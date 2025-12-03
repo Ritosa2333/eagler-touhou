@@ -1723,16 +1723,11 @@ ChainCallbackResult ResultScreen::OnUpdate(ResultScreen *resultScreen)
 }
 
 #pragma var_order(strPos, row, name, sprite, ShootScoreListNodeA, column, ShootScoreListNodeB, spritePos,              \
-                  spellcardIdx, charPos, unused, unused2, unused3, unk, keyboardCharacter)
+                  spellcardIdx, charPos, keyboardCharacter)
 ChainCallbackResult th06::ResultScreen::OnDraw(ResultScreen *resultScreen)
 {
-    u8 unused[12];
-    u8 unused2;
-    u8 unused3;
-
     AnmVm *sprite;
-    char keyboardCharacter;
-    u8 unk;
+    char keyboardCharacter[16];
     ZunVec2 charPos;
 
     i32 spellcardIdx;
@@ -1959,22 +1954,22 @@ ChainCallbackResult th06::ResultScreen::OnDraw(ResultScreen *resultScreen)
                 strPos = *spritePos.AsD3dXVec();
                 strPos.x += charPos.y;
                 strPos.y += charPos.x;
-                keyboardCharacter = g_AlphabetList[row * RESULT_KEYBOARD_COLUMNS + column];
-                unk = 0;
+                keyboardCharacter[0] = g_AlphabetList[row * RESULT_KEYBOARD_COLUMNS + column];
+                keyboardCharacter[1] = 0;
 
                 if (row == 5)
                 {
                     if (column == 14)
                     {
-                        keyboardCharacter = 0x80; // SP
+                        keyboardCharacter[0] = 0x80; // SP
                     }
                     else if (column == 15)
                     {
-                        keyboardCharacter = 0x81; // END
+                        keyboardCharacter[0] = 0x81; // END
                     }
                 }
 
-                g_AsciiManager.AddString(&strPos, &keyboardCharacter);
+                g_AsciiManager.AddString(&strPos, keyboardCharacter);
 
                 spritePos.AsD3dXVec()->x += 20.0f;
             }
