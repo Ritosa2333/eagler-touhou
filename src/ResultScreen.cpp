@@ -1771,9 +1771,8 @@ ChainCallbackResult th06::ResultScreen::OnDraw(ResultScreen *resultScreen)
             resultScreen->unk_28a0[1].pos = *spritePos.AsD3dXVec();
             g_AnmManager->DrawNoRotation(&resultScreen->unk_28a0[1]);
 
-            spritePos.AsD3dXVec()->x -= -320.0f;
+            spritePos.AsD3dXVec()->x -= 320.0f;
             spritePos.AsD3dXVec()->y += 18.0f;
-            spritePos.AsD3dXVec()->y += 320.0f;
 
             ShootScoreListNodeA = resultScreen->scores[resultScreen->diffSelected][resultScreen->charUsed * 2].next;
             ShootScoreListNodeB = resultScreen->scores[resultScreen->diffSelected][resultScreen->charUsed * 2 + 1].next;
@@ -1870,7 +1869,7 @@ ChainCallbackResult th06::ResultScreen::OnDraw(ResultScreen *resultScreen)
                                                  ShootScoreListNodeB->data->score);
                 }
                 spritePos.AsD3dXVec()->x -= 336.0f;
-                spritePos.AsD3dXVec()->y += 336.0f;
+                spritePos.AsD3dXVec()->y += 18.0f;
                 ShootScoreListNodeA = ShootScoreListNodeA->next;
                 ShootScoreListNodeB = ShootScoreListNodeB->next;
             }
