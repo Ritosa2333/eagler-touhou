@@ -1773,6 +1773,7 @@ ChainCallbackResult th06::ResultScreen::OnDraw(ResultScreen *resultScreen)
 
             spritePos.AsD3dXVec()->x -= 320.0f;
             spritePos.AsD3dXVec()->y += 18.0f;
+            spritePos.AsD3dXVec()->y += 18.0f;
 
             ShootScoreListNodeA = resultScreen->scores[resultScreen->diffSelected][resultScreen->charUsed * 2].next;
             ShootScoreListNodeB = resultScreen->scores[resultScreen->diffSelected][resultScreen->charUsed * 2 + 1].next;
@@ -1786,7 +1787,9 @@ ChainCallbackResult th06::ResultScreen::OnDraw(ResultScreen *resultScreen)
                         {
                             g_AsciiManager.color = 0xfff0f0ff;
 
-                            strcpy(name, "        ");
+                            // Yes, this seems to be required to match. No, I don't like it either
+                            memcpy(name, "    ", 4);
+                            memcpy(name + 4, "    ", 4);
                             name[8] = 0;
 
                             name[resultScreen->cursor >= 8 ? 7 : resultScreen->cursor] = '_';
@@ -1833,7 +1836,8 @@ ChainCallbackResult th06::ResultScreen::OnDraw(ResultScreen *resultScreen)
                         {
                             g_AsciiManager.color = 0xfffff0f0;
 
-                            strcpy(name, "        ");
+                            memcpy(name, "    ", 4);
+                            memcpy(name + 4, "    ", 4);
                             name[8] = 0;
 
                             name[resultScreen->cursor >= 8 ? 7 : resultScreen->cursor] = '_';
@@ -2010,8 +2014,8 @@ ChainCallbackResult th06::ResultScreen::OnDraw(ResultScreen *resultScreen)
                                              resultScreen->defaultReplay.score);
                 g_AsciiManager.color = 0xfff0f0ff;
 
-                strcpy(name, "        ");
-
+                memcpy(name, "    ", 4);
+                memcpy(name + 4, "    ", 4);
                 name[8] = 0;
 
                 name[resultScreen->cursor >= 8 ? 7 : resultScreen->cursor] = '_';
