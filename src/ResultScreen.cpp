@@ -1954,7 +1954,7 @@ ChainCallbackResult th06::ResultScreen::OnDraw(ResultScreen *resultScreen)
                 strPos.x += charPos.y;
                 strPos.y += charPos.x;
                 keyboardCharacter[0] = g_AlphabetList[row * RESULT_KEYBOARD_COLUMNS + column];
-                keyboardCharacter[1] = 0;
+                keyboardCharacter[1] = '\0';
 
                 if (row == 5)
                 {
