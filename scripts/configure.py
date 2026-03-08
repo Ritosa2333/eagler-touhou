@@ -64,7 +64,7 @@ def configure(build_type):
         writer.rule("extracticon", "python scripts/extract_icon.py --output $out")
         writer.rule(
             "geni18n",
-            """python -c "import sys; open(sys.argv[2], 'wb').write(open(sys.argv[1], 'rb').read().decode('utf8').encode('shift_jis'))" $in $out""",
+            "python scripts/generate_i18n.py $in $out",
         )
         writer.rule(
             "genstubs",
