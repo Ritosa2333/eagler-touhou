@@ -1396,8 +1396,8 @@ void AnmManager::DrawVmTextFmt(AnmVm *vm, ZunColor textColor, ZunColor shadowCol
     vsprintf(buffer, fmt, argptr);
     va_end(argptr);
     this->DrawTextToSprite(vm->sprite->sourceFileIndex, vm->sprite->startPixelInclusive.x,
-                             vm->sprite->startPixelInclusive.y, vm->sprite->textureWidth, vm->sprite->textureHeight,
-                             fontWidth, vm->fontHeight, textColor, shadowColor, buffer);
+                           vm->sprite->startPixelInclusive.y, vm->sprite->textureWidth, vm->sprite->textureHeight,
+                           fontWidth, vm->fontHeight, textColor, shadowColor, buffer);
     vm->flags.isVisible = true;
     return;
 }
@@ -1415,13 +1415,13 @@ void AnmManager::DrawStringFormat(AnmVm *vm, ZunColor textColor, ZunColor shadow
     vsprintf(buf, fmt, args);
     va_end(args);
     this->DrawTextToSprite(vm->sprite->sourceFileIndex, vm->sprite->startPixelInclusive.x,
-                          vm->sprite->startPixelInclusive.y, vm->sprite->textureWidth, vm->sprite->textureHeight,
-                          fontWidth, vm->fontHeight, textColor, shadowColor, " ");
+                           vm->sprite->startPixelInclusive.y, vm->sprite->textureWidth, vm->sprite->textureHeight,
+                           fontWidth, vm->fontHeight, textColor, shadowColor, " ");
     secondPartStartX =
         vm->sprite->startPixelInclusive.x + vm->sprite->textureWidth - ((f32)strlen(buf) * (f32)(fontWidth + 1) / 2.0f);
     this->DrawTextToSprite(vm->sprite->sourceFileIndex, secondPartStartX, vm->sprite->startPixelInclusive.y,
-                          vm->sprite->textureWidth, vm->sprite->textureHeight, fontWidth, vm->fontHeight, textColor,
-                          shadowColor, buf);
+                           vm->sprite->textureWidth, vm->sprite->textureHeight, fontWidth, vm->fontHeight, textColor,
+                           shadowColor, buf);
     vm->flags.isVisible = true;
     return;
 }
@@ -1439,13 +1439,13 @@ void AnmManager::DrawStringFormat2(AnmVm *vm, ZunColor textColor, ZunColor shado
     vsprintf(buf, fmt, args);
     va_end(args);
     this->DrawTextToSprite(vm->sprite->sourceFileIndex, vm->sprite->startPixelInclusive.x,
-                          vm->sprite->startPixelInclusive.y, vm->sprite->textureWidth, vm->sprite->textureHeight,
-                          fontWidth, vm->fontHeight, textColor, shadowColor, " ");
+                           vm->sprite->startPixelInclusive.y, vm->sprite->textureWidth, vm->sprite->textureHeight,
+                           fontWidth, vm->fontHeight, textColor, shadowColor, " ");
     secondPartStartX = vm->sprite->startPixelInclusive.x + vm->sprite->textureWidth / 2.0f -
                        ((f32)strlen(buf) * (f32)(fontWidth + 1) / 4.0f);
     this->DrawTextToSprite(vm->sprite->sourceFileIndex, secondPartStartX, vm->sprite->startPixelInclusive.y,
-                          vm->sprite->textureWidth, vm->sprite->textureHeight, fontWidth, vm->fontHeight, textColor,
-                          shadowColor, buf);
+                           vm->sprite->textureWidth, vm->sprite->textureHeight, fontWidth, vm->fontHeight, textColor,
+                           shadowColor, buf);
     vm->flags.isVisible = true;
     return;
 }
