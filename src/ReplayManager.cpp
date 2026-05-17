@@ -9,6 +9,7 @@
 #include "ReplayManager.hpp"
 #include "Rng.hpp"
 #include "Supervisor.hpp"
+#include "ZunMemory.hpp"
 #include "utils.hpp"
 
 namespace th06
@@ -209,21 +210,6 @@ ChainCallbackResult ReplayManager::OnDraw(ReplayManager *mgr)
     return CHAIN_CALLBACK_RESULT_CONTINUE;
 }
 
-__inline StageReplayData *AllocateStageReplayData(i32 size)
-{
-    return (StageReplayData *)malloc(size);
-}
-
-__inline void ReleaseReplayData(void *data)
-{
-    return free(data);
-}
-
-__inline void ReleaseStageReplayData(void *data)
-{
-    return free(data);
-}
-
 #pragma var_order(stageReplayData, idx, oldStageReplayData)
 ZunResult ReplayManager::AddedCallback(ReplayManager *mgr)
 {
@@ -258,7 +244,8 @@ ZunResult ReplayManager::AddedCallback(ReplayManager *mgr)
     {
         utils::DebugPrint2("error : replay.cpp");
     }
-    mgr->replayData->stageReplayData[g_GameManager.currentStage - 1] = AllocateStageReplayData(sizeof(StageReplayData));
+    mgr->replayData->stageReplayData[g_GameManager.currentStage - 1] =
+        (StageReplayData *)ZunAlloc(sizeof(StageReplayData));
     stageReplayData = mgr->replayData->stageReplayData[g_GameManager.currentStage - 1];
     stageReplayData->bombsRemaining = g_GameManager.bombsRemaining;
     stageReplayData->livesRemaining = g_GameManager.livesRemaining;
@@ -329,7 +316,7 @@ ZunResult ReplayManager::DeletedCallback(ReplayManager *mgr)
         g_Chain.Cut(mgr->calcChainDemoHighPrio);
         mgr->calcChainDemoHighPrio = NULL;
     }
-    ReleaseReplayData(g_ReplayManager->replayData);
+    ZunFree(g_ReplayManager->replayData);
     delete g_ReplayManager;
     g_ReplayManager = NULL;
     g_ReplayManager = NULL;
@@ -478,7 +465,7 @@ void ReplayManager::SaveReplay(char *replayPath, char *replayName)
                 {
                     utils::DebugPrint2("Replay Size %d\n", (i32)mgr->replayInputStageBookmarks[stageIdx] -
                                                                (i32)mgr->replayData->stageReplayData[stageIdx]);
-                    ReleaseStageReplayData(g_ReplayManager->replayData->stageReplayData[stageIdx]);
+                    ZunFree(g_ReplayManager->replayData->stageReplayData[stageIdx]);
                 }
             }
         }

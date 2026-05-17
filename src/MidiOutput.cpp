@@ -239,27 +239,20 @@ ZunResult MidiOutput::ReadFileData(u32 idx, char *path)
 
 void MidiOutput::ReleaseFileData(u32 idx)
 {
-    u8 *data = this->midiFileData[idx];
-    free(data);
-
+    ZunFree(this->midiFileData[idx]);
     this->midiFileData[idx] = NULL;
 }
 
-#pragma var_order(trackIndex, data, tracks)
 void MidiOutput::ClearTracks()
 {
     i32 trackIndex;
-    u8 *data;
-    MidiTrack *tracks;
 
     for (trackIndex = 0; trackIndex < this->numTracks; trackIndex++)
     {
-        data = this->tracks[trackIndex].trackData;
-        free(data);
+        ZunFree(this->tracks[trackIndex].trackData);
     }
 
-    tracks = this->tracks;
-    free(tracks);
+    ZunFree(this->tracks);
     this->tracks = NULL;
     this->numTracks = 0;
 }
@@ -310,7 +303,7 @@ ZunResult MidiOutput::ParseFile(i32 fileIdx)
     this->numTracks = MidiOutput::Ntohs(*(u16 *)(endOfHeaderPointer + 2));
 
     // Allocate this->divisions * 32 bytes.
-    this->tracks = (MidiTrack *)ZunMemory::Alloc(sizeof(MidiTrack) * this->numTracks);
+    this->tracks = (MidiTrack *)ZunAlloc(sizeof(MidiTrack) * this->numTracks);
     memset(this->tracks, 0, sizeof(MidiTrack) * this->numTracks);
     for (trackIdx = 0; trackIdx < this->numTracks; trackIdx += 1)
     {
@@ -322,7 +315,7 @@ ZunResult MidiOutput::ParseFile(i32 fileIdx)
         // First, read the length of the chunk
         trackLength = MidiOutput::Ntohl(*(u32 *)(currentCursorTrack + 4));
         this->tracks[trackIdx].trackLength = trackLength;
-        this->tracks[trackIdx].trackData = (u8 *)ZunMemory::Alloc(trackLength);
+        this->tracks[trackIdx].trackData = (u8 *)ZunAlloc(trackLength);
         this->tracks[trackIdx].trackPlaying = 1;
         memcpy(this->tracks[trackIdx].trackData, currentCursor, trackLength);
         currentCursor += trackLength;
@@ -432,9 +425,8 @@ success:
         utils::DebugPrint2("error :\n");
     }
 
-    void *lpData = pmh->lpData;
-    free(lpData);
-    free(pmh);
+    ZunFree(pmh->lpData);
+    ZunFree(pmh);
     return ZUN_SUCCESS;
 }
 
@@ -540,11 +532,10 @@ void MidiOutput::ProcessMsg(MidiTrack *track)
             {
                 this->UnprepareHeader(this->midiHeaders[this->midiHeadersCursor]);
             }
-            midiHeaderSize = sizeof(MIDIHDR);
-            midiHdr = this->midiHeaders[this->midiHeadersCursor] = (MIDIHDR *)malloc(midiHeaderSize);
+            midiHdr = this->midiHeaders[this->midiHeadersCursor] = (MIDIHDR *)ZunAlloc(sizeof(MIDIHDR));
             curTrackLength = MidiOutput::SkipVariableLength(&track->curTrackDataCursor);
             memset(midiHdr, 0, sizeof(MIDIHDR));
-            midiHdr->lpData = (LPSTR)malloc(curTrackLength + 1);
+            midiHdr->lpData = (LPSTR)ZunAlloc(curTrackLength + 1);
             midiHdr->lpData[0] = -0x10;
             midiHdr->dwFlags = 0;
             midiHdr->dwBufferLength = curTrackLength + 1;
@@ -555,9 +546,8 @@ void MidiOutput::ProcessMsg(MidiTrack *track)
             }
             if (this->midiOutDev.SendLongMsg(midiHdr))
             {
-                lpdata = midiHdr->lpData;
-                free(lpdata);
-                free(midiHdr);
+                ZunFree(midiHdr->lpData);
+                ZunFree(midiHdr);
                 this->midiHeaders[this->midiHeadersCursor] = NULL;
             }
             this->midiHeadersCursor += 1;

@@ -9,6 +9,7 @@
 #include "Player.hpp"
 #include "ScreenEffect.hpp"
 #include "Supervisor.hpp"
+#include "ZunMemory.hpp"
 #include "i18n.hpp"
 #include "utils.hpp"
 
@@ -623,13 +624,7 @@ ZunResult Ending::DeletedCallback(Ending *ending)
     g_Supervisor.curState = SUPERVISOR_STATE_RESULTSCREEN_FROMGAME;
 
     g_AnmManager->ReleaseSurface(0);
-
-    // This has the same effect as doing "delete ending->endFileData" since delete just calls free, but for some reason,
-    // in both ways, the stack doesn't match with the other variable used in delete ending, in theory this should should
-    // be correct since ending->endFileData was allocated with malloc. One way to solve it, would be to do the same with
-    // ending, and align both variables with var_order, but that would be "incorrect", weird...
-    char *endfiledata = ending->endFileData;
-    free(endfiledata);
+    ZunFree(ending->endFileData);
 
     g_Chain.Cut(ending->drawChain);
     ending->drawChain = NULL;
