@@ -12,6 +12,8 @@
 
 This project aims to perfectly reconstruct the source code of [Touhou Koumakyou ~ the Embodiment of Scarlet Devil 1.02h](https://en.touhouwiki.net/wiki/Embodiment_of_Scarlet_Devil) by Team Shanghai Alice.
 
+For a functioning port of the game to other platforms (Linux, modern Windows, etc), see [the portable branch](https://github.com/GensokyoClub/th06/tree/portable)
+
 ## Installation
 
 ### Executable
