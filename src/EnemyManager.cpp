@@ -187,8 +187,8 @@ void EnemyManager::RunEclTimeline()
             case 1:
                 if (!g_Gui.BossPresent())
                 {
-                    this->SpawnEnemy(this->timelineInstr->arg0, this->timelineInstr->args.Var1AsVec(), -1, ITEM_RANDOM_ITEM,
-                                     -1);
+                    this->SpawnEnemy(this->timelineInstr->arg0, this->timelineInstr->args.Var1AsVec(), -1,
+                                     ITEM_RANDOM_ITEM, -1);
                 }
                 break;
             case 2:
