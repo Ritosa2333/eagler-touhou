@@ -552,55 +552,55 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 break;
             case ECL_OPCODE_MOVEDIRTIMEDECELERATE:
                 EnemyEclInstr::MoveDirTime(enemy, instruction);
-                enemy->flags.unk2 = 1;
+                enemy->flags.movementEaseType = 1;
                 break;
             case ECL_OPCODE_MOVEDIRTIMEDECELERATEFAST:
                 EnemyEclInstr::MoveDirTime(enemy, instruction);
-                enemy->flags.unk2 = 2;
+                enemy->flags.movementEaseType = 2;
                 break;
             case ECL_OPCODE_MOVEDIRTIMEACCELERATE:
                 EnemyEclInstr::MoveDirTime(enemy, instruction);
-                enemy->flags.unk2 = 3;
+                enemy->flags.movementEaseType = 3;
                 break;
             case ECL_OPCODE_MOVEDIRTIMEACCELERATEFAST:
                 EnemyEclInstr::MoveDirTime(enemy, instruction);
-                enemy->flags.unk2 = 4;
+                enemy->flags.movementEaseType = 4;
                 break;
             case ECL_OPCODE_MOVEPOSITIONTIMELINEAR:
                 EnemyEclInstr::MovePosTime(enemy, instruction);
-                enemy->flags.unk2 = 0;
+                enemy->flags.movementEaseType = 0;
                 break;
             case ECL_OPCODE_MOVEPOSITIONTIMEDECELERATE:
                 EnemyEclInstr::MovePosTime(enemy, instruction);
-                enemy->flags.unk2 = 1;
+                enemy->flags.movementEaseType = 1;
                 break;
             case ECL_OPCODE_MOVEPOSITIONTIMEDECELERATEFAST:
                 EnemyEclInstr::MovePosTime(enemy, instruction);
-                enemy->flags.unk2 = 2;
+                enemy->flags.movementEaseType = 2;
                 break;
             case ECL_OPCODE_MOVEPOSITIONTIMEACCELERATE:
                 EnemyEclInstr::MovePosTime(enemy, instruction);
-                enemy->flags.unk2 = 3;
+                enemy->flags.movementEaseType = 3;
                 break;
             case ECL_OPCODE_MOVEPOSITIONTIMEACCELERATEFAST:
                 EnemyEclInstr::MovePosTime(enemy, instruction);
-                enemy->flags.unk2 = 4;
+                enemy->flags.movementEaseType = 4;
                 break;
             case ECL_OPCODE_MOVETIMEDECELERATE:
                 EnemyEclInstr::MoveTime(enemy, instruction);
-                enemy->flags.unk2 = 1;
+                enemy->flags.movementEaseType = 1;
                 break;
             case ECL_OPCODE_MOVETIMEDECELERATEFAST:
                 EnemyEclInstr::MoveTime(enemy, instruction);
-                enemy->flags.unk2 = 2;
+                enemy->flags.movementEaseType = 2;
                 break;
             case ECL_OPCODE_MOVETIMEACCELERATE:
                 EnemyEclInstr::MoveTime(enemy, instruction);
-                enemy->flags.unk2 = 3;
+                enemy->flags.movementEaseType = 3;
                 break;
             case ECL_OPCODE_MOVETIMEACCELERATEFAST:
                 EnemyEclInstr::MoveTime(enemy, instruction);
-                enemy->flags.unk2 = 4;
+                enemy->flags.movementEaseType = 4;
                 break;
             case ECL_OPCODE_MOVEBOUNDSSET:
                 enemy->lowerMoveLimit.x = instruction->args.moveBoundSet.lowerMoveLimit.x;
@@ -939,7 +939,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 {
                     local_bc = 1.0f;
                 }
-                switch (enemy->flags.unk2)
+                switch (enemy->flags.movementEaseType)
                 {
                 case 0:
                     local_bc = 1.0f - local_bc;

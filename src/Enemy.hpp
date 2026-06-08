@@ -99,7 +99,7 @@ struct EnemyFlags
 {
     // First byte
     u8 unk1 : 2;
-    u8 unk2 : 3;
+    u8 movementEaseType : 3;
     u8 shootingDisabled : 1;
     u8 unk4 : 1;
     u8 unk5 : 1;
