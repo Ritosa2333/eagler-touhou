@@ -1048,7 +1048,7 @@ void ExInsHandleBatTransformation(Enemy *enemy, EclRawInstr *instr)
             enemy->anmExLeft = -1;
         }
 
-        enemy->flags.unk6 = 0;
+        enemy->flags.isInteractable = 0;
         enemy->exInsFunc10Timer.SetCurrent(60);
     }
     else
@@ -1061,7 +1061,7 @@ void ExInsHandleBatTransformation(Enemy *enemy, EclRawInstr *instr)
                 enemy->anmExLeft = 0xa1;
             }
 
-            enemy->flags.unk6 = 1;
+            enemy->flags.isInteractable = 1;
         }
     }
 }

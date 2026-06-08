@@ -792,7 +792,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 enemy->timerCallbackSub = instruction->args.setInt;
                 break;
             case ECL_OPCODE_ENEMYFLAGINTERACTABLE:
-                enemy->flags.unk6 = instruction->args.setInt;
+                enemy->flags.isInteractable = instruction->args.setInt;
                 break;
             case ECL_OPCODE_EFFECTPARTICLE:
                 g_EffectManager.SpawnParticles(instruction->args.effectParticle.effectId, &enemy->position,
@@ -868,7 +868,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                     }
 
                     local_b4->life = 0;
-                    if (local_b4->flags.unk6 == 0 && 0 <= local_b4->deathCallbackSub)
+                    if (local_b4->flags.isInteractable == 0 && 0 <= local_b4->deathCallbackSub)
                     {
                         g_EclManager.CallEclSub(&local_b4->currentContext, local_b4->deathCallbackSub);
                         local_b4->deathCallbackSub = -1;

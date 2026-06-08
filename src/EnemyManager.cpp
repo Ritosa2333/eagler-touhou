@@ -44,7 +44,7 @@ void EnemyManager::Initialize()
     }
     enemy->flags.unk5 = 1;
     enemy->bossTimer.InitializeForPopup();
-    enemy->flags.unk6 = 1;
+    enemy->flags.isInteractable = 1;
     enemy->flags.unk7 = 1;
     enemy->flags.unk8 = 0;
     enemy->hitboxDimensions = D3DXVECTOR3(12.0f, 12.0f, 12.0f);
@@ -370,7 +370,7 @@ ZunBool Enemy::HandleLifeCallback()
             }
             curEnemy->life = 0;
 
-            if (!curEnemy->flags.unk6 && curEnemy->deathCallbackSub >= 0)
+            if (!curEnemy->flags.isInteractable && curEnemy->deathCallbackSub >= 0)
             {
                 g_EclManager.CallEclSub(&curEnemy->currentContext, curEnemy->deathCallbackSub);
                 curEnemy->deathCallbackSub = -1;
@@ -428,7 +428,7 @@ ZunBool Enemy::HandleTimerCallback()
             }
             curEnemy->life = 0;
 
-            if (!curEnemy->flags.unk6 && curEnemy->deathCallbackSub >= 0)
+            if (!curEnemy->flags.isInteractable && curEnemy->deathCallbackSub >= 0)
             {
                 g_EclManager.CallEclSub(&curEnemy->currentContext, curEnemy->deathCallbackSub);
                 curEnemy->deathCallbackSub = -1;
@@ -454,7 +454,7 @@ void Enemy::Despawn()
     }
     else
     {
-        this->flags.unk6 = 0;
+        this->flags.isInteractable = 0;
     }
     if (this->flags.isBoss)
     {
@@ -583,16 +583,16 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
         if (curEnemy->flags.unk8 != 0 && !curEnemy->flags.unk15)
         {
             enemyLifeBeforeDmg = curEnemy->life;
-            if (curEnemy->flags.unk7 && curEnemy->flags.unk6)
+            if (curEnemy->flags.unk7 && curEnemy->flags.isInteractable)
             {
                 enemyHitbox = curEnemy->hitboxDimensions / 1.5;
-                if (g_Player.CalcKillBoxCollision(&curEnemy->position, &enemyHitbox) == 1 && curEnemy->flags.unk6 &&
+                if (g_Player.CalcKillBoxCollision(&curEnemy->position, &enemyHitbox) == 1 && curEnemy->flags.isInteractable &&
                     !curEnemy->flags.isBoss)
                 {
                     curEnemy->life -= 10;
                 }
             }
-            if (curEnemy->flags.unk6 != 0)
+            if (curEnemy->flags.isInteractable != 0)
             {
                 damage = g_Player.CalcDamageToEnemy(&curEnemy->position, &curEnemy->hitboxDimensions, &local_8);
                 if (70 <= damage)
@@ -638,7 +638,7 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
                     g_Player.positionOfLastEnemyHit = curEnemy->position;
                 }
             }
-            if (0 >= curEnemy->life && curEnemy->flags.unk6 != 0)
+            if (0 >= curEnemy->life && curEnemy->flags.isInteractable != 0)
             {
                 curEnemy->lifeCallbackThreshold = -1;
                 curEnemy->timerCallbackThreshold = -1;
@@ -655,7 +655,7 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
                     break;
                 case 1:
                     g_GameManager.AddScore(curEnemy->score);
-                    curEnemy->flags.unk6 = 0;
+                    curEnemy->flags.isInteractable = 0;
                     goto LAB_00412a4d;
                 case 0:
                     g_GameManager.AddScore(curEnemy->score);
