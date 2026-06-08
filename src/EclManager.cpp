@@ -817,7 +817,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 }
                 break;
             case ECL_OPCODE_ANMFLAGROTATION:
-                enemy->flags.unk13 = instruction->args.setInt;
+                enemy->flags.rotateAnm = instruction->args.setInt;
                 break;
             case ECL_OPCODE_EXINSCALL:
                 g_EclExInsn[instruction->args.setInt](enemy, instruction);

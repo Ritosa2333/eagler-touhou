@@ -79,7 +79,7 @@ void EnemyManager::Initialize()
     enemy->timerCallbackThreshold = -1;
     enemy->laserStore = 0;
     enemy->unk_e41 = 0;
-    enemy->flags.unk13 = 0;
+    enemy->flags.rotateAnm = 0;
     enemy->bulletRankSpeedLow = -0.5f;
     enemy->bulletRankSpeedHigh = 0.5f;
 }
@@ -798,7 +798,7 @@ ChainCallbackResult EnemyManager::OnDraw(EnemyManager *mgr)
                 g_AnmManager->Draw2(curEnemyVm);
             }
         }
-        if (curEnemy->flags.unk13 != 0)
+        if (curEnemy->flags.rotateAnm != 0)
         {
             curEnemy->primaryVm.rotation.z = curEnemy->angle;
         }
