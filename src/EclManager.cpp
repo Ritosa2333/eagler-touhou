@@ -397,7 +397,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 local_14 = local_54->color;
                 // TODO: Strict aliasing rule be like.
                 local_58->spriteOffset = *EnemyEclInstr::GetVar(enemy, (EclVarId *)&local_14, NULL);
-                if (enemy->flags.unk3 == 0)
+                if (enemy->flags.shootingDisabled == 0)
                 {
                     g_BulletManager.SpawnBulletPattern(local_58);
                 }
@@ -432,10 +432,10 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 }
                 break;
             case ECL_OPCODE_SHOOTDISABLED:
-                enemy->flags.unk3 = 1;
+                enemy->flags.shootingDisabled = 1;
                 break;
             case ECL_OPCODE_SHOOTENABLED:
-                enemy->flags.unk3 = 0;
+                enemy->flags.shootingDisabled = 0;
                 break;
             case ECL_OPCODE_SHOOTNOW:
                 enemy->bulletProps.position = enemy->position + enemy->shootOffset;

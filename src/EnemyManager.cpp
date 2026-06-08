@@ -54,7 +54,7 @@ void EnemyManager::Initialize()
     enemy->acceleration = 0.0f;
     enemy->speed = 0.0f;
     enemy->flags.unk1 = 0;
-    enemy->flags.unk3 = 0;
+    enemy->flags.shootingDisabled = 0;
     enemy->flags.unk4 = 0;
     enemy->flags.isBoss = 0;
     enemy->stackDepth = 0;
