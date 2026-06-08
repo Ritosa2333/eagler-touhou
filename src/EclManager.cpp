@@ -667,7 +667,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 enemy->flags.unk7 = instruction->args.setInt;
                 break;
             case ECL_OPCODE_ENEMYFLAGCANTAKEDAMAGE:
-                enemy->flags.unk10 = instruction->args.setInt;
+                enemy->flags.isDamageable = instruction->args.setInt;
                 break;
             case ECL_OPCODE_EFFECTSOUND:
                 g_SoundPlayer.PlaySoundByIdx((SoundIdx)instruction->args.setInt, 0);

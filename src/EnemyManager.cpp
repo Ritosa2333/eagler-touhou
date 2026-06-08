@@ -69,7 +69,7 @@ void EnemyManager::Initialize()
     enemy->anmExLeft = -1;
     enemy->anmExRight = -1;
     enemy->anmExDefaults = -1;
-    enemy->flags.unk10 = 1;
+    enemy->flags.isDamageable = 1;
     enemy->flags.unk11 = 0;
     enemy->deathCallbackSub = -1;
     enemy->flags.shouldClampPos = 0;
@@ -629,7 +629,7 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
                         damage = 0;
                     }
                 }
-                if (curEnemy->flags.unk10 != 0)
+                if (curEnemy->flags.isDamageable != 0)
                 {
                     curEnemy->life -= damage;
                 }
@@ -646,7 +646,7 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
                 {
                 case 3:
                     curEnemy->life = 1;
-                    curEnemy->flags.unk10 = 0;
+                    curEnemy->flags.isDamageable = 0;
                     curEnemy->flags.unk11 = 0;
                     g_Gui.bossPresent = 0;
                     g_EffectManager.SpawnParticles(curEnemy->deathAnm1, &curEnemy->position, 1, COLOR_WHITE);
