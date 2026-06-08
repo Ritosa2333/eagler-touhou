@@ -32,7 +32,7 @@ void ExInsStage6Func7(Enemy *enemy, EclRawInstr *instr);
 void ExInsStage6Func8(Enemy *enemy, EclRawInstr *instr);
 void ExInsStage6Func9(Enemy *enemy, EclRawInstr *instr);
 void ExInsStage6Func11(Enemy *enemy, EclRawInstr *instr);
-void ExInsStage6XFunc10(Enemy *enemy, EclRawInstr *instr);
+void ExInsHandleBatTransformation(Enemy *enemy, EclRawInstr *instr);
 void ExInsStage4Func12(Enemy *enemy, EclRawInstr *instr);
 void ExInsStageXFunc13(Enemy *enemy, EclRawInstr *instr);
 void ExInsStageXFunc14(Enemy *enemy, EclRawInstr *instr);

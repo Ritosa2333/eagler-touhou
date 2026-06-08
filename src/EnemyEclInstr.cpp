@@ -1032,7 +1032,7 @@ void ExInsStage6Func11(Enemy *enemy, EclRawInstr *instr)
     }
 }
 
-void ExInsStage6XFunc10(Enemy *enemy, EclRawInstr *instr)
+void ExInsHandleBatTransformation(Enemy *enemy, EclRawInstr *instr)
 {
     if (enemy->life <= 0)
     {
@@ -1202,7 +1202,7 @@ void ExInsStageXFunc15(Enemy *enemy, EclRawInstr *instr)
         }
     }
 
-    ExInsStage6XFunc10(enemy, instr);
+    ExInsHandleBatTransformation(enemy, instr);
     enemy->currentContext.var3 = totalIterations;
 }
 

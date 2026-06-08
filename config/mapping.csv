@@ -71,7 +71,7 @@ th06::EnemyEclInstr::ExInsStage6Func7,0x40d040,0x3bb,default,,void,Enemy*,EclRaw
 th06::EnemyEclInstr::ExInsStage6Func8,0x40d400,0x125,default,,void,Enemy*,EclRawInstr*
 th06::EnemyEclInstr::ExInsStage6Func9,0x40d530,0x238,default,,void,Enemy*,EclRawInstr*
 th06::EnemyEclInstr::ExInsStage6Func11,0x40d770,0x1b6,default,,void,Enemy*,EclRawInstr*
-th06::EnemyEclInstr::ExInsStage6XFunc10,0x40d930,0x164,default,,void,Enemy*,EclRawInstr*
+th06::EnemyEclInstr::ExInsHandleBatTransformation,0x40d930,0x164,default,,void,Enemy*,EclRawInstr*
 th06::EnemyEclInstr::ExInsStage4Func12,0x40daa0,0x114,default,,void,Enemy*,EclRawInstr*
 th06::EnemyEclInstr::ExInsStageXFunc13,0x40dbc0,0xf2,default,,void,Enemy*,EclRawInstr*
 th06::EnemyEclInstr::ExInsStageXFunc14,0x40dcc0,0x139,default,,void,Enemy*,EclRawInstr*
