@@ -361,8 +361,8 @@ i32 Player::CalcDamageToEnemy(D3DXVECTOR3 *enemyPos, D3DXVECTOR3 *enemyHitboxSiz
     }
     for (idx = 0; idx < ARRAY_SIZE_SIGNED(this->bullets); idx++, bullet++)
     {
-        if (bullet->bulletState == BULLET_STATE_UNUSED ||
-            bullet->bulletState != BULLET_STATE_FIRED && bullet->bulletType != BULLET_TYPE_2)
+        if (bullet->bulletState == PLAYER_BULLET_STATE_UNUSED ||
+            bullet->bulletState != PLAYER_BULLET_STATE_FIRED && bullet->bulletType != BULLET_TYPE_2)
         {
             continue;
         }
@@ -417,13 +417,13 @@ i32 Player::CalcDamageToEnemy(D3DXVECTOR3 *enemyPos, D3DXVECTOR3 *enemyHitboxSiz
 
         if (bullet->bulletType != BULLET_TYPE_LASER)
         {
-            if (bullet->bulletState == BULLET_STATE_FIRED)
+            if (bullet->bulletState == PLAYER_BULLET_STATE_FIRED)
             {
                 g_AnmManager->SetAndExecuteScriptIdx(&bullet->sprite, bullet->sprite.anmFileIndex + 0x20);
                 g_EffectManager.SpawnParticles(PARTICLE_EFFECT_UNK_5, &bullet->position, 1, COLOR_WHITE);
                 bullet->position.z = 0.1;
             }
-            bullet->bulletState = BULLET_STATE_COLLIDED;
+            bullet->bulletState = PLAYER_BULLET_STATE_COLLIDED;
             bullet->velocity.x /= 8.0f;
             bullet->velocity.y /= 8.0f;
         }
@@ -486,7 +486,7 @@ void Player::UpdatePlayerBullets(Player *player)
     bullet = &player->bullets[0];
     for (idx = 0; idx < ARRAY_SIZE_SIGNED(player->bullets); idx++, bullet++)
     {
-        if (bullet->bulletState == BULLET_STATE_UNUSED)
+        if (bullet->bulletState == PLAYER_BULLET_STATE_UNUSED)
         {
             continue;
         }
@@ -494,7 +494,7 @@ void Player::UpdatePlayerBullets(Player *player)
         switch (bullet->bulletType)
         {
         case BULLET_TYPE_1:
-            if (bullet->bulletState == BULLET_STATE_FIRED)
+            if (bullet->bulletState == PLAYER_BULLET_STATE_FIRED)
             {
                 if (player->positionOfLastEnemyHit.x > -100.0f && bullet->unk_140.AsFrames() < 40 &&
                     bullet->unk_140.HasTicked())
@@ -540,7 +540,7 @@ void Player::UpdatePlayerBullets(Player *player)
             break;
 
         case BULLET_TYPE_2:
-            if (bullet->bulletState == BULLET_STATE_FIRED)
+            if (bullet->bulletState == PLAYER_BULLET_STATE_FIRED)
             {
                 bullet->velocity.y -= 0.3f;
             }
@@ -577,12 +577,12 @@ void Player::UpdatePlayerBullets(Player *player)
             !g_GameManager.IsInBounds(bullet->position.x, bullet->position.y, bullet->sprite.sprite->widthPx,
                                       bullet->sprite.sprite->heightPx))
         {
-            bullet->bulletState = BULLET_STATE_UNUSED;
+            bullet->bulletState = PLAYER_BULLET_STATE_UNUSED;
         }
 
         if (g_AnmManager->ExecuteScript(&bullet->sprite))
         {
-            bullet->bulletState = BULLET_STATE_UNUSED;
+            bullet->bulletState = PLAYER_BULLET_STATE_UNUSED;
         }
         bullet->unk_140.Tick();
     }
@@ -942,7 +942,7 @@ void Player::DrawBullets(Player *p)
     bullets = p->bullets;
     for (bulletIdx = 0; bulletIdx < ARRAY_SIZE_SIGNED(p->bullets); bulletIdx++, bullets++)
     {
-        if (bullets->bulletState != BULLET_STATE_FIRED)
+        if (bullets->bulletState != PLAYER_BULLET_STATE_FIRED)
         {
             continue;
         }
@@ -963,7 +963,7 @@ void Player::DrawBulletExplosions(Player *p)
     bullets = p->bullets;
     for (bulletIdx = 0; bulletIdx < ARRAY_SIZE_SIGNED(p->bullets); bulletIdx++, bullets++)
     {
-        if (bullets->bulletState != BULLET_STATE_COLLIDED)
+        if (bullets->bulletState != PLAYER_BULLET_STATE_COLLIDED)
         {
             continue;
         }
@@ -1052,7 +1052,7 @@ void Player::SpawnBullets(Player *p, u32 timer)
 
     for (curBulletIdx = 0; curBulletIdx < ARRAY_SIZE_SIGNED(p->bullets); curBulletIdx++, curBullet++)
     {
-        if (curBullet->bulletState != BULLET_STATE_UNUSED)
+        if (curBullet->bulletState != PLAYER_BULLET_STATE_UNUSED)
         {
             continue;
         }
@@ -1070,7 +1070,7 @@ void Player::SpawnBullets(Player *p, u32 timer)
             curBullet->sprite.pos.x = curBullet->position.x;
             curBullet->sprite.pos.y = curBullet->position.y;
             curBullet->sprite.pos.z = 0.495;
-            curBullet->bulletState = BULLET_STATE_FIRED;
+            curBullet->bulletState = PLAYER_BULLET_STATE_FIRED;
         }
         if (bulletResult == FBR_STOP_SPAWNING)
         {
