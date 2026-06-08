@@ -38,6 +38,16 @@ struct BulletTypeSprites
 };
 ZUN_ASSERT_SIZE(BulletTypeSprites, 0x560);
 
+enum BulletState
+{
+    BULLET_STATE_UNUSED,
+    BULLET_STATE_FIRED,
+    BULLET_STATE_SPAWNING_FAST,
+    BULLET_STATE_SPAWNING_NORMAL,
+    BULLET_STATE_SPAWNING_SLOW,
+    BULLET_STATE_DESPAWNING,
+};
+
 struct Bullet
 {
     BulletTypeSprites sprites;

@@ -428,7 +428,7 @@ void ExInsCirnoRainbowBallJank(Enemy *enemy, EclRawInstr *instr)
     g_EffectManager.SpawnParticles(PARTICLE_EFFECT_UNK_12, &enemy->position, 1, COLOR_WHITE);
     for (i = 0; i < ARRAY_SIZE_SIGNED(g_BulletManager.bullets); i++, currentBullet++)
     {
-        if (currentBullet->state == 0 || currentBullet->state == 5)
+        if (currentBullet->state == BULLET_STATE_UNUSED || currentBullet->state == BULLET_STATE_DESPAWNING)
         {
             continue;
         }
@@ -569,7 +569,7 @@ void ExInsStage56Func4(Enemy *enemy, EclRawInstr *instr)
         {
             for (i = 0; i < ARRAY_SIZE_SIGNED(g_BulletManager.bullets); i++, currentBullet++)
             {
-                if (currentBullet->state == 0 || currentBullet->state == 5)
+                if (currentBullet->state == BULLET_STATE_UNUSED || currentBullet->state == BULLET_STATE_DESPAWNING)
                 {
                     continue;
                 }
@@ -610,7 +610,7 @@ void ExInsStage56Func4(Enemy *enemy, EclRawInstr *instr)
             bulletsLeft = 52;
             for (i = 0; i < ARRAY_SIZE_SIGNED(g_BulletManager.bullets); i++, currentBullet++)
             {
-                if (currentBullet->state == 0 || currentBullet->state == 5)
+                if (currentBullet->state == BULLET_STATE_UNUSED || currentBullet->state == BULLET_STATE_DESPAWNING)
                 {
                     continue;
                 }
@@ -922,7 +922,7 @@ void ExInsStage6Func8(Enemy *enemy, EclRawInstr *instr)
 
     for (i = 0; i < ARRAY_SIZE_SIGNED(g_BulletManager.bullets); i++, currentBullet++)
     {
-        if (currentBullet->state == 0 || currentBullet->state == 5)
+        if (currentBullet->state == BULLET_STATE_UNUSED || currentBullet->state == BULLET_STATE_DESPAWNING)
         {
             continue;
         }
@@ -963,7 +963,7 @@ void ExInsStage6Func9(Enemy *enemy, EclRawInstr *instr)
 
     for (i = 0; i < ARRAY_SIZE_SIGNED(g_BulletManager.bullets); i++, currentBullet++)
     {
-        if (currentBullet->state == 0 || currentBullet->state == 5)
+        if (currentBullet->state == BULLET_STATE_UNUSED || currentBullet->state == BULLET_STATE_DESPAWNING)
         {
             continue;
         }
@@ -1010,7 +1010,7 @@ void ExInsStage6Func11(Enemy *enemy, EclRawInstr *instr)
 
     for (i = 0; i < ARRAY_SIZE_SIGNED(g_BulletManager.bullets); i++, currentBullet++)
     {
-        if (currentBullet->state == 0 || currentBullet->state == 5)
+        if (currentBullet->state == BULLET_STATE_UNUSED || currentBullet->state == BULLET_STATE_DESPAWNING)
         {
             continue;
         }
@@ -1159,7 +1159,7 @@ void ExInsStageXFunc15(Enemy *enemy, EclRawInstr *instr)
 
     for (i = 0; i < ARRAY_SIZE_SIGNED(g_BulletManager.bullets); i++, currentBullet++)
     {
-        if (currentBullet->state == 0 || currentBullet->state == 5)
+        if (currentBullet->state == BULLET_STATE_UNUSED || currentBullet->state == BULLET_STATE_DESPAWNING)
         {
             continue;
         }
@@ -1173,7 +1173,7 @@ void ExInsStageXFunc15(Enemy *enemy, EclRawInstr *instr)
             for (j = 0, innerBullet = g_BulletManager.bullets; j < ARRAY_SIZE_SIGNED(g_BulletManager.bullets);
                  j++, innerBullet++)
             {
-                if (innerBullet->state == 0 || innerBullet->state == 5)
+                if (innerBullet->state == BULLET_STATE_UNUSED || innerBullet->state == BULLET_STATE_DESPAWNING)
                 {
                     continue;
                 }

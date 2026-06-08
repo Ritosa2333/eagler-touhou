@@ -66,12 +66,13 @@ enum OrbState
     ORB_UNFOCUSING,
 };
 
-enum BulletState
+enum PlayerBulletState
 {
-    BULLET_STATE_UNUSED,
-    BULLET_STATE_FIRED,
-    BULLET_STATE_COLLIDED,
+    PLAYER_BULLET_STATE_UNUSED,
+    PLAYER_BULLET_STATE_FIRED,
+    PLAYER_BULLET_STATE_COLLIDED,
 };
+
 struct PlayerRect
 {
     f32 posX;
