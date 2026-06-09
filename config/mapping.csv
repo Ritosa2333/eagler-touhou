@@ -66,7 +66,7 @@ th06::EnemyEclInstr::ExInsShootStarPattern,0x40bb80,0x574,default,,void,Enemy*,E
 th06::EnemyEclInstr::ExInsPatchouliShottypeSetVars,0x40c100,0x75,default,,void,Enemy*,EclRawInstr*
 th06::EnemyEclInstr::ExInsStage56Func4,0x40c180,0x42a,default,,void,Enemy*,EclRawInstr*
 th06::EnemyEclInstr::ExInsStage5Func5,0x40c5b0,0x533,default,,void,Enemy*,EclRawInstr*
-th06::EnemyEclInstr::ExInsStage6XFunc6,0x40caf0,0x550,default,,void,Enemy*,EclRawInstr*
+th06::EnemyEclInstr::ExInsBatWingEffect,0x40caf0,0x550,default,,void,Enemy*,EclRawInstr*
 th06::EnemyEclInstr::ExInsStage6Func7,0x40d040,0x3bb,default,,void,Enemy*,EclRawInstr*
 th06::EnemyEclInstr::ExInsStage6Func8,0x40d400,0x125,default,,void,Enemy*,EclRawInstr*
 th06::EnemyEclInstr::ExInsStage6Func9,0x40d530,0x238,default,,void,Enemy*,EclRawInstr*

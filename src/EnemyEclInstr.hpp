@@ -27,7 +27,7 @@ void ExInsShootStarPattern(Enemy *enemy, EclRawInstr *instr);
 void ExInsPatchouliShottypeSetVars(Enemy *enemy, EclRawInstr *instr);
 void ExInsStage56Func4(Enemy *enemy, EclRawInstr *instr);
 void ExInsStage5Func5(Enemy *enemy, EclRawInstr *instr);
-void ExInsStage6XFunc6(Enemy *enemy, EclRawInstr *instr);
+void ExInsBatWingEffect(Enemy *enemy, EclRawInstr *instr);
 void ExInsStage6Func7(Enemy *enemy, EclRawInstr *instr);
 void ExInsStage6Func8(Enemy *enemy, EclRawInstr *instr);
 void ExInsStage6Func9(Enemy *enemy, EclRawInstr *instr);

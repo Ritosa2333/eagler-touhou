@@ -151,7 +151,7 @@ th06::EnemyEclInstr::ExInsShootStarPattern
 th06::EnemyEclInstr::ExInsPatchouliShottypeSetVars
 th06::EnemyEclInstr::ExInsStage56Func4
 th06::EnemyEclInstr::ExInsStage5Func5
-th06::EnemyEclInstr::ExInsStage6XFunc6
+th06::EnemyEclInstr::ExInsBatWingEffect
 th06::EnemyEclInstr::ExInsStage6Func7
 th06::EnemyEclInstr::ExInsStage6Func8
 th06::EnemyEclInstr::ExInsStage6Func9

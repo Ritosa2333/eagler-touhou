@@ -27,7 +27,7 @@ DIFFABLE_STATIC_ARRAY_ASSIGN(ExInsn, 17, g_EclExInsn) = {
     EnemyEclInstr::ExInsCirnoRainbowBallJank, EnemyEclInstr::ExInsShootAtRandomArea,
     EnemyEclInstr::ExInsShootStarPattern,     EnemyEclInstr::ExInsPatchouliShottypeSetVars,
     EnemyEclInstr::ExInsStage56Func4,         EnemyEclInstr::ExInsStage5Func5,
-    EnemyEclInstr::ExInsStage6XFunc6,         EnemyEclInstr::ExInsStage6Func7,
+    EnemyEclInstr::ExInsBatWingEffect,         EnemyEclInstr::ExInsStage6Func7,
     EnemyEclInstr::ExInsStage6Func8,          EnemyEclInstr::ExInsStage6Func9,
     EnemyEclInstr::ExInsHandleBatTransformation,        EnemyEclInstr::ExInsStage6Func11,
     EnemyEclInstr::ExInsStage4Func12,         EnemyEclInstr::ExInsStageXFunc13,

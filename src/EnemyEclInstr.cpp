@@ -734,7 +734,7 @@ void ExInsStage5Func5(Enemy *enemy, EclRawInstr *instr)
 }
 
 #pragma var_order(effect, baseAngleModifier, distanceModifier, finalAngle, particlePos)
-void ExInsStage6XFunc6(Enemy *enemy, EclRawInstr *instr)
+void ExInsBatWingEffect(Enemy *enemy, EclRawInstr *instr)
 {
     i32 baseAngleModifier;
     f32 distanceModifier;
@@ -1039,7 +1039,7 @@ void ExInsHandleBatTransformation(Enemy *enemy, EclRawInstr *instr)
         return;
     }
 
-    ExInsStage6XFunc6(enemy, instr);
+    ExInsBatWingEffect(enemy, instr);
     if (g_Player.bombInfo.isInUse != 0)
     {
         if (enemy->anmExLeft >= 0)
