@@ -161,7 +161,7 @@ th06::EnemyEclInstr::ExInsStage4Func12
 th06::EnemyEclInstr::ExInsStageXFunc13
 th06::EnemyEclInstr::ExInsStageXFunc14
 th06::EnemyEclInstr::ExInsStageXFunc15
-th06::EnemyEclInstr::ExInsStageXFunc16
+th06::EnemyEclInstr::ExInsFlandreFinalContextUpdate
 th06::Enemy::Enemy
 th06::Enemy::Move
 th06::Enemy::ClampPos

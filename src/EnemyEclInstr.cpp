@@ -15,7 +15,7 @@ namespace th06
 {
 namespace EnemyEclInstr
 {
-#define MAX_BOSS_TIME 7200
+#define RAGE_TIME_THRESHOLD 7200
 
 struct PatchouliShottypeVars
 {
@@ -1207,13 +1207,13 @@ void ExInsStageXFunc15(Enemy *enemy, EclRawInstr *instr)
 }
 
 #pragma var_order(remainingLife, rangeModifier)
-void ExInsStageXFunc16(Enemy *enemy, EclRawInstr *instr)
+void ExInsFlandreFinalContextUpdate(Enemy *enemy, EclRawInstr *instr)
 {
     f32 rangeModifier;
     i32 remainingLife;
 
     remainingLife = enemy->life;
-    if (enemy->bossTimer >= MAX_BOSS_TIME)
+    if (enemy->bossTimer >= RAGE_TIME_THRESHOLD)
     {
         remainingLife = 0;
     }
