@@ -742,7 +742,7 @@ void ExInsBatWingEffect(Enemy *enemy, EclRawInstr *instr)
     f32 finalAngle;
     D3DXVECTOR3 particlePos;
 
-    if (enemy->flags.unk15 != 0)
+    if (enemy->flags.isInvisible != 0)
     {
         Enemy::ResetEffectArray(enemy);
         return;

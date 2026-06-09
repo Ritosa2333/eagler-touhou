@@ -907,7 +907,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 enemy->bulletRankAmount2High = args->bulletRankInfluence.bulletRankAmount2High;
                 break;
             case ECL_OPCODE_ENEMYFLAGINVISIBLE:
-                enemy->flags.unk15 = instruction->args.setInt;
+                enemy->flags.isInvisible = instruction->args.setInt;
                 break;
             case ECL_OPCODE_BOSSTIMERCLEAR:
                 enemy->timerCallbackSub = enemy->deathCallbackSub;

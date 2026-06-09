@@ -580,7 +580,7 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
             }
         }
         local_8 = 0;
-        if (curEnemy->flags.hasBeenInBounds != 0 && !curEnemy->flags.unk15)
+        if (curEnemy->flags.hasBeenInBounds != 0 && !curEnemy->flags.isInvisible)
         {
             enemyLifeBeforeDmg = curEnemy->life;
             if (curEnemy->flags.unk7 && curEnemy->flags.isInteractable)
@@ -780,7 +780,7 @@ ChainCallbackResult EnemyManager::OnDraw(EnemyManager *mgr)
         {
             continue;
         }
-        if (curEnemy->flags.unk15)
+        if (curEnemy->flags.isInvisible)
         {
             continue;
         }
