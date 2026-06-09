@@ -914,7 +914,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 enemy->bossTimer.SetCurrent(0);
                 break;
             case ECL_OPCODE_SPELLCARDFLAGTIMEOUT:
-                enemy->flags.unk16 = instruction->args.setInt;
+                enemy->flags.isTimeoutSpell = instruction->args.setInt;
                 break;
             }
         NEXT_INSN:

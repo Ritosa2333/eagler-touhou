@@ -405,7 +405,7 @@ ZunBool Enemy::HandleTimerCallback()
         this->timerCallbackThreshold = -1;
         this->timerCallbackSub = this->deathCallbackSub;
         this->bossTimer.InitializeForPopup();
-        if (!this->flags.unk16)
+        if (!this->flags.isTimeoutSpell)
         {
             g_EnemyManager.spellcardInfo.isCapturing = false;
             if (g_EnemyManager.spellcardInfo.isActive)

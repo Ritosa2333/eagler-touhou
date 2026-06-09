@@ -117,7 +117,7 @@ struct EnemyFlags
     u8 rotateAnm : 1;
     u8 unk14 : 1;
     u8 unk15 : 1;
-    u8 unk16 : 1;
+    u8 isTimeoutSpell : 1;
 
     // Rest is padding.
 };
