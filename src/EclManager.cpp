@@ -23,16 +23,23 @@ DIFFABLE_STATIC_ARRAY_ASSIGN(i32, 64, g_SpellcardScore) = {
     700000, 700000, 700000, 700000, 700000, 700000, 700000, 700000, 700000, 700000, 700000, 700000};
 DIFFABLE_STATIC(EclManager, g_EclManager);
 typedef void (*ExInsn)(Enemy *, EclRawInstr *);
-DIFFABLE_STATIC_ARRAY_ASSIGN(ExInsn, 17, g_EclExInsn) = {
-    EnemyEclInstr::ExInsCirnoRainbowBallJank, EnemyEclInstr::ExInsShootAtRandomArea,
-    EnemyEclInstr::ExInsShootStarPattern,     EnemyEclInstr::ExInsPatchouliShottypeSetVars,
-    EnemyEclInstr::ExInsStage56Func4,         EnemyEclInstr::ExInsStage5Func5,
-    EnemyEclInstr::ExInsStage6XFunc6,         EnemyEclInstr::ExInsStage6Func7,
-    EnemyEclInstr::ExInsStage6Func8,          EnemyEclInstr::ExInsStage6Func9,
-    EnemyEclInstr::ExInsStage6XFunc10,        EnemyEclInstr::ExInsStage6Func11,
-    EnemyEclInstr::ExInsStage4Func12,         EnemyEclInstr::ExInsStageXFunc13,
-    EnemyEclInstr::ExInsStageXFunc14,         EnemyEclInstr::ExInsStageXFunc15,
-    EnemyEclInstr::ExInsStageXFunc16};
+DIFFABLE_STATIC_ARRAY_ASSIGN(ExInsn, 17, g_EclExInsn) = {EnemyEclInstr::ExInsCirnoRainbowBallJank,
+                                                         EnemyEclInstr::ExInsShootAtRandomArea,
+                                                         EnemyEclInstr::ExInsShootStarPattern,
+                                                         EnemyEclInstr::ExInsPatchouliShottypeSetVars,
+                                                         EnemyEclInstr::ExInsStage56Func4,
+                                                         EnemyEclInstr::ExInsStage5Func5,
+                                                         EnemyEclInstr::ExInsBatWingEffect,
+                                                         EnemyEclInstr::ExInsStage6Func7,
+                                                         EnemyEclInstr::ExInsStage6Func8,
+                                                         EnemyEclInstr::ExInsStage6Func9,
+                                                         EnemyEclInstr::ExInsHandleBatTransformation,
+                                                         EnemyEclInstr::ExInsStage6Func11,
+                                                         EnemyEclInstr::ExInsStage4Func12,
+                                                         EnemyEclInstr::ExInsStageXFunc13,
+                                                         EnemyEclInstr::ExInsStageXFunc14,
+                                                         EnemyEclInstr::ExInsStageXFunc15,
+                                                         EnemyEclInstr::ExInsFlandreFinalContextUpdate};
 
 ZunResult EclManager::Load(char *eclPath)
 {
@@ -243,13 +250,13 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
             HANDLE_CALL:
                 local_14 = instruction->args.call.eclSub;
                 enemy->currentContext.currentInstr = (EclRawInstr *)((u8 *)instruction + instruction->offsetToNext);
-                if (enemy->flags.unk14 == 0)
+                if (enemy->flags.disableCallStack == 0)
                 {
                     memcpy(&enemy->savedContextStack[enemy->stackDepth], &enemy->currentContext,
                            sizeof(EnemyEclContext));
                 }
                 g_EclManager.CallEclSub(&enemy->currentContext, (u16)local_14);
-                if (enemy->flags.unk14 == 0 && enemy->stackDepth < 7)
+                if (enemy->flags.disableCallStack == 0 && enemy->stackDepth < 7)
                 {
                     enemy->stackDepth++;
                 }
@@ -257,7 +264,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 enemy->currentContext.float0 = instruction->args.call.float0;
                 continue;
             case ECL_OPCODE_RET:
-                if (enemy->flags.unk14)
+                if (enemy->flags.disableCallStack)
                 {
                     utils::DebugPrint2("error : no Stack Ret\n");
                 }
@@ -318,34 +325,34 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 enemy->axisSpeed.x = *EnemyEclInstr::GetVarFloat(enemy, &enemy->axisSpeed.x, NULL);
                 enemy->axisSpeed.y = *EnemyEclInstr::GetVarFloat(enemy, &enemy->axisSpeed.y, NULL);
                 enemy->axisSpeed.z = *EnemyEclInstr::GetVarFloat(enemy, &enemy->axisSpeed.z, NULL);
-                enemy->flags.unk1 = 0;
+                enemy->flags.movementMode = 0;
                 break;
             case ECL_OPCODE_MOVEVELOCITY:
                 local_8 = instruction->args.move.pos;
                 enemy->angle = *EnemyEclInstr::GetVarFloat(enemy, &local_8.x, NULL);
                 enemy->speed = *EnemyEclInstr::GetVarFloat(enemy, &local_8.y, NULL);
-                enemy->flags.unk1 = 1;
+                enemy->flags.movementMode = 1;
                 break;
             case ECL_OPCODE_MOVEANGULARVELOCITY:
                 local_8 = instruction->args.move.pos;
                 enemy->angularVelocity = *EnemyEclInstr::GetVarFloat(enemy, &local_8.x, NULL);
-                enemy->flags.unk1 = 1;
+                enemy->flags.movementMode = 1;
                 break;
             case ECL_OPCODE_MOVEATPLAYER:
                 local_8 = instruction->args.move.pos;
                 enemy->angle = g_Player.AngleToPlayer(&enemy->position) + local_8.x;
                 enemy->speed = *EnemyEclInstr::GetVarFloat(enemy, &local_8.y, NULL);
-                enemy->flags.unk1 = 1;
+                enemy->flags.movementMode = 1;
                 break;
             case ECL_OPCODE_MOVESPEED:
                 local_8 = instruction->args.move.pos;
                 enemy->speed = *EnemyEclInstr::GetVarFloat(enemy, &local_8.x, NULL);
-                enemy->flags.unk1 = 1;
+                enemy->flags.movementMode = 1;
                 break;
             case ECL_OPCODE_MOVEACCELERATION:
                 local_8 = instruction->args.move.pos;
                 enemy->acceleration = *EnemyEclInstr::GetVarFloat(enemy, &local_8.x, NULL);
-                enemy->flags.unk1 = 1;
+                enemy->flags.movementMode = 1;
                 break;
             case ECL_OPCODE_BULLETFANAIMED:
             case ECL_OPCODE_BULLETFAN:
@@ -397,7 +404,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 local_14 = local_54->color;
                 // TODO: Strict aliasing rule be like.
                 local_58->spriteOffset = *EnemyEclInstr::GetVar(enemy, (EclVarId *)&local_14, NULL);
-                if (enemy->flags.unk3 == 0)
+                if (enemy->flags.shootingDisabled == 0)
                 {
                     g_BulletManager.SpawnBulletPattern(local_58);
                 }
@@ -432,10 +439,10 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 }
                 break;
             case ECL_OPCODE_SHOOTDISABLED:
-                enemy->flags.unk3 = 1;
+                enemy->flags.shootingDisabled = 1;
                 break;
             case ECL_OPCODE_SHOOTENABLED:
-                enemy->flags.unk3 = 0;
+                enemy->flags.shootingDisabled = 0;
                 break;
             case ECL_OPCODE_SHOOTNOW:
                 enemy->bulletProps.position = enemy->position + enemy->shootOffset;
@@ -552,55 +559,55 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 break;
             case ECL_OPCODE_MOVEDIRTIMEDECELERATE:
                 EnemyEclInstr::MoveDirTime(enemy, instruction);
-                enemy->flags.unk2 = 1;
+                enemy->flags.movementEaseType = 1;
                 break;
             case ECL_OPCODE_MOVEDIRTIMEDECELERATEFAST:
                 EnemyEclInstr::MoveDirTime(enemy, instruction);
-                enemy->flags.unk2 = 2;
+                enemy->flags.movementEaseType = 2;
                 break;
             case ECL_OPCODE_MOVEDIRTIMEACCELERATE:
                 EnemyEclInstr::MoveDirTime(enemy, instruction);
-                enemy->flags.unk2 = 3;
+                enemy->flags.movementEaseType = 3;
                 break;
             case ECL_OPCODE_MOVEDIRTIMEACCELERATEFAST:
                 EnemyEclInstr::MoveDirTime(enemy, instruction);
-                enemy->flags.unk2 = 4;
+                enemy->flags.movementEaseType = 4;
                 break;
             case ECL_OPCODE_MOVEPOSITIONTIMELINEAR:
                 EnemyEclInstr::MovePosTime(enemy, instruction);
-                enemy->flags.unk2 = 0;
+                enemy->flags.movementEaseType = 0;
                 break;
             case ECL_OPCODE_MOVEPOSITIONTIMEDECELERATE:
                 EnemyEclInstr::MovePosTime(enemy, instruction);
-                enemy->flags.unk2 = 1;
+                enemy->flags.movementEaseType = 1;
                 break;
             case ECL_OPCODE_MOVEPOSITIONTIMEDECELERATEFAST:
                 EnemyEclInstr::MovePosTime(enemy, instruction);
-                enemy->flags.unk2 = 2;
+                enemy->flags.movementEaseType = 2;
                 break;
             case ECL_OPCODE_MOVEPOSITIONTIMEACCELERATE:
                 EnemyEclInstr::MovePosTime(enemy, instruction);
-                enemy->flags.unk2 = 3;
+                enemy->flags.movementEaseType = 3;
                 break;
             case ECL_OPCODE_MOVEPOSITIONTIMEACCELERATEFAST:
                 EnemyEclInstr::MovePosTime(enemy, instruction);
-                enemy->flags.unk2 = 4;
+                enemy->flags.movementEaseType = 4;
                 break;
             case ECL_OPCODE_MOVETIMEDECELERATE:
                 EnemyEclInstr::MoveTime(enemy, instruction);
-                enemy->flags.unk2 = 1;
+                enemy->flags.movementEaseType = 1;
                 break;
             case ECL_OPCODE_MOVETIMEDECELERATEFAST:
                 EnemyEclInstr::MoveTime(enemy, instruction);
-                enemy->flags.unk2 = 2;
+                enemy->flags.movementEaseType = 2;
                 break;
             case ECL_OPCODE_MOVETIMEACCELERATE:
                 EnemyEclInstr::MoveTime(enemy, instruction);
-                enemy->flags.unk2 = 3;
+                enemy->flags.movementEaseType = 3;
                 break;
             case ECL_OPCODE_MOVETIMEACCELERATEFAST:
                 EnemyEclInstr::MoveTime(enemy, instruction);
-                enemy->flags.unk2 = 4;
+                enemy->flags.movementEaseType = 4;
                 break;
             case ECL_OPCODE_MOVEBOUNDSSET:
                 enemy->lowerMoveLimit.x = instruction->args.moveBoundSet.lowerMoveLimit.x;
@@ -664,16 +671,16 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 enemy->hitboxDimensions.z = instruction->args.move.pos.z;
                 break;
             case ECL_OPCODE_ENEMYFLAGCOLLISION:
-                enemy->flags.unk7 = instruction->args.setInt;
+                enemy->flags.isCollidable = instruction->args.setInt;
                 break;
             case ECL_OPCODE_ENEMYFLAGCANTAKEDAMAGE:
-                enemy->flags.unk10 = instruction->args.setInt;
+                enemy->flags.isDamageable = instruction->args.setInt;
                 break;
             case ECL_OPCODE_EFFECTSOUND:
                 g_SoundPlayer.PlaySoundByIdx((SoundIdx)instruction->args.setInt, 0);
                 break;
             case ECL_OPCODE_ENEMYFLAGDEATH:
-                enemy->flags.unk11 = instruction->args.setInt;
+                enemy->flags.deathMode = instruction->args.setInt;
                 break;
             case ECL_OPCODE_DEATHCALLBACKSUB:
                 enemy->deathCallbackSub = instruction->args.setInt;
@@ -685,7 +692,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 enemy->runInterrupt = instruction->args.setInt;
             HANDLE_INTERRUPT:
                 enemy->currentContext.currentInstr = (EclRawInstr *)((u8 *)instruction + instruction->offsetToNext);
-                if (enemy->flags.unk14 == 0)
+                if (enemy->flags.disableCallStack == 0)
                 {
                     memcpy(&enemy->savedContextStack[enemy->stackDepth], &enemy->currentContext,
                            sizeof(EnemyEclContext));
@@ -792,7 +799,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 enemy->timerCallbackSub = instruction->args.setInt;
                 break;
             case ECL_OPCODE_ENEMYFLAGINTERACTABLE:
-                enemy->flags.unk6 = instruction->args.setInt;
+                enemy->flags.isInteractable = instruction->args.setInt;
                 break;
             case ECL_OPCODE_EFFECTPARTICLE:
                 g_EffectManager.SpawnParticles(instruction->args.effectParticle.effectId, &enemy->position,
@@ -817,7 +824,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 }
                 break;
             case ECL_OPCODE_ANMFLAGROTATION:
-                enemy->flags.unk13 = instruction->args.setInt;
+                enemy->flags.rotateAnm = instruction->args.setInt;
                 break;
             case ECL_OPCODE_EXINSCALL:
                 g_EclExInsn[instruction->args.setInt](enemy, instruction);
@@ -858,7 +865,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 for (local_b4 = &g_EnemyManager.enemies[0], local_b8 = 0;
                      local_b8 < ARRAY_SIZE_SIGNED(g_EnemyManager.enemies) - 1; local_b8++, local_b4++)
                 {
-                    if (!local_b4->flags.unk5)
+                    if (!local_b4->flags.isSlotOccupied)
                     {
                         continue;
                     }
@@ -868,7 +875,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                     }
 
                     local_b4->life = 0;
-                    if (local_b4->flags.unk6 == 0 && 0 <= local_b4->deathCallbackSub)
+                    if (local_b4->flags.isInteractable == 0 && 0 <= local_b4->deathCallbackSub)
                     {
                         g_EclManager.CallEclSub(&local_b4->currentContext, local_b4->deathCallbackSub);
                         local_b4->deathCallbackSub = -1;
@@ -896,7 +903,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 }
                 break;
             case ECL_OPCODE_ENEMYFLAGDISABLECALLSTACK:
-                enemy->flags.unk14 = instruction->args.setInt;
+                enemy->flags.disableCallStack = instruction->args.setInt;
                 break;
             case ECL_OPCODE_BULLETRANKINFLUENCE:
                 enemy->bulletRankSpeedLow = args->bulletRankInfluence.bulletRankSpeedLow;
@@ -907,14 +914,14 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 enemy->bulletRankAmount2High = args->bulletRankInfluence.bulletRankAmount2High;
                 break;
             case ECL_OPCODE_ENEMYFLAGINVISIBLE:
-                enemy->flags.unk15 = instruction->args.setInt;
+                enemy->flags.isInvisible = instruction->args.setInt;
                 break;
             case ECL_OPCODE_BOSSTIMERCLEAR:
                 enemy->timerCallbackSub = enemy->deathCallbackSub;
                 enemy->bossTimer.SetCurrent(0);
                 break;
             case ECL_OPCODE_SPELLCARDFLAGTIMEOUT:
-                enemy->flags.unk16 = instruction->args.setInt;
+                enemy->flags.isTimeoutSpell = instruction->args.setInt;
                 break;
             }
         NEXT_INSN:
@@ -923,7 +930,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
         }
         else
         {
-            switch (enemy->flags.unk1)
+            switch (enemy->flags.movementMode)
             {
             case 1:
                 enemy->angle = utils::AddNormalizeAngle(enemy->angle, g_Supervisor.effectiveFramerateMultiplier *
@@ -939,7 +946,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 {
                     local_bc = 1.0f;
                 }
-                switch (enemy->flags.unk2)
+                switch (enemy->flags.movementEaseType)
                 {
                 case 0:
                     local_bc = 1.0f - local_bc;
@@ -962,7 +969,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 enemy->angle = atan2f(enemy->axisSpeed.y, enemy->axisSpeed.x);
                 if ((ZunBool)(enemy->moveInterpTimer.current <= 0))
                 {
-                    enemy->flags.unk1 = 0;
+                    enemy->flags.movementMode = 0;
                     enemy->position = enemy->moveInterpStartPos + enemy->moveInterp;
                     enemy->axisSpeed = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
                 }

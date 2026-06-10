@@ -15,7 +15,7 @@ namespace th06
 {
 namespace EnemyEclInstr
 {
-#define MAX_BOSS_TIME 7200
+#define RAGE_TIME_THRESHOLD 7200
 
 struct PatchouliShottypeVars
 {
@@ -55,7 +55,7 @@ void MoveDirTime(Enemy *enemy, EclRawInstr *instr)
 
     enemy->moveInterpTimer.SetCurrent(enemy->moveInterpStartTime);
 
-    enemy->flags.unk1 = 2;
+    enemy->flags.movementMode = 2;
 }
 
 void MovePosTime(Enemy *enemy, EclRawInstr *instr)
@@ -73,7 +73,7 @@ void MovePosTime(Enemy *enemy, EclRawInstr *instr)
 
     enemy->moveInterpTimer.SetCurrent(enemy->moveInterpStartTime);
 
-    enemy->flags.unk1 = 2;
+    enemy->flags.movementMode = 2;
     enemy->axisSpeed = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 }
 
@@ -94,7 +94,7 @@ void MoveTime(Enemy *enemy, EclRawInstr *instr)
 
     enemy->moveInterpTimer.SetCurrent(enemy->moveInterpStartTime);
 
-    enemy->flags.unk1 = 2;
+    enemy->flags.movementMode = 2;
 }
 
 i32 *GetVar(Enemy *enemy, EclVarId *eclVarId, EclValueType *valueType)
@@ -734,7 +734,7 @@ void ExInsStage5Func5(Enemy *enemy, EclRawInstr *instr)
 }
 
 #pragma var_order(effect, baseAngleModifier, distanceModifier, finalAngle, particlePos)
-void ExInsStage6XFunc6(Enemy *enemy, EclRawInstr *instr)
+void ExInsBatWingEffect(Enemy *enemy, EclRawInstr *instr)
 {
     i32 baseAngleModifier;
     f32 distanceModifier;
@@ -742,7 +742,7 @@ void ExInsStage6XFunc6(Enemy *enemy, EclRawInstr *instr)
     f32 finalAngle;
     D3DXVECTOR3 particlePos;
 
-    if (enemy->flags.unk15 != 0)
+    if (enemy->flags.isInvisible != 0)
     {
         Enemy::ResetEffectArray(enemy);
         return;
@@ -1032,14 +1032,14 @@ void ExInsStage6Func11(Enemy *enemy, EclRawInstr *instr)
     }
 }
 
-void ExInsStage6XFunc10(Enemy *enemy, EclRawInstr *instr)
+void ExInsHandleBatTransformation(Enemy *enemy, EclRawInstr *instr)
 {
     if (enemy->life <= 0)
     {
         return;
     }
 
-    ExInsStage6XFunc6(enemy, instr);
+    ExInsBatWingEffect(enemy, instr);
     if (g_Player.bombInfo.isInUse != 0)
     {
         if (enemy->anmExLeft >= 0)
@@ -1048,7 +1048,7 @@ void ExInsStage6XFunc10(Enemy *enemy, EclRawInstr *instr)
             enemy->anmExLeft = -1;
         }
 
-        enemy->flags.unk6 = 0;
+        enemy->flags.isInteractable = 0;
         enemy->exInsFunc10Timer.SetCurrent(60);
     }
     else
@@ -1061,7 +1061,7 @@ void ExInsStage6XFunc10(Enemy *enemy, EclRawInstr *instr)
                 enemy->anmExLeft = 0xa1;
             }
 
-            enemy->flags.unk6 = 1;
+            enemy->flags.isInteractable = 1;
         }
     }
 }
@@ -1202,18 +1202,18 @@ void ExInsStageXFunc15(Enemy *enemy, EclRawInstr *instr)
         }
     }
 
-    ExInsStage6XFunc10(enemy, instr);
+    ExInsHandleBatTransformation(enemy, instr);
     enemy->currentContext.var3 = totalIterations;
 }
 
 #pragma var_order(remainingLife, rangeModifier)
-void ExInsStageXFunc16(Enemy *enemy, EclRawInstr *instr)
+void ExInsFlandreFinalContextUpdate(Enemy *enemy, EclRawInstr *instr)
 {
     f32 rangeModifier;
     i32 remainingLife;
 
     remainingLife = enemy->life;
-    if (enemy->bossTimer >= MAX_BOSS_TIME)
+    if (enemy->bossTimer >= RAGE_TIME_THRESHOLD)
     {
         remainingLife = 0;
     }

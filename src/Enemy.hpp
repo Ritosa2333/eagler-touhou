@@ -98,26 +98,26 @@ ZUN_ASSERT_SIZE(EnemyEclContext, 0x4c);
 struct EnemyFlags
 {
     // First byte
-    u8 unk1 : 2;
-    u8 unk2 : 3;
-    u8 unk3 : 1;
-    u8 unk4 : 1;
-    u8 unk5 : 1;
+    u8 movementMode : 2;
+    u8 movementEaseType : 3;
+    u8 shootingDisabled : 1;
+    u8 invertX : 1;
+    u8 isSlotOccupied : 1;
 
     // Second byte
-    u8 unk6 : 1;
-    u8 unk7 : 1;
-    u8 unk8 : 1;
+    u8 isInteractable : 1;
+    u8 isCollidable : 1;
+    u8 hasBeenInBounds : 1;
     u8 isBoss : 1;
-    u8 unk10 : 1;
-    u8 unk11 : 3;
+    u8 isDamageable : 1;
+    u8 deathMode : 3;
 
     // Third byte
     bool shouldClampPos : 1;
-    u8 unk13 : 1;
-    u8 unk14 : 1;
-    u8 unk15 : 1;
-    u8 unk16 : 1;
+    u8 rotateAnm : 1;
+    u8 disableCallStack : 1;
+    u8 isInvisible : 1;
+    u8 isTimeoutSpell : 1;
 
     // Rest is padding.
 };
