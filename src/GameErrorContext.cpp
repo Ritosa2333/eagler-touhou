@@ -65,7 +65,7 @@ void GameErrorContext::Flush()
 
     if (m_BufferEnd != m_Buffer)
     {
-        g_GameErrorContext.Log(TH_ERR_LOGGER_END);
+        this->Log(TH_ERR_LOGGER_END);
 
         if (m_ShowMessageBox)
         {
