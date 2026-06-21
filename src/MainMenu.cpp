@@ -1258,8 +1258,7 @@ ZunResult MainMenu::DrawStartMenu(void)
 }
 
 #pragma function(strcpy)
-#pragma var_order(anmVm, cur, replayFileHandle, replayFileIdx, replayData, replayFilePath, replayFileInfo, uh, uh2,    \
-                  padding)
+#pragma var_order(anmVm, cur, replayFileHandle, replayFileIdx, replayData, padding, replayFilePath, replayFileInfo)
 i32 MainMenu::ReplayHandling()
 {
     AnmVm *anmVm;
@@ -1309,7 +1308,7 @@ i32 MainMenu::ReplayHandling()
                 {
                     for (cur = 0; cur < 0x2d; cur++)
                     {
-                        replayData = (ReplayData *)FileSystem::OpenPath(replayFilePath, 1);
+                        replayData = (ReplayData *)FileSystem::OpenPath(replayFileInfo.cFileName, 1);
                         if (replayData == NULL)
                         {
                             continue;
