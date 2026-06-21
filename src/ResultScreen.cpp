@@ -560,7 +560,7 @@ i32 ResultScreen::HandleResultKeyboard()
         }
 
         g_AnmManager->DrawStringFormat2(&this->unk_28a0[1], COLOR_RGB(COLOR_WHITE), COLOR_RGB(COLOR_BLACK),
-                                        g_CharacterList[this->charUsed * 2]);
+                                        g_CharacterList[this->charUsed * 2 + 1]);
         if (g_GameManager.shotType != SHOT_TYPE_B)
         {
             this->unk_28a0[1].color = COLOR_TRANSPARENT_WHITE;
