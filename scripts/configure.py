@@ -30,7 +30,7 @@ def configure(build_type):
         if build_type == BuildType.BINARY_MATCHBUILD:
             cl_common_flags += " /DDBINARYMATCHBUILD"
         writer.variable("cl_common_flags", cl_common_flags)
-        writer.variable("cl_flags", "$cl_common_flags /Od /Oi /Ob1 /Op /Gy")
+        writer.variable("cl_flags", "$cl_common_flags /Od /Oi /Ob1 /Op /Gy /GF")
         writer.variable("cl_flags_small_codegen", "$cl_flags /Os")
         writer.variable("cl_flags_pbg3", "$cl_common_flags /O2")
         writer.variable(
