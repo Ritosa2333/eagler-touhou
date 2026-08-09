@@ -3,6 +3,7 @@
 #include "ZunResult.hpp"
 #include "inttypes.hpp"
 #include <cstdio>
+#include <string>
 
 namespace FileSystem
 {
@@ -11,6 +12,7 @@ namespace FileSystem
 //   std::filesystem needs to be replaced for portability to systems that might not have
 //   proper C++ standard library support
 FILE *FopenUTF8(const char *filepath, const char *mode);
+std::string GetPrefPath(const char *filepath);
 void CreateDir(const char *path);
 u8 *OpenPath(const char *filepath, int isExternalResource);
 int WriteDataToFile(const char *path, const void *data, std::size_t size);

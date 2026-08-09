@@ -3,7 +3,6 @@
 #include "ZunResult.hpp"
 #include "inttypes.hpp"
 #include <SDL3/SDL.h>
-#include <SDL3/SDL.h>
 #include <atomic>
 #include <mutex>
 #include <thread>

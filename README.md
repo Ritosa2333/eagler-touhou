@@ -5,13 +5,13 @@
 
 This is the readme for the portable fork of EoSD. For the readme of the decomp project, see [here](https://github.com/GensokyoClub/th06/blob/master/README.md).
 
-EoSD-portable is a port of Touhou 6 using SDL2 and OpenGL (with a more general renderer abstraction layer hopefully on the way).
-This enables theoretical portability to any system supported by SDL2, with Linux, Windows, and macOS in particular being known to work.
+EoSD-portable is a port of Touhou 6 using SDL3 and OpenGL/GLES.
+This enables theoretical portability to any system supported by SDL3, with Linux, Windows, macOS, and Web targets in scope.
 Builds for the BSDs and other Unices are also almost certainly possible, but may require some slight modifications to the build system.
 
 ### Platform Requirements
 
-- SDL2, SDL2-image, and SDL2-ttf support
+- SDL3, SDL3_image, and SDL3_ttf support
 - C++20 standard library support
 - A little endian architecture (though big endian support is currently being worked on)
 - OpenGL ES 1.1, OpenGL 1.3, or GL 2.1 / GL ES 2.0 / WebGL support
@@ -20,9 +20,9 @@ Builds for the BSDs and other Unices are also almost certainly possible, but may
 
 EoSD-portable has the following dependencies:
 
-- `SDL2`
-- `SDL2_image`
-- `SDL2_ttf`
+- `SDL3`
+- `SDL3_image`
+- `SDL3_ttf`
 - `libasound` (Optional and Linux-only, enables MIDI support. This will almost always be present as part of a desktop distro.)
 
 On Windows and macOS, MIDI support uses the system APIs and needs no extra dependencies.
@@ -77,6 +77,23 @@ You will also need to add a font to your game directory with the filename `msgot
 This may be the actual MS Gothic, taken from a Windows machine, or a compatible font such as Kochi Gothic.
 EoSD-portable uses the Japanese filenames (e.g. 紅魔郷CM.DAT, 東方紅魔郷.cfg). English and other patches, static or thcrap, do not currently work.
 A Japanese locale is not required.
+
+### SDL3 Web build (reallyportable branch)
+
+The Web target follows the SDL3 callback and GLES3 architecture used by the
+TH07 reallyportable port. Initialize the pinned submodules, put legally
+obtained game files in the ignored `assets/` directory as described in
+`PORTING.md`, then configure with the Emscripten CMake toolchain:
+
+```sh
+git submodule update --init --recursive
+emcmake cmake -S . -B build-web -G Ninja
+cmake --build build-web
+```
+
+Serve `build-web/` over HTTP; opening the generated HTML directly from disk is
+not supported. The generated `.data` bundle contains original game assets and
+must not be committed or redistributed.
 
 # Decomp Credits
 

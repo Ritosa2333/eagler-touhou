@@ -6,13 +6,10 @@
 #include "Stage.hpp"
 #include "Supervisor.hpp"
 #include "ZunMath.hpp"
-#include "graphics/FixedFunctionGL.hpp"
-#include "graphics/Software.hpp"
-#include "graphics/WebGL.hpp"
+#include "graphics/Gles.hpp"
 #include "i18n.hpp"
 #include "utils.hpp"
 
-#include <SDL3/SDL.h>
 #include <SDL3/SDL.h>
 #include <cstring>
 
@@ -22,14 +19,6 @@ i32 g_TickCountToEffectiveFramerate;
 f64 g_LastFrameTime;
 
 #define FRAME_TIME (1000. / 60.)
-
-static const struct
-{
-    const char *name;
-    GfxInterface *(*TryInit)();
-} s_RenderBackends[] = {{"GL 2.1 / GL ES 2.0 / WebGL", WebGL::Create},
-                        {"Fixed function GL(ES)", FixedFunctionGL::Init},
-                        {"Software fallback (VERY SLOW)", Software::Init}};
 
 RenderResult GameWindow::Render()
 {
@@ -184,18 +173,30 @@ void GameWindow::Present()
 
 void GameWindow::CreateGameWindow()
 {
-    SDL_Init(SDL_INIT_GAMEPAD);
-
-    for (u32 i = 0; i < ARRAY_SIZE(s_RenderBackends); i++)
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD))
     {
-        g_GfxBackend = s_RenderBackends[i].TryInit();
-        if (g_GfxBackend)
-        {
-            utils::DebugPrint2("Using renderer backend %s", s_RenderBackends[i].name);
-            break;
-        }
-        utils::DebugPrint2("Renderer creation for backend %s failed", s_RenderBackends[i].name);
+        return;
     }
+
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 0);
+
+    SDL_PropertiesID props = SDL_CreateProperties();
+    SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, TH_WINDOW_TITLE);
+    SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, GAME_WINDOW_WIDTH);
+    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, GAME_WINDOW_HEIGHT);
+    g_GameWindow.window = SDL_CreateWindowWithProperties(props);
+    SDL_DestroyProperties(props);
+    if (!g_GameWindow.window)
+    {
+        return;
+    }
+
+    g_GfxBackend = GlesGraphics::Init();
+    SDL_ShowWindow(g_GameWindow.window);
 
     g_GameWindow.lastActiveAppValue = 1;
 }

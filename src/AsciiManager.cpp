@@ -11,6 +11,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
+#include <SDL3/SDL.h>
 
 AsciiManager g_AsciiManager;
 static ChainElem g_AsciiManagerCalcChain;
@@ -116,14 +117,17 @@ ZunResult AsciiManager::AddedCallback(AsciiManager *s)
 
     if (g_AnmManager->LoadAnm(ANM_FILE_ASCII, "data/ascii.anm", ANM_OFFSET_ASCII) != ZUN_SUCCESS)
     {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "th06: failed to load data/ascii.anm");
         return ZUN_ERROR;
     }
     if (g_AnmManager->LoadAnm(ANM_FILE_ASCIIS, "data/asciis.anm", ANM_OFFSET_ASCIIS) != ZUN_SUCCESS)
     {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "th06: failed to load data/asciis.anm");
         return ZUN_ERROR;
     }
     if (g_AnmManager->LoadAnm(ANM_FILE_CAPTURE, "data/capture.anm", ANM_OFFSET_CAPTURE) != ZUN_SUCCESS)
     {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "th06: failed to load data/capture.anm");
         return ZUN_ERROR;
     }
     s->InitializeVms();

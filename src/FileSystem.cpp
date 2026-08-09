@@ -18,9 +18,27 @@
 
 u32 g_LastFileSize;
 
+std::string FileSystem::GetPrefPath(const char *filepath)
+{
+    while (filepath[0] == '.' && (filepath[1] == '/' || filepath[1] == '\\'))
+        filepath += 2;
+#ifdef __EMSCRIPTEN__
+    return std::string("/savesth06/") + filepath;
+#else
+    return std::string(filepath);
+#endif
+}
+
 FILE *FileSystem::FopenUTF8(const char *filepath, const char *mode)
 {
-#ifndef _WIN32
+#ifdef __EMSCRIPTEN__
+    const std::string prefPath = GetPrefPath(filepath);
+    const bool writes = std::strchr(mode, 'w') || std::strchr(mode, 'a') || std::strchr(mode, '+');
+    FILE *file = std::fopen(prefPath.c_str(), mode);
+    if (file || writes)
+        return file;
+    return std::fopen(filepath, mode);
+#elif !defined(_WIN32)
     return std::fopen(filepath, mode);
 #else
     u32 filepathWLen = MultiByteToWideChar(CP_UTF8, 0, filepath, -1, NULL, 0) * 2;
@@ -48,7 +66,9 @@ FILE *FileSystem::FopenUTF8(const char *filepath, const char *mode)
 
 void FileSystem::CreateDir(const char *path)
 {
-#ifdef _WIN32
+#ifdef __EMSCRIPTEN__
+    std::filesystem::create_directories(GetPrefPath(path));
+#elif defined(_WIN32)
     _mkdir(path);
 #elif __cplusplus >= 201703L
     auto p = std::filesystem::path(path);

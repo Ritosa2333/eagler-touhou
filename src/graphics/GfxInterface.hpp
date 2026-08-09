@@ -14,6 +14,7 @@ enum DepthFunc
 // Position is implied, since everything uses is anyway
 enum VertexAttributeFlags
 {
+    VERTEX_ATTR_POSITION = (1 << 2),
     VERTEX_ATTR_TEX_COORD = (1 << 0),
     VERTEX_ATTR_DIFFUSE = (1 << 1),
 };
@@ -29,7 +30,15 @@ enum ColorOp
 {
     COLOR_OP_MODULATE,
     COLOR_OP_ADD,
-    COLOR_OP_REPLACE
+    COLOR_OP_REPLACE,
+    COLOR_OP_DISABLE
+};
+
+enum TextureArg
+{
+    TEX_ARG_DIFFUSE,
+    TEX_ARG_TEXTURE,
+    TEX_ARG_TFACTOR,
 };
 
 enum TextureOpComponent
@@ -47,19 +56,24 @@ enum TransformMatrix
 };
 enum BlendMode
 {
+    BLEND_ALPHA,
     BLEND_INV_SRC_ALPHA,
     BLEND_ONE,
+    BLEND_NONE,
 };
 enum Capabilities
 {
     CAPS_BLEND,
-    CAPS_DEPTH_TEST
+    CAPS_DEPTH_TEST,
+    CAPS_ALPHA_TEST,
+    CAPS_FOG,
 };
 
 enum PrimitiveType
 {
     PRIM_TRIANGLE_STRIP, // GL_TRIANGLE_STRIP
     PRIM_TRIANGLES,      // GL_TRIANGLES
+    PRIM_TRIANGLE_FAN,
 };
 
 enum ClearBits

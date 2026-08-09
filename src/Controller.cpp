@@ -1,8 +1,6 @@
 #include "Controller.hpp"
 
 #include <SDL3/SDL.h>
-#include <SDL3/SDL.h>
-#include <SDL3/SDL.h>
 
 #include "GameErrorContext.hpp"
 #include "GameWindow.hpp"

@@ -20,7 +20,6 @@
 #include "utils.hpp"
 
 #include <SDL3/SDL.h>
-#include <SDL3/SDL.h>
 #include <cstdio>
 #include <cstring>
 #include <ctime>
@@ -305,6 +304,7 @@ ZunResult Supervisor::AddedCallback(Supervisor *s)
     g_Pbg3Archives = s->pbg3Archives;
     if (s->LoadPbg3(IN_PBG3_INDEX, TH_IN_DAT_FILE))
     {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "th06: failed to load %s", TH_IN_DAT_FILE);
         return ZUN_ERROR;
     }
 
@@ -338,12 +338,14 @@ ZunResult Supervisor::AddedCallback(Supervisor *s)
     g_SoundPlayer.InitSoundBuffers();
     if (g_AnmManager->LoadAnm(ANM_FILE_TEXT, "data/text.anm", ANM_OFFSET_TEXT) != 0)
     {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "th06: failed to load data/text.anm");
         return ZUN_ERROR;
     }
 
     if (AsciiManager::RegisterChain() != 0)
     {
         g_GameErrorContext.Log(TH_ERR_ASCIIMANAGER_INIT_FAILED);
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "th06: AsciiManager initialization failed");
         return ZUN_ERROR;
     }
 
@@ -352,12 +354,16 @@ ZunResult Supervisor::AddedCallback(Supervisor *s)
 
     if (TextHelper::CreateTextBuffer() != ZUN_SUCCESS)
     {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "th06: text buffer initialization failed");
         return ZUN_ERROR;
     }
 
     s->ReleasePbg3(IN_PBG3_INDEX);
     if (g_Supervisor.LoadPbg3(MD_PBG3_INDEX, TH_MD_DAT_FILE) != 0)
+    {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "th06: failed to load %s", TH_MD_DAT_FILE);
         return ZUN_ERROR;
+    }
 
     return ZUN_SUCCESS;
 }

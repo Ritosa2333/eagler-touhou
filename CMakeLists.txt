@@ -26,6 +26,7 @@ set(TH06_SOURCES
     src/GameErrorContext.cpp
     src/GameManager.cpp
     src/GameWindow.cpp
+    src/graphics/Gles.cpp
     src/Gui.cpp
     src/ItemManager.cpp
     src/MainMenu.cpp
@@ -73,8 +74,6 @@ if(EMSCRIPTEN)
         -O2
         -sALLOW_MEMORY_GROWTH
         -sMAX_WEBGL_VERSION=2
-        -sINVOKE_RUN=0
-        "-sEXPORTED_RUNTIME_METHODS=['callMain']"
         -lidbfs.js
         --use-preload-cache
         --shell-file "${CMAKE_SOURCE_DIR}/resources/shell.html"
@@ -102,7 +101,7 @@ if(TH_USE_VENDORED_SDL)
     set(SDLIMAGE_BACKEND_STB ON)
     set(SDLIMAGE_BACKEND_IMAGEIO OFF)
     set(SDLIMAGE_JPG ON)
-    set(SDLIMAGE_PNG OFF)
+    set(SDLIMAGE_PNG ON)
     set(SDLTTF_VENDORED ON)
     set(SDLTTF_HARFBUZZ OFF)
     add_subdirectory(vendored/SDL EXCLUDE_FROM_ALL)

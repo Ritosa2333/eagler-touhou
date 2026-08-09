@@ -26,10 +26,11 @@ It is intentionally not an extension of the old SDL2 `WebGL` experiment.
    remove `WebGL`, `FixedFunctionGL`, `GLFunc`, and the software fallback from
    the web target.
 4. Replace SDL2 audio/threading with the th07-style non-blocking audio path.
-5. Add IDBFS save mounting, user-gesture audio start, keyboard/gamepad input,
-   and touch controls.
-6. Accept only after browser tests reach title, menu, gameplay, pause/resume,
-   audio, and save reload at stable logic timing.
+5. Add IDBFS save mounting, user-gesture audio start, and keyboard/gamepad
+   input. Touch controls can follow as a separate platform feature.
+6. Accept the first playable milestone only after browser tests reach title,
+   menu, character/shot selection, and gameplay at stable logic timing. Audio,
+   pause/resume, and save reload remain explicit follow-up acceptance checks.
 
 ## Asset contract
 

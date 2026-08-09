@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <link rel="icon" href="data:,">
   <title>東方紅魔郷 〜 the Embodiment of Scarlet Devil</title>
   <style>
     html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}
@@ -17,11 +18,12 @@
     var Module = {
       canvas: document.getElementById('canvas'),
       preRun: [function () {
+        addRunDependency('savesth06-sync');
         FS.mkdir('/savesth06');
         FS.mount(IDBFS, { autoPersist: true }, '/savesth06');
         FS.syncfs(true, function (error) {
           if (error) console.error('save sync failed', error);
-          Module.callMain([]);
+          removeRunDependency('savesth06-sync');
         });
       }],
       setStatus: function (text) {
