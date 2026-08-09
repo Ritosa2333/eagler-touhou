@@ -66,6 +66,12 @@ struct MsgRawHeader
 
 struct GuiMsgVm
 {
+    void UpdatePrev()
+    {
+        for (AnmVm &vm : portraits) vm.UpdatePrev();
+        for (AnmVm &vm : dialogueLines) vm.UpdatePrev();
+        for (AnmVm &vm : introLines) vm.UpdatePrev();
+    }
     const MsgRawHeader *msgFile;
     const MsgRawInstr **instrs;
     const MsgRawInstr *currentInstr;
@@ -96,6 +102,21 @@ struct GuiImpl
     ZunResult RunMsg();
     ZunResult DrawDialogue() const;
     void MsgRead(i32 msgIdx);
+
+    void UpdatePrev()
+    {
+        for (AnmVm &vm : vms) vm.UpdatePrev();
+        stageNameSprite.UpdatePrev();
+        songNameSprite.UpdatePrev();
+        playerSpellcardPortrait.UpdatePrev();
+        enemySpellcardPortrait.UpdatePrev();
+        bombSpellcardName.UpdatePrev();
+        enemySpellcardName.UpdatePrev();
+        bombSpellcardBackground.UpdatePrev();
+        enemySpellcardBackground.UpdatePrev();
+        loadingScreenSprite.UpdatePrev();
+        msg.UpdatePrev();
+    }
 
     AnmVm vms[26];
     u8 bossHealthBarState;

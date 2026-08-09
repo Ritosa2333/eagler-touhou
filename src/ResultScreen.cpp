@@ -1368,6 +1368,15 @@ ChainCallbackResult ResultScreen::OnUpdate(ResultScreen *resultScreen)
     i32 characterShotType;
     AnmVm *vm;
     i32 i;
+    for (AnmVm &vm : resultScreen->unk_40)
+    {
+        vm.UpdatePrev();
+    }
+    for (AnmVm &vm : resultScreen->unk_28a0)
+    {
+        vm.UpdatePrev();
+    }
+    resultScreen->unk_39a0.UpdatePrev();
     switch (resultScreen->resultScreenState)
     {
 

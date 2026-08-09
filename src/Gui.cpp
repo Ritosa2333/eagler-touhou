@@ -70,6 +70,7 @@ void Gui::ShowSpellcardBonus(u32 spellcardScore) const
 
 ChainCallbackResult Gui::OnUpdate(Gui *gui)
 {
+    gui->impl->UpdatePrev();
     if (g_GameManager.isTimeStopped)
     {
         return CHAIN_CALLBACK_RESULT_CONTINUE;

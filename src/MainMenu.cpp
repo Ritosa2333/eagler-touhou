@@ -50,6 +50,11 @@ ChainCallbackResult MainMenu::OnUpdate(MainMenu *menu)
     const u8 *controllerData;
     ControllerMapping mappingData;
     f32 refreshRate;
+
+    for (AnmVm &vm : menu->vm)
+    {
+        vm.UpdatePrev();
+    }
     f32 local_48;
     i32 local_4c;
     u32 chosenStage;

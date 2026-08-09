@@ -5,6 +5,7 @@
 #include "ChainPriorities.hpp"
 #include "Enemy.hpp"
 #include "GameManager.hpp"
+#include "GameWindow.hpp"
 #include "Gui.hpp"
 #include "ItemManager.hpp"
 #include "Player.hpp"
@@ -171,6 +172,8 @@ u32 BulletManager::SpawnSingleBullet(const EnemyBulletShooter *bulletProps, i32 
     bullet->angle = utils::AddNormalizeAngle(bulletAngle, 0.0f);
     bullet->pos = bulletProps->position;
     bullet->pos.z = 0.1f;
+    bullet->prevPos = bullet->pos;
+    bullet->sprites.UpdatePrev();
     sincosmul(&bullet->velocity, bullet->angle, bulletSpeed);
     bullet->exFlags = bulletProps->flags;
     bullet->spriteOffset = bulletProps->spriteOffset;
@@ -572,6 +575,9 @@ Laser *BulletManager::SpawnLaserPattern(const EnemyLaserShooter *bulletProps)
 
         laser->vm1.flags.blendMode = AnmVmBlendMode_One;
         laser->pos = bulletProps->position;
+        laser->prevPos = laser->pos;
+        laser->vm0.UpdatePrev();
+        laser->vm1.UpdatePrev();
         laser->color = bulletProps->spriteOffset;
         laser->inUse = true;
         laser->angle = bulletProps->angle;
@@ -661,6 +667,26 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
     if (g_GameManager.isTimeStopped)
     {
         return CHAIN_CALLBACK_RESULT_CONTINUE;
+    }
+
+    for (idx = 0; idx < ARRAY_SIZE_SIGNED(mgr->bullets); idx++)
+    {
+        Bullet &bullet = mgr->bullets[idx];
+        if (bullet.state != 0)
+        {
+            bullet.prevPos = bullet.pos;
+            bullet.sprites.UpdatePrev();
+        }
+    }
+    for (idx = 0; idx < ARRAY_SIZE_SIGNED(mgr->lasers); idx++)
+    {
+        Laser &laser = mgr->lasers[idx];
+        if (laser.inUse)
+        {
+            laser.prevPos = laser.pos;
+            laser.vm0.UpdatePrev();
+            laser.vm1.UpdatePrev();
+        }
     }
 
     g_ItemManager.OnUpdate();
@@ -1108,16 +1134,17 @@ ChainCallbackResult BulletManager::OnDraw(BulletManager *mgr)
         }
         fsincos_wrapper(&sine, &cosine, curLaser->angle);
         laserOffset = (curLaser->endOffset - curLaser->startOffset) / 2.0f + curLaser->startOffset;
-        curLaser->vm0.pos.x = cosine * laserOffset + curLaser->pos.x;
-        curLaser->vm0.pos.y = sine * laserOffset + curLaser->pos.y;
+        const ZunVec3 drawLaserPos = curLaser->prevPos.Lerp(curLaser->pos, g_RenderAlpha);
+        curLaser->vm0.pos.x = cosine * laserOffset + drawLaserPos.x;
+        curLaser->vm0.pos.y = sine * laserOffset + drawLaserPos.y;
         curLaser->vm0.pos.z = 0.0f;
         curLaser->color = COLOR_COMBINE_ALPHA(COLOR_WHITE, curLaser->color);
         g_AnmManager->Draw3(&curLaser->vm0);
 
         if (curLaser->startOffset < 16.0f || curLaser->speed == 0.0f)
         {
-            curLaser->vm1.pos.x = cosine * curLaser->startOffset + curLaser->pos.x;
-            curLaser->vm1.pos.y = sine * curLaser->startOffset + curLaser->pos.y;
+            curLaser->vm1.pos.x = cosine * curLaser->startOffset + drawLaserPos.x;
+            curLaser->vm1.pos.y = sine * curLaser->startOffset + drawLaserPos.y;
             curLaser->vm1.pos.z = 0.0f;
             curLaser->vm1.color = curLaser->vm0.color;
             curLaser->vm1.flags.colorOp = AnmVmColorOp_Add;
@@ -1282,8 +1309,9 @@ void BulletManager::DrawBullet(Bullet *bullet)
         break;
     }
 
-    anmVm->pos.x = bullet->pos.x;
-    anmVm->pos.y = bullet->pos.y;
+    const ZunVec3 drawPos = bullet->prevPos.Lerp(bullet->pos, g_RenderAlpha);
+    anmVm->pos.x = drawPos.x;
+    anmVm->pos.y = drawPos.y;
     anmVm->pos.z = 0.0;
     anmVm->color = COLOR_COMBINE_ALPHA(COLOR_WHITE, anmVm->color);
 
@@ -1318,8 +1346,9 @@ void BulletManager::DrawBulletNoHwVertex(Bullet *bullet)
         break;
     }
 
-    anmVm->pos.x = g_GameManager.arcadeRegionTopLeftPos.x + bullet->pos.x;
-    anmVm->pos.y = g_GameManager.arcadeRegionTopLeftPos.y + bullet->pos.y;
+    const ZunVec3 drawPos = bullet->prevPos.Lerp(bullet->pos, g_RenderAlpha);
+    anmVm->pos.x = g_GameManager.arcadeRegionTopLeftPos.x + drawPos.x;
+    anmVm->pos.y = g_GameManager.arcadeRegionTopLeftPos.y + drawPos.y;
     anmVm->pos.z = 0.0;
     anmVm->color = COLOR_COMBINE_ALPHA(COLOR_WHITE, anmVm->color);
 

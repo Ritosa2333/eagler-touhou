@@ -3,6 +3,7 @@
 #include "AnmManager.hpp"
 #include "AsciiManager.hpp"
 #include "Gui.hpp"
+#include "GameWindow.hpp"
 #include "Player.hpp"
 #include "Rng.hpp"
 #include "SoundPlayer.hpp"
@@ -44,6 +45,8 @@ void ItemManager::SpawnItem(const ZunVec3 *position, ItemType itemType, i32 stat
         }
         item->isInUse = 1;
         item->currentPosition = *position;
+        item->prevPosition = item->currentPosition;
+        item->sprite.UpdatePrev();
         item->startPosition.x = 0.0f;
         item->startPosition.y = -2.2f;
         item->startPosition.z = 0.0f;
@@ -104,6 +107,8 @@ void ItemManager::OnUpdate()
         {
             continue;
         }
+        curItem->prevPosition = curItem->currentPosition;
+        curItem->sprite.UpdatePrev();
         this->itemCount++;
         if (curItem->state == 2)
         {
@@ -364,8 +369,9 @@ void ItemManager::OnDraw()
         {
             continue;
         }
-        curItem->sprite.pos.x = g_GameManager.arcadeRegionTopLeftPos.x + curItem->currentPosition.x;
-        curItem->sprite.pos.y = g_GameManager.arcadeRegionTopLeftPos.y + curItem->currentPosition.y;
+        const ZunVec3 drawPosition = curItem->prevPosition.Lerp(curItem->currentPosition, g_RenderAlpha);
+        curItem->sprite.pos.x = g_GameManager.arcadeRegionTopLeftPos.x + drawPosition.x;
+        curItem->sprite.pos.y = g_GameManager.arcadeRegionTopLeftPos.y + drawPosition.y;
         curItem->sprite.pos.z = 0.01f;
         if (curItem->currentPosition.y < -8.0f)
         {

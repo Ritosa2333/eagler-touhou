@@ -473,6 +473,11 @@ ChainCallbackResult Ending::OnUpdate(Ending *ending)
     i32 idx;
     i32 framesPressed;
 
+    for (AnmVm &vm : ending->sprites)
+    {
+        vm.UpdatePrev();
+    }
+
     for (framesPressed = 0;;)
     {
         if (ending->ParseEndFile() != ZUN_SUCCESS)

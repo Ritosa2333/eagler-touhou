@@ -28,6 +28,12 @@ StageMenu::StageMenu()
 
 ChainCallbackResult AsciiManager::OnUpdate(AsciiManager *mgr)
 {
+    mgr->vm0.UpdatePrev();
+    mgr->vm1.UpdatePrev();
+    for (AnmVm &vm : mgr->gameMenu.menuSprites) vm.UpdatePrev();
+    mgr->gameMenu.menuBackground.UpdatePrev();
+    for (AnmVm &vm : mgr->retryMenu.menuSprites) vm.UpdatePrev();
+    mgr->retryMenu.menuBackground.UpdatePrev();
     if (!g_GameManager.isInGameMenu && !g_GameManager.isInRetryMenu)
     {
         AsciiManagerPopup *curPopup = &mgr->popups[0];

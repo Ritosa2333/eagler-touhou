@@ -22,6 +22,14 @@ enum BulletAimMode
 
 struct BulletTypeSprites
 {
+    void UpdatePrev()
+    {
+        spriteBullet.UpdatePrev();
+        spriteSpawnEffectFast.UpdatePrev();
+        spriteSpawnEffectNormal.UpdatePrev();
+        spriteSpawnEffectSlow.UpdatePrev();
+        spriteSpawnEffectDonut.UpdatePrev();
+    }
     AnmVm spriteBullet;
     AnmVm spriteSpawnEffectFast;
     AnmVm spriteSpawnEffectNormal;
@@ -37,6 +45,7 @@ struct Bullet
 {
     BulletTypeSprites sprites;
     ZunVec3 pos;
+    ZunVec3 prevPos;
     ZunVec3 velocity;
     ZunVec3 ex4Acceleration;
     f32 speed;
@@ -64,6 +73,7 @@ struct Laser
     AnmVm vm0;
     AnmVm vm1;
     ZunVec3 pos;
+    ZunVec3 prevPos;
     f32 angle;
     f32 startOffset;
     f32 endOffset;

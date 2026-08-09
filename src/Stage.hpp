@@ -112,6 +112,8 @@ struct Stage
     ZunTimer timer;
     u32 stage;
     ZunVec3 position;
+    ZunVec3 prevPosition;
+    ZunVec3 prevCameraFacingDir;
     StageCameraSky skyFog;
     StageCameraSky skyFogInterpInitial;
     StageCameraSky skyFogInterpFinal;

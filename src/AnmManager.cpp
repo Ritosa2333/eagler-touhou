@@ -1,6 +1,7 @@
 #include "AnmManager.hpp"
 #include "FileSystem.hpp"
 #include "GameErrorContext.hpp"
+#include "GameWindow.hpp"
 #include "Rng.hpp"
 #include "Supervisor.hpp"
 #include "TextHelper.hpp"
@@ -20,6 +21,18 @@ static VertexTex1Xyzrhw g_PrimitivesToDrawVertexBuf[4];
 static VertexTex1DiffuseXyzrhw g_PrimitivesToDrawNoVertexBuf[4];
 static VertexTex1DiffuseXyz g_PrimitivesToDrawUnknown[4];
 AnmManager *g_AnmManager;
+
+static ZunColor LerpColor(ZunColor from, ZunColor to, f32 amount)
+{
+    ZunColor result = 0;
+    for (i32 component = 0; component < 4; component++)
+    {
+        const f32 value = COLOR_GET_COMPONENT(from, component) * (1.0f - amount) +
+                          COLOR_GET_COMPONENT(to, component) * amount;
+        COLOR_SET_COMPONENT(result, component, static_cast<u8>(value));
+    }
+    return result;
+}
 
 static const SDL_PixelFormat g_TextureFormatSDLMapping[6] = {SDL_PIXELFORMAT_UNKNOWN,  SDL_PIXELFORMAT_RGBA32,
                                                                  SDL_PIXELFORMAT_RGBA5551, SDL_PIXELFORMAT_RGB565,
@@ -690,6 +703,7 @@ void AnmManager::SetAndExecuteScript(AnmVm *vm, const AnmRawInstr *beginingOfScr
 
 void AnmManager::SetRenderStateForVm(const AnmVm *vm)
 {
+    const ZunColor drawColor = LerpColor(vm->prevColor, vm->color, g_RenderAlpha);
     if (this->currentBlendMode != vm->flags.blendMode)
     {
         this->FlushVertexBuffer();
@@ -713,18 +727,18 @@ void AnmManager::SetRenderStateForVm(const AnmVm *vm)
 
     if (((g_Supervisor.cfg.opts >> GCOS_DONT_USE_VERTEX_BUF) & 1) == 0)
     {
-        this->SetTextureFactor(vm->color);
+        this->SetTextureFactor(drawColor);
     }
     else
     {
-        g_PrimitivesToDrawNoVertexBuf[0].diffuse = vm->color;
-        g_PrimitivesToDrawNoVertexBuf[1].diffuse = vm->color;
-        g_PrimitivesToDrawNoVertexBuf[2].diffuse = vm->color;
-        g_PrimitivesToDrawNoVertexBuf[3].diffuse = vm->color;
-        g_PrimitivesToDrawUnknown[0].diffuse = vm->color;
-        g_PrimitivesToDrawUnknown[1].diffuse = vm->color;
-        g_PrimitivesToDrawUnknown[2].diffuse = vm->color;
-        g_PrimitivesToDrawUnknown[3].diffuse = vm->color;
+        g_PrimitivesToDrawNoVertexBuf[0].diffuse = drawColor;
+        g_PrimitivesToDrawNoVertexBuf[1].diffuse = drawColor;
+        g_PrimitivesToDrawNoVertexBuf[2].diffuse = drawColor;
+        g_PrimitivesToDrawNoVertexBuf[3].diffuse = drawColor;
+        g_PrimitivesToDrawUnknown[0].diffuse = drawColor;
+        g_PrimitivesToDrawUnknown[1].diffuse = drawColor;
+        g_PrimitivesToDrawUnknown[2].diffuse = drawColor;
+        g_PrimitivesToDrawUnknown[3].diffuse = drawColor;
     }
 
     this->SetDepthMask(!vm->flags.zWriteDisable);
@@ -835,6 +849,7 @@ void AnmManager::UpdateDirtyStates()
 
 ZunResult AnmManager::DrawOrthographic(const AnmVm *vm, bool roundToPixel)
 {
+    const ZunVec2 drawUv = vm->prevUvScrollPos.Lerp(vm->uvScrollPos, g_RenderAlpha);
     float triangleX1, triangleX2, triangleY1, triangleY2;
     if (roundToPixel)
     {
@@ -877,17 +892,26 @@ ZunResult AnmManager::DrawOrthographic(const AnmVm *vm, bool roundToPixel)
         return ZUN_SUCCESS;
     }
 
+    g_PrimitivesToDrawVertexBuf[0].textureUV.x = g_PrimitivesToDrawVertexBuf[2].textureUV.x =
+        vm->sprite->uvStart.x + drawUv.x;
+    g_PrimitivesToDrawVertexBuf[1].textureUV.x = g_PrimitivesToDrawVertexBuf[3].textureUV.x =
+        vm->sprite->uvEnd.x + drawUv.x;
+    g_PrimitivesToDrawVertexBuf[0].textureUV.y = g_PrimitivesToDrawVertexBuf[1].textureUV.y =
+        vm->sprite->uvStart.y + drawUv.y;
+    g_PrimitivesToDrawVertexBuf[2].textureUV.y = g_PrimitivesToDrawVertexBuf[3].textureUV.y =
+        vm->sprite->uvEnd.y + drawUv.y;
+
     if (this->currentSprite != vm->sprite)
     {
         this->currentSprite = vm->sprite;
         g_PrimitivesToDrawVertexBuf[0].textureUV.x = g_PrimitivesToDrawVertexBuf[2].textureUV.x =
-            vm->sprite->uvStart.x + vm->uvScrollPos.x;
+            vm->sprite->uvStart.x + drawUv.x;
         g_PrimitivesToDrawVertexBuf[1].textureUV.x = g_PrimitivesToDrawVertexBuf[3].textureUV.x =
-            vm->sprite->uvEnd.x + vm->uvScrollPos.x;
+            vm->sprite->uvEnd.x + drawUv.x;
         g_PrimitivesToDrawVertexBuf[0].textureUV.y = g_PrimitivesToDrawVertexBuf[1].textureUV.y =
-            vm->sprite->uvStart.y + vm->uvScrollPos.y;
+            vm->sprite->uvStart.y + drawUv.y;
         g_PrimitivesToDrawVertexBuf[2].textureUV.y = g_PrimitivesToDrawVertexBuf[3].textureUV.y =
-            vm->sprite->uvEnd.y + vm->uvScrollPos.y;
+            vm->sprite->uvEnd.y + drawUv.y;
 
         this->SetCurrentTexture(this->textures[vm->sprite->sourceFileIndex].handle);
     }
@@ -936,13 +960,13 @@ ZunResult AnmManager::DrawOrthographic(const AnmVm *vm, bool roundToPixel)
         g_PrimitivesToDrawNoVertexBuf[3].position.y = g_PrimitivesToDrawVertexBuf[3].position.y;
         g_PrimitivesToDrawNoVertexBuf[3].position.z = g_PrimitivesToDrawVertexBuf[3].position.z;
         g_PrimitivesToDrawNoVertexBuf[0].textureUV.x = g_PrimitivesToDrawNoVertexBuf[2].textureUV.x =
-            vm->sprite->uvStart.x + vm->uvScrollPos.x;
+            vm->sprite->uvStart.x + drawUv.x;
         g_PrimitivesToDrawNoVertexBuf[1].textureUV.x = g_PrimitivesToDrawNoVertexBuf[3].textureUV.x =
-            vm->sprite->uvEnd.x + vm->uvScrollPos.x;
+            vm->sprite->uvEnd.x + drawUv.x;
         g_PrimitivesToDrawNoVertexBuf[0].textureUV.y = g_PrimitivesToDrawNoVertexBuf[1].textureUV.y =
-            vm->sprite->uvStart.y + vm->uvScrollPos.y;
+            vm->sprite->uvStart.y + drawUv.y;
         g_PrimitivesToDrawNoVertexBuf[2].textureUV.y = g_PrimitivesToDrawNoVertexBuf[3].textureUV.y =
-            vm->sprite->uvEnd.y + vm->uvScrollPos.y;
+            vm->sprite->uvEnd.y + drawUv.y;
 
         this->SetAttributePointer(VERTEX_ARRAY_POSITION, sizeof(*g_PrimitivesToDrawNoVertexBuf),
                                   &g_PrimitivesToDrawNoVertexBuf[0].position);
@@ -1022,8 +1046,10 @@ ZunResult AnmManager::DrawNoRotation(const AnmVm *vm)
     {
         return ZUN_ERROR;
     }
-    fVar2 = (vm->sprite->widthPx * vm->scaleX) / 2.0f;
-    fVar3 = (vm->sprite->heightPx * vm->scaleY) / 2.0f;
+    const f32 drawScaleX = vm->prevScaleX * (1.0f - g_RenderAlpha) + vm->scaleX * g_RenderAlpha;
+    const f32 drawScaleY = vm->prevScaleY * (1.0f - g_RenderAlpha) + vm->scaleY * g_RenderAlpha;
+    fVar2 = (vm->sprite->widthPx * drawScaleX) / 2.0f;
+    fVar3 = (vm->sprite->heightPx * drawScaleY) / 2.0f;
     if ((vm->flags.anchor & AnmVmAnchor_Left) == 0)
     {
         g_PrimitivesToDrawVertexBuf[0].position.x = g_PrimitivesToDrawVertexBuf[2].position.x = vm->pos.x - fVar2;
@@ -1067,7 +1093,7 @@ ZunResult AnmManager::Draw(const AnmVm *vm)
     f32 yOffset;
     f32 z;
 
-    if (vm->rotation.z == 0.0f)
+    if (vm->rotation.z == 0.0f && vm->prevRotation.z == 0.0f)
     {
         return this->DrawNoRotation(vm);
     }
@@ -1083,12 +1109,14 @@ ZunResult AnmManager::Draw(const AnmVm *vm)
     {
         return ZUN_ERROR;
     }
-    z = vm->rotation.z;
+    z = utils::LerpAngle(vm->prevRotation.z, vm->rotation.z, g_RenderAlpha);
     fsincos_wrapper(&zSine, &zCosine, z);
     xOffset = rintf(vm->pos.x);
     yOffset = rintf(vm->pos.y);
-    spriteXCenter = rintf((vm->sprite->widthPx * vm->scaleX) / 2.0f);
-    spriteYCenter = rintf((vm->sprite->heightPx * vm->scaleY) / 2.0f);
+    const f32 drawScaleX = vm->prevScaleX * (1.0f - g_RenderAlpha) + vm->scaleX * g_RenderAlpha;
+    const f32 drawScaleY = vm->prevScaleY * (1.0f - g_RenderAlpha) + vm->scaleY * g_RenderAlpha;
+    spriteXCenter = rintf((vm->sprite->widthPx * drawScaleX) / 2.0f);
+    spriteYCenter = rintf((vm->sprite->heightPx * drawScaleY) / 2.0f);
     this->TranslateRotation(&g_PrimitivesToDrawVertexBuf[0], -spriteXCenter - 0.5f, -spriteYCenter - 0.5f, zSine,
                             zCosine, xOffset, yOffset);
     this->TranslateRotation(&g_PrimitivesToDrawVertexBuf[1], spriteXCenter - 0.5f, -spriteYCenter - 0.5f, zSine,
@@ -1134,8 +1162,10 @@ ZunResult AnmManager::DrawFacingCamera(const AnmVm *vm)
         return ZUN_ERROR;
     }
 
-    centerX = vm->sprite->widthPx * vm->scaleX / 2.0f;
-    centerY = vm->sprite->heightPx * vm->scaleY / 2.0f;
+    const f32 drawScaleX = vm->prevScaleX * (1.0f - g_RenderAlpha) + vm->scaleX * g_RenderAlpha;
+    const f32 drawScaleY = vm->prevScaleY * (1.0f - g_RenderAlpha) + vm->scaleY * g_RenderAlpha;
+    centerX = vm->sprite->widthPx * drawScaleX / 2.0f;
+    centerY = vm->sprite->heightPx * drawScaleY / 2.0f;
     if ((vm->flags.anchor & AnmVmAnchor_Left) == 0)
     {
         g_PrimitivesToDrawVertexBuf[0].position.x = g_PrimitivesToDrawVertexBuf[2].position.x = vm->pos.x - centerX;
@@ -1448,6 +1478,11 @@ i32 AnmManager::ExecuteScript(AnmVm *vm)
     if (vm->currentInstruction == NULL)
     {
         return 1;
+    }
+
+    if (g_SuppressAnmAdvance)
+    {
+        return 0;
     }
 
     if (vm->pendingInterrupt != 0)

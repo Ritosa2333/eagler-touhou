@@ -79,6 +79,7 @@ struct PlayerBullet
 {
     AnmVm sprite;
     ZunVec3 position;
+    ZunVec3 prevPosition;
     ZunVec3 size;
     ZunVec2 velocity;
     f32 sidewaysMotion;
@@ -197,6 +198,7 @@ struct Player
     AnmVm playerSprite;
     AnmVm orbsSprite[3];
     ZunVec3 positionCenter;
+    ZunVec3 prevPositionCenter;
     ZunVec3 unk_44c;
     ZunVec3 hitboxTopLeft;
     ZunVec3 hitboxBottomRight;
@@ -205,6 +207,7 @@ struct Player
     ZunVec3 hitboxSize;
     ZunVec3 grabItemSize;
     ZunVec3 orbsPosition[2];
+    ZunVec3 prevOrbsPosition[2];
     ZunVec3 bombRegionPositions[32];
     ZunVec3 bombRegionSizes[32];
     i32 bombRegionDamages[32];

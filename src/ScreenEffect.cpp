@@ -43,6 +43,7 @@ void ScreenEffect::SetViewport(ZunColor color)
 
 ChainCallbackResult ScreenEffect::CalcFadeIn(ScreenEffect *effect)
 {
+    effect->prevFadeAlpha = effect->fadeAlpha;
     if (effect->effectLength != 0)
     {
         effect->fadeAlpha = 255.0f - ((effect->timer.AsFramesFloat() * 255.0f) / effect->effectLength);
@@ -106,6 +107,7 @@ void ScreenEffect::DrawSquare(const ZunRect *rect, ZunColor rectColor)
 
 ChainCallbackResult ScreenEffect::CalcFadeOut(ScreenEffect *effect)
 {
+    effect->prevFadeAlpha = effect->fadeAlpha;
     if (effect->effectLength != 0)
     {
         effect->fadeAlpha = (effect->timer.AsFramesFloat() * 255.0f) / effect->effectLength;
@@ -196,7 +198,9 @@ ChainCallbackResult ScreenEffect::DrawFadeIn(ScreenEffect *effect)
     g_Supervisor.viewport.height = GAME_WINDOW_HEIGHT;
     g_AnmManager->SetProjectionMode(PROJECTION_MODE_PERSPECTIVE);
     g_Supervisor.viewport.Set();
-    ScreenEffect::DrawSquare(&fadeRect, (effect->fadeAlpha << 24) | effect->genericParam);
+    const i32 drawAlpha = static_cast<i32>(
+        effect->prevFadeAlpha * (1.0f - g_RenderAlpha) + effect->fadeAlpha * g_RenderAlpha);
+    ScreenEffect::DrawSquare(&fadeRect, (drawAlpha << 24) | effect->genericParam);
     return CHAIN_CALLBACK_RESULT_CONTINUE;
 }
 
@@ -208,7 +212,9 @@ ChainCallbackResult ScreenEffect::DrawFadeOut(ScreenEffect *effect)
     fadeRect.top = 16.0f;
     fadeRect.right = 416.0f;
     fadeRect.bottom = 464.0f;
-    ScreenEffect::DrawSquare(&fadeRect, (effect->fadeAlpha << 24) | effect->genericParam);
+    const i32 drawAlpha = static_cast<i32>(
+        effect->prevFadeAlpha * (1.0f - g_RenderAlpha) + effect->fadeAlpha * g_RenderAlpha);
+    ScreenEffect::DrawSquare(&fadeRect, (drawAlpha << 24) | effect->genericParam);
     return CHAIN_CALLBACK_RESULT_CONTINUE;
 }
 

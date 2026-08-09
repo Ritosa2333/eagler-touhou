@@ -51,6 +51,7 @@ struct ScreenEffect
     ChainElem *drawChainElement;
     u32 unused;
     i32 fadeAlpha;
+    i32 prevFadeAlpha;
     i32 effectLength;
     i32 genericParam;   // effectParam1
     i32 shakinessParam; // effectParam2

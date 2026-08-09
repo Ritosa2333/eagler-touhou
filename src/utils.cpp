@@ -9,6 +9,10 @@
 
 namespace utils
 {
+f32 LerpAngle(f32 from, f32 to, f32 amount)
+{
+    return from + AddNormalizeAngle(to, -from) * amount;
+}
 void DebugPrint(const char *fmt, ...)
 {
 #ifdef DEBUG

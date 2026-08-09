@@ -11,66 +11,47 @@
 #include "utils.hpp"
 
 #include <SDL3/SDL.h>
+#include <algorithm>
 #include <cstring>
 
 GameWindow g_GameWindow;
 GfxInterface *g_GfxBackend;
 i32 g_TickCountToEffectiveFramerate;
 f64 g_LastFrameTime;
+f32 g_RenderAlpha = 1.0f;
+bool g_SuppressAnmAdvance = false;
 
 #define FRAME_TIME (1000. / 60.)
 
 RenderResult GameWindow::Render()
 {
-    i32 res;
-    f64 slowdown;
+    // Refresh-rate / frameskip only controlled how often the original game drew.
+    // Its simulation still advanced at 60 Hz.
+    constexpr f64 targetDt = 1.0 / 60.0;
     ZunViewport viewport;
-    f64 delta;
-    u32 curtime;
 
     if (this->lastActiveAppValue == 0)
     {
         return RENDER_RESULT_KEEP_RUNNING;
     }
 
-    if (this->curFrame == 0)
+    const u64 currentCounter = SDL_GetPerformanceCounter();
+    if (this->lastPerformanceCounter == 0)
     {
-    RUN_CHAINS:
-        if (g_Supervisor.cfg.frameskipConfig <= this->curFrame)
-        {
-            if (g_Supervisor.RedrawWholeFrame())
-            {
-                viewport.x = 0;
-                viewport.y = 0;
-                viewport.width = GAME_WINDOW_WIDTH;
-                viewport.height = GAME_WINDOW_HEIGHT;
-                viewport.minZ = 0.0;
-                viewport.maxZ = 1.0;
-                viewport.Set();
-                g_GfxBackend->SetClearColor(
-                    ((g_Stage.skyFog.color >> 16) & 0xFF) / 255.0f, ((g_Stage.skyFog.color >> 8) & 0xFF) / 255.0f,
-                    (g_Stage.skyFog.color & 0xFF) / 255.0f, (g_Stage.skyFog.color >> 24) / 255.0f);
-                g_GfxBackend->Clear(CLEAR_COLOR_BUFFER | CLEAR_DEPTH_BUFFER);
-                g_AnmManager->SetProjectionMode(PROJECTION_MODE_PERSPECTIVE);
-                g_Supervisor.viewport.Set();
-            }
+        this->lastPerformanceCounter = currentCounter;
+    }
+    const f64 elapsed = static_cast<f64>(currentCounter - this->lastPerformanceCounter) /
+                        static_cast<f64>(SDL_GetPerformanceFrequency());
+    this->lastPerformanceCounter = currentCounter;
+    this->accumulator += std::clamp(elapsed, 0.0, 0.1);
 
-            g_AnmManager->ClearVertexBuffer();
-            g_AnmManager->flushesThisFrame = 0;
-            g_Chain.RunDrawChain();
-            g_AnmManager->SetCurrentTexture(0);
-        }
-
-        g_AnmManager->FlushVertexBuffer();
-        g_Supervisor.viewport.x = 0;
-        g_Supervisor.viewport.y = 0;
-        g_Supervisor.viewport.width = GAME_WINDOW_WIDTH;
-        g_Supervisor.viewport.height = GAME_WINDOW_HEIGHT;
-        g_AnmManager->SetProjectionMode(PROJECTION_MODE_PERSPECTIVE);
-        g_Supervisor.viewport.Set();
-        res = g_Chain.RunCalcChain();
+    bool updated = false;
+    while (this->accumulator >= targetDt)
+    {
+        g_Supervisor.framerateMultiplier = 1.0f;
+        g_Supervisor.effectiveFramerateMultiplier = 1.0f;
+        const i32 res = g_Chain.RunCalcChain();
         g_SoundPlayer.PlaySounds();
-
         if (res == 0)
         {
             return RENDER_RESULT_EXIT_SUCCESS;
@@ -79,81 +60,46 @@ RenderResult GameWindow::Render()
         {
             return RENDER_RESULT_EXIT_ERROR;
         }
-        this->curFrame++;
+        this->accumulator -= targetDt;
+        updated = true;
     }
 
-    if (g_Supervisor.cfg.windowed || g_Supervisor.ShouldRunAt60Fps())
+    g_RenderAlpha = std::clamp(static_cast<f32>(this->accumulator / targetDt), 0.0f, 1.0f);
+    if (g_GameManager.isInGameMenu || g_GameManager.isInRetryMenu)
     {
-        if (this->curFrame != 0)
-        {
-            g_Supervisor.framerateMultiplier = 1.0;
-            slowdown = SDL_GetTicks();
-            if (slowdown < g_LastFrameTime)
-            {
-                g_LastFrameTime = slowdown;
-            }
-            delta = std::fabs(slowdown - g_LastFrameTime);
-            if (delta >= FRAME_TIME)
-            {
-                do
-                {
-                    g_LastFrameTime += FRAME_TIME;
-                    delta -= FRAME_TIME;
-                } while (delta >= FRAME_TIME);
-
-                if (g_Supervisor.cfg.frameskipConfig < this->curFrame)
-                    goto I_HAVE_NO_CLUE_WHY_BUT_I_MUST_JUMP_HERE;
-                goto RUN_CHAINS;
-            }
-        }
+        g_RenderAlpha = 1.0f;
     }
-    else
+
+    if (g_Supervisor.RedrawWholeFrame())
     {
-        if (g_Supervisor.cfg.frameskipConfig >= this->curFrame)
-        {
-            Present();
-            goto RUN_CHAINS;
-        }
-
-    I_HAVE_NO_CLUE_WHY_BUT_I_MUST_JUMP_HERE:
-        Present();
-        if (g_Supervisor.framerateMultiplier == 0.f)
-        {
-            if (2 <= g_TickCountToEffectiveFramerate)
-            {
-                curtime = SDL_GetTicks();
-                if (curtime < g_Supervisor.lastFrameTime)
-                {
-                    g_Supervisor.lastFrameTime = curtime;
-                }
-                delta = curtime - g_Supervisor.lastFrameTime;
-                delta = (delta * 60.) / 2. / 1000.;
-                delta /= (g_Supervisor.cfg.frameskipConfig + 1);
-                if (delta >= .865)
-                {
-                    delta = 1.0;
-                }
-                else if (delta >= .6)
-                {
-                    delta = 0.8;
-                }
-                else
-                {
-                    delta = 0.5;
-                }
-                g_Supervisor.effectiveFramerateMultiplier = delta;
-                g_Supervisor.lastFrameTime = curtime;
-                g_TickCountToEffectiveFramerate = 0;
-            }
-        }
-        else
-        {
-            g_Supervisor.effectiveFramerateMultiplier = g_Supervisor.framerateMultiplier;
-        }
-        this->curFrame = 0;
-        g_TickCountToEffectiveFramerate = g_TickCountToEffectiveFramerate + 1;
+        viewport = {0, 0, GAME_WINDOW_WIDTH, GAME_WINDOW_HEIGHT, 0.0f, 1.0f};
+        viewport.Set();
+        g_GfxBackend->SetClearColor(((g_Stage.skyFog.color >> 16) & 0xff) / 255.0f,
+                                    ((g_Stage.skyFog.color >> 8) & 0xff) / 255.0f,
+                                    (g_Stage.skyFog.color & 0xff) / 255.0f,
+                                    (g_Stage.skyFog.color >> 24) / 255.0f);
+        g_GfxBackend->Clear(CLEAR_COLOR_BUFFER | CLEAR_DEPTH_BUFFER);
+        g_AnmManager->SetProjectionMode(PROJECTION_MODE_PERSPECTIVE);
+        g_Supervisor.viewport.Set();
     }
+
+    g_AnmManager->ClearVertexBuffer();
+    g_AnmManager->flushesThisFrame = 0;
+    g_SuppressAnmAdvance = !updated;
+    g_Chain.RunDrawChain();
+    g_SuppressAnmAdvance = false;
+    g_AnmManager->SetCurrentTexture(0);
+    g_AnmManager->FlushVertexBuffer();
+    Present();
+
     return RENDER_RESULT_KEEP_RUNNING;
+}
+
+void GameWindow::ResetTiming()
+{
+    this->lastPerformanceCounter = SDL_GetPerformanceCounter();
+    this->accumulator = 0.0;
+    g_RenderAlpha = 1.0f;
 }
 
 void GameWindow::Present()

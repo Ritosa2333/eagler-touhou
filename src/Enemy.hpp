@@ -201,6 +201,7 @@ struct Enemy
     i32 runInterrupt;
     ZunVec3 position;
     ZunVec3 hitboxDimensions;
+    ZunVec3 prevPosition;
     ZunVec3 axisSpeed;
     f32 angle;
     f32 angularVelocity;

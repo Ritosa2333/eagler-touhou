@@ -6,6 +6,7 @@
 #include "Chain.hpp"
 #include "ChainPriorities.hpp"
 #include "GameManager.hpp"
+#include "GameWindow.hpp"
 #include "Rng.hpp"
 #include "ZunResult.hpp"
 #include "utils.hpp"
@@ -227,10 +228,12 @@ Effect *EffectManager::SpawnParticles(i32 effectIdx, const ZunVec3 *pos, i32 cou
         effect->inUseFlag = 1;
         effect->effectId = effectIdx;
         effect->pos1 = *pos;
+        effect->prevPos = effect->pos1;
 
         g_AnmManager->SetAndExecuteScriptIdx(&effect->vm, g_Effects[effectIdx].anmIdx);
 
         effect->vm.color = color;
+        effect->vm.UpdatePrev();
         effect->updateCallback = g_Effects[effectIdx].updateCallback;
         effect->timer.InitializeForPopup();
         effect->unk_17a = 0;
@@ -267,6 +270,9 @@ ChainCallbackResult EffectManager::OnUpdate(EffectManager *mgr)
             continue;
         }
 
+        effect->prevPos = effect->pos1;
+        effect->vm.UpdatePrev();
+
         mgr->activeEffects++;
         if (effect->updateCallback != NULL && (effect->updateCallback)(effect) != EFFECT_CALLBACK_RESULT_DONE)
         {
@@ -297,7 +303,7 @@ ChainCallbackResult EffectManager::OnDraw(EffectManager *mgr)
             continue;
         }
 
-        effect->vm.pos = effect->pos1;
+        effect->vm.pos = effect->prevPos.Lerp(effect->pos1, g_RenderAlpha);
         g_AnmManager->Draw3(&effect->vm);
     }
 

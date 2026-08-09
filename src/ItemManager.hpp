@@ -22,6 +22,7 @@ struct Item
 {
     AnmVm sprite;
     ZunVec3 currentPosition;
+    ZunVec3 prevPosition;
     ZunVec3 startPosition;
     ZunVec3 targetPosition;
     ZunTimer timer;

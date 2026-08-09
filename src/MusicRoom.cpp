@@ -133,6 +133,15 @@ ZunResult MusicRoom::RegisterChain()
 
 ChainCallbackResult MusicRoom::OnUpdate(MusicRoom *musicRoom)
 {
+    musicRoom->mainVm[0].UpdatePrev();
+    for (AnmVm &vm : musicRoom->titleSprites)
+    {
+        vm.UpdatePrev();
+    }
+    for (AnmVm &vm : musicRoom->descriptionSprites)
+    {
+        vm.UpdatePrev();
+    }
     i32 oldInputSetting = musicRoom->enableInput;
     for (;;)
     {

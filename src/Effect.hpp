@@ -18,6 +18,7 @@ struct Effect
 {
     AnmVm vm;
     ZunVec3 pos1;
+    ZunVec3 prevPos;
     ZunVec3 unk_11c;
     ZunVec3 unk_128;
     ZunVec3 position;

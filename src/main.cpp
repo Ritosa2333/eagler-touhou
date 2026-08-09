@@ -77,6 +77,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
     case SDL_EVENT_WILL_ENTER_FOREGROUND:
     case SDL_EVENT_DID_ENTER_FOREGROUND:
         g_GameWindow.lastActiveAppValue = 1;
+        g_GameWindow.ResetTiming();
         g_GameWindow.isAppActive = 1;
         break;
     case SDL_EVENT_WINDOW_FOCUS_LOST:

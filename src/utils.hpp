@@ -23,5 +23,6 @@ void DebugPrint(const char *fmt, ...);
 void DebugPrint2(const char *fmt, ...);
 
 f32 AddNormalizeAngle(f32 a, f32 b);
+f32 LerpAngle(f32 from, f32 to, f32 amount);
 void Rotate(ZunVec3 *outVector, const ZunVec3 *point, f32 angle);
 }; // namespace utils

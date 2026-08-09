@@ -54,6 +54,7 @@ struct GameWindow
 {
     SDL_Window *window;
     RenderResult Render();
+    void ResetTiming();
     static void Present();
 
     static void CreateGameWindow();
@@ -68,9 +69,13 @@ struct GameWindow
     i32 lowPowerActive;
     i32 powerOffActive;
     u32 renderBackendIndex;
+    u64 lastPerformanceCounter;
+    f64 accumulator;
 };
 
 extern GameWindow g_GameWindow;
 extern i32 g_TickCountToEffectiveFramerate;
 extern double g_LastFrameTime;
 extern GfxInterface *g_GfxBackend;
+extern f32 g_RenderAlpha;
+extern bool g_SuppressAnmAdvance;

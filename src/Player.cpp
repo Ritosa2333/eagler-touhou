@@ -13,6 +13,7 @@
 #include "EffectManager.hpp"
 #include "EnemyManager.hpp"
 #include "GameManager.hpp"
+#include "GameWindow.hpp"
 #include "Gui.hpp"
 #include "ItemManager.hpp"
 #include "Rng.hpp"
@@ -98,6 +99,9 @@ ZunResult Player::AddedCallback(Player *p)
     p->positionCenter.x = g_GameManager.arcadeRegionSize.x / 2.0f;
     p->positionCenter.y = g_GameManager.arcadeRegionSize.y - 64.0f;
     p->positionCenter.z = 0.49;
+    p->prevPositionCenter = p->positionCenter;
+    p->prevOrbsPosition[0] = p->orbsPosition[0];
+    p->prevOrbsPosition[1] = p->orbsPosition[1];
     p->orbsPosition[0].z = 0.49;
     p->orbsPosition[1].z = 0.49;
     for (idx = 0; idx < ARRAY_SIZE_SIGNED(p->bombRegionSizes); idx++)
@@ -157,6 +161,22 @@ ChainCallbackResult Player::OnUpdate(Player *p)
     if (g_GameManager.isTimeStopped)
     {
         return CHAIN_CALLBACK_RESULT_CONTINUE;
+    }
+    p->prevPositionCenter = p->positionCenter;
+    p->prevOrbsPosition[0] = p->orbsPosition[0];
+    p->prevOrbsPosition[1] = p->orbsPosition[1];
+    p->playerSprite.UpdatePrev();
+    for (AnmVm &vm : p->orbsSprite)
+    {
+        vm.UpdatePrev();
+    }
+    for (PlayerBullet &bullet : p->bullets)
+    {
+        if (bullet.bulletState != BULLET_STATE_UNUSED)
+        {
+            bullet.prevPosition = bullet.position;
+            bullet.sprite.UpdatePrev();
+        }
     }
     for (idx = 0; idx < ARRAY_SIZE_SIGNED(p->bombRegionSizes); idx++)
     {
@@ -592,8 +612,9 @@ ChainCallbackResult Player::OnDrawHighPrio(Player *p)
     {
         p->bombInfo.draw(p);
     }
-    p->playerSprite.pos.x = g_GameManager.arcadeRegionTopLeftPos.x + p->positionCenter.x;
-    p->playerSprite.pos.y = g_GameManager.arcadeRegionTopLeftPos.y + p->positionCenter.y;
+    const ZunVec3 drawPlayerPosition = p->prevPositionCenter.Lerp(p->positionCenter, g_RenderAlpha);
+    p->playerSprite.pos.x = g_GameManager.arcadeRegionTopLeftPos.x + drawPlayerPosition.x;
+    p->playerSprite.pos.y = g_GameManager.arcadeRegionTopLeftPos.y + drawPlayerPosition.y;
     p->playerSprite.pos.z = 0.49;
     if (!g_GameManager.isInRetryMenu)
     {
@@ -601,8 +622,8 @@ ChainCallbackResult Player::OnDrawHighPrio(Player *p)
         if (p->orbState != ORB_HIDDEN &&
             (p->playerState == PLAYER_STATE_ALIVE || p->playerState == PLAYER_STATE_INVULNERABLE))
         {
-            p->orbsSprite[0].pos = p->orbsPosition[0];
-            p->orbsSprite[1].pos = p->orbsPosition[1];
+            p->orbsSprite[0].pos = p->prevOrbsPosition[0].Lerp(p->orbsPosition[0], g_RenderAlpha);
+            p->orbsSprite[1].pos = p->prevOrbsPosition[1].Lerp(p->orbsPosition[1], g_RenderAlpha);
             f32 *x1 = &p->orbsSprite[0].pos.x;
             *x1 += g_GameManager.arcadeRegionTopLeftPos.x;
             f32 *y1 = &p->orbsSprite[0].pos.y;
@@ -952,7 +973,10 @@ void Player::DrawBullets(Player *p)
         {
             bullets->sprite.rotation.z = ZUN_PI / 2 - utils::AddNormalizeAngle(bullets->unk_134.z, ZUN_PI);
         }
+        const ZunVec3 savedPos = bullets->sprite.pos;
+        bullets->sprite.pos = bullets->prevPosition.Lerp(bullets->position, g_RenderAlpha);
         g_AnmManager->Draw2(&bullets->sprite);
+        bullets->sprite.pos = savedPos;
     }
 }
 
@@ -1137,6 +1161,8 @@ FireBulletResult Player::FireSingleBullet(Player *player, PlayerBullet *bullet, 
         *pfVar4 = *pfVar4 + bulletData->motion.y;
 
         bullet->position.z = 0.495f;
+        bullet->prevPosition = bullet->position;
+        bullet->sprite.UpdatePrev();
 
         bullet->size.x = bulletData->size.x;
         bullet->size.y = bulletData->size.y;

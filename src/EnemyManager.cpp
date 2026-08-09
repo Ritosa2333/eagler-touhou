@@ -5,6 +5,7 @@
 #include "ChainPriorities.hpp"
 #include "EffectManager.hpp"
 #include "GameManager.hpp"
+#include "GameWindow.hpp"
 #include "Gui.hpp"
 #include "Player.hpp"
 #include "Rng.hpp"
@@ -102,6 +103,12 @@ Enemy *EnemyManager::SpawnEnemy(i32 eclSubId, const ZunVec3 *pos, i16 life, i16 
             newEnemy->life = life;
 
         newEnemy->position = *pos;
+        newEnemy->prevPosition = newEnemy->position;
+        newEnemy->primaryVm.UpdatePrev();
+        for (AnmVm &vm : newEnemy->vms)
+        {
+            vm.UpdatePrev();
+        }
         g_EclManager.CallEclSub(&newEnemy->currentContext, eclSubId);
         g_EclManager.RunEcl(newEnemy);
         newEnemy->color = newEnemy->primaryVm.color;
@@ -532,6 +539,12 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
         {
             continue;
         }
+        curEnemy->prevPosition = curEnemy->position;
+        curEnemy->primaryVm.UpdatePrev();
+        for (AnmVm &vm : curEnemy->vms)
+        {
+            vm.UpdatePrev();
+        }
         mgr->enemyCount++;
         curEnemy->Move();
 
@@ -780,6 +793,7 @@ ChainCallbackResult EnemyManager::OnDraw(EnemyManager *mgr)
             continue;
         }
 
+        const ZunVec3 drawPosition = curEnemy->prevPosition.Lerp(curEnemy->position, g_RenderAlpha);
         for (curEnemyVm = &curEnemy->vms[0], curEnemyVmIdx = 0; curEnemyVmIdx < 4; curEnemyVmIdx++, curEnemyVm++)
         {
             if (0 <= curEnemyVm->anmFileIndex)
@@ -788,7 +802,7 @@ ChainCallbackResult EnemyManager::OnDraw(EnemyManager *mgr)
                 {
                     curEnemyVm->rotation.z = curEnemy->angle;
                 }
-                curEnemyVm->pos = curEnemy->position + curEnemyVm->posOffset;
+                curEnemyVm->pos = drawPosition + curEnemyVm->posOffset;
                 curEnemyVm->pos.z = 0.495f;
                 g_AnmManager->Draw2(curEnemyVm);
                 g_AnmManager->FlushVertexBuffer();
@@ -798,7 +812,7 @@ ChainCallbackResult EnemyManager::OnDraw(EnemyManager *mgr)
         {
             curEnemy->primaryVm.rotation.z = curEnemy->angle;
         }
-        curEnemy->primaryVm.pos = curEnemy->position + curEnemy->primaryVm.posOffset;
+        curEnemy->primaryVm.pos = drawPosition + curEnemy->primaryVm.posOffset;
         curEnemy->primaryVm.pos.z = 0.494f;
         g_AnmManager->Draw2(&curEnemy->primaryVm);
         g_AnmManager->FlushVertexBuffer();
@@ -810,7 +824,7 @@ ChainCallbackResult EnemyManager::OnDraw(EnemyManager *mgr)
                 {
                     curEnemyVm->rotation.z = curEnemy->angle;
                 }
-                curEnemyVm->pos = curEnemy->position + curEnemyVm->posOffset;
+                curEnemyVm->pos = drawPosition + curEnemyVm->posOffset;
                 curEnemyVm->pos.z = 0.495f;
                 g_AnmManager->Draw2(curEnemyVm);
             }

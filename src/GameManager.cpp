@@ -6,6 +6,7 @@
 #include "EffectManager.hpp"
 #include "EnemyManager.hpp"
 #include "Gui.hpp"
+#include "GameWindow.hpp"
 #include "Player.hpp"
 #include "ReplayManager.hpp"
 #include "ResultScreen.hpp"
@@ -160,7 +161,16 @@ ChainCallbackResult GameManager::OnUpdate(GameManager *gameManager)
     g_Supervisor.viewport.minZ = 0.5;
     g_Supervisor.viewport.maxZ = 1.0;
 
+    const ZunVec3 currentCameraFacingDir = gameManager->stageCameraFacingDir;
+    ZunVec3 drawCameraFacingDir =
+        g_Stage.prevCameraFacingDir.Lerp(currentCameraFacingDir, g_RenderAlpha);
+    if (ZUN_FABSF(drawCameraFacingDir.z) < 0.0001f)
+    {
+        drawCameraFacingDir = currentCameraFacingDir;
+    }
+    gameManager->stageCameraFacingDir = drawCameraFacingDir;
     SetupCamera(0);
+    gameManager->stageCameraFacingDir = currentCameraFacingDir;
 
     g_Supervisor.viewport.Set();
     g_GfxBackend->SetClearDepth(1.0f);
