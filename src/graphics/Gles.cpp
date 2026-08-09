@@ -425,7 +425,11 @@ void GlesGraphics::GetViewport(ZunViewport &viewport)
 void GlesGraphics::SetViewport(const ZunViewport &viewport)
 {
     this->viewport = viewport;
-    glViewport(viewport.x, 480 - (viewport.y + viewport.height), viewport.width, viewport.height);
+    // TH06's ZunViewport::Set already converts its top-left D3D coordinates
+    // to OpenGL's bottom-left coordinates. TH07 passes unconverted viewport
+    // values, so copying its second Y flip here put different TH06 draw paths
+    // in different coordinate systems.
+    glViewport(viewport.x, viewport.y, viewport.width, viewport.height);
     stateCache.dirtyViewport = true;
 }
 
@@ -680,7 +684,7 @@ void GlesGraphics::SetTextureSubImage(i32 xoffset, i32 yoffset, i32 width, i32 h
 
 void GlesGraphics::ReadPixels(i32 x, i32 y, i32 width, i32 height, void *pixels)
 {
-    glReadPixels(x, 480 - (y + height), width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    glReadPixels(x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
     u32 rowSize = width * 4;
     u8 *p = (u8 *)pixels;
@@ -828,7 +832,10 @@ void GlesGraphics::DrawPrimitiveUP(PrimitiveType type, i32 primitiveCount, const
     switch (vertexStride)
     {
     case sizeof(VertexTex1DiffuseXyzrhw):
-        isScreenSpace = true;
+        // Unlike TH07, TH06 already supplies inverseViewportMatrix() as the
+        // projection for transformed XYZRHW vertices. Keep them on the normal
+        // matrix path so sprites, bullets and enemies share one contract.
+        isScreenSpace = false;
         hasTex = true;
         targetVao = vaos[0][curVbo];
         break;
@@ -838,7 +845,7 @@ void GlesGraphics::DrawPrimitiveUP(PrimitiveType type, i32 primitiveCount, const
         targetVao = vaos[1][curVbo];
         break;
     case sizeof(VertexDiffuseXyzrhw):
-        isScreenSpace = true;
+        isScreenSpace = false;
         hasTex = false;
         targetVao = vaos[2][curVbo];
         break;
@@ -990,7 +997,7 @@ void GlesGraphics::SwapBuffers()
     SDL_GL_SwapWindow(g_GameWindow.window);
 
     glBindFramebuffer(GL_FRAMEBUFFER, this->fbo);
-    glViewport(viewport.x, 480 - (viewport.y + viewport.height), viewport.width, viewport.height);
+    glViewport(viewport.x, viewport.y, viewport.width, viewport.height);
 
     if (blendEnabled)
     {
