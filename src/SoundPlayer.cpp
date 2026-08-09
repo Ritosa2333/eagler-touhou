@@ -5,8 +5,8 @@
 #include "i18n.hpp"
 #include "utils.hpp"
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_timer.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL.h>
 #include <array>
 #include <cmath>
 #include <cstring>
@@ -44,6 +44,18 @@ static const char *const g_SFXList[26] = {
 };
 SoundPlayer g_SoundPlayer;
 
+static u16 ReadU16LE(SDL_IOStream *stream)
+{
+    u16 value = 0;
+    return SDL_ReadIO(stream, &value, sizeof(value)) == sizeof(value) ? SDL_Swap16LE(value) : 0;
+}
+
+static u32 ReadU32LE(SDL_IOStream *stream)
+{
+    u32 value = 0;
+    return SDL_ReadIO(stream, &value, sizeof(value)) == sizeof(value) ? SDL_Swap32LE(value) : 0;
+}
+
 SoundPlayer::SoundPlayer()
 {
     // Note: memset of an std::mutex crashes on windows
@@ -53,28 +65,27 @@ SoundPlayer::SoundPlayer()
 ZunResult SoundPlayer::InitializeDSound()
 {
     SDL_AudioSpec desiredAudio;
-    SDL_AudioSpec obtainedAudio;
-
     if (SDL_InitSubSystem(SDL_INIT_AUDIO))
     {
         goto fail;
     }
 
     desiredAudio.freq = 44100;
-    desiredAudio.format = AUDIO_S16SYS;
+    desiredAudio.format = SDL_AUDIO_S16;
     desiredAudio.channels = 2;
-    desiredAudio.samples = 2048;
-    desiredAudio.padding = 0;
-    desiredAudio.callback = NULL;
-
-    this->audioDev = SDL_OpenAudioDevice(NULL, 0, &desiredAudio, &obtainedAudio, 0);
+    this->audioDev = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desiredAudio);
 
     if (this->audioDev == 0)
     {
         goto fail;
     }
 
-    this->backgroundMusicThreadHandle = std::thread(&SoundPlayer::BackgroundMusicPlayerThread, this);
+    this->audioStream = SDL_CreateAudioStream(&desiredAudio, &desiredAudio);
+    if (!this->audioStream || !SDL_BindAudioStream(this->audioDev, this->audioStream))
+    {
+        goto fail;
+    }
+    SDL_ResumeAudioDevice(this->audioDev);
 
     g_GameErrorContext.Log(TH_DBG_SOUNDPLAYER_INIT_SUCCESS);
     return ZUN_SUCCESS;
@@ -86,10 +97,6 @@ fail:
 
 ZunResult SoundPlayer::Release(void)
 {
-    this->terminateFlag = true;
-    this->backgroundMusicThreadHandle.join();
-    this->terminateFlag = false;
-
     StopBGM();
 
     for (int i = 0; i < ARRAY_SIZE_SIGNED(this->soundBuffers); i++)
@@ -104,6 +111,8 @@ ZunResult SoundPlayer::Release(void)
 
     if (this->audioDev != 0)
     {
+        SDL_DestroyAudioStream(this->audioStream);
+        this->audioStream = NULL;
         SDL_CloseAudioDevice(this->audioDev);
         this->audioDev = 0;
     }
@@ -116,7 +125,7 @@ void SoundPlayer::StopBGM()
     if (this->backgroundMusic.srcWav.fileStream != NULL)
     {
         this->soundBufMutex.lock();
-        SDL_RWclose(this->backgroundMusic.srcWav.fileStream);
+        SDL_CloseIO(this->backgroundMusic.srcWav.fileStream);
         this->backgroundMusic.srcWav.fileStream = NULL;
         this->soundBufMutex.unlock();
 
@@ -135,7 +144,7 @@ void SoundPlayer::FadeOut(f32 seconds)
 
 ZunResult SoundPlayer::LoadWav(const char *path)
 {
-    SDL_RWops *fileStream;
+    SDL_IOStream *fileStream;
     char idBuf[4];
     u32 riffSize;
     u32 wavDataSize;
@@ -154,7 +163,7 @@ ZunResult SoundPlayer::LoadWav(const char *path)
 
     utils::DebugPrint2("load BGM\n");
 
-    fileStream = SDL_RWFromFile(path, "r");
+    fileStream = SDL_IOFromFile(path, "rb");
 
     if (fileStream == NULL)
     {
@@ -163,25 +172,25 @@ ZunResult SoundPlayer::LoadWav(const char *path)
     }
 
     // Minimum size of RIFF header and chunk info preceeding the sample data
-    if (SDL_RWsize(fileStream) < 44)
+    if (SDL_GetIOSize(fileStream) < 44)
     {
         goto fail;
     }
 
-    if (SDL_RWread(fileStream, idBuf, 4, 1) != 1 || std::strncmp(idBuf, "RIFF", 4) != 0)
+    if (SDL_ReadIO(fileStream, idBuf, 4) != 4 || std::strncmp(idBuf, "RIFF", 4) != 0)
     {
         goto fail;
     }
 
-    riffSize = SDL_ReadLE32(fileStream);
+    riffSize = ReadU32LE(fileStream);
 
     // Same bounds check done earlier on the total filesize
-    if (riffSize < 36 || riffSize > SDL_RWsize(fileStream) - 8)
+    if (riffSize < 36 || riffSize > SDL_GetIOSize(fileStream) - 8)
     {
         goto fail;
     }
 
-    if (SDL_RWread(fileStream, idBuf, 4, 1) != 1 || std::strncmp(idBuf, "WAVE", 4) != 0)
+    if (SDL_ReadIO(fileStream, idBuf, 4) != 4 || std::strncmp(idBuf, "WAVE", 4) != 0)
     {
         goto fail;
     }
@@ -190,59 +199,59 @@ ZunResult SoundPlayer::LoadWav(const char *path)
     //   so that's what we handle. We also assume that fmt and data are the only subchunks, which is definitely not
     //   a general guarantee, but it'll work fine with EoSD's WAV files.
 
-    if (SDL_RWread(fileStream, idBuf, 4, 1) != 1 || std::strncmp(idBuf, "fmt ", 4) != 0)
+    if (SDL_ReadIO(fileStream, idBuf, 4) != 4 || std::strncmp(idBuf, "fmt ", 4) != 0)
     {
         goto fail;
     }
 
     // Format subchunk size. Guaranteed 16 for PCM data
-    if (SDL_ReadLE32(fileStream) != 16)
+    if (ReadU32LE(fileStream) != 16)
     {
         goto fail;
     }
 
     // Audio format. 1 represents raw PCM samples
-    if (SDL_ReadLE16(fileStream) != 1)
+    if (ReadU16LE(fileStream) != 1)
     {
         goto fail;
     }
 
     // Number of channels. We expect stereo
-    if (SDL_ReadLE16(fileStream) != BACKGROUND_MUSIC_WAV_NUM_CHANNELS)
+    if (ReadU16LE(fileStream) != BACKGROUND_MUSIC_WAV_NUM_CHANNELS)
     {
         goto fail;
     }
 
     // Sample frequency rate
-    if (SDL_ReadLE32(fileStream) != BACKGROUND_MUSIC_WAV_SAMPLE_RATE)
+    if (ReadU32LE(fileStream) != BACKGROUND_MUSIC_WAV_SAMPLE_RATE)
     {
         goto fail;
     }
 
     // Byte rate
-    if (SDL_ReadLE32(fileStream) != BACKGROUND_MUSIC_WAV_BYTE_RATE)
+    if (ReadU32LE(fileStream) != BACKGROUND_MUSIC_WAV_BYTE_RATE)
     {
         goto fail;
     }
 
     // Block alignment
-    if (SDL_ReadLE16(fileStream) != BACKGROUND_MUSIC_WAV_BLOCK_ALIGN)
+    if (ReadU16LE(fileStream) != BACKGROUND_MUSIC_WAV_BLOCK_ALIGN)
     {
         goto fail;
     }
 
     // Bits per sample
-    if (SDL_ReadLE16(fileStream) != BACKGROUND_MUSIC_WAV_BITS_PER_SAMPLE)
+    if (ReadU16LE(fileStream) != BACKGROUND_MUSIC_WAV_BITS_PER_SAMPLE)
     {
         goto fail;
     }
 
-    if (SDL_RWread(fileStream, idBuf, 4, 1) != 1 || std::strncmp(idBuf, "data", 4) != 0)
+    if (SDL_ReadIO(fileStream, idBuf, 4) != 4 || std::strncmp(idBuf, "data", 4) != 0)
     {
         goto fail;
     }
 
-    wavDataSize = SDL_ReadLE32(fileStream);
+    wavDataSize = ReadU32LE(fileStream);
 
     if (wavDataSize > riffSize - 44)
     {
@@ -257,7 +266,7 @@ ZunResult SoundPlayer::LoadWav(const char *path)
     }
 
     this->backgroundMusic.srcWav.fileStream = fileStream;
-    this->backgroundMusic.srcWav.dataStartOffset = SDL_RWtell(fileStream);
+    this->backgroundMusic.srcWav.dataStartOffset = SDL_TellIO(fileStream);
     this->backgroundMusic.loopStart = 0;
     this->backgroundMusic.loopEnd = this->backgroundMusic.srcWav.samples;
     this->backgroundMusic.fadeoutLen = 0;
@@ -267,7 +276,7 @@ ZunResult SoundPlayer::LoadWav(const char *path)
     return ZUN_SUCCESS;
 
 fail:
-    SDL_RWclose(fileStream);
+    SDL_CloseIO(fileStream);
     return ZUN_ERROR;
 }
 
@@ -287,8 +296,8 @@ ZunResult SoundPlayer::LoadPos(const char *path)
         return ZUN_ERROR;
     }
 
-    this->backgroundMusic.loopStart = SDL_SwapLE32(*((u32 *)fileData));
-    this->backgroundMusic.loopEnd = SDL_SwapLE32(*(u32 *)(fileData + 4));
+    this->backgroundMusic.loopStart = SDL_Swap32LE(*((u32 *)fileData));
+    this->backgroundMusic.loopEnd = SDL_Swap32LE(*(u32 *)(fileData + 4));
 
     free(fileData);
 
@@ -331,11 +340,13 @@ ZunResult SoundPlayer::InitSoundBuffers()
 
 ZunResult SoundPlayer::LoadSound(i32 idx, const char *path, f32 volumeMultiplier)
 {
-    SDL_AudioCVT sampleConversionDesc;
     SDL_AudioSpec wavFormat;
+    SDL_AudioSpec targetFormat = {SDL_AUDIO_S16, 1, 44100};
     u8 *wavRawData;
     u8 *wavRawSamples;
     u32 wavRawSampleByteCount;
+    u8 *convertedSamples = NULL;
+    int convertedByteCount = 0;
 
     soundBufMutex.lock();
 
@@ -352,8 +363,8 @@ ZunResult SoundPlayer::LoadSound(i32 idx, const char *path, f32 volumeMultiplier
         goto fail;
     }
 
-    if (SDL_LoadWAV_RW(SDL_RWFromConstMem(wavRawData, g_LastFileSize), 1, &wavFormat, &wavRawSamples,
-                       &wavRawSampleByteCount) == NULL)
+    if (!SDL_LoadWAV_IO(SDL_IOFromConstMem(wavRawData, g_LastFileSize), true, &wavFormat, &wavRawSamples,
+                        &wavRawSampleByteCount))
     {
         g_GameErrorContext.Log(TH_ERR_NOT_A_WAV_FILE, path);
         goto fail;
@@ -363,20 +374,13 @@ ZunResult SoundPlayer::LoadSound(i32 idx, const char *path, f32 volumeMultiplier
     //   here only uses a few hundred extra kilobytes of RAM compared to the original code,
     //   but it might be worth looking into avoiding it for especially RAM-limited systems
 
-    if (SDL_BuildAudioCVT(&sampleConversionDesc, wavFormat.format, wavFormat.channels, wavFormat.freq, AUDIO_S16SYS, 1,
-                          44100) == 1)
+    if (SDL_ConvertAudioSamples(&wavFormat, wavRawSamples, wavRawSampleByteCount, &targetFormat,
+                                &convertedSamples, &convertedByteCount))
     {
-        sampleConversionDesc.len = wavRawSampleByteCount;
-        sampleConversionDesc.buf = new u8[wavRawSampleByteCount * sampleConversionDesc.len_mult];
-        std::memcpy(sampleConversionDesc.buf, wavRawSamples, wavRawSampleByteCount);
-
-        SDL_ConvertAudio(&sampleConversionDesc);
-
-        this->soundBuffers[idx].len = sampleConversionDesc.len_cvt / 2;
+        this->soundBuffers[idx].len = convertedByteCount / 2;
         this->soundBuffers[idx].samples = new i16[this->soundBuffers[idx].len];
-        std::memcpy(this->soundBuffers[idx].samples, sampleConversionDesc.buf, sampleConversionDesc.len_cvt);
-
-        delete[] sampleConversionDesc.buf;
+        std::memcpy(this->soundBuffers[idx].samples, convertedSamples, convertedByteCount);
+        SDL_free(convertedSamples);
     }
     else
     {
@@ -385,7 +389,7 @@ ZunResult SoundPlayer::LoadSound(i32 idx, const char *path, f32 volumeMultiplier
         std::memcpy(this->soundBuffers[idx].samples, wavRawSamples, wavRawSampleByteCount);
     }
 
-    SDL_FreeWAV(wavRawSamples);
+    SDL_free(wavRawSamples);
 
     for (u32 i = 0; i < this->soundBuffers[idx].len; i++)
     {
@@ -396,6 +400,7 @@ ZunResult SoundPlayer::LoadSound(i32 idx, const char *path, f32 volumeMultiplier
     this->soundBuffers[idx].isPlaying = false;
 
     soundBufMutex.unlock();
+
     return ZUN_SUCCESS;
 
 fail:
@@ -466,6 +471,11 @@ void SoundPlayer::PlaySounds()
     }
 
     soundBufMutex.unlock();
+
+    while (SDL_GetAudioStreamQueued(this->audioStream) < 8192)
+    {
+        this->MixAudio(2048);
+    }
 }
 
 void SoundPlayer::PlaySoundByIdx(SoundIdx idx)
@@ -551,9 +561,9 @@ void SoundPlayer::MixAudio(u32 samples)
             for (u32 j = 0; j < samplesToMix; j++)
             {
                 mixBuffer[samplesMixed + j * 2] +=
-                    ((i16)SDL_ReadLE16(this->backgroundMusic.srcWav.fileStream)) * fadeoutMult;
+                    ((i16)ReadU16LE(this->backgroundMusic.srcWav.fileStream)) * fadeoutMult;
                 mixBuffer[samplesMixed + j * 2 + 1] +=
-                    ((i16)SDL_ReadLE16(this->backgroundMusic.srcWav.fileStream)) * fadeoutMult;
+                    ((i16)ReadU16LE(this->backgroundMusic.srcWav.fileStream)) * fadeoutMult;
             }
 
             this->backgroundMusic.pos += samplesToMix;
@@ -564,12 +574,13 @@ void SoundPlayer::MixAudio(u32 samples)
                 if (this->isLooping)
                 {
                     this->backgroundMusic.pos = this->backgroundMusic.loopStart;
-                    SDL_RWseek(this->backgroundMusic.srcWav.fileStream,
-                               this->backgroundMusic.srcWav.dataStartOffset + this->backgroundMusic.pos * 4, SEEK_SET);
+                    SDL_SeekIO(this->backgroundMusic.srcWav.fileStream,
+                               this->backgroundMusic.srcWav.dataStartOffset + this->backgroundMusic.pos * 4,
+                               SDL_IO_SEEK_SET);
                 }
                 else
                 {
-                    SDL_RWclose(this->backgroundMusic.srcWav.fileStream);
+                    SDL_CloseIO(this->backgroundMusic.srcWav.fileStream);
                     this->backgroundMusic.srcWav.fileStream = NULL;
 
                     break;
@@ -583,7 +594,7 @@ void SoundPlayer::MixAudio(u32 samples)
 
             if (this->backgroundMusic.fadeoutProgress >= this->backgroundMusic.fadeoutLen)
             {
-                SDL_RWclose(this->backgroundMusic.srcWav.fileStream);
+                SDL_CloseIO(this->backgroundMusic.srcWav.fileStream);
                 this->backgroundMusic.srcWav.fileStream = NULL;
             }
         }
@@ -610,7 +621,7 @@ void SoundPlayer::MixAudio(u32 samples)
         finalBuffer[i] = mixBuffer[i] / mixDivisor;
     }
 
-    SDL_QueueAudio(this->audioDev, finalBuffer.data(), samples * 2);
+    SDL_PutAudioStreamData(this->audioStream, finalBuffer.data(), samples * 2);
 }
 
 // EoSD originally just used this function to manage the streaming of the music WAV file.
@@ -618,44 +629,8 @@ void SoundPlayer::MixAudio(u32 samples)
 //   in a thread keeps sound running continuously, even if the main thread runs into lag
 void SoundPlayer::BackgroundMusicPlayerThread()
 {
-    SDL_PauseAudioDevice(this->audioDev, 0);
-
-    u32 latencyLimit = 14'700; // ~5 frames
-    u64 samplesSent = 0;
-    u64 startTick = SDL_GetTicks64();
-
-    while (1)
-    {
-        u64 curTicks = SDL_GetTicks64();
-
-        // Keep slightly more than 1 frame's worth of samples in the audio buffer at all times
-        i32 targetSamples = (curTicks - startTick) * 44.100 - samplesSent + 1024;
-
-        // Quick and dirty checks to keep audio latency low
-        //   Can probably be horribly broken, but I don't have weaker hardware to test on
-        if (SDL_GetQueuedAudioSize(this->audioDev) > latencyLimit)
-        {
-            latencyLimit += 2'940; // 1 frame
-            samplesSent += targetSamples;
-            targetSamples = 0;
-        }
-        else if (targetSamples > 1024)
-        {
-            samplesSent += targetSamples - 1024;
-            targetSamples = 1024;
-        }
-
-        if (targetSamples > 0)
-        {
-            this->MixAudio(targetSamples * 2);
-            samplesSent += targetSamples;
-        }
-
-        if (this->terminateFlag)
-        {
-            return;
-        }
-
-        SDL_Delay(5);
-    }
+    // Kept as an ABI-compatible entry point for now. SDL3 audio is fed from
+    // PlaySounds(), once per application iteration, so the browser main thread
+    // never creates or blocks on an audio producer thread.
+    this->MixAudio(2048);
 }

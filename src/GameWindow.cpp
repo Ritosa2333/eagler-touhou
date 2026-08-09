@@ -12,8 +12,8 @@
 #include "i18n.hpp"
 #include "utils.hpp"
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_timer.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL.h>
 #include <cstring>
 
 GameWindow g_GameWindow;
@@ -184,7 +184,7 @@ void GameWindow::Present()
 
 void GameWindow::CreateGameWindow()
 {
-    SDL_Init(SDL_INIT_GAMECONTROLLER);
+    SDL_Init(SDL_INIT_GAMEPAD);
 
     for (u32 i = 0; i < ARRAY_SIZE(s_RenderBackends); i++)
     {

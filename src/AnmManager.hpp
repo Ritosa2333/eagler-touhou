@@ -3,7 +3,7 @@
 // #include <d3d8.h>
 // #include <d3dx8math.h>
 
-#include <SDL2/SDL_video.h>
+#include <SDL3/SDL.h>
 
 #include "AnmIdx.hpp"
 #include "AnmVm.hpp"
@@ -422,7 +422,7 @@ struct AnmManager
         this->screenshotHeight = GAME_REGION_HEIGHT;
     }
 
-    static SDL_Surface *LoadToSurfaceWithFormat(const char *filename, SDL_PixelFormatEnum format, u8 **fileData);
+    static SDL_Surface *LoadToSurfaceWithFormat(const char *filename, SDL_PixelFormat format, u8 **fileData);
     static u8 *ExtractSurfacePixels(SDL_Surface *src, u8 pixelDepth);
     static void FlipSurface(SDL_Surface *surface);
     void ApplySurfaceToColorBuffer(SDL_Surface *src, const SDL_Rect &srcRect, const SDL_Rect &dstRect);

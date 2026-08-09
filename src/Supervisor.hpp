@@ -1,7 +1,7 @@
 #pragma once
 
-#include <SDL2/SDL_gamecontroller.h>
-#include <SDL2/SDL_video.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL.h>
 
 #include "Chain.hpp"
 #include "Controller.hpp"
@@ -147,7 +147,7 @@ struct Supervisor
     //    LPDIRECTINPUT8 dinputIface;
     //    LPDIRECTINPUTDEVICE8A keyboard;
     //    LPDIRECTINPUTDEVICE8A controller;
-    SDL_GameController *gameController;
+    SDL_Gamepad *gameController;
     //    DIDEVCAPS controllerCaps;
     //    SDL_Window *gameWindow;
     ZunMatrix viewMatrix;

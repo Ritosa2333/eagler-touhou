@@ -6,7 +6,7 @@
 #include "inttypes.hpp"
 #include "utils.hpp"
 
-#include <SDL2/SDL_endian.h>
+#include <SDL3/SDL.h>
 #include <cstdlib>
 #include <cstring>
 
@@ -161,7 +161,7 @@ ZunResult MidiOutput::ParseFile(i32 fileIdx)
 
     // Get a pointer to the end of the header chunk
     currentCursor += sizeof(hdrRaw);
-    hdrLength = SDL_SwapBE32(*(u32 *)(hdrRaw + 4));
+    hdrLength = SDL_Swap32BE(*(u32 *)(hdrRaw + 4));
 
     endOfHeaderPointer = currentCursor;
     currentCursor += hdrLength;
@@ -172,13 +172,13 @@ ZunResult MidiOutput::ParseFile(i32 fileIdx)
     //  sequence
     //  2: the file contains one or more sequentially independent single-track
     //  patterns
-    this->format = SDL_SwapBE16(*(u16 *)endOfHeaderPointer);
+    this->format = SDL_Swap16BE(*(u16 *)endOfHeaderPointer);
 
     // Read the divisions in this track. Note that this doesn't appear to support
     // "negative SMPTE format", which happens when the MSB is set.
-    this->divisions = SDL_SwapBE16(*(u16 *)(endOfHeaderPointer + 4));
+    this->divisions = SDL_Swap16BE(*(u16 *)(endOfHeaderPointer + 4));
     // Read the number of tracks in this midi file.
-    this->numTracks = SDL_SwapBE16(*(u16 *)(endOfHeaderPointer + 2));
+    this->numTracks = SDL_Swap16BE(*(u16 *)(endOfHeaderPointer + 2));
 
     // Allocate this->divisions * 32 bytes.
     this->tracks = (MidiTrack *)ZunMemory::Alloc(sizeof(MidiTrack) * this->numTracks);
@@ -191,7 +191,7 @@ ZunResult MidiOutput::ParseFile(i32 fileIdx)
         // Read a track (MTrk) chunk.
         //
         // First, read the length of the chunk
-        trackLength = SDL_SwapBE32(*(u32 *)(currentCursorTrack + 4));
+        trackLength = SDL_Swap32BE(*(u32 *)(currentCursorTrack + 4));
         this->tracks[trackIdx].trackLength = trackLength;
         this->tracks[trackIdx].trackData = (u8 *)ZunMemory::Alloc(trackLength);
         this->tracks[trackIdx].trackPlaying = 1;

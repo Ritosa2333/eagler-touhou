@@ -1,10 +1,11 @@
 #include "Controller.hpp"
 
-#include <SDL2/SDL_events.h>
-#include <SDL2/SDL_keyboard.h>
-#include <SDL2/SDL_scancode.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL.h>
 
 #include "GameErrorContext.hpp"
+#include "GameWindow.hpp"
 #include "Supervisor.hpp"
 #include "i18n.hpp"
 #include "utils.hpp"
@@ -110,17 +111,17 @@ u16 Controller::GetControllerInput(u16 buttons)
         SetButtonFromControllerInputs(&buttons, g_Supervisor.cfg.controllerMapping.skipButton, TH_BUTTON_SKIP,
                                       g_Supervisor.gameController);
 
-        if (SDL_GameControllerHasAxis(g_Supervisor.gameController, SDL_CONTROLLER_AXIS_LEFTX) &&
-            SDL_GameControllerHasAxis(g_Supervisor.gameController, SDL_CONTROLLER_AXIS_LEFTY))
+        if (SDL_GamepadHasAxis(g_Supervisor.gameController, SDL_GAMEPAD_AXIS_LEFTX) &&
+            SDL_GamepadHasAxis(g_Supervisor.gameController, SDL_GAMEPAD_AXIS_LEFTY))
         {
-            stickX = SDL_GameControllerGetAxis(g_Supervisor.gameController, SDL_CONTROLLER_AXIS_LEFTX);
-            stickY = SDL_GameControllerGetAxis(g_Supervisor.gameController, SDL_CONTROLLER_AXIS_LEFTY);
+            stickX = SDL_GetGamepadAxis(g_Supervisor.gameController, SDL_GAMEPAD_AXIS_LEFTX);
+            stickY = SDL_GetGamepadAxis(g_Supervisor.gameController, SDL_GAMEPAD_AXIS_LEFTY);
         }
-        else if (SDL_GameControllerHasAxis(g_Supervisor.gameController, SDL_CONTROLLER_AXIS_RIGHTX) &&
-                 SDL_GameControllerHasAxis(g_Supervisor.gameController, SDL_CONTROLLER_AXIS_RIGHTY))
+        else if (SDL_GamepadHasAxis(g_Supervisor.gameController, SDL_GAMEPAD_AXIS_RIGHTX) &&
+                 SDL_GamepadHasAxis(g_Supervisor.gameController, SDL_GAMEPAD_AXIS_RIGHTY))
         {
-            stickX = SDL_GameControllerGetAxis(g_Supervisor.gameController, SDL_CONTROLLER_AXIS_RIGHTX);
-            stickY = SDL_GameControllerGetAxis(g_Supervisor.gameController, SDL_CONTROLLER_AXIS_RIGHTY);
+            stickX = SDL_GetGamepadAxis(g_Supervisor.gameController, SDL_GAMEPAD_AXIS_RIGHTX);
+            stickY = SDL_GetGamepadAxis(g_Supervisor.gameController, SDL_GAMEPAD_AXIS_RIGHTY);
         }
         else
         {
@@ -263,7 +264,7 @@ u32 Controller::SetButtonFromDirectInputJoystate(u16 *outButtons, i16 controller
 }
 
 u32 Controller::SetButtonFromControllerInputs(u16 *outButtons, i16 controllerButtonToTest,
-                                              enum TouhouButton touhouButton, SDL_GameController *controller)
+                                              enum TouhouButton touhouButton, SDL_Gamepad *controller)
 {
     u8 pressed;
 
@@ -272,14 +273,14 @@ u32 Controller::SetButtonFromControllerInputs(u16 *outButtons, i16 controllerBut
         return 0;
     }
 
-    pressed = SDL_GameControllerGetButton(controller, (SDL_GameControllerButton)controllerButtonToTest);
+    pressed = SDL_GetGamepadButton(controller, (SDL_GamepadButton)controllerButtonToTest);
 
     *outButtons |= pressed ? touhouButton & 0xFFFF : 0;
 
     return pressed ? touhouButton & 0xFFFF : 0;
 }
 
-static u8 g_ControllerData[SDL_CONTROLLER_BUTTON_MAX];
+static u8 g_ControllerData[SDL_GAMEPAD_BUTTON_COUNT];
 
 // This is for rebinding keys
 const u8 *Controller::GetControllerState()
@@ -296,11 +297,11 @@ const u8 *Controller::GetControllerState()
     {
         memset(&g_ControllerData, 0, sizeof(g_ControllerData));
 
-        SDL_Joystick *joystick = SDL_GameControllerGetJoystick(g_Supervisor.gameController);
+        SDL_Joystick *joystick = SDL_GetGamepadJoystick(g_Supervisor.gameController);
 
-        for (int i = 0; i < SDL_CONTROLLER_BUTTON_MAX; i++)
+        for (int i = 0; i < SDL_GAMEPAD_BUTTON_COUNT; i++)
         {
-            if (SDL_GameControllerGetButton(g_Supervisor.gameController, (SDL_GameControllerButton)i))
+            if (SDL_GetGamepadButton(g_Supervisor.gameController, (SDL_GamepadButton)i))
             {
                 g_ControllerData[i] = 0x80;
             }
@@ -397,6 +398,9 @@ void Controller::ResetKeyboard(void)
     //   Doesn't work on Wine :( but hopefully works on Windows?
     //   We both start and stop due to this bug https://github.com/libsdl-org/SDL/issues/13172
     //   Since I can't test on Windows, it's good to be on the safe side
-    SDL_StartTextInput();
-    SDL_StopTextInput();
+    if (g_GameWindow.window)
+    {
+        SDL_StartTextInput(g_GameWindow.window);
+        SDL_StopTextInput(g_GameWindow.window);
+    }
 }

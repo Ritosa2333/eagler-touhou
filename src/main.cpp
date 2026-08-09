@@ -1,5 +1,5 @@
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_mouse.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL.h>
 #include <cstdio>
 
 #include "AnmManager.hpp"
@@ -72,7 +72,7 @@ restart:
     }
     if (!g_Supervisor.cfg.windowed)
     {
-        SDL_ShowCursor(SDL_DISABLE);
+        SDL_HideCursor();
     }
 
     g_GameWindow.curFrame = 0;
@@ -83,7 +83,7 @@ restart:
 
         while (SDL_PollEvent(&e))
         {
-            if (e.type == SDL_QUIT)
+            if (e.type == SDL_EVENT_QUIT)
             {
                 goto stop;
             }
@@ -146,7 +146,7 @@ stop:
 
         if (!g_Supervisor.cfg.windowed)
         {
-            SDL_ShowCursor(SDL_ENABLE);
+            SDL_ShowCursor();
         }
 
         goto restart;
@@ -157,7 +157,7 @@ stop:
     //    SystemParametersInfo(SPI_SETLOWPOWERACTIVE, g_GameWindow.lowPowerActive, NULL, SPIF_SENDCHANGE);
     //    SystemParametersInfo(SPI_SETPOWEROFFACTIVE, g_GameWindow.powerOffActive, NULL, SPIF_SENDCHANGE);
 
-    SDL_ShowCursor(SDL_ENABLE);
+    SDL_ShowCursor();
     g_GameErrorContext.Flush();
     return 0;
 }

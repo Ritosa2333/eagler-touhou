@@ -19,23 +19,23 @@
 #include "inttypes.hpp"
 #include "utils.hpp"
 
-#include <SDL2/SDL_joystick.h>
-#include <SDL2/SDL_timer.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL.h>
 #include <cstdio>
 #include <cstring>
 #include <ctime>
 
 Supervisor g_Supervisor;
 ControllerMapping g_ControllerMapping = {
-    (i16)SDL_CONTROLLER_BUTTON_A,
-    (i16)SDL_CONTROLLER_BUTTON_B,
-    (i16)SDL_CONTROLLER_BUTTON_LEFTSHOULDER,
-    (i16)SDL_CONTROLLER_BUTTON_START,
-    (i16)SDL_CONTROLLER_BUTTON_DPAD_UP,
-    (i16)SDL_CONTROLLER_BUTTON_DPAD_DOWN,
-    (i16)SDL_CONTROLLER_BUTTON_DPAD_LEFT,
-    (i16)SDL_CONTROLLER_BUTTON_DPAD_RIGHT,
-    (i16)SDL_CONTROLLER_BUTTON_RIGHTSHOULDER,
+    (i16)SDL_GAMEPAD_BUTTON_SOUTH,
+    (i16)SDL_GAMEPAD_BUTTON_EAST,
+    (i16)SDL_GAMEPAD_BUTTON_LEFT_SHOULDER,
+    (i16)SDL_GAMEPAD_BUTTON_START,
+    (i16)SDL_GAMEPAD_BUTTON_DPAD_UP,
+    (i16)SDL_GAMEPAD_BUTTON_DPAD_DOWN,
+    (i16)SDL_GAMEPAD_BUTTON_DPAD_LEFT,
+    (i16)SDL_GAMEPAD_BUTTON_DPAD_RIGHT,
+    (i16)SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER,
 };
 SDL_Surface *g_TextBufferSurface;
 u16 g_LastFrameInput;
@@ -432,16 +432,17 @@ ZunResult Supervisor::SetupDInput(Supervisor *supervisor)
     //    supervisor->keyboard->Acquire();
     g_GameErrorContext.Log(TH_ERR_DIRECTINPUT_INITIALIZED);
 
-    int numSticks = SDL_NumJoysticks();
-
+    int numSticks = 0;
+    SDL_JoystickID *sticks = SDL_GetGamepads(&numSticks);
     for (int i = 0; i < numSticks; i++)
     {
-        if (SDL_IsGameController(i) && (supervisor->gameController = SDL_GameControllerOpen(i)) != NULL)
+        if ((supervisor->gameController = SDL_OpenGamepad(sticks[i])) != NULL)
         {
 
             break;
         }
     }
+    SDL_free(sticks);
 
     //    supervisor->dinputIface->EnumDevices(DI8DEVCLASS_GAMECTRL, Supervisor::EnumGameControllersCb, NULL,
     //                                         DIEDFL_ATTACHEDONLY);
@@ -511,7 +512,7 @@ ZunResult Supervisor::DeletedCallback(Supervisor *s)
     //    }
     if (s->gameController != NULL)
     {
-        SDL_GameControllerClose(s->gameController);
+        SDL_CloseGamepad(s->gameController);
         s->gameController = NULL;
     }
     //    if (s->dinputIface != NULL)

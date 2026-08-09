@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>東方紅魔郷 〜 the Embodiment of Scarlet Devil</title>
+  <style>
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}
+    body{display:grid;place-items:center} canvas{width:min(100vw,calc(100vh * 4 / 3));height:auto;max-height:100vh;outline:0}
+    #status{position:fixed;inset:auto 0 1rem;text-align:center;color:#ddd;font:14px sans-serif}
+  </style>
+</head>
+<body>
+  <canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
+  <div id="status">Loading…</div>
+  <script>
+    var Module = {
+      canvas: document.getElementById('canvas'),
+      preRun: [function () {
+        FS.mkdir('/savesth06');
+        FS.mount(IDBFS, { autoPersist: true }, '/savesth06');
+        FS.syncfs(true, function (error) {
+          if (error) console.error('save sync failed', error);
+          Module.callMain([]);
+        });
+      }],
+      setStatus: function (text) {
+        document.getElementById('status').textContent = text;
+      }
+    };
+    Module.canvas.addEventListener('pointerdown', function () { Module.canvas.focus(); });
+  </script>
+  {{{ SCRIPT }}}
+</body>
+</html>

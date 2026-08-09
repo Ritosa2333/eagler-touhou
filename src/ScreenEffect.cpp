@@ -5,7 +5,7 @@
 #include "Rng.hpp"
 #include "Supervisor.hpp"
 
-#include <SDL2/SDL_video.h>
+#include <SDL3/SDL.h>
 #include <cstring>
 
 void ScreenEffect::Clear(ZunColor color)

@@ -4,7 +4,7 @@
 //   Any bad parts were tacked on by me
 
 #include "inttypes.hpp"
-#include <SDL2/SDL_endian.h>
+#include <SDL3/SDL.h>
 #include <cstring>
 #include <type_traits>
 

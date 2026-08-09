@@ -13,16 +13,15 @@
 #include <cstring>
 #include <new>
 
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_rwops.h>
-#include <SDL2/SDL_surface.h>
+#include <SDL3/SDL.h>
+#include <SDL3_image/SDL_image.h>
 
 static VertexTex1Xyzrhw g_PrimitivesToDrawVertexBuf[4];
 static VertexTex1DiffuseXyzrhw g_PrimitivesToDrawNoVertexBuf[4];
 static VertexTex1DiffuseXyz g_PrimitivesToDrawUnknown[4];
 AnmManager *g_AnmManager;
 
-static const SDL_PixelFormatEnum g_TextureFormatSDLMapping[6] = {SDL_PIXELFORMAT_UNKNOWN,  SDL_PIXELFORMAT_RGBA32,
+static const SDL_PixelFormat g_TextureFormatSDLMapping[6] = {SDL_PIXELFORMAT_UNKNOWN,  SDL_PIXELFORMAT_RGBA32,
                                                                  SDL_PIXELFORMAT_RGBA5551, SDL_PIXELFORMAT_RGB565,
                                                                  SDL_PIXELFORMAT_RGB24,    SDL_PIXELFORMAT_RGBA4444};
 
@@ -44,12 +43,12 @@ void AnmManager::CreateTextureObject()
     g_GfxBackend->SetTextureFilter();
 }
 
-SDL_Surface *AnmManager::LoadToSurfaceWithFormat(const char *filename, SDL_PixelFormatEnum format, u8 **fileData)
+SDL_Surface *AnmManager::LoadToSurfaceWithFormat(const char *filename, SDL_PixelFormat format, u8 **fileData)
 {
     u8 *data;
     SDL_Surface *imageSrcSurface;
     SDL_Surface *imageTargetSurface;
-    SDL_RWops *rwData;
+    SDL_IOStream *rwData;
 
     data = FileSystem::OpenPath(filename, 0);
 
@@ -58,7 +57,7 @@ SDL_Surface *AnmManager::LoadToSurfaceWithFormat(const char *filename, SDL_Pixel
         return NULL;
     }
 
-    rwData = SDL_RWFromConstMem(data, g_LastFileSize);
+    rwData = SDL_IOFromConstMem(data, g_LastFileSize);
 
     if (rwData == NULL)
     {
@@ -66,7 +65,7 @@ SDL_Surface *AnmManager::LoadToSurfaceWithFormat(const char *filename, SDL_Pixel
         return NULL;
     }
 
-    imageSrcSurface = IMG_Load_RW(rwData, 1);
+    imageSrcSurface = IMG_Load_IO(rwData, true);
 
     if (imageSrcSurface == NULL)
     {
@@ -74,9 +73,9 @@ SDL_Surface *AnmManager::LoadToSurfaceWithFormat(const char *filename, SDL_Pixel
         return NULL;
     }
 
-    imageTargetSurface = SDL_ConvertSurfaceFormat(imageSrcSurface, format, 0);
+    imageTargetSurface = SDL_ConvertSurface(imageSrcSurface, format);
 
-    SDL_FreeSurface(imageSrcSurface);
+    SDL_DestroySurface(imageSrcSurface);
 
     if (imageTargetSurface != NULL && fileData != NULL)
     {
@@ -153,7 +152,7 @@ void AnmManager::ReleaseSurfaces(void)
     {
         if (this->surfaces[idx] != NULL)
         {
-            SDL_FreeSurface(this->surfaces[idx]);
+            SDL_DestroySurface(this->surfaces[idx]);
             this->surfaces[idx] = NULL;
         }
     }
@@ -178,7 +177,6 @@ AnmManager::~AnmManager()
         this->dummyTextureHandle = 0;
     }
 
-    IMG_Quit();
 }
 
 // void AnmManager::ReleaseVertexBuffer()
@@ -192,7 +190,6 @@ AnmManager::~AnmManager()
 
 AnmManager::AnmManager()
 {
-    IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG);
 
     this->maybeLoadedSpriteCount = 0;
 
@@ -331,13 +328,12 @@ ZunResult AnmManager::LoadTexture(i32 textureIdx, const char *textureName, i32 t
     const AnmRawEntry *entry = this->anmFiles[textureIdx];
     if (textureSurface->w != entry->width || textureSurface->h != entry->height)
     {
-        SDL_Surface *textureSurface2 = SDL_CreateRGBSurfaceWithFormat(0, entry->width, entry->height,
-                                                                      g_TextureFormatBytesPerPixel[textureFormat] * 8,
-                                                                      g_TextureFormatSDLMapping[textureFormat]);
+        SDL_Surface *textureSurface2 =
+            SDL_CreateSurface(entry->width, entry->height, g_TextureFormatSDLMapping[textureFormat]);
         SDL_Rect srcRect = {0, 0, textureSurface->w, textureSurface->h};
         SDL_Rect dstRect = {0, 0, entry->width, entry->height};
-        SDL_BlitScaled(textureSurface, &srcRect, textureSurface2, &dstRect);
-        SDL_FreeSurface(textureSurface);
+        SDL_BlitSurfaceScaled(textureSurface, &srcRect, textureSurface2, &dstRect, SDL_SCALEMODE_LINEAR);
+        SDL_DestroySurface(textureSurface);
         textureSurface = textureSurface2;
     }
 
@@ -372,7 +368,7 @@ ZunResult AnmManager::LoadTexture(i32 textureIdx, const char *textureName, i32 t
     g_GfxBackend->SetTextureImage(textureSurface->w, textureSurface->h, g_TextureFormatTypeGfxMapping[textureFormat],
                                   g_TextureFormatTypeMapping[textureFormat], rawTextureData);
 
-    SDL_FreeSurface(textureSurface);
+    SDL_DestroySurface(textureSurface);
 
     if (g_GfxBackend->HasError())
     {
@@ -469,7 +465,7 @@ ZunResult AnmManager::LoadTextureAlphaChannel(i32 textureIdx, const char *textur
     }
 
     SDL_UnlockSurface(alphaSurface);
-    SDL_FreeSurface(alphaSurface);
+    SDL_DestroySurface(alphaSurface);
 
     this->SetCurrentTexture(this->textures[textureIdx].handle);
     g_GfxBackend->SetTextureImage(textureDesc->width, textureDesc->height, PIXEL_RGBA,
@@ -1951,7 +1947,7 @@ void AnmManager::ReleaseSurface(i32 surfaceIdx)
 {
     if (this->surfaces[surfaceIdx] != NULL)
     {
-        SDL_FreeSurface(this->surfaces[surfaceIdx]);
+        SDL_DestroySurface(this->surfaces[surfaceIdx]);
         this->surfaces[surfaceIdx] = NULL;
     }
 }
@@ -2088,11 +2084,11 @@ void AnmManager::TakeScreenshot(i32 textureId, i32 left, i32 top, i32 width, i32
                              GAME_WINDOW_HEIGHT_REAL - ((top + height) * HEIGHT_RESOLUTION_SCALE) - VIEWPORT_OFF_Y,
                              width * WIDTH_RESOLUTION_SCALE, height * HEIGHT_RESOLUTION_SCALE, backBufferPixels);
 
-    unstretchedSurface = SDL_CreateRGBSurfaceWithFormatFrom(backBufferPixels, width * WIDTH_RESOLUTION_SCALE,
-                                                            height * HEIGHT_RESOLUTION_SCALE, 32,
-                                                            width * WIDTH_RESOLUTION_SCALE * 4, SDL_PIXELFORMAT_RGBA32);
-    stretchedSurface = SDL_CreateRGBSurfaceWithFormat(0, this->textures[textureId].width,
-                                                      this->textures[textureId].height, 32, SDL_PIXELFORMAT_RGBA32);
+    unstretchedSurface = SDL_CreateSurfaceFrom(width * WIDTH_RESOLUTION_SCALE, height * HEIGHT_RESOLUTION_SCALE,
+                                               SDL_PIXELFORMAT_RGBA32, backBufferPixels,
+                                               width * WIDTH_RESOLUTION_SCALE * 4);
+    stretchedSurface = SDL_CreateSurface(this->textures[textureId].width, this->textures[textureId].height,
+                                         SDL_PIXELFORMAT_RGBA32);
 
     if (unstretchedSurface == NULL || stretchedSurface == NULL)
     {
@@ -2113,13 +2109,14 @@ void AnmManager::TakeScreenshot(i32 textureId, i32 left, i32 top, i32 width, i32
     stretchDstRect.h = this->textures[textureId].height;
     stretchDstRect.w = this->textures[textureId].width;
 
-    if (SDL_SoftStretchLinear(unstretchedSurface, &stretchSrcRect, stretchedSurface, &stretchDstRect) < 0)
+    if (!SDL_StretchSurface(unstretchedSurface, &stretchSrcRect, stretchedSurface, &stretchDstRect,
+                            SDL_SCALEMODE_LINEAR))
     {
         goto cleanup;
     }
 
     dstFormatSurface =
-        SDL_ConvertSurfaceFormat(stretchedSurface, g_TextureFormatSDLMapping[this->textures[textureId].format], 0);
+        SDL_ConvertSurface(stretchedSurface, g_TextureFormatSDLMapping[this->textures[textureId].format]);
 
     if (dstFormatSurface == NULL)
     {
@@ -2134,9 +2131,9 @@ void AnmManager::TakeScreenshot(i32 textureId, i32 left, i32 top, i32 width, i32
                                   g_TextureFormatTypeMapping[this->textures[textureId].format], dstFormatPixels);
 
 cleanup:
-    SDL_FreeSurface(unstretchedSurface);
-    SDL_FreeSurface(stretchedSurface);
-    SDL_FreeSurface(dstFormatSurface);
+    SDL_DestroySurface(unstretchedSurface);
+    SDL_DestroySurface(stretchedSurface);
+    SDL_DestroySurface(dstFormatSurface);
     delete[] backBufferPixels;
     delete[] dstFormatPixels;
 }
