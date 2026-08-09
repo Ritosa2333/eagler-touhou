@@ -145,6 +145,11 @@ struct ZunVec2
         return ZunVec2(this->x * mult.x, this->y * mult.y);
     }
 
+    ZunVec2 Lerp(const ZunVec2 &to, f32 amount) const
+    {
+        return *this * (1.0f - amount) + to * amount;
+    }
+
     f32 VectorLength() const
     {
         return std::sqrt((f64)(this->x * this->x + this->y * this->y));
@@ -242,6 +247,11 @@ struct ZunVec3
     ZunVec3 operator/(const f32 divisor) const
     {
         return ZunVec3(this->x / divisor, this->y / divisor, this->z / divisor);
+    }
+
+    ZunVec3 Lerp(const ZunVec3 &to, f32 amount) const
+    {
+        return *this * (1.0f - amount) + to * amount;
     }
 
     ZunVec3 &operator/=(const f32 div)

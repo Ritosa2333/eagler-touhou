@@ -126,6 +126,16 @@ struct AnmVm
         this->currentTimeInScript.Initialize();
     }
 
+    void UpdatePrev()
+    {
+        this->prevRotation = this->rotation;
+        this->prevScaleY = this->scaleY;
+        this->prevScaleX = this->scaleX;
+        this->prevUvScrollPos = this->uvScrollPos;
+        this->prevColor = this->color;
+        this->prevPos = this->pos;
+    }
+
     AnmVm()
     {
         this->activeSpriteIndex = -1;
@@ -137,15 +147,20 @@ struct AnmVm
     }
 
     ZunVec3 rotation;
+    ZunVec3 prevRotation;
     ZunVec3 angleVel;
     f32 scaleY;
     f32 scaleX;
+    f32 prevScaleY;
+    f32 prevScaleX;
     f32 scaleInterpFinalY;
     f32 scaleInterpFinalX;
     ZunVec2 uvScrollPos;
+    ZunVec2 prevUvScrollPos;
     ZunTimer currentTimeInScript;
     ZunMatrix matrix;
     ZunColor color;
+    ZunColor prevColor;
     AnmVmFlags flags;
 
     i16 alphaInterpEndTime;
@@ -155,6 +170,7 @@ struct AnmVm
     i16 posInterpEndTime;
     // Two padding bytes
     ZunVec3 pos;
+    ZunVec3 prevPos;
     f32 scaleInterpInitialY;
     f32 scaleInterpInitialX;
     ZunTimer scaleInterpTime;

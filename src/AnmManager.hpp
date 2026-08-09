@@ -196,6 +196,7 @@ struct AnmManager
     {
         vm->Initialize();
         this->SetActiveSprite(vm, spriteIdx);
+        vm->UpdatePrev();
     }
 
     void BackendDrawCall()

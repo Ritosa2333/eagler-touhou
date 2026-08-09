@@ -685,6 +685,7 @@ void AnmManager::SetAndExecuteScript(AnmVm *vm, const AnmRawInstr *beginingOfScr
     {
         this->ExecuteScript(vm);
     }
+    vm->UpdatePrev();
 }
 
 void AnmManager::SetRenderStateForVm(const AnmVm *vm)
