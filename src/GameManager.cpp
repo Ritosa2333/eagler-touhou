@@ -116,6 +116,19 @@ ChainCallbackResult GameManager::OnUpdate(GameManager *gameManager)
     u32 isInMenu;
     u32 scoreIncrement;
 
+    // The pause-menu state machine advanced inside OnDraw at high refresh
+    // (gated by g_SuppressAnmAdvance). State 1 and 2 are treated identically
+    // everywhere, so the 1 -> 2 transition belongs to the fixed 60 Hz update
+    // chain: it now runs on the update following the pause request, exactly
+    // one frame later as before, and never depends on the draw rate.
+    if (gameManager->isInGameMenu == 1)
+    {
+        gameManager->isInGameMenu = 2;
+    }
+
+    gameManager->prevArcadeRegionTopLeftPos = gameManager->arcadeRegionTopLeftPos;
+    gameManager->prevArcadeRegionSize = gameManager->arcadeRegionSize;
+
     if (gameManager->demoMode)
     {
         if (WAS_PRESSED(TH_BUTTON_ANY))
@@ -153,31 +166,6 @@ ChainCallbackResult GameManager::OnUpdate(GameManager *gameManager)
     }
 
     gameManager->isInMenu = isInMenu;
-
-    g_Supervisor.viewport.x = gameManager->arcadeRegionTopLeftPos.x;
-    g_Supervisor.viewport.y = gameManager->arcadeRegionTopLeftPos.y;
-    g_Supervisor.viewport.width = gameManager->arcadeRegionSize.x;
-    g_Supervisor.viewport.height = gameManager->arcadeRegionSize.y;
-    g_Supervisor.viewport.minZ = 0.5;
-    g_Supervisor.viewport.maxZ = 1.0;
-
-    const ZunVec3 currentCameraFacingDir = gameManager->stageCameraFacingDir;
-    ZunVec3 drawCameraFacingDir =
-        g_Stage.prevCameraFacingDir.Lerp(currentCameraFacingDir, g_RenderAlpha);
-    if (ZUN_FABSF(drawCameraFacingDir.z) < 0.0001f)
-    {
-        drawCameraFacingDir = currentCameraFacingDir;
-    }
-    gameManager->stageCameraFacingDir = drawCameraFacingDir;
-    SetupCamera(0);
-    gameManager->stageCameraFacingDir = currentCameraFacingDir;
-
-    g_Supervisor.viewport.Set();
-    g_GfxBackend->SetClearDepth(1.0f);
-    g_GfxBackend->Clear(CLEAR_DEPTH_BUFFER);
-
-    //    g_Supervisor.d3dDevice->SetViewport(&g_Supervisor.viewport);
-    //    g_Supervisor.d3dDevice->Clear(0, NULL, D3DCLEAR_ZBUFFER, g_Stage.skyFog.color, 1.0, 0);
 
     // Seems like gameManager->isInGameMenu was supposed to have 3 states, but all the times it ends up checking both
     if (gameManager->isInGameMenu == 1 || gameManager->isInGameMenu == 2 || gameManager->isInRetryMenu)
@@ -244,10 +232,22 @@ ChainCallbackResult GameManager::OnUpdate(GameManager *gameManager)
 
 ChainCallbackResult GameManager::OnDraw(GameManager *gameManager)
 {
-    if (gameManager->isInGameMenu)
-    {
-        gameManager->isInGameMenu = 2;
-    }
+    // Rendering state must be established for every presentation frame. The
+    // original 60 Hz loop happened to run OnUpdate immediately before every
+    // draw, but at high refresh render-only frames otherwise inherit whichever
+    // viewport/camera the GUI or a full-screen effect left behind. That made
+    // the playfield alternate between 384x448 and 640x480 at 180 Hz.
+    g_Supervisor.viewport.x = gameManager->arcadeRegionTopLeftPos.x;
+    g_Supervisor.viewport.y = gameManager->arcadeRegionTopLeftPos.y;
+    g_Supervisor.viewport.width = gameManager->arcadeRegionSize.x;
+    g_Supervisor.viewport.height = gameManager->arcadeRegionSize.y;
+    g_Supervisor.viewport.minZ = 0.5f;
+    g_Supervisor.viewport.maxZ = 1.0f;
+    SetupCamera(0);
+    g_Supervisor.viewport.Set();
+    g_GfxBackend->SetClearDepth(1.0f);
+    g_GfxBackend->Clear(CLEAR_DEPTH_BUFFER);
+
     return CHAIN_CALLBACK_RESULT_CONTINUE;
 }
 
@@ -570,12 +570,13 @@ void GameManager::SetupCamera(f32 extraRenderDistance)
     upVec.x = 0.0f;
     upVec.y = 1.0f;
     upVec.z = 0.0f;
-    atVecY = -viewportMiddleHeight + (f32)g_GameManager.stageCameraFacingDir.y;
-    atVecX = viewportMiddleWidth + (f32)g_GameManager.stageCameraFacingDir.x;
+    const ZunVec3 drawCameraFacingDir = g_Stage.GetDrawCameraFacingDir();
+    atVecY = -viewportMiddleHeight + drawCameraFacingDir.y;
+    atVecX = viewportMiddleWidth + drawCameraFacingDir.x;
     atVec.x = atVecX;
     atVec.y = atVecY;
     atVec.z = 0;
-    eyeVecZ = -cameraDistance * (f32)g_GameManager.stageCameraFacingDir.z;
+    eyeVecZ = -cameraDistance * drawCameraFacingDir.z;
     eyeVec.x = viewportMiddleWidth;
     eyeVec.y = -viewportMiddleHeight;
     eyeVec.z = eyeVecZ;
@@ -630,6 +631,8 @@ GameManager::GameManager()
     (this->arcadeRegionTopLeftPos).y = GAME_REGION_TOP;
     (this->arcadeRegionSize).x = GAME_REGION_WIDTH;
     (this->arcadeRegionSize).y = GAME_REGION_HEIGHT;
+    this->prevArcadeRegionTopLeftPos = this->arcadeRegionTopLeftPos;
+    this->prevArcadeRegionSize = this->arcadeRegionSize;
 }
 
 i32 GameManager::HasReachedMaxClears(i32 character, i32 shottype) const

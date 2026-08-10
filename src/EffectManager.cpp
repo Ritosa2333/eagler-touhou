@@ -303,8 +303,13 @@ ChainCallbackResult EffectManager::OnDraw(EffectManager *mgr)
             continue;
         }
 
+        const ZunVec3 savedPos = effect->vm.pos;
+        const ZunVec3 savedPrevPos = effect->vm.prevPos;
         effect->vm.pos = effect->prevPos.Lerp(effect->pos1, g_RenderAlpha);
+        effect->vm.prevPos = effect->vm.pos;
         g_AnmManager->Draw3(&effect->vm);
+        effect->vm.pos = savedPos;
+        effect->vm.prevPos = savedPrevPos;
     }
 
     return CHAIN_CALLBACK_RESULT_CONTINUE;

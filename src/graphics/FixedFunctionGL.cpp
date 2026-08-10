@@ -45,7 +45,7 @@ GfxInterface *FixedFunctionGL::Init()
         return NULL;
     }
 
-    if (SDL_GL_MakeCurrent(window, glContext) != 0)
+    if (!SDL_GL_MakeCurrent(window, glContext))
     {
         delete self;
         return NULL;

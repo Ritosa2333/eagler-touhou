@@ -58,6 +58,7 @@ struct GameWindow
     static void Present();
 
     static void CreateGameWindow();
+    static void ToggleFullscreen();
     static ZunResult InitD3dRendering();
     static void InitD3dDevice();
 
@@ -79,3 +80,8 @@ extern double g_LastFrameTime;
 extern GfxInterface *g_GfxBackend;
 extern f32 g_RenderAlpha;
 extern bool g_SuppressAnmAdvance;
+extern bool g_PresentationVsyncEnabled;
+
+#ifdef TH_DEV_TOOLS
+extern f32 g_DevSpeedMultiplier;
+#endif

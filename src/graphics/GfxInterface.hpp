@@ -125,6 +125,8 @@ struct GfxInterface
     // call the destructor of that instance and return nullptr if it fails
 
     virtual ~GfxInterface() = default;
+    virtual void BeginFrame() = 0;
+    virtual void EndFrame() = 0;
     // the destructor is called when the backend fails to initialize or when the program exits,
     // so it should clean up any resources that were allocated by the init function
     // The GL backends delete the SDL window and GL context, for example
@@ -135,6 +137,7 @@ struct GfxInterface
     virtual void SetAttributePointer(VertexAttributeArrays attr, std::size_t stride, void *ptr) = 0;
     virtual void SetColorOp(TextureOpComponent component, ColorOp op) = 0;
     virtual void SetTextureFactor(ZunColor factor) = 0;
+    virtual void SetTextureArg(TextureArg arg) {}
     virtual void SetTransformMatrix(TransformMatrix type, const ZunMatrix &matrix) = 0;
 
     virtual void SetTextureFilter() = 0;
@@ -153,6 +156,7 @@ struct GfxInterface
     virtual void SetDepthFunc(DepthFunc func) = 0;
 
     virtual void SetClearDepth(f32 depth) = 0;
+    virtual void SetAlphaTestRef(u8 ref) {}
     virtual void SetClearColor(f32 r, f32 g, f32 b, f32 a) = 0;
     virtual void Clear(u32 clearBits) = 0;
 

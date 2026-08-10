@@ -170,10 +170,10 @@ u32 BulletManager::SpawnSingleBullet(const EnemyBulletShooter *bulletProps, i32 
     bullet->unk_5c2 = 1;
     bullet->speed = bulletSpeed;
     bullet->angle = utils::AddNormalizeAngle(bulletAngle, 0.0f);
+    bullet->prevAngle = bullet->angle;
     bullet->pos = bulletProps->position;
     bullet->pos.z = 0.1f;
     bullet->prevPos = bullet->pos;
-    bullet->sprites.UpdatePrev();
     sincosmul(&bullet->velocity, bullet->angle, bulletSpeed);
     bullet->exFlags = bulletProps->flags;
     bullet->spriteOffset = bulletProps->spriteOffset;
@@ -374,6 +374,7 @@ u32 BulletManager::SpawnSingleBullet(const EnemyBulletShooter *bulletProps, i32 
         bullet->dirChangeMaxTimes = bulletProps->exInts[0];
         bullet->dirChangeNumTimes = 0;
     }
+    bullet->sprites.UpdatePrev();
     return 0;
 }
 
@@ -576,8 +577,6 @@ Laser *BulletManager::SpawnLaserPattern(const EnemyLaserShooter *bulletProps)
         laser->vm1.flags.blendMode = AnmVmBlendMode_One;
         laser->pos = bulletProps->position;
         laser->prevPos = laser->pos;
-        laser->vm0.UpdatePrev();
-        laser->vm1.UpdatePrev();
         laser->color = bulletProps->spriteOffset;
         laser->inUse = true;
         laser->angle = bulletProps->angle;
@@ -586,11 +585,14 @@ Laser *BulletManager::SpawnLaserPattern(const EnemyLaserShooter *bulletProps)
         {
             laser->angle += g_Player.AngleToPlayer(&bulletProps->position);
         }
+        laser->prevAngle = laser->angle;
 
         laser->flags = bulletProps->flags;
         laser->timer.InitializeForPopup();
         laser->startOffset = bulletProps->startOffset;
+        laser->prevStartOffset = laser->startOffset;
         laser->endOffset = bulletProps->endOffset;
+        laser->prevEndOffset = laser->endOffset;
         laser->startLength = bulletProps->startLength;
         laser->width = bulletProps->width;
         laser->speed = bulletProps->speed;
@@ -608,6 +610,8 @@ Laser *BulletManager::SpawnLaserPattern(const EnemyLaserShooter *bulletProps)
         {
             laser->state = 0;
         }
+        laser->vm0.UpdatePrev();
+        laser->vm1.UpdatePrev();
         break;
     }
     return laser;
@@ -675,6 +679,7 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
         if (bullet.state != 0)
         {
             bullet.prevPos = bullet.pos;
+            bullet.prevAngle = bullet.angle;
             bullet.sprites.UpdatePrev();
         }
     }
@@ -684,6 +689,9 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
         if (laser.inUse)
         {
             laser.prevPos = laser.pos;
+            laser.prevAngle = laser.angle;
+            laser.prevStartOffset = laser.startOffset;
+            laser.prevEndOffset = laser.endOffset;
             laser.vm0.UpdatePrev();
             laser.vm1.UpdatePrev();
         }
@@ -1132,24 +1140,38 @@ ChainCallbackResult BulletManager::OnDraw(BulletManager *mgr)
         {
             continue;
         }
-        fsincos_wrapper(&sine, &cosine, curLaser->angle);
-        laserOffset = (curLaser->endOffset - curLaser->startOffset) / 2.0f + curLaser->startOffset;
+        const f32 drawAngle = utils::LerpAngle(curLaser->prevAngle, curLaser->angle, g_RenderAlpha);
+        const f32 drawStart = curLaser->prevStartOffset * (1.0f - g_RenderAlpha) +
+                              curLaser->startOffset * g_RenderAlpha;
+        const f32 drawEnd =
+            curLaser->prevEndOffset * (1.0f - g_RenderAlpha) + curLaser->endOffset * g_RenderAlpha;
+        fsincos_wrapper(&sine, &cosine, drawAngle);
+        laserOffset = (drawEnd - drawStart) / 2.0f + drawStart;
         const ZunVec3 drawLaserPos = curLaser->prevPos.Lerp(curLaser->pos, g_RenderAlpha);
+        const ZunVec3 vm0Pos = curLaser->vm0.pos;
         curLaser->vm0.pos.x = cosine * laserOffset + drawLaserPos.x;
         curLaser->vm0.pos.y = sine * laserOffset + drawLaserPos.y;
         curLaser->vm0.pos.z = 0.0f;
         curLaser->color = COLOR_COMBINE_ALPHA(COLOR_WHITE, curLaser->color);
         g_AnmManager->Draw3(&curLaser->vm0);
+        curLaser->vm0.pos = vm0Pos;
 
-        if (curLaser->startOffset < 16.0f || curLaser->speed == 0.0f)
+        if (drawStart < 16.0f || curLaser->speed == 0.0f)
         {
-            curLaser->vm1.pos.x = cosine * curLaser->startOffset + drawLaserPos.x;
-            curLaser->vm1.pos.y = sine * curLaser->startOffset + drawLaserPos.y;
+            const ZunVec3 vm1Pos = curLaser->vm1.pos;
+            const f32 vm1ScaleX = curLaser->vm1.scaleX;
+            const f32 vm1ScaleY = curLaser->vm1.scaleY;
+            const f32 vm1PrevScaleX = curLaser->vm1.prevScaleX;
+            const f32 vm1PrevScaleY = curLaser->vm1.prevScaleY;
+            const ZunColor vm1Color = curLaser->vm1.color;
+            const ZunColor vm1PrevColor = curLaser->vm1.prevColor;
+            curLaser->vm1.pos.x = cosine * drawStart + drawLaserPos.x;
+            curLaser->vm1.pos.y = sine * drawStart + drawLaserPos.y;
             curLaser->vm1.pos.z = 0.0f;
             curLaser->vm1.color = curLaser->vm0.color;
             curLaser->vm1.flags.colorOp = AnmVmColorOp_Add;
             curLaser->vm1.color = COLOR_SET_ALPHA2(curLaser->vm1.color, 0xff);
-            curLaser->vm1.scaleX = (curLaser->width / 10.0f) * ((16.0f - curLaser->startOffset) / 16.0f);
+            curLaser->vm1.scaleX = (curLaser->width / 10.0f) * ((16.0f - drawStart) / 16.0f);
             curLaser->vm1.scaleY = curLaser->vm1.scaleX;
 
             if (curLaser->vm1.scaleY < 0.0f)
@@ -1158,7 +1180,18 @@ ChainCallbackResult BulletManager::OnDraw(BulletManager *mgr)
                 curLaser->vm1.scaleY = curLaser->vm1.scaleX;
             }
 
+            curLaser->vm1.prevScaleX = curLaser->vm1.scaleX;
+            curLaser->vm1.prevScaleY = curLaser->vm1.scaleY;
+            curLaser->vm1.prevColor = curLaser->vm1.color;
+
             g_AnmManager->Draw3(&curLaser->vm1);
+            curLaser->vm1.pos = vm1Pos;
+            curLaser->vm1.scaleX = vm1ScaleX;
+            curLaser->vm1.scaleY = vm1ScaleY;
+            curLaser->vm1.prevScaleX = vm1PrevScaleX;
+            curLaser->vm1.prevScaleY = vm1PrevScaleY;
+            curLaser->vm1.color = vm1Color;
+            curLaser->vm1.prevColor = vm1PrevColor;
         }
     }
 
@@ -1310,17 +1343,30 @@ void BulletManager::DrawBullet(Bullet *bullet)
     }
 
     const ZunVec3 drawPos = bullet->prevPos.Lerp(bullet->pos, g_RenderAlpha);
+    const ZunVec3 originalPos = anmVm->pos;
+    const ZunColor originalColor = anmVm->color;
+    const ZunColor originalPrevColor = anmVm->prevColor;
+    const f32 originalRotationZ = anmVm->rotation.z;
+    const f32 originalPrevRotationZ = anmVm->prevRotation.z;
     anmVm->pos.x = drawPos.x;
     anmVm->pos.y = drawPos.y;
     anmVm->pos.z = 0.0;
     anmVm->color = COLOR_COMBINE_ALPHA(COLOR_WHITE, anmVm->color);
+    anmVm->prevColor = anmVm->color;
 
     if (anmVm->autoRotate != 0)
     {
-        anmVm->rotation.z = (ZUN_PI / 2.0f) - bullet->angle;
+        const f32 drawAngle = utils::LerpAngle(bullet->prevAngle, bullet->angle, g_RenderAlpha);
+        anmVm->rotation.z = (ZUN_PI / 2.0f) - drawAngle;
+        anmVm->prevRotation.z = anmVm->rotation.z;
     }
 
     g_AnmManager->Draw2(anmVm);
+    anmVm->pos = originalPos;
+    anmVm->color = originalColor;
+    anmVm->prevColor = originalPrevColor;
+    anmVm->rotation.z = originalRotationZ;
+    anmVm->prevRotation.z = originalPrevRotationZ;
 }
 
 void BulletManager::DrawBulletNoHwVertex(Bullet *bullet)
@@ -1347,17 +1393,30 @@ void BulletManager::DrawBulletNoHwVertex(Bullet *bullet)
     }
 
     const ZunVec3 drawPos = bullet->prevPos.Lerp(bullet->pos, g_RenderAlpha);
+    const ZunVec3 originalPos = anmVm->pos;
+    const ZunColor originalColor = anmVm->color;
+    const ZunColor originalPrevColor = anmVm->prevColor;
+    const f32 originalRotationZ = anmVm->rotation.z;
+    const f32 originalPrevRotationZ = anmVm->prevRotation.z;
     anmVm->pos.x = g_GameManager.arcadeRegionTopLeftPos.x + drawPos.x;
     anmVm->pos.y = g_GameManager.arcadeRegionTopLeftPos.y + drawPos.y;
     anmVm->pos.z = 0.0;
     anmVm->color = COLOR_COMBINE_ALPHA(COLOR_WHITE, anmVm->color);
+    anmVm->prevColor = anmVm->color;
 
     if (anmVm->autoRotate != 0)
     {
-        anmVm->rotation.z = (ZUN_PI / 2.0f) - bullet->angle;
+        const f32 drawAngle = utils::LerpAngle(bullet->prevAngle, bullet->angle, g_RenderAlpha);
+        anmVm->rotation.z = (ZUN_PI / 2.0f) - drawAngle;
+        anmVm->prevRotation.z = anmVm->rotation.z;
     }
 
     g_AnmManager->Draw(anmVm);
+    anmVm->pos = originalPos;
+    anmVm->color = originalColor;
+    anmVm->prevColor = originalPrevColor;
+    anmVm->rotation.z = originalRotationZ;
+    anmVm->prevRotation.z = originalPrevRotationZ;
 }
 
 ZunResult BulletManager::AddedCallback(BulletManager *mgr)

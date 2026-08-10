@@ -47,6 +47,7 @@ void EnemyManager::Initialize()
     enemy->axisSpeed = ZunVec3(0.0f, 0.0f, 0.0f);
     enemy->angularVelocity = 0.0f;
     enemy->angle = 0.0f;
+    enemy->prevAngle = enemy->angle;
     enemy->acceleration = 0.0f;
     enemy->speed = 0.0f;
     enemy->flags.unk1 = 0;
@@ -104,6 +105,7 @@ Enemy *EnemyManager::SpawnEnemy(i32 eclSubId, const ZunVec3 *pos, i16 life, i16 
 
         newEnemy->position = *pos;
         newEnemy->prevPosition = newEnemy->position;
+        newEnemy->prevAngle = newEnemy->angle;
         newEnemy->primaryVm.UpdatePrev();
         for (AnmVm &vm : newEnemy->vms)
         {
@@ -111,6 +113,16 @@ Enemy *EnemyManager::SpawnEnemy(i32 eclSubId, const ZunVec3 *pos, i16 life, i16 
         }
         g_EclManager.CallEclSub(&newEnemy->currentContext, eclSubId);
         g_EclManager.RunEcl(newEnemy);
+        // ECL initialization can immediately change position, angle, and ANM state.
+        // Treat that initialized state as both endpoints so a newly spawned enemy
+        // cannot interpolate in from the reusable template's stale values.
+        newEnemy->prevPosition = newEnemy->position;
+        newEnemy->prevAngle = newEnemy->angle;
+        newEnemy->primaryVm.UpdatePrev();
+        for (AnmVm &vm : newEnemy->vms)
+        {
+            vm.UpdatePrev();
+        }
         newEnemy->color = newEnemy->primaryVm.color;
         newEnemy->itemDrop = itemDrop;
 
@@ -540,6 +552,7 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
             continue;
         }
         curEnemy->prevPosition = curEnemy->position;
+        curEnemy->prevAngle = curEnemy->angle;
         curEnemy->primaryVm.UpdatePrev();
         for (AnmVm &vm : curEnemy->vms)
         {
@@ -794,39 +807,43 @@ ChainCallbackResult EnemyManager::OnDraw(EnemyManager *mgr)
         }
 
         const ZunVec3 drawPosition = curEnemy->prevPosition.Lerp(curEnemy->position, g_RenderAlpha);
+        const f32 drawAngle = utils::LerpAngle(curEnemy->prevAngle, curEnemy->angle, g_RenderAlpha);
+        auto drawVm = [&](AnmVm *vm, f32 z, bool autoRotate) {
+            const ZunVec3 savedPos = vm->pos;
+            const ZunVec3 savedPrevPos = vm->prevPos;
+            const ZunVec3 savedRotation = vm->rotation;
+            const ZunVec3 savedPrevRotation = vm->prevRotation;
+
+            if (autoRotate)
+            {
+                vm->rotation.z = drawAngle;
+                vm->prevRotation = vm->rotation;
+            }
+            vm->pos = drawPosition + vm->posOffset;
+            vm->pos.z = z;
+            vm->prevPos = vm->pos;
+            g_AnmManager->Draw2(vm);
+
+            vm->pos = savedPos;
+            vm->prevPos = savedPrevPos;
+            vm->rotation = savedRotation;
+            vm->prevRotation = savedPrevRotation;
+        };
         for (curEnemyVm = &curEnemy->vms[0], curEnemyVmIdx = 0; curEnemyVmIdx < 4; curEnemyVmIdx++, curEnemyVm++)
         {
             if (0 <= curEnemyVm->anmFileIndex)
             {
-                if (curEnemyVm->autoRotate != 0)
-                {
-                    curEnemyVm->rotation.z = curEnemy->angle;
-                }
-                curEnemyVm->pos = drawPosition + curEnemyVm->posOffset;
-                curEnemyVm->pos.z = 0.495f;
-                g_AnmManager->Draw2(curEnemyVm);
+                drawVm(curEnemyVm, 0.495f, curEnemyVm->autoRotate != 0);
                 g_AnmManager->FlushVertexBuffer();
             }
         }
-        if (curEnemy->flags.unk13 != 0)
-        {
-            curEnemy->primaryVm.rotation.z = curEnemy->angle;
-        }
-        curEnemy->primaryVm.pos = drawPosition + curEnemy->primaryVm.posOffset;
-        curEnemy->primaryVm.pos.z = 0.494f;
-        g_AnmManager->Draw2(&curEnemy->primaryVm);
+        drawVm(&curEnemy->primaryVm, 0.494f, curEnemy->flags.unk13 != 0);
         g_AnmManager->FlushVertexBuffer();
         for (curEnemyVmIdx = 4; curEnemyVmIdx < 8; curEnemyVmIdx++, curEnemyVm++)
         {
             if (0 <= curEnemyVm->anmFileIndex)
             {
-                if (curEnemyVm->autoRotate != 0)
-                {
-                    curEnemyVm->rotation.z = curEnemy->angle;
-                }
-                curEnemyVm->pos = drawPosition + curEnemyVm->posOffset;
-                curEnemyVm->pos.z = 0.495f;
-                g_AnmManager->Draw2(curEnemyVm);
+                drawVm(curEnemyVm, 0.495f, curEnemyVm->autoRotate != 0);
             }
         }
     }

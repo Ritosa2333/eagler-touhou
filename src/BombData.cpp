@@ -16,6 +16,11 @@ extern const BombData g_BombData[4] = {
     /* MarisaB */ {BombData::BombMarisaBCalc, BombData::BombMarisaBDraw},
 };
 
+static ZunVec3 GetBombDrawPosition(const PlayerBombInfo &bomb, i32 index)
+{
+    return bomb.prevBombRegionPositions[index].Lerp(bomb.bombRegionPositions[index], g_RenderAlpha);
+}
+
 void BombData::BombReimuACalc(Player *player)
 {
     i32 i;
@@ -58,6 +63,7 @@ void BombData::BombReimuACalc(Player *player)
             player->bombInfo.reimuABombProjectilesState[i] = 1;
             player->bombInfo.reimuABombProjectilesRelated[i] = 4.0f;
             player->bombInfo.bombRegionPositions[i] = player->positionCenter;
+            player->bombInfo.prevBombRegionPositions[i] = player->bombInfo.bombRegionPositions[i];
 
             angle.x = g_Rng.GetRandomF32ZeroToOne() * ZUN_2PI - ZUN_PI;
 
@@ -195,24 +201,46 @@ void BombData::BombReimuADraw(Player *player)
             continue;
         }
 
-        bombSprite->pos = player->bombInfo.bombRegionPositions[idx] + bombSprite->posOffset;
+        const ZunVec3 drawPosition = GetBombDrawPosition(player->bombInfo, idx);
+
+        ZunVec3 savedPos = bombSprite->pos;
+        ZunVec3 savedPrevPos = bombSprite->prevPos;
+        bombSprite->pos = drawPosition + bombSprite->posOffset;
         player->SetToTopLeftPos(bombSprite);
+        bombSprite->prevPos = bombSprite->pos;
         g_AnmManager->DrawNoRotation(bombSprite);
+        bombSprite->pos = savedPos;
+        bombSprite->prevPos = savedPrevPos;
         bombSprite++;
 
-        bombSprite->pos = player->bombInfo.bombRegionPositions[idx] + bombSprite->posOffset;
+        savedPos = bombSprite->pos;
+        savedPrevPos = bombSprite->prevPos;
+        bombSprite->pos = drawPosition + bombSprite->posOffset;
         player->SetToTopLeftPos(bombSprite);
+        bombSprite->prevPos = bombSprite->pos;
         g_AnmManager->DrawNoRotation(bombSprite);
+        bombSprite->pos = savedPos;
+        bombSprite->prevPos = savedPrevPos;
         bombSprite++;
 
-        bombSprite->pos = player->bombInfo.bombRegionPositions[idx] + bombSprite->posOffset;
+        savedPos = bombSprite->pos;
+        savedPrevPos = bombSprite->prevPos;
+        bombSprite->pos = drawPosition + bombSprite->posOffset;
         player->SetToTopLeftPos(bombSprite);
+        bombSprite->prevPos = bombSprite->pos;
         g_AnmManager->DrawNoRotation(bombSprite);
+        bombSprite->pos = savedPos;
+        bombSprite->prevPos = savedPrevPos;
         bombSprite++;
 
-        bombSprite->pos = player->bombInfo.bombRegionPositions[idx] + bombSprite->posOffset;
+        savedPos = bombSprite->pos;
+        savedPrevPos = bombSprite->prevPos;
+        bombSprite->pos = drawPosition + bombSprite->posOffset;
         player->SetToTopLeftPos(bombSprite);
+        bombSprite->prevPos = bombSprite->pos;
         g_AnmManager->DrawNoRotation(bombSprite);
+        bombSprite->pos = savedPos;
+        bombSprite->prevPos = savedPrevPos;
         bombSprite++;
     }
     return;
@@ -286,6 +314,10 @@ void BombData::BombReimuBCalc(Player *player)
         player->bombInfo.bombRegionPositions[3].x = 192.0f;
         player->bombInfo.bombRegionPositions[3].y = player->positionCenter.y;
         player->bombInfo.bombRegionPositions[3].z = 0.405f;
+        for (i = 0; i < 4; ++i)
+        {
+            player->bombInfo.prevBombRegionPositions[i] = player->bombInfo.bombRegionPositions[i];
+        }
         ScreenEffect::RegisterChain(SCREEN_EFFECT_SHAKE, 60, 2, 6, 0);
     }
     else
@@ -335,11 +367,16 @@ void BombData::BombReimuBDraw(Player *player)
     bombSprite = player->bombInfo.sprites[0];
     for (i = 0; i < 4; i++, bombSprite++)
     {
-        bombSprite->pos = player->bombInfo.bombRegionPositions[i] + bombSprite->posOffset;
+        const ZunVec3 savedPos = bombSprite->pos;
+        const ZunVec3 savedPrevPos = bombSprite->prevPos;
+        bombSprite->pos = GetBombDrawPosition(player->bombInfo, i) + bombSprite->posOffset;
         bombSprite->pos.x += g_GameManager.arcadeRegionTopLeftPos.x;
         bombSprite->pos.y += g_GameManager.arcadeRegionTopLeftPos.y;
         bombSprite->pos.z = 0.0f;
+        bombSprite->prevPos = bombSprite->pos;
         g_AnmManager->Draw(bombSprite);
+        bombSprite->pos = savedPos;
+        bombSprite->prevPos = savedPrevPos;
     }
 }
 
@@ -370,6 +407,7 @@ void BombData::BombMarisaACalc(Player *player)
         {
             g_AnmManager->ExecuteAnmIdx(starSprite, ANM_SCRIPT_PLAYER_MARISA_A_BLUE_STAR + i % 3);
             player->bombInfo.bombRegionPositions[i] = player->positionCenter;
+            player->bombInfo.prevBombRegionPositions[i] = player->bombInfo.bombRegionPositions[i];
 
             starAngle = i * ZUN_2PI / 8.0f;
 
@@ -419,13 +457,22 @@ void BombData::BombMarisaADraw(Player *player)
     bombSprite = &player->bombInfo.sprites[0][0];
     for (idx = 0; idx < ARRAY_SIZE_SIGNED(player->bombInfo.sprites); idx++)
     {
+        const ZunVec3 savedPos = bombSprite->pos;
+        const ZunVec3 savedPrevPos = bombSprite->prevPos;
+        const f32 savedScaleX = bombSprite->scaleX;
+        const f32 savedScaleY = bombSprite->scaleY;
+        const f32 savedPrevScaleX = bombSprite->prevScaleX;
+        const f32 savedPrevScaleY = bombSprite->prevScaleY;
 
-        bombSprite->pos = player->bombInfo.bombRegionPositions[idx];
+        bombSprite->pos = GetBombDrawPosition(player->bombInfo, idx);
         bombSprite->pos.x += g_GameManager.arcadeRegionTopLeftPos.x;
         bombSprite->pos.y += g_GameManager.arcadeRegionTopLeftPos.y;
         bombSprite->pos.z = 0.0f;
+        bombSprite->prevPos = bombSprite->pos;
         bombSprite->scaleX = 3.2f;
         bombSprite->scaleY = 3.2f;
+        bombSprite->prevScaleX = bombSprite->scaleX;
+        bombSprite->prevScaleY = bombSprite->scaleY;
         g_AnmManager->Draw(bombSprite);
 
         bombSprite->pos -= player->bombInfo.bombRegionVelocities[idx] * 6.0f;
@@ -434,6 +481,9 @@ void BombData::BombMarisaADraw(Player *player)
         bombSprite->pos.z = 0.0f;
         bombSprite->scaleX = 2.2f;
         bombSprite->scaleY = 2.2f;
+        bombSprite->prevPos = bombSprite->pos;
+        bombSprite->prevScaleX = bombSprite->scaleX;
+        bombSprite->prevScaleY = bombSprite->scaleY;
         g_AnmManager->Draw(bombSprite);
 
         bombSprite->pos -= player->bombInfo.bombRegionVelocities[idx] * 2.0f;
@@ -447,7 +497,17 @@ void BombData::BombMarisaADraw(Player *player)
         bombSprite->pos.z = 0.0f;
         bombSprite->scaleX = 1.0f;
         bombSprite->scaleY = 1.0f;
+        bombSprite->prevPos = bombSprite->pos;
+        bombSprite->prevScaleX = bombSprite->scaleX;
+        bombSprite->prevScaleY = bombSprite->scaleY;
         g_AnmManager->Draw(bombSprite);
+
+        bombSprite->pos = savedPos;
+        bombSprite->prevPos = savedPrevPos;
+        bombSprite->scaleX = savedScaleX;
+        bombSprite->scaleY = savedScaleY;
+        bombSprite->prevScaleX = savedPrevScaleX;
+        bombSprite->prevScaleY = savedPrevScaleY;
         bombSprite++;
     }
 }
@@ -477,6 +537,7 @@ void BombData::BombMarisaBCalc(Player *player)
         {
             g_AnmManager->ExecuteAnmIdx(bombSprite, ANM_SCRIPT_PLAYER_MARISA_B_MASTER_SPARK + i);
             player->bombInfo.bombRegionPositions[i] = player->positionCenter;
+            player->bombInfo.prevBombRegionPositions[i] = player->bombInfo.bombRegionPositions[i];
         }
         g_SoundPlayer.PlaySoundByIdx(SOUND_BOMB_MARISA_B);
         player->verticalMovementSpeedMultiplierDuringBomb = 0.3f;
@@ -526,8 +587,12 @@ void BombData::BombMarisaBDraw(Player *player)
     bombSprite = player->bombInfo.sprites[0];
     for (i = 0; i < 4; i++)
     {
+        const ZunVec3 savedPos = bombSprite->pos;
+        const ZunVec3 savedPrevPos = bombSprite->prevPos;
+        const ZunVec3 savedRotation = bombSprite->rotation;
+        const ZunVec3 savedPrevRotation = bombSprite->prevRotation;
         spriteAngle = (((ZUN_PI / 5) * i) / 3.0f - ZUN_PI) + ((2 * ZUN_PI) / 5);
-        bombSprite->pos = player->positionCenter;
+        bombSprite->pos = player->prevPositionCenter.Lerp(player->positionCenter, g_RenderAlpha);
         bombSprite->pos.x += (ZUN_COSF(spriteAngle) * bombSprite->sprite->heightPx * bombSprite->scaleY) / 2.0f;
         bombSprite->pos.y += (ZUN_SINF(spriteAngle) * bombSprite->sprite->heightPx * bombSprite->scaleY) / 2.0f;
         spriteAngle = (ZUN_PI / 2) - spriteAngle;
@@ -535,7 +600,13 @@ void BombData::BombMarisaBDraw(Player *player)
         bombSprite->pos.x += g_GameManager.arcadeRegionTopLeftPos.x;
         bombSprite->pos.y += g_GameManager.arcadeRegionTopLeftPos.y;
         bombSprite->pos.z = 0.0f;
+        bombSprite->prevPos = bombSprite->pos;
+        bombSprite->prevRotation = bombSprite->rotation;
         g_AnmManager->Draw(bombSprite);
+        bombSprite->pos = savedPos;
+        bombSprite->prevPos = savedPrevPos;
+        bombSprite->rotation = savedRotation;
+        bombSprite->prevRotation = savedPrevRotation;
         bombSprite++;
     }
 }

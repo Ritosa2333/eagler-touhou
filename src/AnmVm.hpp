@@ -116,6 +116,15 @@ struct AnmVm
         this->scaleInterpEndTime = 0;
         this->alphaInterpEndTime = 0;
         this->color = COLOR_WHITE;
+        // Match TH07 reallyportable's invariant: every property that can be
+        // interpolated must start with identical previous/current endpoints.
+        // Position is owned by the caller and is synchronized after scripts
+        // are assigned, so do not manufacture a position here.
+        this->prevRotation = this->rotation;
+        this->prevScaleY = this->scaleY;
+        this->prevScaleX = this->scaleX;
+        this->prevUvScrollPos = this->uvScrollPos;
+        this->prevColor = this->color;
         this->matrix.Identity();
         std::memset(&this->flags, 0, sizeof(this->flags));
         this->flags.isVisible = 1;

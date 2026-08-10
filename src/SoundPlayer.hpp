@@ -94,7 +94,7 @@ struct SoundPlayer
     ZunResult LoadPos(const char *path);
 
     void BackgroundMusicPlayerThread();
-    void MixAudio(u32 samples);
+    bool MixAudio(u32 samples);
 
     SoundData soundBuffers[128];
     std::mutex soundBufMutex;

@@ -22,7 +22,12 @@
 #include "utils.hpp"
 
 #include <SDL3/SDL.h>
+#include <algorithm>
+#include <cctype>
 #include <cstring>
+#include <filesystem>
+#include <string>
+#include <vector>
 
 static const char *const g_ShortCharacterList[4] = {"ReimuA ", "ReimuB ", "MarisaA", "MarisaB"};
 static const char *const g_DifficultyList[5] = {"Easy   ", "Normal ", "Hard   ", "Lunatic", "Extra  "};
@@ -54,6 +59,20 @@ ChainCallbackResult MainMenu::OnUpdate(MainMenu *menu)
     for (AnmVm &vm : menu->vm)
     {
         vm.UpdatePrev();
+    }
+    if (menu->gameState != STATE_STARTUP)
+    {
+        if (menu->framesActive != 0)
+        {
+            if (menu->numFramesSinceActive < (i32)menu->framesActive)
+            {
+                menu->numFramesSinceActive++;
+            }
+        }
+        else if (menu->numFramesSinceActive != 0)
+        {
+            menu->numFramesSinceActive--;
+        }
     }
     f32 local_48;
     i32 local_4c;
@@ -878,7 +897,18 @@ ChainCallbackResult MainMenu::OnUpdate(MainMenu *menu)
         }
         if (hasLoadedSprite)
         {
+            const bool wasVisible = menu->vm[i].flags.isVisible != 0;
             g_AnmManager->ExecuteScript(&menu->vm[i]);
+            if (!wasVisible && menu->vm[i].flags.isVisible)
+            {
+                // Becoming visible establishes a new animation origin. The
+                // original 60 Hz renderer never displayed an intermediate
+                // frame between the zeroed VM and this script-defined start
+                // position; high-refresh interpolation must not invent one.
+                // Subsequent ANM position animation still interpolates from
+                // this real origin normally.
+                menu->vm[i].prevPos = menu->vm[i].pos;
+            }
         }
     }
     return CHAIN_CALLBACK_RESULT_CONTINUE;
@@ -1255,11 +1285,9 @@ i32 MainMenu::ReplayHandling()
 {
     AnmVm *anmVm;
     i32 cur;
-    //    HANDLE replayFileHandle;
     u32 replayFileIdx;
     ReplayHeader *replayData;
     char replayFilePath[32];
-    //    WIN32_FIND_DATA replayFileInfo;
     u8 padding[0x20]; // idk
 
     switch (this->gameState)
@@ -1293,32 +1321,59 @@ i32 MainMenu::ReplayHandling()
                         replayFileIdx++;
                     }
                 }
-                //                _mkdir("./replay");
-                //                _chdir("./replay");
-                //                replayFileHandle = FindFirstFileA("th6_ud????.rpy", &replayFileInfo);
-                //                if (replayFileHandle != INVALID_HANDLE_VALUE)
-                //                {
-                //                    for (cur = 0; cur < 0x2d; cur++)
-                //                    {
-                //                        replayData = (ReplayData *)FileSystem::OpenPath(replayFilePath, 1);
-                //                        if (replayData == NULL)
-                //                        {
-                //                            continue;
-                //                        }
-                //                        if (!ReplayManager::ValidateReplayData(replayData, g_LastFileSize))
-                //                        {
-                //                            this->replayFileData[replayFileIdx] = *replayData;
-                //                            sprintf(this->replayFilePaths[replayFileIdx], "./replay/%s",
-                //                            replayFileInfo.cFileName); sprintf(this->replayFileName[replayFileIdx],
-                //                            "User "); replayFileIdx++;
-                //                        }
-                //                        free(replayData);
-                //                        if (!FindNextFileA(replayFileHandle, &replayFileInfo))
-                //                            break;
-                //                    }
-                //                }
-                //                FindClose(replayFileHandle);
-                //                _chdir("../");
+                // Restore the original game's th6_ud????.rpy user-replay
+                // enumeration without Win32-only FindFirstFile/chdir state.
+                // Sorting makes the menu order deterministic on every host.
+                std::vector<std::string> userReplayNames;
+                std::error_code replayDirError;
+                std::filesystem::create_directories("./replay", replayDirError);
+                replayDirError.clear();
+                for (const auto &entry : std::filesystem::directory_iterator("./replay", replayDirError))
+                {
+                    if (replayDirError || !entry.is_regular_file())
+                    {
+                        continue;
+                    }
+
+                    std::string name = entry.path().filename().string();
+                    std::string lowerName = name;
+                    std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(),
+                                   [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+                    if (lowerName.size() == 14 && lowerName.starts_with("th6_ud") &&
+                        lowerName.ends_with(".rpy"))
+                    {
+                        userReplayNames.push_back(std::move(name));
+                    }
+                }
+                std::sort(userReplayNames.begin(), userReplayNames.end());
+
+                constexpr u32 maxReplayFiles = ARRAY_SIZE_SIGNED(this->replayFileData);
+                for (const std::string &name : userReplayNames)
+                {
+                    if (replayFileIdx >= maxReplayFiles)
+                    {
+                        break;
+                    }
+                    std::snprintf(replayFilePath, sizeof(replayFilePath), "./replay/%s", name.c_str());
+                    replayData = (ReplayHeader *)FileSystem::OpenPath(replayFilePath, 1);
+                    if (replayData == NULL)
+                    {
+                        continue;
+                    }
+                    if (ReplayManager::ValidateReplayData(replayData, g_LastFileSize) == ZUN_SUCCESS)
+                    {
+                        this->replayFileData[replayFileIdx].header = replayData;
+                        std::snprintf(this->replayFilePaths[replayFileIdx],
+                                      sizeof(this->replayFilePaths[replayFileIdx]), "%s", replayFilePath);
+                        std::snprintf(this->replayFileName[replayFileIdx],
+                                      sizeof(this->replayFileName[replayFileIdx]), "User ");
+                        replayFileIdx++;
+                    }
+                    else
+                    {
+                        std::free(replayData);
+                    }
+                }
                 this->replayFilesNum = replayFileIdx;
                 this->minimumOpacity = 0;
                 this->framesInactive = this->framesActive;
@@ -1346,7 +1401,7 @@ i32 MainMenu::ReplayHandling()
         {
             break;
         }
-        if (this->replayFilesNum != NULL)
+        if (this->replayFilesNum != 0)
         {
             MoveCursor(this, this->replayFilesNum);
             this->chosenReplay = this->cursor;
@@ -1952,13 +2007,6 @@ ChainCallbackResult MainMenu::OnDraw(MainMenu *menu)
     g_AnmManager->CopySurfaceToBackBuffer(0, 0, 0, 0, 0);
     if (menu->framesActive != 0)
     {
-        // This is confusing. framesActive/framesInactive appear to be unsigned,
-        // due to how they get loaded. But this comparison is signed somehow.
-        // Why?
-        if (menu->numFramesSinceActive < (i32)menu->framesActive)
-        {
-            menu->numFramesSinceActive += 1;
-        }
         targetOpacity = COLOR_ALPHA(menu->menuTextColor) - COLOR_ALPHA(menu->minimumOpacity);
         ScreenEffect::DrawSquare(
             &window,
@@ -1967,7 +2015,6 @@ ChainCallbackResult MainMenu::OnDraw(MainMenu *menu)
     }
     else if (menu->numFramesSinceActive != 0)
     {
-        menu->numFramesSinceActive -= 1;
         targetOpacity = COLOR_ALPHA(menu->menuTextColor) - COLOR_ALPHA(menu->minimumOpacity);
         ScreenEffect::DrawSquare(
             &window,
@@ -1993,6 +2040,7 @@ ChainCallbackResult MainMenu::OnDraw(MainMenu *menu)
             std::memcpy(&posBackup, &curVm->pos, sizeof(ZunVec3));
             offset = &curVm->posOffset;
             pos = &curVm->pos;
+            *pos = curVm->prevPos.Lerp(*pos, g_RenderAlpha);
             pos->x += offset->x;
             pos->y += offset->y;
             pos->z += offset->z;

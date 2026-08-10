@@ -15,6 +15,7 @@
 #include "i18n.hpp"
 
 static RenderResult renderResult = RENDER_RESULT_KEEP_RUNNING;
+static bool g_ToggleFullscreenRequested = false;
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
 {
@@ -36,11 +37,15 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
     }
 
     g_AnmManager = new AnmManager();
+    // Resource initialization can render temporary glyph/ANM data. Establish
+    // the streaming VBO for that work before any DrawPrimitiveUP call.
+    g_GfxBackend->BeginFrame();
     if (GameWindow::InitD3dRendering() != ZUN_SUCCESS)
     {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "th06: renderer resource initialization failed");
         return SDL_APP_FAILURE;
     }
+    g_GfxBackend->EndFrame();
 
     g_SoundPlayer.InitializeDSound();
     Controller::GetJoystickCaps();
@@ -64,6 +69,14 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
 SDL_AppResult SDL_AppIterate(void *appstate)
 {
     (void)appstate;
+    if (g_ToggleFullscreenRequested)
+    {
+        // Toggling inside SDL_AppEvent re-enters SDL's message handling and
+        // the window can be reset to its windowed geometry shortly afterwards;
+        // perform it here, from the regular frame loop instead.
+        g_ToggleFullscreenRequested = false;
+        GameWindow::ToggleFullscreen();
+    }
     renderResult = g_GameWindow.Render();
     return renderResult == RENDER_RESULT_KEEP_RUNNING ? SDL_APP_CONTINUE : SDL_APP_SUCCESS;
 }
@@ -89,6 +102,34 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
         break;
     case SDL_EVENT_QUIT:
         return SDL_APP_SUCCESS;
+    case SDL_EVENT_KEY_DOWN:
+        // Toggle windowed <-> borderless fullscreen with Alt+Enter. Deferred to
+        // SDL_AppIterate: see g_ToggleFullscreenRequested above.
+        if (event->key.repeat == 0 &&
+            (event->key.scancode == SDL_SCANCODE_RETURN || event->key.scancode == SDL_SCANCODE_KP_ENTER) &&
+            (event->key.mod & (SDL_KMOD_LALT | SDL_KMOD_RALT)) != 0)
+        {
+            g_ToggleFullscreenRequested = true;
+            // Don't let the Enter used for the toggle trigger in-game actions.
+            Controller::SetEnterSuppressed(true);
+        }
+#ifdef TH_DEV_TOOLS
+        else if (event->key.repeat == 0 && event->key.scancode == SDL_SCANCODE_F5)
+        {
+            // Developer fast-forward: cycle 1x -> 4x -> 8x -> 1x.
+            g_DevSpeedMultiplier = (g_DevSpeedMultiplier == 1.0f) ? 4.0f
+                                  : (g_DevSpeedMultiplier == 4.0f) ? 8.0f
+                                                                   : 1.0f;
+            SDL_Log("th06 dev: logic speed = %gx", g_DevSpeedMultiplier);
+        }
+#endif
+        break;
+    case SDL_EVENT_KEY_UP:
+        if (event->key.scancode == SDL_SCANCODE_RETURN || event->key.scancode == SDL_SCANCODE_KP_ENTER)
+        {
+            Controller::SetEnterSuppressed(false);
+        }
+        break;
     default:
         break;
     }

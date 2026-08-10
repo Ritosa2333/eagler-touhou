@@ -42,7 +42,10 @@ const char *vertexShaderSource =
     "out float v_FogFragCoord;\n"
     "\n"
     "void main() {\n"
-    "    v_Color = a_Color.bgra;\n"
+    // TH06's ColorData is already laid out as RGBA. TH07 stores a packed
+    // D3D-style BGRA ZunColor in the vertex and therefore needs .bgra here;
+    // applying that swizzle to TH06 swaps red and blue a second time.
+    "    v_Color = a_Color;\n"
     "    if (u_ScreenSpace) {\n"
     "        float x = (a_Position.x - u_Viewport.x) / u_Viewport.z * 2.0 - 1.0;\n"
     "        float y = 1.0 - (a_Position.y - u_Viewport.y) / u_Viewport.w * 2.0;\n"
@@ -158,7 +161,15 @@ GfxInterface *GlesGraphics::Init()
     }
     gfx->ctx = ctx;
 
-    SDL_GL_MakeCurrent(g_GameWindow.window, ctx);
+    if (!SDL_GL_MakeCurrent(g_GameWindow.window, ctx))
+    {
+        utils::DebugPrint("gles renderer context bind failed: %s\n", SDL_GetError());
+        delete gfx;
+        return nullptr;
+    }
+
+    SDL_Log("GLES renderer: %s; GLSL: %s", glGetString(GL_VERSION),
+            glGetString(GL_SHADING_LANGUAGE_VERSION));
 
     glGenFramebuffers(1, &gfx->fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, gfx->fbo);
@@ -199,7 +210,8 @@ GfxInterface *GlesGraphics::Init()
                           (void *)offsetof(RenderVertexInfo, textureUV));
     glBindVertexArray(0);
 
-    if (!SDL_GL_SetSwapInterval(-1) && !SDL_GL_SetSwapInterval(1))
+    g_PresentationVsyncEnabled = SDL_GL_SetSwapInterval(-1) || SDL_GL_SetSwapInterval(1);
+    if (!g_PresentationVsyncEnabled)
     {
         // technically this isnt fatal we just go into 60 fps later on in gamewindow::render
         utils::DebugPrint("SDL_GL_SetSwapInterval failed: %s\n", SDL_GetError());
@@ -260,6 +272,12 @@ GfxInterface *GlesGraphics::Init()
     glUseProgram(gfx->shaderProgram);
     glUniform1i(gfx->u_Texture, 0);
 
+    // SDL surfaces are tightly packed by their pitch, and TH06 also uploads
+    // RGB24 data. The OpenGL default alignment of four bytes corrupts rows
+    // whose byte width is not divisible by four.
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+
     glUseProgram(gfx->blitProgram);
     glUniform1i(gfx->u_BlitTexture, 0);
 
@@ -318,11 +336,6 @@ GfxInterface *GlesGraphics::Init()
     }
 
     utils::DebugPrint("using gles rendering.\n");
-
-    // TH06 presents from several legacy call sites instead of owning explicit
-    // renderer frame boundaries like TH07. Prime the streaming VBO here; each
-    // SwapBuffers call starts the following frame below.
-    gfx->BeginFrame();
 
     return gfx;
 }
@@ -617,12 +630,17 @@ GfxTextureHandle GlesGraphics::CreateTexture()
 void GlesGraphics::BindTexture(GfxTextureHandle handle)
 {
     glBindTexture(GL_TEXTURE_2D, handle.id);
+    boundTexture = handle.id;
 }
 
 void GlesGraphics::DeleteTexture(GfxTextureHandle handle)
 {
     GLuint tex = handle.id;
     glDeleteTextures(1, &tex);
+    if (boundTexture == tex)
+    {
+        boundTexture = 0;
+    }
 }
 
 void GlesGraphics::SetTextureImage(u32 width, u32 height, PixelFormat fmt, PixelDataType type,
@@ -924,8 +942,6 @@ void GlesGraphics::DrawPrimitiveUP(PrimitiveType type, i32 primitiveCount, const
 
 void GlesGraphics::SwapBuffers()
 {
-    EndFrame();
-
     i32 drawableWidth, drawableHeight;
     SDL_GetWindowSizeInPixels(g_GameWindow.window, &drawableWidth, &drawableHeight);
 
@@ -983,6 +999,7 @@ void GlesGraphics::SwapBuffers()
     glUseProgram(this->blitProgram);
 
     glActiveTexture(GL_TEXTURE0);
+    const GLuint gameplayTexture = boundTexture;
     glBindTexture(GL_TEXTURE_2D, this->fboColor);
 
     glBindVertexArray(this->blitVao);
@@ -1021,8 +1038,8 @@ void GlesGraphics::SwapBuffers()
                  COLOR_B(clearColor) / 255.0f, COLOR_A(clearColor) / 255.0f);
 
     glUseProgram(this->shaderProgram);
+    glBindTexture(GL_TEXTURE_2D, gameplayTexture);
     stateCache.Invalidate();
-    BeginFrame();
 }
 
 void GlesGraphics::ToggleVertexAttribute(u8 attr, bool enable)

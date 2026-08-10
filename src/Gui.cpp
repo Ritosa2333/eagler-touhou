@@ -10,6 +10,7 @@
 #include "ChainPriorities.hpp"
 #include "FileSystem.hpp"
 #include "GameManager.hpp"
+#include "GameWindow.hpp"
 #include "Player.hpp"
 #include "SoundPlayer.hpp"
 #include "Stage.hpp"
@@ -71,6 +72,43 @@ void Gui::ShowSpellcardBonus(u32 spellcardScore) const
 ChainCallbackResult Gui::OnUpdate(Gui *gui)
 {
     gui->impl->UpdatePrev();
+
+    // HUD element visibility timers used to be refreshed and decayed inside
+    // DrawGameScene, gated by g_SuppressAnmAdvance. They are time-based state
+    // and must advance with the fixed 60 Hz update chain, not the presentation
+    // rate, so they are handled here instead. The refresh condition mirrors
+    // the one that gates the HUD border rendering.
+    if (((g_Supervisor.cfg.opts >> GCOS_DISPLAY_MINIMUM_GRAPHICS) & 1) == 0 &&
+        (gui->impl->vms[6].currentInstruction != NULL || g_Supervisor.unk198 != 0 ||
+         g_Supervisor.RedrawWholeFrame()))
+    {
+        gui->flags.flag0 = 2;
+        gui->flags.flag1 = 2;
+        gui->flags.flag3 = 2;
+        gui->flags.flag4 = 2;
+        gui->flags.flag2 = 2;
+    }
+    if (gui->flags.flag0)
+    {
+        gui->flags.flag0--;
+    }
+    if (gui->flags.flag2)
+    {
+        gui->flags.flag2--;
+    }
+    if (gui->flags.flag1)
+    {
+        gui->flags.flag1--;
+    }
+    if (gui->flags.flag3)
+    {
+        gui->flags.flag3--;
+    }
+    if (gui->flags.flag4)
+    {
+        gui->flags.flag4--;
+    }
+
     if (g_GameManager.isTimeStopped)
     {
         return CHAIN_CALLBACK_RESULT_CONTINUE;
@@ -773,8 +811,8 @@ ZunResult GuiImpl::DrawDialogue() const
     vertices[0].diffuse = vertices[1].diffuse = ColorData(0xd0000000);
     vertices[2].diffuse = vertices[3].diffuse = ColorData(0x90000000);
     //    vertices[0].position.w = vertices[1].position.w = vertices[2].position.w = vertices[3].position.w = 1.0f;
-    g_AnmManager->DrawNoRotation(&this->msg.portraits[0]);
-    g_AnmManager->DrawNoRotation(&this->msg.portraits[1]);
+    g_AnmManager->DrawInterpNoRotation(&this->msg.portraits[0]);
+    g_AnmManager->DrawInterpNoRotation(&this->msg.portraits[1]);
 
     g_AnmManager->SetColorOp(COMPONENT_ALPHA, COLOR_OP_REPLACE);
     g_AnmManager->SetColorOp(COMPONENT_RGB, COLOR_OP_REPLACE);
@@ -800,10 +838,10 @@ ZunResult GuiImpl::DrawDialogue() const
     g_AnmManager->SetColorOp(COMPONENT_ALPHA, COLOR_OP_MODULATE);
     g_AnmManager->SetColorOp(COMPONENT_RGB, COLOR_OP_MODULATE);
 
-    g_AnmManager->DrawNoRotation(&this->msg.dialogueLines[0]);
-    g_AnmManager->DrawNoRotation(&this->msg.dialogueLines[1]);
-    g_AnmManager->DrawNoRotation(&this->msg.introLines[0]);
-    g_AnmManager->DrawNoRotation(&this->msg.introLines[1]);
+    g_AnmManager->DrawInterpNoRotation(&this->msg.dialogueLines[0]);
+    g_AnmManager->DrawInterpNoRotation(&this->msg.dialogueLines[1]);
+    g_AnmManager->DrawInterpNoRotation(&this->msg.introLines[0]);
+    g_AnmManager->DrawInterpNoRotation(&this->msg.introLines[1]);
     return ZUN_SUCCESS;
 }
 
@@ -1018,14 +1056,14 @@ void Gui::DrawGameScene()
     if (this->impl->msg.currentMsgIdx < 0 && (this->bossPresent + this->impl->bossHealthBarState) > 0)
     {
         vm = &this->impl->vms[19];
-        g_AnmManager->DrawNoRotation(vm);
+        g_AnmManager->DrawInterpNoRotation(vm);
         vm = &this->impl->vms[21];
         vm->flags.anchor = AnmVmAnchor_TopLeft;
         vm->scaleX = (this->bossHealthBar2 * 288.0f) / 14.0f;
         vm->pos.x = 96.0f;
         vm->pos.y = 24.0f;
         vm->pos.z = 0.0;
-        g_AnmManager->DrawNoRotation(vm);
+        g_AnmManager->DrawInterpNoRotation(vm);
         ZunVec3 textPos(80.0f, 16.0f, 0.0);
         g_AsciiManager.SetColor(this->bossUIOpacity << 24 | 0xffff80);
         g_AsciiManager.AddFormatText(&textPos, "%d", this->eclSetLives);
@@ -1097,24 +1135,19 @@ void Gui::DrawGameScene()
             vm->pos = ZunVec3(xPos, 464.0f, 0.49f);
             g_AnmManager->DrawNoRotation(vm);
         }
-        g_AnmManager->Draw(&this->impl->vms[5]);
-        g_AnmManager->Draw(&this->impl->vms[0]);
-        g_AnmManager->Draw(&this->impl->vms[1]);
-        g_AnmManager->Draw(&this->impl->vms[3]);
-        g_AnmManager->Draw(&this->impl->vms[4]);
-        g_AnmManager->Draw(&this->impl->vms[2]);
-        g_AnmManager->DrawNoRotation(&this->impl->vms[9]);
-        g_AnmManager->DrawNoRotation(&this->impl->vms[10]);
-        g_AnmManager->DrawNoRotation(&this->impl->vms[11]);
-        g_AnmManager->DrawNoRotation(&this->impl->vms[12]);
-        g_AnmManager->DrawNoRotation(&this->impl->vms[13]);
-        g_AnmManager->DrawNoRotation(&this->impl->vms[14]);
-        g_AnmManager->DrawNoRotation(&this->impl->vms[15]);
-        this->flags.flag0 = 2;
-        this->flags.flag1 = 2;
-        this->flags.flag3 = 2;
-        this->flags.flag4 = 2;
-        this->flags.flag2 = 2;
+        g_AnmManager->DrawInterp(&this->impl->vms[5]);
+        g_AnmManager->DrawInterp(&this->impl->vms[0]);
+        g_AnmManager->DrawInterp(&this->impl->vms[1]);
+        g_AnmManager->DrawInterp(&this->impl->vms[3]);
+        g_AnmManager->DrawInterp(&this->impl->vms[4]);
+        g_AnmManager->DrawInterp(&this->impl->vms[2]);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->vms[9]);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->vms[10]);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->vms[11]);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->vms[12]);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->vms[13]);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->vms[14]);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->vms[15]);
     }
     if ((g_Supervisor.cfg.opts >> GCOS_DISPLAY_MINIMUM_GRAPHICS & 1) == 0)
     {
@@ -1255,26 +1288,6 @@ void Gui::DrawGameScene()
             g_AsciiManager.AddFormatText(&elemPos, "%d", g_GameManager.pointItemsCollectedInStage);
         }
     }
-    if (this->flags.flag0)
-    {
-        this->flags.flag0--;
-    }
-    if (this->flags.flag2)
-    {
-        this->flags.flag2--;
-    }
-    if (this->flags.flag1)
-    {
-        this->flags.flag1--;
-    }
-    if (this->flags.flag3)
-    {
-        this->flags.flag3--;
-    }
-    if (this->flags.flag4)
-    {
-        this->flags.flag4--;
-    }
     return;
 }
 
@@ -1332,11 +1345,11 @@ void Gui::DrawStageElements() const
     }
     if (this->impl->playerSpellcardPortrait.flags.isVisible)
     {
-        g_AnmManager->DrawNoRotation(&this->impl->playerSpellcardPortrait);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->playerSpellcardPortrait);
     }
     if (this->impl->enemySpellcardPortrait.flags.isVisible)
     {
-        g_AnmManager->DrawNoRotation(&this->impl->enemySpellcardPortrait);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->enemySpellcardPortrait);
     }
 
     if (this->impl->bombSpellcardName.flags.isVisible)
@@ -1345,8 +1358,8 @@ void Gui::DrawStageElements() const
         this->impl->bombSpellcardBackground.pos.x +=
             this->bombSpellcardBarLength * 16.0f / 15.0f / 2.0f + -128.0f - 16.0f;
         this->impl->bombSpellcardBackground.scaleX = this->bombSpellcardBarLength / 14.0f;
-        g_AnmManager->DrawNoRotation(&this->impl->bombSpellcardBackground);
-        g_AnmManager->DrawNoRotation(&this->impl->bombSpellcardName);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->bombSpellcardBackground);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->bombSpellcardName);
     }
     if (this->impl->enemySpellcardName.flags.isVisible)
     {
@@ -1354,8 +1367,8 @@ void Gui::DrawStageElements() const
         this->impl->enemySpellcardBackground.pos = this->impl->enemySpellcardName.pos;
         this->impl->enemySpellcardBackground.pos.x += 128.0f - this->blueSpellcardBarLength * 16.0f / 15.0f / 2.0f;
         this->impl->enemySpellcardBackground.scaleX = this->blueSpellcardBarLength / 14.0f;
-        g_AnmManager->DrawNoRotation(&this->impl->enemySpellcardBackground);
-        g_AnmManager->DrawNoRotation(&this->impl->enemySpellcardName);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->enemySpellcardBackground);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->enemySpellcardName);
     }
     if (this->impl->loadingScreenSprite.activeSpriteIndex >= 0)
     {
@@ -1368,7 +1381,7 @@ void Gui::DrawStageElements() const
         g_AnmManager->SetProjectionMode(PROJECTION_MODE_PERSPECTIVE);
         g_Supervisor.viewport.Set();
         //        g_Supervisor.d3dDevice->SetViewport(&g_Supervisor.viewport);
-        g_AnmManager->DrawNoRotation(&this->impl->loadingScreenSprite);
+        g_AnmManager->DrawInterpNoRotation(&this->impl->loadingScreenSprite);
     }
     g_AnmManager->FlushVertexBuffer();
 }

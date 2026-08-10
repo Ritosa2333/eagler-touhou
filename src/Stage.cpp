@@ -5,6 +5,7 @@
 #include "ChainPriorities.hpp"
 #include "FileSystem.hpp"
 #include "GameManager.hpp"
+#include "GameWindow.hpp"
 #include "Gui.hpp"
 #include "ScreenEffect.hpp"
 #include "Supervisor.hpp"
@@ -28,8 +29,30 @@ static const StageFile g_StageFiles[8] = {
 };
 Stage g_Stage;
 
+static f32 LerpFloat(f32 from, f32 to, f32 amount)
+{
+    return from + (to - from) * amount;
+}
+
+static ZunColor LerpColor(ZunColor from, ZunColor to, f32 amount)
+{
+    ZunColor result = 0;
+    for (i32 component = 0; component < 4; component++)
+    {
+        const f32 value = LerpFloat((f32)COLOR_GET_COMPONENT(from, component),
+                                   (f32)COLOR_GET_COMPONENT(to, component), amount);
+        COLOR_SET_COMPONENT(result, component, (u8)value);
+    }
+    return result;
+}
+
 Stage::Stage()
 {
+}
+
+ZunVec3 Stage::GetDrawCameraFacingDir() const
+{
+    return this->prevCameraFacingDir.Lerp(g_GameManager.stageCameraFacingDir, g_RenderAlpha);
 }
 
 #define StdVec3Arg (*(ZunVec3Raw *)curInsn->args)
@@ -54,6 +77,7 @@ ChainCallbackResult Stage::OnUpdate(Stage *stage)
     stage->unk2.UpdatePrev();
     stage->prevPosition = stage->position;
     stage->prevCameraFacingDir = g_GameManager.stageCameraFacingDir;
+    stage->prevSkyFog = stage->skyFog;
 
     if (stage->stdData == NULL)
     {
@@ -258,7 +282,13 @@ ChainCallbackResult Stage::OnDrawHighPrio(Stage *stage)
     //    g_Supervisor.d3dDevice->SetRenderState(D3DRS_FOGSTART, *(u32 *)&stage->skyFog.nearPlane);
     //    g_Supervisor.d3dDevice->SetRenderState(D3DRS_FOGEND, *(u32 *)&stage->skyFog.farPlane);
 
-    g_AnmManager->SetFogRange(stage->skyFog.nearPlane, stage->skyFog.farPlane);
+    const StageCameraSky drawFog = {
+        LerpFloat(stage->prevSkyFog.nearPlane, stage->skyFog.nearPlane, g_RenderAlpha),
+        LerpFloat(stage->prevSkyFog.farPlane, stage->skyFog.farPlane, g_RenderAlpha),
+        LerpColor(stage->prevSkyFog.color, stage->skyFog.color, g_RenderAlpha),
+    };
+    g_AnmManager->SetFogColor(drawFog.color);
+    g_AnmManager->SetFogRange(drawFog.nearPlane, drawFog.farPlane);
 
     if (stage->spellcardState <= RUNNING)
     {
@@ -295,10 +325,6 @@ ChainCallbackResult Stage::OnDrawLowPrio(Stage *stage)
     }
     if (RUNNING <= stage->spellcardState)
     {
-        if (stage->ticksSinceSpellcardStarted <= g_Supervisor.cfg.frameskipConfig)
-        {
-            g_AnmManager->SetAndExecuteScriptIdx(&stage->spellcardBackground, ANM_SCRIPT_EFFECTS_SPELLCARD_BACKGROUND);
-        }
         g_AnmManager->Draw(&stage->spellcardBackground);
     }
     g_AnmManager->FlushVertexBuffer();
@@ -338,6 +364,7 @@ ZunResult Stage::AddedCallback(Stage *stage)
     stage->skyFog.color = COLOR_BLACK;
     stage->skyFog.nearPlane = 200.0;
     stage->skyFog.farPlane = 500.0;
+    stage->prevSkyFog = stage->skyFog;
     interpFinal.x = 0;
     interpFinal.y = 0;
     interpFinal.z = 1.0;
@@ -580,94 +607,31 @@ ZunResult Stage::RenderObjects(i32 zLevel)
             //
             // It will check them in the following order: C, G, E, A, D, H, F, B.
 
-            // It first starts by checking point C
-            worldMatrix.m[3][0] = obj->position.x + instance->position.x - drawPosition.x;
-            worldMatrix.m[3][1] = -(obj->position.y + instance->position.y - drawPosition.y);
-            worldMatrix.m[3][2] = obj->position.z + instance->position.z - drawPosition.z + obj->size.z;
-            projectVec3(quadPos, projectSrc, g_Supervisor.viewport, g_Supervisor.projectionMatrix,
-                        g_Supervisor.viewMatrix, worldMatrix);
-
-            if (quadPos.y >= g_Supervisor.viewport.y &&
-                quadPos.y <= g_Supervisor.viewport.y + g_Supervisor.viewport.height)
+            f32 projectedMinY = 1000000.0f;
+            f32 projectedMaxY = -1000000.0f;
+            for (i32 xCorner = 0; xCorner < 2; xCorner++)
             {
-                goto render;
+                for (i32 yCorner = 0; yCorner < 2; yCorner++)
+                {
+                    for (i32 zCorner = 0; zCorner < 2; zCorner++)
+                    {
+                        worldMatrix.m[3][0] = obj->position.x + instance->position.x - drawPosition.x +
+                                              obj->size.x * xCorner;
+                        worldMatrix.m[3][1] = -(obj->position.y + instance->position.y - drawPosition.y) -
+                                              obj->size.y * yCorner;
+                        worldMatrix.m[3][2] = obj->position.z + instance->position.z - drawPosition.z +
+                                              obj->size.z * zCorner;
+                        projectVec3(quadPos, projectSrc, g_Supervisor.viewport,
+                                    g_Supervisor.projectionMatrix, g_Supervisor.viewMatrix, worldMatrix);
+                        projectedMinY = ZUN_MIN(projectedMinY, quadPos.y);
+                        projectedMaxY = ZUN_MAX(projectedMaxY, quadPos.y);
+                    }
+                }
             }
-
-            // Then G:
-            worldMatrix.m[3][1] = worldMatrix.m[3][1] - obj->size.y;
-            projectVec3(quadPos, projectSrc, g_Supervisor.viewport, g_Supervisor.projectionMatrix,
-                        g_Supervisor.viewMatrix, worldMatrix);
-            if (quadPos.y >= g_Supervisor.viewport.y &&
-                quadPos.y <= g_Supervisor.viewport.y + g_Supervisor.viewport.height)
-            {
-                goto render;
-            }
-
-            // Then E
-            worldMatrix.m[3][2] = worldMatrix.m[3][2] - obj->size.z;
-            projectVec3(quadPos, projectSrc, g_Supervisor.viewport, g_Supervisor.projectionMatrix,
-                        g_Supervisor.viewMatrix, worldMatrix);
-            if (quadPos.y >= g_Supervisor.viewport.y &&
-                quadPos.y <= g_Supervisor.viewport.y + g_Supervisor.viewport.height)
-            {
-                goto render;
-            }
-
-            // Then A
-            worldMatrix.m[3][1] = worldMatrix.m[3][1] + obj->size.y;
-            projectVec3(quadPos, projectSrc, g_Supervisor.viewport, g_Supervisor.projectionMatrix,
-                        g_Supervisor.viewMatrix, worldMatrix);
-            if (quadPos.y >= g_Supervisor.viewport.y &&
-                quadPos.y <= g_Supervisor.viewport.y + g_Supervisor.viewport.height)
-            {
-                goto render;
-            }
-
-            // Then D
-            worldMatrix.m[3][0] = obj->position.x + instance->position.x - drawPosition.x + obj->size.x;
-            worldMatrix.m[3][1] = -(obj->position.y + instance->position.y - drawPosition.y);
-            worldMatrix.m[3][2] = obj->position.z + instance->position.z - drawPosition.z + obj->size.z;
-            projectVec3(quadPos, projectSrc, g_Supervisor.viewport, g_Supervisor.projectionMatrix,
-                        g_Supervisor.viewMatrix, worldMatrix);
-            if (quadPos.y >= g_Supervisor.viewport.y &&
-                quadPos.y <= g_Supervisor.viewport.y + g_Supervisor.viewport.height)
-            {
-                goto render;
-            }
-
-            // Then H
-            worldMatrix.m[3][1] = worldMatrix.m[3][1] - obj->size.y;
-            projectVec3(quadPos, projectSrc, g_Supervisor.viewport, g_Supervisor.projectionMatrix,
-                        g_Supervisor.viewMatrix, worldMatrix);
-            if (quadPos.y >= g_Supervisor.viewport.y &&
-                quadPos.y <= g_Supervisor.viewport.y + g_Supervisor.viewport.height)
-            {
-                goto render;
-            }
-
-            // Then F
-            worldMatrix.m[3][2] = worldMatrix.m[3][2] - (obj->size).z;
-            projectVec3(quadPos, projectSrc, g_Supervisor.viewport, g_Supervisor.projectionMatrix,
-                        g_Supervisor.viewMatrix, worldMatrix);
-            if (quadPos.y >= g_Supervisor.viewport.y &&
-                quadPos.y <= g_Supervisor.viewport.y + g_Supervisor.viewport.height)
-            {
-                goto render;
-            }
-
-            // And finally B
-            worldMatrix.m[3][1] = worldMatrix.m[3][1] + (obj->size).y;
-            projectVec3(quadPos, projectSrc, g_Supervisor.viewport, g_Supervisor.projectionMatrix,
-                        g_Supervisor.viewMatrix, worldMatrix);
-            if (quadPos.y >= g_Supervisor.viewport.y &&
-                quadPos.y <= g_Supervisor.viewport.y + g_Supervisor.viewport.height)
-            {
-                goto render;
-            }
-
-            // If none of the points were in the viewport, we can skip this object
-            // entirely.
-            goto skip;
+            // TH06's original corner-only visibility test drops large stage tiles
+            // that enclose the viewport. TH07 replaced it with camera-volume
+            // culling; until that camera model is fully ported, drawing the small
+            // stage instance list is both correct and deterministic.
 
         render:
             didDraw = true;
@@ -677,6 +641,13 @@ ZunResult Stage::RenderObjects(i32 zLevel)
                 switch (curQuad->type)
                 {
                 case 0:
+                {
+                    const ZunVec3 savedPos = curQuadVm->pos;
+                    const ZunVec3 savedPrevPos = curQuadVm->prevPos;
+                    const f32 savedScaleX = curQuadVm->scaleX;
+                    const f32 savedScaleY = curQuadVm->scaleY;
+                    const f32 savedPrevScaleX = curQuadVm->prevScaleX;
+                    const f32 savedPrevScaleY = curQuadVm->prevScaleY;
                     curQuadVm->pos.x = curQuad->position.x + instance->position.x - drawPosition.x;
                     curQuadVm->pos.y = curQuad->position.y + instance->position.y - drawPosition.y;
                     curQuadVm->pos.z = curQuad->position.z + instance->position.z - drawPosition.z;
@@ -709,13 +680,26 @@ ZunResult Stage::RenderObjects(i32 zLevel)
                         curQuadVm->scaleX = (quadScaledPos.x - quadPos.x) / quadWidth;
                         curQuadVm->scaleY = curQuadVm->scaleX;
                         curQuadVm->pos = quadPos;
+                        curQuadVm->prevPos = curQuadVm->pos;
+                        curQuadVm->prevScaleX = curQuadVm->scaleX;
+                        curQuadVm->prevScaleY = curQuadVm->scaleY;
                         g_AnmManager->DrawFacingCamera(curQuadVm);
                     }
                     else
                     {
+                        curQuadVm->prevPos = curQuadVm->pos;
+                        curQuadVm->prevScaleX = curQuadVm->scaleX;
+                        curQuadVm->prevScaleY = curQuadVm->scaleY;
                         g_AnmManager->Draw3(curQuadVm);
                     }
+                    curQuadVm->pos = savedPos;
+                    curQuadVm->prevPos = savedPrevPos;
+                    curQuadVm->scaleX = savedScaleX;
+                    curQuadVm->scaleY = savedScaleY;
+                    curQuadVm->prevScaleX = savedPrevScaleX;
+                    curQuadVm->prevScaleY = savedPrevScaleY;
                     break;
+                }
                 }
                 curQuad = (RawStageQuadBasic *)(((u8 *)&curQuad->type) + curQuad->byteSize);
             }

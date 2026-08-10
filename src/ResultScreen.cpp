@@ -23,7 +23,7 @@
 
 static const f32 g_DifficultyWeightsList[5] = {-30.0f, -10.0f, 20.0f, 30.0f, 30.0f};
 
-static const u32 g_DefaultMagic = 'DMYS';
+static constexpr u32 g_DefaultMagic = MakeMagic('S', 'Y', 'M', 'D');
 
 // EoSD assumes every character in this array is a single byte, which is a safe assumption in SJIS, but not
 //   in UTF-8, so we have to encode '･' with an escape sequence
@@ -1755,7 +1755,7 @@ ChainCallbackResult ResultScreen::OnDraw(ResultScreen *resultScreen)
     for (row = 0; row < ARRAY_SIZE_SIGNED(resultScreen->unk_40); row++, sprite++)
     {
         spritePos = sprite->pos;
-        sprite->pos += sprite->posOffset;
+        sprite->pos = sprite->prevPos.Lerp(sprite->pos, g_RenderAlpha) + sprite->posOffset;
         g_AnmManager->DrawNoRotation(sprite);
         sprite->pos = spritePos;
     }
@@ -1764,14 +1764,21 @@ ChainCallbackResult ResultScreen::OnDraw(ResultScreen *resultScreen)
     {
         if (resultScreen->lastResultScreenState != 8)
         {
-            spritePos = sprite->pos;
-            resultScreen->unk_28a0->pos = spritePos;
-            g_AnmManager->DrawNoRotation(&resultScreen->unk_28a0[0]);
+            // These text VMs are positioned relative to the moving result
+            // panel. Their positions are derived render state, so interpolating
+            // their independently stored prevPos makes a newly visible label
+            // fly in from the VM's old/default origin. Interpolate the owning
+            // panel once and derive every child from that authoritative result.
+            spritePos = sprite->prevPos.Lerp(sprite->pos, g_RenderAlpha) + sprite->posOffset;
+            AnmVm characterNameA = resultScreen->unk_28a0[0];
+            characterNameA.pos = spritePos;
+            g_AnmManager->DrawNoRotation(&characterNameA);
 
             spritePos.x += 320.0f;
 
-            resultScreen->unk_28a0[1].pos = spritePos;
-            g_AnmManager->DrawNoRotation(&resultScreen->unk_28a0[1]);
+            AnmVm characterNameB = resultScreen->unk_28a0[1];
+            characterNameB.pos = spritePos;
+            g_AnmManager->DrawNoRotation(&characterNameB);
 
             spritePos.x -= 320.0f;
             spritePos.y += 36.0f;
@@ -1879,8 +1886,7 @@ ChainCallbackResult ResultScreen::OnDraw(ResultScreen *resultScreen)
         }
         else
         {
-
-            spritePos = sprite->pos;
+            spritePos = sprite->prevPos.Lerp(sprite->pos, g_RenderAlpha) + sprite->posOffset;
             spritePos.y += 16.0f;
 
             for (row = 0; row < 10; row++)
@@ -1891,7 +1897,6 @@ ChainCallbackResult ResultScreen::OnDraw(ResultScreen *resultScreen)
                     break;
                 }
 
-                resultScreen->unk_28a0[row].pos = spritePos;
                 if (g_GameManager.catk[spellcardIdx].numAttempts == 0)
                 {
                     g_AsciiManager.color = 0x80c0c0ff;
@@ -1906,9 +1911,10 @@ ChainCallbackResult ResultScreen::OnDraw(ResultScreen *resultScreen)
                 }
                 g_AsciiManager.AddFormatText(&spritePos, "No.%.2d", spellcardIdx + 1);
 
-                resultScreen->unk_28a0[row].pos.x += 96.0f;
-
-                g_AnmManager->DrawNoRotation(&resultScreen->unk_28a0[row]);
+                AnmVm spellcardName = resultScreen->unk_28a0[row];
+                spellcardName.pos = spritePos;
+                spellcardName.pos.x += 96.0f;
+                g_AnmManager->DrawNoRotation(&spellcardName);
 
                 spritePos.x += 368.0f;
 
@@ -1986,7 +1992,7 @@ ChainCallbackResult ResultScreen::OnDraw(ResultScreen *resultScreen)
         sprite = &resultScreen->unk_40[15];
         for (row = 0; row < 6; row++, sprite++)
         {
-            g_AnmManager->DrawNoRotation(sprite);
+            g_AnmManager->DrawInterpNoRotation(sprite);
         }
         sprite = &resultScreen->unk_40[21];
         spritePos = sprite->pos;

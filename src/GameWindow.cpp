@@ -14,12 +14,29 @@
 #include <algorithm>
 #include <cstring>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 GameWindow g_GameWindow;
 GfxInterface *g_GfxBackend;
 i32 g_TickCountToEffectiveFramerate;
 f64 g_LastFrameTime;
 f32 g_RenderAlpha = 1.0f;
 bool g_SuppressAnmAdvance = false;
+bool g_PresentationVsyncEnabled = false;
+
+#ifdef TH_DEV_TOOLS
+f32 g_DevSpeedMultiplier = 1.0f;
+#endif
+
+#ifdef _WIN32
+static RECT g_WindowedRect;
+static int g_WindowedClientW;
+static int g_WindowedClientH;
+static LONG g_WindowedStyle;
+static bool g_InBorderlessFullscreen = false;
+#endif
 
 #define FRAME_TIME (1000. / 60.)
 
@@ -28,12 +45,36 @@ RenderResult GameWindow::Render()
     // Refresh-rate / frameskip only controlled how often the original game drew.
     // Its simulation still advanced at 60 Hz.
     constexpr f64 targetDt = 1.0 / 60.0;
+    const u64 renderStartNs = SDL_GetTicksNS();
     ZunViewport viewport;
 
     if (this->lastActiveAppValue == 0)
     {
         return RENDER_RESULT_KEEP_RUNNING;
     }
+
+#ifdef _WIN32
+    // Keep a persistent record of the windowed geometry while the window is
+    // windowed, so the fullscreen toggle never has to trust a single
+    // instantaneous GetWindowRect around a transition (which can return the
+    // window's initial unpositioned state instead of its real geometry).
+    {
+        HWND hwnd = (HWND)SDL_GetPointerProperty(SDL_GetWindowProperties(g_GameWindow.window),
+                                                 SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+        if (hwnd && !g_InBorderlessFullscreen)
+        {
+            RECT wr;
+            RECT clientRect;
+            if (GetWindowRect(hwnd, &wr) && GetClientRect(hwnd, &clientRect))
+            {
+                g_WindowedRect = wr;
+                g_WindowedClientW = clientRect.right - clientRect.left;
+                g_WindowedClientH = clientRect.bottom - clientRect.top;
+                g_WindowedStyle = GetWindowLong(hwnd, GWL_STYLE);
+            }
+        }
+    }
+#endif
 
     const u64 currentCounter = SDL_GetPerformanceCounter();
     if (this->lastPerformanceCounter == 0)
@@ -44,6 +85,16 @@ RenderResult GameWindow::Render()
                         static_cast<f64>(SDL_GetPerformanceFrequency());
     this->lastPerformanceCounter = currentCounter;
     this->accumulator += std::clamp(elapsed, 0.0, 0.1);
+
+#ifdef TH_DEV_TOOLS
+    // Developer fast-forward: run extra 60 Hz simulation passes proportional
+    // to the real elapsed time, like the original's frame-count manipulation,
+    // while keeping the presentation rate unchanged. F5 cycles the speed.
+    if (g_DevSpeedMultiplier > 1.0f)
+    {
+        this->accumulator += elapsed * (g_DevSpeedMultiplier - 1.0);
+    }
+#endif
 
     bool updated = false;
     while (this->accumulator >= targetDt)
@@ -70,6 +121,8 @@ RenderResult GameWindow::Render()
         g_RenderAlpha = 1.0f;
     }
 
+    g_GfxBackend->BeginFrame();
+
     if (g_Supervisor.RedrawWholeFrame())
     {
         viewport = {0, 0, GAME_WINDOW_WIDTH, GAME_WINDOW_HEIGHT, 0.0f, 1.0f};
@@ -80,17 +133,39 @@ RenderResult GameWindow::Render()
                                     (g_Stage.skyFog.color >> 24) / 255.0f);
         g_GfxBackend->Clear(CLEAR_COLOR_BUFFER | CLEAR_DEPTH_BUFFER);
         g_AnmManager->SetProjectionMode(PROJECTION_MODE_PERSPECTIVE);
-        g_Supervisor.viewport.Set();
+        // Keep the full-window viewport as the presentation-frame baseline.
+        // g_Supervisor.viewport is shared mutable state and, at this point,
+        // still contains whichever viewport the final draw callback selected
+        // on the previous presentation frame. Restoring it here made the first
+        // callback of a new frame depend on the previous frame's tail. Each
+        // scene callback establishes its own authoritative viewport below.
     }
 
     g_AnmManager->ClearVertexBuffer();
     g_AnmManager->flushesThisFrame = 0;
+    // The arcade region is layout/clip state, not simulation motion. Interpolating
+    // it makes render-only frames use different viewports: one frame draws into
+    // the 384x448 playfield while the next can expand across the whole 640x480
+    // window and cover the HUD. TH07 keeps its viewport authoritative and only
+    // interpolates world/object coordinates, so do the same here.
     g_SuppressAnmAdvance = !updated;
     g_Chain.RunDrawChain();
     g_SuppressAnmAdvance = false;
     g_AnmManager->SetCurrentTexture(0);
+    g_AnmManager->SetCurrentSprite(nullptr);
     g_AnmManager->FlushVertexBuffer();
+    g_GfxBackend->EndFrame();
     Present();
+
+    if (!g_PresentationVsyncEnabled)
+    {
+        constexpr u64 fallbackFrameNs = 1'000'000'000ull / 60ull;
+        const u64 elapsedNs = SDL_GetTicksNS() - renderStartNs;
+        if (elapsedNs < fallbackFrameNs)
+        {
+            SDL_DelayNS(fallbackFrameNs - elapsedNs);
+        }
+    }
 
     return RENDER_RESULT_KEEP_RUNNING;
 }
@@ -119,6 +194,10 @@ void GameWindow::Present()
 
 void GameWindow::CreateGameWindow()
 {
+    // On Windows SDL3 may otherwise create an OpenGL ES profile through WGL.
+    // The portable builds link Mesa GLES, so force SDL onto the matching EGL
+    // path just as the established TH07 desktop package does.
+    SDL_SetHint(SDL_HINT_OPENGL_ES_DRIVER, "1");
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD))
     {
         return;
@@ -145,6 +224,106 @@ void GameWindow::CreateGameWindow()
     SDL_ShowWindow(g_GameWindow.window);
 
     g_GameWindow.lastActiveAppValue = 1;
+}
+
+// Toggle between windowed and borderless fullscreen.
+//
+// SDL_SetWindowFullscreen is deliberately not used on Windows: under SDL3 +
+// Mesa EGL in RDP sessions the fullscreen transition can be followed by an
+// SDL-internal restore of the windowed geometry (~250-400 ms later), leaving
+// the window "fullscreen" but at the windowed size. Instead we toggle the
+// Win32 style directly and let SDL_SetWindowSize/Position apply the geometry:
+// those update SDL's tracked state before touching the window, so the Win32
+// min/max-track clamp (derived from SDL's size) never fights the toggle, and
+// SwapBuffers() already re-reads the window size every frame.
+//
+// The windowed geometry is captured continuously by the frame loop (see
+// RememberWindowedState) rather than at toggle time, because reading the
+// window rect synchronously around a transition can return the window's
+// initial unpositioned state (0,0) instead of its real geometry.
+void GameWindow::ToggleFullscreen()
+{
+    if (g_GameWindow.window == NULL)
+    {
+        return;
+    }
+
+#ifdef _WIN32
+    HWND hwnd = (HWND)SDL_GetPointerProperty(SDL_GetWindowProperties(g_GameWindow.window),
+                                             SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+    if (!hwnd)
+    {
+        return;
+    }
+
+    if (!g_InBorderlessFullscreen)
+    {
+        if (g_WindowedRect.right == 0 && g_WindowedRect.bottom == 0)
+        {
+            RECT windowedRect;
+            RECT windowedClient;
+            if (!GetWindowRect(hwnd, &windowedRect) || !GetClientRect(hwnd, &windowedClient))
+            {
+                return;
+            }
+            g_WindowedRect = windowedRect;
+            g_WindowedClientW = windowedClient.right - windowedClient.left;
+            g_WindowedClientH = windowedClient.bottom - windowedClient.top;
+            g_WindowedStyle = GetWindowLong(hwnd, GWL_STYLE);
+        }
+
+        HMONITOR mon = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+        MONITORINFO minfo;
+        minfo.cbSize = sizeof(minfo);
+        if (!mon || !GetMonitorInfoW(mon, &minfo))
+        {
+            return;
+        }
+
+        // Size the window to the display's current desktop mode rather than the
+        // raw monitor rect. Virtual/remote displays can report a native
+        // geometry (e.g. 2560x1600) that is taller than the visible desktop
+        // mode (e.g. 2560x1440); covering the monitor rect then letterboxes
+        // the image on the client's screen. The desktop mode matches what the
+        // user actually sees.
+        SDL_DisplayID disp = SDL_GetDisplayForWindow(g_GameWindow.window);
+        SDL_Rect dispBounds;
+        SDL_GetDisplayBounds(disp, &dispBounds);
+        const SDL_DisplayMode *dm = SDL_GetDesktopDisplayMode(disp);
+        const int fsW = (dm && dm->w > 0) ? dm->w : dispBounds.w;
+        const int fsH = (dm && dm->h > 0) ? dm->h : dispBounds.h;
+
+        SetWindowLong(hwnd, GWL_STYLE, (g_WindowedStyle & ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX |
+                                                            WS_MAXIMIZEBOX | WS_SYSMENU)) |
+                                           WS_POPUP);
+        SDL_SetWindowSize(g_GameWindow.window, fsW, fsH);
+        SDL_SetWindowPosition(g_GameWindow.window, dispBounds.x, dispBounds.y);
+        g_InBorderlessFullscreen = true;
+    }
+    else
+    {
+        SetWindowLong(hwnd, GWL_STYLE, g_WindowedStyle);
+        SDL_SetWindowSize(g_GameWindow.window, g_WindowedClientW, g_WindowedClientH);
+        SDL_SetWindowPosition(g_GameWindow.window, g_WindowedRect.left, g_WindowedRect.top);
+        // Pin the exact window rect. SDL_SetWindowPosition addresses the client
+        // area, which shifts with the caption frame; SDL now tracks the windowed
+        // size so the Win32 min/max-track clamp (if any) lets this through.
+        SetWindowPos(hwnd, HWND_TOP, g_WindowedRect.left, g_WindowedRect.top,
+                     g_WindowedRect.right - g_WindowedRect.left,
+                     g_WindowedRect.bottom - g_WindowedRect.top,
+                     SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_SHOWWINDOW);
+        g_InBorderlessFullscreen = false;
+    }
+#else
+    if (SDL_GetWindowFlags(g_GameWindow.window) & SDL_WINDOW_FULLSCREEN)
+    {
+        SDL_SetWindowFullscreen(g_GameWindow.window, false);
+    }
+    else
+    {
+        SDL_SetWindowFullscreen(g_GameWindow.window, true);
+    }
+#endif
 }
 
 // LRESULT __stdcall GameWindow::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -445,6 +624,17 @@ void GameWindow::InitD3dDevice(void)
 
     g_GfxBackend->SetBlendMode(BLEND_INV_SRC_ALPHA);
 
+    // Match the fixed-function renderer defaults. GLES implements these in
+    // the shader, so leaving them disabled silently removes cutout alpha and
+    // all stage fog.
+    g_GfxBackend->Enable(CAPS_ALPHA_TEST);
+    g_GfxBackend->SetAlphaTestRef(4);
+
+    if (((g_Supervisor.cfg.opts >> GCOS_DONT_USE_FOG) & 1) == 0)
+    {
+        g_GfxBackend->Enable(CAPS_FOG);
+    }
+
     if (((g_Supervisor.cfg.opts >> GCOS_TURN_OFF_DEPTH_TEST) & 1) == 0)
     {
         g_GfxBackend->Enable(CAPS_DEPTH_TEST);
@@ -469,6 +659,7 @@ void GameWindow::InitD3dDevice(void)
         anm1->currentBlendMode = 0xff;
         anm4 = g_AnmManager;
         anm4->currentTextureHandle = 0;
+        anm4->currentSprite = nullptr;
     }
     g_Stage.skyFogNeedsSetup = 1;
     return;

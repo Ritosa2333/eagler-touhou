@@ -175,7 +175,7 @@ GfxInterface *WebGL::Create()
         return NULL;
     }
 
-    if (SDL_GL_MakeCurrent(window, glContext) != 0)
+    if (!SDL_GL_MakeCurrent(window, glContext))
     {
         delete interface;
         return NULL;

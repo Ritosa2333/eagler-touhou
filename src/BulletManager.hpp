@@ -52,6 +52,7 @@ struct Bullet
     f32 ex5Float0;
     f32 dirChangeSpeed;
     f32 angle;
+    f32 prevAngle;
     f32 ex5Float1;
     f32 dirChangeRotation;
     ZunTimer timer;
@@ -75,8 +76,11 @@ struct Laser
     ZunVec3 pos;
     ZunVec3 prevPos;
     f32 angle;
+    f32 prevAngle;
     f32 startOffset;
+    f32 prevStartOffset;
     f32 endOffset;
+    f32 prevEndOffset;
     f32 startLength;
     f32 width;
     f32 speed;

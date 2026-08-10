@@ -58,8 +58,8 @@ class GlesGraphics : public GfxInterface
 
     void Exit();
 
-    void BeginFrame();
-    void EndFrame();
+    void BeginFrame() override;
+    void EndFrame() override;
     void SetFogRange(f32 nearPlane, f32 farPlane) override;
     void SetFogColor(ZunColor color) override;
     void SetColorOp(TextureOpComponent component, ColorOp op) override;
@@ -77,12 +77,12 @@ class GlesGraphics : public GfxInterface
     void SetDepthMask(bool enable) override;
     void SetDepthFunc(DepthFunc func) override;
 
-    void SetTextureArg(TextureArg arg);
+    void SetTextureArg(TextureArg arg) override;
 
     void SetClearDepth(f32 depth) override;
     void SetClearColor(ZunColor color);
     void SetClearColor(f32 r, f32 g, f32 b, f32 a) override;
-    void SetAlphaTestRef(u8 ref);
+    void SetAlphaTestRef(u8 ref) override;
     void Clear(u32 clearBits) override;
 
     GfxTextureHandle CreateTexture() override;
@@ -135,6 +135,7 @@ class GlesGraphics : public GfxInterface
 
     GLuint unitQuadVao = 0;
     GLuint unitQuadVbo = 0;
+    GLuint boundTexture = 0;
 
     ZunMatrix transforms[4];
     ZunViewport viewport;
@@ -177,6 +178,7 @@ class GlesGraphics : public GfxInterface
         {
             char log[512];
             glGetShaderInfoLog(shader, 512, nullptr, log);
+            SDL_LogError(SDL_LOG_CATEGORY_RENDER, "shader compile error: %s", log);
             utils::DebugPrint("shader compile error: %s\n", log);
             return 0;
         }

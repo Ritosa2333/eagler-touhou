@@ -88,7 +88,7 @@ struct MidiOutput
     i32 StopTimer();
     void StartTimer(u32 delay, SDL_TimerCallback cb, void *data);
 
-    static u32 SDLCALL DefaultTimerCallback(u32 interval, MidiOutput *timer);
+    static u32 SDLCALL DefaultTimerCallback(void *userdata, SDL_TimerID timerID, u32 interval);
 
     void OnTimerElapsed();
 

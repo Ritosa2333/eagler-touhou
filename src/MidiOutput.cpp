@@ -38,8 +38,11 @@ i32 MidiOutput::StopTimer()
     return 1;
 }
 
-u32 SDLCALL MidiOutput::DefaultTimerCallback(u32 interval, MidiOutput *timer)
+u32 SDLCALL MidiOutput::DefaultTimerCallback(void *userdata, SDL_TimerID timerID, u32 interval)
 {
+    (void)timerID;
+
+    MidiOutput *timer = (MidiOutput *)userdata;
     timer->OnTimerElapsed();
 
     return interval; // Reschedules with same interval

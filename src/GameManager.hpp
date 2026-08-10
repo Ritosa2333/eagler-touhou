@@ -121,6 +121,8 @@ struct GameManager
     u32 menuCursorBackup;
     ZunVec2 arcadeRegionTopLeftPos;
     ZunVec2 arcadeRegionSize;
+    ZunVec2 prevArcadeRegionTopLeftPos;
+    ZunVec2 prevArcadeRegionSize;
     ZunVec2 playerMovementAreaTopLeftPos;
     ZunVec2 playerMovementAreaSize;
     f32 cameraDistance;

@@ -370,6 +370,8 @@ void ItemManager::OnDraw()
             continue;
         }
         const ZunVec3 drawPosition = curItem->prevPosition.Lerp(curItem->currentPosition, g_RenderAlpha);
+        const ZunVec3 savedPos = curItem->sprite.pos;
+        const ZunVec3 savedPrevPos = curItem->sprite.prevPos;
         curItem->sprite.pos.x = g_GameManager.arcadeRegionTopLeftPos.x + drawPosition.x;
         curItem->sprite.pos.y = g_GameManager.arcadeRegionTopLeftPos.y + drawPosition.y;
         curItem->sprite.pos.z = 0.01f;
@@ -397,7 +399,10 @@ void ItemManager::OnDraw()
                 curItem->sprite.color = COLOR_WHITE;
             }
         }
+        curItem->sprite.prevPos = curItem->sprite.pos;
         g_AnmManager->DrawNoRotation(&curItem->sprite);
+        curItem->sprite.pos = savedPos;
+        curItem->sprite.prevPos = savedPrevPos;
     }
     return;
 }

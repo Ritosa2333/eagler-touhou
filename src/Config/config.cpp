@@ -385,13 +385,13 @@ int main()
         cfg.opts = (1 << GCOS_USE_D3D_HW_TEXTURE_BLENDING);
     }
 
-    if (SDL_Init(SDL_INIT_VIDEO) != 0)
+    if (!SDL_Init(SDL_INIT_VIDEO))
     {
         printf("SDL_Init failed: %s\n", SDL_GetError());
         return 1;
     }
 
-    if (TTF_Init() != 0)
+    if (!TTF_Init())
     {
         printf("TTF_Init failed: %s\n", TTF_GetError());
         SDL_Quit();

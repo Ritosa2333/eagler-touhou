@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(TH_EXTERNAL_ASSETS "Do not bundle original game assets" OFF)
+option(TH_DEV_TOOLS "Enable developer-only tools (e.g. F5 logic fast-forward). Keep OFF in release builds." OFF)
 
 # Keep this list explicit so source additions are visible in upstream review.
 set(TH06_SOURCES
@@ -31,7 +32,6 @@ set(TH06_SOURCES
     src/ItemManager.cpp
     src/MainMenu.cpp
     src/MidiOutput.cpp
-    src/midi/MidiDefault.cpp
     src/MusicRoom.cpp
     src/Player.cpp
     src/ReplayManager.cpp
@@ -53,6 +53,15 @@ set(TH06_SOURCES
     src/utils.cpp
 )
 
+# The MIDI backend must match the platform header selected by src/MidiOutput.hpp.
+# Compiling MidiDefault.cpp on Windows would link a MidiDevice with a different
+# layout than the one MidiOutput.cpp instantiates (ODR mismatch, silent no-op MIDI).
+if(WIN32 AND NOT EMSCRIPTEN)
+    list(APPEND TH06_SOURCES src/midi/MidiWin32.cpp)
+else()
+    list(APPEND TH06_SOURCES src/midi/MidiDefault.cpp)
+endif()
+
 # GLES and the SDL3 callback lifecycle are introduced during the source
 # migration. Keeping legacy renderers out of this target prevents accidentally
 # treating the old WebGL experiment as the new architecture.
@@ -61,6 +70,10 @@ target_include_directories(th06 PRIVATE src src/pbg3)
 
 if(TH_EXTERNAL_ASSETS)
     target_compile_definitions(th06 PRIVATE TH_EXTERNAL_ASSETS)
+endif()
+
+if(TH_DEV_TOOLS)
+    target_compile_definitions(th06 PRIVATE TH_DEV_TOOLS)
 endif()
 
 if(EMSCRIPTEN)
@@ -100,6 +113,21 @@ endif()
 if(TH_USE_VENDORED_SDL)
     set(SDLIMAGE_BACKEND_STB ON)
     set(SDLIMAGE_BACKEND_IMAGEIO OFF)
+    set(SDLIMAGE_AVIF OFF)
+    set(SDLIMAGE_BMP OFF)
+    set(SDLIMAGE_GIF OFF)
+    set(SDLIMAGE_JXL OFF)
+    set(SDLIMAGE_LBM OFF)
+    set(SDLIMAGE_PCX OFF)
+    set(SDLIMAGE_PNM OFF)
+    set(SDLIMAGE_QOI OFF)
+    set(SDLIMAGE_SVG OFF)
+    set(SDLIMAGE_TGA OFF)
+    set(SDLIMAGE_TIF OFF)
+    set(SDLIMAGE_WEBP OFF)
+    set(SDLIMAGE_XCF OFF)
+    set(SDLIMAGE_XPM OFF)
+    set(SDLIMAGE_XV OFF)
     set(SDLIMAGE_JPG ON)
     set(SDLIMAGE_PNG ON)
     set(SDLTTF_VENDORED ON)
@@ -110,3 +138,13 @@ if(TH_USE_VENDORED_SDL)
 endif()
 
 target_link_libraries(th06 PRIVATE SDL3::SDL3 SDL3_image::SDL3_image SDL3_ttf::SDL3_ttf)
+
+if(WIN32 AND NOT EMSCRIPTEN)
+    set(TH_MESA_ROOT "${CMAKE_SOURCE_DIR}/../deps")
+    target_include_directories(th06 PRIVATE "${TH_MESA_ROOT}/mesa-devel/include")
+    target_link_libraries(th06 PRIVATE
+        "${TH_MESA_ROOT}/mesa-devel/lib/x64/libEGL.dll.a"
+        "${TH_MESA_ROOT}/mesa-devel/lib/x64/libGLESv2.dll.a"
+        winmm
+    )
+endif()

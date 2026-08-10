@@ -99,7 +99,7 @@ ChainCallbackResult Supervisor::OnUpdate(Supervisor *s)
             case SUPERVISOR_STATE_EXITERROR:
                 return CHAIN_CALLBACK_RESULT_EXIT_GAME_ERROR;
             case SUPERVISOR_STATE_RESULTSCREEN:
-                if (ResultScreen::RegisterChain(NULL) != ZUN_SUCCESS)
+                if (ResultScreen::RegisterChain(0) != ZUN_SUCCESS)
                 {
                     return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
                 }
@@ -308,26 +308,51 @@ ZunResult Supervisor::AddedCallback(Supervisor *s)
         return ZUN_ERROR;
     }
 
-    // D3DX code swaps twice to copy to both buffers
-
     g_AnmManager->LoadSurface(0, "data/title/th06logo.jpg");
+    s->startupTimeBeforeMenuMusic = SDL_GetTicks();
+#ifndef __EMSCRIPTEN__
+    // TH07 reallyportable keeps its startup logo in a self-contained render
+    // phase for up to three seconds. Merely swapping twice, as the old D3D
+    // double-buffer workaround did, lets TH06's first render-only frame clear
+    // the logo before the first simulation update. Use complete frame
+    // boundaries and keep the logo visible until the original startup delay
+    // has elapsed, while retaining TH07's input-to-skip behavior.
+    while (SDL_GetTicks() - s->startupTimeBeforeMenuMusic < 3000)
+    {
+        SDL_Event event;
+        bool skip = false;
+        while (SDL_PollEvent(&event))
+        {
+            if (event.type == SDL_EVENT_QUIT)
+            {
+                SDL_PushEvent(&event);
+                skip = true;
+            }
+            if (event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN ||
+                event.type == SDL_EVENT_FINGER_DOWN || event.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
+            {
+                skip = true;
+            }
+        }
+        if (skip)
+        {
+            break;
+        }
+
+        g_GfxBackend->BeginFrame();
+        g_AnmManager->CopySurfaceToBackBuffer(0, 0, 0, 0, 0);
+        g_GfxBackend->EndFrame();
+        g_GfxBackend->SwapBuffers();
+        SDL_Delay(16);
+    }
+#else
+    g_GfxBackend->BeginFrame();
     g_AnmManager->CopySurfaceToBackBuffer(0, 0, 0, 0, 0);
-    //    if (g_Supervisor.d3dDevice->Present(0, 0, 0, 0) < 0)
-    //        g_Supervisor.d3dDevice->Reset(&g_Supervisor.presentParameters);
-
+    g_GfxBackend->EndFrame();
     g_GfxBackend->SwapBuffers();
-
-    //
-    g_AnmManager->CopySurfaceToBackBuffer(0, 0, 0, 0, 0);
-    //    if (g_Supervisor.d3dDevice->Present(0, 0, 0, 0) < 0)
-    //        g_Supervisor.d3dDevice->Reset(&g_Supervisor.presentParameters);
-    //
-
-    g_GfxBackend->SwapBuffers();
+#endif
 
     g_AnmManager->ReleaseSurface(0);
-
-    s->startupTimeBeforeMenuMusic = SDL_GetTicks();
     Supervisor::SetupDInput(s);
 
     s->midiOutput = new MidiOutput();
@@ -660,7 +685,7 @@ ZunResult Supervisor::LoadConfig(const char *path)
     {
         g_Supervisor.cfg.lifeCount = 2;
         g_Supervisor.cfg.bombCount = 3;
-        g_Supervisor.cfg.colorMode16bit = 0xff;
+        g_Supervisor.cfg.colorMode16bit = 0;
         g_Supervisor.cfg.version = GAME_VERSION;
         g_Supervisor.cfg.padXAxis = 600;
         g_Supervisor.cfg.padYAxis = 600;
@@ -677,7 +702,7 @@ ZunResult Supervisor::LoadConfig(const char *path)
         }
         g_Supervisor.cfg.playSounds = 1;
         g_Supervisor.cfg.defaultDifficulty = 1;
-        g_Supervisor.cfg.windowed = false;
+        g_Supervisor.cfg.windowed = true;
         g_Supervisor.cfg.frameskipConfig = 0;
         g_Supervisor.cfg.controllerMapping = g_ControllerMapping;
         g_GameErrorContext.Log(TH_ERR_CONFIG_NOT_FOUND);
@@ -693,7 +718,7 @@ ZunResult Supervisor::LoadConfig(const char *path)
         {
             g_Supervisor.cfg.lifeCount = 2;
             g_Supervisor.cfg.bombCount = 3;
-            g_Supervisor.cfg.colorMode16bit = 0xff;
+            g_Supervisor.cfg.colorMode16bit = 0;
             g_Supervisor.cfg.version = GAME_VERSION;
             g_Supervisor.cfg.padXAxis = 600;
             g_Supervisor.cfg.padYAxis = 600;
@@ -710,7 +735,7 @@ ZunResult Supervisor::LoadConfig(const char *path)
             }
             g_Supervisor.cfg.playSounds = 1;
             g_Supervisor.cfg.defaultDifficulty = 1;
-            g_Supervisor.cfg.windowed = false;
+            g_Supervisor.cfg.windowed = true;
             g_Supervisor.cfg.frameskipConfig = 0;
             g_Supervisor.cfg.controllerMapping = g_ControllerMapping;
             std::memset(&g_Supervisor.cfg.opts, 0, sizeof(GameConfigOptsShifts));

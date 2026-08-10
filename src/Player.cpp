@@ -170,6 +170,7 @@ ChainCallbackResult Player::OnUpdate(Player *p)
     {
         vm.UpdatePrev();
     }
+    p->bombInfo.UpdatePrev();
     for (PlayerBullet &bullet : p->bullets)
     {
         if (bullet.bulletState != BULLET_STATE_UNUSED)
@@ -613,6 +614,7 @@ ChainCallbackResult Player::OnDrawHighPrio(Player *p)
         p->bombInfo.draw(p);
     }
     const ZunVec3 drawPlayerPosition = p->prevPositionCenter.Lerp(p->positionCenter, g_RenderAlpha);
+    const ZunVec3 playerSpritePos = p->playerSprite.pos;
     p->playerSprite.pos.x = g_GameManager.arcadeRegionTopLeftPos.x + drawPlayerPosition.x;
     p->playerSprite.pos.y = g_GameManager.arcadeRegionTopLeftPos.y + drawPlayerPosition.y;
     p->playerSprite.pos.z = 0.49;
@@ -622,6 +624,8 @@ ChainCallbackResult Player::OnDrawHighPrio(Player *p)
         if (p->orbState != ORB_HIDDEN &&
             (p->playerState == PLAYER_STATE_ALIVE || p->playerState == PLAYER_STATE_INVULNERABLE))
         {
+            const ZunVec3 orb0Pos = p->orbsSprite[0].pos;
+            const ZunVec3 orb1Pos = p->orbsSprite[1].pos;
             p->orbsSprite[0].pos = p->prevOrbsPosition[0].Lerp(p->orbsPosition[0], g_RenderAlpha);
             p->orbsSprite[1].pos = p->prevOrbsPosition[1].Lerp(p->orbsPosition[1], g_RenderAlpha);
             f32 *x1 = &p->orbsSprite[0].pos.x;
@@ -636,8 +640,11 @@ ChainCallbackResult Player::OnDrawHighPrio(Player *p)
             p->orbsSprite[1].pos.z = 0.491;
             g_AnmManager->Draw(&p->orbsSprite[0]);
             g_AnmManager->Draw(&p->orbsSprite[1]);
+            p->orbsSprite[0].pos = orb0Pos;
+            p->orbsSprite[1].pos = orb1Pos;
         }
     }
+    p->playerSprite.pos = playerSpritePos;
     return CHAIN_CALLBACK_RESULT_CONTINUE;
 }
 
@@ -969,14 +976,20 @@ void Player::DrawBullets(Player *p)
         {
             continue;
         }
+        const f32 savedRotationZ = bullets->sprite.rotation.z;
+        const f32 savedPrevRotationZ = bullets->sprite.prevRotation.z;
         if (bullets->sprite.autoRotate)
         {
+            bullets->sprite.prevRotation.z =
+                ZUN_PI / 2 - utils::AddNormalizeAngle(bullets->unk_134.z, ZUN_PI);
             bullets->sprite.rotation.z = ZUN_PI / 2 - utils::AddNormalizeAngle(bullets->unk_134.z, ZUN_PI);
         }
         const ZunVec3 savedPos = bullets->sprite.pos;
         bullets->sprite.pos = bullets->prevPosition.Lerp(bullets->position, g_RenderAlpha);
         g_AnmManager->Draw2(&bullets->sprite);
         bullets->sprite.pos = savedPos;
+        bullets->sprite.rotation.z = savedRotationZ;
+        bullets->sprite.prevRotation.z = savedPrevRotationZ;
     }
 }
 
@@ -992,12 +1005,21 @@ void Player::DrawBulletExplosions(Player *p)
         {
             continue;
         }
+        const f32 savedRotationZ = bullets->sprite.rotation.z;
+        const f32 savedPrevRotationZ = bullets->sprite.prevRotation.z;
         if (bullets->sprite.autoRotate)
         {
+            bullets->sprite.prevRotation.z =
+                ZUN_PI / 2 - utils::AddNormalizeAngle(bullets->unk_134.z, ZUN_PI);
             bullets->sprite.rotation.z = ZUN_PI / 2 - utils::AddNormalizeAngle(bullets->unk_134.z, ZUN_PI);
         }
+        const ZunVec3 savedPos = bullets->sprite.pos;
+        bullets->sprite.pos = bullets->prevPosition.Lerp(bullets->position, g_RenderAlpha);
         bullets->sprite.pos.z = 0.4f;
         g_AnmManager->Draw2(&bullets->sprite);
+        bullets->sprite.pos = savedPos;
+        bullets->sprite.rotation.z = savedRotationZ;
+        bullets->sprite.prevRotation.z = savedPrevRotationZ;
     }
 }
 

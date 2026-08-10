@@ -106,6 +106,18 @@ struct PlayerBullet
 
 struct PlayerBombInfo
 {
+    void UpdatePrev()
+    {
+        for (i32 i = 0; i < 8; ++i)
+        {
+            prevBombRegionPositions[i] = bombRegionPositions[i];
+            for (AnmVm &vm : sprites[i])
+            {
+                vm.UpdatePrev();
+            }
+        }
+    }
+
     u32 isInUse;
     i32 duration;
     ZunTimer timer;
@@ -114,6 +126,7 @@ struct PlayerBombInfo
     i32 reimuABombProjectilesState[8];
     f32 reimuABombProjectilesRelated[8];
     ZunVec3 bombRegionPositions[8];
+    ZunVec3 prevBombRegionPositions[8];
     ZunVec3 bombRegionVelocities[8];
     AnmVm sprites[8][4];
 };

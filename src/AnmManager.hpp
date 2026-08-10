@@ -4,6 +4,7 @@
 // #include <d3dx8math.h>
 
 #include <SDL3/SDL.h>
+#include <cstddef>
 
 #include "AnmIdx.hpp"
 #include "AnmVm.hpp"
@@ -82,6 +83,10 @@ struct VertexTex1DiffuseXyzrhw
     ColorData diffuse;
     ZunVec2 textureUV;
 };
+static_assert(sizeof(VertexTex1DiffuseXyzrhw) == 28);
+static_assert(offsetof(VertexTex1DiffuseXyzrhw, position) == 0);
+static_assert(offsetof(VertexTex1DiffuseXyzrhw, diffuse) == 16);
+static_assert(offsetof(VertexTex1DiffuseXyzrhw, textureUV) == 20);
 
 // Structure of a vertex with SetVertexShade FVF set to D3DFVF_TEX1 | D3DFVF_DIFFUSE | D3DFVF_XYZ
 struct VertexTex1DiffuseXyz
@@ -170,13 +175,13 @@ struct AnmManager
     void ClearVertexBuffer();
 
     u32 spritesToDraw;
-    VertexTex1Xyzrhw *vertexBufferStartPtr;
-    VertexTex1Xyzrhw *vertexBufferEndPtr;
-    VertexTex1Xyzrhw vertexBuffer[0x18000];
+    VertexTex1DiffuseXyzrhw *vertexBufferStartPtr;
+    VertexTex1DiffuseXyzrhw *vertexBufferEndPtr;
+    VertexTex1DiffuseXyzrhw vertexBuffer[0x18000];
 
     u32 renderStateChangesThisFrame;
     u32 flushesThisFrame;
-    ZunResult AddSpriteToDrawBuffer(VertexTex1Xyzrhw *vertices);
+    ZunResult AddSpriteToDrawBuffer(VertexTex1DiffuseXyzrhw *vertices);
 
     ZunResult CreateEmptyTexture(i32 textureIdx, u32 width, u32 height, i32 textureFormat);
     ZunResult LoadTexture(i32 textureIdx, const char *textureName, i32 textureFormat, ZunColor colorKey);
@@ -381,6 +386,18 @@ struct AnmManager
     void DrawStringFormat2(AnmVm *vm, ZunColor textColor, ZunColor shadowColor, const char *fmt, ...);
     void DrawVmTextFmt(AnmVm *vm, ZunColor textColor, ZunColor shadowColor, const char *fmt, ...);
     ZunResult DrawNoRotation(const AnmVm *vm);
+    ZunResult DrawInterpNoRotation(const AnmVm *vm)
+    {
+        AnmVm drawVm = *vm;
+        drawVm.pos = vm->prevPos.Lerp(vm->pos, g_RenderAlpha);
+        return DrawNoRotation(&drawVm);
+    }
+    ZunResult DrawInterp(const AnmVm *vm)
+    {
+        AnmVm drawVm = *vm;
+        drawVm.pos = vm->prevPos.Lerp(vm->pos, g_RenderAlpha);
+        return Draw(&drawVm);
+    }
     ZunResult DrawOrthographic(const AnmVm *vm, bool roundToPixel);
     ZunResult DrawFacingCamera(const AnmVm *vm);
     ZunResult Draw2(const AnmVm *vm);
@@ -396,7 +413,7 @@ struct AnmManager
     void CopySurfaceRectToBackBuffer(i32 surfaceIdx, i32 rectX, i32 rectY, i32 rectLeft, i32 rectTop, i32 width,
                                      i32 height);
 
-    void TranslateRotation(VertexTex1Xyzrhw *param_1, float x, float y, float sine, float cosine, float xOffset,
+    void TranslateRotation(VertexTex1DiffuseXyzrhw *param_1, float x, float y, float sine, float cosine, float xOffset,
                            float yOffset);
 
     void ReleaseAnm(i32 anmIdx);
@@ -423,9 +440,9 @@ struct AnmManager
         this->screenshotHeight = GAME_REGION_HEIGHT;
     }
 
-    static SDL_Surface *LoadToSurfaceWithFormat(const char *filename, SDL_PixelFormat format, u8 **fileData);
+    static SDL_Surface *LoadToSurfaceWithFormat(const char *filename, SDL_PixelFormat format, u8 **fileData,
+                                                ZunColor colorKey = 0);
     static u8 *ExtractSurfacePixels(SDL_Surface *src, u8 pixelDepth);
-    static void FlipSurface(SDL_Surface *surface);
     void ApplySurfaceToColorBuffer(SDL_Surface *src, const SDL_Rect &srcRect, const SDL_Rect &dstRect);
     // Creates, binds, and set parameters for a new texture
     void CreateTextureObject();

@@ -5,11 +5,22 @@
 #include "ZunResult.hpp"
 #include "inttypes.hpp"
 
-#define TH6K_MAGIC 'K6HT'
-#define HSCR_MAGIC 'RCSH'
-#define CLRD_MAGIC 'DRLC'
-#define PSCR_MAGIC 'RCSP'
-#define CATK_MAGIC 'KTAC'
+constexpr u32 MakeMagic(char a, char b, char c, char d)
+{
+    return static_cast<u32>(static_cast<u8>(a)) | (static_cast<u32>(static_cast<u8>(b)) << 8) |
+           (static_cast<u32>(static_cast<u8>(c)) << 16) | (static_cast<u32>(static_cast<u8>(d)) << 24);
+}
+
+constexpr u32 TH6K_MAGIC = MakeMagic('T', 'H', '6', 'K');
+constexpr u32 HSCR_MAGIC = MakeMagic('H', 'S', 'C', 'R');
+constexpr u32 CLRD_MAGIC = MakeMagic('C', 'L', 'R', 'D');
+constexpr u32 PSCR_MAGIC = MakeMagic('P', 'S', 'C', 'R');
+constexpr u32 CATK_MAGIC = MakeMagic('C', 'A', 'T', 'K');
+static_assert(TH6K_MAGIC == 0x4b364854u);
+static_assert(HSCR_MAGIC == 0x52435348u);
+static_assert(CLRD_MAGIC == 0x44524c43u);
+static_assert(PSCR_MAGIC == 0x52435350u);
+static_assert(CATK_MAGIC == 0x4b544143u);
 
 #define HSCR_NUM_CHARS_SHOTTYPES 4
 #define HSCR_NUM_DIFFICULTIES 5

@@ -9,6 +9,15 @@
 #define __has_builtin(name) 0
 #endif
 
+// mingw-w64's winnt.h aliases these names to its _rotl16/_rotr16
+// intrinsics. Keep the portable project's public helper names intact.
+#ifdef RotateLeft16
+#undef RotateLeft16
+#endif
+#ifdef RotateRight16
+#undef RotateRight16
+#endif
+
 #if __cplusplus >= 202002L
 #include <bit>
 inline u32 BitCeil(u32 n)

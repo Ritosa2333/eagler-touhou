@@ -187,7 +187,7 @@ ChainCallbackResult MusicRoom::OnDraw(MusicRoom *musicRoom)
 
     g_AnmManager->SetCurrentTexture(0);
     g_AnmManager->CopySurfaceToBackBuffer(0, 0, 0, 0, 0);
-    g_AnmManager->DrawNoRotation(musicRoom->mainVm);
+    g_AnmManager->DrawInterpNoRotation(musicRoom->mainVm);
 
     // Draw the 10 songs in the song select window, and list indices
     for (i = musicRoom->listingOffset; i < musicRoom->listingOffset + 10; i++)
@@ -224,7 +224,7 @@ ChainCallbackResult MusicRoom::OnDraw(MusicRoom *musicRoom)
 
     for (i = 0; i < ARRAY_SIZE_SIGNED(musicRoom->descriptionSprites); i++)
     {
-        g_AnmManager->DrawNoRotation(&musicRoom->descriptionSprites[i]);
+        g_AnmManager->DrawInterpNoRotation(&musicRoom->descriptionSprites[i]);
     }
 
     g_AsciiManager.color = COLOR_WHITE;

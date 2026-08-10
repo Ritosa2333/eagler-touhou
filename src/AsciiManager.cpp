@@ -5,6 +5,7 @@
 #include "ChainPriorities.hpp"
 #include "Controller.hpp"
 #include "GameManager.hpp"
+#include "GameWindow.hpp"
 #include "Gui.hpp"
 #include "Supervisor.hpp"
 #include "utils.hpp"
@@ -28,6 +29,9 @@ StageMenu::StageMenu()
 
 ChainCallbackResult AsciiManager::OnUpdate(AsciiManager *mgr)
 {
+    // Text is produced by the calc chain and must remain available for every
+    // presentation frame until the next 60 Hz simulation tick.
+    mgr->numStrings = 0;
     mgr->vm0.UpdatePrev();
     mgr->vm1.UpdatePrev();
     for (AnmVm &vm : mgr->gameMenu.menuSprites) vm.UpdatePrev();
@@ -68,7 +72,6 @@ ChainCallbackResult AsciiManager::OnUpdate(AsciiManager *mgr)
 ChainCallbackResult AsciiManager::OnDrawMenus(AsciiManager *mgr)
 {
     mgr->DrawStrings();
-    mgr->numStrings = 0;
     mgr->gameMenu.OnDrawGameMenu();
     mgr->retryMenu.OnDrawRetryMenu();
     return CHAIN_CALLBACK_RESULT_CONTINUE;
@@ -180,6 +183,10 @@ void AsciiManager::CutChain()
 
 void AsciiManager::AddString(const ZunVec3 *position, const char *text)
 {
+    if (g_SuppressAnmAdvance)
+    {
+        return;
+    }
     if (this->numStrings >= 0x100)
     {
         return;
@@ -187,9 +194,7 @@ void AsciiManager::AddString(const ZunVec3 *position, const char *text)
 
     AsciiManagerString *curString = &this->strings[this->numStrings];
     this->numStrings += 1;
-    // Hello unguarded strcpy my old friend. If text is bigger than 64
-    // characters, kboom.
-    std::strcpy(curString->text, text);
+    std::snprintf(curString->text, sizeof(curString->text), "%s", text);
     curString->position = *position;
     curString->color = this->color;
     curString->scale.x = this->scale.x;
@@ -211,7 +216,7 @@ void AsciiManager::AddFormatText(const ZunVec3 *position, const char *fmt, ...)
     std::va_list args;
 
     va_start(args, fmt);
-    std::vsprintf(tmpBuffer, fmt, args);
+    std::vsnprintf(tmpBuffer, sizeof(tmpBuffer), fmt, args);
     this->AddString(position, tmpBuffer);
     va_end(args);
 }
@@ -259,7 +264,7 @@ void AsciiManager::DrawStrings(void)
             g_AnmManager->SetProjectionMode(PROJECTION_MODE_PERSPECTIVE);
             g_Supervisor.viewport.Set();
         }
-        while (*text != NULL)
+        while (*text != '\0')
         {
             if (*text == '\n')
             {

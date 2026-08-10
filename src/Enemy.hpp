@@ -204,6 +204,7 @@ struct Enemy
     ZunVec3 prevPosition;
     ZunVec3 axisSpeed;
     f32 angle;
+    f32 prevAngle;
     f32 angularVelocity;
     f32 speed;
     f32 acceleration;

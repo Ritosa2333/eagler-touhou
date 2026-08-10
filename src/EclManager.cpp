@@ -728,6 +728,14 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 g_BulletManager.TurnAllBulletsIntoPoints();
                 g_Stage.spellcardState = RUNNING;
                 g_Stage.ticksSinceSpellcardStarted = 0;
+                // The spellcard background script is (re)started here, the same
+                // frame the spellcard begins. It used to be restarted from the
+                // draw chain (gated by g_SuppressAnmAdvance); doing it in the
+                // update chain keeps the draw phase read-only while preserving
+                // the exact original timing (Stage::OnUpdate has already run,
+                // so its tick/advance only applies from the next frame).
+                g_AnmManager->SetAndExecuteScriptIdx(&g_Stage.spellcardBackground,
+                                                     ANM_SCRIPT_EFFECTS_SPELLCARD_BACKGROUND);
                 enemy->bulletRankSpeedLow = -0.5f;
                 enemy->bulletRankSpeedHigh = 0.5f;
                 enemy->bulletRankAmount1Low = 0;

@@ -168,6 +168,16 @@ ScreenEffect *ScreenEffect::RegisterChain(i32 effect, u32 ticks, u32 effectParam
     createdEffect->shakinessParam = effectParam2;
     createdEffect->unusedParam = unusedEffectParam;
 
+    if (effect == SCREEN_EFFECT_FADE_IN)
+    {
+        // A presentation frame can occur before this effect's first 60 Hz
+        // calc callback. Fade-in is defined to start fully opaque; leaving the
+        // memset value of zero visible for that frame exposes the black frame
+        // clear between the startup logo and the white title transition.
+        createdEffect->fadeAlpha = 255;
+        createdEffect->prevFadeAlpha = 255;
+    }
+
     if (g_Chain.AddToCalcChain(calcChainElem, TH_CHAIN_PRIO_CALC_SCREENEFFECT) != 0)
     {
         return NULL;

@@ -62,10 +62,12 @@ struct Ending
 
     ZunResult LoadEnding(const char *endFilePath);
     void FadingEffect();
+    void UpdateFade();
 
     ChainElem *calcChain;
     ChainElem *drawChain;
     ZunVec2 backgroundPos;
+    ZunVec2 prevBackgroundPos;
     f32 backgroundScrollSpeed;
     AnmVm sprites[16];
     char *endFileData;
@@ -81,6 +83,7 @@ struct Ending
     i32 timesFileParsed;
     ZunColor textColor;
     ZunColor endingFadeColor;
+    ZunColor prevEndingFadeColor;
     i32 timeFading;
     i32 fadeFrames;
     EndingFadeType fadeType;

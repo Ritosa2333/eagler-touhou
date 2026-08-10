@@ -46,4 +46,5 @@ u16 GetControllerInput(u16 buttons);
 const u8 *GetControllerState();
 u16 GetInput(void);
 void ResetKeyboard(void);
+void SetEnterSuppressed(bool suppressed);
 }; // namespace Controller

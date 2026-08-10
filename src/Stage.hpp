@@ -99,6 +99,7 @@ struct Stage
     ZunResult LoadStageData(const char *anmpath, const char *stdpath);
     ZunResult UpdateObjects();
     ZunResult RenderObjects(i32 zLevel);
+    ZunVec3 GetDrawCameraFacingDir() const;
 
     AnmVm *quadVms;
     const RawStageHeader *stdData;
@@ -115,6 +116,7 @@ struct Stage
     ZunVec3 prevPosition;
     ZunVec3 prevCameraFacingDir;
     StageCameraSky skyFog;
+    StageCameraSky prevSkyFog;
     StageCameraSky skyFogInterpInitial;
     StageCameraSky skyFogInterpFinal;
     i32 skyFogInterpDuration;

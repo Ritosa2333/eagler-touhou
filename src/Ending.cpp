@@ -29,15 +29,21 @@ i32 Ending::ReadEndFileParameter()
     return readResult;
 }
 
-void Ending::FadingEffect()
+static ZunColor LerpEndingColor(ZunColor from, ZunColor to, f32 amount)
 {
-    ZunRect endingRect;
-    ZunColor color;
+    ZunColor result = 0;
+    for (i32 component = 0; component < 4; component++)
+    {
+        const f32 value = COLOR_GET_COMPONENT(from, component) * (1.0f - amount) +
+                          COLOR_GET_COMPONENT(to, component) * amount;
+        COLOR_SET_COMPONENT(result, component, (u8)value);
+    }
+    return result;
+}
 
-    endingRect.left = 0.0;
-    endingRect.top = 0.0;
-    endingRect.right = GAME_WINDOW_WIDTH;
-    endingRect.bottom = GAME_WINDOW_HEIGHT;
+void Ending::UpdateFade()
+{
+    ZunColor color;
 
     switch (this->fadeType)
     {
@@ -99,9 +105,15 @@ void Ending::FadingEffect()
         this->endingFadeColor = 0x00000000;
         break;
     }
-    if ((this->endingFadeColor & COLOR_BLACK) != 0)
+}
+
+void Ending::FadingEffect()
+{
+    ZunRect endingRect = {0.0f, 0.0f, GAME_WINDOW_WIDTH, GAME_WINDOW_HEIGHT};
+    const ZunColor drawColor = LerpEndingColor(this->prevEndingFadeColor, this->endingFadeColor, g_RenderAlpha);
+    if ((drawColor & COLOR_ALPHA_MASK) != 0)
     {
-        ScreenEffect::DrawSquare(&endingRect, this->endingFadeColor);
+        ScreenEffect::DrawSquare(&endingRect, drawColor);
     }
 }
 
@@ -473,6 +485,8 @@ ChainCallbackResult Ending::OnUpdate(Ending *ending)
     i32 idx;
     i32 framesPressed;
 
+    ending->prevBackgroundPos = ending->backgroundPos;
+    ending->prevEndingFadeColor = ending->endingFadeColor;
     for (AnmVm &vm : ending->sprites)
     {
         vm.UpdatePrev();
@@ -498,6 +512,7 @@ ChainCallbackResult Ending::OnUpdate(Ending *ending)
         }
         break;
     };
+    ending->UpdateFade();
     return CHAIN_CALLBACK_RESULT_CONTINUE;
 }
 
@@ -505,13 +520,14 @@ ChainCallbackResult Ending::OnDraw(Ending *ending)
 {
     i32 idx;
 
-    g_AnmManager->CopySurfaceRectToBackBuffer(0, 0, 0, ending->backgroundPos.x, ending->backgroundPos.y,
-                                              GAME_WINDOW_WIDTH, GAME_WINDOW_HEIGHT);
+    const ZunVec2 drawBackgroundPos = ending->prevBackgroundPos.Lerp(ending->backgroundPos, g_RenderAlpha);
+    g_AnmManager->CopySurfaceRectToBackBuffer(0, 0, 0, drawBackgroundPos.x, drawBackgroundPos.y,
+                                               GAME_WINDOW_WIDTH, GAME_WINDOW_HEIGHT);
     for (idx = 0; idx < ARRAY_SIZE_SIGNED(ending->sprites); idx++)
     {
         if (ending->sprites[idx].anmFileIndex != 0)
         {
-            g_AnmManager->DrawNoRotation(&ending->sprites[idx]);
+            g_AnmManager->DrawInterpNoRotation(&ending->sprites[idx]);
         }
     }
     ending->FadingEffect();

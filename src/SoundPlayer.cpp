@@ -63,8 +63,8 @@ SoundPlayer::SoundPlayer()
 
 ZunResult SoundPlayer::InitializeDSound()
 {
-    SDL_AudioSpec desiredAudio;
-    if (SDL_InitSubSystem(SDL_INIT_AUDIO))
+    SDL_AudioSpec desiredAudio{};
+    if (!SDL_InitSubSystem(SDL_INIT_AUDIO))
     {
         goto fail;
     }
@@ -90,6 +90,7 @@ ZunResult SoundPlayer::InitializeDSound()
     return ZUN_SUCCESS;
 
 fail:
+    SDL_LogError(SDL_LOG_CATEGORY_AUDIO, "th06: audio initialization failed: %s", SDL_GetError());
     g_GameErrorContext.Log(TH_ERR_SOUNDPLAYER_FAILED_TO_INITIALIZE_OBJECT);
     return ZUN_ERROR;
 }
@@ -473,7 +474,13 @@ void SoundPlayer::PlaySounds()
 
     while (SDL_GetAudioStreamQueued(this->audioStream) < 8192)
     {
-        this->MixAudio(2048);
+        // If the stream can't accept data (device gone, stream unbound, ...),
+        // SDL_PutAudioStreamData fails and the queue never fills; bail out
+        // instead of spinning forever.
+        if (!this->MixAudio(2048))
+        {
+            break;
+        }
     }
 }
 
@@ -502,9 +509,8 @@ void SoundPlayer::PlaySoundByIdx(SoundIdx idx)
     this->soundBuffersToPlay[i] = idx;
 }
 
-void SoundPlayer::MixAudio(u32 samples)
-{
-    std::vector<i16> finalBuffer(samples);
+bool SoundPlayer::MixAudio(u32 samples)
+{    std::vector<i16> finalBuffer(samples);
     std::vector<i32> mixBuffer(samples);
     u8 playingChannels = 0;
 
@@ -559,9 +565,11 @@ void SoundPlayer::MixAudio(u32 samples)
 
             for (u32 j = 0; j < samplesToMix; j++)
             {
-                mixBuffer[samplesMixed + j * 2] +=
+                // samplesMixed counts stereo frames; each frame occupies two
+                // slots in the interleaved mix buffer.
+                mixBuffer[(samplesMixed + j) * 2] +=
                     ((i16)ReadU16LE(this->backgroundMusic.srcWav.fileStream)) * fadeoutMult;
-                mixBuffer[samplesMixed + j * 2 + 1] +=
+                mixBuffer[(samplesMixed + j) * 2 + 1] +=
                     ((i16)ReadU16LE(this->backgroundMusic.srcWav.fileStream)) * fadeoutMult;
             }
 
@@ -620,7 +628,7 @@ void SoundPlayer::MixAudio(u32 samples)
         finalBuffer[i] = mixBuffer[i] / mixDivisor;
     }
 
-    SDL_PutAudioStreamData(this->audioStream, finalBuffer.data(), samples * 2);
+    return SDL_PutAudioStreamData(this->audioStream, finalBuffer.data(), samples * 2);
 }
 
 // EoSD originally just used this function to manage the streaming of the music WAV file.
@@ -631,5 +639,5 @@ void SoundPlayer::BackgroundMusicPlayerThread()
     // Kept as an ABI-compatible entry point for now. SDL3 audio is fed from
     // PlaySounds(), once per application iteration, so the browser main thread
     // never creates or blocks on an audio producer thread.
-    this->MixAudio(2048);
+    (void)this->MixAudio(2048);
 }

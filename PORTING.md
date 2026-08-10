@@ -32,6 +32,37 @@ It is intentionally not an extension of the old SDL2 `WebGL` experiment.
    menu, character/shot selection, and gameplay at stable logic timing. Audio,
    pause/resume, and save reload remain explicit follow-up acceptance checks.
 
+## High-refresh invariants
+
+TH06 was written around one simulation update and one draw at 60 Hz. Desktop
+and web presentation may run faster, but the following rules must remain true:
+
+- Simulation, input edge detection, RNG, timers, collision, audio events, and
+  ANM script advancement run only on the fixed 60 Hz calc chain.
+- Every presentation frame establishes the viewport, camera, depth clear, and
+  other scene state it needs. A draw callback must not rely on the final state
+  left by the previous presentation frame.
+- Interpolation is limited to state with a complete previous/current lifecycle.
+  Creation, object-pool reuse, script replacement, and invisible-to-visible
+  transitions must initialize both endpoints to the same authoritative value.
+- Layout and clip rectangles are discrete render state. Do not interpolate the
+  playfield viewport or other values that determine where subsequent draws are
+  clipped.
+- Positions derived during drawing from an owning object (for example text on
+  a moving result panel) interpolate the owner once, then derive their final
+  draw positions. They must not keep an independent history based on temporary
+  draw-time coordinates.
+- Temporary VM changes made for drawing must be restored before returning, or
+  be made on a local VM copy. Draw-only values must not become the next calc
+  tick's previous state accidentally.
+
+There are a few deliberate compatibility exceptions inherited by TH07
+reallyportable: the pause state changes from its capture state after a draw,
+offscreen item indicator sprite selection is render-derived, and the FPS
+counter measures presentation time. These paths must remain idempotent on
+render-only frames and must never advance RNG, timers, or ANM scripts more than
+once per simulation tick.
+
 ## Asset contract
 
 For a local bundled test build, place legally obtained files in `assets/`:

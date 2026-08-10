@@ -11,6 +11,7 @@
 // DIFFABLE_STATIC(JOYCAPSA, g_JoystickCaps)
 static u16 g_FocusButtonConflictState;
 static u8 *keyboardState;
+static bool g_EnterSuppressed;
 
 u16 Controller::GetJoystickCaps(void)
 {
@@ -383,9 +384,17 @@ u16 Controller::GetInput(void)
     buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_SKIP, SDL_SCANCODE_RCTRL);
     buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_Q, SDL_SCANCODE_Q);
     buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_S, SDL_SCANCODE_S);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_ENTER, SDL_SCANCODE_RETURN);
+    if (!g_EnterSuppressed)
+    {
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_ENTER, SDL_SCANCODE_RETURN);
+    }
 
     return Controller::GetControllerInput(buttons);
+}
+
+void Controller::SetEnterSuppressed(bool suppressed)
+{
+    g_EnterSuppressed = suppressed;
 }
 
 void Controller::ResetKeyboard(void)
