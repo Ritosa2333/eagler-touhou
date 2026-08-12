@@ -68,4 +68,13 @@ inline i32 TouchBombSerial()
     return 0;
 #endif
 }
+
+inline i32 TouchEscapeSerial()
+{
+#ifdef __EMSCRIPTEN__
+    return EM_ASM_INT({ return Module.eaglerControls?.escapeSerial | 0; });
+#else
+    return 0;
+#endif
+}
 } // namespace EaglerOptions

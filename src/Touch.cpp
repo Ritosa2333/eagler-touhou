@@ -53,6 +53,7 @@ bool g_BombPending = false;
 bool g_PausePending = false;
 bool g_BombedWithTouch = false;
 i32 g_LastHostBombSerial = 0;
+i32 g_LastHostEscapeSerial = 0;
 
 bool IsGameplayTouchMode()
 {
@@ -416,6 +417,13 @@ u16 Touch::GetButtonBits()
             g_BombPending = true;
             g_UsedThisRun = true;
         }
+    }
+
+    const i32 hostEscapeSerial = EaglerOptions::TouchEscapeSerial();
+    if (hostEscapeSerial != g_LastHostEscapeSerial)
+    {
+        g_LastHostEscapeSerial = hostEscapeSerial;
+        buttons |= TH_BUTTON_MENU;
     }
 
     if (!IsGameplayTouchMode())

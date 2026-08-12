@@ -263,10 +263,11 @@
             reply(message.request, true);
             break;
           case "touch-controls":
-            if (typeof message.fireEnabled !== "boolean" || !Number.isInteger(message.bombSerial))
+            if (typeof message.fireEnabled !== "boolean" || !Number.isInteger(message.bombSerial) || !Number.isInteger(message.escapeSerial))
               throw new Error("invalid touch controls");
             Module.eaglerControls.fireEnabled = message.fireEnabled;
             Module.eaglerControls.bombSerial = message.bombSerial;
+            Module.eaglerControls.escapeSerial = message.escapeSerial;
             reply(message.request, true);
             break;
           case "list":
@@ -311,7 +312,7 @@
         // sends an explicit mode before launching an embedded runtime.
         touhouMusicMode: "",
       eaglerOptions: { thpracEnabled: false, touchEnabled: false, unlimitedTouch: false, touchBombZoneEnabled: true, alwaysHitbox: false, th06FocusHitbox: false, thpracSession: null },
-        eaglerControls: { fireEnabled: true, bombSerial: 0 },
+        eaglerControls: { fireEnabled: true, bombSerial: 0, escapeSerial: 0 },
         preRun: [() => {
           addRunDependency("savesth06-sync");
           try { FS.mkdir(saveRoot); } catch (error) {
