@@ -255,7 +255,7 @@ void Touch::FingerDown(const SDL_TouchFingerEvent &f)
             return;
         }
 
-        if (IsBombZone(px, py))
+        if (EaglerOptions::TouchBombZoneEnabled() && IsBombZone(px, py))
         {
             g_BombPending = true;
             g_UsedThisRun = true;
@@ -531,35 +531,37 @@ void Touch::ConsumePlayerDelta(f32 dx, f32 dy)
 }
 
 #ifdef __EMSCRIPTEN__
-// SDL only reports touches that begin on its canvas. eagler-touhou uses these
-// entry points for additional fingers that land in the surrounding letterbox.
-// A letterbox touch can extend an existing gesture, but can never start one.
-extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchDown(i32 id)
+// SDL only reports touches that begin on its canvas. The Web shell forwards
+// touches from the surrounding letterbox through these equivalent entry points.
+extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchDown(i32 id, f32 x, f32 y)
 {
     if (!EaglerOptions::TouchEnabled())
     {
         return;
     }
 
-    if ((IsGameplayTouchMode() && !g_MoveFinger.active) ||
-        (!IsGameplayTouchMode() && !g_MenuGesture.active))
-    {
-        return;
-    }
-
     SDL_TouchFingerEvent event = {};
     event.fingerID = static_cast<SDL_FingerID>(id);
-    event.x = 0.5f;
-    event.y = 0.5f;
+    event.x = x;
+    event.y = y;
     Touch::FingerDown(event);
 }
 
-extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchUp(i32 id)
+extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchMotion(i32 id, f32 x, f32 y)
 {
     SDL_TouchFingerEvent event = {};
     event.fingerID = static_cast<SDL_FingerID>(id);
-    event.x = 0.5f;
-    event.y = 0.5f;
+    event.x = x;
+    event.y = y;
+    Touch::FingerMotion(event);
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchUp(i32 id, f32 x, f32 y)
+{
+    SDL_TouchFingerEvent event = {};
+    event.fingerID = static_cast<SDL_FingerID>(id);
+    event.x = x;
+    event.y = y;
     Touch::FingerUp(event);
 }
 #endif

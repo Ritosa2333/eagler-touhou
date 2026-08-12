@@ -178,7 +178,7 @@
         if (!Array.isArray(message.thpracCatalog ?? []) || (message.thpracCatalog?.length || 0) > 256) throw new Error("invalid thprac catalog");
         thpracCatalog = message.thpracCatalog ?? [];
         Module.eaglerThpracCatalog = thpracCatalog;
-        for (const key of ["thpracEnabled", "touchEnabled", "unlimitedTouch", "alwaysHitbox", "th06FocusHitbox"]) {
+        for (const key of ["thpracEnabled", "touchEnabled", "unlimitedTouch", "touchBombZoneEnabled", "alwaysHitbox", "th06FocusHitbox"]) {
           if (options[key] != null && typeof options[key] !== "boolean") throw new Error("invalid eagler-touhou option");
         }
         const session = options.thpracSession;
@@ -188,6 +188,7 @@
           thpracEnabled: !!options.thpracEnabled,
           touchEnabled: !!options.touchEnabled,
           unlimitedTouch: !!options.touchEnabled && !!options.unlimitedTouch,
+          touchBombZoneEnabled: options.touchBombZoneEnabled !== false,
           alwaysHitbox: !!options.alwaysHitbox,
           th06FocusHitbox: !!options.th06FocusHitbox,
           debugHarness: options.debugHarness || null,
@@ -309,7 +310,7 @@
         // Empty means original auto-detection for standalone builds. The host
         // sends an explicit mode before launching an embedded runtime.
         touhouMusicMode: "",
-      eaglerOptions: { thpracEnabled: false, touchEnabled: false, unlimitedTouch: false, alwaysHitbox: false, th06FocusHitbox: false, thpracSession: null },
+      eaglerOptions: { thpracEnabled: false, touchEnabled: false, unlimitedTouch: false, touchBombZoneEnabled: true, alwaysHitbox: false, th06FocusHitbox: false, thpracSession: null },
         eaglerControls: { fireEnabled: true, bombSerial: 0 },
         preRun: [() => {
           addRunDependency("savesth06-sync");
@@ -347,24 +348,38 @@
       };
 
       Module.canvas.addEventListener("pointerdown", () => Module.canvas.focus());
-      const canvasTouches = new Set();
-      const auxiliaryTouches = new Set();
+      const auxiliaryTouches = new Map();
+      let nextAuxiliaryTouchId = -1;
+      const auxiliaryCoordinates = event => {
+        const rect = Module.canvas.getBoundingClientRect();
+        return [(event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height];
+      };
       document.addEventListener("pointerdown", event => {
         if (event.pointerType !== "touch" || !Module.eaglerOptions.touchEnabled) return;
-        if (event.target === Module.canvas) {
-          canvasTouches.add(event.pointerId);
-          return;
-        }
-        if (!canvasTouches.size || typeof Module._TouhouAuxTouchDown !== "function") return;
-        auxiliaryTouches.add(event.pointerId);
-        Module._TouhouAuxTouchDown(event.pointerId);
+        if (event.target === Module.canvas || typeof Module._TouhouAuxTouchDown !== "function") return;
+        const [x, y] = auxiliaryCoordinates(event);
+        const touch = { id: nextAuxiliaryTouchId--, x, y };
+        auxiliaryTouches.set(event.pointerId, touch);
+        Module._TouhouAuxTouchDown(touch.id, x, y);
+        try { event.target.setPointerCapture?.(event.pointerId); } catch {}
+        event.preventDefault();
+      }, { capture: true, passive: false });
+      document.addEventListener("pointermove", event => {
+        if (event.pointerType !== "touch" || !auxiliaryTouches.has(event.pointerId)) return;
+        const [x, y] = auxiliaryCoordinates(event);
+        const touch = auxiliaryTouches.get(event.pointerId);
+        touch.x = x;
+        touch.y = y;
+        if (typeof Module._TouhouAuxTouchMotion === "function") Module._TouhouAuxTouchMotion(touch.id, x, y);
         event.preventDefault();
       }, { capture: true, passive: false });
       const releaseTouch = event => {
         if (event.pointerType !== "touch") return;
-        canvasTouches.delete(event.pointerId);
-        if (!auxiliaryTouches.delete(event.pointerId)) return;
-        if (typeof Module._TouhouAuxTouchUp === "function") Module._TouhouAuxTouchUp(event.pointerId);
+        const touch = auxiliaryTouches.get(event.pointerId);
+        if (!touch) return;
+        auxiliaryTouches.delete(event.pointerId);
+        const [x, y] = Number.isFinite(event.clientX) ? auxiliaryCoordinates(event) : [touch.x, touch.y];
+        if (typeof Module._TouhouAuxTouchUp === "function") Module._TouhouAuxTouchUp(touch.id, x, y);
         event.preventDefault();
       };
       document.addEventListener("pointerup", releaseTouch, { capture: true, passive: false });

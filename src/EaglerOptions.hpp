@@ -24,6 +24,15 @@ inline bool UnlimitedTouch()
 #endif
 }
 
+inline bool TouchBombZoneEnabled()
+{
+#ifdef __EMSCRIPTEN__
+    return EM_ASM_INT({ return Module.eaglerOptions?.touchBombZoneEnabled !== false; }) != 0;
+#else
+    return true;
+#endif
+}
+
 inline bool AlwaysShowHitbox()
 {
 #ifdef __EMSCRIPTEN__
