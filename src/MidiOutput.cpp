@@ -10,11 +10,28 @@
 #include <cstdlib>
 #include <cstring>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#endif
+
+static u16 ReadMidiBE16(const u8 *data)
+{
+    return (static_cast<u16>(data[0]) << 8) | data[1];
+}
+
+static u32 ReadMidiBE32(const u8 *data)
+{
+    return (static_cast<u32>(data[0]) << 24) | (static_cast<u32>(data[1]) << 16) |
+           (static_cast<u32>(data[2]) << 8) | data[3];
+}
+
 void MidiOutput::StartTimer(u32 delay, SDL_TimerCallback cb, void *data)
 {
     this->StopTimer();
 
     this->lastTimerTicks = SDL_GetTicks();
+    this->timerActive.store(true, std::memory_order_release);
+    this->timerPaused.store(false, std::memory_order_release);
 
     if (cb != NULL)
     {
@@ -22,18 +39,36 @@ void MidiOutput::StartTimer(u32 delay, SDL_TimerCallback cb, void *data)
     }
     else
     {
-        this->timerId = SDL_AddTimer(delay, (SDL_TimerCallback)&MidiOutput::DefaultTimerCallback, this);
+        this->timerId = SDL_AddTimer(delay, MidiOutput::DefaultTimerCallback, this);
     }
+
+    if (this->timerId == 0)
+    {
+        this->timerActive.store(false, std::memory_order_release);
+    }
+}
+
+void MidiOutput::SetPaused(bool value)
+{
+    std::lock_guard<std::mutex> lock(this->timerMutex);
+    this->timerPaused.store(value, std::memory_order_release);
+    this->lastTimerTicks = SDL_GetTicks();
 }
 
 i32 MidiOutput::StopTimer()
 {
+    this->timerActive.store(false, std::memory_order_release);
     if (this->timerId != 0)
     {
         SDL_RemoveTimer(this->timerId);
     }
 
     this->timerId = 0;
+
+    // SDL_RemoveTimer only cancels future callbacks; it does not join one
+    // which is already executing. Synchronize with the callback before any
+    // MIDI tracks or the MidiOutput itself can be released.
+    std::lock_guard<std::mutex> lock(this->timerMutex);
 
     return 1;
 }
@@ -43,30 +78,49 @@ u32 SDLCALL MidiOutput::DefaultTimerCallback(void *userdata, SDL_TimerID timerID
     (void)timerID;
 
     MidiOutput *timer = (MidiOutput *)userdata;
+    std::lock_guard<std::mutex> lock(timer->timerMutex);
+    if (!timer->timerActive.load(std::memory_order_acquire))
+    {
+        return 0;
+    }
+    if (timer->timerPaused.load(std::memory_order_acquire))
+    {
+        timer->lastTimerTicks = SDL_GetTicks();
+        return interval;
+    }
     timer->OnTimerElapsed();
 
     return interval; // Reschedules with same interval
 }
 
-u32 MidiOutput::ReadVariableLength(u8 **curTrackDataCursor)
+bool MidiOutput::ReadVariableLength(u8 **curTrackDataCursor, const u8 *end, u32 *value)
 {
-    u32 length;
-    u8 tmp;
+    u32 length = 0;
 
-    length = 0;
-    do
+    // A Standard MIDI variable-length quantity is at most four bytes.
+    for (i32 count = 0; count < 4; ++count)
     {
-        tmp = **curTrackDataCursor;
-        *curTrackDataCursor = *curTrackDataCursor + 1;
+        if (*curTrackDataCursor >= end)
+        {
+            return false;
+        }
+        const u8 tmp = *(*curTrackDataCursor)++;
         length = length * 0x80 + (tmp & 0x7f);
-    } while ((tmp & 0x80) != 0);
+        if ((tmp & 0x80) == 0)
+        {
+            *value = length;
+            return true;
+        }
+    }
 
-    return length;
+    return false;
 }
 
 MidiOutput::MidiOutput()
 {
     this->timerId = 0;
+    this->timerActive.store(false, std::memory_order_relaxed);
+    this->timerPaused.store(false, std::memory_order_relaxed);
 
     this->tracks = NULL;
     this->divisions = 0;
@@ -79,6 +133,7 @@ MidiOutput::MidiOutput()
     for (int i = 0; i < ARRAY_SIZE_SIGNED(this->midiFileData); i++)
     {
         this->midiFileData[i] = NULL;
+        this->midiFileSizes[i] = 0;
     }
 }
 
@@ -96,7 +151,15 @@ MidiOutput::~MidiOutput()
 
 ZunResult MidiOutput::ReadFileData(u32 idx, const char *path)
 {
-    if (g_Supervisor.cfg.musicMode != MIDI)
+    if (idx >= ARRAY_SIZE(this->midiFileData))
+    {
+        return ZUN_ERROR;
+    }
+    bool allowRead = g_Supervisor.cfg.musicMode == MIDI;
+#ifdef __EMSCRIPTEN__
+    allowRead = allowRead || EM_ASM_INT({ return Module.touhouMusicMode === 'ogg'; });
+#endif
+    if (!allowRead)
     {
         return ZUN_SUCCESS;
     }
@@ -112,14 +175,21 @@ ZunResult MidiOutput::ReadFileData(u32 idx, const char *path)
         return ZUN_ERROR;
     }
 
+    this->midiFileSizes[idx] = g_LastFileSize;
+
     return ZUN_SUCCESS;
 }
 
 void MidiOutput::ReleaseFileData(u32 idx)
 {
+    if (idx >= ARRAY_SIZE(this->midiFileData))
+    {
+        return;
+    }
     std::free(this->midiFileData[idx]);
 
     this->midiFileData[idx] = NULL;
+    this->midiFileSizes[idx] = 0;
 }
 
 void MidiOutput::ClearTracks()
@@ -128,7 +198,7 @@ void MidiOutput::ClearTracks()
     u8 *data;
     MidiTrack *tracks;
 
-    for (trackIndex = 0; trackIndex < this->numTracks; trackIndex++)
+    for (trackIndex = 0; this->tracks != NULL && trackIndex < this->numTracks; trackIndex++)
     {
         data = this->tracks[trackIndex].trackData;
         std::free(data);
@@ -151,6 +221,11 @@ ZunResult MidiOutput::ParseFile(i32 fileIdx)
     u32 hdrLength;
 
     this->ClearTracks();
+    if (fileIdx < 0 || fileIdx >= ARRAY_SIZE_SIGNED(this->midiFileData) ||
+        this->midiFileSizes[fileIdx] < 14)
+    {
+        return ZUN_ERROR;
+    }
     currentCursor = this->midiFileData[fileIdx];
     if (currentCursor == NULL)
     {
@@ -160,11 +235,21 @@ ZunResult MidiOutput::ParseFile(i32 fileIdx)
 
     // Read midi header chunk
     // First, read the header len
+    const u8 *fileEnd = currentCursor + this->midiFileSizes[fileIdx];
     std::memcpy(&hdrRaw, currentCursor, 8);
+    if (std::memcmp(hdrRaw, "MThd", 4) != 0)
+    {
+        return ZUN_ERROR;
+    }
 
     // Get a pointer to the end of the header chunk
     currentCursor += sizeof(hdrRaw);
-    hdrLength = SDL_Swap32BE(*(u32 *)(hdrRaw + 4));
+    hdrLength = ReadMidiBE32(hdrRaw + 4);
+
+    if (hdrLength < 6 || static_cast<size_t>(fileEnd - currentCursor) < hdrLength)
+    {
+        return ZUN_ERROR;
+    }
 
     endOfHeaderPointer = currentCursor;
     currentCursor += hdrLength;
@@ -175,30 +260,57 @@ ZunResult MidiOutput::ParseFile(i32 fileIdx)
     //  sequence
     //  2: the file contains one or more sequentially independent single-track
     //  patterns
-    this->format = SDL_Swap16BE(*(u16 *)endOfHeaderPointer);
+    this->format = ReadMidiBE16(endOfHeaderPointer);
 
     // Read the divisions in this track. Note that this doesn't appear to support
     // "negative SMPTE format", which happens when the MSB is set.
-    this->divisions = SDL_Swap16BE(*(u16 *)(endOfHeaderPointer + 4));
+    this->divisions = ReadMidiBE16(endOfHeaderPointer + 4);
     // Read the number of tracks in this midi file.
-    this->numTracks = SDL_Swap16BE(*(u16 *)(endOfHeaderPointer + 2));
+    this->numTracks = ReadMidiBE16(endOfHeaderPointer + 2);
+
+    if (this->format > 2 || this->divisions <= 0 || this->numTracks <= 0 || this->numTracks > 256)
+    {
+        this->numTracks = 0;
+        return ZUN_ERROR;
+    }
 
     // Allocate this->divisions * 32 bytes.
     this->tracks = (MidiTrack *)ZunMemory::Alloc(sizeof(MidiTrack) * this->numTracks);
+    if (this->tracks == NULL)
+    {
+        this->numTracks = 0;
+        return ZUN_ERROR;
+    }
     std::memset(this->tracks, 0, sizeof(MidiTrack) * this->numTracks);
     for (trackIdx = 0; trackIdx < this->numTracks; trackIdx++)
     {
         currentCursorTrack = currentCursor;
+        if (fileEnd - currentCursor < 8 || std::memcmp(currentCursorTrack, "MTrk", 4) != 0)
+        {
+            this->ClearTracks();
+            return ZUN_ERROR;
+        }
         currentCursor += 8;
 
         // Read a track (MTrk) chunk.
         //
         // First, read the length of the chunk
-        trackLength = SDL_Swap32BE(*(u32 *)(currentCursorTrack + 4));
+        trackLength = ReadMidiBE32(currentCursorTrack + 4);
+        if (trackLength == 0 || static_cast<size_t>(fileEnd - currentCursor) < trackLength)
+        {
+            this->ClearTracks();
+            return ZUN_ERROR;
+        }
         this->tracks[trackIdx].trackLength = trackLength;
         this->tracks[trackIdx].trackData = (u8 *)ZunMemory::Alloc(trackLength);
+        if (this->tracks[trackIdx].trackData == NULL)
+        {
+            this->ClearTracks();
+            return ZUN_ERROR;
+        }
         this->tracks[trackIdx].trackPlaying = 1;
         std::memcpy(this->tracks[trackIdx].trackData, currentCursor, trackLength);
+        this->tracks[trackIdx].trackDataEnd = this->tracks[trackIdx].trackData + trackLength;
         currentCursor += trackLength;
     }
     this->tempo = 1'000'000;
@@ -212,10 +324,10 @@ ZunResult MidiOutput::LoadFile(const char *midiPath)
         return ZUN_ERROR;
     }
 
-    this->ParseFile(0x1f);
+    const ZunResult result = this->ParseFile(0x1f);
     this->ReleaseFileData(0x1f);
 
-    return ZUN_SUCCESS;
+    return result;
 }
 
 void MidiOutput::LoadTracks()
@@ -233,7 +345,11 @@ void MidiOutput::LoadTracks()
         track->curTrackDataCursor = track->trackData;
         track->loopPointTarget = track->curTrackDataCursor;
         track->trackPlaying = true;
-        track->nextMessageTimePos = MidiOutput::ReadVariableLength(&track->curTrackDataCursor);
+        if (!MidiOutput::ReadVariableLength(&track->curTrackDataCursor, track->trackDataEnd,
+                                            &track->nextMessageTimePos))
+        {
+            track->trackPlaying = false;
+        }
     }
 }
 
@@ -245,25 +361,26 @@ ZunResult MidiOutput::Play()
     }
 
     this->LoadTracks();
-    this->midiOutDev.OpenDevice(0xFFFF'FFFF);
+    if (!this->midiOutDev.OpenDevice(0xFFFF'FFFF))
+    {
+        return ZUN_ERROR;
+    }
     this->StartTimer(1, NULL, NULL);
+
+    if (this->timerId == 0)
+    {
+        this->midiOutDev.Close();
+        return ZUN_ERROR;
+    }
 
     return ZUN_SUCCESS;
 }
 
 ZunResult MidiOutput::StopPlayback()
 {
-    if (this->tracks == NULL)
-    {
-        return ZUN_ERROR;
-    }
-    else
-    {
-        this->StopTimer();
-        this->midiOutDev.Close();
-
-        return ZUN_SUCCESS;
-    }
+    this->StopTimer();
+    this->midiOutDev.Close();
+    return ZUN_SUCCESS;
 }
 
 u32 MidiOutput::SetFadeOut(u32 ms)
@@ -288,6 +405,10 @@ void MidiOutput::OnTimerElapsed()
     bool trackLoaded;
 
     trackLoaded = false;
+    if (this->tempo <= 0 || this->divisions <= 0 || this->tracks == NULL)
+    {
+        return;
+    }
     timePos = this->tickBase + (this->elapsedMS * this->divisions * 1000) / this->tempo;
     if (this->fadeOutFlag)
     {
@@ -339,16 +460,30 @@ void MidiOutput::OnTimerElapsed()
 void MidiOutput::ProcessMsg(MidiTrack *track)
 {
     i32 curTrackLength;
-    u8 arg1, arg2;
+    u8 arg1 = 0, arg2 = 0;
     u8 opcode, opcodeHigh, opcodeLow;
     u8 metaEventID;
     i32 idx;
     u8 *sysExData;
 
+    if (track == NULL || track->curTrackDataCursor >= track->trackDataEnd)
+    {
+        if (track != NULL)
+        {
+            track->trackPlaying = false;
+        }
+        return;
+    }
+
     opcode = *track->curTrackDataCursor;
     if (opcode < MIDI_OPCODE_NOTE_OFF)
     {
         opcode = track->opcode;
+        if (opcode < MIDI_OPCODE_NOTE_OFF)
+        {
+            track->trackPlaying = false;
+            return;
+        }
     }
     else
     {
@@ -363,9 +498,21 @@ void MidiOutput::ProcessMsg(MidiTrack *track)
     case MIDI_OPCODE_SYSTEM_EXCLUSIVE:
         if (opcode == MIDI_OPCODE_SYSTEM_EXCLUSIVE)
         {
-            curTrackLength = MidiOutput::ReadVariableLength(&track->curTrackDataCursor);
+            u32 messageLength = 0;
+            if (!MidiOutput::ReadVariableLength(&track->curTrackDataCursor, track->trackDataEnd, &messageLength) ||
+                messageLength > static_cast<u32>(track->trackDataEnd - track->curTrackDataCursor))
+            {
+                track->trackPlaying = false;
+                return;
+            }
+            curTrackLength = static_cast<i32>(messageLength);
 
             sysExData = (u8 *)std::malloc(curTrackLength + 1);
+            if (sysExData == NULL)
+            {
+                track->trackPlaying = false;
+                return;
+            }
             sysExData[0] = MIDI_OPCODE_SYSTEM_EXCLUSIVE;
 
             std::memcpy(sysExData + 1, track->curTrackDataCursor, curTrackLength);
@@ -382,9 +529,21 @@ void MidiOutput::ProcessMsg(MidiTrack *track)
             // sort of escape code to introducde its own meta-events system,
             // which are events that make sense in the context of a MIDI
             // file, but not in the context of the MIDI protocol itself.
+            if (track->curTrackDataCursor >= track->trackDataEnd)
+            {
+                track->trackPlaying = false;
+                return;
+            }
             metaEventID = *track->curTrackDataCursor;
             track->curTrackDataCursor++;
-            curTrackLength = MidiOutput::ReadVariableLength(&track->curTrackDataCursor);
+            u32 messageLength = 0;
+            if (!MidiOutput::ReadVariableLength(&track->curTrackDataCursor, track->trackDataEnd, &messageLength) ||
+                messageLength > static_cast<u32>(track->trackDataEnd - track->curTrackDataCursor))
+            {
+                track->trackPlaying = false;
+                return;
+            }
+            curTrackLength = static_cast<i32>(messageLength);
 
             // End of Track meta-event.
             if (metaEventID == 0x2f)
@@ -402,8 +561,14 @@ void MidiOutput::ProcessMsg(MidiTrack *track)
 
                 for (idx = 0; idx < curTrackLength; idx++)
                 {
-                    this->tempo += this->tempo * 0x100 + *track->curTrackDataCursor;
+                    this->tempo = this->tempo * 0x100 + *track->curTrackDataCursor;
                     track->curTrackDataCursor++;
+                }
+
+                if (this->tempo <= 0)
+                {
+                    track->trackPlaying = false;
+                    return;
                 }
 
                 break;
@@ -417,6 +582,11 @@ void MidiOutput::ProcessMsg(MidiTrack *track)
     case MIDI_OPCODE_POLYPHONIC_AFTERTOUCH:
     case MIDI_OPCODE_MODE_CHANGE:
     case MIDI_OPCODE_PITCH_BEND_CHANGE:
+        if (track->trackDataEnd - track->curTrackDataCursor < 2)
+        {
+            track->trackPlaying = false;
+            return;
+        }
         arg1 = *track->curTrackDataCursor;
         track->curTrackDataCursor++;
         arg2 = *track->curTrackDataCursor;
@@ -424,10 +594,22 @@ void MidiOutput::ProcessMsg(MidiTrack *track)
         break;
     case MIDI_OPCODE_PROGRAM_CHANGE:
     case MIDI_OPCODE_CHANNEL_AFTERTOUCH:
+        if (track->curTrackDataCursor >= track->trackDataEnd)
+        {
+            track->trackPlaying = false;
+            return;
+        }
         arg1 = *track->curTrackDataCursor;
         track->curTrackDataCursor++;
         arg2 = 0;
         break;
+    }
+
+    if ((opcodeHigh >= MIDI_OPCODE_NOTE_OFF && opcodeHigh <= MIDI_OPCODE_PITCH_BEND_CHANGE) &&
+        (arg1 >= 0x80 || arg2 >= 0x80))
+    {
+        track->trackPlaying = false;
+        return;
     }
 
     switch (opcodeHigh)
@@ -509,7 +691,14 @@ void MidiOutput::ProcessMsg(MidiTrack *track)
     }
 
     track->opcode = opcode;
-    track->nextMessageTimePos += MidiOutput::ReadVariableLength(&track->curTrackDataCursor);
+    u32 delta = 0;
+    if (!MidiOutput::ReadVariableLength(&track->curTrackDataCursor, track->trackDataEnd, &delta) ||
+        UINT32_MAX - track->nextMessageTimePos < delta)
+    {
+        track->trackPlaying = false;
+        return;
+    }
+    track->nextMessageTimePos += delta;
 }
 
 void MidiOutput::FadeOutSetVolume(i32 volume)

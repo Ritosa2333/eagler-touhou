@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GLFunc.hpp"
 #include "GfxInterface.hpp"
@@ -49,6 +49,7 @@ struct WebGL : GfxInterface
     virtual void SetDepthRange(f32 nearPlane, f32 farPlane);
 
     virtual void Enable(Capabilities cap);
+    virtual void Disable(Capabilities cap);
     virtual bool HasError();
     virtual void SetBlendMode(BlendMode mode);
     virtual void SetDepthMask(bool enable);

@@ -71,7 +71,7 @@ class GlesGraphics : public GfxInterface
     void SetViewport(const ZunViewport &viewport);
 
     void Enable(Capabilities cap) override;
-    void Disable(Capabilities cap);
+    void Disable(Capabilities cap) override;
 
     void SetBlendMode(BlendMode srcMode, BlendMode dstMode);
     void SetDepthMask(bool enable) override;
@@ -112,13 +112,13 @@ class GlesGraphics : public GfxInterface
     void SwapBuffers() override;
 
   private:
-    SDL_GLContext ctx;
-    u32 shaderProgram;
-    u32 vaos[3][3];
-    u32 vbos[3];
+    SDL_GLContext ctx = nullptr;
+    u32 shaderProgram = 0;
+    u32 vaos[3][3] = {};
+    u32 vbos[3] = {};
     u32 curVbo = 0xFFFFFFFF;
-    u32 blitProgram;
-    u32 blitVao;
+    u32 blitProgram = 0;
+    u32 blitVao = 0;
     u8 alphaRef = 0;
     TextureArg texArg = TEX_ARG_DIFFUSE;
     ZunColor textureFactor = {0xFFFFFFFF};
@@ -149,12 +149,12 @@ class GlesGraphics : public GfxInterface
     bool alphaTestEnabled = false;
     bool depthMaskEnabled = true;
 
-    GLint u_Model, u_View, u_Proj, u_TextureMatrix;
-    GLint u_ScreenSpace, u_Viewport;
-    GLint u_UseTexture, u_Texture;
-    GLint u_ColorOpRgb, u_ColorOpAlpha, u_TexArg, u_TextureFactor;
-    GLint u_AlphaTest, u_AlphaRef;
-    GLint u_FogEnabled, u_FogColor, u_FogNear, u_FogFar;
+    GLint u_Model = -1, u_View = -1, u_Proj = -1, u_TextureMatrix = -1;
+    GLint u_ScreenSpace = -1, u_Viewport = -1;
+    GLint u_UseTexture = -1, u_Texture = -1;
+    GLint u_ColorOpRgb = -1, u_ColorOpAlpha = -1, u_TexArg = -1, u_TextureFactor = -1;
+    GLint u_AlphaTest = -1, u_AlphaRef = -1;
+    GLint u_FogEnabled = -1, u_FogColor = -1, u_FogNear = -1, u_FogFar = -1;
     GLint u_BlitTexture = -1;
 
     CachedState stateCache;
@@ -180,6 +180,7 @@ class GlesGraphics : public GfxInterface
             glGetShaderInfoLog(shader, 512, nullptr, log);
             SDL_LogError(SDL_LOG_CATEGORY_RENDER, "shader compile error: %s", log);
             utils::DebugPrint("shader compile error: %s\n", log);
+            glDeleteShader(shader);
             return 0;
         }
         return shader;

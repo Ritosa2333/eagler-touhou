@@ -50,6 +50,13 @@ RenderResult GameWindow::Render()
 
     if (this->lastActiveAppValue == 0)
     {
+        // Vanilla TH06 stops advancing the game while inactive, but its
+        // DirectSound buffers keep playing.  Our SDL stream is fed by the
+        // main thread, so keep that stream supplied without running a game
+        // tick.  Otherwise WAV/OGG music stops as soon as the queued audio is
+        // exhausted.
+        g_SoundPlayer.PlaySounds();
+        SDL_Delay(16);
         return RENDER_RESULT_KEEP_RUNNING;
     }
 
@@ -113,6 +120,19 @@ RenderResult GameWindow::Render()
         }
         this->accumulator -= targetDt;
         updated = true;
+    }
+
+    // Scene callbacks can request a Supervisor state change after the
+    // Supervisor has already run for this 60 Hz tick. Their calc element and
+    // draw element are removed immediately, while the replacement scene can
+    // only be registered on the next fixed tick. At high presentation rates,
+    // clearing and presenting in that interval exposes one or more black
+    // frames. Vanilla TH06 leaves the last completed backbuffer visible during
+    // this hand-off. Do the same until Supervisor has installed the new scene.
+    if (g_Supervisor.wantedState != g_Supervisor.curState)
+    {
+        SDL_Delay(1);
+        return RENDER_RESULT_KEEP_RUNNING;
     }
 
     g_RenderAlpha = std::clamp(static_cast<f32>(this->accumulator / targetDt), 0.0f, 1.0f);
@@ -194,25 +214,43 @@ void GameWindow::Present()
 
 void GameWindow::CreateGameWindow()
 {
+    SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
+    SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
+
     // On Windows SDL3 may otherwise create an OpenGL ES profile through WGL.
     // The portable builds link Mesa GLES, so force SDL onto the matching EGL
     // path just as the established TH07 desktop package does.
+#ifndef USING_GL
     SDL_SetHint(SDL_HINT_OPENGL_ES_DRIVER, "1");
+#endif
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD))
     {
         return;
     }
 
+#ifdef USING_GL
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+#else
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+#endif
     SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 0);
 
     SDL_PropertiesID props = SDL_CreateProperties();
     SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, TH_WINDOW_TITLE);
     SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_OPENGL_BOOLEAN, true);
+#if defined(__ANDROID__) || (defined(__APPLE__) && TARGET_OS_IPHONE)
+    SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FULLSCREEN_BOOLEAN, true);
+    SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_HIGH_PIXEL_DENSITY_BOOLEAN, true);
+#elif defined(__EMSCRIPTEN__)
+    SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_HIGH_PIXEL_DENSITY_BOOLEAN, true);
+#else
     SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, GAME_WINDOW_WIDTH);
     SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, GAME_WINDOW_HEIGHT);
+#endif
     g_GameWindow.window = SDL_CreateWindowWithProperties(props);
     SDL_DestroyProperties(props);
     if (!g_GameWindow.window)
@@ -633,6 +671,7 @@ void GameWindow::InitD3dDevice(void)
     if (((g_Supervisor.cfg.opts >> GCOS_DONT_USE_FOG) & 1) == 0)
     {
         g_GfxBackend->Enable(CAPS_FOG);
+        g_Supervisor.fogEnabled = 1;
     }
 
     if (((g_Supervisor.cfg.opts >> GCOS_TURN_OFF_DEPTH_TEST) & 1) == 0)

@@ -10,6 +10,7 @@
 #include "Gui.hpp"
 #include "Player.hpp"
 #include "Rng.hpp"
+#include "RuntimeExtension.hpp"
 #include "Stage.hpp"
 #include "utils.hpp"
 
@@ -40,6 +41,14 @@ ZunResult EclManager::Load(const char *eclPath)
 
     if (this->eclFile == NULL)
     {
+        g_GameErrorContext.Log(TH_ERR_ECLMANAGER_ENEMY_DATA_CORRUPT);
+        return ZUN_ERROR;
+    }
+
+    if (!RuntimeExtension::OnEclLoaded(eclPath, (u8 *)this->eclFile, g_LastFileSize))
+    {
+        free((void *)this->eclFile);
+        this->eclFile = NULL;
         g_GameErrorContext.Log(TH_ERR_ECLMANAGER_ENEMY_DATA_CORRUPT);
         return ZUN_ERROR;
     }

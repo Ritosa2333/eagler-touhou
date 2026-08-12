@@ -1,6 +1,7 @@
 #pragma once
 
 #include "inttypes.hpp"
+#include <SDL3/SDL_iostream.h>
 #include <cstdio>
 
 enum AccessMode
@@ -48,7 +49,7 @@ class FileAbstraction : public IFileAbstraction
     }
 
   protected:
-    std::FILE *handle;
+    SDL_IOStream *handle;
 
   private:
     AccessMode access;

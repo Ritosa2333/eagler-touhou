@@ -182,6 +182,14 @@ void Software::Enable(Capabilities cap)
     }
 }
 
+void Software::Disable(Capabilities cap)
+{
+    if (cap == CAPS_DEPTH_TEST)
+    {
+        useDepthTest = false;
+    }
+}
+
 void Software::SetBlendMode(BlendMode mode)
 {
     blendMode = mode;

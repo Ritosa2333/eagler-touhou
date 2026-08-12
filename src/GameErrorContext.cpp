@@ -14,7 +14,7 @@ const char *GameErrorContext::Log(const char *fmt, ...)
     va_list args;
 
     va_start(args, fmt);
-    std::vsprintf(tmpBuffer, fmt, args);
+    std::vsnprintf(tmpBuffer, sizeof(tmpBuffer), fmt, args);
 
     tmpBufferSize = std::strlen(tmpBuffer);
 
@@ -38,7 +38,7 @@ const char *GameErrorContext::Fatal(const char *fmt, ...)
     va_list args;
 
     va_start(args, fmt);
-    std::vsprintf(tmpBuffer, fmt, args);
+    std::vsnprintf(tmpBuffer, sizeof(tmpBuffer), fmt, args);
 
     tmpBufferSize = std::strlen(tmpBuffer);
 
@@ -72,7 +72,10 @@ void GameErrorContext::Flush()
 
         logFile = FileSystem::FopenUTF8("./log.txt", "w");
 
-        std::fprintf(logFile, "%s", m_Buffer);
-        std::fclose(logFile);
+        if (logFile != NULL)
+        {
+            std::fprintf(logFile, "%s", m_Buffer);
+            std::fclose(logFile);
+        }
     }
 }

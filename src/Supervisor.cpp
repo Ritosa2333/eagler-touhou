@@ -24,7 +24,49 @@
 #include <cstring>
 #include <ctime>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#endif
+
 Supervisor g_Supervisor;
+#ifdef __EMSCRIPTEN__
+static char g_WebMidiPaths[32][256] = {};
+
+static bool IsWebOggMode()
+{
+    return EM_ASM_INT({ return Module.touhouMusicMode === 'ogg'; }) != 0;
+}
+
+static bool HasWebOggForMidi(const char *midiPath)
+{
+    char oggPath[256];
+    std::strncpy(oggPath, midiPath, sizeof(oggPath) - 1);
+    oggPath[sizeof(oggPath) - 1] = '\0';
+    char *extension = std::strrchr(oggPath, '.');
+    if (!extension || extension + 4 >= oggPath + sizeof(oggPath))
+    {
+        return false;
+    }
+    std::strcpy(extension, ".ogg");
+    SDL_IOStream *stream = FileSystem::OpenFileStream(oggPath, "rb");
+    if (!stream)
+    {
+        return false;
+    }
+    SDL_CloseIO(stream);
+    return true;
+}
+
+static void NotifyWebMidiFallback(const char *path)
+{
+    EM_ASM({
+        if (window.parent !== window) {
+            window.parent.postMessage({ protocol: 'eagler-touhou/1', game: 'th06',
+                event: 'midi-fallback', path: UTF8ToString($0) }, location.origin);
+        }
+    }, path);
+}
+#endif
 ControllerMapping g_ControllerMapping = {
     (i16)SDL_GAMEPAD_BUTTON_SOUTH,
     (i16)SDL_GAMEPAD_BUTTON_EAST,
@@ -617,6 +659,33 @@ void Supervisor::TickTimer(i32 *frames, f32 *subframes)
     }
 }
 
+// Fog is a per-draw state: 3D stage objects are fogged, while 2D overlay and
+// effect quads (spellcard background, popups, ...) render clear of it. This
+// mirrors the TH07 reallyportable mechanism.
+i32 Supervisor::EnableFog()
+{
+    g_AnmManager->FlushVertexBuffer();
+    if (this->fogEnabled != 1)
+    {
+        this->fogEnabled = 1;
+        g_GfxBackend->Enable(CAPS_FOG);
+        return 1;
+    }
+    return 0;
+}
+
+i32 Supervisor::DisableFog()
+{
+    g_AnmManager->FlushVertexBuffer();
+    if (this->fogEnabled)
+    {
+        this->fogEnabled = 0;
+        g_GfxBackend->Disable(CAPS_FOG);
+        return 1;
+    }
+    return 0;
+}
+
 void Supervisor::ReleasePbg3(i32 pbg3FileIdx)
 {
     if (this->pbg3Archives[pbg3FileIdx] == NULL)
@@ -624,16 +693,6 @@ void Supervisor::ReleasePbg3(i32 pbg3FileIdx)
         return;
     }
 
-    // Double free! Release is called internally by the Pbg3Archive destructor,
-    // and as such should not be called directly. By calling it directly here,
-    // it ends up being called twice, which will cause the resources owned by
-    // Pbg3Archive to be freed multiple times, which can result in crashes.
-    //
-    // For some reason, this double-free doesn't cause crashes in the original
-    // game. However, this can cause problems in dllbuilds of the game. Maybe
-    // some accuracy improvements in the PBG3 handling will remove this
-    // difference.
-    this->pbg3Archives[pbg3FileIdx]->Release();
     delete this->pbg3Archives[pbg3FileIdx];
     this->pbg3Archives[pbg3FileIdx] = NULL;
 }
@@ -675,8 +734,19 @@ i32 Supervisor::LoadPbg3(i32 pbg3FileIdx, const char *filename)
 ZunResult Supervisor::LoadConfig(const char *path)
 {
     const GameConfiguration *data;
-    FILE *wavFile;
-    FILE *wavFile2;
+    const auto hasStreamedBgm = []() {
+        SDL_IOStream *stream = FileSystem::OpenFileStream("bgm/th06_01.wav", "rb");
+        if (stream == NULL)
+        {
+            stream = FileSystem::OpenFileStream("bgm/th06_01.ogg", "rb");
+        }
+        if (stream == NULL)
+        {
+            return false;
+        }
+        SDL_CloseIO(stream);
+        return true;
+    };
 
     std::memset(&g_Supervisor.cfg, 0, sizeof(GameConfiguration));
     g_Supervisor.cfg.opts = g_Supervisor.cfg.opts | (1 << GCOS_USE_D3D_HW_TEXTURE_BLENDING);
@@ -689,11 +759,9 @@ ZunResult Supervisor::LoadConfig(const char *path)
         g_Supervisor.cfg.version = GAME_VERSION;
         g_Supervisor.cfg.padXAxis = 600;
         g_Supervisor.cfg.padYAxis = 600;
-        wavFile = FileSystem::FopenUTF8("bgm/th06_01.wav", "rb");
-        if (wavFile != NULL)
+        if (hasStreamedBgm())
         {
             g_Supervisor.cfg.musicMode = WAV;
-            std::fclose(wavFile);
         }
         else
         {
@@ -722,11 +790,9 @@ ZunResult Supervisor::LoadConfig(const char *path)
             g_Supervisor.cfg.version = GAME_VERSION;
             g_Supervisor.cfg.padXAxis = 600;
             g_Supervisor.cfg.padYAxis = 600;
-            wavFile2 = FileSystem::FopenUTF8("bgm/th06_01.wav", "rb");
-            if (wavFile2 != NULL)
+            if (hasStreamedBgm())
             {
                 g_Supervisor.cfg.musicMode = WAV;
-                std::fclose(wavFile2);
             }
             else
             {
@@ -745,6 +811,18 @@ ZunResult Supervisor::LoadConfig(const char *path)
         g_ControllerMapping = g_Supervisor.cfg.controllerMapping;
         free((void *)data);
     }
+#ifdef __EMSCRIPTEN__
+    // eagler-touhou chooses the original MIDI/WAV mode at run time. OGG is an
+    // alternative resource format handled by SoundPlayer's WAV path.
+    const int webMusicMode = EM_ASM_INT({
+        return Module.touhouMusicMode === 'midi' ? 2 :
+               (Module.touhouMusicMode === 'wav' || Module.touhouMusicMode === 'ogg' ? 1 : 0);
+    });
+    if (webMusicMode == MIDI || webMusicMode == WAV)
+    {
+        g_Supervisor.cfg.musicMode = static_cast<MusicMode>(webMusicMode);
+    }
+#endif
     if (((this->cfg.opts >> GCOS_DONT_USE_VERTEX_BUF) & 1) != 0)
     {
         g_GameErrorContext.Log(TH_ERR_NO_VERTEX_BUFFER);
@@ -807,7 +885,18 @@ ZunResult Supervisor::LoadConfig(const char *path)
 bool Supervisor::ReadMidiFile(u32 midiFileIdx, const char *path)
 {
     // Return conventions seem opposite of normal? But they're never used anyway
-    if (g_Supervisor.cfg.musicMode == MIDI)
+    #ifdef __EMSCRIPTEN__
+    if (midiFileIdx < ARRAY_SIZE(g_WebMidiPaths))
+    {
+        std::strncpy(g_WebMidiPaths[midiFileIdx], path, sizeof(g_WebMidiPaths[midiFileIdx]) - 1);
+        g_WebMidiPaths[midiFileIdx][sizeof(g_WebMidiPaths[midiFileIdx]) - 1] = '\0';
+    }
+    #endif
+    if (g_Supervisor.cfg.musicMode == MIDI
+        #ifdef __EMSCRIPTEN__
+        || IsWebOggMode()
+        #endif
+    )
     {
         if (g_Supervisor.midiOutput != NULL)
         {
@@ -822,8 +911,23 @@ bool Supervisor::ReadMidiFile(u32 midiFileIdx, const char *path)
 
 ZunResult Supervisor::PlayMidiFile(i32 midiFileIdx)
 {
-    if (g_Supervisor.cfg.musicMode == MIDI)
+    bool useMidi = g_Supervisor.cfg.musicMode == MIDI;
+    #ifdef __EMSCRIPTEN__
+    if (IsWebOggMode() && midiFileIdx >= 0 && midiFileIdx < ARRAY_SIZE(g_WebMidiPaths) &&
+        !HasWebOggForMidi(g_WebMidiPaths[midiFileIdx]))
     {
+        useMidi = true;
+        NotifyWebMidiFallback(g_WebMidiPaths[midiFileIdx]);
+    }
+    #endif
+    if (useMidi)
+    {
+#ifdef __EMSCRIPTEN__
+        if (IsWebOggMode())
+        {
+            g_SoundPlayer.StopBGM();
+        }
+#endif
         if (g_Supervisor.midiOutput != NULL)
         {
             g_Supervisor.midiOutput->StopPlayback();
@@ -843,8 +947,22 @@ ZunResult Supervisor::PlayAudio(const char *path)
     char wavPos[256];
     char *pathExtension;
 
-    if (g_Supervisor.cfg.musicMode == MIDI)
+    bool useMidi = g_Supervisor.cfg.musicMode == MIDI;
+    #ifdef __EMSCRIPTEN__
+    if (IsWebOggMode() && !HasWebOggForMidi(path))
     {
+        useMidi = true;
+        NotifyWebMidiFallback(path);
+    }
+    #endif
+    if (useMidi)
+    {
+#ifdef __EMSCRIPTEN__
+        if (IsWebOggMode())
+        {
+            g_SoundPlayer.StopBGM();
+        }
+#endif
         if (g_Supervisor.midiOutput != NULL)
         {
             g_Supervisor.midiOutput->StopPlayback();
@@ -854,6 +972,12 @@ ZunResult Supervisor::PlayAudio(const char *path)
     }
     else if (g_Supervisor.cfg.musicMode == WAV)
     {
+#ifdef __EMSCRIPTEN__
+        if (IsWebOggMode() && g_Supervisor.midiOutput != NULL)
+        {
+            g_Supervisor.midiOutput->StopPlayback();
+        }
+#endif
         std::strcpy(wavName, path);
         std::strcpy(wavPos, path);
         pathExtension = std::strrchr(wavName, L'.');
@@ -883,6 +1007,17 @@ ZunResult Supervisor::PlayAudio(const char *path)
 
 ZunResult Supervisor::StopAudio()
 {
+#ifdef __EMSCRIPTEN__
+    if (IsWebOggMode())
+    {
+        if (g_Supervisor.midiOutput != NULL)
+        {
+            g_Supervisor.midiOutput->StopPlayback();
+        }
+        g_SoundPlayer.StopBGM();
+        return ZUN_SUCCESS;
+    }
+#endif
     if (g_Supervisor.cfg.musicMode == MIDI)
     {
         if (g_Supervisor.midiOutput != NULL)
@@ -907,6 +1042,20 @@ ZunResult Supervisor::StopAudio()
 
 ZunResult Supervisor::FadeOutMusic(f32 fadeOutSeconds)
 {
+#ifdef __EMSCRIPTEN__
+    if (IsWebOggMode())
+    {
+        if (g_Supervisor.midiOutput != NULL)
+        {
+            g_Supervisor.midiOutput->SetFadeOut(1000.0f * fadeOutSeconds);
+        }
+        g_SoundPlayer.FadeOut(this->effectiveFramerateMultiplier > 0.0f &&
+                                      this->effectiveFramerateMultiplier < 1.0f
+                                  ? fadeOutSeconds / this->effectiveFramerateMultiplier
+                                  : fadeOutSeconds);
+        return ZUN_SUCCESS;
+    }
+#endif
     if (g_Supervisor.cfg.musicMode == MIDI)
     {
         if (g_Supervisor.midiOutput != NULL)

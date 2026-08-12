@@ -271,14 +271,6 @@ ChainCallbackResult Stage::OnUpdate(Stage *stage)
 
 ChainCallbackResult Stage::OnDrawHighPrio(Stage *stage)
 {
-    if (stage->skyFogNeedsSetup)
-    {
-        stage->skyFogNeedsSetup = 0;
-        //        g_Supervisor.d3dDevice->SetRenderState(D3DRS_FOGCOLOR, stage->skyFog.color);
-
-        g_AnmManager->SetFogColor(stage->skyFog.color);
-    }
-
     //    g_Supervisor.d3dDevice->SetRenderState(D3DRS_FOGSTART, *(u32 *)&stage->skyFog.nearPlane);
     //    g_Supervisor.d3dDevice->SetRenderState(D3DRS_FOGEND, *(u32 *)&stage->skyFog.farPlane);
 
@@ -325,7 +317,20 @@ ChainCallbackResult Stage::OnDrawLowPrio(Stage *stage)
     }
     if (RUNNING <= stage->spellcardState)
     {
-        g_AnmManager->Draw(&stage->spellcardBackground);
+        // The spellcard background renders clear of the stage fog in the
+        // original (see Supervisor::DisableFog); the range-based fog would
+        // over-fog this large flat quad with a visible fog-color gradient.
+        // Respect GCOS_DONT_USE_FOG: if the user disabled fog, leave it off.
+        if (((g_Supervisor.cfg.opts >> GCOS_DONT_USE_FOG) & 1) == 0)
+        {
+            g_Supervisor.DisableFog();
+            g_AnmManager->Draw(&stage->spellcardBackground);
+            g_Supervisor.EnableFog();
+        }
+        else
+        {
+            g_AnmManager->Draw(&stage->spellcardBackground);
+        }
     }
     g_AnmManager->FlushVertexBuffer();
     g_Supervisor.viewport.minZ = 0.0;

@@ -1,5 +1,7 @@
 #include "pbg3/FileAbstraction.hpp"
 #include "FileSystem.hpp"
+#include <cstdio>
+#include <new>
 
 FileAbstraction::FileAbstraction()
 {
@@ -41,7 +43,7 @@ i32 FileAbstraction::Open(const char *filename, const char *mode)
         return 0;
     }
 
-    this->handle = FileSystem::FopenUTF8(filename, openMode);
+    this->handle = FileSystem::OpenFileStream(filename, openMode);
 
     if (this->handle == NULL)
         return 0;
@@ -53,7 +55,7 @@ void FileAbstraction::Close()
 {
     if (this->handle != NULL)
     {
-        std::fclose(this->handle);
+        SDL_CloseIO(this->handle);
         this->handle = NULL;
         this->access = ACCESS_INVALID;
     }
@@ -61,24 +63,26 @@ void FileAbstraction::Close()
 
 i32 FileAbstraction::Read(u8 *data, u32 dataLen, u32 *numBytesRead)
 {
-    if (this->access != ACCESS_READ)
+    if (this->access != ACCESS_READ || this->handle == NULL || numBytesRead == NULL ||
+        (data == NULL && dataLen != 0))
     {
         return false;
     }
 
-    *numBytesRead = std::fread(data, 1, dataLen, this->handle);
+    *numBytesRead = SDL_ReadIO(this->handle, data, dataLen);
 
     return !(dataLen != 0 && *numBytesRead < dataLen);
 }
 
 i32 FileAbstraction::Write(const u8 *data, u32 dataLen, u32 *outWritten)
 {
-    if (this->access != ACCESS_WRITE)
+    if (this->access != ACCESS_WRITE || this->handle == NULL || outWritten == NULL ||
+        (data == NULL && dataLen != 0))
     {
         return false;
     }
 
-    *outWritten = std::fwrite(data, 1, dataLen, this->handle);
+    *outWritten = SDL_WriteIO(this->handle, data, dataLen);
 
     return !(dataLen != 0 && *outWritten < dataLen);
 }
@@ -129,8 +133,10 @@ i32 FileAbstraction::Seek(u32 amount, u32 seekFrom)
         return 0;
     }
 
-    std::fseek(this->handle, amount, seekFrom);
-    return 1;
+    SDL_IOWhence whence = SDL_IO_SEEK_SET;
+    if (seekFrom == SEEK_CUR) whence = SDL_IO_SEEK_CUR;
+    else if (seekFrom == SEEK_END) whence = SDL_IO_SEEK_END;
+    return SDL_SeekIO(this->handle, amount, whence) >= 0;
 }
 
 u32 FileAbstraction::Tell()
@@ -140,7 +146,8 @@ u32 FileAbstraction::Tell()
         return 0;
     }
 
-    return std::ftell(this->handle);
+    const Sint64 position = SDL_TellIO(this->handle);
+    return position < 0 ? 0 : static_cast<u32>(position);
 }
 
 u32 FileAbstraction::GetSize()
@@ -150,12 +157,8 @@ u32 FileAbstraction::GetSize()
         return 0;
     }
 
-    long curPos = std::ftell(this->handle);
-    std::fseek(this->handle, 0, SEEK_END);
-    u32 fileLen = (u32)std::ftell(this->handle);
-    std::fseek(this->handle, curPos, SEEK_SET);
-
-    return fileLen;
+    const Sint64 size = SDL_GetIOSize(this->handle);
+    return size < 0 || static_cast<Uint64>(size) > UINT32_MAX ? 0 : static_cast<u32>(size);
 }
 
 u8 *FileAbstraction::ReadWholeFile(u32 maxSize)
@@ -169,15 +172,13 @@ u8 *FileAbstraction::ReadWholeFile(u32 maxSize)
     u32 outDataLen;
     if (dataLen <= maxSize)
     {
-        u8 *data = new u8[dataLen];
+        u8 *data = new (std::nothrow) u8[dataLen == 0 ? 1 : dataLen];
         if (data != NULL)
         {
             u32 oldLocation = this->Tell();
-            // Pretty sure the plan here was to seek to 0, but woops the code
-            // is buggy.
-            if (this->Seek(oldLocation, SEEK_SET) != 0)
+            if (this->Seek(0, SEEK_SET) != 0)
             {
-                if (this->Read(data, dataLen, &outDataLen) == 0)
+                if (this->Read(data, dataLen, &outDataLen) == 0 || outDataLen != dataLen)
                 {
                     delete[] data;
                     return NULL;
@@ -185,7 +186,7 @@ u8 *FileAbstraction::ReadWholeFile(u32 maxSize)
                 this->Seek(oldLocation, SEEK_SET);
                 return data;
             }
-            // Yes, this case leaks the data. Amazing, I know.
+            delete[] data;
         }
     }
     return NULL;

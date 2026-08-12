@@ -42,6 +42,10 @@ Chain::Chain()
 
 int Chain::AddToCalcChain(ChainElem *elem, int priority)
 {
+    if (elem == NULL)
+    {
+        return ZUN_ERROR;
+    }
     ChainElem *cur;
 
     cur = &this->calcChain;
@@ -92,6 +96,10 @@ int Chain::AddToCalcChain(ChainElem *elem, int priority)
 
 int Chain::AddToDrawChain(ChainElem *elem, int priority)
 {
+    if (elem == NULL)
+    {
+        return ZUN_ERROR;
+    }
     ChainElem *cur;
 
     cur = &this->drawChain;
@@ -241,42 +249,17 @@ int Chain::RunDrawChain(void)
 
 void Chain::ReleaseSingleChain(ChainElem *root)
 {
-    // NOTE: Those names are like this to get perfect stack frame matching
-    // TODO: Give meaningfull names that still match.
-    ChainElem a0;
-    ChainElem *current;
-    ChainElem *tmp;
-    ChainElem *wasNext;
-
-    tmp = new ChainElem();
-    a0.next = tmp;
-
-    current = root;
-    while (current != NULL)
+    if (root == NULL)
     {
-        tmp->unkPtr = current;
-        tmp->next = new ChainElem();
-        tmp = tmp->next;
-        current = current->next;
+        return;
     }
 
-    current = &a0;
-    while (current != NULL)
+    // Always remove the live first element. Deleted callbacks are allowed to
+    // cut other elements, so retaining a snapshot of raw pointers can turn
+    // the next iteration into a use-after-free.
+    while (root->next != NULL)
     {
-        Cut(current->unkPtr);
-        current = current->next;
-    }
-
-    tmp = a0.next;
-
-    while (tmp != NULL)
-    {
-        wasNext = tmp->next;
-
-        delete tmp;
-
-        tmp = NULL;
-        tmp = wasNext;
+        Cut(root->next);
     }
 }
 
@@ -290,7 +273,12 @@ ChainElem *Chain::CreateElem(ChainCallback callback)
 {
     ChainElem *elem;
 
-    elem = new ChainElem();
+    elem = new (std::nothrow) ChainElem();
+
+    if (elem == NULL)
+    {
+        return NULL;
+    }
 
     elem->callback = callback;
     elem->addedCallback = NULL;

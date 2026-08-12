@@ -5,6 +5,7 @@
 #include "GameErrorContext.hpp"
 #include "GameWindow.hpp"
 #include "Supervisor.hpp"
+#include "Touch.hpp"
 #include "i18n.hpp"
 #include "utils.hpp"
 
@@ -252,7 +253,7 @@ u16 Controller::GetControllerInput(u16 buttons)
 u32 Controller::SetButtonFromDirectInputJoystate(u16 *outButtons, i16 controllerButtonToTest,
                                                  enum TouhouButton touhouButton, const u8 *inputButtons)
 {
-    if (controllerButtonToTest < 0)
+    if (controllerButtonToTest < 0 || controllerButtonToTest >= 128 || inputButtons == NULL)
     {
         return 0;
     }
@@ -267,7 +268,7 @@ u32 Controller::SetButtonFromControllerInputs(u16 *outButtons, i16 controllerBut
 {
     u8 pressed;
 
-    if (controllerButtonToTest < 0)
+    if (controllerButtonToTest < 0 || controllerButtonToTest >= SDL_GAMEPAD_BUTTON_COUNT || controller == NULL)
     {
         return 0;
     }
@@ -292,12 +293,9 @@ const u8 *Controller::GetControllerState()
     //    DIJOYSTATE2 dijoystate2;
     //    i32 diRetryCount;
 
+    memset(&g_ControllerData, 0, sizeof(g_ControllerData));
     if (g_Supervisor.gameController != NULL)
     {
-        memset(&g_ControllerData, 0, sizeof(g_ControllerData));
-
-        SDL_Joystick *joystick = SDL_GetGamepadJoystick(g_Supervisor.gameController);
-
         for (int i = 0; i < SDL_GAMEPAD_BUTTON_COUNT; i++)
         {
             if (SDL_GetGamepadButton(g_Supervisor.gameController, (SDL_GamepadButton)i))
@@ -362,6 +360,11 @@ u16 Controller::GetInput(void)
 {
     u16 buttons = 0;
 
+    if (keyboardState == NULL)
+    {
+        return Controller::GetControllerInput(buttons) | Touch::GetButtonBits();
+    }
+
     buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_UP, SDL_SCANCODE_UP);
     buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_DOWN, SDL_SCANCODE_DOWN);
     buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_LEFT, SDL_SCANCODE_LEFT);
@@ -389,7 +392,7 @@ u16 Controller::GetInput(void)
         buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_ENTER, SDL_SCANCODE_RETURN);
     }
 
-    return Controller::GetControllerInput(buttons);
+    return Controller::GetControllerInput(buttons) | Touch::GetButtonBits();
 }
 
 void Controller::SetEnterSuppressed(bool suppressed)

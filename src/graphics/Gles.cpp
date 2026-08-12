@@ -4,6 +4,7 @@
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
 #include <cstddef>
+#include <new>
 #include <vector>
 
 #define COLOR_R(c) (((c) >> 16) & 0xff)
@@ -150,7 +151,11 @@ const char *blitFSSource =
 
 GfxInterface *GlesGraphics::Init()
 {
-    GlesGraphics *gfx = new GlesGraphics;
+    GlesGraphics *gfx = new (std::nothrow) GlesGraphics();
+    if (gfx == nullptr)
+    {
+        return nullptr;
+    }
 
     SDL_GLContext ctx = SDL_GL_CreateContext(g_GameWindow.window);
     if (!ctx)
@@ -168,8 +173,10 @@ GfxInterface *GlesGraphics::Init()
         return nullptr;
     }
 
-    SDL_Log("GLES renderer: %s; GLSL: %s", glGetString(GL_VERSION),
-            glGetString(GL_SHADING_LANGUAGE_VERSION));
+    const GLubyte *version = glGetString(GL_VERSION);
+    const GLubyte *glslVersion = glGetString(GL_SHADING_LANGUAGE_VERSION);
+    SDL_Log("GLES renderer: %s; GLSL: %s", version != nullptr ? reinterpret_cast<const char *>(version) : "unknown",
+            glslVersion != nullptr ? reinterpret_cast<const char *>(glslVersion) : "unknown");
 
     glGenFramebuffers(1, &gfx->fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, gfx->fbo);
@@ -186,6 +193,13 @@ GfxInterface *GlesGraphics::Init()
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 640, 480);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER,
                               gfx->fboDepth);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "th06: GLES framebuffer is incomplete");
+        delete gfx;
+        return nullptr;
+    }
 
     glBindFramebuffer(GL_FRAMEBUFFER, gfx->fbo);
 
@@ -221,6 +235,9 @@ GfxInterface *GlesGraphics::Init()
     u32 fragmentShader = CompileShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
     if (vertexShader == 0 || fragmentShader == 0)
     {
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        delete gfx;
         return nullptr;
     }
 
@@ -228,6 +245,18 @@ GfxInterface *GlesGraphics::Init()
     glAttachShader(gfx->shaderProgram, vertexShader);
     glAttachShader(gfx->shaderProgram, fragmentShader);
     glLinkProgram(gfx->shaderProgram);
+    GLint linked = GL_FALSE;
+    glGetProgramiv(gfx->shaderProgram, GL_LINK_STATUS, &linked);
+    if (linked != GL_TRUE)
+    {
+        char log[512] = {};
+        glGetProgramInfoLog(gfx->shaderProgram, sizeof(log), nullptr, log);
+        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "th06: main shader link failed: %s", log);
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        delete gfx;
+        return nullptr;
+    }
     glUseProgram(gfx->shaderProgram);
 
     glDeleteShader(vertexShader);
@@ -237,6 +266,9 @@ GfxInterface *GlesGraphics::Init()
     fragmentShader = CompileShader(GL_FRAGMENT_SHADER, blitFSSource);
     if (vertexShader == 0 || fragmentShader == 0)
     {
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        delete gfx;
         return nullptr;
     }
 
@@ -244,6 +276,18 @@ GfxInterface *GlesGraphics::Init()
     glAttachShader(gfx->blitProgram, vertexShader);
     glAttachShader(gfx->blitProgram, fragmentShader);
     glLinkProgram(gfx->blitProgram);
+    linked = GL_FALSE;
+    glGetProgramiv(gfx->blitProgram, GL_LINK_STATUS, &linked);
+    if (linked != GL_TRUE)
+    {
+        char log[512] = {};
+        glGetProgramInfoLog(gfx->blitProgram, sizeof(log), nullptr, log);
+        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "th06: blit shader link failed: %s", log);
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        delete gfx;
+        return nullptr;
+    }
     glUseProgram(gfx->blitProgram);
 
     glDeleteShader(vertexShader);
@@ -342,7 +386,28 @@ GfxInterface *GlesGraphics::Init()
 
 void GlesGraphics::Exit()
 {
+    if (this->ctx == nullptr)
+    {
+        return;
+    }
+    if (!SDL_GL_MakeCurrent(g_GameWindow.window, this->ctx))
+    {
+        SDL_GL_DestroyContext(this->ctx);
+        this->ctx = nullptr;
+        return;
+    }
+    glDeleteVertexArrays(9, &this->vaos[0][0]);
+    glDeleteBuffers(3, this->vbos);
+    glDeleteVertexArrays(1, &this->unitQuadVao);
+    glDeleteBuffers(1, &this->unitQuadVbo);
+    glDeleteVertexArrays(1, &this->blitVao);
+    glDeleteProgram(this->shaderProgram);
+    glDeleteProgram(this->blitProgram);
+    glDeleteRenderbuffers(1, &this->fboDepth);
+    glDeleteTextures(1, &this->fboColor);
+    glDeleteFramebuffers(1, &this->fbo);
     SDL_GL_DestroyContext(this->ctx);
+    this->ctx = nullptr;
 }
 
 void GlesGraphics::BeginFrame()
@@ -811,6 +876,10 @@ void GlesGraphics::DrawPrimitive(PrimitiveType type, i32 startVertex, i32 primit
 void GlesGraphics::DrawPrimitiveUP(PrimitiveType type, i32 primitiveCount, const void *vertexData,
                                    i32 vertexStride)
 {
+    if (primitiveCount <= 0 || vertexData == nullptr || vertexStride <= 0)
+    {
+        return;
+    }
     i32 vertexCount = 0;
     GLenum glMode = GL_TRIANGLES;
 
@@ -831,6 +900,12 @@ void GlesGraphics::DrawPrimitiveUP(PrimitiveType type, i32 primitiveCount, const
     }
 
     GLsizeiptr bytesNeeded = vertexCount * vertexStride;
+    if (vertexCount <= 0 || bytesNeeded <= 0 || static_cast<size_t>(bytesNeeded) > VBO_CAPACITY)
+    {
+        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "th06: invalid immediate draw size (%lld bytes)",
+                     static_cast<long long>(bytesNeeded));
+        return;
+    }
     vboOffset = ((vboOffset + vertexStride - 1) / vertexStride) * vertexStride;
     GLuint vbo = vbos[curVbo];
 
@@ -867,6 +942,12 @@ void GlesGraphics::DrawPrimitiveUP(PrimitiveType type, i32 primitiveCount, const
         hasTex = false;
         targetVao = vaos[2][curVbo];
         break;
+    }
+
+    if (targetVao == 0)
+    {
+        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "th06: unsupported immediate vertex stride %d", vertexStride);
+        return;
     }
 
     vboOffset += bytesNeeded;
@@ -944,6 +1025,10 @@ void GlesGraphics::SwapBuffers()
 {
     i32 drawableWidth, drawableHeight;
     SDL_GetWindowSizeInPixels(g_GameWindow.window, &drawableWidth, &drawableHeight);
+    if (drawableWidth <= 0 || drawableHeight <= 0)
+    {
+        return;
+    }
 
 #if defined(__APPLE__) && TARGET_OS_IPHONE
     SDL_PropertiesID props = SDL_GetWindowProperties(g_GameWindow.window);

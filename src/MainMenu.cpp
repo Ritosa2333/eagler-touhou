@@ -12,7 +12,9 @@
 #include "GameErrorContext.hpp"
 #include "GameManager.hpp"
 #include "ReplayData.hpp"
+#include "Stage.hpp"
 #include "ReplayManager.hpp"
+#include "PracticeRuntime.hpp"
 #include "ResultScreen.hpp"
 #include "ScreenEffect.hpp"
 #include "SoundPlayer.hpp"
@@ -804,6 +806,32 @@ ChainCallbackResult MainMenu::OnUpdate(MainMenu *menu)
         }
         break;
     case STATE_PRACTICE_LVL_SELECT:
+        if (PracticeRuntime::Enabled())
+        {
+            if (menu->stateTimer == 0)
+                PracticeRuntime::OpenPracticeMenu(g_GameManager.difficulty, g_GameManager.CharacterShotType());
+            switch (PracticeRuntime::PollPracticeMenu())
+            {
+            case PracticeRuntime::MenuResult::Waiting:
+                break;
+            case PracticeRuntime::MenuResult::Accepted:
+                g_GameManager.currentStage = PracticeRuntime::GetConfig().stage;
+                g_GameManager.menuCursorBackup = g_GameManager.currentStage;
+                goto something;
+            case PracticeRuntime::MenuResult::Cancelled:
+                menu->gameState = STATE_SHOT_SELECT;
+                menu->stateTimer = 0;
+                for (i = 0; i < ARRAY_SIZE_SIGNED(menu->vm); i++)
+                    menu->vm[i].pendingInterrupt = 13;
+                menu->vm[81 + g_GameManager.difficulty].pendingInterrupt = 0;
+                menu->cursor = g_GameManager.shotType;
+                g_SoundPlayer.PlaySoundByIdx(SOUND_BACK);
+                break;
+            }
+            // The thprac menu replaces the vanilla stage list completely.
+            // Do not let the original stage cursor consume the same inputs.
+            break;
+        }
         chosenStage = g_GameManager.clrd[g_GameManager.CharacterShotType()]
                                   .difficultyClearedWithoutRetries[g_GameManager.difficulty] > 6
                           ? 6
@@ -1326,9 +1354,11 @@ i32 MainMenu::ReplayHandling()
                 // Sorting makes the menu order deterministic on every host.
                 std::vector<std::string> userReplayNames;
                 std::error_code replayDirError;
-                std::filesystem::create_directories("./replay", replayDirError);
+                const std::filesystem::path replayDirectory =
+                    std::filesystem::u8path(FileSystem::GetPrefPath("./replay"));
+                std::filesystem::create_directories(replayDirectory, replayDirError);
                 replayDirError.clear();
-                for (const auto &entry : std::filesystem::directory_iterator("./replay", replayDirError))
+                for (const auto &entry : std::filesystem::directory_iterator(replayDirectory, replayDirError))
                 {
                     if (replayDirError || !entry.is_regular_file())
                     {
@@ -1418,10 +1448,22 @@ i32 MainMenu::ReplayHandling()
                 this->stateTimer = 0;
                 this->cursor = 0;
                 g_SoundPlayer.PlaySoundByIdx(SOUND_SELECT);
-                this->currentReplay = (ReplayData *)std::malloc(sizeof(ReplayData));
+                this->currentReplay = (ReplayData *)std::calloc(1, sizeof(ReplayData));
+                if (this->currentReplay == NULL)
+                {
+                    this->gameState = STATE_REPLAY_ANIM;
+                    break;
+                }
                 this->currentReplay->header =
                     (ReplayHeader *)FileSystem::OpenPath(this->replayFilePaths[this->chosenReplay], 1);
-                ReplayManager::ValidateReplayData(this->currentReplay->header, g_LastFileSize);
+                if (ReplayManager::ValidateReplayData(this->currentReplay->header, g_LastFileSize) != ZUN_SUCCESS)
+                {
+                    std::free(this->currentReplay->header);
+                    std::free(this->currentReplay);
+                    this->currentReplay = NULL;
+                    this->gameState = STATE_REPLAY_ANIM;
+                    break;
+                }
                 for (cur = 0; cur < ARRAY_SIZE_SIGNED(this->currentReplay->stageReplayData); cur++)
                 {
                     if (this->currentReplay->header->stageReplayDataOffsets[cur] != 0)
@@ -1948,6 +1990,11 @@ ZunResult MainMenu::ChoosePracticeLevel() const
 {
     if (this->gameState == STATE_PRACTICE_LVL_SELECT)
     {
+        if (PracticeRuntime::Enabled())
+        {
+            PracticeRuntime::DrawPracticeMenu();
+            return ZUN_SUCCESS;
+        }
         ZunVec3 textPos(320.0, 200.0, 0.0);
         u32 color = (this->stateTimer < 30) ? this->stateTimer * 0xFF / 30 : 0xff;
         i32 charShotType = (g_GameManager.character << 1) + g_GameManager.shotType;
@@ -2255,6 +2302,20 @@ ZunResult MainMenu::AddedCallback(MainMenu *m)
 
     anmmgr = g_AnmManager;
 
+    // Returning from a stage leaves the stage's fog color/range in the
+    // renderer; the menu's full-screen quads would then be fogged with it
+    // (a one-frame flash of the leftover fog color). Reset to the D3D
+    // defaults (gray, far range) so menu quads are never fogged.
+    g_AnmManager->SetFogColor(0xFF'A0'A0'A0);
+    g_AnmManager->SetFogRange(1'000.0f, 5'000.0f);
+
+    // The per-frame backbuffer clear color also comes from g_Stage.skyFog;
+    // clear that leftover too, otherwise menu transitions can flash the last
+    // stage's sky color.
+    g_Stage.skyFog.color = 0;
+    g_Stage.skyFog.nearPlane = 0.0f;
+    g_Stage.skyFog.farPlane = 0.0f;
+
     for (i = 0; i < ANM_OFFSET_TITLE01S - ANM_OFFSET_TITLE01; i++)
     {
         anmmgr->scripts[i + ANM_OFFSET_TITLE01] = NULL;
@@ -2302,6 +2363,11 @@ ZunResult MainMenu::AddedCallback(MainMenu *m)
     m->framesActive = 0;
     m->unk_10f28 = 0x10;
     m->currentReplay = NULL;
+    m->replayFilesNum = 0;
+    for (ReplayData &replayData : m->replayFileData)
+    {
+        replayData.header = NULL;
+    }
     scoredat = ResultScreen::OpenScore("score.dat");
     ResultScreen::ParseClrd(scoredat, g_GameManager.clrd);
     ResultScreen::ParsePscr(scoredat, (Pscr *)g_GameManager.pscr);
@@ -2347,7 +2413,18 @@ ZunResult MainMenu::DeletedCallback(MainMenu *menu)
     menu->chainDraw = NULL;
 
     replay = menu->currentReplay;
-    free(replay);
+    if (replay != NULL)
+    {
+        std::free(menu->currentReplay->header);
+        std::free(replay);
+        menu->currentReplay = NULL;
+    }
+    for (i32 replayIdx = 0; replayIdx < menu->replayFilesNum; ++replayIdx)
+    {
+        std::free(menu->replayFileData[replayIdx].header);
+        menu->replayFileData[replayIdx].header = NULL;
+    }
+    menu->replayFilesNum = 0;
     return ZUN_SUCCESS;
 }
 

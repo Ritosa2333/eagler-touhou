@@ -8,6 +8,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(TH_EXTERNAL_ASSETS "Do not bundle original game assets" OFF)
 option(TH_DEV_TOOLS "Enable developer-only tools (e.g. F5 logic fast-forward). Keep OFF in release builds." OFF)
+option(TH_WEB_SHARED_FONT "Let the Web host install msgothic.ttc instead of embedding it" OFF)
+option(TH_ENABLE_THPRAC "Build the archived thprac integration" OFF)
+option(TH_ENABLE_THCRAP "Build the archived thcrap localization integration" OFF)
+set(TH_WEB_MUSIC "BASE" CACHE STRING "Bundled Web music payload: BASE, MIDI, WAV, or OGG")
+set_property(CACHE TH_WEB_MUSIC PROPERTY STRINGS BASE MIDI WAV OGG)
+set(TH06_ASSET_ROOT "${CMAKE_SOURCE_DIR}/assets" CACHE PATH "TH06 original asset directory")
+set(TH06_OGG_ROOT "${CMAKE_SOURCE_DIR}/assets-ogg" CACHE PATH "TH06 generated OGG asset directory")
 
 # Keep this list explicit so source additions are visible in upstream review.
 set(TH06_SOURCES
@@ -19,6 +26,7 @@ set(TH06_SOURCES
     src/Chain.cpp
     src/Controller.cpp
     src/EclManager.cpp
+    src/RuntimeExtension.cpp
     src/EffectManager.cpp
     src/Ending.cpp
     src/EnemyEclInstr.cpp
@@ -42,6 +50,7 @@ set(TH06_SOURCES
     src/Stage.cpp
     src/Supervisor.cpp
     src/TextHelper.cpp
+    src/Touch.cpp
     src/ZunMath.cpp
     src/ZunTimer.cpp
     src/main.cpp
@@ -50,14 +59,40 @@ set(TH06_SOURCES
     src/pbg3/Pbg3Archive.cpp
     src/pbg3/Pbg3Parser.cpp
     src/thirdparty/sjis_converter.cpp
+    src/thirdparty/stb_vorbis.c
     src/utils.cpp
 )
+
+if(TH_ENABLE_THPRAC)
+    list(APPEND TH06_SOURCES src/PracticeRuntime.cpp)
+else()
+    list(APPEND TH06_SOURCES src/PracticeRuntimeStub.cpp)
+endif()
+
+if(TH_ENABLE_THCRAP)
+    list(APPEND TH06_SOURCES src/Localization.cpp)
+else()
+    list(APPEND TH06_SOURCES src/LocalizationStub.cpp)
+endif()
 
 # The MIDI backend must match the platform header selected by src/MidiOutput.hpp.
 # Compiling MidiDefault.cpp on Windows would link a MidiDevice with a different
 # layout than the one MidiOutput.cpp instantiates (ODR mismatch, silent no-op MIDI).
-if(WIN32 AND NOT EMSCRIPTEN)
+if(EMSCRIPTEN)
+    list(APPEND TH06_SOURCES src/midi/MidiWeb.cpp)
+elseif(WIN32)
     list(APPEND TH06_SOURCES src/midi/MidiWin32.cpp)
+elseif(APPLE)
+    list(APPEND TH06_SOURCES src/midi/MidiCoreAudio.cpp)
+    set(TH06_MIDI_COREAUDIO ON)
+elseif(UNIX AND NOT EMSCRIPTEN)
+    find_package(ALSA QUIET)
+    if(ALSA_FOUND)
+        list(APPEND TH06_SOURCES src/midi/MidiAlsa.cpp)
+        set(TH06_MIDI_ALSA ON)
+    else()
+        list(APPEND TH06_SOURCES src/midi/MidiDefault.cpp)
+    endif()
 else()
     list(APPEND TH06_SOURCES src/midi/MidiDefault.cpp)
 endif()
@@ -65,20 +100,38 @@ endif()
 # GLES and the SDL3 callback lifecycle are introduced during the source
 # migration. Keeping legacy renderers out of this target prevents accidentally
 # treating the old WebGL experiment as the new architecture.
-add_executable(th06 ${TH06_SOURCES})
-target_include_directories(th06 PRIVATE src src/pbg3)
+if(ANDROID)
+    add_library(main SHARED ${TH06_SOURCES})
+    set(TH_EXEC_NAME main)
+else()
+    add_executable(th06 ${TH06_SOURCES})
+    set(TH_EXEC_NAME th06)
+endif()
+target_include_directories(${TH_EXEC_NAME} PRIVATE src src/pbg3)
+if(TH_ENABLE_THPRAC)
+    target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_ENABLE_THPRAC)
+endif()
+if(TH_ENABLE_THCRAP)
+    target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_ENABLE_THCRAP)
+endif()
+
+set(TH_RUNTIME_EXTENSION_CMAKE "" CACHE FILEPATH "Optional runtime extension CMake integration")
+if(TH_ENABLE_THPRAC AND TH_RUNTIME_EXTENSION_CMAKE)
+    include("${TH_RUNTIME_EXTENSION_CMAKE}")
+    thprac_portable_attach(${TH_EXEC_NAME} th06 "${CMAKE_CURRENT_SOURCE_DIR}/src")
+endif()
 
 if(TH_EXTERNAL_ASSETS)
-    target_compile_definitions(th06 PRIVATE TH_EXTERNAL_ASSETS)
+    target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_EXTERNAL_ASSETS)
 endif()
 
 if(TH_DEV_TOOLS)
-    target_compile_definitions(th06 PRIVATE TH_DEV_TOOLS)
+    target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_DEV_TOOLS)
 endif()
 
 if(EMSCRIPTEN)
-    if(NOT TH_EXTERNAL_ASSETS AND NOT EXISTS "${CMAKE_SOURCE_DIR}/assets")
-        message(FATAL_ERROR "assets/ is required for a bundled local Web build; use -DTH_EXTERNAL_ASSETS=ON for source-only builds")
+    if(NOT TH_EXTERNAL_ASSETS AND NOT EXISTS "${TH06_ASSET_ROOT}")
+        message(FATAL_ERROR "TH06_ASSET_ROOT is required for a bundled local Web build; use -DTH_EXTERNAL_ASSETS=ON for source-only builds")
     endif()
 
     set(CMAKE_EXECUTABLE_SUFFIX ".html")
@@ -87,12 +140,54 @@ if(EMSCRIPTEN)
         -O2
         -sALLOW_MEMORY_GROWTH
         -sMAX_WEBGL_VERSION=2
+        -sINVOKE_RUN=0
+        "-sEXPORTED_RUNTIME_METHODS=['callMain']"
         -lidbfs.js
         --use-preload-cache
         --shell-file "${CMAKE_SOURCE_DIR}/resources/shell.html"
     )
     if(NOT TH_EXTERNAL_ASSETS)
-        target_link_options(th06 PRIVATE --preload-file "${CMAKE_SOURCE_DIR}/assets@/")
+        set(TH06_WEB_ASSET_STAGE "${CMAKE_BINARY_DIR}/web-assets-${TH_WEB_MUSIC}")
+        file(REMOVE_RECURSE "${TH06_WEB_ASSET_STAGE}")
+        file(MAKE_DIRECTORY "${TH06_WEB_ASSET_STAGE}")
+        set(TH06_WEB_BASE_ASSETS
+            紅魔郷CM.DAT
+            紅魔郷ED.DAT
+            紅魔郷IN.DAT
+            紅魔郷MD.DAT
+            紅魔郷ST.DAT
+            紅魔郷TL.DAT
+        )
+        if(EXISTS "${TH06_ASSET_ROOT}/eagler-hitbox.png")
+            list(APPEND TH06_WEB_BASE_ASSETS eagler-hitbox.png)
+        endif()
+        if(NOT TH_WEB_SHARED_FONT)
+            list(APPEND TH06_WEB_BASE_ASSETS msgothic.ttc)
+        endif()
+        foreach(asset IN LISTS TH06_WEB_BASE_ASSETS)
+            if(NOT EXISTS "${TH06_ASSET_ROOT}/${asset}")
+                message(FATAL_ERROR "Missing Web asset: ${TH06_ASSET_ROOT}/${asset}")
+            endif()
+            file(COPY_FILE "${TH06_ASSET_ROOT}/${asset}" "${TH06_WEB_ASSET_STAGE}/${asset}")
+        endforeach()
+
+        if(TH_WEB_MUSIC STREQUAL "WAV")
+            if(NOT EXISTS "${TH06_ASSET_ROOT}/bgm")
+                message(FATAL_ERROR "TH_WEB_MUSIC=WAV requires ${TH06_ASSET_ROOT}/bgm")
+            endif()
+            file(COPY "${TH06_ASSET_ROOT}/bgm" DESTINATION "${TH06_WEB_ASSET_STAGE}")
+        elseif(TH_WEB_MUSIC STREQUAL "OGG")
+            if(NOT EXISTS "${TH06_OGG_ROOT}/bgm")
+                message(FATAL_ERROR "TH_WEB_MUSIC=OGG requires generated ${TH06_OGG_ROOT}/bgm (see PORTING.md)")
+            endif()
+            file(COPY "${TH06_OGG_ROOT}/bgm" DESTINATION "${TH06_WEB_ASSET_STAGE}")
+        elseif(TH_WEB_MUSIC STREQUAL "MIDI" OR TH_WEB_MUSIC STREQUAL "BASE")
+            # MIDI is stored in the original archives. BASE intentionally ships
+            # no streamed BGM; the Web host may install WAV/OGG files at run time.
+        else()
+            message(FATAL_ERROR "Unsupported TH_WEB_MUSIC=${TH_WEB_MUSIC}; expected BASE, MIDI, WAV, or OGG")
+        endif()
+        target_link_options(th06 PRIVATE --preload-file "${TH06_WEB_ASSET_STAGE}@/")
     endif()
 endif()
 
@@ -137,14 +232,75 @@ if(TH_USE_VENDORED_SDL)
     add_subdirectory(vendored/SDL_ttf EXCLUDE_FROM_ALL)
 endif()
 
-target_link_libraries(th06 PRIVATE SDL3::SDL3 SDL3_image::SDL3_image SDL3_ttf::SDL3_ttf)
+target_link_libraries(${TH_EXEC_NAME} PRIVATE SDL3::SDL3 SDL3_image::SDL3_image SDL3_ttf::SDL3_ttf)
+
+if(TH06_MIDI_ALSA)
+    target_compile_definitions(${TH_EXEC_NAME} PRIVATE LIBASOUND_MIDI_SUPPORT)
+    target_link_libraries(${TH_EXEC_NAME} PRIVATE ALSA::ALSA)
+elseif(TH06_MIDI_COREAUDIO)
+    target_compile_definitions(${TH_EXEC_NAME} PRIVATE COREAUDIO_MIDI_SUPPORT)
+    target_link_libraries(${TH_EXEC_NAME} PRIVATE "-framework AudioToolbox" "-framework AudioUnit")
+endif()
+
+if(APPLE)
+    enable_language(OBJC)
+    enable_language(OBJCXX)
+
+    set(TH06_APP_RESOURCES
+        "${CMAKE_SOURCE_DIR}/assets/msgothic.ttc"
+        "${CMAKE_SOURCE_DIR}/assets/紅魔郷CM.DAT"
+        "${CMAKE_SOURCE_DIR}/assets/紅魔郷ED.DAT"
+        "${CMAKE_SOURCE_DIR}/assets/紅魔郷IN.DAT"
+        "${CMAKE_SOURCE_DIR}/assets/紅魔郷MD.DAT"
+        "${CMAKE_SOURCE_DIR}/assets/紅魔郷ST.DAT"
+        "${CMAKE_SOURCE_DIR}/assets/紅魔郷TL.DAT"
+    )
+    file(GLOB TH06_BGM_RESOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/assets/bgm/*")
+    if(NOT TH_EXTERNAL_ASSETS)
+        target_sources(${TH_EXEC_NAME} PRIVATE ${TH06_APP_RESOURCES} ${TH06_BGM_RESOURCES})
+        set_source_files_properties(${TH06_APP_RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+        set_source_files_properties(${TH06_BGM_RESOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources/bgm")
+    endif()
+    if(IOS OR NOT TH_EXTERNAL_ASSETS)
+        set_target_properties(${TH_EXEC_NAME} PROPERTIES
+            MACOSX_BUNDLE TRUE
+            MACOSX_BUNDLE_BUNDLE_NAME "東方紅魔郷"
+            MACOSX_BUNDLE_GUI_IDENTIFIER "com.zun.th06"
+            MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0.0"
+        )
+    endif()
+    if(IOS)
+        set_target_properties(${TH_EXEC_NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/ios/Info.plist")
+    endif()
+endif()
 
 if(WIN32 AND NOT EMSCRIPTEN)
-    set(TH_MESA_ROOT "${CMAKE_SOURCE_DIR}/../deps")
-    target_include_directories(th06 PRIVATE "${TH_MESA_ROOT}/mesa-devel/include")
-    target_link_libraries(th06 PRIVATE
+    set(TH_MESA_ROOT "${CMAKE_SOURCE_DIR}/../dependencies")
+    target_include_directories(${TH_EXEC_NAME} PRIVATE "${TH_MESA_ROOT}/mesa-devel/include")
+    target_link_libraries(${TH_EXEC_NAME} PRIVATE
         "${TH_MESA_ROOT}/mesa-devel/lib/x64/libEGL.dll.a"
         "${TH_MESA_ROOT}/mesa-devel/lib/x64/libGLESv2.dll.a"
         winmm
     )
+elseif(ANDROID)
+    target_link_libraries(${TH_EXEC_NAME} PRIVATE GLESv3)
+elseif(APPLE)
+    target_compile_definitions(${TH_EXEC_NAME} PRIVATE USING_GL)
+    if(IOS)
+        target_link_libraries(${TH_EXEC_NAME} PRIVATE
+            "-framework OpenGLES" "-framework AVFoundation" "-framework CoreAudio"
+            "-framework CoreGraphics" "-framework QuartzCore" "-framework UIKit"
+            "-framework Foundation"
+        )
+    else()
+        find_package(OpenGL REQUIRED)
+        target_link_libraries(${TH_EXEC_NAME} PRIVATE
+            OpenGL::GL
+            "-framework CoreAudio" "-framework CoreVideo" "-framework Cocoa"
+            "-framework IOKit" "-framework ForceFeedback" "-framework Carbon"
+        )
+    endif()
+elseif(NOT EMSCRIPTEN)
+    find_package(OpenGL COMPONENTS GLES3 REQUIRED)
+    target_link_libraries(${TH_EXEC_NAME} PRIVATE OpenGL::GLES3)
 endif()

@@ -61,6 +61,7 @@ struct SoundData
 struct WavData
 {
     SDL_IOStream *fileStream;
+    i16 *ownedSamples;
     u32 dataStartOffset;
     u32 samples;
 };

@@ -11,6 +11,7 @@
 #include "ChainPriorities.hpp"
 #include "EclManager.hpp"
 #include "EffectManager.hpp"
+#include "EaglerOptions.hpp"
 #include "EnemyManager.hpp"
 #include "GameManager.hpp"
 #include "GameWindow.hpp"
@@ -20,10 +21,51 @@
 #include "ScreenEffect.hpp"
 #include "SoundPlayer.hpp"
 #include "Supervisor.hpp"
+#include "Touch.hpp"
 #include "i18n.hpp"
 #include "utils.hpp"
 
 Player g_Player;
+
+// This is TH07 etama2's original texture used by effect 24. Load its extracted
+// PNG through TH06's normal decoder so TH07's embedded pixel layout is not
+// misinterpreted by TH06.
+static void DrawEaglerHitbox(const ZunVec3 &center)
+{
+    constexpr i32 TEXTURE_SLOT = 63;
+    constexpr i32 SPRITE_SLOT = 1900;
+    static AnmVm vm;
+    static bool initialized = false;
+    static bool unavailable = false;
+    if (!initialized && !unavailable)
+    {
+        const ZunResult result = g_AnmManager->LoadTexture(
+            TEXTURE_SLOT, "eagler-hitbox.png", TEX_FMT_A8R8G8B8, 0x00000000, true);
+        if (result != ZUN_SUCCESS)
+        {
+            unavailable = true;
+            return;
+        }
+        AnmLoadedSprite sprite = {};
+        sprite.sourceFileIndex = TEXTURE_SLOT;
+        sprite.startPixelInclusive = ZunVec2(0.0f, 112.0f);
+        sprite.endPixelInclusive = ZunVec2(64.0f, 176.0f);
+        sprite.textureWidth = sprite.widthPx = 256.0f;
+        sprite.textureHeight = sprite.heightPx = 256.0f;
+        sprite.spriteId = SPRITE_SLOT;
+        g_AnmManager->LoadSprite(SPRITE_SLOT, &sprite);
+        g_AnmManager->InitializeAndSetSprite(&vm, SPRITE_SLOT);
+        vm.scaleX = vm.scaleY = vm.prevScaleX = vm.prevScaleY = 1.0f;
+        vm.flags.blendMode = AnmVmBlendMode_InvSrcAlpha;
+        initialized = true;
+    }
+    vm.pos = vm.prevPos = center;
+    const f32 angle = (static_cast<f32>(g_GameManager.gameFrames) + g_RenderAlpha) * 0.03141593f;
+    vm.rotation.z = vm.prevRotation.z = angle;
+    vm.color = COLOR_SET_ALPHA(vm.color, 255);
+    vm.prevColor = COLOR_SET_ALPHA(vm.prevColor, 255);
+    g_AnmManager->Draw(&vm);
+}
 
 static const CharacterData g_CharData[4] = {
     /* ReimuA  */ {4.0, 2.0, 4.0, 2.0, Player::FireBulletReimuA, Player::FireBulletReimuA},
@@ -157,6 +199,8 @@ ChainCallbackResult Player::OnUpdate(Player *p)
     f32 scaleFactor1, scaleFactor2;
     i32 idx;
     ZunVec3 lastEnemyHit;
+    const i32 minRequiredDeathbombTimer =
+        (Touch::WasUsedThisRun() && !Touch::UsedTouchToBomb()) ? Touch::DEATHBOMB_TOLERANCE : 0;
 
     if (g_GameManager.isTimeStopped)
     {
@@ -192,7 +236,8 @@ ChainCallbackResult Player::OnUpdate(Player *p)
         p->bombInfo.calc(p);
     }
     else if (!g_Gui.HasCurrentMsgIdx() && p->respawnTimer != 0 && 0 < g_GameManager.bombsRemaining &&
-             WAS_PRESSED(TH_BUTTON_BOMB) && p->bombInfo.calc != NULL)
+             WAS_PRESSED(TH_BUTTON_BOMB) && p->bombInfo.calc != NULL &&
+             (p->playerState != PLAYER_STATE_DEAD || p->respawnTimer > minRequiredDeathbombTimer))
     {
         g_GameManager.bombsUsed++;
         g_GameManager.bombsRemaining--;
@@ -643,6 +688,13 @@ ChainCallbackResult Player::OnDrawHighPrio(Player *p)
             p->orbsSprite[0].pos = orb0Pos;
             p->orbsSprite[1].pos = orb1Pos;
         }
+        if ((EaglerOptions::AlwaysShowHitbox() ||
+             (EaglerOptions::ShowTh06FocusHitbox() && p->isFocus)) &&
+            (p->playerState == PLAYER_STATE_ALIVE || p->playerState == PLAYER_STATE_INVULNERABLE))
+        {
+            DrawEaglerHitbox(ZunVec3(g_GameManager.arcadeRegionTopLeftPos.x + drawPlayerPosition.x,
+                                     g_GameManager.arcadeRegionTopLeftPos.y + drawPlayerPosition.y, 0.488f));
+        }
     }
     p->playerSprite.pos = playerSpritePos;
     return CHAIN_CALLBACK_RESULT_CONTINUE;
@@ -665,6 +717,8 @@ ZunResult Player::HandlePlayerInputs()
 
     float horizontalSpeed = 0.0;
     float verticalSpeed = 0.0;
+    float touchDx = 0.0f;
+    float touchDy = 0.0f;
     PlayerDirection playerDirection = this->playerDirection;
 
     this->playerDirection = MOVEMENT_NONE;
@@ -717,6 +771,8 @@ ZunResult Player::HandlePlayerInputs()
 
     switch (this->playerDirection)
     {
+    case MOVEMENT_NONE:
+        break;
     case MOVEMENT_RIGHT:
         if (IS_PRESSED(TH_BUTTON_FOCUS))
         {
@@ -800,6 +856,93 @@ ZunResult Player::HandlePlayerInputs()
             horizontalSpeed = this->characterData.diagonalMovementSpeed;
         }
         verticalSpeed = horizontalSpeed;
+    }
+
+    if (Touch::GetPlayerDelta(&touchDx, &touchDy))
+    {
+        f32 focusRatio = 1.0f;
+        if (!Touch::IsUnlimited() && this->isFocus &&
+            this->characterData.orthogonalMovementSpeed != 0.0f)
+        {
+            focusRatio = this->characterData.orthogonalMovementSpeedFocus /
+                         this->characterData.orthogonalMovementSpeed;
+        }
+
+        f32 reqGameDx = touchDx * focusRatio;
+        f32 reqGameDy = touchDy * focusRatio;
+
+        const f32 minX = g_GameManager.playerMovementAreaTopLeftPos.x;
+        const f32 maxX = minX + g_GameManager.playerMovementAreaSize.x;
+        const f32 minY = g_GameManager.playerMovementAreaTopLeftPos.y;
+        const f32 maxY = minY + g_GameManager.playerMovementAreaSize.y;
+
+        const f32 targetX = this->positionCenter.x + reqGameDx;
+        const f32 targetY = this->positionCenter.y + reqGameDy;
+        if (targetX < minX)
+        {
+            reqGameDx = minX - this->positionCenter.x;
+        }
+        else if (targetX > maxX)
+        {
+            reqGameDx = maxX - this->positionCenter.x;
+        }
+        if (targetY < minY)
+        {
+            reqGameDy = minY - this->positionCenter.y;
+        }
+        else if (targetY > maxY)
+        {
+            reqGameDy = maxY - this->positionCenter.y;
+        }
+
+        if (focusRatio != 0.0f)
+        {
+            Touch::SetPlayerDelta(reqGameDx / focusRatio, reqGameDy / focusRatio);
+        }
+
+        const f32 hx = this->horizontalMovementSpeedMultiplierDuringBomb *
+                       g_Supervisor.effectiveFramerateMultiplier;
+        const f32 vy = this->verticalMovementSpeedMultiplierDuringBomb *
+                       g_Supervisor.effectiveFramerateMultiplier;
+        const f32 requestedHorizontalSpeed = hx != 0.0f ? reqGameDx / hx : 0.0f;
+        const f32 requestedVerticalSpeed = vy != 0.0f ? reqGameDy / vy : 0.0f;
+        const f32 currentSpeedSq = requestedHorizontalSpeed * requestedHorizontalSpeed +
+                                   requestedVerticalSpeed * requestedVerticalSpeed;
+        const f32 maxSpeed = this->isFocus ? this->characterData.orthogonalMovementSpeedFocus
+                                           : this->characterData.orthogonalMovementSpeed;
+        const f32 effectiveMaxSpeed = Touch::IsUnlimited() ? std::sqrt(currentSpeedSq) : maxSpeed;
+
+        if (!Touch::IsUnlimited() && currentSpeedSq > effectiveMaxSpeed * effectiveMaxSpeed &&
+            currentSpeedSq > 0.0f)
+        {
+            const f32 currentSpeed = std::sqrt(currentSpeedSq);
+            horizontalSpeed = requestedHorizontalSpeed / currentSpeed * effectiveMaxSpeed;
+            verticalSpeed = requestedVerticalSpeed / currentSpeed * effectiveMaxSpeed;
+        }
+        else
+        {
+            horizontalSpeed = requestedHorizontalSpeed;
+            verticalSpeed = requestedVerticalSpeed;
+        }
+
+        const f32 consumedGameDx = hx != 0.0f ? horizontalSpeed * hx : 0.0f;
+        const f32 consumedGameDy = vy != 0.0f ? verticalSpeed * vy : 0.0f;
+        if (focusRatio != 0.0f)
+        {
+            if (!Touch::IsUnlimited() &&
+                currentSpeedSq > effectiveMaxSpeed * effectiveMaxSpeed && currentSpeedSq > 0.0f)
+            {
+                const f32 consumeX = hx != 0.0f ? consumedGameDx / focusRatio : touchDx;
+                const f32 consumeY = vy != 0.0f ? consumedGameDy / focusRatio : touchDy;
+                Touch::ConsumePlayerDelta(consumeX, consumeY);
+            }
+            else
+            {
+                Touch::SetPlayerDelta(0.0f, 0.0f);
+            }
+        }
+
+        this->playerDirection = MOVEMENT_NONE;
     }
 
     if (horizontalSpeed < 0.0f && this->previousHorizontalSpeed >= 0.0f)
@@ -1447,6 +1590,7 @@ void Player::Die()
     g_EffectManager.SpawnParticles(PARTICLE_EFFECT_UNK_12, &this->positionCenter, 1, COLOR_NEONBLUE);
     g_EffectManager.SpawnParticles(PARTICLE_EFFECT_UNK_6, &this->positionCenter, 16, COLOR_WHITE);
     this->playerState = PLAYER_STATE_DEAD;
+    this->respawnTimer = 6 + (Touch::WasUsedThisRun() ? Touch::DEATHBOMB_TOLERANCE : 0);
     this->invulnerabilityTimer.InitializeForPopup();
     g_SoundPlayer.PlaySoundByIdx(SOUND_PICHUN);
     g_GameManager.deaths++;

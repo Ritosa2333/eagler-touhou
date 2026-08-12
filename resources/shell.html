@@ -7,31 +7,375 @@
   <title>東方紅魔郷 〜 the Embodiment of Scarlet Devil</title>
   <style>
     html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}
-    body{display:grid;place-items:center} canvas{width:min(100vw,calc(100vh * 4 / 3));height:auto;max-height:100vh;outline:0}
-    #status{position:fixed;inset:auto 0 1rem;text-align:center;color:#ddd;font:14px sans-serif}
+    body{display:grid;place-items:center;touch-action:none}
+    canvas{width:min(100vw,calc(100vh * 4 / 3));height:min(100vh,calc(100vw * 3 / 4));outline:0;touch-action:none}
+    #status{position:fixed;inset:auto 0 1rem;text-align:center;color:#ddd;font:14px sans-serif;pointer-events:none}
   </style>
 </head>
 <body>
   <canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
   <div id="status">Loading…</div>
   <script>
-    var Module = {
-      canvas: document.getElementById('canvas'),
-      preRun: [function () {
-        addRunDependency('savesth06-sync');
-        FS.mkdir('/savesth06');
-        FS.mount(IDBFS, { autoPersist: true }, '/savesth06');
-        FS.syncfs(true, function (error) {
-          if (error) console.error('save sync failed', error);
-          removeRunDependency('savesth06-sync');
+    (() => {
+      "use strict";
+      const protocol = "eagler-touhou/1";
+      const game = "th06";
+      const saveRoot = "/savesth06";
+      const params = new URLSearchParams(location.search);
+      const hosted = params.get("hosted") === "1" && window.parent !== window;
+      const assetVersion = params.get("v") || "";
+      const status = document.getElementById("status");
+      let launched = false;
+      let loadedMusicFiles = [];
+      let loadedRuntimeFiles = [];
+      let thpracCatalog = [];
+      const failedMusicResources = new Map();
+      let transfer = null;
+      let baseTransfer = null;
+
+      const reply = (request, ok, payload = {}) => {
+        if (!hosted) return;
+        window.parent.postMessage({ protocol, game, request, ok, ...payload }, location.origin);
+      };
+      const emit = (event, payload = {}) => {
+        if (hosted) window.parent.postMessage({ protocol, game, event, ...payload }, location.origin);
+      };
+      globalThis.EaglerTouhouGameExited = result => emit("exit", { status: result === 1 ? "success" : "failure" });
+
+      const sync = () => new Promise((resolve, reject) => {
+        FS.syncfs(false, error => error ? reject(error) : resolve());
+      });
+
+      const safePath = value => {
+        if (typeof value !== "string" || !value || value.includes("\\")) throw new Error("invalid path");
+        const parts = value.split("/");
+        if (parts.some(part => !part || part === "." || part === "..")) throw new Error("invalid path");
+        return `${saveRoot}/${parts.join("/")}`;
+      };
+
+      const ensureDir = path => {
+        const slash = path.lastIndexOf("/");
+        if (slash > 0) FS.mkdirTree(path.slice(0, slash));
+      };
+
+      const clearMusic = () => {
+        for (const path of loadedMusicFiles) {
+          try { FS.unlink(path); } catch {}
+        }
+        loadedMusicFiles = [];
+      };
+      const clearRuntime = () => {
+        for (const path of loadedRuntimeFiles) { try { FS.unlink(path); } catch {} }
+        loadedRuntimeFiles = [];
+      };
+      const installRuntime = async message => {
+        if (launched) throw new Error("runtime resources cannot be changed after launch");
+        const resources = message.runtimeResources ?? [];
+        if (!Array.isArray(resources) || resources.length > 256) throw new Error("invalid runtime resources");
+        clearRuntime();
+        for (const resource of resources) {
+          if (typeof resource?.url !== "string" || typeof resource.path !== "string" || !resource.path.startsWith("/thcrap/th06/") || resource.path.includes("\\") || resource.path.includes("..")) throw new Error("invalid runtime resource");
+          const url = new URL(resource.url, location.href);
+          if (url.origin !== location.origin) throw new Error("cross-origin runtime resource");
+          const response = await fetch(url, { cache: "force-cache" });
+          if (!response.ok) throw new Error(`${url.pathname}: HTTP ${response.status}`);
+          const bytes = new Uint8Array(await response.arrayBuffer());
+          if (Number.isFinite(Number(resource.size)) && bytes.length !== Number(resource.size)) throw new Error(`${resource.path}: size mismatch`);
+          if (typeof resource.sha256 === "string" && resource.sha256) {
+            const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+            const actual = Array.from(digest, byte => byte.toString(16).padStart(2, "0")).join("");
+            if (actual !== resource.sha256.toLowerCase()) throw new Error(`${resource.path}: checksum mismatch`);
+          }
+          ensureDir(resource.path); FS.writeFile(resource.path, bytes, { canOwn: true }); loadedRuntimeFiles.push(resource.path);
+        }
+      };
+
+      const installShared = async message => {
+        if (!Array.isArray(message.sharedResources) || message.sharedResources.length > 4) throw new Error("invalid shared resources");
+        await Promise.all(message.sharedResources.map(async resource => {
+          if (typeof resource?.url !== "string" || !["/msgothic.ttc", "/NotoSansCJKsc-Regular.otf"].includes(resource.path)) throw new Error("invalid shared resource");
+          const url = new URL(resource.url, location.href);
+          if (url.origin !== location.origin) throw new Error("cross-origin shared resource");
+          const response = await fetch(url, { cache: "force-cache" });
+          if (!response.ok) throw new Error(`${url.pathname}: HTTP ${response.status}`);
+          FS.writeFile(resource.path, new Uint8Array(await response.arrayBuffer()), { canOwn: true });
+        }));
+      };
+
+      const emitTransfer = force => {
+        if (!transfer) return;
+        const now = performance.now();
+        if (!force && now - transfer.lastEmit < 200) return;
+        transfer.lastEmit = now;
+        const seconds = Math.max((now - transfer.startedAt) / 1000, 0.1);
+        emit("transfer", {
+          kind: "music", mode: transfer.mode, loaded: transfer.loaded, total: transfer.total,
+          speed: transfer.loaded / seconds, completed: transfer.completed, files: transfer.files
         });
-      }],
-      setStatus: function (text) {
-        document.getElementById('status').textContent = text;
-      }
-    };
-    Module.canvas.addEventListener('pointerdown', function () { Module.canvas.focus(); });
+      };
+
+      const downloadMusicResource = async resource => {
+        if (typeof resource?.url !== "string" || typeof resource?.path !== "string" ||
+            !/^\/bgm\/[A-Za-z0-9_.-]+$/.test(resource.path)) throw new Error("invalid music resource");
+        const url = new URL(resource.url, location.href);
+        if (url.origin !== location.origin) throw new Error("cross-origin music resource");
+        const previous = transfer.byPath.get(resource.path) || 0;
+        transfer.loaded = Math.max(0, transfer.loaded - previous);
+        transfer.byPath.set(resource.path, 0);
+        const response = await fetch(url, { cache: "force-cache" });
+        if (!response.ok) throw new Error(`${url.pathname}: HTTP ${response.status}`);
+        const declared = Number(resource.size) || Number(response.headers.get("content-length")) || 0;
+        if (!Number(resource.size) && declared) transfer.total += declared;
+        const chunks = [];
+        let received = 0;
+        if (response.body) {
+          const reader = response.body.getReader();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value); received += value.length; transfer.loaded += value.length;
+            transfer.byPath.set(resource.path, received); emitTransfer(false);
+          }
+        } else {
+          const value = new Uint8Array(await response.arrayBuffer());
+          chunks.push(value); received = value.length; transfer.loaded += value.length;
+          transfer.byPath.set(resource.path, received);
+        }
+        const bytes = new Uint8Array(received);
+        let offset = 0;
+        for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
+        ensureDir(resource.path); FS.writeFile(resource.path, bytes, { canOwn: true });
+        loadedMusicFiles.push(resource.path); failedMusicResources.delete(resource.path);
+        transfer.completed++; emitTransfer(true);
+      };
+
+      const recordMusicFailure = (resource, error) => {
+        failedMusicResources.set(resource.path, resource);
+        emit("music-error", { path: resource.path, error: String(error?.message || error), failed: failedMusicResources.size });
+      };
+
+      const runMusicQueue = async resources => {
+        let next = 0;
+        const worker = async () => {
+          while (next < resources.length) {
+            const resource = resources[next++];
+            try { await downloadMusicResource(resource); } catch (error) { recordMusicFailure(resource, error); }
+          }
+        };
+        await Promise.all(Array.from({ length: Math.min(4, resources.length) }, worker));
+      };
+
+      const retryMusic = async () => {
+        const resources = [...failedMusicResources.values()];
+        failedMusicResources.clear();
+        await runMusicQueue(resources);
+        if (!failedMusicResources.size) emit("music-complete", { loaded: transfer?.loaded || 0, total: transfer?.total || 0 });
+      };
+
+      const installMusic = async message => {
+        if (launched) throw new Error("music cannot be changed after launch");
+        const options = message.options || {};
+        if (!Array.isArray(message.thpracCatalog ?? []) || (message.thpracCatalog?.length || 0) > 256) throw new Error("invalid thprac catalog");
+        thpracCatalog = message.thpracCatalog ?? [];
+        Module.eaglerThpracCatalog = thpracCatalog;
+        for (const key of ["thpracEnabled", "touchEnabled", "unlimitedTouch", "alwaysHitbox", "th06FocusHitbox"]) {
+          if (options[key] != null && typeof options[key] !== "boolean") throw new Error("invalid eagler-touhou option");
+        }
+        const session = options.thpracSession;
+        if (options.debugHarness != null && !["thprac-menu", "music-room"].includes(options.debugHarness)) throw new Error("invalid debug harness");
+        if (session != null && (session.schema !== "eagler-touhou/thprac-session/1" || session.game !== "th06" || typeof session.params !== "object" || !session.params)) throw new Error("invalid thprac session");
+        Module.eaglerOptions = {
+          thpracEnabled: !!options.thpracEnabled,
+          touchEnabled: !!options.touchEnabled,
+          unlimitedTouch: !!options.touchEnabled && !!options.unlimitedTouch,
+          alwaysHitbox: !!options.alwaysHitbox,
+          th06FocusHitbox: !!options.th06FocusHitbox,
+          debugHarness: options.debugHarness || null,
+          thpracSession: session || null
+        };
+        if (!["midi", "wav", "ogg"].includes(message.music)) throw new Error("invalid music mode");
+        if (!Array.isArray(message.resources) || message.resources.length > 64) throw new Error("invalid music resources");
+        clearMusic();
+        failedMusicResources.clear();
+        Module.touhouMusicMode = message.music;
+        if (message.music === "midi") return;
+        transfer = {
+          mode: message.music, loaded: 0,
+          total: message.resources.reduce((sum, resource) => sum + (Number(resource.size) || 0), 0),
+          completed: 0, files: message.resources.length, startedAt: performance.now(), lastEmit: 0,
+          byPath: new Map()
+        };
+        emitTransfer(true);
+        if (message.music === "ogg") {
+          await runMusicQueue(message.resources.slice(0, 2));
+          runMusicQueue(message.resources.slice(2)).then(() => {
+            emit(failedMusicResources.size ? "music-incomplete" : "music-complete",
+              { loaded: transfer.loaded, total: transfer.total, failed: failedMusicResources.size });
+          });
+        } else {
+          await runMusicQueue(message.resources);
+          if (failedMusicResources.size) {
+            clearMusic(); Module.touhouMusicMode = "";
+            throw new Error(`${failedMusicResources.size} music resources failed`);
+          }
+          emit("music-complete", { loaded: transfer.loaded, total: transfer.total });
+        }
+        status.textContent = "Ready";
+      };
+
+      const walk = (path, output = []) => {
+        for (const name of FS.readdir(path)) {
+          if (name === "." || name === "..") continue;
+          const child = `${path}/${name}`;
+          const stat = FS.stat(child);
+          if (FS.isDir(stat.mode)) walk(child, output);
+          else output.push({ path: child.slice(saveRoot.length + 1), size: stat.size });
+        }
+        return output;
+      };
+
+      const launch = () => {
+        if (launched) return;
+        const start = session => {
+          if (launched) return;
+          Module.eaglerOptions.thpracSession = session;
+          if (session) emit("thprac-session", { session });
+          launched = true; status.textContent = ""; Module.callMain([]); document.getElementById("canvas").focus();
+        };
+        start(Module.eaglerOptions.thpracSession || null);
+      };
+
+      window.addEventListener("message", async event => {
+        if (!hosted || event.source !== window.parent || event.origin !== location.origin) return;
+        const message = event.data || {};
+        if (message.protocol !== protocol || message.game !== game) return;
+        try {
+          switch (message.command) {
+          case "configure":
+            await installShared(message);
+            await installRuntime(message);
+            await installMusic(message);
+            reply(message.request, true);
+            break;
+          case "launch":
+            launch();
+            reply(message.request, true);
+            break;
+          case "touch-controls":
+            if (typeof message.fireEnabled !== "boolean" || !Number.isInteger(message.bombSerial))
+              throw new Error("invalid touch controls");
+            Module.eaglerControls.fireEnabled = message.fireEnabled;
+            Module.eaglerControls.bombSerial = message.bombSerial;
+            reply(message.request, true);
+            break;
+          case "list":
+            reply(message.request, true, { files: walk(saveRoot) });
+            break;
+          case "read": {
+            const bytes = FS.readFile(safePath(message.path));
+            reply(message.request, true, { path: message.path, bytes: Array.from(bytes) });
+            break;
+          }
+          case "write":
+            ensureDir(safePath(message.path));
+            FS.writeFile(safePath(message.path), new Uint8Array(message.bytes));
+            await sync();
+            reply(message.request, true);
+            break;
+          case "remove":
+            FS.unlink(safePath(message.path));
+            await sync();
+            reply(message.request, true);
+            break;
+          case "sync":
+            await sync();
+            reply(message.request, true);
+            break;
+          case "retry-music":
+            await retryMusic();
+            reply(message.request, true);
+            break;
+          default:
+            reply(message.request, false, { error: "unknown command" });
+          }
+        } catch (error) {
+          reply(message.request, false, { error: String(error && error.message || error) });
+        }
+      });
+
+      window.Module = {
+        canvas: document.getElementById("canvas"),
+        locateFile: path => assetVersion ? `${path}?v=${encodeURIComponent(assetVersion)}` : path,
+        // Empty means original auto-detection for standalone builds. The host
+        // sends an explicit mode before launching an embedded runtime.
+        touhouMusicMode: "",
+      eaglerOptions: { thpracEnabled: false, touchEnabled: false, unlimitedTouch: false, alwaysHitbox: false, th06FocusHitbox: false, thpracSession: null },
+        eaglerControls: { fireEnabled: true, bombSerial: 0 },
+        preRun: [() => {
+          addRunDependency("savesth06-sync");
+          try { FS.mkdir(saveRoot); } catch (error) {
+            if (!String(error).includes("File exists")) console.error(error);
+          }
+          FS.mount(IDBFS, { autoPersist: true }, saveRoot);
+          FS.syncfs(true, error => {
+            if (error) console.error("save sync failed", error);
+            removeRunDependency("savesth06-sync");
+          });
+        }],
+        onRuntimeInitialized: () => {
+          if (hosted) {
+            status.textContent = "Ready";
+            window.parent.postMessage({ protocol, game, event: "ready", saveRoot }, location.origin);
+          } else {
+            launch();
+          }
+        },
+        setStatus: text => {
+          status.textContent = text || "";
+          const match = /^Downloading data\.\.\. \((\d+)\/(\d+)\)$/.exec(text || "");
+          if (match) {
+            const now = performance.now();
+            const loaded = Number(match[1]); const total = Number(match[2]);
+            if (!baseTransfer) baseTransfer = { startedAt: now, lastEmit: 0 };
+            if (now - baseTransfer.lastEmit >= 200 || loaded >= total) {
+              baseTransfer.lastEmit = now;
+              emit("transfer", { kind: "game", mode: "base", loaded, total,
+                speed: loaded / Math.max((now - baseTransfer.startedAt) / 1000, 0.1) });
+            }
+          }
+        }
+      };
+
+      Module.canvas.addEventListener("pointerdown", () => Module.canvas.focus());
+      const canvasTouches = new Set();
+      const auxiliaryTouches = new Set();
+      document.addEventListener("pointerdown", event => {
+        if (event.pointerType !== "touch" || !Module.eaglerOptions.touchEnabled) return;
+        if (event.target === Module.canvas) {
+          canvasTouches.add(event.pointerId);
+          return;
+        }
+        if (!canvasTouches.size || typeof Module._TouhouAuxTouchDown !== "function") return;
+        auxiliaryTouches.add(event.pointerId);
+        Module._TouhouAuxTouchDown(event.pointerId);
+        event.preventDefault();
+      }, { capture: true, passive: false });
+      const releaseTouch = event => {
+        if (event.pointerType !== "touch") return;
+        canvasTouches.delete(event.pointerId);
+        if (!auxiliaryTouches.delete(event.pointerId)) return;
+        if (typeof Module._TouhouAuxTouchUp === "function") Module._TouhouAuxTouchUp(event.pointerId);
+        event.preventDefault();
+      };
+      document.addEventListener("pointerup", releaseTouch, { capture: true, passive: false });
+      document.addEventListener("pointercancel", releaseTouch, { capture: true, passive: false });
+      Module.canvas.addEventListener("webglcontextlost", event => {
+        event.preventDefault();
+        status.textContent = "WebGL context lost. Reload the page.";
+      });
+    })();
   </script>
+    <script src="/eagler-touhou/thprac-game-ui.js?v=20260812-2"></script>
   {{{ SCRIPT }}}
 </body>
 </html>

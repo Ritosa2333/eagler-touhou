@@ -184,7 +184,9 @@ struct AnmManager
     ZunResult AddSpriteToDrawBuffer(VertexTex1DiffuseXyzrhw *vertices);
 
     ZunResult CreateEmptyTexture(i32 textureIdx, u32 width, u32 height, i32 textureFormat);
-    ZunResult LoadTexture(i32 textureIdx, const char *textureName, i32 textureFormat, ZunColor colorKey);
+    ZunResult LoadTexture(i32 textureIdx, const char *textureName, i32 textureFormat, ZunColor colorKey,
+                          bool isExternalResource = false);
+    ZunResult LoadEmbeddedTexture(i32 textureIdx, const AnmRawEntry *entry);
     ZunResult LoadTextureAlphaChannel(i32 textureIdx, const char *textureName, i32 textureFormat, ZunColor colorKey);
     void ReleaseTexture(i32 textureIdx);
     void TakeScreenshotIfRequested();
@@ -213,6 +215,7 @@ struct AnmManager
 
         g_GfxBackend->Draw(PRIM_TRIANGLE_STRIP, 0, 4);
     }
+
 
     // We need to do checks in these because they're called nearly every ANM draw call and otherwise
     //   we'd be constantly setting the dirty flag. The other global state sets are done less often
@@ -441,7 +444,7 @@ struct AnmManager
     }
 
     static SDL_Surface *LoadToSurfaceWithFormat(const char *filename, SDL_PixelFormat format, u8 **fileData,
-                                                ZunColor colorKey = 0);
+                                                ZunColor colorKey = 0, bool isExternalResource = false);
     static u8 *ExtractSurfacePixels(SDL_Surface *src, u8 pixelDepth);
     void ApplySurfaceToColorBuffer(SDL_Surface *src, const SDL_Rect &srcRect, const SDL_Rect &dstRect);
     // Creates, binds, and set parameters for a new texture

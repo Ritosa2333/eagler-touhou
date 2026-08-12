@@ -856,7 +856,9 @@ bool Gui::MsgWait() const
 
 bool Gui::HasCurrentMsgIdx() const
 {
-    return 0 <= this->impl->msg.currentMsgIdx;
+    // Touch input is polled before a gameplay GUI exists (notably when the
+    // desktop visual-test entry point starts directly in Music Room).
+    return this->impl != nullptr && 0 <= this->impl->msg.currentMsgIdx;
 }
 
 void Gui::UpdateStageElements()
@@ -1006,6 +1008,8 @@ void Gui::UpdateStageElements()
         }
         switch (g_GameManager.difficulty)
         {
+        case NORMAL:
+            break;
         case EASY:
             stageScore /= 2;
             stageScore -= stageScore % 10;

@@ -243,6 +243,19 @@ void FixedFunctionGL::Enable(Capabilities cap)
     }
 }
 
+void FixedFunctionGL::Disable(Capabilities cap)
+{
+    switch (cap)
+    {
+    case CAPS_BLEND:
+        g_glFuncTable.glDisable(GL_BLEND);
+        break;
+    case CAPS_DEPTH_TEST:
+        g_glFuncTable.glDisable(GL_DEPTH_TEST);
+        break;
+    }
+}
+
 bool FixedFunctionGL::HasError()
 {
     return g_glFuncTable.glGetError() != GL_NO_ERROR;

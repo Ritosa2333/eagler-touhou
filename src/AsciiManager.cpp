@@ -2,6 +2,7 @@
 #include "StageMenu.hpp"
 
 #include "AnmManager.hpp"
+#include "PracticeRuntime.hpp"
 #include "ChainPriorities.hpp"
 #include "Controller.hpp"
 #include "GameManager.hpp"
@@ -59,7 +60,8 @@ ChainCallbackResult AsciiManager::OnUpdate(AsciiManager *mgr)
     }
     else if (g_GameManager.isInGameMenu)
     {
-        mgr->gameMenu.OnUpdateGameMenu();
+        if (!PracticeRuntime::UpdatePauseMenu())
+            mgr->gameMenu.OnUpdateGameMenu();
     }
     if (g_GameManager.isInRetryMenu)
     {
@@ -71,6 +73,12 @@ ChainCallbackResult AsciiManager::OnUpdate(AsciiManager *mgr)
 
 ChainCallbackResult AsciiManager::OnDrawMenus(AsciiManager *mgr)
 {
+    if (PracticeRuntime::Active() && g_GameManager.isInGameMenu)
+    {
+        PracticeRuntime::DrawPauseMenuPanel();
+        mgr->DrawStrings();
+        return CHAIN_CALLBACK_RESULT_CONTINUE;
+    }
     mgr->DrawStrings();
     mgr->gameMenu.OnDrawGameMenu();
     mgr->retryMenu.OnDrawRetryMenu();

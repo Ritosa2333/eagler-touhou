@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key><string>東方紅魔郷</string>
+	<key>CFBundleIdentifier</key><string>com.zun.th06</string>
+	<key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+	<key>CFBundleVersion</key><string>1.0.0</string>
+	<key>CFBundleShortVersionString</key><string>1.0.0</string>
+	<key>CFBundleExecutable</key><string>th06</string>
+	<key>CFBundlePackageType</key><string>APPL</string>
+	<key>CFBundleDevelopmentRegion</key><string>ja-JP</string>
+	<key>NSHumanReadableCopyright</key><string>(C)opyright 2002 ZUN All rights reserved.</string>
+	<key>UISupportedInterfaceOrientations~iphone</key>
+	<array><string>UIInterfaceOrientationLandscapeLeft</string><string>UIInterfaceOrientationLandscapeRight</string></array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array><string>UIInterfaceOrientationLandscapeLeft</string><string>UIInterfaceOrientationLandscapeRight</string></array>
+	<key>UIApplicationSupportsIndirectInputEvents</key><true/>
+	<key>LSRequiresIPhoneOS</key><true/>
+	<key>UIStatusBarHidden</key><true/>
+	<key>GCSupportsGameMode</key><true/>
+	<key>UIRequiresFullScreen</key><true/>
+	<key>UIFileSharingEnabled</key><true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key><true/>
+</dict>
+</plist>

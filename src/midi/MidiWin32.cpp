@@ -31,7 +31,7 @@ bool MidiDevice::OpenDevice(u32 uDeviceId)
         }
         else
         {
-            return false;
+            return true;
         }
     }
 
@@ -48,15 +48,16 @@ ZunResult MidiDevice::Close()
         return ZUN_ERROR;
     }
 
+    midiOutReset(this->handle);
+
     for (i32 i = 0; i < ARRAY_SIZE_SIGNED(this->midiHeaders); i++)
     {
-        if (this->midiHeaders[this->midiHeadersCursor] != NULL)
+        if (this->midiHeaders[i] != NULL)
         {
-            this->UnprepareHeader(this->midiHeaders[this->midiHeadersCursor]);
+            this->UnprepareHeader(this->midiHeaders[i]);
         }
     }
 
-    midiOutReset(this->handle);
     midiOutClose(this->handle);
     this->handle = 0;
 
@@ -81,33 +82,66 @@ bool MidiDevice::SendLongMsg(const u8 *buf, u32 len)
         return true;
     }
 
-    if (this->midiHeaders[this->midiHeadersCursor] != NULL)
+    // Reclaim completed asynchronous messages before looking for a slot.
+    for (i32 i = 0; i < ARRAY_SIZE_SIGNED(this->midiHeaders); ++i)
     {
-        this->UnprepareHeader(this->midiHeaders[this->midiHeadersCursor]);
+        MIDIHDR *header = this->midiHeaders[i];
+        if (header != NULL && (header->dwFlags & MHDR_DONE) != 0)
+        {
+            this->UnprepareHeader(header);
+        }
     }
 
-    MIDIHDR *midiHdr = this->midiHeaders[this->midiHeadersCursor] = (MIDIHDR *)std::malloc(sizeof(MIDIHDR));
-
-    std::memset(midiHdr, 0, sizeof(*midiHdr));
-    midiHdr->lpData = (LPSTR)std::malloc(len);
-    std::memcpy(midiHdr->lpData, buf, len);
-    midiHdr->dwFlags = 0;
-    midiHdr->dwBufferLength = len;
-
-    if (midiOutPrepareHeader(this->handle, midiHdr, sizeof(*midiHdr)) != MMSYSERR_NOERROR)
+    i32 slot = -1;
+    for (i32 offset = 0; offset < ARRAY_SIZE_SIGNED(this->midiHeaders); ++offset)
+    {
+        const i32 candidate = (this->midiHeadersCursor + offset) % ARRAY_SIZE_SIGNED(this->midiHeaders);
+        if (this->midiHeaders[candidate] == NULL)
+        {
+            slot = candidate;
+            break;
+        }
+    }
+    if (slot < 0 || buf == NULL || len == 0)
     {
         return false;
     }
 
-    this->midiHeadersCursor++;
-    this->midiHeadersCursor = this->midiHeadersCursor % ARRAY_SIZE(this->midiHeaders);
+    MIDIHDR *midiHdr = (MIDIHDR *)std::calloc(1, sizeof(MIDIHDR));
+    if (midiHdr == NULL)
+    {
+        return false;
+    }
+    midiHdr->lpData = (LPSTR)std::malloc(len);
+    if (midiHdr->lpData == NULL)
+    {
+        std::free(midiHdr);
+        return false;
+    }
+    std::memcpy(midiHdr->lpData, buf, len);
+    midiHdr->dwBufferLength = len;
 
-    return midiOutLongMsg(this->handle, midiHdr, sizeof(*midiHdr)) == MMSYSERR_NOERROR;
+    if (midiOutPrepareHeader(this->handle, midiHdr, sizeof(*midiHdr)) != MMSYSERR_NOERROR)
+    {
+        std::free(midiHdr->lpData);
+        std::free(midiHdr);
+        return false;
+    }
+
+    this->midiHeaders[slot] = midiHdr;
+    this->midiHeadersCursor = (slot + 1) % ARRAY_SIZE(this->midiHeaders);
+
+    if (midiOutLongMsg(this->handle, midiHdr, sizeof(*midiHdr)) != MMSYSERR_NOERROR)
+    {
+        this->UnprepareHeader(midiHdr);
+        return false;
+    }
+    return true;
 }
 
 bool MidiDevice::SendShortMsg(u8 midiStatus, u8 firstByte, u8 secondByte)
 {
-    MidiShortMsg pkt;
+    MidiShortMsg pkt{};
 
     if (this->handle == 0)
     {
@@ -124,14 +158,10 @@ bool MidiDevice::SendShortMsg(u8 midiStatus, u8 firstByte, u8 secondByte)
 
 ZunResult MidiDevice::UnprepareHeader(LPMIDIHDR pmh)
 {
-    if (pmh == NULL)
+    if (pmh == NULL || this->handle == 0)
     {
         utils::DebugPrint2("error :\n");
-    }
-
-    if (this->handle == 0)
-    {
-        utils::DebugPrint2("error :\n");
+        return ZUN_ERROR;
     }
 
     // The reason for this weird linear search here is that this is supposed to be able
@@ -143,22 +173,20 @@ ZunResult MidiDevice::UnprepareHeader(LPMIDIHDR pmh)
     {
         if (this->midiHeaders[i] == pmh)
         {
+            MMRESULT res = midiOutUnprepareHeader(this->handle, pmh, sizeof(*pmh));
+            if (res != MMSYSERR_NOERROR)
+            {
+                // In particular, MIDIERR_STILLPLAYING means the driver still
+                // owns this memory. Keep it registered and try again later.
+                return ZUN_ERROR;
+            }
+
             this->midiHeaders[i] = NULL;
-            goto success;
+            std::free(pmh->lpData);
+            std::free(pmh);
+            return ZUN_SUCCESS;
         }
     }
 
     return ZUN_ERROR;
-
-success:
-    MMRESULT res = midiOutUnprepareHeader(this->handle, pmh, sizeof(*pmh));
-    if (res != MMSYSERR_NOERROR)
-    {
-        utils::DebugPrint2("error :\n");
-    }
-
-    std::free(pmh->lpData);
-    std::free(pmh);
-
-    return ZUN_SUCCESS;
 }

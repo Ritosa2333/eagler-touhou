@@ -16,6 +16,11 @@ class Pbg3Parser : public IPbg3Parser, public FileAbstraction
     i32 SeekToNextByte();
     i32 ReadByteAlignedData(u8 *data, u32 bytesToRead);
 
+    u32 GetFileSize() const
+    {
+        return this->fileSize;
+    }
+
     void Close();
     i32 ReadByte();
 

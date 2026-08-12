@@ -29,6 +29,13 @@ i32 Pbg3Archive::ParseHeader()
 
     this->numOfEntries = this->parser->ReadVarInt();
     this->fileTableOffset = this->parser->ReadVarInt();
+    if (this->numOfEntries == 0 || this->numOfEntries > 65536 ||
+        this->fileTableOffset >= this->parser->GetFileSize())
+    {
+        delete this->parser;
+        this->parser = NULL;
+        return false;
+    }
     if (!this->parser->SeekToOffset(this->fileTableOffset))
     {
         if (this->parser != NULL)
@@ -57,6 +64,13 @@ i32 Pbg3Archive::ParseHeader()
         this->entries[idx].checksum = this->parser->ReadVarInt();
         this->entries[idx].dataOffset = this->parser->ReadVarInt();
         this->entries[idx].uncompressedSize = this->parser->ReadVarInt();
+        if (this->entries[idx].dataOffset >= this->fileTableOffset ||
+            this->entries[idx].uncompressedSize == 0 ||
+            (idx != 0 && this->entries[idx - 1].dataOffset >= this->entries[idx].dataOffset))
+        {
+            this->Release();
+            return false;
+        }
         if (!this->parser->ReadString(this->entries[idx].filename, sizeof(this->entries[idx].filename)))
         {
             if (this->parser != NULL)
@@ -92,6 +106,7 @@ i32 Pbg3Archive::Release()
         this->entries = NULL;
     }
     std::free(this->unk);
+    this->unk = NULL;
     return true;
 }
 
@@ -139,14 +154,14 @@ u8 *Pbg3Archive::ReadEntryRaw(u32 *outSize, u32 *outChecksum, i32 entryIdx)
         return NULL;
 
     u32 size;
-    if (entryIdx == this->numOfEntries - 1)
+    const u32 dataOffset = this->entries[entryIdx].dataOffset;
+    const u32 nextOffset = entryIdx == this->numOfEntries - 1 ? this->fileTableOffset
+                                                              : this->entries[entryIdx + 1].dataOffset;
+    if (nextOffset <= dataOffset || nextOffset > this->fileTableOffset)
     {
-        size = this->fileTableOffset - this->entries[entryIdx].dataOffset;
+        return NULL;
     }
-    else
-    {
-        size = this->entries[entryIdx + 1].dataOffset - this->entries[entryIdx].dataOffset;
-    }
+    size = nextOffset - dataOffset;
 
     u8 *data = (u8 *)malloc(size);
     if (data == NULL)
@@ -196,67 +211,19 @@ i32 Pbg3Archive::Load(const char *path)
 
 #define LZSS_DICTSIZE 0x2000
 #define LZSS_DICTSIZE_MASK 0x1fff
-#define LZSS_MIN_MATCH 3
-
-#define DEC_NEXT_BIT()                                                                                                 \
-    inBitMask >>= 1;                                                                                                   \
-    if (inBitMask == 0)                                                                                                \
-    {                                                                                                                  \
-        inBitMask = 0x80;                                                                                              \
-    }
-
-#define DEC_WRITE_BYTE(data)                                                                                           \
-    *outCursor++ = data;                                                                                               \
-    dict[dictHead] = data;                                                                                             \
-    dictHead = (dictHead + 1) & LZSS_DICTSIZE_MASK;
-
-#define DEC_HANDLE_FETCH_NEW_BYTE()                                                                                    \
-    if (inBitMask == 0x80)                                                                                             \
-    {                                                                                                                  \
-        currByte = *inCursor;                                                                                          \
-        if (inCursor - rawData >= (i32)size)                                                                           \
-        {                                                                                                              \
-            currByte = 0;                                                                                              \
-        }                                                                                                              \
-        else                                                                                                           \
-        {                                                                                                              \
-            inCursor++;                                                                                                \
-        }                                                                                                              \
-        checksum += currByte;                                                                                          \
-    }
-
-#define DEC_READ_FLAG_BIT()                                                                                            \
-    DEC_HANDLE_FETCH_NEW_BYTE();                                                                                       \
-    opcode = currByte & inBitMask;                                                                                     \
-    DEC_NEXT_BIT();
-
-#define DEC_READ_BITS(bitsCount)                                                                                       \
-    outBitMask = 0x01 << (bitsCount - 1);                                                                              \
-    inBits = 0;                                                                                                        \
-    while (outBitMask != 0)                                                                                            \
-    {                                                                                                                  \
-        DEC_HANDLE_FETCH_NEW_BYTE();                                                                                   \
-        if ((currByte & inBitMask) != 0)                                                                               \
-        {                                                                                                              \
-            inBits |= outBitMask;                                                                                      \
-        }                                                                                                              \
-        outBitMask >>= 1;                                                                                              \
-        DEC_NEXT_BIT();                                                                                                \
-    }
 
 u8 *Pbg3Archive::ReadDecompressEntry(u32 entryIdx, const char *filename)
 {
     if (entryIdx >= this->numOfEntries || this->parser == NULL)
         return NULL;
 
-    u32 size = this->GetEntrySize(entryIdx);
-    u8 *out = (u8 *)malloc(size);
+    const u32 outputSize = this->GetEntrySize(entryIdx);
+    u8 *out = (u8 *)malloc(outputSize);
     if (out == NULL)
         return NULL;
 
-    u8 *outCursor = out;
-
     u32 expectedCsum;
+    u32 size = 0;
     u8 *rawData = this->ReadEntryRaw(&size, &expectedCsum, entryIdx);
 
     if (rawData == NULL)
@@ -269,10 +236,12 @@ u8 *Pbg3Archive::ReadDecompressEntry(u32 entryIdx, const char *filename)
         return NULL;
     }
 
-    u8 *inCursor = rawData;
-    u8 inBitMask = 0x80;
+    size_t inputOffset = 0;
+    u8 inBitMask = 0;
+    u8 currByte = 0;
     u32 checksum = 0;
     u32 dictHead = 1;
+    u32 outputOffset = 0;
 
     u8 dict[LZSS_DICTSIZE];
 
@@ -282,52 +251,103 @@ u8 *Pbg3Archive::ReadDecompressEntry(u32 entryIdx, const char *filename)
         dict[i] = 0;
     }
 
-    u32 currByte;
-    u32 inBits;
-    u32 outBitMask;
-    u32 matchOffset;
-    u32 opcode;
+    auto readBit = [&](u32 &bit) -> bool {
+        if (inBitMask == 0)
+        {
+            if (inputOffset >= size)
+            {
+                return false;
+            }
+            currByte = rawData[inputOffset++];
+            checksum += currByte;
+            inBitMask = 0x80;
+        }
+        bit = (currByte & inBitMask) != 0;
+        inBitMask >>= 1;
+        return true;
+    };
+
+    auto readBits = [&](u32 count, u32 &value) -> bool {
+        value = 0;
+        for (u32 i = 0; i < count; ++i)
+        {
+            u32 bit = 0;
+            if (!readBit(bit))
+            {
+                return false;
+            }
+            value = (value << 1) | bit;
+        }
+        return true;
+    };
+
+    auto writeByte = [&](u8 value) -> bool {
+        if (outputOffset >= outputSize)
+        {
+            return false;
+        }
+        out[outputOffset++] = value;
+        dict[dictHead] = value;
+        dictHead = (dictHead + 1) & LZSS_DICTSIZE_MASK;
+        return true;
+    };
 
     for (;;)
     {
-        DEC_READ_FLAG_BIT();
+        u32 opcode = 0;
+        if (!readBit(opcode))
+        {
+            free(rawData);
+            free(out);
+            return NULL;
+        }
 
-        // Read literal byte from next 8 bits
         if (opcode != 0)
         {
-            DEC_READ_BITS(8);
-            DEC_WRITE_BYTE(inBits);
+            u32 literal = 0;
+            if (!readBits(8, literal) || !writeByte(static_cast<u8>(literal)))
+            {
+                free(rawData);
+                free(out);
+                return NULL;
+            }
         }
-        // Copy from dictionary, 13 bit offset, then 4 bit length
         else
         {
-            DEC_READ_BITS(13);
-
-            matchOffset = inBits;
+            u32 matchOffset = 0;
+            if (!readBits(13, matchOffset))
+            {
+                free(rawData);
+                free(out);
+                return NULL;
+            }
             if (matchOffset == 0)
             {
                 break;
             }
 
-            DEC_READ_BITS(4);
-
-            for (i32 i = 0; i <= (i32)inBits + 2; i++)
+            u32 matchLength = 0;
+            if (!readBits(4, matchLength))
             {
-                u32 c = dict[(matchOffset + i) & LZSS_DICTSIZE_MASK];
-                DEC_WRITE_BYTE(c);
+                free(rawData);
+                free(out);
+                return NULL;
+            }
+            for (u32 i = 0; i < matchLength + 3; ++i)
+            {
+                if (!writeByte(dict[(matchOffset + i) & LZSS_DICTSIZE_MASK]))
+                {
+                    free(rawData);
+                    free(out);
+                    return NULL;
+                }
             }
         }
     }
 
-    // Skip past any remaining bits in the data
-    while (inBitMask != 0x80)
-    {
-        DEC_READ_FLAG_BIT();
-    }
-
     free(rawData);
 
-    if (this->entries[entryIdx].checksum != checksum)
+    if (expectedCsum != checksum || outputOffset != outputSize)
     {
         if (out != NULL)
         {

@@ -396,6 +396,19 @@ void WebGL::Enable(Capabilities cap)
     }
 }
 
+void WebGL::Disable(Capabilities cap)
+{
+    switch (cap)
+    {
+    case CAPS_BLEND:
+        g_glFuncTable.glDisable(GL_BLEND);
+        break;
+    case CAPS_DEPTH_TEST:
+        g_glFuncTable.glDisable(GL_DEPTH_TEST);
+        break;
+    }
+}
+
 bool WebGL::HasError()
 {
     return g_glFuncTable.glGetError() != GL_NO_ERROR;

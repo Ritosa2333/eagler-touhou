@@ -120,6 +120,8 @@ struct Supervisor
     ZunResult LoadConfig(const char *path);
 
     void TickTimer(i32 *frames, f32 *subframes);
+    i32 EnableFog();
+    i32 DisableFog();
 
     f32 FramerateMultiplier() const
     {
@@ -164,6 +166,7 @@ struct Supervisor
     i32 unk198;
     bool isInEnding;
 
+    i32 fogEnabled;
     i32 vsyncEnabled;
     u32 lastFrameTime;
     f32 effectiveFramerateMultiplier;

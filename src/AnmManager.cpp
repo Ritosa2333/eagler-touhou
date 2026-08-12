@@ -57,14 +57,14 @@ void AnmManager::CreateTextureObject()
 }
 
 SDL_Surface *AnmManager::LoadToSurfaceWithFormat(const char *filename, SDL_PixelFormat format, u8 **fileData,
-                                                 ZunColor colorKey)
+                                                 ZunColor colorKey, bool isExternalResource)
 {
     u8 *data;
     SDL_Surface *imageSrcSurface;
     SDL_Surface *imageTargetSurface;
     SDL_IOStream *rwData;
 
-    data = FileSystem::OpenPath(filename, 0);
+    data = FileSystem::OpenPath(filename, isExternalResource ? 1 : 0);
 
     if (data == NULL)
     {
@@ -293,7 +293,8 @@ void AnmManager::SetupVertexBuffer()
     }
 }
 
-ZunResult AnmManager::LoadTexture(i32 textureIdx, const char *textureName, i32 textureFormat, ZunColor colorKey)
+ZunResult AnmManager::LoadTexture(i32 textureIdx, const char *textureName, i32 textureFormat, ZunColor colorKey,
+                                  bool isExternalResource)
 {
     u8 *rawTextureData;
     SDL_Surface *textureSurface;
@@ -314,7 +315,8 @@ ZunResult AnmManager::LoadTexture(i32 textureIdx, const char *textureName, i32 t
     }
 
     textureSurface = LoadToSurfaceWithFormat(textureName, g_TextureFormatSDLMapping[textureFormat],
-                                             (u8 **)&this->textures[textureIdx].fileData, colorKey);
+                                             (u8 **)&this->textures[textureIdx].fileData, colorKey,
+                                             isExternalResource);
 
     if (textureSurface == NULL)
     {
@@ -325,7 +327,7 @@ ZunResult AnmManager::LoadTexture(i32 textureIdx, const char *textureName, i32 t
 
     // Hideous hack to account for ANM entries that report a different texture size than the actual size
     const AnmRawEntry *entry = this->anmFiles[textureIdx];
-    if (textureSurface->w != entry->width || textureSurface->h != entry->height)
+    if (entry && (textureSurface->w != entry->width || textureSurface->h != entry->height))
     {
         SDL_Surface *textureSurface2 =
             SDL_CreateSurface(entry->width, entry->height, g_TextureFormatSDLMapping[textureFormat]);
@@ -371,6 +373,37 @@ ZunResult AnmManager::LoadTexture(i32 textureIdx, const char *textureName, i32 t
     }
 
     return ZUN_SUCCESS;
+}
+
+ZunResult AnmManager::LoadEmbeddedTexture(i32 textureIdx, const AnmRawEntry *entry)
+{
+    if (!entry || !entry->hasData)
+        return ZUN_ERROR;
+    struct EmbeddedHeader
+    {
+        i16 magic, colorDepth, imageType, format, width, height;
+        i32 unused;
+        u8 data[];
+    };
+    const auto *image = reinterpret_cast<const EmbeddedHeader *>(
+        reinterpret_cast<const u8 *>(entry) + static_cast<u32>(entry->textureOffset));
+    const i32 format = image->format;
+    if (format <= 0 || format >= 6 || image->width <= 0 || image->height <= 0)
+        return ZUN_ERROR;
+    ReleaseTexture(textureIdx);
+    CreateTextureObject();
+    const size_t size = static_cast<size_t>(image->width) * image->height *
+                        g_TextureFormatBytesPerPixel[format];
+    u8 *copy = new u8[size];
+    memcpy(copy, image->data, size);
+    this->textures[textureIdx].handle = this->currentTextureHandle;
+    this->textures[textureIdx].textureData = copy;
+    this->textures[textureIdx].width = image->width;
+    this->textures[textureIdx].height = image->height;
+    this->textures[textureIdx].format = format;
+    g_GfxBackend->SetTextureImage(image->width, image->height, g_TextureFormatTypeGfxMapping[format],
+                                  g_TextureFormatTypeMapping[format], copy);
+    return g_GfxBackend->HasError() ? ZUN_ERROR : ZUN_SUCCESS;
 }
 
 ZunResult AnmManager::LoadTextureAlphaChannel(i32 textureIdx, const char *textureName, i32 textureFormat,
@@ -528,7 +561,9 @@ ZunResult AnmManager::LoadAnm(i32 anmIdx, const char *path, i32 spriteIdxOffset)
         return ZUN_ERROR;
     }
 
-    if (anm->alphaNameOffset != 0)
+    const bool textureWasRuntimeOverride = g_LastFileWasRuntimeOverride;
+
+    if (anm->alphaNameOffset != 0 && !textureWasRuntimeOverride)
     {
         anmName = (char *)((u8 *)anm + anm->alphaNameOffset);
         if (this->LoadTextureAlphaChannel(anm->textureIdx, anmName, anm->format, anm->colorKey) != ZUN_SUCCESS)

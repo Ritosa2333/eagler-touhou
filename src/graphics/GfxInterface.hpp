@@ -148,6 +148,7 @@ struct GfxInterface
     virtual void SetDepthRange(f32 nearPlane, f32 farPlane) = 0;
 
     virtual void Enable(Capabilities cap) = 0;
+    virtual void Disable(Capabilities cap) = 0;
 
     virtual bool HasError() = 0;
 

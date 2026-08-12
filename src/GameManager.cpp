@@ -8,6 +8,8 @@
 #include "Gui.hpp"
 #include "GameWindow.hpp"
 #include "Player.hpp"
+#include "PracticeRuntime.hpp"
+#include "RuntimeExtension.hpp"
 #include "ReplayManager.hpp"
 #include "ResultScreen.hpp"
 #include "Rng.hpp"
@@ -15,6 +17,7 @@
 #include "SoundPlayer.hpp"
 #include "Stage.hpp"
 #include "Supervisor.hpp"
+#include "Touch.hpp"
 #include "utils.hpp"
 
 // #include <d3d8types.h>
@@ -286,6 +289,11 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
     bool failedToLoadReplay;
     i32 padding[3];
 
+    Touch::ResetRunUsage();
+    PracticeRuntime::RefreshFromHost();
+    if (mgr->isInReplay)
+        PracticeRuntime::LoadReplayMetadata(reinterpret_cast<const char *>(mgr->replayFile));
+    PracticeRuntime::PrepareStart(*mgr);
     failedToLoadReplay = false;
     //    g_Supervisor.d3dDevice->ResourceManagerDiscardBytes(0);
     if (g_Supervisor.curState != SUPERVISOR_STATE_GAMEMANAGER_REINIT)
@@ -448,6 +456,10 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
         g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_GUI);
         return ZUN_ERROR;
     }
+    // A practice replay sidecar is authoritative for the initial state that
+    // produced it. Ordinary replays leave PracticeRuntime inactive.
+    PracticeRuntime::ApplyInitialState(*mgr, true);
+    RuntimeExtension::OnGameStarted(mgr);
     if (g_GameManager.isInReplay == 0)
     {
         ReplayManager::RegisterChain(0, "replay/th6_00.rpy");
@@ -467,7 +479,8 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
         g_Supervisor.unk1b8 = 0.0;
     }
     mgr->isTimeStopped = false;
-    mgr->score = 0;
+    if (!PracticeRuntime::Active())
+        mgr->score = 0;
     mgr->isGameCompleted = 0;
     g_AsciiManager.InitializeVms();
     if (failedToLoadReplay)

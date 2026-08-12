@@ -121,9 +121,9 @@ i32 EffectManager::EffectUpdateCallback4(Effect *effect)
 
     posMagnitude = posOffset.getMagnitude();
 
-    if (posMagnitude * posMagnitude < 0)
+    if (posMagnitude <= 0.000001f)
     {
-        normalizedPos = ZunVec3(1.0f, 0.0f, 0.0f);
+        posOffset = ZunVec3(1.0f, 0.0f, 0.0f);
     }
     else
     {
@@ -204,6 +204,12 @@ Effect *EffectManager::SpawnParticles(i32 effectIdx, const ZunVec3 *pos, i32 cou
     i32 idx;
     Effect *effect;
 
+    Effect *const failure = &this->effects[ARRAY_SIZE(this->effects) - 1];
+    if (effectIdx < 0 || effectIdx >= ARRAY_SIZE_SIGNED(g_Effects) || pos == NULL || count <= 0)
+    {
+        return failure;
+    }
+
     effect = &this->effects[this->nextIndex];
     for (idx = 0; idx < ARRAY_SIZE_SIGNED(this->effects) - 1; idx++)
     {
@@ -253,7 +259,7 @@ Effect *EffectManager::SpawnParticles(i32 effectIdx, const ZunVec3 *pos, i32 cou
         }
     }
 
-    return idx >= ARRAY_SIZE_SIGNED(this->effects) - 1 ? &this->effects[512] : effect;
+    return idx >= ARRAY_SIZE_SIGNED(this->effects) - 1 ? failure : effect;
 }
 
 ChainCallbackResult EffectManager::OnUpdate(EffectManager *mgr)

@@ -4,8 +4,12 @@
 #include "inttypes.hpp"
 
 #include <SDL3/SDL.h>
+#include <atomic>
+#include <mutex>
 
-#ifdef _WIN32
+#ifdef __EMSCRIPTEN__
+#include "midi/MidiWeb.hpp"
+#elif defined(_WIN32)
 #include "midi/MidiWin32.hpp"
 #elif defined(LIBASOUND_MIDI_SUPPORT)
 #include "midi/MidiAlsa.hpp"
@@ -64,6 +68,7 @@ struct MidiTrack
     u32 trackLength;
     u8 opcode;
     u8 *trackData;
+    u8 *trackDataEnd;
     u8 *curTrackDataCursor;
     u8 *loopPointTarget;
     u32 loopPointTimePos;
@@ -87,6 +92,7 @@ struct MidiOutput
 
     i32 StopTimer();
     void StartTimer(u32 delay, SDL_TimerCallback cb, void *data);
+    void SetPaused(bool value);
 
     static u32 SDLCALL DefaultTimerCallback(void *userdata, SDL_TimerID timerID, u32 interval);
 
@@ -106,12 +112,16 @@ struct MidiOutput
     u32 SetFadeOut(u32 ms);
     void FadeOutSetVolume(i32 volume);
 
-    static u32 ReadVariableLength(u8 **curTrackDataCursor);
+    static bool ReadVariableLength(u8 **curTrackDataCursor, const u8 *end, u32 *value);
 
     SDL_TimerID timerId;
-    u32 lastTimerTicks;
+    u64 lastTimerTicks;
+    std::mutex timerMutex;
+    std::atomic_bool timerActive;
+    std::atomic_bool timerPaused;
 
     u8 *midiFileData[32];
+    size_t midiFileSizes[32];
     i32 numTracks;
     u32 format;
     i32 divisions;

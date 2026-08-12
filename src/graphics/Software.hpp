@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "AnmManager.hpp"
 #include "GfxInterface.hpp"
@@ -111,6 +111,7 @@ struct Software : GfxInterface
     virtual void SetDepthRange(f32 nearPlane, f32 farPlane);
 
     virtual void Enable(Capabilities cap);
+    virtual void Disable(Capabilities cap);
     virtual bool HasError()
     {
         return false;

@@ -1152,7 +1152,6 @@ ChainCallbackResult BulletManager::OnDraw(BulletManager *mgr)
         curLaser->vm0.pos.x = cosine * laserOffset + drawLaserPos.x;
         curLaser->vm0.pos.y = sine * laserOffset + drawLaserPos.y;
         curLaser->vm0.pos.z = 0.0f;
-        curLaser->color = COLOR_COMBINE_ALPHA(COLOR_WHITE, curLaser->color);
         g_AnmManager->Draw3(&curLaser->vm0);
         curLaser->vm0.pos = vm0Pos;
 
@@ -1165,6 +1164,7 @@ ChainCallbackResult BulletManager::OnDraw(BulletManager *mgr)
             const f32 vm1PrevScaleY = curLaser->vm1.prevScaleY;
             const ZunColor vm1Color = curLaser->vm1.color;
             const ZunColor vm1PrevColor = curLaser->vm1.prevColor;
+            const u32 vm1ColorOp = curLaser->vm1.flags.colorOp;
             curLaser->vm1.pos.x = cosine * drawStart + drawLaserPos.x;
             curLaser->vm1.pos.y = sine * drawStart + drawLaserPos.y;
             curLaser->vm1.pos.z = 0.0f;
@@ -1192,6 +1192,7 @@ ChainCallbackResult BulletManager::OnDraw(BulletManager *mgr)
             curLaser->vm1.prevScaleY = vm1PrevScaleY;
             curLaser->vm1.color = vm1Color;
             curLaser->vm1.prevColor = vm1PrevColor;
+            curLaser->vm1.flags.colorOp = vm1ColorOp;
         }
     }
 
