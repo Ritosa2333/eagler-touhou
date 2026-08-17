@@ -14,9 +14,11 @@ namespace FileSystem
 //   proper C++ standard library support
 FILE *FopenUTF8(const char *filepath, const char *mode);
 SDL_IOStream *OpenFileStream(const char *filepath, const char *mode);
+std::string GetBasePath(const char *filepath);
 std::string GetPrefPath(const char *filepath);
 void CreateDir(const char *path);
 u8 *OpenPath(const char *filepath, int isExternalResource);
+u8 *OpenOriginalPath(const char *filepath, int isExternalResource);
 u8 *OpenRuntimeOverride(const char *filepath);
 int WriteDataToFile(const char *path, const void *data, std::size_t size);
 } // namespace FileSystem

@@ -82,7 +82,6 @@ GameManager g_GameManager;
 static ChainElem g_GameManagerCalcChain;
 static ChainElem g_GameManagerDrawChain;
 
-#define MAX_SCORE 999999999
 #define MAX_CLEARS 99
 
 #define DEMO_FADEOUT_FRAMES 3600
@@ -91,6 +90,22 @@ static ChainElem g_GameManagerDrawChain;
 #define GUI_SCORE_STEP 78910
 
 #define MAX_LIVES 8
+
+static u32 ApplyScoreCap(u32 score)
+{
+#ifdef TH_ENABLE_THCRAP
+    // base_tsa::remove_score_cap patches both the unsigned compare threshold
+    // and replacement value to 0x7fffffff. Keep that exact behavior in
+    // thcrap-enabled builds; it is intentionally independent of whether a
+    // particular language is currently active.
+    constexpr u32 SCORE_CAP_TRIGGER = 0x7fffffffu;
+    constexpr u32 SCORE_CAP_VALUE = 0x7fffffffu;
+#else
+    constexpr u32 SCORE_CAP_TRIGGER = 1000000000u;
+    constexpr u32 SCORE_CAP_VALUE = 999999990u;
+#endif
+    return score >= SCORE_CAP_TRIGGER ? SCORE_CAP_VALUE : score;
+}
 
 i32 GameManager::IsInBounds(f32 x, f32 y, f32 width, f32 height) const
 {
@@ -176,10 +191,7 @@ ChainCallbackResult GameManager::OnUpdate(GameManager *gameManager)
         return CHAIN_CALLBACK_RESULT_BREAK;
     }
 
-    if (gameManager->score >= MAX_SCORE + 1)
-    {
-        gameManager->score = MAX_SCORE - 9;
-    }
+    gameManager->score = ApplyScoreCap(gameManager->score);
     if (gameManager->guiScore != gameManager->score)
     {
         if (gameManager->score < gameManager->guiScore)
@@ -376,6 +388,8 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
     mgr->grazeInStage = 0;
     mgr->isInGameMenu = 0;
     mgr->currentStage = mgr->currentStage + 1;
+    PracticeRuntime::ResetTracker();
+    PracticeRuntime::ResetBgmTracking();
     if (g_GameManager.isInReplay == 0)
     {
         clrdIdx = g_GameManager.CharacterShotType();
@@ -468,8 +482,20 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
     {
         // Read boss battle, and store it for use when boss is started.
         g_Supervisor.ReadMidiFile(1, g_Stage.stdData->songPaths[1]);
-        // Immediately start playing this level's theme.
-        g_Supervisor.PlayAudio(g_Stage.stdData->songPaths[0]);
+        // th06_patch_main uses THBGMTest() to start the boss theme when an
+        // advanced Practice section begins on a boss portion.
+        const char *initialBgm = g_Stage.stdData->songPaths[PracticeRuntime::InitialBgmIndex()];
+        if (!PracticeRuntime::PreserveBgmOnRestart())
+        {
+            g_Supervisor.PlayAudio(initialBgm);
+            PracticeRuntime::NotifyBgmPlay(initialBgm);
+        }
+        else
+        {
+            // Exact el_bgm_signal consumption: the previous audio stream is
+            // already alive, so skip the new run's redundant initial play.
+            PracticeRuntime::FinishBgmRestartPreservation();
+        }
     }
     mgr->isInRetryMenu = 0;
     mgr->isInMenu = 1;
@@ -496,7 +522,7 @@ ZunResult GameManager::DeletedCallback(GameManager *mgr)
     i32 padding1, padding2, padding3;
 
     //    g_Supervisor.d3dDevice->ResourceManagerDiscardBytes(0);
-    if (!g_GameManager.demoMode)
+    if (!g_GameManager.demoMode && !PracticeRuntime::PreserveBgmOnRestart())
     {
         g_Supervisor.StopAudio();
     }

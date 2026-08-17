@@ -24,6 +24,8 @@
       const params = new URLSearchParams(location.search);
       const hosted = params.get("hosted") === "1" && window.parent !== window;
       const assetVersion = params.get("v") || "";
+      const mobileDevice = navigator.userAgentData?.mobile === true || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+        (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
       const status = document.getElementById("status");
       let launched = false;
       let loadedMusicFiles = [];
@@ -68,8 +70,41 @@
         for (const path of loadedRuntimeFiles) { try { FS.unlink(path); } catch {} }
         loadedRuntimeFiles = [];
       };
+      const assertStaticPackManifest = (manifest, expected) => {
+        if (manifest?.schema !== "eagler-touhou/thcrap-static-pack/1" || manifest.game !== "th06" ||
+            manifest.language !== expected.language || manifest.runtimeVersion !== expected.runtimeVersion ||
+            !Array.isArray(manifest.files) || manifest.files.length > 256) throw new Error("invalid TH06 language pack manifest");
+        for (const file of manifest.files) {
+          if (typeof file?.path !== "string" || !file.path.startsWith("/thcrap/th06/") || file.path.includes("\\") || file.path.includes("..") ||
+              !Number.isInteger(file.bytes) || file.bytes < 0) throw new Error("invalid TH06 language pack file");
+        }
+      };
+      const installStaticPack = async pack => {
+        if (launched) throw new Error("runtime resources cannot be changed after launch");
+        if (typeof pack?.url !== "string" || typeof pack.language !== "string" || typeof pack.runtimeVersion !== "string" ||
+            !Number.isInteger(pack.bytes) || pack.bytes <= 0 ||
+            !pack.manifest || !Array.isArray(pack.files)) throw new Error("invalid TH06 language pack");
+        const url = new URL(pack.url, location.href);
+        if (url.origin !== location.origin) throw new Error("cross-origin TH06 language pack");
+        assertStaticPackManifest(pack.manifest, pack);
+        const expected = new Map(pack.manifest.files.map(file => [file.path, file]));
+        if (pack.files.length !== expected.size) throw new Error("TH06 language pack file count mismatch");
+        const verified = [];
+        for (const file of pack.files) {
+          if (typeof file?.path !== "string" || !file.path.startsWith("/thcrap/th06/") || file.path.includes("\\") || file.path.includes("..") ||
+              !(file.bytes instanceof Uint8Array)) throw new Error("invalid TH06 language pack path");
+          const declaration = expected.get(file.path);
+          if (!declaration || file.bytes.length !== declaration.bytes) throw new Error(`${file.path}: size mismatch`);
+          verified.push({ path: file.path, bytes: file.bytes });
+        }
+        clearRuntime();
+        for (const file of verified) {
+          ensureDir(file.path); FS.writeFile(file.path, file.bytes, { canOwn: true }); loadedRuntimeFiles.push(file.path);
+        }
+      };
       const installRuntime = async message => {
         if (launched) throw new Error("runtime resources cannot be changed after launch");
+        if (message.runtimePack) { await installStaticPack(message.runtimePack); return; }
         const resources = message.runtimeResources ?? [];
         if (!Array.isArray(resources) || resources.length > 256) throw new Error("invalid runtime resources");
         clearRuntime();
@@ -81,11 +116,6 @@
           if (!response.ok) throw new Error(`${url.pathname}: HTTP ${response.status}`);
           const bytes = new Uint8Array(await response.arrayBuffer());
           if (Number.isFinite(Number(resource.size)) && bytes.length !== Number(resource.size)) throw new Error(`${resource.path}: size mismatch`);
-          if (typeof resource.sha256 === "string" && resource.sha256) {
-            const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
-            const actual = Array.from(digest, byte => byte.toString(16).padStart(2, "0")).join("");
-            if (actual !== resource.sha256.toLowerCase()) throw new Error(`${resource.path}: checksum mismatch`);
-          }
           ensureDir(resource.path); FS.writeFile(resource.path, bytes, { canOwn: true }); loadedRuntimeFiles.push(resource.path);
         }
       };
@@ -93,7 +123,7 @@
       const installShared = async message => {
         if (!Array.isArray(message.sharedResources) || message.sharedResources.length > 4) throw new Error("invalid shared resources");
         await Promise.all(message.sharedResources.map(async resource => {
-          if (typeof resource?.url !== "string" || !["/msgothic.ttc", "/NotoSansCJKsc-Regular.otf"].includes(resource.path)) throw new Error("invalid shared resource");
+          if (typeof resource?.url !== "string" || !["/msgothic.ttc", "/unifont.otf"].includes(resource.path)) throw new Error("invalid shared resource");
           const url = new URL(resource.url, location.href);
           if (url.origin !== location.origin) throw new Error("cross-origin shared resource");
           const response = await fetch(url, { cache: "force-cache" });
@@ -178,19 +208,24 @@
         if (!Array.isArray(message.thpracCatalog ?? []) || (message.thpracCatalog?.length || 0) > 256) throw new Error("invalid thprac catalog");
         thpracCatalog = message.thpracCatalog ?? [];
         Module.eaglerThpracCatalog = thpracCatalog;
-        for (const key of ["thpracEnabled", "touchEnabled", "unlimitedTouch", "touchBombZoneEnabled", "alwaysHitbox", "th06FocusHitbox"]) {
+        for (const key of ["thpracEnabled", "limitPresentationTo60", "touchEnabled", "unlimitedTouch", "touchBombZoneEnabled", "alwaysHitbox", "th06FocusHitbox"]) {
           if (options[key] != null && typeof options[key] !== "boolean") throw new Error("invalid eagler-touhou option");
         }
+        if (options.touchFocusMode != null && !["two-finger", "hold-button", "toggle-button"].includes(options.touchFocusMode)) throw new Error("invalid touch focus mode");
+        if (options.thpracLocale != null && !["zh-CN", "ja-JP", "en-US"].includes(options.thpracLocale)) throw new Error("invalid thprac locale");
         const session = options.thpracSession;
-        if (options.debugHarness != null && !["thprac-menu", "music-room"].includes(options.debugHarness)) throw new Error("invalid debug harness");
+        if (options.debugHarness != null && !["thprac-menu", "music-room", "font-metrics"].includes(options.debugHarness)) throw new Error("invalid debug harness");
         if (session != null && (session.schema !== "eagler-touhou/thprac-session/1" || session.game !== "th06" || typeof session.params !== "object" || !session.params)) throw new Error("invalid thprac session");
         Module.eaglerOptions = {
           thpracEnabled: !!options.thpracEnabled,
+          limitPresentationTo60: mobileDevice || !!options.limitPresentationTo60,
           touchEnabled: !!options.touchEnabled,
+          touchFocusMode: options.touchFocusMode || "two-finger",
           unlimitedTouch: !!options.touchEnabled && !!options.unlimitedTouch,
           touchBombZoneEnabled: options.touchBombZoneEnabled !== false,
           alwaysHitbox: !!options.alwaysHitbox,
           th06FocusHitbox: !!options.th06FocusHitbox,
+          thpracLocale: options.thpracLocale || "en-US",
           debugHarness: options.debugHarness || null,
           thpracSession: session || null
         };
@@ -263,9 +298,10 @@
             reply(message.request, true);
             break;
           case "touch-controls":
-            if (typeof message.fireEnabled !== "boolean" || !Number.isInteger(message.bombSerial) || !Number.isInteger(message.escapeSerial))
+            if (typeof message.fireEnabled !== "boolean" || typeof message.focusEnabled !== "boolean" || !Number.isInteger(message.bombSerial) || !Number.isInteger(message.escapeSerial))
               throw new Error("invalid touch controls");
             Module.eaglerControls.fireEnabled = message.fireEnabled;
+            Module.eaglerControls.focusEnabled = message.focusEnabled;
             Module.eaglerControls.bombSerial = message.bombSerial;
             Module.eaglerControls.escapeSerial = message.escapeSerial;
             reply(message.request, true);
@@ -311,8 +347,8 @@
         // Empty means original auto-detection for standalone builds. The host
         // sends an explicit mode before launching an embedded runtime.
         touhouMusicMode: "",
-      eaglerOptions: { thpracEnabled: false, touchEnabled: false, unlimitedTouch: false, touchBombZoneEnabled: true, alwaysHitbox: false, th06FocusHitbox: false, thpracSession: null },
-        eaglerControls: { fireEnabled: true, bombSerial: 0, escapeSerial: 0 },
+      eaglerOptions: { thpracEnabled: false, limitPresentationTo60: mobileDevice, touchEnabled: false, touchFocusMode: "two-finger", unlimitedTouch: false, touchBombZoneEnabled: true, alwaysHitbox: false, th06FocusHitbox: false, thpracLocale: "en-US", thpracSession: null },
+        eaglerControls: { fireEnabled: true, focusEnabled: false, bombSerial: 0, escapeSerial: 0 },
         preRun: [() => {
           addRunDependency("savesth06-sync");
           try { FS.mkdir(saveRoot); } catch (error) {
@@ -350,6 +386,7 @@
 
       Module.canvas.addEventListener("pointerdown", () => Module.canvas.focus());
       const auxiliaryTouches = new Map();
+      const nativeCanvasTouches = new Map();
       let nextAuxiliaryTouchId = -1;
       const auxiliaryCoordinates = event => {
         const rect = Module.canvas.getBoundingClientRect();
@@ -357,8 +394,12 @@
       };
       document.addEventListener("pointerdown", event => {
         if (event.pointerType !== "touch" || !Module.eaglerOptions.touchEnabled) return;
-        if (event.target === Module.canvas || typeof Module._TouhouAuxTouchDown !== "function") return;
         const [x, y] = auxiliaryCoordinates(event);
+        if (event.target === Module.canvas) {
+          nativeCanvasTouches.set(event.pointerId, { id: event.pointerId + 1, x, y });
+          return;
+        }
+        if (typeof Module._TouhouAuxTouchDown !== "function") return;
         const touch = { id: nextAuxiliaryTouchId--, x, y };
         auxiliaryTouches.set(event.pointerId, touch);
         Module._TouhouAuxTouchDown(touch.id, x, y);
@@ -366,7 +407,15 @@
         event.preventDefault();
       }, { capture: true, passive: false });
       document.addEventListener("pointermove", event => {
-        if (event.pointerType !== "touch" || !auxiliaryTouches.has(event.pointerId)) return;
+        if (event.pointerType !== "touch") return;
+        const nativeTouch = nativeCanvasTouches.get(event.pointerId);
+        if (nativeTouch) {
+          const [x, y] = auxiliaryCoordinates(event);
+          nativeTouch.x = x;
+          nativeTouch.y = y;
+          return;
+        }
+        if (!auxiliaryTouches.has(event.pointerId)) return;
         const [x, y] = auxiliaryCoordinates(event);
         const touch = auxiliaryTouches.get(event.pointerId);
         touch.x = x;
@@ -376,22 +425,40 @@
       }, { capture: true, passive: false });
       const releaseTouch = event => {
         if (event.pointerType !== "touch") return;
-        const touch = auxiliaryTouches.get(event.pointerId);
-        if (!touch) return;
-        auxiliaryTouches.delete(event.pointerId);
-        const [x, y] = Number.isFinite(event.clientX) ? auxiliaryCoordinates(event) : [touch.x, touch.y];
-        if (typeof Module._TouhouAuxTouchUp === "function") Module._TouhouAuxTouchUp(touch.id, x, y);
-        event.preventDefault();
+        const auxiliaryTouch = auxiliaryTouches.get(event.pointerId);
+        if (auxiliaryTouch) {
+          auxiliaryTouches.delete(event.pointerId);
+          const [x, y] = Number.isFinite(event.clientX) ? auxiliaryCoordinates(event) : [auxiliaryTouch.x, auxiliaryTouch.y];
+          if (typeof Module._TouhouAuxTouchUp === "function") Module._TouhouAuxTouchUp(auxiliaryTouch.id, x, y);
+          event.preventDefault();
+          return;
+        }
+
+        const nativeTouch = nativeCanvasTouches.get(event.pointerId);
+        if (!nativeTouch) return;
+        nativeCanvasTouches.delete(event.pointerId);
+        const [x, y] = Number.isFinite(event.clientX) ? auxiliaryCoordinates(event) : [nativeTouch.x, nativeTouch.y];
+        if (typeof Module._TouhouAuxTouchUp === "function") Module._TouhouAuxTouchUp(nativeTouch.id, x, y);
       };
       document.addEventListener("pointerup", releaseTouch, { capture: true, passive: false });
       document.addEventListener("pointercancel", releaseTouch, { capture: true, passive: false });
+      document.addEventListener("lostpointercapture", releaseTouch, { capture: true, passive: false });
+      const cancelAllTouches = () => {
+        auxiliaryTouches.clear();
+        nativeCanvasTouches.clear();
+        if (typeof Module._TouhouAuxTouchCancelAll === "function") Module._TouhouAuxTouchCancelAll();
+      };
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") cancelAllTouches();
+      });
+      window.addEventListener("blur", cancelAllTouches);
+      window.addEventListener("pagehide", cancelAllTouches);
       Module.canvas.addEventListener("webglcontextlost", event => {
         event.preventDefault();
         status.textContent = "WebGL context lost. Reload the page.";
       });
     })();
   </script>
-    <script src="/eagler-touhou/thprac-game-ui.js?v=20260812-2"></script>
   {{{ SCRIPT }}}
 </body>
 </html>

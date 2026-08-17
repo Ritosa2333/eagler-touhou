@@ -17,6 +17,7 @@
 #include "GameWindow.hpp"
 #include "Gui.hpp"
 #include "ItemManager.hpp"
+#include "PracticeRuntime.hpp"
 #include "Rng.hpp"
 #include "ScreenEffect.hpp"
 #include "SoundPlayer.hpp"
@@ -162,7 +163,9 @@ ZunResult Player::AddedCallback(Player *p)
     p->characterData.diagonalMovementSpeedFocus = p->characterData.orthogonalMovementSpeedFocus / ZUN_SQRTF(2.0);
     p->fireBulletCallback = p->characterData.fireBulletCallback;
     p->fireBulletFocusCallback = p->characterData.fireBulletFocusCallback;
-    p->playerState = PLAYER_STATE_SPAWNING;
+    // Upstream th06_cancel_muteki replaces the vanilla SPAWNING assignment
+    // inside Player::AddedCallback for advanced Practice/Practice Replay.
+    p->playerState = PracticeRuntime::AdvancedActive() ? PLAYER_STATE_ALIVE : PLAYER_STATE_SPAWNING;
     p->invulnerabilityTimer.SetCurrent(120);
     p->orbState = ORB_HIDDEN;
     g_AnmManager->SetAndExecuteScriptIdx(&p->orbsSprite[0], ANM_SCRIPT_PLAYER_ORB_LEFT);
@@ -181,7 +184,9 @@ ZunResult Player::AddedCallback(Player *p)
     }
     p->verticalMovementSpeedMultiplierDuringBomb = 1.0;
     p->horizontalMovementSpeedMultiplierDuringBomb = 1.0;
-    p->respawnTimer = 8;
+    // th06_set_deathbomb_timer patches this exact vanilla 8 to 6 whenever
+    // thPracParam.mode is active.
+    p->respawnTimer = PracticeRuntime::AdvancedActive() ? 6 : 8;
     return ZUN_SUCCESS;
 }
 
@@ -194,18 +199,8 @@ ZunResult Player::DeletedCallback(Player *p)
     return ZUN_SUCCESS;
 }
 
-ChainCallbackResult Player::OnUpdate(Player *p)
+void Player::SyncRenderState(Player *p)
 {
-    f32 scaleFactor1, scaleFactor2;
-    i32 idx;
-    ZunVec3 lastEnemyHit;
-    const i32 minRequiredDeathbombTimer =
-        (Touch::WasUsedThisRun() && !Touch::UsedTouchToBomb()) ? Touch::DEATHBOMB_TOLERANCE : 0;
-
-    if (g_GameManager.isTimeStopped)
-    {
-        return CHAIN_CALLBACK_RESULT_CONTINUE;
-    }
     p->prevPositionCenter = p->positionCenter;
     p->prevOrbsPosition[0] = p->orbsPosition[0];
     p->prevOrbsPosition[1] = p->orbsPosition[1];
@@ -223,6 +218,25 @@ ChainCallbackResult Player::OnUpdate(Player *p)
             bullet.sprite.UpdatePrev();
         }
     }
+}
+
+ChainCallbackResult Player::OnUpdate(Player *p)
+{
+    f32 scaleFactor1, scaleFactor2;
+    i32 idx;
+    ZunVec3 lastEnemyHit;
+    const i32 minRequiredDeathbombTimer =
+        (Touch::WasUsedThisRun() && !Touch::UsedTouchToBomb()) ? Touch::DEATHBOMB_TOLERANCE : 0;
+
+    // Keep interpolation endpoints synchronized even when Sakuya's in-game
+    // time stop prevents the player simulation from advancing. Returning
+    // before these snapshots left stale prev* values that were re-interpolated
+    // on every high-refresh presentation frame, producing visible jitter.
+    SyncRenderState(p);
+    if (g_GameManager.isTimeStopped)
+    {
+        return CHAIN_CALLBACK_RESULT_CONTINUE;
+    }
     for (idx = 0; idx < ARRAY_SIZE_SIGNED(p->bombRegionSizes); idx++)
     {
         p->bombRegionSizes[idx].x = 0.0;
@@ -236,11 +250,14 @@ ChainCallbackResult Player::OnUpdate(Player *p)
         p->bombInfo.calc(p);
     }
     else if (!g_Gui.HasCurrentMsgIdx() && p->respawnTimer != 0 && 0 < g_GameManager.bombsRemaining &&
-             WAS_PRESSED(TH_BUTTON_BOMB) && p->bombInfo.calc != NULL &&
+             (WAS_PRESSED(TH_BUTTON_BOMB) ||
+              (PracticeRuntime::OverlayAutoBomb() && p->playerState == PLAYER_STATE_DEAD)) &&
+             p->bombInfo.calc != NULL &&
              (p->playerState != PLAYER_STATE_DEAD || p->respawnTimer > minRequiredDeathbombTimer))
     {
         g_GameManager.bombsUsed++;
-        g_GameManager.bombsRemaining--;
+        if (!PracticeRuntime::OverlayInfiniteBombs())
+            g_GameManager.bombsRemaining--;
         g_Gui.flags.flag1 = 2;
         p->bombInfo.isInUse = 1;
         p->bombInfo.timer.SetCurrent(0);
@@ -266,13 +283,16 @@ ChainCallbackResult Player::OnUpdate(Player *p)
                     g_ItemManager.SpawnItem(&p->positionCenter, ITEM_POWER_SMALL, 2);
                     g_ItemManager.SpawnItem(&p->positionCenter, ITEM_POWER_SMALL, 2);
                     g_ItemManager.SpawnItem(&p->positionCenter, ITEM_POWER_SMALL, 2);
-                    if (g_GameManager.currentPower <= 16)
+                    if (!PracticeRuntime::OverlayInfinitePower())
                     {
-                        g_GameManager.currentPower = 0;
-                    }
-                    else
-                    {
-                        g_GameManager.currentPower -= 16;
+                        if (g_GameManager.currentPower <= 16)
+                        {
+                            g_GameManager.currentPower = 0;
+                        }
+                        else
+                        {
+                            g_GameManager.currentPower -= 16;
+                        }
                     }
                     g_Gui.flags.flag2 = 2;
                 }
@@ -283,7 +303,8 @@ ChainCallbackResult Player::OnUpdate(Player *p)
                     g_ItemManager.SpawnItem(&p->positionCenter, ITEM_FULL_POWER, 2);
                     g_ItemManager.SpawnItem(&p->positionCenter, ITEM_FULL_POWER, 2);
                     g_ItemManager.SpawnItem(&p->positionCenter, ITEM_FULL_POWER, 2);
-                    g_GameManager.currentPower = 0;
+                    if (!PracticeRuntime::OverlayInfinitePower())
+                        g_GameManager.currentPower = 0;
                     g_Gui.flags.flag2 = 2;
                     g_GameManager.extraLives = -1;
                 }
@@ -316,7 +337,11 @@ ChainCallbackResult Player::OnUpdate(Player *p)
                 }
                 else
                 {
-                    g_GameManager.livesRemaining--;
+                    // th06_track_miss is immediately before the stock
+                    // decrement, after the deathbomb window has expired.
+                    PracticeRuntime::RecordTrackerMiss();
+                    if (!PracticeRuntime::OverlayInfiniteLives())
+                        g_GameManager.livesRemaining--;
                     g_Gui.flags.flag0 = 2;
                     if (g_GameManager.difficulty < 4 && g_GameManager.isInPracticeMode == 0)
                     {
@@ -1587,9 +1612,13 @@ void Player::Die()
     int curLaserTimerIdx;
 
     g_EnemyManager.spellcardInfo.isCapturing = 0;
-    g_EffectManager.SpawnParticles(PARTICLE_EFFECT_UNK_12, &this->positionCenter, 1, COLOR_NEONBLUE);
+    // Upstream Muteki replaces the first death-particle call with stack
+    // cleanup and changes the state immediate from DEAD(2) to
+    // INVULNERABLE(3); the remaining hit feedback/sound/death counter stays.
+    if (!PracticeRuntime::OverlayInvincible())
+        g_EffectManager.SpawnParticles(PARTICLE_EFFECT_UNK_12, &this->positionCenter, 1, COLOR_NEONBLUE);
     g_EffectManager.SpawnParticles(PARTICLE_EFFECT_UNK_6, &this->positionCenter, 16, COLOR_WHITE);
-    this->playerState = PLAYER_STATE_DEAD;
+    this->playerState = PracticeRuntime::OverlayInvincible() ? PLAYER_STATE_INVULNERABLE : PLAYER_STATE_DEAD;
     this->respawnTimer = 6 + (Touch::WasUsedThisRun() ? Touch::DEATHBOMB_TOLERANCE : 0);
     this->invulnerabilityTimer.InitializeForPopup();
     g_SoundPlayer.PlaySoundByIdx(SOUND_PICHUN);

@@ -22,3 +22,5 @@ assets/
 build-*/
 *.data
 *.wasm
+/東方紅魔郷.cfg
+/thprac-replay-selftest.rpy.thprac.json

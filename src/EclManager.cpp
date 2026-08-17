@@ -14,6 +14,10 @@
 #include "Stage.hpp"
 #include "utils.hpp"
 
+#ifdef TH_DEV_TOOLS
+#include <SDL3/SDL_log.h>
+#endif
+
 static const i32 g_SpellcardScore[64] = {
     200000, 200000, 200000, 200000, 200000, 200000, 200000, 250000, 250000, 250000, 250000, 250000, 250000,
     250000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 300000, 300000,
@@ -52,7 +56,6 @@ ZunResult EclManager::Load(const char *eclPath)
         g_GameErrorContext.Log(TH_ERR_ECLMANAGER_ENEMY_DATA_CORRUPT);
         return ZUN_ERROR;
     }
-
     this->timelinePtrs[0] = (EclTimelineInstr *)(((u8 *)this->eclFile) + this->eclFile->timelineOffsets[0]);
 
     this->subTable = (EclRawInstr **)malloc(sizeof(EclRawInstr *) * this->eclFile->subCount);
@@ -728,7 +731,12 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 enemy->life = enemy->maxLife = instruction->args.setInt;
                 break;
             case ECL_OPCODE_SPELLCARDSTART:
+#ifdef TH_DEV_TOOLS
+                SDL_Log("TH06 thprac spell event: start id=%d frame=%d",
+                        static_cast<i32>(instruction->args.spellcardStart.spellcardId), g_GameManager.gameFrames);
+#endif
                 g_Gui.ShowSpellcard(instruction->args.spellcardStart.spellcardSprite,
+                                    instruction->args.spellcardStart.spellcardId,
                                     instruction->args.spellcardStart.spellcardName);
                 g_EnemyManager.spellcardInfo.isCapturing = 1;
                 g_EnemyManager.spellcardInfo.isActive = 1;
@@ -777,6 +785,11 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
             case ECL_OPCODE_SPELLCARDEND:
                 if (g_EnemyManager.spellcardInfo.isActive != 0)
                 {
+#ifdef TH_DEV_TOOLS
+                    SDL_Log("TH06 thprac spell event: end id=%d frame=%d capturing=%d",
+                            g_EnemyManager.spellcardInfo.idx, g_GameManager.gameFrames,
+                            g_EnemyManager.spellcardInfo.isCapturing ? 1 : 0);
+#endif
                     g_Gui.EndEnemySpellcard();
                     if (g_EnemyManager.spellcardInfo.isActive == 1)
                     {

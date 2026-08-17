@@ -41,6 +41,7 @@ struct ScreenEffect
     static ChainCallbackResult ShakeScreen(ScreenEffect *effect);
     static ChainCallbackResult DrawFadeOut(ScreenEffect *effect);
     static ChainCallbackResult CalcFadeOut(ScreenEffect *effect);
+    static void RequestShakeCancelForRestart();
 
     static void DrawSquare(const ZunRect *rect, ZunColor rectColor);
     static void Clear(ZunColor color);

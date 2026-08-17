@@ -1,5 +1,6 @@
 #include "GameErrorContext.hpp"
 #include "FileSystem.hpp"
+#include "Localization.hpp"
 #include <SDL3/SDL.h>
 #include <cstdarg>
 #include <cstdio>
@@ -13,8 +14,9 @@ const char *GameErrorContext::Log(const char *fmt, ...)
     size_t tmpBufferSize;
     va_list args;
 
+    const char *localizedFmt = Localization::LogString(fmt);
     va_start(args, fmt);
-    std::vsnprintf(tmpBuffer, sizeof(tmpBuffer), fmt, args);
+    std::vsnprintf(tmpBuffer, sizeof(tmpBuffer), localizedFmt, args);
 
     tmpBufferSize = std::strlen(tmpBuffer);
 
@@ -28,7 +30,7 @@ const char *GameErrorContext::Log(const char *fmt, ...)
 
     va_end(args);
 
-    return fmt;
+    return localizedFmt;
 }
 
 const char *GameErrorContext::Fatal(const char *fmt, ...)
@@ -37,8 +39,9 @@ const char *GameErrorContext::Fatal(const char *fmt, ...)
     size_t tmpBufferSize;
     va_list args;
 
+    const char *localizedFmt = Localization::LogString(fmt);
     va_start(args, fmt);
-    std::vsnprintf(tmpBuffer, sizeof(tmpBuffer), fmt, args);
+    std::vsnprintf(tmpBuffer, sizeof(tmpBuffer), localizedFmt, args);
 
     tmpBufferSize = std::strlen(tmpBuffer);
 
@@ -54,7 +57,7 @@ const char *GameErrorContext::Fatal(const char *fmt, ...)
 
     this->m_ShowMessageBox = true;
 
-    return fmt;
+    return localizedFmt;
 }
 
 void GameErrorContext::Flush()

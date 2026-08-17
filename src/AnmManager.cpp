@@ -2,9 +2,11 @@
 #include "FileSystem.hpp"
 #include "GameErrorContext.hpp"
 #include "GameWindow.hpp"
+#include "Localization.hpp"
 #include "Rng.hpp"
 #include "Supervisor.hpp"
 #include "TextHelper.hpp"
+#include <algorithm>
 #include "ZunMath.hpp"
 #include "i18n.hpp"
 #include "utils.hpp"
@@ -13,6 +15,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <new>
+#include <vector>
 
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
@@ -48,6 +51,236 @@ static const PixelDataType g_TextureFormatTypeMapping[6] = {static_cast<PixelDat
 
 static const u8 g_TextureFormatBytesPerPixel[6] = {0, 4, 2, 2, 3, 2};
 
+enum class RuntimePatchAlphaState
+{
+    Empty,
+    Opaque,
+    Mixed,
+};
+
+static RuntimePatchAlphaState AnalyzeRuntimePatchAlpha(const u8 *pixels, i32 pitch, i32 textureFormat,
+                                                       i32 left, i32 top, i32 width, i32 height)
+{
+    if (textureFormat == TEX_FMT_R5G6B5 || textureFormat == TEX_FMT_R8G8B8)
+        return RuntimePatchAlphaState::Opaque;
+
+    bool sawZero = false;
+    bool sawOpaque = false;
+    for (i32 y = top; y < top + height; y++)
+    {
+        const u8 *row = pixels + y * pitch + left * g_TextureFormatBytesPerPixel[textureFormat];
+        for (i32 x = 0; x < width; x++)
+        {
+            i32 alpha = 0;
+            i32 alphaMax = 0;
+            if (textureFormat == TEX_FMT_A8R8G8B8)
+            {
+                alpha = row[x * 4 + 3];
+                alphaMax = 0xff;
+            }
+            else if (textureFormat == TEX_FMT_A4R4G4B4)
+            {
+                alpha = reinterpret_cast<const u16 *>(row)[x] & 0x000f;
+                alphaMax = 0x0f;
+            }
+            else if (textureFormat == TEX_FMT_A1R5G5B5)
+            {
+                alpha = reinterpret_cast<const u16 *>(row)[x] & 0x0001;
+                alphaMax = 0x01;
+            }
+
+            if (alpha == 0)
+                sawZero = true;
+            else if (alpha == alphaMax)
+                sawOpaque = true;
+            else
+                return RuntimePatchAlphaState::Mixed;
+
+            if (sawZero && sawOpaque)
+                return RuntimePatchAlphaState::Mixed;
+        }
+    }
+    return sawOpaque ? RuntimePatchAlphaState::Opaque : RuntimePatchAlphaState::Empty;
+}
+
+static void BlendRuntimePatchRow(u8 *destination, const u8 *replacement, i32 pixels, i32 textureFormat)
+{
+    if (textureFormat == TEX_FMT_A8R8G8B8)
+    {
+        for (i32 x = 0; x < pixels; x++, destination += 4, replacement += 4)
+        {
+            const i32 replacementAlpha = replacement[3];
+            const i32 destinationWeight = 0xff - replacementAlpha;
+            destination[0] = static_cast<u8>(
+                (destination[0] * destinationWeight + replacement[0] * replacementAlpha) >> 8);
+            destination[1] = static_cast<u8>(
+                (destination[1] * destinationWeight + replacement[1] * replacementAlpha) >> 8);
+            destination[2] = static_cast<u8>(
+                (destination[2] * destinationWeight + replacement[2] * replacementAlpha) >> 8);
+            destination[3] = static_cast<u8>(std::min<i32>(destination[3] + replacementAlpha, 0xff));
+        }
+        return;
+    }
+
+    if (textureFormat == TEX_FMT_A4R4G4B4)
+    {
+        u16 *dst = reinterpret_cast<u16 *>(destination);
+        const u16 *rep = reinterpret_cast<const u16 *>(replacement);
+        for (i32 x = 0; x < pixels; x++)
+        {
+            const i32 repR = (rep[x] >> 12) & 0xf;
+            const i32 repG = (rep[x] >> 8) & 0xf;
+            const i32 repB = (rep[x] >> 4) & 0xf;
+            const i32 repA = rep[x] & 0xf;
+            const i32 dstR = (dst[x] >> 12) & 0xf;
+            const i32 dstG = (dst[x] >> 8) & 0xf;
+            const i32 dstB = (dst[x] >> 4) & 0xf;
+            const i32 dstA = dst[x] & 0xf;
+            const i32 destinationWeight = 0xf - repA;
+            const i32 outR = (dstR * destinationWeight + repR * repA) >> 4;
+            const i32 outG = (dstG * destinationWeight + repG * repA) >> 4;
+            const i32 outB = (dstB * destinationWeight + repB * repA) >> 4;
+            const i32 outA = std::min(dstA + repA, 0xf);
+            dst[x] = static_cast<u16>((outR << 12) | (outG << 8) | (outB << 4) | outA);
+        }
+        return;
+    }
+
+    if (textureFormat == TEX_FMT_A1R5G5B5)
+    {
+        u16 *dst = reinterpret_cast<u16 *>(destination);
+        const u16 *rep = reinterpret_cast<const u16 *>(replacement);
+        for (i32 x = 0; x < pixels; x++)
+        {
+            if ((rep[x] & 1) != 0)
+                dst[x] = rep[x] | 1;
+        }
+        return;
+    }
+
+    memcpy(destination, replacement, static_cast<size_t>(pixels) * g_TextureFormatBytesPerPixel[textureFormat]);
+}
+
+static SDL_Surface *LoadRuntimePatchSurface(const char *textureName)
+{
+    u8 *data = FileSystem::OpenRuntimeOverride(textureName);
+    if (data == nullptr)
+        return nullptr;
+    const size_t size = g_LastFileSize;
+    SDL_IOStream *stream = SDL_IOFromConstMem(data, size);
+    SDL_Surface *surface = stream ? IMG_Load_IO(stream, true) : nullptr;
+    std::free(data);
+    return surface;
+}
+
+static void ApplyRuntimePatchRect(TextureData &texture, const SDL_Surface *patch, const SDL_Rect &rect,
+                                  i32 &patchedRects, i32 &fallbackRects)
+{
+    if (rect.x >= patch->w || rect.y >= patch->h)
+    {
+        fallbackRects++;
+        return;
+    }
+    const i32 copyWidth = std::min(rect.w, patch->w - rect.x);
+    const i32 copyHeight = std::min(rect.h, patch->h - rect.y);
+    if (copyWidth <= 0 || copyHeight <= 0)
+    {
+        fallbackRects++;
+        return;
+    }
+
+    const i32 bytesPerPixel = g_TextureFormatBytesPerPixel[texture.format];
+    const i32 destinationPitch = static_cast<i32>(texture.width) * bytesPerPixel;
+    const auto replacementAlpha = AnalyzeRuntimePatchAlpha(
+        static_cast<const u8 *>(patch->pixels), patch->pitch, texture.format,
+        rect.x, rect.y, copyWidth, copyHeight);
+    if (replacementAlpha == RuntimePatchAlphaState::Empty)
+    {
+        fallbackRects++;
+        return;
+    }
+
+    const auto destinationAlpha = AnalyzeRuntimePatchAlpha(
+        texture.textureData, destinationPitch, texture.format,
+        rect.x, rect.y, copyWidth, copyHeight);
+    patchedRects++;
+    for (i32 y = rect.y; y < rect.y + copyHeight; y++)
+    {
+        u8 *destinationRow = texture.textureData + y * destinationPitch + rect.x * bytesPerPixel;
+        const u8 *replacementRow = static_cast<const u8 *>(patch->pixels) + y * patch->pitch +
+                                   rect.x * bytesPerPixel;
+        if (destinationAlpha == RuntimePatchAlphaState::Opaque)
+            BlendRuntimePatchRow(destinationRow, replacementRow, copyWidth, texture.format);
+        else
+            memcpy(destinationRow, replacementRow, static_cast<size_t>(copyWidth) * bytesPerPixel);
+    }
+}
+
+static bool ApplyRuntimeSpritePatch(AnmManager *manager, i32 textureIdx, const AnmRawEntry *entry,
+                                    SDL_Surface *runtimePatch, i32 &patchedRects, i32 &fallbackRects)
+{
+    patchedRects = 0;
+    fallbackRects = 0;
+    TextureData &texture = manager->textures[textureIdx];
+    if (runtimePatch == nullptr || texture.textureData == nullptr || entry == nullptr ||
+        texture.format <= TEX_FMT_UNKNOWN || texture.format > TEX_FMT_A4R4G4B4)
+        return false;
+
+    SDL_Surface *patch = SDL_ConvertSurface(runtimePatch, g_TextureFormatSDLMapping[texture.format]);
+    if (patch == nullptr)
+        return false;
+
+    const LE<u32> *spriteOffset = entry->spriteOffsets;
+    for (i32 index = 0; index < entry->numSprites; index++, spriteOffset++)
+    {
+        const auto *sprite = reinterpret_cast<const AnmRawSprite *>(
+            reinterpret_cast<const u8 *>(entry) + static_cast<u32>(*spriteOffset));
+        if (sprite->size.x <= 0.0f || sprite->size.y <= 0.0f || entry->width <= 0 || entry->height <= 0)
+            continue;
+
+        SDL_Rect lowerRight = {
+            static_cast<i32>(sprite->offset.x) % static_cast<i32>(entry->width),
+            static_cast<i32>(sprite->offset.y) % static_cast<i32>(entry->height),
+            std::min(static_cast<i32>(sprite->size.x), static_cast<i32>(entry->width)),
+            std::min(static_cast<i32>(sprite->size.y), static_cast<i32>(entry->height)),
+        };
+        if (lowerRight.x < 0)
+            lowerRight.x += entry->width;
+        if (lowerRight.y < 0)
+            lowerRight.y += entry->height;
+
+        const i32 splitWidth = lowerRight.x + lowerRight.w - entry->width;
+        const i32 splitHeight = lowerRight.y + lowerRight.h - entry->height;
+        const i32 originalWidth = lowerRight.w;
+        const i32 originalHeight = lowerRight.h;
+        if (splitWidth > 0)
+            lowerRight.w = entry->width - lowerRight.x;
+        if (splitHeight > 0)
+            lowerRight.h = entry->height - lowerRight.y;
+        if (splitWidth > 0 && splitHeight > 0)
+            ApplyRuntimePatchRect(texture, patch, SDL_Rect{0, 0, splitWidth, splitHeight},
+                                  patchedRects, fallbackRects);
+        if (splitWidth > 0)
+            ApplyRuntimePatchRect(texture, patch,
+                                  SDL_Rect{0, lowerRight.y, splitWidth, lowerRight.h},
+                                  patchedRects, fallbackRects);
+        if (splitHeight > 0)
+            ApplyRuntimePatchRect(texture, patch,
+                                  SDL_Rect{lowerRight.x, 0, lowerRight.w, splitHeight},
+                                  patchedRects, fallbackRects);
+        (void)originalWidth;
+        (void)originalHeight;
+        ApplyRuntimePatchRect(texture, patch, lowerRight, patchedRects, fallbackRects);
+    }
+
+    SDL_DestroySurface(patch);
+    manager->SetCurrentTexture(texture.handle);
+    g_GfxBackend->SetTextureImage(texture.width, texture.height,
+                                  g_TextureFormatTypeGfxMapping[texture.format],
+                                  g_TextureFormatTypeMapping[texture.format], texture.textureData);
+    return !g_GfxBackend->HasError();
+}
+
 void AnmManager::CreateTextureObject()
 {
     this->currentTextureHandle = g_GfxBackend->CreateTexture();
@@ -57,14 +290,16 @@ void AnmManager::CreateTextureObject()
 }
 
 SDL_Surface *AnmManager::LoadToSurfaceWithFormat(const char *filename, SDL_PixelFormat format, u8 **fileData,
-                                                 ZunColor colorKey, bool isExternalResource)
+                                                 ZunColor colorKey, bool isExternalResource,
+                                                 bool allowRuntimeOverride)
 {
     u8 *data;
     SDL_Surface *imageSrcSurface;
     SDL_Surface *imageTargetSurface;
     SDL_IOStream *rwData;
 
-    data = FileSystem::OpenPath(filename, isExternalResource ? 1 : 0);
+    data = allowRuntimeOverride ? FileSystem::OpenPath(filename, isExternalResource ? 1 : 0)
+                                : FileSystem::OpenOriginalPath(filename, isExternalResource ? 1 : 0);
 
     if (data == NULL)
     {
@@ -160,6 +395,81 @@ void AnmManager::TakeScreenshotIfRequested()
     }
     return;
 }
+
+#ifdef TH_ENABLE_THCRAP
+static i32 g_ThcrapSnapshotRequests = 0;
+
+void AnmManager::QueueThcrapSnapshotIfRequested()
+{
+    // Preserve the upstream 60 Hz breakpoint/key sampling cadence, but defer
+    // the actual backbuffer read until the current portable draw is complete.
+    const bool *keyboard = SDL_GetKeyboardState(NULL);
+    if (keyboard != NULL && keyboard[SDL_SCANCODE_P] && g_ThcrapSnapshotRequests < 1000)
+        ++g_ThcrapSnapshotRequests;
+}
+
+void AnmManager::TakeThcrapSnapshotIfRequested()
+{
+    if (g_ThcrapSnapshotRequests <= 0)
+        return;
+    --g_ThcrapSnapshotRequests;
+
+    FileSystem::CreateDir("snapshot");
+
+    char relativePath[32];
+    std::string outputPath;
+    bool foundFreeSlot = false;
+    for (i32 index = 0; index < 1000; ++index)
+    {
+        std::snprintf(relativePath, sizeof(relativePath), "snapshot/th%03d.png", index);
+        outputPath = FileSystem::GetPrefPath(relativePath);
+        FILE *existing = FileSystem::FopenUTF8(relativePath, "rb");
+        if (existing == NULL)
+        {
+            foundFreeSlot = true;
+            break;
+        }
+        std::fclose(existing);
+    }
+    if (!foundFreeSlot)
+        return;
+
+    const i32 readWidth = GAME_WINDOW_WIDTH_REAL;
+    const i32 readHeight = GAME_WINDOW_HEIGHT_REAL;
+    std::vector<u8> pixels(static_cast<size_t>(readWidth) * static_cast<size_t>(readHeight) * 4u);
+    g_GfxBackend->ReadPixels(0, 0, readWidth, readHeight, pixels.data());
+
+    SDL_Surface *source = SDL_CreateSurfaceFrom(readWidth, readHeight, SDL_PIXELFORMAT_RGBA32, pixels.data(),
+                                                readWidth * 4);
+    SDL_Surface *snapshot = SDL_CreateSurface(GAME_WINDOW_WIDTH, GAME_WINDOW_HEIGHT, SDL_PIXELFORMAT_RGBA32);
+    if (source == NULL || snapshot == NULL)
+    {
+        if (source != NULL)
+            SDL_DestroySurface(source);
+        if (snapshot != NULL)
+            SDL_DestroySurface(snapshot);
+        return;
+    }
+
+    const SDL_Rect sourceRect = {0, 0, readWidth, readHeight};
+    const SDL_Rect targetRect = {0, 0, GAME_WINDOW_WIDTH, GAME_WINDOW_HEIGHT};
+    if (!SDL_BlitSurfaceScaled(source, &sourceRect, snapshot, &targetRect, SDL_SCALEMODE_LINEAR) ||
+        !IMG_SavePNG(snapshot, outputPath.c_str()))
+    {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "TH06 thcrap snapshot failed: %s", outputPath.c_str());
+    }
+#ifdef TH_DEV_TOOLS
+    else
+    {
+        SDL_Log("TH06 thcrap snapshot: %s size=%dx%d source=%dx%d", outputPath.c_str(), GAME_WINDOW_WIDTH,
+                GAME_WINDOW_HEIGHT, readWidth, readHeight);
+    }
+#endif
+
+    SDL_DestroySurface(snapshot);
+    SDL_DestroySurface(source);
+}
+#endif
 
 AnmManager::~AnmManager()
 {
@@ -294,7 +604,8 @@ void AnmManager::SetupVertexBuffer()
 }
 
 ZunResult AnmManager::LoadTexture(i32 textureIdx, const char *textureName, i32 textureFormat, ZunColor colorKey,
-                                  bool isExternalResource)
+                                  bool isExternalResource, bool clearTransparentRgb,
+                                  bool allowRuntimeOverride)
 {
     u8 *rawTextureData;
     SDL_Surface *textureSurface;
@@ -316,7 +627,7 @@ ZunResult AnmManager::LoadTexture(i32 textureIdx, const char *textureName, i32 t
 
     textureSurface = LoadToSurfaceWithFormat(textureName, g_TextureFormatSDLMapping[textureFormat],
                                              (u8 **)&this->textures[textureIdx].fileData, colorKey,
-                                             isExternalResource);
+                                             isExternalResource, allowRuntimeOverride);
 
     if (textureSurface == NULL)
     {
@@ -346,6 +657,23 @@ ZunResult AnmManager::LoadTexture(i32 textureIdx, const char *textureName, i32 t
     }
 
     rawTextureData = ExtractSurfacePixels(textureSurface, g_TextureFormatBytesPerPixel[textureFormat]);
+
+    // Some PNG encoders leave arbitrary RGB values in fully transparent
+    // pixels. They are invisible with point sampling, but straight-alpha
+    // linear filtering interpolates that RGB into neighboring visible pixels
+    // and produces a bright fringe. Keep this opt-in: ordinary TH06 textures
+    // retain their original loading contract, while callers emulating D3DX
+    // text-image uploads can request canonical transparent black.
+    if (clearTransparentRgb && textureFormat == TEX_FMT_A8R8G8B8)
+    {
+        const std::size_t pixelCount = static_cast<std::size_t>(textureSurface->w) * textureSurface->h;
+        for (std::size_t pixel = 0; pixel < pixelCount; pixel++)
+        {
+            u8 *rgba = rawTextureData + pixel * 4;
+            if (rgba[3] == 0)
+                rgba[0] = rgba[1] = rgba[2] = 0;
+        }
+    }
 
     this->textures[textureIdx].handle = this->currentTextureHandle;
     this->textures[textureIdx].textureData = rawTextureData;
@@ -407,7 +735,7 @@ ZunResult AnmManager::LoadEmbeddedTexture(i32 textureIdx, const AnmRawEntry *ent
 }
 
 ZunResult AnmManager::LoadTextureAlphaChannel(i32 textureIdx, const char *textureName, i32 textureFormat,
-                                              ZunColor colorKey)
+                                              ZunColor colorKey, bool allowRuntimeOverride)
 {
     SDL_Surface *alphaSurface;
     TextureData *textureDesc;
@@ -432,7 +760,8 @@ ZunResult AnmManager::LoadTextureAlphaChannel(i32 textureIdx, const char *textur
     // Alpha masks are intensity images. Normalize their byte layout first;
     // otherwise forced 16-bit mode can make this function read an RGBA32 mask
     // through a u16 pointer selected from the destination texture format.
-    alphaSurface = LoadToSurfaceWithFormat(textureName, SDL_PIXELFORMAT_RGBA32, NULL);
+    alphaSurface = LoadToSurfaceWithFormat(textureName, SDL_PIXELFORMAT_RGBA32, NULL, 0, false,
+                                           allowRuntimeOverride);
 
     if (alphaSurface == NULL)
     {
@@ -550,9 +879,64 @@ ZunResult AnmManager::LoadAnm(i32 anmIdx, const char *path, i32 spriteIdxOffset)
         anm->format = TEX_FMT_A8R8G8B8;
     }
 
+    SDL_Surface *runtimePatch = nullptr;
+    if (*anmName != '@')
+        runtimePatch = LoadRuntimePatchSurface(anmName);
+
     if (*anmName == '@')
     {
         this->CreateEmptyTexture(anm->textureIdx, anm->width, anm->height, anm->format);
+    }
+    else if (runtimePatch != nullptr)
+    {
+        // Upstream thcrap patches ANM PNGs on top of the game's original
+        // texture, sprite by sprite. TH06 stores that original texture and its
+        // alpha mask as external archive files, so both must be loaded without
+        // allowing the runtime override to replace them before composition.
+        if (this->LoadTexture(anm->textureIdx, anmName, anm->format, anm->colorKey,
+                              false, false, false) != ZUN_SUCCESS)
+        {
+            SDL_DestroySurface(runtimePatch);
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+                         "th06: original ANM texture failed beneath runtime patch: %s (from %s)",
+                         anmName, path);
+            g_GameErrorContext.Fatal(TH_ERR_ANMMANAGER_TEXTURE_CORRUPTED, anmName);
+            return ZUN_ERROR;
+        }
+
+        if (anm->alphaNameOffset != 0)
+        {
+            const char *alphaName = reinterpret_cast<const char *>(
+                reinterpret_cast<const u8 *>(anm) + static_cast<u32>(anm->alphaNameOffset));
+            if (this->LoadTextureAlphaChannel(anm->textureIdx, alphaName, anm->format,
+                                              anm->colorKey, false) != ZUN_SUCCESS)
+            {
+                SDL_DestroySurface(runtimePatch);
+                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+                             "th06: original ANM alpha failed beneath runtime patch: %s (from %s)",
+                             alphaName, path);
+                g_GameErrorContext.Fatal(TH_ERR_ANMMANAGER_TEXTURE_CORRUPTED, alphaName);
+                return ZUN_ERROR;
+            }
+        }
+
+        i32 patchedRects = 0;
+        i32 fallbackRects = 0;
+        const bool patchOk = ApplyRuntimeSpritePatch(this, anm->textureIdx, anm, runtimePatch,
+                                                     patchedRects, fallbackRects);
+        SDL_DestroySurface(runtimePatch);
+        if (!patchOk)
+        {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+                         "th06: ANM sprite patch failed: %s (from %s)", anmName, path);
+            g_GameErrorContext.Fatal(TH_ERR_ANMMANAGER_TEXTURE_CORRUPTED, anmName);
+            return ZUN_ERROR;
+        }
+#ifdef TH_DEV_TOOLS
+        SDL_Log("th06 thcrap ANM sprite patch: %s patched=%d fallback=%d",
+                anmName, patchedRects, fallbackRects);
+#endif
+        g_LastFileWasRuntimeOverride = true;
     }
     else if (this->LoadTexture(anm->textureIdx, anmName, anm->format, anm->colorKey) != ZUN_SUCCESS)
     {
@@ -695,6 +1079,20 @@ ZunResult AnmManager::SetActiveSprite(AnmVm *vm, u32 sprite_index)
     vm->matrix.m[1][1] = vm->sprite->heightPx / vm->sprite->textureHeight;
 
     return ZUN_SUCCESS;
+}
+
+void AnmManager::SetActiveSpriteWidth(AnmVm *vm, f32 widthPx)
+{
+    if (vm == nullptr || vm->activeSpriteIndex < 0)
+        return;
+
+    AnmLoadedSprite *sprite = &this->sprites[vm->activeSpriteIndex];
+    widthPx = std::clamp(widthPx, 0.0f, sprite->textureWidth);
+    sprite->endPixelInclusive.x = sprite->startPixelInclusive.x + widthPx;
+    sprite->uvEnd.x = sprite->endPixelInclusive.x / sprite->textureWidth;
+    sprite->widthPx = widthPx;
+    vm->sprite = sprite;
+    vm->matrix.m[0][0] = widthPx / sprite->textureWidth;
 }
 
 void AnmManager::SetAndExecuteScript(AnmVm *vm, const AnmRawInstr *beginingOfScript)
@@ -1254,6 +1652,29 @@ ZunResult AnmManager::Draw3(const AnmVm *vm)
     worldTransformMatrix = vm->matrix;
     worldTransformMatrix.m[0][0] *= drawScaleX;
     worldTransformMatrix.m[1][1] *= -drawScaleY;
+    if (Localization::Active())
+    {
+        // base_tsa::sprite3d_rotated_voodookill compensates the original
+        // fixed -128..+128 3D vertex basis for backing textures that are not
+        // 256x256. SetActiveSprite() stores spriteSize / textureSize in the
+        // VM matrix, so without this factor a sprite on a 512px translated
+        // texture is rendered at half its intended size.
+        worldTransformMatrix.m[0][0] *= vm->sprite->textureWidth / 256.0f;
+        worldTransformMatrix.m[1][1] *= vm->sprite->textureHeight / 256.0f;
+#ifdef TH_DEV_TOOLS
+        static bool loggedRotatedWideTexture = false;
+        if (!loggedRotatedWideTexture &&
+            (vm->sprite->textureWidth != 256.0f || vm->sprite->textureHeight != 256.0f))
+        {
+            SDL_Log("TH06 sprite3d rotated basis: texture=%.0fx%.0f sprite=%.0fx%.0f m00=%.6f m11=%.6f",
+                    static_cast<double>(vm->sprite->textureWidth), static_cast<double>(vm->sprite->textureHeight),
+                    static_cast<double>(vm->sprite->widthPx), static_cast<double>(vm->sprite->heightPx),
+                    static_cast<double>(worldTransformMatrix.m[0][0]),
+                    static_cast<double>(worldTransformMatrix.m[1][1]));
+            loggedRotatedWideTexture = true;
+        }
+#endif
+    }
 
     if (drawRotation.x != 0.0f)
     {
@@ -1417,6 +1838,27 @@ ZunResult AnmManager::Draw2(const AnmVm *vm)
     worldTransformMatrix.m[3][2] = vm->pos.z;
     worldTransformMatrix.m[0][0] *= drawScaleX;
     worldTransformMatrix.m[1][1] *= -drawScaleY;
+    if (Localization::Active())
+    {
+        // Same base_tsa correction as Draw3(), for the unrotated 3D path.
+        // Anchor offsets above already use widthPx/heightPx directly, which
+        // is the typed portable equivalent of the corresponding patch math.
+        worldTransformMatrix.m[0][0] *= vm->sprite->textureWidth / 256.0f;
+        worldTransformMatrix.m[1][1] *= vm->sprite->textureHeight / 256.0f;
+#ifdef TH_DEV_TOOLS
+        static bool loggedUnrotatedWideTexture = false;
+        if (!loggedUnrotatedWideTexture &&
+            (vm->sprite->textureWidth != 256.0f || vm->sprite->textureHeight != 256.0f))
+        {
+            SDL_Log("TH06 sprite3d unrotated basis: texture=%.0fx%.0f sprite=%.0fx%.0f m00=%.6f m11=%.6f",
+                    static_cast<double>(vm->sprite->textureWidth), static_cast<double>(vm->sprite->textureHeight),
+                    static_cast<double>(vm->sprite->widthPx), static_cast<double>(vm->sprite->heightPx),
+                    static_cast<double>(worldTransformMatrix.m[0][0]),
+                    static_cast<double>(worldTransformMatrix.m[1][1]));
+            loggedUnrotatedWideTexture = true;
+        }
+#endif
+    }
 
     ZunMatrix originalView = this->dirtyTransformMatrices[MATRIX_VIEW];
     ZunMatrix modelView;
@@ -1865,18 +2307,56 @@ void AnmManager::DrawTextToSprite(u32 textureDstIdx, i32 xPos, i32 yPos, i32 spr
     return;
 }
 
+#ifdef TH_ENABLE_THCRAP
+static std::vector<char> FormatThcrapAnmText(const char *format, va_list args)
+{
+    // TH06 base_tsa removes the original 64-byte copies in two formatter
+    // variants and redirects DrawStringFormat's 0x50-byte sprintf through
+    // strings_vsprintf(), whose storage grows to the full formatted length.
+    // Do not reintroduce a fixed 1024-byte ceiling in the portable build.
+    va_list measureArgs;
+    va_copy(measureArgs, args);
+    const int length = std::vsnprintf(nullptr, 0, format, measureArgs);
+    va_end(measureArgs);
+    if (length < 0)
+        return std::vector<char>(1, '\0');
+
+    std::vector<char> output(static_cast<std::size_t>(length) + 1u);
+    va_list writeArgs;
+    va_copy(writeArgs, args);
+    std::vsnprintf(output.data(), output.size(), format, writeArgs);
+    va_end(writeArgs);
+    return output;
+}
+#endif
+
 void AnmManager::DrawVmTextFmt(AnmVm *vm, ZunColor textColor, ZunColor shadowColor, const char *fmt, ...)
 {
     u32 fontWidth;
-    char buffer[64];
+#ifndef TH_ENABLE_THCRAP
+    char buffer[1024];
+#endif
     va_list argptr;
 
     fontWidth = vm->fontWidth;
     va_start(argptr, fmt);
-    vsprintf(buffer, fmt, argptr);
+#ifdef TH_ENABLE_THCRAP
+    std::vector<char> dynamicBuffer = FormatThcrapAnmText(fmt, argptr);
+    const char *buffer = dynamicBuffer.data();
+#else
+    std::vsnprintf(buffer, sizeof(buffer), fmt, argptr);
+#endif
     va_end(argptr);
+    // base_tsa's text_sprite_width/text_sprite_height patches deliberately
+    // switch these arguments from the backing texture dimensions (0x18/0x14)
+    // to the active sprite dimensions (0x30/0x2c).  This matters for the
+    // widened 320 px dialogue sprites stored in a 512 px texture.
+    const i32 spriteWidth = Localization::Active() ? static_cast<i32>(vm->sprite->widthPx)
+                                                    : vm->sprite->textureWidth;
+    const i32 spriteHeight = Localization::Active() ? static_cast<i32>(vm->sprite->heightPx)
+                                                     : vm->sprite->textureHeight;
     this->DrawTextToSprite(vm->sprite->sourceFileIndex, vm->sprite->startPixelInclusive.x,
-                           vm->sprite->startPixelInclusive.y, vm->sprite->textureWidth, vm->sprite->textureHeight,
+                           vm->sprite->startPixelInclusive.y, spriteWidth, spriteHeight,
                            fontWidth, vm->fontHeight, textColor, shadowColor, buffer);
     vm->flags.isVisible = true;
     return;
@@ -1884,22 +2364,50 @@ void AnmManager::DrawVmTextFmt(AnmVm *vm, ZunColor textColor, ZunColor shadowCol
 
 void AnmManager::DrawStringFormat(AnmVm *vm, ZunColor textColor, ZunColor shadowColor, const char *fmt, ...)
 {
-    char buf[64];
+#ifndef TH_ENABLE_THCRAP
+    char buf[1024];
+#endif
     va_list args;
     i32 fontWidth;
     i32 secondPartStartX;
 
     fontWidth = vm->fontWidth <= 0 ? 15 : vm->fontWidth;
     va_start(args, fmt);
-    vsprintf(buf, fmt, args);
+#ifdef TH_ENABLE_THCRAP
+    std::vector<char> dynamicBuf = FormatThcrapAnmText(fmt, args);
+    const char *buf = dynamicBuf.data();
+#else
+    std::vsnprintf(buf, sizeof(buf), fmt, args);
+#endif
     va_end(args);
+    const i32 spriteWidth = Localization::Active() ? static_cast<i32>(vm->sprite->widthPx)
+                                                    : vm->sprite->textureWidth;
+    const i32 spriteHeight = Localization::Active() ? static_cast<i32>(vm->sprite->heightPx)
+                                                     : vm->sprite->textureHeight;
     this->DrawTextToSprite(vm->sprite->sourceFileIndex, vm->sprite->startPixelInclusive.x,
-                           vm->sprite->startPixelInclusive.y, vm->sprite->textureWidth, vm->sprite->textureHeight,
+                           vm->sprite->startPixelInclusive.y, spriteWidth, spriteHeight,
                            fontWidth, vm->fontHeight, textColor, shadowColor, " ");
-    secondPartStartX =
-        vm->sprite->startPixelInclusive.x + vm->sprite->textureWidth - ((f32)strlen(buf) * (f32)(fontWidth + 1) / 2.0f);
+    // base_tsa::right_align uses GetTextExtentForFontID() + 2 after the
+    // helper has already converted the 2x GDI extent to on-screen pixels.
+    const f32 renderedWidth = Localization::Active() ? TextHelper::MeasureTextWidth(buf, vm->fontHeight) + 2.0f
+                                                     : (f32)strlen(buf) * (f32)(fontWidth + 1) / 2.0f;
+    const f32 availableWidth = Localization::Active() ? vm->sprite->widthPx : vm->sprite->textureWidth;
+    secondPartStartX = vm->sprite->startPixelInclusive.x + availableWidth - renderedWidth;
+#if defined(TH_DEV_TOOLS) && defined(TH_ENABLE_THCRAP)
+    if (Localization::Active())
+    {
+        static bool loggedRightAlign = false;
+        if (!loggedRightAlign)
+        {
+            SDL_Log("TH06 thcrap right-align: text=%s start=%.3f available=%.3f measuredPlus2=%.3f",
+                    buf, static_cast<double>(secondPartStartX), static_cast<double>(availableWidth),
+                    static_cast<double>(renderedWidth));
+            loggedRightAlign = true;
+        }
+    }
+#endif
     this->DrawTextToSprite(vm->sprite->sourceFileIndex, secondPartStartX, vm->sprite->startPixelInclusive.y,
-                           vm->sprite->textureWidth, vm->sprite->textureHeight, fontWidth, vm->fontHeight, textColor,
+                           spriteWidth, spriteHeight, fontWidth, vm->fontHeight, textColor,
                            shadowColor, buf);
     vm->flags.isVisible = true;
     return;
@@ -1907,22 +2415,50 @@ void AnmManager::DrawStringFormat(AnmVm *vm, ZunColor textColor, ZunColor shadow
 
 void AnmManager::DrawStringFormat2(AnmVm *vm, ZunColor textColor, ZunColor shadowColor, const char *fmt, ...)
 {
-    char buf[64];
+#ifndef TH_ENABLE_THCRAP
+    char buf[1024];
+#endif
     va_list args;
     i32 fontWidth;
     i32 secondPartStartX;
 
     fontWidth = vm->fontWidth <= 0 ? 15 : vm->fontWidth;
     va_start(args, fmt);
-    vsprintf(buf, fmt, args);
+#ifdef TH_ENABLE_THCRAP
+    std::vector<char> dynamicBuf = FormatThcrapAnmText(fmt, args);
+    const char *buf = dynamicBuf.data();
+#else
+    std::vsnprintf(buf, sizeof(buf), fmt, args);
+#endif
     va_end(args);
+    const i32 spriteWidth = Localization::Active() ? static_cast<i32>(vm->sprite->widthPx)
+                                                    : vm->sprite->textureWidth;
+    const i32 spriteHeight = Localization::Active() ? static_cast<i32>(vm->sprite->heightPx)
+                                                     : vm->sprite->textureHeight;
     this->DrawTextToSprite(vm->sprite->sourceFileIndex, vm->sprite->startPixelInclusive.x,
-                           vm->sprite->startPixelInclusive.y, vm->sprite->textureWidth, vm->sprite->textureHeight,
+                           vm->sprite->startPixelInclusive.y, spriteWidth, spriteHeight,
                            fontWidth, vm->fontHeight, textColor, shadowColor, " ");
-    secondPartStartX = vm->sprite->startPixelInclusive.x + vm->sprite->textureWidth / 2.0f -
-                       ((f32)strlen(buf) * (f32)(fontWidth + 1) / 4.0f);
+    // base_tsa::center_align likewise adds 2 before halving the measured
+    // width for the center offset, i.e. a one-pixel left shift on screen.
+    const f32 renderedWidth = Localization::Active() ? TextHelper::MeasureTextWidth(buf, vm->fontHeight) + 2.0f
+                                                     : (f32)strlen(buf) * (f32)(fontWidth + 1) / 2.0f;
+    const f32 availableWidth = Localization::Active() ? vm->sprite->widthPx : vm->sprite->textureWidth;
+    secondPartStartX = vm->sprite->startPixelInclusive.x + (availableWidth - renderedWidth) / 2.0f;
+#if defined(TH_DEV_TOOLS) && defined(TH_ENABLE_THCRAP)
+    if (Localization::Active())
+    {
+        static bool loggedCenterAlign = false;
+        if (!loggedCenterAlign)
+        {
+            SDL_Log("TH06 thcrap center-align: text=%s start=%.3f available=%.3f measuredPlus2=%.3f",
+                    buf, static_cast<double>(secondPartStartX), static_cast<double>(availableWidth),
+                    static_cast<double>(renderedWidth));
+            loggedCenterAlign = true;
+        }
+    }
+#endif
     this->DrawTextToSprite(vm->sprite->sourceFileIndex, secondPartStartX, vm->sprite->startPixelInclusive.y,
-                           vm->sprite->textureWidth, vm->sprite->textureHeight, fontWidth, vm->fontHeight, textColor,
+                           spriteWidth, spriteHeight, fontWidth, vm->fontHeight, textColor,
                            shadowColor, buf);
     vm->flags.isVisible = true;
     return;
@@ -2229,6 +2765,12 @@ void AnmManager::ApplySurfaceToColorBuffer(SDL_Surface *src, const SDL_Rect &src
 
     fullscreenViewport.Set();
 
+    // Original TH06 used IDirect3DDevice8::CopyRects for this surface copy.
+    // That operation bypassed the 3D render pipeline entirely. The GLES
+    // replacement below renders a textured quad, so gameplay fog must not be
+    // allowed to shade a menu/result background by view-space distance.
+    const bool restoreFog = g_Supervisor.DisableFog() != 0;
+
     this->SetProjectionMode(PROJECTION_MODE_ORTHOGRAPHIC);
 
     CreateTextureObject();
@@ -2277,6 +2819,11 @@ void AnmManager::ApplySurfaceToColorBuffer(SDL_Surface *src, const SDL_Rect &src
     this->SetCurrentSprite(NULL);
     this->SetCurrentTexture(0);
     this->SetCurrentBlendMode(0xff);
+
+    if (restoreFog)
+    {
+        g_Supervisor.EnableFog();
+    }
 
     originalViewport.Set();
 }

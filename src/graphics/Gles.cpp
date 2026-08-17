@@ -3,7 +3,10 @@
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_timer.h>
 #include <SDL3/SDL_video.h>
+#include <algorithm>
 #include <cstddef>
+#include <cstdint>
+#include <cmath>
 #include <new>
 #include <vector>
 
@@ -15,6 +18,10 @@
 #include "AnmManager.hpp"
 #include "GameWindow.hpp"
 #include "Supervisor.hpp"
+
+#ifdef TH_ENABLE_THPRAC
+#include "ThpracImGui.hpp"
+#endif
 
 #ifdef USING_GL
 #define GLSL_VERSION "#version 330 core\n"
@@ -147,6 +154,38 @@ const char *blitFSSource =
     "void main() {\n"
     "    FragColor = texture(u_Texture, v_TexCoord);\n"
     "}\n";
+
+#ifdef TH_ENABLE_THPRAC
+const char *imguiVertexShaderSource =
+    GLSL_VERSION
+    GLSL_PRECISION
+    "uniform mat4 u_ProjMtx;\n"
+    "layout(location = 0) in vec2 Position;\n"
+    "layout(location = 1) in vec2 UV;\n"
+    "layout(location = 2) in vec4 Color;\n"
+    "out vec2 Frag_UV;\n"
+    "out vec4 Frag_Color;\n"
+    "void main() {\n"
+    "    Frag_UV = UV;\n"
+    // The pinned thprac imconfig.h stores ImGui colors as BGRA bytes so its
+    // old D3D backends can consume them directly. GLES reads vertex bytes in
+    // memory order, therefore this swizzle is local to the ImGui backend and
+    // must not be applied to TH06 game vertices.
+    "    Frag_Color = Color.bgra;\n"
+    "    gl_Position = u_ProjMtx * vec4(Position.xy, 0.0, 1.0);\n"
+    "}\n";
+
+const char *imguiFragmentShaderSource =
+    GLSL_VERSION
+    GLSL_PRECISION
+    "in vec2 Frag_UV;\n"
+    "in vec4 Frag_Color;\n"
+    "uniform sampler2D Texture;\n"
+    "out vec4 Out_Color;\n"
+    "void main() {\n"
+    "    Out_Color = Frag_Color * texture(Texture, Frag_UV.st);\n"
+    "}\n";
+#endif
 // clang-format on
 
 GfxInterface *GlesGraphics::Init()
@@ -224,12 +263,25 @@ GfxInterface *GlesGraphics::Init()
                           (void *)offsetof(RenderVertexInfo, textureUV));
     glBindVertexArray(0);
 
+#ifdef __EMSCRIPTEN__
+    // Browser presentation is driven by requestAnimationFrame. Keep the
+    // previously validated Emscripten swap behavior; native strict-VSync work
+    // must not change this path.
     g_PresentationVsyncEnabled = SDL_GL_SetSwapInterval(-1) || SDL_GL_SetSwapInterval(1);
     if (!g_PresentationVsyncEnabled)
     {
-        // technically this isnt fatal we just go into 60 fps later on in gamewindow::render
         utils::DebugPrint("SDL_GL_SetSwapInterval failed: %s\n", SDL_GetError());
     }
+#else
+    g_PresentationVsyncEnabled = SDL_GL_SetSwapInterval(1);
+    if (!g_PresentationVsyncEnabled)
+    {
+        // The native GameWindow also caps presentation to the current display
+        // refresh rate, but strict interval 1 is preferred because adaptive
+        // VSync (-1) may tear on missed refresh deadlines.
+        utils::DebugPrint("SDL_GL_SetSwapInterval(1) failed: %s\n", SDL_GetError());
+    }
+#endif
 
     u32 vertexShader = CompileShader(GL_VERTEX_SHADER, vertexShaderSource);
     u32 fragmentShader = CompileShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
@@ -401,6 +453,13 @@ void GlesGraphics::Exit()
     glDeleteVertexArrays(1, &this->unitQuadVao);
     glDeleteBuffers(1, &this->unitQuadVbo);
     glDeleteVertexArrays(1, &this->blitVao);
+#ifdef TH_ENABLE_THPRAC
+    glDeleteVertexArrays(1, &this->imguiVao);
+    glDeleteBuffers(1, &this->imguiVbo);
+    glDeleteBuffers(1, &this->imguiEbo);
+    glDeleteProgram(this->imguiProgram);
+    glDeleteTextures(1, &this->imguiFontTexture);
+#endif
     glDeleteProgram(this->shaderProgram);
     glDeleteProgram(this->blitProgram);
     glDeleteRenderbuffers(1, &this->fboDepth);
@@ -427,6 +486,300 @@ void GlesGraphics::EndFrame()
 {
     Flush();
 }
+
+#ifdef TH_ENABLE_THPRAC
+void GlesGraphics::RenderImGui(const ImDrawData *drawData)
+{
+    if (drawData == nullptr || drawData->CmdListsCount <= 0 || drawData->TotalVtxCount <= 0 ||
+        drawData->TotalIdxCount <= 0)
+    {
+        return;
+    }
+
+    // Save the state owned by the game renderer. ImGui is drawn into the
+    // 640x480 game FBO before the normal presentation blit, so changing the
+    // window's default framebuffer or its pillarbox viewport here would make
+    // the menu scale differently from the game.
+    GLint lastFramebuffer = 0;
+    GLint lastActiveTexture = GL_TEXTURE0;
+    GLint lastProgram = 0;
+    GLint lastTexture = 0;
+    GLint lastTexture0 = 0;
+    GLint lastArrayBuffer = 0;
+    GLint lastElementArrayBuffer = 0;
+    GLint lastVertexArray = 0;
+    GLint lastUnpackAlignment = 4;
+    GLint lastViewport[4] = {};
+    GLint lastScissorBox[4] = {};
+    GLint lastBlendSrcRgb = GL_SRC_ALPHA;
+    GLint lastBlendDstRgb = GL_ONE_MINUS_SRC_ALPHA;
+    GLint lastBlendSrcAlpha = GL_SRC_ALPHA;
+    GLint lastBlendDstAlpha = GL_ONE_MINUS_SRC_ALPHA;
+    GLint lastBlendEquationRgb = GL_FUNC_ADD;
+    GLint lastBlendEquationAlpha = GL_FUNC_ADD;
+    GLboolean lastBlend = glIsEnabled(GL_BLEND);
+    GLboolean lastDepthTest = glIsEnabled(GL_DEPTH_TEST);
+    GLboolean lastCullFace = glIsEnabled(GL_CULL_FACE);
+    GLboolean lastScissorTest = glIsEnabled(GL_SCISSOR_TEST);
+    GLboolean lastDepthMask = GL_TRUE;
+
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &lastFramebuffer);
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &lastActiveTexture);
+    glGetIntegerv(GL_CURRENT_PROGRAM, &lastProgram);
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastTexture);
+    glActiveTexture(GL_TEXTURE0);
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastTexture0);
+    glActiveTexture(static_cast<GLenum>(lastActiveTexture));
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &lastArrayBuffer);
+    glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &lastElementArrayBuffer);
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &lastVertexArray);
+    glGetIntegerv(GL_VIEWPORT, lastViewport);
+    glGetIntegerv(GL_SCISSOR_BOX, lastScissorBox);
+    glGetIntegerv(GL_BLEND_SRC_RGB, &lastBlendSrcRgb);
+    glGetIntegerv(GL_BLEND_DST_RGB, &lastBlendDstRgb);
+    glGetIntegerv(GL_BLEND_SRC_ALPHA, &lastBlendSrcAlpha);
+    glGetIntegerv(GL_BLEND_DST_ALPHA, &lastBlendDstAlpha);
+    glGetIntegerv(GL_BLEND_EQUATION_RGB, &lastBlendEquationRgb);
+    glGetIntegerv(GL_BLEND_EQUATION_ALPHA, &lastBlendEquationAlpha);
+    glGetIntegerv(GL_UNPACK_ALIGNMENT, &lastUnpackAlignment);
+    glGetBooleanv(GL_DEPTH_WRITEMASK, &lastDepthMask);
+
+    if (this->imguiProgram == 0)
+    {
+        const GLuint vertexShader = CompileShader(GL_VERTEX_SHADER, imguiVertexShaderSource);
+        const GLuint fragmentShader = CompileShader(GL_FRAGMENT_SHADER, imguiFragmentShaderSource);
+        if (vertexShader == 0 || fragmentShader == 0)
+        {
+            glDeleteShader(vertexShader);
+            glDeleteShader(fragmentShader);
+            return;
+        }
+
+        this->imguiProgram = glCreateProgram();
+        glAttachShader(this->imguiProgram, vertexShader);
+        glAttachShader(this->imguiProgram, fragmentShader);
+        glLinkProgram(this->imguiProgram);
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+
+        GLint linked = GL_FALSE;
+        glGetProgramiv(this->imguiProgram, GL_LINK_STATUS, &linked);
+        if (linked != GL_TRUE)
+        {
+            char log[512] = {};
+            glGetProgramInfoLog(this->imguiProgram, sizeof(log), nullptr, log);
+            SDL_LogError(SDL_LOG_CATEGORY_RENDER, "th06: ImGui shader link failed: %s", log);
+            glDeleteProgram(this->imguiProgram);
+            this->imguiProgram = 0;
+            return;
+        }
+
+        this->imguiProjMtx = glGetUniformLocation(this->imguiProgram, "u_ProjMtx");
+        this->imguiTexture = glGetUniformLocation(this->imguiProgram, "Texture");
+        glGenVertexArrays(1, &this->imguiVao);
+        glGenBuffers(1, &this->imguiVbo);
+        glGenBuffers(1, &this->imguiEbo);
+
+        glBindVertexArray(this->imguiVao);
+        glBindBuffer(GL_ARRAY_BUFFER, this->imguiVbo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->imguiEbo);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert),
+                              reinterpret_cast<void *>(offsetof(ImDrawVert, pos)));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert),
+                              reinterpret_cast<void *>(offsetof(ImDrawVert, uv)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert),
+                              reinterpret_cast<void *>(offsetof(ImDrawVert, col)));
+        glBindVertexArray(0);
+    }
+
+    if (this->imguiFontTexture == 0)
+    {
+        unsigned char *pixels = nullptr;
+        int width = 0;
+        int height = 0;
+        ImGuiIO &io = ImGui::GetIO();
+        io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+        if (pixels == nullptr || width <= 0 || height <= 0)
+        {
+            return;
+        }
+
+        glGenTextures(1, &this->imguiFontTexture);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, this->imguiFontTexture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                     pixels);
+        io.Fonts->TexID = reinterpret_cast<ImTextureID>(
+            static_cast<uintptr_t>(this->imguiFontTexture));
+        io.Fonts->ClearTexData();
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, this->fbo);
+    glViewport(0, 0, GAME_WINDOW_WIDTH, GAME_WINDOW_HEIGHT);
+    glEnable(GL_BLEND);
+    glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glEnable(GL_SCISSOR_TEST);
+    glUseProgram(this->imguiProgram);
+    glActiveTexture(GL_TEXTURE0);
+    glBindVertexArray(this->imguiVao);
+    glBindBuffer(GL_ARRAY_BUFFER, this->imguiVbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->imguiEbo);
+    glUniform1i(this->imguiTexture, 0);
+
+    const ImVec2 clipOffset = drawData->DisplayPos;
+    const ImVec2 clipScale = drawData->FramebufferScale;
+    const float displayHeight = drawData->DisplaySize.y * clipScale.y;
+    const float left = drawData->DisplayPos.x;
+    const float right = drawData->DisplayPos.x + drawData->DisplaySize.x;
+    const float top = drawData->DisplayPos.y;
+    const float bottom = drawData->DisplayPos.y + drawData->DisplaySize.y;
+    const float projection[4][4] = {
+        {2.0f / (right - left), 0.0f, 0.0f, 0.0f},
+        {0.0f, 2.0f / (top - bottom), 0.0f, 0.0f},
+        {0.0f, 0.0f, -1.0f, 0.0f},
+        {(right + left) / (left - right), (top + bottom) / (bottom - top), 0.0f, 1.0f},
+    };
+    glUniformMatrix4fv(this->imguiProjMtx, 1, GL_FALSE, &projection[0][0]);
+
+    const GLsizeiptr vertexBytes = static_cast<GLsizeiptr>(drawData->TotalVtxCount * sizeof(ImDrawVert));
+    const GLsizeiptr indexBytes = static_cast<GLsizeiptr>(drawData->TotalIdxCount * sizeof(ImDrawIdx));
+    glBufferData(GL_ARRAY_BUFFER, vertexBytes, nullptr, GL_STREAM_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBytes, nullptr, GL_STREAM_DRAW);
+
+    GLsizeiptr vertexOffset = 0;
+    GLsizeiptr indexOffset = 0;
+    for (int listIndex = 0; listIndex < drawData->CmdListsCount; ++listIndex)
+    {
+        const ImDrawList *commandList = drawData->CmdLists[listIndex];
+        const GLsizeiptr listVertexBytes =
+            static_cast<GLsizeiptr>(commandList->VtxBuffer.Size * sizeof(ImDrawVert));
+        const GLsizeiptr listIndexBytes =
+            static_cast<GLsizeiptr>(commandList->IdxBuffer.Size * sizeof(ImDrawIdx));
+        glBufferSubData(GL_ARRAY_BUFFER, vertexOffset, listVertexBytes, commandList->VtxBuffer.Data);
+        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, indexOffset, listIndexBytes,
+                        commandList->IdxBuffer.Data);
+
+        for (int commandIndex = 0; commandIndex < commandList->CmdBuffer.Size; ++commandIndex)
+        {
+            const ImDrawCmd *command = &commandList->CmdBuffer[commandIndex];
+            if (command->UserCallback != nullptr)
+            {
+                if (command->UserCallback == ImDrawCallback_ResetRenderState)
+                {
+                    glUseProgram(this->imguiProgram);
+                    glBindVertexArray(this->imguiVao);
+                    glUniformMatrix4fv(this->imguiProjMtx, 1, GL_FALSE, &projection[0][0]);
+                }
+                else
+                {
+                    command->UserCallback(commandList, command);
+                }
+                continue;
+            }
+
+            ImVec4 clipRect;
+            clipRect.x = (command->ClipRect.x - clipOffset.x) * clipScale.x;
+            clipRect.y = (command->ClipRect.y - clipOffset.y) * clipScale.y;
+            clipRect.z = (command->ClipRect.z - clipOffset.x) * clipScale.x;
+            clipRect.w = (command->ClipRect.w - clipOffset.y) * clipScale.y;
+            if (clipRect.x >= clipRect.z || clipRect.y >= clipRect.w || clipRect.z <= 0.0f ||
+                clipRect.w <= 0.0f || clipRect.x >= drawData->DisplaySize.x * clipScale.x ||
+                clipRect.y >= displayHeight)
+            {
+                continue;
+            }
+
+            const GLint scissorX = static_cast<GLint>(std::floor(std::max(clipRect.x, 0.0f)));
+            const GLint scissorY = static_cast<GLint>(
+                std::floor(std::max(displayHeight - clipRect.w, 0.0f)));
+            const GLsizei scissorWidth = static_cast<GLsizei>(
+                std::ceil(std::min(clipRect.z, drawData->DisplaySize.x * clipScale.x)) - scissorX);
+            const GLsizei scissorHeight = static_cast<GLsizei>(
+                std::ceil(displayHeight - std::max(clipRect.y, 0.0f)) - scissorY);
+            if (scissorWidth <= 0 || scissorHeight <= 0)
+            {
+                continue;
+            }
+            glScissor(scissorX, scissorY, scissorWidth, scissorHeight);
+
+            const GLuint texture = command->TextureId != nullptr
+                                        ? static_cast<GLuint>(reinterpret_cast<uintptr_t>(command->TextureId))
+                                        : this->imguiFontTexture;
+            glBindTexture(GL_TEXTURE_2D, texture);
+
+            // The draw lists are concatenated into one streaming VBO/EBO.
+            // ImDrawIdx values are local to each ImDrawList (and may also use
+            // ImDrawCmd::VtxOffset), so the vertex attribute base has to move
+            // with the list/command. Without this, every list after the first
+            // indexes vertices from the beginning of the combined VBO and
+            // renders unrelated geometry.
+            const GLsizeiptr commandVertexOffset =
+                vertexOffset + static_cast<GLsizeiptr>(command->VtxOffset * sizeof(ImDrawVert));
+            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert),
+                                  reinterpret_cast<void *>(commandVertexOffset + offsetof(ImDrawVert, pos)));
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert),
+                                  reinterpret_cast<void *>(commandVertexOffset + offsetof(ImDrawVert, uv)));
+            glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert),
+                                  reinterpret_cast<void *>(commandVertexOffset + offsetof(ImDrawVert, col)));
+            const void *indexPointer = reinterpret_cast<const void *>(
+                indexOffset + static_cast<GLsizeiptr>(command->IdxOffset * sizeof(ImDrawIdx)));
+            const GLenum indexType = sizeof(ImDrawIdx) == sizeof(std::uint16_t) ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT;
+            glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(command->ElemCount), indexType,
+                           indexPointer);
+        }
+
+        vertexOffset += listVertexBytes;
+        indexOffset += listIndexBytes;
+    }
+
+    glBindVertexArray(static_cast<GLuint>(lastVertexArray));
+    glBindBuffer(GL_ARRAY_BUFFER, static_cast<GLuint>(lastArrayBuffer));
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLuint>(lastElementArrayBuffer));
+    glUseProgram(static_cast<GLuint>(lastProgram));
+    glPixelStorei(GL_UNPACK_ALIGNMENT, lastUnpackAlignment);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(lastTexture0));
+    glActiveTexture(static_cast<GLenum>(lastActiveTexture));
+    glBindTexture(GL_TEXTURE_2D, static_cast<GLuint>(lastTexture));
+    glBindFramebuffer(GL_FRAMEBUFFER, static_cast<GLuint>(lastFramebuffer));
+    glViewport(lastViewport[0], lastViewport[1], lastViewport[2], lastViewport[3]);
+    glScissor(lastScissorBox[0], lastScissorBox[1], lastScissorBox[2], lastScissorBox[3]);
+    glBlendEquationSeparate(static_cast<GLenum>(lastBlendEquationRgb),
+                            static_cast<GLenum>(lastBlendEquationAlpha));
+    glBlendFuncSeparate(static_cast<GLenum>(lastBlendSrcRgb), static_cast<GLenum>(lastBlendDstRgb),
+                        static_cast<GLenum>(lastBlendSrcAlpha), static_cast<GLenum>(lastBlendDstAlpha));
+    if (lastBlend)
+        glEnable(GL_BLEND);
+    else
+        glDisable(GL_BLEND);
+    if (lastDepthTest)
+        glEnable(GL_DEPTH_TEST);
+    else
+        glDisable(GL_DEPTH_TEST);
+    if (lastCullFace)
+        glEnable(GL_CULL_FACE);
+    else
+        glDisable(GL_CULL_FACE);
+    if (lastScissorTest)
+        glEnable(GL_SCISSOR_TEST);
+    else
+        glDisable(GL_SCISSOR_TEST);
+    glDepthMask(lastDepthMask);
+    this->stateCache.Invalidate();
+}
+#endif
 
 void GlesGraphics::SetFogRange(f32 nearPlane, f32 farPlane)
 {
@@ -907,9 +1260,6 @@ void GlesGraphics::DrawPrimitiveUP(PrimitiveType type, i32 primitiveCount, const
         return;
     }
     vboOffset = ((vboOffset + vertexStride - 1) / vertexStride) * vertexStride;
-    GLuint vbo = vbos[curVbo];
-
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
     if (vboOffset + bytesNeeded > VBO_CAPACITY)
     {
         glBufferData(GL_ARRAY_BUFFER, VBO_CAPACITY, nullptr, GL_STREAM_DRAW);

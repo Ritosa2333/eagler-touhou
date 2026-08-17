@@ -68,6 +68,9 @@ struct AsciiManager
 
     void AddString(const ZunVec3 *position, const char *text);
     void AddFormatText(const ZunVec3 *position, const char *fmt, ...);
+#if defined(TH_DEV_TOOLS) && defined(TH_ENABLE_THCRAP)
+    static bool DebugLocalizedFormatSelfTest();
+#endif
     void CreatePopup1(const ZunVec3 *position, i32 value, ZunColor color);
     void CreatePopup2(const ZunVec3 *position, i32 value, ZunColor color);
 

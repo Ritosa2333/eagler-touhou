@@ -313,4 +313,4 @@
 #define TH_SONG_NAME "\x81\xF4%s"
 #define TH_FONT_NAME "ＭＳ ゴシック"
 #define TH_PRIMARY_FONT_FILENAME "msgothic.ttc"
-#define TH_FALLBACK_FONT_FILENAME "NotoSansJP-Regular.ttf"
+#define TH_LOCALIZED_FONT_FILENAME "unifont.otf"

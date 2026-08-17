@@ -9,6 +9,7 @@
 #include "Gui.hpp"
 #include "ItemManager.hpp"
 #include "Player.hpp"
+#include "PracticeRuntime.hpp"
 #include "Rng.hpp"
 #include "ZunColor.hpp"
 #include "ZunMath.hpp"
@@ -535,6 +536,10 @@ ZunResult BulletManager::SpawnBulletPattern(const EnemyBulletShooter *bulletProp
     i32 idx1, idx2;
     f32 angle;
 
+    // th06_sfx_fix is installed at 0x4145c6, the first body instruction of
+    // this function. Keep the same one-shot boundary before any pattern work.
+    PracticeRuntime::ApplyPendingBossSectionSfxFix();
+
     angle = g_Player.AngleToPlayer(&bulletProps->position);
     for (idx1 = 0; idx1 < bulletProps->count2; idx1++)
     {
@@ -652,6 +657,31 @@ ZunResult BulletManager::RegisterChain(const char *bulletAnmPath)
     return ZUN_SUCCESS;
 }
 
+void BulletManager::SyncRenderState(BulletManager *mgr)
+{
+    for (Bullet &bullet : mgr->bullets)
+    {
+        if (bullet.state != 0)
+        {
+            bullet.prevPos = bullet.pos;
+            bullet.prevAngle = bullet.angle;
+            bullet.sprites.UpdatePrev();
+        }
+    }
+    for (Laser &laser : mgr->lasers)
+    {
+        if (laser.inUse)
+        {
+            laser.prevPos = laser.pos;
+            laser.prevAngle = laser.angle;
+            laser.prevStartOffset = laser.startOffset;
+            laser.prevEndOffset = laser.endOffset;
+            laser.vm0.UpdatePrev();
+            laser.vm1.UpdatePrev();
+        }
+    }
+}
+
 ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
 {
     i32 res;
@@ -668,33 +698,19 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
 
     curBullet = &mgr->bullets[0];
 
+    SyncRenderState(mgr);
+
+    // Sakuya's in-game time stop freezes simulation, but the portable renderer
+    // still presents between fixed 60 Hz ticks. Keep the frozen objects' render
+    // endpoints identical before returning; otherwise g_RenderAlpha repeatedly
+    // interpolates from the stale pre-stop position/angle to the frozen value.
+    // This is especially visible when Killing Doll snaps knife angles while
+    // time is stopped: stale prevAngle makes every presentation cycle rotate
+    // the knife from the old angle again.
     if (g_GameManager.isTimeStopped)
     {
+        g_ItemManager.SyncRenderState();
         return CHAIN_CALLBACK_RESULT_CONTINUE;
-    }
-
-    for (idx = 0; idx < ARRAY_SIZE_SIGNED(mgr->bullets); idx++)
-    {
-        Bullet &bullet = mgr->bullets[idx];
-        if (bullet.state != 0)
-        {
-            bullet.prevPos = bullet.pos;
-            bullet.prevAngle = bullet.angle;
-            bullet.sprites.UpdatePrev();
-        }
-    }
-    for (idx = 0; idx < ARRAY_SIZE_SIGNED(mgr->lasers); idx++)
-    {
-        Laser &laser = mgr->lasers[idx];
-        if (laser.inUse)
-        {
-            laser.prevPos = laser.pos;
-            laser.prevAngle = laser.angle;
-            laser.prevStartOffset = laser.startOffset;
-            laser.prevEndOffset = laser.endOffset;
-            laser.vm0.UpdatePrev();
-            laser.vm1.UpdatePrev();
-        }
     }
 
     g_ItemManager.OnUpdate();

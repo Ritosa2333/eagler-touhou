@@ -6,6 +6,15 @@
 
 namespace EaglerOptions
 {
+inline bool LimitPresentationTo60()
+{
+#ifdef __EMSCRIPTEN__
+    return EM_ASM_INT({ return !!Module.eaglerOptions?.limitPresentationTo60; }) != 0;
+#else
+    return false;
+#endif
+}
+
 inline bool TouchEnabled()
 {
 #ifdef __EMSCRIPTEN__
@@ -37,6 +46,24 @@ inline bool AlwaysShowHitbox()
 {
 #ifdef __EMSCRIPTEN__
     return EM_ASM_INT({ return !!Module.eaglerOptions?.alwaysHitbox; }) != 0;
+#else
+    return false;
+#endif
+}
+
+inline bool TouchFocusUsesTwoFingers()
+{
+#ifdef __EMSCRIPTEN__
+    return EM_ASM_INT({ return (Module.eaglerOptions?.touchFocusMode || 'two-finger') === 'two-finger'; }) != 0;
+#else
+    return true;
+#endif
+}
+
+inline bool TouchFocusButtonEnabled()
+{
+#ifdef __EMSCRIPTEN__
+    return EM_ASM_INT({ return !!Module.eaglerControls?.focusEnabled; }) != 0;
 #else
     return false;
 #endif

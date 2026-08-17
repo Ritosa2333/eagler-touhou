@@ -24,5 +24,9 @@ bool WasUsedThisRun();
 bool UsedTouchToBomb();
 void ResetRunUsage();
 void CancelTouches();
+
+#ifdef TH_DEV_TOOLS
+bool DebugStateSelfTest();
+#endif
 } // namespace Touch
 

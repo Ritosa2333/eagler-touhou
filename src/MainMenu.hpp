@@ -70,6 +70,9 @@ struct MainMenu
 
     i32 ReplayHandling();
     static ZunResult LoadReplayMenu(MainMenu *menu);
+#ifdef TH_DEV_TOOLS
+    static ChainCallbackResult DebugStartStage1(MainMenu *menu);
+#endif
 
     static ZunResult RegisterChain(u32 isDemo);
     static ChainCallbackResult OnUpdate(MainMenu *s);

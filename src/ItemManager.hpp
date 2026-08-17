@@ -36,6 +36,7 @@ struct ItemManager
 {
     ItemManager();
     void SpawnItem(const ZunVec3 *position, ItemType type, i32 state);
+    void SyncRenderState();
     void OnUpdate();
     void OnDraw();
     void RemoveAllItems();

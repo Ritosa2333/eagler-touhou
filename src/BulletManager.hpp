@@ -103,6 +103,7 @@ struct BulletManager
     static void CutChain();
     static ZunResult AddedCallback(BulletManager *mgr);
     static ZunResult DeletedCallback(BulletManager *mgr);
+    static void SyncRenderState(BulletManager *mgr);
     static ChainCallbackResult OnUpdate(BulletManager *mgr);
     static ChainCallbackResult OnDraw(BulletManager *mgr);
 

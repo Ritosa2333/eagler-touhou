@@ -7,6 +7,7 @@
 #include "Controller.hpp"
 #include "FileSystem.hpp"
 #include "GameManager.hpp"
+#include "Localization.hpp"
 #include "Player.hpp"
 #include "PracticeRuntime.hpp"
 #include "ReplayManager.hpp"
@@ -21,6 +22,10 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
+#ifdef TH_DEV_TOOLS
+#include <SDL3/SDL_log.h>
+#endif
 #include <ctime>
 
 static const f32 g_DifficultyWeightsList[5] = {-30.0f, -10.0f, 20.0f, 30.0f, 30.0f};
@@ -42,6 +47,57 @@ static const char *const g_RightAlignedDifficultyList[5] = {"     Easy", "   Nor
                                                             "    Extra"};
 
 static const char *const g_ShortCharacterList2[4] = {"ReimuA ", "ReimuB ", "MarisaA", "MarisaB"};
+
+static const char *LocalizedStatsCharacterName(i32 index)
+{
+    static const char *const ids[4] = {
+        "th06 Stats ReimuA",
+        "th06 Stats ReimuB",
+        "th06 Stats MarisaA",
+        "th06 Stats MarisaB",
+    };
+    if (index >= 0 && index < ARRAY_SIZE_SIGNED(ids))
+        return Localization::StringById(ids[index], g_CharacterList[index]);
+    return g_CharacterList[index];
+}
+
+static void DrawResultShotTypeText(AnmVm *vm, const char *text)
+{
+    const bool localized = Localization::Active();
+#ifdef TH_DEV_TOOLS
+    static bool loggedLocalized = false;
+    static bool loggedOriginal = false;
+    bool &logged = localized ? loggedLocalized : loggedOriginal;
+    if (!logged)
+    {
+        SDL_Log("TH06 thcrap result shot-type layout: localization=%d mode=%s text=%s",
+                localized ? 1 : 0, localized ? "left" : "center", text != nullptr ? text : "(null)");
+        logged = true;
+    }
+#endif
+    if (localized)
+        g_AnmManager->DrawVmTextFmt(vm, COLOR_RGB(COLOR_WHITE), COLOR_RGB(COLOR_BLACK), "%s", text);
+    else
+        g_AnmManager->DrawStringFormat2(vm, COLOR_RGB(COLOR_WHITE), COLOR_RGB(COLOR_BLACK), text);
+}
+
+static ResultScreenState ResolveFromGameResultState(bool directReplaySave, bool isInPracticeMode,
+                                                    bool thpracActive, bool isInReplay)
+{
+    if (directReplaySave)
+        return RESULT_SCREEN_STATE_SAVE_REPLAY_QUESTION;
+    if (!isInPracticeMode || (thpracActive && !isInReplay))
+        return RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME;
+    return RESULT_SCREEN_STATE_EXIT;
+}
+
+#ifdef TH_DEV_TOOLS
+static bool g_DebugStatsAuditRequested = false;
+static bool g_DebugShotTypeAuditRequested = false;
+static bool g_DebugSpellAuditRequested = false;
+static ResultScreen *g_DebugStatsAuditResult = nullptr;
+static int g_DebugSpellAuditId = -1;
+#endif
 
 #define DEFAULT_HIGH_SCORE_NAME "Nanashi "
 
@@ -67,6 +123,72 @@ static bool ValidateScoreRecords(const ScoreRaw *scoreRaw, u32 availableSize, bo
         record = record->ShiftBytes(record->th6kLen);
     }
     return !requireHeaderRecord || foundHeader;
+}
+
+#ifdef TH_DEV_TOOLS
+ZunResult ResultScreen::DebugRegisterStatsAudit()
+{
+    g_GameManager.difficulty = NORMAL;
+    g_GameManager.score = 123456789;
+    g_GameManager.guiScore = 123456789;
+    g_GameManager.counat = 19800;
+    g_GameManager.numRetries = 2;
+    g_GameManager.deaths = 1;
+    g_GameManager.pointItemsCollected = 321;
+    g_GameManager.grazeInTotal = 456;
+    g_GameManager.isGameCompleted = 1;
+    g_GameManager.isInPracticeMode = 0;
+    g_GameManager.isInReplay = 0;
+    g_DebugStatsAuditRequested = true;
+    const ZunResult result = ResultScreen::RegisterChain(0);
+    if (result != ZUN_SUCCESS)
+    {
+        g_DebugStatsAuditRequested = false;
+        g_DebugStatsAuditResult = nullptr;
+    }
+    return result;
+}
+
+ZunResult ResultScreen::DebugRegisterSpellAudit()
+{
+    g_DebugSpellAuditRequested = true;
+    g_DebugSpellAuditId = -1;
+    const ZunResult result = ResultScreen::RegisterChain(0);
+    if (result != ZUN_SUCCESS)
+    {
+        g_DebugSpellAuditRequested = false;
+        g_DebugStatsAuditResult = nullptr;
+    }
+    return result;
+}
+
+ZunResult ResultScreen::DebugRegisterShotTypeAudit()
+{
+    g_DebugShotTypeAuditRequested = true;
+    const ZunResult result = ResultScreen::RegisterChain(0);
+    if (result != ZUN_SUCCESS)
+    {
+        g_DebugShotTypeAuditRequested = false;
+        g_DebugStatsAuditResult = nullptr;
+    }
+    return result;
+}
+
+void ResultScreen::DebugCloseStatsAudit()
+{
+    if (g_DebugStatsAuditResult != nullptr && g_DebugStatsAuditResult->calcChain != nullptr)
+        g_Chain.Cut(g_DebugStatsAuditResult->calcChain);
+}
+
+#endif
+
+bool ResultScreen::DebugThpracResultRoutingSelfTest()
+{
+    return ResolveFromGameResultState(true, true, true, false) == RESULT_SCREEN_STATE_SAVE_REPLAY_QUESTION &&
+           ResolveFromGameResultState(false, true, true, false) == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME &&
+           ResolveFromGameResultState(false, true, false, false) == RESULT_SCREEN_STATE_EXIT &&
+           ResolveFromGameResultState(false, true, true, true) == RESULT_SCREEN_STATE_EXIT &&
+           ResolveFromGameResultState(false, false, false, false) == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME;
 }
 
 ScoreDat *ResultScreen::OpenScore(const char *path)
@@ -610,15 +732,13 @@ i32 ResultScreen::HandleResultKeyboard()
             sprite->pendingInterrupt = this->diffSelected + 3;
         }
 
-        g_AnmManager->DrawStringFormat2(this->unk_28a0, COLOR_RGB(COLOR_WHITE), COLOR_RGB(COLOR_BLACK),
-                                        g_CharacterList[this->charUsed * 2]);
+        DrawResultShotTypeText(this->unk_28a0, LocalizedStatsCharacterName(this->charUsed * 2));
         if (g_GameManager.shotType != SHOT_TYPE_A)
         {
             this->unk_28a0[0].color = COLOR_TRANSPARENT_WHITE;
         }
 
-        g_AnmManager->DrawStringFormat2(&this->unk_28a0[1], COLOR_RGB(COLOR_WHITE), COLOR_RGB(COLOR_BLACK),
-                                        g_CharacterList[this->charUsed * 2]);
+        DrawResultShotTypeText(&this->unk_28a0[1], LocalizedStatsCharacterName(this->charUsed * 2));
         if (g_GameManager.shotType != SHOT_TYPE_B)
         {
             this->unk_28a0[1].color = COLOR_TRANSPARENT_WHITE;
@@ -1292,7 +1412,10 @@ u32 ResultScreen::DrawFinalStats() const
         }
 
         strPos.y += 22.0f;
-        g_AsciiManager.AddString(&strPos, g_RightAlignedDifficultyList[g_GameManager.difficulty]);
+        // base_tsa/th06.v1.02h.js::result_rank_format rewrites this exact
+        // AddString call into the variadic ASCII printer so ascii_vpatchf_th06
+        // can replace the right-aligned duplicate with the regular rank text.
+        g_AsciiManager.AddFormatText(&strPos, g_RightAlignedDifficultyList[g_GameManager.difficulty]);
 
         unknownFloat += g_DifficultyWeightsList[g_GameManager.difficulty];
         strPos.y += 22.0f;
@@ -1392,22 +1515,73 @@ ZunResult ResultScreen::RegisterChain(i32 unk)
 
     if (unk != 0)
     {
-        if (!g_GameManager.isInPracticeMode)
+        const bool directReplaySave = PracticeRuntime::ConsumeResultReplaySaveRequest();
+        resultScreen->resultScreenState = ResolveFromGameResultState(
+            directReplaySave, g_GameManager.isInPracticeMode != 0,
+            PracticeRuntime::Active(), g_GameManager.isInReplay != 0);
+
+        if (directReplaySave)
         {
-            resultScreen->resultScreenState = RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME;
-        }
-        else if (PracticeRuntime::Active() && PracticeRuntime::GetConfig().mode == 1)
-        {
-            // thprac overrides the vanilla Practice auto-exit so a completed
-            // advanced-practice run can be saved as a replay.
-            resultScreen->resultScreenState = RESULT_SCREEN_STATE_SAVE_REPLAY_QUESTION;
+            // Upstream th06_result_screen_create is enabled only by the
+            // advanced-practice Pause->Exit path and disables itself after one
+            // invocation.  This must still run before the vanilla Practice
+            // flag check because Extra clears that flag.
             std::memset(resultScreen->replayName, ' ', sizeof(resultScreen->replayName));
+#ifdef TH_DEV_TOOLS
+            SDL_Log("TH06 thprac result: save replay question");
+#endif
         }
-        else
+        else if (resultScreen->resultScreenState == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME &&
+                 g_GameManager.isInPracticeMode)
         {
-            resultScreen->resultScreenState = RESULT_SCREEN_STATE_EXIT;
+            // thprac v2.3.0.3's th06_preplay_1 is a permanent one-byte patch
+            // at the vanilla Practice branch of ResultScreen::RegisterChain:
+            // it changes the initial state from EXIT (0x11) to
+            // WRITING_HIGHSCORE_NAME (0x09).  That normal result flow then
+            // reaches Stats -> SAVE_REPLAY_QUESTION, allowing a naturally
+            // finished/missed Practice run to be saved as a replay.  This is
+            // separate from the one-shot Pause->Exit hook above, which jumps
+            // directly to SAVE_REPLAY_QUESTION (and is also needed for Extra,
+            // where thprac deliberately clears isInPracticeMode).
+#ifdef TH_DEV_TOOLS
+            SDL_Log("TH06 thprac result: natural Practice enters replay-save result flow");
+#endif
         }
     }
+
+#ifdef TH_DEV_TOOLS
+    if (g_DebugStatsAuditRequested)
+    {
+        resultScreen->resultScreenState = RESULT_SCREEN_STATE_STATS_SCREEN;
+        resultScreen->frameTimer = 0;
+        g_DebugStatsAuditResult = resultScreen;
+        g_DebugStatsAuditRequested = false;
+        SDL_Log("TH06 thcrap result stats audit: registered read-only stats chain");
+    }
+    else if (g_DebugShotTypeAuditRequested)
+    {
+        resultScreen->resultScreenState = RESULT_SCREEN_STATE_BEST_SCORES_EASY;
+        resultScreen->diffSelected = EASY;
+        resultScreen->cursor = 1;
+        resultScreen->charUsed = 0;
+        resultScreen->frameTimer = 20;
+        g_DebugStatsAuditResult = resultScreen;
+        g_DebugShotTypeAuditRequested = false;
+        SDL_Log("TH06 thcrap result shot-type audit: registered read-only best-scores chain");
+    }
+    else if (g_DebugSpellAuditRequested)
+    {
+        resultScreen->resultScreenState = RESULT_SCREEN_STATE_SPELLCARDS;
+        resultScreen->lastResultScreenState = RESULT_SCREEN_STATE_SPELLCARDS;
+        resultScreen->previousCursor = 0;
+        resultScreen->cursor = 0;
+        resultScreen->lastSpellcardSelected = -1;
+        resultScreen->frameTimer = 0;
+        g_DebugStatsAuditResult = resultScreen;
+        g_DebugSpellAuditRequested = false;
+        SDL_Log("TH06 thcrap result spell audit: registered read-only spell-card chain");
+    }
+#endif
 
     if (g_Chain.AddToCalcChain(resultScreen->calcChain, TH_CHAIN_PRIO_CALC_RESULTSCREEN))
     {
@@ -1673,10 +1847,10 @@ ChainCallbackResult ResultScreen::OnUpdate(ResultScreen *resultScreen)
         if (resultScreen->charUsed != resultScreen->cursor && resultScreen->frameTimer == 20)
         {
             resultScreen->charUsed = resultScreen->cursor;
-            g_AnmManager->DrawStringFormat2(&resultScreen->unk_28a0[0], COLOR_RGB(COLOR_WHITE), COLOR_RGB(COLOR_BLACK),
-                                            g_CharacterList[resultScreen->charUsed * 2]);
-            g_AnmManager->DrawStringFormat2(&resultScreen->unk_28a0[1], COLOR_RGB(COLOR_WHITE), COLOR_RGB(COLOR_BLACK),
-                                            g_CharacterList[resultScreen->charUsed * 2 + 1]);
+            DrawResultShotTypeText(&resultScreen->unk_28a0[0],
+                                   LocalizedStatsCharacterName(resultScreen->charUsed * 2));
+            DrawResultShotTypeText(&resultScreen->unk_28a0[1],
+                                   LocalizedStatsCharacterName(resultScreen->charUsed * 2 + 1));
         }
         if (resultScreen->frameTimer < 30)
         {
@@ -1726,8 +1900,26 @@ ChainCallbackResult ResultScreen::OnUpdate(ResultScreen *resultScreen)
                 }
                 else
                 {
-                    g_AnmManager->DrawVmTextFmt(&resultScreen->unk_28a0[i % 10], COLOR_RGB(COLOR_WHITE),
-                                                COLOR_RGB(COLOR_BLACK), g_GameManager.catk[i].name);
+                    const char *spellName = Localization::SpellName(static_cast<u32>(i), g_GameManager.catk[i].name);
+#ifdef TH_DEV_TOOLS
+                    static bool loggedLocalizedSpellDisplay = false;
+                    static bool loggedOriginalSpellDisplay = false;
+                    bool &loggedSpellDisplay = spellName != g_GameManager.catk[i].name
+                                                   ? loggedLocalizedSpellDisplay
+                                                   : loggedOriginalSpellDisplay;
+                    if (!loggedSpellDisplay)
+                    {
+                        SDL_Log("TH06 result spell display: localization=%d id=%d original=%s displayed=%s",
+                                Localization::Active() ? 1 : 0, i, g_GameManager.catk[i].name, spellName);
+                        loggedSpellDisplay = true;
+                    }
+#endif
+                    if (Localization::Active())
+                        g_AnmManager->DrawVmTextFmt(&resultScreen->unk_28a0[i % 10], COLOR_RGB(COLOR_WHITE),
+                                                    COLOR_RGB(COLOR_BLACK), "%s", spellName);
+                    else
+                        g_AnmManager->DrawVmTextFmt(&resultScreen->unk_28a0[i % 10], COLOR_RGB(COLOR_WHITE),
+                                                    COLOR_RGB(COLOR_BLACK), spellName);
                 }
             }
         }
@@ -1982,11 +2174,43 @@ ChainCallbackResult ResultScreen::OnDraw(ResultScreen *resultScreen)
                 spellcardName.pos.x += 96.0f;
                 g_AnmManager->DrawNoRotation(&spellcardName);
 
-                spritePos.x += 368.0f;
-
-                g_AsciiManager.AddFormatText(&spritePos, "%3d/%3d", g_GameManager.catk[spellcardIdx].numSuccess,
-                                             g_GameManager.catk[spellcardIdx].numAttempts);
-                spritePos.x -= 368.0f;
+                if (Localization::Active())
+                {
+                    // base_tsa/th06 result_spell_cap_pos_1 saves the original
+                    // X, changes the capture counter offset from 368 to 472,
+                    // and result_spell_cap_pos_2 restores that exact saved X.
+                    const f32 originalX = spritePos.x;
+                    spritePos.x += 472.0f;
+#ifdef TH_DEV_TOOLS
+                    static bool loggedLocalizedCapturePos = false;
+                    if (!loggedLocalizedCapturePos)
+                    {
+                        SDL_Log("TH06 thcrap result spell capture position: localization=1 base=%.3f capture=%.3f",
+                                static_cast<double>(originalX), static_cast<double>(spritePos.x));
+                        loggedLocalizedCapturePos = true;
+                    }
+#endif
+                    g_AsciiManager.AddFormatText(&spritePos, "%3d/%3d", g_GameManager.catk[spellcardIdx].numSuccess,
+                                                 g_GameManager.catk[spellcardIdx].numAttempts);
+                    spritePos.x = originalX;
+                }
+                else
+                {
+                    const f32 originalX = spritePos.x;
+                    spritePos.x += 368.0f;
+#ifdef TH_DEV_TOOLS
+                    static bool loggedOriginalCapturePos = false;
+                    if (!loggedOriginalCapturePos)
+                    {
+                        SDL_Log("TH06 thcrap result spell capture position: localization=0 base=%.3f capture=%.3f",
+                                static_cast<double>(originalX), static_cast<double>(spritePos.x));
+                        loggedOriginalCapturePos = true;
+                    }
+#endif
+                    g_AsciiManager.AddFormatText(&spritePos, "%3d/%3d", g_GameManager.catk[spellcardIdx].numSuccess,
+                                                 g_GameManager.catk[spellcardIdx].numAttempts);
+                    spritePos.x -= 368.0f;
+                }
                 spritePos.y += 30.0f;
             }
         }
@@ -2213,6 +2437,51 @@ ZunResult ResultScreen::AddedCallback(ResultScreen *resultScreen)
         ParseClrd(resultScreen->scoreDat, g_GameManager.clrd);
         ParsePscr(resultScreen->scoreDat, (Pscr *)g_GameManager.pscr);
     }
+#ifdef TH_DEV_TOOLS
+    if (resultScreen == g_DebugStatsAuditResult &&
+        resultScreen->resultScreenState == RESULT_SCREEN_STATE_SPELLCARDS)
+    {
+        static const char auditFallback[] = "TH06_RESULT_SPELL_AUDIT";
+        for (int spellId = 0; spellId < CATK_NUM_CAPTURES; ++spellId)
+        {
+            const char *localized = Localization::SpellName(static_cast<u32>(spellId), auditFallback);
+            if (localized != auditFallback)
+            {
+                Catk &catk = g_GameManager.catk[spellId];
+                std::memset(&catk, 0, sizeof(catk));
+                catk.idx = static_cast<u16>(spellId);
+                catk.numAttempts = 1;
+                catk.numSuccess = 1;
+                std::strncpy(catk.name, auditFallback, sizeof(catk.name) - 1);
+                g_DebugSpellAuditId = spellId;
+                resultScreen->cursor = spellId / 10;
+                resultScreen->lastSpellcardSelected = -1;
+                SDL_Log("TH06 thcrap result spell audit: fixture id=%d localized=%s", spellId, localized);
+                break;
+            }
+        }
+        if (g_DebugSpellAuditId < 0)
+        {
+            Catk &catk = g_GameManager.catk[0];
+            std::memset(&catk, 0, sizeof(catk));
+            catk.idx = 0;
+            catk.numAttempts = 1;
+            catk.numSuccess = 1;
+            std::strncpy(catk.name, auditFallback, sizeof(catk.name) - 1);
+            g_DebugSpellAuditId = 0;
+            resultScreen->cursor = 0;
+            resultScreen->lastSpellcardSelected = -1;
+            SDL_Log("TH06 result spell audit: no translated record; using fallback fixture id=0 localization=%d",
+                    Localization::Active() ? 1 : 0);
+        }
+        // AddedCallback initializes every result ANM VM after RegisterChain's
+        // state selection, which clears any earlier pendingInterrupt. Apply
+        // the exact real Spell Cards transition interrupt here, after that
+        // initialization and score parsing have finished.
+        for (AnmVm &vm : resultScreen->unk_40)
+            vm.pendingInterrupt = RESULT_SCREEN_CURSOR_SPELLCARDS + 3;
+    }
+#endif
 
     if (resultScreen->resultScreenState == RESULT_SCREEN_STATE_EXIT &&
         g_GameManager.pscr[g_GameManager.CharacterShotType()][g_GameManager.currentStage - 1][g_GameManager.difficulty]
@@ -2231,10 +2500,16 @@ ZunResult ResultScreen::DeletedCallback(ResultScreen *resultScreen)
 {
     i32 character;
     i32 difficulty;
+#ifdef TH_DEV_TOOLS
+    const bool readOnlyStatsAudit = resultScreen == g_DebugStatsAuditResult;
+#else
+    const bool readOnlyStatsAudit = false;
+#endif
 
     if (resultScreen->scoreDat != NULL)
     {
-        ResultScreen::WriteScore(resultScreen);
+        if (!readOnlyStatsAudit)
+            ResultScreen::WriteScore(resultScreen);
         ResultScreen::ReleaseScoreDat(resultScreen->scoreDat);
     }
 
@@ -2255,6 +2530,14 @@ ZunResult ResultScreen::DeletedCallback(ResultScreen *resultScreen)
     g_Chain.Cut(resultScreen->drawChain);
 
     resultScreen->drawChain = NULL;
+
+#ifdef TH_DEV_TOOLS
+    if (readOnlyStatsAudit)
+    {
+        g_DebugStatsAuditResult = nullptr;
+        SDL_Log("TH06 thcrap result stats audit: closed without WriteScore");
+    }
+#endif
 
     delete resultScreen;
     resultScreen = NULL;

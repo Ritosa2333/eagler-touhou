@@ -4,6 +4,7 @@
 
 #include "EffectManager.hpp"
 #include "Gui.hpp"
+#include "Localization.hpp"
 #include "Rng.hpp"
 #include "ScreenEffect.hpp"
 #include "i18n.hpp"
@@ -38,7 +39,9 @@ void BombData::BombReimuACalc(Player *player)
     }
     if (player->bombInfo.timer.HasTicked() && player->bombInfo.timer == 0)
     {
-        g_Gui.ShowBombNamePortrait(ANM_SCRIPT_FACE_BOMB_PORTRAIT, TH_REIMU_A_BOMB_NAME);
+        g_Gui.ShowBombNamePortrait(
+            ANM_SCRIPT_FACE_BOMB_PORTRAIT,
+            Localization::StringById("th06 Bomb Reimu A", TH_REIMU_A_BOMB_NAME));
         player->bombInfo.duration = 300;
         player->invulnerabilityTimer.SetCurrent(360);
 
@@ -291,7 +294,9 @@ void BombData::BombReimuBCalc(Player *player)
     if (player->bombInfo.timer.HasTicked() && player->bombInfo.timer == 0)
     {
         g_ItemManager.RemoveAllItems();
-        g_Gui.ShowBombNamePortrait(ANM_SCRIPT_FACE_ENEMY_SPELLCARD_PORTRAIT, TH_REIMU_B_BOMB_NAME);
+        g_Gui.ShowBombNamePortrait(
+            ANM_SCRIPT_FACE_ENEMY_SPELLCARD_PORTRAIT,
+            Localization::StringById("th06 Bomb Reimu B", TH_REIMU_B_BOMB_NAME));
         player->bombInfo.duration = 140;
         player->invulnerabilityTimer.SetCurrent(200);
         bombSprite = player->bombInfo.sprites[0];
@@ -398,7 +403,9 @@ void BombData::BombMarisaACalc(Player *player)
     if (player->bombInfo.timer.HasTicked() && player->bombInfo.timer == 0)
     {
         g_ItemManager.RemoveAllItems();
-        g_Gui.ShowBombNamePortrait(ANM_SCRIPT_FACE_ENEMY_SPELLCARD_PORTRAIT, TH_MARISA_A_BOMB_NAME);
+        g_Gui.ShowBombNamePortrait(
+            ANM_SCRIPT_FACE_ENEMY_SPELLCARD_PORTRAIT,
+            Localization::StringById("th06 Bomb Marisa A", TH_MARISA_A_BOMB_NAME));
         player->bombInfo.duration = 250;
         player->invulnerabilityTimer.SetCurrent(300);
 
@@ -529,7 +536,9 @@ void BombData::BombMarisaBCalc(Player *player)
     if (player->bombInfo.timer.HasTicked() && player->bombInfo.timer == 0)
     {
         g_ItemManager.RemoveAllItems();
-        g_Gui.ShowBombNamePortrait(ANM_SCRIPT_FACE_BOMB_PORTRAIT, TH_MARISA_B_BOMB_NAME);
+        g_Gui.ShowBombNamePortrait(
+            ANM_SCRIPT_FACE_BOMB_PORTRAIT,
+            Localization::StringById("th06 Bomb Marisa B", TH_MARISA_B_BOMB_NAME));
         player->bombInfo.duration = 300;
         player->invulnerabilityTimer.SetCurrent(360);
         bombSprite = player->bombInfo.sprites[0];

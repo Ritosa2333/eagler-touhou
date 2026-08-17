@@ -169,7 +169,13 @@ struct Gui
     void MsgRead(i32 msgIdx) const;
     bool MsgWait() const;
 
-    void ShowSpellcard(i32 spellcardSprite, const char *spellcardName);
+    void ShowSpellcard(i32 spellcardSprite, i32 spellcardId, const char *spellcardName);
+#ifdef TH_DEV_TOOLS
+    void DebugShowLocalizedStageText();
+    void DebugShowLocalizedSpellcard();
+    void DebugShowLocalizedBomb();
+    void DebugStartStage1BossDialogue();
+#endif
     void ShowSpellcardBonus(u32 spellcardScore) const;
     void ShowBombNamePortrait(u32 sprite, const char *bombName);
     void ShowBonusScore(u32 bonusScore) const;

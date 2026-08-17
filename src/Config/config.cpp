@@ -419,7 +419,7 @@ int main()
         return 1;
     }
 
-    TTF_Font *font = TTF_OpenFont("NotoSans-Regular.ttf", 18);
+    TTF_Font *font = TTF_OpenFont("unifont.otf", 18);
     if (!font)
     {
         printf("Failed to load font: %s\n", TTF_GetError());

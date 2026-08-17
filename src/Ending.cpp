@@ -6,12 +6,56 @@
 #include "FileSystem.hpp"
 #include "GameErrorContext.hpp"
 #include "GameManager.hpp"
+#include "Localization.hpp"
 #include "Player.hpp"
 #include "ScreenEffect.hpp"
 #include "Supervisor.hpp"
 #include "i18n.hpp"
 #include "utils.hpp"
 #include <cstdlib>
+
+#ifdef TH_DEV_TOOLS
+static bool g_DebugEndingFastForward = false;
+#endif
+
+#ifdef TH_DEV_TOOLS
+void Ending::DebugSetFastForward(bool enabled)
+{
+    g_DebugEndingFastForward = enabled;
+}
+#endif
+
+static const char *FindTranslatedEndingLine(char *cursor, char *&lineEnd)
+{
+    if (!Localization::Active() || cursor == nullptr)
+        return nullptr;
+
+    char *scan = cursor;
+    while (*scan != '\0' && *scan != '\n' && *scan != '\r')
+        ++scan;
+    if (*scan != '\0')
+        return nullptr;
+
+    lineEnd = scan;
+    return cursor;
+}
+
+#if defined(TH_DEV_TOOLS) && defined(TH_ENABLE_THCRAP)
+bool Ending::DebugTranslatedLineSelfTest()
+{
+    char translated[] = "A translated TH06 ending line that is deliberately longer than the vanilla thirty-two byte split.\0\n@w";
+    char *lineEnd = nullptr;
+    const char *line = FindTranslatedEndingLine(translated, lineEnd);
+    if (line != translated || lineEnd == nullptr || *lineEnd != '\0' || lineEnd - line <= 32)
+        return false;
+
+    char originalStyle[] = "Original CP932-style line without an inserted terminator\n@w";
+    lineEnd = nullptr;
+    if (FindTranslatedEndingLine(originalStyle, lineEnd) != nullptr || lineEnd != nullptr)
+        return false;
+    return true;
+}
+#endif
 
 i32 Ending::ReadEndFileParameter()
 {
@@ -133,6 +177,7 @@ ZunResult Ending::ParseEndFile()
     i32 fill[6];
 
     char textBuffer[39];
+    const char *translatedLine = nullptr;
 
     lineDisplayed = false;
     charactersReaded = 0;
@@ -368,8 +413,12 @@ ZunResult Ending::ParseEndFile()
                 g_AnmManager->SetAndExecuteScriptIdx(&this->sprites[lineDisplayed + this->timesFileParsed * 2],
                                                      lineDisplayed + ANM_SCRIPT_TEXT_ENDING_TEXT +
                                                          this->timesFileParsed * 2);
-                g_AnmManager->DrawVmTextFmt(&this->sprites[lineDisplayed + this->timesFileParsed * 2], this->textColor,
-                                            COLOR_END_TEXT_SHADOW, textBuffer);
+                if (translatedLine != nullptr)
+                    g_AnmManager->DrawVmTextFmt(&this->sprites[lineDisplayed + this->timesFileParsed * 2], this->textColor,
+                                                COLOR_END_TEXT_SHADOW, "%s", translatedLine);
+                else
+                    g_AnmManager->DrawVmTextFmt(&this->sprites[lineDisplayed + this->timesFileParsed * 2], this->textColor,
+                                                COLOR_END_TEXT_SHADOW, textBuffer);
             }
             while (this->endFileDataPtr[0] == '\n' || this->endFileDataPtr[0] == '\0' ||
                    this->endFileDataPtr[0] == '\r')
@@ -392,6 +441,44 @@ ZunResult Ending::ParseEndFile()
             this->timesFileParsed++;
             goto endParsing;
         default:
+        {
+            char *translatedLineEnd = nullptr;
+            translatedLine = FindTranslatedEndingLine(this->endFileDataPtr, translatedLineEnd);
+            if (translatedLine != nullptr)
+            {
+                // TH06 base_tsa ending_copy_rem remembers the line start and
+                // scans directly to the NUL inserted by patchEnding(). The
+                // ending_copy_rep patch then passes that original pointer to
+                // the text renderer. This intentionally bypasses the vanilla
+                // 32-byte/two-sprite CP932 split for translated UTF-8 lines.
+                charactersReaded = static_cast<i32>(translatedLineEnd - translatedLine);
+                this->endFileDataPtr = translatedLineEnd;
+#ifdef TH_DEV_TOOLS
+                static bool loggedTranslatedEndingLine = false;
+                static bool loggedLongTranslatedEndingLine = false;
+                if (!loggedTranslatedEndingLine)
+                {
+                    SDL_Log("th06 thcrap ending line: bytes=%d text=%s", charactersReaded, translatedLine);
+                    loggedTranslatedEndingLine = true;
+                }
+                if (!loggedLongTranslatedEndingLine && charactersReaded > 32)
+                {
+                    SDL_Log("th06 thcrap ending long line: bytes=%d text=%s", charactersReaded, translatedLine);
+                    loggedLongTranslatedEndingLine = true;
+                }
+#endif
+                goto nextOpcode;
+            }
+#ifdef TH_DEV_TOOLS
+            static bool loggedVanillaEndingCopy = false;
+            if (!loggedVanillaEndingCopy && !Localization::Active())
+            {
+                SDL_Log("th06 ending vanilla copy path: byte0=%02x byte1=%02x",
+                        static_cast<unsigned char>(this->endFileDataPtr[0]),
+                        static_cast<unsigned char>(this->endFileDataPtr[1]));
+                loggedVanillaEndingCopy = true;
+            }
+#endif
             // Read 2 characters at a time
             textBuffer[charactersReaded] = this->endFileDataPtr[0];
             textBuffer[charactersReaded + 1] = this->endFileDataPtr[1];
@@ -415,6 +502,7 @@ ZunResult Ending::ParseEndFile()
 
                 memset(textBuffer, 0, sizeof(textBuffer) - 1);
             }
+        }
         nextOpcode:
             continue;
         }
@@ -492,6 +580,16 @@ ChainCallbackResult Ending::OnUpdate(Ending *ending)
         vm.UpdatePrev();
     }
 
+#ifdef TH_DEV_TOOLS
+    if (g_DebugEndingFastForward)
+    {
+        ending->timer2.SetCurrent(0);
+        ending->timer3.SetCurrent(0);
+        ending->minWaitFrames = 0;
+        ending->minWaitResetFrames = 0;
+    }
+#endif
+
     for (framesPressed = 0;;)
     {
         if (ending->ParseEndFile() != ZUN_SUCCESS)
@@ -505,7 +603,13 @@ ChainCallbackResult Ending::OnUpdate(Ending *ending)
                 g_AnmManager->ExecuteScript(&ending->sprites[idx]);
             }
         }
-        if (ending->hasSeenEnding && IS_PRESSED(TH_BUTTON_SKIP) && framesPressed < 4)
+        if (ending->hasSeenEnding &&
+            (IS_PRESSED(TH_BUTTON_SKIP)
+#ifdef TH_DEV_TOOLS
+             || g_DebugEndingFastForward
+#endif
+             ) &&
+            framesPressed < 4)
         {
             framesPressed++;
             continue;
@@ -632,6 +736,9 @@ ZunResult Ending::AddedCallback(Ending *ending)
 
 ZunResult Ending::DeletedCallback(Ending *ending)
 {
+#ifdef TH_DEV_TOOLS
+    g_DebugEndingFastForward = false;
+#endif
     g_AnmManager->ReleaseAnm(ANM_FILE_STAFF01);
     g_AnmManager->ReleaseAnm(ANM_FILE_STAFF02);
     g_AnmManager->ReleaseAnm(ANM_FILE_STAFF03);

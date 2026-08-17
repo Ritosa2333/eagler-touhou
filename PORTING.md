@@ -3,6 +3,11 @@
 This branch ports EoSD using the proven `th07` reallyportable platform model.
 It is intentionally not an extension of the old SDL2 `WebGL` experiment.
 
+The optional thcrap localization work has a separate source-level handoff in
+[`THCRAP_PORTING.md`](THCRAP_PORTING.md). Read it before adapting localization
+to another game; its architecture is reusable, but its TH06 renderer, font,
+sprite and ANM constants are not.
+
 ## Non-negotiable boundaries
 
 - `src/graphics/Gles.*` is the only accelerated renderer used by web builds.

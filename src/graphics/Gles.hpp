@@ -19,6 +19,10 @@
 #include "GfxInterface.hpp"
 #include "utils.hpp"
 
+#ifdef TH_ENABLE_THPRAC
+struct ImDrawData;
+#endif
+
 struct CachedState
 {
     void Invalidate()
@@ -111,6 +115,10 @@ class GlesGraphics : public GfxInterface
 
     void SwapBuffers() override;
 
+#ifdef TH_ENABLE_THPRAC
+    void RenderImGui(const ImDrawData *drawData);
+#endif
+
   private:
     SDL_GLContext ctx = nullptr;
     u32 shaderProgram = 0;
@@ -136,6 +144,16 @@ class GlesGraphics : public GfxInterface
     GLuint unitQuadVao = 0;
     GLuint unitQuadVbo = 0;
     GLuint boundTexture = 0;
+
+#ifdef TH_ENABLE_THPRAC
+    GLuint imguiProgram = 0;
+    GLuint imguiVao = 0;
+    GLuint imguiVbo = 0;
+    GLuint imguiEbo = 0;
+    GLuint imguiFontTexture = 0;
+    GLint imguiProjMtx = -1;
+    GLint imguiTexture = -1;
+#endif
 
     ZunMatrix transforms[4];
     ZunViewport viewport;

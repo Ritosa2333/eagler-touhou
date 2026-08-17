@@ -85,6 +85,19 @@ static inline i32 calculatePointScore(const Item *curItem, i32 scoreAcquiredItem
 
 static const ZunVec3 g_ItemSize(16.0f, 16.0f, 16.0f);
 
+void ItemManager::SyncRenderState()
+{
+    for (Item &item : this->items)
+    {
+        if (!item.isInUse)
+        {
+            continue;
+        }
+        item.prevPosition = item.currentPosition;
+        item.sprite.UpdatePrev();
+    }
+}
+
 void ItemManager::OnUpdate()
 {
     i32 iVar9;

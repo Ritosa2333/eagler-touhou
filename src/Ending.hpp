@@ -55,6 +55,12 @@ struct Ending
     static ChainCallbackResult OnDraw(Ending *ending);
     static ZunResult AddedCallback(Ending *ending);
     static ZunResult DeletedCallback(Ending *ending);
+#if defined(TH_DEV_TOOLS) && defined(TH_ENABLE_THCRAP)
+    static bool DebugTranslatedLineSelfTest();
+#endif
+#ifdef TH_DEV_TOOLS
+    static void DebugSetFastForward(bool enabled);
+#endif
 
     i32 ReadEndFileParameter();
 

@@ -8,6 +8,12 @@
 #include <SDL3/SDL.h>
 #include <cstring>
 
+namespace
+{
+int g_ActiveShakeEffects = 0;
+bool g_CancelNextShakeForRestart = false;
+}
+
 void ScreenEffect::Clear(ZunColor color)
 {
     f32 a = (color >> 24) / 255.0f;
@@ -242,6 +248,18 @@ ChainCallbackResult ScreenEffect::ShakeScreen(ScreenEffect *effect)
     }
 
     effect->timer.Tick();
+    // Upstream DisableShakeScreenEffect() arms a one-shot hook at 0x430042,
+    // after the timer tick/comparison setup but before either shake RNG call.
+    // Forcing the cleanup branch here preserves that restart/desync boundary.
+    if (g_CancelNextShakeForRestart)
+    {
+        g_CancelNextShakeForRestart = false;
+        g_GameManager.arcadeRegionTopLeftPos.x = 32.0f;
+        g_GameManager.arcadeRegionTopLeftPos.y = 16.0f;
+        g_GameManager.arcadeRegionSize.x = 384.0f;
+        g_GameManager.arcadeRegionSize.y = 448.0f;
+        return CHAIN_CALLBACK_RESULT_CONTINUE_AND_REMOVE_JOB;
+    }
     if (effect->timer >= effect->effectLength)
     {
         g_GameManager.arcadeRegionTopLeftPos.x = 32.0f;
@@ -293,11 +311,24 @@ ChainCallbackResult ScreenEffect::ShakeScreen(ScreenEffect *effect)
 ZunResult ScreenEffect::AddedCallback(ScreenEffect *effect)
 {
     effect->timer.InitializeForPopup();
+    if (effect->usedEffect == SCREEN_EFFECT_SHAKE)
+        ++g_ActiveShakeEffects;
     return ZUN_SUCCESS;
+}
+
+void ScreenEffect::RequestShakeCancelForRestart()
+{
+    // The original helper scans the calc chain and only enables the one-shot
+    // patch when a ShakeScreen job is actually present. Never leave a request
+    // armed for a future unrelated shake.
+    if (g_ActiveShakeEffects > 0)
+        g_CancelNextShakeForRestart = true;
 }
 
 ZunResult ScreenEffect::DeletedCallback(ScreenEffect *effect)
 {
+    if (effect->usedEffect == SCREEN_EFFECT_SHAKE && g_ActiveShakeEffects > 0)
+        --g_ActiveShakeEffects;
     effect->calcChainElement->deletedCallback = NULL;
     g_Chain.Cut(effect->drawChainElement);
     effect->drawChainElement = NULL;

@@ -195,6 +195,13 @@ struct ResultScreen
     };
 
     static ZunResult RegisterChain(i32 unk);
+    static bool DebugThpracResultRoutingSelfTest();
+#ifdef TH_DEV_TOOLS
+    static ZunResult DebugRegisterStatsAudit();
+    static ZunResult DebugRegisterShotTypeAudit();
+    static ZunResult DebugRegisterSpellAudit();
+    static void DebugCloseStatsAudit();
+#endif
     static ChainCallbackResult OnUpdate(ResultScreen *r);
     static ChainCallbackResult OnDraw(ResultScreen *r);
     static ZunResult AddedCallback(ResultScreen *r);

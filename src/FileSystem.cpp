@@ -47,9 +47,30 @@ static u8 *ReadRuntimeOverrideFile(const std::string &path)
     return data;
 }
 
+static u8 *OpenPathImpl(const char *filepath, int isExternalResource, bool allowRuntimeOverride);
+
+u8 *FileSystem::OpenPath(const char *filepath, int isExternalResource)
+{
+    return OpenPathImpl(filepath, isExternalResource, true);
+}
+
+u8 *FileSystem::OpenOriginalPath(const char *filepath, int isExternalResource)
+{
+    return OpenPathImpl(filepath, isExternalResource, false);
+}
+
 u8 *FileSystem::OpenRuntimeOverride(const char *filepath)
 {
     g_LastFileWasRuntimeOverride = false;
+#ifndef TH_ENABLE_THCRAP
+    // Match TH07's strict localization-off regression boundary: a build with
+    // thcrap disabled must never consume an adjacent/stale runtime override
+    // tree. Otherwise an OFF binary launched from a translated package can
+    // still read patched UTF-8 END/MSG/ANM resources while all Localization
+    // consumers are inactive, corrupting the Japanese baseline.
+    (void)filepath;
+    return NULL;
+#else
     if (filepath == NULL || *filepath == '\0')
         return NULL;
     std::string relative(filepath);
@@ -73,6 +94,27 @@ u8 *FileSystem::OpenRuntimeOverride(const char *filepath)
     if (separator != std::string::npos)
         return ReadRuntimeOverrideFile(root + relative.substr(separator + 1));
     return NULL;
+#endif
+}
+
+std::string FileSystem::GetBasePath(const char *filepath)
+{
+    if (filepath == nullptr)
+        return {};
+#if defined(TH_EXTERNAL_ASSETS)
+    const char *path = nullptr;
+#if defined(__ANDROID__)
+    path = SDL_GetAndroidExternalStoragePath();
+#elif defined(__APPLE__) && TARGET_OS_IPHONE
+    path = SDL_GetUserFolder(SDL_FOLDER_DOCUMENTS);
+#endif
+    if (path != nullptr)
+        return std::string(path) + filepath;
+#endif
+    const char *basePath = SDL_GetBasePath();
+    if (basePath != nullptr)
+        return std::string(basePath) + filepath;
+    return std::string(filepath);
 }
 
 std::string FileSystem::GetPrefPath(const char *filepath)
@@ -161,7 +203,7 @@ void FileSystem::CreateDir(const char *path)
 #endif
 }
 
-u8 *FileSystem::OpenPath(const char *filepath, int isExternalResource)
+static u8 *OpenPathImpl(const char *filepath, int isExternalResource, bool allowRuntimeOverride)
 {
     u8 *data;
     SDL_IOStream *file;
@@ -180,8 +222,11 @@ u8 *FileSystem::OpenPath(const char *filepath, int isExternalResource)
     entryIdx = -1;
     if (isExternalResource == 0)
     {
-        if (u8 *overrideData = OpenRuntimeOverride(filepath))
-            return overrideData;
+        if (allowRuntimeOverride)
+        {
+            if (u8 *overrideData = FileSystem::OpenRuntimeOverride(filepath))
+                return overrideData;
+        }
         const char *backslash = std::strrchr(filepath, '\\');
         const char *slash = std::strrchr(filepath, '/');
         const char *separator = backslash == NULL ? slash : (slash == NULL || backslash > slash ? backslash : slash);
@@ -217,7 +262,7 @@ u8 *FileSystem::OpenPath(const char *filepath, int isExternalResource)
     else
     {
         utils::DebugPrint2("%s Load ... \n", filepath);
-        file = OpenFileStream(filepath, "rb");
+        file = FileSystem::OpenFileStream(filepath, "rb");
         if (file == NULL)
         {
             utils::DebugPrint2("error : %s is not found.\n", filepath);

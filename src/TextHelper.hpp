@@ -20,9 +20,13 @@ struct TextHelper
 {
     static ZunResult CreateTextBuffer();
     static void ReleaseTextBuffer();
+    static float MeasureTextWidth(const char *string, i32 fontHeight);
     static void RenderTextToTexture(i32 xPos, i32 yPos, i32 spriteWidth, i32 spriteHeight, i32 fontHeight,
                                     i32 fontWidth, ZunColor textColor, ZunColor shadowColor, const char *string,
                                     TextureData *outTexture);
+#if defined(TH_DEV_TOOLS) && defined(TH_ENABLE_THCRAP)
+    static bool DebugLocalizedFontMetricsSelfTest();
+#endif
 
     TextHelper();
     ~TextHelper();

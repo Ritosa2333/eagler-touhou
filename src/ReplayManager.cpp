@@ -17,6 +17,23 @@
 
 ReplayManager *g_ReplayManager;
 
+static i32 ReplayGameplayDataSize(const u8 *bytes, i32 fileSize)
+{
+    if (bytes == nullptr || fileSize < static_cast<i32>(sizeof(ReplayHeader) + 8) ||
+        std::memcmp(bytes, "T6RP", 4) != 0 || std::memcmp(bytes + fileSize - 4, "PRAC", 4) != 0)
+        return fileSize;
+
+    const size_t size = static_cast<size_t>(fileSize);
+    const u32 payloadSize = static_cast<u32>(bytes[size - 8]) |
+                            (static_cast<u32>(bytes[size - 7]) << 8) |
+                            (static_cast<u32>(bytes[size - 6]) << 16) |
+                            (static_cast<u32>(bytes[size - 5]) << 24);
+    // ReplayLoadParam in thprac v2.3.0.3 accepts TH06 payloads below 512 B.
+    if (payloadSize == 0 || payloadSize >= 512 || payloadSize > size - 8 - sizeof(ReplayHeader))
+        return fileSize;
+    return static_cast<i32>(size - 8 - payloadSize);
+}
+
 ZunResult ReplayManager::ValidateReplayData(ReplayHeader *data, i32 fileSize)
 {
     u8 *checksumCursor;
@@ -29,6 +46,13 @@ ZunResult ReplayManager::ValidateReplayData(ReplayHeader *data, i32 fileSize)
     {
         return ZUN_ERROR;
     }
+
+    // Detect thprac's raw PRAC trailer before deobfuscation mutates the
+    // in-memory bytes. Checksum/deobfuscation still cover the complete file,
+    // exactly like upstream ReplaySaveParam; only stage-record bounds stop at
+    // the end of the original replay payload rather than treating JSON as
+    // ReplayDataInput records.
+    const i32 gameplayDataSize = ReplayGameplayDataSize(reinterpret_cast<const u8 *>(data), fileSize);
 
     /* "T6RP" magic bytes */
     if (std::memcmp(data->magic, "T6RP", 4) != 0)
@@ -80,12 +104,12 @@ ZunResult ReplayManager::ValidateReplayData(ReplayHeader *data, i32 fileSize)
         }
         foundStage = true;
         if (offset < sizeof(ReplayHeader) || offset <= previousOffset ||
-            offset > static_cast<u32>(fileSize) - offsetof(StageReplayData, replayInputs) - sizeof(ReplayDataInput))
+            offset > static_cast<u32>(gameplayDataSize) - offsetof(StageReplayData, replayInputs) - sizeof(ReplayDataInput))
         {
             return ZUN_ERROR;
         }
 
-        u32 nextOffset = static_cast<u32>(fileSize);
+        u32 nextOffset = static_cast<u32>(gameplayDataSize);
         for (i32 nextStage = stage + 1; nextStage < ARRAY_SIZE_SIGNED(data->stageReplayDataOffsets); ++nextStage)
         {
             if (data->stageReplayDataOffsets[nextStage] != 0)
@@ -94,7 +118,8 @@ ZunResult ReplayManager::ValidateReplayData(ReplayHeader *data, i32 fileSize)
                 break;
             }
         }
-        if (nextOffset <= offset + offsetof(StageReplayData, replayInputs) || nextOffset > static_cast<u32>(fileSize) ||
+        if (nextOffset <= offset + offsetof(StageReplayData, replayInputs) ||
+            nextOffset > static_cast<u32>(gameplayDataSize) ||
             (nextOffset - offset - offsetof(StageReplayData, replayInputs)) % sizeof(ReplayDataInput) != 0)
         {
             return ZUN_ERROR;

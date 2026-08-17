@@ -13,8 +13,8 @@ struct TrackDescriptor
     }
 
     char path[64];
-    char title[34];
-    char description[8][66];
+    char title[128];
+    char description[8][256];
 };
 
 struct MusicRoom

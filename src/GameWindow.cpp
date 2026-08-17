@@ -1,6 +1,8 @@
 #include "GameWindow.hpp"
 #include "AnmManager.hpp"
+#include "EaglerOptions.hpp"
 #include "GameErrorContext.hpp"
+#include "PracticeRuntime.hpp"
 #include "ScreenEffect.hpp"
 #include "SoundPlayer.hpp"
 #include "Stage.hpp"
@@ -9,6 +11,10 @@
 #include "graphics/Gles.hpp"
 #include "i18n.hpp"
 #include "utils.hpp"
+
+#ifdef TH_ENABLE_THPRAC
+#include "ThpracImGui.hpp"
+#endif
 
 #include <SDL3/SDL.h>
 #include <algorithm>
@@ -25,6 +31,18 @@ f64 g_LastFrameTime;
 f32 g_RenderAlpha = 1.0f;
 bool g_SuppressAnmAdvance = false;
 bool g_PresentationVsyncEnabled = false;
+
+#ifndef __EMSCRIPTEN__
+static f64 GetNativePresentationHz()
+{
+    SDL_DisplayID display = SDL_GetDisplayForWindow(g_GameWindow.window);
+    const SDL_DisplayMode *mode = display ? SDL_GetCurrentDisplayMode(display) : nullptr;
+    f64 hz = mode ? (f64)mode->refresh_rate : 0.0;
+    if (hz < 30.0 || hz > 1000.0)
+        hz = 60.0;
+    return hz;
+}
+#endif
 
 #ifdef TH_DEV_TOOLS
 f32 g_DevSpeedMultiplier = 1.0f;
@@ -56,7 +74,9 @@ RenderResult GameWindow::Render()
         // tick.  Otherwise WAV/OGG music stops as soon as the queued audio is
         // exhausted.
         g_SoundPlayer.PlaySounds();
+#ifndef __EMSCRIPTEN__
         SDL_Delay(16);
+#endif
         return RENDER_RESULT_KEEP_RUNNING;
     }
 
@@ -91,7 +111,14 @@ RenderResult GameWindow::Render()
     const f64 elapsed = static_cast<f64>(currentCounter - this->lastPerformanceCounter) /
                         static_cast<f64>(SDL_GetPerformanceFrequency());
     this->lastPerformanceCounter = currentCounter;
-    this->accumulator += std::clamp(elapsed, 0.0, 0.1);
+    const f64 clampedElapsed = std::clamp(elapsed, 0.0, 0.1);
+    this->accumulator += clampedElapsed;
+
+#ifdef __EMSCRIPTEN__
+    const bool limitPresentationTo60 = EaglerOptions::LimitPresentationTo60();
+#else
+    constexpr bool limitPresentationTo60 = false;
+#endif
 
 #ifdef TH_DEV_TOOLS
     // Developer fast-forward: run extra 60 Hz simulation passes proportional
@@ -104,22 +131,54 @@ RenderResult GameWindow::Render()
 #endif
 
     bool updated = false;
-    while (this->accumulator >= targetDt)
+    const auto runSimulationTick = [&]() -> i32
     {
         g_Supervisor.framerateMultiplier = 1.0f;
         g_Supervisor.effectiveFramerateMultiplier = 1.0f;
+#ifdef TH_ENABLE_THPRAC
+        PracticeRuntime::UpdateOverlay();
+#endif
         const i32 res = g_Chain.RunCalcChain();
+#ifdef TH_ENABLE_THCRAP
+        g_AnmManager->QueueThcrapSnapshotIfRequested();
+#endif
         g_SoundPlayer.PlaySounds();
-        if (res == 0)
+        return res;
+    };
+
+    if (limitPresentationTo60)
+    {
+        if (this->accumulator >= targetDt)
         {
-            return RENDER_RESULT_EXIT_SUCCESS;
+            // Original TH06's 60 Hz path consumes all overdue wall-clock
+            // intervals but runs the game chains only once. Do not let a late
+            // browser callback turn into two or three simulation steps before
+            // the next picture; fast bullets make that catch-up visibly jump.
+            do
+            {
+                this->accumulator -= targetDt;
+            } while (this->accumulator >= targetDt);
+
+            const i32 res = runSimulationTick();
+            if (res == 0)
+                return RENDER_RESULT_EXIT_SUCCESS;
+            if (res == -1)
+                return RENDER_RESULT_EXIT_ERROR;
+            updated = true;
         }
-        if (res == -1)
+    }
+    else
+    {
+        while (this->accumulator >= targetDt)
         {
-            return RENDER_RESULT_EXIT_ERROR;
+            const i32 res = runSimulationTick();
+            if (res == 0)
+                return RENDER_RESULT_EXIT_SUCCESS;
+            if (res == -1)
+                return RENDER_RESULT_EXIT_ERROR;
+            this->accumulator -= targetDt;
+            updated = true;
         }
-        this->accumulator -= targetDt;
-        updated = true;
     }
 
     // Scene callbacks can request a Supervisor state change after the
@@ -131,11 +190,38 @@ RenderResult GameWindow::Render()
     // this hand-off. Do the same until Supervisor has installed the new scene.
     if (g_Supervisor.wantedState != g_Supervisor.curState)
     {
+#ifndef __EMSCRIPTEN__
         SDL_Delay(1);
+#endif
         return RENDER_RESULT_KEEP_RUNNING;
     }
 
+#ifdef __EMSCRIPTEN__
+    // Simulation stays fixed at 60 Hz, while Web presentation normally follows
+    // requestAnimationFrame at the display refresh rate. The optional 60 FPS
+    // mode follows the original one-tick-per-picture behavior above and skips
+    // callbacks with no new simulation tick. With it off, 90/120/144 Hz
+    // catch-up + interpolation/presentation remains available.
+    if (limitPresentationTo60 && !updated)
+    {
+        return RENDER_RESULT_KEEP_RUNNING;
+    }
+#endif
+
     g_RenderAlpha = std::clamp(static_cast<f32>(this->accumulator / targetDt), 0.0f, 1.0f);
+#ifdef __EMSCRIPTEN__
+    // When presentation itself is capped to the fixed 60 Hz simulation ticks,
+    // there are no intermediate presentation frames to interpolate. Drawing a
+    // residual accumulator fraction here makes the retained frames alternate
+    // between different points inside the previous/current interval on 75/90/
+    // 120/144+ Hz requestAnimationFrame schedules, which visibly jitters moving
+    // objects. Match the original 60 Hz presentation semantics and draw the
+    // authoritative current simulation state on every retained frame.
+    if (limitPresentationTo60)
+    {
+        g_RenderAlpha = 1.0f;
+    }
+#endif
     if (g_GameManager.isInGameMenu || g_GameManager.isInRetryMenu)
     {
         g_RenderAlpha = 1.0f;
@@ -169,23 +255,38 @@ RenderResult GameWindow::Render()
     // window and cover the HUD. TH07 keeps its viewport authoritative and only
     // interpolates world/object coordinates, so do the same here.
     g_SuppressAnmAdvance = !updated;
+#ifdef TH_ENABLE_THPRAC
+    ThpracImGui::SetGameInput(g_CurFrameInput, updated);
+    // Upstream thprac builds its ImGui frame from TH06's 60 Hz update hook
+    // and only renders the resulting draw data from the render hook.  Do not
+    // advance ImGui again on presentation-only frames (180 Hz on high-refresh
+    // displays), otherwise UI timing/navigation runs faster than the game.
+    if (updated)
+        ThpracImGui::BeginFrame(static_cast<f32>(targetDt));
+#endif
     g_Chain.RunDrawChain();
     g_SuppressAnmAdvance = false;
     g_AnmManager->SetCurrentTexture(0);
     g_AnmManager->SetCurrentSprite(nullptr);
     g_AnmManager->FlushVertexBuffer();
+#ifdef TH_ENABLE_THPRAC
+    PracticeRuntime::DrawOverlay();
+    if (ThpracImGui::IsFrameOpen())
+        ThpracImGui::EndFrame();
+    static_cast<GlesGraphics *>(g_GfxBackend)->RenderImGui(ThpracImGui::GetDrawData());
+#endif
     g_GfxBackend->EndFrame();
     Present();
 
-    if (!g_PresentationVsyncEnabled)
+#ifndef __EMSCRIPTEN__
+    const f64 presentationHz = GetNativePresentationHz();
+    const u64 presentationFrameNs = (u64)(1000000000.0 / presentationHz);
+    const u64 elapsedNs = SDL_GetTicksNS() - renderStartNs;
+    if (elapsedNs < presentationFrameNs)
     {
-        constexpr u64 fallbackFrameNs = 1'000'000'000ull / 60ull;
-        const u64 elapsedNs = SDL_GetTicksNS() - renderStartNs;
-        if (elapsedNs < fallbackFrameNs)
-        {
-            SDL_DelayNS(fallbackFrameNs - elapsedNs);
-        }
+        SDL_DelayPrecise(presentationFrameNs - elapsedNs);
     }
+#endif
 
     return RENDER_RESULT_KEEP_RUNNING;
 }
@@ -202,6 +303,12 @@ void GameWindow::Present()
     // In D3D, this was done after the present call, but SDL makes no guarantees
     // about the color buffer state immediately after a swap, so it has to be moved to be before it
     g_AnmManager->TakeScreenshotIfRequested();
+#ifdef TH_ENABLE_THCRAP
+    // The P key itself is sampled at the 60 Hz calc breakpoint above. Read
+    // the completed portable backbuffer here, immediately before the swap,
+    // so double-buffered GLES does not return the cleared/old draw target.
+    g_AnmManager->TakeThcrapSnapshotIfRequested();
+#endif
     if (g_Supervisor.unk198 != 0)
     {
         g_Supervisor.unk198--;
@@ -420,6 +527,20 @@ ZunResult GameWindow::InitD3dRendering()
         g_GameErrorContext.Fatal(TH_ERR_D3D_INIT_FAILED);
         return ZUN_ERROR;
     }
+
+    // TH06 used this legacy capability bit to choose between two materially
+    // different bullet/popup draw paths.  The original Direct3D code set it
+    // when D3DCREATE_HARDWARE_VERTEXPROCESSING succeeded.  Our GLES backend
+    // always implements the corresponding model/view/projection transform
+    // path (whether the host GL implementation is backed by a physical GPU or
+    // a software rasterizer), so leaving the zero-initialized D3D bit unset
+    // incorrectly forces the old software-vertex fallback forever.
+    //
+    // This matters visibly for bullets: the normal path reaches Draw2/Draw3,
+    // which preserves sub-pixel positions for rotated sprites, while the
+    // fallback Draw() path rounds their center with rintf() every frame.
+    g_Supervisor.hasD3dHardwareVertexProcessing = 1;
+
     //    u8 using_d3d_hal;
     //    D3DPRESENT_PARAMETERS present_params;
     //    D3DDISPLAYMODE display_mode;

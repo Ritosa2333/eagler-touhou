@@ -7,6 +7,7 @@
 #include "GameManager.hpp"
 #include "Gui.hpp"
 #include "Player.hpp"
+#include "PracticeRuntime.hpp"
 #include "Rng.hpp"
 #include "utils.hpp"
 
@@ -221,7 +222,7 @@ i32 *GetVar(Enemy *enemy, EclVarId *eclVarId, EclValueType *valueType)
         return &enemy->life;
 
     case ECL_VAR_PLAYER_SHOT:
-        g_PlayerShot = g_GameManager.CharacterShotType();
+        g_PlayerShot = PracticeRuntime::EffectivePlayerShot(g_GameManager.CharacterShotType());
         if (valueType != NULL)
             *valueType = ECL_VALUE_TYPE_INT;
         return &g_PlayerShot;
@@ -530,9 +531,12 @@ void ExInsShootStarPattern(Enemy *enemy, EclRawInstr *instr)
 
 void ExInsPatchouliShottypeSetVars(Enemy *enemy, EclRawInstr *instr)
 {
-    enemy->currentContext.var1 = g_PatchouliShottypeVars[g_GameManager.character].shotVars[g_GameManager.shotType].var1;
-    enemy->currentContext.var2 = g_PatchouliShottypeVars[g_GameManager.character].shotVars[g_GameManager.shotType].var2;
-    enemy->currentContext.var3 = g_PatchouliShottypeVars[g_GameManager.character].shotVars[g_GameManager.shotType].var3;
+    const i32 shot = PracticeRuntime::EffectivePlayerShot(g_GameManager.CharacterShotType());
+    const i32 character = shot / 2;
+    const i32 shotType = shot % 2;
+    enemy->currentContext.var1 = g_PatchouliShottypeVars[character].shotVars[shotType].var1;
+    enemy->currentContext.var2 = g_PatchouliShottypeVars[character].shotVars[shotType].var2;
+    enemy->currentContext.var3 = g_PatchouliShottypeVars[character].shotVars[shotType].var3;
 }
 
 void ExInsStage56Func4(Enemy *enemy, EclRawInstr *instr)
@@ -1185,7 +1189,7 @@ void ExInsStageXFunc16(Enemy *enemy, EclRawInstr *instr)
     i32 remainingLife;
 
     remainingLife = enemy->life;
-    if (enemy->bossTimer >= MAX_BOSS_TIME)
+    if (PracticeRuntime::ForceFlandreFinalRage() || enemy->bossTimer >= MAX_BOSS_TIME)
     {
         remainingLife = 0;
     }

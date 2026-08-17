@@ -58,6 +58,27 @@ ChainCallbackResult MainMenu::OnUpdate(MainMenu *menu)
     ControllerMapping mappingData;
     f32 refreshRate;
 
+#ifdef TH_DEV_TOOLS
+    static bool debugMenuTraceInitialized = false;
+    static GameState debugLastGameState = STATE_STARTUP;
+    static i32 debugLastCursor = -1;
+    static u32 debugLastInput = 0;
+    const u32 debugInput = g_CurFrameInput & 0xffff;
+    if (!debugMenuTraceInitialized || debugLastGameState != menu->gameState || debugLastCursor != menu->cursor)
+    {
+        SDL_Log("TH06 menu trace: state=%d cursor=%d timer=%d idle=%d practice=%d difficulty=%d character=%d shot=%d input=0x%04x",
+                menu->gameState, menu->cursor, menu->stateTimer, menu->idleFrames,
+                g_GameManager.isInPracticeMode, g_GameManager.difficulty, g_GameManager.character,
+                g_GameManager.shotType, debugInput);
+        debugMenuTraceInitialized = true;
+        debugLastGameState = menu->gameState;
+        debugLastCursor = menu->cursor;
+    }
+    if (debugInput != 0 && debugInput != debugLastInput)
+        SDL_Log("TH06 menu input: state=%d input=0x%04x", menu->gameState, debugInput);
+    debugLastInput = debugInput;
+#endif
+
     for (AnmVm &vm : menu->vm)
     {
         vm.UpdatePrev();
@@ -808,7 +829,12 @@ ChainCallbackResult MainMenu::OnUpdate(MainMenu *menu)
     case STATE_PRACTICE_LVL_SELECT:
         if (PracticeRuntime::Enabled())
         {
-            if (menu->stateTimer == 0)
+            // TH06 increments stateTimer after the SHOT_SELECT transition,
+            // so the first real update of PRACTICE_LVL_SELECT observes 1.
+            // Upstream thprac opens THGuiPrac from the stage-selection entry
+            // hook itself; accepting only timer==0 misses that real entry and
+            // leaves the vanilla stage-selection state with no thprac window.
+            if (menu->stateTimer <= 1)
                 PracticeRuntime::OpenPracticeMenu(g_GameManager.difficulty, g_GameManager.CharacterShotType());
             switch (PracticeRuntime::PollPracticeMenu())
             {
@@ -824,6 +850,24 @@ ChainCallbackResult MainMenu::OnUpdate(MainMenu *menu)
                 for (i = 0; i < ARRAY_SIZE_SIGNED(menu->vm); i++)
                     menu->vm[i].pendingInterrupt = 13;
                 menu->vm[81 + g_GameManager.difficulty].pendingInterrupt = 0;
+                vmList = &menu->vm[86];
+                for (i = 0; i < 2; i++, vmList += 2)
+                {
+                    if (i != g_GameManager.character)
+                    {
+                        vmList[0].pendingInterrupt = 0;
+                        vmList[1].pendingInterrupt = 0;
+                    }
+                }
+                vmList = &menu->vm[92];
+                for (i = 0; i < 2; i++, vmList += 2)
+                {
+                    if (i != g_GameManager.character)
+                    {
+                        vmList[0].pendingInterrupt = 0;
+                        vmList[1].pendingInterrupt = 0;
+                    }
+                }
                 menu->cursor = g_GameManager.shotType;
                 g_SoundPlayer.PlaySoundByIdx(SOUND_BACK);
                 break;
@@ -941,6 +985,24 @@ ChainCallbackResult MainMenu::OnUpdate(MainMenu *menu)
     }
     return CHAIN_CALLBACK_RESULT_CONTINUE;
 }
+
+#ifdef TH_DEV_TOOLS
+ChainCallbackResult MainMenu::DebugStartStage1(MainMenu *menu)
+{
+    g_GameManager.difficulty = NORMAL;
+    g_GameManager.character = 0;
+    g_GameManager.shotType = 0;
+    g_GameManager.currentStage = 0;
+    g_GameManager.livesRemaining = g_Supervisor.cfg.lifeCount;
+    g_GameManager.bombsRemaining = g_Supervisor.cfg.bombCount;
+    g_GameManager.isInPracticeMode = 0;
+    g_GameManager.isInReplay = 0;
+    g_Supervisor.framerateMultiplier = 1.0f;
+    g_Supervisor.StopAudio();
+    g_Supervisor.curState = SUPERVISOR_STATE_GAMEMANAGER;
+    return CHAIN_CALLBACK_RESULT_CONTINUE_AND_REMOVE_JOB;
+}
+#endif
 
 CursorMovement MainMenu::MoveCursor(MainMenu *menu, i32 menuLength)
 {
@@ -1346,6 +1408,9 @@ i32 MainMenu::ReplayHandling()
                         this->replayFileData[replayFileIdx].header = replayData;
                         std::strcpy(this->replayFilePaths[replayFileIdx], replayFilePath);
                         std::sprintf(this->replayFileName[replayFileIdx], "No.%.2d", cur + 1);
+#ifdef TH_DEV_TOOLS
+                        SDL_Log("TH06 replay menu entry: index=%u path=%s", replayFileIdx, replayFilePath);
+#endif
                         replayFileIdx++;
                     }
                 }

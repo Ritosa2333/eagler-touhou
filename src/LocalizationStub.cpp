@@ -22,6 +22,24 @@ const char *Localization::SpellName(std::uint32_t, const char *fallback) { retur
 const char *Localization::StageName(std::uint32_t, const char *fallback) { return fallback; }
 const char *Localization::MusicTitle(std::uint32_t, const char *fallback) { return fallback; }
 const char *Localization::MusicComment(std::uint32_t, std::uint16_t, const char *fallback) { return fallback; }
+bool Localization::LookupAscii(const char *, AsciiEntryView &) { return false; }
+const char *Localization::AsciiString(const char *fallback) { return fallback; }
+const char *Localization::AsciiStringById(const char *, const char *fallback) { return fallback; }
+const char *Localization::StringById(const char *, const char *fallback) { return fallback; }
+const char *Localization::FormatStringById(const char *, const char *fallback) { return fallback; }
+const char *Localization::LogString(const char *fallback) { return fallback; }
+#if defined(TH_DEV_TOOLS) && defined(TH_ENABLE_THCRAP)
+bool Localization::DebugAsciiTableSelfTest() { return false; }
+bool Localization::DebugStringTableSelfTest() { return false; }
+#endif
+bool Localization::Active() { return false; }
+const char *Localization::FontFile() { return nullptr; }
+const char *Localization::FontName() { return nullptr; }
+bool Localization::ApplyStageTitleImage(AnmVm *, std::uint32_t) { return false; }
+bool Localization::StageLogoImageActive() { return false; }
+bool Localization::ApplyMusicTitleImage(AnmVm *, std::uint32_t, std::uint32_t) { return false; }
+bool Localization::ApplyBossTitleImage(AnmVm *, std::uint32_t) { return false; }
+bool Localization::ApplyBossNameImage(AnmVm *, std::uint32_t) { return false; }
 
 void Localization::CopyCodepointChunk(char *destination, std::size_t capacity, const char *source,
                                       std::size_t first, std::size_t maximum)

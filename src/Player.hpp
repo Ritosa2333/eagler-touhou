@@ -179,6 +179,7 @@ struct Player
     static ChainCallbackResult OnDrawLowPrio(Player *p);
     static ZunResult AddedCallback(Player *p);
     static ZunResult DeletedCallback(Player *p);
+    static void SyncRenderState(Player *p);
 
     static FireBulletResult FireSingleBullet(Player *, PlayerBullet *bullet, i32 bullet_idx, i32 framesSinceLastBullet,
                                              const CharacterPowerData *powerData);

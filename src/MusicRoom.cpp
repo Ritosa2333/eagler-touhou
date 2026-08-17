@@ -5,9 +5,51 @@
 #include "ChainPriorities.hpp"
 #include "Controller.hpp"
 #include "FileSystem.hpp"
+#include "Localization.hpp"
 #include "utils.hpp"
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
+namespace
+{
+void RenderDescription(MusicRoom *musicRoom)
+{
+    if (Localization::Active())
+    {
+        for (i32 line = 0; line < 8; line++)
+        {
+            AnmVm &textVm = musicRoom->descriptionSprites[line * 2];
+            AnmVm &unusedVm = musicRoom->descriptionSprites[line * 2 + 1];
+            const char *text = musicRoom->trackDescriptors[musicRoom->selectedSongIndex].description[line];
+            textVm.flags.flag1 = text[0] != '\0';
+            unusedVm.flags.flag1 = 0;
+            if (textVm.flags.flag1)
+                g_AnmManager->DrawVmTextFmt(&textVm, COLOR_MUSIC_ROOM_SONG_DESC_TEXT,
+                                            COLOR_MUSIC_ROOM_SONG_DESC_SHADOW, "%s", text);
+            textVm.pos = ZunVec3(96.0f, 320.0f + line * 16.0f, 0.0f);
+            textVm.flags.anchor = AnmVmAnchor_TopLeft;
+        }
+        return;
+    }
+
+    char lineCharBuffer[64];
+    for (i32 index = 0; index < ARRAY_SIZE_SIGNED(musicRoom->descriptionSprites); index++)
+    {
+        std::memset(lineCharBuffer, 0, sizeof(lineCharBuffer));
+        const char *description = musicRoom->trackDescriptors[musicRoom->selectedSongIndex].description[index / 2];
+        if (index % 2 == 0 || std::strlen(description) > 32)
+            std::memcpy(lineCharBuffer, description + (index % 2) * 32, 32);
+        musicRoom->descriptionSprites[index].flags.flag1 = lineCharBuffer[0] != '\0';
+        if (lineCharBuffer[0] != '\0')
+            g_AnmManager->DrawVmTextFmt(&musicRoom->descriptionSprites[index], COLOR_MUSIC_ROOM_SONG_DESC_TEXT,
+                                        COLOR_MUSIC_ROOM_SONG_DESC_SHADOW, "%s", lineCharBuffer);
+        musicRoom->descriptionSprites[index].pos =
+            ZunVec3((index % 2) * 248.0f + 96.0f, 320.0f + (index / 2) * 16.0f, 0.0f);
+        musicRoom->descriptionSprites[index].flags.anchor = AnmVmAnchor_TopLeft;
+    }
+}
+}
 
 ZunResult MusicRoom::CheckInputEnable()
 {
@@ -21,8 +63,6 @@ ZunResult MusicRoom::CheckInputEnable()
 
 bool MusicRoom::ProcessInput()
 {
-    i32 i;
-    char lineCharBuffer[64];
     i32 listPos;
 
     // This variable is never used after this?
@@ -68,33 +108,7 @@ bool MusicRoom::ProcessInput()
         this->selectedSongIndex = this->cursor;
         g_Supervisor.PlayAudio(this->trackDescriptors[this->selectedSongIndex].path);
 
-        // Update description to match newly selected song
-        for (i = 0; i < ARRAY_SIZE_SIGNED(this->descriptionSprites); i++)
-        {
-            std::memset(lineCharBuffer, 0, sizeof(lineCharBuffer));
-
-            if (i % 2 == 0 || std::strlen(this->trackDescriptors[this->selectedSongIndex].description[i / 2]) > 32)
-            {
-                std::memcpy(lineCharBuffer,
-                            &this->trackDescriptors[this->selectedSongIndex].description[i / 2][(i % 2) * 32], 32);
-            }
-
-            if (lineCharBuffer[0] != '\0')
-            {
-                this->descriptionSprites[i].flags.flag1 = 1;
-                g_AnmManager->DrawVmTextFmt(&this->descriptionSprites[i], COLOR_MUSIC_ROOM_SONG_DESC_TEXT,
-                                            COLOR_MUSIC_ROOM_SONG_DESC_SHADOW, lineCharBuffer);
-            }
-            else
-            {
-                this->descriptionSprites[i].flags.flag1 = 0;
-            }
-
-            this->descriptionSprites[i].pos.x = ((f32)(i % 2)) * 248.0f + 96.0f;
-            this->descriptionSprites[i].pos.y = 320.0f + ((i / 2) << 4);
-            this->descriptionSprites[i].pos.z = 0.0f;
-            this->descriptionSprites[i].flags.anchor = AnmVmAnchor_TopLeft;
-        }
+        RenderDescription(this);
     }
 
     if (WAS_PRESSED(TH_BUTTON_RETURNMENU))
@@ -238,7 +252,6 @@ ZunResult MusicRoom::AddedCallback(MusicRoom *musicRoom)
     char *currChar;
     char *fileBase;
     i32 i;
-    char lineCharBuffer[64];
     i32 lineIndex;
 
     if (g_AnmManager->LoadSurface(0, "data/result/music.jpg") != ZUN_SUCCESS)
@@ -365,44 +378,48 @@ ZunResult MusicRoom::AddedCallback(MusicRoom *musicRoom)
 finishMusiccmtRead:
     musicRoom->numDescriptors = i + 1;
 
+    if (Localization::Active())
+    {
+        for (i = 0; i < musicRoom->numDescriptors; i++)
+        {
+            const u32 track = static_cast<u32>(i + 1);
+            const char *title = Localization::MusicTitle(track, musicRoom->trackDescriptors[i].title);
+            Localization::CopyText(musicRoom->trackDescriptors[i].title,
+                                   sizeof(musicRoom->trackDescriptors[i].title), title);
+            for (lineIndex = 0; lineIndex < 8; lineIndex++)
+            {
+                const char *comment = Localization::MusicComment(
+                    track, static_cast<u16>(lineIndex), musicRoom->trackDescriptors[i].description[lineIndex]);
+                if (std::strcmp(comment, "@") == 0)
+                    std::snprintf(musicRoom->trackDescriptors[i].description[lineIndex],
+                                  sizeof(musicRoom->trackDescriptors[i].description[lineIndex]),
+                                  "No. %2u  %s", track, musicRoom->trackDescriptors[i].title);
+                else
+                    Localization::CopyText(musicRoom->trackDescriptors[i].description[lineIndex],
+                                           sizeof(musicRoom->trackDescriptors[i].description[lineIndex]), comment);
+            }
+        }
+    }
+
     for (i = 0; i < musicRoom->numDescriptors; i++)
     {
         g_AnmManager->InitializeAndSetSprite(&musicRoom->titleSprites[i], ANM_OFFSET_MUSIC01 + i);
         g_AnmManager->DrawVmTextFmt(&musicRoom->titleSprites[i], COLOR_MUSIC_ROOM_SONG_TITLE_TEXT,
-                                    COLOR_MUSIC_ROOM_SONG_TITLE_SHADOW, musicRoom->trackDescriptors[i].title);
+                                    COLOR_MUSIC_ROOM_SONG_TITLE_SHADOW, "%s",
+                                    musicRoom->trackDescriptors[i].title);
         musicRoom->titleSprites[i].pos.x = 93.0f;
         musicRoom->titleSprites[i].pos.y = 104.0f + ((i + 1) * 18) - 20.0f;
         musicRoom->titleSprites[i].pos.z = 0.0f;
         musicRoom->titleSprites[i].flags.anchor = AnmVmAnchor_TopLeft;
     }
 
-    // Two sprites are used for each line, with a split at the 32nd byte
+    // Vanilla uses two sprites per line, split at byte 32. Localized UTF-8 text
+    // uses one wide sprite per line, matching thcrap's widened text surface.
     for (i = 0; i < ARRAY_SIZE_SIGNED(musicRoom->descriptionSprites); i++)
     {
         g_AnmManager->InitializeAndSetSprite(&musicRoom->descriptionSprites[i], ANM_SCRIPT_TEXT_MUSIC_ROOM_DESC + i);
-        std::memset(lineCharBuffer, 0, sizeof(lineCharBuffer));
-
-        if (i % 2 == 0 || strlen(musicRoom->trackDescriptors[musicRoom->selectedSongIndex].description[i / 2]) > 32)
-        {
-            memcpy(lineCharBuffer, &musicRoom->trackDescriptors[0].description[i / 2][(i % 2) * 32], 32);
-        }
-
-        if (lineCharBuffer[0] != '\0')
-        {
-            musicRoom->descriptionSprites[i].flags.flag1 = 1;
-            g_AnmManager->DrawVmTextFmt(&musicRoom->descriptionSprites[i], COLOR_MUSIC_ROOM_SONG_DESC_TEXT,
-                                        COLOR_MUSIC_ROOM_SONG_DESC_SHADOW, lineCharBuffer);
-        }
-        else
-        {
-            musicRoom->descriptionSprites[i].flags.flag1 = 0;
-        }
-
-        musicRoom->descriptionSprites[i].pos.x = ((f32)(i % 2)) * 248.0f + 96.0f;
-        musicRoom->descriptionSprites[i].pos.y = 320.0f + ((i / 2) << 4);
-        musicRoom->descriptionSprites[i].pos.z = 0.0f;
-        musicRoom->descriptionSprites[i].flags.anchor = AnmVmAnchor_TopLeft;
     }
+    RenderDescription(musicRoom);
 
     std::free(fileBase);
 
@@ -411,7 +428,7 @@ finishMusiccmtRead:
 
 ZunResult MusicRoom::DeletedCallback(MusicRoom *musicRoom)
 {
-    delete musicRoom->trackDescriptors;
+    delete[] musicRoom->trackDescriptors;
     musicRoom->trackDescriptors = NULL;
 
     g_AnmManager->ReleaseSurface(0);

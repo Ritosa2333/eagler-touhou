@@ -8,6 +8,7 @@
 #include "GameWindow.hpp"
 #include "Gui.hpp"
 #include "Player.hpp"
+#include "PracticeRuntime.hpp"
 #include "Rng.hpp"
 #include "utils.hpp"
 
@@ -755,12 +756,35 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
             }
         }
         Enemy::UpdateEffects(curEnemy);
-        if (g_GameManager.isTimeStopped == 0)
+        if (g_GameManager.isTimeStopped == 0 && !PracticeRuntime::OverlayTimeLock())
         {
             curEnemy->bossTimer.Tick();
         }
     }
-    mgr->timelineTime.Tick();
+    bool freezeTimeline = false;
+    if (PracticeRuntime::OverlayTimeLock())
+    {
+        // Upstream TH06 mTimeLock uses currentStage-1 here because gameplay
+        // increments GameManager::currentStage before the calc chain starts.
+        const u32 stageIndex = static_cast<u32>(g_GameManager.currentStage - 1);
+        if (stageIndex < 5 && stageIndex != 2)
+        {
+            static constexpr i32 midStart[5] = {2008, 2588, 0, 4132, 3374};
+            static constexpr i32 midLength[5] = {(24 + 24) * 60, 32 * 60, 0, 40 * 60, (40 + 30) * 60};
+            static constexpr i32 midExtraWait[5] = {4 * 60, 15 * 60, 0, 12 * 60, 5 * 60};
+            const bool bossExists = g_Gui.BossPresent();
+            const i32 curTime = mgr->timelineTime.current;
+            if (bossExists && curTime >= midStart[stageIndex] &&
+                curTime < midStart[stageIndex] + midLength[stageIndex])
+            {
+                freezeTimeline = true;
+                if (curTime < midStart[stageIndex] + midExtraWait[stageIndex])
+                    mgr->timelineTime.SetCurrent(midStart[stageIndex] + midExtraWait[stageIndex]);
+            }
+        }
+    }
+    if (!freezeTimeline)
+        mgr->timelineTime.Tick();
     return CHAIN_CALLBACK_RESULT_CONTINUE;
 }
 

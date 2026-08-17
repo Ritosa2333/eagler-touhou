@@ -185,12 +185,18 @@ struct AnmManager
 
     ZunResult CreateEmptyTexture(i32 textureIdx, u32 width, u32 height, i32 textureFormat);
     ZunResult LoadTexture(i32 textureIdx, const char *textureName, i32 textureFormat, ZunColor colorKey,
-                          bool isExternalResource = false);
+                          bool isExternalResource = false, bool clearTransparentRgb = false,
+                          bool allowRuntimeOverride = true);
     ZunResult LoadEmbeddedTexture(i32 textureIdx, const AnmRawEntry *entry);
-    ZunResult LoadTextureAlphaChannel(i32 textureIdx, const char *textureName, i32 textureFormat, ZunColor colorKey);
+    ZunResult LoadTextureAlphaChannel(i32 textureIdx, const char *textureName, i32 textureFormat, ZunColor colorKey,
+                                      bool allowRuntimeOverride = true);
     void ReleaseTexture(i32 textureIdx);
     void TakeScreenshotIfRequested();
     void TakeScreenshot(i32 textureId, i32 left, i32 top, i32 width, i32 height);
+#ifdef TH_ENABLE_THCRAP
+    void QueueThcrapSnapshotIfRequested();
+    void TakeThcrapSnapshotIfRequested();
+#endif
 
     void SetAndExecuteScript(AnmVm *vm, const AnmRawInstr *beginingOfScript);
     void SetAndExecuteScriptIdx(AnmVm *vm, i32 anmFileIdx)
@@ -408,6 +414,7 @@ struct AnmManager
 
     void LoadSprite(u32 spriteIdx, const AnmLoadedSprite *sprite);
     ZunResult SetActiveSprite(AnmVm *vm, u32 spriteIdx);
+    void SetActiveSpriteWidth(AnmVm *vm, f32 widthPx);
 
     void ReleaseSurfaces(void);
     ZunResult LoadSurface(i32 surfaceIdx, const char *path);
@@ -444,7 +451,8 @@ struct AnmManager
     }
 
     static SDL_Surface *LoadToSurfaceWithFormat(const char *filename, SDL_PixelFormat format, u8 **fileData,
-                                                ZunColor colorKey = 0, bool isExternalResource = false);
+                                                ZunColor colorKey = 0, bool isExternalResource = false,
+                                                bool allowRuntimeOverride = true);
     static u8 *ExtractSurfacePixels(SDL_Surface *src, u8 pixelDepth);
     void ApplySurfaceToColorBuffer(SDL_Surface *src, const SDL_Rect &srcRect, const SDL_Rect &dstRect);
     // Creates, binds, and set parameters for a new texture

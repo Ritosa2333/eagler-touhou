@@ -8,13 +8,18 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(TH_EXTERNAL_ASSETS "Do not bundle original game assets" OFF)
 option(TH_DEV_TOOLS "Enable developer-only tools (e.g. F5 logic fast-forward). Keep OFF in release builds." OFF)
-option(TH_WEB_SHARED_FONT "Let the Web host install msgothic.ttc instead of embedding it" OFF)
+option(TH_WEB_SHARED_FONT "Let the Web host install runtime fonts instead of embedding them" OFF)
 option(TH_ENABLE_THPRAC "Build the archived thprac integration" OFF)
 option(TH_ENABLE_THCRAP "Build the archived thcrap localization integration" OFF)
+set(THPRAC_IMGUI_ROOT "${CMAKE_SOURCE_DIR}/../thprac-reallyportable/thprac/src/3rdParties/ImGui" CACHE PATH "Dear ImGui 1.82 source used by the optional desktop thprac integration")
 set(TH_WEB_MUSIC "BASE" CACHE STRING "Bundled Web music payload: BASE, MIDI, WAV, or OGG")
 set_property(CACHE TH_WEB_MUSIC PROPERTY STRINGS BASE MIDI WAV OGG)
 set(TH06_ASSET_ROOT "${CMAKE_SOURCE_DIR}/assets" CACHE PATH "TH06 original asset directory")
 set(TH06_OGG_ROOT "${CMAKE_SOURCE_DIR}/assets-ogg" CACHE PATH "TH06 generated OGG asset directory")
+set(TH_UNIFONT_FILE "${CMAKE_SOURCE_DIR}/../dependencies/unifont-15.1.05/unifont-15.1.05.otf" CACHE FILEPATH "GNU Unifont OTF used by localized text and thprac")
+if((TH_ENABLE_THCRAP OR TH_ENABLE_THPRAC) AND NOT EXISTS "${TH_UNIFONT_FILE}")
+    message(FATAL_ERROR "GNU Unifont is required: ${TH_UNIFONT_FILE}")
+endif()
 
 # Keep this list explicit so source additions are visible in upstream review.
 set(TH06_SOURCES
@@ -65,6 +70,21 @@ set(TH06_SOURCES
 
 if(TH_ENABLE_THPRAC)
     list(APPEND TH06_SOURCES src/PracticeRuntime.cpp)
+    if(NOT EXISTS "${THPRAC_IMGUI_ROOT}/imgui.cpp" OR NOT EXISTS "${THPRAC_IMGUI_ROOT}/imgui.h")
+        message(FATAL_ERROR "TH_ENABLE_THPRAC requires Dear ImGui sources at ${THPRAC_IMGUI_ROOT}")
+    endif()
+    # Use the exact ImGui core shipped with the pinned thprac source.  The
+    # renderer/platform backends are intentionally implemented by Eagler so
+    # the game remains same-process and does not inherit the old Win32/DX9
+    # injection boundary.
+    list(APPEND TH06_SOURCES
+        src/ThpracImGui.cpp
+        "${THPRAC_IMGUI_ROOT}/imgui.cpp"
+        "${THPRAC_IMGUI_ROOT}/imgui_draw.cpp"
+        "${THPRAC_IMGUI_ROOT}/imgui_freetype.cpp"
+        "${THPRAC_IMGUI_ROOT}/imgui_tables.cpp"
+        "${THPRAC_IMGUI_ROOT}/imgui_widgets.cpp"
+    )
 else()
     list(APPEND TH06_SOURCES src/PracticeRuntimeStub.cpp)
 endif()
@@ -107,9 +127,25 @@ else()
     add_executable(th06 ${TH06_SOURCES})
     set(TH_EXEC_NAME th06)
 endif()
+if(NOT EMSCRIPTEN AND NOT ANDROID AND NOT APPLE)
+    add_custom_command(TARGET ${TH_EXEC_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${TH06_ASSET_ROOT}/msgothic.ttc" "$<TARGET_FILE_DIR:${TH_EXEC_NAME}>/msgothic.ttc"
+        VERBATIM)
+    if(TH_ENABLE_THCRAP OR TH_ENABLE_THPRAC)
+        add_custom_command(TARGET ${TH_EXEC_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${TH_UNIFONT_FILE}" "$<TARGET_FILE_DIR:${TH_EXEC_NAME}>/unifont.otf"
+            VERBATIM)
+    endif()
+endif()
 target_include_directories(${TH_EXEC_NAME} PRIVATE src src/pbg3)
 if(TH_ENABLE_THPRAC)
     target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_ENABLE_THPRAC)
+    target_compile_definitions(${TH_EXEC_NAME} PRIVATE
+        IMGUI_DISABLE_WIN32_FUNCTIONS
+    )
+    target_include_directories(${TH_EXEC_NAME} PRIVATE "${THPRAC_IMGUI_ROOT}")
 endif()
 if(TH_ENABLE_THCRAP)
     target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_ENABLE_THCRAP)
@@ -146,6 +182,7 @@ if(EMSCRIPTEN)
         --use-preload-cache
         --shell-file "${CMAKE_SOURCE_DIR}/resources/shell.html"
     )
+    set_property(TARGET th06 APPEND PROPERTY LINK_DEPENDS "${CMAKE_SOURCE_DIR}/resources/shell.html")
     if(NOT TH_EXTERNAL_ASSETS)
         set(TH06_WEB_ASSET_STAGE "${CMAKE_BINARY_DIR}/web-assets-${TH_WEB_MUSIC}")
         file(REMOVE_RECURSE "${TH06_WEB_ASSET_STAGE}")
@@ -161,15 +198,18 @@ if(EMSCRIPTEN)
         if(EXISTS "${TH06_ASSET_ROOT}/eagler-hitbox.png")
             list(APPEND TH06_WEB_BASE_ASSETS eagler-hitbox.png)
         endif()
-        if(NOT TH_WEB_SHARED_FONT)
-            list(APPEND TH06_WEB_BASE_ASSETS msgothic.ttc)
-        endif()
         foreach(asset IN LISTS TH06_WEB_BASE_ASSETS)
             if(NOT EXISTS "${TH06_ASSET_ROOT}/${asset}")
                 message(FATAL_ERROR "Missing Web asset: ${TH06_ASSET_ROOT}/${asset}")
             endif()
             file(COPY_FILE "${TH06_ASSET_ROOT}/${asset}" "${TH06_WEB_ASSET_STAGE}/${asset}")
         endforeach()
+        if(NOT TH_WEB_SHARED_FONT)
+            file(COPY_FILE "${TH06_ASSET_ROOT}/msgothic.ttc" "${TH06_WEB_ASSET_STAGE}/msgothic.ttc")
+            if(TH_ENABLE_THCRAP OR TH_ENABLE_THPRAC)
+                file(COPY_FILE "${TH_UNIFONT_FILE}" "${TH06_WEB_ASSET_STAGE}/unifont.otf")
+            endif()
+        endif()
 
         if(TH_WEB_MUSIC STREQUAL "WAV")
             if(NOT EXISTS "${TH06_ASSET_ROOT}/bgm")
@@ -232,6 +272,19 @@ if(TH_USE_VENDORED_SDL)
     add_subdirectory(vendored/SDL_ttf EXCLUDE_FROM_ALL)
 endif()
 
+if(TH_ENABLE_THPRAC AND TH_USE_VENDORED_SDL)
+    if(NOT TARGET Freetype::Freetype)
+        message(FATAL_ERROR "TH_ENABLE_THPRAC requires the vendored Freetype target for ImGui's pinned FreeType atlas builder")
+    endif()
+    # The archived ImGui configuration enables its FreeType builder. SDL_ttf
+    # keeps that dependency private, so expose the same vendored target only
+    # to the optional thprac build.
+    target_include_directories(${TH_EXEC_NAME} PRIVATE
+        $<TARGET_PROPERTY:Freetype::Freetype,INTERFACE_INCLUDE_DIRECTORIES>
+    )
+    target_link_libraries(${TH_EXEC_NAME} PRIVATE Freetype::Freetype)
+endif()
+
 target_link_libraries(${TH_EXEC_NAME} PRIVATE SDL3::SDL3 SDL3_image::SDL3_image SDL3_ttf::SDL3_ttf)
 
 if(TH06_MIDI_ALSA)
@@ -255,6 +308,9 @@ if(APPLE)
         "${CMAKE_SOURCE_DIR}/assets/紅魔郷ST.DAT"
         "${CMAKE_SOURCE_DIR}/assets/紅魔郷TL.DAT"
     )
+    if(TH_ENABLE_THCRAP OR TH_ENABLE_THPRAC)
+        list(APPEND TH06_APP_RESOURCES "${TH_UNIFONT_FILE}")
+    endif()
     file(GLOB TH06_BGM_RESOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/assets/bgm/*")
     if(NOT TH_EXTERNAL_ASSETS)
         target_sources(${TH_EXEC_NAME} PRIVATE ${TH06_APP_RESOURCES} ${TH06_BGM_RESOURCES})
@@ -282,6 +338,9 @@ if(WIN32 AND NOT EMSCRIPTEN)
         "${TH_MESA_ROOT}/mesa-devel/lib/x64/libGLESv2.dll.a"
         winmm
     )
+    if(TH_ENABLE_THCRAP)
+        target_link_libraries(${TH_EXEC_NAME} PRIVATE gdi32)
+    endif()
 elseif(ANDROID)
     target_link_libraries(${TH_EXEC_NAME} PRIVATE GLESv3)
 elseif(APPLE)

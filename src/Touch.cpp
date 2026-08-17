@@ -72,6 +72,40 @@ void GetWindowSize(i32 *w, i32 *h)
     }
 }
 
+f32 GetSwipeThreshold();
+
+bool ReleaseMenuGestureFinger(SDL_FingerID id)
+{
+    if (!g_MenuGesture.active)
+    {
+        return false;
+    }
+
+    const bool primaryReleased = id == g_MenuGesture.primaryId;
+    const bool multiFingerGesture = g_MenuGesture.maxFingers >= 2;
+    if (!primaryReleased && !multiFingerGesture)
+    {
+        return false;
+    }
+
+    f32 dx = g_MenuGesture.currentX - g_MenuGesture.startX;
+    f32 dy = g_MenuGesture.currentY - g_MenuGesture.startY;
+
+    if (std::abs(dx) <= GetSwipeThreshold() && std::abs(dy) <= GetSwipeThreshold())
+    {
+        g_MenuGesture.pendingButton =
+            multiFingerGesture ? TH_BUTTON_RETURNMENU : TH_BUTTON_SELECTMENU;
+    }
+
+    // A menu gesture used to be released only by primaryId. If a two-finger
+    // gesture delivered the secondary UP first and the primary UP was lost,
+    // active stayed true forever and every later touch was attached to that
+    // stale gesture. Any participating UP now terminates a multi-finger
+    // gesture, while single-finger taps still require their primary finger.
+    g_MenuGesture.active = false;
+    return true;
+}
+
 void GetContainedRenderRect(f32 *outX, f32 *outY, f32 *outW, f32 *outH, f32 *outScale)
 {
     i32 winW, winH;
@@ -192,6 +226,26 @@ void ClearGameplayFingers()
     g_NumActiveGameplayFingers = 0;
 }
 
+void ReleaseGameplayFingerState(SDL_FingerID id)
+{
+    RemoveGameplayFinger(id);
+
+    if (IsFinger(g_DialogueHoldFinger, id))
+    {
+        ReleaseFinger(&g_DialogueHoldFinger);
+    }
+    if (IsFinger(g_MoveFinger, id))
+    {
+        ReleaseFinger(&g_MoveFinger);
+        g_AccumDx = 0.0f;
+        g_AccumDy = 0.0f;
+    }
+    if (IsFinger(g_FocusFinger, id))
+    {
+        ReleaseFinger(&g_FocusFinger);
+    }
+}
+
 void Touch::ResetRunUsage()
 {
     g_UsedThisRun = false;
@@ -221,6 +275,7 @@ void Touch::CancelTouches()
     g_PausePending = false;
     g_BombPending = false;
     g_BombedWithTouch = false;
+    g_MenuGesture = {};
 }
 
 void Touch::FingerDown(const SDL_TouchFingerEvent &f)
@@ -229,6 +284,16 @@ void Touch::FingerDown(const SDL_TouchFingerEvent &f)
     {
         return;
     }
+
+    // Browser/SDL touch backends can legitimately synthesize a new DOWN for an
+    // id whose previous UP/CANCELED was lost. Match SDL's own duplicate-touch
+    // recovery semantics by clearing any stale role held by this id first.
+    if (HasGameplayFinger(f.fingerID) || IsFinger(g_MoveFinger, f.fingerID) ||
+        IsFinger(g_FocusFinger, f.fingerID) || IsFinger(g_DialogueHoldFinger, f.fingerID))
+    {
+        ReleaseGameplayFingerState(f.fingerID);
+    }
+
     f32 px, py;
     FingerToWindowPx(f, &px, &py);
 
@@ -288,7 +353,7 @@ void Touch::FingerDown(const SDL_TouchFingerEvent &f)
             return;
         }
 
-        if (!g_FocusFinger.active && f.fingerID != g_MoveFinger.id)
+        if (EaglerOptions::TouchFocusUsesTwoFingers() && !g_FocusFinger.active && f.fingerID != g_MoveFinger.id)
         {
             AssignFinger(&g_FocusFinger, f.fingerID, px, py);
             g_UsedThisRun = true;
@@ -301,50 +366,22 @@ void Touch::FingerUp(const SDL_TouchFingerEvent &f)
 {
     if (!EaglerOptions::TouchEnabled())
     {
+        // Never leave a latched gameplay role behind merely because touch was
+        // disabled between DOWN and UP.
+        ReleaseGameplayFingerState(f.fingerID);
         return;
     }
     f32 px, py;
     FingerToWindowPx(f, &px, &py);
 
+    // Cleanup must be keyed by the finger that ended, not by the game mode at
+    // the instant the UP arrives. A state transition between DOWN and UP used
+    // to route the event into the menu branch and leave move/focus latched.
+    ReleaseGameplayFingerState(f.fingerID);
+
     if (!IsGameplayTouchMode())
     {
-        if (g_MenuGesture.active && f.fingerID == g_MenuGesture.primaryId)
-        {
-            f32 dx = g_MenuGesture.currentX - g_MenuGesture.startX;
-            f32 dy = g_MenuGesture.currentY - g_MenuGesture.startY;
-
-            if (std::abs(dx) <= GetSwipeThreshold() && std::abs(dy) <= GetSwipeThreshold())
-            {
-                if (g_MenuGesture.maxFingers >= 2)
-                {
-                    g_MenuGesture.pendingButton = TH_BUTTON_RETURNMENU;
-                }
-                else
-                {
-                    g_MenuGesture.pendingButton = TH_BUTTON_SELECTMENU;
-                }
-            }
-
-            g_MenuGesture.active = false;
-        }
-    }
-    else
-    {
-        RemoveGameplayFinger(f.fingerID);
-        if (IsFinger(g_DialogueHoldFinger, f.fingerID))
-        {
-            ReleaseFinger(&g_DialogueHoldFinger);
-        }
-        if (IsFinger(g_MoveFinger, f.fingerID))
-        {
-            ReleaseFinger(&g_MoveFinger);
-            g_AccumDx = 0.0f;
-            g_AccumDy = 0.0f;
-        }
-        if (IsFinger(g_FocusFinger, f.fingerID))
-        {
-            ReleaseFinger(&g_FocusFinger);
-        }
+        ReleaseMenuGestureFinger(f.fingerID);
     }
 }
 
@@ -480,7 +517,8 @@ u16 Touch::GetButtonBits()
         g_UsedThisRun = true;
     }
 
-    if (g_FocusFinger.active)
+    if ((EaglerOptions::TouchFocusUsesTwoFingers() && g_FocusFinger.active) ||
+        (EaglerOptions::TouchFocusButtonEnabled() && IsGameplayTouchMode()))
     {
         buttons |= TH_BUTTON_FOCUS;
     }
@@ -503,7 +541,9 @@ u16 Touch::GetButtonBits()
 
 bool Touch::IsFocus()
 {
-    return EaglerOptions::TouchEnabled() && g_FocusFinger.active;
+    return EaglerOptions::TouchEnabled() &&
+           ((EaglerOptions::TouchFocusUsesTwoFingers() && g_FocusFinger.active) ||
+            (EaglerOptions::TouchFocusButtonEnabled() && IsGameplayTouchMode()));
 }
 
 bool Touch::IsUnlimited()
@@ -538,6 +578,54 @@ void Touch::ConsumePlayerDelta(f32 dx, f32 dy)
     g_AccumDy -= dy;
 }
 
+#ifdef TH_DEV_TOOLS
+bool Touch::DebugStateSelfTest()
+{
+    Touch::CancelTouches();
+
+    g_MoveFinger = {true, 101, 10.0f, 20.0f, 0, 0};
+    g_FocusFinger = {true, 202, 30.0f, 40.0f, 0, 0};
+    g_DialogueHoldFinger = {true, 303, 50.0f, 60.0f, 0, 0};
+    g_ActiveGameplayFingerIds[0] = 101;
+    g_ActiveGameplayFingerIds[1] = 202;
+    g_ActiveGameplayFingerIds[2] = 303;
+    g_NumActiveGameplayFingers = 3;
+    g_AccumDx = 7.0f;
+    g_AccumDy = -5.0f;
+
+    ReleaseGameplayFingerState(202);
+    const bool focusReleasedOnly =
+        !g_FocusFinger.active && g_MoveFinger.active && g_DialogueHoldFinger.active &&
+        g_NumActiveGameplayFingers == 2 && !HasGameplayFinger(202);
+
+    ReleaseGameplayFingerState(101);
+    const bool moveReleasedAndDeltaCleared =
+        !g_MoveFinger.active && g_AccumDx == 0.0f && g_AccumDy == 0.0f &&
+        g_NumActiveGameplayFingers == 1 && !HasGameplayFinger(101);
+
+    ReleaseGameplayFingerState(303);
+    const bool dialogueReleased =
+        !g_DialogueHoldFinger.active && g_NumActiveGameplayFingers == 0;
+
+    g_MenuGesture = {true, 401, 100.0f, 100.0f, 100.0f, 100.0f, 2, 0};
+    const bool secondaryEndedTwoFingerMenuGesture =
+        ReleaseMenuGestureFinger(402) && !g_MenuGesture.active &&
+        g_MenuGesture.pendingButton == TH_BUTTON_RETURNMENU;
+
+    g_MenuGesture = {true, 501, 120.0f, 120.0f, 120.0f, 120.0f, 1, 0};
+    const bool unrelatedFingerDoesNotEndSingleFingerGesture =
+        !ReleaseMenuGestureFinger(502) && g_MenuGesture.active && g_MenuGesture.pendingButton == 0;
+    const bool primaryEndsSingleFingerGesture =
+        ReleaseMenuGestureFinger(501) && !g_MenuGesture.active &&
+        g_MenuGesture.pendingButton == TH_BUTTON_SELECTMENU;
+
+    Touch::CancelTouches();
+    return focusReleasedOnly && moveReleasedAndDeltaCleared && dialogueReleased &&
+           secondaryEndedTwoFingerMenuGesture && unrelatedFingerDoesNotEndSingleFingerGesture &&
+           primaryEndsSingleFingerGesture;
+}
+#endif
+
 #ifdef __EMSCRIPTEN__
 // SDL only reports touches that begin on its canvas. The Web shell forwards
 // touches from the surrounding letterbox through these equivalent entry points.
@@ -571,5 +659,10 @@ extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchUp(i32 id, f32 x, f32 y)
     event.x = x;
     event.y = y;
     Touch::FingerUp(event);
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchCancelAll()
+{
+    Touch::CancelTouches();
 }
 #endif

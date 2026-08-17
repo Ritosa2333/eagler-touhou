@@ -4,6 +4,10 @@
 #include <cstdlib>
 #include <cstring>
 
+#ifdef TH_DEV_TOOLS
+#include <SDL3/SDL_log.h>
+#endif
+
 #include "AnmManager.hpp"
 #include "AsciiManager.hpp"
 #include "Chain.hpp"
@@ -11,11 +15,18 @@
 #include "FileSystem.hpp"
 #include "GameManager.hpp"
 #include "GameWindow.hpp"
+#include "Localization.hpp"
 #include "Player.hpp"
+#include "PracticeRuntime.hpp"
 #include "SoundPlayer.hpp"
 #include "Stage.hpp"
+#include "TextHelper.hpp"
 #include "ZunColor.hpp"
 #include "utils.hpp"
+
+#ifdef TH_DEV_TOOLS
+static bool g_DebugDialogueFastForward = false;
+#endif
 
 Gui g_Gui;
 static ChainElem g_GuiCalcChain;
@@ -262,19 +273,70 @@ void Gui::ShowBombNamePortrait(u32 sprite, const char *bombName)
     g_AnmManager->SetAndExecuteScriptIdx(&this->impl->playerSpellcardPortrait, 0x4a1);
     g_AnmManager->SetActiveSprite(&this->impl->playerSpellcardPortrait, sprite);
     g_AnmManager->SetAndExecuteScriptIdx(&this->impl->bombSpellcardName, 0x706);
-    g_AnmManager->DrawVmTextFmt(&this->impl->bombSpellcardName, 0xf0f0ff, 0x0, bombName);
-    this->bombSpellcardBarLength = std::strlen(bombName) * 0xf / 2.0f + 16;
+    if (Localization::Active())
+    {
+        // The same thcrap spell_width patch covers player bomb names.
+        const f32 spriteWidth = std::min(TextHelper::MeasureTextWidth(bombName,
+                                                                      this->impl->bombSpellcardName.fontHeight) +
+                                                 4.0f,
+                                             this->impl->bombSpellcardName.sprite->textureWidth);
+        g_AnmManager->SetActiveSpriteWidth(&this->impl->bombSpellcardName, spriteWidth);
+        g_AnmManager->DrawVmTextFmt(&this->impl->bombSpellcardName, 0xf0f0ff, 0x0, "%s", bombName);
+        this->bombSpellcardBarLength = spriteWidth + 16.0f;
+#ifdef TH_DEV_TOOLS
+        SDL_Log("TH06 thcrap bomb geometry: text=%s measuredWidth=%.3f textureWidth=%.3f spriteWidth=%.3f bar=%.3f",
+                bombName, static_cast<double>(TextHelper::MeasureTextWidth(bombName,
+                                                                          this->impl->bombSpellcardName.fontHeight)),
+                static_cast<double>(this->impl->bombSpellcardName.sprite->textureWidth),
+                static_cast<double>(spriteWidth), static_cast<double>(this->bombSpellcardBarLength));
+#endif
+    }
+    else
+    {
+        g_AnmManager->DrawVmTextFmt(&this->impl->bombSpellcardName, 0xf0f0ff, 0x0, "%s", bombName);
+        this->bombSpellcardBarLength = std::strlen(bombName) * 0xf / 2.0f + 16.0f;
+    }
     g_Supervisor.unk198 = 3;
     g_SoundPlayer.PlaySoundByIdx(SOUND_BOMB);
 }
 
-void Gui::ShowSpellcard(i32 spellcardSprite, const char *spellcardName)
+void Gui::ShowSpellcard(i32 spellcardSprite, i32 spellcardId, const char *spellcardName)
 {
+    const char *displayName = Localization::SpellName(static_cast<u32>(spellcardId), spellcardName);
     g_AnmManager->SetAndExecuteScriptIdx(&this->impl->enemySpellcardPortrait, ANM_SCRIPT_FACE_ENEMY_SPELLCARD_PORTRAIT);
     g_AnmManager->SetActiveSprite(&this->impl->enemySpellcardPortrait, ANM_SPRITE_FACE_STAGE_START + spellcardSprite);
     g_AnmManager->SetAndExecuteScriptIdx(&this->impl->enemySpellcardName, ANM_SCRIPT_TEXT_ENEMY_SPELLCARD_NAME);
-    g_AnmManager->DrawStringFormat(&this->impl->enemySpellcardName, 0xfff0f0, COLOR_RGB(COLOR_BLACK), spellcardName);
-    this->blueSpellcardBarLength = std::strlen(spellcardName) * 15 / 2.0f + 16.0f;
+    if (Localization::Active())
+    {
+        // thcrap's TH06 spell_width patch reduces the shared text sprite to
+        // min(measured width + 4, texture width), and its
+        // spell_draw_leftaligned patch then renders from that sprite's left
+        // edge. The surrounding bar is 16 pixels wider than the reduced
+        // sprite. Keeping these three values coupled is what makes the name
+        // and background animate as one element.
+        const f32 spriteWidth = std::min(TextHelper::MeasureTextWidth(displayName,
+                                                                      this->impl->enemySpellcardName.fontHeight) +
+                                                 4.0f,
+                                             this->impl->enemySpellcardName.sprite->textureWidth);
+        g_AnmManager->SetActiveSpriteWidth(&this->impl->enemySpellcardName, spriteWidth);
+        g_AnmManager->DrawVmTextFmt(&this->impl->enemySpellcardName, 0xfff0f0, COLOR_RGB(COLOR_BLACK), "%s",
+                                    displayName);
+        this->blueSpellcardBarLength = spriteWidth + 16.0f;
+#ifdef TH_DEV_TOOLS
+        SDL_Log("TH06 thcrap spell geometry: id=%d text=%s measuredWidth=%.3f textureWidth=%.3f spriteWidth=%.3f bar=%.3f",
+                spellcardId, displayName,
+                static_cast<double>(TextHelper::MeasureTextWidth(displayName,
+                                                                  this->impl->enemySpellcardName.fontHeight)),
+                static_cast<double>(this->impl->enemySpellcardName.sprite->textureWidth),
+                static_cast<double>(spriteWidth), static_cast<double>(this->blueSpellcardBarLength));
+#endif
+    }
+    else
+    {
+        g_AnmManager->DrawStringFormat(&this->impl->enemySpellcardName, 0xfff0f0, COLOR_RGB(COLOR_BLACK), "%s",
+                                       displayName);
+        this->blueSpellcardBarLength = std::strlen(spellcardName) * 15 / 2.0f + 16.0f;
+    }
     g_SoundPlayer.PlaySoundByIdx(SOUND_BOMB);
     return;
 }
@@ -473,14 +535,33 @@ ZunResult Gui::ActualAddedCallback()
     this->impl->bombSpellcardName.fontHeight = 15;
     this->impl->enemySpellcardName.fontWidth = 15;
     this->impl->enemySpellcardName.fontHeight = 15;
-    g_AnmManager->SetAndExecuteScriptIdx(&this->impl->stageNameSprite, ANM_SCRIPT_TEXT_STAGE_NAME);
-    g_AnmManager->SetAndExecuteScriptIdx(&this->impl->songNameSprite, ANM_SCRIPT_TEXT_SONG_NAME);
-    g_AnmManager->DrawStringFormat2(&this->impl->stageNameSprite, COLOR_RGB(COLOR_LIGHTCYAN), COLOR_RGB(COLOR_BLACK),
-                                    g_Stage.stdData->stageName);
-    this->impl->songNameSprite.fontWidth = 16;
-    this->impl->songNameSprite.fontHeight = 16;
-    g_AnmManager->DrawStringFormat(&this->impl->songNameSprite, COLOR_RGB(COLOR_LIGHTCYAN), COLOR_RGB(COLOR_BLACK),
-                                   TH_SONG_NAME, g_Stage.stdData->songNames[0]);
+    // Upstream thprac's th06_title hook jumps from 0x41ae2c to 0x41af35,
+    // skipping this entire initialization block for custom section warps.
+    // GuiImpl was zeroed at the start of ActualAddedCallback(), so the exact
+    // portable equivalent is to perform no replacement writes here at all.
+    const bool suppressStageIntroTitles = PracticeRuntime::SuppressStageIntroTitles();
+#ifdef TH_DEV_TOOLS
+    if (suppressStageIntroTitles)
+        SDL_Log("TH06 thprac stage intro titles: suppressed");
+#endif
+    if (!suppressStageIntroTitles)
+    {
+        g_AnmManager->SetAndExecuteScriptIdx(&this->impl->stageNameSprite, ANM_SCRIPT_TEXT_STAGE_NAME);
+        g_AnmManager->SetAndExecuteScriptIdx(&this->impl->songNameSprite, ANM_SCRIPT_TEXT_SONG_NAME);
+        if (!Localization::ApplyStageTitleImage(&this->impl->stageNameSprite, g_GameManager.currentStage))
+            g_AnmManager->DrawStringFormat2(&this->impl->stageNameSprite, COLOR_RGB(COLOR_LIGHTCYAN),
+                                            COLOR_RGB(COLOR_BLACK), "%s",
+                                            Localization::StageName(g_GameManager.currentStage,
+                                                                    g_Stage.stdData->stageName));
+        this->impl->songNameSprite.fontWidth = 16;
+        this->impl->songNameSprite.fontHeight = 16;
+        if (!Localization::ApplyMusicTitleImage(&this->impl->songNameSprite, g_GameManager.currentStage, 0))
+            g_AnmManager->DrawStringFormat(&this->impl->songNameSprite, COLOR_RGB(COLOR_LIGHTCYAN),
+                                           COLOR_RGB(COLOR_BLACK),
+                                           Localization::StringById("th06 BGM In-game format", TH_SONG_NAME),
+                                           Localization::MusicTitle((g_GameManager.currentStage - 1) * 2 + 2,
+                                                                    g_Stage.stdData->songNames[0]));
+    }
     this->impl->msg.currentMsgIdx = 0xffffffff;
     this->impl->finishedStage = 0;
     this->impl->bonusScore.isShown = 0;
@@ -619,12 +700,25 @@ ZunResult GuiImpl::RunMsg()
                                                  0x702 + args->text.textLine);
             this->msg.dialogueLines[args->text.textLine].fontWidth =
                 this->msg.dialogueLines[args->text.textLine].fontHeight = this->msg.fontSize;
-            g_AnmManager->DrawVmTextFmt(&this->msg.dialogueLines[args->text.textLine],
-                                        this->msg.textColorsA[args->text.textColor],
-                                        this->msg.textColorsB[args->text.textColor], args->text.text);
+            if (Localization::Active())
+                g_AnmManager->DrawVmTextFmt(&this->msg.dialogueLines[args->text.textLine],
+                                            this->msg.textColorsA[args->text.textColor],
+                                            this->msg.textColorsB[args->text.textColor], "%s", args->text.text);
+            else
+                g_AnmManager->DrawVmTextFmt(&this->msg.dialogueLines[args->text.textLine],
+                                            this->msg.textColorsA[args->text.textColor],
+                                            this->msg.textColorsB[args->text.textColor], args->text.text);
             this->msg.framesElapsedDuringPause = 0;
             break;
         case MSG_OPCODE_WAIT:
+#ifdef TH_DEV_TOOLS
+            if (g_DebugDialogueFastForward && this->msg.currentInstr->time >= 135)
+            {
+                g_DebugDialogueFastForward = false;
+                g_DevSpeedMultiplier = 1.0f;
+                SDL_Log("th06 dev thcrap: dialogue harness reached @135; restored 1x logic speed");
+            }
+#endif
             if (!this->msg.dialogueSkippable || !IS_PRESSED(TH_BUTTON_SKIP))
             {
                 if (!WAS_PRESSED(TH_BUTTON_SHOOT) || this->msg.framesElapsedDuringPause < 8)
@@ -656,21 +750,39 @@ ZunResult GuiImpl::RunMsg()
             g_AnmManager->SetAndExecuteScriptIdx(&this->songNameSprite, 0x701);
             this->songNameSprite.fontWidth = 16;
             this->songNameSprite.fontHeight = 16;
-            g_AnmManager->DrawStringFormat(&this->songNameSprite, COLOR_RGB(COLOR_LIGHTCYAN), COLOR_RGB(COLOR_BLACK),
-                                           TH_SONG_NAME,
-                                           g_Stage.stdData->songNames[this->msg.currentInstr->args.music]);
+            if (!Localization::ApplyMusicTitleImage(&this->songNameSprite, g_GameManager.currentStage,
+                                                     this->msg.currentInstr->args.music))
+                g_AnmManager->DrawStringFormat(
+                    &this->songNameSprite, COLOR_RGB(COLOR_LIGHTCYAN), COLOR_RGB(COLOR_BLACK),
+                    Localization::StringById("th06 BGM In-game format", TH_SONG_NAME),
+                    Localization::MusicTitle((g_GameManager.currentStage - 1) * 2 +
+                                                 this->msg.currentInstr->args.music + 2,
+                                             g_Stage.stdData->songNames[this->msg.currentInstr->args.music]));
             if (g_Supervisor.PlayMidiFile(this->msg.currentInstr->args.music) != ZUN_SUCCESS)
             {
-                g_Supervisor.PlayAudio(g_Stage.stdData->songPaths[this->msg.currentInstr->args.music]);
+                const char *path = g_Stage.stdData->songPaths[this->msg.currentInstr->args.music];
+                g_Supervisor.PlayAudio(path);
+                // th06_bgm_play marks el_bgm_changed only when PlayAudio was
+                // called from GuiImpl::RunMsg's music opcode (return 0x418db4).
+                PracticeRuntime::NotifyBgmPlay(path);
             }
             break;
         case MSG_OPCODE_TEXTINTRO:
             args = &this->msg.currentInstr->args;
             g_AnmManager->SetAndExecuteScriptIdx(&this->msg.introLines[args->text.textLine],
                                                  args->text.textLine + 0x704);
-            g_AnmManager->DrawStringFormat(&this->msg.introLines[args->text.textLine],
-                                           this->msg.textColorsA[args->text.textColor],
-                                           this->msg.textColorsB[args->text.textColor], args->text.text);
+            if (!((args->text.textLine == 0 &&
+                   Localization::ApplyBossTitleImage(&this->msg.introLines[0], g_GameManager.currentStage)) ||
+                  (args->text.textLine == 1 &&
+                   Localization::ApplyBossNameImage(&this->msg.introLines[1], g_GameManager.currentStage))))
+                if (Localization::Active())
+                    g_AnmManager->DrawStringFormat(&this->msg.introLines[args->text.textLine],
+                                                   this->msg.textColorsA[args->text.textColor],
+                                                   this->msg.textColorsB[args->text.textColor], "%s", args->text.text);
+                else
+                    g_AnmManager->DrawStringFormat(&this->msg.introLines[args->text.textLine],
+                                                   this->msg.textColorsA[args->text.textColor],
+                                                   this->msg.textColorsB[args->text.textColor], args->text.text);
             this->msg.framesElapsedDuringPause = 0;
             break;
         case MSG_OPCODE_STAGERESULTS:
@@ -763,6 +875,29 @@ ZunResult GuiImpl::DrawDialogue() const
     {
         dialogueBoxHeight = 48.0f;
     }
+    // base_tsa's dialog_box_leftedge/dialog_box_rightedge binhacks replace
+    // every hard-coded 256 below with the end X of text sprite 0x702.  Its
+    // patched text.anm widens that sprite to 320 px, expanding the box by
+    // 32 px on each side while retaining a 16 px text inset.
+    const f32 dialogueBoxWidth = Localization::Active()
+                                     ? g_AnmManager->sprites[ANM_OFFSET_TEXT + 2].endPixelInclusive.x
+                                     : 256.0f;
+#ifdef TH_DEV_TOOLS
+    static bool loggedLocalizedDialogueBox = false;
+    static bool loggedOriginalDialogueBox = false;
+    bool &loggedDialogueBox = Localization::Active() ? loggedLocalizedDialogueBox : loggedOriginalDialogueBox;
+    if (!loggedDialogueBox)
+    {
+        SDL_Log("TH06 dialogue box geometry: localization=%d width=%.3f left=%.3f right=%.3f",
+                Localization::Active() ? 1 : 0, static_cast<double>(dialogueBoxWidth),
+                static_cast<double>(g_GameManager.arcadeRegionTopLeftPos.x +
+                                    (g_GameManager.arcadeRegionSize.x - dialogueBoxWidth) / 2.0f - 16.0f),
+                static_cast<double>(g_GameManager.arcadeRegionTopLeftPos.x +
+                                    (g_GameManager.arcadeRegionSize.x - dialogueBoxWidth) / 2.0f +
+                                    dialogueBoxWidth + 16.0f));
+        loggedDialogueBox = true;
+    }
+#endif
     VertexDiffuseXyzrhw vertices[4];
     // Probably not what Zun wrote, but I don't like Zun's design. My guess is
     // Zun made a separate vertex structure with a ZunVec3 for the xyz, a
@@ -775,7 +910,8 @@ ZunResult GuiImpl::DrawDialogue() const
     //           sizeof(ZunVec3));
 
     vertices[0].position =
-        ZunVec4(g_GameManager.arcadeRegionTopLeftPos.x + (g_GameManager.arcadeRegionSize.x - 256.0f) / 2.0f - 16.0f,
+        ZunVec4(g_GameManager.arcadeRegionTopLeftPos.x +
+                    (g_GameManager.arcadeRegionSize.x - dialogueBoxWidth) / 2.0f - 16.0f,
                 384.0f, 0.0f, 1.0f);
 
     //    std::memcpy(&vertices[1].position,
@@ -785,7 +921,8 @@ ZunResult GuiImpl::DrawDialogue() const
     //           sizeof(ZunVec3));
 
     vertices[1].position = ZunVec4(g_GameManager.arcadeRegionTopLeftPos.x +
-                                       (g_GameManager.arcadeRegionSize.x - 256.0f) / 2.0f + 256.0f + 16.0f,
+                                       (g_GameManager.arcadeRegionSize.x - dialogueBoxWidth) / 2.0f +
+                                       dialogueBoxWidth + 16.0f,
                                    384.0f, 0.0f, 1.0f),
 
     //    std::memcpy(&vertices[2].position,
@@ -795,7 +932,8 @@ ZunResult GuiImpl::DrawDialogue() const
     //           sizeof(ZunVec3));
 
         vertices[2].position =
-            ZunVec4(g_GameManager.arcadeRegionTopLeftPos.x + (g_GameManager.arcadeRegionSize.x - 256.0f) / 2.0f - 16.0f,
+            ZunVec4(g_GameManager.arcadeRegionTopLeftPos.x +
+                        (g_GameManager.arcadeRegionSize.x - dialogueBoxWidth) / 2.0f - 16.0f,
                     384.0f + dialogueBoxHeight, 0.0f, 1.0f),
 
     //    std::memcpy(&vertices[3].position,
@@ -805,7 +943,8 @@ ZunResult GuiImpl::DrawDialogue() const
     //           sizeof(ZunVec3));
 
         vertices[3].position = ZunVec4(g_GameManager.arcadeRegionTopLeftPos.x +
-                                           (g_GameManager.arcadeRegionSize.x - 256.0f) / 2.0f + 256.0f + 16.0f,
+                                           (g_GameManager.arcadeRegionSize.x - dialogueBoxWidth) / 2.0f +
+                                           dialogueBoxWidth + 16.0f,
                                        384.0f + dialogueBoxHeight, 0.0f, 1.0f);
 
     vertices[0].diffuse = vertices[1].diffuse = ColorData(0xd0000000);
@@ -840,8 +979,17 @@ ZunResult GuiImpl::DrawDialogue() const
 
     g_AnmManager->DrawInterpNoRotation(&this->msg.dialogueLines[0]);
     g_AnmManager->DrawInterpNoRotation(&this->msg.dialogueLines[1]);
-    g_AnmManager->DrawInterpNoRotation(&this->msg.introLines[0]);
-    g_AnmManager->DrawInterpNoRotation(&this->msg.introLines[1]);
+    if (Localization::Active())
+    {
+        // base_tsa swaps these draws so the name layer is below the title.
+        g_AnmManager->DrawInterpNoRotation(&this->msg.introLines[1]);
+        g_AnmManager->DrawInterpNoRotation(&this->msg.introLines[0]);
+    }
+    else
+    {
+        g_AnmManager->DrawInterpNoRotation(&this->msg.introLines[0]);
+        g_AnmManager->DrawInterpNoRotation(&this->msg.introLines[1]);
+    }
     return ZUN_SUCCESS;
 }
 
@@ -860,6 +1008,42 @@ bool Gui::HasCurrentMsgIdx() const
     // desktop visual-test entry point starts directly in Music Room).
     return this->impl != nullptr && 0 <= this->impl->msg.currentMsgIdx;
 }
+
+#ifdef TH_DEV_TOOLS
+void Gui::DebugShowLocalizedStageText()
+{
+    if (this->impl == nullptr)
+        return;
+    g_AnmManager->SetAndExecuteScriptIdx(&this->impl->stageNameSprite, ANM_SCRIPT_TEXT_STAGE_NAME);
+    Localization::ApplyStageTitleImage(&this->impl->stageNameSprite, 1);
+    g_AnmManager->SetAndExecuteScriptIdx(&this->impl->songNameSprite, ANM_SCRIPT_TEXT_SONG_NAME);
+    Localization::ApplyMusicTitleImage(&this->impl->songNameSprite, 1, 0);
+    SDL_Log("th06 dev thcrap: stage title and music title triggered");
+}
+
+void Gui::DebugShowLocalizedSpellcard()
+{
+    if (this->impl != nullptr)
+        ShowSpellcard(0, 0, "");
+}
+
+void Gui::DebugShowLocalizedBomb()
+{
+    if (this->impl != nullptr)
+        ShowBombNamePortrait(ANM_SCRIPT_FACE_BOMB_PORTRAIT,
+                             Localization::StringById("th06 Bomb Reimu A", TH_REIMU_A_BOMB_NAME));
+}
+
+void Gui::DebugStartStage1BossDialogue()
+{
+    if (this->impl == nullptr)
+        return;
+    this->impl->MsgRead(0);
+    g_DebugDialogueFastForward = true;
+    g_DevSpeedMultiplier = 8.0f;
+    SDL_Log("th06 dev thcrap: Stage 1 dialogue running at 8x until @135");
+}
+#endif
 
 void Gui::UpdateStageElements()
 {
@@ -1315,7 +1499,13 @@ void Gui::DrawStageElements() const
             stageTextColor = COLOR_COMBINE_ALPHA(COLOR_SUNSHINEYELLOW, this->impl->stageNameSprite.color);
             g_AsciiManager.color = stageTextColor;
 
-            if (g_GameManager.currentStage < EXTRA_STAGE)
+            if (Localization::StageLogoImageActive())
+            {
+                // base_tsa::textimage_is_active#stlogo suppresses the
+                // original STAGE / FINAL / EXTRA label while the combined
+                // 384x48 ti_stlogo.png row owns logical textimage slot 0x700.
+            }
+            else if (g_GameManager.currentStage < EXTRA_STAGE)
             {
                 stageTextPos.x = 168.0f;
                 g_AsciiManager.AddFormatText(&stageTextPos, "STAGE %d", g_GameManager.currentStage);
@@ -1338,7 +1528,8 @@ void Gui::DrawStageElements() const
 
             stageTextPos.x = 136.0f;
 
-            g_AsciiManager.AddFormatText(&stageTextPos, " DEMO PLAY");
+            if (!Localization::StageLogoImageActive())
+                g_AsciiManager.AddFormatText(&stageTextPos, " DEMO PLAY");
         }
         g_AsciiManager.color = COLOR_WHITE;
     }
@@ -1358,21 +1549,88 @@ void Gui::DrawStageElements() const
 
     if (this->impl->bombSpellcardName.flags.isVisible)
     {
-        this->impl->bombSpellcardBackground.pos = this->impl->bombSpellcardName.pos;
-        this->impl->bombSpellcardBackground.pos.x +=
-            this->bombSpellcardBarLength * 16.0f / 15.0f / 2.0f + -128.0f - 16.0f;
-        this->impl->bombSpellcardBackground.scaleX = this->bombSpellcardBarLength / 14.0f;
-        g_AnmManager->DrawInterpNoRotation(&this->impl->bombSpellcardBackground);
-        g_AnmManager->DrawInterpNoRotation(&this->impl->bombSpellcardName);
+        if (Localization::Active())
+        {
+            // Equivalent to thcrap's bomb_pos and spell_pos_reset patches.
+            AnmVm nameDraw = this->impl->bombSpellcardName;
+            nameDraw.pos = nameDraw.prevPos.Lerp(nameDraw.pos, g_RenderAlpha);
+            const f32 sourceNameX = nameDraw.pos.x;
+            nameDraw.pos.x += -nameDraw.sprite->textureWidth + nameDraw.sprite->widthPx / 2.0f;
+
+            AnmVm backgroundDraw = this->impl->bombSpellcardBackground;
+            backgroundDraw.pos = nameDraw.pos;
+            backgroundDraw.pos.x += (nameDraw.sprite->widthPx - this->bombSpellcardBarLength) / 2.0f;
+            backgroundDraw.scaleX = this->bombSpellcardBarLength / 14.0f;
+#ifdef TH_DEV_TOOLS
+            static bool loggedBombDrawGeometry = false;
+            if (!loggedBombDrawGeometry)
+            {
+                SDL_Log("TH06 thcrap bomb draw geometry: sourceX=%.3f nameX=%.3f bgX=%.3f textureWidth=%.3f spriteWidth=%.3f bar=%.3f",
+                        static_cast<double>(sourceNameX), static_cast<double>(nameDraw.pos.x),
+                        static_cast<double>(backgroundDraw.pos.x),
+                        static_cast<double>(nameDraw.sprite->textureWidth),
+                        static_cast<double>(nameDraw.sprite->widthPx),
+                        static_cast<double>(this->bombSpellcardBarLength));
+                loggedBombDrawGeometry = true;
+            }
+#endif
+            g_AnmManager->DrawNoRotation(&backgroundDraw);
+            g_AnmManager->DrawNoRotation(&nameDraw);
+        }
+        else
+        {
+            this->impl->bombSpellcardBackground.pos = this->impl->bombSpellcardName.pos;
+            this->impl->bombSpellcardBackground.pos.x +=
+                this->bombSpellcardBarLength * 16.0f / 15.0f / 2.0f + -128.0f - 16.0f;
+            this->impl->bombSpellcardBackground.scaleX = this->bombSpellcardBarLength / 14.0f;
+            g_AnmManager->DrawInterpNoRotation(&this->impl->bombSpellcardBackground);
+            g_AnmManager->DrawInterpNoRotation(&this->impl->bombSpellcardName);
+        }
     }
     if (this->impl->enemySpellcardName.flags.isVisible)
     {
+        if (Localization::Active())
+        {
+            // thcrap's spell_pos patch temporarily moves the reduced name
+            // sprite so its right edge remains at the original 256-pixel
+            // sprite's right edge. It restores the VM immediately after the
+            // draw to avoid disturbing the ANM animation. Draw copies here
+            // provide the same temporary state without mutating either the
+            // current or previous animation position.
+            AnmVm nameDraw = this->impl->enemySpellcardName;
+            nameDraw.pos = nameDraw.prevPos.Lerp(nameDraw.pos, g_RenderAlpha);
+            const f32 sourceNameX = nameDraw.pos.x;
+            nameDraw.pos.x += nameDraw.sprite->textureWidth - nameDraw.sprite->widthPx / 2.0f;
 
-        this->impl->enemySpellcardBackground.pos = this->impl->enemySpellcardName.pos;
-        this->impl->enemySpellcardBackground.pos.x += 128.0f - this->blueSpellcardBarLength * 16.0f / 15.0f / 2.0f;
-        this->impl->enemySpellcardBackground.scaleX = this->blueSpellcardBarLength / 14.0f;
-        g_AnmManager->DrawInterpNoRotation(&this->impl->enemySpellcardBackground);
-        g_AnmManager->DrawInterpNoRotation(&this->impl->enemySpellcardName);
+            AnmVm backgroundDraw = this->impl->enemySpellcardBackground;
+            backgroundDraw.pos = nameDraw.pos;
+            backgroundDraw.pos.x += (nameDraw.sprite->widthPx - this->blueSpellcardBarLength) / 2.0f;
+            backgroundDraw.scaleX = this->blueSpellcardBarLength / 14.0f;
+#ifdef TH_DEV_TOOLS
+            static bool loggedSpellDrawGeometry = false;
+            if (!loggedSpellDrawGeometry)
+            {
+                SDL_Log("TH06 thcrap spell draw geometry: sourceX=%.3f nameX=%.3f bgX=%.3f textureWidth=%.3f spriteWidth=%.3f bar=%.3f",
+                        static_cast<double>(sourceNameX), static_cast<double>(nameDraw.pos.x),
+                        static_cast<double>(backgroundDraw.pos.x),
+                        static_cast<double>(nameDraw.sprite->textureWidth),
+                        static_cast<double>(nameDraw.sprite->widthPx),
+                        static_cast<double>(this->blueSpellcardBarLength));
+                loggedSpellDrawGeometry = true;
+            }
+#endif
+            g_AnmManager->DrawNoRotation(&backgroundDraw);
+            g_AnmManager->DrawNoRotation(&nameDraw);
+        }
+        else
+        {
+            this->impl->enemySpellcardBackground.pos = this->impl->enemySpellcardName.pos;
+            this->impl->enemySpellcardBackground.pos.x +=
+                128.0f - this->blueSpellcardBarLength * 16.0f / 15.0f / 2.0f;
+            this->impl->enemySpellcardBackground.scaleX = this->blueSpellcardBarLength / 14.0f;
+            g_AnmManager->DrawInterpNoRotation(&this->impl->enemySpellcardBackground);
+            g_AnmManager->DrawInterpNoRotation(&this->impl->enemySpellcardName);
+        }
     }
     if (this->impl->loadingScreenSprite.activeSpriteIndex >= 0)
     {
