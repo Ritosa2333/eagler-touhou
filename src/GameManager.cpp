@@ -302,7 +302,6 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
     i32 padding[3];
 
     Touch::ResetRunUsage();
-    PracticeRuntime::ResetReplayDeterminismUsage();
     PracticeRuntime::RefreshFromHost();
     // Normal Replay-menu playback already executed THGuiRep::State(1/2/3)
     // before the original isInReplay write. Do not parse the file a second

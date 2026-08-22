@@ -116,7 +116,6 @@ const portableOwnerCategory = new Map(Object.entries({
   g_ReplayStartupCommitted: 'portable State(3)->GameManager replay one-shot bridge',
   g_ReplayParamStatus: 'source THGuiRep mParamStatus',
   g_ReplayCandidate: 'source THGuiRep mRepParam',
-  g_ReplayUnsafeAssistUsedThisRun: 'portable replay determinism guard for unsafe assist usage',
   g_Overlay: 'source THOverlay/Tracker persistent state',
   g_ModMenuToggleRequested: 'backend post-calc->ImGui OnPreUpdate bridge',
   g_AdvancedMenuToggleRequested: 'backend THAdvOpt StaticUpdate ordering bridge',

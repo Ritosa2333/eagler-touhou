@@ -613,6 +613,10 @@ if (!upstreamTh06.includes('if (thPracParam.mode)\n            THSaveReplay(rep_
     !portablePractice.includes('if (!AdvancedActive() || !replayPath || !*replayPath)')) {
     throw new Error('Portable TH06 replay metadata save must be mode-gated, not merely Active()-gated');
 }
+if (portablePractice.includes('ReplayUnsafeAssistUsedThisRun') ||
+    portableResult.includes('ReplayUnsafeAssistUsedThisRun')) {
+    throw new Error('Portable TH06 must not add an assist-based replay-save ban absent from upstream thprac');
+}
 
 // TH06_ST6_MID2 selects its health branch from the *current game* character
 // and shot type. It is not a THGuiPrac widget field and is not serialized by

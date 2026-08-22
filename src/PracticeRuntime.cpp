@@ -166,7 +166,6 @@ static std::string g_CurrentBgmPath;
 // run; Replay entry does not enable it.
 static bool g_BossSectionSfxFixPending = false;
 static MenuResult g_MenuResult = MenuResult::Waiting;
-static bool g_ReplayUnsafeAssistUsedThisRun = false;
 #if defined(THPRAC_PORTABLE_ENABLED)
 extern "C" bool ThpracPortableTh06SetSessionJson(const char *json);
 #endif
@@ -244,16 +243,6 @@ bool OverlayEverlastingBgm()
 #endif
 }
 
-void ResetReplayDeterminismUsage()
-{
-    g_ReplayUnsafeAssistUsedThisRun = false;
-}
-
-bool ReplayUnsafeAssistUsedThisRun()
-{
-    return g_ReplayUnsafeAssistUsedThisRun;
-}
-
 void ResetTracker()
 {
 #ifdef TH_ENABLE_THPRAC
@@ -327,12 +316,6 @@ static bool OverlayKeyPressed(i32 slot, SDL_Scancode scancode)
 void UpdateOverlay()
 {
 #ifdef TH_ENABLE_THPRAC
-    if (!g_GameManager.isInReplay &&
-        (g_Overlay.invincible || g_Overlay.infiniteLives || g_Overlay.infiniteBombs ||
-         g_Overlay.infinitePower || g_Overlay.timeLock || g_Overlay.autoBomb))
-    {
-        g_ReplayUnsafeAssistUsedThisRun = true;
-    }
     // Upstream th06_update runs at the RunCalcChain return boundary and calls
     // THPauseMenu::Update() every trainer tick, even while its window is
     // closed. OnPreUpdate owns the persistent mFrameCounter; fade progression

@@ -50,8 +50,6 @@ bool OverlayInfinitePower();
 bool OverlayTimeLock();
 bool OverlayAutoBomb();
 bool OverlayEverlastingBgm();
-void ResetReplayDeterminismUsage();
-bool ReplayUnsafeAssistUsedThisRun();
 void ResetTracker();
 void RecordTrackerMiss();
 void ResetBgmTracking();

@@ -944,8 +944,7 @@ i32 ResultScreen::HandleReplaySaveKeyboard()
             }
             else
             {
-                if (g_Supervisor.framerateMultiplier < 0.99f ||
-                    PracticeRuntime::ReplayUnsafeAssistUsedThisRun())
+                if (g_Supervisor.framerateMultiplier < 0.99f)
                 {
                     saveInterrupt = 0xd;
                 }

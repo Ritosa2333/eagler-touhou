@@ -26,8 +26,6 @@ bool OverlayInfinitePower() { return false; }
 bool OverlayTimeLock() { return false; }
 bool OverlayAutoBomb() { return false; }
 bool OverlayEverlastingBgm() { return false; }
-void ResetReplayDeterminismUsage() {}
-bool ReplayUnsafeAssistUsedThisRun() { return false; }
 void ResetTracker() {}
 void RecordTrackerMiss() {}
 void ResetBgmTracking() {}
