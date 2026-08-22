@@ -96,6 +96,10 @@ struct SoundPlayer
 
     void BackgroundMusicPlayerThread();
     bool MixAudio(u32 samples);
+#ifdef __EMSCRIPTEN__
+    void SetWebAudioWindowActive(bool active);
+    void SetWebAudioBgmTransition(bool active);
+#endif
 
     SoundData soundBuffers[128];
     std::mutex soundBufMutex;
@@ -106,6 +110,12 @@ struct SoundPlayer
     i32 soundBuffersToPlay[3];
     MusicStream backgroundMusic;
     bool isLooping;
+#ifdef __EMSCRIPTEN__
+    void UpdateWebAudioPlaybackState();
+    bool webAudioWindowActive;
+    bool webAudioBgmTransition;
+    bool webAudioPlaybackSuspended;
+#endif
 };
 
 extern SoundPlayer g_SoundPlayer;

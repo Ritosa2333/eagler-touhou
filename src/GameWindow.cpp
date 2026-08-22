@@ -1,6 +1,7 @@
 #include "GameWindow.hpp"
 #include "AnmManager.hpp"
 #include "EaglerOptions.hpp"
+#include "FileSystem.hpp"
 #include "GameErrorContext.hpp"
 #include "PracticeRuntime.hpp"
 #include "ScreenEffect.hpp"
@@ -19,6 +20,8 @@
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <cstring>
+#include <filesystem>
+#include <vector>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -57,6 +60,33 @@ static bool g_InBorderlessFullscreen = false;
 #endif
 
 #define FRAME_TIME (1000. / 60.)
+
+#ifdef TH_ENABLE_THPRAC
+static void SaveThpracSnapshot()
+{
+    std::filesystem::create_directory(FileSystem::GetPrefPath("snapshot"));
+    char relativePath[64] = {};
+    i32 index = 0;
+    for (; index < 1000; ++index)
+    {
+        std::snprintf(relativePath, sizeof(relativePath), "snapshot/th%.3d.bmp", index);
+        if (!std::filesystem::exists(std::filesystem::u8path(FileSystem::GetPrefPath(relativePath))))
+            break;
+    }
+    if (index >= 1000)
+        return;
+
+    std::vector<u8> pixels(640 * 480 * 4);
+    g_GfxBackend->ReadPixels(0, 0, 640, 480, pixels.data());
+    SDL_Surface *surface = SDL_CreateSurfaceFrom(640, 480, SDL_PIXELFORMAT_RGBA32,
+                                                 pixels.data(), 640 * 4);
+    if (surface != nullptr)
+    {
+        SDL_SaveBMP(surface, FileSystem::GetPrefPath(relativePath).c_str());
+        SDL_DestroySurface(surface);
+    }
+}
+#endif
 
 RenderResult GameWindow::Render()
 {
@@ -119,6 +149,7 @@ RenderResult GameWindow::Render()
 #else
     constexpr bool limitPresentationTo60 = false;
 #endif
+    const bool preserveReplayCadence = g_GameManager.isInReplay != 0;
 
 #ifdef TH_DEV_TOOLS
     // Developer fast-forward: run extra 60 Hz simulation passes proportional
@@ -135,10 +166,13 @@ RenderResult GameWindow::Render()
     {
         g_Supervisor.framerateMultiplier = 1.0f;
         g_Supervisor.effectiveFramerateMultiplier = 1.0f;
+        const i32 res = g_Chain.RunCalcChain();
 #ifdef TH_ENABLE_THPRAC
+        // Upstream th06_update is hooked at the RunCalcChain return boundary
+        // (0x41caac). Trainer GUI/hotkey producers must therefore run after
+        // this tick's game consumers, not before them.
         PracticeRuntime::UpdateOverlay();
 #endif
-        const i32 res = g_Chain.RunCalcChain();
 #ifdef TH_ENABLE_THCRAP
         g_AnmManager->QueueThcrapSnapshotIfRequested();
 #endif
@@ -146,7 +180,7 @@ RenderResult GameWindow::Render()
         return res;
     };
 
-    if (limitPresentationTo60)
+    if (limitPresentationTo60 || preserveReplayCadence)
     {
         if (this->accumulator >= targetDt)
         {
@@ -256,6 +290,10 @@ RenderResult GameWindow::Render()
     // interpolates world/object coordinates, so do the same here.
     g_SuppressAnmAdvance = !updated;
 #ifdef TH_ENABLE_THPRAC
+    // GameGuiBegin(..., !THAdvOptWnd::IsOpen()): Advanced Options exclusively
+    // owns keyboard navigation while open, so background trainer windows do
+    // not receive D-pad input.
+    ThpracImGui::SetGameNavEnabled(!PracticeRuntime::AdvancedOptionsOpen());
     ThpracImGui::SetGameInput(g_CurFrameInput, updated);
     // Upstream thprac builds its ImGui frame from TH06's 60 Hz update hook
     // and only renders the resulting draw data from the render hook.  Do not
@@ -276,6 +314,13 @@ RenderResult GameWindow::Render()
     static_cast<GlesGraphics *>(g_GfxBackend)->RenderImGui(ThpracImGui::GetDrawData());
 #endif
     g_GfxBackend->EndFrame();
+#ifdef TH_ENABLE_THPRAC
+    // th06_render takes the snapshot after GameGuiRender, so the thprac UI is
+    // part of the captured 640x480 backbuffer. Keep the same semantic point,
+    // immediately before the portable buffer swap.
+    if (PracticeRuntime::ConsumeScreenshotRequest())
+        SaveThpracSnapshot();
+#endif
     Present();
 
 #ifndef __EMSCRIPTEN__

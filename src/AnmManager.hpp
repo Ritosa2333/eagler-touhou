@@ -242,10 +242,20 @@ struct AnmManager
 
     void SetColorOp(TextureOpComponent component, ColorOp op)
     {
+        if ((g_Supervisor.cfg.opts >> GCOS_NO_COLOR_COMP) & 1)
+        {
+            this->dirtyColorOps[component] = op;
+            dirtyFlags &= ~(1 << DIRTY_COLOR_OP);
+            return;
+        }
+
+        if (this->dirtyColorOps[component] != op)
+        {
+            this->FlushVertexBuffer();
+        }
         this->dirtyColorOps[component] = op;
 
-        if ((g_Supervisor.cfg.opts >> GCOS_NO_COLOR_COMP) & 1 ||
-            this->dirtyColorOps[component] == this->colorOps[component])
+        if (this->dirtyColorOps[component] == this->colorOps[component])
         {
             dirtyFlags &= ~(1 << DIRTY_COLOR_OP);
             return;

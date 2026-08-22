@@ -13,6 +13,13 @@
 #include <new>
 #include <vector>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#endif
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#endif
+
 #define STB_VORBIS_HEADER_ONLY
 #include "thirdparty/stb_vorbis.c"
 
@@ -71,7 +78,65 @@ SoundPlayer::SoundPlayer()
     this->terminateFlag.store(false, std::memory_order_relaxed);
     this->backgroundMusic = {};
     this->isLooping = false;
+#ifdef __EMSCRIPTEN__
+    this->webAudioWindowActive = true;
+    this->webAudioBgmTransition = false;
+    this->webAudioPlaybackSuspended = false;
+#endif
 }
+
+#ifdef __EMSCRIPTEN__
+void SoundPlayer::UpdateWebAudioPlaybackState()
+{
+    const bool shouldSuspend = !this->webAudioWindowActive || this->webAudioBgmTransition;
+    if (shouldSuspend == this->webAudioPlaybackSuspended)
+    {
+        return;
+    }
+
+    if (shouldSuspend)
+    {
+        EM_ASM({
+            const sdl = Module['SDL3'];
+            const node = sdl && sdl.audio_playback && sdl.audio_playback.scriptProcessorNode;
+            if (node) {
+                try { node.disconnect(); } catch (_) {}
+            }
+        });
+        if (this->audioDev != 0 && !SDL_AudioDevicePaused(this->audioDev))
+        {
+            SDL_PauseAudioDevice(this->audioDev);
+        }
+    }
+    else
+    {
+        if (this->audioDev != 0 && SDL_AudioDevicePaused(this->audioDev))
+        {
+            SDL_ResumeAudioDevice(this->audioDev);
+        }
+        EM_ASM({
+            const sdl = Module['SDL3'];
+            const node = sdl && sdl.audio_playback && sdl.audio_playback.scriptProcessorNode;
+            if (node && sdl.audioContext) {
+                try { node.connect(sdl.audioContext.destination); } catch (_) {}
+            }
+        });
+    }
+    this->webAudioPlaybackSuspended = shouldSuspend;
+}
+
+void SoundPlayer::SetWebAudioWindowActive(bool active)
+{
+    this->webAudioWindowActive = active;
+    this->UpdateWebAudioPlaybackState();
+}
+
+void SoundPlayer::SetWebAudioBgmTransition(bool active)
+{
+    this->webAudioBgmTransition = active;
+    this->UpdateWebAudioPlaybackState();
+}
+#endif
 
 ZunResult SoundPlayer::InitializeDSound()
 {
@@ -147,6 +212,12 @@ void SoundPlayer::StopBGM()
     if (this->backgroundMusic.srcWav.fileStream != NULL)
     {
         this->soundBufMutex.lock();
+#ifdef __EMSCRIPTEN__
+        // Web audio may retain a short already-mixed tail after the BGM source
+        // changes. Drop it at the existing StopBGM owner boundary.
+        if (this->audioStream != NULL)
+            SDL_ClearAudioStream(this->audioStream);
+#endif
         SDL_CloseIO(this->backgroundMusic.srcWav.fileStream);
         this->backgroundMusic.srcWav.fileStream = NULL;
         free(this->backgroundMusic.srcWav.ownedSamples);
@@ -184,6 +255,26 @@ ZunResult SoundPlayer::LoadWav(const char *path)
     {
         return ZUN_ERROR;
     }
+
+#ifdef __EMSCRIPTEN__
+    // SDL's Emscripten backend feeds WebAudio through a ScriptProcessorNode
+    // callback that runs on the browser main thread. Merely pausing the SDL
+    // logical device cannot silence the last already-rendered quantum if that
+    // main thread is about to block on file I/O / full-track OGG decode. Cut
+    // the WebAudio graph first, and leave it disconnected until PlayBGM owns a
+    // fully prepared replacement source.
+    struct WebBgmTransitionGuard
+    {
+        SoundPlayer *owner;
+        bool keepTransition = false;
+        ~WebBgmTransitionGuard()
+        {
+            if (!keepTransition)
+                owner->SetWebAudioBgmTransition(false);
+        }
+    } webBgmTransitionGuard{this};
+    this->SetWebAudioBgmTransition(true);
+#endif
 
     this->StopBGM();
 
@@ -256,6 +347,9 @@ ZunResult SoundPlayer::LoadWav(const char *path)
         this->backgroundMusic.fadeoutLen = 0;
         this->backgroundMusic.fadeoutProgress = 0;
         this->backgroundMusic.pos = 0;
+#ifdef __EMSCRIPTEN__
+        webBgmTransitionGuard.keepTransition = true;
+#endif
         return ZUN_SUCCESS;
     }
 
@@ -366,6 +460,9 @@ ZunResult SoundPlayer::LoadWav(const char *path)
     this->backgroundMusic.fadeoutProgress = 0;
     this->backgroundMusic.pos = 0;
 
+#ifdef __EMSCRIPTEN__
+    webBgmTransitionGuard.keepTransition = true;
+#endif
     return ZUN_SUCCESS;
 
 fail:
@@ -527,6 +624,9 @@ ZunResult SoundPlayer::PlayBGM(bool isLooping)
 
     if (this->backgroundMusic.srcWav.fileStream == NULL)
     {
+#ifdef __EMSCRIPTEN__
+        this->SetWebAudioBgmTransition(false);
+#endif
         return ZUN_ERROR;
     }
 
@@ -549,6 +649,9 @@ ZunResult SoundPlayer::PlayBGM(bool isLooping)
     //    }
     utils::DebugPrint2("comp\n");
     this->isLooping = isLooping;
+#ifdef __EMSCRIPTEN__
+    this->SetWebAudioBgmTransition(false);
+#endif
     return ZUN_SUCCESS;
 }
 

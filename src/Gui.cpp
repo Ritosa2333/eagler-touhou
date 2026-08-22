@@ -804,7 +804,16 @@ ZunResult GuiImpl::RunMsg()
             break;
         case MSG_OPCODE_STAGEEND:
             g_GameManager.guiScore = g_GameManager.score;
-            if (g_GameManager.isInPracticeMode)
+            // th06_preplay_2 @ 0x418ef9 is not primarily a score patch: the
+            // original instruction already copies score -> guiScore.  thprac
+            // jumps to 0x418f0e for a live advanced-practice run, bypassing
+            // the vanilla isInPracticeMode test.  This matters most for Extra:
+            // th06_prac_menu_enter deliberately clears isInPracticeMode there,
+            // but advanced Extra still must end through the Practice Result
+            // path. THGuiRep::mRepStatus is its own owner and becomes true in
+            // Replay State(3); do not substitute the broader isInReplay flag.
+            if (g_GameManager.isInPracticeMode ||
+                (PracticeRuntime::AdvancedActive() && !PracticeRuntime::ReplayPlaybackActive()))
             {
                 g_GameManager.guiScore = g_GameManager.score;
                 g_Supervisor.curState = SUPERVISOR_STATE_RESULTSCREEN_FROMGAME;
@@ -1007,6 +1016,13 @@ bool Gui::HasCurrentMsgIdx() const
     // Touch input is polled before a gameplay GUI exists (notably when the
     // desktop visual-test entry point starts directly in Music Room).
     return this->impl != nullptr && 0 <= this->impl->msg.currentMsgIdx;
+}
+
+bool Gui::IsWaitingForPlayerAdvance() const
+{
+    return this->impl != nullptr && 0 <= this->impl->msg.currentMsgIdx &&
+           this->impl->msg.currentInstr != nullptr &&
+           this->impl->msg.currentInstr->opcode == MSG_OPCODE_WAIT;
 }
 
 #ifdef TH_DEV_TOOLS

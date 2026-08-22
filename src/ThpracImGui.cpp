@@ -37,13 +37,18 @@ namespace
 bool g_Initialized = false;
 bool g_FrameOpen = false;
 std::uint16_t g_GameButtons = 0;
+bool g_GameNavEnabled = true;
 Locale g_Locale = Locale::EnUS;
+Locale g_PendingLocale = Locale::EnUS;
+bool g_LocaleChangePending = false;
 float g_MouseWheel = 0.0f;
 float g_MouseWheelH = 0.0f;
 bool g_MouseButtons[5] = {};
 float g_MouseClientX = 0.0f;
 float g_MouseClientY = 0.0f;
 bool g_MousePositionValid = false;
+bool g_MousePositionFromBridge = false;
+bool g_ProcessingBridgeMouseEvent = false;
 
 constexpr const char *g_Text[][3] = {
     {"练习选项", "Option", "オプション"},
@@ -295,10 +300,10 @@ bool BuildLocaleFont(ImGuiIO &io, Locale locale)
 void ApplyGameInput()
 {
     ImGuiIO &io = ImGui::GetIO();
-    io.NavInputs[ImGuiNavInput_DpadUp] = (g_GameButtons & TH_BUTTON_UP) != 0 ? 1.0f : 0.0f;
-    io.NavInputs[ImGuiNavInput_DpadDown] = (g_GameButtons & TH_BUTTON_DOWN) != 0 ? 1.0f : 0.0f;
-    io.NavInputs[ImGuiNavInput_DpadLeft] = (g_GameButtons & TH_BUTTON_LEFT) != 0 ? 1.0f : 0.0f;
-    io.NavInputs[ImGuiNavInput_DpadRight] = (g_GameButtons & TH_BUTTON_RIGHT) != 0 ? 1.0f : 0.0f;
+    io.NavInputs[ImGuiNavInput_DpadUp] = g_GameNavEnabled && (g_GameButtons & TH_BUTTON_UP) != 0 ? 1.0f : 0.0f;
+    io.NavInputs[ImGuiNavInput_DpadDown] = g_GameNavEnabled && (g_GameButtons & TH_BUTTON_DOWN) != 0 ? 1.0f : 0.0f;
+    io.NavInputs[ImGuiNavInput_DpadLeft] = g_GameNavEnabled && (g_GameButtons & TH_BUTTON_LEFT) != 0 ? 1.0f : 0.0f;
+    io.NavInputs[ImGuiNavInput_DpadRight] = g_GameNavEnabled && (g_GameButtons & TH_BUTTON_RIGHT) != 0 ? 1.0f : 0.0f;
     // Original GameGuiWnd::Update() deliberately exposes only D-pad input to
     // ImGui. Z/X still belong to TH06's vanilla Practice state, where the
     // thprac hooks translate them to State(3)=accept / State(4)=cancel. If we
@@ -322,7 +327,7 @@ void ApplyMouseInput()
         // Keep the cached client position fresh while SDL has mouse focus.
         // ProcessEvent() also updates it from motion/button event coordinates,
         // which is what preserves the focus-acquiring first click.
-        if (SDL_GetMouseFocus() == g_GameWindow.window)
+        if (!g_MousePositionFromBridge && SDL_GetMouseFocus() == g_GameWindow.window)
         {
             float mouseX = 0.0f;
             float mouseY = 0.0f;
@@ -332,25 +337,33 @@ void ApplyMouseInput()
             g_MousePositionValid = true;
         }
 
-        int windowWidth = 0;
-        int windowHeight = 0;
-        SDL_GetWindowSize(g_GameWindow.window, &windowWidth, &windowHeight);
-        if (windowWidth > 0 && windowHeight > 0 && g_MousePositionValid &&
-            SDL_GetKeyboardFocus() == g_GameWindow.window)
+        if (g_MousePositionValid && g_MousePositionFromBridge)
         {
-            const float scaleX = static_cast<float>(windowWidth) / 640.0f;
-            const float scaleY = static_cast<float>(windowHeight) / 480.0f;
-            const float scale = std::min(scaleX, scaleY);
-            const float renderWidth = 640.0f * scale;
-            const float renderHeight = 480.0f * scale;
-            const float renderX = (static_cast<float>(windowWidth) - renderWidth) * 0.5f;
-            const float renderY = (static_cast<float>(windowHeight) - renderHeight) * 0.5f;
-
-            if (scale > 0.0f && g_MouseClientX >= renderX && g_MouseClientX < renderX + renderWidth &&
-                g_MouseClientY >= renderY && g_MouseClientY < renderY + renderHeight)
+            io.MousePos.x = g_MouseClientX;
+            io.MousePos.y = g_MouseClientY;
+        }
+        else
+        {
+            int windowWidth = 0;
+            int windowHeight = 0;
+            SDL_GetWindowSize(g_GameWindow.window, &windowWidth, &windowHeight);
+            if (windowWidth > 0 && windowHeight > 0 && g_MousePositionValid &&
+                SDL_GetKeyboardFocus() == g_GameWindow.window)
             {
-                io.MousePos.x = (g_MouseClientX - renderX) / scale;
-                io.MousePos.y = (g_MouseClientY - renderY) / scale;
+                const float scaleX = static_cast<float>(windowWidth) / 640.0f;
+                const float scaleY = static_cast<float>(windowHeight) / 480.0f;
+                const float scale = std::min(scaleX, scaleY);
+                const float renderWidth = 640.0f * scale;
+                const float renderHeight = 480.0f * scale;
+                const float renderX = (static_cast<float>(windowWidth) - renderWidth) * 0.5f;
+                const float renderY = (static_cast<float>(windowHeight) - renderHeight) * 0.5f;
+
+                if (scale > 0.0f && g_MouseClientX >= renderX && g_MouseClientX < renderX + renderWidth &&
+                    g_MouseClientY >= renderY && g_MouseClientY < renderY + renderHeight)
+                {
+                    io.MousePos.x = (g_MouseClientX - renderX) / scale;
+                    io.MousePos.y = (g_MouseClientY - renderY) / scale;
+                }
             }
         }
     }
@@ -455,6 +468,14 @@ Locale GetLocale()
     return g_Locale;
 }
 
+void RequestLocale(Locale locale)
+{
+    if (locale == g_Locale)
+        return;
+    g_PendingLocale = locale;
+    g_LocaleChangePending = true;
+}
+
 const char *Text(TextId id)
 {
     const std::size_t index = static_cast<std::size_t>(id);
@@ -469,6 +490,13 @@ void SetGameInput(std::uint16_t buttons, bool sampled)
 {
     g_GameButtons = BuildGameInputPulse(buttons, g_LastFrameInput,
                                         g_IsEigthFrameOfHeldInput != 0, sampled);
+    if (g_Initialized)
+        ApplyGameInput();
+}
+
+void SetGameNavEnabled(bool enabled)
+{
+    g_GameNavEnabled = enabled;
     if (g_Initialized)
         ApplyGameInput();
 }
@@ -501,6 +529,7 @@ void ProcessEvent(const SDL_Event &event)
         g_MouseClientX = event.motion.x;
         g_MouseClientY = event.motion.y;
         g_MousePositionValid = true;
+        g_MousePositionFromBridge = g_ProcessingBridgeMouseEvent;
         break;
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
     case SDL_EVENT_MOUSE_BUTTON_UP:
@@ -509,6 +538,7 @@ void ProcessEvent(const SDL_Event &event)
         g_MouseClientX = event.button.x;
         g_MouseClientY = event.button.y;
         g_MousePositionValid = true;
+        g_MousePositionFromBridge = g_ProcessingBridgeMouseEvent;
         if (index >= 0)
             g_MouseButtons[index] = event.type == SDL_EVENT_MOUSE_BUTTON_DOWN;
         bool anyDown = false;
@@ -530,6 +560,7 @@ void ProcessEvent(const SDL_Event &event)
         for (bool &down : g_MouseButtons)
             down = false;
         g_MousePositionValid = false;
+        g_MousePositionFromBridge = false;
         SDL_CaptureMouse(false);
         break;
     default:
@@ -543,6 +574,17 @@ void BeginFrame(float deltaSeconds)
         return;
 
     ImGuiIO &io = ImGui::GetIO();
+    // Upstream GameGuiEnd changes locale only after the current UI content has
+    // already been built. Rebuild at the next BeginFrame so the current draw
+    // list never references UVs from a newly rebuilt atlas.
+    if (g_LocaleChangePending)
+    {
+        const Locale oldLocale = g_Locale;
+        g_Locale = g_PendingLocale;
+        if (!BuildLocaleFont(io, g_Locale))
+            g_Locale = oldLocale;
+        g_LocaleChangePending = false;
+    }
     io.DisplaySize = ImVec2(640.0f, 480.0f);
     io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
     io.DeltaTime = std::max(deltaSeconds, 1.0f / 1000.0f);
@@ -742,5 +784,32 @@ bool DebugInputSamplingSelfTest()
     return navigationContract;
 }
 } // namespace ThpracImGui
+
+#ifdef __EMSCRIPTEN__
+extern "C" EMSCRIPTEN_KEEPALIVE void TouhouThpracMouseEvent(std::int32_t type, float x, float y)
+{
+    SDL_Event event = {};
+    if (type == 0)
+    {
+        event.type = SDL_EVENT_MOUSE_MOTION;
+        event.motion.x = x;
+        event.motion.y = y;
+    }
+    else if (type == 1 || type == 2)
+    {
+        event.type = type == 1 ? SDL_EVENT_MOUSE_BUTTON_DOWN : SDL_EVENT_MOUSE_BUTTON_UP;
+        event.button.button = SDL_BUTTON_LEFT;
+        event.button.x = x;
+        event.button.y = y;
+    }
+    else
+    {
+        return;
+    }
+    ThpracImGui::g_ProcessingBridgeMouseEvent = true;
+    ThpracImGui::ProcessEvent(event);
+    ThpracImGui::g_ProcessingBridgeMouseEvent = false;
+}
+#endif
 
 #endif

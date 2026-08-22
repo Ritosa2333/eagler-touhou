@@ -18,6 +18,7 @@
 #include "Gui.hpp"
 #include "ItemManager.hpp"
 #include "PracticeRuntime.hpp"
+#include "ReplayExtension.hpp"
 #include "Rng.hpp"
 #include "ScreenEffect.hpp"
 #include "SoundPlayer.hpp"
@@ -249,29 +250,45 @@ ChainCallbackResult Player::OnUpdate(Player *p)
     {
         p->bombInfo.calc(p);
     }
-    else if (!g_Gui.HasCurrentMsgIdx() && p->respawnTimer != 0 && 0 < g_GameManager.bombsRemaining &&
-             (WAS_PRESSED(TH_BUTTON_BOMB) ||
-              (PracticeRuntime::OverlayAutoBomb() && p->playerState == PLAYER_STATE_DEAD)) &&
-             p->bombInfo.calc != NULL &&
-             (p->playerState != PLAYER_STATE_DEAD || p->respawnTimer > minRequiredDeathbombTimer))
+    else
     {
-        g_GameManager.bombsUsed++;
-        if (!PracticeRuntime::OverlayInfiniteBombs())
-            g_GameManager.bombsRemaining--;
-        g_Gui.flags.flag1 = 2;
-        p->bombInfo.isInUse = 1;
-        p->bombInfo.timer.SetCurrent(0);
-        p->bombInfo.duration = 999;
-        p->bombInfo.calc(p);
-        g_EnemyManager.spellcardInfo.isCapturing = false;
-        g_GameManager.DecreaseSubrank(200);
-        g_EnemyManager.spellcardInfo.usedBomb = g_EnemyManager.spellcardInfo.isActive != 0;
+        // THOverlay F6 does not invoke the bomb routine directly.  Upstream
+        // patches 0x428989/0x4289B4 so the normal bomb path consumes the
+        // previous frame's Bomb bit while AutoBomb is active.  The DEAD path
+        // below synthesizes that bit into g_CurFrameInput, so it becomes
+        // g_LastFrameInput on the following fixed tick.
+        const bool bombPressed = PracticeRuntime::OverlayAutoBomb()
+                                     ? ((g_LastFrameInput & TH_BUTTON_BOMB) != 0)
+                                     : WAS_PRESSED(TH_BUTTON_BOMB);
+        if (!g_Gui.HasCurrentMsgIdx() && p->respawnTimer != 0 && 0 < g_GameManager.bombsRemaining &&
+            bombPressed && p->bombInfo.calc != NULL &&
+             (p->playerState != PLAYER_STATE_DEAD || p->respawnTimer > minRequiredDeathbombTimer))
+        {
+            g_GameManager.bombsUsed++;
+            if (!PracticeRuntime::OverlayInfiniteBombs())
+                g_GameManager.bombsRemaining--;
+            g_Gui.flags.flag1 = 2;
+            p->bombInfo.isInUse = 1;
+            p->bombInfo.timer.SetCurrent(0);
+            p->bombInfo.duration = 999;
+            p->bombInfo.calc(p);
+            g_EnemyManager.spellcardInfo.isCapturing = false;
+            g_GameManager.DecreaseSubrank(200);
+            g_EnemyManager.spellcardInfo.usedBomb = g_EnemyManager.spellcardInfo.isActive != 0;
+        }
     }
     if (p->playerState == PLAYER_STATE_DEAD)
     {
         if (p->respawnTimer != 0)
         {
             p->respawnTimer--;
+            // Remaining F6 patches at 0x428A94/0x428A9D replace the vanilla
+            // load/sub/store with a direct decrement followed by
+            //     *(u16*)INPUT_ADDR = TH_BUTTON_BOMB;
+            // Preserve that one-tick input ownership exactly.  This is an
+            // assignment, not OR: upstream overwrites the current raw word.
+            if (PracticeRuntime::OverlayAutoBomb())
+                g_CurFrameInput = TH_BUTTON_BOMB;
             if (p->respawnTimer == 0)
             {
                 g_GameManager.powerItemCountForScore = 0;
@@ -744,6 +761,11 @@ ZunResult Player::HandlePlayerInputs()
     float verticalSpeed = 0.0;
     float touchDx = 0.0f;
     float touchDy = 0.0f;
+    float joystickX = 0.0f;
+    float joystickY = 0.0f;
+    bool sampledReplayTouch = false;
+    bool touchUnlimited = false;
+    const bool replayPlayback = g_GameManager.isInReplay != 0;
     PlayerDirection playerDirection = this->playerDirection;
 
     this->playerDirection = MOVEMENT_NONE;
@@ -883,10 +905,38 @@ ZunResult Player::HandlePlayerInputs()
         verticalSpeed = horizontalSpeed;
     }
 
-    if (Touch::GetPlayerDelta(&touchDx, &touchDy))
+    ReplayExtension::BeginInputFrame();
+    if (replayPlayback && ReplayExtension::GetPlaybackJoystick(&joystickX, &joystickY))
     {
+        const f32 maxSpeed = this->isFocus ? this->characterData.orthogonalMovementSpeedFocus
+                                           : this->characterData.orthogonalMovementSpeed;
+        horizontalSpeed = joystickX * maxSpeed;
+        verticalSpeed = joystickY * maxSpeed;
+        this->playerDirection = MOVEMENT_NONE;
+    }
+    else if (!replayPlayback && Touch::GetFreeJoystickVector(&joystickX, &joystickY))
+    {
+        ReplayExtension::CaptureJoystick(joystickX, joystickY);
+        const f32 maxSpeed = this->isFocus ? this->characterData.orthogonalMovementSpeedFocus
+                                           : this->characterData.orthogonalMovementSpeed;
+        horizontalSpeed = joystickX * maxSpeed;
+        verticalSpeed = joystickY * maxSpeed;
+        this->playerDirection = MOVEMENT_NONE;
+    }
+    else if ((replayPlayback &&
+              (sampledReplayTouch = ReplayExtension::GetPlaybackDirectTouch(&touchDx, &touchDy, &touchUnlimited))) ||
+             (!replayPlayback && Touch::GetPlayerDelta(&touchDx, &touchDy)))
+    {
+        if (!sampledReplayTouch)
+        {
+            touchUnlimited = Touch::IsUnlimited();
+            // Match vanilla replay's ownership model: sample the player's
+            // touch input once on the fixed 60 Hz game tick. Raw DOWN/MOVE/UP
+            // events remain in EAGX only for touch semantics/visualization.
+            ReplayExtension::CaptureDirectTouch(touchDx, touchDy, touchUnlimited);
+        }
         f32 focusRatio = 1.0f;
-        if (!Touch::IsUnlimited() && this->isFocus &&
+        if (!touchUnlimited && this->isFocus &&
             this->characterData.orthogonalMovementSpeed != 0.0f)
         {
             focusRatio = this->characterData.orthogonalMovementSpeedFocus /
@@ -920,7 +970,7 @@ ZunResult Player::HandlePlayerInputs()
             reqGameDy = maxY - this->positionCenter.y;
         }
 
-        if (focusRatio != 0.0f)
+        if (focusRatio != 0.0f && !sampledReplayTouch)
         {
             Touch::SetPlayerDelta(reqGameDx / focusRatio, reqGameDy / focusRatio);
         }
@@ -935,9 +985,9 @@ ZunResult Player::HandlePlayerInputs()
                                    requestedVerticalSpeed * requestedVerticalSpeed;
         const f32 maxSpeed = this->isFocus ? this->characterData.orthogonalMovementSpeedFocus
                                            : this->characterData.orthogonalMovementSpeed;
-        const f32 effectiveMaxSpeed = Touch::IsUnlimited() ? std::sqrt(currentSpeedSq) : maxSpeed;
+        const f32 effectiveMaxSpeed = touchUnlimited ? std::sqrt(currentSpeedSq) : maxSpeed;
 
-        if (!Touch::IsUnlimited() && currentSpeedSq > effectiveMaxSpeed * effectiveMaxSpeed &&
+        if (!touchUnlimited && currentSpeedSq > effectiveMaxSpeed * effectiveMaxSpeed &&
             currentSpeedSq > 0.0f)
         {
             const f32 currentSpeed = std::sqrt(currentSpeedSq);
@@ -952,9 +1002,9 @@ ZunResult Player::HandlePlayerInputs()
 
         const f32 consumedGameDx = hx != 0.0f ? horizontalSpeed * hx : 0.0f;
         const f32 consumedGameDy = vy != 0.0f ? verticalSpeed * vy : 0.0f;
-        if (focusRatio != 0.0f)
+        if (focusRatio != 0.0f && !sampledReplayTouch)
         {
-            if (!Touch::IsUnlimited() &&
+            if (!touchUnlimited &&
                 currentSpeedSq > effectiveMaxSpeed * effectiveMaxSpeed && currentSpeedSq > 0.0f)
             {
                 const f32 consumeX = hx != 0.0f ? consumedGameDx / focusRatio : touchDx;

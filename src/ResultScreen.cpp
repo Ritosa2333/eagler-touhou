@@ -10,6 +10,7 @@
 #include "Localization.hpp"
 #include "Player.hpp"
 #include "PracticeRuntime.hpp"
+#include "ReplayExtension.hpp"
 #include "ReplayManager.hpp"
 #include "Rng.hpp"
 #include "SoundPlayer.hpp"
@@ -84,11 +85,16 @@ static void DrawResultShotTypeText(AnmVm *vm, const char *text)
 static ResultScreenState ResolveFromGameResultState(bool directReplaySave, bool isInPracticeMode,
                                                     bool thpracActive, bool isInReplay)
 {
+    (void)isInPracticeMode;
+    (void)thpracActive;
+    (void)isInReplay;
     if (directReplaySave)
         return RESULT_SCREEN_STATE_SAVE_REPLAY_QUESTION;
-    if (!isInPracticeMode || (thpracActive && !isInReplay))
-        return RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME;
-    return RESULT_SCREEN_STATE_EXIT;
+    // th06_preplay_1 permanently changes the vanilla Practice branch's
+    // immediate state from EXIT (0x11) to WRITING_HIGHSCORE_NAME (0x09).
+    // The non-Practice branch already used 0x09, so after the patch every
+    // normal from-game ResultScreen starts there. This is not mode-gated.
+    return RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME;
 }
 
 #ifdef TH_DEV_TOOLS
@@ -186,8 +192,8 @@ bool ResultScreen::DebugThpracResultRoutingSelfTest()
 {
     return ResolveFromGameResultState(true, true, true, false) == RESULT_SCREEN_STATE_SAVE_REPLAY_QUESTION &&
            ResolveFromGameResultState(false, true, true, false) == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME &&
-           ResolveFromGameResultState(false, true, false, false) == RESULT_SCREEN_STATE_EXIT &&
-           ResolveFromGameResultState(false, true, true, true) == RESULT_SCREEN_STATE_EXIT &&
+           ResolveFromGameResultState(false, true, false, false) == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME &&
+           ResolveFromGameResultState(false, true, true, true) == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME &&
            ResolveFromGameResultState(false, false, false, false) == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME;
 }
 
@@ -932,13 +938,14 @@ i32 ResultScreen::HandleReplaySaveKeyboard()
     case RESULT_SCREEN_STATE_SAVE_REPLAY_QUESTION:
         if (this->frameTimer == 60)
         {
-            if (g_GameManager.numRetries != 0 || Touch::WasUsedThisRun())
+            if (g_GameManager.numRetries != 0)
             {
                 saveInterrupt = 0xc;
             }
             else
             {
-                if (g_Supervisor.framerateMultiplier < 0.99f)
+                if (g_Supervisor.framerateMultiplier < 0.99f ||
+                    PracticeRuntime::ReplayUnsafeAssistUsedThisRun())
                 {
                     saveInterrupt = 0xd;
                 }
@@ -1045,10 +1052,16 @@ i32 ResultScreen::HandleReplaySaveKeyboard()
                 replayLoaded = (ReplayHeader *)FileSystem::OpenPath(replayToReadPath, 1);
                 if (replayLoaded == NULL)
                 {
-                    continue;
+                    std::sprintf(replayToReadPath, "./replay/th6_%.2d.rpyx", idx + 1);
+                    replayLoaded = (ReplayHeader *)FileSystem::OpenPath(replayToReadPath, 1);
+                    if (replayLoaded == NULL)
+                    {
+                        continue;
+                    }
                 }
 
-                if (ReplayManager::ValidateReplayData(replayLoaded, g_LastFileSize) == ZUN_SUCCESS)
+                if (ReplayExtension::MatchesPath(replayToReadPath, reinterpret_cast<const u8 *>(replayLoaded), g_LastFileSize) &&
+                    ReplayManager::ValidateReplayData(replayLoaded, g_LastFileSize) == ZUN_SUCCESS)
                 {
                     this->replays[idx] = *replayLoaded;
                 }
@@ -1461,7 +1474,7 @@ u32 ResultScreen::DrawFinalStats() const
             slowdownRate = 1.0f;
         }
 
-        slowdownRate = Touch::WasUsedThisRun() ? 100.0f : (1 - slowdownRate) * 100.0f;
+        slowdownRate = Touch::UsedCheatMovementThisRun() ? 100.0f : (1 - slowdownRate) * 100.0f;
 
         strPos.y += 22.0f;
         g_AsciiManager.AddFormatText(&strPos, "    %3.2f%%", slowdownRate);

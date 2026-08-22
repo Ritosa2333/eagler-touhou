@@ -302,8 +302,14 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
     i32 padding[3];
 
     Touch::ResetRunUsage();
+    PracticeRuntime::ResetReplayDeterminismUsage();
     PracticeRuntime::RefreshFromHost();
-    if (mgr->isInReplay)
+    // Normal Replay-menu playback already executed THGuiRep::State(1/2/3)
+    // before the original isInReplay write. Do not parse the file a second
+    // time here and overwrite that candidate/state-machine semantics. Keep a
+    // direct-start fallback for developer/architectural entry paths that do
+    // not pass through MainMenu::ReplayHandling().
+    if (mgr->isInReplay && !PracticeRuntime::ReplayStartupCommitted())
         PracticeRuntime::LoadReplayMetadata(reinterpret_cast<const char *>(mgr->replayFile));
     PracticeRuntime::PrepareStart(*mgr);
     failedToLoadReplay = false;
@@ -424,6 +430,14 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
         {
             failedToLoadReplay = true;
         }
+        else
+        {
+            // ReplayManager::RegisterChain is the point where the replay
+            // header becomes authoritative for character/shot/difficulty.
+            // Re-publish those runtime-owned values before Stage/Enemy/ECL
+            // loading so section patches never use the previous Practice menu.
+            PracticeRuntime::SyncRuntimeDerivedSession();
+        }
         while (g_ExtraLivesScores[mgr->extraLives] <= mgr->guiScore)
         {
             mgr->extraLives++;
@@ -470,14 +484,22 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
         g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_GUI);
         return ZUN_ERROR;
     }
-    // A practice replay sidecar is authoritative for the initial state that
-    // produced it. Ordinary replays leave PracticeRuntime inactive.
-    PracticeRuntime::ApplyInitialState(*mgr, true);
-    RuntimeExtension::OnGameStarted(mgr);
     if (g_GameManager.isInReplay == 0)
     {
         ReplayManager::RegisterChain(0, "replay/th6_00.rpy");
     }
+
+    // th06_patch_main is installed at original address 0x41c17a. Verified
+    // against the Japanese i386 executable, that site is after ReplayManager
+    // registration and immediately before the initial-BGM play sequence.
+    // Keep trainer stats/section side effects at that exact lifecycle boundary
+    // instead of exposing them to the replay recorder too early.
+    PracticeRuntime::ApplyInitialState(*mgr, true);
+    // State(3)'s portable startup bridge is one-shot. The source-owned
+    // THGuiRep::mRepStatus remains sticky independently until Replay State(1).
+    PracticeRuntime::FinishReplayStartup();
+    RuntimeExtension::OnGameStarted(mgr);
+
     if (g_GameManager.demoMode == 0)
     {
         // Read boss battle, and store it for use when boss is started.
@@ -505,8 +527,10 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
         g_Supervisor.unk1b8 = 0.0;
     }
     mgr->isTimeStopped = false;
-    if (!PracticeRuntime::Active())
-        mgr->score = 0;
+    // Original 0x41c1c1 clears score after th06_patch_main. guiScore keeps the
+    // configured practice score; the first normal OnUpdate restores score from
+    // guiScore, exactly as upstream. Do not suppress this vanilla transient.
+    mgr->score = 0;
     mgr->isGameCompleted = 0;
     g_AsciiManager.InitializeVms();
     if (failedToLoadReplay)

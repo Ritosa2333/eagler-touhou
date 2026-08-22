@@ -5,33 +5,40 @@
 #include <ctime>
 #include <new>
 
+#include "AsciiManager.hpp"
 #include "Controller.hpp"
+#include "EaglerOptions.hpp"
 #include "FileSystem.hpp"
 #include "GameManager.hpp"
 #include "Gui.hpp"
 #include "PracticeRuntime.hpp"
+#include "ReplayExtension.hpp"
 #include "ReplayManager.hpp"
 #include "Rng.hpp"
 #include "Supervisor.hpp"
+#include "Touch.hpp"
 #include "utils.hpp"
 
 ReplayManager *g_ReplayManager;
 
 static i32 ReplayGameplayDataSize(const u8 *bytes, i32 fileSize)
 {
-    if (bytes == nullptr || fileSize < static_cast<i32>(sizeof(ReplayHeader) + 8) ||
-        std::memcmp(bytes, "T6RP", 4) != 0 || std::memcmp(bytes + fileSize - 4, "PRAC", 4) != 0)
+    if (bytes == nullptr || fileSize < static_cast<i32>(sizeof(ReplayHeader)))
         return fileSize;
 
-    const size_t size = static_cast<size_t>(fileSize);
-    const u32 payloadSize = static_cast<u32>(bytes[size - 8]) |
-                            (static_cast<u32>(bytes[size - 7]) << 8) |
-                            (static_cast<u32>(bytes[size - 6]) << 16) |
-                            (static_cast<u32>(bytes[size - 5]) << 24);
+    const size_t baseSize = ReplayExtension::BaseFileSize(bytes, static_cast<size_t>(fileSize));
+    if (baseSize < sizeof(ReplayHeader) + 8 || std::memcmp(bytes, "T6RP", 4) != 0 ||
+        std::memcmp(bytes + baseSize - 4, "PRAC", 4) != 0)
+        return static_cast<i32>(baseSize);
+
+    const u32 payloadSize = static_cast<u32>(bytes[baseSize - 8]) |
+                            (static_cast<u32>(bytes[baseSize - 7]) << 8) |
+                            (static_cast<u32>(bytes[baseSize - 6]) << 16) |
+                            (static_cast<u32>(bytes[baseSize - 5]) << 24);
     // ReplayLoadParam in thprac v2.3.0.3 accepts TH06 payloads below 512 B.
-    if (payloadSize == 0 || payloadSize >= 512 || payloadSize > size - 8 - sizeof(ReplayHeader))
-        return fileSize;
-    return static_cast<i32>(size - 8 - payloadSize);
+    if (payloadSize == 0 || payloadSize >= 512 || payloadSize > baseSize - 8 - sizeof(ReplayHeader))
+        return static_cast<i32>(baseSize);
+    return static_cast<i32>(baseSize - 8 - payloadSize);
 }
 
 ZunResult ReplayManager::ValidateReplayData(ReplayHeader *data, i32 fileSize)
@@ -216,6 +223,47 @@ ZunResult ReplayManager::RegisterChain(i32 isDemo, const char *replayFile)
 #define TH_BUTTON_REPLAY_CAPTURE                                                                                       \
     (TH_BUTTON_SHOOT | TH_BUTTON_BOMB | TH_BUTTON_FOCUS | TH_BUTTON_SKIP | TH_BUTTON_DIRECTION)
 
+static void ApplyReplayExtensionFrame()
+{
+    bool usedThisRun = false;
+    bool bombedWithTouch = false;
+    bool cheatMovementUsed = false;
+    if (ReplayExtension::GetPlaybackTouchState(&usedThisRun, &bombedWithTouch, &cheatMovementUsed))
+        Touch::SetReplayUsageState(usedThisRun, bombedWithTouch, cheatMovementUsed);
+
+    Touch::BeginReplayTouchFrame();
+    std::size_t eventCount = 0;
+    const ReplayExtension::TouchEvent *events = ReplayExtension::GetPlaybackTouchEvents(&eventCount);
+    for (std::size_t index = 0; index < eventCount; ++index)
+    {
+        const ReplayExtension::TouchEvent &event = events[index];
+        Touch::ApplyReplayTouchEvent(event.fingerId, event.x, event.y, event.action, event.role, event.flags);
+    }
+
+    Touch::ReplayTouchPoint points[10];
+    const i32 pointCount = Touch::GetReplayTouchPoints(points, ARRAY_SIZE_SIGNED(points));
+    if (pointCount == 0)
+        return;
+
+    const ZunColor oldColor = g_AsciiManager.color;
+    const ZunVec2 oldScale = g_AsciiManager.scale;
+    const u32 oldIsGui = g_AsciiManager.isGui;
+    const bool oldIsSelected = g_AsciiManager.isSelected;
+    g_AsciiManager.color = COLOR_WHITE;
+    g_AsciiManager.scale = {0.7f, 0.7f};
+    g_AsciiManager.isGui = 0;
+    g_AsciiManager.isSelected = false;
+    for (i32 index = 0; index < pointCount; ++index)
+    {
+        ZunVec3 position = {points[index].x - 5.0f, points[index].y - 7.0f, 0.0f};
+        g_AsciiManager.AddString(&position, "+");
+    }
+    g_AsciiManager.color = oldColor;
+    g_AsciiManager.scale = oldScale;
+    g_AsciiManager.isGui = oldIsGui;
+    g_AsciiManager.isSelected = oldIsSelected;
+}
+
 ChainCallbackResult ReplayManager::OnUpdate(ReplayManager *mgr)
 {
     u16 inputs;
@@ -225,6 +273,9 @@ ChainCallbackResult ReplayManager::OnUpdate(ReplayManager *mgr)
         return CHAIN_CALLBACK_RESULT_CONTINUE;
     }
     inputs = IS_PRESSED(TH_BUTTON_REPLAY_CAPTURE);
+    ReplayExtension::CaptureTouchState(Touch::WasUsedThisRun(), Touch::UsedTouchToBomb(),
+                                       Touch::UsedCheatMovementThisRun());
+    ReplayExtension::RecordFrame(g_GameManager.currentStage - 1, mgr->frameId);
     if (inputs != mgr->replayInputs->inputKey)
     {
         if (mgr->replayInputs + 2 >= mgr->replayInputEnd)
@@ -265,6 +316,8 @@ ChainCallbackResult ReplayManager::OnUpdateDemoHighPrio(ReplayManager *mgr)
     {
         mgr->replayInputs += 1;
     }
+    ReplayExtension::SetPlaybackFrame(g_GameManager.currentStage - 1, mgr->frameId);
+    ApplyReplayExtensionFrame();
     g_CurFrameInput = IS_PRESSED(0xFFFFFFFF & ~TH_BUTTON_REPLAY_CAPTURE) | mgr->replayInputs->inputKey;
     g_IsEigthFrameOfHeldInput = 0;
     if (g_LastFrameInput == g_CurFrameInput)
@@ -319,6 +372,8 @@ ZunResult ReplayManager::AddedCallback(ReplayManager *mgr)
     mgr->frameId = 0;
     if (mgr->replayData == NULL)
     {
+        ReplayExtension::ClearPlayback();
+        ReplayExtension::ResetRecording();
         mgr->replayData = new (std::nothrow) ReplayData{};
         if (mgr->replayData == NULL)
         {
@@ -354,6 +409,7 @@ ZunResult ReplayManager::AddedCallback(ReplayManager *mgr)
     {
         utils::DebugPrint2("error : replay.cpp");
     }
+    ReplayExtension::BeginStageRecording(g_GameManager.currentStage - 1);
     mgr->replayData->stageReplayData[g_GameManager.currentStage - 1] = AllocateStageReplayData(sizeof(StageReplayData));
     stageReplayData = mgr->replayData->stageReplayData[g_GameManager.currentStage - 1];
     if (stageReplayData == NULL)
@@ -384,6 +440,7 @@ ZunResult ReplayManager::AddedCallbackDemo(ReplayManager *mgr)
     mgr->frameId = 0;
     if (mgr->replayData == NULL)
     {
+        ReplayExtension::ClearPlayback();
         mgr->replayData = new (std::nothrow) ReplayData{};
         if (mgr->replayData == NULL)
         {
@@ -391,8 +448,19 @@ ZunResult ReplayManager::AddedCallbackDemo(ReplayManager *mgr)
         }
 
         mgr->replayData->header = (ReplayHeader *)FileSystem::OpenPath(mgr->replayFile, g_GameManager.demoMode == 0);
-        mgr->replayFileSize = g_LastFileSize;
-        if (ValidateReplayData(mgr->replayData->header, mgr->replayFileSize) != ZUN_SUCCESS)
+        const u32 fileSize = g_LastFileSize;
+        mgr->replayFileSize = ReplayGameplayDataSize(reinterpret_cast<const u8 *>(mgr->replayData->header), fileSize);
+        if (!ReplayExtension::MatchesPath(mgr->replayFile, reinterpret_cast<const u8 *>(mgr->replayData->header),
+                                          fileSize))
+        {
+            std::free(mgr->replayData->header);
+            delete mgr->replayData;
+            mgr->replayData = NULL;
+            return ZUN_ERROR;
+        }
+        Touch::ResetReplayTouch();
+        ReplayExtension::LoadPlayback(reinterpret_cast<const u8 *>(mgr->replayData->header), fileSize);
+        if (ValidateReplayData(mgr->replayData->header, fileSize) != ZUN_SUCCESS)
         {
             std::free(mgr->replayData->header);
             delete mgr->replayData;
@@ -452,6 +520,8 @@ ZunResult ReplayManager::AddedCallbackDemo(ReplayManager *mgr)
 
 ZunResult ReplayManager::DeletedCallback(ReplayManager *mgr)
 {
+    Touch::ResetReplayTouch();
+    ReplayExtension::ClearPlayback();
     g_Chain.Cut(mgr->drawChain);
     mgr->drawChain = NULL;
     if (mgr->calcChainDemoHighPrio != NULL)
@@ -538,7 +608,8 @@ void ReplayManager::SaveReplay(const char *replayPath, char *replayName)
                                                    (u8 *)mgr->replayData->stageReplayData[stageIdx]);
                     }
                 }
-                utils::DebugPrint2("%s write ...\n", replayPath);
+                const std::string actualReplayPath = ReplayExtension::ResolveSavePath(replayPath);
+                utils::DebugPrint2("%s write ...\n", actualReplayPath.c_str());
                 replayCopy.score = g_GameManager.guiScore;
                 slowDown = (g_Supervisor.unk1b4 / g_Supervisor.unk1b8 - 0.5f) * 2.0f;
                 if (slowDown < 0.0f)
@@ -608,7 +679,7 @@ void ReplayManager::SaveReplay(const char *replayPath, char *replayName)
                 }
 
                 // Write the data to the replay file.
-                file = FileSystem::OpenFileStream(replayPath, "wb");
+                file = FileSystem::OpenFileStream(actualReplayPath.c_str(), "wb");
                 if (file == NULL)
                 {
                     return;
@@ -632,7 +703,9 @@ void ReplayManager::SaveReplay(const char *replayPath, char *replayName)
                     }
                 }
                 SDL_CloseIO(file);
-                PracticeRuntime::SaveReplayMetadata(replayPath);
+                PracticeRuntime::SaveReplayMetadata(actualReplayPath.c_str());
+                if (ReplayExtension::AppendRecording(actualReplayPath.c_str()))
+                    ReplayExtension::RemoveAlternateSave(actualReplayPath.c_str());
             }
             for (stageIdx = 0; stageIdx < ARRAY_SIZE_SIGNED(mgr->replayData->stageReplayData); stageIdx += 1)
             {

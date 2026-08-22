@@ -12,6 +12,7 @@
 #include "GameErrorContext.hpp"
 #include "GameManager.hpp"
 #include "ReplayData.hpp"
+#include "ReplayExtension.hpp"
 #include "Stage.hpp"
 #include "ReplayManager.hpp"
 #include "PracticeRuntime.hpp"
@@ -1385,6 +1386,10 @@ i32 MainMenu::ReplayHandling()
     case STATE_REPLAY_LOAD:
         if (this->stateTimer == 60)
         {
+            // th06_rep_menu_1 @ 0x438262 is immediately before the original
+            // LoadReplayMenu(this) call. THGuiRep::State(1) resets live
+            // thPracParam/replay ownership at this exact Replay-menu entry.
+            PracticeRuntime::ReplayMenuReset();
             if (LoadReplayMenu(this))
             {
                 g_GameErrorContext.Log("japanese");
@@ -1400,10 +1405,15 @@ i32 MainMenu::ReplayHandling()
                     replayData = (ReplayHeader *)FileSystem::OpenPath(replayFilePath, 1);
                     if (replayData == NULL)
                     {
-                        std::free(replayData);
-                        continue;
+                        std::sprintf(replayFilePath, "./replay/th6_%.2d.rpyx", cur + 1);
+                        replayData = (ReplayHeader *)FileSystem::OpenPath(replayFilePath, 1);
+                        if (replayData == NULL)
+                        {
+                            continue;
+                        }
                     }
-                    if (!ReplayManager::ValidateReplayData(replayData, g_LastFileSize))
+                    if (ReplayExtension::MatchesPath(replayFilePath, reinterpret_cast<const u8 *>(replayData), g_LastFileSize) &&
+                        !ReplayManager::ValidateReplayData(replayData, g_LastFileSize))
                     {
                         this->replayFileData[replayFileIdx].header = replayData;
                         std::strcpy(this->replayFilePaths[replayFileIdx], replayFilePath);
@@ -1434,8 +1444,8 @@ i32 MainMenu::ReplayHandling()
                     std::string lowerName = name;
                     std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(),
                                    [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
-                    if (lowerName.size() == 14 && lowerName.starts_with("th6_ud") &&
-                        lowerName.ends_with(".rpy"))
+                    if ((lowerName.size() == 14 && lowerName.starts_with("th6_ud") && lowerName.ends_with(".rpy")) ||
+                        (lowerName.size() == 15 && lowerName.starts_with("th6_ud") && lowerName.ends_with(".rpyx")))
                     {
                         userReplayNames.push_back(std::move(name));
                     }
@@ -1455,7 +1465,8 @@ i32 MainMenu::ReplayHandling()
                     {
                         continue;
                     }
-                    if (ReplayManager::ValidateReplayData(replayData, g_LastFileSize) == ZUN_SUCCESS)
+                    if (ReplayExtension::MatchesPath(replayFilePath, reinterpret_cast<const u8 *>(replayData), g_LastFileSize) &&
+                        ReplayManager::ValidateReplayData(replayData, g_LastFileSize) == ZUN_SUCCESS)
                     {
                         this->replayFileData[replayFileIdx].header = replayData;
                         std::snprintf(this->replayFilePaths[replayFileIdx],
@@ -1502,6 +1513,11 @@ i32 MainMenu::ReplayHandling()
             this->chosenReplay = this->cursor;
             if (WAS_PRESSED(TH_BUTTON_SELECTMENU))
             {
+                // th06_rep_menu_2 @ 0x4385d5 is on the instruction that
+                // transitions gameState to STATE_REPLAY_SELECT. State(2)
+                // inspects this replay into the separate mRepParam candidate
+                // before the stage picker owns the menu.
+                PracticeRuntime::ReplayMenuCheck(this->replayFilePaths[this->chosenReplay]);
                 this->gameState = STATE_REPLAY_SELECT;
                 anmVm = &(this->vm[97]);
                 for (cur = 0; cur < 0x19; cur += 1, anmVm++)
@@ -1597,6 +1613,10 @@ i32 MainMenu::ReplayHandling()
         }
         if (WAS_PRESSED(TH_BUTTON_SELECTMENU) /*&& this->currentReplay[this->cursor].header->stageReplayDataOffsets*/)
         {
+            // th06_rep_menu_3 @ 0x438974 is exactly the original
+            // isInReplay=1 write. State(3) first marks THGuiRep replay
+            // ownership active and conditionally copies mRepParam live.
+            PracticeRuntime::ReplayMenuActivate();
             g_GameManager.isInReplay = 1;
             g_Supervisor.framerateMultiplier = 1.0;
             std::strcpy((char *)g_GameManager.replayFile, this->replayFilePaths[this->chosenReplay]);

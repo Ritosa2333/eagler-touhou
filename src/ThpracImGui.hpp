@@ -73,11 +73,13 @@ bool Initialize();
 void Shutdown();
 bool IsInitialized();
 Locale GetLocale();
+void RequestLocale(Locale locale);
 const char *Text(TextId id);
 // Feed exactly one fixed-tick input sample.  Upstream thprac's TH06 Gen1
 // bridge exposes rising edges, followed by the game's delayed 8-frame repeat;
 // it never gives Dear ImGui a continuously-held direction every render frame.
 void SetGameInput(std::uint16_t buttons, bool sampled);
+void SetGameNavEnabled(bool enabled);
 bool InputPressed(std::uint16_t button);
 
 // Feed platform mouse-wheel events. Mouse position/buttons are sampled from

@@ -15,6 +15,7 @@ const upstreamBase = read('dependencies/upstream-thcrap-tsa/base_tsa/th06.js');
 const upstreamVersion = read('dependencies/upstream-thcrap-tsa/base_tsa/th06.v1.02h.js');
 const upstreamStringlocs = read('dependencies/upstream-thcrap-tsa/base_tsa/th06/stringlocs.v1.02h.js');
 const upstreamStrings = read('dependencies/upstream-thcrap/thcrap/src/strings.cpp');
+const upstreamMusic = read('dependencies/upstream-thcrap/thcrap_tsa/src/music.cpp');
 const originalSource = read('th06/src/ResultScreen.cpp');
 const portableSource = read('th06-eagler/src/ResultScreen.cpp');
 const originalGui = read('th06/src/Gui.cpp');
@@ -394,8 +395,12 @@ if (!originalController.includes('if (res == DIERR_INPUTLOST)') ||
     throw new Error('Original TH06 DirectInput keyboard reacquire baseline drifted');
 }
 if (!portableController.includes('keyboardState = (u8 *)SDL_GetKeyboardState(NULL);') ||
+    !portableController.includes('if (keyboardState != NULL)') ||
     !portableController.includes('SDL_GetGamepadButton(g_Supervisor.gameController') ||
-    !portableController.includes('return Controller::GetControllerInput(buttons) | Touch::GetButtonBits();')) {
+    !portableController.includes('buttons |= EaglerOptions::BrowserKeyboardBits();') ||
+    !portableController.includes('buttons |= EaglerOptions::BrowserGamepadDirectionBits();') ||
+    !portableController.includes('buttons = Controller::GetControllerInput(buttons);') ||
+    !portableController.includes('return buttons | Touch::GetButtonBits();')) {
     throw new Error('Portable TH06 SDL input boundary no longer structurally supersedes DirectInput reacquire_input');
 }
 
@@ -548,8 +553,8 @@ if (!portableMusicRoom.includes('if (Localization::Active())') ||
     !portableMusicRoom.includes('unusedVm.flags.flag1 = 0;') ||
     !portableMusicRoom.includes('COLOR_MUSIC_ROOM_SONG_DESC_SHADOW, "%s", text);') ||
     !portableMusicRoom.includes('textVm.pos = ZunVec3(96.0f, 320.0f + line * 16.0f, 0.0f);') ||
-    !portableMusicRoom.includes('const char *comment = Localization::MusicComment(') ||
-    !portableMusicRoom.includes('track, static_cast<u16>(lineIndex), musicRoom->trackDescriptors[i].description[lineIndex]')) {
+    !portableMusicRoom.includes('const char *fallback = musicRoom->trackDescriptors[musicRoom->selectedSongIndex].description[line];') ||
+    !portableMusicRoom.includes('const char *text = Localization::MusicComment(track, static_cast<u16>(line), fallback);')) {
     throw new Error('Portable TH06 localized Music Room must replace the byte-32 split with one wide sprite and look up every source line, including empty originals');
 }
 if (!portableMusicRoom.includes('char lineCharBuffer[64];') ||
@@ -737,7 +742,7 @@ if (!portableAnmManager.includes('void AnmManager::QueueThcrapSnapshotIfRequeste
     !portableGameWindow.includes('g_AnmManager->TakeThcrapSnapshotIfRequested();')) {
     throw new Error('Portable TH06 must sample P at 60Hz, defer backbuffer read until present, and save 000..999 640x480 PNG snapshots');
 }
-if (!/const i32 res = g_Chain\.RunCalcChain\(\);\s*#ifdef TH_ENABLE_THCRAP\s*g_AnmManager->QueueThcrapSnapshotIfRequested\(\);\s*#endif/m.test(portableGameWindow) ||
+if (!/const i32 res = g_Chain\.RunCalcChain\(\);[^]*?#ifdef TH_ENABLE_THCRAP\s*g_AnmManager->QueueThcrapSnapshotIfRequested\(\);\s*#endif/m.test(portableGameWindow) ||
     !/g_AnmManager->TakeScreenshotIfRequested\(\);\s*#ifdef TH_ENABLE_THCRAP[^]*?g_AnmManager->TakeThcrapSnapshotIfRequested\(\);\s*#endif[^]*?g_GfxBackend->SwapBuffers\(\);/m.test(portableGameWindow)) {
     throw new Error('TH06 snapshot must sample immediately after fixed-step calc and capture the completed frame immediately before SwapBuffers');
 }
@@ -767,12 +772,17 @@ if (!/"music_cmt#line_num"\s*:\s*\{\s*"addr"\s*:\s*\[\s*"0x425c17"\s*,\s*"0x4250
     !/"music_cmt"\s*:\s*\{\s*"addr"\s*:\s*\[\s*"0x425c67"\s*,\s*"0x4250f6"\s*\]/m.test(upstreamVersion)) {
     throw new Error('TH06 Music Room comment breakpoint addresses drifted');
 }
-if (!portableLocalization.includes('const char *Localization::MusicTitle(std::uint32_t track, const char *fallback)') ||
+if (!upstreamMusic.includes('void music_title_print(const char **str') ||
+    !upstreamMusic.includes('*str = strings_sprintf(0, format, track_id_displayed, title);') ||
+    !upstreamMusic.includes('*str = str_rep;') ||
+    !portableLocalization.includes('const char *Localization::MusicTitle(std::uint32_t track, const char *fallback)') ||
     !portableLocalization.includes('const char *Localization::MusicComment(std::uint32_t track, std::uint16_t line, const char *fallback)') ||
-    !portableMusicRoom.includes('Localization::MusicTitle(track, musicRoom->trackDescriptors[i].title)') ||
-    !portableMusicRoom.includes('Localization::MusicComment(') ||
+    !portableMusicRoom.includes('const char *displayTitle = Localization::MusicTitle(') ||
+    !portableMusicRoom.includes('const char *text = Localization::MusicComment(') ||
+    !portableMusicRoom.includes('if (std::strcmp(text, "@") == 0)') ||
+    portableMusicRoom.includes('Localization::CopyText(musicRoom->trackDescriptors') ||
     !portableGui.includes('Localization::MusicTitle(')) {
-    throw new Error('Portable TH06 must preserve typed track/line IDs for Music Room and in-game music title/comment lookups');
+    throw new Error('Portable TH06 Music Room must late-bind translated title/comment pointers at text generation and never copy them back into fixed TrackDescriptor storage');
 }
 
 for (const [name, addr] of [
@@ -877,6 +887,12 @@ for (const id of diagnosticIds) {
     if (!th06ContractIds.includes(id) || !portableLocalization.includes(`{"${id}",`))
         throw new Error(`TH06 diagnostic strings_lookup mapping missing: ${id}`);
 }
+
+// Fail closed on the complete target-version site inventory and reverse
+// portable Localization-consumer inventory as part of the normal contract
+// entrypoint; this ledger must not depend on somebody remembering to run a
+// second script manually.
+await import('./audit-thcrap-proof-ledger.mjs');
 
 console.log(
     'TH06 thcrap source contract PASS: result_rank_format -> AddFormatText; ' +

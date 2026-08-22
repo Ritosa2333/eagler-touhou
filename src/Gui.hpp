@@ -182,6 +182,7 @@ struct Gui
     void EndEnemySpellcard() const;
     void EndPlayerSpellcard() const;
     bool IsDialogueSkippable() const;
+    bool IsWaitingForPlayerAdvance() const;
 
     void ShowFullPowerMode(i32 fmtArg) const;
 

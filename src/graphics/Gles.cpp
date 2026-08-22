@@ -476,9 +476,15 @@ void GlesGraphics::BeginFrame()
     curVbo = (curVbo + 1) % 3;
 
     glBindBuffer(GL_ARRAY_BUFFER, vbos[curVbo]);
+#ifndef __EMSCRIPTEN__
     glBufferData(GL_ARRAY_BUFFER, VBO_CAPACITY, nullptr, GL_STREAM_DRAW);
+#endif
     vboOffset = 0;
 
+    // Web already rotates three VBOs that were allocated to VBO_CAPACITY at
+    // initialization. Re-orphaning another 1 MiB every presentation adds a
+    // redundant Chromium/driver command with no storage or synchronization
+    // benefit. Keep complete render-state invalidation on every platform.
     stateCache.Invalidate();
 }
 
@@ -595,12 +601,21 @@ void GlesGraphics::RenderImGui(const ImDrawData *drawData)
         glBindVertexArray(0);
     }
 
+    ImGuiIO &io = ImGui::GetIO();
+    // Rebuilding the thprac locale atlas clears FontAtlas::TexID. Treat that
+    // as an explicit backend invalidation request and replace the old GPU font
+    // texture before rendering the next frame.
+    if (this->imguiFontTexture != 0 && io.Fonts->TexID == nullptr)
+    {
+        glDeleteTextures(1, &this->imguiFontTexture);
+        this->imguiFontTexture = 0;
+    }
+
     if (this->imguiFontTexture == 0)
     {
         unsigned char *pixels = nullptr;
         int width = 0;
         int height = 0;
-        ImGuiIO &io = ImGui::GetIO();
         io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
         if (pixels == nullptr || width <= 0 || height <= 0)
         {
@@ -1259,6 +1274,23 @@ void GlesGraphics::DrawPrimitiveUP(PrimitiveType type, i32 primitiveCount, const
                      static_cast<long long>(bytesNeeded));
         return;
     }
+#ifdef __EMSCRIPTEN__
+    // Web permanent path: replace the streaming VBO storage for every
+    // immediate draw instead of repeatedly updating subranges of storage that
+    // earlier draws in the same presentation may still reference.
+    //
+    // This is intentionally not a draw-count or batching optimization. A/B
+    // testing kept draw/state/uniform/simulation/presentation order unchanged
+    // and changed only the storage/update lifetime. The old
+    // glBufferSubData(offset)->draw->glBufferSubData(next offset)->draw pattern
+    // was confirmed as a severe mobile WebGL/ANGLE CPU bottleneck across both
+    // TH06 and TH07. Replacement storage restored stable 120 Hz gameplay on
+    // tested Mali and Adreno-class Android devices, while desktop Intel showed
+    // essentially no A/B change. Keep this Web-specific path unless equivalent
+    // cross-GPU evidence proves a safer replacement.
+    glBufferData(GL_ARRAY_BUFFER, bytesNeeded, vertexData, GL_STREAM_DRAW);
+    GLint firstVertex = 0;
+#else
     vboOffset = ((vboOffset + vertexStride - 1) / vertexStride) * vertexStride;
     if (vboOffset + bytesNeeded > VBO_CAPACITY)
     {
@@ -1268,6 +1300,7 @@ void GlesGraphics::DrawPrimitiveUP(PrimitiveType type, i32 primitiveCount, const
     glBufferSubData(GL_ARRAY_BUFFER, vboOffset, bytesNeeded, vertexData);
 
     GLint firstVertex = (GLint)(vboOffset / vertexStride);
+#endif
 
     bool isScreenSpace = false;
     bool hasTex = false;
@@ -1300,7 +1333,9 @@ void GlesGraphics::DrawPrimitiveUP(PrimitiveType type, i32 primitiveCount, const
         return;
     }
 
+#ifndef __EMSCRIPTEN__
     vboOffset += bytesNeeded;
+#endif
 
     if (stateCache.currentVao != targetVao)
     {

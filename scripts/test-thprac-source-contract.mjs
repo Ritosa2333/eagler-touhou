@@ -14,16 +14,102 @@ const upstreamLocale = read('thprac-reallyportable/thprac/src/thprac/thprac_gui_
 const upstreamConfig = read('thprac-reallyportable/thprac/src/thprac/thprac_cfg.h');
 const upstreamTh06 = read('thprac-reallyportable/thprac/src/thprac/thprac_th06.cpp');
 const upstreamGui = read('thprac-reallyportable/thprac/src/thprac/thprac_gui_components.cpp');
+const upstreamGames = read('thprac-reallyportable/thprac/src/thprac/thprac_games.cpp');
 const catalog = read('thprac-reallyportable/portable/generated/section_catalog.hpp');
 const portableImGui = read('th06-eagler/src/ThpracImGui.cpp');
 const portablePractice = read('th06-eagler/src/PracticeRuntime.cpp');
 const portableShell = read('th06-eagler/resources/shell.html');
 const portableAttach = read('thprac-reallyportable/portable/cmake/AttachReallyportable.cmake');
 const portableAdapter = read('thprac-reallyportable/portable/adapters/th06/adapter.cpp');
+const portableSession = read('thprac-reallyportable/portable/src/session.cpp');
 const portableResult = read('th06-eagler/src/ResultScreen.cpp');
 const portableAscii = read('th06-eagler/src/AsciiManager.cpp');
 const portableMainMenu = read('th06-eagler/src/MainMenu.cpp');
 const portableReplay = read('th06-eagler/src/ReplayManager.cpp');
+const portablePlayer = read('th06-eagler/src/Player.cpp');
+const portableGameWindow = read('th06-eagler/src/GameWindow.cpp');
+const portableGles = read('th06-eagler/src/graphics/Gles.cpp');
+
+// THOverlay F6 is a cross-tick raw-input protocol, not a direct "if DEAD then
+// bomb" helper.  The first two patches make the normal bomb test consume the
+// previous frame Bomb bit; the latter two decrement respawnTimer and write
+// Bomb into the current input word so it is observed on the following tick.
+for (const anchor of [
+    'PATCH_HK(0x428989, "EB1D")',
+    'PATCH_HK(0x4289B4, "85D2")',
+    'PATCH_HK(0x428A94, "FF89")',
+    'PATCH_HK(0x428A9D, "66C70504D9690002")',
+]) {
+    if (!upstreamTh06.includes(anchor))
+        throw new Error(`Upstream TH06 F6 AutoBomb contract missing: ${anchor}`);
+}
+if (!portablePlayer.includes('PracticeRuntime::OverlayAutoBomb()\n                                     ? ((g_LastFrameInput & TH_BUTTON_BOMB) != 0)') ||
+    !portablePlayer.includes('if (PracticeRuntime::OverlayAutoBomb())\n                g_CurFrameInput = TH_BUTTON_BOMB;') ||
+    portablePlayer.includes('PracticeRuntime::OverlayAutoBomb() && p->playerState == PLAYER_STATE_DEAD')) {
+    throw new Error('Portable TH06 F6 AutoBomb must preserve upstream previous-input -> current-input next-tick ownership');
+}
+
+// TH06 Replay candidate semantics are intentionally *not* Reset()+overlay.
+// THPracParam::ReadJson() lacks Reset(), so omitted fields preserve mRepParam;
+// CheckReplay() only Reset()s mRepParam on a failed load and leaves the sticky
+// mParamStatus flag unchanged. Direct standalone loads may still start from an
+// all-zero Config, but Replay State(2) must use preserveMissing=true.
+const th06ReadJson = upstreamTh06.slice(
+    upstreamTh06.indexOf('bool ReadJson(std::string& json)'),
+    upstreamTh06.indexOf('std::string GetJson()', upstreamTh06.indexOf('bool ReadJson(std::string& json)')));
+if (th06ReadJson.includes('Reset();') ||
+    !th06ReadJson.includes('GetJsonValue(mode);') ||
+    !portablePractice.includes('ParseConfigJson(json, candidate, true)') ||
+    !portablePractice.includes('config.mode = static_cast<i32>(JsonNumber(json, "mode", config.mode));') ||
+    !portablePractice.includes('config.life = static_cast<i32>(JsonNumber(json, "life", config.life));')) {
+    throw new Error('Portable TH06 Replay candidate parser must preserve upstream non-resetting ReadJson semantics');
+}
+const th06ReplayCheck = portablePractice.slice(
+    portablePractice.indexOf('bool ReplayMenuCheck(const char *replayPath)'),
+    portablePractice.indexOf('void ReplayMenuActivate()', portablePractice.indexOf('bool ReplayMenuCheck(const char *replayPath)')));
+if (!th06ReplayCheck.includes('g_ReplayParamStatus = true;') ||
+    !th06ReplayCheck.includes('g_ReplayCandidate = {};') ||
+    th06ReplayCheck.includes('g_ReplayParamStatus = false;')) {
+    throw new Error('Portable TH06 Replay State(2) must preserve sticky mParamStatus on candidate failure');
+}
+const th06ReplayReset = portablePractice.slice(
+    portablePractice.indexOf('void ReplayMenuReset()'),
+    portablePractice.indexOf('bool ReplayMenuCheck(', portablePractice.indexOf('void ReplayMenuReset()')));
+if (!th06ReplayReset.includes('g_ReplayParamStatus = false;') ||
+    !th06ReplayReset.includes('g_Config = {};') ||
+    th06ReplayReset.includes('g_ReplayCandidate = {};')) {
+    throw new Error('Portable TH06 Replay State(1) must reset live/status owners without inventing an mRepParam reset');
+}
+for (const anchor of [
+    'i32 life = 0;',
+    'i32 bomb = 0;',
+    'i32 power = 0;',
+    'i32 rank = 0;',
+]) {
+    if (!read('th06-eagler/src/PracticeRuntime.hpp').includes(anchor))
+        throw new Error(`Portable TH06 Config{} must equal live Reset(): ${anchor}`);
+}
+for (const anchor of ['config.life = 8;', 'config.bomb = 8;', 'config.power = 128;', 'config.rank = 32;']) {
+    if (!portablePractice.includes(anchor))
+        throw new Error(`Portable TH06 persistent THGuiPrac default missing: ${anchor}`);
+}
+if (!portableSession.includes('Number(json, "life", 0)') ||
+    !portableSession.includes('Number(json, "mode", 0)') ||
+    !portableSession.includes('Number(json, "bomb", 0)') ||
+    !portableSession.includes('Number(json, "power", 0)') ||
+    !portableSession.includes('Number(json, "rank", 0)')) {
+    throw new Error('Portable shared session standalone decode must start from zero; TH06 candidate merging belongs to PracticeRuntime State(2)');
+}
+for (const anchor of [
+    'HostNumber("mode", 0)',
+    'HostNumber("life", 0)',
+    'HostNumber("bomb", 0)',
+    'HostNumber("power", 0)',
+    'HostNumber("rank", 0)',
+]) {
+    if (!portablePractice.includes(anchor))
+        throw new Error(`Portable TH06 Web host session fallback must match Reset=0: ${anchor}`);
+}
 
 // Web thprac must be the same portable trainer core as desktop, not merely the
 // ImGui/Backspace shell. The adapter owns ECL patching and re-reads the host
@@ -34,8 +120,188 @@ if (!portableAttach.includes('THPRAC_PORTABLE_ENABLED=1') ||
     !portableAdapter.includes('Module.eaglerOptions?.thpracSession') ||
     !portableAdapter.includes('ApplySection(ecl, g_Context, g_Session, g_Session.section)') ||
     !portablePractice.includes('\\\"difficulty\\\":%d,\\\"shotType\\\":%d}}') ||
-    !portablePractice.includes('g_Config.fakeType, g_MenuDifficulty, g_MenuShotType);')) {
+    !portablePractice.includes('g_Config.fakeType, RuntimeDifficulty(), RuntimeShotType());')) {
     throw new Error('Portable TH06 Web session/adapter contract is incomplete');
+}
+
+// TH06 live-run ownership must be reset before a fresh THGuiPrac selection.
+// Upstream gets that reset from th06_restart (State(1) itself intentionally
+// does not Reset), so portable must not leave a previous Web/adapter session
+// alive while the new menu is only editing persistent widget state.
+const th06OpenPractice = portablePractice.slice(
+    portablePractice.indexOf('void OpenPracticeMenu(i32 difficulty, i32 shotType)'),
+    portablePractice.indexOf('struct CurrentSectionInfo'));
+if (!upstreamTh06.includes('EHOOK_DY(th06_restart, 0x435901, 5, {') ||
+    !upstreamTh06.includes('thPracParam.Reset();') ||
+    !th06OpenPractice.includes('Module.eaglerOptions.thpracSession = null;') ||
+    !th06OpenPractice.includes('ThpracPortableTh06SetSessionJson(nullptr);') ||
+    !th06OpenPractice.includes('g_Config = g_MenuConfig;') ||
+    th06OpenPractice.indexOf('ThpracPortableTh06SetSessionJson(nullptr);') > th06OpenPractice.indexOf('g_Config = g_MenuConfig;')) {
+    throw new Error('Portable TH06 fresh Practice entry must atomically end the previous live host/adapter session before editing persistent widgets');
+}
+if (!upstreamTh06.includes('mDiffculty = GAME_MANAGER->difficulty;') ||
+    !upstreamTh06.includes('mShotType = (int)(GAME_MANAGER->character * 2 + GAME_MANAGER->shotType);') ||
+    th06OpenPractice.includes('g_MenuSectionIndex = 0;') ||
+    th06OpenPractice.includes('g_MenuChapter = 1;')) {
+    throw new Error('Portable TH06 State(1) must preserve persistent section/chapter widgets and update only source-owned difficulty/shot inputs');
+}
+const th06HostAbsent = portablePractice.slice(
+    portablePractice.indexOf('if (!active)\n    {', portablePractice.indexOf('void RefreshFromHost()')),
+    portablePractice.indexOf('Config config;', portablePractice.indexOf('void RefreshFromHost()')));
+if (!th06HostAbsent.includes('g_Config = {};') ||
+    !th06HostAbsent.includes('ThpracPortableTh06SetSessionJson(nullptr);')) {
+    throw new Error('Portable TH06 missing-host boundary must clear both C++ and adapter live owners');
+}
+const th06SetConfig = portablePractice.slice(
+    portablePractice.indexOf('void SetConfig(const Config &config)'),
+    portablePractice.indexOf('\nvoid RefreshFromHost()', portablePractice.indexOf('void SetConfig(const Config &config)')));
+if (!th06SetConfig.includes('if (g_Config.active)') ||
+    !th06SetConfig.includes('PublishPortableSession();') ||
+    !th06SetConfig.includes('ThpracPortableTh06SetSessionJson(nullptr);')) {
+    throw new Error('Portable TH06 inactive Config must be encoded as session absence; the wire schema otherwise reactivates it');
+}
+const th06NativeReset = portablePractice.slice(
+    portablePractice.indexOf('#else\n    // Upstream th06_restart resets thPracParam', portablePractice.indexOf('void RefreshFromHost()')),
+    portablePractice.indexOf('#endif\n}', portablePractice.indexOf('#else\n    // Upstream th06_restart resets thPracParam')));
+if (!th06NativeReset.includes('g_Config = {};') ||
+    !th06NativeReset.includes('ThpracPortableTh06SetSessionJson(nullptr);') ||
+    th06NativeReset.includes('PublishPortableSession();')) {
+    throw new Error('Portable TH06 native ordinary reset must Reset the full live block and clear adapter ownership');
+}
+
+// Replay hook-site semantics must remain explicit rather than collapsing
+// THGuiRep State(1/2/3) into GameManager startup. These anchors correspond to
+// original hook addresses 0x438262 / 0x4385d5 / 0x438974.
+if (!portableMainMenu.includes('PracticeRuntime::ReplayMenuReset();') ||
+    !portableMainMenu.includes('PracticeRuntime::ReplayMenuCheck(this->replayFilePaths[this->chosenReplay]);') ||
+    !portableMainMenu.includes('PracticeRuntime::ReplayMenuActivate();') ||
+    !portablePractice.includes('static bool g_ReplayStartupCommitted = false;') ||
+    !portablePractice.includes('g_ReplayPlaybackActive = true;') ||
+    !portablePractice.includes('g_ReplayStartupCommitted = true;') ||
+    !portablePractice.includes('PublishPortableSession();')) {
+    throw new Error('Portable TH06 must preserve THGuiRep State(1/2/3), sticky mRepStatus, and the separate one-shot startup bridge');
+}
+if (!portablePractice.includes('for (i32 round = 0; round < 3 && repeatedPracticeStable; round++)') ||
+    !portablePractice.includes('g_Config.section == 4 && g_Config.life == 5 && g_Config.bomb == 4 &&') ||
+    !portablePractice.includes('g_Config.power == 96 && g_PreserveConfigOnFreshStart')) {
+    throw new Error('Portable TH06 must retain the focused three-round repeated-Practice lifecycle regression');
+}
+
+// Warp is a THGuiPrac widget only in TH06: live THPracParam has no warp member.
+// State(3/5) commits CalcSection()/frame, not the selector itself.
+const upstreamParamStart = upstreamTh06.indexOf('struct THPracParam {');
+const upstreamParamEnd = upstreamTh06.indexOf('THPracParam thPracParam', upstreamParamStart);
+if (upstreamTh06.slice(upstreamParamStart, upstreamParamEnd).includes('int32_t warp;') ||
+    !portablePractice.includes('committed.warp = 0;')) {
+    throw new Error('Portable TH06 live state must not acquire a source-less Warp field from persistent menu state');
+}
+
+// Cancel preserves widgets but leaves the live owner at the reset state.
+const closeStart = portablePractice.indexOf('static void RequestMenuClose(MenuResult result, bool accept)');
+const closeEnd = portablePractice.indexOf('\nMenuResult PollPracticeMenu()', closeStart);
+const closeBody = portablePractice.slice(closeStart, closeEnd);
+if (!closeBody.includes('StoreWorkingMenuConfig();\n        // State(4)') ||
+    !closeBody.includes('g_Config = {};')) {
+    throw new Error('Portable TH06 State(4) must preserve widgets while restoring all-zero live thPracParam');
+}
+
+// THAdvOptWnd is a formal no-hook-name surface. TH06 contains Game Speed and
+// About only; GameplayInit/GameplaySet are empty in upstream.
+for (const anchor of [
+    'class THAdvOptWnd : public Gui::PPGuiWnd',
+    'Gui::GetChordPressed(hotkeys.advanced_menu)',
+    'if (BeginOptGroup<TH_GAME_SPEED>())',
+    'AboutOpt();',
+]) {
+    if (!upstreamTh06.includes(anchor))
+        throw new Error(`Upstream TH06 THAdvOptWnd contract missing: ${anchor}`);
+}
+for (const anchor of [
+    'SDL_SCANCODE_F12',
+    'Advanced Options###th06-thprac-advanced',
+    'No openinputlagpatch/vpatch backend is loaded',
+    'THPrac::Gui::ShowLicenceInfo();',
+]) {
+    if (!portablePractice.includes(anchor))
+        throw new Error(`Portable TH06 THAdvOptWnd surface missing: ${anchor}`);
+}
+if (portablePractice.includes('g_AdvancedOptions.allClearBonus') ||
+    portablePractice.includes('g_AdvancedOptions.fixSpellBonusDisplay')) {
+    throw new Error('Portable TH06 THAdvOptWnd must not import TH07-only Gameplay controls');
+}
+
+// THOverlay input ownership: Backspace OnPreUpdate refuses to toggle while an
+// earlier ImGui item is active; F1..F7 GuiHotKey operators are called only by
+// OnContentUpdate while the Mod Menu is open. Tracker/F12 have separate owners.
+const overlayUpdateStart = portablePractice.indexOf('void UpdateOverlay()');
+const overlayDrawStart = portablePractice.indexOf('void DrawOverlay()', overlayUpdateStart);
+const overlayUpdateBody = portablePractice.slice(overlayUpdateStart, overlayDrawStart);
+const overlayDrawEnd = portablePractice.indexOf('\nvoid NotifyBorderBreak()', overlayDrawStart);
+const overlayDrawBody = portablePractice.slice(overlayDrawStart, overlayDrawEnd);
+if (!upstreamTh06.includes('if (mMenu(false) && !ImGui::IsAnyItemActive())') ||
+    !overlayUpdateBody.includes('g_ModMenuToggleRequested = true;') ||
+    overlayUpdateBody.includes('g_Overlay.invincible = !g_Overlay.invincible') ||
+    !overlayDrawBody.includes('if (!ImGui::IsAnyItemActive())') ||
+    !overlayDrawBody.includes('if (g_Overlay.menuOpen)') ||
+    !overlayDrawBody.includes('OverlayKeyPressed(1, SDL_SCANCODE_F1)') ||
+    !overlayDrawBody.includes('OverlayKeyPressed(7, SDL_SCANCODE_F7)')) {
+    throw new Error('Portable TH06 THOverlay must preserve Backspace item-owner guard and F1-F7 open-window sampling');
+}
+
+// Common GameGuiEnd has two formal no-hook-name surfaces: Alt+1/2/3 locale
+// switching, gated by !IsAnyItemActive(), and Home screenshot in th06_render.
+for (const anchor of [
+    'if (!ImGui::IsAnyItemActive())',
+    'Gui::GetChordPressedDuration(hotkeys.language)',
+    "Gui::KeyboardInputUpdate('1') == 1",
+    'Gui::LocaleSet(LOCALE_JA_JP);',
+    "Gui::KeyboardInputUpdate('2') == 1",
+    'Gui::LocaleSet(LOCALE_ZH_CN);',
+    "Gui::KeyboardInputUpdate('3') == 1",
+    'Gui::LocaleSet(LOCALE_EN_US);',
+]) {
+    if (!upstreamGames.includes(anchor))
+        throw new Error(`Upstream common GameGuiEnd locale contract missing: ${anchor}`);
+}
+for (const anchor of [
+    'SDL_SCANCODE_LALT',
+    'OverlayKeyPressed(10, SDL_SCANCODE_1)',
+    'RequestLocale(ThpracImGui::Locale::JaJP)',
+    'OverlayKeyPressed(11, SDL_SCANCODE_2)',
+    'RequestLocale(ThpracImGui::Locale::ZhCN)',
+    'OverlayKeyPressed(12, SDL_SCANCODE_3)',
+    'RequestLocale(ThpracImGui::Locale::EnUS)',
+]) {
+    if (!portablePractice.includes(anchor))
+        throw new Error(`Portable TH06 GameGuiEnd locale surface missing: ${anchor}`);
+}
+if (!portableImGui.includes('void RequestLocale(Locale locale)') ||
+    !portableImGui.includes('if (g_LocaleChangePending)') ||
+    !portableImGui.includes('BuildLocaleFont(io, g_Locale)') ||
+    !portableGles.includes('this->imguiFontTexture != 0 && io.Fonts->TexID == nullptr')) {
+    throw new Error('Portable TH06 locale change must defer atlas rebuild to next BeginFrame and invalidate the GLES font texture');
+}
+if (!upstreamTh06.includes('GameGuiBegin(IMPL_WIN32_DX8, !THAdvOptWnd::singleton().IsOpen());') ||
+    !portableGameWindow.includes('ThpracImGui::SetGameNavEnabled(!PracticeRuntime::AdvancedOptionsOpen());') ||
+    !portableImGui.includes('g_GameNavEnabled && (g_GameButtons & TH_BUTTON_UP)') ||
+    !portablePractice.includes('bool AdvancedOptionsOpen()')) {
+    throw new Error('Portable TH06 GameGuiBegin must disable background game navigation while THAdvOptWnd is open');
+}
+if (!upstreamGames.includes('if (draw_cursor && Gui::ImplWin32CheckFullScreen())') ||
+    !upstreamGames.includes('io.MouseDrawCursor = true;') ||
+    !upstreamTh06.includes('GameGuiEnd(THAdvOptWnd::StaticUpdate() || THGuiPrac::singleton().IsOpen() || THPauseMenu::singleton().IsOpen());') ||
+    !portablePractice.includes('ImGui::GetIO().MouseDrawCursor = fullscreen &&') ||
+    !portablePractice.includes('(g_AdvancedOptions.menuOpen || g_MenuOpen || pauseCursor);')) {
+    throw new Error('Portable TH06 GameGuiEnd must preserve fullscreen software-cursor ownership for AdvOpt/Practice/Pause');
+}
+if (!upstreamTh06.includes('Gui::GetChordPressed(hotkeys.screenshot)') ||
+    !upstreamTh06.includes('THSnapshot::Snapshot(SUPERVISOR->d3dDevice);') ||
+    !portablePractice.includes('OverlayKeyPressed(13, SDL_SCANCODE_HOME)') ||
+    !portablePractice.includes('bool ConsumeScreenshotRequest()') ||
+    !portableGameWindow.includes('SaveThpracSnapshot()') ||
+    !portableGameWindow.includes('SDL_SaveBMP(surface, FileSystem::GetPrefPath(relativePath).c_str())') ||
+    !portableGameWindow.includes('if (PracticeRuntime::ConsumeScreenshotRequest())')) {
+    throw new Error('Portable TH06 must implement the formal Home full-backbuffer screenshot surface');
 }
 if (!portableShell.includes('thpracLocale: options.thpracLocale || "en-US"') ||
     !portableImGui.includes("Module.eaglerOptions?.thpracLocale") ||
@@ -51,10 +317,11 @@ if (!upstreamTh06.includes('ReplaySaveParam(mb_to_utf16(rep_name, 932).c_str(), 
     !read('thprac-reallyportable/thprac/src/thprac/thprac_games.cpp').includes("*(int32_t*)((int)paramBuf + paramSize + 4) = 'CARP';") ||
     !portablePractice.includes('std::memcmp(bytes + size - 4, "PRAC", 4)') ||
     !portablePractice.includes('std::memcpy(bytes.data() + sizeOffset + 4, "PRAC", 4)') ||
-    !portableReplay.includes('std::memcmp(bytes + fileSize - 4, "PRAC", 4)') ||
+    !portableReplay.includes('const size_t baseSize = ReplayExtension::BaseFileSize(bytes, static_cast<size_t>(fileSize));') ||
+    !portableReplay.includes('std::memcmp(bytes + baseSize - 4, "PRAC", 4)') ||
     portablePractice.includes('std::memcmp(bytes + size - 4, "CARP", 4)') ||
     portablePractice.includes('std::memcpy(bytes.data() + sizeOffset + 4, "CARP", 4)') ||
-    portableReplay.includes('std::memcmp(bytes + fileSize - 4, "CARP", 4)')) {
+    portableReplay.includes('std::memcmp(bytes + baseSize - 4, "CARP", 4)')) {
     throw new Error('Portable TH06 replay metadata trailer must use upstream on-disk PRAC bytes');
 }
 
@@ -266,6 +533,135 @@ for (const anchor of [
     if (!portablePractice.includes(anchor))
         throw new Error(`Portable TH06 menu/runtime parameter boundary missing: ${anchor}`);
 }
+const pauseUpdateStart = portablePractice.indexOf('bool UpdatePauseMenu()');
+const pauseUpdateEnd = portablePractice.indexOf('\nvoid DrawPauseMenuPanel()', pauseUpdateStart);
+const pauseUpdateBody = portablePractice.slice(pauseUpdateStart, pauseUpdateEnd);
+const restartFrameOne = pauseUpdateBody.indexOf('if (g_PauseFrameCounter == 1)');
+const restartFrameTen = pauseUpdateBody.indexOf('if (g_PauseFrameCounter != 10)', restartFrameOne);
+if (restartFrameOne < 0 || restartFrameTen < 0 ||
+    !pauseUpdateBody.slice(restartFrameOne, restartFrameTen).includes('CommitRestartWithBgmPolicy();') ||
+    !pauseUpdateBody.includes('g_PauseFrameCounter = 0;') ||
+    portablePractice.includes('g_PauseActionFrames')) {
+    throw new Error('Portable TH06 Restart must use the persistent upstream mFrameCounter: State(5) at frame 1, signal at frame 10, no second action counter');
+}
+// THPauseMenu::Update() runs from th06_update at the RunCalcChain return
+// boundary. Its OnPreUpdate counter continues while the window is closed;
+// entering Pause must not initialize a fresh six-frame delay.
+const runChain = portableGameWindow.indexOf('const i32 res = g_Chain.RunCalcChain();');
+const trainerUpdate = portableGameWindow.indexOf('PracticeRuntime::UpdateOverlay();', runChain);
+if (runChain < 0 || trainerUpdate < runChain ||
+    !portablePractice.includes('if (g_PauseFrameCounter < 0xffffffffu)\n        ++g_PauseFrameCounter;') ||
+    pauseUpdateBody.slice(0, pauseUpdateBody.indexOf('if (g_Config.mode == 0)')).includes('g_PauseFrameCounter = 0;') ||
+    pauseUpdateBody.slice(pauseUpdateBody.indexOf('if (!g_PauseWasOpen)'), pauseUpdateBody.indexOf('#ifdef TH_ENABLE_THPRAC', pauseUpdateBody.indexOf('if (!g_PauseWasOpen)')) + 250).includes('g_PauseFrameCounter = 0;')) {
+    throw new Error('Portable TH06 THPauseMenu counter/hotkey producer must live at the post-RunCalcChain th06_update boundary and persist across closed/non-paused ticks');
+}
+const openPracticeStart = portablePractice.indexOf('void OpenPracticeMenu(i32 difficulty, i32 shotType)');
+const openPracticeEnd = portablePractice.indexOf('\nstruct CurrentSectionInfo', openPracticeStart);
+const openPracticeBody = portablePractice.slice(openPracticeStart, openPracticeEnd);
+if (openPracticeBody.includes('RefreshFromHost();') ||
+    openPracticeBody.includes('g_MenuConfig = g_Config;')) {
+    throw new Error('Portable TH06 State(1) must not import live/replay Web session state into persistent THGuiPrac widgets');
+}
+const applyInitialStart = portablePractice.indexOf('void ApplyInitialState(GameManager &gameManager, bool applyStats)');
+const applyInitialEnd = portablePractice.indexOf('\nstatic double JsonNumber', applyInitialStart);
+const applyInitialBody = portablePractice.slice(applyInitialStart, applyInitialEnd);
+if (applyInitialBody.includes('ResolveWarpFrame(g_Config.stage, g_Config.warp)')) {
+    throw new Error('Portable TH06 must not reinterpret Warp selector Mid/End/Nonspell/Spell/Frame as a chapter portion');
+}
+
+// Original TH06 patch_main is at 0x41c17a: after ReplayManager registration,
+// immediately before initial BGM, and before the vanilla end-of-callback score
+// reset at 0x41c1c1. Preserve that transient ordering; it affects what the
+// replay recorder and first gameplay tick observe.
+const portableGame = read('th06-eagler/src/GameManager.cpp');
+const portableGui = read('th06-eagler/src/Gui.cpp');
+const gameAddedStart = portableGame.indexOf('ZunResult GameManager::AddedCallback(GameManager *mgr)');
+const gameAddedEnd = portableGame.indexOf('\nZunResult GameManager::DeletedCallback', gameAddedStart);
+const gameAdded = portableGame.slice(gameAddedStart, gameAddedEnd);
+const recorderPos = gameAdded.indexOf('ReplayManager::RegisterChain(0, "replay/th6_00.rpy")');
+const applyPos = gameAdded.indexOf('PracticeRuntime::ApplyInitialState(*mgr, true);');
+const bgmPos = gameAdded.indexOf('g_Supervisor.PlayAudio(initialBgm);');
+const scoreResetPos = gameAdded.indexOf('mgr->score = 0;', applyPos);
+if (recorderPos < 0 || applyPos < recorderPos || bgmPos < applyPos || scoreResetPos < bgmPos ||
+    gameAdded.includes('if (!PracticeRuntime::Active())\n        mgr->score = 0;')) {
+    throw new Error('Portable TH06 patch_main timing drifted from verified 0x41c17a -> BGM -> 0x41c1c1 score-reset lifecycle');
+}
+
+// th06_preplay_2's load/store is already vanilla code; its trainer semantic
+// is the EIP jump that bypasses the isInPracticeMode test for live advanced
+// practice. Extra advanced practice intentionally has isInPracticeMode=false,
+// so losing this jump sends StageEnd down the normal Extra flow.
+for (const anchor of [
+    'if (thPracParam.mode && !THGuiRep::singleton().mRepStatus)',
+    'pCtx->Eip = 0x418f0e;',
+]) {
+    if (!upstreamTh06.includes(anchor))
+        throw new Error(`Upstream TH06 preplay control-flow contract missing: ${anchor}`);
+}
+if (!portableGui.includes('(PracticeRuntime::AdvancedActive() && !PracticeRuntime::ReplayPlaybackActive())'))
+    throw new Error('Portable TH06 StageEnd no longer mirrors th06_preplay_2 live-advanced-practice branch override');
+
+// th06_preplay_1 is an unconditional permanent byte patch on the vanilla
+// Practice branch: EXIT (0x11) -> WRITING_HIGHSCORE_NAME (0x09). It therefore
+// applies to Mode=Original/vanilla Practice as well as advanced runs.
+if (!upstreamTh06.includes('PATCH_DY(th06_preplay_1, 0x42d835, "09")') ||
+    !portableResult.includes('return RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME;') ||
+    portableResult.includes('ResolveFromGameResultState(false, true, false, false) == RESULT_SCREEN_STATE_EXIT')) {
+    throw new Error('Portable TH06 ResultScreen must preserve unconditional th06_preplay_1 Practice routing');
+}
+if (!upstreamTh06.includes('if (thPracParam.mode)\n            THSaveReplay(rep_name);') ||
+    !portablePractice.includes('if (!AdvancedActive() || !replayPath || !*replayPath)')) {
+    throw new Error('Portable TH06 replay metadata save must be mode-gated, not merely Active()-gated');
+}
+
+// TH06_ST6_MID2 selects its health branch from the *current game* character
+// and shot type. It is not a THGuiPrac widget field and is not serialized by
+// upstream Replay metadata, so adapter/host state must not use g_MenuShotType
+// here (that would replay the previous menu's character).
+for (const anchor of [
+    'shot = GAME_MANAGER->character * 2 + GAME_MANAGER->shotType;',
+]) {
+    if (!upstreamTh06.includes(anchor))
+        throw new Error(`Upstream TH06 runtime-shot contract missing: ${anchor}`);
+}
+if (!portablePractice.includes('static i32 RuntimeShotType()') ||
+    !portablePractice.includes('return g_GameManager.CharacterShotType();') ||
+    !portablePractice.includes('static i32 RuntimeDifficulty()') ||
+    !portablePractice.includes('return g_GameManager.difficulty;') ||
+    /"shotType\\":%d[^\n]*g_MenuShotType/.test(portablePractice)) {
+    throw new Error('Portable TH06 adapter/host session shotType must follow current GameManager, not persistent Practice-menu state');
+}
+const replayRegisterPos = gameAdded.indexOf('ReplayManager::RegisterChain(1, (char *)g_GameManager.replayFile)');
+const runtimeSyncPos = gameAdded.indexOf('PracticeRuntime::SyncRuntimeDerivedSession();', replayRegisterPos);
+const stageRegisterPos = gameAdded.indexOf('Stage::RegisterChain(mgr->currentStage)', replayRegisterPos);
+if (replayRegisterPos < 0 || runtimeSyncPos < replayRegisterPos || stageRegisterPos < runtimeSyncPos) {
+    throw new Error('Portable TH06 Replay must republish GameManager-owned shot/difficulty after replay header load and before Stage/ECL load');
+}
+
+// Mode ownership is hook-specific in TH06. th06_patch_main calls
+// THSectionPatch only inside mode==1, while th06_fake_shot_type and
+// th06_patchouli gate on fakeType alone. Hidden widget state makes this
+// observable, so do not collapse both rules into AdvancedActive().
+for (const anchor of [
+    'if (thPracParam.mode == 1)',
+    'THSectionPatch();',
+    'if (thPracParam.fakeType)',
+    '*PLAYER_SHOT = thPracParam.fakeType - 1;',
+]) {
+    if (!upstreamTh06.includes(anchor))
+        throw new Error(`Upstream TH06 mode/fakeType contract missing: ${anchor}`);
+}
+const effectiveShotStart = portablePractice.indexOf('i32 EffectivePlayerShot(i32 vanillaShot)');
+const effectiveShotEnd = portablePractice.indexOf('\nbool ForceFlandreFinalRage()', effectiveShotStart);
+const effectiveShotBody = portablePractice.slice(effectiveShotStart, effectiveShotEnd);
+if (!effectiveShotBody.includes('if (Active() && g_Config.fakeType != 0)') ||
+    effectiveShotBody.includes('AdvancedActive()')) {
+    throw new Error('Portable TH06 fakeType hooks must follow live fakeType independently of mode');
+}
+if (!portableAdapter.includes('g_Session.mode != 1 || g_Session.section == 0') ||
+    (portableAdapter.match(/g_Context = \{\};/g) || []).length < 3) {
+    throw new Error('Portable TH06 section adapter must gate ECL/runtime section effects on mode==1 and clear stale context otherwise');
+}
 const pauseSettingsDraw = portablePractice.slice(
     portablePractice.indexOf('void DrawPauseMenuPanel()'),
     portablePractice.indexOf('void PrepareStart(', portablePractice.indexOf('void DrawPauseMenuPanel()'))
@@ -366,7 +762,10 @@ if (!upstreamTh06.includes('PATCH_DY(th06_preplay_1, 0x42d835, "09")') ||
     throw new Error('Upstream TH06 natural Practice replay-save/preplay contract drifted');
 }
 if (!portableResult.includes('static ResultScreenState ResolveFromGameResultState(') ||
-    !portableResult.includes('if (!isInPracticeMode || (thpracActive && !isInReplay))') ||
+    !portableResult.includes('(void)isInPracticeMode;') ||
+    !portableResult.includes('(void)thpracActive;') ||
+    !portableResult.includes('(void)isInReplay;') ||
+    !portableResult.includes('return RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME;') ||
     !portableResult.includes('natural Practice enters replay-save result flow')) {
     throw new Error('Portable TH06 natural Practice result no longer enters the replay-save result flow');
 }
@@ -466,6 +865,11 @@ for (const anchor of [
     if (!portableImGui.includes(anchor))
         throw new Error(`Portable TH06 60 Hz input-pulse contract missing: ${anchor}`);
 }
+
+// The detailed contract above must always be accompanied by the independent
+// mechanical upstream hook/surface/state inventory. Never rely on somebody
+// remembering to run the second audit manually.
+await import('./audit-thprac-upstream-hooks.mjs');
 
 console.log(
     'TH06 thprac source contract PASS: Zh-CN default -> ChineseFull + shipped-glyph coverage; ' +

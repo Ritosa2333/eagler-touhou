@@ -1,3 +1,4 @@
+#include "EaglerOptions.hpp"
 #include "Controller.hpp"
 
 #include <SDL3/SDL.h>
@@ -110,6 +111,28 @@ u16 Controller::GetControllerInput(u16 buttons)
                                       g_Supervisor.gameController);
         SetButtonFromControllerInputs(&buttons, g_Supervisor.cfg.controllerMapping.skipButton, TH_BUTTON_SKIP,
                                       g_Supervisor.gameController);
+
+        // Android may expose a multi-function Bluetooth/USB input device as a
+        // Web Gamepad as well as a keyboard/D-pad. Chromium can then consume
+        // KEYCODE_DPAD_* on the Gamepad path before Blink emits KeyboardEvent.
+        // Treat the standard SDL Gamepad D-pad as a direction fallback so the
+        // physical arrow keys still reach Touhou when that happens.
+        if (SDL_GetGamepadButton(g_Supervisor.gameController, SDL_GAMEPAD_BUTTON_DPAD_RIGHT))
+        {
+            buttons |= TH_BUTTON_RIGHT;
+        }
+        if (SDL_GetGamepadButton(g_Supervisor.gameController, SDL_GAMEPAD_BUTTON_DPAD_LEFT))
+        {
+            buttons |= TH_BUTTON_LEFT;
+        }
+        if (SDL_GetGamepadButton(g_Supervisor.gameController, SDL_GAMEPAD_BUTTON_DPAD_DOWN))
+        {
+            buttons |= TH_BUTTON_DOWN;
+        }
+        if (SDL_GetGamepadButton(g_Supervisor.gameController, SDL_GAMEPAD_BUTTON_DPAD_UP))
+        {
+            buttons |= TH_BUTTON_UP;
+        }
 
         if (SDL_GamepadHasAxis(g_Supervisor.gameController, SDL_GAMEPAD_AXIS_LEFTX) &&
             SDL_GamepadHasAxis(g_Supervisor.gameController, SDL_GAMEPAD_AXIS_LEFTY))
@@ -360,40 +383,55 @@ u16 Controller::GetInput(void)
 {
     u16 buttons = 0;
 
-    if (keyboardState == NULL)
+    if (keyboardState != NULL)
     {
-        return Controller::GetControllerInput(buttons) | Touch::GetButtonBits();
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_UP, SDL_SCANCODE_UP);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_DOWN, SDL_SCANCODE_DOWN);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_LEFT, SDL_SCANCODE_LEFT);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_RIGHT, SDL_SCANCODE_RIGHT);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_UP, SDL_SCANCODE_KP_8);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_DOWN, SDL_SCANCODE_KP_2);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_LEFT, SDL_SCANCODE_KP_4);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_RIGHT, SDL_SCANCODE_KP_6);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_UP_LEFT, SDL_SCANCODE_KP_7);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_UP_RIGHT, SDL_SCANCODE_KP_9);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_DOWN_LEFT, SDL_SCANCODE_KP_1);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_DOWN_RIGHT, SDL_SCANCODE_KP_3);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_HOME, SDL_SCANCODE_HOME);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_SHOOT, SDL_SCANCODE_Z);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_BOMB, SDL_SCANCODE_X);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_FOCUS, SDL_SCANCODE_LSHIFT);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_FOCUS, SDL_SCANCODE_RSHIFT);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_MENU, SDL_SCANCODE_ESCAPE);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_SKIP, SDL_SCANCODE_LCTRL);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_SKIP, SDL_SCANCODE_RCTRL);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_Q, SDL_SCANCODE_Q);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_S, SDL_SCANCODE_S);
+        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_R, SDL_SCANCODE_R);
+        if (!g_EnterSuppressed)
+        {
+            buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_ENTER, SDL_SCANCODE_RETURN);
+        }
     }
+    buttons |= EaglerOptions::BrowserKeyboardBits();
+    buttons |= EaglerOptions::BrowserGamepadDirectionBits();
+    if (g_EnterSuppressed)
+        buttons &= ~TH_BUTTON_ENTER;
 
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_UP, SDL_SCANCODE_UP);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_DOWN, SDL_SCANCODE_DOWN);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_LEFT, SDL_SCANCODE_LEFT);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_RIGHT, SDL_SCANCODE_RIGHT);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_UP, SDL_SCANCODE_KP_8);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_DOWN, SDL_SCANCODE_KP_2);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_LEFT, SDL_SCANCODE_KP_4);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_RIGHT, SDL_SCANCODE_KP_6);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_UP_LEFT, SDL_SCANCODE_KP_7);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_UP_RIGHT, SDL_SCANCODE_KP_9);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_DOWN_LEFT, SDL_SCANCODE_KP_1);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_DOWN_RIGHT, SDL_SCANCODE_KP_3);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_HOME, SDL_SCANCODE_HOME);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_SHOOT, SDL_SCANCODE_Z);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_BOMB, SDL_SCANCODE_X);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_FOCUS, SDL_SCANCODE_LSHIFT);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_FOCUS, SDL_SCANCODE_RSHIFT);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_MENU, SDL_SCANCODE_ESCAPE);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_SKIP, SDL_SCANCODE_LCTRL);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_SKIP, SDL_SCANCODE_RCTRL);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_Q, SDL_SCANCODE_Q);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_S, SDL_SCANCODE_S);
-    buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_R, SDL_SCANCODE_R);
-    if (!g_EnterSuppressed)
+    buttons = Controller::GetControllerInput(buttons);
+    if (EaglerOptions::TouchEnabled() && EaglerOptions::TouchMovementIsJoystick())
     {
-        buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_ENTER, SDL_SCANCODE_RETURN);
+        // The mobile wheel publishes a continuous SDL-style stick vector, but
+        // movement must enter the game through the same digital direction bits
+        // as the original pad path. ReplayManager records these bits verbatim.
+        const i32 stickX = EaglerOptions::TouchJoystickX();
+        const i32 stickY = EaglerOptions::TouchJoystickY();
+        buttons |= JOYSTICK_BUTTON_PRESSED(TH_BUTTON_RIGHT, stickX, JOYSTICK_MIDPOINT(0, INT16_MAX));
+        buttons |= JOYSTICK_BUTTON_PRESSED(TH_BUTTON_LEFT, -stickX, JOYSTICK_MIDPOINT(0, INT16_MAX));
+        buttons |= JOYSTICK_BUTTON_PRESSED(TH_BUTTON_DOWN, stickY, JOYSTICK_MIDPOINT(0, INT16_MAX));
+        buttons |= JOYSTICK_BUTTON_PRESSED(TH_BUTTON_UP, -stickY, JOYSTICK_MIDPOINT(0, INT16_MAX));
     }
-
-    return Controller::GetControllerInput(buttons) | Touch::GetButtonBits();
+    return buttons | Touch::GetButtonBits();
 }
 
 void Controller::SetEnterSuppressed(bool suppressed)
@@ -403,6 +441,7 @@ void Controller::SetEnterSuppressed(bool suppressed)
 
 void Controller::ResetKeyboard(void)
 {
+    EaglerOptions::ResetBrowserKeyboard();
     keyboardState = (u8 *)SDL_GetKeyboardState(NULL);
 
     // Ensure IMEs are disabled so they don't interfer with EoSD input

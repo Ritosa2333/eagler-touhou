@@ -2,13 +2,14 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
   <link rel="icon" href="data:,">
   <title>東方紅魔郷 〜 the Embodiment of Scarlet Devil</title>
   <style>
-    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+    html{--touhou-canvas-width:640px;--touhou-canvas-height:480px}
     body{display:grid;place-items:center;touch-action:none}
-    canvas{width:min(100vw,calc(100vh * 4 / 3));height:min(100vh,calc(100vw * 3 / 4));outline:0;touch-action:none}
+    canvas{display:block;width:var(--touhou-canvas-width)!important;height:var(--touhou-canvas-height)!important;max-width:none;max-height:none;aspect-ratio:4/3;outline:0;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
     #status{position:fixed;inset:auto 0 1rem;text-align:center;color:#ddd;font:14px sans-serif;pointer-events:none}
   </style>
 </head>
@@ -24,9 +25,57 @@
       const params = new URLSearchParams(location.search);
       const hosted = params.get("hosted") === "1" && window.parent !== window;
       const assetVersion = params.get("v") || "";
+      const gameDataVersion = params.get("asset") || "";
+      const oggAssetVersion = params.get("oggAsset") || "";
+      const nativeFetch = globalThis.fetch.bind(globalThis);
+      const localGameDataUrl = gameDataVersion
+        ? new URL(`/.eagler-local/game-data/${game}/${encodeURIComponent(gameDataVersion)}/${game}.data`, location.origin).href
+        : "";
+      globalThis.fetch = async (input, init) => {
+        try {
+          const requestUrl = new URL(input instanceof Request ? input.url : String(input), location.href);
+          const method = String(input instanceof Request ? input.method : (init?.method || "GET")).toUpperCase();
+          if (localGameDataUrl && method === "GET" && requestUrl.origin === location.origin &&
+              requestUrl.pathname.endsWith(`/${game}.data`) && globalThis.caches?.match) {
+            const local = await caches.match(localGameDataUrl);
+            if (local) return local.clone();
+          }
+          if (oggAssetVersion && method === "GET" && requestUrl.origin === location.origin &&
+              /\/[^/]+\.ogg$/i.test(requestUrl.pathname) && globalThis.caches?.match) {
+            const filename = decodeURIComponent(requestUrl.pathname.slice(requestUrl.pathname.lastIndexOf("/") + 1));
+            if (/^[A-Za-z0-9_.-]+\.ogg$/.test(filename)) {
+              const localOgg = new URL(`/.eagler-local/ogg/${game}/${encodeURIComponent(oggAssetVersion)}/${encodeURIComponent(filename)}`, location.origin).href;
+              const local = await caches.match(localOgg);
+              if (local) return local.clone();
+            }
+          }
+        } catch {}
+        return nativeFetch(input, init);
+      };
       const mobileDevice = navigator.userAgentData?.mobile === true || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
         (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
       const status = document.getElementById("status");
+      const containCanvasSize = (width, height) => {
+        const safeWidth = Math.max(1, Math.floor(Number(width) || 0));
+        const safeHeight = Math.max(1, Math.floor(Number(height) || 0));
+        let cssWidth = safeWidth;
+        let cssHeight = Math.floor(cssWidth * 3 / 4);
+        if (cssHeight > safeHeight) {
+          cssHeight = safeHeight;
+          cssWidth = Math.floor(cssHeight * 4 / 3);
+        }
+        return { width: cssWidth, height: cssHeight };
+      };
+      const fitCanvasToViewport = () => {
+        const root = document.documentElement;
+        if (!root) return;
+        const size = containCanvasSize(root.clientWidth, root.clientHeight);
+        root.style.setProperty("--touhou-canvas-width", `${size.width}px`);
+        root.style.setProperty("--touhou-canvas-height", `${size.height}px`);
+      };
+      fitCanvasToViewport();
+      window.addEventListener("resize", fitCanvasToViewport, { passive: true });
+      window.visualViewport?.addEventListener("resize", fitCanvasToViewport, { passive: true });
       let launched = false;
       let loadedMusicFiles = [];
       let loadedRuntimeFiles = [];
@@ -208,21 +257,30 @@
         if (!Array.isArray(message.thpracCatalog ?? []) || (message.thpracCatalog?.length || 0) > 256) throw new Error("invalid thprac catalog");
         thpracCatalog = message.thpracCatalog ?? [];
         Module.eaglerThpracCatalog = thpracCatalog;
-        for (const key of ["thpracEnabled", "limitPresentationTo60", "touchEnabled", "unlimitedTouch", "touchBombZoneEnabled", "alwaysHitbox", "th06FocusHitbox"]) {
+        for (const key of ["thpracEnabled", "limitPresentationTo60", "touchEnabled", "unlimitedTouch", "touchBombZoneEnabled", "doubleTapBombEnabled", "alwaysHitbox", "th06FocusHitbox"]) {
           if (options[key] != null && typeof options[key] !== "boolean") throw new Error("invalid eagler-touhou option");
         }
+        if (options.touchSensitivity != null && (!Number.isFinite(options.touchSensitivity) || options.touchSensitivity < 50 || options.touchSensitivity > 300)) throw new Error("invalid touch sensitivity");
+        if (options.touchMovementMode != null && !["joystick", "joystick-free", "touch", "touch-unlimited"].includes(options.touchMovementMode)) throw new Error("invalid touch movement mode");
         if (options.touchFocusMode != null && !["two-finger", "hold-button", "toggle-button"].includes(options.touchFocusMode)) throw new Error("invalid touch focus mode");
         if (options.thpracLocale != null && !["zh-CN", "ja-JP", "en-US"].includes(options.thpracLocale)) throw new Error("invalid thprac locale");
         const session = options.thpracSession;
-        if (options.debugHarness != null && !["thprac-menu", "music-room", "font-metrics"].includes(options.debugHarness)) throw new Error("invalid debug harness");
+        if (options.debugHarness != null && ![
+          "thprac-menu", "music-room", "font-metrics", "stage1",
+          "ending-reimu-a", "ending-reimu-b", "ending-marisa-a", "ending-marisa-b",
+          "ending-reimu-bad", "ending-marisa-bad"
+        ].includes(options.debugHarness)) throw new Error("invalid debug harness");
         if (session != null && (session.schema !== "eagler-touhou/thprac-session/1" || session.game !== "th06" || typeof session.params !== "object" || !session.params)) throw new Error("invalid thprac session");
         Module.eaglerOptions = {
           thpracEnabled: !!options.thpracEnabled,
-          limitPresentationTo60: mobileDevice || !!options.limitPresentationTo60,
+          limitPresentationTo60: !!options.limitPresentationTo60,
           touchEnabled: !!options.touchEnabled,
+          touchMovementMode: options.touchMovementMode || "touch",
+          touchSensitivity: options.touchSensitivity ?? 100,
           touchFocusMode: options.touchFocusMode || "two-finger",
-          unlimitedTouch: !!options.touchEnabled && !!options.unlimitedTouch,
+          unlimitedTouch: !!options.touchEnabled && (options.touchMovementMode === "touch-unlimited" || !!options.unlimitedTouch),
           touchBombZoneEnabled: options.touchBombZoneEnabled !== false,
+          doubleTapBombEnabled: !!options.touchEnabled && !!options.doubleTapBombEnabled,
           alwaysHitbox: !!options.alwaysHitbox,
           th06FocusHitbox: !!options.th06FocusHitbox,
           thpracLocale: options.thpracLocale || "en-US",
@@ -281,6 +339,144 @@
         start(Module.eaglerOptions.thpracSession || null);
       };
 
+      // Browser/Emscripten keyboard delivery is not uniform across Edge IME
+      // paths, Bluetooth keyboards and tablet external keyboards. Keep SDL as
+      // the primary input source, but mirror recognized physical game keys in
+      // a tiny host-owned bitset that Controller::GetInput ORs with SDL state.
+      const browserKeyboardDown = new Map();
+      const thpracKeyboardDown = new Map();
+      const thpracKeyboardBitForEvent = event => {
+        switch (event.code || "") {
+        case "Backspace": return 1 << 0;
+        case "F1": return 1 << 1;
+        case "F2": return 1 << 2;
+        case "F3": return 1 << 3;
+        case "F4": return 1 << 4;
+        case "F5": return 1 << 5;
+        case "F6": return 1 << 6;
+        case "F7": return 1 << 7;
+        }
+        const key = String(event.key || "").toLowerCase();
+        if (key === "backspace") return 1 << 0;
+        if (/^f[1-7]$/.test(key)) return 1 << Number(key.slice(1));
+        const keyCode = Number(event.keyCode) || 0;
+        if (keyCode === 8) return 1 << 0;
+        if (keyCode >= 112 && keyCode <= 118) return 1 << (keyCode - 111);
+        return 0;
+      };
+      const keyboardBitForEvent = event => {
+        switch (event.code || "") {
+        case "KeyZ": return 1 << 0;
+        case "KeyX": return 1 << 1;
+        case "ShiftLeft": case "ShiftRight": return 1 << 2;
+        case "Escape": return 1 << 3;
+        case "ArrowUp": case "Numpad8": return 1 << 4;
+        case "ArrowDown": case "Numpad2": return 1 << 5;
+        case "ArrowLeft": case "Numpad4": return 1 << 6;
+        case "ArrowRight": case "Numpad6": return 1 << 7;
+        case "Numpad7": return (1 << 4) | (1 << 6);
+        case "Numpad9": return (1 << 4) | (1 << 7);
+        case "Numpad1": return (1 << 5) | (1 << 6);
+        case "Numpad3": return (1 << 5) | (1 << 7);
+        case "ControlLeft": case "ControlRight": return 1 << 8;
+        case "KeyQ": return 1 << 9;
+        case "KeyS": return 1 << 10;
+        case "Home": return 1 << 11;
+        case "Enter": case "NumpadEnter": return 1 << 12;
+        case "KeyR": return 1 << 13;
+        }
+        const key = String(event.key || "").toLowerCase();
+        if (key === "z") return 1 << 0;
+        if (key === "x") return 1 << 1;
+        if (key === "shift") return 1 << 2;
+        if (key === "escape" || key === "esc") return 1 << 3;
+        if (key === "arrowup") return 1 << 4;
+        if (key === "arrowdown") return 1 << 5;
+        if (key === "arrowleft") return 1 << 6;
+        if (key === "arrowright") return 1 << 7;
+        if (key === "control") return 1 << 8;
+        if (key === "q") return 1 << 9;
+        if (key === "s") return 1 << 10;
+        if (key === "home") return 1 << 11;
+        if (key === "enter") return 1 << 12;
+        if (key === "r") return 1 << 13;
+        // Legacy DOM keyCode fallback for older/vendor Android WebViews. Do
+        // not map raw Android KEYCODE_DPAD_* 19..22 here: Chromium converts
+        // those to DOM Arrow* before exposing the event, and 19/20 already
+        // have unrelated legacy Web meanings.
+        switch (Number(event.keyCode) || 0) {
+        case 90: return 1 << 0;  // Z
+        case 88: return 1 << 1;  // X
+        case 16: return 1 << 2;  // Shift
+        case 27: return 1 << 3;  // Escape
+        case 38: return 1 << 4;  // Up
+        case 40: return 1 << 5;  // Down
+        case 37: return 1 << 6;  // Left
+        case 39: return 1 << 7;  // Right
+        case 17: return 1 << 8;  // Control
+        case 81: return 1 << 9;  // Q
+        case 83: return 1 << 10; // S
+        case 36: return 1 << 11; // Home
+        case 13: return 1 << 12; // Enter
+        case 82: return 1 << 13; // R
+        }
+        return 0;
+      };
+      const publishBrowserKeyboard = () => {
+        let bits = 0;
+        for (const value of browserKeyboardDown.values()) bits |= value;
+        let thpracBits = 0;
+        for (const value of thpracKeyboardDown.values()) thpracBits |= value;
+        if (Module.eaglerControls) {
+          Module.eaglerControls.keyboardBits = bits;
+          Module.eaglerControls.thpracKeyboardBits = thpracBits;
+        }
+      };
+      const applyBrowserKeyboardEvent = (event, down) => {
+        const bit = keyboardBitForEvent(event);
+        const thpracBit = thpracKeyboardBitForEvent(event);
+        if (!bit && !thpracBit) return false;
+        // Some external/mobile keyboards report code=KeyZ on DOWN and
+        // code=Unidentified on UP. The mapped logical bit is stable across
+        // both events; location still separates left/right modifier owners.
+        if (bit) {
+          const id = `${bit}:${event.location || 0}`;
+          if (down) {
+            browserKeyboardDown.set(id, bit);
+          } else {
+            const hadDownOwner = browserKeyboardDown.delete(id);
+            if (!hadDownOwner && Module.eaglerControls)
+              Module.eaglerControls.keyboardPulseBits = (Module.eaglerControls.keyboardPulseBits | 0) | bit;
+          }
+        }
+        const thpracId = `${thpracBit}:${event.location || 0}`;
+        if (thpracBit) {
+          if (down) thpracKeyboardDown.set(thpracId, thpracBit);
+          else thpracKeyboardDown.delete(thpracId);
+        }
+        publishBrowserKeyboard();
+        return true;
+      };
+      const clearBrowserKeyboard = () => {
+        browserKeyboardDown.clear();
+        thpracKeyboardDown.clear();
+        if (Module.eaglerControls) {
+          Module.eaglerControls.keyboardBits = 0;
+          Module.eaglerControls.keyboardPulseBits = 0;
+          Module.eaglerControls.thpracKeyboardBits = 0;
+        }
+      };
+      window.addEventListener("keydown", event => {
+        if (!launched) return;
+        if (event.metaKey || event.altKey) return;
+        if (applyBrowserKeyboardEvent(event, true)) event.preventDefault();
+      }, true);
+      window.addEventListener("keyup", event => {
+        if (!launched) return;
+        if (event.metaKey || event.altKey) return;
+        if (applyBrowserKeyboardEvent(event, false)) event.preventDefault();
+      }, true);
+
       window.addEventListener("message", async event => {
         if (!hosted || event.source !== window.parent || event.origin !== location.origin) return;
         const message = event.data || {};
@@ -293,17 +489,41 @@
             await installMusic(message);
             reply(message.request, true);
             break;
+          case "keyboard":
+            if (typeof message.down !== "boolean" || typeof message.code !== "string" || typeof message.key !== "string" ||
+                !Number.isInteger(message.keyCode) || !Number.isInteger(message.location))
+              throw new Error("invalid keyboard bridge event");
+            applyBrowserKeyboardEvent(message, message.down);
+            break;
+          case "keyboard-clear": clearBrowserKeyboard(); break;
+          case "touch-cancel": cancelAllTouches(); reply(message.request, true); break;
+          case "thprac-mouse":
+            if (!["move", "down", "up"].includes(message.type) || !Number.isFinite(message.x) || !Number.isFinite(message.y))
+              throw new Error("invalid thprac mouse bridge event");
+            const mouseRect = Module.canvas.getBoundingClientRect();
+            if (!(mouseRect.width > 0) || !(mouseRect.height > 0)) break;
+            const mouseX = (message.x - mouseRect.left) * 640 / mouseRect.width;
+            const mouseY = (message.y - mouseRect.top) * 480 / mouseRect.height;
+            Module.canvas.focus({ preventScroll: true });
+            if (typeof Module._TouhouThpracMouseEvent === "function")
+              Module._TouhouThpracMouseEvent(message.type === "move" ? 0 : message.type === "down" ? 1 : 2, mouseX, mouseY);
+            break;
           case "launch":
             launch();
             reply(message.request, true);
             break;
           case "touch-controls":
-            if (typeof message.fireEnabled !== "boolean" || typeof message.focusEnabled !== "boolean" || !Number.isInteger(message.bombSerial) || !Number.isInteger(message.escapeSerial))
+            if (typeof message.fireEnabled !== "boolean" || typeof message.focusEnabled !== "boolean" || !Number.isInteger(message.bombSerial) || !Number.isInteger(message.escapeSerial) ||
+                !Number.isInteger(message.joystickX) || !Number.isInteger(message.joystickY) || message.joystickX < -32768 || message.joystickX > 32767 || message.joystickY < -32768 || message.joystickY > 32767 ||
+                !Number.isFinite(message.touchSensitivity) || message.touchSensitivity < 50 || message.touchSensitivity > 300)
               throw new Error("invalid touch controls");
             Module.eaglerControls.fireEnabled = message.fireEnabled;
             Module.eaglerControls.focusEnabled = message.focusEnabled;
             Module.eaglerControls.bombSerial = message.bombSerial;
             Module.eaglerControls.escapeSerial = message.escapeSerial;
+            Module.eaglerControls.joystickX = message.joystickX;
+            Module.eaglerControls.joystickY = message.joystickY;
+            Module.eaglerOptions.touchSensitivity = message.touchSensitivity;
             reply(message.request, true);
             break;
           case "list":
@@ -347,8 +567,8 @@
         // Empty means original auto-detection for standalone builds. The host
         // sends an explicit mode before launching an embedded runtime.
         touhouMusicMode: "",
-      eaglerOptions: { thpracEnabled: false, limitPresentationTo60: mobileDevice, touchEnabled: false, touchFocusMode: "two-finger", unlimitedTouch: false, touchBombZoneEnabled: true, alwaysHitbox: false, th06FocusHitbox: false, thpracLocale: "en-US", thpracSession: null },
-        eaglerControls: { fireEnabled: true, focusEnabled: false, bombSerial: 0, escapeSerial: 0 },
+      eaglerOptions: { thpracEnabled: false, limitPresentationTo60: false, touchEnabled: false, touchMovementMode: "touch", touchSensitivity: 100, touchFocusMode: "hold-button", unlimitedTouch: false, touchBombZoneEnabled: true, doubleTapBombEnabled: false, alwaysHitbox: false, th06FocusHitbox: false, thpracLocale: "en-US", thpracSession: null },
+        eaglerControls: { fireEnabled: true, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 0, joystickY: 0, keyboardBits: 0, keyboardPulseBits: 0, thpracKeyboardBits: 0 },
         preRun: [() => {
           addRunDependency("savesth06-sync");
           try { FS.mkdir(saveRoot); } catch (error) {
@@ -448,11 +668,20 @@
         nativeCanvasTouches.clear();
         if (typeof Module._TouhouAuxTouchCancelAll === "function") Module._TouhouAuxTouchCancelAll();
       };
+      const setWebAudioActive = active => {
+        if (typeof Module._TouhouWebSetAudioActive === "function") Module._TouhouWebSetAudioActive(active ? 1 : 0);
+      };
+      const preventGameGesture = event => event.preventDefault();
+      for (const type of ["contextmenu", "selectstart", "dragstart", "gesturestart", "gesturechange", "gestureend"])
+        document.addEventListener(type, preventGameGesture, { capture: true, passive: false });
       document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "hidden") cancelAllTouches();
+        const active = document.visibilityState !== "hidden";
+        setWebAudioActive(active);
+        if (!active) { cancelAllTouches(); clearBrowserKeyboard(); }
       });
-      window.addEventListener("blur", cancelAllTouches);
-      window.addEventListener("pagehide", cancelAllTouches);
+      window.addEventListener("blur", () => { cancelAllTouches(); clearBrowserKeyboard(); });
+      window.addEventListener("pagehide", () => { setWebAudioActive(false); cancelAllTouches(); clearBrowserKeyboard(); });
+      window.addEventListener("pageshow", () => setWebAudioActive(true));
       Module.canvas.addEventListener("webglcontextlost", event => {
         event.preventDefault();
         status.textContent = "WebGL context lost. Reload the page.";

@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <string>
 
 namespace
 {
@@ -17,11 +18,23 @@ void RenderDescription(MusicRoom *musicRoom)
 {
     if (Localization::Active())
     {
+        const u32 track = static_cast<u32>(musicRoom->selectedSongIndex + 1);
+        const char *title = Localization::MusicTitle(
+            track, musicRoom->trackDescriptors[musicRoom->selectedSongIndex].title);
         for (i32 line = 0; line < 8; line++)
         {
             AnmVm &textVm = musicRoom->descriptionSprites[line * 2];
             AnmVm &unusedVm = musicRoom->descriptionSprites[line * 2 + 1];
-            const char *text = musicRoom->trackDescriptors[musicRoom->selectedSongIndex].description[line];
+            const char *fallback = musicRoom->trackDescriptors[musicRoom->selectedSongIndex].description[line];
+            const char *text = Localization::MusicComment(track, static_cast<u16>(line), fallback);
+            std::string numberedTitle;
+            if (std::strcmp(text, "@") == 0)
+            {
+                char buffer[512];
+                std::snprintf(buffer, sizeof(buffer), "No. %2u  %s", track, title);
+                numberedTitle = buffer;
+                text = numberedTitle.c_str();
+            }
             textVm.flags.flag1 = text[0] != '\0';
             unusedVm.flags.flag1 = 0;
             if (textVm.flags.flag1)
@@ -378,35 +391,14 @@ ZunResult MusicRoom::AddedCallback(MusicRoom *musicRoom)
 finishMusiccmtRead:
     musicRoom->numDescriptors = i + 1;
 
-    if (Localization::Active())
-    {
-        for (i = 0; i < musicRoom->numDescriptors; i++)
-        {
-            const u32 track = static_cast<u32>(i + 1);
-            const char *title = Localization::MusicTitle(track, musicRoom->trackDescriptors[i].title);
-            Localization::CopyText(musicRoom->trackDescriptors[i].title,
-                                   sizeof(musicRoom->trackDescriptors[i].title), title);
-            for (lineIndex = 0; lineIndex < 8; lineIndex++)
-            {
-                const char *comment = Localization::MusicComment(
-                    track, static_cast<u16>(lineIndex), musicRoom->trackDescriptors[i].description[lineIndex]);
-                if (std::strcmp(comment, "@") == 0)
-                    std::snprintf(musicRoom->trackDescriptors[i].description[lineIndex],
-                                  sizeof(musicRoom->trackDescriptors[i].description[lineIndex]),
-                                  "No. %2u  %s", track, musicRoom->trackDescriptors[i].title);
-                else
-                    Localization::CopyText(musicRoom->trackDescriptors[i].description[lineIndex],
-                                           sizeof(musicRoom->trackDescriptors[i].description[lineIndex]), comment);
-            }
-        }
-    }
-
     for (i = 0; i < musicRoom->numDescriptors; i++)
     {
         g_AnmManager->InitializeAndSetSprite(&musicRoom->titleSprites[i], ANM_OFFSET_MUSIC01 + i);
+        const char *displayTitle = Localization::MusicTitle(
+            static_cast<u32>(i + 1), musicRoom->trackDescriptors[i].title);
         g_AnmManager->DrawVmTextFmt(&musicRoom->titleSprites[i], COLOR_MUSIC_ROOM_SONG_TITLE_TEXT,
                                     COLOR_MUSIC_ROOM_SONG_TITLE_SHADOW, "%s",
-                                    musicRoom->trackDescriptors[i].title);
+                                    displayTitle);
         musicRoom->titleSprites[i].pos.x = 93.0f;
         musicRoom->titleSprites[i].pos.y = 104.0f + ((i + 1) * 18) - 20.0f;
         musicRoom->titleSprites[i].pos.z = 0.0f;

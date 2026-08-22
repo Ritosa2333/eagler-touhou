@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const repo = process.cwd();
+const here = path.dirname(fileURLToPath(import.meta.url));
+const repo = path.resolve(here, '..');
 const root = path.resolve(repo, '..');
 const upstreamPath = path.join(root, 'thprac-reallyportable', 'thprac', 'src', 'thprac', 'thprac_th06.cpp');
 const read = (p) => fs.readFileSync(path.join(repo, p), 'utf8');
@@ -31,8 +33,122 @@ function has(source, needle, label) {
   if (!source.includes(needle)) throw new Error(`${label}: missing ${JSON.stringify(needle)}`);
 }
 
+// Checker mutation smoke-test: a newly introduced upstream surface must be
+// rejected by the exact-set ledger. If this ever stops throwing, the ledger no
+// longer has proof value.
+let mutationCaught = false;
+try {
+  exactSet(['THAdvOptWnd', 'THGuiPrac', 'THGuiRep', 'THOverlay', 'THPauseMenu', 'THMutationWnd'],
+           ['THAdvOptWnd', 'THGuiPrac', 'THGuiRep', 'THOverlay', 'THPauseMenu'],
+           'TH06 mutation');
+} catch {
+  mutationCaught = true;
+}
+if (!mutationCaught)
+  throw new Error('TH06 Proof Ledger mutation self-test failed');
+
+// th06_update is hooked at 0x41caac, the RunCalcChain return boundary. The
+// trainer update producer must stay after this tick's game calc consumers;
+// moving it before the chain advances F1-F7/Pause state by one gameplay tick.
+const runCalc = sources.gameWindow.indexOf('const i32 res = g_Chain.RunCalcChain();');
+const trainerUpdate = sources.gameWindow.indexOf('PracticeRuntime::UpdateOverlay();');
+if (runCalc < 0 || trainerUpdate < runCalc)
+  throw new Error('th06_update backend-equivalent must remain post-RunCalcChain');
+
 const hookNames = [...upstream.matchAll(/(?:EHOOK|PATCH)_(?:ST|DY)\((th06_[A-Za-z0-9_]+)/g)].map((m) => m[1]);
 const uniqueHooks = [...new Set(hookNames)];
+
+function exactSet(actual, expected, label) {
+  const a = [...new Set(actual)].sort();
+  const e = [...expected].sort();
+  if (JSON.stringify(a) !== JSON.stringify(e))
+    throw new Error(`${label} drifted: actual=[${a}] expected=[${e}]`);
+}
+
+// Proof-Ledger inventories beyond named hooks. Any new upstream GUI surface,
+// central live-param write, or one-shot lifecycle site becomes hard-red until
+// explicitly reviewed and mapped.
+exactSet(
+  [...upstream.matchAll(/class\s+(TH[A-Za-z0-9_]+)\s*:\s*public\s+Gui::/g)].map(m => m[1]),
+  ['THAdvOptWnd', 'THGuiPrac', 'THGuiRep', 'THOverlay', 'THPauseMenu'],
+  'TH06 formal Gui surface inventory');
+exactSet(
+  [...upstream.matchAll(/thPracParam\.([A-Za-z_][A-Za-z0-9_]*)\s*=/g)].map(m => m[1]),
+  ['_playLock', 'bomb', 'dlg', 'fakeType', 'frame', 'graze', 'life', 'mode', 'phase', 'point', 'power', 'rank', 'rankLock', 'score', 'section', 'stage'],
+  'TH06 central thPracParam write inventory');
+exactSet(
+  [...upstream.matchAll(/\b(th06_[A-Za-z0-9_]+)\.Enable\(\)/g)].map(m => m[1]),
+  ['th06_bomb_esc_r_prevent_desyncs', 'th06_result_screen_create', 'th06_sfx_fix', 'th06_white_screen'],
+  'TH06 explicit hook Enable inventory');
+exactSet(
+  [...upstream.matchAll(/\b(th06_[A-Za-z0-9_]+)\.Disable\(\)/g)].map(m => m[1]),
+  ['th06_bomb_esc_r_prevent_desyncs', 'th06_sfx_fix', 'th06_white_screen'],
+  'TH06 explicit hook Disable inventory');
+
+const portableOwnerCategory = new Map(Object.entries({
+  g_Config: 'source live THPracParam',
+  g_MenuConfig: 'source persistent THGuiPrac widgets',
+  g_MenuOpen: 'source THGuiPrac/GameGuiWnd open state',
+  g_MenuCursor: 'backend ImGui nav cursor',
+  g_MenuDifficulty: 'source THGuiPrac mDiffculty',
+  g_MenuShotType: 'source THGuiPrac mShotType',
+  g_MenuSectionIndex: 'source THGuiPrac mSection',
+  g_MenuChapter: 'source THGuiPrac mChapter',
+  g_ImGuiMenuFocusPending: 'backend mNavFocus handoff',
+  g_ImGuiMenuFocusLabel: 'backend mNavFocus target',
+  g_MenuVisualState: 'backend GameGuiWnd status/fade',
+  g_MenuAlpha: 'backend GameGuiWnd fade',
+  g_MenuCloseStep: 'backend GameGuiWnd fade',
+  g_MenuPendingResult: 'backend close-callback handoff',
+  g_PauseWasOpen: 'backend vanilla pause detection',
+  g_PauseSettings: 'source THPauseMenu inSettings',
+  g_PauseCursor: 'source THPauseMenu cursor',
+  g_PauseVisualState: 'backend THPauseMenu GameGuiWnd status/fade',
+  g_PauseAlpha: 'backend THPauseMenu fade',
+  g_PauseAction: 'source THPauseMenu state/signal',
+  g_PauseLogicalOpen: 'source THPauseMenu mState',
+  g_PauseFrameCounter: 'source THPauseMenu mFrameCounter',
+  g_ImGuiPauseFocusPending: 'backend THPauseMenu focus handoff',
+  g_PreserveConfigOnRestart: 'portable State(5)->reinit one-shot bridge',
+  g_PreserveConfigOnFreshStart: 'portable State(3)->GameManager one-shot bridge',
+  g_ResultReplaySaveRequested: 'source th06_result_screen_create one-shot',
+  g_ReplayPlaybackActive: 'source THGuiRep mRepStatus',
+  g_ReplayStartupCommitted: 'portable State(3)->GameManager replay one-shot bridge',
+  g_ReplayParamStatus: 'source THGuiRep mParamStatus',
+  g_ReplayCandidate: 'source THGuiRep mRepParam',
+  g_ReplayUnsafeAssistUsedThisRun: 'portable replay determinism guard for unsafe assist usage',
+  g_Overlay: 'source THOverlay/Tracker persistent state',
+  g_ModMenuToggleRequested: 'backend post-calc->ImGui OnPreUpdate bridge',
+  g_AdvancedMenuToggleRequested: 'backend THAdvOpt StaticUpdate ordering bridge',
+  g_ScreenshotRequested: 'backend hotkey->render one-shot bridge',
+  g_AdvancedOptions: 'source THAdvOptWnd persistent state',
+  g_OverlayKeyDown: 'backend GuiHotKey/GuiHotKeyChord edge history',
+  g_TrackerMisses: 'source Tracker miss counter',
+  g_PreserveBgmRestart: 'source THPauseMenu everlasting-BGM signal',
+  g_BgmTrackingStarted: 'backend THPauseMenu BGM identity tracking',
+  g_BgmChangedSinceStart: 'source THPauseMenu el_bgm_changed equivalent',
+  g_CurrentBgmPath: 'backend current-BGM identity',
+  g_BossSectionSfxFixPending: 'source th06_sfx_fix one-shot',
+  g_MenuResult: 'backend THGuiPrac close result handoff',
+}));
+const portableOwnerNames = [...sources.practice.matchAll(/^static\s+(?![^\n]*\()[^\n;=]+?\b(g_[A-Za-z0-9_]+)\b(?:\s*\[[^\]]+\])?\s*(?:=|;)/gm)].map(m => m[1]);
+exactSet(portableOwnerNames, portableOwnerCategory.keys(), 'TH06 portable PracticeRuntime owner inventory');
+
+// `_playLock` is written but never consumed in TH06 v2.3.0.3. Preserve that
+// as an explicit proven dead field rather than inventing a portable owner.
+const playLockOccurrences = [...upstream.matchAll(/_playLock/g)].map(m => m.index);
+if (playLockOccurrences.length !== 2 ||
+    !upstream.includes('bool _playLock;') ||
+    !upstream.includes('thPracParam._playLock = true;'))
+  throw new Error('TH06 _playLock stopped being a declaration+write-only dead field; re-audit required');
+
+// Exact one-shot lifecycle mappings, not just hook-name presence.
+has(sources.screen, 'if (g_ActiveShakeEffects > 0)', 'th06_bomb_esc_r only arms when a shake job exists');
+has(sources.screen, 'g_CancelNextShakeForRestart = true;', 'th06_bomb_esc_r one-shot request');
+has(sources.practice, 'g_ResultReplaySaveRequested = true;', 'th06_result_screen_create one-shot producer');
+has(sources.practice, 'g_ResultReplaySaveRequested = false;', 'th06_result_screen_create one-shot consume/reset');
+has(sources.practice, 'g_BossSectionSfxFixPending = true;', 'th06_sfx_fix one-shot producer');
+has(sources.practice, 'g_BossSectionSfxFixPending = false;', 'th06_sfx_fix one-shot consume/reset');
 
 // Every upstream hook/patch must be named here. The point of this audit is to
 // make omissions impossible to hide behind a successful end-to-end run.
@@ -119,12 +235,19 @@ if (fadeRegistrations.length !== 1 || fadeRegistrations[0] !== 'MainMenu.cpp') {
   throw new Error(`white-screen N/A assumption changed: fade registrations=${fadeRegistrations.join(',')}`);
 }
 
-// Replay State(1/2/3) is integrated at actual run start: normal Replay first
-// clears live practice state, then metadata (if present) is loaded before
-// PrepareStart/ApplyInitialState. No separate visible THGuiRep window exists.
-has(sources.game, 'PracticeRuntime::RefreshFromHost();', 'Replay State(1) reset equivalent');
-has(sources.game, 'PracticeRuntime::LoadReplayMetadata', 'Replay State(2/3) load equivalent');
-has(sources.practice, 'g_Config = {};', 'Replay metadata reset');
+// Replay State(1/2/3) is a real ownership state machine even though THGuiRep
+// itself has no separate visible window in portable. Preserve the three
+// original MainMenu hook boundaries rather than collapsing them into run
+// startup: State(1) before LoadReplayMenu, State(2) on transition to replay
+// stage select, State(3) at the original isInReplay=1 write.
+has(sources.mainMenu, 'PracticeRuntime::ReplayMenuReset();', 'Replay State(1) hook-site equivalent');
+has(sources.mainMenu, 'PracticeRuntime::ReplayMenuCheck(this->replayFilePaths[this->chosenReplay]);', 'Replay State(2) hook-site equivalent');
+has(sources.mainMenu, 'PracticeRuntime::ReplayMenuActivate();', 'Replay State(3) hook-site equivalent');
+has(sources.practice, 'static bool g_ReplayParamStatus = false;', 'Replay mParamStatus owner');
+has(sources.practice, 'static bool g_ReplayPlaybackActive = false;', 'Replay mRepStatus owner');
+has(sources.practice, 'static bool g_ReplayStartupCommitted = false;', 'portable one-shot Replay startup bridge');
+has(sources.practice, 'ParseConfigJson(json, candidate, true)', 'TH06 non-resetting mRepParam ReadJson merge');
+has(sources.practice, 'PublishPortableSession();', 'resolved live Replay session publication');
 has(sources.practice, 'if (!g_GameManager.isInPracticeMode)', 'ordinary Start live-thprac ownership boundary');
 has(sources.practice, 'Module.eaglerOptions.thpracSession = null;', 'ordinary Start clears Web live thprac session');
 if (sources.practice.includes('g_MenuConfig = {};')) {
@@ -175,6 +298,26 @@ const overlayFeatures = [
 ];
 for (const [needle, label] of overlayFeatures) has(upstream, needle, `THOverlay ${label}`);
 
+// THAdvOptWnd has no standalone th06_* hook name, so a named-hook inventory
+// alone cannot discover it. It is nevertheless a formal upstream player
+// surface owned by F12 and must be mandatory in the ledger.
+for (const [needle, label] of [
+  ['class THAdvOptWnd : public Gui::PPGuiWnd', 'THAdvOptWnd surface'],
+  ['Gui::GetChordPressed(hotkeys.advanced_menu)', 'THAdvOptWnd F12 owner'],
+  ['if (BeginOptGroup<TH_GAME_SPEED>())', 'THAdvOptWnd Game Speed group'],
+  ['AboutOpt();', 'THAdvOptWnd About group'],
+  ['void GameplayInit()\r\n        {\r\n        }', 'THAdvOptWnd TH06 empty GameplayInit'],
+  ['void GameplaySet()\r\n        {\r\n        }', 'THAdvOptWnd TH06 empty GameplaySet'],
+]) has(upstream, needle, label);
+has(sources.practice, 'SDL_SCANCODE_F12', 'THAdvOptWnd F12 hotkey');
+has(sources.practice, 'Advanced Options###th06-thprac-advanced', 'THAdvOptWnd portable window');
+has(sources.practice, 'No openinputlagpatch/vpatch backend is loaded', 'THAdvOptWnd unavailable Game Speed backend');
+has(sources.practice, 'THPrac::Gui::ShowLicenceInfo();', 'THAdvOptWnd About license surface');
+if (sources.practice.includes('g_AdvancedOptions.allClearBonus') ||
+    sources.practice.includes('g_AdvancedOptions.fixSpellBonusDisplay')) {
+  throw new Error('TH06 THAdvOptWnd must not import TH07-only Gameplay options');
+}
+
 // Mandatory portable THOverlay contract.  Checking only the upstream names is
 // insufficient: every checkbox/hotkey must have a typed gameplay consumer.
 has(sources.practice, 'SDL_SCANCODE_BACKSPACE', 'THOverlay Backspace hotkey');
@@ -188,6 +331,20 @@ has(sources.practice, 'SDL_SCANCODE_F7', 'THOverlay F7 hotkey');
 has(sources.practice, 'SDL_SCANCODE_TAB', 'Tracker default Tab hotkey');
 has(sources.gameWindow, 'PracticeRuntime::UpdateOverlay();', 'THOverlay 60 Hz update bridge');
 has(sources.gameWindow, 'PracticeRuntime::DrawOverlay();', 'THOverlay ImGui draw bridge');
+
+const overlayUpdateStart = sources.practice.indexOf('void UpdateOverlay()');
+const overlayDrawStart = sources.practice.indexOf('void DrawOverlay()', overlayUpdateStart);
+const overlayUpdateBody = sources.practice.slice(overlayUpdateStart, overlayDrawStart);
+const overlayDrawEnd = sources.practice.indexOf('\nvoid Notify', overlayDrawStart);
+const overlayDrawBody = sources.practice.slice(overlayDrawStart, overlayDrawEnd);
+if (!upstream.includes('if (mMenu(false) && !ImGui::IsAnyItemActive())') ||
+    !overlayUpdateBody.includes('g_ModMenuToggleRequested = true;') ||
+    overlayUpdateBody.includes('g_Overlay.invincible = !g_Overlay.invincible') ||
+    !overlayDrawBody.includes('if (!ImGui::IsAnyItemActive())') ||
+    !overlayDrawBody.includes('OverlayKeyPressed(1, SDL_SCANCODE_F1)') ||
+    !overlayDrawBody.includes('OverlayKeyPressed(7, SDL_SCANCODE_F7)')) {
+  throw new Error('TH06 THOverlay ownership drift: Backspace must respect active items and F1-F7 are sampled only while Mod Menu content is open');
+}
 
 has(sources.player, 'PracticeRuntime::OverlayInvincible()', 'F1 invincible death-state consumer');
 has(sources.player, 'PracticeRuntime::OverlayInfiniteLives()', 'F2 infinite-lives consumer');
@@ -217,4 +374,4 @@ const counts = {};
 for (const kind of classifications.values()) counts[kind] = (counts[kind] ?? 0) + 1;
 console.log(`TH06 upstream thprac hook audit PASS: ${uniqueHooks.length}/${uniqueHooks.length} hooks classified; ` +
   Object.entries(counts).map(([k, v]) => `${k}=${v}`).join(' ') +
-  `; mandatory THOverlay surface enumerated=${overlayFeatures.length}`);
+  `; mandatory THOverlay surface enumerated=${overlayFeatures.length}; THAdvOptWnd=implemented`);

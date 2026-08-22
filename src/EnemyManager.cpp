@@ -858,11 +858,9 @@ ChainCallbackResult EnemyManager::OnDraw(EnemyManager *mgr)
             if (0 <= curEnemyVm->anmFileIndex)
             {
                 drawVm(curEnemyVm, 0.495f, curEnemyVm->autoRotate != 0);
-                g_AnmManager->FlushVertexBuffer();
             }
         }
         drawVm(&curEnemy->primaryVm, 0.494f, curEnemy->flags.unk13 != 0);
-        g_AnmManager->FlushVertexBuffer();
         for (curEnemyVmIdx = 4; curEnemyVmIdx < 8; curEnemyVmIdx++, curEnemyVm++)
         {
             if (0 <= curEnemyVm->anmFileIndex)
