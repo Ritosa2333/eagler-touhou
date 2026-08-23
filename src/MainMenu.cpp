@@ -2197,6 +2197,49 @@ ZunResult MainMenu::LoadTitleAnm(MainMenu *menu)
     i32 i;
 
     g_Supervisor.LoadPbg3(3, TH_TL_DAT_FILE);
+#ifdef __EMSCRIPTEN__
+    static bool s_WebTransitionAnmsPrewarmed = false;
+    if (!s_WebTransitionAnmsPrewarmed)
+    {
+        struct PrewarmAnm
+        {
+            i32 idx;
+            const char *path;
+            i32 offset;
+        };
+        static const PrewarmAnm kPrewarmAnms[] = {
+            {ANM_FILE_TITLE01, "data/title01.anm", ANM_OFFSET_TITLE01},
+            {ANM_FILE_TITLE02, "data/title02.anm", ANM_OFFSET_TITLE02},
+            {ANM_FILE_TITLE03, "data/title03.anm", ANM_OFFSET_TITLE03},
+            {ANM_FILE_TITLE04, "data/title04.anm", ANM_OFFSET_TITLE04},
+            {ANM_FILE_TITLE01S, "data/title01s.anm", ANM_OFFSET_TITLE01S},
+            {ANM_FILE_TITLE04S, "data/title04s.anm", ANM_OFFSET_TITLE04S},
+            {ANM_FILE_SELECT01, "data/select01.anm", ANM_OFFSET_SELECT01},
+            {ANM_FILE_SELECT02, "data/select02.anm", ANM_OFFSET_SELECT02},
+            {ANM_FILE_SELECT03, "data/select03.anm", ANM_OFFSET_SELECT03},
+            {ANM_FILE_SELECT04, "data/select04.anm", ANM_OFFSET_SELECT04},
+            {ANM_FILE_SELECT05, "data/select05.anm", ANM_OFFSET_SELECT05},
+            {ANM_FILE_SLPL00A, "data/slpl00a.anm", ANM_OFFSET_SLPL00A},
+            {ANM_FILE_SLPL00B, "data/slpl00b.anm", ANM_OFFSET_SLPL00B},
+            {ANM_FILE_SLPL01A, "data/slpl01a.anm", ANM_OFFSET_SLPL01A},
+            {ANM_FILE_SLPL01B, "data/slpl01b.anm", ANM_OFFSET_SLPL01B},
+            {ANM_FILE_REPLAY, "data/replay00.anm", ANM_OFFSET_REPLAY},
+            {ANM_FILE_RESULT00, "data/result00.anm", ANM_OFFSET_RESULT00},
+            {ANM_FILE_RESULT01, "data/result01.anm", ANM_OFFSET_RESULT01},
+            {ANM_FILE_RESULT02, "data/result02.anm", ANM_OFFSET_RESULT02},
+            {ANM_FILE_RESULT03, "data/result03.anm", ANM_OFFSET_RESULT03},
+            {ANM_FILE_MUSIC00, "data/music00.anm", ANM_OFFSET_MUSIC00},
+            {ANM_FILE_MUSIC01, "data/music01.anm", ANM_OFFSET_MUSIC01},
+            {ANM_FILE_MUSIC02, "data/music02.anm", ANM_OFFSET_MUSIC02},
+        };
+        for (const PrewarmAnm &anm : kPrewarmAnms)
+        {
+            if (g_AnmManager->PreloadTransitionAnm(anm.idx, anm.path, anm.offset) != ZUN_SUCCESS)
+                return ZUN_ERROR;
+        }
+        s_WebTransitionAnmsPrewarmed = true;
+    }
+#endif
     for (i = ANM_FILE_SELECT01; i <= ANM_FILE_REPLAY; i++)
     {
         g_AnmManager->ReleaseAnm(i);

@@ -215,6 +215,17 @@ RenderResult GameWindow::Render()
         }
     }
 
+#ifdef __EMSCRIPTEN__
+    // Keep Web audio supplied at requestAnimationFrame cadence rather than at
+    // the fixed 60 Hz simulation cadence. Sound events are still consumed by
+    // PlaySounds() on the simulation tick; this only maintains the already-
+    // owned SDL output queue.
+    if (!g_SoundPlayer.PumpWebAudio())
+    {
+        SDL_LogError(SDL_LOG_CATEGORY_AUDIO, "th06: SDL audio pump failed: %s", SDL_GetError());
+    }
+#endif
+
     // Scene callbacks can request a Supervisor state change after the
     // Supervisor has already run for this 60 Hz tick. Their calc element and
     // draw element are removed immediately, while the replacement scene can
@@ -322,6 +333,43 @@ RenderResult GameWindow::Render()
         SaveThpracSnapshot();
 #endif
     Present();
+
+#ifdef __EMSCRIPTEN__
+    // One-shot observability only: tell the host that a real rendered frame
+    // made it through the game loop and buffer swap. This deliberately sits
+    // after Present() and does not participate in simulation/presentation
+    // timing, input, RNG, collision, or Replay determinism.
+    static bool s_FirstWebFrameReported = false;
+    if (!s_FirstWebFrameReported)
+    {
+        s_FirstWebFrameReported = true;
+        EM_ASM({ globalThis.EaglerTouhouFirstFrame?.(); });
+    }
+
+    // Low-rate presentation telemetry for the host diagnostic strip. Count
+    // only frames that reached Present(), and report the worst inter-present
+    // gap in the same window; no timing result feeds back into game state.
+    static f64 s_WebFrameHealthStartMs = 0.0;
+    static f64 s_WebLastPresentMs = 0.0;
+    static f64 s_WebMaxPresentGapMs = 0.0;
+    static u32 s_WebPresentedFrames = 0;
+    const f64 presentNowMs = emscripten_get_now();
+    if (s_WebFrameHealthStartMs == 0.0)
+        s_WebFrameHealthStartMs = presentNowMs;
+    if (s_WebLastPresentMs > 0.0)
+        s_WebMaxPresentGapMs = std::max(s_WebMaxPresentGapMs, presentNowMs - s_WebLastPresentMs);
+    s_WebLastPresentMs = presentNowMs;
+    s_WebPresentedFrames++;
+    const f64 frameHealthWindowMs = presentNowMs - s_WebFrameHealthStartMs;
+    if (frameHealthWindowMs >= 500.0)
+    {
+        const f64 presentationFps = static_cast<f64>(s_WebPresentedFrames) * 1000.0 / frameHealthWindowMs;
+        EM_ASM({ globalThis.EaglerTouhouFrameHealth?.($0, $1); }, presentationFps, s_WebMaxPresentGapMs);
+        s_WebFrameHealthStartMs = presentNowMs;
+        s_WebMaxPresentGapMs = 0.0;
+        s_WebPresentedFrames = 0;
+    }
+#endif
 
 #ifndef __EMSCRIPTEN__
     const f64 presentationHz = GetNativePresentationHz();
@@ -581,9 +629,9 @@ ZunResult GameWindow::InitD3dRendering()
     // a software rasterizer), so leaving the zero-initialized D3D bit unset
     // incorrectly forces the old software-vertex fallback forever.
     //
-    // This matters visibly for bullets: the normal path reaches Draw2/Draw3,
-    // which preserves sub-pixel positions for rotated sprites, while the
-    // fallback Draw() path rounds their center with rintf() every frame.
+    // This matters visibly for bullets because the two branches use different
+    // projection/draw contracts. Keep the D3D hardware-path selection faithful
+    // even though both portable sprite paths now preserve fractional positions.
     g_Supervisor.hasD3dHardwareVertexProcessing = 1;
 
     //    u8 using_d3d_hal;

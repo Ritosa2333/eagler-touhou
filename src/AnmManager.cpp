@@ -1,4 +1,5 @@
 #include "AnmManager.hpp"
+#include "AnmIdx.hpp"
 #include "FileSystem.hpp"
 #include "GameErrorContext.hpp"
 #include "GameWindow.hpp"
@@ -7,6 +8,7 @@
 #include "Supervisor.hpp"
 #include "TextHelper.hpp"
 #include <algorithm>
+#include <cmath>
 #include "ZunMath.hpp"
 #include "i18n.hpp"
 #include "utils.hpp"
@@ -50,6 +52,436 @@ static const PixelDataType g_TextureFormatTypeMapping[6] = {static_cast<PixelDat
                                                             PIXEL_UNSIGNED_SHORT_4_4_4_4};
 
 static const u8 g_TextureFormatBytesPerPixel[6] = {0, 4, 2, 2, 3, 2};
+
+namespace
+{
+constexpr i32 SPRITE_EXTRUSION_GUTTER = 1;
+constexpr u32 SPRITE_EXTRUSION_MAX_ATLAS_SIZE = 2048;
+
+struct SpriteExtrusionRect
+{
+    i32 srcX;
+    i32 srcY;
+    i32 width;
+    i32 height;
+    i32 dstX;
+    i32 dstY;
+    std::vector<i32> spriteIndices;
+};
+
+static u32 NextPowerOfTwo(u32 value)
+{
+    if (value <= 1)
+        return 1;
+    value--;
+    value |= value >> 1;
+    value |= value >> 2;
+    value |= value >> 4;
+    value |= value >> 8;
+    value |= value >> 16;
+    return value + 1;
+}
+
+static bool ToPixelCoordinate(f32 value, i32 &result)
+{
+    result = static_cast<i32>(std::lround(value));
+    return std::fabs(value - static_cast<f32>(result)) <= 0.001f;
+}
+
+static bool TryPackSpriteExtrusionRects(std::vector<SpriteExtrusionRect> &rects, u32 atlasWidth,
+                                        u32 &usedHeight)
+{
+    u32 x = 0;
+    u32 y = 0;
+    u32 rowHeight = 0;
+
+    for (SpriteExtrusionRect &rect : rects)
+    {
+        const u32 packedWidth = static_cast<u32>(rect.width + SPRITE_EXTRUSION_GUTTER * 2);
+        const u32 packedHeight = static_cast<u32>(rect.height + SPRITE_EXTRUSION_GUTTER * 2);
+        if (packedWidth > atlasWidth || packedHeight > SPRITE_EXTRUSION_MAX_ATLAS_SIZE)
+            return false;
+
+        if (x + packedWidth > atlasWidth)
+        {
+            y += rowHeight;
+            x = 0;
+            rowHeight = 0;
+        }
+        if (y + packedHeight > SPRITE_EXTRUSION_MAX_ATLAS_SIZE)
+            return false;
+
+        rect.dstX = static_cast<i32>(x);
+        rect.dstY = static_cast<i32>(y);
+        x += packedWidth;
+        rowHeight = std::max(rowHeight, packedHeight);
+    }
+
+    usedHeight = y + rowHeight;
+    return usedHeight > 0 && usedHeight <= SPRITE_EXTRUSION_MAX_ATLAS_SIZE;
+}
+
+static bool BuildSpriteExtrusionAtlas(AnmManager *manager, i32 textureIdx,
+                                      const std::vector<i32> &spriteIndices)
+{
+    if (!manager || textureIdx < 0 || textureIdx >= ARRAY_SIZE_SIGNED(manager->textures))
+        return false;
+
+    TextureData &sourceTexture = manager->textures[textureIdx];
+    if (!sourceTexture.handle || !sourceTexture.textureData || sourceTexture.width == 0 ||
+        sourceTexture.height == 0 || sourceTexture.format <= TEX_FMT_UNKNOWN ||
+        sourceTexture.format > TEX_FMT_A4R4G4B4)
+        return false;
+
+    const u32 bytesPerPixel = g_TextureFormatBytesPerPixel[sourceTexture.format];
+    if (bytesPerPixel == 0 || sourceTexture.width > SPRITE_EXTRUSION_MAX_ATLAS_SIZE ||
+        sourceTexture.height > SPRITE_EXTRUSION_MAX_ATLAS_SIZE)
+        return false;
+
+    if (manager->spriteAtlasTextures[textureIdx])
+    {
+        if (manager->currentTextureHandle == manager->spriteAtlasTextures[textureIdx])
+            manager->currentTextureHandle = 0;
+        g_GfxBackend->DeleteTexture(manager->spriteAtlasTextures[textureIdx]);
+        manager->spriteAtlasTextures[textureIdx] = 0;
+    }
+
+    std::vector<SpriteExtrusionRect> rects;
+    rects.reserve(spriteIndices.size());
+    for (const i32 spriteIdx : spriteIndices)
+    {
+        if (spriteIdx < 0 || spriteIdx >= ARRAY_SIZE_SIGNED(manager->sprites))
+            continue;
+
+        AnmLoadedSprite &sprite = manager->sprites[spriteIdx];
+        sprite.extrudedUvStart = sprite.uvStart;
+        sprite.extrudedUvEnd = sprite.uvEnd;
+        sprite.hasExtrudedUv = false;
+        if (sprite.sourceFileIndex != textureIdx)
+            continue;
+
+        i32 x0, y0, x1, y1;
+        if (!ToPixelCoordinate(sprite.startPixelInclusive.x, x0) ||
+            !ToPixelCoordinate(sprite.startPixelInclusive.y, y0) ||
+            !ToPixelCoordinate(sprite.endPixelInclusive.x, x1) ||
+            !ToPixelCoordinate(sprite.endPixelInclusive.y, y1))
+            continue;
+
+        const i32 width = x1 - x0;
+        const i32 height = y1 - y0;
+        if (width <= 0 || height <= 0 || x0 < 0 || y0 < 0 ||
+            x1 > static_cast<i32>(sourceTexture.width) || y1 > static_cast<i32>(sourceTexture.height))
+            continue;
+
+        SpriteExtrusionRect *existing = nullptr;
+        for (SpriteExtrusionRect &rect : rects)
+        {
+            if (rect.srcX == x0 && rect.srcY == y0 && rect.width == width && rect.height == height)
+            {
+                existing = &rect;
+                break;
+            }
+        }
+        if (existing)
+        {
+            existing->spriteIndices.push_back(spriteIdx);
+        }
+        else
+        {
+            SpriteExtrusionRect rect = {x0, y0, width, height, 0, 0, {spriteIdx}};
+            rects.push_back(std::move(rect));
+        }
+    }
+
+    if (rects.empty())
+        return false;
+
+    std::sort(rects.begin(), rects.end(), [](const SpriteExtrusionRect &a, const SpriteExtrusionRect &b) {
+        if (a.height != b.height)
+            return a.height > b.height;
+        return a.width > b.width;
+    });
+
+    u32 widestPackedRect = 1;
+    for (const SpriteExtrusionRect &rect : rects)
+        widestPackedRect = std::max(widestPackedRect,
+                                    static_cast<u32>(rect.width + SPRITE_EXTRUSION_GUTTER * 2));
+
+    u32 atlasWidth = NextPowerOfTwo(std::max(sourceTexture.width, widestPackedRect));
+    u32 usedHeight = 0;
+    while (atlasWidth <= SPRITE_EXTRUSION_MAX_ATLAS_SIZE &&
+           !TryPackSpriteExtrusionRects(rects, atlasWidth, usedHeight))
+        atlasWidth <<= 1;
+
+    if (atlasWidth > SPRITE_EXTRUSION_MAX_ATLAS_SIZE || usedHeight == 0)
+        return false;
+
+    const u32 atlasHeight = NextPowerOfTwo(usedHeight);
+    if (atlasHeight > SPRITE_EXTRUSION_MAX_ATLAS_SIZE)
+        return false;
+
+    std::vector<u8> atlas(static_cast<size_t>(atlasWidth) * atlasHeight * bytesPerPixel, 0);
+    const u8 *source = sourceTexture.textureData;
+    const size_t sourcePitch = static_cast<size_t>(sourceTexture.width) * bytesPerPixel;
+    const size_t atlasPitch = static_cast<size_t>(atlasWidth) * bytesPerPixel;
+
+    for (const SpriteExtrusionRect &rect : rects)
+    {
+        const i32 contentX = rect.dstX + SPRITE_EXTRUSION_GUTTER;
+        const i32 contentY = rect.dstY + SPRITE_EXTRUSION_GUTTER;
+        const size_t copyBytes = static_cast<size_t>(rect.width) * bytesPerPixel;
+
+        for (i32 row = 0; row < rect.height; row++)
+        {
+            const u8 *sourceRow = source + static_cast<size_t>(rect.srcY + row) * sourcePitch +
+                                  static_cast<size_t>(rect.srcX) * bytesPerPixel;
+            u8 *destinationRow = atlas.data() + static_cast<size_t>(contentY + row) * atlasPitch +
+                                 static_cast<size_t>(contentX) * bytesPerPixel;
+            std::memcpy(destinationRow, sourceRow, copyBytes);
+            std::memcpy(destinationRow - bytesPerPixel, sourceRow, bytesPerPixel);
+            std::memcpy(destinationRow + copyBytes, sourceRow + copyBytes - bytesPerPixel,
+                        bytesPerPixel);
+        }
+
+        u8 *firstPackedRow = atlas.data() + static_cast<size_t>(contentY) * atlasPitch +
+                             static_cast<size_t>(rect.dstX) * bytesPerPixel;
+        u8 *lastPackedRow = atlas.data() + static_cast<size_t>(contentY + rect.height - 1) * atlasPitch +
+                            static_cast<size_t>(rect.dstX) * bytesPerPixel;
+        const size_t packedRowBytes = static_cast<size_t>(rect.width + 2 * SPRITE_EXTRUSION_GUTTER) *
+                                      bytesPerPixel;
+        std::memcpy(firstPackedRow - atlasPitch, firstPackedRow, packedRowBytes);
+        std::memcpy(lastPackedRow + atlasPitch, lastPackedRow, packedRowBytes);
+    }
+
+    manager->CreateTextureObject();
+    const GfxTextureHandle atlasTexture = manager->currentTextureHandle;
+    g_GfxBackend->SetTextureImage(atlasWidth, atlasHeight,
+                                  g_TextureFormatTypeGfxMapping[sourceTexture.format],
+                                  g_TextureFormatTypeMapping[sourceTexture.format], atlas.data());
+    if (g_GfxBackend->HasError())
+    {
+        g_GfxBackend->DeleteTexture(atlasTexture);
+        manager->currentTextureHandle = 0;
+        return false;
+    }
+
+    manager->spriteAtlasTextures[textureIdx] = atlasTexture;
+    manager->currentSprite = nullptr;
+    for (const SpriteExtrusionRect &rect : rects)
+    {
+        const f32 u0 = static_cast<f32>(rect.dstX + SPRITE_EXTRUSION_GUTTER) / atlasWidth;
+        const f32 v0 = static_cast<f32>(rect.dstY + SPRITE_EXTRUSION_GUTTER) / atlasHeight;
+        const f32 u1 = static_cast<f32>(rect.dstX + SPRITE_EXTRUSION_GUTTER + rect.width) / atlasWidth;
+        const f32 v1 = static_cast<f32>(rect.dstY + SPRITE_EXTRUSION_GUTTER + rect.height) / atlasHeight;
+        for (const i32 spriteIdx : rect.spriteIndices)
+        {
+            AnmLoadedSprite &sprite = manager->sprites[spriteIdx];
+            sprite.extrudedUvStart = ZunVec2(u0, v0);
+            sprite.extrudedUvEnd = ZunVec2(u1, v1);
+            sprite.hasExtrudedUv = true;
+        }
+    }
+    return true;
+}
+
+static bool UseSpriteExtrusionAtlas(const AnmManager *manager, const AnmLoadedSprite *sprite,
+                                    const ZunVec2 &drawUv)
+{
+    return manager && sprite && sprite->hasExtrudedUv && drawUv.x == 0.0f && drawUv.y == 0.0f &&
+           sprite->sourceFileIndex >= 0 &&
+           sprite->sourceFileIndex < ARRAY_SIZE_SIGNED(manager->spriteAtlasTextures) &&
+           static_cast<bool>(manager->spriteAtlasTextures[sprite->sourceFileIndex]);
+}
+
+static void InvalidateSpriteExtrusionAtlas(AnmManager *manager, i32 textureIdx)
+{
+    if (!manager || textureIdx < 0 || textureIdx >= ARRAY_SIZE_SIGNED(manager->spriteAtlasTextures))
+        return;
+
+    const GfxTextureHandle atlas = manager->spriteAtlasTextures[textureIdx];
+    if (atlas)
+    {
+        if (manager->currentTextureHandle == atlas)
+            manager->currentTextureHandle = 0;
+        g_GfxBackend->DeleteTexture(atlas);
+        manager->spriteAtlasTextures[textureIdx] = 0;
+        manager->currentSprite = nullptr;
+    }
+
+    for (AnmLoadedSprite &sprite : manager->sprites)
+    {
+        if (sprite.sourceFileIndex == textureIdx)
+            sprite.hasExtrudedUv = false;
+    }
+}
+
+static void ResolveSpriteDrawSampling(const AnmManager *manager, const AnmLoadedSprite *sprite,
+                                      const ZunVec2 &drawUv, ZunVec2 &uvStart, ZunVec2 &uvEnd,
+                                      GfxTextureHandle &texture)
+{
+    const bool useExtrusion = UseSpriteExtrusionAtlas(manager, sprite, drawUv);
+    if (useExtrusion)
+    {
+        uvStart = sprite->extrudedUvStart;
+        uvEnd = sprite->extrudedUvEnd;
+        texture = manager->spriteAtlasTextures[sprite->sourceFileIndex];
+    }
+    else
+    {
+        uvStart = ZunVec2(sprite->uvStart.x + drawUv.x, sprite->uvStart.y + drawUv.y);
+        uvEnd = ZunVec2(sprite->uvEnd.x + drawUv.x, sprite->uvEnd.y + drawUv.y);
+        texture = manager->textures[sprite->sourceFileIndex].handle;
+    }
+}
+} // namespace
+
+#ifdef __EMSCRIPTEN__
+struct WebTransitionSurfaceCacheEntry
+{
+    const char *path;
+    SDL_Surface *surface;
+};
+
+static WebTransitionSurfaceCacheEntry g_WebTransitionSurfaceCache[] = {
+    {"data/title/title00.jpg", nullptr},
+    {"data/title/select00.jpg", nullptr},
+    {"data/result/music.jpg", nullptr},
+    {"data/result/result.jpg", nullptr},
+};
+
+static u8 g_WebTransitionSurfaceOwner[32] = {};
+
+static WebTransitionSurfaceCacheEntry *FindWebTransitionSurface(const char *path, u8 *ownerId = nullptr)
+{
+    for (u8 i = 0; i < static_cast<u8>(std::size(g_WebTransitionSurfaceCache)); i++)
+    {
+        if (std::strcmp(g_WebTransitionSurfaceCache[i].path, path) == 0)
+        {
+            if (ownerId)
+                *ownerId = static_cast<u8>(i + 1);
+            return &g_WebTransitionSurfaceCache[i];
+        }
+    }
+    return nullptr;
+}
+
+struct WebTransitionAnmSpriteBinding
+{
+    i32 index;
+    AnmLoadedSprite sprite;
+};
+
+struct WebTransitionAnmScriptBinding
+{
+    i32 index;
+    const AnmRawInstr *script;
+    i32 spriteIndex;
+};
+
+struct WebTransitionAnmCacheEntry
+{
+    const char *path;
+    i32 anmIdx;
+    i32 spriteIdxOffset;
+    bool loaded = false;
+    bool active = false;
+    std::vector<WebTransitionAnmSpriteBinding> sprites;
+    std::vector<WebTransitionAnmScriptBinding> scripts;
+};
+
+static WebTransitionAnmCacheEntry g_WebTransitionAnmCache[] = {
+    {"data/title01.anm", ANM_FILE_TITLE01, ANM_OFFSET_TITLE01},
+    {"data/title02.anm", ANM_FILE_TITLE02, ANM_OFFSET_TITLE02},
+    {"data/title03.anm", ANM_FILE_TITLE03, ANM_OFFSET_TITLE03},
+    {"data/title04.anm", ANM_FILE_TITLE04, ANM_OFFSET_TITLE04},
+    {"data/title01s.anm", ANM_FILE_TITLE01S, ANM_OFFSET_TITLE01S},
+    {"data/title04s.anm", ANM_FILE_TITLE04S, ANM_OFFSET_TITLE04S},
+    {"data/select01.anm", ANM_FILE_SELECT01, ANM_OFFSET_SELECT01},
+    {"data/select02.anm", ANM_FILE_SELECT02, ANM_OFFSET_SELECT02},
+    {"data/select03.anm", ANM_FILE_SELECT03, ANM_OFFSET_SELECT03},
+    {"data/select04.anm", ANM_FILE_SELECT04, ANM_OFFSET_SELECT04},
+    {"data/select05.anm", ANM_FILE_SELECT05, ANM_OFFSET_SELECT05},
+    {"data/slpl00a.anm", ANM_FILE_SLPL00A, ANM_OFFSET_SLPL00A},
+    {"data/slpl00b.anm", ANM_FILE_SLPL00B, ANM_OFFSET_SLPL00B},
+    {"data/slpl01a.anm", ANM_FILE_SLPL01A, ANM_OFFSET_SLPL01A},
+    {"data/slpl01b.anm", ANM_FILE_SLPL01B, ANM_OFFSET_SLPL01B},
+    {"data/replay00.anm", ANM_FILE_REPLAY, ANM_OFFSET_REPLAY},
+    {"data/result00.anm", ANM_FILE_RESULT00, ANM_OFFSET_RESULT00},
+    {"data/result01.anm", ANM_FILE_RESULT01, ANM_OFFSET_RESULT01},
+    {"data/result02.anm", ANM_FILE_RESULT02, ANM_OFFSET_RESULT02},
+    {"data/result03.anm", ANM_FILE_RESULT03, ANM_OFFSET_RESULT03},
+    {"data/music00.anm", ANM_FILE_MUSIC00, ANM_OFFSET_MUSIC00},
+    {"data/music01.anm", ANM_FILE_MUSIC01, ANM_OFFSET_MUSIC01},
+    {"data/music02.anm", ANM_FILE_MUSIC02, ANM_OFFSET_MUSIC02},
+};
+
+static WebTransitionAnmCacheEntry *FindWebTransitionAnm(i32 anmIdx, const char *path = nullptr)
+{
+    for (WebTransitionAnmCacheEntry &entry : g_WebTransitionAnmCache)
+    {
+        if (entry.anmIdx == anmIdx && (!path || std::strcmp(entry.path, path) == 0))
+            return &entry;
+    }
+    return nullptr;
+}
+
+static void CaptureWebTransitionAnmBindings(AnmManager *manager, WebTransitionAnmCacheEntry *entry)
+{
+    AnmRawEntry *anm = manager->anmFiles[entry->anmIdx];
+    if (!anm)
+        return;
+
+    entry->sprites.clear();
+    entry->scripts.clear();
+
+    const LE<u32> *offset = anm->spriteOffsets;
+    for (i32 i = 0; i < anm->numSprites; i++, offset++)
+    {
+        const AnmRawSprite *rawSprite = reinterpret_cast<const AnmRawSprite *>(
+            reinterpret_cast<const u8 *>(anm) + *offset);
+        const i32 target = rawSprite->id + entry->spriteIdxOffset;
+        entry->sprites.push_back({target, manager->sprites[target]});
+    }
+
+    for (i32 i = 0; i < anm->numScripts; i++, offset += 2)
+    {
+        const i32 target = offset[0] + entry->spriteIdxOffset;
+        entry->scripts.push_back({target, manager->scripts[target], manager->spriteIndices[target]});
+    }
+
+    entry->loaded = true;
+    entry->active = true;
+}
+
+static void RestoreWebTransitionAnmBindings(AnmManager *manager, WebTransitionAnmCacheEntry *entry)
+{
+    for (const WebTransitionAnmSpriteBinding &binding : entry->sprites)
+        manager->sprites[binding.index] = binding.sprite;
+    for (const WebTransitionAnmScriptBinding &binding : entry->scripts)
+    {
+        manager->scripts[binding.index] = binding.script;
+        manager->spriteIndices[binding.index] = binding.spriteIndex;
+    }
+    manager->anmFilesSpriteIndexOffsets[entry->anmIdx] = entry->spriteIdxOffset;
+    entry->active = true;
+}
+
+static void ClearWebTransitionAnmBindings(AnmManager *manager, WebTransitionAnmCacheEntry *entry)
+{
+    for (const WebTransitionAnmSpriteBinding &binding : entry->sprites)
+    {
+        std::memset(&manager->sprites[binding.index], 0, sizeof(manager->sprites[binding.index]));
+        manager->sprites[binding.index].sourceFileIndex = -1;
+    }
+    for (const WebTransitionAnmScriptBinding &binding : entry->scripts)
+    {
+        manager->scripts[binding.index] = nullptr;
+        manager->spriteIndices[binding.index] = 0;
+    }
+    manager->anmFilesSpriteIndexOffsets[entry->anmIdx] = 0;
+    entry->active = false;
+}
+#endif
 
 enum class RuntimePatchAlphaState
 {
@@ -377,11 +809,7 @@ void AnmManager::ReleaseSurfaces(void)
 {
     for (i32 idx = 0; idx < ARRAY_SIZE_SIGNED(this->surfaces); idx++)
     {
-        if (this->surfaces[idx] != NULL)
-        {
-            SDL_DestroySurface(this->surfaces[idx]);
-            this->surfaces[idx] = NULL;
-        }
+        ReleaseSurface(idx);
     }
 }
 
@@ -856,6 +1284,17 @@ ZunResult AnmManager::CreateEmptyTexture(i32 textureIdx, u32 width, u32 height, 
 
 ZunResult AnmManager::LoadAnm(i32 anmIdx, const char *path, i32 spriteIdxOffset)
 {
+#ifdef __EMSCRIPTEN__
+    if (WebTransitionAnmCacheEntry *cache = FindWebTransitionAnm(anmIdx, path); cache && cache->loaded)
+    {
+        RestoreWebTransitionAnmBindings(this, cache);
+        this->currentBlendMode = 0xff;
+        this->currentTextureHandle = 0;
+        this->currentSprite = nullptr;
+        return ZUN_SUCCESS;
+    }
+#endif
+
     this->ReleaseAnm(anmIdx);
     this->anmFiles[anmIdx] = (AnmRawEntry *)FileSystem::OpenPath(path, 0);
 
@@ -871,6 +1310,7 @@ ZunResult AnmManager::LoadAnm(i32 anmIdx, const char *path, i32 spriteIdxOffset)
     anm->textureIdx = anmIdx;
 
     const char *anmName = (char *)((u8 *)anm + anm->nameOffset);
+    const bool isMutableTexture = *anmName == '@';
 
     // D3D seems to treat unknown texture format as a wildcard, but SDL treats it as an error
     //   This is a hack to avoid that for now
@@ -965,6 +1405,8 @@ ZunResult AnmManager::LoadAnm(i32 anmIdx, const char *path, i32 spriteIdxOffset)
     i32 index;
     const AnmRawSprite *rawSprite;
 
+    std::vector<i32> loadedSpriteIndices;
+    loadedSpriteIndices.reserve(this->anmFiles[anmIdx]->numSprites);
     for (index = 0; index < this->anmFiles[anmIdx]->numSprites; index++, curSpriteOffset++)
     {
         rawSprite = (AnmRawSprite *)((u8 *)anm + *curSpriteOffset);
@@ -977,8 +1419,17 @@ ZunResult AnmManager::LoadAnm(i32 anmIdx, const char *path, i32 spriteIdxOffset)
         loadedSprite.endPixelInclusive.y = rawSprite->offset.y + rawSprite->size.y;
         loadedSprite.textureWidth = (float)anm->width;
         loadedSprite.textureHeight = (float)anm->height;
-        this->LoadSprite(rawSprite->id + spriteIdxOffset, &loadedSprite);
+        const i32 loadedSpriteIdx = rawSprite->id + spriteIdxOffset;
+        this->LoadSprite(loadedSpriteIdx, &loadedSprite);
+        loadedSpriteIndices.push_back(loadedSpriteIdx);
     }
+
+    // Mutable '@' textures are written by text/screenshot paths at runtime and
+    // therefore must keep their authoritative source layout. Static ANM
+    // textures get a draw-only atlas with one-texel edge extrusion; failure to
+    // build it is a compatibility fallback, never a load failure.
+    if (!isMutableTexture)
+        BuildSpriteExtrusionAtlas(this, anm->textureIdx, loadedSpriteIndices);
 
     for (index = 0; index < anm->numScripts; index++, curSpriteOffset += 2)
     {
@@ -988,11 +1439,45 @@ ZunResult AnmManager::LoadAnm(i32 anmIdx, const char *path, i32 spriteIdxOffset)
 
     this->anmFilesSpriteIndexOffsets[anmIdx] = spriteIdxOffset;
 
+#ifdef __EMSCRIPTEN__
+    if (WebTransitionAnmCacheEntry *cache = FindWebTransitionAnm(anmIdx, path))
+        CaptureWebTransitionAnmBindings(this, cache);
+#endif
+
     return ZUN_SUCCESS;
 }
 
+#ifdef __EMSCRIPTEN__
+ZunResult AnmManager::PreloadTransitionAnm(i32 anmIdx, const char *path, i32 spriteIdxOffset)
+{
+    WebTransitionAnmCacheEntry *cache = FindWebTransitionAnm(anmIdx, path);
+    if (!cache)
+        return ZUN_ERROR;
+    if (cache->loaded)
+        return ZUN_SUCCESS;
+
+    const ZunResult result = LoadAnm(anmIdx, path, spriteIdxOffset);
+    if (result != ZUN_SUCCESS)
+        return result;
+    ReleaseAnm(anmIdx);
+    return ZUN_SUCCESS;
+}
+#endif
+
 void AnmManager::ReleaseAnm(i32 anmIdx)
 {
+#ifdef __EMSCRIPTEN__
+    if (WebTransitionAnmCacheEntry *cache = FindWebTransitionAnm(anmIdx); cache && cache->loaded)
+    {
+        if (cache->active)
+            ClearWebTransitionAnmBindings(this, cache);
+        this->currentBlendMode = 0xff;
+        this->currentTextureHandle = 0;
+        this->currentSprite = nullptr;
+        return;
+    }
+#endif
+
     if (this->anmFiles[anmIdx] != NULL)
     {
         const LE<i32> *spriteIdx;
@@ -1026,6 +1511,18 @@ void AnmManager::ReleaseAnm(i32 anmIdx)
 
 void AnmManager::ReleaseTexture(i32 textureIdx)
 {
+    if (textureIdx < 0 || textureIdx >= ARRAY_SIZE_SIGNED(this->textures))
+        return;
+
+    if (this->spriteAtlasTextures[textureIdx] != 0)
+    {
+        if (this->currentTextureHandle == this->spriteAtlasTextures[textureIdx])
+            this->currentTextureHandle = 0;
+        g_GfxBackend->DeleteTexture(this->spriteAtlasTextures[textureIdx]);
+        this->spriteAtlasTextures[textureIdx] = 0;
+        this->currentSprite = nullptr;
+    }
+
     if (this->textures[textureIdx].handle != 0)
     {
         if (this->currentTextureHandle == this->textures[textureIdx].handle)
@@ -1059,6 +1556,10 @@ void AnmManager::LoadSprite(u32 spriteIdx, const AnmLoadedSprite *sprite)
     this->sprites[spriteIdx].uvEnd.y =
         this->sprites[spriteIdx].endPixelInclusive.y / this->sprites[spriteIdx].textureHeight;
 
+    this->sprites[spriteIdx].extrudedUvStart = this->sprites[spriteIdx].uvStart;
+    this->sprites[spriteIdx].extrudedUvEnd = this->sprites[spriteIdx].uvEnd;
+    this->sprites[spriteIdx].hasExtrudedUv = false;
+
     this->sprites[spriteIdx].widthPx =
         this->sprites[spriteIdx].endPixelInclusive.x - this->sprites[spriteIdx].startPixelInclusive.x;
     this->sprites[spriteIdx].heightPx =
@@ -1090,6 +1591,10 @@ void AnmManager::SetActiveSpriteWidth(AnmVm *vm, f32 widthPx)
     widthPx = std::clamp(widthPx, 0.0f, sprite->textureWidth);
     sprite->endPixelInclusive.x = sprite->startPixelInclusive.x + widthPx;
     sprite->uvEnd.x = sprite->endPixelInclusive.x / sprite->textureWidth;
+    // This helper intentionally edits a sprite cell's source-space width at
+    // runtime. Its prepacked extrusion rectangle no longer represents that
+    // cell exactly, so fall back to the authoritative source texture.
+    sprite->hasExtrudedUv = false;
     sprite->widthPx = widthPx;
     vm->sprite = sprite;
     vm->matrix.m[0][0] = widthPx / sprite->textureWidth;
@@ -1119,12 +1624,31 @@ void AnmManager::SetAndExecuteScript(AnmVm *vm, const AnmRawInstr *beginingOfScr
 
 void AnmManager::SetRenderStateForVm(const AnmVm *vm)
 {
-    // VM-wide interpolation is only safe after every VM creation/reset path
-    // initializes the corresponding previous state. TH06 still has legacy
-    // paths which construct or repurpose a VM without doing that, so globally
-    // blending from prevColor makes those sprites translucent on render-only
-    // frames. Keep discrete ANM properties at their authoritative simulation
-    // value until their full lifecycle has been ported from TH07.
+    // IMPORTANT: Do not "finish" TH06's high-refresh presentation by globally
+    // interpolating ANM properties here (color/alpha, scale, rotation, UV, etc.)
+    // just because TH07 can safely do so. TH06 has legacy VM lifecycles which
+    // memset, copy, reuse, rebind scripts, or overwrite only part of an AnmVm;
+    // therefore a seemingly initialized prev* endpoint does NOT prove that the
+    // previous/current pair belongs to the same logical animation state.
+    //
+    // This was verified by a real regression on 2026-08-23: even after adding a
+    // generic "prev state valid" guard, enabling VM-wide presentation
+    // interpolation caused severe animation breakage and had to be reverted.
+    // The concrete real-device symptom was not merely "less smooth": after
+    // bullets were fired, animation/effect sprites which should have finished
+    // could remain on screen and flash repeatedly. That is evidence of broken
+    // VM lifetime/state semantics, not a cosmetic interpolation mismatch. The
+    // exact offending owner/path was not isolated because the experiment was
+    // immediately rolled back; do not infer a narrower cause from this comment.
+    // Earlier attempts also produced transient opacity errors on render-only
+    // frames. Treat this as a lifecycle invariant, not as unfinished cleanup.
+    //
+    // If a particular TH06 animation needs smoother high-refresh presentation,
+    // fix it at that animation/object owner only, after proving every create,
+    // reset, reuse, script switch, temporary draw mutation, and freeze path keeps
+    // valid prev/current endpoints. Do not copy TH07's global Lerp behavior into
+    // AnmManager::Draw* / SetRenderStateForVm without that per-owner proof.
+    // Keep discrete ANM properties at their authoritative simulation value here.
     const ZunColor drawColor = vm->color;
     if (this->currentBlendMode != vm->flags.blendMode)
     {
@@ -1272,25 +1796,14 @@ void AnmManager::UpdateDirtyStates()
     }
 }
 
-ZunResult AnmManager::DrawOrthographic(const AnmVm *vm, bool roundToPixel)
+ZunResult AnmManager::DrawOrthographic(const AnmVm *vm)
 {
     const ZunVec2 drawUv = vm->uvScrollPos;
+    ZunVec2 drawUvStart;
+    ZunVec2 drawUvEnd;
+    GfxTextureHandle drawTexture;
+    ResolveSpriteDrawSampling(this, vm->sprite, drawUv, drawUvStart, drawUvEnd, drawTexture);
     float triangleX1, triangleX2, triangleY1, triangleY2;
-    if (roundToPixel)
-    {
-        // In the original D3D code, 0.5 was subtracted from the final position here to center on D3D
-        //   pixels. This has been changed to round to OpenGL pixels. See comment in inverseViewportMatrix()
-        //   for a more detailed explanation and porting notes.
-
-        g_PrimitivesToDrawVertexBuf[0].position.x = floorf(g_PrimitivesToDrawVertexBuf[0].position.x + 0.5f);
-        g_PrimitivesToDrawVertexBuf[2].position.x = g_PrimitivesToDrawVertexBuf[0].position.x;
-        g_PrimitivesToDrawVertexBuf[1].position.x = floorf(g_PrimitivesToDrawVertexBuf[1].position.x + 0.5f);
-        g_PrimitivesToDrawVertexBuf[3].position.x = g_PrimitivesToDrawVertexBuf[1].position.x;
-        g_PrimitivesToDrawVertexBuf[0].position.y = floorf(g_PrimitivesToDrawVertexBuf[0].position.y + 0.5f);
-        g_PrimitivesToDrawVertexBuf[1].position.y = g_PrimitivesToDrawVertexBuf[0].position.y;
-        g_PrimitivesToDrawVertexBuf[2].position.y = floorf(g_PrimitivesToDrawVertexBuf[2].position.y + 0.5f);
-        g_PrimitivesToDrawVertexBuf[3].position.y = g_PrimitivesToDrawVertexBuf[2].position.y;
-    }
     g_PrimitivesToDrawVertexBuf[0].position.z = g_PrimitivesToDrawVertexBuf[1].position.z =
         g_PrimitivesToDrawVertexBuf[2].position.z = g_PrimitivesToDrawVertexBuf[3].position.z = vm->pos.z;
 
@@ -1318,28 +1831,30 @@ ZunResult AnmManager::DrawOrthographic(const AnmVm *vm, bool roundToPixel)
     }
 
     g_PrimitivesToDrawVertexBuf[0].textureUV.x = g_PrimitivesToDrawVertexBuf[2].textureUV.x =
-        vm->sprite->uvStart.x + drawUv.x;
+        drawUvStart.x;
     g_PrimitivesToDrawVertexBuf[1].textureUV.x = g_PrimitivesToDrawVertexBuf[3].textureUV.x =
-        vm->sprite->uvEnd.x + drawUv.x;
+        drawUvEnd.x;
     g_PrimitivesToDrawVertexBuf[0].textureUV.y = g_PrimitivesToDrawVertexBuf[1].textureUV.y =
-        vm->sprite->uvStart.y + drawUv.y;
+        drawUvStart.y;
     g_PrimitivesToDrawVertexBuf[2].textureUV.y = g_PrimitivesToDrawVertexBuf[3].textureUV.y =
-        vm->sprite->uvEnd.y + drawUv.y;
+        drawUvEnd.y;
 
     if (this->currentSprite != vm->sprite)
     {
         this->currentSprite = vm->sprite;
         g_PrimitivesToDrawVertexBuf[0].textureUV.x = g_PrimitivesToDrawVertexBuf[2].textureUV.x =
-            vm->sprite->uvStart.x + drawUv.x;
+            drawUvStart.x;
         g_PrimitivesToDrawVertexBuf[1].textureUV.x = g_PrimitivesToDrawVertexBuf[3].textureUV.x =
-            vm->sprite->uvEnd.x + drawUv.x;
+            drawUvEnd.x;
         g_PrimitivesToDrawVertexBuf[0].textureUV.y = g_PrimitivesToDrawVertexBuf[1].textureUV.y =
-            vm->sprite->uvStart.y + drawUv.y;
+            drawUvStart.y;
         g_PrimitivesToDrawVertexBuf[2].textureUV.y = g_PrimitivesToDrawVertexBuf[3].textureUV.y =
-            vm->sprite->uvEnd.y + drawUv.y;
-
-        this->SetCurrentTexture(this->textures[vm->sprite->sourceFileIndex].handle);
+            drawUvEnd.y;
     }
+    // UV scrolling can switch a VM from the extruded atlas back to its source
+    // texture without changing the sprite pointer, so texture selection cannot
+    // be keyed only by `currentSprite`.
+    this->SetCurrentTexture(drawTexture);
 
     if (((g_Supervisor.cfg.opts >> GCOS_DONT_USE_VERTEX_BUF) & 1) == 0)
     {
@@ -1385,13 +1900,13 @@ ZunResult AnmManager::DrawOrthographic(const AnmVm *vm, bool roundToPixel)
         g_PrimitivesToDrawNoVertexBuf[3].position.y = g_PrimitivesToDrawVertexBuf[3].position.y;
         g_PrimitivesToDrawNoVertexBuf[3].position.z = g_PrimitivesToDrawVertexBuf[3].position.z;
         g_PrimitivesToDrawNoVertexBuf[0].textureUV.x = g_PrimitivesToDrawNoVertexBuf[2].textureUV.x =
-            vm->sprite->uvStart.x + drawUv.x;
+            drawUvStart.x;
         g_PrimitivesToDrawNoVertexBuf[1].textureUV.x = g_PrimitivesToDrawNoVertexBuf[3].textureUV.x =
-            vm->sprite->uvEnd.x + drawUv.x;
+            drawUvEnd.x;
         g_PrimitivesToDrawNoVertexBuf[0].textureUV.y = g_PrimitivesToDrawNoVertexBuf[1].textureUV.y =
-            vm->sprite->uvStart.y + drawUv.y;
+            drawUvStart.y;
         g_PrimitivesToDrawNoVertexBuf[2].textureUV.y = g_PrimitivesToDrawNoVertexBuf[3].textureUV.y =
-            vm->sprite->uvEnd.y + drawUv.y;
+            drawUvEnd.y;
 
         this->SetAttributePointer(VERTEX_ARRAY_POSITION, sizeof(*g_PrimitivesToDrawNoVertexBuf),
                                   &g_PrimitivesToDrawNoVertexBuf[0].position);
@@ -1501,7 +2016,7 @@ ZunResult AnmManager::DrawNoRotation(const AnmVm *vm)
         g_PrimitivesToDrawVertexBuf[2].position.y = g_PrimitivesToDrawVertexBuf[3].position.y =
             fVar3 + vm->pos.y + fVar3;
     }
-    return this->DrawOrthographic(vm, true);
+    return this->DrawOrthographic(vm);
 }
 
 void AnmManager::TranslateRotation(VertexTex1DiffuseXyzrhw *param_1, f32 x, f32 y, f32 sine, f32 cosine, f32 xOffset,
@@ -1540,12 +2055,12 @@ ZunResult AnmManager::Draw(const AnmVm *vm)
     }
     z = vm->rotation.z;
     fsincos_wrapper(&zSine, &zCosine, z);
-    xOffset = rintf(vm->pos.x);
-    yOffset = rintf(vm->pos.y);
+    xOffset = vm->pos.x;
+    yOffset = vm->pos.y;
     const f32 drawScaleX = vm->scaleX;
     const f32 drawScaleY = vm->scaleY;
-    spriteXCenter = rintf((vm->sprite->widthPx * drawScaleX) / 2.0f);
-    spriteYCenter = rintf((vm->sprite->heightPx * drawScaleY) / 2.0f);
+    spriteXCenter = (vm->sprite->widthPx * drawScaleX) / 2.0f;
+    spriteYCenter = (vm->sprite->heightPx * drawScaleY) / 2.0f;
     this->TranslateRotation(&g_PrimitivesToDrawVertexBuf[0], -spriteXCenter - 0.5f, -spriteYCenter - 0.5f, zSine,
                             zCosine, xOffset, yOffset);
     this->TranslateRotation(&g_PrimitivesToDrawVertexBuf[1], spriteXCenter - 0.5f, -spriteYCenter - 0.5f, zSine,
@@ -1570,7 +2085,7 @@ ZunResult AnmManager::Draw(const AnmVm *vm)
         g_PrimitivesToDrawVertexBuf[2].position.y += spriteYCenter;
         g_PrimitivesToDrawVertexBuf[3].position.y += spriteYCenter;
     }
-    return this->DrawOrthographic(vm, false);
+    return this->DrawOrthographic(vm);
 }
 
 ZunResult AnmManager::DrawFacingCamera(const AnmVm *vm)
@@ -1617,7 +2132,7 @@ ZunResult AnmManager::DrawFacingCamera(const AnmVm *vm)
         g_PrimitivesToDrawVertexBuf[2].position.y = g_PrimitivesToDrawVertexBuf[3].position.y =
             vm->pos.y + centerY + centerY;
     }
-    return this->DrawOrthographic(vm, false);
+    return this->DrawOrthographic(vm);
 }
 
 ZunResult AnmManager::Draw3(const AnmVm *vm)
@@ -1648,6 +2163,11 @@ ZunResult AnmManager::Draw3(const AnmVm *vm)
     const f32 drawScaleY = vm->scaleY;
     const ZunVec3 drawRotation = vm->rotation;
     const ZunVec2 drawUv = vm->uvScrollPos;
+    ZunVec2 drawUvStart;
+    ZunVec2 drawUvEnd;
+    GfxTextureHandle drawTexture;
+    ResolveSpriteDrawSampling(this, vm->sprite, drawUv, drawUvStart, drawUvEnd, drawTexture);
+    const bool useExtrusion = UseSpriteExtrusionAtlas(this, vm->sprite, drawUv);
 
     worldTransformMatrix = vm->matrix;
     worldTransformMatrix.m[0][0] *= drawScaleX;
@@ -1736,26 +2256,31 @@ ZunResult AnmManager::Draw3(const AnmVm *vm)
                 ZunVec4(worldTransformMatrix * this->vertexBufferContents[i].position, 1.0f);
 
         g_PrimitivesToDrawVertexBuf[0].textureUV.x = g_PrimitivesToDrawVertexBuf[2].textureUV.x =
-            vm->sprite->uvStart.x + drawUv.x;
+            drawUvStart.x;
         g_PrimitivesToDrawVertexBuf[1].textureUV.x = g_PrimitivesToDrawVertexBuf[3].textureUV.x =
-            vm->sprite->uvEnd.x + drawUv.x;
+            drawUvEnd.x;
         g_PrimitivesToDrawVertexBuf[0].textureUV.y = g_PrimitivesToDrawVertexBuf[1].textureUV.y =
-            vm->sprite->uvStart.y + drawUv.y;
+            drawUvStart.y;
         g_PrimitivesToDrawVertexBuf[2].textureUV.y = g_PrimitivesToDrawVertexBuf[3].textureUV.y =
-            vm->sprite->uvEnd.y + drawUv.y;
+            drawUvEnd.y;
     }
 
     // Load sprite if vm->sprite is not the same as current sprite.
     if (this->currentSprite != vm->sprite)
     {
         this->currentSprite = vm->sprite;
-        this->SetCurrentTexture(this->textures[vm->sprite->sourceFileIndex].handle);
     }
+    this->SetCurrentTexture(drawTexture);
     if ((g_Supervisor.cfg.opts >> GCOS_DONT_USE_VERTEX_BUF & 1) != 0)
     {
         textureMatrix = vm->matrix;
-        textureMatrix.m[3][0] = vm->sprite->uvStart.x + drawUv.x;
-        textureMatrix.m[3][1] = vm->sprite->uvStart.y + drawUv.y;
+        if (useExtrusion)
+        {
+            textureMatrix.m[0][0] = drawUvEnd.x - drawUvStart.x;
+            textureMatrix.m[1][1] = drawUvEnd.y - drawUvStart.y;
+        }
+        textureMatrix.m[3][0] = drawUvStart.x;
+        textureMatrix.m[3][1] = drawUvStart.y;
         this->SetTransformMatrix(MATRIX_TEXTURE, textureMatrix);
     }
 
@@ -1823,10 +2348,15 @@ ZunResult AnmManager::Draw2(const AnmVm *vm)
     const f32 drawScaleX = vm->scaleX;
     const f32 drawScaleY = vm->scaleY;
     const ZunVec2 drawUv = vm->uvScrollPos;
+    ZunVec2 drawUvStart;
+    ZunVec2 drawUvEnd;
+    GfxTextureHandle drawTexture;
+    ResolveSpriteDrawSampling(this, vm->sprite, drawUv, drawUvStart, drawUvEnd, drawTexture);
+    const bool useExtrusion = UseSpriteExtrusionAtlas(this, vm->sprite, drawUv);
 
     worldTransformMatrix = vm->matrix;
-    worldTransformMatrix.m[3][0] = rintf(vm->pos.x) - 0.5f;
-    worldTransformMatrix.m[3][1] = -rintf(vm->pos.y) + 0.5f;
+    worldTransformMatrix.m[3][0] = vm->pos.x - 0.5f;
+    worldTransformMatrix.m[3][1] = -vm->pos.y + 0.5f;
     if ((vm->flags.anchor & AnmVmAnchor_Left) != 0)
     {
         worldTransformMatrix.m[3][0] += (vm->sprite->widthPx * drawScaleX) / 2.0f;
@@ -1875,13 +2405,13 @@ ZunResult AnmManager::Draw2(const AnmVm *vm)
                 ZunVec4(worldTransformMatrix * this->vertexBufferContents[i].position, 1.0f);
 
         g_PrimitivesToDrawVertexBuf[0].textureUV.x = g_PrimitivesToDrawVertexBuf[2].textureUV.x =
-            vm->sprite->uvStart.x + drawUv.x;
+            drawUvStart.x;
         g_PrimitivesToDrawVertexBuf[1].textureUV.x = g_PrimitivesToDrawVertexBuf[3].textureUV.x =
-            vm->sprite->uvEnd.x + drawUv.x;
+            drawUvEnd.x;
         g_PrimitivesToDrawVertexBuf[0].textureUV.y = g_PrimitivesToDrawVertexBuf[1].textureUV.y =
-            vm->sprite->uvStart.y + drawUv.y;
+            drawUvStart.y;
         g_PrimitivesToDrawVertexBuf[2].textureUV.y = g_PrimitivesToDrawVertexBuf[3].textureUV.y =
-            vm->sprite->uvEnd.y + drawUv.y;
+            drawUvEnd.y;
     }
     if (this->currentSprite != vm->sprite)
     {
@@ -1892,8 +2422,6 @@ ZunResult AnmManager::Draw2(const AnmVm *vm)
         //            g_Supervisor.d3dDevice->SetTexture(0, this->currentTexture);
         //        }
 
-        this->SetCurrentTexture(this->textures[vm->sprite->sourceFileIndex].handle);
-
         if (((g_Supervisor.cfg.opts >> GCOS_DONT_USE_VERTEX_BUF) & 1) == 0)
         {
             this->SetVertexAttributes(VERTEX_ATTR_TEX_COORD);
@@ -1903,11 +2431,17 @@ ZunResult AnmManager::Draw2(const AnmVm *vm)
             this->SetVertexAttributes(VERTEX_ATTR_TEX_COORD | VERTEX_ATTR_DIFFUSE);
         }
     }
+    this->SetCurrentTexture(drawTexture);
     if ((g_Supervisor.cfg.opts >> GCOS_DONT_USE_VERTEX_BUF & 1) != 0)
     {
         textureMatrix = vm->matrix;
-        textureMatrix.m[3][0] = vm->sprite->uvStart.x + drawUv.x;
-        textureMatrix.m[3][1] = vm->sprite->uvStart.y + drawUv.y;
+        if (useExtrusion)
+        {
+            textureMatrix.m[0][0] = drawUvEnd.x - drawUvStart.x;
+            textureMatrix.m[1][1] = drawUvEnd.y - drawUvStart.y;
+        }
+        textureMatrix.m[3][0] = drawUvStart.x;
+        textureMatrix.m[3][1] = drawUvStart.y;
         this->SetTransformMatrix(MATRIX_TEXTURE, textureMatrix);
     }
 
@@ -2298,6 +2832,8 @@ void AnmManager::DrawTextToSprite(u32 textureDstIdx, i32 xPos, i32 yPos, i32 spr
         fontHeight = 15;
     }
 
+    InvalidateSpriteExtrusionAtlas(this, static_cast<i32>(textureDstIdx));
+
     TextHelper::RenderTextToTexture(xPos, yPos, spriteWidth, spriteHeight, fontWidth, fontHeight, textColor,
                                     shadowColor, strToPrint, &this->textures[textureDstIdx]);
     //
@@ -2466,6 +3002,24 @@ void AnmManager::DrawStringFormat2(AnmVm *vm, ZunColor textColor, ZunColor shado
 
 ZunResult AnmManager::LoadSurface(i32 surfaceIdx, const char *path)
 {
+#ifdef __EMSCRIPTEN__
+    u8 ownerId = 0;
+    if (WebTransitionSurfaceCacheEntry *entry = FindWebTransitionSurface(path, &ownerId))
+    {
+        if (entry->surface == nullptr)
+        {
+            entry->surface = LoadToSurfaceWithFormat(path, SDL_PIXELFORMAT_RGB24, NULL);
+            if (entry->surface == nullptr)
+                return ZUN_ERROR;
+        }
+
+        ReleaseSurface(surfaceIdx);
+        this->surfaces[surfaceIdx] = entry->surface;
+        g_WebTransitionSurfaceOwner[surfaceIdx] = ownerId;
+        return ZUN_SUCCESS;
+    }
+#endif
+
     if (this->surfaces[surfaceIdx] != NULL)
     {
         this->ReleaseSurface(surfaceIdx);
@@ -2548,8 +3102,29 @@ ZunResult AnmManager::LoadSurface(i32 surfaceIdx, const char *path)
     //    return ZUN_ERROR;
 }
 
+#ifdef __EMSCRIPTEN__
+ZunResult AnmManager::PreloadTransitionSurface(const char *path)
+{
+    WebTransitionSurfaceCacheEntry *entry = FindWebTransitionSurface(path);
+    if (!entry)
+        return ZUN_ERROR;
+    if (!entry->surface)
+        entry->surface = LoadToSurfaceWithFormat(path, SDL_PIXELFORMAT_RGB24, NULL);
+    return entry->surface ? ZUN_SUCCESS : ZUN_ERROR;
+}
+#endif
+
 void AnmManager::ReleaseSurface(i32 surfaceIdx)
 {
+#ifdef __EMSCRIPTEN__
+    if (g_WebTransitionSurfaceOwner[surfaceIdx] != 0)
+    {
+        this->surfaces[surfaceIdx] = NULL;
+        g_WebTransitionSurfaceOwner[surfaceIdx] = 0;
+        return;
+    }
+#endif
+
     if (this->surfaces[surfaceIdx] != NULL)
     {
         SDL_DestroySurface(this->surfaces[surfaceIdx]);
@@ -2679,6 +3254,8 @@ void AnmManager::TakeScreenshot(i32 textureId, i32 left, i32 top, i32 width, i32
     {
         return;
     }
+
+    InvalidateSpriteExtrusionAtlas(this, textureId);
 
     this->SetCurrentTexture(this->textures[textureId].handle);
 

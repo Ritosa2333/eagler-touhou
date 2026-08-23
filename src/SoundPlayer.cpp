@@ -54,6 +54,15 @@ static const char *const g_SFXList[26] = {
 };
 SoundPlayer g_SoundPlayer;
 
+static bool HasBackgroundMusicSource(const MusicStream &music)
+{
+#ifdef __EMSCRIPTEN__
+    return music.srcWav.fileStream != NULL || music.srcWav.oggDecoder != NULL;
+#else
+    return music.srcWav.fileStream != NULL;
+#endif
+}
+
 static u16 ReadU16LE(SDL_IOStream *stream)
 {
     u16 value = 0;
@@ -82,6 +91,9 @@ SoundPlayer::SoundPlayer()
     this->webAudioWindowActive = true;
     this->webAudioBgmTransition = false;
     this->webAudioPlaybackSuspended = false;
+    this->webAudioRefilling = false;
+    this->webAudioLastDiagnosticMs = 0.0;
+    this->webAudioMinQueuedFrames = UINT_MAX;
 #endif
 }
 
@@ -98,7 +110,8 @@ void SoundPlayer::UpdateWebAudioPlaybackState()
     {
         EM_ASM({
             const sdl = Module['SDL3'];
-            const node = sdl && sdl.audio_playback && sdl.audio_playback.scriptProcessorNode;
+            const playback = sdl && sdl.audio_playback;
+            const node = playback && playback.scriptProcessorNode;
             if (node) {
                 try { node.disconnect(); } catch (_) {}
             }
@@ -116,7 +129,8 @@ void SoundPlayer::UpdateWebAudioPlaybackState()
         }
         EM_ASM({
             const sdl = Module['SDL3'];
-            const node = sdl && sdl.audio_playback && sdl.audio_playback.scriptProcessorNode;
+            const playback = sdl && sdl.audio_playback;
+            const node = playback && playback.scriptProcessorNode;
             if (node && sdl.audioContext) {
                 try { node.connect(sdl.audioContext.destination); } catch (_) {}
             }
@@ -209,17 +223,28 @@ ZunResult SoundPlayer::Release(void)
 
 void SoundPlayer::StopBGM()
 {
-    if (this->backgroundMusic.srcWav.fileStream != NULL)
+#ifdef __EMSCRIPTEN__
+    // StopBGM is the output-owner boundary even if a prior EOF/fade already
+    // released the source. Always discard any queued mixed tail before a new
+    // BGM can be connected.
+    if (this->audioStream != NULL)
+        SDL_ClearAudioStream(this->audioStream);
+#endif
+    if (HasBackgroundMusicSource(this->backgroundMusic))
     {
         this->soundBufMutex.lock();
+        if (this->backgroundMusic.srcWav.fileStream != NULL)
+        {
+            SDL_CloseIO(this->backgroundMusic.srcWav.fileStream);
+            this->backgroundMusic.srcWav.fileStream = NULL;
+        }
 #ifdef __EMSCRIPTEN__
-        // Web audio may retain a short already-mixed tail after the BGM source
-        // changes. Drop it at the existing StopBGM owner boundary.
-        if (this->audioStream != NULL)
-            SDL_ClearAudioStream(this->audioStream);
+        if (this->backgroundMusic.srcWav.oggDecoder != NULL)
+        {
+            stb_vorbis_close(static_cast<stb_vorbis *>(this->backgroundMusic.srcWav.oggDecoder));
+            this->backgroundMusic.srcWav.oggDecoder = NULL;
+        }
 #endif
-        SDL_CloseIO(this->backgroundMusic.srcWav.fileStream);
-        this->backgroundMusic.srcWav.fileStream = NULL;
         free(this->backgroundMusic.srcWav.ownedSamples);
         this->backgroundMusic.srcWav.ownedSamples = NULL;
         this->soundBufMutex.unlock();
@@ -230,7 +255,7 @@ void SoundPlayer::StopBGM()
 
 void SoundPlayer::FadeOut(f32 seconds)
 {
-    if (this->backgroundMusic.srcWav.fileStream != NULL)
+    if (HasBackgroundMusicSource(this->backgroundMusic))
     {
         this->backgroundMusic.fadeoutLen = seconds * 44100;
         this->backgroundMusic.fadeoutProgress = 0;
@@ -259,10 +284,9 @@ ZunResult SoundPlayer::LoadWav(const char *path)
 #ifdef __EMSCRIPTEN__
     // SDL's Emscripten backend feeds WebAudio through a ScriptProcessorNode
     // callback that runs on the browser main thread. Merely pausing the SDL
-    // logical device cannot silence the last already-rendered quantum if that
-    // main thread is about to block on file I/O / full-track OGG decode. Cut
-    // the WebAudio graph first, and leave it disconnected until PlayBGM owns a
-    // fully prepared replacement source.
+    // logical device cannot silence the last already-rendered quantum while a
+    // BGM source is being replaced. Cut the WebAudio graph first, and leave it
+    // disconnected until PlayBGM owns a fully prepared replacement source.
     struct WebBgmTransitionGuard
     {
         SoundPlayer *owner;
@@ -297,6 +321,32 @@ ZunResult SoundPlayer::LoadWav(const char *path)
         }
         std::strcpy(extension, ".ogg");
 
+#ifdef __EMSCRIPTEN__
+        const std::string fullPath = FileSystem::GetBasePath(oggPath);
+        int error = 0;
+        stb_vorbis *decoder = stb_vorbis_open_filename(fullPath.c_str(), &error, NULL);
+        if (decoder == NULL)
+        {
+            utils::DebugPrint2("error : BGM file load error %s / %s\n", path, oggPath);
+            return ZUN_ERROR;
+        }
+
+        const stb_vorbis_info info = stb_vorbis_get_info(decoder);
+        const unsigned int frames = stb_vorbis_stream_length_in_samples(decoder);
+        if (frames == 0 || info.channels != BACKGROUND_MUSIC_WAV_NUM_CHANNELS ||
+            info.sample_rate != BACKGROUND_MUSIC_WAV_SAMPLE_RATE)
+        {
+            stb_vorbis_close(decoder);
+            utils::DebugPrint2("error : BGM file load error %s / %s\n", path, oggPath);
+            return ZUN_ERROR;
+        }
+
+        // Keep compressed OGG open on Web and decode only the small PCM slices
+        // requested by MixAudio(). Native keeps the existing whole-track path.
+        this->backgroundMusic.srcWav.fileStream = NULL;
+        this->backgroundMusic.srcWav.ownedSamples = NULL;
+        this->backgroundMusic.srcWav.oggDecoder = decoder;
+#else
         SDL_IOStream *oggStream = FileSystem::OpenFileStream(oggPath, "rb");
         if (oggStream == NULL)
         {
@@ -340,6 +390,7 @@ ZunResult SoundPlayer::LoadWav(const char *path)
         }
         this->backgroundMusic.srcWav.fileStream = fileStream;
         this->backgroundMusic.srcWav.ownedSamples = decoded;
+#endif
         this->backgroundMusic.srcWav.dataStartOffset = 0;
         this->backgroundMusic.srcWav.samples = static_cast<u32>(frames);
         this->backgroundMusic.loopStart = 0;
@@ -474,7 +525,8 @@ ZunResult SoundPlayer::LoadPos(const char *path)
 {
     u8 *fileData;
 
-    if (this->audioDev == 0 || g_Supervisor.cfg.playSounds == 0 || backgroundMusic.srcWav.fileStream == NULL)
+    if (this->audioDev == 0 || g_Supervisor.cfg.playSounds == 0 ||
+        !HasBackgroundMusicSource(this->backgroundMusic))
     {
         return ZUN_ERROR;
     }
@@ -622,7 +674,7 @@ ZunResult SoundPlayer::PlayBGM(bool isLooping)
 {
     utils::DebugPrint2("play BGM\n");
 
-    if (this->backgroundMusic.srcWav.fileStream == NULL)
+    if (!HasBackgroundMusicSource(this->backgroundMusic))
     {
 #ifdef __EMSCRIPTEN__
         this->SetWebAudioBgmTransition(false);
@@ -689,6 +741,7 @@ void SoundPlayer::PlaySounds()
 
     soundBufMutex.unlock();
 
+#ifndef __EMSCRIPTEN__
     while (SDL_GetAudioStreamQueued(this->audioStream) < 8192)
     {
         // If the stream can't accept data (device gone, stream unbound, ...),
@@ -699,7 +752,67 @@ void SoundPlayer::PlaySounds()
             break;
         }
     }
+#endif
 }
+
+#ifdef __EMSCRIPTEN__
+bool SoundPlayer::PumpWebAudio()
+{
+    if (this->audioDev == 0 || !g_Supervisor.cfg.playSounds || this->audioStream == NULL ||
+        this->webAudioPlaybackSuspended)
+    {
+        return true;
+    }
+
+    // Keep the verified low-latency streaming envelope. This function only
+    // replenishes the SDL stream; playback timing remains owned by SDL/WebAudio.
+    constexpr u32 FRAMES_PER_CHUNK = 1024;
+    constexpr u32 LOW_WATER_FRAMES = 2048;
+    constexpr u32 HIGH_WATER_FRAMES = 3072;
+    constexpr int BYTES_PER_FRAME = BACKGROUND_MUSIC_WAV_BLOCK_ALIGN;
+
+    const f64 nowMs = emscripten_get_now();
+    const int queuedBytes = SDL_GetAudioStreamQueued(this->audioStream);
+    if (queuedBytes < 0)
+        return false;
+    const u32 queuedFrames = static_cast<u32>(queuedBytes / BYTES_PER_FRAME);
+    this->webAudioMinQueuedFrames = std::min(this->webAudioMinQueuedFrames, queuedFrames);
+
+    if (this->webAudioLastDiagnosticMs == 0.0 || nowMs - this->webAudioLastDiagnosticMs >= 500.0)
+    {
+        const u32 minFrames = this->webAudioMinQueuedFrames == UINT_MAX ? queuedFrames : this->webAudioMinQueuedFrames;
+        EM_ASM({
+            globalThis.EaglerTouhouAudioHealth?.($0, $1, $2);
+        }, static_cast<double>(queuedFrames) * 1000.0 / 44100.0,
+           static_cast<double>(minFrames) * 1000.0 / 44100.0, 0);
+        this->webAudioLastDiagnosticMs = nowMs;
+        this->webAudioMinQueuedFrames = queuedFrames;
+    }
+
+    if (!this->webAudioRefilling)
+    {
+        if (queuedFrames >= LOW_WATER_FRAMES)
+        {
+            return true;
+        }
+        this->webAudioRefilling = true;
+    }
+
+    if (queuedFrames >= HIGH_WATER_FRAMES)
+    {
+        this->webAudioRefilling = false;
+        return true;
+    }
+
+    const u32 framesToMix = std::min(FRAMES_PER_CHUNK, HIGH_WATER_FRAMES - queuedFrames);
+    if (framesToMix == 0)
+    {
+        this->webAudioRefilling = false;
+        return true;
+    }
+    return this->MixAudio(framesToMix * BACKGROUND_MUSIC_WAV_NUM_CHANNELS);
+}
+#endif
 
 void SoundPlayer::PlaySoundByIdx(SoundIdx idx)
 {
@@ -766,10 +879,17 @@ bool SoundPlayer::MixAudio(u32 samples)
         }
     }
 
-    if (this->backgroundMusic.srcWav.fileStream != NULL)
+    if (HasBackgroundMusicSource(this->backgroundMusic))
     {
         u32 samplesMixed = 0;
         f32 fadeoutMult;
+#ifdef __EMSCRIPTEN__
+        std::vector<i16> oggSamples;
+        if (this->backgroundMusic.srcWav.oggDecoder != NULL)
+        {
+            oggSamples.resize(samples);
+        }
+#endif
 
         if (this->backgroundMusic.fadeoutLen != 0)
         {
@@ -784,9 +904,37 @@ bool SoundPlayer::MixAudio(u32 samples)
 
         while (samplesMixed < samples / 2)
         {
-            const u32 samplesToMix =
+            u32 samplesToMix =
                 std::min((samples / 2) - samplesMixed, this->backgroundMusic.loopEnd - this->backgroundMusic.pos);
 
+#ifdef __EMSCRIPTEN__
+            if (this->backgroundMusic.srcWav.oggDecoder != NULL)
+            {
+                const int decodedFrames = stb_vorbis_get_samples_short_interleaved(
+                    static_cast<stb_vorbis *>(this->backgroundMusic.srcWav.oggDecoder),
+                    BACKGROUND_MUSIC_WAV_NUM_CHANNELS,
+                    oggSamples.data() + samplesMixed * BACKGROUND_MUSIC_WAV_NUM_CHANNELS,
+                    samplesToMix * BACKGROUND_MUSIC_WAV_NUM_CHANNELS);
+                if (decodedFrames <= 0)
+                {
+                    this->backgroundMusic.pos = this->backgroundMusic.loopEnd;
+                    samplesToMix = 0;
+                }
+                else
+                {
+                    samplesToMix = static_cast<u32>(decodedFrames);
+                    for (u32 j = 0; j < samplesToMix; j++)
+                    {
+                        mixBuffer[(samplesMixed + j) * 2] +=
+                            oggSamples[(samplesMixed + j) * 2] * fadeoutMult;
+                        mixBuffer[(samplesMixed + j) * 2 + 1] +=
+                            oggSamples[(samplesMixed + j) * 2 + 1] * fadeoutMult;
+                    }
+                }
+            }
+            else
+#endif
+            {
             for (u32 j = 0; j < samplesToMix; j++)
             {
                 // samplesMixed counts stereo frames; each frame occupies two
@@ -795,6 +943,7 @@ bool SoundPlayer::MixAudio(u32 samples)
                     ((i16)ReadU16LE(this->backgroundMusic.srcWav.fileStream)) * fadeoutMult;
                 mixBuffer[(samplesMixed + j) * 2 + 1] +=
                     ((i16)ReadU16LE(this->backgroundMusic.srcWav.fileStream)) * fadeoutMult;
+            }
             }
 
             this->backgroundMusic.pos += samplesToMix;
@@ -805,14 +954,41 @@ bool SoundPlayer::MixAudio(u32 samples)
                 if (this->isLooping)
                 {
                     this->backgroundMusic.pos = this->backgroundMusic.loopStart;
+#ifdef __EMSCRIPTEN__
+                    if (this->backgroundMusic.srcWav.oggDecoder != NULL)
+                    {
+                        if (!stb_vorbis_seek(static_cast<stb_vorbis *>(this->backgroundMusic.srcWav.oggDecoder),
+                                             this->backgroundMusic.loopStart))
+                        {
+                            stb_vorbis_close(
+                                static_cast<stb_vorbis *>(this->backgroundMusic.srcWav.oggDecoder));
+                            this->backgroundMusic.srcWav.oggDecoder = NULL;
+                            break;
+                        }
+                    }
+                    else
+#endif
+                    {
                     SDL_SeekIO(this->backgroundMusic.srcWav.fileStream,
                                this->backgroundMusic.srcWav.dataStartOffset + this->backgroundMusic.pos * 4,
                                SDL_IO_SEEK_SET);
+                    }
                 }
                 else
                 {
-                    SDL_CloseIO(this->backgroundMusic.srcWav.fileStream);
-                    this->backgroundMusic.srcWav.fileStream = NULL;
+#ifdef __EMSCRIPTEN__
+                    if (this->backgroundMusic.srcWav.oggDecoder != NULL)
+                    {
+                        stb_vorbis_close(
+                            static_cast<stb_vorbis *>(this->backgroundMusic.srcWav.oggDecoder));
+                        this->backgroundMusic.srcWav.oggDecoder = NULL;
+                    }
+#endif
+                    if (this->backgroundMusic.srcWav.fileStream != NULL)
+                    {
+                        SDL_CloseIO(this->backgroundMusic.srcWav.fileStream);
+                        this->backgroundMusic.srcWav.fileStream = NULL;
+                    }
                     free(this->backgroundMusic.srcWav.ownedSamples);
                     this->backgroundMusic.srcWav.ownedSamples = NULL;
 
@@ -827,8 +1003,18 @@ bool SoundPlayer::MixAudio(u32 samples)
 
             if (this->backgroundMusic.fadeoutProgress >= this->backgroundMusic.fadeoutLen)
             {
-                SDL_CloseIO(this->backgroundMusic.srcWav.fileStream);
-                this->backgroundMusic.srcWav.fileStream = NULL;
+#ifdef __EMSCRIPTEN__
+                if (this->backgroundMusic.srcWav.oggDecoder != NULL)
+                {
+                    stb_vorbis_close(static_cast<stb_vorbis *>(this->backgroundMusic.srcWav.oggDecoder));
+                    this->backgroundMusic.srcWav.oggDecoder = NULL;
+                }
+#endif
+                if (this->backgroundMusic.srcWav.fileStream != NULL)
+                {
+                    SDL_CloseIO(this->backgroundMusic.srcWav.fileStream);
+                    this->backgroundMusic.srcWav.fileStream = NULL;
+                }
                 free(this->backgroundMusic.srcWav.ownedSamples);
                 this->backgroundMusic.srcWav.ownedSamples = NULL;
             }
@@ -853,8 +1039,8 @@ bool SoundPlayer::MixAudio(u32 samples)
 //   in a thread keeps sound running continuously, even if the main thread runs into lag
 void SoundPlayer::BackgroundMusicPlayerThread()
 {
-    // Kept as an ABI-compatible entry point for now. SDL3 audio is fed from
-    // PlaySounds(), once per application iteration, so the browser main thread
-    // never creates or blocks on an audio producer thread.
+    // Kept as an ABI-compatible entry point for now. SDL3 audio is fed on the
+    // main thread (PumpWebAudio() at presentation cadence on Web), so the
+    // browser never creates or blocks on an audio producer thread.
     (void)this->MixAudio(2048);
 }

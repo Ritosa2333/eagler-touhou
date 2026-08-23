@@ -395,6 +395,15 @@ ZunResult Supervisor::AddedCallback(Supervisor *s)
 #endif
 
     g_AnmManager->ReleaseSurface(0);
+#ifdef __EMSCRIPTEN__
+    // Avoid browser-main-thread JPEG decode stalls during menu/result scene
+    // changes. These immutable backgrounds are decoded once at startup and
+    // then borrowed by LoadSurface() for later scene transitions.
+    (void)g_AnmManager->PreloadTransitionSurface("data/title/title00.jpg");
+    (void)g_AnmManager->PreloadTransitionSurface("data/title/select00.jpg");
+    (void)g_AnmManager->PreloadTransitionSurface("data/result/music.jpg");
+    (void)g_AnmManager->PreloadTransitionSurface("data/result/result.jpg");
+#endif
     Supervisor::SetupDInput(s);
 
     s->midiOutput = new MidiOutput();

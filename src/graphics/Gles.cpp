@@ -523,12 +523,20 @@ void GlesGraphics::RenderImGui(const ImDrawData *drawData)
     GLint lastBlendDstAlpha = GL_ONE_MINUS_SRC_ALPHA;
     GLint lastBlendEquationRgb = GL_FUNC_ADD;
     GLint lastBlendEquationAlpha = GL_FUNC_ADD;
-    GLboolean lastBlend = glIsEnabled(GL_BLEND);
-    GLboolean lastDepthTest = glIsEnabled(GL_DEPTH_TEST);
-    GLboolean lastCullFace = glIsEnabled(GL_CULL_FACE);
-    GLboolean lastScissorTest = glIsEnabled(GL_SCISSOR_TEST);
+    GLboolean lastBlend = GL_FALSE;
+    GLboolean lastDepthTest = GL_FALSE;
+    GLboolean lastCullFace = GL_FALSE;
+    GLboolean lastScissorTest = GL_FALSE;
     GLboolean lastDepthMask = GL_TRUE;
 
+    // Web owns this draw at the end of the frame. Avoid synchronous WebGL
+    // state queries here: presentation immediately establishes its own state,
+    // and the gameplay cache is invalidated below/at the next BeginFrame.
+#ifndef __EMSCRIPTEN__
+    lastBlend = glIsEnabled(GL_BLEND);
+    lastDepthTest = glIsEnabled(GL_DEPTH_TEST);
+    lastCullFace = glIsEnabled(GL_CULL_FACE);
+    lastScissorTest = glIsEnabled(GL_SCISSOR_TEST);
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &lastFramebuffer);
     glGetIntegerv(GL_ACTIVE_TEXTURE, &lastActiveTexture);
     glGetIntegerv(GL_CURRENT_PROGRAM, &lastProgram);
@@ -549,6 +557,7 @@ void GlesGraphics::RenderImGui(const ImDrawData *drawData)
     glGetIntegerv(GL_BLEND_EQUATION_ALPHA, &lastBlendEquationAlpha);
     glGetIntegerv(GL_UNPACK_ALIGNMENT, &lastUnpackAlignment);
     glGetBooleanv(GL_DEPTH_WRITEMASK, &lastDepthMask);
+#endif
 
     if (this->imguiProgram == 0)
     {
@@ -759,6 +768,7 @@ void GlesGraphics::RenderImGui(const ImDrawData *drawData)
         indexOffset += listIndexBytes;
     }
 
+#ifndef __EMSCRIPTEN__
     glBindVertexArray(static_cast<GLuint>(lastVertexArray));
     glBindBuffer(GL_ARRAY_BUFFER, static_cast<GLuint>(lastArrayBuffer));
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLuint>(lastElementArrayBuffer));
@@ -792,6 +802,7 @@ void GlesGraphics::RenderImGui(const ImDrawData *drawData)
     else
         glDisable(GL_SCISSOR_TEST);
     glDepthMask(lastDepthMask);
+#endif
     this->stateCache.Invalidate();
 }
 #endif

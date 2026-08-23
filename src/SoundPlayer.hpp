@@ -64,6 +64,9 @@ struct WavData
     i16 *ownedSamples;
     u32 dataStartOffset;
     u32 samples;
+#ifdef __EMSCRIPTEN__
+    void *oggDecoder;
+#endif
 };
 
 struct MusicStream
@@ -99,6 +102,7 @@ struct SoundPlayer
 #ifdef __EMSCRIPTEN__
     void SetWebAudioWindowActive(bool active);
     void SetWebAudioBgmTransition(bool active);
+    bool PumpWebAudio();
 #endif
 
     SoundData soundBuffers[128];
@@ -115,6 +119,9 @@ struct SoundPlayer
     bool webAudioWindowActive;
     bool webAudioBgmTransition;
     bool webAudioPlaybackSuspended;
+    bool webAudioRefilling;
+    f64 webAudioLastDiagnosticMs;
+    u32 webAudioMinQueuedFrames;
 #endif
 };
 

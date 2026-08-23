@@ -620,7 +620,9 @@ void ReplayManager::SaveReplay(const char *replayPath, char *replayName)
                 {
                     slowDown = 1.0f;
                 }
-                replayCopy.slowdownRate = (1.0f - slowDown) * 100.0f;
+                replayCopy.slowdownRate = Touch::UsedCheatMovementThisRun()
+                                              ? 100.0f
+                                              : (1.0f - slowDown) * 100.0f;
                 replayCopy.slowdownRate2 = replayCopy.slowdownRate + 1.12f;
                 replayCopy.slowdownRate3 = replayCopy.slowdownRate + 2.34f;
                 mgr->replayData->stageReplayData[g_GameManager.currentStage - 1]->score = g_GameManager.score;

@@ -92,6 +92,31 @@
         if (hosted) window.parent.postMessage({ protocol, game, event, ...payload }, location.origin);
       };
       globalThis.EaglerTouhouGameExited = result => emit("exit", { status: result === 1 ? "success" : "failure" });
+      let runtimeInfoSent = false;
+      const emitRuntimeInfo = () => {
+        if (runtimeInfoSent || !hosted) return;
+        runtimeInfoSent = true;
+        let renderer = "WebGL";
+        try {
+          const sdl = Module && Module.SDL3;
+          const gl = globalThis.GLctx || Module.ctx || (sdl && sdl.ctx) ||
+            (Module.canvas && (Module.canvas.getContext("webgl2") || Module.canvas.getContext("webgl")));
+          if (gl && typeof gl.getParameter === "function") {
+            const ext = gl.getExtension("WEBGL_debug_renderer_info");
+            renderer = String(gl.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER) || renderer);
+          }
+        } catch {}
+        emit("runtime-info", { renderer });
+      };
+      globalThis.EaglerTouhouFirstFrame = () => { emit("first-frame"); emitRuntimeInfo(); };
+      globalThis.EaglerTouhouFrameHealth = (fps, maxGapMs) => emit("frame-health", { fps, maxGapMs });
+      globalThis.EaglerTouhouAudioHealth = (queuedMs, minQueuedMs, robust) => {
+        emit("audio-health", {
+          queuedMs, minQueuedMs, robust: !!robust,
+          backend: "script",
+          underruns: 0
+        });
+      };
 
       const sync = () => new Promise((resolve, reject) => {
         FS.syncfs(false, error => error ? reject(error) : resolve());
@@ -151,6 +176,49 @@
           ensureDir(file.path); FS.writeFile(file.path, file.bytes, { canOwn: true }); loadedRuntimeFiles.push(file.path);
         }
       };
+      const fetchResourceBytes = async (url, init = {}, callbacks = {}) => {
+        const controller = new AbortController();
+        const timeoutMs = 15000;
+        let timer = null;
+        let timedOut = false;
+        const arm = () => {
+          clearTimeout(timer);
+          timer = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
+        };
+        arm();
+        try {
+          const response = await fetch(url, { ...init, signal: controller.signal });
+          if (!response.ok) throw new Error(`${url.pathname}: HTTP ${response.status}`);
+          callbacks.onResponse?.(response);
+          arm();
+          const chunks = [];
+          let received = 0;
+          if (response.body?.getReader) {
+            const reader = response.body.getReader();
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              arm();
+              chunks.push(value); received += value.length;
+              callbacks.onChunk?.(value, received);
+            }
+          } else {
+            const value = new Uint8Array(await response.arrayBuffer());
+            arm();
+            chunks.push(value); received = value.length;
+            callbacks.onChunk?.(value, received);
+          }
+          const bytes = new Uint8Array(received);
+          let offset = 0;
+          for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
+          return { response, bytes };
+        } catch (error) {
+          if (timedOut || error?.name === "AbortError") throw new Error(`${url.pathname}: 15 秒内没有继续收到数据（网络 / CDN 超时）`);
+          throw error;
+        } finally {
+          clearTimeout(timer);
+        }
+      };
       const installRuntime = async message => {
         if (launched) throw new Error("runtime resources cannot be changed after launch");
         if (message.runtimePack) { await installStaticPack(message.runtimePack); return; }
@@ -161,9 +229,7 @@
           if (typeof resource?.url !== "string" || typeof resource.path !== "string" || !resource.path.startsWith("/thcrap/th06/") || resource.path.includes("\\") || resource.path.includes("..")) throw new Error("invalid runtime resource");
           const url = new URL(resource.url, location.href);
           if (url.origin !== location.origin) throw new Error("cross-origin runtime resource");
-          const response = await fetch(url, { cache: "force-cache" });
-          if (!response.ok) throw new Error(`${url.pathname}: HTTP ${response.status}`);
-          const bytes = new Uint8Array(await response.arrayBuffer());
+          const { bytes } = await fetchResourceBytes(url, { cache: "force-cache" });
           if (Number.isFinite(Number(resource.size)) && bytes.length !== Number(resource.size)) throw new Error(`${resource.path}: size mismatch`);
           ensureDir(resource.path); FS.writeFile(resource.path, bytes, { canOwn: true }); loadedRuntimeFiles.push(resource.path);
         }
@@ -175,9 +241,8 @@
           if (typeof resource?.url !== "string" || !["/msgothic.ttc", "/unifont.otf"].includes(resource.path)) throw new Error("invalid shared resource");
           const url = new URL(resource.url, location.href);
           if (url.origin !== location.origin) throw new Error("cross-origin shared resource");
-          const response = await fetch(url, { cache: "force-cache" });
-          if (!response.ok) throw new Error(`${url.pathname}: HTTP ${response.status}`);
-          FS.writeFile(resource.path, new Uint8Array(await response.arrayBuffer()), { canOwn: true });
+          const { bytes } = await fetchResourceBytes(url, { cache: "force-cache" });
+          FS.writeFile(resource.path, bytes, { canOwn: true });
         }));
       };
 
@@ -201,28 +266,19 @@
         const previous = transfer.byPath.get(resource.path) || 0;
         transfer.loaded = Math.max(0, transfer.loaded - previous);
         transfer.byPath.set(resource.path, 0);
-        const response = await fetch(url, { cache: "force-cache" });
-        if (!response.ok) throw new Error(`${url.pathname}: HTTP ${response.status}`);
-        const declared = Number(resource.size) || Number(response.headers.get("content-length")) || 0;
-        if (!Number(resource.size) && declared) transfer.total += declared;
-        const chunks = [];
         let received = 0;
-        if (response.body) {
-          const reader = response.body.getReader();
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            chunks.push(value); received += value.length; transfer.loaded += value.length;
-            transfer.byPath.set(resource.path, received); emitTransfer(false);
+        const { bytes } = await fetchResourceBytes(url, { cache: "force-cache" }, {
+          onResponse(response) {
+            const declared = Number(resource.size) || Number(response.headers.get("content-length")) || 0;
+            if (!Number(resource.size) && declared) transfer.total += declared;
+          },
+          onChunk(value, totalReceived) {
+            received = totalReceived;
+            transfer.loaded += value.length;
+            transfer.byPath.set(resource.path, received);
+            emitTransfer(false);
           }
-        } else {
-          const value = new Uint8Array(await response.arrayBuffer());
-          chunks.push(value); received = value.length; transfer.loaded += value.length;
-          transfer.byPath.set(resource.path, received);
-        }
-        const bytes = new Uint8Array(received);
-        let offset = 0;
-        for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
+        });
         ensureDir(resource.path); FS.writeFile(resource.path, bytes, { canOwn: true });
         loadedMusicFiles.push(resource.path); failedMusicResources.delete(resource.path);
         transfer.completed++; emitTransfer(true);
@@ -328,7 +384,7 @@
         return output;
       };
 
-      const launch = () => {
+      const launch = async () => {
         if (launched) return;
         const start = session => {
           if (launched) return;
@@ -355,12 +411,15 @@
         case "F5": return 1 << 5;
         case "F6": return 1 << 6;
         case "F7": return 1 << 7;
+        case "Tab": return 1 << 8;
         }
         const key = String(event.key || "").toLowerCase();
         if (key === "backspace") return 1 << 0;
+        if (key === "tab") return 1 << 8;
         if (/^f[1-7]$/.test(key)) return 1 << Number(key.slice(1));
         const keyCode = Number(event.keyCode) || 0;
         if (keyCode === 8) return 1 << 0;
+        if (keyCode === 9) return 1 << 8;
         if (keyCode >= 112 && keyCode <= 118) return 1 << (keyCode - 111);
         return 0;
       };
@@ -509,7 +568,7 @@
               Module._TouhouThpracMouseEvent(message.type === "move" ? 0 : message.type === "down" ? 1 : 2, mouseX, mouseY);
             break;
           case "launch":
-            launch();
+            await launch();
             reply(message.request, true);
             break;
           case "touch-controls":
@@ -524,7 +583,7 @@
             Module.eaglerControls.joystickX = message.joystickX;
             Module.eaglerControls.joystickY = message.joystickY;
             Module.eaglerOptions.touchSensitivity = message.touchSensitivity;
-            reply(message.request, true);
+            if (message.request) reply(message.request, true);
             break;
           case "list":
             reply(message.request, true, { files: walk(saveRoot) });
@@ -557,7 +616,7 @@
             reply(message.request, false, { error: "unknown command" });
           }
         } catch (error) {
-          reply(message.request, false, { error: String(error && error.message || error) });
+          if (message.request) reply(message.request, false, { error: String(error && error.message || error) });
         }
       });
 

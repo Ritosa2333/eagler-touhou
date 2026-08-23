@@ -273,6 +273,7 @@ static bool EaglerOverlayKeyDown(SDL_Scancode scancode)
     case SDL_SCANCODE_F5: bit = 5; break;
     case SDL_SCANCODE_F6: bit = 6; break;
     case SDL_SCANCODE_F7: bit = 7; break;
+    case SDL_SCANCODE_TAB: bit = 8; break;
     default: return false;
     }
     return EM_ASM_INT({

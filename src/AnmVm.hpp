@@ -16,6 +16,14 @@ struct AnmLoadedSprite
     f32 textureWidth;
     ZunVec2 uvStart;
     ZunVec2 uvEnd;
+    // Optional UVs into AnmManager's runtime sprite atlas. The atlas keeps a
+    // one-texel extruded gutter around every static ANM sprite so GL_LINEAR
+    // can sample subpixel positions without leaking neighbouring atlas cells.
+    // The original UVs stay untouched for UV-scroll and other compatibility
+    // paths which intentionally address the source texture outside the cell.
+    ZunVec2 extrudedUvStart;
+    ZunVec2 extrudedUvEnd;
+    bool hasExtrudedUv;
     f32 heightPx;
     f32 widthPx;
     i32 spriteId;

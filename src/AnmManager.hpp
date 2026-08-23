@@ -417,7 +417,7 @@ struct AnmManager
         drawVm.pos = vm->prevPos.Lerp(vm->pos, g_RenderAlpha);
         return Draw(&drawVm);
     }
-    ZunResult DrawOrthographic(const AnmVm *vm, bool roundToPixel);
+    ZunResult DrawOrthographic(const AnmVm *vm);
     ZunResult DrawFacingCamera(const AnmVm *vm);
     ZunResult Draw2(const AnmVm *vm);
     ZunResult Draw3(const AnmVm *vm);
@@ -428,6 +428,9 @@ struct AnmManager
 
     void ReleaseSurfaces(void);
     ZunResult LoadSurface(i32 surfaceIdx, const char *path);
+#ifdef __EMSCRIPTEN__
+    ZunResult PreloadTransitionSurface(const char *path);
+#endif
     void ReleaseSurface(i32 surfaceIdx);
     void CopySurfaceToBackBuffer(i32 surfaceIdx, i32 left, i32 top, i32 x, i32 y);
     void CopySurfaceRectToBackBuffer(i32 surfaceIdx, i32 rectX, i32 rectY, i32 rectLeft, i32 rectTop, i32 width,
@@ -438,6 +441,9 @@ struct AnmManager
 
     void ReleaseAnm(i32 anmIdx);
     ZunResult LoadAnm(i32 anmIdx, const char *path, i32 spriteIdxOffset);
+#ifdef __EMSCRIPTEN__
+    ZunResult PreloadTransitionAnm(i32 anmIdx, const char *path, i32 spriteIdxOffset);
+#endif
     void ExecuteAnmIdx(AnmVm *vm, i32 anmFileIdx)
     {
         vm->anmFileIndex = anmFileIdx;
@@ -474,6 +480,10 @@ struct AnmManager
     //    GLuint textures[264];
     //    void *imageDataArray[256];
     TextureData textures[264];
+    // Static ANM sprites are sampled from a separately packed runtime atlas
+    // with one-texel edge extrusion. `textures` remains the authoritative
+    // source texture so dynamic/scrolling paths retain original semantics.
+    GfxTextureHandle spriteAtlasTextures[264];
     i32 maybeLoadedSpriteCount;
     const AnmRawInstr *scripts[2048];
     i32 spriteIndices[2048];
