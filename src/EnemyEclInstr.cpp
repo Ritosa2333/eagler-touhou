@@ -29,9 +29,36 @@ static const PatchouliShottypeVars g_PatchouliShottypeVars[2] = {{{{0, 3, 1}, {2
 static i32 g_PlayerShot;
 static f32 g_PlayerDistance;
 static f32 g_PlayerAngle;
-static f32 g_StarAngleTable[6];
-static ZunVec3 g_EnemyPosVector;
-static ZunVec3 g_PlayerPosVector;
+static RollbackState g_RollbackState{};
+
+RollbackState *GetRollbackState()
+{
+    return &g_RollbackState;
+}
+
+static Player *TargetPlayer(const ZunVec3 *position)
+{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    return GetClosestActivePlayer(position);
+#else
+    (void)position;
+    return &g_Player;
+#endif
+}
+
+static bool AnyPlayerBombing()
+{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    for (u8 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+    {
+        if (IsPlayerGameplayActive(playerId) && g_Players[playerId].bombInfo.isInUse)
+            return true;
+    }
+    return false;
+#else
+    return g_Player.bombInfo.isInUse != 0;
+#endif
+}
 
 void MoveDirTime(Enemy *enemy, EclRawInstr *instr)
 {
@@ -187,20 +214,20 @@ i32 *GetVar(Enemy *enemy, EclVarId *eclVarId, EclValueType *valueType)
     case ECL_VAR_PLAYER_POS_X:
         if (valueType != NULL)
             *valueType = ECL_VALUE_TYPE_READONLY;
-        return (i32 *)&g_Player.positionCenter;
+        return (i32 *)&TargetPlayer(&enemy->position)->positionCenter;
 
     case ECL_VAR_PLAYER_POS_Y:
         if (valueType != NULL)
             *valueType = ECL_VALUE_TYPE_READONLY;
-        return (i32 *)&g_Player.positionCenter.y;
+        return (i32 *)&TargetPlayer(&enemy->position)->positionCenter.y;
 
     case ECL_VAR_PLAYER_POS_Z:
         if (valueType != NULL)
             *valueType = ECL_VALUE_TYPE_READONLY;
-        return (i32 *)&g_Player.positionCenter.z;
+        return (i32 *)&TargetPlayer(&enemy->position)->positionCenter.z;
 
     case ECL_VAR_PLAYER_ANGLE:
-        g_PlayerAngle = g_Player.AngleToPlayer(&enemy->position);
+        g_PlayerAngle = TargetPlayer(&enemy->position)->AngleToPlayer(&enemy->position);
         if (valueType != NULL)
             *valueType = ECL_VALUE_TYPE_READONLY;
         return (i32 *)&g_PlayerAngle;
@@ -211,7 +238,7 @@ i32 *GetVar(Enemy *enemy, EclVarId *eclVarId, EclValueType *valueType)
         return &enemy->bossTimer.current;
 
     case ECL_VAR_PLAYER_DISTANCE:
-        g_PlayerDistance = (g_Player.positionCenter - enemy->position).getMagnitude();
+        g_PlayerDistance = (TargetPlayer(&enemy->position)->positionCenter - enemy->position).getMagnitude();
         if (valueType != NULL)
             *valueType = ECL_VALUE_TYPE_READONLY;
         return (i32 *)&g_PlayerDistance;
@@ -484,26 +511,35 @@ void ExInsShootStarPattern(Enemy *enemy, EclRawInstr *instr)
 
     if (enemy->currentContext.var2 == 0)
     {
-        g_EnemyPosVector = enemy->position;
-        g_PlayerPosVector = g_Player.positionCenter;
-        g_StarAngleTable[0] = g_Rng.GetRandomF32ZeroToOne() * (ZUN_PI * 2) - ZUN_PI;
-        g_StarAngleTable[1] = utils::AddNormalizeAngle(g_StarAngleTable[0], 4 * ZUN_PI / 5);
+        g_RollbackState.enemyPosVector = enemy->position;
+        g_RollbackState.playerPosVector = TargetPlayer(&enemy->position)->positionCenter;
+        g_RollbackState.starAngleTable[0] =
+            g_Rng.GetRandomF32ZeroToOne() * (ZUN_PI * 2) - ZUN_PI;
+        g_RollbackState.starAngleTable[1] =
+            utils::AddNormalizeAngle(g_RollbackState.starAngleTable[0], 4 * ZUN_PI / 5);
     }
     if (enemy->currentContext.var2 % 30 == 0)
     {
-        g_StarAngleTable[0] = g_StarAngleTable[1];
-        g_StarAngleTable[1] = utils::AddNormalizeAngle(g_StarAngleTable[1], 4 * ZUN_PI / 5);
-        g_StarAngleTable[2] = utils::AddNormalizeAngle(g_StarAngleTable[1], 4 * ZUN_PI / 5);
-        g_StarAngleTable[3] = utils::AddNormalizeAngle(g_StarAngleTable[2], 4 * ZUN_PI / 5);
-        g_StarAngleTable[4] = utils::AddNormalizeAngle(g_StarAngleTable[3], 4 * ZUN_PI / 5);
-        g_StarAngleTable[5] = utils::AddNormalizeAngle(g_StarAngleTable[4], 4 * ZUN_PI / 5);
+        g_RollbackState.starAngleTable[0] = g_RollbackState.starAngleTable[1];
+        g_RollbackState.starAngleTable[1] =
+            utils::AddNormalizeAngle(g_RollbackState.starAngleTable[1], 4 * ZUN_PI / 5);
+        g_RollbackState.starAngleTable[2] =
+            utils::AddNormalizeAngle(g_RollbackState.starAngleTable[1], 4 * ZUN_PI / 5);
+        g_RollbackState.starAngleTable[3] =
+            utils::AddNormalizeAngle(g_RollbackState.starAngleTable[2], 4 * ZUN_PI / 5);
+        g_RollbackState.starAngleTable[4] =
+            utils::AddNormalizeAngle(g_RollbackState.starAngleTable[3], 4 * ZUN_PI / 5);
+        g_RollbackState.starAngleTable[5] =
+            utils::AddNormalizeAngle(g_RollbackState.starAngleTable[4], 4 * ZUN_PI / 5);
     }
     if (enemy->currentContext.var2 % 6 == 0)
     {
         patternPosition = (f32)enemy->currentContext.var2 / (f32)enemy->currentContext.var3;
         targetDistance = patternPosition * 0.1f;
 
-        baseTargetPosition = (g_PlayerPosVector - g_EnemyPosVector) * targetDistance + g_EnemyPosVector;
+        baseTargetPosition =
+            (g_RollbackState.playerPosVector - g_RollbackState.enemyPosVector) * targetDistance +
+            g_RollbackState.enemyPosVector;
         baseTargetPosition.z = 0.0f;
 
         patternPosition += 0.5f;
@@ -512,8 +548,8 @@ void ExInsShootStarPattern(Enemy *enemy, EclRawInstr *instr)
         for (i = 0; i < 5; i++)
         {
             targetDistance = (enemy->currentContext.var2 % 30) / 30.0f;
-            sincosmul(&starPatternTarget0, g_StarAngleTable[i], enemy->currentContext.float3);
-            sincosmul(&starPatterTarget1, g_StarAngleTable[i + 1], enemy->currentContext.float3);
+            sincosmul(&starPatternTarget0, g_RollbackState.starAngleTable[i], enemy->currentContext.float3);
+            sincosmul(&starPatterTarget1, g_RollbackState.starAngleTable[i + 1], enemy->currentContext.float3);
             starPatternTarget0 = (starPatterTarget1 - starPatternTarget0) * targetDistance + starPatternTarget0;
             starPatternTarget0.z = 0;
             enemy->bulletProps.position = baseTargetPosition + starPatternTarget0;
@@ -568,13 +604,14 @@ void ExInsStage56Func4(Enemy *enemy, EclRawInstr *instr)
                     currentBullet->sprites.spriteBullet.sprite->heightPx >= 30.0f && currentBullet->spriteOffset != 5 &&
                     (g_Rng.GetRandomU16() % 4 == 0))
                 {
+                    Player *targetPlayer = TargetPlayer(&currentBullet->pos);
                     currentBullet->spriteOffset = 5;
                     g_AnmManager->SetActiveSprite(&currentBullet->sprites.spriteBullet,
                                                   currentBullet->sprites.spriteBullet.baseSpriteIndex +
                                                       currentBullet->spriteOffset);
 
-                    playerBulletOffset.x = (currentBullet->pos.x) - g_Player.positionCenter.x;
-                    playerBulletOffset.y = (currentBullet->pos.y) - g_Player.positionCenter.y;
+                    playerBulletOffset.x = (currentBullet->pos.x) - targetPlayer->positionCenter.x;
+                    playerBulletOffset.y = (currentBullet->pos.y) - targetPlayer->positionCenter.y;
 
                     if (playerBulletOffset.VectorLength() > 128.0f)
                     {
@@ -582,7 +619,7 @@ void ExInsStage56Func4(Enemy *enemy, EclRawInstr *instr)
                     }
                     else
                     {
-                        currentBullet->angle = g_Player.AngleFromPlayer(&currentBullet->pos) + (ZUN_PI / 2) +
+                        currentBullet->angle = targetPlayer->AngleFromPlayer(&currentBullet->pos) + (ZUN_PI / 2) +
                                                g_Rng.GetRandomF32InRange(ZUN_PI * 2);
                     }
 
@@ -609,13 +646,14 @@ void ExInsStage56Func4(Enemy *enemy, EclRawInstr *instr)
                     currentBullet->sprites.spriteBullet.sprite->heightPx >= 30.0f && currentBullet->spriteOffset != 5 &&
                     (g_Rng.GetRandomU16() % 4 == 0))
                 {
+                    Player *targetPlayer = TargetPlayer(&currentBullet->pos);
                     currentBullet->spriteOffset = 5;
                     g_AnmManager->SetActiveSprite(&currentBullet->sprites.spriteBullet,
                                                   currentBullet->sprites.spriteBullet.baseSpriteIndex +
                                                       currentBullet->spriteOffset);
 
-                    playerBulletOffset.x = (currentBullet->pos.x) - g_Player.positionCenter.x;
-                    playerBulletOffset.y = (currentBullet->pos.y) - g_Player.positionCenter.y;
+                    playerBulletOffset.x = (currentBullet->pos.x) - targetPlayer->positionCenter.x;
+                    playerBulletOffset.y = (currentBullet->pos.y) - targetPlayer->positionCenter.y;
 
                     if (playerBulletOffset.VectorLength() > 128.0f)
                     {
@@ -623,7 +661,7 @@ void ExInsStage56Func4(Enemy *enemy, EclRawInstr *instr)
                     }
                     else
                     {
-                        currentBullet->angle = g_Player.AngleFromPlayer(&currentBullet->pos) + (ZUN_PI / 2) +
+                        currentBullet->angle = targetPlayer->AngleFromPlayer(&currentBullet->pos) + (ZUN_PI / 2) +
                                                g_Rng.GetRandomF32InRange(ZUN_PI * 2);
                     }
 
@@ -673,7 +711,7 @@ void ExInsStage5Func5(Enemy *enemy, EclRawInstr *instr)
         bulletProps.flags = 0;
 
         matrixOutSeed = 0.5f - patternPosition * 0.5f / 9.0f;
-        matrixOut = g_Player.positionCenter - enemy->position;
+        matrixOut = TargetPlayer(&enemy->position)->positionCenter - enemy->position;
         matrixOut.getNormalized(matrixIn);
         if ((patternPosition & 1) != 0)
         {
@@ -1021,7 +1059,7 @@ void ExInsStage6XFunc10(Enemy *enemy, EclRawInstr *instr)
     }
 
     ExInsStage6XFunc6(enemy, instr);
-    if (g_Player.bombInfo.isInUse != 0)
+    if (AnyPlayerBombing())
     {
         if (enemy->anmExLeft >= 0)
         {

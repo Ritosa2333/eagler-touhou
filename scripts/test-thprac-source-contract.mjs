@@ -43,8 +43,14 @@ for (const anchor of [
     if (!upstreamTh06.includes(anchor))
         throw new Error(`Upstream TH06 F6 AutoBomb contract missing: ${anchor}`);
 }
-if (!portablePlayer.includes('PracticeRuntime::OverlayAutoBomb()\n                                     ? ((g_LastFrameInput & TH_BUTTON_BOMB) != 0)') ||
-    !portablePlayer.includes('if (PracticeRuntime::OverlayAutoBomb())\n                g_CurFrameInput = TH_BUTTON_BOMB;') ||
+const autoBombBlock = portablePlayer.slice(
+    portablePlayer.indexOf('// THOverlay F6 does not invoke the bomb routine directly.'),
+    portablePlayer.indexOf('if (p->respawnTimer == 0)', portablePlayer.indexOf('// THOverlay F6 does not invoke the bomb routine directly.')));
+if (!autoBombBlock.includes('PracticeRuntime::OverlayAutoBomb()') ||
+    !autoBombBlock.includes('(g_LastFrameInput & TH_BUTTON_BOMB) != 0') ||
+    !autoBombBlock.includes('g_CurFrameInput = TH_BUTTON_BOMB;') ||
+    autoBombBlock.indexOf('(g_LastFrameInput & TH_BUTTON_BOMB) != 0') >
+        autoBombBlock.indexOf('g_CurFrameInput = TH_BUTTON_BOMB;') ||
     portablePlayer.includes('PracticeRuntime::OverlayAutoBomb() && p->playerState == PLAYER_STATE_DEAD')) {
     throw new Error('Portable TH06 F6 AutoBomb must preserve upstream previous-input -> current-input next-tick ownership');
 }
@@ -547,7 +553,10 @@ if (restartFrameOne < 0 || restartFrameTen < 0 ||
 // THPauseMenu::Update() runs from th06_update at the RunCalcChain return
 // boundary. Its OnPreUpdate counter continues while the window is closed;
 // entering Pause must not initialize a fresh six-frame delay.
-const runChain = portableGameWindow.indexOf('const i32 res = g_Chain.RunCalcChain();');
+// Netplay wraps the calc call in runSimulationTick and may choose the stage
+// probe driver.  The ordinary branch still calls g_Chain directly, and the
+// trainer producer must remain after that whole branch has returned.
+const runChain = portableGameWindow.indexOf('res = g_Chain.RunCalcChain();');
 const trainerUpdate = portableGameWindow.indexOf('PracticeRuntime::UpdateOverlay();', runChain);
 if (runChain < 0 || trainerUpdate < runChain ||
     !portablePractice.includes('if (g_PauseFrameCounter < 0xffffffffu)\n        ++g_PauseFrameCounter;') ||

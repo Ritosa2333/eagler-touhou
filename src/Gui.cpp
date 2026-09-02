@@ -1,5 +1,9 @@
 #include "Gui.hpp"
 
+#if defined(TH_DEV_TOOLS) && defined(__EMSCRIPTEN__)
+#include <emscripten/emscripten.h>
+#endif
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -13,6 +17,7 @@
 #include "Chain.hpp"
 #include "ChainPriorities.hpp"
 #include "FileSystem.hpp"
+#include "EnemyManager.hpp"
 #include "GameManager.hpp"
 #include "GameWindow.hpp"
 #include "Localization.hpp"
@@ -23,6 +28,12 @@
 #include "TextHelper.hpp"
 #include "ZunColor.hpp"
 #include "utils.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "multiplayer/GameplaySession.hpp"
+#endif
+#ifdef TH_ENABLE_NETPLAY
+#include "netplay/NetplaySideEffects.hpp"
+#endif
 
 #ifdef TH_DEV_TOOLS
 static bool g_DebugDialogueFastForward = false;
@@ -31,6 +42,133 @@ static bool g_DebugDialogueFastForward = false;
 Gui g_Gui;
 static ChainElem g_GuiCalcChain;
 static ChainElem g_GuiDrawChain;
+
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace
+{
+// Countdown warning audio is presentation state, not rollback state. Track the
+// currently presented spellcard and a bit for each audible second (0..9). A
+// rollback may move the timer back above 10 or revisit 9/8/etc., but it must not
+// re-arm a second which this spellcard already voiced.
+struct SpellcardCountdownAudioState
+{
+    bool initialized = false;
+    i32 phaseSpellcardId = -1;
+    i32 lastPresentedSecond = -1;
+    u16 soundedSeconds = 0;
+};
+
+SpellcardCountdownAudioState g_SpellcardCountdownAudio;
+
+void ResetSpellcardCountdownAudio()
+{
+    g_SpellcardCountdownAudio = {};
+    g_SpellcardCountdownAudio.phaseSpellcardId = -1;
+    g_SpellcardCountdownAudio.lastPresentedSecond = -1;
+}
+
+bool ShouldPlaySpellcardCountdownWarning(i32 secondsRemaining,
+                                         i32 rollbackLastSecondsRemaining)
+{
+    if (!MultiplayerGameplay::IsMultiplayer())
+        return secondsRemaining < 10 &&
+               rollbackLastSecondsRemaining != secondsRemaining;
+
+    // The vanilla warning belongs to the whole Boss timer, including non-spell
+    // phases. Use the active spell id when there is one, otherwise -1. A real
+    // phase restart also makes the displayed timer jump upward by many seconds;
+    // TH06 rollback is capped at 12 frames (< 1 second), so an increase of more
+    // than one displayed second cannot be caused by rollback alone.
+    const i32 phaseSpellcardId = g_EnemyManager.spellcardInfo.isActive != 0
+                                     ? static_cast<i32>(g_EnemyManager.spellcardInfo.idx)
+                                     : -1;
+    const bool newPhase =
+        !g_SpellcardCountdownAudio.initialized ||
+        g_SpellcardCountdownAudio.phaseSpellcardId != phaseSpellcardId ||
+        (g_SpellcardCountdownAudio.lastPresentedSecond >= 0 &&
+         secondsRemaining > g_SpellcardCountdownAudio.lastPresentedSecond + 1);
+    if (newPhase)
+    {
+        g_SpellcardCountdownAudio.initialized = true;
+        g_SpellcardCountdownAudio.phaseSpellcardId = phaseSpellcardId;
+        g_SpellcardCountdownAudio.soundedSeconds = 0;
+    }
+    g_SpellcardCountdownAudio.lastPresentedSecond = secondsRemaining;
+
+    if (secondsRemaining < 0 || secondsRemaining >= 10)
+        return false;
+
+    const u16 bit = static_cast<u16>(1u << secondsRemaining);
+    if ((g_SpellcardCountdownAudio.soundedSeconds & bit) != 0)
+        return false;
+    g_SpellcardCountdownAudio.soundedSeconds |= bit;
+    return true;
+}
+
+const char *GetMultiplayerHudLoadoutName(u8 playerId)
+{
+    static const char *names[4] = {
+        "ReimuA", "ReimuB", "MarisaA", "MarisaB",
+    };
+    const i32 index = MultiplayerGameplay::GetPlayerCharacter(playerId) * 2 +
+                      MultiplayerGameplay::GetPlayerShot(playerId);
+    return index >= 0 && index < 4 ? names[index] : "Unknown";
+}
+
+ZunResult LoadMultiplayerFaceBank(u8 playerId)
+{
+    if (playerId == 0 || playerId >= MultiplayerGameplay::GetPlayerCount())
+        return ZUN_SUCCESS;
+
+    const bool marisa = MultiplayerGameplay::GetPlayerCharacter(playerId) == CHARA_MARISA;
+    const char *pathA = marisa ? "data/face01a.anm" : "data/face00a.anm";
+    const char *pathB = marisa ? "data/face01b.anm" : "data/face00b.anm";
+    const char *pathC = marisa ? "data/face01c.anm" : "data/face00c.anm";
+    const i32 fileA = playerId == 1 ? ANM_FILE_FACE2_CHARA_A : ANM_FILE_FACE3_CHARA_A;
+    const i32 fileB = playerId == 1 ? ANM_FILE_FACE2_CHARA_B : ANM_FILE_FACE3_CHARA_B;
+    const i32 fileC = playerId == 1 ? ANM_FILE_FACE2_CHARA_C : ANM_FILE_FACE3_CHARA_C;
+    const i32 offsetA = playerId == 1 ? ANM_OFFSET_FACE2_CHARA_A : ANM_OFFSET_FACE3_CHARA_A;
+    const i32 offsetB = playerId == 1 ? ANM_OFFSET_FACE2_CHARA_B : ANM_OFFSET_FACE3_CHARA_B;
+    const i32 offsetC = playerId == 1 ? ANM_OFFSET_FACE2_CHARA_C : ANM_OFFSET_FACE3_CHARA_C;
+
+    if (g_AnmManager->LoadAnm(fileA, pathA, offsetA) != ZUN_SUCCESS ||
+        g_AnmManager->LoadAnm(fileB, pathB, offsetB) != ZUN_SUCCESS ||
+        g_AnmManager->LoadAnm(fileC, pathC, offsetC) != ZUN_SUCCESS)
+        return ZUN_ERROR;
+    return ZUN_SUCCESS;
+}
+
+i32 ResolveMultiplayerBombFaceIndex(u8 playerId, i32 p1Index)
+{
+    if (playerId == 1)
+        return p1Index - ANM_OFFSET_FACE_CHARA_A + ANM_OFFSET_FACE2_CHARA_A;
+    if (playerId == 2)
+        return p1Index - ANM_OFFSET_FACE_CHARA_A + ANM_OFFSET_FACE3_CHARA_A;
+    return p1Index;
+}
+} // namespace
+
+#if defined(TH_DEV_TOOLS) && defined(__EMSCRIPTEN__) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+extern "C" EMSCRIPTEN_KEEPALIVE int TouhouDebugCountdownAudioStep(
+    i32 secondsRemaining, i32 rollbackLastSecondsRemaining, i32 phaseSpellcardId,
+    i32 spellActive, i32 reset)
+{
+    if (reset)
+        ResetSpellcardCountdownAudio();
+    const auto oldActive = g_EnemyManager.spellcardInfo.isActive;
+    const auto oldIdx = g_EnemyManager.spellcardInfo.idx;
+    g_EnemyManager.spellcardInfo.isActive = spellActive ? 1u : 0u;
+    g_EnemyManager.spellcardInfo.idx = static_cast<u32>(phaseSpellcardId);
+    const bool play = ShouldPlaySpellcardCountdownWarning(
+        secondsRemaining, rollbackLastSecondsRemaining);
+    g_EnemyManager.spellcardInfo.isActive = oldActive;
+    g_EnemyManager.spellcardInfo.idx = oldIdx;
+    if (play)
+        g_SoundPlayer.PlaySoundByIdx(SOUND_1D);
+    return play ? 1 : 0;
+}
+#endif
+#endif
 
 bool Gui::IsStageFinished() const
 {
@@ -268,9 +406,28 @@ ChainCallbackResult Gui::OnDraw(Gui *gui)
     return CHAIN_CALLBACK_RESULT_CONTINUE;
 }
 
-void Gui::ShowBombNamePortrait(u32 sprite, const char *bombName)
+void Gui::ShowBombNamePortrait(u32 sprite, const char *bombName, u8 playerId)
 {
-    g_AnmManager->SetAndExecuteScriptIdx(&this->impl->playerSpellcardPortrait, 0x4a1);
+    i32 portraitScript = ANM_SCRIPT_FACE_BOMB_PORTRAIT;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (MultiplayerGameplay::IsMultiplayer() && playerId < MultiplayerGameplay::GetPlayerCount())
+    {
+        portraitScript = ResolveMultiplayerBombFaceIndex(playerId, portraitScript);
+        sprite = static_cast<u32>(ResolveMultiplayerBombFaceIndex(playerId, static_cast<i32>(sprite)));
+
+        // Match TH07's cosmetic fallback rule: a missing guest face must not
+        // turn a Bomb cut-in into an invalid sprite/script access.
+        if (sprite >= ARRAY_SIZE(g_AnmManager->sprites) ||
+            g_AnmManager->sprites[sprite].sourceFileIndex < 0)
+        {
+            portraitScript = ANM_SCRIPT_FACE_BOMB_PORTRAIT;
+            sprite = ANM_SCRIPT_FACE_BOMB_PORTRAIT;
+        }
+    }
+#else
+    (void)playerId;
+#endif
+    g_AnmManager->SetAndExecuteScriptIdx(&this->impl->playerSpellcardPortrait, portraitScript);
     g_AnmManager->SetActiveSprite(&this->impl->playerSpellcardPortrait, sprite);
     g_AnmManager->SetAndExecuteScriptIdx(&this->impl->bombSpellcardName, 0x706);
     if (Localization::Active())
@@ -343,6 +500,9 @@ void Gui::ShowSpellcard(i32 spellcardSprite, i32 spellcardId, const char *spellc
 
 ZunResult Gui::ActualAddedCallback()
 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    ResetSpellcardCountdownAudio();
+#endif
     i32 idx;
 
     if ((i32)(g_Supervisor.curState != SUPERVISOR_STATE_GAMEMANAGER_REINIT))
@@ -394,6 +554,14 @@ ZunResult Gui::ActualAddedCallback()
             }
             break;
         }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if (MultiplayerGameplay::IsMultiplayer())
+        {
+            for (u8 playerId = 1; playerId < MultiplayerGameplay::GetPlayerCount(); ++playerId)
+                if (LoadMultiplayerFaceBank(playerId) != ZUN_SUCCESS)
+                    return ZUN_ERROR;
+        }
+#endif
     }
     else
     {
@@ -1256,6 +1424,17 @@ void Gui::DrawGameScene()
     i32 idx;
     f32 xPos;
     f32 yPos;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Match TH07MP: once the runtime owns a multiplayer session, the HUD stays
+    // in multiplayer layout for the whole gameplay lifecycle. Player-chain
+    // registration is transient during stage teardown/rebuild and must not make
+    // the presentation fall back to P1's vanilla resource rows.
+    const bool compactMultiplayerHud = MultiplayerGameplay::IsMultiplayer();
+    constexpr f32 multiplayerHudBaseY = 112.0f;
+    constexpr f32 multiplayerHudRowStep = 48.0f;
+    constexpr f32 multiplayerHudOffsetX = 8.0f;
+    constexpr f32 resourceIconStep = 11.0f;
+#endif
 
     if (this->impl->msg.currentMsgIdx < 0 && (this->bossPresent + this->impl->bossHealthBarState) > 0)
     {
@@ -1293,8 +1472,14 @@ void Gui::DrawGameScene()
         g_AsciiManager.SetColor(this->bossUIOpacity << 24 | bossLivesColor);
         i32 cappedSpellcardSecondsRemaining =
             this->spellcardSecondsRemaining > 99 ? 99 : this->spellcardSecondsRemaining;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if (ShouldPlaySpellcardCountdownWarning(
+                cappedSpellcardSecondsRemaining,
+                this->lastSpellcardSecondsRemaining))
+#else
         if (cappedSpellcardSecondsRemaining < 10 &&
             this->lastSpellcardSecondsRemaining != this->spellcardSecondsRemaining)
+#endif
         {
             g_SoundPlayer.PlaySoundByIdx(SOUND_1D);
         }
@@ -1347,11 +1532,18 @@ void Gui::DrawGameScene()
         g_AnmManager->DrawInterp(&this->impl->vms[2]);
         g_AnmManager->DrawInterpNoRotation(&this->impl->vms[9]);
         g_AnmManager->DrawInterpNoRotation(&this->impl->vms[10]);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if (!compactMultiplayerHud)
+        {
+#endif
         g_AnmManager->DrawInterpNoRotation(&this->impl->vms[11]);
         g_AnmManager->DrawInterpNoRotation(&this->impl->vms[12]);
         g_AnmManager->DrawInterpNoRotation(&this->impl->vms[13]);
         g_AnmManager->DrawInterpNoRotation(&this->impl->vms[14]);
         g_AnmManager->DrawInterpNoRotation(&this->impl->vms[15]);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        }
+#endif
     }
     if ((g_Supervisor.cfg.opts >> GCOS_DISPLAY_MINIMUM_GRAPHICS & 1) == 0)
     {
@@ -1361,6 +1553,10 @@ void Gui::DrawGameScene()
         g_AnmManager->DrawNoRotation(vm);
         vm->pos = ZunVec3(xPos, 82.0f, 0.49f);
         g_AnmManager->DrawNoRotation(vm);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if (!compactMultiplayerHud)
+        {
+#endif
         if (this->flags.flag0)
         {
             vm->pos = ZunVec3(xPos, 122.0f, 0.49f);
@@ -1386,11 +1582,201 @@ void Gui::DrawGameScene()
             vm->pos = ZunVec3(xPos, 226.0f, 0.49f);
             g_AnmManager->DrawNoRotation(vm);
         }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        }
+#endif
         vm->pos = ZunVec3(488.0f, 464.0f, 0.49f);
         g_AnmManager->DrawNoRotation(vm);
         vm->pos = ZunVec3(0.0, 464.0f, 0.49f);
         g_AnmManager->DrawNoRotation(vm);
     }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (compactMultiplayerHud)
+    {
+        AnmVm rowBackgroundVm = this->impl->vms[22];
+        AnmVm playerLabelVm = this->impl->vms[11];
+        AnmVm bombLabelVm = this->impl->vms[12];
+        AnmVm powerLabelVm = this->impl->vms[13];
+        AnmVm grazeLabelVm = this->impl->vms[14];
+        AnmVm pointLabelVm = this->impl->vms[15];
+        const f32 savedLifeScaleX = this->impl->vms[16].scaleX;
+        const f32 savedLifeScaleY = this->impl->vms[16].scaleY;
+        const f32 savedBombScaleX = this->impl->vms[17].scaleX;
+        const f32 savedBombScaleY = this->impl->vms[17].scaleY;
+        const ZunVec2 savedAsciiScale = g_AsciiManager.scale;
+        const ZunColor savedAsciiColor = g_AsciiManager.color;
+        const u32 savedAsciiGui = g_AsciiManager.isGui;
+        const bool savedAsciiSelected = g_AsciiManager.isSelected;
+
+        for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+        {
+            const f32 blockY = multiplayerHudBaseY + multiplayerHudRowStep * playerId;
+            for (xPos = 416.0f; xPos < 640.0f; xPos += 16.0f)
+            {
+                rowBackgroundVm.pos = ZunVec3(xPos, blockY, 0.48f);
+                g_AnmManager->DrawNoRotation(&rowBackgroundVm);
+                rowBackgroundVm.pos = ZunVec3(xPos, blockY + 12.0f, 0.48f);
+                g_AnmManager->DrawNoRotation(&rowBackgroundVm);
+                rowBackgroundVm.pos = ZunVec3(xPos, blockY + 24.0f, 0.48f);
+                g_AnmManager->DrawNoRotation(&rowBackgroundVm);
+            }
+        }
+
+        playerLabelVm.scaleX = playerLabelVm.scaleY = 0.80f;
+        bombLabelVm.scaleX = bombLabelVm.scaleY = 0.80f;
+        powerLabelVm.scaleX = powerLabelVm.scaleY = 0.80f;
+        for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+        {
+            if (!IsPlayerActive(static_cast<u8>(playerId)) ||
+                MultiplayerGameplay::IsPlayerTemporarilyAbsent(static_cast<u8>(playerId)))
+                continue;
+            const f32 blockY = multiplayerHudBaseY + multiplayerHudRowStep * playerId;
+            playerLabelVm.pos = ZunVec3(481.0f + multiplayerHudOffsetX, blockY, 0.47f);
+            bombLabelVm.pos = ZunVec3(481.0f + multiplayerHudOffsetX, blockY + 12.0f, 0.47f);
+            powerLabelVm.pos = ZunVec3(481.0f + multiplayerHudOffsetX, blockY + 24.0f, 0.47f);
+            g_AnmManager->DrawNoRotation(&playerLabelVm);
+            g_AnmManager->DrawNoRotation(&bombLabelVm);
+            g_AnmManager->DrawNoRotation(&powerLabelVm);
+        }
+
+        grazeLabelVm.pos.y = multiplayerHudBaseY + 148.0f;
+        pointLabelVm.pos.y = multiplayerHudBaseY + 164.0f;
+        g_AnmManager->DrawNoRotation(&grazeLabelVm);
+        g_AnmManager->DrawNoRotation(&pointLabelVm);
+
+        // Keep the same draw ordering as TH07MP: finish all sprite-based
+        // resources before issuing the custom Power-bar draw calls. The latter
+        // changes backend render state, so interleaving it per player can make
+        // later life/bomb sprites depend on whichever state the previous Power
+        // row left behind.
+        this->impl->vms[16].scaleX = this->impl->vms[16].scaleY = 0.65f;
+        for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+        {
+            if (!IsPlayerActive(static_cast<u8>(playerId)) ||
+                MultiplayerGameplay::IsPlayerTemporarilyAbsent(static_cast<u8>(playerId)))
+                continue;
+            const f32 blockY = multiplayerHudBaseY + multiplayerHudRowStep * playerId;
+            vm = &this->impl->vms[16];
+            for (idx = 0, xPos = 532.0f + multiplayerHudOffsetX;
+                 idx < GetPlayerLives(static_cast<u8>(playerId)); ++idx, xPos += resourceIconStep)
+            {
+                vm->pos = ZunVec3(xPos, blockY, 0.49f);
+                g_AnmManager->DrawNoRotation(vm);
+            }
+        }
+        this->impl->vms[16].scaleX = savedLifeScaleX;
+        this->impl->vms[16].scaleY = savedLifeScaleY;
+
+        this->impl->vms[17].scaleX = this->impl->vms[17].scaleY = 0.65f;
+        for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+        {
+            if (!IsPlayerActive(static_cast<u8>(playerId)) ||
+                MultiplayerGameplay::IsPlayerTemporarilyAbsent(static_cast<u8>(playerId)))
+                continue;
+            const f32 blockY = multiplayerHudBaseY + multiplayerHudRowStep * playerId;
+            vm = &this->impl->vms[17];
+            for (idx = 0, xPos = 532.0f + multiplayerHudOffsetX;
+                 idx < GetPlayerBombs(static_cast<u8>(playerId)); ++idx, xPos += resourceIconStep)
+            {
+                vm->pos = ZunVec3(xPos, blockY + 12.0f, 0.49f);
+                g_AnmManager->DrawNoRotation(vm);
+            }
+        }
+        this->impl->vms[17].scaleX = savedBombScaleX;
+        this->impl->vms[17].scaleY = savedBombScaleY;
+
+        for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+        {
+            if (!IsPlayerActive(static_cast<u8>(playerId)))
+                continue;
+            const f32 blockY = multiplayerHudBaseY + multiplayerHudRowStep * playerId;
+            ZunVec3 textPos(424.0f + multiplayerHudOffsetX, blockY, 0.0f);
+            g_AsciiManager.scale = ZunVec2(0.55f, 0.55f);
+            g_AsciiManager.color = COLOR_WHITE;
+            g_AsciiManager.AddFormatText(&textPos, "P%d", playerId + 1);
+
+            g_AsciiManager.scale = ZunVec2(0.50f, 0.50f);
+            g_AsciiManager.color = 0xff80c0ff;
+            textPos = ZunVec3(424.0f + multiplayerHudOffsetX, blockY + 14.0f, 0.0f);
+            g_AsciiManager.AddString(
+                &textPos, GetMultiplayerHudLoadoutName(static_cast<u8>(playerId)));
+
+            if (MultiplayerGameplay::ShouldShowContributionStats())
+            {
+                g_AsciiManager.scale = ZunVec2(0.42f, 0.42f);
+                g_AsciiManager.color = 0xffa0d8ff;
+                textPos = ZunVec3(424.0f + multiplayerHudOffsetX, blockY + 27.0f, 0.0f);
+                g_AsciiManager.AddFormatText(
+                    &textPos, "K:%u D:%u",
+                    GetPlayerEnemiesDefeated(static_cast<u8>(playerId)),
+                    GetPlayerDamageDealt(static_cast<u8>(playerId)));
+            }
+
+            if (MultiplayerGameplay::IsPlayerTemporarilyAbsent(static_cast<u8>(playerId)))
+            {
+                g_AsciiManager.scale = ZunVec2(0.50f, 0.50f);
+                g_AsciiManager.color = 0xffffc080;
+                textPos = ZunVec3(486.0f + multiplayerHudOffsetX, blockY + 12.0f, 0.0f);
+                g_AsciiManager.AddString(&textPos, "AWAY");
+            }
+        }
+
+        for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+        {
+            if (!IsPlayerActive(static_cast<u8>(playerId)) ||
+                MultiplayerGameplay::IsPlayerTemporarilyAbsent(static_cast<u8>(playerId)))
+                continue;
+            const f32 blockY = multiplayerHudBaseY + multiplayerHudRowStep * playerId;
+            const i32 playerPower = GetPlayerPower(static_cast<u8>(playerId));
+            const f32 powerBarLeft = 532.0f + multiplayerHudOffsetX;
+            const f32 powerBarTop = blockY + 26.0f;
+            const f32 powerBarBottom = blockY + 36.0f;
+            const f32 powerBarRight = powerBarLeft + static_cast<f32>(playerPower) * 0.25f;
+            ZunVec3 textPos;
+            if (playerPower > 0)
+            {
+                VertexDiffuseXyzrhw vertices[4];
+                vertices[0].position = ZunVec4(powerBarLeft, powerBarTop, 0.1f, 1.0f);
+                vertices[1].position = ZunVec4(powerBarRight, powerBarTop, 0.1f, 1.0f);
+                vertices[2].position = ZunVec4(powerBarLeft, powerBarBottom, 0.1f, 1.0f);
+                vertices[3].position = ZunVec4(powerBarRight, powerBarBottom, 0.1f, 1.0f);
+                vertices[0].diffuse = vertices[2].diffuse = ColorData(0xe0e0e0ff);
+                vertices[1].diffuse = vertices[3].diffuse = ColorData(0x80e0e0ff);
+                g_AnmManager->FlushVertexBuffer();
+                g_AnmManager->SetColorOp(COMPONENT_ALPHA, COLOR_OP_REPLACE);
+                g_AnmManager->SetColorOp(COMPONENT_RGB, COLOR_OP_REPLACE);
+                g_AnmManager->SetDepthMask(false);
+                g_AnmManager->SetDepthFunc(DEPTH_FUNC_ALWAYS);
+                if (g_AnmManager->currentTextureHandle == 0)
+                    g_AnmManager->SetCurrentTexture(g_AnmManager->dummyTextureHandle);
+                g_AnmManager->SetProjectionMode(PROJECTION_MODE_ORTHOGRAPHIC);
+                g_AnmManager->SetVertexAttributes(VERTEX_ATTR_DIFFUSE);
+                g_AnmManager->SetAttributePointer(
+                    VERTEX_ARRAY_POSITION, sizeof(*vertices), &vertices[0].position);
+                g_AnmManager->SetAttributePointer(
+                    VERTEX_ARRAY_DIFFUSE, sizeof(*vertices), &vertices[0].diffuse);
+                g_AnmManager->BackendDrawCall();
+                g_AnmManager->SetCurrentBlendMode(0xff);
+                g_AnmManager->SetColorOp(COMPONENT_ALPHA, COLOR_OP_MODULATE);
+                g_AnmManager->SetColorOp(COMPONENT_RGB, COLOR_OP_MODULATE);
+            }
+
+            g_AsciiManager.scale = ZunVec2(0.70f, 0.70f);
+            g_AsciiManager.color = COLOR_WHITE;
+            textPos = ZunVec3(powerBarLeft, powerBarTop, 0.0f);
+            if (playerPower < 128)
+                g_AsciiManager.AddFormatText(&textPos, "%d", playerPower);
+            else
+                g_AsciiManager.AddString(&textPos, "MAX");
+        }
+        g_AsciiManager.scale = savedAsciiScale;
+        g_AsciiManager.color = savedAsciiColor;
+        g_AsciiManager.isGui = savedAsciiGui;
+        g_AsciiManager.isSelected = savedAsciiSelected;
+    }
+    if (!compactMultiplayerHud)
+    {
+#endif
     if (this->flags.flag0 || ((g_Supervisor.cfg.opts >> GCOS_DISPLAY_MINIMUM_GRAPHICS & 1) != 0))
     {
         vm = &this->impl->vms[16];
@@ -1476,6 +1862,9 @@ void Gui::DrawGameScene()
             g_AsciiManager.AddFormatText(&formatTextPos, "%d", g_GameManager.currentPower);
         }
     }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    }
+#endif
     {
         ZunVec3 elemPos(496.0f, 82.0f, 0.0f);
         g_AsciiManager.AddFormatText(&elemPos, "%.9d", g_GameManager.guiScore);
@@ -1483,12 +1872,22 @@ void Gui::DrawGameScene()
         g_AsciiManager.AddFormatText(&elemPos, "%.9d", g_GameManager.highScore);
         if (this->flags.flag3 || ((g_Supervisor.cfg.opts >> 4 & 1) != 0))
         {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            elemPos = ZunVec3(
+                496.0f, compactMultiplayerHud ? multiplayerHudBaseY + 148.0f : 206.0f, 0.0f);
+#else
             elemPos = ZunVec3(496.0f, 206.0f, 0.0f);
+#endif
             g_AsciiManager.AddFormatText(&elemPos, "%d", g_GameManager.grazeInStage);
         }
         if (this->flags.flag4 || ((g_Supervisor.cfg.opts >> 4 & 1) != 0))
         {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            elemPos = ZunVec3(
+                496.0f, compactMultiplayerHud ? multiplayerHudBaseY + 164.0f : 226.0f, 0.0f);
+#else
             elemPos = ZunVec3(496.0f, 226.0f, 0.0f);
+#endif
             g_AsciiManager.AddFormatText(&elemPos, "%d", g_GameManager.pointItemsCollectedInStage);
         }
     }
@@ -1682,6 +2081,14 @@ ZunResult Gui::DeletedCallback(Gui *gui)
         g_AnmManager->ReleaseAnm(ANM_FILE_FACE_CHARA_A);
         g_AnmManager->ReleaseAnm(ANM_FILE_FACE_CHARA_B);
         g_AnmManager->ReleaseAnm(ANM_FILE_FACE_CHARA_C);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        g_AnmManager->ReleaseAnm(ANM_FILE_FACE2_CHARA_A);
+        g_AnmManager->ReleaseAnm(ANM_FILE_FACE2_CHARA_B);
+        g_AnmManager->ReleaseAnm(ANM_FILE_FACE2_CHARA_C);
+        g_AnmManager->ReleaseAnm(ANM_FILE_FACE3_CHARA_A);
+        g_AnmManager->ReleaseAnm(ANM_FILE_FACE3_CHARA_B);
+        g_AnmManager->ReleaseAnm(ANM_FILE_FACE3_CHARA_C);
+#endif
         delete gui->impl;
         gui->impl = NULL;
     }

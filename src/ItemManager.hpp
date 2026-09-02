@@ -36,10 +36,17 @@ struct ItemManager
 {
     ItemManager();
     void SpawnItem(const ZunVec3 *position, ItemType type, i32 state);
+    // Enemy/ECL resource drops use this path. In multiplayer, LIFE and BOMB
+    // are duplicated once per active player; direct SpawnItem callers such as
+    // player transfers and bullet conversions keep their original semantics.
+    void SpawnEnemyDrop(const ZunVec3 *position, ItemType type, i32 state);
     void SyncRenderState();
     void OnUpdate();
     void OnDraw();
     void RemoveAllItems();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    bool CanSpawnItems(i32 count) const;
+#endif
 
     Item items[513];
     i32 nextIndex;
@@ -47,3 +54,8 @@ struct ItemManager
 };
 
 extern ItemManager g_ItemManager;
+
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+i32 GetItemAutoCollectStateForPlayer(u8 playerId);
+i32 GetItemTransferStateForPlayer(u8 playerId);
+#endif

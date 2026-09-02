@@ -11,6 +11,8 @@ option(TH_DEV_TOOLS "Enable developer-only tools (e.g. F5 logic fast-forward). K
 option(TH_WEB_SHARED_FONT "Let the Web host install runtime fonts instead of embedding them" OFF)
 option(TH_ENABLE_THPRAC "Build the archived thprac integration" OFF)
 option(TH_ENABLE_THCRAP "Build the archived thcrap localization integration" OFF)
+option(TH_ENABLE_NETPLAY "Build the isolated TH06 rollback-netplay runtime" OFF)
+option(TH_ENABLE_MULTIPLAYER_GAMEPLAY "Build TH06 multiplayer gameplay without requiring a transport" OFF)
 set(THPRAC_IMGUI_ROOT "${CMAKE_SOURCE_DIR}/../thprac-reallyportable/thprac/src/3rdParties/ImGui" CACHE PATH "Dear ImGui 1.82 source used by the optional desktop thprac integration")
 set(TH_WEB_MUSIC "BASE" CACHE STRING "Bundled Web music payload: BASE, MIDI, WAV, or OGG")
 set_property(CACHE TH_WEB_MUSIC PROPERTY STRINGS BASE MIDI WAV OGG)
@@ -96,6 +98,32 @@ else()
     list(APPEND TH06_SOURCES src/LocalizationStub.cpp)
 endif()
 
+if(TH_ENABLE_NETPLAY OR TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    list(APPEND TH06_SOURCES
+        src/MultiplayerResources.cpp
+        src/multiplayer/GameplaySession.cpp
+        src/netplay/NetplayInput.cpp
+    )
+endif()
+
+# Keep the ordinary TH06 binary free of netplay objects.  As with TH07, the
+# normal and multiplayer runtimes are produced from separate build trees by
+# toggling these options rather than by runtime-disabling a single fat binary.
+if(TH_ENABLE_NETPLAY)
+    list(APPEND TH06_SOURCES
+        src/netplay/NetplayCore.cpp
+        src/netplay/NetplayProtocol.cpp
+        src/netplay/NetplaySession.cpp
+        src/netplay/RollbackJournal.cpp
+        src/netplay/Th06CanonicalHash.cpp
+        src/netplay/Th06RollbackState.cpp
+        src/netplay/Th06LanStageProbe.cpp
+        src/netplay/NetplaySideEffects.cpp
+        src/netplay/BrowserPeerTransport.cpp
+        src/netplay/WebSocketTransport.cpp
+    )
+endif()
+
 # The MIDI backend must match the platform header selected by src/MidiOutput.hpp.
 # Compiling MidiDefault.cpp on Windows would link a MidiDevice with a different
 # layout than the one MidiOutput.cpp instantiates (ODR mismatch, silent no-op MIDI).
@@ -151,6 +179,12 @@ endif()
 if(TH_ENABLE_THCRAP)
     target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_ENABLE_THCRAP)
 endif()
+if(TH_ENABLE_NETPLAY OR TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+endif()
+if(TH_ENABLE_NETPLAY)
+    target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_ENABLE_NETPLAY)
+endif()
 
 set(TH_RUNTIME_EXTENSION_CMAKE "" CACHE FILEPATH "Optional runtime extension CMake integration")
 if(TH_ENABLE_THPRAC AND TH_RUNTIME_EXTENSION_CMAKE)
@@ -177,12 +211,16 @@ if(EMSCRIPTEN)
         -O2
         -sALLOW_MEMORY_GROWTH
         -sMAX_WEBGL_VERSION=2
+        -sMIN_SAFARI_VERSION=140100
+        -sENVIRONMENT=web
         -sINVOKE_RUN=0
         "-sEXPORTED_RUNTIME_METHODS=['callMain']"
         -lidbfs.js
-        --use-preload-cache
         --shell-file "${CMAKE_SOURCE_DIR}/resources/shell.html"
     )
+    if(TH_ENABLE_NETPLAY)
+        target_link_options(th06 PRIVATE -lwebsocket)
+    endif()
     set_property(TARGET th06 APPEND PROPERTY LINK_DEPENDS "${CMAKE_SOURCE_DIR}/resources/shell.html")
     if(NOT TH_EXTERNAL_ASSETS)
         set(TH06_WEB_ASSET_STAGE "${CMAKE_BINARY_DIR}/web-assets-${TH_WEB_MUSIC}")

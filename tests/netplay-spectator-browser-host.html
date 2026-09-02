@@ -1,0 +1,87 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>TH06 netplay spectator browser host</title>
+<iframe id="runtime" style="width:640px;height:480px;border:0"></iframe>
+<pre id="status">boot</pre>
+<script>
+(() => {
+  "use strict";
+  const protocol = "eagler-touhou/1";
+  const game = "th06";
+  const params = new URLSearchParams(location.search);
+  const spectator = params.get("spectator") === "1";
+  const player = Number(params.get("player") || 0);
+  const playerCount = Number(params.get("players") || 2);
+  const relay = String(params.get("relay") || "");
+  const testFrames = Math.max(60, Math.min(12000, Number(params.get("frames") || 600) || 600));
+  const retryContinue = params.get("retry") === "1";
+  const iframe = document.getElementById("runtime");
+  const status = document.getElementById("status");
+  const pending = new Map();
+  let request = 0;
+
+  function send(command, body = {}) {
+    const id = `spectator-${++request}`;
+    return new Promise((resolve, reject) => {
+      pending.set(id, { resolve, reject });
+      iframe.contentWindow.postMessage({ protocol, game, command, request: id, ...body }, location.origin);
+      setTimeout(() => {
+        const waiter = pending.get(id);
+        if (!waiter) return;
+        pending.delete(id);
+        reject(new Error(`${command} timeout`));
+      }, 15000);
+    });
+  }
+
+  addEventListener("message", async event => {
+    if (event.source !== iframe.contentWindow || event.origin !== location.origin) return;
+    const message = event.data || {};
+    if (message.protocol !== protocol || message.game !== game) return;
+    if (message.request && pending.has(message.request)) {
+      const waiter = pending.get(message.request);
+      pending.delete(message.request);
+      if (message.ok) waiter.resolve(message);
+      else waiter.reject(new Error(message.error || "runtime request failed"));
+      return;
+    }
+    if (message.event !== "ready") return;
+    try {
+      await send("configure", {
+        music: "none",
+        resources: [],
+        sharedResources: [{ url: "/assets/msgothic.ttc", path: "/msgothic.ttc" }],
+        thpracCatalog: [],
+        options: {
+          netplayMode: "lan",
+          netplayUrl: relay,
+          netplayPlayer: player,
+          netplayPlayerCount: playerCount,
+          netplayTestFrames: testFrames,
+          netplaySeed: 19005,
+          netplayDifficulty: 1,
+          netplayIceServers: [],
+          netplayLoadouts: [
+            { character: 0, shot: 0 },
+            { character: 1, shot: 1 },
+          ],
+          netplayPhysicalInput: false,
+          netplayScriptedInput: true,
+          netplayRetryContinueCycle: retryContinue,
+          netplaySpectator: spectator,
+          netplaySpectatorId: spectator ? String(params.get("spectatorId") || "") : "",
+          netplaySpectatorCount: 1,
+        },
+      });
+      await send("launch");
+      globalThis.__spectatorSmokeLaunched = true;
+      status.textContent = "launched";
+    } catch (error) {
+      globalThis.__spectatorSmokeFailure = String(error?.message || error);
+      status.textContent = `failed: ${globalThis.__spectatorSmokeFailure}`;
+    }
+  });
+
+  iframe.src = "/build-web-netplay-th06/th06.html?hosted=1&runtimeVariant=multiplayer";
+})();
+</script>

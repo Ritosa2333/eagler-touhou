@@ -50,7 +50,7 @@ if (!mutationCaught)
 // th06_update is hooked at 0x41caac, the RunCalcChain return boundary. The
 // trainer update producer must stay after this tick's game calc consumers;
 // moving it before the chain advances F1-F7/Pause state by one gameplay tick.
-const runCalc = sources.gameWindow.indexOf('const i32 res = g_Chain.RunCalcChain();');
+const runCalc = sources.gameWindow.indexOf('res = g_Chain.RunCalcChain();');
 const trainerUpdate = sources.gameWindow.indexOf('PracticeRuntime::UpdateOverlay();');
 if (runCalc < 0 || trainerUpdate < runCalc)
   throw new Error('th06_update backend-equivalent must remain post-RunCalcChain');

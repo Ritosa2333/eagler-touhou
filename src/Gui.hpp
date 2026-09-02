@@ -177,7 +177,7 @@ struct Gui
     void DebugStartStage1BossDialogue();
 #endif
     void ShowSpellcardBonus(u32 spellcardScore) const;
-    void ShowBombNamePortrait(u32 sprite, const char *bombName);
+    void ShowBombNamePortrait(u32 sprite, const char *bombName, u8 playerId = 0);
     void ShowBonusScore(u32 bonusScore) const;
     void EndEnemySpellcard() const;
     void EndPlayerSpellcard() const;

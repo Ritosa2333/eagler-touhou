@@ -8,6 +8,9 @@
 #include "ZunMath.hpp"
 #include "ZunResult.hpp"
 #include "inttypes.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "Multiplayer.hpp"
+#endif
 
 struct Player;
 
@@ -50,6 +53,14 @@ enum PlayerState
     PLAYER_STATE_SPAWNING,
     PLAYER_STATE_DEAD,
     PLAYER_STATE_INVULNERABLE,
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    PLAYER_STATE_ELIMINATED,
+    // TH06-native co-op terminal state. The original game has no TH07-style
+    // Spirit system; this state exists only in the multiplayer binary so a
+    // zero-stock player can remain visible/non-colliding while a teammate is
+    // still able to donate a life.
+    PLAYER_STATE_REVIVABLE,
+#endif
 };
 
 enum OrbState
@@ -233,7 +244,11 @@ struct Player
     i32 respawnTimer;
     i32 bulletGracePeriod;
     i8 playerState;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    u8 initParam;
+#else
     u8 unk_9e1;
+#endif
     i8 orbState;
     i8 isFocus;
     u8 unk_9e4;
@@ -250,6 +265,14 @@ struct Player
     FireBulletCallback fireBulletCallback;
     FireBulletCallback fireBulletFocusCallback;
     PlayerBombInfo bombInfo;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Multiplayer-only interaction state. Keeping these on the Player makes
+    // rollback capture them with the rest of the authoritative player object.
+    i32 lifeGiveTimer;
+    i32 lifeGiveTargetToken;
+    i32 powerGiveTaps;
+    i32 powerGiveWindow;
+#endif
     ChainElem *chainCalc;
     ChainElem *chainDraw1;
     ChainElem *chainDraw2;
@@ -265,4 +288,20 @@ struct Player
     };
 };
 
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+extern Player g_Players[TH06_MULTI_MAX_PLAYERS];
+extern bool g_PlayerActive[TH06_MULTI_MAX_PLAYERS];
+extern i32 g_teamWipeRetryFrames;
+#define g_Player (g_Players[0])
+Player *GetPlayerById(u8 playerId);
+const Player *GetPlayerByIdConst(u8 playerId);
+bool IsPlayerActive(u8 playerId);
+bool IsPlayerGameplayActive(u8 playerId);
+i32 GetActivePlayerCount();
+bool IsPlayerTerminal(u8 playerId);
+Player *GetClosestActivePlayer(const ZunVec3 *position);
+i32 GetPlayerAnmScript(const Player *player, i32 script);
+void UpdateTeamWipeRetryCountdown();
+#else
 extern Player g_Player;
+#endif

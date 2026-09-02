@@ -15,6 +15,7 @@
 #endif
 
 #include "FileSystem.hpp"
+#include "EaglerOptions.hpp"
 #include "pbg3/Pbg3Archive.hpp"
 #include "utils.hpp"
 
@@ -122,7 +123,7 @@ std::string FileSystem::GetPrefPath(const char *filepath)
     while (filepath[0] == '.' && (filepath[1] == '/' || filepath[1] == '\\'))
         filepath += 2;
 #ifdef __EMSCRIPTEN__
-    return std::string("/savesth06/") + filepath;
+    return std::string(EaglerOptions::MultiplayerStorageEnabled() ? "/savesth06-multiplayer/" : "/savesth06/") + filepath;
 #elif defined(__ANDROID__) || defined(__APPLE__)
     static char *prefPath = SDL_GetPrefPath("TeamShanghaiAlice", "th06");
     return prefPath ? std::string(prefPath) + filepath : std::string(filepath);

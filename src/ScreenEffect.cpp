@@ -68,7 +68,7 @@ ChainCallbackResult ScreenEffect::CalcFadeIn(ScreenEffect *effect)
     return CHAIN_CALLBACK_RESULT_CONTINUE;
 }
 
-void ScreenEffect::DrawSquare(const ZunRect *rect, ZunColor rectColor)
+static void DrawSquareWithBlend(const ZunRect *rect, ZunColor rectColor, BlendMode blendMode)
 {
     VertexDiffuseXyzrhw vertices[4];
 
@@ -97,7 +97,7 @@ void ScreenEffect::DrawSquare(const ZunRect *rect, ZunColor rectColor)
     g_AnmManager->SetDepthMask(false);
     g_AnmManager->SetDepthFunc(DEPTH_FUNC_ALWAYS);
 
-    g_GfxBackend->SetBlendMode(BLEND_INV_SRC_ALPHA);
+    g_GfxBackend->SetBlendMode(blendMode);
 
     g_AnmManager->BackendDrawCall();
 
@@ -110,6 +110,12 @@ void ScreenEffect::DrawSquare(const ZunRect *rect, ZunColor rectColor)
 
     g_AnmManager->SetDepthFunc(DEPTH_FUNC_LEQUAL);
 }
+
+void ScreenEffect::DrawSquare(const ZunRect *rect, ZunColor rectColor)
+{
+    DrawSquareWithBlend(rect, rectColor, BLEND_INV_SRC_ALPHA);
+}
+
 
 ChainCallbackResult ScreenEffect::CalcFadeOut(ScreenEffect *effect)
 {

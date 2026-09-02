@@ -400,7 +400,9 @@ if (!portableController.includes('keyboardState = (u8 *)SDL_GetKeyboardState(NUL
     !portableController.includes('buttons |= EaglerOptions::BrowserKeyboardBits();') ||
     !portableController.includes('buttons |= EaglerOptions::BrowserGamepadDirectionBits();') ||
     !portableController.includes('buttons = Controller::GetControllerInput(buttons);') ||
-    !portableController.includes('return buttons | Touch::GetButtonBits();')) {
+    !portableController.includes('buttons |= Touch::GetButtonBits();') ||
+    !portableController.includes('return Netplay::Input::ResolveLocal(buttons);') ||
+    !portableController.includes('return buttons;')) {
     throw new Error('Portable TH06 SDL input boundary no longer structurally supersedes DirectInput reacquire_input');
 }
 
@@ -709,7 +711,9 @@ if (!originalGameWindow.includes('timeBeginPeriod(1);') ||
     !originalGameWindow.includes('g_LastFrameTime += FRAME_TIME;')) {
     throw new Error('Original TH06 WinMM frame-pacing loop around th06_time_fix drifted');
 }
-if (!portableGameWindow.includes('constexpr f64 targetDt = 1.0 / 60.0;') ||
+if (!portableGameWindow.includes('constexpr f64 baseTargetDt = 1.0 / 60.0;') ||
+    !portableGameWindow.includes('const f64 targetDt = baseTargetDt * Netplay::Th06LanStageProbe::SimulationIntervalScale();') ||
+    !portableGameWindow.includes('constexpr f64 targetDt = baseTargetDt;') ||
     !portableGameWindow.includes('const u64 currentCounter = SDL_GetPerformanceCounter();') ||
     !portableGameWindow.includes('static_cast<f64>(SDL_GetPerformanceFrequency())') ||
     !portableGameWindow.includes('this->accumulator += clampedElapsed;') ||
@@ -742,7 +746,10 @@ if (!portableAnmManager.includes('void AnmManager::QueueThcrapSnapshotIfRequeste
     !portableGameWindow.includes('g_AnmManager->TakeThcrapSnapshotIfRequested();')) {
     throw new Error('Portable TH06 must sample P at 60Hz, defer backbuffer read until present, and save 000..999 640x480 PNG snapshots');
 }
-if (!/const i32 res = g_Chain\.RunCalcChain\(\);[^]*?#ifdef TH_ENABLE_THCRAP\s*g_AnmManager->QueueThcrapSnapshotIfRequested\(\);\s*#endif/m.test(portableGameWindow) ||
+const snapshotCalc = portableGameWindow.indexOf('res = g_Chain.RunCalcChain();');
+const snapshotQueue = portableGameWindow.indexOf('g_AnmManager->QueueThcrapSnapshotIfRequested();', snapshotCalc);
+const snapshotTickReturn = portableGameWindow.indexOf('return res;', snapshotCalc);
+if (snapshotCalc < 0 || snapshotQueue < snapshotCalc || snapshotQueue > snapshotTickReturn ||
     !/g_AnmManager->TakeScreenshotIfRequested\(\);\s*#ifdef TH_ENABLE_THCRAP[^]*?g_AnmManager->TakeThcrapSnapshotIfRequested\(\);\s*#endif[^]*?g_GfxBackend->SwapBuffers\(\);/m.test(portableGameWindow)) {
     throw new Error('TH06 snapshot must sample immediately after fixed-step calc and capture the completed frame immediately before SwapBuffers');
 }

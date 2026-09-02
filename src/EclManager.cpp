@@ -13,6 +13,9 @@
 #include "RuntimeExtension.hpp"
 #include "Stage.hpp"
 #include "utils.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "multiplayer/GameplaySession.hpp"
+#endif
 
 #ifdef TH_DEV_TOOLS
 #include <SDL3/SDL_log.h>
@@ -359,7 +362,12 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 break;
             case ECL_OPCODE_MOVEATPLAYER:
                 local_8 = instruction->args.move.pos;
-                enemy->angle = g_Player.AngleToPlayer(&enemy->position) + local_8.x;
+                enemy->angle =
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                    GetClosestActivePlayer(&enemy->position)->AngleToPlayer(&enemy->position) + local_8.x;
+#else
+                    g_Player.AngleToPlayer(&enemy->position) + local_8.x;
+#endif
                 enemy->speed = EnemyEclInstr::GetVarFloatValue(enemy, local_8.y, NULL);
                 enemy->flags.unk1 = 1;
                 break;
@@ -519,7 +527,12 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 if (enemy->lasers[instruction->args.laserOp.laserIdx] != NULL)
                 {
                     enemy->lasers[instruction->args.laserOp.laserIdx]->angle =
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                        GetClosestActivePlayer(&enemy->lasers[instruction->args.laserOp.laserIdx]->pos)
+                                ->AngleToPlayer(&enemy->lasers[instruction->args.laserOp.laserIdx]->pos) +
+#else
                         g_Player.AngleToPlayer(&enemy->lasers[instruction->args.laserOp.laserIdx]->pos) +
+#endif
                         EnemyEclInstr::GetVarFloatValue(enemy, instruction->args.laserOp.arg1.x, NULL);
                 }
                 break;
@@ -848,13 +861,35 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                                                instruction->args.effectParticle.particleColor);
                 break;
             case ECL_OPCODE_DROPITEMS:
+            {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                bool shouldDropPower = !MultiplayerGameplay::IsMultiplayer() &&
+                                       g_GameManager.currentPower < 128;
+                if (MultiplayerGameplay::IsMultiplayer())
+                {
+                    for (u8 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+                    {
+                        if (IsPlayerGameplayActive(playerId) && GetPlayerPower(playerId) < 128)
+                        {
+                            shouldDropPower = true;
+                            break;
+                        }
+                    }
+                }
+#endif
                 for (local_8c = 0; local_8c < instruction->args.setInt; local_8c++)
                 {
                     local_98 = enemy->position;
 
                     g_Rng.GetRandomF32InBounds(&local_98.x, -72.0f, 72.0f);
                     g_Rng.GetRandomF32InBounds(&local_98.y, -72.0f, 72.0f);
-                    if (g_GameManager.currentPower < 128)
+                    if (
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                        shouldDropPower
+#else
+                        g_GameManager.currentPower < 128
+#endif
+                    )
                     {
                         g_ItemManager.SpawnItem(&local_98, local_8c == 0 ? ITEM_POWER_BIG : ITEM_POWER_SMALL, 0);
                     }
@@ -864,6 +899,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                     }
                 }
                 break;
+            }
             case ECL_OPCODE_ANMFLAGROTATION:
                 enemy->flags.unk13 = instruction->args.setInt;
                 break;
@@ -885,7 +921,7 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                     EnemyEclInstr::GetVarValue(enemy, instruction->args.timeSet.timeToSet, NULL));
                 break;
             case ECL_OPCODE_DROPITEMID:
-                g_ItemManager.SpawnItem(&enemy->position, instruction->args.dropItem.itemId, 0);
+                g_ItemManager.SpawnEnemyDrop(&enemy->position, (ItemType)instruction->args.dropItem.itemId, 0);
                 break;
             case ECL_OPCODE_STDUNPAUSE:
                 g_Stage.unpauseFlag = 1;

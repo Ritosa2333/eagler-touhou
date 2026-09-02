@@ -10,6 +10,7 @@
 #include "Player.hpp"
 #include "PracticeRuntime.hpp"
 #include "RuntimeExtension.hpp"
+#include "ReplayExtension.hpp"
 #include "ReplayManager.hpp"
 #include "ResultScreen.hpp"
 #include "Rng.hpp"
@@ -19,6 +20,9 @@
 #include "Supervisor.hpp"
 #include "Touch.hpp"
 #include "utils.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "multiplayer/GameplaySession.hpp"
+#endif
 
 // #include <d3d8types.h>
 // #include <d3dx8math.h>
@@ -163,6 +167,9 @@ ChainCallbackResult GameManager::OnUpdate(GameManager *gameManager)
             g_Supervisor.curState = SUPERVISOR_STATE_MAINMENU;
         }
     }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    UpdateTeamWipeRetryCountdown();
+#endif
     if (!gameManager->isInRetryMenu && !gameManager->isInGameMenu && !gameManager->demoMode &&
         WAS_PRESSED(TH_BUTTON_MENU))
     {
@@ -227,6 +234,26 @@ ChainCallbackResult GameManager::OnUpdate(GameManager *gameManager)
         }
         if (gameManager->extraLives >= 0 && g_ExtraLivesScores[gameManager->extraLives] <= gameManager->guiScore)
         {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            if (MultiplayerGameplay::IsMultiplayer())
+            {
+                bool awarded = false;
+                for (u8 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+                {
+                    if (!IsPlayerActive(playerId) ||
+                        MultiplayerGameplay::IsPlayerPermanentlyDeparted(playerId))
+                        continue;
+                    if (GetPlayerLives(playerId) < MAX_LIVES)
+                    {
+                        AddPlayerLives(playerId, 1);
+                        awarded = true;
+                    }
+                }
+                if (awarded)
+                    g_SoundPlayer.PlaySoundByIdx(SOUND_1UP);
+            }
+            else
+#endif
             if (gameManager->livesRemaining < MAX_LIVES)
             {
                 gameManager->livesRemaining++;
@@ -303,6 +330,16 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
 
     Touch::ResetRunUsage();
     PracticeRuntime::RefreshFromHost();
+    if (g_Supervisor.curState != SUPERVISOR_STATE_GAMEMANAGER_REINIT)
+    {
+        // A fresh run owns a fresh replay/touch stream. Practice restart can
+        // reuse the existing ReplayManager, so relying only on its AddedCallback
+        // leaves the previous run's gesture lane and finger ids alive.
+        Touch::CancelTouches();
+        Touch::ResetReplayRecordingState();
+        Touch::ResetReplayTouch();
+        ReplayExtension::ResetRecording();
+    }
     // Normal Replay-menu playback already executed THGuiRep::State(1/2/3)
     // before the original isInReplay write. Do not parse the file a second
     // time here and overwrite that candidate/state-machine semantics. Keep a
@@ -446,6 +483,44 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
     }
     g_Rng.generationCount = 0;
     mgr->randomSeed = g_Rng.seed;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (MultiplayerGameplay::IsMultiplayer() &&
+        g_Supervisor.curState != SUPERVISOR_STATE_GAMEMANAGER_REINIT)
+    {
+        // P1's vanilla fields are authoritative after all start/practice
+        // setup above. Seed guest sidecars exactly once per fresh run; stage
+        // reinit must preserve the resources each participant earned/lost.
+        ResetMultiplayerPlayerResources();
+        ResetPlayerContributionStats();
+        if (g_GameManager.isInReplay == 1 && ReplayExtension::MultiplayerPlaybackActive())
+        {
+            // Vanilla StageReplayData restores only P1. New MP EAGX files append
+            // a per-stage snapshot so direct Stage2+ playback can restore each
+            // guest's divergent lives/bombs/power instead of cloning P1. Old v1
+            // MP files simply lack this optional block and retain the historical
+            // Stage1-compatible fallback above.
+            for (u8 playerId = 0; playerId < MultiplayerGameplay::GetPlayerCount(); ++playerId)
+            {
+                ReplayExtension::MultiplayerPlayerResourceSnapshot resources;
+                if (!ReplayExtension::GetMultiplayerPlaybackStageResources(
+                        mgr->currentStage - 1, playerId, &resources))
+                    continue;
+                SetPlayerLives(playerId, resources.lives);
+                SetPlayerBombs(playerId, resources.bombs);
+                SetPlayerPower(playerId, resources.power);
+                ReplayExtension::MultiplayerContributionSnapshot contributions;
+                if (ReplayExtension::GetMultiplayerPlaybackStageContributions(
+                        mgr->currentStage - 1, playerId, &contributions))
+                {
+                    g_MultiplayerContributionStats[playerId].enemiesDefeated =
+                        contributions.enemiesDefeated;
+                    g_MultiplayerContributionStats[playerId].damageDealt =
+                        contributions.damageDealt;
+                }
+            }
+        }
+    }
+#endif
     if (Stage::RegisterChain(mgr->currentStage) != ZUN_SUCCESS)
     {
         g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_STAGE);
@@ -457,6 +532,21 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
         g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_PLAYER);
         return ZUN_ERROR;
     }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (MultiplayerGameplay::IsMultiplayer())
+    {
+        for (u8 playerId = 1; playerId < MultiplayerGameplay::GetPlayerCount(); ++playerId)
+        {
+            if (!MultiplayerGameplay::IsPlayerActive(playerId))
+                continue;
+            if (Player::RegisterChain(playerId) != ZUN_SUCCESS)
+            {
+                g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_PLAYER);
+                return ZUN_ERROR;
+            }
+        }
+    }
+#endif
     if (BulletManager::RegisterChain("data/etama.anm") != ZUN_SUCCESS)
     {
         g_GameErrorContext.Log(TH_ERR_GAMEMANAGER_FAILED_TO_INITIALIZE_BULLETMANAGER);

@@ -4,6 +4,7 @@
 // #include <windows.h>
 
 #include "MainMenu.hpp"
+#include "EaglerOptions.hpp"
 
 #include "AnmManager.hpp"
 #include "AsciiManager.hpp"
@@ -17,6 +18,9 @@
 #include "ReplayManager.hpp"
 #include "PracticeRuntime.hpp"
 #include "ResultScreen.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "multiplayer/GameplaySession.hpp"
+#endif
 #include "ScreenEffect.hpp"
 #include "SoundPlayer.hpp"
 #include "Supervisor.hpp"
@@ -29,6 +33,7 @@
 #include <cctype>
 #include <cstring>
 #include <filesystem>
+
 #include <string>
 #include <vector>
 
@@ -1537,6 +1542,8 @@ i32 MainMenu::ReplayHandling()
                 }
                 this->currentReplay->header =
                     (ReplayHeader *)FileSystem::OpenPath(this->replayFilePaths[this->chosenReplay], 1);
+                ReplayExtension::LoadPlayback(reinterpret_cast<const u8 *>(this->currentReplay->header),
+                                              g_LastFileSize);
                 if (ReplayManager::ValidateReplayData(this->currentReplay->header, g_LastFileSize) != ZUN_SUCCESS)
                 {
                     std::free(this->currentReplay->header);
@@ -1623,6 +1630,42 @@ i32 MainMenu::ReplayHandling()
             g_GameManager.difficulty = (Difficulty)this->currentReplay->header->difficulty;
             g_GameManager.character = this->currentReplay->header->shottypeChara / 2;
             g_GameManager.shotType = this->currentReplay->header->shottypeChara % 2;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            ReplayExtension::MultiplayerReplayConfig replayConfig;
+            if (ReplayExtension::GetMultiplayerPlaybackConfig(&replayConfig))
+            {
+                if (replayConfig.gameplayAbi != TH06_MULTI_GAMEPLAY_ABI)
+                {
+                    g_GameErrorContext.Fatal("Multiplayer replay gameplay ABI is incompatible\n");
+                    return CHAIN_CALLBACK_RESULT_CONTINUE_AND_REMOVE_JOB;
+                }
+                MultiplayerGameplay::SessionState session;
+                session.playerCount = replayConfig.playerCount;
+                session.localPlayer = replayConfig.localPlayer;
+                session.showStagePlayerNames = true;
+                session.showContributionStats = replayConfig.showContributionStats;
+                for (u8 playerId = 0; playerId < replayConfig.playerCount; ++playerId)
+                {
+                    session.players[playerId].active = true;
+                    session.players[playerId].character = replayConfig.characters[playerId];
+                    session.players[playerId].shot = replayConfig.shots[playerId];
+                }
+                if (!MultiplayerGameplay::Configure(session))
+                {
+                    g_GameErrorContext.Fatal("Multiplayer replay configuration is invalid\n");
+                    return CHAIN_CALLBACK_RESULT_CONTINUE_AND_REMOVE_JOB;
+                }
+                g_GameManager.difficulty = static_cast<Difficulty>(replayConfig.difficulty);
+                g_GameManager.character = replayConfig.characters[0];
+                g_GameManager.shotType = replayConfig.shots[0];
+            }
+            else
+            {
+                MultiplayerGameplay::ResetToSinglePlayer(
+                    static_cast<u8>(g_GameManager.character),
+                    static_cast<u8>(g_GameManager.shotType));
+            }
+#endif
             cur = 0;
             while (this->currentReplay->stageReplayData[cur] == NULL)
             {
@@ -2237,6 +2280,17 @@ ZunResult MainMenu::LoadTitleAnm(MainMenu *menu)
             if (g_AnmManager->PreloadTransitionAnm(anm.idx, anm.path, anm.offset) != ZUN_SUCCESS)
                 return ZUN_ERROR;
         }
+        static const char *const kPrewarmSurfaces[] = {
+            "data/title/title00.jpg",
+            "data/title/select00.jpg",
+            "data/result/music.jpg",
+            "data/result/result.jpg",
+        };
+        for (const char *surface : kPrewarmSurfaces)
+        {
+            if (g_AnmManager->PreloadTransitionSurface(surface) != ZUN_SUCCESS)
+                return ZUN_ERROR;
+        }
         s_WebTransitionAnmsPrewarmed = true;
     }
 #endif
@@ -2359,6 +2413,11 @@ ZunResult MainMenu::LoadReplayMenu(MainMenu *menu)
     AnmVm *vm;
     i32 fileIdx;
 
+    // Replay Viewer can enter this state before BeginStartup/LoadTitleAnm.
+    // Load the same title archive explicitly instead of relying on the normal
+    // title-menu path to have done so earlier.
+    g_Supervisor.LoadPbg3(3, TH_TL_DAT_FILE);
+
     for (fileIdx = ANM_FILE_TITLE01; fileIdx <= ANM_FILE_TITLE04; fileIdx++)
     {
         g_AnmManager->ReleaseAnm(fileIdx);
@@ -2366,11 +2425,13 @@ ZunResult MainMenu::LoadReplayMenu(MainMenu *menu)
 
     if (g_AnmManager->LoadSurface(0, "data/title/select00.jpg") != ZUN_SUCCESS)
     {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "th06: Replay menu surface load failed");
         return ZUN_ERROR;
     }
 
     if (g_AnmManager->LoadAnm(ANM_FILE_REPLAY, "data/replay00.anm", ANM_OFFSET_REPLAY) != ZUN_SUCCESS)
     {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "th06: Replay menu ANM load failed");
         return ZUN_ERROR;
     }
 
@@ -2402,7 +2463,7 @@ ZunResult MainMenu::RegisterChain(u32 isDemo)
 
     std::memset(menu, 0, sizeof(MainMenu));
     g_GameManager.isInGameMenu = 0;
-    menu->gameState = isDemo ? STATE_REPLAY_LOAD : STATE_STARTUP;
+    menu->gameState = (isDemo || EaglerOptions::ReplayViewerEnabled()) ? STATE_REPLAY_LOAD : STATE_STARTUP;
     g_Supervisor.framerateMultiplier = 0.0;
     menu->chainCalc = g_Chain.CreateElem((ChainCallback)MainMenu::OnUpdate);
     menu->chainCalc->arg = menu;

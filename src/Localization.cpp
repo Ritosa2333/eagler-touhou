@@ -520,6 +520,15 @@ bool g_BossTitleImageReady = false;
 bool g_BossNameImageAttempted = false;
 bool g_BossNameImageReady = false;
 
+// Runtime-only localization textures must never share ANM file/texture slots.
+// TH06MP owns 47+ for guest player and portrait resources, while the original
+// game only uses low numbered ANM texture slots. Keep translated image atlases
+// immediately below the top eight entries reserved for multiplayer ANMs.
+constexpr i32 TEXTURE_SLOT_LOCALIZED_STAGE = 252;
+constexpr i32 TEXTURE_SLOT_LOCALIZED_MUSIC = 253;
+constexpr i32 TEXTURE_SLOT_LOCALIZED_BOSS_TITLE = 254;
+constexpr i32 TEXTURE_SLOT_LOCALIZED_BOSS_NAME = 255;
+
 bool LoadTextImage(i32 textureSlot, const char *path, bool &attempted, bool &ready)
 {
     if (!attempted)
@@ -867,8 +876,10 @@ bool Localization::ApplyStageTitleImage(AnmVm *vm, std::uint32_t stage)
     // In base_tsa slot 0x700 is a priority chain: ti_sttitle.png is the
     // 384x16 fallback and ti_stlogo.png is the later/higher-priority 384x48
     // replacement. The Russian pack currently ships the latter.
-    if (LoadTextImage(47, "ti_stlogo.png", g_StageLogoImageAttempted, g_StageLogoImageReady) &&
-        ApplyTextImage(vm, 0x7fe, 47, static_cast<i32>(stage - 1), 384, 48))
+    if (LoadTextImage(TEXTURE_SLOT_LOCALIZED_STAGE, "ti_stlogo.png", g_StageLogoImageAttempted,
+                      g_StageLogoImageReady) &&
+        ApplyTextImage(vm, 0x7fe, TEXTURE_SLOT_LOCALIZED_STAGE,
+                       static_cast<i32>(stage - 1), 384, 48))
     {
         g_StageLogoImageActive = true;
 #ifdef TH_DEV_TOOLS
@@ -879,11 +890,13 @@ bool Localization::ApplyStageTitleImage(AnmVm *vm, std::uint32_t stage)
     }
 
     g_StageLogoImageActive = false;
-    if (!LoadTextImage(47, "ti_sttitle.png", g_StageImageAttempted, g_StageImageReady))
+    if (!LoadTextImage(TEXTURE_SLOT_LOCALIZED_STAGE, "ti_sttitle.png", g_StageImageAttempted,
+                       g_StageImageReady))
         return false;
     // Keep the original script's sprite table untouched: its source texture is
     // shared by other gameplay VMs. Use private slots for the translated slice.
-    const bool applied = ApplyTextImage(vm, 0x7fe, 47, static_cast<i32>(stage - 1), 384, 16);
+    const bool applied = ApplyTextImage(vm, 0x7fe, TEXTURE_SLOT_LOCALIZED_STAGE,
+                                        static_cast<i32>(stage - 1), 384, 16);
 #ifdef TH_DEV_TOOLS
     if (applied)
         SDL_Log("TH06 thcrap stage textimage: stage=%u source=ti_sttitle.png row=%u size=384x16", stage,
@@ -900,10 +913,11 @@ bool Localization::StageLogoImageActive()
 bool Localization::ApplyMusicTitleImage(AnmVm *vm, std::uint32_t stage, std::uint32_t cue)
 {
     if (!Active() || stage < 1 || stage > 7 || cue > 1 ||
-        !LoadTextImage(48, "ti_bgm.png", g_MusicImageAttempted, g_MusicImageReady))
+        !LoadTextImage(TEXTURE_SLOT_LOCALIZED_MUSIC, "ti_bgm.png", g_MusicImageAttempted,
+                       g_MusicImageReady))
         return false;
     const i32 row = static_cast<i32>((stage - 1) * 2 + cue);
-    if (!ApplyTextImage(vm, 0x7ff, 48, row, 384, 32))
+    if (!ApplyTextImage(vm, 0x7ff, TEXTURE_SLOT_LOCALIZED_MUSIC, row, 384, 32))
         return false;
     g_AnmManager->SetAndExecuteScript(vm, reinterpret_cast<const AnmRawInstr *>(kMusicTitleScript));
     // The script's initial SetActiveSprite deliberately rebuilds the original
@@ -936,13 +950,15 @@ bool ApplyBossImage(AnmVm *vm, std::uint32_t stage, i32 textureSlot, const char 
 
 bool Localization::ApplyBossTitleImage(AnmVm *vm, std::uint32_t stage)
 {
-    return ApplyBossImage(vm, stage, 49, "ti_bosstitle.png", g_BossTitleImageAttempted,
+    return ApplyBossImage(vm, stage, TEXTURE_SLOT_LOCALIZED_BOSS_TITLE, "ti_bosstitle.png",
+                          g_BossTitleImageAttempted,
                           g_BossTitleImageReady, 0x7fc);
 }
 
 bool Localization::ApplyBossNameImage(AnmVm *vm, std::uint32_t stage)
 {
-    return ApplyBossImage(vm, stage, 50, "ti_bossname.png", g_BossNameImageAttempted,
+    return ApplyBossImage(vm, stage, TEXTURE_SLOT_LOCALIZED_BOSS_NAME, "ti_bossname.png",
+                          g_BossNameImageAttempted,
                           g_BossNameImageReady, 0x7fd);
 }
 

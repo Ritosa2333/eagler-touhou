@@ -997,12 +997,11 @@ void Touch::ApplyReplayTouchEvent(i32 fingerId, f32 x, f32 y, u32 action, u32 ro
         return;
     }
 
-    ReplayPlaybackFingerSlot *slot = AcquireReplayPlaybackFinger(fingerId);
-    if (!slot)
-        return;
-
     if (action == ReplayExtension::TOUCH_ACTION_DOWN)
     {
+        ReplayPlaybackFingerSlot *slot = AcquireReplayPlaybackFinger(fingerId);
+        if (!slot)
+            return;
         slot->active = true;
         slot->releasedThisFrame = false;
         slot->x = x;
@@ -1014,6 +1013,12 @@ void Touch::ApplyReplayTouchEvent(i32 fingerId, f32 x, f32 y, u32 action, u32 ro
 
     if (action == ReplayExtension::TOUCH_ACTION_MOTION)
     {
+        // Match SDL's touch lifecycle: motion cannot create a finger.  This
+        // also makes replay playback robust against stale/malformed gesture
+        // streams left at a Practice restart boundary.
+        ReplayPlaybackFingerSlot *slot = FindReplayPlaybackFinger(fingerId);
+        if (!slot || !slot->active)
+            return;
         slot->active = true;
         slot->releasedThisFrame = false;
         slot->x = x;
@@ -1025,6 +1030,9 @@ void Touch::ApplyReplayTouchEvent(i32 fingerId, f32 x, f32 y, u32 action, u32 ro
 
     if (action == ReplayExtension::TOUCH_ACTION_UP)
     {
+        ReplayPlaybackFingerSlot *slot = FindReplayPlaybackFinger(fingerId);
+        if (!slot || !slot->active)
+            return;
         slot->x = x;
         slot->y = y;
         slot->role = role;
@@ -1056,10 +1064,16 @@ void Touch::ResetReplayTouch()
         slot = {};
 }
 
+void Touch::ResetReplayRecordingState()
+{
+    ResetReplayRecordFingerIds();
+}
+
 #ifdef TH_DEV_TOOLS
 bool Touch::DebugStateSelfTest()
 {
     Touch::CancelTouches();
+    Touch::ResetReplayTouch();
 
     g_MoveFinger = {true, 101, 10.0f, 20.0f, 0, 0};
     g_FocusFinger = {true, 202, 30.0f, 40.0f, 0, 0};
@@ -1097,10 +1111,36 @@ bool Touch::DebugStateSelfTest()
         ReleaseMenuGestureFinger(501) && !g_MenuGesture.active &&
         g_MenuGesture.pendingButton == TH_BUTTON_SELECTMENU;
 
+    // Replay touch visualization owns a separate finger table. A Practice
+    // restart must clear both fingers atomically, and stale MOTION/UP events
+    // from the old attempt must not recreate either cross without a new DOWN.
+    Touch::ApplyReplayTouchEvent(1, 0.25f, 0.30f,
+                                 ReplayExtension::TOUCH_ACTION_DOWN,
+                                 ReplayExtension::TOUCH_ROLE_MOVE, 0);
+    Touch::ApplyReplayTouchEvent(2, 0.70f, 0.65f,
+                                 ReplayExtension::TOUCH_ACTION_DOWN,
+                                 ReplayExtension::TOUCH_ROLE_FOCUS, 0);
+    ReplayTouchPoint replayPoints[4] = {};
+    const bool twoReplayFingersVisible =
+        Touch::GetReplayTouchPoints(replayPoints, 4) == 2;
+    Touch::ResetReplayTouch();
+    const bool replayRestartClearsBoth =
+        Touch::GetReplayTouchPoints(replayPoints, 4) == 0;
+    Touch::ApplyReplayTouchEvent(1, 0.30f, 0.35f,
+                                 ReplayExtension::TOUCH_ACTION_MOTION,
+                                 ReplayExtension::TOUCH_ROLE_MOVE, 0);
+    Touch::ApplyReplayTouchEvent(2, 0.70f, 0.65f,
+                                 ReplayExtension::TOUCH_ACTION_UP,
+                                 ReplayExtension::TOUCH_ROLE_FOCUS, 0);
+    const bool staleReplayEventsStayCleared =
+        Touch::GetReplayTouchPoints(replayPoints, 4) == 0;
+
     Touch::CancelTouches();
+    Touch::ResetReplayTouch();
     return focusReleasedOnly && moveReleasedAndDeltaCleared && dialogueReleased &&
            secondaryEndedTwoFingerMenuGesture && unrelatedFingerDoesNotEndSingleFingerGesture &&
-           primaryEndsSingleFingerGesture;
+           primaryEndsSingleFingerGesture && twoReplayFingersVisible &&
+           replayRestartClearsBoth && staleReplayEventsStayCleared;
 }
 #endif
 

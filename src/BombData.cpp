@@ -22,6 +22,16 @@ static ZunVec3 GetBombDrawPosition(const PlayerBombInfo &bomb, i32 index)
     return bomb.prevBombRegionPositions[index].Lerp(bomb.bombRegionPositions[index], g_RenderAlpha);
 }
 
+static u8 GetBombPlayerId(const Player *player)
+{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    return player ? player->initParam : 0;
+#else
+    (void)player;
+    return 0;
+#endif
+}
+
 void BombData::BombReimuACalc(Player *player)
 {
     i32 i;
@@ -41,7 +51,8 @@ void BombData::BombReimuACalc(Player *player)
     {
         g_Gui.ShowBombNamePortrait(
             ANM_SCRIPT_FACE_BOMB_PORTRAIT,
-            Localization::StringById("th06 Bomb Reimu A", TH_REIMU_A_BOMB_NAME));
+            Localization::StringById("th06 Bomb Reimu A", TH_REIMU_A_BOMB_NAME),
+            GetBombPlayerId(player));
         player->bombInfo.duration = 300;
         player->invulnerabilityTimer.SetCurrent(360);
 
@@ -79,7 +90,14 @@ void BombData::BombReimuACalc(Player *player)
 
             for (bombSprite = &player->bombInfo.sprites[0][i * 4], bombIdx = 0; bombIdx < 4; bombIdx++, bombSprite++)
             {
-                g_AnmManager->ExecuteAnmIdx(bombSprite, ANM_SCRIPT_PLAYER_REIMU_A_BOMB_ARRAY + bombIdx);
+                g_AnmManager->ExecuteAnmIdx(
+                    bombSprite,
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                    GetPlayerAnmScript(player, ANM_SCRIPT_PLAYER_REIMU_A_BOMB_ARRAY + bombIdx)
+#else
+                    ANM_SCRIPT_PLAYER_REIMU_A_BOMB_ARRAY + bombIdx
+#endif
+                );
             }
             g_SoundPlayer.PlaySoundByIdx(SOUND_BOMB_REIMU_A);
         }
@@ -296,14 +314,22 @@ void BombData::BombReimuBCalc(Player *player)
         g_ItemManager.RemoveAllItems();
         g_Gui.ShowBombNamePortrait(
             ANM_SCRIPT_FACE_ENEMY_SPELLCARD_PORTRAIT,
-            Localization::StringById("th06 Bomb Reimu B", TH_REIMU_B_BOMB_NAME));
+            Localization::StringById("th06 Bomb Reimu B", TH_REIMU_B_BOMB_NAME),
+            GetBombPlayerId(player));
         player->bombInfo.duration = 140;
         player->invulnerabilityTimer.SetCurrent(200);
         bombSprite = player->bombInfo.sprites[0];
 
         for (i = 0; i < 4; i++, bombSprite++)
         {
-            g_AnmManager->ExecuteAnmIdx(bombSprite, ANM_SCRIPT_PLAYER_REIMU_B_BOMB_ARRAY + i);
+            g_AnmManager->ExecuteAnmIdx(
+                bombSprite,
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                GetPlayerAnmScript(player, ANM_SCRIPT_PLAYER_REIMU_B_BOMB_ARRAY + i)
+#else
+                ANM_SCRIPT_PLAYER_REIMU_B_BOMB_ARRAY + i
+#endif
+            );
         }
 
         g_SoundPlayer.PlaySoundByIdx(SOUND_BOMB_REIMARI);
@@ -405,14 +431,22 @@ void BombData::BombMarisaACalc(Player *player)
         g_ItemManager.RemoveAllItems();
         g_Gui.ShowBombNamePortrait(
             ANM_SCRIPT_FACE_ENEMY_SPELLCARD_PORTRAIT,
-            Localization::StringById("th06 Bomb Marisa A", TH_MARISA_A_BOMB_NAME));
+            Localization::StringById("th06 Bomb Marisa A", TH_MARISA_A_BOMB_NAME),
+            GetBombPlayerId(player));
         player->bombInfo.duration = 250;
         player->invulnerabilityTimer.SetCurrent(300);
 
         starSprite = player->bombInfo.sprites[0];
         for (i = 0; i < ARRAY_SIZE_SIGNED(player->bombInfo.sprites); i++, starSprite++)
         {
-            g_AnmManager->ExecuteAnmIdx(starSprite, ANM_SCRIPT_PLAYER_MARISA_A_BLUE_STAR + i % 3);
+            g_AnmManager->ExecuteAnmIdx(
+                starSprite,
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                GetPlayerAnmScript(player, ANM_SCRIPT_PLAYER_MARISA_A_BLUE_STAR + i % 3)
+#else
+                ANM_SCRIPT_PLAYER_MARISA_A_BLUE_STAR + i % 3
+#endif
+            );
             player->bombInfo.bombRegionPositions[i] = player->positionCenter;
             player->bombInfo.prevBombRegionPositions[i] = player->bombInfo.bombRegionPositions[i];
 
@@ -538,13 +572,21 @@ void BombData::BombMarisaBCalc(Player *player)
         g_ItemManager.RemoveAllItems();
         g_Gui.ShowBombNamePortrait(
             ANM_SCRIPT_FACE_BOMB_PORTRAIT,
-            Localization::StringById("th06 Bomb Marisa B", TH_MARISA_B_BOMB_NAME));
+            Localization::StringById("th06 Bomb Marisa B", TH_MARISA_B_BOMB_NAME),
+            GetBombPlayerId(player));
         player->bombInfo.duration = 300;
         player->invulnerabilityTimer.SetCurrent(360);
         bombSprite = player->bombInfo.sprites[0];
         for (i = 0; i < 4; i++, bombSprite++)
         {
-            g_AnmManager->ExecuteAnmIdx(bombSprite, ANM_SCRIPT_PLAYER_MARISA_B_MASTER_SPARK + i);
+            g_AnmManager->ExecuteAnmIdx(
+                bombSprite,
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                GetPlayerAnmScript(player, ANM_SCRIPT_PLAYER_MARISA_B_MASTER_SPARK + i)
+#else
+                ANM_SCRIPT_PLAYER_MARISA_B_MASTER_SPARK + i
+#endif
+            );
             player->bombInfo.bombRegionPositions[i] = player->positionCenter;
             player->bombInfo.prevBombRegionPositions[i] = player->bombInfo.bombRegionPositions[i];
         }

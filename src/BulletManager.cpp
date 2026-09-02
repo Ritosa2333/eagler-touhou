@@ -14,6 +14,9 @@
 #include "ZunColor.hpp"
 #include "ZunMath.hpp"
 #include "utils.hpp"
+#ifdef TH_ENABLE_NETPLAY
+#include "netplay/Th06RollbackState.hpp"
+#endif
 
 BulletManager g_BulletManager;
 static ChainElem g_BulletManagerCalcChain;
@@ -113,6 +116,11 @@ u32 BulletManager::SpawnSingleBullet(const EnemyBulletShooter *bulletProps, i32 
     {
         return 1;
     }
+
+#ifdef TH_ENABLE_NETPLAY
+    if (!Netplay::Th06Rollback::TouchBullet(bullet))
+        return 1;
+#endif
 
     bulletAngle = 0.0f;
     bulletSpeed = bulletProps->speed1 - (bulletProps->speed1 - bulletProps->speed2) * bulletIdx2 / bulletProps->count2;
@@ -540,7 +548,11 @@ ZunResult BulletManager::SpawnBulletPattern(const EnemyBulletShooter *bulletProp
     // this function. Keep the same one-shot boundary before any pattern work.
     PracticeRuntime::ApplyPendingBossSectionSfxFix();
 
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    angle = GetClosestActivePlayer(&bulletProps->position)->AngleToPlayer(&bulletProps->position);
+#else
     angle = g_Player.AngleToPlayer(&bulletProps->position);
+#endif
     for (idx1 = 0; idx1 < bulletProps->count2; idx1++)
     {
         for (idx2 = 0; idx2 < bulletProps->count1; idx2++)
@@ -573,6 +585,11 @@ Laser *BulletManager::SpawnLaserPattern(const EnemyLaserShooter *bulletProps)
             continue;
         }
 
+#ifdef TH_ENABLE_NETPLAY
+        if (!Netplay::Th06Rollback::TouchLaser(laser))
+            return nullptr;
+#endif
+
         g_AnmManager->SetAndExecuteScriptIdx(&laser->vm0, bulletProps->sprite + ANM_SCRIPT_BULLET3_LASER);
         g_AnmManager->SetActiveSprite(&laser->vm0, laser->vm0.activeSpriteIndex + bulletProps->spriteOffset);
 
@@ -588,7 +605,11 @@ Laser *BulletManager::SpawnLaserPattern(const EnemyLaserShooter *bulletProps)
 
         if (bulletProps->type == 0)
         {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            laser->angle += GetClosestActivePlayer(&bulletProps->position)->AngleToPlayer(&bulletProps->position);
+#else
             laser->angle += g_Player.AngleToPlayer(&bulletProps->position);
+#endif
         }
         laser->prevAngle = laser->angle;
 
@@ -854,7 +875,12 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
                             curBullet->exFlags &= ~0x80;
                         }
 
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                        curBullet->angle = GetClosestActivePlayer(&curBullet->pos)->AngleToPlayer(&curBullet->pos) +
+                                           curBullet->dirChangeRotation;
+#else
                         curBullet->angle = g_Player.AngleToPlayer(&curBullet->pos) + curBullet->dirChangeRotation;
+#endif
                         curBullet->speed = curBullet->dirChangeSpeed;
                         bulletSpeed = curBullet->speed;
                     }
@@ -956,7 +982,17 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
 
             if (curBullet->isGrazed == 0)
             {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                grazeState = 0;
+                for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS && grazeState == 0; ++playerId)
+                {
+                    if (!IsPlayerGameplayActive(static_cast<u8>(playerId)))
+                        continue;
+                    grazeState = g_Players[playerId].CheckGraze(&curBullet->pos, &curBullet->sprites.grazeSize);
+                }
+#else
                 grazeState = g_Player.CheckGraze(&curBullet->pos, &curBullet->sprites.grazeSize);
+#endif
 
                 if (grazeState == 1)
                 {
@@ -972,7 +1008,17 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
             else if (curBullet->isGrazed == 1)
             {
             bulletGrazed:
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                grazeState = 0;
+                for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS && grazeState == 0; ++playerId)
+                {
+                    if (!IsPlayerGameplayActive(static_cast<u8>(playerId)))
+                        continue;
+                    grazeState = g_Players[playerId].CalcKillBoxCollision(&curBullet->pos, &curBullet->sprites.grazeSize);
+                }
+#else
                 grazeState = g_Player.CalcKillBoxCollision(&curBullet->pos, &curBullet->sprites.grazeSize);
+#endif
                 if (grazeState != 0)
                 {
                     curBullet->state = 5;
@@ -1058,8 +1104,17 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
 
             if (curLaser->timer.current >= curLaser->grazeDelay)
             {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+                {
+                    if (IsPlayerGameplayActive(static_cast<u8>(playerId)))
+                        g_Players[playerId].CalcLaserHitbox(&laserCenter, &laserSize, &curLaser->pos, curLaser->angle,
+                                                           curLaser->timer.AsFrames() % 12 == 0);
+                }
+#else
                 g_Player.CalcLaserHitbox(&laserCenter, &laserSize, &curLaser->pos, curLaser->angle,
                                          curLaser->timer.AsFrames() % 12 == 0);
+#endif
             }
 
             if (curLaser->timer.current < curLaser->startTime)
@@ -1070,8 +1125,17 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
             curLaser->timer.InitializeForPopup();
             curLaser->state++;
         case 1:
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+            {
+                if (IsPlayerGameplayActive(static_cast<u8>(playerId)))
+                    g_Players[playerId].CalcLaserHitbox(&laserCenter, &laserSize, &curLaser->pos, curLaser->angle,
+                                                       curLaser->timer.AsFrames() % 12 == 0);
+            }
+#else
             g_Player.CalcLaserHitbox(&laserCenter, &laserSize, &curLaser->pos, curLaser->angle,
                                      curLaser->timer.AsFrames() % 12 == 0);
+#endif
 
             if (curLaser->timer.current < curLaser->duration)
             {
@@ -1112,8 +1176,17 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
 
             if (curLaser->timer.current < curLaser->grazeInterval)
             {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+                {
+                    if (IsPlayerGameplayActive(static_cast<u8>(playerId)))
+                        g_Players[playerId].CalcLaserHitbox(&laserCenter, &laserSize, &curLaser->pos, curLaser->angle,
+                                                           curLaser->timer.AsFrames() % 12 == 0);
+                }
+#else
                 g_Player.CalcLaserHitbox(&laserCenter, &laserSize, &curLaser->pos, curLaser->angle,
                                          curLaser->timer.AsFrames() % 12 == 0);
+#endif
             }
 
             if (curLaser->timer.current < curLaser->endTime)

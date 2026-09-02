@@ -11,6 +11,9 @@
 #include "PracticeRuntime.hpp"
 #include "Rng.hpp"
 #include "utils.hpp"
+#ifdef TH_ENABLE_NETPLAY
+#include "netplay/Th06RollbackState.hpp"
+#endif
 
 #define ITEM_SPAWNS 3
 #define ITEM_TABLES 8
@@ -98,6 +101,11 @@ Enemy *EnemyManager::SpawnEnemy(i32 eclSubId, const ZunVec3 *pos, i16 life, i16 
     {
         if (newEnemy->flags.active)
             continue;
+
+#ifdef TH_ENABLE_NETPLAY
+        if (!Netplay::Th06Rollback::TouchEnemy(newEnemy))
+            return nullptr;
+#endif
 
         *newEnemy = this->enemyTemplate;
 
@@ -542,6 +550,13 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
     i32 enemyIdx;
     i32 damage;
     bool local_8;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    i32 itemDropState = 0;
+    i32 playerDamage[TH06_MULTI_MAX_PLAYERS] = {};
+    u8 damageOwnerId = 0;
+    i32 damageTotal = 0;
+    i32 damageAttributed = 0;
+#endif
 
     local_8 = false;
     mgr->RunEclTimeline();
@@ -603,6 +618,12 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
             }
         }
         local_8 = false;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        itemDropState = 0;
+        damageOwnerId = 0;
+        damageTotal = 0;
+        damageAttributed = 0;
+#endif
         if (curEnemy->flags.unk8 != 0 && !curEnemy->flags.unk15)
         {
             enemyLifeBeforeDmg = curEnemy->life;
@@ -610,14 +631,82 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
             {
                 // There's something weird going on here, stack-wise.
                 enemyHitbox = curEnemy->HitboxDimensions(1.5f);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                bool hitPlayer = false;
+                for (u8 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+                {
+                    if (IsPlayerGameplayActive(playerId) &&
+                        g_Players[playerId].CalcKillBoxCollision(&curEnemy->position, &enemyHitbox) == 1)
+                        hitPlayer = true;
+                }
+                if (hitPlayer && curEnemy->flags.unk6 && !curEnemy->flags.isBoss)
+#else
                 if (g_Player.CalcKillBoxCollision(&curEnemy->position, &enemyHitbox) == 1 && curEnemy->flags.unk6 &&
                     !curEnemy->flags.isBoss)
+#endif
                 {
                     curEnemy->life -= 10;
                 }
             }
             if (curEnemy->flags.unk6 != 0)
             {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                i32 scoreDamage = 0;
+                damage = 0;
+                for (u8 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+                {
+                    playerDamage[playerId] = 0;
+                    if (!IsPlayerGameplayActive(playerId))
+                        continue;
+
+                    bool playerLaserDuringBomb = false;
+                    playerDamage[playerId] = g_Players[playerId].CalcDamageToEnemy(
+                        &curEnemy->position, &curEnemy->hitboxDimensions, &playerLaserDuringBomb);
+                    if (playerLaserDuringBomb && itemDropState == 0)
+                        itemDropState = GetItemAutoCollectStateForPlayer(playerId);
+                    scoreDamage += playerDamage[playerId];
+                    if (playerDamage[playerId] != 0 &&
+                        g_Players[playerId].positionOfLastEnemyHit.y < curEnemy->position.y)
+                        g_Players[playerId].positionOfLastEnemyHit = curEnemy->position;
+
+                    if (mgr->spellcardInfo.isActive != 0)
+                    {
+                        if (!playerLaserDuringBomb)
+                        {
+                            if (playerDamage[playerId] > 7)
+                                playerDamage[playerId] /= 7;
+                            else if (playerDamage[playerId] != 0)
+                                playerDamage[playerId] = 1;
+                        }
+                        else if (mgr->spellcardInfo.usedBomb != 0)
+                        {
+                            if (playerDamage[playerId] > 3)
+                                playerDamage[playerId] /= 3;
+                            else if (playerDamage[playerId] != 0)
+                                playerDamage[playerId] = 1;
+                        }
+                        else
+                        {
+                            playerDamage[playerId] = 0;
+                        }
+                    }
+                    damage += playerDamage[playerId];
+                    if (playerDamage[playerId] > playerDamage[damageOwnerId])
+                        damageOwnerId = playerId;
+                }
+                damageTotal = damage;
+                // Preserve TH06's per-tick 70-damage ceiling. Multiplayer can
+                // reach it with combined fire, but cannot exceed the original
+                // simulation bound merely because more stable slots exist.
+                if (scoreDamage >= 70)
+                    scoreDamage = 70;
+                if (damage >= 70)
+                    damage = 70;
+                if (curEnemy->flags.isBoss)
+                    damage = static_cast<i32>(
+                        static_cast<f32>(damage) * GetMultiplayerBossDamageMultiplier());
+                g_GameManager.score = (scoreDamage / 5) * 10 + g_GameManager.score;
+#else
                 damage = g_Player.CalcDamageToEnemy(&curEnemy->position, &curEnemy->hitboxDimensions, &local_8);
                 if (70 <= damage)
                 {
@@ -653,17 +742,48 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
                         damage = 0;
                     }
                 }
+#endif
                 if (curEnemy->flags.unk10 != 0)
                 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                    if (damage > 0 && damageTotal > 0)
+                    {
+                        for (u8 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+                        {
+                            if (!IsPlayerGameplayActive(playerId) || playerDamage[playerId] <= 0)
+                                continue;
+                            const i32 contribution = static_cast<i32>(
+                                static_cast<std::int64_t>(damage) * playerDamage[playerId] /
+                                damageTotal);
+                            if (contribution > 0)
+                            {
+                                AddPlayerDamageDealt(playerId, static_cast<u32>(contribution));
+                                damageAttributed += contribution;
+                            }
+                        }
+                        // Integer division may leave a small remainder. Keep
+                        // the lower-slot exact-tie rule used by owner selection.
+                        if (damageAttributed < damage)
+                            AddPlayerDamageDealt(
+                                damageOwnerId, static_cast<u32>(damage - damageAttributed));
+                    }
+#endif
                     curEnemy->life -= damage;
                 }
+#ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                 if (g_Player.positionOfLastEnemyHit.y < curEnemy->position.y)
                 {
                     g_Player.positionOfLastEnemyHit = curEnemy->position;
                 }
+#endif
             }
             if (0 >= curEnemy->life && curEnemy->flags.unk6 != 0)
             {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                if (enemyLifeBeforeDmg > 0 && curEnemy->flags.unk11 != 3 &&
+                    curEnemy->flags.unk10 != 0 && damage > 0)
+                    AddPlayerEnemiesDefeated(damageOwnerId, 1);
+#endif
                 curEnemy->lifeCallbackThreshold = -1;
                 curEnemy->timerCallbackThreshold = -1;
                 switch (curEnemy->flags.unk11)
@@ -694,7 +814,14 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
                     if (curEnemy->itemDrop >= 0)
                     {
                         g_EffectManager.SpawnParticles(curEnemy->deathAnm2 + 4, &curEnemy->position, 3, 0xffffffff);
-                        g_ItemManager.SpawnItem(&curEnemy->position, (ItemType)curEnemy->itemDrop, local_8);
+                        g_ItemManager.SpawnEnemyDrop(
+                            &curEnemy->position, (ItemType)curEnemy->itemDrop,
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                            itemDropState
+#else
+                            local_8
+#endif
+                        );
                     }
                     else if (curEnemy->itemDrop == ITEM_NO_ITEM)
                     {
@@ -702,8 +829,14 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
                         {
                             g_EffectManager.SpawnParticles(curEnemy->deathAnm2 + 4, &curEnemy->position, 6,
                                                            COLOR_WHITE);
-                            g_ItemManager.SpawnItem(&curEnemy->position,
-                                                    (ItemType)g_RandomItems[mgr->randomItemTableIndex], local_8);
+                            g_ItemManager.SpawnEnemyDrop(&curEnemy->position,
+                                                         (ItemType)g_RandomItems[mgr->randomItemTableIndex],
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                                                    itemDropState
+#else
+                                                    local_8
+#endif
+                            );
                             mgr->randomItemTableIndex++;
                             if (ARRAY_SIZE_SIGNED(g_RandomItems) <= mgr->randomItemTableIndex)
                             {

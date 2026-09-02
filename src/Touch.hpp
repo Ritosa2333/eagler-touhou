@@ -31,6 +31,7 @@ void BeginReplayTouchFrame();
 void ApplyReplayTouchEvent(i32 fingerId, f32 x, f32 y, u32 action, u32 role, u32 flags);
 i32 GetReplayTouchPoints(ReplayTouchPoint *points, i32 capacity);
 void ResetReplayTouch();
+void ResetReplayRecordingState();
 
 bool WasUsedThisRun();
 bool UsedCheatMovementThisRun();

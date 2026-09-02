@@ -9,6 +9,11 @@
 #include "GameWindow.hpp"
 #include "Gui.hpp"
 #include "Localization.hpp"
+#include "ScreenEffect.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "Player.hpp"
+#include "multiplayer/GameplaySession.hpp"
+#endif
 #include "Supervisor.hpp"
 #include "utils.hpp"
 #include <cstdarg>
@@ -640,6 +645,26 @@ bool AsciiManager::DebugLocalizedFormatSelfTest()
         std::strstr(manager.strings[replayStart].text, "123") == nullptr)
         return false;
 
+    // Replay list rows contain several conversions in one format string. A
+    // formatter must continue after every conversion instead of silently
+    // truncating the row after the leading "No.xx" field.
+    const int replayRowStart = manager.numStrings;
+    manager.AddFormatText(&pos, "No.%.2d %8s  %8s %7s  %7s", 1, "TEST", "08/31/26", "MarisaA", "Normal");
+    if (manager.numStrings != replayRowStart + 1 ||
+        std::strstr(manager.strings[replayRowStart].text, "No.01") == nullptr ||
+        std::strstr(manager.strings[replayRowStart].text, "TEST") == nullptr ||
+        std::strstr(manager.strings[replayRowStart].text, "MarisaA") == nullptr ||
+        std::strstr(manager.strings[replayRowStart].text, "Normal") == nullptr)
+        return false;
+
+    // Result/Replay stats append a literal percent sign after a formatted
+    // float ("%3.2f%%"). Keep exercising the literal suffix explicitly.
+    const int percentStart = manager.numStrings;
+    manager.AddFormatText(&pos, "    %3.2f%%", 12.5);
+    if (manager.numStrings != percentStart + 1 ||
+        std::strcmp(manager.strings[percentStart].text, "    12.50%") != 0)
+        return false;
+
     const int unknownStart = manager.numStrings;
     manager.AddFormatText(&pos, "Unknown %d", 42);
     if (manager.numStrings != unknownStart + 1 ||
@@ -815,6 +840,7 @@ enum UpdateGameMenuState
     GAME_MENU_QUIT_CURSOR_YES,
     GAME_MENU_QUIT_CURSOR_NO,
     GAME_MENU_QUIT_SELECTED_YES,
+    GAME_MENU_PAUSE_SELECTED_RESTART,
 };
 
 #define GAME_MENU_SPRITE_TITLE_PAUSE 0
@@ -860,6 +886,28 @@ i32 StageMenu::OnUpdateGameMenu()
         }
         this->numFrames = 0;
     }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (MultiplayerGameplay::IsMultiplayer() && !g_GameManager.isInReplay &&
+        WAS_PRESSED(TH_BUTTON_R) &&
+        this->curState != GAME_MENU_QUIT_SELECTED_YES &&
+        this->curState != GAME_MENU_PAUSE_SELECTED_RESTART)
+    {
+        // Match TH07's Pause-menu Reset shortcut: R is meaningful only while
+        // the shared Pause UI owns input.  The synchronized combined input
+        // lane means any participant can request it, while every peer enters
+        // the same close/rebuild state on the same logical frame.
+        g_SoundPlayer.PlaySoundByIdx(SOUND_SELECT);
+        ScreenEffect::RequestShakeCancelForRestart();
+        this->curState = GAME_MENU_PAUSE_SELECTED_RESTART;
+        for (vmIdx = 0; vmIdx < ARRAY_SIZE_SIGNED(this->menuSprites); vmIdx++)
+        {
+            if (this->menuSprites[vmIdx].flags.isVisible)
+                this->menuSprites[vmIdx].pendingInterrupt = 2;
+        }
+        this->numFrames = 0;
+        this->menuBackground.pendingInterrupt = 1;
+    }
+#endif
     switch (this->curState)
     {
     case GAME_MENU_PAUSE_OPENING:
@@ -1018,6 +1066,17 @@ i32 StageMenu::OnUpdateGameMenu()
                 this->menuSprites[vmIdx].SetInvisible();
             }
         }
+        break;
+    case GAME_MENU_PAUSE_SELECTED_RESTART:
+        if (20 <= this->numFrames)
+        {
+            this->curState = GAME_MENU_PAUSE_OPENING;
+            g_GameManager.isInGameMenu = 0;
+            g_Supervisor.curState = SUPERVISOR_STATE_GAMEMANAGER_RESTART;
+            for (vmIdx = 0; vmIdx < ARRAY_SIZE_SIGNED(this->menuSprites); vmIdx++)
+                this->menuSprites[vmIdx].SetInvisible();
+        }
+        break;
     }
     for (vmIdx = 0; vmIdx < ARRAY_SIZE_SIGNED(this->menuSprites); vmIdx++)
     {
@@ -1084,6 +1143,19 @@ i32 StageMenu::OnUpdateRetryMenu()
 {
     i32 idx;
 
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Multiplayer has no Continue. Keep Pause -> Restart as a separate action,
+    // but any path that reaches TH06's ordinary Retry/Continue menu must retire
+    // the run immediately instead of exposing Retry-Yes, even if another caller
+    // sets isInRetryMenu in the future.
+    if (MultiplayerGameplay::IsMultiplayer())
+    {
+        g_GameManager.isInRetryMenu = 0;
+        g_GameManager.guiScore = g_GameManager.score;
+        g_Supervisor.curState = SUPERVISOR_STATE_RESULTSCREEN_FROMGAME;
+        return 1;
+    }
+#endif
     if (g_GameManager.isInPracticeMode)
     {
         g_GameManager.isInRetryMenu = 0;

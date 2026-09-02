@@ -123,6 +123,15 @@ inline bool AlwaysShowHitbox()
 #endif
 }
 
+inline bool EnhanceLocalPlayerVisibility()
+{
+#ifdef __EMSCRIPTEN__
+    return EM_ASM_INT({ return !!Module.eaglerOptions?.enhanceLocalPlayerVisibility; }) != 0;
+#else
+    return false;
+#endif
+}
+
 inline bool TouchFocusUsesTwoFingers()
 {
 #ifdef __EMSCRIPTEN__
@@ -228,6 +237,27 @@ inline void ResetBrowserKeyboard()
             Module.eaglerControls.keyboardPulseBits = 0;
         }
     });
+#endif
+}
+
+inline bool ReplayViewerEnabled()
+{
+#ifdef __EMSCRIPTEN__
+    return EM_ASM_INT({ return !!Module.eaglerOptions?.replayViewer; }) != 0;
+#else
+    return false;
+#endif
+}
+
+inline bool MultiplayerStorageEnabled()
+{
+#if defined(__EMSCRIPTEN__) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    // Storage follows the downloaded runtime variant, not the current room or
+    // Replay mode. An MP binary must never read or write the ordinary save
+    // tree even when it is launched outside an active LAN session.
+    return true;
+#else
+    return false;
 #endif
 }
 } // namespace EaglerOptions

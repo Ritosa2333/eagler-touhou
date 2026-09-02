@@ -639,10 +639,12 @@ void Software::Draw(PrimitiveType type, i32 start, i32 count)
                     {
                         if (useDepthTest && depthMask)
                             depthBuffer[pixelCoord] = depth;
-                        framebuffer[pixelCoord] =
-                            RGBAToZunColor(AlphaBlendU8(ZunR(src), ZunR(dst), srcFactor, dstFactor),
-                                           AlphaBlendU8(ZunG(src), ZunG(dst), srcFactor, dstFactor),
-                                           AlphaBlendU8(ZunB(src), ZunB(dst), srcFactor, dstFactor), ZunA(src));
+                        {
+                            framebuffer[pixelCoord] =
+                                RGBAToZunColor(AlphaBlendU8(ZunR(src), ZunR(dst), srcFactor, dstFactor),
+                                               AlphaBlendU8(ZunG(src), ZunG(dst), srcFactor, dstFactor),
+                                               AlphaBlendU8(ZunB(src), ZunB(dst), srcFactor, dstFactor), ZunA(src));
+                        }
                     }
                 }
             }

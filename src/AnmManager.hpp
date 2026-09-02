@@ -487,8 +487,8 @@ struct AnmManager
     i32 maybeLoadedSpriteCount;
     const AnmRawInstr *scripts[2048];
     i32 spriteIndices[2048];
-    AnmRawEntry *anmFiles[128];
-    u32 anmFilesSpriteIndexOffsets[128];
+    AnmRawEntry *anmFiles[264];
+    u32 anmFilesSpriteIndexOffsets[264];
     SDL_Surface *surfaces[32];
     //    SDL_Surface *surfacesBis[32];
     //    D3DXIMAGE_INFO surfaceSourceInfo[32];

@@ -1,0 +1,175 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>TH06 netplay browser host</title>
+<iframe id="runtime" style="width:640px;height:480px;border:0"></iframe>
+<pre id="status">boot</pre>
+<script>
+(() => {
+  "use strict";
+  const protocol = "eagler-touhou/1";
+  const game = "th06";
+  const params = new URLSearchParams(location.search);
+  const player = Number(params.get("player") || 0);
+  const playerCount = Number(params.get("players") || 2);
+  const testFrames = Number(params.get("frames") || 300);
+  const relay = String(params.get("relay") || "");
+  const dynamicInput = params.get("input") === "dynamic";
+  const touchInput = params.get("input") === "touch";
+  const scriptedInput = params.get("scripted") === "1";
+  const scriptedStressInput = params.get("stress") === "1";
+  const rollbackAudit = params.get("audit") === "1";
+  const denseRollbackProfile = params.get("dense") === "1";
+  const stageTransition = params.get("stage") === "1";
+  const eliminationCycle = params.get("eliminate") === "1";
+  const coopTransferCycle = params.get("coop") === "1";
+  const pauseCycle = params.get("pause") === "1";
+  const restartCycle = params.get("restart") === "1";
+  const retryContinueCycle = params.get("retry") === "1";
+  const quitCycle = params.get("quit") === "1";
+  const endingCycle = params.get("ending") === "1";
+  const replayPlaybackCycle = params.get("replayplay") === "1";
+  const devRuntime = params.get("dev") === "1";
+  const loadoutProfile = String(params.get("loadouts") || "default");
+  const status = document.getElementById("status");
+  const iframe = document.getElementById("runtime");
+  let request = 0;
+  const pending = new Map();
+
+  function send(command, body = {}) {
+    const id = `smoke-${++request}`;
+    return new Promise((resolve, reject) => {
+      pending.set(id, { resolve, reject });
+      iframe.contentWindow.postMessage({ protocol, game, command, request: id, ...body }, location.origin);
+      setTimeout(() => {
+        const waiter = pending.get(id);
+        if (!waiter) return;
+        pending.delete(id);
+        reject(new Error(`${command} timeout`));
+      }, 15000);
+    });
+  }
+
+  window.addEventListener("message", async event => {
+    if (event.source !== iframe.contentWindow || event.origin !== location.origin) return;
+    const message = event.data || {};
+    if (message.protocol !== protocol || message.game !== game) return;
+    if (message.request && pending.has(message.request)) {
+      const waiter = pending.get(message.request);
+      pending.delete(message.request);
+      if (message.ok) waiter.resolve(message);
+      else waiter.reject(new Error(message.error || "runtime request failed"));
+      return;
+    }
+    if (message.event !== "ready") return;
+    try {
+      const loadoutProfiles = {
+        default: [
+          { character: 0, shot: 0 }, // Reimu A
+          { character: 1, shot: 1 }, // Marisa B
+          { character: 0, shot: 1 }, // Reimu B
+        ],
+        alternate: [
+          { character: 1, shot: 0 }, // Marisa A
+          { character: 0, shot: 1 }, // Reimu B
+          { character: 1, shot: 1 }, // Marisa B
+        ],
+      };
+      const selectedLoadouts = loadoutProfiles[loadoutProfile];
+      if (!selectedLoadouts) throw new Error(`unknown loadout profile: ${loadoutProfile}`);
+      const loadouts = selectedLoadouts.slice(0, playerCount);
+      await send("configure", {
+        music: "none",
+        resources: [],
+        sharedResources: [
+          { url: "/assets/msgothic.ttc", path: "/msgothic.ttc" },
+        ],
+        thpracCatalog: [],
+        options: {
+          netplayMode: "lan",
+          netplayUrl: relay,
+          netplayPlayer: player,
+          netplayPlayerCount: playerCount,
+          netplayTestFrames: testFrames,
+          netplaySeed: 19005,
+          netplayDifficulty: 1,
+          netplayIceServers: [],
+          netplayLoadouts: loadouts,
+          netplayPhysicalInput: false,
+          touchEnabled: touchInput,
+          touchMovementMode: "touch",
+          touchSensitivity: 100,
+          unlimitedTouch: false,
+          netplayScriptedInput: scriptedInput,
+          netplayScriptedStressInput: scriptedStressInput,
+          netplayEliminationCycle: eliminationCycle,
+          netplayCoopTransferCycle: coopTransferCycle,
+          netplayReplayPlaybackCycle: replayPlaybackCycle,
+          netplayRollbackAudit: rollbackAudit,
+          netplayDenseRollbackProfile: denseRollbackProfile,
+          netplayPauseCycle: pauseCycle,
+          netplayRestartCycle: restartCycle,
+          netplayRetryContinueCycle: retryContinueCycle,
+          netplayQuitCycle: quitCycle,
+          netplayEndingCycle: endingCycle,
+          netplayStageTransition: stageTransition,
+        },
+      });
+      await send("launch");
+      status.textContent = "launched";
+      globalThis.__th06SmokeLaunched = true;
+      if (dynamicInput) {
+        const plans = [
+          { first: "ArrowLeft", second: "ArrowRight", interval: 83, held: "z" },
+          { first: "ArrowRight", second: "ArrowLeft", interval: 97, held: "z" },
+          { first: "ArrowRight", second: "ArrowDown", interval: 137, held: "z" },
+        ];
+        const plan = plans[player] || plans[0];
+        const runtimeWindow = iframe.contentWindow;
+        const emit = (type, key) => runtimeWindow.dispatchEvent(new KeyboardEvent(type, {
+          key,
+          code: key === "z" ? "KeyZ" : key === "Shift" ? "ShiftLeft" : key,
+          bubbles: true,
+          cancelable: true,
+        }));
+        let first = true;
+        emit("keydown", plan.first);
+        emit("keydown", plan.held);
+        globalThis.__th06SmokeInputTimer = setInterval(() => {
+          emit("keyup", first ? plan.first : plan.second);
+          first = !first;
+          emit("keydown", first ? plan.first : plan.second);
+        }, plan.interval);
+      } else if (touchInput) {
+        const emitTouch = (type, x, y) => iframe.contentWindow.postMessage({
+          protocol, game, command: "direct-touch", type, id: 1, x, y,
+        }, location.origin);
+        const runtimeWindow = iframe.contentWindow;
+        const arm = setInterval(() => {
+          if ((runtimeWindow.__eaglerNetplayLanFrame | 0) < 30) return;
+          clearInterval(arm);
+          let right = true;
+          let x = 0.333;
+          const y = 0.533;
+          emitTouch("down", x, y);
+          globalThis.__th06SmokeInputTimer = setInterval(() => {
+            right = !right;
+            x = right ? 0.36 : 0.30;
+            emitTouch("move", x, y);
+          }, 83);
+        }, 16);
+      }
+    } catch (error) {
+      status.textContent = `failed: ${error && error.message || error}`;
+      globalThis.__th06SmokeFailure = status.textContent;
+      console.error(status.textContent);
+    }
+  });
+
+  // Match the real Launcher surface: the MP binary owns a separate IDBFS
+  // root, and FileSystem selects that same root once netplayMode=lan is set.
+  const runtimeBuild = devRuntime
+    ? "build-web-netplay-th06-replay-audit"
+    : "build-web-netplay-th06";
+  iframe.src = `/${runtimeBuild}/th06.html?hosted=1&runtimeVariant=multiplayer`;
+})();
+</script>

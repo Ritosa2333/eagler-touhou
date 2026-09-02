@@ -45,6 +45,22 @@
 #define ANM_FILE_STAFF01 44
 #define ANM_FILE_STAFF02 45
 #define ANM_FILE_STAFF03 46
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+// Reserve the top eight entries of TH06's 264-entry texture/file tables for MP.
+// Localization patches commonly append files immediately after the original
+// slot range, so guest resources must not compete for those low extension ids.
+#define ANM_FILE_PLAYER2 256
+#define ANM_FILE_PLAYER3 257
+// TH06's player portrait files are separate from player00/player01.anm. Keep
+// independent guest face banks just like TH07MP so a Marisa guest cannot use
+// P1 Reimu's globally loaded Bomb cut-in.
+#define ANM_FILE_FACE2_CHARA_A 258
+#define ANM_FILE_FACE2_CHARA_B 259
+#define ANM_FILE_FACE2_CHARA_C 260
+#define ANM_FILE_FACE3_CHARA_A 261
+#define ANM_FILE_FACE3_CHARA_B 262
+#define ANM_FILE_FACE3_CHARA_C 263
+#endif
 
 #define ANM_OFFSET_ASCII 0x000
 #define ANM_OFFSET_ASCIIS 0x077
@@ -77,6 +93,21 @@
 #define ANM_OFFSET_EFFECTS 0x2b3
 #define ANM_OFFSET_STAGEBG 0x300
 #define ANM_OFFSET_PLAYER 0x400
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+// Original player00.anm reaches raw script id 140 (0x8c). The audited gap
+// between original face end 0x4ab and front 0x600 can hold two complete banks:
+// P2 0x4c0..0x54c, P3 0x550..0x5dc.
+#define ANM_OFFSET_PLAYER2 0x4c0
+#define ANM_OFFSET_PLAYER3 0x550
+// player03 sidecar ends at 0x5dc. The remaining audited gap before FRONT
+// (0x600) safely holds the two three-file character-face banks.
+#define ANM_OFFSET_FACE2_CHARA_A 0x5e0
+#define ANM_OFFSET_FACE2_CHARA_B 0x5e2
+#define ANM_OFFSET_FACE2_CHARA_C 0x5e4
+#define ANM_OFFSET_FACE3_CHARA_A 0x5e8
+#define ANM_OFFSET_FACE3_CHARA_B 0x5ea
+#define ANM_OFFSET_FACE3_CHARA_C 0x5ec
+#endif
 #define ANM_OFFSET_FACE_CHARA_A 0x4a0
 #define ANM_OFFSET_FACE_CHARA_B 0x4a2
 #define ANM_OFFSET_FACE_CHARA_C 0x4a4

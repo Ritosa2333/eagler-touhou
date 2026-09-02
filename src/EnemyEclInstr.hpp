@@ -4,6 +4,19 @@
 
 namespace EnemyEclInstr
 {
+// A small part of TH06's ECL implementation keeps state outside Enemy itself.
+// ExInsShootStarPattern snapshots the enemy/player positions and a generated
+// star-angle table on its first frame, then reuses them for later frames. That
+// makes these values simulation-authoritative and therefore rollback-owned.
+struct RollbackState
+{
+    f32 starAngleTable[6]{};
+    ZunVec3 enemyPosVector{};
+    ZunVec3 playerPosVector{};
+};
+
+RollbackState *GetRollbackState();
+
 i32 *GetVar(Enemy *enemy, EclVarId *varId, EclValueType *valueType);
 f32 *GetVarFloat(Enemy *enemy, f32 *varId, EclValueType *valueType);
 

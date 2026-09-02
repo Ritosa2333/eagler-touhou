@@ -95,6 +95,7 @@ enum SupervisorState
     SUPERVISOR_STATE_MAINMENU_REPLAY,
     SUPERVISOR_STATE_MUSICROOM,
     SUPERVISOR_STATE_ENDING,
+    SUPERVISOR_STATE_GAMEMANAGER_RESTART,
 };
 
 struct Supervisor
@@ -192,6 +193,11 @@ extern ControllerMapping g_ControllerMapping;
 extern Supervisor g_Supervisor;
 extern u16 g_LastFrameInput;
 extern u16 g_CurFrameInput;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "Multiplayer.hpp"
+extern u16 g_LastFrameGameInputs[TH06_MULTI_MAX_PLAYERS];
+extern u16 g_CurFrameGameInputs[TH06_MULTI_MAX_PLAYERS];
+#endif
 extern u16 g_IsEigthFrameOfHeldInput;
 extern SDL_Surface *g_TextBufferSurface;
 extern u16 g_NumOfFramesInputsWereHeld;

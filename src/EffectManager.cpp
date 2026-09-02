@@ -10,6 +10,9 @@
 #include "Rng.hpp"
 #include "ZunResult.hpp"
 #include "utils.hpp"
+#ifdef TH_ENABLE_NETPLAY
+#include "netplay/Th06RollbackState.hpp"
+#endif
 
 EffectManager g_EffectManager;
 
@@ -230,6 +233,11 @@ Effect *EffectManager::SpawnParticles(i32 effectIdx, const ZunVec3 *pos, i32 cou
             }
             continue;
         }
+
+#ifdef TH_ENABLE_NETPLAY
+        if (!Netplay::Th06Rollback::TouchEffect(effect))
+            return failure;
+#endif
 
         effect->inUseFlag = 1;
         effect->effectId = effectIdx;

@@ -8,6 +8,9 @@
 #include "ResultScreen.hpp"
 #include "ZunResult.hpp"
 #include "inttypes.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "Multiplayer.hpp"
+#endif
 
 enum Difficulty
 {
@@ -17,6 +20,43 @@ enum Difficulty
     LUNATIC,
     EXTRA,
 };
+
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+struct MultiplayerPlayerResources
+{
+    i32 livesRemaining;
+    i32 bombsRemaining;
+    i32 currentPower;
+};
+
+struct MultiplayerContributionStats
+{
+    u32 enemiesDefeated;
+    u32 damageDealt;
+};
+
+extern MultiplayerPlayerResources
+    g_MultiplayerPlayerResources[TH06_MULTI_MAX_GUESTS];
+extern MultiplayerContributionStats
+    g_MultiplayerContributionStats[TH06_MULTI_MAX_PLAYERS];
+
+i32 GetPlayerLives(u8 playerId);
+i32 GetPlayerBombs(u8 playerId);
+i32 GetPlayerPower(u8 playerId);
+u32 GetPlayerEnemiesDefeated(u8 playerId);
+u32 GetPlayerDamageDealt(u8 playerId);
+void SetPlayerLives(u8 playerId, i32 amount);
+void SetPlayerBombs(u8 playerId, i32 amount);
+void SetPlayerPower(u8 playerId, i32 amount);
+void AddPlayerLives(u8 playerId, i32 amount);
+void AddPlayerPower(u8 playerId, i32 amount);
+void AddPlayerEnemiesDefeated(u8 playerId, u32 amount);
+void AddPlayerDamageDealt(u8 playerId, u32 amount);
+void ResetPlayerContributionStats();
+void ResetMultiplayerPlayerResources();
+f32 GetMultiplayerBossDamageMultiplier();
+i32 GetMultiplayerRankPenalty(i32 amount);
+#endif
 
 enum StageNumber
 {

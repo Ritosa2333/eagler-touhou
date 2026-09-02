@@ -27,12 +27,20 @@
 #include "ReplayExtension.hpp"
 #include "ReplayManager.hpp"
 #include "ResultScreen.hpp"
+#include "Rng.hpp"
 #include "SoundPlayer.hpp"
 #include "Supervisor.hpp"
 #include "TextHelper.hpp"
 #include "Touch.hpp"
 #include "ZunResult.hpp"
 #include "i18n.hpp"
+
+#ifdef TH_ENABLE_NETPLAY
+#include "netplay/Th06LanStageProbe.hpp"
+#endif
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "multiplayer/GameplaySession.hpp"
+#endif
 
 #ifdef TH_ENABLE_THPRAC
 #include "ThpracImGui.hpp"
@@ -43,6 +51,10 @@ static bool g_ToggleFullscreenRequested = false;
 static bool g_AudioSuspendedByFocus = false;
 static bool g_OpenMusicRoomForVisualTest = false;
 static bool g_MusicRoomVisualTestDispatched = false;
+#ifdef TH_ENABLE_NETPLAY
+static bool g_NetplayLanProduction = false;
+static bool g_NetplayProductionDispatched = false;
+#endif
 #ifdef TH_DEV_TOOLS
 static bool g_StartStage1ForVisualTest = false;
 static bool g_ShowStage1TextForVisualTest = false;
@@ -114,6 +126,121 @@ static void SuspendAudioForInactiveWindow()
     }
     g_AudioSuspendedByFocus = true;
 }
+
+#ifdef TH_ENABLE_NETPLAY
+static ChainCallbackResult StartNetplayGame(MainMenu *menu)
+{
+    (void)menu;
+    i32 requestedDifficulty = NORMAL;
+    i32 requestedPlayerCount = 2;
+    i32 localSlot = 0;
+    i32 requestedSeed = 0x4a3d;
+    bool endingCycleTest = false;
+#ifdef __EMSCRIPTEN__
+    requestedDifficulty = EM_ASM_INT({
+        const value = Number(Module.eaglerOptions?.netplayDifficulty ?? 1);
+        return Number.isInteger(value) && value >= 0 && value <= 4 ? value : 1;
+    });
+    requestedPlayerCount = EM_ASM_INT({
+        const value = Number(Module.eaglerOptions?.netplayPlayerCount ?? 2);
+        return value === 3 ? 3 : 2;
+    });
+    localSlot = EM_ASM_INT({
+        const value = Number(Module.eaglerOptions?.netplayPlayer ?? 0);
+        return Number.isInteger(value) ? value : 0;
+    });
+    requestedSeed = EM_ASM_INT({
+        const value = Number(Module.eaglerOptions?.netplaySeed);
+        return Number.isInteger(value) && value >= 0 && value <= 65535 ? value : 0x4a3d;
+    });
+    endingCycleTest = EM_ASM_INT({
+        return Module.eaglerOptions?.netplayEndingCycle ? 1 : 0;
+    }) != 0;
+#endif
+    if (localSlot < 0 || localSlot >= requestedPlayerCount)
+        localSlot = 0;
+
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    MultiplayerGameplay::SessionState gameplaySession;
+    gameplaySession.playerCount = static_cast<u8>(requestedPlayerCount);
+    gameplaySession.localPlayer = static_cast<u8>(localSlot);
+    gameplaySession.showStagePlayerNames = true;
+    for (i32 playerId = 0; playerId < requestedPlayerCount; ++playerId)
+    {
+        i32 character = playerId == 0 ? CHARA_REIMU : CHARA_MARISA;
+        i32 shot = SHOT_TYPE_A;
+#ifdef __EMSCRIPTEN__
+        character = EM_ASM_INT({
+            const entry = Module.eaglerOptions?.netplayLoadouts?.[$0];
+            const value = Number(entry?.character);
+            return Number.isInteger(value) && value >= 0 && value <= 1 ? value : $1;
+        }, playerId, character);
+        shot = EM_ASM_INT({
+            const entry = Module.eaglerOptions?.netplayLoadouts?.[$0];
+            const value = Number(entry?.shot);
+            return Number.isInteger(value) && value >= 0 && value <= 1 ? value : 0;
+        }, playerId);
+#endif
+        gameplaySession.players[playerId].active = true;
+        gameplaySession.players[playerId].character = static_cast<u8>(character);
+        gameplaySession.players[playerId].shot = static_cast<u8>(shot);
+    }
+    if (!MultiplayerGameplay::Configure(gameplaySession))
+    {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+                     "th06 netplay: multiplayer gameplay session rejected");
+        return CHAIN_CALLBACK_RESULT_EXIT_GAME_ERROR;
+    }
+    // TH06's original globals remain the P1 compatibility owner for global
+    // stage-script branches and save/replay layout.
+    g_GameManager.character = gameplaySession.players[0].character;
+    g_GameManager.shotType = gameplaySession.players[0].shot;
+#else
+    g_GameManager.character = CHARA_REIMU;
+    g_GameManager.shotType = SHOT_TYPE_A;
+#endif
+
+    g_GameManager.difficulty = static_cast<Difficulty>(requestedDifficulty);
+    g_Supervisor.cfg.defaultDifficulty = static_cast<u8>(requestedDifficulty);
+    // Test-only lifecycle seed: start from the predecessor of the real final
+    // stage. GameManager still performs its vanilla stage++ and registers the
+    // actual Stage 6; the smoke must clear that stage and reach Ending/Result
+    // through the production Gui/Supervisor transitions.
+    g_GameManager.currentStage =
+        endingCycleTest && requestedDifficulty != EXTRA ? 5 :
+        requestedDifficulty == EXTRA ? 6 : 0;
+    // Room gameplay must not inherit simulation-affecting values from this
+    // machine's persistent config. Two peers may have different Options
+    // settings (especially phone vs desktop), so using cfg.lifeCount or
+    // cfg.bombCount here would make the world diverge before frame zero.
+    // TH06's vanilla defaults are the room contract; GameManager copies these
+    // values into defaultConfig for later death/respawn handling.
+    g_GameManager.livesRemaining = 2;
+    g_GameManager.bombsRemaining = 3;
+    if (requestedDifficulty == EXTRA)
+    {
+        // Exact vanilla TH06 Extra-start resource contract.
+        g_GameManager.livesRemaining = 2;
+        g_GameManager.bombsRemaining = 3;
+    }
+    g_GameManager.isInPracticeMode = 0;
+    g_GameManager.isInReplay = 0;
+    g_GameManager.demoMode = 0;
+    g_GameManager.demoFrames = 0;
+
+    g_Rng.Initialize(static_cast<u16>(requestedSeed));
+
+    // Match MainMenu's real start boundary, but force canonical 1x logical
+    // time rather than carrying the original refresh-rate compensation into
+    // a deterministic room.
+    g_Supervisor.framerateMultiplier = 1.0f;
+    g_Supervisor.StopAudio();
+    g_Supervisor.curState = SUPERVISOR_STATE_GAMEMANAGER;
+    SDL_Log("th06 netplay: dispatched LAN game players=%d local=%d difficulty=%d seed=%d",
+            requestedPlayerCount, localSlot, requestedDifficulty, requestedSeed);
+    return CHAIN_CALLBACK_RESULT_CONTINUE_AND_REMOVE_JOB;
+}
+#endif
 
 static void ResumeAudioForActiveWindow()
 {
@@ -214,7 +341,17 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
 #endif
 #ifdef __EMSCRIPTEN__
     g_OpenMusicRoomForVisualTest = EM_ASM_INT({ return Module.eaglerOptions?.debugHarness === 'music-room'; }) != 0;
+#ifdef TH_ENABLE_NETPLAY
+    g_NetplayLanProduction = EM_ASM_INT({
+        return Module.eaglerOptions?.netplayMode === 'lan' ? 1 : 0;
+    }) != 0;
+    if (g_NetplayLanProduction)
+        SDL_Log("th06 netplay: LAN session requested");
+#endif
 #ifdef TH_DEV_TOOLS
+    g_ReplayExtensionSelfTest = EM_ASM_INT({
+        return Module.eaglerOptions?.debugHarness === 'replay-extension';
+    }) != 0;
     g_EndingViewerSelection = EM_ASM_INT({
         const id = Module.eaglerOptions?.debugHarness;
         return id === 'ending-reimu-a' ? 0 :
@@ -470,6 +607,19 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
 SDL_AppResult SDL_AppIterate(void *appstate)
 {
     (void)appstate;
+#ifdef TH_ENABLE_NETPLAY
+    if (g_NetplayLanProduction && !g_NetplayProductionDispatched &&
+        g_MainMenu.chainCalc != nullptr &&
+        Netplay::Th06LanStageProbe::TransportReady())
+    {
+        // Transport setup began from GameWindow's title-screen calc ticks.
+        // Once the route is open, replace exactly one MainMenu calc callback;
+        // the callback then enters the same GameManager boundary as vanilla.
+        g_MainMenu.chainCalc->callback =
+            reinterpret_cast<ChainCallback>(StartNetplayGame);
+        g_NetplayProductionDispatched = true;
+    }
+#endif
     if (g_OpenMusicRoomForVisualTest && !g_MusicRoomVisualTestDispatched &&
         g_MainMenu.chainCalc != nullptr)
     {

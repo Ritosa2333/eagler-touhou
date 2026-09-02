@@ -1035,6 +1035,9 @@ ZunResult AnmManager::LoadTexture(i32 textureIdx, const char *textureName, i32 t
                                   bool isExternalResource, bool clearTransparentRgb,
                                   bool allowRuntimeOverride)
 {
+    if (textureIdx < 0 || textureIdx >= ARRAY_SIZE_SIGNED(this->textures))
+        return ZUN_ERROR;
+
     u8 *rawTextureData;
     SDL_Surface *textureSurface;
 
@@ -1065,7 +1068,10 @@ ZunResult AnmManager::LoadTexture(i32 textureIdx, const char *textureName, i32 t
     }
 
     // Hideous hack to account for ANM entries that report a different texture size than the actual size
-    const AnmRawEntry *entry = this->anmFiles[textureIdx];
+    // Runtime-only textures do not necessarily have ANM metadata. Keep this
+    // lookup guarded if the texture and ANM table capacities diverge later.
+    const AnmRawEntry *entry =
+        textureIdx < ARRAY_SIZE_SIGNED(this->anmFiles) ? this->anmFiles[textureIdx] : nullptr;
     if (entry && (textureSurface->w != entry->width || textureSurface->h != entry->height))
     {
         SDL_Surface *textureSurface2 =
@@ -1284,6 +1290,9 @@ ZunResult AnmManager::CreateEmptyTexture(i32 textureIdx, u32 width, u32 height, 
 
 ZunResult AnmManager::LoadAnm(i32 anmIdx, const char *path, i32 spriteIdxOffset)
 {
+    if (anmIdx < 0 || anmIdx >= ARRAY_SIZE_SIGNED(this->anmFiles))
+        return ZUN_ERROR;
+
 #ifdef __EMSCRIPTEN__
     if (WebTransitionAnmCacheEntry *cache = FindWebTransitionAnm(anmIdx, path); cache && cache->loaded)
     {
@@ -1466,6 +1475,9 @@ ZunResult AnmManager::PreloadTransitionAnm(i32 anmIdx, const char *path, i32 spr
 
 void AnmManager::ReleaseAnm(i32 anmIdx)
 {
+    if (anmIdx < 0 || anmIdx >= ARRAY_SIZE_SIGNED(this->anmFiles))
+        return;
+
 #ifdef __EMSCRIPTEN__
     if (WebTransitionAnmCacheEntry *cache = FindWebTransitionAnm(anmIdx); cache && cache->loaded)
     {

@@ -18,6 +18,13 @@
 #include "i18n.hpp"
 #include "inttypes.hpp"
 #include "utils.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "multiplayer/GameplaySession.hpp"
+#include "netplay/NetplayInput.hpp"
+#endif
+#ifdef TH_ENABLE_NETPLAY
+#include "netplay/NetplaySideEffects.hpp"
+#endif
 
 #include <SDL3/SDL.h>
 #include <cstdio>
@@ -81,6 +88,10 @@ ControllerMapping g_ControllerMapping = {
 SDL_Surface *g_TextBufferSurface;
 u16 g_LastFrameInput;
 u16 g_CurFrameInput;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+u16 g_LastFrameGameInputs[TH06_MULTI_MAX_PLAYERS] = {};
+u16 g_CurFrameGameInputs[TH06_MULTI_MAX_PLAYERS] = {};
+#endif
 u16 g_IsEigthFrameOfHeldInput;
 u16 g_NumOfFramesInputsWereHeld;
 
@@ -93,6 +104,27 @@ ChainCallbackResult Supervisor::OnUpdate(Supervisor *s)
     //    }
     g_LastFrameInput = g_CurFrameInput;
     g_CurFrameInput = Controller::GetInput();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // A multiplayer-capable binary must still behave exactly like ordinary
+    // TH06 before a room/driver installs synchronized logical lanes. Once
+    // NetplayInput owns the lanes it performs this current/previous handoff
+    // itself before the simulation chain and Supervisor must not overwrite it.
+    if (!Netplay::Input::PlayerButtonOverridesActive())
+    {
+        const bool multiplayerGameplay = MultiplayerGameplay::IsMultiplayer();
+        for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+        {
+            g_LastFrameGameInputs[playerId] = g_CurFrameGameInputs[playerId];
+            // Multiplayer Player lanes are authoritative-only.  A short gap
+            // before the netplay driver installs synchronized overrides must
+            // never mirror this machine's keyboard/controller state into P1.
+            // g_CurFrameInput stays untouched so local Result/Menu UI still
+            // receives ordinary hardware input after gameplay retires.
+            g_CurFrameGameInputs[playerId] =
+                !multiplayerGameplay && playerId == 0 ? g_CurFrameInput : 0;
+        }
+    }
+#endif
     g_IsEigthFrameOfHeldInput = 0;
     if (g_LastFrameInput == g_CurFrameInput)
     {
@@ -201,6 +233,24 @@ ChainCallbackResult Supervisor::OnUpdate(Supervisor *s)
                 if (s->curState == SUPERVISOR_STATE_MAINMENU)
                 {
                     goto RETURN_TO_MENU_FROM_GAME;
+                }
+                s->curState = SUPERVISOR_STATE_GAMEMANAGER;
+                break;
+            case SUPERVISOR_STATE_GAMEMANAGER_RESTART:
+                // TH07's Pause -> R path is a new attempt, not a stage
+                // transition. Story restarts from Stage 1; Extra/Practice
+                // restart their current stage. Keep the established browser
+                // transport alive; the netplay driver retires this gameplay
+                // generation and starts the rebuilt GameManager at frame zero.
+                GameManager::CutChain();
+                if (!g_GameManager.isInPracticeMode && g_GameManager.difficulty < EXTRA)
+                    g_GameManager.currentStage = 0;
+                else
+                    g_GameManager.currentStage--;
+                ReplayManager::SaveReplay(NULL, NULL);
+                if (GameManager::RegisterChain() != ZUN_SUCCESS)
+                {
+                    return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;
                 }
                 s->curState = SUPERVISOR_STATE_GAMEMANAGER;
                 break;
@@ -824,10 +874,11 @@ ZunResult Supervisor::LoadConfig(const char *path)
     // eagler-touhou chooses the original MIDI/WAV mode at run time. OGG is an
     // alternative resource format handled by SoundPlayer's WAV path.
     const int webMusicMode = EM_ASM_INT({
-        return Module.touhouMusicMode === 'midi' ? 2 :
-               (Module.touhouMusicMode === 'wav' || Module.touhouMusicMode === 'ogg' ? 1 : 0);
+        return Module.touhouMusicMode === 'none' ? 0 :
+               Module.touhouMusicMode === 'midi' ? 2 :
+               (Module.touhouMusicMode === 'wav' || Module.touhouMusicMode === 'ogg' ? 1 : -1);
     });
-    if (webMusicMode == MIDI || webMusicMode == WAV)
+    if (webMusicMode == OFF || webMusicMode == MIDI || webMusicMode == WAV)
     {
         g_Supervisor.cfg.musicMode = static_cast<MusicMode>(webMusicMode);
     }
@@ -920,6 +971,10 @@ bool Supervisor::ReadMidiFile(u32 midiFileIdx, const char *path)
 
 ZunResult Supervisor::PlayMidiFile(i32 midiFileIdx)
 {
+#ifdef TH_ENABLE_NETPLAY
+    if (Netplay::SideEffects::IsSpeculative())
+        return ZUN_SUCCESS;
+#endif
     bool useMidi = g_Supervisor.cfg.musicMode == MIDI;
     #ifdef __EMSCRIPTEN__
     if (IsWebOggMode() && midiFileIdx >= 0 && midiFileIdx < ARRAY_SIZE(g_WebMidiPaths) &&
@@ -952,6 +1007,10 @@ ZunResult Supervisor::PlayMidiFile(i32 midiFileIdx)
 
 ZunResult Supervisor::PlayAudio(const char *path)
 {
+#ifdef TH_ENABLE_NETPLAY
+    if (Netplay::SideEffects::IsSpeculative())
+        return ZUN_SUCCESS;
+#endif
     char wavName[256];
     char wavPos[256];
     char *pathExtension;
@@ -1016,6 +1075,10 @@ ZunResult Supervisor::PlayAudio(const char *path)
 
 ZunResult Supervisor::StopAudio()
 {
+#ifdef TH_ENABLE_NETPLAY
+    if (Netplay::SideEffects::IsSpeculative())
+        return ZUN_SUCCESS;
+#endif
 #ifdef __EMSCRIPTEN__
     if (IsWebOggMode())
     {
@@ -1051,6 +1114,10 @@ ZunResult Supervisor::StopAudio()
 
 ZunResult Supervisor::FadeOutMusic(f32 fadeOutSeconds)
 {
+#ifdef TH_ENABLE_NETPLAY
+    if (Netplay::SideEffects::IsSpeculative())
+        return ZUN_SUCCESS;
+#endif
 #ifdef __EMSCRIPTEN__
     if (IsWebOggMode())
     {

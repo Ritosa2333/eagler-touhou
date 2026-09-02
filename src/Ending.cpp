@@ -14,6 +14,10 @@
 #include "utils.hpp"
 #include <cstdlib>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #ifdef TH_DEV_TOOLS
 static bool g_DebugEndingFastForward = false;
 #endif
@@ -647,6 +651,14 @@ ZunResult Ending::AddedCallback(Ending *ending)
 
     g_GameManager.isGameCompleted = true;
     g_Supervisor.isInEnding = true;
+#ifdef __EMSCRIPTEN__
+    EM_ASM({
+        if (Module.eaglerOptions?.netplayMode === "lan") {
+            globalThis.__eaglerNetplayEndingEntered = true;
+            globalThis.__eaglerNetplayEndingCompleted = false;
+        }
+    });
+#endif
     g_Supervisor.LoadPbg3(ED_PBG3_INDEX, TH_ED_DAT_FILE);
     g_AnmManager->LoadAnm(ANM_FILE_STAFF01, "data/staff01.anm", ANM_OFFSET_STAFF01);
     g_AnmManager->LoadAnm(ANM_FILE_STAFF02, "data/staff02.anm", ANM_OFFSET_STAFF02);
@@ -744,6 +756,12 @@ ZunResult Ending::DeletedCallback(Ending *ending)
     g_AnmManager->ReleaseAnm(ANM_FILE_STAFF03);
 
     g_Supervisor.curState = SUPERVISOR_STATE_RESULTSCREEN_FROMGAME;
+#ifdef __EMSCRIPTEN__
+    EM_ASM({
+        if (Module.eaglerOptions?.netplayMode === "lan")
+            globalThis.__eaglerNetplayEndingCompleted = true;
+    });
+#endif
 
     g_AnmManager->ReleaseSurface(0);
 

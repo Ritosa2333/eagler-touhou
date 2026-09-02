@@ -21,9 +21,14 @@
       "use strict";
       const protocol = "eagler-touhou/1";
       const game = "th06";
-      const saveRoot = "/savesth06";
       const params = new URLSearchParams(location.search);
+      const saveRoot = params.get("runtimeVariant") === "multiplayer" ? "/savesth06-multiplayer" : "/savesth06";
       const hosted = params.get("hosted") === "1" && window.parent !== window;
+      window.__eaglerManagedDataState = {
+        enabled: params.get("managedData") === "1" && hosted,
+        game,
+        generation: params.get("gameGeneration") || ""
+      };
       const assetVersion = params.get("v") || "";
       const gameDataVersion = params.get("asset") || "";
       const oggAssetVersion = params.get("oggAsset") || "";
@@ -91,7 +96,16 @@
       const emit = (event, payload = {}) => {
         if (hosted) window.parent.postMessage({ protocol, game, event, ...payload }, location.origin);
       };
-      globalThis.EaglerTouhouGameExited = result => emit("exit", { status: result === 1 ? "success" : "failure" });
+      globalThis.EaglerTouhouGameExited = result => {
+        const finish = () => emit("exit", { status: result === 1 ? "success" : "failure" });
+        // Flush IDBFS while the Runtime is still alive. The parent must not
+        // wait for a post-mortem sync RPC after it receives exit, because the
+        // main loop may already be gone and that RPC can sit until timeout.
+        return sync().then(finish, error => {
+          console.error("final save sync failed", error);
+          finish();
+        });
+      };
       let runtimeInfoSent = false;
       const emitRuntimeInfo = () => {
         if (runtimeInfoSent || !hosted) return;
@@ -121,6 +135,12 @@
       const sync = () => new Promise((resolve, reject) => {
         FS.syncfs(false, error => error ? reject(error) : resolve());
       });
+      const failHostedStartup = error => {
+        const message = String(error?.message || error || "Runtime startup failed");
+        console.error(error);
+        status.textContent = message;
+        emit("error", { error: message });
+      };
 
       const safePath = value => {
         if (typeof value !== "string" || !value || value.includes("\\")) throw new Error("invalid path");
@@ -146,7 +166,7 @@
       };
       const assertStaticPackManifest = (manifest, expected) => {
         if (manifest?.schema !== "eagler-touhou/thcrap-static-pack/1" || manifest.game !== "th06" ||
-            manifest.language !== expected.language || manifest.runtimeVersion !== expected.runtimeVersion ||
+            manifest.language !== expected.language || typeof manifest.runtimeVersion !== "string" ||
             !Array.isArray(manifest.files) || manifest.files.length > 256) throw new Error("invalid TH06 language pack manifest");
         for (const file of manifest.files) {
           if (typeof file?.path !== "string" || !file.path.startsWith("/thcrap/th06/") || file.path.includes("\\") || file.path.includes("..") ||
@@ -155,7 +175,7 @@
       };
       const installStaticPack = async pack => {
         if (launched) throw new Error("runtime resources cannot be changed after launch");
-        if (typeof pack?.url !== "string" || typeof pack.language !== "string" || typeof pack.runtimeVersion !== "string" ||
+        if (typeof pack?.url !== "string" || typeof pack.language !== "string" ||
             !Number.isInteger(pack.bytes) || pack.bytes <= 0 ||
             !pack.manifest || !Array.isArray(pack.files)) throw new Error("invalid TH06 language pack");
         const url = new URL(pack.url, location.href);
@@ -245,6 +265,22 @@
           FS.writeFile(resource.path, bytes, { canOwn: true });
         }));
       };
+      const installPackageResources = async resources => {
+        if (launched) throw new Error("resources cannot be changed after launch");
+        if (!Array.isArray(resources) || resources.length > 512) throw new Error("invalid package resources");
+        for (const resource of resources) {
+          if (typeof resource?.url !== "string" || typeof resource?.path !== "string" || !resource.path.startsWith("/") ||
+              resource.path.includes("\\") || resource.path.includes("\0") ||
+              resource.path.split("/").some((part, index) => index > 0 && (!part || part === "." || part === ".."))) {
+            throw new Error("invalid package resource");
+          }
+          const url = new URL(resource.url, location.href);
+          if (url.origin !== location.origin) throw new Error("cross-origin package resource");
+          const { bytes } = await fetchResourceBytes(url, { cache: "no-store" });
+          ensureDir(resource.path);
+          FS.writeFile(resource.path, bytes, { canOwn: true });
+        }
+      };
 
       const emitTransfer = force => {
         if (!transfer) return;
@@ -313,16 +349,53 @@
         if (!Array.isArray(message.thpracCatalog ?? []) || (message.thpracCatalog?.length || 0) > 256) throw new Error("invalid thprac catalog");
         thpracCatalog = message.thpracCatalog ?? [];
         Module.eaglerThpracCatalog = thpracCatalog;
-        for (const key of ["thpracEnabled", "limitPresentationTo60", "touchEnabled", "unlimitedTouch", "touchBombZoneEnabled", "doubleTapBombEnabled", "alwaysHitbox", "th06FocusHitbox"]) {
+        for (const key of ["thpracEnabled", "limitPresentationTo60", "touchEnabled", "unlimitedTouch", "touchBombZoneEnabled", "doubleTapBombEnabled", "alwaysHitbox", "enhanceLocalPlayerVisibility", "th06FocusHitbox", "replayViewer", "netplayRollbackAudit", "netplayScriptedInput", "netplayScriptedStressInput", "netplayEliminationCycle", "netplayCoopTransferCycle", "netplayReplayPlaybackCycle", "netplayPauseCycle", "netplayRestartCycle", "netplayRetryContinueCycle", "netplayRepeatedRetryCycle", "netplayDenseRollbackProfile", "netplayQuitCycle", "netplayEndingCycle", "netplayStageTransition", "netplayPhysicalInput", "netplaySpectator"]) {
           if (options[key] != null && typeof options[key] !== "boolean") throw new Error("invalid eagler-touhou option");
         }
         if (options.touchSensitivity != null && (!Number.isFinite(options.touchSensitivity) || options.touchSensitivity < 50 || options.touchSensitivity > 300)) throw new Error("invalid touch sensitivity");
         if (options.touchMovementMode != null && !["joystick", "joystick-free", "touch", "touch-unlimited"].includes(options.touchMovementMode)) throw new Error("invalid touch movement mode");
         if (options.touchFocusMode != null && !["two-finger", "hold-button", "toggle-button"].includes(options.touchFocusMode)) throw new Error("invalid touch focus mode");
         if (options.thpracLocale != null && !["zh-CN", "ja-JP", "en-US"].includes(options.thpracLocale)) throw new Error("invalid thprac locale");
+        if (options.oggDecodeMode != null && !["stream", "full"].includes(options.oggDecodeMode)) throw new Error("invalid OGG decode mode");
+        if (options.netplayUrl != null && (typeof options.netplayUrl !== "string" || options.netplayUrl.length > 511 || !/^wss?:\/\//.test(options.netplayUrl))) throw new Error("invalid netplay URL");
+        if (options.netplayPlayer != null && (!Number.isInteger(options.netplayPlayer) || options.netplayPlayer < 0 || options.netplayPlayer > 2)) throw new Error("invalid netplay player");
+        if (options.netplayPlayerCount != null && (!Number.isInteger(options.netplayPlayerCount) || options.netplayPlayerCount < 2 || options.netplayPlayerCount > 3)) throw new Error("invalid netplay player count");
+        if (options.netplaySpectatorId != null && (typeof options.netplaySpectatorId !== "string" || !/^[A-Za-z0-9_-]{0,64}$/.test(options.netplaySpectatorId))) throw new Error("invalid spectator id");
+        if (options.netplaySpectatorCount != null && (!Number.isInteger(options.netplaySpectatorCount) || options.netplaySpectatorCount < 0 || options.netplaySpectatorCount > 64)) throw new Error("invalid spectator count");
+        if (options.netplayMode != null && options.netplayMode !== "lan") throw new Error("invalid netplay mode");
+        if (options.netplaySeed != null && (!Number.isInteger(options.netplaySeed) || options.netplaySeed < 0 || options.netplaySeed > 65535)) throw new Error("invalid netplay seed");
+        if (options.netplayDifficulty != null && (!Number.isInteger(options.netplayDifficulty) || options.netplayDifficulty < 0 || options.netplayDifficulty > 4)) throw new Error("invalid netplay difficulty");
+        if (options.netplayIceServers != null) {
+          if (!Array.isArray(options.netplayIceServers) || options.netplayIceServers.length > 8) throw new Error("invalid netplay ICE servers");
+          for (const server of options.netplayIceServers) {
+            if (!server || typeof server !== "object" || Array.isArray(server)) throw new Error("invalid netplay ICE server");
+            const urls = Array.isArray(server.urls) ? server.urls : [server.urls];
+            if (!urls.length || urls.length > 8 || urls.some(url => typeof url !== "string" || url.length > 511 || !/^(?:stun|stuns|turn|turns):/i.test(url))) {
+              throw new Error("invalid netplay ICE server URL");
+            }
+            if (server.username != null && (typeof server.username !== "string" || server.username.length > 255)) throw new Error("invalid netplay ICE username");
+            if (server.credential != null && (typeof server.credential !== "string" || server.credential.length > 255)) throw new Error("invalid netplay ICE credential");
+          }
+        }
+        if (options.netplayLoadouts != null) {
+          if (!Array.isArray(options.netplayLoadouts) || options.netplayLoadouts.length < 2 || options.netplayLoadouts.length > 3 ||
+              options.netplayLoadouts.some(entry => !entry || typeof entry !== "object" || Array.isArray(entry) ||
+                !Number.isInteger(entry.character) || entry.character < 0 || entry.character > 1 ||
+                !Number.isInteger(entry.shot) || entry.shot < 0 || entry.shot > 1)) throw new Error("invalid netplay loadouts");
+        }
+        if (options.netplayMode === "lan") {
+          if (!options.netplayUrl || !Number.isInteger(options.netplayPlayer) || !Number.isInteger(options.netplayPlayerCount) ||
+              options.netplayPlayer >= options.netplayPlayerCount || !Number.isInteger(options.netplaySeed) ||
+              !Number.isInteger(options.netplayDifficulty) ||
+              !Array.isArray(options.netplayLoadouts) || options.netplayLoadouts.length !== options.netplayPlayerCount) {
+            throw new Error("incomplete LAN netplay session");
+          }
+        }
+        const netplayTestFrameLimit = options.netplayStageTransition ? 24000 : 12000;
+        if (options.netplayTestFrames != null && (!Number.isInteger(options.netplayTestFrames) || options.netplayTestFrames < 60 || options.netplayTestFrames > netplayTestFrameLimit)) throw new Error("invalid netplay test frame count");
         const session = options.thpracSession;
         if (options.debugHarness != null && ![
-          "thprac-menu", "music-room", "font-metrics", "stage1",
+          "thprac-menu", "music-room", "font-metrics", "stage1", "netplay-lan-stage1", "replay-extension",
           "ending-reimu-a", "ending-reimu-b", "ending-marisa-a", "ending-marisa-b",
           "ending-reimu-bad", "ending-marisa-bad"
         ].includes(options.debugHarness)) throw new Error("invalid debug harness");
@@ -338,17 +411,51 @@
           touchBombZoneEnabled: options.touchBombZoneEnabled !== false,
           doubleTapBombEnabled: !!options.touchEnabled && !!options.doubleTapBombEnabled,
           alwaysHitbox: !!options.alwaysHitbox,
+          enhanceLocalPlayerVisibility: !!options.enhanceLocalPlayerVisibility,
           th06FocusHitbox: !!options.th06FocusHitbox,
+          replayViewer: !!options.replayViewer,
           thpracLocale: options.thpracLocale || "en-US",
+          oggDecodeMode: options.oggDecodeMode || "stream",
           debugHarness: options.debugHarness || null,
+          netplayMode: options.netplayMode || null,
+          netplayUrl: options.netplayUrl || "",
+          netplayPlayer: options.netplayPlayer ?? -1,
+          netplayPlayerCount: options.netplayPlayerCount ?? 2,
+          netplaySpectator: !!options.netplaySpectator,
+          netplaySpectatorId: options.netplaySpectatorId || "",
+          netplaySpectatorCount: options.netplaySpectatorCount ?? 0,
+          netplaySeed: options.netplaySeed ?? 0x4a3d,
+          netplayDifficulty: options.netplayDifficulty ?? 1,
+          netplayIceServers: Array.isArray(options.netplayIceServers) ? options.netplayIceServers.map(server => ({
+            urls: Array.isArray(server.urls) ? [...server.urls] : server.urls,
+            ...(server.username != null ? { username: server.username } : {}),
+            ...(server.credential != null ? { credential: server.credential } : {})
+          })) : [],
+          netplayLoadouts: Array.isArray(options.netplayLoadouts) ? options.netplayLoadouts.map(entry => ({ character: entry.character, shot: entry.shot })) : null,
+          netplayPhysicalInput: !!options.netplayPhysicalInput,
+          netplayScriptedInput: !!options.netplayScriptedInput,
+          netplayScriptedStressInput: !!options.netplayScriptedStressInput,
+          netplayEliminationCycle: !!options.netplayEliminationCycle,
+          netplayCoopTransferCycle: !!options.netplayCoopTransferCycle,
+          netplayReplayPlaybackCycle: !!options.netplayReplayPlaybackCycle,
+          netplayRollbackAudit: !!options.netplayRollbackAudit,
+          netplayPauseCycle: !!options.netplayPauseCycle,
+          netplayRestartCycle: !!options.netplayRestartCycle,
+          netplayRetryContinueCycle: !!options.netplayRetryContinueCycle,
+          netplayRepeatedRetryCycle: !!options.netplayRepeatedRetryCycle,
+          netplayDenseRollbackProfile: !!options.netplayDenseRollbackProfile,
+          netplayQuitCycle: !!options.netplayQuitCycle,
+          netplayEndingCycle: !!options.netplayEndingCycle,
+          netplayStageTransition: !!options.netplayStageTransition,
+          netplayTestFrames: options.netplayTestFrames ?? 300,
           thpracSession: session || null
         };
-        if (!["midi", "wav", "ogg"].includes(message.music)) throw new Error("invalid music mode");
+        if (!["midi", "wav", "ogg", "none"].includes(message.music)) throw new Error("invalid music mode");
         if (!Array.isArray(message.resources) || message.resources.length > 64) throw new Error("invalid music resources");
         clearMusic();
         failedMusicResources.clear();
         Module.touhouMusicMode = message.music;
-        if (message.music === "midi") return;
+        if (message.music === "midi" || message.music === "none") return;
         transfer = {
           mode: message.music, loaded: 0,
           total: message.resources.reduce((sum, resource) => sum + (Number(resource.size) || 0), 0),
@@ -390,7 +497,14 @@
           if (launched) return;
           Module.eaglerOptions.thpracSession = session;
           if (session) emit("thprac-session", { session });
-          launched = true; status.textContent = ""; Module.callMain([]); document.getElementById("canvas").focus();
+          launched = true; status.textContent = "";
+          // Keep the canvas itself focusable before entering the main loop.
+          // Android browsing-context focus is owned by the Launcher/Player
+          // iframe chain; shell-level repeated element.focus() cannot move
+          // focus across iframe boundaries on Via/WebView.
+          document.getElementById("canvas").focus({ preventScroll: true });
+          Module.callMain([]);
+          document.getElementById("canvas").focus({ preventScroll: true });
         };
         start(Module.eaglerOptions.thpracSession || null);
       };
@@ -548,6 +662,10 @@
             await installMusic(message);
             reply(message.request, true);
             break;
+          case "resources":
+            await installPackageResources(message.resources ?? []);
+            reply(message.request, true);
+            break;
           case "keyboard":
             if (typeof message.down !== "boolean" || typeof message.code !== "string" || typeof message.key !== "string" ||
                 !Number.isInteger(message.keyCode) || !Number.isInteger(message.location))
@@ -556,6 +674,22 @@
             break;
           case "keyboard-clear": clearBrowserKeyboard(); break;
           case "touch-cancel": cancelAllTouches(); reply(message.request, true); break;
+          case "direct-touch": {
+            if (!["down", "move", "up"].includes(message.type) || !Number.isInteger(message.id) ||
+                !Number.isFinite(message.x) || !Number.isFinite(message.y))
+              throw new Error("invalid direct touch bridge event");
+            const touchRect = Module.canvas.getBoundingClientRect();
+            if (!(touchRect.width > 0) || !(touchRect.height > 0)) break;
+            const viewportX = message.x * window.innerWidth;
+            const viewportY = message.y * window.innerHeight;
+            const touchX = (viewportX - touchRect.left) / touchRect.width;
+            const touchY = (viewportY - touchRect.top) / touchRect.height;
+            if (message.type === "down") Module.canvas.focus({ preventScroll: true });
+            if (message.type === "down" && typeof Module._TouhouAuxTouchDown === "function") Module._TouhouAuxTouchDown(message.id, touchX, touchY);
+            else if (message.type === "move" && typeof Module._TouhouAuxTouchMotion === "function") Module._TouhouAuxTouchMotion(message.id, touchX, touchY);
+            else if (message.type === "up" && typeof Module._TouhouAuxTouchUp === "function") Module._TouhouAuxTouchUp(message.id, touchX, touchY);
+            break;
+          }
           case "thprac-mouse":
             if (!["move", "down", "up"].includes(message.type) || !Number.isFinite(message.x) || !Number.isFinite(message.y))
               throw new Error("invalid thprac mouse bridge event");
@@ -616,7 +750,12 @@
             reply(message.request, false, { error: "unknown command" });
           }
         } catch (error) {
-          if (message.request) reply(message.request, false, { error: String(error && error.message || error) });
+          if (message.request) {
+            const detail = typeof error?.message === "string" && error.message ? error.message
+              : Number.isInteger(error?.errno) ? `Filesystem error (errno ${error.errno})`
+              : String(error);
+            reply(message.request, false, { error: detail, errno: Number.isInteger(error?.errno) ? error.errno : null });
+          }
         }
       });
 
@@ -626,7 +765,7 @@
         // Empty means original auto-detection for standalone builds. The host
         // sends an explicit mode before launching an embedded runtime.
         touhouMusicMode: "",
-      eaglerOptions: { thpracEnabled: false, limitPresentationTo60: false, touchEnabled: false, touchMovementMode: "touch", touchSensitivity: 100, touchFocusMode: "hold-button", unlimitedTouch: false, touchBombZoneEnabled: true, doubleTapBombEnabled: false, alwaysHitbox: false, th06FocusHitbox: false, thpracLocale: "en-US", thpracSession: null },
+      eaglerOptions: { thpracEnabled: false, limitPresentationTo60: false, touchEnabled: false, touchMovementMode: "touch", touchSensitivity: 100, touchFocusMode: "hold-button", unlimitedTouch: false, touchBombZoneEnabled: true, doubleTapBombEnabled: false, alwaysHitbox: false, enhanceLocalPlayerVisibility: false, th06FocusHitbox: false, thpracLocale: "en-US", oggDecodeMode: "stream", thpracSession: null },
         eaglerControls: { fireEnabled: true, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 0, joystickY: 0, keyboardBits: 0, keyboardPulseBits: 0, thpracKeyboardBits: 0 },
         preRun: [() => {
           addRunDependency("savesth06-sync");
@@ -634,8 +773,23 @@
             if (!String(error).includes("File exists")) console.error(error);
           }
           FS.mount(IDBFS, { autoPersist: true }, saveRoot);
+          let settled = false;
+          const timer = setTimeout(() => {
+            if (settled) return;
+            settled = true;
+            failHostedStartup(new Error("Local save restore timed out; reload the page before retrying"));
+            // Keep the run dependency held. Starting with an empty save tree
+            // after an IndexedDB stall could let autoPersist overwrite a real
+            // save that WebKit merely failed to return in time.
+          }, 15000);
           FS.syncfs(true, error => {
-            if (error) console.error("save sync failed", error);
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            if (error) {
+              failHostedStartup(new Error(`Local save restore failed: ${error?.message || error}`));
+              return;
+            }
             removeRunDependency("savesth06-sync");
           });
         }],
@@ -747,6 +901,40 @@
       });
     })();
   </script>
-  {{{ SCRIPT }}}
+  <template id="eagler-runtime-script-template">{{{ SCRIPT }}}</template>
+  <script>
+    (async () => {
+      const template = document.getElementById("eagler-runtime-script-template");
+      const generated = template.content.querySelector("script");
+      if (!generated) throw new Error("missing Emscripten runtime script");
+      const runtime = document.createElement("script");
+      for (const attr of generated.attributes) runtime.setAttribute(attr.name, attr.value);
+      const src = generated.getAttribute("src");
+      const managedData = window.__eaglerManagedDataState;
+      if (managedData?.enabled) {
+        const prepare = window.parent.__eaglerPrepareManagedRuntimeDataV1;
+        if (typeof prepare !== "function") throw new Error("Managed DATA provider is unavailable");
+        const payload = await prepare({ game: managedData.game, generation: managedData.generation });
+        if (!payload?.buffer || typeof payload.buffer.byteLength !== "number" || payload.buffer.byteLength !== Number(payload.bytes)) {
+          throw new Error("Managed DATA payload is invalid");
+        }
+        const preparedData = new Uint8Array(payload.buffer).slice().buffer;
+        Module.getPreloadedPackage = (_name, expectedBytes) => {
+          if (Number(expectedBytes) > 0 && preparedData.byteLength !== Number(expectedBytes)) {
+            throw new Error(`Managed DATA size mismatch: ${preparedData.byteLength}/${expectedBytes}`);
+          }
+          return preparedData;
+        };
+      }
+      if (src) {
+        runtime.setAttribute("src", src);
+      } else runtime.textContent = generated.textContent;
+      template.replaceWith(runtime);
+    })().catch(error => {
+      console.error(error);
+      const status = document.getElementById("status");
+      if (status) status.textContent = `Runtime bootstrap failed: ${error?.message || error}`;
+    });
+  </script>
 </body>
 </html>

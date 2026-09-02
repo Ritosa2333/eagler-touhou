@@ -56,6 +56,9 @@ class Chain
     int RunCalcChain(void);
 
     ChainElem *CreateElem(ChainCallback callback);
+#ifdef TH_ENABLE_NETPLAY
+    ChainElem *NetplayFirstCalcElem() { return calcChain.next; }
+#endif
 };
 
 extern Chain g_Chain;

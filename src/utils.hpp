@@ -16,6 +16,16 @@
 #define WAS_PRESSED(key) (((g_CurFrameInput & (key)) != 0) && (g_CurFrameInput & (key)) != (g_LastFrameInput & (key)))
 #define WAS_PRESSED_PERIODIC(key)                                                                                      \
     (WAS_PRESSED(key) || (((g_CurFrameInput & (key)) != 0) && (g_IsEigthFrameOfHeldInput != 0)))
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#define IS_PRESSED_PLAYER(player, key) (g_CurFrameGameInputs[(player)->initParam] & (key))
+#define WAS_PRESSED_PLAYER(player, key)                                                                            \
+    (((g_CurFrameGameInputs[(player)->initParam] & (key)) != 0) &&                                                \
+     ((g_CurFrameGameInputs[(player)->initParam] & (key)) !=                                                       \
+      (g_LastFrameGameInputs[(player)->initParam] & (key))))
+#else
+#define IS_PRESSED_PLAYER(player, key) IS_PRESSED(key)
+#define WAS_PRESSED_PLAYER(player, key) WAS_PRESSED(key)
+#endif
 
 namespace utils
 {

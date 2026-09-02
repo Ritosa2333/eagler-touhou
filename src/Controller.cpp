@@ -7,6 +7,9 @@
 #include "GameWindow.hpp"
 #include "Supervisor.hpp"
 #include "Touch.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "netplay/NetplayInput.hpp"
+#endif
 #include "i18n.hpp"
 #include "utils.hpp"
 
@@ -431,7 +434,12 @@ u16 Controller::GetInput(void)
         buttons |= JOYSTICK_BUTTON_PRESSED(TH_BUTTON_DOWN, stickY, JOYSTICK_MIDPOINT(0, INT16_MAX));
         buttons |= JOYSTICK_BUTTON_PRESSED(TH_BUTTON_UP, -stickY, JOYSTICK_MIDPOINT(0, INT16_MAX));
     }
-    return buttons | Touch::GetButtonBits();
+    buttons |= Touch::GetButtonBits();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    return Netplay::Input::ResolveLocal(buttons);
+#else
+    return buttons;
+#endif
 }
 
 void Controller::SetEnterSuppressed(bool suppressed)

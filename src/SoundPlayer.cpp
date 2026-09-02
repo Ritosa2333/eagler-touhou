@@ -1,4 +1,7 @@
 #include "SoundPlayer.hpp"
+#ifdef TH_ENABLE_NETPLAY
+#include "netplay/NetplaySideEffects.hpp"
+#endif
 
 #include "FileSystem.hpp"
 #include "Supervisor.hpp"
@@ -62,6 +65,15 @@ static bool HasBackgroundMusicSource(const MusicStream &music)
     return music.srcWav.fileStream != NULL;
 #endif
 }
+
+#ifdef __EMSCRIPTEN__
+static bool UseWebFullTrackOggDecode()
+{
+    return EM_ASM_INT({
+        return Module.eaglerOptions?.oggDecodeMode === 'full' ? 1 : 0;
+    }) != 0;
+}
+#endif
 
 static u16 ReadU16LE(SDL_IOStream *stream)
 {
@@ -321,31 +333,59 @@ ZunResult SoundPlayer::LoadWav(const char *path)
         }
         std::strcpy(extension, ".ogg");
 
+        u32 frames = 0;
 #ifdef __EMSCRIPTEN__
         const std::string fullPath = FileSystem::GetBasePath(oggPath);
-        int error = 0;
-        stb_vorbis *decoder = stb_vorbis_open_filename(fullPath.c_str(), &error, NULL);
-        if (decoder == NULL)
+        if (UseWebFullTrackOggDecode())
         {
-            utils::DebugPrint2("error : BGM file load error %s / %s\n", path, oggPath);
-            return ZUN_ERROR;
+            int channels = 0;
+            int sampleRate = 0;
+            short *decoded = NULL;
+            const int decodedFrames = stb_vorbis_decode_filename(fullPath.c_str(), &channels, &sampleRate, &decoded);
+            if (decodedFrames <= 0 || decoded == NULL || channels != BACKGROUND_MUSIC_WAV_NUM_CHANNELS ||
+                sampleRate != BACKGROUND_MUSIC_WAV_SAMPLE_RATE)
+            {
+                free(decoded);
+                utils::DebugPrint2("error : BGM file load error %s / %s\n", path, oggPath);
+                return ZUN_ERROR;
+            }
+            fileStream = SDL_IOFromConstMem(decoded, static_cast<size_t>(decodedFrames) * channels * sizeof(i16));
+            if (fileStream == NULL)
+            {
+                free(decoded);
+                return ZUN_ERROR;
+            }
+            frames = static_cast<u32>(decodedFrames);
+            this->backgroundMusic.srcWav.fileStream = fileStream;
+            this->backgroundMusic.srcWav.ownedSamples = decoded;
+            this->backgroundMusic.srcWav.oggDecoder = NULL;
         }
-
-        const stb_vorbis_info info = stb_vorbis_get_info(decoder);
-        const unsigned int frames = stb_vorbis_stream_length_in_samples(decoder);
-        if (frames == 0 || info.channels != BACKGROUND_MUSIC_WAV_NUM_CHANNELS ||
-            info.sample_rate != BACKGROUND_MUSIC_WAV_SAMPLE_RATE)
+        else
         {
-            stb_vorbis_close(decoder);
-            utils::DebugPrint2("error : BGM file load error %s / %s\n", path, oggPath);
-            return ZUN_ERROR;
-        }
+            int error = 0;
+            stb_vorbis *decoder = stb_vorbis_open_filename(fullPath.c_str(), &error, NULL);
+            if (decoder == NULL)
+            {
+                utils::DebugPrint2("error : BGM file load error %s / %s\n", path, oggPath);
+                return ZUN_ERROR;
+            }
 
-        // Keep compressed OGG open on Web and decode only the small PCM slices
-        // requested by MixAudio(). Native keeps the existing whole-track path.
-        this->backgroundMusic.srcWav.fileStream = NULL;
-        this->backgroundMusic.srcWav.ownedSamples = NULL;
-        this->backgroundMusic.srcWav.oggDecoder = decoder;
+            const stb_vorbis_info info = stb_vorbis_get_info(decoder);
+            frames = stb_vorbis_stream_length_in_samples(decoder);
+            if (frames == 0 || info.channels != BACKGROUND_MUSIC_WAV_NUM_CHANNELS ||
+                info.sample_rate != BACKGROUND_MUSIC_WAV_SAMPLE_RATE)
+            {
+                stb_vorbis_close(decoder);
+                utils::DebugPrint2("error : BGM file load error %s / %s\n", path, oggPath);
+                return ZUN_ERROR;
+            }
+
+            // Default Web mode: keep compressed OGG open and decode only the
+            // small PCM slices requested by MixAudio().
+            this->backgroundMusic.srcWav.fileStream = NULL;
+            this->backgroundMusic.srcWav.ownedSamples = NULL;
+            this->backgroundMusic.srcWav.oggDecoder = decoder;
+        }
 #else
         SDL_IOStream *oggStream = FileSystem::OpenFileStream(oggPath, "rb");
         if (oggStream == NULL)
@@ -372,9 +412,9 @@ ZunResult SoundPlayer::LoadWav(const char *path)
         int channels = 0;
         int sampleRate = 0;
         short *decoded = NULL;
-        const int frames = stb_vorbis_decode_memory(encoded.data(), static_cast<int>(encoded.size()), &channels,
-                                                    &sampleRate, &decoded);
-        if (frames <= 0 || decoded == NULL || channels != BACKGROUND_MUSIC_WAV_NUM_CHANNELS ||
+        const int decodedFrames = stb_vorbis_decode_memory(encoded.data(), static_cast<int>(encoded.size()), &channels,
+                                                           &sampleRate, &decoded);
+        if (decodedFrames <= 0 || decoded == NULL || channels != BACKGROUND_MUSIC_WAV_NUM_CHANNELS ||
             sampleRate != BACKGROUND_MUSIC_WAV_SAMPLE_RATE)
         {
             free(decoded);
@@ -382,7 +422,7 @@ ZunResult SoundPlayer::LoadWav(const char *path)
             return ZUN_ERROR;
         }
 
-        fileStream = SDL_IOFromConstMem(decoded, static_cast<size_t>(frames) * channels * sizeof(i16));
+        fileStream = SDL_IOFromConstMem(decoded, static_cast<size_t>(decodedFrames) * channels * sizeof(i16));
         if (fileStream == NULL)
         {
             free(decoded);
@@ -390,6 +430,7 @@ ZunResult SoundPlayer::LoadWav(const char *path)
         }
         this->backgroundMusic.srcWav.fileStream = fileStream;
         this->backgroundMusic.srcWav.ownedSamples = decoded;
+        frames = static_cast<u32>(decodedFrames);
 #endif
         this->backgroundMusic.srcWav.dataStartOffset = 0;
         this->backgroundMusic.srcWav.samples = static_cast<u32>(frames);
@@ -714,6 +755,7 @@ void SoundPlayer::PlaySounds()
 
     if (this->audioDev == 0 || !g_Supervisor.cfg.playSounds)
     {
+        std::fill_n(this->soundBuffersToPlay, ARRAY_SIZE(this->soundBuffersToPlay), -1);
         return;
     }
 
@@ -764,11 +806,12 @@ bool SoundPlayer::PumpWebAudio()
         return true;
     }
 
-    // Keep the verified low-latency streaming envelope. This function only
-    // replenishes the SDL stream; playback timing remains owned by SDL/WebAudio.
+    // A/B robustness envelope paired with the Web SDL backend's 4096-frame
+    // ScriptProcessor block. Producer work stays in small 1024-frame slices;
+    // only the queued safety window is deeper.
     constexpr u32 FRAMES_PER_CHUNK = 1024;
-    constexpr u32 LOW_WATER_FRAMES = 2048;
-    constexpr u32 HIGH_WATER_FRAMES = 3072;
+    constexpr u32 LOW_WATER_FRAMES = 4096;
+    constexpr u32 HIGH_WATER_FRAMES = 6144;
     constexpr int BYTES_PER_FRAME = BACKGROUND_MUSIC_WAV_BLOCK_ALIGN;
 
     const f64 nowMs = emscripten_get_now();
@@ -822,6 +865,13 @@ void SoundPlayer::PlaySoundByIdx(SoundIdx idx)
     {
         return;
     }
+#ifdef TH_ENABLE_NETPLAY
+    if (Netplay::SideEffects::IsSpeculative())
+    {
+        Netplay::SideEffects::NoteSpeculativeBombStartSound(static_cast<std::uint32_t>(idx));
+        return;
+    }
+#endif
 
     for (i = 0; i < ARRAY_SIZE(this->soundBuffersToPlay); i++)
     {
@@ -832,16 +882,22 @@ void SoundPlayer::PlaySoundByIdx(SoundIdx idx)
 
         if (this->soundBuffersToPlay[i] == idx)
         {
+#ifdef TH_ENABLE_NETPLAY
+            Netplay::SideEffects::NoteBombStartSoundEnqueued(static_cast<std::uint32_t>(idx));
+#endif
             return;
         }
     }
 
-    if (i >= 3)
+    if (i >= ARRAY_SIZE(this->soundBuffersToPlay))
     {
         return;
     }
 
     this->soundBuffersToPlay[i] = idx;
+#ifdef TH_ENABLE_NETPLAY
+    Netplay::SideEffects::NoteBombStartSoundEnqueued(static_cast<std::uint32_t>(idx));
+#endif
 }
 
 bool SoundPlayer::MixAudio(u32 samples)

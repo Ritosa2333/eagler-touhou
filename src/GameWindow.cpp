@@ -12,6 +12,9 @@
 #include "graphics/Gles.hpp"
 #include "i18n.hpp"
 #include "utils.hpp"
+#ifdef TH_ENABLE_NETPLAY
+#include "netplay/Th06LanStageProbe.hpp"
+#endif
 
 #ifdef TH_ENABLE_THPRAC
 #include "ThpracImGui.hpp"
@@ -92,7 +95,12 @@ RenderResult GameWindow::Render()
 {
     // Refresh-rate / frameskip only controlled how often the original game drew.
     // Its simulation still advanced at 60 Hz.
-    constexpr f64 targetDt = 1.0 / 60.0;
+    constexpr f64 baseTargetDt = 1.0 / 60.0;
+#ifdef TH_ENABLE_NETPLAY
+    const f64 targetDt = baseTargetDt * Netplay::Th06LanStageProbe::SimulationIntervalScale();
+#else
+    constexpr f64 targetDt = baseTargetDt;
+#endif
     const u64 renderStartNs = SDL_GetTicksNS();
     ZunViewport viewport;
 
@@ -162,11 +170,26 @@ RenderResult GameWindow::Render()
 #endif
 
     bool updated = false;
+    bool lastSimulationTickAdvanced = true;
     const auto runSimulationTick = [&]() -> i32
     {
         g_Supervisor.framerateMultiplier = 1.0f;
         g_Supervisor.effectiveFramerateMultiplier = 1.0f;
-        const i32 res = g_Chain.RunCalcChain();
+        i32 res;
+#ifdef TH_ENABLE_NETPLAY
+        if (Netplay::Th06LanStageProbe::Requested())
+        {
+            res = Netplay::Th06LanStageProbe::RunCalcChain();
+            lastSimulationTickAdvanced = Netplay::Th06LanStageProbe::LastTickAdvanced();
+        }
+        else
+        {
+            res = g_Chain.RunCalcChain();
+            lastSimulationTickAdvanced = true;
+        }
+#else
+        res = g_Chain.RunCalcChain();
+#endif
 #ifdef TH_ENABLE_THPRAC
         // Upstream th06_update is hooked at the RunCalcChain return boundary
         // (0x41caac). Trainer GUI/hotkey producers must therefore run after
@@ -176,10 +199,40 @@ RenderResult GameWindow::Render()
 #ifdef TH_ENABLE_THCRAP
         g_AnmManager->QueueThcrapSnapshotIfRequested();
 #endif
-        g_SoundPlayer.PlaySounds();
+        if (lastSimulationTickAdvanced)
+            g_SoundPlayer.PlaySounds();
         return res;
     };
 
+#ifdef TH_ENABLE_NETPLAY
+    if (Netplay::Th06LanStageProbe::Requested())
+    {
+        // A stalled network tick consumes no deterministic simulation time.
+        // Keep only a bounded backlog, then run several fixed ticks before the
+        // next presentation once required input resumes. This is the same
+        // production scheduler rule already validated by TH07.
+        constexpr i32 maxNetplayCatchupTicks = 6;
+        i32 catchupTicks = 0;
+        while (this->accumulator >= targetDt && catchupTicks < maxNetplayCatchupTicks)
+        {
+            const i32 res = runSimulationTick();
+            if (res == 0)
+                return RENDER_RESULT_EXIT_SUCCESS;
+            if (res == -1)
+                return RENDER_RESULT_EXIT_ERROR;
+            if (!lastSimulationTickAdvanced)
+            {
+                this->accumulator = std::min(
+                    this->accumulator, targetDt * static_cast<f64>(maxNetplayCatchupTicks));
+                break;
+            }
+            this->accumulator -= targetDt;
+            updated = true;
+            ++catchupTicks;
+        }
+    }
+    else
+#endif
     if (limitPresentationTo60 || preserveReplayCadence)
     {
         if (this->accumulator >= targetDt)

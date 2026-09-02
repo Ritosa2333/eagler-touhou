@@ -22,6 +22,7 @@
 #include "ReplayExtension.hpp"
 #include "ReplayManager.hpp"
 #include "ScreenEffect.hpp"
+#include "Touch.hpp"
 #include "SoundPlayer.hpp"
 #include "utils.hpp"
 #ifdef TH_ENABLE_THPRAC
@@ -33,6 +34,20 @@
 namespace THPrac::Gui
 {
 void ShowLicenceInfo();
+}
+
+static void ResetTouchReplayForPracticeRestart()
+{
+    // A thprac Restart is a new attempt, not a continuation of the previous
+    // gesture stream. End any in-flight touch lifetime and clear the extension
+    // recorder/finger-id map before GAMEMANAGER_REINIT reuses ReplayManager.
+    // Playback fingers are separate from live touch owners; clear them too or
+    // a DOWN without a matching UP at the restart boundary leaves a visible
+    // replay cross in the next attempt.
+    Touch::CancelTouches();
+    Touch::ResetReplayRecordingState();
+    Touch::ResetReplayTouch();
+    ReplayExtension::ResetRecording();
 }
 #endif
 
@@ -1935,6 +1950,7 @@ bool UpdatePauseMenu()
         SDL_Log("TH06 thprac original pause: quick restart");
 #endif
         ScreenEffect::RequestShakeCancelForRestart();
+        ResetTouchReplayForPracticeRestart();
         SetConfig(Config {});
         g_GameManager.isInGameMenu = 0;
         g_Supervisor.curState = SUPERVISOR_STATE_GAMEMANAGER_REINIT;
@@ -2051,6 +2067,7 @@ bool UpdatePauseMenu()
 #ifdef TH_DEV_TOOLS
             SDL_Log("TH06 thprac pause action: execute restart at frame %u", g_PauseFrameCounter);
 #endif
+            ResetTouchReplayForPracticeRestart();
             g_GameManager.isInGameMenu = 0;
             g_Supervisor.curState = SUPERVISOR_STATE_GAMEMANAGER_REINIT;
             break;
@@ -2121,6 +2138,7 @@ bool UpdatePauseMenu()
                 PublishConfigToHost();
 #endif
                 g_PreserveConfigOnRestart = true;
+                ResetTouchReplayForPracticeRestart();
                 g_Supervisor.curState = SUPERVISOR_STATE_GAMEMANAGER_REINIT;
                 g_PauseWasOpen = false;
                 break;

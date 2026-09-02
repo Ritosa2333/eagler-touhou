@@ -19,10 +19,17 @@
 #include "ZunMath.hpp"
 #include "i18n.hpp"
 #include "utils.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "multiplayer/GameplaySession.hpp"
+#endif
 // #include <direct.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 
 #ifdef TH_DEV_TOOLS
 #include <SDL3/SDL_log.h>
@@ -32,6 +39,10 @@
 static const f32 g_DifficultyWeightsList[5] = {-30.0f, -10.0f, 20.0f, 30.0f, 30.0f};
 
 static constexpr u32 g_DefaultMagic = MakeMagic('S', 'Y', 'M', 'D');
+
+#ifdef __EMSCRIPTEN__
+static bool g_NetplayEndingCycleResultAudit = false;
+#endif
 
 // EoSD assumes every character in this array is a single byte, which is a safe assumption in SJIS, but not
 //   in UTF-8, so we have to encode '･' with an escape sequence
@@ -82,12 +93,37 @@ static void DrawResultShotTypeText(AnmVm *vm, const char *text)
         g_AnmManager->DrawStringFormat2(vm, COLOR_RGB(COLOR_WHITE), COLOR_RGB(COLOR_BLACK), text);
 }
 
+namespace
+{
+bool ShouldSkipPersistentResultWrite()
+{
+    // Playback is read-only. A completed Replay may enter the ResultScreen
+    // teardown path, but it must never update score.dat/PSCR or create a
+    // Replay-of-a-Replay.
+    if (g_GameManager.isInReplay)
+        return true;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Multiplayer has a deliberately different lives/power/score economy.
+    // Keep Replay saving available, but never merge a room result into the
+    // ordinary single-player score.dat progression/high-score tables.
+    return MultiplayerGameplay::IsMultiplayer();
+#else
+    return false;
+#endif
+}
+} // namespace
+
 static ResultScreenState ResolveFromGameResultState(bool directReplaySave, bool isInPracticeMode,
                                                     bool thpracActive, bool isInReplay)
 {
     (void)isInPracticeMode;
     (void)thpracActive;
-    (void)isInReplay;
+    // Replay playback is observational. Preserve thprac's natural-Practice
+    // result/save flow below, but never let a played Replay enter high-score,
+    // stats or Replay-save states when it finishes. Replay takes precedence
+    // even over a stale one-shot direct-save request.
+    if (isInReplay)
+        return RESULT_SCREEN_STATE_EXIT;
     if (directReplaySave)
         return RESULT_SCREEN_STATE_SAVE_REPLAY_QUESTION;
     // th06_preplay_1 permanently changes the vanilla Practice branch's
@@ -191,9 +227,11 @@ void ResultScreen::DebugCloseStatsAudit()
 bool ResultScreen::DebugThpracResultRoutingSelfTest()
 {
     return ResolveFromGameResultState(true, true, true, false) == RESULT_SCREEN_STATE_SAVE_REPLAY_QUESTION &&
+           ResolveFromGameResultState(true, true, true, true) == RESULT_SCREEN_STATE_EXIT &&
            ResolveFromGameResultState(false, true, true, false) == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME &&
            ResolveFromGameResultState(false, true, false, false) == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME &&
-           ResolveFromGameResultState(false, true, true, true) == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME &&
+           ResolveFromGameResultState(false, true, true, true) == RESULT_SCREEN_STATE_EXIT &&
+           ResolveFromGameResultState(false, false, false, true) == RESULT_SCREEN_STATE_EXIT &&
            ResolveFromGameResultState(false, false, false, false) == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME;
 }
 
@@ -555,6 +593,8 @@ void ResultScreen::ReleaseScoreDat(ScoreDat *scoreDat)
 
 void ResultScreen::WriteScore(ResultScreen *resultScreen)
 {
+    if (ShouldSkipPersistentResultWrite())
+        return;
 
     u8 *fileBuffer;
     u8 originalByte;
@@ -1532,6 +1572,20 @@ ZunResult ResultScreen::RegisterChain(i32 unk)
             directReplaySave, g_GameManager.isInPracticeMode != 0,
             PracticeRuntime::Active(), g_GameManager.isInReplay != 0);
 
+#if defined(__EMSCRIPTEN__) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+        if (MultiplayerGameplay::IsMultiplayer())
+        {
+            g_NetplayEndingCycleResultAudit = EM_ASM_INT({
+                return Module.eaglerOptions?.netplayEndingCycle ? 1 : 0;
+            }) != 0;
+            EM_ASM({
+                globalThis.__eaglerNetplayResultEntered = true;
+                globalThis.__eaglerNetplayResultCompleted = false;
+                globalThis.__eaglerNetplayResultState = $0;
+            }, static_cast<int>(resultScreen->resultScreenState));
+        }
+#endif
+
         if (directReplaySave)
         {
             // Upstream th06_result_screen_create is enabled only by the
@@ -1618,6 +1672,13 @@ ChainCallbackResult ResultScreen::OnUpdate(ResultScreen *resultScreen)
 {
     i32 difficulty;
     i32 characterShotType;
+#ifdef __EMSCRIPTEN__
+    if (g_NetplayEndingCycleResultAudit)
+    {
+        EM_ASM({ globalThis.__eaglerNetplayResultState = $0; },
+               static_cast<int>(resultScreen->resultScreenState));
+    }
+#endif
     AnmVm *vm;
     i32 i;
     for (AnmVm &vm : resultScreen->unk_40)
@@ -2495,7 +2556,8 @@ ZunResult ResultScreen::AddedCallback(ResultScreen *resultScreen)
     }
 #endif
 
-    if (resultScreen->resultScreenState == RESULT_SCREEN_STATE_EXIT &&
+    if (!ShouldSkipPersistentResultWrite() &&
+        resultScreen->resultScreenState == RESULT_SCREEN_STATE_EXIT &&
         g_GameManager.pscr[g_GameManager.CharacterShotType()][g_GameManager.currentStage - 1][g_GameManager.difficulty]
                 .score < g_GameManager.score)
     {
@@ -2542,6 +2604,17 @@ ZunResult ResultScreen::DeletedCallback(ResultScreen *resultScreen)
     g_Chain.Cut(resultScreen->drawChain);
 
     resultScreen->drawChain = NULL;
+
+#ifdef __EMSCRIPTEN__
+    if (g_NetplayEndingCycleResultAudit)
+    {
+        EM_ASM({
+            globalThis.__eaglerNetplayResultCompleted = true;
+            globalThis.__eaglerNetplayResultState = -1;
+        });
+        g_NetplayEndingCycleResultAudit = false;
+    }
+#endif
 
 #ifdef TH_DEV_TOOLS
     if (readOnlyStatsAudit)

@@ -12,6 +12,10 @@
 #include <cstring>
 #include <string>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 namespace
 {
 void RenderDescription(MusicRoom *musicRoom)
@@ -414,6 +418,13 @@ finishMusiccmtRead:
     RenderDescription(musicRoom);
 
     std::free(fileBase);
+
+#ifdef __EMSCRIPTEN__
+    EM_ASM({
+        globalThis.__eaglerMusicRoomEntered = true;
+        globalThis.__eaglerMusicRoomDescriptorCount = $0;
+    }, musicRoom->numDescriptors);
+#endif
 
     return ZUN_SUCCESS;
 }

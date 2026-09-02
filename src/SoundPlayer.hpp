@@ -111,7 +111,11 @@ struct SoundPlayer
     SDL_AudioStream *audioStream;
     std::thread backgroundMusicThreadHandle;
     std::atomic_bool terminateFlag;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    i32 soundBuffersToPlay[5];
+#else
     i32 soundBuffersToPlay[3];
+#endif
     MusicStream backgroundMusic;
     bool isLooping;
 #ifdef __EMSCRIPTEN__
