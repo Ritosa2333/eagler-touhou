@@ -118,17 +118,18 @@ static ResultScreenState ResolveFromGameResultState(bool directReplaySave, bool 
 {
     (void)isInPracticeMode;
     (void)thpracActive;
-    // Replay playback is observational. Preserve thprac's natural-Practice
-    // result/save flow below, but never let a played Replay enter high-score,
-    // stats or Replay-save states when it finishes. Replay takes precedence
-    // even over a stale one-shot direct-save request.
-    if (isInReplay)
-        return RESULT_SCREEN_STATE_EXIT;
+    (void)isInReplay;
+    // Replay playback is diverted back to the Replay menu by the StageMenu
+    // boundary before this patched ResultScreen path is entered. Keep this
+    // helper faithful to thprac's ResultScreen patches instead of adding a
+    // second Replay owner here.
     if (directReplaySave)
         return RESULT_SCREEN_STATE_SAVE_REPLAY_QUESTION;
     // th06_preplay_1 permanently changes the vanilla Practice branch's
     // immediate state from EXIT (0x11) to WRITING_HIGHSCORE_NAME (0x09).
     // The non-Practice branch already used 0x09, so after the patch every
+    // natural Practice enters replay-save result flow through the same normal
+    // result-state chain instead of taking the vanilla Practice exit.
     // normal from-game ResultScreen starts there. This is not mode-gated.
     return RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME;
 }
@@ -227,11 +228,11 @@ void ResultScreen::DebugCloseStatsAudit()
 bool ResultScreen::DebugThpracResultRoutingSelfTest()
 {
     return ResolveFromGameResultState(true, true, true, false) == RESULT_SCREEN_STATE_SAVE_REPLAY_QUESTION &&
-           ResolveFromGameResultState(true, true, true, true) == RESULT_SCREEN_STATE_EXIT &&
+           ResolveFromGameResultState(true, true, true, true) == RESULT_SCREEN_STATE_SAVE_REPLAY_QUESTION &&
            ResolveFromGameResultState(false, true, true, false) == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME &&
            ResolveFromGameResultState(false, true, false, false) == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME &&
-           ResolveFromGameResultState(false, true, true, true) == RESULT_SCREEN_STATE_EXIT &&
-           ResolveFromGameResultState(false, false, false, true) == RESULT_SCREEN_STATE_EXIT &&
+           ResolveFromGameResultState(false, true, true, true) == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME &&
+           ResolveFromGameResultState(false, false, false, true) == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME &&
            ResolveFromGameResultState(false, false, false, false) == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME;
 }
 
