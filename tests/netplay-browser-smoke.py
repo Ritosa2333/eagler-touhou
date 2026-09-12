@@ -6,13 +6,13 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from integration_support import require_host_relay
 
 from playwright.sync_api import sync_playwright
 
 
 ROOT = Path(__file__).resolve().parents[1]
-WORKSPACE = ROOT.parent
-RELAY_ROOT = WORKSPACE / "th07-eagler" / "tools" / "netplay"
+HOST_ROOT, RELAY_SCRIPT = require_host_relay()
 
 
 def free_port() -> int:
@@ -249,8 +249,8 @@ def run_smoke(
         text=True,
     )
     relay = subprocess.Popen(
-        ["node", "lan-relay.cjs"],
-        cwd=RELAY_ROOT,
+        ["node", str(RELAY_SCRIPT)],
+        cwd=HOST_ROOT,
         env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,

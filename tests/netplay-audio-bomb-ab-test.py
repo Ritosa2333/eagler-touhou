@@ -1,12 +1,12 @@
 ﻿from __future__ import annotations
 import os, socket, subprocess, sys, time
 from pathlib import Path
+from integration_support import require_host_relay
 import numpy as np
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
-WORKSPACE = ROOT.parent
-RELAY_ROOT = WORKSPACE / 'th07-eagler' / 'tools' / 'netplay'
+HOST_ROOT, RELAY_SCRIPT = require_host_relay()
 
 
 def free_port():
@@ -130,7 +130,7 @@ def run_case(label, bomb):
         'TH07_RELAY_JITTER_MS':'10',
     })
     http = subprocess.Popen([sys.executable, '-m', 'http.server', str(hp), '--bind', '127.0.0.1'], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    relay = subprocess.Popen(['node', 'lan-relay.cjs'], cwd=RELAY_ROOT, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+    relay = subprocess.Popen(['node', str(RELAY_SCRIPT)], cwd=HOST_ROOT, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
     browsers = []
     try:
         wait_http(f'http://127.0.0.1:{hp}/tests/netplay-browser-host.html')
