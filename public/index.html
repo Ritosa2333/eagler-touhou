@@ -399,7 +399,10 @@
                 </div>
               </section>
             </div>
-            <button class="mp-network-check" id="mpNetworkCheck" type="button"><svg viewBox="0 -960 960 960" aria-hidden="true"><path d="M120-160v-120q0-33 23.5-56.5T200-360h40v-80q0-33 23.5-56.5T320-520h120v-80h-40q-33 0-56.5-23.5T320-680v-120q0-33 23.5-56.5T400-880h160q33 0 56.5 23.5T640-800v120q0 33-23.5 56.5T560-600h-40v80h120q33 0 56.5 23.5T720-440v80h40q33 0 56.5 23.5T840-280v120q0 33-23.5 56.5T760-80H600q-33 0-56.5-23.5T520-160v-120q0-33 23.5-56.5T600-360h40v-80H320v80h40q33 0 56.5 23.5T440-280v120q0 33-23.5 56.5T360-80H200q-33 0-56.5-23.5T120-160Zm280-520h160v-120H400v120ZM200-160h160v-120H200v120Zm400 0h160v-120H600v120Z"/></svg><span data-i18n="networkCheck.action">检查网络</span></button>
+            <div class="mp-network-actions">
+              <button class="mp-network-guide-open" id="mpGuideOpen" type="button"><svg viewBox="0 -960 960 960" aria-hidden="true"><path d="M240-80q-50 0-85-35t-35-85v-560q0-50 35-85t85-35h400q50 0 85 35t35 85v560q0 50-35 85t-85 35H240Zm0-80h400q17 0 28.5-11.5T680-200v-560q0-17-11.5-28.5T640-800H240q-17 0-28.5 11.5T200-760v560q0 17 11.5 28.5T240-160Zm80-120h240v-80H320v80Zm0-160h240v-80H320v80Zm0-160h160v-80H320v80Z"/></svg><span data-i18n="multiplayerGuide.action">联机玩法介绍</span></button>
+              <button class="mp-network-check" id="mpNetworkCheck" type="button"><svg viewBox="0 -960 960 960" aria-hidden="true"><path d="M120-160v-120q0-33 23.5-56.5T200-360h40v-80q0-33 23.5-56.5T320-520h120v-80h-40q-33 0-56.5-23.5T320-680v-120q0-33 23.5-56.5T400-880h160q33 0 56.5 23.5T640-800v120q0 33-23.5 56.5T560-600h-40v80h120q33 0 56.5 23.5T720-440v80h40q33 0 56.5 23.5T840-280v120q0 33-23.5 56.5T760-80H600q-33 0-56.5-23.5T520-160v-120q0-33 23.5-56.5T600-360h40v-80H320v80h40q33 0 56.5 23.5T440-280v120q0 33-23.5 56.5T360-80H200q-33 0-56.5-23.5T120-160Zm280-520h160v-120H400v120ZM200-160h160v-120H200v120Zm400 0h160v-120H600v120Z"/></svg><span data-i18n="networkCheck.action">检查网络</span></button>
+            </div>
           </section>
         </section>
         <div class="file-tools-grid">
@@ -586,14 +589,19 @@
       </header>
       <div class="changelog-text" id="changelogText"><p class="changelog-loading" data-i18n="changelog.loading">正在读取更新日志…</p></div>
       <footer>
-        <div class="changelog-swipe-hint" aria-hidden="true">
+        <button class="changelog-swipe-hint" id="changelogCloseHint" type="button" aria-label="关闭更新日志" data-i18n-aria-label="changelog.close">
           <span data-i18n="changelog.swipeToClose">右滑来关闭该页面</span>
           <span class="changelog-swipe-visual"><svg viewBox="0 0 280 26"><path d="M6 13h260m-10-9 10 9-10 9"/></svg></span>
-        </div>
+        </button>
       </footer>
     </article>
   </dialog>
-  <button class="edge-drawer-cue edge-drawer-cue-right" id="changelogEdgeCue" type="button" aria-controls="changelogDialog" aria-label="更新日志" data-i18n-aria-label="changelog.title"></button>
+  <dialog class="multiplayer-guide-dialog" id="mpGuideDialog" aria-labelledby="mpGuideTitle">
+    <article class="multiplayer-guide-window">
+      <header><h1 id="mpGuideTitle" data-i18n="multiplayerGuide.title">联机玩法介绍</h1><button id="mpGuideClose" type="button" aria-label="关闭联机玩法介绍" data-i18n-aria-label="multiplayerGuide.close">×</button></header>
+      <div class="multiplayer-guide-content" id="mpGuideContent"><p class="multiplayer-guide-loading" data-i18n="multiplayerGuide.loading">正在读取联机玩法介绍…</p></div>
+    </article>
+  </dialog>
   <dialog class="apple-refresh-dialog" id="appleRefreshDialog" aria-labelledby="appleRefreshTitle">
     <article class="apple-refresh-window">
       <header>

@@ -1,3 +1,5 @@
+import { loadMarkdownParser, parseTrustedMarkdown, type MarkdownParser } from "./markdown.mjs";
+
 export const CHANGELOG_FILE = "CHANGELOG.md";
 export const CHANGELOG_SEEN_STORAGE_KEY = "eagler-touhou-changelog-seen-v2";
 
@@ -25,57 +27,11 @@ export function changelogContentIdentity(source: string): string {
   return `fnv1a32-${text.length.toString(36)}-${(hash >>> 0).toString(16).padStart(8, "0")}`;
 }
 
-type MarkdownParser = (source: string) => string;
-let markdownParserLoad: Promise<MarkdownParser> | null = null;
-
-function globalMarkdownParser(): MarkdownParser | null {
-  const parser = (globalThis as typeof globalThis & {
-    marked?: { parse: (markdown: string, options?: Readonly<Record<string, unknown>>) => string | Promise<string> };
-  }).marked;
-  if (!parser) return null;
-  return source => {
-    const html = parser.parse(source, { async: false, gfm: true });
-    if (typeof html !== "string") throw new Error("Markdown parser unexpectedly returned an asynchronous result");
-    return html;
-  };
-}
-
-function defaultMarkdownParser(source: string): string {
-  const parser = globalMarkdownParser();
-  if (!parser) throw new Error("Markdown parser is unavailable");
-  return parser(source);
-}
-
-async function loadMarkdownParser(documentObj: Document): Promise<MarkdownParser> {
-  const existing = globalMarkdownParser();
-  if (existing) return existing;
-  if (!markdownParserLoad) {
-    markdownParserLoad = (async () => {
-      // Keep mixed App Shell generations usable: a new Launcher module may run
-      // briefly under an older cached index.html that did not preload Marked.
-      await new Promise<void>((resolvePromise, reject) => {
-        const script = documentObj.createElement("script");
-        script.src = new URL("../../vendor/marked.umd.js", import.meta.url).href;
-        script.addEventListener("load", () => resolvePromise(), { once: true });
-        script.addEventListener("error", () => reject(new Error("Markdown parser download failed")), { once: true });
-        (documentObj.head || documentObj.documentElement).append(script);
-      });
-      const loaded = globalMarkdownParser();
-      if (!loaded) throw new Error("Markdown parser failed to initialize");
-      return loaded;
-    })().catch(error => {
-      markdownParserLoad = null;
-      throw error;
-    });
-  }
-  return markdownParserLoad;
-}
-
 export function renderChangelogMarkdown(
   documentObj: Document,
   target: HTMLElement,
   source: string,
-  parseMarkdown: MarkdownParser = defaultMarkdownParser,
+  parseMarkdown: MarkdownParser,
 ): void {
   target.replaceChildren();
   const list = documentObj.createElement("div");
@@ -84,8 +40,7 @@ export function renderChangelogMarkdown(
 
   // CHANGELOG.md is repository-controlled content. Marked supplies the full
   // Markdown grammar; this adapter only applies the Launcher's visual grouping.
-  const parsed = documentObj.createElement("div");
-  parsed.innerHTML = parseMarkdown(normalizeChangelogText(source));
+  const parsed = parseTrustedMarkdown(documentObj, normalizeChangelogText(source), parseMarkdown);
   let entry: HTMLElement | null = null;
   for (const node of Array.from(parsed.childNodes)) {
     const tagName = "tagName" in node ? String((node as Element).tagName).toUpperCase() : "";
@@ -96,22 +51,6 @@ export function renderChangelogMarkdown(
       list.append(entry);
     }
     entry.append(node);
-  }
-  const base = new URL(documentObj.baseURI || "https://launcher.invalid/");
-  for (const link of Array.from(list.querySelectorAll("a"))) {
-    let resolved: URL;
-    try { resolved = new URL(link.getAttribute("href") || "", base); } catch { continue; }
-    if (resolved.protocol !== "http:" && resolved.protocol !== "https:") {
-      link.removeAttribute("href");
-      continue;
-    }
-    if ((link.textContent || "").trim() !== (link.getAttribute("href") || "").trim()) {
-      link.classList.add("changelog-link-labeled");
-    }
-    if (resolved.origin !== base.origin) {
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-    }
   }
 }
 

@@ -67,7 +67,7 @@ function validIceServers(value: unknown): RTCIceServer[] {
   }) as RTCIceServer[];
 }
 
-async function probeRelay(url: string, timeoutMs = 6000): Promise<RelayProbe> {
+async function probeDiagnosticRelay(url: string, timeoutMs: number): Promise<RelayProbe> {
   const socket = new WebSocket(url);
   const pongWaiters = new Map<string, (receivedAt: number) => void>();
   let readyResolve: ((value: { iceServers: RTCIceServer[] }) => void) | null = null;
@@ -113,6 +113,58 @@ async function probeRelay(url: string, timeoutMs = 6000): Promise<RelayProbe> {
     clearTimeout(timer);
     pongWaiters.clear();
     try { socket.close(1000, "diagnostic complete"); } catch {}
+  }
+}
+
+export function legacyDiagnosticRelayUrl(value: string, nonce: string): string {
+  const url = new URL(value);
+  for (const key of ["diagnostic", "room", "run", "lobby", "player", "players", "signal", "spectator"])
+    url.searchParams.delete(key);
+  url.searchParams.set("room", `th07mp-diagnostic-${nonce}`.slice(0, 64));
+  url.searchParams.set("run", nonce.slice(0, 64));
+  url.searchParams.set("player", "0");
+  url.searchParams.set("players", "2");
+  url.searchParams.set("signal", "1");
+  return url.href;
+}
+
+async function probeLegacyRelay(url: string, timeoutMs: number): Promise<RelayProbe> {
+  const nonce = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  const startedAt = performance.now();
+  const socket = new WebSocket(legacyDiagnosticRelayUrl(url, nonce));
+  let readyResolve: ((value: RelayProbe) => void) | null = null;
+  let readyReject: ((reason: unknown) => void) | null = null;
+  const ready = new Promise<RelayProbe>((resolve, reject) => {
+    readyResolve = resolve;
+    readyReject = reject;
+  });
+  const timer = globalThis.setTimeout(() => readyReject?.(timeoutError("WebSocket signaling")), timeoutMs);
+  socket.addEventListener("message", event => {
+    const message = websocketMessage(event.data);
+    if (message?.type !== "peers") return;
+    readyResolve?.({
+      latencyMs: Math.max(1, Math.round(performance.now() - startedAt)),
+      iceServers: validIceServers(message.iceServers),
+    });
+  });
+  socket.addEventListener("error", () => readyReject?.(new Error("WebSocket signaling failed")));
+  socket.addEventListener("close", () => readyReject?.(new Error("WebSocket signaling closed")));
+  try {
+    return await ready;
+  } finally {
+    clearTimeout(timer);
+    try { socket.close(1000, "diagnostic complete"); } catch {}
+  }
+}
+
+export async function probeRelay(url: string, timeoutMs = 6000): Promise<RelayProbe> {
+  try {
+    return await probeDiagnosticRelay(url, Math.min(timeoutMs, 3000));
+  } catch {
+    // Relays deployed before the dedicated diagnostic endpoint still expose
+    // their real ICE configuration through the normal signaling handshake.
+    // A unique room/run keeps this compatibility probe isolated from users.
+    return probeLegacyRelay(url, timeoutMs);
   }
 }
 

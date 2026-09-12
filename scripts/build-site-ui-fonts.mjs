@@ -13,6 +13,7 @@ const sources = [
   ...APP_SHELL_FILES.filter(path => !path.startsWith("vendor/") && /\.(?:html|css|js|mjs)$/.test(path)),
   "NOTICE.txt",
   "CHANGELOG.md",
+  "MULTIPLAYER.md",
   "product-catalog.mjs",
   "lib/development-content.mjs",
   "integrations/thcrap.mjs",

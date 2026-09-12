@@ -63,6 +63,7 @@
     "test:import-update:browser": "python tests/browser/test-import-update.py",
     "test:card-filter:browser": "python tests/test-card-filter-browser.py",
     "test:edge-drawers:browser": "python tests/browser/test-edge-drawers.py",
+    "test:multiplayer-guide:browser": "python tests/browser/test-multiplayer-guide.py",
     "test:test-build-cards:browser": "node tests/test-test-build-cards-browser.mjs",
     "test:legacy-package:browser": "python tests/test-legacy-package-app-runtime-browser.py",
     "test:offline-reload:browser": "python tests/test-offline-reload-browser.py",

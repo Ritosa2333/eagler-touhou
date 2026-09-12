@@ -169,6 +169,13 @@ Examples of already separated owners include:
 - `src/launcher/changelog.mts` - packaged `CHANGELOG.md` loading/rendering,
   empty/error handling and browser-local seen-state keyed by normalized content
   identity rather than a manually synchronized JavaScript version constant.
+- `src/launcher/markdown.mts` - shared lazy Marked loading and trusted packaged-
+  Markdown rendering boundary, including safe link protocols and external-link
+  isolation. Changelog and multiplayer guidance add only their own structure
+  and presentation after this shared parse step.
+- `src/launcher/multiplayer-guide.mts` - on-demand `MULTIPLAYER.md` loading and
+  dialog lifecycle. The guide is an App Shell resource so installed Launchers
+  retain the instructions offline with the rest of the current UI generation.
 - `src/launcher/game-preferences.mts` - persisted Launcher option schema,
   normalization/legacy cleanup, music-mode normalization, stable preference
   storage-key construction and non-fatal browser-storage read/write lifecycle.
@@ -222,6 +229,11 @@ Examples of already separated owners include:
   parameters are mutually exclusive while unrelated deployment-owned query
   parameters are preserved. WebSocket/RTC lifecycle, live room state and
   Runtime transport implementation remain outside this owner.
+- `src/launcher/network-diagnostics.mts` - user-triggered WS, TURN, NAT and IPv6
+  capability checks. It prefers the dedicated Relay diagnostic protocol and
+  falls back to an isolated legacy signaling handshake so an older but fully
+  playable Relay is not reported as unavailable merely because it lacks the
+  newer diagnostic endpoint.
 - `src/launcher/multiplayer-runtime-options.mts` - validation and construction
   of the Launcher-to-Runtime multiplayer option payload. Per-game difficulty
   and character bounds remain product-catalog inputs rather than duplicated
@@ -273,10 +285,12 @@ editor unusable for the current session.
 
 ### Site-information surface
 
-`NOTICE.txt` and `CHANGELOG.md` are packaged Launcher content, not remote
+`NOTICE.txt`, `CHANGELOG.md` and `MULTIPLAYER.md` are packaged Launcher content, not remote
 control-plane metadata. `src/launcher/site-notice.mts` owns the transient notice
 controller and treats notice loading as non-blocking.
 `src/launcher/changelog.mts` owns Changelog loading/rendering and seen-state.
+`src/launcher/multiplayer-guide.mts` owns the explicitly opened gameplay guide;
+its Markdown source is precached rather than duplicated into HTML or JavaScript.
 An empty `CHANGELOG.md` is a valid packaged state: it must not auto-open an
 empty dialog, while explicit user access reports that no changelog is present.
 Non-empty normalized content derives its own content identity, so deployers do

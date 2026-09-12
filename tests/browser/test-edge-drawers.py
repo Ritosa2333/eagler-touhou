@@ -57,17 +57,15 @@ def main() -> int:
               document.getElementById('siteNotice').hidden = true;
             }""")
             page.wait_for_timeout(240)
-            cue_box = page.locator("#changelogEdgeCue").bounding_box()
-            assert cue_box and abs(cue_box["x"] + cue_box["width"] - 430) < 1.5, cue_box
-            assert page.locator("#changelogEdgeCue").evaluate("element => getComputedStyle(element).visibility") == "visible"
+            assert page.locator("#changelogEdgeCue").count() == 0
             artifact_dir = os.environ.get("EAGLER_EDGE_DRAWER_ARTIFACT_DIR")
             if artifact_dir:
                 Path(artifact_dir).mkdir(parents=True, exist_ok=True)
                 page.screenshot(path=str(Path(artifact_dir) / "changelog-cue-closed.png"), full_page=True)
 
-            page.locator("#changelogEdgeCue").click()
+            swipe(page, (428, 320), (348, 321))
             page.wait_for_function("document.getElementById('changelogDialog')?.open === true")
-            swipe(page, (90, 320), (170, 321))
+            page.locator("#changelogCloseHint").click()
             page.wait_for_function("document.getElementById('changelogDialog')?.open === false")
 
             swipe(page, (428, 320), (348, 321))
@@ -105,9 +103,9 @@ def main() -> int:
                 "pass": True,
                 "viewport": [430, 820],
                 "changelog": {"side": "right", "box": changelog_box, "backdrop": backdrop, "heading": heading_style},
-                "cue": {"side": "right", "box": cue_box},
+                "cue": "removed",
                 "notice": {"side": "left", "box": notice_box},
-                "gestures": ["right-cue-click", "right-edge-reveal", "right-retract", "left-edge-reveal", "left-retract"],
+                "gestures": ["right-edge-reveal", "bottom-hint-close", "right-retract", "left-edge-reveal", "left-retract"],
             }
             print(json.dumps(result, ensure_ascii=False))
             browser.close()

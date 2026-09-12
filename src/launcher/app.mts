@@ -91,6 +91,7 @@ import { createTouchLayoutWindowPositionStore } from "./touch-layout-editor-stat
 import type { TouchLayoutWindowKind } from "./touch-layout-editor-state.mjs";
 import { createSiteNoticeController } from "./site-notice.mjs";
 import { createChangelogController } from "./changelog.mjs";
+import { createMultiplayerGuideController } from "./multiplayer-guide.mjs";
 import { createEdgeDrawerGesture } from "./edge-drawer-gesture.mjs";
 import {
   DEFAULT_GAME_OPTIONS as defaultOptions,
@@ -1376,7 +1377,7 @@ const selectElementSelectors = [
   "#touchFocusMode",
 ] as const;
 const dialogElementSelectors = [
-  "#decisionDialog", "#changelogDialog", "#appleRefreshDialog", "#replayDialog",
+  "#decisionDialog", "#changelogDialog", "#mpGuideDialog", "#appleRefreshDialog", "#replayDialog",
 ] as const;
 const anchorElementSelectors = ["#originMigrationOpen", "#gameDataFallbackUrl"] as const;
 const outputElementSelectors = ["#touchLayoutScaleValue", "#touchSensitivityValue"] as const;
@@ -1386,14 +1387,14 @@ const buttonElementSelectors = [
   "#mpFrameLimitToggle", "#mpLocalPlayerVisibilityToggle", "#mpMobileOptionsToggle",
   "#mpTouchToggle", "#mpTouchLayoutEdit", "#mpAlwaysHitboxToggle", "#mpMagnifierToggle",
   "#mpReplayViewer", "#mpCreateRoom", "#mpJoinRoom", "#frameLimitAppleNote",
-  "#mpNetworkCheck",
+  "#mpGuideOpen", "#mpNetworkCheck",
   "#frameLimitToggle", "#th06HitboxToggle", "#thpracToggle", "#mobileOptionsToggle",
   "#touchToggle", "#touchLayoutEdit", "#alwaysHitboxToggle", "#magnifierToggle",
   "#launch", "#gamePackageImport", "#mpLeaveRoom", "#mpSpectatorJoin",
   "#mpLoadoutPrev", "#mpLoadoutNext", "#mpStandUp", "#mpLoadoutPrevSeat",
   "#mpLoadoutNextSeat", "#mpCopyRoomCode", "#mpReady", "#mpCheckGame", "#mpStartGame",
   "#mpRoomSettingsToggle", "#toastClose", "#startupErrorClose", "#decisionCancel",
-  "#decisionSecondary", "#decisionConfirm", "#changelogClose",
+  "#decisionSecondary", "#decisionConfirm", "#changelogClose", "#changelogCloseHint", "#mpGuideClose",
   "#appleRefreshClose", "#transferCancel", "#transferRetry", "#gameDataImportClose",
   "#transferImport", "#transferDownload", "#gameDataLinkClose", "#touchLayoutOrientationHelpOpen",
   "#touchLayoutReset", "#touchLayoutSave", "#touchLayoutExit", "#doubleTapBombToggle",
@@ -6893,6 +6894,7 @@ $("#lessMotionToggle").addEventListener("click", () => {
   render();
 });
 $("#changelogClose").addEventListener("click", changelog.close);
+$("#changelogCloseHint").addEventListener("click", changelog.close);
 const appleRefreshDialog = $("#appleRefreshDialog");
 function openAppleRefreshDialog() {
   if (!appleRefreshDialog.open) {
@@ -6924,6 +6926,10 @@ appleRefreshDialog.addEventListener("click", event => {
 const siteNotice = createSiteNoticeController({
   onOptOut: () => showToast(t("notice.restoreHint")),
 });
+const multiplayerGuide = createMultiplayerGuideController({
+  readFailureText: error => t("multiplayerGuide.readFailed", { reason: errorMessage(error) }),
+});
+$("#mpGuideOpen").addEventListener("click", () => { void multiplayerGuide.show(); });
 createNetworkDiagnosticsController({
   button: $("#mpNetworkCheck"),
   panel: $("#mpNetworkResults"),
@@ -6934,7 +6940,6 @@ createNetworkDiagnosticsController({
   getFallbackIceServers: () => state.netplay.iceServers,
   translate: (key, params) => t(key, params),
 });
-$("#changelogEdgeCue").addEventListener("click", () => { void changelog.showManual(); });
 createEdgeDrawerGesture({
   side: "right",
   drawer: $("#changelogDialog"),
