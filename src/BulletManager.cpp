@@ -1105,7 +1105,7 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
                 laserSize.x = local_14 / 2.0f;
             }
 
-            if ((ZunBool)(curLaser->timer.current >= curLaser->hitboxStartTime))
+            if (curLaser->timer.current >= curLaser->hitboxStartTime)
             {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                 for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
@@ -1181,7 +1181,7 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
                 }
             }
 
-            if ((ZunBool)(curLaser->timer.current < curLaser->hitboxEndDelay))
+            if (curLaser->timer.current < curLaser->hitboxEndDelay)
             {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                 for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
@@ -1196,7 +1196,7 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
 #endif
             }
 
-            if ((ZunBool)(curLaser->timer.current < curLaser->despawnDuration))
+            if (curLaser->timer.current < curLaser->despawnDuration)
             {
                 break;
             }

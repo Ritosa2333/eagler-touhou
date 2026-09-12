@@ -280,9 +280,9 @@ struct Player
 
     inline void SetToTopLeftPos(AnmVm *sprite) const
     {
-        sprite->pos[0] += g_GameManager.arcadeRegionTopLeftPos.x;
-        sprite->pos[1] += g_GameManager.arcadeRegionTopLeftPos.y;
-        sprite->pos[2] = 0.0;
+        sprite->pos.x += g_GameManager.arcadeRegionTopLeftPos.x;
+        sprite->pos.y += g_GameManager.arcadeRegionTopLeftPos.y;
+        sprite->pos.z = 0.0;
     };
 };
 
