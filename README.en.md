@@ -86,6 +86,10 @@ Operators can choose among three modes based on their resources and bandwidth:
 
 All three modes share the same frontend, browser-local game packages, and offline-play support. See the [self-hosting guide](docs/SELF_HOSTING.md) for complete deployment instructions.
 
+## Frequently Asked Questions
+
+See [FAQ](/docs/FAQ.md), or the [HTML version used in the website](/public/faq.html). (Both are only Chinese version available)
+
 ## License
 
 Licensed under the [GNU General Public License v3.0 or later](LICENSE).
