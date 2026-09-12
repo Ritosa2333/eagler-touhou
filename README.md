@@ -86,6 +86,9 @@
 
 三种模式共用同一套前端、浏览器本地游戏包和离线运行能力。完整部署方法见[自托管指南](docs/SELF_HOSTING.md)。
 
+## 常见问题
+详见 [常见问题](/docs/FAQ.md)，同时有[网页内部的HTML版](/public/faq.html)。
+
 ## 许可证
 
 本项目采用 [GNU General Public License v3.0 or later](LICENSE)。
