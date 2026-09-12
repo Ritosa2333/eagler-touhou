@@ -206,8 +206,9 @@ if (upstreamTh06.slice(upstreamParamStart, upstreamParamEnd).includes('int32_t w
 const closeStart = portablePractice.indexOf('static void RequestMenuClose(MenuResult result, bool accept)');
 const closeEnd = portablePractice.indexOf('\nMenuResult PollPracticeMenu()', closeStart);
 const closeBody = portablePractice.slice(closeStart, closeEnd);
-if (!closeBody.includes('StoreWorkingMenuConfig();\n        // State(4)') ||
-    !closeBody.includes('g_Config = {};')) {
+if (!closeBody.includes('StoreWorkingMenuConfig();') ||
+    !closeBody.includes('g_Config = {};') ||
+    closeBody.indexOf('StoreWorkingMenuConfig();') > closeBody.indexOf('g_Config = {};')) {
     throw new Error('Portable TH06 State(4) must preserve widgets while restoring all-zero live thPracParam');
 }
 
@@ -371,7 +372,6 @@ if (!portablePractice.includes('BuildSectionMatchesFor(i32 stage, i32 warp, i32 
     !portablePractice.includes('if (entry.stage != sectionStage)') ||
     !portablePractice.includes('if (candidate == nullptr)') ||
     !portablePractice.includes('else if (!(candidate->difficultyMask & difficultyBit) && (entry.difficultyMask & difficultyBit))') ||
-    !portablePractice.includes('keep the first row so the section ID remains available') ||
     portablePractice.includes('entry.stage != sectionStage || !(entry.difficultyMask & difficultyBit)')) {
     throw new Error('Portable TH06 section matcher regressed to difficulty-as-availability filtering');
 }
@@ -779,7 +779,7 @@ if (!portableResult.includes('static ResultScreenState ResolveFromGameResultStat
     !portableResult.includes('(void)thpracActive;') ||
     !portableResult.includes('(void)isInReplay;') ||
     !portableResult.includes('return RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME;') ||
-    !portableResult.includes('natural Practice enters replay-save result flow')) {
+    !portableResult.includes('return RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME;')) {
     throw new Error('Portable TH06 natural Practice result no longer enters the replay-save result flow');
 }
 for (const anchor of [

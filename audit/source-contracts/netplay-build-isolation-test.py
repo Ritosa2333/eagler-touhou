@@ -1,6 +1,6 @@
 from pathlib import Path
 
-root = Path(__file__).resolve().parents[1]
+root = Path(__file__).resolve().parents[2]
 cmake = (root / "CMakeLists.txt").read_text(encoding="utf-8")
 
 assert 'option(TH_ENABLE_NETPLAY' in cmake

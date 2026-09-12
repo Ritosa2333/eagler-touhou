@@ -1,6 +1,6 @@
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 game_manager = (ROOT / "src/GameManager.cpp").read_text(encoding="utf-8")
 resources = (ROOT / "src/MultiplayerResources.cpp").read_text(encoding="utf-8")
 enemy = (ROOT / "src/EnemyManager.cpp").read_text(encoding="utf-8")

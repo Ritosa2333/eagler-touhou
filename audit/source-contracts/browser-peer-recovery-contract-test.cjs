@@ -1,7 +1,7 @@
 const { readFileSync } = require('node:fs');
 const path = require('node:path');
 
-const source = readFileSync(path.resolve(__dirname, '../src/netplay/BrowserPeerTransport.cpp'), 'utf8');
+const source = readFileSync(path.resolve(__dirname, '../../src/netplay/BrowserPeerTransport.cpp'), 'utf8');
 
 function requireText(text, label) {
   if (!source.includes(text)) throw new Error(`missing ${label}: ${text}`);
