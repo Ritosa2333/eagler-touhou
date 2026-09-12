@@ -8,6 +8,7 @@ const MIME_BY_EXTENSION = new Map([
   [".webmanifest", "application/manifest+json; charset=utf-8"],
   [".css", "text/css; charset=utf-8"],
   [".txt", "text/plain; charset=utf-8"],
+  [".md", "text/markdown; charset=utf-8"],
   [".wasm", "application/wasm"],
   [".data", "application/octet-stream"],
   [".zip", "application/zip"],
@@ -25,7 +26,7 @@ const MIME_BY_EXTENSION = new Map([
 ]);
 
 const COMPRESSIBLE = new Set([
-  ".html", ".js", ".mjs", ".json", ".css", ".wasm", ".data", ".ttc", ".otf", ".svg",
+  ".html", ".js", ".mjs", ".json", ".css", ".txt", ".md", ".wasm", ".data", ".ttc", ".otf", ".svg",
 ]);
 
 export function staticContentType(path) {

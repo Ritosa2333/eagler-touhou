@@ -17,13 +17,15 @@ class FakeElement {
   className = "";
   textContent = "";
   children = [];
+  childNodes = [];
   open = false;
   showCount = 0;
   closeCount = 0;
   classList = { values: new Set(), add: (...names) => names.forEach(name => this.classList.values.add(name)), remove: (...names) => names.forEach(name => this.classList.values.delete(name)) };
   listeners = new Map();
-  append(...values) { this.children.push(...values); }
-  replaceChildren(...values) { this.children = [...values]; }
+  append(...values) { this.children.push(...values); this.childNodes.push(...values); }
+  replaceChildren(...values) { this.children = [...values]; this.childNodes = [...values]; }
+  querySelectorAll() { return []; }
   addEventListener(type, callback) { this.listeners.set(type, [...(this.listeners.get(type) || []), callback]); }
   showModal() { this.open = true; this.showCount++; }
   close() { this.open = false; this.closeCount++; }
@@ -53,7 +55,8 @@ function response(text, status = 200) {
   return { ok: status >= 200 && status < 300, status, text: async () => text };
 }
 
-const releaseText = "EAGLER TOUHOU CHANGELOG\n[2026-09-06] Test\n- Item";
+globalThis.marked = { parse: () => "<h2>2026-09-06</h2><p>Item</p>" };
+const releaseText = "# EAGLER TOUHOU CHANGELOG\n\n## 2026-09-06\n\n- Item";
 const sharedStorage = storageFrom();
 const firstDocument = new FakeDocument();
 const first = createChangelogController({
@@ -86,7 +89,7 @@ const changed = createChangelogController({
   fetchImpl: async () => response(changedText),
 });
 assert.equal(await changed.maybeShowAutomatically(), true,
-  "changing only CHANGELOG.txt content must create a new auto-show release");
+  "changing only CHANGELOG.md content must create a new auto-show release");
 assert.equal(sharedStorage.values.get(CHANGELOG_SEEN_STORAGE_KEY), changelogContentIdentity(changedText));
 
 const emptyDocument = new FakeDocument();

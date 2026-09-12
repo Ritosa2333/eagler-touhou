@@ -1,4 +1,4 @@
-export const CHANGELOG_FILE = "CHANGELOG.txt";
+export const CHANGELOG_FILE = "CHANGELOG.md";
 export const CHANGELOG_SEEN_STORAGE_KEY = "eagler-touhou-changelog-seen-v2";
 
 export type ChangelogLoadResult =
@@ -25,92 +25,93 @@ export function changelogContentIdentity(source: string): string {
   return `fnv1a32-${text.length.toString(36)}-${(hash >>> 0).toString(16).padStart(8, "0")}`;
 }
 
-function appendLinkedText(documentObj: Document, target: HTMLElement, text: string): void {
-  const pattern = /\[([^\]\n]+)\]\(([^\s)]+)\)|https?:\/\/[^\s<>"']+/gi;
-  let offset = 0;
-  for (const match of text.matchAll(pattern)) {
-    const index = match.index ?? 0;
-    if (index > offset) target.append(documentObj.createTextNode(text.slice(offset, index)));
-    const href = match[2] ?? match[0];
-    let resolved: URL;
-    try { resolved = new URL(href, documentObj.baseURI || "https://launcher.invalid/"); }
-    catch { target.append(documentObj.createTextNode(match[0])); offset = index + match[0].length; continue; }
-    if (resolved.protocol !== "http:" && resolved.protocol !== "https:") {
-      target.append(documentObj.createTextNode(match[0]));
-      offset = index + match[0].length;
-      continue;
-    }
-    const link = documentObj.createElement("a");
-    link.href = href;
-    link.textContent = match[1] ?? match[0];
-    if (match[1]) link.className = "changelog-link-labeled";
-    const base = new URL(documentObj.baseURI || "https://launcher.invalid/");
-    if (resolved.origin !== base.origin) {
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-    }
-    target.append(link);
-    offset = index + match[0].length;
-  }
-  if (offset < text.length) target.append(documentObj.createTextNode(text.slice(offset)));
+type MarkdownParser = (source: string) => string;
+let markdownParserLoad: Promise<MarkdownParser> | null = null;
+
+function globalMarkdownParser(): MarkdownParser | null {
+  const parser = (globalThis as typeof globalThis & {
+    marked?: { parse: (markdown: string, options?: Readonly<Record<string, unknown>>) => string | Promise<string> };
+  }).marked;
+  if (!parser) return null;
+  return source => {
+    const html = parser.parse(source, { async: false, gfm: true });
+    if (typeof html !== "string") throw new Error("Markdown parser unexpectedly returned an asynchronous result");
+    return html;
+  };
 }
 
-export function renderChangelogText(documentObj: Document, target: HTMLElement, source: string): void {
+function defaultMarkdownParser(source: string): string {
+  const parser = globalMarkdownParser();
+  if (!parser) throw new Error("Markdown parser is unavailable");
+  return parser(source);
+}
+
+async function loadMarkdownParser(documentObj: Document): Promise<MarkdownParser> {
+  const existing = globalMarkdownParser();
+  if (existing) return existing;
+  if (!markdownParserLoad) {
+    markdownParserLoad = (async () => {
+      // Keep mixed App Shell generations usable: a new Launcher module may run
+      // briefly under an older cached index.html that did not preload Marked.
+      await new Promise<void>((resolvePromise, reject) => {
+        const script = documentObj.createElement("script");
+        script.src = new URL("../../vendor/marked.umd.js", import.meta.url).href;
+        script.addEventListener("load", () => resolvePromise(), { once: true });
+        script.addEventListener("error", () => reject(new Error("Markdown parser download failed")), { once: true });
+        (documentObj.head || documentObj.documentElement).append(script);
+      });
+      const loaded = globalMarkdownParser();
+      if (!loaded) throw new Error("Markdown parser failed to initialize");
+      return loaded;
+    })().catch(error => {
+      markdownParserLoad = null;
+      throw error;
+    });
+  }
+  return markdownParserLoad;
+}
+
+export function renderChangelogMarkdown(
+  documentObj: Document,
+  target: HTMLElement,
+  source: string,
+  parseMarkdown: MarkdownParser = defaultMarkdownParser,
+): void {
   target.replaceChildren();
   const list = documentObj.createElement("div");
   list.className = "changelog-list";
   target.append(list);
-  let entry: HTMLElement | null = null;
-  let bullets: HTMLUListElement | null = null;
-  const ensureEntry = () => {
-    if (entry) return entry;
-    entry = documentObj.createElement("section");
-    entry.className = "changelog-item";
-    list.append(entry);
-    return entry;
-  };
 
-  for (const rawLine of normalizeChangelogText(source).split("\n")) {
-    const line = rawLine.trim();
-    if (!line || /^=+$/.test(line)) { bullets = null; continue; }
-    if (line === "EAGLER TOUHOU CHANGELOG") continue;
-    if (/^-{8,}$/.test(line)) { entry = null; bullets = null; continue; }
-    const dated = line.match(/^\[([^\]]+)\]\s*(.*)$/);
-    if (dated) {
+  // CHANGELOG.md is repository-controlled content. Marked supplies the full
+  // Markdown grammar; this adapter only applies the Launcher's visual grouping.
+  const parsed = documentObj.createElement("div");
+  parsed.innerHTML = parseMarkdown(normalizeChangelogText(source));
+  let entry: HTMLElement | null = null;
+  for (const node of Array.from(parsed.childNodes)) {
+    const tagName = "tagName" in node ? String((node as Element).tagName).toUpperCase() : "";
+    if (tagName === "H1") continue;
+    if (tagName === "H2" || !entry) {
       entry = documentObj.createElement("section");
       entry.className = "changelog-item";
-      const heading = documentObj.createElement("h2");
-      const date = documentObj.createElement("span");
-      date.className = "changelog-date";
-      date.textContent = dated[1];
-      heading.append(date);
-      if (dated[2]) heading.append(documentObj.createTextNode(` ${dated[2]}`));
-      entry.append(heading);
       list.append(entry);
-      bullets = null;
+    }
+    entry.append(node);
+  }
+  const base = new URL(documentObj.baseURI || "https://launcher.invalid/");
+  for (const link of Array.from(list.querySelectorAll("a"))) {
+    let resolved: URL;
+    try { resolved = new URL(link.getAttribute("href") || "", base); } catch { continue; }
+    if (resolved.protocol !== "http:" && resolved.protocol !== "https:") {
+      link.removeAttribute("href");
       continue;
     }
-    if (line.startsWith("## ")) {
-      const heading = documentObj.createElement("h3");
-      appendLinkedText(documentObj, heading, line.slice(3).trim());
-      ensureEntry().append(heading);
-      bullets = null;
-      continue;
+    if ((link.textContent || "").trim() !== (link.getAttribute("href") || "").trim()) {
+      link.classList.add("changelog-link-labeled");
     }
-    if (line.startsWith("- ")) {
-      if (!bullets) {
-        bullets = documentObj.createElement("ul");
-        ensureEntry().append(bullets);
-      }
-      const item = documentObj.createElement("li");
-      appendLinkedText(documentObj, item, line.slice(2));
-      bullets.append(item);
-      continue;
+    if (resolved.origin !== base.origin) {
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
     }
-    bullets = null;
-    const paragraph = documentObj.createElement("p");
-    appendLinkedText(documentObj, paragraph, line);
-    ensureEntry().append(paragraph);
   }
 }
 
@@ -120,6 +121,7 @@ export interface ChangelogControllerOptions {
   fetchImpl?: typeof fetch;
   emptyText?: () => string;
   readFailureText?: (error: unknown) => string;
+  parseMarkdown?: MarkdownParser;
   matchMediaImpl?: (query: string) => Pick<MediaQueryList, "matches">;
   setTimeoutImpl?: (callback: () => void, delay: number) => number;
 }
@@ -142,8 +144,9 @@ export function createChangelogController(options: ChangelogControllerOptions = 
   const emptyText = options.emptyText ?? (() => "暂无更新日志。");
   const readFailureText = options.readFailureText ?? (error => {
     const message = error instanceof Error ? error.message : String(error);
-    return `CHANGELOG.txt 读取失败：${message}。请刷新页面后重试。`;
+    return `CHANGELOG.md 读取失败：${message}。请刷新页面后重试。`;
   });
+  const parseMarkdown = options.parseMarkdown;
   const matchMediaImpl = options.matchMediaImpl ?? (query => globalThis.matchMedia?.(query) ?? { matches: false });
   const setTimeoutImpl = options.setTimeoutImpl ?? ((callback, delay) => globalThis.setTimeout(callback, delay));
   if (!documentObj || typeof fetchImpl !== "function") throw new Error("Changelog requires a browser document and fetch implementation");
@@ -183,7 +186,7 @@ export function createChangelogController(options: ChangelogControllerOptions = 
         renderStatus(emptyText(), "changelog-empty");
         return cached;
       }
-      renderChangelogText(documentObj, target, text);
+      renderChangelogMarkdown(documentObj, target, text, parseMarkdown ?? await loadMarkdownParser(documentObj));
       cached = Object.freeze({ kind: "available", contentId: changelogContentIdentity(text) });
       return cached;
     } catch (error) {

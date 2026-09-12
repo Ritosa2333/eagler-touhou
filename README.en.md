@@ -88,7 +88,7 @@ All three modes share the same frontend, browser-local game packages, and offlin
 
 ## Frequently Asked Questions
 
-See [FAQ](/docs/FAQ.md), or the [HTML version used in the website](/public/faq.html). (Both are only Chinese version available)
+See the [FAQ](/docs/FAQ.md). The website page is generated from this Markdown source. (Only Chinese is currently available.)
 
 ## License
 

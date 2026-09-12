@@ -27,6 +27,7 @@
   "scripts": {
     "start": "node scripts/serve.mjs",
     "build:launcher": "node scripts/build-launcher.mjs --force",
+    "build:content": "node scripts/build-content-pages.mjs",
     "host": "node host/build.mjs",
     "host:build": "node host/build.mjs --build-only",
     "host:doctor": "node scripts/inspect-host.mjs",
@@ -96,6 +97,7 @@
     "acorn": "8.18.0",
     "browserstack-local": "^1.5.13",
     "lighthouse": "13.4.1",
+    "marked": "18.0.12",
     "puppeteer-core": "25.10.0",
     "typescript": "7.0.2",
     "workbox-build": "^7.4.1"

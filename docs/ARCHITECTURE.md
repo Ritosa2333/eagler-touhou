@@ -166,7 +166,7 @@ Examples of already separated owners include:
 - `src/launcher/site-notice.mts` - non-blocking packaged `NOTICE.txt` parsing,
   branded-link rendering, notice lifetime/scroll behavior and browser-local
   notice preference ownership.
-- `src/launcher/changelog.mts` - packaged `CHANGELOG.txt` loading/rendering,
+- `src/launcher/changelog.mts` - packaged `CHANGELOG.md` loading/rendering,
   empty/error handling and browser-local seen-state keyed by normalized content
   identity rather than a manually synchronized JavaScript version constant.
 - `src/launcher/game-preferences.mts` - persisted Launcher option schema,
@@ -273,11 +273,11 @@ editor unusable for the current session.
 
 ### Site-information surface
 
-`NOTICE.txt` and `CHANGELOG.txt` are packaged Launcher content, not remote
+`NOTICE.txt` and `CHANGELOG.md` are packaged Launcher content, not remote
 control-plane metadata. `src/launcher/site-notice.mts` owns the transient notice
 controller and treats notice loading as non-blocking.
 `src/launcher/changelog.mts` owns Changelog loading/rendering and seen-state.
-An empty `CHANGELOG.txt` is a valid packaged state: it must not auto-open an
+An empty `CHANGELOG.md` is a valid packaged state: it must not auto-open an
 empty dialog, while explicit user access reports that no changelog is present.
 Non-empty normalized content derives its own content identity, so deployers do
 not have to update a second version constant when replacing release notes.

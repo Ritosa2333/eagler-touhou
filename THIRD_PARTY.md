@@ -14,6 +14,13 @@ Run `npm ci --ignore-scripts` followed by `npm run vendor` to reproduce the vend
 - License: MIT
 - Purpose: import and export original-format replay files as a ZIP archive without changing `.rpy` bytes.
 
+`public/vendor/marked.umd.js` is generated from `marked@18.0.12`.
+
+- Project: https://marked.js.org/
+- License: MIT
+- Purpose: render repository-controlled FAQ and changelog Markdown while preserving the site's own components and styles.
+- License copy: `public/vendor/marked.LICENSE`
+
 The masthead wordmark uses `font-touhou98@1.0.0`.
 
 - Project: https://github.com/thwiki/font-touhou98

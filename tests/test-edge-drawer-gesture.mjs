@@ -19,8 +19,10 @@ class FakeSurface {
     this.listeners.set(type, (this.listeners.get(type) || []).filter(value => value !== callback));
   }
   dispatch(type, values) {
-    const event = { isPrimary: true, button: 0, pointerId: 1, preventDefault() {}, ...values };
+    let prevented = false;
+    const event = { isPrimary: true, button: 0, pointerId: 1, preventDefault() { prevented = true; }, ...values };
     for (const callback of this.listeners.get(type) || []) callback(event);
+    return prevented;
   }
 }
 
@@ -48,6 +50,8 @@ function exercise(side) {
 
   const closingEnd = side === "left" ? 20 : 380;
   documentObj.dispatch("pointerdown", { clientX: 90, clientY: 100, target: drawer });
+  assert.equal(documentObj.dispatch("dragstart", { target: drawer }), true,
+    `${side} drawer must suppress native link/image drag during a swipe`);
   documentObj.dispatch("pointermove", { clientX: closingEnd, clientY: 101, target: drawer });
   documentObj.dispatch("pointerup", { clientX: closingEnd, clientY: 101, target: drawer });
   assert.equal(closes, 1, `${side} drawer must retract toward its owning edge`);

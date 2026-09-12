@@ -12,5 +12,5 @@ html{background:#0d0d0c}
 .primary-credits{margin:12px 0 14px}.primary-credits dt{margin-top:13px;font-weight:700;font-size:15px}.primary-credits dd{margin:2px 0 0 20px;color:#aaa}
 .secondary-credits{line-height:1.9}.about-page code{padding:1px 3px;background:#222;color:#fff;font:inherit}
 .about-foot{margin-top:26px!important;padding-top:12px;border:0}
-.faq-intro{color:#aaa}.faq-list{margin-top:18px;border:0}.faq-item{padding:16px 0 17px;border:0}.faq-item h2{margin:0 0 7px;font-size:14px}.faq-item p{margin:0;color:#b8b4ad}.faq-item p+p{margin-top:7px}.faq-item strong{color:#eee}.faq-item code{white-space:nowrap}
+.faq-content>p:first-of-type{margin:5px 0 18px;color:#aaa}.faq-content h2{margin:22px 0 7px;font-size:14px}.faq-content p{margin:7px 0;color:#b8b4ad}.faq-content ul{margin:8px 0;padding-left:22px;color:#b8b4ad}.faq-content li+li{margin-top:6px}.faq-content strong{color:#eee}.faq-content code{white-space:nowrap}
 @media(max-width:520px){.about-page{width:min(100% - 24px,680px);padding-top:22px}.primary-credits dd{margin-left:12px}}

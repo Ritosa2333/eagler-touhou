@@ -93,12 +93,12 @@
       setTimeout(function () { if (preload.isConnected) preload.remove(); }, 100);
     }
     function diagnosis() {
-      if (boot.kind === "script-load") return "启动器脚本没有加载成功。更像网络 / CDN / 缓存 / CSP 问题。";
-      if (boot.kind === "manifest") return "服务器发行信息没有正常取得。已安装的游戏仍可从本地启动；如果启动器界面本身也没有正常出现，请复制诊断信息反馈。";
-      if (boot.kind === "javascript") return "启动器脚本已经开始执行，但发生了 JavaScript 错误。更像浏览器兼容性、缓存混版本或脚本异常。";
-      if (boot.stage === "catalog-request" || boot.stage === "manifest-request") return "启动器正在后台检查服务器发行信息。这个请求不应阻止已安装游戏从本地启动；如果界面迟迟没有完成初始化，更可能是启动器脚本自身异常。";
-      if (boot.stage === "app-module-request") return "启动器模块长时间没有开始执行。可能是 app.js / 依赖没有加载，也可能是浏览器无法执行当前模块。";
-      return "网页启动器没有在预期时间内完成初始化。可能是网络 / CDN，也可能是浏览器脚本执行异常。";
+      if (boot.kind === "script-load") return "有一项启动文件未能载入。请检查网络后重新加载。";
+      if (boot.kind === "manifest") return "服务器信息暂时不可用。已安装的游戏和存档不会受到影响。";
+      if (boot.kind === "javascript") return "启动器初始化时遇到错误，可能是缓存版本不一致或浏览器兼容问题。";
+      if (boot.stage === "catalog-request" || boot.stage === "manifest-request") return "启动器初始化超时。已安装的游戏和存档不会受到影响。";
+      if (boot.stage === "app-module-request") return "启动器主程序未能开始运行。请重新加载页面。";
+      return "启动器没有在预期时间内准备完成。请重新加载页面。";
     }
     function diagnosticText() {
       var online = typeof navigator.onLine === "boolean" ? String(navigator.onLine) : "unknown";
@@ -126,32 +126,48 @@
       var panel = document.createElement("section");
       panel.id = "eaglerBootEmergency";
       panel.setAttribute("role", "alert");
-      panel.style.cssText = "position:fixed;z-index:2147483647;left:12px;right:12px;bottom:12px;box-sizing:border-box;max-height:72vh;overflow:auto;padding:16px;border:1px solid #ff7568;border-radius:10px;background:#160707;color:#ffe0dc;box-shadow:0 12px 42px rgba(0,0,0,.72);font:13px/1.55 system-ui,-apple-system,sans-serif;text-align:left;white-space:normal";
+      panel.style.cssText = "position:fixed;z-index:2147483647;inset:0;box-sizing:border-box;display:grid;place-items:center;padding:20px;background:transparent;font:13px/1.6 system-ui,-apple-system,sans-serif;text-align:left;white-space:normal";
+      var card = document.createElement("div");
+      card.style.cssText = "box-sizing:border-box;width:min(460px,100%);max-height:min(82vh,620px);overflow:auto;padding:24px;border:1px solid rgba(255,255,255,.1);border-radius:22px;background:#191a17;color:#d8d5ce;box-shadow:0 24px 70px rgba(0,0,0,.62),inset 0 1px rgba(255,255,255,.035)";
+      var heading = document.createElement("div");
+      heading.style.cssText = "display:flex;align-items:center;gap:11px;margin-bottom:10px";
+      var status = document.createElement("i");
+      status.setAttribute("aria-hidden", "true");
+      status.style.cssText = "display:grid;flex:0 0 28px;width:28px;height:28px;place-items:center;border-radius:50%;background:rgba(239,106,88,.13);color:#ef6a58;font-style:normal;font-weight:800";
+      status.textContent = "!";
       var title = document.createElement("strong");
-      title.textContent = "启动异常 - 页面没有失去响应";
-      title.style.cssText = "display:block;margin:0 0 7px;font-size:15px;color:#fff";
+      title.textContent = "启动器未能载入";
+      title.style.cssText = "display:block;color:#f2eee8;font-size:17px;line-height:1.3";
+      heading.appendChild(status); heading.appendChild(title);
       var text = document.createElement("div");
       text.id = "eaglerBootEmergencyText";
       text.textContent = diagnosis();
+      text.style.cssText = "color:#bdb8b0";
       var hint = document.createElement("div");
-      hint.textContent = "如果游戏选择界面都没有出现，说明故障发生在启动器完成初始化之前。请复制下面的诊断信息反馈。";
-      hint.style.cssText = "margin-top:7px;color:#d7aaa5";
+      hint.textContent = "如果重新加载后仍然失败，请复制诊断信息并反馈。";
+      hint.style.cssText = "margin-top:5px;color:#85827c;font-size:12px";
+      var details = document.createElement("details");
+      details.style.cssText = "margin-top:15px";
+      var summary = document.createElement("summary");
+      summary.textContent = "查看诊断信息";
+      summary.style.cssText = "color:#a6a29b;cursor:pointer;font-size:12px;user-select:none";
       var code = document.createElement("pre");
       code.id = "eaglerBootEmergencyCode";
       code.textContent = diagnosticText();
-      code.style.cssText = "margin:10px 0;padding:9px;overflow:auto;background:#090303;color:#f4c7c2;border:1px solid #633;font:11px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;word-break:break-word";
+      code.style.cssText = "margin:10px 0 0;padding:11px;overflow:auto;border-radius:10px;background:#10110f;color:#aaa69f;font:10px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;word-break:break-word";
+      details.appendChild(summary); details.appendChild(code);
       var actions = document.createElement("div");
-      actions.style.cssText = "display:flex;gap:8px;flex-wrap:wrap";
-      function button(label, action) {
+      actions.style.cssText = "display:flex;gap:9px;flex-wrap:wrap;margin-top:18px";
+      function button(label, action, primary) {
         var item = document.createElement("button");
         item.type = "button";
         item.textContent = label;
-        item.style.cssText = "min-height:34px;padding:6px 11px;border:1px solid #a66;border-radius:7px;background:#2a0c0c;color:#fff;font:inherit";
+        item.style.cssText = "min-height:38px;padding:7px 14px;border:0;border-radius:11px;background:" + (primary ? "#ef6a58" : "#292b27") + ";color:" + (primary ? "#17100e" : "#e8e4dd") + ";font:700 12px/1 system-ui,-apple-system,sans-serif;cursor:pointer";
         item.addEventListener("click", action);
         return item;
       }
-      actions.appendChild(button("刷新页面", function () { location.reload(); }));
-      actions.appendChild(button("复制诊断", function (event) {
+      actions.appendChild(button("重新加载", function () { location.reload(); }, true));
+      actions.appendChild(button("复制诊断信息", function (event) {
         var value = diagnosticText();
         var target = event.currentTarget;
         if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -163,8 +179,9 @@
         document.body.appendChild(area); area.select();
         try { document.execCommand("copy"); target.textContent = "已复制"; } catch (_) {}
         area.remove();
-      }));
-      panel.appendChild(title); panel.appendChild(text); panel.appendChild(hint); panel.appendChild(code); panel.appendChild(actions);
+      }, false));
+      card.appendChild(heading); card.appendChild(text); card.appendChild(hint); card.appendChild(details); card.appendChild(actions);
+      panel.appendChild(card);
       (document.body || document.documentElement).appendChild(panel);
     }
     boot.mark = function (stage) {

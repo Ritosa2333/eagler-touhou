@@ -80,6 +80,7 @@ const pythonFiles = sourceFiles.filter(file => extname(file) === ".py");
 // gate always recompiles it so strict type-checking cannot be skipped merely
 // because generated output happens to look fresh on disk.
 await run(process.execPath, ["scripts/build-launcher.mjs", "--force"]);
+await run(process.execPath, ["scripts/build-content-pages.mjs", "--check"]);
 
 await runPool(javascriptFiles.map(file => [process.execPath, ["--check", file]]));
 if (pythonFiles.length) await run("python", ["scripts/check-python-syntax.py", ...pythonFiles]);

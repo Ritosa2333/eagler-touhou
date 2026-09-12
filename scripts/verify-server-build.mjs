@@ -51,7 +51,7 @@ if (!deployment.files.some(item => item.path === "migrate.html")) throw new Erro
 if (!deployment.files.some(item => item.path === "about.html")) throw new Error("about page missing from deployment");
 if (!deployment.files.some(item => item.path === "faq.html")) throw new Error("FAQ page missing from deployment");
 if (!deployment.files.some(item => item.path === "about.css")) throw new Error("about stylesheet missing from deployment");
-if (!deployment.files.some(item => item.path === "CHANGELOG.txt")) throw new Error("CHANGELOG.txt missing from deployment");
+if (!deployment.files.some(item => item.path === "CHANGELOG.md")) throw new Error("CHANGELOG.md missing from deployment");
 for (const font of ["yatra-one-latin.woff2", "chill-round-gothic-site-medium.woff2", "chill-round-gothic-site-bold.woff2", "chill-round-gothic-site-heavy.woff2"]) {
   if (!deployment.files.some(item => item.path === `assets/fonts/${font}`)) throw new Error(`UI font missing from deployment: ${font}`);
 }

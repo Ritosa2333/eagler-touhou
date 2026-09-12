@@ -72,11 +72,18 @@ export function createEdgeDrawerGesture(options: EdgeDrawerGestureOptions) {
       else options.close();
     }
   };
+  const dragStart = (event: DragEvent) => {
+    // Native link/image dragging cancels the pointer stream before a drawer
+    // swipe reaches pointerup. Suppress only a drag that began as an active
+    // drawer gesture; ordinary clicks and drags outside the drawer keep working.
+    if (active && options.drawer.contains(event.target as Node)) event.preventDefault();
+  };
 
   documentObj.addEventListener("pointerdown", pointerDown, { capture: true, passive: true });
   documentObj.addEventListener("pointermove", pointerMove, { capture: true, passive: false });
   documentObj.addEventListener("pointerup", pointerUp, { capture: true, passive: false });
   documentObj.addEventListener("pointercancel", reset, { capture: true });
+  documentObj.addEventListener("dragstart", dragStart, { capture: true });
 
   return Object.freeze({
     destroy() {
@@ -85,6 +92,7 @@ export function createEdgeDrawerGesture(options: EdgeDrawerGestureOptions) {
       documentObj.removeEventListener("pointermove", pointerMove, { capture: true });
       documentObj.removeEventListener("pointerup", pointerUp, { capture: true });
       documentObj.removeEventListener("pointercancel", reset, { capture: true });
+      documentObj.removeEventListener("dragstart", dragStart, { capture: true });
     },
   });
 }
