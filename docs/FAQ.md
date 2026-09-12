@@ -1,20 +1,20 @@
 # 游戏常见问题
-## 游戏闪退 / 卡顿 / 黑屏 / 加载异常 / 断触（夸克）等浏览器相关问题怎么办？
+## 游戏闪退 / 卡顿 / 黑屏 / 加载异常 / 断触 等相关问题怎么办？
 推荐优先使用以下浏览器：
 
 - **Android**：**Via（仅 < 5 MB）** / [Edge](https://explore.microsoft.com/zh-cn/edge/download) / [Chrome](https://google.cn/chrome)
 
-**（重要）Android端请不要使用系统自带浏览器和各种国内浏览器，会出现各种严重问题**
+**Android 端不建议使用系统自带浏览器和各种国内浏览器。你也可以用，但可能会有一定的 BUG，如目前已知夸克浏览器会断触。**
 - **Windows**：Edge（系统自带） / [Chrome](https://google.cn/chrome) / [FireFox](https://www.firefox.com/)
 
 若使用以上任一浏览器却仍然遇到了问题，**请与我们反馈**。
 
-## 游戏有操作说明/攻略吗？游戏剧情在哪看？
+## 游戏有操作说明 / 攻略吗？游戏剧情在哪看？
 本网站有**自带的操作说明**。启动游戏后，**点击右上角的 "?" 图标**，即可查看。
 
 如果想看原版游戏自带的说明和游戏剧情，可以访问[东方Project 附带文档总览页](https://omake.thwiki.cc/)。
 
-关于游戏攻略，可以前往 [THBwiki](https://thwiki.cc) 中的[游戏攻略页](https://thwiki.cc/%e6%b8%b8%e6%88%8f%e6%94%bb%e7%95%a5)查看。（英文版可在[Touhou Wiki](https://en.touhouwiki.net/wiki/Touhou_Wiki)查看）
+关于游戏攻略，可以前往 [THBwiki](https://thbwiki.cc) 中的[游戏攻略页](https://thbwiki.cc/%e6%b8%b8%e6%88%8f%e6%94%bb%e7%95%a5)查看。（英文版可在[Touhou Wiki](https://en.touhouwiki.net/wiki/Touhou_Wiki)查看）
 
 如果您对东方Project的世界观和游戏玩法了解不深，我们更建议您先去查阅 THBwiki，其对游戏机制的解析十分全面易懂，然后再进行游戏。但是如果您要看 THBwiki 里的「东方ProjectSTG基础百科」，我们建议直接从第一章开始看，并且直接跳过第一章开头的游戏称谓表。
 
@@ -31,7 +31,7 @@ STG游戏存档分两个概念。
  这个答案是：**完全可以**。并且通过测试，**和原版游戏互通**，存档文件为：“score.dat”。（**注：不同游戏存档不能混用!!** 如th06的score.dat不能用在th07上。）
 
 
-## 会有风神录、地灵殿等其他正作/小数点作/格斗作/二次创作/新典......吗？
+## 会有风神录、地灵殿等其他正作 / 小数点作 / 格斗作 / 二次创作 / 新典......吗？
 
 对于*较旧的正作*，我们正在**尽力将其移植到网页端**。**上线时间不定**。
 
