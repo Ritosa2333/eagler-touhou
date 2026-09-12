@@ -1,4 +1,5 @@
 #include "netplay/NetplayInput.hpp"
+#include "Multiplayer.hpp"
 #include "Supervisor.hpp"
 
 #include <cassert>

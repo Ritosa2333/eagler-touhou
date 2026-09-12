@@ -11,6 +11,20 @@ permissions:
   contents: read
 
 jobs:
+  core-tests:
+    name: Core behavior tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Compile and run core behavior tests
+        run: bash scripts/run-core-tests.sh
+
   web-build:
     name: Web ${{ matrix.variant }}
     runs-on: ubuntu-latest
