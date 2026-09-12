@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 
-const player = fs.readFileSync(new URL('../src/Player.cpp', import.meta.url), 'utf8');
-const bullets = fs.readFileSync(new URL('../src/BulletManager.cpp', import.meta.url), 'utf8');
-const items = fs.readFileSync(new URL('../src/ItemManager.cpp', import.meta.url), 'utf8');
+const player = fs.readFileSync(new URL('../../src/Player.cpp', import.meta.url), 'utf8');
+const bullets = fs.readFileSync(new URL('../../src/BulletManager.cpp', import.meta.url), 'utf8');
+const items = fs.readFileSync(new URL('../../src/ItemManager.cpp', import.meta.url), 'utf8');
 
 function requireOrdered(text, first, second, label) {
   const a = text.indexOf(first);

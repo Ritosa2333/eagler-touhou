@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const project = path.resolve(here, '..');
+const project = path.resolve(here, '../..');
 const workspace = path.resolve(project, '..');
 
 function read(rel) {
@@ -899,7 +899,7 @@ for (const id of diagnosticIds) {
 // portable Localization-consumer inventory as part of the normal contract
 // entrypoint; this ledger must not depend on somebody remembering to run a
 // second script manually.
-await import('./audit-thcrap-proof-ledger.mjs');
+await import('./thcrap-proof-ledger.mjs');
 
 console.log(
     'TH06 thcrap source contract PASS: result_rank_format -> AddFormatText; ' +

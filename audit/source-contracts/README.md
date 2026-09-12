@@ -14,3 +14,14 @@ for product behavior.
 
 Keep new source-string checks here only when a structural audit is genuinely
 needed. Do not assert comments, whitespace, or incidental formatting.
+
+## Maintainer entry points
+
+The following scripts are static proof/audit tools, not behavior tests:
+
+- `thprac-source-contract.mjs` and `thprac-upstream-hooks.mjs`
+- `thcrap-source-contract.mjs` and `thcrap-proof-ledger.mjs`
+- `eagler-time-stop-contract.mjs`
+- `surface-copy-contract.mjs`
+
+Run them only when the corresponding source ownership/porting contract is being audited. A green result is structural evidence, not gameplay acceptance.

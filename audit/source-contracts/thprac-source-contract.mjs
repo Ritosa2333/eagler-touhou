@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const project = path.resolve(here, '..');
+const project = path.resolve(here, '../..');
 const workspace = path.resolve(project, '..');
 
 function read(rel) {
@@ -882,7 +882,7 @@ for (const anchor of [
 // The detailed contract above must always be accompanied by the independent
 // mechanical upstream hook/surface/state inventory. Never rely on somebody
 // remembering to run the second audit manually.
-await import('./audit-thprac-upstream-hooks.mjs');
+await import('./thprac-upstream-hooks.mjs');
 
 console.log(
     'TH06 thprac source contract PASS: Zh-CN default -> ChineseFull + shipped-glyph coverage; ' +
