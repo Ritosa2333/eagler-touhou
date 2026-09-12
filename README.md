@@ -94,3 +94,7 @@
 本项目采用 [GNU General Public License v3.0 or later](LICENSE)。
 
 完整的第三方来源、素材归属和许可信息见 [THIRD_PARTY.md](THIRD_PARTY.md) 与 [ASSETS.md](ASSETS.md)。
+
+## 星标历史
+
+[![Star History Chart](https://api.star-history.com/chart?repos=yomotsuhisami/eagler-touhou&type=date&legend=top-left)](https://www.star-history.com/?repos=yomotsuhisami%2Feagler-touhou&type=date&legend=top-left)

@@ -95,3 +95,7 @@ See [FAQ](/docs/FAQ.md), or the [HTML version used in the website](/public/faq.h
 Licensed under the [GNU General Public License v3.0 or later](LICENSE).
 
 Complete third-party source, asset attribution, and licensing information is available in [THIRD_PARTY.md](THIRD_PARTY.md) and [ASSETS.md](ASSETS.md).
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/chart?repos=yomotsuhisami/eagler-touhou&type=date&legend=top-left)](https://www.star-history.com/?repos=yomotsuhisami%2Feagler-touhou&type=date&legend=top-left)
