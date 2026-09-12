@@ -260,5 +260,6 @@ export function createSiteNoticeController(options: SiteNoticeControllerOptions 
     setEnabled,
     destroy,
     isEnabled: () => enabled,
+    isOpen: () => !bar.hidden && !bar.classList.contains("site-notice-closing"),
   });
 }

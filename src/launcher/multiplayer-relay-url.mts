@@ -6,11 +6,19 @@ const relayRoleParams = Object.freeze([
   "players",
   "signal",
   "spectator",
+  "diagnostic",
 ]);
 
 export interface MultiplayerLobbyRelayUrl {
   roomId: string;
   url: string;
+}
+
+export function buildMultiplayerDiagnosticRelayUrl(baseUrl: string): string {
+  const url = relayUrl(baseUrl);
+  clearRelayRole(url);
+  url.searchParams.set("diagnostic", "1");
+  return url.href;
 }
 
 export type MultiplayerGameplayRelayRole =

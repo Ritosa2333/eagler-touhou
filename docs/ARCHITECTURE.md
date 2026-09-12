@@ -499,6 +499,27 @@ implementation or its npm dependency tree. Namespaced `th06mp-*` / `th07mp-*`
 rooms consume multiplayer bounds directly from `product-catalog.mjs`; the
 relay must not maintain a second table of difficulty/loadout product facts.
 
+The multiplayer tool surface is available before remote Host Manifest loading
+finishes so local settings and Replay management never depend on Relay health.
+Only its online-room fold is closed and disabled until a valid `netplayRelay`
+configuration arrives. The same Relay exposes a bounded, roomless diagnostic
+connection for explicit user-initiated WebSocket RTT checks and short-lived ICE
+server credentials. Browser diagnostics report TURN RTT only after the selected
+candidate pair is confirmed relay-to-relay. NAT labels are deliberately
+conservative: NAT4 requires observed endpoint-dependent IPv4 mapping, while a
+missing server-reflexive candidate is reported as a failed check rather than a
+fabricated NAT type. IPv6 availability requires a global IPv6 server-reflexive
+candidate. Candidate addresses are interpreted in memory and are never stored.
+
+A seated, unready player may run the lobby's local game preflight. It exercises
+the selected multiplayer Runtime and its normal resource preparation without
+joining the room's gameplay transport, waits for that exact Runtime session's
+first-frame acknowledgement, then tears the Runtime down through the existing
+return-to-room path. The action is unavailable after the player becomes ready,
+so a preflight cannot overlap a match start for which that player is eligible.
+Because it does not use gameplay transport, temporary lobby Relay reconnection
+does not disable the preflight for an already seated player.
+
 ## 8. Host and release architecture
 
 ### Runtime Release

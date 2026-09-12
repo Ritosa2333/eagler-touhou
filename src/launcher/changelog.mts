@@ -26,16 +26,29 @@ export function changelogContentIdentity(source: string): string {
 }
 
 function appendLinkedText(documentObj: Document, target: HTMLElement, text: string): void {
-  const pattern = /https?:\/\/[^\s<>"']+/gi;
+  const pattern = /\[([^\]\n]+)\]\(([^\s)]+)\)|https?:\/\/[^\s<>"']+/gi;
   let offset = 0;
   for (const match of text.matchAll(pattern)) {
     const index = match.index ?? 0;
     if (index > offset) target.append(documentObj.createTextNode(text.slice(offset, index)));
+    const href = match[2] ?? match[0];
+    let resolved: URL;
+    try { resolved = new URL(href, documentObj.baseURI || "https://launcher.invalid/"); }
+    catch { target.append(documentObj.createTextNode(match[0])); offset = index + match[0].length; continue; }
+    if (resolved.protocol !== "http:" && resolved.protocol !== "https:") {
+      target.append(documentObj.createTextNode(match[0]));
+      offset = index + match[0].length;
+      continue;
+    }
     const link = documentObj.createElement("a");
-    link.href = match[0];
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    link.textContent = match[0];
+    link.href = href;
+    link.textContent = match[1] ?? match[0];
+    if (match[1]) link.className = "changelog-link-labeled";
+    const base = new URL(documentObj.baseURI || "https://launcher.invalid/");
+    if (resolved.origin !== base.origin) {
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+    }
     target.append(link);
     offset = index + match[0].length;
   }
@@ -79,7 +92,7 @@ export function renderChangelogText(documentObj: Document, target: HTMLElement, 
     }
     if (line.startsWith("## ")) {
       const heading = documentObj.createElement("h3");
-      heading.textContent = line.slice(3).trim();
+      appendLinkedText(documentObj, heading, line.slice(3).trim());
       ensureEntry().append(heading);
       bullets = null;
       continue;
@@ -107,6 +120,8 @@ export interface ChangelogControllerOptions {
   fetchImpl?: typeof fetch;
   emptyText?: () => string;
   readFailureText?: (error: unknown) => string;
+  matchMediaImpl?: (query: string) => Pick<MediaQueryList, "matches">;
+  setTimeoutImpl?: (callback: () => void, delay: number) => number;
 }
 
 function defaultStorage(): ChangelogStorage | null {
@@ -129,6 +144,8 @@ export function createChangelogController(options: ChangelogControllerOptions = 
     const message = error instanceof Error ? error.message : String(error);
     return `CHANGELOG.txt 读取失败：${message}。请刷新页面后重试。`;
   });
+  const matchMediaImpl = options.matchMediaImpl ?? (query => globalThis.matchMedia?.(query) ?? { matches: false });
+  const setTimeoutImpl = options.setTimeoutImpl ?? ((callback, delay) => globalThis.setTimeout(callback, delay));
   if (!documentObj || typeof fetchImpl !== "function") throw new Error("Changelog requires a browser document and fetch implementation");
 
   const find = (id: string): HTMLElement => {
@@ -144,6 +161,8 @@ export function createChangelogController(options: ChangelogControllerOptions = 
   const dialog = findDialog("changelogDialog");
   const target = find("changelogText");
   let cached: ChangelogLoadResult | null = null;
+  let closing = false;
+  let closeGeneration = 0;
 
   function renderStatus(text: string, className: string): void {
     target.replaceChildren();
@@ -181,7 +200,10 @@ export function createChangelogController(options: ChangelogControllerOptions = 
   async function showManual(): Promise<ChangelogLoadResult> {
     const result = await load();
     if (result.kind === "empty") renderStatus(emptyText(), "changelog-empty");
-    dialog.showModal();
+    ++closeGeneration;
+    closing = false;
+    dialog.classList.remove("closing");
+    if (!dialog.open) dialog.showModal();
     markSeen(result);
     return result;
   }
@@ -192,14 +214,30 @@ export function createChangelogController(options: ChangelogControllerOptions = 
     let seen = "";
     try { seen = storage?.getItem(CHANGELOG_SEEN_STORAGE_KEY) || ""; } catch {}
     if (seen === result.contentId) return false;
-    dialog.showModal();
+    ++closeGeneration;
+    closing = false;
+    dialog.classList.remove("closing");
+    if (!dialog.open) dialog.showModal();
     markSeen(result);
     return true;
   }
 
   function close(): void {
-    if (dialog.open) dialog.close();
+    if (!dialog.open || closing) return;
+    const generation = ++closeGeneration;
+    if (matchMediaImpl("(prefers-reduced-motion: reduce)").matches) { dialog.close(); return; }
+    closing = true;
+    dialog.classList.add("closing");
+    setTimeoutImpl(() => {
+      if (generation !== closeGeneration) return;
+      if (dialog.open) dialog.close();
+      dialog.classList.remove("closing");
+      closing = false;
+    }, 220);
   }
 
-  return Object.freeze({ load, showManual, maybeShowAutomatically, close });
+  dialog.addEventListener("cancel", event => { event.preventDefault(); close(); });
+  dialog.addEventListener("click", event => { if (event.target === dialog) close(); });
+
+  return Object.freeze({ load, showManual, maybeShowAutomatically, close, isOpen: () => dialog.open });
 }

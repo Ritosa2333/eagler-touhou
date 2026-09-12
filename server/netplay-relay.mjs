@@ -76,6 +76,30 @@ function iceServersFor(roomId, runId, player) {
   return servers;
 }
 
+function handleDiagnosticConnection(socket) {
+  const runId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  let pingCount = 0;
+  const idleTimer = setTimeout(() => socket.close(1000, 'diagnostic timeout'), 12000);
+  socket.send(JSON.stringify({
+    type: 'diagnostic-ready',
+    protocol: 1,
+    iceServers: iceServersFor('network-check', runId, 0),
+  }));
+  socket.on('message', (data, isBinary) => {
+    if (isBinary || data.length > 512) { socket.close(1003, 'diagnostic messages must be short text'); return; }
+    let message;
+    try { message = JSON.parse(String(data)); }
+    catch { socket.close(1007, 'invalid diagnostic message'); return; }
+    if (message?.type !== 'diagnostic-ping' || typeof message.nonce !== 'string' || message.nonce.length > 96 || ++pingCount > 3) {
+      socket.close(1008, 'invalid diagnostic message');
+      return;
+    }
+    socket.send(JSON.stringify({ type: 'diagnostic-pong', nonce: message.nonce }));
+  });
+  socket.on('close', () => clearTimeout(idleTimer));
+  socket.on('error', () => {});
+}
+
 function getRoom(id) {
   let room = rooms.get(id);
   if (!room) {
@@ -636,6 +660,10 @@ const server = new WebSocketServer({ host, port, perMessageDeflate: false });
 
 server.on('connection', (socket, request) => {
   const url = new URL(request.url || '/', `ws://${request.headers.host || 'localhost'}`);
+  if (url.searchParams.get('diagnostic') === '1') {
+    handleDiagnosticConnection(socket);
+    return;
+  }
   const roomId = url.searchParams.get('room') || '';
   const runId = url.searchParams.get('run') || '0';
   const lobbyClient = url.searchParams.get('lobby') || '';

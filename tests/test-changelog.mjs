@@ -20,8 +20,11 @@ class FakeElement {
   open = false;
   showCount = 0;
   closeCount = 0;
+  classList = { values: new Set(), add: (...names) => names.forEach(name => this.classList.values.add(name)), remove: (...names) => names.forEach(name => this.classList.values.delete(name)) };
+  listeners = new Map();
   append(...values) { this.children.push(...values); }
   replaceChildren(...values) { this.children = [...values]; }
+  addEventListener(type, callback) { this.listeners.set(type, [...(this.listeners.get(type) || []), callback]); }
   showModal() { this.open = true; this.showCount++; }
   close() { this.open = false; this.closeCount++; }
 }
@@ -57,11 +60,14 @@ const first = createChangelogController({
   documentObj: firstDocument,
   storage: sharedStorage,
   fetchImpl: async () => response(releaseText),
+  matchMediaImpl: () => ({ matches: true }),
 });
 assert.equal(await first.maybeShowAutomatically(), true, "new non-empty content must auto-show once");
 assert.equal(firstDocument.getElementById("changelogDialog").showCount, 1);
 const firstIdentity = changelogContentIdentity(releaseText);
 assert.equal(sharedStorage.values.get(CHANGELOG_SEEN_STORAGE_KEY), firstIdentity);
+first.close();
+assert.equal(firstDocument.getElementById("changelogDialog").closeCount, 1, "reduced-motion close finishes immediately");
 
 const secondDocument = new FakeDocument();
 const second = createChangelogController({
@@ -97,6 +103,21 @@ assert.equal(emptyResult.kind, "empty");
 assert.equal(emptyDocument.getElementById("changelogDialog").showCount, 1,
   "manual changelog entry remains usable when release content is empty");
 assert.equal(emptyDocument.getElementById("changelogText").children[0]?.textContent, "EMPTY");
+
+const reopenDocument = new FakeDocument();
+let delayedClose;
+const reopen = createChangelogController({
+  documentObj: reopenDocument,
+  storage: storageFrom(),
+  fetchImpl: async () => response(releaseText),
+  setTimeoutImpl: callback => { delayedClose = callback; return 1; },
+});
+await reopen.showManual();
+reopen.close();
+await reopen.showManual();
+delayedClose();
+assert.equal(reopenDocument.getElementById("changelogDialog").open, true,
+  "reopening during the close animation must cancel the stale close completion");
 
 const failedDocument = new FakeDocument();
 const failed = createChangelogController({

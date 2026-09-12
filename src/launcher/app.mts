@@ -91,6 +91,7 @@ import { createTouchLayoutWindowPositionStore } from "./touch-layout-editor-stat
 import type { TouchLayoutWindowKind } from "./touch-layout-editor-state.mjs";
 import { createSiteNoticeController } from "./site-notice.mjs";
 import { createChangelogController } from "./changelog.mjs";
+import { createEdgeDrawerGesture } from "./edge-drawer-gesture.mjs";
 import {
   DEFAULT_GAME_OPTIONS as defaultOptions,
   MUSIC_MODES as musicModes,
@@ -140,8 +141,10 @@ import {
   normalizeMultiplayerDisplayName as mpNormalizeDisplayName,
 } from "./multiplayer-identity.mjs";
 import { normalizeMultiplayerLobbySnapshot } from "./multiplayer-lobby-snapshot.mjs";
+import { createNetworkDiagnosticsController } from "./network-diagnostics.mjs";
 import { createMultiplayerPreferenceStore } from "./multiplayer-preferences.mjs";
 import {
+  buildMultiplayerDiagnosticRelayUrl,
   buildMultiplayerGameplayRelayUrl,
   buildMultiplayerLobbyRelayUrl,
 } from "./multiplayer-relay-url.mjs";
@@ -562,6 +565,7 @@ function mpConnectLobby(reconnecting = false) {
 }
 
 let mpLaunchInFlight = false;
+let mpGameCheckInFlight = false;
 let launcherOperationDepth = 0;
 let serverConfigurationWarning = "";
 async function mpLaunchRoomGame() {
@@ -600,6 +604,47 @@ async function mpLaunchRoomGame() {
     showToast(message);
   } finally {
     mpLaunchInFlight = false;
+    maybeApplyDeferredAppShellUpdate();
+  }
+}
+
+async function mpCheckGame() {
+  const room = mpUiState.room;
+  if (!room || (room.phase && room.phase !== "lobby") || mpUiState.seat == null || mpUiState.ready ||
+      mpGameCheckInFlight || mpLaunchInFlight || state.launched) return;
+  mpGameCheckInFlight = true;
+  mpLaunchInFlight = true;
+  renderMpRoom();
+  try {
+    // Exercise the exact multiplayer Runtime and selected resources without
+    // attaching this preflight run to the room's gameplay transport.
+    state.runtimeVariant = "multiplayer";
+    state.replayViewer = false;
+    resetRuntime();
+    openPlayerView();
+    setPlayerStatus(t("multiplayer.checkingGame"));
+    await launchConfiguredRuntime({ awaitFirstFrame: true, omitNetplay: true });
+    await closePlayerView(false, { skipSync: true, returnToMpRoom: true });
+    setStatus(t("multiplayer.checkGamePassed"));
+    showToast(t("multiplayer.checkGamePassed"));
+  } catch (error) {
+    const reason = errorMessage(error);
+    if (player.classList.contains("open")) {
+      await closePlayerView(false, { skipSync: true, returnToMpRoom: true });
+    } else {
+      resetRuntime();
+    }
+    if (isResourceLoadFailure(error)) {
+      beginManualGamePackageImport(reason, captureGameDataContinuation("install-only"));
+    } else {
+      showStartupError(error, t("multiplayer.checkGame"));
+    }
+    setStatus(t("multiplayer.checkGameFailed", { reason }));
+    showToast(t("multiplayer.checkGameFailed", { reason }), 4000);
+  } finally {
+    mpGameCheckInFlight = false;
+    mpLaunchInFlight = false;
+    renderMpRoom();
     maybeApplyDeferredAppShellUpdate();
   }
 }
@@ -682,6 +727,7 @@ let releaseCatalogUrl = new URL(RELEASE_CATALOG_FILE, location.href).href;
 let hostManifestAvailable = false;
 let hostManifestError: unknown = null;
 let remoteCatalogError: unknown = null;
+let netplayConfigurationWasReady = false;
 let gameDataFallback: { url: string; hint?: string; [key: string]: unknown } | null = null;
 let serverResourceMode = "hosted";
 let importServer = false;
@@ -848,6 +894,7 @@ function applyHostManifest(value: unknown) {
   if (mpUiState.room && state.netplay.url) mpReconnectLobbyNow();
   hostManifestAvailable = true;
   renderServerStatusNote();
+  render();
 }
 
 async function refreshRemoteReleaseState() {
@@ -1339,13 +1386,14 @@ const buttonElementSelectors = [
   "#mpFrameLimitToggle", "#mpLocalPlayerVisibilityToggle", "#mpMobileOptionsToggle",
   "#mpTouchToggle", "#mpTouchLayoutEdit", "#mpAlwaysHitboxToggle", "#mpMagnifierToggle",
   "#mpReplayViewer", "#mpCreateRoom", "#mpJoinRoom", "#frameLimitAppleNote",
+  "#mpNetworkCheck",
   "#frameLimitToggle", "#th06HitboxToggle", "#thpracToggle", "#mobileOptionsToggle",
   "#touchToggle", "#touchLayoutEdit", "#alwaysHitboxToggle", "#magnifierToggle",
   "#launch", "#gamePackageImport", "#mpLeaveRoom", "#mpSpectatorJoin",
   "#mpLoadoutPrev", "#mpLoadoutNext", "#mpStandUp", "#mpLoadoutPrevSeat",
-  "#mpLoadoutNextSeat", "#mpCopyRoomCode", "#mpReady", "#mpStartGame",
+  "#mpLoadoutNextSeat", "#mpCopyRoomCode", "#mpReady", "#mpCheckGame", "#mpStartGame",
   "#mpRoomSettingsToggle", "#toastClose", "#startupErrorClose", "#decisionCancel",
-  "#decisionSecondary", "#decisionConfirm", "#changelogClose", "#changelogConfirm",
+  "#decisionSecondary", "#decisionConfirm", "#changelogClose",
   "#appleRefreshClose", "#transferCancel", "#transferRetry", "#gameDataImportClose",
   "#transferImport", "#transferDownload", "#gameDataLinkClose", "#touchLayoutOrientationHelpOpen",
   "#touchLayoutReset", "#touchLayoutSave", "#touchLayoutExit", "#doubleTapBombToggle",
@@ -3010,10 +3058,14 @@ async function installImportedGameData(file: File | Blob) {
   };
 }
 const selectedLanguagePack = () => resolveLanguagePackSource(languageEntry(), location.href);
-async function launchConfiguredRuntime() {
-  return withLauncherActivity(launchConfiguredRuntimeImpl);
+interface LaunchConfiguredRuntimeOptions {
+  awaitFirstFrame?: boolean;
+  omitNetplay?: boolean;
 }
-async function launchConfiguredRuntimeImpl() {
+async function launchConfiguredRuntime(options: LaunchConfiguredRuntimeOptions = {}) {
+  return withLauncherActivity(() => launchConfiguredRuntimeImpl(options));
+}
+async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptions = {}) {
   clearStartupError();
   await ensureRuntime(true);
   const session = runtimeSessions.assertCurrent(currentRuntimeSession());
@@ -3036,7 +3088,8 @@ async function launchConfiguredRuntimeImpl() {
     const packageResources = await installedPackageRuntimeResources();
     assertSession();
     setPlayerStatus(t("runtime.preparingResources", { resource: runtimePack ? `${entryTitle(languageEntry())} ${t("settings.language")}` : `${musicModeLabel(state.music)} ${t("settings.music")}` }));
-    const netplayOptions = state.runtimeVariant === "multiplayer" && !state.replayViewer ? validatedNetplayOptions() : {};
+    const netplayOptions = state.runtimeVariant === "multiplayer" && !state.replayViewer && !options.omitNetplay
+      ? validatedNetplayOptions() : {};
     await send("configure", {
       // Imported OGG is already in the host's IndexedDB.  Do not route those
       // bytes back through blob: URLs and fetch() inside the iframe: on mobile
@@ -3087,6 +3140,10 @@ async function launchConfiguredRuntimeImpl() {
         showToast(t("runtime.localOggFallbackMidi", { reason: errorMessage(error) }));
       }
     }
+    const firstFramePromise = options.awaitFirstFrame ? waitForRuntimeFirstFrame(session) : null;
+    // Session invalidation owns cancellation. Observe rejection immediately so
+    // an earlier launch failure cannot leave a transient unhandled promise.
+    if (firstFramePromise) void firstFramePromise.catch(() => {});
     armFirstFrameWatchdog();
     // The Runtime is once again the direct child browsing context. Keep the
     // bounded Android focus relay that fixed the historical first-frame stall,
@@ -3116,6 +3173,7 @@ async function launchConfiguredRuntimeImpl() {
     setPlayerStatus(t("runtime.ready")); refocusGameIfNeeded();
     if (localMusicInstall) localMusicInstall.installRemaining();
     startManagedOggProgressiveInstall();
+    if (firstFramePromise) await firstFramePromise;
   } catch (error) {
     if (runtimeSessionCurrent(session) && !state.launched) resetRuntime();
     throw error;
@@ -3429,6 +3487,18 @@ function render() {
   $("#mpTitleBadge").hidden = !multiplayerProduct;
   $("#th08MaintenanceCallout").hidden = state.game !== "th08" || multiplayerProduct;
   $("#mpShell").hidden = !multiplayerProduct;
+  const netplayConfigurationReady = hostManifestAvailable && !!state.netplay.url;
+  const mpOnlineHead = document.querySelector<HTMLButtonElement>('[data-mp-fold="online"]');
+  if (!netplayConfigurationReady && mpUiState.folds.online) mpSetFold("online", false);
+  else if (netplayConfigurationReady && !netplayConfigurationWasReady) mpSetFold("online", true);
+  netplayConfigurationWasReady = netplayConfigurationReady;
+  if (mpOnlineHead) {
+    mpOnlineHead.disabled = !netplayConfigurationReady;
+    mpOnlineHead.title = netplayConfigurationReady ? "" : t(hostManifestAvailable ? "multiplayer.serviceMissing" : "multiplayer.configLoading");
+  }
+  $("#mpCreateRoom").disabled = !netplayConfigurationReady;
+  $("#mpJoinRoom").disabled = !netplayConfigurationReady;
+  $("#mpJoinCode").toggleAttribute("disabled", !netplayConfigurationReady);
   if (multiplayerProduct && state.hasSelection) {
     for (const [name, open] of Object.entries(mpUiState.folds)) {
       if (open && isMpFoldName(name)) mpRefreshFoldHeight(name);
@@ -3901,7 +3971,7 @@ function openPlayerView() {
   if (!touchHelpSeen) {
     try { touchHelpSeen = localStorage.getItem(touchHelpSeenKey) === "1"; } catch {}
   }
-  if (state.options.touchEnabled && !state.netplay.spectator && !touchHelpSeen) {
+  if (!mpGameCheckInFlight && state.options.touchEnabled && !state.netplay.spectator && !touchHelpSeen) {
     touchHelpSeenInSession = true;
     try { localStorage.setItem(touchHelpSeenKey, "1"); } catch {}
     $("#touchHelp").hidden = false;
@@ -4106,6 +4176,7 @@ window.addEventListener("message", event => {
     if (state.launched) pushTouchControlsLive();
     startRuntimeSchedulingProbe();
     updateRuntimeDiagnostics();
+    frame.dispatchEvent(new CustomEvent("runtime-first-frame"));
     return;
   }
   if (message.event === "runtime-info") {
@@ -4199,6 +4270,41 @@ function waitForRuntimeReady(session: RuntimeSessionToken, timeoutMessage: strin
       if (!runtimeSessionCurrent(session)) finish(() => reject(new Error(t("runtime.switched"))));
     });
     frame.addEventListener("runtime-ready", ready);
+    frame.addEventListener("runtime-error", failed);
+  });
+}
+
+function waitForRuntimeFirstFrame(session: RuntimeSessionToken): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    let settled = false;
+    let unsubscribe = () => {};
+    const cleanup = () => {
+      clearOptionalTimeout(timer);
+      frame.removeEventListener("runtime-first-frame", firstFrame);
+      frame.removeEventListener("runtime-error", failed);
+      unsubscribe();
+    };
+    const finish = (action: () => void) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      action();
+    };
+    const firstFrame = () => {
+      if (runtimeSessionCurrent(session)) finish(resolve);
+    };
+    const failed = (event: Event) => {
+      if (!runtimeSessionCurrent(session)) return;
+      const detail = event instanceof CustomEvent ? event.detail : t("runtime.startFailed");
+      finish(() => reject(detail instanceof Error ? detail : new Error(String(detail || t("runtime.startFailed")))));
+    };
+    const timer = setTimeout(() => {
+      finish(() => reject(new Error(t("runtime.firstFrameLate"))));
+    }, firstFrameFallbackMs + 2000);
+    unsubscribe = runtimeSessions.subscribe(() => {
+      if (!runtimeSessionCurrent(session)) finish(() => reject(new Error(t("runtime.switched"))));
+    });
+    frame.addEventListener("runtime-first-frame", firstFrame);
     frame.addEventListener("runtime-error", failed);
   });
 }
@@ -5278,6 +5384,7 @@ $("#mpReady").addEventListener("click", () => {
   mpUiState.ready = ready;
   renderMpRoom();
 });
+$("#mpCheckGame").addEventListener("click", () => { void mpCheckGame(); });
 $("#mpStartGame").addEventListener("click", async () => {
   if (!mpRoomOwnerLocal() || !mpUiState.ready || !mpLobby.connected) return;
   mpLobbySend({ type: "start" });
@@ -6359,9 +6466,14 @@ function renderMpRoom() {
   requiredDescendant($("#mpRoomView"), ".mp-room-footer", HTMLElement).hidden = !room.synced || mpUiState.seat == null;
   const ready = $("#mpReady");
   ready.hidden = mpUiState.seat == null;
-  ready.disabled = !roomReady || mpUiState.seat == null || room.phase !== "lobby";
+  ready.disabled = !roomReady || mpUiState.seat == null || room.phase !== "lobby" || mpGameCheckInFlight;
   ready.classList.toggle("ready", mpUiState.ready && mpUiState.seat != null);
   ready.textContent = t(mpUiState.ready && mpUiState.seat != null ? "multiplayer.readyDone" : "multiplayer.ready");
+  const gameCheck = $("#mpCheckGame");
+  gameCheck.hidden = mpUiState.seat == null;
+  gameCheck.disabled = mpUiState.seat == null || (!!room.phase && room.phase !== "lobby") ||
+    mpUiState.ready || mpGameCheckInFlight || mpLaunchInFlight;
+  gameCheck.textContent = t(mpGameCheckInFlight ? "multiplayer.checkingGame" : "multiplayer.checkGame");
   const start = $("#mpStartGame");
   const synchronizedReady = roomReady && room.phase === "lobby" && Array.isArray(room.seats) &&
     room.seats.slice(0, room.playerCount).every(seat => seat && !seat.offline && seat.ready);
@@ -6626,12 +6738,6 @@ document.querySelectorAll<HTMLElement>(".game").forEach(card => {
     const product = card.dataset.product || card.dataset.game;
     const gameId = card.dataset.game;
     if (!product || !gameId || !isProductId(product) || !isGameId(gameId) || !productEnabled(product)) return;
-    if (isMultiplayerProduct(product) && !state.netplay.url) {
-      showToast(hostManifestAvailable
-        ? t("multiplayer.serviceMissing")
-        : t("multiplayer.configLoading"), 4000);
-      return;
-    }
     const changed = state.product !== product;
     const previousLayout = changed || !state.hasSelection ? captureCardLayout() : null;
     if (changed) {
@@ -6787,7 +6893,6 @@ $("#lessMotionToggle").addEventListener("click", () => {
   render();
 });
 $("#changelogClose").addEventListener("click", changelog.close);
-$("#changelogConfirm").addEventListener("click", changelog.close);
 const appleRefreshDialog = $("#appleRefreshDialog");
 function openAppleRefreshDialog() {
   if (!appleRefreshDialog.open) {
@@ -6818,6 +6923,32 @@ appleRefreshDialog.addEventListener("click", event => {
 });
 const siteNotice = createSiteNoticeController({
   onOptOut: () => showToast(t("notice.restoreHint")),
+});
+createNetworkDiagnosticsController({
+  button: $("#mpNetworkCheck"),
+  panel: $("#mpNetworkResults"),
+  getRelayUrl: () => {
+    try { return buildMultiplayerDiagnosticRelayUrl(state.netplay.url); }
+    catch { return ""; }
+  },
+  getFallbackIceServers: () => state.netplay.iceServers,
+  translate: (key, params) => t(key, params),
+});
+$("#changelogEdgeCue").addEventListener("click", () => { void changelog.showManual(); });
+createEdgeDrawerGesture({
+  side: "right",
+  drawer: $("#changelogDialog"),
+  isOpen: changelog.isOpen,
+  open: changelog.showManual,
+  close: changelog.close,
+});
+createEdgeDrawerGesture({
+  side: "left",
+  drawer: $("#siteNotice"),
+  isOpen: siteNotice.isOpen,
+  open: siteNotice.load,
+  close: siteNotice.close,
+  enabled: siteNotice.isEnabled,
 });
 $("#th06HitboxToggle").addEventListener("click", () => setOption("th06FocusHitbox", !state.options.th06FocusHitbox));
 $("#touchToggle").addEventListener("click", async () => {
