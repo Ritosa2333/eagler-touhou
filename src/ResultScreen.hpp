@@ -94,8 +94,7 @@ struct Catk
     i32 captureScore;
     u16 idx;
     u8 nameCsum;
-    u8 characterShotType;
-    u32 unk_14;
+    u8 characterShotType[5];
     char name[32];
     u32 unk_38;
     u16 numAttempts;

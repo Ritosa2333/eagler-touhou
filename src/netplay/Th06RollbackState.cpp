@@ -253,7 +253,7 @@ bool CaptureFixedAndSparseState()
     if (!TouchRange(enemyBegin, enemiesBegin))
         return false;
     for (Enemy &enemy : g_EnemyManager.enemies)
-        if (enemy.flags.active && !TouchEnemy(&enemy))
+        if (enemy.flags.isSlotOccupied && !TouchEnemy(&enemy))
             return false;
     if (!TouchRange(enemiesEnd, enemyManagerEnd))
         return false;

@@ -10,6 +10,7 @@
 #include "ScreenEffect.hpp"
 #include "Supervisor.hpp"
 #include "ZunColor.hpp"
+#include "ZunMemory.hpp"
 #include "utils.hpp"
 // #include <d3d8.h>
 
@@ -469,8 +470,6 @@ ZunResult Stage::LoadStageData(const char *anmpath, const char *stdpath)
     RawStageQuadBasic *curQuad;
     i32 idx;
     i32 vmIdx;
-    u32 sizeVmArr;
-    u32 padding1, padding2, padding3, padding4, padding5, padding6;
 
     if (g_AnmManager->LoadAnm(ANM_FILE_STAGEBG, anmpath, ANM_OFFSET_STAGEBG) != ZUN_SUCCESS)
     {

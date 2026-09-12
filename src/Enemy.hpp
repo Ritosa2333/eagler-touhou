@@ -60,9 +60,9 @@ struct EnemyLaserShooter
     f32 width;
     i32 startTime;
     i32 duration;
-    i32 stopTime;
-    i32 grazeDelay;
-    i32 grazeDistance;
+    i32 despawnDuration;
+    i32 hitboxStartTime;
+    i32 hitboxEndDelay;
     u32 unk_44;
     u16 type;
     u32 flags;
@@ -100,19 +100,19 @@ struct EnemyFlags
     u8 active : 1;
 
     // Second byte
-    u8 unk6 : 1;
-    u8 unk7 : 1;
-    u8 unk8 : 1;
+    u8 isInteractable : 1;
+    u8 isCollidable : 1;
+    u8 hasBeenInBounds : 1;
     u8 isBoss : 1;
-    u8 unk10 : 1;
-    u8 unk11 : 3;
+    u8 isDamageable : 1;
+    u8 deathMode : 3;
 
     // Third byte
     bool shouldClampPos : 1;
-    u8 unk13 : 1;
-    u8 unk14 : 1;
-    u8 unk15 : 1;
-    u8 unk16 : 1;
+    u8 rotateAnm : 1;
+    u8 disableCallStack : 1;
+    u8 isInvisible : 1;
+    u8 isTimeoutSpell : 1;
 
     // Rest is padding.
 };
@@ -247,7 +247,7 @@ struct Enemy
     ZunVec2 lowerMoveLimit;
     ZunVec2 upperMoveLimit;
     Effect *effectArray[12];
-    u32 effectIdx;
+    i32 effectIdx;
     f32 effectDistance;
     i32 lifeCallbackThreshold;
     i32 lifeCallbackSub;

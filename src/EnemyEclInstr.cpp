@@ -13,7 +13,7 @@
 
 namespace EnemyEclInstr
 {
-#define MAX_BOSS_TIME 7200
+#define RAGE_TIME_THRESHOLD 7200
 
 struct PatchouliShottypeVars
 {
@@ -60,6 +60,7 @@ static bool AnyPlayerBombing()
 #endif
 }
 
+#pragma var_order(alu, angle)
 void MoveDirTime(Enemy *enemy, EclRawInstr *instr)
 {
     EclRawInstrAluArgs *alu;
@@ -77,7 +78,7 @@ void MoveDirTime(Enemy *enemy, EclRawInstr *instr)
 
     enemy->moveInterpTimer.SetCurrent(enemy->moveInterpStartTime);
 
-    enemy->flags.unk1 = 2;
+    enemy->flags.movementMode = 2;
 }
 
 void MovePosTime(Enemy *enemy, EclRawInstr *instr)
@@ -95,7 +96,7 @@ void MovePosTime(Enemy *enemy, EclRawInstr *instr)
 
     enemy->moveInterpTimer.SetCurrent(enemy->moveInterpStartTime);
 
-    enemy->flags.unk1 = 2;
+    enemy->flags.movementMode = 2;
     enemy->axisSpeed = ZunVec3(0.0f, 0.0f, 0.0f);
 }
 
@@ -116,7 +117,7 @@ void MoveTime(Enemy *enemy, const EclRawInstr *instr)
 
     enemy->moveInterpTimer.SetCurrent(enemy->moveInterpStartTime);
 
-    enemy->flags.unk1 = 2;
+    enemy->flags.movementMode = 2;
 }
 
 i32 *GetVar(Enemy *enemy, EclVarId *eclVarId, EclValueType *valueType)
@@ -445,7 +446,7 @@ void ExInsCirnoRainbowBallJank(Enemy *enemy, EclRawInstr *instr)
     g_EffectManager.SpawnParticles(PARTICLE_EFFECT_UNK_12, &enemy->position, 1, COLOR_WHITE);
     for (i = 0; i < ARRAY_SIZE_SIGNED(g_BulletManager.bullets); i++, currentBullet++)
     {
-        if (currentBullet->state == 0 || currentBullet->state == 5)
+        if (currentBullet->state == BULLET_STATE_UNUSED || currentBullet->state == BULLET_STATE_DESPAWNING)
         {
             continue;
         }
@@ -595,7 +596,7 @@ void ExInsStage56Func4(Enemy *enemy, EclRawInstr *instr)
         {
             for (i = 0; i < ARRAY_SIZE_SIGNED(g_BulletManager.bullets); i++, currentBullet++)
             {
-                if (currentBullet->state == 0 || currentBullet->state == 5)
+                if (currentBullet->state == BULLET_STATE_UNUSED || currentBullet->state == BULLET_STATE_DESPAWNING)
                 {
                     continue;
                 }
@@ -637,7 +638,7 @@ void ExInsStage56Func4(Enemy *enemy, EclRawInstr *instr)
             bulletsLeft = 52;
             for (i = 0; i < ARRAY_SIZE_SIGNED(g_BulletManager.bullets); i++, currentBullet++)
             {
-                if (currentBullet->state == 0 || currentBullet->state == 5)
+                if (currentBullet->state == BULLET_STATE_UNUSED || currentBullet->state == BULLET_STATE_DESPAWNING)
                 {
                     continue;
                 }
@@ -758,7 +759,7 @@ void ExInsStage5Func5(Enemy *enemy, EclRawInstr *instr)
     enemy->currentContext.var2++;
 }
 
-void ExInsStage6XFunc6(Enemy *enemy, EclRawInstr *instr)
+void ExInsBatWingEffect(Enemy *enemy, EclRawInstr *instr)
 {
     i32 baseAngleModifier;
     f32 distanceModifier;
@@ -766,7 +767,7 @@ void ExInsStage6XFunc6(Enemy *enemy, EclRawInstr *instr)
     f32 finalAngle;
     ZunVec3 particlePos;
 
-    if (enemy->flags.unk15 != 0)
+    if (enemy->flags.isInvisible != 0)
     {
         Enemy::ResetEffectArray(enemy);
         return;
@@ -909,9 +910,9 @@ void ExInsStage6Func7(Enemy *enemy, EclRawInstr *instr)
                     }
                     laserProps.startTime = innerLoopCount * 16 + 60;
                     laserProps.duration = 90 - innerLoopCount * 16;
-                    laserProps.stopTime = 16;
-                    laserProps.grazeDelay = 50;
-                    laserProps.grazeDistance = 16;
+                    laserProps.despawnDuration = 16;
+                    laserProps.hitboxStartTime = 50;
+                    laserProps.hitboxEndDelay = 16;
                     laserProps.flags = 2;
                     laserProps.type = 1;
                     g_BulletManager.SpawnLaserPattern(&laserProps);
@@ -943,7 +944,7 @@ void ExInsStage6Func8(Enemy *enemy, EclRawInstr *instr)
 
     for (i = 0; i < ARRAY_SIZE_SIGNED(g_BulletManager.bullets); i++, currentBullet++)
     {
-        if (currentBullet->state == 0 || currentBullet->state == 5)
+        if (currentBullet->state == BULLET_STATE_UNUSED || currentBullet->state == BULLET_STATE_DESPAWNING)
         {
             continue;
         }
@@ -983,7 +984,7 @@ void ExInsStage6Func9(Enemy *enemy, EclRawInstr *instr)
 
     for (i = 0; i < ARRAY_SIZE_SIGNED(g_BulletManager.bullets); i++, currentBullet++)
     {
-        if (currentBullet->state == 0 || currentBullet->state == 5)
+        if (currentBullet->state == BULLET_STATE_UNUSED || currentBullet->state == BULLET_STATE_DESPAWNING)
         {
             continue;
         }
@@ -1029,7 +1030,7 @@ void ExInsStage6Func11(Enemy *enemy, EclRawInstr *instr)
 
     for (i = 0; i < ARRAY_SIZE_SIGNED(g_BulletManager.bullets); i++, currentBullet++)
     {
-        if (currentBullet->state == 0 || currentBullet->state == 5)
+        if (currentBullet->state == BULLET_STATE_UNUSED || currentBullet->state == BULLET_STATE_DESPAWNING)
         {
             continue;
         }
@@ -1051,14 +1052,14 @@ void ExInsStage6Func11(Enemy *enemy, EclRawInstr *instr)
     }
 }
 
-void ExInsStage6XFunc10(Enemy *enemy, EclRawInstr *instr)
+void ExInsHandleBatTransformation(Enemy *enemy, EclRawInstr *instr)
 {
     if (enemy->life <= 0)
     {
         return;
     }
 
-    ExInsStage6XFunc6(enemy, instr);
+    ExInsBatWingEffect(enemy, instr);
     if (AnyPlayerBombing())
     {
         if (enemy->anmExLeft >= 0)
@@ -1067,7 +1068,7 @@ void ExInsStage6XFunc10(Enemy *enemy, EclRawInstr *instr)
             enemy->anmExLeft = -1;
         }
 
-        enemy->flags.unk6 = 0;
+        enemy->flags.isInteractable = 0;
         enemy->exInsFunc10Timer.SetCurrent(60);
     }
     else
@@ -1080,7 +1081,7 @@ void ExInsStage6XFunc10(Enemy *enemy, EclRawInstr *instr)
                 enemy->anmExLeft = 0xa1;
             }
 
-            enemy->flags.unk6 = 1;
+            enemy->flags.isInteractable = 1;
         }
     }
 }
@@ -1174,7 +1175,7 @@ void ExInsStageXFunc15(Enemy *enemy, EclRawInstr *instr)
 
     for (i = 0; i < ARRAY_SIZE_SIGNED(g_BulletManager.bullets); i++, currentBullet++)
     {
-        if (currentBullet->state == 0 || currentBullet->state == 5)
+        if (currentBullet->state == BULLET_STATE_UNUSED || currentBullet->state == BULLET_STATE_DESPAWNING)
         {
             continue;
         }
@@ -1188,7 +1189,7 @@ void ExInsStageXFunc15(Enemy *enemy, EclRawInstr *instr)
             for (j = 0, innerBullet = g_BulletManager.bullets; j < ARRAY_SIZE_SIGNED(g_BulletManager.bullets);
                  j++, innerBullet++)
             {
-                if (innerBullet->state == 0 || innerBullet->state == 5)
+                if (innerBullet->state == BULLET_STATE_UNUSED || innerBullet->state == BULLET_STATE_DESPAWNING)
                 {
                     continue;
                 }
@@ -1217,17 +1218,17 @@ void ExInsStageXFunc15(Enemy *enemy, EclRawInstr *instr)
         }
     }
 
-    ExInsStage6XFunc10(enemy, instr);
+    ExInsHandleBatTransformation(enemy, instr);
     enemy->currentContext.var3 = totalIterations;
 }
 
-void ExInsStageXFunc16(Enemy *enemy, EclRawInstr *instr)
+void ExInsFlandreFinalContextUpdate(Enemy *enemy, EclRawInstr *instr)
 {
     f32 rangeModifier;
     i32 remainingLife;
 
     remainingLife = enemy->life;
-    if (PracticeRuntime::ForceFlandreFinalRage() || enemy->bossTimer >= MAX_BOSS_TIME)
+    if (PracticeRuntime::ForceFlandreFinalRage() || enemy->bossTimer >= RAGE_TIME_THRESHOLD)
     {
         remainingLife = 0;
     }

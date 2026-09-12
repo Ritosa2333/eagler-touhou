@@ -9,7 +9,7 @@ inline void *Alloc(size_t size)
     return std::malloc(size);
 }
 
-inline void Free(void *ptr)
+inline void ZunFree(void *ptr)
 {
     std::free(ptr);
 }

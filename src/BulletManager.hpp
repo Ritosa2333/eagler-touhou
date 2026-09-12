@@ -41,6 +41,16 @@ struct BulletTypeSprites
     u8 bulletHeight;
 };
 
+enum BulletState
+{
+    BULLET_STATE_UNUSED,
+    BULLET_STATE_FIRED,
+    BULLET_STATE_SPAWNING_FAST,
+    BULLET_STATE_SPAWNING_NORMAL,
+    BULLET_STATE_SPAWNING_SLOW,
+    BULLET_STATE_DESPAWNING,
+};
+
 struct Bullet
 {
     BulletTypeSprites sprites;
@@ -85,10 +95,10 @@ struct Laser
     f32 width;
     f32 speed;
     i32 startTime;
-    i32 grazeDelay;
+    i32 hitboxStartTime;
     i32 duration;
-    i32 endTime;
-    i32 grazeInterval;
+    i32 despawnDuration;
+    i32 hitboxEndDelay;
     i32 inUse;
     ZunTimer timer;
     u16 flags;

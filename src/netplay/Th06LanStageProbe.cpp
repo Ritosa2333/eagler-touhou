@@ -1736,9 +1736,9 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
         // sees the same deterministic mutation on every peer.
         for (Enemy *boss : g_EnemyManager.bosses)
         {
-            if (boss == nullptr || !boss->flags.active || !boss->flags.isBoss)
+            if (boss == nullptr || !boss->flags.isSlotOccupied || !boss->flags.isBoss)
                 continue;
-            if (boss->flags.unk6 && boss->life > 0)
+            if (boss->flags.isInteractable && boss->life > 0)
                 boss->life = 0;
             if (boss->timerCallbackThreshold >= 0 &&
                 boss->bossTimer.AsFrames() < boss->timerCallbackThreshold)

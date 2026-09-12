@@ -86,6 +86,8 @@ enum StageNumber
 #define GAME_REGION_RIGHT (GAME_REGION_LEFT + GAME_REGION_WIDTH)
 #define GAME_REGION_BOTTOM (GAME_REGION_TOP + GAME_REGION_HEIGHT)
 
+#define MAX_CLEARS 99
+
 struct GameManager;
 
 extern GameManager g_GameManager;

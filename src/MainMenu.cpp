@@ -1570,7 +1570,7 @@ i32 MainMenu::ReplayHandling()
                 {
                     this->cursor = this->cursor + 1;
 
-                    if ((int)this->cursor >= ARRAY_SIZE_SIGNED(this->currentReplay->stageReplayData))
+                    if (this->cursor >= ARRAY_SIZE_SIGNED(this->currentReplay->stageReplayData))
                     {
                         return ZUN_SUCCESS;
                     }

@@ -195,8 +195,6 @@ void MidiOutput::ReleaseFileData(u32 idx)
 void MidiOutput::ClearTracks()
 {
     i32 trackIndex;
-    u8 *data;
-    MidiTrack *tracks;
 
     for (trackIndex = 0; this->tracks != NULL && trackIndex < this->numTracks; trackIndex++)
     {

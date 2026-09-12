@@ -243,7 +243,6 @@ ScoreDat *ResultScreen::OpenScore(const char *path)
     i32 fileLen;
     Th6k *decryptedFilePointer;
     i32 remainingData;
-    i32 scoreListNodeSize;
     u16 checksum;
     u8 xorValue;
     i32 scoreDatSize;
@@ -374,7 +373,7 @@ u32 ResultScreen::GetHighScore(ScoreDat *scoreDat, ScoreListNode *node, u32 char
         }
 
         remainingSize -= highScore->base.th6kLen;
-        highScore = highScore->ShiftBytes(highScore->base.th6kLen);
+        highScore = (Hscr *)((u8 *)highScore + highScore->base.th6kLen);
     }
     if (scoreDat->scores->next != NULL)
     {
@@ -399,7 +398,6 @@ i32 ResultScreen::LinkScore(ScoreListNode *prevNode, Hscr *newScore)
 {
     i32 scoresAmount;
     ScoreListNode *nextNode;
-    i32 scoreNodeSize;
 
     scoresAmount = 0;
     while (prevNode->next != NULL)
@@ -412,7 +410,6 @@ i32 ResultScreen::LinkScore(ScoreListNode *prevNode, Hscr *newScore)
         scoresAmount++;
     }
     nextNode = prevNode->next;
-    scoreNodeSize = sizeof(ScoreListNode);
 
     prevNode->next = (ScoreListNode *)std::malloc(scoreNodeSize);
     if (prevNode->next == NULL)
@@ -574,7 +571,7 @@ ZunResult ResultScreen::ParsePscr(ScoreDat *scoreDat, Pscr *outClrd)
             outClrd[pscr->character * 6 * 4 + pscr->stage * 4 + pscr->difficulty] = *pscr;
         }
         cursor -= parsedPscr->base.th6kLen;
-        parsedPscr = parsedPscr->ShiftBytes(parsedPscr->base.th6kLen);
+        parsedPscr = (Pscr *)((u8 *)parsedPscr + parsedPscr->base.th6kLen);
     }
     return ZUN_SUCCESS;
 }
@@ -1445,7 +1442,7 @@ u32 ResultScreen::DrawFinalStats() const
         g_AsciiManager.color = color;
         unknownFloat = 0.0;
 
-        completion = g_GameManager.difficulty < 4 ? g_GameManager.counat / 39600.0f : g_GameManager.counat / 89500.0f;
+        completion = g_GameManager.difficulty < 4 ? g_GameManager.counat / 89500.0f : g_GameManager.counat / 39600.0f;
         strPos = viewport->pos;
         strPos.x += 224.0f;
         strPos.y += 32.0f;
@@ -2054,10 +2051,6 @@ ChainCallbackResult ResultScreen::OnUpdate(ResultScreen *resultScreen)
 
 ChainCallbackResult ResultScreen::OnDraw(ResultScreen *resultScreen)
 {
-    u8 unused[12];
-    u8 unused2;
-    u8 unused3;
-
     AnmVm *sprite;
     char keyboardCharacter[2];
     ZunVec2 charPos;

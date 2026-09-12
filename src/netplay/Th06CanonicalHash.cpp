@@ -207,9 +207,9 @@ void HashLaserShooter(Hasher &hash, const EnemyLaserShooter &shooter)
     hash.Scalar(shooter.width);
     hash.Scalar(shooter.startTime);
     hash.Scalar(shooter.duration);
-    hash.Scalar(shooter.stopTime);
-    hash.Scalar(shooter.grazeDelay);
-    hash.Scalar(shooter.grazeDistance);
+    hash.Scalar(shooter.despawnDuration);
+    hash.Scalar(shooter.hitboxStartTime);
+    hash.Scalar(shooter.hitboxEndDelay);
     hash.Scalar(shooter.unk_44);
     hash.Scalar(shooter.type);
     hash.Scalar(shooter.flags);
@@ -265,22 +265,22 @@ void HashEnemy(Hasher &hash, i32 index, const Enemy &enemy)
     hash.Scalar(enemy.bossId);
     hash.Scalar(enemy.unk_e41);
     HashTimer(hash, enemy.exInsFunc10Timer);
-    hash.Scalar(enemy.flags.unk1);
-    hash.Scalar(enemy.flags.unk2);
-    hash.Scalar(enemy.flags.unk3);
-    hash.Scalar(enemy.flags.unk4);
-    hash.Scalar(enemy.flags.active);
-    hash.Scalar(enemy.flags.unk6);
-    hash.Scalar(enemy.flags.unk7);
-    hash.Scalar(enemy.flags.unk8);
+    hash.Scalar(enemy.flags.movementMode);
+    hash.Scalar(enemy.flags.movementEaseType);
+    hash.Scalar(enemy.flags.shootingDisabled);
+    hash.Scalar(enemy.flags.invertX);
+    hash.Scalar(enemy.flags.isSlotOccupied);
+    hash.Scalar(enemy.flags.isInteractable);
+    hash.Scalar(enemy.flags.isCollidable);
+    hash.Scalar(enemy.flags.hasBeenInBounds);
     hash.Scalar(enemy.flags.isBoss);
-    hash.Scalar(enemy.flags.unk10);
-    hash.Scalar(enemy.flags.unk11);
+    hash.Scalar(enemy.flags.movementMode0);
+    hash.Scalar(enemy.flags.movementMode1);
     hash.Scalar(enemy.flags.shouldClampPos);
-    hash.Scalar(enemy.flags.unk13);
-    hash.Scalar(enemy.flags.unk14);
-    hash.Scalar(enemy.flags.unk15);
-    hash.Scalar(enemy.flags.unk16);
+    hash.Scalar(enemy.flags.movementMode3);
+    hash.Scalar(enemy.flags.movementMode4);
+    hash.Scalar(enemy.flags.movementMode5);
+    hash.Scalar(enemy.flags.movementMode6);
     hash.Scalar(enemy.anmExFlags);
     hash.Scalar(enemy.anmExDefaults);
     hash.Scalar(enemy.anmExFarLeft);
@@ -423,10 +423,10 @@ void HashLaser(Hasher &hash, i32 index, const Laser &laser)
     hash.Scalar(laser.width);
     hash.Scalar(laser.speed);
     hash.Scalar(laser.startTime);
-    hash.Scalar(laser.grazeDelay);
+    hash.Scalar(laser.hitboxStartTime);
     hash.Scalar(laser.duration);
-    hash.Scalar(laser.endTime);
-    hash.Scalar(laser.grazeInterval);
+    hash.Scalar(laser.despawnDuration);
+    hash.Scalar(laser.hitboxEndDelay);
     hash.Scalar(laser.inUse);
     HashTimer(hash, laser.timer);
     hash.Scalar(laser.flags);
@@ -607,7 +607,7 @@ Sample Capture()
     enemies.Scalar(g_EnemyManager.spellcardInfo.usedBomb);
     for (i32 i = 0; i < 257; ++i)
     {
-        if (!g_EnemyManager.enemies[i].flags.active)
+        if (!g_EnemyManager.enemies[i].flags.isSlotOccupied)
             continue;
         ++sample.enemyCount;
         HashEnemy(enemies, i, g_EnemyManager.enemies[i]);

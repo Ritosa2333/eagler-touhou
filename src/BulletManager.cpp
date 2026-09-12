@@ -99,7 +99,7 @@ u32 BulletManager::SpawnSingleBullet(const EnemyBulletShooter *bulletProps, i32 
             this->nextBulletIndex = 0;
         }
 
-        if (bullet->state != 0)
+        if (bullet->state != BULLET_STATE_UNUSED)
         {
             bullet++;
             if (this->nextBulletIndex == 0)
@@ -175,7 +175,7 @@ u32 BulletManager::SpawnSingleBullet(const EnemyBulletShooter *bulletProps, i32 
         bulletSpeed = g_Rng.GetRandomF32InRange(bulletProps->speed1 - bulletProps->speed2) + bulletProps->speed2;
     }
 
-    bullet->state = 1;
+    bullet->state = BULLET_STATE_FIRED;
     bullet->unk_5c2 = 1;
     bullet->speed = bulletSpeed;
     bullet->angle = utils::AddNormalizeAngle(bulletAngle, 0.0f);
@@ -225,7 +225,7 @@ u32 BulletManager::SpawnSingleBullet(const EnemyBulletShooter *bulletProps, i32 
                                               bulletProps->spriteOffset);
         }
 
-        bullet->state = 2;
+        bullet->state = BULLET_STATE_SPAWNING_FAST;
     }
     else if (bullet->exFlags & 4)
     {
@@ -258,7 +258,7 @@ u32 BulletManager::SpawnSingleBullet(const EnemyBulletShooter *bulletProps, i32 
                                           bullet->sprites.spriteSpawnEffectNormal.activeSpriteIndex +
                                               bulletProps->spriteOffset);
         }
-        bullet->state = 3;
+        bullet->state = BULLET_STATE_SPAWNING_NORMAL;
     }
     else if (bullet->exFlags & 8)
     {
@@ -290,7 +290,7 @@ u32 BulletManager::SpawnSingleBullet(const EnemyBulletShooter *bulletProps, i32 
                                               bulletProps->spriteOffset);
         }
 
-        bullet->state = 4;
+        bullet->state = BULLET_STATE_SPAWNING_SLOW;
     }
     g_AnmManager->SetActiveSprite(&bullet->sprites.spriteBullet,
                                   bullet->sprites.spriteBullet.activeSpriteIndex + bulletProps->spriteOffset);
@@ -399,7 +399,7 @@ void BulletManager::RemoveAllBullets(bool turnIntoItem)
 
     for (bullet = &g_BulletManager.bullets[0], i = 0; i < ARRAY_SIZE_SIGNED(g_BulletManager.bullets); i++, bullet++)
     {
-        if (bullet->state == 0 || bullet->state == 5)
+        if (bullet->state == BULLET_STATE_UNUSED || bullet->state == BULLET_STATE_DESPAWNING)
         {
             continue;
         }
@@ -411,7 +411,7 @@ void BulletManager::RemoveAllBullets(bool turnIntoItem)
         }
         else
         {
-            bullet->state = 5;
+            bullet->state = BULLET_STATE_DESPAWNING;
         }
     }
 
@@ -443,7 +443,7 @@ void BulletManager::RemoveAllBullets(bool turnIntoItem)
             }
         }
 
-        laser->grazeInterval = 0;
+        laser->hitboxEndDelay = 0;
     }
 }
 
@@ -471,7 +471,7 @@ i32 BulletManager::DespawnBullets(i32 maxBonusScore, bool awardPoints)
     bullets = &g_BulletManager.bullets[0];
     for (i = 0; i < ARRAY_SIZE_SIGNED(g_BulletManager.bullets); i++, bullets++)
     {
-        if (bullets->state == 0)
+        if (bullets->state == BULLET_STATE_UNUSED)
         {
             continue;
         }
@@ -493,7 +493,7 @@ i32 BulletManager::DespawnBullets(i32 maxBonusScore, bool awardPoints)
             bulletScore = maxBonusScore;
         }
 
-        bullets->state = 5;
+        bullets->state = BULLET_STATE_DESPAWNING;
     }
 
     laser = &this->lasers[0];
@@ -526,7 +526,7 @@ i32 BulletManager::DespawnBullets(i32 maxBonusScore, bool awardPoints)
             }
         }
 
-        laser->grazeInterval = 0;
+        laser->hitboxEndDelay = 0;
     }
 
     g_GameManager.score += totalBonusScore;
@@ -624,9 +624,9 @@ Laser *BulletManager::SpawnLaserPattern(const EnemyLaserShooter *bulletProps)
         laser->speed = bulletProps->speed;
         laser->startTime = bulletProps->startTime;
         laser->duration = bulletProps->duration;
-        laser->endTime = bulletProps->stopTime;
-        laser->grazeDelay = bulletProps->grazeDelay;
-        laser->grazeInterval = bulletProps->grazeDistance;
+        laser->despawnDuration = bulletProps->despawnDuration;
+        laser->hitboxStartTime = bulletProps->hitboxStartTime;
+        laser->hitboxEndDelay = bulletProps->hitboxEndDelay;
 
         if (laser->startTime == 0)
         {
@@ -738,13 +738,13 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
     mgr->bulletCount = 0;
     for (idx = 0; idx < ARRAY_SIZE_SIGNED(mgr->bullets); idx++, curBullet++)
     {
-        if (curBullet->state == 0)
+        if (curBullet->state == BULLET_STATE_UNUSED)
             continue;
 
         mgr->bulletCount++;
         switch (curBullet->state)
         {
-        case 2:
+        case BULLET_STATE_SPAWNING_FAST:
             curBullet->pos += curBullet->velocity / 2.0f * g_Supervisor.effectiveFramerateMultiplier;
 
             if (g_AnmManager->ExecuteScript(&curBullet->sprites.spriteSpawnEffectFast) == 0)
@@ -752,7 +752,7 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
                 break;
             }
             goto HELL;
-        case 3:
+        case BULLET_STATE_SPAWNING_NORMAL:
             curBullet->pos += curBullet->velocity / 2.5f * g_Supervisor.effectiveFramerateMultiplier;
 
             if (g_AnmManager->ExecuteScript(&curBullet->sprites.spriteSpawnEffectNormal) == 0)
@@ -760,7 +760,7 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
                 break;
             }
             goto HELL;
-        case 4:
+        case BULLET_STATE_SPAWNING_SLOW:
             curBullet->pos += curBullet->velocity / 3.0f * g_Supervisor.effectiveFramerateMultiplier;
 
             if (g_AnmManager->ExecuteScript(&curBullet->sprites.spriteSpawnEffectSlow) == 0)
@@ -768,9 +768,9 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
                 break;
             }
         HELL:
-            curBullet->state = 1;
+            curBullet->state = BULLET_STATE_FIRED;
             curBullet->timer.InitializeForPopup();
-        case 1:
+        case BULLET_STATE_FIRED:
             if (curBullet->exFlags != 0)
             {
                 if (curBullet->exFlags & 1)
@@ -1001,7 +1001,7 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
                 }
                 else if (grazeState == 2)
                 {
-                    curBullet->state = 5;
+                    curBullet->state = BULLET_STATE_DESPAWNING;
                     g_ItemManager.SpawnItem(&curBullet->pos, ITEM_POINT_BULLET, 1);
                 }
             }
@@ -1021,7 +1021,7 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
 #endif
                 if (grazeState != 0)
                 {
-                    curBullet->state = 5;
+                    curBullet->state = BULLET_STATE_DESPAWNING;
                     if (grazeState == 2)
                     {
                         g_ItemManager.SpawnItem(&curBullet->pos, ITEM_POINT_BULLET, 1);
@@ -1030,7 +1030,7 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
             }
             g_AnmManager->ExecuteScript(&curBullet->sprites.spriteBullet);
             break;
-        case 5:
+        case BULLET_STATE_DESPAWNING:
             curBullet->pos += curBullet->velocity / 2.0f * g_Supervisor.effectiveFramerateMultiplier;
             if (g_AnmManager->ExecuteScript(&curBullet->sprites.spriteSpawnEffectDonut) != 0)
             {
@@ -1099,10 +1099,13 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
                 }
 
                 curLaser->vm0.scaleX = local_14 / 16.0f;
+                // Bug: ZUN intended to set laserSize.y instead of laserSize.x
+                // This way, between hitboxStartTime and startTime, the laser would have a thinner hitbox.
+                // Setting laserSize.x results in a tiny hitbox at the laser midpoint.
                 laserSize.x = local_14 / 2.0f;
             }
 
-            if (curLaser->timer.current >= curLaser->grazeDelay)
+            if ((ZunBool)(curLaser->timer.current >= curLaser->hitboxStartTime))
             {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                 for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
@@ -1145,7 +1148,7 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
             curLaser->timer.InitializeForPopup();
             curLaser->state++;
 
-            if (curLaser->endTime == 0)
+            if (curLaser->despawnDuration == 0)
             {
                 curLaser->inUse = 0;
                 continue;
@@ -1165,16 +1168,20 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
             }
             else
             {
-                if (0 < curLaser->endTime)
+                if (0 < curLaser->despawnDuration)
                 {
-                    local_14 =
-                        curLaser->width - (curLaser->timer.AsFramesFloat() * curLaser->width) / curLaser->endTime;
+                    local_14 = curLaser->width -
+                               (curLaser->timer.AsFramesFloat() * curLaser->width) / curLaser->despawnDuration;
                     curLaser->vm0.scaleX = local_14 / 16.0f;
+                    // Bug: ZUN intended to set laserSize.y instead of laserSize.x
+                    // This way, for hitboxEndDelay ticks after the laser starts despawning,
+                    // the laser would have a thinner hitbox.
+                    // Setting laserSize.x results in a tiny hitbox at the laser midpoint.
                     laserSize.x = local_14 / 2.0f;
                 }
             }
 
-            if (curLaser->timer.current < curLaser->grazeInterval)
+            if ((ZunBool)(curLaser->timer.current < curLaser->hitboxEndDelay))
             {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                 for (i32 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
@@ -1189,7 +1196,7 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
 #endif
             }
 
-            if (curLaser->timer.current < curLaser->endTime)
+            if ((ZunBool)(curLaser->timer.current < curLaser->despawnDuration))
             {
                 break;
             }
@@ -1291,7 +1298,7 @@ ChainCallbackResult BulletManager::OnDraw(BulletManager *mgr)
     {
         for (curBullet1 = &mgr->bullets[0], idx = 0; idx < ARRAY_SIZE_SIGNED(mgr->bullets); idx++, curBullet1++)
         {
-            if (curBullet1->state == 0)
+            if (curBullet1->state == BULLET_STATE_UNUSED)
             {
                 continue;
             }
@@ -1304,7 +1311,7 @@ ChainCallbackResult BulletManager::OnDraw(BulletManager *mgr)
 
         for (curBullet1 = &mgr->bullets[0], idx = 0; idx < ARRAY_SIZE_SIGNED(mgr->bullets); idx++, curBullet1++)
         {
-            if (curBullet1->state == 0)
+            if (curBullet1->state == BULLET_STATE_UNUSED)
             {
                 continue;
             }
@@ -1319,7 +1326,7 @@ ChainCallbackResult BulletManager::OnDraw(BulletManager *mgr)
 
         for (curBullet1 = &mgr->bullets[0], idx = 0; idx < ARRAY_SIZE_SIGNED(mgr->bullets); idx++, curBullet1++)
         {
-            if (curBullet1->state == 0)
+            if (curBullet1->state == BULLET_STATE_UNUSED)
             {
                 continue;
             }
@@ -1334,7 +1341,7 @@ ChainCallbackResult BulletManager::OnDraw(BulletManager *mgr)
 
         for (curBullet1 = &mgr->bullets[0], idx = 0; idx < ARRAY_SIZE_SIGNED(mgr->bullets); idx++, curBullet1++)
         {
-            if (curBullet1->state == 0)
+            if (curBullet1->state == BULLET_STATE_UNUSED)
             {
                 continue;
             }
@@ -1349,7 +1356,7 @@ ChainCallbackResult BulletManager::OnDraw(BulletManager *mgr)
     {
         for (curBullet2 = &mgr->bullets[0], idx = 0; idx < ARRAY_SIZE_SIGNED(mgr->bullets); idx++, curBullet2++)
         {
-            if (curBullet2->state == 0)
+            if (curBullet2->state == BULLET_STATE_UNUSED)
             {
                 continue;
             }
@@ -1362,7 +1369,7 @@ ChainCallbackResult BulletManager::OnDraw(BulletManager *mgr)
 
         for (curBullet2 = &mgr->bullets[0], idx = 0; idx < ARRAY_SIZE_SIGNED(mgr->bullets); idx++, curBullet2++)
         {
-            if (curBullet2->state == 0)
+            if (curBullet2->state == BULLET_STATE_UNUSED)
             {
                 continue;
             }
@@ -1377,7 +1384,7 @@ ChainCallbackResult BulletManager::OnDraw(BulletManager *mgr)
 
         for (curBullet2 = &mgr->bullets[0], idx = 0; idx < ARRAY_SIZE_SIGNED(mgr->bullets); idx++, curBullet2++)
         {
-            if (curBullet2->state == 0)
+            if (curBullet2->state == BULLET_STATE_UNUSED)
             {
                 continue;
             }
@@ -1392,7 +1399,7 @@ ChainCallbackResult BulletManager::OnDraw(BulletManager *mgr)
 
         for (curBullet2 = &mgr->bullets[0], idx = 0; idx < ARRAY_SIZE_SIGNED(mgr->bullets); idx++, curBullet2++)
         {
-            if (curBullet2->state == 0)
+            if (curBullet2->state == BULLET_STATE_UNUSED)
             {
                 continue;
             }
@@ -1415,16 +1422,16 @@ void BulletManager::DrawBullet(Bullet *bullet)
 
     switch (bullet->state)
     {
-    case 2:
+    case BULLET_STATE_SPAWNING_FAST:
         anmVm = &bullet->sprites.spriteSpawnEffectFast;
         break;
-    case 3:
+    case BULLET_STATE_SPAWNING_NORMAL:
         anmVm = &bullet->sprites.spriteSpawnEffectNormal;
         break;
-    case 4:
+    case BULLET_STATE_SPAWNING_SLOW:
         anmVm = &bullet->sprites.spriteSpawnEffectSlow;
         break;
-    case 5:
+    case BULLET_STATE_DESPAWNING:
         anmVm = &bullet->sprites.spriteSpawnEffectDonut;
         break;
     default:
@@ -1465,16 +1472,16 @@ void BulletManager::DrawBulletNoHwVertex(Bullet *bullet)
 
     switch (bullet->state)
     {
-    case 2:
+    case BULLET_STATE_SPAWNING_FAST:
         anmVm = &bullet->sprites.spriteSpawnEffectFast;
         break;
-    case 3:
+    case BULLET_STATE_SPAWNING_NORMAL:
         anmVm = &bullet->sprites.spriteSpawnEffectNormal;
         break;
-    case 4:
+    case BULLET_STATE_SPAWNING_SLOW:
         anmVm = &bullet->sprites.spriteSpawnEffectSlow;
         break;
-    case 5:
+    case BULLET_STATE_DESPAWNING:
         anmVm = &bullet->sprites.spriteSpawnEffectDonut;
         break;
     default:

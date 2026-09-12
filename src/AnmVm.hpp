@@ -70,6 +70,25 @@ struct AnmRawInstr
     u32 args[10];
 };
 
+enum AnmVmFlagsEnum
+{
+    AnmVmFlags_Visible = 1 << 0,
+    AnmVmFlags_1 = 1 << 1,
+    AnmVmFlags_BlendMode = 1 << 2,
+    AnmVmFlags_ColorOp = 1 << 3,
+    AnmVmFlags_4 = 1 << 4,
+    AnmVmFlags_UsePosOffset = 1 << 5,
+    AnmVmFlags_FlipX = 1 << 6,
+    AnmVmFlags_FlipY = 1 << 7,
+    AnmVmFlags_AnchorLeft = 1 << 8,
+    AnmVmFlags_AnchorTop = 1 << 9,
+    /* posTime missing because it is not really a flag */
+    AnmVmFlags_ZWriteDisable = 1 << 12,
+    AnmVmFlags_IsStopped = 1 << 13,
+};
+
+#define ANM_VM_INITIAL_FLAGS 0x3
+
 enum AnmVmBlendMode
 {
     AnmVmBlendMode_InvSrcAlpha,
