@@ -1,0 +1,49 @@
+name: Eagler Web CI
+
+on:
+  push:
+    branches: ["eagler"]
+  pull_request:
+    branches: ["eagler"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  web-build:
+    name: Web ${{ matrix.variant }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [normal, netplay]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Emscripten
+        uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984 # v16
+        with:
+          version: 6.0.5
+          actions-cache-folder: emsdk-cache
+
+      - name: Configure
+        run: emcmake cmake --preset web-ci-${{ matrix.variant }}
+
+      - name: Build
+        run: cmake --build --preset web-ci-${{ matrix.variant }} --parallel
+
+      - name: Verify source-only Web output
+        shell: bash
+        run: |
+          test -s build/ci-web-${{ matrix.variant }}/th06.html
+          test -s build/ci-web-${{ matrix.variant }}/th06.js
+          test -s build/ci-web-${{ matrix.variant }}/th06.wasm
+          if find build/ci-web-${{ matrix.variant }} -type f \( -iname '*.dat' -o -iname '*.data' \) -print -quit | grep -q .; then
+            echo 'error: source-only Web CI produced original-game DATA' >&2
+            exit 1
+          fi

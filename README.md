@@ -5,6 +5,8 @@
 
 This is the readme for the portable fork of EoSD. For the readme of the decomp project, see [here](https://github.com/GensokyoClub/th06/blob/master/README.md).
 
+> **Eagler branch:** Hosted Web Runtime protocol, browser integration, persistence, touch, practice and multiplayer details are documented in [README_EAGLER.md](README_EAGLER.md).
+
 EoSD-portable is a port of Touhou 6 using SDL3 and OpenGL/GLES.
 This enables theoretical portability to any system supported by SDL3, with Linux, Windows, macOS, and Web targets in scope.
 Builds for the BSDs and other Unices are also almost certainly possible, but may require some slight modifications to the build system.

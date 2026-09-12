@@ -772,7 +772,13 @@
           try { FS.mkdir(saveRoot); } catch (error) {
             if (!String(error).includes("File exists")) console.error(error);
           }
-          FS.mount(IDBFS, { autoPersist: true }, saveRoot);
+          const saveMountRoot = FS.mount(IDBFS, { autoPersist: true }, saveRoot);
+          const saveMount = saveMountRoot?.mount;
+          // IDBFS autoPersist observes the MEMFS nodes created by populate and
+          // can queue a partial VFS -> IndexedDB write while restore is still
+          // walking nested directories. WebKit can then delete entries that
+          // have not been restored yet. Hold its queue until populate commits.
+          if (saveMount) saveMount.idbPersistState = "restore";
           let settled = false;
           const timer = setTimeout(() => {
             if (settled) return;
@@ -790,6 +796,7 @@
               failHostedStartup(new Error(`Local save restore failed: ${error?.message || error}`));
               return;
             }
+            if (saveMount) saveMount.idbPersistState = 0;
             removeRunDependency("savesth06-sync");
           });
         }],

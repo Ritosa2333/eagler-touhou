@@ -835,6 +835,15 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
         g_GameWindow.isAppActive = 1;
         break;
     case SDL_EVENT_WINDOW_FOCUS_LOST:
+#ifdef __EMSCRIPTEN__
+        // Canvas/iframe focus on Web, especially iOS WebKit, is not an app
+        // lifecycle signal. A touch ending can transiently drop DOM focus while
+        // the page remains visible; treating that as background freezes Render()
+        // until another finger is held down. Real backgrounding is handled by
+        // the SDL background events and the shell visibility/pagehide owner.
+        Touch::CancelTouches();
+        break;
+#endif
     case SDL_EVENT_WILL_ENTER_BACKGROUND:
     case SDL_EVENT_DID_ENTER_BACKGROUND:
         Touch::CancelTouches();
