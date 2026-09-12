@@ -470,6 +470,7 @@ ZunResult Stage::LoadStageData(const char *anmpath, const char *stdpath)
     RawStageQuadBasic *curQuad;
     i32 idx;
     i32 vmIdx;
+    u32 sizeVmArr;
 
     if (g_AnmManager->LoadAnm(ANM_FILE_STAGEBG, anmpath, ANM_OFFSET_STAGEBG) != ZUN_SUCCESS)
     {

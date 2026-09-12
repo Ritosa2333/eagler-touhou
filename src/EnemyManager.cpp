@@ -625,7 +625,7 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
         damageTotal = 0;
         damageAttributed = 0;
 #endif
-        if (curEnemy->flags.hasBeenInBounds != 0 && !curEnemy->flags.movementMode5)
+        if (curEnemy->flags.hasBeenInBounds != 0 && !curEnemy->flags.isInvisible)
         {
             enemyLifeBeforeDmg = curEnemy->life;
             if (curEnemy->flags.isCollidable && curEnemy->flags.isInteractable)
@@ -744,7 +744,7 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
                     }
                 }
 #endif
-                if (curEnemy->flags.movementMode0 != 0)
+                if (curEnemy->flags.isDamageable != 0)
                 {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                     if (damage > 0 && damageTotal > 0)
@@ -781,8 +781,8 @@ ChainCallbackResult EnemyManager::OnUpdate(EnemyManager *mgr)
             if (0 >= curEnemy->life && curEnemy->flags.isInteractable != 0)
             {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-                if (enemyLifeBeforeDmg > 0 && curEnemy->flags.movementMode1 != 3 &&
-                    curEnemy->flags.movementMode0 != 0 && damage > 0)
+                if (enemyLifeBeforeDmg > 0 && curEnemy->flags.deathMode != 3 &&
+                    curEnemy->flags.isDamageable != 0 && damage > 0)
                     AddPlayerEnemiesDefeated(damageOwnerId, 1);
 #endif
                 curEnemy->lifeCallbackThreshold = -1;
@@ -994,7 +994,7 @@ ChainCallbackResult EnemyManager::OnDraw(EnemyManager *mgr)
                 drawVm(curEnemyVm, 0.495f, curEnemyVm->autoRotate != 0);
             }
         }
-        drawVm(&curEnemy->primaryVm, 0.494f, curEnemy->flags.movementMode3 != 0);
+        drawVm(&curEnemy->primaryVm, 0.494f, curEnemy->flags.rotateAnm != 0);
         for (curEnemyVmIdx = 4; curEnemyVmIdx < 8; curEnemyVmIdx++, curEnemyVm++)
         {
             if (0 <= curEnemyVm->anmFileIndex)

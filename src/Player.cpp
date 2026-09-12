@@ -1740,9 +1740,9 @@ void Player::UpdatePlayerBullets(Player *player)
             break;
         }
 
-        bullet->sprite.pos.x = bullet->position[0] += bullet->velocity.x * g_Supervisor.effectiveFramerateMultiplier;
+        bullet->sprite.pos.x = bullet->position.x += bullet->velocity.x * g_Supervisor.effectiveFramerateMultiplier;
 
-        bullet->sprite.pos.y = bullet->position[1] += bullet->velocity.y * g_Supervisor.effectiveFramerateMultiplier;
+        bullet->sprite.pos.y = bullet->position.y += bullet->velocity.y * g_Supervisor.effectiveFramerateMultiplier;
 
         bullet->sprite.pos.z = bullet->position.z;
         if (bullet->bulletType != BULLET_TYPE_LASER &&
@@ -2282,9 +2282,9 @@ ZunResult Player::HandlePlayerInputs()
     this->previousVerticalSpeed = verticalSpeed;
 
     // TODO: Match stack variables here
-    this->positionCenter[0] +=
+    this->positionCenter.x +=
         horizontalSpeed * this->horizontalMovementSpeedMultiplierDuringBomb * g_Supervisor.effectiveFramerateMultiplier;
-    this->positionCenter[1] +=
+    this->positionCenter.y +=
         verticalSpeed * this->verticalMovementSpeedMultiplierDuringBomb * g_Supervisor.effectiveFramerateMultiplier;
 
     if (this->positionCenter.x < g_GameManager.playerMovementAreaTopLeftPos.x)
@@ -2668,8 +2668,8 @@ FireBulletResult Player::FireSingleBullet(Player *player, PlayerBullet *bullet, 
         {
             bullet->position = player->orbsPosition[bulletData->spawnPositionIdx - 1];
         }
-        bullet->position[0] += bulletData->motion.x;
-        bullet->position[1] += bulletData->motion.y;
+        bullet->position.x += bulletData->motion.x;
+        bullet->position.y += bulletData->motion.y;
 
         bullet->position.z = 0.495f;
         bullet->prevPosition = bullet->position;

@@ -243,6 +243,7 @@ ScoreDat *ResultScreen::OpenScore(const char *path)
     i32 fileLen;
     Th6k *decryptedFilePointer;
     i32 remainingData;
+    i32 scoreListNodeSize;
     u16 checksum;
     u8 xorValue;
     i32 scoreDatSize;
@@ -398,6 +399,7 @@ i32 ResultScreen::LinkScore(ScoreListNode *prevNode, Hscr *newScore)
 {
     i32 scoresAmount;
     ScoreListNode *nextNode;
+    i32 scoreNodeSize;
 
     scoresAmount = 0;
     while (prevNode->next != NULL)
@@ -410,6 +412,7 @@ i32 ResultScreen::LinkScore(ScoreListNode *prevNode, Hscr *newScore)
         scoresAmount++;
     }
     nextNode = prevNode->next;
+    scoreNodeSize = sizeof(ScoreListNode);
 
     prevNode->next = (ScoreListNode *)std::malloc(scoreNodeSize);
     if (prevNode->next == NULL)
