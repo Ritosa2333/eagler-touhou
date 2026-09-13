@@ -1,6 +1,6 @@
 import { loadMarkdownParser, parseTrustedMarkdown, type MarkdownParser } from "./markdown.mjs";
 
-export const CHANGELOG_FILE = "CHANGELOG.md";
+export const CHANGELOG_FILE = "content/CHANGELOG.md";
 export const CHANGELOG_SEEN_STORAGE_KEY = "eagler-touhou-changelog-seen-v2";
 
 export type ChangelogLoadResult =
@@ -38,8 +38,8 @@ export function renderChangelogMarkdown(
   list.className = "changelog-list";
   target.append(list);
 
-  // CHANGELOG.md is repository-controlled content. Marked supplies the full
-  // Markdown grammar; this adapter only applies the Launcher's visual grouping.
+  // The deployment operator controls this content. The shared Markdown layer
+  // sanitizes Marked output; this adapter only applies Launcher visual grouping.
   const parsed = parseTrustedMarkdown(documentObj, normalizeChangelogText(source), parseMarkdown);
   let entry: HTMLElement | null = null;
   for (const node of Array.from(parsed.childNodes)) {

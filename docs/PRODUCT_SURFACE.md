@@ -82,11 +82,11 @@ Service Worker storage/offline model.
   preference is stored locally.
 - The masthead also exposes interface language, the packaged changelog and the
   About page, while FAQ remains a direct site-information entry.
-- `CHANGELOG.md` content is optional packaged release-note content. An empty
+- `content/CHANGELOG.md` is optional operator-maintained site content. An empty
   file is a supported state and does not auto-open; a non-empty replacement is
   recognized by its content identity and may auto-open once for a user who has
   not seen that content yet.
-- Reading `NOTICE.txt` or `CHANGELOG.md` must never become a prerequisite for
+- Reading `NOTICE.txt` or `content/CHANGELOG.md` must never become a prerequisite for
   package management or game launch.
 - Notice display is non-blocking: failure to load `NOTICE.txt` must not prevent
   game/package use.

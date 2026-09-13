@@ -166,14 +166,14 @@ Examples of already separated owners include:
 - `src/launcher/site-notice.mts` - non-blocking packaged `NOTICE.txt` parsing,
   branded-link rendering, notice lifetime/scroll behavior and browser-local
   notice preference ownership.
-- `src/launcher/changelog.mts` - packaged `CHANGELOG.md` loading/rendering,
+- `src/launcher/changelog.mts` - packaged `content/CHANGELOG.md` loading/rendering,
   empty/error handling and browser-local seen-state keyed by normalized content
   identity rather than a manually synchronized JavaScript version constant.
 - `src/launcher/markdown.mts` - shared lazy Marked loading and trusted packaged-
   Markdown rendering boundary, including safe link protocols and external-link
   isolation. Changelog and multiplayer guidance add only their own structure
   and presentation after this shared parse step.
-- `src/launcher/multiplayer-guide.mts` - on-demand `MULTIPLAYER.md` loading and
+- `src/launcher/multiplayer-guide.mts` - on-demand `content/MULTIPLAYER.md` loading and
   dialog lifecycle. The guide is an App Shell resource so installed Launchers
   retain the instructions offline with the rest of the current UI generation.
 - `src/launcher/game-preferences.mts` - persisted Launcher option schema,
@@ -288,13 +288,16 @@ editor unusable for the current session.
 
 ### Site-information surface
 
-`NOTICE.txt`, `CHANGELOG.md` and `MULTIPLAYER.md` are packaged Launcher content, not remote
+`NOTICE.txt`, `content/CHANGELOG.md` and `content/MULTIPLAYER.md` are packaged Launcher content, not remote
 control-plane metadata. `src/launcher/site-notice.mts` owns the transient notice
 controller and treats notice loading as non-blocking.
 `src/launcher/changelog.mts` owns Changelog loading/rendering and seen-state.
 `src/launcher/multiplayer-guide.mts` owns the explicitly opened gameplay guide;
 its Markdown source is precached rather than duplicated into HTML or JavaScript.
-An empty `CHANGELOG.md` is a valid packaged state: it must not auto-open an
+Both runtime Markdown surfaces share the lazy-loaded, precached Marked parser and
+DOMPurify sanitizer. Sanitization occurs before generated HTML enters the DOM;
+inline event handlers, scripts and author-supplied styles are not content APIs.
+An empty `content/CHANGELOG.md` is a valid packaged state: it must not auto-open an
 empty dialog, while explicit user access reports that no changelog is present.
 Non-empty normalized content derives its own content identity, so deployers do
 not have to update a second version constant when replacing release notes.

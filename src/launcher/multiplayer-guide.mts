@@ -1,6 +1,6 @@
 import { loadMarkdownParser, parseTrustedMarkdown, type MarkdownParser } from "./markdown.mjs";
 
-export const MULTIPLAYER_GUIDE_FILE = "MULTIPLAYER.md";
+export const MULTIPLAYER_GUIDE_FILE = "content/MULTIPLAYER.md";
 
 export interface MultiplayerGuideControllerOptions {
   documentObj?: Document;

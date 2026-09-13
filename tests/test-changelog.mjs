@@ -56,6 +56,7 @@ function response(text, status = 200) {
 }
 
 globalThis.marked = { parse: () => "<h2>2026-09-06</h2><p>Item</p>" };
+globalThis.DOMPurify = { sanitize: html => html };
 const releaseText = "# EAGLER TOUHOU CHANGELOG\n\n## 2026-09-06\n\n- Item";
 const sharedStorage = storageFrom();
 const firstDocument = new FakeDocument();
@@ -89,7 +90,7 @@ const changed = createChangelogController({
   fetchImpl: async () => response(changedText),
 });
 assert.equal(await changed.maybeShowAutomatically(), true,
-  "changing only CHANGELOG.md content must create a new auto-show release");
+  "changing only content/CHANGELOG.md must create a new auto-show release");
 assert.equal(sharedStorage.values.get(CHANGELOG_SEEN_STORAGE_KEY), changelogContentIdentity(changedText));
 
 const emptyDocument = new FakeDocument();

@@ -18,8 +18,15 @@ Run `npm ci --ignore-scripts` followed by `npm run vendor` to reproduce the vend
 
 - Project: https://marked.js.org/
 - License: MIT
-- Purpose: render repository-controlled FAQ and changelog Markdown while preserving the site's own components and styles.
+- Purpose: render FAQ at build time and Launcher content Markdown at runtime while preserving the site's own components and styles.
 - License copy: `public/vendor/marked.LICENSE`
+
+`public/vendor/purify.min.js` is generated from `dompurify@3.4.15`.
+
+- Project: https://github.com/cure53/DOMPurify
+- License: Apache License 2.0 OR Mozilla Public License 2.0
+- Purpose: sanitize browser-rendered operator and gameplay Markdown after Marked parsing.
+- License copy: `public/vendor/dompurify.LICENSE`
 
 The masthead wordmark uses `font-touhou98@1.0.0`.
 

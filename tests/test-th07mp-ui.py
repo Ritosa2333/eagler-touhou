@@ -4,6 +4,13 @@ import sys
 from playwright.sync_api import sync_playwright
 
 
+def wait_for_text(page, selector: str, expected: str) -> None:
+    page.wait_for_function(
+        "args => document.querySelector(args.selector)?.textContent?.trim() === args.expected",
+        arg={"selector": selector, "expected": expected},
+    )
+
+
 def main() -> int:
     if len(sys.argv) < 2:
         raise SystemExit("usage: test-th07mp-ui.py URL")
@@ -199,21 +206,23 @@ def main() -> int:
         assert page.locator("#mpLocalRoleLabel").inner_text() in ("灵梦 A", "灵梦 B", "魔理沙 A", "魔理沙 B", "咲夜 A", "咲夜 B")
         assert "未准备" not in page.locator("#mpLocalRoleLabel").inner_text()
         page.locator("#mpReady").click()
-        assert page.locator("#mpReady").inner_text() == "已准备"
+        wait_for_text(page, "#mpReady", "已准备")
         page.locator("#mpStandUp").click()
         page.locator('[data-mp-seat-drop="0"] button').click()
         assert "房主" not in page.locator("#mpLocalRoleLabel").inner_text()
         # Standing up relinquishes the ready state; re-arm it in the new seat.
         assert page.locator("#mpReady").inner_text() == "准备"
         page.locator("#mpReady").click()
-        assert page.locator("#mpReady").inner_text() == "已准备"
+        wait_for_text(page, "#mpReady", "已准备")
 
         page.locator("#mpRoomSettingsToggle").click()
         assert page.locator("#mpRoomSettings").is_visible()
         page.locator('[data-mp-player-count="3"]').click()
         assert page.locator('[data-mp-seat="2"]').is_visible()
         page.locator('[data-mp-difficulty="5"]').click()
-        assert page.locator("#mpReady").inner_text() == "已准备"
+        wait_for_text(page, "#mpReady", "准备")
+        page.locator("#mpReady").click()
+        wait_for_text(page, "#mpReady", "已准备")
 
         # Room page is a persistent page state: refresh stays in the same room.
         page.reload(wait_until="load", timeout=30000)
