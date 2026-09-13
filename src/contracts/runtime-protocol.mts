@@ -56,9 +56,17 @@ export interface RuntimeCommandPayloads {
   resources: { resources: unknown[] };
   keyboard: { down: boolean; code: string };
   "keyboard-clear": Record<string, never>;
-  "touch-controls": { controls: unknown };
+  "touch-controls": {
+    fireEnabled: boolean;
+    focusEnabled: boolean;
+    bombSerial: number;
+    escapeSerial: number;
+    joystickX: number;
+    joystickY: number;
+    touchSensitivity: number;
+  };
   "touch-cancel": Record<string, never>;
-  "direct-touch": { phase: string; pointer: unknown };
+  "direct-touch": { type: "down" | "move" | "up"; id: number; x: number; y: number };
   launch: Record<string, never>;
   list: Record<string, never>;
   read: { path: string };

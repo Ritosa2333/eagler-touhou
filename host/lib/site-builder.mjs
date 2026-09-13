@@ -9,7 +9,7 @@ import { ensurePythonEnvironment } from "./python-environment.mjs";
 import { ensureThtk } from "./thtk.mjs";
 import { run } from "./process.mjs";
 
-const GAMES = Object.freeze(["th06", "th07", "th08"]);
+const GAMES = Object.freeze(["th06", "th07", "th08", "th10"]);
 const TH06_ARCHIVES = Object.freeze([
   "紅魔郷CM.DAT", "紅魔郷ED.DAT", "紅魔郷IN.DAT",
   "紅魔郷MD.DAT", "紅魔郷ST.DAT", "紅魔郷TL.DAT",
@@ -162,16 +162,46 @@ async function prepareLanguages(projectRoot, layout, python, thtk, font) {
   });
 }
 
-async function prepareArtwork(projectRoot, layout, python) {
+async function prepareArtwork(projectRoot, layout, python, thtk) {
   const output = resolve(layout.root, ".cache", "generated", "host-artwork");
-  await run(python, [
+  const args = [
     script(projectRoot, "scripts/prepare-host-artwork.py"),
     `--output=${output}`,
-    "--games=th06,th07,th08",
+    "--games=th06,th07,th08,th10",
     `--th06-dir=${layout.games.th06}`,
     `--th07-dir=${layout.games.th07}`,
     `--th08-dir=${layout.games.th08}`,
-  ], { cwd: projectRoot });
+    `--th10-dir=${layout.games.th10}`,
+  ];
+  if (thtk?.thdat) args.push(`--thdat=${thtk.thdat}`);
+  if (thtk?.thanm) args.push(`--thanm=${thtk.thanm}`);
+  await run(python, args, { cwd: projectRoot });
+  return output;
+}
+
+async function prepareTh10Content(projectRoot, layout) {
+  const output = resolve(layout.root, ".cache", "generated", "th10");
+  await rm(output, { recursive: true, force: true });
+  const supplied = resolve(layout.games.th10, "assets-ogg");
+  if (await fileExists(resolve(supplied, "th10.data")) && await fileExists(resolve(supplied, "bgm-ogg", "th10_00.ogg"))) {
+    await cp(supplied, output, { recursive: true });
+    return output;
+  }
+  const bundledRoot = resolve(projectRoot, "th10-runtime");
+  const bundledScript = resolve(bundledRoot, "scripts", "prepare-eagler-content.mjs");
+  const workspaceScript = workspacePath("th10", "scripts", "prepare-eagler-content.mjs");
+  const useBundledPreparer = await fileExists(bundledScript);
+  const preparationScript = useBundledPreparer ? bundledScript : workspaceScript;
+  if (!await fileExists(preparationScript)) {
+    throw new Error(`TH10 content is missing: provide ${supplied} or the bundled TH10 content preparer`);
+  }
+  const args = [
+    preparationScript,
+    `--original=${layout.games.th10}`,
+    `--output=${output}`,
+  ];
+  if (useBundledPreparer) args.push(`--runtime=${bundledRoot}`);
+  await run(process.execPath, args, { cwd: projectRoot });
   return output;
 }
 
@@ -198,9 +228,9 @@ async function prepareTh06DataAssets(projectRoot, layout, python, fonts) {
   return output;
 }
 
-async function prepareOgg(projectRoot, layout, python) {
+async function prepareOgg(projectRoot, layout, python, th10Content) {
   const roots = {};
-  for (const game of GAMES) {
+  for (const game of GAMES.filter(game => game !== "th10")) {
     const output = game === "th06"
       ? resolve(layout.root, ".cache", "generated", game, "bgm")
       : resolve(layout.root, ".cache", "generated", game, "bgm-ogg");
@@ -213,6 +243,7 @@ async function prepareOgg(projectRoot, layout, python) {
     ], { cwd: projectRoot });
     roots[game] = resolve(layout.root, ".cache", "generated", game);
   }
+  roots.th10 = th10Content;
   return Object.freeze(roots);
 }
 
@@ -227,10 +258,11 @@ export async function buildHostedSite({ projectRoot, hostRoot, music = "midi,ogg
   console.log("[Build 2/6] Preparing language packs");
   const languages = await prepareLanguages(projectRoot, layout, hostPython, thtk, fonts.unicode);
   console.log("[Build 3/6] Preparing Launcher artwork");
-  const artwork = await prepareArtwork(projectRoot, layout, hostPython);
+  const artwork = await prepareArtwork(projectRoot, layout, hostPython, thtk);
   const th06DataAssets = await prepareTh06DataAssets(projectRoot, layout, hostPython, fonts);
+  const th10DataAssets = await prepareTh10Content(projectRoot, layout);
   console.log("[Build 4/6] Preparing music");
-  const ogg = modes.includes("ogg") ? await prepareOgg(projectRoot, layout, hostPython) : null;
+  const ogg = modes.includes("ogg") ? await prepareOgg(projectRoot, layout, hostPython, th10DataAssets) : null;
   const features = await prepareFeatureConfig(projectRoot, layout, "hosted");
   try {
     console.log("[Build 5/6] Assembling static site");
@@ -242,13 +274,15 @@ export async function buildHostedSite({ projectRoot, hostRoot, music = "midi,ogg
       `--music=${modes.join(",")}`,
       `--feature-config=${features}`,
       `--artwork-dir=${artwork}`,
-      "--games=th06,th07,th08",
+      "--games=th06,th07,th08,th10",
       "--profile=web-validation-self-host",
       `--runtime-release=${layout.runtimeRelease}`,
       `--th06-assets=${layout.games.th06}`,
       `--th06-data-assets=${th06DataAssets}`,
       `--th07-assets=${layout.games.th07}`,
       `--th08-assets=${layout.games.th08}`,
+      `--th10-assets=${layout.games.th10}`,
+      `--th10-data-assets=${th10DataAssets}`,
       `--th06-language-packs=${languages.th06}`,
       `--th07-language-packs=${languages.th07}`,
     ];
@@ -290,7 +324,7 @@ export async function buildImportArtifacts({
       `--host-manifest=${resolve(layout.site, "host-manifest.json")}`,
       `--runtime-release=${layout.runtimeRelease}`,
       `--artwork-dir=${resolve(layout.site, "assets")}`,
-      "--games=th06,th07,th08",
+      "--games=th06,th07,th08,th10",
       "--profile=web-validation-self-host-import",
       `--test-build=${testBuild ? "1" : "0"}`,
     ], { cwd: projectRoot });

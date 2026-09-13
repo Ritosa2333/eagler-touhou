@@ -880,8 +880,29 @@ async function fetchJsonWithTimeout(path: string, timeoutMs = 12000, meta: Unkno
 
 const originMigrationOpen = document.getElementById("originMigrationOpen");
 
+function firstAvailableHostGame(host: Pick<HostManifest, "games">): GameId {
+  const gameId = Object.keys(PRODUCT_GAMES).find(candidate => Object.hasOwn(host.games, candidate));
+  if (!gameId || !isGameId(gameId)) throw new Error("Host Manifest 没有可用游戏");
+  return gameId;
+}
+
+function selectAvailableHostProduct(host: Pick<HostManifest, "games">) {
+  if (Object.hasOwn(host.games, state.game)) return;
+  const gameId = firstAvailableHostGame(host);
+  state.game = gameId;
+  state.product = gameId;
+  state.runtimeVariant = "normal";
+  state.replayViewer = false;
+  restoreGamePreferences(gameId, gameId);
+}
+
 function applyHostManifest(value: unknown) {
-  manifest = validateHostManifest(value);
+  const nextManifest = validateHostManifest(value);
+  manifest = nextManifest;
+  // A hosted site may intentionally publish a game subset (for example a
+  // TH10-only review package). Keep the Launcher state inside that subset
+  // before render() asks game() for music and feature capabilities.
+  selectAvailableHostProduct(nextManifest);
   if (originMigrationOpen) {
     originMigrationOpen.hidden = !hostOriginMigrationAvailable(manifest, location.protocol);
   }
@@ -1286,7 +1307,10 @@ try {
   if (saved && isCardFilter(saved)) cardFilter = saved;
 } catch {}
 function productEnabled(product: string) {
-  return productEnabledForBuild(product, manifest.shared.testBuild === true);
+  if (!productEnabledForBuild(product, manifest.shared.testBuild === true)) return false;
+  if (!hostManifestAvailable) return true;
+  const gameId = gameIdForProduct(product);
+  return isGameId(gameId) && Object.hasOwn(manifest.games, gameId);
 }
 function matchesCardFilter(product: ProductId) {
   if (!productEnabled(product)) return false;
@@ -3002,6 +3026,93 @@ function gameDataDescriptor(gameId: GameId = state.game): HostGameData {
   if (!descriptor) throw new Error(t("runtime.dataDescriptorMissing", { game: gameId }));
   return descriptor;
 }
+
+function developmentPackageDescriptor(gameId: GameId): PackageDescriptor | null {
+  const hosted = game(gameId);
+  const data = hosted.gameData;
+  const dataSource = typeof data?.source === "string" && data.source ? data.source : null;
+  if (!data || !dataSource) return null;
+  const files: PackageDescriptor["files"] = {
+    "game-data": {
+      revision: data.version,
+      source: "game-data",
+      target: `/${data.path}`,
+      bytes: data.bytes,
+      sha256: data.sha256,
+    },
+  };
+  const ogg = hosted.music?.ogg;
+  const oggMount = hosted.package.musicMounts.ogg || "/bgm-ogg";
+  const oggFiles = Array.isArray(ogg?.files) && Array.isArray(ogg?.sizes) && Array.isArray(ogg?.sha256)
+    ? ogg.files.map((name, index) => ({
+      name,
+      bytes: Number(ogg.sizes[index]),
+      sha256: String(ogg.sha256[index] || ""),
+    })).filter(item => item.name && Number.isSafeInteger(item.bytes) && item.bytes > 0 && /^[a-f0-9]{64}$/i.test(item.sha256))
+    : [];
+  for (const item of oggFiles) {
+    const fileId = `ogg:${item.name}`;
+    files[fileId] = {
+      revision: ogg?.version || data.version,
+      source: item.name,
+      target: `${oggMount.replace(/\/$/, "")}/${item.name}`,
+      bytes: item.bytes,
+      sha256: item.sha256,
+    };
+  }
+  const oggIds = oggFiles.map(item => `ogg:${item.name}`);
+  return {
+    schema: PACKAGE_DESCRIPTOR_SCHEMA,
+    game: gameId,
+    revision: data.version,
+    runtimeRequirement: {
+      protocol: HOST_PROTOCOL,
+      target: gameId,
+      dataFile: "game-data",
+      dataLayout: data.layout,
+    },
+    files,
+    base: { files: ["game-data"] },
+    components: oggIds.length ? { ogg: { type: "ogg", files: oggIds } } : {},
+  } as PackageDescriptor;
+}
+
+async function installDevelopmentPackage(show = true) {
+  if (PRODUCT_GAMES[state.game].dataProvider !== "retail-memory") return null;
+  const descriptor = developmentPackageDescriptor(state.game);
+  if (!descriptor) return null;
+  const dataSource = gameDataDescriptor().source;
+  if (!dataSource) return null;
+  const ogg = game().music?.ogg;
+  const oggIds = componentFileIds(descriptor, "ogg");
+  const desiredFileIds = ["game-data", ...(isOggMusicMode(state.music) ? oggIds : [])];
+  const operation = beginBlockingNetworkOperation({ label: t("package.cancelDownload") });
+  try {
+    if (show) openPlayerView();
+    setPlayerStatus(t("package.installingResources"));
+    const installed = await installPackageFromAcquisition({
+      descriptor,
+      desiredFileIds,
+      source: "remote",
+      acquire: async (fileId, declaration) => {
+        const source = fileId === "game-data"
+          ? dataSource
+          : `${typeof ogg?.base === "string" ? ogg.base : ""}${declaration?.source || ""}`;
+        const response = await networkActivity.xhrFetch(new URL(source, location.href), { cache: "no-store", signal: operation.controller.signal }, packageNetworkMeta(state.game, source));
+        if (!response.ok) throw new Error(`${source}: HTTP ${response.status}`);
+        return response.arrayBuffer();
+      },
+      onProgress(progress) {
+        setPlayerStatus(t("package.installingResourcesProgress", { completed: progress.completed, total: progress.total }));
+      },
+    });
+    if (installed?.generation) installedPackageSnapshots.set(state.game, installed.generation);
+    return installed;
+  } finally {
+    finishBlockingNetworkOperation(operation);
+  }
+}
+
 async function installImportedGameData(file: File | Blob) {
   if (!(file instanceof Blob) || file.size <= 0 || file.size > maxImportBytes) throw new Error(t("package.invalidDataSize"));
   if (!globalThis.indexedDB?.open) throw new Error(t("package.indexedDbUnavailable"));
@@ -4640,6 +4751,11 @@ function startManagedOggProgressiveInstall() {
 
 async function ensureRuntime(show = true) {
   if (!productEnabled(state.product)) throw new Error("该游戏仅在测试版开启");
+  // Development has no publication catalog. Materialize its selected music
+  // through the same Package Store before considering a reusable generation.
+  if ("profile" in manifest && manifest.profile === "web-development" && PRODUCT_GAMES[state.game].dataProvider === "retail-memory") {
+    await installDevelopmentPackage(show);
+  }
   const localInstalled = await readCurrentPackageGeneration(state.game);
   if (localInstalled?.generation) {
     // Never wait for the network merely to decide whether a local current may
@@ -4685,6 +4801,19 @@ async function ensureRuntime(show = true) {
   if (importServer) throw new GameDataAcquisitionError(t("package.importServerNoFiles"));
   if (serverResourceMode === "external") {
     throw new GameDataAcquisitionError("外部游戏资源当前不可用，请检查网络 / CDN，或导入本地游戏包");
+  }
+  // The local development server intentionally publishes an empty Release
+  // Catalog. Seed the same Package Store used by published releases from the
+  // development Host Manifest's source paths before opening a Runtime that
+  // requires managed DATA (TH08/TH10 retail-memory).
+  if (!releaseCatalog?.games?.[state.game] && PRODUCT_GAMES[state.game].dataProvider === "retail-memory") {
+    try {
+      await installDevelopmentPackage(show);
+      if (await ensureInstalledPackageRuntime(show)) return;
+    } catch (error) {
+      if (isCancelledDownload(error)) throw error;
+      throw new GameDataAcquisitionError(errorMessage(error), { cause: error });
+    }
   }
   const expectedData = gameDataDescriptor();
   const sourceUrl = new URL(runtimeUrl(), location.href);

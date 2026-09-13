@@ -22,6 +22,8 @@ export interface HostGameData {
   sha256: string;
   version: string;
   layout: string;
+  /** Development-only source path used to seed the local Package Store. */
+  source?: string;
 }
 
 export interface HostMidiManifest {

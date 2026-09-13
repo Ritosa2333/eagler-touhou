@@ -3,7 +3,9 @@ param(
     [string] $Th06Directory,
     [string] $Th07Directory,
     [string] $Th08Directory,
+    [string] $Th10Directory,
     [string] $Th08Build,
+    [string] $Th10Build,
     [string] $RuntimeRelease,
     [Parameter(Mandatory)] [string] $OutputDirectory,
     [string[]] $Music = @('midi', 'ogg'),
@@ -21,7 +23,7 @@ param(
     [string] $ArtworkDirectory,
     [string] $FeatureConfig,
     [string] $HostManifest,
-    [string[]] $Games = @('th06', 'th07', 'th08'),
+    [string[]] $Games = @('th06', 'th07', 'th08', 'th10'),
     [string] $Profile = 'web-validation-package',
     [switch] $SuppressCompletionSummary
 )
@@ -64,11 +66,12 @@ if ($configuredResourceMode -notin @('hosted', 'import')) {
 }
 $resourceMode = $configuredResourceMode
 $Games = @($Games | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim().ToLowerInvariant() } | Where-Object { $_ })
-if ($Games.Count -eq 0 -or @($Games | Select-Object -Unique).Count -ne $Games.Count -or @($Games | Where-Object { $_ -notin @('th06', 'th07', 'th08') }).Count) {
-    throw 'Games must be a non-empty unique subset of th06, th07 and th08'
+if ($Games.Count -eq 0 -or @($Games | Select-Object -Unique).Count -ne $Games.Count -or @($Games | Where-Object { $_ -notin @('th06', 'th07', 'th08', 'th10') }).Count) {
+    throw 'Games must be a non-empty unique subset of th06, th07, th08 and th10'
 }
 $selectedPreloadGames = @($Games | Where-Object { $_ -in @('th06', 'th07') })
 $selectedHasTh08 = $Games -contains 'th08'
+$selectedHasTh10 = $Games -contains 'th10'
 if ($null -ne $featureSettings.gameDataFallback) {
     $fallbackUrl = [string]$featureSettings.gameDataFallback.url
     if (-not $fallbackUrl -or $fallbackUrl -notmatch '^https://') {
@@ -166,7 +169,18 @@ if ($resourceMode -eq 'import') {
             $runtimeBuilds.th08 = if ($Th08Build) { (Resolve-Path -LiteralPath $Th08Build).Path } else { Get-EaglerWorkspacePath $workspaceLayout 'th08' 'build\web-formal' }
             $runtimeSpecs += ,@($runtimeBuilds.th08, 'th08-modern')
         }
+        if ($selectedHasTh10) {
+            if (-not $Th10Build) { throw 'Import mode without -RuntimeRelease requires -Th10Build when th10 is selected' }
+            $runtimeBuilds.th10 = (Resolve-Path -LiteralPath $Th10Build).Path
+            if (-not (Test-Path -LiteralPath (Join-Path $runtimeBuilds.th10 'runtime-files.json') -PathType Leaf)) {
+                throw "Prepared TH10 Runtime directory manifest not found: $(Join-Path $runtimeBuilds.th10 'runtime-files.json')"
+            }
+            $runtimeSpecs += ,@($runtimeBuilds.th10, 'th10')
+        }
         foreach ($runtime in $runtimeSpecs) {
+            if ($runtime[1] -eq 'th10') {
+                continue
+            }
             foreach ($extension in @('html', 'js', 'wasm')) {
                 $runtimeFile = Join-Path $runtime[0] ("$($runtime[1]).$extension")
                 if (-not (Test-Path -LiteralPath $runtimeFile -PathType Leaf)) {
@@ -195,6 +209,7 @@ if ($resourceMode -eq 'import') {
         $nodeArgs += "--th07-multiplayer-build=$($runtimeBuilds.th07Multiplayer)"
     }
     if (-not $runtimeReleasePath -and $selectedHasTh08) { $nodeArgs += "--th08-build=$($runtimeBuilds.th08)" }
+    if (-not $runtimeReleasePath -and $selectedHasTh10) { $nodeArgs += "--th10-build=$($runtimeBuilds.th10)" }
     & node @nodeArgs
     if ($LASTEXITCODE -ne 0) { throw "$resourceMode server packaging failed: $LASTEXITCODE" }
     & node (Join-Path $project 'scripts\verify-server-build.mjs') $output
@@ -207,11 +222,17 @@ if ($resourceMode -eq 'import') {
 if (($Games -contains 'th06') -and -not $Th06Directory) { throw "Hosted resource mode requires -Th06Directory when th06 is selected" }
 if (($Games -contains 'th07') -and -not $Th07Directory) { throw "Hosted resource mode requires -Th07Directory when th07 is selected" }
 if ($selectedHasTh08 -and -not $Th08Directory) { throw "Hosted resource mode requires -Th08Directory when th08 is selected" }
+if ($selectedHasTh10 -and -not $Th10Directory) { throw "Hosted resource mode requires -Th10Directory when th10 is selected" }
 $th06Source = if ($Games -contains 'th06') { (Resolve-Path -LiteralPath $Th06Directory).Path } else { $null }
 $th07Source = if ($Games -contains 'th07') { (Resolve-Path -LiteralPath $Th07Directory).Path } else { $null }
 $th08Source = if ($selectedHasTh08) { (Resolve-Path -LiteralPath $Th08Directory).Path } else { $null }
+$th10Source = if ($selectedHasTh10) { (Resolve-Path -LiteralPath $Th10Directory).Path } else { $null }
 $th08Build = if ($selectedHasTh08 -and -not $runtimeReleasePath) {
     if ($Th08Build) { (Resolve-Path -LiteralPath $Th08Build).Path } else { Get-EaglerWorkspacePath $workspaceLayout 'th08' 'build\web-formal' }
+} else { $null }
+$th10Build = if ($selectedHasTh10 -and -not $runtimeReleasePath) {
+    if (-not $Th10Build) { throw 'Hosted mode without -RuntimeRelease requires -Th10Build when th10 is selected' }
+    (Resolve-Path -LiteralPath $Th10Build).Path
 } else { $null }
 $font = (Resolve-Path -LiteralPath $FontFile).Path
 $vanillaFont = (Resolve-Path -LiteralPath $VanillaFontFile).Path
@@ -232,6 +253,7 @@ $required = @($font, $vanillaFont)
 if ($Games -contains 'th06') { $required += $th06Archives | ForEach-Object { Join-Path $th06Source $_ } }
 if ($Games -contains 'th07') { $required += Join-Path $th07Source 'th07.dat' }
 if ($selectedHasTh08) { $required += Join-Path $th08Source 'th08.dat' }
+if ($selectedHasTh10) { $required += Join-Path $th10Source 'th10.dat' }
 if ($Music -contains 'wav' -or $Music -contains 'ogg') {
     if ($Games -contains 'th06') { $required += 1..17 | ForEach-Object { Join-Path $th06Source ('bgm\th06_{0:d2}.wav' -f $_) } }
     if ($Games -contains 'th07') { $required += Join-Path $th07Source 'thbgm.dat' }
@@ -247,6 +269,9 @@ if ($selectedHasTh08 -and -not $runtimeReleasePath) {
             throw "Prepared TH08 App Runtime artifact not found: $runtimeFile"
         }
     }
+}
+if ($selectedHasTh10 -and -not $runtimeReleasePath -and -not (Test-Path -LiteralPath (Join-Path $th10Build 'runtime-files.json') -PathType Leaf)) {
+    throw "Prepared TH10 Runtime directory manifest not found: $(Join-Path $th10Build 'runtime-files.json')"
 }
 
 function Find-BuildTool([string] $Value, [string] $Name, [string] $VisualStudioPattern) {
@@ -301,6 +326,15 @@ $artworkArgs = @(
 if ($Games -contains 'th06') { $artworkArgs += "--th06-dir=$th06Source" }
 if ($Games -contains 'th07') { $artworkArgs += "--th07-dir=$th07Source" }
 if ($selectedHasTh08) { $artworkArgs += "--th08-dir=$th08Source" }
+if ($selectedHasTh10) { $artworkArgs += "--th10-dir=$th10Source" }
+if ($selectedHasTh10 -and $ThtkThanm) {
+    $thanmForArtwork = (Resolve-Path -LiteralPath $ThtkThanm).Path
+    $thdatForArtwork = Join-Path (Split-Path $thanmForArtwork -Parent) 'thdat.exe'
+    if (-not (Test-Path -LiteralPath $thdatForArtwork -PathType Leaf)) {
+        throw "TH10 artwork extraction requires thdat.exe next to ThtkThanm: $thdatForArtwork"
+    }
+    $artworkArgs += "--thdat=$thdatForArtwork", "--thanm=$thanmForArtwork"
+}
 if ($artworkOverride) { $artworkArgs += "--override-dir=$artworkOverride" }
 & $uiPython @artworkArgs
 if ($LASTEXITCODE -ne 0) { throw "Host artwork preparation failed: $LASTEXITCODE" }
@@ -315,6 +349,14 @@ if ($Games -contains 'th07') {
     Copy-Item -LiteralPath $font -Destination (Join-Path $th07Assets 'unifont.otf')
     Copy-Item -LiteralPath $vanillaFont -Destination (Join-Path $th07Assets 'msgothic.ttc')
     Copy-Item -LiteralPath (Join-Path $th07Source 'th07.dat') -Destination (Join-Path $th07Assets 'th07.dat')
+}
+
+$th10DataAssets = $null
+if ($selectedHasTh10) {
+    $th10DataAssets = Join-Path $generated 'th10'
+    $th10ContentScript = Get-EaglerWorkspacePath $workspaceLayout 'th10' 'scripts\prepare-eagler-content.mjs'
+    & node $th10ContentScript "--original=$th10Source" "--output=$th10DataAssets"
+    if ($LASTEXITCODE -ne 0) { throw "TH10 content preparation failed: $LASTEXITCODE" }
 }
 if (($Games -contains 'th06') -and ($Games -contains 'th07')) {
     if ($ThtkThanm) {
@@ -457,10 +499,16 @@ if ($selectedHasTh08) {
     if (-not $runtimeReleasePath) { $nodeArgs += "--th08-build=$th08Build" }
     $nodeArgs += "--th08-assets=$th08Source"
 }
+if ($selectedHasTh10) {
+    if (-not $runtimeReleasePath) { $nodeArgs += "--th10-build=$th10Build" }
+    $nodeArgs += "--th10-assets=$th10Source"
+    $nodeArgs += "--th10-data-assets=$th10DataAssets"
+}
 if ($musicSet.Contains('ogg')) {
     if ($Games -contains 'th06') { $nodeArgs += "--th06-ogg=$(Join-Path $generated 'th06')" }
     if ($Games -contains 'th07') { $nodeArgs += "--th07-ogg=$(Join-Path $generated 'th07')" }
     if ($selectedHasTh08) { $nodeArgs += "--th08-ogg=$(Join-Path $generated 'th08')" }
+    if ($selectedHasTh10) { $nodeArgs += "--th10-ogg=$th10DataAssets" }
 }
 if (($Games -contains 'th06') -and $Th06LanguagePacks) { $nodeArgs += "--th06-language-packs=$((Resolve-Path -LiteralPath $Th06LanguagePacks).Path)" }
 if (($Games -contains 'th07') -and $Th07LanguagePacks) { $nodeArgs += "--th07-language-packs=$((Resolve-Path -LiteralPath $Th07LanguagePacks).Path)" }

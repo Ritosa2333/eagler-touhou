@@ -5,7 +5,7 @@
     "th06": "th06-eagler",
     "th07": "th07-eagler",
     "th08": "th08-eaglertemp",
-    "th10": "interpret/worktrees/th10-plugins",
+    "th10": "th10-eagler",
     "thprac": "thprac-reallyportable",
     "dependencies": "dependencies",
     "toolchains": "toolchains"

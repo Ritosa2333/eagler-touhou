@@ -43,13 +43,13 @@ try{
     page.on('pageerror',error=>errors.push(String(error)));
     await page.goto(url+'?debug=card-gate&game=th10');
     await page.waitForFunction(()=>document.querySelector('.game[data-game=th06]').hasAttribute('aria-current'));
-    if(flag===true)await page.waitForFunction(()=>!document.querySelector('.game[data-game=th10]').hidden);
-    const expected=flag===true?['th06','th06mp','th07','th07mp','th08','th10']:['th06','th06mp','th07','th07mp','th08'];
+    await page.waitForFunction(()=>!document.querySelector('.game[data-game=th10]').hidden);
+    const expected=['th06','th06mp','th07','th07mp','th08','th10'];
     const visible=()=>page.$$eval('.game:not([hidden])',cards=>cards.map(c=>c.dataset.product||c.dataset.game).sort());
     assert.deepEqual(await visible(),expected);
     for(const game of ['th10']){
       await page.$eval(`.game[data-game=${game}]`,card=>card.click());
-      assert.equal(await page.$eval('.tools',element=>element.getAttribute('aria-hidden')),String(flag!==true));
+      assert.equal(await page.$eval('.tools',element=>element.getAttribute('aria-hidden')),'false');
     }
     await page.$eval('.game[data-game=th08]',card=>card.click());
     assert.equal(await page.$eval('.tools',element=>element.getAttribute('aria-hidden')),'false');
@@ -58,14 +58,14 @@ try{
     await page.waitForFunction(()=>!document.querySelector('#main').classList.contains('card-filter-motion'));
     assert.deepEqual(await visible(),expected.filter(p=>!p.endsWith('mp')));
     await page.reload();await page.waitForFunction(()=>document.querySelector('.game[data-game=th06]').hasAttribute('aria-current'));
-    if(flag===true)await page.waitForFunction(()=>!document.querySelector('.game[data-game=th10]').hidden);
+    await page.waitForFunction(()=>!document.querySelector('.game[data-game=th10]').hidden);
     assert.deepEqual(await visible(),expected.filter(p=>!p.endsWith('mp')));
     checks.push(scenario.name+': ordinary TH08 selection, TH10 visibility, direct route, hidden click, category and reload');await context.close();
   }
   const context=await browser.createBrowserContext(),page=await context.newPage();await page.setJavaScriptEnabled(false);await page.goto(url);
   const visible=selector=>page.$eval(selector,element=>!element.hidden&&element.getBoundingClientRect().width>0&&element.getBoundingClientRect().height>0);
-  assert.equal(await visible('.game[data-game=th08]'),true);assert.equal(await visible('.game[data-game=th10]'),false);
-  checks.push('static HTML keeps ordinary TH08 visible and hides TH10 before JavaScript');await context.close();
+  assert.equal(await visible('.game[data-game=th08]'),true);assert.equal(await visible('.game[data-game=th10]'),true);
+  checks.push('static HTML keeps ordinary TH08 and formal TH10 visible before JavaScript');await context.close();
   assert.deepEqual(errors,[]);
   console.log(JSON.stringify({ok:true,checks,errors},null,2));
 }finally{await browser?.close();await new Promise(resolve=>{server.close(resolve);server.closeAllConnections();});}

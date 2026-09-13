@@ -22,6 +22,7 @@ for (const name of ["紅魔郷CM.DAT", "紅魔郷ED.DAT", "紅魔郷IN.DAT", "�
 }
 await put(join(layout.games.th07, "th07.dat"));
 await put(join(layout.games.th08, "th08.dat"));
+await put(join(layout.games.th10, "th10.dat"));
 
 const midiOnly = await inspectHostWorkspace(root, { music: "midi" });
 assert.deepEqual(midiOnly.music, ["midi"]);

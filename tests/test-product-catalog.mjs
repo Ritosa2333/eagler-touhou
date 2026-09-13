@@ -85,11 +85,9 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
 }
 console.log("Product catalog policy: PASS");
 
-for (const id of ["th10"]) {
-  assert.equal(productEnabledForBuild(id), false);
-  assert.equal(productEnabledForBuild(id, false), false);
+for (const id of ["th06", "th07", "th08", "th10", "th06mp", "th07mp"]) {
+  assert.equal(productEnabledForBuild(id), true);
+  assert.equal(productEnabledForBuild(id, false), true);
   assert.equal(productEnabledForBuild(id, true), true);
-  assert.equal(productEnabledForBuild(id, "true"), false);
 }
-for (const id of ["th06", "th07", "th08", "th06mp", "th07mp"]) assert.equal(productEnabledForBuild(id), true);
 assert.equal(productEnabledForBuild("th99", true), false);

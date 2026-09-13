@@ -16,6 +16,7 @@ eagler-touhou.config.json
 games/th06/
 games/th07/
 games/th08/
+games/th10/
 ```
 
 Project/release input:

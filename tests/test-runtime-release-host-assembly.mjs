@@ -70,7 +70,7 @@ try {
     `--th07-build=${workspacePath("th07", "build-web-eagler-thprac")}`,
     `--th07-multiplayer-build=${workspacePath("th07", "build-web-th07-netplay")}`,
     `--th08-build=${workspacePath("th08", "build", "web-formal")}`,
-    `--th10-build=${workspacePath("th10", "artifacts", "validation", "th10-touch", "runtime")}`,
+    `--th10-build=${workspacePath("th10", "build-eagler")}`,
   ]);
 
   await run([

@@ -5,7 +5,7 @@ import json
 from playwright.sync_api import sync_playwright
 
 
-COUNTS = {"all": 5, "original": 3, "multiplayer": 2}
+COUNTS = {"all": 6, "original": 4, "multiplayer": 2}
 
 
 def home(page, category):
@@ -34,12 +34,10 @@ def change(page, category):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("url", nargs="?", default="http://127.0.0.1:8130/")
-    parser.add_argument("--test-build", action="store_true", help="Expect translated TH10 test card")
+    parser.add_argument("--test-build", action="store_true", help="Retained for compatibility; TH10 is formal in all builds")
     args = parser.parse_args()
     products = ["th06", "th07", "th08", "th06mp", "th07mp"]
-    if args.test_build:
-        products += ["th10"]
-        COUNTS.update(all=6, original=4)
+    products += ["th10"]
     with sync_playwright() as p:
         browser = p.chromium.launch()
         context = browser.new_context(viewport={"width": 1280, "height": 800}, service_workers="block")

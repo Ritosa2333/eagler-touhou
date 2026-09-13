@@ -67,7 +67,7 @@ npm start
 
 Open `http://127.0.0.1:8130/`. Do not open `index.html` directly.
 
-Game-card artwork and the site icon are legally owned Host inputs supplied by the operator and are not public source. A standard workspace may place prepared `th06-card.webp`, `th07-card.webp`, `th08-card.webp`, and `th06.ico` files under `..\games\host-artwork\`. The source development server serves those fixed files from that directory without copying them into the repository. A non-standard layout specifies the same input directory explicitly through `EAGLER_TOUHOU_ARTWORK_DIR`. Formal Host assembly still generates artwork from original resources or accepts an override through `--artwork-dir`.
+Game-card artwork and the site icon are legally owned Host inputs supplied by the operator and are not public source. A standard workspace may place prepared `th06-card.webp`, `th07-card.webp`, `th08-card.webp`, `th10-card.webp`, and `th06.ico` files under `..\games\host-artwork\`. The source development server serves those fixed files from that directory without copying them into the repository. A non-standard layout specifies the same input directory explicitly through `EAGLER_TOUHOU_ARTWORK_DIR`. Formal Host assembly still generates artwork from original resources or accepts an override through `--artwork-dir`.
 
 ## Build Runtimes
 

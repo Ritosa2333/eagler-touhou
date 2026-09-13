@@ -20,6 +20,7 @@ const validInput = {
     Th06Directory: "original/th06",
     Th07Directory: "original/th07",
     Th08Directory: "original/th08",
+    Th10Directory: "original/th10",
     Music: ["midi"],
   },
 };

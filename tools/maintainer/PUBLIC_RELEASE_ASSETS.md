@@ -10,7 +10,7 @@ derived from the same verified formal candidate:
 1. `EaglerTouhou-SelfHost.zip` - the recommended download for
    ordinary self-host operators. It contains the portable Host tooling,
    compiled Launcher, redistributable shared resources, the verified
-   `runtime-release/`, and empty `games/th06`, `games/th07`, and `games/th08`
+   `runtime-release/`, and empty `games/th06`, `games/th07`, `games/th08`, and `games/th10`
    directories.
 2. `EaglerTouhou-Runtime.zip` - the standalone Runtime Release for
    advanced operators and integration/update work. It contains a canonical

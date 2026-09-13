@@ -508,20 +508,58 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
   entry.runtime = `runtime/${game}/${game}.html?hosted=1&v=${await versionFiles(appRuntimeRoot, names)}`;
   entry.features = { thprac: false, focusHitbox: false };
   entry.languages = []; entry.languageOptions = [{ id: "ja", title: languageDisplayName("ja"), pack: null }];
-  entry.music = { midi: { files: [], supported: false } };
+  const declaredOgg = entry.music?.ogg;
+  entry.music = {
+    midi: { files: [], supported: false },
+    ...(declaredOgg ? { ogg: declaredOgg } : {}),
+  };
   if (serverResourceMode === RESOURCE_MODE_IMPORT) {
+    const ogg = entry.music?.ogg;
     entry.offlineCompatibility = { schema: "eagler-touhou/offline-game-pack/1",
       runtimeCompatibility: { protocol: manifest.protocol, dataLayout: entry.gameData.layout, versionSource: "offline-pack" },
       requiredShared: [...product.requiredShared], languages: { source: "offline-pack", baseline: ["ja"] } };
+    entry.music = {
+      midi: { files: [], supported: false },
+      ...(ogg ? {
+        ogg: {
+          version: ogg.version,
+          mount: ogg.mount,
+          files: ogg.files,
+          sizes: ogg.sizes,
+          ...(ogg.sha256 ? { sha256: ogg.sha256 } : {}),
+        },
+      } : {}),
+    };
   } else if (hostedResources) {
     const target = `games/${game}/${game}.data`;
     await mkdir(dirname(resolve(staging, target)), { recursive: true });
     await cp(resolve(dataAssets[game], `${game}.data`), resolve(staging, target));
     const identity = await fileIdentity(resolve(staging, target));
     entry.gameData = { path: `${game}.data`, ...identity, version: `sha256-${identity.sha256}`, layout: PRODUCT_CONTENT[game].dataLayout };
+    const packageFiles = { "game-data": await descriptorFile(target, `/${game}.data`) };
+    const components = {};
+    if (modes.has("ogg")) {
+      const pack = entry.music?.ogg;
+      if (!pack?.files?.length) throw new Error(`${game}: OGG content declaration is missing`);
+      const sourceBase = musicSourceBase(game, "ogg");
+      const targetBase = resolve(staging, "games", game, "music", "ogg");
+      await copyFiles(sourceBase, targetBase, pack.files);
+      pack.base = `games/${game}/music/ogg/`;
+      const identities = await Promise.all(pack.files.map(file => fileIdentity(resolve(sourceBase, file))));
+      pack.sizes = identities.map(identity => identity.bytes);
+      Object.assign(pack, fileSetIdentity(pack.files, identities));
+      const oggFiles = [];
+      const mount = String(pack.mount || "").replace(/\/$/, "");
+      for (const name of pack.files) {
+        const id = `ogg:${name}`;
+        packageFiles[id] = await descriptorFile(`games/${game}/music/ogg/${name}`, `${mount}/${name}`);
+        oggFiles.push(id);
+      }
+      components.ogg = { type: "ogg", files: oggFiles };
+    }
     const descriptor = { schema: PACKAGE_DESCRIPTOR_SCHEMA, game, revision: "pending",
       runtimeRequirement: { protocol: manifest.protocol, target: game, dataFile: "game-data", dataLayout: entry.gameData.layout },
-      files: { "game-data": await descriptorFile(target, `/${game}.data`) }, base: { files: ["game-data"] }, components: {} };
+      files: packageFiles, base: { files: ["game-data"] }, components };
     descriptor.revision = createHash("sha256").update(canonicalPackagePayload(descriptor)).digest("hex").slice(0, 16);
     validatePackageDescriptor(descriptor);
     const name = `${game}.package.json`; await writeFile(resolve(staging, name), JSON.stringify(descriptor, null, 2));
