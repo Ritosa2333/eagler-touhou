@@ -303,7 +303,7 @@ def main() -> int:
         assert mobile.locator("#mpTouchToggle").count() == 1
         assert mobile.locator("#mpTouchSensitivity").count() == 0
         mobile.locator("#mpMobileOptionsToggle").click()
-        assert "TH06 / TH07 共用" in mobile.locator("#mpMobileOptions").inner_text()
+        assert "按键布局 & 触控设置" in mobile.locator("#mpMobileOptions").inner_text()
         assert mobile.locator("#mpTouchLayoutEdit").is_visible()
         assert mobile.locator("#mpAlwaysHitboxToggle").is_visible()
         assert mobile.locator("#mpMagnifierToggle").is_visible()
