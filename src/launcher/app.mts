@@ -7884,5 +7884,10 @@ render(); setTranslatedStatus("status.selectGame");
 animateMobileHomeCards();
 bootWatchdog?.ready?.();
 const launcherRoomRoute = !!mpNormalizeRoomCode(new URL(location.href).searchParams.get(mpRoomUrlKey));
-if (!launcherRoomRoute) void siteNotice.load();
-if (!launcherRoomRoute && !debugHarness && !touchPreview) void changelog.maybeShowAutomatically();
+if (!launcherRoomRoute && !debugHarness && !touchPreview) {
+  void changelog.maybeShowAutomatically().then(shown => {
+    if (!shown) void siteNotice.load();
+  });
+} else if (!launcherRoomRoute) {
+  void siteNotice.load();
+}
