@@ -3,7 +3,11 @@ import { WebSocket, WebSocketServer } from "ws";
 import {
   legacyDiagnosticRelayUrl,
   probeRelay,
+  turnServerLatencyFromLoopback,
 } from "../.cache/build/browser/assets/launcher/network-diagnostics.mjs";
+
+assert.equal(turnServerLatencyFromLoopback(86), 43,
+  "same-browser relay-to-relay RTT contains two client-to-TURN round trips");
 
 const fallback = new URL(legacyDiagnosticRelayUrl(
   "wss://relay.example.test/netplay/?deployment=blue&diagnostic=1",

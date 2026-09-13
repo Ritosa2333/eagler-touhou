@@ -234,6 +234,9 @@ Examples of already separated owners include:
   falls back to an isolated legacy signaling handshake so an older but fully
   playable Relay is not reported as unavailable merely because it lacks the
   newer diagnostic endpoint.
+  The full relay-to-relay DataChannel echo remains the TURN success proof; its
+  same-browser RTT contains two client-to-TURN round trips and is normalized
+  before presentation so it is comparable to the single WebSocket server RTT.
 - `src/launcher/multiplayer-runtime-options.mts` - validation and construction
   of the Launcher-to-Runtime multiplayer option payload. Per-game difficulty
   and character bounds remain product-catalog inputs rather than duplicated

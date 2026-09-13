@@ -336,12 +336,21 @@ async function probeTurnLatency(servers: RTCIceServer[]): Promise<number> {
       });
       samples.push(receivedAt - sentAt);
     }
-    return Math.max(1, Math.round(median(samples)));
+    return turnServerLatencyFromLoopback(median(samples));
   } finally {
     try { channel.close(); } catch {}
     left.close();
     right.close();
   }
+}
+
+export function turnServerLatencyFromLoopback(peerRoundTripMs: number): number {
+  // Both endpoints are in this browser and both are forced through the same
+  // TURN service. Their echoed DataChannel RTT therefore contains two equal
+  // client-to-TURN round trips, whereas the displayed WebSocket number
+  // contains one. Normalize that deliberate loopback topology only after the
+  // relay-to-relay candidate pair and payload echo have both been proven.
+  return Math.max(1, Math.round(Math.max(0, peerRoundTripMs) / 2));
 }
 
 export function createNetworkDiagnosticsController(options: NetworkDiagnosticsControllerOptions) {

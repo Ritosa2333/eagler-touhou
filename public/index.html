@@ -354,6 +354,9 @@
               <section class="item option-frame-limit mp-setting-item">
                 <div class="itemtop"><span><span data-i18n="settings.frameLimit">锁定 60 帧</span><small id="mpFrameLimitHint" class="option-warning"><span id="mpFrameLimitHintText" data-i18n="settings.frameLimitHint">如果帧数在游玩时经常严重波动，那么必须启用该选项，否则会造成严重的输入延迟。</span> <button class="frame-limit-apple-note" id="mpFrameLimitAppleNote" type="button" data-i18n="settings.appleNotice">苹果用户注意</button></small></span><button class="option-switch" id="mpFrameLimitToggle" type="button" role="switch" aria-checked="false"><i></i></button></div>
               </section>
+              <section class="item option-th06 mp-setting-item" id="mpTh06HitboxOption">
+                <div class="itemtop"><span data-i18n="settings.focusHitbox">低速时显示判定点</span><button class="option-switch" id="mpTh06HitboxToggle" type="button" role="switch" aria-checked="false"><i></i></button></div>
+              </section>
               <section class="item option-frame-limit mp-setting-item">
                 <div class="itemtop"><span><span data-i18n="settings.localPlayerVisibility">增强本机玩家可见性</span><small data-i18n="settings.localPlayerVisibilityHint">在游戏区域中使用白色定位线标出本机玩家。</small></span><button class="option-switch" id="mpLocalPlayerVisibilityToggle" type="button" role="switch" aria-checked="false"><i></i></button></div>
               </section>
@@ -383,6 +386,10 @@
             </div>
           </section>
           <section class="mp-network-diagnostics" id="mpNetworkDiagnostics">
+            <div class="mp-network-actions">
+              <button class="mp-network-guide-open" id="mpGuideOpen" type="button"><svg viewBox="0 -960 960 960" aria-hidden="true"><path d="M240-80q-50 0-85-35t-35-85v-560q0-50 35-85t85-35h400q50 0 85 35t35 85v560q0 50-35 85t-85 35H240Zm0-80h400q17 0 28.5-11.5T680-200v-560q0-17-11.5-28.5T640-800H240q-17 0-28.5 11.5T200-760v560q0 17 11.5 28.5T240-160Zm80-120h240v-80H320v80Zm0-160h240v-80H320v80Zm0-160h160v-80H320v80Z"/></svg><span data-i18n="multiplayerGuide.action">联机玩法介绍</span></button>
+              <button class="mp-network-check" id="mpNetworkCheck" type="button"><svg viewBox="0 -960 960 960" aria-hidden="true"><path d="M120-160v-120q0-33 23.5-56.5T200-360h40v-80q0-33 23.5-56.5T320-520h120v-80h-40q-33 0-56.5-23.5T320-680v-120q0-33 23.5-56.5T400-880h160q33 0 56.5 23.5T640-800v120q0 33-23.5 56.5T560-600h-40v80h120q33 0 56.5 23.5T720-440v80h40q33 0 56.5 23.5T840-280v120q0 33-23.5 56.5T760-80H600q-33 0-56.5-23.5T520-160v-120q0-33 23.5-56.5T600-360h40v-80H320v80h40q33 0 56.5 23.5T440-280v120q0 33-23.5 56.5T360-80H200q-33 0-56.5-23.5T120-160Zm280-520h160v-120H400v120ZM200-160h160v-120H200v120Zm400 0h160v-120H600v120Z"/></svg><span data-i18n="networkCheck.action">检查网络</span></button>
+            </div>
             <div class="mp-network-results" id="mpNetworkResults" role="status" aria-live="polite" hidden>
               <section class="mp-network-group">
                 <h3 data-i18n="networkCheck.serverCapability">服务器能力</h3>
@@ -398,10 +405,6 @@
                   <div class="mp-network-result" data-network-result="ipv6" data-state="pending"><span>IPv6</span><output id="mpNetworkIpv6">检测中…</output><i aria-hidden="true"></i></div>
                 </div>
               </section>
-            </div>
-            <div class="mp-network-actions">
-              <button class="mp-network-guide-open" id="mpGuideOpen" type="button"><svg viewBox="0 -960 960 960" aria-hidden="true"><path d="M240-80q-50 0-85-35t-35-85v-560q0-50 35-85t85-35h400q50 0 85 35t35 85v560q0 50-35 85t-85 35H240Zm0-80h400q17 0 28.5-11.5T680-200v-560q0-17-11.5-28.5T640-800H240q-17 0-28.5 11.5T200-760v560q0 17 11.5 28.5T240-160Zm80-120h240v-80H320v80Zm0-160h240v-80H320v80Zm0-160h160v-80H320v80Z"/></svg><span data-i18n="multiplayerGuide.action">联机玩法介绍</span></button>
-              <button class="mp-network-check" id="mpNetworkCheck" type="button"><svg viewBox="0 -960 960 960" aria-hidden="true"><path d="M120-160v-120q0-33 23.5-56.5T200-360h40v-80q0-33 23.5-56.5T320-520h120v-80h-40q-33 0-56.5-23.5T320-680v-120q0-33 23.5-56.5T400-880h160q33 0 56.5 23.5T640-800v120q0 33-23.5 56.5T560-600h-40v80h120q33 0 56.5 23.5T720-440v80h40q33 0 56.5 23.5T840-280v120q0 33-23.5 56.5T760-80H600q-33 0-56.5-23.5T520-160v-120q0-33 23.5-56.5T600-360h40v-80H320v80h40q33 0 56.5 23.5T440-280v120q0 33-23.5 56.5T360-80H200q-33 0-56.5-23.5T120-160Zm280-520h160v-120H400v120ZM200-160h160v-120H200v120Zm400 0h160v-120H600v120Z"/></svg><span data-i18n="networkCheck.action">检查网络</span></button>
             </div>
           </section>
         </section>
@@ -552,6 +555,16 @@
         </div>
       </section>
     </main>
+    <button class="edge-drawer-cue-right mp-settings-room-cue" id="mpSettingsRoomDrawerToggle" type="button" aria-controls="mpSettingsRoomDrawer" aria-expanded="false" aria-label="设置" data-i18n-aria-label="settings.title" hidden>
+      <svg class="mp-settings-room-cue-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.55V21h-4v-.08a1.7 1.7 0 0 0-1.03-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1.03H3v-4h.08A1.7 1.7 0 0 0 4.63 8.94a1.7 1.7 0 0 0-.34-1.88L4.23 7l2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.57a1.7 1.7 0 0 0 1-1.55V3h4v.08a1.7 1.7 0 0 0 1.03 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06L19.8 7l-.06.06a1.7 1.7 0 0 0-.34 1.88 1.7 1.7 0 0 0 1.55 1.03H21v4h-.08A1.7 1.7 0 0 0 19.4 15Z"></path></svg>
+    </button>
+    <aside class="mp-settings-room-drawer" id="mpSettingsRoomDrawer" aria-label="设置" data-i18n-aria-label="settings.title" hidden>
+      <div class="mp-settings-room-content" id="mpSettingsRoomDrawerContent"></div>
+      <button class="changelog-swipe-hint mp-settings-room-close-hint" id="mpSettingsRoomDrawerCloseHint" type="button" aria-label="关闭设置" data-i18n-aria-label="settings.drawerClose">
+        <span data-i18n="settings.drawerSwipeClose">右滑或点击该箭头关闭</span>
+        <span class="changelog-swipe-visual"><svg viewBox="0 0 280 26"><path d="M6 13h260m-10-9 10 9-10 9"/></svg></span>
+      </button>
+    </aside>
     <nav class="card-filter-bar" id="cardFilterBar" aria-label="游戏分类" data-i18n-aria-label="filter.aria">
       <span class="card-filter-indicator" aria-hidden="true"></span>
       <button type="button" data-card-filter="all" aria-pressed="true" data-i18n="filter.all">全部</button>
@@ -590,7 +603,7 @@
       <div class="changelog-text" id="changelogText"><p class="changelog-loading" data-i18n="changelog.loading">正在读取更新日志…</p></div>
       <footer>
         <button class="changelog-swipe-hint" id="changelogCloseHint" type="button" aria-label="关闭更新日志" data-i18n-aria-label="changelog.close">
-          <span data-i18n="changelog.swipeToClose">右滑来关闭该页面</span>
+          <span data-i18n="changelog.swipeToClose">右滑或点击该箭头关闭</span>
           <span class="changelog-swipe-visual"><svg viewBox="0 0 280 26"><path d="M6 13h260m-10-9 10 9-10 9"/></svg></span>
         </button>
       </footer>

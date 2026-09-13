@@ -58,6 +58,7 @@ def main() -> int:
             }""")
             page.wait_for_timeout(240)
             assert page.locator("#changelogEdgeCue").count() == 0
+            assert page.locator("#mpSettingsRoomDrawerToggle").is_hidden()
             artifact_dir = os.environ.get("EAGLER_EDGE_DRAWER_ARTIFACT_DIR")
             if artifact_dir:
                 Path(artifact_dir).mkdir(parents=True, exist_ok=True)

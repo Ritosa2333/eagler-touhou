@@ -1384,7 +1384,7 @@ const outputElementSelectors = ["#touchLayoutScaleValue", "#touchSensitivityValu
 const buttonElementSelectors = [
   "#siteNoticeOptOut", "#siteNoticeClose", "#lessMotionToggle", "#mastheadMenuToggle",
   "#siteNoticeToggle", "#changelogOpen", "#mpShareSettingsToggle", "#mpFrameLimitAppleNote",
-  "#mpFrameLimitToggle", "#mpLocalPlayerVisibilityToggle", "#mpMobileOptionsToggle",
+  "#mpFrameLimitToggle", "#mpTh06HitboxToggle", "#mpLocalPlayerVisibilityToggle", "#mpMobileOptionsToggle",
   "#mpTouchToggle", "#mpTouchLayoutEdit", "#mpAlwaysHitboxToggle", "#mpMagnifierToggle",
   "#mpReplayViewer", "#mpCreateRoom", "#mpJoinRoom", "#frameLimitAppleNote",
   "#mpGuideOpen", "#mpNetworkCheck",
@@ -1394,6 +1394,7 @@ const buttonElementSelectors = [
   "#mpLoadoutPrev", "#mpLoadoutNext", "#mpStandUp", "#mpLoadoutPrevSeat",
   "#mpLoadoutNextSeat", "#mpCopyRoomCode", "#mpReady", "#mpCheckGame", "#mpStartGame",
   "#mpRoomSettingsToggle", "#toastClose", "#startupErrorClose", "#decisionCancel",
+  "#mpSettingsRoomDrawerToggle", "#mpSettingsRoomDrawerCloseHint",
   "#decisionSecondary", "#decisionConfirm", "#changelogClose", "#changelogCloseHint", "#mpGuideClose",
   "#appleRefreshClose", "#transferCancel", "#transferRetry", "#gameDataImportClose",
   "#transferImport", "#transferDownload", "#gameDataLinkClose", "#touchLayoutOrientationHelpOpen",
@@ -1442,6 +1443,78 @@ function $<S extends string>(selector: S): LauncherElementForSelector<S> {
     : null;
   if (expected && !(element instanceof expected)) throw new Error(`invalid Launcher DOM contract: ${selector}`);
   return element as LauncherElementForSelector<S>;
+}
+
+let mpSettingsRoomDrawerOpen = false;
+let mpSettingsRoomDrawerClosing = false;
+let mpSettingsRoomDrawerCloseGeneration = 0;
+function setMpSettingsRoomDrawerOpen(open: boolean) {
+  const roomOpen = !!mpUiState.room;
+  const drawer = $("#mpSettingsRoomDrawer");
+  const cue = $("#mpSettingsRoomDrawerToggle");
+  const generation = ++mpSettingsRoomDrawerCloseGeneration;
+  if (roomOpen && open) {
+    mpSettingsRoomDrawerOpen = true;
+    mpSettingsRoomDrawerClosing = false;
+    drawer.classList.remove("closing");
+    drawer.hidden = false;
+    cue.hidden = true;
+    cue.setAttribute("aria-expanded", "true");
+    return;
+  }
+  mpSettingsRoomDrawerOpen = false;
+  cue.setAttribute("aria-expanded", "false");
+  if (drawer.hidden) {
+    mpSettingsRoomDrawerClosing = false;
+    drawer.classList.remove("closing");
+    cue.hidden = !roomOpen;
+    return;
+  }
+  if (!roomOpen || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    mpSettingsRoomDrawerClosing = false;
+    drawer.classList.remove("closing");
+    drawer.hidden = true;
+    cue.hidden = !roomOpen;
+    return;
+  }
+  mpSettingsRoomDrawerClosing = true;
+  drawer.classList.add("closing");
+  cue.hidden = true;
+  setTimeout(() => {
+    if (generation !== mpSettingsRoomDrawerCloseGeneration) return;
+    mpSettingsRoomDrawerClosing = false;
+    drawer.classList.remove("closing");
+    drawer.hidden = true;
+    cue.hidden = !mpUiState.room;
+  }, 220);
+}
+
+function syncMpSettingsRoomDrawer(roomOpen: boolean) {
+  const fold = $("#mpSettingsFold");
+  const body = document.querySelector<HTMLElement>('[data-mp-fold-body="settings"]');
+  const head = document.querySelector<HTMLElement>('[data-mp-fold="settings"]');
+  const cue = $("#mpSettingsRoomDrawerToggle");
+  const drawer = $("#mpSettingsRoomDrawer");
+  const drawerContent = $("#mpSettingsRoomDrawerContent");
+  const shell = $("#mpShell");
+  const onlineFold = $("#mpOnlineFold");
+  cue.hidden = !roomOpen || mpSettingsRoomDrawerOpen || mpSettingsRoomDrawerClosing;
+  if (roomOpen) {
+    if (fold.parentElement !== drawerContent) drawerContent.append(fold);
+    fold.classList.add("mp-room-drawer-mounted");
+    if (head) head.hidden = true;
+    if (body) {
+      body.hidden = false;
+      body.inert = false;
+      body.setAttribute("aria-hidden", "false");
+    }
+    return;
+  }
+  setMpSettingsRoomDrawerOpen(false);
+  if (fold.parentElement !== shell) shell.insertBefore(fold, onlineFold);
+  fold.classList.remove("mp-room-drawer-mounted");
+  if (head) head.hidden = false;
+  mpSetFold("settings", mpUiState.folds.settings);
 }
 
 function requiredDescendant<T extends HTMLElement>(root: ParentNode, selector: string, expected: { new(): T }): T {
@@ -3514,6 +3587,7 @@ function render() {
   $("#main").classList.toggle("mp-room-open", multiplayerRoomOpen);
   document.body.classList.toggle("mp-room-active", multiplayerRoomOpen);
   $("#mpRoomView").hidden = !multiplayerRoomOpen;
+  syncMpSettingsRoomDrawer(multiplayerRoomOpen);
   const hasInstalledPackage = installedPackageSnapshots.has(state.game);
   const installedGeneration = installedPackageSnapshots.get(state.game) || null;
   const multiplayerAvailable = (
@@ -3549,6 +3623,9 @@ function render() {
   syncMusicSelectAvailability($("#mpMusicSelect"), musicAvailability);
   $("#mpFrameLimitToggle").setAttribute("aria-checked", String(state.options.frameLimit60Enabled));
   $("#mpFrameLimitToggle").classList.toggle("on", state.options.frameLimit60Enabled);
+  $("#mpTh06HitboxOption").hidden = !gameFeatureAvailable(state.game, "focusHitbox");
+  $("#mpTh06HitboxToggle").setAttribute("aria-checked", String(state.options.th06FocusHitbox));
+  $("#mpTh06HitboxToggle").classList.toggle("on", state.options.th06FocusHitbox);
   $("#mpTouchToggle").setAttribute("aria-checked", String(state.options.touchEnabled));
   $("#mpTouchToggle").classList.toggle("on", state.options.touchEnabled);
   $("#mpAlwaysHitboxToggle").setAttribute("aria-checked", String(state.options.alwaysHitbox));
@@ -5170,6 +5247,10 @@ document.querySelectorAll<HTMLButtonElement>("[data-mp-fold]").forEach(button =>
   if (!isMpFoldName(name)) return;
   mpSetFold(name, !mpUiState.folds[name]);
 }));
+$("#mpSettingsRoomDrawerToggle").addEventListener("click", () => {
+  setMpSettingsRoomDrawerOpen(!mpSettingsRoomDrawerOpen);
+});
+$("#mpSettingsRoomDrawerCloseHint").addEventListener("click", () => setMpSettingsRoomDrawerOpen(false));
 $("#mpLanguageSelect").addEventListener("change", event => {
   const value = $("#mpLanguageSelect").value;
   if (!languageCatalog(state.game).some(entry => entry.id === value)) return;
@@ -5183,6 +5264,7 @@ $("#mpMusicSelect").addEventListener("change", event => {
 $("#mpFrameLimitToggle").addEventListener("click", () => {
   state.options.frameLimit60Enabled = !state.options.frameLimit60Enabled; saveGamePreferences(); render();
 });
+$("#mpTh06HitboxToggle").addEventListener("click", () => setOption("th06FocusHitbox", !state.options.th06FocusHitbox));
 $("#mpShareSettingsToggle").addEventListener("click", () => {
   saveGamePreferences();
   mpShareSingleplayerSettings = !mpShareSingleplayerSettings;
@@ -6946,6 +7028,13 @@ createEdgeDrawerGesture({
   isOpen: changelog.isOpen,
   open: changelog.showManual,
   close: changelog.close,
+});
+createEdgeDrawerGesture({
+  side: "right",
+  drawer: $("#mpSettingsRoomDrawer"),
+  isOpen: () => mpSettingsRoomDrawerOpen,
+  open: () => {},
+  close: () => setMpSettingsRoomDrawerOpen(false),
 });
 createEdgeDrawerGesture({
   side: "left",

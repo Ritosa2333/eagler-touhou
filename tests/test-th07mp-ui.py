@@ -16,12 +16,17 @@ def main() -> int:
         page.goto(url, wait_until="load", timeout=30000)
         page.wait_for_function("window.__eaglerBoot?.done === true", timeout=30000)
         if page.locator("#changelogDialog").get_attribute("open") is not None:
-            page.locator("#changelogClose").click()
+            page.locator("#changelogCloseHint").click()
+            page.wait_for_function("document.querySelector('#changelogDialog')?.open === false")
 
         products = page.locator(".game").evaluate_all(
             "els => els.map(el => el.dataset.product || el.dataset.game)"
         )
-        assert products == ["th06", "th07", "th08", "th06mp", "th07mp"]
+        assert products == ["th06", "th07", "th08", "th10", "th06mp", "th07mp"]
+        assert page.locator("#mpNetworkDiagnostics").evaluate(
+            "el => el.querySelector('#mpNetworkCheck').compareDocumentPosition(el.querySelector('#mpNetworkResults')) "
+            "& Node.DOCUMENT_POSITION_FOLLOWING"
+        )
 
         page.locator('.game[data-game="th06"]:not([data-product])').click()
         assert page.locator("#gameTitle").evaluate("el => getComputedStyle(el, '::before').content") in ("none", '""')
@@ -58,6 +63,37 @@ def main() -> int:
         page.locator("#mpCreateRoom").click()
         page.wait_for_selector("#mpRoomView:not([hidden])")
         page.wait_for_selector("#mpLocalPlayer:not([hidden])", timeout=10000)
+        assert page.locator("#mpSettingsRoomDrawerToggle").is_visible()
+        assert page.locator("#mpSettingsRoomDrawerToggle .mp-settings-room-cue-icon").is_visible()
+        assert page.locator("#mpSettingsRoomDrawer").is_hidden()
+        page.locator("#mpSettingsRoomDrawerToggle").click()
+        assert page.locator("#mpSettingsRoomDrawer").is_visible()
+        assert page.locator("#mpSettingsRoomDrawerToggle").is_hidden()
+        assert page.locator("#mpSettingsFold").evaluate("el => el.parentElement?.id") == "mpSettingsRoomDrawerContent"
+        assert page.locator("#mpSettingsFold .mp-fold-head").is_hidden()
+        assert page.locator("#mpSettingsFold .mp-settings-body").is_visible()
+        assert page.locator("#mpTh06HitboxOption").is_visible()
+        page.locator("#mpTh06HitboxToggle").click()
+        assert page.locator("#mpTh06HitboxToggle").get_attribute("aria-checked") == "true"
+        drawer_padding = page.locator("#mpSettingsRoomDrawer").evaluate(
+            "el => ({ left: parseFloat(getComputedStyle(el).paddingLeft), right: parseFloat(getComputedStyle(el).paddingRight) })"
+        )
+        assert drawer_padding["left"] >= 18 and drawer_padding["right"] >= 18
+        assert page.locator("#mpSettingsRoomDrawerCloseHint").inner_text() == "右滑或点击该箭头关闭"
+        box = page.locator("#mpSettingsRoomDrawer").bounding_box()
+        assert box is not None
+        page.mouse.move(box["x"] + 70, box["y"] + 260)
+        page.mouse.down()
+        page.mouse.move(box["x"] + 220, box["y"] + 260, steps=8)
+        page.mouse.up()
+        assert page.locator("#mpSettingsRoomDrawer").evaluate("el => el.classList.contains('closing')")
+        assert page.locator("#mpSettingsRoomDrawerToggle").is_hidden()
+        page.wait_for_selector("#mpSettingsRoomDrawer", state="hidden")
+        assert page.locator("#mpSettingsRoomDrawerToggle").is_visible()
+        page.locator("#mpSettingsRoomDrawerToggle").click()
+        page.locator("#mpSettingsRoomDrawerCloseHint").click()
+        assert page.locator("#mpSettingsRoomDrawer").evaluate("el => el.classList.contains('closing')")
+        page.wait_for_selector("#mpSettingsRoomDrawer", state="hidden")
         assert page.locator("#mpRoomTitle").inner_text() == "東方紅魔郷"
         assert page.locator("#mpRoomView").get_attribute("aria-label") == "TH06 联机房间"
         th06_room_code = page.locator("#mpRoomCode").inner_text()
@@ -71,7 +107,8 @@ def main() -> int:
         other.goto(url, wait_until="load", timeout=30000)
         other.wait_for_function("window.__eaglerBoot?.done === true", timeout=30000)
         if other.locator("#changelogDialog").get_attribute("open") is not None:
-            other.locator("#changelogClose").click()
+            other.locator("#changelogCloseHint").click()
+            other.wait_for_function("document.querySelector('#changelogDialog')?.open === false")
         other.locator('[data-product="th07mp"]').click()
         other.locator("#mpJoinCode").fill(th06_room_code)
         other.locator("#mpJoinRoom").click()
@@ -95,6 +132,8 @@ def main() -> int:
         assert page.locator('#mpRoomDifficulty option[value="5"]').is_disabled()
         page.locator("#mpLeaveRoom").click()
         page.wait_for_selector("#mpRoomView", state="hidden")
+        assert page.locator("#mpSettingsRoomDrawerToggle").is_hidden()
+        assert page.locator("#mpSettingsFold").evaluate("el => el.parentElement?.id") == "mpShell"
 
         page.locator('[data-product="th07mp"]').click()
         page.wait_for_selector("#mpShell:not([hidden])")
@@ -213,7 +252,8 @@ def main() -> int:
         mobile.goto(url, wait_until="load", timeout=30000)
         mobile.wait_for_function("window.__eaglerBoot?.done === true", timeout=30000)
         if mobile.locator("#changelogDialog").get_attribute("open") is not None:
-            mobile.locator("#changelogClose").click()
+            mobile.locator("#changelogCloseHint").click()
+            mobile.wait_for_function("document.querySelector('#changelogDialog')?.open === false")
         mobile.locator('[data-product="th07mp"]').click()
         mobile.locator("#mpCreateRoom").click()
         mobile.wait_for_selector("#mpRoomView:not([hidden])")
