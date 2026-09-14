@@ -90,7 +90,7 @@ import {
 import { createTouchLayoutWindowPositionStore } from "./touch-layout-editor-state.mjs";
 import type { TouchLayoutWindowKind } from "./touch-layout-editor-state.mjs";
 import { createSiteNoticeController } from "./site-notice.mjs";
-import { createChangelogController } from "./changelog.mjs";
+import { createFirstUseNoticeController } from "./first-use-notice.mjs";
 import { createMultiplayerGuideController } from "./multiplayer-guide.mjs";
 import { createEdgeDrawerGesture } from "./edge-drawer-gesture.mjs";
 import {
@@ -1430,13 +1430,13 @@ const selectElementSelectors = [
   "#touchFocusMode",
 ] as const;
 const dialogElementSelectors = [
-  "#decisionDialog", "#changelogDialog", "#mpGuideDialog", "#appleRefreshDialog", "#replayDialog",
+  "#decisionDialog", "#firstUseNoticeDialog", "#mpGuideDialog", "#appleRefreshDialog", "#replayDialog",
 ] as const;
 const anchorElementSelectors = ["#originMigrationOpen", "#gameDataFallbackUrl"] as const;
 const outputElementSelectors = ["#touchLayoutScaleValue", "#touchSensitivityValue"] as const;
 const buttonElementSelectors = [
   "#siteNoticeOptOut", "#siteNoticeClose", "#lessMotionToggle", "#mastheadMenuToggle",
-  "#siteNoticeToggle", "#changelogOpen", "#mpShareSettingsToggle", "#mpFrameLimitAppleNote",
+  "#siteNoticeToggle", "#firstUseNoticeOpen", "#mpShareSettingsToggle", "#mpFrameLimitAppleNote",
   "#mpFrameLimitToggle", "#mpTh06HitboxToggle", "#mpLocalPlayerVisibilityToggle", "#mpMobileOptionsToggle",
   "#mpTouchToggle", "#mpTouchLayoutEdit", "#mpAlwaysHitboxToggle", "#mpMagnifierToggle",
   "#mpReplayViewer", "#mpCreateRoom", "#mpJoinRoom", "#frameLimitAppleNote",
@@ -1448,7 +1448,7 @@ const buttonElementSelectors = [
   "#mpLoadoutNextSeat", "#mpCopyRoomCode", "#mpReady", "#mpCheckGame", "#mpStartGame",
   "#mpRoomSettingsToggle", "#toastClose", "#startupErrorClose", "#decisionCancel",
   "#mpSettingsRoomDrawerToggle", "#mpSettingsRoomDrawerCloseHint",
-  "#decisionSecondary", "#decisionConfirm", "#changelogClose", "#changelogCloseHint", "#mpGuideClose",
+  "#decisionSecondary", "#decisionConfirm", "#firstUseNoticeClose", "#firstUseNoticeCloseHint", "#mpGuideClose",
   "#appleRefreshClose", "#transferCancel", "#transferRetry", "#gameDataImportClose",
   "#transferImport", "#transferDownload", "#gameDataLinkClose", "#touchLayoutOrientationHelpOpen",
   "#touchLayoutReset", "#touchLayoutSave", "#touchLayoutExit", "#doubleTapBombToggle",
@@ -2448,7 +2448,7 @@ function clearFirstFrameWatchdog() {
   firstFrameTimedOut = false;
   firstFrameWatchdogSerial++;
 }
-function armFirstFrameWatchdog() {
+function armFirstFrameWatchdog(timeoutMs = firstFrameFallbackMs) {
   clearFirstFrameWatchdog();
   const serial = firstFrameWatchdogSerial;
   const gameId = state.game;
@@ -2472,7 +2472,7 @@ function armFirstFrameWatchdog() {
     ].join("\n");
     setPlayerStatus(t("runtime.firstFrameLate"));
     showStartupError(new Error(t("runtime.firstFrameDiagnostic", { diagnostic })), t("runtime.firstFrameContext", { game: gameId.toUpperCase() }), true);
-  }, firstFrameFallbackMs);
+  }, timeoutMs);
 }
 function noteFirstFrame() {
   stopPlayerFocusRelay();
@@ -3405,18 +3405,30 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
         showToast(t("runtime.localOggFallbackMidi", { reason: errorMessage(error) }));
       }
     }
-    const firstFramePromise = options.awaitFirstFrame ? waitForRuntimeFirstFrame(session) : null;
+    const selectedProduct = PRODUCT_GAMES[state.game];
+    const directoryRuntime = "runtimeFileLayout" in selectedProduct &&
+      selectedProduct.runtimeFileLayout === "directory";
+    const firstFramePromise = options.awaitFirstFrame
+      ? waitForRuntimeFirstFrame(session, directoryRuntime ? 122_000 : firstFrameFallbackMs + 2000)
+      : null;
     // Session invalidation owns cancellation. Observe rejection immediately so
     // an earlier launch failure cannot leave a transient unhandled promise.
     if (firstFramePromise) void firstFramePromise.catch(() => {});
-    armFirstFrameWatchdog();
+    armFirstFrameWatchdog(directoryRuntime ? 122_000 : firstFrameFallbackMs);
     // The Runtime is once again the direct child browsing context. Keep the
     // bounded Android focus relay that fixed the historical first-frame stall,
     // but there is no longer a Player -> Runtime focus hop.
     startPlayerFocusRelay();
     try {
-      await send("launch");
+      // Directory Runtimes such as TH10 may intentionally wait for a real
+      // WebKit user gesture before creating Web Audio/worker-owned rendering.
+      // Keep the request alive while that in-Runtime start gate is visible.
+      await send("launch", {}, directoryRuntime ? 120_000 : 15_000);
       assertSession();
+      if (directoryRuntime && firstFrameExpected) {
+        armFirstFrameWatchdog();
+        startPlayerFocusRelay();
+      }
     } catch (error) {
       clearFirstFrameWatchdog();
       localMusicInstall?.cancel();
@@ -3425,6 +3437,7 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
       throw error;
     }
     state.launched = true; clearStartupError();
+    syncDirectTouchSurfaceVisibility();
     const backgroundUpdate = deferredBackgroundPackageUpdate;
     deferredBackgroundPackageUpdate = null;
     if (backgroundUpdate) startBackgroundPackageUpdate(backgroundUpdate);
@@ -3718,6 +3731,12 @@ function renderTouchActionState() {
   renderTouchFocusState();
   renderTouchFireState();
 }
+function syncDirectTouchSurfaceVisibility() {
+  const spectatorRuntime = isMultiplayerProduct() && state.netplay.spectator === true;
+  const wheelMovement = touchMovementUsesJoystick(state.options.touchMovementMode);
+  touchDirectSurface.hidden = !(state.launched && hostDirectTouch && !spectatorRuntime &&
+    state.options.touchEnabled && !wheelMovement && !touchLayoutEditing && !thpracMouseMode);
+}
 function render() {
   if (!productEnabled(state.product)) state.hasSelection = false;
   chooseDefaultMusic();
@@ -3894,7 +3913,7 @@ function render() {
   player.classList.toggle("touch-joystick-enabled", wheelMovement && touchSurfaceVisible);
   $("#touchJoystick").hidden = !(wheelMovement && touchSurfaceVisible);
   $("#touchRestart").hidden = !state.options.restartButtonEnabled;
-  touchDirectSurface.hidden = !(hostDirectTouch && !spectatorRuntime && state.options.touchEnabled && !wheelMovement && !touchLayoutEditing && !thpracMouseMode);
+  syncDirectTouchSurfaceVisibility();
   renderTouchActionState();
   const thpracControlsVisible = !spectatorRuntime && thpracTouchControlsVisible();
   touchThpracInput.hidden = !thpracControlsVisible;
@@ -4010,6 +4029,7 @@ function resetRuntime() {
     pending.reject(new Error(t("runtime.switched")));
   }
   state.pending.clear(); state.ready = false; state.launched = false; state.source = ""; state.sourceIdentity = "";
+  syncDirectTouchSurfaceVisibility();
   launchMusicFallback = null;
   deferredBackgroundPackageUpdate = null;
   releaseRuntimePackageSession();
@@ -4544,7 +4564,7 @@ function waitForRuntimeReady(session: RuntimeSessionToken, timeoutMessage: strin
   });
 }
 
-function waitForRuntimeFirstFrame(session: RuntimeSessionToken): Promise<void> {
+function waitForRuntimeFirstFrame(session: RuntimeSessionToken, timeoutMs = firstFrameFallbackMs + 2000): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     let settled = false;
     let unsubscribe = () => {};
@@ -4570,7 +4590,7 @@ function waitForRuntimeFirstFrame(session: RuntimeSessionToken): Promise<void> {
     };
     const timer = setTimeout(() => {
       finish(() => reject(new Error(t("runtime.firstFrameLate"))));
-    }, firstFrameFallbackMs + 2000);
+    }, timeoutMs);
     unsubscribe = runtimeSessions.subscribe(() => {
       if (!runtimeSessionCurrent(session)) finish(() => reject(new Error(t("runtime.switched"))));
     });
@@ -6916,12 +6936,15 @@ function animateMobileHomeCards() {
   cancelMobileHomeCards();
   if (state.hasSelection || matchMedia("(prefers-reduced-motion: reduce)").matches ||
       !matchMedia("(max-width: 780px), (hover: none), (pointer: coarse)").matches) return;
-  // Reveal only the artwork; keep the original dark tone, text and layout fixed.
+  // Mobile cold start must not animate blur/filter across every card. On
+  // throttled phones that keeps expensive paint/compositing active while the
+  // Launcher is still settling. A short opacity reveal preserves the cue while
+  // leaving the authored card filter completely static.
   for (const art of document.querySelectorAll<HTMLElement>(".game:not([hidden]) .card-art")) {
     const animation = art.animate([
-      { filter: "brightness(.72) saturate(.72) blur(3px)" },
-      { filter: "brightness(.72) saturate(.72) blur(0px)" }
-    ], { duration: 750, easing: "ease", fill: "both" });
+      { opacity: .78 },
+      { opacity: 1 }
+    ], { duration: 180, easing: "ease-out", fill: "both" });
     animation.id = "mobile-home-clear";
     animation.finished.catch(() => {}).finally(() => animation.cancel());
   }
@@ -7170,13 +7193,13 @@ mastheadMenu.addEventListener("keydown", event => {
 document.addEventListener("click", event => {
   if (event.target instanceof Node && !mastheadMenu.contains(event.target)) setMastheadMenuOpen(false);
 });
-const changelog = createChangelogController({
-  emptyText: () => t("changelog.empty"),
-  readFailureText: error => t("changelog.readFailed", { reason: errorMessage(error) }),
+const firstUseNotice = createFirstUseNoticeController({
+  emptyText: () => t("firstUseNotice.empty"),
+  readFailureText: error => t("firstUseNotice.readFailed", { reason: errorMessage(error) }),
 });
-$("#changelogOpen").addEventListener("click", () => {
+$("#firstUseNoticeOpen").addEventListener("click", () => {
   setMastheadMenuOpen(false);
-  void changelog.showManual();
+  void firstUseNotice.showManual();
 });
 $("#lessMotionToggle").addEventListener("click", () => {
   cancelCardLayoutMotion();
@@ -7190,8 +7213,8 @@ $("#lessMotionToggle").addEventListener("click", () => {
   });
   render();
 });
-$("#changelogClose").addEventListener("click", changelog.close);
-$("#changelogCloseHint").addEventListener("click", changelog.close);
+$("#firstUseNoticeClose").addEventListener("click", firstUseNotice.close);
+$("#firstUseNoticeCloseHint").addEventListener("click", firstUseNotice.close);
 const appleRefreshDialog = $("#appleRefreshDialog");
 function openAppleRefreshDialog() {
   if (!appleRefreshDialog.open) {
@@ -7239,10 +7262,10 @@ createNetworkDiagnosticsController({
 });
 createEdgeDrawerGesture({
   side: "right",
-  drawer: $("#changelogDialog"),
-  isOpen: changelog.isOpen,
-  open: changelog.showManual,
-  close: changelog.close,
+  drawer: $("#firstUseNoticeDialog"),
+  isOpen: firstUseNotice.isOpen,
+  open: firstUseNotice.showManual,
+  close: firstUseNotice.close,
 });
 createEdgeDrawerGesture({
   side: "right",
@@ -7974,7 +7997,7 @@ animateMobileHomeCards();
 bootWatchdog?.ready?.();
 const launcherRoomRoute = !!mpNormalizeRoomCode(new URL(location.href).searchParams.get(mpRoomUrlKey));
 if (!launcherRoomRoute && !debugHarness && !touchPreview) {
-  void changelog.maybeShowAutomatically().then(shown => {
+  void firstUseNotice.maybeShowAutomatically().then(shown => {
     if (!shown) void siteNotice.load();
   });
 } else if (!launcherRoomRoute) {

@@ -14,19 +14,11 @@ Run `npm ci --ignore-scripts` followed by `npm run vendor` to reproduce the vend
 - License: MIT
 - Purpose: import and export original-format replay files as a ZIP archive without changing `.rpy` bytes.
 
-`public/vendor/marked.umd.js` is generated from `marked@18.0.12`.
+`marked@18.0.12` is used by the maintainer content build.
 
 - Project: https://marked.js.org/
 - License: MIT
-- Purpose: render FAQ at build time and Launcher content Markdown at runtime while preserving the site's own components and styles.
-- License copy: `public/vendor/marked.LICENSE`
-
-`public/vendor/purify.min.js` is generated from `dompurify@3.4.15`.
-
-- Project: https://github.com/cure53/DOMPurify
-- License: Apache License 2.0 OR Mozilla Public License 2.0
-- Purpose: sanitize browser-rendered operator and gameplay Markdown after Marked parsing.
-- License copy: `public/vendor/dompurify.LICENSE`
+- Purpose: pre-render FAQ, First-use Notice, and Multiplayer Guide Markdown into static browser HTML during the source build. Marked is not shipped as a Launcher runtime dependency.
 
 The masthead wordmark uses `font-touhou98@1.0.0`.
 
@@ -117,5 +109,5 @@ Iconify collection and version referenced by Mizuki.
 - Package: `@iconify-json/material-symbols@1.2.86`
 - License: Apache License 2.0
 - Glyphs: `language`, `history`, `person`, and `warning`
-- Purpose: identify interface language, changelog, and about actions without a
+- Purpose: identify interface language, first-use notice, and about actions without a
   runtime icon service or network dependency.

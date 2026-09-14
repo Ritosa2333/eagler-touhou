@@ -84,9 +84,9 @@ def install_manifest_routes(context, manifest: dict) -> None:
 def open_launcher(page, launcher_url: str) -> None:
     page.goto(launcher_url, wait_until="load", timeout=30_000)
     page.wait_for_function("window.__eaglerBoot?.done === true", timeout=30_000)
-    changelog = page.locator("#changelogDialog")
-    if changelog.count() and changelog.evaluate("dialog => dialog.open"):
-        page.locator("#changelogClose").click()
+    first_use_notice = page.locator("#firstUseNoticeDialog")
+    if first_use_notice.count() and first_use_notice.evaluate("dialog => dialog.open"):
+        page.locator("#firstUseNoticeClose").click()
     page.locator('[data-product="th06mp"]').click()
     page.wait_for_selector("#mpShell:not([hidden])", timeout=10_000)
     assert page.locator("#gameId").inner_text() == "TH06 MP"

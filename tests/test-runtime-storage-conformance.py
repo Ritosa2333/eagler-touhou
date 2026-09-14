@@ -88,8 +88,8 @@ class StorageCase:
         self.page.goto(self.url, wait_until="load", timeout=30000)
         self.page.wait_for_function("window.__eaglerBoot?.done === true", timeout=30000)
         self.page.evaluate("""game => {
-          localStorage.setItem('eagler-touhou-changelog-seen-20260822-1', '1');
-          document.querySelector('#changelogDialog')?.close();
+          localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1');
+          document.querySelector('#firstUseNoticeDialog')?.close();
           localStorage.setItem(`eagler-touhou-game-options-v1-${game}`, JSON.stringify({music:'none',musicPreferenceExplicit:true,options:{}}));
           document.querySelector(`[data-game='${game}']:not(.game-multiplayer)`).click();
           const music = document.getElementById('musicSelect');

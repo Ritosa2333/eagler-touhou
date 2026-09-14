@@ -22,9 +22,9 @@ def main() -> int:
         page.on("pageerror", lambda error: errors.append(str(error)))
         page.goto(url, wait_until="load", timeout=30000)
         page.wait_for_function("window.__eaglerBoot?.done === true", timeout=30000)
-        if page.locator("#changelogDialog").get_attribute("open") is not None:
-            page.locator("#changelogCloseHint").click()
-            page.wait_for_function("document.querySelector('#changelogDialog')?.open === false")
+        if page.locator("#firstUseNoticeDialog").get_attribute("open") is not None:
+            page.locator("#firstUseNoticeCloseHint").click()
+            page.wait_for_function("document.querySelector('#firstUseNoticeDialog')?.open === false")
 
         products = page.locator(".game").evaluate_all(
             "els => els.map(el => el.dataset.product || el.dataset.game)"
@@ -113,9 +113,9 @@ def main() -> int:
         other = browser.new_page(viewport={"width": 960, "height": 720})
         other.goto(url, wait_until="load", timeout=30000)
         other.wait_for_function("window.__eaglerBoot?.done === true", timeout=30000)
-        if other.locator("#changelogDialog").get_attribute("open") is not None:
-            other.locator("#changelogCloseHint").click()
-            other.wait_for_function("document.querySelector('#changelogDialog')?.open === false")
+        if other.locator("#firstUseNoticeDialog").get_attribute("open") is not None:
+            other.locator("#firstUseNoticeCloseHint").click()
+            other.wait_for_function("document.querySelector('#firstUseNoticeDialog')?.open === false")
         other.locator('[data-product="th07mp"]').click()
         other.locator("#mpJoinCode").fill(th06_room_code)
         other.locator("#mpJoinRoom").click()
@@ -260,9 +260,9 @@ def main() -> int:
         mobile = browser.new_page(viewport={"width": 390, "height": 844})
         mobile.goto(url, wait_until="load", timeout=30000)
         mobile.wait_for_function("window.__eaglerBoot?.done === true", timeout=30000)
-        if mobile.locator("#changelogDialog").get_attribute("open") is not None:
-            mobile.locator("#changelogCloseHint").click()
-            mobile.wait_for_function("document.querySelector('#changelogDialog')?.open === false")
+        if mobile.locator("#firstUseNoticeDialog").get_attribute("open") is not None:
+            mobile.locator("#firstUseNoticeCloseHint").click()
+            mobile.wait_for_function("document.querySelector('#firstUseNoticeDialog')?.open === false")
         mobile.locator('[data-product="th07mp"]').click()
         mobile.locator("#mpCreateRoom").click()
         mobile.wait_for_selector("#mpRoomView:not([hidden])")

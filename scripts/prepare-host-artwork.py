@@ -28,7 +28,13 @@ ARTWORK_BY_GAME = {
     "th08": ("th08-card.webp",),
     "th10": ("th10-card.webp",),
 }
-WEBP_QUALITY = 75
+# Launcher cards are presentation derivatives, not archival copies of the
+# original title artwork.  The UI darkens/crops them heavily and Lighthouse's
+# public-site audit consistently identifies the generated cards as the largest
+# avoidable first-load image cost.  Keep method=6 for the best encoder search,
+# but use a web-facing quality target rather than the previous near-source
+# setting.  Original game bytes are never rewritten.
+WEBP_QUALITY = 55
 WEBP_METHOD = 6
 
 

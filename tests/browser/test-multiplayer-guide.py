@@ -60,8 +60,8 @@ def main() -> int:
             page.wait_for_function("window.__eaglerBoot?.done === true")
             page.wait_for_timeout(800)
             page.evaluate("""() => {
-              const changelog = document.getElementById('changelogDialog');
-              if (changelog?.open) changelog.close();
+              const firstUseNotice = document.getElementById('firstUseNoticeDialog');
+              if (firstUseNotice?.open) firstUseNotice.close();
             }""")
             assert page.locator("#mpGuideOpen").inner_text() == "联机玩法介绍"
             assert page.locator("#mpGuideOpen").locator("svg").count() == 1

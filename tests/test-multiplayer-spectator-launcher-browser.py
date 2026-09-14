@@ -222,9 +222,9 @@ def main() -> int:
 
                 page.goto(launcher_url, wait_until="load", timeout=30_000)
                 page.wait_for_function("window.__eaglerBoot?.done === true", timeout=30_000)
-                changelog = page.locator("#changelogDialog")
-                if changelog.count() and changelog.evaluate("dialog => dialog.open"):
-                    page.locator("#changelogClose").click()
+                first_use_notice = page.locator("#firstUseNoticeDialog")
+                if first_use_notice.count() and first_use_notice.evaluate("dialog => dialog.open"):
+                    page.locator("#firstUseNoticeClose").click()
                 toast = page.locator("#toast")
                 assert "联机服务未配置" not in toast.inner_text(), (
                     "configured Relay must not emit an unconfigured-service toast during render"

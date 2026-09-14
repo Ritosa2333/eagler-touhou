@@ -2,8 +2,8 @@
 
 ## Game-card backgrounds
 
-The final hosted site uses `assets/th06-card.webp`, `assets/th07-card.webp`, and
-`assets/th08-card.webp`. Host assembly extracts the title artwork from original
+The final hosted site uses `assets/th06-card.webp`, `assets/th07-card.webp`,
+`assets/th08-card.webp`, and `assets/th10-card.webp`. Host assembly extracts the title artwork from original
 game files supplied by the deployer and converts it to WebP without enlarging
 or cropping it. A deployer may instead provide a custom card image; WebP input
 is preserved and PNG/JPEG input is normalized to the same final WebP contract.
@@ -14,7 +14,10 @@ host merely to support the card UI, and are not part of the resource-free
 Runtime Release. The source tree therefore contains references to stable final
 host paths without owning the original-game-derived bytes.
 
-The currently pinned card encoder is Pillow WebP quality 82 / method 6. This is
+The currently pinned card encoder is Pillow WebP quality 55 / method 6. The
+cards are UI presentation derivatives that are darkened and cropped by the
+Launcher, so the delivery profile favors first-load size over archival image
+quality. This is
 a host-delivery policy rather than a game-data identity: custom WebP overrides
 are not transcoded again.
 

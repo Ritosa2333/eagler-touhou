@@ -5,19 +5,19 @@ import time
 from playwright.sync_api import sync_playwright
 
 
-def close_changelog(page):
-    if page.locator("#changelogDialog").get_attribute("open") is not None:
-        page.locator("#changelogClose").click()
+def close_first_use_notice(page):
+    if page.locator("#firstUseNoticeDialog").get_attribute("open") is not None:
+        page.locator("#firstUseNoticeClose").click()
 
 
 def open_mp(page, url, package_zip=None):
     page.goto(url, wait_until="load", timeout=30000)
     page.wait_for_function("window.__eaglerBoot?.done === true", timeout=30000)
     page.evaluate("""() => {
-      localStorage.setItem('eagler-touhou-changelog-seen-20260822-1', '1');
-      document.querySelector('#changelogDialog')?.close();
+      localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1');
+      document.querySelector('#firstUseNoticeDialog')?.close();
     }""")
-    close_changelog(page)
+    close_first_use_notice(page)
     if package_zip:
         # Model the actual import user path: choose ordinary TH07, press
         # the primary "导入游戏资源" action, then import the package from the
@@ -58,11 +58,11 @@ def open_mp(page, url, package_zip=None):
             }""",
             timeout=120000,
         )
-        # The one-time changelog may have begun loading before the marker was
-        # written and can open asynchronously while the package import runs.
+        # The one-time first-use notice may have begun loading before the marker
+        # was written and can open asynchronously while the package import runs.
         # Keep this network/gameplay gate independent from that modal timing.
         page.wait_for_timeout(1500)
-        page.evaluate("document.querySelector('#changelogDialog')?.close()")
+        page.evaluate("document.querySelector('#firstUseNoticeDialog')?.close()")
         assert not page.locator("#player").evaluate(
             "element => element.classList.contains('open')"
         ), "import package acquisition must not auto-launch normal TH07"
@@ -204,7 +204,7 @@ def main():
                     for _ in range(player_count)]
         for context in contexts:
             context.add_init_script("""
-              try { localStorage.setItem('eagler-touhou-changelog-seen-20260822-1', '1'); } catch {}
+              try { localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1'); } catch {}
             """)
         pages = [context.new_page() for context in contexts]
         errors = [[] for _ in pages]

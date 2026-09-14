@@ -258,7 +258,7 @@
           <div class="masthead-menu-panel" id="mastheadMenuPanel" aria-hidden="true" inert>
             <button class="masthead-menu-item" id="siteNoticeToggle" type="button" role="switch" aria-checked="true"><svg class="masthead-menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2m6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1z"/></svg><span data-i18n="notice.label">公告</span><i class="site-notice-toggle-state" aria-hidden="true"></i></button>
             <div class="ui-language-control masthead-menu-language"><select class="option-select ui-language-select" id="uiLanguageSelect" aria-label="界面语言" data-i18n-aria-label="ui.language" data-trigger-i18n="ui.language.menu"><option value="zh-CN" data-i18n="ui.language.zhCN">简体中文</option><option value="en" data-i18n="ui.language.en">English</option></select><template data-select-trigger-prefix><svg class="masthead-menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.125 21.213q-1.825-.788-3.187-2.15t-2.15-3.188T2 11.988t.788-3.875t2.15-3.175t3.187-2.15T12.013 2t3.875.788t3.175 2.15t2.15 3.175t.787 3.875t-.787 3.887t-2.15 3.188t-3.175 2.15t-3.875.787t-3.888-.787M12 19.95q.65-.9 1.125-1.875T13.9 16h-3.8q.3 1.1.775 2.075T12 19.95m-2.6-.4q-.45-.825-.787-1.713T8.05 16H5.1q.725 1.25 1.813 2.175T9.4 19.55m5.2 0q1.4-.45 2.488-1.375T18.9 16h-2.95q-.225.95-.562 1.838T14.6 19.55M4.25 14h3.4q-.075-.5-.112-.987T7.5 12t.038-1.012T7.65 10h-3.4q-.125.5-.187.988T4 12t.063 1.013t.187.987m5.4 0h4.7q.075-.5.113-.987T14.5 12t-.038-1.012T14.35 10h-4.7q-.075.5-.112.988T9.5 12t.038 1.013t.112.987m6.7 0h3.4q.125-.5.188-.987T20 12t-.062-1.012T19.75 10h-3.4q.075.5.113.988T16.5 12t-.038 1.013t-.112.987m-.4-6h2.95q-.725-1.25-1.812-2.175T14.6 4.45q.45.825.788 1.713T15.95 8M10.1 8h3.8q-.3-1.1-.775-2.075T12 4.05q-.65.9-1.125 1.875T10.1 8m-5 0h2.95q.225-.95.563-1.838T9.4 4.45Q8 4.9 6.912 5.825T5.1 8"/></svg></template></div>
-            <button class="masthead-menu-item" id="changelogOpen" type="button"><svg class="masthead-menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21q-3.45 0-6.012-2.287T3.05 13H5.1q.35 2.6 2.313 4.3T12 19q2.925 0 4.963-2.037T19 12t-2.037-4.962T12 5q-1.725 0-3.225.8T6.25 8H9v2H3V4h2v2.35q1.275-1.6 3.113-2.475T12 3q1.875 0 3.513.713t2.85 1.924t1.925 2.85T21 12t-.712 3.513t-1.925 2.85t-2.85 1.925T12 21m2.8-4.8L11 12.4V7h2v4.6l3.2 3.2z"/></svg><span data-i18n="nav.changelog">更新日志</span></button>
+            <button class="masthead-menu-item" id="firstUseNoticeOpen" type="button"><svg class="masthead-menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21q-3.45 0-6.012-2.287T3.05 13H5.1q.35 2.6 2.313 4.3T12 19q2.925 0 4.963-2.037T19 12t-2.037-4.962T12 5q-1.725 0-3.225.8T6.25 8H9v2H3V4h2v2.35q1.275-1.6 3.113-2.475T12 3q1.875 0 3.513.713t2.85 1.924t1.925 2.85T21 12t-.712 3.513t-1.925 2.85t-2.85 1.925T12 21m2.8-4.8L11 12.4V7h2v4.6l3.2 3.2z"/></svg><span data-i18n="nav.firstUseNotice">首次使用须知</span></button>
             <a class="masthead-menu-item" href="about.html"><svg class="masthead-menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.175 10.825Q8 9.65 8 8t1.175-2.825T12 4t2.825 1.175T16 8t-1.175 2.825T12 12t-2.825-1.175M4 20v-2.8q0-.85.438-1.562T5.6 14.55q1.55-.775 3.15-1.162T12 13t3.25.388t3.15 1.162q.725.375 1.163 1.088T20 17.2V20z"/></svg><span data-i18n="nav.about">关于</span></a>
           </div>
         </div>
@@ -565,9 +565,9 @@
     </button>
     <aside class="mp-settings-room-drawer" id="mpSettingsRoomDrawer" aria-label="设置" data-i18n-aria-label="settings.title" hidden>
       <div class="mp-settings-room-content" id="mpSettingsRoomDrawerContent"></div>
-      <button class="changelog-swipe-hint mp-settings-room-close-hint" id="mpSettingsRoomDrawerCloseHint" type="button" aria-label="关闭设置" data-i18n-aria-label="settings.drawerClose">
+      <button class="edge-drawer-swipe-hint mp-settings-room-close-hint" id="mpSettingsRoomDrawerCloseHint" type="button" aria-label="关闭设置" data-i18n-aria-label="settings.drawerClose">
         <span data-i18n="settings.drawerSwipeClose">右滑或点击该箭头关闭</span>
-        <span class="changelog-swipe-visual"><svg viewBox="0 0 280 26"><path d="M6 13h260m-10-9 10 9-10 9"/></svg></span>
+        <span class="edge-drawer-swipe-visual"><svg viewBox="0 0 280 26"><path d="M6 13h260m-10-9 10 9-10 9"/></svg></span>
       </button>
     </aside>
     <nav class="card-filter-bar" id="cardFilterBar" aria-label="游戏分类" data-i18n-aria-label="filter.aria">
@@ -599,17 +599,17 @@
       <footer><button class="decision-cancel" id="decisionCancel" value="cancel" data-i18n="action.cancel">取消</button><button class="decision-secondary" id="decisionSecondary" value="secondary" hidden data-i18n="action.backgroundDownload">后台下载</button><button class="decision-confirm" id="decisionConfirm" value="confirm" data-i18n="action.confirm">确定</button></footer>
     </form>
   </dialog>
-  <dialog class="changelog-dialog" id="changelogDialog" aria-labelledby="changelogTitle">
-    <article class="changelog-window">
+  <dialog class="first-use-notice-dialog" id="firstUseNoticeDialog" aria-labelledby="firstUseNoticeTitle">
+    <article class="first-use-notice-window">
       <header>
-        <h1 id="changelogTitle" data-i18n="changelog.title">更新日志</h1>
-        <button id="changelogClose" type="button" aria-label="关闭更新日志" data-i18n-aria-label="changelog.close">×</button>
+        <h1 id="firstUseNoticeTitle" data-i18n="firstUseNotice.title">首次使用须知</h1>
+        <button id="firstUseNoticeClose" type="button" aria-label="关闭首次使用须知" data-i18n-aria-label="firstUseNotice.close">×</button>
       </header>
-      <div class="changelog-text" id="changelogText"><p class="changelog-loading" data-i18n="changelog.loading">正在读取更新日志…</p></div>
+      <div class="first-use-notice-text" id="firstUseNoticeText"><p class="first-use-notice-loading" data-i18n="firstUseNotice.loading">正在读取首次使用须知…</p></div>
       <footer>
-        <button class="changelog-swipe-hint" id="changelogCloseHint" type="button" aria-label="关闭更新日志" data-i18n-aria-label="changelog.close">
-          <span data-i18n="changelog.swipeToClose">右滑或点击该箭头关闭</span>
-          <span class="changelog-swipe-visual"><svg viewBox="0 0 280 26"><path d="M6 13h260m-10-9 10 9-10 9"/></svg></span>
+        <button class="edge-drawer-swipe-hint" id="firstUseNoticeCloseHint" type="button" aria-label="关闭首次使用须知" data-i18n-aria-label="firstUseNotice.close">
+          <span data-i18n="firstUseNotice.swipeToClose">右滑或点击该箭头关闭</span>
+          <span class="edge-drawer-swipe-visual"><svg viewBox="0 0 280 26"><path d="M6 13h260m-10-9 10 9-10 9"/></svg></span>
         </button>
       </footer>
     </article>

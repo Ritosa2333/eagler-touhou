@@ -12,7 +12,7 @@ const outputDirectory = resolve(PUBLIC_SOURCE_ROOT, "assets", "fonts");
 const sources = [
   ...APP_SHELL_FILES.filter(path => !path.startsWith("vendor/") && /\.(?:html|css|js|mjs)$/.test(path)),
   "NOTICE.txt",
-  "content/CHANGELOG.md",
+  "content/FIRST_USE_NOTICE.md",
   "content/MULTIPLAYER.md",
   "product-catalog.mjs",
   "lib/development-content.mjs",

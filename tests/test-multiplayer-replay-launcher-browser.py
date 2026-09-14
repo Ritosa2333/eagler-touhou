@@ -134,9 +134,9 @@ def main() -> int:
 
                     page.goto(launcher_url, wait_until="load", timeout=30_000)
                     page.wait_for_function("window.__eaglerBoot?.done === true", timeout=30_000)
-                    changelog = page.locator("#changelogDialog")
-                    if changelog.count() and changelog.evaluate("dialog => dialog.open"):
-                        page.locator("#changelogClose").click()
+                    first_use_notice = page.locator("#firstUseNoticeDialog")
+                    if first_use_notice.count() and first_use_notice.evaluate("dialog => dialog.open"):
+                        page.locator("#firstUseNoticeClose").click()
 
                     page.locator(f'[data-product="{product}"]').click()
                     page.locator('[data-mp-fold="settings"]').click()

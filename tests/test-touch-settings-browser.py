@@ -12,19 +12,19 @@ def main() -> int:
         browser = playwright.chromium.launch(headless=True)
         context = browser.new_context(viewport={"width": 1280, "height": 800})
         context.add_init_script(
-            "localStorage.setItem('eagler-touhou-changelog-seen-20260822-1','1')"
+            "localStorage.setItem('eagler-touhou-first-use-notice-seen-v1','1')"
         )
         page = context.new_page()
         page.emulate_media(reduced_motion="reduce")
         page.on("pageerror", lambda error: errors.append(str(error)))
         page.goto(url, wait_until="load", timeout=30000)
         page.wait_for_function("window.__eaglerBoot?.done === true", timeout=30000)
-        # The content-derived changelog decision resolves asynchronously after
+        # The one-time first-use notice decision resolves asynchronously after
         # boot and may open between the first state check and the next click.
         page.wait_for_timeout(500)
-        if page.locator("#changelogDialog").get_attribute("open") is not None:
-            page.locator("#changelogCloseHint").click()
-            page.wait_for_function("document.querySelector('#changelogDialog')?.open === false")
+        if page.locator("#firstUseNoticeDialog").get_attribute("open") is not None:
+            page.locator("#firstUseNoticeCloseHint").click()
+            page.wait_for_function("document.querySelector('#firstUseNoticeDialog')?.open === false")
 
         page.locator('.game[data-game="th06"]:not([data-product])').click()
         page.locator("#mobileOptionsToggle").click()

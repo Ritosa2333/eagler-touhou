@@ -83,7 +83,7 @@ try {
   });
   await page.goto(targetUrl.href, { waitUntil: "domcontentloaded", timeout: 30_000 });
   await page.waitForFunction(() => globalThis.__eaglerBoot?.done === true, { timeout: 30_000 });
-  await page.evaluate(() => document.querySelector("#changelogDialog")?.close());
+  await page.evaluate(() => document.querySelector("#firstUseNoticeDialog")?.close());
   await page.waitForSelector(`.game[data-game="${game}"]:not(.game-multiplayer)`, { visible: true, timeout: 30_000 });
   await page.evaluate(selectedGame => {
     const card = document.querySelector(`.game[data-game="${selectedGame}"]:not(.game-multiplayer)`);

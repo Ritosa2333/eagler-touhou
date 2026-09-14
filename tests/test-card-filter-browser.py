@@ -41,7 +41,7 @@ def main():
     with sync_playwright() as p:
         browser = p.chromium.launch()
         context = browser.new_context(viewport={"width": 1280, "height": 800}, service_workers="block")
-        context.add_init_script("localStorage.setItem('eagler-touhou-changelog-seen-20260822-1','1')")
+        context.add_init_script("localStorage.setItem('eagler-touhou-first-use-notice-seen-v1','1')")
         page = context.new_page()
         errors = []
         page.on("pageerror", lambda error: errors.append(str(error)))

@@ -234,8 +234,8 @@ def main() -> int:
         page.evaluate(
             """
             () => {
-              localStorage.setItem('eagler-touhou-changelog-seen-20260822-1', '1');
-              document.querySelector('#changelogDialog')?.close();
+              localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1');
+              document.querySelector('#firstUseNoticeDialog')?.close();
               window.__pwFirstFrame = false;
               window.__pwToastHistory = [];
               const toast = document.getElementById('toast');
@@ -262,7 +262,7 @@ def main() -> int:
             """
         )
         page.wait_for_timeout(150)
-        page.evaluate("document.querySelector('#changelogDialog')?.close()")
+        page.evaluate("document.querySelector('#firstUseNoticeDialog')?.close()")
 
         page.evaluate(
             "(game) => document.querySelector(`[data-game='${game}']`)?.click()",
@@ -550,8 +550,8 @@ def main() -> int:
         page.evaluate(
             """
             () => {
-              localStorage.setItem('eagler-touhou-changelog-seen-20260822-1', '1');
-              document.querySelector('#changelogDialog')?.close();
+              localStorage.setItem('eagler-touhou-first-use-notice-seen-v1', '1');
+              document.querySelector('#firstUseNoticeDialog')?.close();
               window.__pwFirstFrame = false;
               window.addEventListener('message', event => {
                 const m = event.data || {};

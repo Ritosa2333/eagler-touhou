@@ -41,7 +41,7 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-runtime-generation-lease.mjs",
   "tests/test-runtime-session.mjs",
   "tests/test-runtime-protocol-model.mjs",
-  "tests/test-changelog.mjs",
+  "tests/test-first-use-notice.mjs",
   "tests/test-multiplayer-guide.mjs",
   "tests/test-edge-drawer-gesture.mjs",
   "tests/test-game-zoom.mjs",

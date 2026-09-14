@@ -33,7 +33,7 @@ def main() -> int:
         page.wait_for_function("window.__eaglerBoot?.done === true", timeout=30_000)
         page.wait_for_timeout(750)
         page.evaluate("""() => {
-          document.querySelector('#changelogDialog')?.close();
+          document.querySelector('#firstUseNoticeDialog')?.close();
           window.__languageFallbackFirstFrame = false;
           addEventListener('message', event => {
             const message = event.data || {};

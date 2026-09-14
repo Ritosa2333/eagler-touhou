@@ -15,7 +15,7 @@ import { buildAppShell } from "../lib/app-shell-build.mjs";
 import { APP_SHELL_OUTPUT_FILE } from "../lib/app-shell-policy.mjs";
 import { findChromiumExecutable } from "../lib/chromium-executable.mjs";
 import { ensureLauncherBuild, resolveBrowserPublicationSource } from "../lib/launcher-build.mjs";
-import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+import { PRODUCT_GAMES, PRODUCT_IDS } from "../lib/contracts/product-catalog.mjs";
 import { HOST_MANIFEST_SCHEMA } from "../lib/contracts/host-manifest.mjs";
 import { RELEASE_CATALOG_SCHEMA } from "../lib/contracts/release-catalog.mjs";
 import { staticContentCompressible, staticContentType } from "../server/static-content-policy.mjs";
@@ -86,6 +86,7 @@ const REFERENCE_ARTWORK = Object.freeze({
   "th06-card.webp": "UklGRj4AAABXRUJQVlA4IDIAAAAQAwCdASogACAAPp1In0slpCKhqAgAsBOJZwDE2BanFAAA/vOkdd6tpg6o+skYToAAAA==",
   "th07-card.webp": "UklGRjwAAABXRUJQVlA4IDAAAAAQAwCdASogACAAPp1In0slpCKhqAgAsBOJZwDKABanFAAA/vPfW7HvwIom+cAAAAA=",
   "th08-card.webp": "UklGRkAAAABXRUJQVlA4IDQAAAAQAwCdASogACAAPp1In0slpCKhqAgAsBOJZwC+SBbbDQAA/vHcjSHCx/ZO8nKPIENc4AAA",
+  "th10-card.webp": "UklGRj4AAABXRUJQVlA4IDIAAAAQAwCdASogACAAPp1In0slpCKhqAgAsBOJZwDE2BanFAAA/vOkdd6tpg6o+skYToAAAA==",
 });
 
 function createCertificate(directory) {
@@ -206,8 +207,8 @@ async function runAgenticChecks(browser, url) {
 
   await scenario("catalog-discovery", async page => {
     const products = await page.$$eval(".game:not([hidden])", elements => elements.map(element => element.innerText));
-    assert.equal(products.length, 5);
-    for (const expected of ["東方紅魔郷", "東方妖々夢", "東方永夜抄", "06MP", "07MP"]) {
+    assert.equal(products.length, PRODUCT_IDS.length);
+    for (const expected of ["東方紅魔郷", "東方妖々夢", "東方永夜抄", "東方風神録", "06MP", "07MP"]) {
       assert(products.some(value => value.includes(expected)), `catalog is missing ${expected}`);
     }
     assert.equal(await page.$("#eaglerBootEmergency"), null);

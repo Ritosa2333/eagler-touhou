@@ -3,16 +3,16 @@ import sys
 from playwright.sync_api import sync_playwright
 
 
-def close_changelog(page) -> None:
-    if page.locator("#changelogDialog").get_attribute("open") is not None:
-        page.locator("#changelogClose").click()
+def close_first_use_notice(page) -> None:
+    if page.locator("#firstUseNoticeDialog").get_attribute("open") is not None:
+        page.locator("#firstUseNoticeClose").click()
 
 
 def run_case(browser, base_url: str, product: str, game: str, game_label: str) -> None:
     page = browser.new_page(viewport={"width": 960, "height": 720})
     page.goto(base_url, wait_until="load", timeout=30000)
     page.wait_for_function("window.__eaglerBoot?.done === true", timeout=30000)
-    close_changelog(page)
+    close_first_use_notice(page)
 
     page.locator(f'[data-product="{product}"]').click()
     page.locator("#mpCreateRoom").click()

@@ -14,7 +14,7 @@ assert.equal(staticContentType("assets/example.jpg"), "image/jpeg");
 assert.equal(staticContentType("runtime/th07.wasm"), "application/wasm");
 assert.equal(staticContentType("runtime/font.otf"), "font/otf");
 assert.equal(staticContentType("site.webmanifest"), "application/manifest+json; charset=utf-8");
-assert.equal(staticContentType("content/CHANGELOG.md"), "text/markdown; charset=utf-8");
+assert.equal(staticContentType("content/FIRST_USE_NOTICE.md"), "text/markdown; charset=utf-8");
 assert.equal(staticContentType("unknown.bin"), "application/octet-stream");
 
 assert.equal(staticContentCompressible("runtime/th07.data", 2048), true);

@@ -279,7 +279,7 @@ def main() -> int:
                     "pageErrors": page_errors,
                     "consoleErrors": console_errors,
                 }, ensure_ascii=False)) from error
-            page.evaluate("document.querySelector('#changelogDialog')?.close()")
+            page.evaluate("document.querySelector('#firstUseNoticeDialog')?.close()")
 
             results = {}
 
@@ -342,7 +342,7 @@ def main() -> int:
             page.evaluate(CORRUPT_LOCAL_OGG)
             page.reload(wait_until="load")
             page.wait_for_function("() => window.__eaglerBoot?.done === true", timeout=30_000)
-            page.evaluate("document.querySelector('#changelogDialog')?.close()")
+            page.evaluate("document.querySelector('#firstUseNoticeDialog')?.close()")
             page.locator('.game-th06:not(.game-multiplayer)').click()
             page.select_option("#musicSelect", "ogg-full")
             page.locator("#launch").click()
@@ -389,7 +389,7 @@ def main() -> int:
             }''')
             page.reload(wait_until='load')
             page.wait_for_function('window.__eaglerBoot?.done === true')
-            page.evaluate("document.querySelector('#changelogDialog')?.close()")
+            page.evaluate("document.querySelector('#firstUseNoticeDialog')?.close()")
             page.locator('.game-th06:not(.game-multiplayer)').click()
             page.select_option('#musicSelect', 'ogg-stream')
             page.locator('#launch').click()
@@ -403,7 +403,7 @@ def main() -> int:
                 page.goto(f'{origin}/', wait_until='load')
                 page.wait_for_function('window.__eaglerBoot?.done === true')
                 page.wait_for_function("document.querySelector('#serverStatusNote').textContent.includes('未配置外部游戏包下载链接')")
-                page.evaluate("document.querySelector('#changelogDialog')?.close()")
+                page.evaluate("document.querySelector('#firstUseNoticeDialog')?.close()")
                 if multiplayer:
                     page.locator('[data-product="th06mp"]').click()
                     assert not page.locator('#mpShell').evaluate('el=>el.hidden'), page.locator('#toast').inner_text()
@@ -421,7 +421,7 @@ def main() -> int:
             page.goto(f'{origin}/', wait_until='load')
             page.wait_for_function('window.__eaglerBoot?.done === true')
             page.wait_for_function("document.querySelector('#serverStatusNote').textContent.includes('未配置外部游戏包下载链接')")
-            page.evaluate("document.querySelector('#changelogDialog')?.close()")
+            page.evaluate("document.querySelector('#firstUseNoticeDialog')?.close()")
             await_delete_data = '''async () => {
               const db = await new Promise((resolve, reject) => {
                 const request = indexedDB.open('eagler-touhou-package-store-v1');

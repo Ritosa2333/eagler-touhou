@@ -166,15 +166,16 @@ Examples of already separated owners include:
 - `src/launcher/site-notice.mts` - non-blocking packaged `NOTICE.txt` parsing,
   branded-link rendering, notice lifetime/scroll behavior and browser-local
   notice preference ownership.
-- `src/launcher/changelog.mts` - packaged `content/CHANGELOG.md` loading/rendering,
-  empty/error handling and browser-local seen-state keyed by normalized content
-  identity rather than a manually synchronized JavaScript version constant.
-- `src/launcher/markdown.mts` - shared lazy Marked loading and trusted packaged-
-  Markdown rendering boundary, including safe link protocols and external-link
-  isolation. Changelog and multiplayer guidance add only their own structure
-  and presentation after this shared parse step.
-- `src/launcher/multiplayer-guide.mts` - on-demand `content/MULTIPLAYER.md` loading and
-  dialog lifecycle. The guide is an App Shell resource so installed Launchers
+- `src/launcher/first-use-notice.mts` - generated `content/FIRST_USE_NOTICE.html`
+  loading, empty/error handling and one-time browser-local onboarding state. Known
+  legacy changelog seen keys migrate to the new seen flag so existing players are
+  not treated as newcomers after the product rename.
+- `scripts/build-content-pages.mjs` - browser-content compilation boundary. FAQ,
+  First-use Notice and Multiplayer Guide Markdown are rendered during the source build;
+  raw authored HTML is escaped and unsafe link/image protocols are rejected before
+  the generated HTML enters the publication/App Shell allowlist.
+- `src/launcher/multiplayer-guide.mts` - on-demand generated `content/MULTIPLAYER.html`
+  loading and dialog lifecycle. The guide is an App Shell resource so installed Launchers
   retain the instructions offline with the rest of the current UI generation.
 - `src/launcher/game-preferences.mts` - persisted Launcher option schema,
   normalization/legacy cleanup, music-mode normalization, stable preference
@@ -288,21 +289,23 @@ editor unusable for the current session.
 
 ### Site-information surface
 
-`NOTICE.txt`, `content/CHANGELOG.md` and `content/MULTIPLAYER.md` are packaged Launcher content, not remote
-control-plane metadata. `src/launcher/site-notice.mts` owns the transient notice
-controller and treats notice loading as non-blocking.
-`src/launcher/changelog.mts` owns Changelog loading/rendering and seen-state.
-`src/launcher/multiplayer-guide.mts` owns the explicitly opened gameplay guide;
-its Markdown source is precached rather than duplicated into HTML or JavaScript.
-Both runtime Markdown surfaces share the lazy-loaded, precached Marked parser and
-DOMPurify sanitizer. Sanitization occurs before generated HTML enters the DOM;
-inline event handlers, scripts and author-supplied styles are not content APIs.
-An empty `content/CHANGELOG.md` is a valid packaged state: it must not auto-open an
-empty dialog, while explicit user access reports that no changelog is present.
-Non-empty normalized content derives its own content identity, so deployers do
-not have to update a second version constant when replacing release notes.
+`NOTICE.txt` and the generated `content/FIRST_USE_NOTICE.html` / `content/MULTIPLAYER.html`
+are packaged Launcher content, not remote control-plane metadata. Their authoritative
+sources remain `content/FIRST_USE_NOTICE.md` and `content/MULTIPLAYER.md`.
+`src/launcher/site-notice.mts` owns the transient notice controller and treats notice
+loading as non-blocking. `src/launcher/first-use-notice.mts` owns First-use Notice
+loading and one-time onboarding state. `src/launcher/multiplayer-guide.mts` owns the explicitly opened gameplay
+guide. Browser runtime code does not parse Markdown: `scripts/build-content-pages.mjs`
+renders all browser-facing Markdown before publication, escapes authored raw HTML,
+and filters unsafe link/image protocols. The resulting HTML fragments are precached
+as App Shell files.
+An empty `content/FIRST_USE_NOTICE.md` source generates an empty fragment and is a valid
+packaged state: it must not auto-open an empty dialog, while explicit user access
+reports that no first-use notice is present. A non-empty notice auto-opens only for
+a browser that has not completed onboarding; later content edits do not interrupt
+returning players.
 Load failure is also non-blocking. The user's notice-enabled/dismissed and
-changelog-seen state are browser-local UI state. These files must not be
+first-use-notice-seen state are browser-local UI state. These files must not be
 confused with Host Manifest / Release Catalog, which remain the only top-level
 remote metadata contracts.
 

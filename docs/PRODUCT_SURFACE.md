@@ -80,14 +80,16 @@ Service Worker storage/offline model.
   contain the project's maintained feedback/community links.
 - Players can disable or re-enable the notice from the masthead menu; that
   preference is stored locally.
-- The masthead also exposes interface language, the packaged changelog and the
+- The masthead also exposes interface language, the packaged First-use Notice and the
   About page, while FAQ remains a direct site-information entry.
-- `content/CHANGELOG.md` is optional operator-maintained site content. An empty
-  file is a supported state and does not auto-open; a non-empty replacement is
-  recognized by its content identity and may auto-open once for a user who has
-  not seen that content yet.
-- Reading `NOTICE.txt` or `content/CHANGELOG.md` must never become a prerequisite for
-  package management or game launch.
+- `content/FIRST_USE_NOTICE.md` is optional operator-maintained onboarding content.
+  The build pre-renders it to precached `content/FIRST_USE_NOTICE.html`; an empty
+  source is supported and does not auto-open. A non-empty notice auto-opens once on
+  a new browser and remains manually accessible afterwards. Editing the content does
+  not force the notice back open for returning players, and known historical changelog
+  seen markers migrate as already-onboarded state.
+- Reading `NOTICE.txt` or generated First-use Notice content must never become a prerequisite
+  for package management or game launch.
 - Notice display is non-blocking: failure to load `NOTICE.txt` must not prevent
   game/package use.
 

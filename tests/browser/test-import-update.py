@@ -25,7 +25,7 @@ def main() -> int:
         page.goto(args.url, wait_until="load", timeout=30_000)
         page.wait_for_function("() => window.__eaglerBoot?.done === true", timeout=30_000)
         page.wait_for_timeout(750)
-        page.evaluate("document.querySelector('#changelogDialog')?.close()")
+        page.evaluate("document.querySelector('#firstUseNoticeDialog')?.close()")
         page.locator(f"[data-game={args.game}]").first.click()
         page.locator("#gamePackageImport").click()
         page.locator("#gameDataImportInput").set_input_files(package_zip)

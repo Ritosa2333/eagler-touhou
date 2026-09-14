@@ -57,7 +57,7 @@ def main() -> int:
         page.reload(wait_until="load", timeout=30_000)
         page.wait_for_function("() => window.__eaglerBoot?.done === true", timeout=30_000)
         page.wait_for_timeout(750)
-        page.evaluate("document.querySelector('#changelogDialog')?.close()")
+        page.evaluate("document.querySelector('#firstUseNoticeDialog')?.close()")
         # Install the published Package without launching a Runtime. This keeps
         # the online preparation phase free of App Shell reload/first-frame
         # timing, and makes the first actual Runtime launch happen offline.

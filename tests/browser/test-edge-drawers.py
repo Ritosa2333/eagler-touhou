@@ -53,41 +53,41 @@ def main() -> int:
             page.wait_for_function("window.__eaglerBoot?.done === true")
             page.wait_for_timeout(800)
             page.evaluate("""() => {
-              document.getElementById('changelogDialog')?.close();
+              document.getElementById('firstUseNoticeDialog')?.close();
               document.getElementById('siteNotice').hidden = true;
             }""")
             page.wait_for_timeout(240)
-            assert page.locator("#changelogEdgeCue").count() == 0
+            assert page.locator("#firstUseNoticeEdgeCue").count() == 0
             assert page.locator("#mpSettingsRoomDrawerToggle").is_hidden()
             artifact_dir = os.environ.get("EAGLER_EDGE_DRAWER_ARTIFACT_DIR")
             if artifact_dir:
                 Path(artifact_dir).mkdir(parents=True, exist_ok=True)
-                page.screenshot(path=str(Path(artifact_dir) / "changelog-cue-closed.png"), full_page=True)
+                page.screenshot(path=str(Path(artifact_dir) / "first-use-notice-cue-closed.png"), full_page=True)
 
             swipe(page, (428, 320), (348, 321))
-            page.wait_for_function("document.getElementById('changelogDialog')?.open === true")
-            page.locator("#changelogCloseHint").click()
-            page.wait_for_function("document.getElementById('changelogDialog')?.open === false")
+            page.wait_for_function("document.getElementById('firstUseNoticeDialog')?.open === true")
+            page.locator("#firstUseNoticeCloseHint").click()
+            page.wait_for_function("document.getElementById('firstUseNoticeDialog')?.open === false")
 
             swipe(page, (428, 320), (348, 321))
-            page.wait_for_function("document.getElementById('changelogDialog')?.open === true")
+            page.wait_for_function("document.getElementById('firstUseNoticeDialog')?.open === true")
             page.wait_for_timeout(320)
-            changelog_box = page.locator("#changelogDialog").bounding_box()
-            assert changelog_box and abs(changelog_box["x"] + changelog_box["width"] - 430) < 1.5, changelog_box
-            backdrop = page.locator("#changelogDialog").evaluate(
+            first_use_notice_box = page.locator("#firstUseNoticeDialog").bounding_box()
+            assert first_use_notice_box and abs(first_use_notice_box["x"] + first_use_notice_box["width"] - 430) < 1.5, first_use_notice_box
+            backdrop = page.locator("#firstUseNoticeDialog").evaluate(
                 "element => getComputedStyle(element, '::backdrop').backgroundColor"
             )
             assert backdrop in ("rgba(0, 0, 0, 0)", "transparent"), backdrop
-            heading_style = page.locator("#changelogText .changelog-item h2").first.evaluate(
+            heading_style = page.locator("#firstUseNoticeText .first-use-notice-item h2").first.evaluate(
                 "element => ({ size: parseFloat(getComputedStyle(element).fontSize), weight: parseInt(getComputedStyle(element).fontWeight, 10) })"
             )
             assert heading_style["size"] >= 21 and heading_style["weight"] >= 700, heading_style
             if artifact_dir:
                 Path(artifact_dir).mkdir(parents=True, exist_ok=True)
-                page.screenshot(path=str(Path(artifact_dir) / "changelog-right.png"), full_page=True)
+                page.screenshot(path=str(Path(artifact_dir) / "first-use-notice-right.png"), full_page=True)
 
             swipe(page, (90, 320), (170, 321))
-            page.wait_for_function("document.getElementById('changelogDialog')?.open === false")
+            page.wait_for_function("document.getElementById('firstUseNoticeDialog')?.open === false")
 
             swipe(page, (2, 600), (82, 601))
             page.wait_for_function("document.getElementById('siteNotice')?.hidden === false")
@@ -103,7 +103,7 @@ def main() -> int:
             result = {
                 "pass": True,
                 "viewport": [430, 820],
-                "changelog": {"side": "right", "box": changelog_box, "backdrop": backdrop, "heading": heading_style},
+                "firstUseNotice": {"side": "right", "box": first_use_notice_box, "backdrop": backdrop, "heading": heading_style},
                 "cue": "removed",
                 "notice": {"side": "left", "box": notice_box},
                 "gestures": ["right-edge-reveal", "bottom-hint-close", "right-retract", "left-edge-reveal", "left-retract"],
