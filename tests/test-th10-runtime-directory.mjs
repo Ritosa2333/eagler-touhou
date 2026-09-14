@@ -17,7 +17,7 @@ for (const name of names) {
 for (const path of ['../outside.js', 'runtime/../../outside.js', 'data/th10.exe', 'native/any.dll', '/runtime/a.js', 'runtime/any.data']) {
   assert.throws(() => runtimeFileNames('th10', {...manifest.files, [path]: {bytes: 1, sha256: '0'.repeat(64)}}));
 }
-const incomplete = {...manifest.files}; delete incomplete['runtime/native-worker.mjs'];
+const incomplete = {...manifest.files}; delete incomplete['runtime/gles-main.mjs'];
 assert.throws(() => runtimeFileNames('th10', incomplete));
 assert.throws(() => runtimeFileNames('th06', {'th06.html': {}, 'th06.js': {}, 'th06.wasm': {}, 'runtime/x.js': {}}));
 assert.deepEqual(runtimeFileNames('th06', {'th06.html': {}, 'th06.js': {}, 'th06.wasm': {}}), ['th06.html', 'th06.js', 'th06.wasm']);
@@ -25,4 +25,4 @@ assert.deepEqual(PRODUCT_GAMES.th10.requiredShared, []);
 const files = runtimeAppShellPaths({games: {th10: {runtime: 'runtime/th10/th10.html?hosted=1&v=test'}}});
 for (const path of PRODUCT_GAMES.th10.runtimeAssets) assert.ok(files.includes(`runtime/th10/${path}`));
 assert.ok(!files.includes('runtime/th10/th10.js'));
-console.log(JSON.stringify({th10DirectoryRuntime: 'PASS', verifiedFiles: names.length, executableContentRejected: true, wasiRuntimeContract: true}));
+console.log(JSON.stringify({th10DirectoryRuntime: 'PASS', verifiedFiles: names.length, executableContentRejected: true, sdl3GlesRuntimeContract: true}));
