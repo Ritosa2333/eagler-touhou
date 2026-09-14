@@ -8,6 +8,7 @@ import { runtimeFileNames } from "../lib/runtime-release.mjs";
 import { RELEASE_CATALOG_FILE, releaseCatalogEntryUrl, validateReleaseCatalog } from "../lib/contracts/release-catalog.mjs";
 import { HOST_MANIFEST_FILE, validateHostManifest } from "../lib/contracts/host-manifest.mjs";
 import { extractGameDataLayout } from "../lib/runtime-data-layout.mjs";
+import { assertRuntimeDataShell } from "../lib/runtime-data-provider.mjs";
 import { verifyReleaseManifest } from "../lib/release-manifest.mjs";
 import {
   RESOURCE_MODE_EXTERNAL,
@@ -170,7 +171,7 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
     if (bytes.length !== expected.bytes || createHash("sha256").update(bytes).digest("hex") !== expected.sha256) throw new Error(`${game}: stale Runtime asset: ${name}`);
   }
   const shell = await readFile(resolve(runtimeRoot, `${game}.html`), "utf8");
-  if (!shell.includes("window.parent.__eaglerPrepareManagedRuntimeDataV1")) throw new Error(`${game}: missing managed DATA contract`);
+  assertRuntimeDataShell(shell, game, "normal");
   const identity = entry.gameData;
   if (!Number.isSafeInteger(identity?.bytes) || identity.bytes <= 0 || !/^[a-f0-9]{64}$/.test(identity.sha256) ||
       identity.path !== `${game}.data` || identity.version !== `sha256-${identity.sha256}`) throw new Error(`${game}: invalid DATA identity`);

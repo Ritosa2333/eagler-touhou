@@ -33,9 +33,11 @@ export async function writeSyntheticRuntimeRelease(root) {
     for (const [key, runtimeRoot, variant] of variants) {
       const target = resolve(root, runtimeRoot);
       await mkdir(target, { recursive: true });
-      const html = Buffer.from(product.dataProvider === "emscripten-preload"
-        ? `<script>window.parent.__eaglerPrepareManagedRuntimeDataV1;Module.getPreloadedPackage;</script>${variant}`
-        : `<script>window.parent.__eaglerPrepareManagedRuntimeDataV1;</script>${variant}`);
+      const html = Buffer.from(product.runtimeFileLayout === "directory"
+        ? `<meta name="eagler-data-provider" content="${product.dataProvider}">${variant}`
+        : product.dataProvider === "emscripten-preload"
+          ? `<script>window.parent.__eaglerPrepareManagedRuntimeDataV1;Module.getPreloadedPackage;</script>${variant}`
+          : `<script>window.parent.__eaglerPrepareManagedRuntimeDataV1;</script>${variant}`);
       const js = Buffer.from(preload?.script || `globalThis.__fixture=${JSON.stringify(game)};`);
       const wasm = Buffer.from(`${game}:${variant}:wasm`);
       const payloads = product.runtimeFileLayout === "directory"
