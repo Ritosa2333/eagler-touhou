@@ -56,6 +56,7 @@ const localAppShellOptions = {
   quiet: true,
   globDirectory: servedApp,
   additionalGlobPatterns: APP_SHELL_RUNTIME_GLOBS,
+  deferredPathPrefixes: ["runtime/"],
 };
 const isRuntimeAppShellPath = value => /^runtime\/(?:.*\.(?:html|js|wasm))$/i.test(
   String(value || "").replaceAll("\\", "/")

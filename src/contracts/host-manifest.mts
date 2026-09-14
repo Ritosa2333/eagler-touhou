@@ -40,6 +40,22 @@ export interface HostOggManifest {
   [key: string]: unknown;
 }
 
+export interface HostLanguagePack {
+  url: string;
+  bytes: number;
+  sha256: string;
+  runtimeVersion: string;
+  files?: number;
+  [key: string]: unknown;
+}
+
+export interface HostLanguageOption {
+  id: string;
+  title?: string;
+  pack: HostLanguagePack | null;
+  [key: string]: unknown;
+}
+
 export interface HostGameManifest {
   runtime: string;
   multiplayerRuntime?: string;
@@ -50,8 +66,8 @@ export interface HostGameManifest {
     [key: string]: unknown;
   };
   features?: HostRuntimeFeatures;
-  languageOptions?: unknown;
-  languages?: unknown;
+  languageOptions?: HostLanguageOption[];
+  languages?: HostLanguageOption[];
   offlineCompatibility?: unknown;
   [key: string]: unknown;
 }
@@ -117,6 +133,50 @@ function validOggManifest(value: unknown): value is HostOggManifest | null | und
     sha256.every(hash => typeof hash === "string" && SHA256.test(hash));
 }
 
+function validLanguagePack(value: unknown): value is HostLanguagePack {
+  return isRecord(value) && typeof value.url === "string" && !!value.url &&
+    Number.isSafeInteger(value.bytes) && Number(value.bytes) > 0 &&
+    typeof value.sha256 === "string" && SHA256.test(value.sha256) &&
+    typeof value.runtimeVersion === "string" && !!value.runtimeVersion &&
+    (value.files == null || (Number.isSafeInteger(value.files) && Number(value.files) >= 0));
+}
+
+function sameLanguagePack(left: HostLanguagePack, right: HostLanguagePack): boolean {
+  return left.url === right.url && left.bytes === right.bytes &&
+    left.sha256.toLowerCase() === right.sha256.toLowerCase() &&
+    left.runtimeVersion === right.runtimeVersion && left.files === right.files;
+}
+
+function validLanguageCatalogs(value: UnknownRecord): boolean {
+  const hasLanguages = value.languages != null;
+  const hasOptions = value.languageOptions != null;
+  // Development and old third-party schema-1 manifests may omit both fields.
+  if (!hasLanguages && !hasOptions) return true;
+  if (!Array.isArray(value.languages) || !Array.isArray(value.languageOptions)) return false;
+
+  const packaged = new Map<string, HostLanguagePack>();
+  for (const raw of value.languages) {
+    if (!isRecord(raw) || typeof raw.id !== "string" || !raw.id || raw.id === "ja" ||
+        packaged.has(raw.id) || !validLanguagePack(raw.pack)) return false;
+    packaged.set(raw.id, raw.pack);
+  }
+
+  const selectable = new Set<string>();
+  let japanese = 0;
+  for (const raw of value.languageOptions) {
+    if (!isRecord(raw) || typeof raw.id !== "string" || !raw.id || selectable.has(raw.id)) return false;
+    selectable.add(raw.id);
+    if (raw.id === "ja") {
+      if (raw.pack != null) return false;
+      japanese++;
+      continue;
+    }
+    const pack = packaged.get(raw.id);
+    if (!pack || !validLanguagePack(raw.pack) || !sameLanguagePack(pack, raw.pack)) return false;
+  }
+  return japanese === 1 && selectable.size === packaged.size + 1;
+}
+
 function validOfflineCompatibility(item: UnknownRecord, resourceMode: ResourceMode, gameId: GameId): boolean {
   if (resourceMode !== RESOURCE_MODE_IMPORT) return true;
   const compatibility = item.offlineCompatibility;
@@ -164,6 +224,7 @@ function validGame(gameId: string, value: unknown, resourceMode: ResourceMode): 
     Number.isSafeInteger(gameData.bytes) && Number(gameData.bytes) > 0 &&
     typeof gameData.sha256 === "string" && SHA256.test(gameData.sha256) &&
     validExternalPackage && validHostRuntimeFeatures(value.features) && validOggManifest(music.ogg) &&
+    validLanguageCatalogs(value) &&
     validOfflineCompatibility(value, resourceMode, gameId);
 }
 

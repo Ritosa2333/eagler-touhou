@@ -30,6 +30,32 @@ export interface DirectTouchPoint {
 export type DirectTouchType = "down" | "move" | "up";
 export type ThpracMouseType = "move" | "down" | "up";
 
+export interface HostedKeySpec {
+  code: string;
+  key: string;
+  keyCode: number;
+  location?: number;
+}
+
+export function postHostedKey(
+  context: Pick<TouchRuntimeContext, "target" | "targetOrigin" | "protocol" | "game" | "launched">,
+  spec: HostedKeySpec,
+  down: boolean,
+): boolean {
+  if (!context.launched || !context.target) return false;
+  context.target.postMessage({
+    protocol: context.protocol,
+    game: context.game,
+    command: "keyboard",
+    down,
+    code: spec.code,
+    key: spec.key,
+    keyCode: spec.keyCode,
+    location: spec.location ?? 0,
+  }, context.targetOrigin);
+  return true;
+}
+
 export function postTouchControls(
   context: TouchRuntimeContext,
   controls: TouchControlsSnapshot,

@@ -51,7 +51,9 @@ assert.match(index, /id="uiLanguageSelect"/);
 assert.match(index, /data-i18n="nav\.lessMotion"/);
 assert.match(index, /<title data-i18n="site\.documentTitle">网页上的东方原作 ~ EAGLER TOUHOU<\/title>/);
 assert.match(index, /<meta name="description"[^>]+data-i18n-content="site\.description">/);
-assert.ok(FRONTEND_PACKAGE_FILES.includes("assets/launcher/i18n.mjs"),
-  "the browser i18n owner must be part of the published frontend closure");
+assert.ok(FRONTEND_PACKAGE_FILES.includes("assets/launcher/app.mjs"),
+  "the optimized Launcher bundle containing the i18n owner must be published");
+assert.ok(FRONTEND_PACKAGE_FILES.includes("en.html"),
+  "the English UI must have an independently crawlable document");
 
 console.log(JSON.stringify({ locales: UI_LOCALES, keys: keys.length, catalogs: "PASS", launcherControl: "PASS" }));

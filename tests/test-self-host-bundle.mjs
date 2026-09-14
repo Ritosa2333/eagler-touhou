@@ -56,14 +56,19 @@ for (const file of FRONTEND_PACKAGE_FILES) {
   const source = relative(project, resolveFrontendPackageSource(file)).replaceAll("\\", "/");
   assert.equal(targets.get(file), source, `frontend publication input is missing from self-host bundle: ${file}`);
 }
-for (const file of ["index.html", "app.js", "styles.css", "assets/notice-github.svg", "vendor/fflate.min.js"]) {
+for (const file of ["app.js", "assets/notice-github.svg", "vendor/fflate.min.js"]) {
   assert.equal(targets.get(file), `public/${file}`,
     `authored browser source must be copied from public/ without changing its self-host target: ${file}`);
+}
+for (const file of ["index.html", "en.html", "styles.css"]) {
+  assert.match(targets.get(file), /^\.cache\/build\/optimized\//,
+    `optimized browser output must be used for ${file}`);
 }
 assert.ok([...targets.keys()].every(target => !target.startsWith("public/")),
   "the source-only public/ directory must not leak into self-host bundle targets");
 for (const required of [
-  "assets/launcher/remote-metadata.mjs",
+  "assets/launcher/app.mjs",
+  "assets/contracts/product-catalog.mjs",
   "host/build.mjs",
   "host/build-import.mjs",
   "host/lib/site-builder.mjs",
@@ -129,7 +134,7 @@ try {
     "self-host bundle must resolve browser facades from packaged root files",
   );
   const packagedManifest = await import(pathToFileURL(resolve(smokeRoot, "lib/frontend-manifest.mjs")).href);
-  assert.ok(packagedManifest.BROWSER_MODULE_FILES.includes("assets/launcher/app.mjs"));
+  assert.deepEqual(packagedManifest.BROWSER_MODULE_FILES, ["app.js", "assets/launcher/app.mjs"]);
 
   // A fresh bundle has no node_modules yet. Doctor must still reach its own
   // environment/input diagnostics instead of failing during module loading.

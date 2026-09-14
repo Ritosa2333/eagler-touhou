@@ -18,6 +18,7 @@ import {
 import { BUILD_AUTHORITY_PUBLICATION, classifyBuildProfile } from "../lib/build-profile.mjs";
 import { hostArtworkFiles } from "../lib/frontend-manifest.mjs";
 import { assertAppShellContract } from "../lib/app-shell-policy.mjs";
+import { assertLanguagePublicationConsistency } from "../lib/language-publication-contract.mjs";
 
 const workspace = fileURLToPath(new URL("../..", import.meta.url));
 const root = resolve(process.argv[2] || workspace, process.argv[2] ? "" : "dist/eagler-touhou-server");
@@ -267,14 +268,17 @@ const hostIndex = await readFile(resolve(root, "index.html"), "utf8");
 if (!/id="originMigrationOpen"[^>]+href="migrate\.html"[^>]+hidden/.test(hostIndex)) {
   throw new Error("inert origin migration entry missing from main UI");
 }
-if (!hostApp.includes("hostOriginMigrationAvailable(manifest, location.protocol)")) {
+if (!hostApp.includes("host-manifest-origin-migration-policy/1")) {
   throw new Error("main UI migration entry is not governed by the Host Manifest campaign");
 }
 if (!hostAppFacade.includes('import "./assets/launcher/app.mjs";')) {
   throw new Error("Launcher app.js facade does not delegate to the generated TypeScript artifact");
 }
 for (const mount of sharedFontMounts) {
-  if (!hostApp.includes(`target: "${mount}"`)) throw new Error(`host shared font target mismatch: ${mount}`);
+  const escapedMount = mount.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  if (!new RegExp(`target\\s*:\\s*["']${escapedMount}["']`).test(hostApp)) {
+    throw new Error(`host shared font target mismatch: ${mount}`);
+  }
 }
 for (const game of preloadGames) {
   const entry = games.games?.[game];
@@ -430,6 +434,7 @@ if (resourceMode === RESOURCE_MODE_EXTERNAL) {
     if (descriptor.game !== game || descriptor.revision !== published.revision || descriptor.revision !== revision) {
       throw new Error(`${game}: external Package Descriptor identity mismatch`);
     }
+    assertLanguagePublicationConsistency(game, entry, descriptor);
     for (const [fileId, file] of Object.entries(descriptor.files)) {
       if (!/^(?:games|shared)\//.test(file.source)) {
         throw new Error(`${game}: external Package source is outside redirect-owned routes: ${fileId}`);

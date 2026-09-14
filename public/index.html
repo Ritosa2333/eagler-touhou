@@ -1,7 +1,8 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-ui-locale="zh-CN">
 <head>
   <meta charset="utf-8">
+  <!-- site-metadata:start --><!-- site-metadata:end -->
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#10100f">
   <title data-i18n="site.documentTitle">网页上的东方原作 ~ EAGLER TOUHOU</title>
@@ -16,7 +17,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="icon" href="assets/th06.ico" type="image/x-icon">
   <link rel="manifest" href="site.webmanifest">
-  <link rel="preload" href="assets/fonts/chill-round-gothic-site-medium.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/chill-round-gothic-site-medium-critical.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="touch-guide.css" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="touch-guide.css"></noscript>
@@ -717,6 +718,7 @@
         <div class="touch-layout-setting-row"><label for="touchMovementMode" data-i18n="touch.movement">移动方法</label><select class="option-select" id="touchMovementMode" aria-label="移动方法" data-i18n-aria-label="touch.movement"><option value="touch" data-i18n="touch.movement.touch">触摸（推荐）</option><option value="touch-unlimited" data-i18n="touch.movement.unlimited">触摸（作弊，不限速）</option><option value="joystick" data-i18n="touch.movement.joystick">轮盘</option><option value="joystick-free" data-i18n="touch.movement.joystickFree">轮盘（无方向限制）</option></select></div>
         <div class="touch-layout-setting-row"><label for="touchFocusMode" data-i18n="touch.focusMethod">低速方法</label><select class="option-select" id="touchFocusMode" aria-label="低速方法" data-i18n-aria-label="touch.focusMethod"><option value="hold-button" data-i18n="touch.focus.hold">按钮（按住时低速）</option><option value="toggle-button" data-i18n="touch.focus.toggle">按钮（按下时切换状态）</option><option value="two-finger" data-i18n="touch.focus.twoFinger">双指</option></select></div>
         <div class="touch-layout-setting-row"><span><span data-i18n="touch.doubleTapBomb">双击 Bomb</span><small data-i18n="touch.doubleTapBombHint">在同一位置快速双击以使用 Bomb。</small></span><button class="option-switch" id="doubleTapBombToggle" type="button" role="switch" aria-checked="false"><i></i></button></div>
+        <div class="touch-layout-setting-row"><span><span>R</span><small data-i18n="touch.restartHint">在暂停菜单按下后，会重开本局。</small></span><button class="option-switch" id="restartButtonToggle" type="button" role="switch" aria-checked="false" aria-label="R"><i></i></button></div>
         <div class="touch-layout-setting-row"><span><span data-i18n="touch.thpracButtons">thprac 按键</span><small data-i18n="touch.thpracButtonsHint">显示模拟鼠标、作弊菜单和 Tab 按键。</small></span><button class="option-switch" id="thpracTouchControlsToggle" type="button" role="switch" aria-checked="false"><i></i></button></div>
         <div class="touch-layout-setting-row touch-sensitivity-row"><span class="touch-sensitivity-heading"><span data-i18n="touch.sensitivity">触控灵敏度</span> <output id="touchSensitivityValue">100%</output></span><small data-i18n="touch.sensitivityHint">手指拖动距离与自机目标移动距离的比例。在背景拖动可以预览效果。</small><div class="touch-sensitivity-presets" role="group" aria-label="触控灵敏度档位" data-i18n-aria-label="touch.sensitivityPresets"><button type="button" data-touch-sensitivity-preset="50">50%</button><button type="button" data-touch-sensitivity-preset="100">100%</button><button type="button" data-touch-sensitivity-preset="200">200%</button><button type="button" id="touchSensitivityCustomToggle" aria-expanded="false" data-i18n="touch.custom">自定义</button></div><label class="touch-sensitivity-custom" id="touchSensitivityCustom" for="touchSensitivity" hidden><span data-i18n="touch.customSensitivity">自定义灵敏度</span><input id="touchSensitivity" type="range" min="50" max="300" step="1" value="100" aria-label="自定义触控灵敏度" data-i18n-aria-label="touch.customSensitivity"></label></div>
         <div class="touch-layout-setting-row touch-layout-viewport-row"><span><span data-i18n="touch.viewportPosition">游戏画面位置</span><small data-i18n="touch.viewportHint">仅可水平调整，横屏和竖屏分别保存。</small></span><div class="touch-layout-viewport-actions"><button id="touchViewportAdjust" type="button" data-i18n="touch.adjustViewport">＋ 调整游戏画面</button><button id="touchViewportReset" type="button" data-i18n="action.reset">复位</button></div></div>
@@ -735,6 +737,7 @@
       <span class="touch-layout-resize-handle" aria-hidden="true">↘</span>
     </div>
     <button class="touch-escape" id="touchEscape" data-touch-layout-control="escape" type="button" aria-label="返回或暂停" title="ESC：返回或暂停" data-i18n-aria-label="touch.escapeAria" data-i18n-title="touch.escapeTitle">ESC<span class="touch-layout-resize-handle" aria-hidden="true">↘</span></button>
+    <button class="touch-restart" id="touchRestart" data-touch-layout-control="restart" type="button" aria-label="R" title="在暂停菜单按下后，会重开本局。" data-i18n-title="touch.restartTitle">R<span class="touch-layout-resize-handle" aria-hidden="true">↘</span></button>
     <button class="touch-thprac-input" id="touchThpracInput" data-touch-layout-control="thpracInput" type="button" aria-pressed="false" hidden><strong data-i18n="touch.mouse">模拟鼠标</strong><span class="touch-layout-resize-handle" aria-hidden="true">↘</span></button>
     <button class="touch-thprac-tab" id="touchThpracTab" data-touch-layout-control="thpracTab" data-thprac-key="Tab" type="button" hidden><strong>Tab</strong><small>Tracker</small><span class="touch-layout-resize-handle" aria-hidden="true">↘</span></button>
     <div class="touch-thprac-menu" id="touchThpracMenu" data-touch-layout-control="thpracMenu" hidden>
@@ -891,6 +894,7 @@
     </aside>
     <div class="game-viewport" id="gameViewport"><iframe id="gameFrame" title="Touhou game" allow="autoplay; fullscreen" tabindex="0"></iframe></div>
   </section>
+  <nav class="site-language-links" aria-label="Language"><a id="uiLanguageLink" href="en.html" hreflang="en" lang="en">English</a></nav>
   <noscript><p class="noscript-message">此启动器需要 JavaScript。你仍可查看<a href="faq.html">常见问题</a>和<a href="about.html">项目说明</a>。</p></noscript>
   <script>window.__eaglerBoot && window.__eaglerBoot.mark("app-module-request");</script>
   <script type="module" src="app.js"></script>

@@ -98,16 +98,20 @@ import {
   MUSIC_MODES as musicModes,
   TOUCH_FOCUS_MODES as touchFocusModes,
   TOUCH_MOVEMENT_MODES as touchMovementModes,
+  applySharedTouchPreferences,
   loadStoredGamePreferences,
   loadStoredLanguagePreference,
+  loadOrInitializeSharedTouchPreferences,
   isMusicMode,
   isTouchMovementMode,
   isTouchFocusMode,
   persistStoredGamePreferences,
+  persistSharedTouchPreferences,
   touchMovementUsesJoystick,
 } from "./game-preferences.mjs";
 import {
   postDirectTouch as postRuntimeDirectTouch,
+  postHostedKey as postRuntimeHostedKey,
   postThpracMouse as postRuntimeThpracMouse,
   postTouchCancel as postRuntimeTouchCancel,
   postTouchControls as postRuntimeTouchControls,
@@ -225,6 +229,19 @@ const launcherDocument = document as LauncherDocument;
 const bootWatchdog = launcherWindow.__eaglerBoot || null;
 bootWatchdog?.mark("app-module-executing");
 initUiLocale();
+
+function loadDeferredUiFonts() {
+  if (document.querySelector('link[data-deferred-ui-fonts]')) return;
+  const stylesheet = document.createElement("link");
+  stylesheet.rel = "stylesheet";
+  stylesheet.href = "ui-fonts-deferred.css";
+  stylesheet.dataset.deferredUiFonts = "true";
+  document.head.append(stylesheet);
+}
+
+for (const event of ["pointerdown", "keydown"] as const) {
+  window.addEventListener(event, loadDeferredUiFonts, { capture: true, once: true, passive: true });
+}
 
 const brandUpdateAge = document.querySelector<HTMLTimeElement>("#brandUpdateAge");
 let appliedAppShellUpdatedAt: number | null = null;
@@ -846,16 +863,23 @@ async function migrateLegacyStoredImports() {
     }
   }
 }
-await migrateLegacyStoredImports();
-await Promise.all(Object.keys(manifest.games).filter(isGameId).map(async gameId => {
-  try {
-    const installed = await readCurrentPackageGeneration(gameId);
-    if (installed?.generation) installedPackageSnapshots.set(gameId, installed.generation);
-  } catch {}
-}));
-// This is the safe GC boundary: no Player/Runtime exists yet, so generations
-// that are no longer current/pending cannot still be serving lazy resources.
-try { await garbageCollectPackageStore(); } catch {}
+// Storage maintenance must never hold the Launcher boot screen hostage. Edge
+// can take seconds to open or recover a large IndexedDB database. Hydrate the
+// installed-package hints in the background; launch paths still read the
+// authoritative Package Store before using a generation.
+void (async () => {
+  await migrateLegacyStoredImports();
+  await Promise.all(Object.keys(manifest.games).filter(isGameId).map(async gameId => {
+    try {
+      const installed = await readCurrentPackageGeneration(gameId);
+      if (installed?.generation) installedPackageSnapshots.set(gameId, installed.generation);
+    } catch {}
+  }));
+  // No Player/Runtime existed when this maintenance task was queued. Package
+  // leases still protect a Runtime that starts before the task reaches GC.
+  try { await garbageCollectPackageStore(); } catch {}
+  render();
+})().catch(error => console.warn("local Package Store hydration deferred", error));
 
 async function fetchJsonWithTimeout(path: string, timeoutMs = 12000, meta: UnknownRecord = {}): Promise<unknown> {
   const controller = new AbortController();
@@ -904,6 +928,7 @@ function applyHostManifest(value: unknown) {
   // before render() asks game() for music and feature capabilities.
   selectAvailableHostProduct(nextManifest);
   if (originMigrationOpen) {
+    originMigrationOpen.dataset.policy = "host-manifest-origin-migration-policy/1";
     originMigrationOpen.hidden = !hostOriginMigrationAvailable(manifest, location.protocol);
   }
   serverResourceMode = manifest.shared?.resourceMode || "hosted";
@@ -1365,7 +1390,10 @@ function restoreGamePreferences(gameId: GameId, preferenceId: ProductId = gameId
       webAudioAvailable,
     },
   });
-  state.options = normalized.options;
+  state.options = applySharedTouchPreferences(
+    normalized.options,
+    loadOrInitializeSharedTouchPreferences(localStorage, normalized.options),
+  );
   state.musicPreferenceExplicit = normalized.musicPreferenceExplicit;
   state.musicPreference = normalized.musicPreference;
   state.music = normalized.music;
@@ -1379,6 +1407,7 @@ function restoreGamePreferences(gameId: GameId, preferenceId: ProductId = gameId
 }
 function saveGamePreferences() {
   const preferenceId = currentPreferenceId();
+  persistSharedTouchPreferences(localStorage, state.options);
   persistStoredGamePreferences({
     storage: localStorage,
     preferenceId,
@@ -1423,9 +1452,9 @@ const buttonElementSelectors = [
   "#appleRefreshClose", "#transferCancel", "#transferRetry", "#gameDataImportClose",
   "#transferImport", "#transferDownload", "#gameDataLinkClose", "#touchLayoutOrientationHelpOpen",
   "#touchLayoutReset", "#touchLayoutSave", "#touchLayoutExit", "#doubleTapBombToggle",
-  "#thpracTouchControlsToggle", "#touchSensitivityCustomToggle", "#touchViewportAdjust",
+  "#restartButtonToggle", "#thpracTouchControlsToggle", "#touchSensitivityCustomToggle", "#touchViewportAdjust",
   "#touchViewportReset", "#touchViewportDone", "#touchFocus", "#touchFire",
-  "#touchBomb", "#touchEscape", "#touchThpracInput", "#touchThpracTab",
+  "#touchBomb", "#touchEscape", "#touchRestart", "#touchThpracInput", "#touchThpracTab",
   "#touchThpracBackspace", "#touchHelpOpen", "#touchHelpClose", "#guideTabOrientation",
   "#guideTabGameControls", "#guideTabFocus", "#guideTabMenu", "#guideTabDialogue",
   "#guideTabThprac", "#orientationToggle", "#gameZoomToggle", "#fullscreenToggle",
@@ -3017,6 +3046,39 @@ function runtimeUrl() {
   }
   return entry.runtime;
 }
+
+function offlineRuntimePaths(gameId: GameId): string[] {
+  const runtime = manifest.games[gameId]?.runtime;
+  if (typeof runtime !== "string" || !runtime) return [];
+  const url = new URL(runtime, location.href);
+  const product = PRODUCT_GAMES[gameId];
+  if ("runtimeFileLayout" in product && product.runtimeFileLayout === "directory" && "runtimeAssets" in product) {
+    const directory = url.pathname.slice(0, url.pathname.lastIndexOf("/") + 1);
+    return product.runtimeAssets.map((name: string) => `${directory}${name}`);
+  }
+  return ["html", "js", "wasm"].map(extension => url.pathname.replace(/\.html$/i, `.${extension}`));
+}
+
+async function cacheRuntimeForOffline(gameId: GameId) {
+  if (!("serviceWorker" in navigator)) return;
+  await appShellClient?.ready;
+  const registration = await navigator.serviceWorker.getRegistration("./").catch(() => null);
+  const worker = navigator.serviceWorker.controller || registration?.active;
+  const paths = offlineRuntimePaths(gameId);
+  if (!worker || !paths.length) return;
+  const channel = new MessageChannel();
+  const result = new Promise<{ ok?: boolean; error?: string }>((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error(`${gameId}: Runtime offline cache timed out`)), 120_000);
+    channel.port1.onmessage = event => {
+      window.clearTimeout(timer);
+      resolve(event.data || {});
+    };
+  });
+  worker.postMessage({ type: "CACHE_APP_SHELL_PATHS", paths }, [channel.port2]);
+  const response = await result;
+  if (!response.ok) throw new Error(response.error || `${gameId}: Runtime offline cache failed`);
+}
+
 function musicPackage() {
   const transport = musicTransportMode(state.music);
   return !transport || transport === "none" ? { files: [] } : game().music[transport];
@@ -3258,7 +3320,25 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
   try {
     launchMusicFallback = null;
     chooseDefaultMusic();
-    const runtimePack = await prepareLanguagePack();
+    let launchLanguage = state.language;
+    let runtimePack: Awaited<ReturnType<typeof prepareLanguagePack>> = null;
+    try {
+      runtimePack = await prepareLanguagePack();
+    } catch (error) {
+      if (isCancelledDownload(error)) throw error;
+      const requestedLanguage = entryTitle(languageEntry());
+      // A translation is optional content. Keep the durable preference so a
+      // later online launch can retry it, but never let a missing CDN object or
+      // an incomplete local Package prevent otherwise-valid game DATA from
+      // starting in the built-in Japanese language.
+      launchLanguage = "ja";
+      hideTransfer();
+      showToast(t("language.launchFallback", {
+        language: requestedLanguage,
+        reason: errorMessage(error),
+      }));
+      console.warn(`${state.game}: language pack unavailable; using Japanese for this launch`, error);
+    }
     assertSession();
     await ensureManagedOggStartupBarrier();
     assertSession();
@@ -3269,7 +3349,7 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
     const localMusicResources = isOggMusicMode(state.music) && musicResources.length > 0 &&
       musicResources.every(isLocalMusicResource) ? musicResources : null;
     const localMusicGeneration = localMusicResources ? activeInstalledPackageGeneration : null;
-    const shared = await selectedSharedResources();
+    const shared = await selectedSharedResources(launchLanguage);
     const packageResources = await installedPackageRuntimeResources();
     assertSession();
     setPlayerStatus(t("runtime.preparingResources", { resource: runtimePack ? `${entryTitle(languageEntry())} ${t("settings.language")}` : `${musicModeLabel(state.music)} ${t("settings.music")}` }));
@@ -3288,7 +3368,7 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
       runtimePack: runtimePack ? { ...runtimePack, manifest: runtimePack.manifest, files: runtimePack.files } : null,
       sharedResources: shared,
       options: { ...state.options, thpracEnabled: state.runtimeVariant === "normal" && state.options.thpracEnabled,
-        limitPresentationTo60: state.options.frameLimit60Enabled, debugHarness, thpracLocale: thpracLocaleForLanguage(state.language),
+        limitPresentationTo60: state.options.frameLimit60Enabled, debugHarness, thpracLocale: thpracLocaleForLanguage(launchLanguage),
         oggDecodeMode: oggDecodeMode(state.music),
         unlimitedTouch: state.options.touchMovementMode === "touch-unlimited",
         touchBombZoneEnabled: false,
@@ -3757,7 +3837,7 @@ function render() {
   $("#th06HitboxOption").hidden = !gameFeatureAvailable(state.game, "focusHitbox");
   $("#mobileOptions").classList.toggle("open", state.mobileOpen);
   $("#mobileOptionsToggle").setAttribute("aria-expanded", String(state.mobileOpen));
-  const switches = { thpracToggle: state.options.thpracEnabled, thpracTouchControlsToggle: state.options.thpracTouchControlsEnabled, magnifierToggle: state.options.magnifierEnabled, frameLimitToggle: state.options.frameLimit60Enabled, th06HitboxToggle: state.options.th06FocusHitbox, touchToggle: state.options.touchEnabled, doubleTapBombToggle: state.options.doubleTapBombEnabled, alwaysHitboxToggle: state.options.alwaysHitbox };
+  const switches = { thpracToggle: state.options.thpracEnabled, thpracTouchControlsToggle: state.options.thpracTouchControlsEnabled, restartButtonToggle: state.options.restartButtonEnabled, magnifierToggle: state.options.magnifierEnabled, frameLimitToggle: state.options.frameLimit60Enabled, th06HitboxToggle: state.options.th06FocusHitbox, touchToggle: state.options.touchEnabled, doubleTapBombToggle: state.options.doubleTapBombEnabled, alwaysHitboxToggle: state.options.alwaysHitbox };
   for (const [id, enabled] of Object.entries(switches)) {
     $("#" + id).setAttribute("aria-checked", String(enabled));
     $("#" + id).classList.toggle("on", enabled);
@@ -3813,6 +3893,7 @@ function render() {
   player.classList.toggle("touch-enabled", touchSurfaceVisible);
   player.classList.toggle("touch-joystick-enabled", wheelMovement && touchSurfaceVisible);
   $("#touchJoystick").hidden = !(wheelMovement && touchSurfaceVisible);
+  $("#touchRestart").hidden = !state.options.restartButtonEnabled;
   touchDirectSurface.hidden = !(hostDirectTouch && !spectatorRuntime && state.options.touchEnabled && !wheelMovement && !touchLayoutEditing && !thpracMouseMode);
   renderTouchActionState();
   const thpracControlsVisible = !spectatorRuntime && thpracTouchControlsVisible();
@@ -4531,6 +4612,11 @@ async function ensureInstalledPackageRuntime(show = true) {
   // generated Emscripten loader through Module.getPreloadedPackage.
   state.source = managedRuntimeUrl(runtimeUrl(), generation, state.runtimeVariant, location.href);
   if (show) openPlayerView();
+  // Offline readiness is a background enhancement. A newly installed or slow
+  // Service Worker must never delay iframe creation for an already-local
+  // Package; the Runtime's ordinary request can populate the same cache.
+  void cacheRuntimeForOffline(state.game).catch(error =>
+    console.warn(`${state.game}: Runtime background offline cache failed`, error));
   const runtimeReady = waitForRuntimeReady(runtimeSession, t("runtime.localLoadTimeout"));
   // App-owned same-origin Runtime URLs can commit and execute immediately.
   // Arm readiness/error listeners before navigation so a fast local Runtime
@@ -4888,7 +4974,7 @@ async function selectedMusicResources(): Promise<MusicResource[]> {
   });
 }
 
-async function selectedSharedResources() {
+async function selectedSharedResources(language = state.language) {
   if (activeInstalledPackageGeneration) return [];
   const shared = record(manifest.shared) ?? {};
   const vanillaFont = shared.vanillaFont;
@@ -4897,8 +4983,8 @@ async function selectedSharedResources() {
     throw new Error(t("runtime.sharedFontManifestInvalid"));
   }
   const wanted: Array<{ target: string; network: string }> = [];
-  if (state.language === "ja") wanted.push({ target: "/msgothic.ttc", network: vanillaFont });
-  if (state.language !== "ja" || state.options.thpracEnabled) wanted.push({ target: "/unifont.otf", network: unicodeFont });
+  if (language === "ja") wanted.push({ target: "/msgothic.ttc", network: vanillaFont });
+  if (language !== "ja" || state.options.thpracEnabled) wanted.push({ target: "/unifont.otf", network: unicodeFont });
   return wanted.map(item => ({ url: new URL(item.network, location.href).href, path: item.target }));
 }
 
@@ -7213,6 +7299,7 @@ $("#touchFocusMode").addEventListener("change", event => {
   if (isTouchFocusMode(value)) setOption("touchFocusMode", value);
 });
 $("#doubleTapBombToggle").addEventListener("click", () => setOption("doubleTapBombEnabled", !state.options.doubleTapBombEnabled));
+$("#restartButtonToggle").addEventListener("click", () => setOption("restartButtonEnabled", !state.options.restartButtonEnabled));
 $("#alwaysHitboxToggle").addEventListener("click", () => setOption("alwaysHitbox", !state.options.alwaysHitbox));
 $("#thpracTouchControlsToggle").addEventListener("click", () => {
   if (state.options.thpracEnabled)
@@ -7468,6 +7555,16 @@ async function triggerTouchEscape() {
   pushTouchControlsLive();
 }
 
+const restartKeySpec = Object.freeze({ code: "KeyR", key: "r", keyCode: 82 });
+
+function triggerTouchRestart() {
+  if (!state.launched) return;
+  const context = touchRuntimeMessageContext();
+  postRuntimeHostedKey(context, restartKeySpec, true);
+  setTimeout(() => postRuntimeHostedKey(context, restartKeySpec, false), 70);
+  refocusGameIfNeeded();
+}
+
 const thpracKeySpecs = Object.freeze({
   Tab: Object.freeze({ code: "Tab", key: "Tab", keyCode: 9 }),
   Backspace: Object.freeze({ code: "Backspace", key: "Backspace", keyCode: 8 }),
@@ -7481,27 +7578,18 @@ const thpracKeySpecs = Object.freeze({
 });
 
 type ThpracKeyName = keyof typeof thpracKeySpecs;
-type ThpracKeySpec = (typeof thpracKeySpecs)[ThpracKeyName];
 function isThpracKeyName(name: string | undefined): name is ThpracKeyName {
   return name !== undefined && Object.hasOwn(thpracKeySpecs, name);
 }
-function postHostedKey(spec: ThpracKeySpec, down: boolean) {
-  if (!state.launched || !frame.contentWindow) return;
-  frame.contentWindow.postMessage({
-    protocol, game: state.game, command: "keyboard", down,
-    code: spec.code, key: spec.key, keyCode: spec.keyCode, location: 0
-  }, location.origin);
-}
-
 function pulseThpracKey(name: string | undefined) {
   if (!thpracTouchControlsAvailable() || !state.launched) return;
   if (!isThpracKeyName(name)) return;
   const spec = thpracKeySpecs[name];
   if (!spec) return;
-  postHostedKey(spec, true);
+  postRuntimeHostedKey(touchRuntimeMessageContext(), spec, true);
   // OverlayKeyPressed samples at the fixed trainer tick. Hold the synthetic
   // key long enough to span several 60 Hz boundaries, then release it.
-  setTimeout(() => postHostedKey(spec, false), 70);
+  setTimeout(() => postRuntimeHostedKey(touchRuntimeMessageContext(), spec, false), 70);
   refocusGameIfNeeded();
 }
 
@@ -7551,6 +7639,7 @@ const touchActionButtons: Array<[HTMLButtonElement, () => void]> = [
   [$("#touchFire"), toggleTouchFire],
   [$("#touchBomb"), () => { void triggerTouchBomb(); }],
   [$("#touchEscape"), () => { void triggerTouchEscape(); }],
+  [$("#touchRestart"), triggerTouchRestart],
 ];
 for (const [button, activate] of touchActionButtons) {
   // Pointer-down is handled directly so the browser never transfers focus

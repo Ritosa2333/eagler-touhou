@@ -1,5 +1,5 @@
 export const touchLayoutStorageKey = "eagler-touhou-touch-layout-v1";
-export const touchLayoutVersion = 4;
+export const touchLayoutVersion = 5;
 
 export const touchLayoutControlMeta = Object.freeze({
   focus: Object.freeze({ id: "touchFocus", title: "低速", titleKey: "touch.focus", priority: 0 }),
@@ -7,9 +7,10 @@ export const touchLayoutControlMeta = Object.freeze({
   bomb: Object.freeze({ id: "touchBomb", title: "Bomb", priority: 2 }),
   joystick: Object.freeze({ id: "touchJoystick", title: "轮盘", titleKey: "touch.movement.joystick", priority: 3 }),
   escape: Object.freeze({ id: "touchEscape", title: "ESC", priority: 4 }),
-  thpracInput: Object.freeze({ id: "touchThpracInput", title: "模拟鼠标", titleKey: "touch.mouse", priority: 5 }),
-  thpracTab: Object.freeze({ id: "touchThpracTab", title: "Tab", priority: 6 }),
-  thpracMenu: Object.freeze({ id: "touchThpracMenu", title: "作弊菜单", titleKey: "touch.cheatMenu", priority: 7 }),
+  restart: Object.freeze({ id: "touchRestart", title: "R", priority: 5 }),
+  thpracInput: Object.freeze({ id: "touchThpracInput", title: "模拟鼠标", titleKey: "touch.mouse", priority: 6 }),
+  thpracTab: Object.freeze({ id: "touchThpracTab", title: "Tab", priority: 7 }),
+  thpracMenu: Object.freeze({ id: "touchThpracMenu", title: "作弊菜单", titleKey: "touch.cheatMenu", priority: 8 }),
 });
 
 export const touchLayoutScaleMin = 0.6;
@@ -47,6 +48,7 @@ export interface TouchLayoutStorage {
 export const touchLayoutControlNames = Object.freeze(Object.keys(touchLayoutControlMeta) as TouchLayoutControlName[]);
 const optionalLegacyControls = new Set<TouchLayoutControlName>([
   "joystick",
+  "restart",
   "thpracInput",
   "thpracTab",
   "thpracMenu",
@@ -146,7 +148,7 @@ export function normalizeTouchLayout(value: unknown): TouchLayout | null {
     };
   }
 
-  if (![2, 3, touchLayoutVersion].includes(Number(value.version)) || !isRecord(value.profiles)) return null;
+  if (![2, 3, 4, touchLayoutVersion].includes(Number(value.version)) || !isRecord(value.profiles)) return null;
   const profiles = {} as Record<TouchLayoutOrientation, TouchLayoutProfile | null>;
   for (const orientation of touchLayoutOrientations) {
     const profile = normalizeTouchLayoutProfile(value.profiles[orientation] ?? null);

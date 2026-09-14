@@ -63,6 +63,9 @@
     "test:import-update:browser": "python tests/browser/test-import-update.py",
     "test:card-filter:browser": "python tests/test-card-filter-browser.py",
     "test:edge-drawers:browser": "python tests/browser/test-edge-drawers.py",
+    "test:localized-entries:browser": "node tests/test-localized-entry-browser.mjs",
+    "test:language-fallback:browser": "python tests/test-language-fallback-browser.py",
+    "test:touch-settings:browser": "python tests/test-touch-settings-browser.py",
     "test:multiplayer-guide:browser": "python tests/browser/test-multiplayer-guide.py",
     "test:test-build-cards:browser": "node tests/test-test-build-cards-browser.mjs",
     "test:legacy-package:browser": "python tests/test-legacy-package-app-runtime-browser.py",
@@ -98,8 +101,10 @@
   "devDependencies": {
     "acorn": "8.18.0",
     "browserstack-local": "^1.5.13",
+    "esbuild": "0.28.2",
     "lighthouse": "13.4.1",
     "marked": "18.0.12",
+    "parse5": "8.0.1",
     "puppeteer-core": "25.10.0",
     "typescript": "7.0.2",
     "workbox-build": "^7.4.1"

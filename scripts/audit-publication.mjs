@@ -24,6 +24,8 @@ const publicAssets = new Set([
   "assets/fonts/unifont-site.woff2",
   "assets/fonts/OFL-Unifont.txt",
   "assets/fonts/yatra-one-latin.woff2", "assets/fonts/chill-round-gothic-site-medium.woff2", "assets/fonts/chill-round-gothic-site-bold.woff2", "assets/fonts/chill-round-gothic-site-heavy.woff2",
+  "assets/fonts/chill-round-gothic-site-medium-critical.woff2", "assets/fonts/chill-round-gothic-site-medium-deferred.woff2",
+  "assets/fonts/chill-round-gothic-site-bold-critical.woff2", "assets/fonts/chill-round-gothic-site-bold-deferred.woff2",
   "assets/fonts/OFL-YatraOne.txt", "assets/fonts/OFL-ChillRoundGothic.txt",
   "assets/fonts/NotoSansCJKsc-Regular.otf", "assets/fonts/OFL-NotoSansCJK.txt"
 ]);

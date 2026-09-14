@@ -13,6 +13,7 @@ export interface GameOptions {
   touchSensitivity: number;
   touchFocusMode: TouchFocusMode;
   doubleTapBombEnabled: boolean;
+  restartButtonEnabled: boolean;
   alwaysHitbox: boolean;
   enhanceLocalPlayerVisibility: boolean;
 }
@@ -28,6 +29,7 @@ export const DEFAULT_GAME_OPTIONS: Readonly<GameOptions> = Object.freeze({
   touchSensitivity: 100,
   touchFocusMode: "hold-button",
   doubleTapBombEnabled: false,
+  restartButtonEnabled: false,
   alwaysHitbox: false,
   enhanceLocalPlayerVisibility: false,
 });
@@ -56,10 +58,64 @@ export const gamePreferenceStorageKey = (preferenceId: string): string =>
   `eagler-touhou-game-options-v1-${preferenceId}`;
 export const languagePreferenceStorageKey = (preferenceId: string): string =>
   `eagler-touhou-language-v1-${preferenceId}`;
+export const sharedTouchPreferenceStorageKey = "eagler-touhou-touch-options-v1";
+
+export const SHARED_TOUCH_OPTION_NAMES = Object.freeze([
+  "touchMovementMode",
+  "touchSensitivity",
+  "touchFocusMode",
+  "doubleTapBombEnabled",
+  "restartButtonEnabled",
+  "thpracTouchControlsEnabled",
+] as const);
+
+export type SharedTouchOptionName = (typeof SHARED_TOUCH_OPTION_NAMES)[number];
+export type SharedTouchOptions = Pick<GameOptions, SharedTouchOptionName>;
 
 export interface GamePreferenceStorage {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
+}
+
+function sharedTouchOptionsFrom(options: GameOptions): SharedTouchOptions {
+  return Object.fromEntries(SHARED_TOUCH_OPTION_NAMES.map(name => [name, options[name]])) as SharedTouchOptions;
+}
+
+export function normalizeSharedTouchPreferences(value: unknown, fallback: GameOptions): SharedTouchOptions {
+  const saved = record(value);
+  const normalized = normalizeStoredGamePreferences({ options: { ...fallback, ...saved } }, {
+    thpracAvailable: true,
+    webAudioAvailable: true,
+  });
+  return Object.freeze(sharedTouchOptionsFrom(normalized.options));
+}
+
+export function applySharedTouchPreferences(options: GameOptions, shared: SharedTouchOptions): GameOptions {
+  // Launcher state intentionally mutates option fields before persisting and
+  // rendering them. Keep only the standalone shared snapshot immutable.
+  return { ...options, ...shared };
+}
+
+export function loadOrInitializeSharedTouchPreferences(
+  storage: GamePreferenceStorage | null,
+  fallback: GameOptions,
+): SharedTouchOptions {
+  const saved = readStoredJson(storage, sharedTouchPreferenceStorageKey);
+  const normalized = normalizeSharedTouchPreferences(saved, fallback);
+  if (saved == null && storage) {
+    try { storage.setItem(sharedTouchPreferenceStorageKey, JSON.stringify(normalized)); } catch {}
+  }
+  return normalized;
+}
+
+export function persistSharedTouchPreferences(
+  storage: GamePreferenceStorage | null,
+  options: GameOptions,
+): void {
+  if (!storage) return;
+  try {
+    storage.setItem(sharedTouchPreferenceStorageKey, JSON.stringify(sharedTouchOptionsFrom(options)));
+  } catch {}
 }
 
 export function touchMovementUsesJoystick(mode: unknown): boolean {
@@ -146,6 +202,7 @@ export function normalizeStoredGamePreferences(
     touchSensitivity,
     touchFocusMode: focusMode,
     doubleTapBombEnabled: booleanOption(rawOptions, "doubleTapBombEnabled", DEFAULT_GAME_OPTIONS.doubleTapBombEnabled),
+    restartButtonEnabled: booleanOption(rawOptions, "restartButtonEnabled", DEFAULT_GAME_OPTIONS.restartButtonEnabled),
     alwaysHitbox: booleanOption(rawOptions, "alwaysHitbox", DEFAULT_GAME_OPTIONS.alwaysHitbox),
     enhanceLocalPlayerVisibility: booleanOption(rawOptions, "enhanceLocalPlayerVisibility", DEFAULT_GAME_OPTIONS.enhanceLocalPlayerVisibility),
   };

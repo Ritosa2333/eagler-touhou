@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { validatePackageDescriptor } from "../package/package-descriptor.mjs";
+import { assertLanguagePublicationConsistency } from "../lib/language-publication-contract.mjs";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { RESOURCE_MODE_EXTERNAL, RESOURCE_MODE_HOSTED, RESOURCE_MODE_IMPORT, normalizeResourceMode } from "../lib/contracts/resource-mode.mjs";
 import { assertAppShellContract } from "../lib/app-shell-policy.mjs";
@@ -112,7 +113,7 @@ else if (!new TextDecoder().decode(appResult.bytes).includes('import "./assets/l
   failures.push("app.js: generated Launcher facade missing");
 }
 if (!appModuleResult) failures.push("assets/launcher/app.mjs: unavailable");
-else if (!new TextDecoder().decode(appModuleResult.bytes).includes("hostOriginMigrationAvailable(manifest, location.protocol)")) {
+else if (!new TextDecoder().decode(appModuleResult.bytes).includes("host-manifest-origin-migration-policy/1")) {
   failures.push("assets/launcher/app.mjs: migration entry is not governed by the Host Manifest campaign");
 }
 if (!migrationResult) failures.push("migrate.html: unavailable");
@@ -206,12 +207,22 @@ else {
         failures.push(`${game}: invalid external Package Descriptor: ${error?.message || error}`);
         continue;
       }
+      try { assertLanguagePublicationConsistency(game, games.games[game], descriptor); }
+      catch (error) {
+        failures.push(`${game}: ${error?.message || error}`);
+        continue;
+      }
+      const languageByFile = new Map((descriptor.components?.language?.entries || [])
+        .map(language => [language.file, games.games[game].languageOptions
+          .find(option => option.id === language.id)]));
       for (const [fileId, file] of Object.entries(descriptor.files)) {
         if (!/^(?:games|shared)\//.test(file.source)) {
           failures.push(`${game}/${fileId}: Package source is outside redirect-owned routes`);
           continue;
         }
-        const route = new URL(file.source, descriptorHref);
+        const language = languageByFile.get(fileId);
+        const route = new URL(language?.pack?.url || file.source, descriptorHref);
+        if (language?.pack?.sha256) route.searchParams.set("v", language.pack.sha256);
         try {
           const redirect = await fetch(route, { method: "HEAD", cache: "no-store", redirect: "manual" });
           const location = redirect.headers.get("location");
@@ -222,6 +233,7 @@ else {
           const allowOrigin = response.headers.get("access-control-allow-origin");
           if (allowOrigin !== "*" && allowOrigin !== base.origin) throw new Error("external response does not allow Launcher origin");
           const contentLengthHeader = response.headers.get("content-length");
+          if (language && contentLengthHeader == null) throw new Error("language response is missing Content-Length");
           if (contentLengthHeader != null) {
             const contentLength = Number(contentLengthHeader);
             if (!Number.isSafeInteger(contentLength) || contentLength !== file.bytes) {
@@ -244,6 +256,20 @@ else {
             throw new Error("external response does not expose Content-Range");
           }
           if ((await range.arrayBuffer()).byteLength !== 1) throw new Error("Range GET did not return exactly one byte");
+          if (language) {
+            const full = await fetch(route, {
+              method: "GET",
+              cache: "no-store",
+              redirect: "follow",
+              headers: { Origin: base.origin, "Accept-Encoding": "identity" },
+            });
+            if (!full.ok) throw new Error(`language GET failed: HTTP ${full.status}`);
+            const bytes = new Uint8Array(await full.arrayBuffer());
+            const sha256 = createHash("sha256").update(bytes).digest("hex");
+            if (bytes.length !== file.bytes || sha256 !== String(file.sha256).toLowerCase()) {
+              throw new Error("language GET identity mismatch");
+            }
+          }
         } catch (error) {
           failures.push(`${game}/${fileId}: ${error?.message || error}`);
         }

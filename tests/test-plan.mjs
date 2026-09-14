@@ -9,6 +9,7 @@
 export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-integrations.mjs",
   "tests/test-i18n.mjs",
+  "tests/test-site-metadata.mjs",
   "tests/test-test-ownership.mjs",
   "tests/test-thcrap-service.mjs",
   "tests/test-thcrap-compiler.mjs",
@@ -84,6 +85,7 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-offline-publication.mjs",
   "tests/test-release-catalog.mjs",
   "tests/test-host-manifest.mjs",
+  "tests/test-language-publication-contract.mjs",
   "tests/test-origin-migration.mjs",
   "tests/test-release-manifest.mjs",
   "tests/test-release-bundle.mjs",

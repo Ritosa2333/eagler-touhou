@@ -74,7 +74,22 @@ def main() -> int:
             addComponents: [],
             fetchImpl: fetch,
           });
-          await navigator.serviceWorker.ready;
+          const registration = await navigator.serviceWorker.ready;
+          const deployment = await fetch(new URL('deployment.json', location.href), { cache: 'no-store' }).then(r => r.json());
+          const prefix = `runtime/${game}/`;
+          const paths = deployment.appShell.entries.filter(path => path.startsWith(prefix));
+          const channel = new MessageChannel();
+          const prepared = new Promise((resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error('Runtime offline cache timed out')), 120000);
+            channel.port1.onmessage = event => {
+              clearTimeout(timer);
+              if (event.data?.ok) resolve(event.data);
+              else reject(new Error(event.data?.error || 'Runtime offline cache failed'));
+            };
+          });
+          (navigator.serviceWorker.controller || registration.active).postMessage(
+            { type: 'CACHE_APP_SHELL_PATHS', paths }, [channel.port2]);
+          await prepared;
           const runtimePath = game === 'th07' ? 'runtime/th07/th07.html' : 'runtime/th06/th06.html';
           const runtimeUrl = new URL(runtimePath, location.href).href;
           const cachedRuntime = !!(await caches.match(runtimeUrl));

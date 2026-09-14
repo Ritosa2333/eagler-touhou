@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import {
   postDirectTouch,
+  postHostedKey,
   postThpracMouse,
   postTouchCancel,
   postTouchControls,
@@ -30,6 +31,19 @@ const controls = {
   joystickX: -1234,
   joystickY: 5678,
 };
+
+assert.equal(postHostedKey({ ...ready, launched: false }, { code: "KeyR", key: "r", keyCode: 82 }, true), false);
+assert.equal(postHostedKey(ready, { code: "KeyR", key: "r", keyCode: 82 }, true), true);
+assert.deepEqual(sent.pop().message, {
+  protocol: "eagler-touhou/1",
+  game: "th07",
+  command: "keyboard",
+  down: true,
+  code: "KeyR",
+  key: "r",
+  keyCode: 82,
+  location: 0,
+});
 
 assert.equal(postTouchControls({ ...ready, launched: false }, controls, 150), false);
 assert.equal(postTouchControls({ ...ready, ready: false }, controls, 150), false);

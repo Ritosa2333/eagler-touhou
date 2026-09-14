@@ -20,6 +20,22 @@ const game = {
   features: { thprac: true, focusHitbox: true },
 };
 
+const languagePack = {
+  url: "games/th06/language/lang_en.zip",
+  bytes: 42,
+  sha256: "c".repeat(64),
+  runtimeVersion: "independent",
+  files: 3,
+};
+const gameWithLanguages = {
+  ...game,
+  languages: [{ id: "lang_en", title: "English", pack: languagePack }],
+  languageOptions: [
+    { id: "ja", title: "Japanese", pack: null },
+    { id: "lang_en", title: "English", pack: { ...languagePack } },
+  ],
+};
+
 const hosted = validateHostManifest({
   schema: HOST_MANIFEST_SCHEMA,
   protocol: "eagler-touhou/1",
@@ -56,6 +72,16 @@ assert.doesNotThrow(() => validateHostManifest({
   ...hosted,
   games: { th06: { ...game, features: undefined } },
 }));
+assert.doesNotThrow(() => validateHostManifest({ ...hosted, games: { th06: gameWithLanguages } }));
+for (const broken of [
+  { ...gameWithLanguages, languageOptions: gameWithLanguages.languageOptions.map(item => item.id === "lang_en"
+    ? { ...item, pack: { ...languagePack, url: "games/th06/language/missing.zip" } } : item) },
+  { ...gameWithLanguages, languageOptions: [{ id: "ja", pack: null }] },
+  { ...gameWithLanguages, languages: [...gameWithLanguages.languages, gameWithLanguages.languages[0]] },
+  { ...gameWithLanguages, languageOptions: [{ id: "ja", pack: languagePack }, gameWithLanguages.languageOptions[1]] },
+]) {
+  assert.throws(() => validateHostManifest({ ...hosted, games: { th06: broken } }), /games/);
+}
 
 const external = validateHostManifest({
   ...hosted,

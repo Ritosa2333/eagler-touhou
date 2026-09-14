@@ -289,6 +289,21 @@ for (const test of cases) {
   if (context.Module.eaglerControls.keyboardBits !== 0) {
     throw new Error(`${test.game}: legacy DOM keyCode ArrowUp fallback was not released`);
   }
+  const restartBit = 1 << (test.game === "th06" ? 13 : 14);
+  await message({ origin: context.location.origin, source: parent, data: {
+    protocol: "eagler-touhou/1", game: test.game, command: "keyboard",
+    down: true, code: "KeyR", key: "r", keyCode: 82, location: 0
+  } });
+  if (context.Module.eaglerControls.keyboardBits !== restartBit) {
+    throw new Error(`${test.game}: hosted KeyR restart was not asserted`);
+  }
+  await message({ origin: context.location.origin, source: parent, data: {
+    protocol: "eagler-touhou/1", game: test.game, command: "keyboard",
+    down: false, code: "KeyR", key: "r", keyCode: 82, location: 0
+  } });
+  if (context.Module.eaglerControls.keyboardBits !== 0) {
+    throw new Error(`${test.game}: hosted KeyR restart was not released`);
+  }
   await message({ origin: context.location.origin, source: parent, data: {
     protocol: "eagler-touhou/1", game: test.game, command: "keyboard",
     down: false, code: "Escape", key: "Escape", keyCode: 27, location: 0

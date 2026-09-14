@@ -338,6 +338,7 @@ const entries = [
   ["language.empty", "语言包内容为空", "Language pack is empty"],
   ["language.sizeError", "语言包大小错误", "Language pack size is invalid"],
   ["language.hashError", "语言包 SHA-256 校验失败", "Language pack SHA-256 validation failed"],
+  ["language.launchFallback", "{language}语言包不可用，本次以日文原版启动：{reason}", "{language} is unavailable; starting this launch in the original Japanese: {reason}"],
   ["replay.unsupported", "当前游戏没有 Replay 文件管理适配器", "The current game has no Replay file-management adapter"],
   ["multiplayer.noProduct", "当前游戏没有联机产品入口", "The current game has no multiplayer product entry"],
   ["multiplayer.replayMenuOpened", "已打开 {game} 联机 Replay 菜单", "Opened the {game} multiplayer Replay menu"],
@@ -474,6 +475,8 @@ const entries = [
   ["touch.holdFocus", "按住低速", "Hold to focus"], ["touch.tapToggle", "点按切换", "Tap to toggle"], ["touch.fire", "开火", "Fire"],
   ["touch.joystickAria", "移动轮盘", "Movement joystick"], ["touch.escapeAria", "返回或暂停", "Back or pause"],
   ["touch.escapeTitle", "ESC：返回或暂停", "ESC: back or pause"], ["touch.mouse", "模拟鼠标", "Mouse emulation"],
+  ["touch.restartTitle", "在暂停菜单按下后，会重开本局。", "Restarts the current run when pressed in the pause menu."],
+  ["touch.restartHint", "在暂停菜单按下后，会重开本局。", "Restarts the current run when pressed in the pause menu."],
   ["touch.cheatMenu", "作弊菜单", "Cheat menu"], ["touch.invincible", "无敌", "Invincible"],
   ["touch.infiniteLives", "无限残机", "Infinite lives"], ["touch.infiniteBombs", "无限 Bomb", "Infinite Bombs"],
   ["touch.infinitePower", "无限火力", "Infinite power"], ["touch.timeLock", "时间锁", "Time lock"],
@@ -577,6 +580,10 @@ export function isUiMessageKey(value: unknown): value is UiMessageKey {
 }
 export function resolveUiLocale(value: unknown): UiLocale { return /^zh(?:-|$)/i.test(String(value || "")) ? "zh-CN" : "en"; }
 export function detectUiLocale(): UiLocale {
+  // A published document owns its language. Browser preferences must not turn
+  // the same crawlable URL into a different language after hydration.
+  const documentLocale = globalThis.document?.documentElement?.dataset.uiLocale;
+  if (isUiLocale(documentLocale)) return documentLocale;
   try { const saved = safeStorage()?.getItem(UI_LOCALE_STORAGE_KEY); if (isUiLocale(saved)) return saved; } catch {}
   for (const value of globalThis.navigator?.languages || [globalThis.navigator?.language]) if (value) return resolveUiLocale(value);
   return "zh-CN";
@@ -621,6 +628,21 @@ export function setUiLocale(value: unknown, { persist = true, notify = true }: {
     const select = document.querySelector<HTMLSelectElement>("#uiLanguageSelect");
     if (select) select.value = currentLocale;
     applyStaticTranslations(document);
+    if (notify && typeof location !== "undefined") {
+      const target = new URL(currentLocale === "en" ? "en.html" : "./", location.href);
+      target.search = location.search;
+      target.hash = location.hash;
+      // Keep the running game and history state when switching UI language.
+      history.replaceState(history.state, "", target);
+      const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+      if (canonical) canonical.href = new URL(currentLocale === "en" ? "en.html" : "./", canonical.href).href;
+    }
+    const alternate = document.querySelector<HTMLAnchorElement>("#uiLanguageLink");
+    if (alternate) {
+      alternate.href = currentLocale === "en" ? "./" : "en.html";
+      alternate.hreflang = currentLocale === "en" ? "zh-CN" : "en";
+      alternate.textContent = currentLocale === "en" ? "简体中文" : "English";
+    }
   }
   if (notify && typeof window !== "undefined") window.dispatchEvent(new CustomEvent("eagler-ui-locale-change", { detail: { locale: currentLocale } }));
   return currentLocale;

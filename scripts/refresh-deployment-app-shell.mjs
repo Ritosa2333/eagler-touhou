@@ -10,15 +10,20 @@ import { ensureLauncherBuild } from "../lib/launcher-build.mjs";
 import { HOST_MANIFEST_FILE, validateHostManifest } from "../lib/contracts/host-manifest.mjs";
 import { sourceIdentity, writeReleaseManifest } from "../lib/release-manifest.mjs";
 import { WORKSPACE_REPOSITORIES } from "../lib/workspace-layout.mjs";
+import { normalizeSiteUrl, writeSiteMetadata } from "../lib/site-metadata.mjs";
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const values = process.argv.slice(2);
 const refreshFrontend = values.includes("--frontend");
+const siteUrlOption = values.find(value => value.startsWith("--site-url="));
+const artworkOption = values.find(value => value.startsWith("--artwork-dir="));
 const rootValue = values.find(value => !value.startsWith("--"));
-if (!rootValue || values.some(value => value !== rootValue && value !== "--frontend")) {
-  throw new Error("usage: node scripts/refresh-deployment-app-shell.mjs <deployment-root> [--frontend]");
+if (!rootValue || values.some(value => value !== rootValue && value !== "--frontend" && value !== siteUrlOption && value !== artworkOption)) {
+  throw new Error("usage: node scripts/refresh-deployment-app-shell.mjs <deployment-root> [--frontend] [--site-url=https://example.com/] [--artwork-dir=<path>]");
 }
 const root = resolve(rootValue);
+const artworkRoot = artworkOption ? resolve(artworkOption.slice("--artwork-dir=".length)) : null;
+if (artworkRoot && !refreshFrontend) throw new Error("--artwork-dir requires --frontend");
 
 const appRoot = root;
 const swPath = resolve(appRoot, "app-shell-sw.js");
@@ -31,6 +36,7 @@ const [deployment, hostManifest] = await Promise.all([
 if (deployment.format !== "eagler-touhou-deployment/1" || !Array.isArray(deployment.files)) {
   throw new Error("invalid deployment manifest");
 }
+const siteUrl = normalizeSiteUrl(siteUrlOption?.slice("--site-url=".length) || deployment.siteUrl);
 
 const runtimePaths = runtimeAppShellPaths(hostManifest);
 const inventoryPaths = new Set(deployment.files.map(item => item.path));
@@ -57,7 +63,25 @@ try {
         inventory.set(path, identity);
       }
     }
+    if (artworkRoot) {
+      for (const name of availableHostArtwork) {
+        const path = `assets/${name}`;
+        const target = resolve(appRoot, path);
+        await copyFile(resolve(artworkRoot, name), target);
+        const bytes = await readFile(target);
+        Object.assign(inventory.get(path), {
+          bytes: bytes.length,
+          sha256: createHash("sha256").update(bytes).digest("hex"),
+        });
+      }
+    }
     deployment.files.sort((left, right) => left.path.localeCompare(right.path, "en"));
+    const metadataPaths = await writeSiteMetadata(appRoot, siteUrl);
+    for (const path of metadataPaths) {
+      const bytes = await readFile(resolve(appRoot, path));
+      Object.assign(inventory.get(path), { bytes: bytes.length, sha256: createHash("sha256").update(bytes).digest("hex") });
+    }
+    if (siteUrl) deployment.siteUrl = siteUrl;
   }
   const result = await buildAppShell({
     quiet: true,
@@ -67,6 +91,8 @@ try {
       games: Object.keys(hostManifest.games),
       hostArtwork: availableHostArtwork,
     }),
+    deferredPaths: runtimePaths,
+    deferredPathPrefixes: ["runtime/"],
   });
   const nextPrecache = new Set(result.contract.entries);
   for (const path of runtimePaths) if (!nextPrecache.has(path)) throw new Error(`refreshed App Shell omitted Runtime: ${path}`);
@@ -108,6 +134,7 @@ try {
   console.log(JSON.stringify({
     refreshed: true,
     frontend: refreshFrontend,
+    artwork: Boolean(artworkRoot),
     buildId: result.buildId,
     precache: result.count,
     runtimeFiles: runtimePaths.length,

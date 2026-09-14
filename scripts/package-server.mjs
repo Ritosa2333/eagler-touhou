@@ -20,12 +20,13 @@ import { extractGameDataLayout } from "../lib/runtime-data-layout.mjs";
 import { assemblePreloadData } from "../lib/preload-data-assembler.mjs";
 import { assertRuntimeDataShell } from "../lib/runtime-data-provider.mjs";
 import { buildAppShell } from "../lib/app-shell-build.mjs";
-import { deploymentAppShellPatterns } from "../lib/app-shell-policy.mjs";
+import { deploymentAppShellPatterns, runtimeAppShellPaths } from "../lib/app-shell-policy.mjs";
 import { sourceIdentity, verifyReleaseManifest, writeReleaseManifest, fileSetIdentity } from "../lib/release-manifest.mjs";
 import { verifyRuntimeRelease, runtimeFileNames } from "../lib/runtime-release.mjs";
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
 import { WORKSPACE_REPOSITORIES, workspacePath, workspaceRoot } from "../lib/workspace-layout.mjs";
 import { FRONTEND_PACKAGE_FILES, hostArtworkFiles, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
+import { normalizeSiteUrl, writeSiteMetadata } from "../lib/site-metadata.mjs";
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const args = Object.fromEntries(process.argv.slice(2).map(value => {
@@ -38,6 +39,7 @@ const required = name => {
   return resolve(args[name]);
 };
 const output = required("output");
+const siteUrl = normalizeSiteUrl(args["site-url"]);
 const temporaryRoot = resolve(dirname(output), ".tmp");
 const staging = resolve(temporaryRoot, `${basename(output)}.staging-${randomUUID()}`);
 const workspace = workspaceRoot();
@@ -247,6 +249,7 @@ async function copyFrontend() {
     await mkdir(resolve(target, ".."), { recursive: true });
     await cp(resolveFrontendPackageSource(name), target);
   }
+  await writeSiteMetadata(frontend, siteUrl);
   const copiedHostAssets = [];
   const artworkNames = hostArtworkFiles(gameIds);
   const requiredArtwork = publicationBuild ? new Set(artworkNames) : new Set();
@@ -900,6 +903,8 @@ const appShellBuild = await buildAppShell({
   globDirectory: staging,
   swDest: resolve(staging, "app-shell-sw.js"),
   additionalGlobPatterns: deploymentAppShellPatterns({ games: gameIds, hostArtwork: hostUiAssets }),
+  deferredPaths: runtimeAppShellPaths(manifest),
+  deferredPathPrefixes: ["runtime/"],
 });
 
 const inventory = [];
@@ -912,6 +917,7 @@ for (const path of (await walk(staging)).sort()) {
   });
 }
 const deployment = {
+  ...(siteUrl ? { siteUrl } : {}),
   format: "eagler-touhou-deployment/1",
   profile: buildProfile,
   authority: buildAuthority,

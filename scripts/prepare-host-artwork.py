@@ -28,7 +28,7 @@ ARTWORK_BY_GAME = {
     "th08": ("th08-card.webp",),
     "th10": ("th10-card.webp",),
 }
-WEBP_QUALITY = 82
+WEBP_QUALITY = 75
 WEBP_METHOD = 6
 
 
