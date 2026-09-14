@@ -35,6 +35,9 @@ def main() -> int:
             "errors": errors,
             "status": page.locator("#status").text_content(),
         }
+        assert page.locator("#touchRestart").evaluate(
+            "el => el.hidden && getComputedStyle(el).display === 'none'"
+        ), "disabled R must be actually hidden in the layout editor"
 
         assert page.locator("#restartButtonToggle").evaluate(
             "r => !!(r.closest('.touch-layout-setting-row').compareDocumentPosition("
@@ -49,6 +52,22 @@ def main() -> int:
         page.locator("#doubleTapBombToggle").click()
         page.locator("#restartButtonToggle").click()
         assert page.locator("#restartButtonToggle").get_attribute("aria-checked") == "true"
+        restart_geometry = page.evaluate("""() => {
+          const escapeRect = document.querySelector('#touchEscape').getBoundingClientRect();
+          const restart = document.querySelector('#touchRestart');
+          const restartRect = restart.getBoundingClientRect();
+          return {
+            hidden: restart.hidden,
+            display: getComputedStyle(restart).display,
+            escapeBottom: escapeRect.bottom,
+            restartTop: restartRect.top,
+            leftDelta: Math.abs(escapeRect.left - restartRect.left),
+          };
+        }""")
+        assert restart_geometry["hidden"] is False, restart_geometry
+        assert restart_geometry["display"] != "none", restart_geometry
+        assert restart_geometry["restartTop"] >= restart_geometry["escapeBottom"], restart_geometry
+        assert restart_geometry["leftDelta"] <= 1, restart_geometry
         page.locator("#restartButtonToggle").click()
         page.locator("#touchMovementMode").select_option("joystick-free")
         page.wait_for_function("document.querySelector('#decisionDialog')?.open === true")
