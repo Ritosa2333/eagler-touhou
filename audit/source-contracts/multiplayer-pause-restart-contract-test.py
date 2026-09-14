@@ -18,11 +18,11 @@ multiplayer = text("src/Multiplayer.hpp")
 pause = ascii_manager.split("i32 StageMenu::OnUpdateGameMenu()", 1)[1].split(
     "void StageMenu::OnDrawGameMenu()", 1
 )[0]
-assert "MultiplayerGameplay::IsMultiplayer()" in pause
 assert "WAS_PRESSED(TH_BUTTON_R)" in pause
 assert "GAME_MENU_PAUSE_SELECTED_RESTART" in pause
 assert "SUPERVISOR_STATE_GAMEMANAGER_RESTART" in pause
 assert "!g_GameManager.isInReplay" in pause
+assert "MultiplayerGameplay::IsMultiplayer()" not in pause
 
 # The restart is a fresh attempt, not TH06's ordinary stage-reinit path. This
 # mirrors TH07 state 10: Story returns to Stage 1, while Extra/Practice restart

@@ -886,15 +886,13 @@ i32 StageMenu::OnUpdateGameMenu()
         }
         this->numFrames = 0;
     }
-#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if (MultiplayerGameplay::IsMultiplayer() && !g_GameManager.isInReplay &&
-        WAS_PRESSED(TH_BUTTON_R) &&
+    if (!g_GameManager.isInReplay && WAS_PRESSED(TH_BUTTON_R) &&
         this->curState != GAME_MENU_QUIT_SELECTED_YES &&
         this->curState != GAME_MENU_PAUSE_SELECTED_RESTART)
     {
-        // Match TH07's Pause-menu Reset shortcut: R is meaningful only while
-        // the shared Pause UI owns input.  The synchronized combined input
-        // lane means any participant can request it, while every peer enters
+        // Match TH07's Pause-menu Reset shortcut for ordinary and multiplayer
+        // runs. R is meaningful only while the Pause UI owns input. In a room,
+        // the synchronized combined-input lane still makes every peer enter
         // the same close/rebuild state on the same logical frame.
         g_SoundPlayer.PlaySoundByIdx(SOUND_SELECT);
         ScreenEffect::RequestShakeCancelForRestart();
@@ -907,7 +905,6 @@ i32 StageMenu::OnUpdateGameMenu()
         this->numFrames = 0;
         this->menuBackground.pendingInterrupt = 1;
     }
-#endif
     switch (this->curState)
     {
     case GAME_MENU_PAUSE_OPENING:
