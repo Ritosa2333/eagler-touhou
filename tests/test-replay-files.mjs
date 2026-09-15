@@ -40,6 +40,9 @@ for (const unsafe of ["", "/absolute.rpy", "../escape.rpy", "a/../b.rpy", "a\\b.
 
 assert.equal(isValidReplayName("th6", "th6_01.rpy"), true);
 assert.equal(isValidReplayName("th6", "TH6_ud00AF.RPYX"), true);
+assert.equal(isValidReplayName("th8", "th8_15.rpy"), true);
+assert.equal(isValidReplayName("th10", "th10_01.rpyx"), true);
+assert.equal(isValidReplayName("th10", "TH10_ud00AF.RPY"), true);
 assert.equal(isValidReplayName("th6", "th6_ud10000.rpy"), false);
 assert.equal(isValidReplayName("th6", "other_01.rpy"), false);
 assert.equal(isReplayImportFileName("run.RPYX"), true);
@@ -56,6 +59,7 @@ assert.equal(allocateReplayName("th6", occupied, "my replay.rpy"), "th6_ud0000.r
 assert.equal(allocateReplayName("th6", occupied, "my replay.rpyx"), "th6_ud0000.rpyx",
   "collision renaming must preserve ReplayX identity");
 assert.equal(allocateReplayName("th6", occupied, "th6_02.rpyx"), "th6_02.rpyx");
+assert.equal(allocateReplayName("th10", ["replay/th10_01.rpyx"], "th10_02.rpyx"), "th10_02.rpyx");
 
 const planned = planReplayArchiveImport("th6", [
   "backup/th6_01.rpy",

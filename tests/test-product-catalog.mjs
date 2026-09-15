@@ -38,8 +38,11 @@ assert.equal(productFeatureAvailable("th08", "thprac", { thprac: true }), false)
 assert.equal(productFeatureAvailable("th06", "focusHitbox", { focusHitbox: false }), false);
 assert.equal(productFeatureAvailable("th07", "focusHitbox", { focusHitbox: true }), false);
 assert.equal(productFeatureAvailable("th06", "replayManagement", { replayManagement: false }), true);
-assert.equal(productFeatureAvailable("th08", "replayManagement", { replayManagement: true }), false);
+assert.equal(productFeatureAvailable("th08", "replayManagement", { replayManagement: false }), true);
+assert.equal(productFeatureAvailable("th10", "replayManagement", { replayManagement: false }), true);
 assert.equal(productFeatureAvailable("th06", "languages", { languages: false }), true);
+assert.equal(PRODUCT_GAMES.th08.replay.prefix, "th8");
+assert.equal(PRODUCT_GAMES.th10.replay.prefix, "th10");
 assert.equal(PRODUCT_GAMES.th06.multiplayerRuntime, "./runtime/th06/multiplayer/th06.html");
 assert.deepEqual(PRODUCT_GAMES.th06.multiplayer, {
   difficultyMax: 4,
@@ -71,7 +74,7 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
     assert.equal(typeof directory, "string");
     assert.ok(directory === "." || /^[A-Za-z0-9_.-]+$/.test(directory));
   }
-  if (product.features.replayManagement) assert.match(product.replay?.prefix || "", /^th\d$/);
+  if (product.features.replayManagement) assert.match(product.replay?.prefix || "", /^th\d+$/);
   else assert.equal(product.replay, undefined);
   if (product.multiplayerRuntime) {
     assert.ok(product.multiplayer);

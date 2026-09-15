@@ -101,7 +101,8 @@ export const PRODUCT_GAMES = Object.freeze({
       musicSourceDirectories: Object.freeze({ ogg: "bgm-ogg" }),
       musicMounts: Object.freeze({ ogg: "/bgm-ogg" }),
     }),
-    features: Object.freeze({ thprac: false, replayManagement: false, languages: false, focusHitbox: false }),
+    replay: Object.freeze({ prefix: "th8" }),
+    features: Object.freeze({ thprac: false, replayManagement: true, languages: false, focusHitbox: false }),
   }),
   th10: Object.freeze({
     cardArtwork: "th10-card.webp",
@@ -130,7 +131,8 @@ export const PRODUCT_GAMES = Object.freeze({
       musicSourceDirectories: Object.freeze({ ogg: "bgm-ogg" }),
       musicMounts: Object.freeze({ ogg: "/bgm-ogg" }),
     }),
-    features: Object.freeze({ thprac: false, replayManagement: false, languages: false, focusHitbox: false }),
+    replay: Object.freeze({ prefix: "th10" }),
+    features: Object.freeze({ thprac: false, replayManagement: true, languages: false, focusHitbox: false }),
   }),
 });
 
