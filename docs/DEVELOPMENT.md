@@ -29,9 +29,11 @@ workspace/
 ├─ eagler-touhou/
 ├─ th06-eagler/
 ├─ th07-eagler/
+├─ th08-eagler/
+├─ th10-eagler/
 ├─ worktrees/
-│  ├─ th08-eagler-portable/
-│  └─ th10-eagler-portable/
+│  ├─ th08-upstream/
+│  └─ th10-upstream/
 ├─ thprac-reallyportable/
 ├─ dependencies/
 └─ toolchains/
@@ -122,7 +124,7 @@ npm run verify:practice
 
 `npm run check:workspace` is the explicit cross-repository integration gate. It additionally reads the TH06/TH07/TH08/TH10 workspace state and runs local Runtime, HTTP, and format integrations. It also owns a small number of fast cross-repository checks where structure itself is the contract: shared Runtime protocol vocabulary, ReplayX/EAGX ABI and PRAC ownership, and the safety boundary that always-hitbox presentation must not alter gameplay RNG or `EffectManager`. Ordinary implementation shape, local browser tests, the full OGG baseline, public networking, complete Runtime builds, and formal Release verification remain on-demand or pre-release lanes; broader coverage alone is not a reason to add them to the default `check`. Real iPhone/iPad Safari coverage requires Apple hardware and is not represented as an automated repository gate.
 
-The canonical TH08/TH10 Runtime workspaces are `worktrees/th08-eagler-portable` and `worktrees/th10-eagler-portable`. Private retail game content is not owned by those source trees. Development metadata therefore uses verified DATA identities by default; set `EAGLER_TH08_CONTENT_DIR` to a private directory containing `bgm-ogg/` when local TH08 OGG is needed, and set `EAGLER_TH10_CONTENT_DIR` to a private directory containing `th10.data` and `bgm-ogg/` when a local hosted TH10 content lane is needed. Formal release continues to take original TH08/TH10 content through its explicit `Th08Directory` / `Th10Directory` inputs.
+The canonical TH08/TH10 Eagler Runtime repositories are `th08-eagler` and `th10-eagler`. Their upstream-tracking worktrees are `worktrees/th08-upstream` and `worktrees/th10-upstream`; do not use those upstream worktrees as Launcher Runtime inputs. Private derived Web content is not owned by source repositories and lives under `games/web-content/` in the standard local workspace. Development metadata therefore uses verified DATA identities by default; set `EAGLER_TH08_CONTENT_DIR` to a private directory containing `bgm-ogg/` when local TH08 OGG is needed, and set `EAGLER_TH10_CONTENT_DIR` to a private directory containing `th10.data` and `bgm-ogg/` when a local hosted TH10 content lane is needed. Formal release continues to take original TH08/TH10 content through its explicit `Th08Directory` / `Th10Directory` inputs.
 
 Public-network, public Relay/TURN, and performance-profiling tasks belong to the remote/operations lane. Their scripts must receive an explicit target URL. Repository commands never embed `touhou.vip` or `test.touhou.vip` as defaults, preventing ordinary local tests, accidental invocation, or forks from contacting project infrastructure when a target is omitted.
 
