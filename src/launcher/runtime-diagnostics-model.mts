@@ -6,8 +6,9 @@ export interface BrowserEnvironmentInput {
   brave?: boolean | null;
 }
 
-export function runtimeDiagnosticsVisibleByDefault(testBuild: unknown, launched: unknown): boolean {
-  return testBuild === true && launched === true;
+export function runtimeDiagnosticsVisibleByDefault(testBuild: unknown, launched: unknown, preference: unknown = null): boolean {
+  const enabled = preference === true || (preference !== false && testBuild === true);
+  return enabled && launched === true;
 }
 
 export function compactDiagnosticText(value: unknown, maxLength = 96): string {

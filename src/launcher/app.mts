@@ -1320,6 +1320,12 @@ const androidDirectTouchTrial = /\bAndroid\b/i.test(navigator.userAgent || "") &
   new URLSearchParams(location.search).get("androidDirectTouch") === "1";
 const hostDirectTouch = iosWebKitTouch || androidDirectTouchTrial;
 const lessMotionStorageKey = "eagler-touhou-less-motion-v1";
+const runtimeDiagnosticsStorageKey = "eagler-touhou-runtime-diagnostics-v1";
+let runtimeDiagnosticsPreference: boolean | null = null;
+try {
+  const saved = localStorage.getItem(runtimeDiagnosticsStorageKey);
+  if (saved === "1" || saved === "0") runtimeDiagnosticsPreference = saved === "1";
+} catch {}
 const cardFilterStorageKey = "eagler-touhou-card-filter-v1";
 type CardFilter = "all" | "original" | "multiplayer";
 const cardFilters = new Set<CardFilter>(["all", "original", "multiplayer"]);
@@ -1436,7 +1442,7 @@ const anchorElementSelectors = ["#originMigrationOpen", "#gameDataFallbackUrl"] 
 const outputElementSelectors = ["#touchLayoutScaleValue", "#touchSensitivityValue"] as const;
 const buttonElementSelectors = [
   "#siteNoticeOptOut", "#siteNoticeClose", "#lessMotionToggle", "#mastheadMenuToggle",
-  "#siteNoticeToggle", "#firstUseNoticeOpen", "#mpShareSettingsToggle", "#mpFrameLimitAppleNote",
+  "#siteNoticeToggle", "#runtimeDiagnosticsToggle", "#firstUseNoticeOpen", "#mpShareSettingsToggle", "#mpFrameLimitAppleNote",
   "#mpFrameLimitToggle", "#mpTh06HitboxToggle", "#mpLocalPlayerVisibilityToggle", "#mpMobileOptionsToggle",
   "#mpTouchToggle", "#mpTouchLayoutEdit", "#mpAlwaysHitboxToggle", "#mpMagnifierToggle",
   "#mpReplayViewer", "#mpCreateRoom", "#mpJoinRoom", "#frameLimitAppleNote",
@@ -1590,6 +1596,7 @@ const gameViewport = $("#gameViewport");
 const player = $("#player");
 const playerFullscreenElement: LauncherFullscreenElement = player;
 const runtimeDiagnostics = $("#runtimeDiagnostics");
+const runtimeDiagnosticsToggle = $("#runtimeDiagnosticsToggle");
 const runtimeBrowserDiag = $("#runtimeBrowserDiag");
 const runtimeGapDiag = $("#runtimeGapDiag");
 const runtimeAudioDiag = $("#runtimeAudioDiag");
@@ -1611,6 +1618,12 @@ const runtimeDiagnosticState: RuntimeDiagnosticState = {
   robust: false,
   renderer: ""
 };
+function runtimeDiagnosticsEnabled() {
+  return runtimeDiagnosticsPreference ?? manifest.shared.testBuild === true;
+}
+function syncRuntimeDiagnosticsToggle() {
+  runtimeDiagnosticsToggle.setAttribute("aria-checked", String(runtimeDiagnosticsEnabled()));
+}
 let runtimeSchedulingProbeSerial = 0;
 let runtimeSchedulingProbeTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -2031,7 +2044,7 @@ function updateRuntimeDiagnostics() {
   const frameWarn = diag.maxGapMs != null && Number.isFinite(diag.maxGapMs) && diag.maxGapMs >= 35;
   runtimeDiagnostics.classList.toggle("bad", softwareRenderer || audioBad || frameBad);
   runtimeDiagnostics.classList.toggle("warn", !softwareRenderer && !audioBad && !frameBad && (audioWarn || frameWarn));
-  runtimeDiagnostics.hidden = !runtimeDiagnosticsVisibleByDefault(manifest.shared.testBuild, state.launched);
+  runtimeDiagnostics.hidden = !runtimeDiagnosticsVisibleByDefault(manifest.shared.testBuild, state.launched, runtimeDiagnosticsPreference);
 }
 window.setInterval(() => {
   if (state.launched && (isMultiplayerProduct() || state.runtimeVariant === "multiplayer")) updateRuntimeDiagnostics();
@@ -3740,6 +3753,7 @@ function syncDirectTouchSurfaceVisibility() {
 function render() {
   if (!productEnabled(state.product)) state.hasSelection = false;
   chooseDefaultMusic();
+  syncRuntimeDiagnosticsToggle();
   const multiplayerProduct = isMultiplayerProduct();
   document.body.classList.toggle("less-motion", state.lessMotion);
   document.querySelectorAll<HTMLElement>('[role="switch"]:not([aria-label]):not([aria-labelledby])').forEach(control => {
@@ -7170,6 +7184,12 @@ $("#frameLimitToggle").addEventListener("click", () => setOption("frameLimit60En
 const mastheadMenu = $("#mastheadMenu");
 const mastheadMenuToggle = $("#mastheadMenuToggle");
 const mastheadMenuPanel = $("#mastheadMenuPanel");
+runtimeDiagnosticsToggle.addEventListener("click", () => {
+  runtimeDiagnosticsPreference = !runtimeDiagnosticsEnabled();
+  try { localStorage.setItem(runtimeDiagnosticsStorageKey, runtimeDiagnosticsPreference ? "1" : "0"); } catch {}
+  syncRuntimeDiagnosticsToggle();
+  updateRuntimeDiagnostics();
+});
 function setMastheadMenuOpen(open: boolean, { focusFirst = false, restoreFocus = false }: { focusFirst?: boolean; restoreFocus?: boolean } = {}) {
   mastheadMenuToggle.setAttribute("aria-expanded", String(open));
   mastheadMenuPanel.setAttribute("aria-hidden", String(!open));

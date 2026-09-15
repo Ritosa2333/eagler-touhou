@@ -21,6 +21,7 @@ const entries = [
   ["preload.aria", "正在加载 EAGLER TOUHOU", "Loading EAGLER TOUHOU"],
   ["notice.aria", "网站公告", "Site announcement"], ["notice.label", "公告", "Notice"], ["notice.close", "关闭公告", "Close announcement"],
   ["notice.dismissForever", "不再显示", "Don't show again"],
+  ["diagnostics.toggle", "显示调试信息", "Show debug information"],
   ["nav.siteInfo", "站点信息", "Site information"],
   ["nav.lessMotion", "更少动画", "Less motion"],
   ["nav.motionLessTitle", "减少页面装饰动画", "Reduce decorative motion"],

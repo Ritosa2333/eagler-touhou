@@ -6,6 +6,9 @@ assert.equal(runtimeDiagnosticsVisibleByDefault(true, true), true);
 for (const [testBuild, launched] of [[false, true], [true, false], ["true", true], [true, 1]]) {
   assert.equal(runtimeDiagnosticsVisibleByDefault(testBuild, launched), false);
 }
+assert.equal(runtimeDiagnosticsVisibleByDefault(false, true, true), true);
+assert.equal(runtimeDiagnosticsVisibleByDefault(true, true, false), false);
+assert.equal(runtimeDiagnosticsVisibleByDefault(false, true, false), false);
 assert.equal(compactDiagnosticText("  A   B  ", 8), "A B");
 assert.equal(compactDiagnosticText("123456789", 8), "1234567…");
 assert.equal([...compactDiagnosticText("显卡参数非常非常长", 6)].length, 6);
@@ -75,4 +78,4 @@ assert.equal(spectatorFailed.reconnecting, true);
 assert.equal(spectatorFailed.title, "旁观连接已断开");
 assert.equal(spectatorFailed.summary, "closed");
 
-console.log(JSON.stringify({ runtimeDiagnosticsModel: "PASS", visibility: "test-build-only", lineLimit: 96, browserDetection: 3, renderer: "compact", rtcPair: "selected", rttWindow: 20, connectionWindow: "modeled" }));
+console.log(JSON.stringify({ runtimeDiagnosticsModel: "PASS", visibility: "test-build-default-or-user-toggle", lineLimit: 96, browserDetection: 3, renderer: "compact", rtcPair: "selected", rttWindow: 20, connectionWindow: "modeled" }));
