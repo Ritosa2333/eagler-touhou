@@ -7616,9 +7616,12 @@ const releaseIosDirectTouches = (event: TouchEvent) => {
 touchDirectSurface.addEventListener("touchend", releaseIosDirectTouches, { passive: false });
 touchDirectSurface.addEventListener("touchcancel", releaseIosDirectTouches, { passive: false });
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden") cancelDirectTouches(true);
+  if (document.visibilityState === "hidden") cancelTransientTouchInput();
 });
-window.addEventListener("blur", () => cancelDirectTouches(true));
+window.addEventListener("blur", () => {
+  // Focusing our own Runtime iframe is not leaving the application.
+  queueMicrotask(() => { if (!document.hasFocus()) cancelTransientTouchInput(); });
+});
 window.addEventListener("resize", invalidateDirectTouchFrameRect, { passive: true });
 window.visualViewport?.addEventListener("resize", invalidateDirectTouchFrameRect, { passive: true });
 document.addEventListener("fullscreenchange", invalidateDirectTouchFrameRect);
@@ -7803,6 +7806,16 @@ function resetTouchJoystick(sync = true) {
   touchJoystickKnob.style.transform = "translate(-50%,-50%)";
   touchJoystick.classList.remove("active");
   if (sync) queueTouchControlsSync();
+}
+function cancelTransientTouchInput() {
+  cancelDirectTouches(false);
+  resetTouchJoystick(false);
+  touchControls.focusEnabled = false;
+  renderTouchFocusState(false);
+  postRuntimeTouchCancel(touchRuntimeMessageContext());
+  // Clear the parent snapshot too, so a queued RAF cannot restore stale input.
+  // Fire is an intentional toggle and remains unchanged.
+  pushTouchControlsLive();
 }
 function updateTouchJoystick(event: PointerEvent) {
   if (event.pointerId !== touchJoystickPointerId) return;
