@@ -1,6 +1,6 @@
 # TH10 正式卡片
 
-TH10 WASI Runtime 是正式产品。普通版 TH08（`th08-modern.html`）始终是
+TH10 WASI Runtime 是正式产品。普通版 TH08（`th08.html`）始终是
 独立产品；Launcher 仍只有一个 TH10 卡片。
 
 Host Manifest 的 `shared.testBuild` 只保留开发清单兼容字段，不再控制 TH10

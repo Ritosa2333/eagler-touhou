@@ -22,7 +22,7 @@ import { assertRuntimeDataShell } from "../lib/runtime-data-provider.mjs";
 import { buildAppShell } from "../lib/app-shell-build.mjs";
 import { deploymentAppShellPatterns, runtimeAppShellPaths } from "../lib/app-shell-policy.mjs";
 import { sourceIdentity, verifyReleaseManifest, writeReleaseManifest, fileSetIdentity } from "../lib/release-manifest.mjs";
-import { verifyRuntimeRelease, runtimeFileNames } from "../lib/runtime-release.mjs";
+import { verifyRuntimeRelease, runtimeFileNames, runtimeStem } from "../lib/runtime-release.mjs";
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
 import { WORKSPACE_REPOSITORIES, workspacePath, workspaceRoot } from "../lib/workspace-layout.mjs";
 import { FRONTEND_PACKAGE_FILES, hostArtworkFiles, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
@@ -452,11 +452,11 @@ if (serverResourceMode === RESOURCE_MODE_HOSTED) {
 // TH08 is an App-owned subsidiary Runtime just like the existing game
 // binaries. Publish the already-verified formal HTML/JS/WASM in every
 // resource mode; only DATA/OGG ownership changes between hosted, external, and import.
-if (gameIds.includes("th08")) {
+if (gameIds.includes("th08") && PRODUCT_GAMES.th08.runtimeFileLayout !== "directory") {
   const game = "th08";
   const entry = manifest.games?.[game];
   if (!entry) throw new Error("TH08 product entry is missing from Host Manifest");
-  const stem = "th08-modern";
+  const stem = "th08";
   const appRuntimeRoot = resolve(staging, "runtime", game);
   await mkdir(appRuntimeRoot, { recursive: true });
   await assertAppManagedRuntimeShell(builds.th08, game, "normal", stem);
@@ -497,10 +497,11 @@ if (gameIds.includes("th08")) {
 
 for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === "directory")) {
   const entry = manifest.games[game], product = PRODUCT_GAMES[game];
+  const stem = runtimeStem(game);
   const declared = runtimeRelease?.games[game]?.runtime.files ||
     JSON.parse(await readFile(resolve(builds[game], "runtime-files.json"), "utf8")).files;
   const names = runtimeFileNames(game, declared), appRuntimeRoot = resolve(staging, "runtime", game);
-  await assertAppManagedRuntimeShell(builds[game], game, "normal", game);
+  await assertAppManagedRuntimeShell(builds[game], game, "normal", stem);
   for (const name of names) {
     const source = resolve(builds[game], name), identity = await fileIdentity(source), expected = declared[name];
     if (identity.bytes !== expected.bytes || identity.sha256 !== expected.sha256) throw new Error(`${game}: Runtime identity mismatch: ${name}`);
@@ -508,12 +509,12 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
     await cp(source, resolve(appRuntimeRoot, name));
   }
   await writeFile(resolve(appRuntimeRoot, "runtime-files.json"), JSON.stringify({ schema: "eagler-touhou/runtime-directory/1", files: declared }, null, 2));
-  entry.runtime = `runtime/${game}/${game}.html?hosted=1&v=${await versionFiles(appRuntimeRoot, names)}`;
+  entry.runtime = `runtime/${game}/${stem}.html?hosted=1&v=${await versionFiles(appRuntimeRoot, names)}`;
   entry.features = { thprac: false, focusHitbox: false };
   entry.languages = []; entry.languageOptions = [{ id: "ja", title: languageDisplayName("ja"), pack: null }];
   const declaredOgg = entry.music?.ogg;
   entry.music = {
-    midi: { files: [], supported: false },
+    midi: game === "th10" ? { files: [], supported: false } : { files: [] },
     ...(declaredOgg ? { ogg: declaredOgg } : {}),
   };
   if (serverResourceMode === RESOURCE_MODE_IMPORT) {
@@ -540,6 +541,18 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
     const identity = await fileIdentity(resolve(staging, target));
     entry.gameData = { path: `${game}.data`, ...identity, version: `sha256-${identity.sha256}`, layout: PRODUCT_CONTENT[game].dataLayout };
     const packageFiles = { "game-data": await descriptorFile(target, `/${game}.data`) };
+    const baseFiles = ["game-data"];
+    for (const sharedTarget of product.requiredShared || []) {
+      if (sharedTarget === "/msgothic.ttc") {
+        packageFiles["shared-msgothic"] = await descriptorFile("shared/msgothic.ttc", sharedTarget);
+        baseFiles.push("shared-msgothic");
+      } else if (sharedTarget === "/unifont.otf") {
+        packageFiles["shared-unifont"] = await descriptorFile("shared/unifont.otf", sharedTarget);
+        baseFiles.push("shared-unifont");
+      } else {
+        throw new Error(`${game}: unsupported shared Runtime resource ${sharedTarget}`);
+      }
+    }
     const components = {};
     if (modes.has("ogg")) {
       const pack = entry.music?.ogg;
@@ -562,7 +575,7 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
     }
     const descriptor = { schema: PACKAGE_DESCRIPTOR_SCHEMA, game, revision: "pending",
       runtimeRequirement: { protocol: manifest.protocol, target: game, dataFile: "game-data", dataLayout: entry.gameData.layout },
-      files: packageFiles, base: { files: ["game-data"] }, components };
+      files: packageFiles, base: { files: baseFiles }, components };
     descriptor.revision = createHash("sha256").update(canonicalPackagePayload(descriptor)).digest("hex").slice(0, 16);
     validatePackageDescriptor(descriptor);
     const name = `${game}.package.json`; await writeFile(resolve(staging, name), JSON.stringify(descriptor, null, 2));
@@ -793,7 +806,7 @@ for (const game of preloadGames) {
   entry.package = { revision: descriptor.revision, descriptor: descriptorName };
 }
 
-if (hostedResources && gameIds.includes("th08")) {
+if (hostedResources && gameIds.includes("th08") && PRODUCT_GAMES.th08.runtimeFileLayout !== "directory") {
   const game = "th08";
   const entry = manifest.games?.[game];
   if (!entry) throw new Error("TH08 product entry is missing from Host Manifest");

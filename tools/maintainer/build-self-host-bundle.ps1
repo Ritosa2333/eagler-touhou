@@ -50,24 +50,6 @@ try {
         Copy-Item -LiteralPath $source -Destination $destination
     }
 
-    # TH10 content preparation is part of the portable self-host bundle.  The
-    # preparer needs only its retail-layout helper and native WASI build; keep
-    # those inputs beside it so a consumer does not need a sibling th10-eagler
-    # checkout.  The preparer still uses the consumer's ffmpeg installation to
-    # encode OGG when games/th10/assets-ogg is not supplied.
-    $th10PortableFilesJson = & node (Join-Path $project 'scripts\list-th10-preparer-files.mjs')
-    if ($LASTEXITCODE -ne 0) { throw 'Unable to resolve TH10 content-preparer module dependencies' }
-    $th10PortableFiles = @($th10PortableFilesJson | ConvertFrom-Json)
-    foreach ($item in $th10PortableFiles) {
-        if (-not (Test-Path -LiteralPath $item.Source -PathType Leaf)) {
-            throw "Portable TH10 content-preparer input is missing: $($item.Source)"
-        }
-        $destination = Join-Path $staging $item.Target
-        $parent = Split-Path $destination -Parent
-        if (-not (Test-Path -LiteralPath $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
-        Copy-Item -LiteralPath $item.Source -Destination $destination
-    }
-
     foreach ($game in @('th06', 'th07', 'th08', 'th10')) {
         New-Item -ItemType Directory -Path (Join-Path $staging "games\$game") -Force | Out-Null
     }

@@ -1,11 +1,10 @@
 import argparse
-from importlib.metadata import version as package_version
 import json
 import os
 import sys
 import tempfile
 import time
-from urllib.parse import parse_qs, quote, urlparse
+from urllib.parse import parse_qs, urlparse
 
 from playwright.sync_api import sync_playwright
 
@@ -13,8 +12,6 @@ from playwright.sync_api import sync_playwright
 def is_runtime_frame(frame_src: str, game: str) -> bool:
     path = urlparse(frame_src or "").path
     runtime_names = {f"{game}.html"}
-    if game == "th08":
-        runtime_names.add("th08-modern.html")
     return any(
         path.endswith(f"/runtime/{game}/{name}")
         or path.endswith(f"/games/{game}/{name}")
@@ -34,9 +31,6 @@ def main() -> int:
     parser.add_argument("url", nargs="?", default="http://127.0.0.1:8136/")
     parser.add_argument("game", nargs="?", default="th07")
     parser.add_argument("music", nargs="?", default="none")
-    parser.add_argument("--browserstack-device")
-    parser.add_argument("--browserstack-os-version")
-    parser.add_argument("--browserstack-local-identifier")
     parser.add_argument("--package-zip")
     parser.add_argument("--block-game-data", action="store_true")
     parser.add_argument("--artifact-dir")
@@ -47,13 +41,6 @@ def main() -> int:
     if args.music not in {"midi", "ogg-stream", "ogg-full", "none"}:
         raise SystemExit("invalid music mode")
 
-    browserstack_enabled = bool(args.browserstack_device or args.browserstack_os_version)
-    if browserstack_enabled and not (args.browserstack_device and args.browserstack_os_version):
-        raise SystemExit(
-            "BrowserStack requires --browserstack-device and --browserstack-os-version"
-        )
-    browserstack_local_enabled = bool(args.browserstack_local_identifier)
-
     console_errors = []
     console_warnings = []
     page_errors = []
@@ -61,54 +48,20 @@ def main() -> int:
     response_diagnostics = []
 
     with sync_playwright() as p:
-        if browserstack_enabled:
-            username = os.environ.get("BROWSERSTACK_USERNAME", "").strip()
-            access_key = os.environ.get("BROWSERSTACK_ACCESS_KEY", "").strip()
-            if not username or not access_key:
-                raise SystemExit(
-                    "BROWSERSTACK_USERNAME and BROWSERSTACK_ACCESS_KEY must be set"
-                )
-            capabilities = {
-                "browser": "safari",
-                "deviceName": args.browserstack_device,
-                "osVersion": args.browserstack_os_version,
-                "realMobile": "true",
-                "name": f"Touhou Eagler {args.game} real iOS gate",
-                "build": os.environ.get(
-                    "BROWSERSTACK_BUILD_NAME", "touhou-eagler-real-ios"
-                ),
-                "browserstack.username": username,
-                "browserstack.accessKey": access_key,
-                "client.playwrightVersion": package_version("playwright"),
-            }
-            if browserstack_local_enabled:
-                capabilities.update(
-                    {
-                        "browserstack.local": "true",
-                        "browserstack.localIdentifier": args.browserstack_local_identifier,
-                    }
-                )
-            endpoint = (
-                "wss://cdp.browserstack.com/playwright?caps="
-                + quote(json.dumps(capabilities, separators=(",", ":")))
-            )
-            browser = p.webkit.connect(endpoint, timeout=120_000)
-            # Preserve the physical device's own viewport, touch model and UA.
-            # Overriding them here would turn a real-iOS run back into emulation.
-            context = browser.new_context()
-        else:
-            browser = p.webkit.launch(headless=True)
-            context = browser.new_context(
-                viewport={"width": 844, "height": 390},
-                user_agent=(
-                    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) "
-                    "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 "
-                    "Mobile/15E148 Safari/604.1"
-                ),
-                has_touch=True,
-                is_mobile=True,
-                device_scale_factor=3,
-            )
+        browser = p.webkit.launch(headless=True)
+        # This exercises the mobile/touch WebKit code path on Windows. It is
+        # deliberately not presented as real iOS/Safari hardware coverage.
+        context = browser.new_context(
+            viewport={"width": 844, "height": 390},
+            user_agent=(
+                "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) "
+                "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 "
+                "Mobile/15E148 Safari/604.1"
+            ),
+            has_touch=True,
+            is_mobile=True,
+            device_scale_factor=3,
+        )
         page = context.new_page()
         page.on("console", lambda msg: console_errors.append(msg.text) if msg.type == "error" else console_warnings.append(msg.text) if msg.type == "warning" else None)
         page.on("pageerror", lambda error: page_errors.append(str(error)))
@@ -153,7 +106,7 @@ def main() -> int:
             )
             os.makedirs(artifact_dir, exist_ok=True)
             screenshot_path = os.path.join(
-                artifact_dir, f"browserstack-ios-{args.game}-launcher-boot-failure.png"
+                artifact_dir, f"webkit-mobile-{args.game}-launcher-boot-failure.png"
             )
             screenshot_error = ""
             try:
@@ -318,9 +271,9 @@ def main() -> int:
                       files: document.getElementById('gameDataImportInput')?.files?.length || 0,
                     })"""
                 )
-                # BrowserStack's real-iOS bridge can assign the FileList
+                # Some WebKit automation bridges can assign the FileList
                 # without emitting the DOM change event that starts the
-                # Launcher's importer.  Emit it only when the page proves no
+                # Launcher's importer. Emit it only when the page proves no
                 # native change event was delivered.
                 if package_input_events["change"] == 0:
                     page.evaluate(
@@ -340,7 +293,7 @@ def main() -> int:
             page.evaluate("document.getElementById('launch')?.click()")
             launch_clicked = True
 
-        deadline = time.time() + (300 if browserstack_enabled and args.package_zip else 120)
+        deadline = time.time() + 120
         last = None
         first_generation = ""
         while time.time() < deadline:
@@ -752,31 +705,29 @@ def main() -> int:
                         )
                     )
 
-                direct_tap_probe = None
-                if browserstack_enabled:
-                    runtime.evaluate("() => { globalThis.__eaglerDirectTouchProbe = []; }")
-                    tap_point = page.evaluate(
-                        """
-                        () => {
-                          const frame = document.getElementById('gameFrame');
-                          const rect = frame.getBoundingClientRect();
-                          return { x: rect.left + rect.width * 0.62, y: rect.top + rect.height * 0.58 };
-                        }
-                        """
+                runtime.evaluate("() => { globalThis.__eaglerDirectTouchProbe = []; }")
+                tap_point = page.evaluate(
+                    """
+                    () => {
+                      const frame = document.getElementById('gameFrame');
+                      const rect = frame.getBoundingClientRect();
+                      return { x: rect.left + rect.width * 0.62, y: rect.top + rect.height * 0.58 };
+                    }
+                    """
+                )
+                page.touchscreen.tap(tap_point["x"], tap_point["y"])
+                page.wait_for_timeout(120)
+                page.touchscreen.tap(tap_point["x"], tap_point["y"])
+                page.wait_for_timeout(120)
+                direct_tap_probe = runtime.evaluate(
+                    """() => globalThis.__eaglerDirectTouchProbe?.slice() || []"""
+                )
+                direct_tap_types = [entry.get("type") for entry in direct_tap_probe]
+                if direct_tap_types[-4:] != ["down", "up", "down", "up"]:
+                    raise RuntimeError(
+                        "WebKit consecutive direct-touch taps did not reach Runtime: "
+                        + json.dumps(direct_tap_probe, ensure_ascii=False)
                     )
-                    page.touchscreen.tap(tap_point["x"], tap_point["y"])
-                    page.wait_for_timeout(120)
-                    page.touchscreen.tap(tap_point["x"], tap_point["y"])
-                    page.wait_for_timeout(120)
-                    direct_tap_probe = runtime.evaluate(
-                        """() => globalThis.__eaglerDirectTouchProbe?.slice() || []"""
-                    )
-                    direct_tap_types = [entry.get("type") for entry in direct_tap_probe]
-                    if direct_tap_types[-4:] != ["down", "up", "down", "up"]:
-                        raise RuntimeError(
-                            "iOS consecutive direct-touch taps did not reach Runtime: "
-                            + json.dumps(direct_tap_probe, ensure_ascii=False)
-                        )
                 post_release_frames = None
                 if args.game == "th08":
                     # iOS/WebKit can transiently drop canvas focus as the last
@@ -818,19 +769,13 @@ def main() -> int:
                             + json.dumps(post_release_frames, ensure_ascii=False)
                         )
                 result = {
-                    "execution": "browserstack-real-ios" if browserstack_enabled else "desktop-playwright-webkit",
-                    "device": args.browserstack_device if browserstack_enabled else None,
-                    "osVersion": args.browserstack_os_version if browserstack_enabled else None,
+                    "execution": "desktop-playwright-webkit-mobile-emulation",
                     "game": args.game,
                     "requestedMusic": requested_music,
                     "effectiveMusic": effective_music,
                     "actualMusic": local_last["music"],
                     "audioAvailable": audio_available,
-                    "audioCoverage": "tested" if audio_available else (
-                        "unavailable-on-real-ios-session"
-                        if browserstack_enabled
-                        else "unavailable-in-windows-playwright-webkit"
-                    ),
+                    "audioCoverage": "tested" if audio_available else "unavailable-in-windows-playwright-webkit",
                     "firstGeneration": first_generation,
                     "localGeneration": local_generation,
                     "blockedRemotePackageRequests": len(blocked),

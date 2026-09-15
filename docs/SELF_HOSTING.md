@@ -15,9 +15,10 @@ any other operator infrastructure.
 - FFmpeg on PATH for the bundled TH10 OGG preparer, or a supplied
   `games/th10/assets-ogg/` containing `th10.data` and `bgm-ogg/`.
 
-The self-host bundle includes the TH10 content preparer and its Wasm/module
-dependencies. It extracts DATA/OGG from `games/th10`; the existing thtk artwork
-step also reconstructs `th10-card.webp` from the original title background.
+The self-host bundle includes a Launcher-owned TH10 content preparer. It uses
+the canonical portable SDL music layout to extract DATA/OGG from `games/th10`
+without carrying an obsolete TH10 Runtime/Wasm parser. The existing thtk
+artwork step also reconstructs `th10-card.webp` from the original title background.
 
 PowerShell, CMake, Ninja, Emscripten and the Runtime source repositories are
 not required for ordinary self-hosting.

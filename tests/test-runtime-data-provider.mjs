@@ -8,8 +8,15 @@ import { assertRuntimeDataShell, runtimeDataProvider } from "../lib/runtime-data
 for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
   const provider = runtimeDataProvider(game);
   assert.equal(provider.name, product.dataProvider);
-  const complete = provider.shellMarkers.join("\n");
+  const declaration = `<meta name="eagler-data-provider" content="${provider.name}">`;
+  const complete = product.runtimeFileLayout === "directory"
+    ? [declaration, ...provider.shellMarkers].join("\n")
+    : provider.shellMarkers.join("\n");
   assert.equal(assertRuntimeDataShell(complete, game, "fixture").name, provider.name);
+  if (product.runtimeFileLayout === "directory") {
+    assert.throws(() => assertRuntimeDataShell(provider.shellMarkers.join("\n"), game, "fixture"), /provider declaration is missing/);
+    continue;
+  }
   for (const marker of provider.shellMarkers) {
     const incomplete = provider.shellMarkers.filter(value => value !== marker).join("\n");
     assert.throws(() => assertRuntimeDataShell(incomplete, game, "fixture"), /provider markers are missing/);

@@ -12,47 +12,21 @@ const workRoot = resolve(tmpdir(), `eagler-playwright-webkit-${randomUUID()}`);
 const output = resolve(workRoot, "site");
 const artwork = resolve(workRoot, "artwork");
 const diagnostics = resolve(tmpdir(), `eagler-playwright-webkit-diagnostics-${randomUUID()}`);
-const browserStackDevice = process.argv.find(value => value.startsWith("--browserstack-device="))?.split("=", 2)[1] || "";
-const browserStackOsVersion = process.argv.find(value => value.startsWith("--browserstack-os-version="))?.split("=", 2)[1] || "";
 const requestedGame = process.argv.find(value => value.startsWith("--game="))?.split("=", 2)[1] || "";
 const requestedMusic = process.argv.find(value => value.startsWith("--music="))?.split("=", 2)[1] || "none";
-const browserStackUrl = process.argv.find(value => value.startsWith("--browserstack-url="))?.slice("--browserstack-url=".length) || "";
-const requireBrowserStack = process.argv.includes("--require-browserstack");
 const packageZip = process.argv.find(value => value.startsWith("--package-zip="))?.slice("--package-zip=".length) || "";
 const blockGameData = process.argv.includes("--block-game-data");
-const browserStackEnabled = !!(browserStackDevice || browserStackOsVersion);
-if (requireBrowserStack && !browserStackEnabled) {
-  throw new Error("BrowserStack iOS lane requires --browserstack-device and --browserstack-os-version");
-}
-if (browserStackEnabled && (!browserStackDevice || !browserStackOsVersion)) {
-  throw new Error("BrowserStack requires both --browserstack-device and --browserstack-os-version");
-}
-if (requestedGame && !new Set(["th06", "th07"]).has(requestedGame)) {
-  throw new Error(`Unsupported --game value: ${requestedGame}`);
-}
-if (!new Set(["midi", "ogg-stream", "ogg-full", "none"]).has(requestedMusic)) {
-  throw new Error(`Unsupported --music value: ${requestedMusic}`);
-}
-if (browserStackEnabled && (!process.env.BROWSERSTACK_USERNAME || !process.env.BROWSERSTACK_ACCESS_KEY)) {
-  throw new Error("Set BROWSERSTACK_USERNAME and BROWSERSTACK_ACCESS_KEY in this shell before running the real-iOS gate");
-}
-if (browserStackUrl && !/^https:\/\//i.test(browserStackUrl)) {
-  throw new Error("--browserstack-url must use HTTPS");
-}
-const browserStackLocalIdentifier = browserStackEnabled ? `touhou-eagler-${randomUUID()}` : "";
+
+if (requestedGame && !new Set(["th06", "th07"]).has(requestedGame)) throw new Error(`Unsupported --game value: ${requestedGame}`);
+if (!new Set(["midi", "ogg-stream", "ogg-full", "none"]).has(requestedMusic)) throw new Error(`Unsupported --music value: ${requestedMusic}`);
 
 function run(command, args) {
   return new Promise((resolveRun, reject) => {
-    const child = spawn(command, args, {
-      cwd: project,
-      stdio: "inherit",
-      shell: false,
-    });
+    const child = spawn(command, args, { cwd: project, stdio: "inherit", shell: false });
     child.once("error", reject);
-    child.once("exit", (code, signal) => {
-      if (code === 0) resolveRun();
-      else reject(new Error(`${command} ${args.join(" ")} failed (${signal || code})`));
-    });
+    child.once("exit", (code, signal) => code === 0
+      ? resolveRun()
+      : reject(new Error(`${command} ${args.join(" ")} failed (${signal || code})`)));
   });
 }
 
@@ -68,45 +42,6 @@ function freePort() {
   });
 }
 
-function localTunnelOptions() {
-  const options = {
-    key: process.env.BROWSERSTACK_ACCESS_KEY,
-    localIdentifier: browserStackLocalIdentifier,
-    forceLocal: true,
-  };
-  const proxyValue = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || "";
-  if (!proxyValue) return options;
-  try {
-    const proxy = new URL(proxyValue);
-    options.proxyHost = proxy.hostname;
-    options.proxyPort = Number(proxy.port) || (proxy.protocol === "https:" ? 443 : 80);
-    // This workspace has no direct route to BrowserStack. Without forceProxy,
-    // BrowserStack Local also retries direct repeater connections before using
-    // the configured proxy, which makes real-device runs stall for minutes.
-    options.forceProxy = true;
-    if (proxy.username) options.proxyUser = decodeURIComponent(proxy.username);
-    if (proxy.password) options.proxyPass = decodeURIComponent(proxy.password);
-  } catch {
-    throw new Error("HTTPS_PROXY/HTTP_PROXY is not a valid URL for BrowserStack Local");
-  }
-  return options;
-}
-
-async function startBrowserStackLocal() {
-  const module = await import("browserstack-local");
-  const BrowserStackLocal = module.default || module;
-  const local = new BrowserStackLocal.Local();
-  await new Promise((resolveStart, reject) => {
-    local.start(localTunnelOptions(), error => error ? reject(error) : resolveStart());
-  });
-  return local;
-}
-
-async function stopBrowserStackLocal(local) {
-  if (!local) return;
-  await new Promise(resolveStop => local.stop(() => resolveStop()));
-}
-
 async function waitForHttp(url, timeoutMs = 15000) {
   const deadline = Date.now() + timeoutMs;
   let lastError = null;
@@ -115,20 +50,17 @@ async function waitForHttp(url, timeoutMs = 15000) {
       const response = await fetch(url, { cache: "no-store" });
       if (response.ok) return;
       lastError = new Error(`HTTP ${response.status}`);
-    } catch (error) {
-      lastError = error;
-    }
+    } catch (error) { lastError = error; }
     await new Promise(resolveDelay => setTimeout(resolveDelay, 100));
   }
   throw new Error(`WebKit smoke server did not become ready: ${lastError || "timeout"}`);
 }
 
-let port = 0;
 let server = null;
-if (!browserStackUrl) {
-  // Card art/favicon are optional to runtime behavior. Keep this browser gate
-  // independent of image tooling and original-game artwork extraction while
-  // still satisfying package-server's explicit host-artwork ownership input.
+let completed = false;
+try {
+  // Real iOS requires Apple hardware. Keep this gate honest: it is a local
+  // desktop-WebKit compatibility lane, not a claim of iPhone/iPad coverage.
   await rm(artwork, { recursive: true, force: true });
   await mkdir(artwork, { recursive: true });
   await run(process.execPath, [
@@ -150,43 +82,24 @@ if (!browserStackUrl) {
     "--profile=web-validation",
   ]);
   await run(process.execPath, ["scripts/verify-server-build.mjs", output]);
-  port = await freePort();
+  const port = await freePort();
   server = spawn(process.execPath, ["scripts/serve.mjs", String(port), output], {
     cwd: project,
     stdio: "inherit",
     shell: false,
-    env: {
-      ...process.env,
-      EAGLER_TOUHOU_HOST: browserStackEnabled ? "0.0.0.0" : (process.env.EAGLER_TOUHOU_HOST || "127.0.0.1"),
-    },
+    env: { ...process.env, EAGLER_TOUHOU_HOST: process.env.EAGLER_TOUHOU_HOST || "127.0.0.1" },
   });
-}
-let browserStackLocal = null;
-let completed = false;
-
-try {
-  const localUrl = port ? `http://127.0.0.1:${port}/` : "";
-  if (localUrl) await waitForHttp(localUrl);
-  if (browserStackEnabled && !browserStackUrl) browserStackLocal = await startBrowserStackLocal();
-  const url = browserStackUrl || (browserStackEnabled ? `http://bs-local.com:${port}/` : localUrl);
-  const games = requestedGame ? [requestedGame] : (browserStackEnabled ? ["th07"] : ["th06", "th07"]);
-  for (const game of games) {
+  const url = `http://127.0.0.1:${port}/`;
+  await waitForHttp(url);
+  for (const game of requestedGame ? [requestedGame] : ["th06", "th07"]) {
     const args = ["tests/browser/launcher-playwright-webkit.py", url, game, requestedMusic, `--artifact-dir=${diagnostics}`];
-    if (browserStackEnabled && !browserStackUrl) {
-      args.push(
-        `--browserstack-device=${browserStackDevice}`,
-        `--browserstack-os-version=${browserStackOsVersion}`,
-        `--browserstack-local-identifier=${browserStackLocalIdentifier}`,
-      );
-    }
     if (packageZip) args.push(`--package-zip=${packageZip}`);
     if (blockGameData) args.push("--block-game-data");
     await run("python", args);
   }
   completed = true;
-  console.log(browserStackEnabled ? "BrowserStack real iOS gate: PASS" : "Playwright WebKit gate: PASS");
+  console.log("Local Playwright WebKit gate: PASS");
 } finally {
-  await stopBrowserStackLocal(browserStackLocal);
   if (server && server.exitCode == null && server.signalCode == null) server.kill();
   await rm(workRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   if (completed) await rm(diagnostics, { recursive: true, force: true });

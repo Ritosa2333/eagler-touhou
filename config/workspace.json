@@ -4,8 +4,8 @@
     "launcher": "eagler-touhou",
     "th06": "th06-eagler",
     "th07": "th07-eagler",
-    "th08": "th08-eaglertemp",
-    "th10": "th10-eagler",
+    "th08": "worktrees/th08-eagler-portable",
+    "th10": "worktrees/th10-eagler-portable",
     "thprac": "thprac-reallyportable",
     "dependencies": "dependencies",
     "toolchains": "toolchains"

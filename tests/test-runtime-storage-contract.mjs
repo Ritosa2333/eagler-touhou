@@ -1,5 +1,5 @@
 /**
- * L3/module: execute the actual three shell scripts with mocked DOM/FS.
+ * L3/module: execute the actual inline preload shell scripts with mocked DOM/FS.
  * Preconditions: source shells; no game assets or browser required.
  * Mutations: isolated VM filesystem, deferred restore/persist callbacks.
  * Invariant: restore fails closed; command replies wait for persistence.
@@ -15,7 +15,6 @@ import { workspacePath } from "../lib/workspace-layout.mjs";
 const shells = {
   th06: workspacePath("th06", "resources", "shell.html"),
   th07: workspacePath("th07", "resources", "shell.html"),
-  th08: workspacePath("th08", "resources", "web-shell.html"),
 };
 
 function harness(source, game) {

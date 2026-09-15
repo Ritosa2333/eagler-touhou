@@ -166,8 +166,10 @@ if ($resourceMode -eq 'import') {
             $runtimeSpecs += ,@($runtimeBuilds.th07Multiplayer, 'th07')
         }
         if ($selectedHasTh08) {
-            $runtimeBuilds.th08 = if ($Th08Build) { (Resolve-Path -LiteralPath $Th08Build).Path } else { Get-EaglerWorkspacePath $workspaceLayout 'th08' 'build\web-formal' }
-            $runtimeSpecs += ,@($runtimeBuilds.th08, 'th08-modern')
+            $runtimeBuilds.th08 = if ($Th08Build) { (Resolve-Path -LiteralPath $Th08Build).Path } else { Get-EaglerWorkspacePath $workspaceLayout 'th08' 'build-eagler' }
+            if (-not (Test-Path -LiteralPath (Join-Path $runtimeBuilds.th08 'runtime-files.json') -PathType Leaf)) {
+                throw "Prepared TH08 Runtime directory manifest not found: $(Join-Path $runtimeBuilds.th08 'runtime-files.json')"
+            }
         }
         if ($selectedHasTh10) {
             if (-not $Th10Build) { throw 'Import mode without -RuntimeRelease requires -Th10Build when th10 is selected' }
@@ -178,9 +180,6 @@ if ($resourceMode -eq 'import') {
             $runtimeSpecs += ,@($runtimeBuilds.th10, 'th10')
         }
         foreach ($runtime in $runtimeSpecs) {
-            if ($runtime[1] -eq 'th10') {
-                continue
-            }
             foreach ($extension in @('html', 'js', 'wasm')) {
                 $runtimeFile = Join-Path $runtime[0] ("$($runtime[1]).$extension")
                 if (-not (Test-Path -LiteralPath $runtimeFile -PathType Leaf)) {
@@ -228,7 +227,7 @@ $th07Source = if ($Games -contains 'th07') { (Resolve-Path -LiteralPath $Th07Dir
 $th08Source = if ($selectedHasTh08) { (Resolve-Path -LiteralPath $Th08Directory).Path } else { $null }
 $th10Source = if ($selectedHasTh10) { (Resolve-Path -LiteralPath $Th10Directory).Path } else { $null }
 $th08Build = if ($selectedHasTh08 -and -not $runtimeReleasePath) {
-    if ($Th08Build) { (Resolve-Path -LiteralPath $Th08Build).Path } else { Get-EaglerWorkspacePath $workspaceLayout 'th08' 'build\web-formal' }
+    if ($Th08Build) { (Resolve-Path -LiteralPath $Th08Build).Path } else { Get-EaglerWorkspacePath $workspaceLayout 'th08' 'build-eagler' }
 } else { $null }
 $th10Build = if ($selectedHasTh10 -and -not $runtimeReleasePath) {
     if (-not $Th10Build) { throw 'Hosted mode without -RuntimeRelease requires -Th10Build when th10 is selected' }
@@ -263,11 +262,8 @@ foreach ($path in $required) {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Required original resource not found: $path" }
 }
 if ($selectedHasTh08 -and -not $runtimeReleasePath) {
-    foreach ($extension in @('html', 'js', 'wasm')) {
-        $runtimeFile = Join-Path $th08Build ("th08-modern.$extension")
-        if (-not (Test-Path -LiteralPath $runtimeFile -PathType Leaf)) {
-            throw "Prepared TH08 App Runtime artifact not found: $runtimeFile"
-        }
+    if (-not (Test-Path -LiteralPath (Join-Path $th08Build 'runtime-files.json') -PathType Leaf)) {
+        throw "Prepared TH08 Runtime directory manifest not found: $(Join-Path $th08Build 'runtime-files.json')"
     }
 }
 if ($selectedHasTh10 -and -not $runtimeReleasePath -and -not (Test-Path -LiteralPath (Join-Path $th10Build 'runtime-files.json') -PathType Leaf)) {
@@ -354,7 +350,7 @@ if ($Games -contains 'th07') {
 $th10DataAssets = $null
 if ($selectedHasTh10) {
     $th10DataAssets = Join-Path $generated 'th10'
-    $th10ContentScript = Get-EaglerWorkspacePath $workspaceLayout 'th10' 'scripts\prepare-eagler-content.mjs'
+    $th10ContentScript = Join-Path $project 'scripts\prepare-th10-content.mjs'
     & node $th10ContentScript "--original=$th10Source" "--output=$th10DataAssets"
     if ($LASTEXITCODE -ne 0) { throw "TH10 content preparation failed: $LASTEXITCODE" }
 }

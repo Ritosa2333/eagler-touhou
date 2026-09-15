@@ -326,7 +326,8 @@ the old HTTP/new HTTPS boundary before the Launcher starts.
 Deployed `/app.js` is the stable browser facade and module entrypoint; its
 source-checkout owner is `public/app.js`.
 `lib/browser-module-graph.mjs`
-derives its complete static relative-ESM dependency closure.
+derives its complete relative-ESM dependency closure, including literal
+`import("./feature.mjs")` edges emitted by the optimized Launcher.
 
 That derived closure is consumed by `lib/frontend-manifest.mjs` for both:
 
@@ -335,8 +336,12 @@ That derived closure is consumed by `lib/frontend-manifest.mjs` for both:
 
 Therefore a newly imported Launcher module cannot silently become
 network-only because somebody forgot to add it to a second file list.
-Non-static dynamic imports and bare-package imports are rejected by this
-offline closure contract.
+Feature code may be dynamically imported to avoid first-screen evaluation,
+but every emitted feature chunk remains part of the eager Launcher App Shell.
+`styles.css` is the render-blocking shell stylesheet; `features.css` starts
+downloading with the document without blocking first paint and is also owned by
+the App Shell. Non-literal dynamic imports and bare-package imports are rejected
+by this offline closure contract.
 
 ## 3. Browser-visible metadata contracts
 
@@ -478,9 +483,16 @@ Offline support has two independent storage authorities:
 1. **App Shell / Runtime bootstrap files** - Workbox precache.
 2. **Installed game/package data** - Package Store in IndexedDB.
 
-The Service Worker must precache every Launcher module required by the browser
-module closure and every deployment-declared Runtime HTML/JS/WASM required for
-offline launch. Package DATA is not routed through the Service Worker.
+The Service Worker install eagerly caches every Launcher module in the browser
+module closure plus the Launcher feature styles. Code splitting changes when
+feature JavaScript is parsed/evaluated, not whether it belongs to the installed
+Launcher. Package DATA is not routed through the Service Worker.
+
+Deployment-declared Runtime HTML/JS/WASM remains in the App Shell contract but
+is currently marked as a deferred Runtime path by Host assembly. It is fetched
+when that Runtime is prepared rather than competing with the first Launcher
+paint. Changing Runtime bootstrap from deferred to eager installation is a
+separate product/performance decision from Launcher code/CSS splitting.
 
 This separation is intentional: Workbox owns Web application availability;
 Package Store owns installed game content.

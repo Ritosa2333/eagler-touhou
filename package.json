@@ -1,7 +1,7 @@
 {
   "name": "eagler-touhou",
   "version": "0.1.0",
-  "description": "Browser Launcher and self-host site builder for Touhou Project 6-8 ports, with local packages, offline support, touch controls, and multiplayer.",
+  "description": "Browser Launcher and self-host site builder for Touhou Project 6, 7, 8 and 10 ports, with local packages, offline support, touch controls, and multiplayer.",
   "private": true,
   "license": "GPL-3.0-or-later",
   "type": "module",
@@ -59,7 +59,6 @@
     "test:package-store:browser": "python tests/test-package-update-atomicity-browser.py",
     "test:package-installer": "npm run test:package-store:browser",
     "test:webkit": "node tests/browser/test-playwright-webkit-gate.mjs",
-    "test:browserstack:ios": "node tests/browser/test-playwright-webkit-gate.mjs --require-browserstack",
     "test:import-update:browser": "python tests/browser/test-import-update.py",
     "test:card-filter:browser": "python tests/test-card-filter-browser.py",
     "test:edge-drawers:browser": "python tests/browser/test-edge-drawers.py",
@@ -99,7 +98,6 @@
   },
   "devDependencies": {
     "acorn": "8.18.0",
-    "browserstack-local": "^1.5.13",
     "esbuild": "0.28.2",
     "lighthouse": "13.4.1",
     "marked": "18.0.12",

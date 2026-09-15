@@ -100,7 +100,7 @@ assert.ok([...targets.keys()].every(target => !target.startsWith("tools/maintain
 for (const target of targets.keys()) {
   const segments = target.toLowerCase().split("/");
   const maintainerOnly = segments.some(segment =>
-    ["test-", "test_", "test.", "run-", "audit-", "profile-", "browserstack", "playwright", "webkit"]
+    ["test-", "test_", "test.", "run-", "audit-", "profile-", "playwright", "webkit"]
       .some(prefix => segment.startsWith(prefix)));
   assert.equal(maintainerOnly, false, `maintainer/test file leaked into self-host bundle: ${target}`);
   assert.notEqual(target, "server/netplay-relay.mjs", "relay server must not be bundled into the static self-host bundle");
@@ -134,7 +134,11 @@ try {
     "self-host bundle must resolve browser facades from packaged root files",
   );
   const packagedManifest = await import(pathToFileURL(resolve(smokeRoot, "lib/frontend-manifest.mjs")).href);
-  assert.deepEqual(packagedManifest.BROWSER_MODULE_FILES, ["app.js", "assets/launcher/app.mjs"]);
+  assert.ok(packagedManifest.BROWSER_MODULE_FILES.includes("app.js"));
+  assert.ok(packagedManifest.BROWSER_MODULE_FILES.includes("assets/launcher/app.mjs"));
+  assert.ok(packagedManifest.BROWSER_MODULE_FILES.length > 2,
+    "self-host bundle must preserve split Launcher chunks for offline feature loading");
+  assert.ok(packagedManifest.APP_SHELL_FILES.includes("features.css"));
 
   // A fresh bundle has no node_modules yet. Doctor must still reach its own
   // environment/input diagnostics instead of failing during module loading.

@@ -13,7 +13,7 @@ const hostManifest = {
   shared: { resourceMode: "hosted", vanillaFont: "../shared/msgothic.ttc", unicodeFont: "../shared/unifont.otf" },
   games: {
     th08: {
-      runtime: "runtime/th08/th08-modern.html",
+      runtime: "runtime/th08/th08.html",
       gameData: {
         version: `sha256-${"a".repeat(64)}`,
         layout: `sha256-${"b".repeat(64)}`,

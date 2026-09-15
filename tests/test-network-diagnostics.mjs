@@ -47,7 +47,11 @@ globalThis.WebSocket = WebSocket;
 try {
   const address = server.address();
   assert.equal(typeof address, "object");
-  const result = await probeRelay(`ws://127.0.0.1:${address.port}/?diagnostic=1`, 1000);
+  // The repository gate runs many CPU-heavy checks concurrently. Give the
+  // loopback socket enough scheduling headroom to prove the dedicated probe
+  // before exercising the legacy fallback; production already uses a longer
+  // bounded timeout.
+  const result = await probeRelay(`ws://127.0.0.1:${address.port}/?diagnostic=1`, 5000);
   assert.equal(dedicatedAttempts, 1);
   assert.equal(signalingAttempts, 1);
   assert.equal(result.iceServers[0].username, "ephemeral");

@@ -187,20 +187,15 @@ async function prepareTh10Content(projectRoot, layout) {
     await cp(supplied, output, { recursive: true });
     return output;
   }
-  const bundledRoot = resolve(projectRoot, "th10-runtime");
-  const bundledScript = resolve(bundledRoot, "scripts", "prepare-eagler-content.mjs");
-  const workspaceScript = workspacePath("th10", "scripts", "prepare-eagler-content.mjs");
-  const useBundledPreparer = await fileExists(bundledScript);
-  const preparationScript = useBundledPreparer ? bundledScript : workspaceScript;
+  const preparationScript = resolve(projectRoot, "scripts", "prepare-th10-content.mjs");
   if (!await fileExists(preparationScript)) {
-    throw new Error(`TH10 content is missing: provide ${supplied} or the bundled TH10 content preparer`);
+    throw new Error(`TH10 content is missing: provide ${supplied} or the Launcher TH10 content preparer`);
   }
   const args = [
     preparationScript,
     `--original=${layout.games.th10}`,
     `--output=${output}`,
   ];
-  if (useBundledPreparer) args.push(`--runtime=${bundledRoot}`);
   await run(process.execPath, args, { cwd: projectRoot });
   return output;
 }

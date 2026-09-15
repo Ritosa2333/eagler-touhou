@@ -29,7 +29,9 @@ workspace/
 ├─ eagler-touhou/
 ├─ th06-eagler/
 ├─ th07-eagler/
-├─ th08-eaglertemp/
+├─ worktrees/
+│  ├─ th08-eagler-portable/
+│  └─ th10-eagler-portable/
 ├─ thprac-reallyportable/
 ├─ dependencies/
 └─ toolchains/
@@ -118,7 +120,9 @@ npm run verify:practice
 
 `npm run check` is the fast single-repository gate for the normal edit loop. It runs deterministic source syntax, generated-output freshness, module/format/package contracts, and public-resource audits. It does not access the public network, launch a real browser, require sibling game repositories, or require original game resources. Independent checks run with bounded concurrency; set `EAGLER_CHECK_JOBS=1` when diagnosing concurrency issues.
 
-`npm run check:workspace` is the explicit cross-repository integration gate. It additionally reads the TH06/TH07/TH08 workspace state and runs local Runtime, HTTP, and format integrations. It also owns a small number of fast cross-repository checks where structure itself is the contract: shared Runtime protocol vocabulary, ReplayX/EAGX ABI and PRAC ownership, and the safety boundary that always-hitbox presentation must not alter gameplay RNG or `EffectManager`. Ordinary implementation shape, browser tests, BrowserStack, the full OGG baseline, public networking, complete Runtime builds, and formal Release verification remain on-demand or pre-release lanes; broader coverage alone is not a reason to add them to the default `check`.
+`npm run check:workspace` is the explicit cross-repository integration gate. It additionally reads the TH06/TH07/TH08/TH10 workspace state and runs local Runtime, HTTP, and format integrations. It also owns a small number of fast cross-repository checks where structure itself is the contract: shared Runtime protocol vocabulary, ReplayX/EAGX ABI and PRAC ownership, and the safety boundary that always-hitbox presentation must not alter gameplay RNG or `EffectManager`. Ordinary implementation shape, local browser tests, the full OGG baseline, public networking, complete Runtime builds, and formal Release verification remain on-demand or pre-release lanes; broader coverage alone is not a reason to add them to the default `check`. Real iPhone/iPad Safari coverage requires Apple hardware and is not represented as an automated repository gate.
+
+The canonical TH08/TH10 Runtime workspaces are `worktrees/th08-eagler-portable` and `worktrees/th10-eagler-portable`. Private retail game content is not owned by those source trees. Development metadata therefore uses verified DATA identities by default; set `EAGLER_TH08_CONTENT_DIR` to a private directory containing `bgm-ogg/` when local TH08 OGG is needed, and set `EAGLER_TH10_CONTENT_DIR` to a private directory containing `th10.data` and `bgm-ogg/` when a local hosted TH10 content lane is needed. Formal release continues to take original TH08/TH10 content through its explicit `Th08Directory` / `Th10Directory` inputs.
 
 Public-network, public Relay/TURN, and performance-profiling tasks belong to the remote/operations lane. Their scripts must receive an explicit target URL. Repository commands never embed `touhou.vip` or `test.touhou.vip` as defaults, preventing ordinary local tests, accidental invocation, or forks from contacting project infrastructure when a target is omitted.
 

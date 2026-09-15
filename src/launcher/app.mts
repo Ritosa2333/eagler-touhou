@@ -1,12 +1,4 @@
-import { parseStoredGameDataPack } from "../../legacy/legacy-game-pack.mjs";
-import { parsePackageZip } from "../../package/package-zip.mjs";
-import { installPackageFromAcquisition, installParsedPackageZip } from "../../package/package-installer.mjs";
-import { adaptLegacyGamePackToPackage } from "../../legacy/legacy-package-adapter.mjs";
-import {
-  migrateLegacyStoredImport,
-} from "../../legacy/legacy-import-storage.mjs";
 import { PACKAGE_DESCRIPTOR_SCHEMA } from "../../package/package-descriptor.mjs";
-import { installPublishedPackage } from "../../package/package-launcher.mjs";
 import { componentFileIds } from "../../package/package-generation.mjs";
 import {
   garbageCollectPackageStore,
@@ -91,7 +83,6 @@ import { createTouchLayoutWindowPositionStore } from "./touch-layout-editor-stat
 import type { TouchLayoutWindowKind } from "./touch-layout-editor-state.mjs";
 import { createSiteNoticeController } from "./site-notice.mjs";
 import { createFirstUseNoticeController } from "./first-use-notice.mjs";
-import { createMultiplayerGuideController } from "./multiplayer-guide.mjs";
 import { createEdgeDrawerGesture } from "./edge-drawer-gesture.mjs";
 import {
   DEFAULT_GAME_OPTIONS as defaultOptions,
@@ -119,19 +110,6 @@ import {
 import { createGameZoomController } from "./game-zoom.mjs";
 import type { GameZoomPointerInput } from "./game-zoom.mjs";
 import {
-  allocateReplayName,
-  createReplayArchiveExtractionGuard,
-  createReplayMutationQueue,
-  isReplayFilePath,
-  isReplayImportFileName,
-  ReplayArchiveScanError,
-  isReplayTargetAvailable,
-  isValidReplayName,
-  planReplayArchiveImport,
-  replayImportAccept,
-  selectReplayExportPaths,
-} from "./replay-files.mjs";
-import {
   appendRttSample,
   compactDiagnosticText,
   compactRendererLabel,
@@ -146,7 +124,6 @@ import {
   normalizeMultiplayerDisplayName as mpNormalizeDisplayName,
 } from "./multiplayer-identity.mjs";
 import { normalizeMultiplayerLobbySnapshot } from "./multiplayer-lobby-snapshot.mjs";
-import { createNetworkDiagnosticsController } from "./network-diagnostics.mjs";
 import { createMultiplayerPreferenceStore } from "./multiplayer-preferences.mjs";
 import {
   buildMultiplayerDiagnosticRelayUrl,
@@ -222,6 +199,32 @@ import type {
   TouchLayoutProfile,
 } from "./touch-layout-model.mjs";
 import type { DirectTouchPoint, DirectTouchType } from "./touch-runtime-protocol.mjs";
+
+type PackageFeatureModule = typeof import("./package-feature.mjs");
+type ReplayFeatureModule = typeof import("./replay-files.mjs");
+type NetworkDiagnosticsModule = typeof import("./network-diagnostics.mjs");
+type MultiplayerGuideModule = typeof import("./multiplayer-guide.mjs");
+
+let packageFeaturePromise: Promise<PackageFeatureModule> | null = null;
+let replayFeaturePromise: Promise<ReplayFeatureModule> | null = null;
+let networkDiagnosticsPromise: Promise<NetworkDiagnosticsModule> | null = null;
+let multiplayerGuidePromise: Promise<MultiplayerGuideModule> | null = null;
+
+function loadPackageFeature(): Promise<PackageFeatureModule> {
+  return packageFeaturePromise ??= import("./package-feature.mjs");
+}
+function loadReplayFeature(): Promise<ReplayFeatureModule> {
+  return replayFeaturePromise ??= import("./replay-files.mjs");
+}
+function loadNetworkDiagnostics(): Promise<NetworkDiagnosticsModule> {
+  return networkDiagnosticsPromise ??= import("./network-diagnostics.mjs");
+}
+function loadMultiplayerGuide(): Promise<MultiplayerGuideModule> {
+  return multiplayerGuidePromise ??= import("./multiplayer-guide.mjs");
+}
+async function installPublishedPackageLazy(...args: Parameters<PackageFeatureModule["installPublishedPackage"]>) {
+  return (await loadPackageFeature()).installPublishedPackage(...args);
+}
 
 const launcherWindow = window as LauncherWindow;
 const launcherNavigator = navigator as LauncherNavigator;
@@ -837,6 +840,7 @@ const packageTrackedFetch = (gameId: GameId) => (input: RequestInfo | URL, init?
 
 const installedPackageSnapshots = new Map<GameId, InstalledPackageGeneration>();
 async function migrateLegacyStoredImports() {
+  const { installParsedPackageZip, migrateLegacyStoredImport } = await loadPackageFeature();
   for (const gameId of Object.keys(manifest.games).filter(isGameId)) {
     let currentRevision = null;
     try { currentRevision = (await readCurrentPackageGeneration(gameId))?.generation?.descriptor?.revision || null; } catch {}
@@ -867,19 +871,47 @@ async function migrateLegacyStoredImports() {
 // can take seconds to open or recover a large IndexedDB database. Hydrate the
 // installed-package hints in the background; launch paths still read the
 // authoritative Package Store before using a generation.
-void (async () => {
-  await migrateLegacyStoredImports();
-  await Promise.all(Object.keys(manifest.games).filter(isGameId).map(async gameId => {
-    try {
-      const installed = await readCurrentPackageGeneration(gameId);
-      if (installed?.generation) installedPackageSnapshots.set(gameId, installed.generation);
-    } catch {}
-  }));
-  // No Player/Runtime existed when this maintenance task was queued. Package
-  // leases still protect a Runtime that starts before the task reaches GC.
-  try { await garbageCollectPackageStore(); } catch {}
-  render();
-})().catch(error => console.warn("local Package Store hydration deferred", error));
+let localPackageStoreHydrationRunning = false;
+let localPackageStoreHydrationScheduled = false;
+let localPackageStoreHydrationRerun = false;
+const hydrateLocalPackageStore = async () => {
+  if (localPackageStoreHydrationRunning) {
+    localPackageStoreHydrationRerun = true;
+    return;
+  }
+  localPackageStoreHydrationRunning = true;
+  try {
+    await migrateLegacyStoredImports();
+    await Promise.all(Object.keys(manifest.games).filter(isGameId).map(async gameId => {
+      try {
+        const installed = await readCurrentPackageGeneration(gameId);
+        if (installed?.generation) installedPackageSnapshots.set(gameId, installed.generation);
+      } catch {}
+    }));
+    // No Player/Runtime existed when this maintenance task was queued. Package
+    // leases still protect a Runtime that starts before the task reaches GC.
+    try { await garbageCollectPackageStore(); } catch {}
+    render();
+  } finally {
+    localPackageStoreHydrationRunning = false;
+    if (localPackageStoreHydrationRerun) {
+      localPackageStoreHydrationRerun = false;
+      scheduleLocalPackageStoreHydration();
+    }
+  }
+};
+// Package migration is compatibility maintenance, not first-paint work. Give
+// the browser one rendered frame before evaluating the package/import chunk;
+// Workbox still downloads that chunk as part of the eager Launcher App Shell.
+function scheduleLocalPackageStoreHydration() {
+  if (localPackageStoreHydrationScheduled) return;
+  localPackageStoreHydrationScheduled = true;
+  requestAnimationFrame(() => setTimeout(() => {
+    localPackageStoreHydrationScheduled = false;
+    void hydrateLocalPackageStore().catch(error => console.warn("local Package Store hydration deferred", error));
+  }, 0));
+}
+scheduleLocalPackageStoreHydration();
 
 async function fetchJsonWithTimeout(path: string, timeoutMs = 12000, meta: UnknownRecord = {}): Promise<unknown> {
   const controller = new AbortController();
@@ -951,7 +983,10 @@ async function refreshRemoteReleaseState() {
   }));
   if (metadata.hostManifest.ok) {
     applyHostManifest(metadata.hostManifest.value);
-    await migrateLegacyStoredImports();
+    // A freshly loaded Host Manifest may supply identities needed by a legacy
+    // migration. Retry maintenance out of band instead of making metadata
+    // readiness wait on IndexedDB/package work.
+    scheduleLocalPackageStoreHydration();
     hostManifestError = null;
   } else {
     hostManifestError = metadata.hostManifest.error;
@@ -1438,7 +1473,7 @@ const selectElementSelectors = [
 const dialogElementSelectors = [
   "#decisionDialog", "#firstUseNoticeDialog", "#mpGuideDialog", "#appleRefreshDialog", "#replayDialog",
 ] as const;
-const anchorElementSelectors = ["#originMigrationOpen", "#gameDataFallbackUrl"] as const;
+const anchorElementSelectors = ["#originMigrationOpen", "#gameDataFallbackUrl", "#gameNoticeRepo"] as const;
 const outputElementSelectors = ["#touchLayoutScaleValue", "#touchSensitivityValue"] as const;
 const buttonElementSelectors = [
   "#siteNoticeOptOut", "#siteNoticeClose", "#lessMotionToggle", "#mastheadMenuToggle",
@@ -3154,6 +3189,7 @@ function developmentPackageDescriptor(gameId: GameId): PackageDescriptor | null 
 
 async function installDevelopmentPackage(show = true) {
   if (PRODUCT_GAMES[state.game].dataProvider !== "retail-memory") return null;
+  const { installPackageFromAcquisition } = await loadPackageFeature();
   const descriptor = developmentPackageDescriptor(state.game);
   if (!descriptor) return null;
   const dataSource = gameDataDescriptor().source;
@@ -3191,6 +3227,13 @@ async function installDevelopmentPackage(show = true) {
 async function installImportedGameData(file: File | Blob) {
   if (!(file instanceof Blob) || file.size <= 0 || file.size > maxImportBytes) throw new Error(t("package.invalidDataSize"));
   if (!globalThis.indexedDB?.open) throw new Error(t("package.indexedDbUnavailable"));
+  const {
+    adaptLegacyGamePackToPackage,
+    installPackageFromAcquisition,
+    installParsedPackageZip,
+    parsePackageZip,
+    parseStoredGameDataPack,
+  } = await loadPackageFeature();
   if (state.game === "th08" && file instanceof File && /^th08\.dat$/i.test(file.name)) {
     const expected = gameDataDescriptor();
     if (file.size !== expected.bytes) throw new Error(t("package.th08SizeMismatch", { actual: file.size, expected: expected.bytes }));
@@ -3783,7 +3826,13 @@ function render() {
   $("#gameId").dataset.game = state.game;
   $("#gameTitle").textContent = game().title;
   $("#mpTitleBadge").hidden = !multiplayerProduct;
-  $("#th08MaintenanceCallout").hidden = state.game !== "th08" || multiplayerProduct;
+  const noticeGame = (state.game === "th08" || state.game === "th10") && !multiplayerProduct;
+  $("#gameNoticeCallout").hidden = !noticeGame;
+  if (noticeGame) {
+    $("#gameNoticeRepo").href = state.game === "th08"
+      ? "https://github.com/YomotsuHisami/th08"
+      : "https://github.com/YomotsuHisami/th10";
+  }
   $("#mpShell").hidden = !multiplayerProduct;
   const netplayConfigurationReady = hostManifestAvailable && !!state.netplay.url;
   const mpOnlineHead = document.querySelector<HTMLButtonElement>('[data-mp-fold="online"]');
@@ -4689,7 +4738,7 @@ async function maybeUpdateInstalledPackageBeforeLaunch(installed: CurrentPackage
   const operation = beginBlockingNetworkOperation({ label: t("package.cancelUpdate") });
   try {
     setPlayerStatus(t(localInstall ? "package.updatingLocal" : "package.updatingRemote"));
-    const updated = await installPublishedPackage(state.game, {
+    const updated = await installPublishedPackageLazy(state.game, {
       catalog: releaseCatalog,
       catalogUrl: releaseCatalogUrl,
       addComponents: [],
@@ -4726,7 +4775,7 @@ function startBackgroundPackageUpdate(installed: CurrentPackageGeneration) {
   const addComponents: string[] = [];
   const selectedComponentEntries = selectedLanguageEntriesForPackageUpdate();
   const localInstall = installed?.installation?.source === "local";
-  const task = installPublishedPackage(game, {
+  const task = installPublishedPackageLazy(game, {
     catalog,
     catalogUrl,
     addComponents,
@@ -4777,7 +4826,7 @@ async function ensureManagedOggStartupBarrier() {
   const operation = beginBlockingNetworkOperation({ label: t("music.cancelDownload") });
   try {
     setPlayerStatus(t("music.preparingInitialOgg"));
-    const updated = await installPublishedPackage(gameId, {
+    const updated = await installPublishedPackageLazy(gameId, {
       catalog: releaseCatalog,
       catalogUrl: releaseCatalogUrl,
       addFileIds: initialIds,
@@ -4834,7 +4883,7 @@ function startManagedOggProgressiveInstall() {
     for (const fileId of remaining) {
       if (!state.launched || state.game !== gameId || !runtimeSessionCurrent(session)) return;
       try {
-        const updated = await installPublishedPackage(gameId, {
+        const updated = await installPublishedPackageLazy(gameId, {
           catalog: releaseCatalog,
           catalogUrl: releaseCatalogUrl,
           addFileIds: [fileId],
@@ -4895,7 +4944,7 @@ async function ensureRuntime(show = true) {
     try {
       if (show) openPlayerView();
       setPlayerStatus(t("package.installingResources"));
-      await installPublishedPackage(state.game, {
+      await installPublishedPackageLazy(state.game, {
         catalog: releaseCatalog,
         catalogUrl: releaseCatalogUrl,
         addComponents: [],
@@ -5201,7 +5250,13 @@ const formatBytes = (bytes: number) => bytes < 1024 * 1024 ? `${(bytes / 1024).t
 interface ReplayStorageFile { path: string; size: number }
 type ImportFileKind = "save" | "replay";
 
-const replayMutations = createReplayMutationQueue();
+type ReplayMutationQueue = ReturnType<ReplayFeatureModule["createReplayMutationQueue"]>;
+let replayMutationQueue: ReplayMutationQueue | null = null;
+async function getReplayMutationQueue(): Promise<ReplayMutationQueue> {
+  if (replayMutationQueue) return replayMutationQueue;
+  const replay = await loadReplayFeature();
+  return replayMutationQueue ??= replay.createReplayMutationQueue();
+}
 let replayManagerOwnsRuntime = false;
 
 function runtimeResponseBytes(response: RuntimeResponseMessage): number[] {
@@ -5227,6 +5282,7 @@ async function listReplayStorageFiles() {
 }
 
 async function exportFiles(kind: ImportFileKind) {
+  const replay = kind === "replay" ? await loadReplayFeature() : null;
   const label = t(kind === "save" ? "file.kind.save" : "file.kind.replay");
   const wasReady = state.ready;
   showToast(t("file.exportPreparing", { kind: label }));
@@ -5239,8 +5295,8 @@ async function exportFiles(kind: ImportFileKind) {
       const zip = await ensureFflate();
       if (!zip?.zipSync) throw new Error(t("file.zipComponentMissing"));
       const storedFiles = await listReplayStorageFiles();
-      const exportPaths = selectReplayExportPaths(storedFiles.map(file => file.path));
-      if (!exportPaths.some(isReplayFilePath)) throw new Error(t("file.noReplayToExport"));
+      const exportPaths = replay!.selectReplayExportPaths(storedFiles.map(file => file.path));
+      if (!exportPaths.some(replay!.isReplayFilePath)) throw new Error(t("file.noReplayToExport"));
       const storedByPath = new Map(storedFiles.map(file => [file.path.toLowerCase(), file]));
       const entries: Record<string, Uint8Array> = {};
       for (const path of exportPaths) {
@@ -5262,7 +5318,7 @@ async function exportFiles(kind: ImportFileKind) {
     if (missingSave || missingReplay) {
       const labelText = t(missingSave ? "file.missingSavePrompt" : "file.missingReplayPrompt");
       if (await askConfirmation({ message: labelText, confirmText: t("file.selectImport") })) {
-        const file = await pickFile(missingSave ? ".dat" : replayImportAccept);
+        const file = await pickFile(missingSave ? ".dat" : replay!.replayImportAccept);
         if (file) await importFile(missingSave ? "save" : "replay", file);
       }
       return;
@@ -5272,6 +5328,7 @@ async function exportFiles(kind: ImportFileKind) {
   }
 }
 async function importFileExclusive(kind: ImportFileKind, file: File) {
+  const replay = kind === "replay" ? await loadReplayFeature() : null;
   if (!file.size) throw new Error(t("file.emptyImport"));
   if (file.size > maxImportBytes) throw new Error(t("file.importTooLarge"));
   if (kind === "save" && state.launched) {
@@ -5289,13 +5346,13 @@ async function importFileExclusive(kind: ImportFileKind, file: File) {
   } else if (kind === "replay" && /\.rpyx?$/.test(lowerName)) {
     const listing = await send("list");
     const existing = runtimeResponseFiles(listing).map(item => item.path);
-    const replayName = allocateReplayName(replayPrefix(), existing, file.name);
+    const replayName = replay!.allocateReplayName(replayPrefix(), existing, file.name);
     if (!replayName) throw new Error(t("file.replaySlotsExhausted"));
     files = [{ path: `replay/${replayName}`, bytes: new Uint8Array(await file.arrayBuffer()) }];
   } else if (kind === "replay" && lowerName.endsWith(".zip")) {
     const zip = await ensureFflate();
     if (!zip?.unzipSync) throw new Error(t("file.zipComponentMissing"));
-    const guard = createReplayArchiveExtractionGuard({
+    const guard = replay!.createReplayArchiveExtractionGuard({
       maxFileBytes: maxStoredFileBytes,
       maxExpandedBytes: maxReplayArchiveExpandedBytes,
     });
@@ -5303,7 +5360,7 @@ async function importFileExclusive(kind: ImportFileKind, file: File) {
     try {
       archive = zip.unzipSync(new Uint8Array(await file.arrayBuffer()), { filter: guard.filter });
     } catch (error) {
-      if (error instanceof ReplayArchiveScanError) {
+      if (error instanceof replay!.ReplayArchiveScanError) {
         const key = error.reason === "unsafe-path" ? "file.zipUnsafePath"
           : error.reason === "duplicate-path" ? "file.zipDuplicatePath"
             : error.reason === "file-too-large" ? "file.importStoredTooLarge"
@@ -5314,7 +5371,7 @@ async function importFileExclusive(kind: ImportFileKind, file: File) {
     }
     const listing = await send("list");
     const existing = runtimeResponseFiles(listing).map(item => item.path);
-    const plan = planReplayArchiveImport(replayPrefix(), guard.paths, existing);
+    const plan = replay!.planReplayArchiveImport(replayPrefix(), guard.paths, existing);
     if (!plan.ok) {
       if (plan.reason === "unsafe-path") throw new Error(t("file.zipUnsafePath"));
       if (plan.reason === "duplicate-path") throw new Error(t("file.zipDuplicatePath"));
@@ -5350,15 +5407,17 @@ async function importFileExclusive(kind: ImportFileKind, file: File) {
 }
 
 async function importFile(kind: ImportFileKind, file: File) {
-  return kind === "replay"
-    ? replayMutations.run(() => importFileExclusive(kind, file))
-    : importFileExclusive(kind, file);
+  if (kind !== "replay") return importFileExclusive(kind, file);
+  const mutations = await getReplayMutationQueue();
+  return mutations.run(() => importFileExclusive(kind, file));
 }
 
 async function refreshReplayManager({ animateRows = false } = {}) {
+  const replay = await loadReplayFeature();
+  const replayMutations = await getReplayMutationQueue();
   const storedFiles = await listReplayStorageFiles();
   const storedPaths = storedFiles.map(file => file.path);
-  const files = storedFiles.filter(file => isReplayFilePath(file.path)).sort((a, b) => a.path.localeCompare(b.path));
+  const files = storedFiles.filter(file => replay.isReplayFilePath(file.path)).sort((a, b) => a.path.localeCompare(b.path));
   const list = $("#replayList");
   list.replaceChildren();
   $("#replaySummary").textContent = t("replay.fileCount", { count: files.length });
@@ -5382,12 +5441,12 @@ async function refreshReplayManager({ animateRows = false } = {}) {
       const renamed = prompt(t("replay.renamePrompt"), name);
       if (renamed === null) return;
       if (!renamed.trim()) throw new Error(t("replay.nameEmpty"));
-      if (!isValidReplayName(replayPrefix(), renamed.trim())) throw new Error(t("replay.nameInvalid", { prefix: replayPrefix() }));
+      if (!replay.isValidReplayName(replayPrefix(), renamed.trim())) throw new Error(t("replay.nameInvalid", { prefix: replayPrefix() }));
       const target = `replay/${renamed.trim()}`;
       if (target.toLowerCase() === file.path.toLowerCase()) return;
       await replayMutations.run(async () => {
         const currentPaths = (await listReplayStorageFiles()).map(entry => entry.path);
-        if (!isReplayTargetAvailable(currentPaths, target)) throw new Error(t("replay.nameExists"));
+        if (!replay.isReplayTargetAvailable(currentPaths, target)) throw new Error(t("replay.nameExists"));
         const result = await send("read", { path: file.path });
         await send("write", { path: target, bytes: runtimeResponseBytes(result) });
         await send("remove", { path: file.path });
@@ -5454,7 +5513,8 @@ replayDialog.addEventListener("close", () => {
   if (replayManagerOwnsRuntime) {
     replayManagerOwnsRuntime = false;
     const ownedSession = currentRuntimeSession();
-    void replayMutations.idle().then(() => {
+    const idle = replayMutationQueue?.idle() ?? Promise.resolve();
+    void idle.then(() => {
       if (!state.launched && !replayDialog.open && currentRuntimeSession() === ownedSession) resetRuntime();
       maybeApplyDeferredAppShellUpdate();
     });
@@ -5481,7 +5541,8 @@ replayWindow.addEventListener("drop", async event => {
   try {
     const files = [...(event.dataTransfer?.files || [])];
     if (files.length !== 1) throw new Error(t("replay.dropSingle"));
-    if (!isReplayImportFileName(files[0].name)) throw new Error(t("replay.dropType"));
+    const replay = await loadReplayFeature();
+    if (!replay.isReplayImportFileName(files[0].name)) throw new Error(t("replay.dropType"));
     await importFile("replay", files[0]);
   } catch (error) {
     setStatus(t("status.errorReason", { reason: errorMessage(error) })); showToast(t("replay.importFailed", { reason: errorMessage(error) }));
@@ -5751,7 +5812,8 @@ async function runAction(action: string) {
           confirmText: t("file.continueImport"),
           tone: "danger"
         })) return;
-        const file = await pickFile(kind === "replay" ? replayImportAccept : ".dat");
+        const accept = kind === "replay" ? (await loadReplayFeature()).replayImportAccept : ".dat";
+        const file = await pickFile(accept);
         if (file && (kind === "save" || kind === "replay")) await importFile(kind, file);
       }
     } catch (error) {
@@ -7266,20 +7328,42 @@ appleRefreshDialog.addEventListener("click", event => {
 const siteNotice = createSiteNoticeController({
   onOptOut: () => showToast(t("notice.restoreHint")),
 });
-const multiplayerGuide = createMultiplayerGuideController({
-  readFailureText: error => t("multiplayerGuide.readFailed", { reason: errorMessage(error) }),
+type MultiplayerGuideController = ReturnType<MultiplayerGuideModule["createMultiplayerGuideController"]>;
+let multiplayerGuideController: MultiplayerGuideController | null = null;
+async function ensureMultiplayerGuideController(): Promise<MultiplayerGuideController> {
+  if (multiplayerGuideController) return multiplayerGuideController;
+  const module = await loadMultiplayerGuide();
+  return multiplayerGuideController ??= module.createMultiplayerGuideController({
+    readFailureText: error => t("multiplayerGuide.readFailed", { reason: errorMessage(error) }),
+  });
+}
+$("#mpGuideOpen").addEventListener("click", () => {
+  void ensureMultiplayerGuideController().then(controller => controller.show());
 });
-$("#mpGuideOpen").addEventListener("click", () => { void multiplayerGuide.show(); });
-createNetworkDiagnosticsController({
-  button: $("#mpNetworkCheck"),
-  panel: $("#mpNetworkResults"),
-  getRelayUrl: () => {
-    try { return buildMultiplayerDiagnosticRelayUrl(state.netplay.url); }
-    catch { return ""; }
-  },
-  getFallbackIceServers: () => state.netplay.iceServers,
-  translate: (key, params) => t(key, params),
-});
+const mpNetworkCheck = $("#mpNetworkCheck");
+type NetworkDiagnosticsController = ReturnType<NetworkDiagnosticsModule["createNetworkDiagnosticsController"]>;
+let networkDiagnosticsController: NetworkDiagnosticsController | null = null;
+async function ensureNetworkDiagnosticsController(): Promise<NetworkDiagnosticsController> {
+  if (networkDiagnosticsController) return networkDiagnosticsController;
+  const module = await loadNetworkDiagnostics();
+  return networkDiagnosticsController ??= module.createNetworkDiagnosticsController({
+    button: mpNetworkCheck,
+    panel: $("#mpNetworkResults"),
+    getRelayUrl: () => {
+      try { return buildMultiplayerDiagnosticRelayUrl(state.netplay.url); }
+      catch { return ""; }
+    },
+    getFallbackIceServers: () => state.netplay.iceServers,
+    translate: (key, params) => t(key, params),
+  });
+}
+for (const eventName of ["pointerenter", "focus"] as const) {
+  mpNetworkCheck.addEventListener(eventName, () => { void ensureNetworkDiagnosticsController(); }, { once: true });
+}
+mpNetworkCheck.addEventListener("click", () => {
+  if (networkDiagnosticsController) return;
+  void ensureNetworkDiagnosticsController().then(controller => controller.run());
+}, { once: true });
 createEdgeDrawerGesture({
   side: "right",
   drawer: $("#firstUseNoticeDialog"),

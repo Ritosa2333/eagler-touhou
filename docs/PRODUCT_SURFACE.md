@@ -224,7 +224,7 @@ These are engineering/release facilities rather than player features:
 - CMake/Ninja/Emscripten Runtime compilation;
 - Runtime Release production;
 - publication/release verification;
-- BrowserStack/WebKit and other explicit browser gates;
+- local browser/WebKit and other explicit browser gates;
 - publication audits and remote deployment probes.
 
 Ordinary self-host users should not need the Runtime source repositories or

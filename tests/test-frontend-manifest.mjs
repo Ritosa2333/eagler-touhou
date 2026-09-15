@@ -36,10 +36,13 @@ assert.ok(APP_SHELL_FILES.every(path => FRONTEND_PACKAGE_FILES.includes(path)));
 assert.deepEqual(BROWSER_MODULE_ENTRYPOINTS, ["app.js"]);
 assert.ok(BROWSER_MODULE_FILES.includes("app.js"));
 assert.ok(BROWSER_MODULE_FILES.includes("assets/launcher/app.mjs"));
-assert.equal(BROWSER_MODULE_FILES.length, 2,
-  "the published browser graph must contain the facade and optimized bundle instead of the source module graph");
+assert.ok(BROWSER_MODULE_FILES.length > 2,
+  "feature chunks must remain in the published browser graph so code splitting never creates online-only functionality");
+assert.ok(BROWSER_MODULE_FILES.some(path => /^assets\/launcher\/[^/]+-[A-Z0-9]{8}\.mjs$/.test(path)),
+  "optimized browser graph must contain at least one split feature chunk");
 assert.ok(BROWSER_MODULE_FILES.every(path => APP_SHELL_FILES.includes(path)));
 assert.equal(new Set(BROWSER_MODULE_FILES).size, BROWSER_MODULE_FILES.length);
+assert.ok(APP_SHELL_FILES.includes("features.css"), "deferred feature CSS must still be installed with the App Shell");
 assert.ok(!FRONTEND_PACKAGE_FILES.includes("app-shell-sw.js"));
 assert.ok(FRONTEND_PACKAGE_FILES.includes("en.html"));
 assert.ok(FRONTEND_PACKAGE_FILES.includes("sitemap.xml"));
