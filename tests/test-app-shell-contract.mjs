@@ -40,7 +40,8 @@ assert.deepEqual(APP_SHELL_RUNTIME_GLOBS, [
   "runtime/**/*.js",
   "runtime/**/*.wasm",
   "runtime/**/*.mjs",
-  "runtime/**/manifest.json",
+  "runtime/**/*.json",
+  "runtime/**/*.bin",
   "runtime/**/fonts/**/*.gz",
 ]);
 assert.deepEqual(deploymentAppShellPatterns({
