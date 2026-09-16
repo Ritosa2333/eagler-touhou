@@ -97,6 +97,19 @@ Serve `build-web/` over HTTP; opening the generated HTML directly from disk is
 not supported. The generated `.data` bundle contains original game assets and
 must not be committed or redistributed.
 
+For repository CI or source-only compile validation, use the checked-in CMake
+presets instead. They set `TH_EXTERNAL_ASSETS=ON`, so they compile/link the real
+Web Runtime without requiring original game resources and do not produce a
+playable asset bundle:
+
+```sh
+emcmake cmake -G Ninja --preset web-ci-normal
+cmake --build --preset web-ci-normal --parallel
+
+emcmake cmake -G Ninja --preset web-ci-netplay
+cmake --build --preset web-ci-netplay --parallel
+```
+
 # Decomp Credits
 
 We would like to extend our thanks to the following individuals for their
