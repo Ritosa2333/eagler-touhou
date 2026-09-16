@@ -188,7 +188,7 @@ export function normalizeStoredGamePreferences(
 
   const sensitivityCandidate = rawOptions?.touchSensitivity;
   const touchSensitivity = typeof sensitivityCandidate === "number" && Number.isFinite(sensitivityCandidate)
-    ? Math.min(300, Math.max(50, Math.round(sensitivityCandidate)))
+    ? Math.min(300, Math.max(100, Math.round(sensitivityCandidate)))
     : DEFAULT_GAME_OPTIONS.touchSensitivity;
 
   const options: GameOptions = {

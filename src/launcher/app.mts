@@ -1319,7 +1319,7 @@ const musicModeLabel = (mode: MusicMode) => mode === "ogg-stream" ? t("settings.
   : mode === "ogg-full" ? t("settings.music.oggFull")
   : mode === "midi" ? "midi"
   : t("settings.music.none");
-const touchSensitivityPresets = new Set([50, 100, 200]);
+const touchSensitivityPresets = new Set([100, 150, 200]);
 const touchLayoutControlTitle = (name: TouchLayoutControlName) => {
   const meta = touchLayoutControlMeta[name];
   return "titleKey" in meta ? t(meta.titleKey) : meta.title;
@@ -6118,7 +6118,7 @@ function moveTouchSensitivityPreview(event: PointerEvent) {
   const gesture = touchSensitivityPreviewGesture;
   if (!gesture || event.pointerId !== gesture.pointerId) return;
   event.preventDefault();
-  const gain = Math.min(300, Math.max(50, state.options.touchSensitivity)) / 100;
+  const gain = Math.min(300, Math.max(100, state.options.touchSensitivity)) / 100;
   setTouchSensitivityPreviewOffset((event.clientX - gesture.startX) * gain, (event.clientY - gesture.startY) * gain);
 }
 
@@ -7427,7 +7427,7 @@ $("#touchSensitivityCustomToggle").addEventListener("click", () => {
   render();
 });
 $("#touchSensitivity").addEventListener("input", event => {
-  const value = Math.min(300, Math.max(50, Math.round(Number($("#touchSensitivity").value) || 100)));
+  const value = Math.min(300, Math.max(100, Math.round(Number($("#touchSensitivity").value) || 100)));
   touchSensitivityCustomOpen = true;
   state.options.touchSensitivity = value;
   $("#touchSensitivityValue").textContent = `${value}%`;

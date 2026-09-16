@@ -45,6 +45,11 @@ const migratedTouch = normalizeStoredGamePreferences({
 assert.equal(migratedTouch.options.touchMovementMode, "touch-unlimited",
   "old unlimitedTouch must migrate into the mutually-exclusive movement mode");
 assert.equal(migratedTouch.options.touchSensitivity, 300, "touch sensitivity must remain bounded");
+const migratedLowSensitivity = normalizeStoredGamePreferences({
+  options: { touchSensitivity: 50 },
+}, { thpracAvailable: true, webAudioAvailable: true });
+assert.equal(migratedLowSensitivity.options.touchSensitivity, 100,
+  "legacy touch sensitivity below 100% must clamp to the new minimum");
 assert.equal(migratedTouch.options.thpracEnabled, false, "unavailable thprac cannot be restored as enabled");
 assert.equal(migratedTouch.musicPreference, "ogg-stream", "legacy OGG/WAV preference maps to the canonical OGG mode");
 assert.equal(migratedTouch.music, "ogg-stream");
