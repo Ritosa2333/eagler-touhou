@@ -4070,9 +4070,22 @@ async function confirmTouchModeBeforeEnable(mode: TouchMovementMode | "touch") {
 async function confirmInputWarnings() {
   const pureTouch = navigator.maxTouchPoints > 0 && !matchMedia("(any-pointer: fine)").matches;
   if (!state.options.touchEnabled && (pureTouch || mobileDevice)) {
-    return askConfirmation({
+    const confirmed = await askConfirmation({
       message: t("touch.disabledInputWarning"),
       confirmText: t("touch.startAnyway")
+    });
+    if (!confirmed) return false;
+  }
+  if (state.music === "none") {
+    return askConfirmation({
+      message: t("music.noneLaunchWarning"),
+      confirmText: t("music.startAnyway")
+    });
+  }
+  if (state.music === "midi") {
+    return askConfirmation({
+      message: t("music.midiLaunchWarning"),
+      confirmText: t("music.startAnyway")
     });
   }
   return true;
