@@ -1,7 +1,8 @@
 # Self-hosting
 
 Eagler Touhou can generate a complete, verified static site from a resource-free
-Runtime Release and legally-owned TH06/TH07/TH08/TH10 installations. The normal
+Runtime Release and legally-owned installations for every selected formal
+Product Catalog game. The normal
 self-host workflow is intentionally infrastructure-neutral: it does not install
 or configure nginx, Caddy, Apache, IIS, systemd, TLS, a CDN, firewall rules, or
 any other operator infrastructure.
@@ -11,7 +12,7 @@ any other operator infrastructure.
 - Node.js 22 or newer;
 - Python 3;
 - a verified all-product `runtime-release/` supplied by the project;
-- legally-owned TH06, TH07, TH08 and TH10 installations;
+- legally-owned installations for the selected Product Catalog games;
 - FFmpeg on PATH for the bundled TH10 OGG preparer, or a supplied
   `games/th10/assets-ogg/` containing `th10.data` and `bgm-ogg/`.
 
@@ -122,7 +123,7 @@ on `PATH`; `thanm` is optional.
 
 The normal hosted build:
 
-- validates the Runtime Release and the three original game directories;
+- validates the Runtime Release and every selected original game directory;
 - prepares Japanese, Simplified Chinese and English for TH06/TH07;
 - prepares the Launcher-facing artwork needed by the selected products;
 - converts OGG using the project-owned production baselines when OGG is

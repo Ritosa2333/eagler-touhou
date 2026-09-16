@@ -17,7 +17,8 @@ deployment, and verification.
 ## Hosting and deployment
 
 - [Self-hosting](SELF_HOSTING.md) - shortest supported path for an operator
-  with a Runtime Release and legally-owned TH06/TH07/TH08 installations.
+  with a Runtime Release and legally-owned installations for the selected
+  Product Catalog games.
 - [Self-hosting reference](SELF_HOSTING_REFERENCE.md) - self-host inputs, generated static
   site, resource modes, WebSocket relay/TURN configuration, and updates.
 - [External resource mode](EXTERNAL_RESOURCE_MODE.md) - paired Hosted resource
@@ -34,7 +35,12 @@ document instead.
 - [Artifacts](ARTIFACTS.md) - generated artifact and validation directory
   conventions.
 - [Game adapter contract](GAME_ADAPTER_CONTRACT.md) - Runtime/game adapter
-  boundary and remaining adapter differences.
+  ownership and declaration boundary.
+- [Adapter capability classification](ADAPTER_CAPABILITIES.md) - authoritative
+  required vs optional vs format-specific vs legacy-compatibility distinction.
+- [Adapting a game](ADAPTING_A_GAME.md) - end-to-end implementation guide,
+  Runtime protocol lifecycle, verification checklist, and handoff template for
+  adding another title.
 - [Runtime storage testing](RUNTIME_STORAGE_TESTING.md) - storage contract and
   browser conformance lanes.
 

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { FRONTEND_PACKAGE_FILES, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
+import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import {
   applyStaticTranslations,
   UI_LOCALES,
@@ -20,6 +21,17 @@ assert.equal(resolveUiLocale("ja-JP"), "en");
 const keys = validateUiCatalogs();
 assert.deepEqual(Object.keys(UI_MESSAGES["zh-CN"]), keys);
 assert.deepEqual(Object.keys(UI_MESSAGES.en), keys);
+for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
+  if (!product.multiplayer) continue;
+  assert.ok(keys.includes(product.multiplayer.titleKey), `${game}: Multiplayer product title is missing from UI catalogs: ${product.multiplayer.titleKey}`);
+  assert.equal(typeof UI_MESSAGES["zh-CN"][product.multiplayer.titleKey], "string");
+  assert.equal(typeof UI_MESSAGES.en[product.multiplayer.titleKey], "string");
+  for (const loadout of product.multiplayer.loadouts) {
+    assert.ok(keys.includes(loadout.labelKey), `${game}: Multiplayer loadout label is missing from UI catalogs: ${loadout.labelKey}`);
+    assert.equal(typeof UI_MESSAGES["zh-CN"][loadout.labelKey], "string");
+    assert.equal(typeof UI_MESSAGES.en[loadout.labelKey], "string");
+  }
+}
 setUiLocale("en", { persist: false, notify: false });
 assert.equal(t("site.documentTitle"), "Original Touhou Games on the Web ~ EAGLER TOUHOU");
 assert.match(t("site.description"), /launcher and multiplayer platform/);

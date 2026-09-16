@@ -3,11 +3,14 @@
  * and layout gates. Does not prove DATA transfer or Runtime execution. */
 import assert from "node:assert/strict";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
-import { assertRuntimeDataShell, runtimeDataProvider } from "../lib/runtime-data-provider.mjs";
+import { assertRuntimeDataShell, runtimeAdapterProfile, runtimeDataProvider } from "../lib/runtime-data-provider.mjs";
 
 for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
   const provider = runtimeDataProvider(game);
   assert.equal(provider.name, product.dataProvider);
+  const profile = runtimeAdapterProfile(game);
+  assert.equal(profile.dataProvider, product.dataProvider);
+  assert.equal(profile.runtimeLayout, product.runtimeFileLayout === "directory" ? "directory" : "flat");
   const declaration = `<meta name="eagler-data-provider" content="${provider.name}">`;
   const complete = product.runtimeFileLayout === "directory"
     ? [declaration, ...provider.shellMarkers].join("\n")

@@ -17,10 +17,16 @@ const validInput = {
   prepare: {
     RuntimeRelease: "runtime-release",
     FeatureConfig: "features.json",
-    Th06Directory: "original/th06",
-    Th07Directory: "original/th07",
-    Th08Directory: "original/th08",
-    Th10Directory: "original/th10",
+    GameDirectories: {
+      th06: "original/th06",
+      th07: "original/th07",
+      th08: "original/th08",
+      th10: "original/th10",
+    },
+    LanguagePackDirectories: {
+      th06: "languages/th06",
+      th07: "languages/th07",
+    },
     Music: ["midi"],
   },
 };
@@ -29,6 +35,11 @@ assert.deepEqual(plan.games, FORMAL_RELEASE_GAMES);
 assert.equal(plan.prepare.Profile, "web-release-hosted");
 assert.deepEqual(plan.prepare.Games, FORMAL_RELEASE_GAMES);
 assert.equal(plan.prepare.RuntimeRelease, resolve(inputDirectory, "runtime-release"));
+for (const game of FORMAL_RELEASE_GAMES) {
+  assert.equal(plan.prepare.GameDirectories[game], resolve(inputDirectory, "original", game));
+}
+assert.equal(plan.prepare.LanguagePackDirectories.th06, resolve(inputDirectory, "languages", "th06"));
+assert.equal(plan.prepare.LanguagePackDirectories.th07, resolve(inputDirectory, "languages", "th07"));
 assert.deepEqual(formalReleaseSourceOwners(), ["launcher"]);
 
 const exampleInput = JSON.parse(await readFile(new URL("../tools/maintainer/release-input.example.json", import.meta.url), "utf8"));
@@ -36,6 +47,27 @@ const examplePlan = normalizeFormalReleaseInput(exampleInput, normalizationOptio
 assert.deepEqual(examplePlan.games, FORMAL_RELEASE_GAMES);
 assert.deepEqual(examplePlan.prepare.Music, ["midi", "ogg"]);
 assert.equal(examplePlan.prepare.RuntimeRelease, resolve(inputDirectory, "runtime-release"));
+for (const game of FORMAL_RELEASE_GAMES) assert.ok(examplePlan.prepare.GameDirectories[game]);
+
+const legacyInput = {
+  ...validInput,
+  prepare: {
+    RuntimeRelease: "runtime-release",
+    FeatureConfig: "features.json",
+    Th06Directory: "original/th06",
+    Th07Directory: "original/th07",
+    Th08Directory: "original/th08",
+    Th10Directory: "original/th10",
+    Th06LanguagePacks: "languages/th06",
+    Th07LanguagePacks: "languages/th07",
+    Music: ["midi"],
+  },
+};
+const legacyPlan = normalizeFormalReleaseInput(legacyInput, normalizationOptions);
+assert.deepEqual(legacyPlan.prepare.GameDirectories, plan.prepare.GameDirectories);
+assert.deepEqual(legacyPlan.prepare.LanguagePackDirectories, plan.prepare.LanguagePackDirectories);
+assert.equal("Th06Directory" in legacyPlan.prepare, false);
+assert.equal("Th06LanguagePacks" in legacyPlan.prepare, false);
 
 assert.throws(() => normalizeFormalReleaseInput({ ...validInput, prepare: { ...validInput.prepare, RuntimeRelease: "" } }, {
   ...normalizationOptions,
@@ -46,6 +78,10 @@ assert.throws(() => normalizeFormalReleaseInput({ ...validInput, games: ["th07"]
 assert.throws(() => normalizeFormalReleaseInput({ ...validInput, prepare: { ...validInput.prepare, Th08Build: "build" } }, {
   ...normalizationOptions,
 }), /belongs to maintainer Runtime compilation/);
+assert.throws(() => normalizeFormalReleaseInput({
+  ...validInput,
+  prepare: { ...validInput.prepare, GameDirectories: { ...validInput.prepare.GameDirectories, th99: "original/th99" } },
+}, normalizationOptions), /unknown game/);
 
 const root = await mkdtemp(join(tmpdir(), "eagler-release-entry-"));
 try {

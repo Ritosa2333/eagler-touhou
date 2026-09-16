@@ -4,6 +4,7 @@ param(
     [string] $CMake,
     [string] $Ninja,
     [switch] $EmbedLocalAssets,
+    [hashtable] $GameAssetDirectories,
     [string] $Th06AssetDirectory,
     [string] $Th07AssetDirectory,
     [int] $Parallel = 6
@@ -14,6 +15,23 @@ $project = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 Import-Module (Join-Path $PSScriptRoot 'lib\workspace-layout.psm1') -Force
 $workspaceLayout = Get-EaglerWorkspaceLayout -ProjectRoot $project
 $workspace = $workspaceLayout.Root
+$runtimeBuildConfigPath = Join-Path $project 'config\runtime-builds.json'
+$runtimeBuildConfig = Get-Content -LiteralPath $runtimeBuildConfigPath -Raw | ConvertFrom-Json
+if ($runtimeBuildConfig.schema -ne 'eagler-touhou/runtime-builds/1' -or -not $runtimeBuildConfig.games) {
+    throw "Invalid Runtime build config: $runtimeBuildConfigPath"
+}
+$cmakeGames = @(
+    $runtimeBuildConfig.games.PSObject.Properties |
+        Where-Object { $_.Value.builder -eq 'cmake' } |
+        ForEach-Object { [string]$_.Name }
+)
+if ($cmakeGames.Count -eq 0) { throw 'Runtime build config declares no CMake products' }
+foreach ($game in $cmakeGames) {
+    $entry = $runtimeBuildConfig.games.$game
+    if (-not $entry.variants.development -or -not $entry.variants.external) {
+        throw "$game CMake workspace build requires development and external Runtime variants"
+    }
+}
 if (-not $EmsdkDirectory) { $EmsdkDirectory = Get-EaglerWorkspacePath $workspaceLayout 'toolchains' 'emsdk' }
 $emsdk = (Resolve-Path -LiteralPath $EmsdkDirectory).Path
 $emcmake = Join-Path $emsdk 'upstream\emscripten\emcmake.exe'
@@ -43,18 +61,33 @@ function Resolve-RuntimeBuildPlan([string] $Game, [string] $Variant, [string] $A
     return $json | ConvertFrom-Json
 }
 
-if (-not $EmbedLocalAssets -and ($Th06AssetDirectory -or $Th07AssetDirectory)) {
+if (-not $GameAssetDirectories) { $GameAssetDirectories = @{} }
+$legacyAssetDirectories = @{
+    th06 = $Th06AssetDirectory
+    th07 = $Th07AssetDirectory
+}
+foreach ($game in $legacyAssetDirectories.Keys) {
+    if (-not $GameAssetDirectories.ContainsKey($game) -and $legacyAssetDirectories[$game]) {
+        $GameAssetDirectories[$game] = $legacyAssetDirectories[$game]
+    }
+}
+if (-not $EmbedLocalAssets -and $GameAssetDirectories.Count -gt 0) {
     throw 'Asset directories require -EmbedLocalAssets'
 }
 $assetDirectories = @{}
 if ($EmbedLocalAssets) {
-    if (-not $Th06AssetDirectory) { $Th06AssetDirectory = Get-EaglerWorkspacePath $workspaceLayout 'th06' 'assets' }
-    if (-not $Th07AssetDirectory) { $Th07AssetDirectory = Get-EaglerWorkspacePath $workspaceLayout 'th07' 'assets' }
-    $assetDirectories.th06 = (Resolve-Path -LiteralPath $Th06AssetDirectory).Path
-    $assetDirectories.th07 = (Resolve-Path -LiteralPath $Th07AssetDirectory).Path
+    foreach ($game in $cmakeGames) {
+        $profile = $runtimeBuildConfig.games.$game
+        $directory = if ($GameAssetDirectories.ContainsKey($game) -and $GameAssetDirectories[$game]) {
+            [string]$GameAssetDirectories[$game]
+        } else {
+            Get-EaglerWorkspacePath $workspaceLayout ([string]$profile.workspaceRepository) 'assets'
+        }
+        $assetDirectories[$game] = (Resolve-Path -LiteralPath $directory).Path
+    }
 }
 
-foreach ($game in @('th06', 'th07')) {
+foreach ($game in $cmakeGames) {
     $variant = if ($EmbedLocalAssets) { 'development' } else { 'external' }
     $profileAssetRoot = if ($EmbedLocalAssets) { $assetDirectories[$game] } else { $null }
     $plan = Resolve-RuntimeBuildPlan $game $variant $profileAssetRoot
@@ -78,4 +111,5 @@ foreach ($game in @('th06', 'th07')) {
 }
 
 $kind = if ($EmbedLocalAssets) { 'playable local development' } else { 'source-only external-assets' }
-Write-Host "TH06 and TH07 $kind Web runtimes are ready."
+$labels = @($cmakeGames | ForEach-Object { $_.ToUpperInvariant() })
+Write-Host "$([string]::Join(', ', $labels)) $kind Web runtimes are ready."

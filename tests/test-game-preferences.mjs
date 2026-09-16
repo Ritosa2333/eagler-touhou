@@ -32,6 +32,25 @@ assert.equal(legacyFrameLimit.storageRewriteRequired, true);
 assert.equal(Object.hasOwn(legacyFrameLimit.sanitizedRecord.options, "limitPresentationTo60"), false,
   "legacy host frame-limit key must be physically removed from the persisted record");
 
+const legacyFocusHitbox = normalizeStoredGamePreferences({
+  options: { th06FocusHitbox: true },
+}, { thpracAvailable: true, webAudioAvailable: true });
+assert.equal(legacyFocusHitbox.options.focusHitboxEnabled, true,
+  "legacy TH06-named focus-hitbox preference must migrate to the generic product capability");
+assert.equal(legacyFocusHitbox.storageRewriteRequired, true);
+assert.equal(Object.hasOwn(legacyFocusHitbox.sanitizedRecord.options, "th06FocusHitbox"), false,
+  "legacy TH06-named focus-hitbox key must be removed after migration");
+assert.equal(legacyFocusHitbox.sanitizedRecord.options.focusHitboxEnabled, true);
+
+const legacyMultiplayerVisibility = normalizeStoredGamePreferences({
+  options: { enhanceLocalPlayerVisibility: true },
+}, { thpracAvailable: true, webAudioAvailable: true });
+assert.equal(legacyMultiplayerVisibility.options.multiplayerLocalPlayerVisibility, true,
+  "legacy local-player visibility preference must migrate into the Multiplayer profile");
+assert.equal(legacyMultiplayerVisibility.storageRewriteRequired, true);
+assert.equal(Object.hasOwn(legacyMultiplayerVisibility.sanitizedRecord.options, "enhanceLocalPlayerVisibility"), false);
+assert.equal(legacyMultiplayerVisibility.sanitizedRecord.options.multiplayerLocalPlayerVisibility, true);
+
 const migratedTouch = normalizeStoredGamePreferences({
   music: "ogg",
   musicPreferenceExplicit: true,
@@ -72,6 +91,10 @@ assert.equal(serialized.music, "ogg-full");
 assert.equal(serialized.options.frameLimit60Enabled, true);
 assert.equal(Object.hasOwn(serialized.options, "limitPresentationTo60"), false,
   "new preference writes must never reintroduce the retired host key");
+assert.equal(Object.hasOwn(serialized.options, "th06FocusHitbox"), false,
+  "new preference writes must use the generic focus-hitbox capability key");
+assert.equal(Object.hasOwn(serialized.options, "enhanceLocalPlayerVisibility"), false,
+  "new preference writes must use the Multiplayer-profile visibility key");
 
 class MemoryStorage {
   constructor(initial = {}) { this.values = new Map(Object.entries(initial)); }

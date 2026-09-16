@@ -4,8 +4,9 @@ export interface MultiplayerRuntimeLoadout {
 }
 
 export interface MultiplayerRuntimeOptionConstraints {
-  difficultyMax: number;
-  characterMax: number;
+  playerCounts: readonly (2 | 3)[];
+  difficulties: readonly string[];
+  loadouts: readonly MultiplayerRuntimeLoadout[];
 }
 
 export interface MultiplayerRuntimeOptionInput {
@@ -48,7 +49,7 @@ export function buildMultiplayerRuntimeOptions(
 
   const { player, playerCount, seed } = input;
   const spectator = input.spectator === true;
-  if (![2, 3].includes(playerCount) || (!spectator &&
+  if (!constraints.playerCounts.includes(playerCount as 2 | 3) || (!spectator &&
       (typeof player !== "number" || !Number.isInteger(player) || player < 0 || player >= playerCount))) {
     throw new Error("LAN 玩家槽位无效");
   }
@@ -59,16 +60,17 @@ export function buildMultiplayerRuntimeOptions(
     throw new Error("LAN 同步种子必须在 0–65535 之间");
   }
 
-  const difficultyMax = constraints.difficultyMax;
+  const difficultyMax = Math.max(0, constraints.difficulties.length - 1);
   const difficulty = Number(input.difficulty);
   if (!Number.isInteger(difficulty) || difficulty < 0 || difficulty > difficultyMax) {
     throw new Error(`LAN 难度必须在 0–${difficultyMax} 之间`);
   }
 
-  const maxCharacter = constraints.characterMax;
+  const allowedLoadouts = new Set(constraints.loadouts.map(({ character, shot }) => `${character}:${shot}`));
+  if (!allowedLoadouts.size) throw new Error("LAN 机体配置表为空");
   const loadouts = input.loadouts.slice(0, playerCount).map(({ character, shot }, index) => {
-    if (!Number.isInteger(character) || character < 0 || character > maxCharacter ||
-        !Number.isInteger(shot) || shot < 0 || shot > 1) {
+    if (!Number.isInteger(character) || character < 0 ||
+        !Number.isInteger(shot) || shot < 0 || !allowedLoadouts.has(`${character}:${shot}`)) {
       throw new Error(`P${index + 1} 机体配置无效`);
     }
     return { character, shot };

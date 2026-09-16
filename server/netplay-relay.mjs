@@ -9,46 +9,73 @@ function multiplayerPolicyForRoomId(roomId) {
   return multiplayerConfigForProduct(roomId.slice(0, separator));
 }
 
-const host = process.env.TH07_RELAY_HOST || '0.0.0.0';
-const port = Number.parseInt(process.env.TH07_RELAY_PORT || '18142', 10);
-const delayMs = Math.max(0, Number.parseInt(process.env.TH07_RELAY_DELAY_MS || '0', 10) || 0);
-const jitterMs = Math.max(0, Number.parseInt(process.env.TH07_RELAY_JITTER_MS || '0', 10) || 0);
-const dropEvery = Math.max(0, Number.parseInt(process.env.TH07_RELAY_DROP_EVERY || '0', 10) || 0);
-const dropFirstInputPerEdge = process.env.TH07_RELAY_DROP_FIRST_INPUT_PER_EDGE === '1';
-const dropInputLatestFrom = Math.max(-1, Number.parseInt(process.env.TH07_RELAY_DROP_INPUT_LATEST_FROM || '-1', 10) || -1);
-const dropInputLatestTo = Math.max(-1, Number.parseInt(process.env.TH07_RELAY_DROP_INPUT_LATEST_TO || '-1', 10) || -1);
-const routeSkewPlayer = Number.parseInt(process.env.TH07_TEST_ROUTE_SKEW_PLAYER || '-1', 10);
-const routeSkewMs = Math.max(0, Number.parseInt(process.env.TH07_TEST_ROUTE_SKEW_MS || '0', 10) || 0);
+const LEGACY_MULTIPLAYER_PLAYER_COUNTS = Object.freeze([2, 3]);
+function multiplayerPlayerCounts(policy) {
+  return Array.isArray(policy?.playerCounts) && policy.playerCounts.length
+    ? policy.playerCounts
+    : LEGACY_MULTIPLAYER_PLAYER_COUNTS;
+}
+function validPlayerCount(policy, value) {
+  return Number.isInteger(value) && multiplayerPlayerCounts(policy).includes(value);
+}
+function defaultPlayerCount(policy) {
+  return multiplayerPlayerCounts(policy)[0] ?? 2;
+}
+
+function envValue(primary, legacyNames, fallback = '') {
+  const names = [primary, ...legacyNames];
+  const configured = names
+    .filter(name => process.env[name] != null)
+    .map(name => [name, String(process.env[name])]);
+  if (configured.length > 1 && new Set(configured.map(([, value]) => value)).size > 1) {
+    throw new Error(`conflicting environment variables: ${configured.map(([name]) => name).join(', ')}`);
+  }
+  return configured[0]?.[1] ?? fallback;
+}
+
+// EAGLER_NETPLAY_* is the canonical service configuration. TH07_* names are
+// read-only compatibility aliases for deployments created before Multiplayer
+// became a shared product profile.
+const host = envValue('EAGLER_NETPLAY_RELAY_HOST', ['TH07_RELAY_HOST'], '0.0.0.0');
+const port = Number.parseInt(envValue('EAGLER_NETPLAY_RELAY_PORT', ['TH07_RELAY_PORT'], '18142'), 10);
+const delayMs = Math.max(0, Number.parseInt(envValue('EAGLER_NETPLAY_RELAY_DELAY_MS', ['TH07_RELAY_DELAY_MS'], '0'), 10) || 0);
+const jitterMs = Math.max(0, Number.parseInt(envValue('EAGLER_NETPLAY_RELAY_JITTER_MS', ['TH07_RELAY_JITTER_MS'], '0'), 10) || 0);
+const dropEvery = Math.max(0, Number.parseInt(envValue('EAGLER_NETPLAY_RELAY_DROP_EVERY', ['TH07_RELAY_DROP_EVERY'], '0'), 10) || 0);
+const dropFirstInputPerEdge = envValue('EAGLER_NETPLAY_RELAY_DROP_FIRST_INPUT_PER_EDGE', ['TH07_RELAY_DROP_FIRST_INPUT_PER_EDGE']) === '1';
+const dropInputLatestFrom = Math.max(-1, Number.parseInt(envValue('EAGLER_NETPLAY_RELAY_DROP_INPUT_LATEST_FROM', ['TH07_RELAY_DROP_INPUT_LATEST_FROM'], '-1'), 10) || -1);
+const dropInputLatestTo = Math.max(-1, Number.parseInt(envValue('EAGLER_NETPLAY_RELAY_DROP_INPUT_LATEST_TO', ['TH07_RELAY_DROP_INPUT_LATEST_TO'], '-1'), 10) || -1);
+const routeSkewPlayer = Number.parseInt(envValue('EAGLER_NETPLAY_TEST_ROUTE_SKEW_PLAYER', ['TH07_TEST_ROUTE_SKEW_PLAYER'], '-1'), 10);
+const routeSkewMs = Math.max(0, Number.parseInt(envValue('EAGLER_NETPLAY_TEST_ROUTE_SKEW_MS', ['TH07_TEST_ROUTE_SKEW_MS'], '0'), 10) || 0);
 const rtcTimeoutMs = Math.max(1000, Number.parseInt(
-  process.env.TH07_RTC_TIMEOUT_MS || process.env.TH07_DIRECT_TIMEOUT_MS || '4500', 10
+  envValue('EAGLER_NETPLAY_RTC_TIMEOUT_MS', ['TH07_RTC_TIMEOUT_MS', 'TH07_DIRECT_TIMEOUT_MS'], '4500'), 10
 ) || 4500);
-const stunUrls = (process.env.TH07_STUN_URLS || 'stun:stun.cloudflare.com:3478')
+const stunUrls = envValue('EAGLER_NETPLAY_STUN_URLS', ['TH07_STUN_URLS'], 'stun:stun.cloudflare.com:3478')
   .split(',').map(value => value.trim()).filter(Boolean);
-const turnUrls = (process.env.TH07_TURN_URLS || '')
+const turnUrls = envValue('EAGLER_NETPLAY_TURN_URLS', ['TH07_TURN_URLS'])
   .split(',').map(value => value.trim()).filter(Boolean);
-const turnSharedSecret = process.env.TH07_TURN_SHARED_SECRET || '';
-const turnUsername = process.env.TH07_TURN_USERNAME || '';
-const turnCredential = process.env.TH07_TURN_CREDENTIAL || '';
-const turnTtlSeconds = Math.max(60, Number.parseInt(process.env.TH07_TURN_TTL_SECONDS || '3600', 10) || 3600);
-const lobbyReconnectGraceMs = Math.max(100, Number.parseInt(process.env.TH07_LOBBY_RECONNECT_GRACE_MS || '12000', 10) || 12000);
+const turnSharedSecret = envValue('EAGLER_NETPLAY_TURN_SHARED_SECRET', ['TH07_TURN_SHARED_SECRET']);
+const turnUsername = envValue('EAGLER_NETPLAY_TURN_USERNAME', ['TH07_TURN_USERNAME']);
+const turnCredential = envValue('EAGLER_NETPLAY_TURN_CREDENTIAL', ['TH07_TURN_CREDENTIAL']);
+const turnTtlSeconds = Math.max(60, Number.parseInt(envValue('EAGLER_NETPLAY_TURN_TTL_SECONDS', ['TH07_TURN_TTL_SECONDS'], '3600'), 10) || 3600);
+const lobbyReconnectGraceMs = Math.max(100, Number.parseInt(envValue('EAGLER_NETPLAY_LOBBY_RECONNECT_GRACE_MS', ['TH07_LOBBY_RECONNECT_GRACE_MS'], '12000'), 10) || 12000);
 const spectatorConnectGraceMs = Math.max(100, Number.parseInt(
-  process.env.TH07_SPECTATOR_CONNECT_GRACE_MS || '60000', 10
+  envValue('EAGLER_NETPLAY_SPECTATOR_CONNECT_GRACE_MS', ['TH07_SPECTATOR_CONNECT_GRACE_MS'], '60000'), 10
 ) || 60000);
 const spectatorMaxBufferedBytes = Math.max(64 * 1024, Number.parseInt(
-  process.env.TH07_SPECTATOR_MAX_BUFFERED_BYTES || String(1024 * 1024), 10
+  envValue('EAGLER_NETPLAY_SPECTATOR_MAX_BUFFERED_BYTES', ['TH07_SPECTATOR_MAX_BUFFERED_BYTES'], String(1024 * 1024)), 10
 ) || 1024 * 1024);
 
 for (const url of stunUrls) {
-  if (!/^stuns?:/i.test(url)) throw new Error(`invalid TH07_STUN_URLS entry: ${url}`);
+  if (!/^stuns?:/i.test(url)) throw new Error(`invalid EAGLER_NETPLAY_STUN_URLS entry: ${url}`);
 }
 for (const url of turnUrls) {
-  if (!/^turns?:/i.test(url)) throw new Error(`invalid TH07_TURN_URLS entry: ${url}`);
+  if (!/^turns?:/i.test(url)) throw new Error(`invalid EAGLER_NETPLAY_TURN_URLS entry: ${url}`);
 }
 if (turnUrls.length && !turnSharedSecret && !(turnUsername && turnCredential)) {
-  throw new Error('TH07_TURN_URLS requires TH07_TURN_SHARED_SECRET or both static TURN credentials');
+  throw new Error('EAGLER_NETPLAY_TURN_URLS requires EAGLER_NETPLAY_TURN_SHARED_SECRET or both static TURN credentials');
 }
 if ((turnUsername && !turnCredential) || (!turnUsername && turnCredential)) {
-  throw new Error('TH07_TURN_USERNAME and TH07_TURN_CREDENTIAL must be configured together');
+  throw new Error('EAGLER_NETPLAY_TURN_USERNAME and EAGLER_NETPLAY_TURN_CREDENTIAL must be configured together');
 }
 const rooms = new Map();
 const forwardCounters = new Map();
@@ -70,7 +97,7 @@ function iceServersFor(roomId, runId, player) {
     servers.push({ urls: turnUrls, username, credential });
   } else if (turnUsername && turnCredential) {
     // Static credentials are supported for local testing only; production
-    // deployments should prefer TH07_TURN_SHARED_SECRET.
+    // deployments should prefer EAGLER_NETPLAY_TURN_SHARED_SECRET.
     servers.push({ urls: turnUrls, username: turnUsername, credential: turnCredential });
   }
   return servers;
@@ -103,14 +130,15 @@ function handleDiagnosticConnection(socket) {
 function getRoom(id) {
   let room = rooms.get(id);
   if (!room) {
+    const multiplayer = multiplayerPolicyForRoomId(id);
     room = {
-      multiplayer: multiplayerPolicyForRoomId(id),
+      multiplayer,
       clients: new Map(),
       lobbyClients: new Map(),
       lobbyDisconnectTimers: new Map(),
       runs: new Map(),
       lobby: {
-        playerCount: 2,
+        playerCount: defaultPlayerCount(multiplayer),
         difficulty: 1,
         settingsVersion: 1,
         phase: 'lobby',
@@ -401,7 +429,7 @@ function lobbySeatOf(room, clientId) {
 }
 
 function validLoadout(room, value) {
-  const loadoutCount = room.multiplayer?.loadoutCount ?? 6;
+  const loadoutCount = room.multiplayer?.loadouts?.length ?? 6;
   return Number.isInteger(value) && value >= 0 && value < loadoutCount;
 }
 
@@ -549,8 +577,12 @@ function handleLobbyConnection(socket, roomId, clientId) {
     }
     if (message.type === 'settings') {
       if (seat !== 0) { sendLobby(socket, { type: 'error', error: '只有 P1 可以修改房间设置' }); return; }
-      const playerCount = Number(message.playerCount) === 3 ? 3 : 2;
-      const difficultyMax = room.multiplayer?.difficultyMax ?? 5;
+      const playerCount = Number(message.playerCount);
+      if (!validPlayerCount(room.multiplayer, playerCount)) {
+        sendLobby(socket, { type: 'error', error: 'invalid player count' });
+        return;
+      }
+      const difficultyMax = Math.max(0, (room.multiplayer?.difficulties?.length ?? 6) - 1);
       const difficulty = Math.max(0, Math.min(difficultyMax, Number(message.difficulty) || 0));
       if (room.lobby.playerCount !== playerCount || room.lobby.difficulty !== difficulty) {
         invalidateLobbyReady(room);
@@ -672,10 +704,12 @@ server.on('connection', (socket, request) => {
     return;
   }
   const spectator = url.searchParams.get('spectator') || '';
-  const spectatorPlayerCount = Number.parseInt(url.searchParams.get('players') || '2', 10);
+  const multiplayer = multiplayerPolicyForRoomId(roomId);
+  const defaultCount = defaultPlayerCount(multiplayer);
+  const spectatorPlayerCount = Number.parseInt(url.searchParams.get('players') || String(defaultCount), 10);
   if (spectator) {
     if (!/^[A-Za-z0-9_-]{1,64}$/.test(roomId) || !/^[A-Za-z0-9_-]{1,64}$/.test(runId) ||
-        !/^[A-Za-z0-9_-]{8,64}$/.test(spectator) || ![2, 3].includes(spectatorPlayerCount)) {
+        !/^[A-Za-z0-9_-]{8,64}$/.test(spectator) || !validPlayerCount(multiplayer, spectatorPlayerCount)) {
       socket.close(1008, 'invalid spectator');
       return;
     }
@@ -683,10 +717,10 @@ server.on('connection', (socket, request) => {
     return;
   }
   const player = Number.parseInt(url.searchParams.get('player') || '-1', 10);
-  const playerCount = Number.parseInt(url.searchParams.get('players') || '2', 10);
+  const playerCount = Number.parseInt(url.searchParams.get('players') || String(defaultCount), 10);
   const signaling = url.searchParams.get('signal') === '1';
   if (!/^[A-Za-z0-9_-]{1,64}$/.test(roomId) || !/^[A-Za-z0-9_-]{1,64}$/.test(runId) ||
-      !Number.isInteger(player) || player < 0 || player > 2 || ![2, 3].includes(playerCount)) {
+      !Number.isInteger(player) || player < 0 || player >= playerCount || !validPlayerCount(multiplayer, playerCount)) {
     socket.close(1008, 'invalid room or player');
     return;
   }
@@ -790,7 +824,7 @@ server.on('connection', (socket, request) => {
 server.on('listening', () => {
   const dropRange = dropInputLatestFrom >= 0 && dropInputLatestTo >= dropInputLatestFrom
     ? `${dropInputLatestFrom}-${dropInputLatestTo}` : 'off';
-  console.log(`TH07 LAN relay listening ws://${host}:${port} delay=${delayMs} jitter=${jitterMs} dropEvery=${dropEvery} dropFirstInput=${dropFirstInputPerEdge ? 1 : 0} dropInputLatest=${dropRange}`);
+  console.log(`Eagler Touhou netplay relay listening ws://${host}:${port} delay=${delayMs} jitter=${jitterMs} dropEvery=${dropEvery} dropFirstInput=${dropFirstInputPerEdge ? 1 : 0} dropInputLatest=${dropRange}`);
 });
 
 server.on('error', error => {

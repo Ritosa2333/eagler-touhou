@@ -17,6 +17,7 @@ import {
 import { buildAppShell } from "../lib/app-shell-build.mjs";
 import { createDevelopmentHostManifest } from "../lib/development-host-manifest.mjs";
 import { DEVELOPMENT_CONTENT } from "../lib/development-content.mjs";
+import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
 import { FRONTEND_PACKAGE_FILES, hostArtworkFiles, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
 import { HOST_MANIFEST_FILE } from "../lib/contracts/host-manifest.mjs";
 import { RELEASE_CATALOG_FILE, RELEASE_CATALOG_SCHEMA } from "../lib/contracts/release-catalog.mjs";
@@ -110,14 +111,14 @@ function createRuntimeCompiler() {
   const bundledThtk = resolve(root, "dependencies", "thtk-bin-12", "thtk-bin-12");
   const thdat = resolve(process.env.EAGLER_THTK_THDAT || resolve(bundledThtk, "thdat.exe"));
   const thmsg = resolve(process.env.EAGLER_THTK_THMSG || resolve(bundledThtk, "thmsg.exe"));
-  const archives = {
-    th06: configuredPaths(process.env.EAGLER_TH06_ARCHIVES, [
-      resolve(root, "games", "th06", "紅魔郷ST.DAT"),
-      resolve(root, "games", "th06", "紅魔郷ED.DAT")
-    ]),
-    th07: configuredPaths(process.env.EAGLER_TH07_ARCHIVES, [resolve(root, "games", "th07", "th07.dat")])
-  };
-  if (!existsSync(thdat) || !existsSync(thmsg) || !archives.th06.length || !archives.th07.length) return null;
+  const compilerGames = Object.entries(PRODUCT_CONTENT)
+    .filter(([, content]) => content.hostPreparation?.languagePack?.kind === "thcrap-runtime-compiler");
+  const archives = Object.fromEntries(compilerGames.map(([game, content]) => {
+    const preparation = content.hostPreparation.languagePack;
+    const fallback = (preparation.developmentFiles || []).map(name => resolve(root, "games", game, name));
+    return [game, configuredPaths(process.env[preparation.developmentEnv], fallback)];
+  }));
+  if (!existsSync(thdat) || !existsSync(thmsg) || Object.values(archives).some(paths => !paths.length)) return null;
   return new ThcrapRuntimeCompiler({ runner: new ThtkRunner({ thdat, thmsg }), archives });
 }
 

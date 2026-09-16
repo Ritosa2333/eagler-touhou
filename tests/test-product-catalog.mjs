@@ -2,8 +2,14 @@
  * Proves: stable product registry invariants, product-id mapping and language ordering. */
 import assert from "node:assert/strict";
 import {
+  HOST_RUNTIME_FEATURE_IDS,
   PRODUCT_GAMES,
+  PRODUCT_FEATURE_IDS,
+  PRODUCT_FEATURE_POLICY,
   PRODUCT_IDS,
+  DEFAULT_MULTIPLAYER_PRODUCT_ID,
+  DEFAULT_PRODUCT_ID,
+  createLocalProductManifest,
   gameIdForProduct,
   isMultiplayerProductId,
   languagePriority,
@@ -12,6 +18,15 @@ import {
   productFeatureAvailable,
   productEnabledForBuild,
 } from "../lib/contracts/product-catalog.mjs";
+import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
+
+assert.deepEqual(PRODUCT_FEATURE_IDS, ["thprac", "languages", "focusHitbox"]);
+assert.deepEqual(HOST_RUNTIME_FEATURE_IDS, ["thprac", "focusHitbox"]);
+assert.equal(PRODUCT_FEATURE_POLICY.languages.runtimeRelease, true);
+assert.equal(PRODUCT_FEATURE_POLICY.languages.hostManifestFeature, false);
+assert.match(PRODUCT_FEATURE_POLICY.languages.hostSurface, /languageOptions/);
+assert.equal(PRODUCT_FEATURE_POLICY.thprac.hostValueSource, "server-request-and-runtime");
+assert.equal(PRODUCT_FEATURE_POLICY.focusHitbox.hostValueSource, "runtime-release");
 
 assert.deepEqual(
   ["lang_ru", "lang_en", "ja", "lang_zh-hant", "lang_zh-hans", "lang_de"]
@@ -20,6 +35,10 @@ assert.deepEqual(
 );
 
 assert.deepEqual(PRODUCT_IDS, ["th06", "th07", "th08", "th10", "th06mp", "th07mp"]);
+assert.equal(DEFAULT_PRODUCT_ID, "th06");
+assert.ok(PRODUCT_IDS.includes(DEFAULT_PRODUCT_ID));
+assert.equal(DEFAULT_MULTIPLAYER_PRODUCT_ID, "th07mp");
+assert.equal(isMultiplayerProductId(DEFAULT_MULTIPLAYER_PRODUCT_ID), true);
 assert.equal(isMultiplayerProductId("th06mp"), true);
 assert.equal(isMultiplayerProductId("th07mp"), true);
 assert.equal(isMultiplayerProductId("th06"), false);
@@ -37,54 +56,159 @@ assert.equal(productFeatureAvailable("th06", "thprac", { thprac: false }), false
 assert.equal(productFeatureAvailable("th08", "thprac", { thprac: true }), false);
 assert.equal(productFeatureAvailable("th06", "focusHitbox", { focusHitbox: false }), false);
 assert.equal(productFeatureAvailable("th07", "focusHitbox", { focusHitbox: true }), false);
-assert.equal(productFeatureAvailable("th06", "replayManagement", { replayManagement: false }), true);
-assert.equal(productFeatureAvailable("th08", "replayManagement", { replayManagement: false }), true);
-assert.equal(productFeatureAvailable("th10", "replayManagement", { replayManagement: false }), true);
 assert.equal(productFeatureAvailable("th06", "languages", { languages: false }), true);
 assert.equal(PRODUCT_GAMES.th08.replay.prefix, "th8");
 assert.equal(PRODUCT_GAMES.th10.replay.prefix, "th10");
+assert.deepEqual(PRODUCT_GAMES.th08.package.rawDataImport.fileNames, ["th08.dat"]);
+assert.equal(PRODUCT_GAMES.th08.musicCapabilities.midi, true);
+assert.equal(PRODUCT_GAMES.th10.musicCapabilities.midi, false);
+assert.equal(PRODUCT_GAMES.th08.support.adaptationNotice, "early-test");
+assert.equal(PRODUCT_GAMES.th10.support.adaptationNotice, "early-test");
+const localManifest = createLocalProductManifest();
+assert.notEqual(localManifest.games.th06.music.midi.supported, false);
+assert.equal(localManifest.games.th10.music.midi.supported, false,
+  "development fallback must not advertise a product capability forbidden by static policy");
 assert.equal(PRODUCT_GAMES.th06.multiplayerRuntime, "./runtime/th06/multiplayer/th06.html");
-assert.deepEqual(PRODUCT_GAMES.th06.multiplayer, {
-  difficultyMax: 4,
-  characterMax: 1,
-  loadoutCount: 4,
-  peerTransportGlobal: "__th06PeerTransport",
-});
+assert.equal(PRODUCT_GAMES.th06.multiplayer.titleKey, "game.title.th06mp");
+assert.deepEqual(PRODUCT_GAMES.th06.multiplayer.playerCounts, [2, 3]);
+assert.deepEqual(PRODUCT_GAMES.th06.multiplayer.loadouts.map(item => [item.labelKey, item.glyph, item.character, item.shot]), [
+  ["multiplayer.loadout.reimuA", "霊", 0, 0],
+  ["multiplayer.loadout.reimuB", "霊", 0, 1],
+  ["multiplayer.loadout.marisaA", "魔", 1, 0],
+  ["multiplayer.loadout.marisaB", "魔", 1, 1],
+]);
+assert.deepEqual(PRODUCT_GAMES.th06.multiplayer.difficulties, ["Easy", "Normal", "Hard", "Lunatic", "Extra"]);
+assert.equal(PRODUCT_GAMES.th06.multiplayer.peerTransportGlobal, "__th06PeerTransport");
 assert.equal(PRODUCT_GAMES.th07.multiplayerRuntime, "./runtime/th07/multiplayer/th07.html");
-assert.deepEqual(PRODUCT_GAMES.th07.multiplayer, {
-  difficultyMax: 5,
-  characterMax: 2,
-  loadoutCount: 6,
-  peerTransportGlobal: "__th07PeerTransport",
-});
+assert.equal(PRODUCT_GAMES.th07.multiplayer.titleKey, "game.title.th07mp");
+assert.deepEqual(PRODUCT_GAMES.th07.multiplayer.playerCounts, [2, 3]);
+assert.deepEqual(PRODUCT_GAMES.th07.multiplayer.loadouts.slice(-2).map(item => [item.labelKey, item.glyph, item.character, item.shot]), [
+  ["multiplayer.loadout.sakuyaA", "咲", 2, 0],
+  ["multiplayer.loadout.sakuyaB", "咲", 2, 1],
+]);
+assert.deepEqual(PRODUCT_GAMES.th07.multiplayer.difficulties, ["Easy", "Normal", "Hard", "Lunatic", "Extra", "Phantasm"]);
+assert.equal(PRODUCT_GAMES.th07.multiplayer.peerTransportGlobal, "__th07PeerTransport");
 
 const roots = new Set();
+assert.deepEqual(Object.keys(PRODUCT_CONTENT), Object.keys(PRODUCT_GAMES),
+  "every registered product must declare its original-content shape");
 for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
+  const content = PRODUCT_CONTENT[game];
+  if (product.cardPresentation) {
+    const card = product.cardPresentation;
+    assert.ok(Number.isFinite(card.positionPercent) && card.positionPercent >= 0 && card.positionPercent <= 100,
+      `${game}: card artwork position must be a 0-100 percentage`);
+    for (const key of ["artBrightness", "artSaturation", "glowBrightness", "glowSaturation"]) {
+      assert.ok(Number.isFinite(card[key]) && card[key] >= 0, `${game}: invalid card presentation ${key}`);
+    }
+  }
+  assert.ok(content?.original && Array.isArray(content.original.files) && content.original.files.length > 0,
+    `${game}: original-content files must be declared`);
+  assert.ok(content.hostPreparation?.ogg, `${game}: required OGG support needs an explicit Host preparation owner`);
+  assert.ok(["verified-converter", "prepared-content"].includes(content.hostPreparation.ogg.kind),
+    `${game}: unknown OGG Host preparation kind`);
+  if (content.hostPreparation.ogg.kind === "verified-converter") {
+    assert.match(content.hostPreparation.ogg.outputDirectory, /^[A-Za-z0-9][A-Za-z0-9._/-]*$/,
+      `${game}: verified OGG converter needs a safe output directory`);
+  } else {
+    assert.ok(content.hostPreparation.preparedContent, `${game}: prepared OGG path needs preparedContent metadata`);
+  }
+  if (product.features.languages) {
+    assert.equal(content.hostPreparation?.languagePack?.kind, "thcrap-runtime-compiler",
+      `${game}: language-capable product needs an explicit language preparation adapter`);
+    assert.ok(["archive", "archives"].includes(content.hostPreparation.languagePack.inputMode));
+    assert.match(content.hostPreparation.languagePack.developmentEnv, /^EAGLER_[A-Z0-9_]+$/);
+    assert.ok(Array.isArray(content.hostPreparation.languagePack.developmentFiles) &&
+      content.hostPreparation.languagePack.developmentFiles.length > 0);
+  }
+  if (content.hostPreparation?.preparedContent) {
+    const prepared = content.hostPreparation.preparedContent;
+    assert.match(prepared.directory, /^[A-Za-z0-9][A-Za-z0-9._/-]*$/);
+    assert.ok(Array.isArray(prepared.markerFiles) && prepared.markerFiles.length > 0);
+    assert.match(prepared.script, /^scripts\/[A-Za-z0-9][A-Za-z0-9._/-]*$/);
+  }
+  if (content.hostPreparation?.dataAssets?.kind === "legacy-preload-with-focus-hitbox") {
+    const focus = content.hostPreparation.dataAssets.focusHitbox;
+    assert.ok(PRODUCT_GAMES[focus.sourceGame], `${game}: focus-hitbox preparation source game must be registered`);
+    assert.match(focus.output, /^[A-Za-z0-9][A-Za-z0-9._-]*$/);
+  }
+  for (const name of [...content.original.files, ...(content.original.oggSourceFiles || [])]) {
+    assert.equal(typeof name, "string");
+    assert.ok(name && !name.startsWith("/") && !name.includes("..") && !name.includes("\\"),
+      `${game}: original-content path must be safe and relative: ${name}`);
+  }
+  if (content.original.preparedAlternative) {
+    assert.match(content.original.preparedAlternative.directory, /^[A-Za-z0-9][A-Za-z0-9._/-]*$/);
+    assert.ok(content.original.preparedAlternative.markerFiles.length > 0);
+  }
   assert.equal(roots.has(product.storage.saveRoot), false, `${game}: unique save owner`);
   roots.add(product.storage.saveRoot);
   assert.ok(product.storage.saveRoot.startsWith("/"));
   assert.ok(!product.storage.scoreFile.includes("/"));
-  assert.equal(typeof product.features.replayManagement, "boolean");
   assert.equal(typeof product.features.languages, "boolean");
   assert.equal(typeof product.features.focusHitbox, "boolean");
   assert.equal(typeof product.package.dataFileId, "string");
-  assert.equal(product.package.dataTarget, `/${game}.data`);
+  assert.match(product.package.dataFileId, /^[A-Za-z0-9][A-Za-z0-9._:-]*$/);
+  assert.match(product.package.dataTarget, /^\/[A-Za-z0-9][A-Za-z0-9._/-]*$/);
+  assert.equal(typeof product.musicCapabilities.midi, "boolean");
+  assert.deepEqual(Object.keys(product.musicCapabilities), ["midi"], `${game}: only optional music capabilities belong in product policy`);
+  assert.match(product.support.sourceRepository, /^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/);
+  if (product.support.adaptationNotice != null) assert.equal(product.support.adaptationNotice, "early-test");
+  if (product.package.rawDataImport) {
+    assert.ok(product.package.rawDataImport.fileNames.length > 0);
+    assert.equal(new Set(product.package.rawDataImport.fileNames.map(name => name.toLowerCase())).size,
+      product.package.rawDataImport.fileNames.length);
+    for (const name of product.package.rawDataImport.fileNames) {
+      assert.match(name, /^[A-Za-z0-9][A-Za-z0-9._-]*$/);
+      assert.ok(!name.includes("/") && !name.includes("\\"));
+    }
+  }
   for (const [mode, directory] of Object.entries(product.package.musicSourceDirectories || {})) {
     assert.ok(["wav", "ogg"].includes(mode));
     assert.equal(typeof directory, "string");
     assert.ok(directory === "." || /^[A-Za-z0-9_.-]+$/.test(directory));
   }
-  if (product.features.replayManagement) assert.match(product.replay?.prefix || "", /^th\d+$/);
-  else assert.equal(product.replay, undefined);
+  assert.match(product.replay?.prefix || "", /^th\d+$/);
   if (product.multiplayerRuntime) {
     assert.ok(product.multiplayer);
-    assert.ok(Number.isInteger(product.multiplayer.difficultyMax));
-    assert.ok(Number.isInteger(product.multiplayer.characterMax));
-    assert.ok(Number.isInteger(product.multiplayer.loadoutCount));
+    assert.match(product.multiplayer.titleKey, /^game\.title\.[A-Za-z0-9_-]+$/,
+      `${game}: multiplayer product needs an explicit localized title key`);
+    assert.ok(Array.isArray(product.multiplayer.playerCounts) && product.multiplayer.playerCounts.length > 0,
+      `${game}: multiplayer product needs at least one supported player count`);
+    assert.equal(new Set(product.multiplayer.playerCounts).size, product.multiplayer.playerCounts.length,
+      `${game}: multiplayer player-count declarations must be unique`);
+    assert.ok(product.multiplayer.playerCounts.every(count => count === 2 || count === 3),
+      `${game}: current shared Multiplayer platform supports only declared 2P/3P subsets`);
+    assert.ok(product.multiplayer.difficulties.length > 0 && product.multiplayer.difficulties.every(label => typeof label === "string" && label.length > 0));
+    assert.equal(new Set(product.multiplayer.difficulties).size, product.multiplayer.difficulties.length,
+      `${game}: multiplayer difficulty labels must be unique`);
+    assert.ok(product.multiplayer.loadouts.length > 0, `${game}: multiplayer product needs at least one loadout`);
+    const loadoutPairs = new Set();
+    const loadoutLabels = new Set();
+    for (const loadout of product.multiplayer.loadouts) {
+      assert.match(loadout.labelKey, /^multiplayer\.loadout\.[A-Za-z0-9_-]+$/);
+      assert.equal(typeof loadout.glyph, "string");
+      assert.ok(loadout.glyph.length > 0);
+      assert.ok(Number.isInteger(loadout.character) && loadout.character >= 0);
+      assert.ok(Number.isInteger(loadout.shot) && loadout.shot >= 0);
+      assert.equal(loadoutLabels.has(loadout.labelKey), false, `${game}: duplicate Multiplayer loadout label ${loadout.labelKey}`);
+      loadoutLabels.add(loadout.labelKey);
+      const pair = `${loadout.character}:${loadout.shot}`;
+      assert.equal(loadoutPairs.has(pair), false, `${game}: duplicate Multiplayer loadout pair ${pair}`);
+      loadoutPairs.add(pair);
+    }
     assert.match(product.multiplayer.peerTransportGlobal, /^__[A-Za-z0-9]+$/);
   } else {
     assert.equal(product.multiplayer, undefined);
   }
+  if (product.runtimeFileLayout === "directory") {
+    assert.ok(Array.isArray(product.runtimeAssets) && product.runtimeAssets.length > 0);
+    assert.ok(Array.isArray(product.requiredShared));
+    assert.ok(product.runtimeAssets.includes(`${game}.html`));
+    assert.equal(new Set(product.runtimeAssets).size, product.runtimeAssets.length);
+  }
+  assert.equal(typeof PRODUCT_CONTENT[game].hostPreparation?.artwork?.kind, "string",
+    `${game}: host artwork preparation must be declared as a format recipe`);
 }
 console.log("Product catalog policy: PASS");
 

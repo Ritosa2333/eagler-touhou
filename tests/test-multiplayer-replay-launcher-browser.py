@@ -11,7 +11,23 @@ from playwright.sync_api import sync_playwright
 
 
 PROJECT = Path(__file__).resolve().parents[1]
-WORKSPACE = PROJECT.parent
+
+_adapter_contracts = json.loads(subprocess.run(
+    ["node", "scripts/inspect-adapter-contract.mjs"],
+    cwd=PROJECT,
+    check=True,
+    capture_output=True,
+    text=True,
+).stdout)
+MULTIPLAYER_FIXTURES = [
+    {
+        "game": report["game"],
+        "product": f"{report['game']}mp",
+        "midi": report["product"]["music"]["midiOptional"],
+    }
+    for report in _adapter_contracts
+    if report["product"]["multiplayer"] is not None
+]
 
 
 def free_port() -> int:
@@ -34,7 +50,7 @@ def wait_http(url: str, timeout: float = 10.0) -> None:
     raise RuntimeError(f"HTTP server did not start: {url}")
 
 
-def host_game(game: str) -> dict:
+def host_game(game: str, midi: bool) -> dict:
     digest = "a" * 64
     layout = "b" * 64
     return {
@@ -47,7 +63,7 @@ def host_game(game: str) -> dict:
             "version": f"sha256-{digest}",
             "layout": f"sha256-{layout}",
         },
-        "music": {"midi": {"files": []}},
+        "music": {"midi": {"files": []} if midi else {"files": [], "supported": False}},
     }
 
 
@@ -60,10 +76,7 @@ HOST_MANIFEST = {
         "vanillaFont": "shared/msgothic.ttc?v=test",
         "unicodeFont": "shared/unifont.otf?v=test",
     },
-    "games": {
-        "th06": host_game("th06"),
-        "th07": host_game("th07"),
-    },
+    "games": {fixture["game"]: host_game(fixture["game"], fixture["midi"]) for fixture in MULTIPLAYER_FIXTURES},
 }
 
 
@@ -72,7 +85,7 @@ RUNTIME_PROTOCOL_STUB = r"""<!doctype html>
 <script>
 (() => {
   const protocol = "eagler-touhou/1";
-  const match = location.pathname.match(/\/runtime\/(th0[67])\/multiplayer\//);
+  const match = location.pathname.match(/\/runtime\/(th\d+)\/multiplayer\//);
   const game = match?.[1] || "";
   window.__eaglerTestMessages = [];
   window.addEventListener("message", event => {
@@ -91,8 +104,8 @@ def main() -> int:
     http_port = free_port()
     launcher_url = f"http://127.0.0.1:{http_port}/"
     http = subprocess.Popen(
-        [sys.executable, "-m", "http.server", str(http_port), "--bind", "127.0.0.1"],
-        cwd=WORKSPACE,
+        ["node", "scripts/serve.mjs", str(http_port)],
+        cwd=PROJECT,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         text=True,
@@ -103,7 +116,9 @@ def main() -> int:
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
             try:
-                for product, game in (("th06mp", "th06"), ("th07mp", "th07")):
+                for fixture in MULTIPLAYER_FIXTURES:
+                    product = fixture["product"]
+                    game = fixture["game"]
                     context = browser.new_context(
                         viewport={"width": 960, "height": 720},
                         service_workers="block",

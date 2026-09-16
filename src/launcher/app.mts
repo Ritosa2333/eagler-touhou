@@ -27,7 +27,15 @@ import {
 import { createNetworkActivityTracker } from "./network-activity.mjs";
 import { loadOfflineLanguageIndex, rememberOfflineLanguage } from "./offline-language-index.mjs";
 import {
+  createRawDataImportPackageDescriptor,
+  rawDataImportHashMatches,
+  rawDataImportMatchesFileName,
+  rawDataImportSizeMatches,
+} from "./raw-data-import.mjs";
+import {
   HOST_PROTOCOL,
+  DEFAULT_MULTIPLAYER_PRODUCT_ID,
+  DEFAULT_PRODUCT_ID,
   PRODUCT_GAMES,
   PRODUCT_IDS,
   createLocalProductManifest,
@@ -47,7 +55,13 @@ import {
   releaseCatalogEntryUrl,
 } from "../contracts/release-catalog.mjs";
 import { hostOriginMigrationAvailable, validateHostManifest } from "../contracts/host-manifest.mjs";
-import { isRuntimeResponseMessage, parseRuntimeInboundMessage } from "../contracts/runtime-protocol.mjs";
+import {
+  TOUCH_SENSITIVITY_MAX,
+  TOUCH_SENSITIVITY_MIN,
+  isRuntimeResponseMessage,
+  parseRuntimeInboundMessage,
+} from "../contracts/runtime-protocol.mjs";
+import type { RuntimeConfigureOptions } from "../contracts/runtime-protocol.mjs";
 import { loadRemoteMetadata } from "./remote-metadata.mjs";
 import { getUiLocale, initUiLocale, isUiMessageKey, t } from "./i18n.mjs";
 import type { UiMessageKey } from "./i18n.mjs";
@@ -435,8 +449,9 @@ function mpApplyLobbyRoom(next: unknown) {
   if (!mpUiState.room) return;
   const normalized = normalizeMultiplayerLobbySnapshot(next, {
     localClientId: mpLobby.clientId,
-    maxDifficulty: mpDifficultyMax(),
-    loadoutCount: mpLoadoutCount(),
+    playerCounts: mpPlayerCounts(),
+    difficulties: game().multiplayer?.difficulties || [],
+    loadouts: mpLoadouts(),
   });
   if (!normalized) return;
   mpUiState.room.synced = true;
@@ -497,7 +512,7 @@ function mpReconnectLobbyNow() {
 function mpConnectLobby(reconnecting = false) {
   const room = mpUiState.room;
   if (!room || typeof WebSocket !== "function") return;
-  mpLobby.clientId = multiplayerIdentity.lobbyClientId(isMultiplayerProduct(state.product) ? state.product : "th07mp");
+  mpLobby.clientId = multiplayerIdentity.lobbyClientId(isMultiplayerProduct(state.product) ? state.product : DEFAULT_MULTIPLAYER_PRODUCT_ID);
   let lobbyRelay;
   try {
     lobbyRelay = buildMultiplayerLobbyRelayUrl(state.netplay.url, {
@@ -956,7 +971,7 @@ function applyHostManifest(value: unknown) {
   const nextManifest = validateHostManifest(value);
   manifest = nextManifest;
   // A hosted site may intentionally publish a game subset (for example a
-  // TH10-only review package). Keep the Launcher state inside that subset
+  // single-title review package). Keep the Launcher state inside that subset
   // before render() asks game() for music and feature capabilities.
   selectAvailableHostProduct(nextManifest);
   if (originMigrationOpen) {
@@ -1214,11 +1229,11 @@ if (typeof window.AudioContext !== "function" && typeof launcherWindow.webkitAud
 const webAudioAvailable = typeof window.AudioContext === "function";
 
 const state: LauncherState = {
-  game: "th06", hasSelection: false, music: "ogg-stream", ready: false, launched: false, replayViewer: false,
+  game: gameIdForProduct(DEFAULT_PRODUCT_ID), hasSelection: false, music: "ogg-stream", ready: false, launched: false, replayViewer: false,
   musicPreferenceExplicit: false,
   musicPreference: "ogg-stream",
   request: 0, pending: new Map(), source: "", sourceIdentity: "", mobileOpen: false,
-  product: "th06", options: { ...defaultOptions }, language: "ja", lessMotion: false, runtimeVariant: "normal",
+  product: DEFAULT_PRODUCT_ID, options: { ...defaultOptions }, language: "ja", lessMotion: false, runtimeVariant: "normal",
   netplay: {
     url: "",
     player: 0, playerCount: 2, seed: 19005, difficulty: 1,
@@ -1229,8 +1244,21 @@ const state: LauncherState = {
 };
 const productIds = new Set<ProductId>(PRODUCT_IDS);
 const isMultiplayerProduct = (product: ProductId = state.product) => isMultiplayerProductId(product);
-const mpDifficultyMax = (product: ProductId = state.product) => multiplayerConfigForProduct(product)?.difficultyMax ?? 0;
-const productTitle = (product: ProductId) => isMultiplayerProductId(product) ? t(`game.title.${product}`) : game().title;
+const mpPlayerCounts = (product: ProductId = state.product): readonly (2 | 3)[] =>
+  multiplayerConfigForProduct(product)?.playerCounts ?? [2];
+const mpDefaultPlayerCount = (product: ProductId = state.product): 2 | 3 => mpPlayerCounts(product)[0] ?? 2;
+const mpNormalizePlayerCount = (value: unknown, product: ProductId = state.product): 2 | 3 => {
+  const allowed = mpPlayerCounts(product);
+  const numeric = Number(value);
+  return allowed.includes(numeric as 2 | 3) ? numeric as 2 | 3 : (allowed[0] ?? 2);
+};
+const mpDifficultyMax = (product: ProductId = state.product) =>
+  Math.max(0, (multiplayerConfigForProduct(product)?.difficulties.length ?? 1) - 1);
+const productTitle = (product: ProductId) => {
+  if (!isMultiplayerProductId(product)) return PRODUCT_GAMES[gameIdForProduct(product)].title;
+  const multiplayer = multiplayerConfigForProduct(product);
+  return multiplayer ? t(multiplayer.titleKey as UiMessageKey) : PRODUCT_GAMES[gameIdForProduct(product)].title;
+};
 const mpUiState: MultiplayerUiState = {
   room: null,
   seat: null,
@@ -1248,7 +1276,7 @@ const multiplayerRoomSessions = createMultiplayerRoomSessionStore();
 const multiplayerSpectatorRailPositions = createMultiplayerSpectatorRailPositionStore();
 let mpShareSingleplayerSettings = true;
 function restoreMpProductPreferences(product: ProductId = state.product) {
-  const maxLoadout = multiplayerConfigForProduct(product)?.loadoutCount ?? 0;
+  const maxLoadout = multiplayerConfigForProduct(product)?.loadouts.length ?? 0;
   const restored = multiplayerPreferences.load({
     product,
     multiplayer: isMultiplayerProduct(product),
@@ -1478,11 +1506,11 @@ const outputElementSelectors = ["#touchLayoutScaleValue", "#touchSensitivityValu
 const buttonElementSelectors = [
   "#siteNoticeOptOut", "#siteNoticeClose", "#lessMotionToggle", "#mastheadMenuToggle",
   "#siteNoticeToggle", "#runtimeDiagnosticsToggle", "#firstUseNoticeOpen", "#mpShareSettingsToggle", "#mpFrameLimitAppleNote",
-  "#mpFrameLimitToggle", "#mpTh06HitboxToggle", "#mpLocalPlayerVisibilityToggle", "#mpMobileOptionsToggle",
+  "#mpFrameLimitToggle", "#mpFocusHitboxToggle", "#mpLocalPlayerVisibilityToggle", "#mpMobileOptionsToggle",
   "#mpTouchToggle", "#mpTouchLayoutEdit", "#mpAlwaysHitboxToggle", "#mpMagnifierToggle",
   "#mpReplayViewer", "#mpCreateRoom", "#mpJoinRoom", "#frameLimitAppleNote",
   "#mpGuideOpen", "#mpNetworkCheck",
-  "#frameLimitToggle", "#th06HitboxToggle", "#thpracToggle", "#mobileOptionsToggle",
+  "#frameLimitToggle", "#focusHitboxToggle", "#thpracToggle", "#mobileOptionsToggle",
   "#touchToggle", "#touchLayoutEdit", "#alwaysHitboxToggle", "#magnifierToggle",
   "#launch", "#gamePackageImport", "#mpLeaveRoom", "#mpSpectatorJoin",
   "#mpLoadoutPrev", "#mpLoadoutNext", "#mpStandUp", "#mpLoadoutPrevSeat",
@@ -3034,9 +3062,15 @@ interface LauncherGameView {
   runtime: string;
   multiplayerRuntime?: string;
   multiplayer?: {
-    difficultyMax: number;
-    characterMax: number;
-    loadoutCount: number;
+    titleKey: string;
+    playerCounts: readonly (2 | 3)[];
+    difficulties: readonly string[];
+    loadouts: readonly {
+      labelKey: string;
+      glyph: string;
+      character: number;
+      shot: number;
+    }[];
     peerTransportGlobal: string;
   };
   storage: {
@@ -3234,48 +3268,30 @@ async function installImportedGameData(file: File | Blob) {
     parsePackageZip,
     parseStoredGameDataPack,
   } = await loadPackageFeature();
-  if (state.game === "th08" && file instanceof File && /^th08\.dat$/i.test(file.name)) {
+  const matchesRawDataImport = file instanceof File && rawDataImportMatchesFileName(state.game, file.name);
+  if (matchesRawDataImport) {
     const expected = gameDataDescriptor();
-    if (file.size !== expected.bytes) throw new Error(t("package.th08SizeMismatch", { actual: file.size, expected: expected.bytes }));
-    setPlayerStatus(t("package.validatingTh08"));
+    const gameLabel = state.game.toUpperCase();
+    if (!rawDataImportSizeMatches(expected, file.size)) throw new Error(t("package.rawDataSizeMismatch", { game: gameLabel, actual: file.size, expected: expected.bytes }));
+    setPlayerStatus(t("package.validatingRawData", { game: gameLabel }));
     const bytes = await file.arrayBuffer();
     const actualHash = await sha256Hex(new Uint8Array(bytes));
-    if (actualHash.toLowerCase() !== expected.sha256.toLowerCase()) throw new Error(t("package.th08HashMismatch"));
+    if (!rawDataImportHashMatches(expected, actualHash)) throw new Error(t("package.rawDataHashMismatch", { game: gameLabel }));
 
-    // The retail filename is only an acquisition concern. Once accepted by
-    // eagler-touhou, TH08 occupies the same Package/DB namespace as TH06/TH07:
-    // game-data -> /th08.data. The stored bytes remain the untouched retail
-    // th08.dat payload so future App-managed WASM Runtimes can reuse them.
-    const descriptor: PackageDescriptor = {
-      schema: PACKAGE_DESCRIPTOR_SCHEMA,
-      game: "th08",
-      revision: `raw-${actualHash.slice(0, 16)}`,
-      runtimeRequirement: {
-        protocol: HOST_PROTOCOL,
-        target: "th08",
-        dataFile: "game-data",
-        dataLayout: expected.layout,
-      },
-      files: {
-        "game-data": {
-          revision: expected.version,
-          source: "th08.data",
-          target: "/th08.data",
-          bytes: expected.bytes,
-        },
-      },
-      base: { files: ["game-data"] },
-      components: {},
-    };
-    setPlayerStatus(t("package.installingTh08"));
+    // The retail filename is only an acquisition concern. Once accepted, raw
+    // data enters the same canonical Package Store namespace as any published
+    // Package and is mounted at the product-declared Runtime target.
+    const descriptor = createRawDataImportPackageDescriptor(state.game, expected, actualHash);
+    const dataFileId = descriptor.runtimeRequirement!.dataFile;
+    setPlayerStatus(t("package.installingRawData", { game: gameLabel }));
     const installed = await installPackageFromAcquisition({
       descriptor,
-      desiredFileIds: ["game-data"],
+      desiredFileIds: [dataFileId],
       source: "local",
       reuseCurrent: false,
-      acquire: async fileId => fileId === "game-data" ? bytes : null,
+      acquire: async fileId => fileId === dataFileId ? bytes : null,
       onProgress(progress) {
-        setPlayerStatus(t("package.installingTh08Progress", { completed: progress.completed, total: progress.total }));
+        setPlayerStatus(t("package.installingRawDataProgress", { game: gameLabel, completed: progress.completed, total: progress.total }));
       },
     });
     if (installed?.generation) installedPackageSnapshots.set(state.game, installed.generation);
@@ -3411,6 +3427,33 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
     setPlayerStatus(t("runtime.preparingResources", { resource: runtimePack ? `${entryTitle(languageEntry())} ${t("settings.language")}` : `${musicModeLabel(state.music)} ${t("settings.music")}` }));
     const netplayOptions = state.runtimeVariant === "multiplayer" && !state.replayViewer && !options.omitNetplay
       ? validatedNetplayOptions() : {};
+    const runtimeOptions: RuntimeConfigureOptions = {
+      limitPresentationTo60: state.options.frameLimit60Enabled,
+      touchEnabled: state.options.touchEnabled,
+      touchMovementMode: state.options.touchMovementMode,
+      touchSensitivity: state.options.touchSensitivity,
+      touchFocusMode: state.options.touchFocusMode,
+      doubleTapBombEnabled: state.options.doubleTapBombEnabled,
+      alwaysHitbox: state.options.alwaysHitbox,
+      oggDecodeMode: oggDecodeMode(state.music),
+      ...(state.runtimeVariant === "normal" && gameFeatureAvailable(state.game, "thprac")
+        ? {
+            thpracEnabled: state.options.thpracEnabled,
+            thpracLocale: thpracLocaleForLanguage(launchLanguage),
+          }
+        : {}),
+      ...(gameFeatureAvailable(state.game, "focusHitbox")
+        ? { focusHitboxEnabled: state.options.focusHitboxEnabled }
+        : {}),
+      ...(state.runtimeVariant === "multiplayer"
+        ? {
+            multiplayerLocalPlayerVisibility: state.options.multiplayerLocalPlayerVisibility,
+            ...(state.replayViewer ? { replayViewer: true } : {}),
+            ...netplayOptions,
+          }
+        : {}),
+      ...(debugHarness ? { debugHarness } : {}),
+    };
     await send("configure", {
       // Imported OGG is already in the host's IndexedDB.  Do not route those
       // bytes back through blob: URLs and fetch() inside the iframe: on mobile
@@ -3423,14 +3466,7 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
       runtimeResources: [],
       runtimePack: runtimePack ? { ...runtimePack, manifest: runtimePack.manifest, files: runtimePack.files } : null,
       sharedResources: shared,
-      options: { ...state.options, thpracEnabled: state.runtimeVariant === "normal" && state.options.thpracEnabled,
-        limitPresentationTo60: state.options.frameLimit60Enabled, debugHarness, thpracLocale: thpracLocaleForLanguage(launchLanguage),
-        oggDecodeMode: oggDecodeMode(state.music),
-        unlimitedTouch: state.options.touchMovementMode === "touch-unlimited",
-        touchBombZoneEnabled: false,
-        th06FocusHitbox: gameFeatureAvailable(state.game, "focusHitbox") && state.options.th06FocusHitbox,
-        replayViewer: !!state.replayViewer,
-        ...netplayOptions }
+      options: runtimeOptions,
     }, 120_000);
     assertSession();
     if (packageResources.length) {
@@ -3476,7 +3512,7 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
     // but there is no longer a Player -> Runtime focus hop.
     startPlayerFocusRelay();
     try {
-      // Directory Runtimes such as TH10 may intentionally wait for a real
+      // Directory Runtimes may intentionally wait for a real
       // WebKit user gesture before creating Web Audio/worker-owned rendering.
       // Keep the request alive while that in-Runtime start gate is visible.
       await send("launch", {}, directoryRuntime ? 120_000 : 15_000);
@@ -3521,7 +3557,7 @@ function musicAvailabilityContext() {
   const installedGeneration = activeInstalledPackageGeneration || installedPackageSnapshots.get(state.game) || null;
   return {
     audio: webAudioAvailable,
-    midiAvailable: state.game !== "th10" && !!packages.midi,
+    midiAvailable: PRODUCT_GAMES[state.game].musicCapabilities.midi && packages.midi?.supported !== false,
     importServer: !!importServer,
     publishedOggCapable: !!(packages.ogg || packages.wav),
     remoteOggAdvertised: !!packages.ogg,
@@ -3826,12 +3862,11 @@ function render() {
   $("#gameId").dataset.game = state.game;
   $("#gameTitle").textContent = game().title;
   $("#mpTitleBadge").hidden = !multiplayerProduct;
-  const noticeGame = (state.game === "th08" || state.game === "th10") && !multiplayerProduct;
+  const support = PRODUCT_GAMES[state.game].support;
+  const noticeGame = "adaptationNotice" in support && support.adaptationNotice === "early-test" && !multiplayerProduct;
   $("#gameNoticeCallout").hidden = !noticeGame;
   if (noticeGame) {
-    $("#gameNoticeRepo").href = state.game === "th08"
-      ? "https://github.com/YomotsuHisami/th08"
-      : "https://github.com/YomotsuHisami/th10";
+    $("#gameNoticeRepo").href = support.sourceRepository;
   }
   $("#mpShell").hidden = !multiplayerProduct;
   const netplayConfigurationReady = hostManifestAvailable && !!state.netplay.url;
@@ -3885,7 +3920,7 @@ function render() {
   languageSelect.value = state.language;
   $("#musicOption").hidden = !musicAvailability.ogg;
   $("#languageOption").hidden = languageEntries.length <= 1;
-  $("#replayFileTool").hidden = !gameFeatureAvailable(state.game, "replayManagement");
+  $("#replayFileTool").hidden = false;
   const mpLanguageSelect = $("#mpLanguageSelect");
   mpLanguageSelect.replaceChildren(...languageEntries.map(entry => {
     const option = document.createElement("option"); option.value = entry.id; option.textContent = entryTitle(entry); return option;
@@ -3896,15 +3931,15 @@ function render() {
   syncMusicSelectAvailability($("#mpMusicSelect"), musicAvailability);
   $("#mpFrameLimitToggle").setAttribute("aria-checked", String(state.options.frameLimit60Enabled));
   $("#mpFrameLimitToggle").classList.toggle("on", state.options.frameLimit60Enabled);
-  $("#mpTh06HitboxOption").hidden = !gameFeatureAvailable(state.game, "focusHitbox");
-  $("#mpTh06HitboxToggle").setAttribute("aria-checked", String(state.options.th06FocusHitbox));
-  $("#mpTh06HitboxToggle").classList.toggle("on", state.options.th06FocusHitbox);
+  $("#mpFocusHitboxOption").hidden = !gameFeatureAvailable(state.game, "focusHitbox");
+  $("#mpFocusHitboxToggle").setAttribute("aria-checked", String(state.options.focusHitboxEnabled));
+  $("#mpFocusHitboxToggle").classList.toggle("on", state.options.focusHitboxEnabled);
   $("#mpTouchToggle").setAttribute("aria-checked", String(state.options.touchEnabled));
   $("#mpTouchToggle").classList.toggle("on", state.options.touchEnabled);
   $("#mpAlwaysHitboxToggle").setAttribute("aria-checked", String(state.options.alwaysHitbox));
   $("#mpAlwaysHitboxToggle").classList.toggle("on", state.options.alwaysHitbox);
-  $("#mpLocalPlayerVisibilityToggle").setAttribute("aria-checked", String(state.options.enhanceLocalPlayerVisibility));
-  $("#mpLocalPlayerVisibilityToggle").classList.toggle("on", state.options.enhanceLocalPlayerVisibility);
+  $("#mpLocalPlayerVisibilityToggle").setAttribute("aria-checked", String(state.options.multiplayerLocalPlayerVisibility));
+  $("#mpLocalPlayerVisibilityToggle").classList.toggle("on", state.options.multiplayerLocalPlayerVisibility);
   $("#mpMagnifierToggle").setAttribute("aria-checked", String(state.options.magnifierEnabled));
   $("#mpMagnifierToggle").classList.toggle("on", state.options.magnifierEnabled);
   $("#mpMagnifierConflict").hidden = state.options.touchFocusMode !== "two-finger";
@@ -3916,10 +3951,10 @@ function render() {
   const thpracAvailable = gameFeatureAvailable(state.game, "thprac");
   if (!thpracAvailable || multiplayerProduct) state.options.thpracEnabled = false;
   $("#thpracOption").hidden = !thpracAvailable || multiplayerProduct;
-  $("#th06HitboxOption").hidden = !gameFeatureAvailable(state.game, "focusHitbox");
+  $("#focusHitboxOption").hidden = !gameFeatureAvailable(state.game, "focusHitbox");
   $("#mobileOptions").classList.toggle("open", state.mobileOpen);
   $("#mobileOptionsToggle").setAttribute("aria-expanded", String(state.mobileOpen));
-  const switches = { thpracToggle: state.options.thpracEnabled, thpracTouchControlsToggle: state.options.thpracTouchControlsEnabled, restartButtonToggle: state.options.restartButtonEnabled, magnifierToggle: state.options.magnifierEnabled, frameLimitToggle: state.options.frameLimit60Enabled, th06HitboxToggle: state.options.th06FocusHitbox, touchToggle: state.options.touchEnabled, doubleTapBombToggle: state.options.doubleTapBombEnabled, alwaysHitboxToggle: state.options.alwaysHitbox };
+  const switches = { thpracToggle: state.options.thpracEnabled, thpracTouchControlsToggle: state.options.thpracTouchControlsEnabled, restartButtonToggle: state.options.restartButtonEnabled, magnifierToggle: state.options.magnifierEnabled, frameLimitToggle: state.options.frameLimit60Enabled, focusHitboxToggle: state.options.focusHitboxEnabled, touchToggle: state.options.touchEnabled, doubleTapBombToggle: state.options.doubleTapBombEnabled, alwaysHitboxToggle: state.options.alwaysHitbox };
   for (const [id, enabled] of Object.entries(switches)) {
     $("#" + id).setAttribute("aria-checked", String(enabled));
     $("#" + id).classList.toggle("on", enabled);
@@ -4016,8 +4051,9 @@ function validatedNetplayOptions() {
     iceServers: state.netplay.iceServers,
     loadouts: state.netplay.loadouts,
   }, {
-    difficultyMax: multiplayer.difficultyMax,
-    characterMax: multiplayer.characterMax,
+    playerCounts: multiplayer.playerCounts,
+    difficulties: multiplayer.difficulties,
+    loadouts: multiplayer.loadouts,
   });
 }
 
@@ -4564,6 +4600,10 @@ window.addEventListener("message", event => {
     updateRuntimeDiagnostics();
     return;
   }
+  if (message.event === "notice") {
+    if (typeof message.message === "string" && message.message) showToast(message.message);
+    return;
+  }
   if (message.event === "exit") {
     setPlayerStatus(message.status === "success" ? t("runtime.gameExited") : t("runtime.gameExitedAbnormally"));
     closePlayerView(false, {
@@ -4987,7 +5027,7 @@ async function ensureRuntime(show = true) {
   // The local development server intentionally publishes an empty Release
   // Catalog. Seed the same Package Store used by published releases from the
   // development Host Manifest's source paths before opening a Runtime that
-  // requires managed DATA (TH08/TH10 retail-memory).
+  // requires managed DATA (the retail-memory provider).
   if (!releaseCatalog?.games?.[state.game] && PRODUCT_GAMES[state.game].dataProvider === "retail-memory") {
     try {
       await installDevelopmentPackage(show);
@@ -5345,7 +5385,7 @@ async function importFileExclusive(kind: ImportFileKind, file: File) {
   if (!file.size) throw new Error(t("file.emptyImport"));
   if (file.size > maxImportBytes) throw new Error(t("file.importTooLarge"));
   if (kind === "save" && state.launched) {
-    // Match the established TH06/TH07 Runtime lifecycle: never tear down a
+    // Match the established preload-Runtime lifecycle: never tear down a
     // running IDBFS owner while it may still have autoPersist work in flight.
     // A late write from that dead iframe can otherwise race the newly imported
     // score.dat and restore the older tree after the import already verified.
@@ -5587,7 +5627,7 @@ $("#mpMusicSelect").addEventListener("change", event => {
 $("#mpFrameLimitToggle").addEventListener("click", () => {
   state.options.frameLimit60Enabled = !state.options.frameLimit60Enabled; saveGamePreferences(); render();
 });
-$("#mpTh06HitboxToggle").addEventListener("click", () => setOption("th06FocusHitbox", !state.options.th06FocusHitbox));
+$("#mpFocusHitboxToggle").addEventListener("click", () => setOption("focusHitboxEnabled", !state.options.focusHitboxEnabled));
 $("#mpShareSettingsToggle").addEventListener("click", () => {
   saveGamePreferences();
   mpShareSingleplayerSettings = !mpShareSingleplayerSettings;
@@ -5605,7 +5645,7 @@ $("#mpMobileOptionsToggle").addEventListener("click", () => {
 });
 $("#mpTouchToggle").addEventListener("click", () => setOption("touchEnabled", !state.options.touchEnabled));
 $("#mpAlwaysHitboxToggle").addEventListener("click", () => setOption("alwaysHitbox", !state.options.alwaysHitbox));
-$("#mpLocalPlayerVisibilityToggle").addEventListener("click", () => setOption("enhanceLocalPlayerVisibility", !state.options.enhanceLocalPlayerVisibility));
+$("#mpLocalPlayerVisibilityToggle").addEventListener("click", () => setOption("multiplayerLocalPlayerVisibility", !state.options.multiplayerLocalPlayerVisibility));
 $("#mpMagnifierToggle").addEventListener("click", () => setOption("magnifierEnabled", !state.options.magnifierEnabled));
 $("#mpTouchLayoutEdit").addEventListener("click", () => {
   void openTouchLayoutEditor().catch(error => { const reason = errorMessage(error); showToast(reason); setStatus(t("status.errorReason", { reason })); });
@@ -5669,7 +5709,7 @@ $("#mpRoomSettingsToggle").addEventListener("click", () => {
 $("#mpRoomPlayerCount").addEventListener("change", event => {
   const room = mpUiState.room;
   if (!room || !mpRoomOwnerLocal() || !mpLobby.connected) return;
-  const count = Number($("#mpRoomPlayerCount").value) === 3 ? 3 : 2;
+  const count = mpNormalizePlayerCount($("#mpRoomPlayerCount").value);
   room.playerCount = count;
   if (mpUiState.seat != null && mpUiState.seat >= count) mpUiState.seat = null;
   mpLobbySend({ type: "settings", playerCount: count, difficulty: room.difficulty });
@@ -5684,7 +5724,7 @@ $("#mpRoomDifficulty").addEventListener("change", event => {
 });
 document.querySelectorAll<HTMLElement>("[data-mp-player-count]").forEach(button => button.addEventListener("click", () => {
   if (!mpRoomOwnerLocal()) return;
-  $("#mpRoomPlayerCount").value = button.dataset.mpPlayerCount || "2";
+  $("#mpRoomPlayerCount").value = String(mpNormalizePlayerCount(button.dataset.mpPlayerCount));
   $("#mpRoomPlayerCount").dispatchEvent(new Event("change", { bubbles: true }));
 }));
 document.querySelectorAll<HTMLElement>("[data-mp-difficulty]").forEach(button => button.addEventListener("click", () => {
@@ -6118,7 +6158,7 @@ function moveTouchSensitivityPreview(event: PointerEvent) {
   const gesture = touchSensitivityPreviewGesture;
   if (!gesture || event.pointerId !== gesture.pointerId) return;
   event.preventDefault();
-  const gain = Math.min(300, Math.max(100, state.options.touchSensitivity)) / 100;
+  const gain = Math.min(TOUCH_SENSITIVITY_MAX, Math.max(TOUCH_SENSITIVITY_MIN, state.options.touchSensitivity)) / 100;
   setTouchSensitivityPreviewOffset((event.clientX - gesture.startX) * gain, (event.clientY - gesture.startY) * gain);
 }
 
@@ -6155,7 +6195,7 @@ async function openTouchLayoutEditor() {
   touchLayoutEditorEnteredFullscreen = false;
   touchLayoutWindowOrientation = null;
   resetTouchLayoutEditorPosition();
-  player.style.setProperty("--touch-preview-image", `url("assets/${state.game}-card.webp")`);
+  player.style.setProperty("--touch-preview-image", `url("assets/${PRODUCT_GAMES[state.game].cardArtwork}")`);
   document.body.classList.add("player-active");
   player.classList.add("open", "touch-preview", "touch-layout-edit");
   player.setAttribute("aria-hidden", "false");
@@ -6445,16 +6485,24 @@ function cancelTouchLayoutGestures() {
   cancelTouchSensitivityPreview();
 }
 
-const mpLoadouts = Object.freeze([
-  { labelKey: "multiplayer.loadout.reimuA" as const, glyph: "霊", character: 0, shot: 0 }, { labelKey: "multiplayer.loadout.reimuB" as const, glyph: "霊", character: 0, shot: 1 },
-  { labelKey: "multiplayer.loadout.marisaA" as const, glyph: "魔", character: 1, shot: 0 }, { labelKey: "multiplayer.loadout.marisaB" as const, glyph: "魔", character: 1, shot: 1 },
-  { labelKey: "multiplayer.loadout.sakuyaA" as const, glyph: "咲", character: 2, shot: 0 }, { labelKey: "multiplayer.loadout.sakuyaB" as const, glyph: "咲", character: 2, shot: 1 },
-]);
-const mpLoadoutLabel = (loadout: (typeof mpLoadouts)[number]) => t(loadout.labelKey);
-const mpBootstrapLoadoutIndexes = Object.freeze([0, 2, 4]);
-const mpLoadoutCount = () => game().multiplayer?.loadoutCount || 0;
+type MpLoadout = NonNullable<LauncherGameView["multiplayer"]>["loadouts"][number];
+const mpLoadouts = (): readonly MpLoadout[] => game().multiplayer?.loadouts || [];
+const mpLoadoutLabel = (loadout: MpLoadout) => t(loadout.labelKey as UiMessageKey);
+const mpBootstrapLoadoutIndexes = () => {
+  const loadouts = mpLoadouts();
+  const seen = new Set<number>();
+  const primary = loadouts.flatMap((loadout, index) => {
+    if (seen.has(loadout.character)) return [];
+    seen.add(loadout.character);
+    return [index];
+  });
+  const candidates = primary.length ? primary : [0];
+  return Array.from({ length: 3 }, (_, index) => candidates[index % candidates.length] ?? 0);
+};
+const mpLoadoutCount = () => mpLoadouts().length;
 const mpNormalizeLoadoutIndex = (index: unknown) => {
   const count = mpLoadoutCount();
+  if (count <= 0) return 0;
   const numeric = Number.isInteger(Number(index)) ? Number(index) : 0;
   return (numeric % count + count) % count;
 };
@@ -6530,7 +6578,7 @@ function mpClearPersistedRoom() {
 function mpRestoreRoomFromLocation() {
   const code = mpNormalizeRoomCode(new URL(location.href).searchParams.get(mpRoomUrlKey));
   if (!code) return false;
-  const routedProduct = isMultiplayerProduct(state.product) ? state.product : "th07mp";
+  const routedProduct = isMultiplayerProduct(state.product) ? state.product : DEFAULT_MULTIPLAYER_PRODUCT_ID;
   // A room URL opened directly has no guaranteed same-document home entry.
   // Seed one once, then push the room route so the browser Back action is as
   // deterministic as the in-page return button. A managed room entry keeps
@@ -6543,9 +6591,10 @@ function mpRestoreRoomFromLocation() {
   const saved = multiplayerRoomSessions.load({
     product: routedProduct,
     roomCode: code,
-    maxDifficulty: mpDifficultyMax(routedProduct),
+    playerCounts: mpPlayerCounts(routedProduct),
+    difficulties: multiplayerConfigForProduct(routedProduct)?.difficulties || [],
   });
-  const playerCount: 2 | 3 = saved?.room.playerCount === 3 ? 3 : 2;
+  const playerCount = saved?.room.playerCount ?? mpDefaultPlayerCount(routedProduct);
   const difficulty = saved?.room.difficulty ?? 1;
   const seat = saved?.seat ?? null;
   mpUiState.room = {
@@ -6573,7 +6622,7 @@ function mpEnterRoom(code: string, created: boolean) {
   // next `start` (normally serial=1) will be mistaken for an old event.
   mpLobby.startSerial = 0;
   mpUiState.room = {
-    code, playerCount: 2, difficulty: 1, created: !!created,
+    code, playerCount: mpDefaultPlayerCount(), difficulty: 1, created: !!created,
     seats: null, synced: false, connection: "connecting",
   };
   mpUiState.seat = created ? 0 : null;
@@ -6689,9 +6738,11 @@ function mpConfigureRuntimeSession() {
   state.netplay.spectatorCount = Math.max(0, Number(room.spectatorCount) || 0);
   state.netplay.seed = Number.parseInt(room.code, 10) & 0xffff;
   state.netplay.difficulty = Math.max(0, Math.min(mpDifficultyMax(), Number(room.difficulty) || 0));
+  const loadouts = mpLoadouts();
+  const bootstrapLoadouts = mpBootstrapLoadoutIndexes();
   state.netplay.loadouts = Array.from({ length: 3 }, (_, playerIndex) => {
-    const loadoutIndex = mpNormalizeLoadoutIndex(room.seats?.[playerIndex]?.loadout ?? mpBootstrapLoadoutIndexes[playerIndex]);
-    const loadout = mpLoadouts[loadoutIndex] ?? mpLoadouts[0];
+    const loadoutIndex = mpNormalizeLoadoutIndex(room.seats?.[playerIndex]?.loadout ?? bootstrapLoadouts[playerIndex]);
+    const loadout = loadouts[loadoutIndex] ?? loadouts[0];
     if (!loadout) throw new Error(t("multiplayer.loadoutEmpty"));
     return { character: loadout.character, shot: loadout.shot };
   });
@@ -6717,6 +6768,7 @@ function mpSetDisplayName(value: string) {
 
 function mpSetLoadout(delta: number) {
   const count = mpLoadoutCount();
+  if (count <= 0) throw new Error(t("multiplayer.loadoutEmpty"));
   mpUiState.preferredLoadout = (mpNormalizeLoadoutIndex(mpUiState.preferredLoadout) + delta + count) % count;
   multiplayerPreferences.persistPreferredLoadout(state.product, mpUiState.preferredLoadout);
   if (mpUiState.seat != null) mpLobbySend({ type: "set-loadout", loadout: mpUiState.preferredLoadout });
@@ -6729,9 +6781,10 @@ function renderMpRoom() {
   const roomReady = room.synced === true && mpLobby.connected;
   const ownerLocal = mpRoomOwnerLocal();
   mpUiState.preferredLoadout = mpNormalizeLoadoutIndex(mpUiState.preferredLoadout);
-  const loadout = mpLoadouts[mpUiState.preferredLoadout] ?? mpLoadouts[0];
+  const loadouts = mpLoadouts();
+  const loadout = loadouts[mpUiState.preferredLoadout] ?? loadouts[0];
   if (!loadout) throw new Error(t("multiplayer.loadoutEmpty"));
-  const difficultyLabels = ["Easy", "Normal", "Hard", "Lunatic", "Extra", "Phantasm"];
+  const difficultyLabels = game().multiplayer?.difficulties || [];
   $("#mpRoomTitle").textContent = game().title;
   $("#mpRoomView").setAttribute("aria-label", `${state.game.toUpperCase()} ${t("multiplayer.roomAria")}`);
   $("#mpRoomCode").textContent = room.code;
@@ -6754,11 +6807,19 @@ function renderMpRoom() {
       : t(ownerLocal ? "multiplayer.youAreHost" : "multiplayer.takeHostSeat");
 
   document.querySelectorAll<HTMLButtonElement>("[data-mp-player-count]").forEach(button => {
-    const selected = Number(button.dataset.mpPlayerCount) === room.playerCount;
+    const value = Number(button.dataset.mpPlayerCount);
+    const supported = mpPlayerCounts().includes(value as 2 | 3);
+    const selected = value === room.playerCount;
+    button.hidden = !supported;
     button.classList.toggle("selected", selected);
-    button.disabled = !roomReady || !ownerLocal || selected;
+    button.disabled = !supported || !roomReady || !ownerLocal || selected;
     button.setAttribute("aria-pressed", String(selected));
   });
+  for (const option of $("#mpRoomPlayerCount").options) {
+    const supported = mpPlayerCounts().includes(Number(option.value) as 2 | 3);
+    option.disabled = !supported;
+    option.hidden = !supported;
+  }
   document.querySelectorAll<HTMLButtonElement>("[data-mp-difficulty]").forEach(button => {
     const difficulty = Number(button.dataset.mpDifficulty);
     const supported = difficulty <= mpDifficultyMax();
@@ -6791,7 +6852,7 @@ function renderMpRoom() {
     if (drop) drop.hidden = occupied;
     if (glyph) {
       glyph.hidden = !occupied;
-      const seatLoadout = networkSeat ? mpLoadouts[mpNormalizeLoadoutIndex(networkSeat.loadout)] : loadout;
+      const seatLoadout = networkSeat ? loadouts[mpNormalizeLoadoutIndex(networkSeat.loadout)] : loadout;
       const seatName = networkSeat?.name || (mpUiState.seat === index ? mpUiState.displayName : "");
       glyph.textContent = mpDisplayInitial(seatName, seatLoadout?.glyph || loadout.glyph);
       seat.title = seatName ? `${seatName} - ${mpLoadoutLabel(seatLoadout || loadout)}` : mpLoadoutLabel(seatLoadout || loadout);
@@ -7399,7 +7460,7 @@ createEdgeDrawerGesture({
   close: siteNotice.close,
   enabled: siteNotice.isEnabled,
 });
-$("#th06HitboxToggle").addEventListener("click", () => setOption("th06FocusHitbox", !state.options.th06FocusHitbox));
+$("#focusHitboxToggle").addEventListener("click", () => setOption("focusHitboxEnabled", !state.options.focusHitboxEnabled));
 $("#touchToggle").addEventListener("click", async () => {
   const enabling = !state.options.touchEnabled;
   if (enabling && !await confirmTouchModeBeforeEnable(state.options.touchMovementMode)) return;
@@ -7427,7 +7488,8 @@ $("#touchSensitivityCustomToggle").addEventListener("click", () => {
   render();
 });
 $("#touchSensitivity").addEventListener("input", event => {
-  const value = Math.min(300, Math.max(100, Math.round(Number($("#touchSensitivity").value) || 100)));
+  const value = Math.min(TOUCH_SENSITIVITY_MAX, Math.max(TOUCH_SENSITIVITY_MIN,
+    Math.round(Number($("#touchSensitivity").value) || TOUCH_SENSITIVITY_MIN)));
   touchSensitivityCustomOpen = true;
   state.options.touchSensitivity = value;
   $("#touchSensitivityValue").textContent = `${value}%`;
@@ -7948,7 +8010,7 @@ $("#launch").addEventListener("click", async () => {
   try {
     // Via and other mobile browsers can restore a BFCache/history entry with
     // the URL already moved to ?game=th07 while the in-memory state still
-    // belongs to TH06.  Treat an explicit route as authoritative at launch so
+    // belongs to the default product. Treat an explicit route as authoritative at launch so
     // a stale tab can never silently start the wrong runtime/local pack.
     syncSelectionFromPlayerRoute();
     if (!state.launched && importServer && !(await readCurrentPackageGeneration(state.game)).generation) {
@@ -8106,6 +8168,7 @@ $("#gameDataImportInput").addEventListener("change", async () => {
 const touchPreview = new URLSearchParams(location.search).get("preview");
 if (touchPreview === "touch" || touchPreview === "touch-hud") {
   state.options.touchEnabled = true;
+  player.style.setProperty("--touch-preview-image", `url("assets/${PRODUCT_GAMES[state.game].cardArtwork}")`);
   document.body.classList.add("player-active");
   player.classList.add("open", "touch-preview");
   player.setAttribute("aria-hidden", "false");

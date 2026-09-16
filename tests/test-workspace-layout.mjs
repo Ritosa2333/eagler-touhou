@@ -3,7 +3,11 @@
  * rooted elsewhere with EAGLER_WORKSPACE_ROOT. Does NOT prove sibling repos
  * are present or valid. */
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { isAbsolute } from "node:path";
+import { resolve } from "node:path";
+import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import {
   WORKSPACE_REPOSITORIES,
   launcherRoot,
@@ -13,7 +17,7 @@ import {
 } from "../lib/workspace-layout.mjs";
 
 assert.deepEqual(Object.keys(WORKSPACE_REPOSITORIES), [
-  "launcher", "th06", "th07", "th08", "th10", "thprac", "dependencies", "toolchains",
+  "launcher", ...Object.keys(PRODUCT_GAMES), "thprac", "dependencies", "toolchains",
 ]);
 assert.deepEqual(workspaceRepositoryNames(["launcher", "th06", "th08"]), [
   "eagler-touhou", "th06-eagler", "th08-eagler",
@@ -26,4 +30,13 @@ assert.equal(projectRelativeWorkspacePath("th06", "src", "FileSystem.cpp"), "../
 assert.equal(projectRelativeWorkspacePath("th08", "build-eagler"), "../th08-eagler/build-eagler");
 assert.equal(projectRelativeWorkspacePath("th10", "build-eagler"), "../th10-eagler/build-eagler");
 assert.throws(() => workspacePath("missing"), /unknown workspace repository/);
+const listedProducts = JSON.parse(execFileSync(process.execPath, ["scripts/list-product-games.mjs"], {
+  cwd: resolve(import.meta.dirname, ".."),
+  encoding: "utf8",
+}));
+assert.deepEqual(listedProducts, Object.keys(PRODUCT_GAMES),
+  "maintainer tooling must derive the game list from Product Catalog");
+const powershellLayout = readFileSync(resolve(import.meta.dirname, "..", "tools", "maintainer", "lib", "workspace-layout.psm1"), "utf8");
+assert.doesNotMatch(powershellLayout, /foreach\s*\(\$name\s+in\s+@\([^)]*th0\d/i,
+  "PowerShell workspace layout must validate repository declarations generically instead of carrying a second game registry");
 console.log(JSON.stringify({ workspaceLayout: "PASS", repositories: Object.keys(WORKSPACE_REPOSITORIES).length }));

@@ -5,7 +5,7 @@ import {readFile,stat} from 'node:fs/promises';
 import puppeteer from 'puppeteer-core';
 import {findChromiumExecutable} from '../lib/chromium-executable.mjs';
 import {FRONTEND_PACKAGE_FILES,resolveFrontendPackageSource} from '../lib/frontend-manifest.mjs';
-import {PRODUCT_GAMES} from '../lib/contracts/product-catalog.mjs';
+import {PRODUCT_GAMES,PRODUCT_IDS} from '../lib/contracts/product-catalog.mjs';
 const files=new Map(FRONTEND_PACKAGE_FILES.map(name=>['/'+name,resolveFrontendPackageSource(name)]));
 const games=Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([id,p])=>[id,{
   runtime:p.runtime,...(p.multiplayerRuntime?{multiplayerRuntime:p.multiplayerRuntime}:{}),
@@ -44,7 +44,7 @@ try{
     await page.goto(url+'?debug=card-gate&game=th10');
     await page.waitForFunction(()=>document.querySelector('.game[data-game=th06]').hasAttribute('aria-current'));
     await page.waitForFunction(()=>!document.querySelector('.game[data-game=th10]').hidden);
-    const expected=['th06','th06mp','th07','th07mp','th08','th10'];
+    const expected=[...PRODUCT_IDS].sort();
     const visible=()=>page.$$eval('.game:not([hidden])',cards=>cards.map(c=>c.dataset.product||c.dataset.game).sort());
     assert.deepEqual(await visible(),expected);
     for(const game of ['th10']){

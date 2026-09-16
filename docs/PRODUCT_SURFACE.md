@@ -1,15 +1,24 @@
 # Product surface
 
-This document is the authoritative inventory of the capabilities that the
+This document is the human-readable inventory of the capabilities that the
 project intentionally supports. It answers "what is part of the product?";
 implementation ownership belongs in `ARCHITECTURE.md`.
+
+The machine-readable authority for whether a capability is all-game required,
+Launcher-inherited, profile-required, optional, a format adapter, an
+implementation detail or compatibility-only is
+`src/contracts/adapter-capabilities.mts`. Per-product optional differences are
+declared in `src/contracts/product-catalog.mts`. If this prose/table disagrees
+with those contracts, fix this document rather than teaching another Runtime or
+Launcher path to follow the prose.
 
 Status meanings:
 
 - **Supported** - part of the intended current product surface and expected to
   remain working across ordinary releases.
-- **Partial** - usable but not yet at feature parity with the mature TH06/TH07
-  path, or intentionally limited.
+- **Partial** - usable but not yet at the capability's declared product
+  contract, or intentionally limited. It does not mean a later adapter should
+  copy an older title's implementation.
 - **Optional** - supported when the deployer enables/provides the dependency.
 - **Compatibility** - accepted for migration/read purposes, but no new data is
   produced in that format.
@@ -18,18 +27,23 @@ Status meanings:
 
 ## Games and Runtime variants
 
-| Capability | TH06 | TH07 | TH08 |
-| --- | --- | --- | --- |
-| Browser Runtime | Supported | Supported | Partial |
-| Normal single-player | Supported | Supported | Partial |
-| Multiplayer Runtime | Supported | Supported | Not supported |
-| Local package installation | Supported | Supported | Supported where package/runtime inputs exist |
-| Hosted package installation | Supported | Supported | Supported where published |
-| Offline installed-game launch | Supported | Supported | Supported where the deployed Runtime/package is complete |
-| Touch controls | Supported | Supported | Partial / Runtime-dependent |
-| Replay import/export | Supported | Supported | Partial / Runtime-dependent |
-| thprac integration | Supported | Supported | Not part of the current formal surface |
-| thcrap language packages | Supported | Supported | Not part of the current formal language pipeline |
+The table below is a snapshot of the currently registered four games, not a
+second capability registry. Required rows must stay supported for every formal
+adapter; optional rows follow the Product Catalog declarations.
+
+| Capability | TH06 | TH07 | TH08 | TH10 |
+| --- | --- | --- | --- | --- |
+| Browser Runtime | Supported | Supported | Supported | Supported |
+| Normal single-player | Supported | Supported | Supported | Supported |
+| Multiplayer Runtime | Supported | Supported | Not supported | Not supported |
+| Local package installation | Supported | Supported | Supported | Supported |
+| Hosted package installation | Supported | Supported | Supported where published | Supported where published |
+| Offline installed-game launch | Supported | Supported | Supported where the deployed Runtime/package is complete | Supported where the deployed Runtime/package is complete |
+| Physical gamepad/controller input | Supported | Supported | Supported | Supported |
+| Touch controls | Supported | Supported | Supported | Supported |
+| Replay import/export | Supported | Supported | Supported | Supported |
+| thprac integration | Supported | Supported | Not supported | Not supported |
+| thcrap language packages | Supported | Supported | Not part of the current formal language pipeline | Not part of the current formal language pipeline |
 
 "Supported" does not mean every upstream/private build combination is a public
 release. Publication still depends on the selected Runtime Release and host
@@ -59,20 +73,23 @@ configuration.
 HTTPS (or a browser-trusted local/loopback context) is required for the full
 Service Worker storage/offline model.
 
-### Touch / mobile controls - Supported for mature TH06/TH07 Runtime paths
+### Touch / mobile controls - Required for every formal game adapter
 
 - Direct touch movement and configured touch movement modes.
 - Custom control placement, scale and stacking order.
-- Separate portrait and landscape touch-layout profiles, shared across the
-  mature TH06/TH07 Launcher path rather than maintained once per game.
+- Separate portrait and landscape touch-layout profiles, shared across
+  supported Launcher products rather than maintained once per game.
 - Saved horizontal game-viewport placement as part of each orientation profile.
 - Optional thprac simulated-mouse/Tab/cheat-menu controls participate in the
   same layout editor when that feature is enabled.
 - Touch sensitivity.
 - Low-speed control modes.
 - Pinch/zoom magnifier behavior.
-- Touch-aware Replay extensions where the Runtime supports them.
 - Mobile orientation/layout handling.
+- Always-hitbox display without changing authoritative collision state.
+- Touch input resolves to the same authoritative logical input/Replay semantics
+  as keyboard/controller input; Eagler Touhou does not define a separate
+  touch-Replay format or touch-only Replay metadata feature.
 
 ### Site information and notices - Supported
 
@@ -93,13 +110,16 @@ Service Worker storage/offline model.
 - Notice display is non-blocking: failure to load `NOTICE.txt` must not prevent
   game/package use.
 
-### Replay and user files - Supported for mature TH06/TH07 Runtime paths
+### Replay and user files - Required for every formal game adapter
 
-- Import/export of original-compatible Replay/save files where supported by
-  the Runtime.
+- Import/playback of original Replay/save files and original-compatible export
+  whenever the recorded authoritative input is representable by the retail
+  format.
+- A Runtime may use a clearly identified project extension for deterministic
+  data the retail format cannot encode; such a sidecar/extension is an adapter
+  implementation detail, not a universal "touch Replay" product feature.
 - File actions prepare the Runtime/storage bridge on demand; a user does not
   need to launch the game manually once before save/Replay tools become usable.
-- Extended Replay sidecar/format support for project-specific touch metadata.
 - Separate multiplayer Replay handling.
 
 ### Language support - Supported for TH06/TH07
@@ -113,12 +133,13 @@ Service Worker storage/offline model.
 Language availability is a deployment input; the Launcher does not promise
 that every server publishes every thcrap language.
 
-### Music modes - Supported according to Runtime/host capability
+### Music modes - OGG/no-music required; MIDI optional
 
-The product model supports the configured Runtime music modes, including MIDI,
-OGG-based modes and no-music operation where the corresponding Runtime/host
-profile permits them. Exact available choices are product/build-profile data,
-not hard-coded deployment promises in this document.
+Every formal game adapter must support normal OGG music and an explicit
+no-music mode. MIDI is an optional product capability and is exposed only when
+the product declares it and the concrete Runtime/Host path can actually play
+it. Exact published OGG content remains deployment/package data rather than a
+hard-coded site promise.
 
 ### thprac - Supported for TH06/TH07 when built/published
 
@@ -129,11 +150,13 @@ not hard-coded deployment promises in this document.
 
 ## Multiplayer surface
 
-### TH06MP / TH07MP - Supported
+### Current Multiplayer products - TH06MP / TH07MP
 
 - Room creation and room-code join.
-- 2- or 3-player seat model where supported by the Runtime/session.
-- Character/loadout and difficulty selection.
+- Product-declared player-count subset within the shared 2P/3P platform.
+- Product-declared character/loadout and difficulty tables; the shared
+  Launcher/Relay must not assume TH06/TH07's A/B-shot or difficulty layout for
+  a future Multiplayer title.
 - Ready state before match start.
 - Spectator role before match start.
 - Pause/restart behavior supported by the multiplayer Runtime.
@@ -220,7 +243,7 @@ snapshots are not supported product APIs.
 
 These are engineering/release facilities rather than player features:
 
-- sibling TH06/TH07/TH08 Runtime source workspaces;
+- sibling TH06/TH07/TH08/TH10 Runtime source workspaces;
 - CMake/Ninja/Emscripten Runtime compilation;
 - Runtime Release production;
 - publication/release verification;

@@ -1,7 +1,17 @@
 import assert from "node:assert/strict";
 import { buildMultiplayerRuntimeOptions } from "../.cache/build/browser/assets/launcher/multiplayer-runtime-options.mjs";
+import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 
-const th06 = { difficultyMax: 4, characterMax: 1 };
+const th06 = {
+  playerCounts: PRODUCT_GAMES.th06.multiplayer.playerCounts,
+  difficulties: PRODUCT_GAMES.th06.multiplayer.difficulties,
+  loadouts: PRODUCT_GAMES.th06.multiplayer.loadouts,
+};
+const th07 = {
+  playerCounts: PRODUCT_GAMES.th07.multiplayer.playerCounts,
+  difficulties: PRODUCT_GAMES.th07.multiplayer.difficulties,
+  loadouts: PRODUCT_GAMES.th07.multiplayer.loadouts,
+};
 const base = {
   url: "wss://relay.example.test/netplay?room=th06mp-1234&run=1&player=0",
   player: 0,
@@ -46,7 +56,7 @@ const spectator = buildMultiplayerRuntimeOptions({
     { character: 1, shot: 0 },
     { character: 2, shot: 1 },
   ],
-}, { difficultyMax: 5, characterMax: 2 });
+}, th07);
 assert.equal(spectator.netplaySpectator, true);
 assert.equal(spectator.netplaySpectatorId, "c12345678");
 assert.equal(spectator.netplayPlayerCount, 3);
@@ -62,6 +72,12 @@ assert.throws(() => buildMultiplayerRuntimeOptions({
   ...base,
   loadouts: [{ character: 2, shot: 0 }, { character: 1, shot: 0 }],
 }, th06), /P1 机体配置无效/, "TH06 constraints must reject TH07-only Sakuya loadouts");
+const nonAB = buildMultiplayerRuntimeOptions({
+  ...base,
+  loadouts: [{ character: 0, shot: 2 }, { character: 0, shot: 2 }],
+}, { playerCounts: [2, 3], difficulties: ["0", "1", "2", "3", "4"], loadouts: [{ character: 0, shot: 2 }] });
+assert.deepEqual(nonAB.netplayLoadouts, [{ character: 0, shot: 2 }, { character: 0, shot: 2 }],
+  "Runtime protocol must validate product-declared loadout pairs instead of assuming A/B shot ids");
 assert.throws(() => buildMultiplayerRuntimeOptions({ ...base, loadouts: [{ character: 0, shot: 0 }] }, th06), /配置数量不足/);
 assert.throws(() => buildMultiplayerRuntimeOptions({
   ...base, spectator: true, spectatorId: "short",
@@ -70,6 +86,6 @@ assert.throws(() => buildMultiplayerRuntimeOptions({
 console.log(JSON.stringify({
   multiplayerRuntimeOptions: "PASS",
   playerCounts: [2, 3],
-  productConstraints: ["difficultyMax", "characterMax"],
+  productConstraints: ["playerCounts", "difficulties", "loadouts"],
   spectator: "explicit-role",
 }));

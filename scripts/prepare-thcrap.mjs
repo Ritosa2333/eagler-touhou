@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve, sep } from "node:path";
 import { createThcrapClient, downloadThcrapPack } from "../integrations/thcrap.mjs";
+import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 
 const args = new Map();
 for (let index = 2; index < process.argv.length; index++) {
@@ -11,7 +12,15 @@ for (let index = 2; index < process.argv.length; index++) {
   args.set(key.slice(2), value); index++;
 }
 const language = args.get("language") || "lang_en";
-const games = (args.get("games") || "th06,th07").split(",").filter(Boolean);
+const languageGames = Object.entries(PRODUCT_GAMES)
+  .filter(([, product]) => product.features.languages)
+  .map(([game]) => game);
+const games = args.has("games")
+  ? args.get("games").split(",").filter(Boolean)
+  : languageGames;
+for (const game of games) {
+  if (!languageGames.includes(game)) throw new Error(`${game}: product does not declare downloadable language capability`);
+}
 const output = resolve(args.get("output") || `prepared/thcrap/${language}`);
 const client = createThcrapClient({ repository: args.get("repository") });
 

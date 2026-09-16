@@ -3,10 +3,12 @@ import { legacyAsciiPrintfSignature, validateAsciiContract } from "./thcrap-asci
 import { validateStringContract } from "./thcrap-string-contract.mjs";
 
 const GAME_VERSION = Object.freeze({ th06: 6, th07: 7 });
-const MESSAGE_DIFF = /^(?:th06|th07)\/(msg[1-8]\.dat)\.jdiff$/i;
-const ENDING_DIFF = /^(?:th06|th07)\/(end[0-9]{2}b?\.end)\.jdiff$/i;
-const LOCALIZATION_TABLE = /^(th06|th07)\/(spells|stages|musiccmt)\.js$/i;
-const GAME_OPTIONS = /^(?:(th06|th07)\/)?(th06|th07)\.js$/i;
+export const THCRAP_RUNTIME_COMPILER_GAMES = Object.freeze(Object.keys(GAME_VERSION));
+const GAME_PATTERN = `(?:${THCRAP_RUNTIME_COMPILER_GAMES.join("|")})`;
+const MESSAGE_DIFF = new RegExp(`^${GAME_PATTERN}\\/(msg[1-8]\\.dat)\\.jdiff$`, "i");
+const ENDING_DIFF = new RegExp(`^${GAME_PATTERN}\\/(end[0-9]{2}b?\\.end)\\.jdiff$`, "i");
+const LOCALIZATION_TABLE = new RegExp(`^(${GAME_PATTERN})\\/(spells|stages|musiccmt)\\.js$`, "i");
+const GAME_OPTIONS = new RegExp(`^(?:(${GAME_PATTERN})\\/)?(${GAME_PATTERN})\\.js$`, "i");
 
 function assertJsonTree(value, depth = 0) {
   if (depth > 16) throw new TypeError("thcrap JSON nesting is too deep");

@@ -21,6 +21,7 @@ from touhou_formats import extract_pbg4_entry, extract_pbgz_entry
 OGG_CRC_POLYNOMIAL = 0x04C11DB7
 BGM_FORMAT = Struct("<16s i I i i H H I I H H H 2x")
 EXPECTED_PCM_FORMAT = (1, 2, 44100, 176400, 4, 16)
+SUPPORTED_GAMES = ("th06", "th07", "th08")
 
 
 def _progress(game: str, current: int, total: int, label: str, detail: str = "") -> None:
@@ -264,12 +265,19 @@ def _convert_packed_game(game: str, original: Path, output: Path, baseline: dict
 
 def main() -> None:
     parser = ArgumentParser(description="Build verified TH06/TH07/TH08 OGG payloads for host assembly")
-    parser.add_argument("--game", choices=("th06", "th07", "th08"), required=True)
-    parser.add_argument("--original-dir", type=Path, required=True)
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--list-games", action="store_true", help="print the format-adapter game ids and exit")
+    parser.add_argument("--game", choices=SUPPORTED_GAMES)
+    parser.add_argument("--original-dir", type=Path)
+    parser.add_argument("--output", type=Path)
     parser.add_argument("--quality", type=float, default=0.55)
     parser.add_argument("--baseline", type=Path)
     args = parser.parse_args()
+
+    if args.list_games:
+        print(json.dumps(list(SUPPORTED_GAMES)))
+        return
+    if not args.game or args.original_dir is None or args.output is None:
+        parser.error("--game, --original-dir and --output are required unless --list-games is used")
 
     baseline_path = args.baseline or Path(__file__).resolve().parents[1] / "host" / "ogg-baselines" / f"{args.game}.json"
     baseline = _load_baseline(baseline_path, args.game)

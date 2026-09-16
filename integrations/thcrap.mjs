@@ -1,8 +1,12 @@
+import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+
 export const THCRAP_DEFAULT_REPOSITORY = "https://srv.thpatch.net/";
-export const THCRAP_SUPPORTED_GAMES = Object.freeze(["th06", "th07"]);
+export const THCRAP_SUPPORTED_GAMES = Object.freeze(Object.entries(PRODUCT_GAMES)
+  .filter(([, product]) => product.features.languages)
+  .map(([game]) => game));
 
 const LANGUAGE_ID = /^lang_[a-z0-9]+(?:-[a-z0-9]+)*$/i;
-const GAME_ID = /^th(?:06|07)$/;
+const supportedGames = new Set(THCRAP_SUPPORTED_GAMES);
 
 function assertObject(value, label) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -28,7 +32,7 @@ function assertLanguageId(value) {
 }
 
 function assertGameId(value) {
-  if (typeof value !== "string" || !GAME_ID.test(value)) {
+  if (typeof value !== "string" || !supportedGames.has(value)) {
     throw new TypeError(`unsupported game id: ${value}`);
   }
   return value;

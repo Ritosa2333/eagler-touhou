@@ -10,7 +10,10 @@ import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 const root = await mkdtemp(join(tmpdir(), "eagler-development-manifest-"));
 const fixtureData = Buffer.from([1, 2, 3, 4]);
 const fixtureScript = game => `loadPackage({files:[{filename:"/${game}-fixture.dat",start:0,end:4}],remote_package_size:4});`;
-for (const game of ["th06", "th07"]) {
+const preloadGames = Object.entries(PRODUCT_GAMES)
+  .filter(([, product]) => product.dataProvider === "emscripten-preload")
+  .map(([game]) => game);
+for (const game of preloadGames) {
   await writeFile(join(root, `${game}.data`), fixtureData);
   await writeFile(join(root, `${game}.js`), fixtureScript(game));
 }

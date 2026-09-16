@@ -3,10 +3,19 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { normalizeSiteUrl, writeSiteMetadata } from "../lib/site-metadata.mjs";
+import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 
 assert.equal(normalizeSiteUrl("https://touhou.vip/"), "https://touhou.vip/");
 assert.throws(() => normalizeSiteUrl("https://touhou.vip/path"), /directory URL/);
 assert.throws(() => normalizeSiteUrl("javascript:alert(1)"), /http/);
+
+const about = await readFile(new URL("../public/about.html", import.meta.url), "utf8");
+assert.match(about, /扩展能力仅在对应作品明确声明支持时提供/,
+  "About page must distinguish shared capabilities from optional per-product capabilities");
+for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
+  assert.ok(about.includes(`href="${product.support.sourceRepository}"`),
+    `${game}: About page must link the formal adapter repository declared by Product Catalog`);
+}
 
 const root = await mkdtemp(join(tmpdir(), "eagler-site-metadata-"));
 try {

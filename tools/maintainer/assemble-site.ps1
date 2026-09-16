@@ -1,5 +1,7 @@
 [CmdletBinding()]
 param(
+    [hashtable] $GameDirectories,
+    [hashtable] $LanguagePackDirectories,
     [string] $Th06Directory,
     [string] $Th07Directory,
     [string] $Th08Directory,
@@ -23,7 +25,7 @@ param(
     [string] $ArtworkDirectory,
     [string] $FeatureConfig,
     [string] $HostManifest,
-    [string[]] $Games = @('th06', 'th07', 'th08', 'th10'),
+    [string[]] $Games,
     [string] $Profile = 'web-validation-package',
     [switch] $SuppressCompletionSummary
 )
@@ -48,6 +50,11 @@ $project = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 Import-Module (Join-Path $PSScriptRoot 'lib\workspace-layout.psm1') -Force
 $workspaceLayout = Get-EaglerWorkspaceLayout -ProjectRoot $project
 $workspace = $workspaceLayout.Root
+$catalogGames = @((& node (Join-Path $project 'scripts\list-product-games.mjs')) | ConvertFrom-Json)
+if ($LASTEXITCODE -ne 0 -or $catalogGames.Count -eq 0) {
+    throw 'Unable to read Product Catalog game list'
+}
+$Games = if ($Games) { $Games } else { $catalogGames }
 $FontFile = if ($FontFile) { $FontFile } else { Get-EaglerWorkspacePath $workspaceLayout 'dependencies' 'unifont-15.1.05\unifont-15.1.05.otf' }
 $VanillaFontFile = if ($VanillaFontFile) { $VanillaFontFile } else { Join-Path $env:WINDIR 'Fonts\msgothic.ttc' }
 $featureConfigPath = if ($FeatureConfig) {
@@ -66,8 +73,34 @@ if ($configuredResourceMode -notin @('hosted', 'import')) {
 }
 $resourceMode = $configuredResourceMode
 $Games = @($Games | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim().ToLowerInvariant() } | Where-Object { $_ })
-if ($Games.Count -eq 0 -or @($Games | Select-Object -Unique).Count -ne $Games.Count -or @($Games | Where-Object { $_ -notin @('th06', 'th07', 'th08', 'th10') }).Count) {
-    throw 'Games must be a non-empty unique subset of th06, th07, th08 and th10'
+if ($Games.Count -eq 0 -or @($Games | Select-Object -Unique).Count -ne $Games.Count) {
+    throw 'Games must be a non-empty unique product list'
+}
+$legacyGameDirectories = @{
+    th06 = $Th06Directory
+    th07 = $Th07Directory
+    th08 = $Th08Directory
+    th10 = $Th10Directory
+}
+if (-not $GameDirectories) { $GameDirectories = @{} }
+foreach ($game in $Games) {
+    if (-not $GameDirectories.ContainsKey($game) -and $legacyGameDirectories.ContainsKey($game) -and $legacyGameDirectories[$game]) {
+        $GameDirectories[$game] = $legacyGameDirectories[$game]
+    }
+}
+$declaredGames = @($GameDirectories.Keys | ForEach-Object { [string]$_ })
+if ($declaredGames.Count -gt 0 -and @($Games | Where-Object { $_ -notin $declaredGames }).Count) {
+    throw "Games contains a product without GameDirectories input: $([string]::Join(',', @($Games | Where-Object { $_ -notin $declaredGames })))"
+}
+$legacyLanguagePackDirectories = @{
+    th06 = $Th06LanguagePacks
+    th07 = $Th07LanguagePacks
+}
+if (-not $LanguagePackDirectories) { $LanguagePackDirectories = @{} }
+foreach ($game in $Games) {
+    if (-not $LanguagePackDirectories.ContainsKey($game) -and $legacyLanguagePackDirectories.ContainsKey($game) -and $legacyLanguagePackDirectories[$game]) {
+        $LanguagePackDirectories[$game] = $legacyLanguagePackDirectories[$game]
+    }
 }
 $selectedPreloadGames = @($Games | Where-Object { $_ -in @('th06', 'th07') })
 $selectedHasTh08 = $Games -contains 'th08'
@@ -218,14 +251,17 @@ if ($resourceMode -eq 'import') {
     return
 }
 
-if (($Games -contains 'th06') -and -not $Th06Directory) { throw "Hosted resource mode requires -Th06Directory when th06 is selected" }
-if (($Games -contains 'th07') -and -not $Th07Directory) { throw "Hosted resource mode requires -Th07Directory when th07 is selected" }
-if ($selectedHasTh08 -and -not $Th08Directory) { throw "Hosted resource mode requires -Th08Directory when th08 is selected" }
-if ($selectedHasTh10 -and -not $Th10Directory) { throw "Hosted resource mode requires -Th10Directory when th10 is selected" }
-$th06Source = if ($Games -contains 'th06') { (Resolve-Path -LiteralPath $Th06Directory).Path } else { $null }
-$th07Source = if ($Games -contains 'th07') { (Resolve-Path -LiteralPath $Th07Directory).Path } else { $null }
-$th08Source = if ($selectedHasTh08) { (Resolve-Path -LiteralPath $Th08Directory).Path } else { $null }
-$th10Source = if ($selectedHasTh10) { (Resolve-Path -LiteralPath $Th10Directory).Path } else { $null }
+$gameSources = @{}
+foreach ($game in $Games) {
+    if (-not $GameDirectories.ContainsKey($game) -or -not $GameDirectories[$game]) {
+        throw "Hosted resource mode requires GameDirectories.$game"
+    }
+    $gameSources[$game] = (Resolve-Path -LiteralPath $GameDirectories[$game]).Path
+}
+$th06Source = if ($Games -contains 'th06') { $gameSources.th06 } else { $null }
+$th07Source = if ($Games -contains 'th07') { $gameSources.th07 } else { $null }
+$th08Source = if ($selectedHasTh08) { $gameSources.th08 } else { $null }
+$th10Source = if ($selectedHasTh10) { $gameSources.th10 } else { $null }
 $th08Build = if ($selectedHasTh08 -and -not $runtimeReleasePath) {
     if ($Th08Build) { (Resolve-Path -LiteralPath $Th08Build).Path } else { Get-EaglerWorkspacePath $workspaceLayout 'th08' 'build-eagler' }
 } else { $null }
@@ -319,10 +355,7 @@ $artworkArgs = @(
     "--output=$hostArtwork",
     "--games=$([string]::Join(',', $Games))"
 )
-if ($Games -contains 'th06') { $artworkArgs += "--th06-dir=$th06Source" }
-if ($Games -contains 'th07') { $artworkArgs += "--th07-dir=$th07Source" }
-if ($selectedHasTh08) { $artworkArgs += "--th08-dir=$th08Source" }
-if ($selectedHasTh10) { $artworkArgs += "--th10-dir=$th10Source" }
+foreach ($game in $Games) { $artworkArgs += "--game-dir=$game=$($gameSources[$game])" }
 if ($selectedHasTh10 -and $ThtkThanm) {
     $thanmForArtwork = (Resolve-Path -LiteralPath $ThtkThanm).Path
     $thdatForArtwork = Join-Path (Split-Path $thanmForArtwork -Parent) 'thdat.exe'
@@ -420,7 +453,7 @@ foreach ($game in $buildPreloadGames) {
     $assetRoot = if ($game -eq 'th06') { $th06Assets } else { $th07Assets }
     $featureEntry = $featureSettings.games.$game
     $downloadableLanguages = @($featureEntry.languages | Where-Object { $_ -ne 'ja' })
-    $languagePackPath = if ($game -eq 'th06') { $Th06LanguagePacks } else { $Th07LanguagePacks }
+    $languagePackPath = if ($LanguagePackDirectories.ContainsKey($game)) { $LanguagePackDirectories[$game] } else { $null }
     if ($downloadableLanguages.Count -gt 0 -and -not $languagePackPath) {
         throw "$($game.ToUpperInvariant()) server feature config requests translated languages, but no language-pack directory was provided"
     }
@@ -480,24 +513,17 @@ if (-not $runtimeReleasePath -and $Games -contains 'th06') {
     $nodeArgs += "--th06-build=$($builds.th06)"
     $nodeArgs += "--th06-multiplayer-build=$($multiplayerBuilds.th06)"
 }
-if ($Games -contains 'th06') {
-    $nodeArgs += "--th06-assets=$th06Source"
-    $nodeArgs += "--th06-data-assets=$th06Assets"
-}
+foreach ($game in $Games) { $nodeArgs += "--$game-assets=$($gameSources[$game])" }
+if ($Games -contains 'th06') { $nodeArgs += "--th06-data-assets=$th06Assets" }
 if (-not $runtimeReleasePath -and $Games -contains 'th07') {
     $nodeArgs += "--th07-build=$($builds.th07)"
     $nodeArgs += "--th07-multiplayer-build=$($multiplayerBuilds.th07)"
 }
-if ($Games -contains 'th07') {
-    $nodeArgs += "--th07-assets=$th07Source"
-}
 if ($selectedHasTh08) {
     if (-not $runtimeReleasePath) { $nodeArgs += "--th08-build=$th08Build" }
-    $nodeArgs += "--th08-assets=$th08Source"
 }
 if ($selectedHasTh10) {
     if (-not $runtimeReleasePath) { $nodeArgs += "--th10-build=$th10Build" }
-    $nodeArgs += "--th10-assets=$th10Source"
     $nodeArgs += "--th10-data-assets=$th10DataAssets"
 }
 if ($musicSet.Contains('ogg')) {
@@ -506,8 +532,11 @@ if ($musicSet.Contains('ogg')) {
     if ($selectedHasTh08) { $nodeArgs += "--th08-ogg=$(Join-Path $generated 'th08')" }
     if ($selectedHasTh10) { $nodeArgs += "--th10-ogg=$th10DataAssets" }
 }
-if (($Games -contains 'th06') -and $Th06LanguagePacks) { $nodeArgs += "--th06-language-packs=$((Resolve-Path -LiteralPath $Th06LanguagePacks).Path)" }
-if (($Games -contains 'th07') -and $Th07LanguagePacks) { $nodeArgs += "--th07-language-packs=$((Resolve-Path -LiteralPath $Th07LanguagePacks).Path)" }
+foreach ($game in $Games) {
+    if ($LanguagePackDirectories.ContainsKey($game) -and $LanguagePackDirectories[$game]) {
+        $nodeArgs += "--$game-language-packs=$((Resolve-Path -LiteralPath $LanguagePackDirectories[$game]).Path)"
+    }
+}
 & node @nodeArgs
 if ($LASTEXITCODE -ne 0) { throw "Server packaging failed: $LASTEXITCODE" }
 Write-SiteBuildStage 4 'Verifying the generated site'

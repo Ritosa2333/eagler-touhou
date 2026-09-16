@@ -8,10 +8,21 @@ function Get-EaglerWorkspaceLayout {
     if ($config.schema -ne 'eagler-touhou/workspace-layout/1' -or -not $config.repositories) {
         throw "Invalid workspace layout: $configPath"
     }
-    foreach ($name in @('launcher', 'th06', 'th07', 'th08', 'thprac', 'dependencies', 'toolchains')) {
-        $value = [string]$config.repositories.$name
-        if (-not $value -or $value -match '[\\/]' -or $value -in @('.', '..')) {
+    $repositoryProperties = @($config.repositories.PSObject.Properties)
+    if ($repositoryProperties.Count -eq 0) { throw "Workspace layout has no repositories: $configPath" }
+    foreach ($property in $repositoryProperties) {
+        $name = [string]$property.Name
+        $value = [string]$property.Value
+        $segments = @($value -split '/')
+        if (-not $name -or $name -notmatch '^[A-Za-z0-9_-]+$' -or -not $value -or
+            $value -match '\\' -or $value -match '^[A-Za-z]:' -or [IO.Path]::IsPathRooted($value) -or
+            @($segments | Where-Object { -not $_ -or $_ -in @('.', '..') }).Count -gt 0) {
             throw "Invalid workspace repository '$name' in $configPath"
+        }
+    }
+    foreach ($required in @('launcher', 'thprac', 'dependencies', 'toolchains')) {
+        if (-not $config.repositories.PSObject.Properties[$required]) {
+            throw "Missing workspace repository '$required' in $configPath"
         }
     }
     $root = if ($env:EAGLER_WORKSPACE_ROOT) {

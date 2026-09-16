@@ -10,9 +10,11 @@ import {
   BROWSER_MODULE_ENTRYPOINTS,
   BROWSER_MODULE_FILES,
   FRONTEND_PACKAGE_FILES,
+  HOST_SITE_ARTWORK_FILES,
   hostArtworkFiles,
   resolveFrontendPackageSource,
 } from "../lib/frontend-manifest.mjs";
+import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const publicRoot = resolve(project, "public");
@@ -47,12 +49,20 @@ assert.ok(!FRONTEND_PACKAGE_FILES.includes("app-shell-sw.js"));
 assert.ok(FRONTEND_PACKAGE_FILES.includes("en.html"));
 assert.ok(FRONTEND_PACKAGE_FILES.includes("sitemap.xml"));
 assert.ok(FRONTEND_PACKAGE_FILES.every(path => !/title00\.(?:jpg|png)$/i.test(path)));
-assert.ok(FRONTEND_PACKAGE_FILES.every(path => !/(?:^|\/)th0[678]-card\.webp$/i.test(path)));
-assert.deepEqual(hostArtworkFiles(["th06", "th07", "th08"]), [
-  "th06-card.webp", "th06.ico", "th07-card.webp", "th08-card.webp",
-]);
-assert.deepEqual(hostArtworkFiles(["th07"]), ["th07-card.webp", "th06.ico"],
-  "the site favicon is required even when TH06 is not a selected product");
+const gameIds = Object.keys(PRODUCT_GAMES);
+const cardArtwork = gameIds.map(game => PRODUCT_GAMES[game].cardArtwork);
+for (const artwork of cardArtwork) {
+  assert.ok(!FRONTEND_PACKAGE_FILES.includes(`assets/${artwork}`),
+    `${artwork}: original-game-derived card artwork must remain a Host input, not a repository-owned frontend asset`);
+}
+assert.deepEqual(HOST_SITE_ARTWORK_FILES, ["th06.ico"],
+  "site branding must be explicit global publication state, not attached to one product selection");
+for (const game of gameIds) {
+  assert.deepEqual(hostArtworkFiles([game]), [PRODUCT_GAMES[game].cardArtwork, ...HOST_SITE_ARTWORK_FILES],
+    `${game}: selected product artwork must come from Product Catalog plus global site artwork`);
+}
+assert.deepEqual(hostArtworkFiles(gameIds), [...cardArtwork, ...HOST_SITE_ARTWORK_FILES],
+  "all registered products must contribute their catalog-owned card artwork exactly once");
 assert.match(
   relative(project, resolveFrontendPackageSource("assets/launcher/app.mjs")).replaceAll("\\", "/"),
   /^\.cache\/build\/optimized\/assets\/launcher\/app\.mjs$/,
@@ -69,8 +79,6 @@ const declaredPublicFiles = FRONTEND_PACKAGE_FILES.filter(path =>
 ).concat(["index.html", "styles.css", "touch-guide.css"]).sort();
 assert.deepEqual(publicFiles, declaredPublicFiles,
   "public/ must contain exactly the allowlisted authored browser source files");
-console.log(JSON.stringify({ frontendManifest: "PASS", packaged: FRONTEND_PACKAGE_FILES.length, appShell: APP_SHELL_FILES.length }));
+console.log(JSON.stringify({ frontendManifest: "PASS", packaged: FRONTEND_PACKAGE_FILES.length, appShell: APP_SHELL_FILES.length, games: gameIds }));
 
-assert.deepEqual(hostArtworkFiles(["th10"]), ["th10-card.webp", "th06.ico"], "TH10 title artwork is a host-owned resource");
-assert.deepEqual(hostArtworkFiles(["th06", "th07", "th08", "th10"]), ["th06-card.webp", "th06.ico", "th07-card.webp", "th08-card.webp", "th10-card.webp"]);
 assert.throws(()=>hostArtworkFiles(["unknown"]), /unknown artwork product/);

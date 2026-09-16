@@ -120,7 +120,11 @@ export function legacyDiagnosticRelayUrl(value: string, nonce: string): string {
   const url = new URL(value);
   for (const key of ["diagnostic", "room", "run", "lobby", "player", "players", "signal", "spectator"])
     url.searchParams.delete(key);
-  url.searchParams.set("room", `th07mp-diagnostic-${nonce}`.slice(0, 64));
+  // Old relay deployments predate the dedicated ?diagnostic=1 endpoint and
+  // require an ordinary signaling room. Keep that compatibility probe product
+  // neutral: network health is a shared Multiplayer service concern, not a
+  // title-specific capability.
+  url.searchParams.set("room", `diagnostic-${nonce}`.slice(0, 64));
   url.searchParams.set("run", nonce.slice(0, 64));
   url.searchParams.set("player", "0");
   url.searchParams.set("players", "2");

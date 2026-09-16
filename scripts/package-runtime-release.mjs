@@ -20,14 +20,10 @@ const required = name => {
 const output = required("output");
 const temporaryRoot = resolve(dirname(output), ".tmp");
 const staging = resolve(temporaryRoot, `${basename(output)}.staging-${randomUUID()}`);
-const builds = {
-  th06: required("th06-build"),
-  th06Multiplayer: required("th06-multiplayer-build"),
-  th07: required("th07-build"),
-  th07Multiplayer: required("th07-multiplayer-build"),
-  th08: required("th08-build"),
-  th10: required("th10-build"),
-};
+const builds = Object.fromEntries(Object.entries(PRODUCT_GAMES).flatMap(([game, product]) => [
+  [game, required(`${game}-build`)],
+  ...(product.multiplayerRuntime ? [[`${game}Multiplayer`, required(`${game}-multiplayer-build`)]] : []),
+]));
 
 async function identity(path) {
   const bytes = await readFile(path);
@@ -99,7 +95,7 @@ for (const game of Object.keys(PRODUCT_GAMES)) {
       }
     }
   } else {
-    // TH08's retail-memory provider uses the product's declared original-content layout.
+    // retail-memory providers use the product's declared original-content layout.
     const { PRODUCT_CONTENT } = await import("../lib/content-definition.mjs");
     dataLayout = PRODUCT_CONTENT[game]?.dataLayout;
   }

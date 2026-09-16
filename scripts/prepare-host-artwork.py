@@ -226,24 +226,44 @@ def prepare_host_artwork(
 
 def _main() -> None:
     parser = ArgumentParser(description="Prepare extracted/custom Launcher artwork for host assembly")
-    parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--games", required=True, help="comma-separated subset of th06,th07,th08,th10")
-    parser.add_argument("--th06-dir", type=Path)
-    parser.add_argument("--th07-dir", type=Path)
-    parser.add_argument("--th08-dir", type=Path)
-    parser.add_argument("--th10-dir", type=Path)
+    parser.add_argument("--list-games", action="store_true", help="print the registered artwork format-adapter games as JSON and exit")
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--games", help="comma-separated subset of registered artwork adapters")
+    parser.add_argument(
+        "--game-dir",
+        action="append",
+        default=[],
+        metavar="GAME=DIR",
+        help="original game directory; repeat once per selected game",
+    )
     parser.add_argument("--override-dir", type=Path)
     parser.add_argument("--thdat", default="thdat")
     parser.add_argument("--thanm", default="thanm")
     args = parser.parse_args()
+    if args.list_games:
+        print(json.dumps({
+            "games": list(ARTWORK_BY_GAME),
+            "files": {game: list(files) for game, files in ARTWORK_BY_GAME.items()},
+        }, ensure_ascii=False))
+        return
+    if args.output is None or not args.games:
+        parser.error("--output and --games are required unless --list-games is used")
     games = [value.strip().lower() for value in args.games.split(",") if value.strip()]
     if not games or len(games) != len(set(games)) or any(game not in ARTWORK_BY_GAME for game in games):
-        parser.error("--games must be a non-empty unique subset of th06,th07,th08,th10")
-    roots = {
-        game: getattr(args, f"{game}_dir").resolve()
-        for game in games
-        if getattr(args, f"{game}_dir") is not None
-    }
+        parser.error(f"--games must be a non-empty unique subset of {','.join(ARTWORK_BY_GAME)}")
+    roots: dict[str, Path] = {}
+    for value in args.game_dir:
+        if "=" not in value:
+            parser.error(f"--game-dir must use GAME=DIR: {value}")
+        game, directory = value.split("=", 1)
+        game = game.strip().lower()
+        if game not in games:
+            parser.error(f"--game-dir references an unselected or unknown game: {game}")
+        if game in roots:
+            parser.error(f"duplicate --game-dir for {game}")
+        if not directory.strip():
+            parser.error(f"--game-dir requires a directory for {game}")
+        roots[game] = Path(directory).resolve()
     if args.override_dir is not None and not args.override_dir.is_dir():
         parser.error(f"override directory not found: {args.override_dir}")
     report = prepare_host_artwork(

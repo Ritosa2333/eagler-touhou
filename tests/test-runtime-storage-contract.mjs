@@ -16,6 +16,12 @@ const shells = {
   th06: workspacePath("th06", "resources", "shell.html"),
   th07: workspacePath("th07", "resources", "shell.html"),
 };
+const preloadGames = Object.entries(PRODUCT_GAMES)
+  .filter(([, product]) => product.dataProvider === "emscripten-preload")
+  .map(([game]) => game)
+  .sort();
+assert.deepEqual(Object.keys(shells).sort(), preloadGames,
+  "preload Runtime storage verification must be updated when a formal emscripten-preload adapter is registered");
 
 function harness(source, game) {
   const listeners = new Map(), timers = new Map(), dependencies = new Set();

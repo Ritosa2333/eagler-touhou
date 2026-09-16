@@ -32,7 +32,7 @@ function packageDataFileId(generation: InstalledPackageGeneration) {
 
 async function storedObjectBuffer(stored: StoredPackageObject | null) {
   if (!stored) return null;
-  // Return an owned Runtime copy. TH10 can then transfer this copy to its worker
+  // Return an owned Runtime copy. A Runtime may then transfer this copy to a worker
   // without detaching a Package Store read object that another caller may still
   // hold in the current task.
   if (stored.data instanceof ArrayBuffer) return stored.data.slice(0);

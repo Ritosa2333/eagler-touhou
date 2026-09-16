@@ -72,6 +72,10 @@ assert.doesNotThrow(() => validateHostManifest({
   ...hosted,
   games: { th06: { ...game, features: undefined } },
 }));
+assert.doesNotThrow(() => validateHostManifest({
+  ...hosted,
+  games: { th06: { ...game, music: { midi: { files: [], supported: false } } } },
+}));
 assert.doesNotThrow(() => validateHostManifest({ ...hosted, games: { th06: gameWithLanguages } }));
 for (const broken of [
   { ...gameWithLanguages, languageOptions: gameWithLanguages.languageOptions.map(item => item.id === "lang_en"
@@ -117,6 +121,7 @@ for (const music of [
   { midi: { files: ["track.ogg"] } },
   { midi: { files: ["x?y.mid"] } },
   { midi: { files: ["a.mid"], sizes: [0] } },
+  { midi: { files: [], supported: "no" } },
   { midi: { files: [] }, ogg: { version: "legacy", files: [], sizes: [] } },
   { midi: { files: [] }, ogg: { version: `sha256-${"c".repeat(64)}`, files: [], sizes: [], sha256: [] } },
   { midi: { files: [] }, ogg: { version: `sha256-${"c".repeat(64)}`, files: ["a.ogg"], sizes: [1] } },

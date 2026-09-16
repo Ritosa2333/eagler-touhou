@@ -1,8 +1,14 @@
 import { readFile } from "node:fs/promises";
 
+import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
 
-for (const game of ["th06", "th07"]) {
+const preloadGames = Object.entries(PRODUCT_GAMES)
+  .filter(([, product]) => product.dataProvider === "emscripten-preload")
+  .map(([game]) => game)
+  .sort();
+
+for (const game of preloadGames) {
   const sdlAudio = await readFile(workspacePath(game, "vendored", "SDL", "src", "audio", "emscripten", "SDL_emscriptenaudio.c"), "utf8");
   if (!sdlAudio.includes("scriptProcessorNode") || !sdlAudio.includes("setup a ScriptProcessorNode")) {
     throw new Error(`${game}: SDL Emscripten playback must retain the verified ScriptProcessor baseline`);
@@ -19,7 +25,7 @@ for (const game of ["th06", "th07"]) {
 
 console.log(JSON.stringify({
   sdlEmscriptenAudio: "PASS",
-  games: ["th06", "th07"],
+  games: preloadGames,
   backend: "ScriptProcessor",
   minimumFrames: 4096,
   rejectedExperiment: "AudioWorklet",

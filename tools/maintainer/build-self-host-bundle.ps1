@@ -50,7 +50,11 @@ try {
         Copy-Item -LiteralPath $source -Destination $destination
     }
 
-    foreach ($game in @('th06', 'th07', 'th08', 'th10')) {
+    $productGamesJson = & node (Join-Path $project 'scripts\list-product-games.mjs')
+    if ($LASTEXITCODE -ne 0) { throw "Unable to read Product Catalog game list: $LASTEXITCODE" }
+    $productGames = @($productGamesJson | ConvertFrom-Json)
+    if ($productGames.Count -eq 0) { throw 'Product Catalog game list is empty' }
+    foreach ($game in $productGames) {
         New-Item -ItemType Directory -Path (Join-Path $staging "games\$game") -Force | Out-Null
     }
     New-Item -ItemType Directory -Path (Join-Path $staging 'shared') -Force | Out-Null
@@ -70,7 +74,8 @@ try {
         Write-Host "Self-host bundle archive ready: $archive"
     }
     Write-Host "Self-host bundle ready: $output"
-    Write-Host 'User flow: copy games/th06, games/th07, games/th08, games/th10 -> edit eagler-touhou.config.json if needed -> npm run host'
+    $gamePaths = @($productGames | ForEach-Object { "games/$_" })
+    Write-Host "User flow: copy $([string]::Join(', ', $gamePaths)) -> edit eagler-touhou.config.json if needed -> npm run host"
 } finally {
     if (Test-Path -LiteralPath $staging) { Remove-Item -LiteralPath $staging -Recurse -Force }
 }

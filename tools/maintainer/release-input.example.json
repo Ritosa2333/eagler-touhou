@@ -3,10 +3,12 @@
   "prepare": {
     "RuntimeRelease": "runtime-release",
     "FeatureConfig": "features.json",
-    "Th06Directory": "original/th06",
-    "Th07Directory": "original/th07",
-    "Th08Directory": "original/th08",
-    "Th10Directory": "original/th10",
+    "GameDirectories": {
+      "th06": "original/th06",
+      "th07": "original/th07",
+      "th08": "original/th08",
+      "th10": "original/th10"
+    },
     "Music": [
       "midi",
       "ogg"

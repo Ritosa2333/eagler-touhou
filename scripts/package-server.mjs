@@ -11,7 +11,12 @@ import {
 import { staticLanguagePackPath } from "../server/thcrap-static-pack.mjs";
 import { RELEASE_CATALOG_FILE, RELEASE_CATALOG_SCHEMA, validateReleaseCatalog } from "../lib/contracts/release-catalog.mjs";
 import { HOST_MANIFEST_FILE, HOST_MANIFEST_SCHEMA, validateHostManifest } from "../lib/contracts/host-manifest.mjs";
-import { PRODUCT_GAMES, languagePriority } from "../lib/contracts/product-catalog.mjs";
+import {
+  HOST_RUNTIME_FEATURE_IDS,
+  PRODUCT_FEATURE_POLICY,
+  PRODUCT_GAMES,
+  languagePriority,
+} from "../lib/contracts/product-catalog.mjs";
 import { assertProductEntriesRegistered, normalizeProductSelection, selectProductEntries } from "../lib/product-selection.mjs";
 import { createPublicationHostSeed } from "../lib/publication-host-seed.mjs";
 import { RESOURCE_MODE_EXTERNAL, RESOURCE_MODE_HOSTED, RESOURCE_MODE_IMPORT } from "../lib/contracts/resource-mode.mjs";
@@ -71,6 +76,9 @@ if (!buildAuthority || buildProfile === "web-development") throw new Error("pack
 const publicationBuild = buildAuthority === BUILD_AUTHORITY_PUBLICATION;
 const gameIds = normalizeProductSelection(args.games);
 const languageGames = gameIds.filter(game => PRODUCT_GAMES[game].features.languages);
+const thpracGames = gameIds.filter(game => PRODUCT_GAMES[game].features.thprac);
+const serverFeatureGames = gameIds.filter(game =>
+  PRODUCT_GAMES[game].features.languages || PRODUCT_GAMES[game].features.thprac);
 const preloadGames = gameIds.filter(game => PRODUCT_GAMES[game].dataProvider === "emscripten-preload");
 const runtimeReleaseRoot = args["runtime-release"] ? resolve(args["runtime-release"]) : null;
 const runtimeRelease = runtimeReleaseRoot ? await verifyRuntimeRelease(runtimeReleaseRoot) : null;
@@ -147,11 +155,41 @@ const LANGUAGE_DISPLAY_NAMES = Object.freeze({
 const canonicalLanguageIds = ids => [...ids].sort((a, b) =>
   languagePriority(a) - languagePriority(b) || a.localeCompare(b, "en"));
 const languageDisplayName = (id, fallback) => LANGUAGE_DISPLAY_NAMES[id] || fallback || id;
-const defaultFeatures = Object.freeze(Object.fromEntries(languageGames.map(game => [
+const defaultFeatures = Object.freeze(Object.fromEntries(serverFeatureGames.map(game => [
   game,
   Object.freeze({ languages: null, thprac: false }),
 ])));
-const serverFeatures = Object.fromEntries(languageGames.map(game => [game, { ...defaultFeatures[game] }]));
+const serverFeatures = Object.fromEntries(serverFeatureGames.map(game => [game, { ...defaultFeatures[game] }]));
+
+function publishedHostRuntimeFeatures(game, requestedFeatures, runtimeCapabilities) {
+  const product = PRODUCT_GAMES[game];
+  const result = {};
+  for (const feature of HOST_RUNTIME_FEATURE_IDS) {
+    if (!product.features[feature]) {
+      result[feature] = false;
+      continue;
+    }
+    const policy = PRODUCT_FEATURE_POLICY[feature];
+    if (policy.hostValueSource === "server-request-and-runtime") {
+      const requested = requestedFeatures?.[feature] === true;
+      if (requested && runtimeCapabilities && runtimeCapabilities[feature] !== true) {
+        throw new Error(`${game.toUpperCase()} Runtime Release does not attest requested ${feature} capability`);
+      }
+      result[feature] = requested && (!runtimeCapabilities || runtimeCapabilities[feature] === true);
+      continue;
+    }
+    if (policy.hostValueSource === "runtime-release") {
+      // Old build-directory workflows predate Runtime Release attestation. In
+      // that compatibility lane an omitted Host feature historically meant the
+      // product ceiling; preserve the same effective value until those builds
+      // are retired.
+      result[feature] = runtimeCapabilities ? runtimeCapabilities[feature] === true : true;
+      continue;
+    }
+    throw new Error(`${game}: Host Boolean feature ${feature} has unsupported publication source ${policy.hostValueSource}`);
+  }
+  return result;
+}
 let serverGameDataFallback = null;
 let serverNetplayRelay = null;
 if (configuredFeatures) {
@@ -171,16 +209,32 @@ if (configuredFeatures) {
     }
     serverGameDataFallback = { url: fallback.url, ...(fallback.hint ? { hint: fallback.hint } : {}) };
   }
-  for (const game of languageGames) {
+  for (const game of serverFeatureGames) {
+    const product = PRODUCT_GAMES[game];
     const entry = configured.games[game];
-    if (!entry || !Array.isArray(entry.languages) || entry.languages.length === 0 || typeof entry.thprac !== "boolean") {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
       throw new Error(`invalid ${game.toUpperCase()} server feature entry`);
     }
-    const languages = entry.languages.map(value => String(value).toLowerCase());
-    if (languages.some(value => !LANGUAGE_ID.test(value)) || new Set(languages).size !== languages.length) {
-      throw new Error(`invalid ${game.toUpperCase()} language allowlist`);
+    let languages = null;
+    if (product.features.languages) {
+      if (!Array.isArray(entry.languages) || entry.languages.length === 0) {
+        throw new Error(`invalid ${game.toUpperCase()} language allowlist`);
+      }
+      languages = entry.languages.map(value => String(value).toLowerCase());
+      if (languages.some(value => !LANGUAGE_ID.test(value)) || new Set(languages).size !== languages.length) {
+        throw new Error(`invalid ${game.toUpperCase()} language allowlist`);
+      }
+    } else if (entry.languages != null) {
+      throw new Error(`${game.toUpperCase()} does not declare downloadable language capability`);
     }
-    serverFeatures[game] = { languages, thprac: entry.thprac };
+    let thprac = false;
+    if (product.features.thprac) {
+      if (typeof entry.thprac !== "boolean") throw new Error(`invalid ${game.toUpperCase()} thprac feature flag`);
+      thprac = entry.thprac;
+    } else if (entry.thprac != null && entry.thprac !== false) {
+      throw new Error(`${game.toUpperCase()} does not declare thprac capability`);
+    }
+    serverFeatures[game] = { languages, thprac };
   }
 }
 
@@ -191,6 +245,9 @@ const languagePackSources = Object.fromEntries(languageGames.map(game => {
 for (const game of languageGames) {
   const languagePack = languagePackSources[game];
   const selected = hostedResources ? (serverFeatures[game].languages?.filter(id => id !== "ja") ?? null) : [];
+  if (runtimeRelease && selected?.length && !runtimeRelease.games[game].features.languages) {
+    throw new Error(`${game.toUpperCase()} Runtime Release does not attest language capability`);
+  }
   if (selected?.length && !languagePack) {
     throw new Error(`${game.toUpperCase()} language allowlist requests downloadable packs, but no language-pack directory was provided`);
   }
@@ -209,14 +266,9 @@ for (const game of languageGames) {
   }
 }
 
-for (const game of languageGames) {
+for (const game of thpracGames) {
   if (!hostedResources || !serverFeatures[game].thprac) continue;
-  if (runtimeRelease) {
-    if (!runtimeRelease.games[game].features.thprac) {
-      throw new Error(`${game.toUpperCase()} Runtime Release does not attest thprac capability`);
-    }
-    continue;
-  }
+  if (runtimeRelease) continue;
   const compileCommandsPath = resolve(builds[game], "compile_commands.json");
   let compileCommands;
   try {
@@ -331,11 +383,11 @@ async function assertAppManagedRuntimeShell(buildRoot, game, variant, stem = gam
   }
 }
 
-async function runtimeDataIdentity(gameRoot, game) {
+async function runtimeDataIdentity(gameRoot, dataPath) {
   // DATA is now owned by the Launcher Package Store. The old
   // --use-preload-cache package_uuid marker intentionally no longer exists;
   // publication identity comes from the actual .data bytes instead.
-  return fileIdentity(resolve(gameRoot, `${game}.data`));
+  return fileIdentity(resolve(gameRoot, dataPath));
 }
 
 async function walk(directory, files = []) {
@@ -449,54 +501,10 @@ if (serverResourceMode === RESOURCE_MODE_HOSTED) {
   await cp(font, resolve(staging, "shared", "unifont.otf"));
 }
 
-// TH08 is an App-owned subsidiary Runtime just like the existing game
-// binaries. Publish the already-verified formal HTML/JS/WASM in every
-// resource mode; only DATA/OGG ownership changes between hosted, external, and import.
-if (gameIds.includes("th08") && PRODUCT_GAMES.th08.runtimeFileLayout !== "directory") {
-  const game = "th08";
-  const entry = manifest.games?.[game];
-  if (!entry) throw new Error("TH08 product entry is missing from Host Manifest");
-  const stem = "th08";
-  const appRuntimeRoot = resolve(staging, "runtime", game);
-  await mkdir(appRuntimeRoot, { recursive: true });
-  await assertAppManagedRuntimeShell(builds.th08, game, "normal", stem);
-  const appRuntimeFiles = ["html", "js", "wasm"].map(extension => `${stem}.${extension}`);
-  for (const extension of ["html", "js", "wasm"]) {
-    await cp(resolve(builds.th08, `${stem}.${extension}`), resolve(appRuntimeRoot, `${stem}.${extension}`));
-  }
-  const runtimeVersion = await versionFiles(appRuntimeRoot, appRuntimeFiles);
-  await versionRuntimeScript(appRuntimeRoot, stem, runtimeVersion);
-  entry.runtime = `runtime/${game}/${stem}.html?hosted=1&v=${runtimeVersion}`;
-  entry.features = { ...(entry.features || {}), thprac: false };
-  entry.languages = [];
-  entry.languageOptions = [{ id: "ja", title: languageDisplayName("ja"), pack: null }];
-  if (serverResourceMode === RESOURCE_MODE_IMPORT) {
-    entry.offlineCompatibility = {
-      schema: "eagler-touhou/offline-game-pack/1",
-      runtimeCompatibility: {
-        protocol: manifest.protocol,
-        dataLayout: entry.gameData.layout,
-        versionSource: "offline-pack",
-      },
-      requiredShared: ["/msgothic.ttc", "/unifont.otf"],
-      languages: { source: "offline-pack", baseline: ["ja"] },
-    };
-    const oggPack = entry.music?.ogg;
-    entry.music = {
-      midi: { files: [] },
-      ...(oggPack ? { ogg: {
-        version: oggPack.version,
-        mount: oggPack.mount,
-        files: oggPack.files,
-        sizes: oggPack.sizes,
-        ...(oggPack.sha256 ? { sha256: oggPack.sha256 } : {}),
-      } } : {}),
-    };
-  }
-}
-
 for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === "directory")) {
   const entry = manifest.games[game], product = PRODUCT_GAMES[game];
+  const requestedFeatures = serverFeatures[game] || { languages: null, thprac: false };
+  const runtimeCapabilities = runtimeRelease?.games[game]?.features;
   const stem = runtimeStem(game);
   const declared = runtimeRelease?.games[game]?.runtime.files ||
     JSON.parse(await readFile(resolve(builds[game], "runtime-files.json"), "utf8")).files;
@@ -510,11 +518,12 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
   }
   await writeFile(resolve(appRuntimeRoot, "runtime-files.json"), JSON.stringify({ schema: "eagler-touhou/runtime-directory/1", files: declared }, null, 2));
   entry.runtime = `runtime/${game}/${stem}.html?hosted=1&v=${await versionFiles(appRuntimeRoot, names)}`;
-  entry.features = { thprac: false, focusHitbox: false };
+  entry.features = publishedHostRuntimeFeatures(game, requestedFeatures, runtimeCapabilities);
   entry.languages = []; entry.languageOptions = [{ id: "ja", title: languageDisplayName("ja"), pack: null }];
   const declaredOgg = entry.music?.ogg;
+  const declaredMidi = product.musicCapabilities.midi ? { files: [] } : { files: [], supported: false };
   entry.music = {
-    midi: game === "th10" ? { files: [], supported: false } : { files: [] },
+    midi: declaredMidi,
     ...(declaredOgg ? { ogg: declaredOgg } : {}),
   };
   if (serverResourceMode === RESOURCE_MODE_IMPORT) {
@@ -523,7 +532,7 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
       runtimeCompatibility: { protocol: manifest.protocol, dataLayout: entry.gameData.layout, versionSource: "offline-pack" },
       requiredShared: [...product.requiredShared], languages: { source: "offline-pack", baseline: ["ja"] } };
     entry.music = {
-      midi: { files: [], supported: false },
+      midi: declaredMidi,
       ...(ogg ? {
         ogg: {
           version: ogg.version,
@@ -535,13 +544,16 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
       } : {}),
     };
   } else if (hostedResources) {
-    const target = `games/${game}/${game}.data`;
+    const dataFileId = product.package.dataFileId;
+    const dataTarget = product.package.dataTarget;
+    const dataPath = dataTarget.slice(1);
+    const target = `games/${game}/${dataPath}`;
     await mkdir(dirname(resolve(staging, target)), { recursive: true });
     await cp(resolve(dataAssets[game], `${game}.data`), resolve(staging, target));
     const identity = await fileIdentity(resolve(staging, target));
-    entry.gameData = { path: `${game}.data`, ...identity, version: `sha256-${identity.sha256}`, layout: PRODUCT_CONTENT[game].dataLayout };
-    const packageFiles = { "game-data": await descriptorFile(target, `/${game}.data`) };
-    const baseFiles = ["game-data"];
+    entry.gameData = { path: dataPath, ...identity, version: `sha256-${identity.sha256}`, layout: PRODUCT_CONTENT[game].dataLayout };
+    const packageFiles = { [dataFileId]: await descriptorFile(target, dataTarget) };
+    const baseFiles = [dataFileId];
     for (const sharedTarget of product.requiredShared || []) {
       if (sharedTarget === "/msgothic.ttc") {
         packageFiles["shared-msgothic"] = await descriptorFile("shared/msgothic.ttc", sharedTarget);
@@ -574,7 +586,7 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
       components.ogg = { type: "ogg", files: oggFiles };
     }
     const descriptor = { schema: PACKAGE_DESCRIPTOR_SCHEMA, game, revision: "pending",
-      runtimeRequirement: { protocol: manifest.protocol, target: game, dataFile: "game-data", dataLayout: entry.gameData.layout },
+      runtimeRequirement: { protocol: manifest.protocol, target: game, dataFile: dataFileId, dataLayout: entry.gameData.layout },
       files: packageFiles, base: { files: baseFiles }, components };
     descriptor.revision = createHash("sha256").update(canonicalPackagePayload(descriptor)).digest("hex").slice(0, 16);
     validatePackageDescriptor(descriptor);
@@ -584,18 +596,13 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
 }
 
 for (const game of preloadGames) {
+  const product = PRODUCT_GAMES[game];
   const entry = manifest.games[game];
   const runtimeCapabilities = runtimeRelease?.games[game]?.features;
-  const downloadableLanguages = serverFeatures[game].languages?.some(id => id !== "ja") || false;
-  if (runtimeRelease && downloadableLanguages && !runtimeCapabilities.languages) {
-    throw new Error(`${game.toUpperCase()} Runtime Release does not attest language capability`);
-  }
+  const requestedFeatures = serverFeatures[game] || { languages: null, thprac: false };
   entry.features = {
     ...(entry.features || {}),
-    thprac: !!serverFeatures[game].thprac,
-    ...(game === "th06" && runtimeCapabilities
-      ? { focusHitbox: !!runtimeCapabilities.focusHitbox }
-      : {}),
+    ...publishedHostRuntimeFeatures(game, requestedFeatures, runtimeCapabilities),
   };
   // Executable Runtime belongs to the App Shell in every resource mode.
   const appRuntimeRoot = resolve(staging, "runtime", game);
@@ -660,16 +667,19 @@ for (const game of preloadGames) {
   if (externalResources) continue;
   const gameRoot = resolve(staging, "games", game);
   await mkdir(gameRoot, { recursive: true });
+  const dataFileId = product.package.dataFileId;
+  const dataTarget = product.package.dataTarget;
+  const dataPath = dataTarget.slice(1);
   const assembled = await assemblePreloadData({
     game,
     runtimeScript: resolve(appRuntimeRoot, `${game}.js`),
     sourceDirectory: dataAssets[game],
-    output: resolve(gameRoot, `${game}.data`),
+    output: resolve(gameRoot, dataPath),
   });
-  const dataIdentity = await runtimeDataIdentity(gameRoot, game);
+  const dataIdentity = await runtimeDataIdentity(gameRoot, dataPath);
   const runtimeLayout = assembled.layout;
   if (dataIdentity.bytes !== runtimeLayout.bytes) throw new Error(`${game}: packaged DATA size does not match Runtime layout`);
-  entry.gameData = { path: `${game}.data`, ...dataIdentity,
+  entry.gameData = { path: dataPath, ...dataIdentity,
     version: `sha256-${dataIdentity.sha256}`, layout: runtimeLayout.layout };
   if (multiplayerBuild) {
     const multiplayerLayout = extractGameDataLayout(await readFile(resolve(appRuntimeRoot, "multiplayer", `${game}.js`), "utf8"), game);
@@ -752,8 +762,8 @@ for (const game of preloadGames) {
   // publication and offline ZIP acquisition.
   const packageFiles = {};
   const baseFiles = [];
-  packageFiles["game-data"] = await descriptorFile(`games/${game}/${game}.data`, `/${game}.data`);
-  baseFiles.push("game-data");
+  packageFiles[dataFileId] = await descriptorFile(`games/${game}/${dataPath}`, dataTarget);
+  baseFiles.push(dataFileId);
   packageFiles["shared-msgothic"] = await descriptorFile("shared/msgothic.ttc", "/msgothic.ttc");
   packageFiles["shared-unifont"] = await descriptorFile("shared/unifont.otf", "/unifont.otf");
   baseFiles.push("shared-msgothic", "shared-unifont");
@@ -792,81 +802,7 @@ for (const game of preloadGames) {
     runtimeRequirement: {
       protocol: manifest.protocol,
       target: game,
-      dataFile: "game-data",
-      dataLayout: entry.gameData.layout,
-    },
-    files: packageFiles,
-    base: { files: baseFiles },
-    components,
-  };
-  descriptor.revision = createHash("sha256").update(canonicalPackagePayload(descriptor)).digest("hex").slice(0, 16);
-  validatePackageDescriptor(descriptor);
-  const descriptorName = `${game}.package.json`;
-  await writeFile(resolve(staging, descriptorName), `${JSON.stringify(descriptor, null, 2)}\n`);
-  entry.package = { revision: descriptor.revision, descriptor: descriptorName };
-}
-
-if (hostedResources && gameIds.includes("th08") && PRODUCT_GAMES.th08.runtimeFileLayout !== "directory") {
-  const game = "th08";
-  const entry = manifest.games?.[game];
-  if (!entry) throw new Error("TH08 product entry is missing from Host Manifest");
-  const gameRoot = resolve(staging, "games", game);
-  await mkdir(gameRoot, { recursive: true });
-
-  const packagedData = resolve(gameRoot, `${game}.data`);
-  await cp(resolve(assets.th08, "th08.dat"), packagedData);
-  const dataIdentity = await fileIdentity(packagedData);
-  entry.gameData = { ...(entry.gameData || {}), path: `${game}.data`, bytes: dataIdentity.bytes,
-    sha256: dataIdentity.sha256, version: `sha256-${dataIdentity.sha256}` };
-
-  entry.features = { ...(entry.features || {}), thprac: false };
-  entry.languages = [];
-  entry.languageOptions = [{ id: "ja", title: languageDisplayName("ja"), pack: null }];
-
-  if (!modes.has("ogg")) {
-    delete entry.music.ogg;
-  } else {
-    const pack = entry.music?.ogg;
-    if (!pack?.files?.length) throw new Error("TH08 hosted OGG metadata is missing from Host Manifest");
-    if (!ogg.th08) throw new Error("TH08 hosted OGG source is required when OGG music is enabled");
-    const sourceBase = musicSourceBase(game, "ogg");
-    const targetBase = resolve(gameRoot, "music", "ogg");
-    await copyFiles(sourceBase, targetBase, pack.files);
-    pack.base = `games/${game}/music/ogg/`;
-    const identities = await Promise.all(pack.files.map(file => fileIdentity(resolve(sourceBase, file))));
-    pack.sizes = identities.map(identity => identity.bytes);
-    Object.assign(pack, fileSetIdentity(pack.files, identities));
-  }
-
-  const packageFiles = {};
-  const baseFiles = [];
-  packageFiles["game-data"] = await descriptorFile(`games/${game}/${game}.data`, `/${game}.data`);
-  baseFiles.push("game-data");
-  packageFiles["shared-msgothic"] = await descriptorFile("shared/msgothic.ttc", "/msgothic.ttc");
-  packageFiles["shared-unifont"] = await descriptorFile("shared/unifont.otf", "/unifont.otf");
-  baseFiles.push("shared-msgothic", "shared-unifont");
-
-  const components = {};
-  const oggPack = entry.music?.ogg;
-  if (oggPack?.files?.length) {
-    const oggFiles = [];
-    const mount = String(oggPack.mount || "").replace(/\/$/, "");
-    for (const name of oggPack.files) {
-      const id = `ogg:${name}`;
-      packageFiles[id] = await descriptorFile(`games/${game}/music/ogg/${name}`, `${mount}/${name}`);
-      oggFiles.push(id);
-    }
-    components.ogg = { type: "ogg", files: oggFiles };
-  }
-
-  const descriptor = {
-    schema: PACKAGE_DESCRIPTOR_SCHEMA,
-    game,
-    revision: "pending",
-    runtimeRequirement: {
-      protocol: manifest.protocol,
-      target: game,
-      dataFile: "game-data",
+      dataFile: dataFileId,
       dataLayout: entry.gameData.layout,
     },
     files: packageFiles,

@@ -15,7 +15,7 @@ import { buildAppShell } from "../lib/app-shell-build.mjs";
 import { APP_SHELL_OUTPUT_FILE } from "../lib/app-shell-policy.mjs";
 import { findChromiumExecutable } from "../lib/chromium-executable.mjs";
 import { ensureLauncherBuild, resolveBrowserPublicationSource } from "../lib/launcher-build.mjs";
-import { PRODUCT_GAMES, PRODUCT_IDS } from "../lib/contracts/product-catalog.mjs";
+import { DEFAULT_MULTIPLAYER_PRODUCT_ID, PRODUCT_GAMES, PRODUCT_IDS } from "../lib/contracts/product-catalog.mjs";
 import { HOST_MANIFEST_SCHEMA } from "../lib/contracts/host-manifest.mjs";
 import { RELEASE_CATALOG_SCHEMA } from "../lib/contracts/release-catalog.mjs";
 import { staticContentCompressible, staticContentType } from "../server/static-content-policy.mjs";
@@ -88,6 +88,11 @@ const REFERENCE_ARTWORK = Object.freeze({
   "th08-card.webp": "UklGRkAAAABXRUJQVlA4IDQAAAAQAwCdASogACAAPp1In0slpCKhqAgAsBOJZwC+SBbbDQAA/vHcjSHCx/ZO8nKPIENc4AAA",
   "th10-card.webp": "UklGRj4AAABXRUJQVlA4IDIAAAAQAwCdASogACAAPp1In0slpCKhqAgAsBOJZwDE2BanFAAA/vOkdd6tpg6o+skYToAAAA==",
 });
+assert.deepEqual(
+  Object.keys(REFERENCE_ARTWORK).sort(),
+  Object.values(PRODUCT_GAMES).map(product => product.cardArtwork).sort(),
+  "Verified In Practice reference artwork must cover every registered game card",
+);
 
 function createCertificate(directory) {
   const key = resolve(directory, "localhost-key.pem");
@@ -230,13 +235,15 @@ async function runAgenticChecks(browser, url) {
   });
 
   await scenario("multiplayer-flow", async page => {
-    const clicked = await page.$$eval(".game:not([hidden])", elements => {
-      const target = elements.find(element => element.innerText.includes("07MP"));
+    const clicked = await page.$$eval(".game:not([hidden])", (elements, product) => {
+      const target = elements.find(element => element.getAttribute("data-product") === product);
       target?.click();
       return Boolean(target);
-    });
+    }, DEFAULT_MULTIPLAYER_PRODUCT_ID);
     assert(clicked);
-    await page.waitForFunction(() => document.querySelector('.game[data-product="th07mp"]')?.getAttribute("aria-current") === "page");
+    await page.waitForFunction(product =>
+      document.querySelector(`.game[data-product="${product}"]`)?.getAttribute("aria-current") === "page",
+      {}, DEFAULT_MULTIPLAYER_PRODUCT_ID);
     const actions = (await page.$$eval("button", elements => elements.filter(element => {
       const rect = element.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0;

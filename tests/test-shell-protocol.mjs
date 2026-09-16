@@ -1,6 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { webcrypto } from "node:crypto";
 import vm from "node:vm";
+import assert from "node:assert/strict";
+import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+import { RUNTIME_CONFIGURE_LEGACY_MUSIC_MODES } from "../lib/contracts/runtime-protocol.mjs";
 import { workspacePath } from "../lib/workspace-layout.mjs";
 
 const cases = [
@@ -13,6 +16,13 @@ const cases = [
     ogg: [{ url: "http://test.local/music.ogg", path: "/bgm-ogg/th07_01.ogg" }]
   } }
 ];
+
+const preloadGames = Object.entries(PRODUCT_GAMES)
+  .filter(([, product]) => product.dataProvider === "emscripten-preload")
+  .map(([game]) => game)
+  .sort();
+assert.deepEqual(cases.map(test => test.game).sort(), preloadGames,
+  "preload shell execution cases must be updated when a formal emscripten-preload adapter is registered");
 
 for (const test of cases) {
   const html = await readFile(test.shell, "utf8");
@@ -148,12 +158,11 @@ for (const test of cases) {
     { url: "http://test.local/unifont.otf", path: "/unifont.otf" },
   ];
   const runtimeResources = [{ url: "http://test.local/translation.bin", path: `/thcrap/${test.game}/translation.bin`, size: 1 }];
-  const thpracSession = { schema: "eagler-touhou/thprac-session/1", game: test.game, params: { mode: 1, stage: 0, section: 1 } };
-  for (const mode of ["wav", "ogg"]) {
+  for (const mode of [...RUNTIME_CONFIGURE_LEGACY_MUSIC_MODES, "ogg"]) {
     const resources = test.packs[mode];
     await message({ origin: context.location.origin, source: parent, data: {
       protocol: "eagler-touhou/1", game: test.game, command: "configure", request: mode, music: mode, resources, sharedResources, runtimeResources,
-      options: { thpracEnabled: true, limitPresentationTo60: true, touchEnabled: true, touchMovementMode: "touch-unlimited", unlimitedTouch: true, touchBombZoneEnabled: false, doubleTapBombEnabled: true, alwaysHitbox: true, th06FocusHitbox: true, oggDecodeMode: mode === "ogg" ? "full" : "stream", thpracSession }
+      options: { thpracEnabled: true, limitPresentationTo60: true, touchEnabled: true, touchMovementMode: "touch-unlimited", doubleTapBombEnabled: true, alwaysHitbox: true, multiplayerLocalPlayerVisibility: true, focusHitboxEnabled: true, oggDecodeMode: mode === "ogg" ? "full" : "stream" }
     } });
     if (context.Module.touhouMusicMode !== mode || !resources.every(resource => files.has(resource.path))) {
       throw new Error(`${test.game}: ${mode.toUpperCase()} resources were not installed`);
@@ -164,12 +173,27 @@ for (const test of cases) {
         !context.Module.eaglerOptions.doubleTapBombEnabled ||
         context.Module.eaglerOptions.touchBombZoneEnabled !== false ||
         !context.Module.eaglerOptions.alwaysHitbox ||
-        context.Module.eaglerOptions.th06FocusHitbox !== (test.game === "th06") ||
+        !context.Module.eaglerOptions.enhanceLocalPlayerVisibility ||
+        context.Module.eaglerOptions.focusHitboxEnabled !== (test.game === "th06") ||
         context.Module.eaglerOptions.netplayMode !== null || context.Module.eaglerOptions.netplayLoadouts !== null ||
-        context.Module.eaglerOptions.oggDecodeMode !== (mode === "ogg" ? "full" : "stream") ||
-        context.Module.eaglerOptions.thpracSession !== thpracSession || !files.has(runtimeResources[0].path)) {
+        context.Module.eaglerOptions.oggDecodeMode !== (mode === "ogg" ? "full" : "stream") || !files.has(runtimeResources[0].path)) {
       throw new Error(`${test.game}: eagler-touhou options were not installed`);
     }
+  }
+  const legacyThpracSession = { schema: "eagler-touhou/thprac-session/1", game: test.game, params: { mode: 1, stage: 0, section: 1 } };
+  await message({ origin: context.location.origin, source: parent, data: {
+    protocol: "eagler-touhou/1", game: test.game, command: "configure", request: "legacy-thprac-session", music: "none", resources: [], sharedResources,
+    options: { thpracSession: legacyThpracSession }
+  } });
+  if (context.Module.eaglerOptions.thpracSession !== legacyThpracSession) {
+    throw new Error(`${test.game}: legacy thpracSession read compatibility was lost`);
+  }
+  await message({ origin: context.location.origin, source: parent, data: {
+    protocol: "eagler-touhou/1", game: test.game, command: "configure", request: "legacy-focus-hitbox", music: "none", resources: [], sharedResources,
+    options: { th06FocusHitbox: true }
+  } });
+  if (context.Module.eaglerOptions.focusHitboxEnabled !== (test.game === "th06")) {
+    throw new Error(`${test.game}: legacy TH06-named focus-hitbox alias escaped its compatibility boundary`);
   }
   {
     const keyMessage = (request, down, code, key, keyCode) => message({
@@ -217,7 +241,7 @@ for (const test of cases) {
       music: "midi", resources: [], sharedResources,
       runtimePack: { url: "http://test.local/lang_en.zip", language: "lang_en", runtimeVersion: "0123456789abcdef",
         bytes: 4, sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", manifest: packManifest, files: [{ path: `/thcrap/${test.game}/test.bin`, bytes: invalidPackBytes }] },
-      options: { thpracEnabled: false, touchEnabled: true, unlimitedTouch: true, touchBombZoneEnabled: true, alwaysHitbox: true, th06FocusHitbox: test.game === "th06" }
+      options: { thpracEnabled: false, touchEnabled: true, unlimitedTouch: true, touchBombZoneEnabled: true, alwaysHitbox: true, focusHitboxEnabled: test.game === "th06" }
     } });
     // The static-pack message is deliberately sent with a file-size mismatch;
     // the shell must reject it before writing any runtime file.
@@ -230,7 +254,7 @@ for (const test of cases) {
       runtimePack: { url: "http://test.local/lang_en.zip", language: "lang_en", runtimeVersion: "0123456789abcdef",
         bytes: 3, sha256: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", manifest: packManifest,
         files: [{ path: `/thcrap/${test.game}/test.bin`, bytes: packBytes }] },
-      options: { thpracEnabled: false, touchEnabled: true, unlimitedTouch: true, touchBombZoneEnabled: true, alwaysHitbox: true, th06FocusHitbox: test.game === "th06" }
+      options: { thpracEnabled: false, touchEnabled: true, unlimitedTouch: true, touchBombZoneEnabled: true, alwaysHitbox: true, focusHitboxEnabled: test.game === "th06" }
     } });
     if (!files.has(`/thcrap/${test.game}/test.bin`) || !replies.some(reply => reply.request === "static-pack-valid" && reply.ok)) {
       throw new Error(`${test.game}: valid static language pack was not installed`);
@@ -465,4 +489,4 @@ for (const test of cases) {
   }
 }
 
-console.log(JSON.stringify({ shells: cases.length, configure: ["midi", "wav", "ogg-stream", "ogg-full", "none"], letterbox: "full-touch", touchReleaseSafety: "canvas+lostcapture+visibility", protocol: "eagler-touhou/1" }));
+console.log(JSON.stringify({ shells: cases.length, configure: ["midi", "ogg-stream", "ogg-full", "none"], legacyConfigureMusic: RUNTIME_CONFIGURE_LEGACY_MUSIC_MODES, letterbox: "full-touch", touchReleaseSafety: "canvas+lostcapture+visibility", protocol: "eagler-touhou/1" }));

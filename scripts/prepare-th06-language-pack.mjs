@@ -9,6 +9,7 @@ import { createThcrapClient, downloadThcrapPack } from "../integrations/thcrap.m
 import { ThcrapRuntimeCompiler } from "../server/thcrap-compiler.mjs";
 import { ThtkRunner } from "../server/thtk-runner.mjs";
 import { createStaticThcrapPack } from "../server/thcrap-static-pack.mjs";
+import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
 
 const args = new Map();
 for (let index = 2; index < process.argv.length; index++) {
@@ -26,8 +27,11 @@ const required = name => {
 };
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const workspace = resolve(project, "..");
-const game = (args.get("game") || "th06").toLowerCase();
-if (!new Set(["th06", "th07"]).has(game)) throw new Error(`unsupported game: ${game}`);
+const game = String(args.get("game") || "").toLowerCase();
+if (!game) throw new Error("missing --game=GAME");
+if (PRODUCT_CONTENT[game]?.hostPreparation?.languagePack?.kind !== "thcrap-runtime-compiler") {
+  throw new Error(`unsupported thcrap Runtime language adapter: ${game}`);
+}
 const language = args.get("language") || "lang_zh-hans";
 if (args.has("runtime-version") && String(args.get("runtime-version")).toLowerCase() !== "auto") {
   process.stderr.write("note: --runtime-version is retained for CLI compatibility but language packs are Runtime-independent\n");

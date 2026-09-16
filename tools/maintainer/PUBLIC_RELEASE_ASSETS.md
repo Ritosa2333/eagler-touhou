@@ -10,8 +10,9 @@ derived from the same verified formal candidate:
 1. `EaglerTouhou-SelfHost.zip` - the recommended download for
    ordinary self-host operators. It contains the portable Host tooling,
    compiled Launcher, redistributable shared resources, the verified
-   `runtime-release/`, and empty `games/th06`, `games/th07`, `games/th08`, and `games/th10`
-   directories.
+   `runtime-release/`, and one empty `games/<game>` directory for every formal
+   game currently registered by the Product Catalog. The bundle builder derives
+   that set from the catalog; this document is not a second product registry.
 2. `EaglerTouhou-Runtime.zip` - the standalone Runtime Release for
    advanced operators and integration/update work. It contains a canonical
    top-level `runtime-release/` directory and no original game resources.
@@ -44,7 +45,9 @@ Never publish any of the following as public project assets:
 
 Static deployment verification is necessary but does not prove a real browser
 can complete first installation. After an explicitly authorized staging
-deployment, run both mature browser/package paths from fresh Chromium sessions:
+deployment, run the browser/package probe from a fresh Chromium session for
+every formal Product Catalog game. Use `node scripts/list-product-games.mjs`
+to obtain the current set. For example:
 
 ```powershell
 node tools/maintainer/verify-public-first-install.mjs https://staging.example.invalid/ --game=th06

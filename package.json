@@ -31,6 +31,7 @@
     "host": "node host/build.mjs",
     "host:build": "node host/build.mjs --build-only",
     "host:doctor": "node scripts/inspect-host.mjs",
+    "adapter:inspect": "node scripts/inspect-adapter-contract.mjs",
     "import": "node host/build-import.mjs",
     "relay": "node scripts/build-launcher.mjs && node server/netplay-relay.mjs",
     "build:app-shell": "node scripts/build-app-shell.mjs",

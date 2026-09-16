@@ -29,10 +29,7 @@ const publicAssets = new Set([
   "assets/fonts/OFL-YatraOne.txt", "assets/fonts/OFL-ChillRoundGothic.txt",
   "assets/fonts/NotoSansCJKsc-Regular.otf", "assets/fonts/OFL-NotoSansCJK.txt"
 ]);
-const hostGeneratedOriginalAssets = new Set([
-  "assets/th06-card.webp",
-  "assets/th07-card.webp",
-  "assets/th08-card.webp",
+const legacyHostGeneratedOriginalAssets = new Set([
   // Legacy/intermediate names remain forbidden too. They are useful as a
   // guard against accidentally copying extraction staging back into source.
   "assets/th06-title00.jpg",
@@ -40,16 +37,23 @@ const hostGeneratedOriginalAssets = new Set([
   "assets/th08-title00.png",
   "assets/th06.ico",
 ]);
+function isHostGeneratedOriginalAsset(path) {
+  // Card artwork is host-generated from retail content for every formal title.
+  // Keep this rule product-neutral so adding a title does not require teaching
+  // the publication safety audit another game id.
+  return /^assets\/th\d{2}-card\.webp$/i.test(path) || legacyHostGeneratedOriginalAssets.has(path);
+}
 const failures = [];
 let workspaceChecked = null;
 if (workspaceAudit) {
+  const { PRODUCT_GAMES } = await import("../lib/contracts/product-catalog.mjs");
   const { WORKSPACE_REPOSITORIES, workspacePath } = await import("../lib/workspace-layout.mjs");
+  const gameOwners = Object.keys(PRODUCT_GAMES);
   workspaceChecked = [
     WORKSPACE_REPOSITORIES.launcher,
-    `${WORKSPACE_REPOSITORIES.th06} tracked files`,
-    `${WORKSPACE_REPOSITORIES.th07} tracked files`,
+    ...gameOwners.map(owner => `${WORKSPACE_REPOSITORIES[owner]} tracked files`),
   ];
-  for (const owner of ["th06", "th07"]) {
+  for (const owner of gameOwners) {
     const repo = WORKSPACE_REPOSITORIES[owner];
     const root = workspacePath(owner);
     if (!existsSync(resolve(root, ".git"))) throw new Error(`workspace publication audit requires sibling repository: ${repo}`);
@@ -62,7 +66,7 @@ if (workspaceAudit) {
 async function inspect(path) {
   const rel = relative(project, path).replaceAll("\\", "/");
   const publicRel = rel.startsWith("public/") ? rel.slice("public/".length) : rel;
-  if (hostGeneratedOriginalAssets.has(publicRel)) failures.push(`eagler-touhou/${rel} (original-game-derived host asset must not be source-published)`);
+  if (isHostGeneratedOriginalAsset(publicRel)) failures.push(`eagler-touhou/${rel} (original-game-derived host asset must not be source-published)`);
   else if (publicRel.startsWith("assets/") && !publicAssets.has(publicRel)) failures.push(`eagler-touhou/${rel} (unreviewed public asset)`);
   if (forbiddenExtensions.has(extname(rel).toLowerCase())) failures.push(`eagler-touhou/${rel}`);
   if ((await stat(path)).size > 50 * 1024 * 1024) failures.push(`eagler-touhou/${rel} (>50 MiB)`);

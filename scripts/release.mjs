@@ -9,7 +9,12 @@ import { tmpdir } from "node:os";
 import { basename, dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { COMPLETION_REPORT_SCHEMA, validateCompletionReport } from "../lib/completion-report.mjs";
-import { formalReleaseSourceOwners, normalizeFormalReleaseInput, RELEASE_PATH_INPUT_KEYS } from "../lib/release-plan.mjs";
+import {
+  formalReleaseSourceOwners,
+  normalizeFormalReleaseInput,
+  RELEASE_PATH_INPUT_KEYS,
+  RELEASE_PATH_MAP_INPUT_KEYS,
+} from "../lib/release-plan.mjs";
 import { verifyRuntimeRelease } from "../lib/runtime-release.mjs";
 import { WORKSPACE_REPOSITORIES, workspacePath, workspaceRoot } from "../lib/workspace-layout.mjs";
 import { sourceIdentity, writeReleaseManifest } from "../lib/release-manifest.mjs";
@@ -95,6 +100,9 @@ async function identifyInputs(inputPath, prepare) {
   for (const key of RELEASE_PATH_INPUT_KEYS) {
     if (prepare[key]) await visit(prepare[key], key);
   }
+  for (const key of RELEASE_PATH_MAP_INPUT_KEYS) {
+    for (const [game, path] of Object.entries(prepare[key] || {})) await visit(path, `${key}/${game}`);
+  }
   await visit(inputPath, "release-input.json");
   return { scope: "explicit release input files", files, sha256: sha256(JSON.stringify(files)) };
 }
@@ -138,6 +146,11 @@ const prepare = { ...plan.prepare };
 for (const key of RELEASE_PATH_INPUT_KEYS) {
   if (!prepare[key]) continue;
   if (!existsSync(prepare[key])) throw new Error(`input path missing: ${key}`);
+}
+for (const key of RELEASE_PATH_MAP_INPUT_KEYS) {
+  for (const [game, path] of Object.entries(prepare[key] || {})) {
+    if (!existsSync(path)) throw new Error(`input path missing: ${key}.${game}`);
+  }
 }
 await verifyRuntimeRelease(prepare.RuntimeRelease);
 

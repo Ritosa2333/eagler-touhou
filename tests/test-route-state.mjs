@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { PRODUCT_IDS } from "../lib/contracts/product-catalog.mjs";
 import {
   MP_ROOM_HISTORY_KEY,
   MP_ROOM_URL_KEY,
@@ -16,11 +17,12 @@ import {
   routedProductFromUrl,
 } from "../.cache/build/browser/assets/launcher/route-state.mjs";
 
-const products = new Set(["th06", "th07", "th06mp", "th07mp"]);
+const products = new Set(PRODUCT_IDS);
 
 assert.equal(normalizeRoomCode(" 12-34abc567890 "), "12345678");
 assert.equal(normalizeRoomCode(null), "");
 assert.equal(routedProductFromUrl("https://launcher.invalid/?game=th06mp", products), "th06mp");
+assert.equal(routedProductFromUrl("https://launcher.invalid/?game=th10", products), "th10");
 assert.equal(routedProductFromUrl("https://launcher.invalid/?game=unknown", products), null);
 
 const homeUrl = launcherHomeUrl("https://launcher.invalid/?game=th07mp&mpRoom=1234&keep=1");

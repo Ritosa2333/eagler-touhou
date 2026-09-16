@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { inspectHostWorkspace, hostWorkspacePaths } from "../lib/host-workspace.mjs";
+import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
+import { HOST_WORKSPACE_GAMES, inspectHostWorkspace, hostWorkspacePaths } from "../lib/host-workspace.mjs";
 import { writeSyntheticRuntimeRelease } from "../tests/support/runtime-release-fixture.mjs";
 
 const root = await mkdtemp(join(tmpdir(), "eagler-host-workspace-"));
@@ -15,24 +16,22 @@ assert.equal(layout.site, join(root, "dist", "site"));
 assert.equal(layout.importSite, join(root, "dist", "import-site"));
 assert.equal(layout.importPackages, join(root, "dist", "import"));
 await writeSyntheticRuntimeRelease(layout.runtimeRelease);
-for (const game of ["th06", "th07", "th08", "th10"]) await mkdir(layout.games[game], { recursive: true });
+for (const game of HOST_WORKSPACE_GAMES) await mkdir(layout.games[game], { recursive: true });
 const put = async path => { await mkdir(join(path, ".."), { recursive: true }); await writeFile(path, Buffer.from([1])); };
-for (const name of ["紅魔郷CM.DAT", "紅魔郷ED.DAT", "紅魔郷IN.DAT", "紅魔郷MD.DAT", "紅魔郷ST.DAT", "紅魔郷TL.DAT"]) {
-  await put(join(layout.games.th06, name));
+for (const game of HOST_WORKSPACE_GAMES) {
+  for (const name of PRODUCT_CONTENT[game].original.files) await put(join(layout.games[game], name));
 }
-await put(join(layout.games.th07, "th07.dat"));
-await put(join(layout.games.th08, "th08.dat"));
-await put(join(layout.games.th10, "th10.dat"));
 
 const midiOnly = await inspectHostWorkspace(root, { music: "midi" });
 assert.deepEqual(midiOnly.music, ["midi"]);
-await assert.rejects(() => inspectHostWorkspace(root), /TH06 BGM th06_01\.wav not found/);
+await assert.rejects(() => inspectHostWorkspace(root), /TH06 OGG source bgm[\\/]th06_01\.wav not found/);
 
-for (let index = 1; index <= 17; index++) {
-  await put(join(layout.games.th06, "bgm", `th06_${String(index).padStart(2, "0")}.wav`));
+for (const game of ["th06", "th07", "th08"]) {
+  for (const name of PRODUCT_CONTENT[game].original.oggSourceFiles) await put(join(layout.games[game], name));
 }
-await put(join(layout.games.th07, "thbgm.dat"));
-await put(join(layout.games.th08, "thbgm.dat"));
+await assert.rejects(() => inspectHostWorkspace(root), /TH10 OGG source thbgm\.dat not found/);
+const alternative = PRODUCT_CONTENT.th10.original.preparedAlternative;
+for (const marker of alternative.markerFiles) await put(join(layout.games.th10, alternative.directory, marker));
 const full = await inspectHostWorkspace(root);
 assert.deepEqual(full.music, ["midi", "ogg"]);
 assert.equal(full.runtimeReleaseSchema, "eagler-touhou/runtime-release/1");

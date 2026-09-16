@@ -28,6 +28,7 @@ const GAME_SCHEMAS = Object.freeze({
     })
   })
 });
+export const THPRAC_SUPPORTED_GAMES = Object.freeze(Object.keys(GAME_SCHEMAS));
 
 export const THPRAC_FUNCTIONAL_FEATURES = Object.freeze({
   th06: Object.freeze(["coarse-stage-warp", "direct-frame-warp", "initial-resources", "rank", "rank-lock", "practice-replay-metadata", "midrun-replay-save"]),
@@ -41,6 +42,12 @@ export const THPRAC_DEFERRED_FEATURES = Object.freeze({
   th06: Object.freeze(["exact-section-warp", "multi-phase-spell-start", "section-dialogue", "patchouli-fake-shot"]),
   th07: Object.freeze(["exact-section-warp", "multi-phase-spell-start", "section-dialogue"])
 });
+
+for (const [label, table] of [["functional", THPRAC_FUNCTIONAL_FEATURES], ["deferred", THPRAC_DEFERRED_FEATURES]]) {
+  if (JSON.stringify(Object.keys(table)) !== JSON.stringify(THPRAC_SUPPORTED_GAMES)) {
+    throw new Error(`thprac ${label} feature table must match supported game schemas`);
+  }
+}
 
 function schemaFor(game) {
   const schema = GAME_SCHEMAS[game];

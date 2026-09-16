@@ -1,12 +1,15 @@
-import fs from "node:fs";
-import path from "node:path";
+import { readFileSync } from "node:fs";
+import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+import { workspacePath } from "../lib/workspace-layout.mjs";
 
-const root = path.resolve(import.meta.dirname, "..", "..");
-const read = rel => fs.readFileSync(path.join(root, rel), "utf8");
+const preloadGames = Object.entries(PRODUCT_GAMES)
+  .filter(([, product]) => product.dataProvider === "emscripten-preload")
+  .map(([game]) => game)
+  .sort();
 
-for (const game of ["th06", "th07"]) {
-  const windowSource = read(`${game}-eagler/src/GameWindow.cpp`);
-  const glesSource = read(`${game}-eagler/src/graphics/Gles.cpp`);
+for (const game of preloadGames) {
+  const windowSource = readFileSync(workspacePath(game, "src", "GameWindow.cpp"), "utf8");
+  const glesSource = readFileSync(workspacePath(game, "src", "graphics", "Gles.cpp"), "utf8");
 
   for (const [needle, label] of [
     ["SDL_GetDisplayForWindow", "window display detection"],
@@ -59,4 +62,4 @@ for (const result of cases) {
     throw new Error(`${result.displayHz} Hz: presentation must follow display refresh`);
 }
 
-console.log(JSON.stringify({ simulationHz: 60, nativePresentation: "display-refresh", strictVsync: true, cases }));
+console.log(JSON.stringify({ games: preloadGames, simulationHz: 60, nativePresentation: "display-refresh", strictVsync: true, cases }));

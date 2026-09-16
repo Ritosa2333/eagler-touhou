@@ -72,6 +72,7 @@ try {
     `--th08-build=${workspacePath("th08", "build-eagler")}`,
     `--th10-build=${workspacePath("th10", "build-eagler")}`,
   ]);
+  const runtimeManifestPath = resolve(runtimeRelease, "runtime-release.json");
 
   await run([
     "scripts/package-server.mjs",
@@ -88,6 +89,38 @@ try {
     `--th06-data-assets=${workspacePath("th06", "assets")}`,
     `--th07-assets=${workspacePath("th07", "assets")}`,
   ], { ...process.env, EAGLER_WORKSPACE_ROOT: fakeWorkspace });
+
+  const originalRuntimeManifest = JSON.parse(await readFile(runtimeManifestPath, "utf8"));
+  const mismatchedCapabilities = structuredClone(originalRuntimeManifest);
+  mismatchedCapabilities.games.th06.features.thprac = false;
+  await writeFile(runtimeManifestPath, JSON.stringify(mismatchedCapabilities, null, 2));
+  const requestedThpracFeatures = resolve(scratch, "features-thprac.json");
+  await writeFile(requestedThpracFeatures, JSON.stringify({
+    schema: "eagler-touhou/server-features/1",
+    resourceMode: "hosted",
+    games: {
+      th06: { languages: ["ja"], thprac: true },
+      th07: { languages: ["ja"], thprac: false },
+    },
+  }));
+  const capabilityFailure = runExpectFailure([
+    "scripts/package-server.mjs",
+    `--output=${resolve(scratch, "host-thprac-mismatch")}`,
+    `--runtime-release=${runtimeRelease}`,
+    "--games=th06,th07",
+    "--music=midi",
+    "--profile=web-validation-runtime-release",
+    `--feature-config=${requestedThpracFeatures}`,
+    `--artwork-dir=${artwork}`,
+    `--font=${workspacePath("dependencies", "unifont-15.1.05", "unifont-15.1.05.otf")}`,
+    `--vanilla-font=${workspacePath("th06", "assets", "msgothic.ttc")}`,
+    `--th06-assets=${workspacePath("th06", "assets")}`,
+    `--th06-data-assets=${workspacePath("th06", "assets")}`,
+    `--th07-assets=${workspacePath("th07", "assets")}`,
+  ], { ...process.env, EAGLER_WORKSPACE_ROOT: fakeWorkspace });
+  assert.match(capabilityFailure, /Runtime Release does not attest requested thprac capability/,
+    "Host must not publish requested thprac above the concrete Runtime Release attestation");
+  await writeFile(runtimeManifestPath, JSON.stringify(originalRuntimeManifest, null, 2));
 
   const releaseFailure = runExpectFailure([
     "scripts/package-server.mjs",
@@ -141,7 +174,6 @@ try {
   assert(externalDeployment.files.some(file => file.path === "runtime/th07/th07.wasm"));
 
   const externalDeploymentBeforeMismatch = await readFile(resolve(external, "deployment.json"), "utf8");
-  const runtimeManifestPath = resolve(runtimeRelease, "runtime-release.json");
   const changedRuntimeManifest = JSON.parse(await readFile(runtimeManifestPath, "utf8"));
   const changedRuntimePath = resolve(runtimeRelease, changedRuntimeManifest.games.th06.runtime.root, "th06.wasm");
   const changedRuntimeBytes = Buffer.concat([await readFile(changedRuntimePath), Buffer.from("runtime-mismatch")]);

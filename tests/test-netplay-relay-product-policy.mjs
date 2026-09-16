@@ -8,6 +8,9 @@ import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const relayPath = resolve(root, "server/netplay-relay.mjs");
+const multiplayerGames = Object.entries(PRODUCT_GAMES)
+  .filter(([, product]) => !!product.multiplayer)
+  .map(([game]) => game);
 
 function freePort() {
   return new Promise((resolvePort, reject) => {
@@ -83,22 +86,22 @@ async function verifyProduct(port, game) {
   const socket = await openLobby(port, room, `${product}_client`);
   try {
     const invalid = await sendAndReceive(socket, {
-      type: "take-seat", seat: 0, loadout: multiplayer.loadoutCount, ready: false,
+      type: "take-seat", seat: 0, loadout: multiplayer.loadouts.length, ready: false,
     });
     assert.equal(invalid.type, "error");
     assert.match(invalid.error, /loadout/);
 
     const seated = await sendAndReceive(socket, {
-      type: "take-seat", seat: 0, loadout: multiplayer.loadoutCount - 1, ready: false,
+      type: "take-seat", seat: 0, loadout: multiplayer.loadouts.length - 1, ready: false,
     });
     assert.equal(seated.type, "state");
-    assert.equal(seated.room.seats[0].loadout, multiplayer.loadoutCount - 1);
+    assert.equal(seated.room.seats[0].loadout, multiplayer.loadouts.length - 1);
 
     const settings = await sendAndReceive(socket, {
-      type: "settings", playerCount: 2, difficulty: multiplayer.difficultyMax + 1,
+      type: "settings", playerCount: multiplayer.playerCounts[0], difficulty: multiplayer.difficulties.length,
     });
     assert.equal(settings.type, "state");
-    assert.equal(settings.room.difficulty, multiplayer.difficultyMax);
+    assert.equal(settings.room.difficulty, multiplayer.difficulties.length - 1);
   } finally {
     socket.close(1000);
   }
@@ -119,21 +122,23 @@ async function verifyGenericRoom(port) {
 }
 
 const port = await freePort();
+const relayEnv = {
+  ...process.env,
+  EAGLER_NETPLAY_RELAY_HOST: "127.0.0.1",
+  EAGLER_NETPLAY_RELAY_PORT: String(port),
+  EAGLER_NETPLAY_STUN_URLS: "",
+};
+for (const legacy of ["TH07_RELAY_HOST", "TH07_RELAY_PORT", "TH07_STUN_URLS"])
+  delete relayEnv[legacy];
 const relay = spawn(process.execPath, [relayPath], {
   cwd: root,
-  env: {
-    ...process.env,
-    TH07_RELAY_HOST: "127.0.0.1",
-    TH07_RELAY_PORT: String(port),
-    TH07_STUN_URLS: "",
-  },
+  env: relayEnv,
   stdio: ["ignore", "pipe", "pipe"],
 });
 
 try {
   await waitListening(relay);
-  await verifyProduct(port, "th06");
-  await verifyProduct(port, "th07");
+  for (const game of multiplayerGames) await verifyProduct(port, game);
   await verifyGenericRoom(port);
 } finally {
   relay.kill();
@@ -141,7 +146,8 @@ try {
 
 console.log(JSON.stringify({
   netplayRelayProductPolicy: "PASS",
-  products: ["th06mp", "th07mp"],
+  products: multiplayerGames.map(game => `${game}mp`),
   policyOwner: "product-catalog",
-  genericRooms: "legacy-test-compatible",
+  genericRooms: "product-neutral",
+  configuration: "EAGLER_NETPLAY_*",
 }));

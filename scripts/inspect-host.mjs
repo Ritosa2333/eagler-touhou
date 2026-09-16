@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
-const { inspectHostWorkspace } = await import("../lib/host-workspace.mjs");
+const { HOST_WORKSPACE_GAMES, inspectHostWorkspace } = await import("../lib/host-workspace.mjs");
 const args = Object.fromEntries(process.argv.slice(2).map(value => {
   const split = value.indexOf("=");
   if (!value.startsWith("--") || split < 3) throw new Error(`invalid argument: ${value}`);
@@ -114,7 +114,7 @@ try {
     console.log(`  ${"Python packages".padEnd(24)}${doctorValue(buildEnvironment.pythonPackages)}`);
     console.log(`  ${"thtk 12".padEnd(24)}${doctorValue(buildEnvironment.thtk)}`);
     console.log("\nHost input");
-    for (const game of ["TH06", "TH07", "TH08", "TH10"]) console.log(`  ${game.padEnd(24)}${good("OK")}`);
+    for (const game of HOST_WORKSPACE_GAMES) console.log(`  ${game.toUpperCase().padEnd(24)}${good("OK")}`);
     console.log(`  ${"Runtime Release".padEnd(24)}${good("OK")}`);
     console.log("\nNetplay");
     console.log(`  ${"WebSocket relay".padEnd(24)}${doctorValue(relayConfigured ? "CONFIGURED" : "NOT CONFIGURED")}`);
@@ -133,13 +133,13 @@ try {
         const importSiteReady = existsSync(join(result.importSite, "deployment.json")) &&
           existsSync(join(result.importSite, "release-manifest.json")) &&
           existsSync(join(result.importSite, "checksums.txt"));
-        const packageStates = Object.fromEntries(["th06", "th07", "th08", "th10"].map(game => [
+        const packageStates = Object.fromEntries(HOST_WORKSPACE_GAMES.map(game => [
           game,
           existsSync(join(result.importPackages, `${game}.zip`)),
         ]));
         generatedOutputReady = generatedOutputReady && importSiteReady && Object.values(packageStates).every(Boolean);
         console.log(`  ${"Import site".padEnd(24)}${doctorValue(importSiteReady ? "READY" : "MISSING")}`);
-        for (const game of ["th06", "th07", "th08", "th10"]) {
+        for (const game of HOST_WORKSPACE_GAMES) {
           console.log(`  ${`${game.toUpperCase()} Import ZIP`.padEnd(24)}${doctorValue(packageStates[game] ? "READY" : "MISSING")}`);
         }
       }

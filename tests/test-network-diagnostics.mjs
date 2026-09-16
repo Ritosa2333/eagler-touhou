@@ -15,6 +15,7 @@ const fallback = new URL(legacyDiagnosticRelayUrl(
 ));
 assert.equal(fallback.searchParams.get("deployment"), "blue");
 assert.equal(fallback.searchParams.get("diagnostic"), null);
+assert.equal(fallback.searchParams.get("room"), "diagnostic-probe-123");
 assert.equal(fallback.searchParams.get("signal"), "1");
 assert.equal(fallback.searchParams.get("player"), "0");
 assert.equal(fallback.searchParams.get("players"), "2");

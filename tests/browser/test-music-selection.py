@@ -10,6 +10,25 @@ from playwright.sync_api import sync_playwright
 
 PROJECT = Path(__file__).resolve().parents[2]
 
+_adapter_contracts = json.loads(subprocess.run(
+    ["node", "scripts/inspect-adapter-contract.mjs"],
+    cwd=PROJECT,
+    check=True,
+    capture_output=True,
+    text=True,
+).stdout)
+PRODUCT_FIXTURES = [
+    {
+        "game": report["game"],
+        "dataTarget": report["product"]["dataTarget"],
+        "oggMount": report["product"]["music"]["mounts"]["ogg"],
+        "multiplayer": report["product"]["multiplayer"] is not None,
+    }
+    for report in _adapter_contracts
+]
+SINGLE_GAMES = [item["game"] for item in PRODUCT_FIXTURES]
+MULTIPLAYER_GAMES = [item["game"] for item in PRODUCT_FIXTURES if item["multiplayer"]]
+
 
 def free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -35,6 +54,7 @@ def wait_for_server(url: str, process: subprocess.Popen[str]) -> None:
 
 SEED_LOCAL_OGG = """
 async () => {
+  const fixtures = __PRODUCT_FIXTURES__;
   const db = await new Promise((resolve, reject) => {
     const request = indexedDB.open('eagler-touhou-package-store-v1');
     request.onupgradeneeded = () => {
@@ -49,8 +69,9 @@ async () => {
   try {
     await new Promise((resolve, reject) => {
       const tx = db.transaction(['objects', 'generations', 'installations'], 'readwrite');
-      for (const game of ['th06', 'th07', 'th08']) {
-        const musicMount = game === 'th06' ? '/bgm' : '/bgm-ogg';
+      for (const fixture of fixtures) {
+        const { game, dataTarget, oggMount } = fixture;
+        const musicMount = oggMount.endsWith('/') ? oggMount.slice(0, -1) : oggMount;
         const objectIds = {
           data: `obj-local-${game}-data-0001`,
           ogg1: `obj-local-${game}-ogg-0001`,
@@ -76,7 +97,7 @@ async () => {
             components: { ogg: { type: 'ogg', files: ['ogg-1', 'ogg-2'] } },
             files: {
               'game-data': {
-                source: `data/${game}.data`, target: `/${game}.data`, revision: 'data-r1', bytes: 1,
+                source: `data/${game}.data`, target: dataTarget, revision: 'data-r1', bytes: 1,
               },
               'ogg-1': {
                 source: `ogg/${game}_01.ogg`, target: `${musicMount}/${game}_01.ogg`, revision: 'ogg-r1',
@@ -109,6 +130,7 @@ async () => {
   }
 }
 """
+SEED_LOCAL_OGG = SEED_LOCAL_OGG.replace("__PRODUCT_FIXTURES__", json.dumps(PRODUCT_FIXTURES))
 
 
 RUNTIME_PROTOCOL_STUB = r"""<!doctype html>
@@ -116,7 +138,7 @@ RUNTIME_PROTOCOL_STUB = r"""<!doctype html>
 <script>
 (() => {
   const protocol = "eagler-touhou/1";
-  const game = location.pathname.match(/runtime-stub\/(th0[678])\.html/)?.[1] || "";
+  const game = location.pathname.match(/runtime-stub\/(th\d+)\.html/)?.[1] || "";
   window.__eaglerTestMessages = [];
   window.__eaglerTestWrites = [];
   const FS = {
@@ -200,7 +222,7 @@ def main() -> int:
                     music.pop("ogg", None)
                     music.pop("wav", None)
                     game["runtime"] = f"runtime-stub/{game_id}.html"
-                    if game_id in ('th06', 'th07'):
+                    if game_id in MULTIPLAYER_GAMES:
                         game['multiplayerRuntime'] = f'runtime-stub/{game_id}.html?multiplayer=1'
                     if fault['mode']:
                         game['offlineCompatibility'] = {
@@ -298,11 +320,12 @@ def main() -> int:
                 result["valueAfterRender"] = page.locator(f"#{select_id}").input_value()
                 return result
 
-            for game in ("th06", "th07", "th08"):
+            for game in SINGLE_GAMES:
                 results[game] = exercise(
-                    f'.game-{game}:not(.game-multiplayer)', "musicSelect", "ogg-full", True
+                    f'.game[data-game="{game}"]:not(.game-multiplayer)', "musicSelect", "ogg-full", True
                 )
-            for product in ("th06mp", "th07mp"):
+            for game in MULTIPLAYER_GAMES:
+                product = f"{game}mp"
                 results[product] = exercise(f'[data-product="{product}"]', "mpMusicSelect", "ogg-stream")
 
             for result in results.values():

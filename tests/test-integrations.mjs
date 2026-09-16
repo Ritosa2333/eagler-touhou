@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { classifyThcrapAsset, createThcrapClient, crc32, downloadThcrapPack } from "../integrations/thcrap.mjs";
-import { createThpracSession, normalizeThpracParams } from "../integrations/thprac.mjs";
+import { createThpracSession, normalizeThpracParams, THPRAC_SUPPORTED_GAMES } from "../integrations/thprac.mjs";
+import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 
 const encoder = new TextEncoder();
 const png = encoder.encode("fake png fixture");
@@ -57,4 +58,9 @@ assert.equal(th06.dlg, true);
 const th07 = createThpracSession("th07", { cherryMax: 250000, spellBonus: 31 });
 assert.equal(th07.params.cherryMax, 250000);
 assert.equal(th07.params.spellBonus, 30);
-console.log(JSON.stringify({ thcrap: { assets: pack.assets.length, stringdefs: stringdefsAssets.length, crc32: "ok" }, thprac: { games: ["th06", "th07"] } }));
+const declaredThpracGames = Object.entries(PRODUCT_GAMES)
+  .filter(([, product]) => product.features.thprac)
+  .map(([game]) => game);
+assert.deepEqual(THPRAC_SUPPORTED_GAMES, declaredThpracGames,
+  "thprac integration support must exactly match Product Catalog declarations");
+console.log(JSON.stringify({ thcrap: { assets: pack.assets.length, stringdefs: stringdefsAssets.length, crc32: "ok" }, thprac: { games: THPRAC_SUPPORTED_GAMES } }));

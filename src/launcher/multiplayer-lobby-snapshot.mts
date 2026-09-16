@@ -40,21 +40,25 @@ function record(value: unknown): Record<string, unknown> | null {
 
 export function normalizeMultiplayerLobbySnapshot(value: unknown, {
   localClientId,
-  maxDifficulty,
-  loadoutCount,
+  playerCounts,
+  difficulties,
+  loadouts,
 }: {
   localClientId: string;
-  maxDifficulty: number;
-  loadoutCount: number;
+  playerCounts: readonly (2 | 3)[];
+  difficulties: readonly unknown[];
+  loadouts: readonly unknown[];
 }): NormalizedMultiplayerLobbySnapshot | null {
   const source = record(value);
   if (!source) return null;
-  const playerCount: 2 | 3 = Number(source.playerCount) === 3 ? 3 : 2;
+  const requestedPlayerCount = Number(source.playerCount);
+  if (!playerCounts.includes(requestedPlayerCount as 2 | 3)) return null;
+  const playerCount = requestedPlayerCount as 2 | 3;
   const difficulty = Math.max(
     0,
-    Math.min(normalizedNonNegativeLimit(maxDifficulty), Number(source.difficulty) || 0),
+    Math.min(Math.max(0, difficulties.length - 1), Number(source.difficulty) || 0),
   );
-  const normalizedLoadoutCount = normalizedNonNegativeLimit(loadoutCount);
+  const normalizedLoadoutCount = normalizedNonNegativeLimit(loadouts.length);
   const settingsVersion = Math.max(1, Math.trunc(Number(source.settingsVersion) || 1));
   const phase = source.phase === "starting" || source.phase === "running" ? source.phase : "lobby";
 

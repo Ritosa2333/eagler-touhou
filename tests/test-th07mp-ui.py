@@ -1,7 +1,22 @@
 import json
+import subprocess
 import sys
+from pathlib import Path
 
 from playwright.sync_api import sync_playwright
+
+
+PROJECT = Path(__file__).resolve().parents[1]
+_adapter_contracts = json.loads(subprocess.run(
+    ["node", "scripts/inspect-adapter-contract.mjs"],
+    cwd=PROJECT,
+    check=True,
+    capture_output=True,
+    text=True,
+).stdout)
+EXPECTED_PRODUCTS = [report["game"] for report in _adapter_contracts] + [
+    f"{report['game']}mp" for report in _adapter_contracts if report["product"]["multiplayer"] is not None
+]
 
 
 def wait_for_text(page, selector: str, expected: str) -> None:
@@ -29,7 +44,7 @@ def main() -> int:
         products = page.locator(".game").evaluate_all(
             "els => els.map(el => el.dataset.product || el.dataset.game)"
         )
-        assert products == ["th06", "th07", "th08", "th10", "th06mp", "th07mp"]
+        assert products == EXPECTED_PRODUCTS
         assert page.locator("#mpNetworkDiagnostics").evaluate(
             "el => el.querySelector('#mpNetworkCheck').compareDocumentPosition(el.querySelector('#mpNetworkResults')) "
             "& Node.DOCUMENT_POSITION_FOLLOWING"
@@ -79,9 +94,9 @@ def main() -> int:
         assert page.locator("#mpSettingsFold").evaluate("el => el.parentElement?.id") == "mpSettingsRoomDrawerContent"
         assert page.locator("#mpSettingsFold .mp-fold-head").is_hidden()
         assert page.locator("#mpSettingsFold .mp-settings-body").is_visible()
-        assert page.locator("#mpTh06HitboxOption").is_visible()
-        page.locator("#mpTh06HitboxToggle").click()
-        assert page.locator("#mpTh06HitboxToggle").get_attribute("aria-checked") == "true"
+        assert page.locator("#mpFocusHitboxOption").is_visible()
+        page.locator("#mpFocusHitboxToggle").click()
+        assert page.locator("#mpFocusHitboxToggle").get_attribute("aria-checked") == "true"
         drawer_padding = page.locator("#mpSettingsRoomDrawer").evaluate(
             "el => ({ left: parseFloat(getComputedStyle(el).paddingLeft), right: parseFloat(getComputedStyle(el).paddingRight) })"
         )

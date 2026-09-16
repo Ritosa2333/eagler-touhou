@@ -1,3 +1,5 @@
+import { TOUCH_SENSITIVITY_MAX, TOUCH_SENSITIVITY_MIN } from "../contracts/runtime-protocol.mjs";
+
 export type TouchMovementMode = "touch" | "touch-unlimited" | "joystick" | "joystick-free";
 export type TouchFocusMode = "two-finger" | "hold-button" | "toggle-button";
 export type MusicMode = "ogg-stream" | "ogg-full" | "midi" | "none";
@@ -6,7 +8,7 @@ export interface GameOptions {
   thpracEnabled: boolean;
   thpracTouchControlsEnabled: boolean;
   magnifierEnabled: boolean;
-  th06FocusHitbox: boolean;
+  focusHitboxEnabled: boolean;
   frameLimit60Enabled: boolean;
   touchEnabled: boolean;
   touchMovementMode: TouchMovementMode;
@@ -15,23 +17,23 @@ export interface GameOptions {
   doubleTapBombEnabled: boolean;
   restartButtonEnabled: boolean;
   alwaysHitbox: boolean;
-  enhanceLocalPlayerVisibility: boolean;
+  multiplayerLocalPlayerVisibility: boolean;
 }
 
 export const DEFAULT_GAME_OPTIONS: Readonly<GameOptions> = Object.freeze({
   thpracEnabled: false,
   thpracTouchControlsEnabled: false,
   magnifierEnabled: false,
-  th06FocusHitbox: false,
+  focusHitboxEnabled: false,
   frameLimit60Enabled: false,
   touchEnabled: false,
   touchMovementMode: "touch",
-  touchSensitivity: 100,
+  touchSensitivity: TOUCH_SENSITIVITY_MIN,
   touchFocusMode: "hold-button",
   doubleTapBombEnabled: false,
   restartButtonEnabled: false,
   alwaysHitbox: false,
-  enhanceLocalPlayerVisibility: false,
+  multiplayerLocalPlayerVisibility: false,
 });
 
 export const TOUCH_MOVEMENT_MODES = new Set<TouchMovementMode>([
@@ -165,11 +167,31 @@ export function normalizeStoredGamePreferences(
 
   let sanitizedRecord = saved;
   let storageRewriteRequired = false;
-  if (saved && savedOptions && Object.prototype.hasOwnProperty.call(savedOptions, "limitPresentationTo60")) {
+  if (saved && savedOptions) {
     const sanitizedOptions = { ...savedOptions };
-    delete sanitizedOptions.limitPresentationTo60;
-    sanitizedRecord = { ...saved, options: sanitizedOptions };
-    storageRewriteRequired = true;
+    let changed = false;
+    if (Object.prototype.hasOwnProperty.call(sanitizedOptions, "limitPresentationTo60")) {
+      delete sanitizedOptions.limitPresentationTo60;
+      changed = true;
+    }
+    if (Object.prototype.hasOwnProperty.call(sanitizedOptions, "th06FocusHitbox")) {
+      if (!Object.prototype.hasOwnProperty.call(sanitizedOptions, "focusHitboxEnabled")) {
+        sanitizedOptions.focusHitboxEnabled = sanitizedOptions.th06FocusHitbox;
+      }
+      delete sanitizedOptions.th06FocusHitbox;
+      changed = true;
+    }
+    if (Object.prototype.hasOwnProperty.call(sanitizedOptions, "enhanceLocalPlayerVisibility")) {
+      if (!Object.prototype.hasOwnProperty.call(sanitizedOptions, "multiplayerLocalPlayerVisibility")) {
+        sanitizedOptions.multiplayerLocalPlayerVisibility = sanitizedOptions.enhanceLocalPlayerVisibility;
+      }
+      delete sanitizedOptions.enhanceLocalPlayerVisibility;
+      changed = true;
+    }
+    if (changed) {
+      sanitizedRecord = { ...saved, options: sanitizedOptions };
+      storageRewriteRequired = true;
+    }
   }
 
   const rawOptions = record(sanitizedRecord?.options);
@@ -188,14 +210,14 @@ export function normalizeStoredGamePreferences(
 
   const sensitivityCandidate = rawOptions?.touchSensitivity;
   const touchSensitivity = typeof sensitivityCandidate === "number" && Number.isFinite(sensitivityCandidate)
-    ? Math.min(300, Math.max(100, Math.round(sensitivityCandidate)))
+    ? Math.min(TOUCH_SENSITIVITY_MAX, Math.max(TOUCH_SENSITIVITY_MIN, Math.round(sensitivityCandidate)))
     : DEFAULT_GAME_OPTIONS.touchSensitivity;
 
   const options: GameOptions = {
     thpracEnabled: context.thpracAvailable && booleanOption(rawOptions, "thpracEnabled", DEFAULT_GAME_OPTIONS.thpracEnabled),
     thpracTouchControlsEnabled: booleanOption(rawOptions, "thpracTouchControlsEnabled", DEFAULT_GAME_OPTIONS.thpracTouchControlsEnabled),
     magnifierEnabled: booleanOption(rawOptions, "magnifierEnabled", DEFAULT_GAME_OPTIONS.magnifierEnabled),
-    th06FocusHitbox: booleanOption(rawOptions, "th06FocusHitbox", DEFAULT_GAME_OPTIONS.th06FocusHitbox),
+    focusHitboxEnabled: booleanOption(rawOptions, "focusHitboxEnabled", DEFAULT_GAME_OPTIONS.focusHitboxEnabled),
     frameLimit60Enabled: booleanOption(rawOptions, "frameLimit60Enabled", DEFAULT_GAME_OPTIONS.frameLimit60Enabled),
     touchEnabled: booleanOption(rawOptions, "touchEnabled", DEFAULT_GAME_OPTIONS.touchEnabled),
     touchMovementMode: migratedMovement,
@@ -204,7 +226,7 @@ export function normalizeStoredGamePreferences(
     doubleTapBombEnabled: booleanOption(rawOptions, "doubleTapBombEnabled", DEFAULT_GAME_OPTIONS.doubleTapBombEnabled),
     restartButtonEnabled: booleanOption(rawOptions, "restartButtonEnabled", DEFAULT_GAME_OPTIONS.restartButtonEnabled),
     alwaysHitbox: booleanOption(rawOptions, "alwaysHitbox", DEFAULT_GAME_OPTIONS.alwaysHitbox),
-    enhanceLocalPlayerVisibility: booleanOption(rawOptions, "enhanceLocalPlayerVisibility", DEFAULT_GAME_OPTIONS.enhanceLocalPlayerVisibility),
+    multiplayerLocalPlayerVisibility: booleanOption(rawOptions, "multiplayerLocalPlayerVisibility", DEFAULT_GAME_OPTIONS.multiplayerLocalPlayerVisibility),
   };
 
   const musicPreference = normalizeMusicMode(sanitizedRecord?.music);

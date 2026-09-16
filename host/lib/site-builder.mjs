@@ -4,16 +4,14 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { inspectHostWorkspace } from "../../lib/host-workspace.mjs";
+import { PRODUCT_CONTENT } from "../../lib/content-definition.mjs";
+import { PRODUCT_GAMES } from "../../lib/contracts/product-catalog.mjs";
 import { workspacePath } from "../../lib/workspace-layout.mjs";
 import { ensurePythonEnvironment } from "./python-environment.mjs";
 import { ensureThtk } from "./thtk.mjs";
 import { run } from "./process.mjs";
 
-const GAMES = Object.freeze(["th06", "th07", "th08", "th10"]);
-const TH06_ARCHIVES = Object.freeze([
-  "紅魔郷CM.DAT", "紅魔郷ED.DAT", "紅魔郷IN.DAT",
-  "紅魔郷MD.DAT", "紅魔郷ST.DAT", "紅魔郷TL.DAT",
-]);
+const GAMES = Object.freeze(Object.keys(PRODUCT_CONTENT));
 const DEFAULT_LANGUAGES = Object.freeze(["ja", "lang_zh-hans", "lang_en"]);
 
 function script(projectRoot, path) {
@@ -110,9 +108,12 @@ async function prepareFeatureConfig(projectRoot, layout, resourceMode) {
   const basePath = script(projectRoot, "host/config/site-features.default.json");
   const features = JSON.parse(await readFile(basePath, "utf8"));
   features.resourceMode = resourceMode;
-  for (const game of ["th06", "th07"]) {
-    features.games[game] ||= {};
-    features.games[game].languages = [...DEFAULT_LANGUAGES];
+  for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
+    if (!product.features.languages && !product.features.thprac) continue;
+    features.games[game] = {
+      ...(product.features.languages ? { languages: [...DEFAULT_LANGUAGES] } : {}),
+      ...(product.features.thprac ? { thprac: true } : {}),
+    };
   }
   if (layout.hostConfig.netplay.relay) features.netplayRelay = layout.hostConfig.netplay.relay;
   else delete features.netplayRelay;
@@ -131,35 +132,40 @@ async function prepareFeatureConfig(projectRoot, layout, resourceMode) {
 
 async function prepareLanguages(projectRoot, layout, python, thtk, font) {
   const languageRoot = resolve(layout.root, ".cache", "generated", "language-packs");
-  const th06Archives = TH06_ARCHIVES.map(name => resolve(layout.games.th06, name));
+  const games = GAMES.filter(game => PRODUCT_GAMES[game].features.languages);
+  const requestedLanguages = ["lang_zh-hans", "lang_en"];
   let task = 0;
-  const total = 4;
-  for (const language of ["lang_zh-hans", "lang_en"]) {
+  const total = games.length * requestedLanguages.length;
+  const prepared = {};
+  for (const language of requestedLanguages) {
     const label = language === "lang_zh-hans" ? "Simplified Chinese" : "English";
-    console.log(`[Languages ${++task}/${total}] TH06 ${label}`);
-    await run(process.execPath, [
-      script(projectRoot, "scripts/prepare-th06-language-pack.mjs"),
-      "--game", "th06", "--language", language,
-      "--thdat", thtk.thdat, "--thmsg", thtk.thmsg,
-      "--archives", th06Archives.join(";"),
-      "--output", resolve(languageRoot, "th06"),
-      "--font-file", font, "--font-python", python,
-    ], { cwd: projectRoot });
-    console.log(`[Languages ${++task}/${total}] TH07 ${label}`);
-    await run(process.execPath, [
-      script(projectRoot, "scripts/prepare-th06-language-pack.mjs"),
-      "--game", "th07", "--language", language,
-      "--thdat", thtk.thdat, "--thmsg", thtk.thmsg,
-      "--archive", resolve(layout.games.th07, "th07.dat"),
-      "--output", resolve(languageRoot, "th07"),
-      "--font-file", font, "--font-python", python,
-    ], { cwd: projectRoot });
+    for (const game of games) {
+      const preparation = PRODUCT_CONTENT[game].hostPreparation?.languagePack;
+      if (preparation?.kind !== "thcrap-runtime-compiler") {
+        throw new Error(`${game}: language capability has no supported Host preparation declaration`);
+      }
+      const output = resolve(languageRoot, game);
+      prepared[game] = output;
+      const args = [
+        script(projectRoot, "scripts/prepare-th06-language-pack.mjs"),
+        "--game", game, "--language", language,
+        "--thdat", thtk.thdat, "--thmsg", thtk.thmsg,
+        "--output", output,
+        "--font-file", font, "--font-python", python,
+      ];
+      if (preparation.inputMode === "archives") {
+        args.push("--archives", PRODUCT_CONTENT[game].original.files.map(name => resolve(layout.games[game], name)).join(";"));
+      } else if (preparation.inputMode === "archive" && preparation.archive) {
+        args.push("--archive", resolve(layout.games[game], preparation.archive));
+      } else {
+        throw new Error(`${game}: invalid language Host preparation input mode`);
+      }
+      console.log(`[Languages ${++task}/${total}] ${game.toUpperCase()} ${label}`);
+      await run(process.execPath, args, { cwd: projectRoot });
+    }
   }
   console.log("Default languages ready: Japanese / Simplified Chinese / English");
-  return Object.freeze({
-    th06: resolve(languageRoot, "th06"),
-    th07: resolve(languageRoot, "th07"),
-  });
+  return Object.freeze(prepared);
 }
 
 async function prepareArtwork(projectRoot, layout, python, thtk) {
@@ -167,11 +173,8 @@ async function prepareArtwork(projectRoot, layout, python, thtk) {
   const args = [
     script(projectRoot, "scripts/prepare-host-artwork.py"),
     `--output=${output}`,
-    "--games=th06,th07,th08,th10",
-    `--th06-dir=${layout.games.th06}`,
-    `--th07-dir=${layout.games.th07}`,
-    `--th08-dir=${layout.games.th08}`,
-    `--th10-dir=${layout.games.th10}`,
+    `--games=${GAMES.join(",")}`,
+    ...GAMES.map(game => `--game-dir=${game}=${layout.games[game]}`),
   ];
   if (thtk?.thdat) args.push(`--thdat=${thtk.thdat}`);
   if (thtk?.thanm) args.push(`--thanm=${thtk.thanm}`);
@@ -179,56 +182,86 @@ async function prepareArtwork(projectRoot, layout, python, thtk) {
   return output;
 }
 
-async function prepareTh10Content(projectRoot, layout) {
-  const output = resolve(layout.root, ".cache", "generated", "th10");
-  await rm(output, { recursive: true, force: true });
-  const supplied = resolve(layout.games.th10, "assets-ogg");
-  if (await fileExists(resolve(supplied, "th10.data")) && await fileExists(resolve(supplied, "bgm-ogg", "th10_00.ogg"))) {
-    await cp(supplied, output, { recursive: true });
-    return output;
+async function prepareDeclaredContent(projectRoot, layout) {
+  const prepared = {};
+  for (const game of GAMES) {
+    const declaration = PRODUCT_CONTENT[game].hostPreparation?.preparedContent;
+    if (!declaration) continue;
+    const output = resolve(layout.root, ".cache", "generated", game);
+    await rm(output, { recursive: true, force: true });
+    const supplied = resolve(layout.games[game], declaration.directory);
+    const markers = await Promise.all(declaration.markerFiles.map(name => fileExists(resolve(supplied, name))));
+    if (markers.length > 0 && markers.every(Boolean)) {
+      await cp(supplied, output, { recursive: true });
+      prepared[game] = output;
+      continue;
+    }
+    const preparationScript = resolve(projectRoot, declaration.script);
+    if (!await fileExists(preparationScript)) {
+      throw new Error(`${game.toUpperCase()} content is missing: provide ${supplied} or ${declaration.script}`);
+    }
+    await run(process.execPath, [
+      preparationScript,
+      `--original=${layout.games[game]}`,
+      `--output=${output}`,
+    ], { cwd: projectRoot });
+    prepared[game] = output;
   }
-  const preparationScript = resolve(projectRoot, "scripts", "prepare-th10-content.mjs");
-  if (!await fileExists(preparationScript)) {
-    throw new Error(`TH10 content is missing: provide ${supplied} or the Launcher TH10 content preparer`);
-  }
-  const args = [
-    preparationScript,
-    `--original=${layout.games.th10}`,
-    `--output=${output}`,
-  ];
-  await run(process.execPath, args, { cwd: projectRoot });
-  return output;
+  return Object.freeze(prepared);
 }
 
-async function prepareTh06DataAssets(projectRoot, layout, python, fonts) {
-  const output = resolve(layout.root, ".cache", "generated", "th06-data-assets");
-  await rm(output, { recursive: true, force: true });
-  await mkdir(output, { recursive: true });
-  await cp(fonts.unicode, resolve(output, "unifont.otf"));
-  await cp(fonts.japanese, resolve(output, "msgothic.ttc"));
-  for (const name of TH06_ARCHIVES) await cp(resolve(layout.games.th06, name), resolve(output, name));
+async function prepareDeclaredDataAssets(projectRoot, layout, python, fonts, preparedContent) {
+  const prepared = {};
+  for (const game of GAMES) {
+    const declaration = PRODUCT_CONTENT[game].hostPreparation?.dataAssets;
+    if (!declaration) continue;
+    if (declaration.kind === "prepared-content") {
+      if (!preparedContent[game]) throw new Error(`${game}: prepared DATA content is unavailable`);
+      prepared[game] = preparedContent[game];
+      continue;
+    }
+    if (declaration.kind !== "legacy-preload-with-focus-hitbox") {
+      throw new Error(`${game}: unsupported Host DATA preparation kind ${declaration.kind}`);
+    }
+    const output = resolve(layout.root, ".cache", "generated", `${game}-data-assets`);
+    await rm(output, { recursive: true, force: true });
+    await mkdir(output, { recursive: true });
+    await cp(fonts.unicode, resolve(output, "unifont.otf"));
+    await cp(fonts.japanese, resolve(output, "msgothic.ttc"));
+    for (const name of PRODUCT_CONTENT[game].original.files) await cp(resolve(layout.games[game], name), resolve(output, name));
 
-  const hitbox = resolve(output, "eagler-hitbox.png");
-  const result = await run(python, [
-    script(projectRoot, "scripts/touhou_formats.py"), "extract-th07-texture",
-    "--archive", resolve(layout.games.th07, "th07.dat"),
-    "--anm", "etama.anm",
-    "--texture", "data/etama/etama2.png",
-    "--output", hitbox,
-  ], { cwd: projectRoot, capture: true, allowFailure: true });
-  if (result.code !== 0) {
-    await rm(hitbox, { force: true });
-    console.warn(`[Host] TH06 focus-hitbox extraction was unavailable${result.stderr ? `: ${result.stderr}` : ""}`);
+    const focus = declaration.focusHitbox;
+    if (!focus || !PRODUCT_CONTENT[focus.sourceGame]) throw new Error(`${game}: invalid focus-hitbox Host preparation declaration`);
+    const hitbox = resolve(output, focus.output);
+    const result = await run(python, [
+      script(projectRoot, "scripts/touhou_formats.py"), focus.extractor,
+      "--archive", resolve(layout.games[focus.sourceGame], focus.archive),
+      "--anm", focus.anm,
+      "--texture", focus.texture,
+      "--output", hitbox,
+    ], { cwd: projectRoot, capture: true, allowFailure: true });
+    if (result.code !== 0) {
+      await rm(hitbox, { force: true });
+      console.warn(`[Host] ${game.toUpperCase()} optional focus-hitbox extraction was unavailable${result.stderr ? `: ${result.stderr}` : ""}`);
+    }
+    prepared[game] = output;
   }
-  return output;
+  return Object.freeze(prepared);
 }
 
-async function prepareOgg(projectRoot, layout, python, th10Content) {
+async function prepareOgg(projectRoot, layout, python, preparedContent) {
   const roots = {};
-  for (const game of GAMES.filter(game => game !== "th10")) {
-    const output = game === "th06"
-      ? resolve(layout.root, ".cache", "generated", game, "bgm")
-      : resolve(layout.root, ".cache", "generated", game, "bgm-ogg");
+  for (const game of GAMES) {
+    const preparation = PRODUCT_CONTENT[game].hostPreparation?.ogg;
+    if (preparation?.kind === "prepared-content") {
+      if (!preparedContent[game]) throw new Error(`${game}: prepared OGG content is unavailable`);
+      roots[game] = preparedContent[game];
+      continue;
+    }
+    if (preparation?.kind !== "verified-converter" || !preparation.outputDirectory) {
+      throw new Error(`${game}: required OGG capability has no supported Host preparation declaration`);
+    }
+    const output = resolve(layout.root, ".cache", "generated", game, preparation.outputDirectory);
     await run(python, [
       script(projectRoot, "scripts/convert_bgm_ogg.py"),
       "--game", game,
@@ -238,7 +271,6 @@ async function prepareOgg(projectRoot, layout, python, th10Content) {
     ], { cwd: projectRoot });
     roots[game] = resolve(layout.root, ".cache", "generated", game);
   }
-  roots.th10 = th10Content;
   return Object.freeze(roots);
 }
 
@@ -254,10 +286,10 @@ export async function buildHostedSite({ projectRoot, hostRoot, music = "midi,ogg
   const languages = await prepareLanguages(projectRoot, layout, hostPython, thtk, fonts.unicode);
   console.log("[Build 3/6] Preparing Launcher artwork");
   const artwork = await prepareArtwork(projectRoot, layout, hostPython, thtk);
-  const th06DataAssets = await prepareTh06DataAssets(projectRoot, layout, hostPython, fonts);
-  const th10DataAssets = await prepareTh10Content(projectRoot, layout);
+  const preparedContent = await prepareDeclaredContent(projectRoot, layout);
+  const dataAssets = await prepareDeclaredDataAssets(projectRoot, layout, hostPython, fonts, preparedContent);
   console.log("[Build 4/6] Preparing music");
-  const ogg = modes.includes("ogg") ? await prepareOgg(projectRoot, layout, hostPython, th10DataAssets) : null;
+  const ogg = modes.includes("ogg") ? await prepareOgg(projectRoot, layout, hostPython, preparedContent) : null;
   const features = await prepareFeatureConfig(projectRoot, layout, "hosted");
   try {
     console.log("[Build 5/6] Assembling static site");
@@ -269,17 +301,12 @@ export async function buildHostedSite({ projectRoot, hostRoot, music = "midi,ogg
       `--music=${modes.join(",")}`,
       `--feature-config=${features}`,
       `--artwork-dir=${artwork}`,
-      "--games=th06,th07,th08,th10",
+      `--games=${GAMES.join(",")}`,
       "--profile=web-validation-self-host",
       `--runtime-release=${layout.runtimeRelease}`,
-      `--th06-assets=${layout.games.th06}`,
-      `--th06-data-assets=${th06DataAssets}`,
-      `--th07-assets=${layout.games.th07}`,
-      `--th08-assets=${layout.games.th08}`,
-      `--th10-assets=${layout.games.th10}`,
-      `--th10-data-assets=${th10DataAssets}`,
-      `--th06-language-packs=${languages.th06}`,
-      `--th07-language-packs=${languages.th07}`,
+      ...GAMES.map(game => `--${game}-assets=${layout.games[game]}`),
+      ...Object.entries(dataAssets).map(([game, path]) => `--${game}-data-assets=${path}`),
+      ...Object.entries(languages).map(([game, path]) => `--${game}-language-packs=${path}`),
     ];
     if (ogg) {
       for (const game of GAMES) args.push(`--${game}-ogg=${ogg[game]}`);
@@ -319,7 +346,7 @@ export async function buildImportArtifacts({
       `--host-manifest=${resolve(layout.site, "host-manifest.json")}`,
       `--runtime-release=${layout.runtimeRelease}`,
       `--artwork-dir=${resolve(layout.site, "assets")}`,
-      "--games=th06,th07,th08,th10",
+      `--games=${GAMES.join(",")}`,
       "--profile=web-validation-self-host-import",
       `--test-build=${testBuild ? "1" : "0"}`,
     ], { cwd: projectRoot });

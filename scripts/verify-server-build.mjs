@@ -161,6 +161,7 @@ if (games.profile !== deployment.profile) throw new Error("Host Manifest profile
 if (games.protocol !== "eagler-touhou/1") throw new Error("invalid host protocol");
 if (normalizeResourceMode(games.shared?.resourceMode || "hosted") !== resourceMode) throw new Error("host/deployment resourceMode mismatch");
 for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === "directory")) {
+  const product = PRODUCT_GAMES[game];
   const entry = games.games[game], runtimeUrl = new URL(entry.runtime, "https://eagler.invalid/");
   if (!runtimeUrl.searchParams.get("v")) throw new Error(`unversioned directory Runtime: ${game}`);
   const runtimeRoot = resolve(root, "runtime", game);
@@ -173,10 +174,14 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
   const shell = await readFile(resolve(runtimeRoot, `${game}.html`), "utf8");
   assertRuntimeDataShell(shell, game, "normal");
   const identity = entry.gameData;
+  const dataPath = product.package.dataTarget.slice(1);
   if (!Number.isSafeInteger(identity?.bytes) || identity.bytes <= 0 || !/^[a-f0-9]{64}$/.test(identity.sha256) ||
-      identity.path !== `${game}.data` || identity.version !== `sha256-${identity.sha256}`) throw new Error(`${game}: invalid DATA identity`);
+      identity.path !== dataPath || identity.version !== `sha256-${identity.sha256}`) throw new Error(`${game}: invalid DATA identity`);
+  if (!product.musicCapabilities.midi && entry.music?.midi?.supported !== false) {
+    throw new Error(`${game}: Host Manifest exposes unsupported MIDI capability`);
+  }
   if (resourceMode === RESOURCE_MODE_HOSTED) {
-    const bytes = await readFile(resolve(root, "games", game, `${game}.data`));
+    const bytes = await readFile(resolve(root, "games", game, dataPath));
     if (bytes.length !== identity.bytes || createHash("sha256").update(bytes).digest("hex") !== identity.sha256) throw new Error(`${game}: DATA identity mismatch`);
   } else if (resourceMode === RESOURCE_MODE_IMPORT) {
     const requiredShared = entry.offlineCompatibility?.requiredShared;
@@ -186,32 +191,9 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
         expectedShared.some(target => !requiredShared.includes(target))) {
       throw new Error(`${game}: invalid import-only compatibility`);
     }
-  }
-}
-if (resourceMode === RESOURCE_MODE_IMPORT && gameIds.includes("th08")) {
-  const entry = games.games?.th08;
-  if (!entry?.music?.midi || typeof entry.runtime !== "string" || !entry.runtime.includes("&v=")) {
-    throw new Error(`invalid ${resourceMode} game entry: th08`);
-  }
-  if (entry.gameData?.path !== "th08.data" || typeof entry.gameData?.version !== "string" ||
-      !/^sha256-[a-f0-9]{64}$/i.test(entry.gameData.version) || typeof entry.gameData?.layout !== "string" ||
-      !/^sha256-[a-f0-9]{64}$/i.test(entry.gameData.layout) || !Number.isInteger(entry.gameData?.bytes) ||
-      entry.gameData.bytes <= 0 || !/^[a-f0-9]{64}$/i.test(entry.gameData?.sha256 || "")) {
-    throw new Error(`invalid ${resourceMode} game data identity: th08`);
-  }
-  const compatibility = entry.offlineCompatibility;
-  if (compatibility?.schema !== "eagler-touhou/offline-game-pack/1" ||
-      compatibility.runtimeCompatibility?.protocol !== games.protocol ||
-      compatibility.runtimeCompatibility?.dataLayout !== entry.gameData.layout ||
-      compatibility.runtimeCompatibility?.versionSource !== "offline-pack" ||
-      !Array.isArray(compatibility.requiredShared) ||
-      !["/msgothic.ttc", "/unifont.otf"].every(target => compatibility.requiredShared.includes(target)) ||
-      compatibility.languages?.source !== "offline-pack" ||
-      !Array.isArray(compatibility.languages?.baseline) || !compatibility.languages.baseline.includes("ja")) {
-    throw new Error(`invalid ${resourceMode} offline compatibility metadata: th08`);
-  }
-  for (const pack of Object.values(entry.music || {})) {
-    if (pack?.base != null) throw new Error(`${resourceMode} manifest must not expose music base URL: th08`);
+    for (const pack of Object.values(entry.music || {})) {
+      if (pack?.base != null) throw new Error(`${game}: import manifest must not expose a music base URL`);
+    }
   }
 }
 if (resourceMode === RESOURCE_MODE_HOSTED) {
@@ -272,6 +254,10 @@ for (const mount of sharedFontMounts) {
   }
 }
 for (const game of preloadGames) {
+  const product = PRODUCT_GAMES[game];
+  const dataFileId = product.package.dataFileId;
+  const dataTarget = product.package.dataTarget;
+  const dataPath = dataTarget.slice(1);
   const entry = games.games?.[game];
   if (resourceMode === RESOURCE_MODE_IMPORT) {
     if (!entry?.music?.midi || typeof entry.runtime !== "string" || !entry.runtime.includes("&v=")) {
@@ -279,7 +265,7 @@ for (const game of preloadGames) {
     }
     if (typeof entry.gameData?.version !== "string" || !/^sha256-[a-f0-9]{64}$/i.test(entry.gameData.version) ||
         typeof entry.gameData?.layout !== "string" || !/^sha256-[a-f0-9]{64}$/i.test(entry.gameData.layout) ||
-        entry.gameData?.path !== `${game}.data` || !Number.isInteger(entry.gameData?.bytes) || entry.gameData.bytes <= 0 ||
+        entry.gameData?.path !== dataPath || !Number.isInteger(entry.gameData?.bytes) || entry.gameData.bytes <= 0 ||
         !/^[a-f0-9]{64}$/i.test(entry.gameData?.sha256 || "")) {
       throw new Error(`invalid ${resourceMode} game data identity: ${game}`);
     }
@@ -308,7 +294,7 @@ for (const game of preloadGames) {
   const runtimeVersion = new URL(entry.runtime, "https://eagler.invalid/").searchParams.get("v");
   const runtimeHtml = await readFile(resolve(root, "runtime", game, `${game}.html`), "utf8");
   const runtimeScript = await readFile(resolve(root, "runtime", game, `${game}.js`), "utf8");
-  const runtimeData = await readFile(resolve(root, "games", game, `${game}.data`));
+  const runtimeData = await readFile(resolve(root, "games", game, dataPath));
   const dataSha256 = createHash("sha256").update(runtimeData).digest("hex");
   const runtimeLayout = extractGameDataLayout(runtimeScript, game);
   if (!runtimeHtml.includes("invalid shared resource")) throw new Error(`runtime shared resource validation missing: ${game}`);
@@ -319,7 +305,7 @@ for (const game of preloadGames) {
   }
   const versionedScript = new RegExp(`<script\\b[^>]*\\bsrc=["']?${game}\\.js\\?v=${runtimeVersion}(?:["'\\s>])`, "i");
   if (!runtimeVersion || !versionedScript.test(runtimeHtml)) throw new Error(`unversioned runtime script: ${game}`);
-  if (entry.gameData?.path !== `${game}.data` || entry.gameData?.bytes !== runtimeData.length ||
+  if (entry.gameData?.path !== dataPath || entry.gameData?.bytes !== runtimeData.length ||
       String(entry.gameData?.sha256 || "").toLowerCase() !== dataSha256 || entry.gameData?.version !== `sha256-${dataSha256}` ||
       entry.gameData?.layout !== runtimeLayout.layout || entry.gameData?.bytes !== runtimeLayout.bytes) {
     throw new Error(`gameData identity mismatch: ${game}`);
@@ -327,7 +313,7 @@ for (const game of preloadGames) {
   for (const extension of ["html", "js", "wasm"]) {
     await stat(resolve(root, "runtime", game, `${game}.${extension}`));
   }
-  await stat(resolve(root, "games", game, `${game}.data`));
+  await stat(resolve(root, "games", game, dataPath));
   for (const [mode, pack] of Object.entries(entry.music)) {
     if (!Array.isArray(pack.files)) throw new Error(`invalid ${game}/${mode} pack`);
     if (mode !== "midi" && (typeof pack.version !== "string" || pack.version.length < 8)) throw new Error(`unversioned ${game}/${mode} pack`);
@@ -401,6 +387,10 @@ for (const game of preloadGames) {
   if (descriptor.revision !== calculatedPackageRevision) {
     throw new Error(`${game.toUpperCase()} Package revision does not identify its descriptor`);
   }
+  if (descriptor.runtimeRequirement?.dataFile !== dataFileId || descriptor.files?.[dataFileId]?.target !== dataTarget ||
+      !descriptor.base?.files?.includes(dataFileId)) {
+    throw new Error(`${game.toUpperCase()} Package DATA ownership does not match product declaration`);
+  }
   for (const [fileId, file] of Object.entries(descriptor.files)) {
     const path = resolve(root, file.source);
     const bytes = await readFile(path);
@@ -438,74 +428,72 @@ if (resourceMode === RESOURCE_MODE_EXTERNAL) {
   }
 }
 
-if (resourceMode === RESOURCE_MODE_HOSTED && gameIds.includes("th08")) {
-  const game = "th08";
-  const entry = games.games?.[game];
-  if (!entry?.music?.midi || typeof entry.runtime !== "string" || !entry.runtime.includes("&v=")) {
-    throw new Error("invalid game entry: th08");
-  }
-
-  const runtimeData = await readFile(resolve(root, "games", game, "th08.data"));
-  const dataSha256 = createHash("sha256").update(runtimeData).digest("hex");
-  if (entry.gameData?.path !== "th08.data" || entry.gameData?.bytes !== runtimeData.length ||
-      String(entry.gameData?.sha256 || "").toLowerCase() !== dataSha256 ||
-      entry.gameData?.version !== `sha256-${dataSha256}` ||
-      typeof entry.gameData?.layout !== "string" || !/^sha256-[a-f0-9]{64}$/i.test(entry.gameData.layout)) {
-    throw new Error("gameData identity mismatch: th08");
-  }
-
-  const oggPack = entry.music?.ogg;
-  if (oggPack) {
-    if (oggPack.mount !== "/bgm-ogg" || !Array.isArray(oggPack.files) ||
-        !Array.isArray(oggPack.sizes) || !Array.isArray(oggPack.sha256) ||
-        oggPack.sizes.length !== oggPack.files.length || oggPack.sha256.length !== oggPack.files.length) {
-      throw new Error("invalid TH08 hosted OGG content identity");
-    }
-    const oggSet = [];
-    for (let index = 0; index < oggPack.files.length; index++) {
-      const file = oggPack.files[index];
-      const bytes = await readFile(resolve(root, oggPack.base, file));
-      const sha256 = createHash("sha256").update(bytes).digest("hex");
-      if (oggPack.sizes[index] !== bytes.length || String(oggPack.sha256[index]).toLowerCase() !== sha256) {
-        throw new Error(`TH08 hosted OGG identity mismatch: ${file}`);
+if (resourceMode === RESOURCE_MODE_HOSTED) {
+  for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === "directory")) {
+    const product = PRODUCT_GAMES[game];
+    const entry = games.games[game];
+    const dataFileId = product.package.dataFileId;
+    const dataTarget = product.package.dataTarget;
+    const oggPack = entry.music?.ogg;
+    if (oggPack) {
+      if (oggPack.mount !== product.package.musicMounts.ogg || !Array.isArray(oggPack.files) ||
+          !Array.isArray(oggPack.sizes) || !Array.isArray(oggPack.sha256) ||
+          oggPack.sizes.length !== oggPack.files.length || oggPack.sha256.length !== oggPack.files.length ||
+          typeof oggPack.base !== "string" || !oggPack.base) {
+        throw new Error(`${game}: invalid hosted OGG content identity`);
       }
-      oggSet.push([file, bytes.length, sha256]);
+      const oggSet = [];
+      for (let index = 0; index < oggPack.files.length; index++) {
+        const file = oggPack.files[index];
+        const bytes = await readFile(resolve(root, oggPack.base, file));
+        const sha256 = createHash("sha256").update(bytes).digest("hex");
+        if (oggPack.sizes[index] !== bytes.length || String(oggPack.sha256[index]).toLowerCase() !== sha256) {
+          throw new Error(`${game}: hosted OGG identity mismatch: ${file}`);
+        }
+        oggSet.push([file, bytes.length, sha256]);
+      }
+      const oggSetHash = createHash("sha256").update(JSON.stringify(oggSet)).digest("hex");
+      if (oggPack.version !== `sha256-${oggSetHash}`) throw new Error(`${game}: hosted OGG set version mismatch`);
     }
-    const oggSetHash = createHash("sha256").update(JSON.stringify(oggSet)).digest("hex");
-    if (oggPack.version !== `sha256-${oggSetHash}`) throw new Error("TH08 hosted OGG set version mismatch");
-  }
 
-  if (!Array.isArray(entry.languageOptions) ||
-      !entry.languageOptions.some(language => language?.id === "ja" && language.pack == null) ||
-      typeof entry.features?.thprac !== "boolean" || entry.features.thprac !== false) {
-    throw new Error("invalid TH08 hosted capability/language metadata");
-  }
+    if (!Array.isArray(entry.languageOptions) ||
+        !entry.languageOptions.some(language => language?.id === "ja" && language.pack == null)) {
+      throw new Error(`${game}: missing hosted Japanese language baseline`);
+    }
+    for (const [feature, enabled] of Object.entries(entry.features || {})) {
+      if (enabled === true && PRODUCT_GAMES[game].features[feature] !== true) {
+        throw new Error(`${game}: Host enables unsupported product feature ${feature}`);
+      }
+    }
 
-  const published = releaseCatalog.games?.th08;
-  if (!published || entry.package?.revision !== published.revision || entry.package?.descriptor !== published.descriptor) {
-    throw new Error("TH08 Release Catalog / legacy Package pointer mismatch");
-  }
-  const descriptorHref = releaseCatalogEntryUrl(`https://eagler.invalid/${RELEASE_CATALOG_FILE}`, releaseCatalog, game);
-  const descriptorPath = new URL(descriptorHref).pathname.slice(1);
-  const descriptor = validatePackageDescriptor(JSON.parse(await readFile(resolve(root, descriptorPath), "utf8")));
-  const calculatedRevision = createHash("sha256").update(canonicalPackagePayload(descriptor)).digest("hex").slice(0, 16);
-  if (descriptor.game !== game || descriptor.revision !== published.revision || descriptor.revision !== calculatedRevision) {
-    throw new Error("TH08 Package Descriptor identity mismatch");
-  }
-  const descriptorOggFiles = descriptor.components?.ogg?.files;
-  const oggOwnershipValid = oggPack
-    ? Array.isArray(descriptorOggFiles) && descriptorOggFiles.length === oggPack.files.length
-    : descriptorOggFiles === undefined;
-  if (descriptor.runtimeRequirement?.dataFile !== "game-data" || descriptor.files?.["game-data"]?.target !== "/th08.data" ||
-      !descriptor.base?.files?.includes("game-data") || !descriptor.base?.files?.includes("shared-msgothic") ||
-      !descriptor.base?.files?.includes("shared-unifont") || !oggOwnershipValid) {
-    throw new Error("TH08 Package Descriptor base/OGG ownership mismatch");
-  }
-  for (const [fileId, file] of Object.entries(descriptor.files)) {
-    const bytes = await readFile(resolve(root, file.source));
-    const revision = createHash("sha256").update(bytes).digest("hex").slice(0, 16);
-    if (file.bytes != null && file.bytes !== bytes.length) throw new Error(`TH08 Package byte mismatch: ${fileId}`);
-    if (file.revision !== revision) throw new Error(`TH08 Package file revision mismatch: ${fileId}`);
+    const published = releaseCatalog.games?.[game];
+    if (!published || entry.package?.revision !== published.revision || entry.package?.descriptor !== published.descriptor) {
+      throw new Error(`${game}: Release Catalog / Package pointer mismatch`);
+    }
+    const descriptorHref = releaseCatalogEntryUrl(`https://eagler.invalid/${RELEASE_CATALOG_FILE}`, releaseCatalog, game);
+    const descriptorPath = new URL(descriptorHref).pathname.slice(1);
+    const descriptor = validatePackageDescriptor(JSON.parse(await readFile(resolve(root, descriptorPath), "utf8")));
+    const calculatedRevision = createHash("sha256").update(canonicalPackagePayload(descriptor)).digest("hex").slice(0, 16);
+    if (descriptor.game !== game || descriptor.revision !== published.revision || descriptor.revision !== calculatedRevision) {
+      throw new Error(`${game}: Package Descriptor identity mismatch`);
+    }
+    const descriptorOggFiles = descriptor.components?.ogg?.files;
+    const oggOwnershipValid = oggPack
+      ? Array.isArray(descriptorOggFiles) && descriptorOggFiles.length === oggPack.files.length
+      : descriptorOggFiles === undefined;
+    const requiredSharedTargets = new Set(product.requiredShared || []);
+    const baseTargets = new Set((descriptor.base?.files || []).map(fileId => descriptor.files?.[fileId]?.target));
+    if (descriptor.runtimeRequirement?.dataFile !== dataFileId || descriptor.files?.[dataFileId]?.target !== dataTarget ||
+        !descriptor.base?.files?.includes(dataFileId) || [...requiredSharedTargets].some(target => !baseTargets.has(target)) ||
+        !oggOwnershipValid) {
+      throw new Error(`${game}: Package Descriptor base/OGG ownership mismatch`);
+    }
+    for (const [fileId, file] of Object.entries(descriptor.files)) {
+      const bytes = await readFile(resolve(root, file.source));
+      const revision = createHash("sha256").update(bytes).digest("hex").slice(0, 16);
+      if (file.bytes != null && file.bytes !== bytes.length) throw new Error(`${game}: Package byte mismatch: ${fileId}`);
+      if (file.revision !== revision) throw new Error(`${game}: Package file revision mismatch: ${fileId}`);
+    }
   }
 }
 console.log(JSON.stringify({ valid: true, resourceMode, files: deployment.files.length, music: deployment.music }));

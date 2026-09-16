@@ -17,7 +17,8 @@ non-test product in canonical order and explicitly provides:
 
 - one verified, resource-free Runtime Release covering every registered game,
   including Runtime artifacts retained for validation-only products;
-- original-resource directories for TH06, TH07, and TH08;
+- `GameDirectories`, a game-id keyed map containing the original-resource
+  directory for every formal product;
 - a maintainer feature configuration;
 - an explicit music mode;
 - font, language-pack, or custom artwork inputs when required.
@@ -26,10 +27,18 @@ Copy [`tools/maintainer/release-input.example.json`](../tools/maintainer/release
 next to the paths it will reference, then replace its relative placeholders.
 The committed template deliberately contains no private resource location,
 credential, server address, or output path. Optional `prepare` fields are
-`Th06LanguagePacks`, `Th07LanguagePacks`, `ArtworkDirectory`, `FontFile`, and
-`VanillaFontFile`; the optional top-level `gameDataFallback` contains an HTTPS
-`url` and an optional user-facing `hint`. The release owner always supplies
-the output directory from the command line.
+`LanguagePackDirectories`, `ArtworkDirectory`, `FontFile`, and
+`VanillaFontFile`; `LanguagePackDirectories` is keyed by game id and is needed
+only for products whose optional language capability is being published. The
+optional top-level `gameDataFallback` contains an HTTPS `url` and an optional
+user-facing `hint`. The release owner always supplies the output directory from
+the command line.
+
+Older release-input/1 files using `Th06Directory`, `Th07Directory`, ... or
+title-specific `Th06LanguagePacks` / `Th07LanguagePacks` names remain readable
+for compatibility. They normalize into `GameDirectories` /
+`LanguagePackDirectories` and are not precedent for adding another per-title
+release parameter when a new game is registered.
 
 The formal entrypoint does not accept `Th08Build`, Emscripten, CMake, or Ninja. Runtime compilation belongs to the Runtime Release producer, not the site release.
 
@@ -187,7 +196,9 @@ Only a Host Manifest built for the migration window declares:
 
 Migrated data includes:
 
-- TH06/TH07/TH08 saves, Replays, settings, and thprac files for supported games;
+- per-game saves, Replays and settings for every supported Product Catalog game,
+  plus capability-specific data such as thprac files only where that product
+  declares the corresponding profile;
 - Launcher settings;
 - Package Store installation, generation, and object data;
 - explicitly owned local-resource caches.

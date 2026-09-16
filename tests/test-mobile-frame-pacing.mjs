@@ -1,11 +1,14 @@
-import fs from "node:fs";
-import path from "node:path";
+import { readFileSync } from "node:fs";
+import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+import { workspacePath } from "../lib/workspace-layout.mjs";
 
-const root = path.resolve(import.meta.dirname, "..", "..");
-const read = rel => fs.readFileSync(path.join(root, rel), "utf8");
+const preloadGames = Object.entries(PRODUCT_GAMES)
+  .filter(([, product]) => product.dataProvider === "emscripten-preload")
+  .map(([game]) => game)
+  .sort();
 
-for (const game of ["th06", "th07"]) {
-  const source = read(`${game}-eagler/src/GameWindow.cpp`).replaceAll("\r\n", "\n");
+for (const game of preloadGames) {
+  const source = readFileSync(workspacePath(game, "src", "GameWindow.cpp"), "utf8").replaceAll("\r\n", "\n");
   for (const [needle, label] of [
     ["#ifdef __EMSCRIPTEN__", "Web-only guard"],
     ["const bool limitPresentationTo60 = EaglerOptions::LimitPresentationTo60();", "optional 60 FPS presentation mode"],
@@ -49,7 +52,7 @@ function simulateIntervals(intervals, limitPresentationTo60, preserveReplayCaden
     let updatesThisCallback = 0;
     if (limitPresentationTo60 || preserveReplayCadence) {
       if (accumulator + 1e-12 >= targetDt) {
-        // Faithful TH06/TH07 60 Hz behavior: consume every overdue timing
+        // Faithful preload-Runtime 60 Hz behavior: consume every overdue timing
         // interval, but advance game state exactly once before the picture.
         do accumulator -= targetDt;
         while (accumulator + 1e-12 >= targetDt);
@@ -126,6 +129,7 @@ if (delayedReplay.maxUpdatesBeforeDraw !== 1)
   throw new Error("replay playback must never catch up multiple game ticks before one picture");
 
 console.log(JSON.stringify({
+  games: preloadGames,
   targetSimulationHz: 60,
   optionalPresentationLimitHz: 60,
   cases: cases.map(({ renderAlphas, ...result }) => ({

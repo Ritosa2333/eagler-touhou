@@ -1,5 +1,6 @@
 import {
   HOST_PROTOCOL,
+  isHostRuntimeFeatureId,
   PRODUCT_GAMES,
   isGameId,
   type GameId,
@@ -29,6 +30,8 @@ export interface HostGameData {
 export interface HostMidiManifest {
   files: string[];
   sizes?: number[];
+  /** Concrete publication support; false means the Runtime/product must not expose MIDI. */
+  supported?: boolean;
   [key: string]: unknown;
 }
 
@@ -118,7 +121,8 @@ function validMusicSizes(value: unknown, length: number): value is number[] {
 
 function validMidiManifest(value: unknown): value is HostMidiManifest {
   if (!isRecord(value) || !validMusicFiles(value.files, "mid", true)) return false;
-  return value.sizes == null || validMusicSizes(value.sizes, value.files.length);
+  return (value.sizes == null || validMusicSizes(value.sizes, value.files.length)) &&
+    (value.supported == null || typeof value.supported === "boolean");
 }
 
 function validOggManifest(value: unknown): value is HostOggManifest | null | undefined {
@@ -201,8 +205,7 @@ function validOfflineCompatibility(item: UnknownRecord, resourceMode: ResourceMo
 function validHostRuntimeFeatures(value: unknown): value is HostRuntimeFeatures | undefined {
   if (value == null) return true;
   if (!isRecord(value)) return false;
-  const allowed = new Set(["thprac", "focusHitbox"]);
-  return Object.entries(value).every(([key, item]) => allowed.has(key) && typeof item === "boolean");
+  return Object.entries(value).every(([key, item]) => isHostRuntimeFeatureId(key) && typeof item === "boolean");
 }
 
 function validGame(gameId: string, value: unknown, resourceMode: ResourceMode): value is HostGameManifest {

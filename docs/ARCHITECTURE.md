@@ -140,10 +140,12 @@ Examples of already separated owners include:
   failures, and managed DATA rejection reaches Launcher readiness immediately.
 - `src/launcher/replay-files.mts` - Launcher-side Replay filename/path policy,
   import collision allocation and Replay ZIP entry planning. `.rpy` and
-  `.rpyx` are the supported Replay file identities; thprac practice metadata
-  lives inside the Replay's embedded `PRAC` trailer rather than an external
-  companion file. Runtime file I/O, IDBFS lifecycle and Replay-manager DOM
-  interaction remain in `src/launcher/app.mts` orchestration.
+  `.rpyx` are Launcher-recognized file identities used by current adapters;
+  `.rpyx` is not a required format for a new Runtime. When an existing thprac
+  adapter needs practice metadata, that Runtime owns its embedded `PRAC`
+  representation rather than the Launcher inventing a universal sidecar.
+  Runtime file I/O, IDBFS lifecycle and Replay-manager DOM interaction remain
+  in `src/launcher/app.mts` orchestration.
 - `src/launcher/runtime-diagnostics-model.mts` - pure browser/Runtime
   diagnostics interpretation: user-agent environment labels, compact graphics
   renderer identity, selected WebRTC candidate-pair resolution and bounded RTT
@@ -215,15 +217,20 @@ Examples of already separated owners include:
   lobby transport, seat assignment and rendering remain in `src/launcher/app.mts`.
 - `src/launcher/multiplayer-preferences.mts` - product-scoped multiplayer UI
   preference persistence and normalization. It owns the share-singleplayer-
-  settings flag and remembered loadout storage; product detection, maximum
-  loadout count, UI interaction and room/lobby behavior remain in `src/launcher/app.mts` and
-  the product catalog.
+  settings flag and remembered loadout storage; product detection, declared
+  player-count subset, ordered difficulty/loadout tables, UI interaction and
+  room/lobby behavior remain in `src/launcher/app.mts` and the Product Catalog.
 - `src/launcher/multiplayer-lobby-snapshot.mts` - normalization of authoritative
   relay room snapshots before they enter Launcher UI state. It reuses the
   participant-identity owner for names/client IDs and consumes the selected
-  product's difficulty/loadout bounds as inputs. Malformed or product-invalid
-  seats fail closed; live WebSocket lifecycle and room orchestration remain in
-  `src/launcher/app.mts`.
+  product's player-count, difficulty and loadout bounds as inputs. Malformed or
+  product-invalid rooms/seats fail closed; live WebSocket lifecycle and room
+  orchestration remain in `src/launcher/app.mts`.
+- `src/launcher/multiplayer-runtime-options.mts` - validated conversion from
+  selected room state into Runtime `netplay*` configure fields. Valid loadouts
+  are the Product Catalog's declared `{character, shot}` pairs; this layer must
+  not invent universal A/B-shot, character-count or 2P/3P assumptions beyond
+  the shared platform limits.
 - `src/launcher/multiplayer-relay-url.mts` - multiplayer relay URL composition.
   It owns product-namespaced transport room IDs and normalization between lobby,
   player-gameplay and spectator-gameplay query roles. Launcher-owned role
@@ -268,8 +275,8 @@ Examples of already separated owners include:
 
 ### Touch-layout persistence boundary
 
-The touch-layout data model is shared by the mature TH06/TH07 Launcher path
-rather than keyed per game. The current persisted schema has independent
+The touch-layout data model is a shared Launcher capability for every formal
+adapter rather than state keyed per game. The current persisted schema has independent
 `landscape` and `portrait` profiles. Each profile owns normalized control
 positions/scales/stacking priorities plus a horizontal game-viewport offset.
 
@@ -470,11 +477,11 @@ not compatibility surfaces.
 The Launcher does not execute historical Runtime HTML/JS/WASM embedded in old
 legacy packages.
 
-The browser/Runtime protocol is `eagler-touhou/1`.
-
-TH06/TH07 normal and multiplayer builds are separate Runtime variants. TH08
-currently has its own supported development/release state described in
-`PRODUCT_SURFACE.md` rather than being assumed equivalent to TH06/TH07.
+The browser/Runtime protocol is `eagler-touhou/1`. Every formal Product Catalog
+game provides its normal Runtime through that protocol. A separate Multiplayer
+Runtime exists only when the product declares the optional Multiplayer profile;
+current TH06/TH07 products do, while TH08/TH10 do not. Runtime file layout and
+retail-format preparation remain per-adapter implementation/format concerns.
 
 ## 6. Offline model
 
@@ -503,7 +510,8 @@ worker whose required offline set is incomplete.
 ## 7. Multiplayer boundary
 
 The Launcher owns lobby/session UI and signaling integration. Multiplayer
-Runtime logic remains in the corresponding TH06/TH07 Runtime builds.
+Runtime logic remains in the corresponding Runtime variant of each product that
+declares the Multiplayer profile.
 
 Transport preference is:
 
@@ -519,8 +527,8 @@ Relay services are operational/server infrastructure, not static self-host bundl
 content. Host configuration may point at a WebSocket Relay; TURN remains
 server-managed rather than pretending to be a static-site setting.
 
-`server/netplay-relay.mjs` is the single source owner for the shared TH06/TH07
-lobby, signaling, route-barrier and emergency WebSocket relay service. Lobby
+`server/netplay-relay.mjs` is the single source owner for the shared product-
+neutral lobby, signaling, route-barrier and emergency WebSocket relay service. Lobby
 readiness is bound to a monotonically increasing settings version; match-affecting
 changes invalidate prior ready acknowledgements, offline grace seats never satisfy
 start conditions, and `start` is idempotent while a match is starting/running.
@@ -530,9 +538,11 @@ for admitting new mid-game spectators.
 `server/render-coturn-config.cjs` and `server/coturn.env.example` own its coturn
 deployment support. Runtime repositories may integration-test against these
 Host-owned services, but must not carry private copies of the server
-implementation or its npm dependency tree. Namespaced `th06mp-*` / `th07mp-*`
-rooms consume multiplayer bounds directly from `product-catalog.mjs`; the
-relay must not maintain a second table of difficulty/loadout product facts.
+implementation or its npm dependency tree. Room namespaces use the declared
+Multiplayer product identity (current examples are `th06mp-*` / `th07mp-*`) and
+consume player-count/difficulty/loadout bounds directly from
+`product-catalog.mjs`; the relay must not maintain a second table of product
+facts.
 
 The multiplayer tool surface is available before remote Host Manifest loading
 finishes so local settings and Replay management never depend on Relay health.

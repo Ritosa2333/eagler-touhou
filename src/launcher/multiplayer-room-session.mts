@@ -10,7 +10,7 @@ export interface MultiplayerRoomSessionStorage {
 export interface MultiplayerRoomSessionSnapshot {
   room: {
     code: string;
-    playerCount: number;
+    playerCount: 2 | 3;
     difficulty: number;
     created: boolean;
   };
@@ -26,7 +26,7 @@ export interface RestoredMultiplayerRoomSession extends MultiplayerRoomSessionSn
 
 export interface MultiplayerRoomSessionStore {
   save(product: string, snapshot: MultiplayerRoomSessionSnapshot): void;
-  load(input: { product: string; roomCode: string; maxDifficulty: number }): RestoredMultiplayerRoomSession | null;
+  load(input: { product: string; roomCode: string; playerCounts: readonly (2 | 3)[]; difficulties: readonly unknown[] }): RestoredMultiplayerRoomSession | null;
   clear(product: string): void;
 }
 
@@ -66,10 +66,11 @@ export function createMultiplayerRoomSessionStore({
     } catch {}
   };
 
-  const load = ({ product, roomCode, maxDifficulty }: {
+  const load = ({ product, roomCode, playerCounts, difficulties }: {
     product: string;
     roomCode: string;
-    maxDifficulty: number;
+    playerCounts: readonly (2 | 3)[];
+    difficulties: readonly unknown[];
   }): RestoredMultiplayerRoomSession | null => {
     let parsed: unknown = null;
     try { parsed = JSON.parse(storage?.getItem(multiplayerRoomSessionStorageKey(product)) || "null"); }
@@ -78,10 +79,13 @@ export function createMultiplayerRoomSessionStore({
     const room = record(saved?.room);
     if (!saved || !room || saved.product !== product || room.code !== roomCode) return null;
 
-    const playerCount = Number(room.playerCount) === 3 ? 3 : 2;
+    const requestedPlayerCount = Number(room.playerCount);
+    const playerCount = playerCounts.includes(requestedPlayerCount as 2 | 3)
+      ? requestedPlayerCount as 2 | 3
+      : (playerCounts[0] ?? 2);
     const difficulty = Math.max(
       0,
-      Math.min(normalizeMaxDifficulty(maxDifficulty), Number(room.difficulty) || 0),
+      Math.min(normalizeMaxDifficulty(difficulties.length - 1), Number(room.difficulty) || 0),
     );
     const savedSeat = saved.seat;
     const seat = typeof savedSeat === "number" && Number.isInteger(savedSeat) &&

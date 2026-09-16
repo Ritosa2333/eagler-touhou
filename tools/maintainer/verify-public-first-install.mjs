@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 import puppeteer from "puppeteer-core";
 import { findChromiumExecutable } from "../../lib/chromium-executable.mjs";
+import { DEFAULT_PRODUCT_ID, isGameId } from "../../lib/contracts/product-catalog.mjs";
 
 const target = process.argv[2];
 if (!target) {
-  throw new Error("usage: node tools/maintainer/verify-public-first-install.mjs <launcher-url> [--game=th07] [--timeout-ms=180000]");
+  throw new Error(`usage: node tools/maintainer/verify-public-first-install.mjs <launcher-url> [--game=${DEFAULT_PRODUCT_ID}] [--timeout-ms=180000]`);
 }
 const targetUrl = new URL(target);
 if (!new Set(["http:", "https:"]).has(targetUrl.protocol)) throw new Error("launcher URL must use http or https");
@@ -16,8 +17,8 @@ const values = Object.fromEntries(process.argv.slice(3).map(value => {
 for (const name of Object.keys(values)) {
   if (!new Set(["game", "timeout-ms"]).has(name)) throw new Error(`unknown argument: --${name}`);
 }
-const game = values.game || "th07";
-if (!/^th(?:06|07|08|10)$/.test(game)) throw new Error(`unsupported game: ${game}`);
+const game = values.game || DEFAULT_PRODUCT_ID;
+if (!isGameId(game)) throw new Error(`unsupported game: ${game}`);
 const timeoutMs = Number.parseInt(values["timeout-ms"] || "180000", 10);
 if (!Number.isInteger(timeoutMs) || timeoutMs < 30_000 || timeoutMs > 600_000) {
   throw new Error("--timeout-ms must be between 30000 and 600000");
