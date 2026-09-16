@@ -867,8 +867,7 @@ void RefreshFromHost()
     const bool active = EM_ASM_INT({
         const session = Module.eaglerOptions?.thpracSession;
         return !!session && session.game === 'th06' &&
-            (session.schema === 'eagler-touhou/thprac-session/1' ||
-             session.schema === 'eagler-touhou/thprac-replay/1');
+            session.schema === 'eagler-touhou/thprac-session/1';
     }) != 0;
     if (!active)
     {
@@ -2394,8 +2393,6 @@ static bool JsonBool(const std::string &json, const char *key, bool fallback)
 static bool ParseConfigJson(const std::string &json, Config &config, bool preserveMissing)
 {
     const bool portableSchema =
-        json.find("\"schema\":\"thprac/portable-replay/1\"") != std::string::npos ||
-        json.find("\"schema\":\"eagler-touhou/thprac-replay/1\"") != std::string::npos ||
         json.find("\"schema\":\"eagler-touhou/thprac-session/1\"") != std::string::npos;
     // thprac v2.3.0.3 stores THPracParam::GetJson() directly in the replay.
     // It has no portable "schema" field; its discriminator is game="th06"
@@ -2714,18 +2711,8 @@ bool LoadReplayMetadata(const char *replayPath)
             json.clear();
     }
 
-    // Read-only compatibility with the earlier experimental sidecar format.
-    // New saves never create it; preserving this fallback avoids breaking a
-    // local replay a previous build may already have produced.
     if (json.empty())
-    {
-        const std::string sidecar = std::string(replayPath) + ".thprac.json";
-        bytes = FileSystem::OpenPath(sidecar.c_str(), 1);
-        if (!bytes)
-            return false;
-        json.assign(reinterpret_cast<char *>(bytes), g_LastFileSize);
-        std::free(bytes);
-    }
+        return false;
     if (!LoadConfigJson(json))
         return false;
 #ifdef TH_DEV_TOOLS
