@@ -1,8 +1,9 @@
+**Eagler branch:**
+Hosted Web Runtime protocol, browser integration, persistence, touch, practice and multiplayer implementation details are documented in [README_EAGLER.md](README_EAGLER.md).
+---
 # th07
 
 A cross-platform port of 東方妖々夢　～ Perfect Cherry Blossom 1.00b by Team Shanghai Alice using SDL3 and OpenGL ES.
-
-> **Eagler branch:** Hosted Web Runtime protocol, browser integration, persistence, touch, practice and multiplayer implementation details are documented in [README_EAGLER.md](README_EAGLER.md).
 
 This is the reallyportable branch of the Touhou 7 decompilation. This is where changes go that I thought were too big for the standard portable branch, like migrating to SDL3, web support, mobile support, decoupling render speed from logic speed, etc.
 
