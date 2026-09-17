@@ -55,6 +55,7 @@ void RecordTrackerMiss();
 void ResetBgmTracking();
 void NotifyBgmPlay(const char *path);
 bool PreserveBgmOnRestart();
+bool ConsumeReplayResetOnReinit();
 void FinishBgmRestartPreservation();
 bool SuppressStageIntroTitles();
 enum class MenuResult { Waiting, Accepted, Cancelled };
