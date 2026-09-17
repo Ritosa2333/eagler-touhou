@@ -1,6 +1,6 @@
 **Eagler branch:**
 Hosted Web Runtime protocol, browser integration, persistence, touch, practice and multiplayer implementation details are documented in [README_EAGLER.md](README_EAGLER.md).
----
+
 # th07
 
 A cross-platform port of 東方妖々夢　～ Perfect Cherry Blossom 1.00b by Team Shanghai Alice using SDL3 and OpenGL ES.
