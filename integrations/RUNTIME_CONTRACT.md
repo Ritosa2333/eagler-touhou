@@ -1,6 +1,6 @@
 # thcrap / thprac Runtime contract
 
-The Eagler Host and the two reallyportable games share runtime data only; neither links the other's source.
+The Eagler Host and the game Runtimes share runtime data only; neither links the other's source.
 
 ## thcrap
 
@@ -25,6 +25,22 @@ Module.eaglerOptions.thprac = {
 };
 ```
 
-Both games currently embed practice parameters directly in the Replay's PRAC trailer and read them only from the Replay itself during playback. An external `*.rpy.thprac.json` sidecar was never a published format and is not part of the supported Replay data model. TH06 additionally exports `_EaglerThpracSaveReplaySlot(slot)` so the Host can request an in-game save to Replay slot 1–99; the Host remains responsible for synchronizing IDBFS afterward.
+TH06 and TH07 use this legacy module option. TH08 receives the canonical
+`thpracEnabled` and `thpracLocale` fields through the Runtime `configure`
+command and owns its live practice state internally.
 
-The current implementation provides coarse stage navigation, direct frame navigation, initial resources/score/Rank (including cherry points in TH07), and practice Replay metadata. Upstream thprac features that depend on exact original ECL byte offsets—per-spellcard starting points, multi-phase spellcards, dialogue toggles, and TH06's fake Patchouli shot types—have not been ported and must not be presented as available in the UI.
+All three games embed practice parameters directly in the Replay's PRAC trailer
+and read them only from the Replay itself during playback. An external
+`*.rpy.thprac.json` sidecar was never a published format and is not part of the
+supported Replay data model. TH06 additionally exports
+`_EaglerThpracSaveReplaySlot(slot)` so the Host can request an in-game save to
+Replay slot 1–99; the Host remains responsible for synchronizing IDBFS
+afterward.
+
+TH06 and TH07 provide coarse stage navigation, direct frame navigation,
+initial resources/score/Rank (including cherry points in TH07), and practice
+Replay metadata. Their exact-offset upstream features remain deferred. TH08
+also provides exact section and multi-phase spell starts, dialogue control,
+game-specific gauge/time/night/familiar parameters, source-level ECL/STD/ANM
+patches, and practice assists. A Runtime must expose only the features listed
+for that game in `integrations/thprac.mjs`.

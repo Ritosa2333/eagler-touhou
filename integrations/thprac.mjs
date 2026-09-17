@@ -26,13 +26,28 @@ const GAME_SCHEMAS = Object.freeze({
       point: [0, 9999], point_total: [0, 9999], point_stage: [0, 9999], cherry: [0, 9999990],
       cherryMax: [0, 9999990], cherryPlus: [0, 50000], spellBonus: [0, 30], rank: [10, 99]
     })
+  }),
+  th08: Object.freeze({
+    defaults: Object.freeze({
+      mode: 1, stage: 0, warp: 0, section: 0, phase: 0, frame: 0, dlg: false,
+      score: 0, life: 2, bomb: 8, power: 128, gauge: 0, graze: 0, point: 0,
+      point_total: 0, point_stage: 0, time: 0, value: 60000, night: 0,
+      familiar: 0, rank: 12, rankLock: false
+    }),
+    ranges: Object.freeze({
+      mode: [0, 1], stage: [0, 8], warp: [0, 7], section: [0, 19999], phase: [0, 6], frame: [0, 0x7fffffff],
+      score: [0, 9999999990], life: [0, 8], bomb: [0, 8], power: [0, 128], gauge: [-10000, 10000],
+      graze: [0, 0x7fffffff], point: [0, 9999], point_total: [0, 9999], point_stage: [0, 9999],
+      time: [0, 0x7fffffff], value: [0, 9999999], night: [0, 11], familiar: [0, 2000], rank: [8, 99]
+    })
   })
 });
 export const THPRAC_SUPPORTED_GAMES = Object.freeze(Object.keys(GAME_SCHEMAS));
 
 export const THPRAC_FUNCTIONAL_FEATURES = Object.freeze({
   th06: Object.freeze(["coarse-stage-warp", "direct-frame-warp", "initial-resources", "rank", "rank-lock", "practice-replay-metadata", "midrun-replay-save"]),
-  th07: Object.freeze(["coarse-stage-warp", "direct-frame-warp", "initial-resources", "cherry", "rank", "rank-lock", "practice-replay-metadata"])
+  th07: Object.freeze(["coarse-stage-warp", "direct-frame-warp", "initial-resources", "cherry", "rank", "rank-lock", "practice-replay-metadata"]),
+  th08: Object.freeze(["coarse-stage-warp", "direct-frame-warp", "exact-section-warp", "multi-phase-spell-start", "section-dialogue", "initial-resources", "gauge", "time", "night", "familiar", "rank", "rank-lock", "practice-replay-metadata", "practice-assists"])
 });
 
 // These parameters remain in the stable session/replay schema so a later
@@ -40,7 +55,8 @@ export const THPRAC_FUNCTIONAL_FEATURES = Object.freeze({
 // They are deliberately not advertised as functional today.
 export const THPRAC_DEFERRED_FEATURES = Object.freeze({
   th06: Object.freeze(["exact-section-warp", "multi-phase-spell-start", "section-dialogue", "patchouli-fake-shot"]),
-  th07: Object.freeze(["exact-section-warp", "multi-phase-spell-start", "section-dialogue"])
+  th07: Object.freeze(["exact-section-warp", "multi-phase-spell-start", "section-dialogue"]),
+  th08: Object.freeze([])
 });
 
 for (const [label, table] of [["functional", THPRAC_FUNCTIONAL_FEATURES], ["deferred", THPRAC_DEFERRED_FEATURES]]) {
@@ -74,6 +90,7 @@ export function normalizeThpracParams(game, input = {}) {
   // Matches thprac: unlocked TH06 rank uses the original 0..32 range.
   if (game === "th06" && !output.rankLock) output.rank = Math.min(output.rank, 32);
   if (game === "th07" && !output.rankLock) output.rank = Math.min(output.rank, 32);
+  if (game === "th08" && !output.rankLock) output.rank = Math.min(output.rank, 16);
   return output;
 }
 

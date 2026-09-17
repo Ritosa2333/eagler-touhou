@@ -42,7 +42,7 @@ adapter; optional rows follow the Product Catalog declarations.
 | Physical gamepad/controller input | Supported | Supported | Supported | Supported |
 | Touch controls | Supported | Supported | Supported | Supported |
 | Replay import/export | Supported | Supported | Supported | Supported |
-| thprac integration | Supported | Supported | Not supported | Not supported |
+| thprac integration | Supported | Supported | Supported | Not supported |
 | thcrap language packages | Supported | Supported | Not part of the current formal language pipeline | Not part of the current formal language pipeline |
 
 "Supported" does not mean every upstream/private build combination is a public
@@ -141,9 +141,11 @@ the product declares it and the concrete Runtime/Host path can actually play
 it. Exact published OGG content remains deployment/package data rather than a
 hard-coded site promise.
 
-### thprac - Supported for TH06/TH07 when built/published
+### thprac - Supported for TH06/TH07/TH08 when built/published
 
 - Portable thprac integration.
+- TH08 includes source-level section/ECL/STD patches, its game-specific resource,
+  gauge, time, night, familiar and rank parameters, and embedded Replay metadata.
 - Touch-device simulated mouse/control affordances needed by the practice UI.
 - Runtime/Host verification requires the corresponding capability attestation;
   a host must not advertise thprac merely because a UI toggle exists.
