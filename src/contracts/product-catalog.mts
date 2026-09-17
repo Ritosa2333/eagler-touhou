@@ -147,6 +147,7 @@ export const PRODUCT_GAMES = Object.freeze({
       "shell.mjs",
       "eagler-host.mjs",
       "practice.mjs",
+      "practice-config.mjs",
       "practice-sections.mjs",
       "motion-replay.mjs",
       "th08-sdl.mjs",
