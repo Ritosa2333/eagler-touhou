@@ -42,6 +42,6 @@ assert "s->curState = SUPERVISOR_STATE_GAMEMANAGER;" in restart
 
 # Old live peers must not mix with the new lifecycle, while ABI5 Replay remains
 # readable because Pause-menu Restart is never part of replayed gameplay.
-assert "TH06_MULTI_GAMEPLAY_ABI = 8;" in multiplayer
+assert "TH06_MULTI_GAMEPLAY_ABI = 9;" in multiplayer
 
 print("TH06 multiplayer Pause R Restart contract: PASS")

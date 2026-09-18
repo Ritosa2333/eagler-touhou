@@ -946,6 +946,7 @@ ZunResult Player::RegisterChain(u8 unk)
     p->invulnerabilityTimer.InitializeForPopup();
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     p->initParam = unk;
+    Netplay::Input::ResetPlayerDirectTouch(unk);
     g_PlayerActive[unk] = true;
 #else
     p->unk_9e1 = unk;
@@ -984,6 +985,7 @@ void Player::CutChain()
         player.chainDraw1 = NULL;
         g_Chain.Cut(player.chainDraw2);
         player.chainDraw2 = NULL;
+        Netplay::Input::ResetPlayerDirectTouch(playerId);
         g_PlayerActive[playerId] = false;
     }
 #else
@@ -2142,9 +2144,15 @@ ZunResult Player::HandlePlayerInputs()
             ReplayExtension::CaptureDirectTouch(touchDx, touchDy, touchUnlimited);
 
         const bool sampledLogicalTouch = sampledReplayTouch || sampledNetplayTouch;
+        const bool incrementalLogicalTouch =
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            sampledNetplayTouch && Netplay::Input::UsesIncrementalDirectTouch(this->initParam);
+#else
+            false;
+#endif
         const bool consumeSynchronizedLocalTouch =
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-            sampledNetplayTouch && !speculative && canSampleRawTouch &&
+            sampledNetplayTouch && !incrementalLogicalTouch && !speculative && canSampleRawTouch &&
             this->initParam == MultiplayerGameplay::GetLocalPlayerSlot();
 #else
             false;
@@ -2189,6 +2197,13 @@ ZunResult Player::HandlePlayerInputs()
         {
             Touch::SetPlayerDelta(reqGameDx / focusRatio, reqGameDy / focusRatio);
         }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if (focusRatio != 0.0f && incrementalLogicalTouch)
+        {
+            Netplay::Input::SetDirectTouchRemainder(
+                this->initParam, reqGameDx / focusRatio, reqGameDy / focusRatio);
+        }
+#endif
 
         const f32 hx = this->horizontalMovementSpeedMultiplierDuringBomb *
                        g_Supervisor.effectiveFramerateMultiplier;
@@ -2232,6 +2247,23 @@ ZunResult Player::HandlePlayerInputs()
                 Touch::SetPlayerDelta(0.0f, 0.0f);
             }
         }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if (focusRatio != 0.0f && incrementalLogicalTouch)
+        {
+            if (!touchUnlimited &&
+                currentSpeedSq > effectiveMaxSpeed * effectiveMaxSpeed && currentSpeedSq > 0.0f)
+            {
+                Netplay::Input::ConsumeDirectTouchRemainder(
+                    this->initParam,
+                    hx != 0.0f ? consumedGameDx / focusRatio : touchDx,
+                    vy != 0.0f ? consumedGameDy / focusRatio : touchDy);
+            }
+            else
+            {
+                Netplay::Input::SetDirectTouchRemainder(this->initParam, 0.0f, 0.0f);
+            }
+        }
+#endif
 
         this->playerDirection = MOVEMENT_NONE;
     }

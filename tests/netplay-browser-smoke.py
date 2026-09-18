@@ -129,6 +129,8 @@ def runtime_snapshot(page, target_frame: int = 300):
             replayComparedFrames: Number(runtime?.__eaglerNetplayReplayComparedFrames || 0),
             replayInputMismatch: !!runtime?.__eaglerNetplayReplayInputMismatch,
             replayInputCoverage: Number(runtime?.__eaglerNetplayReplayInputCoverage || 0),
+            directTouchBeginCaptures: Number(runtime?.__eaglerNetplayDirectTouchBeginCaptures || 0),
+            directTouchDeltaCaptures: Number(runtime?.__eaglerNetplayDirectTouchDeltaCaptures || 0),
             receiveBacklog: Math.max(0,
               Number(runtime?.__th06PeerTransport?.received?.length || 0) -
               Number(runtime?.__th06PeerTransport?.receivedHead || 0)),
@@ -792,6 +794,14 @@ def run_smoke(
                 raise RuntimeError(f"wrong runtime build marker: {snapshots}")
             if require_rollback and sum(value["rollback"] for value in snapshots) <= 0:
                 raise RuntimeError(f"expected rollback but saw none: {snapshots}")
+            if touch_input:
+                targets = range(player_count) if touch_input_player < 0 else (touch_input_player,)
+                for player in targets:
+                    if (snapshots[player]["directTouchBeginCaptures"] <= 0 or
+                        snapshots[player]["directTouchDeltaCaptures"] <= 0):
+                        raise RuntimeError(
+                            f"incremental DirectTouch capture not observed for P{player + 1}: {snapshots}"
+                        )
             if live_bullet_audit:
                 audited = [value["liveBulletAuditRestores"] for value in snapshots]
                 if any(value <= 0 for value in audited):

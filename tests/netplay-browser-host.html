@@ -168,7 +168,7 @@
         }, plan.interval);
       } else if (touchInput) {
         const emitTouch = (type, x, y) => iframe.contentWindow.postMessage({
-          protocol, game, command: "direct-touch", type, id: 1, x, y,
+          protocol, game, epoch, command: "direct-touch", type, id: 1, x, y,
         }, location.origin);
         const runtimeWindow = iframe.contentWindow;
         const arm = setInterval(() => {

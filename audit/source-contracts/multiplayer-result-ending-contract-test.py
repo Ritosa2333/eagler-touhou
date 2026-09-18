@@ -28,7 +28,7 @@ assert "if (!ShouldSkipPersistentResultWrite() &&\n        resultScreen->resultS
 # before the vanilla local Ending/Result chain. Result persistence remains
 # isolated without rewriting the user's ordinary CLRD history.
 assert "constexpr std::uint32_t GAMEPLAY_ABI = TH06_MULTI_GAMEPLAY_ABI;" in driver
-assert "TH06_MULTI_GAMEPLAY_ABI = 8;" in text("src/Multiplayer.hpp")
+assert "TH06_MULTI_GAMEPLAY_ABI = 9;" in text("src/Multiplayer.hpp")
 owns = driver.split("bool SessionStillOwnsStageState()", 1)[1].split(
     "bool SharedUiNeedsConfirmedInputs()", 1
 )[0]

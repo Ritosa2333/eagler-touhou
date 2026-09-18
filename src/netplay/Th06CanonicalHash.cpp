@@ -5,6 +5,7 @@
 #include "EnemyManager.hpp"
 #include "GameManager.hpp"
 #include "ItemManager.hpp"
+#include "NetplayInput.hpp"
 #include "Player.hpp"
 #include "Rng.hpp"
 #include "Stage.hpp"
@@ -541,6 +542,14 @@ Sample Capture()
     sample.metaGame = game.value;
 
     Hasher input;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    for (const auto &touch : Input::GetDirectTouchStates())
+    {
+        input.Scalar(touch.x);
+        input.Scalar(touch.y);
+        input.Scalar(touch.active);
+    }
+#endif
     input.Scalar(g_CurFrameInput);
     input.Scalar(g_LastFrameInput);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY

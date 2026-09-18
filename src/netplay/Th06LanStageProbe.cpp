@@ -109,6 +109,8 @@ std::array<bool, MAX_PLAYERS> g_RemoteTimeoutArmed{};
 bool g_IndependentInputSlotsObserved = false;
 std::uint8_t g_InputSlotObservedMask = 0;
 bool g_PhysicalInputObserved = false;
+std::uint32_t g_DirectTouchBeginCaptures = 0;
+std::uint32_t g_DirectTouchDeltaCaptures = 0;
 bool g_PhysicalLoggedFrame0Sample = false;
 bool g_PhysicalLoggedFrame0Wait = false;
 bool g_PhysicalLoggedFrame0Sim = false;
@@ -651,11 +653,25 @@ FrameInput CaptureLocalInput(std::uint32_t frame)
     (void)Controller::GetInput();
     float x = 0.0f;
     float y = 0.0f;
+    bool beginGesture = false;
     if (Touch::GetFreeJoystickVector(&x, &y))
         Input::CaptureJoystick(x, y);
-    else if (Touch::GetPlayerDelta(&x, &y))
-        Input::CaptureDirectTouch(x, y, Touch::IsUnlimited());
+    else if (Touch::TakePlayerDelta(&x, &y, &beginGesture))
+        Input::CaptureDirectTouchDelta(x, y, Touch::IsUnlimited(), beginGesture);
     FrameInput input = Input::EndCapture();
+    if (input.analogMode == AnalogMode::DirectTouchBegin)
+        ++g_DirectTouchBeginCaptures;
+    else if (input.analogMode == AnalogMode::DirectTouchDelta)
+        ++g_DirectTouchDeltaCaptures;
+#ifdef __EMSCRIPTEN__
+    if (ProbeMode() || UsePhysicalInput())
+    {
+        EM_ASM({
+            globalThis.__eaglerNetplayDirectTouchBeginCaptures = $0;
+            globalThis.__eaglerNetplayDirectTouchDeltaCaptures = $1;
+        }, g_DirectTouchBeginCaptures, g_DirectTouchDeltaCaptures);
+    }
+#endif
     input.touchUsed = Touch::WasUsedThisRun();
     input.touchBomb = Touch::UsedTouchToBomb();
     if (input.buttons != 0 || input.analogMode != AnalogMode::None)
@@ -1242,6 +1258,7 @@ void ClearTransientModes()
 {
     Input::ClearReplayOverride();
     Input::ClearPlayerButtonOverrides();
+    Input::ResetDirectTouchStates();
     if (Input::CaptureActive())
         (void)Input::EndCapture();
     SideEffects::SetSpeculative(false);
@@ -1473,6 +1490,8 @@ bool Initialize()
         state = PeerTimeSyncState{};
     g_PredictionDepth.fill(0);
     g_RollbackByPlayer.fill(0);
+    g_DirectTouchBeginCaptures = 0;
+    g_DirectTouchDeltaCaptures = 0;
     for (RestoreAuditEntry &entry : g_RestoreAudit)
         entry = RestoreAuditEntry{};
     g_RecommendedLead = 0.0;
@@ -1507,6 +1526,8 @@ bool Initialize()
             globalThis.__eaglerNetplayError = "";
             globalThis.__eaglerNetplayLanActive = true;
             globalThis.__eaglerNetplayLanFrame = 0;
+            globalThis.__eaglerNetplayDirectTouchBeginCaptures = 0;
+            globalThis.__eaglerNetplayDirectTouchDeltaCaptures = 0;
             globalThis.__eaglerNetplayLanGeneration = $0;
             globalThis.__eaglerNetplayLanHighestStage = 0;
             globalThis.__eaglerNetplayLanStageTransitionObserved = false;
@@ -1639,19 +1660,19 @@ bool SendSessionControl(bool forceReady = false)
 
 bool SendScheduledLocalFrame(std::uint32_t frame);
 
-bool SendLocalFrame(std::uint32_t frame)
+bool SendLocalFrame(std::uint32_t captureFrame)
 {
-    const FrameInput input = CaptureLocalInput(frame);
-    if (UsePhysicalInput() && frame == 0 && !g_PhysicalLoggedFrame0Sample)
+    const FrameInput input = CaptureLocalInput(captureFrame);
+    if (UsePhysicalInput() && captureFrame == 0 && !g_PhysicalLoggedFrame0Sample)
     {
         g_PhysicalLoggedFrame0Sample = true;
         std::printf("netplay lan physical: FRAME0 SAMPLE player=%u bits=0x%04x\n",
                     static_cast<unsigned>(g_LocalPlayer),
                     static_cast<unsigned>(input.buttons));
     }
-    if (!g_Core.ScheduleLocalInput(frame, input))
+    if (!g_Core.ScheduleLocalInput(captureFrame, input))
         return false;
-    return SendScheduledLocalFrame(frame);
+    return SendScheduledLocalFrame(g_Core.LocalFrameForCapture(captureFrame));
 }
 
 bool SendScheduledLocalFrame(std::uint32_t frame)
@@ -2439,15 +2460,14 @@ int RunCalcChain()
     if (((!ProbeMode() && !UseReplayPlaybackCycle()) || g_SimFrame < g_TestFrames) &&
         TransportIsOpen())
     {
-        bool localPresent = false;
-        (void)g_Core.LocalInput(g_SimFrame, &localPresent);
+        const bool localPresent = g_Core.HasLocalCapture(g_SimFrame);
         if (!localPresent && !SendLocalFrame(g_SimFrame))
         {
             Fail("send local input");
             return -1;
         }
         if (localPresent && (g_DriverTicks % 3u) == 0u &&
-            !SendScheduledLocalFrame(g_SimFrame))
+            !SendScheduledLocalFrame(g_Core.LocalFrameForCapture(g_SimFrame)))
         {
             Fail("input retry");
             return -1;

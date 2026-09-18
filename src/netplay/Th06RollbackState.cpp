@@ -19,6 +19,7 @@
 #include "ScreenEffect.hpp"
 #include "Stage.hpp"
 #include "Supervisor.hpp"
+#include "NetplayInput.hpp"
 
 #include <algorithm>
 #include <array>
@@ -266,7 +267,8 @@ bool CaptureFixedAndSparseState()
         !TouchObject(&g_Supervisor.framerateMultiplier))
         return false;
 
-    if (!TouchObject(&g_CurFrameInput) || !TouchObject(&g_LastFrameInput) ||
+    if (!TouchObject(&Input::GetDirectTouchStates()) ||
+        !TouchObject(&g_CurFrameInput) || !TouchObject(&g_LastFrameInput) ||
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         !TouchObject(&g_CurFrameGameInputs) ||
         !TouchObject(&g_LastFrameGameInputs) ||
