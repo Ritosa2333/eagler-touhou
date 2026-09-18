@@ -43,6 +43,9 @@ Published/active convergence slices:
 - `WebSocketTransport`
 - `NetplayProtocol`
 - `NetplayCore`
+- `RollbackJournal`
+- generic rollback primitives: `SnapshotPolicy`, `SparsePoolCapture`,
+  `PartitionedPoolJournal`
 
 `NetplaySession` and `WebSocketTransport` were byte-identical before extraction.
 `NetplayProtocol` differs only through a deliberately tiny title-owned wire
@@ -51,14 +54,14 @@ Protocol header and `NetplayCore` preserve the behavior of the current TH06 and
 TH07 `eagler` branches exactly; newer uncommitted title experiments are not
 folded into this authority migration.
 
-`RollbackJournal` is intentionally **not** part of this slice. TH06 still needs
-its own measured journal optimization pass, using the successful TH07 work as
-the reference. Only after both titles converge on the same validated generic
-journal should that implementation move into `eagler-common`.
+`RollbackJournal` moved only after TH06 completed its measured optimization pass
+against the TH07 playbook. The shared implementation preserves TH06's validated
+allocation/index/copy/restore behavior and the TH07-only snapshot-patch API used
+by its once-only DirectTouch equivalence path. Pool layout remains title-owned;
+only the generic storage algorithms live here.
 
-Future intended slices include `RollbackJournal`, browser peer transport,
-rollback primitives and the shared performance testkit once their title-facing
-seams are explicit.
+Future intended slices include browser peer transport, generic input ownership
+and the shared performance testkit once their title-facing seams are explicit.
 
 ## Convergence order
 
