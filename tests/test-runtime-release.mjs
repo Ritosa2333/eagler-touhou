@@ -2,7 +2,7 @@
  * proves exact-file-set, hash, path and original-resource leak rejection.
  * Does not prove any Runtime executes in a browser. */
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { validateRuntimeReleaseManifest, verifyRuntimeRelease } from "../lib/runtime-release.mjs";
@@ -11,6 +11,12 @@ import { writeSyntheticRuntimeRelease } from "../tests/support/runtime-release-f
 const root = await mkdtemp(join(tmpdir(), "eagler-runtime-release-"));
 const manifest = await writeSyntheticRuntimeRelease(root);
 await verifyRuntimeRelease(root);
+
+const staleShellPath = resolve(root, "runtime", "th08", "shell.mjs");
+const staleShell = await readFile(staleShellPath, "utf8");
+await writeFile(staleShellPath, staleShell.replaceAll("runtimeEpoch", "legacyRuntimeToken"));
+await assert.rejects(() => verifyRuntimeRelease(root), /navigation epoch protocol contract is missing/);
+await writeFile(staleShellPath, staleShell);
 
 await writeFile(resolve(root, "runtime", "th06", "th06.data"), "private game data");
 await assert.rejects(() => verifyRuntimeRelease(root), /unexpected=.*th06\.data/);

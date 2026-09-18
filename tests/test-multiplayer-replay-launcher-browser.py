@@ -87,14 +87,15 @@ RUNTIME_PROTOCOL_STUB = r"""<!doctype html>
   const protocol = "eagler-touhou/1";
   const match = location.pathname.match(/\/runtime\/(th\d+)\/multiplayer\//);
   const game = match?.[1] || "";
+  const epoch = Number(new URLSearchParams(location.search).get("runtimeEpoch"));
   window.__eaglerTestMessages = [];
   window.addEventListener("message", event => {
     const message = event.data || {};
-    if (event.origin !== location.origin || message.protocol !== protocol || message.game !== game) return;
+    if (event.origin !== location.origin || message.protocol !== protocol || message.game !== game || message.epoch !== epoch) return;
     window.__eaglerTestMessages.push(message);
-    event.source.postMessage({ protocol, game, request: message.request, ok: true }, event.origin);
+    event.source.postMessage({ protocol, game, epoch, request: message.request, ok: true }, event.origin);
   });
-  window.parent.postMessage({ protocol, game, event: "ready" }, location.origin);
+  window.parent.postMessage({ protocol, game, epoch, event: "ready" }, location.origin);
 })();
 </script>
 """

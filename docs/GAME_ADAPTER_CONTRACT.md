@@ -97,8 +97,18 @@ ACK for live input does not make touch/keyboard optional. A Runtime must reject
 an inapplicable conditional/profile command rather than silently acknowledge it.
 
 Runtime messages must be same-origin, from the expected parent/iframe, use the
-current protocol and identify the selected game. User-file commands expose only
-the product's allowlisted save/Replay surface, never arbitrary Runtime FS access.
+current protocol, identify the selected game, and carry the navigation epoch
+assigned to the current Runtime session. The Launcher places that epoch in the
+Runtime URL as `runtimeEpoch`; every command/event/response must echo the same
+positive integer. A Runtime must reject a command from another epoch, and the
+Launcher must reject an inbound event/response whose epoch is not current.
+`WindowProxy` identity alone is not a navigation identity because the same
+iframe object survives document replacement. Same-origin direct bridges used by
+the Runtime (for example managed DATA or an immediate-input fast path) must bind
+to the same epoch rather than bypassing the protocol's session boundary.
+
+User-file commands expose only the product's allowlisted save/Replay surface,
+never arbitrary Runtime FS access.
 
 ## DATA ownership
 

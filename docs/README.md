@@ -38,9 +38,15 @@ document instead.
   ownership and declaration boundary.
 - [Adapter capability classification](ADAPTER_CAPABILITIES.md) - authoritative
   required vs optional vs format-specific vs legacy-compatibility distinction.
+- [Adapter behavior invariants](ADAPTER_BEHAVIOR_INVARIANTS.md) - product-level
+  interaction and presentation semantics that must remain stable across
+  technically different adapter implementations.
 - [Adapting a game](ADAPTING_A_GAME.md) - end-to-end implementation guide,
   Runtime protocol lifecycle, verification checklist, and handoff template for
   adding another title.
+- [Engineering playbooks](playbooks/README.md) - implementation ownership,
+  recurring pitfalls, superseded approaches, and verification methods for
+  adaptation and maintenance work.
 - [Runtime storage testing](RUNTIME_STORAGE_TESTING.md) - storage contract and
   browser conformance lanes.
 

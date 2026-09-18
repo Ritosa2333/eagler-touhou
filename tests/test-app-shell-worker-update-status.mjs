@@ -9,6 +9,7 @@ class MemoryCache {
   key(input) { return typeof input === "string" ? input : input.url; }
   async put(input, response) { this.entries.set(this.key(input), response.clone()); }
   async match(input) { return this.entries.get(this.key(input))?.clone(); }
+  async delete(input) { return this.entries.delete(this.key(input)); }
   async keys() { return [...this.entries.keys()].map(url => new Request(url)); }
 }
 
@@ -49,7 +50,19 @@ async function installWorker({ existingCacheNames = [], manifest = [], deferredP
     });
     return (await responseTask).json();
   };
-  return { readMeta, requestStatus, stores, listeners };
+  const requestMessage = async data => {
+    let response;
+    let task;
+    const port = { postMessage(value) { response = value; } };
+    listeners.get("message")({
+      data,
+      ports: [port],
+      waitUntil(value) { task = value; },
+    });
+    await task;
+    return response;
+  };
+  return { readMeta, requestStatus, requestMessage, stores, listeners, currentName, current };
 }
 
 const firstInstall = await installWorker();
@@ -106,5 +119,78 @@ revisioned.listeners.get("fetch")({
 });
 assert.equal(await (await deferredResponse).text(), "reused", "deferred Runtime should reuse a matching older revision on demand");
 assert.deepEqual(networkRequests, [changedUrl]);
+
+const fallbackPaths = [
+  "runtime/game.html",
+  "runtime/shell.mjs",
+  "runtime/eagler-host.mjs",
+  "runtime/game.wasm",
+];
+const fallbackUrls = Object.fromEntries(fallbackPaths.map(path => [path, `https://example.test/${path}`]));
+const fallbackNetworkRequests = [];
+const fallback = await installWorker({
+  existingCacheNames: ["eagler-touhou-app-shell-runtime-old"],
+  manifest: fallbackPaths.map((url, index) => ({ url, revision: `current-${index}` })),
+  deferredPaths: fallbackPaths,
+  seed: async stores => {
+    const old = stores.get("eagler-touhou-app-shell-runtime-old");
+    await old.put(fallbackUrls["runtime/game.html"], new Response(
+      "<script>const protocol='eagler-touhou/1';const epoch=Number(new URLSearchParams(location.search).get('runtimeEpoch'));window.parent.__eaglerPrepareManagedRuntimeDataV1({game:'th10',generation:'old',epoch});</script>"
+    ));
+    await old.put(fallbackUrls["runtime/shell.mjs"], new Response(
+      "const protocol='eagler-touhou/1';const epoch=Number(new URLSearchParams(location.search).get('runtimeEpoch'));"
+    ));
+    await old.put(fallbackUrls["runtime/eagler-host.mjs"], new Response(
+      "const epoch=Number(query.get('runtimeEpoch'));parentWindow.__eaglerPrepareManagedRuntimeDataV1({game,generation,epoch});"
+    ));
+    await old.put(fallbackUrls["runtime/game.wasm"], new Response("old-runtime-wasm"));
+    await old.put("https://example.test/__app-shell-meta__/old-runtime", new Response(JSON.stringify({
+      createdAt: 50,
+      entries: Object.fromEntries(fallbackPaths.map((path, index) => [fallbackUrls[path], `old-${index}`])),
+    })));
+  },
+  fetchImpl: async request => {
+    fallbackNetworkRequests.push(request.url);
+    return new Response(`network:${request.url}`);
+  },
+});
+const fallbackProbe = await fallback.requestMessage({ type: "PROBE_RUNTIME_CACHE_FALLBACK", paths: fallbackPaths });
+assert.equal(fallbackProbe.available, true, "complete epoch-compatible retained Runtime should be offered as one-shot fallback");
+const restored = await fallback.requestMessage({ type: "RESTORE_RUNTIME_CACHE_FALLBACK", paths: fallbackPaths });
+assert.equal(restored.ok, true);
+assert.equal(await (await fallback.current.match(fallbackUrls["runtime/game.wasm"])).text(), "old-runtime-wasm");
+assert.equal((await fallback.readMeta()).temporaryRuntimeFallback.paths.length, fallbackPaths.length);
+assert.equal((await fallback.readMeta()).entries[fallbackUrls["runtime/game.wasm"]], "old-3",
+  "temporary fallback metadata must describe the actual cached generation");
+const cleared = await fallback.requestMessage({ type: "CLEAR_RUNTIME_CACHE_FALLBACK" });
+assert.equal(cleared.cleared, fallbackPaths.length);
+assert.equal((await fallback.readMeta()).entries[fallbackUrls["runtime/game.wasm"]], "current-3",
+  "cleanup must restore the active manifest revision before the next network attempt");
+let forcedNetworkResponse;
+fallback.listeners.get("fetch")({
+  request: new Request(fallbackUrls["runtime/game.wasm"]),
+  respondWith(task) { forcedNetworkResponse = task; },
+});
+assert.match(await (await forcedNetworkResponse).text(), /^network:/,
+  "the launch after a one-shot fallback must bypass retained Runtime caches and retry the network");
+assert.deepEqual(fallbackNetworkRequests, [fallbackUrls["runtime/game.wasm"]]);
+
+const incompatible = await installWorker({
+  existingCacheNames: ["eagler-touhou-app-shell-incompatible-old"],
+  manifest: fallbackPaths.map((url, index) => ({ url, revision: `current-${index}` })),
+  deferredPaths: fallbackPaths,
+  seed: async stores => {
+    const old = stores.get("eagler-touhou-app-shell-incompatible-old");
+    for (const path of fallbackPaths) await old.put(fallbackUrls[path], new Response(`legacy:${path}`));
+    await old.put("https://example.test/__app-shell-meta__/legacy", new Response(JSON.stringify({
+      createdAt: 60,
+      entries: Object.fromEntries(fallbackPaths.map((path, index) => [fallbackUrls[path], `legacy-${index}`])),
+    })));
+  },
+});
+assert.equal((await incompatible.requestMessage({
+  type: "PROBE_RUNTIME_CACHE_FALLBACK",
+  paths: fallbackPaths,
+})).available, false, "pre-epoch or otherwise incompatible Runtime caches must never be offered");
 
 console.log("app shell worker update status: PASS");

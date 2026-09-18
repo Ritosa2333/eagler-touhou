@@ -9,6 +9,11 @@ Read this together with:
 
 - [`ADAPTER_CAPABILITIES.md`](ADAPTER_CAPABILITIES.md) for the required / optional /
   format-adapter / compatibility classification;
+- [`ADAPTER_BEHAVIOR_INVARIANTS.md`](ADAPTER_BEHAVIOR_INVARIANTS.md) for
+  product-level interaction and presentation behavior that is easy to miss when
+  adapting a new title;
+- [`playbooks/README.md`](playbooks/README.md) for recurring implementation
+  pitfalls, ownership rules and verification methods;
 - [`GAME_ADAPTER_CONTRACT.md`](GAME_ADAPTER_CONTRACT.md) for ownership rules;
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) for subsystem boundaries;
 - [`PRODUCT_SURFACE.md`](PRODUCT_SURFACE.md) for what is intentionally exposed;
@@ -32,6 +37,30 @@ If adding a title requires a new `if (game === "thXX")` in Launcher, Host,
 Package or deployment code, first determine whether the difference is really a
 product capability, a DATA provider, a Runtime layout, a storage rule, or an
 optional feature that should be declared instead.
+
+## 0. Workspace prerequisite
+
+Do **not** start a new Eagler title adaptation from the game repository alone.
+A fresh adaptation workspace must contain a current checkout of
+`eagler-touhou` before implementation work begins.
+
+`eagler-touhou` is not an optional packaging step added after the Runtime is
+finished. It owns the shared Product Catalog, adapter capability taxonomy,
+Runtime protocol, Launcher/Package contracts, host preparation model and the
+machine-backed acceptance commands used throughout this guide. A game Runtime
+developed without those authorities in the workspace can appear functional
+while already violating the integration contract.
+
+The minimum starting workspace therefore contains:
+
+```text
+eagler-touhou/       current shared Launcher/Runtime contract authority
+thXX-eagler/         the canonical title adaptation repository
+```
+
+When shared runtime infrastructure is relevant, also materialize the exact
+`eagler-common` revision declared by the consumer repository. Do not substitute
+an arbitrary sibling branch head for a pinned dependency.
 
 ## 1. Definition of done
 
@@ -324,6 +353,10 @@ unsynced IDBFS state cause game-visible bugs.
 
 At minimum, a mature Runtime shell must:
 
+- read the positive `runtimeEpoch` supplied in its navigation URL, include it
+  unchanged in every Runtime protocol event/response, and reject Host commands
+  whose epoch differs; do not use `parent === event.source` /
+  `frame.contentWindow` equality as a substitute for navigation identity;
 - clear keyboard state on blur/visibility loss;
 - cancel active touch state on blur/pagehide;
 - pause its scheduling loop while hidden when appropriate;

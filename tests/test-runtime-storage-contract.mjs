@@ -24,6 +24,7 @@ assert.deepEqual(Object.keys(shells).sort(), preloadGames,
   "preload Runtime storage verification must be updated when a formal emscripten-preload adapter is registered");
 
 function harness(source, game) {
+  const epoch = 19;
   const listeners = new Map(), timers = new Map(), dependencies = new Set();
   const replies = [], pending = [], files = new Map();
   const saveMount = { idbPersistState: 0 };
@@ -36,7 +37,7 @@ function harness(source, game) {
     console: { log() {}, warn() {}, error() {} }, URL, URLSearchParams, Uint8Array, TextDecoder,
     Request, Response, AbortController, performance,
     navigator: { userAgent:"contract",maxTouchPoints:0 },
-    location: { search:"?hosted=1",origin:"http://test.local",href:"http://test.local/game.html?hosted=1" },
+    location: { search:`?hosted=1&runtimeEpoch=${epoch}`,origin:"http://test.local",href:`http://test.local/game.html?hosted=1&runtimeEpoch=${epoch}` },
     parent, innerWidth:640,innerHeight:480,
     document: { visibilityState:"visible",documentElement:{...element,clientWidth:640,clientHeight:480},
       getElementById:()=>element,addEventListener() {} },
@@ -59,7 +60,7 @@ function harness(source, game) {
   vm.runInNewContext(source,context,{filename:shells[game]});
   return {context,replies,pending,timers,dependencies,files,saveMount,
     send: (command, payload={}) => listeners.get("message")({origin:context.location.origin,source:parent,
-      data:{protocol:HOST_PROTOCOL,game,command,request:`test-${replies.length}`, ...payload}})};
+      data:{protocol:HOST_PROTOCOL,game,epoch,command,request:`test-${replies.length}`, ...payload}})};
 }
 
 for (const [game, shell] of Object.entries(shells)) {
