@@ -48,10 +48,13 @@ Published/active convergence slices:
   `PartitionedPoolJournal`
 - `BrowserPeerTransport`
 - `NetplayInput`
+- incremental DirectTouch primitives: `DirectTouchBegin` / `DirectTouchDelta`,
+  `DirectTouchState`, delayed capture mapping and conservative delta prediction
 
 `NetplaySession` and `WebSocketTransport` were byte-identical before extraction.
 `NetplayProtocol` differs only through a deliberately tiny title-owned wire
-capability seam (`NetplayProtocolConfig.hpp`): the game magic byte. The shared
+capability seam (`NetplayProtocolConfig.hpp`): the game magic byte and maximum
+supported analog mode. The shared
 Protocol header and `NetplayCore` preserve the behavior of the current TH06 and
 TH07 `eagler` branches exactly; newer uncommitted title experiments are not
 folded into this authority migration.
@@ -73,14 +76,20 @@ those remain separate changes with their own acceptance criteria.
 also becomes byte-identical after removing TH06's legacy `Multiplayer.hpp`
 player-count alias. The shared implementation therefore uses protocol
 `MAX_PLAYERS` and delegates only the title-owned synchronized gameplay-lane
-writeback to `NetplayInputConfig.hpp::CommitGameInputs()`. The extraction keeps
-the existing capture/replay/override semantics only; incremental DirectTouch
-remainder, reliable input repair and performance telemetry are not part of this
-slice.
+writeback to `NetplayInputConfig.hpp::CommitGameInputs()`.
 
-Future intended slices include incremental DirectTouch ownership, input
-repair/health logic and the shared performance testkit once their title-facing
-seams are explicit.
+The next shared input slice adds the already validated once-only DirectTouch
+model: device displacement is captured once as `DirectTouchBegin` / `Delta`,
+unapplied limited-speed movement lives in rewindable `DirectTouchState`, and
+`RollbackCore::LocalFrameForCapture()` makes delayed scheduling addressable
+without re-sampling the producer. Prediction is conservative by default: a
+missing delta contributes zero new displacement. Equivalent-prediction
+acceptance, reliable input repair, main-thread frame budgets and performance
+telemetry are deliberately not part of this slice.
+
+Future intended slices include DirectTouch equivalence, input repair/health
+logic, browser-frame budgeting and the shared performance testkit once their
+title-facing seams are explicit.
 
 ## Convergence order
 
@@ -91,9 +100,10 @@ Use this order unless new evidence proves a dependency requires otherwise:
 3. generic storage: `RollbackJournal` plus fixed-pool/sparse snapshot helpers;
 4. browser transport: `BrowserPeerTransport`;
 5. generic input authority: `NetplayInput`;
-6. incremental DirectTouch, input repair/health and rollback driver helpers;
-7. performance testkit and diagnostics;
-8. only then consider broader platform/presentation helpers.
+6. once-only incremental DirectTouch and delayed capture mapping;
+7. DirectTouch equivalence, input repair/health and rollback driver budgets;
+8. performance testkit and diagnostics;
+9. only then consider broader platform/presentation helpers.
 
 Every step must leave TH06 and TH07 buildable and testable independently. A
 consumer may advance to a newer common implementation only after its own

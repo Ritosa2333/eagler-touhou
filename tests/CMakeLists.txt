@@ -82,3 +82,18 @@ add_test(
     NAME eagler-common.netplay-input
     COMMAND eagler_common_netplay_input_test
 )
+
+add_executable(eagler_common_direct_touch_pipeline_test
+    direct-touch-pipeline-test.cpp
+)
+target_include_directories(eagler_common_direct_touch_pipeline_test PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/include"
+)
+target_link_libraries(eagler_common_direct_touch_pipeline_test PRIVATE
+    eagler::netplay_base
+    eagler::netplay_input
+)
+add_test(
+    NAME eagler-common.direct-touch-pipeline
+    COMMAND eagler_common_direct_touch_pipeline_test
+)

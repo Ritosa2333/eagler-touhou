@@ -67,9 +67,8 @@ bool GetU64(const std::uint8_t *data, std::size_t size, std::size_t *at, std::ui
 
 bool ValidInput(const FrameInput &input)
 {
-    return (input.analogMode == AnalogMode::None ||
-            input.analogMode == AnalogMode::Joystick ||
-            input.analogMode == AnalogMode::DirectTouch) &&
+    const auto mode = static_cast<std::uint8_t>(input.analogMode);
+    return mode <= ProtocolConfig::MaxAnalogMode &&
            std::isfinite(input.x) && std::isfinite(input.y);
 }
 

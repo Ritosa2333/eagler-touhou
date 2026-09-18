@@ -34,6 +34,10 @@ enum class AnalogMode : std::uint8_t
     None = 0,
     Joystick = 1,
     DirectTouch = 2,
+    // Fresh displacement, not the legacy snapshot of pending movement.
+    // Begin resets the previous gesture's simulation-side remainder.
+    DirectTouchDelta = 3,
+    DirectTouchBegin = 4,
 };
 
 // One transport-neutral logical input sample. Buttons remain game-defined;

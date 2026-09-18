@@ -1,6 +1,8 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
+#include <eagler/netplay/DirectTouchState.hpp>
 #include <eagler/netplay/NetplayProtocol.hpp>
 
 namespace Netplay::Input
@@ -20,6 +22,15 @@ bool CaptureActive();
 std::uint16_t ResolveLocal(std::uint16_t physicalBits);
 void CaptureJoystick(float x, float y);
 void CaptureDirectTouch(float x, float y, bool unlimited);
+void CaptureDirectTouchDelta(float x, float y, bool unlimited, bool begin);
+
+using DirectTouchStates = std::array<DirectTouchState, MAX_PLAYERS>;
+DirectTouchStates &GetDirectTouchStates();
+void ResetDirectTouchStates();
+void ResetPlayerDirectTouch(std::size_t player);
+bool UsesIncrementalDirectTouch(std::size_t player);
+void SetDirectTouchRemainder(std::size_t player, float x, float y);
+void ConsumeDirectTouchRemainder(std::size_t player, float x, float y);
 
 void SetReplayOverride(const FrameInput &input);
 void SetReplayOverride(std::uint16_t bits);

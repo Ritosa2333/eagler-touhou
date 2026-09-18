@@ -33,7 +33,16 @@ void TestProtocolCapability()
     assert(DecodeInputPacket(wire.data(), wire.size(), &decoded));
     assert(decoded.inputs[0] == packet.inputs[0]);
 
-    packet.inputs[0].analogMode = static_cast<AnalogMode>(3);
+    packet.inputs[0].analogMode = AnalogMode::DirectTouchDelta;
+    assert(EncodeInputPacket(packet, &wire));
+    assert(DecodeInputPacket(wire.data(), wire.size(), &decoded));
+    assert(decoded.inputs[0] == packet.inputs[0]);
+    packet.inputs[0].analogMode = AnalogMode::DirectTouchBegin;
+    assert(EncodeInputPacket(packet, &wire));
+    assert(DecodeInputPacket(wire.data(), wire.size(), &decoded));
+    assert(decoded.inputs[0] == packet.inputs[0]);
+
+    packet.inputs[0].analogMode = static_cast<AnalogMode>(5);
     assert(!EncodeInputPacket(packet, &wire));
 }
 

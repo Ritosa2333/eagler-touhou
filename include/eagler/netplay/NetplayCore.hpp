@@ -26,6 +26,10 @@ struct CoreConfig
     // after movement becomes neutral.
     std::uint16_t directionButtons = 0;
     std::uint8_t maxDirectionPredictionFrames = 0xffu;
+    // Incremental direct-touch is a per-tick displacement stream. Holding the
+    // last confirmed delta for a very short missing-input window is optional;
+    // zero is the conservative once-only default.
+    std::uint8_t maxDirectTouchDeltaPredictionFrames = 0;
 };
 
 struct FrameDecision
@@ -55,6 +59,8 @@ public:
     // Physical input captured on captureFrame becomes the local input for
     // captureFrame + inputDelay. Frames introduced by delay are neutral.
     bool ScheduleLocalInput(std::uint32_t captureFrame, const FrameInput &input);
+    std::uint32_t LocalFrameForCapture(std::uint32_t captureFrame) const;
+    bool HasLocalCapture(std::uint32_t captureFrame) const;
     bool ScheduleLocalInput(std::uint32_t captureFrame, std::uint16_t bits)
     {
         return ScheduleLocalInput(captureFrame, FrameInput(bits));

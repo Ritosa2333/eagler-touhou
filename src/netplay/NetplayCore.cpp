@@ -88,9 +88,9 @@ const RollbackCore::UsedSlot *RollbackCore::FindUsedSlot(std::uint32_t frame) co
 
 bool RollbackCore::ScheduleLocalInput(std::uint32_t captureFrame, const FrameInput &input)
 {
-    if (!configured_ || captureFrame > INVALID_FRAME - config_.inputDelay)
+    const std::uint32_t frame = LocalFrameForCapture(captureFrame);
+    if (frame == INVALID_FRAME)
         return false;
-    const std::uint32_t frame = captureFrame + config_.inputDelay;
     InputSlot *slot = GetInputSlot(config_.localPlayer, frame);
     if (slot->present && slot->input != input)
         return false;
@@ -98,6 +98,20 @@ bool RollbackCore::ScheduleLocalInput(std::uint32_t captureFrame, const FrameInp
     slot->present = true;
     AdvanceConfirmedThrough(config_.localPlayer);
     return true;
+}
+
+std::uint32_t RollbackCore::LocalFrameForCapture(std::uint32_t captureFrame) const
+{
+    // INVALID_FRAME is a sentinel, never an addressable input frame.
+    if (!configured_ || captureFrame >= INVALID_FRAME - config_.inputDelay)
+        return INVALID_FRAME;
+    return captureFrame + config_.inputDelay;
+}
+
+bool RollbackCore::HasLocalCapture(std::uint32_t captureFrame) const
+{
+    const auto target = LocalFrameForCapture(captureFrame);
+    return target != INVALID_FRAME && FindInputSlot(config_.localPlayer, target) != nullptr;
 }
 
 bool RollbackCore::FrameIsTooOld(std::uint32_t frame) const
@@ -153,6 +167,18 @@ FrameInput RollbackCore::PredictInput(std::uint8_t player, std::uint32_t frame) 
             if (distance > config_.maxDirectionPredictionFrames)
                 predicted.buttons &= static_cast<std::uint16_t>(~config_.directionButtons);
             predicted.touchBomb = false;
+            // Fresh delta streams already keep unapplied movement inside the
+            // rewindable simulation. Predict no NEW displacement by default;
+            // never repeat a gesture reset or add one device event twice.
+            if (predicted.analogMode == AnalogMode::DirectTouchDelta ||
+                predicted.analogMode == AnalogMode::DirectTouchBegin)
+            {
+                const bool holdDelta = predicted.analogMode == AnalogMode::DirectTouchDelta &&
+                    distance <= config_.maxDirectTouchDeltaPredictionFrames;
+                predicted.analogMode = AnalogMode::DirectTouchDelta;
+                if (!holdDelta)
+                    predicted.x = predicted.y = 0.0f;
+            }
             // Joystick axes and buttons describe held state. Direct-touch axes
             // describe displacement consumed exactly once on that logical
             // frame; repeating the last delta during packet jitter makes the
