@@ -70,12 +70,23 @@ def main() -> int:
     rows = json.loads(compile_db.read_text(encoding="utf-8"))
     replacements: dict[str, str] = {}
     compile_records = []
-    for name in ("RollbackJournal.cpp", "Th06RollbackState.cpp"):
+    source_specs = {
+        "RollbackJournal.cpp": {
+            "path_fragment": "/third_party/eagler-common/src/netplay/",
+            "candidate_object": "CMakeFiles/th06.dir/third_party/eagler-common/src/netplay/RollbackJournal.cpp.o",
+        },
+        "Th06RollbackState.cpp": {
+            "path_fragment": "/src/netplay/",
+            "candidate_object": "CMakeFiles/th06.dir/src/netplay/Th06RollbackState.cpp.o",
+        },
+    }
+    for name, spec in source_specs.items():
         row = next(
             entry for entry in rows
-            if Path(entry["file"]).name == name and "/src/netplay/" in entry["file"].replace("\\", "/")
+            if Path(entry["file"]).name == name
+            and spec["path_fragment"] in entry["file"].replace("\\", "/")
         )
-        candidate_object = f"CMakeFiles/th06.dir/src/netplay/{name}.o"
+        candidate_object = spec["candidate_object"]
         baseline_object = (destination / f"{name}.o").resolve()
         command = row["command"]
         # CMake emits exactly one output/source tail for compile_commands.

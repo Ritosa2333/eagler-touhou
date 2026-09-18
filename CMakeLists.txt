@@ -118,7 +118,6 @@ include("${EAGLER_COMMON_ROOT}/cmake/EaglerCommon.cmake")
 
 if(TH_ENABLE_NETPLAY)
     list(APPEND TH06_SOURCES
-        src/netplay/RollbackJournal.cpp
         src/netplay/Th06CanonicalHash.cpp
         src/netplay/Th06RollbackState.cpp
         src/netplay/Th06LanStageProbe.cpp

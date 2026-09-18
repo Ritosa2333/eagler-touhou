@@ -13,8 +13,9 @@ trap 'rm -rf "$OUT"' EXIT
   -o "$OUT/netplay-core-test"
 "$OUT/netplay-core-test"
 
-"$CXX" -std=c++20 -Isrc \
-  tests/rollback-journal-test.cpp src/netplay/RollbackJournal.cpp \
+"$CXX" -std=c++20 -Isrc -Ithird_party/eagler-common/include \
+  tests/rollback-journal-test.cpp \
+  third_party/eagler-common/src/netplay/RollbackJournal.cpp \
   -o "$OUT/rollback-journal-test"
 "$OUT/rollback-journal-test"
 

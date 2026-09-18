@@ -10,12 +10,11 @@ assert 'src/multiplayer/GameplaySession.cpp' in cmake
 assert 'src/netplay/NetplayInput.cpp' in cmake
 assert 'if(TH_ENABLE_NETPLAY)' in cmake
 for source in (
-    'src/netplay/RollbackJournal.cpp',
     'src/netplay/NetplaySideEffects.cpp',
     'src/netplay/BrowserPeerTransport.cpp',
 ):
     assert source in cmake
-for shared_source in ('src/netplay/NetplayCore.cpp', 'src/netplay/NetplayProtocol.cpp'):
+for shared_source in ('src/netplay/NetplayCore.cpp', 'src/netplay/NetplayProtocol.cpp', 'src/netplay/RollbackJournal.cpp'):
     assert shared_source not in cmake
 assert 'eagler_common_link_netplay_base(${TH_EXEC_NAME})' in cmake
 assert 'eagler_common_link_netplay_headers(${TH_EXEC_NAME})' in cmake
@@ -26,13 +25,22 @@ for source in (
     'src/netplay/NetplayCore.cpp',
     'src/netplay/NetplayProtocol.cpp',
     'src/netplay/NetplaySession.cpp',
+    'src/netplay/RollbackJournal.cpp',
     'src/netplay/WebSocketTransport.cpp',
     'include/eagler/netplay/NetplayCore.hpp',
     'include/eagler/netplay/NetplayProtocol.hpp',
     'include/eagler/netplay/NetplaySession.hpp',
+    'include/eagler/netplay/RollbackJournal.hpp',
+    'include/eagler/netplay/SnapshotPolicy.hpp',
+    'include/eagler/netplay/SparsePoolCapture.hpp',
+    'include/eagler/netplay/PartitionedPoolJournal.hpp',
     'include/eagler/netplay/WebSocketTransport.hpp',
 ):
     assert (common / source).is_file(), source
+for stem in ('RollbackJournal', 'SnapshotPolicy', 'SparsePoolCapture', 'PartitionedPoolJournal'):
+    shim = (root / 'src' / 'netplay' / f'{stem}.hpp').read_text(encoding='utf-8')
+    assert f'#include <eagler/netplay/{stem}.hpp>' in shim
+    assert 'implementation authority lives in eagler-common' in shim
 assert 'target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_ENABLE_NETPLAY)' in cmake
 assert 'target_link_options(th06 PRIVATE -lwebsocket)' in cmake
 

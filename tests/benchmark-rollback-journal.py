@@ -41,8 +41,12 @@ def main() -> int:
             path = f"src/netplay/RollbackJournal.{name}"
             if label == "before":
                 return git("show", f"{revision}:{path}")
-            return (ROOT / path).read_text(encoding="utf-8")
+            common = ROOT / "third_party" / "eagler-common"
+            current = common / ("include/eagler/netplay/RollbackJournal.hpp" if name == "hpp"
+                                else "src/netplay/RollbackJournal.cpp")
+            return current.read_text(encoding="utf-8")
         journal_cpp = read("cpp").replace('#include "RollbackJournal.hpp"', '')
+        journal_cpp = journal_cpp.replace('#include <eagler/netplay/RollbackJournal.hpp>', '')
         sources[label] = (read("hpp").replace("#pragma once", "") + "\n" +
                           journal_cpp + "\n" + bench)
 
