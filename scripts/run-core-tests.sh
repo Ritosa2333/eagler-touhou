@@ -5,9 +5,10 @@ CXX="${CXX:-c++}"
 OUT="$(mktemp -d "${TMPDIR:-/tmp}/th07-eagler-core-tests.XXXXXX")"
 trap 'rm -rf "$OUT"' EXIT
 
-"$CXX" -std=c++20 -Isrc \
+"$CXX" -std=c++20 -Isrc -Ithird_party/eagler-common/include \
   tests/netplay-core-test.cpp \
-  src/netplay/NetplayCore.cpp src/netplay/NetplayProtocol.cpp src/netplay/NetplaySession.cpp \
+  src/netplay/NetplayCore.cpp src/netplay/NetplayProtocol.cpp \
+  third_party/eagler-common/src/netplay/NetplaySession.cpp \
   -o "$OUT/netplay-core-test"
 "$OUT/netplay-core-test"
 
