@@ -1070,12 +1070,11 @@ let thpracMenuOpen = false;
 let runtimeCustomEventWindow: RuntimeWindow | null = null;
 
 function thpracTouchControlsAvailable() {
-  return !!state.options.touchEnabled && !!state.options.thpracEnabled && !!state.options.thpracTouchControlsEnabled;
+  return !!state.options.touchEnabled && !!state.options.thpracTouchControlsEnabled;
 }
 
 function thpracTouchControlsVisible() {
-  return !!state.options.thpracEnabled && !!state.options.thpracTouchControlsEnabled &&
-    (touchLayoutEditing || !!state.options.touchEnabled);
+  return !!state.options.thpracTouchControlsEnabled && (touchLayoutEditing || !!state.options.touchEnabled);
 }
 
 function thpracMouseModeActive() {
@@ -3972,7 +3971,9 @@ function render() {
   touchMovementMode.value = state.options.touchMovementMode;
   touchMovementMode.disabled = false;
   $("#doubleTapBombToggle").disabled = false;
-  $("#thpracTouchControlsToggle").disabled = !state.options.thpracEnabled;
+  // Match the other games: the mobile thprac controls are independently
+  // configurable and become visible as soon as their touch option is enabled.
+  $("#thpracTouchControlsToggle").disabled = false;
   const touchFocusMode = $("#touchFocusMode");
   touchFocusMode.value = state.options.touchFocusMode;
   touchFocusMode.disabled = false;
@@ -7504,8 +7505,7 @@ $("#doubleTapBombToggle").addEventListener("click", () => setOption("doubleTapBo
 $("#restartButtonToggle").addEventListener("click", () => setOption("restartButtonEnabled", !state.options.restartButtonEnabled));
 $("#alwaysHitboxToggle").addEventListener("click", () => setOption("alwaysHitbox", !state.options.alwaysHitbox));
 $("#thpracTouchControlsToggle").addEventListener("click", () => {
-  if (state.options.thpracEnabled)
-    setOption("thpracTouchControlsEnabled", !state.options.thpracTouchControlsEnabled);
+  setOption("thpracTouchControlsEnabled", !state.options.thpracTouchControlsEnabled);
 });
 $("#startupErrorClose").addEventListener("click", clearStartupError);
 $("#toastClose").addEventListener("click", hideToast);
