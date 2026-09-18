@@ -8,6 +8,7 @@
   "use strict";
   const protocol = "eagler-touhou/1";
   const game = "th06";
+  const epoch = 1;
   const params = new URLSearchParams(location.search);
   const mode = params.get("mode") || "replay";
   const iframe = document.getElementById("runtime");
@@ -19,7 +20,7 @@
     const id = `ordinary-smoke-${++request}`;
     return new Promise((resolve, reject) => {
       pending.set(id, { resolve, reject });
-      iframe.contentWindow.postMessage({ protocol, game, command, request: id, ...body }, location.origin);
+      iframe.contentWindow.postMessage({ protocol, game, epoch, command, request: id, ...body }, location.origin);
       setTimeout(() => {
         const waiter = pending.get(id);
         if (!waiter) return;
@@ -32,7 +33,7 @@
   window.addEventListener("message", async event => {
     if (event.source !== iframe.contentWindow || event.origin !== location.origin) return;
     const message = event.data || {};
-    if (message.protocol !== protocol || message.game !== game) return;
+    if (message.protocol !== protocol || message.game !== game || message.epoch !== epoch) return;
     if (message.request && pending.has(message.request)) {
       const waiter = pending.get(message.request);
       pending.delete(message.request);
@@ -69,6 +70,6 @@
     }
   });
 
-  iframe.src = "/build-web-ordinary-audit-clean/th06.html?hosted=1&runtimeVariant=ordinary";
+  iframe.src = `/build-web-ordinary-audit-clean/th06.html?hosted=1&runtimeVariant=ordinary&runtimeEpoch=${epoch}`;
 })();
 </script>
