@@ -72,6 +72,10 @@ def check_consumer(name: str, source_var: str, magic: str, transport_tag: str) -
         f"{name}: common browser peer transport target is not linked",
     )
     require(
+        "eagler_common_link_netplay_input(${TH_EXEC_NAME})" in cmake,
+        f"{name}: common netplay input target is not linked",
+    )
+    require(
         f"eagler_common_append_netplay_base_sources({source_var})" not in cmake
         and "eagler_common_add_include_path(${TH_EXEC_NAME})" not in cmake,
         f"{name}: legacy source/include wiring remains",
@@ -122,10 +126,34 @@ def check_consumer(name: str, source_var: str, magic: str, transport_tag: str) -
         ],
         f"{name}: BrowserPeerTransport compatibility source contains implementation code",
     )
+    input_header = read(root / "src/netplay/NetplayInput.hpp")
+    input_source = read(root / "src/netplay/NetplayInput.cpp")
+    input_config = read(root / "src/netplay/NetplayInputConfig.hpp")
+    require(
+        "#include <eagler/netplay/NetplayInput.hpp>" in input_header
+        and "implementation authority lives in eagler-common" in input_header,
+        f"{name}: NetplayInput header is not a common forwarding shim",
+    )
+    require(
+        "CMake compiles the eagler-common implementation source" in input_source
+        and not [
+            line for line in input_source.splitlines()
+            if line.strip() and not line.lstrip().startswith("//")
+        ],
+        f"{name}: NetplayInput compatibility source contains implementation code",
+    )
+    require(
+        "CommitGameInputs" in input_config
+        and "Netplay::MAX_PLAYERS" in input_config
+        and "g_LastFrameGameInputs" in input_config
+        and "g_CurFrameGameInputs" in input_config,
+        f"{name}: NetplayInput title-owned lane adapter is incomplete",
+    )
     require(
         "src/netplay/NetplayProtocol.cpp" not in cmake
         and "src/netplay/NetplayCore.cpp" not in cmake
-        and "src/netplay/BrowserPeerTransport.cpp" not in cmake,
+        and "src/netplay/BrowserPeerTransport.cpp" not in cmake
+        and "src/netplay/NetplayInput.cpp" not in cmake,
         f"{name}: common netplay authority still compiles from a title-local implementation",
     )
 
@@ -143,6 +171,8 @@ def main() -> None:
         "src/netplay/WebSocketTransport.cpp",
         "include/eagler/netplay/BrowserPeerTransport.hpp",
         "src/netplay/BrowserPeerTransport.cpp",
+        "include/eagler/netplay/NetplayInput.hpp",
+        "src/netplay/NetplayInput.cpp",
         "cmake/EaglerCommon.cmake",
     ):
         require((COMMON / relative).is_file(), f"missing common file: {relative}")
@@ -155,6 +185,10 @@ def main() -> None:
     require(
         "add_library(eagler::browser_peer_transport ALIAS eagler_common_browser_peer_transport)" in common_cmake,
         "common browser peer transport component target is missing",
+    )
+    require(
+        "add_library(eagler::netplay_input ALIAS eagler_common_netplay_input)" in common_cmake,
+        "common netplay input component target is missing",
     )
 
     check_consumer("th06-eagler", "TH06_SOURCES", "6", "th06")

@@ -47,6 +47,7 @@ Published/active convergence slices:
 - generic rollback primitives: `SnapshotPolicy`, `SparsePoolCapture`,
   `PartitionedPoolJournal`
 - `BrowserPeerTransport`
+- `NetplayInput`
 
 `NetplaySession` and `WebSocketTransport` were byte-identical before extraction.
 `NetplayProtocol` differs only through a deliberately tiny title-owned wire
@@ -68,9 +69,18 @@ labels and legacy browser globals remain stable. This authority migration does
 not include the later experimental input-repair path or performance telemetry;
 those remain separate changes with their own acceptance criteria.
 
-Future intended slices include generic input ownership, input repair/health
-logic and the shared performance testkit once their title-facing seams are
-explicit.
+`NetplayInput.hpp` was byte-identical between TH06 and TH07. Their implementation
+also becomes byte-identical after removing TH06's legacy `Multiplayer.hpp`
+player-count alias. The shared implementation therefore uses protocol
+`MAX_PLAYERS` and delegates only the title-owned synchronized gameplay-lane
+writeback to `NetplayInputConfig.hpp::CommitGameInputs()`. The extraction keeps
+the existing capture/replay/override semantics only; incremental DirectTouch
+remainder, reliable input repair and performance telemetry are not part of this
+slice.
+
+Future intended slices include incremental DirectTouch ownership, input
+repair/health logic and the shared performance testkit once their title-facing
+seams are explicit.
 
 ## Convergence order
 
@@ -80,9 +90,10 @@ Use this order unless new evidence proves a dependency requires otherwise:
 2. near-identical wire/core code: `NetplayProtocol`, `NetplayCore`;
 3. generic storage: `RollbackJournal` plus fixed-pool/sparse snapshot helpers;
 4. browser transport: `BrowserPeerTransport`;
-5. generic input semantics, input repair/health and rollback driver helpers;
-6. performance testkit and diagnostics;
-7. only then consider broader platform/presentation helpers.
+5. generic input authority: `NetplayInput`;
+6. incremental DirectTouch, input repair/health and rollback driver helpers;
+7. performance testkit and diagnostics;
+8. only then consider broader platform/presentation helpers.
 
 Every step must leave TH06 and TH07 buildable and testable independently. A
 consumer may advance to a newer common implementation only after its own
@@ -101,11 +112,13 @@ The workspace sibling remains a development fallback and an explicit
 `EAGLER_COMMON_ROOT` override remains available for controlled experiments.
 
 Consumers link `eagler::netplay_base` for Protocol/Core and may independently
-link `eagler::browser_peer_transport` when they use the browser WebRTC/relay
-transport. Both remain INTERFACE components so shared sources compile with the
-consumer's platform toolchain and title-owned config seams. Protocol uses
+link `eagler::browser_peer_transport` and `eagler::netplay_input`. These remain
+INTERFACE components so shared sources compile with the consumer's platform
+toolchain and title-owned config seams. Protocol uses
 `<netplay/NetplayProtocolConfig.hpp>` for wire capability; browser transport
-uses `<netplay/NetplayTransportConfig.hpp>` only for its stable title tag.
+uses `<netplay/NetplayTransportConfig.hpp>` only for its stable title tag; input
+uses `<netplay/NetplayInputConfig.hpp>` only to commit synchronized logical
+buttons into title-owned gameplay lanes.
 
 Do not push a consumer commit that requires the common library until the common
 repository/revision it names is available remotely. CI/release builds must pin

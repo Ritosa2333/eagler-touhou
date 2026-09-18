@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(eagler-common VERSION 0.4.0 LANGUAGES CXX)
+project(eagler-common VERSION 0.5.0 LANGUAGES CXX)
 
 # Consumers such as Replay metadata readers need the shared protocol types even
 # in ordinary (non-netplay) builds. Keep that dependency header-only so title
@@ -41,6 +41,22 @@ target_sources(eagler_common_browser_peer_transport INTERFACE
 )
 
 target_link_libraries(eagler_common_browser_peer_transport INTERFACE
+    eagler::netplay_headers
+)
+
+# Logical input capture/replay is independent of transport and Protocol/Core.
+# Keep it as its own component so title multiplayer gameplay can consume the
+# validated input ownership layer without pulling the full netplay runtime.
+# The consumer provides only <netplay/NetplayInputConfig.hpp>, which commits
+# synchronized logical button lanes into title-owned gameplay state.
+add_library(eagler_common_netplay_input INTERFACE)
+add_library(eagler::netplay_input ALIAS eagler_common_netplay_input)
+
+target_sources(eagler_common_netplay_input INTERFACE
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/netplay/NetplayInput.cpp>"
+)
+
+target_link_libraries(eagler_common_netplay_input INTERFACE
     eagler::netplay_headers
 )
 

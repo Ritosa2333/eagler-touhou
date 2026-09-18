@@ -65,3 +65,20 @@ add_test(
     NAME eagler-common.browser-peer-transport
     COMMAND eagler_common_browser_peer_transport_test
 )
+
+add_executable(eagler_common_netplay_input_test
+    netplay-input-test.cpp
+)
+target_include_directories(eagler_common_netplay_input_test PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/include"
+)
+target_compile_definitions(eagler_common_netplay_input_test PRIVATE
+    TH_ENABLE_MULTIPLAYER_GAMEPLAY
+)
+target_link_libraries(eagler_common_netplay_input_test PRIVATE
+    eagler::netplay_input
+)
+add_test(
+    NAME eagler-common.netplay-input
+    COMMAND eagler_common_netplay_input_test
+)
