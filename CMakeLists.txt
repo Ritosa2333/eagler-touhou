@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(eagler-common VERSION 0.3.0 LANGUAGES CXX)
+project(eagler-common VERSION 0.4.0 LANGUAGES CXX)
 
 # Consumers such as Replay metadata readers need the shared protocol types even
 # in ordinary (non-netplay) builds. Keep that dependency header-only so title
@@ -26,6 +26,21 @@ target_sources(eagler_common_rollback INTERFACE
 )
 
 target_link_libraries(eagler_common_rollback INTERFACE
+    eagler::netplay_headers
+)
+
+# Browser peer networking is deliberately separate from netplay_base. Titles
+# that use another transport can keep Protocol/Core without inheriting WebRTC
+# or relay implementation sources. The consumer provides only the stable
+# <netplay/NetplayTransportConfig.hpp> tag seam used for channel/global names.
+add_library(eagler_common_browser_peer_transport INTERFACE)
+add_library(eagler::browser_peer_transport ALIAS eagler_common_browser_peer_transport)
+
+target_sources(eagler_common_browser_peer_transport INTERFACE
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/netplay/BrowserPeerTransport.cpp>"
+)
+
+target_link_libraries(eagler_common_browser_peer_transport INTERFACE
     eagler::netplay_headers
 )
 

@@ -46,6 +46,7 @@ Published/active convergence slices:
 - `RollbackJournal`
 - generic rollback primitives: `SnapshotPolicy`, `SparsePoolCapture`,
   `PartitionedPoolJournal`
+- `BrowserPeerTransport`
 
 `NetplaySession` and `WebSocketTransport` were byte-identical before extraction.
 `NetplayProtocol` differs only through a deliberately tiny title-owned wire
@@ -60,8 +61,16 @@ allocation/index/copy/restore behavior and the TH07-only snapshot-patch API used
 by its once-only DirectTouch equivalence path. Pool layout remains title-owned;
 only the generic storage algorithms live here.
 
-Future intended slices include browser peer transport, generic input ownership
-and the shared performance testkit once their title-facing seams are explicit.
+`BrowserPeerTransport` was byte-identical between TH06 and TH07 after replacing
+only the title tag (`th06`/`th07`). The shared implementation keeps that tag as
+the tiny title-owned `NetplayTransportConfig.hpp` seam so existing DataChannel
+labels and legacy browser globals remain stable. This authority migration does
+not include the later experimental input-repair path or performance telemetry;
+those remain separate changes with their own acceptance criteria.
+
+Future intended slices include generic input ownership, input repair/health
+logic and the shared performance testkit once their title-facing seams are
+explicit.
 
 ## Convergence order
 
@@ -70,8 +79,8 @@ Use this order unless new evidence proves a dependency requires otherwise:
 1. exact duplicates: `NetplaySession`, `WebSocketTransport`;
 2. near-identical wire/core code: `NetplayProtocol`, `NetplayCore`;
 3. generic storage: `RollbackJournal` plus fixed-pool/sparse snapshot helpers;
-4. browser transport: `BrowserPeerTransport`, input repair and health logic;
-5. generic input semantics and rollback driver helpers;
+4. browser transport: `BrowserPeerTransport`;
+5. generic input semantics, input repair/health and rollback driver helpers;
 6. performance testkit and diagnostics;
 7. only then consider broader platform/presentation helpers.
 
@@ -91,11 +100,12 @@ submodule in each game repository, pointing at `YomotsuHisami/eagler-common`.
 The workspace sibling remains a development fallback and an explicit
 `EAGLER_COMMON_ROOT` override remains available for controlled experiments.
 
-Consumers link the CMake component target `eagler::netplay_base`. It remains an
-INTERFACE component so the shared sources compile with the consumer's platform
-toolchain and its title-owned `<netplay/NetplayProtocolConfig.hpp>` capability
-seam. The config may describe wire compatibility; it must not grow into a
-second title-specific Protocol/Core implementation.
+Consumers link `eagler::netplay_base` for Protocol/Core and may independently
+link `eagler::browser_peer_transport` when they use the browser WebRTC/relay
+transport. Both remain INTERFACE components so shared sources compile with the
+consumer's platform toolchain and title-owned config seams. Protocol uses
+`<netplay/NetplayProtocolConfig.hpp>` for wire capability; browser transport
+uses `<netplay/NetplayTransportConfig.hpp>` only for its stable title tag.
 
 Do not push a consumer commit that requires the common library until the common
 repository/revision it names is available remotely. CI/release builds must pin

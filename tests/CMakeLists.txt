@@ -51,3 +51,17 @@ add_executable(eagler_common_partitioned_pool_test
 )
 target_link_libraries(eagler_common_partitioned_pool_test PRIVATE eagler::netplay_headers)
 add_test(NAME eagler-common.partitioned-pool COMMAND eagler_common_partitioned_pool_test)
+
+add_executable(eagler_common_browser_peer_transport_test
+    browser-peer-transport-test.cpp
+)
+target_include_directories(eagler_common_browser_peer_transport_test PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/include"
+)
+target_link_libraries(eagler_common_browser_peer_transport_test PRIVATE
+    eagler::browser_peer_transport
+)
+add_test(
+    NAME eagler-common.browser-peer-transport
+    COMMAND eagler_common_browser_peer_transport_test
+)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Guard the TH06/TH07 Protocol/Core common-runtime convergence slice."""
+"""Guard the TH06/TH07 shared netplay authority convergence slices."""
 
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ def consumer_root(name: str) -> Path:
     return Path(override).resolve() if override else WORKSPACE / name
 
 
-def check_consumer(name: str, source_var: str, magic: str) -> None:
+def check_consumer(name: str, source_var: str, magic: str, transport_tag: str) -> None:
     root = consumer_root(name)
     cmake = read(root / "CMakeLists.txt")
     gitmodules = read(root / ".gitmodules")
@@ -68,6 +68,10 @@ def check_consumer(name: str, source_var: str, magic: str) -> None:
         f"{name}: common netplay target is not linked",
     )
     require(
+        "eagler_common_link_browser_peer_transport(${TH_EXEC_NAME})" in cmake,
+        f"{name}: common browser peer transport target is not linked",
+    )
+    require(
         f"eagler_common_append_netplay_base_sources({source_var})" not in cmake
         and "eagler_common_add_include_path(${TH_EXEC_NAME})" not in cmake,
         f"{name}: legacy source/include wiring remains",
@@ -98,10 +102,31 @@ def check_consumer(name: str, source_var: str, magic: str) -> None:
         f"MagicGame = '{magic}'" in config,
         f"{name}: protocol capability seam changed unexpectedly",
     )
+    transport_config = read(root / "src/netplay/NetplayTransportConfig.hpp")
+    require(
+        f'Tag[] = "{transport_tag}"' in transport_config,
+        f"{name}: browser transport tag seam changed unexpectedly",
+    )
+    transport_header = read(root / "src/netplay/BrowserPeerTransport.hpp")
+    transport_source = read(root / "src/netplay/BrowserPeerTransport.cpp")
+    require(
+        "#include <eagler/netplay/BrowserPeerTransport.hpp>" in transport_header
+        and "implementation authority lives in eagler-common" in transport_header,
+        f"{name}: BrowserPeerTransport header is not a common forwarding shim",
+    )
+    require(
+        "CMake compiles the eagler-common implementation source" in transport_source
+        and not [
+            line for line in transport_source.splitlines()
+            if line.strip() and not line.lstrip().startswith("//")
+        ],
+        f"{name}: BrowserPeerTransport compatibility source contains implementation code",
+    )
     require(
         "src/netplay/NetplayProtocol.cpp" not in cmake
-        and "src/netplay/NetplayCore.cpp" not in cmake,
-        f"{name}: Protocol/Core still compile from a title-local implementation",
+        and "src/netplay/NetplayCore.cpp" not in cmake
+        and "src/netplay/BrowserPeerTransport.cpp" not in cmake,
+        f"{name}: common netplay authority still compiles from a title-local implementation",
     )
 
 
@@ -116,6 +141,8 @@ def main() -> None:
         "src/netplay/NetplaySession.cpp",
         "include/eagler/netplay/WebSocketTransport.hpp",
         "src/netplay/WebSocketTransport.cpp",
+        "include/eagler/netplay/BrowserPeerTransport.hpp",
+        "src/netplay/BrowserPeerTransport.cpp",
         "cmake/EaglerCommon.cmake",
     ):
         require((COMMON / relative).is_file(), f"missing common file: {relative}")
@@ -125,10 +152,14 @@ def main() -> None:
         "add_library(eagler::netplay_base ALIAS eagler_common_netplay_base)" in common_cmake,
         "common netplay component target is missing",
     )
+    require(
+        "add_library(eagler::browser_peer_transport ALIAS eagler_common_browser_peer_transport)" in common_cmake,
+        "common browser peer transport component target is missing",
+    )
 
-    check_consumer("th06-eagler", "TH06_SOURCES", "6")
-    check_consumer("th07-eagler", "SOURCES", "7")
-    print("eagler-common consumer contract: PASS (TH06/TH07 Protocol/Core slice)")
+    check_consumer("th06-eagler", "TH06_SOURCES", "6", "th06")
+    check_consumer("th07-eagler", "SOURCES", "7", "th07")
+    print("eagler-common consumer contract: PASS (TH06/TH07 shared netplay authority)")
 
 
 if __name__ == "__main__":
