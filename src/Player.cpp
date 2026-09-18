@@ -27,7 +27,7 @@
 #include "multiplayer/GameplaySession.hpp"
 #endif
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-#include "netplay/NetplayInput.hpp"
+#include <eagler/netplay/NetplayInput.hpp>
 #include "netplay/NetplaySideEffects.hpp"
 #include "netplay/Th07RollbackState.hpp"
 #endif

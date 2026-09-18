@@ -1,5 +1,5 @@
-#include "netplay/NetplayCore.hpp"
-#include "netplay/NetplaySession.hpp"
+#include <eagler/netplay/NetplayCore.hpp>
+#include <eagler/netplay/NetplaySession.hpp>
 
 #include <cassert>
 #include <cstdint>

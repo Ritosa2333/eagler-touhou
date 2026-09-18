@@ -18,15 +18,11 @@ PLAYER = (ROOT / "src/Player.cpp").read_text(encoding="utf-8")
 ROLLBACK = (ROOT / "src/netplay/Th07RollbackState.cpp").read_text(encoding="utf-8")
 JOURNAL_H = (COMMON / "include/eagler/netplay/RollbackJournal.hpp").read_text(encoding="utf-8")
 JOURNAL = (COMMON / "src/netplay/RollbackJournal.cpp").read_text(encoding="utf-8")
-JOURNAL_SHIM_H = (ROOT / "src/netplay/RollbackJournal.hpp").read_text(encoding="utf-8")
-JOURNAL_SHIM = (ROOT / "src/netplay/RollbackJournal.cpp").read_text(encoding="utf-8")
 SIDE_EFFECTS = (ROOT / "src/netplay/NetplaySideEffects.cpp").read_text(encoding="utf-8")
 WINDOW = (ROOT / "src/GameWindow.cpp").read_text(encoding="utf-8")
 TRANSPORT = (COMMON / "src/netplay/WebSocketTransport.cpp").read_text(encoding="utf-8")
 PEER_TRANSPORT = (COMMON / "src/netplay/BrowserPeerTransport.cpp").read_text(encoding="utf-8")
 PEER_TRANSPORT_H = (COMMON / "include/eagler/netplay/BrowserPeerTransport.hpp").read_text(encoding="utf-8")
-PEER_SHIM_H = (ROOT / "src/netplay/BrowserPeerTransport.hpp").read_text(encoding="utf-8")
-PEER_SHIM = (ROOT / "src/netplay/BrowserPeerTransport.cpp").read_text(encoding="utf-8")
 TRANSPORT_CONFIG = (ROOT / "src/netplay/NetplayTransportConfig.hpp").read_text(encoding="utf-8")
 BASE = "5b9ebe892914ff5666ef68c0cd02719dde7d4ee9"
 FINAL = "022c533"
@@ -55,17 +51,24 @@ def main() -> None:
         "browser peer transport implementation authority lives in eagler-common",
         "src/netplay/BrowserPeerTransport.cpp" not in CMAKE
         and "class BrowserPeerTransport" in PEER_TRANSPORT_H
-        and "#include <eagler/netplay/BrowserPeerTransport.hpp>" in PEER_SHIM_H
-        and "implementation authority lives in eagler-common" in PEER_SHIM_H
-        and "Compatibility marker" in PEER_SHIM
         and 'Tag[] = "th07"' in TRANSPORT_CONFIG,
     )
     require(
         "rollback journal implementation authority lives in eagler-common",
         "src/netplay/RollbackJournal.cpp" not in CMAKE
-        and "#include <eagler/netplay/RollbackJournal.hpp>" in JOURNAL_SHIM_H
-        and "implementation authority lives in eagler-common" in JOURNAL_SHIM_H
-        and "Compatibility marker" in JOURNAL_SHIM,
+        and "std::vector<Block> blocks" in JOURNAL_H,
+    )
+    require(
+        "title-local common authority shims are retired",
+        all(not (ROOT / "src/netplay" / retired).exists() for retired in (
+            "BrowserPeerTransport.hpp", "BrowserPeerTransport.cpp",
+            "NetplayCore.hpp", "NetplayCore.cpp",
+            "NetplayInput.hpp", "NetplayInput.cpp",
+            "NetplayProtocol.hpp", "NetplayProtocol.cpp",
+            "NetplaySession.hpp", "NetplaySession.cpp",
+            "RollbackJournal.hpp", "RollbackJournal.cpp",
+            "WebSocketTransport.hpp", "WebSocketTransport.cpp",
+        )),
     )
     frozen = git(
         "diff", "--unified=0", f"{BASE}..{FINAL}", "--", "src/th07/Netplay.cpp"

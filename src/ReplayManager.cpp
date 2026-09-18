@@ -1,6 +1,6 @@
 #include "ReplayManager.hpp"
 #ifdef TH_ENABLE_NETPLAY
-#include "netplay/NetplayInput.hpp"
+#include <eagler/netplay/NetplayInput.hpp>
 #include "netplay/NetplaySideEffects.hpp"
 #endif
 

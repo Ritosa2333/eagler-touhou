@@ -1,8 +1,8 @@
 #include "Th07LanCoreProbe.hpp"
 
-#include "NetplayCore.hpp"
-#include "NetplayProtocol.hpp"
-#include "WebSocketTransport.hpp"
+#include <eagler/netplay/NetplayCore.hpp>
+#include <eagler/netplay/NetplayProtocol.hpp>
+#include <eagler/netplay/WebSocketTransport.hpp>
 
 #include "Controller.hpp"
 

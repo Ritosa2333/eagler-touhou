@@ -1,6 +1,6 @@
 #include "Th07DeterminismProbe.hpp"
 
-#include "NetplayInput.hpp"
+#include <eagler/netplay/NetplayInput.hpp>
 #include "Th07CanonicalHash.hpp"
 
 #include "Controller.hpp"

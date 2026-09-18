@@ -4,7 +4,7 @@
 #include <string>
 
 #include "inttypes.hpp"
-#include "netplay/NetplayProtocol.hpp"
+#include <eagler/netplay/NetplayProtocol.hpp>
 
 namespace ReplayExtension
 {

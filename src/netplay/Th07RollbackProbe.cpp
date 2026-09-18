@@ -1,6 +1,6 @@
 #include "Th07RollbackProbe.hpp"
 
-#include "NetplayInput.hpp"
+#include <eagler/netplay/NetplayInput.hpp>
 #include "NetplaySideEffects.hpp"
 #include "Th07RollbackState.hpp"
 

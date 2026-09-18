@@ -1,6 +1,6 @@
 #include "Th07RollbackState.hpp"
 
-#include "RollbackJournal.hpp"
+#include <eagler/netplay/RollbackJournal.hpp>
 
 #include "AnmManager.hpp"
 #include "AsciiManager.hpp"

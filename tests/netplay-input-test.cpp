@@ -1,4 +1,4 @@
-#include "netplay/NetplayInput.hpp"
+#include <eagler/netplay/NetplayInput.hpp>
 #include "Multiplayer.hpp"
 #include "Supervisor.hpp"
 

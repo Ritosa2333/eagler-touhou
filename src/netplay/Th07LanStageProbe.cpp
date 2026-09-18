@@ -1,14 +1,14 @@
 #include "Th07LanStageProbe.hpp"
 
-#include "NetplayCore.hpp"
-#include "NetplayInput.hpp"
-#include "NetplayProtocol.hpp"
-#include "NetplaySession.hpp"
+#include <eagler/netplay/NetplayCore.hpp>
+#include <eagler/netplay/NetplayInput.hpp>
+#include <eagler/netplay/NetplayProtocol.hpp>
+#include <eagler/netplay/NetplaySession.hpp>
 #include "NetplaySideEffects.hpp"
 #include "Th07CanonicalHash.hpp"
 #include "Th07RollbackState.hpp"
-#include "BrowserPeerTransport.hpp"
-#include "WebSocketTransport.hpp"
+#include <eagler/netplay/BrowserPeerTransport.hpp>
+#include <eagler/netplay/WebSocketTransport.hpp>
 
 #include "BulletManager.hpp"
 #include "AsciiManager.hpp"
