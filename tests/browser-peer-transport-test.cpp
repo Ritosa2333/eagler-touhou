@@ -16,6 +16,7 @@ int main()
     assert(!transport.Poll(&packet));
     assert(!transport.Send(nullptr, 0));
     assert(!transport.SendTo(1, nullptr, 0));
+    assert(!transport.SendRepairTo(1, nullptr, 0));
     assert(!transport.SendControl(nullptr, 0));
     assert(!transport.SendSpectator(nullptr, 0));
     assert(!transport.HasSpectators());

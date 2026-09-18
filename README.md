@@ -50,6 +50,8 @@ Published/active convergence slices:
 - `NetplayInput`
 - incremental DirectTouch primitives: `DirectTouchBegin` / `DirectTouchDelta`,
   `DirectTouchState`, delayed capture mapping and conservative delta prediction
+- bounded reliable input repair primitives: `InputRepairBudget` and
+  `BrowserPeerTransport::SendRepairTo`
 
 `NetplaySession` and `WebSocketTransport` were byte-identical before extraction.
 `NetplayProtocol` differs only through a deliberately tiny title-owned wire
@@ -84,12 +86,19 @@ unapplied limited-speed movement lives in rewindable `DirectTouchState`, and
 `RollbackCore::LocalFrameForCapture()` makes delayed scheduling addressable
 without re-sampling the producer. Prediction is conservative by default: a
 missing delta contributes zero new displacement. Equivalent-prediction
-acceptance, reliable input repair, main-thread frame budgets and performance
-telemetry are deliberately not part of this slice.
+acceptance, main-thread frame budgets and performance telemetry remain separate
+slices.
 
-Future intended slices include DirectTouch equivalence, input repair/health
-logic, browser-frame budgeting and the shared performance testkit once their
-title-facing seams are explicit.
+Reliable input repair is deliberately not a second input transport. Normal RTC
+input remains unordered/unreliable. After the first unacknowledged input frame
+has made no progress for `InputRepairBudget::StalledMs`, a consumer may send the
+already-captured redundant packet through that peer's reliable control channel.
+Healthy ACK progress produces zero repair traffic; control-channel backpressure
+simply skips an attempt and does not fail the gameplay transport.
+
+Future intended slices include DirectTouch equivalence, broader connection
+health policy, browser-frame budgeting and the shared performance testkit once
+their title-facing seams are explicit.
 
 ## Convergence order
 
@@ -101,9 +110,10 @@ Use this order unless new evidence proves a dependency requires otherwise:
 4. browser transport: `BrowserPeerTransport`;
 5. generic input authority: `NetplayInput`;
 6. once-only incremental DirectTouch and delayed capture mapping;
-7. DirectTouch equivalence, input repair/health and rollback driver budgets;
-8. performance testkit and diagnostics;
-9. only then consider broader platform/presentation helpers.
+7. bounded reliable input repair;
+8. DirectTouch equivalence, broader health policy and rollback driver budgets;
+9. performance testkit and diagnostics;
+10. only then consider broader platform/presentation helpers.
 
 Every step must leave TH06 and TH07 buildable and testable independently. A
 consumer may advance to a newer common implementation only after its own

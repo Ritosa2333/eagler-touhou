@@ -33,6 +33,11 @@ public:
     // estimate. RTC sends directly to one DataChannel; relay mode uses the
     // relay's small transport envelope and delivers the unchanged payload.
     bool SendTo(std::uint8_t peer, const std::uint8_t *data, std::size_t size);
+    // Rare reliable duplicate of an already-captured input packet. This is
+    // intentionally RTC-control-only: it repairs a stalled fast input lane
+    // without converting the normal input path into a reliable stream. Repair
+    // failure never takes ownership of overall transport health.
+    bool SendRepairTo(std::uint8_t peer, const std::uint8_t *data, std::size_t size);
     // Session/control traffic: reliable and ordered on RTC.
     bool SendControl(const std::uint8_t *data, std::size_t size);
     // Best-effort, relay-only confirmed input stream. Failure is deliberately

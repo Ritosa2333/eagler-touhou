@@ -571,6 +571,24 @@ EM_JS(int, eagler_peer_send_to, (int peerId, const unsigned char *data, int size
     return 0;
 });
 
+EM_JS(int, eagler_peer_send_repair_to, (int peerId, const unsigned char *data, int size), {
+    const state = globalThis.__eaglerPeerTransport;
+    if (!state || state.failed || state.closed || state.route !== 'rtc' ||
+        !Number.isInteger(peerId) || peerId < 0 || peerId >= state.playerCount ||
+        peerId === state.localPlayer || size <= 0 || size > 32768) return 0;
+    const channel = state.peers.get(peerId)?.controlDc;
+    // Session/control traffic has priority. Do not create unbounded reliable
+    // head-of-line work when an RTC association is already unhealthy.
+    if (channel?.readyState !== 'open' || channel.bufferedAmount > 32768) return 0;
+    try {
+        channel.send(HEAPU8.slice(data, data + size));
+        return 1;
+    } catch {
+        // The ordinary input/control health checks retain failure ownership.
+        return 0;
+    }
+});
+
 EM_JS(int, eagler_peer_send_spectator, (const unsigned char *data, int size), {
     const state = globalThis.__eaglerPeerTransport;
     if (!state || state.closed || size <= 0 ||
@@ -726,6 +744,18 @@ bool BrowserPeerTransport::SendTo(std::uint8_t peer, const std::uint8_t *data, s
 #ifdef __EMSCRIPTEN__
     if (!data || size == 0 || size > static_cast<std::size_t>(std::numeric_limits<int>::max())) return false;
     return eagler_peer_send_to(peer, data, static_cast<int>(size)) != 0;
+#else
+    (void)peer; (void)data; (void)size;
+    return false;
+#endif
+}
+
+bool BrowserPeerTransport::SendRepairTo(std::uint8_t peer, const std::uint8_t *data,
+                                        std::size_t size)
+{
+#ifdef __EMSCRIPTEN__
+    if (!data || size == 0 || size > 32768u) return false;
+    return eagler_peer_send_repair_to(peer, data, static_cast<int>(size)) != 0;
 #else
     (void)peer; (void)data; (void)size;
     return false;
