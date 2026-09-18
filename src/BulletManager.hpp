@@ -22,6 +22,8 @@ enum BulletAimMode
 
 struct BulletTypeSprites
 {
+    void UpdateLivePrev(u16 state);
+
     void UpdatePrev()
     {
         spriteBullet.UpdatePrev();
@@ -50,6 +52,22 @@ enum BulletState
     BULLET_STATE_SPAWNING_SLOW,
     BULLET_STATE_DESPAWNING,
 };
+
+inline void BulletTypeSprites::UpdateLivePrev(u16 state)
+{
+    // Normal and despawn VMs may become visible later in this tick. A spawn
+    // slot initializes all five endpoints before first draw; after that only
+    // the selected spawn VM can be observed until the slot is reused.
+    spriteBullet.UpdatePrev();
+    spriteSpawnEffectDonut.UpdatePrev();
+    switch (state)
+    {
+    case BULLET_STATE_SPAWNING_FAST: spriteSpawnEffectFast.UpdatePrev(); break;
+    case BULLET_STATE_SPAWNING_NORMAL: spriteSpawnEffectNormal.UpdatePrev(); break;
+    case BULLET_STATE_SPAWNING_SLOW: spriteSpawnEffectSlow.UpdatePrev(); break;
+    default: break;
+    }
+}
 
 struct Bullet
 {

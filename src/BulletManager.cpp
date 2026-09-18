@@ -407,6 +407,9 @@ void BulletManager::RemoveAllBullets(bool turnIntoItem)
         if (turnIntoItem)
         {
             g_ItemManager.SpawnItem(&bullet->pos, ITEM_POINT_BULLET, 1);
+#ifdef TH_ENABLE_NETPLAY
+            Netplay::Th06Rollback::TouchBullet(bullet);
+#endif
             memset(bullet, 0, sizeof(Bullet));
         }
         else
@@ -686,7 +689,7 @@ void BulletManager::SyncRenderState(BulletManager *mgr)
         {
             bullet.prevPos = bullet.pos;
             bullet.prevAngle = bullet.angle;
-            bullet.sprites.UpdatePrev();
+            bullet.sprites.UpdateLivePrev(bullet.state);
         }
     }
     for (Laser &laser : mgr->lasers)
@@ -961,6 +964,9 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
                     (curBullet->exFlags & 0x80) == 0 && (curBullet->exFlags & 0x400) == 0 &&
                     (curBullet->exFlags & 0x800) == 0 && curBullet->unk_5c0 == 0)
                 {
+#ifdef TH_ENABLE_NETPLAY
+                    Netplay::Th06Rollback::TouchBullet(curBullet);
+#endif
                     memset(curBullet, 0, sizeof(Bullet));
                     continue;
                 }
@@ -970,6 +976,9 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
 
                     if (curBullet->unk_5c0 >= 0x100)
                     {
+#ifdef TH_ENABLE_NETPLAY
+                        Netplay::Th06Rollback::TouchBullet(curBullet);
+#endif
                         memset(curBullet, 0, sizeof(Bullet));
                         continue;
                     }
@@ -1034,6 +1043,9 @@ ChainCallbackResult BulletManager::OnUpdate(BulletManager *mgr)
             curBullet->pos += curBullet->velocity / 2.0f * g_Supervisor.effectiveFramerateMultiplier;
             if (g_AnmManager->ExecuteScript(&curBullet->sprites.spriteSpawnEffectDonut) != 0)
             {
+#ifdef TH_ENABLE_NETPLAY
+                Netplay::Th06Rollback::TouchBullet(curBullet);
+#endif
                 memset(curBullet, 0, sizeof(Bullet));
                 continue;
             }

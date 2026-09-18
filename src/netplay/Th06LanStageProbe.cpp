@@ -5,6 +5,7 @@
 #include "NetplayProtocol.hpp"
 #include "NetplaySession.hpp"
 #include "NetplaySideEffects.hpp"
+#include "SnapshotPolicy.hpp"
 #include "Th06CanonicalHash.hpp"
 #include "Th06RollbackState.hpp"
 #include "BrowserPeerTransport.hpp"
@@ -88,8 +89,12 @@ std::uint32_t g_PredictedFrames = 0;
 std::uint32_t g_RollbackCount = 0;
 std::uint32_t g_ResimulatedFrames = 0;
 std::uint32_t g_MaxRollbackSpan = 0;
+std::uint32_t g_SnapshotTicks = 0;
+std::uint32_t g_ConfirmedOnlyTicks = 0;
 std::size_t g_MaxSnapshotBytes = 0;
 std::size_t g_MaxSnapshotBlocks = 0;
+bool g_FrontierSnapshots = false;
+bool g_DemandSnapshots = false;
 
 struct ReplayFrameBinding
 {
@@ -748,6 +753,17 @@ void NormalizeMultiplayerEndingSkipHistory()
 
 bool RemoteInputsTimedOut()
 {
+    // The hidden Replay save/playback gate has a finite authoritative input
+    // window. Once every peer has confirmed the final recorded frame, no
+    // later input is supposed to advance: the driver intentionally sends only
+    // the final tail keepalive while it saves and switches to Replay playback.
+    // Do not let the production liveness watchdog race that test-only
+    // finalization state and misreport the expected stationary confirmation
+    // frontier as a dead peer.
+    if (UseReplayPlaybackCycle() && g_SimFrame >= g_TestFrames &&
+        ConfirmedThroughAllRemotes() >= g_TestFrames - 1)
+        return false;
+
     // Native sbrik can contract a 3P UDP session around an absent guest by
     // announcing host-authored lifecycle controls and relaying synthesized
     // inputs. The browser relay has no equivalent authority protocol. Do not
@@ -1377,8 +1393,42 @@ bool Initialize()
     stateConfig.maxFrames = 16;
     stateConfig.maxBytesPerFrame = 8 * 1024 * 1024;
     stateConfig.maxBlocksPerFrame = 4096;
+#ifdef __EMSCRIPTEN__
+    stateConfig.coalesceBulletRuns = EM_ASM_INT({
+        const value = Module.eaglerOptions?.netplayCoalesceBulletRuns;
+        return value == null ? 1 : (value ? 1 : 0);
+    }) != 0;
+    stateConfig.fastBulkCopy = EM_ASM_INT({
+        return Module.eaglerOptions?.netplayFastBulkCopy ? 1 : 0;
+    }) != 0;
+    stateConfig.coalesceRestore = EM_ASM_INT({
+        return Module.eaglerOptions?.netplayCoalesceRestore ? 1 : 0;
+    }) != 0;
+    stateConfig.liveBulletSnapshots = EM_ASM_INT({
+        return Module.eaglerOptions?.netplayLiveBulletSnapshots ? 1 : 0;
+    }) != 0;
+    stateConfig.auditLiveBulletBytes = RollbackAuditEnabled() && stateConfig.liveBulletSnapshots && EM_ASM_INT({
+        return Module.eaglerOptions?.netplayLiveBulletAudit ? 1 : 0;
+    }) != 0;
+    g_DemandSnapshots = EM_ASM_INT({
+        const policy = Module.eaglerOptions?.netplaySnapshotPolicy;
+        return policy == null || policy === 'demand' || policy === 'frontier' ? 1 : 0;
+    }) != 0;
+    g_FrontierSnapshots = EM_ASM_INT({
+        const policy = Module.eaglerOptions?.netplaySnapshotPolicy;
+        return policy == null || policy === 'frontier' ? 1 : 0;
+    }) != 0;
+    EM_ASM({
+        globalThis.__eaglerNetplaySnapshotPolicy = $0 ? 'frontier' : ($1 ? 'demand' : 'always');
+    }, g_FrontierSnapshots ? 1 : 0, g_DemandSnapshots ? 1 : 0);
+#else
+    g_DemandSnapshots = false;
+    g_FrontierSnapshots = false;
+#endif
     if (!Th06Rollback::Reset(stateConfig))
         return false;
+    g_SnapshotTicks = 0;
+    g_ConfirmedOnlyTicks = 0;
 
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if (UseStageTransitionTest() || UseEndingCycle() ||
@@ -1686,8 +1736,17 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
             replayBinding = slot;
     }
 #endif
-    const bool captureRollback = !g_SpectatorMode;
-    if (captureRollback && RollbackAuditEnabled())
+    const bool snapshotAllowed = !g_SpectatorMode;
+    const bool captureRollback = snapshotAllowed &&
+        (!g_DemandSnapshots || NeedsRollbackSnapshot(
+            frame, ConfirmedThroughAllRemotes(), decision.predictedMask,
+            resimulation, g_FrontierSnapshots));
+    if (snapshotAllowed && !captureRollback)
+    {
+        Th06Rollback::DiscardBefore(frame);
+        ++g_ConfirmedOnlyTicks;
+    }
+    if (snapshotAllowed && RollbackAuditEnabled())
     {
         RestoreAuditEntry &entry = g_RestoreAudit[frame % g_RestoreAudit.size()];
         entry.frame = frame;
@@ -1696,6 +1755,8 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
     }
     if (captureRollback && !Th06Rollback::BeginFrame(frame))
         return -1;
+    if (captureRollback)
+        ++g_SnapshotTicks;
     if (captureRollback && UseDenseRollbackProfile())
     {
         // Hidden rollback-budget stress only. Touch every reusable enemy,
@@ -1706,9 +1767,16 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
         for (Enemy &enemy : g_EnemyManager.enemies)
             if (!Th06Rollback::TouchEnemy(&enemy))
                 return -1;
-        for (Bullet &bullet : g_BulletManager.bullets)
-            if (!Th06Rollback::TouchBullet(&bullet))
-                return -1;
+        // The generic-journal stress lane deliberately forces every Bullet
+        // slot through Touch(). Specialized Bullet snapshot backends instead
+        // keep their production sparse policy: live state is captured by
+        // BeginFrame(), while inactive/reused slots are touched by their
+        // mutation paths. Forcing TouchBullet(AllParts) here would defeat the
+        // live-part backend and turn this test hook into a different workload.
+        if (!Th06Rollback::SpecializedBulletSnapshotsEnabled())
+            for (Bullet &bullet : g_BulletManager.bullets)
+                if (!Th06Rollback::TouchBullet(&bullet))
+                    return -1;
         for (Item &item : g_ItemManager.items)
             if (!Th06Rollback::TouchItem(&item))
                 return -1;
@@ -1902,11 +1970,10 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
             g_Players[0].playerState, g_Players[1].playerState, g_Players[2].playerState,
             GetPlayerLives(0), GetPlayerLives(1), GetPlayerLives(2));
     }
-    if (captureRollback)
-    {
-        if (!Th06Rollback::EndFrame() || !g_Core.MarkSimulated(frame, decision))
-            return -1;
-    }
+    if (captureRollback && !Th06Rollback::EndFrame())
+        return -1;
+    if (!g_SpectatorMode && !g_Core.MarkSimulated(frame, decision))
+        return -1;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if (replayBinding.simFrame == frame && replayBinding.stage >= 0 &&
         replayBinding.replayFrame >= 0)
@@ -1930,8 +1997,17 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
             globalThis.__eaglerNetplayDenseRollback = true;
             globalThis.__eaglerNetplayMaxSnapshotBytes = $0;
             globalThis.__eaglerNetplayMaxSnapshotBlocks = $1;
+            globalThis.__eaglerNetplayRestoreCopiedBytes = $2;
+            globalThis.__eaglerNetplayRestoreSkippedBytes = $3;
+            globalThis.__eaglerNetplayJournalArenaGrowths = $4;
+            globalThis.__eaglerNetplaySnapshotTicks = $5;
+            globalThis.__eaglerNetplayConfirmedOnlyTicks = $6;
         }, static_cast<double>(g_MaxSnapshotBytes),
-           static_cast<double>(g_MaxSnapshotBlocks));
+           static_cast<double>(g_MaxSnapshotBlocks),
+           static_cast<double>(Th06Rollback::RestoreCopiedBytes()),
+           static_cast<double>(Th06Rollback::RestoreSkippedBytes()),
+           static_cast<double>(Th06Rollback::ArenaGrowths()),
+           g_SnapshotTicks, g_ConfirmedOnlyTicks);
     }
 #endif
 #ifdef __EMSCRIPTEN__

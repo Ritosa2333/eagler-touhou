@@ -20,6 +20,12 @@
   const scriptedStressInput = params.get("stress") === "1";
   const rollbackAudit = params.get("audit") === "1";
   const denseRollbackProfile = params.get("dense") === "1";
+  const coalesceBulletRuns = params.get("bulletRuns") === "1";
+  const fastBulkCopy = params.get("bulkCopy") === "1";
+  const coalesceRestore = params.get("coalescedRestore") === "1";
+  const liveBulletSnapshots = params.get("liveBullets") === "1";
+  const liveBulletAudit = params.get("liveBulletAudit") === "1";
+  const snapshotPolicy = String(params.get("snapshotPolicy") || "always");
   const stageTransition = params.get("stage") === "1";
   const eliminationCycle = params.get("eliminate") === "1";
   const coopTransferCycle = params.get("coop") === "1";
@@ -30,11 +36,25 @@
   const endingCycle = params.get("ending") === "1";
   const replayPlaybackCycle = params.get("replayplay") === "1";
   const devRuntime = params.get("dev") === "1";
+  const requestedRuntimeBuild = String(params.get("runtimeBuild") || "");
+  const sharedFont = params.get("sharedFont") !== "0";
   const loadoutProfile = String(params.get("loadouts") || "default");
   const status = document.getElementById("status");
   const iframe = document.getElementById("runtime");
   let request = 0;
   const pending = new Map();
+  globalThis.__th06SmokeRafGaps = [];
+  let lastRaf = 0;
+  const sampleRaf = now => {
+    if (lastRaf) {
+      const gaps = globalThis.__th06SmokeRafGaps;
+      gaps.push(now - lastRaf);
+      if (gaps.length > 4096) gaps.splice(0, gaps.length - 4096);
+    }
+    lastRaf = now;
+    requestAnimationFrame(sampleRaf);
+  };
+  requestAnimationFrame(sampleRaf);
 
   function send(command, body = {}) {
     const id = `smoke-${++request}`;
@@ -81,9 +101,9 @@
       await send("configure", {
         music: "none",
         resources: [],
-        sharedResources: [
-          { url: "/assets/msgothic.ttc", path: "/msgothic.ttc" },
-        ],
+        sharedResources: sharedFont
+          ? [{ url: "/assets/msgothic.ttc", path: "/msgothic.ttc" }]
+          : [],
         thpracCatalog: [],
         options: {
           netplayMode: "lan",
@@ -107,6 +127,12 @@
           netplayReplayPlaybackCycle: replayPlaybackCycle,
           netplayRollbackAudit: rollbackAudit,
           netplayDenseRollbackProfile: denseRollbackProfile,
+          netplayCoalesceBulletRuns: coalesceBulletRuns,
+          netplayFastBulkCopy: fastBulkCopy,
+          netplayCoalesceRestore: coalesceRestore,
+          netplayLiveBulletSnapshots: liveBulletSnapshots,
+          netplayLiveBulletAudit: liveBulletAudit,
+          netplaySnapshotPolicy: snapshotPolicy,
           netplayPauseCycle: pauseCycle,
           netplayRestartCycle: restartCycle,
           netplayRetryContinueCycle: retryContinueCycle,
@@ -168,9 +194,9 @@
 
   // Match the real Launcher surface: the MP binary owns a separate IDBFS
   // root, and FileSystem selects that same root once netplayMode=lan is set.
-  const runtimeBuild = devRuntime
+  const runtimeBuild = requestedRuntimeBuild || (devRuntime
     ? "build-web-netplay-th06-replay-audit"
-    : "build-web-netplay-th06";
+    : "build-web-netplay-th06");
   iframe.src = `/${runtimeBuild}/th06.html?hosted=1&runtimeVariant=multiplayer&runtimeEpoch=${epoch}`;
 })();
 </script>
