@@ -460,7 +460,8 @@
           netplayCoalesceRestore: !!options.netplayCoalesceRestore,
           netplayLiveBulletSnapshots: !!options.netplayLiveBulletSnapshots,
           netplayLiveBulletAudit: !!options.netplayLiveBulletAudit,
-          netplayReliableInputRepair: options.netplayReliableInputRepair ?? true,
+          netplayReliableInputRepair: options.netplayReliableInputRepair ??
+            (options.netplayMode === "lan" && !options.netplaySpectator && !options.replayViewer),
           netplaySnapshotPolicy: options.netplaySnapshotPolicy ?? null,
           netplayQuitCycle: !!options.netplayQuitCycle,
           netplayEndingCycle: !!options.netplayEndingCycle,
