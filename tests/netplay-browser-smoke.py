@@ -132,7 +132,7 @@ def runtime_snapshot(page, target_frame: int = 300):
             replayInputCoverage: Number(runtime?.__eaglerNetplayReplayInputCoverage || 0),
             directTouchBeginCaptures: Number(runtime?.__eaglerNetplayDirectTouchBeginCaptures || 0),
             directTouchDeltaCaptures: Number(runtime?.__eaglerNetplayDirectTouchDeltaCaptures || 0),
-            inputRepairs: Number(runtime?.__eaglerNetplayInputRepairSent || 0),
+            inputRepairs: Number(runtime?.__th06PeerTransport?.inputRepairSent || 0),
             repairEnabled: runtime?.Module?.eaglerOptions?.netplayReliableInputRepair === true,
             impairment: (() => {
               const stats = runtime?.__th06InputImpairment?.stats;
@@ -326,12 +326,14 @@ def run_smoke(
             for index, browser in enumerate(browsers):
                 context = browser.new_context(viewport={"width": 960, "height": 720})
                 if rtc_input_delay_ms is not None:
-                    injector = (ROOT / "tests/rtc-input-impairment.cjs").read_text(encoding="utf-8")
+                    injector = (ROOT / "third_party/eagler-common/testkit/rtc-input-impairment.cjs").read_text(encoding="utf-8")
                     settings = json.dumps({
                         "oneWayMs": rtc_input_delay_ms,
                         "jitterMs": rtc_input_jitter_ms,
                         "blackoutMs": rtc_input_blackout_ms,
                         "blackoutFrame": 900,
+                        "inputLabel": "th06-input",
+                        "controlLabel": "th06-control",
                         "seed": 607 + index,
                     })
                     context.add_init_script(

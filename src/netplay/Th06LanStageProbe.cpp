@@ -167,7 +167,6 @@ std::array<std::uint32_t, MAX_PLAYERS> g_PredictionDepth{};
 std::array<std::uint32_t, MAX_PLAYERS> g_RollbackByPlayer{};
 std::array<InputRepairBudget, MAX_PLAYERS> g_InputRepairBudgets{};
 bool g_ReliableInputRepair = false;
-std::uint32_t g_InputRepairSent = 0;
 double g_RecommendedLead = 0.0;
 double g_SimulationIntervalScale = 1.0;
 
@@ -284,7 +283,6 @@ void RetireGameplaySession()
     g_LastHelloSendTick = 0;
     g_LastReadySendTick = 0;
     g_InputRepairBudgets = {};
-    g_InputRepairSent = 0;
     ++g_SessionGeneration;
 #ifdef __EMSCRIPTEN__
     if (ProductionLanMode())
@@ -1301,13 +1299,9 @@ bool Initialize()
     g_LocalPlayer = g_SpectatorMode ? 0 : ReadPlayer();
     g_TestFrames = ProbeMode() ? ReadTestFrames() : 0xffffffffu;
 #ifdef __EMSCRIPTEN__
-    g_ReliableInputRepair = EM_ASM_INT({
-        const value = Module.eaglerOptions?.netplayReliableInputRepair;
-        return value == null || value ? 1 : 0;
-    }) != 0;
+    g_ReliableInputRepair = !g_SpectatorMode &&
+        EM_ASM_INT({ return Module.eaglerOptions?.netplayReliableInputRepair ? 1 : 0; }) != 0;
     g_InputRepairBudgets = {};
-    g_InputRepairSent = 0;
-    EM_ASM({ globalThis.__eaglerNetplayInputRepairSent = 0; });
     const int testFlags = EM_ASM_INT({
         const o = Module.eaglerOptions || {};
         return (o.netplayScriptedInput ? 1 : 0) |
@@ -1355,7 +1349,6 @@ bool Initialize()
 #else
     g_ReliableInputRepair = false;
     g_InputRepairBudgets = {};
-    g_InputRepairSent = 0;
     g_TestUsePhysicalInput = false;
     g_TestUseScriptedStressInput = false;
     g_TestUseEliminationCycle = false;
@@ -1715,14 +1708,8 @@ bool SendScheduledLocalFrame(std::uint32_t frame)
                 !TransportSendTo(peer, wire.data(), wire.size()))
                 return false;
             if (g_ReliableInputRepair && g_InputRepairBudgets[peer].ShouldRepair(
-                    packet.firstInputFrame, packet.inputCount != 0, SDL_GetTicks()) &&
-                g_BrowserPeerTransport.SendRepairTo(peer, wire.data(), wire.size()))
-            {
-                ++g_InputRepairSent;
-#ifdef __EMSCRIPTEN__
-                EM_ASM({ globalThis.__eaglerNetplayInputRepairSent = $0; }, g_InputRepairSent);
-#endif
-            }
+                    packet.firstInputFrame, packet.inputCount != 0, SDL_GetTicks()))
+                (void)g_BrowserPeerTransport.SendRepairTo(peer, wire.data(), wire.size());
             ++g_SentPackets;
         }
         return true;

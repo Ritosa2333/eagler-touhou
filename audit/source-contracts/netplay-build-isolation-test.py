@@ -82,7 +82,11 @@ assert 'g_InputRepairBudgets[peer].ShouldRepair(' in send_path
 assert 'packet.firstInputFrame, packet.inputCount != 0, SDL_GetTicks()' in send_path
 assert 'g_BrowserPeerTransport.SendRepairTo(peer, wire.data(), wire.size())' in send_path
 assert send_path.index('TransportSendTo(peer, wire.data(), wire.size())') < send_path.index('SendRepairTo(peer, wire.data(), wire.size())')
-assert 'netplayReliableInputRepair: options.netplayReliableInputRepair ?? true' in shell
+assert 'netplayReliableInputRepair: options.netplayReliableInputRepair ??' in shell
+assert 'options.netplayMode === "lan" && !options.netplaySpectator && !options.replayViewer' in shell
+assert not (root / 'src/netplay/InputRepairBudget.hpp').exists()
+assert not (root / 'tests/rtc-input-impairment.cjs').exists()
+assert (root / 'third_party/eagler-common/testkit/rtc-input-impairment.cjs').is_file()
 assert '"netplayReliableInputRepair"' in shell
 assert 'target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_ENABLE_NETPLAY)' in cmake
 assert 'target_link_options(th06 PRIVATE -lwebsocket)' in cmake
