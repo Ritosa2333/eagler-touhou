@@ -107,7 +107,6 @@ if(TH_ENABLE_NETPLAY)
     list(APPEND SOURCES
         src/netplay/NetplayInput.cpp
         src/netplay/NetplaySideEffects.cpp
-        src/netplay/BrowserPeerTransport.cpp
         src/netplay/Th07CanonicalHash.cpp
         src/netplay/Th07DeterminismProbe.cpp
         src/netplay/Th07LanCoreProbe.cpp
@@ -159,6 +158,7 @@ endif()
 target_include_directories(${TH_EXEC_NAME} PRIVATE src src/pbg4)
 if(TH_ENABLE_NETPLAY)
     eagler_common_link_netplay_base(${TH_EXEC_NAME})
+    eagler_common_link_browser_peer_transport(${TH_EXEC_NAME})
 else()
     eagler_common_link_netplay_headers(${TH_EXEC_NAME})
 endif()

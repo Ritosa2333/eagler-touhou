@@ -23,7 +23,11 @@ JOURNAL_SHIM = (ROOT / "src/netplay/RollbackJournal.cpp").read_text(encoding="ut
 SIDE_EFFECTS = (ROOT / "src/netplay/NetplaySideEffects.cpp").read_text(encoding="utf-8")
 WINDOW = (ROOT / "src/GameWindow.cpp").read_text(encoding="utf-8")
 TRANSPORT = (COMMON / "src/netplay/WebSocketTransport.cpp").read_text(encoding="utf-8")
-PEER_TRANSPORT = (ROOT / "src/netplay/BrowserPeerTransport.cpp").read_text(encoding="utf-8")
+PEER_TRANSPORT = (COMMON / "src/netplay/BrowserPeerTransport.cpp").read_text(encoding="utf-8")
+PEER_TRANSPORT_H = (COMMON / "include/eagler/netplay/BrowserPeerTransport.hpp").read_text(encoding="utf-8")
+PEER_SHIM_H = (ROOT / "src/netplay/BrowserPeerTransport.hpp").read_text(encoding="utf-8")
+PEER_SHIM = (ROOT / "src/netplay/BrowserPeerTransport.cpp").read_text(encoding="utf-8")
+TRANSPORT_CONFIG = (ROOT / "src/netplay/NetplayTransportConfig.hpp").read_text(encoding="utf-8")
 BASE = "5b9ebe892914ff5666ef68c0cd02719dde7d4ee9"
 FINAL = "022c533"
 
@@ -44,7 +48,17 @@ def main() -> None:
     require(
         "ordinary and netplay builds consume separate common CMake surfaces",
         "eagler_common_link_netplay_headers(${TH_EXEC_NAME})" in CMAKE
-        and "eagler_common_link_netplay_base(${TH_EXEC_NAME})" in CMAKE,
+        and "eagler_common_link_netplay_base(${TH_EXEC_NAME})" in CMAKE
+        and "eagler_common_link_browser_peer_transport(${TH_EXEC_NAME})" in CMAKE,
+    )
+    require(
+        "browser peer transport implementation authority lives in eagler-common",
+        "src/netplay/BrowserPeerTransport.cpp" not in CMAKE
+        and "class BrowserPeerTransport" in PEER_TRANSPORT_H
+        and "#include <eagler/netplay/BrowserPeerTransport.hpp>" in PEER_SHIM_H
+        and "implementation authority lives in eagler-common" in PEER_SHIM_H
+        and "Compatibility marker" in PEER_SHIM
+        and 'Tag[] = "th07"' in TRANSPORT_CONFIG,
     )
     require(
         "rollback journal implementation authority lives in eagler-common",

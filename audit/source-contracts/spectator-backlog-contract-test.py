@@ -16,8 +16,8 @@ ROOT = Path(__file__).resolve().parents[2]
 HOST_ROOT = require_checkout("TH_EAGLER_HOST_ROOT", "an eagler-touhou checkout")
 TH06_ROOT = require_checkout("TH_EAGLER_TH06_ROOT", "a TH06 eagler checkout")
 RELAY = (HOST_ROOT / "server/netplay-relay.mjs").read_text(encoding="utf-8")
-TH06 = (TH06_ROOT / "src/netplay/BrowserPeerTransport.cpp").read_text(encoding="utf-8")
-TH07 = (ROOT / "src/netplay/BrowserPeerTransport.cpp").read_text(encoding="utf-8")
+TH06 = (TH06_ROOT / "third_party/eagler-common/src/netplay/BrowserPeerTransport.cpp").read_text(encoding="utf-8")
+TH07 = (ROOT / "third_party/eagler-common/src/netplay/BrowserPeerTransport.cpp").read_text(encoding="utf-8")
 
 
 def require(ok: bool, label: str) -> None:
@@ -36,7 +36,9 @@ require("if (run.spectatorAdmissionOpen)" in RELAY and "run.spectatorHistory.pus
 require("run.spectatorHistory.length = 0" in RELAY,
         "frame-zero history is released when the window closes")
 
-for name, source in (("TH06", TH06), ("TH07", TH07)):
+require(TH06 == TH07, "TH06/TH07 consume one BrowserPeerTransport authority")
+
+for name, source in (("TH06 common", TH06), ("TH07 common", TH07)):
     require("maxReceivedPackets: 16384" in source, f"{name} spectator receive queue cap")
     require("this.received.length - this.receivedHead >= this.maxReceivedPackets" in source,
             f"{name} spectator queue checks unconsumed packets")
