@@ -582,6 +582,7 @@ EM_JS(int, eagler_peer_send_repair_to, (int peerId, const unsigned char *data, i
     if (channel?.readyState !== 'open' || channel.bufferedAmount > 32768) return 0;
     try {
         channel.send(HEAPU8.slice(data, data + size));
+        state.inputRepairSent = (state.inputRepairSent || 0) + 1;
         return 1;
     } catch {
         // The ordinary input/control health checks retain failure ownership.

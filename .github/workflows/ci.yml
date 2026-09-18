@@ -12,6 +12,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - name: Configure
         run: cmake -S . -B build -DEAGLER_COMMON_BUILD_TESTS=ON
       - name: Build

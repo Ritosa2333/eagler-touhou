@@ -70,9 +70,9 @@ only the generic storage algorithms live here.
 `BrowserPeerTransport` was byte-identical between TH06 and TH07 after replacing
 only the title tag (`th06`/`th07`). The shared implementation keeps that tag as
 the tiny title-owned `NetplayTransportConfig.hpp` seam so existing DataChannel
-labels and legacy browser globals remain stable. This authority migration does
-not include the later experimental input-repair path or performance telemetry;
-those remain separate changes with their own acceptance criteria.
+labels and legacy browser globals remain stable. Bounded reliable repair is now
+part of this shared transport authority; broader performance telemetry remains
+a separate concern with its own acceptance criteria.
 
 `NetplayInput.hpp` was byte-identical between TH06 and TH07. Their implementation
 also becomes byte-identical after removing TH06's legacy `Multiplayer.hpp`
@@ -96,8 +96,13 @@ already-captured redundant packet through that peer's reliable control channel.
 Healthy ACK progress produces zero repair traffic; control-channel backpressure
 simply skips an attempt and does not fail the gameplay transport.
 
+The shared `testkit/rtc-input-impairment.cjs` fixture can delay, jitter, drop or
+black out the real RTC input DataChannel while giving reliable repair traffic
+the same artificial application-send delay. Title harnesses provide their
+input/control channel labels; the fixture contains no TH06/TH07 product policy.
+
 Future intended slices include DirectTouch equivalence, broader connection
-health policy, browser-frame budgeting and the shared performance testkit once
+health policy, browser-frame budgeting and broader performance diagnostics once
 their title-facing seams are explicit.
 
 ## Convergence order

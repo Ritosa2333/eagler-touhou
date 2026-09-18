@@ -6,6 +6,7 @@ foreach(REQUIRED IN ITEMS
     "const channel = state.peers.get(peerId)?.controlDc;"
     "channel.bufferedAmount > 32768"
     "channel.send(HEAPU8.slice(data, data + size));"
+    "state.inputRepairSent = (state.inputRepairSent || 0) + 1;"
     "return eagler_peer_send_repair_to(peer, data, static_cast<int>(size)) != 0;"
 )
     string(FIND "${CONTENT}" "${REQUIRED}" POSITION)

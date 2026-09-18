@@ -115,3 +115,12 @@ add_test(
         -DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}/../src/netplay/BrowserPeerTransport.cpp
         -P ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-repair-source-test.cmake
 )
+
+find_program(EAGLER_COMMON_NODE_EXECUTABLE NAMES node node.exe)
+if(EAGLER_COMMON_NODE_EXECUTABLE)
+    add_test(
+        NAME eagler-common.rtc-input-impairment
+        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/rtc-input-impairment-test.cjs
+    )
+endif()
