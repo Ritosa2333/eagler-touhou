@@ -167,19 +167,19 @@ html,body,.sheet{background:#0d0d0c}
 .transfer{
   position:absolute;
   z-index:31;
-  top:max(14px,env(safe-area-inset-top));
-  left:max(14px,env(safe-area-inset-left));
-  width:min(360px,calc(100vw - 92px));
+  top:max(10px,env(safe-area-inset-top));
+  left:max(10px,env(safe-area-inset-left));
+  width:min(282px,calc(100vw - 72px));
   box-sizing:border-box;
-  padding:16px;
-  border:1px solid rgba(255,255,255,.075);
-  border-radius:16px;
-  background:rgba(25,26,23,.96);
+  padding:9px 10px 10px;
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:12px;
+  background:rgba(22,24,20,.68);
   color:#eee9e1;
-  box-shadow:0 18px 44px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.025);
-  backdrop-filter:blur(18px);
-  -webkit-backdrop-filter:blur(18px);
-  font:12px/1.45 var(--ui-font);
+  box-shadow:0 8px 24px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.02);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  font:10px/1.35 var(--ui-font);
   text-shadow:none;
   overflow:hidden;
   animation:mizuki-float-panel-in 220ms cubic-bezier(.4,0,.2,1) both;
@@ -187,17 +187,17 @@ html,body,.sheet{background:#0d0d0c}
 .transfer[hidden]{display:none}
 .transfer strong{
   display:block;
-  margin:0 0 12px;
+  margin:0 0 5px;
   color:rgba(255,255,255,.9);
-  font:800 15px/1.3 var(--ui-font);
+  font:800 12px/1.25 var(--ui-font);
   letter-spacing:0;
 }
-.transfer-line,.transfer-meta{display:flex;align-items:center;justify-content:space-between;gap:14px}
-.transfer-line{color:#b8b3ac;font-size:11px}
+.transfer-line,.transfer-meta{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.transfer-line{color:#b8b3ac;font-size:9px}
 .transfer-line #transferAmount{flex:0 0 auto;color:#e7e1d9;font-variant-numeric:tabular-nums}
 .transfer-bar{
-  height:6px;
-  margin:9px 0 8px;
+  height:4px;
+  margin:5px 0;
   border:0;
   border-radius:999px;
   background:#30332d;
@@ -216,18 +216,18 @@ html,body,.sheet{background:#0d0d0c}
   background:linear-gradient(90deg,rgba(217,77,85,.28),var(--red-bright),rgba(217,77,85,.28));
   animation:network-transfer-indeterminate .9s linear infinite;
 }
-.transfer-meta{color:#85817b;font-size:10px;font-variant-numeric:tabular-nums}
+.transfer-meta{color:#9a958e;font-size:8px;font-variant-numeric:tabular-nums}
 .player-debug{
   max-height:190px;
-  margin:12px 0 0;
-  padding:10px 11px;
+  margin:7px 0 0;
+  padding:7px 8px;
   overflow:auto;
   border:0;
-  border-radius:10px;
-  background:#10120f;
+  border-radius:8px;
+  background:rgba(12,14,12,.68);
   color:#9fd9a7;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);
-  font:9px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font:8px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   text-shadow:none;
   white-space:pre-wrap;
   overflow-wrap:anywhere;
@@ -235,27 +235,27 @@ html,body,.sheet{background:#0d0d0c}
   user-select:text;
 }
 .transfer-warning{
-  margin-top:11px;
-  padding:10px 11px;
+  margin-top:7px;
+  padding:7px 8px;
   border:0;
-  border-radius:10px;
+  border-radius:8px;
   background:rgba(214,79,69,.12);
   color:#ffaaa3;
-  font-size:10px;
-  line-height:1.45;
+  font-size:9px;
+  line-height:1.35;
   white-space:pre-line;
 }
-.transfer-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:12px}
+.transfer-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;margin-top:7px}
 .transfer-retry,.transfer-cancel,.transfer-import-open,.transfer-import,.transfer-download{
   box-sizing:border-box;
-  min-height:40px;
-  padding:0 14px;
+  min-height:32px;
+  padding:0 10px;
   border:0;
-  border-radius:10px;
-  background:#292c27;
+  border-radius:8px;
+  background:rgba(41,44,39,.72);
   color:rgba(255,255,255,.78);
   box-shadow:none;
-  font:700 11px/1 var(--ui-font);
+  font:700 9px/1 var(--ui-font);
   text-decoration:none;
   cursor:pointer;
   transition:background-color .15s ease,color .15s ease,opacity .15s ease,transform .1s ease;
@@ -423,15 +423,15 @@ html,body,.sheet{background:#0d0d0c}
 }
 @media(max-width:600px){
   .transfer{
-    left:max(10px,env(safe-area-inset-left));
-    right:max(10px,env(safe-area-inset-right));
-    width:auto;
-    padding:14px;
-    border-radius:14px;
+    left:max(8px,env(safe-area-inset-left));
+    right:auto;
+    width:min(278px,calc(100vw - 64px));
+    padding:9px 10px 10px;
+    border-radius:12px;
   }
-  .transfer strong{font-size:14px;margin-bottom:10px}
-  .transfer-actions{display:grid;grid-template-columns:1fr}
-  .transfer-actions button{width:100%;min-height:42px}
+  .transfer strong{font-size:12px;margin-bottom:5px}
+  .transfer-actions{display:flex}
+  .transfer-actions button{width:auto;min-height:32px}
   .game-data-import-window,.game-data-link-window{
     width:calc(100vw - 20px);
     max-height:90dvh;
@@ -447,7 +447,6 @@ html,body,.sheet{background:#0d0d0c}
 @media(prefers-reduced-motion:reduce){
   .transfer,.game-data-import-window,.game-data-link-window{animation:none!important}
 }
-
 
 /* Touch management and controls: carry the current rounded tonal theme into
    the layout editor without changing touch behavior, hit areas, or saved data. */
@@ -938,3 +937,20 @@ body.mp-room-active .mp-spectator-join:disabled{opacity:.35;cursor:not-allowed}
 .touch-restart:hover,.touch-restart:focus-visible{opacity:1;background:rgba(35,39,33,.94)}.touch-restart:active{transform:scale(.96)}
 .player.help-visible>.touch-restart{visibility:hidden}.player #touchRestart{z-index:36}
 @media(max-width:760px){.touch-restart{left:max(8px,env(safe-area-inset-left));top:calc(max(10px,env(safe-area-inset-top)) + 48px);width:40px;height:40px}}
+
+/* Final gameplay transparency pass: preserve label/icon contrast while making
+   touch control surfaces less intrusive over the playfield. */
+.touch-hud button,.touch-escape,.touch-restart,.touch-thprac-input,.touch-thprac-tab,.touch-thprac-menu button{
+  background:rgba(20,23,19,.56);
+  box-shadow:0 4px 12px rgba(0,0,0,.26),inset 0 0 0 1px rgba(255,255,255,.035);
+}
+.touch-fire.is-on,.touch-focus.is-on,.touch-thprac-input.is-on{
+  background:rgba(91,27,37,.62);
+  box-shadow:0 4px 13px rgba(0,0,0,.3),inset 0 0 0 1px rgba(255,126,137,.09);
+}
+.touch-bomb{
+  background:rgba(51,25,29,.58);
+  box-shadow:0 5px 14px rgba(0,0,0,.3),inset 0 0 0 1px rgba(255,255,255,.03);
+}
+.touch-restart{background:rgba(18,21,17,.56);opacity:.8}
+.touch-restart:hover,.touch-restart:focus-visible{background:rgba(35,39,33,.72);opacity:1}
