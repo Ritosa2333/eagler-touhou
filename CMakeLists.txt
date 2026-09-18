@@ -102,7 +102,6 @@ if(TH_ENABLE_NETPLAY OR TH_ENABLE_MULTIPLAYER_GAMEPLAY)
     list(APPEND TH06_SOURCES
         src/MultiplayerResources.cpp
         src/multiplayer/GameplaySession.cpp
-        src/netplay/NetplayInput.cpp
     )
 endif()
 
@@ -175,6 +174,9 @@ if(TH_ENABLE_NETPLAY)
     eagler_common_link_browser_peer_transport(${TH_EXEC_NAME})
 else()
     eagler_common_link_netplay_headers(${TH_EXEC_NAME})
+endif()
+if(TH_ENABLE_NETPLAY OR TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    eagler_common_link_netplay_input(${TH_EXEC_NAME})
 endif()
 if(TH_ENABLE_THPRAC)
     target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_ENABLE_THPRAC)
