@@ -72,6 +72,7 @@ assert.deepEqual(await firstInstall.readMeta(), {
   appliedAt: null,
   updated: false,
   entries: {},
+  runtimeTrusted: {},
   install: { reused: 0, fetched: 0, deferred: 0 },
 });
 assert.equal((await firstInstall.requestStatus()).appliedAt, null, "first install must not count as an update");
@@ -102,6 +103,7 @@ const revisioned = await installWorker({
     await old.put("https://example.test/__app-shell-meta__/old", new Response(JSON.stringify({
       createdAt: 1,
       entries: { [unchangedUrl]: "same", [deferredUrl]: "runtime" },
+      runtimeTrusted: { [deferredUrl]: "runtime" },
     })));
   },
   fetchImpl: async request => {
@@ -119,6 +121,37 @@ revisioned.listeners.get("fetch")({
 });
 assert.equal(await (await deferredResponse).text(), "reused", "deferred Runtime should reuse a matching older revision on demand");
 assert.deepEqual(networkRequests, [changedUrl]);
+assert.equal((await revisioned.readMeta()).runtimeTrusted[deferredUrl], "runtime");
+
+const untrustedRuntimeRequests = [];
+const untrustedRuntime = await installWorker({
+  existingCacheNames: ["eagler-touhou-app-shell-untrusted-runtime"],
+  manifest: [{ url: "runtime/game.wasm", revision: "runtime-current" }],
+  deferredPaths: ["runtime/game.wasm"],
+  seed: async stores => {
+    const old = stores.get("eagler-touhou-app-shell-untrusted-runtime");
+    await old.put(deferredUrl, new Response("stale-runtime"));
+    await old.put("https://example.test/__app-shell-meta__/untrusted-runtime", new Response(JSON.stringify({
+      createdAt: 2,
+      entries: { [deferredUrl]: "runtime-current" },
+    })));
+  },
+  fetchImpl: async (request, init) => {
+    untrustedRuntimeRequests.push({ url: request.url, cache: init?.cache || request.cache });
+    return new Response("fresh-runtime");
+  },
+});
+let untrustedResponse;
+untrustedRuntime.listeners.get("fetch")({
+  request: new Request(deferredUrl),
+  respondWith(task) { untrustedResponse = task; },
+});
+assert.equal(await (await untrustedResponse).text(), "fresh-runtime",
+  "legacy Runtime caches without a trusted network acquisition marker must not be reused automatically");
+assert.deepEqual(untrustedRuntimeRequests, [{ url: deferredUrl, cache: "reload" }],
+  "Runtime repair fetches must bypass the browser HTTP cache");
+assert.equal((await untrustedRuntime.readMeta()).runtimeTrusted[deferredUrl], "runtime-current",
+  "a successfully reloaded Runtime entry becomes reusable by later App Shell generations");
 
 const fallbackPaths = [
   "runtime/game.html",
