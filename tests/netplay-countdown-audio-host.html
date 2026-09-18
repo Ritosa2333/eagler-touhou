@@ -6,7 +6,7 @@
 <script>
 (() => {
   "use strict";
-  const protocol="eagler-touhou/1", game="th07";
+  const protocol="eagler-touhou/1", game="th07", epoch=1;
   const params=new URLSearchParams(location.search);
   const player=Number(params.get("player")||0), playerCount=Number(params.get("players")||2);
   const relay=String(params.get("relay")||"");
@@ -16,13 +16,13 @@
     const id=`countdown-${++request}`;
     return new Promise((resolve,reject)=>{
       pending.set(id,{resolve,reject});
-      iframe.contentWindow.postMessage({protocol,game,command,request:id,...body},location.origin);
+      iframe.contentWindow.postMessage({protocol,game,epoch,command,request:id,...body},location.origin);
       setTimeout(()=>{const w=pending.get(id);if(!w)return;pending.delete(id);reject(new Error(`${command} timeout`));},15000);
     });
   }
   window.addEventListener("message",async event=>{
     if(event.source!==iframe.contentWindow||event.origin!==location.origin)return;
-    const m=event.data||{};if(m.protocol!==protocol||m.game!==game)return;
+    const m=event.data||{};if(m.protocol!==protocol||m.game!==game||m.epoch!==epoch)return;
     if(m.request&&pending.has(m.request)){const w=pending.get(m.request);pending.delete(m.request);m.ok?w.resolve(m):w.reject(new Error(m.error||"runtime request failed"));return;}
     if(m.event!=="ready")return;
     try{
@@ -35,6 +35,6 @@
       await send("launch"); globalThis.__countdownLaunched=true; status.textContent="launched";
     }catch(e){globalThis.__countdownFailure=String(e?.message||e);status.textContent=`failed: ${globalThis.__countdownFailure}`;}
   });
-  iframe.src="/build-web-th07-netplay-replay-audit/th07.html?hosted=1&runtimeVariant=multiplayer";
+  iframe.src=`/build-web-th07-netplay-replay-audit/th07.html?hosted=1&runtimeVariant=multiplayer&runtimeEpoch=${epoch}`;
 })();
 </script>

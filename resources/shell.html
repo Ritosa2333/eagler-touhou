@@ -20,6 +20,9 @@
       const protocol = "eagler-touhou/1";
       const game = "th07";
       const params = new URLSearchParams(location.search);
+      const epoch = Number(params.get("runtimeEpoch"));
+      const validEpoch = Number.isSafeInteger(epoch) && epoch > 0;
+      window.__eaglerRuntimeEpochV1 = validEpoch ? epoch : 0;
       const saveRoot = params.get("runtimeVariant") === "multiplayer" ? "/savesth07-multiplayer" : "/savesth07";
       const hosted = params.get("hosted") === "1" && window.parent !== window;
       window.__eaglerManagedDataState = {
@@ -87,10 +90,10 @@
       let transfer = null;
       let baseTransfer = null;
       const reply = (request, ok, payload = {}) => {
-        if (hosted) window.parent.postMessage({ protocol, game, request, ok, ...payload }, location.origin);
+        if (hosted) window.parent.postMessage({ protocol, game, epoch, request, ok, ...payload }, location.origin);
       };
       const emit = (event, payload = {}) => {
-        if (hosted) window.parent.postMessage({ protocol, game, event, ...payload }, location.origin);
+        if (hosted) window.parent.postMessage({ protocol, game, epoch, event, ...payload }, location.origin);
       };
       globalThis.EaglerTouhouGameExited = result => {
         const finish = () => emit("exit", { status: result === 1 ? "success" : "failure" });
@@ -608,7 +611,7 @@
       window.addEventListener("message", async event => {
         if (!hosted || event.source !== window.parent || event.origin !== location.origin) return;
         const message = event.data || {};
-        if (message.protocol !== protocol || message.game !== game) return;
+        if (!validEpoch || message.protocol !== protocol || message.game !== game || message.epoch !== epoch) return;
         try {
           switch (message.command) {
           case "configure": await installShared(message); await installRuntime(message); await installMusic(message); reply(message.request, true); break;
@@ -704,7 +707,7 @@
           });
         }],
         onRuntimeInitialized: () => {
-          if (hosted) { status.textContent = "Ready"; window.parent.postMessage({ protocol, game, event: "ready", saveRoot }, location.origin); }
+          if (hosted) { status.textContent = "Ready"; emit("ready", { saveRoot }); }
           else launch();
         },
         setStatus: text => {
@@ -816,7 +819,9 @@
       if (managedData?.enabled) {
         const prepare = window.parent.__eaglerPrepareManagedRuntimeDataV1;
         if (typeof prepare !== "function") throw new Error("Managed DATA provider is unavailable");
-        const payload = await prepare({ game: managedData.game, generation: managedData.generation });
+        const runtimeEpoch = Number(window.__eaglerRuntimeEpochV1);
+        if (!Number.isSafeInteger(runtimeEpoch) || runtimeEpoch <= 0) throw new Error("Managed DATA Runtime epoch is unavailable");
+        const payload = await prepare({ game: managedData.game, generation: managedData.generation, epoch: runtimeEpoch });
         if (!payload?.buffer || typeof payload.buffer.byteLength !== "number" || payload.buffer.byteLength !== Number(payload.bytes)) {
           throw new Error("Managed DATA payload is invalid");
         }

@@ -8,6 +8,7 @@
   "use strict";
   const protocol = "eagler-touhou/1";
   const game = "th07";
+  const epoch = 1;
   const iframe = document.getElementById("runtime");
   const status = document.getElementById("status");
   const pending = new Map();
@@ -18,7 +19,7 @@
     return new Promise((resolve, reject) => {
       pending.set(id, { resolve, reject });
       iframe.contentWindow.postMessage(
-        { protocol, game, command, request: id, ...body }, location.origin);
+        { protocol, game, epoch, command, request: id, ...body }, location.origin);
       setTimeout(() => {
         const waiter = pending.get(id);
         if (!waiter) return;
@@ -31,7 +32,7 @@
   window.addEventListener("message", async event => {
     if (event.source !== iframe.contentWindow || event.origin !== location.origin) return;
     const message = event.data || {};
-    if (message.protocol !== protocol || message.game !== game) return;
+    if (message.protocol !== protocol || message.game !== game || message.epoch !== epoch) return;
     if (message.request && pending.has(message.request)) {
       const waiter = pending.get(message.request);
       pending.delete(message.request);
@@ -63,6 +64,6 @@
     }
   });
 
-  iframe.src = "/build-web-th07-netplay-replay-audit/th07.html?hosted=1&runtimeVariant=multiplayer";
+  iframe.src = `/build-web-th07-netplay-replay-audit/th07.html?hosted=1&runtimeVariant=multiplayer&runtimeEpoch=${epoch}`;
 })();
 </script>
