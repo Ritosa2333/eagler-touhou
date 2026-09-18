@@ -21,6 +21,6 @@ trap 'rm -rf "$OUT"' EXIT
 
 "$CXX" -std=c++20 -DTH_ENABLE_MULTIPLAYER_GAMEPLAY -Isrc \
   -Ithird_party/eagler-common/include -Ivendored/SDL/include \
-  tests/netplay-input-test.cpp src/netplay/NetplayInput.cpp \
+  tests/netplay-input-test.cpp third_party/eagler-common/src/netplay/NetplayInput.cpp \
   -o "$OUT/netplay-input-test"
 "$OUT/netplay-input-test"

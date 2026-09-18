@@ -9,9 +9,11 @@ import subprocess
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
+COMMON = ROOT / "third_party" / "eagler-common"
 SOURCE = (ROOT / "src" / "Controller.cpp").read_text(encoding="utf-8")
 HEADER = (ROOT / "src" / "Controller.hpp").read_text(encoding="utf-8")
-NET_INPUT = (ROOT / "src" / "netplay" / "NetplayInput.cpp").read_text(encoding="utf-8")
+NET_INPUT = (COMMON / "src" / "netplay" / "NetplayInput.cpp").read_text(encoding="utf-8")
+INPUT_CONFIG = (ROOT / "src" / "netplay" / "NetplayInputConfig.hpp").read_text(encoding="utf-8")
 BASE = "5b9ebe892914ff5666ef68c0cd02719dde7d4ee9"
 FINAL = "022c533"
 
@@ -70,8 +72,9 @@ def main() -> None:
             "g_PlayerInputOverrides[i] = inputs[i]" in NET_INPUT and
             "g_PlayerButtonOverrides[i] = inputs[i].buttons" in NET_INPUT)
     require("logical lanes commit before gameplay simulation",
-            "g_LastFrameGameInputs[player] = g_CurFrameGameInputs[player]" in NET_INPUT and
-            "g_CurFrameGameInputs[player] = g_PlayerButtonOverrides[player]" in NET_INPUT)
+            "InputConfig::CommitGameInputs(g_PlayerButtonOverrides)" in NET_INPUT and
+            "g_LastFrameGameInputs[player] = g_CurFrameGameInputs[player]" in INPUT_CONFIG and
+            "g_CurFrameGameInputs[player] = buttons[player]" in INPUT_CONFIG)
     require("raw touch is never sampled from the transport layer",
             "Touch::" not in NET_INPUT and "EaglerOptions::" not in NET_INPUT)
 
