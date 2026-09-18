@@ -43,8 +43,9 @@ button{font:inherit;color:inherit}
 .main:not(.has-selection) .game .rail-title strong,.main.has-selection .game:not(.selected) .rail-title strong{font-weight:700}
 .game .no,.game h2{text-shadow:0 0 2px rgba(0,0,0,.85),2px 2px 8px rgba(0,0,0,.8)}.game small,.game .rail-title{text-shadow:0 0 1px rgba(0,0,0,.8),1px 1px 4px rgba(0,0,0,.7)}
 .tools{position:relative;overflow:hidden;flex:0 0 0;width:0;min-width:0;opacity:0;transform:none;border:1px solid transparent;border-radius:0;background:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px) 0 0/100% 18px,#080a08;box-shadow:4px 4px 0 #000,inset 1px 1px 0 #242924;padding:0;display:flex;flex-direction:column;pointer-events:none;transition:opacity .4s ease .24s}
-.main:not(.has-selection) .tools{content-visibility:hidden;contain:layout style paint}
-.main.has-selection .tools{flex-basis:330px;width:330px;opacity:1;transform:none;padding:16px 24px 24px;pointer-events:auto;border-color:#858b82}
+.main:not(.has-selection) .tools{visibility:hidden}
+.main.has-selection .tools{visibility:visible;flex-basis:330px;width:330px;opacity:1;transform:none;padding:16px 24px 24px;pointer-events:auto;border-color:#858b82}
+.main.has-selection .tools :is(button,a,input,select,textarea,label,[role="button"],[role="switch"]){pointer-events:auto}
 .main.has-selection .game.selected{flex:1 1 auto;border-color:rgba(255,255,255,.72);box-shadow:0 28px 80px rgba(0,0,0,.38)}
 .main.has-selection .game.selected .card-art{filter:brightness(1.08) saturate(1.04);transform:scale(1.03);transition:filter .75s ease,transform 1.2s var(--ease)}
 .main.has-selection .game.selected .card-glow{opacity:.22;filter:brightness(1.08) saturate(1.04);transition:opacity .25s ease .24s,filter .75s ease,transform 1.2s var(--ease)}

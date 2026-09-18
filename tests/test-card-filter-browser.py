@@ -11,6 +11,7 @@ def home(page, category, counts):
       selected: document.querySelectorAll('.game.selected').length,
       expanded: document.querySelector('#main').classList.contains('has-selection'),
       inert: document.querySelector('#main').inert,
+      toolsInert: document.querySelector('.tools').inert,
       tools: document.querySelector('.tools').getAttribute('aria-hidden'),
       category: document.querySelector('[data-card-filter][aria-pressed=true]').dataset.cardFilter,
       count: document.querySelectorAll('.game:not([hidden])').length,
@@ -18,7 +19,7 @@ def home(page, category, counts):
       route: new URL(location.href).searchParams.has('game'),
       overflow: document.documentElement.scrollWidth > innerWidth
     })""")
-    assert state == dict(selected=0, expanded=False, inert=False, tools="true", category=category,
+    assert state == dict(selected=0, expanded=False, inert=False, toolsInert=False, tools="true", category=category,
                          count=counts[category], opacity="1",
                          route=False, overflow=False), state
 
@@ -59,6 +60,23 @@ def main():
         assert len(products) == len(set(products)) and counts["all"] == len(products), catalog
         assert counts["original"] > 0 and counts["multiplayer"] > 0, catalog
         page.wait_for_timeout(1000)
+        # Returning home and reselecting the same product must immediately
+        # restore tools hit-testing. Edge could leave the visible tools parent
+        # above its descendants in hit testing until a different card was picked.
+        first_product = products[0]
+        page.evaluate("p => [...document.querySelectorAll('.game')].find(c => (c.dataset.product || c.dataset.game) === p).click()", first_product)
+        page.wait_for_timeout(80)
+        assert page.evaluate("!document.querySelector('.tools').inert && document.querySelector('.tools').getAttribute('aria-hidden') === 'false'")
+        page.locator("#gamePackageImport").click()
+        page.locator("#gameDataImportWindow").wait_for(state="visible", timeout=5000)
+        page.locator("#gameDataImportClose").click()
+        change(page, "all", counts)
+        page.evaluate("p => [...document.querySelectorAll('.game')].find(c => (c.dataset.product || c.dataset.game) === p).click()", first_product)
+        page.wait_for_timeout(80)
+        page.locator("#gamePackageImport").click()
+        page.locator("#gameDataImportWindow").wait_for(state="visible", timeout=5000)
+        page.locator("#gameDataImportClose").click()
+        change(page, "all", counts)
         # Includes same-category clicks and destinations containing the old game.
         for product in products:
             for category in ["all", "original", "multiplayer"]:
