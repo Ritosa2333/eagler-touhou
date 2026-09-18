@@ -3908,7 +3908,11 @@ function render() {
   tools.classList.toggle("mobile-open", state.mobileOpen);
   tools.classList.toggle("mp-mode", multiplayerProduct);
   tools.setAttribute("aria-hidden", String(!state.hasSelection));
-  tools.inert = !state.hasSelection;
+  // Keep the tools panel out of native inert state. The collapsed panel already
+  // uses visibility:hidden + pointer-events:none, while aria-hidden owns
+  // accessibility exposure. Avoiding another browser-managed interaction state
+  // also makes the Edge hit-test recovery path deterministic after Player exit.
+  tools.removeAttribute("inert");
   document.querySelectorAll<HTMLElement>(".game").forEach(card => {
     const candidate = card.dataset.product || card.dataset.game || "";
     if (!isProductId(candidate)) return;
@@ -4421,6 +4425,7 @@ for (const type of ["contextmenu", "selectstart", "dragstart", "gesturestart", "
   document.addEventListener(type, preventPlayerBrowserGesture, { capture: true, passive: false });
 
 function openPlayerView() {
+  cancelLauncherInteractionAnimations();
   if (!player.classList.contains("open")) {
     const operation = playerRouteHistoryOperation({
       currentUrl: location.href,
@@ -4510,6 +4515,7 @@ async function closePlayerView(fromHistory = false, { skipSync = false, returnTo
   // user explicitly chooses to leave without it.
   if (!skipSync && !await confirmRuntimeSyncBeforeClose()) return false;
   if (isPlayerFullscreen()) await exitPlayerFullscreen().catch(() => {});
+  cancelLauncherInteractionAnimations();
   $("#touchHelp").hidden = true;
   collapseTouchGuides();
   player.classList.remove("help-visible");
@@ -7112,6 +7118,13 @@ function cancelCardLayoutMotion() {
   cardArtworkSizes.clear();
   $("#main").classList.remove("card-layout-motion");
 }
+function cancelLauncherInteractionAnimations() {
+  cancelCardLayoutMotion();
+  cancelMobileHomeCards();
+  for (const animation of $("#main").getAnimations({ subtree: true })) {
+    try { animation.cancel(); } catch {}
+  }
+}
 function captureCardLayout(): CardLayoutSnapshot | null {
   if (!cardLayoutMedia.matches || state.lessMotion) {
     cancelCardLayoutMotion();
@@ -7202,14 +7215,6 @@ function animateCardLayout(before: CardLayoutSnapshot | null) {
         return { offset, transform: `translate(calc(-1 * var(--art-position,50%)),-50%) scale(${size / x},${size / y})` };
       }));
     }
-  }
-  // Fade only the content groups, leaving the panel surface and its layout
-  // unchanged. Direct children avoid applying opacity twice to nested controls.
-  for (const content of $(".tools").children) {
-    if (!(content instanceof HTMLElement) || content.hidden) continue;
-    track(content, [{ opacity: 0 }, { opacity: 1 }], {
-      duration: 420, delay: 80, easing: style.getPropertyValue("--ease"), fill: "both"
-    });
   }
   if (!cardLayoutAnimations.size) main.classList.remove("card-layout-motion");
 }
