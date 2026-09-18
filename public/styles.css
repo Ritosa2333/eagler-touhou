@@ -161,6 +161,294 @@ html,body,.sheet{background:#0d0d0c}
 .player.touch-viewport-edit{background:#080808!important;background-image:none!important}.player.touch-viewport-edit .game-viewport{background:var(--touch-preview-image,linear-gradient(#171615,#171615)) center/contain no-repeat;cursor:ew-resize}.player.touch-viewport-edit>:not(#gameViewport):not(#touchViewportDragSurface):not(#touchViewportDone){visibility:hidden!important;pointer-events:none!important}.player.touch-viewport-edit>#touchViewportDragSurface,.player.touch-viewport-edit>#touchViewportDone{visibility:visible!important;pointer-events:auto!important}
 .touch-layout-viewport-row{gap:7px}.touch-layout-viewport-row>.touch-layout-viewport-actions{width:100%}
 
+/* Mizuki transfer + package import surfaces.
+   These replace the early terminal-like boxes without changing their runtime
+   ownership, IDs or cancellation/import behavior. */
+.transfer{
+  position:absolute;
+  z-index:31;
+  top:max(14px,env(safe-area-inset-top));
+  left:max(14px,env(safe-area-inset-left));
+  width:min(360px,calc(100vw - 92px));
+  box-sizing:border-box;
+  padding:16px;
+  border:1px solid rgba(255,255,255,.075);
+  border-radius:16px;
+  background:rgba(25,26,23,.96);
+  color:#eee9e1;
+  box-shadow:0 18px 44px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.025);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  font:12px/1.45 var(--ui-font);
+  text-shadow:none;
+  overflow:hidden;
+  animation:mizuki-float-panel-in 220ms cubic-bezier(.4,0,.2,1) both;
+}
+.transfer[hidden]{display:none}
+.transfer strong{
+  display:block;
+  margin:0 0 12px;
+  color:rgba(255,255,255,.9);
+  font:800 15px/1.3 var(--ui-font);
+  letter-spacing:0;
+}
+.transfer-line,.transfer-meta{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.transfer-line{color:#b8b3ac;font-size:11px}
+.transfer-line #transferAmount{flex:0 0 auto;color:#e7e1d9;font-variant-numeric:tabular-nums}
+.transfer-bar{
+  height:6px;
+  margin:9px 0 8px;
+  border:0;
+  border-radius:999px;
+  background:#30332d;
+  overflow:hidden;
+}
+.transfer-bar i{
+  display:block;
+  width:0;
+  height:100%;
+  border-radius:inherit;
+  background:var(--red-bright);
+  box-shadow:0 0 10px rgba(217,77,85,.28);
+}
+.transfer-bar.indeterminate i{
+  width:34%!important;
+  background:linear-gradient(90deg,rgba(217,77,85,.28),var(--red-bright),rgba(217,77,85,.28));
+  animation:network-transfer-indeterminate .9s linear infinite;
+}
+.transfer-meta{color:#85817b;font-size:10px;font-variant-numeric:tabular-nums}
+.player-debug{
+  max-height:190px;
+  margin:12px 0 0;
+  padding:10px 11px;
+  overflow:auto;
+  border:0;
+  border-radius:10px;
+  background:#10120f;
+  color:#9fd9a7;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);
+  font:9px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  text-shadow:none;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  -webkit-user-select:text;
+  user-select:text;
+}
+.transfer-warning{
+  margin-top:11px;
+  padding:10px 11px;
+  border:0;
+  border-radius:10px;
+  background:rgba(214,79,69,.12);
+  color:#ffaaa3;
+  font-size:10px;
+  line-height:1.45;
+  white-space:pre-line;
+}
+.transfer-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:12px}
+.transfer-retry,.transfer-cancel,.transfer-import-open,.transfer-import,.transfer-download{
+  box-sizing:border-box;
+  min-height:40px;
+  padding:0 14px;
+  border:0;
+  border-radius:10px;
+  background:#292c27;
+  color:rgba(255,255,255,.78);
+  box-shadow:none;
+  font:700 11px/1 var(--ui-font);
+  text-decoration:none;
+  cursor:pointer;
+  transition:background-color .15s ease,color .15s ease,opacity .15s ease,transform .1s ease;
+}
+.transfer-retry:hover,.transfer-retry:focus-visible,
+.transfer-download:hover,.transfer-download:focus-visible{
+  background:#363a33;
+  color:#fff;
+  outline:none;
+}
+.transfer-cancel,.transfer-import,.transfer-import-open{
+  background:var(--red-bright);
+  color:#fff;
+  box-shadow:0 5px 14px rgba(189,68,56,.16);
+}
+.transfer-cancel:hover,.transfer-cancel:focus-visible,
+.transfer-import:hover,.transfer-import:focus-visible,
+.transfer-import-open:hover,.transfer-import-open:focus-visible{
+  background:var(--red-bright);
+  color:#fff;
+  opacity:.86;
+  outline:none;
+}
+.transfer-retry:active,.transfer-cancel:active,.transfer-import-open:active,
+.transfer-import:active,.transfer-download:active{transform:scale(.98)}
+.transfer-download:disabled,.transfer-import:disabled,.transfer-cancel:disabled,.transfer-retry:disabled{
+  opacity:.38;
+  cursor:not-allowed;
+  transform:none;
+}
+
+.game-data-import-window,.game-data-link-window{
+  position:fixed;
+  z-index:45;
+  left:50%;
+  top:50%;
+  width:min(440px,calc(100vw - 32px));
+  max-height:min(86dvh,680px);
+  box-sizing:border-box;
+  transform:translate(-50%,-50%);
+  overflow:auto;
+  border:1px solid rgba(255,255,255,.075);
+  border-radius:16px;
+  background:#191a17;
+  color:#eee9e1;
+  box-shadow:0 24px 64px rgba(0,0,0,.64),inset 0 1px 0 rgba(255,255,255,.025);
+  font:12px/1.55 var(--ui-font);
+  animation:mizuki-centered-panel-in 230ms cubic-bezier(.4,0,.2,1) both;
+}
+.game-data-link-window{z-index:46;width:min(480px,calc(100vw - 32px))}
+.game-data-import-window[hidden],.game-data-link-window[hidden]{display:none}
+.game-data-import-window header,.game-data-link-window header{
+  min-height:58px;
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:10px 12px 10px 20px;
+  border:0;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.game-data-import-window header div,.game-data-link-window header div{display:grid;gap:3px;min-width:0}
+.game-data-import-window header small,.game-data-link-window header small{
+  color:#918c85;
+  font:700 8px/1 var(--art-font);
+  letter-spacing:.16em;
+}
+.game-data-import-window header strong,.game-data-link-window header strong{
+  color:#f0ebe4;
+  font:800 17px/1.25 var(--ui-font);
+}
+.game-data-import-window header button,.game-data-link-window header button{
+  flex:0 0 auto;
+  width:36px;
+  height:36px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:0;
+  border-radius:10px;
+  background:transparent;
+  color:rgba(255,255,255,.54);
+  box-shadow:none;
+  font:20px/1 var(--ui-font);
+  cursor:pointer;
+  transition:background-color .15s ease,color .15s ease,transform .1s ease;
+}
+.game-data-import-window header button:hover,.game-data-import-window header button:focus-visible,
+.game-data-link-window header button:hover,.game-data-link-window header button:focus-visible{
+  background:#292c27;
+  color:#fff;
+  outline:none;
+}
+.game-data-import-window header button:active,.game-data-link-window header button:active{transform:scale(.94)}
+.game-data-import-window p{
+  margin:0;
+  padding:18px 20px 12px;
+  color:#b8b3ac;
+  font-size:12px;
+  line-height:1.65;
+  white-space:pre-line;
+}
+.game-data-import-busy{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:0 20px 14px;
+  padding:11px 12px;
+  border:0;
+  border-radius:10px;
+  background:#20231e;
+  color:#c9c4bd;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.035);
+  font:10px/1.4 var(--ui-font);
+}
+.game-data-import-busy[hidden]{display:none}
+.game-data-import-busy .eagler-preload-spinner{flex:0 0 auto;width:20px;height:20px}
+.game-data-import-window[aria-busy="true"] .game-data-import-actions button,
+.game-data-import-window[aria-busy="true"] header button{opacity:.4;cursor:not-allowed}
+.game-data-import-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  padding:4px 20px 20px;
+}
+.game-data-import-actions button{width:100%;min-width:0;min-height:44px}
+.game-data-import-actions .transfer-import{order:2}
+.game-data-import-actions .transfer-download{order:1}
+.game-data-link-window{padding-bottom:10px}
+.game-data-link-row{
+  display:grid;
+  grid-template-columns:100px minmax(0,1fr);
+  align-items:start;
+  gap:12px;
+  margin:10px 16px 0;
+  padding:12px 13px;
+  border:0;
+  border-radius:10px;
+  background:#151714;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.035);
+}
+.game-data-link-row:last-child{border-bottom:0}
+.game-data-link-row>span{color:#8f8a83;font-size:10px}
+.game-data-link-row a{
+  color:#9abfff;
+  font-weight:650;
+  overflow-wrap:anywhere;
+  word-break:break-all;
+  text-decoration:none;
+}
+.game-data-link-row a:hover,.game-data-link-row a:focus-visible{color:#c2d8ff;text-decoration:underline;text-underline-offset:3px}
+.game-data-link-row strong{font-weight:600;color:#e7d08e;white-space:pre-wrap;overflow-wrap:anywhere}
+.game-data-link-window,.game-data-link-window *{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default!important}
+.game-data-link-window a{touch-action:auto}
+.game-data-link-window header button{-webkit-user-select:none!important;user-select:none!important}
+
+@keyframes mizuki-float-panel-in{
+  from{opacity:0;transform:translateY(-8px) scale(.985)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes mizuki-centered-panel-in{
+  from{opacity:0;transform:translate(-50%,calc(-50% + 14px)) scale(.985)}
+  to{opacity:1;transform:translate(-50%,-50%) scale(1)}
+}
+@media(max-width:600px){
+  .transfer{
+    left:max(10px,env(safe-area-inset-left));
+    right:max(10px,env(safe-area-inset-right));
+    width:auto;
+    padding:14px;
+    border-radius:14px;
+  }
+  .transfer strong{font-size:14px;margin-bottom:10px}
+  .transfer-actions{display:grid;grid-template-columns:1fr}
+  .transfer-actions button{width:100%;min-height:42px}
+  .game-data-import-window,.game-data-link-window{
+    width:calc(100vw - 20px);
+    max-height:90dvh;
+    border-radius:14px;
+  }
+  .game-data-import-window header,.game-data-link-window header{padding-left:16px}
+  .game-data-import-window p{padding:16px 16px 11px}
+  .game-data-import-busy{margin-inline:16px}
+  .game-data-import-actions{grid-template-columns:1fr;padding:4px 16px 16px}
+  .game-data-import-actions .transfer-import,.game-data-import-actions .transfer-download{order:initial}
+  .game-data-link-row{grid-template-columns:1fr;gap:6px;margin-inline:12px}
+}
+@media(prefers-reduced-motion:reduce){
+  .transfer,.game-data-import-window,.game-data-link-window{animation:none!important}
+}
+
+
 /* Touch management and controls: carry the current rounded tonal theme into
    the layout editor without changing touch behavior, hit areas, or saved data. */
 .player{--touch-surface:#111410;--touch-surface-raised:#181b17;--touch-surface-soft:#1d211c;--touch-outline:rgba(255,255,255,.055);--touch-muted:#918d86;--touch-accent:#d94d55;--touch-accent-soft:rgba(217,77,85,.16);--touch-accent-strong:#b33142}
