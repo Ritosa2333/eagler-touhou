@@ -2,6 +2,7 @@ import { HOST_PROTOCOL, isGameId, type GameId } from "./product-catalog.mjs";
 
 export const TOUCH_SENSITIVITY_MIN = 100;
 export const TOUCH_SENSITIVITY_MAX = 300;
+export const RUNTIME_EPOCH_QUERY_PARAMETER = "runtimeEpoch";
 
 export const RUNTIME_PROTOCOL_COMMANDS = Object.freeze([
   "configure",
@@ -287,6 +288,7 @@ export interface RuntimeEventPayloads {
 export interface RuntimeProtocolEnvelope {
   protocol: typeof HOST_PROTOCOL;
   game: GameId;
+  epoch: number;
 }
 
 export type RuntimeCommandMessage<C extends RuntimeProtocolCommand = RuntimeProtocolCommand> =
@@ -334,8 +336,18 @@ function isRecord(value: unknown): value is UnknownRecord {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-export function parseRuntimeInboundMessage(value: unknown, expectedGame: GameId): RuntimeInboundMessage | null {
-  if (!isRecord(value) || value.protocol !== HOST_PROTOCOL || value.game !== expectedGame || !isGameId(expectedGame)) {
+export function isRuntimeProtocolEpoch(value: unknown): value is number {
+  return Number.isSafeInteger(value) && Number(value) > 0;
+}
+
+export function parseRuntimeInboundMessage(
+  value: unknown,
+  expectedGame: GameId,
+  expectedEpoch?: number,
+): RuntimeInboundMessage | null {
+  if (!isRecord(value) || value.protocol !== HOST_PROTOCOL || value.game !== expectedGame || !isGameId(expectedGame) ||
+      !isRuntimeProtocolEpoch(value.epoch) ||
+      (expectedEpoch !== undefined && value.epoch !== expectedEpoch)) {
     return null;
   }
   if (typeof value.event === "string" && runtimeEvents.has(value.event)) {

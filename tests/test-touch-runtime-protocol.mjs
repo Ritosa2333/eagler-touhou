@@ -19,6 +19,7 @@ const ready = {
   targetOrigin: "https://launcher.invalid",
   protocol: "eagler-touhou/1",
   game: "th07",
+  epoch: 17,
   launched: true,
   ready: true,
   spectator: false,
@@ -37,6 +38,7 @@ assert.equal(postHostedKey(ready, { code: "KeyR", key: "r", keyCode: 82 }, true)
 assert.deepEqual(sent.pop().message, {
   protocol: "eagler-touhou/1",
   game: "th07",
+  epoch: 17,
   command: "keyboard",
   down: true,
   code: "KeyR",
@@ -57,6 +59,7 @@ assert.deepEqual(sent.pop(), {
   message: {
     protocol: "eagler-touhou/1",
     game: "th07",
+    epoch: 17,
     command: "touch-controls",
     ...controls,
     touchSensitivity: 150,
@@ -74,6 +77,7 @@ assert.equal(postDirectTouch(ready, "up", touch), true);
 assert.deepEqual(sent.pop().message, {
   protocol: "eagler-touhou/1",
   game: "th07",
+  epoch: 17,
   command: "direct-touch",
   type: "up",
   id: -3,
@@ -86,10 +90,12 @@ assert.equal(postTouchCancel(ready), true);
 assert.equal(sent.pop().message.command, "touch-cancel");
 
 assert.equal(postThpracMouse({ ...ready, target: null }, "down", 10, 20), false);
+assert.equal(postThpracMouse({ ...ready, epoch: 0 }, "down", 10, 20), false);
 assert.equal(postThpracMouse(ready, "move", 123.5, 234.5), true);
 assert.deepEqual(sent.pop().message, {
   protocol: "eagler-touhou/1",
   game: "th07",
+  epoch: 17,
   command: "thprac-mouse",
   type: "move",
   x: 123.5,

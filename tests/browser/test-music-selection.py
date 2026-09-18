@@ -139,6 +139,7 @@ RUNTIME_PROTOCOL_STUB = r"""<!doctype html>
 (() => {
   const protocol = "eagler-touhou/1";
   const game = location.pathname.match(/runtime-stub\/(th\d+)\.html/)?.[1] || "";
+  const epoch = Number(new URLSearchParams(location.search).get("runtimeEpoch"));
   window.__eaglerTestMessages = [];
   window.__eaglerTestWrites = [];
   const FS = {
@@ -151,11 +152,11 @@ RUNTIME_PROTOCOL_STUB = r"""<!doctype html>
   window.Module = { FS, touhouMusicMode: "midi" };
   window.addEventListener("message", event => {
     const message = event.data || {};
-    if (event.origin !== location.origin || message.protocol !== protocol || message.game !== game) return;
+    if (event.origin !== location.origin || message.protocol !== protocol || message.game !== game || message.epoch !== epoch) return;
     window.__eaglerTestMessages.push(message);
-    event.source.postMessage({ protocol, game, request: message.request, ok: true }, event.origin);
+    event.source.postMessage({ protocol, game, epoch, request: message.request, ok: true }, event.origin);
   });
-  window.parent.postMessage({ protocol, game, event: "ready" }, location.origin);
+  window.parent.postMessage({ protocol, game, epoch, event: "ready" }, location.origin);
 })();
 </script>
 """
@@ -255,10 +256,10 @@ def main() -> int:
                     stub = stub.replace('request: message.request, ok: true',
                         'request: message.request, ok: message.command !== "configure", error: "HTTP 503 music configuration failed"')
                 if fault['mode'] == 'missing-data':
-                    stub = stub.replace('window.parent.postMessage({ protocol, game, event: "ready" }, location.origin);', '''
+                    stub = stub.replace('window.parent.postMessage({ protocol, game, epoch, event: "ready" }, location.origin);', '''
                       window.parent.__eaglerPrepareManagedRuntimeDataV1({
-                        game, generation: new URLSearchParams(location.search).get('gameGeneration'),
-                      }).then(() => window.parent.postMessage({ protocol, game, event: "ready" }, location.origin))
+                        game, generation: new URLSearchParams(location.search).get('gameGeneration'), epoch,
+                      }).then(() => window.parent.postMessage({ protocol, game, epoch, event: "ready" }, location.origin))
                         .catch(error => { window.__providerError = error.message; });
                     ''')
                 route.fulfill(status=200, content_type='text/html', body=stub)

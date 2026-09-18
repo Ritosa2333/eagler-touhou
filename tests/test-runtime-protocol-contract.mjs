@@ -24,6 +24,9 @@ const shellSources = Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([game
 assert.deepEqual(Object.keys(shellSources), Object.keys(PRODUCT_GAMES));
 for (const [game, paths] of Object.entries(shellSources)) {
   const source = (await Promise.all(paths.map(path => readFile(path, "utf8")))).join("\n");
+  assert.match(source, /runtimeEpoch/, `${game}: Runtime shell must bind protocol traffic to a navigation epoch`);
+  assert.match(source, /\.epoch\s*!==\s*epoch|message\.epoch\s*!==\s*epoch/,
+    `${game}: Runtime shell must reject Host commands from another navigation epoch`);
   const directoryRuntime = PRODUCT_GAMES[game].runtimeFileLayout === "directory";
   if (directoryRuntime) {
     assert.ok(source.includes(`Math.max(${TOUCH_SENSITIVITY_MIN},Math.min(${TOUCH_SENSITIVITY_MAX},sensitivity))`),

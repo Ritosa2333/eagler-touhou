@@ -33,7 +33,7 @@ assert.deepEqual(RUNTIME_PROTOCOL_LEGACY_EVENTS, ["thprac-session"]);
 for (const event of RUNTIME_PROTOCOL_LEGACY_EVENTS) {
   assert.ok(!RUNTIME_PROTOCOL_EVENTS.includes(event), `${event}: legacy event must not become a canonical required event`);
   assert.ok(!RUNTIME_PROTOCOL_OPTIONAL_EVENTS.includes(event), `${event}: legacy event must not remain in canonical optional vocabulary`);
-  const legacyMessage = { protocol: "eagler-touhou/1", game: "th06", event };
+  const legacyMessage = { protocol: "eagler-touhou/1", game: "th06", epoch: 7, event };
   assert.equal(parseRuntimeInboundMessage(legacyMessage, "th06")?.event, event,
     `${event}: bounded legacy read compatibility must remain parseable`);
 }
@@ -84,22 +84,27 @@ assert.equal(RUNTIME_PROTOCOL_EVENT_BEHAVIOR["first-frame"].cadence, "per-launch
 assert.equal(RUNTIME_PROTOCOL_EVENT_BEHAVIOR["frame-health"].cadence, "periodic");
 assert.equal(RUNTIME_PROTOCOL_EVENT_BEHAVIOR["audio-health"].cadence, "periodic");
 
-const ready = { protocol: "eagler-touhou/1", game: "th06", event: "ready", saveRoot: "/savesth06" };
-assert.deepEqual(parseRuntimeInboundMessage(ready, "th06"), ready);
+const ready = { protocol: "eagler-touhou/1", game: "th06", epoch: 7, event: "ready", saveRoot: "/savesth06" };
+assert.deepEqual(parseRuntimeInboundMessage(ready, "th06", 7), ready);
+assert.equal(parseRuntimeInboundMessage(ready, "th06", 8), null,
+  "a queued message from a previous iframe navigation must not enter the current Runtime session");
 
-const response = { protocol: "eagler-touhou/1", game: "th07", request: "r1", ok: true, files: [] };
-assert.deepEqual(parseRuntimeInboundMessage(response, "th07"), response);
+const response = { protocol: "eagler-touhou/1", game: "th07", epoch: 11, request: "r1", ok: true, files: [] };
+assert.deepEqual(parseRuntimeInboundMessage(response, "th07", 11), response);
 
-const notice = { protocol: "eagler-touhou/1", game: "th08", event: "notice", message: "Runtime notice" };
-assert.deepEqual(parseRuntimeInboundMessage(notice, "th08"), notice);
+const notice = { protocol: "eagler-touhou/1", game: "th08", epoch: 13, event: "notice", message: "Runtime notice" };
+assert.deepEqual(parseRuntimeInboundMessage(notice, "th08", 13), notice);
 
 for (const invalid of [
   null,
   [],
   { ...ready, protocol: "other/1" },
   { ...ready, game: "th07" },
+  { ...ready, epoch: 0 },
+  { ...ready, epoch: Number.NaN },
+  { protocol: "eagler-touhou/1", game: "th06", event: "ready" },
   { ...ready, event: "unknown-event" },
-  { protocol: "eagler-touhou/1", game: "th06", request: "r1", ok: "yes" },
+  { protocol: "eagler-touhou/1", game: "th06", epoch: 7, request: "r1", ok: "yes" },
 ]) assert.equal(parseRuntimeInboundMessage(invalid, "th06"), null);
 
-console.log(JSON.stringify({ runtimeProtocolModel: "PASS", boundary: "unknown-to-envelope" }));
+console.log(JSON.stringify({ runtimeProtocolModel: "PASS", boundary: "game-and-navigation-epoch" }));

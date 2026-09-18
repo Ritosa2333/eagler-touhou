@@ -24,6 +24,7 @@ import { BUILD_AUTHORITY_PUBLICATION, classifyBuildProfile } from "../lib/build-
 import { extractGameDataLayout } from "../lib/runtime-data-layout.mjs";
 import { assemblePreloadData } from "../lib/preload-data-assembler.mjs";
 import { assertRuntimeDataShell } from "../lib/runtime-data-provider.mjs";
+import { assertRuntimeProtocolSources } from "../lib/runtime-protocol-shell.mjs";
 import { buildAppShell } from "../lib/app-shell-build.mjs";
 import { deploymentAppShellPatterns, runtimeAppShellPaths } from "../lib/app-shell-policy.mjs";
 import { sourceIdentity, verifyReleaseManifest, writeReleaseManifest, fileSetIdentity } from "../lib/release-manifest.mjs";
@@ -378,6 +379,15 @@ async function assertAppManagedRuntimeShell(buildRoot, game, variant, stem = gam
   const htmlPath = resolve(buildRoot, `${stem}.html`);
   const source = await readFile(htmlPath, "utf8");
   assertRuntimeDataShell(source, game, variant);
+  const protocolSources = [{ name: `${stem}.html`, source }];
+  if (PRODUCT_GAMES[game].runtimeFileLayout === "directory") {
+    const directory = JSON.parse(await readFile(resolve(buildRoot, "runtime-files.json"), "utf8"));
+    for (const name of runtimeFileNames(game, directory.files)) {
+      if (!/\.(?:html|m?js)$/i.test(name) || name === `${stem}.html`) continue;
+      protocolSources.push({ name, source: await readFile(resolve(buildRoot, name), "utf8") });
+    }
+  }
+  assertRuntimeProtocolSources(protocolSources, game, variant);
   if (/packageBridge|package-bootstrap|__eaglerPackageBootstrapState/.test(source)) {
     throw new Error(`${game} ${variant} Runtime shell is stale: retired Package Runtime bridge is still present`);
   }

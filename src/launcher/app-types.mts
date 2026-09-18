@@ -155,6 +155,7 @@ export type LauncherFullscreenElement = HTMLElement & {
 export interface ManagedRuntimeDataRequest {
   game: GameId;
   generation: string;
+  epoch: number;
 }
 
 export type ManagedRuntimeDataProvider = (

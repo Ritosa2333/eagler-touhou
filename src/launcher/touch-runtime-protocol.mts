@@ -7,6 +7,7 @@ export interface TouchRuntimeContext {
   targetOrigin: string;
   protocol: string;
   game: string;
+  epoch: number;
   launched: boolean;
   ready: boolean;
   spectator: boolean;
@@ -38,7 +39,7 @@ export interface HostedKeySpec {
 }
 
 export function postHostedKey(
-  context: Pick<TouchRuntimeContext, "target" | "targetOrigin" | "protocol" | "game" | "launched">,
+  context: Pick<TouchRuntimeContext, "target" | "targetOrigin" | "protocol" | "game" | "epoch" | "launched">,
   spec: HostedKeySpec,
   down: boolean,
 ): boolean {
@@ -46,6 +47,7 @@ export function postHostedKey(
   context.target.postMessage({
     protocol: context.protocol,
     game: context.game,
+    epoch: context.epoch,
     command: "keyboard",
     down,
     code: spec.code,
@@ -65,6 +67,7 @@ export function postTouchControls(
   context.target.postMessage({
     protocol: context.protocol,
     game: context.game,
+    epoch: context.epoch,
     command: "touch-controls",
     ...controls,
     touchSensitivity,
@@ -81,6 +84,7 @@ export function postDirectTouch(
   context.target.postMessage({
     protocol: context.protocol,
     game: context.game,
+    epoch: context.epoch,
     command: "direct-touch",
     type,
     id: touch.id,
@@ -95,21 +99,23 @@ export function postTouchCancel(context: TouchRuntimeContext): boolean {
   context.target.postMessage({
     protocol: context.protocol,
     game: context.game,
+    epoch: context.epoch,
     command: "touch-cancel",
   }, context.targetOrigin);
   return true;
 }
 
 export function postThpracMouse(
-  context: Pick<TouchRuntimeContext, "target" | "targetOrigin" | "protocol" | "game">,
+  context: Pick<TouchRuntimeContext, "target" | "targetOrigin" | "protocol" | "game" | "epoch">,
   type: ThpracMouseType,
   x: number,
   y: number,
 ): boolean {
-  if (!context.target) return false;
+  if (!context.target || !Number.isSafeInteger(context.epoch) || context.epoch <= 0) return false;
   context.target.postMessage({
     protocol: context.protocol,
     game: context.game,
+    epoch: context.epoch,
     command: "thprac-mouse",
     type,
     x,
