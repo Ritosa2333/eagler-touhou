@@ -25,6 +25,7 @@ assert.deepEqual(cases.map(test => test.game).sort(), preloadGames,
   "preload shell execution cases must be updated when a formal emscripten-preload adapter is registered");
 
 for (const test of cases) {
+  const runtimeEpoch = 23;
   const html = await readFile(test.shell, "utf8");
   const source = html.match(/<script>\s*([\s\S]*?)<\/script>/)?.[1];
   if (!source) throw new Error(`${test.game}: inline shell script missing`);
@@ -50,8 +51,8 @@ for (const test of cases) {
     console, URL, URLSearchParams, Uint8Array, TextDecoder, Request, Response, AbortController, setTimeout, clearTimeout, performance, crypto: webcrypto,
     innerWidth: 640, innerHeight: 480,
     navigator: { userAgent: "Desktop Test Browser", maxTouchPoints: 0, userAgentData: { mobile: false } },
-    location: { search: `?hosted=1&asset=${encodeURIComponent(localDataVersion)}&oggAsset=${encodeURIComponent(localOggVersion)}`, origin: "http://test.local",
-      href: `http://test.local/game.html?hosted=1&asset=${encodeURIComponent(localDataVersion)}&oggAsset=${encodeURIComponent(localOggVersion)}` },
+    location: { search: `?hosted=1&runtimeEpoch=${runtimeEpoch}&asset=${encodeURIComponent(localDataVersion)}&oggAsset=${encodeURIComponent(localOggVersion)}`, origin: "http://test.local",
+      href: `http://test.local/game.html?hosted=1&runtimeEpoch=${runtimeEpoch}&asset=${encodeURIComponent(localDataVersion)}&oggAsset=${encodeURIComponent(localOggVersion)}` },
     parent,
     caches: {
       async match(url) {
@@ -139,8 +140,15 @@ for (const test of cases) {
       reply.minQueuedMs === 31.0 && reply.robust === true && reply.backend === "script" && reply.underruns === 0)) {
     throw new Error(`${test.game}: audio queue health was not forwarded`);
   }
-  const message = listeners.get("message");
-  if (!message) throw new Error(`${test.game}: message listener missing`);
+  const rawMessage = listeners.get("message");
+  if (!rawMessage) throw new Error(`${test.game}: message listener missing`);
+  const message = event => rawMessage({ ...event, data: { epoch: runtimeEpoch, ...event.data } });
+  const beforeStaleEpoch = replies.length;
+  await rawMessage({ origin: context.location.origin, source: parent, data: {
+    protocol: "eagler-touhou/1", game: test.game, epoch: runtimeEpoch - 1,
+    command: "keyboard-clear", request: "stale-epoch"
+  } });
+  assert.equal(replies.length, beforeStaleEpoch, `${test.game}: stale navigation epoch command must be ignored`);
   const auxDown = [];
   const auxMotion = [];
   const auxUp = [];

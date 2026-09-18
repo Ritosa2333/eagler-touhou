@@ -56,6 +56,7 @@ import {
 } from "../contracts/release-catalog.mjs";
 import { hostOriginMigrationAvailable, validateHostManifest } from "../contracts/host-manifest.mjs";
 import {
+  RUNTIME_EPOCH_QUERY_PARAMETER,
   TOUCH_SENSITIVITY_MAX,
   TOUCH_SENSITIVITY_MIN,
   isRuntimeResponseMessage,
@@ -1083,11 +1084,13 @@ function thpracMouseModeActive() {
 }
 
 function touchRuntimeMessageContext() {
+  const session = currentRuntimeSession();
   return {
     target: frame?.contentWindow || null,
     targetOrigin: location.origin,
     protocol,
     game: state.game,
+    epoch: session?.id ?? 0,
     launched: state.launched,
     ready: state.ready,
     spectator: state.netplay.spectator,
@@ -4327,8 +4330,10 @@ function forwardHostedKeyboard(event: KeyboardEvent) {
   const key = String(event.key || "").toLowerCase();
   const keyCode = Number.isInteger(event.keyCode) ? event.keyCode : 0;
   if (!hostedGameKeyCodes.has(event.code || "") && !hostedGameKeys.has(key) && !hostedGameLegacyKeyCodes.has(keyCode)) return;
+  const session = currentRuntimeSession();
+  if (!session) return;
   frame.contentWindow.postMessage({
-    protocol, game: state.game, command: "keyboard", down: event.type === "keydown",
+    protocol, game: state.game, epoch: session.id, command: "keyboard", down: event.type === "keydown",
     code: event.code || "", key: event.key || "", keyCode,
     location: Number.isInteger(event.location) ? event.location : 0
   }, location.origin);
@@ -4338,7 +4343,9 @@ window.addEventListener("keydown", forwardHostedKeyboard, true);
 window.addEventListener("keyup", forwardHostedKeyboard, true);
 function clearHostedKeyboard() {
   if (!state.launched || !frame.contentWindow) return;
-  frame.contentWindow.postMessage({ protocol, game: state.game, command: "keyboard-clear" }, location.origin);
+  const session = currentRuntimeSession();
+  if (!session) return;
+  frame.contentWindow.postMessage({ protocol, game: state.game, epoch: session.id, command: "keyboard-clear" }, location.origin);
 }
 window.addEventListener("blur", clearHostedKeyboard);
 document.addEventListener("visibilitychange", () => {
@@ -4515,7 +4522,8 @@ window.addEventListener("pageshow", event => {
 
 function send(command: RuntimeProtocolCommand, payload: UnknownRecord = {}, timeout = 15000): Promise<RuntimeResponseMessage> {
   const runtime = frame.contentWindow;
-  if (!state.ready || !runtime) return Promise.reject(new Error(t("runtime.notReady")));
+  const session = currentRuntimeSession();
+  if (!state.ready || !runtime || !session) return Promise.reject(new Error(t("runtime.notReady")));
   const request = `${Date.now().toString(36)}-${++state.request}`;
   return new Promise<RuntimeResponseMessage>((resolve, reject) => {
     const expire = () => { state.pending.delete(request); reject(new Error(t("runtime.operationTimeout", { command }))); };
@@ -4530,16 +4538,19 @@ function send(command: RuntimeProtocolCommand, payload: UnknownRecord = {}, time
       };
     }
     state.pending.set(request, pending);
-    runtime.postMessage({ protocol, game: state.game, command, request, ...payload }, location.origin);
+    runtime.postMessage({ protocol, game: state.game, epoch: session.id, command, request, ...payload }, location.origin);
   });
 }
 
 launcherWindow.__eaglerPrepareManagedRuntimeDataV1 = async request => {
+  const session = runtimeSessions.assertCurrent(currentRuntimeSession());
+  if (request.epoch !== session.id) throw new Error("Runtime session is no longer active");
   const generation = managedRuntimeGenerationLease.resolve(request);
-  const session = currentRuntimeSession();
   setPlayerStatus(t("runtime.handingLocalData"));
   try {
-    return await readManagedRuntimeData(generation);
+    const result = await readManagedRuntimeData(generation);
+    runtimeSessions.assertCurrent(session);
+    return result;
   } catch (error) {
     const failure = error instanceof InstalledGameDataError
       ? new GameDataAcquisitionError(`本地游戏数据不完整，请重新导入或修复：${error.message}`, { cause: error })
@@ -4553,7 +4564,9 @@ launcherWindow.__eaglerPrepareManagedRuntimeDataV1 = async request => {
 
 window.addEventListener("message", event => {
   if (event.origin !== location.origin || event.source !== frame.contentWindow) return;
-  const message = parseRuntimeInboundMessage(event.data, state.game);
+  const session = currentRuntimeSession();
+  if (!session) return;
+  const message = parseRuntimeInboundMessage(event.data, state.game, session.id);
   if (!message) return;
   if (message.event === "player-debug") {
     showPlayerDebug(message);
@@ -4746,7 +4759,9 @@ async function ensureInstalledPackageRuntime(show = true) {
   // Runtime HTML/JS/WASM are Launcher-managed ordinary static resources.
   // Only the selected immutable DATA bytes cross from Package Store into the
   // generated Emscripten loader through Module.getPreloadedPackage.
-  state.source = managedRuntimeUrl(runtimeUrl(), generation, state.runtimeVariant, location.href);
+  const managedSource = new URL(managedRuntimeUrl(runtimeUrl(), generation, state.runtimeVariant, location.href));
+  managedSource.searchParams.set(RUNTIME_EPOCH_QUERY_PARAMETER, String(runtimeSession.id));
+  state.source = managedSource.href;
   if (show) openPlayerView();
   // Offline readiness is a background enhancement. A newly installed or slow
   // Service Worker must never delay iframe creation for an already-local
@@ -5050,6 +5065,7 @@ async function ensureRuntime(show = true) {
   const runtimeSession = runtimeSessions.begin({
     game: state.game, runtimeVariant: state.runtimeVariant, generationId: null, revision: null,
   });
+  sourceUrl.searchParams.set(RUNTIME_EPOCH_QUERY_PARAMETER, String(runtimeSession.id));
   state.source = sourceUrl.href;
   beginGameDataAttempt();
   showTransfer({

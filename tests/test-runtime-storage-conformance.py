@@ -126,18 +126,20 @@ class StorageCase:
         return self.page.evaluate("""async ({game,command,payload}) => {
           const frame = document.getElementById('gameFrame');
           const target = frame.contentWindow;
+          const epoch = Number(new URL(frame.src, location.href).searchParams.get('runtimeEpoch'));
+          if (!Number.isSafeInteger(epoch) || epoch <= 0) throw Error('Runtime navigation epoch missing');
           const request = `storage-conformance-${crypto.randomUUID()}`;
           return await new Promise((resolve,reject) => {
             const timer=setTimeout(()=>{window.removeEventListener('message', receive);reject(Error(`${command} timeout`));},10000);
             function receive(event) {
               const m=event.data || {};
-              if(event.source!==target || event.origin!==location.origin || m.protocol!=='eagler-touhou/1' || m.game!==game || m.request!==request) return;
+              if(event.source!==target || event.origin!==location.origin || m.protocol!=='eagler-touhou/1' || m.game!==game || m.epoch!==epoch || m.request!==request) return;
               clearTimeout(timer);window.removeEventListener('message',receive);
               if(!m.ok) reject(Error(m.error || command));
               else resolve(m.bytes ? {...m,bytes:Array.from(new Uint8Array(m.bytes))} : m);
             }
             window.addEventListener('message',receive);
-            target.postMessage({protocol:'eagler-touhou/1',game,command,request,...payload},location.origin);
+            target.postMessage({protocol:'eagler-touhou/1',game,epoch,command,request,...payload},location.origin);
           });
         }""", {"game": self.game, "command": command, "payload": payload})
 

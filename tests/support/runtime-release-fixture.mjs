@@ -17,6 +17,32 @@ function preloadFixture(game) {
   return { layout, script };
 }
 
+function flatRuntimeShellFixture(game, variant, provider) {
+  return `<script>
+const protocol="eagler-touhou/1",game="${game}";
+const epoch=Number(new URLSearchParams(location.search).get("runtimeEpoch"));
+window.addEventListener("message",event=>{const message=event.data||{};if(message.epoch!==epoch)return;});
+window.parent.postMessage({protocol,game,epoch,event:"ready"},location.origin);
+const prepare=window.parent.__eaglerPrepareManagedRuntimeDataV1;
+prepare({game,generation:"fixture",epoch});
+${provider === "emscripten-preload" ? "Module.getPreloadedPackage;" : ""}
+</script>${variant}`;
+}
+
+function directoryProtocolFixture(game) {
+  return `const protocol="eagler-touhou/1",game="${game}";
+const epoch=Number(new URLSearchParams(location.search).get("runtimeEpoch"));
+window.addEventListener("message",event=>{const m=event.data||{};if(m.epoch!==epoch)return;});
+parent.postMessage({protocol,game,epoch,event:"ready"},location.origin);`;
+}
+
+function directoryManagedDataFixture() {
+  return `export async function mountManagedData(parentWindow,query,game){
+const epoch=Number(query.get("runtimeEpoch"));
+return parentWindow.__eaglerPrepareManagedRuntimeDataV1({game,generation:"fixture",epoch});
+}`;
+}
+
 export async function writeSyntheticRuntimeRelease(root) {
   const games = {};
   for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
@@ -35,14 +61,15 @@ export async function writeSyntheticRuntimeRelease(root) {
       await mkdir(target, { recursive: true });
       const html = Buffer.from(product.runtimeFileLayout === "directory"
         ? `<meta name="eagler-data-provider" content="${product.dataProvider}">${variant}`
-        : product.dataProvider === "emscripten-preload"
-          ? `<script>window.parent.__eaglerPrepareManagedRuntimeDataV1;Module.getPreloadedPackage;</script>${variant}`
-          : `<script>window.parent.__eaglerPrepareManagedRuntimeDataV1;</script>${variant}`);
+        : flatRuntimeShellFixture(game, variant, product.dataProvider));
       const js = Buffer.from(preload?.script || `globalThis.__fixture=${JSON.stringify(game)};`);
       const wasm = Buffer.from(`${game}:${variant}:wasm`);
       const payloads = product.runtimeFileLayout === "directory"
         ? Object.fromEntries(product.runtimeAssets.map(name => [name,
-          name === `${stem}.html` ? html : Buffer.from(`${game}:${variant}:${name}`)]))
+          name === `${stem}.html` ? html :
+          name === "shell.mjs" ? Buffer.from(directoryProtocolFixture(game)) :
+          name === "eagler-host.mjs" ? Buffer.from(directoryManagedDataFixture()) :
+          Buffer.from(`${game}:${variant}:${name}`)]))
         : {
             [`${stem}.html`]: html,
             [`${stem}.js`]: js,
