@@ -122,7 +122,6 @@ if(TH_ENABLE_NETPLAY)
         src/netplay/Th06RollbackState.cpp
         src/netplay/Th06LanStageProbe.cpp
         src/netplay/NetplaySideEffects.cpp
-        src/netplay/BrowserPeerTransport.cpp
     )
 endif()
 
@@ -173,6 +172,7 @@ endif()
 target_include_directories(${TH_EXEC_NAME} PRIVATE src src/pbg3)
 if(TH_ENABLE_NETPLAY)
     eagler_common_link_netplay_base(${TH_EXEC_NAME})
+    eagler_common_link_browser_peer_transport(${TH_EXEC_NAME})
 else()
     eagler_common_link_netplay_headers(${TH_EXEC_NAME})
 endif()
