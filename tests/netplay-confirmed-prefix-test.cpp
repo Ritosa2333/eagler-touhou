@@ -1,6 +1,6 @@
-#include "netplay/SnapshotPolicy.hpp"
-#include "netplay/NetplayCore.hpp"
-#include "netplay/RollbackJournal.hpp"
+#include <eagler/netplay/SnapshotPolicy.hpp>
+#include <eagler/netplay/NetplayCore.hpp>
+#include <eagler/netplay/RollbackJournal.hpp>
 #include <algorithm>
 #include <array>
 #include <cassert>

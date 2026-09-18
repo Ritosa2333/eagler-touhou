@@ -2,7 +2,7 @@
 // g++ -std=c++17 -O2 -Isrc tests/rollback-journal-benchmark.cpp \
 //     src/netplay/RollbackJournal.cpp -o rollback-journal-benchmark
 // Pass --require-zero-alloc to enforce allocation-free warmed history reuse.
-#include "netplay/RollbackJournal.hpp"
+#include <eagler/netplay/RollbackJournal.hpp>
 
 #include <algorithm>
 #include <chrono>

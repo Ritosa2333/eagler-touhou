@@ -47,31 +47,25 @@ for source in (
     'include/eagler/netplay/WebSocketTransport.hpp',
 ):
     assert (common / source).is_file(), source
-for stem in ('RollbackJournal', 'SnapshotPolicy', 'SparsePoolCapture', 'PartitionedPoolJournal'):
-    shim = (root / 'src' / 'netplay' / f'{stem}.hpp').read_text(encoding='utf-8')
-    assert f'#include <eagler/netplay/{stem}.hpp>' in shim
-    assert 'implementation authority lives in eagler-common' in shim
-peer_header = (root / 'src/netplay/BrowserPeerTransport.hpp').read_text(encoding='utf-8')
-peer_source = (root / 'src/netplay/BrowserPeerTransport.cpp').read_text(encoding='utf-8')
 transport_config = (root / 'src/netplay/NetplayTransportConfig.hpp').read_text(encoding='utf-8')
-assert '#include <eagler/netplay/BrowserPeerTransport.hpp>' in peer_header
-assert 'implementation authority lives in eagler-common' in peer_header
-assert 'CMake compiles the eagler-common implementation source' in peer_source
-assert not [line for line in peer_source.splitlines()
-            if line.strip() and not line.lstrip().startswith('//')]
 assert 'Tag[] = "th06"' in transport_config
-input_header = (root / 'src/netplay/NetplayInput.hpp').read_text(encoding='utf-8')
-input_source = (root / 'src/netplay/NetplayInput.cpp').read_text(encoding='utf-8')
 input_config = (root / 'src/netplay/NetplayInputConfig.hpp').read_text(encoding='utf-8')
-assert '#include <eagler/netplay/NetplayInput.hpp>' in input_header
-assert 'implementation authority lives in eagler-common' in input_header
-assert 'CMake compiles the eagler-common implementation source' in input_source
-assert not [line for line in input_source.splitlines()
-            if line.strip() and not line.lstrip().startswith('//')]
 assert 'CommitGameInputs' in input_config
 assert 'Netplay::MAX_PLAYERS' in input_config
 assert 'g_LastFrameGameInputs[player] = g_CurFrameGameInputs[player]' in input_config
 assert 'g_CurFrameGameInputs[player] = buttons[player]' in input_config
+for retired in (
+    'BrowserPeerTransport.hpp', 'BrowserPeerTransport.cpp',
+    'NetplayCore.hpp', 'NetplayCore.cpp',
+    'NetplayInput.hpp', 'NetplayInput.cpp',
+    'NetplayProtocol.hpp', 'NetplayProtocol.cpp',
+    'NetplaySession.hpp', 'NetplaySession.cpp',
+    'PartitionedPoolJournal.hpp',
+    'RollbackJournal.hpp', 'RollbackJournal.cpp',
+    'SnapshotPolicy.hpp', 'SparsePoolCapture.hpp',
+    'WebSocketTransport.hpp', 'WebSocketTransport.cpp',
+):
+    assert not (root / 'src' / 'netplay' / retired).exists(), retired
 assert 'target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_ENABLE_NETPLAY)' in cmake
 assert 'target_link_options(th06 PRIVATE -lwebsocket)' in cmake
 

@@ -5,7 +5,7 @@
 #include "EnemyManager.hpp"
 #include "GameManager.hpp"
 #include "ItemManager.hpp"
-#include "NetplayInput.hpp"
+#include <eagler/netplay/NetplayInput.hpp>
 #include "Player.hpp"
 #include "Rng.hpp"
 #include "Stage.hpp"

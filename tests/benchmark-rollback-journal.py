@@ -35,6 +35,7 @@ def main() -> int:
     revision = git("rev-parse", "--verify", args.before_ref).strip()
     bench = (ROOT / "tests/rollback-journal-benchmark.cpp").read_text(encoding="utf-8")
     bench = bench.replace('#include "netplay/RollbackJournal.hpp"', '')
+    bench = bench.replace('#include <eagler/netplay/RollbackJournal.hpp>', '')
     sources = {}
     for label in ("before", "after"):
         def read(name: str) -> str:

@@ -1,8 +1,8 @@
 #include "Th06RollbackState.hpp"
 
-#include "RollbackJournal.hpp"
+#include <eagler/netplay/RollbackJournal.hpp>
 #include "LiveBulletSnapshot.hpp"
-#include "SparsePoolCapture.hpp"
+#include <eagler/netplay/SparsePoolCapture.hpp>
 
 #include "AsciiManager.hpp"
 #include "BulletManager.hpp"
@@ -19,7 +19,7 @@
 #include "ScreenEffect.hpp"
 #include "Stage.hpp"
 #include "Supervisor.hpp"
-#include "NetplayInput.hpp"
+#include <eagler/netplay/NetplayInput.hpp>
 
 #include <algorithm>
 #include <array>

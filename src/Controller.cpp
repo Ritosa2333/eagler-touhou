@@ -8,7 +8,7 @@
 #include "Supervisor.hpp"
 #include "Touch.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-#include "netplay/NetplayInput.hpp"
+#include <eagler/netplay/NetplayInput.hpp>
 #endif
 #include "i18n.hpp"
 #include "utils.hpp"
