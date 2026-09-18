@@ -6,6 +6,9 @@ implement it, allowed to omit it, or expected not to copy it at all?**
 
 The machine-readable authority is
 `src/contracts/adapter-capabilities.mts`. This document explains the policy.
+Product-level interaction and presentation details that are intentionally more
+specific than the capability names are defined in
+[`ADAPTER_BEHAVIOR_INVARIANTS.md`](ADAPTER_BEHAVIOR_INVARIANTS.md).
 
 ## 1. Required adapter capabilities
 
