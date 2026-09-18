@@ -2341,7 +2341,14 @@ let transferSpeed = 0;
 let transferMode: TransferMode = "";
 let transferKind: TransferKind = "";
 let transferHideTimer: ReturnType<typeof setTimeout> | null = null;
-interface BlockingNetworkOperation { controller: AbortController; label: string; onCancel: (() => void) | null }
+let transferCancelUserInitiated = false;
+const runtimeCacheFallbackCleanupKey = "eagler-touhou-runtime-cache-fallback-v1";
+interface BlockingNetworkOperation {
+  controller: AbortController;
+  label: string;
+  onCancel: (() => void) | null;
+  suppressDeferredReload: boolean;
+}
 let blockingNetworkOperation: BlockingNetworkOperation | null = null;
 const backgroundPackageUpdates = new Map<GameId, Promise<unknown>>();
 const backgroundOggInstalls = new Map<GameId, Promise<unknown>>();
@@ -2427,8 +2434,16 @@ function syncTransferCancelButton() {
   button.hidden = !blockingNetworkOperation;
   button.textContent = blockingNetworkOperation?.label || t("player.cancelDownload");
 }
-function beginBlockingNetworkOperation({ label = t("player.cancelDownload"), onCancel = null }: { label?: string; onCancel?: (() => void) | null } = {}): BlockingNetworkOperation {
-  const operation = { controller: new AbortController(), label, onCancel };
+function beginBlockingNetworkOperation({
+  label = t("player.cancelDownload"),
+  onCancel = null,
+  suppressDeferredReload = false,
+}: {
+  label?: string;
+  onCancel?: (() => void) | null;
+  suppressDeferredReload?: boolean;
+} = {}): BlockingNetworkOperation {
+  const operation = { controller: new AbortController(), label, onCancel, suppressDeferredReload };
   blockingNetworkOperation = operation;
   syncTransferCancelButton();
   return operation;
@@ -2445,7 +2460,7 @@ function cancelBlockingNetworkOperation() {
   blockingNetworkOperation = null;
   syncTransferCancelButton();
   operation.controller.abort();
-  maybeApplyDeferredAppShellUpdate();
+  if (!operation.suppressDeferredReload) maybeApplyDeferredAppShellUpdate();
   try { operation.onCancel?.(); } catch (error) { console.warn("blocking download cancel handler failed", error); }
 }
 function askDecision({ message = "", confirmText = "", cancelText = "", secondaryText = "", tone = "normal", confirmOnEnter = false }: {
@@ -3132,8 +3147,11 @@ function runtimeUrl() {
   return entry.runtime;
 }
 
-function offlineRuntimePaths(gameId: GameId): string[] {
-  const runtime = manifest.games[gameId]?.runtime;
+function runtimeCachePaths(gameId: GameId, runtimeVariant: "normal" | "multiplayer" = "normal"): string[] {
+  const hosted = manifest.games[gameId];
+  const runtime = runtimeVariant === "multiplayer" && hosted && "multiplayerRuntime" in hosted
+    ? hosted.multiplayerRuntime
+    : hosted?.runtime;
   if (typeof runtime !== "string" || !runtime) return [];
   const url = new URL(runtime, location.href);
   const product = PRODUCT_GAMES[gameId];
@@ -3142,6 +3160,47 @@ function offlineRuntimePaths(gameId: GameId): string[] {
     return product.runtimeAssets.map((name: string) => `${directory}${name}`);
   }
   return ["html", "js", "wasm"].map(extension => url.pathname.replace(/\.html$/i, `.${extension}`));
+}
+
+function offlineRuntimePaths(gameId: GameId): string[] {
+  return runtimeCachePaths(gameId, "normal");
+}
+
+async function runtimeCacheFallbackCommand(
+  type: "PROBE_RUNTIME_CACHE_FALLBACK" | "RESTORE_RUNTIME_CACHE_FALLBACK" | "CLEAR_RUNTIME_CACHE_FALLBACK",
+  gameId: GameId,
+  runtimeVariant: "normal" | "multiplayer" = state.runtimeVariant,
+) {
+  if (!("serviceWorker" in navigator)) return { ok: false, available: false };
+  await appShellClient?.ready;
+  const registration = await navigator.serviceWorker.getRegistration("./").catch(() => null);
+  const worker = navigator.serviceWorker.controller || registration?.active;
+  if (!worker) return { ok: false, available: false };
+  const paths = type === "CLEAR_RUNTIME_CACHE_FALLBACK" ? [] : runtimeCachePaths(gameId, runtimeVariant);
+  if (type !== "CLEAR_RUNTIME_CACHE_FALLBACK" && !paths.length) return { ok: false, available: false };
+  const channel = new MessageChannel();
+  const result = new Promise<UnknownRecord>((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error(`${gameId}: Runtime cache fallback timed out`)), 10_000);
+    channel.port1.onmessage = event => {
+      window.clearTimeout(timer);
+      resolve(record(event.data) || {});
+    };
+  });
+  worker.postMessage({ type, paths }, [channel.port2]);
+  return await result;
+}
+
+function runtimeCacheFallbackNeedsCleanup() {
+  try { return localStorage.getItem(runtimeCacheFallbackCleanupKey) === "1"; }
+  catch { return false; }
+}
+
+function markRuntimeCacheFallbackForCleanup() {
+  try { localStorage.setItem(runtimeCacheFallbackCleanupKey, "1"); } catch {}
+}
+
+function clearRuntimeCacheFallbackCleanupMark() {
+  try { localStorage.removeItem(runtimeCacheFallbackCleanupKey); } catch {}
 }
 
 async function cacheRuntimeForOffline(gameId: GameId) {
@@ -4728,13 +4787,25 @@ function waitForRuntimeFirstFrame(session: RuntimeSessionToken, timeoutMs = firs
   });
 }
 
-async function ensureInstalledPackageRuntime(show = true) {
+async function ensureInstalledPackageRuntime(show = true, launchMode: "normal" | "cache-fallback" = "normal") {
   const installed = await readCurrentPackageGeneration(state.game);
   const generation = installed?.generation;
   if (!generation?.id) { activeInstalledPackageGeneration = null; return false; }
   installedPackageSnapshots.set(state.game, generation);
   const requestedIdentity = `package:${state.game}:${generation.id}:${state.runtimeVariant}:${state.replayViewer ? "replay" : "game"}`;
   if (state.ready && state.sourceIdentity === requestedIdentity) return true;
+
+  if (launchMode === "normal" && runtimeCacheFallbackNeedsCleanup()) {
+    const cleanup = await runtimeCacheFallbackCommand(
+      "CLEAR_RUNTIME_CACHE_FALLBACK",
+      state.game,
+      state.runtimeVariant,
+    ).catch(error => ({ ok: false, error: errorMessage(error) }));
+    if (cleanup.ok !== true) {
+      throw new Error(t("runtime.cachedRuntimeCleanupFailed", { reason: String(cleanup.error || "") }));
+    }
+    clearRuntimeCacheFallbackCleanupMark();
+  }
 
   resetRuntime();
   // Package Store remains the source of truth, but the game itself runs
@@ -4747,11 +4818,11 @@ async function ensureInstalledPackageRuntime(show = true) {
   managedRuntimeGenerationLease.bind(state.game, generation);
   state.sourceIdentity = requestedIdentity;
   clearGameDataAttempt();
-  setPlayerStatus(t("runtime.preparingLocal"));
+  setPlayerStatus(t(launchMode === "cache-fallback" ? "runtime.usingCachedRuntime" : "runtime.preparingLocal"));
   showTransfer({
     kind: "game",
     mode: "runtime",
-    title: t("runtime.preparingLocal"),
+    title: t(launchMode === "cache-fallback" ? "runtime.usingCachedRuntime" : "runtime.preparingLocal"),
     label: t("runtime.localGameLabel", { game: state.game.toUpperCase() }),
     phase: "preparing",
     indeterminate: true,
@@ -4763,18 +4834,68 @@ async function ensureInstalledPackageRuntime(show = true) {
   managedSource.searchParams.set(RUNTIME_EPOCH_QUERY_PARAMETER, String(runtimeSession.id));
   state.source = managedSource.href;
   if (show) openPlayerView();
-  // Offline readiness is a background enhancement. A newly installed or slow
-  // Service Worker must never delay iframe creation for an already-local
-  // Package; the Runtime's ordinary request can populate the same cache.
-  void cacheRuntimeForOffline(state.game).catch(error =>
-    console.warn(`${state.game}: Runtime background offline cache failed`, error));
+  let fallbackRequested = false;
+  let fallbackOperation: BlockingNetworkOperation | null = null;
+  let launchSettled = false;
+  if (launchMode === "normal") {
+    void runtimeCacheFallbackCommand("PROBE_RUNTIME_CACHE_FALLBACK", state.game, state.runtimeVariant)
+      .then(result => {
+        if (result.available !== true || launchSettled || !runtimeSessionCurrent(runtimeSession) || blockingNetworkOperation) return;
+        fallbackOperation = beginBlockingNetworkOperation({
+          label: t("runtime.useCachedRuntime"),
+          suppressDeferredReload: true,
+          onCancel() {
+            if (!transferCancelUserInitiated) return;
+            fallbackRequested = true;
+            if (runtimeSessionCurrent(runtimeSession)) resetRuntime();
+          },
+        });
+      })
+      .catch(error => console.warn(`${state.game}: Runtime cache fallback probe failed`, error));
+  }
   const runtimeReady = waitForRuntimeReady(runtimeSession, t("runtime.localLoadTimeout"));
   // App-owned same-origin Runtime URLs can commit and execute immediately.
   // Arm readiness/error listeners before navigation so a fast local Runtime
   // cannot emit `ready` in the gap after frame.src changes.
   frame.src = state.source;
-  try { await runtimeReady; }
+  try {
+    await runtimeReady;
+    launchSettled = true;
+    if (fallbackOperation) finishBlockingNetworkOperation(fallbackOperation);
+    // Only warm remaining Runtime assets after the live Runtime is ready.
+    // During startup the iframe is the sole network/cache writer so a
+    // cache-fallback request can never race a second background acquisition.
+    if (launchMode === "normal") {
+      void cacheRuntimeForOffline(state.game).catch(error =>
+        console.warn(`${state.game}: Runtime background offline cache failed`, error));
+    }
+  }
   catch (error) {
+    launchSettled = true;
+    if (fallbackOperation) finishBlockingNetworkOperation(fallbackOperation);
+    if (fallbackRequested) {
+      if (show) openPlayerView();
+      setPlayerStatus(t("runtime.restoringCachedRuntime"));
+      showTransfer({
+        kind: "game",
+        mode: "runtime",
+        title: t("runtime.restoringCachedRuntime"),
+        label: t("runtime.localGameLabel", { game: state.game.toUpperCase() }),
+        phase: "preparing",
+        indeterminate: true,
+      });
+      const restored = await runtimeCacheFallbackCommand(
+        "RESTORE_RUNTIME_CACHE_FALLBACK",
+        state.game,
+        state.runtimeVariant,
+      ).catch(failure => ({ ok: false, error: errorMessage(failure) }));
+      if (restored.ok === true) {
+        markRuntimeCacheFallbackForCleanup();
+        return await ensureInstalledPackageRuntime(show, "cache-fallback");
+      }
+      hideTransfer();
+      throw new Error(t("runtime.cachedRuntimeUnavailable", { reason: String(restored.error || "") }));
+    }
     if (runtimeSessionCurrent(runtimeSession)) resetRuntime();
     throw error;
   }
@@ -8108,7 +8229,11 @@ $("#transferRetry").addEventListener("click", async () => {
   try { await send("retry-music", {}, 30 * 60 * 1000); }
   catch (error) { transferFailure({ failed: 1 }); setPlayerStatus(errorMessage(error)); }
 });
-$("#transferCancel").addEventListener("click", cancelBlockingNetworkOperation);
+$("#transferCancel").addEventListener("click", () => {
+  transferCancelUserInitiated = true;
+  try { cancelBlockingNetworkOperation(); }
+  finally { transferCancelUserInitiated = false; }
+});
 $("#gameDataImportClose").addEventListener("click", () => closeGameDataImportWindow(true));
 $("#gameDataLinkClose").addEventListener("click", closeGameDataLinkWindow);
 $("#gameDataFallbackUrl").addEventListener("click", event => {

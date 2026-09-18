@@ -60,6 +60,7 @@
     "test:package-store:browser": "python tests/test-package-update-atomicity-browser.py",
     "test:package-installer": "npm run test:package-store:browser",
     "test:webkit": "node tests/browser/test-playwright-webkit-gate.mjs",
+    "test:runtime-cache-fallback:browser": "python tests/browser/test-runtime-cache-fallback.py",
     "test:import-update:browser": "python tests/browser/test-import-update.py",
     "test:card-filter:browser": "python tests/test-card-filter-browser.py",
     "test:edge-drawers:browser": "python tests/browser/test-edge-drawers.py",
