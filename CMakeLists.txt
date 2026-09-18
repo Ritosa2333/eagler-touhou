@@ -110,16 +110,10 @@ endif()
 # normal and multiplayer runtimes are produced from separate build trees by
 # toggling these options rather than by runtime-disabling a single fat binary.
 if(TH_ENABLE_NETPLAY)
-    set(EAGLER_COMMON_ROOT "" CACHE PATH "Shared Eagler runtime infrastructure")
-    if(NOT EAGLER_COMMON_ROOT)
-        if(EXISTS "${CMAKE_SOURCE_DIR}/third_party/eagler-common/cmake/EaglerCommon.cmake")
-            set(EAGLER_COMMON_ROOT "${CMAKE_SOURCE_DIR}/third_party/eagler-common")
-        else()
-            set(EAGLER_COMMON_ROOT "${CMAKE_SOURCE_DIR}/../eagler-common")
-        endif()
-    endif()
+    set(EAGLER_COMMON_ROOT "${CMAKE_SOURCE_DIR}/third_party/eagler-common"
+        CACHE PATH "Pinned eagler-common checkout; override explicitly for development only")
     if(NOT EXISTS "${EAGLER_COMMON_ROOT}/cmake/EaglerCommon.cmake")
-        message(FATAL_ERROR "TH_ENABLE_NETPLAY requires eagler-common at ${EAGLER_COMMON_ROOT}")
+        message(FATAL_ERROR "TH_ENABLE_NETPLAY requires the pinned eagler-common checkout at ${EAGLER_COMMON_ROOT}")
     endif()
     include("${EAGLER_COMMON_ROOT}/cmake/EaglerCommon.cmake")
     list(APPEND TH06_SOURCES
