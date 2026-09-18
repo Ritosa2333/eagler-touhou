@@ -106,7 +106,6 @@ include("${EAGLER_COMMON_ROOT}/cmake/EaglerCommon.cmake")
 if(TH_ENABLE_NETPLAY)
     list(APPEND SOURCES
         src/netplay/NetplayInput.cpp
-        src/netplay/RollbackJournal.cpp
         src/netplay/NetplaySideEffects.cpp
         src/netplay/BrowserPeerTransport.cpp
         src/netplay/Th07CanonicalHash.cpp

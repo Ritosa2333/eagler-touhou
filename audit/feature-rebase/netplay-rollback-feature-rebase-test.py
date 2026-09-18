@@ -16,8 +16,10 @@ PROTOCOL = (COMMON / "include/eagler/netplay/NetplayProtocol.hpp").read_text(enc
 DRIVER = (ROOT / "src/netplay/Th07LanStageProbe.cpp").read_text(encoding="utf-8")
 PLAYER = (ROOT / "src/Player.cpp").read_text(encoding="utf-8")
 ROLLBACK = (ROOT / "src/netplay/Th07RollbackState.cpp").read_text(encoding="utf-8")
-JOURNAL_H = (ROOT / "src/netplay/RollbackJournal.hpp").read_text(encoding="utf-8")
-JOURNAL = (ROOT / "src/netplay/RollbackJournal.cpp").read_text(encoding="utf-8")
+JOURNAL_H = (COMMON / "include/eagler/netplay/RollbackJournal.hpp").read_text(encoding="utf-8")
+JOURNAL = (COMMON / "src/netplay/RollbackJournal.cpp").read_text(encoding="utf-8")
+JOURNAL_SHIM_H = (ROOT / "src/netplay/RollbackJournal.hpp").read_text(encoding="utf-8")
+JOURNAL_SHIM = (ROOT / "src/netplay/RollbackJournal.cpp").read_text(encoding="utf-8")
 SIDE_EFFECTS = (ROOT / "src/netplay/NetplaySideEffects.cpp").read_text(encoding="utf-8")
 WINDOW = (ROOT / "src/GameWindow.cpp").read_text(encoding="utf-8")
 TRANSPORT = (COMMON / "src/netplay/WebSocketTransport.cpp").read_text(encoding="utf-8")
@@ -43,6 +45,13 @@ def main() -> None:
         "ordinary and netplay builds consume separate common CMake surfaces",
         "eagler_common_link_netplay_headers(${TH_EXEC_NAME})" in CMAKE
         and "eagler_common_link_netplay_base(${TH_EXEC_NAME})" in CMAKE,
+    )
+    require(
+        "rollback journal implementation authority lives in eagler-common",
+        "src/netplay/RollbackJournal.cpp" not in CMAKE
+        and "#include <eagler/netplay/RollbackJournal.hpp>" in JOURNAL_SHIM_H
+        and "implementation authority lives in eagler-common" in JOURNAL_SHIM_H
+        and "Compatibility marker" in JOURNAL_SHIM,
     )
     frozen = git(
         "diff", "--unified=0", f"{BASE}..{FINAL}", "--", "src/th07/Netplay.cpp"
@@ -269,16 +278,19 @@ def main() -> None:
     )
     require(
         "dense rollback overlap lookup remains logarithmic",
-        "std::map<std::uintptr_t, Block> blocks" in JOURNAL_H
-        and "record->blocks.lower_bound(start)" in JOURNAL
-        and "std::prev(next)->second" in JOURNAL
-        and "for (const Block &block : record->blocks)" not in JOURNAL,
+        "std::vector<Block> blocks" in JOURNAL_H
+        and "std::uint32_t root = NO_BLOCK" in JOURNAL_H
+        and "std::uint32_t ancestors[64]" in JOURNAL
+        and "RebalanceBlock" in JOURNAL
+        and "RotateLeft" in JOURNAL
+        and "RotateRight" in JOURNAL,
     )
     require(
         "evicted rollback byte buffers are reused",
-        "FrameRecord recycled = std::move(frames_.front())" in JOURNAL
-        and "recycled.bytes.clear()" in JOURNAL
-        and "frames_.push_back(std::move(recycled))" in JOURNAL,
+        "std::vector<FrameRecord> frames_" in JOURNAL_H
+        and "if (frameCount_ == frames_.size())" in JOURNAL
+        and "firstFrame_ = (firstFrame_ + 1) % frames_.size()" in JOURNAL
+        and "EnsureByteCapacity" in JOURNAL,
     )
     require(
         "production rollback keeps first-write state across two logical frames and replays from checkpoint start",
