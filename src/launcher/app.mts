@@ -3162,10 +3162,6 @@ function runtimeCachePaths(gameId: GameId, runtimeVariant: "normal" | "multiplay
   return ["html", "js", "wasm"].map(extension => url.pathname.replace(/\.html$/i, `.${extension}`));
 }
 
-function offlineRuntimePaths(gameId: GameId): string[] {
-  return runtimeCachePaths(gameId, "normal");
-}
-
 async function runtimeCacheFallbackCommand(
   type: "PROBE_RUNTIME_CACHE_FALLBACK" | "RESTORE_RUNTIME_CACHE_FALLBACK" | "CLEAR_RUNTIME_CACHE_FALLBACK",
   gameId: GameId,
@@ -3203,12 +3199,15 @@ function clearRuntimeCacheFallbackCleanupMark() {
   try { localStorage.removeItem(runtimeCacheFallbackCleanupKey); } catch {}
 }
 
-async function cacheRuntimeForOffline(gameId: GameId) {
+async function cacheRuntimeForOffline(
+  gameId: GameId,
+  runtimeVariant: "normal" | "multiplayer" = state.runtimeVariant,
+) {
   if (!("serviceWorker" in navigator)) return;
   await appShellClient?.ready;
   const registration = await navigator.serviceWorker.getRegistration("./").catch(() => null);
   const worker = navigator.serviceWorker.controller || registration?.active;
-  const paths = offlineRuntimePaths(gameId);
+  const paths = runtimeCachePaths(gameId, runtimeVariant);
   if (!worker || !paths.length) return;
   const channel = new MessageChannel();
   const result = new Promise<{ ok?: boolean; error?: string }>((resolve, reject) => {
@@ -4840,7 +4839,11 @@ async function ensureInstalledPackageRuntime(show = true, launchMode: "normal" |
   if (launchMode === "normal") {
     void runtimeCacheFallbackCommand("PROBE_RUNTIME_CACHE_FALLBACK", state.game, state.runtimeVariant)
       .then(result => {
-        if (result.available !== true || launchSettled || !runtimeSessionCurrent(runtimeSession) || blockingNetworkOperation) return;
+        if (result.available !== true) {
+          console.info(`${state.game}: Runtime cache fallback unavailable`, result.reason || "unknown");
+          return;
+        }
+        if (launchSettled || !runtimeSessionCurrent(runtimeSession) || blockingNetworkOperation) return;
         fallbackOperation = beginBlockingNetworkOperation({
           label: t("runtime.useCachedRuntime"),
           suppressDeferredReload: true,
@@ -4866,7 +4869,7 @@ async function ensureInstalledPackageRuntime(show = true, launchMode: "normal" |
     // During startup the iframe is the sole network/cache writer so a
     // cache-fallback request can never race a second background acquisition.
     if (launchMode === "normal") {
-      void cacheRuntimeForOffline(state.game).catch(error =>
+      void cacheRuntimeForOffline(state.game, state.runtimeVariant).catch(error =>
         console.warn(`${state.game}: Runtime background offline cache failed`, error));
     }
   }

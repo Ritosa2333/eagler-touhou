@@ -133,31 +133,51 @@ function runtimeEntriesForPaths(paths) {
 }
 
 async function fallbackCacheForEntries(entries) {
-  const names = (await caches.keys()).filter(name => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME);
+  const names = (await caches.keys()).filter(name => name.startsWith(CACHE_PREFIX));
   const ranked = await Promise.all(names.map(async name => ({
     name,
     createdAt: await cacheCreatedAt(name),
     metadata: await cacheMetadata(name),
+    cache: await caches.open(name),
   })));
   ranked.sort((left, right) => right.createdAt - left.createdAt);
-  for (const item of ranked) {
-    if (!item.metadata?.entries || typeof item.metadata.entries !== "object") continue;
-    const cache = await caches.open(item.name);
-    const responses = new Map();
-    let complete = true;
+  const targets = ranked.filter(item => item.name !== CACHE_NAME);
+  if (!targets.length) return { candidate: null, reason: "no-retained-runtime-cache" };
+  let sawCompleteMetadata = false;
+  let sawCompleteBytes = false;
+  let sawProtocolIncompatible = false;
+  for (const target of targets) {
+    if (!target.metadata?.entries || typeof target.metadata.entries !== "object") continue;
+    const revisions = new Map();
+    let metadataComplete = true;
     for (const entry of entries) {
-      if (!(entry.cacheUrl in item.metadata.entries)) {
-        complete = false;
+      const revision = target.metadata.entries[entry.cacheUrl];
+      if (typeof revision !== "string" || !revision) {
+        metadataComplete = false;
         break;
       }
-      const response = await cache.match(entry.cacheUrl);
+      revisions.set(entry.cacheUrl, revision);
+    }
+    if (!metadataComplete) continue;
+    sawCompleteMetadata = true;
+    const responses = new Map();
+    let bytesComplete = true;
+    for (const entry of entries) {
+      const targetRevision = revisions.get(entry.cacheUrl);
+      let response = null;
+      for (const source of ranked) {
+        if (source.metadata?.entries?.[entry.cacheUrl] !== targetRevision) continue;
+        response = await source.cache.match(entry.cacheUrl);
+        if (response) break;
+      }
       if (!response) {
-        complete = false;
+        bytesComplete = false;
         break;
       }
       responses.set(entry.cacheUrl, response);
     }
-    if (!complete) continue;
+    if (!bytesComplete) continue;
+    sawCompleteBytes = true;
     let protocolCompatible = false;
     let managedDataCompatible = false;
     for (const entry of entries) {
@@ -168,19 +188,37 @@ async function fallbackCacheForEntries(entries) {
         managedDataCompatible = true;
       }
     }
-    if (protocolCompatible && managedDataCompatible) return { ...item, responses };
+    if (protocolCompatible && managedDataCompatible) {
+      return { candidate: { ...target, responses }, reason: null };
+    }
+    sawProtocolIncompatible = true;
   }
-  return null;
+  return {
+    candidate: null,
+    reason: sawProtocolIncompatible ? "runtime-protocol-incompatible"
+      : sawCompleteBytes ? "runtime-protocol-markers-missing"
+        : sawCompleteMetadata ? "runtime-cache-bytes-incomplete"
+          : "runtime-cache-metadata-incomplete",
+  };
 }
 
 async function probeRuntimeCacheFallback(entries) {
-  const candidate = await fallbackCacheForEntries(entries);
-  return candidate ? { ok: true, available: true, sourceCache: candidate.name } : { ok: true, available: false };
+  const { candidate, reason } = await fallbackCacheForEntries(entries);
+  return candidate
+    ? { ok: true, available: true, sourceCache: candidate.name }
+    : { ok: true, available: false, reason };
 }
 
 async function restoreRuntimeCacheFallback(entries) {
-  const candidate = await fallbackCacheForEntries(entries);
-  if (!candidate) return { ok: false, available: false, error: "Compatible cached Runtime is unavailable" };
+  const { candidate, reason } = await fallbackCacheForEntries(entries);
+  if (!candidate) {
+    return {
+      ok: false,
+      available: false,
+      reason,
+      error: `Compatible cached Runtime is unavailable (${reason || "unknown"})`,
+    };
+  }
   const cache = await caches.open(CACHE_NAME);
   for (const entry of entries) {
     await cache.put(entry.cacheUrl, candidate.responses.get(entry.cacheUrl).clone());
