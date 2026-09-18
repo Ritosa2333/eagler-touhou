@@ -4607,15 +4607,22 @@ function send(command: RuntimeProtocolCommand, payload: UnknownRecord = {}, time
 }
 
 launcherWindow.__eaglerPrepareManagedRuntimeDataV1 = async request => {
-  const session = runtimeSessions.assertCurrent(currentRuntimeSession());
-  if (request.epoch !== session.id) throw new Error("Runtime session is no longer active");
+  const session = currentRuntimeSession();
+  if (!session || request.epoch !== session.id) {
+    throw new DOMException("EAGLER_RUNTIME_SESSION_SUPERSEDED", "AbortError");
+  }
   const generation = managedRuntimeGenerationLease.resolve(request);
   setPlayerStatus(t("runtime.handingLocalData"));
   try {
     const result = await readManagedRuntimeData(generation);
-    runtimeSessions.assertCurrent(session);
+    if (!runtimeSessionCurrent(session)) {
+      throw new DOMException("EAGLER_RUNTIME_SESSION_SUPERSEDED", "AbortError");
+    }
     return result;
   } catch (error) {
+    if (!runtimeSessionCurrent(session)) {
+      throw new DOMException("EAGLER_RUNTIME_SESSION_SUPERSEDED", "AbortError");
+    }
     const failure = error instanceof InstalledGameDataError
       ? new GameDataAcquisitionError(`本地游戏数据不完整，请重新导入或修复：${error.message}`, { cause: error })
       : error;
