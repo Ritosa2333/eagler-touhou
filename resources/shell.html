@@ -327,7 +327,7 @@
         if (!Array.isArray(message.thpracCatalog ?? []) || (message.thpracCatalog?.length || 0) > 256) throw new Error("invalid thprac catalog");
         thpracCatalog = message.thpracCatalog ?? [];
         Module.eaglerThpracCatalog = thpracCatalog;
-        for (const key of ["thpracEnabled", "limitPresentationTo60", "touchEnabled", "unlimitedTouch", "touchBombZoneEnabled", "doubleTapBombEnabled", "alwaysHitbox", "enhanceLocalPlayerVisibility", "th06FocusHitbox", "replayViewer", "netplayRollbackProbe", "netplayScriptedInput", "netplayReplayPlaybackCycle", "netplayPauseCycle", "netplayRestartCycle", "netplayStageTransition", "netplayStage4BossChain", "netplaySpectator"]) {
+        for (const key of ["thpracEnabled", "limitPresentationTo60", "touchEnabled", "unlimitedTouch", "touchBombZoneEnabled", "doubleTapBombEnabled", "alwaysHitbox", "enhanceLocalPlayerVisibility", "th06FocusHitbox", "replayViewer", "netplayRollbackProbe", "netplayScriptedInput", "netplayReplayPlaybackCycle", "netplayPauseCycle", "netplayRestartCycle", "netplayStageTransition", "netplayStage4BossChain", "netplaySpectator", "netplayReliableInputRepair"]) {
           if (options[key] != null && typeof options[key] !== "boolean") throw new Error("invalid eagler-touhou option");
         }
         if (options.touchSensitivity != null && (!Number.isFinite(options.touchSensitivity) || options.touchSensitivity < 50 || options.touchSensitivity > 300)) throw new Error("invalid touch sensitivity");
@@ -406,6 +406,8 @@
           netplaySpectator: !!options.netplaySpectator,
           netplaySpectatorId: options.netplaySpectatorId || "",
           netplaySpectatorCount: options.netplaySpectatorCount ?? 0,
+          netplayReliableInputRepair: options.netplayReliableInputRepair ??
+            (options.netplayMode === "lan" && !options.netplaySpectator && !options.replayViewer),
           netplaySeed: options.netplaySeed ?? 0x4a3d,
           netplayDifficulty: options.netplayDifficulty ?? 1,
           netplayIceServers: Array.isArray(options.netplayIceServers) ? options.netplayIceServers.map(server => ({

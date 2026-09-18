@@ -4,6 +4,7 @@
 #include <eagler/netplay/NetplayInput.hpp>
 #include <eagler/netplay/NetplayProtocol.hpp>
 #include <eagler/netplay/NetplaySession.hpp>
+#include <eagler/netplay/InputRepairBudget.hpp>
 #include "NetplaySideEffects.hpp"
 #include "Th07CanonicalHash.hpp"
 #include "Th07RollbackState.hpp"
@@ -107,6 +108,8 @@ bool g_EndingSkipHistoryNormalized = false;
 bool g_ReplayPlaybackCycleDispatched = false;
 std::uint32_t g_NextReplayAuditFrame = 0;
 bool g_SpectatorMode = false;
+bool g_ReliableInputRepair = false;
+std::array<InputRepairBudget, MAX_PLAYERS> g_InputRepairBudgets{};
 bool g_SpectatorRunRetired = false;
 std::uint32_t g_NextSpectatorPublishFrame = 0;
 std::uint32_t g_NextSpectatorReceiveFrame = 0;
@@ -207,6 +210,8 @@ void RetireGameplaySession()
     g_LastReceivedSequence = 0;
     g_LastHelloSendTick = 0;
     g_LastReadySendTick = 0;
+    g_ReliableInputRepair = false;
+    g_InputRepairBudgets = {};
     ++g_SessionGeneration;
 #ifdef __EMSCRIPTEN__
     if (ProductionLanMode())
@@ -952,6 +957,12 @@ bool Initialize()
     g_SpectatorMode = SpectatorModeRequested();
     g_LocalPlayer = g_SpectatorMode ? 0 : ReadPlayer();
     g_TestFrames = ProbeMode() ? ReadTestFrames() : 0xffffffffu;
+    g_InputRepairBudgets = {};
+    g_ReliableInputRepair = false;
+#ifdef __EMSCRIPTEN__
+    g_ReliableInputRepair = !g_SpectatorMode &&
+        EM_ASM_INT({ return Module.eaglerOptions?.netplayReliableInputRepair ? 1 : 0; }) != 0;
+#endif
     char url[512] = {};
     if (g_LocalPlayer >= g_PlayerCount || !ReadUrl(url, sizeof(url)))
         return false;
@@ -1213,6 +1224,9 @@ bool SendScheduledLocalFrame(std::uint32_t frame)
             if (!EncodeInputPacket(packet, &wire) ||
                 !TransportSendTo(peer, wire.data(), wire.size()))
                 return false;
+            if (g_ReliableInputRepair && g_InputRepairBudgets[peer].ShouldRepair(
+                    packet.firstInputFrame, packet.inputCount != 0, SDL_GetTicks()))
+                (void)g_BrowserPeerTransport.SendRepairTo(peer, wire.data(), wire.size());
             ++g_SentPackets;
         }
         return true;

@@ -5,6 +5,8 @@ CXX="${CXX:-c++}"
 OUT="$(mktemp -d "${TMPDIR:-/tmp}/th07-eagler-core-tests.XXXXXX")"
 trap 'rm -rf "$OUT"' EXIT
 
+python3 audit/source-contracts/netplay-input-repair-contract-test.py
+
 "$CXX" -std=c++20 -Isrc -Ithird_party/eagler-common/include \
   tests/netplay-core-test.cpp \
   third_party/eagler-common/src/netplay/NetplayCore.cpp \
