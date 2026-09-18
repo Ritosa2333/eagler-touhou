@@ -63,7 +63,7 @@ assert.equal(th08.protocol.configureOptions.thpracEnabled.activeForProduct, true
 assert.equal(th08.protocol.configureOptions.netplayMode.activeForProduct, false);
 assert.equal(th08.obligations.optionalProfiles.multiplayer.active, false);
 assert.equal(th08.obligations.optionalProfiles.thprac.active, true);
-assert.equal(th08.obligations.optionalProfiles.languages.active, false);
+assert.equal(th08.obligations.optionalProfiles.languages.active, true);
 assert.equal(th08.obligations.optionalProfiles.midi.active, true);
 assert.ok(th08.obligations.optionalProfiles.midi.behaviors.includes("audible-midi-transport"));
 

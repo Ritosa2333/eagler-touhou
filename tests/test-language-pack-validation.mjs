@@ -45,4 +45,23 @@ assert.throws(() => validateStaticLanguagePackEntries(entries({
   files: [{ path: filePath, bytes: payload.length + 1 }],
 }), { game: "th06", language: "lang_zh-hans" }), /文件大小错误/);
 
-console.log(JSON.stringify({ languagePackValidation: "PASS", duplicatePaths: "rejected", fileSha256: "not-a-contract" }));
+const th08Path = "/thcrap/th08/localization/strings.etl";
+const th08Manifest = {
+  schema: "eagler-touhou/thcrap-static-pack/1",
+  game: "th08",
+  language: "lang_zh-hans",
+  runtimeVersion: "independent",
+  files: [{ path: th08Path, bytes: payload.length }],
+};
+const th08Valid = validateStaticLanguagePackEntries({
+  "manifest.json": encoder.encode(JSON.stringify(th08Manifest)),
+  "thcrap/th08/localization/strings.etl": payload,
+}, { game: "th08", language: "lang_zh-hans" });
+assert.equal(th08Valid.manifest.game, "th08");
+assert.deepEqual(th08Valid.files.map(file => file.path), [th08Path]);
+assert.throws(() => validateStaticLanguagePackEntries({
+  "manifest.json": encoder.encode(JSON.stringify(th08Manifest)),
+  "thcrap/th08/localization/strings.etl": payload,
+}, { game: "th06", language: "lang_zh-hans" }), /清单不兼容/);
+
+console.log(JSON.stringify({ languagePackValidation: "PASS", duplicatePaths: "rejected", fileSha256: "not-a-contract", th08: "accepted" }));

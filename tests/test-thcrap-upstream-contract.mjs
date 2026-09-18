@@ -7,7 +7,7 @@ import { workspacePath } from "../lib/workspace-layout.mjs";
 import { validateAsciiContract } from "../server/thcrap-ascii-contract.mjs";
 import { validateStringContract } from "../server/thcrap-string-contract.mjs";
 
-for (const [game, version] of [["th06", "v1.02h"], ["th07", "v1.00b"]]) {
+for (const [game, version] of [["th06", "v1.02h"], ["th07", "v1.00b"], ["th08", "v1.00d"]]) {
   const path = workspacePath("dependencies", "upstream-thcrap-tsa", "base_tsa", game, `stringlocs.${version}.js`);
   const stringlocs = JSON.parse(await readFile(path, "utf8"));
   const ids = new Set(Object.values(stringlocs));
@@ -23,4 +23,4 @@ for (const [game, version] of [["th06", "v1.02h"], ["th07", "v1.00b"]]) {
   }
 }
 
-console.log(JSON.stringify({ thcrapUpstreamContract: "PASS", games: ["th06", "th07"] }));
+console.log(JSON.stringify({ thcrapUpstreamContract: "PASS", games: ["th06", "th07", "th08"] }));

@@ -1,8 +1,12 @@
-import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
 
 export const THCRAP_DEFAULT_REPOSITORY = "https://srv.thpatch.net/";
-export const THCRAP_SUPPORTED_GAMES = Object.freeze(Object.entries(PRODUCT_GAMES)
-  .filter(([, product]) => product.features.languages)
+// Games the thcrap client can resolve packs for are the ones whose product
+// content declares the thcrap runtime-compiler language-pack adapter. This
+// intentionally does not key off the launcher's features.languages surface
+// flag, which gates user-facing wiring rather than pack construction.
+export const THCRAP_SUPPORTED_GAMES = Object.freeze(Object.entries(PRODUCT_CONTENT)
+  .filter(([, content]) => content.hostPreparation?.languagePack?.kind === "thcrap-runtime-compiler")
   .map(([game]) => game));
 
 const LANGUAGE_ID = /^lang_[a-z0-9]+(?:-[a-z0-9]+)*$/i;

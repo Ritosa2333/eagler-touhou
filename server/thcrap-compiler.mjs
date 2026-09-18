@@ -2,11 +2,11 @@ import { extname } from "node:path";
 import { legacyAsciiPrintfSignature, validateAsciiContract } from "./thcrap-ascii-contract.mjs";
 import { validateStringContract } from "./thcrap-string-contract.mjs";
 
-const GAME_VERSION = Object.freeze({ th06: 6, th07: 7 });
+const GAME_VERSION = Object.freeze({ th06: 6, th07: 7, th08: 8 });
 export const THCRAP_RUNTIME_COMPILER_GAMES = Object.freeze(Object.keys(GAME_VERSION));
 const GAME_PATTERN = `(?:${THCRAP_RUNTIME_COMPILER_GAMES.join("|")})`;
-const MESSAGE_DIFF = new RegExp(`^${GAME_PATTERN}\\/(msg[1-8]\\.dat)\\.jdiff$`, "i");
-const ENDING_DIFF = new RegExp(`^${GAME_PATTERN}\\/(end[0-9]{2}b?\\.end)\\.jdiff$`, "i");
+const MESSAGE_DIFF = new RegExp(`^${GAME_PATTERN}\\/(msg[1-8][a-z]{0,2}\\.dat)\\.jdiff$`, "i");
+const ENDING_DIFF = new RegExp(`^${GAME_PATTERN}\\/(end[0-9]{2}[a-z]?\\.end)\\.jdiff$`, "i");
 const LOCALIZATION_TABLE = new RegExp(`^(${GAME_PATTERN})\\/(spells|stages|musiccmt)\\.js$`, "i");
 const GAME_OPTIONS = new RegExp(`^(?:(${GAME_PATTERN})\\/)?(${GAME_PATTERN})\\.js$`, "i");
 
@@ -312,19 +312,41 @@ function truncateUtf8(value, maximum = 250) {
   return bytes.subarray(0, end);
 }
 
-function parseDialogueLine(line) {
+// In-game dialogue line layout per msg format, mirroring thcrap's
+// th06_msg.cpp MSG_TH06/MSG_TH08 opcode tables. TH06/TH07 share msg06
+// (hard lines with explicit side/line numbers, op 8 is the typed boss-intro
+// variant); TH08's msg08 keeps hard line op 3 but renders regular dialogue
+// through auto line ops 16/19/20 and closes auto boxes with ops 4/15.
+const MSG_LINE_FORMAT = Object.freeze({
+  6: Object.freeze({ hard: Object.freeze({ 3: null, 8: "h1" }), auto: Object.freeze([]), autoEnd: Object.freeze([]) }),
+  8: Object.freeze({ hard: Object.freeze({ 3: null }), auto: Object.freeze([16, 19, 20]), autoEnd: Object.freeze([4, 15]) })
+});
+
+function msgLineFormat(version) {
+  if (version === 8) return MSG_LINE_FORMAT[8];
+  if (version === 6 || version === 7) return MSG_LINE_FORMAT[6];
+  throw new TypeError(`unsupported message version: ${version}`);
+}
+
+function parseDialogueLine(line, format) {
   const prefix = line.toString("latin1", 0, Math.min(line.length, 96));
+  const opcode = Number(/^\t(\d+);/.exec(prefix)?.[1]);
+  if (format.autoEnd.includes(opcode)) return { autoEnd: true };
+  if (format.auto.includes(opcode)) return { opcode, auto: true };
   const match = /^\t(3|8);(-?\d+);(\d+);/.exec(prefix);
-  if (!match) return null;
+  if (!match || !(Number(match[1]) in format.hard)) return null;
   return {
     opcode: Number(match[1]),
     side: Number(match[2]),
     lineNumber: Number(match[3]),
-    type: match[1] === "8" ? "h1" : null
+    type: format.hard[Number(match[1])]
   };
 }
 
 function replacementLine(command, lineNumber, text) {
+  if (command.auto) {
+    return Buffer.concat([Buffer.from(`\t${command.opcode};`, "ascii"), truncateUtf8(text)]);
+  }
   return Buffer.concat([
     Buffer.from(`\t${command.opcode};${command.side};${lineNumber};`, "ascii"),
     truncateUtf8(text)
@@ -337,9 +359,10 @@ function getPatchedLines(diff, entry, key) {
   return Array.isArray(lines) && lines.every(line => typeof line === "string") ? lines : null;
 }
 
-export function patchThmsgDump(source, diff) {
+export function patchThmsgDump(source, diff, version = 6) {
   if (!Buffer.isBuffer(source) && !(source instanceof Uint8Array)) throw new TypeError("thmsg source bytes are required");
   assertJsonTree(diff);
+  const format = msgLineFormat(version);
   const { lines, trailingNewline } = splitLines(source);
   const replacements = new Map();
   const insertions = new Map();
@@ -390,8 +413,27 @@ export function patchThmsgDump(source, diff) {
       time = nextTime;
       continue;
     }
-    const command = parseDialogueLine(lines[lineIndex]);
+    const command = parseDialogueLine(lines[lineIndex], format);
     if (!command) continue;
+    if (command.autoEnd) {
+      // MSG_TH08 OP_AUTO_END closes an auto box; hard-line boxes stay open
+      // (th06_msg.cpp op_auto_end only ends boxes whose last line was auto).
+      if (!box || box.auto) finishBox();
+      continue;
+    }
+    if (command.auto) {
+      // OP_AUTO_LINE following a hard-line box terminates that box first.
+      if (box && !box.auto) finishBox();
+      if (!box) {
+        index++;
+        box = { entry, key: `${time}_${index}`, commands: [], auto: true };
+      }
+      command.lineNumber = box.commands.length;
+      box.commands.push({ index: lineIndex, command });
+      lastType = null;
+      hasLastType = true;
+      continue;
+    }
     if (command.lineNumber === 0 || !box) {
       finishBox();
       if (hasLastType) {
@@ -616,7 +658,7 @@ export class ThcrapRuntimeCompiler {
       const version = GAME_VERSION[game];
       const base = await this.readBaseFile(game, message[1]);
       const dumped = await this.runner.dumpMessage(base, version);
-      const patched = patchThmsgDump(dumped, parsed);
+      const patched = patchThmsgDump(dumped, parsed, version);
       const bytes = await this.runner.compileMessage(patched, version);
       return {
         bytes,

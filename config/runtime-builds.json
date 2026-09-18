@@ -80,7 +80,7 @@
       "workspaceRepository": "th08",
       "variants": {
         "normal": {
-          "features": { "thcrap": false, "thprac": true },
+          "features": { "thcrap": true, "thprac": true },
           "cache": {}
         }
       }
