@@ -80,27 +80,6 @@ def check_consumer(name: str, source_var: str, magic: str, transport_tag: str) -
         and "eagler_common_add_include_path(${TH_EXEC_NAME})" not in cmake,
         f"{name}: legacy source/include wiring remains",
     )
-    for stem in ("NetplayProtocol", "NetplayCore", "NetplaySession", "WebSocketTransport"):
-        header = read(root / "src/netplay" / f"{stem}.hpp")
-        source = read(root / "src/netplay" / f"{stem}.cpp")
-        require(
-            f"#include <eagler/netplay/{stem}.hpp>" in header,
-            f"{name}: {stem} header is not a forwarding shim",
-        )
-        require(
-            "implementation authority lives in eagler-common" in header,
-            f"{name}: {stem} header does not document common authority",
-        )
-        require(
-            "CMake compiles the eagler-common implementation source" in source,
-            f"{name}: {stem} source is not a compatibility marker",
-        )
-        code_lines = [
-            line
-            for line in source.splitlines()
-            if line.strip() and not line.lstrip().startswith("//")
-        ]
-        require(not code_lines, f"{name}: {stem} compatibility source contains implementation code")
     config = read(root / "src/netplay/NetplayProtocolConfig.hpp")
     require(
         f"MagicGame = '{magic}'" in config,
@@ -111,37 +90,7 @@ def check_consumer(name: str, source_var: str, magic: str, transport_tag: str) -
         f'Tag[] = "{transport_tag}"' in transport_config,
         f"{name}: browser transport tag seam changed unexpectedly",
     )
-    transport_header = read(root / "src/netplay/BrowserPeerTransport.hpp")
-    transport_source = read(root / "src/netplay/BrowserPeerTransport.cpp")
-    require(
-        "#include <eagler/netplay/BrowserPeerTransport.hpp>" in transport_header
-        and "implementation authority lives in eagler-common" in transport_header,
-        f"{name}: BrowserPeerTransport header is not a common forwarding shim",
-    )
-    require(
-        "CMake compiles the eagler-common implementation source" in transport_source
-        and not [
-            line for line in transport_source.splitlines()
-            if line.strip() and not line.lstrip().startswith("//")
-        ],
-        f"{name}: BrowserPeerTransport compatibility source contains implementation code",
-    )
-    input_header = read(root / "src/netplay/NetplayInput.hpp")
-    input_source = read(root / "src/netplay/NetplayInput.cpp")
     input_config = read(root / "src/netplay/NetplayInputConfig.hpp")
-    require(
-        "#include <eagler/netplay/NetplayInput.hpp>" in input_header
-        and "implementation authority lives in eagler-common" in input_header,
-        f"{name}: NetplayInput header is not a common forwarding shim",
-    )
-    require(
-        "CMake compiles the eagler-common implementation source" in input_source
-        and not [
-            line for line in input_source.splitlines()
-            if line.strip() and not line.lstrip().startswith("//")
-        ],
-        f"{name}: NetplayInput compatibility source contains implementation code",
-    )
     require(
         "CommitGameInputs" in input_config
         and "Netplay::MAX_PLAYERS" in input_config
@@ -149,13 +98,58 @@ def check_consumer(name: str, source_var: str, magic: str, transport_tag: str) -
         and "g_CurFrameGameInputs" in input_config,
         f"{name}: NetplayInput title-owned lane adapter is incomplete",
     )
-    require(
-        "src/netplay/NetplayProtocol.cpp" not in cmake
-        and "src/netplay/NetplayCore.cpp" not in cmake
-        and "src/netplay/BrowserPeerTransport.cpp" not in cmake
-        and "src/netplay/NetplayInput.cpp" not in cmake,
-        f"{name}: common netplay authority still compiles from a title-local implementation",
+    retired_paths = (
+        "src/netplay/BrowserPeerTransport.hpp",
+        "src/netplay/BrowserPeerTransport.cpp",
+        "src/netplay/NetplayCore.hpp",
+        "src/netplay/NetplayCore.cpp",
+        "src/netplay/NetplayInput.hpp",
+        "src/netplay/NetplayInput.cpp",
+        "src/netplay/NetplayProtocol.hpp",
+        "src/netplay/NetplayProtocol.cpp",
+        "src/netplay/NetplaySession.hpp",
+        "src/netplay/NetplaySession.cpp",
+        "src/netplay/PartitionedPoolJournal.hpp",
+        "src/netplay/RollbackJournal.hpp",
+        "src/netplay/RollbackJournal.cpp",
+        "src/netplay/SnapshotPolicy.hpp",
+        "src/netplay/SparsePoolCapture.hpp",
+        "src/netplay/WebSocketTransport.hpp",
+        "src/netplay/WebSocketTransport.cpp",
     )
+    for relative in retired_paths:
+        require(
+            not (root / relative).exists(),
+            f"{name}: retired common-authority shim returned: {relative}",
+        )
+        require(
+            relative not in cmake,
+            f"{name}: CMake still references retired common authority: {relative}",
+        )
+
+    retired_headers = (
+        "BrowserPeerTransport",
+        "NetplayCore",
+        "NetplayInput",
+        "NetplayProtocol",
+        "NetplaySession",
+        "PartitionedPoolJournal",
+        "RollbackJournal",
+        "SnapshotPolicy",
+        "SparsePoolCapture",
+        "WebSocketTransport",
+    )
+    for tree in (root / "src", root / "tests"):
+        for path in tree.rglob("*"):
+            if path.suffix not in (".cpp", ".hpp"):
+                continue
+            source = read(path)
+            for stem in retired_headers:
+                require(
+                    f'#include "netplay/{stem}.hpp"' not in source
+                    and f'#include "{stem}.hpp"' not in source,
+                    f"{name}: {path.relative_to(root)} uses retired local include for {stem}",
+                )
 
 
 def main() -> None:

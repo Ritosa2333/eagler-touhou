@@ -127,9 +127,12 @@ a gameplay-state change in the same acceptance step.
 
 ## Version/authority rule
 
-`eagler-common` is the implementation authority. Per-game files with the same
-old names may exist only as forwarding/compatibility shims while migration is in
-progress. They must not contain a second implementation.
+`eagler-common` is the implementation authority. Mature shared authorities are
+included directly from `<eagler/netplay/...>`; consumers must not reintroduce
+title-local forwarding headers or marker `.cpp` files for those names. Keep
+only genuine title-owned seams such as `NetplayProtocolConfig.hpp`,
+`NetplayTransportConfig.hpp`, `NetplayInputConfig.hpp`, canonical hashes,
+rollback state owners and game drivers.
 
 The canonical published layout uses a pinned `third_party/eagler-common` Git
 submodule in each game repository, pointing at `YomotsuHisami/eagler-common`.
