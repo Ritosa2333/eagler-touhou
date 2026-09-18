@@ -175,6 +175,52 @@ assert.match(await (await forcedNetworkResponse).text(), /^network:/,
   "the launch after a one-shot fallback must bypass retained Runtime caches and retry the network");
 assert.deepEqual(fallbackNetworkRequests, [fallbackUrls["runtime/game.wasm"]]);
 
+const splitFallback = await installWorker({
+  existingCacheNames: [
+    "eagler-touhou-app-shell-runtime-target",
+    "eagler-touhou-app-shell-runtime-shard",
+  ],
+  manifest: fallbackPaths.map((url, index) => ({ url, revision: `current-${index}` })),
+  deferredPaths: fallbackPaths,
+  seed: async stores => {
+    const target = stores.get("eagler-touhou-app-shell-runtime-target");
+    const shard = stores.get("eagler-touhou-app-shell-runtime-shard");
+    const revisions = Object.fromEntries(fallbackPaths.map(
+      (path, index) => [fallbackUrls[path], `split-${index}`],
+    ));
+    await target.put(fallbackUrls["runtime/game.html"], new Response(
+      "<script>const protocol='eagler-touhou/1';const epoch=Number(new URLSearchParams(location.search).get('runtimeEpoch'));window.parent.__eaglerPrepareManagedRuntimeDataV1({game:'th10',generation:'old',epoch});</script>"
+    ));
+    await target.put(fallbackUrls["runtime/shell.mjs"], new Response(
+      "const protocol='eagler-touhou/1';const epoch=Number(new URLSearchParams(location.search).get('runtimeEpoch'));"
+    ));
+    await target.put(fallbackUrls["runtime/eagler-host.mjs"], new Response(
+      "const epoch=Number(query.get('runtimeEpoch'));parentWindow.__eaglerPrepareManagedRuntimeDataV1({game,generation,epoch});"
+    ));
+    await target.put("https://example.test/__app-shell-meta__/split-target", new Response(JSON.stringify({
+      createdAt: 80,
+      entries: revisions,
+    })));
+    await shard.put(fallbackUrls["runtime/game.wasm"], new Response("split-runtime-wasm"));
+    await shard.put("https://example.test/__app-shell-meta__/split-shard", new Response(JSON.stringify({
+      createdAt: 70,
+      entries: revisions,
+    })));
+  },
+});
+const splitProbe = await splitFallback.requestMessage({
+  type: "PROBE_RUNTIME_CACHE_FALLBACK",
+  paths: fallbackPaths,
+});
+assert.equal(splitProbe.available, true,
+  "identical revisions may be assembled across retained caches without mixing Runtime generations");
+const splitRestore = await splitFallback.requestMessage({
+  type: "RESTORE_RUNTIME_CACHE_FALLBACK",
+  paths: fallbackPaths,
+});
+assert.equal(splitRestore.ok, true);
+assert.equal(await (await splitFallback.current.match(fallbackUrls["runtime/game.wasm"])).text(), "split-runtime-wasm");
+
 const incompatible = await installWorker({
   existingCacheNames: ["eagler-touhou-app-shell-incompatible-old"],
   manifest: fallbackPaths.map((url, index) => ({ url, revision: `current-${index}` })),
@@ -188,9 +234,11 @@ const incompatible = await installWorker({
     })));
   },
 });
-assert.equal((await incompatible.requestMessage({
+const incompatibleProbe = await incompatible.requestMessage({
   type: "PROBE_RUNTIME_CACHE_FALLBACK",
   paths: fallbackPaths,
-})).available, false, "pre-epoch or otherwise incompatible Runtime caches must never be offered");
+});
+assert.equal(incompatibleProbe.available, false, "pre-epoch or otherwise incompatible Runtime caches must never be offered");
+assert.equal(incompatibleProbe.reason, "runtime-protocol-incompatible");
 
 console.log("app shell worker update status: PASS");
