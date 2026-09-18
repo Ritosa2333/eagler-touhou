@@ -1,17 +1,16 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(eagler-common VERSION 0.1.0 LANGUAGES CXX)
+project(eagler-common VERSION 0.2.0 LANGUAGES CXX)
 
-# The first convergence slice still consumes the title-owned
-# <netplay/NetplayProtocol.hpp>.  Keep the shared sources as an INTERFACE
-# component so they compile inside the consumer target with that title's
-# protocol include path and platform/toolchain settings.  Once Protocol moves
-# into eagler-common this component can become a self-contained compiled
-# library without changing the consumer-facing target name.
+# Shared netplay sources compile inside the consumer target so they inherit the
+# title's platform/toolchain settings and the small
+# <netplay/NetplayProtocolConfig.hpp> wire-capability seam.
 add_library(eagler_common_netplay_base INTERFACE)
 add_library(eagler::netplay_base ALIAS eagler_common_netplay_base)
 
 target_sources(eagler_common_netplay_base INTERFACE
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/netplay/NetplayProtocol.cpp>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/netplay/NetplayCore.cpp>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/netplay/NetplaySession.cpp>"
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/netplay/WebSocketTransport.cpp>"
 )

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Guard the first TH06/TH07 common-runtime convergence slice."""
+"""Guard the TH06/TH07 Protocol/Core common-runtime convergence slice."""
 
 from __future__ import annotations
 
 from pathlib import Path
+import os
 import subprocess
 
 
@@ -27,8 +28,14 @@ def git(root: Path, *args: str) -> str:
     ).strip()
 
 
-def check_consumer(name: str, source_var: str) -> None:
-    root = WORKSPACE / name
+def consumer_root(name: str) -> Path:
+    env_name = "EAGLER_" + name.split("-")[0].upper() + "_ROOT"
+    override = os.environ.get(env_name)
+    return Path(override).resolve() if override else WORKSPACE / name
+
+
+def check_consumer(name: str, source_var: str, magic: str) -> None:
+    root = consumer_root(name)
     cmake = read(root / "CMakeLists.txt")
     gitmodules = read(root / ".gitmodules")
     submodule_path = root / "third_party" / "eagler-common"
@@ -65,7 +72,7 @@ def check_consumer(name: str, source_var: str) -> None:
         and "eagler_common_add_include_path(${TH_EXEC_NAME})" not in cmake,
         f"{name}: legacy source/include wiring remains",
     )
-    for stem in ("NetplaySession", "WebSocketTransport"):
+    for stem in ("NetplayProtocol", "NetplayCore", "NetplaySession", "WebSocketTransport"):
         header = read(root / "src/netplay" / f"{stem}.hpp")
         source = read(root / "src/netplay" / f"{stem}.cpp")
         require(
@@ -86,11 +93,25 @@ def check_consumer(name: str, source_var: str) -> None:
             if line.strip() and not line.lstrip().startswith("//")
         ]
         require(not code_lines, f"{name}: {stem} compatibility source contains implementation code")
+    config = read(root / "src/netplay/NetplayProtocolConfig.hpp")
+    require(
+        f"MagicGame = '{magic}'" in config,
+        f"{name}: protocol capability seam changed unexpectedly",
+    )
+    require(
+        "src/netplay/NetplayProtocol.cpp" not in cmake
+        and "src/netplay/NetplayCore.cpp" not in cmake,
+        f"{name}: Protocol/Core still compile from a title-local implementation",
+    )
 
 
 def main() -> None:
     for relative in (
         "CMakeLists.txt",
+        "include/eagler/netplay/NetplayProtocol.hpp",
+        "src/netplay/NetplayProtocol.cpp",
+        "include/eagler/netplay/NetplayCore.hpp",
+        "src/netplay/NetplayCore.cpp",
         "include/eagler/netplay/NetplaySession.hpp",
         "src/netplay/NetplaySession.cpp",
         "include/eagler/netplay/WebSocketTransport.hpp",
@@ -105,9 +126,9 @@ def main() -> None:
         "common netplay component target is missing",
     )
 
-    check_consumer("th06-eagler", "TH06_SOURCES")
-    check_consumer("th07-eagler", "SOURCES")
-    print("eagler-common consumer contract: PASS (TH06/TH07 first slice)")
+    check_consumer("th06-eagler", "TH06_SOURCES", "6")
+    check_consumer("th07-eagler", "SOURCES", "7")
+    print("eagler-common consumer contract: PASS (TH06/TH07 Protocol/Core slice)")
 
 
 if __name__ == "__main__":

@@ -1,4 +1,6 @@
 #include <eagler/netplay/NetplaySession.hpp>
+#include <eagler/netplay/NetplayCore.hpp>
+#include <eagler/netplay/NetplayProtocol.hpp>
 #include <eagler/netplay/WebSocketTransport.hpp>
 
 #include <cassert>
@@ -10,6 +12,50 @@ using namespace Netplay;
 
 namespace
 {
+void TestProtocolCapability()
+{
+    InputPacket packet;
+    packet.sessionId = 0x1234;
+    packet.senderPlayer = 0;
+    packet.playerCount = 2;
+    packet.latestFrame = 0;
+    packet.firstInputFrame = 0;
+    packet.inputCount = 1;
+    packet.inputs[0].analogMode = AnalogMode::DirectTouch;
+    packet.inputs[0].x = 1.5f;
+    packet.inputs[0].y = -2.0f;
+
+    std::vector<std::uint8_t> wire;
+    assert(EncodeInputPacket(packet, &wire));
+    assert(wire.size() >= 4 && wire[0] == 'E' && wire[1] == 'T' &&
+           wire[2] == 'N' && wire[3] == 'P');
+    InputPacket decoded;
+    assert(DecodeInputPacket(wire.data(), wire.size(), &decoded));
+    assert(decoded.inputs[0] == packet.inputs[0]);
+
+    packet.inputs[0].analogMode = static_cast<AnalogMode>(3);
+    assert(!EncodeInputPacket(packet, &wire));
+}
+
+void TestCoreBehavior()
+{
+    RollbackCore core;
+    CoreConfig config;
+    config.sessionId = 77;
+    config.playerCount = 2;
+    config.localPlayer = 0;
+    config.inputDelay = 2;
+    config.maxRollbackFrames = 8;
+    assert(core.Reset(config));
+    assert(core.ScheduleLocalInput(0, FrameInput(0x10)));
+
+    assert(core.SubmitRemoteInput(1, 0, FrameInput(0x20)) ==
+           RemoteInputResult::Accepted);
+    auto frame0 = core.PrepareFrame(0);
+    assert(frame0.canAdvance);
+    assert(core.MarkSimulated(0, frame0));
+}
+
 SessionPacket PeerPacket(const SessionConfig &config, std::uint8_t player, SessionPhase phase)
 {
     SessionPacket packet;
@@ -79,6 +125,8 @@ void TestNativeWebSocketStub()
 
 int main()
 {
+    TestProtocolCapability();
+    TestCoreBehavior();
     TestSessionGate();
     TestNativeWebSocketStub();
     std::cout << "eagler-common netplay base: PASS\n";

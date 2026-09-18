@@ -37,16 +37,28 @@ both games still pass their existing gates, then converge near-duplicates.  Do
 not combine common-library extraction with gameplay-state or protocol changes in
 the same step.
 
-Current first slice:
+Published/active convergence slices:
 
 - `NetplaySession`
 - `WebSocketTransport`
+- `NetplayProtocol`
+- `NetplayCore`
 
-Both were byte-identical in TH06 and TH07 before extraction.
+`NetplaySession` and `WebSocketTransport` were byte-identical before extraction.
+`NetplayProtocol` differs only through a deliberately tiny title-owned wire
+capability seam (`NetplayProtocolConfig.hpp`): the game magic byte. The shared
+Protocol header and `NetplayCore` preserve the behavior of the current TH06 and
+TH07 `eagler` branches exactly; newer uncommitted title experiments are not
+folded into this authority migration.
 
-Future intended slices include `NetplayProtocol`, `NetplayCore`,
-`RollbackJournal`, browser peer transport, rollback primitives and the shared
-performance testkit once their title-facing seams are explicit.
+`RollbackJournal` is intentionally **not** part of this slice. TH06 still needs
+its own measured journal optimization pass, using the successful TH07 work as
+the reference. Only after both titles converge on the same validated generic
+journal should that implementation move into `eagler-common`.
+
+Future intended slices include `RollbackJournal`, browser peer transport,
+rollback primitives and the shared performance testkit once their title-facing
+seams are explicit.
 
 ## Convergence order
 
@@ -76,12 +88,11 @@ submodule in each game repository, pointing at `YomotsuHisami/eagler-common`.
 The workspace sibling remains a development fallback and an explicit
 `EAGLER_COMMON_ROOT` override remains available for controlled experiments.
 
-Consumers link the CMake component target `eagler::netplay_base`. In the first
-slice this is intentionally an INTERFACE component: `NetplaySession` still
-uses the consumer-owned `<netplay/NetplayProtocol.hpp>`, so the common sources
-must compile in the consumer target's include/toolchain context. Moving
-`NetplayProtocol` into common is the next convergence slice; do not duplicate
-the protocol here merely to make the first slice appear self-contained.
+Consumers link the CMake component target `eagler::netplay_base`. It remains an
+INTERFACE component so the shared sources compile with the consumer's platform
+toolchain and its title-owned `<netplay/NetplayProtocolConfig.hpp>` capability
+seam. The config may describe wire compatibility; it must not grow into a
+second title-specific Protocol/Core implementation.
 
 Do not push a consumer commit that requires the common library until the common
 repository/revision it names is available remotely. CI/release builds must pin

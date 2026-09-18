@@ -1,8 +1,6 @@
 #pragma once
 
-// The wire structures remain game-owned during the first convergence slice.
-// Every consumer exposes its current protocol through <netplay/NetplayProtocol.hpp>.
-#include <netplay/NetplayProtocol.hpp>
+#include <eagler/netplay/NetplayProtocol.hpp>
 
 #include <array>
 #include <cstdint>
