@@ -109,16 +109,15 @@ endif()
 # Keep the ordinary TH06 binary free of netplay objects.  As with TH07, the
 # normal and multiplayer runtimes are produced from separate build trees by
 # toggling these options rather than by runtime-disabling a single fat binary.
+set(EAGLER_COMMON_ROOT "${CMAKE_SOURCE_DIR}/third_party/eagler-common"
+    CACHE PATH "Pinned eagler-common checkout; override explicitly for development only")
+if(NOT EXISTS "${EAGLER_COMMON_ROOT}/cmake/EaglerCommon.cmake")
+    message(FATAL_ERROR "TH06 requires the pinned eagler-common checkout at ${EAGLER_COMMON_ROOT}")
+endif()
+include("${EAGLER_COMMON_ROOT}/cmake/EaglerCommon.cmake")
+
 if(TH_ENABLE_NETPLAY)
-    set(EAGLER_COMMON_ROOT "${CMAKE_SOURCE_DIR}/third_party/eagler-common"
-        CACHE PATH "Pinned eagler-common checkout; override explicitly for development only")
-    if(NOT EXISTS "${EAGLER_COMMON_ROOT}/cmake/EaglerCommon.cmake")
-        message(FATAL_ERROR "TH_ENABLE_NETPLAY requires the pinned eagler-common checkout at ${EAGLER_COMMON_ROOT}")
-    endif()
-    include("${EAGLER_COMMON_ROOT}/cmake/EaglerCommon.cmake")
     list(APPEND TH06_SOURCES
-        src/netplay/NetplayCore.cpp
-        src/netplay/NetplayProtocol.cpp
         src/netplay/RollbackJournal.cpp
         src/netplay/Th06CanonicalHash.cpp
         src/netplay/Th06RollbackState.cpp
@@ -175,6 +174,8 @@ endif()
 target_include_directories(${TH_EXEC_NAME} PRIVATE src src/pbg3)
 if(TH_ENABLE_NETPLAY)
     eagler_common_link_netplay_base(${TH_EXEC_NAME})
+else()
+    eagler_common_link_netplay_headers(${TH_EXEC_NAME})
 endif()
 if(TH_ENABLE_THPRAC)
     target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_ENABLE_THPRAC)

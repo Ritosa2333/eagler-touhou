@@ -10,20 +10,25 @@ assert 'src/multiplayer/GameplaySession.cpp' in cmake
 assert 'src/netplay/NetplayInput.cpp' in cmake
 assert 'if(TH_ENABLE_NETPLAY)' in cmake
 for source in (
-    'src/netplay/NetplayCore.cpp',
-    'src/netplay/NetplayProtocol.cpp',
     'src/netplay/RollbackJournal.cpp',
     'src/netplay/NetplaySideEffects.cpp',
     'src/netplay/BrowserPeerTransport.cpp',
 ):
     assert source in cmake
+for shared_source in ('src/netplay/NetplayCore.cpp', 'src/netplay/NetplayProtocol.cpp'):
+    assert shared_source not in cmake
 assert 'eagler_common_link_netplay_base(${TH_EXEC_NAME})' in cmake
+assert 'eagler_common_link_netplay_headers(${TH_EXEC_NAME})' in cmake
 assert 'eagler_common_append_netplay_base_sources(TH06_SOURCES)' not in cmake
 assert 'eagler_common_add_include_path(${TH_EXEC_NAME})' not in cmake
 common = root / 'third_party' / 'eagler-common'
 for source in (
+    'src/netplay/NetplayCore.cpp',
+    'src/netplay/NetplayProtocol.cpp',
     'src/netplay/NetplaySession.cpp',
     'src/netplay/WebSocketTransport.cpp',
+    'include/eagler/netplay/NetplayCore.hpp',
+    'include/eagler/netplay/NetplayProtocol.hpp',
     'include/eagler/netplay/NetplaySession.hpp',
     'include/eagler/netplay/WebSocketTransport.hpp',
 ):
