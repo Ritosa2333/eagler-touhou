@@ -9,6 +9,11 @@ Read this together with:
 
 - [`ADAPTER_CAPABILITIES.md`](ADAPTER_CAPABILITIES.md) for the required / optional /
   format-adapter / compatibility classification;
+- [`ADAPTER_BEHAVIOR_INVARIANTS.md`](ADAPTER_BEHAVIOR_INVARIANTS.md) for
+  product-level interaction and presentation behavior that is easy to miss when
+  adapting a new title;
+- [`playbooks/README.md`](playbooks/README.md) for recurring implementation
+  pitfalls, ownership rules and verification methods;
 - [`GAME_ADAPTER_CONTRACT.md`](GAME_ADAPTER_CONTRACT.md) for ownership rules;
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) for subsystem boundaries;
 - [`PRODUCT_SURFACE.md`](PRODUCT_SURFACE.md) for what is intentionally exposed;
@@ -348,6 +353,10 @@ unsynced IDBFS state cause game-visible bugs.
 
 At minimum, a mature Runtime shell must:
 
+- read the positive `runtimeEpoch` supplied in its navigation URL, include it
+  unchanged in every Runtime protocol event/response, and reject Host commands
+  whose epoch differs; do not use `parent === event.source` /
+  `frame.contentWindow` equality as a substitute for navigation identity;
 - clear keyboard state on blur/visibility loss;
 - cancel active touch state on blur/pagehide;
 - pause its scheduling loop while hidden when appropriate;

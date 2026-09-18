@@ -28,7 +28,7 @@ th07-eagler/build-web-eagler-thprac
 th07-eagler/build-web-th07-netplay
 ```
 
-These paths carry no compatibility guarantee. Development source paths are owned by `lib/development-content.mjs`; the publisher neither reads these defaults nor searches the source root for generated manifests. A path may move together with all local callers in one coherent change. Existing TH08 development paths are outside the scope of the current cleanup and have not been moved.
+These paths carry no compatibility guarantee. Development source paths are owned by `lib/development-content.mjs`; the publisher neither reads these defaults nor searches the source root for generated manifests. A path may move together with all local callers in one coherent change. Directory-Runtime development paths are likewise implementation details rather than publication contracts.
 
 ## Build profile
 

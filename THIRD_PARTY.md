@@ -80,9 +80,12 @@ The site fallback font is a WOFF2 subset of GNU Unifont 15.1.05.
 - Vendored files: `public/assets/fonts/unifont-site.woff2`,
   `public/assets/fonts/OFL-Unifont.txt`.
 
-The game runtimes are built with SDL, SDL_image, SDL_ttf and Emscripten. Their
-source and license notices live in the separate TH06/TH07 runtime repositories
-and toolchain; they are not vendored into this frontend repository.
+The game Runtimes use the SDL family and Emscripten. TH06/TH07 retain their
+existing SDL-era Runtime dependencies, while the current TH08/TH10 directory
+Runtimes are C++ / SDL3 / Emscripten builds and also carry their own audio/
+decoder dependencies in the sibling Runtime repositories. Runtime-specific
+source and license notices belong to the corresponding TH06/TH07/TH08/TH10
+repository or toolchain; they are not duplicated into this Launcher repository.
 
 - SDL: https://github.com/libsdl-org/SDL
 - SDL_image: https://github.com/libsdl-org/SDL_image

@@ -11,7 +11,7 @@
 
 **Android 端不建议使用系统自带浏览器和各种国内浏览器。你也可以用，但可能会有一定的 BUG，如目前已知夸克浏览器会断触。**
 
-- **iPhone / iPad**：Safari。由于 iOS 上的浏览器都使用 WebKit，换用其他浏览器通常不能绕过系统 WebKit 本身的兼容性限制。TH10（风神录）的 Worker / WebGL2 运行路径需要 **iOS / iPadOS 17 或更高版本**。
+- **iPhone / iPad**：Safari。由于 iOS 上的浏览器都使用 WebKit，换用其他浏览器通常不能绕过系统 WebKit 本身的兼容性限制。
 
 - **Windows**：Edge（系统自带） / [Chrome](https://google.cn/chrome) / [FireFox](https://www.firefox.com/)
 

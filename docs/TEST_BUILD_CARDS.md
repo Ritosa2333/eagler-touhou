@@ -1,6 +1,6 @@
 # TH10 正式卡片
 
-TH10 WASI Runtime 是正式产品。普通版 TH08（`th08.html`）始终是
+TH10 的 directory SDL3 / Emscripten Runtime 是正式产品。普通版 TH08（`th08.html`）始终是
 独立产品；Launcher 仍只有一个 TH10 卡片。
 
 Host Manifest 的 `shared.testBuild` 只保留开发清单兼容字段，不再控制 TH10
@@ -10,8 +10,9 @@ Host Manifest 的 `shared.testBuild` 只保留开发清单兼容字段，不再�
 开发服务器仍生成 `testBuild: true`，供旧客户端兼容；打包不应根据它筛除
 正式 TH10。Runtime、DATA 和 OGG 仍须通过原有发布输入校验。
 
-TH10 静态卡片带有正常导航地址并默认显示。正式版显示 6 张卡片（TH06、
-TH07、TH08、TH10、TH06MP、TH07MP）。
+TH10 静态卡片带有正常导航地址并默认显示。正式卡片集合由 Product Catalog
+中的普通产品和已声明 Multiplayer Runtime 的产品派生；本文不维护第二份
+“应显示多少张卡片”的产品注册表。
 
 产品目录中 TH06、TH07、TH08、TH10 均声明对应卡图。TH10 使用
 `th10-card.webp`，由原始 `th10.dat` 中的标题背景提取、拼接生成。
