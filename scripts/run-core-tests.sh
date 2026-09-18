@@ -7,7 +7,8 @@ trap 'rm -rf "$OUT"' EXIT
 
 "$CXX" -std=c++20 -Isrc -Ithird_party/eagler-common/include \
   tests/netplay-core-test.cpp \
-  src/netplay/NetplayCore.cpp src/netplay/NetplayProtocol.cpp \
+  third_party/eagler-common/src/netplay/NetplayCore.cpp \
+  third_party/eagler-common/src/netplay/NetplayProtocol.cpp \
   third_party/eagler-common/src/netplay/NetplaySession.cpp \
   -o "$OUT/netplay-core-test"
 "$OUT/netplay-core-test"
@@ -17,7 +18,8 @@ trap 'rm -rf "$OUT"' EXIT
   -o "$OUT/rollback-journal-test"
 "$OUT/rollback-journal-test"
 
-"$CXX" -std=c++20 -DTH_ENABLE_MULTIPLAYER_GAMEPLAY -Isrc -Ivendored/SDL/include \
+"$CXX" -std=c++20 -DTH_ENABLE_MULTIPLAYER_GAMEPLAY -Isrc \
+  -Ithird_party/eagler-common/include -Ivendored/SDL/include \
   tests/netplay-input-test.cpp src/netplay/NetplayInput.cpp \
   -o "$OUT/netplay-input-test"
 "$OUT/netplay-input-test"
