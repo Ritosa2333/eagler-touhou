@@ -1,6 +1,19 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(eagler-common VERSION 0.2.0 LANGUAGES CXX)
+project(eagler-common VERSION 0.2.1 LANGUAGES CXX)
+
+# Consumers such as Replay metadata readers need the shared protocol types even
+# in ordinary (non-netplay) builds. Keep that dependency header-only so title
+# builds do not accidentally pull transport/core implementation objects into
+# their normal runtime.
+add_library(eagler_common_netplay_headers INTERFACE)
+add_library(eagler::netplay_headers ALIAS eagler_common_netplay_headers)
+
+target_include_directories(eagler_common_netplay_headers INTERFACE
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+)
+
+target_compile_features(eagler_common_netplay_headers INTERFACE cxx_std_17)
 
 # Shared netplay sources compile inside the consumer target so they inherit the
 # title's platform/toolchain settings and the small
@@ -15,11 +28,9 @@ target_sources(eagler_common_netplay_base INTERFACE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/netplay/WebSocketTransport.cpp>"
 )
 
-target_include_directories(eagler_common_netplay_base INTERFACE
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+target_link_libraries(eagler_common_netplay_base INTERFACE
+    eagler::netplay_headers
 )
-
-target_compile_features(eagler_common_netplay_base INTERFACE cxx_std_17)
 
 option(EAGLER_COMMON_BUILD_TESTS "Build eagler-common standalone tests" ${PROJECT_IS_TOP_LEVEL})
 if(EAGLER_COMMON_BUILD_TESTS)
