@@ -43,6 +43,7 @@ for source in (
     'include/eagler/netplay/SparsePoolCapture.hpp',
     'include/eagler/netplay/PartitionedPoolJournal.hpp',
     'include/eagler/netplay/BrowserPeerTransport.hpp',
+    'include/eagler/netplay/InputRepairBudget.hpp',
     'include/eagler/netplay/NetplayInput.hpp',
     'include/eagler/netplay/WebSocketTransport.hpp',
 ):
@@ -66,6 +67,23 @@ for retired in (
     'WebSocketTransport.hpp', 'WebSocketTransport.cpp',
 ):
     assert not (root / 'src' / 'netplay' / retired).exists(), retired
+
+# Reliable input repair is a rare duplicate of the already-captured packet,
+# never a second physical-input producer or a replacement for the RTC fast
+# lane.  The common transport owns the control-channel send primitive; TH06
+# owns only the stalled-ACK policy and product default.
+driver = (root / 'src/netplay/Th06LanStageProbe.cpp').read_text(encoding='utf-8')
+shell = (root / 'resources/shell.html').read_text(encoding='utf-8')
+send_start = driver.index('bool SendScheduledLocalFrame(std::uint32_t frame)')
+send_end = driver.index('bool SendTailKeepalive()', send_start)
+send_path = driver[send_start:send_end]
+assert '#include <eagler/netplay/InputRepairBudget.hpp>' in driver
+assert 'g_InputRepairBudgets[peer].ShouldRepair(' in send_path
+assert 'packet.firstInputFrame, packet.inputCount != 0, SDL_GetTicks()' in send_path
+assert 'g_BrowserPeerTransport.SendRepairTo(peer, wire.data(), wire.size())' in send_path
+assert send_path.index('TransportSendTo(peer, wire.data(), wire.size())') < send_path.index('SendRepairTo(peer, wire.data(), wire.size())')
+assert 'netplayReliableInputRepair: options.netplayReliableInputRepair ?? true' in shell
+assert '"netplayReliableInputRepair"' in shell
 assert 'target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_ENABLE_NETPLAY)' in cmake
 assert 'target_link_options(th06 PRIVATE -lwebsocket)' in cmake
 

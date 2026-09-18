@@ -35,6 +35,7 @@
   const quitCycle = params.get("quit") === "1";
   const endingCycle = params.get("ending") === "1";
   const replayPlaybackCycle = params.get("replayplay") === "1";
+  const reliableInputRepair = params.get("repair") !== "0";
   const devRuntime = params.get("dev") === "1";
   const requestedRuntimeBuild = String(params.get("runtimeBuild") || "");
   const sharedFont = params.get("sharedFont") !== "0";
@@ -132,6 +133,7 @@
           netplayCoalesceRestore: coalesceRestore,
           netplayLiveBulletSnapshots: liveBulletSnapshots,
           netplayLiveBulletAudit: liveBulletAudit,
+          netplayReliableInputRepair: reliableInputRepair,
           netplaySnapshotPolicy: snapshotPolicy,
           netplayPauseCycle: pauseCycle,
           netplayRestartCycle: restartCycle,

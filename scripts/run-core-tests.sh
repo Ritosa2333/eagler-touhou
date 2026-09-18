@@ -29,3 +29,8 @@ trap 'rm -rf "$OUT"' EXIT
   tests/netplay-input-test.cpp third_party/eagler-common/src/netplay/NetplayInput.cpp \
   -o "$OUT/netplay-input-test"
 "$OUT/netplay-input-test"
+
+"$CXX" -std=c++20 -Ithird_party/eagler-common/include \
+  third_party/eagler-common/tests/input-repair-budget-test.cpp \
+  -o "$OUT/netplay-input-repair-budget-test"
+"$OUT/netplay-input-repair-budget-test"

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import json
 import socket
 import subprocess
 import sys
@@ -131,6 +132,19 @@ def runtime_snapshot(page, target_frame: int = 300):
             replayInputCoverage: Number(runtime?.__eaglerNetplayReplayInputCoverage || 0),
             directTouchBeginCaptures: Number(runtime?.__eaglerNetplayDirectTouchBeginCaptures || 0),
             directTouchDeltaCaptures: Number(runtime?.__eaglerNetplayDirectTouchDeltaCaptures || 0),
+            inputRepairs: Number(runtime?.__eaglerNetplayInputRepairSent || 0),
+            repairEnabled: runtime?.Module?.eaglerOptions?.netplayReliableInputRepair === true,
+            impairment: (() => {
+              const stats = runtime?.__th06InputImpairment?.stats;
+              return stats ? {
+                matched: Number(stats.matched || 0),
+                sent: Number(stats.sent || 0),
+                blackoutDropped: Number(stats.blackoutDropped || 0),
+                controlInputs: Number(stats.controlInputs || 0),
+                overflow: Number(stats.overflow || 0),
+                errors: Number(stats.errors || 0),
+              } : null;
+            })(),
             receiveBacklog: Math.max(0,
               Number(runtime?.__th06PeerTransport?.received?.length || 0) -
               Number(runtime?.__th06PeerTransport?.receivedHead || 0)),
@@ -212,6 +226,11 @@ def run_smoke(
     relay_drop_first_input_per_edge: bool = False,
     relay_drop_input_latest_from: int = -1,
     relay_drop_input_latest_to: int = -1,
+    reliable_input_repair: bool = True,
+    rtc_input_delay_ms: int | None = None,
+    rtc_input_jitter_ms: int = 0,
+    rtc_input_blackout_ms: int = 0,
+    require_input_repair: bool = False,
     route_skew_player: int = -1,
     route_skew_ms: int = 0,
     require_rollback: bool = False,
@@ -248,6 +267,8 @@ def run_smoke(
         raise ValueError("player_count must be 2 or 3")
     if snapshot_policy not in ("always", "demand", "frontier"):
         raise ValueError("snapshot_policy must be always, demand, or frontier")
+    if rtc_input_delay_ms is not None and force_relay:
+        raise ValueError("RTC input impairment requires an RTC transport")
     http_port = free_port()
     relay_port = free_port()
     while relay_port == http_port:
@@ -304,6 +325,20 @@ def run_smoke(
             failures = [""] * player_count
             for index, browser in enumerate(browsers):
                 context = browser.new_context(viewport={"width": 960, "height": 720})
+                if rtc_input_delay_ms is not None:
+                    injector = (ROOT / "tests/rtc-input-impairment.cjs").read_text(encoding="utf-8")
+                    settings = json.dumps({
+                        "oneWayMs": rtc_input_delay_ms,
+                        "jitterMs": rtc_input_jitter_ms,
+                        "blackoutMs": rtc_input_blackout_ms,
+                        "blackoutFrame": 900,
+                        "seed": 607 + index,
+                    })
+                    context.add_init_script(
+                        injector +
+                        "\nglobalThis.__th06InputImpairment = installRtcInputImpairment(" +
+                        settings + ");"
+                    )
                 if force_relay:
                     context.add_init_script("delete globalThis.RTCPeerConnection")
                 page = context.new_page()
@@ -342,6 +377,7 @@ def run_smoke(
                     f"&liveBullets={'1' if live_bullet_snapshots else '0'}"
                     f"&liveBulletAudit={'1' if live_bullet_audit else '0'}"
                     f"&snapshotPolicy={snapshot_policy}"
+                    f"&repair={'1' if reliable_input_repair else '0'}"
                     f"&stage={'1' if stage_transition else '0'}"
                     f"&eliminate={'1' if elimination_cycle else '0'}"
                     f"&coop={'1' if coop_transfer_cycle else '0'}"
@@ -794,6 +830,23 @@ def run_smoke(
                 raise RuntimeError(f"wrong runtime build marker: {snapshots}")
             if require_rollback and sum(value["rollback"] for value in snapshots) <= 0:
                 raise RuntimeError(f"expected rollback but saw none: {snapshots}")
+            if require_input_repair:
+                if any(not value["repairEnabled"] for value in snapshots):
+                    raise RuntimeError(f"reliable repair was not enabled: {snapshots}")
+                impairment = [value["impairment"] for value in snapshots]
+                if any(not value or value["matched"] <= 0 or value["sent"] <= 0 or
+                       value["blackoutDropped"] <= 0 or value["controlInputs"] <= 0 or
+                       value["overflow"] != 0 or value["errors"] != 0
+                       for value in impairment):
+                    raise RuntimeError(f"RTC fast-lane blackout/repair fixture did not execute cleanly: {impairment}")
+                if sum(value["inputRepairs"] for value in snapshots) <= 0:
+                    raise RuntimeError(f"stalled ACK frontier produced no reliable repair: {snapshots}")
+                print(
+                    "TH06 RTC input repair: PASS "
+                    f"repairs={'/'.join(str(value['inputRepairs']) for value in snapshots)} "
+                    f"blackout={'/'.join(str(value['impairment']['blackoutDropped']) for value in snapshots)} "
+                    f"control={'/'.join(str(value['impairment']['controlInputs']) for value in snapshots)}"
+                )
             if touch_input:
                 targets = range(player_count) if touch_input_player < 0 else (touch_input_player,)
                 for player in targets:
@@ -967,6 +1020,21 @@ if __name__ == "__main__":
         run_smoke(2, True)
     elif mode == "rtc2":
         run_smoke(2, False)
+    elif mode == "repair2":
+        run_smoke(
+            2,
+            False,
+            target_frame=1800,
+            scripted_stress_input=True,
+            require_rollback=True,
+            reliable_input_repair=True,
+            rtc_input_delay_ms=50,
+            rtc_input_jitter_ms=0,
+            rtc_input_blackout_ms=1000,
+            require_input_repair=True,
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
     elif mode == "rtcmove2":
         run_smoke(
             2,
@@ -1777,4 +1845,4 @@ if __name__ == "__main__":
             shared_font=False,
         )
     else:
-        raise SystemExit("usage: netplay-browser-smoke.py [relay2|rtc2|rtcmove2|rtctouch2|routeskew2|relay3|contribution3|rtc3|routeskew3|rollback2|singlemove2|singletouch2|scripted2|stress2|elimination2|elimination3|coop2|pause2|pause3|restart2|restart3|loss2|loss3|frame0drop2|frame0drop3|predlimit2|predlimit3|backlog2|backlog3|loadout2|retry2|retry3|recovery2|recovery3|transient2|transient3|quit2|quit3|ending2|ending3|replay2|replay3|replayrollback2]")
+        raise SystemExit("usage: netplay-browser-smoke.py [relay2|rtc2|repair2|rtcmove2|rtctouch2|routeskew2|relay3|contribution3|rtc3|routeskew3|rollback2|singlemove2|singletouch2|scripted2|stress2|elimination2|elimination3|coop2|pause2|pause3|restart2|restart3|loss2|loss3|frame0drop2|frame0drop3|predlimit2|predlimit3|backlog2|backlog3|loadout2|retry2|retry3|recovery2|recovery3|transient2|transient3|quit2|quit3|ending2|ending3|replay2|replay3|replayrollback2]")
