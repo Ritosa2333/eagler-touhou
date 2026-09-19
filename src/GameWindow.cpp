@@ -31,6 +31,7 @@
 #include "ThpracImGui.hpp"
 #endif
 #ifdef TH_ENABLE_NETPLAY
+#include <eagler/netplay/FrameBudget.hpp>
 #include "netplay/Th07DeterminismProbe.hpp"
 #include "netplay/Th07LanCoreProbe.hpp"
 #include "netplay/Th07LanStageProbe.hpp"
@@ -282,9 +283,12 @@ RenderResult GameWindow::Render()
         // bounded wall-clock backlog while presentation continues, then catch
         // up several fixed ticks before the next draw once packets resume.
         // This prevents a brief network stall from becoming lasting slow time.
-        constexpr i32 maxNetplayCatchupTicks = 6;
+        constexpr i32 maxNetplayCatchupTicks =
+            static_cast<i32>(Netplay::FrameBudget::MaxCatchupTicks);
+        const u64 catchupStartNs = SDL_GetTicksNS();
         i32 catchupTicks = 0;
-        while (this->accumulator >= targetDt && catchupTicks < maxNetplayCatchupTicks)
+        while (this->accumulator >= targetDt && Netplay::FrameBudget::CanStartTick(
+                   static_cast<std::uint32_t>(catchupTicks), SDL_GetTicksNS() - catchupStartNs))
         {
             const i32 res = runSimulationTick();
             if (res == 0)

@@ -6,6 +6,8 @@
 #include <eagler/netplay/NetplaySession.hpp>
 #include <eagler/netplay/InputRepairBudget.hpp>
 #include <eagler/netplay/ConfirmedInputWatchdog.hpp>
+#include <eagler/netplay/FrameAdvantageWindow.hpp>
+#include <eagler/netplay/FramePacingPolicy.hpp>
 #include "NetplaySideEffects.hpp"
 #include "Th07CanonicalHash.hpp"
 #include "Th07RollbackState.hpp"
@@ -118,15 +120,7 @@ std::uint32_t g_PeakBullets = 0;
 std::uint32_t g_PeakLasers = 0;
 std::uint32_t g_PeakItems = 0;
 std::array<std::uint32_t, MAX_PLAYERS> g_LastRemoteSenderFrame{};
-struct PeerTimeSyncState
-{
-    std::array<std::int32_t, 64> samples{};
-    std::size_t sampleCount = 0;
-    std::size_t sampleCursor = 0;
-    double averageLead = 0.0;
-    bool ready = false;
-};
-std::array<PeerTimeSyncState, MAX_PLAYERS> g_PeerTimeSync{};
+std::array<FrameAdvantageWindow, MAX_PLAYERS> g_PeerTimeSync{};
 std::array<std::uint32_t, MAX_PLAYERS> g_PredictionDepth{};
 std::array<std::uint32_t, MAX_PLAYERS> g_RollbackByPlayer{};
 double g_RecommendedLead = 0.0;
@@ -303,11 +297,6 @@ bool ProbeMode()
 #endif
 }
 
-std::int32_t SignedFrameDelta(std::uint32_t lhs, std::uint32_t rhs)
-{
-    return static_cast<std::int32_t>(lhs - rhs);
-}
-
 void RecordTimeSyncSample(const InputPacket &packet)
 {
     // GGPO/GGRS maintain time-sync state per endpoint.  A 3P room must not
@@ -322,32 +311,14 @@ void RecordTimeSyncSample(const InputPacket &packet)
         return;
     lastRemoteFrame = packet.senderFrame;
 
-    const std::int32_t localAdvantage = SignedFrameDelta(g_SimFrame, packet.senderFrame);
-    const std::int32_t advantageDifference =
-        localAdvantage - static_cast<std::int32_t>(packet.frameAdvantage);
-    const std::int32_t inferredLead = advantageDifference / 2;
-    if (std::abs(inferredLead) > 30)
+    const std::int32_t inferredLead = FramePacingPolicy::InferLead(
+        g_SimFrame, packet.senderFrame, packet.frameAdvantage);
+    if (!FramePacingPolicy::AcceptLead(inferredLead))
         return;
 
-    PeerTimeSyncState &state = g_PeerTimeSync[packet.senderPlayer];
-    state.samples[state.sampleCursor] = inferredLead;
-    state.sampleCursor = (state.sampleCursor + 1) % state.samples.size();
-    state.sampleCount = std::min(state.sampleCount + 1, state.samples.size());
-    if (state.sampleCount < 20)
+    FrameAdvantageWindow &state = g_PeerTimeSync[packet.senderPlayer];
+    if (!state.AddSample(inferredLead))
         return;
-
-    std::vector<std::int32_t> sorted;
-    sorted.reserve(state.sampleCount);
-    for (std::size_t i = 0; i < state.sampleCount; ++i)
-        sorted.push_back(state.samples[i]);
-    std::sort(sorted.begin(), sorted.end());
-    const std::size_t trim = std::min<std::size_t>(4, sorted.size() / 8);
-    std::int64_t sum = 0;
-    for (std::size_t i = trim; i < sorted.size() - trim; ++i)
-        sum += sorted[i];
-    state.averageLead = static_cast<double>(sum) /
-        static_cast<double>(sorted.size() - trim * 2);
-    state.ready = true;
 
     bool haveRecommendation = false;
     double recommendedLead = 0.0;
@@ -363,11 +334,8 @@ void RecordTimeSyncSample(const InputPacket &packet)
         return;
     g_RecommendedLead = recommendedLead;
 
-    const double deadbandLead = std::abs(recommendedLead) < 0.5 ? 0.0 : recommendedLead;
-    const double desiredScale = std::clamp(1.0 + deadbandLead * 0.003, 0.98, 1.02);
-    g_SimulationIntervalScale += (desiredScale - g_SimulationIntervalScale) * 0.08;
-    if (std::abs(g_SimulationIntervalScale - 1.0) < 0.0002)
-        g_SimulationIntervalScale = 1.0;
+    g_SimulationIntervalScale =
+        FramePacingPolicy::UpdateScale(g_SimulationIntervalScale, recommendedLead);
 #ifdef __EMSCRIPTEN__
     EM_ASM({
         globalThis.__eaglerNetplayLanFrameAdvantage = $0;
@@ -1036,8 +1004,8 @@ bool Initialize()
 
     g_LastRemoteSenderFrame.fill(INVALID_FRAME);
     g_RemoteInputWatchdogs = {};
-    for (PeerTimeSyncState &state : g_PeerTimeSync)
-        state = PeerTimeSyncState{};
+    for (FrameAdvantageWindow &state : g_PeerTimeSync)
+        state = FrameAdvantageWindow{};
     g_PredictionDepth.fill(0);
     g_RollbackByPlayer.fill(0);
     g_RecommendedLead = 0.0;
@@ -1201,8 +1169,9 @@ bool SendScheduledLocalFrame(std::uint32_t frame)
             packet.senderFrame = g_SimFrame;
             if (g_LastRemoteSenderFrame[peer] != INVALID_FRAME)
             {
-                packet.frameAdvantage = static_cast<std::int16_t>(SignedFrameDelta(
-                    g_SimFrame, g_LastRemoteSenderFrame[peer]));
+                packet.frameAdvantage = static_cast<std::int16_t>(
+                    FramePacingPolicy::SignedFrameDelta(
+                        g_SimFrame, g_LastRemoteSenderFrame[peer]));
             }
             std::vector<std::uint8_t> wire;
             if (!EncodeInputPacket(packet, &wire) ||
