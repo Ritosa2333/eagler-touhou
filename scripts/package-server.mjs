@@ -145,6 +145,13 @@ function musicSourceBase(game, mode) {
   return resolve(root, directory);
 }
 
+function retailDataSource(game) {
+  const preparation = PRODUCT_CONTENT[game].hostPreparation?.dataAssets;
+  if (preparation?.kind === "original-file") return resolve(dataAssets[game], preparation.source);
+  if (preparation?.kind === "prepared-content") return resolve(dataAssets[game], `${game}.data`);
+  throw new Error(`${game}: retail-memory DATA preparation is not declared`);
+}
+
 const LANGUAGE_ID = /^(?:ja|lang_[a-z0-9]+(?:-[a-z0-9]+)*)$/i;
 const LANGUAGE_DISPLAY_NAMES = Object.freeze({
   ja: "日本語",
@@ -300,11 +307,12 @@ function staticPackPath(value, game) {
 // component.
 async function publishLanguagePacks(game, entry, gameRoot) {
   const languagePack = languagePackSources[game];
+  const requestedLanguages = serverFeatures[game]?.languages ?? null;
   entry.languages = [];
   if (languagePack) {
     const { source, catalog } = languagePack;
     const catalogVersion = String(catalog.runtimeVersion).toLowerCase();
-    const allowlist = serverFeatures[game].languages;
+    const allowlist = requestedLanguages;
     const catalogLanguages = allowlist
       ? allowlist.filter(id => id !== "ja").map(id => catalog.languages.find(language => String(language?.id || "").toLowerCase() === id))
       : catalog.languages;
@@ -342,7 +350,7 @@ async function publishLanguagePacks(game, entry, gameRoot) {
       });
     }
   }
-  const selectableIds = canonicalLanguageIds(serverFeatures[game].languages ?? ["ja", ...entry.languages.map(language => language.id)]);
+  const selectableIds = canonicalLanguageIds(requestedLanguages ?? ["ja", ...entry.languages.map(language => language.id)]);
   entry.languageOptions = selectableIds.map(id => {
     if (id === "ja") return { id: "ja", title: languageDisplayName("ja"), pack: null };
     const language = entry.languages.find(item => String(item.id).toLowerCase() === id);
@@ -636,7 +644,7 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
     const dataPath = dataTarget.slice(1);
     const target = `games/${game}/${dataPath}`;
     await mkdir(dirname(resolve(staging, target)), { recursive: true });
-    await cp(resolve(dataAssets[game], `${game}.data`), resolve(staging, target));
+    await cp(retailDataSource(game), resolve(staging, target));
     const identity = await fileIdentity(resolve(staging, target));
     entry.gameData = { path: dataPath, ...identity, version: `sha256-${identity.sha256}`, layout: PRODUCT_CONTENT[game].dataLayout };
     const packageFiles = { [dataFileId]: await descriptorFile(target, dataTarget) };
