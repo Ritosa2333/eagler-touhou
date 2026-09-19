@@ -448,14 +448,14 @@ async function versionRuntimeScript(gameRoot, stem, version) {
   await writeFile(htmlPath, source.replace(pattern, `$1$2${stem}.js?v=${version}$2`));
 }
 
-async function assertAppManagedRuntimeShell(buildRoot, game, variant, stem = game) {
+async function assertAppManagedRuntimeShell(buildRoot, game, variant, stem = game, declaredFiles = null) {
   const htmlPath = resolve(buildRoot, `${stem}.html`);
   const source = await readFile(htmlPath, "utf8");
   assertRuntimeDataShell(source, game, variant);
   const protocolSources = [{ name: `${stem}.html`, source }];
   if (PRODUCT_GAMES[game].runtimeFileLayout === "directory") {
-    const directory = JSON.parse(await readFile(resolve(buildRoot, "runtime-files.json"), "utf8"));
-    for (const name of runtimeFileNames(game, directory.files)) {
+    const files = declaredFiles || JSON.parse(await readFile(resolve(buildRoot, "runtime-files.json"), "utf8")).files;
+    for (const name of runtimeFileNames(game, files)) {
       if (!/\.(?:html|m?js)$/i.test(name) || name === `${stem}.html`) continue;
       protocolSources.push({ name, source: await readFile(resolve(buildRoot, name), "utf8") });
     }
@@ -592,7 +592,7 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
   const declared = runtimeRelease?.games[game]?.runtime.files ||
     JSON.parse(await readFile(resolve(builds[game], "runtime-files.json"), "utf8")).files;
   const names = runtimeFileNames(game, declared), appRuntimeRoot = resolve(staging, "runtime", game);
-  await assertAppManagedRuntimeShell(builds[game], game, "normal", stem);
+  await assertAppManagedRuntimeShell(builds[game], game, "normal", stem, declared);
   for (const name of names) {
     const source = resolve(builds[game], name), identity = await fileIdentity(source), expected = declared[name];
     if (identity.bytes !== expected.bytes || identity.sha256 !== expected.sha256) throw new Error(`${game}: Runtime identity mismatch: ${name}`);

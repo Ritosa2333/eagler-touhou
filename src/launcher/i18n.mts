@@ -227,7 +227,6 @@ const entries = [
   ["package.noExternalLink", "当前站点未配置外部游戏包下载链接；用户仍可导入自己已有的本地游戏包。", "This site does not provide an external game-package link. You can still import a local package you already have."],
   ["runtime.readingHostManifest", "读取服务器运行清单", "Reading server runtime manifest"],
   ["runtime.checkingRelease", "检查服务器发行信息", "Checking server release information"],
-  ["multiplayer.directConnectionFailed", "直连失败，连接质量可能较差，请尽量使用宽带（WiFi 或 网线）而非流量或 VPN。", "Direct connection failed, so connection quality may be reduced. Prefer broadband (Wi-Fi or Ethernet) over mobile data or a VPN."],
   ["diagnostics.netplayRoleSpectator", "旁观/{players}P", "spectator/{players}P"],
   ["diagnostics.netplayRuntime", "联机 房间 {room} - {role} - runtime {runtime}", "Multiplayer room {room} - {role} - runtime {runtime}"],
   ["diagnostics.transportSpectator", "只读 WS", "read-only WS"],

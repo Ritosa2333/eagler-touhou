@@ -14,6 +14,7 @@ const cacheMetaUrl = new URL(`./__app-shell-meta__/__APP_SHELL_BUILD_ID__`, scop
 const updateStatusUrl = new URL("./__app-shell-update-status__", scopeUrl).href;
 const forceNetworkOnce = new Set();
 const runtimeFallbackLockedPaths = new Set();
+let currentMetadataUpdate = Promise.resolve();
 
 const manifestByPathname = new Map(PRECACHE_MANIFEST.map(entry => {
   const url = new URL(entry.url, scopeUrl);
@@ -61,6 +62,7 @@ async function precacheShell() {
     appliedAt: null,
     updated: existingShellCaches.length > 0,
     entries: Object.fromEntries(PRECACHE_MANIFEST.map(entry => [new URL(entry.url, scopeUrl).href, entry.revision || null])),
+    runtimeTrusted: {},
     install: { reused, fetched, deferred: PRECACHE_MANIFEST.length - installEntries.length },
   }), { headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } }));
 }
@@ -120,6 +122,29 @@ async function writeCurrentCacheMetadata(metadata) {
   await cache.put(cacheMetaUrl, new Response(JSON.stringify(metadata), {
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
   }));
+}
+
+async function updateCurrentCacheMetadata(update) {
+  const task = currentMetadataUpdate.then(async () => {
+    const metadata = await cacheMetadata(CACHE_NAME) || {};
+    update(metadata);
+    await writeCurrentCacheMetadata(metadata);
+    return metadata;
+  });
+  currentMetadataUpdate = task.catch(() => {});
+  return task;
+}
+
+function isRuntimeEntry(entry) {
+  return DEFERRED_PATHS.has(entry.cacheUrl);
+}
+
+async function trustRuntimeEntry(entry) {
+  if (!entry.revision || !isRuntimeEntry(entry)) return;
+  await updateCurrentCacheMetadata(metadata => {
+    metadata.runtimeTrusted ||= {};
+    metadata.runtimeTrusted[entry.cacheUrl] = entry.revision;
+  });
 }
 
 function runtimeEntriesForPaths(paths) {
@@ -226,7 +251,11 @@ async function restoreRuntimeCacheFallback(entries) {
   }
   const metadata = await cacheMetadata(CACHE_NAME) || {};
   metadata.entries ||= {};
-  for (const entry of entries) metadata.entries[entry.cacheUrl] = candidate.metadata.entries[entry.cacheUrl] ?? null;
+  metadata.runtimeTrusted ||= {};
+  for (const entry of entries) {
+    metadata.entries[entry.cacheUrl] = candidate.metadata.entries[entry.cacheUrl] ?? null;
+    delete metadata.runtimeTrusted[entry.cacheUrl];
+  }
   metadata.temporaryRuntimeFallback = {
     createdAt: Date.now(),
     sourceCache: candidate.name,
@@ -249,6 +278,7 @@ async function clearRuntimeCacheFallback() {
     forceNetworkOnce.add(path);
     const currentEntry = manifestByPathname.get(new URL(path).pathname);
     if (metadata.entries && currentEntry) metadata.entries[path] = currentEntry.revision || null;
+    if (metadata.runtimeTrusted) delete metadata.runtimeTrusted[path];
   }
   delete metadata.temporaryRuntimeFallback;
   await writeCurrentCacheMetadata(metadata);
@@ -274,6 +304,7 @@ function manifestEntryForRequest(request) {
 
 async function shellCacheFirst(request, entry) {
   const cache = await caches.open(CACHE_NAME);
+  const runtimeEntry = isRuntimeEntry(entry);
   const forceNetwork = forceNetworkOnce.delete(entry.cacheUrl);
   if (!forceNetwork) {
     const cached = await cache.match(entry.cacheUrl);
@@ -283,17 +314,20 @@ async function shellCacheFirst(request, entry) {
       for (const name of otherCaches) {
         const metadata = await cacheMetadata(name);
         if (metadata?.entries?.[entry.cacheUrl] !== entry.revision) continue;
+        if (runtimeEntry && metadata?.runtimeTrusted?.[entry.cacheUrl] !== entry.revision) continue;
         const previous = await (await caches.open(name)).match(entry.cacheUrl);
         if (previous) {
           await cache.put(entry.cacheUrl, previous.clone());
+          if (runtimeEntry) await trustRuntimeEntry(entry);
           return previous;
         }
       }
     }
   }
-  const response = await fetch(request);
+  const response = await fetch(request, runtimeEntry ? { cache: "reload" } : undefined);
   if (response.ok && !runtimeFallbackLockedPaths.has(entry.cacheUrl)) {
     await cache.put(entry.cacheUrl, response.clone());
+    if (runtimeEntry) await trustRuntimeEntry(entry);
   }
   return response;
 }

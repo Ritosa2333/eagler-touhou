@@ -51,7 +51,7 @@ async function runPool(tasks, concurrency = jobs) {
 }
 
 const excludedDirectories = new Set([
-  ".git", ".cache", ".npm-cache", ".deploy-python", "node_modules", "artifacts", "archive",
+  ".git", ".cache", ".codex-tmp", ".npm-cache", ".deploy-python", "node_modules", "artifacts", "archive",
   "archivetemporary", "dist", "design", "screenshots", "vendor", "private-assets",
   "generated-assets", "server-output", "__pycache__",
 ]);

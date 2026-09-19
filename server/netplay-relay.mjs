@@ -577,6 +577,10 @@ function handleLobbyConnection(socket, roomId, clientId) {
     }
     if (message.type === 'settings') {
       if (seat !== 0) { sendLobby(socket, { type: 'error', error: '只有 P1 可以修改房间设置' }); return; }
+      if (room.lobby.phase !== 'lobby') {
+        sendLobby(socket, { type: 'state', room: lobbySnapshot(room) });
+        return;
+      }
       const playerCount = Number(message.playerCount);
       if (!validPlayerCount(room.multiplayer, playerCount)) {
         sendLobby(socket, { type: 'error', error: 'invalid player count' });

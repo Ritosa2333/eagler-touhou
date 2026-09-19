@@ -354,7 +354,7 @@ This proved rollback cost could be moved off a constrained device while preservi
 
 Human testing found the desktop's ~67 ms local delay clearly bad. The approach solved phone performance by moving the responsiveness cost to another player.
 
-It remains useful as an **optional stability fallback and diagnostic tool**, not the preferred zero-latency architecture.
+It remains useful as a **diagnostic/control experiment**, not as a product mode. The shared Launcher no longer exposes a buffered/stability timing selector: TH06/TH07 production multiplayer uses the zero-added-delay, full-rollback path. Keep the generic core delay primitive for testing or a future evidence-backed design, but do not recreate the TH07 asymmetric policy as compatibility surface.
 
 Rooms with multiple mobile endpoints were not validated under the single-mobile ownership policy and must not inherit that conclusion.
 
@@ -712,7 +712,7 @@ Paired-run rules:
 
 `--freeze-only` is useful when the next stage is a long manual matrix and you want to guarantee every run uses the same runtime/fixture bytes.
 
-### `tests/rtc-input-impairment.cjs` — controlled RTC application-send impairment
+### `eagler-common/testkit/rtc-input-impairment.cjs` — controlled RTC application-send impairment
 
 This tool monkey-patches the test realm's `RTCDataChannel.send` before channel creation. It is deliberately labeled:
 
@@ -1039,25 +1039,50 @@ At minimum, cover these dimensions before calling a rollback optimization produc
 - thermal steady-state when relevant;
 - high-refresh and optional 60 Hz lock behavior.
 
-## Code anchors in TH07 reference implementation
+## Code anchors in shared/common and TH07 reference implementation
 
-- `th07-eagler/src/netplay/RollbackJournal.{hpp,cpp}` — generic first-write history, arena lifetime, restore/coalescing.
-- `th07-eagler/src/netplay/Th07RollbackState.{hpp,cpp}` — game-state snapshot ownership.
-- `th07-eagler/src/netplay/PartitionedPoolJournal.hpp` — fixed-pool slot/part undo journal.
+- `eagler-common/include/eagler/netplay/RollbackJournal.hpp` and
+  `src/netplay/RollbackJournal.cpp` — generic first-write history, arena
+  lifetime and restore/coalescing.
+- `eagler-common/include/eagler/netplay/PartitionedPoolJournal.hpp` —
+  fixed-pool slot/part undo journal.
+- `eagler-common/include/eagler/netplay/SnapshotPolicy.hpp` — generic
+  always/demand/frontier snapshot decision model.
+- `eagler-common/include/eagler/netplay/SparsePoolCapture.hpp` — generic
+  sparse/run capture helper.
+- `eagler-common/include/eagler/netplay/InputRepairBudget.hpp` and
+  `BrowserPeerTransport::SendRepairTo` — bounded reliable duplicate repair.
+- `eagler-common/include/eagler/netplay/FrameAdvantageWindow.hpp` —
+  allocation-free per-peer 64-sample trimmed-mean time-sync window.
+- `eagler-common/include/eagler/netplay/FrameBudget.hpp` — validated
+  8 ms / six-tick browser catch-up start budget. This is not input buffering.
+- `eagler-common/include/eagler/netplay/FramePacingPolicy.hpp` — shared
+  lead filtering/deadband/±2% pacing formula.
+- `eagler-common/include/eagler/netplay/ConfirmedInputWatchdog.hpp` —
+  confirmed-frontier liveness state with the production 15-second default.
+- `eagler-common/include/eagler/netplay/NetplayCore.hpp` and
+  `src/netplay/NetplayCore.cpp` — frame mapping, prediction, confirmation,
+  aggregate remote frontier and rollback trigger.
+- `eagler-common/include/eagler/netplay/DirectTouchEquivalence.hpp` —
+  narrow DirectTouch state-equivalence proof; title adapters still own
+  historical world/snapshot patching before equivalent confirmation.
+- `th07-eagler/src/netplay/Th07RollbackState.{hpp,cpp}` — title-owned
+  game-state snapshot inventory and mutation hooks.
 - `th07-eagler/src/netplay/LiveBulletSnapshot.hpp` — Bullet live-part partition/capture rules.
-- `th07-eagler/src/netplay/SnapshotPolicy.hpp` — always/demand/frontier model.
-- `th07-eagler/src/netplay/SparsePoolCapture.hpp` — sparse/run capture helpers.
-- `th07-eagler/src/netplay/InputRepairBudget.hpp` — bounded reliable duplicate repair.
-- `th07-eagler/src/netplay/FrameBudget.hpp` — browser catch-up start budget.
-- `th07-eagler/src/netplay/NetplayCore.{hpp,cpp}` — frame mapping, prediction, confirmation, rollback trigger.
 - `th07-eagler/src/netplay/Th07LanStageProbe.cpp` — production/test driver, reconciliation, telemetry and policy resolution.
 - `th07-eagler/src/Touch.cpp`, `Player.cpp` and netplay input helpers — once-only direct-touch ownership and synchronized remainder.
 - `th07-eagler/src/BulletManager.{hpp,cpp}` — shared Bullet presentation work and rollback mutation hooks.
 - `th07-eagler/src/ItemManager.cpp` — fixed-tick appearance/presentation purity.
 - `th07-eagler/src/GameWindow.cpp` — fixed-step loop, browser yielding, presentation and reconciliation visibility boundary.
 - `th07-eagler/resources/shell.html` — Runtime policy resolution and same-origin input bridge.
-- `eagler-touhou/src/launcher/multiplayer-netplay-timing.mts` — responsive/balanced room policy.
 - `eagler-touhou/src/launcher/touch-runtime-protocol.mts` — optional immediate input delivery.
+
+`RollbackReplayBudget` is deliberately **not** a current shared production
+authority. It belongs to TH07's opt-in incremental/sliced reconciliation
+experiment; the Launcher does not enable that path. Do not promote it merely
+because `FrameBudget` is shared. Revisit it only if another production
+consumer adopts the same replay-slicing policy and its 4 ms / four-frame
+defaults remain justified.
 
 ### Performance experiment anchors
 
@@ -1067,7 +1092,7 @@ At minimum, cover these dimensions before calling a rollback optimization produc
 - `th07-eagler/tests/netplay-performance-browser.py` — main 2P/3P browser rollback/performance laboratory.
 - `th07-eagler/tests/netplay-performance-browser-host.html` — browser-side workload driver, bridge drag, Bomb/fault fixtures.
 - `th07-eagler/tests/measure-netplay-smoothness.py` — freeze identities and run serial paired experiments.
-- `th07-eagler/tests/rtc-input-impairment.cjs` — application-send RTC delay/jitter/drop/blackout fault injection.
+- `eagler-common/testkit/rtc-input-impairment.cjs` — shared application-send RTC delay/jitter/drop/blackout fault injection; title harnesses supply their DataChannel labels.
 - `th07-eagler/tests/netplay-input-latency-probe.cjs` — event-to-Present latency decomposition.
 - `th07-eagler/tests/netplay-audio-probe.cjs` — audio progress/output observability during rollback stress.
 - `th07-eagler/tests/websocket-loopback-health.py` — blank-page transport blackout control with no game/WASM/rollback.
@@ -1102,7 +1127,7 @@ This table is the compact index of the exploration. Keep the status explicit so 
 | Frame-advantage temporary vector | removed | Tiny per-packet allocations matter under sustained traffic. |
 | Catch-up wall-time start budget | adopted | Yield browser work instead of starting unlimited extra historical ticks. |
 | Synchronous Web `SDL_DelayNS` | removed | Browser callback must return to input/network/audio event loop. |
-| Fixed local input delay 3/4/6 frames | fallback/diagnostic | Can reduce corrections, but responsiveness cost is real and non-monotonic. |
+| Fixed local input delay 3/4/6 frames | diagnostic/control only | Can reduce corrections, but responsiveness cost is real and non-monotonic; not a current product mode. |
 | Stable legacy delta predictor | rejected as default | Helps steady input, not variable touch; can overshoot stop. |
 | Fresh DirectTouch delta + synchronized remainder | adopted | Fix producer ownership and reduce mismatch/resimulation without quantizing input. |
 | Short prediction ceiling | rejected as default | Fewer replay frames can mean earlier hard waiting and worse experience. |
@@ -1123,8 +1148,8 @@ This table is the compact index of the exploration. Keep the status explicit so 
 | Early input send before reconcile | adopted | Prevent rollback work from making the next input late. |
 | 60 Hz presentation cap | temporary/fallback | Helped some stressed runs, but not a rollback fix; later returned to high-refresh default. |
 | O3/LTO | rejected | No demonstrated gain over O2; one measured tail was worse. |
-| Asymmetric input delay | diagnostic/fallback | Showed strong endpoint can absorb more correction, but moved latency to desktop. |
-| Mobile buffered/no-rollback + desktop full rollback | optional fallback/diagnostic | Eliminated phone rollback tax, but desktop ~67 ms local delay failed feel target. |
+| Asymmetric input delay | diagnostic/control only | Showed strong endpoint can absorb more correction, but moved latency to desktop; the product mode was retired. |
+| Mobile buffered/no-rollback + desktop full rollback | diagnostic/control only | Eliminated phone rollback tax, but desktop ~67 ms local delay failed feel target; do not expose it as a compatibility mode. |
 | Fixed-pool `PartitionedPoolJournal` | adopted | Slot/part identity avoids generic address indexing in hot Bullet pool. |
 | Live Bullet parts V1 | partial win | Fewer bytes (~5.2 -> ~3.1 MB peak in one run) but insufficient CPU gain. |
 | Live Bullet parts V2 batched gather/scatter | adopted | Fewer operations + bulk copy improved 4x-slow tail behavior. |

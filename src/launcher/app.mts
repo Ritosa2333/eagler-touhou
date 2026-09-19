@@ -121,12 +121,14 @@ import {
   postThpracMouse as postRuntimeThpracMouse,
   postTouchCancel as postRuntimeTouchCancel,
   postTouchControls as postRuntimeTouchControls,
+  deliverRuntimeInput,
 } from "./touch-runtime-protocol.mjs";
 import { createGameZoomController } from "./game-zoom.mjs";
 import type { GameZoomPointerInput } from "./game-zoom.mjs";
 import {
   appendRttSample,
   compactDiagnosticText,
+  compactNetplayPeerStatus,
   compactRendererLabel,
   describeBrowserEnvironment,
   describeNetplayConnection,
@@ -139,7 +141,9 @@ import {
   normalizeMultiplayerDisplayName as mpNormalizeDisplayName,
 } from "./multiplayer-identity.mjs";
 import { normalizeMultiplayerLobbySnapshot } from "./multiplayer-lobby-snapshot.mjs";
-import { createMultiplayerPreferenceStore } from "./multiplayer-preferences.mjs";
+import {
+  createMultiplayerPreferenceStore,
+} from "./multiplayer-preferences.mjs";
 import {
   buildMultiplayerDiagnosticRelayUrl,
   buildMultiplayerGameplayRelayUrl,
@@ -544,7 +548,10 @@ function mpConnectLobby(reconnecting = false) {
     mpLobby.reconnectAttempt = 0;
     room.connection = room.synced ? "connected" : "syncing";
     if (mpUiState.seat != null) {
-      mpLobbySend({ type: "take-seat", seat: mpUiState.seat, loadout: mpUiState.preferredLoadout, ready: mpUiState.ready, name: mpUiState.displayName });
+      mpLobbySend({
+        type: "take-seat", seat: mpUiState.seat, loadout: mpUiState.preferredLoadout,
+        ready: mpUiState.ready, name: mpUiState.displayName,
+      });
       if (mpUiState.seat === 0) mpLobbySend({ type: "settings", playerCount: mpUiState.room.playerCount, difficulty: mpUiState.room.difficulty });
     } else if (mpUiState.spectatorRequested) {
       mpLobbySend({ type: "spectate", name: mpUiState.displayName });
@@ -1661,6 +1668,7 @@ const gameViewport = $("#gameViewport");
 const player = $("#player");
 const playerFullscreenElement: LauncherFullscreenElement = player;
 const runtimeDiagnostics = $("#runtimeDiagnostics");
+const netplayPlayerStatus = $("#netplayPlayerStatus");
 const runtimeDiagnosticsToggle = $("#runtimeDiagnosticsToggle");
 const runtimeBrowserDiag = $("#runtimeBrowserDiag");
 const runtimeGapDiag = $("#runtimeGapDiag");
@@ -1743,6 +1751,8 @@ function startRuntimeSchedulingProbe() {
 }
 interface RuntimePeer {
   pc?: RTCPeerConnection | null;
+  inputOpen?: boolean;
+  controlOpen?: boolean;
 }
 
 interface RuntimePeerCollection extends Iterable<[number, RuntimePeer]> {
@@ -1814,8 +1824,7 @@ const runtimeNetplayQualityState: {
 const netplayConnectionUiState: {
   transport: RuntimePeerTransport | null;
   connectedOnce: boolean;
-  routeWarningShown: boolean;
-} = { transport: null, connectedOnce: false, routeWarningShown: false };
+} = { transport: null, connectedOnce: false };
 const browserEnvironment = describeBrowserEnvironment({
   userAgent: navigator.userAgent,
   platform: navigator.platform,
@@ -1843,10 +1852,12 @@ function resetRuntimeDiagnostics() {
   }
   runtimeDiagnostics.classList.remove("warn", "bad");
   runtimeDiagnostics.hidden = true;
+  netplayPlayerStatus.hidden = true;
+  netplayPlayerStatus.replaceChildren();
+  player.classList.remove("netplay-player-status-visible");
   resetRuntimeNetplayQuality();
   netplayConnectionUiState.transport = null;
   netplayConnectionUiState.connectedOnce = false;
-  netplayConnectionUiState.routeWarningShown = false;
   const connectionWindow = $("#netplayConnectionWindow");
   if (connectionWindow) connectionWindow.hidden = true;
 }
@@ -1935,7 +1946,6 @@ function updateNetplayConnectionWindow(net: RuntimeNetplaySnapshot | null) {
   if (!net.spectator && netplayConnectionUiState.transport !== net.peerState) {
     netplayConnectionUiState.transport = net.peerState;
     netplayConnectionUiState.connectedOnce = false;
-    netplayConnectionUiState.routeWarningShown = false;
   }
   const view = describeNetplayConnection({
     spectator: net.spectator,
@@ -1947,14 +1957,9 @@ function updateNetplayConnectionWindow(net: RuntimeNetplaySnapshot | null) {
     playerCount: state.netplay.playerCount,
     localPlayer: state.netplay.player,
     connectedOnce: netplayConnectionUiState.connectedOnce,
-    routeWarningShown: netplayConnectionUiState.routeWarningShown,
     webSocketOpenState: WebSocket.OPEN,
   });
   netplayConnectionUiState.connectedOnce = view.connectedOnce;
-  if (view.showRouteWarning) {
-    netplayConnectionUiState.routeWarningShown = true;
-    showToast(t("multiplayer.directConnectionFailed"), 8000);
-  }
   windowElement.hidden = view.hidden;
   windowElement.classList.toggle("reconnecting", view.reconnecting);
   if (view.hidden) return;
@@ -1969,9 +1974,6 @@ function updateNetplayConnectionWindow(net: RuntimeNetplaySnapshot | null) {
     item.append(label, detail);
     return item;
   }));
-  const warning = $("#netplayConnectionWarning");
-  warning.hidden = !view.warning;
-  warning.textContent = view.warning;
 }
 async function sampleRuntimeNetplayQuality() {
   const net = runtimeNetplaySnapshot();
@@ -2015,9 +2017,55 @@ async function sampleRuntimeNetplayQuality() {
     runtimeNetplayQualityState.sampling = false;
   }
 }
+function updateNetplayPlayerStatus(net: RuntimeNetplaySnapshot | null) {
+  const visible = !!net && state.launched && !state.replayViewer && !net.spectator;
+  netplayPlayerStatus.hidden = !visible;
+  player.classList.toggle("netplay-player-status-visible", visible);
+  if (!visible || !net) {
+    netplayPlayerStatus.replaceChildren();
+    return;
+  }
+  const playerCount = Math.max(2, Math.min(3, Number(state.netplay.playerCount) || 2));
+  const localPlayer = Math.max(0, Math.min(playerCount - 1, Number(state.netplay.player) || 0));
+  const rtcPaths = new Map<number, RuntimeNetplayEntry>();
+  for (const entry of net.rtcPaths) {
+    const peer = Number(entry.peer);
+    if (Number.isInteger(peer) && peer >= 0 && peer < playerCount) rtcPaths.set(peer, entry);
+  }
+  const rows: HTMLElement[] = [];
+  for (let peerId = 0; peerId < playerCount; ++peerId) {
+    if (peerId === localPlayer) continue;
+    const transportPeer = net.peerState?.peers?.get(peerId);
+    const pcState = String(transportPeer?.pc?.connectionState || transportPeer?.pc?.iceConnectionState || "");
+    const channelsReady = transportPeer?.inputOpen === true && transportPeer?.controlOpen === true;
+    let connected: boolean | undefined;
+    if (net.transport === "relay") connected = Number(net.peerState?.relay?.readyState) === WebSocket.OPEN ? true : undefined;
+    else if (channelsReady || pcState === "connected" || pcState === "completed") connected = true;
+    else if (["disconnected", "failed", "closed"].includes(pcState) || net.failed) connected = false;
+    const path = rtcPaths.get(peerId);
+    const route = net.transport === "relay" ? "relay" : path?.path || (net.path === "mixed" ? "rtc" : net.path);
+    const quality = runtimeNetplayQualityState.peers.get(peerId);
+    const row = document.createElement("span");
+    row.textContent = compactNetplayPeerStatus({
+      player: peerId,
+      route,
+      rttMs: quality?.rttMs,
+      variationMs: quality?.variationMs,
+      connected,
+    });
+    if (quality?.rttMs != null) {
+      const details = [String(route || "rtc"), path?.protocol, path?.family].filter(Boolean).join("/");
+      row.title = `P${peerId + 1} ${details} · RTT ${Math.round(quality.rttMs)}ms` +
+        (quality.variationMs != null ? ` · variation ${Math.round(quality.variationMs)}ms` : "");
+    }
+    rows.push(row);
+  }
+  netplayPlayerStatus.replaceChildren(...rows);
+}
 function updateNetplayDiagnostics() {
   const net = runtimeNetplaySnapshot();
   updateNetplayConnectionWindow(net);
+  updateNetplayPlayerStatus(net);
   const lines = [runtimeNetplaySessionDiag, runtimeNetplayRouteDiag, runtimeNetplayFrameDiag, runtimeNetplayRollbackDiag, runtimeNetplayQualityDiag, runtimeNetplayIceDiag];
   for (const line of lines) line.hidden = !net;
   if (!net) return;
@@ -4393,22 +4441,21 @@ function forwardHostedKeyboard(event: KeyboardEvent) {
   const key = String(event.key || "").toLowerCase();
   const keyCode = Number.isInteger(event.keyCode) ? event.keyCode : 0;
   if (!hostedGameKeyCodes.has(event.code || "") && !hostedGameKeys.has(key) && !hostedGameLegacyKeyCodes.has(keyCode)) return;
-  const session = currentRuntimeSession();
-  if (!session) return;
-  frame.contentWindow.postMessage({
-    protocol, game: state.game, epoch: session.id, command: "keyboard", down: event.type === "keydown",
+  const context = touchRuntimeMessageContext();
+  deliverRuntimeInput(context, {
+    protocol, game: state.game, epoch: context.epoch, command: "keyboard", down: event.type === "keydown",
     code: event.code || "", key: event.key || "", keyCode,
     location: Number.isInteger(event.location) ? event.location : 0
-  }, location.origin);
+  });
   event.preventDefault();
 }
 window.addEventListener("keydown", forwardHostedKeyboard, true);
 window.addEventListener("keyup", forwardHostedKeyboard, true);
 function clearHostedKeyboard() {
   if (!state.launched || !frame.contentWindow) return;
-  const session = currentRuntimeSession();
-  if (!session) return;
-  frame.contentWindow.postMessage({ protocol, game: state.game, epoch: session.id, command: "keyboard-clear" }, location.origin);
+  const context = touchRuntimeMessageContext();
+  deliverRuntimeInput(context,
+    { protocol, game: state.game, epoch: context.epoch, command: "keyboard-clear" });
 }
 window.addEventListener("blur", clearHostedKeyboard);
 document.addEventListener("visibilitychange", () => {
@@ -4608,15 +4655,22 @@ function send(command: RuntimeProtocolCommand, payload: UnknownRecord = {}, time
 }
 
 launcherWindow.__eaglerPrepareManagedRuntimeDataV1 = async request => {
-  const session = runtimeSessions.assertCurrent(currentRuntimeSession());
-  if (request.epoch !== session.id) throw new Error("Runtime session is no longer active");
+  const session = currentRuntimeSession();
+  if (!session || request.epoch !== session.id) {
+    throw new DOMException("EAGLER_RUNTIME_SESSION_SUPERSEDED", "AbortError");
+  }
   const generation = managedRuntimeGenerationLease.resolve(request);
   setPlayerStatus(t("runtime.handingLocalData"));
   try {
     const result = await readManagedRuntimeData(generation);
-    runtimeSessions.assertCurrent(session);
+    if (!runtimeSessionCurrent(session)) {
+      throw new DOMException("EAGLER_RUNTIME_SESSION_SUPERSEDED", "AbortError");
+    }
     return result;
   } catch (error) {
+    if (!runtimeSessionCurrent(session)) {
+      throw new DOMException("EAGLER_RUNTIME_SESSION_SUPERSEDED", "AbortError");
+    }
     const failure = error instanceof InstalledGameDataError
       ? new GameDataAcquisitionError(`本地游戏数据不完整，请重新导入或修复：${error.message}`, { cause: error })
       : error;
@@ -5182,6 +5236,13 @@ async function ensureRuntime(show = true) {
       if (isCancelledDownload(error)) throw error;
       throw new GameDataAcquisitionError(errorMessage(error), { cause: error });
     }
+    // retail-memory Runtimes cannot fetch/own retail DATA themselves. If the
+    // development Host Manifest only declares the expected identity (no local
+    // source) and Package Store has no installed generation, falling through
+    // to the legacy direct-runtime path produces a misleading Runtime-side
+    // "launch from eagler-touhou" error. Keep DATA acquisition in the Launcher
+    // and offer the normal local-package import flow instead.
+    throw new GameDataAcquisitionError(t("package.importServerNoFiles"));
   }
   const expectedData = gameDataDescriptor();
   const sourceUrl = new URL(runtimeUrl(), location.href);
@@ -5258,16 +5319,29 @@ async function selectedMusicResources(): Promise<MusicResource[]> {
 }
 
 async function selectedSharedResources(language = state.language) {
-  if (activeInstalledPackageGeneration) return [];
+  const packageTargets = new Set<string>();
+  const generation = activeInstalledPackageGeneration;
+  if (generation) {
+    for (const fileId of generation.descriptor.base?.files || []) {
+      if (!generation.files?.[fileId]?.objectId) continue;
+      const target = generation.descriptor.files?.[fileId]?.target;
+      if (typeof target === "string" && target) packageTargets.add(target);
+    }
+  }
   const shared = record(manifest.shared) ?? {};
   const vanillaFont = shared.vanillaFont;
   const unicodeFont = shared.unicodeFont;
-  if (typeof vanillaFont !== "string" || !vanillaFont || typeof unicodeFont !== "string" || !unicodeFont) {
-    throw new Error(t("runtime.sharedFontManifestInvalid"));
-  }
   const wanted: Array<{ target: string; network: string }> = [];
-  if (language === "ja") wanted.push({ target: "/msgothic.ttc", network: vanillaFont });
-  if (language !== "ja" || state.options.thpracEnabled) wanted.push({ target: "/unifont.otf", network: unicodeFont });
+  const addHosted = (target: string, network: unknown) => {
+    if (typeof network !== "string" || !network) throw new Error(t("runtime.sharedFontManifestInvalid"));
+    wanted.push({ target, network });
+  };
+  if (language === "ja" && !packageTargets.has("/msgothic.ttc")) {
+    addHosted("/msgothic.ttc", vanillaFont);
+  }
+  if ((language !== "ja" || state.options.thpracEnabled) && !packageTargets.has("/unifont.otf")) {
+    addHosted("/unifont.otf", unicodeFont);
+  }
   return wanted.map(item => ({ url: new URL(item.network, location.href).href, path: item.target }));
 }
 
@@ -6819,7 +6893,10 @@ function mpTakeSeat(index: number) {
   if (!mpUiState.room?.synced || !mpLobby.connected || !Number.isInteger(index) || index < 0 || index >= mpUiState.room.playerCount) return;
   const playerCard = $("#mpLocalPlayer");
   const before = !playerCard.hidden ? playerCard.getBoundingClientRect() : null;
-  if (!mpLobbySend({ type: "take-seat", seat: index, loadout: mpUiState.preferredLoadout, ready: mpUiState.ready, name: mpUiState.displayName })) return;
+  if (!mpLobbySend({
+    type: "take-seat", seat: index, loadout: mpUiState.preferredLoadout,
+    ready: mpUiState.ready, name: mpUiState.displayName,
+  })) return;
   mpUiState.seat = index;
   mpUiState.spectatorRequested = false;
   renderMpRoom();

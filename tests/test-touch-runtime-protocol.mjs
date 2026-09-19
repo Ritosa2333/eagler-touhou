@@ -103,6 +103,33 @@ assert.deepEqual(sent.pop().message, {
 });
 
 assert.equal(sent.length, 0);
+const direct = [];
+target.__eaglerDirectInputBridge = {
+  schema:'eagler-touhou/direct-input/1',protocol:ready.protocol,game:ready.game,epoch:ready.epoch,origin:ready.targetOrigin,
+  submit(message) { direct.push(message); return true; },
+};
+postDirectTouch(ready,'move',touch);
+postTouchControls(ready,controls,100);
+postHostedKey(ready,{code:'KeyX',key:'x',keyCode:88},true);
+postTouchCancel(ready);
+assert.deepEqual(direct.map(message=>message.command),['direct-touch','touch-controls','keyboard','touch-cancel']);
+assert.equal(sent.length,0,'accepted movement/actions must never also be posted');
+target.__eaglerDirectInputBridge.epoch = ready.epoch - 1;
+postDirectTouch(ready,'move',touch);
+assert.equal(sent.pop().message.epoch,ready.epoch,'stale direct-input bridge epoch must fall back to current postMessage transport');
+target.__eaglerDirectInputBridge.epoch = ready.epoch;
+postDirectTouch({...ready,targetOrigin:'https://wrong.invalid'},'move',touch);
+assert.equal(sent.pop().targetOrigin,'https://wrong.invalid','fast path respects targetOrigin');
+target.__eaglerDirectInputBridge.submit = () => false;
+postDirectTouch(ready,'up',touch);
+assert.equal(sent.pop().message.type,'up','explicit refusal falls back before consumption');
+target.__eaglerDirectInputBridge.submit = () => { throw new Error('unknown outcome'); };
+assert.throws(()=>postDirectTouch(ready,'move',touch),/unknown outcome/);
+assert.equal(sent.length,0,'never retry an input after a throw');
+delete target.__eaglerDirectInputBridge;
+Object.defineProperty(target,'__eaglerDirectInputBridge',{get(){throw new Error('SecurityError');}});
+postTouchCancel(ready);
+assert.equal(sent.pop().message.command,'touch-cancel','cross-origin lookup preserves postMessage');
 console.log(JSON.stringify({
   touchRuntimeProtocol: "PASS",
   liveControls: "ready-non-spectator",

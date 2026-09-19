@@ -105,6 +105,20 @@ def seed_previous_cache(page) -> None:
     )
 
 
+def seed_untrusted_current_revision_cache(page) -> None:
+    page.evaluate(
+        """async () => {
+          const url = new URL('./runtime/game.wasm', location.href).href;
+          const cache = await caches.open('eagler-touhou-app-shell-browser-poisoned');
+          await cache.put(url, new Response('stale-runtime-wasm'));
+          await cache.put(new URL('/__app-shell-meta__/poisoned-browser', location.href).href, new Response(JSON.stringify({
+            createdAt: 90,
+            entries: { [url]: 'current-3' },
+          }), { headers: { 'Content-Type': 'application/json' } }));
+        }"""
+    )
+
+
 def run_browser(browser_type, base_url: str) -> None:
     browser = browser_type.launch(headless=True)
     context = browser.new_context(service_workers="allow")
@@ -120,6 +134,23 @@ def run_browser(browser_type, base_url: str) -> None:
         }"""
     )
     seed_previous_cache(page)
+    seed_untrusted_current_revision_cache(page)
+
+    repaired = page.evaluate("async () => await (await fetch('./runtime/game.wasm?repair=1')).text()")
+    assert repaired == "new-runtime-wasm", (
+        f"{browser_type.name}: untrusted same-revision Runtime cache was reused: {repaired}"
+    )
+    trust = page.evaluate(
+        """async () => {
+          const current = (await caches.keys()).find(name => name.includes('browserfallback'));
+          const cache = await caches.open(current);
+          const keys = await cache.keys();
+          const metaKey = keys.find(request => new URL(request.url).pathname.includes('/__app-shell-meta__/'));
+          const meta = await (await cache.match(metaKey)).json();
+          return meta.runtimeTrusted?.[new URL('./runtime/game.wasm', location.href).href] || null;
+        }"""
+    )
+    assert trust == "current-3", f"{browser_type.name}: repaired Runtime was not marked trusted: {trust}"
 
     probe = command(page, "PROBE_RUNTIME_CACHE_FALLBACK", RUNTIME_PATHS)
     assert probe.get("available") is True, f"{browser_type.name}: fallback probe failed: {probe}"
