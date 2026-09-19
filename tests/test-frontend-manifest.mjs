@@ -46,6 +46,14 @@ assert.ok(BROWSER_MODULE_FILES.every(path => APP_SHELL_FILES.includes(path)));
 assert.equal(new Set(BROWSER_MODULE_FILES).size, BROWSER_MODULE_FILES.length);
 assert.ok(APP_SHELL_FILES.includes("features.css"), "deferred feature CSS must still be installed with the App Shell");
 assert.ok(!FRONTEND_PACKAGE_FILES.includes("app-shell-sw.js"));
+for (const path of [
+  "legacy/legacy-game-pack.mjs",
+  "legacy/legacy-import-storage.mjs",
+  "legacy/legacy-package-adapter.mjs",
+]) {
+  assert.ok(FRONTEND_PACKAGE_FILES.includes(path), `${path} must remain published until legacy migration retirement`);
+  assert.ok(!APP_SHELL_FILES.includes(path), `${path} must not be pinned in the App Shell`);
+}
 assert.ok(FRONTEND_PACKAGE_FILES.includes("en.html"));
 assert.ok(FRONTEND_PACKAGE_FILES.includes("sitemap.xml"));
 assert.ok(FRONTEND_PACKAGE_FILES.every(path => !/title00\.(?:jpg|png)$/i.test(path)));
