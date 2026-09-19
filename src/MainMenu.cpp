@@ -239,7 +239,7 @@ u32 MainMenu::OnUpdatePreInput()
         }
         for (i = 0; (u32)i < 8; i++)
         {
-            g_AnmManager->DrawStringFormat2(&this->vms[i], 0xfff0e0, 0x300000,
+            g_AnmManager->DrawStringFormat2(&this->descriptionVms[i], 0xfff0e0, 0x300000,
                                             "%s", Localization::StringById(g_MainMenuStringIds[i],
                                                                             g_MainMenuStrings[i]));
         }
@@ -494,7 +494,7 @@ u32 MainMenu::OnUpdateOptionsMenu()
         this->menuSubState = 1;
         for (i = 0; (u32)i < 9; i++)
         {
-            g_AnmManager->DrawStringFormat2(&this->vms[i], 0xfff0e0, 0x300000, "%s",
+            g_AnmManager->DrawStringFormat2(&this->descriptionVms[i], 0xfff0e0, 0x300000, "%s",
                                             Localization::StringById(g_OptionsStringIds[i],
                                                                      g_OptionsStrings[i]));
         }
@@ -515,7 +515,7 @@ u32 MainMenu::OnUpdateOptionsMenu()
 
     if (this->selected != this->cursor)
     {
-        this->curDescriptionVm = &this->vms[this->cursor];
+        this->curDescriptionVm = &this->descriptionVms[this->cursor];
         this->curDescriptionVm->SetInterrupt(1);
     }
     this->selected = this->cursor;
@@ -882,7 +882,7 @@ u32 MainMenu::OnUpdateKeyConfig()
         this->menuSubState = 1;
         for (i = 0; (u32)i < 12; i++)
         {
-            g_AnmManager->DrawStringFormat2(&this->vms[i], 0xfff0e0, 0x300000,
+            g_AnmManager->DrawStringFormat2(&this->descriptionVms[i], 0xfff0e0, 0x300000,
                                             "%s", Localization::StringById(g_KeyConfigStringIds[i],
                                                                             g_KeyConfigStrings[i]));
         }
@@ -899,7 +899,7 @@ u32 MainMenu::OnUpdateKeyConfig()
         }
         if (this->selected != this->cursor)
         {
-            this->curDescriptionVm = &this->vms[this->cursor];
+            this->curDescriptionVm = &this->descriptionVms[this->cursor];
             // this should be using SetInterrupt?
             cursorVmTmp = this->curDescriptionVm;
             cursorVmTmp->pendingInterrupt = 1;

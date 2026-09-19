@@ -27,5 +27,7 @@ def main():
     require("menu cursor still wraps and plays movement feedback", "this->cursor--" in SOURCE and "this->cursor++" in SOURCE and "SOUND_MOVE_MENU" in SOURCE)
     require("menu draws through previous/current interpolation endpoints", "prevPos.Lerp(local_c->pos, g_RenderAlpha)" in SOURCE)
     require("menu never reads raw touch or presentation offsets for gameplay", "Touch::" not in SOURCE and "GetPlayerPresentationOffset" not in SOURCE)
+    require("description text writes stay on dedicated description VMs", SOURCE.count("DrawStringFormat2(&this->descriptionVms[i]") == 3 and "DrawStringFormat2(&this->vms[i]" not in SOURCE)
+    require("description cursor never aliases heap menu-item VMs", "curDescriptionVm = &this->vms[this->cursor]" not in SOURCE and SOURCE.count("curDescriptionVm = &this->descriptionVms[this->cursor]") >= 3)
 
 if __name__ == "__main__": main()
