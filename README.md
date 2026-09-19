@@ -56,6 +56,8 @@ Published/active convergence slices:
   confirm an already-simulated predicted input after proving state equivalence
 - allocation-free per-peer frame-advantage smoothing with the shared
   64-sample trimmed-mean policy used by TH06/TH07
+- browser catch-up `FrameBudget` preserving the validated six-tick cap plus an
+  8 ms wall-time boundary for starting additional fixed ticks
 
 `NetplaySession` and `WebSocketTransport` were byte-identical before extraction.
 `NetplayProtocol` differs only through a deliberately tiny title-owned wire
@@ -121,6 +123,13 @@ The shared form removes the per-packet temporary vector allocation without
 owning title pacing policy. Simulation-scale/deadband decisions remain in the
 consumer driver.
 
+`FrameBudget` is not an input-delay mode. It governs browser event-loop
+ownership after a callback is already behind: one due tick always runs, then
+additional catch-up ticks may start only while the validated 8 ms wall-time
+budget and six-tick cap allow it. Remaining accumulator debt is retained for a
+later callback. This preserves the production TH07 policy and lets TH06 share
+the same scheduler rule without adding local input frames.
+
 Future intended slices include broader connection health policy,
 browser-frame budgeting and broader performance diagnostics once their
 title-facing seams are explicit.
@@ -138,9 +147,10 @@ Use this order unless new evidence proves a dependency requires otherwise:
 7. bounded reliable input repair;
 8. DirectTouch equivalence;
 9. allocation-free per-peer frame-advantage smoothing;
-10. broader health policy and rollback driver budgets;
-11. performance testkit and diagnostics;
-12. only then consider broader platform/presentation helpers.
+10. browser catch-up start budget;
+11. broader health policy and rollback replay slicing;
+12. performance testkit and diagnostics;
+13. only then consider broader platform/presentation helpers.
 
 Every step must leave TH06 and TH07 buildable and testable independently. A
 consumer may advance to a newer common implementation only after its own
