@@ -10,7 +10,7 @@
 #endif
 #include "miniaudio.h"
 
-typedef enum AudioOpcode
+enum AudioOpcode
 {
     AUDIO_PRELOAD = 1,
     AUDIO_START = 2,
@@ -19,11 +19,11 @@ typedef enum AudioOpcode
     AUDIO_FADEOUT = 5,
     AUDIO_PAUSE = 6,
     AUDIO_UNPAUSE = 7
-} AudioOpcode;
+};
 
-typedef enum SoundIdx
+enum SoundIdx
 {
-    SOUND_0 = 0,
+    SOUND_SHOOTING = 0,
     SOUND_PICHUN = 4,
     SOUND_BOMB_SAKUYA_A = 5,
     SOUND_BOMB_REIMARI = 6,
@@ -35,18 +35,18 @@ typedef enum SoundIdx
     SOUND_BOMB = 14,
     SOUND_ENEMY_SPELLCARD_END = 15,
     SOUND_BOMB_SAKUMARI = 19,
-    SOUND_20 = 20,
-    SOUND_21 = 21,
-    SOUND_25 = 25,
+    SOUND_ENEMY_DAMAGED = 20,
+    SOUND_ITEM_GET = 21,
+    SOUND_DIR_CHANGING = 25,
     SOUND_EXTEND = 28,
-    SOUND_29 = 29,
+    SOUND_LOW_SPELL_TIME_WARNING = 29,
     SOUND_GRAZE = 30,
     SOUND_POWERUP = 31,
     SOUND_BORDER_ACTIVATE = 32,
     SOUND_BORDER_BREAK = 33,
     SOUND_BORDER_ACTIVATE2 = 36,
-    SOUND_37 = 37
-} SoundIdx;
+    SOUND_PAUSED = 37
+};
 
 struct ThWaveFormat
 {
@@ -105,6 +105,8 @@ struct ThBgmDataSource
     u32 currentOffset;
     u32 segmentBytesRemaining;
 };
+
+#define MAX_SOUND_COMMANDS 31
 
 struct SoundPlayer
 {
@@ -167,7 +169,7 @@ struct SoundPlayer
     u32 bgmPreloadAllocSizes[16];
     i32 curBgmIdx;
     ThBgmFormat *bgmFmtData;
-    SoundPlayerCommand commandQueue[32];
+    SoundPlayerCommand commandQueue[MAX_SOUND_COMMANDS + 1];
     char bgmFileNames[16][256];
     char bgmArchivePath[512];
     ThBgmDataSource *bgmDataSource;

@@ -2,6 +2,7 @@
 
 #include <cstdio>
 
+#include "AnmIdx.hpp"
 #include "AnmManager.hpp"
 #include "AsciiManager.hpp"
 #include "EnemyEclInstr.hpp"
@@ -90,7 +91,7 @@ ZunResult EclManager::Load(const char *path)
         return ZUN_ERROR;
     }
 
-    for (i = 0; i < 16; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(this->timelinePtr); i++)
     {
         this->timelinePtr[i] = (EclTimelineInstr *)((uintptr_t)this->eclFile->timelineOffsets[i] +
                                                     (uintptr_t)this->eclFile);
@@ -219,11 +220,11 @@ i32 EclManager::GetVarValue(Enemy *enemy, i32 eclVar)
     case ECL_VAR_POS_Z:
         return enemy->pos.z;
     case ECL_VAR_PLAYER_POS_X:
-        return ECL_TARGET_PLAYER(enemy).positionCenter.x;
+        return ECL_TARGET_PLAYER(enemy).pos.x;
     case ECL_VAR_PLAYER_POS_Y:
-        return ECL_TARGET_PLAYER(enemy).positionCenter.y;
+        return ECL_TARGET_PLAYER(enemy).pos.y;
     case ECL_VAR_PLAYER_POS_Z:
-        return ECL_TARGET_PLAYER(enemy).positionCenter.z;
+        return ECL_TARGET_PLAYER(enemy).pos.z;
     case ECL_VAR_MOVE_INTERP_ORIGIN_X:
         return enemy->moveInterpStartPos.x;
     case ECL_VAR_MOVE_INTERP_ORIGIN_Y:
@@ -247,17 +248,17 @@ i32 EclManager::GetVarValue(Enemy *enemy, i32 eclVar)
     case ECL_VAR_ANGLE:
         return enemy->angle;
     case ECL_VAR_ANGULAR_VELOCITY:
-        return enemy->angularVelocity;
-    case ECL_VAR_MOVE_SPEED:
-        return enemy->moveSpeed;
-    case ECL_VAR_MOVE_ACCELERATION:
-        return enemy->moveAcceleration;
-    case ECL_VAR_MOVE_RADIUS:
-        return enemy->moveRadius;
-    case ECL_VAR_MOVE_ANGLE:
-        return enemy->moveAngle;
-    case ECL_VAR_MOVE_ANGULAR_VELOCITY:
-        return enemy->moveAngularVelocity;
+        return enemy->angleVel;
+    case ECL_VAR_SPEED:
+        return enemy->speed;
+    case ECL_VAR_ACCELERATION:
+        return enemy->accel;
+    case ECL_VAR_ORBIT_RADIUS:
+        return enemy->orbitRadius;
+    case ECL_VAR_ORBIT_ANGLE:
+        return enemy->orbitAngle;
+    case ECL_VAR_ORBIT_ANGULAR_VELOCITY:
+        return enemy->orbitAngleVel;
     case ECL_VAR_RNG:
         return g_Rng.GetRandomU32();
     case ECL_VAR_RNG_CUSTOM_BOUND:
@@ -275,7 +276,7 @@ i32 EclManager::GetVarValue(Enemy *enemy, i32 eclVar)
     case ECL_VAR_ANGLE_TO_PLAYER:
         return ECL_TARGET_PLAYER(enemy).AngleToPlayer(&enemy->pos);
     case ECL_VAR_DISTANCE_FROM_PLAYER:
-        return (ECL_TARGET_PLAYER(enemy).positionCenter - enemy->pos).Length();
+        return (ECL_TARGET_PLAYER(enemy).pos - enemy->pos).Length();
     default:
         return eclVar;
     }
@@ -431,11 +432,11 @@ f32 EclManager::GetFloatVarValue(Enemy *enemy, f32 eclVar)
     case ECL_VAR_POS_Z:
         return enemy->pos.z;
     case ECL_VAR_PLAYER_POS_X:
-        return ECL_TARGET_PLAYER(enemy).positionCenter.x;
+        return ECL_TARGET_PLAYER(enemy).pos.x;
     case ECL_VAR_PLAYER_POS_Y:
-        return ECL_TARGET_PLAYER(enemy).positionCenter.y;
+        return ECL_TARGET_PLAYER(enemy).pos.y;
     case ECL_VAR_PLAYER_POS_Z:
-        return ECL_TARGET_PLAYER(enemy).positionCenter.z;
+        return ECL_TARGET_PLAYER(enemy).pos.z;
     case ECL_VAR_LOCAL_FLOAT2_1:
         return enemy->currentContext.eclContextArgs.floatVars2[0];
     case ECL_VAR_LOCAL_FLOAT2_2:
@@ -471,21 +472,22 @@ f32 EclManager::GetFloatVarValue(Enemy *enemy, f32 eclVar)
     case ECL_VAR_ANGLE:
         return enemy->angle;
     case ECL_VAR_ANGULAR_VELOCITY:
-        return enemy->angularVelocity;
-    case ECL_VAR_MOVE_SPEED:
-        return enemy->moveSpeed;
-    case ECL_VAR_MOVE_ACCELERATION:
-        return enemy->moveAcceleration;
-    case ECL_VAR_MOVE_RADIUS:
-        return enemy->moveRadius;
-    case ECL_VAR_MOVE_ANGLE:
-        return enemy->moveAngle;
-    case ECL_VAR_MOVE_ANGULAR_VELOCITY:
-        return enemy->moveAngularVelocity;
+        return enemy->angleVel;
+    case ECL_VAR_SPEED:
+        return enemy->speed;
+    case ECL_VAR_ACCELERATION:
+        return enemy->accel;
+    case ECL_VAR_ORBIT_RADIUS:
+        return enemy->orbitRadius;
+    case ECL_VAR_ORBIT_ANGLE:
+        return enemy->orbitAngle;
+    case ECL_VAR_ORBIT_ANGULAR_VELOCITY:
+        return enemy->orbitAngleVel;
     case ECL_VAR_RNG:
         return g_Rng.GetRandomFloat();
     case ECL_VAR_RNG_CUSTOM_BOUND:
-        return g_Rng.GetRandomFloatInRange(enemy->currentContext.eclContextArgs.globalVars.floatVars[0]) +
+        return g_Rng.GetRandomFloatInRange(
+                   enemy->currentContext.eclContextArgs.globalVars.floatVars[0]) +
                enemy->currentContext.eclContextArgs.globalVars.floatVars[1];
     case ECL_VAR_RNG_RADIAN:
         return g_Rng.GetRandomFloatInRange(ZUN_2PI) - ZUN_PI;
@@ -494,7 +496,7 @@ f32 EclManager::GetFloatVarValue(Enemy *enemy, f32 eclVar)
     case ECL_VAR_LAST_DAMAGE:
         return (f32)enemy->lastDamage;
     case ECL_VAR_DISTANCE_FROM_PLAYER:
-        return (ECL_TARGET_PLAYER(enemy).positionCenter - enemy->pos).Length();
+        return (ECL_TARGET_PLAYER(enemy).pos - enemy->pos).Length();
     default:
         return eclVar;
     }
@@ -540,11 +542,11 @@ f32 *EclManager::GetFloatVar(Enemy *enemy, f32 *eclVar, u16 paramMask, i32 idx)
     case ECL_VAR_POS_Z:
         return &enemy->pos.z;
     case ECL_VAR_PLAYER_POS_X:
-        return &ECL_TARGET_PLAYER(enemy).positionCenter.x;
+        return &ECL_TARGET_PLAYER(enemy).pos.x;
     case ECL_VAR_PLAYER_POS_Y:
-        return &ECL_TARGET_PLAYER(enemy).positionCenter.y;
+        return &ECL_TARGET_PLAYER(enemy).pos.y;
     case ECL_VAR_PLAYER_POS_Z:
-        return &ECL_TARGET_PLAYER(enemy).positionCenter.z;
+        return &ECL_TARGET_PLAYER(enemy).pos.z;
     case ECL_VAR_LOCAL_FLOAT2_1:
         return &enemy->currentContext.eclContextArgs.floatVars2[0];
     case ECL_VAR_LOCAL_FLOAT2_2:
@@ -572,17 +574,17 @@ f32 *EclManager::GetFloatVar(Enemy *enemy, f32 *eclVar, u16 paramMask, i32 idx)
     case ECL_VAR_ANGLE:
         return &enemy->angle;
     case ECL_VAR_ANGULAR_VELOCITY:
-        return &enemy->angularVelocity;
-    case ECL_VAR_MOVE_SPEED:
-        return &enemy->moveSpeed;
-    case ECL_VAR_MOVE_ACCELERATION:
-        return &enemy->moveAcceleration;
-    case ECL_VAR_MOVE_RADIUS:
-        return &enemy->moveRadius;
-    case ECL_VAR_MOVE_ANGLE:
-        return &enemy->moveAngle;
-    case ECL_VAR_MOVE_ANGULAR_VELOCITY:
-        return &enemy->moveAngularVelocity;
+        return &enemy->angleVel;
+    case ECL_VAR_SPEED:
+        return &enemy->speed;
+    case ECL_VAR_ACCELERATION:
+        return &enemy->accel;
+    case ECL_VAR_ORBIT_RADIUS:
+        return &enemy->orbitRadius;
+    case ECL_VAR_ORBIT_ANGLE:
+        return &enemy->orbitAngle;
+    case ECL_VAR_ORBIT_ANGULAR_VELOCITY:
+        return &enemy->orbitAngleVel;
     default:
         return eclVar;
     }
@@ -599,7 +601,7 @@ void EclManager::MoveDirTime(Enemy *enemy, EclRawInstr *instr)
     enemy->moveInterpStartPos = enemy->pos;
     enemy->moveInterpTimer = enemy->moveInterpStartTime = GET_INT_VALUE(enemy, 0);
     enemy->interpEasing = (u8)GET_INT_VALUE(enemy, 1);
-    enemy->moveMode = 2;
+    enemy->moveMode = ENEMY_MOVE_INTERP;
     if (enemy->mirror)
     {
         enemy->moveInterp.x = -enemy->moveInterp.x;
@@ -617,8 +619,8 @@ void EclManager::MovePosTime(Enemy *enemy, EclRawInstr *instr)
     enemy->moveInterpStartPos = enemy->pos;
     enemy->moveInterpTimer = enemy->moveInterpStartTime = GET_INT_VALUE(enemy, 0);
     enemy->interpEasing = (u8)GET_INT_VALUE(enemy, 1);
-    enemy->moveMode = 2;
-    enemy->axisSpeed = ZunVec3(0.0f, 0.0f, 0.0f);
+    enemy->moveMode = ENEMY_MOVE_INTERP;
+    enemy->velocity = ZunVec3(0.0f, 0.0f, 0.0f);
     if (enemy->mirror)
     {
         enemy->moveInterp.x = -enemy->moveInterp.x;
@@ -851,14 +853,14 @@ void EclManager::BeginSpellcard(Enemy *enemy, EclRawInstr *instr)
     enemy->bulletRankAmount1High = 0;
     enemy->bulletRankAmount2Low = 0;
     enemy->bulletRankAmount2High = 0;
-    enemy->specialEffect = g_EffectManager.SpawnEffect(25, &enemy->pos, 1, 1, 0xffffffff);
+    enemy->specialEffect = g_EffectManager.SpawnSpecialEffect(25, &enemy->pos, 1, 1, 0xffffffff);
     enemy->specialEffect->vm.interpStartTimes[4] = 0;
     enemy->specialEffect->vm.interpEndTimes[4] = enemy->timerCallbackThreshold;
     enemy->specialEffect->vm.easeModes[4] = 0;
     enemy->specialEffect->vm.scaleInterpInitial = enemy->specialEffect->vm.scale;
-    enemy->specialEffect->vm.scaleInterpFinal.x = 0.125;
-    enemy->specialEffect->vm.scaleInterpFinal.y = 0.125;
-    enemy->specialEffect->pos1 = enemy->pos;
+    enemy->specialEffect->vm.scaleInterpFinal.x = 1.0f / 8.0f;
+    enemy->specialEffect->vm.scaleInterpFinal.y = 1.0f / 8.0f;
+    enemy->specialEffect->pos = enemy->pos;
     enemy->customSpecialEffectPos = 0;
     if (!g_GameManager.replay)
     {
@@ -866,13 +868,13 @@ void EclManager::BeginSpellcard(Enemy *enemy, EclRawInstr *instr)
         nameCsum = 0;
         strcpy(catk->name, spellcardName);
         j = (i32)strlen(catk->name);
-        while (0 < j)
+        while (j > 0)
         {
             j--;
             nameCsum += catk->name[j];
         }
         newCsum = nameCsum;
-        for (j = 0; j < 7; j++)
+        for (j = 0; j < ARRAY_SIZE_SIGNED(catk->numSuccessesPerShot); j++)
         {
             nameCsum += catk->numSuccessesPerShot[j];
             nameCsum += catk->numAttemptsPerShot[j];
@@ -880,7 +882,7 @@ void EclManager::BeginSpellcard(Enemy *enemy, EclRawInstr *instr)
         }
         if (catk->nameCsum != (u8)nameCsum)
         {
-            for (j = 0; j < 7; j++)
+            for (j = 0; j < ARRAY_SIZE_SIGNED(catk->numSuccessesPerShot); j++)
             {
                 catk->numSuccessesPerShot[j] = 0;
                 catk->numAttemptsPerShot[j] = 0;
@@ -891,11 +893,11 @@ void EclManager::BeginSpellcard(Enemy *enemy, EclRawInstr *instr)
         {
             catk->numAttemptsPerShot[g_GameManager.shotTypeAndCharacter]++;
         }
-        if (catk->numAttemptsPerShot[6] < 9999)
+        if (catk->numAttemptsPerShot[SHOT_COUNT] < 9999)
         {
-            catk->numAttemptsPerShot[6]++;
+            catk->numAttemptsPerShot[SHOT_COUNT]++;
         }
-        for (j = 0; j < 7; j++)
+        for (j = 0; j < ARRAY_SIZE_SIGNED(catk->numSuccessesPerShot); j++)
         {
             newCsum += catk->numSuccessesPerShot[j];
             newCsum += catk->numAttemptsPerShot[j];
@@ -920,7 +922,7 @@ void EclManager::EndSpellcard()
         g_Gui.EndEnemySpellcard();
         if (g_EnemyManager.spellcardInfo.isActive == 1)
         {
-            score = g_BulletManager.DespawnBullets(8000, 1);
+            score = g_BulletManager.DespawnBullets(8000, TRUE);
             score = g_EnemyManager.RemoveAllEnemies(8000, score);
             if (score != 0)
             {
@@ -938,13 +940,13 @@ void EclManager::EndSpellcard()
                 {
                     nameCsum = 0;
                     i = strlen(catk->name);
-                    while (0 < i)
+                    while (i > 0)
                     {
                         i--;
                         nameCsum += catk->name[i];
                     }
                     newCsum = nameCsum;
-                    for (i = 0; i < 7; i++)
+                    for (i = 0; i < ARRAY_SIZE_SIGNED(catk->numSuccessesPerShot); i++)
                     {
                         nameCsum += catk->numSuccessesPerShot[i];
                         nameCsum += catk->numAttemptsPerShot[i];
@@ -952,7 +954,7 @@ void EclManager::EndSpellcard()
                     }
                     if (catk->nameCsum != (u8)nameCsum)
                     {
-                        for (i = 0; i < 7; i++)
+                        for (i = 0; i < ARRAY_SIZE_SIGNED(catk->numSuccessesPerShot); i++)
                         {
                             catk->numSuccessesPerShot[i] = 0;
                             catk->numAttemptsPerShot[i] = 0;
@@ -976,7 +978,7 @@ void EclManager::EndSpellcard()
                     {
                         catk->numSuccessesPerShot[6]++;
                     }
-                    for (i = 0; i < 7; i++)
+                    for (i = 0; i < ARRAY_SIZE_SIGNED(catk->numSuccessesPerShot); i++)
                     {
                         newCsum += catk->numSuccessesPerShot[i];
                         newCsum += catk->numAttemptsPerShot[i];
@@ -988,7 +990,7 @@ void EclManager::EndSpellcard()
             }
         }
         g_EnemyManager.spellcardInfo.isActive = 0;
-        for (j = 0; j < 8; j++)
+        for (j = 0; j < ARRAY_SIZE_SIGNED(g_EnemyManager.bosses); j++)
         {
             if (g_EnemyManager.bosses[j] && g_EnemyManager.bosses[j]->specialEffect != NULL)
             {
@@ -998,7 +1000,7 @@ void EclManager::EndSpellcard()
         }
         g_SoundPlayer.PlaySoundByIdx(SOUND_ENEMY_SPELLCARD_END, 0);
     }
-    g_Stage.spellCardState = 0;
+    g_Stage.spellCardState = SPELLCARD_STATE_INACTIVE;
 }
 
 ZunResult EclManager::RunEcl(Enemy *enemy)
@@ -1054,7 +1056,7 @@ restart:
             enemy->savedContextStack[enemy->stackDepth] = enemy->currentContext;
             enemy->currentContext.eclContextArgs = enemy->savedEclContextArgs;
             g_EclManager.CallEclSub(&enemy->currentContext, (i16)enemy->periodicCallbackSub);
-            if (enemy->stackDepth < 15)
+            if (enemy->stackDepth < ENEMY_STACK_SIZE)
             {
                 enemy->stackDepth++;
             }
@@ -1097,29 +1099,25 @@ restart:
                 *GET_INT_PTR(enemy, 0) = GET_INT_VALUE(enemy, 1);
                 break;
             case ECL_SET_FLOAT:
-                *GET_FLOAT_PTR(enemy, 0) =
-                    GET_FLOAT_VALUE(enemy, 1);
+                *GET_FLOAT_PTR(enemy, 0) = GET_FLOAT_VALUE(enemy, 1);
                 break;
             case ECL_NORMALIZE_ANGLE:
                 *GET_FLOAT_PTR(enemy, 0) =
                     utils::AddNormalizeAngle(GET_FLOAT_VALUE(enemy, 0), 0.0f);
                 break;
             case ECL_RAND:
-                *GET_INT_PTR(enemy, 0) =
-                    g_Rng.GetRandomU32InRange(GET_INT_VALUE(enemy, 1));
+                *GET_INT_PTR(enemy, 0) = g_Rng.GetRandomU32InRange(GET_INT_VALUE(enemy, 1));
                 break;
             case ECL_RAND_ADD:
                 *GET_INT_PTR(enemy, 0) =
                     g_Rng.GetRandomU32InRange(GET_INT_VALUE(enemy, 1)) + GET_INT_VALUE(enemy, 2);
                 break;
             case ECL_RAND_FLOAT:
-                *GET_FLOAT_PTR(enemy, 0) =
-                    g_Rng.GetRandomFloatInRange(GET_FLOAT_VALUE(enemy, 1));
+                *GET_FLOAT_PTR(enemy, 0) = g_Rng.GetRandomFloatInRange(GET_FLOAT_VALUE(enemy, 1));
                 break;
             case ECL_RAND_FLOAT_ADD:
-                *GET_FLOAT_PTR(enemy, 0) =
-                    g_Rng.GetRandomFloatInRange(GET_FLOAT_VALUE(enemy, 1)) +
-                    GET_FLOAT_VALUE(enemy, 2);
+                *GET_FLOAT_PTR(enemy, 0) = g_Rng.GetRandomFloatInRange(GET_FLOAT_VALUE(enemy, 1)) +
+                                           GET_FLOAT_VALUE(enemy, 2);
                 break;
             case ECL_RAND_SIGN:
                 *GET_INT_PTR(enemy, 0) =
@@ -1144,52 +1142,41 @@ restart:
                     GET_FLOAT_VALUE(g_EnemyManager.bosses[GET_INT_VALUE(enemy, 2)], 1);
                 break;
             case ECL_ADD:
-                *GET_INT_PTR(enemy, 0) =
-                    GET_INT_VALUE(enemy, 1) + GET_INT_VALUE(enemy, 2);
+                *GET_INT_PTR(enemy, 0) = GET_INT_VALUE(enemy, 1) + GET_INT_VALUE(enemy, 2);
                 break;
             case ECL_ADD_FLOAT:
-                *GET_FLOAT_PTR(enemy, 0) =
-                    GET_FLOAT_VALUE(enemy, 1) + GET_FLOAT_VALUE(enemy, 2);
+                *GET_FLOAT_PTR(enemy, 0) = GET_FLOAT_VALUE(enemy, 1) + GET_FLOAT_VALUE(enemy, 2);
                 break;
             case ECL_SUB:
-                *GET_INT_PTR(enemy, 0) =
-                    GET_INT_VALUE(enemy, 1) - GET_INT_VALUE(enemy, 2);
+                *GET_INT_PTR(enemy, 0) = GET_INT_VALUE(enemy, 1) - GET_INT_VALUE(enemy, 2);
                 break;
             case ECL_SUB_FLOAT:
-                *GET_FLOAT_PTR(enemy, 0) =
-                    GET_FLOAT_VALUE(enemy, 1) - GET_FLOAT_VALUE(enemy, 2);
+                *GET_FLOAT_PTR(enemy, 0) = GET_FLOAT_VALUE(enemy, 1) - GET_FLOAT_VALUE(enemy, 2);
                 break;
             case ECL_MUL:
-                *GET_INT_PTR(enemy, 0) =
-                    GET_INT_VALUE(enemy, 1) * GET_INT_VALUE(enemy, 2);
+                *GET_INT_PTR(enemy, 0) = GET_INT_VALUE(enemy, 1) * GET_INT_VALUE(enemy, 2);
                 break;
             case ECL_MUL_FLOAT:
-                *GET_FLOAT_PTR(enemy, 0) =
-                    GET_FLOAT_VALUE(enemy, 1) * GET_FLOAT_VALUE(enemy, 2);
+                *GET_FLOAT_PTR(enemy, 0) = GET_FLOAT_VALUE(enemy, 1) * GET_FLOAT_VALUE(enemy, 2);
                 break;
             case ECL_DIV:
-                *GET_INT_PTR(enemy, 0) =
-                    GET_INT_VALUE(enemy, 1) / GET_INT_VALUE(enemy, 2);
+                *GET_INT_PTR(enemy, 0) = GET_INT_VALUE(enemy, 1) / GET_INT_VALUE(enemy, 2);
                 break;
             case ECL_DIV_FLOAT:
-                *GET_FLOAT_PTR(enemy, 0) =
-                    GET_FLOAT_VALUE(enemy, 1) / GET_FLOAT_VALUE(enemy, 2);
+                *GET_FLOAT_PTR(enemy, 0) = GET_FLOAT_VALUE(enemy, 1) / GET_FLOAT_VALUE(enemy, 2);
                 break;
             case ECL_MOD:
-                *GET_INT_PTR(enemy, 0) =
-                    GET_INT_VALUE(enemy, 1) % GET_INT_VALUE(enemy, 2);
+                *GET_INT_PTR(enemy, 0) = GET_INT_VALUE(enemy, 1) % GET_INT_VALUE(enemy, 2);
                 break;
             case ECL_MOD_FLOAT:
                 *GET_FLOAT_PTR(enemy, 0) =
                     fmodf(GET_FLOAT_VALUE(enemy, 1), GET_FLOAT_VALUE(enemy, 2));
                 break;
             case ECL_SIN:
-                *GET_FLOAT_PTR(enemy, 0) =
-                    sinf(GET_FLOAT_VALUE(enemy, 1));
+                *GET_FLOAT_PTR(enemy, 0) = sinf(GET_FLOAT_VALUE(enemy, 1));
                 break;
             case ECL_COS:
-                *GET_FLOAT_PTR(enemy, 0) =
-                    cosf(GET_FLOAT_VALUE(enemy, 1));
+                *GET_FLOAT_PTR(enemy, 0) = cosf(GET_FLOAT_VALUE(enemy, 1));
                 break;
             case ECL_ATAN2:
                 *GET_FLOAT_PTR(enemy, 0) =
@@ -1197,14 +1184,14 @@ restart:
                            GET_FLOAT_VALUE(enemy, 3) - GET_FLOAT_VALUE(enemy, 1));
                 break;
             case ECL_LERP:
-                lerpDelta = GET_FLOAT_VALUE(enemy, 1) -
-                            GET_FLOAT_VALUE(enemy, 2);
+                lerpDelta = GET_FLOAT_VALUE(enemy, 1) - GET_FLOAT_VALUE(enemy, 2);
                 *GET_FLOAT_PTR(enemy, 0) =
                     lerpDelta * GET_FLOAT_VALUE(enemy, 3) + GET_FLOAT_VALUE(enemy, 2);
                 break;
             case ECL_INIT_INTERP:
                 interp = enemy->currentContext.interps;
-                for (interpIdx = 0; interpIdx < 8; interpIdx++, interp++)
+                for (interpIdx = 0; interpIdx < ARRAY_SIZE_SIGNED(enemy->currentContext.interps);
+                     interpIdx++, interp++)
                 {
                     if (interp->fn && interp->args[7].f != instr->args[0].f)
                     {
@@ -1301,15 +1288,14 @@ restart:
                 continue;
             case ECL_SUB_CALL:
                 arg = instr->args[0].i;
-                enemy->currentContext.curInstr =
-                    (EclRawInstr *)((u8 *)instr + instr->size);
+                enemy->currentContext.curInstr = (EclRawInstr *)((u8 *)instr + instr->size);
                 if (!enemy->noStackRet)
                 {
                     enemy->savedContextStack[enemy->stackDepth] = enemy->currentContext;
                 }
                 g_EclManager.CallEclSub(&enemy->currentContext, (i16)arg);
                 enemy->currentContext.eclContextArgs.globalVars = g_GlobalEclVars;
-                if (!enemy->noStackRet && enemy->stackDepth < 15)
+                if (!enemy->noStackRet && enemy->stackDepth < ENEMY_STACK_SIZE)
                 {
                     enemy->stackDepth++;
                 }
@@ -1328,18 +1314,19 @@ restart:
                 enemy->currentContext = enemy->savedContextStack[enemy->stackDepth];
                 goto restart;
             case ECL_SET_ANM:
-                g_AnmManager->SetAnmIdxAndExecuteScript(&enemy->primaryVm,
-                                                        GET_INT_VALUE(enemy, 0) + 2304);
+                g_AnmManager->SetAnmIdxAndExecuteScript(
+                    &enemy->primaryVm, GET_INT_VALUE(enemy, 0) + ANM_SCRIPT_ENEMY_ARRAY);
                 break;
             case ECL_SET_SUB_ANM:
-                if (GET_INT_VALUE(enemy, 0) >= 2)
+                if (GET_INT_VALUE(enemy, 0) >= ARRAY_SIZE_SIGNED(enemy->vms))
                 {
                     Supervisor::DebugPrint("error : sub anim overflow\n");
                 }
                 if (GET_INT_VALUE(enemy, 1) >= 0)
                 {
                     g_AnmManager->SetAnmIdxAndExecuteScript(&enemy->vms[GET_INT_VALUE(enemy, 0)],
-                                                            GET_INT_VALUE(enemy, 1) + 2304);
+                                                            GET_INT_VALUE(enemy, 1) +
+                                                                ANM_SCRIPT_ENEMY_ARRAY);
                 }
                 else
                 {
@@ -1353,28 +1340,28 @@ restart:
                 enemy->ClampPos();
                 break;
             case ECL_SET_AXIS_SPEED:
-                enemy->axisSpeed.x = GET_FLOAT_VALUE(enemy, 0);
-                enemy->axisSpeed.y = GET_FLOAT_VALUE(enemy, 1);
-                enemy->axisSpeed.z = GET_FLOAT_VALUE(enemy, 2);
-                enemy->angle = atan2f(enemy->axisSpeed.y, enemy->axisSpeed.x);
+                enemy->velocity.x = GET_FLOAT_VALUE(enemy, 0);
+                enemy->velocity.y = GET_FLOAT_VALUE(enemy, 1);
+                enemy->velocity.z = GET_FLOAT_VALUE(enemy, 2);
+                enemy->angle = atan2f(enemy->velocity.y, enemy->velocity.x);
                 enemy->moveMode = 0;
                 break;
             case ECL_SET_ANGULAR_VEL:
-                enemy->angularVelocity = GET_FLOAT_VALUE(enemy, 0);
+                enemy->angleVel = GET_FLOAT_VALUE(enemy, 0);
                 enemy->moveMode = 1;
                 break;
             case ECL_MOVE_AT_PLAYER:
                 enemy->angle = ECL_TARGET_PLAYER(enemy).AngleToPlayer(&enemy->pos) +
                                GET_FLOAT_VALUE(enemy, 0);
-                enemy->moveSpeed = GET_FLOAT_VALUE(enemy, 1);
+                enemy->speed = GET_FLOAT_VALUE(enemy, 1);
                 enemy->moveMode = 1;
                 break;
             case ECL_SET_MOVE_SPEED:
-                enemy->moveSpeed = GET_FLOAT_VALUE(enemy, 0);
+                enemy->speed = GET_FLOAT_VALUE(enemy, 0);
                 enemy->moveMode = 1;
                 break;
             case ECL_SET_MOVE_ACCEL:
-                enemy->moveAcceleration = GET_FLOAT_VALUE(enemy, 0);
+                enemy->accel = GET_FLOAT_VALUE(enemy, 0);
                 enemy->moveMode = 1;
                 break;
             case ECL_SET_MOVE_INTERP_TIMER_POLAR:
@@ -1405,9 +1392,7 @@ restart:
                 bulletInstrArgs = instr->args;
                 bulletProps = &enemy->bulletProps;
                 arg = bulletInstrArgs->s[0];
-                bulletProps->sprite = (instr->paramMask & 1) != 0
-                                          ? GetVarValue(enemy, arg)
-                                          : arg;
+                bulletProps->sprite = (instr->paramMask & 1) != 0 ? GetVarValue(enemy, arg) : arg;
                 bulletProps->aimMode = instr->id - 64;
                 bulletProps->count1 = GET_INT_VALUE_D(enemy, bulletInstrArgs, 1, 2);
                 bulletProps->count2 = GET_INT_VALUE_D(enemy, bulletInstrArgs, 2, 3);
@@ -1446,17 +1431,15 @@ restart:
                 bulletProps->unused_c2 = 0;
                 bulletProps->flags = bulletInstrArgs[7].u;
                 arg = bulletInstrArgs->s[1];
-                bulletProps->spriteOffset = (instr->paramMask & 2) != 0
-                                                ? GetVarValue(enemy, arg)
-                                                : arg;
+                bulletProps->spriteOffset =
+                    (instr->paramMask & 2) != 0 ? GetVarValue(enemy, arg) : arg;
                 if (!enemy->disableBullets)
                 {
                     g_BulletManager.SpawnBulletPattern(bulletProps);
                 }
                 break;
             case ECL_INIT_BULLET_CMD:
-                bulletCommand =
-                    &enemy->bulletProps.commands[GET_INT_VALUE(enemy, 0)];
+                bulletCommand = &enemy->bulletProps.commands[GET_INT_VALUE(enemy, 0)];
                 bulletCommand->type = GET_INT_VALUE(enemy, 1);
                 bulletCommand->flag = GET_INT_VALUE(enemy, 2);
                 bulletCommand->duration = GET_INT_VALUE(enemy, 3);
@@ -1539,8 +1522,8 @@ restart:
                 arg = GET_INT_VALUE(enemy, 0);
                 if (enemy->lasers[arg])
                 {
-                    enemy->lasers[arg]->angle = utils::AddNormalizeAngle(
-                        enemy->lasers[arg]->angle, GET_FLOAT_VALUE(enemy, 1));
+                    enemy->lasers[arg]->angle = utils::AddNormalizeAngle(enemy->lasers[arg]->angle,
+                                                                         GET_FLOAT_VALUE(enemy, 1));
                 }
                 break;
             case ECL_SET_LASER_ANGLE:
@@ -1582,7 +1565,7 @@ restart:
             case ECL_TEST_LASER_NOT_IN_USE:
                 arg = GET_INT_VALUE(enemy, 0);
                 if (enemy->lasers[arg] &&
-                    enemy->lasers[arg]->inUse)
+                    enemy->lasers[arg]->isInUse)
                 {
                     enemy->currentContext.laserNotInUse = 0;
                 }
@@ -1593,18 +1576,16 @@ restart:
                 break;
             case ECL_STOP_LASER:
                 arg = GET_INT_VALUE(enemy, 0);
-                if (enemy->lasers[arg] &&
-                    enemy->lasers[arg]->inUse &&
+                if (enemy->lasers[arg] && enemy->lasers[arg]->isInUse &&
                     enemy->lasers[arg]->state < 2)
                 {
                     enemy->lasers[arg]->state = 2;
                     enemy->lasers[arg]->timer = 0;
-                    enemy->lasers[arg]->width =
-                        enemy->lasers[arg]->targetWidth;
+                    enemy->lasers[arg]->width = enemy->lasers[arg]->targetWidth;
                 }
                 break;
             case ECL_CLEAR_LASERS:
-                for (laserIdx = 0; laserIdx < 32; laserIdx++)
+                for (laserIdx = 0; laserIdx < ARRAY_SIZE_SIGNED(enemy->lasers); laserIdx++)
                 {
                     enemy->lasers[laserIdx] = NULL;
                 }
@@ -1613,18 +1594,15 @@ restart:
                 arg = GET_INT_VALUE(enemy, 0);
                 if (enemy->lasers[arg])
                 {
-                    enemy->lasers[arg]->startLength =
-                        GET_FLOAT_VALUE(enemy, 1);
+                    enemy->lasers[arg]->startLength = GET_FLOAT_VALUE(enemy, 1);
                 }
                 break;
             case ECL_SET_LASER_OFFSETS:
                 arg = GET_INT_VALUE(enemy, 0);
                 if (enemy->lasers[arg])
                 {
-                    enemy->lasers[arg]->startOffset =
-                        GET_FLOAT_VALUE(enemy, 1);
-                    enemy->lasers[arg]->endOffset =
-                        GET_FLOAT_VALUE(enemy, 2);
+                    enemy->lasers[arg]->startOffset = GET_FLOAT_VALUE(enemy, 1);
+                    enemy->lasers[arg]->endOffset = GET_FLOAT_VALUE(enemy, 2);
                 }
                 break;
             case ECL_IDFK:
@@ -1654,7 +1632,7 @@ restart:
                 break;
             case ECL_SPAWN_EFFECT:
                 effectInstrArgs = instr->args;
-                enemy->effects[enemy->effectsNum] = g_EffectManager.SpawnParticles(
+                enemy->effects[enemy->effectsNum] = g_EffectManager.SpawnEffect(
                     13, &enemy->pos, 1, g_BulletColor[effectInstrArgs->i]);
                 enemy->effects[enemy->effectsNum]->direction = *(ZunVec3 *)&effectInstrArgs[1];
                 enemy->effectDistance = effectInstrArgs[4].f;
@@ -1664,8 +1642,8 @@ restart:
                 if (GET_INT_VALUE(enemy, 0) <= 0)
                 {
                     enemy->angle = utils::AddNormalizeAngle(GET_FLOAT_VALUE(enemy, 2), 0.0f);
-                    enemy->moveSpeed = GET_FLOAT_VALUE(enemy, 3);
-                    enemy->moveMode = 1;
+                    enemy->speed = GET_FLOAT_VALUE(enemy, 3);
+                    enemy->moveMode = ENEMY_MOVE_POLAR;
                     enemy->moveInterpTimer = enemy->moveInterpStartTime = GET_INT_VALUE(enemy, 0);
                 }
                 else
@@ -1677,24 +1655,23 @@ restart:
                 MovePosTime(enemy, instr);
                 break;
             case ECL_MOVE_ORBIT:
-                enemy->moveInterpTimer = enemy->moveInterpStartTime =
-                    GET_INT_VALUE(enemy, 0);
+                enemy->moveInterpTimer = enemy->moveInterpStartTime = GET_INT_VALUE(enemy, 0);
                 enemy->moveInterpStartPos.x = GET_FLOAT_VALUE(enemy, 1);
                 enemy->moveInterpStartPos.y = GET_FLOAT_VALUE(enemy, 2);
                 enemy->moveInterpStartPos.z = GET_FLOAT_VALUE(enemy, 3);
-                enemy->moveAngle = GET_FLOAT_VALUE(enemy, 4);
-                enemy->moveAngularVelocity = GET_FLOAT_VALUE(enemy, 5);
-                enemy->moveRadius = GET_FLOAT_VALUE(enemy, 6);
-                enemy->moveRadialVelocity = GET_FLOAT_VALUE(enemy, 7);
-                enemy->moveMode = 3;
+                enemy->orbitAngle = GET_FLOAT_VALUE(enemy, 4);
+                enemy->orbitAngleVel = GET_FLOAT_VALUE(enemy, 5);
+                enemy->orbitRadius = GET_FLOAT_VALUE(enemy, 6);
+                enemy->orbitRadialVel = GET_FLOAT_VALUE(enemy, 7);
+                enemy->moveMode = ENEMY_MOVE_ORBIT;
                 break;
             case ECL_SET_ORBIT_RADIUS:
-                enemy->moveRadius = GET_FLOAT_VALUE(enemy, 0);
-                enemy->moveRadialVelocity = GET_FLOAT_VALUE(enemy, 1);
+                enemy->orbitRadius = GET_FLOAT_VALUE(enemy, 0);
+                enemy->orbitRadialVel = GET_FLOAT_VALUE(enemy, 1);
                 break;
             case ECL_SET_ORBIT_ANGLE:
-                enemy->moveAngle = GET_FLOAT_VALUE(enemy, 0);
-                enemy->moveAngularVelocity = GET_FLOAT_VALUE(enemy, 1);
+                enemy->orbitAngle = GET_FLOAT_VALUE(enemy, 0);
+                enemy->orbitAngleVel = GET_FLOAT_VALUE(enemy, 1);
                 break;
             case ECL_SET_MOVEMENT_BOUNDS:
                 enemy->lowerMoveLimit.x = GET_FLOAT_VALUE(enemy, 0);
@@ -1713,7 +1690,7 @@ restart:
                     GET_FLOAT_VALUE(enemy, 1);
                 break;
             case ECL_GET_EXIT_ANGLE:
-                if (ECL_TARGET_PLAYER(enemy).positionCenter.x < enemy->pos.x)
+                if (ECL_TARGET_PLAYER(enemy).pos.x < enemy->pos.x)
                 {
                     exitAngle = utils::AddNormalizeAngle(
                         g_Rng.GetRandomFloatInRange(1.5707964f) + 2.3561945f, 0.0f);
@@ -1791,8 +1768,7 @@ restart:
                 enemy->deathCallbackSub = (u32)instr->args[0].b[0];
                 break;
             case ECL_SET_INTERRUPT:
-                enemy->interrupts[GET_INT_VALUE(enemy, 1)] =
-                    GET_INT_VALUE(enemy, 0);
+                enemy->interrupts[GET_INT_VALUE(enemy, 1)] = GET_INT_VALUE(enemy, 0);
                 break;
             case ECL_SET_RUN_INTERRUPT:
                 enemy->runInterrupt = GET_INT_VALUE(enemy, 0);
@@ -1804,7 +1780,7 @@ restart:
                 }
                 g_EclManager.CallEclSub(&enemy->currentContext,
                                         enemy->interrupts[enemy->runInterrupt]);
-                if (enemy->stackDepth < 15)
+                if (enemy->stackDepth < ENEMY_STACK_SIZE)
                 {
                     enemy->stackDepth = enemy->stackDepth + 1;
                 }
@@ -1814,7 +1790,8 @@ restart:
                 enemy->life = enemy->maxLife = GET_INT_VALUE(enemy, 0);
                 if (enemy->bossId == 0 && enemy->isBoss)
                 {
-                    for (healthIdx = 0; healthIdx < 8; healthIdx++)
+                    for (healthIdx = 0; healthIdx < ARRAY_SIZE_SIGNED(g_Gui.bossHealth);
+                         healthIdx++)
                     {
                         g_Gui.bossHealthEased[healthIdx] = 0.0f;
                         g_Gui.bossHealth[healthIdx] = 0.0f;
@@ -1843,10 +1820,8 @@ restart:
                 enemy->lifeCallbackSub[0] = GET_INT_VALUE(enemy, 0);
                 break;
             case ECL_SET_LIFE_CALLBACK:
-                enemy->lifeCallbackThreshold[GET_INT_VALUE(enemy, 0)] =
-                    GET_INT_VALUE(enemy, 1);
-                enemy->lifeCallbackSub[GET_INT_VALUE(enemy, 0)] =
-                    GET_INT_VALUE(enemy, 2);
+                enemy->lifeCallbackThreshold[GET_INT_VALUE(enemy, 0)] = GET_INT_VALUE(enemy, 1);
+                enemy->lifeCallbackSub[GET_INT_VALUE(enemy, 0)] = GET_INT_VALUE(enemy, 2);
                 break;
             case ECL_SET_TIMER_CALLBACK_THRESHOLD:
                 enemy->timerCallbackThreshold = GET_INT_VALUE(enemy, 0);
@@ -1865,11 +1840,8 @@ restart:
                 enemy->canDie = instr->args[0].b[0];
                 break;
             case ECL_SPAWN_PARTICLES:
-                g_EffectManager.SpawnParticles(
-                    GET_INT_VALUE(enemy, 0),
-                    &enemy->pos,
-                    GET_INT_VALUE(enemy, 1),
-                    *(u32 *)GET_INT_PTR(enemy, 2));
+                g_EffectManager.SpawnEffect(GET_INT_VALUE(enemy, 0), &enemy->pos,
+                                            GET_INT_VALUE(enemy, 1), *(u32 *)GET_INT_PTR(enemy, 2));
                 break;
             case ECL_SPAWN_MOVING_PARTICLES:
                 particleVel.x = GET_FLOAT_VALUE(enemy, 3);
@@ -2039,21 +2011,16 @@ restart:
                 }
                 break;
             case ECL_SET_GLOBAL_EFFECT_COLOR_MUL:
-                g_EffectManager.globalColorMultiplierR =
-                    GET_FLOAT_VALUE(enemy, 0);
-                g_EffectManager.globalColorMultiplierG =
-                    GET_FLOAT_VALUE(enemy, 1);
-                g_EffectManager.globalColorMultiplierB =
-                    GET_FLOAT_VALUE(enemy, 2);
-                g_EffectManager.globalColorMultiplierA =
-                    GET_FLOAT_VALUE(enemy, 3);
+                g_EffectManager.globalColorMultiplierR = GET_FLOAT_VALUE(enemy, 0);
+                g_EffectManager.globalColorMultiplierG = GET_FLOAT_VALUE(enemy, 1);
+                g_EffectManager.globalColorMultiplierB = GET_FLOAT_VALUE(enemy, 2);
+                g_EffectManager.globalColorMultiplierA = GET_FLOAT_VALUE(enemy, 3);
                 break;
             case ECL_SET_INVINCIBILITY_TIMER:
                 enemy->invincibilityTimer = GET_INT_VALUE(enemy, 0);
                 break;
             case ECL_REMOVE_BULLETS_RADIUS:
-                g_BulletManager.RemoveBulletsInRadius(&enemy->pos,
-                                                      GET_FLOAT_VALUE(enemy, 0));
+                g_BulletManager.RemoveBulletsInRadius(&enemy->pos, GET_FLOAT_VALUE(enemy, 0));
                 break;
             case ECL_SET_BOSS_RUN_INTERRUPT:
                 if (g_EnemyManager.bosses[GET_INT_VALUE(enemy, 0)] != NULL)
@@ -2069,9 +2036,9 @@ restart:
                 enemy->customSpecialEffectPos = GET_INT_VALUE(enemy, 0);
                 if (!enemy->customSpecialEffectPos)
                 {
-                    enemy->specialEffect->pos1.x = GET_FLOAT_VALUE(enemy, 1);
-                    enemy->specialEffect->pos1.y = GET_FLOAT_VALUE(enemy, 2);
-                    enemy->specialEffect->pos1.z = GET_FLOAT_VALUE(enemy, 3);
+                    enemy->specialEffect->pos.x = GET_FLOAT_VALUE(enemy, 1);
+                    enemy->specialEffect->pos.y = GET_FLOAT_VALUE(enemy, 2);
+                    enemy->specialEffect->pos.z = GET_FLOAT_VALUE(enemy, 3);
                 }
                 break;
             case ECL_SET_PRIMARY_VM_ROT_Z:
@@ -2084,7 +2051,7 @@ restart:
                     cosf(GET_FLOAT_VALUE(enemy, 2)) * GET_FLOAT_VALUE(enemy, 3);
                 break;
             case ECL_RAND_EXIT_ANGLE:
-                if ((ECL_TARGET_PLAYER(enemy).positionCenter.x < enemy->pos.x &&
+                if ((ECL_TARGET_PLAYER(enemy).pos.x < enemy->pos.x &&
                      enemy->pos.x > 96.0f) ||
                     enemy->pos.x > 288.0f)
                 {
@@ -2113,47 +2080,43 @@ restart:
         exit:
             switch (enemy->moveMode)
             {
-            case 3:
-                enemy->moveAngle = utils::AddNormalizeAngle(
-                    enemy->moveAngle, g_Supervisor.effectiveFramerateMultiplier *
-                                          enemy->moveAngularVelocity);
-                enemy->moveRadius = g_Supervisor.effectiveFramerateMultiplier *
-                                        enemy->moveRadialVelocity +
-                                    enemy->moveRadius;
-                moveVec.FromAngleMagnitude(enemy->moveAngle, enemy->moveRadius);
-                enemy->axisSpeed.x =
-                    moveVec.x + enemy->moveInterpStartPos.x - enemy->pos.x;
-                enemy->axisSpeed.y =
-                    moveVec.y + enemy->moveInterpStartPos.y - enemy->pos.y;
-                enemy->angle = atan2f(enemy->axisSpeed.y, enemy->axisSpeed.x);
+            case ENEMY_MOVE_ORBIT:
+                enemy->orbitAngle = utils::AddNormalizeAngle(
+                    enemy->orbitAngle,
+                    g_Supervisor.effectiveFramerateMultiplier * enemy->orbitAngleVel);
+                enemy->orbitRadius =
+                    g_Supervisor.effectiveFramerateMultiplier * enemy->orbitRadialVel +
+                    enemy->orbitRadius;
+                moveVec.FromAngleMagnitude(enemy->orbitAngle, enemy->orbitRadius);
+                enemy->velocity.x = moveVec.x + enemy->moveInterpStartPos.x - enemy->pos.x;
+                enemy->velocity.y = moveVec.y + enemy->moveInterpStartPos.y - enemy->pos.y;
+                enemy->angle = atan2f(enemy->velocity.y, enemy->velocity.x);
                 if (enemy->moveInterpStartTime > 0)
                 {
                     enemy->moveInterpTimer--;
                     if (enemy->moveInterpTimer <= 0)
                     {
-                        enemy->moveMode = 0;
+                        enemy->moveMode = ENEMY_MOVE_AXIS;
                     }
                 }
                 break;
-            case 1:
-                enemy->angle = utils::AddNormalizeAngle(enemy->angle,
-                                                        g_Supervisor.effectiveFramerateMultiplier *
-                                                            enemy->angularVelocity);
-                enemy->moveSpeed =
-                    g_Supervisor.effectiveFramerateMultiplier * enemy->moveAcceleration +
-                    enemy->moveSpeed;
-                AngleToVector(&enemy->axisSpeed, enemy->angle, enemy->moveSpeed);
-                enemy->axisSpeed.z = 0.0f;
+            case ENEMY_MOVE_POLAR:
+                enemy->angle = utils::AddNormalizeAngle(
+                    enemy->angle, g_Supervisor.effectiveFramerateMultiplier * enemy->angleVel);
+                enemy->speed =
+                    g_Supervisor.effectiveFramerateMultiplier * enemy->accel + enemy->speed;
+                enemy->velocity.FromAngleMagnitude(enemy->angle, enemy->speed);
+                enemy->velocity.z = 0.0f;
                 if (enemy->moveInterpStartTime > 0)
                 {
                     enemy->moveInterpTimer--;
                     if (enemy->moveInterpTimer <= 0)
                     {
-                        enemy->moveMode = 0;
+                        enemy->moveMode = ENEMY_MOVE_AXIS;
                     }
                 }
                 break;
-            case 2:
+            case ENEMY_MOVE_INTERP:
                 enemy->moveInterpTimer--;
                 t1 = 1.0f - enemy->moveInterpTimer.AsFloat() / (f32)enemy->moveInterpStartTime;
                 if (t1 < 0.0f)
@@ -2193,18 +2156,17 @@ restart:
                     break;
                 }
                 }
-                enemy->axisSpeed =
-                    t1 * enemy->moveInterp + enemy->moveInterpStartPos - enemy->pos;
+                enemy->velocity = t1 * enemy->moveInterp + enemy->moveInterpStartPos - enemy->pos;
                 if (enemy->mirror)
                 {
-                    enemy->axisSpeed.x = -enemy->axisSpeed.x;
+                    enemy->velocity.x = -enemy->velocity.x;
                 }
-                enemy->angle = atan2f(enemy->axisSpeed.y, enemy->axisSpeed.x);
+                enemy->angle = atan2f(enemy->velocity.y, enemy->velocity.x);
                 if (enemy->moveInterpTimer <= 0)
                 {
-                    enemy->moveMode = 0;
+                    enemy->moveMode = ENEMY_MOVE_AXIS;
                     enemy->pos = enemy->moveInterpStartPos + enemy->moveInterp;
-                    enemy->axisSpeed = ZunVec3(0.0f, 0.0f, 0.0f);
+                    enemy->velocity = ZunVec3(0.0f, 0.0f, 0.0f);
                 }
                 break;
             }
@@ -2225,22 +2187,22 @@ restart:
                     anmDirection = 0;
                     if (!enemy->mirror)
                     {
-                        if (enemy->axisSpeed.x < -0.01f)
+                        if (enemy->velocity.x < -0.01f)
                         {
                             anmDirection = 1;
                         }
-                        else if (enemy->axisSpeed.x > 0.01f)
+                        else if (enemy->velocity.x > 0.01f)
                         {
                             anmDirection = 2;
                         }
                     }
                     else
                     {
-                        if (enemy->axisSpeed.x < -0.01f)
+                        if (enemy->velocity.x < -0.01f)
                         {
                             anmDirection = 2;
                         }
-                        else if (enemy->axisSpeed.x > 0.01f)
+                        else if (enemy->velocity.x > 0.01f)
                         {
                             anmDirection = 1;
                         }
@@ -2252,27 +2214,30 @@ restart:
                         case 0:
                             if (enemy->anmExFlags == 255)
                             {
-                                g_AnmManager->SetAnmIdxAndExecuteScript(
-                                    &enemy->primaryVm, enemy->anmExDefaults + 2304);
+                                g_AnmManager->SetAnmIdxAndExecuteScript(&enemy->primaryVm,
+                                                                        enemy->anmExDefaults +
+                                                                            ANM_SCRIPT_ENEMY_ARRAY);
                             }
                             else if (enemy->anmExFlags == 1)
                             {
                                 g_AnmManager->SetAnmIdxAndExecuteScript(&enemy->primaryVm,
-                                                                        enemy->anmExFarLeft + 2304);
+                                                                        enemy->anmExFarLeft +
+                                                                            ANM_SCRIPT_ENEMY_ARRAY);
                             }
                             else
                             {
-                                g_AnmManager->SetAnmIdxAndExecuteScript(
-                                    &enemy->primaryVm, enemy->anmExFarRight + 2304);
+                                g_AnmManager->SetAnmIdxAndExecuteScript(&enemy->primaryVm,
+                                                                        enemy->anmExFarRight +
+                                                                            ANM_SCRIPT_ENEMY_ARRAY);
                             }
                             break;
                         case 1:
-                            g_AnmManager->SetAnmIdxAndExecuteScript(&enemy->primaryVm,
-                                                                    enemy->anmExLeft + 2304);
+                            g_AnmManager->SetAnmIdxAndExecuteScript(
+                                &enemy->primaryVm, enemy->anmExLeft + ANM_SCRIPT_ENEMY_ARRAY);
                             break;
                         case 2:
-                            g_AnmManager->SetAnmIdxAndExecuteScript(&enemy->primaryVm,
-                                                                    enemy->anmExRight + 2304);
+                            g_AnmManager->SetAnmIdxAndExecuteScript(
+                                &enemy->primaryVm, enemy->anmExRight + ANM_SCRIPT_ENEMY_ARRAY);
                             break;
                         }
                         enemy->anmExFlags = anmDirection;
@@ -2285,7 +2250,8 @@ restart:
                 posModified = false;
                 interp2 = enemy->currentContext.interps;
                 ZunVec3 oldPos = enemy->pos;
-                for (interpIdx2 = 0; interpIdx2 < 8; interpIdx2++, interp2++)
+                for (interpIdx2 = 0; interpIdx2 < ARRAY_SIZE_SIGNED(enemy->currentContext.interps);
+                     interpIdx2++, interp2++)
                 {
                     if (interp2->fn)
                     {
@@ -2342,9 +2308,9 @@ restart:
                 }
                 if (posModified)
                 {
-                    enemy->axisSpeed.x = enemy->pos.x - oldPos.x;
-                    enemy->axisSpeed.y = enemy->pos.y - oldPos.y;
-                    enemy->angle = atan2f(enemy->axisSpeed.y, enemy->axisSpeed.x);
+                    enemy->velocity.x = enemy->pos.x - oldPos.x;
+                    enemy->velocity.y = enemy->pos.y - oldPos.y;
+                    enemy->angle = atan2f(enemy->velocity.y, enemy->velocity.x);
                     enemy->pos = oldPos;
                 }
             }

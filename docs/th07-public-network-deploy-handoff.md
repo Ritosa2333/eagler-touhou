@@ -187,7 +187,7 @@ Current owners:
 
 - `eagler-touhou/server/render-coturn-config.cjs`
 - `eagler-touhou/server/coturn.env.example`
-- `eagler-touhou/docs/HOST_DEPLOYMENT.md`
+- `eagler-touhou/docs/SELF_HOSTING_REFERENCE.md`
 - `tests/coturn-config-contract-test.cjs`
 - `tests/turn-signaling-contract-test.cjs`
 

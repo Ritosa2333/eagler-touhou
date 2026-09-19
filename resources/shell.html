@@ -324,34 +324,38 @@
       // BEGIN NETPLAY PERFORMANCE PROFILE (pure function; unit tested)
       function resolveNetplayPerformanceProfile(options, coarsePointer = false) {
         const multiplayer = options.netplayMode === "lan";
-        const profile = options.netplayPerformanceProfile || "balanced";
-        const balanced = multiplayer && profile === "balanced";
-        const mobile = !!options.touchEnabled || !!coarsePointer;
-        // The room's explicit 0/full mode selects the tested responsive backend.
-        // Legacy rooms and the optional buffered mode retain their old defaults.
-        const responsive = balanced && options.netplayInputDelayFrames === 0 &&
-          (options.netplayRollbackPolicy || "full") === "full" && !options.netplaySpectator && !options.replayViewer;
+        const diagnostics = options.debugHarness === "netplay-lan-stage1";
+        const manual = diagnostics && options.netplayPerformanceProfile === "manual";
+        const inputDelay = diagnostics ? (options.netplayInputDelayFrames ?? 0) : 0;
+        const rollbackPolicy = diagnostics ? (options.netplayRollbackPolicy || "full") : "full";
+        const responsive = multiplayer && inputDelay === 0 && rollbackPolicy === "full" &&
+          !options.netplaySpectator && !options.replayViewer;
+        const optimized = responsive && !manual;
         return {
-          netplayPerformanceProfile: profile,
-          netplayInputDelayFrames: options.netplayInputDelayFrames ??
-            (multiplayer ? (balanced && mobile ? 6 : 3) : 0),
-          netplayRollbackPolicy: options.netplayRollbackPolicy || "full",
+          netplayPerformanceProfile: manual ? "manual" : "responsive",
+          netplayInputDelayFrames: inputDelay,
+          netplayRollbackPolicy: rollbackPolicy,
           netplayTouchDeltaPredictionFrames: options.netplayTouchDeltaPredictionFrames ?? 0,
           netplayTouchQuantization: options.netplayTouchQuantization ?? 0,
           netplayTouchEquivalentAbsorb: !!options.netplayTouchEquivalentAbsorb,
           netplayIncrementalReconcile: !!options.netplayIncrementalReconcile,
-          netplayReliableInputRepair: options.netplayReliableInputRepair ?? responsive,
+          netplayReliableInputRepair: diagnostics && options.netplayReliableInputRepair != null
+            ? options.netplayReliableInputRepair : optimized,
           netplayDormantBulletElision: options.netplayDormantBulletElision === true,
           netplayInitialFrameLag: options.netplayInitialFrameLag ?? 0,
           netplayDisableTimeSyncPacing: !!options.netplayDisableTimeSyncPacing,
-          netplaySnapshotPolicy: options.netplaySnapshotPolicy || (balanced ? "frontier" : "always"),
-          netplaySnapshotLayout: options.netplaySnapshotLayout || (balanced ? "runs" : "objects"),
-          netplaySnapshotCopy: options.netplaySnapshotCopy || (balanced ? "bulk" : "wasm"),
-          netplaySnapshotRestore: options.netplaySnapshotRestore || (balanced ? "coalesced" : "sequential"),
+          netplaySnapshotPolicy: diagnostics && options.netplaySnapshotPolicy
+            ? options.netplaySnapshotPolicy : (optimized ? "frontier" : "always"),
+          netplaySnapshotLayout: diagnostics && options.netplaySnapshotLayout
+            ? options.netplaySnapshotLayout : (optimized ? "runs" : "objects"),
+          netplaySnapshotCopy: diagnostics && options.netplaySnapshotCopy
+            ? options.netplaySnapshotCopy : (optimized ? "bulk" : "wasm"),
+          netplaySnapshotRestore: diagnostics && options.netplaySnapshotRestore
+            ? options.netplaySnapshotRestore : (optimized ? "coalesced" : "sequential"),
           // Checkpoint spacing is undo storage, NOT input buffering. The
           // repeated zero-delay 3P tests favor three ticks per checkpoint.
-          netplaySnapshotCheckpointFrames: options.netplaySnapshotCheckpointFrames ?? (responsive ? 3 : 2),
-          netplayBulletSnapshot: options.netplayBulletSnapshot || (responsive ? "live" : "journal"),
+          netplaySnapshotCheckpointFrames: options.netplaySnapshotCheckpointFrames ?? (optimized ? 3 : 2),
+          netplayBulletSnapshot: options.netplayBulletSnapshot || (optimized ? "live" : "journal"),
           // Presentation cadence is a player preference, not a netplay safety
           // mechanism. The 60 Hz simulation remains authoritative either way;
           // high-refresh displays may present interpolated frames unless the
@@ -363,11 +367,13 @@
       const installMusic = async message => {
         if (launched) throw new Error("music cannot be changed after launch");
         const options = message.options || {};
-        if (options.netplayPerformanceProfile != null && !["balanced", "manual"].includes(options.netplayPerformanceProfile)) throw new Error("invalid netplay performance profile");
+        const netplayDiagnostics = options.debugHarness === "netplay-lan-stage1";
+        if (options.netplayPerformanceProfile != null && !["responsive", "manual"].includes(options.netplayPerformanceProfile)) throw new Error("invalid netplay performance profile");
+        if (!netplayDiagnostics && options.netplayPerformanceProfile === "manual") throw new Error("manual netplay profile requires the test harness");
         if (!Array.isArray(message.thpracCatalog ?? []) || (message.thpracCatalog?.length || 0) > 256) throw new Error("invalid thprac catalog");
         thpracCatalog = message.thpracCatalog ?? [];
         Module.eaglerThpracCatalog = thpracCatalog;
-        for (const key of ["thpracEnabled", "limitPresentationTo60", "touchEnabled", "unlimitedTouch", "touchBombZoneEnabled", "doubleTapBombEnabled", "alwaysHitbox", "enhanceLocalPlayerVisibility", "focusHitboxEnabled", "th06FocusHitbox", "replayViewer", "netplayRollbackProbe", "netplayScriptedInput", "netplayReplayPlaybackCycle", "netplayPauseCycle", "netplayRestartCycle", "netplayStageTransition", "netplayStage4BossChain", "netplaySpectator", "netplayTestNoRollback", "netplayTestKeepRollbackSnapshots", "netplayIncrementalReconcile", "netplayDisableTimeSyncPacing"]) {
+        for (const key of ["thpracEnabled", "limitPresentationTo60", "touchEnabled", "unlimitedTouch", "touchBombZoneEnabled", "doubleTapBombEnabled", "alwaysHitbox", "enhanceLocalPlayerVisibility", "focusHitboxEnabled", "th06FocusHitbox", "replayViewer", "netplayRollbackProbe", "netplayScriptedInput", "netplayReplayPlaybackCycle", "netplayPauseCycle", "netplayRestartCycle", "netplayStageTransition", "netplayStage4BossChain", "netplaySpectator", "netplayTestNoRollback", "netplayTestKeepRollbackSnapshots", "netplayIncrementalReconcile", "netplayDisableTimeSyncPacing", "netplayReliableInputRepair"]) {
           if (options[key] != null && typeof options[key] !== "boolean") throw new Error("invalid eagler-touhou option");
         }
         if (options.touchSensitivity != null && (!Number.isFinite(options.touchSensitivity) || options.touchSensitivity < 100 || options.touchSensitivity > 300)) throw new Error("invalid touch sensitivity");
@@ -383,8 +389,9 @@
         if (options.netplayMode != null && options.netplayMode !== "lan") throw new Error("invalid netplay mode");
         if (options.netplayInputDelayFrames != null && (!Number.isInteger(options.netplayInputDelayFrames) || options.netplayInputDelayFrames < 0 || options.netplayInputDelayFrames > 12)) throw new Error("invalid netplay input delay");
         if (options.netplayRollbackPolicy != null && !["full", "buffered"].includes(options.netplayRollbackPolicy)) throw new Error("invalid netplay rollback policy");
+        if (!netplayDiagnostics && options.netplayInputDelayFrames != null && options.netplayInputDelayFrames !== 0) throw new Error("input delay is diagnostic-only");
+        if (!netplayDiagnostics && options.netplayRollbackPolicy != null && options.netplayRollbackPolicy !== "full") throw new Error("buffered rollback is diagnostic-only");
         if (options.netplayMaxPredictionFrames != null && (!Number.isInteger(options.netplayMaxPredictionFrames) || options.netplayMaxPredictionFrames < 1 || options.netplayMaxPredictionFrames > 12)) throw new Error("invalid netplay prediction window");
-        if (options.netplayTouchPrediction != null && !["legacy", "stable"].includes(options.netplayTouchPrediction)) throw new Error("invalid netplay touch prediction");
         if (options.netplayTouchDeltaPredictionFrames != null && (!Number.isInteger(options.netplayTouchDeltaPredictionFrames) || options.netplayTouchDeltaPredictionFrames < 0 || options.netplayTouchDeltaPredictionFrames > 6)) throw new Error("invalid netplay touch delta prediction window");
         if (options.netplayTouchQuantization != null && (!Number.isFinite(options.netplayTouchQuantization) || options.netplayTouchQuantization < 0 || options.netplayTouchQuantization > 2)) throw new Error("invalid netplay touch quantization");
         if (options.netplayTouchEquivalentAbsorb != null && typeof options.netplayTouchEquivalentAbsorb !== "boolean") throw new Error("invalid netplay touch equivalence flag");
@@ -470,7 +477,6 @@
           debugHarness: options.debugHarness || null,
           netplayMode: options.netplayMode || null,
           netplayMaxPredictionFrames: options.netplayMaxPredictionFrames ?? 12,
-          netplayTouchPrediction: options.netplayTouchPrediction || "legacy",
           netplayPerfTelemetry: !!options.netplayPerfTelemetry,
           netplayTestIncrementalTouch: options.debugHarness === "netplay-lan-stage1" && !!options.netplayTestIncrementalTouch,
           netplayTestNoRollback: options.debugHarness === "netplay-lan-stage1" && !!options.netplayTestNoRollback,
@@ -486,6 +492,8 @@
           netplaySpectator: !!options.netplaySpectator,
           netplaySpectatorId: options.netplaySpectatorId || "",
           netplaySpectatorCount: options.netplaySpectatorCount ?? 0,
+          netplayReliableInputRepair: options.netplayReliableInputRepair ??
+            (options.netplayMode === "lan" && !options.netplaySpectator && !options.replayViewer),
           netplaySeed: options.netplaySeed ?? 0x4a3d,
           netplayDifficulty: options.netplayDifficulty ?? 1,
           netplayIceServers: Array.isArray(options.netplayIceServers) ? options.netplayIceServers.map(server => ({

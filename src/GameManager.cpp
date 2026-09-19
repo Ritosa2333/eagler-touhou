@@ -2,6 +2,7 @@
 
 #include <cstdio>
 
+#include "AnmIdx.hpp"
 #include "AnmManager.hpp"
 #include "AsciiManager.hpp"
 #include "Chain.hpp"
@@ -138,7 +139,7 @@ void GameManager::ExtendFromPoints()
         AddLivesRemaining(1);
         g_SoundPlayer.PlaySoundByIdx(SOUND_EXTEND, 0);
         IncreaseSubrank(200);
-        g_Gui.showLives = 2;
+        g_Gui.lifeDisplayUpdateFrames = 2;
     }
     else
     {
@@ -147,7 +148,7 @@ void GameManager::ExtendFromPoints()
             AddBombsRemaining(1);
             g_SoundPlayer.PlaySoundByIdx(SOUND_EXTEND, 0);
             IncreaseSubrank(200);
-            g_Gui.showBombs = 2;
+            g_Gui.bombDisplayUpdateFrames = 2;
         }
     }
 }
@@ -160,7 +161,7 @@ void GameManager::Pause()
     g_GameManager.arcadeRegionSize.x = 384.0f;
     g_GameManager.arcadeRegionSize.y = 448.0f;
     this->isPaused = 1;
-    g_Player.prevPositionCenter = g_Player.positionCenter;
+    g_Player.prevPos = g_Player.pos;
     g_Player.prevOptionsPosition[0] = g_Player.optionsPosition[0];
     g_Player.prevOptionsPosition[1] = g_Player.optionsPosition[1];
     g_Stage.prevCam = g_Stage.cam;
@@ -172,7 +173,7 @@ void GameManager::Pause()
     {
         g_SoundPlayer.PushCommand(AUDIO_PAUSE, 0, "Pause");
     }
-    g_SoundPlayer.PlaySoundByIdx(SOUND_37, 0);
+    g_SoundPlayer.PlaySoundByIdx(SOUND_PAUSED, 0);
     g_Supervisor.UpdateTime();
 }
 
@@ -220,35 +221,35 @@ u32 GameManager::OnUpdate(GameManager *arg)
     {
         if (WAS_PRESSED_RAW(TH_BUTTON_ANY))
         {
-            g_Supervisor.curState = 1;
+            g_Supervisor.curState = SUPERVISOR_STATE_MAINMENU;
         }
         arg->demoFrames = arg->demoFrames + 1;
         if ((arg->demoIdx == 0 && arg->demoFrames == 8100) ||
             (arg->demoIdx == 1 && arg->demoFrames == 7020) ||
             (arg->demoIdx == 2 && arg->demoFrames == 4620))
         {
-            BombEffects::RegisterChain(2, 120, 0, 0, 0);
+            ScreenEffect::RegisterChain(SCREEN_EFFECT_FADE_IN_PLAY_AREA, 120, 0, 0, 0);
             g_Supervisor.FadeOutMusic(3.0f);
         }
         if ((arg->demoIdx == 0 && arg->demoFrames >= 8220) ||
             (arg->demoIdx == 1 && arg->demoFrames >= 7140) ||
             (arg->demoIdx == 2 && arg->demoFrames >= 4740))
         {
-            g_Supervisor.curState = 1;
+            g_Supervisor.curState = SUPERVISOR_STATE_MAINMENU;
             return CHAIN_CALLBACK_RESULT_BREAK;
         }
     }
     g_GameManager.globals->curCsum = g_GameManager.globals->rng1[2];
     csum = arg->ComputeGameIntegrityCsum();
     g_GameManager.csumFloat = (f32)csum + (f32)g_GameManager.globals->rng2[3];
-    for (i = 0; i < 7; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(g_GameManager.globals->rng1); i++)
     {
         if (arg->globals->rng1[i] < 6543 || arg->globals->rng1[i] > 106543)
         {
             g_GameManager.csumFloat = -9999.0f;
         }
     }
-    for (i = 0; i < 2; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(g_GameManager.globals->rngFloat2); i++)
     {
         if (arg->globals->rngFloat2[i] < 6543.0f || arg->globals->rngFloat2[i] > 106543.0f)
         {
@@ -256,14 +257,14 @@ u32 GameManager::OnUpdate(GameManager *arg)
         }
     }
     arg->notInMenu = !arg->isInRetryMenu && !arg->isInPauseMenu;
-    for (i = 0; i < 2; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(g_GameManager.globals->rngFloat1); i++)
     {
         if (arg->globals->rngFloat1[i] < 6543.0f || arg->globals->rngFloat1[i] > 106543.0f)
         {
             g_GameManager.csumFloat = -9999.0f;
         }
     }
-    for (i = 0; i < 8; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(g_GameManager.globals->rng2); i++)
     {
         if (arg->globals->rng2[i] < 6543 || arg->globals->rng2[i] > 106543)
         {
@@ -317,21 +318,21 @@ u32 GameManager::OnUpdate(GameManager *arg)
             arg->globals->highScoreNumContinues = arg->globals->numRetries;
         }
     }
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(arg->globals->rngFloat3); i++)
     {
         if (arg->globals->rngFloat3[i] < 6543.0f || arg->globals->rngFloat3[i] > 106543.0f)
         {
             g_GameManager.csumFloat = -9999.0f;
         }
     }
-    for (i = 0; i < 2; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(arg->globals->rngFloat4); i++)
     {
         if (arg->globals->rngFloat4[i] < 6543.0f || arg->globals->rngFloat4[i] > 106543.0f)
         {
             g_GameManager.csumFloat = -9999.0f;
         }
     }
-    for (i = 0; i < 5; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(arg->globals->csumData); i++)
     {
         if (arg->globals->csumData[i] < 6543 || arg->globals->csumData[i] > 106543)
         {
@@ -381,9 +382,9 @@ void GameManager::DrawLoadingSprite()
 
     rect.left = 0.0f;
     rect.top = 0.0f;
-    rect.right = 640.0f;
-    rect.bottom = 480.0f;
-    g_AnmManager->InitializeAndSetActiveSprite(&spriteVm, 268);
+    rect.right = (f32)GAME_WINDOW_WIDTH;
+    rect.bottom = (f32)GAME_WINDOW_HEIGHT;
+    g_AnmManager->InitializeAndSetActiveSprite(&spriteVm, ANM_SPRITE_ASCII_LOADING);
     spritePos.x = 528.0f;
     spritePos.y = 448.0f;
     spritePos.z = 0.0f;
@@ -407,31 +408,31 @@ void GameManager::InitializeRngAndCsum()
     u32 i;
 
     g_GameManager.globals->cherryStart = g_Rng.GetRandomU32InRange(100000) + 6543;
-    for (i = 0; i < 7; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(g_GameManager.globals->rng1); i++)
     {
         g_GameManager.globals->rng1[i] = g_Rng.GetRandomU32InRange(100000) + 6543;
     }
-    for (i = 0; i < 8; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(g_GameManager.globals->rng2); i++)
     {
         g_GameManager.globals->rng2[i] = g_Rng.GetRandomU32InRange(100000) + 6543;
     }
-    for (i = 0; i < 2; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(g_GameManager.globals->rngFloat1); i++)
     {
         g_GameManager.globals->rngFloat1[i] = g_Rng.GetRandomFloatInRange(100000.0f) + 6543.0f;
     }
-    for (i = 0; i < 2; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(g_GameManager.globals->rngFloat2); i++)
     {
         g_GameManager.globals->rngFloat2[i] = g_Rng.GetRandomFloatInRange(100000.0f) + 6543.0f;
     }
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(g_GameManager.globals->rngFloat3); i++)
     {
         g_GameManager.globals->rngFloat3[i] = g_Rng.GetRandomFloatInRange(100000.0f) + 6543.0f;
     }
-    for (i = 0; i < 2; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(g_GameManager.globals->rngFloat4); i++)
     {
         g_GameManager.globals->rngFloat4[i] = g_Rng.GetRandomFloatInRange(100000.0f) + 6543.0f;
     }
-    for (i = 0; i < 5; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(g_GameManager.globals->csumData); i++)
     {
         g_GameManager.globals->csumData[i] = g_Rng.GetRandomU32InRange(100000) + 6543;
     }
@@ -443,26 +444,26 @@ void GameManager::InitializeRngAndCsum()
 
 ZunResult ResultScreen::ParseScores()
 {
+    i32 j;
     ScoreDat *scoreDat;
-    i32 local_14;
-    i32 local_c;
-    Catk *local_8;
+    i32 i;
+    Catk *catk;
 
-    local_8 = g_GameManager.catk;
+    catk = g_GameManager.catk;
     RegisterChain(2);
     memset(g_GameManager.catk, 0, sizeof(g_GameManager.catk));
-    for (local_c = 0; local_c < 141; local_c++, local_8++)
+    for (i = 0; i < SPELLCARD_COUNT; i++, catk++)
     {
-        local_8->base.magic = 0x4b544143;
-        local_8->base.th7kLen2 = sizeof(Catk);
-        local_8->base.th7kLen = sizeof(Catk);
-        local_8->base.version = 1;
-        local_8->idx = (i16)local_c;
-        for (local_14 = 0; local_14 < 7; local_14++)
+        catk->base.magic = 0x4b544143;
+        catk->base.th7kLen2 = sizeof(Catk);
+        catk->base.th7kLen = sizeof(Catk);
+        catk->base.version = 1;
+        catk->idx = (i16)i;
+        for (j = 0; j < ARRAY_SIZE_SIGNED(catk->numAttemptsPerShot); j++)
         {
-            local_8->numAttemptsPerShot[local_14] = 0;
-            local_8->numSuccessesPerShot[local_14] = 0;
-            local_8->highScorePerShot[local_14] = 0;
+            catk->numAttemptsPerShot[j] = 0;
+            catk->numSuccessesPerShot[j] = 0;
+            catk->highScorePerShot[j] = 0;
         }
     }
     scoreDat = OpenScore(FileSystem::GetPrefPath("score.dat").c_str());
@@ -648,22 +649,22 @@ ZunResult GameManager::AddedCallback(GameManager *arg)
             }
             switch (arg->currentStage + 1)
             {
-            case 2:
+            case STAGE2:
                 arg->cherry = arg->cherryMax;
                 break;
-            case 3:
+            case STAGE3:
                 arg->cherryMax += 50000;
                 arg->cherry = arg->cherryMax;
                 break;
-            case 4:
+            case STAGE4:
                 arg->cherryMax += 100000;
                 arg->cherry = arg->cherryMax;
                 break;
-            case 5:
+            case STAGE5:
                 arg->cherryMax += 150000;
                 arg->cherry = arg->cherryMax;
                 break;
-            case 6:
+            case STAGE6:
                 arg->cherryMax += 200000;
                 arg->cherry = arg->cherryMax;
                 break;
@@ -696,23 +697,23 @@ ZunResult GameManager::AddedCallback(GameManager *arg)
                     g_GameManager.plst.playDataByDifficulty[6].playCountPerShotType +
                         arg->shotTypeAndCharacter,
                     999999);
-                if (g_Supervisor.curState == 10)
+                if (g_Supervisor.curState == SUPERVISOR_STATE_RESTART_FROM_BEGINNING)
                 {
-                    IncrementCappedAgain(&((Plst *)(g_GameManager.pscr + 6))
-                                              ->playDataByDifficulty[g_GameManager.difficulty]
-                                              .clearCount,
-                                         999999);
-                    IncrementCappedAgain(&g_GameManager.plst.playDataByDifficulty[6].clearCount,
+                    IncrementCappedAgain(
+                        &g_GameManager.plst.playDataByDifficulty[g_GameManager.difficulty]
+                             .retryCount,
+                        999999);
+                    IncrementCappedAgain(&g_GameManager.plst.playDataByDifficulty[6].retryCount,
                                          999999);
                 }
                 if (g_GameManager.practice)
                 {
-                    IncrementCappedAgain(&((Plst *)(g_GameManager.pscr + 6))
-                                              ->playDataByDifficulty[g_GameManager.difficulty]
-                                              .extraClearCount,
-                                         999999);
                     IncrementCappedAgain(
-                        &g_GameManager.plst.playDataByDifficulty[6].extraClearCount, 999999);
+                        &g_GameManager.plst.playDataByDifficulty[g_GameManager.difficulty]
+                             .practiceCount,
+                        999999);
+                    IncrementCappedAgain(&g_GameManager.plst.playDataByDifficulty[6].practiceCount,
+                                         999999);
                 }
             }
         }
@@ -735,7 +736,7 @@ ZunResult GameManager::AddedCallback(GameManager *arg)
     arg->globals->pointItemsCollectedThisStage = 0;
     arg->globals->grazeInStage = 0;
     arg->isInPauseMenu = 0;
-    arg->currentStage = arg->currentStage + 1;
+    arg->currentStage++;
     if (!g_GameManager.replay)
     {
         shotTypeAndChar = g_GameManager.shotTypeAndCharacter;
@@ -757,7 +758,7 @@ ZunResult GameManager::AddedCallback(GameManager *arg)
     {
         switch (arg->currentStage)
         {
-        case 1:
+        case STAGE1:
             break;
         default:
             arg->globals->currentPower = 128.0f;
@@ -768,7 +769,7 @@ ZunResult GameManager::AddedCallback(GameManager *arg)
     if (g_GameManager.replay)
     {
         arg->InitializeRank();
-        ReplayManager::RegisterChain(1, g_GameManager.replayFilename);
+        ReplayManager::RegisterChain(TRUE, g_GameManager.replayFilename);
         oldSeed = g_Rng.seed;
         arg->RegenerateGameIntegrityCsum();
         g_Rng.seed = oldSeed;
@@ -840,7 +841,7 @@ ZunResult GameManager::AddedCallback(GameManager *arg)
         ;
     arg->isInRetryMenu = 0;
     arg->notInMenu = 1;
-    if (g_Supervisor.curState != 3)
+    if (g_Supervisor.curState != SUPERVISOR_STATE_NEXT_STAGE)
     {
         g_Supervisor.framerateMultiplier = 0.0f;
         g_Supervisor.fpsAccumulator = 0.0f;
@@ -1023,7 +1024,7 @@ void GameManager::IncreaseCherryMax(i32 amount)
     }
 }
 
-i32 GameManager::HasReachedMaxClears(i32 shotType)
+i32 GameManager::HasReachedMaxClearsAnyDifficulty(i32 shotType)
 {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if (MultiplayerGameplay::ShouldForceContentUnlocks())
@@ -1039,7 +1040,7 @@ i32 GameManager::HasReachedMaxClears(i32 shotType)
                : 1;
 }
 
-i32 GameManager::HasUnlockedPhantom(i32 shotType)
+i32 GameManager::HasUnlockedPhantasm(i32 shotType)
 {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if (MultiplayerGameplay::ShouldForceContentUnlocks())
@@ -1062,7 +1063,7 @@ i32 GameManager::HasUnlockedPhantom(i32 shotType)
     return this->clrd[shotType].difficultyClearedWithRetries[5] == 99;
 }
 
-i32 GameManager::HasReachedMaxClearsAllShotTypes()
+i32 GameManager::HasReachedMaxClearsAnyShotType()
 {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if (MultiplayerGameplay::ShouldForceContentUnlocks())
@@ -1070,14 +1071,14 @@ i32 GameManager::HasReachedMaxClearsAllShotTypes()
         return 1;
     }
 #endif
-    return HasReachedMaxClears(0) == 0 && HasReachedMaxClears(1) == 0 &&
-                   HasReachedMaxClears(2) == 0 && HasReachedMaxClears(3) == 0 &&
-                   HasReachedMaxClears(4) == 0 && HasReachedMaxClears(5) == 0
+    return HasReachedMaxClearsAnyDifficulty(0) == 0 && HasReachedMaxClearsAnyDifficulty(1) == 0 &&
+                   HasReachedMaxClearsAnyDifficulty(2) == 0 && HasReachedMaxClearsAnyDifficulty(3) == 0 &&
+                   HasReachedMaxClearsAnyDifficulty(4) == 0 && HasReachedMaxClearsAnyDifficulty(5) == 0
                ? 0
                : 1;
 }
 
-i32 GameManager::HasUnlockedPhantomAndMaxClears()
+i32 GameManager::HasUnlockedPhantasmAndMaxClears()
 {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if (MultiplayerGameplay::ShouldForceContentUnlocks())
@@ -1108,15 +1109,15 @@ i32 GameManager::HasUnlockedPhantomAndMaxClears()
         }
     }
 
-    if (this->clrd[0].difficultyClearedWithRetries[5] == 99)
+    if (this->clrd[SHOT_REIMU_A].difficultyClearedWithRetries[5] == 99)
     {
         spellCardsCaptured = 60;
     }
 
-    return this->clrd[0].difficultyClearedWithRetries[5] == 99 ||
-           this->clrd[1].difficultyClearedWithRetries[5] == 99 ||
-           this->clrd[2].difficultyClearedWithRetries[5] == 99 ||
-           this->clrd[3].difficultyClearedWithRetries[5] == 99 ||
-           this->clrd[4].difficultyClearedWithRetries[5] == 99 ||
-           this->clrd[5].difficultyClearedWithRetries[5] == 99;
+    return this->clrd[SHOT_REIMU_A].difficultyClearedWithRetries[5] == 99 ||
+           this->clrd[SHOT_REIMU_B].difficultyClearedWithRetries[5] == 99 ||
+           this->clrd[SHOT_MARISA_A].difficultyClearedWithRetries[5] == 99 ||
+           this->clrd[SHOT_MARISA_B].difficultyClearedWithRetries[5] == 99 ||
+           this->clrd[SHOT_SAKUYA_A].difficultyClearedWithRetries[5] == 99 ||
+           this->clrd[SHOT_SAKUYA_B].difficultyClearedWithRetries[5] == 99;
 }

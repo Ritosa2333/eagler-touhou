@@ -6,7 +6,7 @@
 #include "ZunTimer.hpp"
 #include "utils.hpp"
 
-typedef enum StageEaseMode
+enum StageEaseMode
 {
     STAGE_EASE_OUT_QUAD = 1,
     STAGE_EASE_OUT_CUBIC = 2,
@@ -15,7 +15,49 @@ typedef enum StageEaseMode
     STAGE_EASE_IN_CUBIC = 5,
     STAGE_EASE_IN_QUART = 6,
     STAGE_EASE_CUBIC_INTERP = 7, // this is not actually an easing mode
-} StageEaseMode;
+};
+
+enum SpellcardState
+{
+    SPELLCARD_STATE_INACTIVE,
+    SPELLCARD_STATE_STARTING,
+    SPELLCARD_STATE_ACTIVE,
+};
+
+enum StdOpcode
+{
+    STD_CAM_POS_KEY,
+    STD_FOG,
+    STD_FOG_INTERP,
+    STD_HALT,
+    STD_JUMP,
+    STD_CAM_POS,
+    STD_CAM_POS_INTERP,
+    STD_CAM_LOOKAT,
+    STD_CAM_LOOKAT_INTERP,
+    STD_CAM_UP,
+    STD_CAM_UP_INTERP,
+    STD_CAM_FOV,
+    STD_CAM_FOV_INTERP,
+    STD_COLOR,
+    STD_CAM_POS_INTERP_START,
+    STD_CAM_POS_INTERP_END,
+    STD_CAM_POS_INTERP_TAN_START,
+    STD_CAM_POS_INTERP_TAN_END,
+    STD_CAM_POS_INTERP_BEZIER,
+    STD_CAM_LOOKAT_INTERP_START,
+    STD_CAM_LOOKAT_INTERP_END,
+    STD_CAM_LOOKAT_INTERP_TAN_START,
+    STD_CAM_LOOKAT_INTERP_TAN_END,
+    STD_CAM_LOOKAT_INTERP_BEZIER,
+    STD_CAM_UP_INTERP_START,
+    STD_CAM_UP_INTERP_END,
+    STD_CAM_UP_INTERP_TAN_START,
+    STD_CAM_UP_INTERP_TAN_END,
+    STD_CAM_UP_INTERP_BEZIER,
+    STD_BG_SCRIPT1,
+    STD_BG_SCRIPT2,
+};
 
 struct StageAnms
 {
@@ -123,8 +165,7 @@ struct Stage
     static u32 OnDrawHighPrio(Stage *arg);
     static u32 OnDrawLowPrio(Stage *arg);
 
-    static void DrawColoredQuad(ZunRect *rect, u32 param_2, u32 param_3, u32 param_4,
-                                u32 param_5);
+    static void DrawColoredQuad(ZunRect *rect, u32 param_2, u32 param_3, u32 param_4, u32 param_5);
     ZunResult LoadStageData(const char *stdPath);
     i32 RenderObjects(i32 param_1);
     void SmoothBlendColor(ZunColor param_1);
@@ -159,7 +200,7 @@ struct Stage
     // pad 3
     i32 spellCardState;
     i32 ticksSinceSpellcardStarted;
-    i32 clearBackground;
+    ZunBool clearBackground;
     i32 numSpellcardVms;
     i32 spellcardVmsIdx;
     AnmVm spellcardVms[32];
@@ -182,7 +223,7 @@ struct Stage
     u8 cameraTeleported;
     // pad 3
     ZunColor color2;
-    i32 isDarkening;
+    ZunBool isDarkening;
 };
 
 extern Stage g_Stage;

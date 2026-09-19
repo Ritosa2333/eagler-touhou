@@ -8,13 +8,13 @@
 
 extern u64 g_LastPerfCounter;
 
-typedef enum RenderResult
+enum RenderResult
 {
     RENDER_RESULT_EXIT_SUCCESS_2 = -1,
     RENDER_RESULT_KEEP_RUNNING = 0,
     RENDER_RESULT_EXIT_SUCCESS = 1,
     RENDER_RESULT_EXIT_ERROR = 2
-} RenderResult;
+};
 
 struct GameWindow
 {
@@ -42,10 +42,6 @@ struct GameWindow
     i64 frequency;
     f64 accumulator = 0.0;
     bool usesRelativePath;
-    // pad 3
-    u32 screen_save_active;
-    u32 low_power_active;
-    u32 power_off_active;
 };
 
 extern GameWindow g_GameWindow;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "MidiOutput.hpp"
+#include "ZunBool.hpp"
 #include "ZunMath.hpp"
 #include "graphics/ZunGraphics.hpp"
 #include "inttypes.hpp"
@@ -27,29 +28,48 @@ extern u16 g_LastFrameGameInput;
 extern u16 g_IsEighthFrameOfHeldInput;
 extern u16 g_NumOfFramesInputsWereHeld;
 
-typedef enum MusicMode
+enum MusicMode
 {
-    MUSIC_OFF = 0,
-    MUSIC_WAV = 1,
-    MUSIC_MIDI = 2
-} MusicMode;
+    MUSIC_OFF,
+    MUSIC_WAV,
+    MUSIC_MIDI,
+};
 
-typedef enum Difficulty
+enum Difficulty
 {
-    DIFF_EASY = 0,
-    DIFF_NORMAL = 1,
-    DIFF_HARD = 2,
-    DIFF_LUNATIC = 3,
-    DIFF_EXTRA = 4,
-    DIFF_PHANTASM = 5
-} Difficulty;
+    DIFF_EASY,
+    DIFF_NORMAL,
+    DIFF_HARD,
+    DIFF_LUNATIC,
+    DIFF_EXTRA,
+    DIFF_PHANTASM,
+    DIFF_COUNT,
+};
 
-typedef enum EffectQuality
+enum EffectQuality
 {
-    QUALITY_WORST = 0,
-    QUALITY_MEDIUM = 1,
-    QUALITY_BEAUTIFUL = 2
-} EffectQuality;
+    QUALITY_WORST,
+    QUALITY_MEDIUM,
+    QUALITY_BEAUTIFUL,
+};
+
+enum SupervisorState
+{
+    SUPERVISOR_STATE_EXIT = -1,
+    SUPERVISOR_STATE_INIT,
+    SUPERVISOR_STATE_MAINMENU,
+    SUPERVISOR_STATE_GAMEMANAGER,
+    SUPERVISOR_STATE_NEXT_STAGE,
+    SUPERVISOR_STATE_EXIT_ERROR,
+    SUPERVISOR_STATE_RESULTSCREEN,
+    SUPERVISOR_STATE_RESULTSCREEN_FROM_GAME,
+    SUPERVISOR_STATE_REPLAY_END,
+    SUPERVISOR_STATE_MUSICROOM,
+    SUPERVISOR_STATE_ENDING,
+    SUPERVISOR_STATE_RESTART_FROM_BEGINNING,
+    SUPERVISOR_STATE_RESTART_STAGE,
+    SUPERVISOR_STATE_NEXT_STAGE_USELESS,
+};
 
 struct ControllerMapping
 {
@@ -89,7 +109,7 @@ struct GameConfiguration
         u32 opts;
         struct
         {
-            u32 loaded : 1;
+            u32 colorAddEmulation : 1;
             u32 noVertexBuffers : 1;
             u32 use16BitTextures : 1;
             u32 forceBackBufferClear : 1;
@@ -103,7 +123,7 @@ struct GameConfiguration
             u32 disableDinput : 1;
             u32 redrawEveryFrame : 1;
             u32 preloadBgm : 1;
-            u32 enableVsync : 1;
+            u32 disableVsync : 1;
         };
     };
 };
@@ -145,14 +165,19 @@ struct Supervisor
 
     i32 IsSlowMode();
 
-    i32 IsClearingBackbuffer()
+    ZunBool IsSoftwareTexturing()
+    {
+        return this->cfg.disableTextureBlend | this->cfg.colorAddEmulation;
+    }
+
+    ZunBool IsClearingBackbuffer()
     {
         return this->cfg.forceBackBufferClear | this->cfg.disableItemDrawAroundPlayfield;
     }
 
-    i32 VsyncEnabled()
+    ZunBool VsyncDisabled()
     {
-        return this->vsyncEnabled;
+        return this->vsyncDisabled;
     }
 
     ZunGraphics *gfxDevice;
@@ -169,9 +194,9 @@ struct Supervisor
     i32 prevState;
     i32 unused_160;
     i32 renderSkipFrames;
-    i32 isInEnding;
-    i32 vsyncEnabled;
-    i32 lockableBackBuffer;
+    ZunBool isInEnding;
+    ZunBool vsyncDisabled;
+    ZunBool lockableBackBuffer;
     u32 lastFrameTime;
     f32 effectiveFramerateMultiplier;
     MidiOutput *midiOutput;
@@ -179,7 +204,18 @@ struct Supervisor
     f32 fpsAccumulator;
     i16 curFps;
     i16 unused_18a;
-    u32 flags;
+    union {
+        u32 flags;
+        struct
+        {
+            u32 usingTnLHal : 1;
+            u32 hasLockableBackbuffer : 1;
+            u32 supports32BitTex : 1;
+            u32 timingBad : 1;
+            u32 deviceNotReset : 1;
+            u32 forceIntegerTimer : 1;
+        };
+    };
     u64 lastTotalPlayTimeUpdate;
     u64 currentTime;
     u64 perfFrequency;
@@ -192,8 +228,8 @@ struct Supervisor
     i32 maxTimingError;
     i32 timingSpikeAccumulator;
     i32 timingBadCount;
-    i32 checkTiming;
-    i32 fogEnabled;
+    ZunBool checkTiming;
+    ZunBool fogEnabled;
     i32 exeChecksum;
     i32 exeSize;
     i32 versionTableSize;
@@ -203,3 +239,10 @@ struct Supervisor
 extern Supervisor g_Supervisor;
 
 #define NUKE_SUPERVISOR() memset(&g_Supervisor, -1, sizeof(g_Supervisor))
+
+inline ZunBool IsInitialStageLoad()
+{
+    return g_Supervisor.curState != SUPERVISOR_STATE_NEXT_STAGE &&
+           g_Supervisor.curState != SUPERVISOR_STATE_RESTART_STAGE &&
+           g_Supervisor.curState != SUPERVISOR_STATE_NEXT_STAGE_USELESS;
+}

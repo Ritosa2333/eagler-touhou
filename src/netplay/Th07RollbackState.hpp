@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-struct BombEffects;
+struct ScreenEffect;
 struct Bullet;
 struct Effect;
 struct Enemy;

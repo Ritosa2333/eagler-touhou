@@ -36,6 +36,11 @@ namespace THPrac::Gui
 {
 void ShowLicenceInfo();
 }
+#else
+namespace thprac::portable::generated
+{
+struct SectionLabel;
+}
 #endif
 
 #ifdef __EMSCRIPTEN__
@@ -624,8 +629,12 @@ static void CommitMenuConfigToRuntime()
     g_Config.warp = 0;
     // State(1) THReset() happened before State(3), and State(3) only writes
     // dlg when SectionHasDlg() and phase when SpellPhase() exposes a selector.
+#if defined(THPRAC_PORTABLE_ENABLED)
     if (!(section && section->dialogue))
         g_Config.dialogue = false;
+#else
+    g_Config.dialogue = false;
+#endif
     if (SectionPhaseCount(g_Config.section) == 0)
         g_Config.phase = 0;
     g_Config.point = 0;

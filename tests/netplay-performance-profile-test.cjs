@@ -16,13 +16,16 @@ for (const coarse of [false, true]) {
       assert.equal(single.netplayRollbackPolicy,'full');
       const multi = resolve({netplayMode:'lan',touchEnabled:touch,limitPresentationTo60:cap},coarse);
       assert.equal(multi.limitPresentationTo60,cap);
-      assert.equal(multi.netplayInputDelayFrames,coarse || touch ? 6 : 3);
+      assert.equal(multi.netplayPerformanceProfile,'responsive');
+      assert.equal(multi.netplayInputDelayFrames,0);
       assert.equal(multi.netplayRollbackPolicy,'full');
       assert.equal(multi.netplaySnapshotPolicy,'frontier');
       assert.equal(multi.netplaySnapshotLayout,'runs');
       assert.equal(multi.netplaySnapshotCopy,'bulk');
       assert.equal(multi.netplaySnapshotRestore,'coalesced');
-      assert.equal(multi.netplayBulletSnapshot,'journal');
+      assert.equal(multi.netplayBulletSnapshot,'live');
+      assert.equal(multi.netplaySnapshotCheckpointFrames,3);
+      assert.equal(multi.netplayReliableInputRepair,true);
       const responsive = resolve({netplayMode:'lan',netplayInputDelayFrames:0,netplayRollbackPolicy:'full',touchEnabled:touch,limitPresentationTo60:cap},coarse);
       assert.equal(responsive.netplayInputDelayFrames,0);
       assert.equal(responsive.netplayRollbackPolicy,'full');
@@ -30,22 +33,21 @@ for (const coarse of [false, true]) {
       assert.equal(responsive.limitPresentationTo60,cap);
       assert.equal(responsive.netplayReliableInputRepair,true);
       assert.equal(responsive.netplaySnapshotCheckpointFrames,3);
-      assert.equal(multi.netplaySnapshotCheckpointFrames,2);
       assert.equal(resolve({netplayMode:'lan',netplayInputDelayFrames:0,netplaySnapshotCheckpointFrames:1},coarse).netplaySnapshotCheckpointFrames,1);
-      assert.equal(multi.netplayReliableInputRepair,false);
-      assert.equal(resolve({netplayMode:'lan',netplayInputDelayFrames:0,netplayReliableInputRepair:false},coarse).netplayReliableInputRepair,false);
+      assert.equal(resolve({netplayMode:'lan',netplayInputDelayFrames:0,netplayReliableInputRepair:false},coarse).netplayReliableInputRepair,true);
       assert.equal(resolve({netplayMode:'lan',netplayInputDelayFrames:0,netplayBulletSnapshot:'journal'},coarse).netplayBulletSnapshot,'journal');
-      assert.equal(resolve({netplayMode:'lan',netplayInputDelayFrames:0,netplayPerformanceProfile:'manual'},coarse).netplayBulletSnapshot,'journal');
       assert.equal(resolve({netplayMode:'lan',netplayInputDelayFrames:0,netplaySpectator:true},coarse).netplayBulletSnapshot,'journal');
-      const manual = resolve({netplayMode:'lan',netplayPerformanceProfile:'manual',touchEnabled:touch,limitPresentationTo60:cap},coarse);
+      const manual = resolve({debugHarness:'netplay-lan-stage1',netplayMode:'lan',netplayPerformanceProfile:'manual',touchEnabled:touch,limitPresentationTo60:cap},coarse);
       assert.equal(manual.limitPresentationTo60,cap);
-      assert.equal(manual.netplayInputDelayFrames,3);
+      assert.equal(manual.netplayInputDelayFrames,0);
       assert.equal(manual.netplayRollbackPolicy,'full');
       assert.equal(manual.netplaySnapshotPolicy,'always');
       assert.equal(manual.netplaySnapshotCheckpointFrames,2);
-      assert.equal(resolve({netplayMode:'lan',netplayRollbackPolicy:'buffered'},coarse).netplayRollbackPolicy,'buffered');
+      assert.equal(resolve({netplayMode:'lan',netplayRollbackPolicy:'buffered'},coarse).netplayRollbackPolicy,'full');
+      assert.equal(resolve({netplayMode:'lan',netplayInputDelayFrames:6},coarse).netplayInputDelayFrames,0);
+      assert.equal(resolve({debugHarness:'netplay-lan-stage1',netplayMode:'lan',netplayRollbackPolicy:'buffered'},coarse).netplayRollbackPolicy,'buffered');
       for (const delay of [0,1,3,6,12]) {
-        assert.equal(resolve({netplayMode:'lan',touchEnabled:touch,netplayInputDelayFrames:delay},coarse).netplayInputDelayFrames,delay);
+        assert.equal(resolve({debugHarness:'netplay-lan-stage1',netplayMode:'lan',touchEnabled:touch,netplayInputDelayFrames:delay},coarse).netplayInputDelayFrames,delay);
       }
     }
   }
@@ -55,4 +57,4 @@ const assignment = shell.split('Module.eaglerOptions = {')[1].split('};')[0];
 assert.ok(assignment.includes('...resolveNetplayPerformanceProfile'));
 for (const key of ['netplayInputDelayFrames','netplayRollbackPolicy','netplaySnapshotPolicy','netplaySnapshotLayout','netplaySnapshotCopy','netplaySnapshotRestore','limitPresentationTo60'])
   assert.ok(!new RegExp(`\\b${key}\\s*:`).test(assignment), `profile overwritten: ${key}`);
-console.log('netplay performance defaults: PASS mobile, desktop, ordinary, explicit/manual overrides');
+console.log('netplay performance defaults: PASS single production 0/full profile plus diagnostic overrides');

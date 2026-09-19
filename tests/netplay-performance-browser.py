@@ -87,7 +87,6 @@ def main() -> int:
     parser.add_argument("--rtc-input-blackout-ms", type=float, default=0,
                         help="Drop fast-channel input sends for this duration after frame 900; reliable repairs still get the full injected latency")
     parser.add_argument("--prediction-window", type=int, choices=range(1, 13), default=12)
-    parser.add_argument("--touch-prediction", choices=("legacy", "stable"), default="legacy")
     parser.add_argument("--touch-delta-prediction-frames", type=int, choices=range(7), default=0)
     parser.add_argument("--touch-quantization", type=float, default=0.0)
     parser.add_argument("--touch-equivalent-absorb", action="store_true")
@@ -297,7 +296,6 @@ def main() -> int:
                                 else args.input_delay),
                             "rollbackPolicy": ("buffered" if
                                 args.slow_buffered_policy and player == args.slow_player else "full"),
-                            "prediction": args.touch_prediction,
                             "touchDeltaPredictionFrames": args.touch_delta_prediction_frames,
                             "touchQuantization": args.touch_quantization,
                             "touchEquivalentAbsorb": int(args.touch_equivalent_absorb),

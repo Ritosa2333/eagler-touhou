@@ -9,23 +9,6 @@
 #include "Multiplayer.hpp"
 #endif
 
-typedef enum Character
-{
-    CHAR_REIMU = 0,
-    CHAR_MARISA = 1,
-    CHAR_SAKUYA = 2
-} Character;
-
-typedef enum ShotType
-{
-    SHOT_REIMU_A = 0,
-    SHOT_REIMU_B = 1,
-    SHOT_MARISA_A = 2,
-    SHOT_MARISA_B = 3,
-    SHOT_SAKUYA_A = 4,
-    SHOT_SAKUYA_B = 5
-} ShotType;
-
 struct ZunGlobals
 {
     u32 guiScore;
@@ -142,9 +125,9 @@ struct GameManager
         this->csumFloat = (f32)(this->globals->csumAsSum + this->globals->rng2[3]);
     }
 
-    i32 CheckGameIntegrity()
+    ZunBool CheckGameIntegrity()
     {
-        return 0;
+        return FALSE;
     }
 
     void AddCurrentPower(i32 amount);
@@ -181,7 +164,7 @@ struct GameManager
         RegenerateGameIntegrityCsum();
     }
 
-    void SetReplay(i32 replay)
+    void SetIsReplay(ZunBool replay)
     {
         this->replay = replay;
     }
@@ -191,7 +174,7 @@ struct GameManager
         this->globals->score += score / 10;
     }
 
-    i32 IsCherryAtMax()
+    ZunBool IsCherryAtMax()
     {
         return this->cherry >= this->cherryMax;
     }
@@ -217,10 +200,10 @@ struct GameManager
     static i32 ByteCsumAccumulator(u8 *param_1, i32 param_2);
     i32 ComputeGameIntegrityCsum();
 
-    i32 HasReachedMaxClears(i32 shotType);
-    i32 HasReachedMaxClearsAllShotTypes();
-    i32 HasUnlockedPhantom(i32 shotType);
-    i32 HasUnlockedPhantomAndMaxClears();
+    ZunBool HasReachedMaxClearsAnyDifficulty(i32 shotType);
+    ZunBool HasReachedMaxClearsAnyShotType();
+    ZunBool HasUnlockedPhantasm(i32 shotType);
+    ZunBool HasUnlockedPhantasmAndMaxClears();
 
     void AddBombsRemaining(i32 amount);
     void AddCherryPlus(i32 amount);
@@ -252,12 +235,12 @@ struct GameManager
     // pad 2
     i32 difficulty;
     u32 difficultyMask;
-    struct Catk catk[141];
-    struct Catk catkAgain[141];
-    struct Clrd clrd[6];
+    struct Catk catk[SPELLCARD_COUNT];
+    struct Catk catkAgain[SPELLCARD_COUNT];
+    struct Clrd clrd[SHOT_COUNT];
     struct Pscr pscr[6][6][4];
     struct Plst plst;
-    i32 isPaused;
+    ZunBool isPaused;
     i8 powerItemCountForScore;
     u8 character;
     u8 shotType;
@@ -292,7 +275,7 @@ struct GameManager
     i32 cherryMax;
     i32 cherry;
     i32 cherryPlus;
-    i32 phantasmUnlocked;
+    ZunBool phantasmUnlocked;
     i32 playTimeAll; // ZUN name: PlayTimeAll
     u32 bulletLagTime;
     i32 maxRetries;

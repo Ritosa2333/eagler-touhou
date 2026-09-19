@@ -11,7 +11,7 @@ Item::Item() {}
 
 static void LegacyDrawAppearance(Item &item)
 {
-    if (item.currentPosition.y < -8.0f)
+    if (item.pos.y < -8.0f)
     {
         if (item.isOnscreen)
         {
@@ -19,7 +19,7 @@ static void LegacyDrawAppearance(Item &item)
             item.isOnscreen = 0;
             item.sprite.zWriteDisable = 1;
         }
-        auto alpha = 255 - static_cast<int>((8.0f - item.currentPosition.y) * 255.0f / 128.0f);
+        auto alpha = 255 - static_cast<int>((8.0f - item.pos.y) * 255.0f / 128.0f);
         if (alpha < 64) alpha = 64;
         item.sprite.color.color = (item.sprite.color.color & 0xffffffu) | (unsigned(alpha) << 24);
     }
@@ -43,7 +43,7 @@ int main()
         reference.itemType = rng() % 12;
         reference.isOnscreen = rng() % 2;
         reference.sprite.color.color = rng();
-        reference.currentPosition.y = run % 4 == 0 ? -8.0f : float(int(rng() % 6000) - 4000) / 16;
+        reference.pos.y = run % 4 == 0 ? -8.0f : float(int(rng() % 6000) - 4000) / 16;
         actual = reference;
         LegacyDrawAppearance(reference);
         Graphics::UpdateItemPresentation(actual, [](AnmVm &vm, int sprite) { vm.activeSpriteIdx = sprite; });

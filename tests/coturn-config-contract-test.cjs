@@ -1,9 +1,10 @@
 const { mkdtempSync, readFileSync, rmSync } = require('node:fs');
 const { spawnSync } = require('node:child_process');
-const { join, resolve } = require('node:path');
+const { join } = require('node:path');
+const { requireHostFile } = require('./integration-support.cjs');
 const { tmpdir } = require('node:os');
 
-const renderer = resolve(__dirname, '../../eagler-touhou/server/render-coturn-config.cjs');
+const renderer = requireHostFile('server/render-coturn-config.cjs', 'coturn config renderer');
 
 function run(extraEnv = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'th07-coturn-'));

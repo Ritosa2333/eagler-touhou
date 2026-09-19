@@ -185,9 +185,9 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
         else if (std::strcmp(argv[index], "--character-select-sakuya") == 0)
             g_CharacterSelectVisualTestIndex = CHAR_SAKUYA;
         else if (std::strcmp(argv[index], "--options-menu-audit") == 0)
-            g_MenuStringVisualTestState = STATE_OPTIONS;
+            g_MenuStringVisualTestState = MENU_STATE_OPTIONS;
         else if (std::strcmp(argv[index], "--key-config-menu-audit") == 0)
-            g_MenuStringVisualTestState = STATE_KEY_CONFIG;
+            g_MenuStringVisualTestState = MENU_STATE_KEY_CONFIG;
         else if (std::strcmp(argv[index], "--touch-selftest") == 0)
             g_TouchStateSelfTest = true;
         else if (std::strcmp(argv[index], "--replay-extension-selftest") == 0)
@@ -457,7 +457,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
         g_GameManager.shotType = 0;
         g_GameManager.practice = 0;
         g_GameManager.demo = 0;
-        g_GameManager.SetReplay(0);
+        g_GameManager.SetIsReplay(0);
         if (g_NetplayLanProduction)
         {
 #ifdef __EMSCRIPTEN__
@@ -582,7 +582,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
     if (g_MenuStringVisualTestState >= 0 && !g_MenuStringVisualTestDispatched &&
         g_MainMenuForDebug && g_MainMenuForDebug->calcChain)
     {
-        g_MainMenuForDebug->SetGameState(static_cast<GameState>(g_MenuStringVisualTestState));
+        g_MainMenuForDebug->SetMenuState(static_cast<MenuState>(g_MenuStringVisualTestState));
         g_MenuStringVisualTestDispatched = true;
         SDL_Log("th07 strings_lookup menu audit: dispatch state=%d", g_MenuStringVisualTestState);
     }
@@ -596,7 +596,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
         g_GameManager.difficulty = 1;
         g_GameManager.character = g_CharacterSelectVisualTestIndex;
         g_GameManager.practice = 0;
-        g_MainMenuForDebug->SetGameState(STATE_NORMAL_SELECT_CHARACTER);
+        g_MainMenuForDebug->SetMenuState(MENU_STATE_NORMAL_SELECT_CHARACTER);
         g_CharacterSelectVisualTestDispatched = true;
         SDL_Log("th07 character-select audit: dispatch character=%d",
                 g_CharacterSelectVisualTestIndex);
@@ -672,7 +672,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
         g_GameManager.shotType = 0;
         g_GameManager.practice = 0;
         g_GameManager.demo = 0;
-        g_GameManager.SetReplay(0);
+        g_GameManager.SetIsReplay(0);
         g_GameManager.currentStage = g_StageVisualTestIndex;
         g_GameManager.finished = 0;
         MainMenu *menu = g_MainMenuForDebug;
@@ -708,7 +708,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
         g_GameManager.character = 0;
         g_GameManager.shotType = 0;
         g_GameManager.practice = 1;
-        g_MainMenuForDebug->SetGameState(STATE_SELECT_PRACTICE_STAGE);
+        g_MainMenuForDebug->SetMenuState(MENU_STATE_SELECT_PRACTICE_STAGE);
         g_MainMenuForDebug->stateTimer = 0;
         g_ThpracMenuVisualTestDispatched = true;
     }
@@ -884,8 +884,8 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result)
         // model
         // however, this is really only ever used when the application is restarting after enabling
         // vsync. afaik, it should be pretty safe to just not have the application restart after
-        // enabling vsync since theres nothing before the checkvsync call that needs vsyncenabled to
-        // be there beforehand
+        // enabling vsync since theres nothing before the checkvsync call that needs vsyncDisabled
+        // to be there beforehand
     }
 #ifdef TH_DEV_TOOLS
     if (!g_TouchStateSelfTest && !g_ReplayExtensionSelfTest)

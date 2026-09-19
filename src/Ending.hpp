@@ -3,14 +3,16 @@
 #include "AnmVm.hpp"
 #include "Chain.hpp"
 
-typedef enum EndingFadeType
+enum EndingFadeType
 {
-    ENDING_FADE_NONE = 0,
-    ENDING_FADE_OUT_BLACK = 1,
-    ENDING_FADE_IN_BLACK = 2,
-    ENDING_FADE_OUT_WHITE = 3,
-    ENDING_FADE_IN_WHITE = 4,
-} EndingFadeType;
+    ENDING_FADE_NONE,
+    ENDING_FADE_OUT_BLACK,
+    ENDING_FADE_IN_BLACK,
+    ENDING_FADE_OUT_WHITE,
+    ENDING_FADE_IN_WHITE,
+};
+
+#define MAX_ENDING_SPRITES 15
 
 struct Ending
 {
@@ -36,6 +38,12 @@ struct Ending
     ZunResult LoadEnding(const char *endFilePath);
     ZunResult ParseEndFile();
     i32 ReadEndFileParameter();
+    void UpdatePrev()
+    {
+        this->prevBackgroundPos = this->backgroundPos;
+        for (i32 i = 0; i < MAX_ENDING_SPRITES + 1; i++)
+            this->sprites[i].UpdatePrev();
+    }
 #if defined(TH_DEV_TOOLS) && defined(TH_ENABLE_THCRAP)
     static bool DebugTranslatedLineSelfTest();
 #endif
@@ -46,8 +54,9 @@ struct Ending
     ChainElem *calcChain;
     ChainElem *drawChain;
     Float2 backgroundPos;
+    Float2 prevBackgroundPos;
     f32 backgroundScrollSpeed;
-    AnmVm sprites[16];
+    AnmVm sprites[MAX_ENDING_SPRITES + 1];
     char *endFileData;
     i32 hasSeenEnding;
     ZunTimer timer1;
@@ -61,6 +70,7 @@ struct Ending
     i32 timesFileParsed;
     ZunColor textColor;
     ZunColor endingFadeRectColor;
+    ZunColor prevEndingFadeRectColor;
     i32 timeFading;
     i32 fadeFrames;
     i32 fadeType;

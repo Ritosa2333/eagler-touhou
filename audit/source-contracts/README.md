@@ -12,3 +12,14 @@ tests, and real build/runtime validation.
 Keep source-string checks here rather than under `tests/`. Avoid assertions on
 comments, whitespace, incidental statement formatting, or historical hunk
 counts unless the file is explicitly a historical migration audit.
+
+## Maintainer entry points
+
+Static source/porting audits live here rather than under `scripts/` or `tests/`:
+
+- `thprac-source-contract.mjs`, `thprac-upstream-hooks.mjs`, `thprac-address-map.mjs`
+- `thcrap-source-contract.mjs`, `thcrap-proof-ledger.mjs`
+- `music-room-contract.mjs`
+- `window-mode-contract.mjs`
+
+These tools compare source ownership and porting invariants. Their PASS result is structural evidence only and must not be reported as runtime/gameplay acceptance.

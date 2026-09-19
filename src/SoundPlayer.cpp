@@ -1,4 +1,5 @@
 #include "SoundPlayer.hpp"
+#include "utils.hpp"
 #ifdef TH_ENABLE_NETPLAY
 #include "netplay/NetplaySideEffects.hpp"
 #endif
@@ -6,6 +7,7 @@
 #include <algorithm>
 #include <climits>
 #include <cstdio>
+#include <SDL3/SDL_hints.h>
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>
@@ -487,7 +489,7 @@ static bool ThBgmDataSource_init_ogg(ThBgmDataSource *pBgm, const char *path, Th
 SoundPlayer::SoundPlayer()
 {
     memset(this, 0, sizeof(SoundPlayer));
-    for (i32 i = 0; i < 128; i++)
+    for (i32 i = 0; i < ARRAY_SIZE_SIGNED(this->unusedSoundVolRelated); i++)
     {
         this->unusedSoundVolRelated[i] = -1;
     }
@@ -565,7 +567,7 @@ bool SoundPlayer::PumpWebAudio()
         return true;
     }
 
-    // A/B robustness envelope paired with the Web SDL backend's 4096-frame
+    // A/B robustness envelope paired with the configured 4096-frame Web SDL
     // ScriptProcessor block. Vorbis/miniaudio work stays in small 1024-frame
     // slices; only the queued safety window is deeper.
     constexpr ma_uint64 FRAMES_PER_CHUNK = 1024;
@@ -634,7 +636,7 @@ ZunResult SoundPlayer::InitializeSound()
     ma_engine_config engineConfig;
 
     memset(this, 0, sizeof(SoundPlayer));
-    for (i32 i = 0; i < 128; i++)
+    for (i32 i = 0; i < ARRAY_SIZE_SIGNED(this->unusedSoundVolRelated); i++)
     {
         this->unusedSoundVolRelated[i] = -1;
     }
@@ -669,6 +671,11 @@ ZunResult SoundPlayer::InitializeSound()
     }
 
     SDL_AudioSpec desiredAudio = {SDL_AUDIO_F32, 2, 44100};
+    // SDL's stock Emscripten backend doubles SDL_GetDefaultSampleFramesFromFreq().
+    // Requesting 2048 therefore yields the 4096-frame ScriptProcessor block
+    // that this Runtime's Web audio queue is tuned around, without modifying
+    // the vendored SDL submodule in-place.
+    SDL_SetHintWithPriority(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, "2048", SDL_HINT_OVERRIDE);
     this->webAudioStream =
         SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desiredAudio, NULL, NULL);
     if (!this->webAudioStream)
@@ -710,7 +717,7 @@ ZunResult SoundPlayer::Release()
         return ZUN_SUCCESS;
     }
 
-    for (i = 0; i < 128; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(this->soundBuffers); i++)
     {
         if (this->soundBuffers[i])
         {
@@ -1188,11 +1195,11 @@ ZunResult SoundPlayer::InitSoundBuffers()
         return ZUN_ERROR;
     }
 
-    for (i = 0; i < 5; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(this->soundQueue); i++)
     {
         this->soundQueue[i] = -1;
     }
-    for (i = 0; i < 30; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(g_SFXList); i++)
     {
         if (LoadSound(i, g_SFXList[i]) != ZUN_SUCCESS)
         {
@@ -1201,7 +1208,7 @@ ZunResult SoundPlayer::InitSoundBuffers()
             return ZUN_ERROR;
         }
     }
-    for (i = 0; (u32)i < 38; i++)
+    for (i = 0; i < ARRAY_SIZE(SOUND_BUFFER_IDX_VOL); i++)
     {
         i32 bufIdx = SOUND_BUFFER_IDX_VOL[i].bufferIdx;
 
@@ -1446,7 +1453,7 @@ loop:
     default:
         goto loop_breakout;
     }
-    for (i = 0; i < 31; i++, commandCursor++)
+    for (i = 0; i < MAX_SOUND_COMMANDS; i++, commandCursor++)
     {
         if (commandCursor->opcode == 0)
         {

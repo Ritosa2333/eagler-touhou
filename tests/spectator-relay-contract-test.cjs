@@ -1,7 +1,8 @@
 const { spawn } = require('node:child_process');
 const net = require('node:net');
-const path = require('node:path');
-const WebSocket = require(path.join(__dirname, '..', '..', 'eagler-touhou', 'node_modules', 'ws'));
+const { requireHostFile, requireHostNodeModule } = require('./integration-support.cjs');
+const WebSocket = requireHostNodeModule('ws');
+const relayPath = requireHostFile('server/netplay-relay.mjs', 'netplay relay');
 
 const port = 19000 + Math.floor(Math.random() * 20000);
 const room = `spectator-${Date.now()}`;
@@ -9,7 +10,7 @@ const ids = {
   p1: 'player_one_0001', p2: 'player_two_0002', spectator: 'spectator_0003',
   late: 'late_join_0004', tooLate: 'too_late_0005'
 };
-const relay = spawn(process.execPath, [path.join(__dirname, '..', '..', 'eagler-touhou', 'server', 'netplay-relay.mjs')], {
+const relay = spawn(process.execPath, [relayPath], {
   env: {
     ...process.env,
     TH07_RELAY_HOST: '127.0.0.1',

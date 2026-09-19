@@ -17,13 +17,12 @@ import threading
 import time
 from pathlib import Path
 
+from integration_support import require_host_relay
 from playwright.sync_api import sync_playwright
 
 
 ROOT = Path(__file__).resolve().parents[1]
-WORKSPACE = ROOT.parent
-RELAY_ROOT = WORKSPACE / "eagler-touhou"
-RELAY_SCRIPT = RELAY_ROOT / "server" / "netplay-relay.mjs"
+HOST_ROOT, RELAY_SCRIPT = require_host_relay()
 
 
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
@@ -110,7 +109,7 @@ def main() -> int:
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
         relay = subprocess.Popen(
-            ["node", str(RELAY_SCRIPT)], cwd=RELAY_ROOT, env=env,
+            ["node", str(RELAY_SCRIPT)], cwd=HOST_ROOT, env=env,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
         )
         failures = [""] * player_count

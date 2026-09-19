@@ -1,4 +1,4 @@
-#include "netplay/PartitionedPoolJournal.hpp"
+#include <eagler/netplay/PartitionedPoolJournal.hpp>
 #include <array>
 #include <cassert>
 #include <cstring>

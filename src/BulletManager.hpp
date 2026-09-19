@@ -7,36 +7,36 @@
 
 extern u32 *g_BulletColor;
 
-typedef enum BulletState
+enum BulletState
 {
-    BULLET_INACTIVE = 0,
-    BULLET_NORMAL = 1,
-    BULLET_SPAWNING_FAST = 2,
-    BULLET_SPAWNING_NORMAL = 3,
-    BULLET_SPAWNING_SLOW = 4,
-    BULLET_DESPAWN = 5,
-    BULLET_END_ARRAY = 6
-} BulletState;
+    BULLET_INACTIVE,
+    BULLET_NORMAL,
+    BULLET_SPAWNING_FAST,
+    BULLET_SPAWNING_NORMAL,
+    BULLET_SPAWNING_SLOW,
+    BULLET_DESPAWN,
+    BULLET_END_ARRAY,
+};
 
-typedef enum LaserState
+enum LaserState
 {
-    LASER_SPAWNING = 0,
-    LASER_ACTIVE = 1,
-    LASER_DESPAWNING = 2
-} LaserState;
+    LASER_SPAWNING,
+    LASER_ACTIVE,
+    LASER_DESPAWNING,
+};
 
-typedef enum BulletAimMode
+enum BulletAimMode
 {
-    BULLET_AIM_SPREAD_AIMED = 0,
-    BULLET_AIM_SPREAD_ABSOLUTE = 1,
-    BULLET_AIM_RING_AIMED = 2,
-    BULLET_AIM_RING_ABSOLUTE = 3,
-    BULLET_AIM_RING_SHIFTED_AIMED = 4,
-    BULLET_AIM_RING_SHIFTED_ABSOLUTE = 5,
-    BULLET_AIM_ANGLE_RANDOM = 6,
-    BULLET_AIM_RING_SPEED_RANDOM = 7,
-    BULLET_AIM_RANDOM = 8,
-} BulletAimMode;
+    BULLET_AIM_SPREAD_AIMED,
+    BULLET_AIM_SPREAD_ABSOLUTE,
+    BULLET_AIM_RING_AIMED,
+    BULLET_AIM_RING_ABSOLUTE,
+    BULLET_AIM_RING_SHIFTED_AIMED,
+    BULLET_AIM_RING_SHIFTED_ABSOLUTE,
+    BULLET_AIM_ANGLE_RANDOM,
+    BULLET_AIM_RING_SPEED_RANDOM,
+    BULLET_AIM_RANDOM,
+};
 
 struct BulletTypeInfo
 {
@@ -204,7 +204,7 @@ struct Laser
     i32 duration;
     i32 endTime;
     i32 hitboxEndTime;
-    i32 inUse;
+    ZunBool isInUse;
     ZunTimer timer;
     u16 flags;
     i16 color;
@@ -248,8 +248,8 @@ struct Bullet
     ZunVec3 velocity;
     ZunVec3 unused_ba4;
     f32 speed;
-    f32 acceleration;
-    f32 angularVelocity;
+    f32 accel;
+    f32 angleVel;
     f32 angle;
     f32 prevAngle;
     f32 unused_bc0;
@@ -275,9 +275,22 @@ struct Bullet
     BulletCommandState commandStates[5];
 };
 
+#define MAX_BULLETS 1024
+
 struct BulletManager
 {
-    BulletManager();
+    BulletManager()
+    {
+        Initialize();
+    }
+
+    void Initialize()
+    {
+        memset(this, 0, sizeof(BulletManager));
+        this->bulletsStart = this->bullets;
+        this->bullets[MAX_BULLETS].state = BULLET_END_ARRAY;
+        this->itemType = ITEM_POINT_BULLET;
+    }
 
     static ZunResult RegisterChain(const char *etamaAnmPath);
     static void CutChain();
@@ -287,9 +300,7 @@ struct BulletManager
     static u32 OnUpdate(BulletManager *arg);
     static u32 OnDraw(BulletManager *arg);
 
-    void Initialize();
-
-    i32 DespawnBullets(i32 param_1, i32 turnIntoItem);
+    i32 DespawnBullets(i32 param_1, ZunBool turnIntoItem);
     void RemoveAllBullets(i32 param_1);
     void RemoveBulletsInRadius(ZunVec3 *centerPos, f32 radius);
     static void SetActiveSpriteByResolution(AnmVm *sprite, AnmVm *bulletTypeTemplate,
@@ -300,7 +311,7 @@ struct BulletManager
     void StopBulletMovement();
 
     BulletTypeSprites bulletTypeTemplates[16];
-    Bullet bullets[1025];
+    Bullet bullets[MAX_BULLETS + 1];
     Laser lasers[64];
     i32 bulletCount;
     i32 screenClearTime;

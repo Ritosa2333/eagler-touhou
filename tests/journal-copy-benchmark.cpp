@@ -1,6 +1,6 @@
 // Isolate copy backend under the SAME legacy browser compiler target. No FPS
 // claim: measure only copying identical live checkpoint bytes and undoing them.
-#include "netplay/RollbackJournal.hpp"
+#include <eagler/netplay/RollbackJournal.hpp>
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>

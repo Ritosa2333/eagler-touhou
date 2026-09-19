@@ -1,4 +1,4 @@
-#include "netplay/BrowserPeerTransport.hpp"
+#include <eagler/netplay/BrowserPeerTransport.hpp>
 
 #include <array>
 #include <cstdint>

@@ -1,7 +1,7 @@
 #include "EaglerOptions.hpp"
 #include "Controller.hpp"
 #ifdef TH_ENABLE_NETPLAY
-#include "netplay/NetplayInput.hpp"
+#include <eagler/netplay/NetplayInput.hpp>
 #endif
 
 #include <SDL3/SDL.h>

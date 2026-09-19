@@ -93,15 +93,12 @@ endif()
 
 set(EAGLER_COMMON_ROOT "${CMAKE_SOURCE_DIR}/third_party/eagler-common"
     CACHE PATH "Pinned eagler-common checkout; override explicitly for development only")
-if(NOT EXISTS "${EAGLER_COMMON_ROOT}/include/eagler/netplay/NetplayProtocol.hpp")
-    message(FATAL_ERROR "Replay extension requires the pinned eagler-common protocol headers at ${EAGLER_COMMON_ROOT}")
+if(NOT EXISTS "${EAGLER_COMMON_ROOT}/cmake/EaglerCommon.cmake")
+    message(FATAL_ERROR "TH07 requires the pinned eagler-common checkout at ${EAGLER_COMMON_ROOT}")
 endif()
+include("${EAGLER_COMMON_ROOT}/cmake/EaglerCommon.cmake")
 
 if(TH_ENABLE_NETPLAY OR TH_ENABLE_MULTIPLAYER_GAMEPLAY)
-    if(NOT EXISTS "${EAGLER_COMMON_ROOT}/cmake/EaglerCommon.cmake")
-        message(FATAL_ERROR "Multiplayer gameplay requires the pinned eagler-common checkout at ${EAGLER_COMMON_ROOT}")
-    endif()
-    include("${EAGLER_COMMON_ROOT}/cmake/EaglerCommon.cmake")
     list(APPEND SOURCES
         src/multiplayer/GameplaySession.cpp
         src/MultiplayerResources.cpp
@@ -159,15 +156,15 @@ if(NOT EMSCRIPTEN AND NOT ANDROID AND NOT APPLE)
     endif()
 endif()
 
-target_include_directories(${TH_EXEC_NAME} PRIVATE
-    src
-    src/pbg4
-    "${EAGLER_COMMON_ROOT}/include")
-if(TH_ENABLE_NETPLAY OR TH_ENABLE_MULTIPLAYER_GAMEPLAY)
-    eagler_common_link_netplay_input(${TH_EXEC_NAME})
-endif()
+target_include_directories(${TH_EXEC_NAME} PRIVATE src src/pbg4)
 if(TH_ENABLE_NETPLAY)
     eagler_common_link_netplay_base(${TH_EXEC_NAME})
+    eagler_common_link_browser_peer_transport(${TH_EXEC_NAME})
+else()
+    eagler_common_link_netplay_headers(${TH_EXEC_NAME})
+endif()
+if(TH_ENABLE_NETPLAY OR TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    eagler_common_link_netplay_input(${TH_EXEC_NAME})
 endif()
 if(TH_ENABLE_THPRAC)
     target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_ENABLE_THPRAC)

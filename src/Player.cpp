@@ -27,7 +27,7 @@
 #include "multiplayer/GameplaySession.hpp"
 #endif
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-#include "netplay/NetplayInput.hpp"
+#include <eagler/netplay/NetplayInput.hpp>
 #include "netplay/NetplaySideEffects.hpp"
 #include "netplay/Th07RollbackState.hpp"
 #endif
@@ -256,7 +256,7 @@ void DrawEaglerHitboxVm(const Player *player)
     if (!g_EaglerHitboxVmActive || !EaglerOptions::AlwaysShowHitbox() ||
         g_GameManager.isInRetryMenu)
         return;
-    ZunVec3 drawPos = player->prevPositionCenter.Lerp(player->positionCenter, g_RenderAlpha);
+    ZunVec3 drawPos = player->prevPos.Lerp(player->pos, g_RenderAlpha);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if (MultiplayerGameplay::IsMultiplayer() &&
         player->initParam < TH07_MULTI_MAX_PLAYERS)
@@ -383,8 +383,8 @@ Player *SelectPowerTransferReceiver(const Player *giver)
         const i32 power = GetPlayerPower(playerId);
         if (power >= 128)
             continue;
-        const f32 dx = giver->positionCenter.x - candidate->positionCenter.x;
-        const f32 dy = giver->positionCenter.y - candidate->positionCenter.y;
+        const f32 dx = giver->pos.x - candidate->pos.x;
+        const f32 dy = giver->pos.y - candidate->pos.y;
         if (dx * dx + dy * dy > 400.0f)
             continue;
         if (!best || power < bestPower ||
@@ -426,7 +426,7 @@ void UpdatePowerTransfer(Player *giver)
     g_powerGiveWindow[id] = POWER_GIVE_TAP_WINDOW;
     if (g_powerGiveTaps[id] < POWER_GIVE_TAPS_REQUIRED)
     {
-        g_SoundPlayer.PlaySoundByIdx(SOUND_21, 0);
+        g_SoundPlayer.PlaySoundByIdx(SOUND_ITEM_GET, 0);
         return;
     }
 
@@ -439,14 +439,14 @@ void UpdatePowerTransfer(Player *giver)
     AddPlayerPower(id, -POWER_GIVE_AMOUNT);
     for (i32 index = 0; index < 6; ++index)
     {
-        ZunVec3 spawn = giver->positionCenter;
+        ZunVec3 spawn = giver->pos;
         spawn.x += (f32)((index % 3) - 1) * 10.0f;
         spawn.y += (f32)((index / 3) - 1) * 8.0f;
         g_ItemManager.SpawnItem(
             &spawn, index < 2 ? ITEM_POWER_BIG : ITEM_POWER_SMALL,
             GetLifeTransferSpawnState(receiver->initParam));
     }
-    g_Gui.showPower = 2;
+    g_Gui.powerDisplayUpdateFrames = 2;
     g_SoundPlayer.PlaySoundByIdx(SOUND_POWERUP, 0);
 }
 
@@ -469,8 +469,8 @@ Player *SelectLifeTransferReceiver(const Player *giver)
             IsPlayerActiveForLifeTransfer(candidate) && lives < 8;
         if (!isSpirit && !canHoldLife)
             continue;
-        const f32 dx = giver->positionCenter.x - candidate->positionCenter.x;
-        const f32 dy = giver->positionCenter.y - candidate->positionCenter.y;
+        const f32 dx = giver->pos.x - candidate->pos.x;
+        const f32 dy = giver->pos.y - candidate->pos.y;
         if (dx * dx + dy * dy > 400.0f)
             continue;
         if (!best || (isSpirit && !bestIsSpirit) ||
@@ -551,7 +551,7 @@ void UpdateLifeTransfer(Player *giver)
         return;
     }
 
-    g_SoundPlayer.PlaySoundByIdx(SOUND_21, 0);
+    g_SoundPlayer.PlaySoundByIdx(SOUND_ITEM_GET, 0);
     if (++giver->lifeGiveTimer < 90 || GetPlayerLives(giver->initParam) <= 0)
         return;
 
@@ -564,7 +564,7 @@ void UpdateLifeTransfer(Player *giver)
         receiver->respawnTimer = receiver->shooterData->initialRespawnTimer;
         receiver->bulletGracePeriod = 60;
         receiver->playerSprite.color.color = 0xffffffff;
-        g_Gui.showLives = 2;
+        g_Gui.lifeDisplayUpdateFrames = 2;
         giver->lifeGiveTimer = 0;
         giver->lifeGiveTargetToken = LIFE_GIVE_WAIT_RELEASE_TOKEN;
         return;
@@ -573,14 +573,14 @@ void UpdateLifeTransfer(Player *giver)
     giver->lifeGiveTimer = 0;
     giver->lifeGiveTargetToken = 0;
     Item *lifeItem = g_ItemManager.SpawnItem(
-        &giver->positionCenter, ITEM_LIFE,
+        &giver->pos, ITEM_LIFE,
         GetLifeTransferSpawnState(receiver->initParam));
     if (lifeItem != &g_ItemManager.items[1100])
     {
         AddPlayerLives(giver->initParam, -1);
-        g_Gui.showLives = 2;
+        g_Gui.lifeDisplayUpdateFrames = 2;
         giver->lifeGiveTargetToken = LIFE_GIVE_WAIT_RELEASE_TOKEN;
-        g_SoundPlayer.PlaySoundByIdx(SOUND_25, 0);
+        g_SoundPlayer.PlaySoundByIdx(SOUND_DIR_CHANGING, 0);
     }
 }
 
@@ -651,32 +651,32 @@ u8 GetPlayerRescuePresentationAlpha(const Player *player, u8 normalAlpha)
 void UpdateSpiritState(Player *player)
 {
     player->playerSprite.color.color = 0x50ffffff;
-    player->positionCenter.x += player->previousHorizontalSpeed;
-    player->positionCenter.y += player->previousVerticalSpeed;
+    player->pos.x += player->previousHorizontalSpeed;
+    player->pos.y += player->previousVerticalSpeed;
 
     const f32 minX = g_GameManager.playerMovementAreaTopLeftPos.x;
     const f32 maxX = minX + g_GameManager.playerMovementAreaSize.x;
     const f32 minY = g_GameManager.playerMovementAreaTopLeftPos.y + 300.0f;
     const f32 maxY = g_GameManager.playerMovementAreaTopLeftPos.y +
                      g_GameManager.playerMovementAreaSize.y - 32.0f;
-    if (player->positionCenter.x < minX)
+    if (player->pos.x < minX)
     {
-        player->positionCenter.x = minX;
+        player->pos.x = minX;
         player->previousHorizontalSpeed = fabsf(player->previousHorizontalSpeed);
     }
-    else if (player->positionCenter.x > maxX)
+    else if (player->pos.x > maxX)
     {
-        player->positionCenter.x = maxX;
+        player->pos.x = maxX;
         player->previousHorizontalSpeed = -fabsf(player->previousHorizontalSpeed);
     }
-    if (player->positionCenter.y < minY)
+    if (player->pos.y < minY)
     {
-        player->positionCenter.y = minY;
+        player->pos.y = minY;
         player->previousVerticalSpeed = fabsf(player->previousVerticalSpeed);
     }
-    else if (player->positionCenter.y > maxY)
+    else if (player->pos.y > maxY)
     {
-        player->positionCenter.y = maxY;
+        player->pos.y = maxY;
         player->previousVerticalSpeed = -fabsf(player->previousVerticalSpeed);
     }
 }
@@ -705,8 +705,8 @@ u8 CalculatePlayerOverlapAlpha(const Player *player)
     if (!IsPlayerActiveForProximity(localPlayer))
         return 255;
 
-    const f32 dx = player->positionCenter.x - localPlayer->positionCenter.x;
-    const f32 dy = player->positionCenter.y - localPlayer->positionCenter.y;
+    const f32 dx = player->pos.x - localPlayer->pos.x;
+    const f32 dy = player->pos.y - localPlayer->pos.y;
     f32 distance = sqrtf(dx * dx + dy * dy);
     if (distance >= REMOTE_PLAYER_FADE_START_DISTANCE)
         return 255;
@@ -743,7 +743,7 @@ void DrawPowerTransferPrompt(const Player *giver)
         return;
 
     ZunVec3 position =
-        giver->prevPositionCenter.Lerp(giver->positionCenter, g_RenderAlpha) +
+        giver->prevPos.Lerp(giver->pos, g_RenderAlpha) +
         GetPlayerPresentationOffset(giver->initParam);
     position.x += g_GameManager.arcadeRegionTopLeftPos.x - 16.0f;
     position.y += g_GameManager.arcadeRegionTopLeftPos.y + 16.0f;
@@ -775,7 +775,7 @@ void DrawLifeTransferPrompt(const Player *giver)
         return;
 
     ZunVec3 position =
-        giver->prevPositionCenter.Lerp(giver->positionCenter, g_RenderAlpha) +
+        giver->prevPos.Lerp(giver->pos, g_RenderAlpha) +
         GetPlayerPresentationOffset(giver->initParam);
     position.x += g_GameManager.arcadeRegionTopLeftPos.x - 14.0f;
     position.y += g_GameManager.arcadeRegionTopLeftPos.y - 22.0f;
@@ -822,7 +822,7 @@ void DrawStageIntroPlayerName(const Player *player)
     const f32 labelWidth =
         (f32)strlen(name) * 8.0f * STAGE_INTRO_NAME_SCALE;
     ZunVec3 position =
-        player->prevPositionCenter.Lerp(player->positionCenter, g_RenderAlpha) +
+        player->prevPos.Lerp(player->pos, g_RenderAlpha) +
         GetPlayerPresentationOffset(player->initParam);
     position.x -= labelWidth * 0.5f;
     position.y -= 22.0f + (f32)player->initParam * 9.0f;
@@ -881,10 +881,10 @@ i32 UpdateMultiplayerDeath(Player *player)
                     else
                         AddPlayerPower(player->initParam, -16);
                 }
-                g_ItemManager.SpawnItem(&player->positionCenter, ITEM_POWER_BIG, 2);
+                g_ItemManager.SpawnItem(&player->pos, ITEM_POWER_BIG, 2);
                 for (i32 i = 0; i < 5; ++i)
-                    g_ItemManager.SpawnItem(&player->positionCenter, ITEM_POWER_SMALL, 2);
-                g_Gui.showPower = 2;
+                    g_ItemManager.SpawnItem(&player->pos, ITEM_POWER_SMALL, 2);
+                g_Gui.powerDisplayUpdateFrames = 2;
 
                 cherryPenalty =
                     (f32)(g_GameManager.cherry - g_GameManager.globals->cherryStart) *
@@ -896,7 +896,7 @@ i32 UpdateMultiplayerDeath(Player *player)
                     cherryPenalty = cap;
                 cherryPenalty -= cherryPenalty % 10;
                 g_GameManager.cherry -= cherryPenalty;
-                g_Gui.showPoint = 2;
+                g_Gui.pointDisplayUpdateFrames = 2;
                 g_ItemManager.ActivateAllItems();
             }
             else
@@ -904,8 +904,8 @@ i32 UpdateMultiplayerDeath(Player *player)
                 if (!PracticeRuntime::OverlayInfinitePower())
                     SetPlayerPower(player->initParam, 0);
                 for (i32 i = 0; i < 5; ++i)
-                    g_ItemManager.SpawnItem(&player->positionCenter, ITEM_FULL_POWER, 2);
-                g_Gui.showPower = 2;
+                    g_ItemManager.SpawnItem(&player->pos, ITEM_FULL_POWER, 2);
+                g_Gui.powerDisplayUpdateFrames = 2;
             }
             g_GameManager.DecreaseSubrank(GetMultiplayerRankPenalty(1600));
         }
@@ -928,17 +928,17 @@ i32 UpdateMultiplayerDeath(Player *player)
     player->playerState = PLAYER_STATE_SPAWNING;
     if (MultiplayerGameplay::GetPlayerCount() >= 3)
     {
-        player->positionCenter.x = g_GameManager.arcadeRegionSize.x / 2.0f +
+        player->pos.x = g_GameManager.arcadeRegionSize.x / 2.0f +
                                    ((i32)player->initParam - 1) * 48.0f;
     }
     else
     {
-        player->positionCenter.x = g_GameManager.arcadeRegionSize.x / 2.0f +
+        player->pos.x = g_GameManager.arcadeRegionSize.x / 2.0f +
                                    (player->initParam == 0 ? -32.0f : 32.0f);
     }
-    player->positionCenter.y = g_GameManager.arcadeRegionSize.y - 64.0f;
-    player->positionCenter.z = 0.2f;
-    player->prevPositionCenter = player->positionCenter;
+    player->pos.y = g_GameManager.arcadeRegionSize.y - 64.0f;
+    player->pos.z = 0.2f;
+    player->prevPos = player->pos;
     player->invulnerabilityTimer = 0;
     player->playerSprite.scale.x = 3.0f;
     player->playerSprite.scale.y = 3.0f;
@@ -960,12 +960,12 @@ i32 UpdateMultiplayerDeath(Player *player)
             (g_Rng.GetRandomU16() & 1) ? PLAYER_SPIRIT_DRIFT_SPEED
                                        : -PLAYER_SPIRIT_DRIFT_SPEED;
         SetPlayerBombs(player->initParam, 3);
-        g_Gui.showBombs = 2;
+        g_Gui.bombDisplayUpdateFrames = 2;
         const i32 recipientId = SelectLowestLifeRecipient(player->initParam);
         if (recipientId >= 0)
         {
             g_ItemManager.SpawnItem(
-                &player->positionCenter, ITEM_LIFE,
+                &player->pos, ITEM_LIFE,
                 GetLifeTransferSpawnState((u8)recipientId));
         }
         player->playerSprite.color.color = 0x50ffffff;
@@ -995,9 +995,9 @@ i32 UpdateMultiplayerDeath(Player *player)
 
     if (!PracticeRuntime::OverlayInfiniteLives())
         AddPlayerLives(player->initParam, -1);
-    g_Gui.showLives = 2;
+    g_Gui.lifeDisplayUpdateFrames = 2;
     SetPlayerBombs(player->initParam, (i32)player->shooterData->initialBombs);
-    g_Gui.showBombs = 2;
+    g_Gui.bombDisplayUpdateFrames = 2;
     return 1;
 }
 } // namespace
@@ -1011,17 +1011,17 @@ bool VerifyThreePlayerLifeTransferSelectionRules()
     Player &giver = g_Player;
     Player &player2 = g_Player2;
     Player &player3 = g_Player3;
-    const ZunVec3 savedPosition2 = player2.positionCenter;
-    const ZunVec3 savedPosition3 = player3.positionCenter;
+    const ZunVec3 savedPosition2 = player2.pos;
+    const ZunVec3 savedPosition3 = player3.pos;
     const i8 savedState2 = player2.playerState;
     const i8 savedState3 = player3.playerState;
     const i32 savedLives2 = GetPlayerLives(1);
     const i32 savedLives3 = GetPlayerLives(2);
 
-    player2.positionCenter = giver.positionCenter;
-    player2.positionCenter.x += 10.0f;
-    player3.positionCenter = giver.positionCenter;
-    player3.positionCenter.x -= 10.0f;
+    player2.pos = giver.pos;
+    player2.pos.x += 10.0f;
+    player3.pos = giver.pos;
+    player3.pos.x -= 10.0f;
 
     player2.playerState = PLAYER_STATE_ALIVE;
     player3.playerState = PLAYER_STATE_SPIRIT;
@@ -1038,8 +1038,8 @@ bool VerifyThreePlayerLifeTransferSelectionRules()
     SetPlayerLives(2, 1);
     Player *slotWinner = SelectLifeTransferReceiver(&giver);
 
-    player2.positionCenter = savedPosition2;
-    player3.positionCenter = savedPosition3;
+    player2.pos = savedPosition2;
+    player3.pos = savedPosition3;
     player2.playerState = savedState2;
     player3.playerState = savedState3;
     SetPlayerLives(1, savedLives2);
@@ -1203,8 +1203,8 @@ Player *GetClosestActivePlayer(ZunVec3 *position)
             continue;
         }
 
-        const f32 dx = player.positionCenter.x - position->x;
-        const f32 dy = player.positionCenter.y - position->y;
+        const f32 dx = player.pos.x - position->x;
+        const f32 dy = player.pos.y - position->y;
         const f32 distance = dx * dx + dy * dy;
         // Exact ties intentionally stay with the lower slot, matching the
         // upstream multiplayer rule on every peer.
@@ -1254,7 +1254,7 @@ void DefaultFireBulletCallback(Player *player, PlayerBullet *bullet, ShtEntry *s
 {
     if (shtEntry->option == 0)
     {
-        bullet->pos = player->positionCenter;
+        bullet->pos = player->pos;
     }
     else
     {
@@ -1360,7 +1360,7 @@ i32 ShtData::FireOrbBulletFocused(Player *player, PlayerBullet *bullet, i32 fire
     bullet->offset.y = shtEntry->offset.y;
     bullet->trailLength = shtEntry->fireInterval;
     DefaultFireBulletCallback(player, bullet, shtEntry);
-    for (i32 i = 15; i >= 0; i--)
+    for (i32 i = ARRAY_SIZE_SIGNED(bullet->posHistory) - 1; i >= 0; i--)
     {
         bullet->posHistory[i].x = -999.0f;
     }
@@ -1382,9 +1382,9 @@ i32 ShtData::FireHomingBullet(Player *player, PlayerBullet *bullet, i32 fireTime
         {
             angle = utils::AddNormalizeAngle(atan2f(player->sakuyaTargetPosition.y - bullet->pos.y,
                                                     player->sakuyaTargetPosition.x - bullet->pos.x),
-                                             shtEntry->angle + 1.5707964f);
+                                             shtEntry->angle + ZUN_PI / 2.0f);
             speed = shtEntry->speed * 1.5f;
-            AngleToVector((ZunVec3 *)&bullet->velocity, angle, speed);
+            (*(ZunVec3 *)&bullet->velocity).FromAngleMagnitude(angle, speed);
             bullet->angle = angle;
         }
         return 1;
@@ -1402,9 +1402,9 @@ i32 ShtData::FireRotatingOrbBullet(Player *player, PlayerBullet *bullet, i32 fir
     if (fireTime % shtEntry->fireInterval == shtEntry->fireOffset)
     {
         DefaultFireBulletCallback(player, bullet, shtEntry);
-        angle = utils::AddNormalizeAngle(player->optionAngle, shtEntry->angle + 1.5707964f);
+        angle = utils::AddNormalizeAngle(player->optionAngle, shtEntry->angle + ZUN_PI / 2.0f);
         speed = shtEntry->speed;
-        AngleToVector((ZunVec3 *)&bullet->velocity, angle, speed);
+        (*(ZunVec3 *)&bullet->velocity).FromAngleMagnitude(angle, speed);
         bullet->angle = angle;
 
         return 1;
@@ -1451,7 +1451,7 @@ i32 ShtData::UpdateHomingBullet(Player *player, PlayerBullet *bullet)
         {
             if (bullet->speed < 10.0f)
             {
-                bullet->speed = bullet->speed + 0.33333334f;
+                bullet->speed += 1.0f / 3.0f;
                 x = bullet->velocity.x;
                 y = bullet->velocity.y;
                 length = sqrtf(x * x + y * y);
@@ -1526,7 +1526,7 @@ i32 ShtData::UpdateOrbLaser(Player *player, PlayerBullet *bullet)
         bullet->vm.pendingInterrupt = 1;
     }
     if ((g_Gui.HasCurrentMsgIdx() || player->bombInfo.isInUse) &&
-        20 < player->timers[bullet->timerIdx].timer.GetCurrent())
+        player->timers[bullet->timerIdx].timer.GetCurrent() > 20)
     {
         player->timers[bullet->timerIdx].timer = 20;
     }
@@ -1567,7 +1567,7 @@ i32 ShtData::UpdatePlayerLaser(Player *player, PlayerBullet *bullet)
         bullet->vm.pendingInterrupt = 1;
     }
     if ((g_Gui.HasCurrentMsgIdx() || player->bombInfo.isInUse) &&
-        20 < player->timers[bullet->timerIdx].timer.GetCurrent())
+        player->timers[bullet->timerIdx].timer.GetCurrent() > 20)
     {
         player->timers[bullet->timerIdx].timer = 20;
     }
@@ -1592,7 +1592,7 @@ i32 ShtData::UpdatePlayerLaser(Player *player, PlayerBullet *bullet)
             player->bombDamageBoxes[i + 96].size = bullet->hitboxSize;
         }
     }
-    for (i = 15; 0 < i; i--)
+    for (i = ARRAY_SIZE_SIGNED(bullet->posHistory) - 1; i > 0; i--)
     {
         bullet->posHistory[i] = bullet->posHistory[i - 1];
     }
@@ -1603,11 +1603,11 @@ i32 ShtData::UpdatePlayerLaser(Player *player, PlayerBullet *bullet)
     }
     else
     {
-        bullet->pos = player->positionCenter;
+        bullet->pos = player->pos;
         bullet->pos.x += bullet->offset.x;
         bullet->pos.z = 0.44f;
         bullet->vm.scale.y = (bullet->pos.y + 64.0f) / 14.0f;
-        bullet->hitboxSize.y = player->positionCenter.y + 64.0f;
+        bullet->hitboxSize.y = player->pos.y + 64.0f;
         bullet->pos.y = bullet->pos.y / 2.0f - 32.0f;
         return 0;
     }
@@ -1687,47 +1687,47 @@ i32 ShtData::OnMissileHit(Player *player, PlayerBullet *bullet, ZunVec3 *pos)
         case 1089:
             bullet->hitboxSize.x = 32.0f;
             bullet->hitboxSize.y = 32.0f;
-            AngleToVector((ZunVec3 *)&bullet->velocity, angle, 4.0f);
+            (*(ZunVec3 *)&bullet->velocity).FromAngleMagnitude(angle, 4.0f);
             break;
         case 1090:
             bullet->hitboxSize.x = 42.0;
             bullet->hitboxSize.y = 42.0;
-            AngleToVector((ZunVec3 *)&bullet->velocity, angle, 4.0f);
+            (*(ZunVec3 *)&bullet->velocity).FromAngleMagnitude(angle, 4.0f);
             break;
         case 1091:
             bullet->hitboxSize.x = 48.0f;
             bullet->hitboxSize.y = 48.0f;
-            AngleToVector((ZunVec3 *)&bullet->velocity, angle, 4.0f);
+            (*(ZunVec3 *)&bullet->velocity).FromAngleMagnitude(angle, 4.0f);
             break;
         case 1092:
             bullet->hitboxSize.x = 56.0f;
             bullet->hitboxSize.y = 56.0f;
-            AngleToVector((ZunVec3 *)&bullet->velocity, angle, 4.0f);
+            (*(ZunVec3 *)&bullet->velocity).FromAngleMagnitude(angle, 4.0f);
             break;
         case 1093:
             bullet->hitboxSize.x = 48.0f;
             bullet->hitboxSize.y = 48.0f;
-            AngleToVector((ZunVec3 *)&bullet->velocity, angle, 6.0f);
+            (*(ZunVec3 *)&bullet->velocity).FromAngleMagnitude(angle, 6.0f);
             break;
         case 1094:
             bullet->hitboxSize.x = 64.0f;
             bullet->hitboxSize.y = 64.0f;
-            AngleToVector((ZunVec3 *)&bullet->velocity, angle, 6.0f);
+            (*(ZunVec3 *)&bullet->velocity).FromAngleMagnitude(angle, 6.0f);
             break;
         case 1095:
             bullet->hitboxSize.x = 80.0f;
             bullet->hitboxSize.y = 80.0f;
-            AngleToVector((ZunVec3 *)&bullet->velocity, angle, 6.0f);
+            (*(ZunVec3 *)&bullet->velocity).FromAngleMagnitude(angle, 6.0f);
             break;
         case 1096:
             bullet->hitboxSize.x = 96.0f;
             bullet->hitboxSize.y = 96.0f;
-            AngleToVector((ZunVec3 *)&bullet->velocity, angle, 6.0f);
+            (*(ZunVec3 *)&bullet->velocity).FromAngleMagnitude(angle, 6.0f);
         }
     }
     if (bullet->timer.GetCurrent() % 6 == 0)
     {
-        g_EffectManager.SpawnParticles(5, pos, 1, 0xffffffff);
+        g_EffectManager.SpawnEffect(5, pos, 1, 0xffffffff);
     }
     return 0;
 }
@@ -1741,7 +1741,7 @@ i32 ShtData::SpawnHitParticles(Player *player, PlayerBullet *bullet, ZunVec3 *po
     {
         particlePos = *pos;
         particlePos.x = bullet->pos.x;
-        g_EffectManager.SpawnParticles(5, &particlePos, 1, 0xffffffff);
+        g_EffectManager.SpawnEffect(5, &particlePos, 1, 0xffffffff);
     }
     return 0;
 }
@@ -1770,7 +1770,7 @@ void Player::SpawnBullets(Player *player, u32 timer)
 
     entry = level->entry;
     bullet = player->bullets;
-    for (i = 0; i < 96; i++, bullet++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(player->bullets); i++, bullet++)
     {
         if (bullet->bulletState != 0)
         {
@@ -1837,7 +1837,7 @@ void Player::UpdateShots()
     }
     if (this->playerState == PLAYER_STATE_DEAD)
     {
-        for (i = 0; i < 3; i++)
+        for (i = 0; i < ARRAY_SIZE_SIGNED(this->timers); i++)
         {
             if (this->timers[i].bullet)
             {
@@ -1846,7 +1846,7 @@ void Player::UpdateShots()
             }
         }
     }
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(this->timers); i++)
     {
         if (!this->timers[i].bullet)
         {
@@ -1866,7 +1866,7 @@ void Player::UpdateShots()
         }
     }
     bullet = this->bullets;
-    for (i = 0; i < 96; i++, bullet++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(this->bullets); i++, bullet++)
     {
         if (bullet->bulletState == 0)
         {
@@ -1904,7 +1904,7 @@ void Player::DrawBullets()
     i32 i;
 
     bullet = this->bullets;
-    for (i = 0; i < 96; i++, bullet++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(this->bullets); i++, bullet++)
     {
         if (bullet->bulletState != 1)
         {
@@ -1914,7 +1914,7 @@ void Player::DrawBullets()
         if (bullet->vm.autoRotate)
         {
             f32 angle = utils::AddNormalizeAngle(
-                utils::LerpAngle(bullet->prevAngle, bullet->angle, g_RenderAlpha), 1.5707964f);
+                utils::LerpAngle(bullet->prevAngle, bullet->angle, g_RenderAlpha), ZUN_PI / 2.0f);
             bullet->vm.rotation.z = angle;
             bullet->vm.prevRotation.z = angle;
             bullet->vm.updateRotation = 1;
@@ -1938,7 +1938,7 @@ void Player::DrawBulletExplosions()
     i32 i;
 
     bullet = this->bullets;
-    for (i = 0; i < 96; i++, bullet++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(this->bullets); i++, bullet++)
     {
         if (bullet->bulletState != 2)
         {
@@ -1947,7 +1947,7 @@ void Player::DrawBulletExplosions()
 
         if (bullet->vm.autoRotate)
         {
-            f32 angle = utils::AddNormalizeAngle(bullet->angle, 1.5707964f);
+            f32 angle = utils::AddNormalizeAngle(bullet->angle, ZUN_PI / 2.0f);
             bullet->vm.rotation.z = angle;
             bullet->vm.updateRotation = 1;
         }
@@ -2028,7 +2028,7 @@ i32 Player::CalcDamageToEnemy(ZunVec3 *center, ZunVec3 *size, i32 *param_3)
     {
         *param_3 = 0;
     }
-    for (i = 0; i < 96; i++, bullet++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(this->bullets); i++, bullet++)
     {
         if (bullet->bulletState == 0 || (bullet->bulletState != 1 && bullet->bulletState2 != 3))
         {
@@ -2068,7 +2068,7 @@ i32 Player::CalcDamageToEnemy(ZunVec3 *center, ZunVec3 *size, i32 *param_3)
             if (bullet->bulletState == 1)
             {
                 g_AnmManager->SetAnmIdxAndExecuteScript(&bullet->vm, bullet->vm.anmFileIdx + 32);
-                g_EffectManager.SpawnParticles(5, &bullet->pos, 1, 0xffffffff);
+                g_EffectManager.SpawnEffect(5, &bullet->pos, 1, 0xffffffff);
                 bullet->pos.z = 0.1f;
             }
             bullet->bulletState = 2;
@@ -2079,7 +2079,7 @@ i32 Player::CalcDamageToEnemy(ZunVec3 *center, ZunVec3 *size, i32 *param_3)
             }
         }
     }
-    for (i = 0; i < 112; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(this->bombDamageBoxes); i++)
     {
         if (this->bombDamageBoxes[i].size.x <= 0.0f)
         {
@@ -2104,13 +2104,13 @@ i32 Player::CalcDamageToEnemy(ZunVec3 *center, ZunVec3 *size, i32 *param_3)
         this->bombParticleTime++;
         if (this->bombParticleTime % 4 == 0)
         {
-            if (i < 96)
+            if (i < ARRAY_SIZE_SIGNED(this->bombClearBoxes))
             {
-                g_EffectManager.SpawnParticles(3, center, 1, 0xffffffff);
+                g_EffectManager.SpawnEffect(3, center, 1, 0xffffffff);
             }
             else
             {
-                g_EffectManager.SpawnParticles(5, center, 1, 0xffffffff);
+                g_EffectManager.SpawnEffect(5, center, 1, 0xffffffff);
             }
         }
         if (this->bombInfo.isInUse && param_3)
@@ -2132,31 +2132,31 @@ void Player::RebuildBombBoxCache()
     for (i32 i = 0; i < 96; i++)
     {
         BombClearBox *bomb = &this->bombClearBoxes[i];
-        if (bomb->pos.z != 0.0f)
+        if (bomb->size.x != 0.0f)
         {
             CachedBombClearBox *c =
                 &this->activeBombClearBoxesCache[this->numActiveBombClearBoxes++];
             c->isBox = true;
-            c->minX = bomb->pos.x - bomb->pos.z * 0.5f;
-            c->maxX = bomb->pos.x + bomb->pos.z * 0.5f;
-            c->minY = bomb->pos.y - bomb->size.x * 0.5f;
-            c->maxY = bomb->pos.y + bomb->size.x * 0.5f;
+            c->minX = bomb->pos.x - bomb->size.x * 0.5f;
+            c->maxX = bomb->pos.x + bomb->size.x * 0.5f;
+            c->minY = bomb->pos.y - bomb->size.y * 0.5f;
+            c->maxY = bomb->pos.y + bomb->size.y * 0.5f;
             c->itemType = bomb->itemType;
         }
-        else if (bomb->size.y != 0.0f)
+        else if (bomb->radius != 0.0f)
         {
             CachedBombClearBox *c =
                 &this->activeBombClearBoxesCache[this->numActiveBombClearBoxes++];
             c->isBox = false;
             c->cx = bomb->pos.x;
             c->cy = bomb->pos.y;
-            c->radiusSq = bomb->size.y * bomb->size.y;
+            c->radiusSq = bomb->radius * bomb->radius;
             c->itemType = bomb->itemType;
         }
     }
 }
 
-i32 Player::CheckBombGraze(ZunVec3 *center, ZunVec3 *size)
+i32 Player::CalcBombCollision(ZunVec3 *center, ZunVec3 *size)
 {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if (MultiplayerGameplay::IsMultiplayer() &&
@@ -2219,7 +2219,7 @@ i32 Player::CalcKillboxCollision(ZunVec3 *center, ZunVec3 *size)
 #endif
 
     this->itemType = ITEM_POINT_BULLET;
-    if (CheckBombGraze(center, size))
+    if (CalcBombCollision(center, size))
     {
         return 2;
     }
@@ -2265,9 +2265,9 @@ i32 Player::CheckGraze(ZunVec3 *center, ZunVec3 *size)
 
     this->itemType = ITEM_POINT_BULLET;
 
-    if (CheckBombGraze(center, size))
+    if (CalcBombCollision(center, size))
     {
-        return 2;
+        return PLAYER_COLLISION_BOMB;
     }
 
     bulletTopLeft.x = center->x - size->x / 2.0f - 20.0f;
@@ -2277,17 +2277,17 @@ i32 Player::CheckGraze(ZunVec3 *center, ZunVec3 *size)
 
     if (this->playerState == PLAYER_STATE_DEAD || this->playerState == PLAYER_STATE_SPAWNING)
     {
-        return 0;
+        return PLAYER_COLLISION_NONE;
     }
 
     if (this->grazeTopLeft.x > bulletBottomRight.x || this->grazeBottomRight.x < bulletTopLeft.x ||
         this->grazeTopLeft.y > bulletBottomRight.y || this->grazeBottomRight.y < bulletTopLeft.y)
     {
-        return 0;
+        return PLAYER_COLLISION_NONE;
     }
 
     ScoreGraze(center);
-    return 1;
+    return PLAYER_COLLISION_HIT;
 }
 
 i32 Player::CalcItemBoxCollision(ZunVec3 *center, ZunVec3 *size)
@@ -2304,7 +2304,7 @@ i32 Player::CalcItemBoxCollision(ZunVec3 *center, ZunVec3 *size)
     if (this->playerState != PLAYER_STATE_ALIVE && this->playerState != PLAYER_STATE_INVULNERABLE &&
         this->playerState != PLAYER_STATE_BORDER)
     {
-        return 0;
+        return PLAYER_COLLISION_NONE;
     }
 
     itemTopLeft = *center - *size / 2.0f;
@@ -2334,7 +2334,7 @@ i32 Player::CalcLaserHitbox(ZunVec3 *center, ZunVec3 *size, ZunVec3 *origin, f32
         return 0;
 #endif
 
-    laserTopLeft = this->positionCenter - *origin;
+    laserTopLeft = this->pos - *origin;
     utils::Rotate(&laserBottomRight, &laserTopLeft, rotation);
     laserBottomRight.z = 0;
     laserTopLeft = laserBottomRight + *origin;
@@ -2353,7 +2353,7 @@ i32 Player::CalcLaserHitbox(ZunVec3 *center, ZunVec3 *size, ZunVec3 *origin, f32
 
     if (!canGraze)
     {
-        return 0;
+        return PLAYER_COLLISION_NONE;
     }
 
     laserTopLeft.x -= 48.0f;
@@ -2365,16 +2365,16 @@ i32 Player::CalcLaserHitbox(ZunVec3 *center, ZunVec3 *size, ZunVec3 *origin, f32
         playerRelativeTopLeft.y > laserBottomRight.y ||
         playerRelativeBottomRight.y < laserTopLeft.y)
     {
-        return 0;
+        return PLAYER_COLLISION_NONE;
     }
 
     if (this->playerState == PLAYER_STATE_DEAD || this->playerState == PLAYER_STATE_SPAWNING)
     {
-        return 0;
+        return PLAYER_COLLISION_NONE;
     }
 
-    ScoreGraze(&this->positionCenter);
-    return 2;
+    ScoreGraze(&this->pos);
+    return PLAYER_COLLISION_BOMB;
 
 LASER_COLLISION:
     g_ReplayManager->replayEventFlags = g_ReplayManager->replayEventFlags | 2;
@@ -2409,24 +2409,24 @@ void Player::ScoreGraze(ZunVec3 *param_1)
             g_GameManager.globals->grazeInTotal++;
         }
     }
-    grazePos = (this->positionCenter + *param_1) / 2.0f;
+    grazePos = (this->pos + *param_1) / 2.0f;
     if (this->hasBorder == BORDER_ACTIVE)
     {
         if (this->isFocus)
         {
-            g_EffectManager.SpawnParticles(8, &grazePos, 1, 0xffffffff);
+            g_EffectManager.SpawnEffect(8, &grazePos, 1, 0xffffffff);
         }
         else
         {
-            g_EffectManager.SpawnParticles(8, &grazePos, 3, 0xffff8080);
+            g_EffectManager.SpawnEffect(8, &grazePos, 3, 0xffff8080);
         }
     }
     else
     {
-        g_EffectManager.SpawnParticles(8, &grazePos, 1, 0xffffffff);
+        g_EffectManager.SpawnEffect(8, &grazePos, 1, 0xffffffff);
     }
     g_GameManager.IncreaseSubrank(6);
-    g_Gui.showGraze = 2;
+    g_Gui.grazeDisplayUpdateFrames = 2;
     g_SoundPlayer.PlaySoundByIdx(SOUND_GRAZE, 0);
     g_EnemyManager.spellcardInfo.grazeBonusScore =
         g_EnemyManager.spellcardInfo.grazeBonusScore + 2500 +
@@ -2457,12 +2457,12 @@ void Player::Die()
 {
     g_GameManager.RegenerateGameIntegrityCsum();
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    g_EffectManager.SpawnEffect(12, &this->positionCenter,
+    g_EffectManager.SpawnSpecialEffect(12, &this->pos,
                                 GetPlayerEffectSlot(this, 3), 1, 0xff4040ff);
 #else
-    g_EffectManager.SpawnEffect(12, &this->positionCenter, 3, 1, 0xff4040ff);
+    g_EffectManager.SpawnSpecialEffect(12, &this->pos, 3, 1, 0xff4040ff);
 #endif
-    g_EffectManager.SpawnParticles(6, &this->positionCenter, 16, 0xffffffff);
+    g_EffectManager.SpawnEffect(6, &this->pos, 16, 0xffffffff);
     // Upstream THOverlay F1 (th07 mMuteki) patches only the immediate written
     // by Player::Die at 0x43EE14: DEAD(2) -> INVULNERABLE(3). Keep all other
     // hit feedback/timers exactly on the vanilla path.
@@ -2578,7 +2578,7 @@ i32 Player::HandlePlayerInputs()
     }
     else
     {
-        this->isFocus = 0;
+        this->isFocus = FALSE;
         switch (this->playerDirection)
         {
         case MOVEMENT_RIGHT:
@@ -2739,25 +2739,25 @@ i32 Player::HandlePlayerInputs()
         f32 maxY =
             g_GameManager.playerMovementAreaTopLeftPos.y + g_GameManager.playerMovementAreaSize.y;
 
-        f32 targetX = this->positionCenter.x + reqGameDx;
-        f32 targetY = this->positionCenter.y + reqGameDy;
+        f32 targetX = this->pos.x + reqGameDx;
+        f32 targetY = this->pos.y + reqGameDy;
 
         if (targetX < minX)
         {
-            reqGameDx = minX - this->positionCenter.x;
+            reqGameDx = minX - this->pos.x;
         }
         else if (targetX > maxX)
         {
-            reqGameDx = maxX - this->positionCenter.x;
+            reqGameDx = maxX - this->pos.x;
         }
 
         if (targetY < minY)
         {
-            reqGameDy = minY - this->positionCenter.y;
+            reqGameDy = minY - this->pos.y;
         }
         else if (targetY > maxY)
         {
-            reqGameDy = maxY - this->positionCenter.y;
+            reqGameDy = maxY - this->pos.y;
         }
 
             if (focusRatio != 0.0f &&
@@ -2929,39 +2929,39 @@ i32 Player::HandlePlayerInputs()
                        g_Supervisor.effectiveFramerateMultiplier;
     this->velocity.y = verticalSpeed * this->verticalMovementSpeedMultiplierDuringBomb *
                        g_Supervisor.effectiveFramerateMultiplier;
-    *GetPosCenterX() += this->velocity.x;
-    *GetPosCenterY() += this->velocity.y;
+    *GetPosX() += this->velocity.x;
+    *GetPosY() += this->velocity.y;
 
-    if (this->positionCenter.x < g_GameManager.playerMovementAreaTopLeftPos.x)
+    if (this->pos.x < g_GameManager.playerMovementAreaTopLeftPos.x)
     {
-        this->positionCenter.x = g_GameManager.playerMovementAreaTopLeftPos.x;
+        this->pos.x = g_GameManager.playerMovementAreaTopLeftPos.x;
     }
-    else if (this->positionCenter.x >
+    else if (this->pos.x >
              g_GameManager.playerMovementAreaTopLeftPos.x + g_GameManager.playerMovementAreaSize.x)
     {
-        this->positionCenter.x =
+        this->pos.x =
             g_GameManager.playerMovementAreaTopLeftPos.x + g_GameManager.playerMovementAreaSize.x;
     }
 
-    if (this->positionCenter.y < g_GameManager.playerMovementAreaTopLeftPos.y)
+    if (this->pos.y < g_GameManager.playerMovementAreaTopLeftPos.y)
     {
-        this->positionCenter.y = g_GameManager.playerMovementAreaTopLeftPos.y;
+        this->pos.y = g_GameManager.playerMovementAreaTopLeftPos.y;
     }
-    else if (this->positionCenter.y >
+    else if (this->pos.y >
              g_GameManager.playerMovementAreaTopLeftPos.y + g_GameManager.playerMovementAreaSize.y)
     {
-        this->positionCenter.y =
+        this->pos.y =
             g_GameManager.playerMovementAreaTopLeftPos.y + g_GameManager.playerMovementAreaSize.y;
     }
 
-    this->hitboxTopLeft = this->positionCenter - this->hitboxSize;
-    this->hitboxBottomRight = this->positionCenter + this->hitboxSize;
-    this->grazeTopLeft = this->positionCenter - this->grazeSize;
-    this->grazeBottomRight = this->positionCenter + this->grazeSize;
-    this->grabItemTopLeft = this->positionCenter - this->grabItemSize;
-    this->grabItemBottomRight = this->positionCenter + this->grabItemSize;
-    this->optionsPosition[0] = this->positionCenter;
-    this->optionsPosition[1] = this->positionCenter;
+    this->hitboxTopLeft = this->pos - this->hitboxSize;
+    this->hitboxBottomRight = this->pos + this->hitboxSize;
+    this->grazeTopLeft = this->pos - this->grazeSize;
+    this->grazeBottomRight = this->pos + this->grazeSize;
+    this->grabItemTopLeft = this->pos - this->grabItemSize;
+    this->grabItemBottomRight = this->pos + this->grabItemSize;
+    this->optionsPosition[0] = this->pos;
+    this->optionsPosition[1] = this->pos;
     optionOffsetX = optionOffsetY = 0.0f;
 
     bool sakuyaB = g_GameManager.character == CHAR_SAKUYA &&
@@ -2986,8 +2986,8 @@ i32 Player::HandlePlayerInputs()
             if (this->isFocus)
             {
                 this->optionState = OPTION_FOCUSING;
-                this->focusEffect = g_EffectManager.SpawnEffect(
-                    24, &this->positionCenter,
+                this->focusEffect = g_EffectManager.SpawnSpecialEffect(
+                    24, &this->pos,
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                     GetPlayerEffectSlot(this, 2),
 #else
@@ -3051,8 +3051,8 @@ i32 Player::HandlePlayerInputs()
             {
                 this->optionState = OPTION_FOCUSING;
                 this->focusMovementTimer = 8 - this->focusMovementTimer.GetCurrent();
-                this->focusEffect = g_EffectManager.SpawnEffect(
-                    24, &this->positionCenter,
+                this->focusEffect = g_EffectManager.SpawnSpecialEffect(
+                    24, &this->pos,
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                     GetPlayerEffectSlot(this, 2),
 #else
@@ -3081,8 +3081,8 @@ i32 Player::HandlePlayerInputs()
             if (this->isFocus)
             {
                 this->optionState = OPTION_FOCUSING;
-                this->focusEffect = g_EffectManager.SpawnEffect(
-                    24, &this->positionCenter,
+                this->focusEffect = g_EffectManager.SpawnSpecialEffect(
+                    24, &this->pos,
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                     GetPlayerEffectSlot(this, 2),
 #else
@@ -3110,16 +3110,16 @@ i32 Player::HandlePlayerInputs()
             }
             this->focusMovementTimer++;
             t = this->focusMovementTimer.AsFloat() / 8.0f;
-            optionOffsetX = cosf(this->optionAngle + 1.5707964f) * 24.0f;
-            optionOffsetY = sinf(this->optionAngle + 1.5707964f) * 24.0f;
-            targetOffsetX = cosf(this->optionAngle + 0.22439948f) * 24.0f;
-            targetOffsetY = sinf(this->optionAngle + 0.22439948f) * 24.0f;
+            optionOffsetX = cosf(this->optionAngle + ZUN_PI / 2.0f) * 24.0f;
+            optionOffsetY = sinf(this->optionAngle + ZUN_PI / 2.0f) * 24.0f;
+            targetOffsetX = cosf(this->optionAngle + ZUN_PI / 14.0f) * 24.0f;
+            targetOffsetY = sinf(this->optionAngle + ZUN_PI / 14.0f) * 24.0f;
             targetOffsetX = (targetOffsetX - optionOffsetX) * t + optionOffsetX;
             targetOffsetY = (targetOffsetY - optionOffsetY) * t + optionOffsetY;
             this->optionsPosition[1].x += targetOffsetX;
             this->optionsPosition[1].y += targetOffsetY;
-            targetOffsetX = cosf(this->optionAngle - 0.22439948f) * 24.0f;
-            targetOffsetY = sinf(this->optionAngle - 0.22439948f) * 24.0f;
+            targetOffsetX = cosf(this->optionAngle - ZUN_PI / 14.0f) * 24.0f;
+            targetOffsetY = sinf(this->optionAngle - ZUN_PI / 14.0f) * 24.0f;
             targetOffsetX = (targetOffsetX + optionOffsetX) * t - optionOffsetX;
             targetOffsetY = (targetOffsetY + optionOffsetY) * t - optionOffsetY;
             if (this->focusMovementTimer >= 8)
@@ -3140,12 +3140,12 @@ i32 Player::HandlePlayerInputs()
                 }
                 goto CASE_OPTION_UNFOCUSING_2;
             }
-            targetOffsetX = cosf(this->optionAngle + 0.22439948f) * 24.0f;
-            targetOffsetY = sinf(this->optionAngle + 0.22439948f) * 24.0f;
+            targetOffsetX = cosf(this->optionAngle + ZUN_PI / 14.0f) * 24.0f;
+            targetOffsetY = sinf(this->optionAngle + ZUN_PI / 14.0f) * 24.0f;
             this->optionsPosition[1].x += targetOffsetX;
             this->optionsPosition[1].y += targetOffsetY;
-            targetOffsetX = cosf(this->optionAngle - 0.22439948f) * 24.0f;
-            targetOffsetY = sinf(this->optionAngle - 0.22439948f) * 24.0f;
+            targetOffsetX = cosf(this->optionAngle - ZUN_PI / 14.0f) * 24.0f;
+            targetOffsetY = sinf(this->optionAngle - ZUN_PI / 14.0f) * 24.0f;
             this->optionsPosition[0].x += targetOffsetX;
             this->optionsPosition[0].y += targetOffsetY;
             break;
@@ -3155,8 +3155,8 @@ i32 Player::HandlePlayerInputs()
             {
                 this->optionState = OPTION_FOCUSING;
                 this->focusMovementTimer = 8 - this->focusMovementTimer.GetCurrent();
-                this->focusEffect = g_EffectManager.SpawnEffect(
-                    24, &this->positionCenter,
+                this->focusEffect = g_EffectManager.SpawnSpecialEffect(
+                    24, &this->pos,
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                     GetPlayerEffectSlot(this, 2),
 #else
@@ -3200,27 +3200,27 @@ i32 Player::HandlePlayerInputs()
             {
                 angleStep = -(this->velocity.x / 4.0f) * ZUN_PI / 5.0f / 10.0f;
                 this->optionAngle -= angleStep;
-                if (this->optionAngle < -2.1991148f)
+                if (this->optionAngle < -(7.0f * ZUN_PI / 10.0f))
                 {
-                    this->optionAngle = -2.1991148f;
+                    this->optionAngle = -(7.0f * ZUN_PI / 10.0f);
                 }
-                else if (this->optionAngle > -0.9424778f)
+                else if (this->optionAngle > -ZUN_3PI / 10.0f)
                 {
-                    this->optionAngle = -0.9424778f;
+                    this->optionAngle = -ZUN_3PI / 10.0f;
                 }
             }
             else
             {
-                if (fabsf(this->optionAngle - -1.5707964f) > 0.03141593f)
+                if (fabsf(this->optionAngle - (-ZUN_PI / 2.0f)) > ZUN_PI / 100.0f)
                 {
-                    angleStep = this->optionAngle < -1.5707964f
-                                    ? 0.06283186f * g_Supervisor.effectiveFramerateMultiplier
-                                    : -0.06283186f * g_Supervisor.effectiveFramerateMultiplier;
+                    angleStep = this->optionAngle < -ZUN_PI / 2.0f
+                                    ? ZUN_PI / 50.0f * g_Supervisor.effectiveFramerateMultiplier
+                                    : -ZUN_PI / 50.0f * g_Supervisor.effectiveFramerateMultiplier;
                     this->optionAngle += angleStep;
                 }
                 else
                 {
-                    this->optionAngle = -1.5707964f;
+                    this->optionAngle = -ZUN_PI / 2.0f;
                 }
             }
         }
@@ -3233,22 +3233,22 @@ void Player::UpdateBombProjectiles()
     BombClearBox *bomb;
     i32 i;
 
-    for (i = 0; i < 112; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(this->bombDamageBoxes); i++)
     {
         this->bombDamageBoxes[i].size.x = 0.0f;
     }
     bomb = this->bombClearBoxes;
-    for (i = 0; i < 96; i++, bomb++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(this->bombClearBoxes); i++, bomb++)
     {
         if (bomb->lifetime <= 0)
         {
-            bomb->size.y = 0.0f;
-            bomb->pos.z = 0.0f;
+            bomb->radius = 0.0f;
+            bomb->size.x = 0.0f;
         }
         else
         {
             bomb->lifetime--;
-            bomb->size.y += bomb->size.z;
+            bomb->radius += bomb->radiusGrowth;
         }
     }
     this->dirtyBombBoxes = true;
@@ -3278,7 +3278,7 @@ void Player::UpdateBorderAndBombState()
             if (this->bombInfo.bombTimer.HasTicked())
             {
                 PlayerBombInfo::SubtractCherryDrain(this->bombInfo.cherryDrain);
-                g_Gui.showPoint = 2;
+                g_Gui.pointDisplayUpdateFrames = 2;
             }
             if (!this->bombInfo.isFocus)
             {
@@ -3332,7 +3332,7 @@ void Player::UpdateBorderAndBombState()
 #endif
                         g_GameManager.AddBombsRemaining(-1);
                 }
-                g_Gui.showBombs = 2;
+                g_Gui.bombDisplayUpdateFrames = 2;
 #ifdef TH_ENABLE_NETPLAY
                 Netplay::Th07Rollback::TouchPlayerBombInfo(&this->bombInfo);
 #endif
@@ -3369,7 +3369,7 @@ void Player::UpdateBorderAndBombState()
             }
             else
             {
-                this->isBombing = 0;
+                this->isBombing = FALSE;
             }
         }
     }
@@ -3424,13 +3424,13 @@ i32 Player::UpdateDeath()
                         g_GameManager.AddCurrentPower(-16);
                     }
                 }
-                g_ItemManager.SpawnItem(&this->positionCenter, ITEM_POWER_BIG, 2);
-                g_ItemManager.SpawnItem(&this->positionCenter, ITEM_POWER_SMALL, 2);
-                g_ItemManager.SpawnItem(&this->positionCenter, ITEM_POWER_SMALL, 2);
-                g_ItemManager.SpawnItem(&this->positionCenter, ITEM_POWER_SMALL, 2);
-                g_ItemManager.SpawnItem(&this->positionCenter, ITEM_POWER_SMALL, 2);
-                g_ItemManager.SpawnItem(&this->positionCenter, ITEM_POWER_SMALL, 2);
-                g_Gui.showPower = 2;
+                g_ItemManager.SpawnItem(&this->pos, ITEM_POWER_BIG, 2);
+                g_ItemManager.SpawnItem(&this->pos, ITEM_POWER_SMALL, 2);
+                g_ItemManager.SpawnItem(&this->pos, ITEM_POWER_SMALL, 2);
+                g_ItemManager.SpawnItem(&this->pos, ITEM_POWER_SMALL, 2);
+                g_ItemManager.SpawnItem(&this->pos, ITEM_POWER_SMALL, 2);
+                g_ItemManager.SpawnItem(&this->pos, ITEM_POWER_SMALL, 2);
+                g_Gui.powerDisplayUpdateFrames = 2;
                 cherryPenalty = (f32)(g_GameManager.cherry - g_GameManager.globals->cherryStart) *
                                 g_Player.shooterData->cherryPenaltyMultiplier;
                 if (g_GameManager.character != CHAR_SAKUYA)
@@ -3446,7 +3446,7 @@ i32 Player::UpdateDeath()
                 }
                 cherryPenalty -= cherryPenalty % 10;
                 g_GameManager.cherry -= cherryPenalty;
-                g_Gui.showPoint = 2;
+                g_Gui.pointDisplayUpdateFrames = 2;
                 g_ItemManager.ActivateAllItems();
             }
             else
@@ -3456,12 +3456,12 @@ i32 Player::UpdateDeath()
                     g_GameManager.globals->currentPower = 0.0f;
                     g_GameManager.RegenerateGameIntegrityCsum();
                 }
-                g_ItemManager.SpawnItem(&this->positionCenter, ITEM_FULL_POWER, 2);
-                g_ItemManager.SpawnItem(&this->positionCenter, ITEM_FULL_POWER, 2);
-                g_ItemManager.SpawnItem(&this->positionCenter, ITEM_FULL_POWER, 2);
-                g_ItemManager.SpawnItem(&this->positionCenter, ITEM_FULL_POWER, 2);
-                g_ItemManager.SpawnItem(&this->positionCenter, ITEM_FULL_POWER, 2);
-                g_Gui.showPower = 2;
+                g_ItemManager.SpawnItem(&this->pos, ITEM_FULL_POWER, 2);
+                g_ItemManager.SpawnItem(&this->pos, ITEM_FULL_POWER, 2);
+                g_ItemManager.SpawnItem(&this->pos, ITEM_FULL_POWER, 2);
+                g_ItemManager.SpawnItem(&this->pos, ITEM_FULL_POWER, 2);
+                g_ItemManager.SpawnItem(&this->pos, ITEM_FULL_POWER, 2);
+                g_Gui.powerDisplayUpdateFrames = 2;
             }
             g_GameManager.DecreaseSubrank(1600);
         }
@@ -3479,14 +3479,14 @@ i32 Player::UpdateDeath()
         if (this->invulnerabilityTimer.GetCurrent() >= 30)
         {
             this->playerState = PLAYER_STATE_SPAWNING;
-            this->positionCenter.x = g_GameManager.arcadeRegionSize.x / 2.0f;
-            this->positionCenter.y = g_GameManager.arcadeRegionSize.y - 64.0f;
-            this->positionCenter.z = 0.2f;
-            this->prevPositionCenter = this->positionCenter;
+            this->pos.x = g_GameManager.arcadeRegionSize.x / 2.0f;
+            this->pos.y = g_GameManager.arcadeRegionSize.y - 64.0f;
+            this->pos.z = 0.2f;
+            this->prevPos = this->pos;
             this->invulnerabilityTimer = 0;
             this->playerSprite.scale.x = 3.0f;
             this->playerSprite.scale.y = 3.0f;
-            g_AnmManager->SetAnmIdxAndExecuteScript(&this->playerSprite, 1024);
+            g_AnmManager->SetAnmIdxAndExecuteScript(&this->playerSprite, ANM_SCRIPT_PLAYER_IDLE);
             if ((i32)g_GameManager.globals->livesRemaining <= 0)
             {
                 g_GameManager.isInRetryMenu = 1;
@@ -3496,9 +3496,9 @@ i32 Player::UpdateDeath()
                 // THOverlay F2 patches the -1 immediate at 0x44116B to 0.
                 if (!PracticeRuntime::OverlayInfiniteLives())
                     g_GameManager.AddLivesRemaining(-1);
-                g_Gui.showLives = 2;
+                g_Gui.lifeDisplayUpdateFrames = 2;
                 g_GameManager.SetBombsRemainingAndComputeCsum(g_Player.shooterData->initialBombs);
-                g_Gui.showBombs = 2;
+                g_Gui.bombDisplayUpdateFrames = 2;
                 return 1;
             }
         }
@@ -3551,7 +3551,7 @@ void Player::UpdateState()
     {
         if (this->effect)
         {
-            this->effect->pos1 = this->positionCenter;
+            this->effect->pos = this->pos;
         }
         this->invulnerabilityTimer--;
         if (this->invulnerabilityTimer.GetCurrent() <= 0)
@@ -3581,7 +3581,7 @@ void Player::UpdateState()
     {
         if (this->borderEffect)
         {
-            this->borderEffect->pos1 = this->positionCenter;
+            this->borderEffect->pos = this->pos;
         }
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         Player *sharedBorderOwner = MultiplayerGameplay::IsMultiplayer()
@@ -3699,47 +3699,48 @@ void Player::BreakBorderNaturally()
     }
 }
 
-BombClearBox *Player::SpawnBombProjectile(ZunVec3 *centerPosition, f32 posZ, f32 size, i32 itemType)
+BombClearBox *Player::SpawnBombProjectile(ZunVec3 *centerPosition, f32 sizeX, f32 sizeY,
+                                          i32 itemType)
 {
     BombClearBox *bomb;
     i32 i;
 
     bomb = this->bombClearBoxes;
-    for (i = 0; i < 95; i++, bomb++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(this->bombClearBoxes) - 1; i++, bomb++)
     {
-        if (bomb->pos.z == 0.0f && bomb->size.y == 0.0f)
+        if (bomb->size.x == 0.0f && bomb->radius == 0.0f)
         {
             break;
         }
     }
     bomb->pos.x = centerPosition->x;
     bomb->pos.y = centerPosition->y;
-    bomb->pos.z = posZ;
-    bomb->size.x = size;
+    bomb->size.x = sizeX;
+    bomb->size.y = sizeY;
     bomb->lifetime = 0;
     bomb->itemType = itemType;
     this->dirtyBombBoxes = true;
     return bomb;
 }
 
-BombClearBox *Player::SpawnBombEffect(ZunVec3 *pos, f32 sizeY, f32 sizeZ, i32 lifetime,
-                                      i32 itemType)
+BombClearBox *Player::SpawnGrowingBomb(ZunVec3 *pos, f32 radius, f32 radiusGrowth, i32 lifetime,
+                                       i32 itemType)
 {
     BombClearBox *bomb;
     i32 i;
 
     bomb = this->bombClearBoxes;
-    for (i = 0; i < 95; i++, bomb++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(this->bombClearBoxes) - 1; i++, bomb++)
     {
-        if (bomb->pos.z == 0.0f && bomb->size.y == 0.0f)
+        if (bomb->size.x == 0.0f && bomb->radius == 0.0f)
         {
             break;
         }
     }
     bomb->pos.x = pos->x;
     bomb->pos.y = pos->y;
-    bomb->size.y = sizeY;
-    bomb->size.z = sizeZ;
+    bomb->radius = radius;
+    bomb->radiusGrowth = radiusGrowth;
     bomb->lifetime = lifetime;
     bomb->itemType = itemType;
     this->dirtyBombBoxes = true;
@@ -3804,8 +3805,8 @@ void Player::ActivateBorder()
             this->effect->inUseFlag = 0;
             this->effect = NULL;
         }
-        spawnedEffect = g_EffectManager.SpawnEffect(
-            28, &this->positionCenter,
+        spawnedEffect = g_EffectManager.SpawnSpecialEffect(
+            28, &this->pos,
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
             GetPlayerEffectSlot(this, 4),
 #else
@@ -3860,8 +3861,8 @@ void Player::BreakBorder()
         this->borderEffect->inUseFlag = 0;
         this->borderEffect = NULL;
     }
-    effect = g_EffectManager.SpawnEffect(
-        28, &this->positionCenter,
+    effect = g_EffectManager.SpawnSpecialEffect(
+        28, &this->pos,
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         GetPlayerEffectSlot(this, 4),
 #else
@@ -3893,11 +3894,11 @@ void Player::BreakBorder()
     // the forced-break state transition and before the bomb-clear effect.
     // Natural border expiration uses BreakBorderNaturally() and must not count.
     PracticeRuntime::RecordBorderBreak();
-    SpawnBombEffect(&this->positionCenter, 32.0f, 16.0f, 50, 8);
+    SpawnGrowingBomb(&this->pos, 32.0f, 16.0f, 50, 8);
     angle = -ZUN_PI;
     for (i = 0; i < 32; i++, angle += 0.19634955f)
     {
-        effect = g_EffectManager.SpawnParticles(29, &this->positionCenter, 1, 0xffffffff);
+        effect = g_EffectManager.SpawnEffect(29, &this->pos, 1, 0xffffffff);
         effect->direction.x = cosf(angle);
         effect->direction.y = sinf(angle);
     }
@@ -3915,14 +3916,14 @@ void Player::UpdateUI()
     if (MultiplayerGameplay::IsMultiplayer() && this->initParam != 0)
         return;
 #endif
-    if (this->positionCenter.y >= 400.0f)
+    if (this->pos.y >= 400.0f)
     {
-        if (g_AsciiManager.GetFadeState() != 2 && this->positionCenter.x < 160.0f)
+        if (g_AsciiManager.GetFadeState() != 2 && this->pos.x < 160.0f)
         {
             g_AsciiManager.cherryGauge.pendingInterrupt = 2;
             g_AsciiManager.uiFadeState = 2;
         }
-        else if (g_AsciiManager.GetFadeState() == 2 && this->positionCenter.x > 160.0f)
+        else if (g_AsciiManager.GetFadeState() == 2 && this->pos.x > 160.0f)
         {
             g_AsciiManager.cherryGauge.pendingInterrupt = 3;
             g_AsciiManager.uiFadeState = 3;
@@ -3956,7 +3957,7 @@ u32 Player::OnUpdate(Player *arg)
 #endif
     arg->UpdatePrev();
 
-    arg->prevPositionCenter = arg->positionCenter;
+    arg->prevPos = arg->pos;
     arg->prevOptionsPosition[0] = arg->optionsPosition[0];
     arg->prevOptionsPosition[1] = arg->optionsPosition[1];
     if (g_GameManager.isTimeStopped)
@@ -4056,7 +4057,7 @@ u32 Player::OnDrawHighPrio(Player *arg)
     }
     if (!g_GameManager.isInRetryMenu)
     {
-        ZunVec3 drawPlayerPos = arg->prevPositionCenter.Lerp(arg->positionCenter, g_RenderAlpha);
+        ZunVec3 drawPlayerPos = arg->prevPos.Lerp(arg->pos, g_RenderAlpha);
         ZunVec3 drawOptionsPos[2] = {
             arg->prevOptionsPosition[0].Lerp(arg->optionsPosition[0], g_RenderAlpha),
             arg->prevOptionsPosition[1].Lerp(arg->optionsPosition[1], g_RenderAlpha)};
@@ -4187,11 +4188,11 @@ f32 Player::AngleToPlayer(ZunVec3 *pos)
     f32 y;
     f32 x;
 
-    x = this->positionCenter.x - pos->x;
-    y = this->positionCenter.y - pos->y;
+    x = this->pos.x - pos->x;
+    y = this->pos.y - pos->y;
     if (y == 0.0f && x == 0.0f)
     {
-        return 1.5707964f;
+        return ZUN_PI / 2.0f;
     }
     else
     {
@@ -4278,28 +4279,28 @@ ZunResult Player::AddedCallback(Player *arg)
     {
         if (MultiplayerGameplay::GetPlayerCount() >= 3)
         {
-            arg->positionCenter.x = g_GameManager.arcadeRegionSize.x / 2.0f +
+            arg->pos.x = g_GameManager.arcadeRegionSize.x / 2.0f +
                                     (static_cast<i32>(arg->initParam) - 1) * 48.0f;
         }
         else
         {
-            arg->positionCenter.x = g_GameManager.arcadeRegionSize.x / 2.0f +
+            arg->pos.x = g_GameManager.arcadeRegionSize.x / 2.0f +
                                     (arg->initParam == 0 ? -32.0f : 32.0f);
         }
     }
     else
     {
-        arg->positionCenter.x = g_GameManager.arcadeRegionSize.x / 2.0f;
+        arg->pos.x = g_GameManager.arcadeRegionSize.x / 2.0f;
     }
 #else
     g_AnmManager->SetAnmIdxAndExecuteScript(&arg->playerSprite, 1024);
-    arg->positionCenter.x = g_GameManager.arcadeRegionSize.x / 2.0f;
+    arg->pos.x = g_GameManager.arcadeRegionSize.x / 2.0f;
 #endif
-    arg->positionCenter.y = g_GameManager.arcadeRegionSize.y - 64.0f;
-    arg->positionCenter.z = 0.49f;
+    arg->pos.y = g_GameManager.arcadeRegionSize.y - 64.0f;
+    arg->pos.z = 0.49f;
     arg->optionsPosition[0].z = 0.49f;
     arg->optionsPosition[1].z = 0.49f;
-    arg->prevPositionCenter = arg->positionCenter;
+    arg->prevPos = arg->pos;
     arg->prevOptionsPosition[0] = arg->optionsPosition[0];
     arg->prevOptionsPosition[1] = arg->optionsPosition[1];
 
@@ -4567,10 +4568,10 @@ ZunResult ShtData::LoadShtData(ShtData **data, const char *shtPath)
     ShtData *parsed = new ShtData;
     memcpy(parsed, rawData, offsetof(ShtRawData, levels));
 
-    parsed->levels = new ShtLevel[parsed->entryCount];
+    parsed->levels = new ShtLevel[parsed->numLevels];
 
     i32 totalEntries = 0;
-    for (i32 i = 0; i < parsed->entryCount; i++)
+    for (i32 i = 0; i < parsed->numLevels; i++)
     {
         ShtRawEntry *re = (ShtRawEntry *)(rawFile + rawData->levels[i].entryOffset);
         while (re->fireInterval >= 0)
@@ -4584,7 +4585,7 @@ ZunResult ShtData::LoadShtData(ShtData **data, const char *shtPath)
     parsed->entries = new ShtEntry[totalEntries];
 
     i32 entryIdx = 0;
-    for (i32 i = 0; i < parsed->entryCount; i++)
+    for (i32 i = 0; i < parsed->numLevels; i++)
     {
         parsed->levels[i].requiredPower = rawData->levels[i].requiredPower;
         parsed->levels[i].entry = &parsed->entries[entryIdx];

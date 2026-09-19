@@ -137,7 +137,7 @@ The fix is in `src/netplay/Th07LanStageProbe.cpp`:
 - The retry path never calls `CaptureLocalInput`, so keyboard, controller and one-frame direct-touch displacement are not sampled again.
 - The application-level redundant tail remains 32 frames, matching final sbrik behavior.
 
-The focused contract is in `tests/netplay-rollback-feature-rebase-test.py` and explicitly rejects a retry helper that calls `CaptureLocalInput`.
+The focused contract is in `audit/feature-rebase/netplay-rollback-feature-rebase-test.py` and explicitly rejects a retry helper that calls `CaptureLocalInput`.
 
 TH06 reuse lesson was added to `docs/th06-th07-multiplayer-feature-rebase-notes.md`: redundancy alone is insufficient at frame zero/prediction-window stalls; resend scheduled logical input without resampling the device.
 
@@ -157,7 +157,7 @@ The combined `eagler-touhou/server/netplay-relay.mjs` is the current shared deve
 
 TURN security policy should follow the common deployment baseline rather than invent a project-specific hard gate: keep the shared signing secret server-only, issue short-lived credentials, and use TURN-side allocation/bandwidth quotas plus monitoring. Binding credential issuance to an active room/session is optional defense in depth, not a required precondition for public TURN deployment.
 
-Deployment plumbing now lives in `eagler-touhou/server/render-coturn-config.cjs`, `eagler-touhou/server/coturn.env.example` and `eagler-touhou/docs/HOST_DEPLOYMENT.md`. The renderer emits a minimal coturn config with REST-secret auth, `no-cli`, `no-multicast-peers`, common private/reserved IPv4 peer blocks, allocation quotas and bandwidth caps. Current defaults target the ~10 Mbps VPS conservatively and remain environment-overridable. No actual public coturn instance has been exercised yet, so a selected ICE `relay` candidate is still unverified.
+Deployment plumbing now lives in `eagler-touhou/server/render-coturn-config.cjs`, `eagler-touhou/server/coturn.env.example` and `eagler-touhou/docs/SELF_HOSTING_REFERENCE.md`. The renderer emits a minimal coturn config with REST-secret auth, `no-cli`, `no-multicast-peers`, common private/reserved IPv4 peer blocks, allocation quotas and bandwidth caps. Current defaults target the ~10 Mbps VPS conservatively and remain environment-overridable. No actual public coturn instance has been exercised yet, so a selected ICE `relay` candidate is still unverified.
 
 One startup race was found while validating this deployment layer: server route `rtc` is broadcast to both endpoints, but the browser tasks that receive it are not simultaneous. The first endpoint could send HELLO immediately while the second endpoint's DataChannel was already open but its local route was still unset; the old `onmessage` filter discarded that HELLO and the session could remain at frame zero. `BrowserPeerTransport` now buffers RTC packets while route is undecided, symmetric with the existing relay pre-route buffer. A deterministic test delays one endpoint's route message by 300 ms and now passes; the production launcher run subsequently reached frames 133/136 on `rtc/direct`.
 
@@ -204,7 +204,7 @@ Latest relevant evidence:
 - Multiplayer-gameplay desktop Release build: PASS.
 - Production shared-font Emscripten Web build: PASS.
 - Acceptance-only embedded-font Emscripten Web build: PASS. This separate cache exists only because a standalone direct server does not run the production package-font installer.
-- `tests/netplay-rollback-feature-rebase-test.py`: PASS, 16/16.
+- `audit/feature-rebase/netplay-rollback-feature-rebase-test.py`: PASS, 16/16.
 - Fresh C++ `netplay-core-test`: PASS.
 - Fresh C++ sparse rollback-journal test: PASS.
 - Fresh C++ multiplayer input-lane test: PASS.
@@ -301,7 +301,7 @@ Standalone acceptance Web with embedded fonts:
 Latest rollback contract:
 
 ```powershell
-python tests/netplay-rollback-feature-rebase-test.py
+python audit/feature-rebase/netplay-rollback-feature-rebase-test.py
 ```
 
 Before handing off any future change:

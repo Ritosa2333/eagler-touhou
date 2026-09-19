@@ -9,17 +9,17 @@ typedef i32 (*EffectCallback)(struct Effect *);
 struct Effect
 {
     AnmVm vm;
-    ZunVec3 pos1;
+    ZunVec3 pos;
     ZunVec3 prevPos;
     ZunVec3 custom;
     ZunVec3 velocity;
-    ZunVec3 acceleration;
-    ZunVec3 basePosition;
-    ZunVec3 emitterPosition;
+    ZunVec3 accel;
+    ZunVec3 basePos;
+    ZunVec3 emitterPos;
     ZunVec3 direction;
     ZunQuaternion rotationQuat;
     f32 radius;
-    f32 angularVelocity;
+    f32 angleVel;
     ZunTimer timer;
     i32 unused_2c4;
     EffectCallback callback;
@@ -27,7 +27,7 @@ struct Effect
     i8 effectId;
     u8 isFadingOut;
     i8 fadeOutTime;
-    i8 is2D;
+    i8 drawType;
     // pad 3
     Effect *next;
 };
@@ -38,6 +38,12 @@ struct EffectTypeInfo
     EffectCallback updateCallback;
     EffectCallback initCallback;
 };
+
+#define MAX_NORMAL_EFFECTS 400
+// Multiplayer reserves fixed effects through slot 412; keep the same stable
+// capacity in all profiles because the manager exposes the sentinel slot.
+#define MAX_SPECIAL_EFFECTS 13
+#define MAX_EFFECTS (MAX_NORMAL_EFFECTS + MAX_SPECIAL_EFFECTS)
 
 struct EffectManager
 {
@@ -73,25 +79,24 @@ struct EffectManager
     static i32 InitWeatherSlow(Effect *effect);
     static i32 InitWeatherFalling(Effect *effect);
 
-    static void DoSomethingWithEffects(ZunVec3 *param_1);
+    static void ShiftEffectsAfterCameraTeleport(ZunVec3 *shift);
     static void ModifyEffect1eAcceleration();
     static i32 UpdateNoOp(Effect *effect);
 
-    Effect *SpawnParticles(i32 effectId, ZunVec3 *pos, i32 numParticles, u32 color);
-    Effect *SpawnEffect(i32 effectId, ZunVec3 *pos, i32 param_3, i32 param_4, u32 color);
+    Effect *SpawnEffect(i32 effectId, ZunVec3 *pos, i32 numParticles, u32 color);
+    Effect *SpawnSpecialEffect(i32 effectId, ZunVec3 *pos, i32 param_3, i32 param_4, u32 color);
     Effect *SpawnMovingParticles(i32 effectId, ZunVec3 *pos, ZunVec3 *velocity, i32 numParticles,
                                  u32 color);
-    i32 UpdateSpecialEffect();
+    i32 DrawLayer1Effects();
 
     i32 nextIndex;
+    i32 unused;
     i32 activeEffects;
-    i32 activeEffectsCount;
     f32 globalColorMultiplierR;
     f32 globalColorMultiplierG;
     f32 globalColorMultiplierB;
     f32 globalColorMultiplierA;
-    // 0..399 particles, 400..412 fixed P1/P2/P3 player effects, 413 sentinel.
-    Effect effects[414];
+    Effect effects[MAX_EFFECTS + 1];
     Effect layer0;
     Effect layer1;
     Effect layer2;

@@ -57,13 +57,12 @@
           debugHarness: "netplay-lan-stage1", netplayMode: "lan",
           // Explicit manual tuning keeps old/new comparisons controlled. The
           // auto-profile lane below removes overrides and tests real defaults.
-          netplayPerformanceProfile: automaticProfile ? "balanced" : "manual",
+          netplayPerformanceProfile: automaticProfile ? "responsive" : "manual",
           netplayUrl: params.get("relay"), netplayPlayer: player,
           netplayPlayerCount: playerCount,
           netplayInputDelayFrames: responsiveProfile ? 0 : params.get("autoProfile") === "1" ? undefined : Number(params.get("inputDelay") ?? 3),
           netplayRollbackPolicy: params.get("rollbackPolicy") || undefined,
           netplayMaxPredictionFrames: Number(params.get("predictionWindow") ?? 12),
-          netplayTouchPrediction: params.get("prediction") || "legacy",
           netplayTouchDeltaPredictionFrames: Number(params.get("touchDeltaPredictionFrames") || 0),
           netplayTouchQuantization: Number(params.get("touchQuantization") || 0),
           netplayTouchEquivalentAbsorb: params.get("touchEquivalentAbsorb") === "1",

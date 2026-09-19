@@ -11,17 +11,15 @@
 #include "ZunResult.hpp"
 #include "graphics/ZunGraphics.hpp"
 
+#define GAME_WINDOW_WIDTH 640
+#define GAME_WINDOW_HEIGHT 480
+
 struct VertexDiffuseXyzrhw
 {
     ZunVec3 pos;
     f32 w;
     ZunColor diffuse;
 };
-
-// Multiplayer reserves the top six CPU-backed texture/file slots for independent
-// P2/P3 player and face blocks. LoadAnms consumes consecutive face child slots.
-constexpr i32 ANM_SPRITE_SLOT_COUNT = 2816;
-constexpr i32 ANM_FILE_SLOT_COUNT = 256;
 
 struct VertexTex1DiffuseXyz
 {
@@ -49,7 +47,7 @@ struct VertexTex1DiffuseXyzrhw
 
     ZunVec3 pos;
     f32 w;
-    ZunColor color;
+    ZunColor diffuse;
     Float2 textureUV;
 };
 
@@ -121,6 +119,11 @@ struct AnmEntry
     i32 spriteIndexOffset;
     i32 childCount;
 };
+
+#define MAX_SCRIPTS_SPRITES 2816
+#define MAX_TEXTURES 264
+#define MAX_ANM_FILES 256
+#define MAX_SURFACES 32
 
 struct AnmManager
 {
@@ -402,19 +405,19 @@ struct AnmManager
     Float2 shakeOffset;
     Float2 prevShakeOffset;
     ZunMatrix matrix;
-    struct AnmLoadedSprite sprites[ANM_SPRITE_SLOT_COUNT];
+    struct AnmLoadedSprite sprites[MAX_SCRIPTS_SPRITES];
     struct AnmVm vm;
     GfxTextureHandle textures[264];
     // Draw-only copies of immutable ANM textures, repacked with one-texel
     // edge extrusion around every sprite cell. The source textures remain
     // untouched for dynamic writes and UV-scrolling compatibility paths.
-    GfxTextureHandle spriteAtlasTextures[264];
+    GfxTextureHandle spriteAtlasTextures[MAX_TEXTURES];
     void *imageDataArray[256];
     char *textureNames[264];
     i32 loadedSpriteCount;
-    struct AnmRawInstr *scripts[ANM_SPRITE_SLOT_COUNT];
-    i32 spriteIndices[ANM_SPRITE_SLOT_COUNT];
-    struct AnmEntry anmFiles[ANM_FILE_SLOT_COUNT];
+    struct AnmRawInstr *scripts[MAX_SCRIPTS_SPRITES];
+    i32 spriteIndices[MAX_SCRIPTS_SPRITES];
+    struct AnmEntry anmFiles[MAX_ANM_FILES];
     SDL_Surface *surfaces[32];
     SDL_Surface *surfacesBis[32];
     GfxTextureHandle surfaceTextures[32];
@@ -430,12 +433,12 @@ struct AnmManager
     u8 currentZWriteDisable;
     u8 currentCameraMode;
     // pad 3
-    struct AnmLoadedSprite *currentSprite;
-    struct RenderVertexInfo vertexBufferContents[4];
+    AnmLoadedSprite *currentSprite;
+    RenderVertexInfo vertexBufferContents[4];
     u32 spritesToDraw;
-    struct VertexTex1DiffuseXyzrhw spriteVertexBuffer[49152];
-    struct VertexTex1DiffuseXyzrhw *vertexBufferCurPtr;
-    struct VertexTex1DiffuseXyzrhw *vertexBufferStartPtr;
+    VertexTex1DiffuseXyzrhw spriteVertexBuffer[49152];
+    VertexTex1DiffuseXyzrhw *vertexBufferCurPtr;
+    VertexTex1DiffuseXyzrhw *vertexBufferStartPtr;
     i32 screenshotTextureId;
     i32 screenshotSrcLeft;
     i32 screenshotSrcTop;

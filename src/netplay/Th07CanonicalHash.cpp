@@ -1,5 +1,5 @@
 #include "Th07CanonicalHash.hpp"
-#include "NetplayInput.hpp"
+#include <eagler/netplay/NetplayInput.hpp>
 
 #include "BulletManager.hpp"
 #include "Controller.hpp"
@@ -292,20 +292,20 @@ void HashEnemy(Hasher &hash, i32 index, const Enemy &enemy)
         hash.Scalar(value);
     hash.Scalar(enemy.runInterrupt);
     HashVec3(hash, enemy.pos);
-    HashVec3(hash, enemy.prevPosition);
-    HashVec3(hash, enemy.axisSpeed);
+    HashVec3(hash, enemy.prevRenderPos);
+    HashVec3(hash, enemy.velocity);
     HashVec3(hash, enemy.prevPos);
     HashVec3(hash, enemy.deltaPos);
     HashVec3(hash, enemy.hitboxSize);
     HashVec3(hash, enemy.grazeSize);
     hash.Scalar(enemy.angle);
-    hash.Scalar(enemy.angularVelocity);
-    hash.Scalar(enemy.moveAngle);
-    hash.Scalar(enemy.moveAngularVelocity);
-    hash.Scalar(enemy.moveSpeed);
-    hash.Scalar(enemy.moveAcceleration);
-    hash.Scalar(enemy.moveRadius);
-    hash.Scalar(enemy.moveRadialVelocity);
+    hash.Scalar(enemy.angleVel);
+    hash.Scalar(enemy.orbitAngle);
+    hash.Scalar(enemy.orbitAngleVel);
+    hash.Scalar(enemy.speed);
+    hash.Scalar(enemy.accel);
+    hash.Scalar(enemy.orbitRadius);
+    hash.Scalar(enemy.orbitRadialVel);
     HashVec3(hash, enemy.shootOffset);
     HashVec3(hash, enemy.moveInterp);
     HashVec3(hash, enemy.moveInterpStartPos);
@@ -404,9 +404,8 @@ i32 StablePlayerBulletIndex(const Player &player, const PlayerBullet *bullet)
 
 void HashPlayer(Hasher &hash, const Player &player)
 {
-    HashVec3(hash, player.positionCenter);
-    HashVec3(hash, player.prevPositionCenter);
-    HashVec3(hash, player.prevFramePos);
+    HashVec3(hash, player.pos);
+    HashVec3(hash, player.prevPos);
     HashVec3(hash, player.hitboxTopLeft);
     HashVec3(hash, player.hitboxBottomRight);
     HashVec3(hash, player.grazeTopLeft);
@@ -431,8 +430,10 @@ void HashPlayer(Hasher &hash, const Player &player)
     }
     for (const BombClearBox &box : player.bombClearBoxes)
     {
-        HashVec3(hash, box.pos);
-        HashVec3(hash, box.size);
+        HashFloat2(hash, box.pos);
+        HashFloat2(hash, box.size);
+        hash.Scalar(box.radius);
+        hash.Scalar(box.radiusGrowth);
         hash.Scalar(box.lifetime);
         hash.Scalar(box.itemType);
     }
@@ -487,16 +488,16 @@ void HashPlayer(Hasher &hash, const Player &player)
         {
             hash.Scalar(sub.state);
             hash.Scalar(sub.counter);
-            hash.Scalar(sub.accel);
-            hash.Scalar(sub.prevAccel);
+            hash.Scalar(sub.custom);
+            hash.Scalar(sub.prevCustom);
             hash.Scalar(sub.speed);
             hash.Scalar(sub.angle);
-            HashVec3(hash, sub.bombRegionPositions);
-            HashVec3(hash, sub.prevBombRegionPositions);
-            for (const ZunVec3 &trail : sub.bombRegionPositionsTrails)
+            HashVec3(hash, sub.pos);
+            HashVec3(hash, sub.prevPos);
+            for (const ZunVec3 &trail : sub.posHistory)
                 HashVec3(hash, trail);
-            HashVec3(hash, sub.bombRegionVelocities);
-            HashVec3(hash, sub.bombRegionAcceleration);
+            HashVec3(hash, sub.velocity);
+            HashVec3(hash, sub.accel);
             HashTimer(hash, sub.timer);
         }
     }
@@ -533,8 +534,8 @@ void HashBullet(Hasher &hash, i32 index, const Bullet &bullet)
     HashVec3(hash, bullet.velocity);
     HashVec3(hash, bullet.unused_ba4);
     hash.Scalar(bullet.speed);
-    hash.Scalar(bullet.acceleration);
-    hash.Scalar(bullet.angularVelocity);
+    hash.Scalar(bullet.accel);
+    hash.Scalar(bullet.angleVel);
     hash.Scalar(bullet.angle);
     hash.Scalar(bullet.prevAngle);
     hash.Scalar(bullet.unused_bc0);
@@ -581,7 +582,7 @@ void HashLaser(Hasher &hash, i32 index, const Laser &laser)
     hash.Scalar(laser.duration);
     hash.Scalar(laser.endTime);
     hash.Scalar(laser.hitboxEndTime);
-    hash.Scalar(laser.inUse);
+    hash.Scalar(laser.isInUse);
     HashTimer(hash, laser.timer);
     hash.Scalar(laser.flags);
     hash.Scalar(laser.color);
@@ -592,10 +593,10 @@ void HashLaser(Hasher &hash, i32 index, const Laser &laser)
 void HashItem(Hasher &hash, i32 index, const Item &item)
 {
     hash.Scalar(index);
-    HashVec3(hash, item.currentPosition);
-    HashVec3(hash, item.prevPosition);
-    HashVec3(hash, item.startPosition);
-    HashVec3(hash, item.targetPosition);
+    HashVec3(hash, item.pos);
+    HashVec3(hash, item.prevPos);
+    HashVec3(hash, item.velocity);
+    HashVec3(hash, item.targetPos);
     HashTimer(hash, item.timer);
     hash.Scalar(item.itemType);
     hash.Scalar(item.isInUse);
@@ -826,7 +827,7 @@ Sample Capture()
     }
     for (i32 i = 0; i < 64; ++i)
     {
-        if (!g_BulletManager.lasers[i].inUse)
+        if (!g_BulletManager.lasers[i].isInUse)
             continue;
         ++sample.laserCount;
         HashLaser(bullets, i, g_BulletManager.lasers[i]);

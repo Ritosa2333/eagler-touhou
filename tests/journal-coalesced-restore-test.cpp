@@ -1,4 +1,4 @@
-#include "netplay/RollbackJournal.hpp"
+#include <eagler/netplay/RollbackJournal.hpp>
 #include <algorithm>
 #include <array>
 #include <cassert>

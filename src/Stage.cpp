@@ -162,7 +162,7 @@ loop_begin:
     {
         switch (curInstr->opcode)
         {
-        case 0:
+        case STD_CAM_POS_KEY:
             if (curInstr->frame == -1)
             {
                 arg->positionInterpInitial = *curInstr->args.AsVec();
@@ -188,22 +188,22 @@ loop_begin:
                 arg->positionStart = *curInstr->args.AsVec();
             }
             break;
-        case 1:
+        case STD_FOG:
             arg->skyFog.color.color = curInstr->args.args[0].u;
             arg->skyFog.nearPlane = curInstr->args.args[1].f;
             arg->skyFog.farPlane = curInstr->args.args[2].f;
             arg->fogStart = arg->skyFog;
             break;
-        case 2:
+        case STD_FOG_INTERP:
             arg->fogEnd = arg->skyFog;
             arg->skyFogInterpDuration = curInstr->args.args[0].i;
             arg->skyFogInterpTimer = 0;
             break;
-        case 5:
+        case STD_CAM_POS:
             if (arg->cameraTeleported)
             {
                 ZunVec3 diff = *curInstr->args.AsVec() - arg->camEnd.pos;
-                EffectManager::DoSomethingWithEffects(&diff);
+                EffectManager::ShiftEffectsAfterCameraTeleport(&diff);
                 arg->cameraTeleported = 0;
             }
             arg->camStart.pos = arg->camEnd.pos;
@@ -214,12 +214,12 @@ loop_begin:
                 arg->prevCam.pos = arg->cam.pos;
             }
             break;
-        case 6:
+        case STD_CAM_POS_INTERP:
             arg->timersMax[0] = curInstr->args.args[0].i;
             arg->timers[0] = 0;
             arg->easeModes[0] = curInstr->args.args[1].i;
             break;
-        case 7:
+        case STD_CAM_LOOKAT:
             arg->camStart.lookAt = arg->camEnd.lookAt;
             arg->camEnd.lookAt = *curInstr->args.AsVec();
             if (arg->timersMax[1] == 0)
@@ -227,12 +227,12 @@ loop_begin:
                 arg->cam.lookAt = *curInstr->args.AsVec();
             }
             break;
-        case 8:
+        case STD_CAM_LOOKAT_INTERP:
             arg->timersMax[1] = curInstr->args.args[0].i;
             arg->timers[1] = 0;
             arg->easeModes[1] = curInstr->args.args[1].i;
             break;
-        case 9:
+        case STD_CAM_UP:
             arg->camStart.up = arg->camEnd.up;
             arg->camEnd.up = *curInstr->args.AsVec();
             if (arg->timersMax[2] == 0)
@@ -240,12 +240,12 @@ loop_begin:
                 arg->cam.up = *curInstr->args.AsVec();
             }
             break;
-        case 10:
+        case STD_CAM_UP_INTERP:
             arg->timersMax[2] = curInstr->args.args[0].i;
             arg->easeModes[2] = curInstr->args.args[1].i;
             arg->timers[2] = 0;
             break;
-        case 11:
+        case STD_CAM_FOV:
             arg->camStart.fov = arg->camEnd.fov;
             arg->camEnd.fov = curInstr->args.args[0].f;
             if (arg->timersMax[3] == 0)
@@ -253,95 +253,95 @@ loop_begin:
                 arg->cam.fov = curInstr->args.args[0].f;
             }
             break;
-        case 12:
+        case STD_CAM_FOV_INTERP:
             arg->timersMax[3] = curInstr->args.args[0].i;
             arg->timers[3] = 0;
             arg->easeModes[3] = curInstr->args.args[1].i;
             break;
-        case 13:
+        case STD_COLOR:
             arg->color = curInstr->args.args[0].u;
             break;
-        case 3:
+        case STD_HALT:
             if (arg->scriptWaitTime != 0)
             {
                 arg->scriptWaitTime = 0;
                 break;
             }
             goto LAB_004061aa;
-        case 4:
+        case STD_JUMP:
             arg->instructionIndex = curInstr->args.args[0].i;
             arg->scriptTime = curInstr->args.args[1].i;
             arg->timersMax[0] = 0;
             arg->cameraTeleported = 1;
             arg->prevCam = arg->cam;
             goto loop_begin;
-        case 14:
+        case STD_CAM_POS_INTERP_START:
             arg->camStart.pos = *curInstr->args.AsVec();
             break;
-        case 15:
+        case STD_CAM_POS_INTERP_END:
             arg->camEnd.pos = *curInstr->args.AsVec();
             break;
-        case 16:
+        case STD_CAM_POS_INTERP_TAN_START:
             arg->camTangentStart.pos = *curInstr->args.AsVec();
             break;
-        case 17:
+        case STD_CAM_POS_INTERP_TAN_END:
             arg->camTangentEnd.pos = *curInstr->args.AsVec();
             break;
-        case 18:
+        case STD_CAM_POS_INTERP_BEZIER:
             arg->timersMax[0] = curInstr->args.args[0].i;
             arg->timers[0] = 0;
             arg->easeModes[0] = STAGE_EASE_CUBIC_INTERP;
             break;
-        case 19:
+        case STD_CAM_LOOKAT_INTERP_START:
             arg->camStart.lookAt = *curInstr->args.AsVec();
             break;
-        case 20:
+        case STD_CAM_LOOKAT_INTERP_END:
             arg->camEnd.lookAt = *curInstr->args.AsVec();
             break;
-        case 21:
+        case STD_CAM_LOOKAT_INTERP_TAN_START:
             arg->camTangentStart.lookAt = *curInstr->args.AsVec();
             break;
-        case 22:
+        case STD_CAM_LOOKAT_INTERP_TAN_END:
             arg->camTangentEnd.lookAt = *curInstr->args.AsVec();
             break;
-        case 23:
+        case STD_CAM_LOOKAT_INTERP_BEZIER:
             arg->timersMax[1] = curInstr->args.args[0].i;
             arg->timers[1] = 0;
             arg->easeModes[1] = STAGE_EASE_CUBIC_INTERP;
             break;
-        case 24:
+        case STD_CAM_UP_INTERP_START:
             arg->camStart.up = *curInstr->args.AsVec();
             break;
-        case 25:
+        case STD_CAM_UP_INTERP_END:
             arg->camEnd.up = *curInstr->args.AsVec();
             break;
-        case 26:
+        case STD_CAM_UP_INTERP_TAN_START:
             arg->camTangentStart.up = *curInstr->args.AsVec();
             break;
-        case 27:
+        case STD_CAM_UP_INTERP_TAN_END:
             arg->camTangentEnd.up = *curInstr->args.AsVec();
             break;
-        case 28:
+        case STD_CAM_UP_INTERP_BEZIER:
             arg->timersMax[2] = curInstr->args.args[0].i;
             arg->timers[2] = 0;
             arg->easeModes[2] = STAGE_EASE_CUBIC_INTERP;
             break;
-        case 29:
+        case STD_BG_SCRIPT1:
             if (curInstr->args.args[0].i >= 0)
             {
                 g_AnmManager->ExecuteAnmIdx(&arg->vm1,
-                                            curInstr->args.args[0].i + ANM_OFFSET_STAGE_BG1);
+                                            curInstr->args.args[0].i + ANM_OFFSET_STAGE_BG);
             }
             else
             {
                 arg->vm1.activeSpriteIdx = -1;
             }
             break;
-        case 30:
+        case STD_BG_SCRIPT2:
             if (curInstr->args.args[0].i >= 0)
             {
                 g_AnmManager->ExecuteAnmIdx(&arg->vm2,
-                                            curInstr->args.args[0].i + ANM_OFFSET_STAGE_BG1);
+                                            curInstr->args.args[0].i + ANM_OFFSET_STAGE_BG);
             }
             else
             {
@@ -447,7 +447,7 @@ LAB_004061aa: {
         arg->scriptTime++;
     }
     arg->UpdateObjects();
-    if (arg->spellCardState >= 1)
+    if (arg->spellCardState >= SPELLCARD_STATE_STARTING)
     {
         if (arg->ticksSinceSpellcardStarted == 60)
         {
@@ -537,22 +537,22 @@ u32 Stage::OnDrawHighPrio(Stage *arg)
         g_Supervisor.gfxDevice->SetViewport(viewport);
         g_Supervisor.gfxDevice->SetClearColor({0xff000000});
         g_Supervisor.gfxDevice->Clear(CLEAR_COLOR_BUFFER);
-        arg->clearBackground = 0;
+        arg->clearBackground = FALSE;
     }
     g_Supervisor.gfxDevice->SetViewport(g_Supervisor.viewport);
     if (arg->color2.bytes.a > 0)
     {
         g_AnmManager->SetColorWithMulEnabled(arg->color2.color);
     }
-    if (arg->spellCardState <= 1)
+    if (arg->spellCardState <= SPELLCARD_STATE_STARTING)
     {
         if (!g_Gui.IsStageFinished())
         {
-            if (0 < arg->vm1.activeSpriteIdx)
+            if (arg->vm1.activeSpriteIdx > 0)
             {
                 g_AnmManager->DrawInterpAndFlush(&arg->vm1);
             }
-            if (0 < arg->vm2.activeSpriteIdx)
+            if (arg->vm2.activeSpriteIdx > 0)
             {
                 g_AnmManager->DrawInterpAndFlush(&arg->vm2);
             }
@@ -585,7 +585,7 @@ u32 Stage::OnDrawHighPrio(Stage *arg)
     {
         g_Supervisor.EnableFog();
     }
-    if (arg->spellCardState <= 1)
+    if (arg->spellCardState <= SPELLCARD_STATE_STARTING)
     {
         if (!g_Gui.IsStageFinished())
         {
@@ -599,12 +599,12 @@ u32 Stage::OnDrawHighPrio(Stage *arg)
 u32 Stage::OnDrawLowPrio(Stage *arg)
 {
     i32 i;
-    ZunRect local_1c;
+    ZunRect rect;
     i32 alpha;
 
-    if (arg->spellCardState <= 1)
+    if (arg->spellCardState <= SPELLCARD_STATE_STARTING)
     {
-        if (g_Gui.IsStageFinished() == 0)
+        if (!g_Gui.IsStageFinished())
         {
             arg->RenderObjects(2);
             arg->RenderObjects(3);
@@ -612,13 +612,13 @@ u32 Stage::OnDrawLowPrio(Stage *arg)
             {
                 g_Supervisor.DisableFog();
             }
-            g_EffectManager.UpdateSpecialEffect();
-            if (arg->spellCardState == 1)
+            g_EffectManager.DrawLayer1Effects();
+            if (arg->spellCardState == SPELLCARD_STATE_STARTING)
             {
-                local_1c.left = 32.0f;
-                local_1c.top = 16.0f;
-                local_1c.right = 416.0f;
-                local_1c.bottom = 464.0f;
+                rect.left = 32.0f;
+                rect.top = 16.0f;
+                rect.right = 416.0f;
+                rect.bottom = 464.0f;
                 alpha = arg->ticksSinceSpellcardStarted * 255 / 60;
                 g_AnmManager->Flush();
                 g_Supervisor.gfxDevice->SetDepthFunc(DEPTH_FUNC_ALWAYS);
@@ -626,7 +626,7 @@ u32 Stage::OnDrawLowPrio(Stage *arg)
                 {
                     g_Supervisor.gfxDevice->Disable(CAPS_FOG);
                 }
-                ScreenEffect::DrawSquare(&local_1c, alpha << 24);
+                ScreenEffect::DrawSquare(&rect, alpha << 24);
             }
         }
     }
@@ -636,7 +636,7 @@ u32 Stage::OnDrawLowPrio(Stage *arg)
     {
         g_Supervisor.DisableFog();
     }
-    if (arg->spellCardState >= 1)
+    if (arg->spellCardState >= SPELLCARD_STATE_STARTING)
     {
         for (i = 0; i < arg->numSpellcardVms; i++)
         {
@@ -649,7 +649,7 @@ u32 Stage::OnDrawLowPrio(Stage *arg)
     g_Supervisor.gfxDevice->SetFogRange(1000.0f, 2000.0f);
 
     g_AnmManager->SetColor(0x80808080);
-    arg->isDarkening = 0;
+    arg->isDarkening = FALSE;
 
     return CHAIN_CALLBACK_RESULT_CONTINUE;
 }
@@ -663,85 +663,85 @@ ZunResult Stage::AddedCallback(Stage *arg)
     arg->pos.x = 0.0f;
     arg->pos.y = 0.0f;
     arg->pos.z = 0.0f;
-    arg->spellCardState = 0;
+    arg->spellCardState = SPELLCARD_STATE_INACTIVE;
     arg->skyFogInterpDuration = 0;
     switch (g_GameManager.currentStage)
     {
-    case 1:
-        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE_BG1, "data/stg1bg.anm", ANM_OFFSET_STAGE_BG1) !=
+    case STAGE1:
+        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE_BG, "data/stg1bg.anm", ANM_OFFSET_STAGE_BG) !=
             ZUN_SUCCESS)
         {
             return ZUN_ERROR;
         }
         break;
-    case 2:
-        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE_BG1, "data/stg2bg.anm", ANM_OFFSET_STAGE_BG1) !=
+    case STAGE2:
+        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE_BG, "data/stg2bg.anm", ANM_OFFSET_STAGE_BG) !=
             ZUN_SUCCESS)
         {
             return ZUN_ERROR;
         }
         break;
-    case 3:
-        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE_BG1, "data/stg3bg.anm", ANM_OFFSET_STAGE_BG1) !=
+    case STAGE3:
+        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE_BG, "data/stg3bg.anm", ANM_OFFSET_STAGE_BG) !=
             ZUN_SUCCESS)
         {
             return ZUN_ERROR;
         }
         break;
-    case 4:
-        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE_BG1, "data/stg4bg.anm", ANM_OFFSET_STAGE_BG1) !=
+    case STAGE4:
+        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE_BG, "data/stg4bg.anm", ANM_OFFSET_STAGE_BG) !=
             ZUN_SUCCESS)
         {
             return ZUN_ERROR;
         }
 
-        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE_BG2, "data/stg4bg2.anm", ANM_OFFSET_STAGE_BG2) !=
-            ZUN_SUCCESS)
+        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE4_BG2, "data/stg4bg2.anm",
+                                   ANM_OFFSET_STAGE4_BG2) != ZUN_SUCCESS)
         {
             return ZUN_ERROR;
         }
 
-        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE_BG3, "data/stg4bg3.anm", ANM_OFFSET_STAGE_BG3) !=
-            ZUN_SUCCESS)
+        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE4_BG3, "data/stg4bg3.anm",
+                                   ANM_OFFSET_STAGE4_BG3) != ZUN_SUCCESS)
         {
             return ZUN_ERROR;
         }
 
-        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE_BG4, "data/stg4bg4.anm", ANM_OFFSET_STAGE_BG4) !=
-            ZUN_SUCCESS)
+        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE4_BG4, "data/stg4bg4.anm",
+                                   ANM_OFFSET_STAGE4_BG4) != ZUN_SUCCESS)
         {
             return ZUN_ERROR;
         }
 
-        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE_BG5, "data/stg4bg5.anm", ANM_OFFSET_STAGE_BG5) !=
+        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE4_BG5, "data/stg4bg5.anm",
+                                   ANM_OFFSET_STAGE4_BG5) != ZUN_SUCCESS)
+        {
+            return ZUN_ERROR;
+        }
+        break;
+    case STAGE5:
+        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE_BG, "data/stg5bg.anm", ANM_OFFSET_STAGE_BG) !=
             ZUN_SUCCESS)
         {
             return ZUN_ERROR;
         }
         break;
-    case 5:
-        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE_BG1, "data/stg5bg.anm", ANM_OFFSET_STAGE_BG1) !=
+    case STAGE6:
+        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE_BG, "data/stg6bg.anm", ANM_OFFSET_STAGE_BG) !=
             ZUN_SUCCESS)
         {
             return ZUN_ERROR;
         }
         break;
-    case 6:
-        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE_BG1, "data/stg6bg.anm", ANM_OFFSET_STAGE_BG1) !=
+    case EXTRASTAGE:
+        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE_BG, "data/stg7bg.anm", ANM_OFFSET_STAGE_BG) !=
             ZUN_SUCCESS)
         {
             return ZUN_ERROR;
         }
         break;
-    case 7:
-        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE_BG1, "data/stg7bg.anm", ANM_OFFSET_STAGE_BG1) !=
-            ZUN_SUCCESS)
-        {
-            return ZUN_ERROR;
-        }
-        break;
-    case 8:
-        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE_BG1, "data/stg8bg.anm", ANM_OFFSET_STAGE_BG1) !=
+    case PHANTASMSTAGE:
+        if (g_AnmManager->LoadAnms(ANM_FILE_STAGE_BG, "data/stg8bg.anm", ANM_OFFSET_STAGE_BG) !=
             ZUN_SUCCESS)
         {
             return ZUN_ERROR;
@@ -762,7 +762,7 @@ ZunResult Stage::AddedCallback(Stage *arg)
     arg->prevCam = arg->cam;
     arg->camEnd = arg->cam;
     arg->camStart = arg->cam;
-    for (i = 0; i < 4; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(arg->timers); i++)
     {
         arg->timersMax[i] = 0;
         arg->timers[i] = 0;
@@ -773,11 +773,11 @@ ZunResult Stage::AddedCallback(Stage *arg)
 
 ZunResult Stage::DeletedCallback(Stage *arg)
 {
-    g_AnmManager->ReleaseAnm(5);
-    g_AnmManager->ReleaseAnm(6);
-    g_AnmManager->ReleaseAnm(7);
-    g_AnmManager->ReleaseAnm(8);
-    g_AnmManager->ReleaseAnm(9);
+    g_AnmManager->ReleaseAnm(ANM_FILE_STAGE_BG);
+    g_AnmManager->ReleaseAnm(ANM_FILE_STAGE4_BG2);
+    g_AnmManager->ReleaseAnm(ANM_FILE_STAGE4_BG3);
+    g_AnmManager->ReleaseAnm(ANM_FILE_STAGE4_BG4);
+    g_AnmManager->ReleaseAnm(ANM_FILE_STAGE4_BG5);
     SAFE_DELETE_ARRAY(arg->objects);
     SAFE_FREE(arg->quadVms);
     SAFE_FREE(arg->stdData);
@@ -856,7 +856,7 @@ ZunResult Stage::LoadStageData(const char *stdPath)
         while (quad->type >= 0)
         {
             g_AnmManager->ExecuteAnmIdx(&this->quadVms[vmIdx],
-                                        quad->anmScript + ANM_OFFSET_STAGE_BG1);
+                                        quad->anmScript + ANM_OFFSET_STAGE_BG);
             quad->vmIndex = vmIdx++;
             quad = (StdRawQuadBasic *)((u8 *)quad + quad->byteSize);
         }
@@ -879,14 +879,12 @@ ZunResult Stage::UpdateObjects()
         {
             vmCount = 0;
             quad = &object->firstQuad;
-            while (0 <= quad->type)
+            while (quad->type >= 0)
             {
                 vm = &this->quadVms[quad->vmIndex];
                 switch (quad->type)
                 {
                 case 0:
-                    g_AnmManager->ExecuteScript(vm);
-                    break;
                 case 1:
                     g_AnmManager->ExecuteScript(vm);
                     break;

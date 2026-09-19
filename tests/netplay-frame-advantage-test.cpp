@@ -1,4 +1,4 @@
-#include "netplay/FrameAdvantageWindow.hpp"
+#include <eagler/netplay/FrameAdvantageWindow.hpp>
 
 #include <algorithm>
 #include <cassert>

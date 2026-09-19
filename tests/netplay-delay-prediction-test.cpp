@@ -1,5 +1,5 @@
-#include "netplay/NetplayCore.hpp"
-#include "netplay/DirectTouchState.hpp"
+#include <eagler/netplay/NetplayCore.hpp>
+#include <eagler/netplay/DirectTouchState.hpp>
 
 #include <algorithm>
 #include <array>
@@ -53,7 +53,6 @@ static void TestCaptureAddressingAndPrediction()
     CoreConfig config;
     config.inputDelay = 3;
     config.predictableButtons = 3;
-    config.predictStableDirectTouch = true;
     assert(core.Reset(config));
     assert(core.LocalFrameForCapture(0) == 3);
     assert(!core.HasLocalCapture(0)); // neutral frame 0 is not captured frame 3
@@ -73,9 +72,11 @@ static void TestCaptureAddressingAndPrediction()
     auto held = Trace(1, 0, 0);
     assert(core.SubmitRemoteInput(1, 0, held) == RemoteInputResult::Accepted);
     assert(core.SubmitRemoteInput(1, 1, held) == RemoteInputResult::Accepted);
-    auto predicted = core.PrepareFrame(3).inputs[1];
+    auto predicted = core.PrepareFrame(2).inputs[1];
     assert(predicted.x == held.x && predicted.y == held.y);
     assert(!predicted.touchBomb && (predicted.buttons & 4) == 0);
+    predicted = core.PrepareFrame(3).inputs[1];
+    assert(predicted.x == 0 && predicted.y == 0);
     predicted = core.PrepareFrame(4).inputs[1];
     assert(predicted.x == 0 && predicted.y == 0);
     held.x = held.y = 0;
@@ -130,7 +131,7 @@ struct Result { unsigned rollbacks = 0, resimulated = 0, ticks = 0; };
 
 // Exercise real packet redundancy/ACKs, loss, reordering, mixed per-peer
 // delays, the frame-zero barrier, ring wrap, correction and tail drainage.
-static Result Run(unsigned players, std::array<unsigned, 3> delays, bool stable,
+static Result Run(unsigned players, std::array<unsigned, 3> delays,
                   unsigned kind, unsigned oneWay, bool jitter, bool drops,
                   unsigned predictionWindow = 12)
 {
@@ -143,7 +144,7 @@ static Result Run(unsigned players, std::array<unsigned, 3> delays, bool stable,
         CoreConfig config;
         config.sessionId = 0x12345678; config.playerCount = players; config.localPlayer = id;
         config.inputDelay = delays[id]; config.maxRollbackFrames = predictionWindow;
-        config.predictableButtons = 3; config.predictStableDirectTouch = stable;
+        config.predictableButtons = 3;
         assert((*peers)[id].core.Reset(config));
         (*peers)[id].before.resize(frames);
     }
@@ -245,20 +246,18 @@ int main(int argc, char **argv)
 {
     TestCaptureAddressingAndPrediction();
     for (unsigned kind = 0; kind < 7; ++kind)
-        for (bool stable : {false, true})
-        {
-            Run(2, {0, 3, 0}, stable, kind, 3, true, true);
-            Run(3, {0, 3, 6}, stable, kind, 3, true, true);
-            Run(3, {3, 3, 3}, stable, kind, 3, true, true, 4);
-        }
+    {
+        Run(2, {0, 3, 0}, kind, 3, true, true);
+        Run(3, {0, 3, 6}, kind, 3, true, true);
+        Run(3, {3, 3, 3}, kind, 3, true, true, 4);
+    }
     if (argc > 1 && std::strcmp(argv[1], "--study") == 0)
         for (unsigned kind = 0; kind < 7; ++kind)
             for (unsigned delay : {0u, 3u, 4u})
-                for (bool stable : {false, true})
-                {
-                    const auto r = Run(2, {delay, delay, 0}, stable, kind, 3, true, false);
-                    std::printf("{\"trace\":%u,\"delay\":%u,\"stable\":%s,\"rollbacks\":%u,\"resimulated\":%u,\"ticks\":%u}\n",
-                                kind, delay, stable ? "true" : "false", r.rollbacks, r.resimulated, r.ticks);
-                }
+            {
+                const auto r = Run(2, {delay, delay, 0}, kind, 3, true, false);
+                std::printf("{\"trace\":%u,\"delay\":%u,\"rollbacks\":%u,\"resimulated\":%u,\"ticks\":%u}\n",
+                            kind, delay, r.rollbacks, r.resimulated, r.ticks);
+            }
     std::puts("TH07 delayed input and bounded prediction: PASS");
 }

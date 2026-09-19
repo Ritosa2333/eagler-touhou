@@ -48,7 +48,6 @@ def main() -> int:
     parser.add_argument("--mobile-seat", type=int, default=1)
     parser.add_argument("--all-mobile", action="store_true")
     parser.add_argument("--import-package", action="store_true", help="Exercise local package import even on a hosted-resource template")
-    parser.add_argument("--timing-mode", choices=("responsive", "balanced"), default="responsive")
     args = parser.parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
@@ -109,7 +108,7 @@ def main() -> int:
                         if time.monotonic() >= deadline: raise
                         time.sleep(.1)
             command = [sys.executable, "tests/test-th07mp-launch.py", f"http://127.0.0.1:{http_port}/",
-                       str(args.players), "--browser-channel=msedge", f"--timing-mode={args.timing_mode}"]
+                       str(args.players), "--browser-channel=msedge"]
             if args.import_package or host["shared"].get("resourceMode") == "external":
                 command.append(f"--package-zip={ROOT / '.codex-tmp/th07-launch-e2e-pack.zip'}")
             if args.all_mobile: command.append("--all-mobile")

@@ -1,12 +1,12 @@
 const { createHmac } = require('node:crypto');
 const { spawn } = require('node:child_process');
-const path = require('node:path');
+const { requireHostFile } = require('./integration-support.cjs');
 const WebSocket = globalThis.WebSocket;
 
 const port = 18143;
 const secret = 'turn-contract-test-secret';
 const ttl = 600;
-const relayPath = path.resolve(__dirname, '../../eagler-touhou/server/netplay-relay.mjs');
+const relayPath = requireHostFile('server/netplay-relay.mjs', 'netplay relay');
 
 function fail(message) {
   throw new Error(message);

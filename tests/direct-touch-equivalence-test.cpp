@@ -1,4 +1,4 @@
-#include "netplay/DirectTouchEquivalence.hpp"
+#include <eagler/netplay/DirectTouchEquivalence.hpp>
 
 #include <array>
 #include <cassert>

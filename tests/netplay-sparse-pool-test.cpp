@@ -1,5 +1,5 @@
-#include "netplay/SparsePoolCapture.hpp"
-#include "netplay/RollbackJournal.hpp"
+#include <eagler/netplay/SparsePoolCapture.hpp>
+#include <eagler/netplay/RollbackJournal.hpp>
 
 #include <array>
 #include <cassert>

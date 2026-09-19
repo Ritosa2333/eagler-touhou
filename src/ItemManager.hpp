@@ -5,47 +5,45 @@
 
 extern u8 g_ItemDropTable[32];
 
-void AngleToVector(ZunVec3 *out, f32 angle, f32 speed);
-
-typedef enum ItemType
+enum ItemType
 {
-    ITEM_POWER_SMALL = 0,
-    ITEM_POINT = 1,
-    ITEM_POWER_BIG = 2,
-    ITEM_BOMB = 3,
-    ITEM_FULL_POWER = 4,
-    ITEM_LIFE = 5,
-    ITEM_POINT_BULLET = 6,
-    ITEM_CHERRY = 7,
-    ITEM_CHERRY_SMALL = 8,
-    ITEM_STAR = 9,
-    ITEM_NO_ITEM = 255
-} ItemType;
+    ITEM_POWER_SMALL,
+    ITEM_POINT,
+    ITEM_POWER_BIG,
+    ITEM_BOMB,
+    ITEM_FULL_POWER,
+    ITEM_LIFE,
+    ITEM_POINT_BULLET,
+    ITEM_CHERRY,
+    ITEM_CHERRY_SMALL,
+    ITEM_STAR,
+    ITEM_NO_ITEM = 255,
+};
 
 struct Item
 {
     Item();
 
-    i32 IsBelowPoc()
+    ZunBool IsBelowPoc()
     {
-        return this->currentPosition.y < g_Player.shooterData->pocY;
+        return this->pos.y < g_Player.shooterData->pocY;
     }
 
     i32 OffsetFromPoc()
     {
-        return this->currentPosition.y - g_Player.shooterData->pocY;
+        return this->pos.y - g_Player.shooterData->pocY;
     }
 
-    i32 ShouldAwardMaxScore()
+    ZunBool ShouldAwardMaxScore()
     {
-        return this->currentPosition.y < g_Player.shooterData->pocY || this->autoCollect;
+        return this->pos.y < g_Player.shooterData->pocY || this->autoCollect;
     }
 
     AnmVm sprite;
-    ZunVec3 currentPosition;
-    ZunVec3 prevPosition;
-    ZunVec3 startPosition;
-    ZunVec3 targetPosition;
+    ZunVec3 pos;
+    ZunVec3 prevPos;
+    ZunVec3 velocity;
+    ZunVec3 targetPos;
     ZunTimer timer;
     i8 itemType;
     i8 isInUse;
@@ -55,6 +53,8 @@ struct Item
     // pad 3
     struct Item *next;
 };
+
+#define MAX_ITEMS 1100
 
 struct ItemManager
 {
@@ -75,11 +75,11 @@ struct ItemManager
     // player transfers, graze rewards, or other SpawnItem callers.
     Item *SpawnEnemyDrop(ZunVec3 *heading, i32 itemType, i32 state);
 
-    struct Item items[1101];
+    Item items[MAX_ITEMS + 1];
     i32 nextIndex;
     i32 activeItemCount;
-    struct Item listHead;
-    struct Item *listTail;
+    Item listHead;
+    Item *listTail;
 };
 extern ItemManager g_ItemManager;
 

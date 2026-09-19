@@ -29,3 +29,32 @@ PASS means correctness/completion, not phone smoothness acceptance.
 
 Commands, evidence and unresolved failures:
 `../docs/th07-mp-performance-2026-09-16.md`.
+
+Static source-contract checks that are not tied to the historical feature rebase live in `audit/source-contracts/`.
+
+The fast, dependency-light C++ core suite is the CI entry point:
+
+```sh
+bash scripts/run-core-tests.sh
+```
+
+## Host integration dependencies
+
+Relay/coturn/browser integration tests execute the canonical Host implementation
+rather than a repository-private server copy. Set:
+
+```sh
+TH_EAGLER_HOST_ROOT=/path/to/eagler-touhou
+```
+
+The Host checkout must contain `server/netplay-relay.mjs`; Node-based relay
+tests also require the Host Node dependencies to be installed. Cross-game
+spectator smoke that exercises TH06 additionally requires:
+
+```sh
+TH_EAGLER_TH06_ROOT=/path/to/th06-eagler
+```
+
+No integration test should discover sibling checkouts from a fixed workspace
+layout. These environment variables make external ownership explicit.
+Cross-repository source-contract audits use the same variables.

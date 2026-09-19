@@ -1,5 +1,5 @@
-#include "netplay/SnapshotPolicy.hpp"
-#include "netplay/RollbackJournal.hpp"
+#include <eagler/netplay/SnapshotPolicy.hpp>
+#include <eagler/netplay/RollbackJournal.hpp>
 #include <cassert>
 #include <cstdio>
 #include <limits>

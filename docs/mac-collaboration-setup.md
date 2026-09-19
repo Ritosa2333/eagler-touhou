@@ -9,15 +9,11 @@ cd th07-eagler
 git switch eagler
 ```
 
-The Web build currently carries one small local SDL Emscripten audio patch.
-Apply it after cloning or refreshing submodules:
-
-```sh
-git -C vendored/SDL apply --unidiff-zero ../../patches/sdl-emscripten-audio-buffer.patch
-```
-
-The patch raises only the Emscripten ScriptProcessor buffer floor. It does not
-change the SDL submodule revision or native macOS audio.
+The Web build uses the pinned SDL submodule without local source patches. The
+Runtime requests its Web audio buffer through SDL's public
+`SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES` API before opening the Emscripten audio
+device. After cloning, refreshing, or building, the vendored SDL submodules are
+expected to remain clean.
 
 ## What is intentionally not in Git
 

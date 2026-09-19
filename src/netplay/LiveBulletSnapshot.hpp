@@ -1,7 +1,7 @@
 #pragma once
 
 #include "BulletManager.hpp"
-#include "PartitionedPoolJournal.hpp"
+#include <eagler/netplay/PartitionedPoolJournal.hpp>
 #include <array>
 #include <cstddef>
 #include <cstring>

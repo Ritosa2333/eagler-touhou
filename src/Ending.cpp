@@ -86,6 +86,8 @@ u32 Ending::OnUpdate(Ending *arg)
     framesSkipPressed = 0;
     for (;;)
     {
+        arg->prevEndingFadeRectColor = arg->endingFadeRectColor;
+
         if (arg->ParseEndFile() != ZUN_SUCCESS)
         {
             return CHAIN_CALLBACK_RESULT_CONTINUE_AND_REMOVE_JOB;
@@ -109,6 +111,9 @@ u32 Ending::OnUpdate(Ending *arg)
 
         break;
     }
+
+    arg->UpdatePrev();
+
     switch (arg->fadeType)
     {
     case 1:
@@ -239,7 +244,7 @@ ZunResult Ending::ParseEndFile()
         }
         if (this->timer3 <= 0)
         {
-            for (i = 0; i < 15; i++)
+            for (i = 0; i < MAX_ENDING_SPRITES; i++)
             {
                 this->sprites[i].pendingInterrupt = 2;
             }
@@ -307,7 +312,7 @@ ZunResult Ending::ParseEndFile()
                     return ZUN_ERROR;
                 }
                 local_58 = 0;
-                for (execOuter = 0; execOuter < 6; execOuter++)
+                for (execOuter = 0; execOuter < ARRAY_SIZE_SIGNED(g_GameManager.clrd); execOuter++)
                 {
                     for (execInner = 0; execInner < 4; execInner++)
                     {
@@ -322,7 +327,7 @@ ZunResult Ending::ParseEndFile()
                     }
                 }
             case 'R':
-                for (j = 0; j < 16; j++)
+                for (j = 0; j < ARRAY_SIZE_SIGNED(this->sprites); j++)
                 {
                     this->sprites[j].anmFileIdx = 0;
                 }
@@ -525,7 +530,7 @@ ZunResult Ending::AddedCallback(Ending *arg)
     const char *endingPath;
 
     g_GameManager.finished = 1;
-    g_Supervisor.isInEnding = 1;
+    g_Supervisor.isInEnding = TRUE;
     g_AnmManager->LoadAnms(ANM_FILE_STAFF, "data/staff01.anm", ANM_OFFSET_STAFF);
     g_AnmManager->SetTexture(0);
     g_AnmManager->SetSprite(NULL);
@@ -548,9 +553,9 @@ ZunResult Ending::AddedCallback(Ending *arg)
         arg->hasSeenEnding = 1;
     }
     g_GameManager.clrd[shotType].difficultyClearedWithoutRetries[g_GameManager.difficulty] = 99;
-    for (i = 0; i < 15; i++)
+    for (i = 0; i < MAX_ENDING_SPRITES; i++)
     {
-        g_AnmManager->ExecuteAnmIdx(&arg->sprites[i], i + 1807);
+        g_AnmManager->ExecuteAnmIdx(&arg->sprites[i], i + ANM_SCRIPT_TEXT_ENDING);
         arg->sprites[i].pos = ZunVec3(64.0f, (f32)i * 16.0f + 392.0f, 0.0f);
     }
     if (g_GameManager.globals->numRetries != 0)

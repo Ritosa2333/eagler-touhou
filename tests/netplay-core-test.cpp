@@ -1,5 +1,5 @@
-#include "netplay/NetplayCore.hpp"
-#include "netplay/NetplaySession.hpp"
+#include <eagler/netplay/NetplayCore.hpp>
+#include <eagler/netplay/NetplaySession.hpp>
 
 #include <cassert>
 #include <cstdint>
@@ -334,7 +334,7 @@ static void TestEquivalentPredictionConfirmationDoesNotRollback()
     assert(core.MarkSimulated(1, predicted));
 
     assert(core.SubmitEquivalentRemoteInput(1, 1, FrameInput(3)) ==
-           RemoteInputResult::PredictionCorrect);
+           EquivalentRemoteInputResult::Confirmed);
     assert(!core.HasRollbackRequest());
     assert(core.ConfirmedThrough(1) == 1);
     auto authoritative = core.PrepareFrame(1);

@@ -9,12 +9,12 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+from integration_support import require_host_relay, require_th06_root
 from playwright.sync_api import sync_playwright
 
 
-WORKSPACE = Path(__file__).resolve().parents[2]
-RELAY_ROOT = WORKSPACE / "eagler-touhou"
-RELAY_SCRIPT = RELAY_ROOT / "server" / "netplay-relay.mjs"
+ROOT = Path(__file__).resolve().parents[1]
+HOST_ROOT, RELAY_SCRIPT = require_host_relay()
 
 
 def free_port() -> int:
@@ -152,7 +152,7 @@ def snapshot(page, frame: int) -> dict:
 
 def run_game(game: str, force_relay: bool, spectator_delay_ms: int = 0,
              retry_continue: bool = False, browser_channel: str | None = None) -> None:
-    root = WORKSPACE / f"{game}-eagler"
+    root = ROOT if game == "th07" else require_th06_root()
     http_port = free_port()
     relay_port = free_port()
     room = f"{game}-spectator-{int(time.time() * 1000)}"
@@ -169,7 +169,7 @@ def run_game(game: str, force_relay: bool, spectator_delay_ms: int = 0,
         cwd=root, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
     relay = subprocess.Popen(
-        ["node", str(RELAY_SCRIPT)], cwd=RELAY_ROOT, env=env,
+        ["node", str(RELAY_SCRIPT)], cwd=HOST_ROOT, env=env,
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1,
     )
     browsers = []

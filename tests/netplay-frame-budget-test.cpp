@@ -1,4 +1,4 @@
-#include "netplay/FrameBudget.hpp"
+#include <eagler/netplay/FrameBudget.hpp>
 
 #include <cassert>
 #include <cstdio>

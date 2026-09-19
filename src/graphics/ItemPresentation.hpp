@@ -10,7 +10,7 @@ namespace Graphics
 template <typename Item, typename SetSprite>
 void UpdateItemPresentation(Item &item, SetSprite setSprite)
 {
-    if (item.currentPosition.y < -8.0f)
+    if (item.pos.y < -8.0f)
     {
         if (item.isOnscreen)
         {
@@ -19,7 +19,7 @@ void UpdateItemPresentation(Item &item, SetSprite setSprite)
             item.sprite.zWriteDisable = 1;
         }
         auto alpha = 255 - static_cast<std::int32_t>(
-            (8.0f - item.currentPosition.y) * 255.0f / 128.0f);
+            (8.0f - item.pos.y) * 255.0f / 128.0f);
         if (alpha < 64) alpha = 64;
         item.sprite.color.color = (item.sprite.color.color & 0x00ffffffu) |
                                    (static_cast<std::uint32_t>(alpha) << 24);

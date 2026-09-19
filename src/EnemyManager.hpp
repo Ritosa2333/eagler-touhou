@@ -4,14 +4,31 @@
 #include "BulletManager.hpp"
 #include "EclManager.hpp"
 #include "EffectManager.hpp"
+#include "SoundPlayer.hpp"
 #include "inttypes.hpp"
 
-extern u32 g_SpellcardScore[141];
+extern u32 g_SpellcardScore[SPELLCARD_COUNT];
+
+enum EnemyMoveMode
+{
+    ENEMY_MOVE_AXIS,
+    ENEMY_MOVE_POLAR,
+    ENEMY_MOVE_INTERP,
+    ENEMY_MOVE_ORBIT,
+};
+
+enum EnemyDeathType
+{
+    ENEMY_DEATH_DESPAWN,
+    ENEMY_DEATH_SCORE_ONLY,
+    ENEMY_DEATH_DROP_ITEMS,
+    ENEMY_DEATH_BOSS,
+};
 
 struct EnemyHistory
 {
     ZunVec3 pos;
-    ZunVec3 axisSpeed;
+    ZunVec3 velocity;
     f32 angle;
 };
 
@@ -43,6 +60,8 @@ struct SpellcardInfo
     u32 usedBomb;
 };
 
+#define ENEMY_STACK_SIZE 15
+
 struct Enemy
 {
     Enemy();
@@ -50,8 +69,8 @@ struct Enemy
     void CheckBulletPlayerCollision(ZunVec3 *bulletCenter, ZunVec3 *bulletSize);
     void ClampPos();
     void Despawn();
-    i32 HandleLifeCallback();
-    i32 HandleTimerCallback();
+    ZunBool HandleLifeCallback();
+    ZunBool HandleTimerCallback();
     void Move();
     void ResetEffectArray();
     void UpdateEffects();
@@ -105,27 +124,27 @@ struct Enemy
     AnmVm primaryVm;
     AnmVm vms[2];
     EnemyEclContext currentContext;
-    EnemyEclContext savedContextStack[16];
+    EnemyEclContext savedContextStack[ENEMY_STACK_SIZE + 1];
     i32 stackDepth;
     i32 unused_2a80;
     i32 deathCallbackSub;
     i32 interrupts[32];
     i32 runInterrupt;
     ZunVec3 pos;
-    ZunVec3 prevPosition;
-    ZunVec3 axisSpeed;
+    ZunVec3 prevRenderPos;
+    ZunVec3 velocity;
     ZunVec3 prevPos;
     ZunVec3 deltaPos;
     ZunVec3 hitboxSize;
     ZunVec3 grazeSize;
     f32 angle;
-    f32 angularVelocity;
-    f32 moveAngle;
-    f32 moveAngularVelocity;
-    f32 moveSpeed;
-    f32 moveAcceleration;
-    f32 moveRadius;
-    f32 moveRadialVelocity;
+    f32 angleVel;
+    f32 orbitAngle;
+    f32 orbitAngleVel;
+    f32 speed;
+    f32 accel;
+    f32 orbitRadius;
+    f32 orbitRadialVel;
     ZunVec3 shootOffset;
     ZunVec3 moveInterp;
     ZunVec3 moveInterpStartPos;
@@ -250,6 +269,8 @@ struct Enemy
     Enemy *next;
 };
 
+#define MAX_ENEMIES 480
+
 struct EnemyManager
 {
     EnemyManager();
@@ -264,7 +285,6 @@ struct EnemyManager
     static u32 OnDraw2(EnemyManager *arg);
 
     static u32 ActualOnDraw(EnemyManager *arg, i32 param_2, i32 param_3);
-    void Initialize();
 
     i32 HasActiveBoss();
     i32 RemoveAllEnemies(i32 scoreMax, i32 scoreMin);
@@ -273,10 +293,78 @@ struct EnemyManager
     Enemy *SpawnEnemyEx(i32 eclSubId, ZunVec3 *pos, i32 life, i32 itemDrop, i32 score,
                         EclContextArgs *args);
 
+    void Initialize()
+    {
+        Enemy *enemy;
+        i32 i;
+
+        enemy = &this->enemies[0];
+        memset(this, 0, sizeof(EnemyManager));
+        enemy = &this->enemyTemplate;
+        memset(enemy, 0, sizeof(Enemy));
+        for (i = 0; i < ARRAY_SIZE_SIGNED(enemy->vms); i++)
+        {
+            enemy->vms[i].anmFileIdx = -1;
+        }
+        for (i = 0; i < ARRAY_SIZE_SIGNED(enemy->enemyHistory); i++)
+        {
+            enemy->enemyHistory[i].pos.x = -999.0f;
+        }
+        enemy->active = 1;
+        enemy->timer = 0;
+        enemy->isInBounds = 0;
+        enemy->hitboxSize = ZunVec3(12.0f, 12.0f, 12.0f);
+        enemy->velocity = ZunVec3(0.0f, 0.0f, 0.0f);
+        enemy->angleVel = 0.0f;
+        enemy->angle = 0.0f;
+        enemy->accel = 0.0f;
+        enemy->speed = 0.0f;
+        enemy->moveMode = ENEMY_MOVE_AXIS;
+        enemy->disableBullets = 0;
+        enemy->mirror = 0;
+        enemy->isBoss = 0;
+        enemy->stackDepth = 0;
+        enemy->life = 1;
+        enemy->score = 100;
+        enemy->deathAnm1 = 0;
+        enemy->deathAnm2 = 0;
+        enemy->deathAnm3 = 0;
+        enemy->shootInterval = 0;
+        enemy->shootIntervalTimer = 0;
+        enemy->shootOffset = ZunVec3(0.0f, 0.0f, 0.0f);
+        enemy->anmExLeft = -1;
+        enemy->anmExRight = -1;
+        enemy->anmExDefaults = -1;
+        enemy->canDie = 1;
+        enemy->hasContactHitbox = 1;
+        enemy->canBeDamaged = 1;
+        enemy->hasNoCollision = 0;
+        enemy->isHittable = 1;
+        enemy->isProjectile = 0;
+        enemy->deathType = ENEMY_DEATH_DESPAWN;
+        enemy->deathCallbackSub = -1;
+        enemy->hasMovementBounds = 0;
+        enemy->effectsNum = 0;
+        enemy->runInterrupt = -1;
+        for (i = 0; i < ARRAY_SIZE_SIGNED(enemy->lifeCallbackThreshold); i++)
+        {
+            enemy->lifeCallbackThreshold[i] = -1;
+        }
+        enemy->timerCallbackThreshold = -1;
+        enemy->periodicCallbackSub = -1;
+        enemy->laserIdx = 0;
+        enemy->damageTintTimer = 0;
+        enemy->primaryVmAutoRotate = 0;
+        enemy->bulletRankSpeedLow = -0.15f;
+        enemy->bulletRankSpeedHigh = 0.15f;
+        enemy->bulletProps.soundIdx = SOUND_BOMB_MARISA_A_FOCUS;
+        enemy->bulletProps.soundOverride = SOUND_DIR_CHANGING;
+    }
+
     const char *stgEnmAnmFilename;
     const char *stgEnm2AnmFilename;
     Enemy enemyTemplate;
-    Enemy enemies[481];
+    Enemy enemies[MAX_ENEMIES + 1];
     Enemy *bosses[8];
     u16 randomItemSpawnIdx;
     u16 randomItemTableIdx;

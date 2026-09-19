@@ -1,9 +1,9 @@
 const { spawn } = require('node:child_process');
-const path = require('node:path');
+const { requireHostFile } = require('./integration-support.cjs');
 
 const WebSocket = globalThis.WebSocket;
 const port = 18145;
-const relayPath = path.resolve(__dirname, '../../eagler-touhou/server/netplay-relay.mjs');
+const relayPath = requireHostFile('server/netplay-relay.mjs', 'netplay relay');
 
 function waitListening(child) {
   return new Promise((resolve, reject) => {

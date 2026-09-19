@@ -361,13 +361,13 @@ static bool GrantPlayerExtend(u8 playerId)
         if ((i32)g_GameManager.globals->livesRemaining < 8)
         {
             g_GameManager.AddLivesRemaining(1);
-            g_Gui.showLives = 2;
+            g_Gui.lifeDisplayUpdateFrames = 2;
             return true;
         }
         if ((i32)g_GameManager.globals->bombsRemaining < 8)
         {
             g_GameManager.AddBombsRemaining(1);
-            g_Gui.showBombs = 2;
+            g_Gui.bombDisplayUpdateFrames = 2;
             return true;
         }
         return false;
@@ -375,13 +375,13 @@ static bool GrantPlayerExtend(u8 playerId)
     if (resources->livesRemaining < 8)
     {
         resources->livesRemaining++;
-        g_Gui.showLives = 2;
+        g_Gui.lifeDisplayUpdateFrames = 2;
         return true;
     }
     if (resources->bombsRemaining < 8)
     {
         resources->bombsRemaining++;
-        g_Gui.showBombs = 2;
+        g_Gui.bombDisplayUpdateFrames = 2;
         return true;
     }
     return false;

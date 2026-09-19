@@ -1,6 +1,6 @@
-#include "netplay/NetplayCore.hpp"
-#include "netplay/NetplayInput.hpp"
-#include "netplay/RollbackJournal.hpp"
+#include <eagler/netplay/NetplayCore.hpp>
+#include <eagler/netplay/NetplayInput.hpp>
+#include <eagler/netplay/RollbackJournal.hpp>
 
 #include <algorithm>
 #include <array>

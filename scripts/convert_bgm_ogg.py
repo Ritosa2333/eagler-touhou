@@ -4,11 +4,20 @@
 from argparse import ArgumentParser
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
 from struct import Struct
 import sys
 
-import soundfile as sf
+def load_extract_pbg4_entry(host_root: Path):
+    shared_tools = host_root.expanduser().resolve() / "scripts"
+    helper = shared_tools / "touhou_formats.py"
+    if not helper.is_file():
+        raise RuntimeError(f"Host checkout is missing scripts/touhou_formats.py: {host_root}")
+    if str(shared_tools) not in sys.path:
+        sys.path.insert(0, str(shared_tools))
+    from touhou_formats import extract_pbg4_entry
+    return extract_pbg4_entry
 
 SHARED_TOOLS = Path(__file__).resolve().parents[2] / "eagler-touhou" / "scripts"
 if str(SHARED_TOOLS) not in sys.path:
@@ -62,14 +71,26 @@ BGM_FORMAT = Struct("<16s i I i i H H I I H H H 2x")
 
 def main() -> None:
     parser = ArgumentParser()
+    parser.add_argument(
+        "--host-root", type=Path,
+        default=Path(os.environ["TH_EAGLER_HOST_ROOT"]) if os.environ.get("TH_EAGLER_HOST_ROOT") else None,
+        help="eagler-touhou checkout (or set TH_EAGLER_HOST_ROOT)",
+    )
     parser.add_argument("--archive", type=Path, default=Path("assets/th07.dat"))
     parser.add_argument("--pcm", type=Path, default=Path("assets/thbgm.dat"))
     parser.add_argument("--output", type=Path, default=Path("assets-ogg/bgm-ogg"))
     parser.add_argument("--quality", type=float, default=0.55)
     parser.add_argument("--baseline", type=Path, default=Path(__file__).with_name("ogg_server_baseline.json"))
     args = parser.parse_args()
+    if args.host_root is None:
+        parser.error("--host-root or TH_EAGLER_HOST_ROOT is required")
     if not 0.0 <= args.quality <= 1.0:
         parser.error("--quality must be between 0 and 1")
+    try:
+        import soundfile as sf
+    except ImportError as error:
+        parser.error(f"soundfile is required for OGG conversion: {error}")
+    extract_pbg4_entry = load_extract_pbg4_entry(args.host_root)
     baseline = load_server_baseline(args.baseline)
     if args.quality != float(baseline.get("quality")):
         parser.error(f"--quality must remain {baseline['quality']} to preserve the production OGG baseline")

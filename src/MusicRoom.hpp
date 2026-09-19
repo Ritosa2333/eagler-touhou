@@ -4,6 +4,9 @@
 
 #include "AnmVm.hpp"
 #include "Chain.hpp"
+#include "ZunBool.hpp"
+
+#define MAX_TRACK_DESCRIPTORS 32
 
 struct TrackDescriptor
 {
@@ -50,7 +53,7 @@ struct MusicRoom
     ChainElem *calcChain;
     ChainElem *drawChain;
     i32 waitFramesCounter;
-    i32 enableInput;
+    ZunBool enableInput;
     i32 cursor;
     i32 selectedIdx;
     i32 listingOffset;

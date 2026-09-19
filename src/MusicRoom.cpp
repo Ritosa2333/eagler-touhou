@@ -85,7 +85,7 @@ ZunResult MusicRoom::CheckInputEnable()
 
     if (this->waitFramesCounter == 0)
     {
-        for (i = 0; i < 31; i++)
+        for (i = 0; i < ARRAY_SIZE_SIGNED(this->titleSprites); i++)
         {
             if (this->cursor == i)
             {
@@ -96,14 +96,14 @@ ZunResult MusicRoom::CheckInputEnable()
                 this->titleSprites[i].pendingInterrupt = 2;
             }
         }
-        for (i = 0; i < 8; i++)
+        for (i = 0; i < ARRAY_SIZE_SIGNED(this->descriptionSprites); i++)
         {
             this->descriptionSprites[i].pendingInterrupt = 1;
         }
     }
     if (this->waitFramesCounter >= 8)
     {
-        this->enableInput = 1;
+        this->enableInput = TRUE;
     }
     return ZUN_SUCCESS;
 }
@@ -129,7 +129,7 @@ i32 MusicRoom::ProcessInput()
         {
             this->listingOffset = this->cursor;
         }
-        for (i = 0; i < 31; i++)
+        for (i = 0; i < ARRAY_SIZE_SIGNED(this->titleSprites); i++)
         {
             if (this->cursor == i)
             {
@@ -156,7 +156,7 @@ i32 MusicRoom::ProcessInput()
                 this->listingOffset = this->cursor - 9;
             }
         }
-        for (i = 0; i < 31; i++)
+        for (i = 0; i < ARRAY_SIZE_SIGNED(this->titleSprites); i++)
         {
             if (this->cursor == i)
             {
@@ -207,7 +207,7 @@ i32 MusicRoom::ProcessInput()
     }
     if (WAS_PRESSED_RAW(TH_BUTTON_RETURNMENU))
     {
-        g_Supervisor.curState = 1;
+        g_Supervisor.curState = SUPERVISOR_STATE_MAINMENU;
         return 1;
     }
 
@@ -248,11 +248,11 @@ recheck:
         arg->waitFramesCounter++;
     }
     g_AnmManager->ExecuteScript(&arg->vm[0]);
-    for (i = 0; i < 31; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(arg->titleSprites); i++)
     {
         g_AnmManager->ExecuteScript(&arg->titleSprites[i]);
     }
-    for (i = 0; i < 8; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(arg->descriptionSprites); i++)
     {
         g_AnmManager->ExecuteScript(&arg->descriptionSprites[i]);
     }
@@ -384,7 +384,7 @@ ZunResult MusicRoom::AddedCallback(MusicRoom *arg)
         return ZUN_ERROR;
     }
 
-    arg->trackDescriptors = new TrackDescriptor[32];
+    arg->trackDescriptors = new TrackDescriptor[MAX_TRACK_DESCRIPTORS];
     offset = -1;
     while (((uintptr_t)curChar - (uintptr_t)firstChar) < g_LastFileSize)
     {
@@ -436,7 +436,7 @@ ZunResult MusicRoom::AddedCallback(MusicRoom *arg)
                     goto LAB_0043b195;
                 }
             }
-            for (lineIdx = 0; lineIdx < 8; lineIdx++)
+            for (lineIdx = 0; lineIdx < ARRAY_SIZE_SIGNED(arg->descriptionSprites); lineIdx++)
             {
                 if (*curChar == '@')
                 {
@@ -525,8 +525,8 @@ ZunResult MusicRoom::DeletedCallback(MusicRoom *arg)
     delete[] arg->trackDescriptors;
     arg->trackDescriptors = NULL;
     g_AnmManager->ReleaseSurface(0);
-    g_AnmManager->ReleaseAnm(46);
-    g_AnmManager->ReleaseAnm(47);
+    g_AnmManager->ReleaseAnm(ANM_FILE_MUSIC_0);
+    g_AnmManager->ReleaseAnm(ANM_FILE_MUSIC_1);
     g_Chain.Cut(arg->drawChain);
     arg->drawChain = NULL;
     return ZUN_SUCCESS;

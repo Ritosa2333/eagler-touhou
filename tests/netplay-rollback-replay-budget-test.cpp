@@ -1,4 +1,4 @@
-#include "netplay/RollbackReplayBudget.hpp"
+#include <eagler/netplay/RollbackReplayBudget.hpp>
 
 #include <cassert>
 #include <cstdio>

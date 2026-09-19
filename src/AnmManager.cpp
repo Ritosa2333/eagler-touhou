@@ -119,7 +119,7 @@ bool BuildSpriteExtrusionAtlas(AnmManager *manager, i32 textureIdx,
     rects.reserve(spriteIndices.size());
     for (const i32 spriteIdx : spriteIndices)
     {
-        if (spriteIdx < 0 || spriteIdx >= ANM_SPRITE_SLOT_COUNT)
+        if (spriteIdx < 0 || spriteIdx >= MAX_SCRIPTS_SPRITES)
             continue;
         AnmLoadedSprite &sprite = manager->sprites[spriteIdx];
         sprite.extrudedUvStart = sprite.uvStart;
@@ -618,7 +618,7 @@ AnmManager::AnmManager()
 {
     memset((void *)this, 0, sizeof(AnmManager));
 
-    for (i32 i = 0; i < ANM_SPRITE_SLOT_COUNT; i++)
+    for (i32 i = 0; i < MAX_SCRIPTS_SPRITES; i++)
     {
         this->sprites[i].sourceFileIndex = -1;
     }
@@ -983,7 +983,7 @@ i32 AnmManager::LoadAnm(i32 textureIdx, AnmRawEntry *rawEntry, i32 spriteIdxOffs
         g_GameErrorContext.Fatal("アニメが読み込めません。データが失われてるか壊れています\n");
         return ZUN_ERROR;
     }
-    if (textureIdx < 0 || textureIdx >= ANM_FILE_SLOT_COUNT)
+    if (textureIdx < 0 || textureIdx >= MAX_ANM_FILES)
     {
         g_GameErrorContext.Fatal("テクスチャ格納先が足りません\n");
         return ZUN_ERROR;
@@ -1156,7 +1156,7 @@ i32 AnmManager::LoadAnm(i32 textureIdx, AnmRawEntry *rawEntry, i32 spriteIdxOffs
         {
             id = rawSprite->id;
         }
-        if (rawSprite->id + spriteIdxOffset >= ANM_SPRITE_SLOT_COUNT)
+        if (rawSprite->id + spriteIdxOffset >= MAX_SCRIPTS_SPRITES)
         {
             g_GameErrorContext.Fatal("スプライトが格納できません。テーブルが不足しています\n");
             return ZUN_ERROR;
@@ -1173,7 +1173,7 @@ i32 AnmManager::LoadAnm(i32 textureIdx, AnmRawEntry *rawEntry, i32 spriteIdxOffs
         BuildSpriteExtrusionAtlas(this, data->textureIdx, loadedSpriteIndices);
     for (i = 0; i < data->numScripts; i++, curSprite += 2)
     {
-        if (*curSprite + spriteIdxOffset >= ANM_SPRITE_SLOT_COUNT)
+        if (*curSprite + spriteIdxOffset >= MAX_SCRIPTS_SPRITES)
         {
             g_GameErrorContext.Fatal("アニメが格納できません。テーブルが不足しています\n");
             return ZUN_ERROR;
@@ -1212,7 +1212,7 @@ void AnmManager::ReleaseAnm(i32 anmIdx)
     i32 spriteIdxOffset;
     i32 *spriteIdx;
 
-    if (anmIdx < 0 || (u32)anmIdx >= ANM_FILE_SLOT_COUNT)
+    if (anmIdx < 0 || (u32)anmIdx >= MAX_ANM_FILES)
     {
         return;
     }
@@ -1389,10 +1389,10 @@ void AnmManager::SetRenderStateForVm(AnmVm *vm)
             color.bytes.b = ZunColor::Multiply(color.bytes.b, this->color.bytes.b);
             color.bytes.a = ZunColor::Multiply(color.bytes.a, this->color.bytes.a);
         }
-        g_QuadVertices[0].color = color;
-        g_QuadVertices[1].color = color;
-        g_QuadVertices[2].color = color;
-        g_QuadVertices[3].color = color;
+        g_QuadVertices[0].diffuse = color;
+        g_QuadVertices[1].diffuse = color;
+        g_QuadVertices[2].diffuse = color;
+        g_QuadVertices[3].diffuse = color;
         g_Quad3DFallback[0].diffuse = color;
         g_Quad3DFallback[1].diffuse = color;
         g_Quad3DFallback[2].diffuse = color;
@@ -1519,10 +1519,10 @@ ZunResult AnmManager::DrawInner(AnmVm *vm, u32 drawFlags)
             color.bytes.b = ZunColor::Multiply(color.bytes.b, this->color.bytes.b);
             color.bytes.a = ZunColor::Multiply(color.bytes.a, this->color.bytes.a);
         }
-        g_QuadVertices[0].color = color;
-        g_QuadVertices[1].color = color;
-        g_QuadVertices[2].color = color;
-        g_QuadVertices[3].color = color;
+        g_QuadVertices[0].diffuse = color;
+        g_QuadVertices[1].diffuse = color;
+        g_QuadVertices[2].diffuse = color;
+        g_QuadVertices[3].diffuse = color;
     }
     SyncRenderState(vm);
     PushSprite(g_QuadVertices);
@@ -2699,7 +2699,7 @@ stop:
             vm->rotation.z, g_Supervisor.effectiveFramerateMultiplier * vm->angleVel.z);
         vm->updateRotation = 1;
     }
-    for (i = 0; i < 5; i++)
+    for (i = 0; i < ARRAY_SIZE_SIGNED(vm->interpStartTimes); i++)
     {
         if (vm->interpEndTimes[i] > 0)
         {
@@ -3162,8 +3162,8 @@ void AnmManager::CopySurfaceToBackBuffer(i32 surfaceIdx, i32 left, i32 top, i32 
     vertices[2].textureUV = {u0, v1};
     vertices[3].textureUV = {u1, v1};
 
-    vertices[0].color.color = vertices[1].color.color = vertices[2].color.color =
-        vertices[3].color.color = 0xFFFFFFFF;
+    vertices[0].diffuse.color = vertices[1].diffuse.color = vertices[2].diffuse.color =
+        vertices[3].diffuse.color = 0xFFFFFFFF;
 
     g_Supervisor.gfxDevice->SetDepthMask(false);
     g_Supervisor.gfxDevice->SetBlendMode(BLEND_NONE, BLEND_NONE);
@@ -3217,8 +3217,8 @@ void AnmManager::DrawEndingRect(i32 surfaceIdx, f32 rectX, f32 rectY, f32 rectLe
     vertices[2].textureUV = {u0, v1};
     vertices[3].textureUV = {u1, v1};
 
-    vertices[0].color.color = vertices[1].color.color = vertices[2].color.color =
-        vertices[3].color.color = 0xFFFFFFFF;
+    vertices[0].diffuse.color = vertices[1].diffuse.color = vertices[2].diffuse.color =
+        vertices[3].diffuse.color = 0xFFFFFFFF;
 
     g_Supervisor.gfxDevice->SetDepthMask(false);
     g_Supervisor.gfxDevice->SetBlendMode(BLEND_NONE, BLEND_NONE);
@@ -3403,7 +3403,7 @@ ZunResult AnmManager::UpdateTrail(AnmVm *vm, VertexTex1DiffuseXyzrhw *vertices, 
     {
         vertex->textureUV.x = uvX;
         vertex->textureUV.y = uvY;
-        vertex->color.color = vm->color.color;
+        vertex->diffuse.color = vm->color.color;
         vertex->w = 1.0f;
     }
 
@@ -3414,7 +3414,7 @@ ZunResult AnmManager::UpdateTrail(AnmVm *vm, VertexTex1DiffuseXyzrhw *vertices, 
     {
         vertex->textureUV.x = uvX;
         vertex->textureUV.y = uvY;
-        vertex->color.color = vm->color.color;
+        vertex->diffuse.color = vm->color.color;
         vertex->w = 1.0f;
     }
 
