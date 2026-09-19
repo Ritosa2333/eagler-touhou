@@ -101,6 +101,10 @@ For Replay, record the logical run-state consumed by simulation, not a picture o
 - Touch Bomb must preserve the title's original deathbomb window and must not
   drop a held movement gesture merely because movement output is temporarily
   blocked during death/respawn state.
+- Unlimited direct touch is a cheat only after a non-zero unlimited movement is
+  actually consumed by gameplay. Merely enabling the option must not mark the
+  run. Once used, the run-level marker survives stage transitions and forces the
+  title's Result/high-score and saved-Replay processing-drop rate to `100%`.
 - Do not use CSS alone to fix an orientation-memory bug. Verify the saved window/layout owner.
 - `less motion` reduces mobile presentation motion; it does not delete functionality or gameplay.
 - Do not add unrequested D-pad, free remap or save-state features because a feedback item mentions them.
