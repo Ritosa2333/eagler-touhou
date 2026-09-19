@@ -13,6 +13,7 @@
 #include <eagler/netplay/InputRepairBudget.hpp>
 #include <eagler/netplay/FrameAdvantageWindow.hpp>
 #include <eagler/netplay/FramePacingPolicy.hpp>
+#include <eagler/netplay/ConfirmedInputWatchdog.hpp>
 
 #include "BulletManager.hpp"
 #include "AsciiManager.hpp"
@@ -106,9 +107,7 @@ struct ReplayFrameBinding
     i32 replayFrame = -1;
 };
 std::array<ReplayFrameBinding, INPUT_HISTORY_SIZE> g_ReplayFrameBindings{};
-std::array<std::uint32_t, MAX_PLAYERS> g_LastConfirmedFrame{};
-std::array<std::uint64_t, MAX_PLAYERS> g_LastConfirmedAdvanceMs{};
-std::array<bool, MAX_PLAYERS> g_RemoteTimeoutArmed{};
+std::array<ConfirmedInputWatchdog, MAX_PLAYERS> g_RemoteInputWatchdogs{};
 bool g_IndependentInputSlotsObserved = false;
 std::uint8_t g_InputSlotObservedMask = 0;
 bool g_PhysicalInputObserved = false;
@@ -772,22 +771,10 @@ bool RemoteInputsTimedOut()
         const std::uint32_t confirmed = g_Core.ConfirmedThrough(player);
         if (!g_Session.CanStart())
         {
-            g_RemoteTimeoutArmed[player] = false;
+            g_RemoteInputWatchdogs[player].Disarm();
             continue;
         }
-        if (!g_RemoteTimeoutArmed[player])
-        {
-            g_RemoteTimeoutArmed[player] = true;
-            g_LastConfirmedFrame[player] = confirmed;
-            g_LastConfirmedAdvanceMs[player] = now;
-            continue;
-        }
-        if (confirmed != g_LastConfirmedFrame[player])
-        {
-            g_LastConfirmedFrame[player] = confirmed;
-            g_LastConfirmedAdvanceMs[player] = now;
-        }
-        else if (now - g_LastConfirmedAdvanceMs[player] >= timeoutMs)
+        if (g_RemoteInputWatchdogs[player].Observe(confirmed, now, timeoutMs))
         {
             std::printf(
                 "netplay lan stage: ERROR remote input timeout player=%u confirmed=%u sim=%u\n",
@@ -1460,9 +1447,8 @@ bool Initialize()
         return false;
     g_ProductionTransportStarted = true;
 
-    g_LastConfirmedFrame.fill(INVALID_FRAME);
     g_LastRemoteSenderFrame.fill(INVALID_FRAME);
-    g_RemoteTimeoutArmed.fill(false);
+    g_RemoteInputWatchdogs = {};
     for (FrameAdvantageWindow &state : g_PeerTimeSync)
         state = FrameAdvantageWindow{};
     g_PredictionDepth.fill(0);
@@ -1491,8 +1477,6 @@ bool Initialize()
     g_NextSpectatorPublishFrame = 0;
     g_NextSpectatorReceiveFrame = 0;
     g_SpectatorFrames.clear();
-    g_LastConfirmedAdvanceMs.fill(SDL_GetTicks());
-
     g_Active = true;
 #ifdef __EMSCRIPTEN__
     if (ProductionLanMode())
