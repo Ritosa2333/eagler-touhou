@@ -60,6 +60,8 @@ Published/active convergence slices:
   8 ms wall-time boundary for starting additional fixed ticks
 - shared frame-pacing formula preserving the long-lived TH06/TH07 lead filter,
   deadband, ±2% clamp and smoothing constants
+- confirmed-input liveness watchdog preserving the long-lived 15-second
+  production peer-progress timeout while allowing title test harness overrides
 
 `NetplaySession` and `WebSocketTransport` were byte-identical before extraction.
 `NetplayProtocol` differs only through a deliberately tiny title-owned wire
@@ -139,6 +141,12 @@ drivers: infer relative lead from frame-advantage exchange, reject samples past
 0.98..1.02, smooth by 0.08 and snap within 0.0002 of unity. Peer membership,
 packet de-duplication, telemetry and diagnostic disable switches stay title-owned.
 
+`ConfirmedInputWatchdog` likewise owns no room lifecycle. Once a title decides
+a remote peer is required and the session is active, it observes that peer's
+confirmed input frontier and reports a timeout only after the frontier remains
+unchanged for 15 seconds. Disarming, choosing a longer hidden-test timeout and
+turning the timeout into a visible room failure remain title responsibilities.
+
 Future intended slices include broader connection health policy,
 browser-frame budgeting and broader performance diagnostics once their
 title-facing seams are explicit.
@@ -158,9 +166,10 @@ Use this order unless new evidence proves a dependency requires otherwise:
 9. allocation-free per-peer frame-advantage smoothing;
 10. browser catch-up start budget;
 11. shared frame-pacing formula;
-12. broader health policy and rollback replay slicing;
-13. performance testkit and diagnostics;
-14. only then consider broader platform/presentation helpers.
+12. confirmed-input peer liveness watchdog;
+13. broader health policy and rollback replay slicing;
+14. performance testkit and diagnostics;
+15. only then consider broader platform/presentation helpers.
 
 Every step must leave TH06 and TH07 buildable and testable independently. A
 consumer may advance to a newer common implementation only after its own

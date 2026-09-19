@@ -101,6 +101,7 @@ def check_consumer(name: str, source_var: str, magic: str, transport_tag: str) -
     retired_paths = (
         "src/netplay/BrowserPeerTransport.hpp",
         "src/netplay/BrowserPeerTransport.cpp",
+        "src/netplay/ConfirmedInputWatchdog.hpp",
         "src/netplay/DirectTouchEquivalence.hpp",
         "src/netplay/FrameAdvantageWindow.hpp",
         "src/netplay/FrameBudget.hpp",
@@ -133,6 +134,7 @@ def check_consumer(name: str, source_var: str, magic: str, transport_tag: str) -
 
     retired_headers = (
         "BrowserPeerTransport",
+        "ConfirmedInputWatchdog",
         "DirectTouchEquivalence",
         "FrameAdvantageWindow",
         "FrameBudget",
@@ -173,6 +175,7 @@ def main() -> None:
         "src/netplay/WebSocketTransport.cpp",
         "include/eagler/netplay/BrowserPeerTransport.hpp",
         "src/netplay/BrowserPeerTransport.cpp",
+        "include/eagler/netplay/ConfirmedInputWatchdog.hpp",
         "include/eagler/netplay/DirectTouchEquivalence.hpp",
         "include/eagler/netplay/FrameAdvantageWindow.hpp",
         "include/eagler/netplay/FrameBudget.hpp",

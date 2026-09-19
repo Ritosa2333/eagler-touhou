@@ -142,6 +142,17 @@ add_test(
     COMMAND eagler_common_frame_pacing_policy_test
 )
 
+add_executable(eagler_common_confirmed_input_watchdog_test
+    confirmed-input-watchdog-test.cpp
+)
+target_link_libraries(eagler_common_confirmed_input_watchdog_test PRIVATE
+    eagler::netplay_headers
+)
+add_test(
+    NAME eagler-common.confirmed-input-watchdog
+    COMMAND eagler_common_confirmed_input_watchdog_test
+)
+
 add_executable(eagler_common_input_repair_budget_test
     input-repair-budget-test.cpp
 )
