@@ -109,6 +109,15 @@ separate observations; do not infer audio health from a visible canvas or
 `isPlaying` flag. Current TH08/TH10 shells pause the game loop while recovering
 foreground audio so browser output recovery cannot race ordinary simulation.
 
+For the current SDL3 browser backend, pausing only the SDL audio stream is not
+enough for background/foreground recovery. TH06/TH07 established the working
+pattern: disconnect `Module.SDL3.audio_playback.scriptProcessorNode` before the
+stream/device is paused, then after the browser `AudioContext` is genuinely
+running again reconnect that node to `audioContext.destination` before normal
+Runtime execution resumes. Otherwise the title-side mixer can remain correct
+while the resumed browser output stutters. This is an output-lifecycle fix; do
+not restart the BGM owner, seek the track, reset loops or replace fade state.
+
 ## Code anchors
 
 Current directory-Runtime reference anchors (in the sibling TH08/TH10 Runtime

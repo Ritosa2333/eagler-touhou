@@ -115,8 +115,8 @@ profiles so a future adapter cannot satisfy them with a superficial checkbox:
   durable sync/restart/offline continuity and separation between Package bytes
   and mutable player data;
 - `REQUIRED_MUSIC_BEHAVIORS` - genuinely audible normal OGG, explicit no-music,
-  normal title music lifecycle, visible failures and presentation/audio
-  independence;
+  normal title music lifecycle, background/foreground output recovery without
+  restarting title music state, visible failures and presentation/audio independence;
 - `REQUIRED_PACKAGE_BEHAVIORS` - canonical Package Store ownership, DATA
   identity/layout validation, atomic generations, local-import parity and
   installed offline launch without an adapter-private shadow store.

@@ -95,7 +95,7 @@ assert.equal(new Set(REQUIRED_REPLAY_BEHAVIORS.map(item => item.id)).size, REQUI
 for (const [name, profile, requiredIds] of [
   ["input", REQUIRED_INPUT_BEHAVIORS, ["keyboard-logical-input", "controller-logical-input", "loss-cleanup"]],
   ["storage", REQUIRED_STORAGE_BEHAVIORS, ["declared-save-root", "strict-user-file-allowlist", "runtime-restart-durability", "package-user-data-separation"]],
-  ["music", REQUIRED_MUSIC_BEHAVIORS, ["audible-ogg-normal-mode", "explicit-no-music-mode", "presentation-audio-independence"]],
+  ["music", REQUIRED_MUSIC_BEHAVIORS, ["audible-ogg-normal-mode", "explicit-no-music-mode", "foreground-audio-recovery", "presentation-audio-independence"]],
   ["package", REQUIRED_PACKAGE_BEHAVIORS, ["canonical-package-store", "atomic-current-generation", "offline-installed-launch"]],
 ]) {
   assert.ok(profile.length > 0, `${name}: required behavior profile must not be empty`);

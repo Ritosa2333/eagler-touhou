@@ -155,6 +155,7 @@ export const REQUIRED_MUSIC_BEHAVIORS = Object.freeze([
   { id: "audible-ogg-normal-mode", summary: "the normal OGG selection produces the title's actual game music rather than a silent or placeholder compatibility mode" },
   { id: "explicit-no-music-mode", summary: "the no-music selection starts the game without BGM while leaving unrelated game audio behavior intact" },
   { id: "title-music-lifecycle", summary: "track start/stop/change/fade/pause behavior follows the title's ordinary music lifecycle and ends on Runtime teardown" },
+  { id: "foreground-audio-recovery", summary: "background/foreground recovery restores the browser output path without restarting the track, corrupting queued output, or replacing the title's loop/fade/playback state" },
   { id: "music-failure-surfacing", summary: "missing/corrupt/failed required music resources are surfaced through the shared error/health model instead of hanging configure/launch silently" },
   { id: "presentation-audio-independence", summary: "display-rate presentation frames never duplicate authoritative music/sound events or advance audio event state" },
 ] satisfies readonly RequiredCoreBehavior[]);
