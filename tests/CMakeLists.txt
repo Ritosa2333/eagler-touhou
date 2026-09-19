@@ -153,6 +153,17 @@ add_test(
     COMMAND eagler_common_confirmed_input_watchdog_test
 )
 
+add_executable(eagler_common_rollback_replay_budget_test
+    rollback-replay-budget-test.cpp
+)
+target_link_libraries(eagler_common_rollback_replay_budget_test PRIVATE
+    eagler::netplay_headers
+)
+add_test(
+    NAME eagler-common.rollback-replay-budget
+    COMMAND eagler_common_rollback_replay_budget_test
+)
+
 add_executable(eagler_common_input_repair_budget_test
     input-repair-budget-test.cpp
 )

@@ -166,11 +166,16 @@ state; extracting them now would effectively design a universal
 
 Do **not** create v0.14 merely to remove that orchestration duplication. Reopen
 the driver boundary when TH08/TH10 multiplayer or another third production
-consumer exists and can validate the interface shape. Likewise,
-`RollbackReplayBudget` remains TH07 opt-in incremental-reconcile
-infrastructure until a second production consumer adopts the same slicing
-policy. Broader diagnostics/testkit work may still move independently when it
-is title-neutral and already proven reusable.
+consumer exists and can validate the interface shape.
+
+`RollbackReplayBudget` is retained as a shared **experimental primitive**
+because the TH07 performance work already used the same generic 4 ms /
+four-frame slicing rule. It remains opt-in incremental-reconcile infrastructure:
+the Launcher does not enable it, it is not an input-delay mode, and it must not
+be presented as part of the production timing profile. A second production
+consumer is still required before replay-slicing becomes a shared product
+policy. Broader diagnostics/testkit work may move independently when it is
+title-neutral and already proven reusable.
 
 ## Convergence order
 
