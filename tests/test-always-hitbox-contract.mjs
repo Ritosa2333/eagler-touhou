@@ -13,6 +13,7 @@ const th08Form = fs.readFileSync(path.join(root, "th08-eagler/th08_web/cpp/game/
 const th08Scene = fs.readFileSync(path.join(root, "th08-eagler/th08_web/cpp/game/PlayerScene.hpp"), "utf8");
 const th10Exports = fs.readFileSync(path.join(root, "th10-eagler/th10_web/cpp/platform/ApplicationExports.cpp"), "utf8");
 const th10World = fs.readFileSync(path.join(root, "th10-eagler/th10_web/cpp/platform/WorldPlayer.cpp"), "utf8");
+const th10Movement = fs.readFileSync(path.join(root, "th10-eagler/th10_web/cpp/game/PlayerMovement.cpp"), "utf8");
 const coveredGames = new Set();
 
 if (!th06Options.includes("AlwaysShowHitbox()") ||
@@ -43,8 +44,10 @@ coveredGames.add("th08");
 
 if (!th10Exports.includes('application_touch_display') ||
     !th10Exports.includes("always_hitbox=hitbox!=0") ||
-    !th10World.includes("if(always_hitbox&&player.state==1)")) {
-  throw new Error("th10: required always-hitbox presentation is missing");
+    !th10World.includes("always_hitbox=&w.always_hitbox") ||
+    !th10Movement.includes("focused||(env.always_hitbox&&*env.always_hitbox)") ||
+    !th10Movement.includes("create(*env.effect_file,0x160,9,AnimationPlacement::WorldBack")) {
+  throw new Error("th10: required always-hitbox must reuse the native focus marker without changing gameplay focus");
 }
 coveredGames.add("th10");
 
