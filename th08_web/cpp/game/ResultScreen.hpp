@@ -24,7 +24,7 @@ static_assert(sizeof(void*)!=4||offsetof(ResultState,spriteVms)==0x1a0);
 static_assert(sizeof(void*)!=4||offsetof(ResultState,hscr)==0x1144c);
 struct ResultContext {
     InputFrame input;i32 character=0,difficulty=0,stage=0;u32 flags=0;
-    bool slow_mode=false,speedhack=false;i32 play_frames=0,human_frames=0,active_frames=1;
+    bool slow_mode=false,speedhack=false,cheat_movement_used=false;i32 play_frames=0,human_frames=0,active_frames=1;
     float rendered_frames=1,total_frames=1;
     i32 total_game_frames=0;bool software_texturing=false;i32 supervisor_state=5;
 };

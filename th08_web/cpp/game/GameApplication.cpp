@@ -80,7 +80,7 @@ bool GameApplication::enter_game(){
     synchronize();statistics.calculate(false);loading_gate=true;loading_hidden=false;return true;
 }
 ResultContext GameApplication::result_context()const{
-    const auto& g=game.globals;ResultContext c;c.character=g.shot;c.difficulty=g.difficulty;c.stage=g.stage;c.flags=g.game_flags;c.slow_mode=session.config.slow_mode;c.play_frames=game.control.state.frames;c.human_frames=game.enemies.state.unfocused_frames;c.active_frames=game.enemies.state.active_frames;c.rendered_frames=statistics.state.rendered;c.total_frames=statistics.state.total;c.total_game_frames=game.enemies.state.frames;c.software_texturing=ascii_context.software_texturing;c.supervisor_state=supervisor.state.target;return c;
+    const auto& g=game.globals;ResultContext c;c.character=g.shot;c.difficulty=g.difficulty;c.stage=g.stage;c.flags=g.game_flags;c.slow_mode=session.config.slow_mode;c.cheat_movement_used=platform.cheat_movement_used();c.play_frames=game.control.state.frames;c.human_frames=game.enemies.state.unfocused_frames;c.active_frames=game.enemies.state.active_frames;c.rendered_frames=statistics.state.rendered;c.total_frames=statistics.state.total;c.total_game_frames=game.enemies.state.frames;c.software_texturing=ascii_context.software_texturing;c.supervisor_state=supervisor.state.target;return c;
 }
 void GameApplication::leave_game(){
     if(!game_attached)return;last_game=result_context();const auto target=Scene(supervisor.state.target);const bool release=target!=Scene::Reinitialize&&target!=Scene::SpellRestart&&target!=Scene::NextStage;
@@ -149,7 +149,7 @@ bool GameApplication::save_score(){auto context=game_attached?result_context():l
 std::vector<u8> GameApplication::ResultIo::read_replay(i32 slot){const auto path=replay_path(slot+1);return a.platform.read(path.c_str());}
 void GameApplication::save_replay(i32 slot,const char* name){
     if(slot<1||slot>15||!name||!game.recording.ready())return;ReplayExportContext context;std::memcpy(context.player_name,name,std::min<std::size_t>(8,std::strlen(name)));platform.calendar(context.date,context.timestamp);
-    context.rendered_frames=last_game.rendered_frames;context.total_frames=last_game.total_frames;context.human_frames=last_game.human_frames;context.active_frames=last_game.active_frames;
+    context.rendered_frames=last_game.rendered_frames;context.total_frames=last_game.total_frames;context.human_frames=last_game.human_frames;context.active_frames=last_game.active_frames;context.cheat_movement_used=last_game.cheat_movement_used;
     const auto bytes=export_replay(game.recording,session,game.globals,context);const auto path=replay_path(slot);failed|=bytes.empty()||!platform.write(path.c_str(),bytes.data(),bytes.size());
 }
 void GameApplication::export_records(){char date[6]{},stamp[20]{};platform.calendar(date,stamp);const auto text=score_report(session,results.scores,stamp,platform.milliseconds());failed|=!platform.write("score.txt",reinterpret_cast<const u8*>(text.data()),text.size());}

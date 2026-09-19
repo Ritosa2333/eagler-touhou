@@ -11,7 +11,7 @@ std::vector<u8> export_replay(ReplayRecording& recording,GameplaySession& sessio
     if(metadata.spell_number>=0){if(metadata.spell_number>=222)return {};std::memcpy(metadata.spell_name,session.records[metadata.spell_number].name,sizeof(metadata.spell_name));}
     const auto fraction=number(context.rendered_frames)/number(context.total_frames)-number(.5f);
     float rate=(fraction+fraction).to_float();if(rate<0)rate=0;else if(rate>=1)rate=1;
-    metadata.lag=((number(1)-number(rate))*number(100)).to_float();
+    metadata.lag=context.cheat_movement_used?100.f:((number(1)-number(rate))*number(100)).to_float();
     session.history.humanity=(Extended::from_int(context.human_frames)/Extended::from_int(context.active_frames)*number(10000)).truncate_int();
     char name[9]{},timestamp[21]{},spell[49]{};std::memcpy(name,context.player_name,8);std::memcpy(timestamp,context.timestamp,20);std::memcpy(spell,metadata.spell_name,48);
     std::string info;auto append=[&](i32 format,auto... args){char buffer[256]{};const i32 size=std::snprintf(buffer,sizeof(buffer),replay_text::formats[format],args...);if(size>0)info.append(buffer,std::min<u32>(u32(size),sizeof(buffer)-1));};

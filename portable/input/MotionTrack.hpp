@@ -26,14 +26,15 @@ public:
     std::map<std::int32_t,TouchPoint> record_points;
     std::map<std::int32_t,TouchPoint> playback_points;
     int playback_stage=-1;
-    bool playing=false,recording=false,invalid=false,active=false,unlimited=false;
+    bool playing=false,recording=false,invalid=false,active=false,unlimited=false,cheat_movement_used=false;
     float target_x=0,target_y=0;
-    void clear(){for(auto& s:stages)s.clear();for(auto& s:touch_stages)s.clear();ticks={};cursors={};touch_cursors={};record_points.clear();playback_points.clear();playback_stage=-1;playing=recording=invalid=active=unlimited=false;target_x=target_y=0;}
+    void clear(){for(auto& s:stages)s.clear();for(auto& s:touch_stages)s.clear();ticks={};cursors={};touch_cursors={};record_points.clear();playback_points.clear();playback_stage=-1;playing=recording=invalid=active=unlimited=false;cheat_movement_used=false;target_x=target_y=0;}
     void begin(int stage,bool initial,bool replay,bool record){
         if(initial&&!replay)clear();playing=replay;recording=record;active=false;
         if(stage>=0&&stage<9){ticks[stage]=cursors[stage]=touch_cursors[stage]=0;if(!replay){stages[stage].clear();touch_stages[stage].clear();if(record)for(const auto& [id,point]:record_points)touch_stages[stage].push_back({0,id,point.x,point.y,0});}else{if(playback_stage<0||stage<=playback_stage)playback_points.clear();playback_stage=stage;}}
     }
     bool used()const{for(const auto& s:stages)if(!s.empty())return true;for(const auto& s:touch_stages)if(!s.empty())return true;return false;}
+    void mark_cheat_movement(float x,float y){if(unlimited&&(x!=0||y!=0))cheat_movement_used=true;}
     void target(int mode,float x,float y){active=(mode==1||mode==2)&&std::isfinite(x)&&std::isfinite(y);unlimited=mode==2;if(active){target_x=x;target_y=y;}}
     void touch_event(int stage,int action,int id,float x,float y){
         if(!recording||stage<0||stage>=9||action<0||action>2||!std::isfinite(x)||!std::isfinite(y))return;

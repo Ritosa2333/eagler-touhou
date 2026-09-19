@@ -72,7 +72,7 @@ i32 ResultView::final_statistics(){
     pos.y=shift(pos.y,22);ascii.add_string(pos,aligned_difficulties[context.difficulty],context.software_texturing);pos.x=shift(pos.x,Extended::from_int(ascii.state.space_width).to_float());pos.y=shift(pos.y,22);
     if(!(context.flags&16)){if(completion>=1)completion=.99f;add(pos,"    %3.2f%%",(number(completion)*number(100)).to_double());}else add(pos,"      100%%");
     pos.y=shift(pos.y,22);add(pos,"%9d",i32(n.retries));pos.y=shift(pos.y,22);add(pos,"%9d",Scalar::truncate(n.deaths));pos.y=shift(pos.y,22);add(pos,"%9d",Scalar::truncate(n.bombs_used));pos.y=shift(pos.y,22);add(pos,"%9d",n.captured_spells);
-    const auto fraction=number(context.rendered_frames)/number(context.total_frames)-number(.5f);float rate=(fraction+fraction).to_float();if(rate<0)rate=0;else if(rate>=1)rate=1;const float lag=((number(1)-number(rate))*number(100)).to_float();pos.y=shift(pos.y,22);add(pos,"    %3.2f%%",double(lag));ascii.state.color=0xffffffff;return 0;
+    const auto fraction=number(context.rendered_frames)/number(context.total_frames)-number(.5f);float rate=(fraction+fraction).to_float();if(rate<0)rate=0;else if(rate>=1)rate=1;const float lag=context.cheat_movement_used?100.f:((number(1)-number(rate))*number(100)).to_float();pos.y=shift(pos.y,22);add(pos,"    %3.2f%%",double(lag));ascii.state.color=0xffffffff;return 0;
 }
 i32 ResultView::draw(){
     renderer.flush();auto viewport=renderer.viewport;viewport.x=viewport.y=0;viewport.width=640;viewport.height=480;renderer.set_viewport(viewport);result.actions.draw_background();
