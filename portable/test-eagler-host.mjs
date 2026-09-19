@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {existsSync,readFileSync} from 'node:fs';
 const game=existsSync(new URL('../th08_web/cpp/game/AnmRenderer.cpp',import.meta.url))?'th08':'th10';
-const {normalizeOptions,applyTouchOptions,touchControls,resumeRuntimeAudio,directTouch,resourcePath,ensureSharedFontAlias,installResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError}=await import('../'+game+'_web/sdl-runtime/eagler-host.mjs');
+const {normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,resourcePath,ensureSharedFontAlias,installResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError}=await import('../'+game+'_web/sdl-runtime/eagler-host.mjs');
 const base='http://localhost/runtime/'+game+'/entry.html';
 function filesystem(){
  const files=new Map();return {files,FS:{mkdirTree(){},writeFile(path,bytes){files.set(path,bytes);}}};
@@ -33,6 +33,16 @@ test('foreground audio resumes browser context before Runtime loop',async()=>{
  calls.length=0;let foreground=true;context.state='suspended';context.resume=async()=>{context.state='running';foreground=false;};
  assert.equal(await resumeRuntimeAudio({SDL3:{audioContext:context}},core,()=>foreground),false);
  assert.deepEqual(calls,[]);
+});
+test('background audio detaches SDL browser output and reconnects before Runtime resumes',async()=>{
+ const calls=[],events=[];const destination={};
+ const node={disconnect(){events.push('disconnect');},connect(value){assert.equal(value,destination);events.push('connect');}};
+ const context={state:'running',destination,async resume(){events.push('resume');}};
+ const Module={SDL3:{audioContext:context,audio_playback:{scriptProcessorNode:node}}};
+ const core={sdl_loop_pause:value=>calls.push(value)};
+ assert.equal(suspendRuntimeAudio(Module,core),true);assert.deepEqual(events,['disconnect']);assert.deepEqual(calls,[1]);
+ assert.equal(suspendRuntimeAudio(Module,core),true);assert.deepEqual(events,['disconnect']);assert.deepEqual(calls,[1,1]);
+ calls.length=0;assert.equal(await resumeRuntimeAudio(Module,core,()=>true),true);assert.deepEqual(events,['disconnect','connect']);assert.deepEqual(calls,[0]);
 });
 test('shell startup cannot leave Runtime paused when AudioContext is already running',()=>{
  const shell=readFileSync(new URL('../'+game+'_web/sdl-runtime/shell.mjs',import.meta.url),'utf8').replaceAll('\r','');

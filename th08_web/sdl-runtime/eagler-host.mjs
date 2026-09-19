@@ -60,6 +60,16 @@ export function touchControls(core,options,message) {
  const axis=v=>Number.isFinite(Number(v))?Math.max(-32767,Math.min(32767,Number(v))):0;
  core.sdl_touch_controls(!!c.fireEnabled,!!c.focusEnabled,c.bombSerial>>>0,c.escapeSerial>>>0,axis(c.joystickX),axis(c.joystickY));
 }
+const detachedRuntimeAudioNodes=new WeakSet();
+export function suspendRuntimeAudio(Module,core) {
+ if(!core)return false;
+ const node=Module?.SDL3?.audio_playback?.scriptProcessorNode;
+ if(node&&!detachedRuntimeAudioNodes.has(node)){
+  try{node.disconnect();detachedRuntimeAudioNodes.add(node);}catch{}
+ }
+ core.sdl_loop_pause?.(1);
+ return true;
+}
 export async function resumeRuntimeAudio(Module,core,isForeground=()=>true) {
  if(!core||!isForeground())return false;
  const context=Module?.SDL3?.audioContext;
@@ -67,6 +77,11 @@ export async function resumeRuntimeAudio(Module,core,isForeground=()=>true) {
   try{await context.resume();}catch{}
  }
  if(!isForeground()||(context&&context.state!=='running'))return false;
+ const node=Module?.SDL3?.audio_playback?.scriptProcessorNode;
+ if(node&&detachedRuntimeAudioNodes.has(node)){
+  if(!context)return false;
+  try{node.connect(context.destination);detachedRuntimeAudioNodes.delete(node);}catch{return false;}
+ }
  core.sdl_loop_pause?.(0);
  return true;
 }
