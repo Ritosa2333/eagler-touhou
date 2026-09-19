@@ -16,9 +16,14 @@ window = text("src/GameWindow.cpp")
 main = text("src/main.cpp")
 rollback = text("src/netplay/Th06RollbackState.cpp")
 
-# Production driver belongs only to the isolated netplay binary.
-netplay_block = cmake.split("if(TH_ENABLE_NETPLAY)", 1)[1].split("endif()", 1)[0]
+# Production driver belongs only to the isolated netplay binary.  Do not stop
+# at the first nested endif(): the common-library discovery logic is itself
+# conditional inside the netplay block.
+netplay_start = cmake.index("if(TH_ENABLE_NETPLAY)")
+netplay_end = cmake.index("# The MIDI backend", netplay_start)
+netplay_block = cmake[netplay_start:netplay_end]
 assert "src/netplay/Th06LanStageProbe.cpp" in netplay_block
+assert "eagler_common_append_netplay_base_sources(TH06_SOURCES)" in netplay_block
 
 # Frame zero is a hard real-input barrier. Prediction is allowed only later.
 assert "g_SimFrame == 0 && ConfirmedThroughAllRemotes() == INVALID_FRAME" in driver

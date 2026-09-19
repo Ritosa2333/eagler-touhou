@@ -806,6 +806,7 @@
           });
         }],
         onRuntimeInitialized: () => {
+          setWebAudioActive(document.visibilityState !== "hidden");
           if (hosted) {
             status.textContent = "Ready";
             emit("ready", { saveRoot });

@@ -10,6 +10,7 @@
 #include "GameWindow.hpp"
 #include "MainMenu.hpp"
 #include "MusicRoom.hpp"
+#include "PracticeRuntime.hpp"
 #include "ReplayManager.hpp"
 #include "ResultScreen.hpp"
 #include "Rng.hpp"
@@ -226,6 +227,13 @@ ChainCallbackResult Supervisor::OnUpdate(Supervisor *s)
                 break;
             case SUPERVISOR_STATE_GAMEMANAGER_REINIT:
                 GameManager::CutChain();
+                // Normal stage progression also uses REINIT and must keep one
+                // multi-stage Replay recording alive.  thprac Restart marks
+                // only its own REINIT as a fresh attempt; retire the previous
+                // recorder here, after GameManager has stopped recording and
+                // before RegisterChain can reuse stale stage/input pointers.
+                if (PracticeRuntime::ConsumeReplayResetOnReinit())
+                    ReplayManager::SaveReplay(NULL, NULL);
                 if (GameManager::RegisterChain() != ZUN_SUCCESS)
                 {
                     return CHAIN_CALLBACK_RESULT_EXIT_GAME_SUCCESS;

@@ -110,6 +110,7 @@ const portableOwnerCategory = new Map(Object.entries({
   g_PauseFrameCounter: 'source THPauseMenu mFrameCounter',
   g_ImGuiPauseFocusPending: 'backend THPauseMenu focus handoff',
   g_PreserveConfigOnRestart: 'portable State(5)->reinit one-shot bridge',
+  g_ResetReplayOnReinit: 'portable thprac Restart->fresh Replay attempt one-shot bridge',
   g_PreserveConfigOnFreshStart: 'portable State(3)->GameManager one-shot bridge',
   g_ResultReplaySaveRequested: 'source th06_result_screen_create one-shot',
   g_ReplayPlaybackActive: 'source THGuiRep mRepStatus',

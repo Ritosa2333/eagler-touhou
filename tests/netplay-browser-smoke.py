@@ -12,7 +12,7 @@ from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE = ROOT.parent
-RELAY_ROOT = WORKSPACE / "th07-eagler" / "tools" / "netplay"
+RELAY_ROOT = WORKSPACE / "eagler-touhou" / "server"
 
 
 def free_port() -> int:
@@ -42,7 +42,7 @@ def wait_relay(process: subprocess.Popen[str], timeout: float = 10.0) -> None:
         line = process.stdout.readline()
         if line:
             print(f"RELAY {line.rstrip()}")
-            if "LAN relay listening" in line:
+            if "netplay relay listening" in line:
                 return
         elif process.poll() is not None:
             raise RuntimeError(f"relay exited early: {process.returncode}")
@@ -227,19 +227,22 @@ def run_smoke(
         relay_port = free_port()
     room = f"th06-smoke-{player_count}p-{'relay' if force_relay else 'rtc'}-{int(time.time() * 1000)}"
     env = os.environ.copy()
+    for key in list(env):
+        if key.startswith("EAGLER_NETPLAY_") or key.startswith("TH07_"):
+            env.pop(key)
     env.update({
-        "TH07_RELAY_HOST": "127.0.0.1",
-        "TH07_RELAY_PORT": str(relay_port),
-        "TH07_RTC_TIMEOUT_MS": "4500",
-        "TH07_STUN_URLS": "",
-        "TH07_RELAY_DELAY_MS": str(relay_delay_ms),
-        "TH07_RELAY_JITTER_MS": str(relay_jitter_ms),
-        "TH07_RELAY_DROP_EVERY": str(relay_drop_every),
-        "TH07_RELAY_DROP_FIRST_INPUT_PER_EDGE": "1" if relay_drop_first_input_per_edge else "0",
-        "TH07_RELAY_DROP_INPUT_LATEST_FROM": str(relay_drop_input_latest_from),
-        "TH07_RELAY_DROP_INPUT_LATEST_TO": str(relay_drop_input_latest_to),
-        "TH07_TEST_ROUTE_SKEW_PLAYER": str(route_skew_player),
-        "TH07_TEST_ROUTE_SKEW_MS": str(route_skew_ms),
+        "EAGLER_NETPLAY_RELAY_HOST": "127.0.0.1",
+        "EAGLER_NETPLAY_RELAY_PORT": str(relay_port),
+        "EAGLER_NETPLAY_RTC_TIMEOUT_MS": "4500",
+        "EAGLER_NETPLAY_STUN_URLS": "",
+        "EAGLER_NETPLAY_RELAY_DELAY_MS": str(relay_delay_ms),
+        "EAGLER_NETPLAY_RELAY_JITTER_MS": str(relay_jitter_ms),
+        "EAGLER_NETPLAY_RELAY_DROP_EVERY": str(relay_drop_every),
+        "EAGLER_NETPLAY_RELAY_DROP_FIRST_INPUT_PER_EDGE": "1" if relay_drop_first_input_per_edge else "0",
+        "EAGLER_NETPLAY_RELAY_DROP_INPUT_LATEST_FROM": str(relay_drop_input_latest_from),
+        "EAGLER_NETPLAY_RELAY_DROP_INPUT_LATEST_TO": str(relay_drop_input_latest_to),
+        "EAGLER_NETPLAY_TEST_ROUTE_SKEW_PLAYER": str(route_skew_player),
+        "EAGLER_NETPLAY_TEST_ROUTE_SKEW_MS": str(route_skew_ms),
     })
     http = subprocess.Popen(
         [sys.executable, "-m", "http.server", str(http_port), "--bind", "127.0.0.1"],
@@ -249,7 +252,7 @@ def run_smoke(
         text=True,
     )
     relay = subprocess.Popen(
-        ["node", "lan-relay.cjs"],
+        ["node", "netplay-relay.mjs"],
         cwd=RELAY_ROOT,
         env=env,
         stdout=subprocess.PIPE,

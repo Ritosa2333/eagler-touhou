@@ -36,6 +36,13 @@ namespace THPrac::Gui
 void ShowLicenceInfo();
 }
 
+// GAMEMANAGER_REINIT is also used by ordinary stage progression, so Replay
+// teardown cannot be attached to that Supervisor state globally.  A thprac
+// Restart is different: it begins a new attempt of the selected stage and must
+// discard the previous attempt's vanilla Replay input stream before the
+// existing ReplayManager can be reused.
+static bool g_ResetReplayOnReinit = false;
+
 static void ResetTouchReplayForPracticeRestart()
 {
     // A thprac Restart is a new attempt, not a continuation of the previous
@@ -48,6 +55,7 @@ static void ResetTouchReplayForPracticeRestart()
     Touch::ResetReplayRecordingState();
     Touch::ResetReplayTouch();
     ReplayExtension::ResetRecording();
+    g_ResetReplayOnReinit = true;
 }
 #endif
 
@@ -619,6 +627,17 @@ void NotifyBgmPlay(const char *path)
 bool PreserveBgmOnRestart()
 {
     return g_PreserveBgmRestart;
+}
+
+bool ConsumeReplayResetOnReinit()
+{
+#if defined(THPRAC_PORTABLE_ENABLED)
+    const bool requested = g_ResetReplayOnReinit;
+    g_ResetReplayOnReinit = false;
+    return requested;
+#else
+    return false;
+#endif
 }
 
 void FinishBgmRestartPreservation()

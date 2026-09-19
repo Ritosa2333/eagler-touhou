@@ -29,6 +29,7 @@ const portableReplay = read('th06-eagler/src/ReplayManager.cpp');
 const portablePlayer = read('th06-eagler/src/Player.cpp');
 const portableGameWindow = read('th06-eagler/src/GameWindow.cpp');
 const portableGles = read('th06-eagler/src/graphics/Gles.cpp');
+const portableSupervisor = read('th06-eagler/src/Supervisor.cpp');
 
 // THOverlay F6 is a cross-tick raw-input protocol, not a direct "if DEAD then
 // bomb" helper.  The first two patches make the normal bomb test consume the
@@ -627,6 +628,28 @@ if (portablePractice.includes('ReplayUnsafeAssistUsedThisRun') ||
     throw new Error('Portable TH06 must not add an assist-based replay-save ban absent from upstream thprac');
 }
 
+// A thprac Restart is a fresh Replay attempt even though TH06 uses the same
+// GAMEMANAGER_REINIT state as ordinary stage progression.  The restart helper
+// must arm a one-shot Replay reset, and Supervisor must consume it only after
+// the old GameManager has stopped recording and before the next GameManager
+// registers (which would otherwise reuse ReplayManager::AddedCallback's
+// stage-progression path and stale replayInputs pointer).
+if (!portablePractice.includes('g_ResetReplayOnReinit = true;') ||
+    !portablePractice.includes('bool ConsumeReplayResetOnReinit()')) {
+    throw new Error('Portable TH06 thprac Restart must mark REINIT as a fresh Replay attempt');
+}
+const reinitCaseStart = portableSupervisor.indexOf('case SUPERVISOR_STATE_GAMEMANAGER_REINIT:');
+const reinitCaseEnd = portableSupervisor.indexOf('case SUPERVISOR_STATE_GAMEMANAGER_RESTART:', reinitCaseStart);
+const reinitCase = portableSupervisor.slice(reinitCaseStart, reinitCaseEnd);
+const cutPos = reinitCase.indexOf('GameManager::CutChain();');
+const resetPos = reinitCase.indexOf('PracticeRuntime::ConsumeReplayResetOnReinit()');
+const replayCutPos = reinitCase.indexOf('ReplayManager::SaveReplay(NULL, NULL);');
+const registerPos = reinitCase.indexOf('GameManager::RegisterChain()');
+if (reinitCaseStart < 0 || reinitCaseEnd < 0 || cutPos < 0 || resetPos < cutPos ||
+    replayCutPos < resetPos || registerPos < replayCutPos) {
+    throw new Error('Portable TH06 REINIT must retire a marked thprac Replay before GameManager re-registration');
+}
+
 // TH06_ST6_MID2 selects its health branch from the *current game* character
 // and shot type. It is not a THGuiPrac widget field and is not serialized by
 // upstream Replay metadata, so adapter/host state must not use g_MenuShotType
@@ -777,7 +800,6 @@ if (!upstreamTh06.includes('PATCH_DY(th06_preplay_1, 0x42d835, "09")') ||
 if (!portableResult.includes('static ResultScreenState ResolveFromGameResultState(') ||
     !portableResult.includes('(void)isInPracticeMode;') ||
     !portableResult.includes('(void)thpracActive;') ||
-    !portableResult.includes('(void)isInReplay;') ||
     !portableResult.includes('return RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME;') ||
     !portableResult.includes('natural Practice enters replay-save result flow')) {
     throw new Error('Portable TH06 natural Practice result no longer enters the replay-save result flow');

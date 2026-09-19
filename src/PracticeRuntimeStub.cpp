@@ -31,6 +31,7 @@ void RecordTrackerMiss() {}
 void ResetBgmTracking() {}
 void NotifyBgmPlay(const char *) {}
 bool PreserveBgmOnRestart() { return false; }
+bool ConsumeReplayResetOnReinit() { return false; }
 void FinishBgmRestartPreservation() {}
 bool SuppressStageIntroTitles() { return false; }
 void OpenPracticeMenu(i32, i32) {}

@@ -7,14 +7,11 @@ assert 'option(TH_ENABLE_NETPLAY' in cmake
 assert 'option(TH_ENABLE_MULTIPLAYER_GAMEPLAY' in cmake
 assert 'if(TH_ENABLE_NETPLAY OR TH_ENABLE_MULTIPLAYER_GAMEPLAY)' in cmake
 assert 'src/multiplayer/GameplaySession.cpp' in cmake
-assert 'src/netplay/NetplayInput.cpp' in cmake
+assert 'eagler_common_link_netplay_input' in cmake
+assert 'src/netplay/NetplayInput.cpp' not in cmake
 assert 'if(TH_ENABLE_NETPLAY)' in cmake
 for source in (
-    'src/netplay/NetplayCore.cpp',
-    'src/netplay/NetplayProtocol.cpp',
-    'src/netplay/RollbackJournal.cpp',
     'src/netplay/NetplaySideEffects.cpp',
-    'src/netplay/BrowserPeerTransport.cpp',
 ):
     assert source in cmake
 assert 'eagler_common_link_netplay_base(${TH_EXEC_NAME})' in cmake
@@ -22,12 +19,30 @@ assert 'eagler_common_append_netplay_base_sources(TH06_SOURCES)' not in cmake
 assert 'eagler_common_add_include_path(${TH_EXEC_NAME})' not in cmake
 common = root / 'third_party' / 'eagler-common'
 for source in (
+    'src/netplay/NetplayCore.cpp',
+    'src/netplay/NetplayProtocol.cpp',
+    'src/netplay/RollbackJournal.cpp',
+    'src/netplay/NetplayInput.cpp',
     'src/netplay/NetplaySession.cpp',
+    'src/netplay/BrowserPeerTransport.cpp',
     'src/netplay/WebSocketTransport.cpp',
+    'include/eagler/netplay/NetplayCore.hpp',
+    'include/eagler/netplay/NetplayProtocol.hpp',
+    'include/eagler/netplay/RollbackJournal.hpp',
+    'include/eagler/netplay/NetplayInput.hpp',
+    'include/eagler/netplay/DirectTouchState.hpp',
     'include/eagler/netplay/NetplaySession.hpp',
+    'include/eagler/netplay/BrowserPeerTransport.hpp',
     'include/eagler/netplay/WebSocketTransport.hpp',
 ):
     assert (common / source).is_file(), source
+assert (root / 'src/netplay/NetplayProtocolConfig.hpp').is_file()
+assert 'src/netplay/NetplayCore.cpp' not in cmake
+assert 'src/netplay/NetplayProtocol.cpp' not in cmake
+assert 'src/netplay/RollbackJournal.cpp' not in cmake
+assert 'src/netplay/BrowserPeerTransport.cpp' not in cmake
+assert (root / 'src/netplay/NetplayTransportConfig.hpp').is_file()
+assert (root / 'src/netplay/NetplayInputConfig.hpp').is_file()
 assert 'target_compile_definitions(${TH_EXEC_NAME} PRIVATE TH_ENABLE_NETPLAY)' in cmake
 assert 'target_link_options(th06 PRIVATE -lwebsocket)' in cmake
 
