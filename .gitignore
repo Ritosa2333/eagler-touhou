@@ -2,6 +2,7 @@ node_modules/
 node_modules.stale-*/
 .npm-cache/
 .cache/
+/.codex-tmp/
 .deploy-python/
 *.admin-staging/
 server-output/

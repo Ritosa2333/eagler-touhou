@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { appendRttSample, compactDiagnosticText, compactRendererLabel, describeBrowserEnvironment, describeNetplayConnection, runtimeDiagnosticsVisibleByDefault, selectedRtcPair }
+import { appendRttSample, compactDiagnosticText, compactNetplayPeerStatus, compactRendererLabel, describeBrowserEnvironment, describeNetplayConnection, runtimeDiagnosticsVisibleByDefault, selectedRtcPair }
   from "../.cache/build/browser/assets/launcher/runtime-diagnostics-model.mjs";
 
 assert.equal(runtimeDiagnosticsVisibleByDefault(true, true), true);
@@ -44,6 +44,10 @@ assert.deepEqual(quality.samples, [10, 20, 30, 40, 100]);
 assert.equal(quality.variationMs, 10);
 for (let value = 0; value < 30; value++) quality = appendRttSample(quality.samples, value);
 assert.equal(quality.samples.length, 20);
+assert.equal(compactNetplayPeerStatus({ player: 1, route: "direct", rttMs: 42.4, variationMs: 3.6 }), "P2 direct 42/4ms");
+assert.equal(compactNetplayPeerStatus({ player: 2, route: "turn", rttMs: 55.2 }), "P3 turn 55ms");
+assert.equal(compactNetplayPeerStatus({ player: 1, route: "relay" }), "P2 relay --ms");
+assert.equal(compactNetplayPeerStatus({ player: 1, route: "direct", connected: false, rttMs: 20 }), "P2 reconnecting");
 
 const rtcPeers = new Map([
   [1, { pc: { connectionState: "connected" }, inputOpen: true, controlOpen: true }],
@@ -68,7 +72,8 @@ const relayReady = describeNetplayConnection({
   peerState: { relay: { readyState: 1 } }, transport: "relay", path: "relay", playerCount: 2, localPlayer: 0,
 });
 assert.equal(relayReady.hidden, true);
-assert.equal(relayReady.showRouteWarning, true);
+assert.equal(relayReady.showRouteWarning, false);
+assert.equal(relayReady.warning, "");
 
 const spectatorFailed = describeNetplayConnection({
   spectator: true, failed: true, error: "closed", peerState: { relay: { readyState: 3 } }, webSocketOpenState: 1,

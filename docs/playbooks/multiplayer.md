@@ -41,6 +41,8 @@ The TH07MP reference layering is:
 
 Use a frame-0 barrier, bounded direction prediction, confirmed frames, limited catch-up and a sparse/fixed-arena journal. Full-world snapshots were measured at roughly 19 MB each and are not a per-tick transport strategy. Relay forwards targeted envelopes; it does not simulate the game.
 
+For the current TH06/TH07 production profile, there is one player-facing timing policy: zero added local input frames with full rollback on every endpoint. The generic netplay core may retain input-delay primitives for tests and future evidence-backed designs, but the shared Launcher does not expose a title-specific buffered/stability mode. Do not reintroduce the retired TH07 mobile/desktop asymmetric policy merely for backward compatibility.
+
 Spectator is a start-only, read-only product path. It consumes confirmed history/checkpoints and cannot change seat, ready, pause, result, input, touch, THPrac or the simulation. Runtime exit must not accidentally destroy an active room that Launcher still owns.
 
 <!-- knowledge-id: K-MP-002 -->
@@ -68,10 +70,12 @@ The early TH06 LCConnect/`MultiplayerRuntime.*`/`g_Player2` route is withdrawn. 
 ## Code and system anchors
 
 - sibling `eagler-common/`: shared cross-title netplay/runtime authority.
-  Generic
-  session, transport, core, journal and rollback primitives should converge
-  here; title repositories retain rollback-state inventories and canonical
-  hashes.
+  Generic session, transport, core, input ownership, journal/rollback storage,
+  browser catch-up/time-sync pacing, confirmed-frontier liveness and reusable
+  fault-injection primitives converge here. Title repositories retain small
+  protocol/input/transport config seams, rollback-state inventories, canonical
+  hashes, gameplay lifecycle and title acceptance fixtures. Do not build a
+  universal title driver merely to eliminate a few lines of adapter glue.
 - `src/contracts/product-catalog.mts`: optional Multiplayer
   declarations and per-product room/loadout bounds.
 - `src/contracts/adapter-capabilities.mts`: profile-required

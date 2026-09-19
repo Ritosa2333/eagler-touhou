@@ -93,6 +93,31 @@ export function appendRttSample(previous: readonly number[], rttMs: number, limi
   return { samples, rttMs, variationMs: samples.length >= 3 ? Math.max(0, p95 - p50) : null };
 }
 
+export interface CompactNetplayPeerStatusInput {
+  player: unknown;
+  route?: unknown;
+  rttMs?: unknown;
+  variationMs?: unknown;
+  connected?: unknown;
+}
+
+export function compactNetplayPeerStatus(input: CompactNetplayPeerStatusInput): string {
+  const player = Number(input.player);
+  const label = Number.isFinite(player) && player >= 0 ? `P${Math.trunc(player) + 1}` : "P?";
+  if (input.connected === false) return `${label} reconnecting`;
+  const rawRoute = String(input.route || "connecting").trim().toLowerCase();
+  const route = ["direct", "turn", "relay", "rtc"].includes(rawRoute) ? rawRoute : "connecting";
+  const rtt = Number(input.rttMs);
+  const variation = Number(input.variationMs);
+  if (Number.isFinite(rtt) && rtt >= 0) {
+    const latency = Number.isFinite(variation) && variation >= 0
+      ? `${Math.round(rtt)}/${Math.round(variation)}ms`
+      : `${Math.round(rtt)}ms`;
+    return `${label} ${route} ${latency}`;
+  }
+  return route === "connecting" ? `${label} connecting` : `${label} ${route} --ms`;
+}
+
 export interface NetplayConnectionPeer {
   pc?: {
     connectionState?: unknown;
@@ -117,7 +142,6 @@ export interface NetplayConnectionInput {
   playerCount?: unknown;
   localPlayer?: unknown;
   connectedOnce?: boolean;
-  routeWarningShown?: boolean;
   webSocketOpenState?: number;
 }
 
@@ -138,8 +162,6 @@ export interface NetplayConnectionView {
   connectedOnce: boolean;
   showRouteWarning: boolean;
 }
-
-const DIRECT_ROUTE_WARNING = "直连失败，连接质量可能较差，请尽量使用宽带（WiFi 或 网线）而非流量或 VPN。";
 
 export function describeNetplayConnection(input: NetplayConnectionInput): NetplayConnectionView {
   const peerState = input.peerState || {};
@@ -189,7 +211,6 @@ export function describeNetplayConnection(input: NetplayConnectionInput): Netpla
 
   const relayReady = transport === "relay" && Number(peerState.relay?.readyState) === openState;
   const allReady = relayReady || (transport === "rtc" && rtcReadyPeers === expected);
-  const degradedRoute = transport === "relay" || path === "turn" || path === "mixed";
   if (allReady) {
     return {
       hidden: true,
@@ -199,13 +220,12 @@ export function describeNetplayConnection(input: NetplayConnectionInput): Netpla
       warning: "",
       reconnecting: false,
       connectedOnce: true,
-      showRouteWarning: degradedRoute && input.routeWarningShown !== true,
+      showRouteWarning: false,
     };
   }
 
   const disconnectedRows = peerRows.filter(row => row.disconnected);
   const reconnecting = connectedOnce && (disconnectedRows.length > 0 || input.failed === true);
-  const directFailed = degradedRoute || input.failed === true;
   return {
     hidden: false,
     title: reconnecting
@@ -213,7 +233,7 @@ export function describeNetplayConnection(input: NetplayConnectionInput): Netpla
       : "正在连接其他玩家…",
     summary: `路径 ${transport === "rtc" ? "RTC" : transport === "relay" ? "WebSocket Relay" : "协商中"} - ${path} - ${rtcReadyPeers}/${expected} peers ready`,
     peerRows,
-    warning: directFailed ? DIRECT_ROUTE_WARNING : "",
+    warning: "",
     reconnecting,
     connectedOnce,
     showRouteWarning: false,

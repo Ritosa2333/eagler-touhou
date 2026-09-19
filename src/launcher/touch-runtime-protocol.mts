@@ -1,5 +1,15 @@
 export interface RuntimeMessageTarget {
   postMessage(message: unknown, targetOrigin: string): void;
+  readonly __eaglerDirectInputBridge?: unknown;
+}
+
+interface ImmediateInputBridge {
+  schema: "eagler-touhou/direct-input/1";
+  protocol: string;
+  game: string;
+  epoch: number;
+  origin: string;
+  submit(message: unknown): boolean;
 }
 
 export interface TouchRuntimeContext {
@@ -38,13 +48,38 @@ export interface HostedKeySpec {
   location?: number;
 }
 
+// Optional same-origin input delivery; true means consumed exactly once,
+// false means untouched. Never retry after a throwing or unknown outcome.
+export function deliverRuntimeInput(
+  context: Pick<TouchRuntimeContext, "target" | "targetOrigin" | "protocol" | "game" | "epoch">,
+  message: unknown,
+): boolean {
+  if (!context.target || !Number.isSafeInteger(context.epoch) || context.epoch <= 0) return false;
+  let candidate: unknown;
+  try { candidate = context.target.__eaglerDirectInputBridge; }
+  catch { /* Cross-origin Window lookup: preserve postMessage transport. */ }
+  if (candidate && typeof candidate === "object") {
+    const bridge = candidate as Partial<ImmediateInputBridge>;
+    if (bridge.schema === "eagler-touhou/direct-input/1" &&
+        bridge.protocol === context.protocol && bridge.game === context.game &&
+        bridge.epoch === context.epoch &&
+        bridge.origin === context.targetOrigin && typeof bridge.submit === "function") {
+      const accepted = bridge.submit(message);
+      if (accepted === true) return true;
+      if (accepted !== false) throw new Error("invalid immediate-input acknowledgement");
+    }
+  }
+  context.target.postMessage(message, context.targetOrigin);
+  return true;
+}
+
 export function postHostedKey(
   context: Pick<TouchRuntimeContext, "target" | "targetOrigin" | "protocol" | "game" | "epoch" | "launched">,
   spec: HostedKeySpec,
   down: boolean,
 ): boolean {
   if (!context.launched || !context.target) return false;
-  context.target.postMessage({
+  return deliverRuntimeInput(context, {
     protocol: context.protocol,
     game: context.game,
     epoch: context.epoch,
@@ -54,8 +89,7 @@ export function postHostedKey(
     key: spec.key,
     keyCode: spec.keyCode,
     location: spec.location ?? 0,
-  }, context.targetOrigin);
-  return true;
+  });
 }
 
 export function postTouchControls(
@@ -64,15 +98,14 @@ export function postTouchControls(
   touchSensitivity: number,
 ): boolean {
   if (!context.launched || !context.ready || !context.target || context.spectator) return false;
-  context.target.postMessage({
+  return deliverRuntimeInput(context, {
     protocol: context.protocol,
     game: context.game,
     epoch: context.epoch,
     command: "touch-controls",
     ...controls,
     touchSensitivity,
-  }, context.targetOrigin);
-  return true;
+  });
 }
 
 export function postDirectTouch(
@@ -81,7 +114,7 @@ export function postDirectTouch(
   touch: DirectTouchPoint | null,
 ): boolean {
   if (!context.launched || !context.ready || !context.target || !touch) return false;
-  context.target.postMessage({
+  return deliverRuntimeInput(context, {
     protocol: context.protocol,
     game: context.game,
     epoch: context.epoch,
@@ -90,19 +123,17 @@ export function postDirectTouch(
     id: touch.id,
     x: touch.x,
     y: touch.y,
-  }, context.targetOrigin);
-  return true;
+  });
 }
 
 export function postTouchCancel(context: TouchRuntimeContext): boolean {
   if (!context.launched || !context.ready || !context.target) return false;
-  context.target.postMessage({
+  return deliverRuntimeInput(context, {
     protocol: context.protocol,
     game: context.game,
     epoch: context.epoch,
     command: "touch-cancel",
-  }, context.targetOrigin);
-  return true;
+  });
 }
 
 export function postThpracMouse(
@@ -111,7 +142,8 @@ export function postThpracMouse(
   x: number,
   y: number,
 ): boolean {
-  if (!context.target || !Number.isSafeInteger(context.epoch) || context.epoch <= 0) return false;
+  if (!context.target || !Number.isSafeInteger(context.epoch) || context.epoch <= 0 ||
+      !Number.isFinite(x) || !Number.isFinite(y)) return false;
   context.target.postMessage({
     protocol: context.protocol,
     game: context.game,

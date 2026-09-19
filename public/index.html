@@ -649,7 +649,6 @@
       <header><small data-i18n="multiplayer.connection">联机连接</small><strong id="netplayConnectionTitle" data-i18n="multiplayer.connectingPeers">正在连接其他玩家…</strong></header>
       <p id="netplayConnectionSummary" data-i18n="multiplayer.waitingPath">正在等待网络路径就绪。</p>
       <div class="netplay-connection-peers" id="netplayConnectionPeers"></div>
-      <p class="netplay-connection-warning" id="netplayConnectionWarning" hidden></p>
     </section>
     <div class="touch-layout-safe-zone" id="touchLayoutSafeZone" aria-hidden="true"></div>
     <div class="touch-sensitivity-preview" id="touchSensitivityPreview" aria-hidden="true" hidden></div>
@@ -834,6 +833,7 @@
     <button class="orientation-toggle" id="orientationToggle" type="button" aria-label="切换到横屏" data-i18n-aria-label="player.switchLandscape" title="切换屏幕方向" data-i18n-title="player.switchOrientationTitle" hidden><strong id="orientationTarget" data-i18n="touch.landscape">横屏</strong><small data-i18n="player.rotate">旋转</small></button>
     <button class="game-zoom-toggle" id="gameZoomToggle" type="button" aria-label="恢复游戏画面原位置和大小" data-i18n-aria-label="player.restoreViewportAria" title="恢复原位置和大小" data-i18n-title="player.restoreViewportTitle" hidden><strong data-i18n="action.reset">复位</strong><small id="gameZoomScale">100%</small></button>
     <button class="fullscreen-toggle" id="fullscreenToggle" type="button" aria-label="进入全屏" data-i18n-aria-label="player.enterFullscreen" title="进入全屏（Alt+Enter）" data-i18n-title="player.enterFullscreenTitle">⛶</button>
+    <aside class="netplay-player-status" id="netplayPlayerStatus" aria-label="联机连接" data-i18n-aria-label="multiplayer.connection" hidden></aside>
     <aside class="runtime-diagnostics" id="runtimeDiagnostics" aria-label="运行诊断" data-i18n-aria-label="diagnostics.aria" hidden>
       <span id="runtimeBrowserDiag">浏览器 --</span>
       <span id="runtimeAudioDiag">音频 --</span>

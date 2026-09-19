@@ -110,7 +110,9 @@ async function verifyProduct(port, game) {
 async function verifyGenericRoom(port) {
   const socket = await openLobby(port, `genericpolicy${Date.now().toString(36)}`, "generic_client");
   try {
-    const seated = await sendAndReceive(socket, { type: "take-seat", seat: 0, loadout: 5, ready: false });
+    const seated = await sendAndReceive(socket, {
+      type: "take-seat", seat: 0, loadout: 5, ready: false,
+    });
     assert.equal(seated.type, "state");
     assert.equal(seated.room.seats[0].loadout, 5);
     const settings = await sendAndReceive(socket, { type: "settings", playerCount: 2, difficulty: 5 });

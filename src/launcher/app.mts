@@ -121,12 +121,14 @@ import {
   postThpracMouse as postRuntimeThpracMouse,
   postTouchCancel as postRuntimeTouchCancel,
   postTouchControls as postRuntimeTouchControls,
+  deliverRuntimeInput,
 } from "./touch-runtime-protocol.mjs";
 import { createGameZoomController } from "./game-zoom.mjs";
 import type { GameZoomPointerInput } from "./game-zoom.mjs";
 import {
   appendRttSample,
   compactDiagnosticText,
+  compactNetplayPeerStatus,
   compactRendererLabel,
   describeBrowserEnvironment,
   describeNetplayConnection,
@@ -139,7 +141,9 @@ import {
   normalizeMultiplayerDisplayName as mpNormalizeDisplayName,
 } from "./multiplayer-identity.mjs";
 import { normalizeMultiplayerLobbySnapshot } from "./multiplayer-lobby-snapshot.mjs";
-import { createMultiplayerPreferenceStore } from "./multiplayer-preferences.mjs";
+import {
+  createMultiplayerPreferenceStore,
+} from "./multiplayer-preferences.mjs";
 import {
   buildMultiplayerDiagnosticRelayUrl,
   buildMultiplayerGameplayRelayUrl,
@@ -544,7 +548,10 @@ function mpConnectLobby(reconnecting = false) {
     mpLobby.reconnectAttempt = 0;
     room.connection = room.synced ? "connected" : "syncing";
     if (mpUiState.seat != null) {
-      mpLobbySend({ type: "take-seat", seat: mpUiState.seat, loadout: mpUiState.preferredLoadout, ready: mpUiState.ready, name: mpUiState.displayName });
+      mpLobbySend({
+        type: "take-seat", seat: mpUiState.seat, loadout: mpUiState.preferredLoadout,
+        ready: mpUiState.ready, name: mpUiState.displayName,
+      });
       if (mpUiState.seat === 0) mpLobbySend({ type: "settings", playerCount: mpUiState.room.playerCount, difficulty: mpUiState.room.difficulty });
     } else if (mpUiState.spectatorRequested) {
       mpLobbySend({ type: "spectate", name: mpUiState.displayName });
@@ -1662,6 +1669,7 @@ const gameViewport = $("#gameViewport");
 const player = $("#player");
 const playerFullscreenElement: LauncherFullscreenElement = player;
 const runtimeDiagnostics = $("#runtimeDiagnostics");
+const netplayPlayerStatus = $("#netplayPlayerStatus");
 const runtimeDiagnosticsToggle = $("#runtimeDiagnosticsToggle");
 const runtimeBrowserDiag = $("#runtimeBrowserDiag");
 const runtimeGapDiag = $("#runtimeGapDiag");
@@ -1744,6 +1752,8 @@ function startRuntimeSchedulingProbe() {
 }
 interface RuntimePeer {
   pc?: RTCPeerConnection | null;
+  inputOpen?: boolean;
+  controlOpen?: boolean;
 }
 
 interface RuntimePeerCollection extends Iterable<[number, RuntimePeer]> {
@@ -1815,8 +1825,7 @@ const runtimeNetplayQualityState: {
 const netplayConnectionUiState: {
   transport: RuntimePeerTransport | null;
   connectedOnce: boolean;
-  routeWarningShown: boolean;
-} = { transport: null, connectedOnce: false, routeWarningShown: false };
+} = { transport: null, connectedOnce: false };
 const browserEnvironment = describeBrowserEnvironment({
   userAgent: navigator.userAgent,
   platform: navigator.platform,
@@ -1844,10 +1853,12 @@ function resetRuntimeDiagnostics() {
   }
   runtimeDiagnostics.classList.remove("warn", "bad");
   runtimeDiagnostics.hidden = true;
+  netplayPlayerStatus.hidden = true;
+  netplayPlayerStatus.replaceChildren();
+  player.classList.remove("netplay-player-status-visible");
   resetRuntimeNetplayQuality();
   netplayConnectionUiState.transport = null;
   netplayConnectionUiState.connectedOnce = false;
-  netplayConnectionUiState.routeWarningShown = false;
   const connectionWindow = $("#netplayConnectionWindow");
   if (connectionWindow) connectionWindow.hidden = true;
 }
@@ -1936,7 +1947,6 @@ function updateNetplayConnectionWindow(net: RuntimeNetplaySnapshot | null) {
   if (!net.spectator && netplayConnectionUiState.transport !== net.peerState) {
     netplayConnectionUiState.transport = net.peerState;
     netplayConnectionUiState.connectedOnce = false;
-    netplayConnectionUiState.routeWarningShown = false;
   }
   const view = describeNetplayConnection({
     spectator: net.spectator,
@@ -1948,14 +1958,9 @@ function updateNetplayConnectionWindow(net: RuntimeNetplaySnapshot | null) {
     playerCount: state.netplay.playerCount,
     localPlayer: state.netplay.player,
     connectedOnce: netplayConnectionUiState.connectedOnce,
-    routeWarningShown: netplayConnectionUiState.routeWarningShown,
     webSocketOpenState: WebSocket.OPEN,
   });
   netplayConnectionUiState.connectedOnce = view.connectedOnce;
-  if (view.showRouteWarning) {
-    netplayConnectionUiState.routeWarningShown = true;
-    showToast(t("multiplayer.directConnectionFailed"), 8000);
-  }
   windowElement.hidden = view.hidden;
   windowElement.classList.toggle("reconnecting", view.reconnecting);
   if (view.hidden) return;
@@ -1970,9 +1975,6 @@ function updateNetplayConnectionWindow(net: RuntimeNetplaySnapshot | null) {
     item.append(label, detail);
     return item;
   }));
-  const warning = $("#netplayConnectionWarning");
-  warning.hidden = !view.warning;
-  warning.textContent = view.warning;
 }
 async function sampleRuntimeNetplayQuality() {
   const net = runtimeNetplaySnapshot();
@@ -2016,9 +2018,55 @@ async function sampleRuntimeNetplayQuality() {
     runtimeNetplayQualityState.sampling = false;
   }
 }
+function updateNetplayPlayerStatus(net: RuntimeNetplaySnapshot | null) {
+  const visible = !!net && state.launched && !state.replayViewer && !net.spectator;
+  netplayPlayerStatus.hidden = !visible;
+  player.classList.toggle("netplay-player-status-visible", visible);
+  if (!visible || !net) {
+    netplayPlayerStatus.replaceChildren();
+    return;
+  }
+  const playerCount = Math.max(2, Math.min(3, Number(state.netplay.playerCount) || 2));
+  const localPlayer = Math.max(0, Math.min(playerCount - 1, Number(state.netplay.player) || 0));
+  const rtcPaths = new Map<number, RuntimeNetplayEntry>();
+  for (const entry of net.rtcPaths) {
+    const peer = Number(entry.peer);
+    if (Number.isInteger(peer) && peer >= 0 && peer < playerCount) rtcPaths.set(peer, entry);
+  }
+  const rows: HTMLElement[] = [];
+  for (let peerId = 0; peerId < playerCount; ++peerId) {
+    if (peerId === localPlayer) continue;
+    const transportPeer = net.peerState?.peers?.get(peerId);
+    const pcState = String(transportPeer?.pc?.connectionState || transportPeer?.pc?.iceConnectionState || "");
+    const channelsReady = transportPeer?.inputOpen === true && transportPeer?.controlOpen === true;
+    let connected: boolean | undefined;
+    if (net.transport === "relay") connected = Number(net.peerState?.relay?.readyState) === WebSocket.OPEN ? true : undefined;
+    else if (channelsReady || pcState === "connected" || pcState === "completed") connected = true;
+    else if (["disconnected", "failed", "closed"].includes(pcState) || net.failed) connected = false;
+    const path = rtcPaths.get(peerId);
+    const route = net.transport === "relay" ? "relay" : path?.path || (net.path === "mixed" ? "rtc" : net.path);
+    const quality = runtimeNetplayQualityState.peers.get(peerId);
+    const row = document.createElement("span");
+    row.textContent = compactNetplayPeerStatus({
+      player: peerId,
+      route,
+      rttMs: quality?.rttMs,
+      variationMs: quality?.variationMs,
+      connected,
+    });
+    if (quality?.rttMs != null) {
+      const details = [String(route || "rtc"), path?.protocol, path?.family].filter(Boolean).join("/");
+      row.title = `P${peerId + 1} ${details} · RTT ${Math.round(quality.rttMs)}ms` +
+        (quality.variationMs != null ? ` · variation ${Math.round(quality.variationMs)}ms` : "");
+    }
+    rows.push(row);
+  }
+  netplayPlayerStatus.replaceChildren(...rows);
+}
 function updateNetplayDiagnostics() {
   const net = runtimeNetplaySnapshot();
   updateNetplayConnectionWindow(net);
+  updateNetplayPlayerStatus(net);
   const lines = [runtimeNetplaySessionDiag, runtimeNetplayRouteDiag, runtimeNetplayFrameDiag, runtimeNetplayRollbackDiag, runtimeNetplayQualityDiag, runtimeNetplayIceDiag];
   for (const line of lines) line.hidden = !net;
   if (!net) return;
@@ -4392,22 +4440,21 @@ function forwardHostedKeyboard(event: KeyboardEvent) {
   const key = String(event.key || "").toLowerCase();
   const keyCode = Number.isInteger(event.keyCode) ? event.keyCode : 0;
   if (!hostedGameKeyCodes.has(event.code || "") && !hostedGameKeys.has(key) && !hostedGameLegacyKeyCodes.has(keyCode)) return;
-  const session = currentRuntimeSession();
-  if (!session) return;
-  frame.contentWindow.postMessage({
-    protocol, game: state.game, epoch: session.id, command: "keyboard", down: event.type === "keydown",
+  const context = touchRuntimeMessageContext();
+  deliverRuntimeInput(context, {
+    protocol, game: state.game, epoch: context.epoch, command: "keyboard", down: event.type === "keydown",
     code: event.code || "", key: event.key || "", keyCode,
     location: Number.isInteger(event.location) ? event.location : 0
-  }, location.origin);
+  });
   event.preventDefault();
 }
 window.addEventListener("keydown", forwardHostedKeyboard, true);
 window.addEventListener("keyup", forwardHostedKeyboard, true);
 function clearHostedKeyboard() {
   if (!state.launched || !frame.contentWindow) return;
-  const session = currentRuntimeSession();
-  if (!session) return;
-  frame.contentWindow.postMessage({ protocol, game: state.game, epoch: session.id, command: "keyboard-clear" }, location.origin);
+  const context = touchRuntimeMessageContext();
+  deliverRuntimeInput(context,
+    { protocol, game: state.game, epoch: context.epoch, command: "keyboard-clear" });
 }
 window.addEventListener("blur", clearHostedKeyboard);
 document.addEventListener("visibilitychange", () => {
@@ -6845,7 +6892,10 @@ function mpTakeSeat(index: number) {
   if (!mpUiState.room?.synced || !mpLobby.connected || !Number.isInteger(index) || index < 0 || index >= mpUiState.room.playerCount) return;
   const playerCard = $("#mpLocalPlayer");
   const before = !playerCard.hidden ? playerCard.getBoundingClientRect() : null;
-  if (!mpLobbySend({ type: "take-seat", seat: index, loadout: mpUiState.preferredLoadout, ready: mpUiState.ready, name: mpUiState.displayName })) return;
+  if (!mpLobbySend({
+    type: "take-seat", seat: index, loadout: mpUiState.preferredLoadout,
+    ready: mpUiState.ready, name: mpUiState.displayName,
+  })) return;
   mpUiState.seat = index;
   mpUiState.spectatorRequested = false;
   renderMpRoom();
