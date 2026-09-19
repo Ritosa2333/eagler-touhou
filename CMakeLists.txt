@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(eagler-common VERSION 0.12.0 LANGUAGES CXX)
+project(eagler-common VERSION 0.13.0 LANGUAGES CXX)
 
 # Consumers such as Replay metadata readers need the shared protocol types even
 # in ordinary (non-netplay) builds. Keep that dependency header-only so title

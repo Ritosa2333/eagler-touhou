@@ -110,6 +110,28 @@ void TestEquivalentPredictionConfirmationDoesNotRollback()
            EquivalentRemoteInputResult::ConflictingConfirmedInput);
 }
 
+void TestAggregateConfirmedRemoteFrontier()
+{
+    RollbackCore core;
+    CoreConfig config;
+    config.sessionId = 99;
+    config.playerCount = 3;
+    config.localPlayer = 0;
+    config.maxRollbackFrames = 8;
+    assert(core.Reset(config));
+
+    assert(core.ConfirmedThroughAllRemotes() == INVALID_FRAME);
+    assert(core.SubmitRemoteInput(1, 0, FrameInput(1)) == RemoteInputResult::Accepted);
+    assert(core.ConfirmedThroughAllRemotes() == INVALID_FRAME);
+    assert(core.SubmitRemoteInput(2, 0, FrameInput(2)) == RemoteInputResult::Accepted);
+    assert(core.ConfirmedThroughAllRemotes() == 0);
+
+    assert(core.SubmitRemoteInput(1, 1, FrameInput(1)) == RemoteInputResult::Accepted);
+    assert(core.ConfirmedThroughAllRemotes() == 0);
+    assert(core.SubmitRemoteInput(2, 1, FrameInput(2)) == RemoteInputResult::Accepted);
+    assert(core.ConfirmedThroughAllRemotes() == 1);
+}
+
 SessionPacket PeerPacket(const SessionConfig &config, std::uint8_t player, SessionPhase phase)
 {
     SessionPacket packet;
@@ -182,6 +204,7 @@ int main()
     TestProtocolCapability();
     TestCoreBehavior();
     TestEquivalentPredictionConfirmationDoesNotRollback();
+    TestAggregateConfirmedRemoteFrontier();
     TestSessionGate();
     TestNativeWebSocketStub();
     std::cout << "eagler-common netplay base: PASS\n";

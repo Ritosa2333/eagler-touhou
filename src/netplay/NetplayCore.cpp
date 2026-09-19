@@ -198,6 +198,25 @@ bool RollbackCore::UsedInput(std::uint8_t player, std::uint32_t frame, FrameInpu
     return true;
 }
 
+std::uint32_t RollbackCore::ConfirmedThroughAllRemotes() const
+{
+    if (!configured_)
+        return INVALID_FRAME;
+
+    std::uint32_t confirmed = INVALID_FRAME;
+    for (std::uint8_t player = 0; player < config_.playerCount; ++player)
+    {
+        if (player == config_.localPlayer)
+            continue;
+        const std::uint32_t value = ConfirmedThrough(player);
+        if (value == INVALID_FRAME)
+            return INVALID_FRAME;
+        if (confirmed == INVALID_FRAME || value < confirmed)
+            confirmed = value;
+    }
+    return confirmed;
+}
+
 FrameInput RollbackCore::PredictInput(std::uint8_t player, std::uint32_t frame) const
 {
     if (frame == 0)

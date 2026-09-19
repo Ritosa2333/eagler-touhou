@@ -62,6 +62,8 @@ Published/active convergence slices:
   deadband, ±2% clamp and smoothing constants
 - confirmed-input liveness watchdog preserving the long-lived 15-second
   production peer-progress timeout while allowing title test harness overrides
+- aggregate confirmed-remote frontier directly from `RollbackCore`, so room
+  drivers do not duplicate sentinel/minimum semantics
 
 `NetplaySession` and `WebSocketTransport` were byte-identical before extraction.
 `NetplayProtocol` differs only through a deliberately tiny title-owned wire
@@ -147,6 +149,12 @@ confirmed input frontier and reports a timeout only after the frontier remains
 unchanged for 15 seconds. Disarming, choosing a longer hidden-test timeout and
 turning the timeout into a visible room failure remain title responsibilities.
 
+`RollbackCore::ConfirmedThroughAllRemotes()` owns the aggregate frontier
+because the core already owns player count, local-player identity and each
+peer's confirmation state. It returns `INVALID_FRAME` until every remote has
+confirmed input, then the minimum remote frontier. Replay, spectator and shared
+UI policy built on that frontier remain title-owned.
+
 Future intended slices include broader connection health policy,
 browser-frame budgeting and broader performance diagnostics once their
 title-facing seams are explicit.
@@ -167,9 +175,10 @@ Use this order unless new evidence proves a dependency requires otherwise:
 10. browser catch-up start budget;
 11. shared frame-pacing formula;
 12. confirmed-input peer liveness watchdog;
-13. broader health policy and rollback replay slicing;
-14. performance testkit and diagnostics;
-15. only then consider broader platform/presentation helpers.
+13. aggregate confirmed-remote frontier;
+14. broader health policy and rollback replay slicing;
+15. performance testkit and diagnostics;
+16. only then consider broader platform/presentation helpers.
 
 Every step must leave TH06 and TH07 buildable and testable independently. A
 consumer may advance to a newer common implementation only after its own

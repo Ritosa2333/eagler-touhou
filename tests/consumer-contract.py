@@ -98,6 +98,38 @@ def check_consumer(name: str, source_var: str, magic: str, transport_tag: str) -
         and "g_CurFrameGameInputs" in input_config,
         f"{name}: NetplayInput title-owned lane adapter is incomplete",
     )
+    title = "Th06" if name.startswith("th06") else "Th07"
+    driver = read(root / "src/netplay" / f"{title}LanStageProbe.cpp")
+    for header in (
+        "InputRepairBudget",
+        "ConfirmedInputWatchdog",
+        "FrameAdvantageWindow",
+        "FramePacingPolicy",
+    ):
+        require(
+            f"#include <eagler/netplay/{header}.hpp>" in driver,
+            f"{name}: production netplay driver does not consume common {header} directly",
+        )
+    require(
+        "std::uint32_t ConfirmedThroughAllRemotes()" not in driver
+        and "g_Core.ConfirmedThroughAllRemotes()" in driver,
+        f"{name}: confirmed-remote frontier authority leaked back into the title driver",
+    )
+    game_window = read(root / "src/GameWindow.cpp")
+    require(
+        "#include <eagler/netplay/FrameBudget.hpp>" in game_window
+        and "FrameBudget::CanStartTick" in game_window,
+        f"{name}: browser catch-up budget does not consume common FrameBudget directly",
+    )
+    require(
+        not (root / "tests/rtc-input-impairment.cjs").exists()
+        and not (root / "tests/rtc-input-impairment-test.cjs").exists(),
+        f"{name}: RTC impairment testkit was copied back into the title repository",
+    )
+    require(
+        (submodule_path / "testkit/rtc-input-impairment.cjs").is_file(),
+        f"{name}: pinned common revision does not provide the shared RTC impairment testkit",
+    )
     retired_paths = (
         "src/netplay/BrowserPeerTransport.hpp",
         "src/netplay/BrowserPeerTransport.cpp",
@@ -106,6 +138,7 @@ def check_consumer(name: str, source_var: str, magic: str, transport_tag: str) -
         "src/netplay/FrameAdvantageWindow.hpp",
         "src/netplay/FrameBudget.hpp",
         "src/netplay/FramePacingPolicy.hpp",
+        "src/netplay/InputRepairBudget.hpp",
         "src/netplay/NetplayCore.hpp",
         "src/netplay/NetplayCore.cpp",
         "src/netplay/NetplayInput.hpp",
@@ -139,6 +172,7 @@ def check_consumer(name: str, source_var: str, magic: str, transport_tag: str) -
         "FrameAdvantageWindow",
         "FrameBudget",
         "FramePacingPolicy",
+        "InputRepairBudget",
         "NetplayCore",
         "NetplayInput",
         "NetplayProtocol",
@@ -180,8 +214,10 @@ def main() -> None:
         "include/eagler/netplay/FrameAdvantageWindow.hpp",
         "include/eagler/netplay/FrameBudget.hpp",
         "include/eagler/netplay/FramePacingPolicy.hpp",
+        "include/eagler/netplay/InputRepairBudget.hpp",
         "include/eagler/netplay/NetplayInput.hpp",
         "src/netplay/NetplayInput.cpp",
+        "testkit/rtc-input-impairment.cjs",
         "cmake/EaglerCommon.cmake",
     ):
         require((COMMON / relative).is_file(), f"missing common file: {relative}")

@@ -101,6 +101,9 @@ public:
     void ClearRollbackRequest() { rollbackFrame_ = INVALID_FRAME; }
 
     std::uint32_t ConfirmedThrough(std::uint8_t player) const;
+    // Minimum confirmed input frontier across every remote player. Returns
+    // INVALID_FRAME until every remote has at least one confirmed frame.
+    std::uint32_t ConfirmedThroughAllRemotes() const;
     std::uint32_t LastSimulatedFrame() const { return lastSimulatedFrame_; }
     FrameInput LocalInput(std::uint32_t frame, bool *present = nullptr) const;
     bool InputPresent(std::uint8_t player, std::uint32_t frame) const;
