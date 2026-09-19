@@ -58,6 +58,8 @@ Published/active convergence slices:
   64-sample trimmed-mean policy used by TH06/TH07
 - browser catch-up `FrameBudget` preserving the validated six-tick cap plus an
   8 ms wall-time boundary for starting additional fixed ticks
+- shared frame-pacing formula preserving the long-lived TH06/TH07 lead filter,
+  deadband, ±2% clamp and smoothing constants
 
 `NetplaySession` and `WebSocketTransport` were byte-identical before extraction.
 `NetplayProtocol` differs only through a deliberately tiny title-owned wire
@@ -130,6 +132,13 @@ budget and six-tick cap allow it. Remaining accumulator debt is retained for a
 later callback. This preserves the production TH07 policy and lets TH06 share
 the same scheduler rule without adding local input frames.
 
+`FramePacingPolicy` is also nondeterministic scheduling support, not gameplay
+state. TH06 and TH07 have used the same policy since their original multiplayer
+drivers: infer relative lead from frame-advantage exchange, reject samples past
+30 frames, apply a 0.5-frame deadband, target 1.0 + lead*0.003 clamped to
+0.98..1.02, smooth by 0.08 and snap within 0.0002 of unity. Peer membership,
+packet de-duplication, telemetry and diagnostic disable switches stay title-owned.
+
 Future intended slices include broader connection health policy,
 browser-frame budgeting and broader performance diagnostics once their
 title-facing seams are explicit.
@@ -148,9 +157,10 @@ Use this order unless new evidence proves a dependency requires otherwise:
 8. DirectTouch equivalence;
 9. allocation-free per-peer frame-advantage smoothing;
 10. browser catch-up start budget;
-11. broader health policy and rollback replay slicing;
-12. performance testkit and diagnostics;
-13. only then consider broader platform/presentation helpers.
+11. shared frame-pacing formula;
+12. broader health policy and rollback replay slicing;
+13. performance testkit and diagnostics;
+14. only then consider broader platform/presentation helpers.
 
 Every step must leave TH06 and TH07 buildable and testable independently. A
 consumer may advance to a newer common implementation only after its own
