@@ -5,9 +5,9 @@ Shared runtime infrastructure for Eagler Touhou ports.
 License: MIT.
 
 This directory is the single source of truth for code that is independent of a
-specific Touhou title.  Game repositories keep adapters for title-owned state
-and may keep thin compatibility headers during migration, but shared algorithms
-must not be forked back into per-title implementations.
+specific Touhou title. Game repositories keep adapters for title-owned state;
+once a shared authority is adopted, consumers include it directly rather than
+keeping forwarding headers or forking the algorithm back into title code.
 
 ## Ownership boundary
 
@@ -37,7 +37,7 @@ both games still pass their existing gates, then converge near-duplicates.  Do
 not combine common-library extraction with gameplay-state or protocol changes in
 the same step.
 
-Published/active convergence slices:
+Validated convergence slices in the current local v0.13 candidate line:
 
 - `NetplaySession`
 - `WebSocketTransport`
@@ -92,14 +92,14 @@ player-count alias. The shared implementation therefore uses protocol
 `MAX_PLAYERS` and delegates only the title-owned synchronized gameplay-lane
 writeback to `NetplayInputConfig.hpp::CommitGameInputs()`.
 
-The next shared input slice adds the already validated once-only DirectTouch
-model: device displacement is captured once as `DirectTouchBegin` / `Delta`,
+The shared once-only DirectTouch model captures device displacement once as
+`DirectTouchBegin` / `Delta`,
 unapplied limited-speed movement lives in rewindable `DirectTouchState`, and
 `RollbackCore::LocalFrameForCapture()` makes delayed scheduling addressable
 without re-sampling the producer. Prediction is conservative by default: a
 missing delta contributes zero new displacement. Equivalent-prediction
-acceptance, main-thread frame budgets and performance telemetry remain separate
-slices.
+acceptance, browser catch-up budgeting and performance telemetry remain
+separate authorities.
 
 Reliable input repair is deliberately not a second input transport. Normal RTC
 input remains unordered/unreliable. After the first unacknowledged input frame
@@ -125,9 +125,9 @@ silently confuse a failed equivalence precondition with transport input state.
 `FrameAdvantageWindow` is shared because the measured TH06 and TH07 algorithms
 are the same: each peer owns an independent 64-sample ring, waits for 20
 samples, trims up to four values from each tail and averages the remainder.
-The shared form removes the per-packet temporary vector allocation without
-owning title pacing policy. Simulation-scale/deadband decisions remain in the
-consumer driver.
+The shared form removes the per-packet temporary vector allocation. The
+independent pacing formula is owned by `FramePacingPolicy`; peer membership,
+sample de-duplication and telemetry remain in the consumer driver.
 
 `FrameBudget` is not an input-delay mode. It governs browser event-loop
 ownership after a callback is already behind: one due tick always runs, then
@@ -155,9 +155,22 @@ peer's confirmation state. It returns `INVALID_FRAME` until every remote has
 confirmed input, then the minimum remote frontier. Replay, spectator and shared
 UI policy built on that frontier remain title-owned.
 
-Future intended slices include broader connection health policy,
-browser-frame budgeting and broader performance diagnostics once their
-title-facing seams are explicit.
+## Current extraction stop line
+
+The v0.13 candidate intentionally stops before a shared title driver.
+TH06/TH07 still contain several byte-identical orchestration functions for
+session retry, packet drain, spectator publication and scheduled input send.
+Those functions compose many already-shared authorities plus title/session
+state; extracting them now would effectively design a universal
+`NetplayDriver` from only two closely related consumers.
+
+Do **not** create v0.14 merely to remove that orchestration duplication. Reopen
+the driver boundary when TH08/TH10 multiplayer or another third production
+consumer exists and can validate the interface shape. Likewise,
+`RollbackReplayBudget` remains TH07 opt-in incremental-reconcile
+infrastructure until a second production consumer adopts the same slicing
+policy. Broader diagnostics/testkit work may still move independently when it
+is title-neutral and already proven reusable.
 
 ## Convergence order
 
@@ -176,9 +189,10 @@ Use this order unless new evidence proves a dependency requires otherwise:
 11. shared frame-pacing formula;
 12. confirmed-input peer liveness watchdog;
 13. aggregate confirmed-remote frontier;
-14. broader health policy and rollback replay slicing;
-15. performance testkit and diagnostics;
-16. only then consider broader platform/presentation helpers.
+14. **stop and validate with a third production consumer before extracting
+    driver orchestration**;
+15. independently share proven title-neutral performance testkit/diagnostics;
+16. only then reconsider broader platform/presentation helpers.
 
 Every step must leave TH06 and TH07 buildable and testable independently. A
 consumer may advance to a newer common implementation only after its own
