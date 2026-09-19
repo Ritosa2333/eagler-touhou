@@ -11,6 +11,7 @@
 #include <eagler/netplay/BrowserPeerTransport.hpp>
 #include <eagler/netplay/WebSocketTransport.hpp>
 #include <eagler/netplay/InputRepairBudget.hpp>
+#include <eagler/netplay/FrameAdvantageWindow.hpp>
 
 #include "BulletManager.hpp"
 #include "AsciiManager.hpp"
@@ -154,15 +155,7 @@ std::uint32_t g_PeakBullets = 0;
 std::uint32_t g_PeakLasers = 0;
 std::uint32_t g_PeakItems = 0;
 std::array<std::uint32_t, MAX_PLAYERS> g_LastRemoteSenderFrame{};
-struct PeerTimeSyncState
-{
-    std::array<std::int32_t, 64> samples{};
-    std::size_t sampleCount = 0;
-    std::size_t sampleCursor = 0;
-    double averageLead = 0.0;
-    bool ready = false;
-};
-std::array<PeerTimeSyncState, MAX_PLAYERS> g_PeerTimeSync{};
+std::array<FrameAdvantageWindow, MAX_PLAYERS> g_PeerTimeSync{};
 std::array<std::uint32_t, MAX_PLAYERS> g_PredictionDepth{};
 std::array<std::uint32_t, MAX_PLAYERS> g_RollbackByPlayer{};
 std::array<InputRepairBudget, MAX_PLAYERS> g_InputRepairBudgets{};
@@ -378,25 +371,9 @@ void RecordTimeSyncSample(const InputPacket &packet)
     if (std::abs(inferredLead) > 30)
         return;
 
-    PeerTimeSyncState &state = g_PeerTimeSync[packet.senderPlayer];
-    state.samples[state.sampleCursor] = inferredLead;
-    state.sampleCursor = (state.sampleCursor + 1) % state.samples.size();
-    state.sampleCount = std::min(state.sampleCount + 1, state.samples.size());
-    if (state.sampleCount < 20)
+    FrameAdvantageWindow &state = g_PeerTimeSync[packet.senderPlayer];
+    if (!state.AddSample(inferredLead))
         return;
-
-    std::vector<std::int32_t> sorted;
-    sorted.reserve(state.sampleCount);
-    for (std::size_t i = 0; i < state.sampleCount; ++i)
-        sorted.push_back(state.samples[i]);
-    std::sort(sorted.begin(), sorted.end());
-    const std::size_t trim = std::min<std::size_t>(4, sorted.size() / 8);
-    std::int64_t sum = 0;
-    for (std::size_t i = trim; i < sorted.size() - trim; ++i)
-        sum += sorted[i];
-    state.averageLead = static_cast<double>(sum) /
-        static_cast<double>(sorted.size() - trim * 2);
-    state.ready = true;
 
     bool haveRecommendation = false;
     double recommendedLead = 0.0;
@@ -1495,8 +1472,8 @@ bool Initialize()
     g_LastConfirmedFrame.fill(INVALID_FRAME);
     g_LastRemoteSenderFrame.fill(INVALID_FRAME);
     g_RemoteTimeoutArmed.fill(false);
-    for (PeerTimeSyncState &state : g_PeerTimeSync)
-        state = PeerTimeSyncState{};
+    for (FrameAdvantageWindow &state : g_PeerTimeSync)
+        state = FrameAdvantageWindow{};
     g_PredictionDepth.fill(0);
     g_RollbackByPlayer.fill(0);
     g_DirectTouchBeginCaptures = 0;
