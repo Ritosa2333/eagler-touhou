@@ -556,10 +556,15 @@ bool TextHelper::CopyTextToTexture(i32 yPos, i32 spriteWidth, i32 spriteHeight, 
 
     SDL_StretchSurface(this->buffer, &srcRect, outSurface, &dstRect, SDL_SCALEMODE_LINEAR);
 
-    // Keep AnmManager's texture cache synchronized with the real GPU binding.
-    // Boss/spell-name text uploads otherwise leave a different texture bound
-    // while the next player draw can incorrectly skip its cached rebind.
-    g_AnmManager->SetCurrentTexture(outTexture);
+    // Text rendering is an out-of-band texture mutation. The GL binding may
+    // have been changed by a loader/patch path that bypasses AnmManager's draw
+    // cache, so never trust cached equality here. Finish the old batch first,
+    // perform the real bind unconditionally, then synchronize the software
+    // cache before glTexSubImage2D. This prevents font uploads from landing in
+    // a title/menu texture when GL reuses a recently deleted texture name.
+    g_AnmManager->Flush();
+    g_Supervisor.gfxDevice->BindTexture(outTexture);
+    g_AnmManager->SetTexture(outTexture);
     g_Supervisor.gfxDevice->SetTextureSubImage(0, yPos, outSurface->w, fontWidth,
                                                outSurface->pixels);
     SDL_DestroySurface(outSurface);

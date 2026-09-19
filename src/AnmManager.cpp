@@ -1269,6 +1269,12 @@ void AnmManager::ReleaseTexture(i32 textureIdx)
         this->currentSprite = nullptr;
     }
 
+    // glDeleteTextures() invalidates the real GL binding when the deleted
+    // texture is currently bound. Keep AnmManager's software cache in lockstep
+    // so a subsequently reused GL name cannot make SetCurrentTexture() skip a
+    // required rebind. TH06 carries the same invariant in its OpenGL port.
+    if (this->currentTexture == this->textures[textureIdx])
+        this->currentTexture = 0;
     g_Supervisor.gfxDevice->DeleteTexture(this->textures[textureIdx]);
     this->textures[textureIdx].id = 0;
     this->textureWidths[textureIdx] = 0;

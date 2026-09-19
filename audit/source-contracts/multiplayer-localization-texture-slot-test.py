@@ -45,9 +45,15 @@ assert localized.isdisjoint(multiplayer)
 assert len(localized) == 2
 assert localized == {248, 249}
 assert multiplayer == set(range(250, 256))
-assert "SetCurrentTexture(outTexture);" in TEXT
+copy_start = TEXT.index("bool TextHelper::CopyTextToTexture(")
+copy_end = TEXT.index("ZunResult TextHelper::CreateTextBuffer()", copy_start)
+copy = TEXT[copy_start:copy_end]
+assert "SetCurrentTexture(outTexture);" not in copy
+assert copy.index("g_AnmManager->Flush();") < copy.index("g_Supervisor.gfxDevice->BindTexture(outTexture);")
+assert copy.index("g_Supervisor.gfxDevice->BindTexture(outTexture);") < copy.index("g_AnmManager->SetTexture(outTexture);")
+assert copy.index("g_AnmManager->SetTexture(outTexture);") < copy.index("g_Supervisor.gfxDevice->SetTextureSubImage(")
 assert "missileAnmIdx -= GetPlayerAnmScript(player, ANM_OFFSET_PLAYER)" in PLAYER
 assert MANAGER.count("textureIdx >= static_cast<i32>(ARRAY_SIZE(this->imageDataArray))") >= 4
-assert "textureIdx < 0 || textureIdx >= ANM_FILE_SLOT_COUNT" in MANAGER
+assert "textureIdx < 0 || textureIdx >= MAX_ANM_FILES" in MANAGER
 
 print("TH07 multiplayer/localization texture slots: PASS")
