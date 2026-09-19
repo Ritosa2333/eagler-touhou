@@ -202,6 +202,49 @@ assert.doesNotMatch(patched, /third/);
 assert.match(patched, /\t8;1;0;标题\n\t8;1;1;名字/);
 assert.match(patched, /\t3;0;0;untouched/);
 
+// TH08 msg08: regular dialogue is op-16 auto lines grouped into time_index
+// boxes split by op 4/15; op 3 remains the side/line-numbered boss-intro hard
+// line; op 8 has no MSG_TH08 opcode entry upstream and must pass through.
+const th08Source = Buffer.from([
+  "entry 0",
+  "@60",
+  "\t15;0;6;-1;-1;-1",
+  "\t16;originalA",
+  "\t4;500",
+  "@61",
+  "\t16;originalB1",
+  "\t16;originalB2",
+  "\t4;500",
+  "@63",
+  "\t16;originalC",
+  "\t4;500",
+  "\t15;2;-2;-2;-1;-1",
+  "\t3;2;0;boss0",
+  "@64",
+  "\t3;2;1;boss1",
+  "\t8;2;0;intro stays original",
+  "\t4;60",
+  ""
+].join("\n"), "utf8");
+const th08Diff = {
+  "0": {
+    "60_0": { lines: ["甲"] },
+    "61_0": { lines: ["乙一", "乙二", "乙三"] },
+    "63_0": { lines: ["丙"] },
+    "63_1": { lines: ["头目零", "头目一", "头目二"] }
+  }
+};
+const th08Patched = patchThmsgDump(th08Source, th08Diff, 8).toString("utf8");
+assert.match(th08Patched, /\t16;甲\n\t4;500/);
+assert.match(th08Patched, /\t16;乙一\n\t16;乙二\n\t16;乙三\n\t4;500/);
+assert.match(th08Patched, /\t16;丙\n\t4;500/);
+assert.match(th08Patched, /\t3;2;0;头目零\n@64\n\t3;2;1;头目一\n\t3;2;2;头目二/);
+assert.match(th08Patched, /\t8;2;0;intro stays original/);
+assert.doesNotMatch(th08Patched, /originalA|originalB1|boss0/);
+const th08Unpatched = patchThmsgDump(th08Source, { "0": {} }, 8).toString("utf8");
+assert.match(th08Unpatched, /\t16;originalA/);
+assert.throws(() => patchThmsgDump(th08Source, th08Diff, 9), /unsupported message version/);
+
 const ending = Buffer.concat([
   Buffer.from("@cmd\0\n", "ascii"),
   Buffer.from([0x82, 0xa0, 0x00, 0x0a]),
@@ -282,4 +325,88 @@ assert.equal(packedBinary.path, "data.bin");
 assert.equal(packedBinary.game, "th07");
 assert.equal(packedBinary.mountPath, "/thcrap/th07/data.bin");
 
-console.log(JSON.stringify({ dialogue: "patched", extraLines: "inserted", ending: "patched", localization: "encoded", ascii: "EAS1", strings: "EST1" }));
+// TH08 contract shape and table encoding.
+const th08StringContract = validateStringContract("th08");
+assert.equal(th08StringContract.records.length, 154);
+assert.equal(th08StringContract.records.filter(record => /^(?:th06|th07|th08)_(?:log|error)_/.test(record.id)).length, 34);
+const th08AsciiContract = validateAsciiContract("th08");
+assert.equal(th08AsciiContract.records.length, 42);
+assert.equal(th08AsciiContract.aliases.get("Clear = %8d0"), "th07 Clear Bonus Format");
+assert.equal(th08AsciiContract.aliases.get("Clear  = %8d"), undefined,
+  "TH08 must not reuse TH07's two-space stage-clear format literal");
+assert.equal(th08AsciiContract.aliases.get("Last Spell Failed"), "th08 Last Spell Failed");
+assert.equal(th08AsciiContract.aliases.get("BONUS %8d"), undefined,
+  "TH08 must not invent th06_ascii_bonus_format for BONUS %8d");
+
+const th08StringBytes = encodeStringLocalizationTable({
+  "th08 Stats Clear Count": "通关次数    %6d %6d %6d %6d %6d %6d",
+  "th08 Spell Condition Line 1 210": "解锁条件：收取No.%.3d号符卡。",
+  "th08 Bomb Reimu": "灵符「梦想妙珠」"
+}, { game: "th08" });
+const th08StringRecords = decodeStringTable(th08StringBytes);
+assert.equal(th08StringRecords.length, 154);
+assert.deepEqual(th08StringRecords.find(record => record.id === "th08 Bomb Reimu"),
+  { id: "th08 Bomb Reimu", translation: "灵符「梦想妙珠」", flags: 1 });
+assert.throws(() => encodeStringLocalizationTable({
+  "th08 Stats Clear Count": "Clear Count %6d"
+}, { game: "th08" }), /changes printf signature/);
+assert.throws(() => encodeStringLocalizationTable({
+  "th08 Spell Condition Line 1 210": "Selectable when acquired."
+}, { game: "th08" }), /changes printf signature/);
+
+const th08AsciiBytes = encodeAsciiLocalizationTable({
+  "th07 Full Power": "全 power",
+  "th08 Last Spell Failed": "Last Spell 失败"
+}, { game: "th08" });
+const th08AsciiRecords = decodeAsciiTable(th08AsciiBytes);
+const th08FullPower = th08AsciiRecords.find(record => record.alias === "Full Power Mode!");
+assert.deepEqual(th08FullPower, {
+  alias: "Full Power Mode!", id: "th07 Full Power", translation: "全 power",
+  baseline: "Full Power Mode!", extraHalf: 31, flags: 3
+});
+const th08LastSpell = th08AsciiRecords.find(record => record.alias === "Last Spell Failed");
+assert.equal(th08LastSpell.extraHalf, 37);
+assert.equal(th08LastSpell.flags, 3);
+assert.equal(th08AsciiRecords.some(record => record.alias === "Supernatural Border!!"), false,
+  "TH08 has no Supernatural Border stringloc");
+assert.throws(() => encodeAsciiLocalizationTable({ "th08 Spell Replay": "%d" }, { game: "th08" }),
+  /changes printf signature/);
+
+// TH08 msg/end resource routing: msg1a.dat.jdiff and end00a.end.jdiff must
+// compile through the thtk runner/patcher with version 8, not fall through
+// to canonical JSON.
+const th08Dump = Buffer.from("entry 0\n@60\n\t16;original\n\t4;500\n", "utf8");
+const th08Compiler = new ThcrapRuntimeCompiler({
+  archives: { th08: ["fixture-th08.dat"] },
+  runner: {
+    async extractArchiveEntry(archive, entry, version) {
+      assert.equal(version, 8);
+      return Buffer.from(`base:${entry}`);
+    },
+    async dumpMessage(message, version) {
+      assert.equal(version, 8);
+      return th08Dump;
+    },
+    async compileMessage(source, version) {
+      assert.equal(version, 8);
+      return source;
+    }
+  }
+});
+const th08Message = await th08Compiler.process({
+  game: "th08", path: "th08/msg1a.dat.jdiff", mountPath: "/thcrap/th08/msg1a.dat.jdiff", kind: "jdiff",
+  bytes: Buffer.from('{"0":{"60_0":{"lines":["译"]}}}')
+});
+assert.equal(th08Message.format, "touhou-message/1");
+assert.equal(th08Message.extension, ".dat");
+assert.equal(th08Message.targetPath, "/thcrap/th08/msg1a.dat");
+assert.equal(th08Message.bytes.toString("utf8"), "entry 0\n@60\n\t16;译\n\t4;500\n");
+const th08Ending = await th08Compiler.process({
+  game: "th08", path: "th08/end00a.end.jdiff", mountPath: "/thcrap/th08/end00a.end.jdiff", kind: "jdiff",
+  bytes: Buffer.from('{"1":{"lines":["结局"]}}')
+});
+assert.equal(th08Ending.format, "touhou-ending/1");
+assert.equal(th08Ending.extension, ".end");
+assert.equal(th08Ending.targetPath, "/thcrap/th08/end00a.end");
+
+console.log(JSON.stringify({ dialogue: "patched", extraLines: "inserted", ending: "patched", localization: "encoded", ascii: "EAS1", strings: "EST1", th08: "msg08" }));

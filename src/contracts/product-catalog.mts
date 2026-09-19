@@ -146,6 +146,9 @@ export const PRODUCT_GAMES = Object.freeze({
       "manifest.json",
       "shell.mjs",
       "eagler-host.mjs",
+      "practice.mjs",
+      "practice-config.mjs",
+      "practice-sections.mjs",
       "motion-replay.mjs",
       "th08-sdl.mjs",
       "th08-sdl.wasm",
@@ -162,7 +165,7 @@ export const PRODUCT_GAMES = Object.freeze({
       musicMounts: Object.freeze({ ogg: "/bgm-ogg" }),
     }),
     replay: Object.freeze({ prefix: "th8" }),
-    features: Object.freeze({ thprac: false, languages: false, focusHitbox: false }),
+    features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
   }),
   th10: Object.freeze({
     cardArtwork: "th10-card.webp",

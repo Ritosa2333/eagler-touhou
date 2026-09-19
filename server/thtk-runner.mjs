@@ -4,6 +4,11 @@ import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 
 const SAFE_ENTRY = /^[a-z0-9_.-]+$/i;
+const SUPPORTED_ARCHIVE_VERSIONS = new Set([6, 7, 8]);
+
+function assertArchiveVersion(version) {
+  if (!SUPPORTED_ARCHIVE_VERSIONS.has(version)) throw new TypeError("unsupported archive version");
+}
 
 function run(command, args, { cwd, timeoutMs }) {
   return new Promise((resolveRun, reject) => {
@@ -56,7 +61,7 @@ export class ThtkRunner {
 
   async extractArchiveEntry(archive, entry, version) {
     if (typeof entry !== "string" || !SAFE_ENTRY.test(entry)) throw new TypeError("invalid archive entry");
-    if (version !== 6 && version !== 7) throw new TypeError("unsupported archive version");
+    assertArchiveVersion(version);
     const archivePath = resolve(archive);
     return this.withTemporaryDirectory(async directory => {
       await run(this.thdat, ["-x", String(version), archivePath, entry], {
@@ -69,7 +74,7 @@ export class ThtkRunner {
 
   async dumpMessage(message, version) {
     if (!Buffer.isBuffer(message) && !(message instanceof Uint8Array)) throw new TypeError("message bytes are required");
-    if (version !== 6 && version !== 7) throw new TypeError("unsupported message version");
+    assertArchiveVersion(version);
     return this.withTemporaryDirectory(async directory => {
       const input = join(directory, "input.dat");
       const output = join(directory, "output.txt");
@@ -84,7 +89,7 @@ export class ThtkRunner {
 
   async compileMessage(source, version) {
     if (!Buffer.isBuffer(source) && !(source instanceof Uint8Array)) throw new TypeError("message source bytes are required");
-    if (version !== 6 && version !== 7) throw new TypeError("unsupported message version");
+    assertArchiveVersion(version);
     return this.withTemporaryDirectory(async directory => {
       const input = join(directory, "input.txt");
       const output = join(directory, "output.dat");

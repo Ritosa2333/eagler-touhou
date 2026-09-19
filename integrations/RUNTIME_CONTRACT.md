@@ -5,7 +5,7 @@ the optional language and thprac profiles. It does not make the development
 compiler service or a particular portable implementation part of the browser
 protocol.
 
-The products that currently declare these profiles are TH06/TH07. A future
+The products that currently declare these profiles are TH06/TH07/TH08. A future
 title may use a different format adapter while preserving the same product-level
 capability rules.
 
@@ -60,21 +60,36 @@ Before authoritative game launch, the Launcher sends the standard Runtime
 
 - `options.thpracEnabled`;
 - `options.thpracLocale` (`zh-CN`, `ja-JP`, or `en-US` for the current
-  TH06/TH07 adapters).
+  TH06/TH07/TH08 adapters).
 
 The Runtime materializes those prelaunch values into its own practice owner.
 Current TH06/TH07 shells expose them to the game through `Module.eaglerOptions`,
 but that JavaScript object is an implementation detail rather than another Host
-protocol.
+protocol. TH08 receives the canonical `thpracEnabled` and `thpracLocale` fields
+through the Runtime `configure` command and owns its live practice state
+internally.
 
 Live Practice state belongs to the Runtime. Stage/section/frame/resource/score/
 Rank parameters, restart/retry ownership and Replay mirroring must be resolved
 inside the title's real Practice lifecycle rather than by a Launcher-side mock.
 
-Both current adapters embed the practice parameters required for playback in the
-supported Replay model. An external `*.rpy.thprac.json` sidecar was never a
-published format and is not part of the supported Replay data model.
+All three games embed practice parameters directly in the Replay's PRAC trailer
+and read them only from the Replay itself during playback. An external
+`*.rpy.thprac.json` sidecar was never a published format and is not part of the
+supported Replay data model. TH06 additionally exports
+`_EaglerThpracSaveReplaySlot(slot)` so the Host can request an in-game save to
+Replay slot 1–99; the Host remains responsible for synchronizing IDBFS
+afterward.
+
+TH06 and TH07 provide coarse stage navigation, direct frame navigation,
+initial resources/score/Rank (including cherry points in TH07), and practice
+Replay metadata. Their exact-offset upstream features remain deferred. TH08
+also provides exact section and multi-phase spell starts, dialogue control,
+game-specific gauge/time/night/familiar parameters, source-level ECL/STD/ANM
+patches, and practice assists.
 
 The shared product contract intentionally covers the practice subset that has
-actually been ported. Upstream thprac features that are not implemented by the
-adapter must not be exposed merely because the thprac profile is enabled.
+actually been ported. A Runtime must expose only the features listed for that
+game in `integrations/thprac.mjs`; upstream thprac features that are not
+implemented by the adapter must not be exposed merely because the thprac profile
+is enabled.

@@ -53,7 +53,8 @@ assert.equal(multiplayerConfigForProduct("th07"), PRODUCT_GAMES.th07.multiplayer
 assert.equal(multiplayerConfigForProduct("th08"), null);
 assert.equal(productFeatureAvailable("th06", "thprac"), true);
 assert.equal(productFeatureAvailable("th06", "thprac", { thprac: false }), false);
-assert.equal(productFeatureAvailable("th08", "thprac", { thprac: true }), false);
+assert.equal(productFeatureAvailable("th08", "thprac", { thprac: true }), true);
+assert.equal(productFeatureAvailable("th08", "thprac", { thprac: false }), false);
 assert.equal(productFeatureAvailable("th06", "focusHitbox", { focusHitbox: false }), false);
 assert.equal(productFeatureAvailable("th07", "focusHitbox", { focusHitbox: true }), false);
 assert.equal(productFeatureAvailable("th06", "languages", { languages: false }), true);

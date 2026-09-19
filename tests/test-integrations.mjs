@@ -58,6 +58,12 @@ assert.equal(th06.dlg, true);
 const th07 = createThpracSession("th07", { cherryMax: 250000, spellBonus: 31 });
 assert.equal(th07.params.cherryMax, 250000);
 assert.equal(th07.params.spellBonus, 30);
+const th08 = createThpracSession("th08", { stage: 8, gauge: -20000, night: 20, rank: 80 });
+assert.equal(th08.params.stage, 8);
+assert.equal(th08.params.gauge, -10000);
+assert.equal(th08.params.night, 11);
+assert.equal(th08.params.rank, 16);
+assert(th08.features.includes("exact-section-warp"));
 const declaredThpracGames = Object.entries(PRODUCT_GAMES)
   .filter(([, product]) => product.features.thprac)
   .map(([game]) => game);

@@ -294,6 +294,79 @@ function staticPackPath(value, game) {
   return value;
 }
 
+// Language pack publication is shared by every Runtime layout: packs are
+// copied under games/<game>/language/ and surfaced through the Host Manifest
+// languages/languageOptions pair plus the Package Descriptor language
+// component.
+async function publishLanguagePacks(game, entry, gameRoot) {
+  const languagePack = languagePackSources[game];
+  entry.languages = [];
+  if (languagePack) {
+    const { source, catalog } = languagePack;
+    const catalogVersion = String(catalog.runtimeVersion).toLowerCase();
+    const allowlist = serverFeatures[game].languages;
+    const catalogLanguages = allowlist
+      ? allowlist.filter(id => id !== "ja").map(id => catalog.languages.find(language => String(language?.id || "").toLowerCase() === id))
+      : catalog.languages;
+    for (const language of catalogLanguages) {
+      if (!language?.id || !language.pack?.url) {
+        throw new Error(`invalid ${game.toUpperCase()} language entry: ${language?.id}`);
+      }
+      const relativePack = staticPackPath(language.pack.url, game);
+      const archivePath = resolve(source, relativePack);
+      const archiveBytes = await readFile(archivePath);
+      const sourceDigest = createHash("sha256").update(archiveBytes).digest("hex");
+      const packRuntimeVersion = String(language.pack.runtimeVersion || catalogVersion).toLowerCase();
+      if (!['pending', 'auto', 'independent'].includes(packRuntimeVersion) && !/^[a-f0-9]{16,64}$/i.test(packRuntimeVersion)) {
+        throw new Error(`invalid ${game.toUpperCase()} language Runtime compatibility marker: ${language.id}`);
+      }
+      const prepared = {
+        archive: archiveBytes,
+        sha256: sourceDigest,
+        manifest: { runtimeVersion: packRuntimeVersion },
+      };
+      const outputRelativePack = staticLanguagePackPath(language.id);
+      const target = resolve(gameRoot, outputRelativePack);
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, prepared.archive);
+      entry.languages.push({
+        ...language,
+        pack: {
+          ...language.pack,
+          url: `games/${game}/${outputRelativePack}`,
+          bytes: prepared.archive.length,
+          sha256: prepared.sha256,
+          runtimeVersion: packRuntimeVersion,
+          files: Array.isArray(prepared.manifest?.files) ? prepared.manifest.files.length : language.pack.files
+        }
+      });
+    }
+  }
+  const selectableIds = canonicalLanguageIds(serverFeatures[game].languages ?? ["ja", ...entry.languages.map(language => language.id)]);
+  entry.languageOptions = selectableIds.map(id => {
+    if (id === "ja") return { id: "ja", title: languageDisplayName("ja"), pack: null };
+    const language = entry.languages.find(item => String(item.id).toLowerCase() === id);
+    if (!language) throw new Error(`${game.toUpperCase()} selectable language was not packaged: ${id}`);
+    return { ...language, title: languageDisplayName(id, language.title) };
+  });
+}
+
+async function addLanguageDescriptorEntries(game, entry, packageFiles, components) {
+  const languageEntries = [];
+  for (const language of entry.languageOptions || []) {
+    if (!language?.pack?.url || language.id === "ja") continue;
+    const url = new URL(language.pack.url, "https://package.invalid/");
+    if (url.origin !== "https://package.invalid" || !url.pathname.startsWith("/games/")) {
+      throw new Error(`${game}: invalid packaged language URL ${language.pack.url}`);
+    }
+    const source = url.pathname.slice(1);
+    const fileId = `language:${language.id}`;
+    packageFiles[fileId] = await descriptorFile(source, `/__eagler/language/${language.id}.zip`);
+    languageEntries.push({ id: language.id, title: language.title || language.id, file: fileId });
+  }
+  if (languageEntries.length) components.language = { type: "language", entries: languageEntries };
+}
+
 async function copyFrontend() {
   const frontend = staging;
   await mkdir(frontend, { recursive: true });
@@ -529,7 +602,11 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
   await writeFile(resolve(appRuntimeRoot, "runtime-files.json"), JSON.stringify({ schema: "eagler-touhou/runtime-directory/1", files: declared }, null, 2));
   entry.runtime = `runtime/${game}/${stem}.html?hosted=1&v=${await versionFiles(appRuntimeRoot, names)}`;
   entry.features = publishedHostRuntimeFeatures(game, requestedFeatures, runtimeCapabilities);
-  entry.languages = []; entry.languageOptions = [{ id: "ja", title: languageDisplayName("ja"), pack: null }];
+  // External packaging inherits the hosted manifest's language catalogs; only
+  // hosted/import assembly resets them before (re)publishing.
+  if (!externalResources) {
+    entry.languages = []; entry.languageOptions = [{ id: "ja", title: languageDisplayName("ja"), pack: null }];
+  }
   const declaredOgg = entry.music?.ogg;
   const declaredMidi = product.musicCapabilities.midi ? { files: [] } : { files: [], supported: false };
   entry.music = {
@@ -595,6 +672,13 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
       }
       components.ogg = { type: "ogg", files: oggFiles };
     }
+    // Drop content declarations for music modes this publication does not
+    // ship; the seed carries every declared mode regardless of --music.
+    for (const mode of ["wav", "ogg"]) {
+      if (!modes.has(mode)) delete entry.music[mode];
+    }
+    await publishLanguagePacks(game, entry, resolve(staging, "games", game));
+    await addLanguageDescriptorEntries(game, entry, packageFiles, components);
     const descriptor = { schema: PACKAGE_DESCRIPTOR_SCHEMA, game, revision: "pending",
       runtimeRequirement: { protocol: manifest.protocol, target: game, dataFile: dataFileId, dataLayout: entry.gameData.layout },
       files: packageFiles, base: { files: baseFiles }, components };
@@ -697,58 +781,7 @@ for (const game of preloadGames) {
       throw new Error(`${game}: normal and multiplayer Runtime builds must use identical shared DATA content/layout`);
     }
   }
-  const languagePack = languagePackSources[game];
-  if (languagePack) {
-    const { source, catalog } = languagePack;
-    const catalogVersion = String(catalog.runtimeVersion).toLowerCase();
-    entry.languages = [];
-    const allowlist = serverFeatures[game].languages;
-    const catalogLanguages = allowlist
-      ? allowlist.filter(id => id !== "ja").map(id => catalog.languages.find(language => String(language?.id || "").toLowerCase() === id))
-      : catalog.languages;
-    for (const language of catalogLanguages) {
-      if (!language?.id || !language.pack?.url) {
-        throw new Error(`invalid ${game.toUpperCase()} language entry: ${language?.id}`);
-      }
-      const relativePack = staticPackPath(language.pack.url, game);
-      const archivePath = resolve(source, relativePack);
-      const archiveBytes = await readFile(archivePath);
-      const sourceDigest = createHash("sha256").update(archiveBytes).digest("hex");
-      const packRuntimeVersion = String(language.pack.runtimeVersion || catalogVersion).toLowerCase();
-      if (!['pending', 'auto', 'independent'].includes(packRuntimeVersion) && !/^[a-f0-9]{16,64}$/i.test(packRuntimeVersion)) {
-        throw new Error(`invalid ${game.toUpperCase()} language Runtime compatibility marker: ${language.id}`);
-      }
-      const prepared = {
-        archive: archiveBytes,
-        sha256: sourceDigest,
-        manifest: { runtimeVersion: packRuntimeVersion },
-      };
-      const outputRelativePack = staticLanguagePackPath(language.id);
-      const target = resolve(gameRoot, outputRelativePack);
-      await mkdir(dirname(target), { recursive: true });
-      await writeFile(target, prepared.archive);
-      entry.languages.push({
-        ...language,
-        pack: {
-          ...language.pack,
-          url: `games/${game}/${outputRelativePack}`,
-          bytes: prepared.archive.length,
-          sha256: prepared.sha256,
-          runtimeVersion: packRuntimeVersion,
-          files: Array.isArray(prepared.manifest?.files) ? prepared.manifest.files.length : language.pack.files
-        }
-      });
-    }
-  } else {
-    entry.languages = [];
-  }
-  const selectableIds = canonicalLanguageIds(serverFeatures[game].languages ?? ["ja", ...entry.languages.map(language => language.id)]);
-  entry.languageOptions = selectableIds.map(id => {
-    if (id === "ja") return { id: "ja", title: languageDisplayName(id), pack: null };
-    const language = entry.languages.find(item => String(item.id).toLowerCase() === id);
-    if (!language) throw new Error(`${game.toUpperCase()} selectable language was not packaged: ${id}`);
-    return { ...language, title: languageDisplayName(id, language.title) };
-  });
+  await publishLanguagePacks(game, entry, gameRoot);
   for (const mode of ["wav", "ogg"]) {
     if (!modes.has(mode)) {
       delete entry.music[mode];
@@ -791,19 +824,7 @@ for (const game of preloadGames) {
     components.ogg = { type: "ogg", files: oggFiles };
   }
 
-  const languageEntries = [];
-  for (const language of entry.languageOptions || []) {
-    if (!language?.pack?.url || language.id === "ja") continue;
-    const url = new URL(language.pack.url, "https://package.invalid/");
-    if (url.origin !== "https://package.invalid" || !url.pathname.startsWith("/games/")) {
-      throw new Error(`${game}: invalid packaged language URL ${language.pack.url}`);
-    }
-    const source = url.pathname.slice(1);
-    const fileId = `language:${language.id}`;
-    packageFiles[fileId] = await descriptorFile(source, `/__eagler/language/${language.id}.zip`);
-    languageEntries.push({ id: language.id, title: language.title || language.id, file: fileId });
-  }
-  if (languageEntries.length) components.language = { type: "language", entries: languageEntries };
+  await addLanguageDescriptorEntries(game, entry, packageFiles, components);
 
   const descriptor = {
     schema: PACKAGE_DESCRIPTOR_SCHEMA,

@@ -59,11 +59,11 @@ assert.equal(th08.product.adapterProfile.runtimeLayout, "directory");
 assert.equal(th08.obligations.optionalProductCapabilities["raw-data-import"], true);
 assert.equal(th08.product.music.midiOptional, true);
 assert.equal(th08.protocol.configureOptions.focusHitboxEnabled.activeForProduct, false);
-assert.equal(th08.protocol.configureOptions.thpracEnabled.activeForProduct, false);
+assert.equal(th08.protocol.configureOptions.thpracEnabled.activeForProduct, true);
 assert.equal(th08.protocol.configureOptions.netplayMode.activeForProduct, false);
 assert.equal(th08.obligations.optionalProfiles.multiplayer.active, false);
-assert.equal(th08.obligations.optionalProfiles.thprac.active, false);
-assert.equal(th08.obligations.optionalProfiles.languages.active, false);
+assert.equal(th08.obligations.optionalProfiles.thprac.active, true);
+assert.equal(th08.obligations.optionalProfiles.languages.active, true);
 assert.equal(th08.obligations.optionalProfiles.midi.active, true);
 assert.ok(th08.obligations.optionalProfiles.midi.behaviors.includes("audible-midi-transport"));
 

@@ -26,4 +26,11 @@ const th07Pack = createStaticThcrapPack({
 });
 assert.equal(th07Pack.manifest.game, "th07");
 assert.deepEqual(Buffer.from(unzipSync(th07Pack.archive)["thcrap/th07/msg1.dat"]), bytes);
-console.log(JSON.stringify({ schema: pack.manifest.schema, files: pack.manifest.files.length, games: ["th06", "th07"], runtimeIndependent: true }));
+
+const th08Pack = createStaticThcrapPack({
+  pack: { game: "th08", language: "lang_zh-hans", title: "简体中文", assets: [{ path: "th08/msg1a.dat", crc32: 3 }] },
+  resources: [{ path: "th08/msg1a.dat", targetPath: "/thcrap/th08/msg1a.dat", format: "touhou-message/1", bytes }],
+});
+assert.equal(th08Pack.manifest.game, "th08");
+assert.deepEqual(Buffer.from(unzipSync(th08Pack.archive)["thcrap/th08/msg1a.dat"]), bytes);
+console.log(JSON.stringify({ schema: pack.manifest.schema, files: pack.manifest.files.length, games: ["th06", "th07", "th08"], runtimeIndependent: true }));

@@ -1,4 +1,4 @@
-// Source contract for the legacy TH06/TH07 thcrap strings/ascii hooks.
+// Source contract for the legacy TH06/TH07/TH08 thcrap strings/ascii hooks.
 //
 // This is deliberately a fallback-alias table, not a translation table:
 // stringdefs.js supplies optional ID -> translated text at pack build time.
@@ -144,6 +144,66 @@ export const THCRAP_ASCII_CONTRACT = Object.freeze({
     { id: "th06_ascii_lunatic", aliases: ["Lunatic "] },
     { id: "th06_ascii_extra", aliases: ["Extra   "] },
     { id: "th07 Ascii Phantasm", aliases: ["Phantasm"] },
+  ]),
+  // TH08 IDs/addresses come from base_tsa/th08/stringlocs.v1.00d.js; alias
+  // literals are the original strings preserved in the portable runtime
+  // source. The four alignment records come from
+  // thcrap_tsa/src/ascii.cpp::ascii_vpatchf_th07_th08 with the TH08 branch
+  // offsets (TH07 uses different extraX for Full Power and Spell Card Bonus).
+  th08: Object.freeze([
+    // Stage-clear summary block. TH08 displays scores with a trailing 0 and
+    // adds Time Orbs/Human-Youkai ratio/Last Time/Night Bonus rows; the
+    // literals differ from TH07's ("Clear = %8d0", not "Clear  = %8d").
+    { id: "th07 Stage Clear", aliases: ["Stage Clear"] },
+    { id: "th07 All Clear", aliases: ["All Clear!"] },
+    { id: "th07 Clear Bonus Format", aliases: ["Clear = %8d0"] },
+    { id: "th07 Clear Point Items Format", aliases: ["Point = %8d0"] },
+    { id: "th07 Clear Graze Format", aliases: ["Graze = %8d0"] },
+    { id: "th08 Clear Time Orbs Format", aliases: ["Time  = %8d0"] },
+    { id: "th08 Clear Human Format", aliases: ["over-80%% = %3d.%.2d%%"] },
+    { id: "th08 Clear Youkai Format", aliases: ["over 80%% = %3d.%.2d%%"] },
+    { id: "th07 Clear Bonus Life Format", aliases: ["Player =%8d0"] },
+    { id: "th07 Clear Bonus Bomb Format", aliases: ["Bomb   = %7d0"] },
+    { id: "th08 Clear Last Time Format", aliases: ["Last Time = %2d:%.2d"] },
+    { id: "th08 Clear Night Bonus", aliases: ["Night Bonus"] },
+    { id: "th07 Clear Easy Multiplier", aliases: ["Easy Rank    *0.5"] },
+    { id: "th07 Clear Normal Multiplier", aliases: ["Normal Rank  *1.0"] },
+    { id: "th07 Clear Hard Multiplier", aliases: ["Hard Rank    *1.2"] },
+    { id: "th07 Clear Lunatic Multiplier", aliases: ["Lunatic Rank *1.5"] },
+    { id: "th07 Clear Extra Multiplier", aliases: ["Extra Rank   *2.0"] },
+    { id: "th07 Clear Phantasm Multiplier", aliases: ["Phantasm Rank*2.0"] },
+    { id: "th07 Clear Player Penalty*0.5", aliases: ["Player Penalty*0.5"] },
+    { id: "th07 Clear Player Penalty*0.2", aliases: ["Player Penalty*0.2"] },
+    { id: "th07 Clear Player Penalty*0.1", aliases: ["Player Penalty*0.1"] },
+    { id: "th07 Clear Player Penalty*0.05", aliases: ["Player Penalty*0.05"] },
+    { id: "th07 Clear Total Score Format", aliases: ["Total = %8d0"] },
+
+    // In-game transient ASCII. TH08 drops the Supernatural Border/CherryPoint
+    // mechanic and adds Last Spell notifications; " BONUS %8d" has no TH08
+    // stringloc, so there is intentionally no th06_ascii_bonus_format record.
+    { id: "th07 Full Power", aliases: ["Full Power Mode!"], align: { baseline: "Full Power Mode!", extraX: 15.5 } },
+    { id: "th06_ascii_centered_spell_bonus", aliases: ["Spell Card Bonus!"], align: { baseline: "Spell Card Bonus!", extraX: 8.5 } },
+    { id: "th08 Last Spell Failed", aliases: ["Last Spell Failed"], align: { baseline: "Last Spell Failed", extraX: 18.5 } },
+    { id: "th08 Spell Bonus Failed", aliases: ["Spell Bonus Failed"], align: { baseline: "Spell Bonus Failed", extraX: 13.5 } },
+    { id: "th07 MAX", aliases: ["MAX"] },
+
+    // Replay/practice/result screen formats proven by stringloc mapping.
+    // TH08 has no plain "th07 Replay" row stringloc: normal replay rows share
+    // the prefix of the th08 Spell Replay format instead.
+    { id: "th07 Replay Header", aliases: ["No.   Name       Date  Player   Rank"] },
+    { id: "th08 Spell Replay", aliases: ["%s %8s  %6s %7s  Spell No.%3d"] },
+    { id: "th07 Replay Stage Header", aliases: ["Stage    LastScore"] },
+    { id: "th07 Practice Stage Header", aliases: ["Stage    HI-Score"] },
+    { id: "th08 Results Header", aliases: ["No  Name       Score(Stage)   Date   Slow"] },
+    { id: "th06_ascii_2_digit_number_format", aliases: ["No.%.2d"] },
+    { id: "th07 Max Bonus", aliases: ["MaxBonus %8d"] },
+    { id: "th07 Replay Save Header", aliases: ["No.   Name     Date   Player Score"] },
+    { id: "th07 Replay Save", aliases: ["No.%.2d %8s %5s  %7s %9d0"] },
+    { id: "th07 Replay Save Empty", aliases: ["No.%.2d -------- --/--  -------          0"] },
+    { id: "th08 Replay Spell Number", aliases: ["No.%.3d %9d0"] },
+    { id: "th08 Spell Practice Total", aliases: ["%sTotal"] },
+    { id: "th08 Spell Practice Card No", aliases: ["%sNo.%.3d"] },
+    { id: "th08 Now Playing", aliases: ["Now Playing"] },
   ])
 });
 

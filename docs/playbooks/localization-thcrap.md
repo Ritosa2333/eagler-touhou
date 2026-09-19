@@ -27,8 +27,8 @@ Host build resolves selected thcrap source
 ```
 
 Runtime preparation belongs to Host/package tooling, not to the game Runtime
-making arbitrary network requests. Keep `/thcrap/th06` and `/thcrap/th07`
-separate. Static package allowlists should name supported language/feature
+making arbitrary network requests. Keep `/thcrap/th06`, `/thcrap/th07` and
+`/thcrap/th08` separate. Static package allowlists should name supported language/feature
 files and must not become arbitrary remote code execution. The development
 `/api/thcrap` service is useful for live compilation/diagnostics but is not
 the formal publication path.

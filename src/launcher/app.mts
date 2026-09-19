@@ -1078,12 +1078,11 @@ let thpracMenuOpen = false;
 let runtimeCustomEventWindow: RuntimeWindow | null = null;
 
 function thpracTouchControlsAvailable() {
-  return !!state.options.touchEnabled && !!state.options.thpracEnabled && !!state.options.thpracTouchControlsEnabled;
+  return !!state.options.touchEnabled && !!state.options.thpracTouchControlsEnabled;
 }
 
 function thpracTouchControlsVisible() {
-  return !!state.options.thpracEnabled && !!state.options.thpracTouchControlsEnabled &&
-    (touchLayoutEditing || !!state.options.touchEnabled);
+  return !!state.options.thpracTouchControlsEnabled && (touchLayoutEditing || !!state.options.touchEnabled);
 }
 
 function thpracMouseModeActive() {
@@ -4085,7 +4084,9 @@ function render() {
   touchMovementMode.value = state.options.touchMovementMode;
   touchMovementMode.disabled = false;
   $("#doubleTapBombToggle").disabled = false;
-  $("#thpracTouchControlsToggle").disabled = !state.options.thpracEnabled;
+  // Match the other games: the mobile thprac controls are independently
+  // configurable and become visible as soon as their touch option is enabled.
+  $("#thpracTouchControlsToggle").disabled = false;
   const touchFocusMode = $("#touchFocusMode");
   touchFocusMode.value = state.options.touchFocusMode;
   touchFocusMode.disabled = false;
@@ -4315,7 +4316,7 @@ frame.addEventListener("load", () => {
 const gameKeyboardLockCodes = [
   "Escape", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
   "KeyZ", "KeyX", "ShiftLeft", "ShiftRight", "Enter",
-  "Tab", "Backspace", "F1", "F2", "F3", "F4", "F5", "F6", "F7"
+  "Tab", "Backspace", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F12"
 ];
 async function lockEscapeForGame() {
   if (!isPlayerFullscreen() || !launcherNavigator.keyboard?.lock) return;
@@ -4424,16 +4425,16 @@ const hostedGameKeyCodes = new Set([
   "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
   "Numpad8", "Numpad2", "Numpad4", "Numpad6", "Numpad7", "Numpad9", "Numpad1", "Numpad3",
   "ControlLeft", "ControlRight", "KeyQ", "KeyS", "Home", "Enter", "NumpadEnter", "KeyD", "KeyR",
-  "Tab", "Backspace", "F1", "F2", "F3", "F4", "F5", "F6", "F7"
+  "Tab", "Backspace", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F12"
 ]);
 const hostedGameKeys = new Set([
   "z", "x", "shift", "escape", "esc", "arrowup", "arrowdown", "arrowleft", "arrowright",
-  "control", "q", "s", "home", "enter", "d", "r", "tab", "backspace", "f1", "f2", "f3", "f4", "f5", "f6", "f7"
+  "control", "q", "s", "home", "enter", "d", "r", "tab", "backspace", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f12"
 ]);
 // Legacy DOM keyCode fallback for old/vendor WebViews where code/key can be
 // empty or Unidentified. These are DOM virtual-key values, not Android's raw
 // KEYCODE_DPAD_* 19..22 values; Chromium converts the latter before Web events.
-const hostedGameLegacyKeyCodes = new Set([8, 9, 13, 16, 17, 27, 36, 37, 38, 39, 40, 68, 81, 82, 83, 88, 90, 112, 113, 114, 115, 116, 117, 118]);
+const hostedGameLegacyKeyCodes = new Set([8, 9, 13, 16, 17, 27, 36, 37, 38, 39, 40, 68, 81, 82, 83, 88, 90, 112, 113, 114, 115, 116, 117, 118, 123]);
 function forwardHostedKeyboard(event: KeyboardEvent) {
   if (!state.launched || !player.classList.contains("open") || !frame.contentWindow) return;
   if (event.metaKey || event.altKey) return;
@@ -7726,8 +7727,7 @@ $("#doubleTapBombToggle").addEventListener("click", () => setOption("doubleTapBo
 $("#restartButtonToggle").addEventListener("click", () => setOption("restartButtonEnabled", !state.options.restartButtonEnabled));
 $("#alwaysHitboxToggle").addEventListener("click", () => setOption("alwaysHitbox", !state.options.alwaysHitbox));
 $("#thpracTouchControlsToggle").addEventListener("click", () => {
-  if (state.options.thpracEnabled)
-    setOption("thpracTouchControlsEnabled", !state.options.thpracTouchControlsEnabled);
+  setOption("thpracTouchControlsEnabled", !state.options.thpracTouchControlsEnabled);
 });
 $("#startupErrorClose").addEventListener("click", clearStartupError);
 $("#toastClose").addEventListener("click", hideToast);
@@ -8001,7 +8001,8 @@ const thpracKeySpecs = Object.freeze({
   F4: Object.freeze({ code: "F4", key: "F4", keyCode: 115 }),
   F5: Object.freeze({ code: "F5", key: "F5", keyCode: 116 }),
   F6: Object.freeze({ code: "F6", key: "F6", keyCode: 117 }),
-  F7: Object.freeze({ code: "F7", key: "F7", keyCode: 118 })
+  F7: Object.freeze({ code: "F7", key: "F7", keyCode: 118 }),
+  F12: Object.freeze({ code: "F12", key: "F12", keyCode: 123 })
 });
 
 type ThpracKeyName = keyof typeof thpracKeySpecs;
