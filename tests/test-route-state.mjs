@@ -4,6 +4,7 @@ import {
   MP_ROOM_HISTORY_KEY,
   MP_ROOM_URL_KEY,
   PLAYER_HISTORY_KEY,
+  TOUCH_LAYOUT_HISTORY_KEY,
   directRoomHistorySeed,
   initialRoutedHistoryOperations,
   launcherHomeHistoryOperation,
@@ -15,6 +16,7 @@ import {
   roomRouteHistoryOperation,
   roomRouteUrl,
   routedProductFromUrl,
+  touchLayoutEditorHistoryOperation,
 } from "../.cache/build/browser/assets/launcher/route-state.mjs";
 
 const products = new Set(PRODUCT_IDS);
@@ -117,6 +119,17 @@ assert.equal(playerRouteHistoryOperation({
   routedProduct: "th07",
   product: "th07",
 }), null);
+
+const touchLayoutEditor = touchLayoutEditorHistoryOperation({
+  currentUrl: "https://launcher.invalid/?game=th07&keep=1",
+  currentState: { [PLAYER_HISTORY_KEY]: true, game: "th07", keep: 1 },
+});
+assert.equal(touchLayoutEditor.kind, "push");
+assert.equal(touchLayoutEditor.url, "https://launcher.invalid/?game=th07&keep=1");
+assert.equal(touchLayoutEditor.state[TOUCH_LAYOUT_HISTORY_KEY], true);
+assert.equal(touchLayoutEditor.state[PLAYER_HISTORY_KEY], true);
+assert.equal(touchLayoutEditor.state.game, "th07");
+assert.equal(touchLayoutEditor.state.keep, 1);
 
 const roomUrl = roomRouteUrl("https://launcher.invalid/?keep=1", "th06mp", "4321");
 assert.equal(roomUrl.searchParams.get("game"), "th06mp");

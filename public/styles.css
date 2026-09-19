@@ -990,3 +990,18 @@ body.mp-room-active .mp-spectator-join:disabled{opacity:.35;cursor:not-allowed}
 *::-webkit-scrollbar-corner{
   background:transparent;
 }
+
+/* The in-player Help entry is a labelled action, not an icon-only affordance. */
+.touch-help-open{
+  width:auto;
+  min-width:52px;
+  padding:0 10px;
+  font:700 10px/1 var(--ui-font);
+}
+@media(max-width:760px){
+  .touch-help-open{
+    width:auto;
+    min-width:48px;
+    padding:0 8px;
+  }
+}

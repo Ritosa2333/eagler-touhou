@@ -156,6 +156,7 @@ import {
   MP_ROOM_HISTORY_KEY as mpRoomHistoryKey,
   MP_ROOM_URL_KEY as mpRoomUrlKey,
   PLAYER_HISTORY_KEY as playerHistoryKey,
+  TOUCH_LAYOUT_HISTORY_KEY as touchLayoutHistoryKey,
   applyHistoryOperations,
   directRoomHistorySeed,
   initialRoutedHistoryOperations,
@@ -165,6 +166,7 @@ import {
   returnToRoomHistoryOperation,
   roomRouteHistoryOperation,
   routedProductFromUrl,
+  touchLayoutEditorHistoryOperation,
 } from "./route-state.mjs";
 import type {
   GameId,
@@ -1364,6 +1366,7 @@ const touchLayoutControlTitle = (name: TouchLayoutControlName) => {
 let touchLayout = loadTouchLayoutFromStorage(localStorage);
 let touchLayoutDraft: TouchLayout | null = null;
 let touchLayoutEditing = false;
+let touchLayoutHistoryEntryOwned = false;
 let touchLayoutSelected: TouchLayoutControlName = "fire";
 type PointerDrag = { pointerId: number; x: number; y: number };
 type TouchLayoutDrag =
@@ -4099,6 +4102,7 @@ function render() {
   // editor is open even when gameplay touch input itself is disabled.
   const spectatorRuntime = isMultiplayerProduct() && state.netplay.spectator === true;
   const touchSurfaceVisible = (!spectatorRuntime && state.options.touchEnabled) || touchLayoutEditing;
+  $("#touchHelp").classList.toggle("touch-help-touch-input", state.options.touchEnabled);
   if (twoFingerFocusOption) twoFingerFocusOption.disabled = wheelMovement;
   player.classList.toggle("touch-enabled", touchSurfaceVisible);
   player.classList.toggle("touch-joystick-enabled", wheelMovement && touchSurfaceVisible);
@@ -4590,6 +4594,13 @@ function syncSelectionFromPlayerRoute() {
 }
 
 window.addEventListener("popstate", async () => {
+  if (touchLayoutEditing) {
+    const editorHistoryWasPopped = touchLayoutHistoryEntryOwned;
+    touchLayoutHistoryEntryOwned = false;
+    const closed = await closeTouchLayoutEditor();
+    if (!closed && editorHistoryWasPopped) pushTouchLayoutEditorHistory();
+    return;
+  }
   if (mpUiState.room) {
     const routedRoom = mpNormalizeRoomCode(new URL(location.href).searchParams.get(mpRoomUrlKey));
     if (!routedRoom || routedRoom !== mpUiState.room.code) {
@@ -6319,6 +6330,7 @@ function cancelTouchSensitivityPreview() {
 }
 
 async function openTouchLayoutEditor() {
+  if (touchLayoutEditing) return;
   if (state.launched) throw new Error(t("touch.editWhileRunning"));
   touchLayoutEditing = true;
   touchViewportEditing = false;
@@ -6343,6 +6355,7 @@ async function openTouchLayoutEditor() {
   if (!settings) throw new Error(t("touch.settingsMissing"));
   settings.hidden = false;
   render();
+  pushTouchLayoutEditorHistory();
   const wasFullscreen = isPlayerFullscreen();
   try {
     await enterPlayerFullscreen({ focusGame: false });
@@ -6386,13 +6399,30 @@ function saveTouchLayoutEditor() {
   }
 }
 
-async function closeTouchLayoutEditor() {
+function pushTouchLayoutEditorHistory() {
+  if (touchLayoutHistoryEntryOwned) return;
+  applyHistoryOperations(history, [touchLayoutEditorHistoryOperation({
+    currentUrl: location.href,
+    currentState: history.state,
+  })]);
+  touchLayoutHistoryEntryOwned = true;
+}
+
+function consumeTouchLayoutEditorHistory() {
+  if (!touchLayoutHistoryEntryOwned) return;
+  const ownsCurrentEntry = !!history.state?.[touchLayoutHistoryKey];
+  touchLayoutHistoryEntryOwned = false;
+  if (ownsCurrentEntry) history.back();
+}
+
+async function closeTouchLayoutEditor(): Promise<boolean> {
+  if (!touchLayoutEditing) return true;
   if (touchViewportEditing) finishTouchViewportEditing();
   if (touchLayoutHasUnsavedChanges() && !await askConfirmation({
     message: t("touch.layoutDiscardConfirm"),
     confirmText: t("touch.discardChanges"),
     tone: "danger"
-  })) return;
+  })) return false;
   rememberTouchLayoutWindowsNow();
   touchLayoutDrag = null;
   touchLayoutEditorDrag = null;
@@ -6417,6 +6447,7 @@ async function closeTouchLayoutEditor() {
   render();
   setStatus(t("touch.layoutEditorClosed"));
   maybeApplyDeferredAppShellUpdate();
+  return true;
 }
 
 function rectOverlapRatio(a: DOMRect, b: DOMRect) {
@@ -7453,7 +7484,10 @@ $("#touchLayoutReset").addEventListener("click", async () => {
   showToast(t("touch.restoreLayoutToast", { orientation: orientationTitle }));
 });
 $("#touchLayoutSave").addEventListener("click", saveTouchLayoutEditor);
-$("#touchLayoutExit").addEventListener("click", () => { if (touchLayoutEditing) void closeTouchLayoutEditor(); });
+$("#touchLayoutExit").addEventListener("click", () => {
+  if (!touchLayoutEditing) return;
+  void closeTouchLayoutEditor().then(closed => { if (closed) consumeTouchLayoutEditorHistory(); });
+});
 $("#thpracToggle").addEventListener("click", () => setOption("thpracEnabled", !state.options.thpracEnabled));
 $("#magnifierToggle").addEventListener("click", () => setOption("magnifierEnabled", !state.options.magnifierEnabled));
 $("#frameLimitToggle").addEventListener("click", () => setOption("frameLimit60Enabled", !state.options.frameLimit60Enabled));
