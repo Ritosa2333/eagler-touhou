@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "RuntimeOverride.hpp"
+#include "JapaneseFonts.hpp"
 #ifdef TH_NATIVE_PLATFORM
 #include <SDL3/SDL.h>
 #define TH08_LOCALIZATION_LOG(...) SDL_Log(__VA_ARGS__)
@@ -474,8 +475,13 @@ Table g_Spells;
 Table g_Stages;
 Table g_Themes;
 Table g_MusicComments;
+Table g_SpellComments;
 AsciiTable g_Ascii;
 StringTable g_Strings;
+
+// Matches SPELL_COMMENT_OWNER_LINE in the thcrap pack compiler: comment_N
+// lines occupy (N-1)*0x100+line, leaving 0x200 for the owner override.
+constexpr std::uint16_t kSpellCommentOwnerLine=0x200;
 
 struct Options
 {
@@ -560,17 +566,18 @@ void ReportActivation()
     g_Stages.Lookup("localization/stages.etl",0,0,missing);
     g_Themes.Lookup("localization/themes.etl",0,0,missing);
     g_MusicComments.Lookup("localization/musiccmt.etl",0,0,missing);
+    g_SpellComments.Lookup("localization/spellcomments.etl",0,0,missing);
     Localization::AsciiEntryView view{};
     g_Ascii.Lookup("");
     g_Strings.Lookup("");
 
     TH08_LOCALIZATION_LOG("th08 thcrap localization active: font=%s (%s) utf8=%s "
-                          "spells=%zu stages=%zu themes=%zu musiccmt=%zu ascii=%zu strings=%zu",
+                          "spells=%zu stages=%zu themes=%zu musiccmt=%zu spellcomments=%zu ascii=%zu strings=%zu",
                           g_Options.fontFile.c_str(),
                           g_Options.fontName.empty()?"(unnamed)":g_Options.fontName.c_str(),
                           utf8Ok?"ok":"FAILED",
                           g_Spells.Count(),g_Stages.Count(),g_Themes.Count(),
-                          g_MusicComments.Count(),g_Ascii.Count(),g_Strings.Count());
+                          g_MusicComments.Count(),g_SpellComments.Count(),g_Ascii.Count(),g_Strings.Count());
 }
 } // namespace
 
@@ -613,6 +620,16 @@ const char* Localization::MusicTitle(std::uint32_t track,const char* fallback)
 const char* Localization::MusicComment(std::uint32_t track,std::uint16_t line,const char* fallback)
 {
     return g_MusicComments.Lookup("localization/musiccmt.etl",track,line,fallback,true);
+}
+
+const char* Localization::SpellComment(std::uint32_t number,std::uint16_t line,const char* fallback)
+{
+    return g_SpellComments.Lookup("localization/spellcomments.etl",number,line,fallback);
+}
+
+const char* Localization::SpellCommentOwner(std::uint32_t number,const char* fallback)
+{
+    return g_SpellComments.Lookup("localization/spellcomments.etl",number,kSpellCommentOwnerLine,fallback);
 }
 
 bool Localization::LookupAscii(const char* fallback,AsciiEntryView& view)
@@ -661,6 +678,62 @@ const char* Localization::FormatStringById(const char* id,const char* fallback)
         return fallback;
 
     return record->translation.c_str();
+}
+
+const char* Localization::Utf8(const char* text)
+{
+    if(text==nullptr)
+        return nullptr;
+    if(IsValidUtf8(reinterpret_cast<const unsigned char*>(text)))
+        return text;
+#ifdef TH_NATIVE_PLATFORM
+    // Mixed localized strings happen when an untranslated CP932 format or
+    // argument is substituted into a translated UTF-8 line. Re-encode the
+    // CP932 piece so the whole formatted result stays valid UTF-8 and the
+    // rasterizer never falls back to the wrong code page for either half.
+    static Cp932 table;
+    static bool ready=false;
+    if(!ready)
+    {
+        ready=true;
+        std::size_t size=0;
+        if(void* bytes=SDL_LoadFile("/fonts/cp932.bin",&size))
+        {
+            table.load(static_cast<const u8*>(bytes),u32(size));
+            SDL_free(bytes);
+        }
+    }
+    if(!table.loaded())
+        return text;
+    static std::string pool[8];
+    static unsigned slot=0;
+    std::string& out=pool[(slot++)&7u];
+    out.clear();
+    const u8* cursor=reinterpret_cast<const u8*>(text);
+    const u8* end=cursor+std::strlen(text);
+    while(cursor<end)
+    {
+        const u16 code=table.next(cursor,end);
+        if(code==0)
+            break;
+        if(code<0x80)
+            out.push_back(char(code));
+        else if(code<0x800)
+        {
+            out.push_back(char(0xc0|(code>>6)));
+            out.push_back(char(0x80|(code&0x3f)));
+        }
+        else
+        {
+            out.push_back(char(0xe0|(code>>12)));
+            out.push_back(char(0x80|((code>>6)&0x3f)));
+            out.push_back(char(0x80|(code&0x3f)));
+        }
+    }
+    return out.c_str();
+#else
+    return text;
+#endif
 }
 
 void Localization::CopyCodepointChunk(char* destination,std::size_t capacity,const char* source,
