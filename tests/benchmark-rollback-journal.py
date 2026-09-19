@@ -93,8 +93,9 @@ def main() -> int:
             report["summary"][workload] = entry
     text = json.dumps(report, indent=2)
     if args.output:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(text + "\n", encoding="utf-8")
+        output_path = args.output if args.output.is_absolute() else ROOT / args.output
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(text + "\n", encoding="utf-8")
     print(json.dumps({key: value for key, value in report.items() if key != "runs"}, indent=2), flush=True)
     return 0
 
