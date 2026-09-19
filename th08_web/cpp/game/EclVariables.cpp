@@ -8,7 +8,7 @@ i32 EclVm::familiar_count()const noexcept {
     const auto* owner=parent?parent:this;
     if(owner->parent)return 0;
     i32 count=0;for(auto* p=owner;p->next_familiar&&count<481;p=p->next_familiar)++count;
-    return count;
+    return wrapping_add(count,owner->practice_familiar);
 }
 // Original writable resolvers: 0x41fe10 (integer), 0x420950 (float).
 // Read-only variables intentionally do not return a writable field.

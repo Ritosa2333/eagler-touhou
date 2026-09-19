@@ -7,6 +7,8 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+#include <cstddef>
+#include "imgui.h"
 
 EM_JS(int, touhou_clip_control, (), {
   const e=GL.currentContext.GLctx.getExtension('EXT_clip_control');
@@ -25,6 +27,24 @@ float bits(u32 n){float f;std::memcpy(&f,&n,4);return f;}
 std::array<float,4> color(u32 n){return {float(n>>16&255)/255,float(n>>8&255)/255,float(n&255)/255,float(n>>24)/255};}
 void replace(std::string& s,const std::string& a,const std::string& b){size_t p=0;while((p=s.find(a,p))!=std::string::npos){s.replace(p,a.size(),b);p+=b.size();}}
 GLuint shader(GLenum type,const std::string& source){GLuint s=glCreateShader(type);const char* p=source.c_str();glShaderSource(s,1,&p,nullptr);glCompileShader(s);GLint ok=0;glGetShaderiv(s,GL_COMPILE_STATUS,&ok);if(!ok){char log[2048];glGetShaderInfoLog(s,sizeof(log),nullptr,log);std::fprintf(stderr,"SDL shader: %s\n",log);std::abort();}return s;}
+constexpr const char* imguiVertexSource=R"(#version 300 es
+precision mediump float;
+uniform mat4 u_ProjMtx;
+layout(location=0) in vec2 Position;
+layout(location=1) in vec2 UV;
+layout(location=2) in vec4 Color;
+out vec2 Frag_UV;
+out vec4 Frag_Color;
+void main(){Frag_UV=UV;Frag_Color=Color.bgra;gl_Position=u_ProjMtx*vec4(Position.xy,0.0,1.0);}
+)";
+constexpr const char* imguiFragmentSource=R"(#version 300 es
+precision mediump float;
+in vec2 Frag_UV;
+in vec4 Frag_Color;
+uniform sampler2D Texture;
+out vec4 Out_Color;
+void main(){Out_Color=Frag_Color*texture(Texture,Frag_UV.st);}
+)";
 
 bool equal(const State& a,const State& b,bool world=false){
  if(a.layout!=b.layout||a.stride!=b.stride||a.texture!=b.texture||a.target!=b.target||a.depth!=b.depth||std::memcmp(&a.viewport,&b.viewport,sizeof(Viewport)))return false;
@@ -60,7 +80,7 @@ bool Renderer::initialize(){
  glGenVertexArrays(1,&resampleVao);glGenTextures(1,&weightTexture);
  warming=false;set_current(this);return true;
 }
-Renderer::~Renderer(){discard();for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);if(context)SDL_GL_DestroyContext(context);if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;SDL_Quit();}
+Renderer::~Renderer(){discard();for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);glDeleteProgram(imguiProgram);glDeleteVertexArrays(1,&imguiVao);glDeleteBuffers(1,&imguiVbo);glDeleteBuffers(1,&imguiEbo);glDeleteTextures(1,&imguiFontTexture);if(context)SDL_GL_DestroyContext(context);if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;SDL_Quit();}
 void Renderer::bind_texture(GLuint id){if(boundTexture!=id){glBindTexture(GL_TEXTURE_2D,id);boundTexture=id;++stats.textureBinds;}}
 void Renderer::bind_framebuffer(GLenum target,GLuint id){
  const bool read=target!=GL_DRAW_FRAMEBUFFER,draw=target!=GL_READ_FRAMEBUFFER;
@@ -223,6 +243,42 @@ void Renderer::read(u32 id){flush();auto it=surfaces.find(id);if(it==surfaces.en
  }g.rendered=false;
 }
 void Renderer::release(u32 id){flush();auto d=depths.find(id);if(d!=depths.end()){glDeleteRenderbuffers(1,&d->second.buffer);depths.erase(d);}auto it=surfaces.find(id);if(it==surfaces.end())return;glDeleteTextures(1,&it->second.texture);glDeleteFramebuffers(1,&it->second.framebuffer);surfaces.erase(it);boundTexture=readFramebuffer=drawFramebuffer=~0u;}
+void Renderer::render_imgui(const ImDrawData* data,u32 targetHandle){
+ if(!data||data->CmdListsCount<=0||data->TotalVtxCount<=0||data->TotalIdxCount<=0)return;
+ flush();auto& output=target(targetHandle,0xffffffff);
+ if(!imguiProgram){
+  const auto vs=shader(GL_VERTEX_SHADER,imguiVertexSource),fs=shader(GL_FRAGMENT_SHADER,imguiFragmentSource);imguiProgram=glCreateProgram();glAttachShader(imguiProgram,vs);glAttachShader(imguiProgram,fs);glLinkProgram(imguiProgram);glDeleteShader(vs);glDeleteShader(fs);
+  GLint linked=0;glGetProgramiv(imguiProgram,GL_LINK_STATUS,&linked);if(!linked){char log[1024]{};glGetProgramInfoLog(imguiProgram,sizeof(log),nullptr,log);failure=std::string("ImGui program: ")+log;return;}
+  imguiProjMtx=glGetUniformLocation(imguiProgram,"u_ProjMtx");imguiTexture=glGetUniformLocation(imguiProgram,"Texture");
+  glGenVertexArrays(1,&imguiVao);glGenBuffers(1,&imguiVbo);glGenBuffers(1,&imguiEbo);glBindVertexArray(imguiVao);glBindBuffer(GL_ARRAY_BUFFER,imguiVbo);glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,imguiEbo);
+  glEnableVertexAttribArray(0);glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,sizeof(ImDrawVert),reinterpret_cast<void*>(offsetof(ImDrawVert,pos)));
+  glEnableVertexAttribArray(1);glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,sizeof(ImDrawVert),reinterpret_cast<void*>(offsetof(ImDrawVert,uv)));
+  glEnableVertexAttribArray(2);glVertexAttribPointer(2,4,GL_UNSIGNED_BYTE,GL_TRUE,sizeof(ImDrawVert),reinterpret_cast<void*>(offsetof(ImDrawVert,col)));
+ }
+ auto& io=ImGui::GetIO();if(imguiFontTexture&&io.Fonts->TexID==nullptr){glDeleteTextures(1,&imguiFontTexture);imguiFontTexture=0;}
+ if(!imguiFontTexture){unsigned char* pixels=nullptr;int width=0,height=0;io.Fonts->GetTexDataAsRGBA32(&pixels,&width,&height);if(!pixels||width<=0||height<=0)return;
+  glGenTextures(1,&imguiFontTexture);glActiveTexture(GL_TEXTURE0);glBindTexture(GL_TEXTURE_2D,imguiFontTexture);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);glPixelStorei(GL_UNPACK_ALIGNMENT,1);glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,pixels);io.Fonts->TexID=reinterpret_cast<ImTextureID>(static_cast<uintptr_t>(imguiFontTexture));io.Fonts->ClearTexData();
+ }
+ bind_framebuffer(GL_FRAMEBUFFER,output.framebuffer);glViewport(0,0,640,480);glEnable(GL_BLEND);glBlendEquationSeparate(GL_FUNC_ADD,GL_FUNC_ADD);glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_ONE,GL_ONE_MINUS_SRC_ALPHA);glDisable(GL_CULL_FACE);glDisable(GL_DEPTH_TEST);glDepthMask(GL_FALSE);glEnable(GL_SCISSOR_TEST);glUseProgram(imguiProgram);glActiveTexture(GL_TEXTURE0);glBindVertexArray(imguiVao);glBindBuffer(GL_ARRAY_BUFFER,imguiVbo);glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,imguiEbo);glUniform1i(imguiTexture,0);
+ const ImVec2 clipOffset=data->DisplayPos,clipScale=data->FramebufferScale;const float displayWidth=data->DisplaySize.x*clipScale.x,displayHeight=data->DisplaySize.y*clipScale.y,left=data->DisplayPos.x,right=left+data->DisplaySize.x,top=data->DisplayPos.y,bottom=top+data->DisplaySize.y;
+ // The backbuffer is presented with a vertical flip (see commit()), so draw
+ // ImGui pre-flipped: mirror the projection Y and skip the GL-origin scissor
+ // conversion below. The two flips compose to identity for the overlay.
+ const float projection[4][4]={{2.0f/(right-left),0,0,0},{0,2.0f/(bottom-top),0,0},{0,0,-1,0},{(right+left)/(left-right),(top+bottom)/(top-bottom),0,1}};glUniformMatrix4fv(imguiProjMtx,1,GL_FALSE,&projection[0][0]);
+ glBufferData(GL_ARRAY_BUFFER,GLsizeiptr(data->TotalVtxCount*sizeof(ImDrawVert)),nullptr,GL_STREAM_DRAW);glBufferData(GL_ELEMENT_ARRAY_BUFFER,GLsizeiptr(data->TotalIdxCount*sizeof(ImDrawIdx)),nullptr,GL_STREAM_DRAW);GLsizeiptr vertexOffset=0,indexOffset=0;
+ for(int listIndex=0;listIndex<data->CmdListsCount;++listIndex){const auto* list=data->CmdLists[listIndex];const GLsizeiptr vertexBytes=GLsizeiptr(list->VtxBuffer.Size*sizeof(ImDrawVert)),indexBytes=GLsizeiptr(list->IdxBuffer.Size*sizeof(ImDrawIdx));glBufferSubData(GL_ARRAY_BUFFER,vertexOffset,vertexBytes,list->VtxBuffer.Data);glBufferSubData(GL_ELEMENT_ARRAY_BUFFER,indexOffset,indexBytes,list->IdxBuffer.Data);
+  for(int commandIndex=0;commandIndex<list->CmdBuffer.Size;++commandIndex){const auto& command=list->CmdBuffer[commandIndex];if(command.UserCallback){if(command.UserCallback==ImDrawCallback_ResetRenderState){glUseProgram(imguiProgram);glBindVertexArray(imguiVao);glUniformMatrix4fv(imguiProjMtx,1,GL_FALSE,&projection[0][0]);}else command.UserCallback(list,&command);continue;}
+   ImVec4 clip{(command.ClipRect.x-clipOffset.x)*clipScale.x,(command.ClipRect.y-clipOffset.y)*clipScale.y,(command.ClipRect.z-clipOffset.x)*clipScale.x,(command.ClipRect.w-clipOffset.y)*clipScale.y};if(clip.x>=clip.z||clip.y>=clip.w||clip.z<=0||clip.w<=0||clip.x>=displayWidth||clip.y>=displayHeight)continue;
+   const GLint x=GLint(std::floor(std::max(clip.x,0.0f))),y=GLint(std::floor(std::max(clip.y,0.0f)));const GLsizei width=GLsizei(std::ceil(std::min(clip.z,displayWidth))-x),height=GLsizei(std::ceil(std::min(clip.w,displayHeight))-y);if(width<=0||height<=0)continue;glScissor(x,y,width,height);
+   const GLuint texture=command.TextureId?GLuint(reinterpret_cast<uintptr_t>(command.TextureId)):imguiFontTexture;glBindTexture(GL_TEXTURE_2D,texture);const auto base=vertexOffset+GLsizeiptr(command.VtxOffset*sizeof(ImDrawVert));glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,sizeof(ImDrawVert),reinterpret_cast<void*>(base+offsetof(ImDrawVert,pos)));glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,sizeof(ImDrawVert),reinterpret_cast<void*>(base+offsetof(ImDrawVert,uv)));glVertexAttribPointer(2,4,GL_UNSIGNED_BYTE,GL_TRUE,sizeof(ImDrawVert),reinterpret_cast<void*>(base+offsetof(ImDrawVert,col)));glDrawElements(GL_TRIANGLES,GLsizei(command.ElemCount),sizeof(ImDrawIdx)==2?GL_UNSIGNED_SHORT:GL_UNSIGNED_INT,reinterpret_cast<void*>(indexOffset+GLsizeiptr(command.IdxOffset*sizeof(ImDrawIdx))));
+  }vertexOffset+=vertexBytes;indexOffset+=indexBytes;
+ }
+ // ImGui is an end-of-frame overlay on the existing GPU backbuffer.  Keep the
+ // GPU copy synchronized with the current CPU revision: advancing the private
+ // GPU version here makes surface() treat the unchanged CPU pixels as newer on
+ // the next paused/menu frame and upload them over the overlay/game image.
+ output.rendered=true;drawState=DrawStateCache{};currentProgram=0;currentLayout=0;boundTexture=readFramebuffer=drawFramebuffer=~0u;glDepthMask(GL_TRUE);
+}
 void Renderer::present(u32 id){flush();pending=id;stats.frames++;if(!defer)commit();}
 bool Renderer::commit(){if(!pending)return false;auto s=resolve(owner,pending);auto& g=surface(pending);pending=0;bind_framebuffer(GL_READ_FRAMEBUFFER,g.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,0);glDisable(GL_SCISSOR_TEST);glBlitFramebuffer(0,0,s.width,s.height,0,480,640,0,GL_COLOR_BUFFER_BIT,GL_NEAREST);SDL_GL_SwapWindow(window);stats.presentations++;return true;}
 }

@@ -1,4 +1,5 @@
 #include "AnmText.hpp"
+#include "Localization.hpp"
 #include <cstdarg>
 #include <cstdio>
 namespace th08 {
@@ -18,7 +19,13 @@ bool AnmText::draw(AnmVm& vm,TextAlignment align,u32 color,u32 outline,const cha
     auto x=number(s.startPixelInclusive.x);
     if(align!=TextAlignment::Left){const float divisor=align==TextAlignment::Right?1:2;
         const auto extent=number(s.widthPx)*number(s.scaleFactor.x)/number(divisor);
-        const auto text_extent=Extended::from_int64(size)*Extended::from_int(width)*number(s.scaleFactor.x)/number(divisor*2);
+        // The vanilla formula uses the CP932 byte count as display columns.
+        // UTF-8 translations count columns per code point; CP932 text and a
+        // disabled/absent pack keep the original byte count unchanged.
+        u32 units=size;
+        if(Localization::Active()&&utf8_valid(reinterpret_cast<const u8*>(text),size))
+            units=utf8_display_columns(reinterpret_cast<const u8*>(text),size);
+        const auto text_extent=Extended::from_int64(units)*Extended::from_int(width)*number(s.scaleFactor.x)/number(divisor*2);
         x=(extent+x)-text_extent;
     }
     const bool result=inner(s.texture,x.truncate_int(),Scalar::truncate(s.startPixelInclusive.y),Scalar::truncate(s.width),Scalar::truncate(s.height),width,vm.fontHeight,color,outline,reinterpret_cast<const u8*>(text),size,s.scaleFactor.x,s.scaleFactor.y);

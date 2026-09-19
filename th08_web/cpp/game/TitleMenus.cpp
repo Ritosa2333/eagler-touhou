@@ -3,6 +3,7 @@
 #include "TitleMenus.hpp"
 #include "TitleText.hpp"
 #include "TitleSpellText.hpp"
+#include "Localization.hpp"
 namespace th08 {
 #define TITLE_SPRITE_OPTION_START 10
 
@@ -230,7 +231,8 @@ i32 TitleMenus::OnUpdateStartMenu()
         if (state.stateTimer2 < ARRAY_SIZE(g_StartMenuHelpText))
         {
             DrawTextCentered(&state.helpTextVms[state.stateTimer2], 0xfff0e0, 0x300000,
-                                           g_StartMenuHelpText[state.stateTimer2]);
+                                           Localization::StringById(g_StartMenuHelpTextIds[state.stateTimer2],
+                                                                    g_StartMenuHelpText[state.stateTimer2]));
             state.stateTimer2=wrapping_add(state.stateTimer2,1);
 
             return CHAIN_CALLBACK_RESULT_CONTINUE;
@@ -491,7 +493,7 @@ i32 TitleMenus::OnUpdateOptions()
 
         for (i = 0; i < ARRAY_SIZE(g_OptionsHelpText); i++)
         {
-            DrawTextCentered(&state.helpTextVms[i], 0xfff0e0, 0x300000, g_OptionsHelpText[i]);
+            DrawTextCentered(&state.helpTextVms[i], 0xfff0e0, 0x300000, Localization::StringById(g_OptionsHelpTextIds[i], g_OptionsHelpText[i]));
         }
     case TitleCurrentScreenState_Ready:
         if (this->MoveCursorVertical(10) != 0)
@@ -1031,7 +1033,7 @@ i32 TitleMenus::OnUpdateKeyConfig()
 
         for (i = 0; i < ARRAY_SIZE(g_KeyConfigHelpText); i++)
         {
-            DrawTextCentered(&state.helpTextVms[i], 0xfff0e0, 0x300000, g_KeyConfigHelpText[i]);
+            DrawTextCentered(&state.helpTextVms[i], 0xfff0e0, 0x300000, Localization::StringById(g_KeyConfigHelpTextIds[i], g_KeyConfigHelpText[i]));
         }
 
     case TitleCurrentScreenState_Ready:
@@ -1560,6 +1562,12 @@ i32 TitleMenus::OnUpdateCharacterSelect()
             actions.sound(SOUND_SELECT, 0);
             actions.process_sounds();
 
+            // The practice stage-select confirm owns this assignment for a
+            // vanilla run, but thprac's practice menu intercepts that screen,
+            // and the practice character select returns early below. Set the
+            // chosen difficulty here so a thprac run does not inherit a stale
+            // title difficulty.
+            context.difficulty = config.difficulty;
             if (state.currentScreen == TitleCurrentScreen_CharacterSelectPractice)
             {
                 state.cursor = context.currentStage;
@@ -1845,7 +1853,7 @@ i32 TitleMenus::OnUpdateSpellStageSelect()
             state.spellCardNameVms[0].color1.r = 255;
             state.spellCardNameVms[0].color1.g = 255;
             state.spellCardNameVms[0].color1.b = 255;
-            DrawTextLeft(&state.spellCardNameVms[0], COLOR_TEXT_WHITE, 0, TH_TITLE_SPELL_STAGE_INFO);
+            DrawTextLeft(&state.spellCardNameVms[0], COLOR_TEXT_WHITE, 0, Localization::StringById("th08 Spell Practice Description", TH_TITLE_SPELL_STAGE_INFO));
 
             InitializeAndSetSprite(state.resultTextAnm,&state.spellCardNameVms[1], 3);
             state.spellCardNameVms[1].pos = Float3(0, 0, 0);
@@ -1857,7 +1865,8 @@ i32 TitleMenus::OnUpdateSpellStageSelect()
             state.spellCardNameVms[1].color1.g = 255;
             state.spellCardNameVms[1].color1.b = 255;
             DrawTextLeft(&state.spellCardNameVms[1], COLOR_TEXT_WHITE, 0,
-                                       TH_TITLE_SPELL_CAPTURE_PERCENTAGE);
+                                       Localization::StringById("th08 Spell Practice Percentages",
+                                                                TH_TITLE_SPELL_CAPTURE_PERCENTAGE));
 
             /* ZUN bug: possible copy paste mistake? */
             InitializeAndSetSprite(state.titleAnm,&state.spellCardNameVms[2], 144);
@@ -2054,7 +2063,7 @@ i32 TitleMenus::OnUpdateSpellCardSelect()
                         !context.IsLastWordSpellCardAttempted(spellCardNumber))
                     {
                         DrawTextLeft(&state.spellCardNameVms[i], COLOR_TEXT_WHITE, 0,
-                                                   TH_TITLE_SPELLCARD_NOT_UNLOCKED);
+                                                   Localization::StringById("th08_????????", TH_TITLE_SPELLCARD_NOT_UNLOCKED));
                     }
                     else
                     {
@@ -2065,7 +2074,7 @@ i32 TitleMenus::OnUpdateSpellCardSelect()
                 else
                 {
                     DrawTextLeft(&state.spellCardNameVms[i], COLOR_TEXT_WHITE, 0,
-                                               context.spells[spellCardNumber].name);
+                                               Localization::SpellName(u32(spellCardNumber), context.spells[spellCardNumber].name));
                 }
 
                 state.spellCardNameVms[i].color1.a = 255;
@@ -2081,7 +2090,7 @@ i32 TitleMenus::OnUpdateSpellCardSelect()
             state.spellCardNameVms[i].fontWidth = 15;
             state.spellCardNameVms[i].fontHeight = 15;
 
-            DrawTextLeft(&state.spellCardNameVms[i], COLOR_TEXT_WHITE, 0, TH_TITLE_SPELL_CARD_INFO);
+            DrawTextLeft(&state.spellCardNameVms[i], COLOR_TEXT_WHITE, 0, Localization::StringById("th08 Spell Practice List Description", TH_TITLE_SPELL_CARD_INFO));
 
             state.spellCardNameVms[i].color1.a = 255;
             state.spellCardNameVms[i].color1.r = 255;
@@ -2195,7 +2204,7 @@ i32 TitleMenus::OnUpdateSpellCardSelect()
                 if (context.HasSpellCardBeenEncountered(spellCardNumber2, SHOT_ALL))
                 {
                     DrawTextLeft(&state.spellCardNameVms[i2], COLOR_TEXT_WHITE, 0,
-                                               context.spells[spellCardNumber2].name);
+                                               Localization::SpellName(u32(spellCardNumber2), context.spells[spellCardNumber2].name));
                 }
                 else
                 {
@@ -2203,7 +2212,7 @@ i32 TitleMenus::OnUpdateSpellCardSelect()
                         !context.IsLastWordSpellCardAttempted(spellCardNumber2))
                     {
                         DrawTextLeft(&state.spellCardNameVms[i2], COLOR_TEXT_WHITE, 0,
-                                                   TH_TITLE_SPELLCARD_NOT_UNLOCKED);
+                                                   Localization::StringById("th08_????????", TH_TITLE_SPELLCARD_NOT_UNLOCKED));
                     }
                     else
                     {

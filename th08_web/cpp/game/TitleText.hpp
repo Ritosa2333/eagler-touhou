@@ -38,6 +38,21 @@ inline constexpr const char* g_KeyConfigHelpText[]={
  "\x8f\x89\x8a\xfa\x90\xdd\x92\xe8\x82\xc9\x96\xdf\x82\xb5\x82\xdc\x82\xb7",
  "\x82\xa8\x82\xa8\x82\xe6\x82\xbb\x8f\x49\x97\xb9\x82\xb5\x82\xdc\x82\xb7",
 };
+// thcrap stringdefs IDs for the help lines above, in array order (the menu
+// labels themselves are sl_text.png sprites handled by image overrides).
+inline constexpr const char* g_StartMenuHelpTextIds[]={
+ "th07 Menu Start","th07 Menu Extra Start","th08 Menu Spell Practice","th07 Menu Practice Start",
+ "th07 Menu Replay","th07 Menu Result","th07 Menu Music Room","th07 Menu Option","th07 Menu Quit",
+};
+inline constexpr const char* g_OptionsHelpTextIds[]={
+ "th07 Option Player","th07 Option Graphic","th07 Option BGM","th08 Option BGM Volume",
+ "th08 Option SE Volume","th07 Option Window Mode","th07 Option Slow Mode","th07 Option Reset",
+ "th07 Option Key Config","th07 Option Quit",
+};
+inline constexpr const char* g_KeyConfigHelpTextIds[]={
+ "th07 Key Shot","th07 Key Bomb","th07 Key Slow","th07 Key Skip","th07 Key Pause","th07 Key Up",
+ "th07 Key Down","th07 Key Left","th07 Key Right","th07 Key ShotSlow","th07 Key Reset","th07 Key Quit",
+};
 inline constexpr TitleControllerMapping g_ControllerMapping={0,1,2,4,-1,-1,-1,-1,3};
 inline constexpr const char* g_DemoReplayFiles[]={"demo/demorpy0.rpy","demo/demorpy1.rpy","demo/demorpy2.rpy","demo/demorpy3.rpy"};
 }

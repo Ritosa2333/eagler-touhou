@@ -29,8 +29,8 @@ bool update_player_bomb(PlayerBombState& s,PlayerBombContext& input,PlayerLifeSt
     if(!(context.game_flags&0x180)){
         animation.flag17=0;if(life.predead_effect){life.predead_effect->active=0;life.predead_effect=nullptr;}context.game_flags&=~0x400u;actions.reset_screen_color();
         s.type=context.focused;if(life.deathbomb)s.type=wrapping_sub(1,s.type);
-        if(!life.deathbomb){++input.regular_bombs;actions.add_bombs(-1);}
-        else {s.type=wrapping_add(s.type,2);if(automatic||context.bombs<2){s.consumed=context.bombs;actions.set_bombs(0);}else{s.consumed=2;actions.add_bombs(-2);}++input.last_spells;}
+        if(!life.deathbomb){++input.regular_bombs;if(!(input.cheats&4))actions.add_bombs(-1);}
+        else {s.type=wrapping_add(s.type,2);if(automatic||context.bombs<2){s.consumed=context.bombs;if(!(input.cheats&4))actions.set_bombs(0);}else{s.consumed=2;if(!(input.cheats&4))actions.add_bombs(-2);}++input.last_spells;}
         actions.count_bomb(1);
     }else s.type=4;
     life.deathbomb=0;context.hud_flags=(context.hud_flags&~12u)|8;s.active=1;s.triggered=1;s.timer.set(0);s.duration=999;

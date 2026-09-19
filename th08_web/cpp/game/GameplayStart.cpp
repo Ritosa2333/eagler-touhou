@@ -33,7 +33,7 @@ void GameplayStart::after_player(float initial_bombs){
         n.display_score=n.score=0;n.score_increment=0;n.high_score=100000;n.retries=0;n.graze=0;n.points=0;
         if(game.difficulty>=4||(flags&0x4001))s.config.slow_mode=0;
         constexpr i32 point_values[]{60000,100000,200000,300000,300000};n.point_value=point_values[game.difficulty];n.point_extends=0;point_item_extend_threshold(n,game.difficulty);initialize_score();initialize_rank();
-        n.deaths=0;s.values.set_deaths_stage(0);n.bombs_used=0;s.values.set_bombs_stage(0);n.captured_spells=0;
+        n.deaths=0;s.values.set_deaths_stage(0);n.bombs_used=0;s.values.set_bombs_stage(0);n.captured_spells=0;s.practice.tracker_last_spell_captures=0;s.practice.tracker_dissolve_count=0;
         if(!(flags&0x4008)){
             if(!s.config.slow_mode){auto increase=[](u32& value){if(value<999999)++value;};for(const u32 difficulty:{game.difficulty,6u}){auto& p=s.statistics.counts[difficulty];increase(p.total);increase(p.characters[game.shot]);if(menu.supervisor_state==10)increase(p.restarts);if(flags&1)increase(p.practices);}}
         }else s.config.slow_mode=0;

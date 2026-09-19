@@ -10,11 +10,14 @@ static_assert(sizeof(EclInstruction)==12&&sizeof(EclTimelineInstruction)==8&&siz
 // Owns original ECL bytecode, not machine code. Offset tables are decoded
 // into ordinary object pointers without rewriting the portable input bytes.
 class EclProgram {
+    bool practice_instructions=false;
     std::vector<u8> storage;std::vector<EclInstruction*> subs;std::vector<u32> sub_lengths,instruction_offsets;
     std::array<EclTimelineInstruction*,16> timelines{};std::array<u32,16> timeline_lengths{};
 public:
     bool load(const u8* data,u32 size);
-    void release(){storage.clear();subs.clear();sub_lengths.clear();instruction_offsets.clear();timelines.fill(nullptr);timeline_lengths.fill(0);}
+    void release(){practice_instructions=false;storage.clear();subs.clear();sub_lengths.clear();instruction_offsets.clear();timelines.fill(nullptr);timeline_lengths.fill(0);}
+    u8* mutable_data()noexcept{return storage.data();}
+    void enable_practice_instructions()noexcept{practice_instructions=true;}
     const u8* data()const noexcept{return storage.data();}
     u32 size()const noexcept{return storage.size();}
     u32 sub_count()const noexcept{return subs.size();}

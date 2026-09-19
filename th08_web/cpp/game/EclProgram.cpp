@@ -4,6 +4,15 @@ namespace th08 {
 bool EclProgram::has_instruction(const EclInstruction* instruction)const noexcept {
     const auto address=reinterpret_cast<std::uintptr_t>(instruction),base=reinterpret_cast<std::uintptr_t>(storage.data());
     if(address<base||address-base>=storage.size())return false;
+    if(practice_instructions){
+        // thprac replaces instructions with different lengths, including jump
+        // destinations inside former instructions. Validate within the owning
+        // subroutine, never against unrelated data or a timeline.
+        const u32 offset=u32(address-base);if(offset&3)return false;
+        for(u32 i=0;i<subs.size();i++){const u32 start=u32(reinterpret_cast<const u8*>(subs[i])-storage.data()),end=start+sub_lengths[i];
+            if(offset>=start&&offset<end){if(end-offset<12)return false;EclInstruction header;std::memcpy(&header,storage.data()+offset,12);return header.size>=12&&!(header.size&3)&&u32(header.size)<=end-offset;}}
+        return false;
+    }
     return std::binary_search(instruction_offsets.begin(),instruction_offsets.end(),u32(address-base));
 }
 bool EclProgram::load(const u8* input,u32 size){

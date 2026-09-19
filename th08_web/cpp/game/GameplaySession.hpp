@@ -1,8 +1,10 @@
 #pragma once
 #include "GameGauge.hpp"
+#include "PracticeConfig.hpp"
 namespace th08 {
 // Persistent game data shared by title, stage, results and replay owners.
 struct GameplaySession {
+    PracticeState practice;
     Rng random;GameGlobals numbers;GameConfiguration config,display_config;HighScore history;
     SpellRecord records[spell_count],previous_records[spell_count];ClearRecord clears[13];PracticeRecord practices[12];PlayRecord statistics;
     GameRank rank;GaugeThresholds thresholds;i32 stall_frames=0,stage_copy=0;u16 replay_seed=0;

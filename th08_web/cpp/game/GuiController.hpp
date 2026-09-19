@@ -28,6 +28,9 @@ public:
     bool clock(i32 action);
     bool capture();
     void reset_clear();
+    // Section warps skip the opening stage title; the tied clock intro must
+    // never execute then (upstream th08_disable_title). Set by GuiFlow::setup.
+    bool clock_intro_enabled=true;
 private:
     friend class GuiFlow;
     GuiState& gui;GuiImplState& display;DialogueContext& scene;GuiContext& context;

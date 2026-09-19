@@ -56,7 +56,7 @@ void GuiController::update_stage(){
             else if(gui.boss_life_max<gui.boss_life){gui.boss_life=sub(gui.boss_life,.02f);if(gui.boss_life_max>gui.boss_life)gui.boss_life=gui.boss_life_max;}}
     }
     for(auto& vm:display.front)executor.execute(vm);for(auto& vm:display.stage_text)executor.execute(vm);
-    if(!(scene.flags&0x4000)&&display.stage_text[0].color1.a)executor.execute(display.clock_intro);
+    if(clock_intro_enabled&&display.stage_text[0].color1.a)executor.execute(display.clock_intro);
     executor.execute(display.stage_rank);executor.execute(display.clock);
     auto& alpha=display.clock.color1.a;if(alpha){if(context.player.x>=64&&context.player.y<128){if(alpha>64)alpha-=4;}else if(alpha<255)alpha=alpha<=251?alpha+4:255;}
     executor.execute(display.nullify);executor.execute(display.difficulty);

@@ -1,15 +1,17 @@
 #include "GameplayScene.hpp"
+#include "PracticeRuntime.hpp"
+#include "PracticeSections.hpp"
 namespace th08 {
 GameplayScene::GameplayScene(GameplaySession& s,TextureStore& t,AnmLibrary& l,AnmRenderer& r,GameplayPlatform& p,Chain* shared_chain,AsciiManager* shared_ascii)
  :session(s),textures(t),library(l),renderer(r),platform(p),chain(shared_chain?*shared_chain:owned_chain),animations(s.random),owned_ascii(animations,r,p),ascii(shared_ascii?*shared_ascii:owned_ascii),
-  player_services(player_state,shots,s.numbers,s.values,s.gauge,s.rank,l,animations,r,p),
+  player_services(player_state,shots,s.numbers,s.values,s.gauge,s.rank,s.practice,l,animations,r,p),
   player(player_state,shots,s.numbers,s.gauge,s.thresholds,s.rank,s.random,player_services.services()),
   screen(chain,r,s.random),effect_system(effect_pool,environment,animations,r,s.random,screen,player_state.shots.regions,s.values,player_state.context.replay_flags),
   items(player,s.numbers,s.values,s.gauge,s.rank,s.history,s.random,l,animations,r,player_services),
   executor(s.random,player.timing,globals),
   enemies(program,executor,player.timing,s.random,s.numbers,s.values,s.rank,s.gauge,player,effect_system,items,projectile_pool,ascii,ascii_context,r,*this),
   bullets(projectile_pool,globals,s.random,player,items,effect_system,r,*this),
-  presentation(globals,animations,p,*this),spells(globals,s.numbers,s.values,s.history,s.records,effect_system,background,animations,presentation,player_state.bomb,enemies),spell_drawing(globals,s.records,r),
+  presentation(globals,animations,p,*this),spells(globals,s.numbers,s.values,s.history,s.records,effect_system,background,animations,presentation,player_state.bomb,s.practice,enemies),spell_drawing(globals,s.records,r),
   gui(hud,display,dialogue_context,gui_context,s.numbers,s.values,s.config,animations,ascii,r,*this),
   dialogue(hud,display,dialogue_context,s.numbers,s.values,animations,p,r,*this),
   background_script(background,background_context,animations,*this),background_view(background,background_script,r,*this),spell_background(background,background_view,effect_system,animations),name_atlas(t,r),
@@ -22,15 +24,58 @@ GameplayScene::GameplayScene(GameplaySession& s,TextureStore& t,AnmLibrary& l,An
 }
 GameplayScene::~GameplayScene(){unload();}
 bool GameplayScene::ControlActions::replay_stage(i32 stage){return scene.replay_stage_mask&(1u<<stage);}
-void GameplayScene::ControlActions::update_enemy_name(){auto& g=scene.globals;scene.copy_enemy_name(EnemyNameAtlas::select(g.stage,bool(g.game_flags&0x4000),g.current_spell));}
+void GameplayScene::ControlActions::update_enemy_name(){auto& g=scene.globals;
+    // A thprac boss warp already pinned the boss name (MSGNameFix, mirroring
+    // upstream th08_name_fix); the stage-progress heuristic would revert it to
+    // the midboss name (e.g. Extra boss Mokou showing as Keine).
+    const auto& practice=scene.session.practice;
+    if(practice.active&&practice.run.mode==1&&practice.run.section)
+        if(const i32 pinned=practice_boss_name_override(u32(g.stage),practice.run.section)){scene.copy_enemy_name(pinned);return;}
+    scene.copy_enemy_name(EnemyNameAtlas::select(g.stage,bool(g.game_flags&0x4000),g.current_spell));}
 void GameplayScene::ControlActions::release_loading_surface(){scene.platform.release_loading_surface();}
-void GameplayScene::ControlActions::play_music(i32 slot,i32 song){scene.platform.play_music(slot,song);}
-void GameplayScene::ControlActions::pause_audio(){scene.platform.menu_music(MenuMusic::Pause,0);}
+void GameplayScene::ControlActions::play_music(i32 slot,i32 song){if(!scene.practice_bgm_filter(0,song))scene.platform.play_music(slot,song);}
+void GameplayScene::ControlActions::pause_audio(){if(!scene.practice_bgm_filter(2,0))scene.platform.menu_music(MenuMusic::Pause,0);}
+bool GameplayScene::practice_bgm_filter(i32 command,i32 song){
+    // Port of upstream ElBgmTest (thprac_games.h): while the everlasting-BGM
+    // hotkey holds, duplicate starts, stops and pauses are swallowed so the
+    // locked song keeps playing. The lock re-arms on the next play command.
+    auto& p=session.practice;
+    bool el=p.everlasting_bgm&&p.active&&!p.replay;
+    if(p.run.section==TH08_ST6A_LS||(p.run.section>=TH08_ST6B_LS1&&p.run.section<=TH08_ST6B_LS5))el=false;
+    const bool is_practice=(globals.game_flags&1)!=0;
+    switch(command){
+    case 0:
+        if(p.el_bgm_lock==-1)p.el_bgm_lock=song;
+        if(p.el_bgm_lock!=song){p.el_bgm_lock=-1;p.el_bgm_block=false;}
+        else if(!p.el_bgm_block&&el){p.el_bgm_block=true;return false;}
+        if(p.el_bgm_lock>=0&&p.el_bgm_lock!=song){p.el_bgm_lock=-1;p.el_bgm_block=false;}
+        break;
+    case 1:
+        if(p.el_bgm_lock>=0){p.el_bgm_lock=-1;if(!is_practice||!el)p.el_bgm_block=false;}
+        break;
+    case 2:
+        if(p.el_bgm_lock>=0)p.el_bgm_block=el;
+        break;
+    case 3:
+        if(p.el_bgm_lock>=0&&!p.el_bgm_block&&el){p.el_bgm_block=true;return false;}
+        break;
+    default:break;
+    }
+    return p.el_bgm_block;
+}
 void GameplayScene::ControlActions::sound(i32 index){scene.sound(index);}
 void GameplayScene::ControlActions::update_game_time(){scene.update_game_time();}
 void GameplayScene::ControlActions::capture_arcade(){scene.capture_arcade();}
 void GameplayScene::ControlActions::demo_fade(){scene.screen.create(ScreenEffectType::ArcadeFadeOut,120,0,0,0,21);scene.fade_music(3);}
-AnmLoaded* GameplayScene::load(i32 slot,const char* path){const auto bytes=platform.read(path);auto* result=library.load(slot,bytes.data(),bytes.size());if(result&&u32(slot)<32)owned_resources|=1u<<slot;return result;}
+AnmLoaded* GameplayScene::load(i32 slot,const char* path){auto bytes=platform.read(path);
+    // THStage4ANM: patch our private copy before ANM decoding, preserving the
+    // pristine resource/preload cache for subsequent ordinary runs.
+    const auto& practice=session.practice;
+    if(slot==4&&practice.active&&practice.run.mode==1&&practice.run.section&&(globals.stage==3||globals.stage==4)){
+        const std::pair<u32,i32> patches[]{{0x8029c,0},{0x802b0,0},{0x802bc,4000},{0x802f8,0},{0x8030c,0},{0x802fc,1}};
+        for(const auto& patch:patches){if(patch.first+4>bytes.size())return nullptr;std::memcpy(bytes.data()+patch.first,&patch.second,4);}
+    }
+    auto* result=library.load(slot,bytes.data(),bytes.size());if(result&&u32(slot)<32)owned_resources|=1u<<slot;return result;}
 AnmLoaded* GameplayScene::get(i32 slot){return library.get(slot);}
 void GameplayScene::release(i32 slot){renderer.flush();library.release(slot);if(u32(slot)<32)owned_resources&=~(1u<<slot);}
 AnmVm* GameplayScene::moon(){return effect_system.fixed(64,{},12,0xffffffff);}
@@ -145,14 +190,15 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     if(initialize_values&&!startup.before_player(wanted.initial))return false;
     presentation.context.text=dialogue_context.text;spell_drawing.digits=dialogue_context.ascii;
     std::memcpy(dialogue_context.clears,session.clears,sizeof(session.clears));
-    if(!player_services.prepare()||!player.initialize({u8(wanted.character),wanted.initial,bool(wanted.flags&0x4000),0,{384,448}})){unload();return false;}player_services.finish();
+    const bool section_warp=session.practice.active&&session.practice.run.section!=0;
+    if(!player_services.prepare()||!player.initialize({u8(wanted.character),wanted.initial,bool(wanted.flags&0x4000),u8(section_warp),{384,448}})){unload();return false;}player_services.finish();
     if(initialize_values){
         startup.after_player(player.profile(false).initial_bombs);
         if(playing_replay){if(!playback.begin(wanted.stage,session,globals,player_state.context.miss_control)){unload();return false;}playback.input.current=playback.input.previous=0;replay_stage_mask=playback.stage_mask();if(wanted.initial&&playback.metadata().header.unknown6)sample_replay_frame();}
         startup.after_replay();std::memcpy(dialogue_context.clears,session.clears,sizeof(session.clears));
     }
     background_context={wanted.stage,false,bool(wanted.flags&0x4000),false};background_flow.context={wanted.keep_resources,dialogue_context.text};
-    bullet_flow.context={wanted.initial,wanted.release_resources};enemy_flow.context={wanted.initial,wanted.keep_resources,wanted.release_resources};effect_flow.context={wanted.stage,wanted.spell,bool(wanted.flags&0x4000),wanted.keep_resources};gui_flow.context={wanted.initial,wanted.keep_resources,wanted.release_resources,0,wanted.spell};spell_flow.context={wanted.initial,wanted.keep_resources,wanted.release_resources};
+    bullet_flow.context={wanted.initial,wanted.release_resources};enemy_flow.context={wanted.initial,wanted.keep_resources,wanted.release_resources};effect_flow.context={wanted.stage,wanted.spell,bool(wanted.flags&0x4000),wanted.keep_resources};gui_flow.context={wanted.initial,wanted.keep_resources,wanted.release_resources,u8(section_warp),wanted.spell};spell_flow.context={wanted.initial,wanted.keep_resources,wanted.release_resources};
     dialogue_context.flags=globals.game_flags;dialogue_context.stage=wanted.stage;dialogue_context.character=wanted.character;gui_context.difficulty=wanted.difficulty;items.difficulty=wanted.difficulty;
     if(!background_flow.attach(chain,wanted.stage)||!bullet_flow.attach(chain)||!enemy_flow.attach(chain)||!effect_flow.attach(chain)||!gui_flow.attach(chain)||!spell_flow.attach(chain)){unload();return false;}
     // These three counters belong to GameManager across stages. EnemyManager
@@ -165,6 +211,13 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     menus.context.shot_bombs=number(player.profile(false).initial_bombs).truncate_int();
     if(!initialize_values){control.state.stage_mask=u16(1u<<wanted.stage);control.state.start_music=wanted.keep_resources&&(wanted.flags&0x4000)&&!spell_music(wanted.spell).pause_in_practice?2:1;}
     globals.frame_count_value=&enemies.state.frames;session.stall_frames=enemies.state.frames;
+    if(initialize_values){
+        if(!apply_practice(*this,session)){unload();return false;}
+        // GuiFlow creates the stage-entry clock before thprac restores the
+        // configured night value. Refresh that already-created VM so the
+        // entrance graphic and the later result screen use the same clock.
+        if(hud.times&&hud.times->SetSprite(&display.clock_intro,session.numbers.clock_time)){unload();return false;}
+    }
     bind_jobs();loaded=true;synchronize();return ready();
 }
 void GameplayScene::unload(bool keep,bool release_all){
@@ -180,6 +233,8 @@ void GameplayScene::unload(bool keep,bool release_all){
 bool GameplayScene::prepare_frame(u16 buttons,float rate,bool force_unit){
     if(!ready())return false;player.timing={rate,force_unit};player_state.input.buttons=buttons;player_state.bomb_input.previous_buttons=previous_input;dialogue_context.previous_input=previous_input;dialogue_context.input=buttons;menus.context.keys=buttons;menus.context.previous_keys=previous_input;previous_input=buttons;
     if(recording_game){recording.input.physical=buttons;publish_input(recording.input);}else if(playing_replay)publish_input(playback.input);
+    // Practice cheats run after input publication so F6 can press the bomb key.
+    update_practice(*this,session);
     synchronize();return !invalid();
 }
 bool GameplayScene::update(u16 buttons,float rate,bool force_unit){if(!prepare_frame(buttons,rate,force_unit))return false;effect_system.snapshot_presentation();spell_drawing.snapshot_presentation();background_view.snapshot_spell_presentation();ascii.snapshot_presentation(ascii_context);failed|=chain.run()<0;return !invalid();}

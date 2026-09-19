@@ -1,4 +1,8 @@
 #include "BrowserRuntime.hpp"
+#ifdef TH_NATIVE_PLATFORM
+#include "../sdl/ThpracUi.hpp"
+#include "Renderer.hpp"
+#endif
 #include "PlatformDevices.hpp"
 #include "GameAudioManager.hpp"
 #include "../game/Presentation.hpp"
@@ -34,8 +38,19 @@ std::vector<u8> BrowserRuntime::read_prefix(const char* p,u32 size){return resou
 const std::vector<u8>& BrowserRuntime::file(const char* p){return resources_.file(p);}
 bool BrowserRuntime::write(const char* p,const u8* b,u32 size){
     const auto name=path(p);std::vector<u8> extended;
+    // Upstream th08_save_replay appends the thprac 'USER'/'PRAC' block right
+    // after the vanilla file; the touch movement trailer stays last so .rpyx
+    // detection keeps working. Upstream saves whenever thPracParam.mode is set
+    // (advanced practice), with no assist/cheat gate, so assisted runs still
+    // carry their parameters. Original-mode runs carry no PRAC block, and a
+    // config that cannot be serialized simply saves a vanilla replay.
+    if(name.find("replay/")==0&&name.size()>4&&name.substr(name.size()-4)==".rpy"&&app.session.practice.active&&!app.session.practice.replay){
+        const auto tail=practice_replay_block(app.session.practice.run);
+        if(!tail.empty()){extended.assign(b,b+size);extended.insert(extended.end(),tail.begin(),tail.end());b=extended.data();size=extended.size();}
+    }
     if(name.find("replay/")==0&&name.size()>4&&name.substr(name.size()-4)==".rpy"&&motion.used()&&!motion.playing){
-        const auto tail=motion.trailer(8);if(tail.empty())return false;extended.assign(b,b+size);extended.insert(extended.end(),tail.begin(),tail.end());b=extended.data();size=extended.size();
+        const auto tail=motion.trailer(8);if(tail.empty())return false;
+        if(extended.empty())extended.assign(b,b+size);extended.insert(extended.end(),tail.begin(),tail.end());b=extended.data();size=extended.size();
     }
     if(!put(p,b,size))return false;return file_device().save(p,b,size);
 }
@@ -93,6 +108,9 @@ const BrowserTexture* BrowserRuntime::texture(u32 h){const auto* r=app.textures.
 void BrowserRuntime::begin_frame(){}
 bool BrowserRuntime::present(){
     flush();
+#ifdef TH_NATIVE_PLATFORM
+    if(auto* renderer=touhou::sdl::current())ThpracUi::render(*this,*renderer);
+#endif
     if(presentation::render_only)return graphics_device().present(back)&&!capture_failed;
     captured=false;const bool presented=graphics_device().present(back);finish_capture();return presented&&!capture_failed;
 }

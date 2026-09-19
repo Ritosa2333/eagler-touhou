@@ -19,11 +19,17 @@ bool GuiFlow::setup(){
         for(i32 i=0;i<14;++i)for(i32 j=0;j<12;++j){auto& vm=d.transition[i*12+j];if(!c.start(vm,s.capture,((i+j)&1)+3))return false;vm.counterVar0=i+j*2;vm.pos={float(j*32)+15.5f,float(i*32)+15.5f,0};vm.uvScrollPos={float(j)/16,float(i)/16};}d.transition_count=168;
     }
     c.clock(3);if(!c.start(d.clock_intro,g.times,0,true)||g.times->SetSprite(&d.clock_intro,c.globals.clock_time))return false;
+    // The clock intro only plays with the opening stage title. Spell practice
+    // and section warps skip that sequence, so the clock must never execute
+    // (it starts at alpha 0 and would otherwise freeze mid-script on screen).
+    c.clock_intro_enabled=!spell&&!context.section_warp;
     if(!spell){const i32 team=s.character<4?s.character:(s.character-4)/2;const auto bytes=resources.message(messages[s.stage][team]);if(!dialogue.load(bytes.data(),bytes.size()))return false;}
     if(!context.keep_resources){g.stage_text=resources.load(13,stage_text[spell&&context.spell_number>=205?8:s.stage]);if(!g.stage_text)return false;}
     if(context.initial)for(i32 i=0;i<16;++i)if(!c.start(d.front[i],g.front,i))return false;
     g.frame=0;g.boss_present=false;d.boss_life_state=0;g.boss_life_max=g.boss_life=0;
-    if(!spell){for(i32 i=0;i<4;++i){if(!c.start(d.stage_text[i],g.stage_text,i,true))return false;d.stage_text[i].baseSpriteIndex=d.stage_text[i].activeSpriteIndex;}}
+    // Upstream th08_disable_title (0x439568): section warps skip the opening
+    // stage title sequence; the tied clock intro never executes either.
+    if(!spell&&!context.section_warp){for(i32 i=0;i<4;++i){if(!c.start(d.stage_text[i],g.stage_text,i,true))return false;d.stage_text[i].baseSpriteIndex=d.stage_text[i].activeSpriteIndex;}}
     else{const auto& music=spell_music(context.spell_number);if(!context.keep_resources||music.pause_in_practice){if(!c.start(d.stage_text[0],g.stage_text,3,true))return false;d.stage_text[0].baseSpriteIndex=d.stage_text[0].activeSpriteIndex;if(g.stage_text->SetSprite(&d.stage_text[0],music.name_sprite+3))return false;}}
     d.dialogue.message=-1;d.clear_frames=0;d.bonus.display=d.popup.display=d.spell_bonus.display=0;g.flags.lives=g.flags.bombs=g.flags.graze=g.flags.points=g.flags.power=g.flags.time=2;
     if(!c.start(d.stage_rank,s.ascii,3))return false;c.scene.hud_redraw=16;d.clear_clock_display=0;return true;

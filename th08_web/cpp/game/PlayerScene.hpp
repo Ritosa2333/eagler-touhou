@@ -2,6 +2,7 @@
 #include "EnemySystem.hpp"
 #include "BulletSystem.hpp"
 #include "BackgroundScript.hpp"
+#include "PracticeConfig.hpp"
 namespace th08 {
 struct PlayerScenePlatform {
     virtual ~PlayerScenePlatform()=default;
@@ -17,7 +18,7 @@ struct PlayerSceneWorld {
 // Production services for PlayerSimulation and ItemSystem. Bind the scene
 // after constructing its owners, before calling player initialization.
 class PlayerScene:public PlayerSetupActions,public PlayerLifeActions,public PlayerBombActions,public PlayerShotActions,public PlayerSimulationWorld,public ItemSystemActions {
-    PlayerSimulationState& state;ShotResource (&shots)[2];GameGlobals& numbers;GameValues& values;GameGauge& gauge;GameRank& rank;
+    PlayerSimulationState& state;ShotResource (&shots)[2];GameGlobals& numbers;GameValues& values;GameGauge& gauge;GameRank& rank;PracticeState& practice;
     AnmLibrary& library;AnmExecutor& animations;AnmRenderer& renderer;PlayerScenePlatform& platform;PlayerSceneWorld* world=nullptr;bool failed=false;
     PlayerBombBoss boss_views[8];EclVm* boss_owners[8]{};
     struct Motion:PlayerMotionActions {
@@ -46,12 +47,13 @@ class PlayerScene:public PlayerSetupActions,public PlayerLifeActions,public Play
         void panned_sound(i32 id,float x)override{s.sound(id,x);}
         void screen(ScreenEffectType type,i32 duration,i32 a,i32 b,i32 c,i32 priority)override{s.world->screen.create(type,duration,a,b,c,priority);}
         void background_color(u32 color)override{s.reset_screen_color();s.world->background.tint(color);s.world->background.state.use_tint=1;}
+        void reset_screen_color()override{s.reset_screen_color();}
         void draw(AnmVm& vm,bool rotated)override{if(rotated)s.renderer.draw_2d(vm);else s.renderer.draw_no_rotation(vm);}
         void rectangle(float a,float b,float c,float d,u32 color)override{const u32 colors[]{color,color,color,color};s.renderer.draw_rectangle(a,b,c,d,colors);}
     } patterns{*this};
 public:
-    PlayerScene(PlayerSimulationState& s,ShotResource (&r)[2],GameGlobals& n,GameValues& v,GameGauge& g,GameRank& rank,AnmLibrary& l,AnmExecutor& a,AnmRenderer& renderer,PlayerScenePlatform& p)
-     :state(s),shots(r),numbers(n),values(v),gauge(g),rank(rank),library(l),animations(a),renderer(renderer),platform(p){}
+    PlayerScene(PlayerSimulationState& s,ShotResource (&r)[2],GameGlobals& n,GameValues& v,GameGauge& g,GameRank& rank,PracticeState& practice,AnmLibrary& l,AnmExecutor& a,AnmRenderer& renderer,PlayerScenePlatform& p)
+     :state(s),shots(r),numbers(n),values(v),gauge(g),rank(rank),practice(practice),library(l),animations(a),renderer(renderer),platform(p){}
     void bind(PlayerSceneWorld& scene){world=&scene;scene.items.bind_hud(scene.hud);}
     void reset(){failed=false;for(u32 i=0;i<8;i++){boss_owners[i]=nullptr;boss_views[i]={};}}
     PlayerSimulationServices services(){return {*this,motion,*this,*this,patterns,*this,*this};}
@@ -65,6 +67,7 @@ public:
     void hud_group(i32 index,i32 interrupt)override{if(u32(index)<4)world->ascii.state.boss_markers[index].pendingInterrupt=i16(interrupt);else failed=true;}
     void time_item_threshold(i32 value)override{world->enemies.time_item_threshold=value;}
     void update_integrity()override{values.update_integrity();}
+    void dissolve()override{++practice.tracker_dissolve_count;}
     void randomize_integrity()override{values.randomize_integrity();}
     void effect(i32 kind,const Vec3& p,i32 count,u32 color)override{world->effects.spawn(kind,p,count,color);failed|=world->effects.invalid;}
     void effect(i32 kind,const Vec3& p)override{effect(kind,p,1,0xffffffff);}
@@ -95,6 +98,7 @@ public:
     bool step_animation(AnmVm& vm)override{const bool result=animations.execute(vm);failed|=animations.invalid;return result;}
     void draw(AnmVm& vm,bool impact)override{if(impact)renderer.draw_player_bullet(vm);else renderer.draw_2d(vm);}
     bool gui_blocked()override{return world->display.dialogue.message>=0||world->display.dialogue.message==-2;}
+    u32 practice_cheats()override{return practice.enabled&&!practice.replay?practice.cheats:0;}
     i32 hud_state()override{return world->ascii.state.gauge_interrupt;}
     void add_score(i32 value)override{values.add_score(value);}
     bool boss_present()override{for(auto* boss:world->ecl.boss_slots)if(boss)return true;return false;}

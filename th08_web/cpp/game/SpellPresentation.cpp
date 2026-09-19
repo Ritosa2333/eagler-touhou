@@ -1,7 +1,16 @@
 #include "SpellPresentation.hpp"
+#include "Localization.hpp"
 namespace th08 {
 namespace {
-float name_width(const char* name){return (Extended::from_int64(u32(std::strlen(name))*15u)/number(2)+number(16)).to_float();}
+// The vanilla width formula counts CP932 bytes (2 per full-width glyph). For
+// UTF-8 translations count display columns per code point instead; the CP932
+// path is byte-identical to the original.
+float name_width(const char* name){
+    u32 units=u32(std::strlen(name));
+    const auto* bytes=reinterpret_cast<const u8*>(name);
+    if(Localization::Active()&&utf8_valid(bytes,units))units=utf8_display_columns(bytes,units);
+    return (Extended::from_int64(i64(units)*15)/number(2)+number(16)).to_float();
+}
 }
 bool SpellPresentation::start(i32 slot,AnmLoaded* file,i32 script){
     if(!file||!file->scripts||u32(script)>=file->scriptCount)return false;

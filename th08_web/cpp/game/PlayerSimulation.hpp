@@ -19,6 +19,8 @@ struct PlayerSimulationState {
 struct PlayerSimulationWorld {
     virtual ~PlayerSimulationWorld()=default;
     virtual bool gui_blocked()=0;
+    // Active thprac cheat mask (0 when practice is disabled or replaying).
+    virtual u32 practice_cheats()=0;
     virtual i32 hud_state()=0;
     virtual void hud_interrupt(i32)=0;
     virtual void add_score(i32)=0;
@@ -46,6 +48,7 @@ class PlayerSimulation:private PlayerFrameActions,private PlayerBombActions,priv
     void update_shots()override;
     void update_shooting()override;
     bool gui_blocked()override{return services.world.gui_blocked();}
+    bool invincible()override{return services.world.practice_cheats()&1;}
     i32 hud_state()override{return services.world.hud_state();}
     void hud_interrupt(i32 value)override{services.world.hud_interrupt(value);}
     void add_score(i32 value)override{services.world.add_score(value);}

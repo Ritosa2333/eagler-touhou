@@ -58,6 +58,8 @@ bool sdl_prepare_asset(BrowserRuntime& r,u32 index){
 }
 bool sdl_decode_image(BrowserRuntime& r,const char* name,const std::vector<u8>& bytes){int width=0,height=0,channels=0;auto* rgba=stbi_load_from_memory(bytes.data(),bytes.size(),&width,&height,&channels,4);if(!rgba)return false;
     const bool result=r.put_image(name,width,height,rgba,u32(width)*height*4);stbi_image_free(rgba);return result;}
+bool sdl_decode_rgba(const u8* bytes,u32 size,u32& width,u32& height,std::vector<u8>& rgba){if(!bytes||!size)return false;int w=0,h=0,channels=0;auto* pixels=stbi_load_from_memory(bytes,int(size),&w,&h,&channels,4);if(!pixels)return false;
+    width=u32(w);height=u32(h);rgba.assign(pixels,pixels+size_t(w)*h*4);stbi_image_free(pixels);return true;}
 struct SDLFiles final:FileDevice {
  bool save(const char* path,const u8* bytes,u32 size)override{const auto name=BrowserRuntime::path(path);if(!save_name(name))return false;
     auto* stream=SDL_IOFromFile(("/savesth08/"+name).c_str(),"wb");if(!stream)return false;

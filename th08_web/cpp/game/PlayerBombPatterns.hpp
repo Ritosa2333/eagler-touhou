@@ -15,6 +15,8 @@ struct PlayerBombPatternActions:PlayerBombStartActions {
     virtual void screen(ScreenEffectType type,i32 duration,i32 a,i32 b,i32 c,i32 priority)=0;
     // Reset renderer mix, compose the stage tint and enable that tint this frame.
     virtual void background_color(u32 color)=0;
+    // Draw-side renderer mix reset; also runs in render-only presentation passes.
+    virtual void reset_screen_color()=0;
     virtual void draw(AnmVm&,bool rotated)=0;
     virtual void rectangle(float left,float top,float right,float bottom,u32 color)=0;
 };

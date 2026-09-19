@@ -5,6 +5,14 @@
 #include <map>
 #endif
 namespace th08 {
+// Prepared translations arrive as UTF-8 while original assets stay CP932.
+// These helpers decode one buffer at the rasterization boundary; localization
+// off never touches them.
+bool utf8_valid(const u8* text,u32 size) noexcept;
+u16 utf8_next(const u8*& cursor,const u8* end) noexcept;
+// Display columns of a valid UTF-8 string: ASCII counts 1, anything else 2.
+// Matches the column model the CP932 byte count expresses for original text.
+u32 utf8_display_columns(const u8* text,u32 size) noexcept;
 class Cp932 {
 public:
     bool load(const u8* data,u32 size);

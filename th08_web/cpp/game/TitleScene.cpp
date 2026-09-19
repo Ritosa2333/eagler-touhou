@@ -1,7 +1,7 @@
 #include "TitleScene.hpp"
 namespace th08 {
 TitleScene::TitleScene(GameplaySession& s,AnmLibrary& l,AnmRenderer& r,AsciiManager& a,const AsciiContext& ac,TextWriter& t,ScreenEffects& e,TitlePlatform& p)
- :session(s),library(l),renderer(r),platform(p),screen(e),animations(s.random),menus(context,s.display_config,animations,t,p),flow(menus,a,ac,*this),view(menus,a,r),information(r,context.input,p){}
+ :session(s),library(l),renderer(r),platform(p),screen(e),animations(s.random),menus(context,s.display_config,animations,t,p),flow(menus,a,ac,*this),view(menus,a,r),information(r,context.input,p){menus.practice=&s.practice;}
 AnmLoaded* TitleScene::preload_animation(i32 index,const char* path){const auto bytes=platform.read_asset(path);return library.load(index,bytes.data(),bytes.size());}
 void TitleScene::loading(bool capture){platform.show_loading(capture);}
 void TitleScene::begin_loading(){pending_load=true;}
@@ -18,7 +18,15 @@ bool TitleScene::attach(Chain& owner){
     std::memcpy(context.spells,session.records,sizeof(session.records));std::memcpy(context.clears,session.clears,sizeof(session.clears));std::memcpy(context.practice_scores,session.practices,sizeof(session.practices));context.last_words=session.last_words;context.play=session.statistics;
     const char* notice=flow.begin();session.config=flow.game_config;session.numbers=flow.game_values;
     chain=&owner;if(notice)information.start(notice);else if(!setup()){release();return false;}
-    calculation.set_callback([](void* p){auto& s=*static_cast<TitleScene*>(p);if(s.information.active||s.pending_load)return JobResult::Continue;const auto result=s.menus.update();return s.invalid()?JobResult::Error:result;});calculation.argument=this;calculation.deleted=[](void* p){static_cast<TitleScene*>(p)->release();return 0;};
+    calculation.set_callback([](void* p){auto& s=*static_cast<TitleScene*>(p);if(s.information.active||s.pending_load)return JobResult::Continue;
+        auto& practice=s.session.practice;
+        if(practice.enabled&&s.menus.state.currentScreen==TitleCurrentScreen_PracticeStageSelect){
+            if(practice.accepted){practice.accepted=false;practice.menu=false;s.context.currentStage=practice.run.stage;
+                if(practice.run.stage==8)s.context.difficulty=4;s.context.flags.isPracticeMode=true;s.context.flags.isReplay=false;s.context.flags.isSpellPractice=false;
+                s.context.supervisor_state=2;s.platform.stop_audio();return JobResult::Remove;}
+            practice.menu=true;s.menus.state.practiceState=0;return JobResult::Continue;
+        }
+        practice.menu=false;const auto result=s.menus.update();return s.invalid()?JobResult::Error:result;});calculation.argument=this;calculation.deleted=[](void* p){static_cast<TitleScene*>(p)->release();return 0;};
     drawing.set_callback([](void* p){auto& s=*static_cast<TitleScene*>(p);if(!s.information.active)s.view.draw();return s.invalid()?JobResult::Error:JobResult::Continue;});drawing.argument=this;
     menus.state.calcChain=&calculation;menus.state.drawChain=&drawing;owner.add(&calculation,4);owner.add(&drawing,3,true);return true;
 }

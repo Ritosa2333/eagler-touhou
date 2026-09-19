@@ -1,4 +1,7 @@
 #include "ResourceManager.hpp"
+#ifdef TH_ENABLE_THCRAP
+#include "../game/RuntimeOverride.hpp"
+#endif
 namespace th08 {
 std::string ResourceManager::path(const char* p){std::string s=p?p:"";for(auto& c:s){if(c=='\\')c='/';if(c>='A'&&c<='Z')c+=32;}while(s.size()>2&&s.substr(0,2)=="./")s.erase(0,2);return s;}
 bool ResourceManager::put(const char* name,const u8* b,u32 size){if(!name||(!b&&size)||size>128*1024*1024)return false;files[path(name)]=std::vector<u8>(b,b+size);return true;}
@@ -6,6 +9,15 @@ bool ResourceManager::put_archive(const u8* b,u32 size){if(!b||size>128*1024*102
 std::vector<u8> ResourceManager::read(const char* name){
     const auto key=path(name);auto found=files.find(key);if(found!=files.end())return found->second;
     const auto slash=key.rfind('/');const auto base=slash==std::string::npos?key:key.substr(slash+1);found=files.find(base);if(found!=files.end())return found->second;
+#ifdef TH_ENABLE_THCRAP
+    // thcrap-style offline pack: /thcrap/th08/<relative> wins over the
+    // original DAT (but never over user files above). Covers whole-file
+    // replacements such as msg*.dat, end*.end, musiccmt.txt and PNGs.
+    // RuntimeOverride::Read owns the path traversal guard.
+    {std::vector<u8> override_bytes;
+    if(RuntimeOverride::Read(key.c_str(),override_bytes))return override_bytes;
+    if(base!=key&&RuntimeOverride::Read(base.c_str(),override_bytes))return override_bytes;}
+#endif
 #ifdef TH_NATIVE_PLATFORM
     auto cached=decoded.find(base);if(cached!=decoded.end()){cached->second.used=++cache_clock;return cached->second.bytes;}
 #endif

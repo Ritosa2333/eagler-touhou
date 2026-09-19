@@ -2,14 +2,15 @@
 #include "EclNative.hpp"
 #include "AsciiManager.hpp"
 #include "GuiState.hpp"
+#include "Localization.hpp"
 namespace th08 {
 namespace {
 void interpolate(AnmVm& vm,u32 kind,i32 duration,u8 mode){vm.interpCurrentTimers[kind].set(0);vm.interpEndTimers[kind].set(duration);vm.interpModes[kind]=mode;}
 void decode(char* to,const u8* from,u32 size,u8 key){for(u32 i=0;i<size;i++)to[i]=char(from[i]^key);}
 void redraw(EclGlobals& g){if(g.gui)g.gui->flags.lives=g.gui->flags.bombs=3;}
 }
-SpellSystem::SpellSystem(EclGlobals& g,GameGlobals& n,GameValues& v,HighScore& h,SpellRecord* r,EffectSystem& e,BackgroundState& b,AnmExecutor& a,SpellPresentation& p,PlayerBombState& pb,SpellSystemActions& sa)
-    :globals(g),numbers(n),values(v),high_score(h),records(r),effects(e),background(b),anm(a),presentation(p),bomb(pb),actions(sa){globals.spell_actions=this;}
+SpellSystem::SpellSystem(EclGlobals& g,GameGlobals& n,GameValues& v,HighScore& h,SpellRecord* r,EffectSystem& e,BackgroundState& b,AnmExecutor& a,SpellPresentation& p,PlayerBombState& pb,PracticeState& practice,SpellSystemActions& sa)
+    :globals(g),numbers(n),values(v),high_score(h),records(r),effects(e),background(b),anm(a),presentation(p),bomb(pb),practice(practice),actions(sa){globals.spell_actions=this;}
 bool SpellSystem::reward(bool point_value){
     auto& s=globals;s.spell_reward_effect=nullptr;actions.spell_bonus(signed_bits(s.spell_pending_bonus));values.add_score(signed_bits(s.spell_pending_bonus));s.spell_flags&=~256u;
     if(s.spell_time_items>0){values.add_time_orbs(s.spell_time_items);if(point_value)numbers.point_value=wrapping_add(numbers.point_value,signed_bits(u32(s.spell_time_items)*10u));s.spell_time_items=0;}return true;
@@ -25,7 +26,8 @@ bool SpellSystem::begin(EclVm& enemy,u32 number,i32 portrait,u32 bonus,const u8*
     s.spell_bonus_decay=(bonus-bonus/7)/u32(enemy.timeout/60);s.spell_remaining.set(enemy.timeout);s.spell_initial.set(enemy.timeout);decode(s.spell_name,name,48,0xaa);
     if(!std::memchr(s.spell_name,0,48))return false;
     presentation.context.game_flags=s.game_flags;presentation.context.current_spell=s.current_spell;
-    if(!presentation.enemy(portrait,s.spell_name,0)||!actions.clear_projectiles(1))return false;
+    // Storage keeps the decoded Japanese name (CATK records, replays); only the announcement display point looks up spells.etl.
+    if(!presentation.enemy(portrait,Localization::SpellName(u32(number),s.spell_name),0)||!actions.clear_projectiles(1))return false;
     background.spell_state=1;background.spell_frames=0;
     if(background.spell_vm_count<0||background.spell_vm_count>32)return false;
     for(i32 i=0;i<background.spell_vm_count;i++){
@@ -70,7 +72,10 @@ bool SpellSystem::end(){
                     if(practice){decode(record.comment1,reinterpret_cast<const u8*>(s.spell_comment1),64,0xdd);decode(record.comment2,reinterpret_cast<const u8*>(s.spell_comment2),64,0xee);}
                     capture_spell(record,u32(s.shot),practice,u8(s.difficulty),s.spell_bonus);++high_score.spell_counters[s.spell_number];
                 }
-                numbers.captured_spells=wrapping_add(numbers.captured_spells,1);captured=true;values.update_integrity();
+                numbers.captured_spells=wrapping_add(numbers.captured_spells,1);
+                static constexpr u16 last_spells[]{10,11,12,29,30,31,51,52,53,74,75,76,97,98,99,116,117,118,143,144,145,146,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,204};
+                if(std::binary_search(std::begin(last_spells),std::end(last_spells),u16(s.spell_number)))++practice.tracker_last_spell_captures;
+                captured=true;values.update_integrity();
             }
         }
         if(auto* effect=s.spell_effect){

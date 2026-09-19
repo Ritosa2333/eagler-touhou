@@ -18,6 +18,7 @@ public:
     AnmLoaded& view() noexcept {return loaded;}
     const std::vector<AnmTextureSource>& textures() const noexcept {return sources;}
     const std::vector<u8>& data() const noexcept {return raw;}
+    const auto& sprite_rects() const noexcept {return sprite_sources;}
     u32 script_count() const noexcept {return script_pointers.size();}
 private:
     struct SpriteSource {float x,y,width,height;};

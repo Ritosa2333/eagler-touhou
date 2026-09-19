@@ -12,6 +12,7 @@ public:
     std::vector<u8> pixels;
     bool create(u32 width,u32 height,u32 format);
     bool from_anm(const u8* bytes,u32 size,u32 requested_format,bool force_16bit);
+    bool from_rgba(const u8* rgba,u32 width,u32 height,u32 format);
     std::vector<u8> rgba() const;
     static PixelFormat describe(u32 format);
     static u32 anm_format(u32 format,bool force_16bit);

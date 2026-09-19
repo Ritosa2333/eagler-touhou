@@ -9,7 +9,7 @@ struct PlayerBombState {
 };
 struct PlayerBombBoss {i32 life=0;u32 flags=0;};
 struct PlayerBombContext {
-    u16 buttons=0,previous_buttons=0;u8 gui_blocked=0,tampered=0,reserved[2]{};
+    u16 buttons=0,previous_buttons=0;u8 gui_blocked=0,tampered=0,cheats=0,reserved=0;
     u32 regular_bombs=0,last_spells=0;PlayerBombBoss* bosses[8]{};
 };
 struct PlayerBombActions {

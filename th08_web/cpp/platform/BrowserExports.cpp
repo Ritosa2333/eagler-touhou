@@ -5,8 +5,27 @@
 #include "../sdl/GraphicsHost.hpp"
 #endif
 using namespace th08;
+#ifdef __EMSCRIPTEN__
 #define EX(name) __attribute__((export_name(name)))
+#else
+#define EX(name)
+#endif
 extern "C" {
+EX("practice_enable") void browser_practice_enable(BrowserRuntime* r,bool enabled){if(r&&!r->app.in_game()){auto& p=r->app.session.practice;p.enabled=enabled;if(!enabled)p.menu=p.accepted=p.active=false;}}
+EX("practice_status") const i32* browser_practice_status(BrowserRuntime* r){static i32 out[7]{};if(!r)return out;const auto& p=r->app.session.practice;
+    out[0]=p.menu;out[1]=r->app.title.context.difficulty;out[2]=r->app.title.context.character;out[3]=p.active;out[4]=p.replay;out[5]=p.cheats;out[6]=p.assisted;return out;}
+EX("practice_tracker_status") const i32* browser_practice_tracker_status(BrowserRuntime* r){static i32 out[7]{};std::fill(out,out+7,0);if(!r)return out;
+    const auto& app=r->app;if(!app.in_game())return out;const auto& n=app.session.numbers;
+    out[0]=1;out[1]=app.game.globals.shot;out[2]=Scalar::truncate(n.deaths);out[3]=app.session.practice.tracker_dissolve_count;
+    out[4]=Scalar::truncate(n.bombs_used);out[5]=n.captured_spells;out[6]=app.session.practice.tracker_last_spell_captures;return out;}
+EX("practice_configure") bool browser_practice_configure(BrowserRuntime* r,const double* words,u32 count,bool accept){
+    if(!r||!r->app.session.practice.enabled||r->app.in_game())return false;auto& p=r->app.session.practice;PracticeConfig config;
+    if(!config.decode(words,count)||(accept&&!p.menu))return false;p.configured=config;
+    if(accept){p.run=config;p.accepted=true;}return true;
+}
+EX("practice_cancel") void browser_practice_cancel(BrowserRuntime* r){if(!r||!r->app.session.practice.menu)return;auto& p=r->app.session.practice;p.menu=p.accepted=false;
+    r->app.title.menus.state.cursor=r->app.title.context.character;r->app.title.menus.ChangeCurrentScreen(TitleCurrentScreen_CharacterSelectPractice);}
+EX("practice_cheats") bool browser_practice_cheats(BrowserRuntime* r,u32 mask){if(!r||!r->app.in_game()||!r->app.session.practice.enabled||r->app.session.practice.replay||mask>63)return false;auto& p=r->app.session.practice;p.cheats=mask;if(mask)p.assisted=true;return true;}
 EX("resident_hits") u32 browser_resident_hits(BrowserRuntime* r){return r->app.library.resident_hits();}
 EX("preload_stats") const u32* browser_preload_stats(BrowserRuntime* r){static u32 out[2];out[0]=r->app.library.preload_count();out[1]=r->app.library.preload_hits();return out;}
 EX("allocate") void* browser_allocate(u32 n){return std::calloc(n,1);}

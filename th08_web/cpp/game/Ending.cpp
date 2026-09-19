@@ -1,4 +1,6 @@
 #include "Ending.hpp"
+#include "JapaneseFonts.hpp"
+#include "Localization.hpp"
 #include <cstdlib>
 namespace th08 {
 bool Ending::in_file()const{return state.cursor&&state.file&&state.cursor>=state.file&&state.cursor<state.file+data.size();}
@@ -28,7 +30,7 @@ bool Ending::parse(){
     auto finish=[&](){s.elapsed.tick(animations.timing);s.background.y=Scalar::sub(s.background.y,s.scroll);if(s.background.y<=0){s.background.y=0;s.scroll=0;}return !failed;};
     if(s.reset_wait.current>0){s.reset_wait.decrement(1,animations.timing);if(s.minimum_reset)s.minimum_reset=wrapping_sub(s.minimum_reset,1);else if(pressed||skip)s.reset_wait.set(0);if(s.reset_wait.current<=0){for(i32 i=0;i<15;i++)s.vms[i].pendingInterrupt=2;s.lines=0;}else return finish();}
     if(s.wait.current>0){s.wait.decrement(1,animations.timing);if(s.minimum_wait)s.minimum_wait=wrapping_sub(s.minimum_wait,1);else if(pressed||skip)s.wait.set(0);return finish();}
-    char buffer[68]{};u32 size=0;
+    char buffer[160]{};u32 size=0;
     // Original data is finite. Bound malformed chains of @F commands to avoid
     // an imported script monopolizing the application thread.
     for(u32 commands=0;commands<65536&&in_file()&&!failed;commands++){
@@ -56,7 +58,20 @@ bool Ending::parse(){
             if(size){if(u32(s.lines)>=16)return false;if(!text.draw(s.vms[s.lines],TextAlignment::Left,s.text_color,0xffffffff,buffer))return false;s.vms[s.lines].pendingInterrupt=1;}
             while(in_file()&&(*s.cursor==0||*s.cursor=='\n'||*s.cursor=='\r'))++s.cursor;
             s.wait.set(input&4097?s.fast_delay:s.line_delay);s.minimum_wait=s.fast_delay;s.lines=wrapping_add(s.lines,1);return finish();
-        }else{if(size+2>=sizeof(buffer)||s.file+data.size()-s.cursor<2){failed=true;break;}buffer[size++]=*s.cursor++;buffer[size++]=*s.cursor++;}
+        }else{
+            // Translated endings are UTF-8 and need up to 3 bytes per glyph,
+            // so the line budget grows and the copy unit becomes one code
+            // point (thcrap's ending_copy binhacks do the same on Windows).
+            // The CP932 path keeps the original 2-byte unit and 66-byte budget.
+            const u8* line_end=s.cursor;while(line_end<s.file+data.size()&&*line_end&&*line_end!='\n'&&*line_end!='\r')++line_end;
+            if(Localization::Active()&&utf8_valid(s.cursor,u32(line_end-s.cursor))){
+                const u8* unit=s.cursor;utf8_next(s.cursor,line_end);const u32 n=u32(s.cursor-unit);
+                if(size+n>=sizeof(buffer)){failed=true;break;}
+                std::memcpy(buffer+size,unit,n);size+=n;
+            }else{
+                if(size+2>=68||s.file+data.size()-s.cursor<2){failed=true;break;}buffer[size++]=*s.cursor++;buffer[size++]=*s.cursor++;
+            }
+        }
     }
     failed=true;return false;
 }

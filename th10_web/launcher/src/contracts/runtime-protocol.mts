@@ -66,7 +66,7 @@ export interface RuntimeCommandPayloads {
   remove: { path: string };
   sync: Record<string, never>;
   "retry-music": Record<string, never>;
-  "thprac-mouse": { phase: string; x?: number; y?: number; button?: number };
+  "thprac-mouse": { type: "move" | "down" | "up"; x: number; y: number };
 }
 
 export interface RuntimeProtocolEnvelope {

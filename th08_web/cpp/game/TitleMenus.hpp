@@ -7,6 +7,7 @@
 #include "ScoreFile.hpp"
 #include "Chain.hpp"
 #include "SpellProgress.hpp"
+#include "PracticeConfig.hpp"
 #include <string>
 namespace th08 {
 enum TitleCurrentScreen
@@ -150,6 +151,9 @@ class TitleMenus {
     friend class TitleFlow;
 public:
     TitleState state;
+    // Owned by GameplaySession; lets the replay menu drive the THGuiRep
+    // State(1/2/3) practice-parameter lifecycle.
+    PracticeState* practice=nullptr;
     TitleMenus(TitleContext& context,GameConfiguration& config,AnmExecutor& executor,TextWriter& text,TitleActions& actions)
       :context(context),config(config),executor(executor),text(text),actions(actions){}
     ~TitleMenus();

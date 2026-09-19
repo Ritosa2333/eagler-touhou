@@ -1,6 +1,7 @@
 // TH08 replay menu. Platform file enumeration is explicit; decoded metadata
 // and stage offsets are ordinary C++ data and never executable addresses.
 #include "TitleMenus.hpp"
+#include "Localization.hpp"
 #include <cstdio>
 namespace th08 {
 void TitleMenus::scan_replays(){
@@ -26,6 +27,9 @@ bool TitleMenus::open_replay(const char* path){
     if(!replay.decode(file.data(),file.size()))return false;
     std::memcpy(&selected_metadata,replay.decoded().data(),sizeof(selected_metadata));
     if(selected_metadata.shot_type>=12||selected_metadata.difficulty>=5||selected_metadata.spell_number>=222)return false;
+    // THGuiRep::State(2): inspect the opened replay's PRAC parameters into the
+    // candidate block without mutating the live practice run.
+    if(practice)practice_replay_menu_check(*practice,file.data(),u32(file.size()));
     selected_replay=replay.decoded();state.currentReplay=&selected_metadata;return true;
 }
 void TitleMenus::close_replay(){state.currentReplay=nullptr;selected_replay.clear();}
@@ -43,6 +47,8 @@ i32 TitleMenus::OnUpdateReplayMenu(){
     switch(state.currentScreenState){
     case 0:
         if(state.stateTimer2==0){
+            // th08_rep_menu_1 / THGuiRep::State(1).
+            if(practice)practice_replay_menu_reset(*practice);
             if(state.previousScreen!=TitleCurrentScreen_Replay&&actions.load_surface(0,"title/select00.png")!=0)return 0;
             SetInterruptArray(state.vms,state.vmCount,14);state.cursor=0;state.currentScreenState=0;state.stateTimer=0;state.currentHelpTextVm=nullptr;scan_replays();
         }
@@ -61,7 +67,11 @@ i32 TitleMenus::OnUpdateReplayMenu(){
             state.cursor=0;while(!stage_present(state.cursor)){++state.cursor;if(state.cursor>8)return corrupt_replay();}
             InitializeAndSetSprite(state.resultTextAnm,state.spellCardNameVms,11);
             auto& name=state.spellCardNameVms[0];name.pos={};name.anchor=3;name.fontWidth=name.fontHeight=15;
-            char text[49]{};std::memcpy(text,state.replays[state.selectedReplay].spell_name,48);DrawTextLeft(&name,0xffffff,0,text);name.color1.d3dColor=COLOR_WHITE;break;
+            char text[49]{};std::memcpy(text,state.replays[state.selectedReplay].spell_name,48);
+            // spell_name in the replay file stays the recorded Japanese; the
+            // display point looks up spells.etl (upstream spell_name#replay).
+            const i32 spellNumber=state.replays[state.selectedReplay].spell_number;
+            DrawTextLeft(&name,0xffffff,0,spellNumber>=0?Localization::SpellName(u32(spellNumber),text):text);name.color1.d3dColor=COLOR_WHITE;break;
         }
         if(pressed(10)){actions.sound(11,0);state.currentScreenState=4;state.stateTimer=0;SetInterruptArray(state.vms,state.vmCount,16);}break;
     case 2:{
@@ -86,6 +96,8 @@ i32 TitleMenus::OnUpdateReplayMenu(){
             state.vms[state.cursor+108].pendingInterrupt=20;
         }
         if(pressed(4097)){
+            // th08_rep_menu_3 / THGuiRep::State(3).
+            if(practice)practice_replay_menu_activate(*practice);
             context.SetIsReplayWeird(true);std::snprintf(context.replayFilename,sizeof(context.replayFilename),"%s",state.replayFilePaths[state.selectedReplay]);
             context.difficulty=state.currentReplay->difficulty;context.character=state.currentReplay->shot_type;context.flags.isSpellPractice=state.currentReplay->spell_number>=0;context.currentSpellCardNumber=state.currentReplay->spell_number;
             close_replay();context.currentStage=state.selectedReplayStage;context.supervisor_state=2;context.replayMode=state.cursor;actions.stop_audio();return 0;

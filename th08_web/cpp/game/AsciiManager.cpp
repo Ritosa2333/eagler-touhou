@@ -1,11 +1,15 @@
 // TH08 1.00d display logic. Names and behavior cross-checked against the
 // MIT GensokyoClub/th08 reference; original instruction results are the oracle.
 #include "AsciiManager.hpp"
+#include "Localization.hpp"
 #include "Presentation.hpp"
 #include <cmath>
 #include <cstdio>
 #include <cstdarg>
+#include <cstring>
 #include <algorithm>
+#include <string>
+#include <vector>
 namespace th08 {
 namespace {
 float add(float a,float b){return Scalar::add(a,b);}
@@ -16,6 +20,85 @@ i32 popup_alpha(const Vec3& player,const Vec3& position){
     const float x=sub(player.x,position.x),y=sub(player.y,position.y);
     const i32 distance=(number(x)*number(x)+number(y)*number(y)).truncate_int();
     return distance>4096?208:distance>1024?80+(distance-1024)*128/3072:80;
+}
+// thcrap ascii_vpatchf_th07_th08 port: the ASCII overlay font can only draw
+// single-byte sprite glyphs, so a translation containing non-ASCII bytes is
+// rejected and the original format is kept.
+bool single_byte_translation(const char* text){
+    if(!text)return false;
+    for(const auto* p=reinterpret_cast<const unsigned char*>(text);*p;++p)if(*p>=0x80)return false;
+    return true;
+}
+template<typename T>
+bool append_printf_piece(std::string& output,const std::string& specifier,T value){
+    const int length=std::snprintf(nullptr,0,specifier.c_str(),value);
+    if(length<0||length>4096)return false;
+    std::vector<char> buffer(std::size_t(length)+1);
+    if(std::snprintf(buffer.data(),buffer.size(),specifier.c_str(),value)!=length)return false;
+    output.append(buffer.data(),std::size_t(length));return true;
+}
+// Re-emits each printf piece separately so %s arguments can be translated and
+// malformed specifiers can never reach vsnprintf with a mismatched va_list.
+bool format_legacy_ascii(std::string& output,const char* format,va_list args,bool translate_strings){
+    if(!format)return false;
+    output.clear();
+    for(std::size_t index=0;format[index]!='\0';++index){
+        if(format[index]!='%'){output.push_back(format[index]);continue;}
+        const std::size_t start=index++;
+        if(format[index]=='\0')return false;
+        if(format[index]=='%'){output.push_back('%');continue;}
+        while(std::strchr("-+ #0'",format[index]))++index;
+        if(format[index]=='*')return false;
+        while(format[index]>='0'&&format[index]<='9')++index;
+        if(format[index]=='$')return false;
+        if(format[index]=='.'){++index;if(format[index]=='*')return false;while(format[index]>='0'&&format[index]<='9')++index;}
+        if(format[index]=='\0'||std::strchr("hljztLI",format[index]))return false;
+        const char conversion=format[index];
+        const std::string specifier(format+start,index-start+1);
+        if(conversion=='d'||conversion=='i'||conversion=='c'){
+            if(!append_printf_piece(output,specifier,va_arg(args,int)))return false;
+        }else if(std::strchr("uoxX",conversion)){
+            if(!append_printf_piece(output,specifier,va_arg(args,unsigned)))return false;
+        }else if(std::strchr("fFeEgGaA",conversion)){
+            if(!append_printf_piece(output,specifier,va_arg(args,double)))return false;
+        }else if(conversion=='s'){
+            const char* value=va_arg(args,const char*);
+            if(!value)value="(null)";
+            const char* translated=translate_strings?Localization::AsciiString(value):value;
+            if(translated!=value&&!single_byte_translation(translated))translated=value;
+            if(!append_printf_piece(output,specifier,translated))return false;
+        }else if(conversion=='p'){
+            if(!append_printf_piece(output,specifier,va_arg(args,void*)))return false;
+        }else return false;
+    }
+    return true;
+}
+// Formats one add_format call through the EAS1 table. Returns false when the
+// pack cannot reproduce the call safely; the caller then falls back to the
+// exact vanilla vsnprintf path.
+bool format_localized_ascii(AsciiManager& manager,const Vec3& source,Vec3& adjusted,
+                            char* output,std::size_t capacity,const char* format,va_list args){
+    adjusted=source;
+    Localization::AsciiEntryView entry{};
+    const bool active=Localization::Active();
+    const bool known=active&&Localization::LookupAscii(format,entry);
+    const char* selected=known&&entry.hasTranslation&&single_byte_translation(entry.text)?entry.text:format;
+    std::string formatted;
+    va_list copy;va_copy(copy,args);
+    const bool ok=format_legacy_ascii(formatted,selected,copy,active);
+    va_end(copy);
+    if(!ok||formatted.size()>=capacity)return false;
+    std::memcpy(output,formatted.c_str(),formatted.size()+1);
+    if(known&&entry.hasAlignment){
+        // ascii_vpatchf_th07_th08 recenters the translated string on the
+        // baseline extent plus the game's alignment offset; the TH08 branch
+        // advances each glyph by space_width*scale_x.
+        const float char_width=float(manager.state.space_width)*manager.state.scale_x;
+        const float baseline_extent=float(std::strlen(entry.baseline))*char_width;
+        const float output_extent=float(formatted.size())*char_width;
+        adjusted.x=(number(source.x)+number(baseline_extent)/number(2)+number(entry.extraX)-number(output_extent)/number(2)).to_float();
+    }
+    return true;
 }
 }
 void AsciiManager::start(AnmVm& vm,AnmLoaded& file,i32 script){
@@ -81,7 +164,12 @@ bool AsciiManager::add_string(const Vec3& position,const char* text,bool softwar
     next.position=position;next.color=state.color;next.scale_x=state.scale_x;next.scale_y=state.scale_y;next.gui=state.gui;next.selected=software_texturing?state.selected:0;return true;
 }
 i32 AsciiManager::add_format(const Vec3& position,bool software,const char* format,...){
-    char buffer[512];va_list args;va_start(args,format);const i32 length=std::vsnprintf(buffer,sizeof(buffer),format,args);va_end(args);
+    char buffer[512];va_list args;va_start(args,format);
+    Vec3 adjusted=position;
+    if(format_localized_ascii(*this,position,adjusted,buffer,sizeof(buffer),format,args)){
+        va_end(args);add_string(adjusted,buffer,software);return i32(std::strlen(buffer));
+    }
+    const i32 length=std::vsnprintf(buffer,sizeof(buffer),format,args);va_end(args);
     if(length<0||length>=i32(sizeof(buffer)))return -1;add_string(position,buffer,software);return length;
 }
 void AsciiManager::create_score(const Vec3& position,i32 value,u32 color,const AsciiContext& c,bool player){

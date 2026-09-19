@@ -4,6 +4,7 @@
 #include "FrameCadence.hpp"
 #include "PresentationCadence.hpp"
 #include "Renderer.hpp"
+#include "ThpracUi.hpp"
 #include "../../../portable/input/TouchController.hpp"
 #include <SDL3/SDL.h>
 #include <emscripten.h>
@@ -40,6 +41,7 @@ bool interpolation_ready(){
     return g.menus.context.supervisor_state==2&&!g.control.state.load_state&&(g.globals.game_flags&0x60)!=0x20;
 }
 void poll(){if(!runtime)return;SDL_Event event;while(SDL_PollEvent(&event)){
+    ThpracUi::process_event(event);
     if(event.type==SDL_EVENT_FINGER_CANCELED)cancel_touch();
     if(event.type==SDL_EVENT_FINGER_DOWN||event.type==SDL_EVENT_FINGER_MOTION||event.type==SDL_EVENT_FINGER_UP)pointer(event.type==SDL_EVENT_FINGER_DOWN?0:event.type==SDL_EVENT_FINGER_MOTION?1:2,int(event.tfinger.fingerID),event.tfinger.x,event.tfinger.y);
     if(event.type==SDL_EVENT_JOYSTICK_ADDED&&!joystick)joystick=SDL_OpenJoystick(event.jdevice.which);
@@ -52,6 +54,8 @@ void poll(){if(!runtime)return;SDL_Event event;while(SDL_PollEvent(&event)){
     }else runtime->controller_state(0,0,nullptr,0,false);
     const auto state=touch_state();sync_touch_context(state);const auto input=touch.sample(state,SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);for(int i=0;i<256;i++)if(input.keys[i])keys[i]=128;
     runtime->motion.target(input.motion,input.x,input.y);
+    ThpracUi::update_input(*runtime);
+    if(ThpracUi::captures_game_input())for(const int vk:{16,27,37,38,39,40,88,90})keys[vk]=0;
 }
 int tick(){poll();return !runtime||!runtime->step(false)?runtime&&(runtime->status(2)||runtime->status(4))?2:1:0;}
 EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double delta=last<0?0:std::max(0.,(now-last)/1000.);last=now;frame_begin=emscripten_get_now();
@@ -98,7 +102,7 @@ EX("sdl_prepare_next") i32 sdl_prepare_next(){if(!runtime)return -1;if(prepared>
         if(!bytes.empty()&&runtime->app.library.preload(bytes.data(),bytes.size()))warm_mask|=1u<<(prepared-assets-fonts);}
     ++prepared;return ok?i32(prepared):-1;}
 EX("sdl_warm_assets") u32 sdl_warm_assets(){return warm_mask;}
-EX("sdl_game_initialize") bool sdl_game_initialize(){if(!runtime||prepared!=sdl_prepare_total()||!runtime->initialize())return false;sdl_validate_capture();return true;}
+EX("sdl_game_initialize") bool sdl_game_initialize(){if(!runtime||prepared!=sdl_prepare_total()||!runtime->initialize()||!ThpracUi::initialize())return false;sdl_validate_capture();return true;}
 EX("sdl_loop_start") void sdl_loop_start(){if(running||!runtime)return;running=true;last=-1;cadence.reset();presentation.reset();presentation_primed=false;emscripten_request_animation_frame_loop(frame,reinterpret_cast<void*>(uintptr_t(++loop_epoch)));}
 EX("sdl_loop_stop") void sdl_loop_stop(){running=false;++loop_epoch;sdl_audio_pause(true);}
 EX("sdl_loop_pause") void sdl_loop_pause(u32 pause){suspended=pause!=0;last=-1;cadence.reset();presentation.reset();presentation_primed=false;sdl_audio_pause(suspended);}
@@ -109,11 +113,12 @@ EX("sdl_loop_tick") i32 sdl_loop_tick(BrowserRuntime* r,double seconds,u32){
     if(runtime->status(2)||runtime->status(4))return 2;
     ++frames;return runtime->audio_tick(u32(elapsed*1000))?0:2;
 }
-EX("sdl_game_close") void sdl_game_close(){sdl_loop_stop();touch.reset();runtime.reset();if(joystick)SDL_CloseJoystick(joystick);joystick=nullptr;sdl_audio_shutdown();sdl_fonts_shutdown();sdl_detach();}
+EX("sdl_game_close") void sdl_game_close(){sdl_loop_stop();touch.reset();ThpracUi::shutdown();runtime.reset();if(joystick)SDL_CloseJoystick(joystick);joystick=nullptr;sdl_audio_shutdown();sdl_fonts_shutdown();sdl_detach();}
 EX("sdl_key") void sdl_key(const char* code,u32 down){for(auto& key:keyboard_map)if(!std::strcmp(key.code,code)){key.hosted=down!=0;break;}}
 EX("sdl_keys_clear") void sdl_keys_clear(){for(auto& key:keyboard_map)key.hosted=false;cancel_touch();touch.reset();}
 EX("sdl_touch") void sdl_touch(u32 type,i32 id,float x,float y){pointer(type,id,x,y);}
 EX("sdl_touch_cancel") void sdl_touch_cancel(){cancel_touch();}
+EX("sdl_thprac_mouse") void sdl_thprac_mouse(u32 type,float x,float y){ThpracUi::mouse(type,x,y);}
 EX("sdl_touch_options") void sdl_touch_options(u32 on,u32 free,float speed){touch.enabled=on;touch.unlimited=free;touch.sensitivity=std::clamp(speed,1.f,3.f);if(!on)sdl_touch_cancel();}
 EX("sdl_touch_gestures") void sdl_touch_gestures(u32 two,u32 taps){touch.two_finger=two;touch.double_tap=taps;}
 EX("sdl_touch_mode") void sdl_touch_mode(u32 mode){if(touch.set_mode(static_cast<int>(mode))&&runtime)runtime->motion.target(0,0,0);}

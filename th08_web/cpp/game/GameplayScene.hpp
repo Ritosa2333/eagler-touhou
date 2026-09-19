@@ -70,21 +70,24 @@ class GameplayScene:private BackgroundResources,private EnemyResources,private G
     void clear_bullets()override{bullets.clear(1);}
     void despawn_enemies()override;
     void collect_items()override{items.collect_all();}
-    bool play_music(i32 index,i32 song)override{return platform.play_music(index,song);}
-    void play_audio(const char* path,i32 song)override{platform.play_audio(path,song);}
-    void stop_audio()override{platform.stop_audio();}
-    void fade_music(float seconds)override{platform.fade_music(seconds);}
+    bool play_music(i32 index,i32 song)override{return practice_bgm_filter(0,song)||platform.play_music(index,song);}
+    void play_audio(const char* path,i32 song)override{if(!practice_bgm_filter(0,song))platform.play_audio(path,song);}
+    void stop_audio()override{if(!practice_bgm_filter(1,0))platform.stop_audio();}
+    void fade_music(float seconds)override{if(!practice_bgm_filter(1,0))platform.fade_music(seconds);}
     void fade_screen(i32 frames,u32 color,i32 priority)override{screen.create(ScreenEffectType::FadeOut,frames,i32(color),0,0,priority);}
     void capture_arcade(const AnmLoadedSprite& sprite)override{failed|=!platform.capture_arcade(sprite);}
     void capture_arcade()override{failed|=!gui.capture();}
     bool capture(const TextureCaptureRequest& r)override{return platform.capture_texture(r);}
-    void music(MenuMusic m,float seconds)override{platform.menu_music(m,seconds);}
+    void music(MenuMusic m,float seconds)override{if(practice_bgm_filter(m==MenuMusic::Pause||m==MenuMusic::PartialFadeOut?2:m==MenuMusic::Stop?1:3,0))return;platform.menu_music(m,seconds);}
     void save_score()override{platform.save_score();}
     std::vector<u8> read_score()override{return platform.read_score();}
     void preload_music(i32 slot,const char* path)override{platform.preload_music(slot,path);}
     u32 now()override{return platform.milliseconds();}
     void update_game_time()override{accumulate_play_time(session.statistics.game_time,menus.context.system_time,now());}
     void synchronize();void publish_dialogue();JobResult boundary(i32 phase);
+    // th08_everlasting_bgm (upstream ElBgmTest): returns true to swallow a
+    // music command. command: 0=play 1=stop/fade 2=pause 3=resume.
+    bool practice_bgm_filter(i32 command,i32 song);
     JobResult update_player();JobResult update_ascii();JobResult update_control();JobResult draw_ascii();
     JobResult update_replay();JobResult finish_replay_frame();
     JobResult update_recording();JobResult sample_replay_frame();void publish_input(const ReplayInputState&);
@@ -115,6 +118,7 @@ public:
     bool load(const GameplayLoad&,bool initialize_values=false);void unload(bool keep_resources=false,bool release_resources=true);
     bool start(const GameplayLoad& wanted){return load(wanted,true);}
     bool load_replay(const u8* data,u32 size){if(loaded)return false;return playback.load(data,size)&&platform.load_motion(data,size);}
+    void play_practice_music(i32 slot,i32 song){play_music(slot,song);}
     bool update(u16 buttons,float rate=1,bool force_unit=false);bool draw();
     // Application-owned chains run the same jobs alongside the supervisor,
     // loading display and FPS counter, preserving their original priorities.

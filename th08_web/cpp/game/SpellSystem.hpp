@@ -5,6 +5,7 @@
 #include "EffectSystem.hpp"
 #include "BackgroundState.hpp"
 #include "PlayerBomb.hpp"
+#include "PracticeConfig.hpp"
 namespace th08 {
 struct SpellSystemActions {
     virtual ~SpellSystemActions()=default;
@@ -21,10 +22,10 @@ struct SpellSystemActions {
 // records here are the real scene objects, not copies used for display.
 class SpellSystem:public EclSpellActions {
     EclGlobals& globals;GameGlobals& numbers;GameValues& values;HighScore& high_score;SpellRecord* records;
-    EffectSystem& effects;BackgroundState& background;AnmExecutor& anm;SpellPresentation& presentation;PlayerBombState& bomb;SpellSystemActions& actions;
+    EffectSystem& effects;BackgroundState& background;AnmExecutor& anm;SpellPresentation& presentation;PlayerBombState& bomb;PracticeState& practice;SpellSystemActions& actions;
     bool reward(bool point_value=false);
 public:
-    SpellSystem(EclGlobals&,GameGlobals&,GameValues&,HighScore&,SpellRecord*,EffectSystem&,BackgroundState&,AnmExecutor&,SpellPresentation&,PlayerBombState&,SpellSystemActions&);
+    SpellSystem(EclGlobals&,GameGlobals&,GameValues&,HighScore&,SpellRecord*,EffectSystem&,BackgroundState&,AnmExecutor&,SpellPresentation&,PlayerBombState&,PracticeState&,SpellSystemActions&);
     ~SpellSystem(){if(globals.spell_actions==this)globals.spell_actions=nullptr;}
     bool begin(EclVm&,const EclInstruction&)override;
     bool begin(EclVm&,u32 number,i32 portrait,u32 bonus,const u8* name,const u8* owner,const u8* comment1,const u8* comment2);

@@ -43,7 +43,7 @@ i32 PlayerCollision::barrier(const Vec2& p){
 i32 PlayerCollision::bullet(const Vec3& p,const Vec3& size,bool cancellation){
     cancel_item=6;if(cancellation&&barrier(xy(p)))return 2;
     if(!overlap(xy(movement.bounds[0]),xy(movement.bounds[1]),box(xy(p),xy(size))))return 0;
-    context.replay_flags|=2;if(life.state==0){actions.randomize_integrity();actions.die();}return 1;
+    context.replay_flags|=2;if(life.state==0&&!actions.invincible()){actions.randomize_integrity();actions.die();}return 1;
 }
 i32 PlayerCollision::graze(const Vec3& p,const Vec3& size){
     cancel_item=6;if(barrier(xy(p)))return 2;
@@ -63,7 +63,7 @@ i32 PlayerCollision::laser(const Vec2& center,const Vec2& size,const Vec3& origi
                upper{Scalar::add(p.x,half.x),Scalar::add(p.y,half.y)};
     Box b=vector_box(center,size);
     if(overlap(lower,upper,b)){
-        context.replay_flags|=2;if(life.state!=0)return 0;actions.randomize_integrity();actions.die();return 1;
+        context.replay_flags|=2;if(life.state!=0||actions.invincible())return 0;actions.randomize_integrity();actions.die();return 1;
     }
     if(!grazing)return 0;b.lower.x=Scalar::sub(b.lower.x,48);b.lower.y=Scalar::sub(b.lower.y,48);
     b.upper.x=Scalar::add(b.upper.x,48);b.upper.y=Scalar::add(b.upper.y,48);

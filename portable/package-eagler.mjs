@@ -13,7 +13,8 @@ for(const [name,expected] of Object.entries(build.sourceFiles)){
 }
 const entry=game==='th08'?'th08.html':'th10.html';
 const fontNames=game==='th08'?['blend.bin','cp932.bin']:['msgothic.ttc','simhei.ttf','blend.bin','codepages.bin'];
-const names=[entry,'manifest.json','shell.mjs','eagler-host.mjs','motion-replay.mjs',game+'-sdl.mjs',game+'-sdl.wasm','resources.json',...fontNames.map(n=>'fonts/'+n)];
+const runtimeNames=['shell.mjs','eagler-host.mjs',...(game==='th08'?['practice.mjs','practice-config.mjs','practice-sections.mjs']:[])];
+const names=[entry,'manifest.json',...runtimeNames,'motion-replay.mjs',game+'-sdl.mjs',game+'-sdl.wasm','resources.json',...fontNames.map(n=>'fonts/'+n)];
 const allowed=new Set([...names,'runtime-files.json']);
 function walk(dir){return existsSync(dir)?readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(resolve(dir,e.name)):[resolve(dir,e.name)]):[];}
 if(game==='th08')rmSync(resolve(out,'fonts/msgothic.ttc'),{force:true});
@@ -23,7 +24,7 @@ const copy=(from,name)=>write(name,readFileSync(from));
 const shellRoot=resolve(root,game+'_web/sdl-runtime');
 const html=readFileSync(resolve(shellRoot,game+'.html'),'utf8').replace('<head>','<head><meta name="eagler-data-provider" content="retail-memory">');
 write(entry,html);
-for(const name of ['shell.mjs','eagler-host.mjs'])copy(resolve(shellRoot,name),name);
+for(const name of runtimeNames)copy(resolve(shellRoot,name),name);
 copy(resolve(root,'portable/browser/motion-replay.mjs'),'motion-replay.mjs');
 for(const ext of ['mjs','wasm']){
  const bytes=readFileSync(resolve(buildRoot,game+'-sdl.'+ext));

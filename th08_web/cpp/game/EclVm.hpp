@@ -134,7 +134,7 @@ struct EclVm {
     Vec3 position,velocity,direction,hitbox,low_damage_hitbox;float player_protect_squared=0,orbit_angle=0,orbit_radius=0;u32 flags=0,flags2=0;AnmVm* familiar_effect=nullptr;bool waiting=false,finished=false,invalid=false;
     Timer damage_protection;
     u8 death_effects[3]{}; // Native 3310..3312; first entry is used as signed.
-    EclVm* previous_familiar=nullptr;i32 summoned_familiars=0;
+    EclVm* previous_familiar=nullptr;i32 summoned_familiars=0,practice_familiar=0;
     i32 time_items=0;
     u8 draw_layer=0,hit_flash=0;
     EnemyTrail trail;

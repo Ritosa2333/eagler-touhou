@@ -2,7 +2,7 @@
 #include "EnemyRetirement.hpp"
 #include "EclSpawn.hpp"
 namespace th08 {
-void EnemyPopulation::reset(i32 time_items)noexcept{for(auto& enemy:enemies)enemy.reset();spawn_failed=false;replay_flags=0;initial_time_items=time_items;}
+void EnemyPopulation::reset(i32 time_items)noexcept{for(auto& enemy:enemies)enemy.reset();spawn_failed=false;replay_flags=0;initial_time_items=time_items;practice_familiar=0;}
 EclVm* EnemyPopulation::spawn(const TimelineSpawn& request){return spawn_impl(request,nullptr);}
 EclVm* EnemyPopulation::spawn_impl(const TimelineSpawn& request,const EclContext::Locals* inherited){
     replay_flags|=0x1000;u32 index=0;
@@ -28,6 +28,7 @@ EclVm* EnemyPopulation::spawn_impl(const TimelineSpawn& request,const EclContext
         else{enemy.animation_color=enemy.animation[0].color1.d3dColor;enemy.item_reward=i8(request.item);if(inherited&&request.life>=0)enemy.life=request.life;if(request.score>=0)enemy.score_reward=request.score;enemy.initial_life=enemy.remaining_life=enemy.life;}
     }
     if(request.multiple_items){enemy.power_items=request.power_items;enemy.point_items=request.point_items;}
+    if(!failed&&(enemy.flags&2)&&practice_familiar){enemy.practice_familiar=practice_familiar;practice_familiar=0;}
     spawn_failed=failed;return &enemy;
 }
 u32 EnemyPopulation::active_count()const noexcept{u32 count=0;for(u32 i=0;i<480;++i)if(enemies[i]&&(enemies[i]->flags&1))++count;return count;}

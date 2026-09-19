@@ -5,7 +5,7 @@
 namespace th08 {
 struct PlayerResourceNames {const char* animation;const char* human;const char* focused;};
 const PlayerResourceNames* player_resource_names(u8 character)noexcept;
-struct PlayerSetupContext {u8 character=0;bool initial=true,spell_practice=false;u8 reserved=0;Vec2 extent{384,448};};
+struct PlayerSetupContext {u8 character=0;bool initial=true,spell_practice=false;u8 section_warp=0;Vec2 extent{384,448};};
 struct PlayerSetupActions {
     virtual ~PlayerSetupActions()=default;
     virtual bool load_shots(bool focused,const char* path)=0;

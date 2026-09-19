@@ -1,5 +1,84 @@
 #include "AnmLibrary.hpp"
+#ifdef TH_ENABLE_THCRAP
+#include "RuntimeOverride.hpp"
+#endif
+#include <algorithm>
+#include <cmath>
+#include <cstring>
 namespace th08 {
+#ifdef TH_NATIVE_PLATFORM
+bool sdl_decode_rgba(const u8*,u32,u32&,u32&,std::vector<u8>&);
+#endif
+#if defined(TH_NATIVE_PLATFORM)&&defined(TH_ENABLE_THCRAP)
+namespace {
+enum class RgbaAlphaState{Empty,Opaque,Mixed};
+// Exact RGBA rect analysis and blit_blend port of th07 AnmManager, which in turn
+// mirrors upstream thcrap_tsa anm.cpp. The replacement PNG is a coordinate-space
+// patch over the embedded atlas, never a resized backing texture.
+RgbaAlphaState analyze_rgba(const std::vector<u8>& pixels,i32 stride,i32 left,i32 top,i32 width,i32 height){
+    bool zero=false,opaque=false;
+    for(i32 y=top;y<top+height;++y){
+        const u8* row=pixels.data()+size_t(y)*size_t(stride)+size_t(left)*4;
+        for(i32 x=0;x<width;++x,row+=4){
+            if(row[3]==0)zero=true;else if(row[3]==255)opaque=true;else return RgbaAlphaState::Mixed;
+            if(zero&&opaque)return RgbaAlphaState::Mixed;
+        }
+    }
+    return opaque?RgbaAlphaState::Opaque:RgbaAlphaState::Empty;
+}
+void blend_rgba_over_opaque(u8* destination,const u8* source,i32 pixels){
+    for(i32 x=0;x<pixels;++x,destination+=4,source+=4){
+        const i32 source_alpha=source[3],destination_weight=255-source_alpha;
+        destination[0]=u8((destination[0]*destination_weight+source[0]*source_alpha)>>8);
+        destination[1]=u8((destination[1]*destination_weight+source[1]*source_alpha)>>8);
+        destination[2]=u8((destination[2]*destination_weight+source[2]*source_alpha)>>8);
+        destination[3]=u8(std::min<i32>(destination[3]+source_alpha,255));
+    }
+}
+// Overrides ship as external PNGs whose repository path equals the ANM's
+// embedded texture name (data/title/select01.png). The patch is composited into
+// the original atlas at the sprite rectangles that share its origin; sprites
+// outside a smaller patch retain their embedded THTX pixels.
+bool load_override(const AnmResource& resource,u32 index,bool reduced,TexturePixels& image){
+    const auto& source=resource.textures()[index];
+    if(source.name.empty()||source.empty||!source.embedded)return false;
+    // The overlay ASCII atlas is remapped by thcrap's ascii_vpatchf. This port
+    // keeps the original index-to-glyph layout, so replacing the atlas would
+    // corrupt every overlay string; the EAS1 table already covers its text.
+    if(source.name=="data/ascii/ascii.png")return false;
+    std::vector<u8> bytes;
+    if(!RuntimeOverride::Read(source.name.c_str(),bytes))return false;
+    u32 patch_width=0,patch_height=0;std::vector<u8> patch;
+    if(!sdl_decode_rgba(bytes.data(),u32(bytes.size()),patch_width,patch_height,patch))return false;
+    if(!image.width||!image.height)return false;
+    std::vector<u8> target=image.rgba();
+    if(patch_width==0||patch_height==0||target.size()!=u64(image.width)*image.height*4)return false;
+    const auto& rects=resource.sprite_rects();
+    bool patched=false;
+    for(u32 sprite=source.first_sprite;sprite<source.first_sprite+source.sprite_count&&sprite<rects.size();++sprite){
+        const auto& rect=rects[sprite];
+        const i32 left=i32(std::lround(rect.x)),top=i32(std::lround(rect.y));
+        const i32 width=i32(std::lround(rect.width)),height=i32(std::lround(rect.height));
+        if(left<0||top<0||width<=0||height<=0||u32(left+width)>image.width||u32(top+height)>image.height)return false;
+        if(u32(left)>=patch_width||u32(top)>=patch_height)continue;
+        const i32 copy_width=std::min(width,i32(patch_width)-left),copy_height=std::min(height,i32(patch_height)-top);
+        if(analyze_rgba(patch,patch_width*4,left,top,copy_width,copy_height)==RgbaAlphaState::Empty)continue;
+        const auto destination_alpha=analyze_rgba(target,i32(image.width)*4,left,top,copy_width,copy_height);
+        for(i32 y=top;y<top+copy_height;++y){
+            u8* destination_row=target.data()+size_t(y)*image.width*4+size_t(left)*4;
+            const u8* source_row=patch.data()+size_t(y)*patch_width*4+size_t(left)*4;
+            if(destination_alpha==RgbaAlphaState::Opaque)blend_rgba_over_opaque(destination_row,source_row,copy_width);
+            else std::memcpy(destination_row,source_row,size_t(copy_width)*4);
+        }
+        patched=true;
+    }
+    if(!patched)return false;
+    return image.from_rgba(target.data(),image.width,image.height,image.format);
+}
+}
+#else
+namespace { bool load_override(const AnmResource&,u32,bool,TexturePixels&){return false;} }
+#endif
 AnmLibrary::~AnmLibrary() { for(i32 i=0;i<256;++i)release(i);clear_preloads(); }
 void AnmLibrary::clear_preloads(){
     // Active entries refer to their pristine template. Release them before
@@ -57,6 +136,7 @@ bool AnmLibrary::materialize(Entry& entry,u32 index) {
     if(entry.prepared)image=entry.prepared->pixels[index];
     else if(source.embedded) {
         if(!image.from_anm(entry.resource.data().data()+source.pixel_offset-16,source.pixel_size+16,source.format,force_16bit))return false;
+        load_override(entry.resource,index,force_16bit,image);
     } else {
         // Original empty atlases bypass GetAnmFormat's force-16-bit override.
         u32 format=TexturePixels::anm_format(source.format,false);if(source.format==0)format=21;
@@ -72,9 +152,13 @@ bool AnmLibrary::preload(const u8* bytes,u32 size){
         for(const auto& entry:prepared)if(entry->force_16bit==reduced&&entry->resource.data().size()==size&&!std::memcmp(entry->resource.data().data(),bytes,size))return true;
         auto entry=std::make_unique<Prepared>();entry->force_16bit=reduced;if(!entry->resource.load(0,bytes,size))return false;
         u32 cost=size;
-        for(const auto& source:entry->resource.textures()){
+        for(u32 i=0;i<entry->resource.textures().size();++i){
+            const auto& source=entry->resource.textures()[i];
             TexturePixels image;
-            if(source.embedded){if(!image.from_anm(entry->resource.data().data()+source.pixel_offset-16,source.pixel_size+16,source.format,reduced))return false;}
+            if(source.embedded){
+                if(!image.from_anm(entry->resource.data().data()+source.pixel_offset-16,source.pixel_size+16,source.format,reduced))return false;
+                load_override(entry->resource,i,reduced,image);
+            }
             else if(source.empty){u32 format=TexturePixels::anm_format(source.format,false);if(source.format==0)format=21;if(!image.create(source.width,source.height,format))return false;}
             else return false;
             cost+=image.pixels.size();entry->pixels.push_back(std::move(image));

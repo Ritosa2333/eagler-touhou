@@ -2,7 +2,7 @@
 #include "GuiController.hpp"
 #include "Chain.hpp"
 namespace th08 {
-struct GuiLoadContext {bool initial=true,keep_resources=false,release_resources=true;u8 padding=0;i32 spell_number=0;};
+struct GuiLoadContext {bool initial=true,keep_resources=false,release_resources=true;u8 section_warp=0;i32 spell_number=0;};
 struct GuiResources {
     virtual ~GuiResources()=default;
     virtual AnmLoaded* load(i32 index,const char* path)=0;

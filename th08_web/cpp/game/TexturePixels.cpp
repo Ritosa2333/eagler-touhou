@@ -56,6 +56,21 @@ bool TexturePixels::from_anm(const u8* bytes,u32 size,u32 requested_format,bool 
     if(!create(w,h,destination))return false;
     return convert(pixels.data(),format,bytes+16,source_format,w*h);
 }
+bool TexturePixels::from_rgba(const u8* rgba,u32 w,u32 h,u32 pixel_format) {
+    const auto out=describe(pixel_format);
+    if(!rgba||!w||!h||!out.bytes||u64(w)*h>256*1024*1024)return false;
+    if(!create(w,h,pixel_format))return false;
+    const auto scale=[](u32 value,u32 mask){return mask?u32((u64(value)*mask+127)/255):0;};
+    for(u64 i=0;i<u64(w)*h;++i) {
+        const u8 red=rgba[i*4],green=rgba[i*4+1],blue=rgba[i*4+2],alpha=rgba[i*4+3];
+        const u32 value=(scale(red,out.red_mask)<<out.red_shift)|
+                        (scale(green,out.green_mask)<<out.green_shift)|
+                        (scale(blue,out.blue_mask)<<out.blue_shift)|
+                        (out.alpha_mask?(scale(alpha,out.alpha_mask)<<out.alpha_shift):0u);
+        std::memcpy(pixels.data()+i*out.bytes,&value,out.bytes);
+    }
+    return true;
+}
 std::vector<u8> TexturePixels::rgba() const {
     const auto source=describe(format);
     if(!source.bytes||pixels.size()!=u64(width)*height*source.bytes)return {};

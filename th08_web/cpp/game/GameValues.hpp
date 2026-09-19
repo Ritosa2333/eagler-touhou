@@ -33,6 +33,7 @@ public:
     void initialize_integrity();
     void randomize_integrity();
     void update_integrity();
+    void refresh_integrity(){store_checksum();}
     bool tampered()const;
     i32 checksum();
     i32 checksum_bytes(const u8* data,i32 size);

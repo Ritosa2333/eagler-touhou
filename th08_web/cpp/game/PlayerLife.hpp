@@ -8,12 +8,13 @@ struct PlayerLifeState {
 };
 struct PlayerLifeContext {
     u32 game_flags=0,hud_flags=0;i32 pause=0,bombs=0,lives=0,power=0,time_orbs=0,last_spell_requirement=0;
-    Vec2 extent{384,448};u16 replay_flags=0;u8 character=0,focused=0,time_spell=0,game_over=0,miss_control=0,reserved=0;
+    Vec2 extent{384,448};u16 replay_flags=0;u8 character=0,focused=0,time_spell=0,game_over=0,miss_control=0,cheats=0;
     i16 gauge=0,padding=0;
 };
 struct PlayerLifeActions {
     virtual ~PlayerLifeActions()=default;
     virtual void update_integrity()=0;
+    virtual void dissolve()=0;
     virtual void effect(i32 type,const Vec3& position,i32 count,u32 color)=0;
     virtual EffectState* fixed_effect(i32 type,const Vec3& position,i32 slot,u32 color)=0;
     virtual void sound(i32 index,float x)=0;

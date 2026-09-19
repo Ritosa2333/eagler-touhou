@@ -1,6 +1,9 @@
 #include "PlayerLife.hpp"
 namespace th08 {
 void PlayerLife::die(){
+    // th08_dissolve @ 0044abe9: count every entry into the deathbomb window,
+    // including hits later rescued by a deathbomb.
+    actions.dissolve();
     context.pause=0;actions.update_integrity();actions.effect(6,movement.position,16,0xffffffff);
     state.state=2;state.timer.set(0);actions.sound(4,movement.position.x);context.replay_flags|=0x200;
     if(!(context.game_flags&0x180)){
@@ -34,11 +37,11 @@ bool PlayerLife::resolve_death(const ShotProfile& profile){
             actions.fail_spell();actions.add_deaths(1);context.hud_flags=(context.hud_flags&~0xc00u)|0x800;
             actions.add_time_orbs(context.time_orbs>5000?-500:wrapping_sub(0,context.time_orbs)/10);
             if(context.lives>0){
-                if(context.power<=16)actions.set_power(0);else actions.add_power(-16);
+                if(!(context.cheats&8)){if(context.power<=16)actions.set_power(0);else actions.add_power(-16);}
                 actions.item(2,movement.position,2);for(u32 i=0;i<5;++i)actions.item(0,movement.position,2);
                 if(context.bombs>0&&(context.character==2||context.character==8||context.character==9))actions.item(3,movement.position,2);
                 context.hud_flags=(context.hud_flags&~0x30u)|0x20;actions.cancel_item_homing();
-            }else {actions.set_power(0);for(u32 i=0;i<5;++i)actions.item(4,movement.position,2);context.hud_flags=(context.hud_flags&~0x30u)|0x20;}
+            }else {if(!(context.cheats&8))actions.set_power(0);for(u32 i=0;i<5;++i)actions.item(4,movement.position,2);context.hud_flags=(context.hud_flags&~0x30u)|0x20;}
             actions.subtract_rank(1600);
         }
     }else {
@@ -49,7 +52,7 @@ bool PlayerLife::resolve_death(const ShotProfile& profile){
         if(state.timer.current>=30){
             state.state=1;movement.position={Scalar::div(context.extent.x,2),Scalar::sub(context.extent.y,64),.2f};state.timer.set(0);animation.scale={3,3};
             actions.animation(((context.character<4&&!context.focused)||!(context.character&1))?0:5);
-            if(context.lives>0){actions.add_lives(-1);context.hud_flags=(context.hud_flags&~3u)|2;actions.set_bombs(Scalar::truncate(profile.initial_bombs));context.hud_flags=(context.hud_flags&~12u)|8;return true;}
+            if(context.lives>0){if(!(context.cheats&2))actions.add_lives(-1);context.hud_flags=(context.hud_flags&~3u)|2;actions.set_bombs(Scalar::truncate(profile.initial_bombs));context.hud_flags=(context.hud_flags&~12u)|8;return true;}
             context.game_over=1;
         }
     }
