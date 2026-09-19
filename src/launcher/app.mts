@@ -5188,6 +5188,13 @@ async function ensureRuntime(show = true) {
       if (isCancelledDownload(error)) throw error;
       throw new GameDataAcquisitionError(errorMessage(error), { cause: error });
     }
+    // retail-memory Runtimes cannot fetch/own retail DATA themselves. If the
+    // development Host Manifest only declares the expected identity (no local
+    // source) and Package Store has no installed generation, falling through
+    // to the legacy direct-runtime path produces a misleading Runtime-side
+    // "launch from eagler-touhou" error. Keep DATA acquisition in the Launcher
+    // and offer the normal local-package import flow instead.
+    throw new GameDataAcquisitionError(t("package.importServerNoFiles"));
   }
   const expectedData = gameDataDescriptor();
   const sourceUrl = new URL(runtimeUrl(), location.href);
@@ -5264,16 +5271,29 @@ async function selectedMusicResources(): Promise<MusicResource[]> {
 }
 
 async function selectedSharedResources(language = state.language) {
-  if (activeInstalledPackageGeneration) return [];
+  const packageTargets = new Set<string>();
+  const generation = activeInstalledPackageGeneration;
+  if (generation) {
+    for (const fileId of generation.descriptor.base?.files || []) {
+      if (!generation.files?.[fileId]?.objectId) continue;
+      const target = generation.descriptor.files?.[fileId]?.target;
+      if (typeof target === "string" && target) packageTargets.add(target);
+    }
+  }
   const shared = record(manifest.shared) ?? {};
   const vanillaFont = shared.vanillaFont;
   const unicodeFont = shared.unicodeFont;
-  if (typeof vanillaFont !== "string" || !vanillaFont || typeof unicodeFont !== "string" || !unicodeFont) {
-    throw new Error(t("runtime.sharedFontManifestInvalid"));
-  }
   const wanted: Array<{ target: string; network: string }> = [];
-  if (language === "ja") wanted.push({ target: "/msgothic.ttc", network: vanillaFont });
-  if (language !== "ja" || state.options.thpracEnabled) wanted.push({ target: "/unifont.otf", network: unicodeFont });
+  const addHosted = (target: string, network: unknown) => {
+    if (typeof network !== "string" || !network) throw new Error(t("runtime.sharedFontManifestInvalid"));
+    wanted.push({ target, network });
+  };
+  if (language === "ja" && !packageTargets.has("/msgothic.ttc")) {
+    addHosted("/msgothic.ttc", vanillaFont);
+  }
+  if ((language !== "ja" || state.options.thpracEnabled) && !packageTargets.has("/unifont.otf")) {
+    addHosted("/unifont.otf", unicodeFont);
+  }
   return wanted.map(item => ({ url: new URL(item.network, location.href).href, path: item.target }));
 }
 
