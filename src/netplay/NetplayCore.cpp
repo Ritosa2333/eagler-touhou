@@ -152,6 +152,52 @@ RemoteInputResult RollbackCore::SubmitRemoteInput(std::uint8_t player, std::uint
     return RemoteInputResult::RollbackRequired;
 }
 
+EquivalentRemoteInputResult RollbackCore::SubmitEquivalentRemoteInput(std::uint8_t player,
+                                                                       std::uint32_t frame,
+                                                                       const FrameInput &input)
+{
+    if (!configured_ || player >= config_.playerCount || player == config_.localPlayer)
+        return EquivalentRemoteInputResult::InvalidPlayer;
+    if (FrameIsTooOld(frame))
+        return EquivalentRemoteInputResult::TooOld;
+
+    InputSlot *slot = GetInputSlot(player, frame);
+    if (slot->present)
+        return slot->input == input ? EquivalentRemoteInputResult::Duplicate
+                                    : EquivalentRemoteInputResult::ConflictingConfirmedInput;
+
+    const UsedSlot *used = FindUsedSlot(frame);
+    if (!used || lastSimulatedFrame_ == INVALID_FRAME || frame > lastSimulatedFrame_)
+        return EquivalentRemoteInputResult::NotPredicted;
+    const std::uint8_t mask = static_cast<std::uint8_t>(1u << player);
+    if ((used->predictedMask & mask) == 0)
+        return EquivalentRemoteInputResult::NotPredicted;
+
+    slot->input = input;
+    slot->present = true;
+    AdvanceConfirmedThrough(player);
+    return EquivalentRemoteInputResult::Confirmed;
+}
+
+bool RollbackCore::InputPresent(std::uint8_t player, std::uint32_t frame) const
+{
+    return configured_ && player < config_.playerCount && FindInputSlot(player, frame) != nullptr;
+}
+
+bool RollbackCore::UsedInput(std::uint8_t player, std::uint32_t frame, FrameInput *out,
+                             bool *predicted) const
+{
+    if (!out || !configured_ || player >= config_.playerCount)
+        return false;
+    const UsedSlot *slot = FindUsedSlot(frame);
+    if (!slot)
+        return false;
+    *out = slot->inputs[player];
+    if (predicted)
+        *predicted = (slot->predictedMask & static_cast<std::uint8_t>(1u << player)) != 0;
+    return true;
+}
+
 FrameInput RollbackCore::PredictInput(std::uint8_t player, std::uint32_t frame) const
 {
     if (frame == 0)

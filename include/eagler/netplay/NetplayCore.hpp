@@ -50,6 +50,16 @@ enum class RemoteInputResult
     InvalidPlayer,
 };
 
+enum class EquivalentRemoteInputResult
+{
+    Confirmed,
+    Duplicate,
+    ConflictingConfirmedInput,
+    TooOld,
+    InvalidPlayer,
+    NotPredicted,
+};
+
 class RollbackCore
 {
 public:
@@ -67,6 +77,13 @@ public:
     }
     RemoteInputResult SubmitRemoteInput(std::uint8_t player, std::uint32_t frame,
                                         const FrameInput &input);
+    // The title adapter may call this only after independently proving that
+    // replacing the predicted input with the actual input cannot change any
+    // already-simulated authoritative gameplay state. The core records the
+    // actual sample and advances confirmation without requesting rollback.
+    EquivalentRemoteInputResult SubmitEquivalentRemoteInput(std::uint8_t player,
+                                                            std::uint32_t frame,
+                                                            const FrameInput &input);
     RemoteInputResult SubmitRemoteInput(std::uint8_t player, std::uint32_t frame,
                                         std::uint16_t bits)
     {
@@ -86,6 +103,9 @@ public:
     std::uint32_t ConfirmedThrough(std::uint8_t player) const;
     std::uint32_t LastSimulatedFrame() const { return lastSimulatedFrame_; }
     FrameInput LocalInput(std::uint32_t frame, bool *present = nullptr) const;
+    bool InputPresent(std::uint8_t player, std::uint32_t frame) const;
+    bool UsedInput(std::uint8_t player, std::uint32_t frame, FrameInput *out,
+                   bool *predicted = nullptr) const;
 
     InputPacket BuildInputPacket(std::uint8_t peer, std::uint32_t latestFrame,
                                  std::uint32_t sequence, std::uint32_t ackSequence) const;

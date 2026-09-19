@@ -65,6 +65,51 @@ void TestCoreBehavior()
     assert(core.MarkSimulated(0, frame0));
 }
 
+void TestEquivalentPredictionConfirmationDoesNotRollback()
+{
+    RollbackCore core;
+    CoreConfig config;
+    config.sessionId = 88;
+    config.playerCount = 2;
+    config.localPlayer = 0;
+    config.maxRollbackFrames = 8;
+    assert(core.Reset(config));
+
+    assert(core.ScheduleLocalInput(0, FrameInput(1)));
+    assert(core.SubmitRemoteInput(1, 0, FrameInput(2)) == RemoteInputResult::Accepted);
+    const auto frame0 = core.PrepareFrame(0);
+    assert(frame0.canAdvance && core.MarkSimulated(0, frame0));
+
+    assert(core.ScheduleLocalInput(1, FrameInput(1)));
+    const auto predicted = core.PrepareFrame(1);
+    assert(predicted.canAdvance && (predicted.predictedMask & (1u << 1)) != 0);
+    assert(core.MarkSimulated(1, predicted));
+    assert(!core.InputPresent(1, 1));
+
+    FrameInput used{};
+    bool wasPredicted = false;
+    assert(core.UsedInput(1, 1, &used, &wasPredicted));
+    assert(wasPredicted && used.buttons == 2);
+
+    assert(core.SubmitEquivalentRemoteInput(1, 2, FrameInput(3)) ==
+           EquivalentRemoteInputResult::NotPredicted);
+    assert(core.SubmitEquivalentRemoteInput(0, 1, FrameInput(3)) ==
+           EquivalentRemoteInputResult::InvalidPlayer);
+    assert(core.SubmitEquivalentRemoteInput(1, 1, FrameInput(3)) ==
+           EquivalentRemoteInputResult::Confirmed);
+    assert(!core.HasRollbackRequest());
+    assert(core.InputPresent(1, 1));
+    assert(core.ConfirmedThrough(1) == 1);
+    const auto authoritative = core.PrepareFrame(1);
+    assert(authoritative.canAdvance && authoritative.predictedMask == 0 &&
+           authoritative.inputs[1].buttons == 3);
+
+    assert(core.SubmitEquivalentRemoteInput(1, 1, FrameInput(3)) ==
+           EquivalentRemoteInputResult::Duplicate);
+    assert(core.SubmitEquivalentRemoteInput(1, 1, FrameInput(4)) ==
+           EquivalentRemoteInputResult::ConflictingConfirmedInput);
+}
+
 SessionPacket PeerPacket(const SessionConfig &config, std::uint8_t player, SessionPhase phase)
 {
     SessionPacket packet;
@@ -136,6 +181,7 @@ int main()
 {
     TestProtocolCapability();
     TestCoreBehavior();
+    TestEquivalentPredictionConfirmationDoesNotRollback();
     TestSessionGate();
     TestNativeWebSocketStub();
     std::cout << "eagler-common netplay base: PASS\n";

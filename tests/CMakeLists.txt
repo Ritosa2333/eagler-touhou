@@ -98,6 +98,17 @@ add_test(
     COMMAND eagler_common_direct_touch_pipeline_test
 )
 
+add_executable(eagler_common_direct_touch_equivalence_test
+    direct-touch-equivalence-test.cpp
+)
+target_link_libraries(eagler_common_direct_touch_equivalence_test PRIVATE
+    eagler::netplay_headers
+)
+add_test(
+    NAME eagler-common.direct-touch-equivalence
+    COMMAND eagler_common_direct_touch_equivalence_test
+)
+
 add_executable(eagler_common_input_repair_budget_test
     input-repair-budget-test.cpp
 )

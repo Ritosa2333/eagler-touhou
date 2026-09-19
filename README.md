@@ -52,6 +52,8 @@ Published/active convergence slices:
   `DirectTouchState`, delayed capture mapping and conservative delta prediction
 - bounded reliable input repair primitives: `InputRepairBudget` and
   `BrowserPeerTransport::SendRepairTo`
+- DirectTouch equivalence proof plus explicit Core APIs for title adapters to
+  confirm an already-simulated predicted input after proving state equivalence
 
 `NetplaySession` and `WebSocketTransport` were byte-identical before extraction.
 `NetplayProtocol` differs only through a deliberately tiny title-owned wire
@@ -101,9 +103,18 @@ black out the real RTC input DataChannel while giving reliable repair traffic
 the same artificial application-send delay. Title harnesses provide their
 input/control channel labels; the fixture contains no TH06/TH07 product policy.
 
-Future intended slices include DirectTouch equivalence, broader connection
-health policy, browser-frame budgeting and broader performance diagnostics once
-their title-facing seams are explicit.
+DirectTouch equivalence is deliberately adapter-proven rather than inferred by
+`RollbackCore`. The shared proof accepts only a narrow, saturated single-axis
+limited-touch correction that cannot cross a movement boundary or gesture
+reset. A title must provide the historical applied/remaining trace and patch
+its own rollback snapshots before calling `SubmitEquivalentRemoteInput()`.
+That commit API has a dedicated result type; `NotPredicted` is distinct from an
+invalid player and from ordinary packet-processing results so adapters cannot
+silently confuse a failed equivalence precondition with transport input state.
+
+Future intended slices include broader connection health policy,
+browser-frame budgeting and broader performance diagnostics once their
+title-facing seams are explicit.
 
 ## Convergence order
 
@@ -116,9 +127,10 @@ Use this order unless new evidence proves a dependency requires otherwise:
 5. generic input authority: `NetplayInput`;
 6. once-only incremental DirectTouch and delayed capture mapping;
 7. bounded reliable input repair;
-8. DirectTouch equivalence, broader health policy and rollback driver budgets;
-9. performance testkit and diagnostics;
-10. only then consider broader platform/presentation helpers.
+8. DirectTouch equivalence;
+9. broader health policy and rollback driver budgets;
+10. performance testkit and diagnostics;
+11. only then consider broader platform/presentation helpers.
 
 Every step must leave TH06 and TH07 buildable and testable independently. A
 consumer may advance to a newer common implementation only after its own
