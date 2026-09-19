@@ -1,8 +1,8 @@
 const { readFileSync } = require('node:fs');
 const path = require('node:path');
 
-const source = readFileSync(path.resolve(__dirname, '../third_party/eagler-common/src/netplay/BrowserPeerTransport.cpp'), 'utf8');
-const config = readFileSync(path.resolve(__dirname, '../src/netplay/NetplayTransportConfig.hpp'), 'utf8');
+const source = readFileSync(path.resolve(__dirname, '../../third_party/eagler-common/src/netplay/BrowserPeerTransport.cpp'), 'utf8');
+const config = readFileSync(path.resolve(__dirname, '../../src/netplay/NetplayTransportConfig.hpp'), 'utf8');
 
 function requireText(text, label) {
   if (!source.includes(text)) throw new Error(`missing ${label}: ${text}`);

@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const repo = path.resolve(here, '..');
+const repo = path.resolve(here, '../..');
 const root = path.resolve(repo, '..');
 const upstreamPath = path.join(root, 'thprac-reallyportable', 'thprac', 'src', 'thprac', 'thprac_th06.cpp');
 const read = (p) => fs.readFileSync(path.join(repo, p), 'utf8');

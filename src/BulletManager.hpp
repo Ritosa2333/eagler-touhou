@@ -22,6 +22,8 @@ enum BulletAimMode
 
 struct BulletTypeSprites
 {
+    void UpdateLivePrev(u16 state);
+
     void UpdatePrev()
     {
         spriteBullet.UpdatePrev();
@@ -40,6 +42,32 @@ struct BulletTypeSprites
     u8 unk_55c;
     u8 bulletHeight;
 };
+
+enum BulletState
+{
+    BULLET_STATE_UNUSED,
+    BULLET_STATE_FIRED,
+    BULLET_STATE_SPAWNING_FAST,
+    BULLET_STATE_SPAWNING_NORMAL,
+    BULLET_STATE_SPAWNING_SLOW,
+    BULLET_STATE_DESPAWNING,
+};
+
+inline void BulletTypeSprites::UpdateLivePrev(u16 state)
+{
+    // Normal and despawn VMs may become visible later in this tick. A spawn
+    // slot initializes all five endpoints before first draw; after that only
+    // the selected spawn VM can be observed until the slot is reused.
+    spriteBullet.UpdatePrev();
+    spriteSpawnEffectDonut.UpdatePrev();
+    switch (state)
+    {
+    case BULLET_STATE_SPAWNING_FAST: spriteSpawnEffectFast.UpdatePrev(); break;
+    case BULLET_STATE_SPAWNING_NORMAL: spriteSpawnEffectNormal.UpdatePrev(); break;
+    case BULLET_STATE_SPAWNING_SLOW: spriteSpawnEffectSlow.UpdatePrev(); break;
+    default: break;
+    }
+}
 
 struct Bullet
 {
@@ -85,10 +113,10 @@ struct Laser
     f32 width;
     f32 speed;
     i32 startTime;
-    i32 grazeDelay;
+    i32 hitboxStartTime;
     i32 duration;
-    i32 endTime;
-    i32 grazeInterval;
+    i32 despawnDuration;
+    i32 hitboxEndDelay;
     i32 inUse;
     ZunTimer timer;
     u16 flags;

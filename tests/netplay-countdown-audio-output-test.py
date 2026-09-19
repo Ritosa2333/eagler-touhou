@@ -1,9 +1,11 @@
 from __future__ import annotations
 import os, socket, subprocess, sys, time
 from pathlib import Path
+from integration_support import require_host_relay, require_th07_root
 from playwright.sync_api import sync_playwright
-WORKSPACE=Path(__file__).resolve().parents[2]
-RELAY_ROOT=WORKSPACE/'th07-eagler'/'tools'/'netplay'
+ROOT=Path(__file__).resolve().parents[1]
+HOST_ROOT, RELAY_SCRIPT = require_host_relay()
+TH07_ROOT = require_th07_root()
 
 def free_port():
     with socket.socket() as s:s.bind(('127.0.0.1',0));return s.getsockname()[1]
@@ -29,11 +31,11 @@ def wait_relay(proc,timeout=10):
     raise RuntimeError('relay timeout')
 
 def run_game(game:str):
-    root=WORKSPACE/(game+'-eagler')
+    root=ROOT if game=='th06' else TH07_ROOT
     hp,rp=free_port(),free_port()
     env=os.environ.copy();env.update({'TH07_RELAY_HOST':'127.0.0.1','TH07_RELAY_PORT':str(rp),'TH07_RTC_TIMEOUT_MS':'4500','TH07_STUN_URLS':'','TH07_RELAY_DELAY_MS':'0','TH07_RELAY_JITTER_MS':'0'})
     http=subprocess.Popen([sys.executable,'-m','http.server',str(hp),'--bind','127.0.0.1'],cwd=root,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
-    relay=subprocess.Popen(['node','lan-relay.cjs'],cwd=RELAY_ROOT,env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1)
+    relay=subprocess.Popen(['node',str(RELAY_SCRIPT)],cwd=HOST_ROOT,env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,bufsize=1)
     browsers=[]
     try:
         host='tests/netplay-browser-host.html' if game=='th06' else 'tests/netplay-countdown-audio-host.html'

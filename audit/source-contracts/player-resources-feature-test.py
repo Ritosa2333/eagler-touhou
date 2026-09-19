@@ -1,7 +1,7 @@
 from pathlib import Path
 import re
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 anm = (ROOT / "src/AnmIdx.hpp").read_text(encoding="utf-8")
 player_h = (ROOT / "src/Player.hpp").read_text(encoding="utf-8")
 manager_h = (ROOT / "src/AnmManager.hpp").read_text(encoding="utf-8")

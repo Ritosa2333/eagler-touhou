@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 
-const gameWindow = fs.readFileSync(new URL('../src/GameWindow.cpp', import.meta.url), 'utf8').replaceAll('\r\n', '\n');
-const bulletManager = fs.readFileSync(new URL('../src/BulletManager.cpp', import.meta.url), 'utf8').replaceAll('\r\n', '\n');
-const anmManager = fs.readFileSync(new URL('../src/AnmManager.cpp', import.meta.url), 'utf8').replaceAll('\r\n', '\n');
+const gameWindow = fs.readFileSync(new URL('../../src/GameWindow.cpp', import.meta.url), 'utf8').replaceAll('\r\n', '\n');
+const bulletManager = fs.readFileSync(new URL('../../src/BulletManager.cpp', import.meta.url), 'utf8').replaceAll('\r\n', '\n');
+const anmManager = fs.readFileSync(new URL('../../src/AnmManager.cpp', import.meta.url), 'utf8').replaceAll('\r\n', '\n');
 
 function requireText(text, needle, label) {
     if (!text.includes(needle)) {

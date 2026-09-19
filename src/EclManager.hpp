@@ -165,9 +165,12 @@ struct EclRawInstrLaserArgs
     LE<f32> width;
     LE<i32> startTime;
     LE<i32> duration;
-    LE<i32> stopTime;
-    LE<i32> grazeDelay;
-    LE<i32> grazeDistance;
+    // The final three timing fields are distinct: despawn duration controls
+    // the visual shrink, hitbox start controls collision onset, and hitbox
+    // end delay keeps grazing active during despawn.
+    LE<i32> despawnDuration;
+    LE<i32> hitboxStartTime;
+    LE<i32> hitboxEndDelay;
     LE<i32> flags;
 };
 

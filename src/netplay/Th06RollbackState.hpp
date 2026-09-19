@@ -17,6 +17,11 @@ struct Config
     std::size_t maxBytesPerFrame = 8 * 1024 * 1024;
     std::size_t maxBlocksPerFrame = 4096;
     std::size_t maxScreenEffectsPerFrame = 128;
+    bool coalesceBulletRuns = false;
+    bool fastBulkCopy = false;
+    bool coalesceRestore = false;
+    bool liveBulletSnapshots = false;
+    bool auditLiveBulletBytes = false; // Test-only full-pool restore oracle.
 };
 
 bool Reset(const Config &config = Config{});
@@ -28,9 +33,13 @@ void DiscardBefore(std::uint32_t frame);
 
 bool IsCapturing();
 bool Failed();
+bool SpecializedBulletSnapshotsEnabled();
 std::size_t CapturedBytes(std::uint32_t frame);
 std::size_t CapturedBlocks(std::uint32_t frame);
 std::size_t CapturedScreenEffects(std::uint32_t frame);
+std::uint64_t RestoreCopiedBytes();
+std::uint64_t RestoreSkippedBytes();
+std::uint64_t ArenaGrowths();
 std::uint64_t DebugStateHash();
 
 // Spawn paths call these immediately before overwriting an inactive reusable

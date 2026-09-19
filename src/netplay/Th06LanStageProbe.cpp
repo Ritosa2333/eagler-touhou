@@ -1,14 +1,19 @@
 #include "Th06LanStageProbe.hpp"
 
-#include "NetplayCore.hpp"
-#include "NetplayInput.hpp"
-#include "NetplayProtocol.hpp"
-#include "NetplaySession.hpp"
+#include <eagler/netplay/NetplayCore.hpp>
+#include <eagler/netplay/NetplayInput.hpp>
+#include <eagler/netplay/NetplayProtocol.hpp>
+#include <eagler/netplay/NetplaySession.hpp>
 #include "NetplaySideEffects.hpp"
+#include <eagler/netplay/SnapshotPolicy.hpp>
 #include "Th06CanonicalHash.hpp"
 #include "Th06RollbackState.hpp"
-#include "BrowserPeerTransport.hpp"
-#include "WebSocketTransport.hpp"
+#include <eagler/netplay/BrowserPeerTransport.hpp>
+#include <eagler/netplay/WebSocketTransport.hpp>
+#include <eagler/netplay/InputRepairBudget.hpp>
+#include <eagler/netplay/FrameAdvantageWindow.hpp>
+#include <eagler/netplay/FramePacingPolicy.hpp>
+#include <eagler/netplay/ConfirmedInputWatchdog.hpp>
 
 #include "BulletManager.hpp"
 #include "AsciiManager.hpp"
@@ -88,8 +93,12 @@ std::uint32_t g_PredictedFrames = 0;
 std::uint32_t g_RollbackCount = 0;
 std::uint32_t g_ResimulatedFrames = 0;
 std::uint32_t g_MaxRollbackSpan = 0;
+std::uint32_t g_SnapshotTicks = 0;
+std::uint32_t g_ConfirmedOnlyTicks = 0;
 std::size_t g_MaxSnapshotBytes = 0;
 std::size_t g_MaxSnapshotBlocks = 0;
+bool g_FrontierSnapshots = false;
+bool g_DemandSnapshots = false;
 
 struct ReplayFrameBinding
 {
@@ -98,12 +107,12 @@ struct ReplayFrameBinding
     i32 replayFrame = -1;
 };
 std::array<ReplayFrameBinding, INPUT_HISTORY_SIZE> g_ReplayFrameBindings{};
-std::array<std::uint32_t, MAX_PLAYERS> g_LastConfirmedFrame{};
-std::array<std::uint64_t, MAX_PLAYERS> g_LastConfirmedAdvanceMs{};
-std::array<bool, MAX_PLAYERS> g_RemoteTimeoutArmed{};
+std::array<ConfirmedInputWatchdog, MAX_PLAYERS> g_RemoteInputWatchdogs{};
 bool g_IndependentInputSlotsObserved = false;
 std::uint8_t g_InputSlotObservedMask = 0;
 bool g_PhysicalInputObserved = false;
+std::uint32_t g_DirectTouchBeginCaptures = 0;
+std::uint32_t g_DirectTouchDeltaCaptures = 0;
 bool g_PhysicalLoggedFrame0Sample = false;
 bool g_PhysicalLoggedFrame0Wait = false;
 bool g_PhysicalLoggedFrame0Sim = false;
@@ -146,17 +155,11 @@ std::uint32_t g_PeakBullets = 0;
 std::uint32_t g_PeakLasers = 0;
 std::uint32_t g_PeakItems = 0;
 std::array<std::uint32_t, MAX_PLAYERS> g_LastRemoteSenderFrame{};
-struct PeerTimeSyncState
-{
-    std::array<std::int32_t, 64> samples{};
-    std::size_t sampleCount = 0;
-    std::size_t sampleCursor = 0;
-    double averageLead = 0.0;
-    bool ready = false;
-};
-std::array<PeerTimeSyncState, MAX_PLAYERS> g_PeerTimeSync{};
+std::array<FrameAdvantageWindow, MAX_PLAYERS> g_PeerTimeSync{};
 std::array<std::uint32_t, MAX_PLAYERS> g_PredictionDepth{};
 std::array<std::uint32_t, MAX_PLAYERS> g_RollbackByPlayer{};
+std::array<InputRepairBudget, MAX_PLAYERS> g_InputRepairBudgets{};
+bool g_ReliableInputRepair = false;
 double g_RecommendedLead = 0.0;
 double g_SimulationIntervalScale = 1.0;
 
@@ -272,6 +275,7 @@ void RetireGameplaySession()
     g_LastReceivedSequence = 0;
     g_LastHelloSendTick = 0;
     g_LastReadySendTick = 0;
+    g_InputRepairBudgets = {};
     ++g_SessionGeneration;
 #ifdef __EMSCRIPTEN__
     if (ProductionLanMode())
@@ -341,11 +345,6 @@ bool ProbeMode()
 #endif
 }
 
-std::int32_t SignedFrameDelta(std::uint32_t lhs, std::uint32_t rhs)
-{
-    return static_cast<std::int32_t>(lhs - rhs);
-}
-
 void RecordTimeSyncSample(const InputPacket &packet)
 {
     // GGPO/GGRS maintain time-sync state per endpoint.  A 3P room must not
@@ -360,32 +359,14 @@ void RecordTimeSyncSample(const InputPacket &packet)
         return;
     lastRemoteFrame = packet.senderFrame;
 
-    const std::int32_t localAdvantage = SignedFrameDelta(g_SimFrame, packet.senderFrame);
-    const std::int32_t advantageDifference =
-        localAdvantage - static_cast<std::int32_t>(packet.frameAdvantage);
-    const std::int32_t inferredLead = advantageDifference / 2;
-    if (std::abs(inferredLead) > 30)
+    const std::int32_t inferredLead = FramePacingPolicy::InferLead(
+        g_SimFrame, packet.senderFrame, packet.frameAdvantage);
+    if (!FramePacingPolicy::AcceptLead(inferredLead))
         return;
 
-    PeerTimeSyncState &state = g_PeerTimeSync[packet.senderPlayer];
-    state.samples[state.sampleCursor] = inferredLead;
-    state.sampleCursor = (state.sampleCursor + 1) % state.samples.size();
-    state.sampleCount = std::min(state.sampleCount + 1, state.samples.size());
-    if (state.sampleCount < 20)
+    FrameAdvantageWindow &state = g_PeerTimeSync[packet.senderPlayer];
+    if (!state.AddSample(inferredLead))
         return;
-
-    std::vector<std::int32_t> sorted;
-    sorted.reserve(state.sampleCount);
-    for (std::size_t i = 0; i < state.sampleCount; ++i)
-        sorted.push_back(state.samples[i]);
-    std::sort(sorted.begin(), sorted.end());
-    const std::size_t trim = std::min<std::size_t>(4, sorted.size() / 8);
-    std::int64_t sum = 0;
-    for (std::size_t i = trim; i < sorted.size() - trim; ++i)
-        sum += sorted[i];
-    state.averageLead = static_cast<double>(sum) /
-        static_cast<double>(sorted.size() - trim * 2);
-    state.ready = true;
 
     bool haveRecommendation = false;
     double recommendedLead = 0.0;
@@ -401,11 +382,8 @@ void RecordTimeSyncSample(const InputPacket &packet)
         return;
     g_RecommendedLead = recommendedLead;
 
-    const double deadbandLead = std::abs(recommendedLead) < 0.5 ? 0.0 : recommendedLead;
-    const double desiredScale = std::clamp(1.0 + deadbandLead * 0.003, 0.98, 1.02);
-    g_SimulationIntervalScale += (desiredScale - g_SimulationIntervalScale) * 0.08;
-    if (std::abs(g_SimulationIntervalScale - 1.0) < 0.0002)
-        g_SimulationIntervalScale = 1.0;
+    g_SimulationIntervalScale =
+        FramePacingPolicy::UpdateScale(g_SimulationIntervalScale, recommendedLead);
 #ifdef __EMSCRIPTEN__
     EM_ASM({
         globalThis.__eaglerNetplayLanFrameAdvantage = $0;
@@ -438,29 +416,12 @@ bool UseStageTransitionTest()
     return g_TestUseStageTransition;
 }
 
-std::uint32_t ConfirmedThroughAllRemotes()
-{
-    std::uint32_t confirmed = INVALID_FRAME;
-    bool found = false;
-    for (std::uint8_t player = 0; player < g_PlayerCount; ++player)
-    {
-        if (player == g_LocalPlayer)
-            continue;
-        const std::uint32_t value = g_Core.ConfirmedThrough(player);
-        if (!found || value == INVALID_FRAME ||
-            (confirmed != INVALID_FRAME && value < confirmed))
-            confirmed = value;
-        found = true;
-    }
-    return found ? confirmed : INVALID_FRAME;
-}
-
 bool CaptureConfirmedReplayAuditFrames()
 {
 #if defined(TH_DEV_TOOLS) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
     if (!UseReplayPlaybackCycle() || g_SimFrame == 0)
         return true;
-    const std::uint32_t confirmed = ConfirmedThroughAllRemotes();
+    const std::uint32_t confirmed = g_Core.ConfirmedThroughAllRemotes();
     const std::uint32_t lastSimulated = g_SimFrame - 1;
     const std::uint32_t lastAvailable = std::min(confirmed, lastSimulated);
     while (g_NextReplayAuditFrame <= lastAvailable)
@@ -493,12 +454,12 @@ void PublishConfirmedSpectatorFrames()
             state.simFrame = $2 >>> 0;
             state.confirmed = $3 >>> 0;
         }, hasSpectators ? 1 : 0, g_NextSpectatorPublishFrame, g_SimFrame,
-            ConfirmedThroughAllRemotes());
+            g_Core.ConfirmedThroughAllRemotes());
 #endif
     if (g_SpectatorMode || g_LocalPlayer != 0 || g_SimFrame == 0)
         return;
     const std::uint32_t lastAvailable =
-        std::min(ConfirmedThroughAllRemotes(), g_SimFrame - 1);
+        std::min(g_Core.ConfirmedThroughAllRemotes(), g_SimFrame - 1);
     while (g_NextSpectatorPublishFrame <= lastAvailable)
     {
         const FrameDecision decision = g_Core.PrepareFrame(g_NextSpectatorPublishFrame);
@@ -646,11 +607,25 @@ FrameInput CaptureLocalInput(std::uint32_t frame)
     (void)Controller::GetInput();
     float x = 0.0f;
     float y = 0.0f;
+    bool beginGesture = false;
     if (Touch::GetFreeJoystickVector(&x, &y))
         Input::CaptureJoystick(x, y);
-    else if (Touch::GetPlayerDelta(&x, &y))
-        Input::CaptureDirectTouch(x, y, Touch::IsUnlimited());
+    else if (Touch::TakePlayerDelta(&x, &y, &beginGesture))
+        Input::CaptureDirectTouchDelta(x, y, Touch::IsUnlimited(), beginGesture);
     FrameInput input = Input::EndCapture();
+    if (input.analogMode == AnalogMode::DirectTouchBegin)
+        ++g_DirectTouchBeginCaptures;
+    else if (input.analogMode == AnalogMode::DirectTouchDelta)
+        ++g_DirectTouchDeltaCaptures;
+#ifdef __EMSCRIPTEN__
+    if (ProbeMode() || UsePhysicalInput())
+    {
+        EM_ASM({
+            globalThis.__eaglerNetplayDirectTouchBeginCaptures = $0;
+            globalThis.__eaglerNetplayDirectTouchDeltaCaptures = $1;
+        }, g_DirectTouchBeginCaptures, g_DirectTouchDeltaCaptures);
+    }
+#endif
     input.touchUsed = Touch::WasUsedThisRun();
     input.touchBomb = Touch::UsedTouchToBomb();
     if (input.buttons != 0 || input.analogMode != AnalogMode::None)
@@ -748,6 +723,17 @@ void NormalizeMultiplayerEndingSkipHistory()
 
 bool RemoteInputsTimedOut()
 {
+    // The hidden Replay save/playback gate has a finite authoritative input
+    // window. Once every peer has confirmed the final recorded frame, no
+    // later input is supposed to advance: the driver intentionally sends only
+    // the final tail keepalive while it saves and switches to Replay playback.
+    // Do not let the production liveness watchdog race that test-only
+    // finalization state and misreport the expected stationary confirmation
+    // frontier as a dead peer.
+    if (UseReplayPlaybackCycle() && g_SimFrame >= g_TestFrames &&
+        g_Core.ConfirmedThroughAllRemotes() >= g_TestFrames - 1)
+        return false;
+
     // Native sbrik can contract a 3P UDP session around an absent guest by
     // announcing host-authored lifecycle controls and relaying synthesized
     // inputs. The browser relay has no equivalent authority protocol. Do not
@@ -768,22 +754,10 @@ bool RemoteInputsTimedOut()
         const std::uint32_t confirmed = g_Core.ConfirmedThrough(player);
         if (!g_Session.CanStart())
         {
-            g_RemoteTimeoutArmed[player] = false;
+            g_RemoteInputWatchdogs[player].Disarm();
             continue;
         }
-        if (!g_RemoteTimeoutArmed[player])
-        {
-            g_RemoteTimeoutArmed[player] = true;
-            g_LastConfirmedFrame[player] = confirmed;
-            g_LastConfirmedAdvanceMs[player] = now;
-            continue;
-        }
-        if (confirmed != g_LastConfirmedFrame[player])
-        {
-            g_LastConfirmedFrame[player] = confirmed;
-            g_LastConfirmedAdvanceMs[player] = now;
-        }
-        else if (now - g_LastConfirmedAdvanceMs[player] >= timeoutMs)
+        if (g_RemoteInputWatchdogs[player].Observe(confirmed, now, timeoutMs))
         {
             std::printf(
                 "netplay lan stage: ERROR remote input timeout player=%u confirmed=%u sim=%u\n",
@@ -1226,6 +1200,7 @@ void ClearTransientModes()
 {
     Input::ClearReplayOverride();
     Input::ClearPlayerButtonOverrides();
+    Input::ResetDirectTouchStates();
     if (Input::CaptureActive())
         (void)Input::EndCapture();
     SideEffects::SetSpeculative(false);
@@ -1250,7 +1225,7 @@ void Fail(const char *reason)
         "netplay lan stage: FAIL player=%u reason=%s sim=%u sent=%u recv=%u rollback=%u resim=%u predicted=%u confirmed=%u buffered=%llu error=%s\n",
         static_cast<unsigned>(g_LocalPlayer), reason, g_SimFrame, g_SentPackets,
         g_ReceivedPackets, g_RollbackCount, g_ResimulatedFrames, g_PredictedFrames,
-        static_cast<unsigned>(ConfirmedThroughAllRemotes()),
+        static_cast<unsigned>(g_Core.ConfirmedThroughAllRemotes()),
         static_cast<unsigned long long>(TransportBufferedAmount()),
         TransportLastError().c_str());
 }
@@ -1262,6 +1237,9 @@ bool Initialize()
     g_LocalPlayer = g_SpectatorMode ? 0 : ReadPlayer();
     g_TestFrames = ProbeMode() ? ReadTestFrames() : 0xffffffffu;
 #ifdef __EMSCRIPTEN__
+    g_ReliableInputRepair = !g_SpectatorMode &&
+        EM_ASM_INT({ return Module.eaglerOptions?.netplayReliableInputRepair ? 1 : 0; }) != 0;
+    g_InputRepairBudgets = {};
     const int testFlags = EM_ASM_INT({
         const o = Module.eaglerOptions || {};
         return (o.netplayScriptedInput ? 1 : 0) |
@@ -1307,6 +1285,8 @@ bool Initialize()
     g_TestUsePhysicalInput = (testFlags & scriptedTestMask) == 0 &&
                              (ProductionLanMode() || (testFlags & 128) != 0);
 #else
+    g_ReliableInputRepair = false;
+    g_InputRepairBudgets = {};
     g_TestUsePhysicalInput = false;
     g_TestUseScriptedStressInput = false;
     g_TestUseEliminationCycle = false;
@@ -1377,8 +1357,42 @@ bool Initialize()
     stateConfig.maxFrames = 16;
     stateConfig.maxBytesPerFrame = 8 * 1024 * 1024;
     stateConfig.maxBlocksPerFrame = 4096;
+#ifdef __EMSCRIPTEN__
+    stateConfig.coalesceBulletRuns = EM_ASM_INT({
+        const value = Module.eaglerOptions?.netplayCoalesceBulletRuns;
+        return value == null ? 1 : (value ? 1 : 0);
+    }) != 0;
+    stateConfig.fastBulkCopy = EM_ASM_INT({
+        return Module.eaglerOptions?.netplayFastBulkCopy ? 1 : 0;
+    }) != 0;
+    stateConfig.coalesceRestore = EM_ASM_INT({
+        return Module.eaglerOptions?.netplayCoalesceRestore ? 1 : 0;
+    }) != 0;
+    stateConfig.liveBulletSnapshots = EM_ASM_INT({
+        return Module.eaglerOptions?.netplayLiveBulletSnapshots ? 1 : 0;
+    }) != 0;
+    stateConfig.auditLiveBulletBytes = RollbackAuditEnabled() && stateConfig.liveBulletSnapshots && EM_ASM_INT({
+        return Module.eaglerOptions?.netplayLiveBulletAudit ? 1 : 0;
+    }) != 0;
+    g_DemandSnapshots = EM_ASM_INT({
+        const policy = Module.eaglerOptions?.netplaySnapshotPolicy;
+        return policy == null || policy === 'demand' || policy === 'frontier' ? 1 : 0;
+    }) != 0;
+    g_FrontierSnapshots = EM_ASM_INT({
+        const policy = Module.eaglerOptions?.netplaySnapshotPolicy;
+        return policy == null || policy === 'frontier' ? 1 : 0;
+    }) != 0;
+    EM_ASM({
+        globalThis.__eaglerNetplaySnapshotPolicy = $0 ? 'frontier' : ($1 ? 'demand' : 'always');
+    }, g_FrontierSnapshots ? 1 : 0, g_DemandSnapshots ? 1 : 0);
+#else
+    g_DemandSnapshots = false;
+    g_FrontierSnapshots = false;
+#endif
     if (!Th06Rollback::Reset(stateConfig))
         return false;
+    g_SnapshotTicks = 0;
+    g_ConfirmedOnlyTicks = 0;
 
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if (UseStageTransitionTest() || UseEndingCycle() ||
@@ -1416,13 +1430,14 @@ bool Initialize()
         return false;
     g_ProductionTransportStarted = true;
 
-    g_LastConfirmedFrame.fill(INVALID_FRAME);
     g_LastRemoteSenderFrame.fill(INVALID_FRAME);
-    g_RemoteTimeoutArmed.fill(false);
-    for (PeerTimeSyncState &state : g_PeerTimeSync)
-        state = PeerTimeSyncState{};
+    g_RemoteInputWatchdogs = {};
+    for (FrameAdvantageWindow &state : g_PeerTimeSync)
+        state = FrameAdvantageWindow{};
     g_PredictionDepth.fill(0);
     g_RollbackByPlayer.fill(0);
+    g_DirectTouchBeginCaptures = 0;
+    g_DirectTouchDeltaCaptures = 0;
     for (RestoreAuditEntry &entry : g_RestoreAudit)
         entry = RestoreAuditEntry{};
     g_RecommendedLead = 0.0;
@@ -1445,8 +1460,6 @@ bool Initialize()
     g_NextSpectatorPublishFrame = 0;
     g_NextSpectatorReceiveFrame = 0;
     g_SpectatorFrames.clear();
-    g_LastConfirmedAdvanceMs.fill(SDL_GetTicks());
-
     g_Active = true;
 #ifdef __EMSCRIPTEN__
     if (ProductionLanMode())
@@ -1457,6 +1470,8 @@ bool Initialize()
             globalThis.__eaglerNetplayError = "";
             globalThis.__eaglerNetplayLanActive = true;
             globalThis.__eaglerNetplayLanFrame = 0;
+            globalThis.__eaglerNetplayDirectTouchBeginCaptures = 0;
+            globalThis.__eaglerNetplayDirectTouchDeltaCaptures = 0;
             globalThis.__eaglerNetplayLanGeneration = $0;
             globalThis.__eaglerNetplayLanHighestStage = 0;
             globalThis.__eaglerNetplayLanStageTransitionObserved = false;
@@ -1589,19 +1604,19 @@ bool SendSessionControl(bool forceReady = false)
 
 bool SendScheduledLocalFrame(std::uint32_t frame);
 
-bool SendLocalFrame(std::uint32_t frame)
+bool SendLocalFrame(std::uint32_t captureFrame)
 {
-    const FrameInput input = CaptureLocalInput(frame);
-    if (UsePhysicalInput() && frame == 0 && !g_PhysicalLoggedFrame0Sample)
+    const FrameInput input = CaptureLocalInput(captureFrame);
+    if (UsePhysicalInput() && captureFrame == 0 && !g_PhysicalLoggedFrame0Sample)
     {
         g_PhysicalLoggedFrame0Sample = true;
         std::printf("netplay lan physical: FRAME0 SAMPLE player=%u bits=0x%04x\n",
                     static_cast<unsigned>(g_LocalPlayer),
                     static_cast<unsigned>(input.buttons));
     }
-    if (!g_Core.ScheduleLocalInput(frame, input))
+    if (!g_Core.ScheduleLocalInput(captureFrame, input))
         return false;
-    return SendScheduledLocalFrame(frame);
+    return SendScheduledLocalFrame(g_Core.LocalFrameForCapture(captureFrame));
 }
 
 bool SendScheduledLocalFrame(std::uint32_t frame)
@@ -1620,13 +1635,17 @@ bool SendScheduledLocalFrame(std::uint32_t frame)
             packet.senderFrame = g_SimFrame;
             if (g_LastRemoteSenderFrame[peer] != INVALID_FRAME)
             {
-                packet.frameAdvantage = static_cast<std::int16_t>(SignedFrameDelta(
-                    g_SimFrame, g_LastRemoteSenderFrame[peer]));
+                packet.frameAdvantage = static_cast<std::int16_t>(
+                    FramePacingPolicy::SignedFrameDelta(
+                        g_SimFrame, g_LastRemoteSenderFrame[peer]));
             }
             std::vector<std::uint8_t> wire;
             if (!EncodeInputPacket(packet, &wire) ||
                 !TransportSendTo(peer, wire.data(), wire.size()))
                 return false;
+            if (g_ReliableInputRepair && g_InputRepairBudgets[peer].ShouldRepair(
+                    packet.firstInputFrame, packet.inputCount != 0, SDL_GetTicks()))
+                (void)g_BrowserPeerTransport.SendRepairTo(peer, wire.data(), wire.size());
             ++g_SentPackets;
         }
         return true;
@@ -1686,8 +1705,17 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
             replayBinding = slot;
     }
 #endif
-    const bool captureRollback = !g_SpectatorMode;
-    if (captureRollback && RollbackAuditEnabled())
+    const bool snapshotAllowed = !g_SpectatorMode;
+    const bool captureRollback = snapshotAllowed &&
+        (!g_DemandSnapshots || NeedsRollbackSnapshot(
+            frame, g_Core.ConfirmedThroughAllRemotes(), decision.predictedMask,
+            resimulation, g_FrontierSnapshots));
+    if (snapshotAllowed && !captureRollback)
+    {
+        Th06Rollback::DiscardBefore(frame);
+        ++g_ConfirmedOnlyTicks;
+    }
+    if (snapshotAllowed && RollbackAuditEnabled())
     {
         RestoreAuditEntry &entry = g_RestoreAudit[frame % g_RestoreAudit.size()];
         entry.frame = frame;
@@ -1696,6 +1724,8 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
     }
     if (captureRollback && !Th06Rollback::BeginFrame(frame))
         return -1;
+    if (captureRollback)
+        ++g_SnapshotTicks;
     if (captureRollback && UseDenseRollbackProfile())
     {
         // Hidden rollback-budget stress only. Touch every reusable enemy,
@@ -1706,9 +1736,16 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
         for (Enemy &enemy : g_EnemyManager.enemies)
             if (!Th06Rollback::TouchEnemy(&enemy))
                 return -1;
-        for (Bullet &bullet : g_BulletManager.bullets)
-            if (!Th06Rollback::TouchBullet(&bullet))
-                return -1;
+        // The generic-journal stress lane deliberately forces every Bullet
+        // slot through Touch(). Specialized Bullet snapshot backends instead
+        // keep their production sparse policy: live state is captured by
+        // BeginFrame(), while inactive/reused slots are touched by their
+        // mutation paths. Forcing TouchBullet(AllParts) here would defeat the
+        // live-part backend and turn this test hook into a different workload.
+        if (!Th06Rollback::SpecializedBulletSnapshotsEnabled())
+            for (Bullet &bullet : g_BulletManager.bullets)
+                if (!Th06Rollback::TouchBullet(&bullet))
+                    return -1;
         for (Item &item : g_ItemManager.items)
             if (!Th06Rollback::TouchItem(&item))
                 return -1;
@@ -1736,9 +1773,9 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
         // sees the same deterministic mutation on every peer.
         for (Enemy *boss : g_EnemyManager.bosses)
         {
-            if (boss == nullptr || !boss->flags.active || !boss->flags.isBoss)
+            if (boss == nullptr || !boss->flags.isSlotOccupied || !boss->flags.isBoss)
                 continue;
-            if (boss->flags.unk6 && boss->life > 0)
+            if (boss->flags.isInteractable && boss->life > 0)
                 boss->life = 0;
             if (boss->timerCallbackThreshold >= 0 &&
                 boss->bossTimer.AsFrames() < boss->timerCallbackThreshold)
@@ -1902,11 +1939,10 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
             g_Players[0].playerState, g_Players[1].playerState, g_Players[2].playerState,
             GetPlayerLives(0), GetPlayerLives(1), GetPlayerLives(2));
     }
-    if (captureRollback)
-    {
-        if (!Th06Rollback::EndFrame() || !g_Core.MarkSimulated(frame, decision))
-            return -1;
-    }
+    if (captureRollback && !Th06Rollback::EndFrame())
+        return -1;
+    if (!g_SpectatorMode && !g_Core.MarkSimulated(frame, decision))
+        return -1;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if (replayBinding.simFrame == frame && replayBinding.stage >= 0 &&
         replayBinding.replayFrame >= 0)
@@ -1930,8 +1966,17 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
             globalThis.__eaglerNetplayDenseRollback = true;
             globalThis.__eaglerNetplayMaxSnapshotBytes = $0;
             globalThis.__eaglerNetplayMaxSnapshotBlocks = $1;
+            globalThis.__eaglerNetplayRestoreCopiedBytes = $2;
+            globalThis.__eaglerNetplayRestoreSkippedBytes = $3;
+            globalThis.__eaglerNetplayJournalArenaGrowths = $4;
+            globalThis.__eaglerNetplaySnapshotTicks = $5;
+            globalThis.__eaglerNetplayConfirmedOnlyTicks = $6;
         }, static_cast<double>(g_MaxSnapshotBytes),
-           static_cast<double>(g_MaxSnapshotBlocks));
+           static_cast<double>(g_MaxSnapshotBlocks),
+           static_cast<double>(Th06Rollback::RestoreCopiedBytes()),
+           static_cast<double>(Th06Rollback::RestoreSkippedBytes()),
+           static_cast<double>(Th06Rollback::ArenaGrowths()),
+           g_SnapshotTicks, g_ConfirmedOnlyTicks);
     }
 #endif
 #ifdef __EMSCRIPTEN__
@@ -2351,7 +2396,7 @@ int RunCalcChain()
 #ifdef __EMSCRIPTEN__
     if (ProductionLanMode())
     {
-        const std::uint32_t confirmed = ConfirmedThroughAllRemotes();
+        const std::uint32_t confirmed = g_Core.ConfirmedThroughAllRemotes();
         EM_ASM({
             globalThis.__eaglerNetplayLanConfirmed = $0;
             globalThis.__eaglerNetplayLanRollback = $1;
@@ -2363,15 +2408,14 @@ int RunCalcChain()
     if (((!ProbeMode() && !UseReplayPlaybackCycle()) || g_SimFrame < g_TestFrames) &&
         TransportIsOpen())
     {
-        bool localPresent = false;
-        (void)g_Core.LocalInput(g_SimFrame, &localPresent);
+        const bool localPresent = g_Core.HasLocalCapture(g_SimFrame);
         if (!localPresent && !SendLocalFrame(g_SimFrame))
         {
             Fail("send local input");
             return -1;
         }
         if (localPresent && (g_DriverTicks % 3u) == 0u &&
-            !SendScheduledLocalFrame(g_SimFrame))
+            !SendScheduledLocalFrame(g_Core.LocalFrameForCapture(g_SimFrame)))
         {
             Fail("input retry");
             return -1;
@@ -2379,7 +2423,7 @@ int RunCalcChain()
 
         // Frame zero is the session barrier. Receive every peer's real first
         // input before gameplay advances. Later frames may use prediction.
-        if (g_SimFrame == 0 && ConfirmedThroughAllRemotes() == INVALID_FRAME)
+        if (g_SimFrame == 0 && g_Core.ConfirmedThroughAllRemotes() == INVALID_FRAME)
         {
             if (UsePhysicalInput() && !g_PhysicalLoggedFrame0Wait)
             {
@@ -2407,7 +2451,7 @@ int RunCalcChain()
         // subsequent keys.  Keep exchanging frames, but wait one round trip
         // for every remote player's real input while shared UI is active.
         if (SharedUiNeedsConfirmedInputs() &&
-            ConfirmedThroughAllRemotes() < g_SimFrame)
+            g_Core.ConfirmedThroughAllRemotes() < g_SimFrame)
             return CHAIN_CALLBACK_RESULT_CONTINUE;
 
         const FrameDecision decision = g_Core.PrepareFrame(g_SimFrame);
@@ -2450,7 +2494,7 @@ int RunCalcChain()
 
 #if defined(__EMSCRIPTEN__) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(TH_DEV_TOOLS)
     if (UseReplayPlaybackCycle() && g_SimFrame >= g_TestFrames &&
-        ConfirmedThroughAllRemotes() >= g_TestFrames - 1 &&
+        g_Core.ConfirmedThroughAllRemotes() >= g_TestFrames - 1 &&
         !g_Core.HasRollbackRequest())
     {
         // Hidden short end-to-end Replay gate. Save only after every input in
@@ -2479,7 +2523,7 @@ int RunCalcChain()
 #endif
 
     if (ProbeMode() && g_SimFrame >= g_TestFrames &&
-        ConfirmedThroughAllRemotes() >= g_TestFrames - 1 &&
+        g_Core.ConfirmedThroughAllRemotes() >= g_TestFrames - 1 &&
         !g_Core.HasRollbackRequest())
     {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -2541,7 +2585,7 @@ int RunCalcChain()
             g_TestFrames, g_SentPackets,
             g_ReceivedPackets, g_SessionPacketsSent, g_SessionPacketsReceived,
             g_RollbackCount, g_ResimulatedFrames, g_MaxRollbackSpan, g_PredictedFrames,
-            static_cast<unsigned>(ConfirmedThroughAllRemotes()),
+            static_cast<unsigned>(g_Core.ConfirmedThroughAllRemotes()),
             static_cast<unsigned long long>(g_MaxSnapshotBytes),
             static_cast<unsigned long long>(TransportBufferedAmount()),
             g_PeakEnemies, g_PeakBullets, g_PeakLasers, g_PeakItems,

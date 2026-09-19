@@ -24,6 +24,9 @@ bool IsUnlimited();
 bool GetFreeJoystickVector(f32 *x, f32 *y);
 
 bool GetPlayerDelta(f32 *dx, f32 *dy);
+// Transfer each raw displacement once into delayed netplay. Simulation owns
+// its own remaining limited-speed movement and must not mutate this producer.
+bool TakePlayerDelta(f32 *dx, f32 *dy, bool *beginGesture);
 void SetPlayerDelta(f32 dx, f32 dy);
 void ConsumePlayerDelta(f32 dx, f32 dy);
 

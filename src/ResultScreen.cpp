@@ -118,17 +118,18 @@ static ResultScreenState ResolveFromGameResultState(bool directReplaySave, bool 
 {
     (void)isInPracticeMode;
     (void)thpracActive;
-    // Replay playback is observational. Preserve thprac's natural-Practice
-    // result/save flow below, but never let a played Replay enter high-score,
-    // stats or Replay-save states when it finishes. Replay takes precedence
-    // even over a stale one-shot direct-save request.
-    if (isInReplay)
-        return RESULT_SCREEN_STATE_EXIT;
+    (void)isInReplay;
+    // Replay playback is diverted back to the Replay menu by the StageMenu
+    // boundary before this patched ResultScreen path is entered. Keep this
+    // helper faithful to thprac's ResultScreen patches instead of adding a
+    // second Replay owner here.
     if (directReplaySave)
         return RESULT_SCREEN_STATE_SAVE_REPLAY_QUESTION;
     // th06_preplay_1 permanently changes the vanilla Practice branch's
     // immediate state from EXIT (0x11) to WRITING_HIGHSCORE_NAME (0x09).
     // The non-Practice branch already used 0x09, so after the patch every
+    // natural Practice enters replay-save result flow through the same normal
+    // result-state chain instead of taking the vanilla Practice exit.
     // normal from-game ResultScreen starts there. This is not mode-gated.
     return RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME;
 }
@@ -227,11 +228,11 @@ void ResultScreen::DebugCloseStatsAudit()
 bool ResultScreen::DebugThpracResultRoutingSelfTest()
 {
     return ResolveFromGameResultState(true, true, true, false) == RESULT_SCREEN_STATE_SAVE_REPLAY_QUESTION &&
-           ResolveFromGameResultState(true, true, true, true) == RESULT_SCREEN_STATE_EXIT &&
+           ResolveFromGameResultState(true, true, true, true) == RESULT_SCREEN_STATE_SAVE_REPLAY_QUESTION &&
            ResolveFromGameResultState(false, true, true, false) == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME &&
            ResolveFromGameResultState(false, true, false, false) == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME &&
-           ResolveFromGameResultState(false, true, true, true) == RESULT_SCREEN_STATE_EXIT &&
-           ResolveFromGameResultState(false, false, false, true) == RESULT_SCREEN_STATE_EXIT &&
+           ResolveFromGameResultState(false, true, true, true) == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME &&
+           ResolveFromGameResultState(false, false, false, true) == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME &&
            ResolveFromGameResultState(false, false, false, false) == RESULT_SCREEN_STATE_WRITING_HIGHSCORE_NAME;
 }
 
@@ -373,7 +374,7 @@ u32 ResultScreen::GetHighScore(ScoreDat *scoreDat, ScoreListNode *node, u32 char
         }
 
         remainingSize -= highScore->base.th6kLen;
-        highScore = highScore->ShiftBytes(highScore->base.th6kLen);
+        highScore = (Hscr *)((u8 *)highScore + highScore->base.th6kLen);
     }
     if (scoreDat->scores->next != NULL)
     {
@@ -573,7 +574,7 @@ ZunResult ResultScreen::ParsePscr(ScoreDat *scoreDat, Pscr *outClrd)
             outClrd[pscr->character * 6 * 4 + pscr->stage * 4 + pscr->difficulty] = *pscr;
         }
         cursor -= parsedPscr->base.th6kLen;
-        parsedPscr = parsedPscr->ShiftBytes(parsedPscr->base.th6kLen);
+        parsedPscr = (Pscr *)((u8 *)parsedPscr + parsedPscr->base.th6kLen);
     }
     return ZUN_SUCCESS;
 }
@@ -1444,7 +1445,7 @@ u32 ResultScreen::DrawFinalStats() const
         g_AsciiManager.color = color;
         unknownFloat = 0.0;
 
-        completion = g_GameManager.difficulty < 4 ? g_GameManager.counat / 39600.0f : g_GameManager.counat / 89500.0f;
+        completion = g_GameManager.difficulty < 4 ? g_GameManager.counat / 89500.0f : g_GameManager.counat / 39600.0f;
         strPos = viewport->pos;
         strPos.x += 224.0f;
         strPos.y += 32.0f;
@@ -2053,10 +2054,6 @@ ChainCallbackResult ResultScreen::OnUpdate(ResultScreen *resultScreen)
 
 ChainCallbackResult ResultScreen::OnDraw(ResultScreen *resultScreen)
 {
-    u8 unused[12];
-    u8 unused2;
-    u8 unused3;
-
     AnmVm *sprite;
     char keyboardCharacter[2];
     ZunVec2 charPos;

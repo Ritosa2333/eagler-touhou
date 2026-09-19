@@ -1,6 +1,8 @@
 #include "Th06RollbackState.hpp"
 
-#include "RollbackJournal.hpp"
+#include <eagler/netplay/RollbackJournal.hpp>
+#include "LiveBulletSnapshot.hpp"
+#include <eagler/netplay/SparsePoolCapture.hpp>
 
 #include "AsciiManager.hpp"
 #include "BulletManager.hpp"
@@ -17,12 +19,32 @@
 #include "ScreenEffect.hpp"
 #include "Stage.hpp"
 #include "Supervisor.hpp"
+#include <eagler/netplay/NetplayInput.hpp>
 
 #include <algorithm>
+#include <array>
+#include <cstdio>
 #include <cstdint>
 #include <cstring>
 #include <deque>
 #include <vector>
+
+#if defined(__EMSCRIPTEN__) && !defined(__wasm64__)
+#include <emscripten/emscripten.h>
+static_assert(sizeof(Netplay::LiveBulletJournal::CopyRegion) == 12);
+EM_JS(void, th06_live_bullet_copy_batch,
+      (void *destination, const void *source, const void *regions, std::size_t count), {
+    const dst = destination >>> 0, src = source >>> 0;
+    const u8 = HEAPU8, u32 = HEAPU32;
+    let entry = (regions >>> 0) / 4;
+    for (let i = 0; i < count; ++i, entry += 3) {
+        const from = src + u32[entry], to = dst + u32[entry + 1], bytes = u32[entry + 2];
+        if (from + bytes > u8.length || to + bytes > u8.length)
+            throw new RangeError('TH06 live Bullet copy outside WASM heap');
+        u8.copyWithin(to, from, from + bytes);
+    }
+});
+#endif
 
 namespace Netplay::Th06Rollback
 {
@@ -41,6 +63,15 @@ struct ScreenEffectFrame
 constexpr std::size_t CHECKPOINT_LOGICAL_FRAMES = 2;
 
 RollbackJournal g_Journal;
+LiveBulletJournal g_LiveBullets;
+struct LiveBulletAuditFrame
+{
+    std::uint32_t frame = 0;
+    std::vector<std::uint8_t> bytes;
+};
+std::deque<LiveBulletAuditFrame> g_LiveBulletAudit;
+std::uint32_t g_LiveBulletAuditRestores = 0;
+SparsePoolCapture<640> g_BulletCapture;
 Config g_Config{};
 std::deque<ScreenEffectFrame> g_ScreenEffectFrames;
 bool g_Configured = false;
@@ -52,6 +83,15 @@ std::size_t CheckpointCapacity()
 {
     return (g_Config.maxFrames + CHECKPOINT_LOGICAL_FRAMES - 1) /
            CHECKPOINT_LOGICAL_FRAMES;
+}
+
+LiveBulletJournal::CopyFunction LiveBulletCopyFunction()
+{
+#if defined(__EMSCRIPTEN__) && !defined(__wasm64__)
+    return g_Config.fastBulkCopy ? th06_live_bullet_copy_batch : nullptr;
+#else
+    return nullptr;
+#endif
 }
 
 bool TouchMemory(void *address, std::size_t size)
@@ -156,9 +196,18 @@ bool RestoreScreenEffects(const ScreenEffectFrame &snapshot)
 
 void ResetHistoryForStage(int stage)
 {
-    g_Journal.Reset(RollbackJournalConfig{CheckpointCapacity(),
-                                           g_Config.maxBytesPerFrame,
-                                           g_Config.maxBlocksPerFrame});
+    g_LiveBulletAudit.clear();
+    if (!g_Journal.Reset(RollbackJournalConfig{CheckpointCapacity(),
+                                                g_Config.maxBytesPerFrame,
+                                                g_Config.maxBlocksPerFrame,
+                                                g_Config.fastBulkCopy,
+                                                g_Config.coalesceRestore}))
+        g_Failed = true;
+    g_LiveBullets.Clear();
+    if (g_Config.liveBulletSnapshots &&
+        !g_LiveBullets.Reset(g_BulletManager.bullets, LiveBulletParts(),
+                             CheckpointCapacity(), LiveBulletCopyFunction()))
+        g_Failed = true;
     g_ScreenEffectFrames.clear();
     g_HistoryStage = stage;
     g_FramesInCheckpoint = 0;
@@ -218,7 +267,8 @@ bool CaptureFixedAndSparseState()
         !TouchObject(&g_Supervisor.framerateMultiplier))
         return false;
 
-    if (!TouchObject(&g_CurFrameInput) || !TouchObject(&g_LastFrameInput) ||
+    if (!TouchObject(&Input::GetDirectTouchStates()) ||
+        !TouchObject(&g_CurFrameInput) || !TouchObject(&g_LastFrameInput) ||
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         !TouchObject(&g_CurFrameGameInputs) ||
         !TouchObject(&g_LastFrameGameInputs) ||
@@ -253,7 +303,7 @@ bool CaptureFixedAndSparseState()
     if (!TouchRange(enemyBegin, enemiesBegin))
         return false;
     for (Enemy &enemy : g_EnemyManager.enemies)
-        if (enemy.flags.active && !TouchEnemy(&enemy))
+        if (enemy.flags.isSlotOccupied && !TouchEnemy(&enemy))
             return false;
     if (!TouchRange(enemiesEnd, enemyManagerEnd))
         return false;
@@ -266,9 +316,32 @@ bool CaptureFixedAndSparseState()
     auto *bulletManagerEnd = bulletManagerBegin + sizeof(g_BulletManager);
     if (!TouchRange(bulletManagerBegin, bulletsBegin))
         return false;
-    for (Bullet &bullet : g_BulletManager.bullets)
-        if (bullet.state != 0 && !TouchBullet(&bullet))
+    if (g_Config.liveBulletSnapshots)
+    {
+        std::array<std::uint32_t, 640> masks{};
+        for (std::size_t index = 0; index < masks.size(); ++index)
+        {
+            const Bullet &bullet = g_BulletManager.bullets[index];
+            if (bullet.state != BULLET_STATE_UNUSED)
+                masks[index] = LiveBulletMask(bullet.state);
+        }
+        if (!g_LiveBullets.CaptureMasks(masks))
             return false;
+    }
+    else if (g_Config.coalesceBulletRuns)
+    {
+        if (!g_BulletCapture.Capture(
+                g_BulletManager.bullets,
+                [](const Bullet &bullet) { return bullet.state != BULLET_STATE_UNUSED; },
+                [](void *data, std::size_t bytes) { return TouchMemory(data, bytes); }))
+            return false;
+    }
+    else
+    {
+        for (Bullet &bullet : g_BulletManager.bullets)
+            if (bullet.state != BULLET_STATE_UNUSED && !TouchBullet(&bullet))
+                return false;
+    }
     if (!TouchRange(bulletsEnd, lasersBegin))
         return false;
     for (Laser &laser : g_BulletManager.lasers)
@@ -316,22 +389,37 @@ void HashObject(std::uint64_t &hash, const T &object)
 
 bool Reset(const Config &config)
 {
+    if (config.auditLiveBulletBytes && !config.liveBulletSnapshots)
+        return false;
     if (config.maxFrames == 0 || config.maxBytesPerFrame == 0 ||
         config.maxBlocksPerFrame == 0 || config.maxScreenEffectsPerFrame == 0)
         return false;
     g_Config = config;
+    g_LiveBulletAudit.clear();
+    g_LiveBulletAuditRestores = 0;
+#ifdef __EMSCRIPTEN__
+    EM_ASM({ globalThis.__eaglerLiveBulletAuditRestores = 0; });
+#endif
+    g_LiveBullets.Clear();
+    if (config.liveBulletSnapshots &&
+        !g_LiveBullets.Reset(g_BulletManager.bullets, LiveBulletParts(),
+                             CheckpointCapacity(), LiveBulletCopyFunction()))
+        return false;
     g_ScreenEffectFrames.clear();
     g_Failed = false;
     g_HistoryStage = -1;
     g_FramesInCheckpoint = 0;
     g_Configured = g_Journal.Reset(RollbackJournalConfig{
-        CheckpointCapacity(), config.maxBytesPerFrame, config.maxBlocksPerFrame});
+        CheckpointCapacity(), config.maxBytesPerFrame, config.maxBlocksPerFrame,
+        config.fastBulkCopy, config.coalesceRestore});
     return g_Configured;
 }
 
 void Clear()
 {
+    g_LiveBulletAudit.clear();
     g_Journal.Clear();
+    g_LiveBullets.Clear();
     g_ScreenEffectFrames.clear();
     g_Configured = false;
     g_Failed = false;
@@ -351,14 +439,25 @@ bool BeginFrame(std::uint32_t frame)
     const bool extendPrevious = g_FramesInCheckpoint != 0;
     if (!extendPrevious)
     {
+        if (g_Config.auditLiveBulletBytes)
+        {
+            while (g_LiveBulletAudit.size() >= CheckpointCapacity())
+                g_LiveBulletAudit.pop_front();
+            g_LiveBulletAudit.push_back({frame, {}});
+            auto &bytes = g_LiveBulletAudit.back().bytes;
+            bytes.resize(sizeof(g_BulletManager.bullets));
+            std::memcpy(bytes.data(), g_BulletManager.bullets, bytes.size());
+        }
         if (!CaptureScreenEffects(frame) || !g_Journal.BeginFrame(frame) ||
+            (g_Config.liveBulletSnapshots && !g_LiveBullets.BeginFrame(frame)) ||
             !CaptureFixedAndSparseState())
         {
             g_Failed = true;
             return false;
         }
     }
-    else if (!g_Journal.BeginFrame(frame, true))
+    else if (!g_Journal.BeginFrame(frame, true) ||
+             (g_Config.liveBulletSnapshots && !g_LiveBullets.BeginFrame(frame, true)))
     {
         g_Failed = true;
         return false;
@@ -370,7 +469,8 @@ bool BeginFrame(std::uint32_t frame)
 
 bool EndFrame()
 {
-    if (!g_Journal.EndFrame())
+    if (!g_Journal.EndFrame() ||
+        (g_Config.liveBulletSnapshots && !g_LiveBullets.EndFrame()))
     {
         g_Failed = true;
         return false;
@@ -388,13 +488,44 @@ bool RestoreTo(std::uint32_t frame, std::uint32_t *replayFrom)
         return false;
     const ScreenEffectFrame saved = *snapshot;
     std::uint32_t restoredFrame = frame;
+    std::uint32_t liveRestoredFrame = frame;
 
     RemoveCurrentScreenEffects();
     if (!g_Journal.UndoTo(frame, &restoredFrame) ||
-        restoredFrame != saved.startFrame || !RestoreScreenEffects(saved))
+        restoredFrame != saved.startFrame ||
+        (g_Config.liveBulletSnapshots &&
+         (!g_LiveBullets.UndoTo(frame, &liveRestoredFrame) ||
+          liveRestoredFrame != restoredFrame)) ||
+        !RestoreScreenEffects(saved))
     {
         g_Failed = true;
         return false;
+    }
+    if (g_Config.auditLiveBulletBytes)
+    {
+        const auto found = std::find_if(
+            g_LiveBulletAudit.begin(), g_LiveBulletAudit.end(),
+            [restoredFrame](const LiveBulletAuditFrame &entry) {
+                return entry.frame == restoredFrame;
+            });
+        if (found == g_LiveBulletAudit.end() ||
+            std::memcmp(found->bytes.data(), g_BulletManager.bullets,
+                        found->bytes.size()) != 0)
+        {
+            std::fprintf(stderr,
+                         "TH06 live Bullet exact-byte audit failed frame=%u\n",
+                         restoredFrame);
+            g_Failed = true;
+            return false;
+        }
+        ++g_LiveBulletAuditRestores;
+#ifdef __EMSCRIPTEN__
+        EM_ASM({ globalThis.__eaglerLiveBulletAuditRestores = $0; },
+               g_LiveBulletAuditRestores);
+#endif
+        while (!g_LiveBulletAudit.empty() &&
+               g_LiveBulletAudit.back().frame >= restoredFrame)
+            g_LiveBulletAudit.pop_back();
     }
     while (!g_ScreenEffectFrames.empty() &&
            g_ScreenEffectFrames.back().endFrame >= restoredFrame)
@@ -407,16 +538,51 @@ bool RestoreTo(std::uint32_t frame, std::uint32_t *replayFrom)
 
 void DiscardBefore(std::uint32_t frame)
 {
+    // Keep one checkpoint whose two-frame range may straddle the boundary.
+    while (g_LiveBulletAudit.size() > 1 &&
+           g_LiveBulletAudit[1].frame <= frame)
+        g_LiveBulletAudit.pop_front();
     g_Journal.DiscardBefore(frame);
+    if (g_Config.liveBulletSnapshots)
+        g_LiveBullets.DiscardBefore(frame);
     while (!g_ScreenEffectFrames.empty() &&
            g_ScreenEffectFrames.front().endFrame < frame)
         g_ScreenEffectFrames.pop_front();
+    // Confirmed-only stretches intentionally carry no rollback history. The
+    // next speculative frame must open a fresh checkpoint rather than trying
+    // to extend across a gap that has already been retired.
+    if (g_Journal.FrameCount() == 0)
+        g_FramesInCheckpoint = 0;
 }
 
 bool IsCapturing() { return g_Journal.IsFrameOpen(); }
-bool Failed() { return g_Failed || g_Journal.Failed(); }
-std::size_t CapturedBytes(std::uint32_t frame) { return g_Journal.BytesForFrame(frame); }
-std::size_t CapturedBlocks(std::uint32_t frame) { return g_Journal.BlocksForFrame(frame); }
+bool Failed() { return g_Failed || g_Journal.Failed() || g_LiveBullets.Failed(); }
+bool SpecializedBulletSnapshotsEnabled()
+{
+    return g_Config.coalesceBulletRuns || g_Config.liveBulletSnapshots;
+}
+std::size_t CapturedBytes(std::uint32_t frame)
+{
+    return g_Journal.BytesForFrame(frame) +
+           (g_Config.liveBulletSnapshots ? g_LiveBullets.BytesForFrame(frame) : 0);
+}
+std::size_t CapturedBlocks(std::uint32_t frame)
+{
+    return g_Journal.BlocksForFrame(frame) +
+           (g_Config.liveBulletSnapshots ? g_LiveBullets.BlocksForFrame(frame) : 0);
+}
+std::uint64_t RestoreCopiedBytes()
+{
+    return g_Journal.RestoreCopiedBytes() + g_LiveBullets.RestoreCopiedBytes();
+}
+std::uint64_t RestoreSkippedBytes()
+{
+    return g_Journal.RestoreSkippedBytes() + g_LiveBullets.RestoreSkippedBytes();
+}
+std::uint64_t ArenaGrowths()
+{
+    return g_Journal.ArenaGrowths() + g_LiveBullets.ArenaGrowths();
+}
 std::size_t CapturedScreenEffects(std::uint32_t frame)
 {
     ScreenEffectFrame *snapshot = FindScreenEffectFrame(frame);
@@ -424,7 +590,31 @@ std::size_t CapturedScreenEffects(std::uint32_t frame)
 }
 
 bool TouchEnemy(Enemy *enemy) { return TouchObject(enemy); }
-bool TouchBullet(Bullet *bullet) { return TouchObject(bullet); }
+bool TouchBullet(Bullet *bullet)
+{
+    if (!g_Journal.IsFrameOpen())
+        return true;
+    if (g_Config.liveBulletSnapshots)
+    {
+        const auto first = reinterpret_cast<std::uintptr_t>(g_BulletManager.bullets);
+        const auto address = reinterpret_cast<std::uintptr_t>(bullet);
+        if (!bullet || address < first || address - first >= sizeof(Bullet) * 640u ||
+            (address - first) % sizeof(Bullet) != 0)
+            return TouchObject(bullet);
+        if (!g_LiveBullets.Touch((address - first) / sizeof(Bullet),
+                                 LiveBulletJournal::AllParts))
+        {
+            g_Failed = true;
+            return false;
+        }
+        return true;
+    }
+    if (!g_Config.coalesceBulletRuns)
+        return TouchObject(bullet);
+    return g_BulletCapture.TouchSlot(
+        g_BulletManager.bullets, bullet,
+        [](void *data, std::size_t bytes) { return TouchMemory(data, bytes); });
+}
 bool TouchLaser(Laser *laser) { return TouchObject(laser); }
 bool TouchItem(Item *item) { return TouchObject(item); }
 bool TouchEffect(Effect *effect) { return TouchObject(effect); }

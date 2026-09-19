@@ -2,7 +2,7 @@ from pathlib import Path
 import re
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 LOCALIZATION = (ROOT / "src/Localization.cpp").read_text(encoding="utf-8")
 ANM = (ROOT / "src/AnmIdx.hpp").read_text(encoding="utf-8")
 MANAGER = (ROOT / "src/AnmManager.cpp").read_text(encoding="utf-8")

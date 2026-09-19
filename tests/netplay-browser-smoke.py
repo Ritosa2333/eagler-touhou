@@ -1,18 +1,19 @@
 from __future__ import annotations
 
 import os
+import json
 import socket
 import subprocess
 import sys
 import time
 from pathlib import Path
+from integration_support import require_host_relay
 
 from playwright.sync_api import sync_playwright
 
 
 ROOT = Path(__file__).resolve().parents[1]
-WORKSPACE = ROOT.parent
-RELAY_ROOT = WORKSPACE / "eagler-touhou" / "server"
+HOST_ROOT, RELAY_SCRIPT = require_host_relay()
 
 
 def free_port() -> int:
@@ -42,7 +43,7 @@ def wait_relay(process: subprocess.Popen[str], timeout: float = 10.0) -> None:
         line = process.stdout.readline()
         if line:
             print(f"RELAY {line.rstrip()}")
-            if "netplay relay listening" in line:
+            if "LAN relay listening" in line or "netplay relay listening" in line:
                 return
         elif process.poll() is not None:
             raise RuntimeError(f"relay exited early: {process.returncode}")
@@ -129,6 +130,21 @@ def runtime_snapshot(page, target_frame: int = 300):
             replayComparedFrames: Number(runtime?.__eaglerNetplayReplayComparedFrames || 0),
             replayInputMismatch: !!runtime?.__eaglerNetplayReplayInputMismatch,
             replayInputCoverage: Number(runtime?.__eaglerNetplayReplayInputCoverage || 0),
+            directTouchBeginCaptures: Number(runtime?.__eaglerNetplayDirectTouchBeginCaptures || 0),
+            directTouchDeltaCaptures: Number(runtime?.__eaglerNetplayDirectTouchDeltaCaptures || 0),
+            inputRepairs: Number(runtime?.__th06PeerTransport?.inputRepairSent || 0),
+            repairEnabled: runtime?.Module?.eaglerOptions?.netplayReliableInputRepair === true,
+            impairment: (() => {
+              const stats = runtime?.__th06InputImpairment?.stats;
+              return stats ? {
+                matched: Number(stats.matched || 0),
+                sent: Number(stats.sent || 0),
+                blackoutDropped: Number(stats.blackoutDropped || 0),
+                controlInputs: Number(stats.controlInputs || 0),
+                overflow: Number(stats.overflow || 0),
+                errors: Number(stats.errors || 0),
+              } : null;
+            })(),
             receiveBacklog: Math.max(0,
               Number(runtime?.__th06PeerTransport?.received?.length || 0) -
               Number(runtime?.__th06PeerTransport?.receivedHead || 0)),
@@ -146,6 +162,13 @@ def runtime_snapshot(page, target_frame: int = 300):
             denseRollback: !!runtime?.__eaglerNetplayDenseRollback,
             maxSnapshotBytes: Number(runtime?.__eaglerNetplayMaxSnapshotBytes || 0),
             maxSnapshotBlocks: Number(runtime?.__eaglerNetplayMaxSnapshotBlocks || 0),
+            snapshotTicks: Number(runtime?.__eaglerNetplaySnapshotTicks || 0),
+            confirmedOnlyTicks: Number(runtime?.__eaglerNetplayConfirmedOnlyTicks || 0),
+            snapshotPolicy: String(runtime?.__eaglerNetplaySnapshotPolicy || ''),
+            liveBulletAuditRestores: Number(runtime?.__eaglerLiveBulletAuditRestores || 0),
+            restoreCopiedBytes: Number(runtime?.__eaglerNetplayRestoreCopiedBytes || 0),
+            restoreSkippedBytes: Number(runtime?.__eaglerNetplayRestoreSkippedBytes || 0),
+            journalArenaGrowths: Number(runtime?.__eaglerNetplayJournalArenaGrowths || 0),
             transientDisconnectStarted: !!runtime?.__th06PeerTransport?.__smokeTransientDisconnect?.started,
             transientDisconnectRecovered: !!runtime?.__th06PeerTransport?.__smokeTransientDisconnect?.recovered,
             transientDisconnectRestartRequests: Number(runtime?.__th06PeerTransport?.__smokeTransientDisconnect?.restartRequests || 0),
@@ -156,6 +179,14 @@ def runtime_snapshot(page, target_frame: int = 300):
         }""",
         target_frame,
     )
+
+
+def percentile(values: list[float], quantile: float) -> float:
+    if not values:
+        return 0.0
+    ordered = sorted(values)
+    index = min(len(ordered) - 1, int((len(ordered) - 1) * quantile))
+    return float(ordered[index])
 
 
 def pulse_runtime_key(page, key: str, code: str, hold: float = 0.05) -> None:
@@ -195,11 +226,22 @@ def run_smoke(
     relay_drop_first_input_per_edge: bool = False,
     relay_drop_input_latest_from: int = -1,
     relay_drop_input_latest_to: int = -1,
+    reliable_input_repair: bool = True,
+    rtc_input_delay_ms: int | None = None,
+    rtc_input_jitter_ms: int = 0,
+    rtc_input_blackout_ms: int = 0,
+    require_input_repair: bool = False,
     route_skew_player: int = -1,
     route_skew_ms: int = 0,
     require_rollback: bool = False,
     rollback_audit: bool = False,
     dense_rollback_profile: bool = False,
+    coalesce_bullet_runs: bool = False,
+    fast_bulk_copy: bool = False,
+    coalesce_restore: bool = False,
+    live_bullet_snapshots: bool = False,
+    live_bullet_audit: bool = False,
+    snapshot_policy: str = "always",
     scripted_input: bool = False,
     scripted_stress_input: bool = False,
     require_contribution_stats: bool = False,
@@ -218,9 +260,15 @@ def run_smoke(
     cpu_throttle_rate: int = 1,
     report_backlog: bool = False,
     loadout_profile: str = "default",
+    runtime_build: str = "build-web-netplay-th06",
+    shared_font: bool = True,
 ) -> None:
     if player_count not in (2, 3):
         raise ValueError("player_count must be 2 or 3")
+    if snapshot_policy not in ("always", "demand", "frontier"):
+        raise ValueError("snapshot_policy must be always, demand, or frontier")
+    if rtc_input_delay_ms is not None and force_relay:
+        raise ValueError("RTC input impairment requires an RTC transport")
     http_port = free_port()
     relay_port = free_port()
     while relay_port == http_port:
@@ -252,8 +300,8 @@ def run_smoke(
         text=True,
     )
     relay = subprocess.Popen(
-        ["node", "netplay-relay.mjs"],
-        cwd=RELAY_ROOT,
+        ["node", str(RELAY_SCRIPT)],
+        cwd=HOST_ROOT,
         env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -280,6 +328,22 @@ def run_smoke(
             failures = [""] * player_count
             for index, browser in enumerate(browsers):
                 context = browser.new_context(viewport={"width": 960, "height": 720})
+                if rtc_input_delay_ms is not None:
+                    injector = (ROOT / "third_party/eagler-common/testkit/rtc-input-impairment.cjs").read_text(encoding="utf-8")
+                    settings = json.dumps({
+                        "oneWayMs": rtc_input_delay_ms,
+                        "jitterMs": rtc_input_jitter_ms,
+                        "blackoutMs": rtc_input_blackout_ms,
+                        "blackoutFrame": 900,
+                        "inputLabel": "th06-input",
+                        "controlLabel": "th06-control",
+                        "seed": 607 + index,
+                    })
+                    context.add_init_script(
+                        injector +
+                        "\nglobalThis.__th06InputImpairment = installRtcInputImpairment(" +
+                        settings + ");"
+                    )
                 if force_relay:
                     context.add_init_script("delete globalThis.RTCPeerConnection")
                 page = context.new_page()
@@ -312,6 +376,13 @@ def run_smoke(
                     f"&stress={'1' if scripted_stress_input else '0'}"
                     f"&audit={'1' if rollback_audit else '0'}"
                     f"&dense={'1' if dense_rollback_profile else '0'}"
+                    f"&bulletRuns={'1' if coalesce_bullet_runs else '0'}"
+                    f"&bulkCopy={'1' if fast_bulk_copy else '0'}"
+                    f"&coalescedRestore={'1' if coalesce_restore else '0'}"
+                    f"&liveBullets={'1' if live_bullet_snapshots else '0'}"
+                    f"&liveBulletAudit={'1' if live_bullet_audit else '0'}"
+                    f"&snapshotPolicy={snapshot_policy}"
+                    f"&repair={'1' if reliable_input_repair else '0'}"
                     f"&stage={'1' if stage_transition else '0'}"
                     f"&eliminate={'1' if elimination_cycle else '0'}"
                     f"&coop={'1' if coop_transfer_cycle else '0'}"
@@ -323,6 +394,8 @@ def run_smoke(
                     f"&replayplay={'1' if replay_playback_cycle else '0'}"
                     f"&dev={'1' if replay_playback_cycle else '0'}"
                     f"&loadouts={loadout_profile}"
+                    f"&runtimeBuild={runtime_build}"
+                    f"&sharedFont={'1' if shared_font else '0'}"
                 )
                 page.goto(host_url, wait_until="load", timeout=30_000)
 
@@ -354,6 +427,8 @@ def run_smoke(
             rtc_recovery_completed = False
             transient_disconnect_triggered = False
             transient_disconnect_completed = False
+            perf_started_at = None
+            perf_start_frames = None
             while time.time() < deadline:
                 if any(failures):
                     break
@@ -368,6 +443,14 @@ def run_smoke(
                     peak_receive_backlog[index] = max(peak_receive_backlog[index], value["receiveBacklog"])
                     peak_pending_signals[index] = max(peak_pending_signals[index], value["pendingSignals"])
                     peak_send_buffered[index] = max(peak_send_buffered[index], value["sendBuffered"])
+                if (
+                    dense_rollback_profile and perf_started_at is None and
+                    all(value["active"] and value["frame"] >= 60 for value in snapshots)
+                ):
+                    perf_started_at = time.monotonic()
+                    perf_start_frames = [value["frame"] for value in snapshots]
+                    for page in pages:
+                        page.evaluate("globalThis.__th06SmokeRafGaps = []")
                 if ending_cycle:
                     now = time.time()
                     for index, (page, value) in enumerate(zip(pages, snapshots)):
@@ -596,7 +679,15 @@ def run_smoke(
                     for index, value in enumerate(snapshots)
                 ):
                     break
-                if not ending_cycle and not replay_playback_cycle and all(
+                if dense_rollback_profile and all(
+                    value["launched"] and value["active"] and
+                    value["frame"] >= target_frame and
+                    value["confirmed"] >= target_frame - 1 and
+                    value["denseRollback"] and value["maxSnapshotBytes"] > 0
+                    for value in snapshots
+                ):
+                    break
+                if not dense_rollback_profile and not ending_cycle and not replay_playback_cycle and all(
                     value["launched"] and value["active"] and
                     value["frame"] >= target_frame and
                     value["confirmed"] >= target_frame - 1 and value["hashTarget"]
@@ -718,15 +809,24 @@ def run_smoke(
                     f"replay={'/'.join(value['replaySavedPath'] for value in snapshots)}"
                 )
                 return
-            if not all(
-                value["frame"] >= target_frame and
-                value["confirmed"] >= target_frame - 1 and value["hashTarget"]
-                for value in snapshots
-            ):
-                raise RuntimeError(f"telemetry timeout: {snapshots}")
-            hashes = {value["hashTarget"] for value in snapshots}
-            if len(hashes) != 1:
-                raise RuntimeError(f"frame {target_frame} deterministic hash mismatch: {snapshots}")
+            if dense_rollback_profile:
+                if not all(
+                    value["frame"] >= target_frame and
+                    value["confirmed"] >= target_frame - 1 and
+                    value["denseRollback"] and value["maxSnapshotBytes"] > 0
+                    for value in snapshots
+                ):
+                    raise RuntimeError(f"dense telemetry timeout: {snapshots}")
+            else:
+                if not all(
+                    value["frame"] >= target_frame and
+                    value["confirmed"] >= target_frame - 1 and value["hashTarget"]
+                    for value in snapshots
+                ):
+                    raise RuntimeError(f"telemetry timeout: {snapshots}")
+                hashes = {value["hashTarget"] for value in snapshots}
+                if len(hashes) != 1:
+                    raise RuntimeError(f"frame {target_frame} deterministic hash mismatch: {snapshots}")
             if force_relay and any(value["transport"] != "relay" for value in snapshots):
                 raise RuntimeError(f"expected WS relay fallback: {snapshots}")
             if not force_relay and any(value["transport"] != "rtc" for value in snapshots):
@@ -735,17 +835,61 @@ def run_smoke(
                 raise RuntimeError(f"wrong runtime build marker: {snapshots}")
             if require_rollback and sum(value["rollback"] for value in snapshots) <= 0:
                 raise RuntimeError(f"expected rollback but saw none: {snapshots}")
+            if require_input_repair:
+                if any(not value["repairEnabled"] for value in snapshots):
+                    raise RuntimeError(f"reliable repair was not enabled: {snapshots}")
+                impairment = [value["impairment"] for value in snapshots]
+                if any(not value or value["matched"] <= 0 or value["sent"] <= 0 or
+                       value["blackoutDropped"] <= 0 or value["controlInputs"] <= 0 or
+                       value["overflow"] != 0 or value["errors"] != 0
+                       for value in impairment):
+                    raise RuntimeError(f"RTC fast-lane blackout/repair fixture did not execute cleanly: {impairment}")
+                if sum(value["inputRepairs"] for value in snapshots) <= 0:
+                    raise RuntimeError(f"stalled ACK frontier produced no reliable repair: {snapshots}")
+                print(
+                    "TH06 RTC input repair: PASS "
+                    f"repairs={'/'.join(str(value['inputRepairs']) for value in snapshots)} "
+                    f"blackout={'/'.join(str(value['impairment']['blackoutDropped']) for value in snapshots)} "
+                    f"control={'/'.join(str(value['impairment']['controlInputs']) for value in snapshots)}"
+                )
+            if touch_input:
+                targets = range(player_count) if touch_input_player < 0 else (touch_input_player,)
+                for player in targets:
+                    if (snapshots[player]["directTouchBeginCaptures"] <= 0 or
+                        snapshots[player]["directTouchDeltaCaptures"] <= 0):
+                        raise RuntimeError(
+                            f"incremental DirectTouch capture not observed for P{player + 1}: {snapshots}"
+                        )
+            if live_bullet_audit:
+                audited = [value["liveBulletAuditRestores"] for value in snapshots]
+                if any(value <= 0 for value in audited):
+                    raise RuntimeError(f"live Bullet exact-byte audit did not restore: {audited}")
+                print(
+                    "TH06 live Bullet exact-byte audit: PASS "
+                    f"restores={'/'.join(str(value) for value in audited)}"
+                )
             if dense_rollback_profile:
                 dense_details = [
                     (value["maxSnapshotBytes"], value["maxSnapshotBlocks"])
                     for value in snapshots
                 ]
+                specialized_bullet_snapshots = coalesce_bullet_runs or live_bullet_snapshots
                 if any(
                     not value["denseRollback"] or
-                    value["maxSnapshotBytes"] < 2_566_088 or
-                    value["maxSnapshotBlocks"] < 1410 or
                     value["maxSnapshotBytes"] > 4 * 1024 * 1024 or
-                    value["maxSnapshotBlocks"] > 2048
+                    value["maxSnapshotBlocks"] > 2048 or
+                    (
+                        not specialized_bullet_snapshots and
+                        (value["maxSnapshotBytes"] < 2_566_088 or
+                         value["maxSnapshotBlocks"] < 1410)
+                    ) or
+                    (
+                        specialized_bullet_snapshots and
+                        (value["maxSnapshotBytes"] <= 0 or
+                         value["maxSnapshotBytes"] >= 2_566_088 or
+                         value["maxSnapshotBlocks"] <= 0 or
+                         value["maxSnapshotBlocks"] >= 1410)
+                    )
                     for value in snapshots
                 ):
                     raise RuntimeError(
@@ -754,8 +898,39 @@ def run_smoke(
                 print(
                     "TH06 browser netplay dense rollback: "
                     f"bytes={'/'.join(str(value['maxSnapshotBytes']) for value in snapshots)} "
-                    f"blocks={'/'.join(str(value['maxSnapshotBlocks']) for value in snapshots)}"
+                    f"blocks={'/'.join(str(value['maxSnapshotBlocks']) for value in snapshots)} "
+                    f"restoreCopied={'/'.join(str(value['restoreCopiedBytes']) for value in snapshots)} "
+                    f"restoreSkipped={'/'.join(str(value['restoreSkippedBytes']) for value in snapshots)} "
+                    f"arenaGrowths={'/'.join(str(value['journalArenaGrowths']) for value in snapshots)} "
+                    f"snapshots={'/'.join(str(value['snapshotTicks']) for value in snapshots)} "
+                    f"confirmedOnly={'/'.join(str(value['confirmedOnlyTicks']) for value in snapshots)} "
+                    f"policy={'/'.join(value['snapshotPolicy'] for value in snapshots)}"
                 )
+                if perf_started_at is not None and perf_start_frames is not None:
+                    elapsed = max(time.monotonic() - perf_started_at, 1e-6)
+                    raf_gaps = [
+                        [float(gap) for gap in page.evaluate(
+                            "() => [...(globalThis.__th06SmokeRafGaps || [])]"
+                        )]
+                        for page in pages
+                    ]
+                    logic_fps = [
+                        (snapshots[index]["frame"] - perf_start_frames[index]) / elapsed
+                        for index in range(player_count)
+                    ]
+                    raf_p95 = [percentile(values, 0.95) for values in raf_gaps]
+                    raf_p99 = [percentile(values, 0.99) for values in raf_gaps]
+                    raf_max = [max(values) if values else 0.0 for values in raf_gaps]
+                    raf_gt50 = [sum(1 for gap in values if gap > 50.0) for values in raf_gaps]
+                    print(
+                        "TH06 browser netplay dense performance: "
+                        f"logicFps={'/'.join(f'{value:.2f}' for value in logic_fps)} "
+                        f"rafP95={'/'.join(f'{value:.2f}' for value in raf_p95)} "
+                        f"rafP99={'/'.join(f'{value:.2f}' for value in raf_p99)} "
+                        f"rafMax={'/'.join(f'{value:.2f}' for value in raf_max)} "
+                        f"rafGt50={'/'.join(str(value) for value in raf_gt50)} "
+                        f"elapsed={elapsed:.3f}s"
+                    )
             if stage_transition and any(
                 value["highestStage"] < 2 or not value["stageTransition"]
                 for value in snapshots
@@ -818,10 +993,11 @@ def run_smoke(
                 raise RuntimeError(
                     f"transient disconnected state caused false ICE restart or did not settle: {details}"
                 )
+            hash_summary = "n/a-dense-performance-lane" if dense_rollback_profile else next(iter(hashes))
             print(
                 f"TH06 browser netplay smoke: PASS players={player_count} "
                 f"transport={'relay' if force_relay else 'rtc'} frame={target_frame} "
-                f"hash={next(iter(hashes))} "
+                f"hash={hash_summary} "
                 f"frames={'/'.join(str(value['frame']) for value in snapshots)} "
                 f"confirmed={'/'.join(str(value['confirmed']) for value in snapshots)} "
                 f"rollback={'/'.join(str(value['rollback']) for value in snapshots)} "
@@ -849,6 +1025,21 @@ if __name__ == "__main__":
         run_smoke(2, True)
     elif mode == "rtc2":
         run_smoke(2, False)
+    elif mode == "repair2":
+        run_smoke(
+            2,
+            False,
+            target_frame=1800,
+            scripted_stress_input=True,
+            require_rollback=True,
+            reliable_input_repair=True,
+            rtc_input_delay_ms=50,
+            rtc_input_jitter_ms=0,
+            rtc_input_blackout_ms=1000,
+            require_input_repair=True,
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
     elif mode == "rtcmove2":
         run_smoke(
             2,
@@ -980,6 +1171,369 @@ if __name__ == "__main__":
             dense_rollback_profile=True,
             cpu_throttle_rate=3,
         )
+    elif mode == "dense3-ci-runs-frontier":
+        run_smoke(
+            3,
+            True,
+            target_frame=300,
+            relay_delay_ms=20,
+            relay_jitter_ms=15,
+            relay_drop_every=7,
+            require_rollback=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            coalesce_bullet_runs=True,
+            snapshot_policy="frontier",
+            cpu_throttle_rate=3,
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
+    elif mode == "dense2-ci":
+        run_smoke(
+            2,
+            True,
+            target_frame=300,
+            relay_delay_ms=20,
+            relay_jitter_ms=15,
+            relay_drop_every=7,
+            require_rollback=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            cpu_throttle_rate=4,
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
+    elif mode == "dense2-oldjournal":
+        run_smoke(
+            2,
+            True,
+            target_frame=300,
+            relay_delay_ms=20,
+            relay_jitter_ms=15,
+            relay_drop_every=7,
+            require_rollback=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            cpu_throttle_rate=4,
+            runtime_build="build/th06-journal-baseline-b",
+            shared_font=False,
+        )
+    elif mode == "dense2-oldjournal-fixed":
+        run_smoke(
+            2,
+            True,
+            target_frame=300,
+            relay_delay_ms=20,
+            relay_jitter_ms=0,
+            relay_drop_every=7,
+            require_rollback=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            cpu_throttle_rate=4,
+            runtime_build="build/th06-journal-baseline-b",
+            shared_font=False,
+        )
+    elif mode == "dense2-newjournal-fixed":
+        run_smoke(
+            2,
+            True,
+            target_frame=300,
+            relay_delay_ms=20,
+            relay_jitter_ms=0,
+            relay_drop_every=7,
+            require_rollback=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            cpu_throttle_rate=4,
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
+    elif mode == "dense2-runs-fixed":
+        run_smoke(
+            2,
+            True,
+            target_frame=300,
+            relay_delay_ms=20,
+            relay_jitter_ms=0,
+            relay_drop_every=7,
+            require_rollback=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            coalesce_bullet_runs=True,
+            cpu_throttle_rate=4,
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
+    elif mode == "dense2-runs-bulk-fixed":
+        run_smoke(
+            2,
+            True,
+            target_frame=300,
+            relay_delay_ms=20,
+            relay_jitter_ms=0,
+            relay_drop_every=7,
+            require_rollback=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            coalesce_bullet_runs=True,
+            fast_bulk_copy=True,
+            cpu_throttle_rate=4,
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
+    elif mode == "dense2-runs-bulk-frontier-fixed":
+        run_smoke(
+            2,
+            True,
+            target_frame=300,
+            relay_delay_ms=20,
+            relay_jitter_ms=0,
+            relay_drop_every=7,
+            require_rollback=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            coalesce_bullet_runs=True,
+            fast_bulk_copy=True,
+            snapshot_policy="frontier",
+            cpu_throttle_rate=4,
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
+    elif mode == "dense2-runs-frontier-fixed":
+        run_smoke(
+            2,
+            True,
+            target_frame=300,
+            relay_delay_ms=20,
+            relay_jitter_ms=0,
+            relay_drop_every=7,
+            require_rollback=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            coalesce_bullet_runs=True,
+            snapshot_policy="frontier",
+            cpu_throttle_rate=4,
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
+    elif mode == "dense2-runs-restore-fixed":
+        run_smoke(
+            2,
+            True,
+            target_frame=300,
+            relay_delay_ms=20,
+            relay_jitter_ms=0,
+            relay_drop_every=7,
+            require_rollback=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            coalesce_bullet_runs=True,
+            coalesce_restore=True,
+            cpu_throttle_rate=4,
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
+    elif mode == "dense2-runs-restore-frontier-fixed":
+        run_smoke(
+            2,
+            True,
+            target_frame=300,
+            relay_delay_ms=20,
+            relay_jitter_ms=0,
+            relay_drop_every=7,
+            require_rollback=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            coalesce_bullet_runs=True,
+            coalesce_restore=True,
+            snapshot_policy="frontier",
+            cpu_throttle_rate=4,
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
+    elif mode == "dense2-runs-both-fixed":
+        run_smoke(
+            2,
+            True,
+            target_frame=300,
+            relay_delay_ms=20,
+            relay_jitter_ms=0,
+            relay_drop_every=7,
+            require_rollback=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            coalesce_bullet_runs=True,
+            fast_bulk_copy=True,
+            coalesce_restore=True,
+            cpu_throttle_rate=4,
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
+    elif mode == "dense2-runs-both-frontier-fixed":
+        run_smoke(
+            2,
+            True,
+            target_frame=300,
+            relay_delay_ms=20,
+            relay_jitter_ms=0,
+            relay_drop_every=7,
+            require_rollback=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            coalesce_bullet_runs=True,
+            fast_bulk_copy=True,
+            coalesce_restore=True,
+            snapshot_policy="frontier",
+            cpu_throttle_rate=4,
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
+    elif mode == "dense2-live-frontier-fixed":
+        run_smoke(
+            2,
+            True,
+            target_frame=300,
+            relay_delay_ms=20,
+            relay_jitter_ms=0,
+            relay_drop_every=7,
+            require_rollback=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            fast_bulk_copy=True,
+            coalesce_restore=True,
+            live_bullet_snapshots=True,
+            snapshot_policy="frontier",
+            cpu_throttle_rate=4,
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
+    elif mode == "dense2-live-frontier-audit":
+        run_smoke(
+            2,
+            True,
+            target_frame=600,
+            relay_delay_ms=55,
+            relay_jitter_ms=10,
+            require_rollback=True,
+            rollback_audit=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            fast_bulk_copy=True,
+            coalesce_restore=True,
+            live_bullet_snapshots=True,
+            live_bullet_audit=True,
+            snapshot_policy="frontier",
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
+    elif mode == "dense2-ci-runs":
+        run_smoke(
+            2,
+            True,
+            target_frame=300,
+            relay_delay_ms=20,
+            relay_jitter_ms=15,
+            relay_drop_every=7,
+            require_rollback=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            coalesce_bullet_runs=True,
+            cpu_throttle_rate=4,
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
+    elif mode == "dense2-ci-runs-frontier":
+        run_smoke(
+            2,
+            True,
+            target_frame=300,
+            relay_delay_ms=20,
+            relay_jitter_ms=15,
+            relay_drop_every=7,
+            require_rollback=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            coalesce_bullet_runs=True,
+            snapshot_policy="frontier",
+            cpu_throttle_rate=4,
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
+    elif mode == "dense2-ci-runs-audit":
+        run_smoke(
+            2,
+            True,
+            target_frame=600,
+            relay_delay_ms=55,
+            relay_jitter_ms=10,
+            require_rollback=True,
+            rollback_audit=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            coalesce_bullet_runs=True,
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
+    elif mode == "dense2-ci-runs-frontier-audit":
+        run_smoke(
+            2,
+            True,
+            target_frame=600,
+            relay_delay_ms=55,
+            relay_jitter_ms=10,
+            require_rollback=True,
+            rollback_audit=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            coalesce_bullet_runs=True,
+            snapshot_policy="frontier",
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
+    elif mode == "rollback3-runs-frontier":
+        run_smoke(
+            3,
+            True,
+            target_frame=600,
+            relay_delay_ms=55,
+            relay_jitter_ms=10,
+            require_rollback=True,
+            rollback_audit=True,
+            scripted_stress_input=True,
+            coalesce_bullet_runs=True,
+            snapshot_policy="frontier",
+            runtime_build="build/bundled-netplay-validation",
+            shared_font=False,
+        )
+    elif mode == "dense2-ci-fast":
+        run_smoke(
+            2,
+            True,
+            target_frame=120,
+            relay_delay_ms=10,
+            relay_jitter_ms=5,
+            relay_drop_every=7,
+            require_rollback=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
+    elif mode == "dense2-ci-runs-fast":
+        run_smoke(
+            2,
+            True,
+            target_frame=120,
+            relay_delay_ms=10,
+            relay_jitter_ms=5,
+            relay_drop_every=7,
+            require_rollback=True,
+            scripted_stress_input=True,
+            dense_rollback_profile=True,
+            coalesce_bullet_runs=True,
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
+        )
     elif mode == "stress2":
         run_smoke(
             2,
@@ -1090,6 +1644,22 @@ if __name__ == "__main__":
             target_frame=900,
             rollback_audit=True,
             restart_cycle=True,
+        )
+    elif mode == "restart2-runs-frontier":
+        run_smoke(
+            2,
+            True,
+            target_frame=900,
+            relay_delay_ms=55,
+            relay_jitter_ms=10,
+            require_rollback=True,
+            rollback_audit=True,
+            scripted_stress_input=True,
+            restart_cycle=True,
+            coalesce_bullet_runs=True,
+            snapshot_policy="frontier",
+            runtime_build="build/ci-web-netplay",
+            shared_font=False,
         )
     elif mode == "restart3":
         run_smoke(
@@ -1262,5 +1832,22 @@ if __name__ == "__main__":
             replay_playback_cycle=True,
             replay_playback_target=300,
         )
+    elif mode == "replayrollback2-runs-frontier":
+        run_smoke(
+            2,
+            True,
+            target_frame=600,
+            relay_delay_ms=55,
+            relay_jitter_ms=10,
+            require_rollback=True,
+            rollback_audit=True,
+            scripted_stress_input=True,
+            replay_playback_cycle=True,
+            replay_playback_target=300,
+            coalesce_bullet_runs=True,
+            snapshot_policy="frontier",
+            runtime_build="build/replay-audit-candidate",
+            shared_font=False,
+        )
     else:
-        raise SystemExit("usage: netplay-browser-smoke.py [relay2|rtc2|rtcmove2|rtctouch2|routeskew2|relay3|contribution3|rtc3|routeskew3|rollback2|singlemove2|singletouch2|scripted2|stress2|elimination2|elimination3|coop2|pause2|pause3|restart2|restart3|loss2|loss3|frame0drop2|frame0drop3|predlimit2|predlimit3|backlog2|backlog3|loadout2|retry2|retry3|recovery2|recovery3|transient2|transient3|quit2|quit3|ending2|ending3|replay2|replay3|replayrollback2]")
+        raise SystemExit("usage: netplay-browser-smoke.py [relay2|rtc2|repair2|rtcmove2|rtctouch2|routeskew2|relay3|contribution3|rtc3|routeskew3|rollback2|singlemove2|singletouch2|scripted2|stress2|elimination2|elimination3|coop2|pause2|pause3|restart2|restart3|loss2|loss3|frame0drop2|frame0drop3|predlimit2|predlimit3|backlog2|backlog3|loadout2|retry2|retry3|recovery2|recovery3|transient2|transient3|quit2|quit3|ending2|ending3|replay2|replay3|replayrollback2]")

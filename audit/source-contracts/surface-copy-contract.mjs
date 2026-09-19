@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 
-const anm = fs.readFileSync(new URL('../src/AnmManager.cpp', import.meta.url), 'utf8').replaceAll('\r\n', '\n');
-const gles = fs.readFileSync(new URL('../src/graphics/Gles.cpp', import.meta.url), 'utf8').replaceAll('\r\n', '\n');
+const anm = fs.readFileSync(new URL('../../src/AnmManager.cpp', import.meta.url), 'utf8').replaceAll('\r\n', '\n');
+const gles = fs.readFileSync(new URL('../../src/graphics/Gles.cpp', import.meta.url), 'utf8').replaceAll('\r\n', '\n');
 
 function requireText(text, needle, label) {
     if (!text.includes(needle)) {

@@ -175,6 +175,13 @@ ZunResult SoundPlayer::InitializeDSound()
     desiredAudio.freq = 44100;
     desiredAudio.format = SDL_AUDIO_S16;
     desiredAudio.channels = 2;
+#ifdef __EMSCRIPTEN__
+    // SDL's stock Emscripten backend doubles SDL_GetDefaultSampleFramesFromFreq().
+    // Requesting 2048 therefore yields the 4096-frame ScriptProcessor block
+    // that this Runtime's Web audio queue is tuned around, without modifying
+    // the vendored SDL submodule in-place.
+    SDL_SetHintWithPriority(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, "2048", SDL_HINT_OVERRIDE);
+#endif
     this->audioDev = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desiredAudio);
 
     if (this->audioDev == 0)
@@ -806,7 +813,7 @@ bool SoundPlayer::PumpWebAudio()
         return true;
     }
 
-    // A/B robustness envelope paired with the Web SDL backend's 4096-frame
+    // A/B robustness envelope paired with the configured 4096-frame Web SDL
     // ScriptProcessor block. Producer work stays in small 1024-frame slices;
     // only the queued safety window is deeper.
     constexpr u32 FRAMES_PER_CHUNK = 1024;

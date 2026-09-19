@@ -141,6 +141,25 @@ Runtime repository. Runtime code owns deterministic game/session behavior and
 the browser peer transport adapter; server deployment policy remains Host
 infrastructure.
 
+## Validation and test ownership
+
+The fast CI gate for multiplayer/runtime core behavior is:
+
+```sh
+bash scripts/run-core-tests.sh
+```
+
+It compiles and executes the netplay protocol/session, rollback journal, gameplay
+session and multiplayer input-lane tests. GitHub `Eagler Web CI` runs that core
+suite alongside source-only `web-ci-normal` and `web-ci-netplay` Emscripten
+builds.
+
+Browser smoke/replay/audio harnesses under `tests/` provide broader runtime
+evidence when their required browser/resources are available. Static source-text
+checks live under `audit/source-contracts/`; they are architecture/porting
+evidence only and must not be reported as gameplay acceptance. Obsolete checks
+under `audit/historical/` are non-gating historical records.
+
 ## Repository boundaries
 
 Do not commit:

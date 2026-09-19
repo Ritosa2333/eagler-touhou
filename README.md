@@ -1,3 +1,8 @@
+**Eagler branch:**
+Hosted Web Runtime protocol, browser integration, persistence, touch, practice and multiplayer details are documented in [README_EAGLER.md](README_EAGLER.md).
+
+---
+
 [![Discord][discord-badge]][discord] <- click here to join discord server.
 
 [discord]: https://discord.gg/VyGwAjrh9a

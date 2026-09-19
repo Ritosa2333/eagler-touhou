@@ -13,6 +13,7 @@
 #include "i18n.hpp"
 #include "utils.hpp"
 #ifdef TH_ENABLE_NETPLAY
+#include <eagler/netplay/FrameBudget.hpp>
 #include "netplay/Th06LanStageProbe.hpp"
 #endif
 
@@ -211,9 +212,12 @@ RenderResult GameWindow::Render()
         // Keep only a bounded backlog, then run several fixed ticks before the
         // next presentation once required input resumes. This is the same
         // production scheduler rule already validated by TH07.
-        constexpr i32 maxNetplayCatchupTicks = 6;
+        constexpr i32 maxNetplayCatchupTicks =
+            static_cast<i32>(Netplay::FrameBudget::MaxCatchupTicks);
+        const u64 catchupStartNs = SDL_GetTicksNS();
         i32 catchupTicks = 0;
-        while (this->accumulator >= targetDt && catchupTicks < maxNetplayCatchupTicks)
+        while (this->accumulator >= targetDt && Netplay::FrameBudget::CanStartTick(
+                   static_cast<std::uint32_t>(catchupTicks), SDL_GetTicksNS() - catchupStartNs))
         {
             const i32 res = runSimulationTick();
             if (res == 0)

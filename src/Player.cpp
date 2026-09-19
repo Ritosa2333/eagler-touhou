@@ -30,7 +30,7 @@
 #include "utils.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "multiplayer/GameplaySession.hpp"
-#include "netplay/NetplayInput.hpp"
+#include <eagler/netplay/NetplayInput.hpp>
 #endif
 #ifdef TH_ENABLE_NETPLAY
 #include "netplay/NetplaySideEffects.hpp"
@@ -946,6 +946,7 @@ ZunResult Player::RegisterChain(u8 unk)
     p->invulnerabilityTimer.InitializeForPopup();
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     p->initParam = unk;
+    Netplay::Input::ResetPlayerDirectTouch(unk);
     g_PlayerActive[unk] = true;
 #else
     p->unk_9e1 = unk;
@@ -984,6 +985,7 @@ void Player::CutChain()
         player.chainDraw1 = NULL;
         g_Chain.Cut(player.chainDraw2);
         player.chainDraw2 = NULL;
+        Netplay::Input::ResetPlayerDirectTouch(playerId);
         g_PlayerActive[playerId] = false;
     }
 #else
@@ -1528,8 +1530,8 @@ i32 Player::CalcDamageToEnemy(const ZunVec3 *enemyPos, const ZunVec3 *enemyHitbo
     }
     for (idx = 0; idx < ARRAY_SIZE_SIGNED(this->bullets); idx++, bullet++)
     {
-        if (bullet->bulletState == BULLET_STATE_UNUSED ||
-            bullet->bulletState != BULLET_STATE_FIRED && bullet->bulletType != BULLET_TYPE_2)
+        if (bullet->bulletState == PLAYER_BULLET_STATE_UNUSED ||
+            bullet->bulletState != PLAYER_BULLET_STATE_FIRED && bullet->bulletType != BULLET_TYPE_2)
         {
             continue;
         }
@@ -1590,13 +1592,13 @@ i32 Player::CalcDamageToEnemy(const ZunVec3 *enemyPos, const ZunVec3 *enemyHitbo
 
         if (bullet->bulletType != BULLET_TYPE_LASER)
         {
-            if (bullet->bulletState == BULLET_STATE_FIRED)
+            if (bullet->bulletState == PLAYER_BULLET_STATE_FIRED)
             {
                 g_AnmManager->SetAndExecuteScriptIdx(&bullet->sprite, bullet->sprite.anmFileIndex + 0x20);
                 g_EffectManager.SpawnParticles(PARTICLE_EFFECT_UNK_5, &bullet->position, 1, COLOR_WHITE);
                 bullet->position.z = 0.1;
             }
-            bullet->bulletState = BULLET_STATE_COLLIDED;
+            bullet->bulletState = PLAYER_BULLET_STATE_COLLIDED;
             bullet->velocity.x /= 8.0f;
             bullet->velocity.y /= 8.0f;
         }
@@ -1658,7 +1660,7 @@ void Player::UpdatePlayerBullets(Player *player)
     bullet = &player->bullets[0];
     for (idx = 0; idx < ARRAY_SIZE_SIGNED(player->bullets); idx++, bullet++)
     {
-        if (bullet->bulletState == BULLET_STATE_UNUSED)
+        if (bullet->bulletState == PLAYER_BULLET_STATE_UNUSED)
         {
             continue;
         }
@@ -1666,7 +1668,7 @@ void Player::UpdatePlayerBullets(Player *player)
         switch (bullet->bulletType)
         {
         case BULLET_TYPE_1:
-            if (bullet->bulletState == BULLET_STATE_FIRED)
+            if (bullet->bulletState == PLAYER_BULLET_STATE_FIRED)
             {
                 if (player->positionOfLastEnemyHit.x > -100.0f && bullet->unk_140.AsFrames() < 40 &&
                     bullet->unk_140.HasTicked())
@@ -1712,7 +1714,7 @@ void Player::UpdatePlayerBullets(Player *player)
             break;
 
         case BULLET_TYPE_2:
-            if (bullet->bulletState == BULLET_STATE_FIRED)
+            if (bullet->bulletState == PLAYER_BULLET_STATE_FIRED)
             {
                 bullet->velocity.y -= 0.3f;
             }
@@ -1740,21 +1742,21 @@ void Player::UpdatePlayerBullets(Player *player)
             break;
         }
 
-        bullet->MoveHorizontal(&bullet->position.x);
+        bullet->sprite.pos.x = bullet->position.x += bullet->velocity.x * g_Supervisor.effectiveFramerateMultiplier;
 
-        bullet->MoveVertical(&bullet->position.y);
+        bullet->sprite.pos.y = bullet->position.y += bullet->velocity.y * g_Supervisor.effectiveFramerateMultiplier;
 
         bullet->sprite.pos.z = bullet->position.z;
         if (bullet->bulletType != BULLET_TYPE_LASER &&
             !g_GameManager.IsInBounds(bullet->position.x, bullet->position.y, bullet->sprite.sprite->widthPx,
                                       bullet->sprite.sprite->heightPx))
         {
-            bullet->bulletState = BULLET_STATE_UNUSED;
+            bullet->bulletState = PLAYER_BULLET_STATE_UNUSED;
         }
 
         if (g_AnmManager->ExecuteScript(&bullet->sprite))
         {
-            bullet->bulletState = BULLET_STATE_UNUSED;
+            bullet->bulletState = PLAYER_BULLET_STATE_UNUSED;
         }
         bullet->unk_140.Tick();
     }
@@ -1886,8 +1888,6 @@ ZunResult Player::HandlePlayerInputs()
 {
     float intermediateFloat;
 
-    float *posCenterY;
-    float *posCenterX;
     float horizontalOrbOffset;
     float verticalOrbOffset;
 
@@ -2144,9 +2144,15 @@ ZunResult Player::HandlePlayerInputs()
             ReplayExtension::CaptureDirectTouch(touchDx, touchDy, touchUnlimited);
 
         const bool sampledLogicalTouch = sampledReplayTouch || sampledNetplayTouch;
+        const bool incrementalLogicalTouch =
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            sampledNetplayTouch && Netplay::Input::UsesIncrementalDirectTouch(this->initParam);
+#else
+            false;
+#endif
         const bool consumeSynchronizedLocalTouch =
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-            sampledNetplayTouch && !speculative && canSampleRawTouch &&
+            sampledNetplayTouch && !incrementalLogicalTouch && !speculative && canSampleRawTouch &&
             this->initParam == MultiplayerGameplay::GetLocalPlayerSlot();
 #else
             false;
@@ -2191,6 +2197,13 @@ ZunResult Player::HandlePlayerInputs()
         {
             Touch::SetPlayerDelta(reqGameDx / focusRatio, reqGameDy / focusRatio);
         }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if (focusRatio != 0.0f && incrementalLogicalTouch)
+        {
+            Netplay::Input::SetDirectTouchRemainder(
+                this->initParam, reqGameDx / focusRatio, reqGameDy / focusRatio);
+        }
+#endif
 
         const f32 hx = this->horizontalMovementSpeedMultiplierDuringBomb *
                        g_Supervisor.effectiveFramerateMultiplier;
@@ -2234,6 +2247,23 @@ ZunResult Player::HandlePlayerInputs()
                 Touch::SetPlayerDelta(0.0f, 0.0f);
             }
         }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if (focusRatio != 0.0f && incrementalLogicalTouch)
+        {
+            if (!touchUnlimited &&
+                currentSpeedSq > effectiveMaxSpeed * effectiveMaxSpeed && currentSpeedSq > 0.0f)
+            {
+                Netplay::Input::ConsumeDirectTouchRemainder(
+                    this->initParam,
+                    hx != 0.0f ? consumedGameDx / focusRatio : touchDx,
+                    vy != 0.0f ? consumedGameDy / focusRatio : touchDy);
+            }
+            else
+            {
+                Netplay::Input::SetDirectTouchRemainder(this->initParam, 0.0f, 0.0f);
+            }
+        }
+#endif
 
         this->playerDirection = MOVEMENT_NONE;
     }
@@ -2284,11 +2314,9 @@ ZunResult Player::HandlePlayerInputs()
     this->previousVerticalSpeed = verticalSpeed;
 
     // TODO: Match stack variables here
-    posCenterX = &this->positionCenter.x;
-    *posCenterX +=
+    this->positionCenter.x +=
         horizontalSpeed * this->horizontalMovementSpeedMultiplierDuringBomb * g_Supervisor.effectiveFramerateMultiplier;
-    posCenterY = &this->positionCenter.y;
-    *posCenterY +=
+    this->positionCenter.y +=
         verticalSpeed * this->verticalMovementSpeedMultiplierDuringBomb * g_Supervisor.effectiveFramerateMultiplier;
 
     if (this->positionCenter.x < g_GameManager.playerMovementAreaTopLeftPos.x)
@@ -2443,7 +2471,7 @@ void Player::DrawBullets(Player *p)
     bullets = p->bullets;
     for (bulletIdx = 0; bulletIdx < ARRAY_SIZE_SIGNED(p->bullets); bulletIdx++, bullets++)
     {
-        if (bullets->bulletState != BULLET_STATE_FIRED)
+        if (bullets->bulletState != PLAYER_BULLET_STATE_FIRED)
         {
             continue;
         }
@@ -2472,7 +2500,7 @@ void Player::DrawBulletExplosions(Player *p)
     bullets = p->bullets;
     for (bulletIdx = 0; bulletIdx < ARRAY_SIZE_SIGNED(p->bullets); bulletIdx++, bullets++)
     {
-        if (bullets->bulletState != BULLET_STATE_COLLIDED)
+        if (bullets->bulletState != PLAYER_BULLET_STATE_COLLIDED)
         {
             continue;
         }
@@ -2579,7 +2607,7 @@ void Player::SpawnBullets(Player *p, u32 timer)
 
     for (curBulletIdx = 0; curBulletIdx < ARRAY_SIZE_SIGNED(p->bullets); curBulletIdx++, curBullet++)
     {
-        if (curBullet->bulletState != BULLET_STATE_UNUSED)
+        if (curBullet->bulletState != PLAYER_BULLET_STATE_UNUSED)
         {
             continue;
         }
@@ -2597,7 +2625,7 @@ void Player::SpawnBullets(Player *p, u32 timer)
             curBullet->sprite.pos.x = curBullet->position.x;
             curBullet->sprite.pos.y = curBullet->position.y;
             curBullet->sprite.pos.z = 0.495;
-            curBullet->bulletState = BULLET_STATE_FIRED;
+            curBullet->bulletState = PLAYER_BULLET_STATE_FIRED;
         }
         if (bulletResult == FBR_STOP_SPAWNING)
         {
@@ -2623,6 +2651,7 @@ FireBulletResult Player::FireSingleBullet(Player *player, PlayerBullet *bullet, 
     i32 bulletFrame;
     i32 unused;
     i32 unused2;
+    i32 unused3;
 
     const i32 currentPower =
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -2671,10 +2700,8 @@ FireBulletResult Player::FireSingleBullet(Player *player, PlayerBullet *bullet, 
         {
             bullet->position = player->orbsPosition[bulletData->spawnPositionIdx - 1];
         }
-        pfVar4 = &bullet->position.x;
-        *pfVar4 = *pfVar4 + bulletData->motion.x;
-        pfVar4 = &bullet->position.y;
-        *pfVar4 = *pfVar4 + bulletData->motion.y;
+        bullet->position.x += bulletData->motion.x;
+        bullet->position.y += bulletData->motion.y;
 
         bullet->position.z = 0.495f;
         bullet->prevPosition = bullet->position;
@@ -2693,7 +2720,7 @@ FireBulletResult Player::FireSingleBullet(Player *player, PlayerBullet *bullet, 
         bullet->unk_140.InitializeForPopup();
 
         bullet->bulletType = bulletData->bulletType;
-        bullet->damage = bulletData->unk_1c;
+        bullet->damage = bulletData->damage;
         if (bulletData->bulletSoundIdx >= 0)
         {
             g_SoundPlayer.PlaySoundByIdx((SoundIdx)bulletData->bulletSoundIdx);

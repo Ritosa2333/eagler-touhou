@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def text(path: str) -> str:
@@ -15,6 +15,9 @@ supervisor = text("src/Supervisor.cpp")
 window = text("src/GameWindow.cpp")
 main = text("src/main.cpp")
 rollback = text("src/netplay/Th06RollbackState.cpp")
+canonical = text("src/netplay/Th06CanonicalHash.cpp")
+touch = text("src/Touch.cpp")
+protocol_config = text("src/netplay/NetplayProtocolConfig.hpp")
 
 # Production driver belongs only to the isolated netplay binary.  Do not stop
 # at the first nested endif(): the common-library discovery logic is itself
@@ -34,14 +37,33 @@ assert driver.index("g_SimFrame == 0 && ConfirmedThroughAllRemotes() == INVALID_
 
 # Retry/stall retransmits the already scheduled logical sample instead of
 # touching keyboard/controller/touch a second time.
-assert "bool SendLocalFrame(std::uint32_t frame)" in driver
-assert "const FrameInput input = CaptureLocalInput(frame);" in driver
+assert "bool SendLocalFrame(std::uint32_t captureFrame)" in driver
+assert "const FrameInput input = CaptureLocalInput(captureFrame);" in driver
+assert "g_Core.ScheduleLocalInput(captureFrame, input)" in driver
+assert "SendScheduledLocalFrame(g_Core.LocalFrameForCapture(captureFrame))" in driver
 assert "bool SendScheduledLocalFrame(std::uint32_t frame)" in driver
 retry_body = driver.split("bool SendScheduledLocalFrame(std::uint32_t frame)\n{", 1)[1].split(
     "bool SendTailKeepalive()", 1
 )[0]
 assert "CaptureLocalInput" not in retry_body
 assert "g_Core.BuildInputPacket" in retry_body
+assert "const bool localPresent = g_Core.HasLocalCapture(g_SimFrame);" in driver
+assert "SendScheduledLocalFrame(g_Core.LocalFrameForCapture(g_SimFrame))" in driver
+
+# DirectTouch device displacement is transferred exactly once into the logical
+# capture stream. Limited-speed remainder then belongs to rewindable simulation
+# state rather than the machine-local Touch producer.
+assert "Touch::TakePlayerDelta(&x, &y, &beginGesture)" in driver
+assert "Input::CaptureDirectTouchDelta(x, y, Touch::IsUnlimited(), beginGesture)" in driver
+assert "g_AccumDx = g_AccumDy = 0.0f;" in touch
+assert "Netplay::Input::UsesIncrementalDirectTouch(this->initParam)" in player
+assert "Netplay::Input::SetDirectTouchRemainder" in player
+assert "Netplay::Input::ConsumeDirectTouchRemainder" in player
+assert "TouchObject(&Input::GetDirectTouchStates())" in rollback
+assert "for (const auto &touch : Input::GetDirectTouchStates())" in canonical
+assert "input.Scalar(touch.x)" in canonical and "input.Scalar(touch.y)" in canonical
+assert "input.Scalar(touch.active)" in canonical
+assert "MaxAnalogMode = 4" in protocol_config
 
 # A stalled network gate owns no simulation time. GameWindow must keep a
 # bounded backlog and only subtract targetDt after LastTickAdvanced().

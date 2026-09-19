@@ -55,7 +55,7 @@ Goal: ordinary/current TH06 Eagler baseline with no legacy `MultiplayerRuntime` 
 - [x] current TH06 touch/replay/thprac focused checks still pass where relevant. (`test-thprac-source-contract`, `test-thcrap-source-contract`, time-stop, surface-copy; ordinary Emscripten syntax compile PASS.)
 - [x] source diff review confirms valid current Eagler platform/render/audio changes were not reverted.
 
-Build note: the earlier MCP limitation is no longer the latest evidence. A current official ordinary Emscripten/Ninja Web link now passes from `build-web-ordinary-audit`. `test-bullet-render-path-contract.mjs` is still an obsolete pre-float-Draw contract which demands `rintf`; it must not be satisfied by reintroducing the user-rejected pixel quantization.
+Build note: the earlier MCP limitation is no longer the latest evidence. A current official ordinary Emscripten/Ninja Web link now passes from `build-web-ordinary-audit`. `audit/historical/obsolete-bullet-render-path-contract.mjs` is still an obsolete pre-float-Draw contract which demands `rintf`; it must not be satisfied by reintroducing the user-rejected pixel quantization.
 
 ---
 

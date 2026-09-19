@@ -10,6 +10,7 @@
 #include "Player.hpp"
 #include "ScreenEffect.hpp"
 #include "Supervisor.hpp"
+#include "ZunMemory.hpp"
 #include "i18n.hpp"
 #include "utils.hpp"
 #include <cstdlib>

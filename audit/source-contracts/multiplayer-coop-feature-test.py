@@ -1,6 +1,6 @@
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 game_manager = (ROOT / "src/GameManager.cpp").read_text(encoding="utf-8")
 resources = (ROOT / "src/MultiplayerResources.cpp").read_text(encoding="utf-8")
 enemy = (ROOT / "src/EnemyManager.cpp").read_text(encoding="utf-8")
@@ -128,13 +128,17 @@ require("compactMultiplayerHud ? multiplayerHudBaseY + 148.0f : 206.0f" in gui a
         "compactMultiplayerHud ? multiplayerHudBaseY + 164.0f : 226.0f" in gui,
         "shared TH06 Graze/Point rows follow TH07's offsets below the multiplayer rows")
 require("const bool sampledLogicalTouch = sampledReplayTouch || sampledNetplayTouch;" in player and
+        "const bool incrementalLogicalTouch" in player and
+        "sampledNetplayTouch && Netplay::Input::UsesIncrementalDirectTouch(this->initParam)" in player and
         "const bool consumeSynchronizedLocalTouch" in player and
-        "sampledNetplayTouch && !speculative && canSampleRawTouch" in player and
+        "sampledNetplayTouch && !incrementalLogicalTouch && !speculative && canSampleRawTouch" in player and
         "this->initParam == MultiplayerGameplay::GetLocalPlayerSlot()" in player,
         "TH06 synchronized local direct touch follows TH07 ownership/consumption gating")
 require(player.count("(!sampledLogicalTouch || consumeSynchronizedLocalTouch)") >= 2 and
         "Touch::ConsumePlayerDelta(consumeX, consumeY);" in player and
-        "Touch::SetPlayerDelta(0.0f, 0.0f);" in player,
-        "TH06 consumes the local raw touch delta after deterministic netplay replay of that sample")
+        "Touch::SetPlayerDelta(0.0f, 0.0f);" in player and
+        "Netplay::Input::SetDirectTouchRemainder" in player and
+        "Netplay::Input::ConsumeDirectTouchRemainder" in player,
+        "TH06 keeps legacy raw-touch consumption separate from rollback-owned incremental remainder")
 
 print("TH06 multiplayer cooperative feature contract: PASS")
