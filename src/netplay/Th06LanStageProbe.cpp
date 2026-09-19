@@ -12,6 +12,7 @@
 #include <eagler/netplay/WebSocketTransport.hpp>
 #include <eagler/netplay/InputRepairBudget.hpp>
 #include <eagler/netplay/FrameAdvantageWindow.hpp>
+#include <eagler/netplay/FramePacingPolicy.hpp>
 
 #include "BulletManager.hpp"
 #include "AsciiManager.hpp"
@@ -345,11 +346,6 @@ bool ProbeMode()
 #endif
 }
 
-std::int32_t SignedFrameDelta(std::uint32_t lhs, std::uint32_t rhs)
-{
-    return static_cast<std::int32_t>(lhs - rhs);
-}
-
 void RecordTimeSyncSample(const InputPacket &packet)
 {
     // GGPO/GGRS maintain time-sync state per endpoint.  A 3P room must not
@@ -364,11 +360,9 @@ void RecordTimeSyncSample(const InputPacket &packet)
         return;
     lastRemoteFrame = packet.senderFrame;
 
-    const std::int32_t localAdvantage = SignedFrameDelta(g_SimFrame, packet.senderFrame);
-    const std::int32_t advantageDifference =
-        localAdvantage - static_cast<std::int32_t>(packet.frameAdvantage);
-    const std::int32_t inferredLead = advantageDifference / 2;
-    if (std::abs(inferredLead) > 30)
+    const std::int32_t inferredLead = FramePacingPolicy::InferLead(
+        g_SimFrame, packet.senderFrame, packet.frameAdvantage);
+    if (!FramePacingPolicy::AcceptLead(inferredLead))
         return;
 
     FrameAdvantageWindow &state = g_PeerTimeSync[packet.senderPlayer];
@@ -389,11 +383,8 @@ void RecordTimeSyncSample(const InputPacket &packet)
         return;
     g_RecommendedLead = recommendedLead;
 
-    const double deadbandLead = std::abs(recommendedLead) < 0.5 ? 0.0 : recommendedLead;
-    const double desiredScale = std::clamp(1.0 + deadbandLead * 0.003, 0.98, 1.02);
-    g_SimulationIntervalScale += (desiredScale - g_SimulationIntervalScale) * 0.08;
-    if (std::abs(g_SimulationIntervalScale - 1.0) < 0.0002)
-        g_SimulationIntervalScale = 1.0;
+    g_SimulationIntervalScale =
+        FramePacingPolicy::UpdateScale(g_SimulationIntervalScale, recommendedLead);
 #ifdef __EMSCRIPTEN__
     EM_ASM({
         globalThis.__eaglerNetplayLanFrameAdvantage = $0;
@@ -1677,8 +1668,9 @@ bool SendScheduledLocalFrame(std::uint32_t frame)
             packet.senderFrame = g_SimFrame;
             if (g_LastRemoteSenderFrame[peer] != INVALID_FRAME)
             {
-                packet.frameAdvantage = static_cast<std::int16_t>(SignedFrameDelta(
-                    g_SimFrame, g_LastRemoteSenderFrame[peer]));
+                packet.frameAdvantage = static_cast<std::int16_t>(
+                    FramePacingPolicy::SignedFrameDelta(
+                        g_SimFrame, g_LastRemoteSenderFrame[peer]));
             }
             std::vector<std::uint8_t> wire;
             if (!EncodeInputPacket(packet, &wire) ||
