@@ -416,29 +416,12 @@ bool UseStageTransitionTest()
     return g_TestUseStageTransition;
 }
 
-std::uint32_t ConfirmedThroughAllRemotes()
-{
-    std::uint32_t confirmed = INVALID_FRAME;
-    bool found = false;
-    for (std::uint8_t player = 0; player < g_PlayerCount; ++player)
-    {
-        if (player == g_LocalPlayer)
-            continue;
-        const std::uint32_t value = g_Core.ConfirmedThrough(player);
-        if (!found || value == INVALID_FRAME ||
-            (confirmed != INVALID_FRAME && value < confirmed))
-            confirmed = value;
-        found = true;
-    }
-    return found ? confirmed : INVALID_FRAME;
-}
-
 bool CaptureConfirmedReplayAuditFrames()
 {
 #if defined(TH_DEV_TOOLS) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
     if (!UseReplayPlaybackCycle() || g_SimFrame == 0)
         return true;
-    const std::uint32_t confirmed = ConfirmedThroughAllRemotes();
+    const std::uint32_t confirmed = g_Core.ConfirmedThroughAllRemotes();
     const std::uint32_t lastSimulated = g_SimFrame - 1;
     const std::uint32_t lastAvailable = std::min(confirmed, lastSimulated);
     while (g_NextReplayAuditFrame <= lastAvailable)
@@ -471,12 +454,12 @@ void PublishConfirmedSpectatorFrames()
             state.simFrame = $2 >>> 0;
             state.confirmed = $3 >>> 0;
         }, hasSpectators ? 1 : 0, g_NextSpectatorPublishFrame, g_SimFrame,
-            ConfirmedThroughAllRemotes());
+            g_Core.ConfirmedThroughAllRemotes());
 #endif
     if (g_SpectatorMode || g_LocalPlayer != 0 || g_SimFrame == 0)
         return;
     const std::uint32_t lastAvailable =
-        std::min(ConfirmedThroughAllRemotes(), g_SimFrame - 1);
+        std::min(g_Core.ConfirmedThroughAllRemotes(), g_SimFrame - 1);
     while (g_NextSpectatorPublishFrame <= lastAvailable)
     {
         const FrameDecision decision = g_Core.PrepareFrame(g_NextSpectatorPublishFrame);
@@ -748,7 +731,7 @@ bool RemoteInputsTimedOut()
     // finalization state and misreport the expected stationary confirmation
     // frontier as a dead peer.
     if (UseReplayPlaybackCycle() && g_SimFrame >= g_TestFrames &&
-        ConfirmedThroughAllRemotes() >= g_TestFrames - 1)
+        g_Core.ConfirmedThroughAllRemotes() >= g_TestFrames - 1)
         return false;
 
     // Native sbrik can contract a 3P UDP session around an absent guest by
@@ -1242,7 +1225,7 @@ void Fail(const char *reason)
         "netplay lan stage: FAIL player=%u reason=%s sim=%u sent=%u recv=%u rollback=%u resim=%u predicted=%u confirmed=%u buffered=%llu error=%s\n",
         static_cast<unsigned>(g_LocalPlayer), reason, g_SimFrame, g_SentPackets,
         g_ReceivedPackets, g_RollbackCount, g_ResimulatedFrames, g_PredictedFrames,
-        static_cast<unsigned>(ConfirmedThroughAllRemotes()),
+        static_cast<unsigned>(g_Core.ConfirmedThroughAllRemotes()),
         static_cast<unsigned long long>(TransportBufferedAmount()),
         TransportLastError().c_str());
 }
@@ -1725,7 +1708,7 @@ int SimulateFrame(std::uint32_t frame, const FrameDecision &decision, bool resim
     const bool snapshotAllowed = !g_SpectatorMode;
     const bool captureRollback = snapshotAllowed &&
         (!g_DemandSnapshots || NeedsRollbackSnapshot(
-            frame, ConfirmedThroughAllRemotes(), decision.predictedMask,
+            frame, g_Core.ConfirmedThroughAllRemotes(), decision.predictedMask,
             resimulation, g_FrontierSnapshots));
     if (snapshotAllowed && !captureRollback)
     {
@@ -2413,7 +2396,7 @@ int RunCalcChain()
 #ifdef __EMSCRIPTEN__
     if (ProductionLanMode())
     {
-        const std::uint32_t confirmed = ConfirmedThroughAllRemotes();
+        const std::uint32_t confirmed = g_Core.ConfirmedThroughAllRemotes();
         EM_ASM({
             globalThis.__eaglerNetplayLanConfirmed = $0;
             globalThis.__eaglerNetplayLanRollback = $1;
@@ -2440,7 +2423,7 @@ int RunCalcChain()
 
         // Frame zero is the session barrier. Receive every peer's real first
         // input before gameplay advances. Later frames may use prediction.
-        if (g_SimFrame == 0 && ConfirmedThroughAllRemotes() == INVALID_FRAME)
+        if (g_SimFrame == 0 && g_Core.ConfirmedThroughAllRemotes() == INVALID_FRAME)
         {
             if (UsePhysicalInput() && !g_PhysicalLoggedFrame0Wait)
             {
@@ -2468,7 +2451,7 @@ int RunCalcChain()
         // subsequent keys.  Keep exchanging frames, but wait one round trip
         // for every remote player's real input while shared UI is active.
         if (SharedUiNeedsConfirmedInputs() &&
-            ConfirmedThroughAllRemotes() < g_SimFrame)
+            g_Core.ConfirmedThroughAllRemotes() < g_SimFrame)
             return CHAIN_CALLBACK_RESULT_CONTINUE;
 
         const FrameDecision decision = g_Core.PrepareFrame(g_SimFrame);
@@ -2511,7 +2494,7 @@ int RunCalcChain()
 
 #if defined(__EMSCRIPTEN__) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(TH_DEV_TOOLS)
     if (UseReplayPlaybackCycle() && g_SimFrame >= g_TestFrames &&
-        ConfirmedThroughAllRemotes() >= g_TestFrames - 1 &&
+        g_Core.ConfirmedThroughAllRemotes() >= g_TestFrames - 1 &&
         !g_Core.HasRollbackRequest())
     {
         // Hidden short end-to-end Replay gate. Save only after every input in
@@ -2540,7 +2523,7 @@ int RunCalcChain()
 #endif
 
     if (ProbeMode() && g_SimFrame >= g_TestFrames &&
-        ConfirmedThroughAllRemotes() >= g_TestFrames - 1 &&
+        g_Core.ConfirmedThroughAllRemotes() >= g_TestFrames - 1 &&
         !g_Core.HasRollbackRequest())
     {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -2602,7 +2585,7 @@ int RunCalcChain()
             g_TestFrames, g_SentPackets,
             g_ReceivedPackets, g_SessionPacketsSent, g_SessionPacketsReceived,
             g_RollbackCount, g_ResimulatedFrames, g_MaxRollbackSpan, g_PredictedFrames,
-            static_cast<unsigned>(ConfirmedThroughAllRemotes()),
+            static_cast<unsigned>(g_Core.ConfirmedThroughAllRemotes()),
             static_cast<unsigned long long>(g_MaxSnapshotBytes),
             static_cast<unsigned long long>(TransportBufferedAmount()),
             g_PeakEnemies, g_PeakBullets, g_PeakLasers, g_PeakItems,
