@@ -58,6 +58,7 @@ assert.deepEqual(REQUIRED_TOUCH_BEHAVIORS.map(item => item.id), [
   "focus-two-finger",
   "fire-bomb-pause",
   "deathbomb-preservation",
+  "unlimited-cheat-processing-rate",
   "double-tap-bomb",
   "menu-dialogue-navigation",
   "sensitivity-100-300",

@@ -75,6 +75,8 @@ adapter must preserve:
 - Fire, Bomb and Escape/Pause through ordinary logical input;
 - original deathbomb behavior, including keeping a held movement gesture alive
   when Bomb is consumed;
+- actual use of non-zero Unlimited Touch movement marks the run as cheat-movement
+  and forces the title's Result / saved-Replay processing-drop field to 100%;
 - the user-enabled double-tap Bomb gesture;
 - menu/dialogue navigation through normal direction/confirm/cancel/skip input;
 - the shared 100–300% sensitivity range at Launcher and Runtime boundaries;
