@@ -8,6 +8,7 @@ const GAME_PATTERN = `(?:${THCRAP_RUNTIME_COMPILER_GAMES.join("|")})`;
 const MESSAGE_DIFF = new RegExp(`^${GAME_PATTERN}\\/(msg[1-8][a-z]{0,2}\\.dat)\\.jdiff$`, "i");
 const ENDING_DIFF = new RegExp(`^${GAME_PATTERN}\\/(end[0-9]{2}[a-z]?\\.end)\\.jdiff$`, "i");
 const LOCALIZATION_TABLE = new RegExp(`^(${GAME_PATTERN})\\/(spells|stages|musiccmt)\\.js$`, "i");
+const SPELL_COMMENTS_TABLE = new RegExp(`^(${GAME_PATTERN})\\/spellcomments\\.js$`, "i");
 const GAME_OPTIONS = new RegExp(`^(?:(${GAME_PATTERN})\\/)?(${GAME_PATTERN})\\.js$`, "i");
 
 function assertJsonTree(value, depth = 0) {
@@ -557,6 +558,10 @@ export function encodeLocalizationTable(parsed, { game, table } = {}) {
       pushLocalizationRecord(records, key, 0, value, `${table}.${rawKey}`);
     }
   }
+  return serializeLocalizationRecords(records);
+}
+
+function serializeLocalizationRecords(records) {
   records.sort((left, right) => left.key - right.key || left.line - right.line);
   const header = Buffer.alloc(8);
   header.write("ETL1", 0, "ascii");
@@ -570,6 +575,54 @@ export function encodeLocalizationTable(parsed, { game, table } = {}) {
     chunks.push(item, record.bytes);
   }
   return Buffer.concat(chunks);
+}
+
+// spellcomments.js is a per-spell nested table consumed by thcrap's TSA
+// spell_comment_line/spell_owner breakpoints.  The practice details screen
+// rewrites the two displayed comment lines through comment_1[0]/comment_1[1]
+// and the owner through the "owner" field, so the ETL stores comment_N line
+// indices as (N-1)*stride+line and the owner at a reserved line.
+const SPELL_COMMENT_LINE_STRIDE = 0x100;
+export const SPELL_COMMENT_OWNER_LINE = 0x200;
+
+export function encodeSpellCommentsTable(parsed, { game } = {}) {
+  assertJsonTree(parsed);
+  if (!GAME_VERSION[game]) throw new TypeError(`unsupported localization game: ${game}`);
+  const records = [];
+  for (const [rawKey, value] of Object.entries(parsed)) {
+    if (!/^\d+$/.test(rawKey)) continue;
+    const key = Number(rawKey);
+    if (value === null) continue;
+    if (typeof value !== "object" || Array.isArray(value)) {
+      throw new TypeError(`spellcomments.${rawKey}: expected an object`);
+    }
+    for (const [field, fieldValue] of Object.entries(value)) {
+      if (field === "owner") {
+        if (typeof fieldValue !== "string") {
+          throw new TypeError(`spellcomments.${rawKey}.owner: expected a string`);
+        }
+        pushLocalizationRecord(records, key, SPELL_COMMENT_OWNER_LINE, fieldValue,
+          `spellcomments.${rawKey}.owner`);
+        continue;
+      }
+      const comment = /^comment_(\d+)$/.exec(field);
+      if (!comment) continue;
+      const number = Number(comment[1]);
+      if (!Number.isInteger(number) || number < 1 || number > 0x10000 / SPELL_COMMENT_LINE_STRIDE) {
+        throw new TypeError(`spellcomments.${rawKey}.${field}: invalid comment index`);
+      }
+      if (fieldValue === null) continue;
+      if (!Array.isArray(fieldValue)) {
+        throw new TypeError(`spellcomments.${rawKey}.${field}: expected an array of lines`);
+      }
+      for (let line = 0; line < fieldValue.length; line++) {
+        if (fieldValue[line] === null) continue;
+        pushLocalizationRecord(records, key, (number - 1) * SPELL_COMMENT_LINE_STRIDE + line,
+          fieldValue[line], `spellcomments.${rawKey}.${field}[${line}]`);
+      }
+    }
+  }
+  return serializeLocalizationRecords(records);
 }
 
 export class ThcrapRuntimeCompiler {
@@ -641,6 +694,16 @@ export class ThcrapRuntimeCompiler {
         extension: ".etl",
         format: "eagler-localization-table/1",
         targetPath: `/thcrap/${game.toLowerCase()}/localization/${table.toLowerCase()}.etl`
+      };
+    }
+    const spellComments = SPELL_COMMENTS_TABLE.exec(resource.path);
+    if (spellComments) {
+      const game = spellComments[1].toLowerCase();
+      return {
+        bytes: encodeSpellCommentsTable(parsed, { game }),
+        extension: ".etl",
+        format: "eagler-localization-table/1",
+        targetPath: `/thcrap/${game}/localization/spellcomments.etl`
       };
     }
     if (resource.path === "themes.js") {
