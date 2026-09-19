@@ -21,6 +21,28 @@ Adapter 协议通常无法自然推导出的成品行为要求。
 
 除非本文明确覆盖某个行为，原作本身的 gameplay / menu 语义仍是默认基线。
 
+## Gamepad
+
+### 手柄键位必须跨设备保持同一逻辑语义
+
+**目的：同一份游戏内 KeyConfig 在 DS / Xbox / Steam Controller 等受支持手柄上必须表示同一组逻辑按钮，不能因为操作系统、浏览器或驱动暴露的 raw button index 不同而改变。**
+
+KeyConfig 读取到的按钮编号与 Gameplay 实际消费的按钮编号必须来自同一个标准化手柄语义。玩家在 KeyConfig 中重新绑定 Slow / Shot / Bomb / Pause 等动作后，进入游戏必须立即按该绑定工作；不能出现配置菜单完全收不到手柄、配置显示已改变但 Gameplay 仍读另一套编号、或换一种手柄后同一编号变成另一颗物理键。
+
+默认绑定本身也必须在常见标准手柄上提供可用的 Shoot / Bomb / Focus / Pause 等核心操作；KeyConfig 是自定义入口，不应成为“先修好默认手柄支持才能玩”的必经步骤。
+
+方向键同样不能依赖某个驱动恰好把 D-pad 暴露成固定 raw buttons；D-pad 应进入稳定的方向语义。
+
+**参考实现：** TH06 / TH07 已通过 SDL Gamepad 标准化物理控制器。TH08 / TH10 也应在平台输入边界先使用 `SDL_Gamepad` 将 South / East / West / North、肩键、Start / Back / Stick 等转换为稳定的原作 KeyConfig 逻辑槽位，再交给各作自己的输入状态机；不要把 `SDL_Joystick` 的设备原始按钮序号直接持久化或当作游戏键位。
+
+### 手机外接键盘不能只依赖 KeyboardEvent
+
+**目的：Android / Chromium 等环境下的蓝牙或 USB 键盘、遥控器、复合输入设备必须仍能稳定控制游戏方向。**
+
+浏览器可能把某些设备的 D-pad 同时或仅作为 Gamepad API 输入暴露，并吞掉原本期望的 DOM KeyboardEvent。适配不能因此让方向键在手机上完全失效，也不能为了兜底而把真实游戏手柄的按钮重复解释成键盘输入。
+
+**参考实现：** 普通键盘继续走共享 Launcher 的 hosted keyboard bridge；Runtime 解析 hosted keyboard 消息时不能只信 `event.code`，还要在 `code` 为空或 `Unidentified` 时使用 `key` / legacy `keyCode` 恢复同一逻辑键，并正确处理 modifier / Numpad location。另只对 Gamepad API 中设备 ID 明确呈现 keyboard / kb 语义的设备读取标准 D-pad 12–15，并转换为普通 Up / Down / Left / Right。真实手柄仍由 SDL Gamepad owner 处理。TH06 / TH07 已有这两类兜底，后续作品必须继承同一行为。
+
 ## Touch
 
 ### 全显示区域触控

@@ -51,6 +51,21 @@ For Replay, record the logical run-state consumed by simulation, not a picture o
 
 ## Invariants and pitfalls
 
+- Physical gamepads must be normalized at the platform boundary before the
+  title's KeyConfig or gameplay code sees button numbers. Never persist or
+  compare raw `SDL_Joystick` button indices as stable game bindings: device,
+  driver and browser mappings can differ across DualSense/Xbox/Steam
+  controllers. KeyConfig capture and gameplay sampling must consume the same
+  normalized button slots; D-pad directions must use semantic direction input,
+  not assumed raw button numbers. TH06/TH07 provide the proven SDL Gamepad
+  precedent; TH08/TH10 must preserve the same invariant.
+- Mobile/external keyboards need two browser paths: ordinary keys travel over
+  the hosted keyboard bridge, and Runtime-side decoding must preserve the
+  `code -> key -> legacy keyCode` fallback used by TH06/TH07 because mobile
+  keyboards may emit `Unidentified` on one half of a key lifecycle. Devices
+  that Chromium exposes only through the Gamepad API additionally need a
+  D-pad-only fallback. Restrict that fallback to keyboard-like device IDs and
+  buttons 12-15 so it cannot become a second owner for real gamepads.
 - Sample touch delta at most once per logical frame. A permitted first-frame repeat is not a license to repeat later input; later missing samples are zero.
 - Network retry, browser redraw and display refresh must never resample the device or feed the same input twice.
 - Keyboard, touch and mouse must have one clear owner at each tick.
@@ -102,6 +117,8 @@ Recording only raw touch graphics, fixing orientation-memory defects with CSS al
   shared controller, deathbomb and sensitivity boundary.
 - `tests/test-required-gameplay-actions.mjs` — shared Restart/R
   semantics across TH06/TH07/TH08/TH10.
+- `tests/test-gamepad-contract.mjs` — all-game physical controller
+  normalization and KeyConfig/gameplay ownership contract.
 - `tests/test-always-hitbox-contract.mjs` — all-game hitbox
   presentation contract.
 - sibling TH08/TH10 `portable/input/TouchController.hpp` — canonical
