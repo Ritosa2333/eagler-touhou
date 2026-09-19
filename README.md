@@ -54,6 +54,8 @@ Published/active convergence slices:
   `BrowserPeerTransport::SendRepairTo`
 - DirectTouch equivalence proof plus explicit Core APIs for title adapters to
   confirm an already-simulated predicted input after proving state equivalence
+- allocation-free per-peer frame-advantage smoothing with the shared
+  64-sample trimmed-mean policy used by TH06/TH07
 
 `NetplaySession` and `WebSocketTransport` were byte-identical before extraction.
 `NetplayProtocol` differs only through a deliberately tiny title-owned wire
@@ -112,6 +114,13 @@ That commit API has a dedicated result type; `NotPredicted` is distinct from an
 invalid player and from ordinary packet-processing results so adapters cannot
 silently confuse a failed equivalence precondition with transport input state.
 
+`FrameAdvantageWindow` is shared because the measured TH06 and TH07 algorithms
+are the same: each peer owns an independent 64-sample ring, waits for 20
+samples, trims up to four values from each tail and averages the remainder.
+The shared form removes the per-packet temporary vector allocation without
+owning title pacing policy. Simulation-scale/deadband decisions remain in the
+consumer driver.
+
 Future intended slices include broader connection health policy,
 browser-frame budgeting and broader performance diagnostics once their
 title-facing seams are explicit.
@@ -128,9 +137,10 @@ Use this order unless new evidence proves a dependency requires otherwise:
 6. once-only incremental DirectTouch and delayed capture mapping;
 7. bounded reliable input repair;
 8. DirectTouch equivalence;
-9. broader health policy and rollback driver budgets;
-10. performance testkit and diagnostics;
-11. only then consider broader platform/presentation helpers.
+9. allocation-free per-peer frame-advantage smoothing;
+10. broader health policy and rollback driver budgets;
+11. performance testkit and diagnostics;
+12. only then consider broader platform/presentation helpers.
 
 Every step must leave TH06 and TH07 buildable and testable independently. A
 consumer may advance to a newer common implementation only after its own

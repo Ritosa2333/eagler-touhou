@@ -102,6 +102,7 @@ def check_consumer(name: str, source_var: str, magic: str, transport_tag: str) -
         "src/netplay/BrowserPeerTransport.hpp",
         "src/netplay/BrowserPeerTransport.cpp",
         "src/netplay/DirectTouchEquivalence.hpp",
+        "src/netplay/FrameAdvantageWindow.hpp",
         "src/netplay/NetplayCore.hpp",
         "src/netplay/NetplayCore.cpp",
         "src/netplay/NetplayInput.hpp",
@@ -131,6 +132,7 @@ def check_consumer(name: str, source_var: str, magic: str, transport_tag: str) -
     retired_headers = (
         "BrowserPeerTransport",
         "DirectTouchEquivalence",
+        "FrameAdvantageWindow",
         "NetplayCore",
         "NetplayInput",
         "NetplayProtocol",
@@ -168,6 +170,7 @@ def main() -> None:
         "include/eagler/netplay/BrowserPeerTransport.hpp",
         "src/netplay/BrowserPeerTransport.cpp",
         "include/eagler/netplay/DirectTouchEquivalence.hpp",
+        "include/eagler/netplay/FrameAdvantageWindow.hpp",
         "include/eagler/netplay/NetplayInput.hpp",
         "src/netplay/NetplayInput.cpp",
         "cmake/EaglerCommon.cmake",

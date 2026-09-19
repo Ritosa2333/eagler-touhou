@@ -109,6 +109,17 @@ add_test(
     COMMAND eagler_common_direct_touch_equivalence_test
 )
 
+add_executable(eagler_common_frame_advantage_window_test
+    frame-advantage-window-test.cpp
+)
+target_link_libraries(eagler_common_frame_advantage_window_test PRIVATE
+    eagler::netplay_headers
+)
+add_test(
+    NAME eagler-common.frame-advantage-window
+    COMMAND eagler_common_frame_advantage_window_test
+)
+
 add_executable(eagler_common_input_repair_budget_test
     input-repair-budget-test.cpp
 )
