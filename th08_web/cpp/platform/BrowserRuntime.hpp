@@ -54,7 +54,7 @@ public:
     i32 status(i32)const;
     bool audio_tick(u32 now);
     u8* keyboard_state(){return keys;}
-    void controller_state(i32 x,i32 y,const u8* b,u32 n,bool available){pad={};pad.x=x;pad.y=y;pad.available=available;if(b)std::memcpy(pad.buttons,b,std::min<u32>(128,n));}
+    void controller_state(i32 x,i32 y,const u8* b,u32 n,bool available){pad={};pad.x=x;pad.y=y;pad.available=available;if(b)std::memcpy(pad.buttons,b,std::min<u32>(128,n));InputController::bindings(pad,app.title.context.controller_state);}
     std::vector<u8> read(const char*)override;std::vector<u8> read_prefix(const char*,u32)override;
     bool write(const char*,const u8*,u32)override;std::vector<std::string> user_replays()override;
     void calendar(char[6],char[20])override;u32 milliseconds()override;u64 performance_counter()override;

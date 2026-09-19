@@ -13,13 +13,32 @@
 EM_JS(int, th08_frame_ready, (), {return Module['runtimePrepare']?Module['runtimePrepare']():1;});
 EM_JS(void, th08_frame_finished, (int result,double ms), {if(Module['runtimeFinish'])Module['runtimeFinish'](result,ms);});
 EM_JS(int, th08_limit_presentation_to_60, (), {return Module['eaglerOptions']?.limitPresentationTo60?1:0;});
+EM_JS(int, th08_keyboard_gamepad_dpad, (), {
+    if (!navigator.getGamepads) return 0;
+    let bits = 0;
+    for (const pad of navigator.getGamepads()) {
+        if (!pad || !pad.buttons || pad.buttons.length < 16) continue;
+        if (!/keyboard|\bkb\b/i.test(String(pad.id || 0))) continue;
+        if (pad.buttons[12]?.pressed) bits |= 1;
+        if (pad.buttons[13]?.pressed) bits |= 2;
+        if (pad.buttons[14]?.pressed) bits |= 4;
+        if (pad.buttons[15]?.pressed) bits |= 8;
+    }
+    return bits;
+});
 namespace th08 {
 void sdl_validate_capture();
 namespace {
 std::unique_ptr<BrowserRuntime> runtime;touhou::input::TouchController touch;
 struct Key{const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
 #include "../../../portable/input/KeyboardMap.inc"
-SDL_Joystick* joystick=nullptr;u32 prepared=0;bool running=false,suspended=false,presentation_primed=false;double elapsed=0,last=-1,frame_begin=0;u32 frames=0,loop_epoch=0,warm_mask=0;touhou::sdl::FrameCadence cadence;touhou::sdl::PresentationCadence presentation;
+SDL_Gamepad* gamepad=nullptr;u32 prepared=0;bool running=false,suspended=false,presentation_primed=false;double elapsed=0,last=-1,frame_begin=0;u32 frames=0,loop_epoch=0,warm_mask=0;touhou::sdl::FrameCadence cadence;touhou::sdl::PresentationCadence presentation;
+constexpr SDL_GamepadButton gamepad_slots[]={
+    SDL_GAMEPAD_BUTTON_SOUTH,SDL_GAMEPAD_BUTTON_EAST,SDL_GAMEPAD_BUTTON_WEST,SDL_GAMEPAD_BUTTON_NORTH,
+    SDL_GAMEPAD_BUTTON_LEFT_SHOULDER,SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER,SDL_GAMEPAD_BUTTON_BACK,
+    SDL_GAMEPAD_BUTTON_START,SDL_GAMEPAD_BUTTON_LEFT_STICK,SDL_GAMEPAD_BUTTON_RIGHT_STICK,SDL_GAMEPAD_BUTTON_GUIDE,
+};
+int gamepad_axis(SDL_GamepadAxis axis){const int value=SDL_GetGamepadAxis(gamepad,axis);return value<0?value*1000/32768:value*1000/32767;}
 constexpr const char* warmAnimations[]={"etama.anm","enemy.anm","front.anm","times.anm","stg1bg.anm","stg1enm.anm","eff01.anm","stg1txt.anm","stg2bg.anm","stg2enm.anm","eff02.anm","stg2txt.anm","player00.anm","player01.anm","player02.anm","player03.anm","staff01.anm"};
 constexpr u32 warmCount=sizeof(warmAnimations)/sizeof(*warmAnimations);
 touhou::input::TouchState touch_state(){touhou::input::TouchState s;if(!runtime)return s;const auto& a=runtime->app;const auto& g=a.game;const auto& p=g.player_state;
@@ -44,14 +63,19 @@ void poll(){if(!runtime)return;SDL_Event event;while(SDL_PollEvent(&event)){
     ThpracUi::process_event(event);
     if(event.type==SDL_EVENT_FINGER_CANCELED)cancel_touch();
     if(event.type==SDL_EVENT_FINGER_DOWN||event.type==SDL_EVENT_FINGER_MOTION||event.type==SDL_EVENT_FINGER_UP)pointer(event.type==SDL_EVENT_FINGER_DOWN?0:event.type==SDL_EVENT_FINGER_MOTION?1:2,int(event.tfinger.fingerID),event.tfinger.x,event.tfinger.y);
-    if(event.type==SDL_EVENT_JOYSTICK_ADDED&&!joystick)joystick=SDL_OpenJoystick(event.jdevice.which);
-    if(event.type==SDL_EVENT_JOYSTICK_REMOVED&&joystick&&SDL_GetJoystickID(joystick)==event.jdevice.which){SDL_CloseJoystick(joystick);joystick=nullptr;}
+    if(event.type==SDL_EVENT_GAMEPAD_ADDED&&!gamepad)gamepad=SDL_OpenGamepad(event.gdevice.which);
+    if(event.type==SDL_EVENT_GAMEPAD_REMOVED&&gamepad&&SDL_GetGamepadID(gamepad)==event.gdevice.which){SDL_CloseGamepad(gamepad);gamepad=nullptr;}
     }
     auto* keys=runtime->keyboard_state();std::memset(keys,0,256);const bool* physical=SDL_GetKeyboardState(nullptr);
     for(const auto& k:keyboard_map)if(k.hosted||(k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){keys[k.vk]=128;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=128;}
-    if(joystick&&SDL_JoystickConnected(joystick)){u8 buttons[128]{};for(int i=0;i<std::min(128,SDL_GetNumJoystickButtons(joystick));i++)buttons[i]=SDL_GetJoystickButton(joystick,i)?128:0;
-        runtime->controller_state(SDL_GetJoystickAxis(joystick,0)*1000/32767,SDL_GetJoystickAxis(joystick,1)*1000/32767,buttons,128,true);
+    if(gamepad&&SDL_GamepadConnected(gamepad)){u8 buttons[128]{};for(size_t i=0;i<sizeof(gamepad_slots)/sizeof(*gamepad_slots);++i)buttons[i]=SDL_GetGamepadButton(gamepad,gamepad_slots[i])?128:0;
+        int x=gamepad_axis(SDL_GAMEPAD_AXIS_LEFTX),y=gamepad_axis(SDL_GAMEPAD_AXIS_LEFTY);
+        const int dx=int(SDL_GetGamepadButton(gamepad,SDL_GAMEPAD_BUTTON_DPAD_RIGHT))-int(SDL_GetGamepadButton(gamepad,SDL_GAMEPAD_BUTTON_DPAD_LEFT));
+        const int dy=int(SDL_GetGamepadButton(gamepad,SDL_GAMEPAD_BUTTON_DPAD_DOWN))-int(SDL_GetGamepadButton(gamepad,SDL_GAMEPAD_BUTTON_DPAD_UP));
+        if(dx)x=dx*1000;if(dy)y=dy*1000;runtime->controller_state(x,y,buttons,128,true);
     }else runtime->controller_state(0,0,nullptr,0,false);
+    const int keyboardDpad=th08_keyboard_gamepad_dpad();
+    if(keyboardDpad&1)keys[38]=128;if(keyboardDpad&2)keys[40]=128;if(keyboardDpad&4)keys[37]=128;if(keyboardDpad&8)keys[39]=128;
     const auto state=touch_state();sync_touch_context(state);const auto input=touch.sample(state,SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);for(int i=0;i<256;i++)if(input.keys[i])keys[i]=128;
     runtime->motion.target(input.motion,input.x,input.y);
     ThpracUi::update_input(*runtime);
@@ -91,7 +115,7 @@ extern "C" {
 #define EX(name) __attribute__((export_name(name)))
 EX("sdl_game_open") BrowserRuntime* sdl_game_open(u32 milliseconds){if(runtime)return nullptr;prepared=frames=warm_mask=0;elapsed=double(milliseconds)/1000.;cadence.reset();presentation.reset();presentation_primed=false;last=-1;touch.begin_session();
     runtime=std::make_unique<BrowserRuntime>();if(!sdl_attach(runtime.get())||!sdl_load_assets(*runtime)){runtime.reset();sdl_detach();return nullptr;}
-    SDL_InitSubSystem(SDL_INIT_JOYSTICK);for(auto& k:keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);int count=0;auto* ids=SDL_GetJoysticks(&count);if(count)joystick=SDL_OpenJoystick(ids[0]);SDL_free(ids);return runtime.get();}
+    SDL_InitSubSystem(SDL_INIT_GAMEPAD);for(auto& k:keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);int count=0;auto* ids=SDL_GetGamepads(&count);if(count)gamepad=SDL_OpenGamepad(ids[0]);SDL_free(ids);return runtime.get();}
 EX("sdl_prepare_total") u32 sdl_prepare_total(){return runtime?runtime->resources().size()+runtime->native_font_steps()+warmCount:0;}
 EX("sdl_prepare_next") i32 sdl_prepare_next(){if(!runtime)return -1;if(prepared>=sdl_prepare_total())return 0;const auto assets=runtime->resources().size();
     bool ok=true;const auto fonts=runtime->native_font_steps();
@@ -113,7 +137,7 @@ EX("sdl_loop_tick") i32 sdl_loop_tick(BrowserRuntime* r,double seconds,u32){
     if(runtime->status(2)||runtime->status(4))return 2;
     ++frames;return runtime->audio_tick(u32(elapsed*1000))?0:2;
 }
-EX("sdl_game_close") void sdl_game_close(){sdl_loop_stop();touch.reset();ThpracUi::shutdown();runtime.reset();if(joystick)SDL_CloseJoystick(joystick);joystick=nullptr;sdl_audio_shutdown();sdl_fonts_shutdown();sdl_detach();}
+EX("sdl_game_close") void sdl_game_close(){sdl_loop_stop();touch.reset();ThpracUi::shutdown();runtime.reset();if(gamepad)SDL_CloseGamepad(gamepad);gamepad=nullptr;sdl_audio_shutdown();sdl_fonts_shutdown();sdl_detach();}
 EX("sdl_key") void sdl_key(const char* code,u32 down){for(auto& key:keyboard_map)if(!std::strcmp(key.code,code)){key.hosted=down!=0;break;}}
 EX("sdl_keys_clear") void sdl_keys_clear(){for(auto& key:keyboard_map)key.hosted=false;cancel_touch();touch.reset();}
 EX("sdl_touch") void sdl_touch(u32 type,i32 id,float x,float y){pointer(type,id,x,y);}
