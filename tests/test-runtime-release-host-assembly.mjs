@@ -91,6 +91,10 @@ try {
   ], { ...process.env, EAGLER_WORKSPACE_ROOT: fakeWorkspace });
 
   const originalRuntimeManifest = JSON.parse(await readFile(runtimeManifestPath, "utf8"));
+  assert.equal(originalRuntimeManifest.games.th08.features.thprac, true,
+    "directory Runtime manifest must attest the compiled TH08 thprac capability");
+  assert.equal(originalRuntimeManifest.games.th08.features.languages, true,
+    "directory Runtime manifest must attest the compiled TH08 language capability");
   const mismatchedCapabilities = structuredClone(originalRuntimeManifest);
   mismatchedCapabilities.games.th06.features.thprac = false;
   await writeFile(runtimeManifestPath, JSON.stringify(mismatchedCapabilities, null, 2));
