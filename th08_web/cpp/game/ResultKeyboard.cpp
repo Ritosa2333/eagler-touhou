@@ -26,7 +26,7 @@ i32 ResultScreen::HandleResultKeyboard(){
         session.history.play_frames=context.play_frames;session.history.humanity=(Extended::from_int(context.human_frames)/Extended::from_int(context.active_frames)*number(10000)).truncate_int();
         s.hscr=session.history;s.hscr.score=session.numbers.score;s.hscr.retries=session.numbers.retries;s.hscr.header.version=4;s.hscr.header.magic=fourcc('H','S','C','R');s.hscr.stage=context.flags&16?99:context.stage;s.hscr.header.unknown=1;
         copy_name(s.hscr.name,session.last_name.name);actions.format_date(s.hscr.date);
-        const auto fraction=number(context.rendered_frames)/number(context.total_frames)-number(.5f);float rate=(fraction+fraction).to_float();if(rate<0)rate=0;else if(rate>=1)rate=1;s.hscr.lag=((number(1)-number(rate))*number(100)).to_float();
+        const auto fraction=number(context.rendered_frames)/number(context.total_frames)-number(.5f);float rate=(fraction+fraction).to_float();if(rate<0)rate=0;else if(rate>=1)rate=1;s.hscr.lag=context.cheat_movement_used?100.f:((number(1)-number(rate))*number(100)).to_float();
         pending_rank=scores.link(s.hscr,s.selectedDifficulty,s.selectedHighScoreCharacter);if(pending_rank>=10)return finish();
         s.cursor=0;if(s.lastNameSavedInScore)s.selectedCharacter=95;s.lastName[0]=0;
     }

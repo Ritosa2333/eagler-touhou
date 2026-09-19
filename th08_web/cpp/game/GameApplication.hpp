@@ -17,6 +17,7 @@ struct ApplicationPlatform:PlayerScenePlatform,TextWriter,AsciiOverlay,FrameCloc
     virtual void begin_motion(i32,bool,bool,bool){}
     virtual bool load_motion(const u8*,u32){return true;}
     virtual i32 replay_touch_points(ReplayTouchPoint*,i32){return 0;}
+    virtual bool cheat_movement_used()const{return false;}
     virtual std::vector<u8> read_prefix(const char*,u32 size)=0;
     virtual bool write(const char*,const u8*,u32)=0;
     virtual std::vector<std::string> user_replays()=0;

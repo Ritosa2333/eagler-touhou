@@ -62,6 +62,7 @@ bool BrowserRuntime::player_motion(const PlayerMovementState& state,float speed,
         const float sx=state.multiplier.x*timing.rate,sy=state.multiplier.y*timing.rate;
         x=sx?(motion.target_x-state.position.x)/sx:0;y=sy?(motion.target_y-state.position.y)/sy:0;
         if(!motion.unlimited)touhou::input::limit_vector(x,y,speed);
+        motion.mark_cheat_movement(x,y);
     }
     motion.record(g.globals.stage,enabled,x,y);return enabled;
 }
