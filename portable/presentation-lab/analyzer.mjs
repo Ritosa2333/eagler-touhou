@@ -1,8 +1,11 @@
-// Pure, dependency-free classifier used by both the browser inspector and tests.
+import {defaultSeverity,groupFindings as groupFindingsCore,compactReport,mergeIssueGroups as mergeIssueGroupsCore} from '../../third_party/eagler-common/testkit/presentation-lab/report-core.mjs';
+import {OWNERS,STATE_GROUPS,WORLD_OWNER_IDS,MOTION_OWNER_IDS} from './owners.mjs';
+export {OWNERS,STATE_GROUPS} from './owners.mjs';
+
+// Pure classifier used by both the browser inspector and tests. TH08 policy
+// stays here; title-neutral report aggregation lives in eagler-common.
 // It reports measured evidence; it does not decide that every visual must lerp.
 export const SCHEMA = 'th08/presentation-audit/1';
-export const OWNERS = ['未标记', '标题菜单', '菜单说明', '暂停/重试', '重试', '敌弹', '激光', '特效', '敌人/使魔', '道具', 'HUD', '3D背景', '符卡UI', '自机', '自机弹', 'ASCII', '自机Bomb', '自机Option', 'ASCII文本', '分数弹字', '时间弹字'];
-export const STATE_GROUPS = ['RNG/资源数值', '自机逻辑', '弹幕逻辑', '激光逻辑', '敌人逻辑', '特效逻辑', '标题VM', '场景/逻辑计数', '背景镜头'];
 export const STATUS = {
   'interpolated': '端点与中间值吻合', 'responsive': '有中间变化，曲线待核对',
   'missing-interpolation': '连续属性没有中间值', 'held-review': '保持当前值，需核对离散语义',
@@ -18,8 +21,8 @@ export const STATUS = {
   'inactive-channel': '本次绘制未使用此颜色通道',
 };
 const TAU = Math.PI * 2;
-const worldOwners = new Set([5,6,7,8,9,10,11,13,14,15,16,17,19,20]);
-const motionOwners = new Set([5,6,8,9,13,14,16,17,19]);
+const worldOwners = WORLD_OWNER_IDS;
+const motionOwners = MOTION_OWNER_IDS;
 export function keyOf(r) { return [r.meta[0],r.meta[1],r.meta[2],r.meta[3],r.meta[4]].join(':'); }
 export function decodeRecords(buffer, pointer, count, stride = 752) {
   if (stride !== 752 || !Number.isInteger(count) || count < 0 || count > 8192 || !Number.isInteger(pointer) || pointer%4 || pointer < 0 || pointer + count*stride > buffer.byteLength) throw Error('Invalid presentation audit buffer');
@@ -80,7 +83,7 @@ function classifyField(f,previous,current,samples) {
   const residual=Math.max(...observed.map(s=>distance(s.value,p.map((x,i)=>x+d[i]*s.alpha),period)));
   return {...evidence,variation,residual,status:residual<=Math.max(tolerance*2,motion*.02)?'interpolated':'responsive'};
 }
-export const severity = status => ({'nonfinite':6,'non-idempotent':6,'endpoint-mismatch':5,'downstream-held':5,'missing-interpolation':4,'held-review':3,'responsive':2}[status]||0);
+export const severity = defaultSeverity;
 export function analyzeWindow({previous,current,samples,stateBefore=[],statesAfter=[],worldFrozen=false,gate=true,build={},label='',negativeControl=false}) {
   if(!previous||!current||!Array.isArray(samples)||samples.length<3)throw Error('Need two authoritative draws and at least three alpha samples');
   if(samples.some(s=>!Number.isFinite(s.alpha)||s.alpha<0||s.alpha>1))throw Error('Invalid alpha');
@@ -173,34 +176,6 @@ export function analyzeWindow({previous,current,samples,stateBefore=[],statesAft
 
 // Merge particles and repeated windows without calling 50 instances 50 bugs.
 // Identity keys remain in each original window for source/geometry inspection.
-export function groupFindings(reports) {
-  const groups=new Map();
-  for(const report of reports)for(const object of report.objects)for(const f of object.fields){
-    if(severity(f.status)<3)continue;
-    const key=[object.ownerId,object.anm,object.script,object.kind,f.id,f.status].join(':');
-    let g=groups.get(key);
-    if(!g){g={key,owner:object.owner,ownerId:object.ownerId,anm:object.anm,script:object.script,kind:object.kind,field:f.id,label:f.label,status:f.status,severity:severity(f.status),
-      firstTick:report.tick,lastTick:report.tick,observations:0,instances:new Set(),windows:new Set(),maxMotion:0,exampleKey:object.key};groups.set(key,g);}
-    g.firstTick=Math.min(g.firstTick,report.tick);g.lastTick=Math.max(g.lastTick,report.tick);g.observations++;g.instances.add(object.key);g.windows.add(report.tick);
-    if((f.motion||0)>g.maxMotion){g.maxMotion=f.motion;g.exampleKey=object.key;}
-  }
-  return [...groups.values()].map(g=>({...g,instanceCount:g.instances.size,windowCount:g.windows.size,exampleKeys:[...g.instances].slice(0,8),instances:undefined,windows:undefined}))
-    .sort((a,b)=>b.severity-a.severity||b.windowCount-a.windowCount||b.instanceCount-a.instanceCount||a.key.localeCompare(b.key));
-}
-export function compactReport(report,{maxObjects=8192,images=true}={}) {
-  return {...report,images:images?report.images:undefined,totalObjects:report.objects.length,detailsTruncated:report.objects.length>maxObjects,
-    objects:report.objects.slice(0,maxObjects).map(o=>({...o,fields:o.fields.filter(f=>f.status!=='static')}))};
-}
-
-// Preserve full-window counters when stored object details have been bounded.
-export function mergeIssueGroups(reports) {
-  const groups=new Map();
-  for(const report of reports)for(const g of report.issueGroups||groupFindings([report])){
-    let entry=groups.get(g.key);
-    if(!entry){entry={...g,observations:0,peakInstances:0,windowCount:0,exampleWindows:[]};delete entry.instanceCount;groups.set(g.key,entry);}
-    entry.observations+=g.observations;entry.peakInstances=Math.max(entry.peakInstances,g.instanceCount);
-    entry.windowCount++;entry.firstTick=Math.min(entry.firstTick,g.firstTick);entry.lastTick=Math.max(entry.lastTick,g.lastTick);entry.maxMotion=Math.max(entry.maxMotion,g.maxMotion);
-    if(entry.exampleWindows.length<4)entry.exampleWindows.push({tick:report.tick,key:g.exampleKey});
-  }
-  return [...groups.values()].sort((a,b)=>b.severity-a.severity||b.windowCount-a.windowCount||a.key.localeCompare(b.key));
-}
+export const groupFindings=reports=>groupFindingsCore(reports,{severityOf:severity});
+export {compactReport};
+export const mergeIssueGroups=reports=>mergeIssueGroupsCore(reports,{group:groupFindings});

@@ -1,7 +1,7 @@
 import {LabController} from './controller.mjs';
 import {OWNERS,STATUS,compactReport,keyOf} from './analyzer.mjs';
+import {SOURCE_PATHS} from './owners.mjs';
 const $=id=>document.getElementById(id),identity=await fetch('/build.json').then(r=>r.json());
-const sourcePaths={1:'TitleSupport.cpp / TitleView.cpp',2:'TitleView.cpp',3:'UiMenus.cpp',4:'UiMenus.cpp',5:'BulletDrawing.cpp',6:'BulletDrawing.cpp',7:'EffectSystem.cpp',8:'EnemyDrawing.cpp',9:'ItemPool.cpp',10:'GuiController.cpp / GuiView.cpp',11:'BackgroundObjects.cpp / BackgroundView.cpp',12:'SpellDrawing.cpp',13:'PlayerSimulation.cpp',14:'PlayerShotDraw.cpp',16:'PlayerBomb*.cpp'};
 let controller=null,dataBuffer=null,report=null,selected=null,selectedGroup=null,busy=false,scanAbort=null,epoch=0,bootPending=null,readOnly=false,pendingReplay=null,displayBounds=new Map();
 let runtimeHotkeyWindow=null,runtimeHotkeyHandler=null;
 const status=text=>{$('status').textContent=text;};
@@ -27,7 +27,7 @@ async function boot({replayBytes=null}={}){
  if(!dataBuffer){const response=await fetch('/input/th08.dat');if(!response.ok)throw Error('请选择自己的 th08.dat');dataBuffer=await response.arrayBuffer();}
  if(dataBuffer.byteLength<16||dataBuffer.byteLength>128*1024*1024)throw Error('Invalid TH08 DATA');
  if(replayBytes!==null&&(!Array.isArray(replayBytes)||replayBytes.length>16*1024*1024))throw Error('Invalid Replay input');
- controller?.freeze();if(controller)await controller.runtime.stop();
+ if(controller)await controller.close();
  pendingReplay=replayBytes;controller=null;report=null;selected=null;readOnly=false;enable(false);$('boot').disabled=true;$('empty').hidden=true;
  $('runtime').hidden=false;$('reportFrame').hidden=true;$('overlay').hidden=true;$('rows').replaceChildren();$('window').textContent='未采样';
  showBuild(identity);
@@ -114,7 +114,7 @@ function renderRows(){
  }
 }
 const format=value=>value?.map(n=>Number(n).toFixed(Math.abs(n)<.01?5:3)).join(', ')||'—';
-function select(o,group=null){selected=o;selectedGroup=group;renderRows();drawBoxes();const detail=$('detail');detail.replaceChildren();const h=document.createElement('h3');h.textContent=`${o.owner} · 对象 ${o.object}`;detail.append(h);const p=document.createElement('p');p.textContent=`${sourcePaths[o.ownerId]||'尚未标记模块'} | ANM ${o.anm} / script ${o.script} / sprite ${o.sprite} / part ${o.part}`;detail.append(p);
+function select(o,group=null){selected=o;selectedGroup=group;renderRows();drawBoxes();const detail=$('detail');detail.replaceChildren();const h=document.createElement('h3');h.textContent=`${o.owner} · 对象 ${o.object}`;detail.append(h);const p=document.createElement('p');p.textContent=`${SOURCE_PATHS[o.ownerId]||'尚未标记模块'} | ANM ${o.anm} / script ${o.script} / sprite ${o.sprite} / part ${o.part}`;detail.append(p);
  if(group){const note=document.createElement('p');note.textContent=`同组 ${group.instanceCount} 个实例；画框突出该组。下方是变化幅度最大的实例，可直接点击其他框检查。`;detail.append(note);}
  for(const f of o.fields.filter(f=>f.status!=='static')){
   const div=document.createElement('div');div.className='property';const head=document.createElement('strong');head.textContent=`${f.label}：${STATUS[f.status]||f.status}`;div.append(head);

@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {analyzeWindow,decodeRecords,groupFindings,compactReport,mergeIssueGroups} from './analyzer.mjs';
-import {decodeTimingRing} from './controller.mjs';
+import {decodeTimingRing} from './timing.mjs';
 function record(x=0,{owner=5,scale=1,angle=0,opacity=1,sprite=1,age=10,flags=1<<8,screenX=x,z=0}={}){
   const r={meta:[owner,100,0,0,0,1,1,sprite,age,4,4,flags],values:Array(32).fill(0),vertices:[]};
   r.values[0]=x;r.values[2]=z;r.values[6]=r.values[7]=scale;r.values[10]=angle;r.values[16]=opacity;
