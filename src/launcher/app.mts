@@ -118,7 +118,6 @@ import {
 import {
   postDirectTouch as postRuntimeDirectTouch,
   postHostedKey as postRuntimeHostedKey,
-  postThpracMouse as postRuntimeThpracMouse,
   postTouchCancel as postRuntimeTouchCancel,
   postTouchControls as postRuntimeTouchControls,
   deliverRuntimeInput,
@@ -1073,9 +1072,6 @@ function beginImportAttempt() {
   openGameDataImportWindow();
 }
 
-let thpracMouseInputWindow: RuntimeWindow | null = null;
-let thpracMousePointerId: number | null = null;
-let thpracMouseMode = false;
 let thpracMenuOpen = false;
 let runtimeCustomEventWindow: RuntimeWindow | null = null;
 
@@ -1085,10 +1081,6 @@ function thpracTouchControlsAvailable() {
 
 function thpracTouchControlsVisible() {
   return !!state.options.thpracTouchControlsEnabled && (touchLayoutEditing || !!state.options.touchEnabled);
-}
-
-function thpracMouseModeActive() {
-  return state.launched && thpracTouchControlsAvailable() && thpracMouseMode;
 }
 
 function touchRuntimeMessageContext() {
@@ -1103,57 +1095,6 @@ function touchRuntimeMessageContext() {
     ready: state.ready,
     spectator: state.netplay.spectator,
   };
-}
-
-function postThpracMouseEvent(event: PointerEvent, type: "move" | "down" | "up") {
-  postRuntimeThpracMouse(touchRuntimeMessageContext(), type, event.clientX, event.clientY);
-}
-
-function beginThpracMousePointer(event: PointerEvent) {
-  if (!thpracMouseModeActive() || event.pointerType !== "touch" || thpracMousePointerId != null) return;
-  thpracMousePointerId = event.pointerId;
-  try { if (event.target instanceof Element) event.target.setPointerCapture?.(event.pointerId); } catch {}
-  event.preventDefault();
-  event.stopImmediatePropagation();
-  postThpracMouseEvent(event, "move");
-  postThpracMouseEvent(event, "down");
-}
-
-function moveThpracMousePointer(event: PointerEvent) {
-  if (!thpracMouseModeActive() || event.pointerId !== thpracMousePointerId) return;
-  event.preventDefault();
-  event.stopImmediatePropagation();
-  postThpracMouseEvent(event, "move");
-}
-
-function endThpracMousePointer(event: PointerEvent) {
-  if (event.pointerId !== thpracMousePointerId) return;
-  event.preventDefault();
-  event.stopImmediatePropagation();
-  postThpracMouseEvent(event, "move");
-  postThpracMouseEvent(event, "up");
-  try { if (event.target instanceof Element) event.target.releasePointerCapture?.(event.pointerId); } catch {}
-  thpracMousePointerId = null;
-}
-
-function uninstallThpracMouseInputBridge() {
-  if (!thpracMouseInputWindow) return;
-  thpracMouseInputWindow.removeEventListener("pointerdown", beginThpracMousePointer, true);
-  thpracMouseInputWindow.removeEventListener("pointermove", moveThpracMousePointer, true);
-  thpracMouseInputWindow.removeEventListener("pointerup", endThpracMousePointer, true);
-  thpracMouseInputWindow.removeEventListener("pointercancel", endThpracMousePointer, true);
-  thpracMouseInputWindow = null;
-  thpracMousePointerId = null;
-}
-
-function bindThpracMouseInputWindow(win: RuntimeWindow | null) {
-  uninstallThpracMouseInputBridge();
-  if (!win) return;
-  thpracMouseInputWindow = win;
-  win.addEventListener("pointerdown", beginThpracMousePointer, true);
-  win.addEventListener("pointermove", moveThpracMousePointer, true);
-  win.addEventListener("pointerup", endThpracMousePointer, true);
-  win.addEventListener("pointercancel", endThpracMousePointer, true);
 }
 
 function currentRuntimeWindow(): RuntimeWindow | null {
@@ -1203,14 +1144,12 @@ function bindRuntimeCustomEventWindow(win: RuntimeWindow | null) {
 function rebindRuntimeDomBridges() {
   const win = currentRuntimeWindow();
   gameZoom.bindInputWindow(win);
-  bindThpracMouseInputWindow(win);
   bindGameKeyWindow(win);
   bindRuntimeCustomEventWindow(win);
 }
 
 function uninstallRuntimeDomBridges() {
   gameZoom.uninstallInputBridge();
-  uninstallThpracMouseInputBridge();
   bindGameKeyWindow(null);
   bindRuntimeCustomEventWindow(null);
 }
@@ -1535,7 +1474,7 @@ const buttonElementSelectors = [
   "#touchLayoutReset", "#touchLayoutSave", "#touchLayoutExit", "#doubleTapBombToggle",
   "#restartButtonToggle", "#thpracTouchControlsToggle", "#touchSensitivityCustomToggle", "#touchViewportAdjust",
   "#touchViewportReset", "#touchViewportDone", "#touchFocus", "#touchFire",
-  "#touchBomb", "#touchEscape", "#touchRestart", "#touchThpracInput", "#touchThpracTab",
+  "#touchBomb", "#touchEscape", "#touchRestart", "#touchThpracTab",
   "#touchThpracBackspace", "#touchHelpOpen", "#touchHelpClose", "#guideTabOrientation",
   "#guideTabGameControls", "#guideTabFocus", "#guideTabMenu", "#guideTabDialogue",
   "#guideTabThprac", "#orientationToggle", "#gameZoomToggle", "#fullscreenToggle",
@@ -2170,7 +2109,6 @@ window.setInterval(() => {
 }, 1000);
 const gameZoomToggle = $("#gameZoomToggle");
 const orientationToggle = $("#orientationToggle");
-const touchThpracInput = $("#touchThpracInput");
 const touchThpracTab = $("#touchThpracTab");
 const touchThpracMenu = $("#touchThpracMenu");
 const touchThpracFunctionKeys = $("#touchThpracFunctionKeys");
@@ -3917,7 +3855,7 @@ function syncDirectTouchSurfaceVisibility() {
   const spectatorRuntime = isMultiplayerProduct() && state.netplay.spectator === true;
   const wheelMovement = touchMovementUsesJoystick(state.options.touchMovementMode);
   touchDirectSurface.hidden = !(state.launched && hostDirectTouch && !spectatorRuntime &&
-    state.options.touchEnabled && !wheelMovement && !touchLayoutEditing && !thpracMouseMode);
+    state.options.touchEnabled && !wheelMovement && !touchLayoutEditing);
 }
 function render() {
   if (!productEnabled(state.product)) state.hasSelection = false;
@@ -4111,12 +4049,8 @@ function render() {
   syncDirectTouchSurfaceVisibility();
   renderTouchActionState();
   const thpracControlsVisible = !spectatorRuntime && thpracTouchControlsVisible();
-  touchThpracInput.hidden = !thpracControlsVisible;
   touchThpracTab.hidden = !thpracControlsVisible;
   touchThpracMenu.hidden = !thpracControlsVisible;
-  touchThpracInput.classList.toggle("is-on", thpracMouseMode);
-  touchThpracInput.setAttribute("aria-pressed", String(thpracMouseMode));
-  requiredDescendant(touchThpracInput, "strong", HTMLElement).textContent = t("touch.mouse");
   touchThpracFunctionKeys.hidden = !thpracMenuOpen;
   applyTouchLayout();
   if (touchLayoutEditing) updateTouchLayoutEditorUi();
@@ -4159,8 +4093,6 @@ function setOption<K extends keyof GameOptions>(name: K, value: GameOptions[K]) 
   if (state.options[name] === value) return;
   state.options[name] = value;
   if ((name === "touchEnabled" || name === "thpracEnabled" || name === "thpracTouchControlsEnabled") && !thpracTouchControlsAvailable()) {
-    thpracMouseMode = false;
-    thpracMousePointerId = null;
     thpracMenuOpen = false;
   }
   if (name === "touchEnabled" && !value) {
@@ -4251,8 +4183,6 @@ function resetRuntime() {
   touchControls.escapeSerial = 0;
   touchControls.joystickX = 0;
   touchControls.joystickY = 0;
-  thpracMouseMode = false;
-  thpracMousePointerId = null;
   thpracMenuOpen = false;
   uninstallRuntimeDomBridges();
   gameZoom.reset();
@@ -7972,25 +7902,6 @@ function pulseThpracKey(name: string | undefined) {
   refocusGameIfNeeded();
 }
 
-async function toggleThpracMouseMode() {
-  if (!thpracTouchControlsAvailable() || !state.launched) return;
-  thpracMouseMode = !thpracMouseMode;
-  thpracMousePointerId = null;
-  try { await send("touch-cancel", {}, 3000); } catch {}
-  render();
-  refocusGameIfNeeded();
-}
-
-touchThpracInput.addEventListener("pointerdown", event => {
-  if (touchLayoutEditing || !state.launched) return;
-  event.preventDefault();
-  event.stopPropagation();
-  void toggleThpracMouseMode();
-});
-touchThpracInput.addEventListener("click", event => {
-  if (event.detail !== 0 || touchLayoutEditing || !state.launched) return;
-  void toggleThpracMouseMode();
-});
 $("#touchThpracBackspace").addEventListener("pointerdown", event => {
   if (touchLayoutEditing || !state.launched) return;
   event.preventDefault();

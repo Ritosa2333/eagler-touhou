@@ -91,6 +91,13 @@ For Replay, record the logical run-state consumed by simulation, not a picture o
 - One-shot Bomb/Pause/Confirm pulses expire in the state/context where they were
   produced. A rejected or missed pulse must not queue across death/respawn,
   menu/dialogue changes or another run.
+- Dialogue, StageClear and other modal touch-confirm owners must suppress the
+  preceding gameplay Fire hold before emitting a fresh confirm edge. In
+  multiplayer, do not OR another seat's held Shoot back into that modal owner;
+  otherwise two touch clients with auto-fire can make tapping unable to
+  advance. TH06/TH07 use the P1 logical lane for the shared message owner;
+  TH08/TH10 adapters must preserve the same edge invariant even when their
+  state owners differ.
 - Restart/fresh-attempt boundaries invalidate the previous raw-touch lifecycle
   for Replay capture. Until a new DOWN creates a new point, orphaned MOVE/UP
   from the old attempt must be ignored.

@@ -25,22 +25,22 @@ const requiredControls = () => ({
 });
 
 assert.equal(touchLayoutStorageKey, "eagler-touhou-touch-layout-v1");
-assert.equal(touchLayoutVersion, 5);
+assert.equal(touchLayoutVersion, 6);
 assert.deepEqual([...touchLayoutOrientations], ["landscape", "portrait"]);
 assert.equal(touchLayoutScaleMin, 0.6);
 assert.equal(touchLayoutScaleMax, 1.8);
 assert.deepEqual(Object.keys(touchLayoutControlMeta), [
-  "focus", "fire", "bomb", "joystick", "escape", "restart", "thpracInput", "thpracTab", "thpracMenu",
+  "focus", "fire", "bomb", "joystick", "escape", "restart", "thpracTab", "thpracMenu",
 ]);
 
 const v1 = normalizeTouchLayout({ version: 1, controls: requiredControls() });
-assert.equal(v1.version, 5);
+assert.equal(v1.version, 6);
 assert.notEqual(v1.profiles.landscape, v1.profiles.portrait);
 assert.deepEqual(v1.profiles.landscape, v1.profiles.portrait);
 v1.profiles.landscape.controls.fire.x = 0.9;
 assert.equal(v1.profiles.portrait.controls.fire.x, 0.25, "orientation migration must deep-clone profiles");
 
-for (const version of [2, 3, 4, 5]) {
+for (const version of [2, 3, 4, 5, 6]) {
   const normalized = normalizeTouchLayout({
     version,
     profiles: {
@@ -48,7 +48,7 @@ for (const version of [2, 3, 4, 5]) {
       portrait: null,
     },
   });
-  assert.equal(normalized.version, 5);
+  assert.equal(normalized.version, 6);
   assert.equal(normalized.profiles.landscape.viewport.x, 0.2);
   assert.equal(normalized.profiles.portrait, null);
 }
@@ -80,17 +80,16 @@ const ordered = {
   joystick: placement(3),
   escape: placement(4),
   restart: placement(5),
-  thpracInput: placement(8),
   thpracTab: placement(6),
   thpracMenu: placement(7),
 };
 normalizeTouchLayoutPriorityOrder(ordered);
-assert.equal(ordered.thpracMenu.priority, 8, "cheat menu must occupy the highest existing thprac slot");
+assert.equal(ordered.thpracMenu.priority, 7, "cheat menu must occupy the highest existing thprac slot");
 assert.equal(ordered.escape.priority, 4, "thprac reordering must not promote the thprac set over ordinary controls");
 assert.equal(ordered.restart.priority, 5, "R must remain between ESC and the optional thprac controls");
 
 const empty = emptyTouchLayout();
-assert.deepEqual(empty, { version: 5, profiles: { landscape: null, portrait: null } });
+assert.deepEqual(empty, { version: 6, profiles: { landscape: null, portrait: null } });
 const cloned = cloneTouchLayout(v1);
 assert.deepEqual(cloned, v1);
 assert.notEqual(cloned.profiles.landscape, v1.profiles.landscape);

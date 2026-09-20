@@ -61,6 +61,7 @@ assert.deepEqual(REQUIRED_TOUCH_BEHAVIORS.map(item => item.id), [
   "unlimited-cheat-processing-rate",
   "double-tap-bomb",
   "menu-dialogue-navigation",
+  "touch-confirm-edge",
   "sensitivity-100-300",
   "mixed-input-isolation",
   "lifecycle-cancel",
@@ -105,7 +106,7 @@ for (const [name, profile, requiredIds] of [
 
 for (const [name, profile, requiredIds] of [
   ["multiplayer", REQUIRED_MULTIPLAYER_BEHAVIORS, ["dedicated-runtime-variant", "spectator-admission-and-isolation", "multiplayer-replay", "peer-transport-and-relay-fallback"]],
-  ["thprac", REQUIRED_THPRAC_BEHAVIORS, ["runtime-attestation", "replay-prac-metadata", "touch-mouse-function-bridge"]],
+  ["thprac", REQUIRED_THPRAC_BEHAVIORS, ["runtime-attestation", "replay-prac-metadata", "touch-function-bridge"]],
   ["languages", REQUIRED_LANGUAGE_BEHAVIORS, ["built-in-japanese-baseline", "validated-pack-publication", "safe-launch-fallback"]],
   ["midi", REQUIRED_MIDI_BEHAVIORS, ["selector-only-when-declared", "audible-midi-transport", "music-lifecycle"]],
 ]) {

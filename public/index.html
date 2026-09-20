@@ -672,7 +672,7 @@
         <div class="touch-layout-setting-row"><label for="touchFocusMode" data-i18n="touch.focusMethod">低速方法</label><select class="option-select" id="touchFocusMode" aria-label="低速方法" data-i18n-aria-label="touch.focusMethod"><option value="hold-button" data-i18n="touch.focus.hold">按钮（按住时低速）</option><option value="toggle-button" data-i18n="touch.focus.toggle">按钮（按下时切换状态）</option><option value="two-finger" data-i18n="touch.focus.twoFinger">双指</option></select></div>
         <div class="touch-layout-setting-row"><span><span data-i18n="touch.doubleTapBomb">双击 Bomb</span><small data-i18n="touch.doubleTapBombHint">在同一位置快速双击以使用 Bomb。</small></span><button class="option-switch" id="doubleTapBombToggle" type="button" role="switch" aria-checked="false"><i></i></button></div>
         <div class="touch-layout-setting-row"><span><span>R</span><small data-i18n="touch.restartHint">在暂停菜单按下后，会重开本局。</small></span><button class="option-switch" id="restartButtonToggle" type="button" role="switch" aria-checked="false" aria-label="R"><i></i></button></div>
-        <div class="touch-layout-setting-row"><span><span data-i18n="touch.thpracButtons">thprac 按键</span><small data-i18n="touch.thpracButtonsHint">显示模拟鼠标、作弊菜单和 Tab 按键。</small></span><button class="option-switch" id="thpracTouchControlsToggle" type="button" role="switch" aria-checked="false"><i></i></button></div>
+        <div class="touch-layout-setting-row"><span><span data-i18n="touch.thpracButtons">thprac 按键</span><small data-i18n="touch.thpracButtonsHint">显示作弊菜单、Tab 和功能键。</small></span><button class="option-switch" id="thpracTouchControlsToggle" type="button" role="switch" aria-checked="false"><i></i></button></div>
         <div class="touch-layout-setting-row touch-sensitivity-row"><span class="touch-sensitivity-heading"><span data-i18n="touch.sensitivity">触控灵敏度</span> <output id="touchSensitivityValue">100%</output></span><small data-i18n="touch.sensitivityHint">手指拖动距离与自机目标移动距离的比例。在背景拖动可以预览效果。</small><div class="touch-sensitivity-presets" role="group" aria-label="触控灵敏度档位" data-i18n-aria-label="touch.sensitivityPresets"><button type="button" data-touch-sensitivity-preset="100">100%</button><button type="button" data-touch-sensitivity-preset="150">150%</button><button type="button" data-touch-sensitivity-preset="200">200%</button><button type="button" id="touchSensitivityCustomToggle" aria-expanded="false" data-i18n="touch.custom">自定义</button></div><label class="touch-sensitivity-custom" id="touchSensitivityCustom" for="touchSensitivity" hidden><span data-i18n="touch.customSensitivity">自定义灵敏度</span><input id="touchSensitivity" type="range" min="100" max="300" step="1" value="100" aria-label="自定义触控灵敏度" data-i18n-aria-label="touch.customSensitivity"></label></div>
         <div class="touch-layout-setting-row touch-layout-viewport-row"><span><span data-i18n="touch.viewportPosition">游戏画面位置</span><small data-i18n="touch.viewportHint">仅可水平调整，横屏和竖屏分别保存。</small></span><div class="touch-layout-viewport-actions"><button id="touchViewportAdjust" type="button" data-i18n="touch.adjustViewport">＋ 调整游戏画面</button><button id="touchViewportReset" type="button" data-i18n="action.reset">复位</button></div></div>
       </div>
@@ -691,7 +691,6 @@
     </div>
     <button class="touch-escape" id="touchEscape" data-touch-layout-control="escape" type="button" aria-label="返回或暂停" title="ESC：返回或暂停" data-i18n-aria-label="touch.escapeAria" data-i18n-title="touch.escapeTitle">ESC<span class="touch-layout-resize-handle" aria-hidden="true">↘</span></button>
     <button class="touch-restart" id="touchRestart" data-touch-layout-control="restart" type="button" aria-label="R" title="在暂停菜单按下后，会重开本局。" data-i18n-title="touch.restartTitle">R<span class="touch-layout-resize-handle" aria-hidden="true">↘</span></button>
-    <button class="touch-thprac-input" id="touchThpracInput" data-touch-layout-control="thpracInput" type="button" aria-pressed="false" hidden><strong data-i18n="touch.mouse">模拟鼠标</strong><span class="touch-layout-resize-handle" aria-hidden="true">↘</span></button>
     <button class="touch-thprac-tab" id="touchThpracTab" data-touch-layout-control="thpracTab" data-thprac-key="Tab" type="button" hidden><strong>Tab</strong><small>Tracker</small><span class="touch-layout-resize-handle" aria-hidden="true">↘</span></button>
     <div class="touch-thprac-menu" id="touchThpracMenu" data-touch-layout-control="thpracMenu" hidden>
       <button class="touch-thprac-backspace" id="touchThpracBackspace" type="button" data-i18n="touch.cheatMenu">作弊菜单</button>
@@ -818,14 +817,13 @@
                     <div class="guide-key-row"><kbd>F7</kbd><span data-i18n="touch.enemyBgm">敌方 BGM</span></div>
                   </div>
                   <div class="guide-key-grid help-mobile-only">
-                    <div class="guide-key-row"><kbd data-i18n="touch.mouse">模拟鼠标</kbd><span data-i18n="help.thpracControls">操作 thprac 菜单中的控件</span></div>
                     <div class="guide-key-row"><kbd data-i18n="touch.cheatMenu">作弊菜单</kbd><span data-i18n="help.cheatMenu">打开 / 关闭作弊菜单</span></div>
                     <div class="guide-key-row"><kbd>Tab</kbd><span data-i18n="help.tracker">打开 / 关闭练习统计 Tracker</span></div>
                     <div class="guide-key-row"><kbd>F12</kbd><span data-i18n="touch.advancedMenu">高级选项</span></div>
                     <div class="guide-key-row"><kbd>F1–F7</kbd><span data-i18n="help.thpracFeatures">无敌、无限资源、时间锁、自动 Bomb、BGM 等辅助功能</span></div>
                   </div>
                   <p class="guide-info-note help-desktop-only" data-i18n="help.thpracReplayDesktop">thprac 练习录像包含额外练习参数，播放时请保持 thprac 开启。</p>
-                  <p class="guide-info-note help-mobile-only" data-i18n="help.thpracReplayMobile">在「触控设置」中启用 thprac 按键集合后，即可使用模拟鼠标、作弊菜单、Tab 与 F1–F7。thprac 练习录像包含额外练习参数，播放时请保持 thprac 开启。</p>
+                  <p class="guide-info-note help-mobile-only" data-i18n="help.thpracReplayMobile">可以直接触碰操作 thprac 菜单；在「触控设置」中启用 thprac 按键集合后，还可使用作弊菜单、Tab 与 F1–F7。thprac 练习录像包含额外练习参数，播放时请保持 thprac 开启。</p>
                 </div>
               </div>
             </article>
