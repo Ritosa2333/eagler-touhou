@@ -1,0 +1,49 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>TH07 demo determinism host</title>
+<iframe id="runtime" style="width:640px;height:560px;border:0"></iframe>
+<pre id="status">loading</pre>
+<script>
+(() => {
+  const demoIndex = Number.parseInt(new URLSearchParams(location.search).get("demo") || "0", 10);
+  const protocol = "eagler-touhou/1";
+  const game = "th07";
+  const epoch = 1;
+  const runtime = document.getElementById("runtime");
+  const pending = new Map();
+  let nextRequest = 1;
+  function send(command, payload = {}) {
+    const request = String(nextRequest++);
+    runtime.contentWindow.postMessage({ protocol, game, epoch, request, command, ...payload }, location.origin);
+    return new Promise((resolve, reject) => pending.set(request, { resolve, reject }));
+  }
+  addEventListener("message", async event => {
+    if (event.source !== runtime.contentWindow || event.origin !== location.origin) return;
+    const message = event.data || {};
+    if (message.protocol !== protocol || message.game !== game || message.epoch !== epoch) return;
+    if (message.request && pending.has(message.request)) {
+      const waiter = pending.get(message.request);
+      pending.delete(message.request);
+      (message.ok ? waiter.resolve : waiter.reject)(message);
+      return;
+    }
+    if (message.event !== "ready") return;
+    try {
+      await send("configure", {
+        music: "none",
+        resources: [],
+        sharedResources: [{ url: "/games/th07/msgothic.ttc", path: "/msgothic.ttc" }],
+        thpracCatalog: [],
+        options: { debugHarness: "demo-determinism", demoDeterminismIndex: demoIndex }
+      });
+      await send("launch");
+      globalThis.__demoDeterminismLaunched = true;
+      document.getElementById("status").textContent = "launched";
+    } catch (error) {
+      globalThis.__demoDeterminismFailure = String(error?.message || error);
+      document.getElementById("status").textContent = `failed: ${globalThis.__demoDeterminismFailure}`;
+    }
+  });
+  runtime.src = `/th07-eagler/build-web-th07-netplay/th07.html?hosted=1&runtimeVariant=multiplayer&runtimeEpoch=${epoch}`;
+})();
+</script>

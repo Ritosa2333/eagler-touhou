@@ -2,6 +2,7 @@
 #ifdef TH_ENABLE_NETPLAY
 #include <eagler/netplay/NetplayInput.hpp>
 #include "netplay/NetplaySideEffects.hpp"
+#include "netplay/Th07DeterminismProbe.hpp"
 #endif
 
 #include "AsciiManager.hpp"
@@ -188,6 +189,10 @@ u32 ReplayManager::OnUpdateDemoLowPrio(ReplayManager *arg)
         return CHAIN_CALLBACK_RESULT_CONTINUE;
     }
 
+#ifdef TH_ENABLE_NETPLAY
+    Netplay::Th07DeterminismProbe::AfterDemoReplayFrame();
+#endif
+
     if (g_Gui.HasCurrentMsgIdx() && g_Gui.IsDialogueSkippable() && arg->frameId % 3 != 2)
     {
         return CHAIN_CALLBACK_RESULT_RESTART_FROM_FIRST_JOB;
@@ -211,6 +216,10 @@ u32 ReplayManager::OnUpdateDemoHighPrio(ReplayManager *arg)
     {
         return CHAIN_CALLBACK_RESULT_CONTINUE;
     }
+
+#ifdef TH_ENABLE_NETPLAY
+    Netplay::Th07DeterminismProbe::BeforeDemoReplayFrame();
+#endif
 
     g_LastFrameGameInput = g_CurFrameGameInput;
     ReplayExtension::SetPlaybackFrame(std::min(g_GameManager.currentStage - 1, 6), arg->frameId);
@@ -663,6 +672,21 @@ ZunResult ReplayManager::AddedCallbackDemo(ReplayManager *arg)
     g_GameManager.shotType = arg->data->data.shotType % 2;
     g_GameManager.shotTypeAndCharacter = arg->data->data.shotType;
     g_GameManager.difficulty = arg->data->data.difficulty;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Built-in demos enter replay playback without passing through the replay
+    // menu, so the gameplay session can still contain its process-default
+    // ReimuA loadout here.  The multiplayer collision path consults this
+    // session even for its single active player (for ReimuA's stage-specific
+    // damage reduction, homing behaviour, and contribution ownership).  Keep
+    // ordinary replay/demo playback synchronized with the authoritative TH07
+    // replay header; multiplayer replays already own a configured sidecar.
+    if (!ReplayExtension::MultiplayerPlaybackActive())
+    {
+        MultiplayerGameplay::ResetToSinglePlayer(
+            static_cast<u8>(g_GameManager.character),
+            static_cast<u8>(g_GameManager.shotType));
+    }
+#endif
     g_GameManager.globals->pointItemsCollectedForExtend = replayData->pointItemsCollectedForExtend;
     g_GameManager.rank.rank = replayData->rank;
     g_GameManager.SetLivesRemaining(replayData->livesRemaining);

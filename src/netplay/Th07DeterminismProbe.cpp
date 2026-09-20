@@ -27,11 +27,33 @@ bool g_Finished = false;
 bool g_OverrideActive = false;
 std::uint32_t g_Frame = 0;
 
+bool g_DemoFrameActive = false;
+bool g_DemoFirstMismatchReported = false;
+std::uint32_t g_DemoComparedFrames = 0;
+std::uint32_t g_DemoReplayFrame = 0;
+i32 g_DemoStage = 0;
+u16 g_DemoInput = 0;
+u16 g_DemoExpectedAuxCurrent = 0;
+u16 g_DemoExpectedAuxLagged = 0;
+u16 g_DemoPreSeed = 0;
+u32 g_DemoPreGeneration = 0;
+
 bool Requested()
 {
 #ifdef __EMSCRIPTEN__
     return EM_ASM_INT({
         return Module.eaglerOptions?.debugHarness === 'netplay-dual-stage1' ? 1 : 0;
+    }) != 0;
+#else
+    return false;
+#endif
+}
+
+bool DemoRequested()
+{
+#ifdef __EMSCRIPTEN__
+    return EM_ASM_INT({
+        return Module.eaglerOptions?.debugHarness === 'demo-determinism' ? 1 : 0;
     }) != 0;
 #else
     return false;
@@ -137,5 +159,96 @@ void AfterSimulationTick(int chainResult)
         EM_ASM({ globalThis.__eaglerNetplayDualDone = true; });
 #endif
     }
+}
+
+void BeforeDemoReplayFrame()
+{
+    if (!DemoRequested() || !g_ReplayManager || !g_GameManager.notInMenu ||
+        !g_GameManager.replay || !g_GameManager.demo || !g_ReplayManager->replayInputs)
+    {
+        g_DemoFrameActive = false;
+        return;
+    }
+
+    g_DemoFrameActive = true;
+    g_DemoReplayFrame = static_cast<std::uint32_t>(g_ReplayManager->frameId);
+    g_DemoStage = g_GameManager.currentStage;
+    g_DemoInput = g_ReplayManager->replayInputs->frameNum;
+    g_DemoExpectedAuxCurrent = g_ReplayManager->replayInputs->inputKey;
+    g_DemoExpectedAuxLagged = (g_ReplayManager->replayInputs + 1)->inputKey;
+    g_DemoPreSeed = g_Rng.seed;
+    g_DemoPreGeneration = g_Rng.generationCount;
+
+    // During playback replayEventFlags has no gameplay consumer; it is merely
+    // the recorder's event-output latch. Demo playback does not install the
+    // recorder's priority-6 clear callback, so clear it only in this debug
+    // harness to observe events authored by this replay frame.
+    g_ReplayManager->replayEventFlags = 0;
+}
+
+void AfterDemoReplayFrame()
+{
+    if (!g_DemoFrameActive || !g_ReplayManager)
+        return;
+    g_DemoFrameActive = false;
+
+    const u16 actualAux = g_ReplayManager->replayEventFlags;
+    const bool mismatch = g_DemoReplayFrame > 0 && actualAux != g_DemoExpectedAuxLagged;
+    ++g_DemoComparedFrames;
+
+    if ((g_DemoReplayFrame % 600u) == 0u || mismatch)
+    {
+        const auto sample = Th07CanonicalHash::Capture();
+        char composite[17], meta[17], stage[17], player[17], enemies[17], bullets[17], items[17];
+        ToHex(sample.composite, composite);
+        ToHex(sample.meta, meta);
+        ToHex(sample.stage, stage);
+        ToHex(sample.player, player);
+        ToHex(sample.enemies, enemies);
+        ToHex(sample.bullets, bullets);
+        ToHex(sample.items, items);
+        std::printf(
+            "demo determinism: FRAME stage=%d frame=%u input=%04x aux=%04x expectedLagged=%04x expectedCurrent=%04x rng=%04x->%04x draws=%u hash=%s meta=%s stageHash=%s player=%s enemies=%s bullets=%s items=%s counts=%u/%u/%u/%u%s\n",
+            g_DemoStage, g_DemoReplayFrame, static_cast<unsigned>(g_DemoInput),
+            static_cast<unsigned>(actualAux), static_cast<unsigned>(g_DemoExpectedAuxLagged),
+            static_cast<unsigned>(g_DemoExpectedAuxCurrent), static_cast<unsigned>(g_DemoPreSeed),
+            static_cast<unsigned>(g_Rng.seed),
+            static_cast<unsigned>(g_Rng.generationCount - g_DemoPreGeneration), composite, meta,
+            stage, player, enemies, bullets, items, sample.enemyCount, sample.bulletCount,
+            sample.laserCount, sample.itemCount, mismatch ? " MISMATCH" : "");
+    }
+
+    if (mismatch && !g_DemoFirstMismatchReported)
+    {
+        g_DemoFirstMismatchReported = true;
+        std::printf(
+            "demo determinism: FIRST_MISMATCH stage=%d frame=%u input=%04x expected=%04x actual=%04x currentSlot=%04x compared=%u\n",
+            g_DemoStage, g_DemoReplayFrame, static_cast<unsigned>(g_DemoInput),
+            static_cast<unsigned>(g_DemoExpectedAuxLagged), static_cast<unsigned>(actualAux),
+            static_cast<unsigned>(g_DemoExpectedAuxCurrent), g_DemoComparedFrames);
+#ifdef __EMSCRIPTEN__
+        EM_ASM({
+            const mismatch = Object.create(null);
+            mismatch.stage = $0;
+            mismatch.frame = $1;
+            mismatch.input = $2;
+            mismatch.expectedAux = $3;
+            mismatch.actualAux = $4;
+            mismatch.currentSlotAux = $5;
+            mismatch.comparedFrames = $6;
+            globalThis.__eaglerDemoDeterminismFirstMismatch = mismatch;
+        }, g_DemoStage, g_DemoReplayFrame, static_cast<unsigned>(g_DemoInput),
+           static_cast<unsigned>(g_DemoExpectedAuxLagged), static_cast<unsigned>(actualAux),
+           static_cast<unsigned>(g_DemoExpectedAuxCurrent), g_DemoComparedFrames);
+#endif
+    }
+
+#ifdef __EMSCRIPTEN__
+    EM_ASM({
+        globalThis.__eaglerDemoDeterminismComparedFrames = $0;
+        globalThis.__eaglerDemoDeterminismFrame = $1;
+        globalThis.__eaglerDemoDeterminismStage = $2;
+    }, g_DemoComparedFrames, g_DemoReplayFrame, g_DemoStage);
+#endif
 }
 } // namespace Netplay::Th07DeterminismProbe

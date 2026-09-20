@@ -62,6 +62,9 @@ static bool g_NetplayLanStage1Harness = false;
 static bool g_NetplayLanProduction = false;
 static bool g_NetplayStage1HarnessDispatched = false;
 static bool g_NetplayStage1HarnessPrepared = false;
+static bool g_DemoDeterminismHarness = false;
+static bool g_DemoDeterminismHarnessDispatched = false;
+static i32 g_DemoDeterminismIndex = 0;
 #endif
 #ifdef TH_DEV_TOOLS
 static i32 g_StageVisualTestIndex = -1;
@@ -247,6 +250,16 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
         g_NetplayLanProduction || EM_ASM_INT({
         return Module.eaglerOptions?.debugHarness === 'netplay-stage1' ? 1 : 0;
     }) != 0;
+    g_DemoDeterminismHarness = EM_ASM_INT({
+        return Module.eaglerOptions?.debugHarness === 'demo-determinism' ? 1 : 0;
+    }) != 0;
+    if (g_DemoDeterminismHarness)
+    {
+        g_DemoDeterminismIndex = EM_ASM_INT({
+            const index = Number(Module.eaglerOptions?.demoDeterminismIndex ?? 0);
+            return Number.isInteger(index) && index >= 0 && index <= 2 ? index : 0;
+        });
+    }
     if (g_NetplayLanProduction)
         std::printf("th07 netplay: LAN session requested\n");
     else if (g_NetplayStage1Harness)
@@ -424,6 +437,21 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 #endif
     }
 #ifdef TH_ENABLE_NETPLAY
+    if (g_DemoDeterminismHarness && !g_GameManager.demo &&
+        g_MainMenuForDebug && g_MainMenuForDebug->calcChain)
+    {
+        // Enter the stock title-demo path on its next update.  Keeping the
+        // menu as the owner preserves the retail replay validation and setup.
+        // Keep it armed until the menu consumes it so an intro-skip key-up
+        // cannot reset the idle counter on the same logical tick.
+        g_GameManager.demoIdx = (g_DemoDeterminismIndex + 2) % 3;
+        g_MainMenuForDebug->demoFramesCount = 901;
+        if (!g_DemoDeterminismHarnessDispatched)
+        {
+            g_DemoDeterminismHarnessDispatched = true;
+            SDL_Log("th07 demo determinism: armed built-in demo %d", g_DemoDeterminismIndex);
+        }
+    }
     if (g_NetplayStage1Harness && !g_NetplayStage1HarnessDispatched &&
         g_MainMenuForDebug && g_MainMenuForDebug->calcChain &&
         (!g_NetplayLanProduction ||

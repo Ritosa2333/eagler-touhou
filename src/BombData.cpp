@@ -1185,7 +1185,9 @@ void BombData::BombSakuyaACalc(Player *player)
                     angle = g_Rng.GetRandomFloatInRange(ZUN_2PI) - ZUN_PI;
                     subInfo->angle = angle;
                     subInfo->speed = g_Rng.GetRandomFloatInRange(6.0f) + 5.5f;
-                    subInfo->accel = g_Rng.GetRandomFloatInRange(0.1f) + 0.1f;
+                    // `custom` is the upstream scalar acceleration; `accel`
+                    // is the separately migrated angular-acceleration vector.
+                    subInfo->custom = g_Rng.GetRandomFloatInRange(0.1f) + 0.1f;
                     subInfo->accel.x =
                         g_Rng.GetRandomFloatInRange(0.06283186f) - 0.03141593f;
                     subInfo->velocity.x = cosf(subInfo->angle) * 24.0f;
@@ -1318,7 +1320,8 @@ void BombData::BombSakuyaACalcFocus(Player *player)
             angle = (f32)i * ZUN_2PI / 96.0f - ZUN_PI;
             subInfo->angle = angle;
             subInfo->speed = g_Rng.GetRandomFloatInRange(1.0f) + 0.5f;
-            subInfo->accel = g_Rng.GetRandomFloatInRange(0.1f) + 0.03f;
+            // Keep the scalar speed delta separate from accel.x below.
+            subInfo->custom = g_Rng.GetRandomFloatInRange(0.1f) + 0.03f;
             subInfo->accel.x =
                 g_Rng.GetRandomU16InRange(1) ? 0.15707964f : -0.15707964f;
             subInfo->velocity.x = cosf(subInfo->angle) * 24.0f;

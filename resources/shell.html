@@ -444,9 +444,12 @@
         }
         const netplayTestFrameLimit = options.netplayStageTransition ? 24000 : 12000;
         if (options.netplayTestFrames != null && (!Number.isInteger(options.netplayTestFrames) || options.netplayTestFrames < 60 || options.netplayTestFrames > netplayTestFrameLimit)) throw new Error("invalid netplay test frame count");
+        if (options.demoDeterminismIndex != null &&
+            (!Number.isInteger(options.demoDeterminismIndex) || options.demoDeterminismIndex < 0 || options.demoDeterminismIndex > 2 ||
+             options.debugHarness !== "demo-determinism")) throw new Error("invalid demo determinism index");
         const session = options.thpracSession;
         if (options.debugHarness != null && ![
-          "thprac-menu", "music-room", "netplay-stage1", "netplay-dual-stage1", "netplay-lan-core", "netplay-lan-stage1",
+          "thprac-menu", "music-room", "netplay-stage1", "netplay-dual-stage1", "netplay-lan-core", "netplay-lan-stage1", "demo-determinism",
           "replay-extension", "result-stats-phantasm", "stage1-visual", "stage4-visual",
           "ending-reimu-a", "ending-reimu-b", "ending-marisa-a", "ending-marisa-b",
           "ending-sakuya-a", "ending-sakuya-b",
@@ -475,6 +478,7 @@
           thpracLocale: options.thpracLocale || "en-US",
           oggDecodeMode: options.oggDecodeMode || "stream",
           debugHarness: options.debugHarness || null,
+          demoDeterminismIndex: options.debugHarness === "demo-determinism" ? (options.demoDeterminismIndex ?? 0) : undefined,
           netplayMode: options.netplayMode || null,
           netplayMaxPredictionFrames: options.netplayMaxPredictionFrames ?? 12,
           netplayPerfTelemetry: !!options.netplayPerfTelemetry,
