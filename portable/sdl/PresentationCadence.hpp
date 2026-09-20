@@ -17,4 +17,18 @@ struct PresentationCadence {
         return high_refresh;
     }
 };
+
+// A detected high-refresh session only becomes presentable after a real game
+// tick has produced a prev/current endpoint pair. Once primed, isolated late
+// display callbacks must not expose the current endpoint: PresentationCadence's
+// hysteresis owns the decision to leave high-refresh presentation.
+struct PresentationGate {
+    bool primed=false;
+    void reset(){primed=false;}
+    bool advance(bool eligible,bool tick_due){
+        if(!eligible){primed=false;return false;}
+        if(tick_due)primed=true;
+        return primed;
+    }
+};
 }

@@ -1,4 +1,5 @@
 #include "EffectGeometry.hpp"
+#include "PresentationAudit.hpp"
 #include "GameMath.hpp"
 #include <cstdlib>
 namespace th08 {
@@ -18,6 +19,7 @@ i32 EffectGeometry::initialize(EffectState& e,EffectDraw callback,bool alternati
 void EffectGeometry::release(EffectState& e){std::free(e.vertices);e.vertices=nullptr;}
 i32 EffectGeometry::draw(EffectState& e){
     const i32 count=prepare(e);if(count<=0)return 0;
+    TH08_AUDIT_EFFECT(e,e.vertices,u32(count));
     renderer.draw_vertices(e,e.vertices,count);return 1;
 }
 i32 EffectGeometry::prepare(EffectState& e){

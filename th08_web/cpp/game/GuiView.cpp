@@ -1,5 +1,6 @@
 #include "GuiController.hpp"
 #include "Presentation.hpp"
+#include "PresentationAudit.hpp"
 namespace th08 {
 namespace {
 float add(float a,float b){return Scalar::add(a,b);}
@@ -8,7 +9,11 @@ Extended integer(i32 n){return Extended::from_int(n);}
 void GuiController::draw_hud(){
     auto& a=ascii.state;auto viewport=renderer.viewport;viewport.x=viewport.y=0;viewport.width=640;viewport.height=480;renderer.set_viewport(viewport);
     const bool minimal=context.graphics_options&16;
-    auto positioned=[&](AnmVm& vm,float x,float y,float z){if(presentation::render_only){auto draw=vm;draw.pos={x,y,z};renderer.draw_no_rotation(draw);}else{vm.pos={x,y,z};renderer.draw_no_rotation(vm);}};
+    auto positioned=[&](AnmVm& vm,float x,float y,float z){
+        const u32 part=(u32(i32(x))&0x3ffu)|((u32(i32(y))&0x3ffu)<<10);
+        TH08_AUDIT_SCOPE(Gui,&vm,vm.currentTimeInScript.current,part);
+        if(presentation::render_only){auto draw=vm;draw.pos={x,y,z};renderer.draw_no_rotation(draw);}else{vm.pos={x,y,z};renderer.draw_no_rotation(vm);}
+    };
     if(!minimal){auto& vm=display.front[15];positioned(vm,480,40,.49f);positioned(vm,480,56,.49f);
         for(const auto pair:{std::pair<u32,float>{u32(gui.flags.lives),88},{u32(gui.flags.bombs),104},{u32(gui.flags.power),136},{u32(gui.flags.graze),152},{u32(gui.flags.points),168},{u32(gui.flags.time),184}})if(pair.first)positioned(vm,480,pair.second,.48f);
         positioned(vm,512,464,.48f);
@@ -34,7 +39,7 @@ void GuiController::draw_hud(){
 }
 void GuiController::draw_stage(){
     for(auto& vm:display.stage_text)draw_presented_2d(vm);draw_presented_2d(display.clock_intro);draw_presented_2d(display.clock);
-    if(display.loading_portrait.activeSpriteIndex>=0){draw_presented_no_rotation(display.loading_portrait);draw_presented_world(display.arcade);for(auto& vm:display.arcade_blur)draw_presented_world(vm);if(display.unknown3a1c.activeSpriteIndex>=0){if(presentation::render_only){auto draw=presentation_vm(display.unknown3a1c);draw.pos={304,448,0};renderer.draw_no_rotation(draw);}else{display.unknown3a1c.pos={304,448,0};renderer.draw_no_rotation(display.unknown3a1c);}}}
+    if(display.loading_portrait.activeSpriteIndex>=0){draw_presented_no_rotation(display.loading_portrait);draw_presented_world(display.arcade);for(auto& vm:display.arcade_blur)draw_presented_world(vm);if(display.unknown3a1c.activeSpriteIndex>=0){TH08_AUDIT_SCOPE(Gui,&display.unknown3a1c,display.unknown3a1c.currentTimeInScript.current,0);if(presentation::render_only){auto draw=presentation_vm(display.unknown3a1c);draw.pos={304,448,0};renderer.draw_no_rotation(draw);}else{display.unknown3a1c.pos={304,448,0};renderer.draw_no_rotation(display.unknown3a1c);}}}
     if(display.transition_count)for(auto& vm:display.transition){draw_presented_world(vm);renderer.current_sprite=nullptr;}
     if(display.dialogue.message<0&&(u32(gui.boss_present)+display.boss_life_state)>0){
         auto rect=[&](float left,float right,u32 color1,u32 color2){const u32 colors[]={color1,color1,color2,color2};renderer.draw_rectangle(left,19,right,23,colors,true);};

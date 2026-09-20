@@ -15,8 +15,8 @@ bool TitleContext::IsExtraUnlockedWithAllTeams()const{for(i32 i=0;i<4;++i)if(!Is
 TitleMenus::~TitleMenus(){release();}
 void TitleMenus::release(){close_replay();delete[] state.vms;state.vms=nullptr;presentation_previous.clear();presentation_help_vm=nullptr;presentation_valid=false;}
 void TitleMenus::snapshot_presentation(){
-    presentation_previous.resize(std::max(0,state.vmCount));for(i32 i=0;i<state.vmCount;++i)presentation_previous[i]={state.vms[i].pos,state.vms[i].pos2,state.vms[i].scriptIndex};
-    presentation_help_vm=state.currentHelpTextVm;if(presentation_help_vm)presentation_help={presentation_help_vm->pos,presentation_help_vm->pos2,presentation_help_vm->scriptIndex};presentation_valid=true;
+    presentation_previous.resize(std::max(0,state.vmCount));for(i32 i=0;i<state.vmCount;++i)presentation_previous[i]={state.vms[i].pos,state.vms[i].pos2,state.vms[i].scriptIndex,presentation::VisualSample(state.vms[i])};
+    presentation_help_vm=state.currentHelpTextVm;if(presentation_help_vm)presentation_help={presentation_help_vm->pos,presentation_help_vm->pos2,presentation_help_vm->scriptIndex,presentation::VisualSample(*presentation_help_vm)};presentation_valid=true;
 }
 JobResult TitleMenus::update(){
     if(state.state!=TitleScreenState_Ready)return state.state==TitleScreenState_Close?JobResult::Exit:JobResult::Continue;

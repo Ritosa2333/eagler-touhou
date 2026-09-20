@@ -1,4 +1,5 @@
 #include "PlayerMotion.hpp"
+#include "PresentationAudit.hpp"
 namespace th08 {
 void update_player_motion(PlayerMotionState& s,PlayerMotionInput& input,Timer& shooting,GameGauge& gauge,const ShotProfile& human,const ShotProfile& focused,const FrameTiming& timing,PlayerMotionActions& actions){
     s.movement.direction=player_direction(input.buttons);
@@ -13,7 +14,14 @@ void update_player_motion(PlayerMotionState& s,PlayerMotionInput& input,Timer& s
     record_player_position(s.movement);
 }
 void draw_player_motion(PlayerMotionState& s,const Vec2& offset,bool game_over,PlayerMotionActions& actions){
-    if(!game_over){s.animation.pos={Scalar::add(offset.x,s.movement.position.x),Scalar::add(offset.y,s.movement.position.y),.1f};actions.draw_player(s.animation);}
-    PlayerOptionContext context;PlayerOptions options(context);options.actions=&actions;for(auto& option:s.options)if(option.draw)options.draw(option,offset);
+    if(!game_over){
+        TH08_AUDIT_SCOPE(Player,&s.animation,s.animation.currentTimeInScript.current,0);
+        s.animation.pos={Scalar::add(offset.x,s.movement.position.x),Scalar::add(offset.y,s.movement.position.y),.1f};actions.draw_player(s.animation);
+    }
+    PlayerOptionContext context;PlayerOptions options(context);options.actions=&actions;
+    for(u32 i=0;i<4;++i){auto& option=s.options[i];if(!option.draw)continue;
+        TH08_AUDIT_SCOPE(PlayerOption,&option,option.animation.currentTimeInScript.current,i);
+        options.draw(option,offset);
+    }
 }
 }

@@ -1,6 +1,7 @@
 // Recovered against TH08 1.00d; algorithm names and layout also informed by
 // the MIT reference credited in cpp/licenses/th08-reference-MIT.txt.
 #include "AnmRenderer.hpp"
+#include "PresentationAudit.hpp"
 #include "GameMath.hpp"
 #include "GraphicsMath.hpp"
 #include <cmath>
@@ -224,6 +225,7 @@ i32 AnmRenderer::draw_inner(AnmVm& vm, u32 flags) {
         for (auto& vertex : quad) vertex.color = color;
     }
     set_state(vm);
+    TH08_AUDIT_SPRITE(vm,quad,4,shake);
     add_quad(quad);
     return 0;
 }
@@ -353,6 +355,7 @@ i32 AnmRenderer::draw_3d(AnmVm& vm) {
     }
     if(vertex_buffer_disabled)backend.draw(Primitive::Strip,format,colored_world_quad,4);
     else backend.draw(Primitive::Strip,format,world_quad,4);
+    TH08_AUDIT_WORLD(vm,*this,world);
     return 0;
 }
 
@@ -369,6 +372,7 @@ i32 AnmRenderer::draw_vertices(AnmVm& vm,const SpriteVertex* vertices,i32 count)
         if(!vertex_buffer_disabled) { RenderCommands(backend).SetDiffuseArg(TextureArg::Diffuse); }
     }
     backend.draw(Primitive::Strip,VertexFormat::Screen,vertices,u32(count));
+    TH08_AUDIT_CAPTURE(vm,vertices,u32(count),1);
     return 0;
 }
 
@@ -378,7 +382,7 @@ i32 AnmRenderer::draw_quad(AnmVm& vm,const SpriteVertex* vertices) {
         current_texture=vm.loadedSprite->texture; flush(); backend.bind_texture(current_texture);
     }
     if(current_shader!=1) { flush(); current_shader=1; }
-    set_state(vm); add_quad(vertices);
+    set_state(vm); TH08_AUDIT_CAPTURE(vm,vertices,4,2); add_quad(vertices);
     return 0;
 }
 
@@ -413,6 +417,7 @@ i32 AnmRenderer::draw_fan(AnmVm& vm,const UntexturedVertex* vertices,i32 count) 
     RenderCommands(backend).SetTextureArg(TextureArg::Diffuse);
     flush(); backend.write_depth(false);
     backend.draw(Primitive::Fan,VertexFormat::Untextured,vertices,u32(count));
+    TH08_AUDIT_FAN(vm,vertices,u32(count));
     current_shader=current_color_op=disable_z_write=0xff; current_blend=3;
     if(!color_compositing_disabled) { RenderCommands(backend).SetColorOp(ColorOp::Modulate); }
     RenderCommands(backend).SetTextureArg(TextureArg::Texture);

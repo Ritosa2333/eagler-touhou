@@ -3,6 +3,7 @@
 #include "ScreenEffects.hpp"
 #include "Rng.hpp"
 #include "PlayerOptions.hpp"
+#include "PresentationVisual.hpp"
 namespace th08 {
 struct PlayerBombPatternContext {FrameTiming timing;Vec3 homing_target{-999,-999,0};PlayerOption* options=nullptr;Timer shooting_timer;AnmVm* main_animation=nullptr;};
 struct PlayerBombPatternActions:PlayerBombStartActions {
@@ -23,9 +24,14 @@ struct PlayerBombPatternActions:PlayerBombStartActions {
 class PlayerBombPatterns {
     PlayerBombObjects& objects;PlayerBombState& bomb;PlayerLifeState& life;PlayerLifeContext& context;
     PlayerMovementState& movement;PlayerBombContext& input;DamageRegions& regions;Rng& rng;PlayerBombPatternActions& actions;
-    struct PresentationSample {Vec3 position{};float angle=0;i32 state=0,age=0;i16 script=-1;};
+    struct PresentationSample {Vec3 position{};float angle=0;i32 state=0,age=0;i16 script=-1;presentation::VisualSample visual;};
     PresentationSample presentation_previous[128]{};
+    // Only object zero uses multiple ANM parts (Master Spark / Yukari cut-in).
+    presentation::VisualSample presentation_additional[7]{};
+    i32 presentation_additional_age[7]{};
+    presentation::SnapshotMarker presentation_marker;
     void snapshot_presentation();
+    void presentation_visual(u32 index,u32 part,AnmVm& draw)const;
     Vec3 presentation_position(u32 index)const;
     float presentation_angle(u32 index)const;
     void begin(PlayerBombKind kind,i32 sprite,i32 duration,i32 invincibility,i32 variant);
@@ -43,5 +49,8 @@ public:
     // False identifies a callback that has not yet been recovered or invalid data.
     bool update(PlayerBombKind);
     bool draw(PlayerBombKind,const Vec2& offset);
+#if defined(TH_PRESENTATION_AUDIT)
+    const float* audit_presentation_sample(uintptr_t object,u32 part)const;
+#endif
 };
 }

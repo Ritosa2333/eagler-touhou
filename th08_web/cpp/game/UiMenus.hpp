@@ -1,4 +1,5 @@
 #pragma once
+#include "PresentationVisual.hpp"
 #include "AsciiManager.hpp"
 #include "GameValues.hpp"
 #include <array>
@@ -42,7 +43,7 @@ public:
     void draw_pause();
     void draw_retry();
 private:
-    struct PresentationVm {Vec3 pos{},pos2{};i16 script=-1;bool visible=false;};
+    struct PresentationVm {Vec3 pos{},pos2{};i16 script=-1;bool visible=false;presentation::VisualSample visual;};
     std::array<PresentationVm,10> pause_previous{};
     std::array<PresentationVm,6> retry_previous{};
     PresentationVm pause_background{},retry_background{};

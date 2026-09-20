@@ -1,5 +1,6 @@
 // Source-level TH08 title menu recovery. GensokyoClub/th08 reference: MIT.
 #pragma once
+#include "PresentationVisual.hpp"
 #include "AnmText.hpp"
 #include "AnmExecutor.hpp"
 #include "InputController.hpp"
@@ -182,7 +183,7 @@ public:
     bool replay_stage(i32 stage,ReplayStage& out)const;
 private:
     TitleContext& context;GameConfiguration& config;AnmExecutor& executor;TextWriter& text;TitleActions& actions;
-    struct PresentationVm {Vec3 pos{},pos2{};i16 script=-1;};
+    struct PresentationVm {Vec3 pos{},pos2{};i16 script=-1;presentation::VisualSample visual;};
     std::vector<PresentationVm> presentation_previous;AnmVm* presentation_help_vm=nullptr;PresentationVm presentation_help{};bool presentation_valid=false;
     void snapshot_presentation();
     void SetInterruptArray(AnmVm* vms,i32 count,i16 value);

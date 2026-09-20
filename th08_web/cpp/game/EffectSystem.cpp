@@ -1,5 +1,6 @@
 #include "EffectSystem.hpp"
 #include "Presentation.hpp"
+#include "PresentationAudit.hpp"
 #include "GameMath.hpp"
 namespace th08 {
 namespace {
@@ -65,19 +66,48 @@ EffectState* EffectSystem::overlay(i32 kind,Vec3 position,i32 count,u32 color){
     }replay_flags|=0x400;return &state.objects[653];
 }
 void EffectSystem::shift_glows(const Vec3& offset){for(u32 i=0;i<512;++i)if(state.objects[i].kind==51)add(state.objects[i].world_position,offset);}
-void EffectSystem::snapshot_presentation(){for(size_t i=0;i<presentation_previous.size();++i){const auto& e=state.objects[i];auto& before=presentation_previous[i];before.active=e.active!=0;if(before.active){before.position=e.position;before.center=e.center;before.radius=e.radius;before.angle=e.angle;before.width=e.width;before.height=e.height;before.angle_y=e.angle_y;before.age=e.age.current;before.kind=e.kind;}}}
-Vec3 EffectSystem::presentation_position(EffectState& e)const{
+void EffectSystem::snapshot_presentation(){if(!presentation_marker.capture())return;for(size_t i=0;i<presentation_previous.size();++i){const auto& e=state.objects[i];auto& before=presentation_previous[i];before.active=e.active!=0;if(before.active){before.position=e.position;before.center=e.center;before.radius=e.radius;before.angle=e.angle;before.width=e.width;before.height=e.height;before.angle_y=e.angle_y;before.frequency=e.frequency;before.segments=e.segments;before.age=e.age.current;before.kind=e.kind;before.visual.capture(e);before.projected_offset=e.posFinal;}}}
+void EffectSystem::presentation_visual(const EffectState& source,EffectState& draw)const{
+    const size_t index=size_t(&source-state.objects);if(index>=presentation_previous.size())return;const auto& before=presentation_previous[index];
+    if(!before.active||before.kind!=source.kind||source.age.current<before.age)return;
+    using V=presentation::VisualSample;u32 owner_fields=0;
+    // Glow tint is a continuous modulation of ANM color1. Boss-tracking glow
+    // kinds also low-pass pos2 toward the boss every logical tick, so their
+    // owner-driven offset needs an explicit presentation endpoint as well.
+    // The orbit's death callback owns its expanding scale/fade; neither is a
+    // palette flash.
+    if(source.flag17)owner_fields|=V::Rgb2|V::Opacity2;
+    if(source.kind==51||source.kind==63)owner_fields|=V::Offset;
+    if(source.dying)owner_fields|=V::Scale|V::Opacity;
+    if(source.kind==19)owner_fields|=V::Rotation;
+    before.visual.apply(source,draw,presentation::world_alpha,V::Attributes|V::Offset,owner_fields);
+    if((source.kind==51||source.kind==63)&&presentation::active)
+        draw.posFinal=V::vector(before.projected_offset,source.posFinal,presentation::world_alpha);
+}
+Vec3 EffectSystem::presentation_position(const EffectState& e)const{
     if(!presentation::active)return e.position;const size_t index=size_t(&e-state.objects);if(index>=presentation_previous.size())return e.position;const auto& before=presentation_previous[index];
     const float dx=e.position.x-before.position.x,dy=e.position.y-before.position.y;if(!before.active||before.kind!=e.kind||e.age.current<before.age||dx*dx+dy*dy>=16384.0f)return e.position;
     return {presentation::lerp_world(before.position.x,e.position.x),presentation::lerp_world(before.position.y,e.position.y),presentation::lerp_world(before.position.z,e.position.z)};
+}
+EffectState EffectSystem::presentation_copy(const EffectState& source)const{
+    EffectState draw=source;
+    if(!presentation::render_only)return draw;
+    draw.position=presentation_position(source);presentation_visual(source,draw);
+    if(presentation::active)presentation_geometry(source,draw);
+    return draw;
 }
 void EffectSystem::presentation_geometry(const EffectState& source,EffectState& draw)const{
     const size_t index=size_t(&source-state.objects);if(index>=presentation_previous.size())return;const auto& before=presentation_previous[index];
     const float dx=source.position.x-before.position.x,dy=source.position.y-before.position.y;if(!before.active||before.kind!=source.kind||source.age.current<before.age||dx*dx+dy*dy>=16384.0f)return;
     draw.center={presentation::lerp_world(before.center.x,source.center.x),presentation::lerp_world(before.center.y,source.center.y),presentation::lerp_world(before.center.z,source.center.z)};
+    // Branch selectors and vertex layout are discrete. Blending height while
+    // taking frequency/segments from the current endpoint can create a third
+    // geometry mode that exists at neither endpoint. Keep the authoritative
+    // current shape across a topology boundary; placement may still be smooth.
+    if(!EffectGeometry::interpolation_preserves_topology(before.height,before.frequency,before.segments,source.height,source.frequency,source.segments))return;
     draw.radius=presentation::lerp_world(before.radius,source.radius);draw.width=presentation::lerp_world(before.width,source.width);draw.height=presentation::lerp_world(before.height,source.height);
     constexpr float pi=3.1415927410125732f,tau=6.2831854820251465f;
-    auto angle=[&](float a,float b){float d=b-a;if(d>pi)d-=tau;else if(d<-pi)d+=tau;return add_angle(a+d*presentation::world_alpha,0);};
+    auto angle=[&](float a,float b){if(presentation::world_alpha>=1)return b;if(presentation::world_alpha<=0)return a;float d=b-a;if(d>pi)d-=tau;else if(d<-pi)d+=tau;return add_angle(a+d*presentation::world_alpha,0);};
     draw.angle=angle(before.angle,source.angle);draw.angle_y=angle(before.angle_y,source.angle_y);
 }
 JobResult EffectSystem::update(){
@@ -91,26 +121,42 @@ JobResult EffectSystem::update(){
     state.frames=wrapping_add(state.frames,1);return state.frames%300==100&&values.tampered()?JobResult::Exit:JobResult::Continue;
 }
 void EffectSystem::draw_list(u32 index,float depth,bool offset_before_depth){
-    for(auto* e=state.sentinels[index].next;e;e=e->next){if(e->draw){
+    for(auto* e=state.sentinels[index].next;e;e=e->next){TH08_AUDIT_SCOPE(Effect,e,e->age.current,u32(e->kind));if(e->draw){
             if(presentation::render_only){
                 EffectState copy=*e;std::array<SpriteVertex,258> vertices{};if(e->vertices){std::memcpy(vertices.data(),e->vertices,sizeof(vertices));copy.vertices=vertices.data();}
-                copy.position=presentation_position(*e);if(presentation::active)presentation_geometry(*e,copy);copy.geometry_dirty=1;const bool invalid_before=geometry.invalid;e->draw(copy,*this);geometry.invalid=invalid_before;
+                copy.position=presentation_position(*e);presentation_visual(*e,copy);if(presentation::active)presentation_geometry(*e,copy);copy.geometry_dirty=1;const bool invalid_before=geometry.invalid;e->draw(copy,*this);geometry.invalid=invalid_before;
             }else e->draw(*e,*this);
             continue;
         }EffectState copy;EffectState* draw=e;
-        if(presentation::render_only){copy=*e;copy.position=presentation_position(*e);draw=&copy;}
+        if(presentation::render_only){copy=*e;copy.position=presentation_position(*e);presentation_visual(*e,copy);draw=&copy;}
         draw->pos=draw->position;draw->pos.x=Scalar::add(arcade.x,draw->pos.x);draw->pos.y=Scalar::add(arcade.y,draw->pos.y);
         if(offset_before_depth){add(draw->pos,draw->pos2);draw->pos.z=depth;}else{draw->pos.z=depth;add(draw->pos,draw->pos2);}renderer.draw_2d(*draw);
     }
 }
-JobResult EffectSystem::draw(){draw_list(0,.07f,false);for(auto* e=state.sentinels[2].next;e;e=e->next){EffectState copy;EffectState* draw=e;if(presentation::render_only){copy=*e;copy.position=presentation_position(*e);draw=&copy;}draw->pos=draw->position;renderer.draw_facing_camera(*draw);}draw_list(4,.07f,false);return JobResult::Continue;}
+JobResult EffectSystem::draw(){draw_list(0,.07f,false);for(auto* e=state.sentinels[2].next;e;e=e->next){TH08_AUDIT_SCOPE(Effect,e,e->age.current,u32(e->kind));EffectState copy;EffectState* draw=e;if(presentation::render_only){copy=*e;copy.position=presentation_position(*e);presentation_visual(*e,copy);draw=&copy;}draw->pos=draw->position;renderer.draw_facing_camera(*draw);}draw_list(4,.07f,false);return JobResult::Continue;}
 JobResult EffectSystem::draw_alternative(){draw_list(3,.04f,true);return JobResult::Continue;}
-void EffectSystem::projected(AnmVm& vm,Vec3& position,void* p){static_cast<EffectSystem*>(p)->space.projected(vm,position);}
+void EffectSystem::projected(AnmVm& vm,Vec3& position,void* p){
+    // The authoritative Draw has already integrated this attraction once.
+    // Extra Draws read its endpoint instead of integrating it a second time.
+    if(presentation::render_only){add(position,vm.posFinal);return;}
+    static_cast<EffectSystem*>(p)->space.projected(vm,position);
+}
 JobResult EffectSystem::draw_background(){
     // Quality 1 returns before its first object, as in 4281e0; the odd/even
     // check is a return from the loop, not a skip to the next particle.
     if(quality<2)return JobResult::Continue;
-    for(auto* e=state.sentinels[1].next;e;e=e->next){EffectState copy;EffectState* draw=e;if(presentation::render_only){copy=*e;copy.position=presentation_position(*e);draw=&copy;}draw->pos=draw->position;if(draw->layer==4)renderer.draw_2d(*draw);else if(draw->layer==1)renderer.draw_facing_camera(*draw,(draw->kind==51||draw->kind==63)?projected:nullptr,this);else renderer.draw_world(*draw);}
+    for(auto* e=state.sentinels[1].next;e;e=e->next){TH08_AUDIT_SCOPE(Effect,e,e->age.current,u32(e->kind));EffectState copy;EffectState* draw=e;if(presentation::render_only){copy=*e;copy.position=presentation_position(*e);presentation_visual(*e,copy);draw=&copy;}draw->pos=draw->position;if(draw->layer==4)renderer.draw_2d(*draw);else if(draw->layer==1)renderer.draw_facing_camera(*draw,(draw->kind==51||draw->kind==63)?projected:nullptr,this);else renderer.draw_world(*draw);}
     return JobResult::Continue;
 }
+#if defined(TH_PRESENTATION_AUDIT)
+const float* EffectSystem::audit_presentation_sample(uintptr_t object)const{
+    static float out[16];std::fill(out,out+16,0.0f);
+    const auto* begin=state.objects;const auto* end=state.objects+654;const auto* current=reinterpret_cast<const EffectState*>(object);
+    if(current<begin||current>=end)return out;const size_t index=size_t(current-begin);const auto& before=presentation_previous[index];
+    out[0]=before.active?1.0f:0.0f;out[1]=float(before.age);out[2]=float(before.kind);out[3]=before.visual.scale.x;out[4]=before.visual.scale.y;
+    out[5]=float(before.visual.color1.a);out[6]=float(before.visual.continuous);out[7]=before.position.x;out[8]=before.position.y;
+    out[9]=current->scale.x;out[10]=current->scale.y;out[11]=float(current->color1.a);out[12]=float(presentation::VisualSample::continuous_fields(*current));
+    out[13]=current->position.x;out[14]=current->position.y;out[15]=float(presentation_marker.last_epoch&0xffffffu);return out;
+}
+#endif
 }

@@ -21,6 +21,7 @@ private:
     BackgroundState& state;BackgroundScript& script;AnmRenderer& renderer;BackgroundObjects objects;BackgroundDrawActions& actions;
     struct PresentationState {i32 spell_flag=0;ZunColor tint_color{};i32 use_tint=0,effect_visible=0;bool valid=false;} presentation;
     std::array<AnmVm,32> presentation_spell_vms{};bool presentation_spell_valid=false;
+    th08::presentation::SnapshotMarker presentation_marker;
     struct RenderRestore {i32 spell_flag=0;ZunColor tint_color{};i32 use_tint=0,effect_visible=0,effect_flags=0;std::array<Vec3,32> effect_positions{};bool active=false;} restore;
     SceneCamera saved_camera{};bool camera_override=false;
     void layer(AnmVm& vm){renderer.draw_2d(vm);renderer.flush();}

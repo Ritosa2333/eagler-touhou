@@ -1,4 +1,5 @@
 #pragma once
+#include "PresentationVisual.hpp"
 #include "ShotResource.hpp"
 #include "AnmLayout.hpp"
 #include "DamageRegions.hpp"
@@ -49,8 +50,13 @@ public:
     void draw_trail(PlayerShot& shot,const Vec2& screen_offset);
 private:
     PlayerShotsState& state;Rng& rng;
-    struct PresentationSample {Vec3 position{};float angle=0;i32 age=0;i16 state=0,kind=0;bool active=false;};
+    struct PresentationSample {Vec3 position{},history[32]{};float angle=0;i32 age=0;i16 state=0,kind=0;bool active=false;presentation::VisualSample visual;};
     std::array<PresentationSample,128> presentation_previous{};
+    presentation::SnapshotMarker presentation_marker;
+    // A laser tail deliberately leaves its tint in the original VM. Retain
+    // the main sprite's authored draw color without changing that game state.
+    struct DrawColor {ZunColor color{};i32 age=0;i16 state=0,kind=0,script=-1;bool valid=false;};
+    std::array<DrawColor,128> authored_colors{};
     void snapshot_presentation();
     void direction(PlayerShot& shot,float angle,float speed);
 };

@@ -2,6 +2,7 @@
 // original functions and the MIT GensokyoClub/th08 reference.
 #include "UiMenus.hpp"
 #include "Presentation.hpp"
+#include "PresentationAudit.hpp"
 namespace th08 {
 namespace {
 constexpr u16 escape=8,up=16,down=32,quit=512,restart=16384,select=4097;
@@ -20,11 +21,13 @@ bool UiMenus::capture(AnmVm& vm){
     if(!actions.capture(request))return false;vm.pos={32,16,0};return true;
 }
 void UiMenus::viewport(){auto v=renderer.viewport;v.x=u32(Scalar::truncate(context.arcade_origin.x));v.y=u32(Scalar::truncate(context.arcade_origin.y));v.width=u32(Scalar::truncate(context.arcade_size.x));v.height=u32(Scalar::truncate(context.arcade_size.y));renderer.set_viewport(v);}
-void UiMenus::snapshot_pause(){auto& s=ascii.pause;for(size_t i=0;i<pause_previous.size();++i)pause_previous[i]={s.sprites[i].pos,s.sprites[i].pos2,s.sprites[i].scriptIndex,s.sprites[i].visible};pause_background={s.background.pos,s.background.pos2,s.background.scriptIndex,s.background.visible};pause_presentation_valid=true;}
-void UiMenus::snapshot_retry(){auto& s=ascii.retry;for(size_t i=0;i<retry_previous.size();++i)retry_previous[i]={s.sprites[i].pos,s.sprites[i].pos2,s.sprites[i].scriptIndex,s.sprites[i].visible};retry_background={s.background.pos,s.background.pos2,s.background.scriptIndex,s.background.visible};retry_presentation_valid=true;}
+void UiMenus::snapshot_pause(){auto& s=ascii.pause;for(size_t i=0;i<pause_previous.size();++i)pause_previous[i]={s.sprites[i].pos,s.sprites[i].pos2,s.sprites[i].scriptIndex,s.sprites[i].visible,presentation::VisualSample(s.sprites[i])};pause_background={s.background.pos,s.background.pos2,s.background.scriptIndex,s.background.visible,presentation::VisualSample(s.background)};pause_presentation_valid=true;}
+void UiMenus::snapshot_retry(){auto& s=ascii.retry;for(size_t i=0;i<retry_previous.size();++i)retry_previous[i]={s.sprites[i].pos,s.sprites[i].pos2,s.sprites[i].scriptIndex,s.sprites[i].visible,presentation::VisualSample(s.sprites[i])};retry_background={s.background.pos,s.background.pos2,s.background.scriptIndex,s.background.visible,presentation::VisualSample(s.background)};retry_presentation_valid=true;}
 void UiMenus::draw_presented(AnmVm& source,const PresentationVm& before,bool valid,bool force_no_z){
+    TH08_AUDIT_SCOPE(Pause,&source,source.currentTimeInScript.current,context.pause_state?0:1);
     if(!presentation::render_only&&!force_no_z){renderer.draw_no_rotation(source);return;}AnmVm draw=source;
     if(presentation::active&&valid&&before.script==source.scriptIndex&&before.visible==source.visible){
+        before.visual.apply(source,draw,presentation::alpha);
         const float dx=source.pos.x-before.pos.x,dy=source.pos.y-before.pos.y;if(dx*dx+dy*dy<16384.0f)draw.pos={presentation::lerp(before.pos.x,source.pos.x),presentation::lerp(before.pos.y,source.pos.y),presentation::lerp(before.pos.z,source.pos.z)};
         const float ox=source.pos2.x-before.pos2.x,oy=source.pos2.y-before.pos2.y;if(ox*ox+oy*oy<16384.0f)draw.pos2={presentation::lerp(before.pos2.x,source.pos2.x),presentation::lerp(before.pos2.y,source.pos2.y),presentation::lerp(before.pos2.z,source.pos2.z)};
     }

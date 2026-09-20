@@ -2,6 +2,7 @@
 #include "TitleView.hpp"
 #include "GameMath.hpp"
 #include "Presentation.hpp"
+#include "PresentationAudit.hpp"
 #include <array>
 namespace th08 {
 namespace {
@@ -102,11 +103,13 @@ void TitleView::pie(const Vec3& position,u32 color,float fraction,float diameter
 i32 TitleView::draw(){
     if(state.state!=TitleScreenState_Ready)return 1;renderer.current_texture=0;menus.actions.background();
     std::array<Vec3,21> saved_name_positions{};if(presentation::render_only)for(size_t i=0;i<saved_name_positions.size();++i)saved_name_positions[i]=state.spellCardNameVms[i].pos;
-    for(i32 i=0;i<state.vmCount;++i){auto& vm=state.vms[i];if(!vm.loadedSprite||!vm.anmFile||!vm.anmFile->textures)continue;const Vec3 position=vm.pos;Vec3 draw_pos=vm.pos,draw_pos2=vm.pos2;
+    for(i32 i=0;i<state.vmCount;++i){auto& source=state.vms[i];AnmVm copy;AnmVm& vm=presentation::render_only?(copy=source):source;if(!vm.loadedSprite||!vm.anmFile||!vm.anmFile->textures)continue;const Vec3 position=vm.pos;Vec3 draw_pos=vm.pos,draw_pos2=vm.pos2;
+        TH08_AUDIT_SCOPE(Title,&source,source.currentTimeInScript.current,u32(i));
+        if(menus.presentation_valid&&i<i32(menus.presentation_previous.size()))menus.presentation_previous[i].visual.apply(source,vm,presentation::alpha);
         if(presentation::active&&menus.presentation_valid&&i<i32(menus.presentation_previous.size())){const auto& before=menus.presentation_previous[i];if(before.script==vm.scriptIndex){draw_pos={presentation::lerp(before.pos.x,vm.pos.x),presentation::lerp(before.pos.y,vm.pos.y),presentation::lerp(before.pos.z,vm.pos.z)};draw_pos2={presentation::lerp(before.pos2.x,vm.pos2.x),presentation::lerp(before.pos2.y,vm.pos2.y),presentation::lerp(before.pos2.z,vm.pos2.z)};}}
         vm.pos={move(draw_pos.x,draw_pos2.x),move(draw_pos.y,draw_pos2.y),move(draw_pos.z,draw_pos2.z)};
         if(vm.rotation.z!=0)renderer.draw_2d(vm);else renderer.draw_no_rotation(vm);vm.pos=position;}
-    if(state.currentHelpTextVm){if(presentation::active&&menus.presentation_valid&&menus.presentation_help_vm==state.currentHelpTextVm&&menus.presentation_help.script==state.currentHelpTextVm->scriptIndex){auto draw=*state.currentHelpTextVm;draw.pos={presentation::lerp(menus.presentation_help.pos.x,draw.pos.x),presentation::lerp(menus.presentation_help.pos.y,draw.pos.y),presentation::lerp(menus.presentation_help.pos.z,draw.pos.z)};renderer.draw_no_rotation(draw);}else renderer.draw_no_rotation(*state.currentHelpTextVm);}
+    if(state.currentHelpTextVm){TH08_AUDIT_SCOPE(TitleHelp,state.currentHelpTextVm,state.currentHelpTextVm->currentTimeInScript.current,0);if(presentation::active&&menus.presentation_valid&&menus.presentation_help_vm==state.currentHelpTextVm&&menus.presentation_help.script==state.currentHelpTextVm->scriptIndex){auto draw=*state.currentHelpTextVm;menus.presentation_help.visual.apply(*state.currentHelpTextVm,draw,presentation::alpha);draw.pos={presentation::lerp(menus.presentation_help.pos.x,draw.pos.x),presentation::lerp(menus.presentation_help.pos.y,draw.pos.y),presentation::lerp(menus.presentation_help.pos.z,draw.pos.z)};renderer.draw_no_rotation(draw);}else renderer.draw_no_rotation(*state.currentHelpTextVm);}
     switch(state.currentScreen){case TitleCurrentScreen_CharacterSelect:completion();break;case TitleCurrentScreen_Replay:replays();break;case TitleCurrentScreen_PracticeStageSelect:practice();break;case TitleCurrentScreen_SpellStageSelect:spell_stages();break;case TitleCurrentScreen_SpellCardSelect:spell_cards();break;default:break;}if(presentation::render_only)for(size_t i=0;i<saved_name_positions.size();++i)state.spellCardNameVms[i].pos=saved_name_positions[i];return 1;
 }
 }

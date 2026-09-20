@@ -4,6 +4,7 @@
 #include "FrameCadence.hpp"
 #include "PresentationCadence.hpp"
 #include "Renderer.hpp"
+#include "../game/PresentationAudit.hpp"
 #include "ThpracUi.hpp"
 #include "../../../portable/input/TouchController.hpp"
 #include <SDL3/SDL.h>
@@ -29,10 +30,24 @@ EM_JS(int, th08_keyboard_gamepad_dpad, (), {
 namespace th08 {
 void sdl_validate_capture();
 namespace {
+#if defined(TH_PRESENTATION_AUDIT)
+struct AuditTimingSample {
+    double timestamp_ms=0;
+    float delta_ms=0,alpha=1;
+    u32 flags=0,simulation_frame=0;
+    float camera[26]{};
+};
+static_assert(sizeof(AuditTimingSample)==128);
+constexpr u32 audit_timing_capacity=512;
+AuditTimingSample audit_timing[audit_timing_capacity]{};u32 audit_timing_next=0,audit_timing_count=0;
+void camera_values(float* out,const SceneCamera& c){
+    for(const auto& v:{c.position,c.target_offset,c.up,c.eye_offset}){*out++=v.x;*out++=v.y;*out++=v.z;}*out=c.field_of_view;
+}
+#endif
 std::unique_ptr<BrowserRuntime> runtime;touhou::input::TouchController touch;
 struct Key{const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
 #include "../../../portable/input/KeyboardMap.inc"
-SDL_Gamepad* gamepad=nullptr;u32 prepared=0;bool running=false,suspended=false,presentation_primed=false;double elapsed=0,last=-1,frame_begin=0;u32 frames=0,loop_epoch=0,warm_mask=0;touhou::sdl::FrameCadence cadence;touhou::sdl::PresentationCadence presentation;
+SDL_Gamepad* gamepad=nullptr;u32 prepared=0;bool running=false,suspended=false;double elapsed=0,last=-1,frame_begin=0;u32 frames=0,loop_epoch=0,warm_mask=0;touhou::sdl::FrameCadence cadence;touhou::sdl::PresentationCadence display_cadence;touhou::sdl::PresentationGate presentation_gate;
 constexpr SDL_GamepadButton gamepad_slots[]={
     SDL_GAMEPAD_BUTTON_SOUTH,SDL_GAMEPAD_BUTTON_EAST,SDL_GAMEPAD_BUTTON_WEST,SDL_GAMEPAD_BUTTON_NORTH,
     SDL_GAMEPAD_BUTTON_LEFT_SHOULDER,SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER,SDL_GAMEPAD_BUTTON_BACK,
@@ -83,11 +98,11 @@ void poll(){if(!runtime)return;SDL_Event event;while(SDL_PollEvent(&event)){
 }
 int tick(){poll();return !runtime||!runtime->step(false)?runtime&&(runtime->status(2)||runtime->status(4))?2:1:0;}
 EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double delta=last<0?0:std::max(0.,(now-last)/1000.);last=now;frame_begin=emscripten_get_now();
-    if(suspended||!th08_frame_ready()){sdl_audio_pause(true);cadence.reset();presentation.reset();presentation_primed=false;return EM_TRUE;}sdl_audio_pause(false);int result=0;
+    if(suspended||!th08_frame_ready()){sdl_audio_pause(true);cadence.reset();display_cadence.reset();presentation_gate.reset();return EM_TRUE;}sdl_audio_pause(false);int result=0;
     const bool limit60=th08_limit_presentation_to_60()!=0;
-    const bool ready=interpolation_ready()&&!limit60,fast=touhou::sdl::PresentationCadence::fast_sample(delta);if(ready)presentation.advance(delta);else presentation.reset();if(!presentation.high_refresh||!fast)presentation_primed=false;
+    const bool ready=interpolation_ready()&&!limit60,fast=touhou::sdl::PresentationCadence::fast_sample(delta);if(ready)display_cadence.advance(delta);else display_cadence.reset();
     const bool tick_due=cadence.advance(delta)!=0;
-    const bool high=presentation.high_refresh&&interpolation_ready();if(high&&fast&&!presentation_primed&&tick_due)presentation_primed=true;const bool interpolate=high&&fast&&presentation_primed;bool presented=false;
+    const bool high=display_cadence.high_refresh&&interpolation_ready();const bool interpolate=presentation_gate.advance(high,tick_due);bool presented=false;
     if(tick_due&&!result){
         elapsed+=touhou::sdl::FrameCadence::interval;result=tick();
         if(!result&&runtime){
@@ -102,18 +117,29 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
             if(!result){++frames;if(!runtime->audio_tick(u32(elapsed*1000)))result=2;}
         }
     }
+    float presentation_alpha=1.0f;
     if(!result&&runtime&&high){
         const bool frozen=runtime->app.in_game()&&(runtime->app.game.paused||runtime->app.game.retrying||runtime->app.game.menus.context.pause_state||runtime->app.game.menus.context.show_retry);
-        const float alpha=interpolate?float(cadence.interpolation_alpha()):1.0f;presented=runtime->app.draw(alpha,interpolate,true,!frozen);
+        presentation_alpha=interpolate?float(cadence.interpolation_alpha()):1.0f;presented=runtime->app.draw(presentation_alpha,interpolate,true,!frozen);
     }
     if(presented&&runtime)runtime->app.statistics.presentation_frame();
+#if defined(TH_PRESENTATION_AUDIT)
+    if(runtime){auto& sample=audit_timing[audit_timing_next];sample={};sample.timestamp_ms=now;sample.delta_ms=float(delta*1000.);sample.alpha=presentation_alpha;
+        sample.flags=u32(ready)|(u32(fast)<<1)|(u32(high)<<2)|(u32(tick_due)<<3)|(u32(interpolate)<<4)|(u32(presented)<<5);
+        if(runtime->app.in_game()){sample.simulation_frame=u32(runtime->app.game.control.state.frames);SceneCamera previous,current;bool rebased=false;if(runtime->app.game.background_script.audit_cameras(previous,current,rebased)){sample.flags|=1u<<6;if(rebased)sample.flags|=1u<<7;camera_values(sample.camera,previous);camera_values(sample.camera+13,current);}}
+        audit_timing_next=(audit_timing_next+1)%audit_timing_capacity;audit_timing_count=std::min(audit_timing_count+1,audit_timing_capacity);
+    }
+#endif
     sdl_audio_pump();th08_frame_finished(result,emscripten_get_now()-frame_begin);return running?EM_TRUE:EM_FALSE;
 }
 }
 u32 sdl_game_time(){return u32(elapsed*1000);}
 extern "C" {
 #define EX(name) __attribute__((export_name(name)))
-EX("sdl_game_open") BrowserRuntime* sdl_game_open(u32 milliseconds){if(runtime)return nullptr;prepared=frames=warm_mask=0;elapsed=double(milliseconds)/1000.;cadence.reset();presentation.reset();presentation_primed=false;last=-1;touch.begin_session();
+EX("sdl_game_open") BrowserRuntime* sdl_game_open(u32 milliseconds){if(runtime)return nullptr;prepared=frames=warm_mask=0;elapsed=double(milliseconds)/1000.;cadence.reset();display_cadence.reset();presentation_gate.reset();last=-1;touch.begin_session();
+#if defined(TH_PRESENTATION_AUDIT)
+    audit_timing_next=audit_timing_count=0;
+#endif
     runtime=std::make_unique<BrowserRuntime>();if(!sdl_attach(runtime.get())||!sdl_load_assets(*runtime)){runtime.reset();sdl_detach();return nullptr;}
     SDL_InitSubSystem(SDL_INIT_GAMEPAD);for(auto& k:keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);int count=0;auto* ids=SDL_GetGamepads(&count);if(count)gamepad=SDL_OpenGamepad(ids[0]);SDL_free(ids);return runtime.get();}
 EX("sdl_prepare_total") u32 sdl_prepare_total(){return runtime?runtime->resources().size()+runtime->native_font_steps()+warmCount:0;}
@@ -127,10 +153,58 @@ EX("sdl_prepare_next") i32 sdl_prepare_next(){if(!runtime)return -1;if(prepared>
     ++prepared;return ok?i32(prepared):-1;}
 EX("sdl_warm_assets") u32 sdl_warm_assets(){return warm_mask;}
 EX("sdl_game_initialize") bool sdl_game_initialize(){if(!runtime||prepared!=sdl_prepare_total()||!runtime->initialize()||!ThpracUi::initialize())return false;sdl_validate_capture();return true;}
-EX("sdl_loop_start") void sdl_loop_start(){if(running||!runtime)return;running=true;last=-1;cadence.reset();presentation.reset();presentation_primed=false;emscripten_request_animation_frame_loop(frame,reinterpret_cast<void*>(uintptr_t(++loop_epoch)));}
+EX("sdl_loop_start") void sdl_loop_start(){if(running||!runtime)return;running=true;last=-1;cadence.reset();display_cadence.reset();presentation_gate.reset();emscripten_request_animation_frame_loop(frame,reinterpret_cast<void*>(uintptr_t(++loop_epoch)));}
 EX("sdl_loop_stop") void sdl_loop_stop(){running=false;++loop_epoch;sdl_audio_pause(true);}
-EX("sdl_loop_pause") void sdl_loop_pause(u32 pause){suspended=pause!=0;last=-1;cadence.reset();presentation.reset();presentation_primed=false;sdl_audio_pause(suspended);}
+EX("sdl_loop_pause") void sdl_loop_pause(u32 pause){suspended=pause!=0;last=-1;cadence.reset();display_cadence.reset();presentation_gate.reset();sdl_audio_pause(suspended);}
 EX("sdl_loop_time") double sdl_loop_time(){return elapsed;}
+#if defined(TH_PRESENTATION_AUDIT)
+// Diagnostic freeze is NOT the in-game pause. It retains the last endpoint pair
+// and never polls input, advances clocks, executes ANM/ECL, or pumps audio.
+EX("audit_draw") i32 audit_draw(float alpha,u32 world){
+    if(running||!runtime||!std::isfinite(alpha)||alpha<0||alpha>1)return -1;
+    if(runtime->app.title.modal())return -2; // No Draw occurs: do not reuse stale captures.
+    return runtime->app.draw(alpha,true,true,world!=0)?0:1;
+}
+EX("audit_gate") u32 audit_gate(){return interpolation_ready()?1:0;}
+EX("audit_world_frozen") u32 audit_world_frozen(){return runtime&&runtime->app.in_game()&&(runtime->app.game.paused||runtime->app.game.retrying||runtime->app.game.menus.context.pause_state||runtime->app.game.menus.context.show_retry);}
+EX("audit_scene") const i32* audit_scene(){
+    static i32 out[16]{};std::fill(out,out+16,0);if(!runtime)return out;const auto& a=runtime->app;const auto& g=a.game;
+    out[0]=a.supervisor.state.active;out[1]=g.globals.stage;out[2]=g.globals.difficulty;out[3]=g.globals.shot;
+    out[4]=g.playback.stream.frame;out[5]=g.enemies.state.frames;out[6]=g.control.state.frames;
+    out[7]=g.globals.spell_flags;out[8]=g.globals.spell_number;out[9]=g.globals.current_spell;
+    out[10]=a.session.numbers.score;out[11]=g.control.state.load_state;out[12]=g.globals.game_flags;
+    out[13]=g.paused;out[14]=g.retrying;out[15]=g.globals.stage_completion;return out;
+}
+EX("audit_spell_name") const char* audit_spell_name(){return runtime?runtime->app.game.globals.spell_name:"";}
+EX("audit_effect_sample") const float* audit_effect_sample(uintptr_t object){return runtime?runtime->app.game.effect_system.audit_presentation_sample(object):nullptr;}
+EX("audit_ascii_sample") const float* audit_ascii_sample(uintptr_t object){return runtime?runtime->app.ascii.audit_presentation_sample(object):nullptr;}
+EX("audit_player_bomb_sample") const float* audit_player_bomb_sample(uintptr_t object,u32 part){return runtime?runtime->app.game.player.audit_bomb_presentation(object,part):nullptr;}
+EX("audit_enemy_sample") const float* audit_enemy_sample(uintptr_t object,u32 part){return runtime?runtime->app.game.enemies.audit_presentation_sample(object,part):nullptr;}
+EX("audit_calculation_epoch") u32 audit_calculation_epoch(){return u32(th08::presentation::calculation_epoch);}
+EX("audit_timing_records") const AuditTimingSample* audit_timing_records(){return audit_timing;}
+EX("audit_timing_capacity") u32 audit_timing_capacity_value(){return audit_timing_capacity;}
+EX("audit_timing_count") u32 audit_timing_count_value(){return audit_timing_count;}
+EX("audit_timing_next") u32 audit_timing_next_value(){return audit_timing_next;}
+EX("audit_timing_stride") u32 audit_timing_stride(){return sizeof(AuditTimingSample);}
+// Selected authoritative-state fingerprints, independent of render captures.
+// They deliberately omit renderer caches/pointers/padding and wall-clock data.
+// This is a named evidence set, not a claim to serialize the entire game.
+EX("audit_state") const u32* audit_state(){
+    static u32 out[9];std::fill(out,out+9,2166136261u);if(!runtime)return out;auto& a=runtime->app;auto& g=a.game;
+    const auto add=[](u32& h,const auto& value){const auto* p=reinterpret_cast<const u8*>(&value);for(size_t i=0;i<sizeof(value);++i){h^=p[i];h*=16777619u;}};
+    const auto vm=[&](u32& h,const AnmVm& v){add(h,v.pos);add(h,v.pos2);add(h,v.scale);add(h,v.rotation);add(h,v.color1.d3dColor);add(h,v.color2.d3dColor);add(h,v.uvScrollPos);add(h,v.scriptIndex);add(h,v.activeSpriteIndex);add(h,v.currentTimeInScript.current);};
+    add(out[0],a.session.random.seed);add(out[0],a.session.random.calls);add(out[0],a.session.numbers);
+    add(out[1],g.player_state.motion.movement.position);add(out[1],g.player_state.life.state);add(out[1],g.player_state.input.buttons);
+    for(const auto& b:g.projectile_pool.bullets){add(out[2],b.state);if(b.state){add(out[2],b.position);add(out[2],b.angle);add(out[2],b.active_time.current);}}
+    for(const auto& l:g.projectile_pool.lasers){add(out[3],l.in_use);if(l.in_use){add(out[3],l.position);add(out[3],l.angle);add(out[3],l.start_offset);add(out[3],l.end_offset);add(out[3],l.timer.current);}}
+    for(const auto* first:g.enemies.state.layers){u32 n=0;for(auto* e=first;e&&++n<=480;e=e->next_in_layer){add(out[4],e->resolved_position);add(out[4],e->direction);add(out[4],e->lifetime.current);add(out[4],e->main_context.subroutine);}}
+    for(const auto& e:g.effect_pool.objects){add(out[5],e.active);if(e.active){add(out[5],e.position);add(out[5],e.center);add(out[5],e.radius);add(out[5],e.angle);add(out[5],e.age.current);}}
+    for(i32 i=0;i<a.title.menus.state.vmCount;++i)vm(out[6],a.title.menus.state.vms[i]);
+    add(out[7],a.supervisor.state.active);add(out[7],a.supervisor.state.target);add(out[7],g.control.state.frames);add(out[7],g.globals.game_flags);add(out[7],g.globals.stage);
+    add(out[8],g.background.camera.position);add(out[8],g.background.camera.target_offset);add(out[8],g.background.camera.eye_offset);
+    return out;
+}
+#endif
 EX("sdl_loop_tick") i32 sdl_loop_tick(BrowserRuntime* r,double seconds,u32){
     if(running||r!=runtime.get())return -1;elapsed+=seconds;int result=tick();if(result||!runtime)return result;
     if(!runtime->app.draw(1.0f,false,false))return (runtime->status(2)||runtime->status(4))?2:1;

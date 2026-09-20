@@ -30,7 +30,7 @@ assert.match(gui,/if\(!presentation::render_only&&!context\.paused/);
 
 const items=read('th08_web/cpp/game/ItemPool.cpp');
 assert.match(items,/if\(!presentation::render_only\).*p->onscreen/s);
-assert.match(items,/if\(presentation::render_only\)\{copy=source;vm=&copy;\}/);
+assert.match(items,/if\(presentation::render_only\)\{copy=source;[^\n]*before\.visual\.apply\(source,copy,presentation::world_alpha\);vm=&copy;\}/);
 
 const background=read('th08_web/cpp/game/BackgroundObjects.cpp');
 assert.match(background,/if\(!presentation::render_only\)object\.flags\|=2/);
@@ -52,7 +52,7 @@ assert.match(enemy,/if\(!presentation::render_only\)failed\|=!ok/);
 
 const bullets=read('th08_web/cpp/game/BulletDrawing.cpp');
 assert.match(bullets,/if\(presentation::render_only\)\{copy=source;vm=&copy;\}/);
-assert.match(bullets,/if\(presentation::render_only\)\{body_copy=\*body;body=&body_copy;\}/);
+assert.match(bullets,/if\(presentation::render_only\)\{body_copy=\*body;body=&body_copy;[\s\S]*?if\(smooth_laser\)[^;]*\.apply\(l\.animation\[0\],\*body,presentation::world_alpha,[^;]*\);[\s\S]*?\}/);
 
 const player=read('th08_web/cpp/game/PlayerSimulation.cpp');
 assert.match(player,/if\(!presentation::render_only\)synchronize_shots\(\)/);

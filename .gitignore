@@ -4,6 +4,8 @@
 **/.cache/
 **/.npm-cache/
 **/.pip-cache/
+**/__pycache__/
+*.py[cod]
 **/test-results/
 **/tools/node.exe
 **/tools/emsdk/

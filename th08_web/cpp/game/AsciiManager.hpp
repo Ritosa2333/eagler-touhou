@@ -1,6 +1,8 @@
 #pragma once
 #include "AnmExecutor.hpp"
 #include "AnmRenderer.hpp"
+#include "Presentation.hpp"
+#include "PresentationVisual.hpp"
 
 namespace th08 {
 struct AsciiString {
@@ -81,13 +83,21 @@ public:
     void draw_strings(const AsciiContext& context);
     void draw_overlays(const AsciiContext& context);
     void draw_percentage(const Vec3& position,i32 percentage,u32 color);
+#if defined(TH_PRESENTATION_AUDIT)
+    const float* audit_presentation_sample(uintptr_t object)const;
+#endif
 private:
     struct PopupPresentation {Vec3 position{};i32 timer=-2;u8 in_use=0,characters=0;};
     struct PresentationState {
         Vec3 boss_markers[4]{},player{};
+        presentation::VisualSample boss_marker_vm[4],gauge_vm,human_icon_vm,youkai_icon_vm,cursor_vm,percentage_vm,border_vm;
         i32 gauge=0;float blindness_radius=0;u32 blindness_color=0;bool valid=false;
     } presentation_state;
     PopupPresentation score_popup_previous[723]{};
+#if defined(TH_PRESENTATION_AUDIT)
+    u32 score_popup_generation[723]{},time_popup_generation[128]{};
+#endif
+    presentation::SnapshotMarker presentation_marker,popup_marker;
     AnmExecutor& executor;
     AnmRenderer& renderer;
     AsciiOverlay& overlay;

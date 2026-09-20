@@ -18,7 +18,7 @@ struct BulletSystemAudio {
 class BulletSystem:public BulletEmissionActions,public LaserEmissionActions,private BulletCreationActions,private BulletUpdateActions,private LaserActions,private BulletCancelActions,private BulletDrawingActions {
     BulletManagerState& state;EclGlobals& globals;PlayerSimulation& player;ItemSystem& inventory;EffectSystem& effect_system;AnmRenderer& renderer;BulletSystemAudio& audio;
     BulletCreation creation;BulletUpdate updater;LaserRuntime lasers;BulletDrawing drawing;
-    Vec2 arcade{32,16};bool failed=false,ready=false;
+    Vec2 arcade{32,16};bool failed=false,ready=false,presentation_prepared=false;
     void synchronize();void publish_collision();
     void sound(i32 index,float position,bool panned)override{audio.sound(index,position,panned);}
     void reemit(BulletEmission& emission)override{emit(emission);}
@@ -40,6 +40,7 @@ public:
     LaserState* laser(BulletEmission&)override;
     void clear(i32 mode)override;
     bool update();
+    void snapshot_presentation(){if(ready){drawing.snapshot();presentation_prepared=true;}}
     bool draw(const Vec2& origin={32,16});
     bool invalid()const{return failed;}
 };

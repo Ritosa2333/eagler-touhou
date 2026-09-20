@@ -9,14 +9,18 @@ const renderer=read('portable/sdl/Renderer.cpp');
 const presentation=read('th08_web/cpp/game/Presentation.hpp');
 const ascii=read('th08_web/cpp/game/AsciiManager.cpp');
 const background=read('th08_web/cpp/game/BackgroundView.cpp');
+const backgroundObjects=read('th08_web/cpp/game/BackgroundObjects.cpp');
 const player=read('th08_web/cpp/game/PlayerSimulation.cpp');
 const bullets=read('th08_web/cpp/game/BulletDrawing.cpp');
 const effects=read('th08_web/cpp/game/EffectSystem.cpp');
+const effectGeometry=read('th08_web/cpp/game/EffectGeometry.hpp');
 const scene=read('th08_web/cpp/game/GameplayScene.cpp');
 const spell=read('th08_web/cpp/game/SpellUpdate.cpp');
 const spellDrawing=read('th08_web/cpp/game/SpellDrawing.cpp');
+const guiController=read('th08_web/cpp/game/GuiController.cpp');
 const spellBackground=read('th08_web/cpp/game/SpellBackground.cpp');
 const backgroundView=read('th08_web/cpp/game/BackgroundView.cpp');
+const backgroundScript=read('th08_web/cpp/game/BackgroundScript.cpp');
 
 // Fixed game clock: one rAF callback may execute zero or one fixed tick. Late
 // callbacks skip expired 60 Hz deadlines instead of replaying catch-up ticks.
@@ -32,8 +36,9 @@ assert.match(host,/const bool ready=interpolation_ready\(\)&&!limit60/);
 // Every real 60 Hz tick still executes TH08's authoritative draw once. High
 // refresh only hides that swap and follows it with a presentation-only draw.
 assert.match(host,/runtime->app\.draw\(1\.0f,false,false\)/);
-assert.match(host,/runtime->app\.draw\(alpha,interpolate,true,!frozen\)/);
-assert.match(host,/presentation_primed/);
+assert.match(host,/runtime->app\.draw\(presentation_alpha,interpolate,true,!frozen\)/);
+assert.match(host,/presentation_gate\.advance\(high,tick_due\)/);
+assert.doesNotMatch(host,/interpolate=.*fast/);
 assert.match(host,/const bool frozen=.*paused.*retrying.*pause_state.*show_retry/s);
 const frameTick=host.indexOf('result=tick();');
 const frameDraw=host.indexOf('runtime->app.draw(1.0f,false,false)',frameTick);
@@ -79,7 +84,9 @@ assert.match(bullets,/p\.scale_y=vm\.scale\.y/);
 assert.match(bullets,/p\.state==l\.state/);
 assert.match(bullets,/p\.script==l\.animation\[0\]\.scriptIndex/);
 assert.match(bullets,/p\.script==source\.scriptIndex/);
-assert.match(bullets,/p\.sprite==source\.activeSpriteIndex/);
+assert.match(bullets,/p\.state==b\.state&&p\.script==source\.scriptIndex&&b\.active_time\.current>=p\.age/);
+assert.doesNotMatch(bullets,/p\.script==source\.scriptIndex&&p\.sprite==source\.activeSpriteIndex/,
+  'An ordinary sprite animation must not suppress continuous bullet movement');
 assert.match(bullets,/scale_x=presentation::lerp_world\(p\.scale_x,scale_x\)/);
 assert.match(bullets,/scale_y=presentation::lerp_world\(p\.scale_y,scale_y\)/);
 
@@ -91,20 +98,49 @@ assert.match(bullets,/scale_y=presentation::lerp_world\(p\.scale_y,scale_y\)/);
 assert.match(spell,/effect->angle=add_angle\(effect->angle/);
 assert.match(effects,/draw\.angle=angle\(before\.angle,source\.angle\)/);
 assert.match(effects,/draw\.center=\{presentation::lerp_world/);
-assert.match(scene,/effect_system\.snapshot_presentation\(\);spell_drawing\.snapshot_presentation\(\);background_view\.snapshot_spell_presentation\(\);ascii\.snapshot_presentation\(ascii_context\);failed\|=chain\.run\(\)<0/);
+const prepare=scene.slice(scene.indexOf('bool GameplayScene::prepare_frame('),scene.indexOf('bool GameplayScene::update('));
+assert.match(prepare,/effect_system\.snapshot_presentation\(\);spell_drawing\.snapshot_presentation\(\);background_view\.snapshot_spell_presentation\(\);ascii\.snapshot_presentation\(ascii_context\);/);
+assert(prepare.indexOf('effect_system.snapshot_presentation()')<prepare.indexOf('update_practice('),
+  'The shared SDL application chain must snapshot before input/cheat/owner updates');
+assert.match(app,/game\.prepare_frame\(supervisor\.input\.current/);
+assert.equal((scene.match(/effect_system\.snapshot_presentation\(\)/g)||[]).length,1,
+  'Standalone and application-owned chains must share one snapshot boundary');
 assert.doesNotMatch(effects,/JobResult EffectSystem::update\(\)\{\s*snapshot_presentation\(\)/);
+// Custom effect geometry has three discrete topologies. Continuous fields may
+// only be blended when the whole path stays in one topology and vertex layout.
+assert.match(effectGeometry,/interpolation_preserves_topology/);
+assert.match(effectGeometry,/before_segments==current_segments&&before==current/);
+assert.match(effectGeometry,/\(before_height>0\)==\(current_height>0\)/);
+assert.match(effects,/before\.frequency=e\.frequency;before\.segments=e\.segments/);
+assert.match(effects,/if\(!EffectGeometry::interpolation_preserves_topology\([^)]+\)\)return;/);
 
 // Spell-card UI/background ANM VMs remain authoritative 60 Hz owners. High
 // refresh draws copies sampled at the scene tick boundary and never executes
-// ANM a second time. Lifecycle changes (script/sprite/visibility/time reset)
+// ANM a second time. Lifecycle changes (script/visibility/time reset)
 // snap instead of blending unrelated animation phases.
-assert.match(spellDrawing,/before\.scriptIndex!=source\.scriptIndex\|\|before\.activeSpriteIndex!=source\.activeSpriteIndex\|\|before\.visible!=source\.visible/);
+assert.match(spellDrawing,/before\.scriptIndex!=source\.scriptIndex\|\|before\.visible!=source\.visible/);
+assert.match(spellDrawing,/source\.currentTimeInScript\.current<before\.currentTimeInScript\.current/);
 assert.match(spellDrawing,/draw\.rotation=\{angle\(/);
+assert.match(spellDrawing,/before\.activeSpriteIndex==source\.activeSpriteIndex\?presentation::VisualSample::Uv:0/);
+assert.match(spellDrawing,/presentation::VisualSample::Uv,uv_owner/);
 assert.match(spellDrawing,/presentation::render_only\?presented\[i\]:v\[i\]/);
+assert.match(spellDrawing,/presentation_previous_panel_color=state\.spell_panel_color/);
+assert.match(spellDrawing,/presentation::lerp\(float\(before\),float\(current\)\)/);
 assert.doesNotMatch(spellDrawing,/anm\.execute|executor\.execute/);
+assert.match(guiController,/&source==&display\.clock/);
+assert.match(guiController,/owner_fields\|=presentation::VisualSample::Opacity/);
 assert.match(backgroundView,/snapshot_spell_presentation/);
 assert.match(backgroundView,/draw\.rotation=\{background_angle\(/);
 assert.match(backgroundView,/presentation::render_only\).*presentation_spell_vm/s);
+assert.match(backgroundObjects,/std::remainder\(raw\.uvScrollPos\.x-before\.uv\.x,1\.0f\)/);
+assert.match(backgroundObjects,/owner_fields\|=presentation::VisualSample::Uv/);
+// Stage-script coordinate rebases are atomic discontinuities. In particular,
+// stage 1's 511.5-unit wrap must never pass through the generic 512-unit
+// proximity guard and create an intermediate camera view.
+assert.match(backgroundScript,/case 5:if\(s\.jumped\).*presentation_camera_rebased=true/);
+assert.match(backgroundScript,/if\(presentation_camera_rebased\)return result/);
+assert(backgroundScript.indexOf('if(presentation_camera_rebased)return result')<backgroundScript.indexOf('const auto close='),
+  'Authored camera rebases must snap before any distance-based interpolation decision');
 assert.match(spellBackground,/view\.presentation_spell_vm\(0\)/);
 assert.match(spellBackground,/view\.presentation_spell_vm\(1\)/);
 
@@ -114,6 +150,10 @@ assert.match(spellBackground,/view\.presentation_spell_vm\(1\)/);
 // them at the scene boundary so their continuous geometry is presentable.
 assert.match(ascii,/void AsciiManager::snapshot_presentation\(const AsciiContext& c\)/);
 assert.match(ascii,/presentation_state\.boss_markers\[i\]=state\.boss_markers\[i\]\.pos/);
+assert.match(ascii,/presentation_state\.gauge_vm\.capture\(state\.gauge\)/);
+assert.match(ascii,/presentation_state\.cursor_vm\.apply\(s\.cursor,cursor_copy,presentation::world_alpha,fields\)/);
+assert.match(ascii,/presentation_state\.human_icon_vm\.apply\(s\.human_icon,human_copy,presentation::world_alpha,fields\)/);
+assert.match(ascii,/presentation_state\.youkai_icon_vm\.apply\(s\.youkai_icon,youkai_copy,presentation::world_alpha,fields\)/);
 assert.match(ascii,/presentation_state\.gauge=c\.gauge/);
 assert.match(ascii,/presentation_state\.blindness_radius=state\.blindness_radius/);
 const asciiTick=ascii.slice(ascii.indexOf('void AsciiManager::tick_vms'),ascii.indexOf('bool AsciiManager::add_string'));

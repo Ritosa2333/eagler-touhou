@@ -1,0 +1,44 @@
+.viewport {
+  position: relative;
+}
+
+.fullscreen {
+  position: absolute;
+  z-index: 5;
+  top: 10px;
+  right: 10px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-color: #ffffff8c;
+  background: #0808087a;
+  color: #fff;
+  font-size: 24px;
+  line-height: 1;
+  opacity: .65;
+}
+
+.fullscreen:hover,
+.fullscreen:focus-visible {
+  opacity: 1;
+  background: #080808c7;
+}
+
+.viewport:fullscreen {
+  display: grid;
+  place-items: center;
+  width: 100vw;
+  height: 100vh;
+  max-height: none;
+  overflow: hidden;
+}
+
+.viewport:fullscreen #stage {
+  width: min(100vw, calc(100vh * 4 / 3)) !important;
+  height: min(100vh, calc(100vw * 3 / 4)) !important;
+  margin: 0;
+}
+
+.viewport:fullscreen .fullscreen {
+  position: fixed;
+}

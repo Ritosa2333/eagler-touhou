@@ -1,5 +1,6 @@
 #include "PlayerSimulation.hpp"
 #include "Presentation.hpp"
+#include "PresentationAudit.hpp"
 #include <algorithm>
 namespace th08 {
 namespace {
@@ -23,7 +24,15 @@ void PlayerSimulation::synchronize_shots(){
     s.player_state=state.life.state;s.gui_blocked=state.input.gui_blocked;s.option_active=state.motion.options[0].state!=0;s.collision_timer=state.life.timer;s.time_spell=state.context.time_spell;s.human_bonus=gauge.human_bonus();shots.timing=timing;
 }
 bool PlayerSimulation::update(){
-    if(!initialized)return false;failed=false;presentation_previous_position=state.motion.movement.position;presentation_previous_scale=state.motion.animation.scale;presentation_previous_color=state.motion.animation.color1;presentation_previous_script=state.motion.animation.scriptIndex;presentation_previous_sprite=state.motion.animation.activeSpriteIndex;presentation_previous_life_state=state.life.state;for(u32 i=0;i<4;++i){presentation_previous_options[i]=state.motion.options[i].position;presentation_previous_option_state[i]=state.motion.options[i].state;}presentation_valid=true;state.context.focused=state.motion.form.focused;state.context.gauge=gauge.value();state.bomb_input.buttons=state.input.buttons;state.bomb_input.gui_blocked=state.input.gui_blocked;state.bomb_input.tampered=state.input.tampered;
+    if(!initialized)return false;failed=false;
+    if(presentation_marker.capture()){
+        presentation_previous_animation.capture(state.motion.animation);
+        for(u32 i=0;i<4;++i)presentation_previous_option_animation[i].capture(state.motion.options[i].animation);
+        presentation_previous_position=state.motion.movement.position;presentation_previous_scale=state.motion.animation.scale;presentation_previous_color=state.motion.animation.color1;presentation_previous_script=state.motion.animation.scriptIndex;presentation_previous_sprite=state.motion.animation.activeSpriteIndex;presentation_previous_life_state=state.life.state;
+        for(u32 i=0;i<4;++i){presentation_previous_options[i]=state.motion.options[i].position;presentation_previous_option_state[i]=state.motion.options[i].state;}
+        presentation_valid=true;
+    }
+    state.context.focused=state.motion.form.focused;state.context.gauge=gauge.value();state.bomb_input.buttons=state.input.buttons;state.bomb_input.gui_blocked=state.input.gui_blocked;state.bomb_input.tampered=state.input.tampered;
     synchronize_shots();update_player_frame(state.frame,state.motion,state.life,state.shots.regions,gauge,state.context.pause!=0,*this);synchronize_shots();return !failed;
 }
 void PlayerSimulation::update_bomb(){failed|=!update_player_bomb(state.bomb,state.bomb_input,state.life,state.context,state.motion.movement,state.motion.animation,resources[0].settings(),timing,*this);}
@@ -53,6 +62,7 @@ void PlayerSimulation::graze(const Vec3& position,bool laser){
 }
 i32 PlayerSimulation::damage(const Vec3& position,const Vec3& size,i32& time_items,i32* bomb_hit){synchronize_shots();const i32 result=shots.damage(position,size,time_items,bomb_hit);failed|=shots.failure!=PlayerShots::Failure::None;return result;}
 bool PlayerSimulation::draw(const Vec2& offset,bool impacts){
+    TH08_AUDIT_SCOPE(Player,&state.motion,state.motion.animation.currentTimeInScript.current,impacts?1:0);
     const bool failed_before=failed;const auto shot_failure_before=shots.failure;
     if(!presentation::render_only)synchronize_shots();shots.draw(impacts,offset);if(!presentation::render_only)failed|=shots.failure!=PlayerShots::Failure::None;
     if(!impacts){
@@ -66,6 +76,9 @@ bool PlayerSimulation::draw(const Vec2& offset,bool impacts){
         if(presentation::render_only){
             auto draw=state.motion;
             if(presentation::active&&presentation_valid){
+                presentation_previous_animation.apply(state.motion.animation,draw.animation,presentation::world_alpha);
+                for(u32 i=0;i<4;++i)if(presentation_previous_option_state[i]==state.motion.options[i].state)
+                    presentation_previous_option_animation[i].apply(state.motion.options[i].animation,draw.options[i].animation,presentation::world_alpha);
                 if(presentation_previous_life_state==state.life.state&&presentation_near(presentation_previous_position,state.motion.movement.position))draw.movement.position=presentation_lerp(presentation_previous_position,state.motion.movement.position);
                 for(u32 i=0;i<4;++i)if(presentation_previous_option_state[i]==state.motion.options[i].state&&presentation_near(presentation_previous_options[i],state.motion.options[i].position))draw.options[i].position=presentation_lerp(presentation_previous_options[i],state.motion.options[i].position);
                 // TH08's death/respawn owner directly animates the player's

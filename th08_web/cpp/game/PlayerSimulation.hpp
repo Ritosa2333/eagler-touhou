@@ -1,4 +1,5 @@
 #pragma once
+#include "PresentationVisual.hpp"
 #include "PlayerSetup.hpp"
 #include "PlayerFrame.hpp"
 #include "PlayerBombPatterns.hpp"
@@ -37,6 +38,8 @@ class PlayerSimulation:private PlayerFrameActions,private PlayerBombActions,priv
     PlayerLife life;PlayerShots shots;PlayerBombPatterns patterns;PlayerCollision collisions;bool failed=false,initialized=false;
     Vec3 presentation_previous_position{};Vec3 presentation_previous_options[4]{};
     Vec2 presentation_previous_scale{};ZunColor presentation_previous_color{};
+    presentation::VisualSample presentation_previous_animation,presentation_previous_option_animation[4];
+    presentation::SnapshotMarker presentation_marker;
     i32 presentation_previous_life_state=0,presentation_previous_option_state[4]{};i16 presentation_previous_script=-1,presentation_previous_sprite=-1;bool presentation_valid=false;
     void synchronize_shots();
     void update_bomb()override;
@@ -83,5 +86,8 @@ public:
     i32 damage(const Vec3& position,const Vec3& size,i32& time_items,i32* bomb_hit);
     bool draw(const Vec2& screen_offset,bool impacts=false);
     bool invalid()const noexcept{return failed;}
+#if defined(TH_PRESENTATION_AUDIT)
+    const float* audit_bomb_presentation(uintptr_t object,u32 part)const{return patterns.audit_presentation_sample(object,part);}
+#endif
 };
 }

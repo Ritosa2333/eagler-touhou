@@ -23,7 +23,12 @@ i32 BulletSystem::collision(i32 kind,BulletState& bullet){
 }
 void BulletSystem::collision(const Vec2& center,const Vec2& size,const Vec3& origin,float angle,bool graze){if(globals.gui)std::memcpy(&player.status().context.hud_flags,&globals.gui->flags,4);player.collision().laser(center,size,origin,angle,graze);publish_collision();}
 bool BulletSystem::update(){
-    if(failed||!ready)return false;drawing.snapshot();if(globals.game_flags&1024)return true;
+    if(failed||!ready)return false;
+    // Enemy ECL (priority 11) can move/rotate/recolor lasers before this
+    // priority-14 job. The scene supplies the pre-ECL endpoint; standalone
+    // BulletSystem callers retain their original self-contained sampling.
+    if(!presentation_prepared)drawing.snapshot();presentation_prepared=false;
+    if(globals.game_flags&1024)return true;
     if(!inventory.update())return false;synchronize();if(!updater.update_bullets()||!lasers.update())return false;
     if(state.cancel_frames)state.cancel_frames=wrapping_sub(state.cancel_frames,1);state.timer.tick(player.timing);state.unknown_counter=wrapping_add(state.unknown_counter,1);return !failed;
 }

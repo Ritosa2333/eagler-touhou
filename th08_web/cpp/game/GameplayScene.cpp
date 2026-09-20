@@ -231,13 +231,19 @@ void GameplayScene::unload(bool keep,bool release_all){
     if(release_all){release(5);shots[0]=ShotResource{};shots[1]=ShotResource{};}
 }
 bool GameplayScene::prepare_frame(u16 buttons,float rate,bool force_unit){
-    if(!ready())return false;player.timing={rate,force_unit};player_state.input.buttons=buttons;player_state.bomb_input.previous_buttons=previous_input;dialogue_context.previous_input=previous_input;dialogue_context.input=buttons;menus.context.keys=buttons;menus.context.previous_keys=previous_input;previous_input=buttons;
+    if(!ready())return false;
+    // Both the application-owned shared chain and the standalone scene enter
+    // here. Capturing only in update() left the actual SDL Runtime's effect,
+    // spell and ASCII endpoints uninitialized for its entire session.
+    effect_system.snapshot_presentation();spell_drawing.snapshot_presentation();background_view.snapshot_spell_presentation();ascii.snapshot_presentation(ascii_context);
+    bullets.snapshot_presentation();
+    player.timing={rate,force_unit};player_state.input.buttons=buttons;player_state.bomb_input.previous_buttons=previous_input;dialogue_context.previous_input=previous_input;dialogue_context.input=buttons;menus.context.keys=buttons;menus.context.previous_keys=previous_input;previous_input=buttons;
     if(recording_game){recording.input.physical=buttons;publish_input(recording.input);}else if(playing_replay)publish_input(playback.input);
     // Practice cheats run after input publication so F6 can press the bomb key.
     update_practice(*this,session);
     synchronize();return !invalid();
 }
-bool GameplayScene::update(u16 buttons,float rate,bool force_unit){if(!prepare_frame(buttons,rate,force_unit))return false;effect_system.snapshot_presentation();spell_drawing.snapshot_presentation();background_view.snapshot_spell_presentation();ascii.snapshot_presentation(ascii_context);failed|=chain.run()<0;return !invalid();}
+bool GameplayScene::update(u16 buttons,float rate,bool force_unit){presentation::CalculationScope presentation_tick;if(!prepare_frame(buttons,rate,force_unit))return false;failed|=chain.run()<0;return !invalid();}
 bool GameplayScene::draw(){if(!ready())return false;failed|=chain.run(true)<0;renderer.flush();return !invalid();}
 }
 
