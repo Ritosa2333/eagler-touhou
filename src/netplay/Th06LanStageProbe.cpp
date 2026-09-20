@@ -2186,6 +2186,9 @@ bool ReconcileRollback()
         if ((correctedBombStartSounds & (std::uint32_t{1} << soundId)) != 0)
             g_SoundPlayer.PlaySoundByIdx(static_cast<SoundIdx>(soundId));
     }
+    char correctedBgmPath[256];
+    if (SideEffects::ConsumeCorrectedBgmPlay(correctedBgmPath, sizeof(correctedBgmPath)))
+        g_Supervisor.PlayAudio(correctedBgmPath);
     return true;
 }
 } // namespace

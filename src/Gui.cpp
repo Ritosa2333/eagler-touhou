@@ -915,6 +915,8 @@ ZunResult GuiImpl::RunMsg()
             this->msg.ignoreWaitCounter += 1;
             break;
         case MSG_OPCODE_MUSIC:
+        {
+            const char *path = g_Stage.stdData->songPaths[this->msg.currentInstr->args.music];
             g_AnmManager->SetAndExecuteScriptIdx(&this->songNameSprite, 0x701);
             this->songNameSprite.fontWidth = 16;
             this->songNameSprite.fontHeight = 16;
@@ -926,15 +928,19 @@ ZunResult GuiImpl::RunMsg()
                     Localization::MusicTitle((g_GameManager.currentStage - 1) * 2 +
                                                  this->msg.currentInstr->args.music + 2,
                                              g_Stage.stdData->songNames[this->msg.currentInstr->args.music]));
+#ifdef TH_ENABLE_NETPLAY
+            if (Netplay::SideEffects::ObserveBgmPlay(path))
+                break;
+#endif
             if (g_Supervisor.PlayMidiFile(this->msg.currentInstr->args.music) != ZUN_SUCCESS)
             {
-                const char *path = g_Stage.stdData->songPaths[this->msg.currentInstr->args.music];
                 g_Supervisor.PlayAudio(path);
                 // th06_bgm_play marks el_bgm_changed only when PlayAudio was
                 // called from GuiImpl::RunMsg's music opcode (return 0x418db4).
                 PracticeRuntime::NotifyBgmPlay(path);
             }
             break;
+        }
         case MSG_OPCODE_TEXTINTRO:
             args = &this->msg.currentInstr->args;
             g_AnmManager->SetAndExecuteScriptIdx(&this->msg.introLines[args->text.textLine],
