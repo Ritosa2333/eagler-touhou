@@ -110,6 +110,40 @@ def main() -> int:
             request.onerror = () => reject(request.error);
           });
 
+          // Simulate a browser refresh/crash after a Web-Lock-protected
+          // Package mutation staged its generation but before normal cleanup.
+          // The next document can acquire the same Web Lock immediately, so
+          // that stale pending generation must not impose the 2-minute legacy
+          // pending timeout.
+          const refreshOrphanDescriptor = makeDescriptor('r-refresh-orphan', null);
+          refreshOrphanDescriptor.game = 'th10';
+          refreshOrphanDescriptor.runtimeRequirement.target = 'th10';
+          await store.stagePendingPackageGeneration({
+            id: 'gen-refresh-orphan',
+            game: 'th10',
+            descriptor: refreshOrphanDescriptor,
+            files: {},
+          }, {
+            source: 'remote',
+            operationId: 'op-refresh-orphan',
+            webLockHeld: true,
+          });
+          const refreshPendingBefore = await store.readCurrentPackageGeneration('th10');
+          const refreshRecoveryDescriptor = makeDescriptor('r-refresh-recovered', null);
+          refreshRecoveryDescriptor.game = 'th10';
+          refreshRecoveryDescriptor.runtimeRequirement.target = 'th10';
+          refreshRecoveryDescriptor.files.data.revision = 'data-refresh-recovered';
+          const refreshRecoveryStarted = performance.now();
+          await installer.installPackageFromAcquisition({
+            descriptor: refreshRecoveryDescriptor,
+            desiredFileIds: ['data'],
+            source: 'local',
+            reuseCurrent: false,
+            acquire: async () => new Uint8Array([71, 72, 73, 74]).buffer,
+          });
+          const refreshRecoveryMs = performance.now() - refreshRecoveryStarted;
+          const refreshRecovered = await store.readCurrentPackageGeneration('th10');
+
           let failed = null;
           try {
             const changed = makeDescriptor('r2', 'music-r2');
@@ -458,6 +492,10 @@ def main() -> int:
             dataStoredAsArrayBuffer: rawDataObject?.data instanceof ArrayBuffer && !('blob' in rawDataObject),
             normalizedBlob: dataObject?.data instanceof ArrayBuffer && dataObject?.blob instanceof Blob,
             dataStorageMode: dataRef.storageMode || null,
+            refreshPendingWebLock: refreshPendingBefore.installation.pendingWebLock,
+            refreshRecoveryMs,
+            refreshRecoveryRevision: refreshRecovered.generation.descriptor.revision,
+            refreshRecoveryPending: refreshRecovered.installation.pendingGeneration,
             bySourceFileId: bySource?.fileId || null,
             missingBySource: missingBySource === null,
             gcObjectsDeleted: gc.objectsDeleted,
@@ -528,6 +566,10 @@ def main() -> int:
         assert result["dataStoredAsArrayBuffer"] is True, result
         assert result["normalizedBlob"] is True, result
         assert result["dataStorageMode"] == "arraybuffer", result
+        assert result["refreshPendingWebLock"] is True, result
+        assert result["refreshRecoveryMs"] < 10_000, result
+        assert result["refreshRecoveryRevision"] == "r-refresh-recovered", result
+        assert result["refreshRecoveryPending"] is None, result
         assert result["bySourceFileId"] == "data", result
         assert result["missingBySource"] is True, result
         assert result["gcObjectsDeleted"] >= 1, result

@@ -71,6 +71,9 @@ export interface PackageInstallation {
   source: "local" | "remote";
   currentGeneration: string | null;
   pendingGeneration: string | null;
+  pendingOperationId?: string | null;
+  pendingWebLock?: boolean | null;
+  pendingStartedAt?: number | null;
   [key: string]: unknown;
 }
 

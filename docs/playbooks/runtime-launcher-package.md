@@ -85,6 +85,16 @@ HTTP-to-HTTPS migration must first run on the old Origin. Preserve a precise mig
   `PRODUCT_CONTENT[game].hostPreparation` kind for shared formats; change
   `host/lib/site-builder.mjs` only when a genuinely new format/build recipe is
   required.
+- A Package mutation may outlive the JavaScript document only as durable
+  recovery state, never as a long-lived phantom owner. Large `.data` downloads
+  stage a per-game pending generation, so reload/crash must not force the next
+  same-game launch to wait the full stale timeout. Current browsers use a
+  per-game `navigator.locks` exclusive lock in addition to the IndexedDB pending
+  record: browser teardown releases the Web Lock automatically, and the next
+  holder may immediately reclaim a pending generation that explicitly records
+  Web-Lock ownership. Pending state created by older/non-WebLock clients keeps
+  the conservative timestamp/heartbeat fallback so another live tab is never
+  overwritten merely because a page reloaded.
 
 <!-- knowledge-id: K-RUNTIME-004 -->
 ## Cross-project generic runtime reference

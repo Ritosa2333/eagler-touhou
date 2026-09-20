@@ -286,6 +286,7 @@ export async function readCurrentPackageGeneration(game, { indexedDBFactory } = 
 export async function stagePendingPackageGeneration(generation, {
   source = null,
   operationId,
+  webLockHeld = false,
   now = Date.now(),
   staleMs = PENDING_STALE_MS,
   indexedDBFactory,
@@ -305,13 +306,16 @@ export async function stagePendingPackageGeneration(generation, {
     if (current?.pendingGeneration && current.pendingOperationId !== operationId) {
       const started = Number(current.pendingStartedAt) || 0;
       const fresh = started > 0 && now - started < staleMs;
-      if (fresh) {
+      const orphanedWebLockOwner = webLockHeld === true && current.pendingWebLock === true;
+      if (fresh && !orphanedWebLockOwner) {
         try { transaction.abort(); } catch {}
         try { await done; } catch {}
         throw packageMutationBusy(generation.game, current.pendingGeneration);
       }
-      // Recover only demonstrably orphaned/legacy pending state. Current
-      // generation/source remain untouched.
+      // Acquiring the per-game Web Lock proves that a previous pending
+      // operation which also held that lock is no longer alive: refresh,
+      // navigation and crashes release browser locks automatically. Pending
+      // state from older/non-WebLock clients keeps the stale-time fallback.
       generations.delete(generationKey(generation.game, current.pendingGeneration));
     }
     const nextSource = source ?? current?.source ?? "local";
@@ -324,6 +328,7 @@ export async function stagePendingPackageGeneration(generation, {
       currentGeneration: current?.currentGeneration ?? null,
       pendingGeneration: generation.id,
       pendingOperationId: operationId,
+      pendingWebLock: webLockHeld === true,
       pendingSource: nextSource,
       pendingStartedAt: now,
     };
@@ -452,6 +457,7 @@ export async function commitPendingPackageGeneration(game, generationId, { opera
       currentGeneration: generationId,
       pendingGeneration: null,
       pendingOperationId: null,
+      pendingWebLock: null,
       pendingSource: null,
       pendingStartedAt: null,
     };
@@ -478,6 +484,7 @@ export async function cancelPendingPackageGeneration(game, { generationId = null
     generations.delete(generationKey(game, installation.pendingGeneration));
     installation.pendingGeneration = null;
     installation.pendingOperationId = null;
+    installation.pendingWebLock = null;
     installation.pendingSource = null;
     installation.pendingStartedAt = null;
     installs.put(installation, game);
