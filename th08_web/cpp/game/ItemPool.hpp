@@ -1,6 +1,7 @@
 #pragma once
 #include "AnmLayout.hpp"
 #include "GameValues.hpp"
+#include "PresentationVisual.hpp"
 #include <array>
 namespace th08 {
 struct ItemState {
@@ -22,8 +23,9 @@ struct ItemPoolActions {
 };
 class ItemPool {
     ItemPoolState& state;Rng& rng;ItemPoolActions& actions;
-    struct PresentationSample {Vec3 position{};i32 age=0;i8 type=0;bool active=false;};
+    struct PresentationSample {Vec3 position{};i32 age=0;i8 type=0;bool active=false;presentation::VisualSample visual;};
     std::array<PresentationSample,ItemPoolState::capacity+1> previous{};
+    presentation::SnapshotMarker presentation_marker;
 public:
     ItemPool(ItemPoolState& s,Rng& r,ItemPoolActions& a):state(s),rng(r),actions(a){}
     ItemState* spawn(const Vec3& position,i32 type,i32 mode,i32 power,i8 player_state);

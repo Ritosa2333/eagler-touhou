@@ -1,4 +1,5 @@
 #include "PlayerBombPatterns.hpp"
+#include "PresentationAudit.hpp"
 #include "GameMath.hpp"
 #include "Presentation.hpp"
 #include <cmath>
@@ -32,7 +33,8 @@ void PlayerBombPatterns::yuyuko(bool last){
     }
 }
 void PlayerBombPatterns::draw_yuyuko(bool last,const Vec2& offset){
-    tint(last?0x80802020:0x80404040);for(u32 i=0;i<(last?128u:96u);++i){auto& o=objects.objects[i];if(!o.state)continue;auto& source=o.animation[0];AnmVm copy;if(presentation::render_only)copy=source;auto& vm=presentation::render_only?copy:source;vm.rotation.z=Extended::from_double(std::atan2(double(o.history[1].y),double(o.history[1].x))).to_float();vm.updateRotation=1;vm.pos=presentation_position(i);
+    tint(last?0x80802020:0x80404040);for(u32 i=0;i<(last?128u:96u);++i){auto& o=objects.objects[i];if(!o.state)continue;auto& source=o.animation[0];AnmVm copy;if(presentation::render_only){copy=source;presentation_visual(i,0,copy);}auto& vm=presentation::render_only?copy:source;vm.rotation.z=Extended::from_double(std::atan2(double(o.history[1].y),double(o.history[1].x))).to_float();vm.updateRotation=1;vm.pos=presentation_position(i);
+        TH08_AUDIT_SCOPE(PlayerBomb,&o,source.currentTimeInScript.current,(u32(o.state)<<8));
         vm.pos.x=Scalar::add(offset.x,vm.pos.x);vm.pos.y=Scalar::add(offset.y,vm.pos.y);vm.pos.z=0;actions.draw(vm,true);
     }
 }

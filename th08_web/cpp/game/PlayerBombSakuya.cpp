@@ -1,4 +1,5 @@
 #include "PlayerBombPatterns.hpp"
+#include "PresentationAudit.hpp"
 #include "GameMath.hpp"
 #include "Presentation.hpp"
 #include <cmath>
@@ -41,7 +42,8 @@ void PlayerBombPatterns::sakuya(bool last){
 void PlayerBombPatterns::draw_sakuya(bool last,const Vec2& offset){
     tint(last?0x80202080:0x80404040);
     // The last-spell update owns 128 knives; its original draw loop visits 96.
-    for(u32 i=0;i<96;++i){auto& o=objects.objects[i];if(!o.state)continue;auto& source=o.animation[0];AnmVm copy;if(presentation::render_only)copy=source;auto& vm=presentation::render_only?copy:source;vm.rotation.z=presentation_angle(i);vm.updateRotation=1;vm.pos=presentation_position(i);
+    for(u32 i=0;i<96;++i){auto& o=objects.objects[i];if(!o.state)continue;auto& source=o.animation[0];AnmVm copy;if(presentation::render_only){copy=source;presentation_visual(i,0,copy);}auto& vm=presentation::render_only?copy:source;vm.rotation.z=presentation_angle(i);vm.updateRotation=1;vm.pos=presentation_position(i);
+        TH08_AUDIT_SCOPE(PlayerBomb,&o,source.currentTimeInScript.current,(u32(o.state)<<8));
         vm.pos.x=Scalar::add(offset.x,vm.pos.x);vm.pos.y=Scalar::add(offset.y,vm.pos.y);vm.pos.z=0;actions.draw(vm,true);
     }
 }

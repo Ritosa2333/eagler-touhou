@@ -40,6 +40,7 @@ private:
         GuiFormattedText bonus{},popup{},spell_bonus{};
         float boss_life=0;u32 boss_opacity=0;bool boss_present=false;u8 boss_life_state=0;bool valid=false;
     } presentation_state;
+    presentation::SnapshotMarker presentation_marker;
     void snapshot_presentation();
     AnmVm presentation_vm(const AnmVm&)const;
     void draw_presented_no_rotation(AnmVm&);

@@ -3,6 +3,7 @@
 #include "AsciiManager.hpp"
 #include "Localization.hpp"
 #include "Presentation.hpp"
+#include "PresentationAudit.hpp"
 #include <cmath>
 #include <cstdio>
 #include <cstdarg>
@@ -116,6 +117,9 @@ void AsciiManager::reset(){
     auto& s=state;
     presentation_state=PresentationState{};
     std::memset(score_popup_previous,0,sizeof(score_popup_previous));for(auto& p:score_popup_previous)p.timer=-2;
+#if defined(TH_PRESENTATION_AUDIT)
+    std::memset(score_popup_generation,0,sizeof(score_popup_generation));std::memset(time_popup_generation,0,sizeof(time_popup_generation));
+#endif
     std::memset(&s.small_score_text,0,sizeof(AnmVm));std::memset(&s.popup_text,0,sizeof(AnmVm));std::memset(&s.large_text,0,sizeof(AnmVm));
     std::memset(s.strings,0,sizeof(s.strings));std::memset(&s.pause,0,sizeof(s.pause));std::memset(&s.retry,0,sizeof(s.retry));
     std::memset(s.score_popups,0,sizeof(s.score_popups));std::memset(s.time_popups,0,sizeof(s.time_popups));
@@ -127,7 +131,10 @@ void AsciiManager::reset(){
     s.small_score_text.pos.z=.1f;s.space_width=13;
 }
 void AsciiManager::snapshot_presentation(const AsciiContext& c){
-    for(u32 i=0;i<4;++i)presentation_state.boss_markers[i]=state.boss_markers[i].pos;
+    if(!presentation_marker.capture())return;
+    for(u32 i=0;i<4;++i){presentation_state.boss_markers[i]=state.boss_markers[i].pos;presentation_state.boss_marker_vm[i].capture(state.boss_markers[i]);}
+    presentation_state.gauge_vm.capture(state.gauge);presentation_state.human_icon_vm.capture(state.human_icon);presentation_state.youkai_icon_vm.capture(state.youkai_icon);
+    presentation_state.cursor_vm.capture(state.cursor);presentation_state.percentage_vm.capture(state.percentage);presentation_state.border_vm.capture(state.border);
     presentation_state.player=c.player;presentation_state.gauge=c.gauge;
     presentation_state.blindness_radius=state.blindness_radius;presentation_state.blindness_color=state.blindness_color;presentation_state.valid=true;
 }
@@ -146,7 +153,8 @@ void AsciiManager::set_gauge_interrupt(i32 interrupt){
 }
 void AsciiManager::tick_popups(const AsciiContext& c,const FrameTiming& timing){
     if(c.paused||c.retry||c.freeze_popups)return;
-    for(u32 i=0;i<723;++i){auto& p=state.score_popups[i];score_popup_previous[i]={p.position,p.timer.current,p.in_use,p.characters};if(p.in_use){p.position.y=(number(p.position.y)-number(.5f)*number(timing.rate)).to_float();p.timer.tick(timing);if(p.timer.current>60)p.in_use=0;}}
+    const bool snapshot=popup_marker.capture();
+    for(u32 i=0;i<723;++i){auto& p=state.score_popups[i];if(snapshot)score_popup_previous[i]={p.position,p.timer.current,p.in_use,p.characters};if(p.in_use){p.position.y=(number(p.position.y)-number(.5f)*number(timing.rate)).to_float();p.timer.tick(timing);if(p.timer.current>60)p.in_use=0;}}
     for(auto& p:state.time_popups)if(p.in_use){p.timer.tick(timing);if(p.timer.current>90)p.in_use=0;}
 }
 void AsciiManager::tick_vms(bool demo){
@@ -176,6 +184,9 @@ void AsciiManager::create_score(const Vec3& position,i32 value,u32 color,const A
     auto& s=state;auto& next=player?s.next_player:s.next_score;const i32 capacity=player?3:720;
     if(next>=capacity||next<0)next=0;
     const i32 index=(player?720:0)+next++;auto& p=s.score_popups[index];score_popup_previous[index]={};score_popup_previous[index].timer=-2;p.in_use=1;
+#if defined(TH_PRESENTATION_AUDIT)
+    score_popup_generation[index]=wrapping_add(score_popup_generation[index],1u);
+#endif
     i32 count=0;
     if(value>=0){while(value){p.text[count++]=u8(value%10);value/=10;}}else p.text[count++]=10;
     if(!count)p.text[count++]=0;p.characters=u8(count);p.color=color;p.timer.set(0);p.position=position;
@@ -183,7 +194,10 @@ void AsciiManager::create_score(const Vec3& position,i32 value,u32 color,const A
 }
 void AsciiManager::create_time(const Vec3& position,i32 value,i32 multiplier,u32 color,const AsciiContext& c,bool familiar){
     auto& s=state;if(s.next_time>=128||s.next_time<0)s.next_time=0;
-    auto& p=s.time_popups[s.next_time++];p.in_use=1;i32 count=0;
+    const i32 index=s.next_time++;auto& p=s.time_popups[index];p.in_use=1;i32 count=0;
+#if defined(TH_PRESENTATION_AUDIT)
+    time_popup_generation[index]=wrapping_add(time_popup_generation[index],1u);
+#endif
     // Original gameplay caps both quantities; preserve all valid twelve-glyph
     // popups while bounding malformed external values to this record.
     auto append=[&](u8 value){if(count<12)p.text[count++]=value;};
@@ -202,7 +216,7 @@ void AsciiManager::draw_strings(const AsciiContext& c){
         if(gui!=bool(str.gui)){gui=str.gui;viewport(gui);}
         for(const auto* p=reinterpret_cast<const u8*>(str.text);p<reinterpret_cast<const u8*>(str.text)+64&&*p;++p){
             if(*p=='\n'){vm.pos.y=(number(vm.pos.y)+number(16)*number(str.scale_y)).to_float();vm.pos.x=str.position.x;}
-            else {if(*p!=' '){direct_sprite(vm,*p+(str.selected?138:-1));vm.color1.d3dColor=str.selected?0xffffffff:str.color;renderer.draw_no_rotation(vm);}vm.pos.x=add(vm.pos.x,space);}
+            else {if(*p!=' '){direct_sprite(vm,*p+(str.selected?138:-1));vm.color1.d3dColor=str.selected?0xffffffff:str.color;const u32 glyph=u32(p-reinterpret_cast<const u8*>(str.text));TH08_AUDIT_SCOPE(AsciiText,&str,0,glyph);renderer.draw_no_rotation(vm);}vm.pos.x=add(vm.pos.x,space);}
         }
     }
     if(gui)viewport(false);
@@ -216,7 +230,11 @@ void AsciiManager::draw_strings(const AsciiContext& c){
         case 2:case 3:case 4:if(s.frame%(1u<<(5-s.boss_states[i]))==0){direct_sprite(marker,158);marker.color1.d3dColor=0xffffffff;}else normal=true;break;
         }
         if(normal){const u8 alpha=distance<64?u8((number(distance)*number(64)/number(64)+number(96)).truncate_int()):160;marker.color1.d3dColor=0xffffff|(u32(alpha)<<24);}
-        renderer.draw_no_rotation(marker);
+        // The marker alpha is derived from player distance and blink state,
+        // rather than an ANM alpha timer.  Its previous submitted color still
+        // provides an owner-authored continuous endpoint between logic ticks.
+        if(presentation::active&&presentation_state.valid)presentation_state.boss_marker_vm[i].apply(source,marker,presentation::world_alpha,presentation::VisualSample::Opacity,presentation::VisualSample::Opacity);
+        TH08_AUDIT_SCOPE(Ascii,&source,source.currentTimeInScript.current,i|(u32(s.boss_states[i])<<8));renderer.draw_no_rotation(marker);
     }
 }
 void AsciiManager::draw_percentage(const Vec3& position,i32 percentage,u32 color){
@@ -224,13 +242,13 @@ void AsciiManager::draw_percentage(const Vec3& position,i32 percentage,u32 color
     const i32 count=4+(percentage<0)+(absolute>=10000?3:absolute>=1000?2:1);
     const float offset=(integer(count)*number(3.5f)-number(3.5f)-number(4)).to_float();
     vm.pos=position;vm.pos.x=sub(vm.pos.x,offset);vm.color1.d3dColor=color;
-    auto digit=[&](i32 sprite,float advance){set_sprite(vm,sprite);renderer.draw_no_rotation(vm);vm.pos.x=add(vm.pos.x,advance);};
+    u32 digit_index=0;auto digit=[&](i32 sprite,float advance){set_sprite(vm,sprite);TH08_AUDIT_SCOPE(Ascii,&state.percentage,state.percentage.currentTimeInScript.current,0x100u+digit_index++);renderer.draw_no_rotation(vm);vm.pos.x=add(vm.pos.x,advance);};
     if(percentage<0)digit(148,7);
     u32 value=absolute;
     if(absolute>=10000){digit(137,7);digit(136,7);digit(136,7);value=0;}
     else {if(absolute>=1000){digit(136+value/1000,7);value%=1000;}digit(136+value/100,7);value%=100;}
     digit(147,5);vm.scale={.8f,.8f};vm.pos.y=add(vm.pos.y,2);
-    digit(136+value/10,5);digit(136+value%10,7);vm.scale={1,1};vm.pos.y=sub(vm.pos.y,2);set_sprite(vm,146);renderer.draw_no_rotation(vm);
+    digit(136+value/10,5);digit(136+value%10,7);vm.scale={1,1};vm.pos.y=sub(vm.pos.y,2);set_sprite(vm,146);{TH08_AUDIT_SCOPE(Ascii,&state.percentage,state.percentage.currentTimeInScript.current,0x100u+digit_index);renderer.draw_no_rotation(vm);}
 }
 void AsciiManager::draw_overlays(const AsciiContext& c){
     auto& s=state;overlay.begin(!c.fog_disabled);
@@ -242,10 +260,19 @@ void AsciiManager::draw_overlays(const AsciiContext& c){
     }
     AnmVm small_copy;if(presentation::render_only)small_copy=s.small_score_text;auto& small=presentation::render_only?small_copy:s.small_score_text;
     for(u32 popup_index=0;popup_index<723;++popup_index){const auto& p=s.score_popups[popup_index];if(!p.in_use)continue;Vec3 position=p.position;
-        if(presentation::active){const auto& before=score_popup_previous[popup_index];if(before.in_use&&before.characters==p.characters&&p.timer.current>=before.timer&&p.timer.current-before.timer<=2)position={presentation::lerp_world(before.position.x,p.position.x),presentation::lerp_world(before.position.y,p.position.y),presentation::lerp_world(before.position.z,p.position.z)};}
+        // Replay/menu shortcuts may execute more than two nested gameplay
+        // updates before the next authored Draw.  The snapshot still spans
+        // that whole interval.  Slot reuse is rejected by create_score()
+        // clearing the previous record, so an arbitrary timer-delta cap only
+        // makes a live popup snap during those multi-update intervals.
+        if(presentation::active){const auto& before=score_popup_previous[popup_index];if(before.in_use&&before.characters==p.characters&&p.timer.current>=before.timer)position={presentation::lerp_world(before.position.x,p.position.x),presentation::lerp_world(before.position.y,p.position.y),presentation::lerp_world(before.position.z,p.position.z)};}
         small.pos.x=(number(position.x)-integer(p.characters*4)).to_float();small.pos.y=position.y;small.color1.d3dColor=p.color;small.scale={s.scale_x,s.scale_y};
         const i32 alpha=popup_alpha(presented_player,position);for(i32 i=p.characters-1;i>=0;--i){direct_sprite(small,p.text[i]+(p.timer.current<52?0:p.timer.current<56?11:21));small.color1.a=u8(alpha);
-            if(small.loadedSprite)small.spriteSize.x=small.loadedSprite->widthPx;renderer.draw_no_rotation(small);small.pos.x=add(small.pos.x,8);}}
+            if(small.loadedSprite)small.spriteSize.x=small.loadedSprite->widthPx;
+#if defined(TH_PRESENTATION_AUDIT)
+            const u32 audit_part=(score_popup_generation[popup_index]<<8)|(u32(i)&0xffu);TH08_AUDIT_SCOPE(AsciiScorePopup,&p,p.timer.current,audit_part);
+#endif
+            renderer.draw_no_rotation(small);small.pos.x=add(small.pos.x,8);}}
     if(s.blindness_color){
         const u32 color=(presented_blindness_color&255)<<24;
         const auto x=number(presented_player.x)+number(32),y=number(presented_player.y)+number(16),radius=number(presented_blindness_radius);
@@ -255,23 +282,55 @@ void AsciiManager::draw_overlays(const AsciiContext& c){
         rect={std::max(32.f,(x-radius+number(renderer.shake.x)).to_float()),16,std::min(416.f,(x+radius+number(renderer.shake.x)).to_float()),(y-radius+number(renderer.shake.y)).to_float()};
         if(rect.bottom>rect.top)overlay.rectangle(rect,color);
         rect.top=(y+radius+number(renderer.shake.y)).to_float();rect.bottom=464;if(rect.bottom>rect.top)overlay.rectangle(rect,color);
-        if(c.effects){AnmVm blindness_copy;if(presentation::render_only)blindness_copy=s.blindness;auto& blindness=presentation::render_only?blindness_copy:s.blindness;start(blindness,*c.effects,105);blindness.scale.x=blindness.scale.y=(radius/number(63)).to_float();blindness.pos=presented_player;blindness.pos.x=add(blindness.pos.x,32);blindness.pos.y=add(blindness.pos.y,16);blindness.color1.a=u8(presented_blindness_color);renderer.draw_no_rotation(blindness);}
+        if(c.effects){AnmVm blindness_copy;if(presentation::render_only)blindness_copy=s.blindness;auto& blindness=presentation::render_only?blindness_copy:s.blindness;start(blindness,*c.effects,105);blindness.scale.x=blindness.scale.y=(radius/number(63)).to_float();blindness.pos=presented_player;blindness.pos.x=add(blindness.pos.x,32);blindness.pos.y=add(blindness.pos.y,16);blindness.color1.a=u8(presented_blindness_color);TH08_AUDIT_SCOPE(Ascii,&s.blindness,s.frame,0x200u);renderer.draw_no_rotation(blindness);}
     }
     AnmVm popup_copy;if(presentation::render_only)popup_copy=s.popup_text;auto& popup=presentation::render_only?popup_copy:s.popup_text;
-    for(const auto& p:s.time_popups)if(p.in_use){popup.pos.x=(number(p.position.x)-integer(p.characters)*number(3.5f)).to_float();popup.pos.y=p.position.y;popup.color1.d3dColor=p.color;popup.scale={p.scale_x,p.scale_y};
+    for(const auto& p:s.time_popups)if(p.in_use){const u32 popup_index=u32(&p-s.time_popups);popup.pos.x=(number(p.position.x)-integer(p.characters)*number(3.5f)).to_float();popup.pos.y=p.position.y;popup.color1.d3dColor=p.color;popup.scale={p.scale_x,p.scale_y};
         const i32 alpha=popup_alpha(presented_player,p.position);for(i32 i=p.characters-1;i>=0;--i){direct_sprite(popup,p.text[i]+136);popup.color1.a=u8(alpha);if(popup.loadedSprite)popup.spriteSize.x=popup.loadedSprite->widthPx;
+#if defined(TH_PRESENTATION_AUDIT)
+            const u32 audit_part=(time_popup_generation[popup_index]<<8)|(u32(i)&0xffu);TH08_AUDIT_SCOPE(AsciiTimePopup,&p,p.timer.current,audit_part);
+#endif
             renderer.draw_no_rotation(popup);popup.pos.x=(number(popup.pos.x)+number(7)*number(p.scale_x)).to_float();}}
     renderer.shake={};
     if(s.gauge.visible){
-        AnmVm cursor_copy,percentage_copy,gauge_copy;if(presentation::render_only){cursor_copy=s.cursor;percentage_copy=s.percentage;gauge_copy=s.gauge;}auto& cursor=presentation::render_only?cursor_copy:s.cursor;auto& percentage_vm=presentation::render_only?percentage_copy:s.percentage;auto& gauge=presentation::render_only?gauge_copy:s.gauge;
-        cursor.pos.x=(number(presented_gauge)*number(112)/number(2)/number(10000)+number(gauge.pos.x)+number(64)).to_float();renderer.draw_2d(cursor,true);
+        AnmVm cursor_copy,percentage_copy,gauge_copy,human_copy,youkai_copy;
+        if(presentation::render_only){
+            cursor_copy=s.cursor;percentage_copy=s.percentage;gauge_copy=s.gauge;human_copy=s.human_icon;youkai_copy=s.youkai_icon;
+            if(presentation::active&&presentation_state.valid){
+                using V=presentation::VisualSample;constexpr u32 fields=V::Position|V::Offset|V::Attributes;
+                presentation_state.cursor_vm.apply(s.cursor,cursor_copy,presentation::world_alpha,fields);
+                presentation_state.percentage_vm.apply(s.percentage,percentage_copy,presentation::world_alpha,fields);
+                presentation_state.gauge_vm.apply(s.gauge,gauge_copy,presentation::world_alpha,fields);
+                presentation_state.human_icon_vm.apply(s.human_icon,human_copy,presentation::world_alpha,fields);
+                presentation_state.youkai_icon_vm.apply(s.youkai_icon,youkai_copy,presentation::world_alpha,fields);
+            }
+        }
+        auto& cursor=presentation::render_only?cursor_copy:s.cursor;auto& percentage_vm=presentation::render_only?percentage_copy:s.percentage;auto& gauge=presentation::render_only?gauge_copy:s.gauge;
+        auto& human=presentation::render_only?human_copy:s.human_icon;auto& youkai=presentation::render_only?youkai_copy:s.youkai_icon;
+        cursor.pos.x=(number(presented_gauge)*number(112)/number(2)/number(10000)+number(gauge.pos.x)+number(64)).to_float();{TH08_AUDIT_SCOPE(Ascii,&s.cursor,s.cursor.currentTimeInScript.current,0x300u);renderer.draw_2d(cursor,true);}
         percentage_vm.pos.x=(number(presented_gauge)*number(80)/number(2)/number(10000)+number(gauge.pos.x)+number(64)).to_float();percentage_vm.pos.y=sub(cursor.pos.y,7);percentage_vm.pos.z=cursor.pos.z;
         const u32 rgb=c.gauge<=c.human_effects?0x7070ff:c.gauge<=c.human_tint?0xb0b0ff:c.gauge>=c.youkai_effects?0xff7070:c.gauge>=c.youkai_tint?0xffb0b0:0xffffff;
         percentage_vm.color1.d3dColor=(gauge.color1.d3dColor&0xff000000)|rgb;gauge.color1=percentage_vm.color1;
-        renderer.draw_no_rotation(gauge);renderer.draw_no_rotation(s.human_icon);renderer.draw_no_rotation(s.youkai_icon);draw_percentage(percentage_vm.pos,c.gauge,percentage_vm.color1.d3dColor);
+        {TH08_AUDIT_SCOPE(Ascii,&s.gauge,s.gauge.currentTimeInScript.current,0x301u);renderer.draw_no_rotation(gauge);}{TH08_AUDIT_SCOPE(Ascii,&s.human_icon,s.human_icon.currentTimeInScript.current,0x302u);renderer.draw_no_rotation(human);}{TH08_AUDIT_SCOPE(Ascii,&s.youkai_icon,s.youkai_icon.currentTimeInScript.current,0x303u);renderer.draw_no_rotation(youkai);}draw_percentage(percentage_vm.pos,c.gauge,percentage_vm.color1.d3dColor);
         percentage_vm.pos.x=(number(gauge.pos.x)+number(62)-number(14)).to_float();percentage_vm.pos.y=(number(gauge.pos.y)+number(3)+number(8)).to_float();
         i32 divisor=10000000,value=c.point_value,seen=0;
-        for(i32 i=0;i<8;++i){seen+=value/divisor;if(seen){set_sprite(percentage_vm,value/divisor+136);renderer.draw_no_rotation(percentage_vm);percentage_vm.pos.x=add(percentage_vm.pos.x,7);}value%=divisor;divisor/=10;}
+        for(i32 i=0;i<8;++i){seen+=value/divisor;if(seen){set_sprite(percentage_vm,value/divisor+136);TH08_AUDIT_SCOPE(Ascii,&s.percentage,s.percentage.currentTimeInScript.current,0x400u+u32(i));renderer.draw_no_rotation(percentage_vm);percentage_vm.pos.x=add(percentage_vm.pos.x,7);}value%=divisor;divisor/=10;}
     }
 }
+#if defined(TH_PRESENTATION_AUDIT)
+const float* AsciiManager::audit_presentation_sample(uintptr_t object)const{
+    static float out[20];std::fill(out,out+20,0.0f);
+    const AnmVm* current=nullptr;const presentation::VisualSample* before=nullptr;
+    const auto bind=[&](const AnmVm& vm,const presentation::VisualSample& sample){if(object==reinterpret_cast<uintptr_t>(&vm)){current=&vm;before=&sample;}};
+    bind(state.gauge,presentation_state.gauge_vm);bind(state.human_icon,presentation_state.human_icon_vm);bind(state.youkai_icon,presentation_state.youkai_icon_vm);
+    bind(state.cursor,presentation_state.cursor_vm);bind(state.percentage,presentation_state.percentage_vm);bind(state.border,presentation_state.border_vm);
+    if(!current||!before)return out;
+    out[0]=before->file?1.0f:0.0f;out[1]=before->file==current->anmFile?1.0f:0.0f;out[2]=before->script_start==current->beginningOfScript?1.0f:0.0f;
+    out[3]=float(before->script);out[4]=float(current->scriptIndex);out[5]=before->visible?1.0f:0.0f;out[6]=current->visible?1.0f:0.0f;
+    out[7]=float(before->color1.a);out[8]=float(current->color1.a);out[9]=float(before->continuous);out[10]=float(presentation::VisualSample::continuous_fields(*current));
+    out[11]=before->matches(*current)?1.0f:0.0f;out[12]=presentation_state.valid?1.0f:0.0f;out[13]=presentation::active?1.0f:0.0f;
+    out[14]=presentation::world_alpha;out[15]=float(current->currentTimeInScript.current);out[16]=float(current->interpCurrentTimers[AnmInterp_Alpha1].current);out[17]=float(current->interpEndTimers[AnmInterp_Alpha1].current);
+    out[18]=float(presentation_marker.last_epoch&0xffffffu);out[19]=float(presentation::calculation_epoch&0xffffffu);return out;
+}
+#endif
 }

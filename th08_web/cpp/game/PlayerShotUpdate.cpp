@@ -2,7 +2,16 @@
 #include "BulletMotion.hpp"
 #include <cmath>
 namespace th08 {
-void PlayerShots::snapshot_presentation(){for(size_t i=0;i<presentation_previous.size();++i){const auto& shot=state.shots[i];auto& before=presentation_previous[i];before.active=shot.state!=0;if(before.active){before.position=shot.position;before.angle=shot.angle;before.age=shot.timer.current;before.state=shot.state;before.kind=shot.kind;}}}
+void PlayerShots::snapshot_presentation(){
+    if(!presentation_marker.capture())return;
+    for(size_t i=0;i<presentation_previous.size();++i){const auto& shot=state.shots[i];auto& before=presentation_previous[i];before.active=shot.state!=0;
+        if(before.active){before.position=shot.position;before.angle=shot.angle;before.age=shot.timer.current;before.state=shot.state;before.kind=shot.kind;before.visual.capture(shot.animation);
+            const auto& drawn=authored_colors[i];
+            if(drawn.valid&&drawn.state==shot.state&&drawn.kind==shot.kind&&drawn.script==shot.animation.scriptIndex&&shot.timer.current>=drawn.age)before.visual.color1=drawn.color;
+            if(shot.draw==ShotDraw::Laser)std::copy(std::begin(shot.history),std::end(shot.history),std::begin(before.history));
+        }
+    }
+}
 namespace {
 Extended length(float x,float y){return number((number(x)*number(x)+number(y)*number(y)).to_float()).square_root();}
 void color(PlayerShot& shot,bool bonus){shot.animation.color1.r=255;shot.animation.color1.g=bonus?208:255;shot.animation.color1.b=bonus?176:255;}

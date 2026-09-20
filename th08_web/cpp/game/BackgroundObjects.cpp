@@ -1,6 +1,8 @@
 #include "BackgroundObjects.hpp"
 #include "GraphicsMath.hpp"
 #include "Presentation.hpp"
+#include "PresentationAudit.hpp"
+#include <cmath>
 namespace th08 {
 namespace {
 Vec3 add(const Vec3& a,const Vec3& b){return {Scalar::add(a.x,b.x),Scalar::add(a.y,b.y),Scalar::add(a.z,b.z)};}
@@ -21,6 +23,8 @@ u32 BackgroundObjects::fog_color(u32 original,float amount)const{
     result.b=channel(result.b,target.b);result.g=channel(result.g,target.g);result.r=channel(result.r,target.r);result.a=u8((Extended::from_int(result.a)*(number(1)-number(amount))).truncate_int());return u32(result.d3dColor);
 }
 void BackgroundObjects::snapshot(){
+    previous_visuals.resize(presentation_vms.size());
+    for(size_t i=0;i<presentation_vms.size();++i)previous_visuals[i].capture(presentation_vms[i]);
     presentation_vms.clear();
     if(!state.quad_vms||state.quad_count<=0)return;
     presentation_vms.assign(state.quad_vms,state.quad_vms+state.quad_count);
@@ -37,7 +41,18 @@ void BackgroundObjects::draw(i32 layer){
         const float distance=dot(relative,state.camera.unused24).to_float(),limit=(length(object.dimensions)/number(2)+number(960)).to_float();
         if(!(distance<=limit&&distance>=80))continue;if(!presentation::render_only)object.flags|=2;
         for(auto* q=StageProgram::first(object);q->type>=0;q=StageProgram::next(*q)){auto& source=state.quad_vms[q->vm];if(!source.loadedSprite)continue;
-            AnmVm copy;AnmVm* vm=&source;if(presentation::render_only&&q->vm>=0&&q->vm<i32(presentation_vms.size())){copy=presentation_vms[q->vm];vm=&copy;}
+            TH08_AUDIT_SCOPE(Background,instance,source.currentTimeInScript.current,uint32_t(reinterpret_cast<uintptr_t>(q)));
+            AnmVm copy;AnmVm* vm=&source;if(presentation::render_only&&q->vm>=0&&q->vm<i32(presentation_vms.size())){const auto& raw=presentation_vms[q->vm];copy=raw;if(q->vm<i32(previous_visuals.size())){
+                const auto& before=previous_visuals[q->vm];
+                // Stage backgrounds commonly scroll texture coordinates through
+                // authored AddU/AddV loops. Those instructions accumulate the UV
+                // directly, so uvScrollVel is zero and the generic ANM sidecar
+                // cannot infer continuity. Smooth only a small shortest-path UV
+                // delta while the same sprite remains alive; larger authored
+                // jumps and sprite changes stay discrete.
+                const u32 owner_fields=before.authored_uv_fields(raw);
+                before.apply(raw,copy,presentation::world_alpha,presentation::VisualSample::Attributes|presentation::VisualSample::Offset,owner_fields);
+            }vm=&copy;}
             if(q->type==0)sprite(*vm,*static_cast<StageSpriteQuad*>(q),*instance,right,fog_mode);
             else if(q->type==1)beam(*vm,*static_cast<StageBeamQuad*>(q),*instance,right,fog_mode);
         }

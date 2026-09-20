@@ -1,6 +1,7 @@
 #pragma once
 #include "BackgroundState.hpp"
 #include "AnmRenderer.hpp"
+#include "PresentationVisual.hpp"
 #include <vector>
 namespace th08 {
 class BackgroundObjects {
@@ -11,6 +12,7 @@ public:
 private:
     BackgroundState& state;AnmRenderer& renderer;
     std::vector<AnmVm> presentation_vms;
+    std::vector<presentation::VisualSample> previous_visuals;
     Vec3 projection_input;
     void sprite(AnmVm& vm,const StageSpriteQuad& quad,const StageInstance& instance,const Vec3& right,i32& fog_mode);
     void beam(AnmVm& vm,const StageBeamQuad& quad,const StageInstance& instance,const Vec3& right,i32& fog_mode);

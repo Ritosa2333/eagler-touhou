@@ -1,17 +1,20 @@
 #include "BackgroundView.hpp"
 #include "BackgroundScript.hpp"
 #include "Presentation.hpp"
+#include "PresentationVisual.hpp"
 #include "GameMath.hpp"
 #include <algorithm>
 namespace th08 {
 namespace {
-float background_angle(float before,float current){constexpr float pi=3.1415927410125732f,tau=6.2831854820251465f;float delta=current-before;if(delta>pi)delta-=tau;else if(delta<-pi)delta+=tau;return add_angle(before+delta*presentation::world_alpha,0);}
+float background_angle(float before,float current){if(presentation::world_alpha>=1)return current;if(presentation::world_alpha<=0)return before;constexpr float pi=3.1415927410125732f,tau=6.2831854820251465f;float delta=current-before;if(delta>pi)delta-=tau;else if(delta<-pi)delta+=tau;return add_angle(before+delta*presentation::world_alpha,0);}
 u8 background_channel(u8 before,u8 current){return u8(std::clamp(presentation::lerp_world(float(before),float(current)),0.0f,255.0f));}
 }
-void BackgroundView::snapshot_spell_presentation(){for(u32 i=0;i<presentation_spell_vms.size();++i)presentation_spell_vms[i]=state.spell_vms[i];presentation_spell_valid=true;}
+void BackgroundView::snapshot_spell_presentation(){if(!presentation_marker.capture())return;for(u32 i=0;i<presentation_spell_vms.size();++i)presentation_spell_vms[i]=state.spell_vms[i];presentation_spell_valid=true;}
 AnmVm BackgroundView::presentation_spell_vm(u32 index)const{
     if(index>=presentation_spell_vms.size())return {};const auto& source=state.spell_vms[index];AnmVm draw=source;if(!presentation::active||!presentation_spell_valid)return draw;const auto& before=presentation_spell_vms[index];
-    if(before.anmFile!=source.anmFile||before.scriptIndex!=source.scriptIndex||before.activeSpriteIndex!=source.activeSpriteIndex||before.visible!=source.visible||source.currentTimeInScript.current<before.currentTimeInScript.current)return draw;
+    if(before.anmFile!=source.anmFile||before.scriptIndex!=source.scriptIndex||before.visible!=source.visible||source.currentTimeInScript.current<before.currentTimeInScript.current)return draw;
+    const presentation::VisualSample sample(before);
+    sample.apply(source,draw,presentation::world_alpha,presentation::VisualSample::Uv,sample.authored_uv_fields(source));
     const float dx=source.pos.x-before.pos.x,dy=source.pos.y-before.pos.y;if(dx*dx+dy*dy<16384.0f)draw.pos={presentation::lerp_world(before.pos.x,source.pos.x),presentation::lerp_world(before.pos.y,source.pos.y),presentation::lerp_world(before.pos.z,source.pos.z)};
     const float ox=source.pos2.x-before.pos2.x,oy=source.pos2.y-before.pos2.y;if(ox*ox+oy*oy<16384.0f)draw.pos2={presentation::lerp_world(before.pos2.x,source.pos2.x),presentation::lerp_world(before.pos2.y,source.pos2.y),presentation::lerp_world(before.pos2.z,source.pos2.z)};
     draw.rotation={background_angle(before.rotation.x,source.rotation.x),background_angle(before.rotation.y,source.rotation.y),background_angle(before.rotation.z,source.rotation.z)};

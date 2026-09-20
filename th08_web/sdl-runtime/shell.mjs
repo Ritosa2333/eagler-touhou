@@ -150,6 +150,7 @@ window.addEventListener('pageshow',()=>{if(core&&launched&&!document.hidden)void
 canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();core?.sdl_loop_pause(1);error('图形环境已失效，请退出后重新开始。');});
 for(const name of ['pointerdown','keydown'])window.addEventListener(name,()=>{if(Module?.SDL3?.audioContext?.state!=='running')void resumeForegroundAudio(true);},{capture:true});
 for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
+ if(query.get('gameGeneration')==='presentation-lab'&&name==='keydown'&&event.code==='F8'&&!event.repeat){event.preventDefault();event.stopImmediatePropagation();emit('presentation-mark');return;}
  if(options.thpracEnabled&&practice?.key(event.code,name==='keydown'))event.preventDefault();
 },{capture:true});
 const initialized=(async()=>{

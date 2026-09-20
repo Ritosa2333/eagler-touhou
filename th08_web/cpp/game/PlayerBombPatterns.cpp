@@ -4,6 +4,8 @@
 #include "GameMath.hpp"
 #include "Localization.hpp"
 #include "Presentation.hpp"
+#include "PresentationAudit.hpp"
+#include <algorithm>
 namespace th08 {
 namespace {
 float raw_float(u32 bits){float value;std::memcpy(&value,&bits,4);return value;}Vec3 add(const Vec3& a,const Vec3& b){return {Scalar::add(a.x,b.x),Scalar::add(a.y,b.y),Scalar::add(a.z,b.z)};}
@@ -22,14 +24,27 @@ const char* const bomb_name_ids[]={
 };
 const char* bomb_display_name(PlayerBombKind kind){const char* fallback=player_bomb_name(kind);return u32(kind)<17?Localization::StringById(bomb_name_ids[u32(kind)],fallback):fallback;}
 }
-void PlayerBombPatterns::snapshot_presentation(){for(u32 i=0;i<128;++i){const auto& o=objects.objects[i];presentation_previous[i]={o.position,o.angle,o.state,o.timer.current,o.animation[0].scriptIndex};}}
+void PlayerBombPatterns::snapshot_presentation(){
+    if(!presentation_marker.capture())return;
+    for(u32 i=0;i<128;++i){const auto& o=objects.objects[i];presentation_previous[i]={o.position,o.angle,o.state,o.animation[0].currentTimeInScript.current,o.animation[0].scriptIndex,presentation::VisualSample(o.animation[0])};}
+    for(u32 i=0;i<7;++i){const auto& vm=objects.objects[0].animation[i+1];presentation_additional[i].capture(vm);presentation_additional_age[i]=vm.currentTimeInScript.current;}
+}
+void PlayerBombPatterns::presentation_visual(u32 index,u32 part,AnmVm& draw)const{
+    if(index>=128||part>=8||(index!=0&&part!=0)||!presentation::render_only||!presentation::active)return;
+    const auto& o=objects.objects[index];const auto& before=presentation_previous[index];
+    const i32 previous_age=part?presentation_additional_age[part-1]:before.age;
+    if(before.state!=o.state||o.animation[part].currentTimeInScript.current<previous_age)return;
+    const auto& visual=part?presentation_additional[part-1]:before.visual;
+    visual.apply(o.animation[part],draw,presentation::world_alpha,presentation::VisualSample::Attributes|presentation::VisualSample::Offset);
+}
 Vec3 PlayerBombPatterns::presentation_position(u32 index)const{
     if(index>=128||!presentation::active)return index<128?objects.objects[index].position:Vec3{};const auto& o=objects.objects[index];const auto& p=presentation_previous[index];
-    const float dx=o.position.x-p.position.x,dy=o.position.y-p.position.y;if(p.state!=o.state||p.script!=o.animation[0].scriptIndex||o.timer.current<p.age||dx*dx+dy*dy>=16384.0f)return o.position;
+    const float dx=o.position.x-p.position.x,dy=o.position.y-p.position.y;if(p.state!=o.state||p.script!=o.animation[0].scriptIndex||o.animation[0].currentTimeInScript.current<p.age||dx*dx+dy*dy>=16384.0f)return o.position;
     return {presentation::lerp_world(p.position.x,o.position.x),presentation::lerp_world(p.position.y,o.position.y),presentation::lerp_world(p.position.z,o.position.z)};
 }
 float PlayerBombPatterns::presentation_angle(u32 index)const{
-    if(index>=128||!presentation::active)return index<128?objects.objects[index].angle:0;const auto& o=objects.objects[index];const auto& p=presentation_previous[index];if(p.state!=o.state||p.script!=o.animation[0].scriptIndex||o.timer.current<p.age)return o.angle;
+    if(index<128&&presentation::world_alpha>=1)return objects.objects[index].angle;
+    if(index>=128||!presentation::active)return index<128?objects.objects[index].angle:0;const auto& o=objects.objects[index];const auto& p=presentation_previous[index];if(p.state!=o.state||p.script!=o.animation[0].scriptIndex||o.animation[0].currentTimeInScript.current<p.age)return o.angle;
     constexpr float pi=3.1415927410125732f,tau=6.2831854820251465f;float delta=o.angle-p.angle;if(delta>pi)delta-=tau;else if(delta<-pi)delta+=tau;return add_angle(p.angle+delta*presentation::world_alpha,0);
 }
 void PlayerBombPatterns::begin(PlayerBombKind kind,i32 sprite,i32 duration,i32 invincibility,i32 variant){begin_player_bomb(objects,bomb,life,movement.position,sprite,bomb_display_name(kind),duration,invincibility,variant,actions);}
@@ -91,13 +106,29 @@ void PlayerBombPatterns::last_word(){
 }
 bool PlayerBombPatterns::draw_marisa(const Vec2& offset){
     tint(0x80404040);const float step=raw_float(0x3e567750);
-    for(i32 i=0;i<5;++i){auto& source=objects.objects[0].animation[i];if(!source.loadedSprite)return false;AnmVm copy;if(presentation::render_only)copy=source;auto& vm=presentation::render_only?copy:source;
+    for(i32 i=0;i<5;++i){auto& source=objects.objects[0].animation[i];if(!source.loadedSprite)return false;AnmVm copy;if(presentation::render_only){copy=source;presentation_visual(0,u32(i),copy);}auto& vm=presentation::render_only?copy:source;
+        TH08_AUDIT_SCOPE(PlayerBomb,&objects.objects[0],source.currentTimeInScript.current,(u32(objects.objects[0].state)<<8)|u32(i));
         float angle=(Extended::from_int(i)*number(step)-number(raw_float(0x3fc90fdb))-(number(step)+number(step))).to_float();if(angle<-3.1415927410125732f)angle=Scalar::add(angle,6.2831854820251465f);
         vm.pos=movement.position;vm.pos.x=(cosine(angle)*number(vm.loadedSprite->widthPx)*number(vm.scale.x)/number(2)+number(vm.pos.x)).to_float();vm.pos.y=(sine(angle)*number(vm.loadedSprite->widthPx)*number(vm.scale.x)/number(2)+number(vm.pos.y)).to_float();
         vm.rotation.z=angle;vm.updateRotation=1;vm.pos.x=Scalar::add(offset.x,vm.pos.x);vm.pos.y=Scalar::add(offset.y,vm.pos.y);vm.pos.z=0;actions.draw(vm,true);
     }return true;
 }
 void PlayerBombPatterns::draw_yukari(const Vec2& offset){
-    tint(0x802020d0);auto& object=objects.objects[0];const Vec3 position=presentation_position(0);for(i32 i=0;i<2;++i){auto& source=object.animation[i];AnmVm copy;if(presentation::render_only)copy=source;auto& vm=presentation::render_only?copy:source;vm.pos=add(position,vm.pos2);vm.pos.x=Scalar::add(offset.x,vm.pos.x);vm.pos.y=Scalar::add(offset.y,vm.pos.y);vm.pos.z=i?0:.01f;actions.draw(vm,true);}
+    tint(0x802020d0);auto& object=objects.objects[0];const Vec3 position=presentation_position(0);for(i32 i=0;i<2;++i){auto& source=object.animation[i];AnmVm copy;if(presentation::render_only){copy=source;presentation_visual(0,u32(i),copy);}auto& vm=presentation::render_only?copy:source;TH08_AUDIT_SCOPE(PlayerBomb,&object,source.currentTimeInScript.current,(u32(object.state)<<8)|u32(i));vm.pos=add(position,vm.pos2);vm.pos.x=Scalar::add(offset.x,vm.pos.x);vm.pos.y=Scalar::add(offset.y,vm.pos.y);vm.pos.z=i?0:.01f;actions.draw(vm,true);}
 }
+#if defined(TH_PRESENTATION_AUDIT)
+const float* PlayerBombPatterns::audit_presentation_sample(uintptr_t object,u32 part)const{
+    static float out[24];std::fill(out,out+24,0.0f);
+    const auto* begin=objects.objects;const auto* end=objects.objects+128;const auto* current=reinterpret_cast<const PlayerBombObject*>(object);
+    if(current<begin||current>=end||part>=8)return out;
+    const size_t index=size_t(current-begin);const auto& before=presentation_previous[index];const auto& vm=current->animation[part];
+    const auto& visual=part?presentation_additional[part-1]:before.visual;const i32 previous_age=part?presentation_additional_age[part-1]:before.age;
+    out[0]=float(index);out[1]=float(before.state);out[2]=float(current->state);out[3]=float(before.script);out[4]=float(vm.scriptIndex);
+    out[5]=float(previous_age);out[6]=float(vm.currentTimeInScript.current);out[7]=before.position.x;out[8]=before.position.y;out[9]=before.position.z;
+    out[10]=current->position.x;out[11]=current->position.y;out[12]=current->position.z;out[13]=visual.scale.x;out[14]=visual.scale.y;
+    out[15]=vm.scale.x;out[16]=vm.scale.y;out[17]=float(visual.color1.a);out[18]=float(vm.color1.a);out[19]=float(visual.continuous);
+    out[20]=float(presentation::VisualSample::continuous_fields(vm));out[21]=float(presentation_marker.last_epoch&0xffffffu);out[22]=float(bomb.timer.current);out[23]=float(current->frame);
+    return out;
+}
+#endif
 }

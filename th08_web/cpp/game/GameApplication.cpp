@@ -1,5 +1,6 @@
 #include "GameApplication.hpp"
 #include "Presentation.hpp"
+#include "PresentationAudit.hpp"
 #include <algorithm>
 #include <cstdio>
 namespace th08 {
@@ -127,6 +128,7 @@ JobResult GameApplication::update_supervisor(){
 }
 bool GameApplication::update(){
     if(!running||invalid())return false;
+    presentation::CalculationScope presentation_tick;
     // ECL callbacks 18/28/29 write the game's persistent global time scale.
     // The browser's next presentation does not reset it to a unit timestep.
     if(game_attached)timing=game.player.timing;animations.timing=timing;
@@ -136,10 +138,12 @@ bool GameApplication::update(){
 }
 bool GameApplication::draw(float presentation_alpha,bool presentation_active,bool presentation_only,bool world_interpolate){
     if(!running||invalid())return false;if(title.modal())return true;
+    TH08_AUDIT_FRAME(presentation_only,presentation_active?presentation_alpha:1.f);
     const auto string_count=ascii.state.string_count;const u32 ascii_color=ascii.state.color;const float ascii_scale_x=ascii.state.scale_x,ascii_scale_y=ascii.state.scale_y;const i32 ascii_gui=ascii.state.gui,ascii_selected=ascii.state.selected,ascii_space=ascii.state.space_width;const Vec2 saved_shake=renderer.shake;
     if(presentation_only&&presentation_shake_valid)renderer.shake=presentation_shake;else if(!presentation_only){presentation_shake=renderer.shake;presentation_shake_valid=true;}
     presentation::begin(presentation_alpha,presentation_active,presentation_only,world_interpolate);
     const i32 value=chain.run(true);renderer.flush();if(presentation_only){ascii.state.string_count=string_count;ascii.state.color=ascii_color;ascii.state.scale_x=ascii_scale_x;ascii.state.scale_y=ascii_scale_y;ascii.state.gui=ascii_gui;ascii.state.selected=ascii_selected;ascii.state.space_width=ascii_space;}
+    TH08_AUDIT_END();
     if(!presentation_only&&value<=0){failed|=value<0;running=false;}
     if(!presentation_only){if(game_attached&&!(game.globals.game_flags&8))game.recording.input.timing_level=statistics.state.replay_fps;platform.process_sounds();}
     if(!platform.present())platform.reset_device();if(presentation_only)renderer.shake=saved_shake;presentation::end();if(!presentation_only)failed|=invalid();return running&&!failed;
