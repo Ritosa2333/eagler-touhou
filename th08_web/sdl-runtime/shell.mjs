@@ -83,6 +83,11 @@ async function installRuntimePack(pack){
 function applyOptions(){applyTouchOptions(core,options);core.sdl_touch_display?.(options.alwaysHitbox?1:0);practice?.configure(options);}
 function status(){return Array.from(new Int32Array(core.memory.buffer,core.sdl_game_status(),10));}
 function save(){if(app)core.save(app);return sync(false);}
+// Backgrounding only persists the runtime filesystem. core.save() runs the
+// result-screen score save, which attaches the result scene and flushes the
+// shared renderer; that must not run against a title/practice frame whose
+// pending batch has no valid texture.
+function persist(){return sync(false);}
 async function resumeForegroundAudio(forcePause=false){
  if(!core||!launched||document.hidden)return false;
  if(forcePause)core.sdl_loop_pause(1);
@@ -138,9 +143,9 @@ let queue=Promise.resolve();
 window.addEventListener('message',event=>{const m=event.data;if(!validEpoch||event.source!==parent||event.origin!==location.origin||m?.protocol!==protocol||m.game!==game||m.epoch!==epoch||typeof m.command!=='string')return;
  queue=queue.then(async()=>{if(await initialized===false)return;try{const result=await command(m);if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:true,...result},location.origin);}catch(e){if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:false,error:String(e),errno:e.errno},location.origin);else error(e);}}).catch(error);
 });
-document.addEventListener('visibilitychange',()=>{if(!core||!launched)return;core.sdl_keys_clear();cancelTouches();if(document.hidden){suspendRuntimeAudio(Module,core);queue=queue.then(save).catch(error);}else void resumeForegroundAudio(true);});
+document.addEventListener('visibilitychange',()=>{if(!core||!launched)return;core.sdl_keys_clear();cancelTouches();if(document.hidden){suspendRuntimeAudio(Module,core);queue=queue.then(persist).catch(error);}else void resumeForegroundAudio(true);});
 window.addEventListener('blur',()=>{if(core){practice?.clear();core.sdl_keys_clear();cancelTouches();}});
-window.addEventListener('pagehide',()=>{cancelTouches();if(core&&launched){suspendRuntimeAudio(Module,core);void save().catch(console.error);}});
+window.addEventListener('pagehide',()=>{cancelTouches();if(core&&launched){suspendRuntimeAudio(Module,core);void persist().catch(console.error);}});
 window.addEventListener('pageshow',()=>{if(core&&launched&&!document.hidden)void resumeForegroundAudio(true);});
 canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();core?.sdl_loop_pause(1);error('图形环境已失效，请退出后重新开始。');});
 for(const name of ['pointerdown','keydown'])window.addEventListener(name,()=>{if(Module?.SDL3?.audioContext?.state!=='running')void resumeForegroundAudio(true);},{capture:true});

@@ -27,10 +27,18 @@ assert(!ui.includes('AddFontFromFileTTF("/fonts/msgothic.ttc",16,&config,range)'
 assert(ui.includes('io.ConfigDragClickToInputText=desktop_pointer'),'desktop numeric controls must open text input on click-release');
 assert(ui.includes('event.motion.which!=SDL_TOUCH_MOUSEID')&&ui.includes('event.button.which!=SDL_TOUCH_MOUSEID'),'touch-generated mouse input must not enable desktop click-to-input behavior');
 assert(ui.includes('!ImGui::IsAnyItemActive()&&!ImGui::IsPopupOpen'),'practice window focus must not interrupt active numeric input');
+const host=readFileSync(resolve(import.meta.dirname,'../th08_web/cpp/sdl/GameHost.cpp'),'utf8');
+const touchExport=host.slice(host.indexOf('EX("sdl_touch")'),host.indexOf('EX("sdl_touch_cancel")'));
+assert(touchExport.includes('if(ThpracUi::captures_game_input())ThpracUi::mouse('),'Launcher direct touch must mirror into the active thprac UI');
+assert(touchExport.includes('pointer(type,id,x,y);')&&touchExport.indexOf('ThpracUi::mouse(')<touchExport.indexOf('pointer(type,id,x,y);'),'thprac mirroring must not suppress the ordinary touch pointer stream');
 const runtime=readFileSync(resolve(import.meta.dirname,'../th08_web/cpp/game/PracticeRuntime.cpp'),'utf8');
 assert(!runtime.includes('std::swap(scene.globals.enemy_animation_files[0],scene.globals.enemy_animation_files[1])'),'source-level thprac must not swap ECL animation slots');
 const gameplay=readFileSync(resolve(import.meta.dirname,'../th08_web/cpp/game/GameplayScene.cpp'),'utf8');
 assert(gameplay.includes('SetSprite(&display.clock_intro,session.numbers.clock_time)'),'practice night must refresh the stage-entry clock');
+assert(gameplay.includes('if(wanted.initial)control.state=GameplayControlState{}'),'a fresh TH08 run must reset the GameManager-owned Demo timer');
+const titleContext=readFileSync(resolve(import.meta.dirname,'../th08_web/cpp/game/TitleMenus.hpp'),'utf8');
+assert(titleContext.includes('u8 currentDemoReplay=3;'),'TH08 must preserve the original first Demo rotation index');
+assert(!titleContext.includes('demoFrameCount'),'TitleContext must not retain a dead shadow of GameplayControlState::demo_frames');
 const replays=readFileSync(resolve(import.meta.dirname,'../th08_web/cpp/game/TitleReplays.cpp'),'utf8');
 for(const anchor of ['practice_replay_menu_reset','practice_replay_menu_check','practice_replay_menu_activate'])assert(replays.includes(anchor),'replay menu must drive the THGuiRep '+anchor+' lifecycle');
 const config=readFileSync(resolve(import.meta.dirname,'../th08_web/cpp/game/PracticeConfig.cpp'),'utf8');

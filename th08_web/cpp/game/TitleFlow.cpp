@@ -24,7 +24,7 @@ void TitleFlow::finish_begin(){
     title.practiceState=0;if(context.flags.isPracticeMode){title.cursor=context.flags.isSpellPractice?2:3;title.practiceState=context.flags.isSpellPractice?2:1;}
     context.flags.isPracticeMode=context.flags.isSpellPractice=false;
     if(context.supervisor_previous==2){actions.loading(true);actions.start_effect();}else if(context.supervisor_previous!=0)actions.loading(false);
-    context.flags.isDemoMode=false;context.demoFrameCount=0;title.state=TitleScreenState_Loading;actions.begin_loading();
+    context.flags.isDemoMode=false;title.state=TitleScreenState_Loading;actions.begin_loading();
 }
 bool TitleFlow::setup(){
     if(state.capture_pending)return false;auto& title=menus.state;auto& context=menus.context;

@@ -109,8 +109,8 @@ struct TitleGameFlags {
 };
 struct TitleContext {
     TitleGameFlags flags{};
-    i32 supervisor_state=1,supervisor_previous=0,difficulty=1,character=0,shotType=0,currentStage=0,replayMode=0,demoFrameCount=0;
-    u8 currentDemoReplay=0;u8 padding25=0;i16 lastKeyChanged=32;
+    i32 supervisor_state=1,supervisor_previous=0,difficulty=1,character=0,shotType=0,currentStage=0,replayMode=0;
+    u8 currentDemoReplay=3;u8 padding25=0;i16 lastKeyChanged=32;
     i32 bgmVolume=100,sfxVolume=100;
     InputFrame input;u8 controller_state[128]{};
     char replayFilename[512]{};

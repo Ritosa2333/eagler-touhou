@@ -64,7 +64,7 @@ bool TitleMenus::start_demo(){
     if(!replay.decode(file.data(),file.size()))return false;
     ReplayMetadata info;std::memcpy(&info,replay.decoded().data(),sizeof(info));
     i32 first=0;while(first<9&&!info.header.stage_offsets[first])++first;if(first==9)return false;
-    context.SetIsReplayWeird(true);context.flags.isDemoMode=true;context.demoFrameCount=0;
+    context.SetIsReplayWeird(true);context.flags.isDemoMode=true;
     context.difficulty=info.difficulty;context.shotType=info.shot_type%2;context.character=info.shot_type;context.currentStage=first;
     context.supervisor_state=2;context.replayMode=0;context.flags.isSpellPractice=false;state.currentReplay=nullptr;return true;
 }

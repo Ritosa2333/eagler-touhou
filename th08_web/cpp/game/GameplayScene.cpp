@@ -175,7 +175,11 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     platform.begin_motion(wanted.stage,wanted.initial,playing_replay,recording_game);
     if(playing_replay&&(!playback.has_stage(wanted.stage)||playback.metadata().shot_type!=wanted.character||playback.metadata().difficulty!=wanted.difficulty))return false;
     menus.context=MenuContext{};menus.context.supervisor_state=wanted.supervisor_state;menus.context.system_time=now();
-    if(!initialize_values)control.state=GameplayControlState{};control.state.play_frames=0;
+    // GameManager is a fresh owner on an initial title/restart entry in the
+    // original game. Recreate its control state here as well; otherwise the
+    // attract-mode timer survives into later demos and immediately satisfies
+    // their exit thresholds. Next-stage loads deliberately retain the run.
+    if(wanted.initial)control.state=GameplayControlState{};control.state.play_frames=0;
     GameplayStart startup(session,globals,control.state,menus.context,*this);
     globals.stage=wanted.stage;globals.shot=wanted.character;globals.difficulty=wanted.difficulty;globals.difficulty_mask=wanted.difficulty>=4?15:1u<<wanted.difficulty;globals.current_spell=i16(wanted.spell);globals.game_flags=wanted.flags;globals.paused=0;
     // Reset in place: the player owns almost a megabyte of bomb/shot storage.
