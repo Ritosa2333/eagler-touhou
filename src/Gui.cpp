@@ -889,7 +889,7 @@ ZunResult GuiImpl::RunMsg()
 #endif
             if (!this->msg.dialogueSkippable || !IS_PRESSED(TH_BUTTON_SKIP))
             {
-                if (!WAS_PRESSED(TH_BUTTON_SHOOT) || this->msg.framesElapsedDuringPause < 8)
+                if (!WAS_PRESSED_GAME(TH_BUTTON_SHOOT) || this->msg.framesElapsedDuringPause < 8)
                 {
                     if (this->msg.framesElapsedDuringPause >= this->msg.currentInstr->args.wait)
                     {

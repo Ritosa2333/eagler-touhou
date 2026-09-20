@@ -1,6 +1,7 @@
 #include <eagler/netplay/NetplayInput.hpp>
 #include "Multiplayer.hpp"
 #include "Supervisor.hpp"
+#include "utils.hpp"
 
 #include <cassert>
 #include <iostream>
@@ -27,6 +28,12 @@ int main()
     Netplay::Input::SetPlayerInputOverrides(inputs, 2);
     assert(g_CurFrameGameInputs[0] == 0x10);
     assert(g_CurFrameGameInputs[1] == 0x20);
+
+    g_LastFrameGameInputs[0] = 0x10;
+    g_LastFrameGameInputs[1] = 0;
+    assert(!WAS_PRESSED_GAME(0x20));
+    g_LastFrameGameInputs[0] = 0;
+    assert(WAS_PRESSED_GAME(0x10));
 
     float x = 0.0f;
     float y = 0.0f;

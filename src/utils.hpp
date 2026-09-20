@@ -17,12 +17,18 @@
 #define WAS_PRESSED_PERIODIC(key)                                                                                      \
     (WAS_PRESSED(key) || (((g_CurFrameInput & (key)) != 0) && (g_IsEigthFrameOfHeldInput != 0)))
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#define IS_PRESSED_GAME(key) (g_CurFrameGameInputs[0] & (key))
+#define WAS_PRESSED_GAME(key)                                                                                       \
+    (((g_CurFrameGameInputs[0] & (key)) != 0) &&                                                                  \
+     ((g_CurFrameGameInputs[0] & (key)) != (g_LastFrameGameInputs[0] & (key))))
 #define IS_PRESSED_PLAYER(player, key) (g_CurFrameGameInputs[(player)->initParam] & (key))
 #define WAS_PRESSED_PLAYER(player, key)                                                                            \
     (((g_CurFrameGameInputs[(player)->initParam] & (key)) != 0) &&                                                \
      ((g_CurFrameGameInputs[(player)->initParam] & (key)) !=                                                       \
       (g_LastFrameGameInputs[(player)->initParam] & (key))))
 #else
+#define IS_PRESSED_GAME(key) IS_PRESSED(key)
+#define WAS_PRESSED_GAME(key) WAS_PRESSED(key)
 #define IS_PRESSED_PLAYER(player, key) IS_PRESSED(key)
 #define WAS_PRESSED_PLAYER(player, key) WAS_PRESSED(key)
 #endif
