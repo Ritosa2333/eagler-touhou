@@ -20,6 +20,11 @@ Good common-library candidates:
 - fixed-step/browser lifecycle helpers;
 - diagnostics and performance-test primitives.
 
+`testkit/presentation-lab/controller-core.mjs` is the shared orchestration
+authority for draw-only alpha inspection and fixed-tick fast-forward. Games
+retain adapters for their record layouts, owner identities, state fingerprints
+and classification policy; production builds do not expose those diagnostics.
+
 Keep title-specific:
 
 - rollback state inventory and object layout;
