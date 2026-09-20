@@ -30,6 +30,9 @@
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "multiplayer/GameplaySession.hpp"
 #endif
+#ifdef TH_ENABLE_NETPLAY
+#include "netplay/NetplaySideEffects.hpp"
+#endif
 
 u32 g_SpellcardTimeColors[4] = {
     0xa0d0ff,
@@ -1081,6 +1084,9 @@ ZunResult GuiImpl::RunMsg()
             this->msg.ignoreWaitCounter++;
             break;
         case MSG_MUSIC:
+        {
+            const char *path =
+                g_Stage.stdData->bgmPaths[this->msg.curInstr->args.music.musicIdx];
             if (g_GameManager.currentStage != STAGE6)
             {
                 g_AnmManager->SetAnmIdxAndExecuteScript(&this->stageTextVm[0],
@@ -1094,13 +1100,17 @@ ZunResult GuiImpl::RunMsg()
             g_AnmManager->SetActiveSprite(this->stageTextVm,
                                           this->msg.curInstr->args.music.musicIdx +
                                               ANM_SPRITE_STAGE_TEXT_MUSIC);
+#ifdef TH_ENABLE_NETPLAY
+            if (Netplay::SideEffects::ObserveBgmPlay(path))
+                break;
+#endif
             if (g_Supervisor.PlayLoadedAudio(this->msg.curInstr->args.music.musicIdx) !=
                 ZUN_SUCCESS)
             {
-                g_Supervisor.PlayAudio(
-                    g_Stage.stdData->bgmPaths[this->msg.curInstr->args.music.musicIdx]);
+                g_Supervisor.PlayAudio(path);
             }
             break;
+        }
         case MSG_TEXT_INTRODUCE:
         {
             args = &this->msg.curInstr->args;

@@ -28,3 +28,8 @@ python3 audit/source-contracts/texture-binding-contract-test.py
   tests/netplay-input-test.cpp third_party/eagler-common/src/netplay/NetplayInput.cpp \
   -o "$OUT/netplay-input-test"
 "$OUT/netplay-input-test"
+
+"$CXX" -std=c++20 -Isrc \
+  tests/netplay-side-effects-test.cpp src/netplay/NetplaySideEffects.cpp \
+  -o "$OUT/netplay-side-effects-test"
+"$OUT/netplay-side-effects-test"

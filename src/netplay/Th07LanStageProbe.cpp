@@ -1109,6 +1109,7 @@ void Fail(const char *reason)
 
 bool Initialize()
 {
+    SideEffects::ResetBgmHistory();
     g_PlayerCount = ReadPlayerCount();
     g_SpectatorMode = SpectatorModeRequested();
     g_LocalPlayer = g_SpectatorMode ? 0 : ReadPlayer();
@@ -2303,6 +2304,9 @@ bool ReconcileRollback()
             g_ReconcileCostNs += elapsed;
             g_MaxReconcileCostNs = std::max(g_MaxReconcileCostNs, elapsed);
         }
+        char correctedBgmPath[256];
+        if (SideEffects::ConsumeCorrectedBgmPlay(correctedBgmPath, sizeof(correctedBgmPath)))
+            g_Supervisor.PlayAudio(correctedBgmPath);
         return true;
     }
 
@@ -2368,6 +2372,9 @@ bool ReconcileRollback()
         g_ReconcileActive = false;
         SetReconcileTimerMode(false);
         g_ReconcileNextFrame = g_ReconcileLastFrame = INVALID_FRAME;
+        char correctedBgmPath[256];
+        if (SideEffects::ConsumeCorrectedBgmPlay(correctedBgmPath, sizeof(correctedBgmPath)))
+            g_Supervisor.PlayAudio(correctedBgmPath);
     }
     g_ReconcileShouldYield = g_ReconcileActive ||
         elapsed >= RollbackReplayBudget::SliceBudgetNs;
