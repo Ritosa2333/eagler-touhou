@@ -6,6 +6,8 @@ import {
   validateTickReceipt,
 } from './contracts.mjs';
 
+const purityFailed=report=>report.purityStatus==='fail'||report.purity===false;
+
 // Title-neutral orchestration. All runtime ABI and game semantics belong to
 // the driver/observer pair supplied by the consumer.
 export class PresentationLabControllerCore {
@@ -124,12 +126,12 @@ export class PresentationLabControllerCore {
       const report = this.sweep({label: `scan+${completedTicks}`, negativeControl});
       reports.push(this.observer.compact(report, {maxObjects: 96, images: false}));
       onWindow(report);
-      if (report.purity === false) break;
+      if (purityFailed(report)) break;
       await new Promise(resolve => setTimeout(resolve, 0));
     }
     return {schema: this.observer.scanSchema, build: this.identity, reports, completedTicks, windows: reports.length,
       groups: this.observer.mergeIssues(reports), detailsBound: 96,
-      stoppedForPurity: reports.some(report => report.purity === false)};
+      stoppedForPurity: reports.some(purityFailed)};
   }
 
   export() {

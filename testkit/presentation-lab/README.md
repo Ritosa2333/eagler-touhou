@@ -9,6 +9,11 @@ diagnostics:
 - repeat samples for idempotence and compare state fingerprints;
 - run bounded scans and retain compact reports.
 
+`analyzer.mjs` accepts normalized records and treats missing state coverage as
+`unknown`, not a purity pass. Title adapters may retain a legacy analyzer while
+they migrate their native ABI, but new consumers should emit the normalized
+frame and field model described by the contract.
+
 The consumer implements the `RuntimeDriverV1` and `ObservationAdapterV1`
 boundaries in [CONTRACT.md](CONTRACT.md). It owns every title-specific concern:
 runtime ABI, complete tick transaction, record wire layout, owner identities,

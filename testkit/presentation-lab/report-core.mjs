@@ -2,9 +2,13 @@ export const DEFAULT_STATUS_SEVERITY = Object.freeze({
   nonfinite: 6,
   'non-idempotent': 6,
   'endpoint-mismatch': 5,
+  'endpoint-mismatch-current': 5,
+  'endpoint-mismatch-previous': 5,
+  'snap-mismatch': 5,
   'downstream-held': 5,
   'missing-interpolation': 4,
   'held-review': 3,
+  'identity-uncertain': 3,
   responsive: 2,
 });
 

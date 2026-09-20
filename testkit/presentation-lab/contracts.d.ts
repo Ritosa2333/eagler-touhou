@@ -11,6 +11,45 @@ export interface Capabilities {
 }
 export interface FreezeToken { sessionEpoch: number | string; generation: number; }
 export interface TickReceipt { status: TickStatus; advancedTicks: 0 | 1; detail?: string; }
+export interface ObservationField {
+  id: string;
+  label?: string;
+  value: number | number[];
+  tolerance: number;
+  period?: number;
+  interpolationPolicy: 'continuous' | 'snap-current' | 'curve' | 'unknown';
+  evidence?: unknown;
+}
+export interface ObservationRecord {
+  key?: string;
+  ownerId: string | number;
+  ownerLabel?: string;
+  objectId: string | number;
+  generation?: string | number;
+  identityConfidence: 'proven' | 'uncertain';
+  partId?: string | number;
+  drawId?: string | number;
+  lifecycle?: {continuous: boolean; reason?: string};
+  coordinateSpace?: string;
+  bounds?: number[];
+  geometryQuality?: string;
+  fields: ObservationField[];
+}
+export interface ObservationFrame {
+  sessionEpoch: string | number;
+  simulationTick: number;
+  referenceDrawSerial?: number;
+  alpha?: number;
+  completeness: 'complete' | 'incomplete';
+  dropped: number;
+  records: ObservationRecord[];
+  limitations?: string[];
+}
+export interface StateEvidence {
+  coverageVersion: string;
+  groups: Array<{id: string; digest: string | number; includedFields?: string[]}>;
+  missingGroups: string[];
+}
 export interface RuntimeDriverV1 {
   describe(): Capabilities;
   freeze(): FreezeToken;
@@ -26,9 +65,9 @@ export interface ObservationAdapterV1 {
   scanSchema: string;
   sessionSchema: string;
   enable(on: boolean): void;
-  readReferences(): {previous: unknown; current: unknown};
-  readObservation(): unknown;
-  readStateEvidence(): unknown;
+  readReferences(): {previous: ObservationFrame; current: ObservationFrame};
+  readObservation(): ObservationFrame;
+  readStateEvidence(): StateEvidence;
   readTiming(): unknown;
   readTrace(): unknown;
   readScene(): unknown;
