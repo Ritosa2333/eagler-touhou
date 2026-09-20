@@ -5,7 +5,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-$workspace = (Resolve-Path (Join-Path $root '../..')).Path
+$workspace = (Resolve-Path (Join-Path $root '..')).Path
 $node = (Get-Command node -ErrorAction Stop).Source
 $url = "http://127.0.0.1:$Port/"
 $output = Join-Path $root 'artifacts/presentation-lab'

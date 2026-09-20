@@ -3,7 +3,9 @@ import {readFileSync,writeFileSync,createReadStream,existsSync,statSync,mkdirSyn
 import {resolve,extname} from 'node:path';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
-const lab=import.meta.dirname,root=resolve(lab,'../..'),workspace=resolve(root,'../..');
+const lab=import.meta.dirname,root=resolve(lab,'../..'),workspace=resolve(root,'..');
+const common=resolve(root,'third_party/eagler-common/testkit/presentation-lab');
+if(!existsSync(resolve(common,'controller-core.mjs')))throw Error('Initialize the pinned eagler-common submodule');
 const snapshot=process.env.TH08_LAB_SNAPSHOT||'';
 if(snapshot&&!/^[a-z0-9-]{1,40}$/.test(snapshot))throw Error('Invalid snapshot');
 const runtime=snapshot?resolve(root,'artifacts/presentation-lab/builds',snapshot):resolve(root,'build-eagler'),input=resolve(root,'artifacts/presentation-lab/input');
@@ -19,6 +21,7 @@ for(const [name,info] of Object.entries(inventory)){
 }
 if(!snapshot)for(const [name,digest] of Object.entries(build.sourceFiles))if(sha(readFileSync(resolve(root,name)))!==digest)throw Error('Rebuild modified instrumented source: '+name);
 const files=new Map([['/','index.html'],['/index.html','index.html'],['/app.mjs','app.mjs'],['/controller.mjs','controller.mjs'],['/analyzer.mjs','analyzer.mjs'],['/style.css','style.css'],['/fullscreen.css','fullscreen.css']].map(([url,file])=>[url,resolve(lab,file)]));
+files.set('/common/controller-core.mjs',resolve(common,'controller-core.mjs'));
 for(const file of Object.keys(inventory))files.set('/runtime/'+file,resolve(runtime,file));
 const font=process.env.TH08_LAB_FONT||resolve(workspace,'th06-eagler/assets/msgothic.ttc');
 if(!existsSync(font))throw Error('Set TH08_LAB_FONT to your local MS Gothic font');
@@ -41,7 +44,9 @@ const identity={schema:'th08/presentation-lab-build/1',commit:execFileSync('git'
   sourceDigest:sha(JSON.stringify(build.sourceFiles)),snapshot:snapshot||null,instrumented:true,dataAvailable:files.has('/input/th08.dat'),fixtureManifest:existsSync(resolve(input,'manifest.json'))?JSON.parse(readFileSync(resolve(input,'manifest.json'),'utf8')):{},
   evidence:'diagnostic runtime, not production deployment',sampling:'authoritative Draw endpoints + frozen alpha sweep'};
 function currentIdentity(){
- const toolSources=Object.fromEntries(['index.html','style.css','fullscreen.css','app.mjs','controller.mjs','analyzer.mjs'].map(name=>[name,sha(readFileSync(resolve(lab,name)))]));
+ const local=['index.html','style.css','fullscreen.css','app.mjs','controller.mjs','analyzer.mjs'];
+ const toolSources=Object.fromEntries(local.map(name=>[name,sha(readFileSync(resolve(lab,name)))]));
+ toolSources['eagler-common/controller-core.mjs']=sha(readFileSync(resolve(common,'controller-core.mjs')));
  return {...identity,toolSources,toolDigest:sha(JSON.stringify(toolSources))};
 }
 const types={'.html':'text/html; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json','.wasm':'application/wasm','.ttc':'font/collection'};

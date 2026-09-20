@@ -21,6 +21,17 @@ const guiController=read('th08_web/cpp/game/GuiController.cpp');
 const spellBackground=read('th08_web/cpp/game/SpellBackground.cpp');
 const backgroundView=read('th08_web/cpp/game/BackgroundView.cpp');
 const backgroundScript=read('th08_web/cpp/game/BackgroundScript.cpp');
+const shell=read('th08_web/sdl-runtime/shell.mjs');
+const labController=read('portable/presentation-lab/controller.mjs');
+const labServer=read('portable/presentation-lab/serve.mjs');
+const commonController=read('third_party/eagler-common/testkit/presentation-lab/controller-core.mjs');
+
+// Diagnostic orchestration is a pinned common testkit dependency. The
+// production shell must not know Lab hotkeys or expose a runtime toggle.
+assert.match(labController,/PresentationLabControllerCore.*\/common\/controller-core\.mjs/);
+assert.match(labServer,/third_party\/eagler-common\/testkit\/presentation-lab/);
+assert.match(commonController,/class PresentationLabControllerCore/);
+assert.doesNotMatch(shell,/presentation-mark|gameGeneration.*presentation-lab/);
 
 // Fixed game clock: one rAF callback may execute zero or one fixed tick. Late
 // callbacks skip expired 60 Hz deadlines instead of replaying catch-up ticks.
@@ -121,8 +132,7 @@ assert.match(effects,/if\(!EffectGeometry::interpolation_preserves_topology\([^)
 assert.match(spellDrawing,/before\.scriptIndex!=source\.scriptIndex\|\|before\.visible!=source\.visible/);
 assert.match(spellDrawing,/source\.currentTimeInScript\.current<before\.currentTimeInScript\.current/);
 assert.match(spellDrawing,/draw\.rotation=\{angle\(/);
-assert.match(spellDrawing,/before\.activeSpriteIndex==source\.activeSpriteIndex\?presentation::VisualSample::Uv:0/);
-assert.match(spellDrawing,/presentation::VisualSample::Uv,uv_owner/);
+assert.match(spellDrawing,/sample\.authored_uv_fields\(source\)/);
 assert.match(spellDrawing,/presentation::render_only\?presented\[i\]:v\[i\]/);
 assert.match(spellDrawing,/presentation_previous_panel_color=state\.spell_panel_color/);
 assert.match(spellDrawing,/presentation::lerp\(float\(before\),float\(current\)\)/);
@@ -132,8 +142,7 @@ assert.match(guiController,/owner_fields\|=presentation::VisualSample::Opacity/)
 assert.match(backgroundView,/snapshot_spell_presentation/);
 assert.match(backgroundView,/draw\.rotation=\{background_angle\(/);
 assert.match(backgroundView,/presentation::render_only\).*presentation_spell_vm/s);
-assert.match(backgroundObjects,/std::remainder\(raw\.uvScrollPos\.x-before\.uv\.x,1\.0f\)/);
-assert.match(backgroundObjects,/owner_fields\|=presentation::VisualSample::Uv/);
+assert.match(backgroundObjects,/before\.authored_uv_fields\(raw\)/);
 // Stage-script coordinate rebases are atomic discontinuities. In particular,
 // stage 1's 511.5-unit wrap must never pass through the generic 512-unit
 // proximity guard and create an intermediate camera view.
@@ -143,6 +152,8 @@ assert(backgroundScript.indexOf('if(presentation_camera_rebased)return result')<
   'Authored camera rebases must snap before any distance-based interpolation decision');
 assert.match(spellBackground,/view\.presentation_spell_vm\(0\)/);
 assert.match(spellBackground,/view\.presentation_spell_vm\(1\)/);
+assert.match(spellBackground,/effects\.presentation_copy\(\*effects\.group\(9\)\)/);
+assert.match(spellBackground,/effects\.presentation_copy\(\*effects\.group\(10\)\)/);
 
 // Gameplay ASCII overlays have cross-owner inputs too. Boss markers are moved
 // by EnemySimulation before AsciiManager's own VM tick, while the humanity
