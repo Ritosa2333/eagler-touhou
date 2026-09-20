@@ -44,12 +44,12 @@ function classifyField(previous,current,samples){
   return {...evidence,variation,residual,status:residual<=Math.max(tolerance*2,motion*.02)?'interpolated':'responsive'};
 }
 
-export function analyzeNormalizedWindow({previous,current,samples,stateBefore,stateAfter=[],build={},label='',negativeControl=false}){
+export function analyzeNormalizedWindow({previous,current,samples,stateBefore,statesAfter=[],build={},label='',negativeControl=false}){
   if(!previous||!current||!Array.isArray(samples)||samples.length<3)throw Error('Need two reference frames and at least three presentation samples');
   if(samples.some(sample=>!Number.isFinite(sample.alpha)||sample.alpha<0||sample.alpha>1))throw Error('Invalid presentation alpha');
   const before=indexRecords(previous.records),now=indexRecords(current.records),sampleMaps=samples.map(sample=>({...sample,...indexRecords(sample.records)}));
   const consecutive=Number.isInteger(previous.simulationTick)&&current.simulationTick===previous.simulationTick+1;
-  const state=compareStateEvidence(stateBefore,stateAfter);
+  const state=compareStateEvidence(stateBefore,statesAfter);
   const report={schema:'presentation-lab/report/1',build,label,negativeControl,previousTick:previous.simulationTick,tick:current.simulationTick,
     previousDrawSerial:previous.referenceDrawSerial,currentDrawSerial:current.referenceDrawSerial,consecutive,purityStatus:state.status,stateChanges:state.changes,
     objects:[],counts:{},coverage:{},dropped:(previous.dropped||0)+(current.dropped||0)+samples.reduce((total,sample)=>total+(sample.dropped||0),0),
@@ -57,6 +57,7 @@ export function analyzeNormalizedWindow({previous,current,samples,stateBefore,st
   for(const [key,record] of now.map){
     const prior=before.map.get(key),selected=sampleMaps.map(sample=>({alpha:sample.alpha,record:sample.map.get(key)}));
     const row={key,owner:record.ownerLabel||String(record.ownerId),ownerId:record.ownerId,object:record.objectId,generation:record.generation,part:record.partId,draw:record.drawId,
+      anm:record.lifecycle?.fileIndex,script:record.lifecycle?.scriptIndex,kind:record.coordinateSpace,
       lifecycle:record.lifecycle,coordinateSpace:record.coordinateSpace,bounds:record.bounds,geometryQuality:record.geometryQuality,fields:[],status:'static'};
     let skip='';
     if(record.identityConfidence!=='proven')skip='identity-uncertain';
