@@ -43,6 +43,7 @@ void UpdateOverlay();
 void DrawOverlay();
 bool ConsumeScreenshotRequest();
 bool AdvancedOptionsOpen();
+bool CapturesGameInput();
 bool OverlayInvincible();
 bool OverlayInfiniteLives();
 bool OverlayInfiniteBombs();

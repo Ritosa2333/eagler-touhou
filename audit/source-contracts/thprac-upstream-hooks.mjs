@@ -89,6 +89,8 @@ const portableOwnerCategory = new Map(Object.entries({
   g_Config: 'source live THPracParam',
   g_MenuConfig: 'source persistent THGuiPrac widgets',
   g_MenuOpen: 'source THGuiPrac/GameGuiWnd open state',
+  g_MenuInputArmed: 'backend TH08-compatible accept/cancel release gate',
+  g_MenuWidgetBusy: 'backend TH08-compatible previous-frame ImGui item owner',
   g_MenuCursor: 'backend ImGui nav cursor',
   g_MenuDifficulty: 'source THGuiPrac mDiffculty',
   g_MenuShotType: 'source THGuiPrac mShotType',

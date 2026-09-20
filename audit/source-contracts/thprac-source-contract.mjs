@@ -28,8 +28,30 @@ const portableMainMenu = read('th06-eagler/src/MainMenu.cpp');
 const portableReplay = read('th06-eagler/src/ReplayManager.cpp');
 const portablePlayer = read('th06-eagler/src/Player.cpp');
 const portableGameWindow = read('th06-eagler/src/GameWindow.cpp');
+const portableTouch = read('th06-eagler/src/Touch.cpp');
 const portableGles = read('th06-eagler/src/graphics/Gles.cpp');
 const portableSupervisor = read('th06-eagler/src/Supervisor.cpp');
+
+if (!portableMainMenu.includes('if (720 <= menu->idleFrames)') ||
+    !portableMainMenu.includes('g_GameManager.demoFrames = 0;') ||
+    portableMainMenu.includes('disable_demo') ||
+    portableMainMenu.includes('0x7fffffff < menu->idleFrames')) {
+    throw new Error('Portable TH06 must retain its original title Demo trigger and reset the GameManager-owned Demo timer');
+}
+
+if (!portableGameWindow.includes('SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1")') ||
+    !portableGameWindow.includes('SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0")') ||
+    !portableImGui.includes('event.motion.which == SDL_TOUCH_MOUSEID ? MousePositionSource::Touch') ||
+    !portableTouch.includes('PracticeRuntime::CapturesGameInput()') ||
+    !portablePractice.includes('return g_MenuOpen || g_AdvancedOptions.menuOpen;')) {
+    throw new Error('Portable TH06 direct-touch thprac input/capture contract missing');
+}
+if (!portablePractice.includes('g_MenuInputArmed = false;') ||
+    !portablePractice.includes('(g_CurFrameInput & (TH_BUTTON_SELECTMENU | TH_BUTTON_RETURNMENU)) == 0') ||
+    !portablePractice.includes('if (!g_MenuWidgetBusy && WAS_PRESSED(TH_BUTTON_SELECTMENU))') ||
+    !portablePractice.includes('g_MenuWidgetBusy = ImGui::IsAnyItemActive();')) {
+    throw new Error('Portable TH06 must preserve TH08 practice-menu release arming and previous-frame active-widget ownership');
+}
 
 // THOverlay F6 is a cross-tick raw-input protocol, not a direct "if DEAD then
 // bomb" helper.  The first two patches make the normal bomb test consume the

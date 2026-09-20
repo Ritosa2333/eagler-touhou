@@ -82,6 +82,11 @@ static Config g_MenuConfig = [] {
     return config;
 }();
 static bool g_MenuOpen = false;
+// Match TH08's practice_keys_armed/text_editing gate. The original Practice
+// state machine still owns accept/cancel in TH06, but an ImGui pointer click
+// must consume the touch-generated Z edge before that owner sees it.
+static bool g_MenuInputArmed = false;
+static bool g_MenuWidgetBusy = false;
 static i32 g_MenuCursor = 0;
 static i32 g_MenuDifficulty = 0;
 static i32 g_MenuShotType = 0;
@@ -597,6 +602,18 @@ bool AdvancedOptionsOpen()
 #endif
 }
 
+bool CapturesGameInput()
+{
+#ifdef TH_ENABLE_THPRAC
+    // Match TH08 ThpracUi::captures_game_input(): this identifies trainer
+    // ownership but does not suppress the finger stream that also feeds the
+    // existing menu/navigation path.
+    return g_MenuOpen || g_AdvancedOptions.menuOpen;
+#else
+    return false;
+#endif
+}
+
 void ResetBgmTracking()
 {
     if (g_PreserveBgmRestart)
@@ -1025,6 +1042,8 @@ void OpenPracticeMenu(i32 difficulty, i32 shotType)
     g_MenuVisualState = MenuVisualState::Opening;
     g_MenuPendingResult = MenuResult::Waiting;
     g_MenuOpen = true;
+    g_MenuInputArmed = false;
+    g_MenuWidgetBusy = false;
     g_MenuResult = MenuResult::Waiting;
     g_ResultReplaySaveRequested = false;
 }
@@ -1310,12 +1329,23 @@ MenuResult PollPracticeMenu()
     if (g_MenuOpen)
     {
 #ifdef TH_ENABLE_THPRAC
-        // Upstream GameGuiWnd gives Dear ImGui only the four directions.
-        // Vanilla Practice still owns X/Z, and the original hooks translate
-        // those paths to THGuiPrac State(4)=cancel / State(3)=accept.
-        if (WAS_PRESSED(TH_BUTTON_RETURNMENU))
+        // TH08 arms its practice menu only after the opening accept/cancel
+        // keys have all been released. Keep the same boundary here even
+        // though TH06's original Practice state machine remains the owner.
+        if (!g_MenuInputArmed)
+        {
+            if ((g_CurFrameInput & (TH_BUTTON_SELECTMENU | TH_BUTTON_RETURNMENU)) == 0)
+                g_MenuInputArmed = true;
+            return MenuResult::Waiting;
+        }
+
+        // TH08 deliberately uses the previous ImGui frame's active-item
+        // state. On a pointer release, that swallows the simultaneous
+        // touch-generated Z/X edge while leaving ordinary keyboard accept and
+        // cancel behavior unchanged when no widget owns input.
+        if (!g_MenuWidgetBusy && WAS_PRESSED(TH_BUTTON_RETURNMENU))
             RequestMenuClose(MenuResult::Cancelled, false);
-        else if (WAS_PRESSED(TH_BUTTON_SELECTMENU))
+        else if (!g_MenuWidgetBusy && WAS_PRESSED(TH_BUTTON_SELECTMENU))
             RequestMenuClose(MenuResult::Accepted, true);
         return MenuResult::Waiting;
 #else
@@ -1870,6 +1900,7 @@ void DrawPracticeMenu()
     }
     ImGui::End();
     ImGui::PopStyleVar(2);
+    g_MenuWidgetBusy = ImGui::IsAnyItemActive();
     return;
 #else
 void DrawPracticeMenu()
