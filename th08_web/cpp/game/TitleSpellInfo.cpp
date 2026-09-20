@@ -55,30 +55,31 @@ void TitleMenus::FormatSpellCardInfo(){
     char name[49]{},owner[49]{};std::memcpy(name,record.name,48);std::memcpy(owner,record.owner,48);
     if(line(11)){
         char digits[7]{};i32 value=number+1;for(i32 i=2;i>=0;--i){std::memcpy(digits+i*2,spell_info_digits[value%10],2);value/=10;}
-        DrawTextFormatted(info,Localization::FormatStringById("th08_spell_description_string_format",spell_info_title),digits,
-            attempts?Localization::SpellName(u32(number),name):Localization::StringById("th08_????????",spell_info_unknown));
+        DrawTextFormatted(info,Localization::Utf8(Localization::FormatStringById("th08_spell_description_string_format",spell_info_title)),Localization::Utf8(digits),
+            attempts?Localization::Utf8(Localization::SpellName(u32(number),name)):Localization::Utf8(Localization::StringById("th08_????????",spell_info_unknown)));
     }
-    if(line(9))DrawTextFormatted(info+1,Localization::FormatStringById("th08 Spell Practice Owner/Difficulty Line",spell_info_owner),
-        attempts?owner:Localization::StringById("th08_????????",spell_info_unknown),
-        Localization::StringById(difficulty_ids[difficulty],spell_info_difficulties[difficulty]),
-        is_last_spell(number)?Localization::StringById("th08 Spell Practice Last Spell",spell_info_last_spell):spell_info_empty);
-    if(state.currentScreenState==0)DrawTextFormatted(info+2,Localization::FormatStringById("th08 Spell Practice Highscore Title",spell_info_character),Localization::StringById(practice_character_ids[shot],spell_info_characters[shot]));
+    if(line(9))DrawTextFormatted(info+1,Localization::Utf8(Localization::FormatStringById("th08 Spell Practice Owner/Difficulty Line",spell_info_owner)),
+        attempts?Localization::Utf8(Localization::SpellCommentOwner(u32(number),owner)):Localization::Utf8(Localization::StringById("th08_????????",spell_info_unknown)),
+        Localization::Utf8(Localization::StringById(difficulty_ids[difficulty],spell_info_difficulties[difficulty])),
+        is_last_spell(number)?Localization::Utf8(Localization::StringById("th08 Spell Practice Last Spell",spell_info_last_spell)):spell_info_empty);
+    if(state.currentScreenState==0)DrawTextFormatted(info+2,Localization::Utf8(Localization::FormatStringById("th08 Spell Practice Highscore Title",spell_info_character)),Localization::Utf8(Localization::StringById(practice_character_ids[shot],spell_info_characters[shot])));
     const bool encountered=context.HasSpellCardBeenEncountered(number,12);
     if(line(7)){
-        if(!encountered)DrawTextLeft(info+3,0xffffff,0,spell_info_unknown_stats);
-        else if(difficulty<=4)DrawTextFormatted(info+3,spell_info_normal_stats,
+        if(!encountered)DrawTextLeft(info+3,0xffffff,0,Localization::Utf8(spell_info_unknown_stats));
+        else if(difficulty<=4)DrawTextFormatted(info+3,Localization::Utf8(spell_info_normal_stats),
             record.practice.captures[shot],record.practice.attempts[shot],record.game.captures[shot],record.game.attempts[shot],record.practice.max_bonus[shot],
             record.practice.captures[12],record.practice.attempts[12],record.game.captures[12],record.game.attempts[12],record.practice.max_bonus[12]);
-        else DrawTextFormatted(info+3,spell_info_last_word_stats,record.practice.captures[shot],record.practice.attempts[shot],record.practice.max_bonus[shot],record.practice.captures[12],record.practice.attempts[12],record.practice.max_bonus[12]);
+        else DrawTextFormatted(info+3,Localization::Utf8(spell_info_last_word_stats),record.practice.captures[shot],record.practice.attempts[shot],record.practice.max_bonus[shot],record.practice.captures[12],record.practice.attempts[12],record.practice.max_bonus[12]);
     }
-    if(state.currentScreenState==0)DrawTextLeft(info+4,0xffffff,0,Localization::StringById("th08 Spell Practice Comment",spell_info_comments));
+    if(state.currentScreenState==0)DrawTextLeft(info+4,0xffffff,0,Localization::Utf8(Localization::StringById("th08 Spell Practice Comment",spell_info_comments)));
     for(i32 i=0;i<2;++i)if(line(i?3:5)){
         if(encountered||number<204||number>221||context.IsLastWordSpellCardAttempted(number)){
             char comment[128]{};std::memcpy(comment,i?record.comment2:record.comment1,64);
-            DrawTextLeft(info+5+i,0xffffff,0,record.practice.captures[12]?comment:Localization::StringById("th08_?????????",spell_info_locked_comment));
+            const char* localized=Localization::SpellComment(u32(number),static_cast<std::uint16_t>(i),comment);
+            DrawTextLeft(info+5+i,0xffffff,0,record.practice.captures[12]?Localization::Utf8(localized):Localization::Utf8(Localization::StringById("th08_?????????",spell_info_locked_comment)));
         }else{
             const auto& hint=spell_unlock_hints[number-204][i];const char* id=condition_ids[number-204][i];
-            DrawTextFormatted(info+5+i,id?Localization::FormatStringById(id,hint.format):hint.format,hint.arguments[0],hint.arguments[1],hint.arguments[2],hint.arguments[3],hint.arguments[4]);
+            DrawTextFormatted(info+5+i,id?Localization::Utf8(Localization::FormatStringById(id,hint.format)):Localization::Utf8(hint.format),hint.arguments[0],hint.arguments[1],hint.arguments[2],hint.arguments[3],hint.arguments[4]);
         }
     }
     info[5].pos.x=info[6].pos.x=96;

@@ -16,6 +16,6 @@ bool ResultScene::attach(Chain& owner,ResultScreenAction action,const ResultCont
     drawing.set_callback([](void* p){auto& scene=*static_cast<ResultScene*>(p);return scene.view.draw()==1?JobResult::Continue:JobResult::Error;});drawing.argument=this;
     owner.add(&calculation,16);owner.add(&drawing,18,true);return true;
 }
-void ResultScene::release(){renderer.flush();library.release(21);library.release(22);if(resources)platform.release_result_background();resources=false;if(chain)chain->cut(&drawing);chain=nullptr;loaded=false;controls.state.scoreDat=nullptr;}
+void ResultScene::release(){if(loaded)renderer.flush();library.release(21);library.release(22);if(resources)platform.release_result_background();resources=false;if(chain)chain->cut(&drawing);chain=nullptr;loaded=false;controls.state.scoreDat=nullptr;}
 void ResultScene::detach(){if(chain)chain->cut(&calculation);}
 }
