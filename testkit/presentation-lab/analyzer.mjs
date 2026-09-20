@@ -4,7 +4,7 @@ const finiteArray=value=>Array.isArray(value)&&value.every(Number.isFinite);
 const asArray=value=>Array.isArray(value)?value:[value];
 const wrap=(value,period)=>period?((value+period/2)%period+period)%period-period/2:value;
 const distance=(a,b,period=0)=>a.length===b.length?Math.max(0,...a.map((value,index)=>Math.abs(wrap(b[index]-value,period)))):Infinity;
-const identityKey=record=>record.key??[record.ownerId,record.objectId,record.generation??'?',record.partId??0,record.drawId??0].join(':');
+const identityKey=record=>record.key??[record.ownerId,record.objectId,record.generation??'?',record.partId??0].join(':');
 const indexRecords=records=>{const map=new Map(),duplicates=new Set();for(const record of records||[]){const key=identityKey(record);if(map.has(key))duplicates.add(key);else map.set(key,record);}return {map,duplicates};};
 const fieldMap=record=>new Map((record?.fields||[]).map(field=>[field.id,field]));
 
