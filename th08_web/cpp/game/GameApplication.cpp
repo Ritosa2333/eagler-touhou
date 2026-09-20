@@ -86,7 +86,10 @@ ResultContext GameApplication::result_context()const{
 void GameApplication::leave_game(){
     if(!game_attached)return;last_game=result_context();const auto target=Scene(supervisor.state.target);const bool release=target!=Scene::Reinitialize&&target!=Scene::SpellRestart&&target!=Scene::NextStage;
     game.screen_counter=1;ascii.state.blindness_color=0;
-    if(!(game.globals.game_flags&0x4000)||release){platform.stop_audio();if(session.display_config.music==2)platform.midi_reset();}platform.process_sounds();
+    // thprac's everlasting-BGM lock must also cover this teardown stop: when a
+    // thprac practice restart swallowed the pause-menu Stop, a raw platform stop
+    // here would silence the BGM while the next play command stays swallowed.
+    if(release||(!(game.globals.game_flags&0x4000)&&!game.practice_bgm_stop())){platform.stop_audio();if(session.display_config.music==2)platform.midi_reset();}platform.process_sounds();
     game.unload(supervisor.state.keep_resources,release);game_attached=false;loading_gate=false;
     if(!(game.globals.game_flags&8))accumulate_play_time(session.statistics.game_time,game.menus.context.system_time,platform.milliseconds());game.menus.context.system_time=0;results.scores.update_time(platform.milliseconds());
     game.globals.game_flags&=~4u;ascii.reset();game.control.state.sticky_input=false;
