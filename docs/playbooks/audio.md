@@ -71,6 +71,10 @@ The browser bridge receives the final MIDI bytes; it does not reparse the MIDI f
   cadence rather than display-frame count.
 - Restoring browser output after background/foreground must not restart the
   track, reset fade state or otherwise replace the title's existing music state.
+- Rollback resimulation may suppress immediate audio output only if the final
+  corrected BGM selection is reconciled once after the replay batch. Treat
+  long-lived music selection separately from disposable one-shot SFX; silently
+  dropping a corrected music command leaves the previous track playing.
 - A source switch covers the whole old-source stop → new-source open/decode →
   new-source establishment lifecycle; exposing output during only part of that
   transition can repeat or overlap tracks.
