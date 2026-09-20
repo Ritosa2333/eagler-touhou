@@ -3,6 +3,7 @@ import {OWNERS,STATUS,compactReport,keyOf} from './analyzer.mjs';
 const $=id=>document.getElementById(id),identity=await fetch('/build.json').then(r=>r.json());
 const sourcePaths={1:'TitleSupport.cpp / TitleView.cpp',2:'TitleView.cpp',3:'UiMenus.cpp',4:'UiMenus.cpp',5:'BulletDrawing.cpp',6:'BulletDrawing.cpp',7:'EffectSystem.cpp',8:'EnemyDrawing.cpp',9:'ItemPool.cpp',10:'GuiController.cpp / GuiView.cpp',11:'BackgroundObjects.cpp / BackgroundView.cpp',12:'SpellDrawing.cpp',13:'PlayerSimulation.cpp',14:'PlayerShotDraw.cpp',16:'PlayerBomb*.cpp'};
 let controller=null,dataBuffer=null,report=null,selected=null,selectedGroup=null,busy=false,scanAbort=null,epoch=0,bootPending=null,readOnly=false,pendingReplay=null,displayBounds=new Map();
+let runtimeHotkeyWindow=null,runtimeHotkeyHandler=null;
 const status=text=>{$('status').textContent=text;};
 function showBuild(build,prefix='基线'){$('build').textContent=`${prefix} ${String(build?.commit||'未知').slice(0,12)}\nWASM ${String(build?.wasm||'未知').slice(0,16)}…`;}
 showBuild(identity);
@@ -12,6 +13,11 @@ const controls=['play','inspect','step','step10','stage1','alpha','scan','export
 function enable(on){for(const id of controls)$(id).disabled=!on;}
 function failure(error){console.error(error);status(String(error?.message||error));$('health').className='notice error';$('health').textContent=String(error?.message||error);}
 async function action(fn){if(busy)return;busy=true;try{return await fn();}catch(e){failure(e);}finally{busy=false;}}
+function installRuntimeHotkeys(target){
+ if(runtimeHotkeyWindow&&runtimeHotkeyHandler)runtimeHotkeyWindow.removeEventListener('keydown',runtimeHotkeyHandler,true);
+ runtimeHotkeyWindow=target;runtimeHotkeyHandler=event=>{if(event.code==='F8'&&!event.repeat){event.preventDefault();event.stopImmediatePropagation();void action(markIncident);}};
+ target.addEventListener('keydown',runtimeHotkeyHandler,true);
+}
 window.__eaglerPrepareManagedRuntimeDataV1=async request=>{
  if(request.game!=='th08'||request.epoch!==epoch||!dataBuffer)throw Error('Diagnostic DATA session mismatch');
  return {buffer:dataBuffer.slice(0)};
@@ -38,10 +44,10 @@ window.addEventListener('message',async event=>{
  if(event.source!==$('runtime').contentWindow||event.origin!==location.origin||event.data?.epoch!==epoch)return;
  const m=event.data;
  if(m.event==='error'){bootPending?.reject(Error(m.message||m.error));failure(m.message||m.error);return;}
- if(m.event==='presentation-mark'){void action(markIncident);return;}
  if(m.event!=='ready'||!bootPending)return;
  try{
   const w=$('runtime').contentWindow,r=w.__th08Runtime;
+  installRuntimeHotkeys(w);
   w.Date.now=()=>100000; // Reproducible initialization seed, isolated iframe only.
   await r.command({command:'configure',music:'none',options:{touchEnabled:false,thpracEnabled:false},sharedResources:[{path:'/msgothic.ttc',url:'/msgothic.ttc'}]});
   // FileHost snapshots saves into BrowserRuntime when sdl_game_open runs.

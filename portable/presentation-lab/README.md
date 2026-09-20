@@ -71,3 +71,7 @@ node portable/check-presentation-purity.mjs
 先增加明确 owner 的观察作用域，补充正/负/离散边界样例，再扩大真实 Replay/菜单场景覆盖。不要把检测器变成第二套插值实现，不要靠删除报警、降低游戏频率或修改碰撞/RNG 来让结果变好。
 
 诊断代码由 `TH_PRESENTATION_AUDIT` 控制，普通构建不启用；不得将这份测试树的 instrumented Runtime 当作正式发布成果。当前检查器没有承诺全游戏零遗漏，未访问场景和未观测字段需要继续扩展验证。
+
+冻结、固定 tick 快进、alpha-only Draw、重复采样和有界扫描由固定版本的
+`third_party/eagler-common/testkit/presentation-lab/controller-core.mjs`
+统一编排。TH08 本地 adapter 仍拥有记录布局、owner 含义、状态指纹、相机时序和分类策略。克隆仓库后需初始化 submodule；正式 Runtime 不加载该工具模块。
