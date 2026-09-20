@@ -268,14 +268,10 @@ u32 MainMenu::OnUpdatePreInput()
         {
             this->demoFramesCount = 0;
         }
-#ifdef TH_ENABLE_THPRAC
-        // th07_disable_demo patches the original title idle threshold to
-        // INT_MAX. Keep the same comparison/overflow behavior instead of
-        // deleting the demo code from the baseline build.
-        if (0x7fffffff < this->demoFramesCount)
-#else
+        // The browser Runtime keeps the original title attract mode available.
+        // Upstream thprac patches this threshold to INT_MAX, but that global
+        // process patch is not part of the trainer UI/gameplay contract here.
         if (900 < this->demoFramesCount)
-#endif
         {
             g_GameManager.demoIdx++;
             g_GameManager.demoIdx %= 3;

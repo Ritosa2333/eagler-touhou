@@ -65,6 +65,10 @@ static Config g_MenuConfig = [] {
 }();
 static MenuResult g_MenuResult = MenuResult::Waiting;
 static bool g_MenuOpen = false;
+// Match TH08's practice_keys_armed/text_editing gate while retaining TH07's
+// original Practice state machine as the accept/cancel owner.
+static bool g_MenuInputArmed = false;
+static bool g_MenuWidgetBusy = false;
 static i32 g_MenuCursor = 0;
 static i32 g_MenuDifficulty = 0;
 static i32 g_MenuSectionIndex = 0;
@@ -457,6 +461,8 @@ void OpenPracticeMenu(i32 difficulty, i32 shotType)
     // window; CurrentSection() re-synchronizes from g_MenuConfig on first use.
     g_MenuCursor = 0;
     g_MenuOpen = true;
+    g_MenuInputArmed = false;
+    g_MenuWidgetBusy = false;
     g_MenuResult = MenuResult::Waiting;
     g_MenuPendingResult = MenuResult::Waiting;
     g_MenuVisualState = MenuVisualState::Opening;
@@ -1072,12 +1078,22 @@ MenuResult PollPracticeMenu()
 {
     if (g_MenuOpen)
     {
-        // Same ownership as upstream GameGuiWnd: ImGui receives directions;
-        // the original Practice state machine still owns X/Z and invokes
-        // State(4)/State(3) respectively.
-        if (WAS_PRESSED_RAW(TH_BUTTON_RETURNMENU))
+        // TH08 waits for the opening accept/cancel keys to be fully released
+        // before accepting a new edge.
+        if (!g_MenuInputArmed)
+        {
+            if ((g_CurFrameRawInput & (TH_BUTTON_SELECTMENU | TH_BUTTON_RETURNMENU)) == 0)
+                g_MenuInputArmed = true;
+            return MenuResult::Waiting;
+        }
+
+        // Use the previous ImGui frame's active-item state, exactly like
+        // TH08's text_editing/widget_busy handoff. A pointer release may also
+        // synthesize Z/X for the menu gesture; the active widget consumes that
+        // edge instead of starting or cancelling Practice.
+        if (!g_MenuWidgetBusy && WAS_PRESSED_RAW(TH_BUTTON_RETURNMENU))
             RequestMenuClose(MenuResult::Cancelled, false);
-        else if (WAS_PRESSED_RAW(TH_BUTTON_SELECTMENU))
+        else if (!g_MenuWidgetBusy && WAS_PRESSED_RAW(TH_BUTTON_SELECTMENU))
             RequestMenuClose(MenuResult::Accepted, true);
         return MenuResult::Waiting;
     }
@@ -1140,6 +1156,7 @@ void DrawPracticeMenu()
     }
     ImGui::End();
     ImGui::PopStyleVar(2);
+    g_MenuWidgetBusy = ImGui::IsAnyItemActive();
 #endif
 }
 
@@ -1962,6 +1979,18 @@ bool AdvancedOptionsOpen()
 {
 #ifdef TH_ENABLE_THPRAC
     return g_AdvancedOptions.menuOpen;
+#else
+    return false;
+#endif
+}
+
+bool CapturesGameInput()
+{
+#ifdef TH_ENABLE_THPRAC
+    // Match TH08 ThpracUi::captures_game_input(): this identifies trainer
+    // ownership but does not suppress the finger stream that also feeds the
+    // existing menu/navigation path.
+    return g_MenuOpen || g_AdvancedOptions.menuOpen;
 #else
     return false;
 #endif

@@ -23,6 +23,7 @@ void FinishReplayStartup() {}
 void UpdateOverlay() {}
 void DrawOverlay() {}
 bool AdvancedOptionsOpen() { return false; }
+bool CapturesGameInput() { return false; }
 bool OverlayInvincible() { return false; }
 bool OverlayInfiniteLives() { return false; }
 bool OverlayInfiniteBombs() { return false; }

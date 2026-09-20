@@ -100,6 +100,7 @@ bool InputPressed(std::uint16_t button);
 // SDL once per fixed ImGui frame so they stay in sync with the game's actual
 // client area and the 640x480 logical render surface.
 void ProcessEvent(const SDL_Event &event);
+void ProcessLogicalPointer(int type, float x, float y);
 
 // The game owns the fixed 640x480 logical surface.  The platform backend
 // deliberately does not read a separate window or request a server resource.

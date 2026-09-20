@@ -25,8 +25,31 @@ const portableCmake = read('th07-eagler/CMakeLists.txt');
 const portableReplay = read('th07-eagler/src/ReplayManager.cpp');
 const portableResult = read('th07-eagler/src/ResultScreen.cpp');
 const portableImGui = read('th07-eagler/src/ThpracImGui.cpp');
+const portableTouch = read('th07-eagler/src/Touch.cpp');
 const portableSession = read('thprac-reallyportable/portable/src/session.cpp');
 const portableAdapter = read('thprac-reallyportable/portable/adapters/th07/adapter.cpp');
+
+if (!portableWindow.includes('SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1")') ||
+    !portableWindow.includes('SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0")') ||
+    !portableImGui.includes('event.motion.which == SDL_TOUCH_MOUSEID ? MousePositionSource::Touch') ||
+    !portableTouch.includes('PracticeRuntime::CapturesGameInput()') ||
+    !portable.includes('return g_MenuOpen || g_AdvancedOptions.menuOpen;')) {
+    throw new Error('Portable TH07 direct-touch thprac input/capture contract missing');
+}
+const titleDemoStart = portableMenu.slice(
+    portableMenu.indexOf('this->demoFramesCount++;'),
+    portableMenu.indexOf('if (this->selected != this->cursor)', portableMenu.indexOf('this->demoFramesCount++;')));
+if (!titleDemoStart.includes('if (900 < this->demoFramesCount)') ||
+    titleDemoStart.includes('0x7fffffff') ||
+    !titleDemoStart.includes('g_GameManager.demoFrames = 0;')) {
+    throw new Error('Portable TH07 must retain original title Demo startup and reset the GameManager-owned Demo timer');
+}
+if (!portable.includes('g_MenuInputArmed = false;') ||
+    !portable.includes('(g_CurFrameRawInput & (TH_BUTTON_SELECTMENU | TH_BUTTON_RETURNMENU)) == 0') ||
+    !portable.includes('if (!g_MenuWidgetBusy && WAS_PRESSED_RAW(TH_BUTTON_SELECTMENU))') ||
+    !portable.includes('g_MenuWidgetBusy = ImGui::IsAnyItemActive();')) {
+    throw new Error('Portable TH07 must preserve TH08 practice-menu release arming and previous-frame active-widget ownership');
+}
 
 const upstreamPracStateStart = upstream.indexOf('__declspec(noinline) void State(int state)');
 const upstreamPracStateEnd = upstream.indexOf('\n    protected:', upstreamPracStateStart);

@@ -47,7 +47,8 @@ bool g_MouseButtons[5] = {};
 float g_MouseClientX = 0.0f;
 float g_MouseClientY = 0.0f;
 bool g_MousePositionValid = false;
-bool g_MousePositionFromBridge = false;
+enum class MousePositionSource { None, Window, Touch, Bridge };
+MousePositionSource g_MousePositionSource = MousePositionSource::None;
 bool g_ProcessingBridgeMouseEvent = false;
 
 constexpr const char *g_Text[][3] = {
@@ -341,7 +342,9 @@ void ApplyMouseInput()
         // Keep the cached client position fresh while SDL has mouse focus.
         // ProcessEvent() also updates it from motion/button event coordinates,
         // which is what preserves the focus-acquiring first click.
-        if (!g_MousePositionFromBridge && SDL_GetMouseFocus() == g_GameWindow.window)
+        if (g_MousePositionSource != MousePositionSource::Bridge &&
+            g_MousePositionSource != MousePositionSource::Touch &&
+            SDL_GetMouseFocus() == g_GameWindow.window)
         {
             float mouseX = 0.0f;
             float mouseY = 0.0f;
@@ -349,9 +352,10 @@ void ApplyMouseInput()
             g_MouseClientX = mouseX;
             g_MouseClientY = mouseY;
             g_MousePositionValid = true;
+            g_MousePositionSource = MousePositionSource::Window;
         }
 
-        if (g_MousePositionValid && g_MousePositionFromBridge)
+        if (g_MousePositionValid && g_MousePositionSource == MousePositionSource::Bridge)
         {
             io.MousePos.x = g_MouseClientX;
             io.MousePos.y = g_MouseClientY;
@@ -362,7 +366,8 @@ void ApplyMouseInput()
             int windowHeight = 0;
             SDL_GetWindowSize(g_GameWindow.window, &windowWidth, &windowHeight);
             if (windowWidth > 0 && windowHeight > 0 && g_MousePositionValid &&
-                SDL_GetKeyboardFocus() == g_GameWindow.window)
+                (g_MousePositionSource == MousePositionSource::Touch ||
+                 SDL_GetKeyboardFocus() == g_GameWindow.window))
             {
                 const float scaleX = static_cast<float>(windowWidth) / 640.0f;
                 const float scaleY = static_cast<float>(windowHeight) / 480.0f;
@@ -543,7 +548,8 @@ void ProcessEvent(const SDL_Event &event)
         g_MouseClientX = event.motion.x;
         g_MouseClientY = event.motion.y;
         g_MousePositionValid = true;
-        g_MousePositionFromBridge = g_ProcessingBridgeMouseEvent;
+        g_MousePositionSource = g_ProcessingBridgeMouseEvent ? MousePositionSource::Bridge :
+            event.motion.which == SDL_TOUCH_MOUSEID ? MousePositionSource::Touch : MousePositionSource::Window;
         break;
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
     case SDL_EVENT_MOUSE_BUTTON_UP:
@@ -552,7 +558,8 @@ void ProcessEvent(const SDL_Event &event)
         g_MouseClientX = event.button.x;
         g_MouseClientY = event.button.y;
         g_MousePositionValid = true;
-        g_MousePositionFromBridge = g_ProcessingBridgeMouseEvent;
+        g_MousePositionSource = g_ProcessingBridgeMouseEvent ? MousePositionSource::Bridge :
+            event.button.which == SDL_TOUCH_MOUSEID ? MousePositionSource::Touch : MousePositionSource::Window;
         if (index >= 0)
             g_MouseButtons[index] = event.type == SDL_EVENT_MOUSE_BUTTON_DOWN;
         bool anyDown = false;
@@ -574,12 +581,37 @@ void ProcessEvent(const SDL_Event &event)
         for (bool &down : g_MouseButtons)
             down = false;
         g_MousePositionValid = false;
-        g_MousePositionFromBridge = false;
+        g_MousePositionSource = MousePositionSource::None;
         SDL_CaptureMouse(false);
         break;
     default:
         break;
     }
+}
+
+void ProcessLogicalPointer(int type, float x, float y)
+{
+    SDL_Event event = {};
+    if (type == 0)
+    {
+        event.type = SDL_EVENT_MOUSE_MOTION;
+        event.motion.x = x;
+        event.motion.y = y;
+    }
+    else if (type == 1 || type == 2)
+    {
+        event.type = type == 1 ? SDL_EVENT_MOUSE_BUTTON_DOWN : SDL_EVENT_MOUSE_BUTTON_UP;
+        event.button.button = SDL_BUTTON_LEFT;
+        event.button.x = x;
+        event.button.y = y;
+    }
+    else
+    {
+        return;
+    }
+    g_ProcessingBridgeMouseEvent = true;
+    ProcessEvent(event);
+    g_ProcessingBridgeMouseEvent = false;
 }
 
 void BeginFrame(float deltaSeconds)
@@ -802,27 +834,7 @@ bool DebugInputSamplingSelfTest()
 #ifdef __EMSCRIPTEN__
 extern "C" EMSCRIPTEN_KEEPALIVE void TouhouThpracMouseEvent(std::int32_t type, float x, float y)
 {
-    SDL_Event event = {};
-    if (type == 0)
-    {
-        event.type = SDL_EVENT_MOUSE_MOTION;
-        event.motion.x = x;
-        event.motion.y = y;
-    }
-    else if (type == 1 || type == 2)
-    {
-        event.type = type == 1 ? SDL_EVENT_MOUSE_BUTTON_DOWN : SDL_EVENT_MOUSE_BUTTON_UP;
-        event.button.button = SDL_BUTTON_LEFT;
-        event.button.x = x;
-        event.button.y = y;
-    }
-    else
-    {
-        return;
-    }
-    ThpracImGui::g_ProcessingBridgeMouseEvent = true;
-    ThpracImGui::ProcessEvent(event);
-    ThpracImGui::g_ProcessingBridgeMouseEvent = false;
+    ThpracImGui::ProcessLogicalPointer(type, x, y);
 }
 #endif
 

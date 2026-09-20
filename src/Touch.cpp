@@ -13,7 +13,11 @@
 #include "GameManager.hpp"
 #include "GameWindow.hpp"
 #include "Gui.hpp"
+#include "PracticeRuntime.hpp"
 #include "ReplayExtension.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "ThpracImGui.hpp"
+#endif
 
 struct FingerSlot
 {
@@ -1139,6 +1143,12 @@ extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchDown(i32 id, f32 x, f32 y)
         return;
     }
 
+    if (PracticeRuntime::CapturesGameInput())
+    {
+#ifdef TH_ENABLE_THPRAC
+        ThpracImGui::ProcessLogicalPointer(1, x * 640.0f, y * 480.0f);
+#endif
+    }
     SDL_TouchFingerEvent event = {};
     event.fingerID = static_cast<SDL_FingerID>(id);
     event.x = x;
@@ -1148,6 +1158,12 @@ extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchDown(i32 id, f32 x, f32 y)
 
 extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchMotion(i32 id, f32 x, f32 y)
 {
+    if (PracticeRuntime::CapturesGameInput())
+    {
+#ifdef TH_ENABLE_THPRAC
+        ThpracImGui::ProcessLogicalPointer(0, x * 640.0f, y * 480.0f);
+#endif
+    }
     SDL_TouchFingerEvent event = {};
     event.fingerID = static_cast<SDL_FingerID>(id);
     event.x = x;
@@ -1157,6 +1173,12 @@ extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchMotion(i32 id, f32 x, f32 y)
 
 extern "C" EMSCRIPTEN_KEEPALIVE void TouhouAuxTouchUp(i32 id, f32 x, f32 y)
 {
+    if (PracticeRuntime::CapturesGameInput())
+    {
+#ifdef TH_ENABLE_THPRAC
+        ThpracImGui::ProcessLogicalPointer(2, x * 640.0f, y * 480.0f);
+#endif
+    }
     SDL_TouchFingerEvent event = {};
     event.fingerID = static_cast<SDL_FingerID>(id);
     event.x = x;

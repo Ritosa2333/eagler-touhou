@@ -578,7 +578,10 @@ ZunResult GameWindow::InitInterface()
 
 ZunResult GameWindow::CreateGameWindow()
 {
-    SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
+    // Match TH08: touch owns its normal SDL finger stream, and SDL also emits
+    // a mouse stream for pointer-driven thprac UI. The game never consumes
+    // mouse input, so the synthetic events are exclusive to ThpracImGui.
+    SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
     SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
 
     if (!SDL_Init(SDL_INIT_VIDEO))

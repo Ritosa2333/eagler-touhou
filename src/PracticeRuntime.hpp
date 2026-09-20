@@ -52,6 +52,7 @@ void FinishReplayStartup();
 void UpdateOverlay();
 void DrawOverlay();
 bool AdvancedOptionsOpen();
+bool CapturesGameInput();
 bool OverlayInvincible();
 bool OverlayInfiniteLives();
 bool OverlayInfiniteBombs();

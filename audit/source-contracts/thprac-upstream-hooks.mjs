@@ -91,6 +91,8 @@ const portableOwnerCategory = new Map(Object.entries({
     g_MenuConfig: 'source persistent THGuiPrac widgets',
     g_MenuResult: 'backend THGuiPrac close result handoff',
     g_MenuOpen: 'source THGuiPrac/GameGuiWnd open state',
+    g_MenuInputArmed: 'backend TH08-compatible accept/cancel release gate',
+    g_MenuWidgetBusy: 'backend TH08-compatible previous-frame ImGui item owner',
     g_MenuCursor: 'backend ImGui nav cursor',
     g_MenuDifficulty: 'source THGuiPrac mDiffculty',
     g_MenuSectionIndex: 'source THGuiPrac mSection',
@@ -163,7 +165,7 @@ const category = new Map([
     ['th07_update', 'backend-equivalent'],
     ['th07_render', 'backend-equivalent'],
     ['th07_disable_dataver', 'architectural-equivalent'],
-    ['th07_disable_demo', 'trainer-core'],
+    ['th07_disable_demo', 'deliberate-product-override'],
     ['th07_disable_mutex', 'architectural-equivalent'],
     ['th07_gui_init_1', 'backend-equivalent'],
     ['th07_gui_init_2', 'backend-equivalent'],
@@ -229,7 +231,12 @@ requireText(src.game, 'PracticeRuntime::AdvancedSectionActive() ||\n        g_Ga
             'th07_bgm_st6_2 Pause Stage6 advanced-section bypass');
 requireText(src.gui, '!PracticeRuntime::AdvancedSectionActive() &&\n        g_GameManager.currentStage == 6 && arg->frameCounter == 300',
             'th07_bgm_st6_1 delayed Stage6 road BGM suppression');
-requireText(src.mainMenu, 'if (0x7fffffff < this->demoFramesCount)', 'th07_disable_demo INT_MAX threshold');
+requireText(src.mainMenu, 'if (900 < this->demoFramesCount)',
+            'browser Runtime preserves the original TH07 title attract threshold');
+requireText(src.mainMenu, 'that global\n        // process patch is not part of the trainer UI/gameplay contract here.',
+            'th07_disable_demo explicit browser-product override rationale');
+if (src.mainMenu.includes('if (0x7fffffff < this->demoFramesCount)'))
+    throw new Error('TH07 browser Runtime must not globally disable original title Demo playback');
 requireText(src.practice, 'if (g_Config.stage == 5 && g_Config.section == 60)\n                return 2;',
             'th07_bgm Resurrection Butterfly slot 2');
 requireText(src.game, 'g_Supervisor.PlayLoadedAudio(PracticeRuntime::InitialBgmIndex());',
@@ -386,5 +393,5 @@ execFileSync(process.execPath, [path.join(here, 'thprac-address-map.mjs')], {
     stdio: 'inherit',
 });
 
-console.log(`TH07 upstream thprac hook audit PASS: ${uniqueHooks.length}/${uniqueHooks.length} hooks classified and implemented; ` +
+console.log(`TH07 upstream thprac hook audit PASS: ${uniqueHooks.length}/${uniqueHooks.length} hooks classified with explicit portable decisions; ` +
     Object.entries(counts).map(([k, v]) => `${k}=${v}`).join(' '));
