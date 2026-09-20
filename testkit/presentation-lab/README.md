@@ -14,6 +14,11 @@ diagnostics:
 they migrate their native ABI, but new consumers should emit the normalized
 frame and field model described by the contract.
 
+`workbench.html`, `workbench.mjs` and `workbench.css` own the shared browser
+workflow after it was exercised by a second title.  A consumer serves a
+title-owned `/lab-config.mjs`; DATA mounting, runtime configuration, Replay
+paths, owner semantics and native ABI remain outside the common workbench.
+
 The consumer implements the `RuntimeDriverV1` and `ObservationAdapterV1`
 boundaries in [CONTRACT.md](CONTRACT.md). It owns every title-specific concern:
 runtime ABI, complete tick transaction, record wire layout, owner identities,
