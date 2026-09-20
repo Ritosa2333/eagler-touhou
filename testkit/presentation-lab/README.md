@@ -1,6 +1,7 @@
-# Presentation Lab Controller Core
+# Presentation Lab
 
-This directory owns title-neutral orchestration for presentation diagnostics:
+This directory owns title-neutral contracts and orchestration for presentation
+diagnostics:
 
 - stop the display loop without invoking an in-game pause;
 - advance the real fixed-step simulation without skipping ticks;
@@ -8,10 +9,12 @@ This directory owns title-neutral orchestration for presentation diagnostics:
 - repeat samples for idempotence and compare state fingerprints;
 - run bounded scans and retain compact reports.
 
-The consumer adapter owns every title-specific concern: record wire layout,
-owner identities, state fingerprints, scene metadata, continuity policy,
-classification and report schemas. The common controller must not know Touhou
-object layouts, Replay menus or stage numbering.
+The consumer implements the `RuntimeDriverV1` and `ObservationAdapterV1`
+boundaries in [CONTRACT.md](CONTRACT.md). It owns every title-specific concern:
+runtime ABI, complete tick transaction, record wire layout, owner identities,
+state fingerprints, scene metadata, continuity policy and Replay navigation.
+The common controller must not know Touhou object layouts, WASM export names,
+Replay menus or stage numbering.
 
 Production runtimes must not expose the diagnostic adapter. Consumers enable
 it through a compile-time profile and pin the exact `eagler-common` revision.
