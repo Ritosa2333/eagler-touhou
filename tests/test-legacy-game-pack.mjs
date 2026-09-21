@@ -12,7 +12,7 @@ import {
   localOggCacheUrl,
   migrateLegacyStoredImport,
 } from "../legacy/legacy-import-storage.mjs";
-import { adaptLegacyGamePackToPackage } from "../legacy/legacy-package-adapter.mjs";
+import { adaptLegacyGamePackToPackage, adaptLegacyStoredImportToPackage } from "../legacy/legacy-package-adapter.mjs";
 
 const data = strToU8("legacy-data");
 const dataHash = "11".repeat(32);
@@ -200,6 +200,38 @@ assert.ok(adapted.files.has("shared-msgothic"));
 assert.ok(adapted.files.has("language:lang_zh-hans"));
 assert.ok(![...adapted.files.values()].some(file => /\.(?:html|m?js|wasm)$/i.test(file.declaration.source)),
   "legacy executable Runtime files must not cross into Package Store");
+
+const th10MissingSharedPack = {
+  manifest: {
+    ...basicManifest,
+    game: "th10",
+    data: { ...basicManifest.data, path: "th10.data" },
+  },
+  data: { blob: new Blob([data]) },
+  music: [],
+  offline: { runtime: { version: runtimeVersion }, shared: [], languages: [] },
+};
+assert.throws(
+  () => adaptLegacyGamePackToPackage(th10MissingSharedPack, { protocol: "eagler-touhou/1" }),
+  /missing required shared resources: \/msgothic\.ttc, \/unifont\.otf/,
+);
+
+assert.throws(
+  () => adaptLegacyStoredImportToPackage({
+    gameData: {
+      game: "th10",
+      version,
+      layout,
+      sha256: dataHash,
+      bytes: data.length,
+      legacyAssets: null,
+    },
+    dataKey: "legacy-th10-data",
+    assets: new Map([["legacy-th10-data", new Blob([data])]]),
+    ogg: null,
+  }, { protocol: "eagler-touhou/1", origin }),
+  /missing required shared resources: \/msgothic\.ttc, \/unifont\.otf/,
+);
 
 const compressed = zipSync({
   "manifest.json": strToU8(JSON.stringify(basicManifest)),

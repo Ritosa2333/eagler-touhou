@@ -133,6 +133,18 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
     assert.ok(PRODUCT_GAMES[focus.sourceGame], `${game}: focus-hitbox preparation source game must be registered`);
     assert.match(focus.output, /^[A-Za-z0-9][A-Za-z0-9._-]*$/);
   }
+  const dataPreparation = content.hostPreparation?.dataAssets;
+  if (product.dataProvider === "retail-memory") {
+    assert.ok(["original-file", "prepared-content"].includes(dataPreparation?.kind),
+      `${game}: retail-memory DATA preparation must be declared`);
+    if (dataPreparation.kind === "original-file") {
+      assert.ok(content.original.files.includes(dataPreparation.source),
+        `${game}: original DATA source must be part of the declared original content`);
+    } else {
+      assert.ok(content.hostPreparation.preparedContent,
+        `${game}: prepared DATA path needs preparedContent metadata`);
+    }
+  }
   for (const name of [...content.original.files, ...(content.original.oggSourceFiles || [])]) {
     assert.equal(typeof name, "string");
     assert.ok(name && !name.startsWith("/") && !name.includes("..") && !name.includes("\\"),

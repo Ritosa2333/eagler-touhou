@@ -118,7 +118,6 @@ import {
 import {
   postDirectTouch as postRuntimeDirectTouch,
   postHostedKey as postRuntimeHostedKey,
-  postThpracMouse as postRuntimeThpracMouse,
   postTouchCancel as postRuntimeTouchCancel,
   postTouchControls as postRuntimeTouchControls,
   deliverRuntimeInput,
@@ -156,6 +155,7 @@ import {
   MP_ROOM_HISTORY_KEY as mpRoomHistoryKey,
   MP_ROOM_URL_KEY as mpRoomUrlKey,
   PLAYER_HISTORY_KEY as playerHistoryKey,
+  TOUCH_LAYOUT_HISTORY_KEY as touchLayoutHistoryKey,
   applyHistoryOperations,
   directRoomHistorySeed,
   initialRoutedHistoryOperations,
@@ -165,6 +165,7 @@ import {
   returnToRoomHistoryOperation,
   roomRouteHistoryOperation,
   routedProductFromUrl,
+  touchLayoutEditorHistoryOperation,
 } from "./route-state.mjs";
 import type {
   GameId,
@@ -1071,9 +1072,6 @@ function beginImportAttempt() {
   openGameDataImportWindow();
 }
 
-let thpracMouseInputWindow: RuntimeWindow | null = null;
-let thpracMousePointerId: number | null = null;
-let thpracMouseMode = false;
 let thpracMenuOpen = false;
 let runtimeCustomEventWindow: RuntimeWindow | null = null;
 
@@ -1083,10 +1081,6 @@ function thpracTouchControlsAvailable() {
 
 function thpracTouchControlsVisible() {
   return !!state.options.thpracTouchControlsEnabled && (touchLayoutEditing || !!state.options.touchEnabled);
-}
-
-function thpracMouseModeActive() {
-  return state.launched && thpracTouchControlsAvailable() && thpracMouseMode;
 }
 
 function touchRuntimeMessageContext() {
@@ -1101,57 +1095,6 @@ function touchRuntimeMessageContext() {
     ready: state.ready,
     spectator: state.netplay.spectator,
   };
-}
-
-function postThpracMouseEvent(event: PointerEvent, type: "move" | "down" | "up") {
-  postRuntimeThpracMouse(touchRuntimeMessageContext(), type, event.clientX, event.clientY);
-}
-
-function beginThpracMousePointer(event: PointerEvent) {
-  if (!thpracMouseModeActive() || event.pointerType !== "touch" || thpracMousePointerId != null) return;
-  thpracMousePointerId = event.pointerId;
-  try { if (event.target instanceof Element) event.target.setPointerCapture?.(event.pointerId); } catch {}
-  event.preventDefault();
-  event.stopImmediatePropagation();
-  postThpracMouseEvent(event, "move");
-  postThpracMouseEvent(event, "down");
-}
-
-function moveThpracMousePointer(event: PointerEvent) {
-  if (!thpracMouseModeActive() || event.pointerId !== thpracMousePointerId) return;
-  event.preventDefault();
-  event.stopImmediatePropagation();
-  postThpracMouseEvent(event, "move");
-}
-
-function endThpracMousePointer(event: PointerEvent) {
-  if (event.pointerId !== thpracMousePointerId) return;
-  event.preventDefault();
-  event.stopImmediatePropagation();
-  postThpracMouseEvent(event, "move");
-  postThpracMouseEvent(event, "up");
-  try { if (event.target instanceof Element) event.target.releasePointerCapture?.(event.pointerId); } catch {}
-  thpracMousePointerId = null;
-}
-
-function uninstallThpracMouseInputBridge() {
-  if (!thpracMouseInputWindow) return;
-  thpracMouseInputWindow.removeEventListener("pointerdown", beginThpracMousePointer, true);
-  thpracMouseInputWindow.removeEventListener("pointermove", moveThpracMousePointer, true);
-  thpracMouseInputWindow.removeEventListener("pointerup", endThpracMousePointer, true);
-  thpracMouseInputWindow.removeEventListener("pointercancel", endThpracMousePointer, true);
-  thpracMouseInputWindow = null;
-  thpracMousePointerId = null;
-}
-
-function bindThpracMouseInputWindow(win: RuntimeWindow | null) {
-  uninstallThpracMouseInputBridge();
-  if (!win) return;
-  thpracMouseInputWindow = win;
-  win.addEventListener("pointerdown", beginThpracMousePointer, true);
-  win.addEventListener("pointermove", moveThpracMousePointer, true);
-  win.addEventListener("pointerup", endThpracMousePointer, true);
-  win.addEventListener("pointercancel", endThpracMousePointer, true);
 }
 
 function currentRuntimeWindow(): RuntimeWindow | null {
@@ -1201,14 +1144,12 @@ function bindRuntimeCustomEventWindow(win: RuntimeWindow | null) {
 function rebindRuntimeDomBridges() {
   const win = currentRuntimeWindow();
   gameZoom.bindInputWindow(win);
-  bindThpracMouseInputWindow(win);
   bindGameKeyWindow(win);
   bindRuntimeCustomEventWindow(win);
 }
 
 function uninstallRuntimeDomBridges() {
   gameZoom.uninstallInputBridge();
-  uninstallThpracMouseInputBridge();
   bindGameKeyWindow(null);
   bindRuntimeCustomEventWindow(null);
 }
@@ -1364,6 +1305,7 @@ const touchLayoutControlTitle = (name: TouchLayoutControlName) => {
 let touchLayout = loadTouchLayoutFromStorage(localStorage);
 let touchLayoutDraft: TouchLayout | null = null;
 let touchLayoutEditing = false;
+let touchLayoutHistoryEntryOwned = false;
 let touchLayoutSelected: TouchLayoutControlName = "fire";
 type PointerDrag = { pointerId: number; x: number; y: number };
 type TouchLayoutDrag =
@@ -1532,7 +1474,7 @@ const buttonElementSelectors = [
   "#touchLayoutReset", "#touchLayoutSave", "#touchLayoutExit", "#doubleTapBombToggle",
   "#restartButtonToggle", "#thpracTouchControlsToggle", "#touchSensitivityCustomToggle", "#touchViewportAdjust",
   "#touchViewportReset", "#touchViewportDone", "#touchFocus", "#touchFire",
-  "#touchBomb", "#touchEscape", "#touchRestart", "#touchThpracInput", "#touchThpracTab",
+  "#touchBomb", "#touchEscape", "#touchRestart", "#touchThpracTab",
   "#touchThpracBackspace", "#touchHelpOpen", "#touchHelpClose", "#guideTabOrientation",
   "#guideTabGameControls", "#guideTabFocus", "#guideTabMenu", "#guideTabDialogue",
   "#guideTabThprac", "#orientationToggle", "#gameZoomToggle", "#fullscreenToggle",
@@ -2167,7 +2109,6 @@ window.setInterval(() => {
 }, 1000);
 const gameZoomToggle = $("#gameZoomToggle");
 const orientationToggle = $("#orientationToggle");
-const touchThpracInput = $("#touchThpracInput");
 const touchThpracTab = $("#touchThpracTab");
 const touchThpracMenu = $("#touchThpracMenu");
 const touchThpracFunctionKeys = $("#touchThpracFunctionKeys");
@@ -2389,7 +2330,6 @@ let transferMode: TransferMode = "";
 let transferKind: TransferKind = "";
 let transferHideTimer: ReturnType<typeof setTimeout> | null = null;
 let transferCancelUserInitiated = false;
-const runtimeCacheFallbackCleanupKey = "eagler-touhou-runtime-cache-fallback-v1";
 interface BlockingNetworkOperation {
   controller: AbortController;
   label: string;
@@ -3183,6 +3123,12 @@ function game(gameId: GameId = state.game): LauncherGameView {
     languages: "languages" in hosted ? hosted.languages : undefined,
   };
 }
+
+function requiredSharedForGame(gameId: GameId = state.game): readonly string[] {
+  const product = PRODUCT_GAMES[gameId];
+  return "requiredShared" in product ? product.requiredShared : [];
+}
+
 function runtimeUrl() {
   const entry = game();
   if (state.runtimeVariant === "multiplayer") {
@@ -3207,43 +3153,6 @@ function runtimeCachePaths(gameId: GameId, runtimeVariant: "normal" | "multiplay
     return product.runtimeAssets.map((name: string) => `${directory}${name}`);
   }
   return ["html", "js", "wasm"].map(extension => url.pathname.replace(/\.html$/i, `.${extension}`));
-}
-
-async function runtimeCacheFallbackCommand(
-  type: "PROBE_RUNTIME_CACHE_FALLBACK" | "RESTORE_RUNTIME_CACHE_FALLBACK" | "CLEAR_RUNTIME_CACHE_FALLBACK",
-  gameId: GameId,
-  runtimeVariant: "normal" | "multiplayer" = state.runtimeVariant,
-) {
-  if (!("serviceWorker" in navigator)) return { ok: false, available: false };
-  await appShellClient?.ready;
-  const registration = await navigator.serviceWorker.getRegistration("./").catch(() => null);
-  const worker = navigator.serviceWorker.controller || registration?.active;
-  if (!worker) return { ok: false, available: false };
-  const paths = type === "CLEAR_RUNTIME_CACHE_FALLBACK" ? [] : runtimeCachePaths(gameId, runtimeVariant);
-  if (type !== "CLEAR_RUNTIME_CACHE_FALLBACK" && !paths.length) return { ok: false, available: false };
-  const channel = new MessageChannel();
-  const result = new Promise<UnknownRecord>((resolve, reject) => {
-    const timer = window.setTimeout(() => reject(new Error(`${gameId}: Runtime cache fallback timed out`)), 10_000);
-    channel.port1.onmessage = event => {
-      window.clearTimeout(timer);
-      resolve(record(event.data) || {});
-    };
-  });
-  worker.postMessage({ type, paths }, [channel.port2]);
-  return await result;
-}
-
-function runtimeCacheFallbackNeedsCleanup() {
-  try { return localStorage.getItem(runtimeCacheFallbackCleanupKey) === "1"; }
-  catch { return false; }
-}
-
-function markRuntimeCacheFallbackForCleanup() {
-  try { localStorage.setItem(runtimeCacheFallbackCleanupKey, "1"); } catch {}
-}
-
-function clearRuntimeCacheFallbackCleanupMark() {
-  try { localStorage.removeItem(runtimeCacheFallbackCleanupKey); } catch {}
 }
 
 async function cacheRuntimeForOffline(
@@ -3413,6 +3322,14 @@ async function installImportedGameData(file: File | Blob) {
     if (packageZip.descriptor.game !== state.game) {
       throw new Error(t("package.wrongGame", { actual: packageZip.descriptor.game.toUpperCase(), expected: state.game.toUpperCase() }));
     }
+    const requiredShared = requiredSharedForGame();
+    const packageBaseTargets = new Set((packageZip.descriptor.base?.files || [])
+      .map(fileId => packageZip.descriptor.files?.[fileId]?.target)
+      .filter((target): target is string => typeof target === "string" && !!target));
+    const missingShared = requiredShared.filter(target => !packageBaseTargets.has(target));
+    if (missingShared.length) {
+      throw new Error(t("package.missingRequiredResource", { resource: missingShared[0].slice(1) }));
+    }
     setPlayerStatus(t("package.importingSimple"));
     const installed = await installParsedPackageZip(packageZip, {
       onProgress(progress) {
@@ -3434,10 +3351,13 @@ async function installImportedGameData(file: File | Blob) {
   const pack = await parseStoredGameDataPack(file);
   if (pack.manifest.game !== state.game) throw new Error(t("package.legacyWrongGame", { actual: pack.manifest.game.toUpperCase(), expected: state.game.toUpperCase() }));
   if (pack.manifest.data.path !== expected.path) throw new Error(t("package.dataPathMismatch"));
-  if (importServer) {
-    if (!pack.offline) throw new Error(t("package.serverNoContent"));
-    for (const target of ["/msgothic.ttc", "/unifont.otf"]) {
-      if (!pack.offline.shared.some(item => item.target === target)) throw new Error(t("package.legacyMissingResource", { resource: target.slice(1) }));
+  if (importServer && !pack.offline) throw new Error(t("package.serverNoContent"));
+  if (pack.offline) {
+    const requiredShared = requiredSharedForGame();
+    for (const target of requiredShared) {
+      if (!pack.offline.shared.some(item => item.target === target)) {
+        throw new Error(t("package.missingRequiredResource", { resource: target.slice(1) }));
+      }
     }
   }
   setPlayerStatus(t("package.validatingLocalData"));
@@ -3935,7 +3855,7 @@ function syncDirectTouchSurfaceVisibility() {
   const spectatorRuntime = isMultiplayerProduct() && state.netplay.spectator === true;
   const wheelMovement = touchMovementUsesJoystick(state.options.touchMovementMode);
   touchDirectSurface.hidden = !(state.launched && hostDirectTouch && !spectatorRuntime &&
-    state.options.touchEnabled && !wheelMovement && !touchLayoutEditing && !thpracMouseMode);
+    state.options.touchEnabled && !wheelMovement && !touchLayoutEditing);
 }
 function render() {
   if (!productEnabled(state.product)) state.hasSelection = false;
@@ -4120,6 +4040,7 @@ function render() {
   // editor is open even when gameplay touch input itself is disabled.
   const spectatorRuntime = isMultiplayerProduct() && state.netplay.spectator === true;
   const touchSurfaceVisible = (!spectatorRuntime && state.options.touchEnabled) || touchLayoutEditing;
+  $("#touchHelp").classList.toggle("touch-help-touch-input", state.options.touchEnabled);
   if (twoFingerFocusOption) twoFingerFocusOption.disabled = wheelMovement;
   player.classList.toggle("touch-enabled", touchSurfaceVisible);
   player.classList.toggle("touch-joystick-enabled", wheelMovement && touchSurfaceVisible);
@@ -4128,12 +4049,8 @@ function render() {
   syncDirectTouchSurfaceVisibility();
   renderTouchActionState();
   const thpracControlsVisible = !spectatorRuntime && thpracTouchControlsVisible();
-  touchThpracInput.hidden = !thpracControlsVisible;
   touchThpracTab.hidden = !thpracControlsVisible;
   touchThpracMenu.hidden = !thpracControlsVisible;
-  touchThpracInput.classList.toggle("is-on", thpracMouseMode);
-  touchThpracInput.setAttribute("aria-pressed", String(thpracMouseMode));
-  requiredDescendant(touchThpracInput, "strong", HTMLElement).textContent = t("touch.mouse");
   touchThpracFunctionKeys.hidden = !thpracMenuOpen;
   applyTouchLayout();
   if (touchLayoutEditing) updateTouchLayoutEditorUi();
@@ -4176,8 +4093,6 @@ function setOption<K extends keyof GameOptions>(name: K, value: GameOptions[K]) 
   if (state.options[name] === value) return;
   state.options[name] = value;
   if ((name === "touchEnabled" || name === "thpracEnabled" || name === "thpracTouchControlsEnabled") && !thpracTouchControlsAvailable()) {
-    thpracMouseMode = false;
-    thpracMousePointerId = null;
     thpracMenuOpen = false;
   }
   if (name === "touchEnabled" && !value) {
@@ -4268,8 +4183,6 @@ function resetRuntime() {
   touchControls.escapeSerial = 0;
   touchControls.joystickX = 0;
   touchControls.joystickY = 0;
-  thpracMouseMode = false;
-  thpracMousePointerId = null;
   thpracMenuOpen = false;
   uninstallRuntimeDomBridges();
   gameZoom.reset();
@@ -4611,6 +4524,13 @@ function syncSelectionFromPlayerRoute() {
 }
 
 window.addEventListener("popstate", async () => {
+  if (touchLayoutEditing) {
+    const editorHistoryWasPopped = touchLayoutHistoryEntryOwned;
+    touchLayoutHistoryEntryOwned = false;
+    const closed = await closeTouchLayoutEditor();
+    if (!closed && editorHistoryWasPopped) pushTouchLayoutEditorHistory();
+    return;
+  }
   if (mpUiState.room) {
     const routedRoom = mpNormalizeRoomCode(new URL(location.href).searchParams.get(mpRoomUrlKey));
     if (!routedRoom || routedRoom !== mpUiState.room.code) {
@@ -4847,25 +4767,13 @@ function waitForRuntimeFirstFrame(session: RuntimeSessionToken, timeoutMs = firs
   });
 }
 
-async function ensureInstalledPackageRuntime(show = true, launchMode: "normal" | "cache-fallback" = "normal") {
+async function ensureInstalledPackageRuntime(show = true) {
   const installed = await readCurrentPackageGeneration(state.game);
   const generation = installed?.generation;
   if (!generation?.id) { activeInstalledPackageGeneration = null; return false; }
   installedPackageSnapshots.set(state.game, generation);
   const requestedIdentity = `package:${state.game}:${generation.id}:${state.runtimeVariant}:${state.replayViewer ? "replay" : "game"}`;
   if (state.ready && state.sourceIdentity === requestedIdentity) return true;
-
-  if (launchMode === "normal" && runtimeCacheFallbackNeedsCleanup()) {
-    const cleanup = await runtimeCacheFallbackCommand(
-      "CLEAR_RUNTIME_CACHE_FALLBACK",
-      state.game,
-      state.runtimeVariant,
-    ).catch(error => ({ ok: false, error: errorMessage(error) }));
-    if (cleanup.ok !== true) {
-      throw new Error(t("runtime.cachedRuntimeCleanupFailed", { reason: String(cleanup.error || "") }));
-    }
-    clearRuntimeCacheFallbackCleanupMark();
-  }
 
   resetRuntime();
   // Package Store remains the source of truth, but the game itself runs
@@ -4878,11 +4786,11 @@ async function ensureInstalledPackageRuntime(show = true, launchMode: "normal" |
   managedRuntimeGenerationLease.bind(state.game, generation);
   state.sourceIdentity = requestedIdentity;
   clearGameDataAttempt();
-  setPlayerStatus(t(launchMode === "cache-fallback" ? "runtime.usingCachedRuntime" : "runtime.preparingLocal"));
+  setPlayerStatus(t("runtime.preparingLocal"));
   showTransfer({
     kind: "game",
     mode: "runtime",
-    title: t(launchMode === "cache-fallback" ? "runtime.usingCachedRuntime" : "runtime.preparingLocal"),
+    title: t("runtime.preparingLocal"),
     label: t("runtime.localGameLabel", { game: state.game.toUpperCase() }),
     phase: "preparing",
     indeterminate: true,
@@ -4894,29 +4802,6 @@ async function ensureInstalledPackageRuntime(show = true, launchMode: "normal" |
   managedSource.searchParams.set(RUNTIME_EPOCH_QUERY_PARAMETER, String(runtimeSession.id));
   state.source = managedSource.href;
   if (show) openPlayerView();
-  let fallbackRequested = false;
-  let fallbackOperation: BlockingNetworkOperation | null = null;
-  let launchSettled = false;
-  if (launchMode === "normal") {
-    void runtimeCacheFallbackCommand("PROBE_RUNTIME_CACHE_FALLBACK", state.game, state.runtimeVariant)
-      .then(result => {
-        if (result.available !== true) {
-          console.info(`${state.game}: Runtime cache fallback unavailable`, result.reason || "unknown");
-          return;
-        }
-        if (launchSettled || !runtimeSessionCurrent(runtimeSession) || blockingNetworkOperation) return;
-        fallbackOperation = beginBlockingNetworkOperation({
-          label: t("runtime.useCachedRuntime"),
-          suppressDeferredReload: true,
-          onCancel() {
-            if (!transferCancelUserInitiated) return;
-            fallbackRequested = true;
-            if (runtimeSessionCurrent(runtimeSession)) resetRuntime();
-          },
-        });
-      })
-      .catch(error => console.warn(`${state.game}: Runtime cache fallback probe failed`, error));
-  }
   const runtimeReady = waitForRuntimeReady(runtimeSession, t("runtime.localLoadTimeout"));
   // App-owned same-origin Runtime URLs can commit and execute immediately.
   // Arm readiness/error listeners before navigation so a fast local Runtime
@@ -4924,42 +4809,11 @@ async function ensureInstalledPackageRuntime(show = true, launchMode: "normal" |
   frame.src = state.source;
   try {
     await runtimeReady;
-    launchSettled = true;
-    if (fallbackOperation) finishBlockingNetworkOperation(fallbackOperation);
     // Only warm remaining Runtime assets after the live Runtime is ready.
-    // During startup the iframe is the sole network/cache writer so a
-    // cache-fallback request can never race a second background acquisition.
-    if (launchMode === "normal") {
-      void cacheRuntimeForOffline(state.game, state.runtimeVariant).catch(error =>
-        console.warn(`${state.game}: Runtime background offline cache failed`, error));
-    }
+    void cacheRuntimeForOffline(state.game, state.runtimeVariant).catch(error =>
+      console.warn(`${state.game}: Runtime background offline cache failed`, error));
   }
   catch (error) {
-    launchSettled = true;
-    if (fallbackOperation) finishBlockingNetworkOperation(fallbackOperation);
-    if (fallbackRequested) {
-      if (show) openPlayerView();
-      setPlayerStatus(t("runtime.restoringCachedRuntime"));
-      showTransfer({
-        kind: "game",
-        mode: "runtime",
-        title: t("runtime.restoringCachedRuntime"),
-        label: t("runtime.localGameLabel", { game: state.game.toUpperCase() }),
-        phase: "preparing",
-        indeterminate: true,
-      });
-      const restored = await runtimeCacheFallbackCommand(
-        "RESTORE_RUNTIME_CACHE_FALLBACK",
-        state.game,
-        state.runtimeVariant,
-      ).catch(failure => ({ ok: false, error: errorMessage(failure) }));
-      if (restored.ok === true) {
-        markRuntimeCacheFallbackForCleanup();
-        return await ensureInstalledPackageRuntime(show, "cache-fallback");
-      }
-      hideTransfer();
-      throw new Error(t("runtime.cachedRuntimeUnavailable", { reason: String(restored.error || "") }));
-    }
     if (runtimeSessionCurrent(runtimeSession)) resetRuntime();
     throw error;
   }
@@ -5333,7 +5187,11 @@ async function selectedSharedResources(language = state.language) {
   const unicodeFont = shared.unicodeFont;
   const wanted: Array<{ target: string; network: string }> = [];
   const addHosted = (target: string, network: unknown) => {
-    if (typeof network !== "string" || !network) throw new Error(t("runtime.sharedFontManifestInvalid"));
+    if (typeof network !== "string" || !network) {
+      throw new GameDataAcquisitionError(generation
+        ? t("package.missingRequiredResource", { resource: target.slice(1) })
+        : t("runtime.sharedFontManifestInvalid"));
+    }
     wanted.push({ target, network });
   };
   if (language === "ja" && !packageTargets.has("/msgothic.ttc")) {
@@ -6402,6 +6260,7 @@ function cancelTouchSensitivityPreview() {
 }
 
 async function openTouchLayoutEditor() {
+  if (touchLayoutEditing) return;
   if (state.launched) throw new Error(t("touch.editWhileRunning"));
   touchLayoutEditing = true;
   touchViewportEditing = false;
@@ -6426,6 +6285,7 @@ async function openTouchLayoutEditor() {
   if (!settings) throw new Error(t("touch.settingsMissing"));
   settings.hidden = false;
   render();
+  pushTouchLayoutEditorHistory();
   const wasFullscreen = isPlayerFullscreen();
   try {
     await enterPlayerFullscreen({ focusGame: false });
@@ -6469,13 +6329,30 @@ function saveTouchLayoutEditor() {
   }
 }
 
-async function closeTouchLayoutEditor() {
+function pushTouchLayoutEditorHistory() {
+  if (touchLayoutHistoryEntryOwned) return;
+  applyHistoryOperations(history, [touchLayoutEditorHistoryOperation({
+    currentUrl: location.href,
+    currentState: history.state,
+  })]);
+  touchLayoutHistoryEntryOwned = true;
+}
+
+function consumeTouchLayoutEditorHistory() {
+  if (!touchLayoutHistoryEntryOwned) return;
+  const ownsCurrentEntry = !!history.state?.[touchLayoutHistoryKey];
+  touchLayoutHistoryEntryOwned = false;
+  if (ownsCurrentEntry) history.back();
+}
+
+async function closeTouchLayoutEditor(): Promise<boolean> {
+  if (!touchLayoutEditing) return true;
   if (touchViewportEditing) finishTouchViewportEditing();
   if (touchLayoutHasUnsavedChanges() && !await askConfirmation({
     message: t("touch.layoutDiscardConfirm"),
     confirmText: t("touch.discardChanges"),
     tone: "danger"
-  })) return;
+  })) return false;
   rememberTouchLayoutWindowsNow();
   touchLayoutDrag = null;
   touchLayoutEditorDrag = null;
@@ -6500,6 +6377,7 @@ async function closeTouchLayoutEditor() {
   render();
   setStatus(t("touch.layoutEditorClosed"));
   maybeApplyDeferredAppShellUpdate();
+  return true;
 }
 
 function rectOverlapRatio(a: DOMRect, b: DOMRect) {
@@ -7536,7 +7414,10 @@ $("#touchLayoutReset").addEventListener("click", async () => {
   showToast(t("touch.restoreLayoutToast", { orientation: orientationTitle }));
 });
 $("#touchLayoutSave").addEventListener("click", saveTouchLayoutEditor);
-$("#touchLayoutExit").addEventListener("click", () => { if (touchLayoutEditing) void closeTouchLayoutEditor(); });
+$("#touchLayoutExit").addEventListener("click", () => {
+  if (!touchLayoutEditing) return;
+  void closeTouchLayoutEditor().then(closed => { if (closed) consumeTouchLayoutEditorHistory(); });
+});
 $("#thpracToggle").addEventListener("click", () => setOption("thpracEnabled", !state.options.thpracEnabled));
 $("#magnifierToggle").addEventListener("click", () => setOption("magnifierEnabled", !state.options.magnifierEnabled));
 $("#frameLimitToggle").addEventListener("click", () => setOption("frameLimit60Enabled", !state.options.frameLimit60Enabled));
@@ -8021,25 +7902,6 @@ function pulseThpracKey(name: string | undefined) {
   refocusGameIfNeeded();
 }
 
-async function toggleThpracMouseMode() {
-  if (!thpracTouchControlsAvailable() || !state.launched) return;
-  thpracMouseMode = !thpracMouseMode;
-  thpracMousePointerId = null;
-  try { await send("touch-cancel", {}, 3000); } catch {}
-  render();
-  refocusGameIfNeeded();
-}
-
-touchThpracInput.addEventListener("pointerdown", event => {
-  if (touchLayoutEditing || !state.launched) return;
-  event.preventDefault();
-  event.stopPropagation();
-  void toggleThpracMouseMode();
-});
-touchThpracInput.addEventListener("click", event => {
-  if (event.detail !== 0 || touchLayoutEditing || !state.launched) return;
-  void toggleThpracMouseMode();
-});
 $("#touchThpracBackspace").addEventListener("pointerdown", event => {
   if (touchLayoutEditing || !state.launched) return;
   event.preventDefault();

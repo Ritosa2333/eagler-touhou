@@ -58,8 +58,10 @@ assert.deepEqual(REQUIRED_TOUCH_BEHAVIORS.map(item => item.id), [
   "focus-two-finger",
   "fire-bomb-pause",
   "deathbomb-preservation",
+  "unlimited-cheat-processing-rate",
   "double-tap-bomb",
   "menu-dialogue-navigation",
+  "touch-confirm-edge",
   "sensitivity-100-300",
   "mixed-input-isolation",
   "lifecycle-cancel",
@@ -94,7 +96,7 @@ assert.equal(new Set(REQUIRED_REPLAY_BEHAVIORS.map(item => item.id)).size, REQUI
 for (const [name, profile, requiredIds] of [
   ["input", REQUIRED_INPUT_BEHAVIORS, ["keyboard-logical-input", "controller-logical-input", "loss-cleanup"]],
   ["storage", REQUIRED_STORAGE_BEHAVIORS, ["declared-save-root", "strict-user-file-allowlist", "runtime-restart-durability", "package-user-data-separation"]],
-  ["music", REQUIRED_MUSIC_BEHAVIORS, ["audible-ogg-normal-mode", "explicit-no-music-mode", "presentation-audio-independence"]],
+  ["music", REQUIRED_MUSIC_BEHAVIORS, ["audible-ogg-normal-mode", "explicit-no-music-mode", "foreground-audio-recovery", "presentation-audio-independence"]],
   ["package", REQUIRED_PACKAGE_BEHAVIORS, ["canonical-package-store", "atomic-current-generation", "offline-installed-launch"]],
 ]) {
   assert.ok(profile.length > 0, `${name}: required behavior profile must not be empty`);
@@ -104,7 +106,7 @@ for (const [name, profile, requiredIds] of [
 
 for (const [name, profile, requiredIds] of [
   ["multiplayer", REQUIRED_MULTIPLAYER_BEHAVIORS, ["dedicated-runtime-variant", "spectator-admission-and-isolation", "multiplayer-replay", "peer-transport-and-relay-fallback"]],
-  ["thprac", REQUIRED_THPRAC_BEHAVIORS, ["runtime-attestation", "replay-prac-metadata", "touch-mouse-function-bridge"]],
+  ["thprac", REQUIRED_THPRAC_BEHAVIORS, ["runtime-attestation", "replay-prac-metadata", "touch-function-bridge"]],
   ["languages", REQUIRED_LANGUAGE_BEHAVIORS, ["built-in-japanese-baseline", "validated-pack-publication", "safe-launch-fallback"]],
   ["midi", REQUIRED_MIDI_BEHAVIORS, ["selector-only-when-declared", "audible-midi-transport", "music-lifecycle"]],
 ]) {

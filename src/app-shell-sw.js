@@ -12,8 +12,6 @@ const PRECACHE_MANIFEST = self.__WB_MANIFEST;
 const DEFERRED_PATHS = new Set(__APP_SHELL_DEFERRED_PATHS__.map(path => new URL(path, scopeUrl).href));
 const cacheMetaUrl = new URL(`./__app-shell-meta__/__APP_SHELL_BUILD_ID__`, scopeUrl).href;
 const updateStatusUrl = new URL("./__app-shell-update-status__", scopeUrl).href;
-const forceNetworkOnce = new Set();
-const runtimeFallbackLockedPaths = new Set();
 let currentMetadataUpdate = Promise.resolve();
 
 const manifestByPathname = new Map(PRECACHE_MANIFEST.map(entry => {
@@ -157,134 +155,6 @@ function runtimeEntriesForPaths(paths) {
   });
 }
 
-async function fallbackCacheForEntries(entries) {
-  const names = (await caches.keys()).filter(name => name.startsWith(CACHE_PREFIX));
-  const ranked = await Promise.all(names.map(async name => ({
-    name,
-    createdAt: await cacheCreatedAt(name),
-    metadata: await cacheMetadata(name),
-    cache: await caches.open(name),
-  })));
-  ranked.sort((left, right) => right.createdAt - left.createdAt);
-  const targets = ranked.filter(item => item.name !== CACHE_NAME);
-  if (!targets.length) return { candidate: null, reason: "no-retained-runtime-cache" };
-  let sawCompleteMetadata = false;
-  let sawCompleteBytes = false;
-  let sawProtocolIncompatible = false;
-  for (const target of targets) {
-    if (!target.metadata?.entries || typeof target.metadata.entries !== "object") continue;
-    const revisions = new Map();
-    let metadataComplete = true;
-    for (const entry of entries) {
-      const revision = target.metadata.entries[entry.cacheUrl];
-      if (typeof revision !== "string" || !revision) {
-        metadataComplete = false;
-        break;
-      }
-      revisions.set(entry.cacheUrl, revision);
-    }
-    if (!metadataComplete) continue;
-    sawCompleteMetadata = true;
-    const responses = new Map();
-    let bytesComplete = true;
-    for (const entry of entries) {
-      const targetRevision = revisions.get(entry.cacheUrl);
-      let response = null;
-      for (const source of ranked) {
-        if (source.metadata?.entries?.[entry.cacheUrl] !== targetRevision) continue;
-        response = await source.cache.match(entry.cacheUrl);
-        if (response) break;
-      }
-      if (!response) {
-        bytesComplete = false;
-        break;
-      }
-      responses.set(entry.cacheUrl, response);
-    }
-    if (!bytesComplete) continue;
-    sawCompleteBytes = true;
-    let protocolCompatible = false;
-    let managedDataCompatible = false;
-    for (const entry of entries) {
-      if (!/.(?:html|m?js)$/i.test(new URL(entry.cacheUrl).pathname)) continue;
-      const text = await responses.get(entry.cacheUrl).clone().text().catch(() => "");
-      if (text.includes("eagler-touhou/1") && text.includes("runtimeEpoch")) protocolCompatible = true;
-      if (text.includes("__eaglerPrepareManagedRuntimeDataV1") && text.includes("runtimeEpoch")) {
-        managedDataCompatible = true;
-      }
-    }
-    if (protocolCompatible && managedDataCompatible) {
-      return { candidate: { ...target, responses }, reason: null };
-    }
-    sawProtocolIncompatible = true;
-  }
-  return {
-    candidate: null,
-    reason: sawProtocolIncompatible ? "runtime-protocol-incompatible"
-      : sawCompleteBytes ? "runtime-protocol-markers-missing"
-        : sawCompleteMetadata ? "runtime-cache-bytes-incomplete"
-          : "runtime-cache-metadata-incomplete",
-  };
-}
-
-async function probeRuntimeCacheFallback(entries) {
-  const { candidate, reason } = await fallbackCacheForEntries(entries);
-  return candidate
-    ? { ok: true, available: true, sourceCache: candidate.name }
-    : { ok: true, available: false, reason };
-}
-
-async function restoreRuntimeCacheFallback(entries) {
-  const { candidate, reason } = await fallbackCacheForEntries(entries);
-  if (!candidate) {
-    return {
-      ok: false,
-      available: false,
-      reason,
-      error: `Compatible cached Runtime is unavailable (${reason || "unknown"})`,
-    };
-  }
-  const cache = await caches.open(CACHE_NAME);
-  for (const entry of entries) {
-    await cache.put(entry.cacheUrl, candidate.responses.get(entry.cacheUrl).clone());
-    runtimeFallbackLockedPaths.add(entry.cacheUrl);
-  }
-  const metadata = await cacheMetadata(CACHE_NAME) || {};
-  metadata.entries ||= {};
-  metadata.runtimeTrusted ||= {};
-  for (const entry of entries) {
-    metadata.entries[entry.cacheUrl] = candidate.metadata.entries[entry.cacheUrl] ?? null;
-    delete metadata.runtimeTrusted[entry.cacheUrl];
-  }
-  metadata.temporaryRuntimeFallback = {
-    createdAt: Date.now(),
-    sourceCache: candidate.name,
-    paths: entries.map(entry => entry.cacheUrl),
-  };
-  await writeCurrentCacheMetadata(metadata);
-  return { ok: true, available: true, restored: entries.length, sourceCache: candidate.name };
-}
-
-async function clearRuntimeCacheFallback() {
-  const metadata = await cacheMetadata(CACHE_NAME);
-  const paths = Array.isArray(metadata?.temporaryRuntimeFallback?.paths)
-    ? metadata.temporaryRuntimeFallback.paths.filter(path => typeof path === "string")
-    : [];
-  if (!paths.length) return { ok: true, cleared: 0 };
-  const cache = await caches.open(CACHE_NAME);
-  for (const path of paths) {
-    await cache.delete(path);
-    runtimeFallbackLockedPaths.delete(path);
-    forceNetworkOnce.add(path);
-    const currentEntry = manifestByPathname.get(new URL(path).pathname);
-    if (metadata.entries && currentEntry) metadata.entries[path] = currentEntry.revision || null;
-    if (metadata.runtimeTrusted) delete metadata.runtimeTrusted[path];
-  }
-  delete metadata.temporaryRuntimeFallback;
-  await writeCurrentCacheMetadata(metadata);
-  return { ok: true, cleared: paths.length };
-}
-
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
     const shellCaches = (await caches.keys()).filter(name => name.startsWith(CACHE_PREFIX));
@@ -305,27 +175,24 @@ function manifestEntryForRequest(request) {
 async function shellCacheFirst(request, entry) {
   const cache = await caches.open(CACHE_NAME);
   const runtimeEntry = isRuntimeEntry(entry);
-  const forceNetwork = forceNetworkOnce.delete(entry.cacheUrl);
-  if (!forceNetwork) {
-    const cached = await cache.match(entry.cacheUrl);
-    if (cached) return cached;
-    if (entry.revision) {
-      const otherCaches = (await caches.keys()).filter(name => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME);
-      for (const name of otherCaches) {
-        const metadata = await cacheMetadata(name);
-        if (metadata?.entries?.[entry.cacheUrl] !== entry.revision) continue;
-        if (runtimeEntry && metadata?.runtimeTrusted?.[entry.cacheUrl] !== entry.revision) continue;
-        const previous = await (await caches.open(name)).match(entry.cacheUrl);
-        if (previous) {
-          await cache.put(entry.cacheUrl, previous.clone());
-          if (runtimeEntry) await trustRuntimeEntry(entry);
-          return previous;
-        }
+  const cached = await cache.match(entry.cacheUrl);
+  if (cached) return cached;
+  if (entry.revision) {
+    const otherCaches = (await caches.keys()).filter(name => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME);
+    for (const name of otherCaches) {
+      const metadata = await cacheMetadata(name);
+      if (metadata?.entries?.[entry.cacheUrl] !== entry.revision) continue;
+      if (runtimeEntry && metadata?.runtimeTrusted?.[entry.cacheUrl] !== entry.revision) continue;
+      const previous = await (await caches.open(name)).match(entry.cacheUrl);
+      if (previous) {
+        await cache.put(entry.cacheUrl, previous.clone());
+        if (runtimeEntry) await trustRuntimeEntry(entry);
+        return previous;
       }
     }
   }
   const response = await fetch(request, runtimeEntry ? { cache: "reload" } : undefined);
-  if (response.ok && !runtimeFallbackLockedPaths.has(entry.cacheUrl)) {
+  if (response.ok) {
     await cache.put(entry.cacheUrl, response.clone());
     if (runtimeEntry) await trustRuntimeEntry(entry);
   }
@@ -344,29 +211,11 @@ self.addEventListener("fetch", event => {
 
 self.addEventListener("message", event => {
   const type = event.data?.type;
-  const runtimeCacheCommand = new Set([
-    "PROBE_RUNTIME_CACHE_FALLBACK",
-    "RESTORE_RUNTIME_CACHE_FALLBACK",
-    "CLEAR_RUNTIME_CACHE_FALLBACK",
-  ]).has(type);
-  if (type !== "CACHE_APP_SHELL_PATHS" && !runtimeCacheCommand) return;
-  if (type !== "CLEAR_RUNTIME_CACHE_FALLBACK" && !Array.isArray(event.data.paths)) return;
+  if (type !== "CACHE_APP_SHELL_PATHS" || !Array.isArray(event.data.paths)) return;
   const port = event.ports?.[0];
   event.waitUntil((async () => {
     try {
-      if (type === "CLEAR_RUNTIME_CACHE_FALLBACK") {
-        port?.postMessage(await clearRuntimeCacheFallback());
-        return;
-      }
       const entries = runtimeEntriesForPaths(event.data.paths);
-      if (type === "PROBE_RUNTIME_CACHE_FALLBACK") {
-        port?.postMessage(await probeRuntimeCacheFallback(entries));
-        return;
-      }
-      if (type === "RESTORE_RUNTIME_CACHE_FALLBACK") {
-        port?.postMessage(await restoreRuntimeCacheFallback(entries));
-        return;
-      }
       let cursor = 0;
       await Promise.all(Array.from({ length: Math.min(PRECACHE_CONCURRENCY, entries.length) }, async () => {
         while (cursor < entries.length) {

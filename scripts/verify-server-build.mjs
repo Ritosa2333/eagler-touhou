@@ -248,8 +248,7 @@ if (!hostAppFacade.includes('import "./assets/launcher/app.mjs";')) {
   throw new Error("Launcher app.js facade does not delegate to the generated TypeScript artifact");
 }
 for (const mount of sharedFontMounts) {
-  const escapedMount = mount.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  if (!new RegExp(`target\\s*:\\s*["']${escapedMount}["']`).test(hostApp)) {
+  if (!hostApp.includes(JSON.stringify(mount))) {
     throw new Error(`host shared font target mismatch: ${mount}`);
   }
 }

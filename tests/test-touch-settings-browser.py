@@ -29,12 +29,43 @@ def main() -> int:
         page.locator('.game[data-game="th06"]:not([data-product])').click()
         page.locator("#mobileOptionsToggle").click()
         page.wait_for_function("document.querySelector('#mobileOptions').classList.contains('open')")
+        assert page.locator("#touchHelpOpen").text_content().strip() in ("帮助", "Help")
+
+        # Help content follows the enabled input mode, not UA/pointer heuristics.
+        # This context has a desktop/fine pointer, so enabling Touch is the
+        # regression case that previously kept showing keyboard/gamepad help.
+        page.locator("#touchToggle").click()
+        page.wait_for_function("document.querySelector('#decisionDialog')?.open === true")
+        page.evaluate(
+            "document.querySelector('.decision-window').requestSubmit(document.querySelector('#decisionConfirm'))"
+        )
+        page.wait_for_function("document.querySelector('#touchToggle').getAttribute('aria-checked') === 'true'")
+        assert page.locator("#touchHelp").evaluate("el => el.classList.contains('touch-help-touch-input')")
+        assert page.locator(".help-mobile-only").first.evaluate("el => getComputedStyle(el).display !== 'none'")
+        assert page.locator(".help-desktop-only").first.evaluate("el => getComputedStyle(el).display === 'none'")
+        page.locator("#touchToggle").click()
+        assert not page.locator("#touchHelp").evaluate("el => el.classList.contains('touch-help-touch-input')")
+        assert page.locator(".help-mobile-only").first.evaluate("el => getComputedStyle(el).display === 'none'")
+        assert page.locator(".help-desktop-only").first.evaluate("el => getComputedStyle(el).display !== 'none'")
+
         page.evaluate("document.querySelector('#touchLayoutEdit').click()")
         page.wait_for_timeout(1500)
         assert page.locator("#touchLayoutEditor").evaluate("el => !el.hidden"), {
             "errors": errors,
             "status": page.locator("#status").text_content(),
         }
+        editor_url = page.url
+        page.go_back(wait_until="commit")
+        page.wait_for_timeout(100)
+        if page.locator("#decisionDialog").evaluate("el => el.open"):
+            page.evaluate(
+                "document.querySelector('.decision-window').requestSubmit(document.querySelector('#decisionConfirm'))"
+            )
+        page.wait_for_selector("#touchLayoutEditor", state="hidden")
+        assert page.url == editor_url, "system Back must close only the editor history entry"
+        assert not page.locator("#player").evaluate("el => el.classList.contains('touch-layout-edit')")
+        page.evaluate("document.querySelector('#touchLayoutEdit').click()")
+        page.wait_for_selector("#touchLayoutEditor:not([hidden])")
         assert page.locator("#touchRestart").evaluate(
             "el => el.hidden && getComputedStyle(el).display === 'none'"
         ), "disabled R must be actually hidden in the layout editor"

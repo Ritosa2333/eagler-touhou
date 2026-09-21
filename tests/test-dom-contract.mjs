@@ -27,7 +27,7 @@ if (/window\.addEventListener\(["']focus["']\s*,\s*onFocus/.test(script)) {
 
 const escapeControl = html.indexOf('id="touchEscape"');
 const restartControl = html.indexOf('id="touchRestart"');
-const thpracControl = html.indexOf('id="touchThpracInput"');
+const thpracControl = html.indexOf('id="touchThpracTab"');
 if (!(escapeControl >= 0 && restartControl > escapeControl && thpracControl > restartControl)) {
   throw new Error("按键布局顺序必须保持 ESC → R → thprac");
 }

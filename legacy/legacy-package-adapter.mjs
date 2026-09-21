@@ -7,6 +7,16 @@ function normalizedMount(value) {
   return value === "/" ? "" : value.replace(/\/$/, "");
 }
 
+function assertRequiredSharedResources(game, baseFiles, files) {
+  const required = PRODUCT_GAMES[game]?.requiredShared || [];
+  if (!required.length) return;
+  const targets = new Set(baseFiles.map(fileId => files[fileId]?.target).filter(Boolean));
+  const missing = required.filter(target => !targets.has(target));
+  if (missing.length) {
+    throw new Error(`legacy package is missing required shared resources: ${missing.join(", ")}`);
+  }
+}
+
 // Adapts already-persisted historical import state into the same Package
 // shape. This is the retirement bridge for pre-Package-Store browser data;
 // callers should delete the historical storage only after Package commit.
@@ -100,6 +110,7 @@ export function adaptLegacyStoredImportToPackage(state, { protocol, origin } = {
     base: { files: baseFiles },
     components,
   };
+  assertRequiredSharedResources(game, baseFiles, files);
   validatePackageDescriptor(descriptor);
   return { descriptor, files: parsedFiles, legacy: true, storedMigration: true };
 }
@@ -206,6 +217,7 @@ export function adaptLegacyGamePackToPackage(pack, { protocol } = {}) {
     base: { files: baseFiles },
     components,
   };
+  assertRequiredSharedResources(manifest.game, baseFiles, files);
   validatePackageDescriptor(descriptor);
   return { descriptor, files: parsedFiles, legacy: true };
 }

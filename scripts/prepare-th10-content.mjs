@@ -4,6 +4,7 @@ import { basename, join, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { TH10_MUSIC_LAYOUT, TH10_MUSIC_NAMES } from "../lib/th10-content-layout.mjs";
+import { assertOggProductionBaseline, pinOggSerial } from "../lib/ogg-production-baseline.mjs";
 
 const PCM_BYTES_PER_FRAME = 4;
 
@@ -23,6 +24,7 @@ const sourceMusic = join(original, "thbgm.dat");
 const outputArchive = join(output, "th10.data");
 const outputMusic = join(output, "bgm-ogg");
 const provenancePath = join(output, "provenance.json");
+const baselinePath = resolve(import.meta.dirname, "../host/ogg-baselines/th10.json");
 
 const digest = bytes => createHash("sha256").update(bytes).digest("hex");
 
@@ -56,6 +58,12 @@ if (TH10_MUSIC_LAYOUT.length !== 18 || TH10_MUSIC_NAMES.length !== TH10_MUSIC_LA
 
 const archiveBytes = await readFile(sourceArchive);
 const musicBytes = await readFile(sourceMusic);
+const baselineBytes = await readFile(baselinePath);
+const baseline = JSON.parse(baselineBytes);
+if (baseline.schema !== "eagler-touhou/ogg-server-baseline/1" || baseline.game !== "th10" ||
+    baseline.quality !== 5 || !baseline.files || typeof baseline.files !== "object") {
+  throw new Error(`Invalid TH10 production OGG baseline: ${baselinePath}`);
+}
 const ffmpeg = ffmpegVersion();
 const records = TH10_MUSIC_LAYOUT.map((row, index) => ({
   filename: `th10_${TH10_MUSIC_NAMES[index]}.wav`,
@@ -80,6 +88,7 @@ const sourceIdentity = {
   archive: { name: basename(sourceArchive), bytes: archiveBytes.length, sha256: digest(archiveBytes) },
   music: { name: basename(sourceMusic), bytes: musicBytes.length, sha256: digest(musicBytes) },
   layout: { records: layoutIdentity, sha256: digest(Buffer.from(JSON.stringify(layoutIdentity))) },
+  productionBaseline: { name: basename(baselinePath), sha256: digest(baselineBytes) },
   ffmpeg,
   encoder: { codec: "libvorbis", quality: 5 },
 };
@@ -95,18 +104,29 @@ if (!existsSync(outputArchive) || digest(await readFile(outputArchive)) !== sour
 const outputs = [];
 for (const record of records) {
   const target = join(output, record.oggPath);
+  const outputName = basename(record.oggPath);
+  const expected = baseline.files[outputName];
+  if (!expected || !Number.isInteger(expected.bytes) || !/^[a-f0-9]{64}$/i.test(expected.sha256 || "") ||
+      !/^0x[a-f0-9]{1,8}$/i.test(expected.serial || "")) {
+    throw new Error(`Missing or invalid TH10 production OGG baseline for ${outputName}`);
+  }
   const old = sameInput ? previous.tracks.find(item => item.filename === record.filename) : null;
   let bytes;
   let action = "reused";
-  if (old?.output && existsSync(target) && digest(await readFile(target)) === old.output.sha256) {
+  if (old?.output && existsSync(target) && digest(await readFile(target)) === expected.sha256) {
     bytes = await readFile(target);
   } else {
-    bytes = encodeOgg(musicBytes.subarray(record.offset, record.offset + record.length), record);
+    bytes = pinOggSerial(
+      encodeOgg(musicBytes.subarray(record.offset, record.offset + record.length), record),
+      Number.parseInt(expected.serial, 16),
+    );
+    assertOggProductionBaseline(bytes, expected, outputName);
     action = "encoded";
     const temporary = `${target}.tmp-${process.pid}`;
     await writeFile(temporary, bytes);
     await rename(temporary, target);
   }
+  assertOggProductionBaseline(bytes, expected, outputName);
   outputs.push({
     filename: record.filename,
     oggPath: record.oggPath,

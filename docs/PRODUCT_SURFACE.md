@@ -80,7 +80,7 @@ Service Worker storage/offline model.
 - Separate portrait and landscape touch-layout profiles, shared across
   supported Launcher products rather than maintained once per game.
 - Saved horizontal game-viewport placement as part of each orientation profile.
-- Optional thprac simulated-mouse/Tab/cheat-menu controls participate in the
+- Optional thprac Tab/cheat-menu controls participate in the
   same layout editor when that feature is enabled.
 - Touch sensitivity.
 - Low-speed control modes.
@@ -146,7 +146,7 @@ hard-coded site promise.
 - Portable thprac integration.
 - TH08 includes source-level section/ECL/STD patches, its game-specific resource,
   gauge, time, night, familiar and rank parameters, and embedded Replay metadata.
-- Touch-device simulated mouse/control affordances needed by the practice UI.
+- Direct touch pointing and optional function-key controls needed by the practice UI.
 - Runtime/Host verification requires the corresponding capability attestation;
   a host must not advertise thprac merely because a UI toggle exists.
 

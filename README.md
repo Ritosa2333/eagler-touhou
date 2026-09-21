@@ -6,7 +6,7 @@
   <p>简体中文 | <a href="README.en.md">English</a></p>
   <p>一个在 Web 上运行东方 Project 原作的<strong>游戏启动器</strong>和<strong>联机平台</strong>。</p>
   <p>
-    <a href="https://qm.qq.com/q/lNOiECzKFi?from=tim"><img src="https://img.shields.io/badge/QQ%20Group-1121412929-12B7F5?logo=tencentqq" alt="QQ Group 1121412929"></a>
+    <a href="https://qm.qq.com/q/eeUrxIltug?from=tim"><img src="https://img.shields.io/badge/QQ%20Group-1124121427-12B7F5?logo=tencentqq" alt="QQ Group 1124121427"></a>
     <img src="https://img.shields.io/badge/Node.js-%3E%3D22-43853d" alt="Node.js >=22">
     <img src="https://img.shields.io/badge/Python-3-3776ab" alt="Python 3">
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg" alt="License: GPL-3.0-or-later"></a>

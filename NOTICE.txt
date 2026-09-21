@@ -1,4 +1,4 @@
 本项目是[车万云](https://cloud.touhou.best/)的一个子项目。
+反馈问题前，请先阅读页面右上角的[常见问题页](faq.html)。
 如需要交流、联机、反馈等，欢迎加 [QQ群](https://qm.qq.com/q/eeUrxIltug) 或在 [B站](https://www.bilibili.com/video/BV1yogK69EVy) 留言。
-反馈问题前，请先阅读[常见问题](faq.html)。
-项目真不是屎山了！你的 Star 对我非常重要！[Github](https://github.com/YomotsuHisami/eagler-touhou)
+你的 Star 对我非常重要！[Github](https://github.com/YomotsuHisami/eagler-touhou)

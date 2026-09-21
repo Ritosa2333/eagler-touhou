@@ -38,6 +38,20 @@ async function compileAttestation(build) {
   }
 }
 
+async function directoryFeatureAttestation(game, build) {
+  const manifest = JSON.parse(await readFile(resolve(build, "manifest.json"), "utf8"));
+  if (manifest.game !== game || manifest.protocol !== "eagler-touhou/1") {
+    throw new Error(`${game}: invalid directory Runtime manifest`);
+  }
+  return Object.fromEntries(["thprac", "languages", "focusHitbox"].map(feature => {
+    const value = manifest.features?.[feature];
+    if (value != null && typeof value !== "boolean") {
+      throw new Error(`${game}: invalid directory Runtime feature attestation: ${feature}`);
+    }
+    return [feature, value === true];
+  }));
+}
+
 async function copyVariant(game, build, root, variant) {
   const stem = runtimeStem(game);
   const html = await readFile(resolve(build, `${stem}.html`), "utf8");
@@ -100,16 +114,19 @@ for (const game of Object.keys(PRODUCT_GAMES)) {
     dataLayout = PRODUCT_CONTENT[game]?.dataLayout;
   }
 
-  const compile = await compileAttestation(normalBuild);
+  const directoryFeatures = product.runtimeFileLayout === "directory"
+    ? await directoryFeatureAttestation(game, normalBuild)
+    : null;
+  const compile = directoryFeatures ? "" : await compileAttestation(normalBuild);
   games[game] = {
     dataProvider: product.dataProvider,
     dataLayout,
     runtime,
     ...(multiplayerRuntime ? { multiplayerRuntime } : {}),
     features: {
-      thprac: !!product.features.thprac && compile.includes("THPRAC_PORTABLE_ENABLED=1"),
-      languages: !!product.features.languages && compile.includes("-DTH_ENABLE_THCRAP "),
-      focusHitbox: !!product.features.focusHitbox && !!normalLayout?.files.some(([path]) => path === "/eagler-hitbox.png"),
+      thprac: !!product.features.thprac && (directoryFeatures?.thprac === true || compile.includes("THPRAC_PORTABLE_ENABLED=1")),
+      languages: !!product.features.languages && (directoryFeatures?.languages === true || compile.includes("-DTH_ENABLE_THCRAP ")),
+      focusHitbox: !!product.features.focusHitbox && (directoryFeatures?.focusHitbox === true || !!normalLayout?.files.some(([path]) => path === "/eagler-hitbox.png")),
     },
   };
 }

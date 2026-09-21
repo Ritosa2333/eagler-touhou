@@ -1,6 +1,7 @@
 export const PLAYER_HISTORY_KEY = "eaglerTouhouPlayer";
 export const MP_ROOM_HISTORY_KEY = "eaglerTouhouMpRoom";
 export const MP_ROOM_URL_KEY = "mpRoom";
+export const TOUCH_LAYOUT_HISTORY_KEY = "eaglerTouhouTouchLayoutEditor";
 
 export type HistoryState = Record<string, unknown>;
 
@@ -180,6 +181,22 @@ export function playerRouteHistoryOperation({
     return { kind: "replace", state: nextState, url: url.href };
   }
   return null;
+}
+
+export function touchLayoutEditorHistoryOperation({
+  currentUrl,
+  currentState,
+}: {
+  currentUrl: string | URL;
+  currentState: unknown;
+}): HistoryOperation {
+  const nextState = historyState(currentState);
+  nextState[TOUCH_LAYOUT_HISTORY_KEY] = true;
+  return {
+    kind: "push",
+    state: nextState,
+    url: new URL(currentUrl).href,
+  };
 }
 
 export function directRoomHistorySeed({

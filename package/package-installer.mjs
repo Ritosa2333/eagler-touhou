@@ -90,15 +90,16 @@ async function invalidReusableFileIds(current, descriptor, desiredFileIds) {
   return [...invalid];
 }
 
-async function stageWhenAvailable(generation, { source, operationId: owner, signal }) {
+async function stageWhenAvailable(generation, { source, operationId: owner, signal, webLockHeld = false }) {
   while (true) {
     throwIfAborted(signal);
     try {
-      return await stagePendingPackageGeneration(generation, { source, operationId: owner });
+      return await stagePendingPackageGeneration(generation, { source, operationId: owner, webLockHeld });
     } catch (error) {
       if (error?.name !== "PackageMutationBusyError") throw error;
-      // IndexedDB is the cross-document authority. Polling here is only the
-      // waiter; it never cancels or overwrites somebody else's staging state.
+      // Web Locks serialize current browsers. IndexedDB remains the durable
+      // fallback/compatibility authority, so polling here only waits for a
+      // genuinely live legacy/non-WebLock owner.
       await delay(100);
     }
   }
@@ -110,6 +111,18 @@ function abortedDownloadError() {
   return error;
 }
 
+async function withPackageWebLock(game, signal, operation) {
+  const locks = globalThis.navigator?.locks;
+  if (!locks?.request) return operation(false);
+  const options = signal ? { mode: "exclusive", signal } : { mode: "exclusive" };
+  try {
+    return await locks.request(`eagler-touhou-package:${game}`, options, () => operation(true));
+  } catch (error) {
+    if (signal?.aborted || error?.name === "AbortError") throw abortedDownloadError();
+    throw error;
+  }
+}
+
 async function installPackageFromAcquisitionExclusive({
   descriptor,
   desiredFileIds,
@@ -118,7 +131,7 @@ async function installPackageFromAcquisitionExclusive({
   reuseCurrent = source === "remote",
   onProgress = null,
   signal = null,
-}) {
+}, webLockHeld = false) {
   const currentResult = reuseCurrent
     ? await readCurrentPackageGeneration(descriptor.game)
     : { installation: null, generation: null };
@@ -150,7 +163,7 @@ async function installPackageFromAcquisitionExclusive({
   });
   const owner = operationId();
   throwIfAborted(signal);
-  await stageWhenAvailable(plan.generation, { source: resolvedSource, operationId: owner, signal });
+  await stageWhenAvailable(plan.generation, { source: resolvedSource, operationId: owner, signal, webLockHeld });
   const heartbeat = setInterval(() => {
     void refreshPendingPackageOperation(descriptor.game, plan.generation.id, owner).catch(() => {});
   }, 30_000);
@@ -229,7 +242,9 @@ async function installPackageFromAcquisitionExclusive({
 
 export async function installPackageFromAcquisition(options) {
   validatePackageDescriptor(options?.descriptor);
-  return packageMutations.run(options.descriptor.game, () => installPackageFromAcquisitionExclusive(options));
+  return packageMutations.run(options.descriptor.game, () =>
+    withPackageWebLock(options.descriptor.game, options.signal, webLockHeld =>
+      installPackageFromAcquisitionExclusive(options, webLockHeld)));
 }
 
 export async function installPackageFromZip(blob, { onProgress = null } = {}) {

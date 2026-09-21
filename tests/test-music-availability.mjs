@@ -48,7 +48,6 @@ const effective = overrides => resolveEffectiveMusicMode({
   audio: true,
   midiAvailable: true,
   importServer: false,
-  publishedOggCapable: true,
   remoteOggAdvertised: true,
   remoteRevision: null,
   installed,
@@ -61,13 +60,12 @@ assert.equal(effective({ remoteRevision: "r1" }), "ogg-full");
 assert.equal(effective({ importServer: true, remoteRevision: "r1" }), "midi");
 files.track2 = { objectId: "b" };
 assert.equal(effective({ importServer: true }), "ogg-full");
-assert.equal(effective({ importServer: true, publishedOggCapable: false, remoteOggAdvertised: false }), "ogg-full",
+assert.equal(effective({ importServer: true, remoteOggAdvertised: false }), "ogg-full",
   "fully installed local OGG must not depend on Host-published OGG/WAV capability");
 assert.deepEqual(resolveMusicAvailability({
   audio: true,
   midiAvailable: true,
   importServer: true,
-  publishedOggCapable: false,
   remoteOggAdvertised: false,
   installed,
 }), {
@@ -77,23 +75,76 @@ assert.deepEqual(resolveMusicAvailability({
   remoteOgg: false,
   ogg: true,
 }, "local Package OGG must be exposed to both single-player and multiplayer UI");
+
+const progressiveInstalled = {
+  revision: "r1",
+  oggFileIds: ["track1", "track2", "track3", "track4"],
+  files: {
+    track1: { objectId: "a" },
+    track2: { objectId: "b" },
+  },
+};
+assert.deepEqual(resolveMusicAvailability({
+  audio: true,
+  midiAvailable: true,
+  importServer: true,
+  remoteOggAdvertised: false,
+  installed: progressiveInstalled,
+}), {
+  audio: true,
+  midi: true,
+  localOgg: true,
+  remoteOgg: false,
+  ogg: true,
+}, "the first two persisted OGG tracks are the local startup barrier; later progressive tracks may still be missing");
+assert.equal(resolveEffectiveMusicMode({
+  requested: "ogg-stream",
+  explicit: true,
+  audio: true,
+  midiAvailable: true,
+  importServer: true,
+  remoteOggAdvertised: false,
+  installed: progressiveInstalled,
+}), "ogg-stream", "leaving during progressive OGG installation must not change the effective music option to MIDI/none");
+delete progressiveInstalled.files.track2;
+assert.equal(resolveEffectiveMusicMode({
+  requested: "ogg-stream",
+  explicit: true,
+  audio: true,
+  midiAvailable: true,
+  importServer: true,
+  remoteOggAdvertised: false,
+  installed: progressiveInstalled,
+}), "midi", "one persisted startup track is not enough to claim local OGG launch readiness");
+
 assert.equal(effective({ requested: "none" }), "none");
 assert.equal(effective({ remoteRevision: "other", installed: { ...installed, files: {} } }), "midi");
+assert.equal(effective({
+  requested: "ogg-stream",
+  explicit: true,
+  remoteOggAdvertised: false,
+  remoteRevision: "r1",
+  installed: { ...installed, files: {} },
+}), "ogg-stream", "matching Release Catalog revision must preserve remote OGG capability even when Host Manifest does not duplicate music.ogg");
 assert.equal(effective({
   requested: "midi",
   explicit: false,
   remoteRevision: "r1",
   installed: { ...installed, files: { track1: { objectId: "a" } } },
 }), "midi", "a partial install may use matching remote OGG when explicitly requested but must not force an implicit MIDI choice back to OGG");
-assert.equal(effective({ midiAvailable: false, installed: { ...installed, files: {} } }), "none",
-  "fallback must respect a product that has no MIDI publication");
+assert.equal(effective({ midiAvailable: false, remoteRevision: "r1", installed: { ...installed, files: {} } }), "ogg-full",
+  "matching remote OGG remains available even when MIDI is unsupported");
+assert.equal(effective({
+  midiAvailable: false,
+  remoteRevision: "other",
+  installed: { ...installed, files: {} },
+}), "none", "without local OGG, MIDI, or a matching remote generation there is no music capability");
 assert.equal(resolveEffectiveMusicMode({
   requested: "ogg-stream",
   explicit: true,
   audio: true,
   midiAvailable: true,
   importServer: false,
-  publishedOggCapable: true,
   remoteOggAdvertised: true,
   installed: null,
 }), "ogg-stream");
