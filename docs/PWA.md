@@ -14,7 +14,7 @@ native install prompt where available, otherwise browser installation guidance.
 It also explains separate browser/app storage, requests persistent storage only
 on an explicit click and reports unavailable/denied permissions without blocking
 Launcher initialization. Its Chinese/English copy follows the document locale.
-No new persistent data store or migration format is introduced.
+Package Store formats, installed original-game data and saves are unchanged.
 
 Installation is NOT an offline game-readiness signal. The dialog distinguishes
 cached Launcher/Runtime components from game, music and font packages. Package
@@ -22,44 +22,91 @@ Store remains the authority for game resources and saves. Multiplayer and
 resource downloads remain online features. Export saves; neither installation
 nor a successful `persist()` request protects against manual data removal.
 
-## Update contract
+## Launcher update contract
 
-`src/app-shell-sw.js` remains the only Launcher/App Runtime caching authority.
+`app-shell-sw.js` remains the only registered caching worker. The build combines
+`src/app-shell-sw.js` and `src/runtime-cache-sw.js` into that artifact.
 `app-shell-client.mts` owns registration; optional `pwa.mts` UI does not register
 a second worker or await Service Worker/storage promises during boot.
 
-- A candidate does NOT call `skipWaiting()` or `clients.claim()`. Existing
-  windows keep their controlling worker. Close all site/app windows to apply
-  an update; refreshing one window is not a safe update action. A first visit
-  remains network-controlled until its next navigation. The client's `ready`
-  waits for first activation (bounded, without waiting for control), so normal
-  Runtime preparation does not treat registration alone as successful activation.
+- A Launcher candidate does NOT call `skipWaiting()` or `clients.claim()`.
+  Existing windows keep their controlling worker. Closing all site/app windows
+  applies the Launcher update. This does NOT delay a new game's Runtime update:
+  Runtime selection below runs on every launch independently of SW activation.
+- A first visit remains uncontrolled until its next navigation. The client's
+  `ready` waits for first activation (bounded, without waiting for control), so
+  Runtime preparation does not mistake registration for successful activation.
 - A waiting candidate is distinct from an activated replacement. The client
   must not schedule reloads while waiting, and rechecks Launcher activity in
   the scheduled reload task for externally activated/legacy replacements.
-- Initial visits defer Runtime downloads. A replacement prepares all published
-  App-owned Runtime entries before completing installation. Preparing only
-  the previously used games is insufficient: a user can first install another
-  game while the candidate is waiting. Unchanged verified files are reused;
-  original game data/music packages are never pulled into the App Shell.
-- Workbox's manifest revisions use SHA-256 for both mapped and globbed files.
-  Network responses must match before caching. A 200 HTML fallback, wrong build,
-  failed fetch or quota failure cannot be committed as a successful candidate.
-  The initial transition refetches unverified legacy cache bytes.
-- Cache names include the mount path. Legacy cache ownership is checked by the
-  exact scoped metadata URL. Cleanup retains the current and previous scoped
-  generations, not other same-origin deployments, Package Store or saves.
-- Failed installation drains its concurrent writers before removing only its
-  candidate cache. A failed update leaves the existing worker available.
+- Initial visits defer Runtime downloads. A Launcher replacement prepares all
+  published App-owned Runtime entries before completing installation, including
+  new dependencies. Original game data/music stay in Package Store.
+- SHA-256 identifies actual bytes, not just cache labels. An HTTP 200 HTML
+  fallback, wrong build, failed fetch or quota failure cannot be committed as a
+  successful candidate. Failed installation drains writers before cleanup.
+- Activation does not delete old shell caches: it can occur during browser
+  shutdown, before the replacement registration is persisted. Cleanup follows
+  a live client's update-status request, retains the previous actually used
+  shell and leaves newer/waiting candidates alone. It is not a boot dependency.
+- Cache ownership is mount-scoped. Other deployments, Package Store and saves
+  are never cleanup targets.
+
+## Runtime: latest on this launch, automatic usable rollback
+
+Public HTML, shell, glue and Wasm URLs remain unchanged. Deployers do not manage
+version directories, and the user does not choose or enter a version ID.
+
+On every Runtime entry navigation, the worker immediately reads a fresh catalog
+from a JSON-only comment in the current `app-shell-sw.js` response. It uses
+`cache: no-store`, bounded fetches, schema/path validation and `JSON.parse` only;
+it does not evaluate downloaded worker source or add another public endpoint.
+The catalog is emitted from the same build's SHA-256 manifest.
+
+The entire Runtime set is selected before returning HTML or executing glue:
+
+1. Try the just-published set now, reusing only bytes that match its hashes.
+   Fetch missing files into a private candidate cache with two concurrent writers.
+   Mark it complete only after every declared dependency has been verified.
+2. If that attempt fails, find a complete verified local set and launch it.
+   Never replace one missing Wasm independently under older executing glue.
+   Also consider a newer complete set already prepared by the Launcher worker;
+   do not let an older embedded catalog undo a more recent successful launch.
+3. With no complete snapshot, try rebuilding the embedded known set from legacy
+   cache bytes, checking actual hashes rather than old `runtimeTrusted` labels.
+   A fresh network-catalog retry covers publication completing mid-attempt.
+
+The last observed server release is preferred on later offline starts, including
+an operator rollback that reuses an older snapshot. Every subsequent online
+launch still immediately tries the currently published release.
+
+Private CacheStorage metadata pins each browser client to its selected complete
+snapshot before delivering its entry document. Subsequent ESM imports, Wasm
+requests and dedicated workers retain that pin, even when another tab starts a
+newer Runtime. Pins survive worker-process termination. Delivered Runtime
+responses use `Cache-Control: no-store` so normal HTTP/memory caches cannot
+alias different clients' resources merely because the public URL is identical.
+
+Garbage collection retains the two latest complete Runtime snapshots plus live
+and in-flight client pins. An uncommitted candidate is never allowed to delete
+the usable fallback. This does use extra storage for recovery; it never clears
+game packages or saves to make room for an update.
+
+A complete set means verified build coherence, not proof that a new game engine
+has no gameplay bugs. If all usable local copies have been manually removed or
+evicted and the server is also unavailable, no missing program can be restored
+from nothing. This is not treated as a successful offline-readiness state.
+The first transition from a previously deployed legacy worker requires the new
+worker code to become active; code already executing in an old client cannot be
+retroactively repaired. No website-data clearing is part of this update flow.
 
 Keep release publication atomic and retain the existing deployment verifier.
-Integrity validation detects bad publication; it is not a substitute for it.
+Integrity validation and rollback do not replace a coherent server release.
 
 ## Reproducible browser lane
 
-The default repository gate still owns the Node behavior tests. The explicit
-`.github/workflows/pwa-browsers.yml` lane runs Playwright Chromium, WebKit and
-Firefox with the locked browser requirements:
+`.github/workflows/pwa-browsers.yml` runs Chromium, WebKit and Firefox with the
+locked browser requirements. Both browser suites and all assertions are required:
 
 ```sh
 npm ci --ignore-scripts
@@ -67,37 +114,39 @@ python -m pip install -r tests/requirements-browser.txt
 python -m playwright install --with-deps chromium webkit firefox
 npm run build:launcher
 npm run build:content
+node tests/runtime-cache-cases.mjs
+node tests/shell-handoff-cases.mjs
+python tests/browser/runtime-recovery-cases.py --browser=webkit
 python tests/browser/test-pwa-boot.py --browser=webkit
 ```
 
-Repeat with `chromium` and `firefox`. The fixture builds the real published
-Launcher and production worker. It covers root/nested and localized/query
-entries, restricted optional APIs, offline reload, HTTP-503 server outage,
-fresh-process offline startup, multi-window waiting, a corrupt candidate,
-scoped-cache isolation and an iframe -> ESM -> WASM dependency added by an
-update. Tests must observe behavior, not merely find strings in source.
+Repeat with `chromium` and `firefox`. The real published Launcher and production
+SW surround small original-resource-free Runtimes. Their actual Wasm binaries
+call different EM_ASM-like addresses, and mismatched glue/Wasm really throws.
+Coverage requires successful execution after latest-first update, corrupt-new
+fallback, offline fallback, partial-new-cache rollback, network restoration,
+multi-tab/late-import/module-worker isolation and fresh-process offline startup.
+Node cases additionally cover timeouts, quota failure, persisted pins, poisoned
+legacy cache migration, server rollback ordering and shutdown cache retention.
 
-The small WASM module is explicitly synthetic. Passing this lane does NOT prove
-TH06/TH07/TH08/TH10 gameplay, physical iOS Home Screen installation, platform
-storage sharing, touch, audio resume or storage-pressure behavior. Do not label
-Playwright WebKit as an iPhone/iPad test.
+The existing suite also covers root/nested and localized/query entries, optional
+APIs being restricted, icons, multi-window Launcher waiting, HTTP 503, a corrupt
+candidate and scoped-cache isolation. Passing these tests does NOT prove real
+TH06/TH07/TH08/TH10 gameplay, physical iOS installation, touch or audio resume.
 
 ### Offline injection and the WebKit driver
 
 An independent literal-response Service Worker probes offline emulation before
-any application code is loaded. The currently reported Playwright WebKit issue
-<https://github.com/microsoft/playwright/issues/42775> rejects even that response
-with an internal error under `setOffline(true)`. Only if this exact failure is
-reproduced does the lane switch to dropping origin TCP connections without an
-HTTP response. It keeps every application boot/update assertion and verifies
-that a non-cached negative-control fetch really fails. The JSON log records the
-chosen fault-injection method; no app failure triggers this fallback.
+application code loads. Only when it reproduces the specific internal WebKit
+error reported at <https://github.com/microsoft/playwright/issues/42775> does the
+lane replace `setOffline(true)` with origin TCP connection drops. An application
+failure never triggers this fallback. No application assertions are removed.
 
-Origin-connection failure is not identical to airplane mode or
-`navigator.onLine === false`. A green WebKit lane using this mode proves cached
-startup with the origin unreachable, not WebKit device-offline emulation or a
-physical iPhone's offline behavior. Chromium/Firefox keep native emulation when
-the independent probe succeeds. Physical-device acceptance remains required.
+The Runtime recovery suite additionally drops origin connections on every engine
+and does so before starting a cold browser process. Page-only offline flags must
+not accidentally permit the SW's own network process to reach the server.
+A non-cached negative-control request must also fail. Logs record fault injection.
+Origin unavailability does not prove physical airplane-mode behavior.
 
 ## Release acceptance beyond this lane
 
@@ -106,7 +155,8 @@ Android Chrome/Edge and iOS/iPadOS Safari Home Screen, test installing each of
 the four games through the normal UI, first launch offline, selected music and
 fonts, process termination/relaunch, background/audio resume and interrupted
 installation/update. Also test macOS Safari, Windows Chromium and Firefox.
-The generic repository does not contain the originals needed for that gate.
+Do not call Playwright WebKit an iPhone/iPad test or mark these checks complete
+solely because a synthetic Runtime executes successfully.
 
 Useful platform references:
 - https://web.dev/articles/service-worker-lifecycle
