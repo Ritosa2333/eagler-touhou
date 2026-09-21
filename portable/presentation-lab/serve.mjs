@@ -39,6 +39,7 @@ if(existsSync(campaignManifest)){
  }
 }
 const identity={schema:'th08/presentation-lab-build/1',commit:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),wasm:build.sha256,loader:build.loaderSha256,
+  commonCommit:execFileSync('git',['rev-parse','HEAD'],{cwd:resolve(root,'third_party/eagler-common'),encoding:'utf8'}).trim(),
   sourceDigest:sha(JSON.stringify(build.sourceFiles)),snapshot:snapshot||null,instrumented:true,dataAvailable:files.has('/input/th08.dat'),fixtureManifest:existsSync(resolve(input,'manifest.json'))?JSON.parse(readFileSync(resolve(input,'manifest.json'),'utf8')):{},
   evidence:'diagnostic runtime, not production deployment',sampling:'authoritative Draw endpoints + frozen alpha sweep'};
 function currentIdentity(){

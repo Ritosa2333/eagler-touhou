@@ -34,6 +34,7 @@ const commonController=read('third_party/eagler-common/testkit/presentation-lab/
 assert.match(labController,/import \{PresentationLabControllerCore\}/);
 assert.match(labController,/third_party\/eagler-common\/testkit\/presentation-lab\/controller-core\.mjs/);
 assert.match(labServer,/third_party\/eagler-common\/testkit\/presentation-lab/);
+assert.match(labServer,/commonCommit:execFileSync\('git',\['rev-parse','HEAD'\]/);
 assert.match(commonController,/class PresentationLabControllerCore/);
 assert.doesNotMatch(shell,/presentation-mark|gameGeneration.*presentation-lab/);
 assert.match(buildScript,/profile=presentationLab\?'presentation-lab':'sdl3'/);

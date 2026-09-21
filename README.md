@@ -20,6 +20,25 @@ node portable/build.mjs --th08
 
 Build outputs are written below `th08_web/artifacts/` and are intentionally not tracked.
 
+## Presentation Lab
+
+[Presentation Lab](portable/presentation-lab/README.md) is the supported
+diagnostic workbench for TH08 high-refresh presentation. It provides fixed-tick
+stepping, draw-only alpha inspection, fast Replay traversal and bounded evidence
+reports while keeping its instrumented WASM outside the production package.
+
+Run the normal source gate after presentation changes:
+
+```powershell
+node --test portable/presentation-lab/test-analyzer.mjs
+node portable/check-high-refresh-contract.mjs
+node portable/check-presentation-purity.mjs
+```
+
+Build and start the isolated workbench with
+`./portable/presentation-lab/start-lab.ps1 -Build`. The script starts only the
+loopback server; it does not open a browser.
+
 ## Replay logic verification
 
 The [TH08 Replay verifier](tools/replay-verifier/README.md) publishes
