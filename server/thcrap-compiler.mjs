@@ -415,7 +415,9 @@ export function patchThmsgDump(source, diff, version = 6, { ending = false } = {
 
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
     const ascii = lines[lineIndex].toString("ascii");
-    const entryMatch = /^entry (\d+)$/.exec(ascii);
+    // TH10's thmsg -d appends the entry byte size, e.g. "entry 0 (256)";
+    // th06/07/08 emit a bare "entry N". Accept both.
+    const entryMatch = /^entry (\d+)(?: \(\d+\))?$/.exec(ascii);
     if (entryMatch) {
       finishBox();
       entry = Number(entryMatch[1]);
