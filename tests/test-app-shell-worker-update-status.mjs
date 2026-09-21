@@ -70,19 +70,35 @@ assert.equal(a.requests.length, 1, "unused Runtimes stay lazy");
 assert.equal((await a.message({ type: "CACHE_APP_SHELL_PATHS", paths: [runtime] })).ok, true);
 assert.deepEqual((await a.message({ type: "GET_APP_SHELL_STATUS" })).runtimeGroups, ["runtime/th06/"]);
 const extra = "runtime/th06/new-helper.js";
-const b = harness({ stores: a.stores, files: { "./": "b", [runtime]: "wasm-b", [extra]: "helper" }, deferredPaths: [runtime, extra], build: "b" });
+const unused = Object.fromEntries(["th07", "th08", "th10"].map(game => [`runtime/${game}/game.wasm`, game]));
+const b = harness({ stores: a.stores,
+  files: { "./": "b", [runtime]: "wasm-b", [extra]: "helper", ...unused },
+  deferredPaths: [runtime, extra, ...Object.keys(unused)], build: "b" });
 await b.lifecycle("install");
-assert.equal(b.requests.length, 3, "update warms new dependencies of a previously cached Runtime");
+await b.lifecycle("activate");
+assert.deepEqual(b.requests, ["https://example.test/"], "updates do not prewarm even previously used Runtimes or new dependencies");
 const applied = await b.meta();
 assert.equal(applied.updated, true); assert.ok(applied.appliedAt > 0);
 assert.equal((await b.meta()).appliedAt, applied.appliedAt);
+assert.equal(applied.install.deferred, 5);
+assert.deepEqual(applied.runtimeTrusted, {});
+assert.deepEqual((await b.message({ type: "GET_APP_SHELL_STATUS" })).runtimeGroups, []);
+const bCache = await b.caches.open("eagler-touhou-app-shell-%2F-b");
+for (const path of [runtime, extra, ...Object.keys(unused)]) {
+  assert.equal(await bCache.match(`https://example.test/${path}`), undefined, "install does not copy deferred Runtime bytes either");
+}
+assert.equal((await b.message({ type: "CACHE_APP_SHELL_PATHS", paths: [runtime, extra] })).ok, true);
 assert.deepEqual((await b.message({ type: "GET_APP_SHELL_STATUS" })).runtimeGroups, ["runtime/th06/"]);
+assert.deepEqual(b.requests, ["https://example.test/", `https://example.test/${runtime}`, `https://example.test/${extra}`],
+  "explicit preparation fetches only the selected Runtime");
+assert.equal(await (await a.request(runtime)).text(), "wasm-a", "a new preparation leaves the old worker's bytes intact");
 assert.equal((await b.message({ type: "CACHE_APP_SHELL_PATHS", paths: ["https://other.test/x"] })).ok, false);
 assert.equal((await b.message({ type: "CACHE_APP_SHELL_PATHS", paths: ["missing"] })).ok, false);
 
 const reused = harness({ stores: b.stores, build: "reuse", files: { "./": "b", [runtime]: "wasm-b", [extra]: "helper" }, deferredPaths: [runtime, extra], fetchImpl: () => { throw new Error("must reuse"); } });
 await reused.lifecycle("install");
 assert.equal(reused.requests.length, 0);
+assert.deepEqual((await reused.message({ type: "GET_APP_SHELL_STATUS" })).runtimeGroups, [], "replacements do not copy warm Runtime bytes");
 
 const foreign = harness({ stores: a.stores, scope: "https://example.test/nested/", build: "foreign", files: { "./": "nested" } });
 await foreign.lifecycle("install");
@@ -102,14 +118,20 @@ const interrupted = harness({ stores: a.stores, build: "interrupted", files: { "
 await assert.rejects(interrupted.lifecycle("install"), /HTTP 503/);
 assert.deepEqual([...a.stores.keys()].sort(), before, "all writers drain before failed-cache cleanup");
 
-// A user may first install another game AFTER a candidate finishes installing.
-// Preparing only the old warm-group snapshot would lose that game's offline
-// bootstrap when the waiting worker activates without a network.
+// A replacement must not download even a never-used Runtime. Its absence or
+// server failure is not a Launcher installation failure.
 const lazyA = harness({ build: "lazy-a", files: { "./": "a", [runtime]: "a" }, deferredPaths: [runtime] });
 await lazyA.lifecycle("install");
-const lazyB = harness({ stores: lazyA.stores, build: "lazy-b", files: { "./": "b", [runtime]: "b" }, deferredPaths: [runtime] });
+const lazyB = harness({ stores: lazyA.stores, build: "lazy-b", files: { "./": "b", [runtime]: "b" }, deferredPaths: [runtime],
+  fetchImpl: async request => new Response(request.url.endsWith("game.wasm") ? "unavailable" : "b",
+    { status: request.url.endsWith("game.wasm") ? 503 : 200 }) });
 await lazyB.lifecycle("install");
-assert.deepEqual((await lazyB.message({ type: "GET_APP_SHELL_STATUS" })).runtimeGroups, ["runtime/th06/"]);
+await lazyB.lifecycle("activate");
+assert.deepEqual(lazyB.requests, ["https://example.test/"]);
+assert.deepEqual((await lazyB.message({ type: "GET_APP_SHELL_STATUS" })).runtimeGroups, []);
+assert.equal((await lazyB.message({ type: "CACHE_APP_SHELL_PATHS", paths: [runtime] })).ok, false,
+  "the unavailable Runtime fails only when explicitly requested, not during the shell update");
+assert.equal(await (await lazyB.request("./")).text(), "b");
 
 const legacyStores = new Map();
 const legacy = new MemoryCache(); legacyStores.set("eagler-touhou-app-shell-legacy", legacy);
@@ -121,4 +143,4 @@ const migrated = harness({ stores: legacyStores, files: { "./": "fresh" } });
 await migrated.lifecycle("install");
 assert.equal(migrated.requests.length, 1, "legacy revision labels are not proof of verified bytes");
 assert.equal(await (await migrated.request("./")).text(), "fresh");
-console.log("app shell worker update status, integrity, warm updates and scope isolation: PASS");
+console.log("app shell worker update status, integrity, on-demand Runtimes and scope isolation: PASS");

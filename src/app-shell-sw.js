@@ -88,11 +88,10 @@ async function runPool(entries, action) {
 async function precacheShell() {
   const previous = await previousCaches();
   const entries = [...manifestByPathname.values()];
-  // Initial visits stay lazy. Replacements prepare every published Runtime:
-  // users can install another game while this candidate is waiting, so a
-  // snapshot of previously warm groups is not a safe activation boundary.
-  // Unchanged verified bytes are reused; original game packages stay separate.
-  const required = entries.filter(entry => !DEFERRED_PATHS.has(entry.cacheUrl) || previous.length > 0);
+  // First installs and replacements both cache only the Launcher shell.
+  // Runtime preparation belongs to the selected game's on-demand transaction;
+  // an unrelated Runtime must not delay or fail a Launcher update.
+  const required = entries.filter(entry => !DEFERRED_PATHS.has(entry.cacheUrl));
   const cache = await caches.open(CACHE_NAME);
   const metadata = {
     build: "__APP_SHELL_BUILD_ID__", createdAt: Date.now(), appliedAt: null,

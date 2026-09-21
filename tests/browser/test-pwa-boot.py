@@ -30,11 +30,22 @@ def build(directory, version):
 class Handler(SimpleHTTPRequestHandler):
     unavailable = False
     drop_connections = False
+    runtime_requests = []
+    request_lock = threading.Lock()
     extensions_map = {**SimpleHTTPRequestHandler.extensions_map,
                       ".mjs": "text/javascript", ".js": "text/javascript",
                       ".wasm": "application/wasm", ".webmanifest": "application/manifest+json"}
 
+    @classmethod
+    def runtime_hits(cls, prefix="/runtime/"):
+        with cls.request_lock:
+            return [path for path in cls.runtime_requests if path.startswith(prefix)]
+
     def do_GET(self):
+        path = self.path.split("?", 1)[0]
+        if "/runtime/" in path:
+            with self.request_lock:
+                self.runtime_requests.append(path)
         if self.drop_connections:
             # Real transport failure, no HTTP response and no page/SW routing
             # mock. This is origin unavailability, NOT device airplane mode.
@@ -177,6 +188,8 @@ def main():
                 event.respondWith(new Response('<!doctype html><h1>Literal worker response</h1>',
                     { headers: { 'Content-Type': 'text/html' } }));
         });""", encoding="utf-8")
+        with Handler.request_lock:
+            Handler.runtime_requests.clear()
         server = ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Handler, directory=str(site)))
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
@@ -186,13 +199,13 @@ def main():
             with sync_playwright() as playwright:
                 engine = getattr(playwright, args.browser)
                 emulation_supported = probe_offline_emulation(engine, origin)
-                outage_mode = "browser-offline-emulation" if emulation_supported else "origin-connection-drop"
+                outage_mode = "browser-offline-plus-origin-drop" if emulation_supported else "origin-connection-drop"
 
                 def set_outage(context, enabled):
+                    # Cover the worker's network process as well as page fetches.
+                    Handler.drop_connections = enabled
                     if emulation_supported:
                         context.set_offline(enabled)
-                    else:
-                        Handler.drop_connections = enabled
 
                 print(json.dumps({"browser": args.browser, "outage_mode": outage_mode,
                                   "device_airplane_mode_verified": False}), flush=True)
@@ -209,6 +222,8 @@ def main():
                 boot(page, origin)
                 assert page.evaluate("!!navigator.serviceWorker.controller")
                 assert status(page)["build"] == build_a
+                assert status(page)["runtimeGroups"] == []
+                assert Handler.runtime_hits() == [], "first installation fetched a Runtime"
                 mark("initial-install-and-controlled-navigation")
                 icons = page.evaluate("""async () => {
                     const manifest = await (await fetch('site.webmanifest')).json();
@@ -237,6 +252,7 @@ def main():
                 mark("restricted-optional-APIs")
 
                 boot(page, origin)
+                assert Handler.runtime_hits() == [], "visiting the Launcher must not prepare games"
                 # Cache, but do not launch, the fixture before going offline.
                 result = page.evaluate("""async () => {
                     const r = await navigator.serviceWorker.getRegistration('./');
@@ -249,6 +265,8 @@ def main():
                     });
                 }""")
                 assert result["ok"]
+                assert status(page)["runtimeGroups"] == ["runtime/pwa-test/"]
+                assert Handler.runtime_hits("/runtime/pwa-unused/") == []
                 set_outage(context, True)
                 boot(page, origin)
                 launch_fixture(page, origin, "a")
@@ -263,11 +281,15 @@ def main():
                 nested.close()
                 other = context.new_page()
                 boot(other, origin)
+                before_update = Handler.runtime_hits()
                 build_b = build(site, "b")
+                # A broken unselected game cannot block the Launcher update.
+                (site / "runtime/pwa-unused/empty.wasm").unlink()
                 page.evaluate("async () => (await navigator.serviceWorker.getRegistration('./')).update()")
                 wait_async(page, """async () => !!(await navigator.serviceWorker.getRegistration('./'))?.waiting""")
                 assert status(page)["build"] == build_a
                 assert status(other)["build"] == build_a
+                assert Handler.runtime_hits() == before_update, "SW update eagerly fetched Runtime bytes"
                 # A refresh and closing just one window must not activate B.
                 boot(page, origin)
                 assert status(page)["build"] == build_a
@@ -277,18 +299,33 @@ def main():
                 mark("multi-window-native-waiting")
                 page = context.new_page()
                 page.wait_for_timeout(500)
+                assert Handler.runtime_hits() == before_update, "activation eagerly fetched Runtime bytes"
+                mark("shell-update-with-broken-unselected-Runtime-fetches-no-Runtimes")
                 set_outage(context, True)
                 boot(page, origin)
                 assert status(page)["build"] == build_b
-                launch_fixture(page, origin, "b")  # includes newly introduced helper.mjs
+                # B updated only the shell; A is still the complete offline set.
+                launch_fixture(page, origin, "a")
+                assert status(page)["runtimeGroups"] == ["runtime/pwa-test/"]
+                assert_network_unavailable(page, origin)
+                mark("shell-update-offline-retains-previous-complete-Runtime")
+                set_outage(context, False)
+                launch_fixture(page, origin, "b")  # fetch the selected group's new dependencies now
+                assert len(Handler.runtime_hits("/runtime/pwa-test/")) > len(before_update)
+                assert Handler.runtime_hits("/runtime/pwa-unused/") == [], "launch fetched another Runtime"
+                mark("on-demand-launch-fetches-only-selected-latest-Runtime")
+                set_outage(context, True)
+                boot(page, origin)
+                launch_fixture(page, origin, "b")
                 mark("updated-runtime-and-new-dependency-offline")
                 boot(page, origin + "nested/")
                 mark("nested-scope-cache-survives-root-update")
                 set_outage(context, False)
                 boot(page, origin)
-                # HTTP 200 with the wrong bytes must fail the candidate update.
+                # A corrupt SHELL must fail installation. Runtime failures belong
+                # to on-demand selection and are exercised by runtime-recovery.
                 build(site, "c")
-                (site / "runtime/pwa-test/helper.mjs").write_text("export const version = 'corrupt';\n", encoding="utf-8")
+                (site / "index.html").write_text("<!doctype html><title>corrupt shell</title>\n", encoding="utf-8")
                 page.evaluate("""async () => {
                     window.__candidateFailed = false;
                     const r = await navigator.serviceWorker.getRegistration('./');
@@ -307,6 +344,7 @@ def main():
                 mark("server-503-offline-fallback")
                 context.close()
                 # Persistent profile, fresh browser process, no reachable server.
+                Handler.drop_connections = True
                 cold = engine.launch_persistent_context(str(work / "profile"), headless=True)
                 set_outage(cold, True)
                 cold_page = cold.new_page()
@@ -314,6 +352,8 @@ def main():
                 boot(cold_page, origin)
                 launch_fixture(cold_page, origin, "b")
                 assert_network_unavailable(cold_page, origin)
+                assert Handler.runtime_hits("/runtime/pwa-unused/") == []
+                assert Handler.runtime_hits("/nested/runtime/") == []
                 cold.close()
                 mark("fresh-browser-process-offline-launch")
                 assert not errors, json.dumps(errors, ensure_ascii=False)

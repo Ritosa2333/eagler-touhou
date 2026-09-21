@@ -17,11 +17,18 @@ for (const path of FRONTEND_PACKAGE_FILES) {
     if (error.code !== "ENOENT" || APP_SHELL_FILES.includes(path)) throw error;
   }
 }
+// Change shell bytes too, so corrupt-shell installation tests cannot reuse an
+// unchanged index from the preceding generation instead of reading the fault.
+const index = resolve(root, "index.html");
+await writeFile(index, `${await readFile(index, "utf8")}\n<!-- fixture shell ${version} -->\n`);
 // Original-resource-free, but actual incompatible JS/Wasm generations.
 await writeRuntimeFixture(resolve(root, "runtime/pwa-test"), version);
+// This published, unselected Runtime must remain untouched during shell updates
+// and while preparing or launching pwa-test, even if its server files are broken.
+await writeRuntimeFixture(resolve(root, "runtime/pwa-unused"), version);
 const result = await buildAppShell({ quiet: true, globDirectory: root,
-  swDest: resolve(root, "app-shell-sw.js"), additionalGlobPatterns: ["runtime/pwa-test/*"],
-  deferredPathPrefixes: ["runtime/pwa-test/"],
+  swDest: resolve(root, "app-shell-sw.js"), additionalGlobPatterns: ["runtime/pwa-test/*", "runtime/pwa-unused/*"],
+  deferredPathPrefixes: ["runtime/pwa-test/", "runtime/pwa-unused/"],
 });
 if (result.warnings.length) throw new Error(result.warnings.join("\n"));
 if (result.manifestEntries.some(entry => !/^[a-f0-9]{64}$/.test(entry.revision || ""))) throw new Error("non-SHA-256 precache entry");

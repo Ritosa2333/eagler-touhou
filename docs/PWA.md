@@ -39,9 +39,12 @@ a second worker or await Service Worker/storage promises during boot.
 - A waiting candidate is distinct from an activated replacement. The client
   must not schedule reloads while waiting, and rechecks Launcher activity in
   the scheduled reload task for externally activated/legacy replacements.
-- Initial visits defer Runtime downloads. A Launcher replacement prepares all
-  published App-owned Runtime entries before completing installation, including
-  new dependencies. Original game data/music stay in Package Store.
+- First installation and every replacement cache only the Launcher shell.
+  Deferred Runtime entries remain deferred, even for previously used games;
+  updates do not download or copy all Runtime bytes. The manifest may describe
+  all published groups, but only explicit preparation or launch of a selected
+  Runtime prepares its complete set. An unrelated missing/broken Runtime must
+  not block a Launcher update. Original game data/music stay in Package Store.
 - SHA-256 identifies actual bytes, not just cache labels. An HTTP 200 HTML
   fallback, wrong build, failed fetch or quota failure cannot be committed as a
   successful candidate. Failed installation drains writers before cleanup.
@@ -63,18 +66,26 @@ from a JSON-only comment in the current `app-shell-sw.js` response. It uses
 it does not evaluate downloaded worker source or add another public endpoint.
 The catalog is emitted from the same build's SHA-256 manifest.
 
-The entire Runtime set is selected before returning HTML or executing glue:
+The entire SELECTED Runtime set is selected before returning HTML or executing
+glue. Opening TH08 does not prepare TH06, TH07 or TH10:
 
 1. Try the just-published set now, reusing only bytes that match its hashes.
    Fetch missing files into a private candidate cache with two concurrent writers.
    Mark it complete only after every declared dependency has been verified.
 2. If that attempt fails, find a complete verified local set and launch it.
    Never replace one missing Wasm independently under older executing glue.
-   Also consider a newer complete set already prepared by the Launcher worker;
-   do not let an older embedded catalog undo a more recent successful launch.
+   For compatibility, also consider a complete set left in an older App Shell
+   cache; do not let an older embedded catalog undo a more recent successful
+   launch. This legacy-read path does not schedule any all-game prewarming.
 3. With no complete snapshot, try rebuilding the embedded known set from legacy
    cache bytes, checking actual hashes rather than old `runtimeTrusted` labels.
    A fresh network-catalog retry covers publication completing mid-attempt.
+
+A Launcher-only update does not imply that any game's Runtime was updated. If
+the user goes offline before opening that game online, its previous complete
+snapshot remains the fallback. A never-prepared game is not offline-ready merely
+because the Launcher updated. When connectivity returns, the next launch tries
+the latest selected Runtime immediately and prepares its new dependencies then.
 
 The last observed server release is preferred on later offline starts, including
 an operator rollback that reuses an older snapshot. Every subsequent online
@@ -131,8 +142,14 @@ legacy cache migration, server rollback ordering and shutdown cache retention.
 
 The existing suite also covers root/nested and localized/query entries, optional
 APIs being restricted, icons, multi-window Launcher waiting, HTTP 503, a corrupt
-candidate and scoped-cache isolation. Passing these tests does NOT prove real
-TH06/TH07/TH08/TH10 gameplay, physical iOS installation, touch or audio resume.
+shell candidate and scoped-cache isolation. Server-side request recording proves
+that shell install/update/activation fetch no Runtime bytes, even with a broken
+unselected Runtime, and that preparing/launching one group never fetches another.
+It executes the old complete Runtime offline after a shell-only update, then
+updates only the selected Runtime online and executes its new dependencies
+offline. Corrupt-Runtime fallback remains in the separate recovery suite.
+Passing these tests does NOT prove real TH06/TH07/TH08/TH10 gameplay, physical
+iOS installation, touch or audio resume.
 
 ### Offline injection and the WebKit driver
 
@@ -142,9 +159,9 @@ error reported at <https://github.com/microsoft/playwright/issues/42775> does th
 lane replace `setOffline(true)` with origin TCP connection drops. An application
 failure never triggers this fallback. No application assertions are removed.
 
-The Runtime recovery suite additionally drops origin connections on every engine
-and does so before starting a cold browser process. Page-only offline flags must
-not accidentally permit the SW's own network process to reach the server.
+Both suites additionally drop origin connections on every engine and do so
+before starting a cold browser process. Page-only offline flags must not
+accidentally permit the SW's own network process to reach the server.
 A non-cached negative-control request must also fail. Logs record fault injection.
 Origin unavailability does not prove physical airplane-mode behavior.
 
