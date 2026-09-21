@@ -32,6 +32,6 @@ jobs:
       - run: python -m playwright install --with-deps ${{ matrix.browser }}
       - run: npm run build:launcher && npm run build:content
       - run: node tests/test-app-shell-client.mjs && node tests/test-app-shell-worker-update-status.mjs
-      - run: python tests/browser/test-pwa-boot.py --browser=${{ matrix.browser }}
-      - run: node tests/runtime-cache-cases.mjs
+      - run: node tests/runtime-cache-cases.mjs && node tests/shell-handoff-cases.mjs
       - run: python tests/browser/runtime-recovery-cases.py --browser=${{ matrix.browser }}
+      - run: python tests/browser/test-pwa-boot.py --browser=${{ matrix.browser }}

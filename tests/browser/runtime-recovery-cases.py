@@ -61,10 +61,11 @@ def main():
                 engine = getattr(playwright, args.browser)
                 emulation = boot_fixture.probe_offline_emulation(engine, origin)
                 def outage(context, enabled):
+                    # Also block the origin for every engine: offline emulation
+                    # alone need not cover the SW's own network process.
+                    handler.drop_connections = enabled
                     if emulation:
                         context.set_offline(enabled)
-                    else:
-                        handler.drop_connections = enabled
                 context = engine.launch_persistent_context(str(work / "profile"), headless=True)
                 context.on("page", lambda p: p.on("pageerror", lambda error: errors.append(str(error))))
                 page = context.new_page()
@@ -146,6 +147,7 @@ def main():
                     registry = work / 'profile' / 'serviceworker.txt'
                     print(json.dumps({"firefox_registration_saved": registry.exists(),
                         "registry": registry.read_text() if registry.exists() else None}), flush=True)
+                handler.drop_connections = True  # offline before the browser process starts
                 cold = engine.launch_persistent_context(str(work / "profile"), headless=True)
                 cold.on("page", lambda p: p.on("pageerror", lambda error: errors.append(str(error))))
                 outage(cold, True)
@@ -157,7 +159,7 @@ def main():
                 cold.close()
                 assert not errors, json.dumps(errors, ensure_ascii=False)
                 print(json.dumps({"browser": args.browser, "runtime_recovery": "PASS",
-                    "outage_mode": "browser-offline-emulation" if emulation else "origin-connection-drop",
+                    "outage_mode": "browser-offline-plus-origin-drop" if emulation else "origin-connection-drop",
                     "physical_device": False, "real_Touhou_game": False}), flush=True)
         finally:
             handler.drop_connections = False

@@ -134,11 +134,27 @@ async function updateCurrentCacheMetadata(update) {
   return task;
 }
 
+async function collectAfterShellUse(metadata) {
+  // Never prune during activation: activation can run while the browser is
+  // shutting down, before its replacement registration has been persisted.
+  // Only a live client using this worker can acknowledge a successful handoff.
+  const previous = await previousCaches();
+  const older = previous.filter(entry => Number(entry.metadata.createdAt) < Number(metadata.createdAt));
+  older.sort((a, b) => (Number(b.metadata.lastUsedAt) || 0) - (Number(a.metadata.lastUsedAt) || 0)
+    || Number(b.metadata.createdAt) - Number(a.metadata.createdAt));
+  // Keep the last actually used version, not a more recently installed but
+  // never activated candidate. Newer/waiting candidates are never collected.
+  for (const entry of older.slice(CACHE_RETENTION - 1)) await caches.delete(entry.name);
+}
+
 async function appShellUpdateStatus() {
   if (!await cacheMetadata(CACHE_NAME)) return new Response(null, { status: 503 });
   const metadata = await updateCurrentCacheMetadata(status => {
     if (status.updated === true && !(Number(status.appliedAt) > 0)) status.appliedAt = Date.now();
+    status.lastUsedAt = Date.now();
   });
+  try { await collectAfterShellUse(metadata); }
+  catch { /* Cache cleanup is optional, never a Launcher boot dependency. */ }
   return new Response(JSON.stringify(metadata), {
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
@@ -150,12 +166,10 @@ self.addEventListener("install", event => {
   event.waitUntil(precacheShell());
 });
 self.addEventListener("activate", event => {
-  event.waitUntil((async () => {
-    const previous = await previousCaches();
-    for (const entry of previous.slice(CACHE_RETENTION - 1)) await caches.delete(entry.name);
-    // Do not claim a network-loaded document half way through its module graph.
-    // A first visit stays uncontrolled; its next navigation uses this worker.
-  })());
+  // No destructive work on shutdown-triggered activation. Keep the former
+  // active worker's cache until a new live client acknowledges this version.
+  // Do not claim a network-loaded document half way through its module graph.
+  event.waitUntil(Promise.resolve());
 });
 
 async function shellCacheFirst(entry) {
