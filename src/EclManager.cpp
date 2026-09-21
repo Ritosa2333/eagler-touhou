@@ -760,10 +760,12 @@ ZunResult EclManager::RunEcl(Enemy *enemy)
                 g_Stage.ticksSinceSpellcardStarted = 0;
                 // The spellcard background script is (re)started here, the same
                 // frame the spellcard begins. It used to be restarted from the
-                // draw chain (gated by g_SuppressAnmAdvance); doing it in the
-                // update chain keeps the draw phase read-only while preserving
-                // the exact original timing (Stage::OnUpdate has already run,
-                // so its tick/advance only applies from the next frame).
+                // draw chain (gated by g_SuppressAnmAdvance). Moving this
+                // trigger to Update keeps this trigger out of Draw while
+                // preserving exact timing; it does not make the complete Draw
+                // chain read-only. Other owners require separate purity audits.
+                // Stage::OnUpdate has already run, so this background advances
+                // from the next frame.
                 g_AnmManager->SetAndExecuteScriptIdx(&g_Stage.spellcardBackground,
                                                      ANM_SCRIPT_EFFECTS_SPELLCARD_BACKGROUND);
                 enemy->bulletRankSpeedLow = -0.5f;

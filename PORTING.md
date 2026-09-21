@@ -85,9 +85,11 @@ with typed thunks rather than adding more casts.
 There are a few deliberate compatibility exceptions inherited by TH07
 reallyportable: the pause state changes from its capture state after a draw,
 offscreen item indicator sprite selection is render-derived, and the FPS
-counter measures presentation time. These paths must remain idempotent on
-render-only frames and must never advance RNG, timers, or ANM scripts more than
-once per simulation tick.
+counter measures presentation time. These are known Draw-side compatibility
+exceptions and audit targets, not proof of complete Draw purity. Until each
+owner is separately fixed-tick-gated or save/restored, TH06 must not advertise
+Presentation Lab support. They must never advance RNG, timers, or ANM scripts
+more than once per simulation tick.
 
 ## Asset contract
 

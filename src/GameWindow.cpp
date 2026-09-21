@@ -354,8 +354,9 @@ RenderResult GameWindow::Render()
     // The arcade region is layout/clip state, not simulation motion. Interpolating
     // it makes render-only frames use different viewports: one frame draws into
     // the 384x448 playfield while the next can expand across the whole 640x480
-    // window and cover the HUD. TH07 keeps its viewport authoritative and only
-    // interpolates world/object coordinates, so do the same here.
+    // window and cover the HUD. TH07 keeps this viewport authoritative, so
+    // reuse only that local rule here. It does not establish that either
+    // title's complete Draw chain is pure; every Draw owner still needs audit.
     g_SuppressAnmAdvance = !updated;
 #ifdef TH_ENABLE_THPRAC
     // GameGuiBegin(..., !THAdvOptWnd::IsOpen()): Advanced Options exclusively
