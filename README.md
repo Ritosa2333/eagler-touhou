@@ -35,6 +35,24 @@ Keep title-specific:
 
 The rule is: **share algorithms and infrastructure, not object layouts**.
 
+## Shared testkits
+
+The repository publishes source-level testkits that consumers pin and import
+directly. They are normal development infrastructure, not production Runtime
+features:
+
+| Component | Stable source contract | Consumers | Normal gate |
+| --- | --- | --- | --- |
+| [Presentation Lab](testkit/presentation-lab/README.md) | driver/observation v1 | TH08; limited TH10 adapter | `node --test testkit/presentation-lab/controller-core.test.mjs testkit/presentation-lab/release-contract.test.mjs` |
+| [Replay verifier](testkit/replay-verifier/README.md) | trace/report v1 | TH08, TH10 | see its README |
+
+Presentation Lab freezes a title at fixed-tick boundaries, performs draw-only
+alpha sweeps and classifies normalized evidence without changing production
+game logic. Common owns orchestration, contracts and title-neutral analysis;
+each game owns its native diagnostic ABI, state coverage and object semantics.
+TH06 and TH07 do not currently advertise Lab support because their draw chains
+have not yet met the repeated-draw purity boundary.
+
 The cross-title Replay verification contract, comparator, JSONL transport and
 tests live in [`testkit/replay-verifier`](testkit/replay-verifier/). The
 architecture and per-title rollout are specified in the
@@ -47,7 +65,7 @@ both games still pass their existing gates, then converge near-duplicates.  Do
 not combine common-library extraction with gameplay-state or protocol changes in
 the same step.
 
-Validated convergence slices in the current local v0.13 candidate line:
+Validated convergence slices in the current shared source line:
 
 - `NetplaySession`
 - `WebSocketTransport`
@@ -241,9 +259,11 @@ Do not push a consumer commit that requires the common library until the common
 repository/revision it names is available remotely. CI/release builds must pin
 an exact common commit; they must never fetch an unpinned branch head.
 
-Until a stable release policy is declared, the dependency version is the exact
-Git commit recorded by the consumer submodule. Breaking shared-runtime changes
-must be validated against every consumer before advancing those gitlinks.
+The dependency version is the exact Git commit recorded by the consumer
+submodule. Presentation Lab's API major describes source-contract
+compatibility; it does not replace that reproducible commit identity. Breaking
+shared-runtime changes must be validated against every consumer before
+advancing those gitlinks.
 
 ## Standalone validation
 

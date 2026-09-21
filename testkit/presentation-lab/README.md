@@ -1,8 +1,8 @@
 # Presentation Lab
 
-## Release status
+## Component status
 
-The title-neutral Presentation Lab contract is public at v1. TH08 and TH10
+The title-neutral Presentation Lab source contract is stable at v1. TH08 and TH10
 are the first two consumers; their exact feature and observation coverage
 remains title-owned and is not implied by this common release. TH06 and TH07
 must not advertise Lab support until their draw chains stop mutating
@@ -60,7 +60,7 @@ Run the standalone contract with:
 node --test testkit/presentation-lab/controller-core.test.mjs testkit/presentation-lab/release-contract.test.mjs
 ```
 
-Release readiness requires the contract suite, two pinned consumers, isolated
+Integration readiness requires the contract suite, pinned consumers, isolated
 diagnostic/production profiles, and an explicit `unknown` result for every
 uncovered state or observation group. A title's user-played acceptance is
 reported separately from common component publication.
