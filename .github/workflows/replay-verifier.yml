@@ -1,0 +1,23 @@
+name: Replay verifier assets
+
+on:
+  push:
+    paths:
+      - '.github/workflows/replay-verifier.yml'
+      - 'tools/replay-verifier/**'
+  pull_request:
+    paths:
+      - '.github/workflows/replay-verifier.yml'
+      - 'tools/replay-verifier/**'
+  workflow_dispatch:
+
+jobs:
+  golden-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tools/replay-verifier/verify-golden.mjs
+      - run: node --test tools/replay-verifier/golden.test.mjs

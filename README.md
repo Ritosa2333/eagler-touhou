@@ -20,6 +20,13 @@ node portable/build.mjs --th08
 
 Build outputs are written below `th08_web/artifacts/` and are intentionally not tracked.
 
+## Replay logic verification
+
+The [TH08 Replay verifier](tools/replay-verifier/README.md) publishes
+content-addressed original traces for a fast four-Demo gate and complete
+Lunatic/Extra daily regression. Normal checks do not require the retail
+executable; regenerating an oracle is a separate advanced maintenance task.
+
 ## thprac
 
 The TH08 Runtime contains a source-level port of thprac's practice parameters and
