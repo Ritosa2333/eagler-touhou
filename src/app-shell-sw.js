@@ -14,7 +14,8 @@ const cacheMetaUrl = `${metaPrefix}__APP_SHELL_BUILD_ID__`;
 const updateStatusUrl = new URL("./__app-shell-update-status__", scopeUrl).href;
 // Kept in this worker, not a second independently updating Service Worker.
 const runtimeCache = typeof createRuntimeCache === "function" && self.__EAGLER_RUNTIME_CATALOG
-  ? createRuntimeCache({ scopeUrl, catalog: self.__EAGLER_RUNTIME_CATALOG }) : null;
+  ? createRuntimeCache({ scopeUrl, catalog: self.__EAGLER_RUNTIME_CATALOG,
+      embeddedCreatedAt: async () => (await cacheMetadata(CACHE_NAME))?.createdAt || 0 }) : null;
 let currentMetadataUpdate = Promise.resolve();
 const manifestByPathname = new Map(PRECACHE_MANIFEST.map(entry => {
   const url = new URL(entry.url, scopeUrl);

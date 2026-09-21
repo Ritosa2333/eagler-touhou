@@ -3,7 +3,7 @@
 // A Runtime is a transaction, not a collection of independent cache-first URLs.
 // Public URLs stay unchanged. Browser client IDs pin immutable private snapshots.
 // This file is concatenated into the sole App Shell worker by app-shell-build.
-function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
+function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000, embeddedCreatedAt = async () => 0 }) {
   const prefix = `eagler-touhou-runtime-${encodeURIComponent(scopeUrl.pathname)}-`;
   const stateName = `${prefix}state`;
   const metaUrl = new URL("./__runtime-cache__/complete", scopeUrl).href;
@@ -34,7 +34,7 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
         return { url: entry.url, revision: entry.revision, cacheUrl: url.href };
       });
       if (!entries.some(entry => entry.url.endsWith(".html"))) throw new Error("Runtime entry document missing");
-      return { root: group.root, entries };
+      return { root: group.root, entries: entries.sort((a, b) => a.url.localeCompare(b.url)) };
     });
   }
   function groupFor(path, groups = known) {
@@ -87,10 +87,10 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
         const cache = await caches.open(name);
         const raw = await (await cache.match(metaUrl))?.json();
         const group = validateCatalog({ schema: "eagler-touhou/runtime-cache/1", hostProtocol: "eagler-touhou/1", groups: [raw?.group] })[0];
-        if (group.root === root && raw.complete === true) result.push({ name, group, createdAt: raw.createdAt });
+        if (group.root === root && raw.complete === true) result.push({ name, group, createdAt: raw.createdAt, observedAt: raw.observedAt || raw.createdAt });
       } catch { /* Incomplete candidates are not rollback targets. */ }
     }
-    return result.sort((a, b) => b.createdAt - a.createdAt);
+    return result.sort((a, b) => b.observedAt - a.observedAt);
   }
   async function complete(snapshot) {
     const cache = await caches.open(snapshot.name);
@@ -99,10 +99,16 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
       return true;
     } catch { return false; }
   }
-  async function stage(group) {
+  async function stage(group, { localOnly = false, observedAt = 0 } = {}) {
     const existing = await snapshots(group.root);
     for (const candidate of existing) {
-      if (identity(candidate.group) === identity(group) && await complete(candidate)) return candidate;
+      if (identity(candidate.group) === identity(group) && await complete(candidate)) {
+        if (observedAt > candidate.observedAt) {
+          candidate.observedAt = observedAt;
+          await (await caches.open(candidate.name)).put(metaUrl, jsonResponse({ ...candidate, complete: true }));
+        }
+        return candidate;
+      }
     }
     const random = Array.from(crypto.getRandomValues(new Uint32Array(4)), value => value.toString(16)).join("-");
     const name = `${prefix}${encodeURIComponent(group.root)}-${random}`;
@@ -130,6 +136,7 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
               try { response = await checked(await (await caches.open(old)).match(entry.cacheUrl), entry); break; }
               catch { /* No trustworthy bytes at this URL in this cache. */ }
             }
+            if (!response && localOnly) throw new Error(`Runtime is not locally complete: ${entry.url}`);
             response ||= await network(entry.cacheUrl, response => checked(response, entry));
             await cache.put(entry.cacheUrl, response);
           } catch (error) { stopped = true; throw error; }
@@ -137,7 +144,7 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
       }));
       const failure = results.find(result => result.status === "rejected");
       if (failure) throw failure.reason;
-      const snapshot = { name, group, createdAt: Date.now() };
+      const snapshot = { name, group, createdAt: Date.now(), observedAt };
       // The completion marker is the commit point, after every writer drained.
       await cache.put(metaUrl, jsonResponse({ ...snapshot, complete: true }));
       return snapshot;
@@ -150,20 +157,31 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
     let error;
     // Always begin with the network, even if a complete older Runtime exists.
     // The Runtime is independent of a waiting Launcher SW update.
-    try { return await stage(await latestGroup(path)); }
+    try { const observedAt = Date.now(); return await stage(await latestGroup(path), { observedAt }); }
     catch (cause) { error = cause; }
     const group = groupFor(path);
     if (group) {
-      for (const candidate of await snapshots(group.root)) {
+      const candidates = await snapshots(group.root);
+      // A newer App Shell may have prepared a whole Runtime without it ever
+      // being launched. Include that LOCAL set in fallback ordering, but do not
+      // downgrade a Runtime learned later from the network to an old SW catalog.
+      const localObservation = Number(await embeddedCreatedAt()) || 0;
+      let embeddedTried = false;
+      for (const candidate of candidates) {
+        if (!embeddedTried && localObservation > candidate.observedAt) {
+          embeddedTried = true;
+          try { return await stage(group, { localOnly: true, observedAt: localObservation }); }
+          catch { /* An incomplete embedded set cannot replace a usable one. */ }
+        }
         if (candidate.group.entries.some(entry => entry.url === path) && await complete(candidate)) return candidate;
       }
       // Migration from the old per-file cache: rebuild and verify a complete
       // current set, rather than blessing poisoned legacy entries.
-      try { return await stage(group); } catch (cause) { error = cause; }
+      try { return await stage(group, { observedAt: localObservation }); } catch (cause) { error = cause; }
     }
     // A publication may have completed while the first candidate was loading.
     // Retry once with a fresh catalog only when no usable fallback exists.
-    try { return await stage(await latestGroup(path)); } catch (cause) { error = cause; }
+    try { const observedAt = Date.now(); return await stage(await latestGroup(path), { observedAt }); } catch (cause) { error = cause; }
     throw error || new Error("No complete Runtime is available");
   }
   async function prepare(path) {
@@ -211,6 +229,15 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
       } catch { /* Unknown cache metadata is not ours to prune. */ }
     }
   }
+  function deliver(response) {
+    // Browser memory/HTTP caches must not key a prior client's response only by
+    // the unchanged public URL and bypass another client's snapshot selection.
+    const headers = new Headers(response.headers);
+    headers.set("Cache-Control", "no-store");
+    headers.delete("Content-Length");
+    headers.delete("Content-Encoding");
+    return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+  }
   async function respond(event, path) {
     let snapshot;
     if (event.request.mode === "navigate" && path.endsWith(".html")) {
@@ -234,10 +261,10 @@ function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
     const entry = snapshot.group.entries.find(entry => entry.url === path);
     if (!entry) return fetch(new Request(event.request, { cache: "no-store" })); // Package Store / unrelated data
     const response = await (await caches.open(snapshot.name)).match(entry.cacheUrl);
-    if (response) return response;
+    if (response) return deliver(response);
     // A storage eviction after launch can only be repaired with matching bytes,
     // not by slipping a different Wasm underneath the already executing glue.
-    return network(entry.cacheUrl, response => checked(response, entry));
+    return deliver(await network(entry.cacheUrl, response => checked(response, entry)));
   }
   function handle(event) {
     if (event.request.method !== "GET") return null;

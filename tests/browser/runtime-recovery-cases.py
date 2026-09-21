@@ -130,7 +130,22 @@ def main():
                 assert value(page, "D", "fixtureLate") == "d"
                 assert value(page, "D", "fixtureWorker") == "d"
                 boot_fixture.mark("second-tab-new-E-does-not-switch-live-D")
+                diagnostic = page.evaluate("""async () => ({
+                    registrations: (await navigator.serviceWorker.getRegistrations()).map(r => ({
+                        scope: r.scope, active: r.active?.state, waiting: r.waiting?.state, installing: r.installing?.state
+                    })),
+                    caches: await Promise.all((await caches.keys()).filter(name => name.startsWith('eagler-touhou-app-shell-')).map(async name => {
+                        const cache = await caches.open(name);
+                        const keys = await cache.keys();
+                        return {name, entries: keys.length, home: !!await cache.match(location.origin + '/')};
+                    }))
+                })""")
+                print(json.dumps({"before_shutdown": diagnostic}), flush=True)
                 context.close()
+                if args.browser == 'firefox':
+                    registry = work / 'profile' / 'serviceworker.txt'
+                    print(json.dumps({"firefox_registration_saved": registry.exists(),
+                        "registry": registry.read_text() if registry.exists() else None}), flush=True)
                 cold = engine.launch_persistent_context(str(work / "profile"), headless=True)
                 cold.on("page", lambda p: p.on("pageerror", lambda error: errors.append(str(error))))
                 outage(cold, True)

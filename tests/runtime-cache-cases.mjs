@@ -47,10 +47,10 @@ function harness() {
     return JSON.parse(JSON.stringify(state.catalog));
   }
   const first = publish("a");
-  function worker(embedded = first) {
+  function worker(embedded = first, embeddedAt = 0) {
     const context = vm.createContext({
       self: { clients: { async get(id) { return clients.get(id); } } },
-      caches, crypto: webcrypto, URL, Request, Response, Uint8Array, Uint32Array,
+      caches, crypto: webcrypto, URL, Request, Response, Headers, Uint8Array, Uint32Array,
       AbortController, setTimeout, clearTimeout, console,
       fetch: async request => {
         requests.push(request.url);
@@ -63,7 +63,7 @@ function harness() {
       },
     });
     vm.runInContext(source, context);
-    return context.createRuntimeCache({ scopeUrl, catalog: embedded, fetchTimeoutMs: 10 });
+    return context.createRuntimeCache({ scopeUrl, catalog: embedded, fetchTimeoutMs: 10, embeddedCreatedAt: async () => embeddedAt });
   }
   async function navigate(sw, id, path = root + "th08.html") {
     clients.set(id, { id });
@@ -134,3 +134,34 @@ for (const [path, body] of Object.entries(offlineMigration.state.files)) await v
 offlineMigration.state.outage = true;
 assert.match(await (await offlineMigration.navigate(offlineMigration.worker(), "offline-migration")).text(), /a$/);
 console.log("Runtime latest-first, complete fallback, poisoned legacy repair, per-client pinning and restart: PASS");
+
+// An offline SW upgrade must not overlook a newer full Runtime already cached
+// by the App Shell. An older embedded catalog must not undo a newer live launch.
+const upgrade = harness();
+const activeA = upgrade.worker();
+await upgrade.navigate(activeA, "ua");
+await new Promise(resolve => setTimeout(resolve, 2));
+const catalogB = upgrade.publish("b");
+const embeddedAt = Date.now();
+const preparedB = await upgrade.caches.open("eagler-touhou-app-shell-prepared-b");
+for (const [path, body] of Object.entries(upgrade.state.files)) await preparedB.put(new URL(path, upgrade.scopeUrl).href, new Response(body));
+upgrade.state.outage = true;
+assert.match(await (await upgrade.navigate(upgrade.worker(catalogB, embeddedAt), "ub")).text(), /b$/);
+upgrade.state.outage = false;
+await new Promise(resolve => setTimeout(resolve, 2));
+upgrade.publish("c");
+const activeB = upgrade.worker(catalogB, embeddedAt);
+await upgrade.navigate(activeB, "uc");
+upgrade.state.outage = true;
+assert.match(await (await upgrade.navigate(activeB, "uc-offline")).text(), /c$/);
+// Operator rollback reuses a prior snapshot, but records the NEW observation;
+// a later outage must not silently undo that successful rollback.
+upgrade.state.outage = false;
+await new Promise(resolve => setTimeout(resolve, 2));
+upgrade.publish("b");
+await upgrade.navigate(activeB, "server-rollback");
+upgrade.state.outage = true;
+assert.match(await (await upgrade.navigate(activeB, "server-rollback-offline")).text(), /b$/);
+console.log("Runtime offline SW handoff and server rollback ordering: PASS");
+
+assert.equal((await upgrade.resource(activeB, "server-rollback-offline", "game.wasm")).headers.get("Cache-Control"), "no-store");
