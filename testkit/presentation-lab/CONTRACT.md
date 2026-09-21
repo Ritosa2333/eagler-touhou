@@ -48,6 +48,21 @@ The title owner registry documents the authoritative writer, endpoint
 publisher, presentation consumer, final submission point, identity,
 continuity/discontinuity rules, restoration rule and fingerprint coverage.
 
+## Consumer admission
+
+A title is not a Lab consumer merely because normal high-refresh play works.
+A fixed-step scheduler, a native Draw-suppression flag, or several local
+save/restore repairs are implementation evidence, not proof that the complete
+Draw transaction is presentation-pure.
+
+Admission requires a target-title audit of every owner reached by the real
+Draw path, repeated-draw evidence, and versioned fingerprint coverage for all
+authoritative and rollback-visible state that the path can mutate. An
+uncovered owner or state group keeps the result `unknown`; it must not be
+waived by borrowing another title's architecture or historical fixes. Support
+may be advertised only after the title-owned registry and evidence satisfy
+these requirements.
+
 ## Build boundary
 
 Diagnostic exports are compiled only with the title's presentation-audit

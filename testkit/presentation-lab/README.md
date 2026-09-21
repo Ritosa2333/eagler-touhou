@@ -6,7 +6,10 @@ The title-neutral Presentation Lab source contract is stable at v1. TH08 and TH1
 are the first two consumers; their exact feature and observation coverage
 remains title-owned and is not implied by this common release. TH06 and TH07
 must not advertise Lab support until their draw chains stop mutating
-authoritative or rollback-visible state.
+authoritative or rollback-visible state. Their individual high-refresh fixes
+remain useful regression evidence, but their whole Draw scheduling shape is
+not a Lab reference architecture. See the consumer-admission requirements in
+`CONTRACT.md`.
 
 Consumers pin an exact `eagler-common` commit as a Git submodule and include
 these modules directly. There is no copied or bundled title-local edition of
