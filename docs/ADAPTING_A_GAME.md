@@ -393,6 +393,48 @@ authoritative game/Replay recording it must have the same logical meaning as
 the equivalent keyboard/controller action. Do not add touch-only Replay state
 or metadata merely because an adapter uses direct touch internally.
 
+### Replay determinism verifier
+
+Every title repository must also own a maintainer-facing Replay verifier. This
+is not a Launcher protocol command and must not be compiled into ordinary
+player builds merely to satisfy testing.
+
+The minimum adapter package is:
+
+- a corpus manifest recording fixture provenance, hashes, loadout, difficulty,
+  route/stages and completion rules;
+- a `quick` suite containing every built-in title Demo in the title's actual
+  rotation/order;
+- a `daily` suite containing the corpus's declared standard loadout on
+  Lunatic and Extra, normally the second character's second configuration,
+  plus any applicable additional special difficulty. Map this through the
+  title's real selection model (for example, a team-based title) rather than
+  inventing a character/shot equivalence;
+- a read-only candidate provider sampling after complete authoritative logic
+  ticks, never from display-only work;
+- an original provider and explicit advanced oracle-capture command;
+- immutable content-addressed golden traces that bind Replay, original
+  executable/resources, schema, completion and trace identity;
+- a strict comparator/report that rejects incomplete, shifted, cropped,
+  reordered or identity-incompatible traces and reports the earliest observed
+  divergence.
+
+Ordinary `quick` and `daily` checks consume published golden traces and do not
+launch the original executable. Oracle capture cannot run implicitly and a
+candidate run cannot bless or overwrite expected data. The original `.rpy`,
+the golden trace and the oracle-capture process are distinct artifacts.
+
+Observation hooks must be read-only and limited to diagnostic builds. Do not
+change the normal single-player Demo mechanism, gameplay cadence, RNG or state
+to make the verifier pass. Multiplayer is separately compiled and may use its
+own self-determinism profile; it is not required to match retail single-player
+state.
+
+When a divergence is a gameplay/RNG/ECL/timer/state-machine defect shared by
+the portable title core, fix and publish that upstream/core owner as well as
+the Eagler branch. Browser collectors, golden manifests and adapter glue stay
+with the Eagler/test owner.
+
 ## 9. Touch contract
 
 Touch support is more than drawing buttons.
@@ -583,12 +625,15 @@ not merely which game triggers the branch.
 2. Implement/verify DATA provider and authoritative content layout.
 3. Make Runtime Release pass before adding original content.
 4. Implement the shell lifecycle and required protocol commands/events.
-5. Pass keyboard/touch/storage/Replay conformance.
+5. Pass keyboard/touch/storage/Replay conformance and the title's `quick` Demo
+   golden gate.
 6. Add music and optional language/thprac capabilities.
 7. Produce Hosted output and verify Package identities.
 8. Derive External and Import from that same Hosted generation.
 9. Verify App Shell/offline launch.
-10. Run browser first-frame and public/deployment verification.
+10. Run the `daily` long-Replay golden gate, browser first-frame and
+    public/deployment verification. Oracle regeneration remains a separate
+    maintainer operation.
 
 This order prevents Launcher workarounds from hiding an incomplete Runtime
 contract.
@@ -608,6 +653,7 @@ Runtime-specific, as applicable:
 - shell protocol test;
 - touch/deathbomb/input regression tests;
 - Replay/storage tests;
+- Replay verifier golden-integrity, `quick` Demo and `daily` long-Replay gates;
 - Runtime Release verification.
 
 Generated candidate:
@@ -641,6 +687,7 @@ Runtime file layout:
 Supported music modes:
 Storage root / score / config:
 Replay prefix + compatibility:
+Replay verifier quick/daily/oracle status + golden identity:
 Touch status:
 Language status:
 thprac status:

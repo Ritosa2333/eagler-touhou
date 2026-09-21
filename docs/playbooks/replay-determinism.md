@@ -70,7 +70,63 @@ When an automated determinism proof is actually required, compare fixed-tick aut
 
 Human gameplay feedback that a Replay's operations visibly diverge is sufficient evidence of failure. It does not identify the root cause, but it overrides earlier launch/storage smokes as an acceptance claim.
 
-For the current TH08 handoff, the user explicitly requested no further Replay automation before the next repaired build is ready; finish semantic repairs and let the user test the Replay manually first.
+## Formal verification lanes
+
+Every supported title owns a Replay verifier in its Runtime/source repository.
+The verifier is maintainer tooling, not a Launcher feature and not a new
+Launcher↔Runtime command surface.
+
+The required lanes are:
+
+- `quick`: run every built-in title Demo in the title-owned rotation and compare
+  it with published original-derived fixed-tick traces;
+- `daily`: run the corpus's declared standard loadout on Lunatic and Extra,
+  usually the second character's second configuration, plus a title-specific
+  additional special difficulty when one exists. Map that policy through the
+  title's real selection model instead of inventing character/shot equivalence;
+- `oracle`: explicitly run the original executable/provider to regenerate
+  expected traces. This is advanced maintenance, never an implicit part of
+  ordinary candidate checks.
+
+`.rpy` files are input fixtures, golden traces are immutable expected results,
+and oracle capture is the process that creates proposed expected results. Do
+not call all three an "oracle Replay" in manifests or reports because that hides
+which authority is being exercised.
+
+## Golden identity and update discipline
+
+A published golden set binds at least the Replay hash, original executable and
+resource identity, state-schema/adapter identity, completion evidence, tick
+counts and content hashes. The candidate build and its output are run evidence,
+not golden provenance.
+
+Quick and daily checks are read-only against golden data. Candidate code cannot
+write, replace or bless expected traces. Oracle regeneration and golden
+acceptance are separate reviewed operations; a changed expected trace is not a
+normal way to make a failing candidate green.
+
+The comparison fails closed on incompatible identity, missing/extra/reordered
+ticks, incomplete lifecycle, effective input, RNG or any declared authoritative
+state category. It reports the earliest observed divergence without cropping,
+frame shifting or resynchronizing later matching state.
+
+Observation remains diagnostic-build-only and read-only. Do not alter normal
+single-player logic, the built-in Demo mechanism or the separately compiled
+multiplayer Runtime to satisfy a verifier. Multiplayer may own a separate
+self-determinism profile and is not required to match retail single-player
+state.
+
+## Fix ownership after a divergence
+
+When the first divergence identifies gameplay, collision, RNG, ECL, timer,
+Replay consumption or native state-machine semantics, fix the lowest
+authoritative title/source owner and propagate it to every downstream Eagler
+branch that contains the same core. Do not leave a core semantic correction
+only in an Eagler packaging/diagnostic branch.
+
+Browser collection, diagnostic exports, golden manifests and comparison tools
+remain in their adapter/test owners. A platform-only workaround must not mask a
+shared upstream gameplay bug.
 
 <!-- knowledge-id: K-REPLAY-002 -->
 ## Storage and playback evidence are separate
@@ -96,6 +152,11 @@ Replay authority remains title-specific.
   `cpp/platform` Replay/World owners plus `sdl-runtime/shell.mjs`.
 - TH06/TH07: their existing Replay managers/ReplayExtension owners in the
   sibling Runtime repositories.
+- Per-title verifier adapters, corpus manifests, golden traces and commands:
+  `tools/replay-verifier/` in each sibling title repository.
+- Game-agnostic trace lifecycle, validation, comparison and original Present
+  observation infrastructure: sibling
+  `eagler-common/testkit/replay-verifier/`.
 - Launcher: `src/contracts/adapter-capabilities.mts` and the shared Replay
   manager UI own required behavior and file-management surface, not game
   simulation.
@@ -107,8 +168,15 @@ After scheduler, input, storage or Replay changes:
 1. Run static/build checks for the affected lane and `git diff --check`.
 2. Verify a Replay fixture survives write → sync → full reload byte-for-byte.
 3. Use the direct-entry Replay hook to reach actual playback when storage/lifecycle coverage is needed, but do not call that determinism PASS.
-4. For automated determinism, compare the earliest fixed-tick authoritative divergence; use manual playback acceptance when the claim concerns real user-visible operation fidelity.
-5. Run title/Stage 1 plus OGG/MIDI/storage smoke as appropriate and separate static, browser, device and deployment evidence.
+4. Run the title's `quick` Demo golden gate.
+5. For a standard logic regression or release gate, run the `daily` long-Replay
+   golden suite and compare the earliest fixed-tick authoritative divergence.
+6. Regenerate an oracle only when maintaining the provider/schema/fixture or
+   investigating whether the accepted golden itself is wrong; never overwrite
+   golden data from an ordinary candidate run.
+7. Use manual playback acceptance when the claim concerns real user-visible
+   operation fidelity, and run title/Stage 1 plus OGG/MIDI/storage smoke as
+   appropriate. Keep static, browser, device and deployment evidence separate.
 
 Do not weaken checksum or hash-based correctness checks to make a Replay test pass. A test-navigation failure should be repaired in the test setup or direct-entry path, not hidden by removing correctness validation.
 

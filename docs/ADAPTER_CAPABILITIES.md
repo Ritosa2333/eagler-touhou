@@ -152,6 +152,26 @@ versioned/validated and must not become the all-game format contract. This is
 why TH06/TH07 EAGX and TH08/TH10 motion trailers are implementation details,
 not features a future adapter is expected to copy.
 
+Replay behavior alone is not sufficient evidence of authoritative gameplay
+fidelity. The separate machine-readable
+`REQUIRED_REPLAY_VERIFICATION_BEHAVIORS` profile requires every formal title
+adapter to own:
+
+- a `quick` gate covering every built-in title Demo;
+- a `daily` gate covering the declared Lunatic/Extra corpus and any applicable
+  title-specific special difficulty;
+- immutable content-addressed original-derived golden traces;
+- strict fixed-tick comparison with earliest-divergence reporting;
+- an explicit advanced oracle-maintenance path that ordinary candidate tests
+  cannot invoke or use to bless themselves;
+- diagnostic-only read-only observation that does not change normal gameplay,
+  Demo rotation or the separately compiled multiplayer Runtime.
+
+This is a Runtime/source-repository verification obligation. It does not add a
+Launcher UI feature, Runtime wire command or product option. Each title owns its
+state mapping, corpus, completion rules and original provider; shared code may
+own game-agnostic trace validation and comparison.
+
 ## 2. Inherited Launcher capabilities
 
 Inherited capabilities are universal Launcher features that a newly registered

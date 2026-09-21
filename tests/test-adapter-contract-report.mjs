@@ -7,7 +7,7 @@ for (const game of Object.keys(PRODUCT_GAMES)) {
   const report = createAdapterContractReport(game);
   assert.equal(report.schema, ADAPTER_CONTRACT_REPORT_SCHEMA);
   assert.equal(report.game, game);
-  for (const capability of ["authoritative-gameplay-fidelity", "touch-controls", "restart-action", "always-hitbox", "replay-file-management"]) {
+  for (const capability of ["authoritative-gameplay-fidelity", "touch-controls", "restart-action", "always-hitbox", "replay-file-management", "replay-determinism-verification"]) {
     assert.ok(report.obligations.required.includes(capability), `${game}: missing required report capability ${capability}`);
   }
   assert.equal(report.obligations.requiredDefinitions.length, report.obligations.required.length);
@@ -23,6 +23,9 @@ for (const game of Object.keys(PRODUCT_GAMES)) {
   assert.ok(report.obligations.requiredBehaviorDefinitions.package.some(item => item.id === "offline-installed-launch"));
   assert.ok(report.obligations.presentationProfile.includes("display-cadence-presentation"));
   assert.ok(report.obligations.replayProfile.includes("original-replay-import"));
+  assert.ok(report.obligations.replayVerificationProfile.includes("quick-all-title-demos"));
+  assert.ok(report.obligations.replayVerificationProfile.includes("daily-long-replay-corpus"));
+  assert.ok(report.obligations.requiredBehaviorDefinitions.replayVerification.some(item => item.id === "candidate-cannot-bless"));
   assert.ok(report.obligations.inputProfile.includes("controller-logical-input"));
   assert.ok(report.obligations.storageProfile.includes("runtime-restart-durability"));
   assert.ok(report.obligations.musicProfile.includes("audible-ogg-normal-mode"));
