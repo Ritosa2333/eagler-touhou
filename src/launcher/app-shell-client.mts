@@ -19,7 +19,7 @@ interface ServiceWorkerRegistrationLike extends EventTargetLike {
   update(): Promise<unknown>;
 }
 interface ServiceWorkerContainerLike {
-  readonly controller: unknown | null;
+  readonly controller: { readonly scriptURL?: string } | null;
   register(url: string, options: { scope: string; updateViaCache: "none" }): Promise<ServiceWorkerRegistrationLike>;
   getRegistration(scope: string): Promise<ServiceWorkerRegistrationLike | null | undefined>;
 }
@@ -101,12 +101,25 @@ export function createAppShellClient({
     worker.addEventListener("statechange", changed);
     changed();
   }
-  const controlledBeforeRegistration = !!serviceWorker?.controller;
+  const resolvedWorkerUrl = (() => {
+    try { return new URL(workerUrl, globalThis.location?.href).href; }
+    catch { return workerUrl; }
+  })();
+  const controllerBelongsToRegistration = () => {
+    const controller = serviceWorker?.controller;
+    if (!controller) return false;
+    // A page below a nested scope can initially be controlled by the parent
+    // scope. That controller does not make the nested scope's first install an
+    // update. Older test doubles do not expose scriptURL, so retain the
+    // conservative controlled-page behavior for them.
+    return typeof controller.scriptURL !== "string" || controller.scriptURL === resolvedWorkerUrl;
+  };
+  const controlledBeforeRegistration = controllerBelongsToRegistration();
   function watchRegistration(registration: ServiceWorkerRegistrationLike) {
     if (registration === state.registration) return;
     state.registration = registration;
     state.updateWaiting = !!registration.waiting && !!serviceWorker?.controller;
-    registration.addEventListener("updatefound", () => watchWorker(registration.installing, !!serviceWorker?.controller));
+    registration.addEventListener("updatefound", () => watchWorker(registration.installing, controllerBelongsToRegistration()));
     // register() may resolve after updatefound. Observe the in-flight worker too.
     watchWorker(registration.installing, controlledBeforeRegistration);
     notify();

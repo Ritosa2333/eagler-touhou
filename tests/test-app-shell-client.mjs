@@ -52,6 +52,18 @@ firstContainer.controller = {}; firstWorker.setState("installed"); firstWorker.s
 await first.ready;
 assert.equal(initialReady, true);
 assert.equal(firstRegistration.updates, 0, "first installation must not start a redundant update check");
+const nestedRegistration = new RegistrationStub(); const nestedWorker = new WorkerStub();
+nestedRegistration.installing = nestedWorker;
+const nestedContainer = {
+  controller: { scriptURL: "https://example.invalid/app-shell-sw.js" },
+  async register() { return nestedRegistration; }, async getRegistration() { return null; },
+};
+const nested = createAppShellClient({ serviceWorker: nestedContainer, secureContext: true,
+  workerUrl: "https://example.invalid/nested/app-shell-sw.js" });
+nestedWorker.setState("installed"); nestedWorker.setState("activated");
+await nested.ready;
+assert.equal(nestedRegistration.updates, 0, "a parent-scope controller must not turn a nested first install into an update");
+assert.equal(nested.snapshot().updateReady, false, "a nested first install must not schedule a reload");
 const stuck = new RegistrationStub(); stuck.installing = new WorkerStub();
 const bounded = createAppShellClient({ serviceWorker: { ...firstContainer, controller: null, async register() { return stuck; } },
   secureContext: true, activationTimeoutMs: 5 });
