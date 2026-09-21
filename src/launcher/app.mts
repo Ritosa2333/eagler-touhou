@@ -1466,7 +1466,7 @@ const buttonElementSelectors = [
   "#launch", "#gamePackageImport", "#mpLeaveRoom", "#mpSpectatorJoin",
   "#mpLoadoutPrev", "#mpLoadoutNext", "#mpStandUp", "#mpLoadoutPrevSeat",
   "#mpLoadoutNextSeat", "#mpCopyRoomCode", "#mpReady", "#mpCheckGame", "#mpStartGame",
-  "#mpRoomSettingsToggle", "#toastClose", "#startupErrorClose", "#decisionCancel",
+  "#mpRoomSettingsToggle", "#toastClose", "#startupErrorClose", "#startupErrorCopy", "#decisionCancel",
   "#mpSettingsRoomDrawerToggle", "#mpSettingsRoomDrawerCloseHint",
   "#decisionSecondary", "#decisionConfirm", "#firstUseNoticeClose", "#firstUseNoticeCloseHint", "#mpGuideClose",
   "#appleRefreshClose", "#transferCancel", "#transferRetry", "#gameDataImportClose",
@@ -2520,6 +2520,32 @@ function showStartupError(error: unknown, context = t("startup.failed"), allowAf
   const detail = error instanceof Error ? error.stack || error.message : errorMessage(error);
   $("#startupErrorText").textContent = `[${new Date().toLocaleString()}] ${context}\n${detail}`;
   $("#startupError").hidden = false;
+}
+async function copyText(text: string) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {}
+  const area = document.createElement("textarea");
+  const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  area.value = text;
+  area.readOnly = true;
+  area.style.cssText = "position:fixed;inset:0 auto auto 0;width:1px;height:1px;opacity:0;pointer-events:none";
+  (document.fullscreenElement || document.body).append(area);
+  area.select();
+  area.setSelectionRange(0, area.value.length);
+  let copied = false;
+  try { copied = document.execCommand("copy"); } catch {}
+  area.remove();
+  active?.focus({ preventScroll: true });
+  return copied;
+}
+async function copyStartupError() {
+  const text = $("#startupErrorText").textContent || "";
+  if (!text) return;
+  showToast(t(await copyText(text) ? "dialog.errorCopied" : "dialog.errorCopyFailed"), 3200);
 }
 function clearFirstFrameWatchdog() {
   stopPlayerFocusRelay();
@@ -5772,8 +5798,8 @@ $("#mpReplayViewer").addEventListener("click", async () => {
 });
 async function mpCopyRoomCode() {
   if (!mpUiState.room) return;
-  try { await navigator.clipboard.writeText(mpUiState.room.code); showToast(t("status.roomCodeCopied")); }
-  catch { showToast(t("status.roomCode", { code: mpUiState.room.code })); }
+  if (await copyText(mpUiState.room.code)) showToast(t("status.roomCodeCopied"));
+  else showToast(t("status.roomCode", { code: mpUiState.room.code }));
 }
 $("#mpCopyRoomCode").addEventListener("click", mpCopyRoomCode);
 // Do not pass the click Event into mpLeaveRoom(fromHistory). An Event is
@@ -7611,6 +7637,7 @@ $("#thpracTouchControlsToggle").addEventListener("click", () => {
   setOption("thpracTouchControlsEnabled", !state.options.thpracTouchControlsEnabled);
 });
 $("#startupErrorClose").addEventListener("click", clearStartupError);
+$("#startupErrorCopy").addEventListener("click", () => { void copyStartupError(); });
 $("#toastClose").addEventListener("click", hideToast);
 $("#decisionDialog").addEventListener("keydown", event => {
   if (event.key !== "Enter") return;

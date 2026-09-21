@@ -539,7 +539,14 @@
     <span class="toast-copy" id="toastText"></span>
     <button class="toast-close" id="toastClose" type="button" aria-label="关闭提示" title="关闭提示" data-i18n-aria-label="dialog.closeNotice" data-i18n-title="dialog.closeNotice"><span aria-hidden="true">×</span></button>
   </div>
-  <pre class="startup-error" id="startupError" hidden><button id="startupErrorClose" type="button" aria-label="关闭错误信息" data-i18n-aria-label="dialog.closeError">×</button><code id="startupErrorText"></code></pre>
+  <section class="startup-error" id="startupError" role="alertdialog" aria-modal="false" aria-labelledby="startupErrorTitle" aria-describedby="startupErrorText" hidden>
+    <header>
+      <strong id="startupErrorTitle" data-i18n="dialog.errorTitle">运行出错</strong>
+      <button class="startup-error-close" id="startupErrorClose" type="button" aria-label="关闭错误信息" title="关闭错误信息" data-i18n-aria-label="dialog.closeError" data-i18n-title="dialog.closeError">×</button>
+    </header>
+    <pre class="startup-error-detail"><code id="startupErrorText"></code></pre>
+    <footer><button class="startup-error-copy" id="startupErrorCopy" type="button" data-i18n="dialog.copyError">复制错误信息</button></footer>
+  </section>
   <dialog class="decision-dialog" id="decisionDialog" aria-labelledby="decisionTitle" aria-describedby="decisionMessage">
     <form method="dialog" class="decision-window">
       <div class="decision-body">
