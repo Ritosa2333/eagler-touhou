@@ -246,7 +246,7 @@ KeyConfig 读取到的按钮编号与 Gameplay 实际消费的按钮编号必须
 
 人工观察仍可定位体感问题，但不能单独证明覆盖完整。适配器应在最终提交边界观察连续视觉字段，并明确记录未出现、未接入、生命周期不连续、抽样丢弃和状态指纹缺口。
 
-当前 `eagler-common` Presentation Lab 提供通用固定 tick、冻结、alpha-only Draw、重复采样和三态证据契约。TH08 已接入日常门禁；TH10 是有限接入，状态覆盖不完整时明确报告 `unknown`；TH06/TH07 尚未满足重复 Draw 纯度边界，不宣称 Lab 支持。Lab 是验证机制而不是 Launcher 功能；采用其他机制的作品仍必须证明同一高刷行为契约。
+当前 `eagler-common` Presentation Lab 提供通用固定 tick、冻结、alpha-only Draw、重复采样和三态证据契约。TH08 已接入日常门禁；TH10 是有限接入，状态覆盖不完整时明确报告 `unknown`；TH06/TH07 尚未满足完整 Draw 链的重复 Draw 纯度边界，不宣称 Lab 支持，也不是 Lab 接入架构的参考实现。正常高刷可运行、固定步进、单个 suppression flag 或若干局部保存/恢复修复都不能推出 Lab 安全；新作品必须审计真实 Draw 链的全部 owner，并用版本化状态覆盖证明重复 Draw 不改变 authoritative 或 rollback-visible state。Lab 是验证机制而不是 Launcher 功能；采用其他机制的作品仍必须证明同一高刷行为契约。
 
 高刷适配必须在独立 topic worktree 中完成，不能直接在 upstream tracking 或 canonical Eagler 工作树里试验 Draw/Update 拆分。
 
