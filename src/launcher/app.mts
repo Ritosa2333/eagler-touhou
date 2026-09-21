@@ -2491,9 +2491,17 @@ function askDecision({ title = "", message = "", confirmText = "", cancelText = 
 function askConfirmation(options = {}) {
   return askDecision(options).then(value => value === "confirm");
 }
-// Entry notice, shown on every visit from a blacklisted browser. There is no
-// cancel action: the player either opens the FAQ or continues browsing. The
-// FAQ is a real page navigation, so choosing it leaves the launcher.
+// Entry notice from a blacklisted browser. Once the player has seen it, the
+// dismissal is remembered so later visits go straight to the launcher. There
+// is no cancel action: the player either opens the FAQ or continues browsing.
+// The FAQ is a real page navigation, so choosing it leaves the launcher.
+const browserWarningDismissedKey = "browser-warning-dismissed";
+function browserWarningDismissed(): boolean {
+  try { return localStorage.getItem(browserWarningDismissedKey) === "1"; } catch { return false; }
+}
+function markBrowserWarningDismissed(): void {
+  try { localStorage.setItem(browserWarningDismissedKey, "1"); } catch {}
+}
 async function warnDiscouragedBrowser(): Promise<void> {
   const choice = await askDecision({
     title: t("browserWarning.title"),
@@ -2503,6 +2511,8 @@ async function warnDiscouragedBrowser(): Promise<void> {
     hideCancel: true,
     variant: "browser-warning",
   });
+  // Persist before the FAQ navigation so the next visit no longer warns.
+  markBrowserWarningDismissed();
   if (choice === "secondary") location.href = "faq.html";
 }
 function closeDecisionDialog(value = "cancel") {
@@ -8309,8 +8319,8 @@ const loadEntryNotices = () => {
     void siteNotice.load();
   }
 };
-if (!debugHarness && !touchPreview && discouragedBrowserId(String(navigator.userAgent || ""))) {
-  // Per-visit warning for blacklisted UA tokens; the ordinary entry notices
+if (!debugHarness && !touchPreview && !browserWarningDismissed() && discouragedBrowserId(String(navigator.userAgent || ""))) {
+  // First-visit warning for blacklisted UA tokens; the ordinary entry notices
   // run once it is dismissed (the FAQ choice navigates away instead).
   void warnDiscouragedBrowser().then(loadEntryNotices);
 } else {
