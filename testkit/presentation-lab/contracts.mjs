@@ -35,6 +35,8 @@ export function validateCapabilities(value) {
     throw Error('Presentation Lab capabilities require a game identifier');
   if (typeof value.adapterVersion !== 'string' || !value.adapterVersion)
     throw Error('Presentation Lab capabilities require an adapter version');
+  if (typeof value.nativeAbi !== 'string' || !value.nativeAbi)
+    throw Error('Presentation Lab capabilities require a native ABI identifier');
   requireObject(value.features, 'Presentation Lab feature declaration');
   for (const feature of ['freeze', 'resume', 'step', 'drawOnly', 'references', 'stateEvidence', 'timing', 'capture'])
     if (value.features[feature] !== true)
@@ -62,6 +64,8 @@ export function validateTickReceipt(receipt) {
     throw Error('Presentation Lab tick receipt must report zero or one advanced tick');
   if (receipt.status === TICK_STATUS.ADVANCED && receipt.advancedTicks !== 1)
     throw Error('An advanced Presentation Lab tick must report one advanced tick');
+  if (receipt.status !== TICK_STATUS.ADVANCED && receipt.advancedTicks !== 0)
+    throw Error('A non-advanced Presentation Lab tick must report zero advanced ticks');
   return receipt;
 }
 export function validateReferencePair(pair) {

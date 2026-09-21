@@ -22,4 +22,4 @@ jobs:
       - name: Test
         run: ctest --test-dir build -C Release --output-on-failure
       - name: Presentation Lab controller contract
-        run: node --test testkit/presentation-lab/controller-core.test.mjs
+        run: node --test testkit/presentation-lab/controller-core.test.mjs testkit/presentation-lab/release-contract.test.mjs

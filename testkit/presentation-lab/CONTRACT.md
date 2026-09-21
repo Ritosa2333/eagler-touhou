@@ -10,6 +10,10 @@ report envelopes and local tooling. A game supplies two versioned boundaries:
 
 The JavaScript interface is described in `contracts.d.ts` and enforced at
 runtime by `contracts.mjs`. The native record ABI may differ between titles.
+The v1 compatibility boundary is the pair of exported API major constants.
+Breaking a required method, receipt, normalized record or purity rule requires
+a new major. Additive report fields are allowed, but reports always carry the
+exact common revision, title adapter version and native ABI identifier.
 
 ## Runtime invariants
 
@@ -35,8 +39,10 @@ actual simulation tick and draw serial. They must not be synthesized from the
 interpolation implementation under test.
 
 State evidence names its coverage. Missing evidence produces `unknown`, never
-a purity pass. Object identity includes lifecycle or generation evidence;
-memory addresses alone are not stable identities.
+a purity pass. Every draw-only sample supplies the same versioned coverage
+descriptor; an absent sample or malformed `missingGroups` list is unknown.
+Object identity includes lifecycle or generation evidence; memory addresses
+alone are not stable identities.
 
 The title owner registry documents the authoritative writer, endpoint
 publisher, presentation consumer, final submission point, identity,

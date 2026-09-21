@@ -9,15 +9,23 @@ const indexRecords=records=>{const map=new Map(),duplicates=new Set();for(const 
 const fieldMap=record=>new Map((record?.fields||[]).map(field=>[field.id,field]));
 
 export function compareStateEvidence(before,afterSamples){
-  if(!before||!Array.isArray(before.groups)||!Array.isArray(before.missingGroups))
+  const groupsOf=evidence=>{
+    if(!evidence||typeof evidence.coverageVersion!=='string'||!evidence.coverageVersion||!Array.isArray(evidence.groups)||!Array.isArray(evidence.missingGroups)||!evidence.missingGroups.every(group=>typeof group==='string'&&group))return null;
+    const groups=new Map();
+    for(const group of evidence.groups){const digestValid=typeof group?.digest==='string'?group.digest.length>0:Number.isFinite(group?.digest);if(!group||typeof group.id!=='string'||!group.id||!digestValid||groups.has(group.id))return null;groups.set(group.id,group.digest);}
+    return groups;
+  };
+  const baseline=groupsOf(before);
+  if(!baseline)
     return {status:'unknown',changes:[],reason:'missing state coverage descriptor'};
-  const baseline=new Map(before.groups.map(group=>[group.id,group.digest]));
+  if(!Array.isArray(afterSamples)||afterSamples.length===0)
+    return {status:'unknown',changes:[],reason:'missing draw-only state samples'};
   const changes=[];let unknown=before.missingGroups.length>0;
   for(let sample=0;sample<afterSamples.length;sample++){
     const evidence=afterSamples[sample];
-    if(!evidence||evidence.coverageVersion!==before.coverageVersion||!Array.isArray(evidence.groups)){unknown=true;continue;}
-    if(evidence.missingGroups?.length)unknown=true;
-    const groups=new Map(evidence.groups.map(group=>[group.id,group.digest]));
+    const groups=groupsOf(evidence);
+    if(!groups||evidence.coverageVersion!==before.coverageVersion||groups.size!==baseline.size){unknown=true;continue;}
+    if(evidence.missingGroups.length)unknown=true;
     for(const [id,digest] of baseline){if(!groups.has(id)){unknown=true;continue;}if(groups.get(id)!==digest)changes.push({sample,group:id,before:digest,after:groups.get(id)});}
   }
   return {status:changes.length?'fail':unknown?'unknown':'pass',changes};
