@@ -110,7 +110,11 @@ export function createAppShellClient({
     // register() may resolve after updatefound. Observe the in-flight worker too.
     watchWorker(registration.installing, controlledBeforeRegistration);
     notify();
-    void checkForUpdate();
+    // register() already fetches the current worker on first install. Calling
+    // update() again while that uncontrolled installation is settling can
+    // create a second installing worker; a following controlled navigation may
+    // then observe its activation as an update and reload itself mid-navigation.
+    if (controlledBeforeRegistration) void checkForUpdate();
   }
   async function waitForInitialActivation(registration: ServiceWorkerRegistrationLike) {
     const worker = registration.installing;

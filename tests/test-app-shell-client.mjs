@@ -51,6 +51,7 @@ assert.equal(initialReady, false, "registration alone is not an active first-ins
 firstContainer.controller = {}; firstWorker.setState("installed"); firstWorker.setState("activated");
 await first.ready;
 assert.equal(initialReady, true);
+assert.equal(firstRegistration.updates, 0, "first installation must not start a redundant update check");
 const stuck = new RegistrationStub(); stuck.installing = new WorkerStub();
 const bounded = createAppShellClient({ serviceWorker: { ...firstContainer, controller: null, async register() { return stuck; } },
   secureContext: true, activationTimeoutMs: 5 });
