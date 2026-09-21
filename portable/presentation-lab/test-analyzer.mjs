@@ -11,11 +11,12 @@ function record(x=0,{owner=5,scale=1,angle=0,opacity=1,sprite=1,age=10,flags=1<<
   r.values.splice(21,6,Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys),screenX,100);r.values[30]=opacity;r.values[31]=1;return r;
 }
 const alphas=[0,.25,.5,.75,1,.5,.5,1];
+const state=digest=>({coverageVersion:'th08/state/test',groups:[{id:'RNG/资源数值',digest:digest??1}],missingGroups:[]});
 test('timing ring decodes wrapped samples in chronological order',()=>{
   const buffer=new ArrayBuffer(512*128),view=new DataView(buffer),put=(slot,time,frame)=>{const o=slot*128;view.setFloat64(o,time,true);view.setFloat32(o+8,6.1,true);view.setFloat32(o+12,.5,true);view.setUint32(o+16,0xff,true);view.setUint32(o+20,frame,true);view.setFloat32(o+24,frame+.25,true);};
   put(511,100,7);put(0,106,8);const ring=decodeTimingRing(buffer,{base:0,capacity:512,count:2,next:1,stride:128});assert.deepEqual(ring.rows.map(r=>r.simulationFrame),[7,8]);assert.equal(ring.durationMs,6);assert.equal(ring.rows[0].camera.previous[0],7.25);assert.equal(ring.rows[0].flags.interpolate,true);assert.equal(ring.rows[0].flags.cameraRebased,true);
 });
-function analyze(previous,current,maker,extra={}){return analyzeWindow({previous:{tick:1,records:[previous]},current:{tick:2,records:[current]},samples:alphas.map(alpha=>({alpha,records:[maker(alpha)]})),stateBefore:[1],statesAfter:alphas.map(()=>[1]),...extra});}
+function analyze(previous,current,maker,extra={}){return analyzeWindow({previous:{tick:1,records:[previous]},current:{tick:2,records:[current]},samples:alphas.map(alpha=>({alpha,records:[maker(alpha)]})),stateBefore:state(),statesAfter:alphas.map(()=>state()),...extra});}
 const find=(report,id)=>report.objects[0].fields.find(f=>f.id===id)?.status;
 test('known linear interpolation is measured at final vertices',()=>{const r=analyze(record(10),record(14),a=>record(10+4*a));assert.equal(find(r,'position'),'interpolated');assert.equal(find(r,'screen-position'),'interpolated');assert.equal(r.valid,true);});
 test('missing owner interpolation (independent previous endpoint)',()=>{const r=analyze(record(10),record(14),()=>record(14));assert.equal(find(r,'position'),'missing-interpolation');});
@@ -35,7 +36,7 @@ test('sprite change does not excuse position stepping',()=>{const r=analyze(reco
 test('object reuse with age reset',()=>{assert.equal(analyze(record(10,{age:99}),record(14,{age:0}),()=>record(14,{age:0})).objects[0].status,'lifecycle');});
 test('bomb state is part of diagnostic identity rather than a forced cross-state lerp',()=>{
   const previous=record(10,{owner:16}),current=record(14,{owner:16});previous.meta[2]=1<<8;current.meta[2]=2<<8;
-  const r=analyzeWindow({previous:{tick:1,records:[previous]},current:{tick:2,records:[current]},samples:alphas.map(alpha=>({alpha,records:[current]})),stateBefore:[1],statesAfter:alphas.map(()=>[1])});
+  const r=analyzeWindow({previous:{tick:1,records:[previous]},current:{tick:2,records:[current]},samples:alphas.map(alpha=>({alpha,records:[current]})),stateBefore:state(),statesAfter:alphas.map(()=>state())});
   assert.equal(r.objects[0].status,'unobserved');assert.equal(r.objects[0].lifecycleState,2);assert.equal(r.objects[0].part,0);assert.equal(r.disappeared.length,1);
 });
 test('script/lifecycle switch snaps rather than blends unrelated VMs',()=>{const current=record(14);current.meta[6]=2;assert.equal(analyze(record(10),current,()=>current).objects[0].status,'lifecycle');});
@@ -44,7 +45,8 @@ test('absent/cull samples are unobserved rather than passed',()=>{const r=analyz
 test('duplicate semantic keys fail closed',()=>{const r=analyze(record(10),record(14),a=>record(10+4*a),{current:{tick:2,records:[record(14),record(14)]}});assert.equal(r.objects[0].status,'ambiguous');});
 test('nonconsecutive references invalidate window',()=>{const r=analyze(record(10),record(14),a=>record(10+4*a),{previous:{tick:0,records:[record(10)]}});assert.equal(r.valid,false);assert.equal(r.objects[0].status,'unobserved');});
 test('bounded capture overflow never counts as complete',()=>{const r=analyze(record(10),record(14),a=>record(10+4*a),{current:{tick:2,records:[record(14)],dropped:1}});assert.equal(r.valid,false);});
-test('logic state mutation is identified by owner group',()=>{const r=analyze(record(10),record(14),a=>record(10+4*a),{statesAfter:[[2]]});assert.equal(r.purity,false);assert.equal(r.stateChanges[0].group,'RNG/资源数值');});
+test('logic state mutation is identified by owner group',()=>{const r=analyze(record(10),record(14),a=>record(10+4*a),{statesAfter:[state(2)]});assert.equal(r.purity,false);assert.equal(r.purityStatus,'fail');assert.equal(r.stateChanges[0].group,'RNG/资源数值');});
+test('incomplete state coverage remains unknown rather than purity pass',()=>{const incomplete={...state(),missingGroups:['audio']};const r=analyze(record(10),record(14),a=>record(10+4*a),{stateBefore:incomplete,statesAfter:alphas.map(()=>incomplete)});assert.equal(r.purity,false);assert.equal(r.purityStatus,'unknown');});
 test('angle wrap follows shortest arc',()=>{const r=analyze(record(10,{angle:Math.PI-.1}),record(10,{angle:-Math.PI+.1}),a=>record(10,{angle:Math.PI-.1+.2*a}));assert.equal(find(r,'rotation'),'interpolated');});
 test('visibility is distinct from final geometry evidence',()=>{assert.equal(analyze(record(1000),record(1004),a=>record(1000+4*a)).objects[0].status,'offscreen');});
 test('invalid record buffer does not read WASM memory out of bounds',()=>{assert.throws(()=>decodeRecords(new ArrayBuffer(8),0,1));assert.throws(()=>decodeRecords(new ArrayBuffer(752),0,1,750));});

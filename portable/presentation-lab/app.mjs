@@ -65,12 +65,14 @@ function renderReport(value){
  showBuild(value.build,readOnly?'报告基线':'基线');
  $('observed').textContent=value.totalObjects??value.objects.length;$('suspects').textContent=value.issueGroups?.length??value.objects.filter(o=>o.severity>=3).length;
  $('unknown').textContent=value.objects.filter(o=>['unobserved','unscoped','ambiguous','lifecycle','offscreen'].includes(o.status)).length;
+ const purityFailed=value.purityStatus?value.purityStatus==='fail':value.purity===false;
  const messages=[];if(!value.valid)messages.push('样本窗口不完整，不能作为完整覆盖结论');
  if(!value.gate)messages.push('实际高刷门控为关闭：这里是强制诊断采样，不代表正常运行已高刷');
- if(!value.purity)messages.push('所监测的权威字段发生变化：'+[...new Set(value.stateChanges.map(s=>s.group))].join('、')+'；自动扫描已停止');
+ if(purityFailed)messages.push('所监测的权威字段发生变化：'+[...new Set(value.stateChanges.map(s=>s.group))].join('、')+'；自动扫描已停止');
+ else if(value.purityStatus==='unknown')messages.push('重画未改变已覆盖字段，但状态指纹仍有明确缺口，纯度结论为 unknown');
  if(value.negativeControl)messages.push('负对照：故意让现有 lerp 不生成中间值');
  if(value.worldFrozen)messages.push('原作暂停：世界运动不作漏插值判定');
- $('health').className='notice '+(!value.purity?'error':messages.length?'warn':'');
+ $('health').className='notice '+(purityFailed?'error':messages.length?'warn':'');
  $('health').textContent=messages.join('。')||'重画未改变所监测的权威字段。点击对象查看属性证据；不是全游戏通过。';
  $('coverage').textContent=JSON.stringify(value.coverage,null,2);$('overlay').hidden=false;$('alpha').value='1';$('alphaValue').textContent='1.00';
  if(readOnly){

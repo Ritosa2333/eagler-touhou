@@ -2,6 +2,8 @@
 
 这是 TH08 高刷新 presentation 管线的隔离诊断工具，不是可以直接部署的正式 Runtime。主线游戏和 Launcher 不需要为它改变资源路径；诊断代码只在 `TH_PRESENTATION_AUDIT` 构建中启用。
 
+Lab 编译产物固定写入 `th08_web/artifacts/presentation-lab/`，装配产物固定写入 `artifacts/presentation-lab/runtime/`；普通构建仍使用 `th08_web/artifacts/sdl3/` 与 `build-eagler/`。打包器同时核对 profile、诊断标记和实际 WASM 导出，拒绝把含 `audit_*` 的 Runtime 当作 production 装配。
+
 ## 使用
 
 在这份测试树内运行：
@@ -55,6 +57,7 @@ python portable/presentation-lab/prepare.py --zip 'D:\workspace\东方测试.zip
 
 ```powershell
 node --test portable/presentation-lab/test-analyzer.mjs
+node portable/presentation-lab/check-release-boundary.mjs
 python portable/presentation-lab/verify-browser.py
 python portable/presentation-lab/verify-noninterference.py --ticks 1200
 python portable/presentation-lab/verify-replays.py --fixtures 4 --ticks 1200

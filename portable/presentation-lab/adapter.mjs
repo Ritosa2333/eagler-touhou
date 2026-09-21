@@ -1,17 +1,16 @@
 import {DRIVER_API_VERSION,OBSERVATION_API_VERSION,TICK_STATUS} from '../../third_party/eagler-common/testkit/presentation-lab/contracts.mjs';
-import {decodeRecords,analyzeWindow,compactReport,mergeIssueGroups,keyOf} from './analyzer.mjs';
+import {decodeRecords,analyzeWindow,compactReport,mergeIssueGroups,keyOf,STATE_GROUPS} from './analyzer.mjs';
+import {TH08_PRESENTATION_LAB_ABI,TH08_PRESENTATION_LAB_EXPORTS} from './native-abi.mjs';
 import {decodeTimingRing} from './timing.mjs';
-
-const requiredExports=['sdl_loop_start','sdl_loop_stop','sdl_loop_tick','sdl_key','sdl_keys_clear','allocate','deallocate','audit_enable','audit_draw','audit_fault','audit_gate','audit_world_frozen','audit_state','audit_records','audit_count','audit_tick_id','audit_dropped','audit_reference','audit_reference_count','audit_reference_tick','audit_reference_dropped','audit_stride','audit_timing_records','audit_timing_capacity','audit_timing_count','audit_timing_next','audit_timing_stride','trace','diagnostics'];
 
 function validateCore(core){
   if(!core?.memory?.buffer)throw Error('Wrong runtime: missing WASM memory');
-  for(const key of requiredExports)if(typeof core[key]!=='function')throw Error('Wrong runtime: missing '+key);
+  for(const key of TH08_PRESENTATION_LAB_EXPORTS)if(typeof core[key]!=='function')throw Error('Wrong runtime: missing '+key);
 }
 
 export class Th08RuntimeDriver{
   constructor(runtime,identity){this.runtime=runtime;this.core=runtime.core;this.identity=identity;this.generation=0;this.token=null;validateCore(this.core);}
-  describe(){return {driverApiVersion:DRIVER_API_VERSION,game:'th08',adapterVersion:'th08-presentation-lab/1',nativeAbi:'th08/presentation-audit-native/1',features:{freeze:true,resume:true,step:true,drawOnly:true,references:true,stateEvidence:true,timing:true,capture:true,replay:true}};}
+  describe(){return {driverApiVersion:DRIVER_API_VERSION,game:'th08',adapterVersion:'th08-presentation-lab/1',nativeAbi:TH08_PRESENTATION_LAB_ABI,features:{freeze:true,resume:true,step:true,drawOnly:true,references:true,stateEvidence:true,timing:true,capture:true,replay:true}};}
   freeze(){
     if(this.token)return this.token;
     this.core.sdl_loop_stop();
@@ -42,7 +41,13 @@ export class Th08ObservationAdapter{
   readRecordSet(reference=null){const pointer=reference===null?this.core.audit_records():this.core.audit_reference(reference),count=reference===null?this.core.audit_count():this.core.audit_reference_count(reference);return {tick:reference===null?this.core.audit_tick_id():this.core.audit_reference_tick(reference),dropped:reference===null?this.core.audit_dropped():this.core.audit_reference_dropped(reference),records:decodeRecords(this.core.memory.buffer,pointer,count,this.core.audit_stride())};}
   readReferences(){return {previous:this.readRecordSet(0),current:this.readRecordSet(1)};}
   readObservation(){return this.readRecordSet();}
-  readStateEvidence(){return Array.from(new Uint32Array(this.core.memory.buffer,this.core.audit_state(),9));}
+  readStateEvidence(){
+    const buffer=this.core.memory.buffer,pointer=this.core.audit_state(),bytes=9*Uint32Array.BYTES_PER_ELEMENT;
+    if(!Number.isInteger(pointer)||pointer<=0||pointer%4||pointer+bytes>buffer.byteLength)return {coverageVersion:'th08/state/1',groups:[],missingGroups:['all']};
+    const words=new Uint32Array(buffer,pointer,9);
+    return {coverageVersion:'th08/state/1',groups:Array.from(words,(digest,index)=>({id:STATE_GROUPS[index],digest,includedFields:[STATE_GROUPS[index]]})),
+      missingGroups:['authoritative fields outside the nine named fingerprints','audio device and queued effects','Replay cursors and host cadence','unmarked screen effects']};
+  }
   readTiming(){return decodeTimingRing(this.core.memory.buffer,{base:this.core.audit_timing_records(),capacity:this.core.audit_timing_capacity(),count:this.core.audit_timing_count(),next:this.core.audit_timing_next(),stride:this.core.audit_timing_stride()});}
   readTrace(){return Array.from(new Uint32Array(this.core.memory.buffer,this.core.trace(this.runtime.app),68));}
   readScene(){return {status:this.runtime.status(),diagnostics:Array.from(new Int32Array(this.core.memory.buffer,this.core.diagnostics(this.runtime.app),16))};}

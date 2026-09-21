@@ -1,4 +1,5 @@
 import {defaultSeverity,groupFindings as groupFindingsCore,compactReport,mergeIssueGroups as mergeIssueGroupsCore} from '../../third_party/eagler-common/testkit/presentation-lab/report-core.mjs';
+import {compareStateEvidence} from '../../third_party/eagler-common/testkit/presentation-lab/analyzer.mjs';
 import {OWNERS,STATE_GROUPS,WORLD_OWNER_IDS,MOTION_OWNER_IDS} from './owners.mjs';
 export {OWNERS,STATE_GROUPS} from './owners.mjs';
 
@@ -84,16 +85,16 @@ function classifyField(f,previous,current,samples) {
   return {...evidence,variation,residual,status:residual<=Math.max(tolerance*2,motion*.02)?'interpolated':'responsive'};
 }
 export const severity = defaultSeverity;
-export function analyzeWindow({previous,current,samples,stateBefore=[],statesAfter=[],worldFrozen=false,gate=true,build={},label='',negativeControl=false}) {
+export function analyzeWindow({previous,current,samples,stateBefore=null,statesAfter=[],worldFrozen=false,gate=true,build={},label='',negativeControl=false}) {
   if(!previous||!current||!Array.isArray(samples)||samples.length<3)throw Error('Need two authoritative draws and at least three alpha samples');
   if(samples.some(s=>!Number.isFinite(s.alpha)||s.alpha<0||s.alpha>1))throw Error('Invalid alpha');
   const before=indexed(previous.records),now=indexed(current.records),sampleMaps=samples.map(s=>({...s,...indexed(s.records)}));
   const consecutive=previous.tick+1===current.tick;
+  const state=compareStateEvidence(stateBefore,statesAfter);
   const report={schema:SCHEMA,build,label,negativeControl,tick:current.tick,previousTick:previous.tick,consecutive,
-    gate:!!gate,worldFrozen,alphas:samples.map(s=>s.alpha),stateChanges:[],objects:[],counts:{},coverage:{},
+    gate:!!gate,worldFrozen,alphas:samples.map(s=>s.alpha),purityStatus:state.status,stateChanges:state.changes,objects:[],counts:{},coverage:{},
     sampledGeometry:true,dropped:(previous.dropped||0)+(current.dropped||0)+samples.reduce((n,s)=>n+(s.dropped||0),0),
     limitations:['screen geometry is not an occlusion/pixel visibility proof','unmarked owners and unvisited scenes are not counted as passed','state hashes cover named fields, not the complete simulation','geometry over 16 vertices is sampled; no interpolated GPU command replay','CPU-projected 3D UV/fog/color shader output is unobserved']};
-  for(let i=0;i<statesAfter.length;i++)for(let j=0;j<stateBefore.length;j++)if(stateBefore[j]!==statesAfter[i][j])report.stateChanges.push({sample:i,alpha:samples[i]?.alpha,group:STATE_GROUPS[j]||j,before:stateBefore[j],after:statesAfter[i][j]});
   for(const [key,c] of now.map){
     const p=before.map.get(key),selected=sampleMaps.map(s=>({alpha:s.alpha,record:s.map.get(key)}));
     const bomb=c.meta[0]===16,rawPart=c.meta[2];
@@ -168,7 +169,7 @@ export function analyzeWindow({previous,current,samples,stateBefore=[],statesAft
   }
   report.disappeared=[...before.map].filter(([key])=>!now.map.has(key)).map(([key,r])=>({key,ownerId:r.meta[0],script:r.meta[6]|0,status:'lifecycle'}));
   report.objects.sort((a,b)=>b.severity-a.severity||a.ownerId-b.ownerId||a.key.localeCompare(b.key));
-  report.purity=report.stateChanges.length===0;
+  report.purity=report.purityStatus==='pass';
   report.valid=consecutive&&report.dropped===0&&samples.every(s=>s.tick===undefined||s.tick===current.tick)&&samples.some(s=>s.alpha===0)&&samples.some(s=>s.alpha===1)&&samples.filter(s=>s.alpha===.5).length>=2;
   report.issueGroups=groupFindings([report]);
   return report;

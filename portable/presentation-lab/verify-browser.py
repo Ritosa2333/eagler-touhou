@@ -19,7 +19,7 @@ SAMPLE = """({label, negativeControl=false}) => {
 
 
 def brief(report):
-    return {k: report[k] for k in ('label', 'tick', 'valid', 'purity', 'gate', 'counts', 'coverage', 'stateChanges')}
+    return {k: report[k] for k in ('label', 'tick', 'valid', 'purityStatus', 'purity', 'gate', 'counts', 'coverage', 'stateChanges')}
 
 
 def main():
@@ -86,7 +86,7 @@ def main():
             if errors:
                 raise AssertionError(errors)
             assert all(r['valid'] for r in reports), 'Invalid capture window'
-            assert all(r['purity'] for r in reports), 'A diagnostic sweep changed named authoritative fields'
+            assert all(r['purityStatus'] != 'fail' for r in reports), 'A diagnostic sweep changed named authoritative fields'
             if not args.quick:
                 by_label = {r['label']: r for r in reports}
                 def player_position(label):
@@ -131,7 +131,9 @@ def main():
                 page.wait_for_timeout(150)
                 assert page.evaluate('presentationLab.controller.runtime.status()[9]') == frozen_tick
             print(json.dumps({'browserCalibration': 'PASS', 'realWasm': True,
-                              'negativeControl': not args.quick, 'namedStatePurity': True,
+                              'negativeControl': not args.quick,
+                              'namedStatePurity': all(r['purityStatus'] == 'pass' for r in reports),
+                              'namedStatePurityStatus': sorted({r['purityStatus'] for r in reports}),
                               'reportExportImport': not args.quick, 'savedAlphaImages': not args.quick,
                               'livePlayAndFreeze': not args.quick}, ensure_ascii=False), flush=True)
         finally:

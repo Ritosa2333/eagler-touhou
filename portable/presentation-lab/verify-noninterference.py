@@ -50,7 +50,7 @@ def main():
                     if(n%20===19){
                       if(lane==='redraws'){
                         const r=c.sweep({label:'input-tick-'+(n+1)});
-                        pure.push({tick:n+1,ok:r.purity,changes:r.stateChanges});
+                        pure.push({tick:n+1,status:r.purityStatus,changes:r.stateChanges});
                         findings.push({tick:n+1,counts:r.counts,groups:r.issueGroups});
                       }
                       trace.push({tick:n+1,trace:c.trace(),state:c.state(),status:c.runtime.status()});
@@ -63,7 +63,8 @@ def main():
                 lanes[lane] = result
                 context.close()
                 print(json.dumps({'lane': lane, 'samples': len(result['trace']),
-                                  'impureWindows': sum(not row['ok'] for row in result['pure']),
+                                  'impureWindows': sum(row['status'] == 'fail' for row in result['pure']),
+                                  'unknownWindows': sum(row['status'] == 'unknown' for row in result['pure']),
                                   'errors': errors}, ensure_ascii=False), flush=True)
             reference = lanes['observer-off']['trace']
             divergence = []

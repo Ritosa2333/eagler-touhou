@@ -98,7 +98,7 @@ CHUNK = r'''async ({count,maxTicks}) => {
       // repeated thousands of times; full issueGroups/coverage remain intact.
       delete compact.build;compact.context=context;
       windows.push(compact);
-      if(!report.purity||changed){q.done=true;q.stopReason='presentation-state-change';break;}
+      if(report.purityStatus==='fail'||changed){q.done=true;q.stopReason='presentation-state-change';break;}
       if(!report.valid){q.done=true;q.stopReason='invalid-audit-window';break;}
     }
     if(q.mode==='audit'&&q.sparse&&(targetHit||regularHit)){core.audit_enable(0);q.auditOn=false;}

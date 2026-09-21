@@ -18,10 +18,10 @@ try {
         if (!$env:EAGLER_FONT_ROOT) { $env:EAGLER_FONT_ROOT = Join-Path $workspace 'th08-eagler/build-eagler/fonts' }
         & $node portable/build.mjs --th08 --presentation-lab
         if ($LASTEXITCODE) { throw "Lab compilation failed: $LASTEXITCODE" }
-        & $node portable/package-eagler.mjs
+        & $node portable/package-eagler.mjs --presentation-lab
         if ($LASTEXITCODE) { throw "Lab packaging failed: $LASTEXITCODE" }
     }
-    $buildFile = if ($Snapshot) { "artifacts/presentation-lab/builds/$Snapshot/build.json" } else { 'th08_web/artifacts/sdl3/build.json' }
+    $buildFile = if ($Snapshot) { "artifacts/presentation-lab/builds/$Snapshot/build.json" } else { 'th08_web/artifacts/presentation-lab/build.json' }
     $buildIdentity = Get-Content $buildFile -Raw | ConvertFrom-Json
     $existing = $null
     try { $existing = Invoke-RestMethod ($url + 'build.json') -TimeoutSec 2 } catch {}

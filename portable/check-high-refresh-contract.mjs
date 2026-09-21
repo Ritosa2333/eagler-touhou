@@ -24,14 +24,24 @@ const backgroundScript=read('th08_web/cpp/game/BackgroundScript.cpp');
 const shell=read('th08_web/sdl-runtime/shell.mjs');
 const labController=read('portable/presentation-lab/controller.mjs');
 const labServer=read('portable/presentation-lab/serve.mjs');
+const labStart=read('portable/presentation-lab/start-lab.ps1');
+const buildScript=read('portable/build.mjs');
+const packageScript=read('portable/package-eagler.mjs');
 const commonController=read('third_party/eagler-common/testkit/presentation-lab/controller-core.mjs');
 
 // Diagnostic orchestration is a pinned common testkit dependency. The
 // production shell must not know Lab hotkeys or expose a runtime toggle.
-assert.match(labController,/PresentationLabControllerCore.*\/common\/controller-core\.mjs/);
+assert.match(labController,/import \{PresentationLabControllerCore\}/);
+assert.match(labController,/third_party\/eagler-common\/testkit\/presentation-lab\/controller-core\.mjs/);
 assert.match(labServer,/third_party\/eagler-common\/testkit\/presentation-lab/);
 assert.match(commonController,/class PresentationLabControllerCore/);
 assert.doesNotMatch(shell,/presentation-mark|gameGeneration.*presentation-lab/);
+assert.match(buildScript,/profile=presentationLab\?'presentation-lab':'sdl3'/);
+assert.match(buildScript,/diagnostic:presentationLab/);
+assert.match(packageScript,/build\.diagnostic.*presentationLab/);
+assert.match(packageScript,/Production build contains diagnostic export/);
+assert.match(labStart,/package-eagler\.mjs --presentation-lab/);
+assert.match(labServer,/artifacts\/presentation-lab\/runtime/);
 
 // Fixed game clock: one rAF callback may execute zero or one fixed tick. Late
 // callbacks skip expired 60 Hz deadlines instead of replaying catch-up ticks.
