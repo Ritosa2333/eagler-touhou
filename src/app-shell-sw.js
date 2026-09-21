@@ -1,117 +1,114 @@
 "use strict";
 
-// App Shell only. Package/game content and Package DATA preparation are not
-// routed through this worker. Deployment builds may add App-owned Runtime
-// HTML/JS/WASM to this same precache so an installed game can start offline.
+// App-owned shell and Runtime only; never intercept or delete Package Store data.
 const CACHE_PREFIX = "eagler-touhou-app-shell-";
-const CACHE_NAME = `${CACHE_PREFIX}__APP_SHELL_BUILD_ID__`;
+const scopeUrl = new URL(self.registration.scope);
+const CACHE_NAME = `${CACHE_PREFIX}${encodeURIComponent(scopeUrl.pathname)}-__APP_SHELL_BUILD_ID__`;
 const CACHE_RETENTION = 2;
 const PRECACHE_CONCURRENCY = 3;
-const scopeUrl = new URL(self.registration.scope);
+const FETCH_TIMEOUT_MS = 30000;
 const PRECACHE_MANIFEST = self.__WB_MANIFEST;
 const DEFERRED_PATHS = new Set(__APP_SHELL_DEFERRED_PATHS__.map(path => new URL(path, scopeUrl).href));
-const cacheMetaUrl = new URL(`./__app-shell-meta__/__APP_SHELL_BUILD_ID__`, scopeUrl).href;
+const metaPrefix = new URL("./__app-shell-meta__/", scopeUrl).href;
+const cacheMetaUrl = `${metaPrefix}__APP_SHELL_BUILD_ID__`;
 const updateStatusUrl = new URL("./__app-shell-update-status__", scopeUrl).href;
 let currentMetadataUpdate = Promise.resolve();
-
 const manifestByPathname = new Map(PRECACHE_MANIFEST.map(entry => {
   const url = new URL(entry.url, scopeUrl);
   return [url.pathname, { ...entry, cacheUrl: url.href }];
 }));
 
-async function precacheShell() {
-  const existingShellCaches = (await caches.keys()).filter(name => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME);
-  const createdAt = Date.now();
-  const cache = await caches.open(CACHE_NAME);
-  const rankedExisting = await Promise.all(existingShellCaches.map(async name => ({
-    name,
-    createdAt: await cacheCreatedAt(name),
-    metadata: await cacheMetadata(name),
-  })));
-  rankedExisting.sort((a, b) => b.createdAt - a.createdAt);
-  const reusable = rankedExisting.find(item => item.metadata?.entries && typeof item.metadata.entries === "object") || null;
-  const reusableCache = reusable ? await caches.open(reusable.name) : null;
-  let reused = 0;
-  let fetched = 0;
-  const installEntries = PRECACHE_MANIFEST.filter(entry => !DEFERRED_PATHS.has(new URL(entry.url, scopeUrl).href));
-  let cursor = 0;
-  await Promise.all(Array.from({ length: Math.min(PRECACHE_CONCURRENCY, installEntries.length) }, async () => {
-    while (cursor < installEntries.length) {
-      const entry = installEntries[cursor++];
-      const cacheUrl = new URL(entry.url, scopeUrl).href;
-      if (reusableCache && entry.revision && reusable.metadata.entries[cacheUrl] === entry.revision) {
-        const previous = await reusableCache.match(cacheUrl);
-        if (previous) {
-          await cache.put(cacheUrl, previous);
-          reused++;
-          continue;
-        }
-      }
-      const request = new Request(cacheUrl, { cache: "reload" });
-      const response = await fetch(request);
-      if (!response.ok) throw new Error(`App Shell precache failed: ${request.url} HTTP ${response.status}`);
-      await cache.put(cacheUrl, response);
-      fetched++;
-    }
-  }));
-  await cache.put(cacheMetaUrl, new Response(JSON.stringify({
-    build: "__APP_SHELL_BUILD_ID__",
-    createdAt,
-    appliedAt: null,
-    updated: existingShellCaches.length > 0,
-    entries: Object.fromEntries(PRECACHE_MANIFEST.map(entry => [new URL(entry.url, scopeUrl).href, entry.revision || null])),
-    runtimeTrusted: {},
-    install: { reused, fetched, deferred: PRECACHE_MANIFEST.length - installEntries.length },
-  }), { headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } }));
-}
-
-async function appShellUpdateStatus() {
-  const cache = await caches.open(CACHE_NAME);
-  const response = await cache.match(cacheMetaUrl);
-  if (!response) return new Response(null, { status: 503 });
-  const status = await response.json();
-  if (status.updated === true && !(Number(status.appliedAt) > 0)) {
-    status.appliedAt = Date.now();
-    const applied = new Response(JSON.stringify(status), {
-      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-    });
-    await cache.put(cacheMetaUrl, applied.clone());
-    return applied;
-  }
-  return new Response(JSON.stringify(status), {
-    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-  });
-}
-
-self.addEventListener("install", event => {
-  event.waitUntil((async () => {
-    await precacheShell();
-    await self.skipWaiting();
-  })());
-});
-
-async function cacheCreatedAt(name) {
-  try {
-    const cache = await caches.open(name);
-    const keys = await cache.keys();
-    const metaKey = keys.find(request => new URL(request.url).pathname.includes("/__app-shell-meta__/"));
-    if (!metaKey) return 0;
-    const response = await cache.match(metaKey);
-    const parsed = await response?.json();
-    return Number(parsed?.createdAt) || 0;
-  } catch {
-    return 0;
-  }
-}
-
 async function cacheMetadata(name) {
   try {
     const cache = await caches.open(name);
-    const keys = await cache.keys();
-    const metaKey = keys.find(request => new URL(request.url).pathname.includes("/__app-shell-meta__/"));
-    return metaKey ? await (await cache.match(metaKey))?.json() : null;
-  } catch {
-    return null;
+    const key = (await cache.keys()).find(request => request.url.startsWith(metaPrefix));
+    return key ? await (await cache.match(key)).json() : null;
+  } catch { return null; }
+}
+
+async function previousCaches() {
+  const names = (await caches.keys()).filter(name => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME);
+  const entries = await Promise.all(names.map(async name => ({ name, metadata: await cacheMetadata(name) })));
+  // CacheStorage is origin-wide. The metadata URL, not just the name prefix,
+  // proves ownership, including caches written by the pre-scoped worker.
+  return entries.filter(entry => entry.metadata?.entries)
+    .sort((a, b) => (Number(b.metadata.createdAt) || 0) - (Number(a.metadata.createdAt) || 0));
+}
+
+function runtimeGroup(url) {
+  const path = new URL(url).pathname.slice(scopeUrl.pathname.length);
+  const parts = path.split("/");
+  return parts[0] === "runtime" && parts.length > 2
+    ? `${parts[0]}/${parts[1]}/`
+    : path.slice(0, path.lastIndexOf("/") + 1);
+}
+
+async function fetchVerified(entry) {
+  if (!/^[a-f0-9]{64}$/i.test(entry.revision || "")) {
+    throw new Error(`App Shell revision is not SHA-256: ${entry.cacheUrl}`);
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const response = await fetch(new Request(entry.cacheUrl, { cache: "reload", signal: controller.signal }));
+    if (!response.ok) throw new Error(`App Shell cache failed: ${entry.cacheUrl} HTTP ${response.status}`);
+    const bytes = await response.clone().arrayBuffer();
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    const actual = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+    if (actual !== entry.revision.toLowerCase()) throw new Error(`App Shell integrity mismatch: ${entry.cacheUrl}`);
+    return response;
+  } finally { clearTimeout(timer); }
+}
+
+async function reusableResponse(entry, previous) {
+  for (const { name, metadata } of previous) {
+    if (metadata.integrity !== "sha256-v1" || !entry.revision || metadata.entries[entry.cacheUrl] !== entry.revision) continue;
+    if (DEFERRED_PATHS.has(entry.cacheUrl) && metadata.runtimeTrusted?.[entry.cacheUrl] !== entry.revision) continue;
+    const response = await (await caches.open(name)).match(entry.cacheUrl);
+    if (response) return response;
+  }
+  return null;
+}
+
+async function runPool(entries, action) {
+  let cursor = 0;
+  // Drain every writer before callers clean up a failed candidate. Promise.all
+  // alone can reject while another writer is still creating cache entries.
+  const results = await Promise.allSettled(Array.from({ length: Math.min(PRECACHE_CONCURRENCY, entries.length) }, async () => {
+    while (cursor < entries.length) await action(entries[cursor++]);
+  }));
+  const failure = results.find(result => result.status === "rejected");
+  if (failure) throw failure.reason;
+}
+
+async function precacheShell() {
+  const previous = await previousCaches();
+  const entries = [...manifestByPathname.values()];
+  // Initial visits stay lazy. Replacements prepare every published Runtime:
+  // users can install another game while this candidate is waiting, so a
+  // snapshot of previously warm groups is not a safe activation boundary.
+  // Unchanged verified bytes are reused; original game packages stay separate.
+  const required = entries.filter(entry => !DEFERRED_PATHS.has(entry.cacheUrl) || previous.length > 0);
+  const cache = await caches.open(CACHE_NAME);
+  const metadata = {
+    build: "__APP_SHELL_BUILD_ID__", createdAt: Date.now(), appliedAt: null,
+    updated: previous.length > 0, integrity: "sha256-v1",
+    entries: Object.fromEntries(entries.map(entry => [entry.cacheUrl, entry.revision || null])),
+    runtimeTrusted: {},
+    install: { reused: 0, fetched: 0, deferred: entries.length - required.length },
+  };
+  try {
+    await runPool(required, async entry => {
+      const reused = await reusableResponse(entry, previous);
+      const response = reused || await fetchVerified(entry);
+      await cache.put(entry.cacheUrl, response);
+      metadata.install[reused ? "reused" : "fetched"]++;
+      if (DEFERRED_PATHS.has(entry.cacheUrl)) metadata.runtimeTrusted[entry.cacheUrl] = entry.revision;
+    });
+    await writeCurrentCacheMetadata(metadata);
+  } catch (error) {
+    await caches.delete(CACHE_NAME);
+    throw error;
   }
 }
 
@@ -133,101 +130,95 @@ async function updateCurrentCacheMetadata(update) {
   return task;
 }
 
-function isRuntimeEntry(entry) {
-  return DEFERRED_PATHS.has(entry.cacheUrl);
-}
-
-async function trustRuntimeEntry(entry) {
-  if (!entry.revision || !isRuntimeEntry(entry)) return;
-  await updateCurrentCacheMetadata(metadata => {
-    metadata.runtimeTrusted ||= {};
-    metadata.runtimeTrusted[entry.cacheUrl] = entry.revision;
+async function appShellUpdateStatus() {
+  if (!await cacheMetadata(CACHE_NAME)) return new Response(null, { status: 503 });
+  const metadata = await updateCurrentCacheMetadata(status => {
+    if (status.updated === true && !(Number(status.appliedAt) > 0)) status.appliedAt = Date.now();
+  });
+  return new Response(JSON.stringify(metadata), {
+    headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
   });
 }
 
-function runtimeEntriesForPaths(paths) {
-  return paths.map(path => {
-    const url = new URL(String(path), scopeUrl);
-    if (url.origin !== scopeUrl.origin) throw new Error(`Runtime cache path is cross-origin: ${url.href}`);
-    const entry = manifestByPathname.get(url.pathname);
-    if (!entry) throw new Error(`Runtime cache path is not published: ${url.pathname}`);
-    return entry;
-  });
-}
-
+self.addEventListener("install", event => {
+  // Native waiting is the cross-tab safety barrier. Never force a new worker
+  // onto a live game. Reloading one tab is deliberately NOT an update action.
+  event.waitUntil(precacheShell());
+});
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
-    const shellCaches = (await caches.keys()).filter(name => name.startsWith(CACHE_PREFIX));
-    const ranked = await Promise.all(shellCaches.map(async name => ({ name, createdAt: await cacheCreatedAt(name) })));
-    ranked.sort((a, b) => b.createdAt - a.createdAt);
-    for (const entry of ranked.slice(CACHE_RETENTION)) await caches.delete(entry.name);
-    await self.clients.claim();
+    const previous = await previousCaches();
+    for (const entry of previous.slice(CACHE_RETENTION - 1)) await caches.delete(entry.name);
+    // Do not claim a network-loaded document half way through its module graph.
+    // A first visit stays uncontrolled; its next navigation uses this worker.
   })());
 });
 
-function manifestEntryForRequest(request) {
-  if (request.method !== "GET") return null;
-  const url = new URL(request.url);
-  if (url.origin !== scopeUrl.origin) return null;
-  return manifestByPathname.get(url.pathname) || null;
-}
-
-async function shellCacheFirst(request, entry) {
+async function shellCacheFirst(entry) {
   const cache = await caches.open(CACHE_NAME);
-  const runtimeEntry = isRuntimeEntry(entry);
   const cached = await cache.match(entry.cacheUrl);
   if (cached) return cached;
-  if (entry.revision) {
-    const otherCaches = (await caches.keys()).filter(name => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME);
-    for (const name of otherCaches) {
-      const metadata = await cacheMetadata(name);
-      if (metadata?.entries?.[entry.cacheUrl] !== entry.revision) continue;
-      if (runtimeEntry && metadata?.runtimeTrusted?.[entry.cacheUrl] !== entry.revision) continue;
-      const previous = await (await caches.open(name)).match(entry.cacheUrl);
-      if (previous) {
-        await cache.put(entry.cacheUrl, previous.clone());
-        if (runtimeEntry) await trustRuntimeEntry(entry);
-        return previous;
-      }
-    }
-  }
-  const response = await fetch(request, runtimeEntry ? { cache: "reload" } : undefined);
-  if (response.ok) {
-    await cache.put(entry.cacheUrl, response.clone());
-    if (runtimeEntry) await trustRuntimeEntry(entry);
+  const response = await reusableResponse(entry, await previousCaches()) || await fetchVerified(entry);
+  await cache.put(entry.cacheUrl, response.clone());
+  if (DEFERRED_PATHS.has(entry.cacheUrl)) {
+    await updateCurrentCacheMetadata(metadata => {
+      metadata.runtimeTrusted ||= {};
+      metadata.runtimeTrusted[entry.cacheUrl] = entry.revision;
+    });
   }
   return response;
 }
 
 self.addEventListener("fetch", event => {
-  if (event.request.method === "GET" && event.request.url === updateStatusUrl) {
+  if (event.request.method !== "GET") return;
+  if (event.request.url === updateStatusUrl) {
     event.respondWith(appShellUpdateStatus());
     return;
   }
-  const entry = manifestEntryForRequest(event.request);
-  if (!entry) return;
-  event.respondWith(shellCacheFirst(event.request, entry));
+  const url = new URL(event.request.url);
+  if (url.origin !== scopeUrl.origin) return;
+  const entry = manifestByPathname.get(url.pathname);
+  if (entry) event.respondWith(shellCacheFirst(entry));
 });
+
+async function offlineStatus() {
+  const metadata = await cacheMetadata(CACHE_NAME);
+  const cache = await caches.open(CACHE_NAME);
+  const groups = new Map();
+  for (const entry of manifestByPathname.values()) {
+    if (!DEFERRED_PATHS.has(entry.cacheUrl)) continue;
+    const group = runtimeGroup(entry.cacheUrl);
+    const ready = metadata?.runtimeTrusted?.[entry.cacheUrl] === entry.revision && !!await cache.match(entry.cacheUrl);
+    groups.set(group, (groups.get(group) ?? true) && ready);
+  }
+  return { ok: true, build: metadata?.build || null, shellReady: !!metadata,
+    runtimeGroups: [...groups].filter(([, ready]) => ready).map(([group]) => group) };
+}
 
 self.addEventListener("message", event => {
   const type = event.data?.type;
-  if (type !== "CACHE_APP_SHELL_PATHS" || !Array.isArray(event.data.paths)) return;
+  if (type !== "CACHE_APP_SHELL_PATHS" && type !== "GET_APP_SHELL_STATUS") return;
   const port = event.ports?.[0];
   event.waitUntil((async () => {
     try {
-      const entries = runtimeEntriesForPaths(event.data.paths);
-      let cursor = 0;
-      await Promise.all(Array.from({ length: Math.min(PRECACHE_CONCURRENCY, entries.length) }, async () => {
-        while (cursor < entries.length) {
-          const entry = entries[cursor++];
-          const response = await shellCacheFirst(new Request(entry.cacheUrl), entry);
-          if (!response.ok) throw new Error(`App Shell cache failed: ${entry.cacheUrl} HTTP ${response.status}`);
-        }
-      }));
+      if (type === "GET_APP_SHELL_STATUS") {
+        port?.postMessage(await offlineStatus());
+        return;
+      }
+      if (!Array.isArray(event.data.paths)) throw new Error("Runtime cache paths must be an array");
+      const entries = event.data.paths.map(path => {
+        const url = new URL(String(path), scopeUrl);
+        if (url.origin !== scopeUrl.origin) throw new Error(`Runtime cache path is cross-origin: ${url.href}`);
+        const entry = manifestByPathname.get(url.pathname);
+        if (!entry) throw new Error(`Runtime cache path is not published: ${url.pathname}`);
+        return entry;
+      });
+      await runPool(entries, shellCacheFirst);
       port?.postMessage({ ok: true, cached: entries.length });
     } catch (error) {
+      // A negative acknowledgement is the protocol failure, not an unhandled
+      // worker rejection. The caller decides whether to retry or stay online.
       port?.postMessage({ ok: false, error: error instanceof Error ? error.message : String(error) });
-      throw error;
     }
   })());
 });
