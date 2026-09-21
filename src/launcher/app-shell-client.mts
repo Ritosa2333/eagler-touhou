@@ -145,3 +145,4 @@ export function createAppShellClient({
       })
     : Promise.resolve(null);
   return Object.freeze({ ready, snapshot, checkForUpdate, maybeReload });
+}
