@@ -66,6 +66,7 @@ import type { RuntimeConfigureOptions } from "../contracts/runtime-protocol.mjs"
 import { loadRemoteMetadata } from "./remote-metadata.mjs";
 import { getUiLocale, initUiLocale, isUiMessageKey, t } from "./i18n.mjs";
 import type { UiMessageKey } from "./i18n.mjs";
+import { discouragedBrowserId } from "./browser-support.mjs";
 import { createAppShellClient } from "./app-shell-client.mjs";
 import {
   APP_SHELL_UPDATE_STATUS_PATH,
@@ -2450,18 +2451,20 @@ function cancelBlockingNetworkOperation() {
   if (!operation.suppressDeferredReload) maybeApplyDeferredAppShellUpdate();
   try { operation.onCancel?.(); } catch (error) { console.warn("blocking download cancel handler failed", error); }
 }
-function askDecision({ message = "", confirmText = "", cancelText = "", secondaryText = "", tone = "normal", confirmOnEnter = false }: {
+function askDecision({ title = "", message = "", confirmText = "", cancelText = "", secondaryText = "", tone = "normal", variant = "", confirmOnEnter = false }: {
+  title?: string;
   message?: string;
   confirmText?: string;
   cancelText?: string;
   secondaryText?: string;
   tone?: string;
+  variant?: string;
   confirmOnEnter?: boolean;
 } = {}): Promise<DecisionChoice> {
   syncTransientOverlayHost();
   const dialog = $("#decisionDialog");
   if (decisionResolver || dialog.open) return Promise.resolve("cancel");
-  $("#decisionTitle").textContent = t("dialog.confirmTitle");
+  $("#decisionTitle").textContent = title || t("dialog.confirmTitle");
   $("#decisionMessage").textContent = message;
   $("#decisionConfirm").textContent = confirmText || t("action.confirm");
   $("#decisionCancel").textContent = cancelText || t("action.cancel");
@@ -2469,6 +2472,7 @@ function askDecision({ message = "", confirmText = "", cancelText = "", secondar
   secondary.hidden = !secondaryText;
   secondary.textContent = secondaryText || t("action.backgroundDownload");
   dialog.dataset.tone = tone;
+  dialog.dataset.variant = variant;
   dialog.dataset.options = secondaryText ? "3" : "2";
   dialog.dataset.confirmOnEnter = String(!!confirmOnEnter);
   dialog.classList.remove("closing");
@@ -2482,6 +2486,22 @@ function askDecision({ message = "", confirmText = "", cancelText = "", secondar
 }
 function askConfirmation(options = {}) {
   return askDecision(options).then(value => value === "confirm");
+}
+async function confirmDiscouragedBrowser(): Promise<boolean> {
+  const choice = await askDecision({
+    title: t("browserWarning.title"),
+    message: t("browserWarning.message"),
+    cancelText: t("action.cancelLaunch"),
+    secondaryText: t("nav.faq"),
+    confirmText: t("action.continueLaunch"),
+    variant: "browser-warning",
+  });
+  // The FAQ link leaves the launcher, so the launch is cancelled either way.
+  if (choice === "secondary") {
+    location.href = "faq.html";
+    return false;
+  }
+  return choice === "confirm";
 }
 function closeDecisionDialog(value = "cancel") {
   const dialog = $("#decisionDialog");
@@ -8098,6 +8118,7 @@ $("#launch").addEventListener("click", async () => {
     // belongs to the default product. Treat an explicit route as authoritative at launch so
     // a stale tab can never silently start the wrong runtime/local pack.
     syncSelectionFromPlayerRoute();
+    if (!state.launched && discouragedBrowserId(String(navigator.userAgent || "")) && !await confirmDiscouragedBrowser()) return;
     if (!state.launched && importServer && !(await readCurrentPackageGeneration(state.game)).generation) {
       clearStartupError();
       setStatus(t("package.needImport"));
