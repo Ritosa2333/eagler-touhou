@@ -89,6 +89,10 @@ void GameApplication::leave_game(){
     // thprac's everlasting-BGM lock must also cover this teardown stop: when a
     // thprac practice restart swallowed the pause-menu Stop, a raw platform stop
     // here would silence the BGM while the next play command stays swallowed.
+    // On a real release the stop is unconditional, so the ElBgmTest lock/block
+    // state must be dropped too: a stale lock would swallow the first play of
+    // the same track in a later game.
+    if(release){session.practice.el_bgm_lock=-1;session.practice.el_bgm_block=false;}
     if(release||(!(game.globals.game_flags&0x4000)&&!game.practice_bgm_stop())){platform.stop_audio();if(session.display_config.music==2)platform.midi_reset();}platform.process_sounds();
     game.unload(supervisor.state.keep_resources,release);game_attached=false;loading_gate=false;
     if(!(game.globals.game_flags&8))accumulate_play_time(session.statistics.game_time,game.menus.context.system_time,platform.milliseconds());game.menus.context.system_time=0;results.scores.update_time(platform.milliseconds());
