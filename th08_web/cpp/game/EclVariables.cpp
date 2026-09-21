@@ -60,7 +60,9 @@ i32 EclVm::read_int(i32 id)const noexcept {
         return wrapping_add(wrapping_add(current,live?live->pending_time():environment->pending_time),live?live->uncollected_time_items():environment->uncollected_time_items)<quota?0:2;
     }
     if(id==10099&&environment)return (environment->spell_flags&((environment->spell_flags&1)?4:512))!=0;
-    if(id==10100&&environment)return environment->live_values?environment->live_values->boss_timer():environment->boss_timer;
+    // The original 0041fdd0 reads Spellcard::spell_remaining.current at
+    // 004ea670+0x108. This is a frame timer, not the GUI's rounded seconds.
+    if(id==10100&&environment)return environment->spell_remaining.current;
     if(self.float_field(id)||id==10048||id==10050||(id>=10085&&id<=10087))return resolve_float(float(id)).truncate_int();
     return id;
 }

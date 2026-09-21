@@ -105,7 +105,7 @@ void GameplayScene::synchronize(){
     dialogue_context.flags=globals.game_flags;dialogue_context.stage=i32(globals.stage);dialogue_context.character=globals.shot;dialogue_context.player_state=p.life.state;dialogue_context.background_state=background.dialogue_state;
     dialogue_context.faces[0]=globals.spell_human_face;dialogue_context.faces[1]=globals.spell_youkai_face;dialogue_context.faces[2]=globals.spell_enemy_face;dialogue_context.faces[3]=globals.spell_enemy_face2;
     globals.gui_blocks_spawn=hud.boss_present;globals.dialogue_active=dialogue.present();
-    globals.pending_time=globals.spell_time_items;globals.uncollected_time_items=items.time_orb_count();globals.boss_timer=hud.spell_seconds;
+    globals.pending_time=globals.spell_time_items;globals.uncollected_time_items=items.time_orb_count();
     gui_context.difficulty=globals.difficulty;gui_context.player=p.motion.movement.position;gui_context.stage_frames=enemies.state.frames;gui_context.human_frames=enemies.state.unfocused_frames;gui_context.youkai_frames=enemies.state.active_frames-enemies.state.unfocused_frames;
     gui_context.practice_replay=(globals.game_flags&9)==9;gui_context.time_stopped=time_stopped;gui_context.paused=paused;gui_context.retry=retrying;gui_context.spell_active=globals.spell_flags&1;gui_context.boss_exists=globals.boss_slots[0]!=nullptr;gui_context.input=p.input.buttons;
     if(auto* boss=globals.boss_slots[0]){gui_context.familiar_count=boss->familiar_count();gui_context.familiar_multiplier=boss->remaining_seconds;}else gui_context.familiar_count=gui_context.familiar_multiplier=0;

@@ -41,7 +41,6 @@ struct EclLiveValues {
     virtual ~EclLiveValues()=default;
     virtual i32 pending_time()const=0;
     virtual i32 uncollected_time_items()const=0;
-    virtual i32 boss_timer()const=0;
 };
 struct EclGlobals:SpellState {
     AnmLoaded* enemy_animation_files[2]{};
@@ -67,7 +66,7 @@ struct EclGlobals:SpellState {
     bool gui_blocks_spawn=false,dialogue_active=false;u8 stage_completion=0;i32 stop_spawn=0,timeline_signals[4]{-1,-1,-1,-1};
     EclEvent events[256]{};u32 event_count=0;u32 bullets_created=0;u32 enemies_created=0;
     EclEnemy enemies[128]{};EclBullet bullets[1024]{};EclLaser lasers[64]{};EclItem items[256]{};
-    i32 boss_life=0,boss_timer=0,boss_lives=0,stage_interrupt=0;u32 bullet_rank=0;float player_protect_range=0;u8 player_nullified=0;
+    i32 boss_life=0,boss_lives=0,stage_interrupt=0;u32 bullet_rank=0;float player_protect_range=0;u8 player_nullified=0;
     CombatRuntime* combat=nullptr;
     void clear_bullets() noexcept {for(auto& b:bullets)b.active=0;}
     void clear_lasers() noexcept {for(auto& l:lasers)l.active=0;}

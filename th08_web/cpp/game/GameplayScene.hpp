@@ -94,7 +94,6 @@ class GameplayScene:private BackgroundResources,private EnemyResources,private G
     void bind_jobs();
     i32 pending_time()const override{return globals.spell_time_items;}
     i32 uncollected_time_items()const override{return items.time_orb_count();}
-    i32 boss_timer()const override{return hud.spell_seconds;}
     AsciiManager owned_ascii;
 public:
     AsciiManager& ascii;AsciiContext ascii_context;
