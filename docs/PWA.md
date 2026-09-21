@@ -31,7 +31,9 @@ a second worker or await Service Worker/storage promises during boot.
 - A candidate does NOT call `skipWaiting()` or `clients.claim()`. Existing
   windows keep their controlling worker. Close all site/app windows to apply
   an update; refreshing one window is not a safe update action. A first visit
-  remains network-controlled until its next navigation.
+  remains network-controlled until its next navigation. The client's `ready`
+  waits for first activation (bounded, without waiting for control), so normal
+  Runtime preparation does not treat registration alone as successful activation.
 - A waiting candidate is distinct from an activated replacement. The client
   must not schedule reloads while waiting, and rechecks Launcher activity in
   the scheduled reload task for externally activated/legacy replacements.
@@ -79,6 +81,23 @@ The small WASM module is explicitly synthetic. Passing this lane does NOT prove
 TH06/TH07/TH08/TH10 gameplay, physical iOS Home Screen installation, platform
 storage sharing, touch, audio resume or storage-pressure behavior. Do not label
 Playwright WebKit as an iPhone/iPad test.
+
+### Offline injection and the WebKit driver
+
+An independent literal-response Service Worker probes offline emulation before
+any application code is loaded. The currently reported Playwright WebKit issue
+<https://github.com/microsoft/playwright/issues/42775> rejects even that response
+with an internal error under `setOffline(true)`. Only if this exact failure is
+reproduced does the lane switch to dropping origin TCP connections without an
+HTTP response. It keeps every application boot/update assertion and verifies
+that a non-cached negative-control fetch really fails. The JSON log records the
+chosen fault-injection method; no app failure triggers this fallback.
+
+Origin-connection failure is not identical to airplane mode or
+`navigator.onLine === false`. A green WebKit lane using this mode proves cached
+startup with the origin unreachable, not WebKit device-offline emulation or a
+physical iPhone's offline behavior. Chromium/Firefox keep native emulation when
+the independent probe succeeds. Physical-device acceptance remains required.
 
 ## Release acceptance beyond this lane
 

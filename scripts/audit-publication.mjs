@@ -1,98 +1,98 @@
-import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
-import { readdir, stat } from "node:fs/promises";
-import { extname, relative, resolve } from "node:path";
+import { readdir, readFile, stat } from "node:fs/promises";
+import { resolve, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { assertPublicSourceTree } from "../lib/public-source-policy.mjs";
 
-const args = process.argv.slice(2);
-const directoryArgument = args.find(value => value.startsWith("--directory="));
-const workspaceAudit = args.includes("--workspace");
-if (args.some(value => value !== "--workspace" && !value.startsWith("--directory=")) ||
-    args.filter(value => value.startsWith("--directory=")).length > 1 ||
-    (directoryArgument && workspaceAudit)) {
-  throw new Error("usage: node scripts/audit-publication.mjs [--workspace | --directory=SOURCE_EXPORT]");
-}
-const project = directoryArgument ? resolve(directoryArgument.slice("--directory=".length))
-  : resolve(fileURLToPath(new URL("..", import.meta.url)));
-const forbiddenExtensions = new Set([".dat", ".data", ".wav", ".ogg", ".mid", ".midi", ".rpy", ".ttc"]);
-const publicAssets = new Set([
-  "assets/touch-rotate-landscape.webp",
-  "assets/notice-bilibili.svg",
-  "assets/notice-touhou-cloud.png",
-  "assets/notice-github.svg", "assets/notice-qq.svg",
-  "assets/fonts/touhou98.woff2",
-  "assets/fonts/unifont-site.woff2",
-  "assets/fonts/OFL-Unifont.txt",
-  "assets/fonts/yatra-one-latin.woff2", "assets/fonts/chill-round-gothic-site-medium.woff2", "assets/fonts/chill-round-gothic-site-bold.woff2", "assets/fonts/chill-round-gothic-site-heavy.woff2",
-  "assets/fonts/chill-round-gothic-site-medium-critical.woff2", "assets/fonts/chill-round-gothic-site-medium-deferred.woff2",
-  "assets/fonts/chill-round-gothic-site-bold-critical.woff2", "assets/fonts/chill-round-gothic-site-bold-deferred.woff2",
-  "assets/fonts/OFL-YatraOne.txt", "assets/fonts/OFL-ChillRoundGothic.txt",
-  "assets/fonts/NotoSansCJKsc-Regular.otf", "assets/fonts/OFL-NotoSansCJK.txt"
+const launcher = resolve(fileURLToPath(new URL("..", import.meta.url)));
+const workspace = resolve(launcher, "..");
+const runtimeRepos = ["th06-eagler", "th07-eagler", "th08-eagler", "th10-eagler"];
+const argv = process.argv.slice(2);
+const workspaceMode = argv.includes("--workspace");
+const rootIndex = argv.indexOf("--root");
+const explicitRoot = rootIndex >= 0 ? resolve(argv[rootIndex + 1] || "") : null;
+const roots = explicitRoot ? [explicitRoot] : workspaceMode ? [launcher, ...runtimeRepos.map(name => resolve(workspace, name))] : [launcher];
+
+const ignoredDirs = new Set([".git", "node_modules", ".cache", "dist", "web", ".cmake", "build", "__pycache__"]);
+const allowedLegacy = new Set([
+  "legacy/README.md", "legacy/legacy-game-pack.mjs", "legacy/legacy-import-storage.mjs", "legacy/legacy-package-adapter.mjs",
 ]);
-const legacyHostGeneratedOriginalAssets = new Set([
-  // Legacy/intermediate names remain forbidden too. They are useful as a
-  // guard against accidentally copying extraction staging back into source.
-  "assets/th06-title00.jpg",
-  "assets/th07-title00.jpg",
-  "assets/th08-title00.png",
-  "assets/th06.ico",
+// Exact reviewed source assets only. PWA ET monograms are original geometric
+// project artwork (GPL-3.0-or-later), not extracted game data; see ASSETS.md.
+const allowedAssets = new Set([
+  "public/assets/touch-rotate-landscape.webp",
+  "public/assets/notice-bilibili.svg",
+  "public/assets/notice-touhou-cloud.png",
+  "public/assets/notice-github.svg",
+  "public/assets/notice-qq.svg",
+  "public/assets/pwa/icon.svg",
+  "public/assets/pwa/icon-192.png",
+  "public/assets/pwa/icon-512.png",
+  "public/assets/pwa/icon-maskable-512.png",
+  "public/assets/pwa/apple-touch-icon.png",
 ]);
-function isHostGeneratedOriginalAsset(path) {
-  // Card artwork is host-generated from retail content for every formal title.
-  // Keep this rule product-neutral so adding a title does not require teaching
-  // the publication safety audit another game id.
-  return /^assets\/th\d{2}-card\.webp$/i.test(path) || legacyHostGeneratedOriginalAssets.has(path);
-}
+const allowedFonts = new Set([
+  "public/assets/fonts/touhou98.woff2",
+  "public/assets/fonts/unifont-site.woff2",
+  "public/assets/fonts/yatra-one-latin.woff2",
+  "public/assets/fonts/chill-round-gothic-site-medium.woff2",
+  "public/assets/fonts/chill-round-gothic-site-bold.woff2",
+  "public/assets/fonts/chill-round-gothic-site-medium-critical.woff2",
+  "public/assets/fonts/chill-round-gothic-site-medium-deferred.woff2",
+  "public/assets/fonts/chill-round-gothic-site-bold-critical.woff2",
+  "public/assets/fonts/chill-round-gothic-site-bold-deferred.woff2",
+  "public/assets/fonts/chill-round-gothic-site-heavy.woff2",
+  "public/assets/fonts/OFL-Unifont.txt",
+  "public/assets/fonts/OFL-YatraOne.txt",
+  "public/assets/fonts/OFL-ChillRoundGothic.txt",
+]);
 const failures = [];
-let workspaceChecked = null;
-if (workspaceAudit) {
-  const { PRODUCT_GAMES } = await import("../lib/contracts/product-catalog.mjs");
-  const { WORKSPACE_REPOSITORIES, workspacePath } = await import("../lib/workspace-layout.mjs");
-  const gameOwners = Object.keys(PRODUCT_GAMES);
-  workspaceChecked = [
-    WORKSPACE_REPOSITORIES.launcher,
-    ...gameOwners.map(owner => `${WORKSPACE_REPOSITORIES[owner]} tracked files`),
-  ];
-  for (const owner of gameOwners) {
-    const repo = WORKSPACE_REPOSITORIES[owner];
-    const root = workspacePath(owner);
-    if (!existsSync(resolve(root, ".git"))) throw new Error(`workspace publication audit requires sibling repository: ${repo}`);
-    const tracked = execFileSync("git", ["-C", root, "ls-files", "-z"], { encoding: "utf8" }).split("\0").filter(Boolean);
-    for (const file of tracked) {
-      if (forbiddenExtensions.has(extname(file).toLowerCase()) || /(^|\/)assets(?:-ogg)?\//i.test(file)) failures.push(`${repo}/${file}`);
+
+function fail(repo, path, reason) {
+  failures.push(`${repo}/${path} (${reason})`);
+}
+function check(repo, path) {
+  const name = path.split("/").at(-1);
+  if (repo === "eagler-touhou" && path.startsWith("legacy/") && !allowedLegacy.has(path)) {
+    fail(repo, path, "unreviewed legacy compatibility file");
+  }
+  if (/(^|\/)(games|replays)(\/|$)/i.test(path)) fail(repo, path, "private data directory");
+  if (/(^|\/)(hosted-game-data|game-packages|server-deploy|probe-reports|store-probes|migration-probes)(\/|$)/i.test(path)) fail(repo, path, "generated output directory");
+  if (/(^|\/)(netplay-probe(?:[-_].*)?|host-build-probe(?:[-_].*)?|\.self-host[-_].*|self-host-.*|server-deploy.*)(\/|$)/i.test(path)) fail(repo, path, "private/generated probe output");
+  if (/^(?:th\d+(?:mp)?\.(?:dat|data|zip|exe)|(?:score|log|thbgm|bgm|wave)\.dat|.*\.rpy)$/i.test(name)) fail(repo, path, "original-game/generated resource");
+  if (/\.(?:wasm|pdb|ogg|wav|mp3|flac|ttc|ttf|otf)$/i.test(name)) fail(repo, path, "binary/generated resource");
+  if (name === "cloudflare.toml") fail(repo, path, "operator-local configuration");
+  if (name === "server.local.ps1" || name === "server.config.local.ps1") fail(repo, path, "operator-local configuration");
+  if (name === "eagler-touhou.config.json") fail(repo, path, "operator-local configuration");
+  if (repo === "eagler-touhou" && path.startsWith("public/assets/") && !allowedAssets.has(path) && !allowedFonts.has(path)) fail(repo, path, "unreviewed public asset");
+}
+
+async function walk(root, directory = root) {
+  const repo = root.split(/[\\/]/).at(-1);
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const path = resolve(directory, entry.name);
+    const rel = relative(root, path).replaceAll("\\", "/");
+    if (entry.isDirectory()) {
+      if (ignoredDirs.has(entry.name) || /^build(?:[-_].*)?$/.test(entry.name)) continue;
+      if (/^(?:hosted-game-data|game-packages|server-deploy|netplay-probe|host-build-probe)/.test(entry.name)) {
+        fail(repo, rel, "private/generated output directory");
+        continue;
+      }
+      await walk(root, path);
+    } else if (entry.isFile()) {
+      check(repo, rel);
     }
   }
 }
-async function inspect(path) {
-  const rel = relative(project, path).replaceAll("\\", "/");
-  const publicRel = rel.startsWith("public/") ? rel.slice("public/".length) : rel;
-  if (isHostGeneratedOriginalAsset(publicRel)) failures.push(`eagler-touhou/${rel} (original-game-derived host asset must not be source-published)`);
-  else if (publicRel.startsWith("assets/") && !publicAssets.has(publicRel)) failures.push(`eagler-touhou/${rel} (unreviewed public asset)`);
-  if (forbiddenExtensions.has(extname(rel).toLowerCase())) failures.push(`eagler-touhou/${rel}`);
-  if ((await stat(path)).size > 50 * 1024 * 1024) failures.push(`eagler-touhou/${rel} (>50 MiB)`);
+
+for (const root of roots) {
+  if (!(await stat(root)).isDirectory()) throw new Error(`missing publication root: ${root}`);
+  if (root === launcher || root.split(/[\\/]/).at(-1) === "eagler-touhou") {
+    await assertPublicSourceTree(root);
+  }
+  await walk(root);
 }
-async function walk(directory) {
-  for (const entry of await readdir(directory, { withFileTypes: true })) {
-    if (["node_modules", ".cache", ".npm-cache", ".deploy-python", "design", "screenshots"].includes(entry.name)) continue;
-    const path = resolve(directory, entry.name);
-    if (entry.isDirectory()) await walk(path);
-    else await inspect(path);
-  }
+
+if (failures.length) {
+  throw new Error(`publication contains private/generated resources:\n${failures.sort().map(item => ` - ${item}`).join("\n")}`);
 }
-if (!directoryArgument && existsSync(resolve(project, ".git"))) {
-  // Source publication candidates are tracked + nonignored new source, not
-  // private local validation outputs. Force-added ignored assets remain tracked
-  // and therefore still fail. A concrete export is audited with --directory.
-  const files = new Set(execFileSync("git", ["-C", project, "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
-    {encoding:"utf8"}).split("\0").filter(Boolean));
-  for (const asset of publicAssets) {
-    const sourcePath = `public/${asset}`;
-    if (existsSync(resolve(project, sourcePath))) files.add(sourcePath);
-  }
-  for (const file of files) if (existsSync(resolve(project, file)) && (await stat(resolve(project, file))).isFile()) {
-    await inspect(resolve(project, file));
-  }
-} else await walk(project);
-if (failures.length) throw new Error(`publication contains private/generated resources:\n${failures.join("\n")}`);
-console.log(JSON.stringify({ safe: true, scope: directoryArgument ? "explicit-source-export" : "git-source-candidates",
-  checked: workspaceChecked || ["eagler-touhou"] }));
+console.log(`publication audit: PASS (${workspaceMode ? "workspace" : "launcher"})`);

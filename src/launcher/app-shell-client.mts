@@ -7,9 +7,13 @@ export interface AppShellClientState {
   readonly reloadPending: boolean;
   readonly reloadScheduled: boolean;
 }
-interface EventTargetLike { addEventListener(type: string, callback: () => void): void; }
+interface EventTargetLike {
+  addEventListener(type: string, callback: () => void): void;
+  removeEventListener?(type: string, callback: () => void): void;
+}
 interface ServiceWorkerLike extends EventTargetLike { readonly state: string; }
 interface ServiceWorkerRegistrationLike extends EventTargetLike {
+  readonly active?: ServiceWorkerLike | null;
   readonly waiting: unknown | null;
   readonly installing: ServiceWorkerLike | null;
   update(): Promise<unknown>;
@@ -30,6 +34,7 @@ interface AppShellClientOptions {
   reload?: () => void;
   schedule?: (callback: () => void) => unknown;
   logger?: LoggerLike;
+  activationTimeoutMs?: number;
 }
 function browserServiceWorker(): ServiceWorkerContainerLike | null {
   // The getter itself may throw in a restricted/embedded browser context.
@@ -43,6 +48,7 @@ export function createAppShellClient({
   shouldDeferReload = () => false, onChange = () => {},
   reload = () => globalThis.location?.reload(),
   schedule = callback => globalThis.setTimeout(callback, 0), logger = globalThis.console,
+  activationTimeoutMs = 120000,
 }: AppShellClientOptions = {}) {
   const state: { -readonly [K in keyof AppShellClientState]: AppShellClientState[K] } = {
     registration: null, updateReady: false, updateWaiting: false,
@@ -106,6 +112,28 @@ export function createAppShellClient({
     notify();
     void checkForUpdate();
   }
+  async function waitForInitialActivation(registration: ServiceWorkerRegistrationLike) {
+    const worker = registration.installing;
+    if (serviceWorker?.controller || registration.active || !worker) return registration;
+    // register() resolves before install finishes. Callers preparing Runtime
+    // caches await ready and need an active worker even on the first visit.
+    // Do not wait for controllerchange: we intentionally do not clients.claim().
+    await new Promise<void>(resolve => {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const finish = () => {
+        if (timer !== undefined) clearTimeout(timer);
+        worker.removeEventListener?.("statechange", changed);
+        resolve();
+      };
+      const changed = () => {
+        if (worker.state === "activated" || worker.state === "redundant") finish();
+      };
+      timer = setTimeout(finish, activationTimeoutMs);
+      worker.addEventListener("statechange", changed);
+      changed();
+    });
+    return registration;
+  }
   const ready = secureContext && serviceWorker
     ? Promise.resolve().then(() => serviceWorker.register(workerUrl, { scope, updateViaCache: "none" }))
       .catch(async error => {
@@ -113,8 +141,7 @@ export function createAppShellClient({
         try { return await serviceWorker.getRegistration(scope); } catch { return null; }
       }).then(registration => {
         if (registration) watchRegistration(registration);
-        return registration ?? null;
+        return registration ? waitForInitialActivation(registration) : null;
       })
     : Promise.resolve(null);
   return Object.freeze({ ready, snapshot, checkForUpdate, maybeReload });
-}

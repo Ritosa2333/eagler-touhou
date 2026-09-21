@@ -6,6 +6,7 @@ physical iOS installation, audio resumption, or platform storage persistence.
 import argparse
 import functools
 import json
+import socket
 import subprocess
 import tempfile
 import threading
@@ -13,7 +14,7 @@ import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import Error as PlaywrightError, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -28,11 +29,22 @@ def build(directory, version):
 
 class Handler(SimpleHTTPRequestHandler):
     unavailable = False
+    drop_connections = False
     extensions_map = {**SimpleHTTPRequestHandler.extensions_map,
                       ".mjs": "text/javascript", ".js": "text/javascript",
                       ".wasm": "application/wasm", ".webmanifest": "application/manifest+json"}
 
     def do_GET(self):
+        if self.drop_connections:
+            # Real transport failure, no HTTP response and no page/SW routing
+            # mock. This is origin unavailability, NOT device airplane mode.
+            self.close_connection = True
+            try:
+                self.connection.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+            self.connection.close()
+            return
         if self.unavailable:
             self.send_error(503, "Simulated server outage")
             return
@@ -102,6 +114,52 @@ def launch_fixture(page, origin, version):
     page.locator("#pwaFixtureFrame").evaluate("element => element.remove()")
 
 
+def probe_offline_emulation(engine, origin):
+    """An independent literal-response SW distinguishes driver from app faults."""
+    browser = engine.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
+    try:
+        page.goto(origin + "pwa-probe/")
+        page.evaluate("""async () => {
+            await navigator.serviceWorker.register('./sw.js');
+            await navigator.serviceWorker.ready;
+        }""")
+        page.goto(origin + "pwa-probe/literal")
+        assert page.locator("h1").inner_text() == "Literal worker response"
+        assert page.evaluate("!!navigator.serviceWorker.controller")
+        context.set_offline(True)
+        try:
+            page.goto(origin + "pwa-probe/literal", timeout=10000)
+        except PlaywrightError as error:
+            # Only the specifically reproduced upstream driver failure permits
+            # alternate fault injection. Any application failure remains fatal.
+            if engine.name != "webkit" or "WebKit encountered an internal error" not in str(error):
+                raise
+            print(json.dumps({"probe": "literal-service-worker-offline-emulation",
+                              "supported": False, "error": str(error),
+                              "upstream": "https://github.com/microsoft/playwright/issues/42775"}), flush=True)
+            return False
+        assert page.locator("h1").inner_text() == "Literal worker response"
+        print(json.dumps({"probe": "literal-service-worker-offline-emulation", "supported": True}), flush=True)
+        return True
+    finally:
+        context.close()
+        browser.close()
+
+
+def assert_network_unavailable(page, origin):
+    # An unknown pathname is deliberately not handled by either worker.
+    failed = page.evaluate("""async url => {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 5000);
+        try { await fetch(url, { cache: 'no-store', signal: controller.signal }); return false; }
+        catch { return true; }
+        finally { clearTimeout(timer); }
+    }""", origin + "network-required-negative-control")
+    assert failed, "negative control reached the network during the outage"
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--browser", choices=["chromium", "webkit", "firefox"], required=True)
@@ -111,6 +169,14 @@ def main():
         site = work / "site"
         build_a = build(site, "a")
         build(site / "nested", "a")
+        probe = site / "pwa-probe"
+        probe.mkdir()
+        (probe / "index.html").write_text("<!doctype html><title>Independent SW probe</title>", encoding="utf-8")
+        (probe / "sw.js").write_text("""self.addEventListener('fetch', event => {
+            if (new URL(event.request.url).pathname.endsWith('/literal'))
+                event.respondWith(new Response('<!doctype html><h1>Literal worker response</h1>',
+                    { headers: { 'Content-Type': 'text/html' } }));
+        });""", encoding="utf-8")
         server = ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Handler, directory=str(site)))
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
@@ -119,6 +185,17 @@ def main():
         try:
             with sync_playwright() as playwright:
                 engine = getattr(playwright, args.browser)
+                emulation_supported = probe_offline_emulation(engine, origin)
+                outage_mode = "browser-offline-emulation" if emulation_supported else "origin-connection-drop"
+
+                def set_outage(context, enabled):
+                    if emulation_supported:
+                        context.set_offline(enabled)
+                    else:
+                        Handler.drop_connections = enabled
+
+                print(json.dumps({"browser": args.browser, "outage_mode": outage_mode,
+                                  "device_airplane_mode_verified": False}), flush=True)
                 context = engine.launch_persistent_context(str(work / "profile"), headless=True)
                 context.on("page", lambda page: page.on("pageerror", lambda error: errors.append(str(error))))
                 page = context.new_page()
@@ -172,10 +249,11 @@ def main():
                     });
                 }""")
                 assert result["ok"]
-                context.set_offline(True)
+                set_outage(context, True)
                 boot(page, origin)
                 launch_fixture(page, origin, "a")
-                context.set_offline(False)
+                assert_network_unavailable(page, origin)
+                set_outage(context, False)
                 mark("offline-refresh-and-first-iframe-wasm-launch")
                 # Establish another SW scope; root cache GC must not delete it.
                 nested = context.new_page()
@@ -199,14 +277,14 @@ def main():
                 mark("multi-window-native-waiting")
                 page = context.new_page()
                 page.wait_for_timeout(500)
-                context.set_offline(True)
+                set_outage(context, True)
                 boot(page, origin)
                 assert status(page)["build"] == build_b
                 launch_fixture(page, origin, "b")  # includes newly introduced helper.mjs
                 mark("updated-runtime-and-new-dependency-offline")
                 boot(page, origin + "nested/")
                 mark("nested-scope-cache-survives-root-update")
-                context.set_offline(False)
+                set_outage(context, False)
                 boot(page, origin)
                 # HTTP 200 with the wrong bytes must fail the candidate update.
                 build(site, "c")
@@ -230,18 +308,20 @@ def main():
                 context.close()
                 # Persistent profile, fresh browser process, no reachable server.
                 cold = engine.launch_persistent_context(str(work / "profile"), headless=True)
-                cold.set_offline(True)
+                set_outage(cold, True)
                 cold_page = cold.new_page()
                 cold_page.on("pageerror", lambda error: errors.append(str(error)))
                 boot(cold_page, origin)
                 launch_fixture(cold_page, origin, "b")
+                assert_network_unavailable(cold_page, origin)
                 cold.close()
                 mark("fresh-browser-process-offline-launch")
                 assert not errors, json.dumps(errors, ensure_ascii=False)
-                print(json.dumps({"browser": args.browser, "pass": True,
+                print(json.dumps({"browser": args.browser, "pass": True, "outage_mode": outage_mode,
                                   "coverage": "real Launcher + production SW + synthetic iframe/ESM/WASM; not real games or physical iOS"}))
         finally:
             Handler.unavailable = False
+            Handler.drop_connections = False
             server.shutdown()
             server.server_close()
             thread.join(timeout=5)
