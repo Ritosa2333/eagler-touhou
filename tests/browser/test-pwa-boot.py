@@ -12,7 +12,6 @@ import threading
 import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
 
 from playwright.sync_api import sync_playwright
 
@@ -52,6 +51,29 @@ def boot(page, url):
     page.wait_for_function("window.__eaglerBoot?.done === true", timeout=30000)
     assert page.locator("#pwaOpen").count() == 1, "PWA controls missing"
     page.evaluate("document.querySelector('#firstUseNoticeDialog')?.close()")
+
+
+def wait_async(page, expression, timeout=45000):
+    # wait_for_function treats a Promise itself as truthy; it does not poll its
+    # resolved boolean. Await each evaluation before deciding to continue.
+    # https://github.com/microsoft/playwright/issues/29132
+    deadline = time.monotonic() + timeout / 1000
+    while time.monotonic() < deadline:
+        if page.evaluate(expression):
+            return
+        page.wait_for_timeout(100)
+    diagnostic = page.evaluate("""async () => ({
+        url: location.href, controlled: !!navigator.serviceWorker.controller,
+        registrations: (await navigator.serviceWorker.getRegistrations()).map(r => ({
+            scope: r.scope, active: r.active?.state, waiting: r.waiting?.state,
+            installing: r.installing?.state,
+        })),
+    })""")
+    raise AssertionError(f"SW condition timed out: {expression}; {diagnostic}")
+
+
+def mark(case):
+    print(json.dumps({"case": case, "pass": True}), flush=True)
 
 
 def status(page):
@@ -101,7 +123,7 @@ def main():
                 context.on("page", lambda page: page.on("pageerror", lambda error: errors.append(str(error))))
                 page = context.new_page()
                 boot(page, origin)
-                page.wait_for_function("""async () => {
+                wait_async(page, """async () => {
                     const r = await navigator.serviceWorker.getRegistration('./');
                     return r?.active?.state === 'activated';
                 }""", timeout=45000)
@@ -110,6 +132,7 @@ def main():
                 boot(page, origin)
                 assert page.evaluate("!!navigator.serviceWorker.controller")
                 assert status(page)["build"] == build_a
+                mark("initial-install-and-controlled-navigation")
                 icons = page.evaluate("""async () => {
                     const manifest = await (await fetch('site.webmanifest')).json();
                     return await Promise.all(manifest.icons.map(async icon => {
@@ -120,6 +143,7 @@ def main():
                 assert [192, 192] in icons and [512, 512] in icons
                 for path in ["en.html", "?game=th07", "?game=th08", "?game=th10"]:
                     boot(page, origin + path)
+                mark("icons-localized-and-query-entries")
                 # Simulate optional APIs being restricted in a separate clean profile.
                 restricted = engine.launch_persistent_context(str(work / "restricted"), headless=True)
                 restricted.add_init_script("""(() => {
@@ -133,6 +157,7 @@ def main():
                 restricted_page.locator("#pwaOpen").click()
                 restricted_page.wait_for_function("document.querySelector('#pwaDialog').open")
                 restricted.close()
+                mark("restricted-optional-APIs")
 
                 boot(page, origin)
                 # Cache, but do not launch, the fixture before going offline.
@@ -151,17 +176,18 @@ def main():
                 boot(page, origin)
                 launch_fixture(page, origin, "a")
                 context.set_offline(False)
+                mark("offline-refresh-and-first-iframe-wasm-launch")
                 # Establish another SW scope; root cache GC must not delete it.
                 nested = context.new_page()
                 boot(nested, origin + "nested/")
-                nested.wait_for_function("""async () => (await navigator.serviceWorker.getRegistration('./'))?.active?.state === 'activated'""", timeout=45000)
+                wait_async(nested, """async () => (await navigator.serviceWorker.getRegistration('./'))?.active?.state === 'activated'""")
                 boot(nested, origin + "nested/")
                 nested.close()
                 other = context.new_page()
                 boot(other, origin)
                 build_b = build(site, "b")
                 page.evaluate("async () => (await navigator.serviceWorker.getRegistration('./')).update()")
-                page.wait_for_function("""async () => !!(await navigator.serviceWorker.getRegistration('./'))?.waiting""", timeout=45000)
+                wait_async(page, """async () => !!(await navigator.serviceWorker.getRegistration('./'))?.waiting""")
                 assert status(page)["build"] == build_a
                 assert status(other)["build"] == build_a
                 # A refresh and closing just one window must not activate B.
@@ -170,13 +196,16 @@ def main():
                 page.close()
                 assert status(other)["build"] == build_a
                 other.close()
+                mark("multi-window-native-waiting")
                 page = context.new_page()
                 page.wait_for_timeout(500)
                 context.set_offline(True)
                 boot(page, origin)
                 assert status(page)["build"] == build_b
                 launch_fixture(page, origin, "b")  # includes newly introduced helper.mjs
+                mark("updated-runtime-and-new-dependency-offline")
                 boot(page, origin + "nested/")
+                mark("nested-scope-cache-survives-root-update")
                 context.set_offline(False)
                 boot(page, origin)
                 # HTTP 200 with the wrong bytes must fail the candidate update.
@@ -193,9 +222,11 @@ def main():
                 }""")
                 page.wait_for_function("window.__candidateFailed === true", timeout=45000)
                 assert status(page)["build"] == build_b
+                mark("corrupt-candidate-retains-previous-version")
                 Handler.unavailable = True
                 boot(page, origin)  # navigator is online but the entire server returns 503
                 launch_fixture(page, origin, "b")
+                mark("server-503-offline-fallback")
                 context.close()
                 # Persistent profile, fresh browser process, no reachable server.
                 cold = engine.launch_persistent_context(str(work / "profile"), headless=True)
@@ -205,6 +236,7 @@ def main():
                 boot(cold_page, origin)
                 launch_fixture(cold_page, origin, "b")
                 cold.close()
+                mark("fresh-browser-process-offline-launch")
                 assert not errors, json.dumps(errors, ensure_ascii=False)
                 print(json.dumps({"browser": args.browser, "pass": True,
                                   "coverage": "real Launcher + production SW + synthetic iframe/ESM/WASM; not real games or physical iOS"}))
