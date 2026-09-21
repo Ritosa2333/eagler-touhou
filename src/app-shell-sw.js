@@ -12,6 +12,9 @@ const DEFERRED_PATHS = new Set(__APP_SHELL_DEFERRED_PATHS__.map(path => new URL(
 const metaPrefix = new URL("./__app-shell-meta__/", scopeUrl).href;
 const cacheMetaUrl = `${metaPrefix}__APP_SHELL_BUILD_ID__`;
 const updateStatusUrl = new URL("./__app-shell-update-status__", scopeUrl).href;
+// Kept in this worker, not a second independently updating Service Worker.
+const runtimeCache = typeof createRuntimeCache === "function" && self.__EAGLER_RUNTIME_CATALOG
+  ? createRuntimeCache({ scopeUrl, catalog: self.__EAGLER_RUNTIME_CATALOG }) : null;
 let currentMetadataUpdate = Promise.resolve();
 const manifestByPathname = new Map(PRECACHE_MANIFEST.map(entry => {
   const url = new URL(entry.url, scopeUrl);
@@ -175,6 +178,13 @@ self.addEventListener("fetch", event => {
     event.respondWith(appShellUpdateStatus());
     return;
   }
+  // Runtime navigation performs latest-first transaction selection before any
+  // HTML/JS executes. Subresources stay pinned to that document's snapshot.
+  const runtimeResponse = runtimeCache?.handle(event);
+  if (runtimeResponse) {
+    event.respondWith(runtimeResponse);
+    return;
+  }
   const url = new URL(event.request.url);
   if (url.origin !== scopeUrl.origin) return;
   const entry = manifestByPathname.get(url.pathname);
@@ -192,7 +202,8 @@ async function offlineStatus() {
     groups.set(group, (groups.get(group) ?? true) && ready);
   }
   return { ok: true, build: metadata?.build || null, shellReady: !!metadata,
-    runtimeGroups: [...groups].filter(([, ready]) => ready).map(([group]) => group) };
+    runtimeGroups: runtimeCache ? await runtimeCache.readyGroups()
+      : [...groups].filter(([, ready]) => ready).map(([group]) => group) };
 }
 
 self.addEventListener("message", event => {
@@ -213,11 +224,10 @@ self.addEventListener("message", event => {
         if (!entry) throw new Error(`Runtime cache path is not published: ${url.pathname}`);
         return entry;
       });
-      await runPool(entries, shellCacheFirst);
+      if (runtimeCache) await runtimeCache.preparePaths(entries.map(entry => new URL(entry.cacheUrl).pathname.slice(scopeUrl.pathname.length)));
+      await runPool(entries.filter(entry => !runtimeCache || !new URL(entry.cacheUrl).pathname.startsWith(scopeUrl.pathname + "runtime/")), shellCacheFirst);
       port?.postMessage({ ok: true, cached: entries.length });
     } catch (error) {
-      // A negative acknowledgement is the protocol failure, not an unhandled
-      // worker rejection. The caller decides whether to retry or stay online.
       port?.postMessage({ ok: false, error: error instanceof Error ? error.message : String(error) });
     }
   })());
