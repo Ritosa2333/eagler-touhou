@@ -35,6 +35,11 @@ Keep title-specific:
 
 The rule is: **share algorithms and infrastructure, not object layouts**.
 
+The cross-title Replay verification contract, comparator, JSONL transport and
+tests live in [`testkit/replay-verifier`](testkit/replay-verifier/). The
+architecture and per-title rollout are specified in the
+[Replay verifier plan](docs/replay-verifier-plan.md).
+
 ## Migration policy
 
 Migration is intentionally incremental.  Extract exact duplicates first, prove

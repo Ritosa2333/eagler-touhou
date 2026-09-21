@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 build/
 cmake-build-*/
+/artifacts/replay-verifier/

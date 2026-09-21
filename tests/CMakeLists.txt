@@ -189,4 +189,9 @@ if(EAGLER_COMMON_NODE_EXECUTABLE)
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/rtc-input-impairment-test.cjs
     )
+    add_test(
+        NAME eagler-common.replay-verifier
+        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/../testkit/replay-verifier/replay-verifier.test.mjs
+    )
 endif()
