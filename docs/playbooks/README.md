@@ -36,6 +36,9 @@ playbooks.
   records under [`rollback/`](rollback/README.md)
 - [Deployment and Network](deployment-network.md)
 - [Testing and Acceptance](testing-acceptance.md)
+- [Adaptation Worktree Isolation](adaptation-worktrees.md) - required branch/
+  worktree separation for upstream tracking and for high-refresh,
+  Multiplayer, THPrac and THCRAP adaptation work
 
 ## Reading rule
 
@@ -47,6 +50,10 @@ gesture change starts with Input and Touch.
 Code anchors are intentionally repository- or title-relative. A title-specific
 playbook rule never overrides that title's authoritative gameplay/source
 semantics.
+
+High-refresh, Multiplayer, THPrac and THCRAP work also requires the worktree
+isolation playbook. This is intentionally not a blanket requirement for every
+adapter edit.
 
 Paths prefixed by a sibling repository name such as `th07-eagler/` or
 `eagler-common/` are cross-repository reference anchors. They are available in

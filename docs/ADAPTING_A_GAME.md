@@ -14,6 +14,8 @@ Read this together with:
   adapting a new title;
 - [`playbooks/README.md`](playbooks/README.md) for recurring implementation
   pitfalls, ownership rules and verification methods;
+- [`playbooks/adaptation-worktrees.md`](playbooks/adaptation-worktrees.md) for
+  upstream/Eagler isolation and the four mandatory experiment lanes;
 - [`GAME_ADAPTER_CONTRACT.md`](GAME_ADAPTER_CONTRACT.md) for ownership rules;
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) for subsystem boundaries;
 - [`PRODUCT_SURFACE.md`](PRODUCT_SURFACE.md) for what is intentionally exposed;
@@ -56,7 +58,13 @@ The minimum starting workspace therefore contains:
 ```text
 eagler-touhou/       current shared Launcher/Runtime contract authority
 thXX-eagler/         the canonical title adaptation repository
+worktrees/thXX-upstream/  original/upstream tracking; never a Runtime owner
 ```
+
+The upstream and `eagler` branches must not share one working directory.
+High-refresh, Multiplayer, THPrac and THCRAP implementation additionally uses
+a bounded experiment worktree based on the current Eagler commit. Other
+adapter changes are not required by this policy to create another worktree.
 
 When shared runtime infrastructure is relevant, also materialize the exact
 `eagler-common` revision declared by the consumer repository. Do not substitute
@@ -123,6 +131,11 @@ Likewise, a `profile-required` capability cannot be omitted once its parent
 optional profile is declared. For example, Multiplayer is optional, but the
 required behaviors inside the Multiplayer profile are not individually
 optional.
+
+For high-refresh, Multiplayer, THPrac and THCRAP, completion also requires the
+experiment-to-Eagler promotion record defined by the worktree isolation
+playbook. A passing experiment build outside the canonical Eagler worktree is
+not an adapted product result.
 
 ## 2. The authority stack
 
@@ -621,17 +634,19 @@ not merely which game triggers the branch.
 
 ## 17. Recommended implementation order
 
-1. Add product declarations and product-catalog tests.
-2. Implement/verify DATA provider and authoritative content layout.
-3. Make Runtime Release pass before adding original content.
-4. Implement the shell lifecycle and required protocol commands/events.
-5. Pass keyboard/touch/storage/Replay conformance and the title's `quick` Demo
+1. Establish separate upstream and Eagler worktrees; create a topic worktree
+   before high-refresh, Multiplayer, THPrac or THCRAP implementation.
+2. Add product declarations and product-catalog tests.
+3. Implement/verify DATA provider and authoritative content layout.
+4. Make Runtime Release pass before adding original content.
+5. Implement the shell lifecycle and required protocol commands/events.
+6. Pass keyboard/touch/storage/Replay conformance and the title's `quick` Demo
    golden gate.
-6. Add music and optional language/thprac capabilities.
-7. Produce Hosted output and verify Package identities.
-8. Derive External and Import from that same Hosted generation.
-9. Verify App Shell/offline launch.
-10. Run the `daily` long-Replay golden gate, browser first-frame and
+7. Add music and optional language/thprac capabilities.
+8. Produce Hosted output and verify Package identities.
+9. Derive External and Import from that same Hosted generation.
+10. Verify App Shell/offline launch.
+11. Run the `daily` long-Replay golden gate, browser first-frame and
     public/deployment verification. Oracle regeneration remains a separate
     maintainer operation.
 
@@ -655,6 +670,8 @@ Runtime-specific, as applicable:
 - Replay/storage tests;
 - Replay verifier golden-integrity, `quick` Demo and `daily` long-Replay gates;
 - Runtime Release verification.
+- isolated-worktree promotion evidence for high-refresh, Multiplayer, THPrac
+  and THCRAP changes.
 
 Generated candidate:
 
@@ -681,6 +698,9 @@ Before handing off an unfinished adapter, record:
 
 ```text
 Game / version:
+Upstream worktree branch + commit:
+Eagler worktree branch + commit:
+High-refresh/Multiplayer/THPrac/THCRAP experiment worktrees + status:
 Runtime architecture:
 DATA provider + layout:
 Runtime file layout:

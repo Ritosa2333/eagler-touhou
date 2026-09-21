@@ -138,6 +138,14 @@ only lifecycle-compatible continuous visual fields interpolate, discontinuous
 state snaps, paused worlds stay frozen, and `first-frame` is emitted only after
 an actual presentation.
 
+Presentation Lab is a source-level verification mechanism, not a Runtime
+protocol command or Product Catalog capability. Its common v1 contract owns
+driver/observation semantics and fail-closed `unknown` coverage; each title
+owns its native diagnostic ABI, owner registry and state evidence. Current
+support is TH08 daily, TH10 limited/`unknown`, and no advertised TH06/TH07 Lab
+support. A different verifier is valid when it proves the same required
+presentation behaviors.
+
 ### Required Replay profile
 
 Replay support is also behavioral rather than format-specific. The

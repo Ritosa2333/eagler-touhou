@@ -11,6 +11,10 @@ cross-title only where ownership semantics actually match.
 
 ## Applicability and authority
 
+High-refresh implementation must start in a topic worktree separate from both
+the upstream-tracking and canonical Eagler worktrees. Promotion follows
+[Adaptation Worktree Isolation](adaptation-worktrees.md).
+
 Platform ownership lives in [Architecture](../ARCHITECTURE.md). Product-level
 presentation semantics live in
 [Adapter behavior invariants](../ADAPTER_BEHAVIOR_INVARIANTS.md). This playbook
@@ -179,6 +183,13 @@ After each structural slice:
 3. Run the existing title → Stage 1 smoke and check that logical progression stays 60 Hz while display callbacks may be faster.
 4. Re-run OGG, MIDI, storage and direct-entry Replay checks. A scheduler change is not accepted from a screenshot alone.
 5. Confirm no browser `RuntimeError`, `Aborted` or page error and label Edge/Playwright/real-device evidence separately.
+
+When a title uses the shared `eagler-common/testkit/presentation-lab`, common
+owns the versioned driver/observation contract and title-neutral analysis. The
+title adapter owns its native diagnostic ABI, stable object identity, owner
+registry and state coverage. Missing or malformed coverage is `unknown`, never
+a purity pass. Diagnostic builds and `audit_*` exports stay in their isolated
+profile and never enter the normal Runtime package or Launcher protocol.
 
 ## Deliberately omitted claims
 

@@ -64,7 +64,7 @@ surface as practical.
 ## 1. System context
 
 `eagler-touhou` is the Web launcher and distribution/hosting layer around the
-portable TH06, TH07 and TH08 Runtime builds.
+portable TH06, TH07, TH08 and TH10 Runtime builds.
 
 At runtime the system is intentionally split into four major authorities:
 
@@ -485,6 +485,13 @@ game provides its normal Runtime through that protocol. A separate Multiplayer
 Runtime exists only when the product declares the optional Multiplayer profile;
 current TH06/TH07 products do, while TH08/TH10 do not. Runtime file layout and
 retail-format preparation remain per-adapter implementation/format concerns.
+
+Presentation Lab and comparable source diagnostics are outside this browser
+protocol. Their workbench UI, instrumented WASM, native diagnostic ABI and
+evidence reports belong to `eagler-common` plus the title repository. They must
+not enter Product Catalog declarations, Package Store, normal Runtime Release
+or the Launcher launch path. A title may use Lab to prove the required
+presentation capability without making Lab itself a player-facing capability.
 
 ## 6. Offline model
 

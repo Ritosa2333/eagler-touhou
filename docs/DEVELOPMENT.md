@@ -10,6 +10,13 @@ Product content names and Runtime mounts live in the machine-independent `lib/co
 
 Full Runtime development requires sibling source repositories. `config/workspace.json` exclusively owns their physical directory names; do not duplicate a sibling-path table in Node, Python, or PowerShell scripts.
 
+Upstream tracking and Eagler integration are separate worktree roles. The
+canonical `thXX-eagler` checkout is the Launcher/workspace Runtime input;
+`worktrees/thXX-upstream` is original/upstream evidence only. High-refresh,
+Multiplayer, THPrac and THCRAP adaptation starts in an additional topic
+worktree and reaches `thXX-eagler` only after its focused review and gates.
+See [Adaptation Worktree Isolation](playbooks/adaptation-worktrees.md).
+
 ```powershell
 mkdir eagler-touhou-workspace
 cd .\eagler-touhou-workspace
@@ -33,7 +40,8 @@ workspace/
 ├─ th10-eagler/
 ├─ worktrees/
 │  ├─ th08-upstream/
-│  └─ th10-upstream/
+│  ├─ th10-upstream/
+│  └─ thXX-topic/       one high-refresh, Multiplayer, THPrac or THCRAP topic
 ├─ thprac-reallyportable/
 ├─ dependencies/
 └─ toolchains/
