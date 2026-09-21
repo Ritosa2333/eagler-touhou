@@ -47,6 +47,9 @@ export const REQUIRED_ADAPTER_CAPABILITIES = Object.freeze([
   { id: "replay-file-management", class: "required", owner: "launcher-runtime",
     verification: ["repository:tests/test-replay-files.mjs", "workspace:tests/test-replay-extension-contract.mjs", "runtime:per-game Replay compatibility gates"],
     summary: "Replay list/read/write/remove/sync surface and original-compatible import/export" },
+  { id: "replay-determinism-verification", class: "required", owner: "runtime",
+    verification: ["runtime:per-game quick/daily/oracle Replay verifier gates"],
+    summary: "the title repository owns fixed-tick Demo and long-Replay equivalence gates backed by immutable original-derived golden traces, with oracle regeneration isolated as explicit maintenance" },
   { id: "normal-music-ogg", class: "required", owner: "launcher-runtime",
     verification: ["repository:tests/test-music-availability.mjs", "browser:tests/browser/test-music-selection.py", "runtime:per-game OGG/audio gates"],
     summary: "normal game music is available through the OGG path; no-music mode is also supported" },
@@ -70,6 +73,11 @@ export interface RequiredPresentationBehavior {
 }
 
 export interface RequiredReplayBehavior {
+  readonly id: string;
+  readonly summary: string;
+}
+
+export interface RequiredReplayVerificationBehavior {
   readonly id: string;
   readonly summary: string;
 }
@@ -142,6 +150,21 @@ export const REQUIRED_REPLAY_BEHAVIORS = Object.freeze([
   { id: "playback-live-input-isolation", summary: "Replay playback does not accidentally consume live gameplay input except explicit playback/menu controls" },
   { id: "presentation-independence", summary: "display-rate presentation and diagnostics never mutate Replay recording/playback state" },
 ] satisfies readonly RequiredReplayBehavior[]);
+
+// Replay behavior and Replay verification are separate obligations. The
+// Launcher manages files, but the title repository owns gameplay state,
+// original-version knowledge and the diagnostic tick boundary. These rules do
+// not add Launcher/Runtime wire commands and must stay outside player builds.
+export const REQUIRED_REPLAY_VERIFICATION_BEHAVIORS = Object.freeze([
+  { id: "quick-all-title-demos", summary: "a quick lane compares every built-in title Demo in the title-owned rotation without changing the retail or candidate Demo mechanism" },
+  { id: "daily-long-replay-corpus", summary: "a daily lane compares the title corpus's declared standard loadout on Lunatic and Extra, plus any title-specific additional special difficulty; the usual second-character/second-configuration policy is mapped through the title's real selection model" },
+  { id: "immutable-content-addressed-golden", summary: "published original-derived traces bind Replay, original executable/resource, schema, completion and trace identities with content hashes" },
+  { id: "candidate-cannot-bless", summary: "ordinary candidate checks are read-only against expected data and cannot generate, replace or bless golden traces" },
+  { id: "explicit-oracle-maintenance", summary: "regenerating expected traces from the original executable is a separate advanced operation with explicit review and never runs implicitly in quick or daily checks" },
+  { id: "strict-fixed-tick-comparison", summary: "comparison fails closed on identity, lifecycle, missing/extra tick, input, RNG or declared authoritative-state differences and reports the earliest observed divergence without frame shifting" },
+  { id: "diagnostic-build-isolation", summary: "candidate observation is read-only and diagnostic-build-only; normal single-player gameplay, built-in Demo behavior and separately compiled multiplayer behavior are not modified to satisfy the verifier" },
+  { id: "title-owned-adapter", summary: "each title owns its Replay corpus, state mapping, completion rules and original provider while shared infrastructure may own only game-agnostic trace validation and comparison" },
+] satisfies readonly RequiredReplayVerificationBehavior[]);
 
 export const REQUIRED_STORAGE_BEHAVIORS = Object.freeze([
   { id: "declared-save-root", summary: "save/config/Replay files live under the Product Catalog's declared storage root and names rather than an adapter-private browser store" },

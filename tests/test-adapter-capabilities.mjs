@@ -7,6 +7,7 @@ import {
   REQUIRED_TOUCH_BEHAVIORS,
   REQUIRED_PRESENTATION_BEHAVIORS,
   REQUIRED_REPLAY_BEHAVIORS,
+  REQUIRED_REPLAY_VERIFICATION_BEHAVIORS,
   REQUIRED_STORAGE_BEHAVIORS,
   REQUIRED_MUSIC_BEHAVIORS,
   REQUIRED_PACKAGE_BEHAVIORS,
@@ -92,6 +93,17 @@ assert.deepEqual(REQUIRED_REPLAY_BEHAVIORS.map(item => item.id), [
   "presentation-independence",
 ]);
 assert.equal(new Set(REQUIRED_REPLAY_BEHAVIORS.map(item => item.id)).size, REQUIRED_REPLAY_BEHAVIORS.length);
+assert.deepEqual(REQUIRED_REPLAY_VERIFICATION_BEHAVIORS.map(item => item.id), [
+  "quick-all-title-demos",
+  "daily-long-replay-corpus",
+  "immutable-content-addressed-golden",
+  "candidate-cannot-bless",
+  "explicit-oracle-maintenance",
+  "strict-fixed-tick-comparison",
+  "diagnostic-build-isolation",
+  "title-owned-adapter",
+]);
+assert.equal(new Set(REQUIRED_REPLAY_VERIFICATION_BEHAVIORS.map(item => item.id)).size, REQUIRED_REPLAY_VERIFICATION_BEHAVIORS.length);
 
 for (const [name, profile, requiredIds] of [
   ["input", REQUIRED_INPUT_BEHAVIORS, ["keyboard-logical-input", "controller-logical-input", "loss-cleanup"]],

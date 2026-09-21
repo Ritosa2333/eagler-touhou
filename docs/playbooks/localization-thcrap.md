@@ -8,6 +8,10 @@ Keep language packages, THCRAP host/compile/runtime preparation, fonts and game 
 
 ## Applicability and authority
 
+THCRAP integration must use a topic worktree separate from upstream tracking
+and the canonical Eagler integration worktree. Promotion follows
+[Adaptation Worktree Isolation](adaptation-worktrees.md).
+
 - TH06/TH07 THCRAP source-proof and font records are reusable adaptation guidance.
 - A title without verified THCRAP/language-package integration must keep that
   capability unproven until the title-specific path passes.

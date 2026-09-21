@@ -12,6 +12,11 @@ optimization exploration, including failed experiments and zero-delay evidence.
 
 ## Applicability and authority
 
+Multiplayer implementation and rollback/netplay experiments must use a topic
+worktree separate from upstream tracking and the canonical Eagler integration
+worktree. Promotion follows
+[Adaptation Worktree Isolation](adaptation-worktrees.md).
+
 - TH06MP and TH07MP provide the reusable architecture and test evidence for the
   products that currently declare Multiplayer.
 - Titles that do not declare `multiplayerRuntime + multiplayer` are outside

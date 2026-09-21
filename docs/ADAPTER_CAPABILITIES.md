@@ -138,6 +138,14 @@ only lifecycle-compatible continuous visual fields interpolate, discontinuous
 state snaps, paused worlds stay frozen, and `first-frame` is emitted only after
 an actual presentation.
 
+Presentation Lab is a source-level verification mechanism, not a Runtime
+protocol command or Product Catalog capability. Its common v1 contract owns
+driver/observation semantics and fail-closed `unknown` coverage; each title
+owns its native diagnostic ABI, owner registry and state evidence. Current
+support is TH08 daily, TH10 limited/`unknown`, and no advertised TH06/TH07 Lab
+support. A different verifier is valid when it proves the same required
+presentation behaviors.
+
 ### Required Replay profile
 
 Replay support is also behavioral rather than format-specific. The
@@ -151,6 +159,26 @@ format genuinely cannot represent. The extension must be explicit,
 versioned/validated and must not become the all-game format contract. This is
 why TH06/TH07 EAGX and TH08/TH10 motion trailers are implementation details,
 not features a future adapter is expected to copy.
+
+Replay behavior alone is not sufficient evidence of authoritative gameplay
+fidelity. The separate machine-readable
+`REQUIRED_REPLAY_VERIFICATION_BEHAVIORS` profile requires every formal title
+adapter to own:
+
+- a `quick` gate covering every built-in title Demo;
+- a `daily` gate covering the declared Lunatic/Extra corpus and any applicable
+  title-specific special difficulty;
+- immutable content-addressed original-derived golden traces;
+- strict fixed-tick comparison with earliest-divergence reporting;
+- an explicit advanced oracle-maintenance path that ordinary candidate tests
+  cannot invoke or use to bless themselves;
+- diagnostic-only read-only observation that does not change normal gameplay,
+  Demo rotation or the separately compiled multiplayer Runtime.
+
+This is a Runtime/source-repository verification obligation. It does not add a
+Launcher UI feature, Runtime wire command or product option. Each title owns its
+state mapping, corpus, completion rules and original provider; shared code may
+own game-agnostic trace validation and comparison.
 
 ## 2. Inherited Launcher capabilities
 

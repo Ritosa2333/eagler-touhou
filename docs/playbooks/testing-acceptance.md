@@ -41,7 +41,11 @@ Write the level beside each result. `runtimeReady`, a contract test, a screensho
 ## Minimum gates by domain
 
 - Scheduler/interpolation: title → Stage 1, logical 60 Hz, OGG/MIDI, storage, direct-entry Replay and no runtime/page errors.
-- Replay/determinism: fixed-width format/length checks, first divergent logical tick, input ownership, save/load and fresh reload; menu unlock state is not Replay proof.
+- Replay/determinism: golden integrity, all-title-Demo `quick`, declared
+  Lunatic/Extra/special `daily`, first divergent logical tick, input ownership,
+  save/load and fresh reload; menu unlock state is not Replay proof. Original
+  oracle regeneration is a separate advanced maintenance lane, not part of an
+  ordinary candidate PASS.
 - Audio: OGG stream/full, SFX, MIDI message/timer/output path, AudioContext state and real-device audio when claimed.
 - Touch/mobile: focus/blur, pause/restart, portrait/landscape, menus/dialogue/StageClear/fullscreen and manual touch on the named device.
 - Multiplayer: ordinary/MP isolation, 2P/3P, frame-0, prediction/rollback, restart/Result, Replay/spectator, WebRTC/WS/TURN and then human cross-device play.
@@ -53,6 +57,12 @@ Write the level beside each result. `runtimeReady`, a contract test, a screensho
 When a result differs, capture the earliest divergence: logical frame, input owner, RNG/ECL order, stage, Replay offset, network confirmation frame or draw-only state. Do not debug from the last screenshot. Check whether the observed route was later superseded or rolled back before writing a current rule.
 
 Keep direct-entry Replay separate from menu smoke. TH08's Extra/Spell Practice unlock assumptions can block a menu route without proving Replay corruption. Keep `none`, MIDI and OGG mode selection separate; a stale persisted config or pthread `Module` copy can create a silent false positive.
+
+Keep `.rpy` input, published golden trace and original oracle capture separate
+in reports. A candidate may pass only by comparing against the accepted golden;
+it may not regenerate or bless its own expected output. If a divergence proves
+a title-core gameplay defect, the acceptance record must name the upstream/core
+fix as well as any downstream Eagler propagation.
 
 <!-- knowledge-id: K-TEST-003 -->
 ## Structured bring-up diagnostics

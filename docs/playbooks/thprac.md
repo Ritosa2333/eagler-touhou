@@ -8,6 +8,10 @@ Guide real semantic THPrac integration and portable practice behavior. Prevent a
 
 ## Applicability and authority
 
+THPrac integration must use a topic worktree separate from upstream tracking
+and the canonical Eagler integration worktree. Promotion follows
+[Adaptation Worktree Isolation](adaptation-worktrees.md).
+
 - TH06/TH07 reallyportable and source/contract evidence provides the reusable owner, lifecycle and proof method.
 - A title without proven THPrac integration must not infer support from another
   title's UI or hook layout.

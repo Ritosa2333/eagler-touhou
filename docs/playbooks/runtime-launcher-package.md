@@ -63,6 +63,11 @@ current.
 
 Keep ordinary and MP storage roots separate. Keep DATA separate from Replay/save. `runtimeReady=true` means required Runtime dependencies are prepared; it is not a game-function, browser or device PASS. Record local provenance so an old package cannot silently pose as a new one.
 
+Source diagnostics such as Presentation Lab use an isolated build/package
+profile. Instrumented WASM, `audit_*` exports, diagnostic workbench files and
+evidence reports are not Runtime Release or Package Store inputs and never add
+commands to `eagler-touhou/1`.
+
 HTTP-to-HTTPS migration must first run on the old Origin. Preserve a precise migration page without HSTS and use nonce/origin-checked `postMessage`; migrate allowed IndexedDB/localStorage/Cache Storage application data, not arbitrary browser cache or raw OGG cache. Ordinary HTTP requests can redirect after migration handling is available.
 
 ## Invariants and pitfalls

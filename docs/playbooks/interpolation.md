@@ -11,6 +11,10 @@ cross-title only where ownership semantics actually match.
 
 ## Applicability and authority
 
+High-refresh implementation must start in a topic worktree separate from both
+the upstream-tracking and canonical Eagler worktrees. Promotion follows
+[Adaptation Worktree Isolation](adaptation-worktrees.md).
+
 Platform ownership lives in [Architecture](../ARCHITECTURE.md). Product-level
 presentation semantics live in
 [Adapter behavior invariants](../ADAPTER_BEHAVIOR_INVARIANTS.md). This playbook
@@ -24,8 +28,10 @@ Applies to:
 
 Source experience:
 
-- TH06/TH07 fixed-simulation and draw-only interpolation rules are proven
-  reference experience.
+- TH06/TH07 provide proven, narrowly scoped regression evidence for cadence,
+  transient text, freeze paths, renderer-state restoration and ANM lifecycle.
+  Their complete Draw chains are not proven presentation-pure and are not
+  reference implementations for Presentation Lab admission.
 - TH08/TH10 provide the current directory-Runtime field/owner-specific
   presentation implementation.
 - The TH06 global ANM interpolation failure is a proven TH06 regression and a
@@ -40,6 +46,14 @@ Authority:
   implementation and focused tests;
 - another title's presentation code supplies adaptation patterns only and
   cannot override target-game semantics.
+
+Normal high-refresh playability is not evidence that a title supports
+Presentation Lab. Neither a fixed-step loop, a Draw suppression flag nor a
+collection of local save/restore repairs proves that the complete repeated
+Draw transaction is pure. Lab admission requires a target-title audit of every
+owner reached by the real Draw chain, versioned fingerprint coverage for all
+authoritative and rollback-visible state, and repeated-draw evidence under the
+common contract. Any uncovered owner keeps the result `unknown`.
 
 <!-- knowledge-id: K-INTERP-001 -->
 ## Normal design
@@ -179,6 +193,18 @@ After each structural slice:
 3. Run the existing title → Stage 1 smoke and check that logical progression stays 60 Hz while display callbacks may be faster.
 4. Re-run OGG, MIDI, storage and direct-entry Replay checks. A scheduler change is not accepted from a screenshot alone.
 5. Confirm no browser `RuntimeError`, `Aborted` or page error and label Edge/Playwright/real-device evidence separately.
+
+When a title uses the shared `eagler-common/testkit/presentation-lab`, common
+owns the versioned driver/observation contract and title-neutral analysis. The
+title adapter owns its native diagnostic ABI, stable object identity, owner
+registry and state coverage. Missing or malformed coverage is `unknown`, never
+a purity pass. Diagnostic builds and `audit_*` exports stay in their isolated
+profile and never enter the normal Runtime package or Launcher protocol.
+
+TH06/TH07 currently supply historical failure evidence only. Do not copy their
+whole Draw scheduling shape into a Lab adapter or list either title as a Lab
+consumer until a fresh title-specific full-chain audit satisfies the admission
+criteria above.
 
 ## Deliberately omitted claims
 
