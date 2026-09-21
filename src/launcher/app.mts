@@ -1,3 +1,4 @@
+import { prepareRuntimeLaunch } from "./runtime-launch.mjs";
 import { PACKAGE_DESCRIPTOR_SCHEMA } from "../../package/package-descriptor.mjs";
 import { componentFileIds } from "../../package/package-generation.mjs";
 import {
@@ -3140,43 +3141,6 @@ function runtimeUrl() {
   return entry.runtime;
 }
 
-function runtimeCachePaths(gameId: GameId, runtimeVariant: "normal" | "multiplayer" = "normal"): string[] {
-  const hosted = manifest.games[gameId];
-  const runtime = runtimeVariant === "multiplayer" && hosted && "multiplayerRuntime" in hosted
-    ? hosted.multiplayerRuntime
-    : hosted?.runtime;
-  if (typeof runtime !== "string" || !runtime) return [];
-  const url = new URL(runtime, location.href);
-  const product = PRODUCT_GAMES[gameId];
-  if ("runtimeFileLayout" in product && product.runtimeFileLayout === "directory" && "runtimeAssets" in product) {
-    const directory = url.pathname.slice(0, url.pathname.lastIndexOf("/") + 1);
-    return product.runtimeAssets.map((name: string) => `${directory}${name}`);
-  }
-  return ["html", "js", "wasm"].map(extension => url.pathname.replace(/\.html$/i, `.${extension}`));
-}
-
-async function cacheRuntimeForOffline(
-  gameId: GameId,
-  runtimeVariant: "normal" | "multiplayer" = state.runtimeVariant,
-) {
-  if (!("serviceWorker" in navigator)) return;
-  await appShellClient?.ready;
-  const registration = await navigator.serviceWorker.getRegistration("./").catch(() => null);
-  const worker = navigator.serviceWorker.controller || registration?.active;
-  const paths = runtimeCachePaths(gameId, runtimeVariant);
-  if (!worker || !paths.length) return;
-  const channel = new MessageChannel();
-  const result = new Promise<{ ok?: boolean; error?: string }>((resolve, reject) => {
-    const timer = window.setTimeout(() => reject(new Error(`${gameId}: Runtime offline cache timed out`)), 120_000);
-    channel.port1.onmessage = event => {
-      window.clearTimeout(timer);
-      resolve(event.data || {});
-    };
-  });
-  worker.postMessage({ type: "CACHE_APP_SHELL_PATHS", paths }, [channel.port2]);
-  const response = await result;
-  if (!response.ok) throw new Error(response.error || `${gameId}: Runtime offline cache failed`);
-}
 
 function musicPackage() {
   const transport = musicTransportMode(state.music);
@@ -4772,52 +4736,63 @@ async function ensureInstalledPackageRuntime(show = true) {
   const generation = installed?.generation;
   if (!generation?.id) { activeInstalledPackageGeneration = null; return false; }
   installedPackageSnapshots.set(state.game, generation);
+  const gameId = state.game;
+  const variant = state.runtimeVariant;
+  const sourceEntry = runtimeUrl();
   const requestedIdentity = `package:${state.game}:${generation.id}:${state.runtimeVariant}:${state.replayViewer ? "replay" : "game"}`;
   if (state.ready && state.sourceIdentity === requestedIdentity) return true;
-
-  resetRuntime();
-  // Package Store remains the source of truth, but the game itself runs
-  // directly in #gameFrame. The intermediate Player/about:blank carrier was
-  // removed because real iOS WebKit regressed under the extra iframe/WebGL
-  // lifecycle even though the same Runtime worked in the historical
-  // single-iframe topology.
-  activeInstalledPackageGeneration = generation;
-  const runtimeSession = await bindRuntimePackageSession(generation);
-  managedRuntimeGenerationLease.bind(state.game, generation);
-  state.sourceIdentity = requestedIdentity;
-  clearGameDataAttempt();
-  setPlayerStatus(t("runtime.preparingLocal"));
-  showTransfer({
-    kind: "game",
-    mode: "runtime",
-    title: t("runtime.preparingLocal"),
-    label: t("runtime.localGameLabel", { game: state.game.toUpperCase() }),
-    phase: "preparing",
-    indeterminate: true,
-  });
-  // Runtime HTML/JS/WASM are Launcher-managed ordinary static resources.
-  // Only the selected immutable DATA bytes cross from Package Store into the
-  // generated Emscripten loader through Module.getPreloadedPackage.
-  const managedSource = new URL(managedRuntimeUrl(runtimeUrl(), generation, state.runtimeVariant, location.href));
-  managedSource.searchParams.set(RUNTIME_EPOCH_QUERY_PARAMETER, String(runtimeSession.id));
-  state.source = managedSource.href;
-  if (show) openPlayerView();
-  const runtimeReady = waitForRuntimeReady(runtimeSession, t("runtime.localLoadTimeout"));
-  // App-owned same-origin Runtime URLs can commit and execute immediately.
-  // Arm readiness/error listeners before navigation so a fast local Runtime
-  // cannot emit `ready` in the gap after frame.src changes.
-  frame.src = state.source;
-  try {
-    await runtimeReady;
-    // Only warm remaining Runtime assets after the live Runtime is ready.
-    void cacheRuntimeForOffline(state.game, state.runtimeVariant).catch(error =>
-      console.warn(`${state.game}: Runtime background offline cache failed`, error));
+  const excluded: string[] = [];
+  // One direct iframe, as required by the iOS lifecycle contract. Retry only a
+  // complete earlier program before readiness, never individual loaded files.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    resetRuntime();
+    activeInstalledPackageGeneration = generation;
+    const runtimeSession = await bindRuntimePackageSession(generation);
+    managedRuntimeGenerationLease.bind(gameId, generation);
+    state.sourceIdentity = requestedIdentity;
+    clearGameDataAttempt();
+    setPlayerStatus(t("runtime.preparingLocal"));
+    showTransfer({ kind: "game", mode: "runtime", title: t("runtime.preparingLocal"),
+      label: t("runtime.localGameLabel", { game: gameId.toUpperCase() }), phase: "preparing", indeterminate: true });
+    if (show) openPlayerView();
+    let selectedGeneration: string | null = null;
+    try {
+      // Development workspaces intentionally use their live build URLs. A
+      // published Host declares the immutable Runtime Manifest capability.
+      let entry = sourceEntry;
+      if ("runtimeManifest" in manifest.shared && manifest.shared.runtimeManifest) {
+        const selected = await prepareRuntimeLaunch(sourceEntry, {
+          exclude: excluded,
+          worker: (async () => {
+            try {
+              await appShellClient?.ready;
+              return (await navigator.serviceWorker?.getRegistration("./"))?.active || null;
+            } catch { return null; }
+          })(),
+        });
+        entry = selected.url;
+        selectedGeneration = selected.generation;
+      }
+      if (!runtimeSessionCurrent(runtimeSession) || state.game !== gameId || state.runtimeVariant !== variant) {
+        throw new Error(t("runtime.switched"));
+      }
+      // gameGeneration is the Package Store identity, NOT the code generation.
+      const source = new URL(managedRuntimeUrl(entry, generation, variant, location.href));
+      source.searchParams.set(RUNTIME_EPOCH_QUERY_PARAMETER, String(runtimeSession.id));
+      state.source = source.href;
+      const runtimeReady = waitForRuntimeReady(runtimeSession, t("runtime.localLoadTimeout"));
+      frame.src = state.source;
+      await runtimeReady;
+      return true;
+    } catch (error) {
+      const current = runtimeSessionCurrent(runtimeSession) && state.game === gameId && state.runtimeVariant === variant;
+      if (current) resetRuntime();
+      if (!current || !selectedGeneration || attempt === 2) throw error;
+      excluded.push(selectedGeneration);
+      console.warn(`${gameId}: Runtime bootstrap failed; trying a complete previous generation`, error);
+    }
   }
-  catch (error) {
-    if (runtimeSessionCurrent(runtimeSession)) resetRuntime();
-    throw error;
-  }
-  return true;
+  return false;
 }
 
 function selectedLanguageEntriesForPackageUpdate(): Readonly<Record<string, readonly string[]>> {

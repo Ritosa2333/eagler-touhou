@@ -13,9 +13,8 @@ const metaPrefix = new URL("./__app-shell-meta__/", scopeUrl).href;
 const cacheMetaUrl = `${metaPrefix}__APP_SHELL_BUILD_ID__`;
 const updateStatusUrl = new URL("./__app-shell-update-status__", scopeUrl).href;
 // Kept in this worker, not a second independently updating Service Worker.
-const runtimeCache = typeof createRuntimeCache === "function" && self.__EAGLER_RUNTIME_CATALOG
-  ? createRuntimeCache({ scopeUrl, catalog: self.__EAGLER_RUNTIME_CATALOG,
-      embeddedCreatedAt: async () => (await cacheMetadata(CACHE_NAME))?.createdAt || 0 }) : null;
+const runtimeCache = typeof createRuntimeCache === "function" && self.__EAGLER_RUNTIME_MANIFEST
+  ? createRuntimeCache({ scopeUrl, catalog: self.__EAGLER_RUNTIME_MANIFEST }) : null;
 let currentMetadataUpdate = Promise.resolve();
 const manifestByPathname = new Map(PRECACHE_MANIFEST.map(entry => {
   const url = new URL(entry.url, scopeUrl);
@@ -222,10 +221,23 @@ async function offlineStatus() {
 
 self.addEventListener("message", event => {
   const type = event.data?.type;
-  if (type !== "CACHE_APP_SHELL_PATHS" && type !== "GET_APP_SHELL_STATUS") return;
+  const protocol = typeof EaglerRuntimeGenerations !== "undefined" ? EaglerRuntimeGenerations : null;
+  if (!["CACHE_APP_SHELL_PATHS", "GET_APP_SHELL_STATUS", protocol?.RUNTIME_CAPABILITIES, protocol?.RUNTIME_PREPARE].includes(type)) return;
   const port = event.ports?.[0];
   event.waitUntil((async () => {
     try {
+      if (protocol && type === protocol.RUNTIME_CAPABILITIES) {
+        port?.postMessage({ ok: !!runtimeCache, protocol: protocol.RUNTIME_CACHE_PROTOCOL });
+        return;
+      }
+      if (protocol && type === protocol.RUNTIME_PREPARE) {
+        if (!runtimeCache) throw new Error("Immutable Runtime cache unavailable");
+        const request = protocol.validateRuntimePrepareRequest(event.data);
+        port?.postMessage(await runtimeCache.prepareLaunch(request.entry, {
+          exclude: request.exclude, ...(request.catalog ? { catalog: request.catalog } : {}),
+        }));
+        return;
+      }
       if (type === "GET_APP_SHELL_STATUS") {
         port?.postMessage(await offlineStatus());
         return;
@@ -234,15 +246,16 @@ self.addEventListener("message", event => {
       const entries = event.data.paths.map(path => {
         const url = new URL(String(path), scopeUrl);
         if (url.origin !== scopeUrl.origin) throw new Error(`Runtime cache path is cross-origin: ${url.href}`);
+        if (runtimeCache && url.pathname.startsWith(scopeUrl.pathname + "runtime/")) return { cacheUrl: url.href };
         const entry = manifestByPathname.get(url.pathname);
         if (!entry) throw new Error(`Runtime cache path is not published: ${url.pathname}`);
         return entry;
       });
-      if (runtimeCache) await runtimeCache.preparePaths(entries.map(entry => new URL(entry.cacheUrl).pathname.slice(scopeUrl.pathname.length)));
+      if (runtimeCache) await runtimeCache.preparePaths(entries.map(entry => new URL(entry.cacheUrl).pathname.slice(scopeUrl.pathname.length)).filter(path => path.startsWith("runtime/")));
       await runPool(entries.filter(entry => !runtimeCache || !new URL(entry.cacheUrl).pathname.startsWith(scopeUrl.pathname + "runtime/")), shellCacheFirst);
       port?.postMessage({ ok: true, cached: entries.length });
     } catch (error) {
-      port?.postMessage({ ok: false, error: error instanceof Error ? error.message : String(error) });
+      port?.postMessage({ ok: false, code: error?.name || "Error", error: error instanceof Error ? error.message : String(error) });
     }
   })());
 });

@@ -2,7 +2,13 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createHash, webcrypto } from "node:crypto";
 import vm from "node:vm";
-const source = await readFile(new URL("../src/runtime-cache-sw.js", import.meta.url), "utf8");
+import { runtimeGenerationId } from "../lib/runtime-generations.mjs";
+import { RUNTIME_MANIFEST_SCHEMA, RUNTIME_PROTOCOL, RUNTIME_GENERATION_SCHEMA,
+  runtimeGenerationBase, runtimeGenerationEntry } from "../lib/contracts/runtime-generations.mjs";
+const source = (await Promise.all([
+  "../.cache/build/browser/assets/contracts/runtime-generations-worker.js",
+  "../legacy/runtime-generation-reader.js", "../src/runtime-cache-sw.js",
+].map(path => readFile(new URL(path, import.meta.url), "utf8")))).join("\n");
 const sha = text => createHash("sha256").update(text).digest("hex");
 class MemoryCache {
   entries = new Map();
@@ -12,156 +18,119 @@ class MemoryCache {
   async keys() { return [...this.entries.keys()].map(url => new Request(url)); }
   async delete(input) { return this.entries.delete(this.key(input)); }
 }
-const root = "runtime/th08/";
+const root="runtime/th08/";
 function harness() {
-  const stores = new Map(), clients = new Map(), requests = [];
-  const state = { files: {}, catalog: null, outage: false, corrupt: false, slow: false, quota: false };
-  const scopeUrl = new URL("https://example.test/game/");
-  const caches = {
-    async keys() { return [...stores.keys()]; },
-    async open(name) {
-      if (!stores.has(name)) {
-        const cache = new MemoryCache();
-        const put = cache.put.bind(cache);
-        cache.put = async (url, response) => {
-          if (state.quota && String(url).includes("glue.mjs")) throw new Error("QuotaExceededError");
-          await put(url, response);
+  const stores=new Map(), clients=new Map(), requests=[];
+  const state={files:{},catalog:null,outage:false,corrupt:false,slow:false,quota:false,allWritesFail:false};
+  const scopeUrl=new URL("https://example.test/game/");
+  const caches={
+    async keys(){return [...stores.keys()]},
+    async open(name){
+      if(!stores.has(name)){
+        const cache=new MemoryCache(),put=cache.put.bind(cache);
+        cache.put=async(url,response)=>{
+          if(state.allWritesFail || (state.quota && String(url).endsWith("game.wasm")))throw new Error("QuotaExceededError");
+          await put(url,response);
         };
-        stores.set(name, cache);
+        stores.set(name,cache);
       }
       return stores.get(name);
     },
-    async delete(name) { return stores.delete(name); },
+    async delete(name){return stores.delete(name)},
   };
   function publish(version) {
-    state.files = {
-      [root + "th08.html"]: `<script type="module" src="shell.mjs"></script>${version}`,
-      [root + "shell.mjs"]: `shell ${version}`,
-      [root + "glue.mjs"]: `glue ${version}`,
-      [root + "game.wasm"]: `wasm ${version}`,
-      [root + "worker.mjs"]: `worker ${version}`,
-    };
-    if (version !== "a") state.files[root + "new-helper.mjs"] = `helper ${version}`;
-    state.catalog = { schema: "eagler-touhou/runtime-cache/1", hostProtocol: "eagler-touhou/1",
-      groups: [{ root, entries: Object.entries(state.files).map(([url, text]) => ({ url, revision: sha(text) })) }] };
-    return JSON.parse(JSON.stringify(state.catalog));
+    const files={"game.html":`<script type="module" src="shell.mjs"></script>${version}`,
+      "shell.mjs":`shell ${version}`,"glue.mjs":`glue ${version}`,"game.wasm":`wasm ${version}`,"worker.mjs":`worker ${version}`};
+    if(version!=="a")files["new-helper.mjs"]=`helper ${version}`;
+    const identities=Object.entries(files).map(([path,body])=>({path,bytes:Buffer.byteLength(body),sha256:sha(body)}));
+    const descriptor={generation:runtimeGenerationId("game.html",identities),entry:"game.html",files:identities};
+    const base=runtimeGenerationBase(root,descriptor.generation);
+    for(const [path,body]of Object.entries(files))state.files[base+path]=body;
+    state.files[base+"runtime-generation.json"]=JSON.stringify({schema:RUNTIME_GENERATION_SCHEMA,protocol:RUNTIME_PROTOCOL,root,...descriptor});
+    const old=state.catalog?.groups[0];
+    const previous=(old?[old.current,...old.previous]:[]).filter(item=>item.generation!==descriptor.generation).slice(0,2);
+    state.catalog={schema:RUNTIME_MANIFEST_SCHEMA,protocol:RUNTIME_PROTOCOL,groups:[{root,current:descriptor,previous}]};
+    return descriptor;
   }
-  const first = publish("a");
-  function worker(embedded = first, embeddedAt = 0) {
-    const context = vm.createContext({
-      self: { clients: { async get(id) { return clients.get(id); } } },
-      caches, crypto: webcrypto, URL, Request, Response, Headers, Uint8Array, Uint32Array,
-      AbortController, setTimeout, clearTimeout, console,
-      fetch: async request => {
+  const a=publish("a"),first=structuredClone(state.catalog);
+  function worker(embedded=first){
+    const context=vm.createContext({self:{clients:{async matchAll(){return [...clients.values()]}}},
+      caches,crypto:webcrypto,URL,Request,Response,Headers,Uint8Array,Uint32Array,TextEncoder,
+      AbortController,setTimeout,clearTimeout,console,
+      fetch:async request=>{
         requests.push(request.url);
-        if (state.outage) throw new Error("Offline");
-        if (state.slow) return new Promise((_, reject) => request.signal.addEventListener("abort", () => reject(new Error("Timeout"))));
-        const path = new URL(request.url).pathname.slice(scopeUrl.pathname.length);
-        if (path === "app-shell-sw.js") return new Response(`// EAGLER_RUNTIME_CATALOG_V1 ${JSON.stringify(state.catalog)}\n`);
-        const body = state.corrupt && path.endsWith("game.wasm") ? "bad wasm" : state.files[path];
-        return new Response(body || "missing", { status: body === undefined ? 404 : 200 });
+        if(state.outage)throw new Error("Offline");
+        if(state.slow)return new Promise((_,reject)=>request.signal.addEventListener("abort",()=>reject(new Error("Timeout"))));
+        const path=new URL(request.url).pathname.slice(scopeUrl.pathname.length);
+        if(path==="runtime-manifest.json")return new Response(JSON.stringify(state.catalog));
+        const current=runtimeGenerationBase(root,state.catalog.groups[0].current.generation);
+        const body=state.corrupt && path===current+"game.wasm"?"bad wasm":state.files[path];
+        return new Response(body??"missing",{status:body===undefined?404:200});
       },
     });
-    vm.runInContext(source, context);
-    return context.createRuntimeCache({ scopeUrl, catalog: embedded, fetchTimeoutMs: 10, embeddedCreatedAt: async () => embeddedAt });
+    vm.runInContext(source,context);
+    return context.createRuntimeCache({scopeUrl,catalog:embedded,fetchTimeoutMs:10});
   }
-  async function navigate(sw, id, path = root + "th08.html") {
-    clients.set(id, { id });
-    // Node's Request disallows constructing mode:navigate, unlike browser events.
-    return sw.handle({ request: { url: new URL(path, scopeUrl).href, method: "GET", mode: "navigate" }, resultingClientId: id, clientId: "" });
+  async function launch(sw,id,options={}){
+    const selected=await sw.prepareLaunch(root+"game.html",options);
+    clients.set(id,{id,url:new URL(selected.entry,scopeUrl).href});
+    const response=await resource(sw,selected,"game.html");
+    return {...selected,body:await response.text()};
   }
-  async function resource(sw, id, path, workerId = "") {
-    return sw.handle({ request: new Request(new URL(root + path, scopeUrl)), clientId: id, resultingClientId: workerId });
+  function resource(sw,selected,name){
+    const path=runtimeGenerationBase(root,selected.generation)+name;
+    return sw.handle({request:new Request(new URL(path,scopeUrl))});
   }
-  return { stores, clients, requests, state, publish, worker, navigate, resource, scopeUrl, caches };
+  return{stores,clients,requests,state,publish,worker,launch,resource,scopeUrl,caches,a};
 }
-const h = harness();
-let sw = h.worker();
-assert.match(await (await h.navigate(sw, "a")).text(), /a$/);
-assert.equal(await (await h.resource(sw, "a", "game.wasm")).text(), "wasm a");
-const initialRequests = h.requests.length;
-await h.navigate(sw, "a-again");
-assert.equal(h.requests.length, initialRequests + 1, "every launch checks the latest catalog but reuses verified unchanged bytes");
-h.publish("b");
-assert.match(await (await h.navigate(sw, "b")).text(), /b$/);
-assert.equal(await (await h.resource(sw, "b", "new-helper.mjs")).text(), "helper b");
-assert.equal(await (await h.resource(sw, "a", "glue.mjs")).text(), "glue a");
-assert.equal(await (await h.resource(sw, "a", "game.wasm")).text(), "wasm a", "new launches must not switch old clients");
-// SW termination: pins are persisted, not held only in a JavaScript Map.
-sw = h.worker();
-assert.equal(await (await h.resource(sw, "a", "game.wasm")).text(), "wasm a");
-h.clients.set("a-worker", { id: "a-worker" });
-assert.equal(await (await h.resource(sw, "a", "worker.mjs", "a-worker")).text(), "worker a");
-assert.equal(await (await h.resource(sw, "a-worker", "game.wasm")).text(), "wasm a");
-h.publish("c"); h.state.corrupt = true;
-assert.match(await (await h.navigate(sw, "fallback-b")).text(), /b$/, "a corrupt new Wasm falls back and actually serves the old document");
-assert.equal(await (await h.resource(sw, "fallback-b", "glue.mjs")).text(), "glue b");
-h.state.corrupt = false; h.state.outage = true;
-assert.match(await (await h.navigate(sw, "offline")).text(), /b$/);
-h.state.outage = false; h.state.slow = true;
-assert.match(await (await h.navigate(sw, "timeout")).text(), /b$/);
-h.state.slow = false; h.state.quota = true;
-assert.match(await (await h.navigate(sw, "quota")).text(), /b$/);
-h.state.quota = false;
-assert.match(await (await h.navigate(sw, "c")).text(), /c$/);
-assert.equal(await (await h.resource(sw, "a", "game.wasm")).text(), "wasm a", "GC must preserve an old, live session beyond the newest two snapshots");
-// Poison the newest complete snapshot, then take the server offline. A complete
-// older set must be selected before even the Runtime HTML is returned.
-for (const [name, cache] of h.stores) {
-  const response = await cache.match(new URL(root + "game.wasm", h.scopeUrl).href);
-  if (response && await response.text() === "wasm c") await cache.delete(new URL(root + "game.wasm", h.scopeUrl).href);
-}
-h.state.outage = true;
-assert.match(await (await h.navigate(sw, "evicted-c")).text(), /b$/);
-assert.equal(await (await h.resource(sw, "evicted-c", "game.wasm")).text(), "wasm b");
+const h=harness();let sw=h.worker();
+const A=await h.launch(sw,"a");assert.match(A.body,/a$/);
+assert.equal(await(await h.resource(sw,A,"game.wasm")).text(),"wasm a");
+const before=h.requests.length;await h.launch(sw,"a2");
+assert.equal(h.requests.length,before+1,"every launch revalidates pointer, matching bytes are reused");
+const b=h.publish("b"),B=await h.launch(sw,"b");assert.match(B.body,/b$/);
+assert.equal(await(await h.resource(sw,A,"glue.mjs")).text(),"glue a");
+assert.equal(await(await h.resource(sw,A,"game.wasm")).text(),"wasm a");
+sw=h.worker();assert.equal(await(await h.resource(sw,A,"game.wasm")).text(),"wasm a","SW restart needs no client-version routing table");
+assert.equal(await(await h.resource(sw,A,"worker.mjs")).text(),"worker a");
+h.publish("c");h.state.corrupt=true;
+assert.match((await h.launch(sw,"bad-c")).body,/b$/,"bad new Wasm must return a usable complete previous entry");
+h.state.corrupt=false;h.state.outage=true;
+assert.match((await h.launch(sw,"offline")).body,/b$/);
+h.state.outage=false;h.state.slow=true;assert.match((await h.launch(sw,"timeout")).body,/b$/);
+h.state.slow=false;h.state.quota=true;assert.match((await h.launch(sw,"quota")).body,/b$/);
+h.state.quota=false;
+const C=await h.launch(sw,"c");assert.match(C.body,/c$/);
+h.state.allWritesFail=true;h.state.outage=true;
+assert.match((await h.launch(sw,"read-only-offline")).body,/c$/,"optional selection metadata must not block an already complete offline Runtime");
+h.state.allWritesFail=false;
+for(const [name,cache]of h.stores)if(name.includes(C.generation))await cache.delete(new URL(runtimeGenerationBase(root,C.generation)+"game.wasm",h.scopeUrl).href);
+assert.match((await h.launch(sw,"partial-c")).body,/b$/);
+h.state.outage=false;
+assert.match((await h.launch(sw,"exclude-c",{exclude:[C.generation]})).body,/b$/,"bootstrap retry excludes the failed entire generation");
+assert.equal((await h.resource(sw,A,"glue.mjs")).headers.get("Cache-Control"),"public, max-age=31536000, immutable");
+// A server rollback is a fresh pointer observation, not a numerical comparison
+// of hashes; a subsequent offline start keeps that successfully chosen version.
+h.publish("a");await h.launch(sw,"rollback-a");h.state.outage=true;
+assert.match((await h.launch(sw,"rollback-offline")).body,/a$/);
 
-const legacy = harness();
-const oldCache = await legacy.caches.open("eagler-touhou-app-shell-legacy");
-await oldCache.put(new URL(root + "glue.mjs", legacy.scopeUrl).href, new Response("glue a"));
-legacy.publish("b");
-await oldCache.put(new URL(root + "game.wasm", legacy.scopeUrl).href, new Response("wasm b"));
-const migrated = legacy.worker();
-assert.match(await (await legacy.navigate(migrated, "migration")).text(), /b$/);
-assert.equal(await (await legacy.resource(migrated, "migration", "glue.mjs")).text(), "glue b");
-assert.equal(await (await legacy.resource(migrated, "migration", "game.wasm")).text(), "wasm b");
-const previousSnapshotCount = [...legacy.stores.keys()].length;
-legacy.state.catalog.groups[0].entries[0].url = "https://other.test/evil.html";
-assert.match(await (await legacy.navigate(migrated, "invalid-catalog")).text(), /b$/);
-assert.equal([...legacy.stores.keys()].length, previousSnapshotCount);
-const offlineMigration = harness();
-const verifiedCache = await offlineMigration.caches.open("eagler-touhou-app-shell-new");
-for (const [path, body] of Object.entries(offlineMigration.state.files)) await verifiedCache.put(new URL(path, offlineMigration.scopeUrl).href, new Response(body));
-offlineMigration.state.outage = true;
-assert.match(await (await offlineMigration.navigate(offlineMigration.worker(), "offline-migration")).text(), /a$/);
-console.log("Runtime latest-first, complete fallback, poisoned legacy repair, per-client pinning and restart: PASS");
-
-// An offline SW upgrade must not overlook a newer full Runtime already cached
-// by the App Shell. An older embedded catalog must not undo a newer live launch.
-const upgrade = harness();
-const activeA = upgrade.worker();
-await upgrade.navigate(activeA, "ua");
-await new Promise(resolve => setTimeout(resolve, 2));
-const catalogB = upgrade.publish("b");
-const embeddedAt = Date.now();
-const preparedB = await upgrade.caches.open("eagler-touhou-app-shell-prepared-b");
-for (const [path, body] of Object.entries(upgrade.state.files)) await preparedB.put(new URL(path, upgrade.scopeUrl).href, new Response(body));
-upgrade.state.outage = true;
-assert.match(await (await upgrade.navigate(upgrade.worker(catalogB, embeddedAt), "ub")).text(), /b$/);
-upgrade.state.outage = false;
-await new Promise(resolve => setTimeout(resolve, 2));
-upgrade.publish("c");
-const activeB = upgrade.worker(catalogB, embeddedAt);
-await upgrade.navigate(activeB, "uc");
-upgrade.state.outage = true;
-assert.match(await (await upgrade.navigate(activeB, "uc-offline")).text(), /c$/);
-// Operator rollback reuses a prior snapshot, but records the NEW observation;
-// a later outage must not silently undo that successful rollback.
-upgrade.state.outage = false;
-await new Promise(resolve => setTimeout(resolve, 2));
-upgrade.publish("b");
-await upgrade.navigate(activeB, "server-rollback");
-upgrade.state.outage = true;
-assert.match(await (await upgrade.navigate(activeB, "server-rollback-offline")).text(), /b$/);
-console.log("Runtime offline SW handoff and server rollback ordering: PASS");
-
-assert.equal((await upgrade.resource(activeB, "server-rollback-offline", "game.wasm")).headers.get("Cache-Control"), "no-store");
+const legacy=harness(),old=await legacy.caches.open("eagler-touhou-runtime-%2Fgame%2F-legacy");
+const entries=legacy.a.files.map(file=>({url:root+file.path,revision:file.sha256}));
+for(const file of legacy.a.files)await old.put(new URL(root+file.path,legacy.scopeUrl).href,
+ new Response(legacy.state.files[runtimeGenerationBase(root,legacy.a.generation)+file.path]));
+await old.put(new URL("__runtime-cache__/complete",legacy.scopeUrl).href,new Response(JSON.stringify({complete:true,group:{root,entries},createdAt:1})));
+legacy.state.outage=true;
+assert.match((await legacy.launch(legacy.worker(),"legacy-offline")).body,/a$/);
+const damaged=harness(),poison=await damaged.caches.open("eagler-touhou-app-shell-poisoned");
+await poison.put(new URL(root+"glue.mjs",damaged.scopeUrl).href,new Response("glue a"));
+const newB=damaged.publish("b");
+await poison.put(new URL(root+"game.wasm",damaged.scopeUrl).href,new Response("wasm b"));
+const repaired=await damaged.launch(damaged.worker(),"repaired");assert.equal(repaired.generation,newB.generation);
+assert.equal(await(await damaged.resource(damaged.worker(),repaired,"glue.mjs")).text(),"glue b");
+// Missing local state does not make an already fixed immutable URL become
+// latest. An ordinary same-origin request can fetch its retained server files.
+const retained=harness(),oldA=retained.a;retained.publish("b");
+assert.equal(await(await retained.resource(retained.worker(structuredClone(retained.state.catalog)),{generation:oldA.generation},"game.wasm")).text(),"wasm a");
+const alias=await retained.worker().handle({request:{url:new URL(root+"game.html?runtimeEpoch=2",retained.scopeUrl).href,method:"GET",mode:"navigate"}});
+assert.equal(alias.status,302);assert.ok(alias.headers.get("Location").endsWith("/game.html?runtimeEpoch=2"));
+console.log("Immutable Runtime latest-first, coherent rollback, legacy migration, read-only cache, restart and retained URL recovery: PASS");

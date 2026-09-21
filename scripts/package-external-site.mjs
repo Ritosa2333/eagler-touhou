@@ -84,6 +84,7 @@ try {
     resolve(project, "scripts/package-server.mjs"),
     `--output=${candidate}`,
     `--runtime-release=${runtimeRelease}`,
+    `--previous-site=${source}`,
     `--host-manifest=${resolve(source, "host-manifest.json")}`,
     `--artwork-dir=${resolve(source, "assets")}`,
     `--feature-config=${featureConfig}`,

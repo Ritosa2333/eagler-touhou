@@ -1,3 +1,5 @@
+import { RUNTIME_MANIFEST_FILE, RUNTIME_GENERATION_FILE, RUNTIME_GENERATION_SCHEMA, RUNTIME_PROTOCOL,
+  validateRuntimeManifest, canonicalRuntimePayload, parseRuntimeGenerationPath, runtimeGenerationBase } from "../lib/contracts/runtime-generations.mjs";
 import { createHash } from "node:crypto";
 import { validatePackageDescriptor } from "../package/package-descriptor.mjs";
 import { assertLanguagePublicationConsistency } from "../lib/language-publication-contract.mjs";
@@ -95,6 +97,42 @@ await Promise.all(Array.from({ length: concurrency }, async () => {
     }
   }
 }));
+
+const runtimeManifestResult = results.get(RUNTIME_MANIFEST_FILE);
+if (deployment.appShell?.schema === "eagler-touhou/app-shell/2") {
+  if (!runtimeManifestResult || !/(?:no-cache|no-store|max-age=0)/i.test(runtimeManifestResult.cacheControl)) {
+    failures.push("Runtime Manifest is missing or not revalidated");
+  } else try {
+    const catalog = validateRuntimeManifest(JSON.parse(new TextDecoder().decode(runtimeManifestResult.bytes)));
+    if (createHash("sha256").update(runtimeManifestResult.bytes).digest("hex") !== deployment.appShell.runtimeManifest?.sha256) {
+      failures.push("Runtime Manifest differs from deployment contract");
+    }
+    for (const group of catalog.groups) for (const descriptor of [group.current, ...group.previous]) {
+      if (createHash("sha256").update(canonicalRuntimePayload(descriptor.entry, descriptor.files)).digest("hex") !== descriptor.generation) {
+        failures.push(`Runtime generation identity mismatch: ${group.root}`);
+      }
+      const basePath = runtimeGenerationBase(group.root, descriptor.generation);
+      const sidecar = results.get(basePath + RUNTIME_GENERATION_FILE);
+      if (!sidecar) failures.push(`Runtime descriptor missing: ${basePath}`);
+      else {
+        const raw = JSON.parse(new TextDecoder().decode(sidecar.bytes));
+        if (raw.schema !== RUNTIME_GENERATION_SCHEMA || raw.protocol !== RUNTIME_PROTOCOL || raw.root !== group.root ||
+            raw.generation !== descriptor.generation || canonicalRuntimePayload(raw.entry, raw.files) !== canonicalRuntimePayload(descriptor.entry, descriptor.files)) {
+          failures.push(`Runtime descriptor mismatch: ${basePath}`);
+        }
+      }
+      for (const file of descriptor.files) {
+        const entry = inventory.get(basePath + file.path);
+        if (!entry || entry.bytes !== file.bytes || entry.sha256 !== file.sha256) failures.push(`Runtime file not in deployment: ${basePath}${file.path}`);
+      }
+    }
+  } catch (error) { failures.push(String(error)); }
+}
+for (const [path, result] of results) if (parseRuntimeGenerationPath(path)) {
+  if (!/immutable/i.test(result.cacheControl)) failures.push(`${path}: immutable Runtime must have immutable cache policy`);
+  if (/\.wasm$/.test(path) && !/^application\/wasm(?:;|$)/i.test(result.contentType)) failures.push(`${path}: incorrect Wasm MIME`);
+  if (/\.m?js$/.test(path) && !/^(?:text|application)\/javascript(?:;|$)/i.test(result.contentType)) failures.push(`${path}: incorrect module MIME`);
+}
 
 const releaseCatalogResult = results.get(RELEASE_CATALOG_FILE);
 const hostManifestResult = results.get(HOST_MANIFEST_FILE);
@@ -285,29 +323,37 @@ else {
     const path = url.pathname.slice(base.pathname.length).replace(/^\//, "");
     const entry = inventory.get(path);
     if (!entry) failures.push(`shared ${key} missing from manifest: ${path}`);
-    else await verifyExactReference(url, entry, true);
+    else await verifyExactReference(url, entry);
   }
   const preloadGames = Object.keys(PRODUCT_GAMES).filter(game => PRODUCT_GAMES[game].dataProvider === "emscripten-preload");
   for (const game of preloadGames) {
     const runtime = games.games?.[game]?.runtime;
     const runtimeUrl = typeof runtime === "string" ? new URL(runtime, base) : null;
     const runtimeVersion = runtimeUrl?.searchParams.get("v");
-    const htmlResult = results.get(`runtime/${game}/${game}.html`);
+    const runtimePath = runtimeUrl?.pathname.slice(base.pathname.length);
+    const htmlResult = runtimePath && results.get(runtimePath);
     const html = htmlResult && new TextDecoder().decode(htmlResult.bytes);
-    if (!runtimeUrl || !runtimeVersion || !html) {
+    if (!runtimeUrl || !html || (games.shared?.runtimeManifest ? !parseRuntimeGenerationPath(runtimePath) : !runtimeVersion)) {
       failures.push(`${game}: invalid runtime entry`);
       continue;
     }
-    const scriptPattern = new RegExp(`<script\\b[^>]*\\bsrc=["']?${game}\\.js\\?v=${runtimeVersion}(?:["'\\s>])`, "i");
-    if (!scriptPattern.test(html)) failures.push(`${game}: runtime script does not share version ${runtimeVersion}`);
-    const runtimePath = `runtime/${game}/${game}.html`;
-    const runtimeEntry = inventory.get(runtimePath);
-    if (runtimeEntry) await verifyVersionedAsset(runtimePath, runtimeVersion, runtimeEntry, false);
-    for (const extension of ["js", "wasm", "data"]) {
-      const path = extension === "data" ? `games/${game}/${game}.data` : `runtime/${game}/${game}.${extension}`;
-      const entry = inventory.get(path);
-      if (!entry) failures.push(`${game}: ${extension} missing from manifest`);
-      else await verifyVersionedAsset(path, runtimeVersion, entry);
+    const directory = runtimePath.slice(0, runtimePath.lastIndexOf("/") + 1);
+    if (games.shared?.runtimeManifest) {
+      for (const extension of ["html", "js", "wasm"]) {
+        const path = directory + `${game}.${extension}`;
+        const entry = inventory.get(path);
+        if (!entry) failures.push(`${game}: ${extension} missing from immutable generation`);
+        else await verifyExactReference(new URL(path, base), entry, true);
+      }
+    } else {
+      const runtimeEntry = inventory.get(runtimePath);
+      if (runtimeEntry) await verifyVersionedAsset(runtimePath, runtimeVersion, runtimeEntry, false);
+      for (const extension of ["js", "wasm"]) {
+        const path = directory + `${game}.${extension}`;
+        const entry = inventory.get(path);
+        if (!entry) failures.push(`${game}: ${extension} missing from manifest`);
+        else await verifyVersionedAsset(path, runtimeVersion, entry);
+      }
     }
     for (const [mode, pack] of Object.entries(games.games?.[game]?.music || {})) {
       if (!Array.isArray(pack.files) || !pack.files.length) continue;
@@ -354,7 +400,7 @@ for (const htmlPath of ["index.html", "about.html"]) {
         if (!url.pathname.endsWith("/")) failures.push(`${htmlPath}: reference missing from manifest: ${value}`);
         continue;
       }
-      await verifyExactReference(url, entry, url.searchParams.has("v") && !path.endsWith(".html"));
+      await verifyExactReference(url, entry, !!parseRuntimeGenerationPath(path) || /[a-f0-9]{24}\.zip$/.test(path));
     }
   }
 }

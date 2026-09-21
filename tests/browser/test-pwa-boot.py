@@ -6,6 +6,7 @@ physical iOS installation, audio resumption, or platform storage persistence.
 import argparse
 import functools
 import json
+import os
 import socket
 import subprocess
 import tempfile
@@ -17,6 +18,11 @@ from pathlib import Path
 from playwright.sync_api import Error as PlaywrightError, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def browser_options(engine):
+    executable = os.environ.get("EAGLER_CHROMIUM_EXECUTABLE") if engine.name == "chromium" else None
+    return {"executable_path": executable} if executable else {}
 
 
 def build(directory, version):
@@ -31,6 +37,7 @@ class Handler(SimpleHTTPRequestHandler):
     unavailable = False
     drop_connections = False
     runtime_requests = []
+    blocked_runtime_prefixes = ()
     request_lock = threading.Lock()
     extensions_map = {**SimpleHTTPRequestHandler.extensions_map,
                       ".mjs": "text/javascript", ".js": "text/javascript",
@@ -55,6 +62,9 @@ class Handler(SimpleHTTPRequestHandler):
             except OSError:
                 pass
             self.connection.close()
+            return
+        if any(path.startswith(prefix) for prefix in self.blocked_runtime_prefixes):
+            self.send_error(503, "Unselected Runtime unavailable")
             return
         if self.unavailable:
             self.send_error(503, "Simulated server outage")
@@ -115,19 +125,32 @@ def status(page):
 
 
 def launch_fixture(page, origin, version):
+    selected = page.evaluate("""async base => {
+        const { prepareRuntimeLaunch } = await import(base + 'fixture/launcher/runtime-launch.mjs');
+        return await prepareRuntimeLaunch('runtime/pwa-test/runtime.html?runtimeEpoch=1', {baseUrl: base});
+    }""", origin)
+    assert len(selected["generation"]) == 64
+    assert "/" + selected["generation"] + "/" in selected["url"]
     page.evaluate("""url => {
         document.querySelector('#pwaFixtureFrame')?.remove();
         const frame = document.createElement('iframe');
         frame.id = 'pwaFixtureFrame'; frame.src = url; document.body.append(frame);
-    }""", origin + "runtime/pwa-test/runtime.html?runtimeEpoch=1")
+    }""", selected["url"])
     page.wait_for_function("""version => document.querySelector('#pwaFixtureFrame')?.contentWindow?.fixtureVersion === version""",
                            arg=version, timeout=20000)
     page.locator("#pwaFixtureFrame").evaluate("element => element.remove()")
+    return selected
+
+
+def runtime_file(site, name, group="runtime/pwa-test/"):
+    manifest = json.loads((site / 'runtime-manifest.json').read_text(encoding='utf-8'))
+    current = next(entry['current'] for entry in manifest['groups'] if entry['root'] == group)
+    return site / group / current['generation'] / name
 
 
 def probe_offline_emulation(engine, origin):
     """An independent literal-response SW distinguishes driver from app faults."""
-    browser = engine.launch(headless=True)
+    browser = engine.launch(headless=True, **browser_options(engine))
     context = browser.new_context()
     page = context.new_page()
     try:
@@ -209,7 +232,7 @@ def main():
 
                 print(json.dumps({"browser": args.browser, "outage_mode": outage_mode,
                                   "device_airplane_mode_verified": False}), flush=True)
-                context = engine.launch_persistent_context(str(work / "profile"), headless=True)
+                context = engine.launch_persistent_context(str(work / "profile"), headless=True, **browser_options(engine))
                 context.on("page", lambda page: page.on("pageerror", lambda error: errors.append(str(error))))
                 page = context.new_page()
                 boot(page, origin)
@@ -237,7 +260,7 @@ def main():
                     boot(page, origin + path)
                 mark("icons-localized-and-query-entries")
                 # Simulate optional APIs being restricted in a separate clean profile.
-                restricted = engine.launch_persistent_context(str(work / "restricted"), headless=True)
+                restricted = engine.launch_persistent_context(str(work / "restricted"), headless=True, **browser_options(engine))
                 restricted.add_init_script("""(() => {
                     Object.defineProperty(navigator, 'storage', { configurable: true, get() { throw new DOMException('blocked', 'SecurityError'); } });
                     if ('serviceWorker' in navigator) navigator.serviceWorker.register = () => { throw new DOMException('blocked', 'SecurityError'); };
@@ -284,7 +307,7 @@ def main():
                 before_update = Handler.runtime_hits()
                 build_b = build(site, "b")
                 # A broken unselected game cannot block the Launcher update.
-                (site / "runtime/pwa-unused/empty.wasm").unlink()
+                Handler.blocked_runtime_prefixes = ("/runtime/pwa-unused/",)
                 page.evaluate("async () => (await navigator.serviceWorker.getRegistration('./')).update()")
                 wait_async(page, """async () => !!(await navigator.serviceWorker.getRegistration('./'))?.waiting""")
                 assert status(page)["build"] == build_a
@@ -345,7 +368,7 @@ def main():
                 context.close()
                 # Persistent profile, fresh browser process, no reachable server.
                 Handler.drop_connections = True
-                cold = engine.launch_persistent_context(str(work / "profile"), headless=True)
+                cold = engine.launch_persistent_context(str(work / "profile"), headless=True, **browser_options(engine))
                 set_outage(cold, True)
                 cold_page = cold.new_page()
                 cold_page.on("pageerror", lambda error: errors.append(str(error)))
@@ -360,6 +383,7 @@ def main():
                 print(json.dumps({"browser": args.browser, "pass": True, "outage_mode": outage_mode,
                                   "coverage": "real Launcher + production SW + synthetic iframe/ESM/WASM; not real games or physical iOS"}))
         finally:
+            Handler.blocked_runtime_prefixes = ()
             Handler.unavailable = False
             Handler.drop_connections = False
             server.shutdown()

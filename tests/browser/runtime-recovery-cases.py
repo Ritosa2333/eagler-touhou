@@ -19,13 +19,18 @@ SPEC.loader.exec_module(boot_fixture)
 
 
 def launch(page, origin, version, frame_id):
+    selected = page.evaluate("""async base => {
+        const { prepareRuntimeLaunch } = await import(base + 'fixture/launcher/runtime-launch.mjs');
+        return await prepareRuntimeLaunch('runtime/pwa-test/runtime.html', {baseUrl: base});
+    }""", origin)
     page.evaluate("""([url, id]) => {
         const frame = document.createElement('iframe');
         frame.id = id; frame.src = url; document.body.append(frame);
-    }""", [origin + "runtime/pwa-test/runtime.html", frame_id])
+    }""", [selected['url'], frame_id])
     page.wait_for_function("""([id, version]) =>
         document.getElementById(id)?.contentWindow.fixtureVersion === version""",
         arg=[frame_id, version], timeout=30000)
+    return selected
 
 
 def value(page, frame_id, method):
@@ -40,8 +45,8 @@ def main():
         work = Path(temp)
         site = work / "site"
         build_a = boot_fixture.build(site, "a")
-        wasm_a = (site / "runtime/pwa-test/empty.wasm").read_bytes()
-        glue_a = (site / "runtime/pwa-test/glue.mjs").read_text(encoding="utf-8")
+        wasm_a = boot_fixture.runtime_file(site, "empty.wasm").read_bytes()
+        glue_a = boot_fixture.runtime_file(site, "glue.mjs").read_text(encoding="utf-8")
         probe = site / "pwa-probe"
         probe.mkdir()
         (probe / "index.html").write_text("<!doctype html><title>Independent SW probe</title>", encoding="utf-8")
@@ -66,7 +71,7 @@ def main():
                     handler.drop_connections = enabled
                     if emulation:
                         context.set_offline(enabled)
-                context = engine.launch_persistent_context(str(work / "profile"), headless=True)
+                context = engine.launch_persistent_context(str(work / "profile"), headless=True, **boot_fixture.browser_options(engine))
                 context.on("page", lambda p: p.on("pageerror", lambda error: errors.append(str(error))))
                 page = context.new_page()
                 boot_fixture.boot(page, origin)
@@ -78,12 +83,12 @@ def main():
                 boot_fixture.build(site, "b")
                 # Legacy labels are not reliable: reproduce the old glue/new
                 # Wasm cache without modifying the already committed snapshot.
-                page.evaluate("""async glue => {
+                page.evaluate("""async ([glue, wasmPath]) => {
                     const cache = await caches.open('eagler-touhou-app-shell-poisoned');
                     await cache.put(new URL('runtime/pwa-test/glue.mjs', location.href).href, new Response(glue));
                     await cache.put(new URL('runtime/pwa-test/empty.wasm', location.href).href,
-                        await fetch('runtime/pwa-test/empty.wasm', {cache: 'no-store'}));
-                }""", glue_a)
+                        await fetch(wasmPath, {cache: 'no-store'}));
+                }""", [glue_a, origin + str(boot_fixture.runtime_file(site, "empty.wasm").relative_to(site))])
                 launch(page, origin, "b", "B")
                 assert boot_fixture.status(page)["build"] == build_a, "Runtime update must not require Launcher SW activation"
                 assert page.evaluate("window.__runtimeLaunchSentinel") == "not-reloaded"
@@ -92,7 +97,9 @@ def main():
                 assert value(page, "B", "fixtureWorker") == "b"
                 boot_fixture.mark("new-Runtime-immediate-old-window-and-worker-pinned")
                 boot_fixture.build(site, "c")
-                (site / "runtime/pwa-test/empty.wasm").write_bytes(wasm_a)
+                c_wasm = boot_fixture.runtime_file(site, "empty.wasm")
+                valid_c_wasm = c_wasm.read_bytes()
+                c_wasm.write_bytes(wasm_a)
                 launch(page, origin, "b", "badC")
                 assert value(page, "badC", "fixtureWorker") == "b"
                 boot_fixture.mark("bad-new-Wasm-automatically-starts-complete-B")
@@ -104,13 +111,15 @@ def main():
                 # roll back the WHOLE set before returning even its HTML.
                 removed = page.evaluate("""async () => {
                     let count = 0;
-                    const key = new URL('runtime/pwa-test/empty.wasm', location.href).href;
                     for (const name of await caches.keys()) {
-                        if (!name.startsWith('eagler-touhou-runtime-') || name.endsWith('-state')) continue;
+                        if (!name.startsWith('eagler-touhou-runtime-v2-')) continue;
                         const cache = await caches.open(name);
-                        const glue = await cache.match(new URL('runtime/pwa-test/glue.mjs', location.href).href);
-                        if (glue && (await glue.text()).includes('466320:')) {
-                            if (await cache.delete(key)) count++;
+                        for (const key of await cache.keys()) {
+                            if (!key.url.endsWith('/glue.mjs')) continue;
+                            const glue = await cache.match(key);
+                            if (glue && (await glue.text()).includes('466320:')) {
+                                if (await cache.delete(key.url.replace(/glue.mjs$/, 'empty.wasm'))) count++;
+                            }
                         }
                     }
                     return count;
@@ -120,6 +129,7 @@ def main():
                 assert value(page, "fallbackA", "fixtureWorker") == "a"
                 boot_fixture.mark("partial-B-offline-starts-entire-A")
                 outage(context, False)
+                c_wasm.write_bytes(valid_c_wasm)  # end the deliberately corrupted publication
                 boot_fixture.build(site, "d")
                 launch(page, origin, "d", "D")
                 assert page.evaluate("window.__runtimeLaunchSentinel") == "not-reloaded"
@@ -148,7 +158,7 @@ def main():
                     print(json.dumps({"firefox_registration_saved": registry.exists(),
                         "registry": registry.read_text() if registry.exists() else None}), flush=True)
                 handler.drop_connections = True  # offline before the browser process starts
-                cold = engine.launch_persistent_context(str(work / "profile"), headless=True)
+                cold = engine.launch_persistent_context(str(work / "profile"), headless=True, **boot_fixture.browser_options(engine))
                 cold.on("page", lambda p: p.on("pageerror", lambda error: errors.append(str(error))))
                 outage(cold, True)
                 cold_page = cold.new_page()

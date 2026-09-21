@@ -87,8 +87,8 @@ for (const required of [
 assert.ok(!SELF_HOST_BUNDLE_NODE_DEPENDENCIES.includes("typescript"), "self-host bundle must consume compiled Launcher output, not TypeScript");
 assert.deepEqual(
   [...targets.keys()].filter(target => target.startsWith("src/")),
-  ["src/app-shell-sw.js"],
-  "self-host bundle may ship only the App Shell JavaScript build input from src/",
+  ["src/app-shell-sw.js", "src/runtime-cache-sw.js"],
+  "self-host bundle may ship only the owned classic Service Worker build inputs from src/",
 );
 assert.ok([...targets.keys()].every(target => !target.toLowerCase().endsWith(".mts")),
   "self-host bundle must not ship maintainer TypeScript source");

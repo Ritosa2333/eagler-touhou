@@ -1,4 +1,6 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { writeRuntimeGeneration, publishRuntimeManifest } from "../../lib/runtime-generations.mjs";
+import { resolveBrowserPublicationSource } from "../../lib/launcher-build.mjs";
+import { mkdir, readFile, writeFile, readdir, rm } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { FRONTEND_PACKAGE_FILES, APP_SHELL_FILES, resolveFrontendPackageSource } from "../../lib/frontend-manifest.mjs";
 import { buildAppShell } from "../../lib/app-shell-build.mjs";
@@ -21,13 +23,28 @@ for (const path of FRONTEND_PACKAGE_FILES) {
 // unchanged index from the preceding generation instead of reading the fault.
 const index = resolve(root, "index.html");
 await writeFile(index, `${await readFile(index, "utf8")}\n<!-- fixture shell ${version} -->\n`);
-// Original-resource-free, but actual incompatible JS/Wasm generations.
-await writeRuntimeFixture(resolve(root, "runtime/pwa-test"), version);
-// This published, unselected Runtime must remain untouched during shell updates
-// and while preparing or launching pwa-test, even if its server files are broken.
-await writeRuntimeFixture(resolve(root, "runtime/pwa-unused"), version);
+// Exercise the same selector source used by the real Launcher, not a test-only
+// cache implementation. Its fixture ESM publication is kept outside Runtime.
+for (const [source, target] of [
+  ["assets/launcher/runtime-launch.mjs", "fixture/launcher/runtime-launch.mjs"],
+  ["assets/contracts/runtime-generations.mjs", "fixture/contracts/runtime-generations.mjs"],
+]) {
+  await mkdir(dirname(resolve(root, target)), { recursive: true });
+  await writeFile(resolve(root, target), await readFile(resolveBrowserPublicationSource(source)));
+}
+const groups = [];
+for (const game of ["pwa-test", "pwa-unused"]) {
+  const source = resolve(root, ".tmp", game);
+  await rm(source, { recursive: true, force: true });
+  await writeRuntimeFixture(source, version);
+  const current = await writeRuntimeGeneration({ site: root, root: `runtime/${game}/`, source,
+    entry: "runtime.html", names: await readdir(source) });
+  groups.push({ root: `runtime/${game}/`, current });
+  await rm(source, { recursive: true });
+}
+await publishRuntimeManifest(root, groups);
 const result = await buildAppShell({ quiet: true, globDirectory: root,
-  swDest: resolve(root, "app-shell-sw.js"), additionalGlobPatterns: ["runtime/pwa-test/*", "runtime/pwa-unused/*"],
+  swDest: resolve(root, "app-shell-sw.js"), additionalGlobPatterns: ["runtime/pwa-test/**/*", "runtime/pwa-unused/**/*", "fixture/**/*.mjs"],
   deferredPathPrefixes: ["runtime/pwa-test/", "runtime/pwa-unused/"],
 });
 if (result.warnings.length) throw new Error(result.warnings.join("\n"));

@@ -1,3 +1,5 @@
+import { verifyRuntimePublication } from "../lib/runtime-generations.mjs";
+import { RUNTIME_GENERATION_FILE, RUNTIME_MANIFEST_FILE, parseRuntimeGenerationPath } from "../lib/contracts/runtime-generations.mjs";
 import { createHash } from "node:crypto";
 import { readFile, readdir, stat } from "node:fs/promises";
 import { basename, dirname, relative, resolve } from "node:path";
@@ -60,6 +62,22 @@ for (const font of ["yatra-one-latin.woff2", "chill-round-gothic-site-medium.wof
 }
 
 assertAppShellContract(deployment.appShell, games);
+if (games.shared.runtimeManifest) {
+  await verifyRuntimePublication(root, games);
+  const bytes = await readFile(resolve(root, RUNTIME_MANIFEST_FILE));
+  if (deployment.appShell.runtimeManifest?.sha256 !== createHash("sha256").update(bytes).digest("hex")) {
+    throw new Error("App Shell Runtime Manifest identity mismatch");
+  }
+}
+function programPath(entry, name) {
+  const pathname = new URL(entry.runtime, "https://eagler.invalid/").pathname.slice(1);
+  return resolve(root, dirname(pathname), name);
+}
+function versionedRuntime(url) {
+  const parsed = new URL(url, "https://eagler.invalid/");
+  return games.shared.runtimeManifest ? !!parseRuntimeGenerationPath(parsed.pathname.slice(1))
+    : parsed.searchParams.has("v");
+}
 const appShellWorker = await readFile(resolve(root, "app-shell-sw.js"), "utf8");
 if (!appShellWorker.includes(deployment.appShell.buildId)) {
   throw new Error("App Shell Service Worker does not match deployment App Shell contract");
@@ -163,12 +181,19 @@ if (normalizeResourceMode(games.shared?.resourceMode || "hosted") !== resourceMo
 for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === "directory")) {
   const product = PRODUCT_GAMES[game];
   const entry = games.games[game], runtimeUrl = new URL(entry.runtime, "https://eagler.invalid/");
-  if (!runtimeUrl.searchParams.get("v")) throw new Error(`unversioned directory Runtime: ${game}`);
-  const runtimeRoot = resolve(root, "runtime", game);
-  const metadata = JSON.parse(await readFile(resolve(runtimeRoot, "runtime-files.json"), "utf8"));
-  if (metadata.schema !== "eagler-touhou/runtime-directory/1") throw new Error(`${game}: invalid Runtime directory manifest`);
-  for (const name of runtimeFileNames(game, metadata.files)) {
-    const bytes = await readFile(resolve(runtimeRoot, name)), expected = metadata.files[name];
+  if (!versionedRuntime(entry.runtime)) throw new Error(`unversioned directory Runtime: ${game}`);
+  const runtimeRoot = dirname(programPath(entry, `${game}.html`));
+  let files;
+  if (games.shared.runtimeManifest) {
+    const descriptor = JSON.parse(await readFile(resolve(runtimeRoot, RUNTIME_GENERATION_FILE), "utf8"));
+    files = Object.fromEntries(descriptor.files.map(file => [file.path, file]));
+  } else {
+    const metadata = JSON.parse(await readFile(resolve(runtimeRoot, "runtime-files.json"), "utf8"));
+    if (metadata.schema !== "eagler-touhou/runtime-directory/1") throw new Error(`${game}: invalid Runtime directory manifest`);
+    files = metadata.files;
+  }
+  for (const name of runtimeFileNames(game, files)) {
+    const bytes = await readFile(resolve(runtimeRoot, name)), expected = files[name];
     if (bytes.length !== expected.bytes || createHash("sha256").update(bytes).digest("hex") !== expected.sha256) throw new Error(`${game}: stale Runtime asset: ${name}`);
   }
   const shell = await readFile(resolve(runtimeRoot, `${game}.html`), "utf8");
@@ -259,7 +284,7 @@ for (const game of preloadGames) {
   const dataPath = dataTarget.slice(1);
   const entry = games.games?.[game];
   if (resourceMode === RESOURCE_MODE_IMPORT) {
-    if (!entry?.music?.midi || typeof entry.runtime !== "string" || !entry.runtime.includes("&v=")) {
+    if (!entry?.music?.midi || typeof entry.runtime !== "string" || !versionedRuntime(entry.runtime)) {
       throw new Error(`invalid ${resourceMode} game entry: ${game}`);
     }
     if (typeof entry.gameData?.version !== "string" || !/^sha256-[a-f0-9]{64}$/i.test(entry.gameData.version) ||
@@ -289,10 +314,10 @@ for (const game of preloadGames) {
     continue;
   }
   if (resourceMode === RESOURCE_MODE_EXTERNAL) continue;
-  if (!entry?.music?.midi || typeof entry.runtime !== "string" || !entry.runtime.includes("&v=")) throw new Error(`invalid game entry: ${game}`);
+  if (!entry?.music?.midi || typeof entry.runtime !== "string" || !versionedRuntime(entry.runtime)) throw new Error(`invalid game entry: ${game}`);
   const runtimeVersion = new URL(entry.runtime, "https://eagler.invalid/").searchParams.get("v");
-  const runtimeHtml = await readFile(resolve(root, "runtime", game, `${game}.html`), "utf8");
-  const runtimeScript = await readFile(resolve(root, "runtime", game, `${game}.js`), "utf8");
+  const runtimeHtml = await readFile(programPath(entry, `${game}.html`), "utf8");
+  const runtimeScript = await readFile(programPath(entry, `${game}.js`), "utf8");
   const runtimeData = await readFile(resolve(root, "games", game, dataPath));
   const dataSha256 = createHash("sha256").update(runtimeData).digest("hex");
   const runtimeLayout = extractGameDataLayout(runtimeScript, game);
@@ -303,14 +328,14 @@ for (const game of preloadGames) {
     }
   }
   const versionedScript = new RegExp(`<script\\b[^>]*\\bsrc=["']?${game}\\.js\\?v=${runtimeVersion}(?:["'\\s>])`, "i");
-  if (!runtimeVersion || !versionedScript.test(runtimeHtml)) throw new Error(`unversioned runtime script: ${game}`);
+  if (!games.shared.runtimeManifest && (!runtimeVersion || !versionedScript.test(runtimeHtml))) throw new Error(`unversioned runtime script: ${game}`);
   if (entry.gameData?.path !== dataPath || entry.gameData?.bytes !== runtimeData.length ||
       String(entry.gameData?.sha256 || "").toLowerCase() !== dataSha256 || entry.gameData?.version !== `sha256-${dataSha256}` ||
       entry.gameData?.layout !== runtimeLayout.layout || entry.gameData?.bytes !== runtimeLayout.bytes) {
     throw new Error(`gameData identity mismatch: ${game}`);
   }
   for (const extension of ["html", "js", "wasm"]) {
-    await stat(resolve(root, "runtime", game, `${game}.${extension}`));
+    await stat(programPath(entry, `${game}.${extension}`));
   }
   await stat(resolve(root, "games", game, dataPath));
   for (const [mode, pack] of Object.entries(entry.music)) {

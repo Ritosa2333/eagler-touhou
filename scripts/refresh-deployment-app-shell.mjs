@@ -1,6 +1,7 @@
 #!/usr/bin/env node
+import { freezeHostRuntimes, verifyRuntimePublication } from "../lib/runtime-generations.mjs";
 import { createHash, randomUUID } from "node:crypto";
-import { copyFile, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildAppShell } from "../lib/app-shell-build.mjs";
@@ -38,6 +39,11 @@ if (deployment.format !== "eagler-touhou-deployment/1" || !Array.isArray(deploym
 }
 const siteUrl = normalizeSiteUrl(siteUrlOption?.slice("--site-url=".length) || deployment.siteUrl);
 
+// Source/deployment preparation, not a hot in-place server update. Migrate any
+// legacy loose code as one verified generation before rebuilding the shell.
+await freezeHostRuntimes(root, hostManifest);
+await writeFile(hostManifestPath, `${JSON.stringify(hostManifest, null, 2)}\n`);
+await verifyRuntimePublication(root, hostManifest);
 const runtimePaths = runtimeAppShellPaths(hostManifest);
 const inventoryPaths = new Set(deployment.files.map(item => item.path));
 const availableHostArtwork = hostArtworkFiles(Object.keys(hostManifest.games)).filter(name =>
@@ -94,8 +100,7 @@ try {
     deferredPaths: runtimePaths,
     deferredPathPrefixes: ["runtime/"],
   });
-  const nextPrecache = new Set(result.contract.entries);
-  for (const path of runtimePaths) if (!nextPrecache.has(path)) throw new Error(`refreshed App Shell omitted Runtime: ${path}`);
+  if (result.contract.entries.some(path => path.startsWith("runtime/"))) throw new Error("Runtime leaked into Launcher precache");
   await rename(temporary, swPath);
 
   const bytes = await readFile(swPath);
@@ -106,6 +111,23 @@ try {
   const inventoryEntry = deployment.files.find(item => item.path === "app-shell-sw.js");
   if (!inventoryEntry) throw new Error("deployment inventory does not own app-shell-sw.js");
   Object.assign(inventoryEntry, identity);
+  // Regenerate the complete inventory: migration adds immutable directories and
+  // removes old mutable files. Never carry a stale path/hash from the old tree.
+  const files = [];
+  async function inventoryTree(directory, prefix = "") {
+    for (const item of await readdir(directory, { withFileTypes: true })) {
+      if (item.name === ".tmp") continue;
+      const path = prefix + item.name;
+      if (item.isDirectory()) await inventoryTree(resolve(directory, item.name), path + "/");
+      else if (!["deployment.json", "release-manifest.json", "checksums.txt"].includes(path)) {
+        if (!item.isFile()) throw new Error(`Non-file in publication: ${path}`);
+        const contents = await readFile(resolve(directory, item.name));
+        files.push({ path, bytes: contents.length, sha256: createHash("sha256").update(contents).digest("hex") });
+      }
+    }
+  }
+  await inventoryTree(root);
+  deployment.files = files.sort((a, b) => a.path.localeCompare(b.path, "en"));
   deployment.generatedAt = new Date().toISOString();
   deployment.appShell = result.contract;
   await writeFile(deploymentPath, `${JSON.stringify(deployment, null, 2)}\n`);

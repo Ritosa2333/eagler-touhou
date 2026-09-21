@@ -1,295 +1,299 @@
 "use strict";
 
-// A Runtime is a transaction, not a collection of independent cache-first URLs.
-// Public URLs stay unchanged. Browser client IDs pin immutable private snapshots.
-// This file is concatenated into the sole App Shell worker by app-shell-build.
-function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000, embeddedCreatedAt = async () => 0 }) {
-  const prefix = `eagler-touhou-runtime-${encodeURIComponent(scopeUrl.pathname)}-`;
-  const stateName = `${prefix}state`;
-  const metaUrl = new URL("./__runtime-cache__/complete", scopeUrl).href;
-  const pinPrefix = new URL("./__runtime-cache__/client/", scopeUrl).href;
-  const marker = "// EAGLER_RUNTIME_CATALOG_V1 ";
-  const inFlight = new Map();
-  const protectedSnapshots = new Set();
-  const known = validateCatalog(catalog);
-  const jsonResponse = value => new Response(JSON.stringify(value), { headers: { "Content-Type": "application/json" } });
-
-  function validateCatalog(value) {
-    if (value?.schema !== "eagler-touhou/runtime-cache/1" || value.hostProtocol !== "eagler-touhou/1" ||
-        !Array.isArray(value.groups) || value.groups.length > 64) throw new Error("Unsupported Runtime catalog");
-    return value.groups.map(group => {
-      if (!/^runtime\/[a-z0-9_-]+\/(?:[a-z0-9_-]+\/)*$/i.test(group.root) ||
-          !Array.isArray(group.entries) || !group.entries.length || group.entries.length > 1024) {
-        throw new Error("Invalid Runtime group");
-      }
-      const seen = new Set();
-      const entries = group.entries.map(entry => {
-        const url = new URL(entry.url, scopeUrl);
-        if (typeof entry.url !== "string" || !entry.url.startsWith(group.root) ||
-            url.origin !== scopeUrl.origin || url.pathname !== scopeUrl.pathname + entry.url ||
-            url.search || url.hash || seen.has(entry.url) || !/^[a-f0-9]{64}$/.test(entry.revision || "")) {
-          throw new Error("Invalid Runtime entry");
-        }
-        seen.add(entry.url);
-        return { url: entry.url, revision: entry.revision, cacheUrl: url.href };
-      });
-      if (!entries.some(entry => entry.url.endsWith(".html"))) throw new Error("Runtime entry document missing");
-      return { root: group.root, entries: entries.sort((a, b) => a.url.localeCompare(b.url)) };
-    });
+// One registered classic SW. Immutable public URLs do the version binding;
+// private snapshots provide atomic offline preparation and whole-set fallback.
+function createRuntimeCache({ scopeUrl, catalog, fetchTimeoutMs = 8000 }) {
+  const C = EaglerRuntimeGenerations;
+  const known = C.validateRuntimeManifest(catalog);
+  const prefix = `eagler-touhou-runtime-v2-${encodeURIComponent(scopeUrl.pathname)}-`;
+  const marker = new URL("./__runtime-cache-v2__/complete", scopeUrl).href;
+  const inFlight = new Map(), protectedCaches = new Set();
+  let cleanupSafe = true;
+  const json = value => new Response(JSON.stringify(value), { headers: { "Content-Type": "application/json" } });
+  const absolute = path => new URL(path, scopeUrl).href;
+  function relative(url) {
+    const parsed = new URL(url);
+    if (parsed.origin !== scopeUrl.origin || !parsed.pathname.startsWith(scopeUrl.pathname)) return null;
+    const path = parsed.pathname.slice(scopeUrl.pathname.length);
+    return C.isRuntimePath(path) ? path : null;
   }
-  function groupFor(path, groups = known) {
-    return groups.filter(group => path.startsWith(group.root)).sort((a, b) => b.root.length - a.root.length)[0];
+  async function sha256(bytes) {
+    return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), n => n.toString(16).padStart(2, "0")).join("");
   }
-  function relativePath(request) {
-    const url = new URL(request.url);
-    return url.origin === scopeUrl.origin && url.pathname.startsWith(scopeUrl.pathname)
-      ? url.pathname.slice(scopeUrl.pathname.length) : null;
-  }
-  async function digest(bytes) {
-    return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), byte => byte.toString(16).padStart(2, "0")).join("");
-  }
-  async function checked(response, entry) {
-    if (!response?.ok || await digest(await response.clone().arrayBuffer()) !== entry.revision) {
-      throw new Error(`Runtime integrity mismatch: ${entry.url}`);
+  async function verifyGeneration(raw) {
+    const generation = C.validateRuntimeGeneration(raw);
+    if (await sha256(new TextEncoder().encode(C.canonicalRuntimePayload(generation.entry, generation.files))) !== generation.generation) {
+      throw new Error("Runtime generation identity mismatch");
     }
+    return generation;
+  }
+  async function checked(response, file) {
+    if (!response?.ok) throw new Error(`Runtime file unavailable: ${file.path}`);
+    const bytes = await response.clone().arrayBuffer();
+    if (bytes.byteLength !== file.bytes || await sha256(bytes) !== file.sha256) throw new Error(`Runtime integrity mismatch: ${file.path}`);
     return response;
   }
   async function network(url, read) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), fetchTimeoutMs);
+    const timeout = setTimeout(() => controller.abort(), fetchTimeoutMs);
     try {
-      const response = await fetch(new Request(url, { cache: "no-store", signal: controller.signal }));
+      const response = await fetch(new Request(url, { cache: "no-store", redirect: "error", signal: controller.signal }));
       if (!response.ok) throw new Error(`Runtime HTTP ${response.status}: ${url}`);
       return await read(response);
-    } finally { clearTimeout(timer); }
+    } finally { clearTimeout(timeout); }
   }
-  async function latestGroup(path) {
-    // The build emits a JSON-only, machine-readable comment in the existing SW
-    // artifact. No eval/import, extra public endpoint or versioned URL is needed.
-    return network(new URL("./app-shell-sw.js", scopeUrl).href, async response => {
-      const source = await response.text();
-      if (source.length > 4 * 1024 * 1024) throw new Error("Runtime catalog exceeds size limit");
-      const line = source.split("\n").find(line => line.startsWith(marker));
-      if (!line) throw new Error("Runtime catalog is not published");
-      const group = groupFor(path, validateCatalog(JSON.parse(line.slice(marker.length))));
-      if (!group || !group.entries.some(entry => entry.url === path)) throw new Error("Runtime is not published");
-      return group;
+  async function latest() {
+    return network(absolute(C.RUNTIME_MANIFEST_FILE), async response => {
+      const text = await response.text();
+      if (text.length > 4 * 1024 * 1024) throw new Error("Runtime Manifest too large");
+      return C.validateRuntimeManifest(JSON.parse(text));
     });
-  }
-  function identity(group) {
-    return JSON.stringify(group.entries.map(({ url, revision }) => [url, revision]));
   }
   async function snapshots(root) {
     const result = [];
     for (const name of await caches.keys()) {
-      if (!name.startsWith(prefix) || name === stateName) continue;
+      if (!name.startsWith(prefix)) continue;
       try {
-        const cache = await caches.open(name);
-        const raw = await (await cache.match(metaUrl))?.json();
-        const group = validateCatalog({ schema: "eagler-touhou/runtime-cache/1", hostProtocol: "eagler-touhou/1", groups: [raw?.group] })[0];
-        if (group.root === root && raw.complete === true) result.push({ name, group, createdAt: raw.createdAt, observedAt: raw.observedAt || raw.createdAt });
-      } catch { /* Incomplete candidates are not rollback targets. */ }
+        const raw = await (await (await caches.open(name)).match(marker))?.json();
+        if (raw?.schema !== C.RUNTIME_CACHE_PROTOCOL || raw.complete !== true || !C.isRuntimeRoot(raw.root) ||
+            (root && raw.root !== root)) continue;
+        result.push({ ...raw, name, descriptor: await verifyGeneration(raw.descriptor) });
+      } catch { /* An incomplete cache is never a committed generation. */ }
     }
-    return result.sort((a, b) => b.observedAt - a.observedAt);
+    return result.sort((a, b) => Number(b.observedAt || b.createdAt) - Number(a.observedAt || a.createdAt));
   }
   async function complete(snapshot) {
-    const cache = await caches.open(snapshot.name);
     try {
-      for (const entry of snapshot.group.entries) await checked(await cache.match(entry.cacheUrl), entry);
+      const cache = await caches.open(snapshot.name);
+      const base = C.runtimeGenerationBase(snapshot.root, snapshot.descriptor.generation);
+      for (const file of snapshot.descriptor.files) await checked(await cache.match(absolute(base + file.path)), file);
       return true;
     } catch { return false; }
   }
-  async function stage(group, { localOnly = false, observedAt = 0 } = {}) {
-    const existing = await snapshots(group.root);
-    for (const candidate of existing) {
-      if (identity(candidate.group) === identity(group) && await complete(candidate)) {
-        if (observedAt > candidate.observedAt) {
-          candidate.observedAt = observedAt;
-          await (await caches.open(candidate.name)).put(metaUrl, jsonResponse({ ...candidate, complete: true }));
-        }
-        return candidate;
+  async function stageBytes(root, raw, { localOnly = false, observedAt = 0, supplied } = {}) {
+    const descriptor = await verifyGeneration(raw);
+    const existing = await snapshots(root);
+    for (const snapshot of existing) {
+      if (snapshot.descriptor.generation !== descriptor.generation || !await complete(snapshot)) continue;
+      if (observedAt > snapshot.observedAt) {
+        snapshot.observedAt = observedAt;
+        try { await (await caches.open(snapshot.name)).put(marker, json(snapshot)); }
+        catch { /* A metadata write must not prevent using a complete set. */ }
       }
+      return snapshot;
     }
-    const random = Array.from(crypto.getRandomValues(new Uint32Array(4)), value => value.toString(16)).join("-");
-    const name = `${prefix}${encodeURIComponent(group.root)}-${random}`;
+    const nonce = Array.from(crypto.getRandomValues(new Uint32Array(4)), n => n.toString(16)).join("-");
+    const name = `${prefix}${encodeURIComponent(root)}-${descriptor.generation}-${nonce}`;
+    const base = C.runtimeGenerationBase(root, descriptor.generation);
     const cache = await caches.open(name);
-    let cursor = 0;
-    let stopped = false;
-    const legacyNames = (await caches.keys()).filter(name => name.startsWith("eagler-touhou-app-shell-"));
+    const oldNames = (await caches.keys()).filter(name => name.startsWith("eagler-touhou-app-shell-"));
+    let cursor = 0, stopped = false;
     try {
-      await cache.put(metaUrl, jsonResponse({ group, createdAt: Date.now(), complete: false }));
-      // Reuse only verified bytes from committed snapshots. Never trust an old
-      // per-file SW cache's revision labels; that is the TH08 failure mode.
-      const results = await Promise.allSettled(Array.from({ length: Math.min(2, group.entries.length) }, async () => {
-        while (!stopped && cursor < group.entries.length) {
+      await cache.put(marker, json({ schema: C.RUNTIME_CACHE_PROTOCOL, root, descriptor, complete: false, createdAt: Date.now() }));
+      const writers = await Promise.allSettled(Array.from({ length: Math.min(2, descriptor.files.length) }, async () => {
+        while (!stopped && cursor < descriptor.files.length) {
           try {
-            const entry = group.entries[cursor++];
-            let response = null;
-            for (const old of existing) {
-              if (!old.group.entries.some(item => item.url === entry.url && item.revision === entry.revision)) continue;
-              try { response = await checked(await (await caches.open(old.name)).match(entry.cacheUrl), entry); break; }
-              catch { /* Try another verified snapshot or the network. */ }
+            const file = descriptor.files[cursor++];
+            let response = supplied?.get(file.path) || null;
+            if (response) await checked(response, file);
+            for (const snapshot of existing) {
+              if (response) break;
+              const old = snapshot.descriptor.files.find(item => item.path === file.path && item.sha256 === file.sha256 && item.bytes === file.bytes);
+              if (!old) continue;
+              try { response = await checked(await (await caches.open(snapshot.name)).match(
+                absolute(C.runtimeGenerationBase(root, snapshot.descriptor.generation) + file.path)), file); }
+              catch { /* Try other verified bytes, not another version by URL. */ }
             }
-            // Legacy labels may be poisoned, but bytes matching the newly published
-            // build digest are safe to reuse. This also permits offline migration.
-            if (!response) for (const old of legacyNames) {
-              try { response = await checked(await (await caches.open(old)).match(entry.cacheUrl), entry); break; }
-              catch { /* No trustworthy bytes at this URL in this cache. */ }
+            if (!response) for (const old of oldNames) {
+              // A legacy cache may contain a poisoned JS/Wasm combination. The
+              // current generation's actual hash, not its old label, is authority.
+              try { response = await checked(await (await caches.open(old)).match(absolute(root + file.path)), file); break; }
+              catch { /* Not a matching legacy byte sequence. */ }
             }
-            if (!response && localOnly) throw new Error(`Runtime is not locally complete: ${entry.url}`);
-            response ||= await network(entry.cacheUrl, response => checked(response, entry));
-            await cache.put(entry.cacheUrl, response);
+            if (!response && localOnly) throw new Error(`Runtime is not locally complete: ${file.path}`);
+            response ||= await network(absolute(base + file.path), response => checked(response, file));
+            await cache.put(absolute(base + file.path), response);
           } catch (error) { stopped = true; throw error; }
         }
       }));
-      const failure = results.find(result => result.status === "rejected");
+      const failure = writers.find(result => result.status === "rejected");
       if (failure) throw failure.reason;
-      const snapshot = { name, group, createdAt: Date.now(), observedAt };
-      // The completion marker is the commit point, after every writer drained.
-      await cache.put(metaUrl, jsonResponse({ ...snapshot, complete: true }));
+      const snapshot = { schema: C.RUNTIME_CACHE_PROTOCOL, root, descriptor, name,
+        complete: true, createdAt: Date.now(), observedAt };
+      // Atomic logical commit: all writers have completed before this marker.
+      await cache.put(marker, json(snapshot));
       return snapshot;
     } catch (error) {
-      await caches.delete(name);
+      await caches.delete(name).catch(() => {});
       throw error;
     }
   }
-  async function select(path) {
-    let error;
-    // Always begin with the network, even if a complete older Runtime exists.
-    // The Runtime is independent of a waiting Launcher SW update.
-    try { const observedAt = Date.now(); return await stage(await latestGroup(path), { observedAt }); }
-    catch (cause) { error = cause; }
-    const group = groupFor(path);
-    if (group) {
-      const candidates = await snapshots(group.root);
-      // A newer App Shell may have prepared a whole Runtime without it ever
-      // being launched. Include that LOCAL set in fallback ordering, but do not
-      // downgrade a Runtime learned later from the network to an old SW catalog.
-      const localObservation = Number(await embeddedCreatedAt()) || 0;
-      let embeddedTried = false;
-      for (const candidate of candidates) {
-        if (!embeddedTried && localObservation > candidate.observedAt) {
-          embeddedTried = true;
-          try { return await stage(group, { localOnly: true, observedAt: localObservation }); }
-          catch { /* An incomplete embedded set cannot replace a usable one. */ }
-        }
-        if (candidate.group.entries.some(entry => entry.url === path) && await complete(candidate)) return candidate;
-      }
-      // Migration from the old per-file cache: rebuild and verify a complete
-      // current set, rather than blessing poisoned legacy entries.
-      try { return await stage(group, { observedAt: localObservation }); } catch (cause) { error = cause; }
+  async function stage(root, raw, options = {}) {
+    const descriptor = C.validateRuntimeGeneration(raw);
+    const key = root + descriptor.generation + (options.localOnly ? ":local" : ":network");
+    // Coalesce only byte preparation of the SAME generation. Every launch must
+    // still fetch its current pointer, even while an older download is running.
+    if (!inFlight.has(key)) {
+      const task = stageBytes(root, descriptor, options);
+      inFlight.set(key, task);
+      task.finally(() => { if (inFlight.get(key) === task) inFlight.delete(key); }).catch(() => {});
     }
-    // A publication may have completed while the first candidate was loading.
-    // Retry once with a fresh catalog only when no usable fallback exists.
-    try { const observedAt = Date.now(); return await stage(await latestGroup(path), { observedAt }); } catch (cause) { error = cause; }
+    return inFlight.get(key);
+  }
+  async function select(path, options = {}) {
+    let group, error;
+    const excluded = new Set(options.exclude || []);
+    try {
+      const manifest = Object.hasOwn(options, "catalog")
+        ? C.validateRuntimeManifest(options.catalog) : await latest();
+      group = C.findRuntimeGroup(manifest, path);
+      if (!group) throw new Error("Runtime is not published");
+      if (!excluded.has(group.current.generation)) return await stage(group.root, group.current, { observedAt: Date.now() });
+    } catch (cause) { error = cause; }
+    group ||= C.findRuntimeGroup(known, path);
+    if (group) {
+      if (typeof migrateLegacyRuntimeSnapshots === "function") {
+        await migrateLegacyRuntimeSnapshots({ scopeUrl, root: group.root, entry: group.current.entry, sha256,
+          importSnapshot: (root, descriptor, supplied, observedAt) => stage(root, descriptor, { localOnly: true, supplied, observedAt }) });
+      }
+      for (const snapshot of await snapshots(group.root)) {
+        if (!excluded.has(snapshot.descriptor.generation) && await complete(snapshot)) return snapshot;
+      }
+      // No usable local set: a retained complete server generation can still
+      // recover a first visit when the current release is only partially present.
+      for (const descriptor of group.previous) {
+        if (excluded.has(descriptor.generation)) continue;
+        try { return await stage(group.root, descriptor); } catch (cause) { error = cause; }
+      }
+      // Legacy per-file bytes can be reused only against a known whole set.
+      if (!excluded.has(group.current.generation)) {
+        try { return await stage(group.root, group.current, { localOnly: true }); }
+        catch (cause) { error = cause; }
+      }
+    }
+    // A publication might have completed during the first failed transaction.
+    if (!options.noRetry) {
+      try {
+        const fresh = C.findRuntimeGroup(await latest(), path);
+        if (fresh && !excluded.has(fresh.current.generation)) return await stage(fresh.root, fresh.current, { observedAt: Date.now() });
+      } catch (cause) { error = cause; }
+    }
     throw error || new Error("No complete Runtime is available");
   }
-  async function prepare(path) {
-    const root = groupFor(path)?.root || path;
-    // Only overlapping launches coalesce. Each later launch checks the server.
-    if (!inFlight.has(root)) {
-      const task = select(path);
-      inFlight.set(root, task);
-      task.finally(() => { if (inFlight.get(root) === task) inFlight.delete(root); }).catch(() => {});
-    }
-    return inFlight.get(root);
-  }
-  async function pin(id, snapshot) {
-    if (!id) throw new Error("Runtime client identity unavailable");
-    await (await caches.open(stateName)).put(pinPrefix + encodeURIComponent(id), jsonResponse({ ...snapshot, pinnedAt: Date.now() }));
-  }
-  async function readPin(id) {
-    if (!id) return null;
-    return (await (await caches.open(stateName)).match(pinPrefix + encodeURIComponent(id)))?.json() || null;
+  async function prepare(path, options = {}) {
+    return select(path, options);
   }
   async function collect(root) {
-    // Keep two committed generations plus every live/in-flight client pin.
-    // Never prune the fallback to make room for an uncommitted candidate.
-    const state = await caches.open(stateName);
-    const retained = new Set(protectedSnapshots);
-    for (const key of await state.keys()) {
-      if (!key.url.startsWith(pinPrefix)) continue;
-      const id = decodeURIComponent(key.url.slice(pinPrefix.length));
-      const saved = await (await state.match(key)).json();
-      if (protectedSnapshots.has(saved.name) || Date.now() - Number(saved.pinnedAt || 0) < 60000 ||
-          await self.clients.get(id)) retained.add(saved.name);
-      else await state.delete(key);
+    if (!cleanupSafe) return;
+    const all = await snapshots(root);
+    const live = await self.clients.matchAll({ type: "all", includeUncontrolled: true });
+    const active = new Set(live.map(client => {
+      const path = relative(client.url);
+      return path && C.parseRuntimeGenerationPath(path)?.generation;
+    }).filter(Boolean));
+    let retained = 0;
+    for (const snapshot of all) {
+      const keep = protectedCaches.has(snapshot.name) || active.has(snapshot.descriptor.generation) ||
+        Date.now() - Math.max(snapshot.createdAt, snapshot.selectedAt || 0) < 60000;
+      if (retained < 2 && await complete(snapshot)) { retained++; continue; }
+      if (!keep) await caches.delete(snapshot.name);
     }
-    const previous = await snapshots(root);
-    for (const snapshot of previous.slice(0, 2)) retained.add(snapshot.name);
-    for (const snapshot of previous) if (!retained.has(snapshot.name)) await caches.delete(snapshot.name);
-    // Reap only old, explicitly uncommitted stages left by a terminated worker.
     for (const name of await caches.keys()) {
-      if (!name.startsWith(prefix) || name === stateName || retained.has(name)) continue;
+      if (!name.startsWith(prefix) || protectedCaches.has(name)) continue;
       try {
-        const staged = await (await (await caches.open(name)).match(metaUrl))?.json();
-        if (staged?.complete === false && staged.group?.root === root && Date.now() - staged.createdAt > 600000) {
-          await caches.delete(name);
-        }
-      } catch { /* Unknown cache metadata is not ours to prune. */ }
+        const raw = await (await (await caches.open(name)).match(marker))?.json();
+        if (raw?.schema === C.RUNTIME_CACHE_PROTOCOL && raw.root === root && raw.complete === false &&
+            Date.now() - Number(raw.createdAt) > 600000) await caches.delete(name);
+      } catch { /* Unknown caches are not ours to prune. */ }
     }
   }
   function deliver(response) {
-    // Browser memory/HTTP caches must not key a prior client's response only by
-    // the unchanged public URL and bypass another client's snapshot selection.
     const headers = new Headers(response.headers);
-    headers.set("Cache-Control", "no-store");
-    headers.delete("Content-Length");
-    headers.delete("Content-Encoding");
+    headers.set("Cache-Control", "public, max-age=31536000, immutable");
+    headers.delete("Content-Encoding"); headers.delete("Content-Length");
     return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
   }
-  async function respond(event, path) {
-    let snapshot;
-    if (event.request.mode === "navigate" && path.endsWith(".html")) {
-      snapshot = await prepare(path);
-      protectedSnapshots.add(snapshot.name);
-      try {
-        // Write before delivering any HTML, so all nested module/Wasm requests
-        // use the same snapshot even after this SW process is terminated.
-        await pin(event.resultingClientId, snapshot);
-        await collect(snapshot.group.root);
-      } finally { protectedSnapshots.delete(snapshot.name); }
-    } else {
-      snapshot = await readPin(event.clientId);
-      if (!snapshot) {
-        // Requests from the Launcher (preparation probes) are not game sessions.
-        // Do not create a per-file Runtime cache outside the transaction.
-        return fetch(new Request(event.request, { cache: "no-store" }));
+  async function immutableResponse(path, parsed) {
+    for (const snapshot of await snapshots(parsed.root).catch(() => [])) {
+      if (snapshot.descriptor.generation !== parsed.generation) continue;
+      const file = snapshot.descriptor.files.find(file => file.path === parsed.file);
+      if (!file) break;
+      const cache = await caches.open(snapshot.name);
+      const cached = await cache.match(absolute(path));
+      if (cached) {
+        try { return deliver(await checked(cached, file)); } catch { /* Repair this exact immutable address. */ }
       }
-      if (event.resultingClientId) await pin(event.resultingClientId, snapshot); // dedicated workers
+      const fetched = await network(absolute(path), response => checked(response, file));
+      await cache.put(absolute(path), fetched.clone()).catch(() => {});
+      return deliver(fetched);
     }
-    const entry = snapshot.group.entries.find(entry => entry.url === path);
-    if (!entry) return fetch(new Request(event.request, { cache: "no-store" })); // Package Store / unrelated data
-    const response = await (await caches.open(snapshot.name)).match(entry.cacheUrl);
-    if (response) return deliver(response);
-    // A storage eviction after launch can only be repaired with matching bytes,
-    // not by slipping a different Wasm underneath the already executing glue.
-    return deliver(await network(entry.cacheUrl, response => checked(response, entry)));
+    // Explicit immutable requests never follow latest or change generation. In
+    // a storage-restricted browser they remain ordinary same-origin HTTP loads.
+    const group = known.groups.find(group => group.root === parsed.root);
+    let descriptor = group && [group.current, ...group.previous].find(item => item.generation === parsed.generation);
+    if (!descriptor) descriptor = await network(absolute(C.runtimeGenerationBase(parsed.root, parsed.generation) + C.RUNTIME_GENERATION_FILE), async response => {
+      const raw = await response.json();
+      if (raw.schema !== C.RUNTIME_GENERATION_SCHEMA || raw.protocol !== C.RUNTIME_PROTOCOL || raw.root !== parsed.root || raw.generation !== parsed.generation) {
+        throw new Error("Immutable Runtime descriptor mismatch");
+      }
+      return verifyGeneration(raw);
+    });
+    descriptor = await verifyGeneration(descriptor);
+    const file = descriptor.files.find(file => file.path === parsed.file);
+    if (parsed.file === C.RUNTIME_GENERATION_FILE) return deliver(json({ schema: C.RUNTIME_GENERATION_SCHEMA,
+      protocol: C.RUNTIME_PROTOCOL, root: parsed.root, ...descriptor }));
+    if (!file) return new Response("Unknown Runtime resource", { status: 404 });
+    return deliver(await network(absolute(path), response => checked(response, file)));
+  }
+  async function selectForLaunch(path, options) {
+    const snapshot = await prepare(path, options);
+    // A prior snapshot may be selected long after creation. Protect the gap
+    // between replying to the Launcher and its new document becoming a client.
+    snapshot.selectedAt = Date.now();
+    try { await (await caches.open(snapshot.name)).put(marker, json(snapshot)); }
+    catch { cleanupSafe = false; } // usable fallback wins over optional metadata/GC
+    return snapshot;
   }
   function handle(event) {
     if (event.request.method !== "GET") return null;
-    const path = relativePath(event.request);
-    if (path === null || !path.startsWith("runtime/")) return null;
-    return respond(event, path);
+    const path = relative(event.request.url);
+    if (!path?.startsWith("runtime/")) return null;
+    const parsed = C.parseRuntimeGenerationPath(path);
+    if (parsed) return immutableResponse(path, parsed);
+    if (event.request.mode !== "navigate" || !path.endsWith(".html")) return null;
+    return (async () => {
+      const snapshot = await selectForLaunch(path);
+      protectedCaches.add(snapshot.name);
+      try { await collect(snapshot.root); } catch { /* GC must never block a valid launch. */ }
+      finally { protectedCaches.delete(snapshot.name); }
+      const target = new URL(C.runtimeGenerationEntry(snapshot.root, snapshot.descriptor), scopeUrl);
+      target.search = new URL(event.request.url).search;
+      return new Response(null, { status: 302, headers: { Location: target.href, "Cache-Control": "no-store" } });
+    })();
+  }
+  async function prepareLaunch(path, options) {
+    const snapshot = await selectForLaunch(path, options);
+    protectedCaches.add(snapshot.name);
+    try { await collect(snapshot.root); } catch { /* Optional cleanup. */ }
+    finally { protectedCaches.delete(snapshot.name); }
+    return { ok: true, protocol: C.RUNTIME_CACHE_PROTOCOL, cached: true,
+      entry: C.runtimeGenerationEntry(snapshot.root, snapshot.descriptor), generation: snapshot.descriptor.generation };
   }
   async function preparePaths(paths) {
     const groups = new Map();
     for (const path of paths) {
-      const group = groupFor(path);
-      if (!group) continue;
-      const entry = group.entries.find(entry => entry.url.endsWith(".html"));
-      groups.set(group.root, entry.url);
+      const group = C.findRuntimeGroup(known, path) || known.groups.filter(group => path.startsWith(group.root)).sort((a, b) => b.root.length - a.root.length)[0];
+      if (!group) throw new Error("Runtime is not declared: " + path);
+      groups.set(group.root, group.root + group.current.entry);
     }
     for (const path of groups.values()) await prepare(path);
   }
   async function readyGroups() {
-    const result = [];
-    for (const group of known) {
-      for (const candidate of await snapshots(group.root)) {
-        if (await complete(candidate)) { result.push(group.root); break; }
-      }
+    const ready = new Set();
+    for (const snapshot of await snapshots()) {
+      if (!ready.has(snapshot.root) && await complete(snapshot)) ready.add(snapshot.root);
     }
-    return result;
+    return [...ready].sort();
   }
-  return { handle, preparePaths, readyGroups };
+  return { handle, prepareLaunch, preparePaths, readyGroups };
 }
