@@ -73,7 +73,7 @@
     "th10": {
       "builder": "prebuilt",
       "workspaceRepository": "th10",
-      "variants": { "normal": { "features": { "thcrap": false, "thprac": false }, "cache": {} } }
+      "variants": { "normal": { "features": { "thcrap": true, "thprac": true }, "cache": {} } }
     },
     "th08": {
       "builder": "prebuilt",
