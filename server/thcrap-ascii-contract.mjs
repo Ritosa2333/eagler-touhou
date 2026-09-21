@@ -204,7 +204,11 @@ export const THCRAP_ASCII_CONTRACT = Object.freeze({
     { id: "th08 Spell Practice Total", aliases: ["%sTotal"] },
     { id: "th08 Spell Practice Card No", aliases: ["%sNo.%.3d"] },
     { id: "th08 Now Playing", aliases: ["Now Playing"] },
-  ])
+  ]),
+  // TH10's overlay text is translated through the pack's ASCII/PNG atlas, and
+  // zh-hans carries no th10_ascii_* stringdefs. Keep an explicit empty contract
+  // so the compiler still validates and emits a (valid, zero-record) EAS1 table.
+  th10: Object.freeze([])
 });
 
 export function validateAsciiContract(game) {

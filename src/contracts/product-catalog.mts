@@ -200,7 +200,7 @@ export const PRODUCT_GAMES = Object.freeze({
       musicMounts: Object.freeze({ ogg: "/bgm-ogg" }),
     }),
     replay: Object.freeze({ prefix: "th10" }),
-    features: Object.freeze({ thprac: false, languages: false, focusHitbox: false }),
+    features: Object.freeze({ thprac: false, languages: true, focusHitbox: false }),
   }),
 });
 

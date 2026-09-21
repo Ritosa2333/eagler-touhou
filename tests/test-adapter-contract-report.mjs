@@ -72,9 +72,10 @@ assert.equal(th10.product.music.midiOptional, false);
 assert.equal(th10.product.multiplayerRuntime, null);
 assert.equal(th10.product.multiplayer, null);
 assert.equal(th10.obligations.optionalProductCapabilities["raw-data-import"], false);
-assert.deepEqual(th10.obligations.activeProfileRequired, []);
+assert.deepEqual(th10.obligations.activeProfileRequired, ["language-runtime-application"]);
 assert.equal(th10.protocol.configureOptions.focusHitboxEnabled.activeForProduct, false);
 assert.equal(th10.protocol.configureOptions.debugHarness.activeForProduct, false);
+assert.equal(th10.obligations.optionalProfiles.languages.active, true);
 assert.equal(th10.obligations.optionalProfiles.midi.active, false);
 
 const th06 = createAdapterContractReport("th06");

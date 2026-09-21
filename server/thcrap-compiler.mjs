@@ -2,11 +2,14 @@ import { extname } from "node:path";
 import { legacyAsciiPrintfSignature, validateAsciiContract } from "./thcrap-ascii-contract.mjs";
 import { validateStringContract } from "./thcrap-string-contract.mjs";
 
-const GAME_VERSION = Object.freeze({ th06: 6, th07: 7, th08: 8 });
+const GAME_VERSION = Object.freeze({ th06: 6, th07: 7, th08: 8, th10: 10 });
 export const THCRAP_RUNTIME_COMPILER_GAMES = Object.freeze(Object.keys(GAME_VERSION));
 const GAME_PATTERN = `(?:${THCRAP_RUNTIME_COMPILER_GAMES.join("|")})`;
 const MESSAGE_DIFF = new RegExp(`^${GAME_PATTERN}\\/(msg[1-8][a-z]{0,2}\\.dat)\\.jdiff$`, "i");
 const ENDING_DIFF = new RegExp(`^${GAME_PATTERN}\\/(end[0-9]{2}[a-z]?\\.end)\\.jdiff$`, "i");
+// TH10 differs: dialogue lives in st*.msg and endings in e*.msg inside th10.dat.
+const TH10_DIALOGUE_DIFF = /^th10\/(st\d+_\d+\.msg)\.jdiff$/i;
+const TH10_ENDING_DIFF = /^th10\/(e\d+\.msg)\.jdiff$/i;
 const LOCALIZATION_TABLE = new RegExp(`^(${GAME_PATTERN})\\/(spells|stages|musiccmt)\\.js$`, "i");
 const SPELL_COMMENTS_TABLE = new RegExp(`^(${GAME_PATTERN})\\/spellcomments\\.js$`, "i");
 const GAME_OPTIONS = new RegExp(`^(?:(${GAME_PATTERN})\\/)?(${GAME_PATTERN})\\.js$`, "i");
@@ -320,13 +323,28 @@ function truncateUtf8(value, maximum = 250) {
 // through auto line ops 16/19/20 and closes auto boxes with ops 4/15.
 const MSG_LINE_FORMAT = Object.freeze({
   6: Object.freeze({ hard: Object.freeze({ 3: null, 8: "h1" }), auto: Object.freeze([]), autoEnd: Object.freeze([]) }),
-  8: Object.freeze({ hard: Object.freeze({ 3: null }), auto: Object.freeze([16, 19, 20]), autoEnd: Object.freeze([4, 15]) })
+  8: Object.freeze({ hard: Object.freeze({ 3: null }), auto: Object.freeze([16, 19, 20]), autoEnd: Object.freeze([4, 15]) }),
+  // TH10 (thcrap th06_msg.cpp MSG_TH10): dialogue is all auto line 16, closed
+  // by auto-end opcodes 7/8/10; hard-line op 3 carries no text.
+  10: Object.freeze({ hard: Object.freeze({}), auto: Object.freeze([16]), autoEnd: Object.freeze([7, 8, 10]) })
+});
+
+// TH10 endings (thcrap END_TH10): auto line 3, closed by 5/6/9. They live in
+// e*.msg and are dumped/compiled with thmsg -e.
+const ENDING_LINE_FORMAT = Object.freeze({
+  10: Object.freeze({ hard: Object.freeze({}), auto: Object.freeze([3]), autoEnd: Object.freeze([5, 6, 9]) })
 });
 
 function msgLineFormat(version) {
+  if (version === 10) return MSG_LINE_FORMAT[10];
   if (version === 8) return MSG_LINE_FORMAT[8];
   if (version === 6 || version === 7) return MSG_LINE_FORMAT[6];
   throw new TypeError(`unsupported message version: ${version}`);
+}
+
+function endingLineFormat(version) {
+  if (version === 10) return ENDING_LINE_FORMAT[10];
+  throw new TypeError(`unsupported ending version: ${version}`);
 }
 
 function parseDialogueLine(line, format) {
@@ -360,10 +378,10 @@ function getPatchedLines(diff, entry, key) {
   return Array.isArray(lines) && lines.every(line => typeof line === "string") ? lines : null;
 }
 
-export function patchThmsgDump(source, diff, version = 6) {
+export function patchThmsgDump(source, diff, version = 6, { ending = false } = {}) {
   if (!Buffer.isBuffer(source) && !(source instanceof Uint8Array)) throw new TypeError("thmsg source bytes are required");
   assertJsonTree(diff);
-  const format = msgLineFormat(version);
+  const format = ending ? endingLineFormat(version) : msgLineFormat(version);
   const { lines, trailingNewline } = splitLines(source);
   const replacements = new Map();
   const insertions = new Map();
@@ -713,6 +731,36 @@ export class ThcrapRuntimeCompiler {
         extension: ".etl",
         format: "eagler-localization-table/1",
         targetPath: `/thcrap/${game}/localization/themes.etl`
+      };
+    }
+    const th10Dialogue = TH10_DIALOGUE_DIFF.exec(resource.path);
+    if (th10Dialogue) {
+      const game = "th10";
+      const version = GAME_VERSION[game];
+      const base = await this.readBaseFile(game, th10Dialogue[1]);
+      const dumped = await this.runner.dumpMessage(base, version);
+      const patched = patchThmsgDump(dumped, parsed, version);
+      const bytes = await this.runner.compileMessage(patched, version);
+      return {
+        bytes,
+        extension: ".msg",
+        format: "touhou-message/1",
+        targetPath: resource.mountPath.replace(/\.jdiff$/i, "")
+      };
+    }
+    const th10Ending = TH10_ENDING_DIFF.exec(resource.path);
+    if (th10Ending) {
+      const game = "th10";
+      const version = GAME_VERSION[game];
+      const base = await this.readBaseFile(game, th10Ending[1]);
+      const dumped = await this.runner.dumpEnding(base, version);
+      const patched = patchThmsgDump(dumped, parsed, version, { ending: true });
+      const bytes = await this.runner.compileEnding(patched, version);
+      return {
+        bytes,
+        extension: ".msg",
+        format: "touhou-ending/1",
+        targetPath: resource.mountPath.replace(/\.jdiff$/i, "")
       };
     }
     const message = MESSAGE_DIFF.exec(resource.path);
