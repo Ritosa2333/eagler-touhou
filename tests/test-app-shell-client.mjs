@@ -8,7 +8,17 @@ class EventTargetStub {
 }
 class WorkerStub extends EventTargetStub {
   state = "installing";
+  activationClients = 1; messages = [];
   setState(state) { this.state = state; this.emit("statechange"); }
+  postMessage(message, ports = []) {
+    this.messages.push(message.type);
+    const response = message.type === "CHECK_APP_SHELL_ACTIVATION"
+      ? { ok: true, soleClient: this.activationClients === 1, clients: this.activationClients }
+      : message.type === "ACTIVATE_APP_SHELL" && this.activationClients === 1
+        ? { ok: true, activating: true }
+        : { ok: false, code: "MultipleClients", clients: this.activationClients };
+    ports[0]?.postMessage(response);
+  }
 }
 class RegistrationStub extends EventTargetStub {
   waiting = null; installing = null; updates = 0; updateError = null;
@@ -20,8 +30,14 @@ const serviceWorker = { controller: {}, registerCalls: [],
   async getRegistration() { return null; },
 };
 const scheduled = []; let defer = true, reloads = 0;
+const createMessageChannel = () => {
+  const port1 = { onmessage: null, close() {} };
+  const port2 = { postMessage(data) { queueMicrotask(() => port1.onmessage?.({ data })); } };
+  return { port1, port2 };
+};
 const client = createAppShellClient({ serviceWorker, secureContext: true,
   shouldDeferReload: () => defer, schedule: task => scheduled.push(task), reload: () => reloads++, logger: { warn() {} },
+  createMessageChannel, activationRetryMs: 0,
 });
 await client.ready;
 assert.deepEqual(serviceWorker.registerCalls, [{ url: "./app-shell-sw.js", options: { scope: "./", updateViaCache: "none" } }]);
@@ -31,6 +47,9 @@ worker.setState("installed");
 assert.equal(client.snapshot().updateWaiting, true);
 defer = false;
 assert.equal(client.maybeReload(), false, "waiting must not cause a refresh loop");
+await new Promise(resolve => setTimeout(resolve, 0));
+assert.deepEqual(worker.messages, ["CHECK_APP_SHELL_ACTIVATION", "ACTIVATE_APP_SHELL"]);
+assert.equal(client.snapshot().activationPending, true, "the sole idle client blocks input before activating the candidate");
 assert.equal(client.snapshot().reloadPending, false);
 worker.setState("activated");
 assert.equal(scheduled.length, 1);
@@ -68,8 +87,9 @@ const bounded = createAppShellClient({ serviceWorker: { ...firstContainer, contr
   secureContext: true, activationTimeoutMs: 5 });
 assert.equal(await bounded.ready, stuck, "initial activation must not wait forever");
 assert.equal(first.snapshot().updateReady, false, "a late first-install controller is not a replacement");
-const waitingRegistration = new RegistrationStub(); waitingRegistration.waiting = {};
-const waiting = createAppShellClient({ serviceWorker: { ...serviceWorker, async register() { return waitingRegistration; } }, secureContext: true });
+const waitingRegistration = new RegistrationStub(); waitingRegistration.waiting = new WorkerStub();
+const waiting = createAppShellClient({ serviceWorker: { ...serviceWorker, async register() { return waitingRegistration; } }, secureContext: true,
+  shouldDeferReload: () => true, activationRetryMs: 0, createMessageChannel });
 await waiting.ready; assert.equal(waiting.snapshot().updateWaiting, true); assert.equal(waiting.maybeReload(), false);
 const existingRegistration = new RegistrationStub(); existingRegistration.installing = new WorkerStub();
 const existing = createAppShellClient({ serviceWorker: { ...serviceWorker, async register() { return existingRegistration; } }, secureContext: true });

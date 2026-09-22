@@ -222,10 +222,34 @@ async function offlineStatus() {
 self.addEventListener("message", event => {
   const type = event.data?.type;
   const protocol = typeof EaglerRuntimeGenerations !== "undefined" ? EaglerRuntimeGenerations : null;
-  if (!["CACHE_APP_SHELL_PATHS", "GET_APP_SHELL_STATUS", protocol?.RUNTIME_CAPABILITIES, protocol?.RUNTIME_PREPARE].includes(type)) return;
+  if (!["CACHE_APP_SHELL_PATHS", "GET_APP_SHELL_STATUS", "CHECK_APP_SHELL_ACTIVATION", "ACTIVATE_APP_SHELL",
+    protocol?.RUNTIME_CAPABILITIES, protocol?.RUNTIME_PREPARE].includes(type)) return;
   const port = event.ports?.[0];
   event.waitUntil((async () => {
     try {
+      if (type === "CHECK_APP_SHELL_ACTIVATION" || type === "ACTIVATE_APP_SHELL") {
+        const scopeUrl = new URL(self.registration.scope);
+        const windows = (await self.clients.matchAll({ type: "window", includeUncontrolled: true }))
+          .filter(client => {
+            try {
+              const clientUrl = new URL(client.url);
+              return clientUrl.origin === scopeUrl.origin && clientUrl.pathname.startsWith(scopeUrl.pathname);
+            } catch { return false; }
+          });
+        const sourceId = event.source?.id;
+        const soleClient = typeof sourceId === "string" && windows.length === 1 && windows[0].id === sourceId;
+        if (type === "CHECK_APP_SHELL_ACTIVATION") {
+          port?.postMessage({ ok: true, soleClient, clients: windows.length });
+          return;
+        }
+        if (!soleClient) {
+          port?.postMessage({ ok: false, code: "MultipleClients", clients: windows.length });
+          return;
+        }
+        await self.skipWaiting();
+        port?.postMessage({ ok: true, activating: true });
+        return;
+      }
       if (protocol && type === protocol.RUNTIME_CAPABILITIES) {
         port?.postMessage({ ok: !!runtimeCache, protocol: protocol.RUNTIME_CACHE_PROTOCOL });
         return;

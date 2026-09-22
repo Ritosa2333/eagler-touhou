@@ -6,15 +6,24 @@ export interface AppShellClientState {
   readonly updateError: unknown | null;
   readonly reloadPending: boolean;
   readonly reloadScheduled: boolean;
+  readonly activationPending: boolean;
 }
 interface EventTargetLike {
   addEventListener(type: string, callback: () => void): void;
   removeEventListener?(type: string, callback: () => void): void;
 }
-interface ServiceWorkerLike extends EventTargetLike { readonly state: string; }
+interface MessagePortLike {
+  onmessage: ((event: { data?: unknown }) => void) | null;
+  close?(): void;
+}
+interface MessageChannelLike { readonly port1: MessagePortLike; readonly port2: unknown; }
+interface ServiceWorkerLike extends EventTargetLike {
+  readonly state: string;
+  postMessage?(message: unknown, transfer?: unknown[]): void;
+}
 interface ServiceWorkerRegistrationLike extends EventTargetLike {
   readonly active?: ServiceWorkerLike | null;
-  readonly waiting: unknown | null;
+  readonly waiting: ServiceWorkerLike | null;
   readonly installing: ServiceWorkerLike | null;
   update(): Promise<unknown>;
 }
@@ -35,6 +44,8 @@ interface AppShellClientOptions {
   schedule?: (callback: () => void) => unknown;
   logger?: LoggerLike;
   activationTimeoutMs?: number;
+  activationRetryMs?: number;
+  createMessageChannel?: () => MessageChannelLike;
 }
 function browserServiceWorker(): ServiceWorkerContainerLike | null {
   // The getter itself may throw in a restricted/embedded browser context.
@@ -48,16 +59,83 @@ export function createAppShellClient({
   shouldDeferReload = () => false, onChange = () => {},
   reload = () => globalThis.location?.reload(),
   schedule = callback => globalThis.setTimeout(callback, 0), logger = globalThis.console,
-  activationTimeoutMs = 120000,
+  activationTimeoutMs = 120000, activationRetryMs = 1000,
+  createMessageChannel = () => new MessageChannel() as unknown as MessageChannelLike,
 }: AppShellClientOptions = {}) {
   const state: { -readonly [K in keyof AppShellClientState]: AppShellClientState[K] } = {
     registration: null, updateReady: false, updateWaiting: false,
     updateCheckFailed: false, updateError: null, reloadPending: false, reloadScheduled: false,
+    activationPending: false,
   };
+  let waitingCandidate: ServiceWorkerLike | null = null;
+  let activationRequest: Promise<boolean> | null = null;
+  let activationRetryTimer: ReturnType<typeof setTimeout> | null = null;
   const snapshot = (): Readonly<AppShellClientState> => Object.freeze({ ...state });
   const notify = () => onChange(snapshot());
+  function clearActivationRetry() {
+    if (activationRetryTimer != null) clearTimeout(activationRetryTimer);
+    activationRetryTimer = null;
+  }
+  function scheduleActivationRetry() {
+    clearActivationRetry();
+    if (!(activationRetryMs > 0) || !state.updateWaiting || shouldDeferReload()) return;
+    activationRetryTimer = setTimeout(() => {
+      activationRetryTimer = null;
+      void maybeActivateWaiting();
+    }, activationRetryMs);
+  }
+  async function workerRequest(worker: ServiceWorkerLike, type: string) {
+    if (typeof worker.postMessage !== "function") return null;
+    let channel: MessageChannelLike;
+    try { channel = createMessageChannel(); } catch { return null; }
+    return await new Promise<Record<string, unknown> | null>(resolve => {
+      let settled = false;
+      const finish = (value: Record<string, unknown> | null) => {
+        if (settled) return;
+        settled = true; clearTimeout(timer); channel.port1.close?.(); resolve(value);
+      };
+      const timer = setTimeout(() => finish(null), 3000);
+      channel.port1.onmessage = event => finish(event.data && typeof event.data === "object"
+        ? event.data as Record<string, unknown> : null);
+      try { worker.postMessage?.({ type }, [channel.port2]); }
+      catch { finish(null); }
+    });
+  }
+  function maybeActivateWaiting() {
+    if (!state.updateWaiting || state.activationPending || shouldDeferReload()) return Promise.resolve(false);
+    const worker = state.registration?.waiting || waitingCandidate;
+    if (!worker || activationRequest) return activationRequest || Promise.resolve(false);
+    clearActivationRetry();
+    let retryWhenClientsClose = false;
+    activationRequest = (async () => {
+      const eligibility = await workerRequest(worker, "CHECK_APP_SHELL_ACTIVATION");
+      if (eligibility?.soleClient !== true) {
+        retryWhenClientsClose = typeof eligibility?.clients === "number" && Number(eligibility.clients) > 1;
+        return false;
+      }
+      if (shouldDeferReload()) return false;
+      state.activationPending = true;
+      notify();
+      const activation = await workerRequest(worker, "ACTIVATE_APP_SHELL");
+      if (activation?.ok === true) return true;
+      retryWhenClientsClose = activation?.code === "MultipleClients";
+      state.activationPending = false;
+      notify();
+      return false;
+    })().catch(error => {
+      state.activationPending = false;
+      notify();
+      logger?.warn?.("App Shell activation unavailable", error);
+      return false;
+    }).finally(() => {
+      activationRequest = null;
+      if (!state.activationPending && retryWhenClientsClose) scheduleActivationRetry();
+    });
+    return activationRequest;
+  }
   function maybeReload() {
-    if (!state.updateReady || state.updateWaiting || !state.reloadPending || state.reloadScheduled || shouldDeferReload()) return false;
+    if (state.updateWaiting) { void maybeActivateWaiting(); return false; }
+    if (!state.updateReady || !state.reloadPending || state.reloadScheduled || shouldDeferReload()) return false;
     state.reloadScheduled = true;
     notify();
     schedule(() => {
@@ -84,17 +162,26 @@ export function createAppShellClient({
     const changed = () => {
       if (!replacing) return;
       if (worker.state === "installed") {
+        waitingCandidate = worker;
         state.updateWaiting = true;
         state.updateReady = false;
         state.reloadPending = false;
         notify();
+        void maybeActivateWaiting();
       } else if (worker.state === "activated") {
         // Normally the old clients have all closed by now. Retain this path
         // for externally activated/legacy workers without reloading a live game.
         state.updateWaiting = false; state.updateReady = true; state.reloadPending = true;
+        waitingCandidate = null;
+        clearActivationRetry();
         notify(); maybeReload();
       } else if (worker.state === "redundant") {
         state.updateWaiting = !!state.registration?.waiting;
+        if (!state.updateWaiting) {
+          waitingCandidate = null;
+          state.activationPending = false;
+          clearActivationRetry();
+        }
         notify();
       }
     };
@@ -119,10 +206,12 @@ export function createAppShellClient({
     if (registration === state.registration) return;
     state.registration = registration;
     state.updateWaiting = !!registration.waiting && !!serviceWorker?.controller;
+    waitingCandidate = registration.waiting || null;
     registration.addEventListener("updatefound", () => watchWorker(registration.installing, controllerBelongsToRegistration()));
     // register() may resolve after updatefound. Observe the in-flight worker too.
     watchWorker(registration.installing, controlledBeforeRegistration);
     notify();
+    if (state.updateWaiting) void maybeActivateWaiting();
     // register() already fetches the current worker on first install. Calling
     // update() again while that uncontrolled installation is settling can
     // create a second installing worker; a following controlled navigation may
@@ -161,5 +250,5 @@ export function createAppShellClient({
         return registration ? waitForInitialActivation(registration) : null;
       })
     : Promise.resolve(null);
-  return Object.freeze({ ready, snapshot, checkForUpdate, maybeReload });
+  return Object.freeze({ ready, snapshot, checkForUpdate, maybeReload, maybeActivateWaiting });
 }

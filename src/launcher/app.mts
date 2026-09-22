@@ -716,6 +716,9 @@ function renderServerStatusNote(_snapshot?: Readonly<AppShellClientState>) {
   if (serverConfigurationWarning) {
     kind = "offline";
     text = serverConfigurationWarning;
+  } else if (appShell?.activationPending) {
+    kind = "update";
+    text = t("status.applyingSiteUpdate", { seconds: updateSeconds });
   } else if (appShell?.updateWaiting) {
     kind = "update";
     text = t("status.siteUpdateWaiting", { seconds: updateSeconds });
@@ -771,13 +774,19 @@ function shouldDeferAppShellReload() {
 
 appShellClient = createAppShellClient({
   shouldDeferReload: shouldDeferAppShellReload,
-  onChange: renderServerStatusNote,
+  onChange: snapshot => {
+    document.body.classList.toggle("app-shell-activation-pending", snapshot.activationPending);
+    renderServerStatusNote(snapshot);
+  },
 });
 void appShellClient.ready.then(() => {
   if (navigator.serviceWorker?.controller) return loadAppliedAppShellUpdateTime();
 });
 function maybeApplyDeferredAppShellUpdate() {
-  queueMicrotask(() => appShellClient?.maybeReload());
+  queueMicrotask(() => {
+    appShellClient?.maybeReload();
+    void appShellClient?.maybeActivateWaiting();
+  });
 }
 async function withLauncherActivity<T>(operation: () => Promise<T>): Promise<T> {
   launcherOperationDepth++;

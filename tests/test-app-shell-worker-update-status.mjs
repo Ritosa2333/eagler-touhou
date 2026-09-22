@@ -11,7 +11,8 @@ class MemoryCache {
   async match(input) { return this.entries.get(this.key(input))?.clone(); }
   async keys() { return [...this.entries.keys()].map(url => new Request(url)); }
 }
-function harness({ stores = new Map(), scope = "https://example.test/", build = "test", files = {}, deferredPaths = [], fetchImpl } = {}) {
+function harness({ stores = new Map(), scope = "https://example.test/", build = "test", files = {}, deferredPaths = [], fetchImpl,
+  clientIds = ["client-1"] } = {}) {
   const listeners = new Map();
   const requests = [];
   let skipped = 0, claimed = 0;
@@ -24,7 +25,10 @@ function harness({ stores = new Map(), scope = "https://example.test/", build = 
     __WB_MANIFEST: Object.entries(files).map(([url, body]) => ({ url, revision: sha(body) })),
     registration: { scope },
     addEventListener(type, callback) { listeners.set(type, callback); },
-    async skipWaiting() { skipped++; }, clients: { async claim() { claimed++; } },
+    async skipWaiting() { skipped++; }, clients: {
+      async claim() { claimed++; },
+      async matchAll() { return clientIds.map(id => ({ id, url: new URL(id, scope).href })); },
+    },
   };
   vm.runInNewContext(source.replaceAll("__APP_SHELL_BUILD_ID__", build)
     .replace("__APP_SHELL_DEFERRED_PATHS__", JSON.stringify(deferredPaths)), {
@@ -47,9 +51,9 @@ function harness({ stores = new Map(), scope = "https://example.test/", build = 
     listeners.get("fetch")({ request: new Request(new URL(path, scope)), respondWith(value) { task = value; } });
     return task ? await task : null;
   };
-  const message = async data => {
+  const message = async (data, sourceId = "client-1") => {
     let response, task;
-    listeners.get("message")({ data, ports: [{ postMessage(value) { response = value; } }], waitUntil(value) { task = value; } });
+    listeners.get("message")({ data, source: { id: sourceId }, ports: [{ postMessage(value) { response = value; } }], waitUntil(value) { task = value; } });
     await task; return JSON.parse(JSON.stringify(response));
   };
   const meta = async () => (await request("__app-shell-update-status__")).json();
@@ -62,6 +66,15 @@ assert.equal((await first.meta()).appliedAt, null);
 assert.deepEqual(first.forced(), { skipped: 0, claimed: 0 });
 assert.equal(await (await first.request("./?game=th06")).text(), "home");
 assert.equal(await first.request("unpublished"), null);
+assert.deepEqual(await first.message({ type: "CHECK_APP_SHELL_ACTIVATION" }), { ok: true, soleClient: true, clients: 1 });
+assert.deepEqual(await first.message({ type: "ACTIVATE_APP_SHELL" }), { ok: true, activating: true });
+assert.deepEqual(first.forced(), { skipped: 1, claimed: 0 });
+const crowded = harness({ files: { "./": "home" }, clientIds: ["client-1", "client-2"] });
+assert.deepEqual(await crowded.message({ type: "CHECK_APP_SHELL_ACTIVATION" }), { ok: true, soleClient: false, clients: 2 });
+assert.deepEqual(await crowded.message({ type: "ACTIVATE_APP_SHELL" }), { ok: false, code: "MultipleClients", clients: 2 });
+assert.deepEqual(crowded.forced(), { skipped: 0, claimed: 0 });
+const firefoxBlank = harness({ files: { "./": "home" }, clientIds: ["client-1", "about:blank"] });
+assert.deepEqual(await firefoxBlank.message({ type: "CHECK_APP_SHELL_ACTIVATION" }), { ok: true, soleClient: true, clients: 1 });
 
 const runtime = "runtime/th06/game.wasm";
 const a = harness({ files: { "./": "a", [runtime]: "wasm-a" }, deferredPaths: [runtime], build: "a" });

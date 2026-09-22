@@ -315,16 +315,19 @@ def main():
                 assert status(page)["build"] == build_a
                 assert status(other)["build"] == build_a
                 assert Handler.runtime_hits() == before_update, "SW update eagerly fetched Runtime bytes"
-                # A refresh and closing just one window must not activate B.
+                # A refresh cannot bypass the multi-window barrier. Once only
+                # one idle Launcher remains, that client may safely activate B
+                # and reload itself without requiring a browser restart.
                 boot(page, origin)
                 page.wait_for_function("document.querySelector('#serverStatusNote')?.dataset.kind === 'update'")
                 assert status(page)["build"] == build_a
-                page.close()
-                assert status(other)["build"] == build_a
-                other.close()
-                mark("multi-window-native-waiting")
-                page = context.new_page()
-                page.wait_for_timeout(500)
+                with other.expect_navigation(wait_until="load", timeout=30000):
+                    page.close()
+                other.wait_for_function("window.__eaglerBoot?.done === true", timeout=30000)
+                other.evaluate("document.querySelector('#firstUseNoticeDialog')?.close()")
+                assert status(other)["build"] == build_b
+                page = other
+                mark("multi-window-waiting-then-sole-client-auto-activation")
                 assert Handler.runtime_hits() == before_update, "activation eagerly fetched Runtime bytes"
                 mark("shell-update-with-broken-unselected-Runtime-fetches-no-Runtimes")
                 set_outage(context, True)
