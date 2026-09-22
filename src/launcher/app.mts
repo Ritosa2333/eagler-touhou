@@ -1,3 +1,4 @@
+import { prepareRuntimeLaunch } from "./runtime-launch.mjs";
 import { PACKAGE_DESCRIPTOR_SCHEMA } from "../../package/package-descriptor.mjs";
 import { componentFileIds } from "../../package/package-generation.mjs";
 import {
@@ -66,6 +67,7 @@ import type { RuntimeConfigureOptions } from "../contracts/runtime-protocol.mjs"
 import { loadRemoteMetadata } from "./remote-metadata.mjs";
 import { getUiLocale, initUiLocale, isUiMessageKey, t } from "./i18n.mjs";
 import type { UiMessageKey } from "./i18n.mjs";
+import { discouragedBrowserId } from "./browser-support.mjs";
 import { createAppShellClient } from "./app-shell-client.mjs";
 import {
   APP_SHELL_UPDATE_STATUS_PATH,
@@ -2450,26 +2452,33 @@ function cancelBlockingNetworkOperation() {
   if (!operation.suppressDeferredReload) maybeApplyDeferredAppShellUpdate();
   try { operation.onCancel?.(); } catch (error) { console.warn("blocking download cancel handler failed", error); }
 }
-function askDecision({ message = "", confirmText = "", cancelText = "", secondaryText = "", tone = "normal", confirmOnEnter = false }: {
+function askDecision({ title = "", message = "", confirmText = "", cancelText = "", secondaryText = "", tone = "normal", variant = "", hideCancel = false, confirmOnEnter = false }: {
+  title?: string;
   message?: string;
   confirmText?: string;
   cancelText?: string;
   secondaryText?: string;
   tone?: string;
+  variant?: string;
+  hideCancel?: boolean;
   confirmOnEnter?: boolean;
 } = {}): Promise<DecisionChoice> {
   syncTransientOverlayHost();
   const dialog = $("#decisionDialog");
   if (decisionResolver || dialog.open) return Promise.resolve("cancel");
-  $("#decisionTitle").textContent = t("dialog.confirmTitle");
+  $("#decisionTitle").textContent = title || t("dialog.confirmTitle");
   $("#decisionMessage").textContent = message;
   $("#decisionConfirm").textContent = confirmText || t("action.confirm");
-  $("#decisionCancel").textContent = cancelText || t("action.cancel");
+  const cancelButton = $("#decisionCancel");
+  cancelButton.hidden = hideCancel;
+  cancelButton.textContent = cancelText || t("action.cancel");
   const secondary = $("#decisionSecondary");
   secondary.hidden = !secondaryText;
   secondary.textContent = secondaryText || t("action.backgroundDownload");
   dialog.dataset.tone = tone;
-  dialog.dataset.options = secondaryText ? "3" : "2";
+  dialog.dataset.variant = variant;
+  // A hidden cancel hands its column back to the two remaining actions.
+  dialog.dataset.options = secondaryText && !hideCancel ? "3" : "2";
   dialog.dataset.confirmOnEnter = String(!!confirmOnEnter);
   dialog.classList.remove("closing");
   decisionFocusReturn = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -2477,11 +2486,35 @@ function askDecision({ message = "", confirmText = "", cancelText = "", secondar
     decisionResolver = resolve;
     dialog.returnValue = "cancel";
     dialog.showModal();
-    $("#decisionCancel").focus({ preventScroll: true });
+    (hideCancel ? $("#decisionConfirm") : cancelButton).focus({ preventScroll: true });
   });
 }
 function askConfirmation(options = {}) {
   return askDecision(options).then(value => value === "confirm");
+}
+// Entry notice from a blacklisted browser. Once the player has seen it, the
+// dismissal is remembered so later visits go straight to the launcher. There
+// is no cancel action: the player either opens the FAQ or continues browsing.
+// The FAQ is a real page navigation, so choosing it leaves the launcher.
+const browserWarningDismissedKey = "browser-warning-dismissed";
+function browserWarningDismissed(): boolean {
+  try { return localStorage.getItem(browserWarningDismissedKey) === "1"; } catch { return false; }
+}
+function markBrowserWarningDismissed(): void {
+  try { localStorage.setItem(browserWarningDismissedKey, "1"); } catch {}
+}
+async function warnDiscouragedBrowser(): Promise<void> {
+  const choice = await askDecision({
+    title: t("browserWarning.title"),
+    message: t("browserWarning.message"),
+    secondaryText: t("action.viewFaq"),
+    confirmText: t("action.continueVisit"),
+    hideCancel: true,
+    variant: "browser-warning",
+  });
+  // Persist before the FAQ navigation so the next visit no longer warns.
+  markBrowserWarningDismissed();
+  if (choice === "secondary") location.href = "faq.html";
 }
 function closeDecisionDialog(value = "cancel") {
   const dialog = $("#decisionDialog");
@@ -3166,43 +3199,6 @@ function runtimeUrl() {
   return entry.runtime;
 }
 
-function runtimeCachePaths(gameId: GameId, runtimeVariant: "normal" | "multiplayer" = "normal"): string[] {
-  const hosted = manifest.games[gameId];
-  const runtime = runtimeVariant === "multiplayer" && hosted && "multiplayerRuntime" in hosted
-    ? hosted.multiplayerRuntime
-    : hosted?.runtime;
-  if (typeof runtime !== "string" || !runtime) return [];
-  const url = new URL(runtime, location.href);
-  const product = PRODUCT_GAMES[gameId];
-  if ("runtimeFileLayout" in product && product.runtimeFileLayout === "directory" && "runtimeAssets" in product) {
-    const directory = url.pathname.slice(0, url.pathname.lastIndexOf("/") + 1);
-    return product.runtimeAssets.map((name: string) => `${directory}${name}`);
-  }
-  return ["html", "js", "wasm"].map(extension => url.pathname.replace(/\.html$/i, `.${extension}`));
-}
-
-async function cacheRuntimeForOffline(
-  gameId: GameId,
-  runtimeVariant: "normal" | "multiplayer" = state.runtimeVariant,
-) {
-  if (!("serviceWorker" in navigator)) return;
-  await appShellClient?.ready;
-  const registration = await navigator.serviceWorker.getRegistration("./").catch(() => null);
-  const worker = navigator.serviceWorker.controller || registration?.active;
-  const paths = runtimeCachePaths(gameId, runtimeVariant);
-  if (!worker || !paths.length) return;
-  const channel = new MessageChannel();
-  const result = new Promise<{ ok?: boolean; error?: string }>((resolve, reject) => {
-    const timer = window.setTimeout(() => reject(new Error(`${gameId}: Runtime offline cache timed out`)), 120_000);
-    channel.port1.onmessage = event => {
-      window.clearTimeout(timer);
-      resolve(event.data || {});
-    };
-  });
-  worker.postMessage({ type: "CACHE_APP_SHELL_PATHS", paths }, [channel.port2]);
-  const response = await result;
-  if (!response.ok) throw new Error(response.error || `${gameId}: Runtime offline cache failed`);
-}
 
 function musicPackage() {
   const transport = musicTransportMode(state.music);
@@ -4798,52 +4794,63 @@ async function ensureInstalledPackageRuntime(show = true) {
   const generation = installed?.generation;
   if (!generation?.id) { activeInstalledPackageGeneration = null; return false; }
   installedPackageSnapshots.set(state.game, generation);
+  const gameId = state.game;
+  const variant = state.runtimeVariant;
+  const sourceEntry = runtimeUrl();
   const requestedIdentity = `package:${state.game}:${generation.id}:${state.runtimeVariant}:${state.replayViewer ? "replay" : "game"}`;
   if (state.ready && state.sourceIdentity === requestedIdentity) return true;
-
-  resetRuntime();
-  // Package Store remains the source of truth, but the game itself runs
-  // directly in #gameFrame. The intermediate Player/about:blank carrier was
-  // removed because real iOS WebKit regressed under the extra iframe/WebGL
-  // lifecycle even though the same Runtime worked in the historical
-  // single-iframe topology.
-  activeInstalledPackageGeneration = generation;
-  const runtimeSession = await bindRuntimePackageSession(generation);
-  managedRuntimeGenerationLease.bind(state.game, generation);
-  state.sourceIdentity = requestedIdentity;
-  clearGameDataAttempt();
-  setPlayerStatus(t("runtime.preparingLocal"));
-  showTransfer({
-    kind: "game",
-    mode: "runtime",
-    title: t("runtime.preparingLocal"),
-    label: t("runtime.localGameLabel", { game: state.game.toUpperCase() }),
-    phase: "preparing",
-    indeterminate: true,
-  });
-  // Runtime HTML/JS/WASM are Launcher-managed ordinary static resources.
-  // Only the selected immutable DATA bytes cross from Package Store into the
-  // generated Emscripten loader through Module.getPreloadedPackage.
-  const managedSource = new URL(managedRuntimeUrl(runtimeUrl(), generation, state.runtimeVariant, location.href));
-  managedSource.searchParams.set(RUNTIME_EPOCH_QUERY_PARAMETER, String(runtimeSession.id));
-  state.source = managedSource.href;
-  if (show) openPlayerView();
-  const runtimeReady = waitForRuntimeReady(runtimeSession, t("runtime.localLoadTimeout"));
-  // App-owned same-origin Runtime URLs can commit and execute immediately.
-  // Arm readiness/error listeners before navigation so a fast local Runtime
-  // cannot emit `ready` in the gap after frame.src changes.
-  frame.src = state.source;
-  try {
-    await runtimeReady;
-    // Only warm remaining Runtime assets after the live Runtime is ready.
-    void cacheRuntimeForOffline(state.game, state.runtimeVariant).catch(error =>
-      console.warn(`${state.game}: Runtime background offline cache failed`, error));
+  const excluded: string[] = [];
+  // One direct iframe, as required by the iOS lifecycle contract. Retry only a
+  // complete earlier program before readiness, never individual loaded files.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    resetRuntime();
+    activeInstalledPackageGeneration = generation;
+    const runtimeSession = await bindRuntimePackageSession(generation);
+    managedRuntimeGenerationLease.bind(gameId, generation);
+    state.sourceIdentity = requestedIdentity;
+    clearGameDataAttempt();
+    setPlayerStatus(t("runtime.preparingLocal"));
+    showTransfer({ kind: "game", mode: "runtime", title: t("runtime.preparingLocal"),
+      label: t("runtime.localGameLabel", { game: gameId.toUpperCase() }), phase: "preparing", indeterminate: true });
+    if (show) openPlayerView();
+    let selectedGeneration: string | null = null;
+    try {
+      // Development workspaces intentionally use their live build URLs. A
+      // published Host declares the immutable Runtime Manifest capability.
+      let entry = sourceEntry;
+      if ("runtimeManifest" in manifest.shared && manifest.shared.runtimeManifest) {
+        const selected = await prepareRuntimeLaunch(sourceEntry, {
+          exclude: excluded,
+          worker: (async () => {
+            try {
+              await appShellClient?.ready;
+              return (await navigator.serviceWorker?.getRegistration("./"))?.active || null;
+            } catch { return null; }
+          })(),
+        });
+        entry = selected.url;
+        selectedGeneration = selected.generation;
+      }
+      if (!runtimeSessionCurrent(runtimeSession) || state.game !== gameId || state.runtimeVariant !== variant) {
+        throw new Error(t("runtime.switched"));
+      }
+      // gameGeneration is the Package Store identity, NOT the code generation.
+      const source = new URL(managedRuntimeUrl(entry, generation, variant, location.href));
+      source.searchParams.set(RUNTIME_EPOCH_QUERY_PARAMETER, String(runtimeSession.id));
+      state.source = source.href;
+      const runtimeReady = waitForRuntimeReady(runtimeSession, t("runtime.localLoadTimeout"));
+      frame.src = state.source;
+      await runtimeReady;
+      return true;
+    } catch (error) {
+      const current = runtimeSessionCurrent(runtimeSession) && state.game === gameId && state.runtimeVariant === variant;
+      if (current) resetRuntime();
+      if (!current || !selectedGeneration || attempt === 2) throw error;
+      excluded.push(selectedGeneration);
+      console.warn(`${gameId}: Runtime bootstrap failed; trying a complete previous generation`, error);
+    }
   }
-  catch (error) {
-    if (runtimeSessionCurrent(runtimeSession)) resetRuntime();
-    throw error;
-  }
-  return true;
+  return false;
 }
 
 function selectedLanguageEntriesForPackageUpdate(): Readonly<Record<string, readonly string[]>> {
@@ -8305,10 +8312,19 @@ render(); setTranslatedStatus("status.selectGame");
 animateMobileHomeCards();
 bootWatchdog?.ready?.();
 const launcherRoomRoute = !!mpNormalizeRoomCode(new URL(location.href).searchParams.get(mpRoomUrlKey));
-if (!launcherRoomRoute && !debugHarness && !touchPreview) {
-  void firstUseNotice.maybeShowAutomatically().then(shown => {
-    if (!shown) void siteNotice.load();
-  });
-} else if (!launcherRoomRoute) {
-  void siteNotice.load();
+const loadEntryNotices = () => {
+  if (!launcherRoomRoute && !debugHarness && !touchPreview) {
+    void firstUseNotice.maybeShowAutomatically().then(shown => {
+      if (!shown) void siteNotice.load();
+    });
+  } else if (!launcherRoomRoute) {
+    void siteNotice.load();
+  }
+};
+if (!debugHarness && !touchPreview && !browserWarningDismissed() && discouragedBrowserId(String(navigator.userAgent || ""))) {
+  // First-visit warning for blacklisted UA tokens; the ordinary entry notices
+  // run once it is dismissed (the FAQ choice navigates away instead).
+  void warnDiscouragedBrowser().then(loadEntryNotices);
+} else {
+  loadEntryNotices();
 }

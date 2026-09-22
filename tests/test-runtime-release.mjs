@@ -12,10 +12,10 @@ const root = await mkdtemp(join(tmpdir(), "eagler-runtime-release-"));
 const manifest = await writeSyntheticRuntimeRelease(root);
 await verifyRuntimeRelease(root);
 
-const staleShellPath = resolve(root, "runtime", "th08", "shell.mjs");
+const staleShellPath = resolve(root, manifest.games.th08.runtime.root, "shell.mjs");
 const staleShell = await readFile(staleShellPath, "utf8");
 await writeFile(staleShellPath, staleShell.replaceAll("runtimeEpoch", "legacyRuntimeToken"));
-await assert.rejects(() => verifyRuntimeRelease(root), /navigation epoch protocol contract is missing/);
+await assert.rejects(() => verifyRuntimeRelease(root), /navigation epoch protocol contract is missing|generation file mismatch/);
 await writeFile(staleShellPath, staleShell);
 
 await writeFile(resolve(root, "runtime", "th06", "th06.data"), "private game data");

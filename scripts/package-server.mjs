@@ -1,3 +1,4 @@
+import { freezeHostRuntimes } from "../lib/runtime-generations.mjs";
 import { createHash, randomUUID } from "node:crypto";
 import { cp, mkdir, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, relative, resolve } from "node:path";
@@ -447,15 +448,6 @@ async function descriptorFile(source, target) {
   };
 }
 
-async function versionRuntimeScript(gameRoot, stem, version) {
-  const htmlPath = resolve(gameRoot, `${stem}.html`);
-  const source = await readFile(htmlPath, "utf8");
-  const escapedStem = stem.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const pattern = new RegExp(`(<script\\b[^>]*\\bsrc=)(["']?)${escapedStem}\\.js(?:\\?[^"'\\s>]*)?\\2`, "i");
-  if (!pattern.test(source)) throw new Error(`runtime script reference missing: ${htmlPath}`);
-  await writeFile(htmlPath, source.replace(pattern, `$1$2${stem}.js?v=${version}$2`));
-}
-
 async function assertAppManagedRuntimeShell(buildRoot, game, variant, stem = game, declaredFiles = null) {
   const htmlPath = resolve(buildRoot, `${stem}.html`);
   const source = await readFile(htmlPath, "utf8");
@@ -715,7 +707,6 @@ for (const game of preloadGames) {
     await cp(resolve(builds[game], `${game}.${extension}`), resolve(appRuntimeRoot, `${game}.${extension}`));
   }
   const runtimeVersion = await versionFiles(appRuntimeRoot, appRuntimeFiles);
-  await versionRuntimeScript(appRuntimeRoot, game, runtimeVersion);
   entry.runtime = `runtime/${game}/${game}.html?hosted=1&v=${runtimeVersion}`;
   let multiplayerRuntimeVersion = null;
   const multiplayerBuild = builds[`${game}Multiplayer`];
@@ -727,7 +718,6 @@ for (const game of preloadGames) {
       await cp(resolve(multiplayerBuild, `${game}.${extension}`), resolve(multiplayerRoot, `${game}.${extension}`));
     }
     multiplayerRuntimeVersion = await versionFiles(multiplayerRoot, appRuntimeFiles);
-    await versionRuntimeScript(multiplayerRoot, game, multiplayerRuntimeVersion);
     entry.multiplayerRuntime = `runtime/${game}/multiplayer/${game}.html?hosted=1&v=${multiplayerRuntimeVersion}`;
   }
   if (serverResourceMode === RESOURCE_MODE_IMPORT) {
@@ -883,6 +873,9 @@ const releaseCatalog = validateReleaseCatalog({
     ? [[game, { revision: entry.package.revision, descriptor: entry.package.descriptor }]]
     : [])),
 });
+// Freeze only final program bytes after DATA assembly; game/package identities
+// are unchanged. Preserve older immutable directories when replacing a site.
+await freezeHostRuntimes(staging, manifest, { previousSite: args["previous-site"] ? resolve(args["previous-site"]) : output });
 validateHostManifest(manifest);
 await writeFile(resolve(staging, HOST_MANIFEST_FILE), `${JSON.stringify(manifest, null, 2)}\n`);
 await writeFile(resolve(staging, RELEASE_CATALOG_FILE), `${JSON.stringify(releaseCatalog, null, 2)}\n`);

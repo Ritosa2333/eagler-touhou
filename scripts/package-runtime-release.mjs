@@ -1,3 +1,4 @@
+import { writeRuntimeGeneration } from "../lib/runtime-generations.mjs";
 import { createHash, randomUUID } from "node:crypto";
 import { cp, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { basename, dirname, resolve } from "node:path";
@@ -78,6 +79,15 @@ async function copyVariant(game, build, root, variant) {
   return files;
 }
 
+async function immutableVariant(game, build, root, variant) {
+  const files = await copyVariant(game, build, root, variant);
+  const generation = await writeRuntimeGeneration({ site: staging, root: root + "/",
+    source: resolve(staging, root), entry: `${runtimeStem(game)}.html`,
+    names: Object.keys(files), expected: files });
+  for (const name of Object.keys(files)) await rm(resolve(staging, root, name));
+  return { root: `${root}/${generation.generation}`, generation: generation.generation, files };
+}
+
 await mkdir(temporaryRoot, { recursive: true });
 await rm(staging, { recursive: true, force: true });
 await mkdir(staging, { recursive: true });
@@ -87,12 +97,12 @@ for (const game of Object.keys(PRODUCT_GAMES)) {
   const product = PRODUCT_GAMES[game];
   const normalBuild = builds[game];
   const normalRoot = `runtime/${game}`;
-  const runtime = { root: normalRoot, files: await copyVariant(game, normalBuild, normalRoot, "normal") };
+  const runtime = await immutableVariant(game, normalBuild, normalRoot, "normal");
   let multiplayerRuntime = null;
   if (product.multiplayerRuntime) {
     const multiplayerBuild = builds[`${game}Multiplayer`];
     const multiplayerRoot = `runtime/${game}/multiplayer`;
-    multiplayerRuntime = { root: multiplayerRoot, files: await copyVariant(game, multiplayerBuild, multiplayerRoot, "multiplayer") };
+    multiplayerRuntime = await immutableVariant(game, multiplayerBuild, multiplayerRoot, "multiplayer");
   }
 
   let dataLayout = null;

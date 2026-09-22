@@ -47,7 +47,7 @@ assert.deepEqual(APP_SHELL_RUNTIME_GLOBS, [
 assert.deepEqual(deploymentAppShellPatterns({
   games: ["th06", "th07"],
   hostArtwork: ["th06-card.webp"],
-}), [...APP_SHELL_RUNTIME_GLOBS, "assets/th06-card.webp"]);
+}), ["assets/th06-card.webp"]);
 
 assert.equal(isRepositoryAppShellInput("src/app-shell-sw.js"), true);
 assert.equal(isRepositoryAppShellInput("app.js"), true);
@@ -71,11 +71,17 @@ const manifestEntries = [
 ];
 const contract = createAppShellContract({ buildId: "a".repeat(20), manifestEntries });
 assert.equal(contract.schema, APP_SHELL_CONTRACT_SCHEMA);
-assert.doesNotThrow(() => assertAppShellContract(contract, legacy));
+assert.throws(() => assertAppShellContract(contract, legacy), /Runtime files\/pointer must not enter shell precache/);
+const oldContract = { ...contract, schema: "eagler-touhou/app-shell/1" };
+assert.doesNotThrow(() => assertAppShellContract(oldContract, legacy));
+const shellOnly = createAppShellContract({ buildId: "b".repeat(20),
+  manifestEntries: manifestEntries.filter(entry => !entry.url.startsWith("runtime/")),
+  runtimeManifest: { path: "runtime-manifest.json", sha256: "c".repeat(64) } });
+assert.doesNotThrow(() => assertAppShellContract(shellOnly, { ...legacy, shared: { runtimeManifest: "runtime-manifest.json" } }));
 
 const missingRuntime = {
-  ...contract,
-  entries: contract.entries.filter(path => path !== "runtime/th07/th07.wasm"),
+  ...oldContract,
+  entries: oldContract.entries.filter(path => path !== "runtime/th07/th07.wasm"),
 };
 assert.throws(() => assertAppShellContract(missingRuntime, legacy), /omits Runtime/);
 

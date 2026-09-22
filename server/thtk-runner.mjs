@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 
 const SAFE_ENTRY = /^[a-z0-9_.-]+$/i;
-const SUPPORTED_ARCHIVE_VERSIONS = new Set([6, 7, 8]);
+const SUPPORTED_ARCHIVE_VERSIONS = new Set([6, 7, 8, 10]);
 
 function assertArchiveVersion(version) {
   if (!SUPPORTED_ARCHIVE_VERSIONS.has(version)) throw new TypeError("unsupported archive version");
@@ -95,6 +95,38 @@ export class ThtkRunner {
       const output = join(directory, "output.dat");
       await writeFile(input, source);
       await run(this.thmsg, ["-c", String(version), input, output], {
+        cwd: directory,
+        timeoutMs: this.timeoutMs
+      });
+      return readFile(output);
+    });
+  }
+
+  // TH10 endings (e*.msg) use the same thmsg tool with -e and the END_<ver>
+  // opcode set; thcrap routes them through patch_msg_end/END_TH10.
+  async dumpEnding(message, version) {
+    if (!Buffer.isBuffer(message) && !(message instanceof Uint8Array)) throw new TypeError("message bytes are required");
+    assertArchiveVersion(version);
+    return this.withTemporaryDirectory(async directory => {
+      const input = join(directory, "input.dat");
+      const output = join(directory, "output.txt");
+      await writeFile(input, message);
+      await run(this.thmsg, ["-e", "-d", String(version), input, output], {
+        cwd: directory,
+        timeoutMs: this.timeoutMs
+      });
+      return readFile(output);
+    });
+  }
+
+  async compileEnding(source, version) {
+    if (!Buffer.isBuffer(source) && !(source instanceof Uint8Array)) throw new TypeError("message source bytes are required");
+    assertArchiveVersion(version);
+    return this.withTemporaryDirectory(async directory => {
+      const input = join(directory, "input.txt");
+      const output = join(directory, "output.dat");
+      await writeFile(input, source);
+      await run(this.thmsg, ["-e", "-c", String(version), input, output], {
         cwd: directory,
         timeoutMs: this.timeoutMs
       });

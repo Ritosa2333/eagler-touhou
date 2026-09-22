@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import {
-  encodeAsciiLocalizationTable, encodeLocalizationTable, encodeStringLocalizationTable,
+  encodeAsciiLocalizationTable, encodeLocalizationTable, encodeSpellCommentsTable,
+  encodeStringLocalizationTable,
   mergeStringdefsResources, mergeThcrapJsonObjects,
   parseThcrapJson, patchEnding, patchThmsgDump, ThcrapRuntimeCompiler
 } from "../server/thcrap-compiler.mjs";
@@ -41,6 +42,24 @@ function decodeStringTable(bytes) {
     records.push({ id, translation, flags });
   }
   assert.equal(offset, bytes.length, "EST1 decoder must consume the complete table");
+  return records;
+}
+
+function decodeEtlTable(bytes) {
+  assert.equal(bytes.subarray(0, 4).toString("ascii"), "ETL1");
+  const count = bytes.readUInt32LE(4);
+  const records = [];
+  let offset = 8;
+  for (let index = 0; index < count; index++) {
+    const key = bytes.readUInt32LE(offset);
+    const line = bytes.readUInt16LE(offset + 4);
+    const length = bytes.readUInt16LE(offset + 6);
+    offset += 8;
+    const text = bytes.subarray(offset, offset + length).toString("utf8");
+    offset += length;
+    records.push({ key, line, text });
+  }
+  assert.equal(offset, bytes.length, "ETL1 decoder must consume the complete table");
   return records;
 }
 
@@ -409,4 +428,25 @@ assert.equal(th08Ending.format, "touhou-ending/1");
 assert.equal(th08Ending.extension, ".end");
 assert.equal(th08Ending.targetPath, "/thcrap/th08/end00a.end");
 
-console.log(JSON.stringify({ dialogue: "patched", extraLines: "inserted", ending: "patched", localization: "encoded", ascii: "EAS1", strings: "EST1", th08: "msg08" }));
+// TH08 spellcomments.js: TSA's spell_comment_line uses comment_1[0] for the
+// first displayed line and comment_1[1] for the second, so the ETL packs
+// comment_N line <line> as (N-1)*0x100+line and the owner at line 0x200.
+const th08SpellComments = await th08Compiler.process({
+  game: "th08", path: "th08/spellcomments.js", mountPath: "/thcrap/th08/spellcomments.js", kind: "table",
+  bytes: Buffer.from(JSON.stringify({
+    "54": { comment_1: ["结界是意识的力量。", "弹幕本身笔直的飞行着。别被骗了。"], owner: "博丽灵梦" },
+    "3": { comment_1: ["单行"] }
+  }))
+});
+assert.equal(th08SpellComments.format, "eagler-localization-table/1");
+assert.equal(th08SpellComments.extension, ".etl");
+assert.equal(th08SpellComments.targetPath, "/thcrap/th08/localization/spellcomments.etl");
+const th08CommentRecords = decodeEtlTable(th08SpellComments.bytes);
+assert.equal(th08CommentRecords.find(record => record.key === 54 && record.line === 0).text, "结界是意识的力量。");
+assert.equal(th08CommentRecords.find(record => record.key === 54 && record.line === 1).text, "弹幕本身笔直的飞行着。别被骗了。");
+assert.equal(th08CommentRecords.find(record => record.key === 54 && record.line === 0x200).text, "博丽灵梦");
+assert.equal(th08CommentRecords.find(record => record.key === 3 && record.line === 1), undefined);
+assert.throws(() => encodeSpellCommentsTable({ "1": { comment_1: "not-an-array" } }, { game: "th08" }),
+  /expected an array of lines/);
+
+console.log(JSON.stringify({ dialogue: "patched", extraLines: "inserted", ending: "patched", localization: "encoded", ascii: "EAS1", strings: "EST1", spellcomments: "ETL1", th08: "msg08" }));
