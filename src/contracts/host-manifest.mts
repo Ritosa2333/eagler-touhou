@@ -1,3 +1,4 @@
+import { RUNTIME_MANIFEST_FILE, parseRuntimeGenerationPath } from "./runtime-generations.mjs";
 import {
   HOST_PROTOCOL,
   isHostRuntimeFeatureId,
@@ -76,6 +77,8 @@ export interface HostGameManifest {
 }
 
 export interface HostManifestShared {
+  /** Additive schema-1 extension; absent only in legacy/development manifests. */
+  runtimeManifest?: typeof RUNTIME_MANIFEST_FILE;
   testBuild?: boolean;
   resourceMode: ResourceMode;
   vanillaFont?: string;
@@ -275,6 +278,22 @@ export function validateHostManifest(value: unknown): HostManifest {
   }
   if (!validOriginMigration(value.shared.originMigration)) {
     throw new Error("invalid Host Manifest originMigration");
+  }
+  if (value.shared.runtimeManifest != null && value.shared.runtimeManifest !== RUNTIME_MANIFEST_FILE) {
+    throw new Error("invalid Host Manifest Runtime pointer");
+  }
+  if (value.shared.runtimeManifest === RUNTIME_MANIFEST_FILE) {
+    for (const game of Object.values(value.games)) {
+      if (!isRecord(game)) throw new Error("invalid Host Manifest game");
+      for (const field of ["runtime", "multiplayerRuntime"]) {
+        if (game[field] == null) continue;
+        if (typeof game[field] !== "string") throw new Error("invalid Host Runtime URL");
+        const url = new URL(game[field], "https://runtime.invalid/");
+        if (url.origin !== "https://runtime.invalid" || !parseRuntimeGenerationPath(url.pathname.slice(1)) || url.searchParams.has("v")) {
+          throw new Error("Host Runtime URL must name an immutable generation");
+        }
+      }
+    }
   }
   const games = value.games;
   const actualGames = Object.keys(games).sort();

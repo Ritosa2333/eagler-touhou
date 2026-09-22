@@ -1,8 +1,9 @@
 #!/usr/bin/env node
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { marked, Renderer } from "marked";
+import { writeFileAtomic } from "../lib/atomic-file.mjs";
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const faqSourcePath = resolve(project, "docs", "FAQ.md");
@@ -159,8 +160,7 @@ async function emit(path, body, staleMessage) {
     if (current !== body) throw new Error(staleMessage);
     return;
   }
-  await mkdir(resolve(path, ".."), { recursive: true });
-  await writeFile(path, body, "utf8");
+  await writeFileAtomic(path, body, "utf8");
 }
 
 await emit(faqOutputPath, faqHtml, "public/faq.html is stale; run npm run build:content");

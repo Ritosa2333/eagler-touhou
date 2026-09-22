@@ -39,8 +39,10 @@ export function staticContentCompressible(path, bytes) {
 
 export function staticContentCacheControl(path) {
   const extension = extname(path).toLowerCase();
+  const immutableRuntime = /(?:^|\/)runtime\/(?:[A-Za-z0-9_-]+\/)+[a-f0-9]{64}\/[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(path) &&
+    !path.split("/").some(part => part === ".." || part === ".");
   const contentAddressedPack = extension === ".zip" && /[a-f0-9]{24}\.zip$/i.test(path);
-  return contentAddressedPack
+  return immutableRuntime || contentAddressedPack
     ? "public, max-age=31536000, immutable"
     : "public, max-age=0, must-revalidate";
 }

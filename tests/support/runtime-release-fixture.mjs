@@ -1,3 +1,5 @@
+import { writeRuntimeGeneration } from "../../lib/runtime-generations.mjs";
+import { rm } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -69,7 +71,7 @@ export async function writeSyntheticRuntimeRelease(root) {
           name === `${stem}.html` ? html :
           name === "shell.mjs" ? Buffer.from(directoryProtocolFixture(game)) :
           name === "eagler-host.mjs" ? Buffer.from(directoryManagedDataFixture()) :
-          Buffer.from(`${game}:${variant}:${name}`)]))
+          Buffer.from(name.endsWith(".mjs") || name.endsWith(".js") ? `// ${game}:${variant}:${name}\n` : `${game}:${variant}:${name}`)]))
         : {
             [`${stem}.html`]: html,
             [`${stem}.js`]: js,
@@ -79,8 +81,12 @@ export async function writeSyntheticRuntimeRelease(root) {
         await mkdir(resolve(target, name, ".."), { recursive: true });
         await writeFile(resolve(target, name), bytes);
       }
+      const generation = await writeRuntimeGeneration({ site: root, root: runtimeRoot + "/", source: target,
+        entry: `${stem}.html`, names: Object.keys(payloads) });
+      for (const name of Object.keys(payloads)) await rm(resolve(target, name));
       entry[key] = {
-        root: runtimeRoot,
+        root: runtimeRoot + "/" + generation.generation,
+        generation: generation.generation,
         files: Object.fromEntries(Object.entries(payloads).map(([name, bytes]) => [name, identity(bytes)])),
       };
     }

@@ -53,6 +53,16 @@ project and license metadata are recorded in `THIRD_PARTY.md`.
 `docs/assets/eagler-touhou-wordmark.svg` stores the same `EAGLER☯TOUHOU`
 wordmark as font outlines for the repository README.
 
+## PWA application icons
+
+`public/assets/pwa/icon.svg` is an original geometric ET monogram, with no
+extracted game artwork or font glyphs. It is published under this repository's
+GPL-3.0-or-later license. Its raster variants are `icon-192.png`, `icon-512.png`,
+`icon-maskable-512.png` and `apple-touch-icon.png` (180px), in the same directory.
+The centered artwork fits the maskable safe area. These icons are included in
+the frontend delivery and App Shell in every deployment mode and do not depend
+on the host-generated `th06.ico`.
+
 ## Announcement brand icons
 
 `assets/notice-bilibili.svg` is the Bilibili brand glyph taken from the exact
