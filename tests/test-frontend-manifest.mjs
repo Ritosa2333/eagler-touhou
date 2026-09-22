@@ -15,6 +15,7 @@ import {
   resolveFrontendPackageSource,
 } from "../lib/frontend-manifest.mjs";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+import { PRIVATE_FRONTEND_ASSETS } from "../lib/private-frontend-assets.mjs";
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const publicRoot = resolve(project, "public");
@@ -87,6 +88,14 @@ const declaredPublicFiles = FRONTEND_PACKAGE_FILES.filter(path =>
 ).concat(["index.html", "styles.css", "touch-guide.css"]).sort();
 assert.deepEqual(publicFiles, declaredPublicFiles,
   "public/ must contain exactly the allowlisted authored browser source files");
+assert.equal(new Set(PRIVATE_FRONTEND_ASSETS.map(asset => asset.target)).size, PRIVATE_FRONTEND_ASSETS.length,
+  "private frontend publication targets must be unique");
+for (const asset of PRIVATE_FRONTEND_ASSETS) {
+  assert.match(asset.source, /^private-assets\/[a-z0-9][a-z0-9._/-]*$/,
+    "private frontend sources must stay inside the ignored private-assets directory");
+  assert.match(asset.target, /^assets\/[a-z0-9][a-z0-9._/-]*$/,
+    "private frontend targets must stay inside the public assets directory");
+}
 console.log(JSON.stringify({ frontendManifest: "PASS", packaged: FRONTEND_PACKAGE_FILES.length, appShell: APP_SHELL_FILES.length, games: gameIds }));
 
 assert.throws(()=>hostArtworkFiles(["unknown"]), /unknown artwork product/);

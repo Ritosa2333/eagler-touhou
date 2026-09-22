@@ -22,6 +22,7 @@ import { FRONTEND_PACKAGE_FILES, hostArtworkFiles, resolveFrontendPackageSource 
 import { HOST_MANIFEST_FILE } from "../lib/contracts/host-manifest.mjs";
 import { RELEASE_CATALOG_FILE, RELEASE_CATALOG_SCHEMA } from "../lib/contracts/release-catalog.mjs";
 import { isMappedBrowserPublicationPath, resolveBrowserPublicationSource } from "../lib/launcher-build.mjs";
+import { privateFrontendAssetSource } from "../lib/private-frontend-assets.mjs";
 import {
   APP_SHELL_OUTPUT_FILE,
   APP_SHELL_RUNTIME_GLOBS,
@@ -197,8 +198,11 @@ createServer(async (request, response) => {
     let file;
     const publicPath = pathname.replace(/^\//, "");
     const frontendPath = publicPath || "index.html";
+    const privateFrontendAsset = sourceDevelopmentServer ? privateFrontendAssetSource(frontendPath) : null;
     if (sourceDevelopmentServer && FRONTEND_PACKAGE_FILES.includes(frontendPath)) {
       file = resolveFrontendPackageSource(frontendPath);
+    } else if (privateFrontendAsset && existsSync(privateFrontendAsset)) {
+      file = privateFrontendAsset;
     } else if (externalArtwork && existsSync(externalArtwork)) {
       file = externalArtwork;
     } else {

@@ -34,6 +34,7 @@ import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
 import { WORKSPACE_REPOSITORIES, workspacePath, workspaceRoot } from "../lib/workspace-layout.mjs";
 import { FRONTEND_PACKAGE_FILES, hostArtworkFiles, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
 import { normalizeSiteUrl, writeSiteMetadata } from "../lib/site-metadata.mjs";
+import { PRIVATE_FRONTEND_ASSETS, privateFrontendAssetSource } from "../lib/private-frontend-assets.mjs";
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const args = Object.fromEntries(process.argv.slice(2).map(value => {
@@ -383,6 +384,13 @@ async function copyFrontend() {
     const target = resolve(frontend, name);
     await mkdir(resolve(target, ".."), { recursive: true });
     await cp(resolveFrontendPackageSource(name), target);
+  }
+  for (const asset of PRIVATE_FRONTEND_ASSETS) {
+    const source = privateFrontendAssetSource(asset.target);
+    if (!source || !existsSync(source)) continue;
+    const target = resolve(frontend, asset.target);
+    await mkdir(resolve(target, ".."), { recursive: true });
+    await cp(source, target);
   }
   await writeSiteMetadata(frontend, siteUrl);
   const copiedHostAssets = [];

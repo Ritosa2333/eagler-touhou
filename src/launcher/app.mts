@@ -767,7 +767,7 @@ function shouldDeferAppShellReload() {
     blockingOperation: !!blockingNetworkOperation,
     gameDataAttempt: !!gameDataAttempt,
     launchInFlight: mpLaunchInFlight || launcherOperationDepth > 0,
-    decisionOpen: document.querySelector<HTMLDialogElement>("#decisionDialog")?.open === true,
+    decisionOpen: document.querySelector<HTMLDialogElement>("dialog[open]") != null,
     replayOpen: document.querySelector<HTMLDialogElement>("#replayDialog")?.open === true,
   });
 }
@@ -1483,7 +1483,7 @@ const selectElementSelectors = [
   "#touchFocusMode",
 ] as const;
 const dialogElementSelectors = [
-  "#decisionDialog", "#firstUseNoticeDialog", "#mpGuideDialog", "#appleRefreshDialog", "#replayDialog",
+  "#decisionDialog", "#firstUseNoticeDialog", "#mpGuideDialog", "#appleRefreshDialog", "#donationDialog", "#replayDialog",
 ] as const;
 const anchorElementSelectors = ["#originMigrationOpen", "#gameDataFallbackUrl", "#gameNoticeRepo"] as const;
 const outputElementSelectors = ["#touchLayoutScaleValue", "#touchSensitivityValue"] as const;
@@ -1502,7 +1502,7 @@ const buttonElementSelectors = [
   "#mpRoomSettingsToggle", "#toastClose", "#startupErrorClose", "#startupErrorCopy", "#decisionCancel",
   "#mpSettingsRoomDrawerToggle", "#mpSettingsRoomDrawerCloseHint",
   "#decisionSecondary", "#decisionConfirm", "#firstUseNoticeClose", "#firstUseNoticeCloseHint", "#mpGuideClose",
-  "#appleRefreshClose", "#transferCancel", "#transferRetry", "#gameDataImportClose",
+  "#appleRefreshClose", "#donationOpen", "#donationClose", "#transferCancel", "#transferRetry", "#gameDataImportClose",
   "#transferImport", "#transferDownload", "#gameDataLinkClose", "#touchLayoutOrientationHelpOpen",
   "#touchLayoutReset", "#touchLayoutSave", "#touchLayoutExit", "#doubleTapBombToggle",
   "#restartButtonToggle", "#thpracTouchControlsToggle", "#touchSensitivityCustomToggle", "#touchViewportAdjust",
@@ -7540,32 +7540,42 @@ $("#lessMotionToggle").addEventListener("click", () => {
 $("#firstUseNoticeClose").addEventListener("click", firstUseNotice.close);
 $("#firstUseNoticeCloseHint").addEventListener("click", firstUseNotice.close);
 const appleRefreshDialog = $("#appleRefreshDialog");
-function openAppleRefreshDialog() {
-  if (!appleRefreshDialog.open) {
-    appleRefreshDialog.classList.remove("closing");
-    appleRefreshDialog.showModal();
+function openSmallDialog(dialog: HTMLDialogElement) {
+  if (!dialog.open) {
+    dialog.classList.remove("closing");
+    dialog.showModal();
   }
 }
-$("#frameLimitAppleNote").addEventListener("click", openAppleRefreshDialog);
-$("#mpFrameLimitAppleNote").addEventListener("click", openAppleRefreshDialog);
-function closeAppleRefreshDialog() {
-  if (!appleRefreshDialog.open || appleRefreshDialog.classList.contains("closing")) return;
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { appleRefreshDialog.close(); return; }
-  appleRefreshDialog.classList.add("closing");
+function closeSmallDialog(dialog: HTMLDialogElement) {
+  if (!dialog.open || dialog.classList.contains("closing")) return;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { dialog.close(); return; }
+  dialog.classList.add("closing");
   let closed = false;
   const finish = () => {
     if (closed) return;
     closed = true;
-    if (appleRefreshDialog.open) appleRefreshDialog.close();
+    if (dialog.open) dialog.close();
   };
-  appleRefreshDialog.addEventListener("animationend", event => { if (event.animationName === "replay-window-out") finish(); }, { once: true });
+  dialog.addEventListener("animationend", event => { if (event.animationName === "replay-window-out") finish(); }, { once: true });
   setTimeout(finish, 220);
 }
-$("#appleRefreshClose").addEventListener("click", closeAppleRefreshDialog);
-appleRefreshDialog.addEventListener("cancel", event => { event.preventDefault(); closeAppleRefreshDialog(); });
-appleRefreshDialog.addEventListener("close", () => appleRefreshDialog.classList.remove("closing"));
-appleRefreshDialog.addEventListener("click", event => {
-  if (event.target === appleRefreshDialog) closeAppleRefreshDialog();
+function bindSmallDialog(dialog: HTMLDialogElement, closeButton: HTMLButtonElement) {
+  const close = () => closeSmallDialog(dialog);
+  closeButton.addEventListener("click", close);
+  dialog.addEventListener("cancel", event => { event.preventDefault(); close(); });
+  dialog.addEventListener("close", () => dialog.classList.remove("closing"));
+  dialog.addEventListener("click", event => { if (event.target === dialog) close(); });
+}
+$("#frameLimitAppleNote").addEventListener("click", () => openSmallDialog(appleRefreshDialog));
+$("#mpFrameLimitAppleNote").addEventListener("click", () => openSmallDialog(appleRefreshDialog));
+bindSmallDialog(appleRefreshDialog, $("#appleRefreshClose"));
+const donationDialog = $("#donationDialog");
+const donationOpen = $("#donationOpen");
+donationOpen.addEventListener("click", () => openSmallDialog(donationDialog));
+bindSmallDialog(donationDialog, $("#donationClose"));
+$("#donationImage").addEventListener("error", () => {
+  donationOpen.hidden = true;
+  if (donationDialog.open) donationDialog.close();
 });
 const siteNotice = createSiteNoticeController({
   onOptOut: () => showToast(t("notice.restoreHint")),
