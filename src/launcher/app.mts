@@ -303,6 +303,8 @@ async function loadAppliedAppShellUpdateTime() {
 scheduleBrandUpdateAge();
 
 let appShellClient: ReturnType<typeof createAppShellClient> | null = null;
+let appShellUpdateNoticeStartedAt: number | null = null;
+let appShellUpdateNoticeTimer: number | null = null;
 let serverUpdateState = "unknown";
 const vendorLoads = new Map<string, Promise<void>>();
 
@@ -700,16 +702,30 @@ function renderServerStatusNote(_snapshot?: Readonly<AppShellClientState>) {
   const note = document.getElementById("serverStatusNote");
   if (!note) return;
   const appShell = appShellClient?.snapshot();
+  const updateVisible = appShell?.updateWaiting === true || appShell?.updateReady === true;
+  if (updateVisible && appShellUpdateNoticeStartedAt == null) appShellUpdateNoticeStartedAt = Date.now();
+  if (!updateVisible) {
+    appShellUpdateNoticeStartedAt = null;
+    if (appShellUpdateNoticeTimer != null) window.clearTimeout(appShellUpdateNoticeTimer);
+    appShellUpdateNoticeTimer = null;
+  }
+  const updateSeconds = appShellUpdateNoticeStartedAt == null
+    ? 0 : Math.max(0, Math.floor((Date.now() - appShellUpdateNoticeStartedAt) / 1000));
   let text = "";
   let kind = "";
   if (serverConfigurationWarning) {
     kind = "offline";
     text = serverConfigurationWarning;
+  } else if (appShell?.updateWaiting) {
+    kind = "update";
+    text = t("status.siteUpdateWaiting", { seconds: updateSeconds });
   } else if (appShell?.updateReady) {
     kind = "update";
     text = state.launched === true
-      ? t("status.siteUpdateAfterExit")
-      : t("status.applyingSiteUpdate");
+      ? t("status.siteUpdateAfterExit", { seconds: updateSeconds })
+      : shouldDeferAppShellReload()
+        ? t("status.siteUpdateAfterOperation", { seconds: updateSeconds })
+        : t("status.applyingSiteUpdate", { seconds: updateSeconds });
   } else if (serverUpdateState === "unavailable") {
     kind = "offline";
     text = t("status.remoteUnavailable", { reason: remoteFailureReason(remoteCatalogError) });
@@ -728,6 +744,12 @@ function renderServerStatusNote(_snapshot?: Readonly<AppShellClientState>) {
   }
   note.dataset.kind = kind;
   note.textContent = text;
+  if (kind === "update" && appShellUpdateNoticeTimer == null) {
+    appShellUpdateNoticeTimer = window.setTimeout(() => {
+      appShellUpdateNoticeTimer = null;
+      renderServerStatusNote();
+    }, 1000);
+  }
 }
 
 // The App Shell client owns Service Worker registration/update lifecycle. It is

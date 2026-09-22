@@ -82,7 +82,7 @@ class Handler(SimpleHTTPRequestHandler):
 def boot(page, url):
     page.goto(url, wait_until="load", timeout=45000)
     page.wait_for_function("window.__eaglerBoot?.done === true", timeout=30000)
-    assert page.locator("#pwaOpen").count() == 1, "PWA controls missing"
+    assert page.locator("#pwaOpen").count() == 0, "retired install/offline controls are still present"
     page.evaluate("document.querySelector('#firstUseNoticeDialog')?.close()")
 
 
@@ -244,8 +244,9 @@ def main():
                 assert not page.evaluate("!!navigator.serviceWorker.controller")
                 boot(page, origin)
                 assert page.evaluate("!!navigator.serviceWorker.controller")
-                assert status(page)["build"] == build_a
-                assert status(page)["runtimeGroups"] == []
+                initial_status = status(page)
+                assert initial_status["build"] == build_a, initial_status
+                assert initial_status["runtimeGroups"] == [], initial_status
                 assert Handler.runtime_hits() == [], "first installation fetched a Runtime"
                 mark("initial-install-and-controlled-navigation")
                 icons = page.evaluate("""async () => {
@@ -268,9 +269,6 @@ def main():
                 restricted_page = restricted.new_page()
                 restricted_page.on("pageerror", lambda error: errors.append(str(error)))
                 boot(restricted_page, origin)
-                restricted_page.locator("#mastheadMenuToggle").click()
-                restricted_page.locator("#pwaOpen").click()
-                restricted_page.wait_for_function("document.querySelector('#pwaDialog').open")
                 restricted.close()
                 mark("restricted-optional-APIs")
 
@@ -310,11 +308,16 @@ def main():
                 Handler.blocked_runtime_prefixes = ("/runtime/pwa-unused/",)
                 page.evaluate("async () => (await navigator.serviceWorker.getRegistration('./')).update()")
                 wait_async(page, """async () => !!(await navigator.serviceWorker.getRegistration('./'))?.waiting""")
+                page.wait_for_function("""() => {
+                    const note = document.querySelector('#serverStatusNote');
+                    return note?.dataset.kind === 'update' && note.textContent === '已有更新。正在等待本站全部旧页面关闭。';
+                }""")
                 assert status(page)["build"] == build_a
                 assert status(other)["build"] == build_a
                 assert Handler.runtime_hits() == before_update, "SW update eagerly fetched Runtime bytes"
                 # A refresh and closing just one window must not activate B.
                 boot(page, origin)
+                page.wait_for_function("document.querySelector('#serverStatusNote')?.dataset.kind === 'update'")
                 assert status(page)["build"] == build_a
                 page.close()
                 assert status(other)["build"] == build_a

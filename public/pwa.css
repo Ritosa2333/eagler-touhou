@@ -1,9 +1,0 @@
-.pwa-dialog { box-sizing: border-box; width: min(36rem, calc(100vw - 2rem)); max-height: 85vh; max-height: 85dvh; overflow: auto; padding: 1.5rem; border: 1px solid #555; border-radius: 1rem; background: #191a17; color: #f4efeb; line-height: 1.6; }
-.pwa-dialog::backdrop { background: #000a; }
-.pwa-dialog h2 { margin-top: 0; }
-.pwa-dialog p { overflow-wrap: anywhere; }
-.pwa-dialog [hidden] { display: none !important; }
-.pwa-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
-.pwa-actions button { font: inherit; color: inherit; background: #30312d; border: 1px solid #777; border-radius: .5rem; padding: .6rem 1rem; cursor: pointer; }
-.pwa-actions button:focus-visible { outline: 2px solid #ef6a58; outline-offset: 3px; }
-.pwa-actions button:disabled { opacity: .6; cursor: default; }

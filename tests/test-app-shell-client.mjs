@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createAppShellClient } from "../.cache/build/browser/assets/launcher/app-shell-client.mjs";
-import { readStorageStatus, requestPersistentStorage, settleWithin } from "../.cache/build/browser/assets/launcher/pwa.mjs";
 class EventTargetStub {
   listeners = new Map();
   addEventListener(type, callback) { const list = this.listeners.get(type) || []; list.push(callback); this.listeners.set(type, list); }
@@ -92,15 +91,6 @@ assert.equal(await insecure.ready, null);
 registration.updateError = new Error("offline"); assert.equal(await client.checkForUpdate(), false);
 assert.equal(client.snapshot().updateCheckFailed, true);
 
-assert.deepEqual(await readStorageStatus({}), { persistent: null, usage: null, quota: null });
-assert.deepEqual(await readStorageStatus({ persisted: async () => false, estimate: async () => ({ usage: 10, quota: 100 }) }), { persistent: false, usage: 10, quota: 100 });
-assert.equal(await requestPersistentStorage({ persist() { throw new Error("denied"); } }), null);
-let invoked = false;
-const requested = requestPersistentStorage({ persist() { invoked = true; return Promise.resolve(true); } });
-assert.equal(invoked, true, "persistent permission is requested in the user-activation task");
-assert.equal(await requested, true);
-assert.equal(await settleWithin(() => new Promise(() => {}), "timeout", 5), "timeout");
-assert.equal(await settleWithin(() => { throw new Error("restricted"); }, "fallback"), "fallback");
 const manifest = JSON.parse(await readFile(new URL("../public/site.webmanifest", import.meta.url), "utf8"));
 assert.equal(manifest.id, "./"); assert.equal(manifest.scope, "./"); assert.equal(manifest.start_url, "./");
 for (const size of [192, 512]) {
@@ -110,4 +100,4 @@ for (const size of [192, 512]) {
   assert.equal(bytes.readUInt32BE(16), size); assert.equal(bytes.readUInt32BE(20), size);
 }
 assert.ok(manifest.icons.some(icon => icon.purpose === "maskable"));
-console.log("app shell client, optional storage and PWA icons: PASS");
+console.log("app shell client and PWA icons: PASS");

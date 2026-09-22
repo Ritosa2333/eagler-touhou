@@ -17,6 +17,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="icon" href="assets/th06.ico" type="image/x-icon">
   <link rel="manifest" href="site.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/pwa/apple-touch-icon.png">
   <link rel="preload" href="assets/fonts/chill-round-gothic-site-medium-critical.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="features.css" media="print" onload="this.media='all'">
@@ -229,6 +230,7 @@
   </script>
 </head>
 <body>
+  <div class="ambient-texture" aria-hidden="true"></div>
   <div id="eaglerPreload" role="status" aria-label="正在加载 EAGLER TOUHOU" data-i18n-aria-label="preload.aria">
     <div class="eagler-preload-card">
       <i class="eagler-preload-spinner" aria-hidden="true"></i>
@@ -531,6 +533,13 @@
       <button type="button" data-card-filter="multiplayer" aria-pressed="false" data-i18n="filter.multiplayer">联机</button>
     </nav>
     <div class="server-status-note" id="serverStatusNote" role="status" aria-live="polite" hidden></div>
+    <footer class="site-footer">
+      <div class="site-footer-divider" aria-hidden="true"></div>
+      <div class="site-footer-inner">
+        <p><span>EAGLER TOUHOU</span><i aria-hidden="true">/</i><a href="faq.html" data-i18n="nav.faq">常见问题</a><i aria-hidden="true">/</i><a href="about.html" data-i18n="nav.about">关于</a><i aria-hidden="true">/</i><a href="https://github.com/YomotsuHisami/eagler-touhou" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+        <p><span>TH06</span><i aria-hidden="true">/</i><span>TH07</span><i aria-hidden="true">/</i><span>TH08</span><i aria-hidden="true">/</i><span>TH10</span></p>
+      </div>
+    </footer>
   </div>
 
   <input id="fileInput" type="file" hidden>
