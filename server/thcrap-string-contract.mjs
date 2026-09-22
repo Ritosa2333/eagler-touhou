@@ -335,6 +335,28 @@ export const THCRAP_STRING_CONTRACT = Object.freeze({
     { id: "th06_log_window_mode", formatFallback: "ウィンドウモードで起動します\r\n" },
     { id: "th07_log_Vsync", formatFallback: "垂直同期を取りません\r\n" },
   ]),
+  // TH10 (v1.00a). thcrap's th10 stringdefs set is small: title/config labels,
+  // the window-mode dialog, faith-meter/slowshot hints and the five Music Room
+  // spoiler rows. Spell names, stage logos, music titles/comments and dialogue
+  // travel through spells/themes/musiccmt and the .msg/PNG overrides instead,
+  // and zh-hans ships no th10_ascii_* translations.
+  th10: Object.freeze([
+    { id: "th10" },
+    { id: "th10 JP" },
+    { id: "th10 config" },
+    { id: "th10 screen mode" },
+    { id: "th10 Dialog Prompt" },
+    { id: "th10 Dialog Fullscreen" },
+    { id: "th10 Dialog Always ask" },
+    { id: "th10 faith meter" },
+    { id: "th10 always ask" },
+    { id: "th10 slowshot" },
+    { id: "th10 Music Room spoiler 1" },
+    { id: "th10 Music Room spoiler 2" },
+    { id: "th10 Music Room spoiler 3" },
+    { id: "th10 Music Room spoiler 4" },
+    { id: "th10 Music Room spoiler 5" },
+  ]),
 });
 
 export function validateStringContract(game) {

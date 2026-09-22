@@ -66,6 +66,7 @@ import type { RuntimeConfigureOptions } from "../contracts/runtime-protocol.mjs"
 import { loadRemoteMetadata } from "./remote-metadata.mjs";
 import { getUiLocale, initUiLocale, isUiMessageKey, t } from "./i18n.mjs";
 import type { UiMessageKey } from "./i18n.mjs";
+import { discouragedBrowserId } from "./browser-support.mjs";
 import { createAppShellClient } from "./app-shell-client.mjs";
 import {
   APP_SHELL_UPDATE_STATUS_PATH,
@@ -2450,26 +2451,33 @@ function cancelBlockingNetworkOperation() {
   if (!operation.suppressDeferredReload) maybeApplyDeferredAppShellUpdate();
   try { operation.onCancel?.(); } catch (error) { console.warn("blocking download cancel handler failed", error); }
 }
-function askDecision({ message = "", confirmText = "", cancelText = "", secondaryText = "", tone = "normal", confirmOnEnter = false }: {
+function askDecision({ title = "", message = "", confirmText = "", cancelText = "", secondaryText = "", tone = "normal", variant = "", hideCancel = false, confirmOnEnter = false }: {
+  title?: string;
   message?: string;
   confirmText?: string;
   cancelText?: string;
   secondaryText?: string;
   tone?: string;
+  variant?: string;
+  hideCancel?: boolean;
   confirmOnEnter?: boolean;
 } = {}): Promise<DecisionChoice> {
   syncTransientOverlayHost();
   const dialog = $("#decisionDialog");
   if (decisionResolver || dialog.open) return Promise.resolve("cancel");
-  $("#decisionTitle").textContent = t("dialog.confirmTitle");
+  $("#decisionTitle").textContent = title || t("dialog.confirmTitle");
   $("#decisionMessage").textContent = message;
   $("#decisionConfirm").textContent = confirmText || t("action.confirm");
-  $("#decisionCancel").textContent = cancelText || t("action.cancel");
+  const cancelButton = $("#decisionCancel");
+  cancelButton.hidden = hideCancel;
+  cancelButton.textContent = cancelText || t("action.cancel");
   const secondary = $("#decisionSecondary");
   secondary.hidden = !secondaryText;
   secondary.textContent = secondaryText || t("action.backgroundDownload");
   dialog.dataset.tone = tone;
-  dialog.dataset.options = secondaryText ? "3" : "2";
+  dialog.dataset.variant = variant;
+  // A hidden cancel hands its column back to the two remaining actions.
+  dialog.dataset.options = secondaryText && !hideCancel ? "3" : "2";
   dialog.dataset.confirmOnEnter = String(!!confirmOnEnter);
   dialog.classList.remove("closing");
   decisionFocusReturn = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -2477,11 +2485,35 @@ function askDecision({ message = "", confirmText = "", cancelText = "", secondar
     decisionResolver = resolve;
     dialog.returnValue = "cancel";
     dialog.showModal();
-    $("#decisionCancel").focus({ preventScroll: true });
+    (hideCancel ? $("#decisionConfirm") : cancelButton).focus({ preventScroll: true });
   });
 }
 function askConfirmation(options = {}) {
   return askDecision(options).then(value => value === "confirm");
+}
+// Entry notice from a blacklisted browser. Once the player has seen it, the
+// dismissal is remembered so later visits go straight to the launcher. There
+// is no cancel action: the player either opens the FAQ or continues browsing.
+// The FAQ is a real page navigation, so choosing it leaves the launcher.
+const browserWarningDismissedKey = "browser-warning-dismissed";
+function browserWarningDismissed(): boolean {
+  try { return localStorage.getItem(browserWarningDismissedKey) === "1"; } catch { return false; }
+}
+function markBrowserWarningDismissed(): void {
+  try { localStorage.setItem(browserWarningDismissedKey, "1"); } catch {}
+}
+async function warnDiscouragedBrowser(): Promise<void> {
+  const choice = await askDecision({
+    title: t("browserWarning.title"),
+    message: t("browserWarning.message"),
+    secondaryText: t("action.viewFaq"),
+    confirmText: t("action.continueVisit"),
+    hideCancel: true,
+    variant: "browser-warning",
+  });
+  // Persist before the FAQ navigation so the next visit no longer warns.
+  markBrowserWarningDismissed();
+  if (choice === "secondary") location.href = "faq.html";
 }
 function closeDecisionDialog(value = "cancel") {
   const dialog = $("#decisionDialog");
@@ -8278,10 +8310,19 @@ render(); setTranslatedStatus("status.selectGame");
 animateMobileHomeCards();
 bootWatchdog?.ready?.();
 const launcherRoomRoute = !!mpNormalizeRoomCode(new URL(location.href).searchParams.get(mpRoomUrlKey));
-if (!launcherRoomRoute && !debugHarness && !touchPreview) {
-  void firstUseNotice.maybeShowAutomatically().then(shown => {
-    if (!shown) void siteNotice.load();
-  });
-} else if (!launcherRoomRoute) {
-  void siteNotice.load();
+const loadEntryNotices = () => {
+  if (!launcherRoomRoute && !debugHarness && !touchPreview) {
+    void firstUseNotice.maybeShowAutomatically().then(shown => {
+      if (!shown) void siteNotice.load();
+    });
+  } else if (!launcherRoomRoute) {
+    void siteNotice.load();
+  }
+};
+if (!debugHarness && !touchPreview && !browserWarningDismissed() && discouragedBrowserId(String(navigator.userAgent || ""))) {
+  // First-visit warning for blacklisted UA tokens; the ordinary entry notices
+  // run once it is dismissed (the FAQ choice navigates away instead).
+  void warnDiscouragedBrowser().then(loadEntryNotices);
+} else {
+  loadEntryNotices();
 }
