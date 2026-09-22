@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
+import { HOST_SITE_ARTWORK_FILES } from "../lib/frontend-manifest.mjs";
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const python = process.env.EAGLER_PYTHON || process.env.PYTHON || "python";
@@ -25,6 +26,10 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
   assert.ok(Array.isArray(report.files?.[game]), `${game}: artwork adapter did not report its outputs`);
   assert.ok(report.files[game].includes(product.cardArtwork),
     `${game}: artwork adapter outputs must include Product Catalog cardArtwork ${product.cardArtwork}`);
+}
+for (const artwork of HOST_SITE_ARTWORK_FILES) {
+  assert.ok(report.files.th06.includes(artwork),
+    `TH06 host artwork adapter must produce global site artwork ${artwork}`);
 }
 
 console.log(JSON.stringify({ hostArtworkAdapterCoverage: "PASS", games: report.games }));

@@ -64,7 +64,13 @@ for (const artwork of cardArtwork) {
   assert.ok(!FRONTEND_PACKAGE_FILES.includes(`assets/${artwork}`),
     `${artwork}: original-game-derived card artwork must remain a Host input, not a repository-owned frontend asset`);
 }
-assert.deepEqual(HOST_SITE_ARTWORK_FILES, ["th06.ico"],
+assert.deepEqual(HOST_SITE_ARTWORK_FILES, [
+  "th06.ico",
+  "pwa/icon-192.png",
+  "pwa/icon-512.png",
+  "pwa/icon-maskable-512.png",
+  "pwa/apple-touch-icon.png",
+],
   "site branding must be explicit global publication state, not attached to one product selection");
 for (const game of gameIds) {
   assert.deepEqual(hostArtworkFiles([game]), [PRODUCT_GAMES[game].cardArtwork, ...HOST_SITE_ARTWORK_FILES],

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createAppShellClient } from "../.cache/build/browser/assets/launcher/app-shell-client.mjs";
+import { HOST_SITE_ARTWORK_FILES } from "../lib/frontend-manifest.mjs";
 class EventTargetStub {
   listeners = new Map();
   addEventListener(type, callback) { const list = this.listeners.get(type) || []; list.push(callback); this.listeners.set(type, list); }
@@ -116,8 +117,10 @@ assert.equal(manifest.id, "./"); assert.equal(manifest.scope, "./"); assert.equa
 for (const size of [192, 512]) {
   const icon = manifest.icons.find(icon => icon.sizes === `${size}x${size}` && icon.purpose === "any");
   assert.ok(icon);
-  const bytes = await readFile(new URL(`../public/${icon.src}`, import.meta.url));
-  assert.equal(bytes.readUInt32BE(16), size); assert.equal(bytes.readUInt32BE(20), size);
+  assert.ok(HOST_SITE_ARTWORK_FILES.includes(icon.src.replace(/^assets\//, "")),
+    `${icon.src}: manifest icon must be supplied by Host artwork assembly`);
 }
-assert.ok(manifest.icons.some(icon => icon.purpose === "maskable"));
+const maskable = manifest.icons.find(icon => icon.sizes === "512x512" && icon.purpose === "maskable");
+assert.ok(maskable);
+assert.ok(HOST_SITE_ARTWORK_FILES.includes(maskable.src.replace(/^assets\//, "")));
 console.log("app shell client and PWA icons: PASS");

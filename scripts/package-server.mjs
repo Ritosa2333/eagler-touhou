@@ -1,5 +1,6 @@
 import { freezeHostRuntimes } from "../lib/runtime-generations.mjs";
 import { createHash, randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";

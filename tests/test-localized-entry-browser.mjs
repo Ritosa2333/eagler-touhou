@@ -15,8 +15,8 @@ try {
     if (/\.woff2(?:$|\?)/.test(request.url())) fontRequests.add(new URL(request.url()).pathname);
   });
   for (const [path, locale, title] of [
-    ["", "zh-CN", "网页上的东方原作"],
-    ["en.html", "en", "Original Touhou Games on the Web"],
+    ["", "zh-CN", "东方Project 原作 STG"],
+    ["en.html", "en", "Touhou Project Original STGs"],
   ]) {
     await page.goto(new URL(path, baseUrl).href, { waitUntil: "networkidle0" });
     const state = await page.evaluate(() => ({

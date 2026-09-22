@@ -33,8 +33,8 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
   }
 }
 setUiLocale("en", { persist: false, notify: false });
-assert.equal(t("site.documentTitle"), "Original Touhou Games on the Web ~ EAGLER TOUHOU");
-assert.match(t("site.description"), /launcher and multiplayer platform/);
+assert.equal(t("site.documentTitle"), "Touhou Project Original STGs ~ EAGLER TOUHOU");
+assert.match(t("site.description"), /near-pixel-perfect accuracy/);
 assert.equal(t("nav.lessMotion"), "Less motion");
 assert.equal(t("status.roomCreated", { code: "123456" }), "Room 123456 created");
 assert.equal(t("missing.fixture"), "missing.fixture", "runtime JS callers must retain fail-soft missing-key behavior");
@@ -61,7 +61,7 @@ assert.equal(translatedMeta.content, t("site.description"),
 // These are integration selectors consumed by the i18n owner, not styling locks.
 assert.match(index, /id="uiLanguageSelect"/);
 assert.match(index, /data-i18n="nav\.lessMotion"/);
-assert.match(index, /<title data-i18n="site\.documentTitle">网页上的东方原作 ~ EAGLER TOUHOU<\/title>/);
+assert.match(index, /<title data-i18n="site\.documentTitle">东方Project 原作 STG ~ EAGLER TOUHOU<\/title>/);
 assert.match(index, /<meta name="description"[^>]+data-i18n-content="site\.description">/);
 assert.ok(FRONTEND_PACKAGE_FILES.includes("assets/launcher/app.mjs"),
   "the optimized Launcher bundle containing the i18n owner must be published");

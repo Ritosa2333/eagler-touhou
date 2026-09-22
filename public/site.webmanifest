@@ -2,7 +2,7 @@
   "id": "./",
   "name": "EAGLER TOUHOU",
   "short_name": "EAGLER TOUHOU",
-  "description": "进入网站就能玩的东方原作游戏启动器 / 联机平台，提供了高刷新率适配、触控适配、汉化、thprac 以及原版联机 Mod。",
+  "description": "一个将东方原作近乎分毫不差地移植到网页，并带着联机 Mod、汉化、高刷新率适配、触控适配、thprac 的东方原作 STG 游戏平台。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

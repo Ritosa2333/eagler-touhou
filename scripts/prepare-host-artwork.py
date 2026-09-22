@@ -23,7 +23,14 @@ from touhou_formats import extract_pbg3_entry, extract_pbg4_entry, extract_pbgz_
 
 
 ARTWORK_BY_GAME = {
-    "th06": ("th06-card.webp", "th06.ico"),
+    "th06": (
+        "th06-card.webp",
+        "th06.ico",
+        "pwa/icon-192.png",
+        "pwa/icon-512.png",
+        "pwa/icon-maskable-512.png",
+        "pwa/apple-touch-icon.png",
+    ),
     "th07": ("th07-card.webp",),
     "th08": ("th08-card.webp",),
     "th10": ("th10-card.webp",),
@@ -36,6 +43,12 @@ ARTWORK_BY_GAME = {
 # setting.  Original game bytes are never rewritten.
 WEBP_QUALITY = 55
 WEBP_METHOD = 6
+SITE_ICON_SPECS = {
+    "pwa/icon-192.png": (192, 1.0, None),
+    "pwa/icon-512.png": (512, 1.0, None),
+    "pwa/icon-maskable-512.png": (512, 0.70, (16, 16, 15, 255)),
+    "pwa/apple-touch-icon.png": (180, 0.80, (16, 16, 15, 255)),
+}
 
 
 def _validate_artwork(name: str, data: bytes) -> None:
@@ -48,6 +61,9 @@ def _validate_artwork(name: str, data: bytes) -> None:
         count = int.from_bytes(data[4:6], "little")
         if count <= 0 or len(data) < 6 + count * 16:
             raise ValueError(f"{name}: invalid Windows ICO directory")
+    elif name.endswith(".png"):
+        if len(data) < 24 or data[:8] != b"\x89PNG\r\n\x1a\n":
+            raise ValueError(f"{name}: expected a PNG file")
     else:
         raise ValueError(f"unsupported host artwork output: {name}")
 
@@ -72,6 +88,26 @@ def _encode_webp(source: bytes, label: str) -> tuple[bytes, tuple[int, int]]:
             return data, normalized.size
     except OSError as error:
         raise ValueError(f"{label}: unsupported or corrupt image") from error
+
+
+def _encode_site_icon(source: bytes, name: str) -> tuple[bytes, tuple[int, int]]:
+    size, scale, background = SITE_ICON_SPECS[name]
+    try:
+        with Image.open(BytesIO(source)) as image:
+            image.load()
+            normalized = image.convert("RGBA")
+            target_size = max(1, round(size * scale))
+            resized = normalized.resize((target_size, target_size), Image.Resampling.NEAREST)
+            canvas = Image.new("RGBA", (size, size), background or (0, 0, 0, 0))
+            offset = ((size - target_size) // 2, (size - target_size) // 2)
+            canvas.alpha_composite(resized, offset)
+            output = BytesIO()
+            canvas.save(output, format="PNG", optimize=True)
+            data = output.getvalue()
+            _validate_artwork(name, data)
+            return data, canvas.size
+    except OSError as error:
+        raise ValueError(f"th06.ico: unsupported or corrupt site icon") from error
 
 
 def _find_th06_executable(root: Path) -> Path:
@@ -162,8 +198,12 @@ def prepare_host_artwork(
     entries: list[dict[str, object]] = []
     for game in games:
         for name in ARTWORK_BY_GAME[game]:
+            derived_site_icon = name in SITE_ICON_SPECS
             if name.endswith(".webp"):
                 override, direct_webp = _card_override(override_dir, game)
+            elif derived_site_icon:
+                override = override_dir / name if override_dir else None
+                direct_webp = False
             else:
                 override = override_dir / name if override_dir else None
                 direct_webp = False
@@ -188,6 +228,17 @@ def prepare_host_artwork(
                     _validate_artwork(name, data)
                 source = "override"
                 source_bytes = len(raw)
+            elif derived_site_icon:
+                icon_override = override_dir / "th06.ico" if override_dir else None
+                if icon_override is not None and icon_override.is_file():
+                    raw = icon_override.read_bytes()
+                    source = "override-derived"
+                else:
+                    raw = _default_artwork("th06", "th06.ico", roots, thdat, thanm)
+                    source = "original-extraction-derived"
+                _validate_artwork("th06.ico", raw)
+                data, dimensions = _encode_site_icon(raw, name)
+                source_bytes = len(raw)
             else:
                 try:
                     raw = _default_artwork(game, name, roots, thdat, thanm)
@@ -206,7 +257,9 @@ def prepare_host_artwork(
                         "reason": str(error),
                     })
                     continue
-            (output / name).write_bytes(data)
+            target = output / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
             entry: dict[str, object] = {
                 "game": game,
                 "file": name,

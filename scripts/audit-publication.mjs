@@ -20,9 +20,6 @@ const publicAssets = new Set([
   "assets/notice-bilibili.svg",
   "assets/notice-touhou-cloud.png",
   "assets/notice-github.svg", "assets/notice-qq.svg",
-  // Original geometric ET monogram, not game-derived artwork; see ASSETS.md.
-  "assets/pwa/icon.svg", "assets/pwa/icon-192.png", "assets/pwa/icon-512.png",
-  "assets/pwa/icon-maskable-512.png", "assets/pwa/apple-touch-icon.png",
   "assets/fonts/touhou98.woff2",
   "assets/fonts/unifont-site.woff2",
   "assets/fonts/OFL-Unifont.txt",
@@ -39,6 +36,10 @@ const legacyHostGeneratedOriginalAssets = new Set([
   "assets/th07-title00.jpg",
   "assets/th08-title00.png",
   "assets/th06.ico",
+  "assets/pwa/icon-192.png",
+  "assets/pwa/icon-512.png",
+  "assets/pwa/icon-maskable-512.png",
+  "assets/pwa/apple-touch-icon.png",
 ]);
 function isHostGeneratedOriginalAsset(path) {
   // Card artwork is host-generated from retail content for every formal title.

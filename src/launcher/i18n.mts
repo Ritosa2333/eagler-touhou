@@ -6,8 +6,8 @@ type UiMessageEntry = readonly [key: string, zhCN: string, english: string];
 // One tuple owns both translations, so a new key cannot silently exist in only
 // one locale. Keys describe meaning rather than copying the Chinese source.
 const entries = [
-  ["site.documentTitle", "网页上的东方原作 ~ EAGLER TOUHOU", "Original Touhou Games on the Web ~ EAGLER TOUHOU"],
-  ["site.description", "进入网站就能玩的东方原作游戏启动器 / 联机平台，提供了高刷新率适配、触控适配、汉化、thprac 以及原版联机 Mod。", "A browser-playable launcher and multiplayer platform for original Touhou games, with high-refresh-rate support, touch controls, translations, thprac, and multiplayer mods for the original games."],
+  ["site.documentTitle", "东方Project 原作 STG ~ EAGLER TOUHOU", "Touhou Project Original STGs ~ EAGLER TOUHOU"],
+  ["site.description", "一个将东方原作近乎分毫不差地移植到网页，并带着联机 Mod、汉化、高刷新率适配、触控适配、thprac 的东方原作 STG 游戏平台。", "A platform that brings the original Touhou STG games to the web with near-pixel-perfect accuracy, together with multiplayer mods, translations, high-refresh-rate support, touch controls, and thprac."],
   ["brand.neverUpdated", "尚未更新过", "No updates applied yet"],
   ["brand.updatedAgo", "于 {age} 前更新过一次", "Updated {age} ago"],
   ["filter.aria", "游戏分类", "Game categories"],
@@ -546,7 +546,7 @@ const entries = [
   ["status.connectionFailed", "连接失败", "Connection failed"], ["status.requestTimeout", "请求超时", "Request timed out"],
   ["status.deviceOffline", "设备离线", "Device is offline"],
   ["status.connectionRestored", "服务器连接已恢复，正在重新检查网站和游戏更新…", "Server connection restored; checking site and game updates…"],
-  ["status.siteUpdateWaiting", "已有更新。正在等待本站全部旧页面关闭。", "An update is available. Waiting for all old site pages to close."],
+  ["status.siteUpdateWaiting", "已有更新。正在等待本站全部旧页面关闭。（如果仍然长时间看到，请重启浏览器）", "An update is available. Waiting for all old site pages to close. (If this remains visible for a long time, restart the browser.)"],
   ["status.siteUpdateAfterExit", "网站更新已下载，正在等待游戏退出后切换… 已等待 {seconds} 秒", "The site update is downloaded and will switch after the game exits… {seconds}s elapsed"],
   ["status.siteUpdateAfterOperation", "网站更新已下载，正在等待当前操作完成… 已等待 {seconds} 秒", "The site update is downloaded and is waiting for the current operation to finish… {seconds}s elapsed"],
   ["status.applyingSiteUpdate", "网站更新已下载，正在切换到新版本… 已用 {seconds} 秒", "The site update is downloaded and is switching to the new version… {seconds}s elapsed"],

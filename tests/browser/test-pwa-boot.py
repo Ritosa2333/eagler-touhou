@@ -310,7 +310,7 @@ def main():
                 wait_async(page, """async () => !!(await navigator.serviceWorker.getRegistration('./'))?.waiting""")
                 page.wait_for_function("""() => {
                     const note = document.querySelector('#serverStatusNote');
-                    return note?.dataset.kind === 'update' && note.textContent === '已有更新。正在等待本站全部旧页面关闭。';
+                    return note?.dataset.kind === 'update' && note.textContent === '已有更新。正在等待本站全部旧页面关闭。（如果仍然长时间看到，请重启浏览器）';
                 }""")
                 assert status(page)["build"] == build_a
                 assert status(other)["build"] == build_a
