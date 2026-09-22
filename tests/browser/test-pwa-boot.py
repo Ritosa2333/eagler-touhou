@@ -16,6 +16,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from playwright.sync_api import Error as PlaywrightError, sync_playwright
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -26,6 +27,15 @@ def browser_options(engine):
 
 
 def build(directory, version):
+    # Production icons are private Host artwork, not frontend source files.
+    # Supply synthetic icons before hashing the test site's App Shell.
+    manifest = json.loads((ROOT / "public/site.webmanifest").read_text(encoding="utf-8"))
+    icons = [(icon["src"], tuple(map(int, icon["sizes"].split("x")))) for icon in manifest["icons"]]
+    icons.append(("assets/pwa/apple-touch-icon.png", (180, 180)))
+    for name, size in icons:
+        target = directory / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        Image.new("RGB", size, (16, 16, 15)).save(target)
     result = subprocess.run(
         ["node", "tests/browser/build-pwa-fixture.mjs", str(directory), version],
         cwd=ROOT, text=True, capture_output=True, check=True, timeout=120,
@@ -321,13 +331,14 @@ def main():
                 boot(page, origin)
                 page.wait_for_function("document.querySelector('#serverStatusNote')?.dataset.kind === 'update'")
                 assert status(page)["build"] == build_a
-                with other.expect_navigation(wait_until="load", timeout=30000):
-                    page.close()
-                other.wait_for_function("window.__eaglerBoot?.done === true", timeout=30000)
-                other.evaluate("document.querySelector('#firstUseNoticeDialog')?.close()")
-                assert status(other)["build"] == build_b
-                page = other
-                mark("multi-window-waiting-then-sole-client-auto-activation")
+                # Keep the refreshed page, which never observed B installing.
+                # It must observe the already-waiting candidate and finish alone.
+                with page.expect_navigation(wait_until="load", timeout=30000):
+                    other.close()
+                page.wait_for_function("window.__eaglerBoot?.done === true", timeout=30000)
+                page.evaluate("document.querySelector('#firstUseNoticeDialog')?.close()")
+                assert status(page)["build"] == build_b
+                mark("refreshed-waiting-page-then-sole-client-auto-activation")
                 assert Handler.runtime_hits() == before_update, "activation eagerly fetched Runtime bytes"
                 mark("shell-update-with-broken-unselected-Runtime-fetches-no-Runtimes")
                 set_outage(context, True)

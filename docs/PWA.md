@@ -28,16 +28,24 @@ nor a successful `persist()` request protects against manual data removal.
 `app-shell-client.mts` owns registration; optional `pwa.mts` UI does not register
 a second worker or await Service Worker/storage promises during boot.
 
-- A Launcher candidate does NOT call `skipWaiting()` or `clients.claim()`.
-  Existing windows keep their controlling worker. Closing all site/app windows
-  applies the Launcher update. This does NOT delay a new game's Runtime update:
+- Installation does not call `skipWaiting()` or `clients.claim()`. A single idle
+  Launcher can request activation: the candidate rechecks that the requesting
+  window is the only in-scope client before calling `skipWaiting()`. Games,
+  dialogs and Launcher operations defer this handoff. Multiple windows keep
+  waiting until only one idle Launcher remains (or all windows close).
+  This does NOT delay a new game's Runtime update:
   Runtime selection below runs on every launch independently of SW activation.
 - A first visit remains uncontrolled until its next navigation. The client's
   `ready` waits for first activation (bounded, without waiting for control), so
   Runtime preparation does not mistake registration for successful activation.
 - A waiting candidate is distinct from an activated replacement. The client
-  must not schedule reloads while waiting, and rechecks Launcher activity in
-  the scheduled reload task for externally activated/legacy replacements.
+  observes both installing workers and workers already waiting when registration
+  resolves after a refresh. It retries transient message failures and observes
+  worker state during activation, including when statechange delivery is delayed.
+  If an acknowledged handoff still has not started after 10 seconds, the client
+  releases the input lock and retries eligibility. A worker already activating
+  keeps the lock until completion; a timeout never authorizes a reload. Reloads
+  require observed activation and recheck Launcher activity in the scheduled task.
 - First installation and every replacement cache only the Launcher shell.
   Deferred Runtime entries remain deferred, even for previously used games;
   updates do not download or copy all Runtime bytes. The manifest may describe

@@ -45,6 +45,8 @@ interface AppShellClientOptions {
   logger?: LoggerLike;
   activationTimeoutMs?: number;
   activationRetryMs?: number;
+  activationRequestTimeoutMs?: number;
+  activationHandoffTimeoutMs?: number;
   createMessageChannel?: () => MessageChannelLike;
 }
 function browserServiceWorker(): ServiceWorkerContainerLike | null {
@@ -60,6 +62,7 @@ export function createAppShellClient({
   reload = () => globalThis.location?.reload(),
   schedule = callback => globalThis.setTimeout(callback, 0), logger = globalThis.console,
   activationTimeoutMs = 120000, activationRetryMs = 1000,
+  activationRequestTimeoutMs = 3000, activationHandoffTimeoutMs = 10000,
   createMessageChannel = () => new MessageChannel() as unknown as MessageChannelLike,
 }: AppShellClientOptions = {}) {
   const state: { -readonly [K in keyof AppShellClientState]: AppShellClientState[K] } = {
@@ -70,6 +73,7 @@ export function createAppShellClient({
   let waitingCandidate: ServiceWorkerLike | null = null;
   let activationRequest: Promise<boolean> | null = null;
   let activationRetryTimer: ReturnType<typeof setTimeout> | null = null;
+  let activationStartedAt = 0;
   const snapshot = (): Readonly<AppShellClientState> => Object.freeze({ ...state });
   const notify = () => onChange(snapshot());
   function clearActivationRetry() {
@@ -78,7 +82,8 @@ export function createAppShellClient({
   }
   function scheduleActivationRetry() {
     clearActivationRetry();
-    if (!(activationRetryMs > 0) || !state.updateWaiting || shouldDeferReload()) return;
+    if (!(activationRetryMs > 0) || !state.updateWaiting
+      || (!state.activationPending && shouldDeferReload())) return;
     activationRetryTimer = setTimeout(() => {
       activationRetryTimer = null;
       void maybeActivateWaiting();
@@ -94,7 +99,7 @@ export function createAppShellClient({
         if (settled) return;
         settled = true; clearTimeout(timer); channel.port1.close?.(); resolve(value);
       };
-      const timer = setTimeout(() => finish(null), 3000);
+      const timer = setTimeout(() => finish(null), activationRequestTimeoutMs);
       channel.port1.onmessage = event => finish(event.data && typeof event.data === "object"
         ? event.data as Record<string, unknown> : null);
       try { worker.postMessage?.({ type }, [channel.port2]); }
@@ -102,23 +107,39 @@ export function createAppShellClient({
     });
   }
   function maybeActivateWaiting() {
-    if (!state.updateWaiting || state.activationPending || shouldDeferReload()) return Promise.resolve(false);
     const worker = state.registration?.waiting || waitingCandidate;
+    // Reconcile the actual worker state as well as listening to events. Mobile
+    // browsers may suspend the page while activation/message delivery completes.
+    if (state.updateWaiting && worker?.state === "activated") {
+      finishActivation();
+      return Promise.resolve(true);
+    }
+    if (!state.updateWaiting) return Promise.resolve(false);
+    if (state.activationPending) {
+      if (worker?.state === "activating" || Date.now() - activationStartedAt < activationHandoffTimeoutMs) {
+        scheduleActivationRetry();
+        return Promise.resolve(false);
+      }
+      // A lost handoff must not leave Launcher input disabled indefinitely.
+      // Retry through the same eligibility checks; never reload on a timeout.
+      state.activationPending = false;
+      notify();
+    }
+    if (shouldDeferReload()) return Promise.resolve(false);
     if (!worker || activationRequest) return activationRequest || Promise.resolve(false);
     clearActivationRetry();
-    let retryWhenClientsClose = false;
     activationRequest = (async () => {
       const eligibility = await workerRequest(worker, "CHECK_APP_SHELL_ACTIVATION");
-      if (eligibility?.soleClient !== true) {
-        retryWhenClientsClose = typeof eligibility?.clients === "number" && Number(eligibility.clients) > 1;
-        return false;
-      }
-      if (shouldDeferReload()) return false;
+      if (eligibility?.soleClient !== true) return false;
+      if (shouldDeferReload() || !state.updateWaiting || worker.state !== "installed") return false;
       state.activationPending = true;
+      activationStartedAt = Date.now();
       notify();
       const activation = await workerRequest(worker, "ACTIVATE_APP_SHELL");
-      if (activation?.ok === true) return true;
-      retryWhenClientsClose = activation?.code === "MultipleClients";
+      // State can change across the awaited message, despite TS narrowing.
+      const actualState = (worker as ServiceWorkerLike).state;
+      if (actualState === "activated") { finishActivation(); return true; }
+      if (activation?.ok === true || actualState === "activating") return true;
       state.activationPending = false;
       notify();
       return false;
@@ -129,7 +150,9 @@ export function createAppShellClient({
       return false;
     }).finally(() => {
       activationRequest = null;
-      if (!state.activationPending && retryWhenClientsClose) scheduleActivationRetry();
+      // Missing/late MessageChannel replies are transient too, not just a
+      // second window. Keep observing until activation or Launcher activity.
+      scheduleActivationRetry();
     });
     return activationRequest;
   }
@@ -156,6 +179,13 @@ export function createAppShellClient({
     }
   }
   const watched = new WeakSet<ServiceWorkerLike>();
+  function finishActivation() {
+    if (state.updateReady) return;
+    state.updateWaiting = false; state.updateReady = true; state.reloadPending = true;
+    waitingCandidate = null;
+    clearActivationRetry();
+    notify(); maybeReload();
+  }
   function watchWorker(worker: ServiceWorkerLike | null, replacing: boolean) {
     if (!worker || watched.has(worker)) return;
     watched.add(worker);
@@ -169,12 +199,7 @@ export function createAppShellClient({
         notify();
         void maybeActivateWaiting();
       } else if (worker.state === "activated") {
-        // Normally the old clients have all closed by now. Retain this path
-        // for externally activated/legacy workers without reloading a live game.
-        state.updateWaiting = false; state.updateReady = true; state.reloadPending = true;
-        waitingCandidate = null;
-        clearActivationRetry();
-        notify(); maybeReload();
+        finishActivation();
       } else if (worker.state === "redundant") {
         state.updateWaiting = !!state.registration?.waiting;
         if (!state.updateWaiting) {
@@ -205,11 +230,14 @@ export function createAppShellClient({
   function watchRegistration(registration: ServiceWorkerRegistrationLike) {
     if (registration === state.registration) return;
     state.registration = registration;
-    state.updateWaiting = !!registration.waiting && !!serviceWorker?.controller;
+    state.updateWaiting = !!registration.waiting && controlledBeforeRegistration;
     waitingCandidate = registration.waiting || null;
     registration.addEventListener("updatefound", () => watchWorker(registration.installing, controllerBelongsToRegistration()));
     // register() may resolve after updatefound. Observe the in-flight worker too.
     watchWorker(registration.installing, controlledBeforeRegistration);
+    // A refresh can find a candidate that finished installing on the previous
+    // page. It will never emit updatefound here, but still needs state tracking.
+    watchWorker(registration.waiting, controlledBeforeRegistration);
     notify();
     if (state.updateWaiting) void maybeActivateWaiting();
     // register() already fetches the current worker on first install. Calling
