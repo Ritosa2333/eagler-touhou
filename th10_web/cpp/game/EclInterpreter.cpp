@@ -188,7 +188,13 @@ i32 EclContext::update(float elapsed,EclServices& services) {
         }
         instruction=advance(instruction,instruction->length);
     }
+#ifdef TH_ENABLE_THPRAC
+    // F4 time lock (0x44fb9f): freeze the ECL sub-time float for the stages the
+    // upstream EHOOK selects. The service owns the stage/enemy-flag condition.
+    if(!services.hold_time(*this,elapsed))time=Scalar::add(elapsed,time);
+#else
     time=Scalar::add(elapsed,time);
+#endif
     return 0;
 }
 }

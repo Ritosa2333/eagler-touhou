@@ -33,20 +33,28 @@ float HudFrame::presentation_boss_health(float current){
 HudScore::HudScore(Hud& h):owner(h){static constexpr i32 normal[]={2000000,4000000,8000000,15000000,1000000000},extra[]={3000000,10000000,1000000000};game=&h.state.game;normal_extends=normal;extra_extends=extra;}
 void HudScore::bind_digit(AnmFile& f,AnmVm& vm,i32 digit){f.bind_sprite(vm,digit);}
 void HudScore::update_animation(AnmVm& vm){owner.engine.update(vm);}
-void HudScore::add_life(){HudEconomy env(owner);game->add_lives(1,env);}
+void HudScore::add_life(){HudEconomy env(owner);
+#ifdef TH_ENABLE_THPRAC
+    env.practice=&owner.state.practice;
+#endif
+    game->add_lives(1,env);}
 HudNotification::HudNotification(Hud& h):owner(h){registry=&h.engine.manager.registry;}
 u32 HudNotification::create(AnmFile& file,i32 script){return owner.animation(file,script);}
 void HudNotification::bind_sprite(AnmVm& vm,i32 sprite){vm.animation_file->bind_sprite(vm,sprite);}
 void HudEconomy::show_notification(i32 script){auto& id=owner.actors.gui->power_notification;owner.engine.manager.registry.delete_and_clear(id);id=owner.animation(*owner.actors.gui->animations,script);}
 void HudEconomy::play_global_sound(i32 id){owner.sound(id);}
 void HudEconomy::update_lives(i32 lives){owner.actors.gui->update_lives(lives);}
-HudProgress::HudProgress(Hud& h):owner(h){game=&h.state.game;gui=&h.actors.gui;statistics={reinterpret_cast<u8*>(h.records.data)};replay_mode=&h.state.replay->mode;stages=menu_data(h.state.chinese).stages;current_stage=&h.state.current_stage;}
+HudProgress::HudProgress(Hud& h):owner(h){game=&h.state.game;gui=&h.actors.gui;statistics={reinterpret_cast<u8*>(h.records.data)};replay_mode=&h.state.replay->mode;stages=menu_data(h.state.chinese).stages;current_stage=&h.state.current_stage;all_clear_bonus=h.state.practice.all_clear_bonus;}
 void HudProgress::stage_clear_notification(){owner.notify(6,0);}
 void HudProgress::select_screen(i32 screen){owner.state.pending_screen=owner.state.engine_flags&0x1000?2:screen;}
 void HudProgress::show_results(){owner.actions.show_clear_results();}
 void HudProgress::fade_ending(){ScreenEffect::create(ScreenEffectKind::HideScreen,120,0,0,0,49,owner.screen_effects);}
 Hud::Hud(GameState& s,GameActors& a,AnimationEngine& e,Common& c,Fonts& f,Input& i,Audio& sound,Scores& score,ScreenEffects& fx,HudActions& events):state(s),actors(a),engine(e),common(c),fonts(f),input(i),audio(sound),records(score),screen_effects(fx),actions(events),update_chain(&e.chain_value){
-    game=&s.game;current=&a.gui;stage=&s.current_stage;cached_message=&message_cache;rate=&e.speed;filename=resource_name;current_screen=&s.pending_screen;display_difficulty=&difficulty_visible;controller_stage=&a.session->replay_mode;effects=&c.value->effects;slots=e.manager.files;registry=&e.manager.registry;chain=&update_chain;callbacks=&e.callback_environment;update_callback=callback_id::HudUpdate;draw_callback=callback_id::HudDraw;e.register_receiver(*this);
+    game=&s.game;
+#ifdef TH_ENABLE_THPRAC
+    practice=&s.practice;
+#endif
+    current=&a.gui;stage=&s.current_stage;cached_message=&message_cache;rate=&e.speed;filename=resource_name;current_screen=&s.pending_screen;display_difficulty=&difficulty_visible;controller_stage=&a.session->replay_mode;effects=&c.value->effects;slots=e.manager.files;registry=&e.manager.registry;chain=&update_chain;callbacks=&e.callback_environment;update_callback=callback_id::HudUpdate;draw_callback=callback_id::HudDraw;e.register_receiver(*this);
 }
 Hud::~Hud(){shutdown();std::free(message_cache);engine.unregister_receiver(*this);}
 bool Hud::initialize(){return actors.gui||GuiResources::create(*this);}
@@ -61,7 +69,11 @@ void Hud::update_score(){HudScore env(*this);actors.gui->update_score(env);}
 void Hud::update_power(i32 whole,i32 fraction){HudScore env(*this);actors.gui->update_power(whole,fraction,env);}
 void Hud::sound(i32 id){audio.manager.queue_effect(id,0,sound_definitions);}
 u32 Hud::animation(AnmFile& file,i32 script){return engine.manager.create(file,script,15,AnimationPlacement::WorldBack,engine,engine);}
-AudioGame Hud::music(){return {audio.manager,&records.data,&state.configuration.display_flags,&engine.speed};}
+AudioGame Hud::music(){AudioGame game{audio.manager,&records.data,&state.configuration.display_flags,&engine.speed};
+#ifdef TH_ENABLE_THPRAC
+    game.practice=&state.practice;
+#endif
+    return game;}
 Gui* Hud::allocate(){return static_cast<Gui*>(std::malloc(sizeof(Gui)));}
 AnmFile* Hud::load_animations(i32 slot,const char* name){return engine.manager.load(slot,name,engine.resources);}
 void Hud::release_animations(AnmFile& file){file.release(engine.resources);}

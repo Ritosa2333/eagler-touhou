@@ -2,6 +2,9 @@
 #include "World.hpp"
 #include "AudioData.hpp"
 #include "../game/TextFormat.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "../game/PracticeRuntime.hpp"
+#endif
 #include <new>
 #include <cstdlib>
 namespace th10::browser {
@@ -40,7 +43,11 @@ World::~World(){shutdown();while(previews)release_replay(&previews->document.val
 void World::select_screen(i32 screen){state.pending_screen=state.engine_flags&0x1000?2:screen;}
 void World::sound(i32 id){audio.manager.queue_effect(id,0,sound_definitions);}
 void World::sound(i32 id,float x){audio.manager.queue_effect_position(id,x,sound_definitions);}
-AudioGame World::music(){return {audio.manager,&scores.data,&state.configuration.display_flags,&engine.speed};}
+AudioGame World::music(){AudioGame game{audio.manager,&scores.data,&state.configuration.display_flags,&engine.speed};
+#ifdef TH_ENABLE_THPRAC
+    game.practice=&state.practice;
+#endif
+    return game;}
 u32 World::animation(AnmFile& file,i32 script,u32 tag){return engine.manager.create(file,script,tag,AnimationPlacement::WorldBack,engine,engine);}
 void World::effect(AnmFile& file,i32 script,const Vec3& point){engine.manager.create_at(file,script,point,true,AnimationPlacement::WorldBack,engine,engine);}
 void World::rectangle(const ScreenRect& rect,u32 color){auto renderer=engine.renderer();auto* manager=&engine.manager;const u32 colors[]={color,color,color,color};draw_screen_rectangle(rect,colors,&manager,renderer);}

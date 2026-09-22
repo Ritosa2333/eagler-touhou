@@ -1,6 +1,9 @@
 #include "../game/CallbackNames.hpp"
 #include "World.hpp"
 #include "../game/ReplayResources.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "../game/PracticeConfig.hpp"
+#endif
 #include <new>
 namespace th10::browser {
 namespace {
@@ -18,7 +21,22 @@ struct Resources final:ReplayResourceEnvironment {
     i32 load(Replay& replay,const char* name) override{
         w.replay_files.flags=w.state.game.flags;const auto result=load_replay(replay,name,w.replay_files);if(result)return result;
         char path[264];const bool demo=(w.state.game.flags&0x20)!=0;const auto length=std::strlen(name);if(length>255)return -1;const auto prefix=demo?0:7;if(prefix)std::memcpy(path,"replay/",prefix);std::memcpy(path+prefix,name,length+1);const auto handle=w.scores.files.host.open(path,false);
-        if(handle!=0xffffffff){const auto size=w.scores.files.host.size(handle);if(size>16*1024*1024){w.scores.files.host.close(handle);return -1;}std::vector<u8> bytes(size);const bool complete=w.scores.files.host.read(handle,bytes.data(),size)==size;w.scores.files.host.close(handle);if(!complete||!w.motion.load(bytes.data(),size,10))return -1;}else w.motion.clear();return 0;
+        if(handle!=0xffffffff){const auto size=w.scores.files.host.size(handle);if(size>16*1024*1024){w.scores.files.host.close(handle);return -1;}std::vector<u8> bytes(size);const bool complete=w.scores.files.host.read(handle,bytes.data(),size)==size;w.scores.files.host.close(handle);if(!complete||!w.motion.load(bytes.data(),size,10))return -1;
+#ifdef TH_ENABLE_THPRAC
+        // THGuiRep::State(2)/(3) restore: the raw file carries the 'USER'/'PRAC'
+        // block after the packed replay (practice_replay_read, upstream
+        // ReplayLoadParam). Playback is authoritative for the live run, so a
+        // valid block is copied into both the menu candidate and the run.
+        if(w.state.practice.replay){
+            w.state.practice.replay_candidate.reset();w.state.practice.replay_candidate_valid=false;w.state.practice.run.reset();w.state.practice.active=false;
+            PracticeConfig config;
+            if(practice_replay_read(bytes.data(),u32(size),config)){
+                w.state.practice.replay_candidate=config;w.state.practice.replay_candidate_valid=true;
+                w.state.practice.run=config;w.state.practice.active=true;
+            }
+        }
+#endif
+        }else w.motion.clear();return 0;
     }
 };
 }
@@ -42,5 +60,22 @@ i32 World::draw_replay(){
 void World::finish_replay(i32 clear){Gameplay env(*this);state.replay->finish_recording(clear,env);}
 Replay* World::preview(const char* name){auto* entry=new(std::malloc(sizeof(Preview))) Preview(scores.files,state.game.flags,previews);if(entry->document.load(name)){entry->~Preview();std::free(entry);return nullptr;}entry->document.value.mode=2;previews=entry;return &entry->document.value;}
 void World::release_replay(Replay* replay){if(!replay)return;for(auto** next=&previews;*next;next=&(*next)->next){auto* entry=*next;if(&entry->document.value==replay){*next=entry->next;entry->~Preview();std::free(entry);return;}}if(replay==state.replay){destroy_replay(replay);return;}__builtin_trap();}
-void World::save_replay(const char* file,const char* name){const auto tail=motion.playing?std::vector<u8>{}:motion.trailer(10);if((motion.used()&&!motion.playing&&tail.empty())||replay_writer.save(*state.replay,file,name,tail))fail();}
+void World::save_replay(const char* file,const char* name){
+#ifdef TH_ENABLE_THPRAC
+    const auto motion_tail=motion.playing?std::vector<u8>{}:motion.trailer(10);
+    std::vector<u8> tail;
+    // Advanced-practice runs append their 'USER'/'PRAC' block immediately after
+    // the vanilla replay, ahead of the motion trailer (upstream THSaveReplay +
+    // ReplaySaveParam). Assisted/cheated runs are deliberately not savable.
+    const bool practice_save=state.practice.active&&!state.practice.replay&&!state.practice.assisted&&state.practice.run.mode==1;
+    if(practice_save)tail=practice_replay_block(state.practice.run);
+    tail.insert(tail.end(),motion_tail.begin(),motion_tail.end());
+    // th10_rep_power_fix runs inside save_replay while the payload is plain.
+    replay_writer.practice_mode=practice_save;
+    replay_writer.practice_power=state.practice.run.power;
+    if((motion.used()&&!motion.playing&&motion_tail.empty())||replay_writer.save(*state.replay,file,name,tail))fail();
+#else
+    const auto tail=motion.playing?std::vector<u8>{}:motion.trailer(10);if((motion.used()&&!motion.playing&&tail.empty())||replay_writer.save(*state.replay,file,name,tail))fail();
+#endif
+}
 }

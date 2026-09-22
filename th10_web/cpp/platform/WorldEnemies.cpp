@@ -2,6 +2,9 @@
 #include "World.hpp"
 #include "../game/EnemyCommands.hpp"
 #include "../game/EnemySystems.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "../game/PracticeRuntime.hpp"
+#endif
 #include <cstdlib>
 namespace th10::browser {
 namespace {
@@ -21,6 +24,10 @@ struct Frame final:EnemyFrameEnvironment,EnemyDropEnvironment {
     void play_sound(i32 id,float x) override{w.sound(id,x);}
     void spawn_item(const Vec3& p,i32 kind,i32 color,float angle,float speed) override{w.spawn_item(p,kind,color,angle,speed);}
     void spawn_death_animation(i32 file,i32 script,const Vec3& p) override{w.effect(*w.actors.enemies->animation_files[file],script,p);}
+#ifdef TH_ENABLE_THPRAC
+    // F4 time lock (0x40e5b0): hold the enemy lifetime counter.
+    bool time_locked() const override{return practice_time_lock(w.state.practice);}
+#endif
 };
 struct Script final:EclServices {
     World& w;Enemy* owner;Script(World& world,Enemy* enemy):w(world),owner(enemy){}
@@ -30,6 +37,29 @@ struct Script final:EclServices {
     float* float_reference(i32 id) override{if(!owner)__builtin_trap();Frame env(w);return EnemyVariables(owner->state,env).float_reference(id);}
     i32 command(EclContext& context) override{if(!owner)__builtin_trap();return w.enemy_command(owner->state,context,*this);}
     void* allocate(u32 size) override{return std::malloc(size);}void release(void* p) override{std::free(p);}
+#ifdef TH_ENABLE_THPRAC
+    // thprac_th10.cpp:527-547. The upstream EHOOK at 0x44fb9f freezes the ECL
+    // sub-time for the stage 1/2/4 main enemy while a boss exists, and jumps
+    // the midboss wait to its post-midboss value. STAGE_NUM is one-based here.
+    bool hold_time(EclContext& context,float&) override{
+        if(!owner)return false;
+        auto& p=w.state.practice;
+        if(!practice_time_lock(p))return false;
+        const i32 stage=w.state.game.stage-1;
+        if(stage<0||(stage>=2&&stage!=3))return false;
+        // GetMemContent(context+0x1014, 0x103c+0x1444): the owner EnemyState.flags.
+        if(owner->state.flags!=0x510u)return false;
+        const bool boss_exists=w.actors.enemies&&w.actors.enemies->bosses[0]!=nullptr;
+        const float cur_time=context.time;
+        if(boss_exists&&cur_time){
+            constexpr float main_time_mid[4]={2200.0f,2200.0f,0.0f,3600.0f};
+            constexpr float main_time_post_mid[4]={2600.0f,2900.0f,0.0f,4100.0f};
+            if(cur_time>=main_time_mid[stage]&&cur_time<main_time_post_mid[stage])context.time=main_time_post_mid[stage];
+            return true;
+        }
+        return false;
+    }
+#endif
 };
 struct Enemies final:EnemyManagerEnvironment {
     World& w;Script cleanup;explicit Enemies(World& world):w(world),cleanup(world,nullptr){rate=&w.engine.speed;difficulty=&w.state.game.difficulty;registry=&w.engine.manager.registry;player=w.actors.player;scripts=&cleanup;enemy_type_table=reinterpret_cast<void*>(1);script_type_table=reinterpret_cast<void*>(2);}
@@ -72,7 +102,7 @@ struct Scene final:EnemySceneEnvironment {
     void start_dialogue(i32 id) override{w.hud->start_dialogue(id);}
     void cancel_projectiles() override{w.cancel_bullet_rectangle(0);w.cancel_lasers(0);}
     void clear_enemies() override{w.clear_enemies(false);}
-    void start_spell(i32 id,const char* name,i32 frames) override{w.start_spell(id,name,frames);}
+    void start_spell(i32 id,i32 name_id,const char* name,i32 frames) override{w.start_spell(id,name_id,name,frames);}
     void end_spell() override{w.finish_spell();}
     void delete_lasers() override{w.actors.lasers->schedule_deletion();}
 };

@@ -7,9 +7,13 @@
 #include "EnemyManager.hpp"
 #include "GameProgression.hpp"
 namespace th10 {
+struct PracticeState;
 // Common first four words of the managers participating in the update chain.
 struct GameSystemCallbacks {u32 flags,state;UpdateChainEntry *update,*draw;};
 struct GameSessionEnvironment {
+#ifdef TH_ENABLE_THPRAC
+    const PracticeState* practice=nullptr;
+#endif
     GameEconomy* game;
     ScoreData** scores;
     Replay** replay;
@@ -38,7 +42,7 @@ struct GameSessionEnvironment {
     virtual void spawn_stage_controller()=0;
     virtual void activate_gui()=0;
     virtual void configure_player()=0;
-    virtual void play_music(i32 track)=0;
+    virtual void play_music(i32 track,bool stage_start)=0;
     virtual void music_command(i32 command)=0;
     virtual void delete_stage(Stage* stage)=0;
     virtual void update_score_display()=0;

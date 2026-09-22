@@ -1,4 +1,7 @@
 #include "GameEconomy.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "PracticeRuntime.hpp"
+#endif
 namespace th10 {
 // 0x412ed0. Re-selecting the same section preserves its elapsed frame count.
 void GameEconomy::select_section(i32 next) noexcept {const auto previous=section;section=next;if(previous!=next)section_frames=0;}
@@ -9,6 +12,10 @@ void GameEconomy::add_item_value(i32 points) noexcept {item_value=wrapping_add(i
 void GameEconomy::add_rank(i32 delta) noexcept {rank=wrapping_add(rank,delta);if(rank>1024)rank=1024;else if(rank<-1024)rank=-1024;}
 // 0x418930. Power is a signed 16-bit value; the upper neighboring word is retained.
 bool GameEconomy::add_power(std::int16_t delta,EconomyEnvironment& env){
+#ifdef TH_ENABLE_THPRAC
+    // F3 infinite power: suppress only the decrement path (0x425ABD upstream).
+    if(delta<0&&env.practice&&practice_infinite_power(*env.practice))return false;
+#endif
     if(power>=100)return false;
     const u16 bits=static_cast<u16>(power)+static_cast<u16>(delta);std::memcpy(&power,&bits,2);
     if(power>100){power=100;env.show_notification(0x49);}
@@ -16,6 +23,11 @@ bool GameEconomy::add_power(std::int16_t delta,EconomyEnvironment& env){
 }
 // 0x4188a0. The cap path refreshes the life display without a notification.
 void GameEconomy::add_lives(i32 delta,EconomyEnvironment& env){
+#ifdef TH_ENABLE_THPRAC
+    // F2 infinite lives: block any life decrement here as well. Normal callers
+    // add positive 1-ups; the death decrement is handled in PlayerLifecycle.
+    if(delta<0&&env.practice&&practice_infinite_lives(*env.practice))return;
+#endif
     lives=wrapping_add(lives,delta);
     if(lives>9){lives=9;env.update_lives(lives);return;}
     env.play_global_sound(0x2c);env.show_notification(0x4b);env.update_lives(lives);

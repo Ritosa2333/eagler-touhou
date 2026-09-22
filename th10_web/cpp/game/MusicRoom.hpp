@@ -13,6 +13,7 @@ struct MusicRoomEnvironment : TitleAnimationEnvironment {
     virtual char* read_file(i32& length)=0;
     virtual void free_file(char* memory)=0;
     virtual void text(AnmVm& vm,u32 color,const char* value)=0;
+    virtual void numbered_text(AnmVm& vm,u32 color,i32 track_number,const char* title)=0;
     virtual void locked_text(AnmVm& vm,u32 color,i32 track_number)=0;
     virtual void sound(i32 sound)=0;
     virtual void music_command(i32 command)=0;

@@ -8,6 +8,9 @@
 #include <set>
 #include <string>
 #include <vector>
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_NO_STDIO
+#include "../../../portable/sdl/third_party/stb_image.h"
 #include "../game/Types.hpp"
 using th10::u32;using th10::i32;using th10::u8;
 extern "C" SDL_IOStream* th10_music_stream();
@@ -54,4 +57,24 @@ u32 browser_list(const char* directory,const char* pattern,u32 index,char* out,u
 }
 __attribute__((export_name("sdl_files_root"))) void sdl_files_root(u32 chinese){save_root=chinese?"/savesth10/chs":"/savesth10/jp";parents(save_root+"/replay/");}
 __attribute__((export_name("sdl_file_handles"))) u32 sdl_file_handles(){return handles.size();}
+}
+namespace th10 {
+// Raw host-file read used by RuntimeOverride to reach /thcrap/th10/<relative>
+// pack entries without going through the archive writer/reader bookkeeping.
+bool sdl_read_file(const char* path,std::vector<u8>& out){
+    if(!path||!*path)return false;
+    std::size_t size=0;void* bytes=SDL_LoadFile(path,&size);
+    if(!bytes)return false;
+    out.assign(static_cast<u8*>(bytes),static_cast<u8*>(bytes)+size);
+    SDL_free(bytes);return true;
+}
+// Decodes a thcrap texture-override PNG into tightly packed RGBA8. The ANM
+// compositor re-encodes it to the surface's format, mirroring th08's port.
+bool sdl_decode_rgba(const u8* bytes,u32 size,u32& width,u32& height,std::vector<u8>& rgba){
+    if(!bytes||!size)return false;int w=0,h=0,channels=0;
+    auto* pixels=stbi_load_from_memory(bytes,int(size),&w,&h,&channels,4);
+    if(!pixels)return false;width=static_cast<u32>(w);height=static_cast<u32>(h);
+    rgba.assign(pixels,pixels+static_cast<std::size_t>(w)*static_cast<std::size_t>(h)*4);
+    stbi_image_free(pixels);return true;
+}
 }

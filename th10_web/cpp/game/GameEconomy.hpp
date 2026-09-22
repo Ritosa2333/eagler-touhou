@@ -1,7 +1,11 @@
 #pragma once
 #include "Timer.hpp"
 namespace th10 {
+struct PracticeState;
 struct EconomyEnvironment {
+#ifdef TH_ENABLE_THPRAC
+    const PracticeState* practice=nullptr;
+#endif
     virtual void show_notification(i32 script)=0;
     virtual void play_global_sound(i32 sound)=0;
     virtual void update_lives(i32 lives)=0;

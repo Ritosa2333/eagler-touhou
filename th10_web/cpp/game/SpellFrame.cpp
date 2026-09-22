@@ -5,7 +5,13 @@ namespace th10 {
 i32 SpellCard::update(SpellEnvironment& env){
     if(!(spell_flags&1))return 1;
     if(elapsed.current>=60)(*env.stage)->draw_flags&=~1u;
+#ifdef TH_ENABLE_THPRAC
+    // 0x408d93: F4 patches the elapsed<300 branch to an unconditional jump,
+    // so the bonus decay block is always skipped while the lock holds.
+    if(elapsed.current>=300&&!(spell_flags&8)&&!env.time_locked()){
+#else
     if(elapsed.current>=300&&!(spell_flags&8)){
+#endif
         const auto decay=wrapping_add(initial_bonus,-initial_bonus/10)/wrapping_add(duration,-300);
         const auto remaining=wrapping_add(bonus,static_cast<i32>(0u-static_cast<u32>(decay)));bonus=wrapping_add(remaining,-remaining%10);
     }

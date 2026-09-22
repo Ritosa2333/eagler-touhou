@@ -18,6 +18,10 @@ struct AnmTextureEnvironment {
     virtual i32 create_empty(AnmTexture& texture,i32 width,i32 height,i32 format)=0;
     virtual i32 create_encoded(AnmTexture& texture,i32 width,i32 height,i32 format,u32 color_key)=0;
     virtual i32 create_embedded(AnmTexture& texture,const u8* source,i32 width,i32 height,i32 format)=0;
+    // thcrap-style PNG override for an embedded THTX atlas: the platform reads
+    // /thcrap/th10/<texture_name>, decodes it to RGBA and alpha-blends it over
+    // the surface at the chunk's sprite rectangles.
+    virtual bool override_embedded(AnmTexture& texture,const char* texture_name,const AnmChunk* chunk){(void)texture;(void)texture_name;(void)chunk;return false;}
     virtual void set_priority(void* texture,u32 priority)=0;
     virtual void preload(void* texture)=0;
     virtual AnmTextureDimensions dimensions(void* texture)=0;

@@ -1,4 +1,6 @@
 #include "../platform/Application.hpp"
+#include "ThpracUi.hpp"
+#include "../game/PracticeConfig.hpp"
 #include <SDL3/SDL.h>
 #include <emscripten.h>
 #include "../../../portable/input/TouchController.hpp"
@@ -70,6 +72,9 @@ extern "C" {
 __attribute__((export_name("sdl_native_input"))) void sdl_native_input(Application* app){
     if(!session||session->app!=app)return;
     SDL_Event event;while(SDL_PollEvent(&event)){
+#ifdef TH_ENABLE_THPRAC
+        ThpracUi::process_event(event);
+#endif
         if(event.type==SDL_EVENT_FINGER_CANCELED){cancel();continue;}
         if(event.type==SDL_EVENT_GAMEPAD_ADDED)add_controller(event.gdevice.which);
         if(event.type==SDL_EVENT_GAMEPAD_REMOVED)for(auto*& p:controllers)if(p&&SDL_GetGamepadID(p)==event.gdevice.which){SDL_CloseGamepad(p);p=nullptr;}
@@ -83,6 +88,10 @@ __attribute__((export_name("sdl_native_input"))) void sdl_native_input(Applicati
     const auto state=touch_state();sync_touch_context(state);const auto sample=gestures.sample(state,SDL_GetTicks(),snapshot.virtual_keys[16],snapshot.virtual_keys[37]||snapshot.virtual_keys[38]||snapshot.virtual_keys[39]||snapshot.virtual_keys[40]);
     for(const auto& k:keyboard_map)if(sample.keys[k.vk]||(k.vk>=160&&k.vk<=165&&sample.keys[16+(k.vk-160)/2]))key(snapshot,k.scan,k.vk);
     if(app->world)app->world->motion.target(sample.motion,sample.x,sample.y);
+#ifdef TH_ENABLE_THPRAC
+    ThpracUi::update_input(*app);
+    if(ThpracUi::captures_game_input())for(const int vk:{16,27,37,38,39,40,88,90})snapshot.virtual_keys[vk]=0;
+#endif
 }
 #define EXPORT(name) __attribute__((export_name(name)))
 EXPORT("sdl_game_open") Application* sdl_game_open(u32 chinese,u32 seed){
@@ -93,13 +102,48 @@ EXPORT("sdl_game_open") Application* sdl_game_open(u32 chinese,u32 seed){
     s.files=files_create();if(!s.files||!files_attach(s.files,chinese?"th10c.dat":"th10.dat"))return nullptr;
     const u32 parameters[]{640,480,22,1,0,0,1,0,1,1,80,0,0,0};s.input=input_create();s.state=game_state_create(s.input,chinese);s.device=graphics_create(reinterpret_cast<const GraphicsPresentation*>(parameters),0x40);if(!s.device)return nullptr;
     s.animation=animation_engine_create(s.files,s.device,&s.random,&s.visual,&s.rate);s.fonts=fonts_create(s.device,&s.random,chinese);s.audio=audio_create(s.files);s.effects=effects_create(s.animation,&s.quitting,nullptr);
-    s.app=application_create(s.files,s.input,s.state,s.animation,s.fonts,s.audio,s.effects);return s.app;
+    s.app=application_create(s.files,s.input,s.state,s.animation,s.fonts,s.audio,s.effects);
+#ifdef TH_ENABLE_THPRAC
+    if(!s.app)return nullptr;
+    if(!ThpracUi::initialize()){session.reset();return nullptr;}
+#endif
+    return s.app;
 }
-EXPORT("sdl_game_close") void sdl_game_close(){cancel();close_controllers();session.reset();}
+EXPORT("sdl_game_close") void sdl_game_close(){cancel();
+#ifdef TH_ENABLE_THPRAC
+    ThpracUi::shutdown();
+#endif
+    close_controllers();session.reset();}
 EXPORT("sdl_key") void sdl_key(const char* code,u32 down){for(auto& k:keyboard_map)if(!std::strcmp(code,k.code)){k.hosted=down!=0;return;}}
 EXPORT("sdl_keys_clear") void sdl_keys_clear(){for(auto& k:keyboard_map)k.hosted=false;cancel();gestures.reset();}
-EXPORT("sdl_touch") void sdl_touch(u32 type,i32 id,float x,float y){touch(type,id,x,y);}
+EXPORT("sdl_touch") void sdl_touch(u32 type,i32 id,float x,float y){
+#ifdef TH_ENABLE_THPRAC
+    if(ThpracUi::captures_game_input())ThpracUi::mouse(type==0?1:type==1?0:2,x*640.f,y*480.f);
+#endif
+    touch(type,id,x,y);
+}
 EXPORT("sdl_touch_cancel") void sdl_touch_cancel(){cancel();}
+#ifdef TH_ENABLE_THPRAC
+EXPORT("sdl_thprac_mouse") void sdl_thprac_mouse(u32 type,float x,float y){ThpracUi::mouse(int(type),x,y);}
+EXPORT("practice_enable") void practice_enable(Application* app,bool enabled){
+    if(!app||(app->world&&app->world->actors.session))return;auto& p=app->state.practice;p.enabled=enabled;
+    if(!enabled)p.menu=p.accepted=p.active=false;
+}
+EXPORT("practice_status") const i32* practice_status(Application* app){static i32 out[7]{};if(!app)return out;const auto& p=app->state.practice;
+    out[0]=p.menu;out[1]=app->state.game.difficulty;out[2]=app->state.game.character;out[3]=p.active;out[4]=p.replay;out[5]=p.cheats;out[6]=p.assisted;return out;
+}
+EXPORT("practice_configure") bool practice_configure(Application* app,const double* words,u32 count,bool accept){
+    if(!app||!app->state.practice.enabled||(app->world&&app->world->actors.session))return false;auto& p=app->state.practice;PracticeConfig config;
+    if(!config.decode(words,count)||(accept&&!p.menu))return false;p.configured=config;
+    if(accept){p.run=config;p.accepted=true;}return true;
+}
+EXPORT("practice_cancel") void practice_cancel(Application* app){if(!app||!app->state.practice.menu)return;auto& p=app->state.practice;p.menu=p.accepted=false;
+    if(app->title&&app->title->value){app->title->value->menu.select(app->state.game.stage);app->title->value->set_screen(8,&app->engine.speed);}
+}
+EXPORT("practice_cheats") bool practice_cheats(Application* app,u32 mask){
+    if(!app||!(app->world&&app->world->actors.session)||!app->state.practice.enabled||app->state.practice.replay||mask>63)return false;auto& p=app->state.practice;p.cheats=mask;if(mask)p.assisted=true;return true;
+}
+#endif
 EXPORT("sdl_touch_options") void sdl_touch_options(u32 on,u32 free,float speed){gestures.enabled=on;gestures.unlimited=free;gestures.sensitivity=std::clamp(speed,1.f,3.f);if(!on)cancel();}
 EXPORT("sdl_touch_gestures") void sdl_touch_gestures(u32 two,u32 taps){gestures.two_finger=two;gestures.double_tap=taps;}
 EXPORT("sdl_touch_mode") void sdl_touch_mode(u32 mode){if(gestures.set_mode(static_cast<int>(mode))&&session&&session->app&&session->app->world)session->app->world->motion.target(0,0,0);}

@@ -1,4 +1,7 @@
 #include "MusicRoom.hpp"
+#include <cstdio>
+#include <cstring>
+#include "Localization.hpp"
 namespace th10 {
 // 0x4349e0 / 0x434a20. Parsing consumes consecutive CR/LF bytes and replaces the
 // first terminator with NUL. An unterminated final line is not copied.
@@ -7,13 +10,34 @@ char* copy_music_line(char* p,char* destination,i32& remaining) noexcept {auto* 
 void MusicRoom::fill_comment(){
     auto& m=menu;auto& env=environment;if(m.elapsed.current%2||m.music_filled_comments>=8)return;
     auto* vm=env.registry->find_and_clear(m.music_comment_animations[m.music_filled_comments]);const bool locked=!env.unlocked[m.music_playing]&&m.music_warning;
-    env.text(*vm,locked?0x8080ff:0xffffff,locked?env.locked_comments[m.music_filled_comments]:m.music_comments[m.music_playing][m.music_filled_comments]);vm->pending_interrupt=2;++m.music_filled_comments;
+    const char* line=nullptr;
+    // The original eight-row warning leaves rows 0,2,5 blank and localizes the
+    // message rows 1,3,4,6,7 with the five "Music Room spoiler N" records.
+    // Mapping them in order would push the last two messages off the end and
+    // surface the untouched Japanese rows as fallback.
+    if(locked){static constexpr std::int8_t spoiler_row[8]={0,1,0,2,3,0,4,5};const i32 row=m.music_filled_comments;
+        if(Localization::Active()&&spoiler_row[row]){char id[40];std::snprintf(id,sizeof(id),"th10 Music Room spoiler %d",static_cast<int>(spoiler_row[row]));line=Localization::StringById(id,env.locked_comments[row]);}
+        else line=env.locked_comments[row];
+    }
+    else{
+        line=Localization::MusicComment(u32(m.music_playing+1),u16(m.music_filled_comments),m.music_comments[m.music_playing][m.music_filled_comments]);
+        // thcrap's music.cpp BP_music_cmt resolves a literal "@" comment line to
+        // the track's Music Room note title instead of drawing the separator.
+        if(line!=nullptr&&std::strcmp(line,"@")==0)line=Localization::MusicTitle(u32(m.music_playing+1),m.music_titles[m.music_playing]);
+    }
+    env.text(*vm,locked?0x8080ff:0xffffff,line);vm->pending_interrupt=2;++m.music_filled_comments;
 }
 void MusicRoom::layout(bool create){
     auto& m=menu;auto& env=environment;const i32 first=create?wrapping_add(m.elapsed.current*2,-2):0,last=create?m.elapsed.current*2:m.music_track_count;
     Vec3 position{64,0,0};const auto initial=number(96)-Extended::from_int(m.music_scroll)*number(20);position.y=(create?initial+Extended::from_int(static_cast<i32>(static_cast<u32>(m.elapsed.current)*40u-40u)):initial).to_float();
     for(i32 i=first;i<last&&i<m.music_track_count;++i){auto& id=m.music_title_animation(i);if(create)id=env.create(*m.animations,i+173);auto* vm=env.registry->find_and_clear(id);
-        if(create){if(env.unlocked[i])env.text(*vm,0xffffff,m.music_titles[i]);else env.locked_text(*vm,0xffffff,i+1);}
+        if(create){if(env.unlocked[i]){
+            // The original musiccmt.txt title already carries its "No.%d  "
+            // prefix, but localized titles do not. Add the prefix only for a
+            // translated title; an untranslated fallback is used verbatim.
+            const char* title=Localization::MusicTitle(u32(i+1),m.music_titles[i]);
+            if(title==m.music_titles[i])env.text(*vm,0xffffff,title);else env.numbered_text(*vm,0xffffff,i+1,title);
+        }else env.locked_text(*vm,0xffffff,i+1);}
         if(i<m.music_scroll||i>=m.music_scroll+10)vm->flags&=~2u;else vm->flags|=2;
         if(i==m.menu.selected)position.x=Scalar::sub(position.x,4);
         const auto distance=number(vm->script_position.y)-number(position.y);const auto absolute=distance<number(0)?-distance:distance;

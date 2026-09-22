@@ -2,7 +2,13 @@
 #include "Gui.hpp"
 #include "GameProgression.hpp"
 namespace th10 {
+struct PracticeState;
 struct GuiResourceEnvironment {
+#ifdef TH_ENABLE_THPRAC
+    // Live practice run, used by th10_logo's stage-title suppression. Set by the
+    // HUD owner (browser::Hud) from the session's practice state.
+    const PracticeState* practice=nullptr;
+#endif
     GameEconomy* game;
     Gui** current;
     const StageConfiguration** stage;

@@ -13,9 +13,11 @@ bool EnemyState::scene_command(EclContext& context,EclGlobals& globals,EnemyScen
         // oversized script data instead of corrupting the C++ host stack.
         if(length<0||length>64)__builtin_trap();char name[65]{};u8 key=0x77,delta=7;
         for(i32 i=0;i<length;++i){name[i]=reinterpret_cast<const u8*>(instruction)[32+i]^key;key+=delta;delta+=0x10;}
-        auto id=integer(0);const auto variant=context.instruction->opcode;
+        // The ECL id selects the localized name (spells.etl); the game then
+        // offsets it per difficulty to index the per-record capture table.
+        const auto name_id=integer(0);auto id=name_id;const auto variant=context.instruction->opcode;
         if(variant>=0x165&&variant<=0x167)id=wrapping_add(id,wrapping_add(*env.difficulty,0x165-variant));
-        (void)integer(2);const auto parameter=integer(1);env.start_spell(id,name,parameter);break;
+        (void)integer(2);const auto parameter=integer(1);env.start_spell(id,name_id,name,parameter);break;
     }
     case 0x157:env.end_spell();break;
     case 0x158:env.game->select_section(integer(0));break;

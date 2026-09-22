@@ -22,6 +22,20 @@ i32 Timer::tick() noexcept {
     }
     return current;
 }
+// 0x40e5b0. F4 (thprac_th10.cpp:526) patches EnemyState::update's lifetime tick
+// from `inc edx` to nop, so the unscaled branch keeps fractional advancing but
+// leaves current at its previous value. The scaled branch is unchanged.
+i32 Timer::tick_time_locked() noexcept {
+    previous = current;
+    if (unscaled(*rate)) {
+        fractional = Scalar::add(fractional,1.0f);
+    } else {
+        const auto sum = number(*rate) + number(fractional);
+        fractional = sum.to_float();
+        current = sum.truncate_int();
+    }
+    return current;
+}
 // 0x44bf40: unlike tick(), this path reloads the rounded float first.
 void Timer::advance(float frames) noexcept {
     previous = current;

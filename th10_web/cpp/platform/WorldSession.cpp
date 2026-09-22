@@ -1,5 +1,8 @@
 #include "../game/CallbackNames.hpp"
 #include "World.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "../game/PracticeRuntime.hpp"
+#endif
 #include <cstdlib>
 namespace th10::browser {
 namespace {
@@ -7,7 +10,11 @@ template<class T> GameSystemCallbacks** system(T** p){return reinterpret_cast<Ga
 struct SessionResources final:GameSessionResourceEnvironment {
     World& w;
     explicit SessionResources(World& world):w(world){
-        game=&w.state.game;scores=&w.scores.data;current=&w.actors.session;
+        game=&w.state.game;
+#ifdef TH_ENABLE_THPRAC
+        practice=&w.state.practice;
+#endif
+        scores=&w.scores.data;current=&w.actors.session;
         GameSystemCallbacks** slots[]={system(&w.state.replay),system(&w.backgrounds.current),system(&w.backgrounds.previous),system(&w.actors.gui),system(&w.actors.player),system(&w.actors.bullets),system(&w.actors.items),system(&w.actors.lasers),system(&w.actors.results),system(&w.actors.hints),system(&w.actors.popups),system(&w.actors.enemies),system(&w.actors.effects),system(&w.actors.bomb),system(&w.actors.spell)};
         std::memcpy(objects,slots,sizeof(slots));current_stage=&w.state.current_stage;configuration=reinterpret_cast<const u8*>(&w.state.configuration);new_game=&w.new_game;practice_lives=&w.state.practice_shortcut;engine_flags=&w.state.engine_flags;display_flags=&w.state.configuration.display_flags;pending_screen=&w.state.pending_screen;
         drawing_resource=&w.resource_drawing;updating_resource=&w.resource_updating;pending_upload=&w.audio.manager.commands[0].kind;loader_stop_requested=&w.loader_stop;loader_running=&w.loader_running;menu_state=reinterpret_cast<i32*>(&w.state.quitting);background_color=&w.state.background_color;loading_animation=&w.common.value->loading_animation;
@@ -37,6 +44,9 @@ struct SessionFrame final:GameSessionEnvironment {
         game=&w.state.game;scores=&w.scores.data;replay=&w.state.replay;stage=&w.backgrounds.current;previous_stage=&w.backgrounds.previous;items=&w.actors.items;gui=&w.actors.gui;enemies=&w.actors.enemies;animations=&manager;
         GameSystemCallbacks** slots[]={system(&w.actors.results),system(&w.actors.player),system(&w.actors.bullets),system(&w.actors.enemies),system(&w.actors.items),system(&w.actors.lasers),system(&w.actors.effects),system(&w.actors.bomb),system(&w.actors.popups),system(&w.actors.spell),system(&w.actors.hints)};
         std::memcpy(systems,slots,sizeof(slots));spell_foreground=&w.actors.spell->foreground_entry;loading_animation=&w.common.value->loading_animation;intro_animation=&w.common.value->introduction_animation;held=reinterpret_cast<const u32*>(&w.input.player_profiles[0].input.raw);engine_flags=&w.state.engine_flags;display_flags=&w.state.configuration.display_flags;pending_screen=&w.state.pending_screen;rate=&w.engine.speed;current_stage=&w.state.current_stage;
+#ifdef TH_ENABLE_THPRAC
+        practice=&w.state.practice;
+#endif
     }
     void restart_stage() override{w.backgrounds.current->restart(w.backgrounds.script);}
     void fade_previous_stage() override{w.backgrounds.previous->fade_to_black(w.effects);}
@@ -51,14 +61,39 @@ struct SessionFrame final:GameSessionEnvironment {
     void spawn_stage_controller() override{w.spawn_enemy("main",EnemySpawnParameters{});}
     void activate_gui() override{w.hud->activate();}
     void configure_player() override{w.configure_player();}
-    void play_music(i32 track) override{w.music().play(0,track);}
+    void play_music(i32 track,bool stage_start) override{
+        i32 slot=0;
+#ifdef TH_ENABLE_THPRAC
+        // thprac_th10.cpp:2308 th10_bgm (0x4183e0) overrides the fresh
+        // stage-entry song for a custom practice section that THBGMTest selects
+        // for the boss theme. The original pushes the stage-relative song index;
+        // this port loads the stage theme in slot 0 and the boss theme in slot
+        // 1, so the section's BGM is the second entry of the stage's song pair.
+        if(stage_start&&practice_boss_bgm(w.state.practice)){
+            slot=1;track=static_cast<i32>(reinterpret_cast<uintptr_t>(w.state.current_stage->music));
+        }
+#endif
+        w.music().play(slot,track,stage_start);
+    }
     void music_command(i32 command) override{w.audio.manager.queue_music(command,0,"dummy");}
     void delete_stage(Stage* p) override{w.backgrounds.destroy(p);}
     void update_score_display() override{w.hud->update_score();}
 };
 }
-bool World::start(i32 mode){if(actors.session)__builtin_trap();SessionResources env(*this);auto* session=GameSessionResources::create(mode,env);if(!session)return false;effects.controller_flags=&session->session_flags;if(hud)hud->controller_stage=&session->replay_mode;return true;}
-void World::advance_loading_step(){if(!loading)return;SessionResources env(*this);GameSessionResources{*actors.session,env}.load_step(loading_progress);}
+bool World::start(i32 mode){if(actors.session)__builtin_trap();
+#ifdef TH_ENABLE_THPRAC
+    // A non-zero replay mode is playback; cheats are unavailable while one runs.
+    state.practice.replay=mode!=0;
+#endif
+    SessionResources env(*this);auto* session=GameSessionResources::create(mode,env);if(!session)return false;effects.controller_flags=&session->session_flags;if(hud)hud->controller_stage=&session->replay_mode;return true;}
+void World::advance_loading_step(){if(!loading)return;SessionResources env(*this);GameSessionResources{*actors.session,env}.load_step(loading_progress);
+#ifdef TH_ENABLE_THPRAC
+    // One-shot advanced-practice setup. The original th10_patch_main hook runs
+    // after the session finishes allocating its objects, so apply the run
+    // parameters and script patches only once the loading barrier is passed.
+    if(!loading&&!error)apply_practice(*this,state);
+#endif
+}
 void World::advance_loading(){while(loading)advance_loading_step();}
 void World::stop_session(){if(!actors.session)return;loading=false;auto* session=actors.session;SessionResources env(*this);GameSessionResources{*session,env}.shutdown();std::free(session);effects.controller_flags=nullptr;}
 void World::shutdown(){

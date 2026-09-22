@@ -1,6 +1,9 @@
 #include "GameSession.hpp"
 #include "GameProgression.hpp"
 #include "ScreenEffect.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "PracticeRuntime.hpp"
+#endif
 namespace th10 {
 // 0x418a00. Decay subtracts the previous speed before raising it to 18.
 void decay_faith(GameEconomy& game) noexcept {
@@ -25,11 +28,11 @@ i32 GameSession::update(GameSessionEnvironment& env){
         env.restart_stage();
         if(*env.previous_stage){env.fade_previous_stage();env.fade_in_stage();session_flags|=0x800;registry.interrupt((*env.gui)->notification,1);}
         else{
-            activate_objects(env);if(!(game.flags&0x20))env.play_music((*env.current_stage)->reserved_024);
+            activate_objects(env);if(!(game.flags&0x20))env.play_music((*env.current_stage)->reserved_024,true);
             registry.interrupt(*env.intro_animation,1);registry.interrupt(*env.loading_animation,1);*env.loading_animation=0;
         }
     }else if(elapsed.current==30&&(session_flags&0x800)){
-        activate_objects(env);env.music_command((*env.display_flags&0x10)?4:3);env.play_music((*env.current_stage)->reserved_024);
+        activate_objects(env);env.music_command((*env.display_flags&0x10)?4:3);env.play_music((*env.current_stage)->reserved_024,false);
         registry.interrupt(*env.loading_animation,1);*env.loading_animation=0;reset_timer(env.rate);
     }
     if(*env.previous_stage&&((*env.previous_stage)->draw_flags&8))env.delete_stage(*env.previous_stage);
@@ -42,7 +45,13 @@ i32 GameSession::update(GameSessionEnvironment& env){
     }
     env.update_score_display();if(session_flags&0x70)return 3;
     if((*env.replay)->mode!=1){i32 frames;auto* value=(*env.scores)->characters[game.character*3+game.shot_type].statistics+4;std::memcpy(&frames,value,4);if(frames<215999999){frames=wrapping_add(frames,1);std::memcpy(value,&frames,4);}}
+#ifdef TH_ENABLE_THPRAC
+    // F6 no-faith-loss: suppress the faith decay call (0x418A2B upstream); the
+    // stored value is never rewritten, only the decrement is skipped.
+    if(!(env.practice&&practice_no_faith_loss(*env.practice))&&!(*env.enemies)->bosses[0]&&!(*env.gui)->dialogue&&elapsed.current>=90)decay_faith(game);
+#else
     if(!(*env.enemies)->bosses[0]&&!(*env.gui)->dialogue&&elapsed.current>=90)decay_faith(game);
+#endif
     ++game.stage_frames;++game.section_frames;elapsed.tick();return 1;
 }
 // 0x4187a0 / 0x4187d0. Counts are cleared only after loading has finished.

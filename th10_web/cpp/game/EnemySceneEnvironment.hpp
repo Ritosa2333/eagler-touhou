@@ -13,7 +13,9 @@ struct EnemySceneEnvironment {
     virtual void start_dialogue(i32 id)=0;
     virtual void cancel_projectiles()=0;
     virtual void clear_enemies()=0;
-    virtual void start_spell(i32 id,const char* name,i32 parameter)=0;
+    // [id] is the difficulty-adjusted record index used for captures/attempts;
+    // [name_id] is the raw ECL spell id, which is the key used by spells.etl.
+    virtual void start_spell(i32 id,i32 name_id,const char* name,i32 parameter)=0;
     virtual void end_spell()=0;
     virtual void delete_lasers()=0;
 };

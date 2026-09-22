@@ -94,7 +94,7 @@ export function directTouch(core,canvas,message,viewport) {
  core.sdl_touch(type,id,(x*viewport.width-rect.left)/rect.width,(y*viewport.height-rect.top)/rect.height);
 }
 export function resourcePath(path,game) {
- return typeof path==='string'&&(new RegExp('^/bgm-ogg/'+game+'_(?:[0-9]{2}|13b)\\.ogg$').test(path)||/^\/fonts\/[a-z0-9_.-]+$/.test(path)||path==='/msgothic.ttc'||path==='/unifont.otf');
+ return typeof path==='string'&&(new RegExp('^/bgm-ogg/'+game+'_(?:[0-9]{2}|13b)\\.ogg$').test(path)||/^\/fonts\/[a-z0-9_.-]+$/.test(path)||path==='/msgothic.ttc'||path==='/unifont.otf'||(new RegExp('^/thcrap/'+game+'/[a-z0-9_/.-]+$').test(path)&&!path.includes('..')&&!path.includes('//')));
 }
 export function ensureSharedFontAlias(Module,language){
  const source=language==='chs'?'/unifont.otf':'/msgothic.ttc';

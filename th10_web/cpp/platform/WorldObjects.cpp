@@ -15,6 +15,9 @@ struct Resources final:GameObjectResourceEnvironment {
 struct Items final:ItemFrameEnvironment,ItemDrawEnvironment {
     World& w;explicit Items(World& world):w(world){
         animation_file=w.actors.bullets->animation_file;animations=&w.engine;started_animations=&w.engine.manager.started_scripts;default_rate=&w.engine.speed;power=&w.state.game.power;economy=&w.state.game;
+#ifdef TH_ENABLE_THPRAC
+        practice=&w.state.practice;
+#endif
         auto& player=*w.actors.player;player_position=&player.position;player_state=&player.state;player_attraction_speed=&player.profile->item_attraction_speed;auto_collect=&w.actors.bomb->active;input_keys=reinterpret_cast<const u32*>(&w.input.player_profiles[0].input.current);
         pickup_region=reinterpret_cast<const ItemRegion*>(&player.pickup_bounds);slow_region=reinterpret_cast<const ItemRegion*>(&player.slow_pickup_bounds);fast_region=reinterpret_cast<const ItemRegion*>(&player.fast_pickup_bounds);
     }

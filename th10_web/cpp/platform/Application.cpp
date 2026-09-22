@@ -2,6 +2,10 @@
 #include "../game/HighRefresh.hpp"
 #include "../game/PresentationAudit.hpp"
 #include "Application.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "../sdl/ThpracUi.hpp"
+#include "Renderer.hpp"
+#endif
 #include <new>
 #include <cstdlib>
 #include <cstdio>
@@ -79,7 +83,11 @@ bool Application::presentation_draw(float alpha,bool interpolate,bool world_inte
     bool presented=false;
     if(engine.device.begin_scene()>=0){
         auto& animations=*manager;animations.batch_quads=0;animations.vertex_write=animations.batch_start=animations.vertex_buffer;graphics_state=255;
-        u32 fog=saved_fog;ApplicationLoop::disable_fog(value,fog,loop);engine.draw_all();engine.flush();engine.device.texture(nullptr);engine.device.end_scene();presented=engine.device.present_frame()>=0;
+        u32 fog=saved_fog;ApplicationLoop::disable_fog(value,fog,loop);engine.draw_all();engine.flush();engine.device.texture(nullptr);engine.device.end_scene();
+#ifdef TH_ENABLE_THPRAC
+        if(auto* renderer=touhou::sdl::current())ThpracUi::render(*this,*renderer);
+#endif
+        presented=engine.device.present_frame()>=0;
     }
     engine.world=saved_world;engine.ui=saved_ui;engine.active=saved_active;engine.screen_space=saved_screen_space;engine.fog_enabled=saved_fog;graphics_state=saved_graphics;
     manager->reserved_050=saved_reserved;manager->submitted_draws=saved_submitted;manager->started_scripts=saved_started;manager->flushed_batches=saved_flushed;
@@ -133,7 +141,21 @@ StartupScreen* AppScreens::create_startup_screen(ApplicationState&){auto& a=owne
 void AppScreens::destroy_screens(ApplicationState&){owner.shutdown();}
 void AppScreens::create_title(){auto& a=owner;if(!a.ensure_world())return;a.title=create<Title>(a.state,a.engine,*a.startup->shared,a.fonts,a.input,a.audio,*a.startup->scores,a.effects);if(a.title){a.title->startup=a.startup->value;a.title->results=&a.world->results_services();if(!a.title->initialize()){dispose(a.title);a.error=-1;}}else a.error=-1;a.sync_views();}
 void AppScreens::destroy_title(TitleMenu*){dispose(owner.title);owner.sync_views();}
-void AppScreens::create_game(i32 mode){auto& a=owner;if(!a.ensure_world())return;a.world->new_game=a.value.new_game;if(!a.world->start(mode))a.error=-1;a.sync_views();}
+void AppScreens::create_game(i32 mode){auto& a=owner;if(!a.ensure_world())return;
+#ifdef TH_ENABLE_THPRAC
+    // th08 GameApplication::enter_game parity: when a game is entered from the
+    // title (screen 4), re-derive the live practice run for THIS launch from the
+    // launch flags instead of trusting the previous run. A normal launch has no
+    // practice flag, so active and the trainer cheats are cleared and a stale
+    // thprac run can never be applied to it; a practice launch/restart keeps
+    // them. Replay mode derives its run from the PRAC block in the replay.
+    if(a.value.previous_screen==4){
+        auto& p=a.state.practice;
+        p.cheats=0;p.assisted=false;p.replay=mode!=0;
+        p.active=p.enabled&&p.run.mode==1&&(p.replay||(a.state.game.flags&0x10)!=0);
+    }
+#endif
+    a.world->new_game=a.value.new_game;if(!a.world->start(mode))a.error=-1;a.sync_views();}
 void AppScreens::destroy_game(GameSession*){if(owner.world)owner.world->stop_session();owner.sync_views();}
 void AppScreens::create_ending(){auto& a=owner;if(!a.ensure_world())return;a.credits=create<Credits>(*a.world,a.captures);if(!a.credits||!a.credits->initialize()){dispose(a.credits);a.error=-1;}a.sync_views();}
 void AppScreens::destroy_ending(Ending*){dispose(owner.credits);owner.sync_views();}

@@ -11,12 +11,20 @@ static i32 product(i32 a,i32 b) noexcept {return static_cast<i32>(static_cast<u3
 void complete_stage(GameProgressionEnvironment& env){
     auto& game=*env.game;
     if(game.difficulty!=4)env.statistics.unlock_stage(game);
-    if(game.flags&0x10){env.show_results();return;}
+    const bool all_clear=(game.flags&0x10)!=0;
+    // EHOOK th10_all_clear_bonus_1 (0x416c3d, thprac_th10.cpp:564). The
+    // Advanced Option bypasses the all-clear early-out so the clear bonus
+    // below is awarded even in a practice/all-clear run.
+    if(all_clear&&!env.all_clear_bonus){env.show_results();return;}
     if(game.stage==6||game.stage==7){
         (*env.gui)->display_flags|=0x20;
         game.add_score(product(game.item_value,1000));
         if(game.stage==7){game.add_score(product(game.lives,40000000));game.add_score(product(game.power,400000));}
         else if(static_cast<u32>(game.difficulty)<=4){constexpr i32 lives[]={20000000,25000000,35000000,40000000,40000000},power[]={100000,100000,200000,300000,400000};game.add_score(product(game.lives,lives[game.difficulty]));game.add_score(product(game.power,power[game.difficulty]));}
+        // EHOOK th10_all_clear_bonus_2/3 (0x416d6c/0x416e49): once the bonus
+        // has been added, an all-clear run still shows the result screen
+        // instead of continuing into the ending/score-entry flow.
+        if(all_clear&&env.all_clear_bonus){env.show_results();return;}
         if(*env.replay_mode==1){env.select_screen(4);return;}
         if(game.stage==6){env.fade_ending();(*env.gui)->ending_frames=0;(*env.gui)->display_flags|=0x10;}
         else env.show_results();

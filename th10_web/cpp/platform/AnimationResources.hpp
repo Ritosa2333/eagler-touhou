@@ -22,6 +22,7 @@ struct AnimationResources final:AnmResourceEnvironment,AnmTextureEnvironment {
     i32 create_empty(AnmTexture& texture,i32 width,i32 height,i32 format) override {return texture.create_empty(width,height,format,textures);}
     i32 create_encoded(AnmTexture& texture,i32 width,i32 height,i32 format,u32 key) override {return texture.create_encoded(width,height,format,key,textures);}
     i32 create_embedded(AnmTexture& texture,const u8* data,i32 width,i32 height,i32 format) override {return texture.create_embedded(data,width,height,format,textures);}
+    bool override_embedded(AnmTexture& texture,const char* texture_name,const AnmChunk* chunk) override;
     void set_priority(void* texture,u32 priority) override;
     void preload(void* texture) override;
     AnmTextureDimensions dimensions(void* texture) override;

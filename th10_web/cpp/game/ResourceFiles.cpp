@@ -1,9 +1,26 @@
 #include "ResourceFiles.hpp"
+#ifdef TH_ENABLE_THCRAP
+#include "RuntimeOverride.hpp"
+#endif
 namespace th10 {
 void ResourceFiles::lock(){environment.enter();++*environment.lock_depth;}
 void ResourceFiles::unlock(){environment.leave();--*environment.lock_depth;}
 u8* ResourceFiles::load(const char* name,u32* size,bool external){
     auto& env=environment;lock();u8* bytes=nullptr;
+#ifdef TH_ENABLE_THCRAP
+    // thcrap-style offline pack: /thcrap/th10/<entry> wins over the original
+    // archive entry (dialogue .msg, endings, .anm and PNG overrides). External
+    // save files stay untouched.
+    if(!external){
+        const char* last_backslash=std::strrchr(name,'\\');const char* slash=std::strrchr(last_backslash?last_backslash+1:name,'/');if(slash)name=slash+1;
+        std::vector<u8> override_bytes;
+        if(RuntimeOverride::Read(name,override_bytes)){
+            const u32 length=u32(override_bytes.size());if(size)*size=length;
+            if(length){bytes=env.allocate_bytes(length);if(bytes)std::memcpy(bytes,override_bytes.data(),length);}
+            unlock();return bytes;
+        }
+    }
+#endif
     if(!external){
         // Backslashes restrict the subsequent slash search, but without a
         // matching slash the original keeps the entire input path.

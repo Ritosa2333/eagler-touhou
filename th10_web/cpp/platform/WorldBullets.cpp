@@ -19,6 +19,9 @@ struct Bullets final:BulletBehaviorEnvironment {
     World& w;explicit Bullets(World& world):w(world){
         default_rate=&w.engine.speed;manager=&w.engine.manager;effect_file=w.actors.bullets->animation_file;animations=&w.engine;allocation=&w.engine;controller_flags=w.actors.session?&w.actors.session->session_flags:nullptr;player_position=&w.actors.player->position;rng=&w.engine.script_random;
         sprite_scripts=gameplay_data::sprite_scripts;cancel_types=gameplay_data::cancel_types;cancel_scripts=gameplay_data::cancel_scripts;draw_layers=gameplay_data::draw_layers;hitbox_sizes=gameplay_data::hitbox_sizes;
+#ifdef TH_ENABLE_THPRAC
+        real_bullet_sprite=&w.state.practice.real_bullet_sprite;
+#endif
     }
     void spawn_faith(const Vec3& p) override{w.spawn_item(p,8,0xffffffff,-1.5707964f,.6f);}
     void play_turn_sound(i32 id) override{w.sound(id);}

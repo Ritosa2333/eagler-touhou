@@ -13,6 +13,9 @@ i32 AnmFile::materialize(i32 texture_index,i32 first_sprite,i32 first_script,con
     if(chunk->embedded_texture){if(env.create_embedded(texture,bytes+chunk->texture_offset,chunk->width,chunk->height,chunk->format)){env.texture_error(AnmResourceError::EmbeddedTexture,nullptr);return -1;}}
     else if(*chunk->texture_name()=='@')env.create_empty(texture,chunk->width,chunk->height,chunk->format);
     else if(env.create_encoded(texture,chunk->width,chunk->height,chunk->format,chunk->color_key)){env.texture_error(AnmResourceError::EncodedTexture,chunk->texture_name());return -1;}
+#ifdef TH_ENABLE_THCRAP
+    if(chunk->embedded_texture)env.override_embedded(texture,chunk->texture_name(),chunk);
+#endif
     env.set_priority(texture.handle,chunk->priority);env.preload(texture.handle);const auto size=env.dimensions(texture.handle);
     auto* offsets=bytes+sizeof(AnmChunk);
     for(i32 index=0;index<chunk->sprite_count;++index,offsets+=4){

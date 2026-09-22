@@ -4,11 +4,12 @@
 #include "../game/ApplicationConfig.hpp"
 #include "../game/Replay.hpp"
 #include "../game/ApplicationState.hpp"
+#include "../game/PracticeConfig.hpp"
 #include "../../../portable/input/MotionTrack.hpp"
 namespace th10::browser {
 // Persistent application data shared by menus, gameplay and result screens.
 struct GameState {
-    GameEconomy game{};ApplicationConfig configuration{};
+    GameEconomy game{};PracticeState practice;ApplicationConfig configuration{};
     ApplicationState application{};
     u32& engine_flags=application.engine_flags;
     i32& pending_screen=application.pending_screen;

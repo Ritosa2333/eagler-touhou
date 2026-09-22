@@ -1,4 +1,8 @@
 #include "GameSessionResources.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "AudioGame.hpp"
+#include "PracticeConfig.hpp"
+#endif
 #include <initializer_list>
 namespace th10 {
 // 0x417800. The retained ECL program and statistics survive a stage restart.
@@ -19,6 +23,10 @@ i32 GameSessionResources::load_step(Progress& progress){auto& env=environment;au
     if(progress.phase==0){session.session_flags|=4;if(*env.drawing_resource>=0||*env.updating_resource>=0){if(*env.engine_flags&0x80)return fail();env.sleep(1);return 1;}
     *env.rate=1;game.stage_frames=game.section_frames=0;
     if(*env.new_game){
+#ifdef TH_ENABLE_THPRAC
+        // thprac_th10.cpp:2266 (0x41798C) zeroes TrackerInfo on entering a game.
+        if(env.practice){env.practice->tracker_misses=0;env.practice->tracker_bombs=0;}
+#endif
         if(game.stage==7)game.difficulty=4;
         auto& character=(*env.scores)->characters[game.character*3+game.shot_type];const auto& high=character.high_scores[game.difficulty][0];game.high_score=high.score;game.high_score_units=static_cast<std::int8_t>(high.score_units);
         if(!(game.flags&8))game.score_units=0;game.score=0;set_item_value(game,50000,env.rate);
@@ -82,7 +90,26 @@ void GameSessionResources::shutdown(){auto& env=environment;auto& game=*env.game
     if(!(game.flags&9))destroy(SessionObject::Enemies);else env.clear_enemies();
     for(auto kind:{SessionObject::Effects,SessionObject::Bomb,SessionObject::Spell})destroy(kind);
     (*env.chain)->remove_locked(session.update_entry,*env.callbacks);(*env.chain)->remove_locked(session.draw_entry,*env.callbacks);*env.current=nullptr;
-    if(!(game.flags&0x22))env.music_command(*env.display_flags&0x10?4:3);
+#ifdef TH_ENABLE_THPRAC
+    // th08 fix parity (everlasting BGM + practice restart): the teardown stop
+    // must go through the ElBgmTest filter, exactly like the game's other BGM
+    // stops. Otherwise a thprac practice restart hard-stops the song here while
+    // the fresh stage-entry play stays swallowed, leaving silence. Restart
+    // destinations (10 restart, 11 next, 13 retry) defer to the lock; a real
+    // exit still forces the stop.
+    const bool restart=*env.pending_screen==10||*env.pending_screen==11||*env.pending_screen==13;
+    bool keep_locked=false;
+    if(env.practice){
+        if(restart)keep_locked=practice_bgm_stop(*env.practice);
+        // A real exit forces the stop below, so drop the ElBgmTest lock/block
+        // state here too; otherwise the stale lock would swallow the first play
+        // of the same track in a later game and leave it silent.
+        else{env.practice->el_bgm_lock=-1;env.practice->el_bgm_block=false;}
+    }
+#else
+    const bool keep_locked=false;
+#endif
+    if(!(game.flags&0x22)&&!keep_locked)env.music_command(*env.display_flags&0x10?4:3);
     *env.menu_state=1;*env.background_color=game.flags&1?0:0xff000000;
 }
 }

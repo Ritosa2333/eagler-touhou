@@ -1,5 +1,8 @@
 #include "ReplayFile.hpp"
 #include <initializer_list>
+#ifdef TH_ENABLE_THPRAC
+#include "PracticeConfig.hpp"
+#endif
 namespace th10 {
 namespace {
 u32 address(const void* value){return static_cast<u32>(reinterpret_cast<uintptr_t>(value));}
@@ -20,6 +23,13 @@ i32 save_replay(Replay& replay,const char* file_name,const char* player_name,Rep
     replay.info->stage_count=stage_count;replay.info->score=env.game->score;replay.info->slow_rate=env.cheat_movement_used&&*env.cheat_movement_used?100.f:(number(100)-(Extended::from_double(*env.active_time)/Extended::from_double(*env.total_time))*number(100)).to_float();
     auto* plain=env.allocate_bytes(length);if(!plain)return -1;std::memcpy(plain,replay.info,sizeof(ReplayInfo));u32 position=sizeof(ReplayInfo);
     for(i32 stage=0;stage<8;stage++)if(replay.stages[stage]){std::memcpy(plain+position,replay.stages[stage],sizeof(ReplayStage));position+=sizeof(ReplayStage);for(auto* node=replay.buffers[stage].next;node;node=node->next){const auto& block=*node->value;const u32 bytes=(block.input_cursor-block.inputs)*6;std::memcpy(plain+position,block.inputs,bytes);position+=bytes;}for(auto* node=replay.buffers[stage].next;node;node=node->next){const auto& block=*node->value;const u32 bytes=block.rate_cursor-block.frame_rates;std::memcpy(plain+position,block.frame_rates,bytes);position+=bytes;}}
+#ifdef TH_ENABLE_THPRAC
+    // thprac_th10.cpp:2397 th10_rep_power_fix. repBuffer is the plain payload
+    // (ReplayInfo at 0, first ReplayStage at 0x64); the fix writes at +0x198,
+    // which is ReplayStage::option_targets (offsetof 0x134). ReplayInfo's
+    // character/shot_type sit at 0x50/0x54, matching upstream's selection.
+    if(env.practice_mode)practice_replay_power_fix(plain,replay.info->character,replay.info->shot_type,env.practice_power);
+#endif
     u32 packed_length=0;auto* packed=encode_lzss(plain,position,packed_length,env.search,env);env.release_bytes(plain);if(!packed)return -1;
     transform_resource(packed,packed_length,0x3d,0x7a,128,packed_length,true,env);transform_resource(packed,packed_length,0xaa,0xe1,1024,packed_length,true,env);
     replay.header->unpacked_bytes=position;replay.header->packed_bytes=packed_length;replay.header->user_offset=packed_length+sizeof(ReplayHeader);env.open(path);write(env,replay.header,sizeof(ReplayHeader));write(env,packed,packed_length);env.release_bytes(packed);

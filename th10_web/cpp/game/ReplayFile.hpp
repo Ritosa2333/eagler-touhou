@@ -19,6 +19,12 @@ struct ReplaySaveEnvironment : CodecMemory {
     const double* total_time;
     const bool* cheat_movement_used;
     LzssSearch search;
+#ifdef TH_ENABLE_THPRAC
+    // th10_rep_power_fix: set for advanced-practice saves so save_replay can
+    // rewrite the recorded option layout before compression.
+    bool practice_mode=false;
+    i32 practice_power=0;
+#endif
     // Title, version, character and difficulty strings use the game's encoding.
     const char* title;
     const char* version;

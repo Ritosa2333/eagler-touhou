@@ -1,4 +1,7 @@
 #include "PlayerFrame.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "PracticeRuntime.hpp"
+#endif
 namespace th10 {
 namespace {
 void set_timer(Timer& timer,u32& flags,i32 frames,const float* rate){
@@ -9,7 +12,16 @@ void power_changed(Player& player,PlayerFrameEnvironment& env){
     env.update_options(player);const i32 power=env.economy->power;env.update_power(power/20,(power%20)*100/20);
 }
 void consume_bomb(Player& player,PlayerFrameEnvironment& env){
-    env.start_bomb();env.economy->power=static_cast<std::int16_t>(env.economy->power-20);power_changed(player,env);
+    env.start_bomb();
+#ifdef TH_ENABLE_THPRAC
+    // thprac_th10.cpp:2267-2268 (0x4259CF / 0x425C3E) count both the normal and
+    // the deathbomb consumption, independently of the F3 power patches.
+    if(env.practice)++env.practice->tracker_bombs;
+    // F3 infinite power: bombs still fire, but the -20 power cost is skipped
+    // (0x425C4A / 0x4259DB upstream) rather than rewritten every frame.
+    if(!(env.practice&&practice_infinite_power(*env.practice)))
+#endif
+    env.economy->power=static_cast<std::int16_t>(env.economy->power-20);power_changed(player,env);
 }
 void set_bounds(PlayerBounds& bounds,const Vec3& point,Extended x,Extended y,Extended z){
     bounds.minimum={(number(point.x)-x).to_float(),(number(point.y)-y).to_float(),(number(point.z)-z).to_float()};
@@ -47,7 +59,13 @@ i32 Player::update(PlayerFrameEnvironment& env){
     }else if(state==3&&state_timer.current==15){env.clear_bullets(true);env.clear_lasers(true);}
     if(state==2){
         if(state_timer.current==3){
+#ifdef TH_ENABLE_THPRAC
+            if(!(env.practice&&practice_infinite_power(*env.practice))){
+#endif
             economy.power=static_cast<std::int16_t>(economy.power-64);if(economy.power<0)economy.power=0;
+#ifdef TH_ENABLE_THPRAC
+            }
+#endif
             const i32 power=economy.power;env.update_power(power/20,(power%20)*100/20);
             const Vec3 center{0,Scalar::sub(position.y,224.f),0};const float base=angle_towards(center).to_float();
             for(i32 i=0;i<7;++i){const float angle=(Extended::from_int(i)*number(.11219974f)+number(base)-number(.3926991f)).to_float();env.drop_power(position,i&1?4:1,angle);}

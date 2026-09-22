@@ -24,6 +24,11 @@ struct EnemyFrameEnvironment : EnemyEnvironment {
     i32* boss_lives;
     const u32* message_status;
     ItemDropEnvironment* items;
+#ifdef TH_ENABLE_THPRAC
+    // F4 time lock (thprac_th10.cpp:526, PATCH_HK 0x40E5B0). When true the
+    // enemy lifetime tick holds `current` instead of incrementing it.
+    virtual bool time_locked() const { return false; }
+#endif
     virtual i32 player_damage(const Vec3& position,const Vec2& hitbox)=0;
     virtual void player_collision(const Vec3& position,const Vec2& hitbox)=0;
     virtual i32 destroy(EnemyState& enemy)=0;

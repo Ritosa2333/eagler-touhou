@@ -63,7 +63,7 @@ struct World final:HudActions,CallbackReceiver {
     Enemy* spawn_enemy(const char*,const EnemySpawnParameters&);void destroy_enemy(Enemy&);i32 update_enemy(Enemy&);
     i32 enemy_command(EnemyState&,EclContext&,EclGlobals&);
     bool create_spell();void destroy_spell(SpellCard*);i32 update_spell();i32 draw_spell(bool foreground);
-    void start_spell(i32,const char*,i32);void finish_spell();
+    void start_spell(i32,i32,const char*,i32);void finish_spell();
     bool create_replay(i32,const char*);void destroy_replay(Replay*);void prepare_replay();void activate_replay();
     i32 update_replay();i32 replay_frame_action();i32 draw_replay();void finish_replay(i32);
     Replay* preview(const char*);void release_replay(Replay*);void save_replay(const char*,const char*);

@@ -29,7 +29,7 @@ struct SpellCard {
     i32 update(SpellEnvironment& environment);
     i32 draw_backgrounds(SpellEnvironment& environment);
     i32 draw_digits(SpellEnvironment& environment);
-    void start(i32 id,const char* title,i32 frames,SpellEnvironment& environment);
+    void start(i32 id,i32 name_id,const char* title,i32 frames,SpellEnvironment& environment);
     void finish(SpellEnvironment& environment);
 };
 static_assert(sizeof(SpellCard)==0x37b0&&offsetof(SpellCard,elapsed)==0x3734);
@@ -46,6 +46,11 @@ struct SpellEnvironment {
     UpdateChainEnvironment* callbacks;
     CallbackToken update_callback,background_callback,foreground_callback;
     u32* notification_animation;
+#ifdef TH_ENABLE_THPRAC
+    // F4 time lock (thprac_th10.cpp:525, PATCH_HK 0x408D93). When true the
+    // spell bonus decay block is skipped while `elapsed` still ticks.
+    virtual bool time_locked() const { return false; }
+#endif
     virtual SpellCard* allocate()=0;
     virtual void release_memory(void* memory)=0;
     virtual const Vec3& boss_position()=0;

@@ -71,6 +71,13 @@ i32 EnemyState::update(EnemyFrameEnvironment& env){
     }
     if(damage_immunity.current>0)damage_immunity.advance(-1);
     if(collision_immunity.current>0)collision_immunity.advance(-1);
-    lifetime.tick();return 0;
+#ifdef TH_ENABLE_THPRAC
+    // 0x40e5b0: F4 holds the lifetime count without stopping the fractional
+    // accumulation, exactly like the upstream `inc edx` -> nop patch.
+    if(env.time_locked())lifetime.tick_time_locked();else lifetime.tick();
+#else
+    lifetime.tick();
+#endif
+    return 0;
 }
 }

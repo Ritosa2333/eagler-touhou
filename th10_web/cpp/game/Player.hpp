@@ -15,6 +15,7 @@ struct PlayerOptionsEnvironment;
 struct PlayerProfileEnvironment;
 struct PlayerDrawEnvironment;
 struct Enemy;
+struct PracticeState;
 struct PlayerShotDefinition {
     std::int8_t fire_interval,fire_offset;
     std::int16_t damage;
@@ -157,6 +158,9 @@ static_assert(offsetof(Player,pickup_bounds)==0x4324);
 static_assert(offsetof(Player,focused)==0x4474);
 struct PlayerCollisionEnvironment {
     bool dialogue_active;
+#ifdef TH_ENABLE_THPRAC
+    const PracticeState* practice=nullptr;
+#endif
     virtual void hit(Player& player)=0;
 };
 struct PlayerDamageEnvironment {

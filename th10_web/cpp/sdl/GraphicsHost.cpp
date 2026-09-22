@@ -29,7 +29,15 @@ struct Host {
   else if(r.kind==Resource::Texture){gpu->release(r.child);resources.erase(r.child);}else if(r.kind==Resource::Image)gpu->release(id);
   resources.erase(id);return 0;
  }
- static Surface resolve(void* p,u32 id){auto& h=*static_cast<Host*>(p);auto& r=h.get(id);return r.kind==Resource::Texture?h.get(r.child).s:r.s;}
+ static Surface resolve(void* p,u32 id){
+  // The shared ImGui overlay pass asks for a full-size depth surface with the
+  // canonical 0xffffffff handle (Renderer::render_imgui). TH08's device resolve
+  // synthesizes that surface so the overlay can attach a depth renderbuffer to
+  // the backbuffer. TH10 owns real depth resource ids instead, so without this
+  // the resource lookup fails and aborts the wasm module the first time any
+  // ImGui window draws.
+  if(id==0xffffffff)return {id,640,480,touhou::graphics::PixelFormat::Depth16,0,nullptr,0,0};
+  auto& h=*static_cast<Host*>(p);auto& r=h.get(id);return r.kind==Resource::Texture?h.get(r.child).s:r.s;}
  u32 make_texture(u32 w,u32 h,u32 f,u32 pool,u32 usage){u32 s=image(w,h,f,pool,usage),t=create(Resource::Texture);get(t).child=s;get(s).parent=t;return t;}
  void desc(u32 id,u32* out){auto& r=get(id);u32 values[]{asset_pixel_code(r.s.format),1,r.usage,r.pool,0,0,r.s.width,r.s.height};std::memcpy(out,values,sizeof(values));}
  i32 copy(u32 a,const i32* from,u32 b,const i32* dest){auto& x=get(a).s;auto& y=get(b).s;if(a==b||x.format!=y.format)return i32(0x8876086c);

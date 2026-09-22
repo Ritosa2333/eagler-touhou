@@ -19,7 +19,7 @@ export const PRODUCT_GAMES = Object.freeze({
     runtime: "./runtime/th10/th10.html", dataProvider: "emscripten-preload",
     package: Object.freeze({dataFileId: "game-data", dataTarget: "/th10.data", musicSourceDirectories: Object.freeze({wav: "music"}), musicMounts: Object.freeze({wav: "/music"})}),
     replay: Object.freeze({prefix:"th10"}),
-    features: Object.freeze({thprac:false, replayManagement:true, languages:true, focusHitbox:false}),
+    features: Object.freeze({thprac:true, replayManagement:true, languages:true, focusHitbox:false}),
   }),
   th06: Object.freeze({
     number: "06",
@@ -81,7 +81,7 @@ export const PRODUCT_GAMES = Object.freeze({
     runtime:"./runtime/th08/th08.html",dataProvider:"emscripten-preload",
     package:Object.freeze({dataFileId:"game-data",dataTarget:"/th08.data",musicSourceDirectories:Object.freeze({wav:"music"}),musicMounts:Object.freeze({wav:"/music"})}),
     replay:Object.freeze({prefix:"th8"}),
-    features:Object.freeze({thprac:false,replayManagement:true,languages:false,focusHitbox:false}),
+    features:Object.freeze({thprac:true,replayManagement:true,languages:true,focusHitbox:false}),
   }),
 });
 

@@ -19,6 +19,9 @@ struct GameProgressionEnvironment {
     const i32* replay_mode;
     const StageConfiguration* stages;
     const StageConfiguration** current_stage;
+    // thprac Advanced Options "Always factor in the All Clear Bonus"
+    // (thprac_th10.cpp:564-576). Mirrors THAdvOptWnd::mOptCtx.all_clear_bonus.
+    bool all_clear_bonus=false;
     virtual void stage_clear_notification()=0;
     virtual void select_screen(i32 screen)=0;
     virtual void show_results()=0;

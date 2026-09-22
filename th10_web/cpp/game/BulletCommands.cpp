@@ -37,7 +37,13 @@ void EnemyBullet::process_commands(BulletBehaviorEnvironment& env){
         case 0x400:case 0x800:case 0x8000000:active_features|=type;modifiers[4].first=command.floating(0);modifiers[4].count=command.integer(2);modifiers[4].duration=0;break;
         case 0x1000:cancel_protection=command.arguments[2];break;
         case 0x2000:outside_delay=command.integer(2);break;
-        case 0x4000:initialize_embedded_animation(*env.effect_file,animation,wrapping_add(env.sprite_scripts[command.integer(2)],command.integer(3)),*env.animations,env.manager->started_scripts);break;
+        case 0x4000:
+#ifdef TH_ENABLE_THPRAC
+            // 0x406e03: with "Real bullet sprites" on, jump to the loop
+            // increment so this embedded-animation setup is skipped.
+            if(env.real_bullet_sprite&&*env.real_bullet_sprite)break;
+#endif
+            initialize_embedded_animation(*env.effect_file,animation,wrapping_add(env.sprite_scripts[command.integer(2)],command.integer(3)),*env.animations,env.manager->started_scripts);break;
         case 0x8000:active_features|=type;seek(modifiers[5],command.integer(2),env.default_rate);break;
         case 0x10000:cancel(env);break;
         case 0x20000:env.play_sound(command.integer(2),motion.position.x);break;

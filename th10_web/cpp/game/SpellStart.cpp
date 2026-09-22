@@ -1,9 +1,10 @@
 #include "SpellCard.hpp"
+#include "Localization.hpp"
 namespace th10 {
 static AnmVm* child_script(AnmVm* parent,std::int16_t script){for(auto* node=&parent->child_node;node;node=node->next)if(node->value->script_index==script)return node->value;return nullptr;}
 // 0x409280. Keep the title, script creation and saved-record updates in their
 // original order. The spell circle has two children that receive its duration.
-void SpellCard::start(i32 id,const char* title,i32 frames,SpellEnvironment& env){
+void SpellCard::start(i32 id,i32 name_id,const char* title,i32 frames,SpellEnvironment& env){
     if(!(elapsed_flags&1)){elapsed.rate=env.rate;elapsed_flags|=1;}elapsed.initialize(-1);number=id;
     std::memcpy(name,title,std::strlen(title)+1);spell_flags=(spell_flags&~0x18u)|3;
     if(*env.replay_mode!=1){auto& selected=env.record(id,false);std::memcpy(selected.name,title,std::strlen(title)+1);if(selected.attempts<99999)++selected.attempts;auto& combined=env.record(id,true);std::memcpy(combined.name,title,std::strlen(title)+1);if(combined.attempts<99999)++combined.attempts;}
@@ -12,7 +13,11 @@ void SpellCard::start(i32 id,const char* title,i32 frames,SpellEnvironment& env)
     title_animations[0]=env.create_animation(SpellAnimationFile::Effects,1);
     title_animations[1]=env.create_animation(SpellAnimationFile::Text,72);
     title_animations[2]=env.create_animation(SpellAnimationFile::Effects,2);
-    env.draw_name(env.registry->find_and_clear(title_animations[1]),title);env.play_sound(14);
+    // Stored records keep the original Japanese name (like th08); only the
+    // announcement display point looks the translated name up. The lookup key
+    // is the raw ECL id, not the difficulty-adjusted record index, because
+    // spells.etl is keyed by the former (thcrap's spell_id).
+    env.draw_name(env.registry->find_and_clear(title_animations[1]),Localization::SpellName(u32(name_id),title));env.play_sound(14);
     circle_animation=env.create_animation(SpellAnimationFile::Bullets,417);circle_position=env.boss_position();env.registry->set_position(circle_animation,circle_position,true);
     child_script(env.registry->find_and_clear(circle_animation),415)->integer_variables[2]=frames;
     child_script(env.registry->find_and_clear(circle_animation),416)->integer_variables[2]=frames;duration=frames;

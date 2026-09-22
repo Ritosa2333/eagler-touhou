@@ -12,6 +12,10 @@ struct Input final : InputDeviceEnvironment {
     u32 flags=0x600;std::int16_t thresholds[2]={600,600};
     JoystickRange axis_ranges[2]={{0,65535,0,65535},{0,65535,0,65535}};u8 buttons[128]{};
     Input();
+    // Virtual-key indexed state, matching TH08's BrowserRuntime::keyboard_state.
+    // The game itself reads scan_keys through read_keyboard(); the thprac UI
+    // needs the VK-indexed array for io.KeyMap / ImGuiKey and AddInputCharacter.
+    u8* keyboard_state(){return snapshot.virtual_keys;}
     void read_legacy_keyboard(u8* keys) override;
     void write_legacy_keyboard(const u8* keys) override;
     i32 read_direct_keyboard(u8* keys) override;

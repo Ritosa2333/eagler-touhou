@@ -17,6 +17,9 @@ struct PlayerFrameEnvironment {
     PlayerLifecycleEnvironment* lifecycle;
     PlayerMovementEnvironment* movement;
     PlayerShootingEnvironment* shooting;
+#ifdef TH_ENABLE_THPRAC
+    PracticeState* practice=nullptr;
+#endif
     virtual void clear_bullets(bool include_protected)=0;
     virtual void clear_lasers(bool include_protected)=0;
     virtual void cancel_bullet_circle(const Vec3& position,float radius,bool animated)=0;

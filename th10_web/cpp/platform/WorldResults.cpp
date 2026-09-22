@@ -13,7 +13,14 @@ struct ResultsServices final:ResultsEnvironment {
     }
     void bind_session(){auto* p=w.actors.session;controller_update=p?&p->update_entry:nullptr;controller_elapsed=p?&p->elapsed:nullptr;controller_flags=p?&p->session_flags:nullptr;replay_mode=p?&p->replay_mode:nullptr;}
     void sound(i32 id) override{w.sound(id);}
-    void music_command(i32 command,const char* label) override{w.audio.manager.queue_music(command,0,label);}
+    void music_command(i32 command,const char* label) override{
+#ifdef TH_ENABLE_THPRAC
+        // th10 ElBgmTest pause/resume classification: Results::pause issues
+        // music command 6 (0x422be1) and Results::resume issues 7 (0x422c51).
+        if(command==6){if(practice_bgm_filter(w.state.practice,2,0,false))return;}
+        else if(command==7){if(practice_bgm_filter(w.state.practice,3,0,false))return;}
+#endif
+        w.audio.manager.queue_music(command,0,label);}
     void result_music() override{w.music().prepare(0,"bgm/th10_17.wav");}
     u32 create_animation(AnmFile& file,i32 script) override{return w.engine.manager.create(file,script,15,AnimationPlacement::UiBack,w.engine,w.engine);}
     void capture_background(u32 id) override{auto& manager=w.engine.manager;reinterpret_cast<AnmCapture*>(manager.header)->from_animation(id,{32,16,384,448},manager.registry);}

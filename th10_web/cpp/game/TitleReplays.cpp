@@ -12,6 +12,10 @@ i32 TitleReplays::update(){
     auto& t=title;auto& env=environment;auto& m=t.menu;
     switch(t.phase){
     case 0:{
+#ifdef TH_ENABLE_THPRAC
+        // th10_rep_menu_1 / THGuiRep::State(1).
+        env.reset_practice();
+#endif
         m.item_count=25;m.select(*env.remembered_replay);*env.remembered_replay=0;
         if(!env.registry->find(t.animation_ids[94])){t.create_script(94,env);t.animation_ids[195]=env.create(**env.effects,8);}
         t.create_script(101,env);t.set_phase(1,env.rate);std::memset(t.previews,0,sizeof(t.previews));
@@ -27,6 +31,10 @@ i32 TitleReplays::update(){
         if(*env.pressed&10){t.set_phase(5,env.rate);env.sound(11);}
         else if((*env.pressed&0x1001)&&t.previews[m.selected]){
             t.set_phase(4,env.rate);t.replay_index=m.selected;m.push();env.sound(10);m.item_count=7;m.select(0);
+#ifdef TH_ENABLE_THPRAC
+            // th10_rep_menu_2 / THGuiRep::State(2): inspect the opened replay.
+            env.check_practice(t.previews[m.selected]->filename);
+#endif
             for(i32 stage=0;stage<7;++stage)if(!t.previews[t.replay_index]->readers[stage+1].stage)m.disabled_items[m.disabled_count++]=stage;
             m.move(-1);m.move(1);
         }
@@ -43,7 +51,12 @@ i32 TitleReplays::update(){
         if(t.elapsed.current<15)return 1;
         m.reserved=m.selected;if((*env.pressed|*env.repeated)&0x10)m.move(-1);if((*env.pressed|*env.repeated)&0x20)m.move(1);if(m.reserved!=m.selected)env.sound(12);
         if(*env.pressed&10){m.pop();m.item_count=25;m.disabled_count=0;t.set_phase(2,env.rate);env.sound(11);}
-        else if(*env.pressed&0x1001){t.replay_stage=m.selected;t.set_phase(3,env.rate);}break;
+        else if(*env.pressed&0x1001){
+#ifdef TH_ENABLE_THPRAC
+            // th10_rep_menu_3 / THGuiRep::State(3): commit the practice run.
+            env.activate_practice();
+#endif
+            t.replay_stage=m.selected;t.set_phase(3,env.rate);}break;
     case 5:
         if(t.elapsed.current>=6){
             for(auto* preview:t.previews)if(preview)env.delete_replay(preview);std::memset(t.previews,0,sizeof(t.previews));

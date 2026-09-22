@@ -57,6 +57,11 @@ struct MenuReplays final : MenuSelection<TitleReplayEnvironment> {
     u32 find_first(const char*,ReplaySearchEntry&) override;
     bool find_next(u32,ReplaySearchEntry&) override;
     void find_close(u32) override;
+#ifdef TH_ENABLE_THPRAC
+    void reset_practice() override;
+    void check_practice(const char*) override;
+    void activate_practice() override;
+#endif
 };
 struct MenuMusic final : MusicRoomEnvironment {
     Title& owner;
@@ -65,6 +70,7 @@ struct MenuMusic final : MusicRoomEnvironment {
     char* read_file(i32&) override;
     void free_file(char*) override;
     void text(AnmVm&,u32,const char*) override;
+    void numbered_text(AnmVm&,u32,i32,const char*) override;
     void locked_text(AnmVm&,u32,i32) override;
     void sound(i32) override;
     void music_command(i32) override;

@@ -5,6 +5,10 @@ namespace th10 {
 enum class SessionObject : u32 { Replay,Stage,PreviousStage,Gui,Player,Bullets,Items,Lasers,Results,TextOverlay,ScorePopups,Enemies,Effects,Bomb,Spell,Count };
 struct GameSessionResourceEnvironment {
     GameEconomy* game;
+#ifdef TH_ENABLE_THPRAC
+    // Live TH10 tracker counters, reset on the original th10_enter (0x41798C).
+    PracticeState* practice=nullptr;
+#endif
     ScoreData** scores;
     GameSession** current;
     GameSystemCallbacks** objects[static_cast<u32>(SessionObject::Count)];

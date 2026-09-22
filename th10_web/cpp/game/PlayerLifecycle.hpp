@@ -15,6 +15,9 @@ struct PlayerLifecycleEnvironment {
     u32* spell_animation_flags[7];
     bool death_sound_enabled;
     i32 replay_mode;
+#ifdef TH_ENABLE_THPRAC
+    PracticeState* practice=nullptr;
+#endif
     virtual void play_death_sound()=0;
     virtual void update_lives(i32 lives)=0;
     virtual void show_caution(const Vec3& position)=0;

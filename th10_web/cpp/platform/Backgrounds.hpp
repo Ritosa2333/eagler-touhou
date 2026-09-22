@@ -7,7 +7,7 @@
 namespace th10::browser {
 struct Backgrounds;
 struct BackgroundScript final : StageEnvironment {
-    Backgrounds& owner;explicit BackgroundScript(Backgrounds&);
+    Backgrounds& owner;    explicit BackgroundScript(Backgrounds&);
     i32 update_animation(AnmVm&) override;
     void initialize_animation(AnmFile&,AnmVm&,i32) override;
     void normalize(Vec3&,const Vec3&) override;

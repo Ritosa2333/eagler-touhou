@@ -2,6 +2,10 @@
 #include "Application.hpp"
 #include "../game/TextFormat.hpp"
 #include "../game/PresentationAudit.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "../sdl/ThpracUi.hpp"
+#include "Renderer.hpp"
+#endif
 #include <cstdlib>
 #include <cstring>
 namespace th10::browser {
@@ -31,7 +35,12 @@ i32 AppLoop::render_state(void*,u32 key,u32 value){return owner.engine.device.re
 #endif
 void AppLoop::clear_texture(void*){owner.engine.device.texture(nullptr);}
 void AppLoop::end_scene(void*){owner.engine.device.end_scene();}
-void AppLoop::present(){Presentation{owner.presentation}.submit();presentation_audit::end_frame();}
+void AppLoop::present(){
+#ifdef TH_ENABLE_THPRAC
+    if(auto* renderer=touhou::sdl::current())ThpracUi::render(owner,*renderer);
+#endif
+    Presentation{owner.presentation}.submit();presentation_audit::end_frame();
+}
 AppStatistics::AppStatistics(Application& a):owner(a){current=&a.statistics;chain=&a.chain;callbacks=&a.engine.callback_environment;game=&a.session_view;text=&a.common_view;timing_counters=a.timing_counters;timing_samples=a.timing_samples;pending_screen=&a.state.pending_screen;frame_skip=&a.state.configuration.options[4];draw_callback=callback_id::FrameStatisticsDraw;}
 void* AppStatistics::allocate(u32 bytes){return std::malloc(bytes);}Extended AppStatistics::time(){return owner.time();}
 void AppStatistics::draw_rate(CommonResources& common,const Vec3& position,float rate){char output[512];const double value=rate;u32 bits[2];std::memcpy(bits,&value,8);format_text(output,sizeof(output),"%2.1ffps",bits,2);Vec3 adjusted=position;const auto length=std::strlen(output);if(length>7)adjusted.x-=float((length-7)*7);common.queue(output,adjusted,false);common.mark_small();}

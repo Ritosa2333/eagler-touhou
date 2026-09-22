@@ -20,6 +20,12 @@ struct BulletBehaviorEnvironment : BulletFrameEnvironment {
     Rng* rng;
     const i32 *sprite_scripts,*cancel_types,*cancel_scripts,*draw_layers;
     const float* hitbox_sizes;
+#ifdef TH_ENABLE_THPRAC
+    // thprac_th10.cpp:2224 th10_real_bullet_sprite (PATCH_ST 0x406e03). When
+    // set, the 0x4000 embedded-animation command is skipped so bullets keep
+    // their base sprite. Points into PracticeState.
+    const bool* real_bullet_sprite=nullptr;
+#endif
     virtual void emit(const BulletEmitter& emitter)=0;
 };
 }

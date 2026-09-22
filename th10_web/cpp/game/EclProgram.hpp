@@ -20,6 +20,12 @@ struct EclProgram {
 static_assert(offsetof(EclProgram,sorted_subroutines)==0x8c);
 static_assert(sizeof(EclProgram)==0x1098);
 struct EclServices : EclGlobals {
+#ifdef TH_ENABLE_THPRAC
+    // F4 time lock (thprac_th10.cpp:527-547, EHOOK 0x44fb9f): return true to hold
+    // the ECL sub-time for this context instead of adding the frame elapsed.
+    // Implementations may clamp context.time before the caller skips the add.
+    virtual bool hold_time(EclContext& context,float& elapsed){return false;}
+#endif
     virtual i32 command(EclContext& context)=0;
     virtual void* allocate(u32 bytes)=0;
     virtual void release(void* memory)=0;

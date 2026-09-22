@@ -6,6 +6,9 @@
 #include "../game/PlayerDraw.hpp"
 #include "../game/BombEnvironment.hpp"
 #include "../game/HighRefresh.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "../game/PracticeRuntime.hpp"
+#endif
 #include <cstdlib>
 namespace th10::browser {
 namespace {
@@ -14,6 +17,9 @@ struct Lifecycle final:PlayerLifecycleEnvironment {
         economy=&w.state.game;manager=&w.engine.manager;effect_file=w.actors.bullets->animation_file;animations=&w.engine;allocation=&w.engine;default_rate=&w.engine.speed;
         auto& spell=*w.actors.spell;spell_elapsed=&spell.elapsed.current;spell_flags=&spell.spell_flags;spell_bonus=&spell.bonus;const u32 indices[]={0,1,3,4,5,6,7};for(u32 i=0;i<7;++i)spell_animation_flags[i]=&spell.bonus_digits[indices[i]].flags;
         death_sound_enabled=w.actors.session&&!(w.actors.session->session_flags&0x200);replay_mode=w.state.replay->mode;
+#ifdef TH_ENABLE_THPRAC
+        practice=&w.state.practice;
+#endif
     }
     void play_death_sound() override{w.sound(4);}
     void update_lives(i32 lives) override{w.actors.gui->update_lives(lives);}
@@ -42,7 +48,11 @@ struct Shooting final:PlayerShootingEnvironment {
     void play_shot_sound(i32 sound,float x) override{w.sound(sound,x);}
 };
 struct Damage final:PlayerDamageEnvironment,PlayerCollisionEnvironment {
-    World& w;explicit Damage(World& world):w(world){registry=&w.engine.manager.registry;economy=&w.state.game;default_rate=&w.engine.speed;dialogue_active=w.actors.gui&&w.actors.gui->dialogue;}
+    World& w;explicit Damage(World& world):w(world){registry=&w.engine.manager.registry;economy=&w.state.game;default_rate=&w.engine.speed;dialogue_active=w.actors.gui&&w.actors.gui->dialogue;
+#ifdef TH_ENABLE_THPRAC
+        practice=&w.state.practice;
+#endif
+    }
     void hit(Player& player) override{Lifecycle env(w);player.hit(env);}
     // The shipped profiles have no hit callbacks; their sole table entry is 0.
     i32 shot_hit(Player&,PlayerShot&,const Vec3&) override{__builtin_trap();}
@@ -53,6 +63,9 @@ struct Frame final:PlayerFrameEnvironment {
     World& w;Lifecycle life;Movement move;Shooting shoot;
     explicit Frame(World& world):w(world),life(w),move(w),shoot(w){
         economy=&w.state.game;default_rate=&w.engine.speed;input_keys=reinterpret_cast<const u32*>(&w.input.player_profiles[0].input.current);gui_present=w.actors.gui!=nullptr;dialogue=w.actors.gui?reinterpret_cast<const u32*>(&w.actors.gui->dialogue):nullptr;enemy_count=w.actors.enemies?&w.actors.enemies->count:nullptr;replay_mode=&w.state.replay->mode;bomb=w.actors.bomb;animations=&w.engine;lifecycle=&life;movement=&move;shooting=&shoot;
+#ifdef TH_ENABLE_THPRAC
+        practice=&w.state.practice;
+#endif
     }
     void clear_bullets(bool force) override{
         // This API's flag means include protection, the opposite of the
@@ -105,7 +118,13 @@ bool World::create_player(){Resources env(*this);return PlayerResources::create(
 void World::destroy_player(Player* player){Resources env(*this);PlayerResources{*player,env}.shutdown();std::free(player);}
 void World::activate_player(){Resources env(*this);PlayerResources{*actors.player,env}.activate();}
 void World::configure_player(){PlayerOptionsEnvironment env{&state.game,&engine.manager,&engine,&engine,actors.player,callback_id::PlayerOptionInitialize,callback_id::PlayerOptionUpdate};actors.player->reconfigure_options(env);}
-i32 World::update_player(){auto& p=*actors.player;player_presentation={p.position,p.state,true};Frame env(*this);return p.update(env);}
+i32 World::update_player(){
+#ifdef TH_ENABLE_THPRAC
+    // Per-frame trainer updates run after input publication and before the
+    // player consumes its buttons (F5 auto-bomb injects the bomb bit here).
+    update_practice(*this,state);
+#endif
+    auto& p=*actors.player;player_presentation={p.position,p.state,true};Frame env(*this);return p.update(env);}
 i32 World::draw_player(){
     Draw env(*this);auto& player=*actors.player;Player copy;Player* draw=&player;
     if(high_refresh::render_only){copy=player;draw=&copy;engine.present(copy.animation,player.animation);if(high_refresh::active&&player_presentation.valid&&player_presentation.state==player.state){const float dx=player.position.x-player_presentation.position.x,dy=player.position.y-player_presentation.position.y;if(dx*dx+dy*dy<16384.0f)copy.position={high_refresh::lerp_world(player_presentation.position.x,player.position.x),high_refresh::lerp_world(player_presentation.position.y,player.position.y),high_refresh::lerp_world(player_presentation.position.z,player.position.z)};}}

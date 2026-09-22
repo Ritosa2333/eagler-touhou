@@ -40,6 +40,22 @@ void MenuReplays::delete_replay(Replay* replay){owner.delete_replay(replay);}
 u32 MenuReplays::find_first(const char* value,ReplaySearchEntry& entry){if(std::strlen(value)>=sizeof(pattern))return 0xffffffff;std::strcpy(pattern,value);search_index=0;searching=true;if(find_next(1,entry))return 1;searching=false;return 0xffffffff;}
 bool MenuReplays::find_next(u32 id,ReplaySearchEntry& entry){if(id!=1||!searching)return false;std::memset(&entry,0,sizeof(entry));return owner.scores.files.host.list("replay",pattern,search_index++,entry.filename,sizeof(entry.filename))!=0;}
 void MenuReplays::find_close(u32){searching=false;}
+#ifdef TH_ENABLE_THPRAC
+// THGuiRep State(1/2/3) for the title replay menu. The raw file is re-read here
+// (upstream CheckReplay reads replay/<name> directly) because the decoded
+// Replay object does not retain the trailing USER/PRAC area.
+void MenuReplays::reset_practice(){practice_replay_menu_reset(owner.state.practice);}
+void MenuReplays::check_practice(const char* filename){
+    auto& files=owner.scores.files;const auto length=std::strlen(filename);if(length>255)return;
+    char path[264];std::memcpy(path,"replay/",7);std::memcpy(path+7,filename,length+1);
+    const auto handle=files.host.open(path,false);if(handle==0xffffffff)return;
+    const auto size=files.host.size(handle);
+    if(size>16*1024*1024){files.host.close(handle);return;}
+    std::vector<u8> raw(size);const bool complete=files.host.read(handle,raw.data(),size)==size;files.host.close(handle);
+    if(complete)practice_replay_menu_check(owner.state.practice,raw.data(),u32(size));
+}
+void MenuReplays::activate_practice(){practice_replay_menu_activate(owner.state.practice);}
+#endif
 MenuMusic::MenuMusic(Title& o):owner(o){
     o.bind_animation(*this);effects=&o.common.value->effects;comment_file=&o.engine.manager.files[0];unlocked=reinterpret_cast<u8*>(o.scores.data)+0x1d892;
     display_flags=&o.state.configuration.display_flags;pressed=o.main.pressed;repeated=o.main.repeated;locked_title=o.data.locked_title;locked_comments=o.data.locked_comments;
@@ -48,6 +64,7 @@ u32 MenuMusic::create(AnmFile& file,i32 script){return owner.create(file,script)
 char* MenuMusic::read_file(i32& length){return reinterpret_cast<char*>(ResourceFiles{owner.scores.files}.load("musiccmt.txt",reinterpret_cast<u32*>(&length),false));}
 void MenuMusic::free_file(char* bytes){std::free(bytes);}
 void MenuMusic::text(AnmVm& vm,u32 color,const char* text){owner.text(vm,color,text,nullptr,0,TextAlignment::Left);}
+void MenuMusic::numbered_text(AnmVm& vm,u32 color,i32 track_number,const char* title){const u32 arguments[2]={static_cast<u32>(track_number),reinterpret_cast<uintptr_t>(title)};owner.text(vm,color,"No.%d  %s",arguments,2,TextAlignment::Left);}
 void MenuMusic::locked_text(AnmVm& vm,u32 color,i32 track_number){const u32 argument=static_cast<u32>(track_number);owner.text(vm,color,locked_title,&argument,1,TextAlignment::Left);}
 void MenuMusic::sound(i32 id){owner.sound(id);}
 void MenuMusic::music_command(i32 command){owner.audio.manager.queue_music(command,0,"dummy");}
@@ -75,7 +92,26 @@ void MenuLoop::update_menu(TitleMenu& t,i32 screen){
     TitleSelection selection{t,owner.selection};switch(screen){
     case 1:t.update_prompt(owner.main);break;case 2:t.update_main(owner.main);break;
     case 4:TitleOptions{t,owner.options}.update();break;case 5:TitleKeys{t,owner.keys}.update();break;
-    case 6:selection.difficulty();break;case 7:selection.character();break;case 8:selection.shot();break;case 9:selection.stage();break;
+    case 6:selection.difficulty();break;case 7:selection.character();break;case 8:selection.shot();break;
+    case 9:
+#ifdef TH_ENABLE_THPRAC
+    // Advanced practice: the thprac overlay owns the stage-select screen and
+    // commits game.stage/practice flags directly, mirroring TitleScene's
+    // PracticeStageSelect callback in th08.
+    if(owner.state.practice.enabled){
+        auto& p=owner.state.practice;auto& game=owner.state.game;
+        if(p.accepted){
+            p.accepted=false;p.menu=false;p.active=true;p.replay=false;const i32 stage=p.run.stage+1;
+            if(stage==7)game.difficulty=4;
+            game.flags|=0x10;
+            t.set_screen(3,&owner.engine.speed);
+            game.stage=stage;game.reserved_040=stage;owner.state.current_stage=owner.data.stages+stage;
+            owner.state.pending_screen=7;owner.music_control().fade(6);
+        }else p.menu=true;
+        break;
+    }
+#endif
+    selection.stage();break;
     case 11:TitleScores{t,owner.score}.update();break;case 12:TitleReplays{t,owner.replays}.update();break;case 14:MusicRoom{t,owner.music}.update();break;
     case 15:if(!owner.results)__builtin_trap();owner.clear.ranking=owner.results;TitleClear{t,owner.clear}.update_rank();break;
     case 16:TitleClear{t,owner.clear}.update_save();break;
@@ -106,7 +142,11 @@ void Title::sound(i32 id){audio.manager.queue_effect(id,0,sound_definitions);}
 void Title::text(AnmVm& vm,u32 color,const char* pattern,const u32* args,u32 count,TextAlignment alignment){char text[128];if(format_text(text,sizeof(text),pattern,args,count)<0)__builtin_trap();AnmText::draw(vm,color,text,alignment,fonts);}
 Replay* Title::preview(const char* name){auto* bytes=std::malloc(sizeof(Preview));if(!bytes)return nullptr;auto* p=new(bytes)Preview(scores.files,state.game.flags,previews);if(p->document.load(name)){p->~Preview();std::free(p);return nullptr;}previews=p;return &p->document.value;}
 void Title::delete_replay(Replay* replay){if(!replay)return;for(auto** link=&previews;*link;link=&(*link)->next){auto* p=*link;if(&p->document.value==replay){*link=p->next;p->~Preview();std::free(p);return;}}if(results){results->delete_replay(replay);return;}__builtin_trap();}
-AudioGame Title::music_control(){return {audio.manager,&scores.data,&state.configuration.display_flags,&engine.speed};}
+AudioGame Title::music_control(){AudioGame game{audio.manager,&scores.data,&state.configuration.display_flags,&engine.speed};
+#ifdef TH_ENABLE_THPRAC
+    game.practice=&state.practice;
+#endif
+    return game;}
 }
 
 namespace th10::browser {

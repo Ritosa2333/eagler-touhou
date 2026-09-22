@@ -1,5 +1,8 @@
 #include "GuiResources.hpp"
 #include "Dialogue.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "PracticeRuntime.hpp"
+#endif
 namespace th10 {
 // 0x413a20. A transition may transfer the existing MSG file through the cache.
 i32 GuiResources::load_stage(){
@@ -33,7 +36,14 @@ void GuiResources::activate(){
     gui.update_lives(env.game->lives);
     const i32 whole=env.game->power/20,fraction=(env.game->power%20)*100/20;
     env.bind_sprite(*gui.animations,gui.power_digits[0],wrapping_add(whole,8));env.bind_sprite(*gui.animations,gui.power_digits[2],wrapping_add(fraction/10,8));env.bind_sprite(*gui.animations,gui.power_digits[3],wrapping_add(fraction%10,8));
-    if(*env.current_screen!=8&&!(env.game->flags&0x20)){env.create_animation(*gui.stage_animations,0);env.create_animation(*gui.stage_animations,1);}
+    // thprac_th10.cpp:2314 th10_logo. A custom practice start at a section
+    // skips the stage-entry logo/title card (scripts 0/1 of stgXXlogo.anm),
+    // except a stage-warp portion 1, which keeps the normal stage title.
+    bool show_logo=true;
+#ifdef TH_ENABLE_THPRAC
+    if(env.practice)show_logo=!practice_skip_stage_logo(*env.practice);
+#endif
+    if(*env.current_screen!=8&&!(env.game->flags&0x20)&&show_logo){env.create_animation(*gui.stage_animations,0);env.create_animation(*gui.stage_animations,1);}
     if(env.game->flags&0x20)env.create_animation(*gui.animations,113);
     env.initialize_animation(**env.effects,gui.enemy_marker,0);
     if(env.game->stage==1&&!*env.controller_stage&&!env.game->score_units)env.create_animation(*gui.animations,79);

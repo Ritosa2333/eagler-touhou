@@ -1,5 +1,8 @@
 #include "Player.hpp"
 #include "GameMath.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "PracticeRuntime.hpp"
+#endif
 namespace th10 {
 namespace {
 Extended aim_direction(Extended x,Extended y){return x==number(0.0f)&&y==number(0.0f)?number(1.5707963705062866f):angle_to(y,x);}
@@ -17,7 +20,13 @@ i32 Player::collide_rectangle(const Vec3& center,const Vec2& size,PlayerCollisio
     if(!(number(right)<number(collision_bounds.minimum.x)||bottom<number(collision_bounds.minimum.y)||
          number(collision_bounds.maximum.x)<number(left)||number(collision_bounds.maximum.y)<number(top))){
         if(!vulnerable_state(*this,env))return 0;
+#ifdef TH_ENABLE_THPRAC
+        // F1 invincibility skips the damage call but keeps the original
+        // rectangle hit-test result, matching the thprac hit-test patch.
+        if(!(env.practice&&practice_invincible(*env.practice))&&invulnerability.current<=0)env.hit(*this);return 1;
+#else
         if(invulnerability.current<=0)env.hit(*this);return 1;
+#endif
     }
     const float graze_left=Scalar::sub(center.x,24.0f),graze_top=Scalar::sub(center.y,24.0f);
     const auto graze_right=number(center.x)+number(24.0f);const float graze_bottom=Scalar::add(center.y,24.0f);
@@ -37,7 +46,11 @@ i32 Player::collide_laser(const Vec3& origin,float angle,float width,float lengt
         if(!(number(length)<number(left)||number(right)<number(0.0f)||number(width)*number(1.5f)<number(top)||number(top)<number(width)*number(-1.5f)))return 2;
         return 0;
     }
+#ifdef TH_ENABLE_THPRAC
+    if(!vulnerable_state(*this,env)||(env.practice&&practice_invincible(*env.practice))||invulnerability.current>0)return 0;
+#else
     if(!vulnerable_state(*this,env)||invulnerability.current>0)return 0;
+#endif
     env.hit(*this);return 1;
 }
 // 0x427b50. A full pool returns its end pointer, matching the original contract.
