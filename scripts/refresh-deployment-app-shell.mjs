@@ -12,6 +12,7 @@ import { HOST_MANIFEST_FILE, validateHostManifest } from "../lib/contracts/host-
 import { sourceIdentity, writeReleaseManifest } from "../lib/release-manifest.mjs";
 import { WORKSPACE_REPOSITORIES } from "../lib/workspace-layout.mjs";
 import { normalizeSiteUrl, writeSiteMetadata } from "../lib/site-metadata.mjs";
+import { PRIVATE_FRONTEND_ASSETS, privateFrontendAssetSource } from "../lib/private-frontend-assets.mjs";
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const values = process.argv.slice(2);
@@ -67,6 +68,26 @@ try {
       else {
         deployment.files.push(identity);
         inventory.set(path, identity);
+      }
+    }
+    for (const asset of PRIVATE_FRONTEND_ASSETS) {
+      const source = privateFrontendAssetSource(asset.target);
+      let bytes;
+      try { bytes = await readFile(source); }
+      catch (error) { if (error?.code === "ENOENT") continue; throw error; }
+      const target = resolve(appRoot, asset.target);
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, bytes);
+      const identity = {
+        path: asset.target,
+        bytes: bytes.length,
+        sha256: createHash("sha256").update(bytes).digest("hex"),
+      };
+      const current = inventory.get(asset.target);
+      if (current) Object.assign(current, identity);
+      else {
+        deployment.files.push(identity);
+        inventory.set(asset.target, identity);
       }
     }
     if (artworkRoot) {
