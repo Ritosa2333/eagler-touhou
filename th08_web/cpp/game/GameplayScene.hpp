@@ -118,6 +118,10 @@ public:
     bool start(const GameplayLoad& wanted){return load(wanted,true);}
     bool load_replay(const u8* data,u32 size){if(loaded)return false;return playback.load(data,size)&&platform.load_motion(data,size);}
     void play_practice_music(i32 slot,i32 song){play_music(slot,song);}
+    // Upstream routes the scene-teardown BGM stop through the same hooked BGM
+    // function as ElBgmTest, so the everlasting lock swallows it too. Returns
+    // true when the stop must be skipped to keep the locked song playing.
+    bool practice_bgm_stop(){return practice_bgm_filter(1,0);}
     bool update(u16 buttons,float rate=1,bool force_unit=false);bool draw();
     // Application-owned chains run the same jobs alongside the supervisor,
     // loading display and FPS counter, preserving their original priorities.

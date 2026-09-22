@@ -684,6 +684,11 @@ const char* Localization::Utf8(const char* text)
 {
     if(text==nullptr)
         return nullptr;
+    // JapaneseFonts::draw only UTF-8-decodes while a pack is active, and falls
+    // back to the CP932 path otherwise. Without a pack the original bytes must
+    // pass through untouched, or original Japanese text would be decoded twice.
+    if(!Active())
+        return text;
     if(IsValidUtf8(reinterpret_cast<const unsigned char*>(text)))
         return text;
 #ifdef TH_NATIVE_PLATFORM
