@@ -384,6 +384,14 @@ const u8 *Controller::GetControllerState()
 
 u16 Controller::GetInput(void)
 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Rollback replays an already-sampled logical frame. Touch pulses and
+    // host button serials are consumed by GetButtonBits(), so do not poll
+    // physical input again while the replay override owns this frame.
+    if (Netplay::Input::ReplayOverrideActive())
+        return Netplay::Input::ResolveLocal(0);
+#endif
+
     u16 buttons = 0;
 
     if (keyboardState != NULL)
