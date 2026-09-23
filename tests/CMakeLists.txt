@@ -19,6 +19,24 @@ add_executable(eagler_common_netplay_headers_test
     netplay-headers-test.cpp
 )
 
+add_executable(eagler_common_simulation_frontier_test simulation-frontier-test.cpp)
+target_include_directories(eagler_common_simulation_frontier_test PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/include")
+target_link_libraries(eagler_common_simulation_frontier_test PRIVATE eagler::netplay_base)
+add_test(NAME eagler-common.simulation-frontier COMMAND eagler_common_simulation_frontier_test)
+
+add_executable(eagler_common_session_channel_test session-channel-test.cpp)
+target_include_directories(eagler_common_session_channel_test PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/include")
+target_link_libraries(eagler_common_session_channel_test PRIVATE eagler::session_channel)
+add_test(NAME eagler-common.session-channel COMMAND eagler_common_session_channel_test)
+
+add_executable(eagler_common_packet_transaction_test packet-transaction-test.cpp)
+target_include_directories(eagler_common_packet_transaction_test PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/include")
+target_link_libraries(eagler_common_packet_transaction_test PRIVATE eagler::netplay_base)
+add_test(NAME eagler-common.packet-transaction COMMAND eagler_common_packet_transaction_test)
+
 target_link_libraries(eagler_common_netplay_headers_test PRIVATE
     eagler::netplay_headers
 )

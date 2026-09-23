@@ -303,6 +303,31 @@ bool RollbackCore::MarkSimulated(std::uint32_t frame, const FrameDecision &decis
     return true;
 }
 
+bool RollbackCore::RewindSimulationTo(std::uint32_t firstFrame)
+{
+    if (!configured_ || firstFrame == INVALID_FRAME ||
+        lastSimulatedFrame_ == INVALID_FRAME || firstFrame > lastSimulatedFrame_ ||
+        lastSimulatedFrame_ - firstFrame >= INPUT_HISTORY_SIZE ||
+        (rollbackFrame_ != INVALID_FRAME && firstFrame > rollbackFrame_))
+        return false;
+    // Validate the complete interval before mutating anything. MarkSimulated
+    // is also used by diagnostic adapters, so do not assume they marked a
+    // contiguous interval merely because a last-frame number exists.
+    for (std::uint32_t frame = firstFrame; ; ++frame)
+    {
+        if (!FindUsedSlot(frame))
+            return false;
+        if (frame == lastSimulatedFrame_)
+            break;
+    }
+    for (auto &slot : used_)
+        if (slot.frame != INVALID_FRAME && slot.frame >= firstFrame)
+            slot = UsedSlot{};
+    lastSimulatedFrame_ = firstFrame == 0 ? INVALID_FRAME : firstFrame - 1;
+    rollbackFrame_ = INVALID_FRAME;
+    return true;
+}
+
 void RollbackCore::AdvanceConfirmedThrough(std::uint8_t player)
 {
     std::uint32_t next = confirmedThrough_[player] == INVALID_FRAME
@@ -328,6 +353,26 @@ FrameInput RollbackCore::LocalInput(std::uint32_t frame, bool *present) const
     if (present)
         *present = slot != nullptr;
     return slot ? slot->input : FrameInput{};
+}
+
+std::uint32_t RollbackCore::AcknowledgedLocalThrough(std::uint8_t peer) const
+{
+    if (!configured_ || peer >= config_.playerCount || peer == config_.localPlayer)
+        return INVALID_FRAME;
+    return peerAckOfLocal_[peer];
+}
+
+std::uint32_t RollbackCore::AcknowledgedLocalThroughAllRemotes() const
+{
+    if (!configured_) return INVALID_FRAME;
+    std::uint32_t minimum = INVALID_FRAME;
+    for (std::uint8_t peer = 0; peer < config_.playerCount; ++peer)
+    {
+        if (peer == config_.localPlayer) continue;
+        if (peerAckOfLocal_[peer] == INVALID_FRAME) return INVALID_FRAME;
+        minimum = std::min(minimum, peerAckOfLocal_[peer]);
+    }
+    return minimum;
 }
 
 InputPacket RollbackCore::BuildInputPacket(std::uint8_t peer, std::uint32_t latestFrame,
@@ -372,6 +417,7 @@ InputPacket RollbackCore::BuildInputPacket(std::uint8_t peer, std::uint32_t late
 
 bool RollbackCore::ApplyInputPacket(const InputPacket &packet, RemoteInputResult *worstResult)
 {
+    if (worstResult) *worstResult = RemoteInputResult::InvalidPlayer;
     if (!configured_ || packet.sessionId != config_.sessionId ||
         packet.playerCount != config_.playerCount ||
         packet.senderPlayer >= config_.playerCount ||
@@ -387,6 +433,41 @@ bool RollbackCore::ApplyInputPacket(const InputPacket &packet, RemoteInputResult
              packet.firstInputFrame > INVALID_FRAME - (packet.inputCount - 1) ||
              packet.firstInputFrame + packet.inputCount - 1 != packet.latestFrame)
         return false;
+    // Validate the entire transaction before advancing any ACK, input or
+    // rollback frontier. A conflict in the last redundant sample must not
+    // silently commit the earlier samples or acknowledge uncaptured input.
+    if (packet.ackFrame != INVALID_FRAME &&
+        (confirmedThrough_[config_.localPlayer] == INVALID_FRAME ||
+         packet.ackFrame > confirmedThrough_[config_.localPlayer]))
+        return false;
+    const std::uint64_t nextFrame = lastSimulatedFrame_ == INVALID_FRAME
+        ? 0 : std::uint64_t(lastSimulatedFrame_) + 1;
+    if (packet.inputCount && std::uint64_t(packet.latestFrame) >= nextFrame + INPUT_HISTORY_SIZE)
+        return false;
+    for (std::uint8_t i = 0; i < packet.inputCount; ++i)
+    {
+        if (!IsValidFrameInput(packet.inputs[i])) return false;
+        const auto frame = packet.firstInputFrame + i;
+        if (FrameIsTooOld(frame)) continue; // benign expired retransmission
+        const auto &occupant = inputs_[packet.senderPlayer][frame % INPUT_HISTORY_SIZE];
+        const auto oldestRecoverable = lastSimulatedFrame_ == INVALID_FRAME ||
+            lastSimulatedFrame_ < config_.maxRollbackFrames ? 0 :
+            lastSimulatedFrame_ - config_.maxRollbackFrames + 1;
+        if (occupant.present && occupant.frame != frame &&
+            (occupant.frame >= oldestRecoverable ||
+             occupant.frame == confirmedThrough_[packet.senderPlayer]))
+            return false;
+        const auto *existing = FindInputSlot(packet.senderPlayer, frame);
+        const auto *used = FindUsedSlot(frame);
+        if ((existing && existing->input != packet.inputs[i]) ||
+            (!existing && used && lastSimulatedFrame_ != INVALID_FRAME &&
+             frame <= lastSimulatedFrame_ && !(used->predictedMask & (1u << packet.senderPlayer)) &&
+             used->inputs[packet.senderPlayer] != packet.inputs[i]))
+        {
+            if (worstResult) *worstResult = RemoteInputResult::ConflictingConfirmedInput;
+            return false;
+        }
+    }
     if (packet.ackFrame != INVALID_FRAME)
     {
         std::uint32_t &ack = peerAckOfLocal_[packet.senderPlayer];

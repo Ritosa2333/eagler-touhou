@@ -92,6 +92,73 @@ Validated convergence slices in the current shared source line:
   production peer-progress timeout while allowing title test harness overrides
 - aggregate confirmed-remote frontier directly from `RollbackCore`, so room
   drivers do not duplicate sentinel/minimum semantics
+- explicit simulation-frontier retirement after title state restoration,
+  preserving captured input, confirmation and peer ACK history
+
+### Corrected lifecycle and bidirectional frontiers (0.15.0)
+
+`RollbackCore::RewindSimulationTo(firstFrame)` is called **after** the title has
+restored the state immediately before that frame. It removes simulated/used
+decisions from that frame onward and lowers `LastSimulatedFrame`, but retains
+once-captured local inputs, confirmed remote inputs, and ACK/retransmission
+state. Resimulation can stop at an earlier corrected lifecycle boundary without
+retaining phantom simulated frames from an abandoned future.
+
+It rejects absent/expired/non-contiguous decision history, a frame after the
+last simulation, and skipping an earlier rollback request. Validation is
+transactional. It does not restore title memory, retire a network generation,
+or certify the title's snapshot coverage.
+
+`AcknowledgedLocalThrough(peer)` and `AcknowledgedLocalThroughAllRemotes()`
+expose how much **our input** peers have acknowledged. This differs from
+`ConfirmedThroughAllRemotes()`, remote input **we have received**. Drivers must
+handle both directions and the final-ACK/tail retransmission race before
+abandoning an old run's wire history. Unconfigured/missing-peer frontiers use
+`INVALID_FRAME`, never an implicit large confirmed frame.
+
+`tests/simulation-frontier-test.cpp` covers 2P/3P, retained analog samples,
+unchanged encoded retransmission/ACK payloads, partial resimulation, frame zero,
+history wrap/expiry, missing decisions, and transactional rejection. Existing
+callers which do not use these additive APIs keep their prior behavior; the
+wire protocol and title configuration seams are unchanged.
+
+### Transport session lifecycle (0.15.0)
+
+`eagler::session_channel` adds `SessionChannel` over a small `PeerTransport`
+interface. `BrowserPeerTransport` implements that interface; titles still own
+their `SessionGate`, `RollbackCore`, input capture, world restoration and every
+logical update. This is not a universal game driver or a second simulation.
+
+The channel pumps the existing HELLO/READY protocol, peer-relative input/ACK
+packets, bounded reliable tail repairs and confirmation liveness independently
+of whether gameplay can advance. A run may retire only after reconciliation and
+both input directions have reached its terminal frame. Its terminal ACK remains
+answerable while the next generation negotiates, until every peer's new HELLO
+proves that peer has also retired the old generation. Old-session traffic cannot
+advance the new core. Relay uses its reliable targeted route when an RTC repair
+lane is absent. `Clear()` is a full owner teardown, not a generation transition.
+
+`RollbackCore::ApplyInputPacket` validates the complete packet before changing
+any input, ACK or rollback frontier. Conflicting redundant samples, invalid
+analog values, impossible ACKs and destructive future ring-slot collisions
+reject transactionally. Benign expired retransmissions retain their prior
+`TooOld` result. `IsValidFrameInput` exposes the decoder's existing title seam
+for adapters; the wire encoding remains version 4.
+
+`tests/session-channel-test.cpp` covers a lossy three-peer stream, a missed
+READY, bounded handshake/liveness failure, reliable repair with a fully lost
+fast lane, and final-ACK loss while the faster peer starts a fresh generation.
+`tests/packet-transaction-test.cpp` checks exact unchanged core bytes after
+rejection. Consumer browser evidence is separate from these algorithm tests.
+
+### Functional baseline before optimization
+
+The TH08/TH10 multiplayer completion work first closes the entire multiplayer
+functional/correctness profile and records an independently verified ordinary
+single-player baseline. Performance work is deferred until that boundary is
+committed. Any later optimization that also affects ordinary gameplay receives
+its own commits and both single-player and multiplayer regression evidence;
+do not mix it with feature bring-up or update goldens to explain a divergence.
 
 `NetplaySession` and `WebSocketTransport` were byte-identical before extraction.
 `NetplayProtocol` differs only through a deliberately tiny title-owned wire

@@ -73,6 +73,9 @@ struct SpectatorFramePacket
 };
 
 bool operator==(const FrameInput &left, const FrameInput &right);
+// The same finite-axis/capability check is used by the byte decoder and by
+// native callers of packet ingestion; bypassing the codec is not validation.
+bool IsValidFrameInput(const FrameInput &input);
 inline bool operator!=(const FrameInput &left, const FrameInput &right)
 {
     return !(left == right);

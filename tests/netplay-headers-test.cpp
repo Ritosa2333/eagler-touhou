@@ -2,9 +2,12 @@
 #include <eagler/netplay/NetplayProtocol.hpp>
 #include <eagler/netplay/NetplaySession.hpp>
 #include <eagler/netplay/WebSocketTransport.hpp>
+#include <eagler/netplay/SessionChannel.hpp>
+#include <eagler/netplay/BrowserPeerTransport.hpp>
 
 #include <cassert>
 #include <cstdio>
+#include <type_traits>
 
 int main()
 {
@@ -19,6 +22,8 @@ int main()
     assert(core.playerCount == 2);
     assert(session.playerCount == 2);
     static_assert(sizeof(Netplay::WebSocketTransport) > 0);
+    static_assert(std::is_base_of_v<Netplay::PeerTransport, Netplay::BrowserPeerTransport>);
+    static_assert(!std::is_copy_constructible_v<Netplay::SessionChannel>);
     std::puts("eagler-common netplay headers: PASS");
     return 0;
 }

@@ -96,6 +96,15 @@ public:
     FrameDecision PrepareFrame(std::uint32_t frame) const;
     bool MarkSimulated(std::uint32_t frame, const FrameDecision &decision);
 
+    // After the title has restored the state immediately before firstFrame,
+    // retire that frame and every newer simulated decision. Captured local
+    // inputs, confirmed remote inputs, confirmations and wire ACKs survive.
+    // This lets resimulation stop at a newly corrected lifecycle boundary
+    // without pretending the abandoned future is still simulated. Rejects
+    // missing/expired decision history or skipping an earlier rollback request;
+    // invalid calls leave all state unchanged. Does not restore title memory.
+    bool RewindSimulationTo(std::uint32_t firstFrame);
+
     bool HasRollbackRequest() const { return rollbackFrame_ != INVALID_FRAME; }
     std::uint32_t RollbackFrame() const { return rollbackFrame_; }
     void ClearRollbackRequest() { rollbackFrame_ = INVALID_FRAME; }
@@ -104,6 +113,11 @@ public:
     // Minimum confirmed input frontier across every remote player. Returns
     // INVALID_FRAME until every remote has at least one confirmed frame.
     std::uint32_t ConfirmedThroughAllRemotes() const;
+    // ACK frontier for OUR captured input, distinct from locally confirmed
+    // remote input. A run-generation fence needs both directions before its
+    // old retransmission history may be retired.
+    std::uint32_t AcknowledgedLocalThrough(std::uint8_t peer) const;
+    std::uint32_t AcknowledgedLocalThroughAllRemotes() const;
     std::uint32_t LastSimulatedFrame() const { return lastSimulatedFrame_; }
     FrameInput LocalInput(std::uint32_t frame, bool *present = nullptr) const;
     bool InputPresent(std::uint8_t player, std::uint32_t frame) const;

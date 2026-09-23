@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(eagler-common VERSION 0.13.1 LANGUAGES CXX)
+project(eagler-common VERSION 0.15.0 LANGUAGES CXX)
 
 # Consumers such as Replay metadata readers need the shared protocol types even
 # in ordinary (non-netplay) builds. Keep that dependency header-only so title
@@ -65,6 +65,13 @@ target_link_libraries(eagler_common_netplay_input INTERFACE
 # <netplay/NetplayProtocolConfig.hpp> wire-capability seam.
 add_library(eagler_common_netplay_base INTERFACE)
 add_library(eagler::netplay_base ALIAS eagler_common_netplay_base)
+
+add_library(eagler_common_session_channel INTERFACE)
+add_library(eagler::session_channel ALIAS eagler_common_session_channel)
+target_sources(eagler_common_session_channel INTERFACE
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/netplay/SessionChannel.cpp>"
+)
+target_link_libraries(eagler_common_session_channel INTERFACE eagler::netplay_base)
 
 target_sources(eagler_common_netplay_base INTERFACE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/netplay/NetplayProtocol.cpp>"

@@ -123,6 +123,11 @@ bool operator==(const FrameInput &left, const FrameInput &right)
            left.touchUsed == right.touchUsed && left.touchBomb == right.touchBomb;
 }
 
+bool IsValidFrameInput(const FrameInput &input)
+{
+    return ValidInput(input);
+}
+
 bool PeekPacketType(const std::uint8_t *data, std::size_t size, PacketType *out)
 {
     if (!data || !out || size < 6 ||
