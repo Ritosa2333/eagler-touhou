@@ -16,8 +16,13 @@ struct Resources final:ProjectileSystemsEnvironment {
     void destroy_laser(EnemyLaser& laser) override{w.destroy_laser(laser);}
 };
 struct Bullets final:BulletBehaviorEnvironment {
-    World& w;explicit Bullets(World& world):w(world){
+    World& w;explicit Bullets(World& world,const Vec3* origin=nullptr):w(world){
         default_rate=&w.engine.speed;manager=&w.engine.manager;effect_file=w.actors.bullets->animation_file;animations=&w.engine;allocation=&w.engine;controller_flags=w.actors.session?&w.actors.session->session_flags:nullptr;player_position=&w.actors.player->position;rng=&w.engine.script_random;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        player_position=&w.target_player(origin?*origin:Vec3{});
+#else
+        (void)origin;
+#endif
         sprite_scripts=gameplay_data::sprite_scripts;cancel_types=gameplay_data::cancel_types;cancel_scripts=gameplay_data::cancel_scripts;draw_layers=gameplay_data::draw_layers;hitbox_sizes=gameplay_data::hitbox_sizes;
 #ifdef TH_ENABLE_THPRAC
         real_bullet_sprite=&w.state.practice.real_bullet_sprite;
@@ -25,9 +30,27 @@ struct Bullets final:BulletBehaviorEnvironment {
     }
     void spawn_faith(const Vec3& p) override{w.spawn_item(p,8,0xffffffff,-1.5707964f,.6f);}
     void play_turn_sound(i32 id) override{w.sound(id);}
-    void run_commands(EnemyBullet& bullet) override{bullet.process_commands(*this);}
-    void emit(const BulletEmitter& emitter) override{emitter.fire(*w.actors.bullets,*this);}
-    void update_feature(EnemyBullet& bullet,BulletFeature feature) override{bullet.update_feature(feature,*this);}
+    void run_commands(EnemyBullet& bullet) override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        Bullets env(w,&bullet.motion.position);bullet.process_commands(env);
+#else
+        bullet.process_commands(*this);
+#endif
+    }
+    void emit(const BulletEmitter& emitter) override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        Bullets env(w,&emitter.position);emitter.fire(*w.actors.bullets,env);
+#else
+        emitter.fire(*w.actors.bullets,*this);
+#endif
+    }
+    void update_feature(EnemyBullet& bullet,BulletFeature feature) override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        Bullets env(w,&bullet.motion.position);bullet.update_feature(feature,env);
+#else
+        bullet.update_feature(feature,*this);
+#endif
+    }
     i32 collide_player(const Vec3& p,const Vec2& size) override{return w.collide_player(p,size);}
     void play_sound(i32 id,float x) override{w.sound(id,x);}
     void submit(AnmVm& vm) override{w.engine.draw(vm);}
@@ -44,7 +67,7 @@ void World::destroy_bullets(EnemyBulletManager* p){Resources env(*this);p->shutd
 void World::clear_bullets(){Resources env(*this);actors.bullets->clear(env);}
 i32 World::update_bullets(){for(u32 i=0;i<2000;++i){const auto& b=actors.bullets->pool[i];auto& p=bullet_presentation[i];p.active=b.state!=0;if(p.active)p={b.motion.position,b.motion.angle,b.id,b.state,true};}Bullets env(*this);return actors.bullets->tick(env);}
 i32 World::draw_bullets(){Bullets env(*this);return actors.bullets->render(env);}
-void World::fire(const BulletEmitter& emitter){Bullets env(*this);emitter.fire(*actors.bullets,env);}
+void World::fire(const BulletEmitter& emitter){Bullets env(*this,&emitter.position);emitter.fire(*actors.bullets,env);}
 void World::cancel_bullets(bool protection){Bullets env(*this);actors.bullets->cancel_all(protection,env);}
 void World::cancel_bullet(EnemyBullet& bullet){Bullets env(*this);bullet.cancel(env);}
 void World::cancel_bullet_circle(const Vec3& p,float radius,bool convert,bool protection){Bullets env(*this);th10::cancel_bullet_circle(actors.bullets->pool,p,radius,convert,protection,env);}

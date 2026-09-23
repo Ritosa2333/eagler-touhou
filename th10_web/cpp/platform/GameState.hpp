@@ -6,10 +6,26 @@
 #include "../game/ApplicationState.hpp"
 #include "../game/PracticeConfig.hpp"
 #include "../../../portable/input/MotionTrack.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/SessionSetup.hpp"
+#include "../multiplayer/InputLanes.hpp"
+#endif
 namespace th10::browser {
 // Persistent application data shared by menus, gameplay and result screens.
 struct GameState {
-    GameEconomy game{};PracticeState practice;ApplicationConfig configuration{};
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    multiplayer::SessionSetup multiplayer_session{};
+    multiplayer::InputLanes::State input_lanes{};
+    multiplayer::TeamEconomy team_economy{};
+    multiplayer::PilotEconomy pilot_economies[3]{};
+    GameEconomy pilot_games[3]{{team_economy,pilot_economies[0]},
+                              {team_economy,pilot_economies[1]},
+                              {team_economy,pilot_economies[2]}};
+    GameEconomy& game=pilot_games[0];
+#else
+    GameEconomy game{};
+#endif
+    PracticeState practice;ApplicationConfig configuration{};
     ApplicationState application{};
     u32& engine_flags=application.engine_flags;
     i32& pending_screen=application.pending_screen;

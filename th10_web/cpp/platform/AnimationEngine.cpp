@@ -39,7 +39,7 @@ AnimationEngine::AnimationEngine(FileSystem& f,GraphicsDevice& d,Rng& script,Rng
 }
 AnimationEngine::~AnimationEngine(){
     chain_value.clear_list(chain_value.update,callback_environment);chain_value.clear_list(chain_value.draw,callback_environment);manager.release(*this);
-    for(i32 slot=0;slot<33;++slot)manager.unload(slot,resources);
+    for(i32 slot=0;slot<AnmManager::file_slot_count;++slot)manager.unload(slot,resources);
     if(manager.model_vertex_buffer)device.release_resource(manager.model_vertex_buffer);
 }
 GraphicsRenderer AnimationEngine::renderer(){return GraphicsRenderer(device,manager,*active,world,vertices);}
@@ -75,7 +75,11 @@ i32 AnimationEngine::update(AnmVm& vm){
 }
 bool AnimationEngine::present(AnmVm& copy,const AnmVm& source) const{
     if(!high_refresh::render_only||!high_refresh::active)return false;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    const auto* sample=presentation_previous.find(&source);if(!sample)return false;const auto& before=*sample;
+#else
     const auto found=presentation_previous.find(&source);if(found==presentation_previous.end())return false;const auto& before=found->second;
+#endif
     // Visibility changes, timer rewinds and script/file changes are lifecycle
     // boundaries. Snap instead of blending from a stale incarnation.
     if(before.id!=source.id||before.script_index!=source.script_index||before.file!=source.animation_file||before.visible!=(source.flags&3u)||source.script_timer.current<before.script_time)return false;
@@ -121,6 +125,12 @@ i32 AnimationEngine::draw_layer(u32 layer){auto env=renderer();GraphicsCamera ca
 void AnimationEngine::configure_camera(bool flat){auto env=renderer();GraphicsCamera camera(env);if(flat)active->configure_flat(camera);else active->configure_world(camera);camera.set_viewport(active->viewport);}
 void AnimationEngine::snapshot_presentation(){
     presentation_previous.clear();
-    for(auto* node: {manager.registry.world_head,manager.registry.ui_head})while(node){const auto* vm=node->value;node=node->next;if(vm)presentation_previous[vm]=presentation_sample(*vm);}
+    for(auto* node: {manager.registry.world_head,manager.registry.ui_head})while(node){const auto* vm=node->value;node=node->next;if(vm){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        presentation_previous.try_emplace(vm,presentation_sample(*vm));
+#else
+        presentation_previous[vm]=presentation_sample(*vm);
+#endif
+    }}
 }
 }

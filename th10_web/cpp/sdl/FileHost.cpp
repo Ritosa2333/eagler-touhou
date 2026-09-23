@@ -16,7 +16,16 @@ using th10::u32;using th10::i32;using th10::u8;
 extern "C" SDL_IOStream* th10_music_stream();
 EM_JS(void, browser_save_changed, (), { Module['runtimeFileChanged']?.(); });
 namespace {
-std::string save_root="/savesth10/jp";u32 next=1;
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(TH_ENABLE_NETPLAY)
+constexpr bool multiplayer_storage_build=true;
+bool multiplayer_storage_runtime=true;
+std::string save_root="/savesth10-multiplayer/jp";
+#else
+constexpr bool multiplayer_storage_build=false;
+bool multiplayer_storage_runtime=false;
+std::string save_root="/savesth10/jp";
+#endif
+u32 next=1;
 std::map<u32,SDL_IOStream*> handles;
 std::set<u32> writers;
 std::string normalize(const char* value){
@@ -34,6 +43,12 @@ bool match(const char* pat,const char* s){
 }
 }
 extern "C" {
+__attribute__((export_name("sdl_files_variant"))) u32 sdl_files_variant(u32 multiplayer){
+    if(multiplayer>1||(multiplayer!=0)!=multiplayer_storage_build)return 0;
+    multiplayer_storage_runtime=multiplayer!=0;
+    save_root=multiplayer_storage_runtime?"/savesth10-multiplayer/jp":"/savesth10/jp";
+    return 1;
+}
 __attribute__((export_name("sdl_file_open"))) u32 browser_open(const char* raw,u32 write){const auto name=normalize(raw);if(name.empty())return ~0u;SDL_IOStream* f=nullptr;
     if(write){const auto path=save_root+"/"+name;parents(path);f=SDL_IOFromFile(path.c_str(),"wb");}
     else if(name=="thbgm.dat")f=th10_music_stream();
@@ -55,7 +70,10 @@ u32 browser_list(const char* directory,const char* pattern,u32 index,char* out,u
     std::sort(names.begin(),names.end());names.erase(std::unique(names.begin(),names.end()),names.end());
     if(index>=names.size()||names[index].size()+1>capacity)return 0;std::memcpy(out,names[index].c_str(),names[index].size()+1);return 1;
 }
-__attribute__((export_name("sdl_files_root"))) void sdl_files_root(u32 chinese){save_root=chinese?"/savesth10/chs":"/savesth10/jp";parents(save_root+"/replay/");}
+__attribute__((export_name("sdl_files_root"))) void sdl_files_root(u32 chinese){
+    const auto base=multiplayer_storage_runtime?"/savesth10-multiplayer":"/savesth10";
+    save_root=std::string(base)+(chinese?"/chs":"/jp");parents(save_root+"/replay/");
+}
 __attribute__((export_name("sdl_file_handles"))) u32 sdl_file_handles(){return handles.size();}
 }
 namespace th10 {

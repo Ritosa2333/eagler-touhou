@@ -12,7 +12,13 @@ namespace th10::browser {
 namespace{u32 pointer(const void* value){return static_cast<u32>(reinterpret_cast<uintptr_t>(value));}}
 AppFrames::AppFrames(Application& a):owner(a){animations=&a.manager;pending_screen=&a.state.pending_screen;background_color=&a.state.background_color;world_camera=&a.engine.world;}
 void AppFrames::update_audio(){owner.audio.advance_fades();}
-void AppFrames::update_input(){InputDevices{owner.input}.update(0,false);}
+void AppFrames::update_input(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    owner.input.player_profiles[0].input=multiplayer::InputLanes::HostControls(owner.state.input_lanes);
+#else
+    InputDevices{owner.input}.update(0,false);
+#endif
+}
 i32 AppFrames::process_loading(){return owner.engine.manager.process_loading(owner.engine.resources);}
 i32 AppFrames::transition(ApplicationState& app){const i32 result=app.transition(owner.screens);owner.sync_views();return owner.error?4:result;}
 void AppFrames::configure_camera(Camera& camera){owner.configure_camera(camera,false);}

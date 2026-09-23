@@ -44,7 +44,14 @@ bool World::create_replay(i32 mode,const char* name){motion.clear();Resources en
 void World::destroy_replay(Replay* replay){if(!replay)return;Resources env(*this);ReplayResources{*replay,env}.shutdown();env.services.release(replay);replay_files.close();replay_files.memory.clear();}
 void World::prepare_replay(){Gameplay env(*this);state.replay->prepare_stage(env);}
 void World::activate_replay(){Gameplay env(*this);state.replay->activate_stage(env);motion.begin(state.game.stage,false,state.replay->mode!=0,state.replay->mode==0);}
-i32 World::update_replay(){Gameplay env(*this);return state.replay->update_input(env);}
+i32 World::update_replay(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    for(u32 seat=0;seat<player_count;++seat)pilots[seat].input_keys=state.input_lanes.seats[seat].current;
+    state.replay->elapsed=wrapping_add(state.replay->elapsed,1);return 1;
+#else
+    Gameplay env(*this);return state.replay->update_input(env);
+#endif
+}
 i32 World::replay_frame_action(){Gameplay env(*this);return state.replay->frame_action(env,true);}
 i32 World::draw_replay(){
     Gameplay env(*this);const i32 result=state.replay->draw(env,true);

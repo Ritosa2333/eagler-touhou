@@ -12,6 +12,14 @@ struct AnmAllocationEnvironment {
     virtual void release_memory(void* memory)=0;
 };
 struct AnmManager {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Native resources remain in 0..32. The two player character files have
+    // dedicated multiplayer slots, never rented from an ECL-selected range.
+    static constexpr i32 file_slot_count=35;
+#else
+    static constexpr i32 file_slot_count=33;
+#endif
+    static constexpr u32 extra_file_bytes=(file_slot_count-33)*sizeof(AnmFile*);
     u8 header[0x4c];
     u32 started_scripts;
     u32 reserved_050,submitted_draws,flushed_batches;
@@ -20,7 +28,7 @@ struct AnmManager {
     AnmVm pool[4096];
     u8 occupied[4096];
     i32 cursor;
-    AnmFile* files[33];
+    AnmFile* files[file_slot_count];
     Matrix4 render_world_matrix;
     AnmVm resource_animation;
     u8 resource_state[0x3ada60-0x3ad4dc];
@@ -59,12 +67,12 @@ struct AnmManager {
 static_assert(offsetof(AnmManager,pool)==0x68);
 static_assert(offsetof(AnmManager,cursor)==0x3ad068);
 static_assert(offsetof(AnmManager,files)==0x3ad06c);
-static_assert(offsetof(AnmManager,registry)==0x72dad4);
-static_assert(offsetof(AnmManager,last_id)==0x732454);
-static_assert(offsetof(AnmManager,draw_layers)==0x72dae4);
-static_assert(offsetof(AnmManager,current_texture)==0x3ada64);
-static_assert(offsetof(AnmManager,batch_quads)==0x3adac8);
-static_assert(offsetof(AnmManager,vertex_write)==0x72dacc);
-static_assert(offsetof(AnmManager,tint)==0x732458);
-static_assert(sizeof(AnmManager)==0x732460);
+static_assert(offsetof(AnmManager,registry)==0x72dad4+AnmManager::extra_file_bytes);
+static_assert(offsetof(AnmManager,last_id)==0x732454+AnmManager::extra_file_bytes);
+static_assert(offsetof(AnmManager,draw_layers)==0x72dae4+AnmManager::extra_file_bytes);
+static_assert(offsetof(AnmManager,current_texture)==0x3ada64+AnmManager::extra_file_bytes);
+static_assert(offsetof(AnmManager,batch_quads)==0x3adac8+AnmManager::extra_file_bytes);
+static_assert(offsetof(AnmManager,vertex_write)==0x72dacc+AnmManager::extra_file_bytes);
+static_assert(offsetof(AnmManager,tint)==0x732458+AnmManager::extra_file_bytes);
+static_assert(sizeof(AnmManager)==0x732460+AnmManager::extra_file_bytes);
 }

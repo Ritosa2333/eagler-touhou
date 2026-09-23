@@ -4,6 +4,7 @@
 #include "../game/HighRefresh.hpp"
 #include "AudioData.hpp"
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 namespace th10::browser {
 HudMessages::HudMessages(Hud& h):owner(h){gui=h.actors.gui;game=&h.state.game;registry=&h.engine.manager.registry;keys=reinterpret_cast<const u32*>(&h.input.player_profiles[0].input.current);pressed=&h.input.player_profiles[0].input.pressed;rate=&h.engine.speed;decoded_text=text;}
@@ -17,7 +18,11 @@ void HudMessages::play_sound(i32 id){owner.sound(id);}
 void HudMessages::start_music(){owner.music().play(1,static_cast<u32>(reinterpret_cast<uintptr_t>(owner.state.current_stage->music)));}
 void HudMessages::fade_music(float seconds){owner.music().fade(seconds);}
 void HudMessages::complete_stage(){HudProgress env(owner);th10::complete_stage(env);}
-HudFrame::HudFrame(Hud& h):owner(h){GuiFrameEnvironment::game=GuiDrawEnvironment::game=&h.state.game;player=&h.actors.player;GuiFrameEnvironment::enemies=GuiDrawEnvironment::enemies=&h.actors.enemies;spell_flags=&h.actors.spell->spell_flags;engine_flags=&h.state.engine_flags;pending_screen=&h.state.pending_screen;registry=&h.engine.manager.registry;}
+HudFrame::HudFrame(Hud& h):owner(h){GuiFrameEnvironment::game=GuiDrawEnvironment::game=&h.state.game;player=&h.actors.player;GuiFrameEnvironment::enemies=GuiDrawEnvironment::enemies=&h.actors.enemies;spell_flags=&h.actors.spell->spell_flags;engine_flags=&h.state.engine_flags;pending_screen=&h.state.pending_screen;registry=&h.engine.manager.registry;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    GuiFrameEnvironment::game=GuiDrawEnvironment::game=&h.actions.local_economy();player=&h.actions.local_pilot();
+#endif
+}
 void HudFrame::update_animation(AnmVm& vm){owner.engine.update(vm);}
 void HudFrame::bind_digit(AnmFile& f,AnmVm& vm,i32 digit){f.bind_sprite(vm,digit);}
 u32 HudFrame::create_animation(AnmFile& file,i32 script){return owner.animation(file,script);}
@@ -30,14 +35,70 @@ float HudFrame::presentation_boss_health(float current){
     if(!high_refresh::active||!owner.boss_presentation_valid||!owner.actors.enemies||owner.actors.enemies->bosses[0]!=owner.previous_boss||std::abs(current-owner.previous_boss_health)>.1f)return current;
     return high_refresh::lerp_world(owner.previous_boss_health,current);
 }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+void HudFrame::draw_multiplayer_resources(Gui& gui){
+    auto* text=owner.common.value;
+    if(!text)return;
+    const u32 count=owner.actions.multiplayer_count();
+    rectangle({438,104,639,122.0f+48.0f*float(count>3?3:count)},0xff11121a);
+    rectangle({438,104,639,106},0xff9fa8b8);
+    const bool write_text=owner.last_multiplayer_hud_frame!=u32(text->frames);
+    if(write_text)owner.last_multiplayer_hud_frame=u32(text->frames);
+    const u32 saved_color=text->color;
+    const Vec2 saved_scale=text->scale;
+    const i32 saved_camera=text->camera,saved_shadow=text->shadow;
+    if(write_text){text->scale={.83f,.83f};text->camera=0;text->shadow=1;}
+    static constexpr const char* loadouts[]{"ReimuA","ReimuB","ReimuC","MarisaA","MarisaB","MarisaC"};
+    for(u32 seat=0;seat<count&&seat<3;++seat){
+        const auto& economy=owner.actions.multiplayer_economy(seat);
+        const bool spirit=owner.actions.multiplayer_spirit(seat);
+        const i32 power=economy.power<0?0:economy.power;
+        const i32 lives=economy.lives<0?0:economy.lives;
+        const i32 loadout=economy.character*3+economy.shot_type;
+        const char* name=loadout>=0&&loadout<6?loadouts[loadout]:"Unknown";
+        const float y=108.0f+48.0f*float(seat);
+        if(write_text){
+            char label[64];
+            if(spirit)std::snprintf(label,sizeof(label),"%cP%u %s  SPIRIT",seat==owner.actions.multiplayer_local_seat()?'>':' ',seat+1,name);
+            else std::snprintf(label,sizeof(label),"%cP%u %s  B%d",seat==owner.actions.multiplayer_local_seat()?'>':' ',seat+1,name,power/20);
+            text->color=spirit?0xff90a8e8:seat==owner.actions.multiplayer_local_seat()?0xffffe080:0xfff0f0f0;
+            text->queue(label,{453.0f,y,.47f},false);
+            text->color=0xfff0f0f0;
+            text->queue("Player",{453.0f,y+17.0f,.47f},false);
+            text->queue("Power",{453.0f,y+34.0f,.47f},false);
+        }
+        for(i32 icon=0;icon<lives&&icon<9&&!spirit;++icon){
+            auto vm=gui.life_icons[0];vm.flags|=3;
+            vm.script_position=vm.child_position={};vm.position={530.0f+12.0f*float(icon),y+22.0f,.47f};
+            vm.scale={.8f,.8f};draw_animation(vm);
+        }
+        const i32 digits[]{power/20,0,(power%20)*5/10,(power%20)*5%10};
+        const float digit_x[]{521.0f,530.0f,536.0f,545.0f};
+        for(u32 i=0;i<4;++i){
+            auto vm=gui.power_digits[i];vm.flags|=3;
+            if(i!=1)gui.animations->bind_sprite(vm,digits[i]+8);
+            vm.script_position=vm.child_position={};vm.position={digit_x[i],y+36.0f,.47f};
+            vm.scale={.6f,.6f};
+            draw_animation(vm);
+        }
+    }
+    if(write_text){text->color=saved_color;text->scale=saved_scale;text->camera=saved_camera;text->shadow=saved_shadow;}
+}
+#endif
 HudScore::HudScore(Hud& h):owner(h){static constexpr i32 normal[]={2000000,4000000,8000000,15000000,1000000000},extra[]={3000000,10000000,1000000000};game=&h.state.game;normal_extends=normal;extra_extends=extra;}
 void HudScore::bind_digit(AnmFile& f,AnmVm& vm,i32 digit){f.bind_sprite(vm,digit);}
 void HudScore::update_animation(AnmVm& vm){owner.engine.update(vm);}
-void HudScore::add_life(){HudEconomy env(owner);
+void HudScore::add_life(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    owner.actions.award_team_life();
+#else
+    HudEconomy env(owner);
 #ifdef TH_ENABLE_THPRAC
     env.practice=&owner.state.practice;
 #endif
-    game->add_lives(1,env);}
+    game->add_lives(1,env);
+#endif
+}
 HudNotification::HudNotification(Hud& h):owner(h){registry=&h.engine.manager.registry;}
 u32 HudNotification::create(AnmFile& file,i32 script){return owner.animation(file,script);}
 void HudNotification::bind_sprite(AnmVm& vm,i32 sprite){vm.animation_file->bind_sprite(vm,sprite);}
@@ -45,6 +106,9 @@ void HudEconomy::show_notification(i32 script){auto& id=owner.actors.gui->power_
 void HudEconomy::play_global_sound(i32 id){owner.sound(id);}
 void HudEconomy::update_lives(i32 lives){owner.actors.gui->update_lives(lives);}
 HudProgress::HudProgress(Hud& h):owner(h){game=&h.state.game;gui=&h.actors.gui;statistics={reinterpret_cast<u8*>(h.records.data)};replay_mode=&h.state.replay->mode;stages=menu_data(h.state.chinese).stages;current_stage=&h.state.current_stage;all_clear_bonus=h.state.practice.all_clear_bonus;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+void HudProgress::award_resource_bonus(){owner.actions.award_team_clear_bonus();}
+#endif
 void HudProgress::stage_clear_notification(){owner.notify(6,0);}
 void HudProgress::select_screen(i32 screen){owner.state.pending_screen=owner.state.engine_flags&0x1000?2:screen;}
 void HudProgress::show_results(){owner.actions.show_clear_results();}

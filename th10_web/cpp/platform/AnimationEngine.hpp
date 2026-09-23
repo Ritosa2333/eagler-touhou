@@ -5,6 +5,9 @@
 #include "../game/AnmFrame.hpp"
 #include "../game/AnmLayers.hpp"
 #include "../game/AnmDistortion.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/PresentationCache.hpp"
+#endif
 namespace th10::browser {
 // A complete ANM owner sharing native files and graphics with the application.
 // Script operands still come from the original DAT resources; no EXE is loaded.
@@ -19,7 +22,14 @@ struct AnimationEngine final:AnmEnvironment,AnmAllocationEnvironment,AnmSystemEn
         Vec3 position{},script_position{},child_position{},rotation{};Vec2 scale{},uv_offset{};
         u32 color=0,secondary_color=0,visible=0;i32 script_time=0;u16 continuous=0;
     };
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // The native ANM owner has a fixed 4096-slot pool.  MP keeps its
+    // draw-side first samples in a matching bounded table; a full table only
+    // disables interpolation for the missing sample.
+    multiplayer::PresentationCache<const AnmVm*,PresentationVmSample,4096> presentation_previous;
+#else
     std::map<const AnmVm*,PresentationVmSample> presentation_previous;
+#endif
 #ifndef TH_NATIVE_PLATFORM
     CallbackReceiver* application_callbacks=nullptr;
     CallbackReceiver* receivers[16]{};

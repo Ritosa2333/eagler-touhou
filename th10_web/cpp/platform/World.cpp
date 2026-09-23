@@ -11,15 +11,24 @@ namespace th10::browser {
 World::World(GameState& s,AnimationEngine& e,Common& c,Fonts& f,Input& i,Audio& a,Scores& records,ScreenEffects& fx):state(s),engine(e),common(c),fonts(f),input(i),audio(a),scores(records),effects(fx),backgrounds(s,e,fx,records.files),chain(&e.chain_value),replay_files(records.files,s.game.flags),replay_writer(records.files,default_calendar(),s.game,s.active_time,s.total_time,s.motion.cheat_movement_used,s.chinese),calendar(default_calendar()){engine.register_receiver(*this);
     engine.callback_environment.bind(callback_id::SessionUpdate,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.update_session();});
     engine.callback_environment.bind(callback_id::SessionDraw,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.actors.session->draw(w.engine.manager);});
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    engine.callback_environment.bind(callback_id::PlayerUpdate,this,[](void* p,void* player,i32){return static_cast<World*>(p)->update_player(static_cast<Player*>(player));});
+    engine.callback_environment.bind(callback_id::PlayerDraw,this,[](void* p,void* player,i32){return static_cast<World*>(p)->draw_player(static_cast<Player*>(player));});
+#else
     engine.callback_environment.bind(callback_id::PlayerUpdate,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.update_player();});
     engine.callback_environment.bind(callback_id::PlayerDraw,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.draw_player();});
+#endif
     engine.callback_environment.bind(callback_id::BulletsUpdate,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.update_bullets();});
     engine.callback_environment.bind(callback_id::BulletsDraw,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.draw_bullets();});
     engine.callback_environment.bind(callback_id::LasersUpdate,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.update_lasers();});
     engine.callback_environment.bind(callback_id::LasersDraw,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.draw_lasers();});
     engine.callback_environment.bind(callback_id::ItemsUpdate,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.actors.session&&(w.actors.session->session_flags&0x405)?1:w.update_items();});
     engine.callback_environment.bind(callback_id::ItemsDraw,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.actors.session&&(w.actors.session->session_flags&4)?1:w.draw_items();});
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    engine.callback_environment.bind(callback_id::BombUpdate,this,[](void* p,void* bomb,i32){return static_cast<World*>(p)->update_bomb(static_cast<Bomb*>(bomb));});
+#else
     engine.callback_environment.bind(callback_id::BombUpdate,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.update_bomb();});
+#endif
     engine.callback_environment.bind(callback_id::EnemiesUpdate,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.update_enemies();});
     engine.callback_environment.bind(callback_id::SpellUpdate,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.update_spell();});
     engine.callback_environment.bind(callback_id::SpellBackground,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.draw_spell(false);});

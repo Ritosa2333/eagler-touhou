@@ -86,7 +86,21 @@ bool World::start(i32 mode){if(actors.session)__builtin_trap();
     state.practice.replay=mode!=0;
 #endif
     SessionResources env(*this);auto* session=GameSessionResources::create(mode,env);if(!session)return false;effects.controller_flags=&session->session_flags;if(hud)hud->controller_stage=&session->replay_mode;return true;}
-void World::advance_loading_step(){if(!loading)return;SessionResources env(*this);GameSessionResources{*actors.session,env}.load_step(loading_progress);
+void World::advance_loading_step(){if(!loading)return;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    const bool initializing_pilots=new_game&&loading_progress.phase==0;
+#endif
+    SessionResources env(*this);GameSessionResources{*actors.session,env}.load_step(loading_progress);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(initializing_pilots&&loading_progress.phase==1){
+        // Native startup computes initial resources once. Apply that result to
+        // every pilot only at a new-run boundary; stage transitions retain them.
+        for(u32 seat=1;seat<player_count;++seat){
+            pilots[seat].game.lives=state.game.lives;
+            pilots[seat].game.power=state.game.power;
+        }
+    }
+#endif
 #ifdef TH_ENABLE_THPRAC
     // One-shot advanced-practice setup. The original th10_patch_main hook runs
     // after the session finishes allocating its objects, so apply the run

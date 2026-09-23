@@ -1,5 +1,8 @@
 #pragma once
 #include "Timer.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/EconomyView.hpp"
+#endif
 namespace th10 {
 struct PracticeState;
 struct EconomyEnvironment {
@@ -10,7 +13,14 @@ struct EconomyEnvironment {
     virtual void play_global_sound(i32 sound)=0;
     virtual void update_lives(i32 lives)=0;
 };
-struct GameEconomy {
+struct GameEconomy
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    :multiplayer::EconomyView
+#endif
+{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    using multiplayer::EconomyView::EconomyView;
+#else
     i32 high_score;
     i32 score;
     std::int16_t power;
@@ -29,6 +39,7 @@ struct GameEconomy {
     i32 rank;
     i32 extend_index;
     u32 flags;
+#endif
     void add_score(i32 points) noexcept;
     void add_item_value(i32 points) noexcept;
     void add_rank(i32 delta) noexcept;
@@ -37,7 +48,9 @@ struct GameEconomy {
     void extend_faith_timer(i32 frames,const float* default_rate) noexcept;
     void select_section(i32 next) noexcept;
 };
+#ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 static_assert(offsetof(GameEconomy,faith_timer)==0x14);
 static_assert(offsetof(GameEconomy,rank)==0x58);
 static_assert(offsetof(GameEconomy,flags)==0x60);
+#endif
 }

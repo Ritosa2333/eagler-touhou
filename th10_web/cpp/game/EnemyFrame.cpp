@@ -1,5 +1,8 @@
 #include "EnemyFrame.hpp"
 #include "AnmFile.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/Balance.hpp"
+#endif
 namespace th10 {
 namespace {
 Extended abs_value(Extended value){return value<number(0.0f)?-value:value;}
@@ -23,9 +26,14 @@ i32 EnemyState::update(EnemyFrameEnvironment& env){
     const auto switch_phase=[&](const char* name){script_owner->reset_threads(*env.scripts);script_owner->select_subroutine(name);};
     if(!(flags&0x11)){
         auto damage=env.player_damage(current.position,hitbox);
+#ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         if(*env.player_state==2||*env.player_state==0)damage/=5;
+#endif
         if(damage){
             if((*env.phase.spell_flags&1)&&(flags&0x8000)){damage/=5;if(damage<1)damage=1;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            if(flags&0x8000)damage=multiplayer::boss_damage(damage,env.player_count);
+#endif
             if(!(flags&8)&&damage_immunity.current<1)health=wrapping_add(health,static_cast<i32>(0u-static_cast<u32>(damage)));
             if(const auto* name=check_interrupts(env.phase)){
                 switch_phase(name);if(script_owner->update_threads(*lifetime.rate,*env.scripts))return -1;
@@ -53,11 +61,15 @@ i32 EnemyState::update(EnemyFrameEnvironment& env){
     }
     for(unsigned i=0;i<8;++i)env.registry->set_position(animations[i],current.position,!(flags&0x40000));
     if(!(flags&0x11)&&!(flags&0xc0000)){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        env.publish_player_targets(*this);
+#else
         const auto player_x=number(env.player_position->x);
         if(!*env.player_target||abs_value(number((*env.player_target)->state.current.position.x)-player_x)<abs_value(number(current.position.x)-player_x)){
             if(!*env.player_target_seen)*env.player_target=reinterpret_cast<Enemy*>(script_owner);
             *env.player_target_seen=1;
         }
+#endif
     }
     auto* vm=env.registry->find_and_clear(animations[0]);
     if(flash_frames){

@@ -15,6 +15,9 @@ struct PlayerLifecycleEnvironment {
     u32* spell_animation_flags[7];
     bool death_sound_enabled;
     i32 replay_mode;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    u32 player_count=1;
+#endif
 #ifdef TH_ENABLE_THPRAC
     PracticeState* practice=nullptr;
 #endif

@@ -86,6 +86,14 @@ ItemUpdate Item::update(ItemFrameEnvironment& env){
     }else if(state==2){
         advance_position(*this,*env.default_rate);
         const auto vertical=number(*env.default_rate)*number(.03f)+number(velocity.y);velocity.y=vertical.to_float();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(!env.collector_available){
+            // Keep converted/delayed faith's missed-item rank penalty while
+            // there is no player to home toward. Preserve its state for rescue.
+            if(number(472.0f)<number(position.y)){state=0;env.economy->add_rank(-4);return ItemUpdate::Skipped;}
+            if(number(2.0f)<vertical)velocity.y=2;
+        }else
+#endif
         if(number(0.0f)<vertical||number(0.0f)==vertical){attraction_speed=*env.player_attraction_speed;state=3;attract(*this,env);}
         else if(number(472.0f)<number(position.y)){state=0;env.economy->add_rank(-4);return ItemUpdate::Skipped;}
     }else if(state==3||state==4)attract(*this,env);

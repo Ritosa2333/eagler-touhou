@@ -58,6 +58,24 @@ void Application::advance_loading(){
 i32 Application::step(bool scheduled_tick){
     if(stopped)return error?2:1;if(!initialized&&!initialize())return 2;
     advance_loading();if(error){stopped=true;return 2;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    auto& session=state.multiplayer_session;
+    if(session.configured&&!session.started&&value.screen==4&&title&&!title->loading){
+        if(!ensure_world())return 2;
+        world->player_count=session.playerCount;world->local_player=session.localPlayer;
+        for(u32 seat=0;seat<session.playerCount;++seat){
+            state.pilot_games[seat].character=i32(session.loadouts[seat].character);
+            state.pilot_games[seat].shot_type=i32(session.loadouts[seat].shot);
+        }
+        state.game.difficulty=i32(session.difficulty);
+        state.game.stage=session.difficulty==4?7:1;
+        state.game.reserved_040=u32(state.game.stage);state.game.flags=0;
+        state.current_stage=menu_data(state.chinese).stages+state.game.stage;
+        engine.script_random.seed=engine.visual_random.seed=u16(session.seed);
+        engine.script_random.calls=engine.visual_random.calls=0;
+        state.pending_screen=7;session.started=true;
+    }
+#endif
     value.ui_camera=engine.ui;value.world_camera=engine.world;
     // A platform presentation clock may own the 60 Hz accumulator. Run one
     // original tick when requested, while retaining the real monotonic clock

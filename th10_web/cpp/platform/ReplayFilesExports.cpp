@@ -18,7 +18,11 @@ REPLAY_EXPORT("replay_document_load") i32 replay_document_load(browser::ReplayDo
 REPLAY_EXPORT("replay_document_value") Replay* replay_document_value(browser::ReplayDocument* document){return &document->value;}
 REPLAY_EXPORT("replay_document_allocate") u8* replay_document_allocate(browser::ReplayDocument* document,u32 bytes){return document->allocate_bytes(bytes);}
 REPLAY_EXPORT("replay_document_allocations") u32 replay_document_allocations(browser::ReplayDocument* document){return document->memory.count;}
+#ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+// This external API consumes the ordinary single-pilot economy byte layout.
+// Multiplayer replay recording owns a team state and must not expose that ABI.
 REPLAY_EXPORT("replay_writer_create") browser::ReplayWriter* replay_writer_create(browser::FileSystem* files,GameEconomy* game,const double* active,const double* total,u32 chinese){auto* bytes=std::malloc(sizeof(browser::ReplayWriter));return bytes?new(bytes)browser::ReplayWriter(*files,calendar,*game,*active,*total,chinese!=0):nullptr;}
 REPLAY_EXPORT("replay_writer_destroy") void replay_writer_destroy(browser::ReplayWriter* writer){if(writer){writer->~ReplayWriter();std::free(writer);}}
 REPLAY_EXPORT("replay_writer_save") i32 replay_writer_save(browser::ReplayWriter* writer,Replay* replay,const char* file,const char* name){return writer->save(*replay,file,name);}
 REPLAY_EXPORT("replay_writer_allocations") u32 replay_writer_allocations(browser::ReplayWriter* writer){return writer->memory.count;}
+#endif

@@ -25,5 +25,8 @@ struct GuiDrawEnvironment {
     virtual void draw_animation(AnmVm& vm)=0;
     virtual void rectangle(const ScreenRect& rectangle,u32 color)=0;
     virtual float presentation_boss_health(float current)=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    virtual void draw_multiplayer_resources(Gui& gui)=0;
+#endif
 };
 }
