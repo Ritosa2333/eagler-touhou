@@ -616,7 +616,6 @@ function mpConnectLobby(reconnecting = false) {
 let mpLaunchInFlight = false;
 let mpGameCheckInFlight = false;
 let launcherOperationDepth = 0;
-let serverConfigurationWarning = "";
 async function mpLaunchRoomGame() {
   if (mpLaunchInFlight || state.launched) return;
   mpLaunchInFlight = true;
@@ -713,15 +712,16 @@ function renderServerStatusNote(_snapshot?: Readonly<AppShellClientState>) {
     ? 0 : Math.max(0, Math.floor((Date.now() - appShellUpdateNoticeStartedAt) / 1000));
   let text = "";
   let kind = "";
-  if (serverConfigurationWarning) {
-    kind = "offline";
-    text = serverConfigurationWarning;
-  } else if (appShell?.activationPending) {
+  if (appShell?.activationPending) {
     kind = "update";
     text = t("status.applyingSiteUpdate", { seconds: updateSeconds });
   } else if (appShell?.updateWaiting) {
     kind = "update";
-    text = t("status.siteUpdateWaiting", { seconds: updateSeconds });
+    text = state.launched === true
+      ? t("status.siteUpdateAfterExit", { seconds: updateSeconds })
+      : shouldDeferAppShellReload()
+        ? t("status.siteUpdateAfterOperation", { seconds: updateSeconds })
+        : t("status.siteUpdateWaiting", { seconds: updateSeconds });
   } else if (appShell?.updateReady) {
     kind = "update";
     text = state.launched === true
@@ -1016,6 +1016,12 @@ function applyHostManifest(value: unknown) {
   // single-title review package). Keep the Launcher state inside that subset
   // before render() asks game() for music and feature capabilities.
   selectAvailableHostProduct(nextManifest);
+  // Startup preferences were read against the local Japanese-only catalog.
+  // Recheck the stored language once the Host supplies its real language list,
+  // including when a player opens a multiplayer room link directly.
+  if (!hostManifestAvailable && !state.launched) {
+    restoreStoredLanguagePreference(state.game, currentPreferenceId());
+  }
   if (originMigrationOpen) {
     originMigrationOpen.dataset.policy = "host-manifest-origin-migration-policy/1";
     originMigrationOpen.hidden = !hostOriginMigrationAvailable(manifest, location.protocol);
@@ -1024,9 +1030,6 @@ function applyHostManifest(value: unknown) {
   importServer = serverResourceMode === "import";
   gameDataFallback = manifest.shared?.gameDataFallback || null;
   state.netplay.url = typeof manifest.shared?.netplayRelay === "string" ? manifest.shared.netplayRelay : "";
-  serverConfigurationWarning = importServer && !gameDataFallback
-    ? t("package.noExternalLink")
-    : "";
   if (mpUiState.room && state.netplay.url) mpReconnectLobbyNow();
   hostManifestAvailable = true;
   renderServerStatusNote();
@@ -1430,6 +1433,15 @@ const languageCatalog = (gameId: GameId) => {
 };
 const languageEntry = () => selectLanguageEntry(languageCatalog(state.game), state.language);
 const languageCacheName = "eagler-touhou-language-packs-v1";
+function restoreStoredLanguagePreference(gameId: GameId, preferenceId: ProductId) {
+  const savedLanguage = loadStoredLanguagePreference({
+    storage: localStorage,
+    preferenceId,
+    fallbackPreferenceId: isMultiplayerProductId(preferenceId) ? gameId : null,
+  });
+  state.language = savedLanguage && languageCatalog(gameId).some(item => item.id === savedLanguage)
+    ? savedLanguage : "ja";
+}
 function restoreGamePreferences(gameId: GameId, preferenceId: ProductId = gameId) {
   const fallbackPreferenceId = isMultiplayerProductId(preferenceId) ? gameIdForProduct(preferenceId) : null;
   const normalized = loadStoredGamePreferences({
@@ -1448,13 +1460,7 @@ function restoreGamePreferences(gameId: GameId, preferenceId: ProductId = gameId
   state.musicPreferenceExplicit = normalized.musicPreferenceExplicit;
   state.musicPreference = normalized.musicPreference;
   state.music = normalized.music;
-  const available = languageCatalog(gameId);
-  const savedLanguage = loadStoredLanguagePreference({
-    storage: localStorage,
-    preferenceId,
-    fallbackPreferenceId,
-  });
-  state.language = savedLanguage && available.some(item => item.id === savedLanguage) ? savedLanguage : "ja";
+  restoreStoredLanguagePreference(gameId, preferenceId);
 }
 function saveGamePreferences() {
   const preferenceId = currentPreferenceId();

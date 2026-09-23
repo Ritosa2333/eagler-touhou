@@ -22,7 +22,8 @@ for (const path of FRONTEND_PACKAGE_FILES) {
 // Change shell bytes too, so corrupt-shell installation tests cannot reuse an
 // unchanged index from the preceding generation instead of reading the fault.
 const index = resolve(root, "index.html");
-await writeFile(index, `${await readFile(index, "utf8")}\n<!-- fixture shell ${version} -->\n`);
+await writeFile(index, (await readFile(index, "utf8")).replace("</head>",
+  `<meta name="pwa-fixture-shell" content="${version}"></head>`));
 // Exercise the same selector source used by the real Launcher, not a test-only
 // cache implementation. Its fixture ESM publication is kept outside Runtime.
 for (const [source, target] of [

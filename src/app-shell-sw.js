@@ -159,8 +159,8 @@ async function appShellUpdateStatus() {
 }
 
 self.addEventListener("install", event => {
-  // Native waiting is the cross-tab safety barrier. Never force a new worker
-  // onto a live game. Reloading one tab is deliberately NOT an update action.
+  // Publish only after the complete required shell passes integrity checks.
+  // The current Launcher requests activation when its own session is idle.
   event.waitUntil(precacheShell());
 });
 self.addEventListener("activate", event => {
@@ -228,22 +228,9 @@ self.addEventListener("message", event => {
   event.waitUntil((async () => {
     try {
       if (type === "CHECK_APP_SHELL_ACTIVATION" || type === "ACTIVATE_APP_SHELL") {
-        const scopeUrl = new URL(self.registration.scope);
-        const windows = (await self.clients.matchAll({ type: "window", includeUncontrolled: true }))
-          .filter(client => {
-            try {
-              const clientUrl = new URL(client.url);
-              return clientUrl.origin === scopeUrl.origin && clientUrl.pathname.startsWith(scopeUrl.pathname);
-            } catch { return false; }
-          });
-        const sourceId = event.source?.id;
-        const soleClient = typeof sourceId === "string" && windows.length === 1 && windows[0].id === sourceId;
         if (type === "CHECK_APP_SHELL_ACTIVATION") {
-          port?.postMessage({ ok: true, soleClient, clients: windows.length });
-          return;
-        }
-        if (!soleClient) {
-          port?.postMessage({ ok: false, code: "MultipleClients", clients: windows.length });
+          // Older launchers may still ask before sending ACTIVATE.
+          port?.postMessage({ ok: true, soleClient: true });
           return;
         }
         await self.skipWaiting();

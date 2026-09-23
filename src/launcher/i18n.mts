@@ -546,7 +546,7 @@ const entries = [
   ["status.connectionFailed", "连接失败", "Connection failed"], ["status.requestTimeout", "请求超时", "Request timed out"],
   ["status.deviceOffline", "设备离线", "Device is offline"],
   ["status.connectionRestored", "服务器连接已恢复，正在重新检查网站和游戏更新…", "Server connection restored; checking site and game updates…"],
-  ["status.siteUpdateWaiting", "已有更新。正在等待本站全部旧页面关闭。（如果仍然长时间看到，请重启浏览器）", "An update is available. Waiting for all old site pages to close. (If this remains visible for a long time, restart the browser.)"],
+  ["status.siteUpdateWaiting", "已有更新。正在准备切换到新版本…", "An update is available. Preparing to switch to the new version…"],
   ["status.siteUpdateAfterExit", "网站更新已下载，正在等待游戏退出后切换… 已等待 {seconds} 秒", "The site update is downloaded and will switch after the game exits… {seconds}s elapsed"],
   ["status.siteUpdateAfterOperation", "网站更新已下载，正在等待当前操作完成… 已等待 {seconds} 秒", "The site update is downloaded and is waiting for the current operation to finish… {seconds}s elapsed"],
   ["status.applyingSiteUpdate", "网站更新已下载，正在切换到新版本… 已用 {seconds} 秒", "The site update is downloaded and is switching to the new version… {seconds}s elapsed"],

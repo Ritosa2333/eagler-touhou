@@ -193,6 +193,9 @@ else {
   if (!games || !catalog) {
     // Host Manifest validation already recorded the concrete failure.
   } else {
+    if (!games.shared?.gameDataFallback) {
+      console.warn("OPERATOR WARNING: deployed Host Manifest has no gameDataFallback; configure the fallback download link.");
+    }
   if (!appShellWorkerResult) {
     failures.push("app-shell-sw.js: unavailable");
   } else {

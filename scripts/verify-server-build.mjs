@@ -245,6 +245,9 @@ if (resourceMode === RESOURCE_MODE_HOSTED) {
   }
 }
 const fallback = games.shared?.gameDataFallback;
+if (!fallback) {
+  console.warn("OPERATOR WARNING: Host Manifest has no gameDataFallback; configure the fallback download link before publication.");
+}
 if (fallback != null && (typeof fallback !== "object" || typeof fallback.url !== "string" || !/^https:\/\//.test(fallback.url) ||
     (fallback.hint != null && typeof fallback.hint !== "string"))) {
   throw new Error("invalid optional gameDataFallback in server package");

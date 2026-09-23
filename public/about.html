@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0d0d0c">
   <title>关于 EAGLER TOUHOU</title>
-  <meta name="description" content="EAGLER TOUHOU 网页东方游戏适配项目的来源、基础设施和版权说明。">
+  <meta name="description" content="了解 EAGLER TOUHOU、参与项目开发，并查看正式子仓库与上游项目致谢。">
   <link rel="icon" href="assets/th06.ico" type="image/x-icon">
   <link rel="preload" href="assets/fonts/chill-round-gothic-site-medium.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/yatra-one-latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -14,29 +14,50 @@
 </head>
 <body class="about-body">
   <main class="about-page">
-    <p class="about-back"><a href="./">← 返回 EAGLER TOUHOU</a></p>
+    <p class="about-back"><a href="./">← 返回</a></p>
     <h1 class="brand-title">EAGLER☯TOUHOU</h1>
-    <p>东方 Project 官方作品的 Web 适配项目，提供共享的网页运行与移动端支持。thcrap 翻译、thprac、联机等扩展能力仅在对应作品明确声明支持时提供。</p>
+    <p class="about-lead">一个东方 Project 官方作品的全作适配项目。<br>力求让每个人玩上东方原作。</p>
+    <p>目前已适配 TH06、TH07、TH08、TH09 与 TH10，并为桌面和移动设备提供网页运行与触控支持。高刷新率、汉化、thprac 与联机等扩展能力仅在对应作品明确声明支持时提供，具体以启动器中的作品说明为准。</p>
 
     <hr>
-    <h2>本项目建立在以下项目的成果之上</h2>
+    <h2>贡献方式</h2>
+    <p>您可以从 <a href="https://github.com/YomotsuHisami/eagler-touhou" target="_blank" rel="noopener noreferrer">GitHub 仓库</a>立刻开始参与贡献。</p>
+    <p>若要负责一部游戏的移植，请先阅读<a href="https://github.com/YomotsuHisami/eagler-touhou/blob/main/docs/ADAPTING_A_GAME.md" target="_blank" rel="noopener noreferrer">游戏适配指南</a>与<a href="https://github.com/YomotsuHisami/eagler-touhou/blob/main/docs/DEVELOPMENT.md" target="_blank" rel="noopener noreferrer">开发文档</a>。若要修复问题或增加功能，可以提交 <a href="https://github.com/YomotsuHisami/eagler-touhou/issues" target="_blank" rel="noopener noreferrer">Issue</a>，并通过 <a href="https://github.com/YomotsuHisami/eagler-touhou/pulls" target="_blank" rel="noopener noreferrer">Pull Request</a> 提交相应代码。</p>
+
+    <h2>开发者</h2>
+    <p class="people-list"><a href="https://b23.tv/x3IIf0k" target="_blank" rel="noopener noreferrer">Ritosa</a>、<a href="https://github.com/Goan114" target="_blank" rel="noopener noreferrer">Goan114</a>、<a href="https://b23.tv/kmhLOQb" target="_blank" rel="noopener noreferrer">Grass1337</a>、<a href="https://github.com/Patchouli-CN" target="_blank" rel="noopener noreferrer">Patchouli-CN</a>、<a href="https://b23.tv/WOQhahY" target="_blank" rel="noopener noreferrer">SteinsGateON</a></p>
+    <p>也感谢所有提交代码、报告问题、参与测试与帮助其他玩家的贡献者。主仓库中的提交记录可在<a href="https://github.com/YomotsuHisami/eagler-touhou/graphs/contributors" target="_blank" rel="noopener noreferrer">贡献者列表</a>中查看。</p>
+
+    <h2>子仓库</h2>
+    <ul class="repository-list">
+      <li><a href="https://github.com/YomotsuHisami/th06" target="_blank" rel="noopener noreferrer"><strong>TH06</strong><span>东方红魔乡 Runtime</span></a></li>
+      <li><a href="https://github.com/YomotsuHisami/th07" target="_blank" rel="noopener noreferrer"><strong>TH07</strong><span>东方妖妖梦 Runtime</span></a></li>
+      <li><a href="https://github.com/YomotsuHisami/th08" target="_blank" rel="noopener noreferrer"><strong>TH08</strong><span>东方永夜抄 Runtime</span></a></li>
+      <li><a href="https://github.com/YomotsuHisami/th09" target="_blank" rel="noopener noreferrer"><strong>TH09</strong><span>东方花映塚 Runtime</span></a></li>
+      <li><a href="https://github.com/YomotsuHisami/th10" target="_blank" rel="noopener noreferrer"><strong>TH10</strong><span>东方风神录 Runtime</span></a></li>
+      <li><a href="https://github.com/YomotsuHisami/eagler-common" target="_blank" rel="noopener noreferrer"><strong>eagler-common</strong><span>跨作品共享运行组件</span></a></li>
+    </ul>
+
+    <h2>感谢</h2>
+    <h3>游戏功能</h3>
     <dl class="primary-credits">
-      <dt><a href="https://github.com/GensokyoClub/th06">GensokyoClub/th06</a></dt>
-      <dd>《东方红魔乡》的反编译与可移植源码基础。具体基于 <a href="https://github.com/GensokyoClub/th06/tree/portable">portable 分支</a>的 <a href="https://github.com/GensokyoClub/th06/commit/9a1c50b3e7821f2e32e0ff35de7e618216d796e5">9a1c50b</a>，并在其上形成本项目的 <code>eagler</code> 运行时分支。</dd>
-      <dt><a href="https://github.com/some100/th07">some100/th07</a></dt>
-      <dd>《东方妖妖梦》的反编译、跨平台移植与 Web 构建基础。具体基于 <a href="https://github.com/some100/th07/tree/reallyportable">reallyportable 分支</a>的 <a href="https://github.com/some100/th07/commit/97751939e47f6d83971fa6225c7ff2cb46ebb77c">9775193</a>，并在其上形成本项目的 <code>eagler</code> 运行时分支。</dd>
+      <dt><a href="https://github.com/GensokyoClub/th06/tree/portable" target="_blank" rel="noopener noreferrer">GensokyoClub/th06 · portable</a></dt>
+      <dd>《东方红魔乡》的反编译与可移植源码基础。</dd>
+      <dt><a href="https://github.com/some100/th07/tree/reallyportable" target="_blank" rel="noopener noreferrer">some100/th07 · reallyportable</a></dt>
+      <dd>《东方妖妖梦》的反编译、跨平台移植、高刷新率与触控适配基础。</dd>
+      <dt><a href="https://github.com/sbrik1111/th07_multi_player" target="_blank" rel="noopener noreferrer">sbrik1111/th07_multi_player</a></dt>
+      <dd>TH06MP 与 TH07MP 所采用的多人游戏规则及实现基础。</dd>
     </dl>
-    <h2>当前正式适配仓库</h2>
-    <p>以下仓库对应启动器 Product Catalog 当前注册的 Runtime 适配。各作品支持的可选能力并不相同，具体以产品声明为准。</p>
-    <p class="secondary-credits"><a href="https://github.com/YomotsuHisami/th06">TH06 Runtime</a><br><a href="https://github.com/YomotsuHisami/th07">TH07 Runtime</a><br><a href="https://github.com/YomotsuHisami/th08">TH08 Runtime</a><br><a href="https://github.com/YomotsuHisami/th09">TH09 Runtime</a><br><a href="https://github.com/YomotsuHisami/th10">TH10 Runtime</a></p>
-    <h2>基础设施</h2>
-    <p class="secondary-credits"><a href="https://github.com/libsdl-org/SDL">SDL</a><br><a href="https://emscripten.org/">Emscripten</a><br><a href="https://github.com/g200kg/webaudio-tinysynth">webaudio-tinysynth</a><br><a href="https://github.com/101arrowz/fflate">fflate</a></p>
+    <h3>前端界面</h3>
+    <p>部分界面设计与交互参考了 <a href="https://github.com/matsuzaka-yuki/Mizuki" target="_blank" rel="noopener noreferrer">Mizuki</a>。</p>
+    <h3>基础设施</h3>
+    <p class="secondary-credits"><a href="https://github.com/libsdl-org/SDL" target="_blank" rel="noopener noreferrer">SDL</a>、<a href="https://emscripten.org/" target="_blank" rel="noopener noreferrer">Emscripten</a>、<a href="https://github.com/g200kg/webaudio-tinysynth" target="_blank" rel="noopener noreferrer">webaudio-tinysynth</a>、<a href="https://github.com/101arrowz/fflate" target="_blank" rel="noopener noreferrer">fflate</a></p>
 
     <hr>
     <h2>版权说明</h2>
     <p>本项目是非官方爱好者工程，与上海爱丽丝幻乐团、ZUN 及游戏发行方不存在隶属、授权、认可或赞助关系。项目作者无权、亦无意授予任何原版游戏内容的使用或再分发许可。</p>
     <p>使用者必须合法持有相应游戏，并仅可在个人、非商业环境中使用本项目进行怀旧与研究。不得利用本项目在互联网上上传、托管、共享或以其他任何形式分发原版游戏数据、音乐、美术及其他受版权保护的资源。</p>
-    <p class="about-foot"><a href="README.md">README / 部署说明</a></p>
+    <p class="about-foot"><a href="https://github.com/YomotsuHisami/eagler-touhou" target="_blank" rel="noopener noreferrer">项目仓库</a> · <a href="https://github.com/YomotsuHisami/eagler-touhou/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">GPL-3.0-or-later</a></p>
   </main>
 </body>
 </html>

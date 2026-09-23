@@ -12,11 +12,6 @@ interface EventTargetLike {
   addEventListener(type: string, callback: () => void): void;
   removeEventListener?(type: string, callback: () => void): void;
 }
-interface MessagePortLike {
-  onmessage: ((event: { data?: unknown }) => void) | null;
-  close?(): void;
-}
-interface MessageChannelLike { readonly port1: MessagePortLike; readonly port2: unknown; }
 interface ServiceWorkerLike extends EventTargetLike {
   readonly state: string;
   postMessage?(message: unknown, transfer?: unknown[]): void;
@@ -45,9 +40,7 @@ interface AppShellClientOptions {
   logger?: LoggerLike;
   activationTimeoutMs?: number;
   activationRetryMs?: number;
-  activationRequestTimeoutMs?: number;
   activationHandoffTimeoutMs?: number;
-  createMessageChannel?: () => MessageChannelLike;
 }
 function browserServiceWorker(): ServiceWorkerContainerLike | null {
   // The getter itself may throw in a restricted/embedded browser context.
@@ -62,8 +55,7 @@ export function createAppShellClient({
   reload = () => globalThis.location?.reload(),
   schedule = callback => globalThis.setTimeout(callback, 0), logger = globalThis.console,
   activationTimeoutMs = 120000, activationRetryMs = 1000,
-  activationRequestTimeoutMs = 3000, activationHandoffTimeoutMs = 10000,
-  createMessageChannel = () => new MessageChannel() as unknown as MessageChannelLike,
+  activationHandoffTimeoutMs = 10000,
 }: AppShellClientOptions = {}) {
   const state: { -readonly [K in keyof AppShellClientState]: AppShellClientState[K] } = {
     registration: null, updateReady: false, updateWaiting: false,
@@ -89,23 +81,6 @@ export function createAppShellClient({
       void maybeActivateWaiting();
     }, activationRetryMs);
   }
-  async function workerRequest(worker: ServiceWorkerLike, type: string) {
-    if (typeof worker.postMessage !== "function") return null;
-    let channel: MessageChannelLike;
-    try { channel = createMessageChannel(); } catch { return null; }
-    return await new Promise<Record<string, unknown> | null>(resolve => {
-      let settled = false;
-      const finish = (value: Record<string, unknown> | null) => {
-        if (settled) return;
-        settled = true; clearTimeout(timer); channel.port1.close?.(); resolve(value);
-      };
-      const timer = setTimeout(() => finish(null), activationRequestTimeoutMs);
-      channel.port1.onmessage = event => finish(event.data && typeof event.data === "object"
-        ? event.data as Record<string, unknown> : null);
-      try { worker.postMessage?.({ type }, [channel.port2]); }
-      catch { finish(null); }
-    });
-  }
   function maybeActivateWaiting() {
     const worker = state.registration?.waiting || waitingCandidate;
     // Reconcile the actual worker state as well as listening to events. Mobile
@@ -128,22 +103,19 @@ export function createAppShellClient({
     if (shouldDeferReload()) return Promise.resolve(false);
     if (!worker || activationRequest) return activationRequest || Promise.resolve(false);
     clearActivationRetry();
-    activationRequest = (async () => {
-      const eligibility = await workerRequest(worker, "CHECK_APP_SHELL_ACTIVATION");
-      if (eligibility?.soleClient !== true) return false;
-      if (shouldDeferReload() || !state.updateWaiting || worker.state !== "installed") return false;
+    activationRequest = Promise.resolve().then(() => {
+      if (shouldDeferReload() || !state.updateWaiting || worker.state !== "installed" || typeof worker.postMessage !== "function") return false;
       state.activationPending = true;
       activationStartedAt = Date.now();
       notify();
-      const activation = await workerRequest(worker, "ACTIVATE_APP_SHELL");
-      // State can change across the awaited message, despite TS narrowing.
+      // The installed worker has already precached and verified the entire
+      // required shell. Other old tabs are not a reason to block this page.
+      worker.postMessage({ type: "ACTIVATE_APP_SHELL" });
+      // A browser may activate synchronously or while the page is suspended.
       const actualState = (worker as ServiceWorkerLike).state;
       if (actualState === "activated") { finishActivation(); return true; }
-      if (activation?.ok === true || actualState === "activating") return true;
-      state.activationPending = false;
-      notify();
-      return false;
-    })().catch(error => {
+      return true;
+    }).catch(error => {
       state.activationPending = false;
       notify();
       logger?.warn?.("App Shell activation unavailable", error);
