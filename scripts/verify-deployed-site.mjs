@@ -132,6 +132,7 @@ for (const [path, result] of results) if (parseRuntimeGenerationPath(path)) {
   if (!/immutable/i.test(result.cacheControl)) failures.push(`${path}: immutable Runtime must have immutable cache policy`);
   if (/\.wasm$/.test(path) && !/^application\/wasm(?:;|$)/i.test(result.contentType)) failures.push(`${path}: incorrect Wasm MIME`);
   if (/\.m?js$/.test(path) && !/^(?:text|application)\/javascript(?:;|$)/i.test(result.contentType)) failures.push(`${path}: incorrect module MIME`);
+  if (/\.css$/.test(path) && !/^text\/css(?:;|$)/i.test(result.contentType)) failures.push(`${path}: incorrect stylesheet MIME`);
 }
 
 const releaseCatalogResult = results.get(RELEASE_CATALOG_FILE);
