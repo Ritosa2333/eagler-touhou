@@ -29,7 +29,12 @@ AppLoop::AppLoop(Application& a):owner(a){application=&a.value;animations=&a.man
 Extended AppLoop::time(){return owner.time();}void AppLoop::sleep(u32){}void AppLoop::flush(){owner.engine.flush();}
 void AppLoop::configure_flat(Camera& camera){owner.configure_camera(camera,true);}
 void AppLoop::set_viewport(void*,const CameraViewport& viewport){owner.engine.device.viewport(viewport);}
-i32 AppLoop::update(){owner.engine.snapshot_presentation();const i32 result=owner.engine.update_all();if(result&&result!=-1)presentation_audit::simulation_tick();return result;}
+i32 AppLoop::update(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(owner.multiplayer_active())return owner.multiplayer_update();
+#endif
+    owner.engine.snapshot_presentation();const i32 result=owner.engine.update_all();if(result&&result!=-1)presentation_audit::simulation_tick();return result;
+}
 void AppLoop::update_audio(){owner.audio.update();}
 void AppLoop::stop_loader(){owner.value.stop_loading(owner.screens);}
 i32 AppLoop::begin_scene(void*){return owner.engine.device.begin_scene();}

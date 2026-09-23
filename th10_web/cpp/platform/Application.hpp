@@ -85,6 +85,8 @@ struct Application final:CallbackReceiver {
     AppScreens screens;AppFrames frames;AppLoop loop;AppStatistics rates;AppPresentation presentation;AppScreenshot screenshots;AppConfiguration config;
     Application(FileSystem&,Input&,GameState&,AnimationEngine&,Fonts&,Audio&,ScreenEffects&);
     ~Application();bool initialize();i32 step(bool scheduled_tick=false);bool presentation_draw(float alpha,bool interpolate,bool world_interpolate=true);void presentation_frame();void save();void shutdown();
+    i32 multiplayer_update();
+    bool multiplayer_active()const;
     void advance_loading();void sync_views();bool ensure_world();void configure_camera(Camera&,bool);
     Extended time();void bind_callbacks(Callbacks&) override;i32 draw_statistics();
 #ifndef TH_NATIVE_PLATFORM

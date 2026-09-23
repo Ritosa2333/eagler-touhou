@@ -13,6 +13,8 @@
 #include "../multiplayer/Pilot.hpp"
 #include "../multiplayer/CooperativeRules.hpp"
 #include "../multiplayer/ItemOwnership.hpp"
+#include "../multiplayer/RollbackPool.hpp"
+#include "../multiplayer/RollbackState.hpp"
 #endif
 namespace th10::browser {
 // The gameplay owner persists across sessions, including transitions that keep
@@ -24,6 +26,11 @@ struct World final:HudActions,CallbackReceiver {
     multiplayer::Pilot pilots[3]{{state.pilot_games[0],0},{state.pilot_games[1],1},{state.pilot_games[2],2}};
     multiplayer::State cooperation{};
     multiplayer::ItemOwnership regular_item_owners[150]{},faith_item_owners[2048]{};
+    multiplayer::RollbackPool<sizeof(Enemy),512> rollback_enemies{};
+    multiplayer::RollbackPool<sizeof(TimedLaser),256> rollback_lasers{};
+    multiplayer::RollbackPool<sizeof(EclContext),1024> rollback_ecl{};
+    multiplayer::RollbackState rollback{};
+    bool rollback_resimulating=false;
     u32 player_count=2,local_player=0;
     // Separate reserved ANM slots, after the native title's 0..32 slots.
     static constexpr i32 pilot_animation_slot(i32 character){return 33+character;}

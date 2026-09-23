@@ -3,9 +3,15 @@
 #include "MemoryPool.hpp"
 #include "../game/ScreenEffect.hpp"
 #include <unordered_map>
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/RollbackPool.hpp"
+#endif
 namespace th10::browser {
 struct ScreenEffects final : ScreenEffectEnvironment,CallbackReceiver {
     AnimationEngine& engine;UpdateChain* update_chain;MemoryPool memory;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    multiplayer::RollbackPool<sizeof(ScreenEffect),128> rollback_effects{};
+#endif
     std::unordered_map<const ScreenEffect*,i32> previous_alpha;
     ScreenEffects(AnimationEngine&,const u32& quitting,const u32* controller_flags=nullptr);
     ~ScreenEffects();

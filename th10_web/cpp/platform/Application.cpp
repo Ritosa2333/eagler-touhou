@@ -55,12 +55,85 @@ void Application::advance_loading(){
     if(title)title->advance_loading();if(world)world->advance_loading();if(credits)credits->advance_loading();sync_views();
     if((startup&&startup->error)||(title&&title->error)||(world&&world->error)||(credits&&credits->error))error=-3;
 }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+bool Application::multiplayer_active()const{
+    const auto& session=state.multiplayer_session;
+    return session.sessionId&&session.started&&world&&!world->loading&&world->actors.session&&
+           state.netplay_runtime.Configured();
+}
+
+i32 Application::multiplayer_update(){
+    auto& runtime=state.netplay_runtime;
+    auto& rollback=world->rollback;
+
+    // A pending screen/stage lifecycle may free whole resource graphs. Never
+    // cross it speculatively: wait until every remote has confirmed the frame
+    // which requested the transition, then run the lifecycle without advancing
+    // the netplay frame counter and begin a fresh journal frontier afterwards.
+    if(state.pending_screen!=value.screen){
+        const auto last=runtime.LastSimulatedFrame();
+        const auto confirmed=runtime.ConfirmedThroughAllRemotes();
+        if(last!=Netplay::INVALID_FRAME&&(confirmed==Netplay::INVALID_FRAME||confirmed<last))
+            return 1;
+        rollback.Clear();
+        const i32 result=engine.update_all();
+        if(world&&!world->loading)rollback.Reset();
+        if(result&&result!=-1)presentation_audit::simulation_tick();
+        return result;
+    }
+
+    if(runtime.HasRollbackRequest()){
+        const auto rollbackFrame=runtime.RollbackFrame();
+        const auto last=runtime.LastSimulatedFrame();
+        if(last!=Netplay::INVALID_FRAME&&rollbackFrame<=last){
+            std::uint32_t replayFrom=rollbackFrame;
+            if(!rollback.RestoreTo(rollbackFrame,&replayFrom)){error=-4;return -1;}
+            runtime.ClearRollbackRequest();
+            world->rollback_resimulating=true;
+            for(std::uint32_t frame=replayFrom;frame<=last;++frame){
+                const auto decision=runtime.Prepare(frame);
+                if(!decision.canAdvance||!rollback.BeginFrame(*world,frame)||
+                   !multiplayer::InputLanes::Commit(state.input_lanes,decision.inputs.data(),
+                                                    state.multiplayer_session.playerCount)){
+                    world->rollback_resimulating=false;error=-4;return -1;
+                }
+                const i32 result=engine.update_all();
+                if(!rollback.EndFrame()||!runtime.MarkSimulated(frame,decision)||result==0||result==-1){
+                    world->rollback_resimulating=false;error=-4;return -1;
+                }
+            }
+            world->rollback_resimulating=false;
+        }else runtime.ClearRollbackRequest();
+    }
+
+    const auto frame=runtime.NextFrame();
+    if(!runtime.HasLocalCapture(frame)){
+        Netplay::FrameInput local{};
+        local.buttons=InputDevices{input}.sample();
+        if(!runtime.CaptureLocal(frame,local)){error=-4;return -1;}
+    }
+    const auto decision=runtime.Prepare(frame);
+    if(!decision.canAdvance)return 1;
+
+    engine.snapshot_presentation();
+    if(!rollback.BeginFrame(*world,frame)||
+       !multiplayer::InputLanes::Commit(state.input_lanes,decision.inputs.data(),
+                                        state.multiplayer_session.playerCount)){
+        error=-4;return -1;
+    }
+    const i32 result=engine.update_all();
+    if(!rollback.EndFrame()||!runtime.MarkSimulated(frame,decision)){error=-4;return -1;}
+    if(result&&result!=-1)presentation_audit::simulation_tick();
+    return result;
+}
+#endif
 i32 Application::step(bool scheduled_tick){
     if(stopped)return error?2:1;if(!initialized&&!initialize())return 2;
     advance_loading();if(error){stopped=true;return 2;}
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     auto& session=state.multiplayer_session;
     if(session.configured&&!session.started&&value.screen==4&&title&&!title->loading){
+        if(session.sessionId&&!state.netplay_runtime.CanStart())return 0;
         if(!ensure_world())return 2;
         world->player_count=session.playerCount;world->local_player=session.localPlayer;
         for(u32 seat=0;seat<session.playerCount;++seat){

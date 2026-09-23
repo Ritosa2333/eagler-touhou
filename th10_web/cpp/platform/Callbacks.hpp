@@ -3,6 +3,9 @@
 #include <map>
 #include <array>
 #include "../game/CallbackNames.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/RollbackPool.hpp"
+#endif
 namespace th10::browser {
 struct Callbacks;
 struct CallbackReceiver {
@@ -14,6 +17,9 @@ struct CallbackReceiver {
 };
 struct Callbacks final:UpdateChainEnvironment {
     CallbackReceiver& receiver;u8 depth=0;u32 calls=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    multiplayer::RollbackPool<sizeof(UpdateChainEntry),4096> rollback_entries{};
+#endif
     explicit Callbacks(CallbackReceiver& receiver):receiver(receiver){lock_depth=&depth;}
     using NativeFunction=NativeCallback::Function;
     using Binding=NativeCallback;

@@ -7,6 +7,7 @@
 #include "../game/AnmDistortion.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/PresentationCache.hpp"
+#include "../multiplayer/RollbackPool.hpp"
 #endif
 namespace th10::browser {
 // A complete ANM owner sharing native files and graphics with the application.
@@ -27,6 +28,11 @@ struct AnimationEngine final:AnmEnvironment,AnmAllocationEnvironment,AnmSystemEn
     // draw-side first samples in a matching bounded table; a full table only
     // disables interpolation for the missing sample.
     multiplayer::PresentationCache<const AnmVm*,PresentationVmSample,4096> presentation_previous;
+    multiplayer::RollbackPool<sizeof(AnmVm),2048> rollback_animation_overflow{};
+    // ANM geometry is referenced from rewindable VMs. Keep it at stable
+    // addresses as well; retail distortion is 0x4b0 and script-created vertex
+    // buffers are bounded here to 64 KiB rather than falling back to the heap.
+    multiplayer::RollbackPool<65536,128> rollback_geometry{};
 #else
     std::map<const AnmVm*,PresentationVmSample> presentation_previous;
 #endif

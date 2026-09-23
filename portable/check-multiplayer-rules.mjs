@@ -41,6 +41,17 @@ for (const [name, sources, flags = []] of [
     resolve(root,'th10_web/cpp/multiplayer/InputLanes.cpp'),
     resolve(root,'th10_web/cpp/game/GameInput.cpp'),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
+  ['netplay-runtime', [
+    resolve(root,'tests/netplay-runtime-test.cpp'),
+    resolve(root,'th10_web/cpp/multiplayer/NetplayRuntime.cpp'),
+    resolve(root,'th10_web/cpp/multiplayer/SessionSetup.cpp'),
+    resolve(common,'src/netplay/NetplayProtocol.cpp'),
+    resolve(common,'src/netplay/NetplayCore.cpp'),
+    resolve(common,'src/netplay/NetplaySession.cpp'),
+  ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
+  ['rollback-pool', [
+    resolve(root,'tests/rollback-pool-test.cpp'),
+  ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['cooperative-rollback', [
     resolve(root, 'tests/cooperative-rollback-test.cpp'),
     resolve(common, 'src/netplay/NetplayCore.cpp'),

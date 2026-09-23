@@ -21,4 +21,12 @@ int main(){
     words[8]=2;words[4]=65536;assert(!DecodeSessionSetup(first,words,11));
     words[4]=0;first.started=true;assert(!DecodeSessionSetup(first,words,11));
     assert(!DecodeSessionSetup(second,nullptr,11));
+
+    SessionSetup network{};
+    std::uint32_t v2[]{2,2,1,3,1234,0x55667788u,0x11223344u,0,0,1,2,0,0};
+    assert(DecodeSessionSetup(network,v2,13));
+    assert(network.sessionId==0x1122334455667788ull&&network.playerCount==2&&network.localPlayer==1);
+    const auto networkContract=GameplayContract(network);
+    network.sessionId=0;assert(GameplayContract(network)==networkContract);
+    v2[5]=v2[6]=0;SessionSetup invalid{};assert(!DecodeSessionSetup(invalid,v2,13));
 }

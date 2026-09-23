@@ -20,6 +20,18 @@ NativeCallback Callbacks::resolve(CallbackToken token){
     return UpdateChainEnvironment::resolve(token);
 #endif
 }
-UpdateChainEntry* Callbacks::allocate_entry(){return static_cast<UpdateChainEntry*>(std::calloc(1,sizeof(UpdateChainEntry)));}
-void Callbacks::release_entry(UpdateChainEntry* entry){std::free(entry);}
+UpdateChainEntry* Callbacks::allocate_entry(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    return static_cast<UpdateChainEntry*>(rollback_entries.allocate(sizeof(UpdateChainEntry),true));
+#else
+    return static_cast<UpdateChainEntry*>(std::calloc(1,sizeof(UpdateChainEntry)));
+#endif
+}
+void Callbacks::release_entry(UpdateChainEntry* entry){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(entry&&!rollback_entries.release(entry))__builtin_trap();
+#else
+    std::free(entry);
+#endif
+}
 }

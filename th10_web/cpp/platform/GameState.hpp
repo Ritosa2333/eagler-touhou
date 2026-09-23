@@ -9,12 +9,14 @@
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/SessionSetup.hpp"
 #include "../multiplayer/InputLanes.hpp"
+#include "../multiplayer/NetplayRuntime.hpp"
 #endif
 namespace th10::browser {
 // Persistent application data shared by menus, gameplay and result screens.
 struct GameState {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     multiplayer::SessionSetup multiplayer_session{};
+    multiplayer::NetplayRuntime netplay_runtime{};
     multiplayer::InputLanes::State input_lanes{};
     multiplayer::TeamEconomy team_economy{};
     multiplayer::PilotEconomy pilot_economies[3]{};

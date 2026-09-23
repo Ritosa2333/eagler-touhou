@@ -53,7 +53,21 @@ struct Script final:EclServices {
     i32* integer_reference(i32 id) override{if(!owner)__builtin_trap();Frame env(w,&owner->state.current.position);return EnemyVariables(owner->state,env).integer_reference(id);}
     float* float_reference(i32 id) override{if(!owner)__builtin_trap();Frame env(w,&owner->state.current.position);return EnemyVariables(owner->state,env).float_reference(id);}
     i32 command(EclContext& context) override{if(!owner)__builtin_trap();return w.enemy_command(owner->state,context,*this);}
-    void* allocate(u32 size) override{return std::malloc(size);}void release(void* p) override{std::free(p);}
+    void* allocate(u32 size) override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(auto* p=w.rollback_ecl.allocate(size,true))return p;
+        w.fail();return nullptr;
+#else
+        return std::malloc(size);
+#endif
+    }
+    void release(void* p) override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(p&&!w.rollback_ecl.release(p))__builtin_trap();
+#else
+        std::free(p);
+#endif
+    }
 #ifdef TH_ENABLE_THPRAC
     // thprac_th10.cpp:527-547. The upstream EHOOK at 0x44fb9f freezes the ECL
     // sub-time for the stage 1/2/4 main enemy while a boss exists, and jumps
@@ -80,14 +94,31 @@ struct Script final:EclServices {
 };
 struct Enemies final:EnemyManagerEnvironment {
     World& w;Script cleanup;explicit Enemies(World& world):w(world),cleanup(world,nullptr){rate=&w.engine.speed;difficulty=&w.state.game.difficulty;registry=&w.engine.manager.registry;player=w.actors.player;scripts=&cleanup;enemy_type_table=reinterpret_cast<void*>(1);script_type_table=reinterpret_cast<void*>(2);}
-    Enemy* allocate_enemy() override{return static_cast<Enemy*>(std::malloc(sizeof(Enemy)));}
-    void release_enemy(Enemy* enemy) override{std::free(enemy);}
+    Enemy* allocate_enemy() override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        return static_cast<Enemy*>(w.rollback_enemies.allocate(sizeof(Enemy),true));
+#else
+        return static_cast<Enemy*>(std::malloc(sizeof(Enemy)));
+#endif
+    }
+    void release_enemy(Enemy* enemy) override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(enemy&&!w.rollback_enemies.release(enemy))__builtin_trap();
+#else
+        std::free(enemy);
+#endif
+    }
     i32 update_enemy(Enemy& enemy) override{return w.update_enemy(enemy);}
     void destroy_enemy(Enemy& enemy) override{
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         for(u32 seat=0;seat<w.player_count;++seat)if(auto* player=w.pilots[seat].player)if(player->target==&enemy){player->target=nullptr;player->target_seen=0;}
 #endif
-        enemy.shutdown(*w.actors.enemies,*this);std::free(&enemy);
+        enemy.shutdown(*w.actors.enemies,*this);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(!w.rollback_enemies.release(&enemy))__builtin_trap();
+#else
+        std::free(&enemy);
+#endif
     }
     void spawn_death_effect(const EnemyState& enemy) override{w.effect(*w.actors.enemies->animation_files[enemy.death_animation_file],enemy.death_animation,enemy.current.position);}
 };

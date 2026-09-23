@@ -2,13 +2,19 @@
 namespace th10::multiplayer {
 bool DecodeSessionSetup(SessionSetup& current,const std::uint32_t* words,
                         std::size_t size) noexcept {
-    if(current.started||!words||size!=11||words[0]!=1||words[1]<2||words[1]>3||
+    if(current.started||!words||!((words[0]==1&&size==11)||(words[0]==2&&size==13))||
+       words[1]<2||words[1]>3||
        words[2]>=words[1]||words[3]>4||words[4]>65535)return false;
     SessionSetup next{};
     next.playerCount=words[1];next.localPlayer=words[2];
     next.difficulty=words[3];next.seed=words[4];
+    const std::size_t loadoutBase=words[0]==2?7:5;
+    if(words[0]==2){
+        next.sessionId=std::uint64_t(words[5])|(std::uint64_t(words[6])<<32);
+        if(!next.sessionId)return false;
+    }
     for(std::uint32_t seat=0;seat<3;++seat){
-        const auto character=words[5+seat*2],shot=words[6+seat*2];
+        const auto character=words[loadoutBase+seat*2],shot=words[loadoutBase+seat*2+1];
         if(character>1||shot>2||(seat>=next.playerCount&&(character||shot)))return false;
         next.loadouts[seat]={character,shot};
     }

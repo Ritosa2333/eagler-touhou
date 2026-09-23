@@ -45,8 +45,21 @@ struct Behavior final:LaserBehaviorEnvironment {
 };
 struct Lasers final:LaserEnvironment {
     World& w;explicit Lasers(World& world):w(world){default_rate=&w.engine.speed;straight_methods=straight_kind;timed_methods=timed_kind;}
-    void* allocate(u32 size) override{return std::malloc(size);}
-    void release(void* p) override{std::free(p);}
+    void* allocate(u32 size) override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(auto* p=w.rollback_lasers.allocate(size,true))return p;
+        w.fail();return nullptr;
+#else
+        return std::malloc(size);
+#endif
+    }
+    void release(void* p) override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(p&&!w.rollback_lasers.release(p))__builtin_trap();
+#else
+        std::free(p);
+#endif
+    }
     void initialize_laser(EnemyLaser& laser,const void* p) override{Behavior env(w,static_cast<const Vec3*>(p));if(laser.original_virtual_table==straight_kind)reinterpret_cast<StraightLaser&>(laser).start(*static_cast<const StraightLaserParameters*>(p),env);else if(laser.original_virtual_table==timed_kind)reinterpret_cast<TimedLaser&>(laser).start(*static_cast<const TimedLaserParameters*>(p),env);else __builtin_trap();}
     i32 update_laser(EnemyLaser& laser) override{Behavior env(w,&laser.position);if(laser.original_virtual_table==straight_kind)return reinterpret_cast<StraightLaser&>(laser).update(env);if(laser.original_virtual_table==timed_kind)return reinterpret_cast<TimedLaser&>(laser).update(env);__builtin_trap();}
     void draw_laser(EnemyLaser& laser) override{Behavior env(w);if(laser.original_virtual_table==straight_kind)reinterpret_cast<StraightLaser&>(laser).draw(env);else if(laser.original_virtual_table==timed_kind)reinterpret_cast<TimedLaser&>(laser).draw(env);else __builtin_trap();}

@@ -103,15 +103,53 @@ void AnimationEngine::draw(AnmVm& vm){
 }
 void AnimationEngine::bind_sprite(AnmVm& vm,i32 index){vm.animation_file->bind_sprite(vm,index);}
 void AnimationEngine::change_draw_mode(AnmVm& vm){AnmDistortion::initialize(vm,*this);}
-void* AnimationEngine::allocate_geometry(u32 bytes){return std::malloc(bytes);}
+void* AnimationEngine::allocate_geometry(u32 bytes){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    return rollback_geometry.allocate(bytes,true);
+#else
+    return std::malloc(bytes);
+#endif
+}
 AnmVm* AnimationEngine::spawn_child(AnmVm& parent,i32 script,u32 mode){
     const auto placement=mode==88?AnimationPlacement::WorldBack:mode==90?AnimationPlacement::UiBack:mode==91?AnimationPlacement::WorldFront:AnimationPlacement::UiFront;
     u32 id=manager.create(*parent.animation_file,script,parent.owner_tag,placement,*this,*this);return manager.registry.find_and_clear(id);
 }
-AnmVm* AnimationEngine::allocate_animation(){return static_cast<AnmVm*>(std::malloc(sizeof(AnmVm)));}
-void AnimationEngine::release_memory(void* p){std::free(p);}
-void* AnimationEngine::allocate(u32 bytes){return std::malloc(bytes);}
-void AnimationEngine::release(void* p){std::free(p);}
+AnmVm* AnimationEngine::allocate_animation(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    return static_cast<AnmVm*>(rollback_animation_overflow.allocate(sizeof(AnmVm),true));
+#else
+    return static_cast<AnmVm*>(std::malloc(sizeof(AnmVm)));
+#endif
+}
+void AnimationEngine::release_memory(void* p){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(p&&rollback_animation_overflow.owns(p)){
+        if(!rollback_animation_overflow.release(p))__builtin_trap();
+        return;
+    }
+    if(p&&rollback_geometry.owns(p)){
+        if(!rollback_geometry.release(p))__builtin_trap();
+        return;
+    }
+#endif
+    std::free(p);
+}
+void* AnimationEngine::allocate(u32 bytes){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    return rollback_geometry.allocate(bytes,true);
+#else
+    return std::malloc(bytes);
+#endif
+}
+void AnimationEngine::release(void* p){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(p&&rollback_geometry.owns(p)){
+        if(!rollback_geometry.release(p))__builtin_trap();
+        return;
+    }
+#endif
+    std::free(p);
+}
 void AnimationEngine::clear_pixel_shader(){device.clear_shader();}
 void AnimationEngine::create_model_buffer(void*& buffer){device.create_vertices(80,Layouts::World,buffer);}
 void* AnimationEngine::lock_model_buffer(void* buffer){return device.map_vertices(buffer);}

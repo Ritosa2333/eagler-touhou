@@ -8,12 +8,16 @@
 namespace th10::multiplayer {
 struct Loadout { std::uint32_t character=0,shot=0; };
 struct SessionSetup {
+    std::uint64_t sessionId=0;
     std::uint32_t playerCount=0,localPlayer=0,difficulty=0,seed=0;
     Loadout loadouts[3]{};
     bool configured=false,started=false;
 };
-// Version, player count, local seat, difficulty, seed, then three char/shot
-// pairs. Unused pairs must be zero. Reject before changing any owner.
+// v1 (local test compatibility): version, player count, local seat, difficulty,
+// seed, then three char/shot pairs.
+// v2 (real netplay): the same header followed by session-id low/high u32, then
+// the three char/shot pairs. Unused pairs must be zero. Reject before changing
+// any owner.
 bool DecodeSessionSetup(SessionSetup&,const std::uint32_t*,std::size_t) noexcept;
 std::uint32_t GameplayContract(const SessionSetup&) noexcept;
 }
