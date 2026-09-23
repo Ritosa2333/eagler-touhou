@@ -717,7 +717,11 @@ function renderServerStatusNote(_snapshot?: Readonly<AppShellClientState>) {
     text = t("status.applyingSiteUpdate", { seconds: updateSeconds });
   } else if (appShell?.updateWaiting) {
     kind = "update";
-    text = t("status.siteUpdateWaiting", { seconds: updateSeconds });
+    text = state.launched === true
+      ? t("status.siteUpdateAfterExit", { seconds: updateSeconds })
+      : shouldDeferAppShellReload()
+        ? t("status.siteUpdateAfterOperation", { seconds: updateSeconds })
+        : t("status.siteUpdateWaiting", { seconds: updateSeconds });
   } else if (appShell?.updateReady) {
     kind = "update";
     text = state.launched === true

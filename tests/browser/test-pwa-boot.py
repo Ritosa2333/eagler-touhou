@@ -312,33 +312,32 @@ def main():
                 nested.close()
                 other = context.new_page()
                 boot(other, origin)
+                other.evaluate("document.querySelector('#decisionDialog').showModal()")
+                other.evaluate("window.__oldPageMarker = true")
                 before_update = Handler.runtime_hits()
                 build_b = build(site, "b")
                 # A broken unselected game cannot block the Launcher update.
                 Handler.blocked_runtime_prefixes = ("/runtime/pwa-unused/",)
+                page.evaluate("document.querySelector('#decisionDialog').showModal()")
                 page.evaluate("async () => (await navigator.serviceWorker.getRegistration('./')).update()")
                 wait_async(page, """async () => !!(await navigator.serviceWorker.getRegistration('./'))?.waiting""")
                 page.wait_for_function("""() => {
                     const note = document.querySelector('#serverStatusNote');
-                    return note?.dataset.kind === 'update' && note.textContent === '已有更新。正在等待本站全部旧页面关闭。（如果仍然长时间看到，请重启浏览器）';
+                    return note?.dataset.kind === 'update' && note.textContent.startsWith('网站更新已下载，正在等待当前操作完成…');
                 }""")
                 assert status(page)["build"] == build_a
                 assert status(other)["build"] == build_a
                 assert Handler.runtime_hits() == before_update, "SW update eagerly fetched Runtime bytes"
-                # A refresh cannot bypass the multi-window barrier. Once only
-                # one idle Launcher remains, that client may safely activate B
-                # and reload itself without requiring a browser restart.
-                boot(page, origin)
-                page.wait_for_function("document.querySelector('#serverStatusNote')?.dataset.kind === 'update'")
-                assert status(page)["build"] == build_a
-                # Keep the refreshed page, which never observed B installing.
-                # It must observe the already-waiting candidate and finish alone.
+                # The current page stays on A during its own operation, then
+                # activates B while another old page is still open.
                 with page.expect_navigation(wait_until="load", timeout=30000):
-                    other.close()
+                    page.evaluate("document.querySelector('#decisionDialog').close()")
                 page.wait_for_function("window.__eaglerBoot?.done === true", timeout=30000)
                 page.evaluate("document.querySelector('#firstUseNoticeDialog')?.close()")
                 assert status(page)["build"] == build_b
-                mark("refreshed-waiting-page-then-sole-client-auto-activation")
+                assert page.evaluate("document.querySelector('meta[name=pwa-fixture-shell]')?.content === 'b'")
+                assert other.evaluate("window.__oldPageMarker === true && document.querySelector('#decisionDialog').open && document.querySelector('meta[name=pwa-fixture-shell]')?.content === 'a'")
+                mark("current-page-auto-activation-with-other-old-page-open")
                 assert Handler.runtime_hits() == before_update, "activation eagerly fetched Runtime bytes"
                 mark("shell-update-with-broken-unselected-Runtime-fetches-no-Runtimes")
                 set_outage(context, True)
@@ -348,12 +347,20 @@ def main():
                 launch_fixture(page, origin, "a")
                 assert status(page)["runtimeGroups"] == ["runtime/pwa-test/"]
                 assert_network_unavailable(page, origin)
-                mark("shell-update-offline-retains-previous-complete-Runtime")
+                mark("new-page-offline-launch-with-other-old-page-open")
                 set_outage(context, False)
                 launch_fixture(page, origin, "b")  # fetch the selected group's new dependencies now
                 assert len(Handler.runtime_hits("/runtime/pwa-test/")) > len(before_update)
                 assert Handler.runtime_hits("/runtime/pwa-unused/") == [], "launch fetched another Runtime"
-                mark("on-demand-launch-fetches-only-selected-latest-Runtime")
+                assert other.evaluate("window.__oldPageMarker === true")
+                new_page = context.new_page()
+                boot(new_page, origin)
+                assert status(new_page)["build"] == build_b
+                assert new_page.evaluate("document.querySelector('meta[name=pwa-fixture-shell]')?.content === 'b'")
+                launch_fixture(new_page, origin, "b")
+                new_page.close()
+                other.close()
+                mark("new-page-updated-runtime-launch-with-other-old-page-open")
                 set_outage(context, True)
                 boot(page, origin)
                 launch_fixture(page, origin, "b")

@@ -49,6 +49,8 @@ mutable user DATA / save / Replay
 
 Service Worker caches and updates the App Shell. It does not own the Runtime filesystem or hide a package Runtime inside SW state. The Runtime uses same-origin HTML/JS/WASM and the App/Launcher manages DATA.
 
+An App Shell replacement first verifies and caches its complete required Launcher set. An idle Launcher then requests activation and reloads itself; an active game or operation defers that page's reload until it finishes. Other old tabs and Runtime iframes do not block activation. Verify both the reloaded current page and a newly opened page can load the new shell and launch a Runtime while an old page remains open.
+
 Resource delivery has three modes. `hosted` publishes game/shared payloads with the site; `external` keeps Launcher and Runtime local while retaining Release Catalog and Package Descriptors for automatic acquisition through same-origin redirect routes; `import` requires a user-selected local Package. External storage topology does not enter Package Descriptor URLs: descriptors retain safe relative sources, and the web-server/CDN layer owns redirects and CORS.
 
 The static `src/contracts/product-catalog.mts` module is the product registry.

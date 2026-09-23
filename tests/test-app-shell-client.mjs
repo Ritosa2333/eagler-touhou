@@ -14,10 +14,8 @@ class WorkerStub extends EventTargetStub {
   postMessage(message, ports = []) {
     this.messages.push(message.type);
     const response = message.type === "CHECK_APP_SHELL_ACTIVATION"
-      ? { ok: true, soleClient: this.activationClients === 1, clients: this.activationClients }
-      : message.type === "ACTIVATE_APP_SHELL" && this.activationClients === 1
-        ? { ok: true, activating: true }
-        : { ok: false, code: "MultipleClients", clients: this.activationClients };
+      ? { ok: true, soleClient: true }
+      : { ok: true, activating: true };
     ports[0]?.postMessage(response);
   }
 }
@@ -31,14 +29,9 @@ const serviceWorker = { controller: {}, registerCalls: [],
   async getRegistration() { return null; },
 };
 const scheduled = []; let defer = true, reloads = 0;
-const createMessageChannel = () => {
-  const port1 = { onmessage: null, close() {} };
-  const port2 = { postMessage(data) { queueMicrotask(() => port1.onmessage?.({ data })); } };
-  return { port1, port2 };
-};
 const client = createAppShellClient({ serviceWorker, secureContext: true,
   shouldDeferReload: () => defer, schedule: task => scheduled.push(task), reload: () => reloads++, logger: { warn() {} },
-  createMessageChannel, activationRetryMs: 0,
+  activationRetryMs: 0,
 });
 await client.ready;
 assert.deepEqual(serviceWorker.registerCalls, [{ url: "./app-shell-sw.js", options: { scope: "./", updateViaCache: "none" } }]);
@@ -49,7 +42,7 @@ assert.equal(client.snapshot().updateWaiting, true);
 defer = false;
 assert.equal(client.maybeReload(), false, "waiting must not cause a refresh loop");
 await new Promise(resolve => setTimeout(resolve, 0));
-assert.deepEqual(worker.messages, ["CHECK_APP_SHELL_ACTIVATION", "ACTIVATE_APP_SHELL"]);
+assert.deepEqual(worker.messages, ["ACTIVATE_APP_SHELL"]);
 assert.equal(client.snapshot().activationPending, true, "the sole idle client blocks input before activating the candidate");
 assert.equal(client.snapshot().reloadPending, false);
 worker.setState("activated");
@@ -90,7 +83,7 @@ assert.equal(await bounded.ready, stuck, "initial activation must not wait forev
 assert.equal(first.snapshot().updateReady, false, "a late first-install controller is not a replacement");
 const waitingRegistration = new RegistrationStub(); waitingRegistration.waiting = new WorkerStub();
 const waiting = createAppShellClient({ serviceWorker: { ...serviceWorker, async register() { return waitingRegistration; } }, secureContext: true,
-  shouldDeferReload: () => true, activationRetryMs: 0, createMessageChannel });
+  shouldDeferReload: () => true, activationRetryMs: 0 });
 await waiting.ready; assert.equal(waiting.snapshot().updateWaiting, true); assert.equal(waiting.maybeReload(), false);
 // A refreshed page did not see updatefound: the candidate is already waiting.
 const resumedRegistration = new RegistrationStub();
@@ -99,46 +92,40 @@ resumedRegistration.waiting = resumedWorker;
 let resumedReloads = 0;
 const resumed = createAppShellClient({
   serviceWorker: { ...serviceWorker, async register() { return resumedRegistration; } }, secureContext: true,
-  createMessageChannel, activationRetryMs: 0, schedule: task => task(), reload: () => resumedReloads++,
+  activationRetryMs: 0, schedule: task => task(), reload: () => resumedReloads++,
 });
 await resumed.ready;
 await new Promise(resolve => setTimeout(resolve, 0));
-assert.deepEqual(resumedWorker.messages, ["CHECK_APP_SHELL_ACTIVATION", "ACTIVATE_APP_SHELL"]);
+assert.deepEqual(resumedWorker.messages, ["ACTIVATE_APP_SHELL"]);
 resumedWorker.setState("activated");
 assert.equal(resumedReloads, 1, "an already-waiting replacement must finish updating without closing the browser");
 resumedWorker.emit("statechange");
 assert.equal(resumedReloads, 1, "duplicate activation notifications must not reload twice");
-for (const fault of ["check-timeout", "check-throw", "activation-timeout", "missing-statechange", "stalled-handoff", "other-window", "slow-activation"]) {
+for (const fault of ["activation-throw", "missing-statechange", "stalled-handoff", "other-window", "slow-activation"]) {
   const retryRegistration = new RegistrationStub();
   const retryWorker = new WorkerStub(); retryWorker.state = "installed";
+  if (fault === "other-window") retryWorker.activationClients = 2;
   retryRegistration.waiting = retryWorker;
-  let checks = 0, activations = 0, retryReloads = 0;
+  let activations = 0, retryReloads = 0;
   retryWorker.postMessage = function(message, ports) {
-    if (message.type === "CHECK_APP_SHELL_ACTIVATION") {
-      checks++;
-      if (checks === 1 && fault === "check-timeout") return;
-      if (checks === 1 && fault === "check-throw") throw new Error("suspended worker");
-      this.activationClients = checks === 1 && fault === "other-window" ? 2 : 1;
-    } else {
-      activations++;
-      if (fault !== "stalled-handoff" || activations > 1) this.state = "activated";
-      if (fault === "slow-activation") {
-        this.state = "activating";
-        setTimeout(() => { this.state = "activated"; }, 35);
-        return; // Lost reply while the browser is already switching workers.
-      }
-      if (fault === "activation-timeout") return;
+    activations++;
+    if (fault === "activation-throw" && activations === 1) throw new Error("suspended worker");
+    if (fault !== "stalled-handoff" || activations > 1) this.state = "activated";
+    if (fault === "slow-activation") {
+      this.state = "activating";
+      setTimeout(() => { this.state = "activated"; }, 35);
+      return;
     }
     WorkerStub.prototype.postMessage.call(this, message, ports);
   };
   let retryDeferred = false, unlockedDuringActivation = false;
   const retry = createAppShellClient({
     serviceWorker: { ...serviceWorker, async register() { return retryRegistration; } }, secureContext: true,
-    createMessageChannel, activationRetryMs: 2, activationRequestTimeoutMs: 5, activationHandoffTimeoutMs: 10,
+    activationRetryMs: 2, activationHandoffTimeoutMs: 10,
     onChange: snapshot => {
       if (retryWorker.state === "activating" && !snapshot.activationPending) unlockedDuringActivation = true;
     },
-    shouldDeferReload: () => retryDeferred, schedule: task => task(), reload: () => retryReloads++,
+    shouldDeferReload: () => retryDeferred, schedule: task => task(), reload: () => retryReloads++, logger: { warn() {} },
   });
   try {
     await retry.ready;
@@ -147,8 +134,7 @@ for (const fault of ["check-timeout", "check-throw", "activation-timeout", "miss
     assert.equal(retryReloads, 1, `${fault}: must recover without restarting the browser`);
     assert.equal(retry.snapshot().updateWaiting, false);
     assert.equal(unlockedDuringActivation, false, "an in-progress activation must keep input locked even after a timeout");
-    assert.equal(activations, fault === "stalled-handoff" ? 2 : 1);
-    assert.equal(checks, ["check-timeout", "check-throw", "stalled-handoff", "other-window"].includes(fault) ? 2 : 1);
+    assert.equal(activations, ["activation-throw", "stalled-handoff"].includes(fault) ? 2 : 1);
   } finally {
     retryDeferred = true;
     retryWorker.setState("activated");
@@ -158,18 +144,14 @@ const busyRegistration = new RegistrationStub();
 const busyWorker = new WorkerStub(); busyWorker.state = "installed";
 busyRegistration.waiting = busyWorker;
 let becameBusy = false;
-busyWorker.postMessage = function(message, ports) {
-  // Activity can begin while an asynchronous eligibility request is in flight.
-  becameBusy = true;
-  WorkerStub.prototype.postMessage.call(this, message, ports);
-};
 const busyClient = createAppShellClient({
   serviceWorker: { ...serviceWorker, async register() { return busyRegistration; } }, secureContext: true,
-  createMessageChannel, activationRetryMs: 0, shouldDeferReload: () => becameBusy,
+  activationRetryMs: 0, shouldDeferReload: () => becameBusy,
 });
+becameBusy = true;
 await busyClient.ready;
 await new Promise(resolve => setTimeout(resolve, 0));
-assert.deepEqual(busyWorker.messages, ["CHECK_APP_SHELL_ACTIVATION"], "new game/operation must cancel activation after eligibility reply");
+assert.deepEqual(busyWorker.messages, [], "a new game/operation must defer activation");
 assert.equal(busyClient.snapshot().activationPending, false);
 const existingRegistration = new RegistrationStub(); existingRegistration.installing = new WorkerStub();
 const existing = createAppShellClient({ serviceWorker: { ...serviceWorker, async register() { return existingRegistration; } },
