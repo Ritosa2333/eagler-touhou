@@ -3902,11 +3902,12 @@ function renderTouchFocusState(updateCopy = true) {
 }
 function renderTouchFireState(updateCopy = true) {
   const fireButton = $("#touchFire");
-  fireButton.classList.toggle("is-on", touchControls.fireEnabled);
-  const pressed = String(touchControls.fireEnabled);
+  const enabled = state.game === "th09" ? th09FireHeld : touchControls.fireEnabled;
+  fireButton.classList.toggle("is-on", enabled);
+  const pressed = String(enabled);
   if (fireButton.getAttribute("aria-pressed") !== pressed) fireButton.setAttribute("aria-pressed", pressed);
   if (!updateCopy) return;
-  const copy = t("touch.tapToggle");
+  const copy = t(state.game === "th09" ? "touch.holdFireCharge" : "touch.tapToggle");
   const small = requiredDescendant(fireButton, "small", HTMLElement);
   if (small.textContent !== copy) small.textContent = copy;
 }
@@ -4220,6 +4221,7 @@ async function confirmInputWarnings() {
 }
 
 function resetRuntime() {
+  releaseTh09Fire();
   activeLocalMusicInstall?.cancel();
   activeLocalMusicInstall = null;
   cancelBlockingNetworkOperation();
@@ -4428,6 +4430,7 @@ function forwardHostedKeyboard(event: KeyboardEvent) {
 window.addEventListener("keydown", forwardHostedKeyboard, true);
 window.addEventListener("keyup", forwardHostedKeyboard, true);
 function clearHostedKeyboard() {
+  releaseTh09Fire();
   if (!state.launched || !frame.contentWindow) return;
   const context = touchRuntimeMessageContext();
   deliverRuntimeInput(context,
@@ -4490,7 +4493,9 @@ async function syncTouchControls() {
   pushTouchControlsLive();
 }
 function pushTouchControlsLive() {
-  return postRuntimeTouchControls(touchRuntimeMessageContext(), touchControls, state.options.touchSensitivity);
+  // TH09 Fire sends held Z; its automatic Z pulse stream must stay disabled.
+  const controls = state.game === "th09" ? { ...touchControls, fireEnabled: false } : touchControls;
+  return postRuntimeTouchControls(touchRuntimeMessageContext(), controls, state.options.touchSensitivity);
 }
 function refocusGameIfNeeded() {
   // Keep the historical gameplay hot path: HUD pointerdown handlers prevent
@@ -7937,6 +7942,50 @@ touchFocusButton.addEventListener("click", event => {
   void setTouchFocus(!touchControls.focusEnabled);
 });
 
+// TH09 samples a held Z as charge and Z edges as ordinary shots. Its Fire HUD
+// holds that exact key, while the other games retain the toggle-style Fire.
+const th09FireButton = $("#touchFire");
+const th09FireKeySpec = Object.freeze({ code: "KeyZ", key: "z", keyCode: 90 });
+let th09FireHeld = false;
+let th09FirePointerId: number | null = null;
+function setTh09Fire(held: boolean) {
+  if (held && (!state.launched || state.game !== "th09" || !state.options.touchEnabled || touchLayoutEditing)) return;
+  if (th09FireHeld === held) return;
+  th09FireHeld = held;
+  renderTouchFireState(false);
+  postRuntimeHostedKey(touchRuntimeMessageContext(), th09FireKeySpec, held);
+}
+function releaseTh09Fire() {
+  th09FirePointerId = null;
+  setTh09Fire(false);
+}
+th09FireButton.addEventListener("pointerdown", event => {
+  if (iosWebKitTouch || th09FirePointerId !== null || !state.launched || state.game !== "th09" || touchLayoutEditing) return;
+  event.preventDefault();
+  th09FirePointerId = event.pointerId;
+  try { th09FireButton.setPointerCapture(event.pointerId); } catch {}
+  setTh09Fire(true);
+});
+for (const type of ["pointerup", "pointercancel", "lostpointercapture"] as const) {
+  th09FireButton.addEventListener(type, event => {
+    if (iosWebKitTouch || th09FirePointerId !== event.pointerId) return;
+    event.preventDefault();
+    releaseTh09Fire();
+  });
+}
+th09FireButton.addEventListener("touchstart", event => {
+  if (!iosWebKitTouch || !state.launched || state.game !== "th09" || touchLayoutEditing) return;
+  event.preventDefault();
+  setTh09Fire(true);
+}, { passive: false });
+for (const type of ["touchend", "touchcancel"] as const) {
+  th09FireButton.addEventListener(type, event => {
+    if (!iosWebKitTouch) return;
+    event.preventDefault();
+    releaseTh09Fire();
+  }, { passive: false });
+}
+
 async function triggerTouchBomb() {
   touchControls.bombSerial++;
   refocusGameIfNeeded();
@@ -8023,12 +8072,14 @@ for (const [button, activate] of touchActionButtons) {
   // keyboard and assistive-technology activation without firing twice.
   button.addEventListener("pointerdown", event => {
     if (!state.launched) return;
+    if (button === th09FireButton && state.game === "th09") return;
     event.preventDefault();
     try { button.setPointerCapture(event.pointerId); } catch {}
     activate();
   });
   button.addEventListener("click", event => {
     if (event.detail !== 0 || !state.launched) return;
+    if (button === th09FireButton && state.game === "th09") return;
     activate();
   });
 }

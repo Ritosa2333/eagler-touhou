@@ -88,6 +88,25 @@ try {
   const touch = (type, x, y) => cdp.send('Input.dispatchTouchEvent', {
     type, touchPoints: type === 'touchEnd' ? [] : [{ x, y, id: 1, radiusX: 1, radiusY: 1 }],
   });
+  const fire = await page.evaluate(() => {
+    const button = document.querySelector('#touchFire');
+    const frame = document.querySelector('#gameFrame');
+    const core = frame.contentWindow.__th09Runtime.core;
+    frame.contentWindow.__fireKeyProbe = [];
+    const original = core._th09_key;
+    core._th09_key = (...args) => { frame.contentWindow.__fireKeyProbe.push(args); return original(...args); };
+    const rect = button.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, label: button.querySelector('small').textContent };
+  });
+  assert.equal(fire.label, '按住开火／蓄力', 'TH09 Fire must explain its hold-to-charge behavior');
+  await touch('touchStart', fire.x, fire.y);
+  await page.waitForFunction(() => document.querySelector('#gameFrame').contentWindow.__fireKeyProbe.length >= 1);
+  assert.equal(await page.$eval('#touchFire', button => button.getAttribute('aria-pressed')), 'true');
+  await touch('touchEnd', fire.x, fire.y);
+  await page.waitForFunction(() => document.querySelector('#gameFrame').contentWindow.__fireKeyProbe.length >= 2);
+  assert.equal(await page.$eval('#touchFire', button => button.getAttribute('aria-pressed')), 'false');
+  const fireKeys = await page.evaluate(() => document.querySelector('#gameFrame').contentWindow.__fireKeyProbe);
+  assert.deepEqual(fireKeys, [[44, 1], [44, 0]], 'TH09 Fire must hold and release native Z exactly once');
   await touch('touchStart', surface.canvasRight - 25, surface.y);
   await touch('touchMove', surface.canvasRight + 25, surface.y);
   await touch('touchEnd', surface.canvasRight + 25, surface.y);
@@ -105,9 +124,36 @@ try {
   assert.deepEqual(events.map(event => event[0]), [0, 1, 2], 'one finger must survive crossing the letterbox boundary');
   assert.equal(events[0][1], events[1][1], 'cross-border movement must keep the same finger ID');
   assert.ok(events[1][2] > 1, 'black-bar coordinates must be forwarded outside the 4:3 canvas');
+  await page.evaluate(() => { document.querySelector('#gameFrame').contentWindow.__directTouchProbe = []; });
+  const outsideX = surface.canvasRight + 35;
+  const outsideHit = await page.evaluate((x, y) => document.elementFromPoint(x, y)?.id, outsideX, surface.y);
+  await touch('touchStart', outsideX, surface.y);
+  await touch('touchMove', surface.canvasRight - 35, surface.y);
+  await touch('touchEnd', surface.canvasRight - 35, surface.y);
+  await page.waitForFunction(() => document.querySelector('#gameFrame').contentWindow.__directTouchProbe.length >= 3, { timeout: 4000 });
+  const outsideEvents = await page.evaluate(() => document.querySelector('#gameFrame').contentWindow.__directTouchProbe);
+  console.log(JSON.stringify({ name: 'outside-start', outsideHit, outsideEvents }));
+  assert.deepEqual(outsideEvents.map(event => event[0]), [0, 1, 2], 'a gesture starting in the letterbox must reach the game');
+  assert.equal(outsideEvents[0][1], outsideEvents[1][1], 'outside-start must retain its finger ID');
+  assert.ok(outsideEvents[0][2] > 1 && outsideEvents[1][2] < 1, 'outside-start coordinates must cross into the canvas');
   await page.setViewport(viewport(390, 844));
   await page.waitForFunction(() => innerWidth < innerHeight, { timeout: 10000 });
   await measure('portrait');
+  const portraitTouch = await page.evaluate(() => {
+    const frame = document.querySelector('#gameFrame');
+    const canvas = frame.contentDocument.querySelector('canvas').getBoundingClientRect();
+    frame.contentWindow.__directTouchProbe = [];
+    return { x: innerWidth / 2, outsideY: canvas.bottom + 35, insideY: canvas.bottom - 35,
+      hit: document.elementFromPoint(innerWidth / 2, canvas.bottom + 35)?.id };
+  });
+  await touch('touchStart', portraitTouch.x, portraitTouch.outsideY);
+  await touch('touchMove', portraitTouch.x, portraitTouch.insideY);
+  await touch('touchEnd', portraitTouch.x, portraitTouch.insideY);
+  await page.waitForFunction(() => document.querySelector('#gameFrame').contentWindow.__directTouchProbe.length >= 3, { timeout: 4000 });
+  const portraitEvents = await page.evaluate(() => document.querySelector('#gameFrame').contentWindow.__directTouchProbe);
+  console.log(JSON.stringify({ name: 'portrait-outside-start', portraitTouch, portraitEvents }));
+  assert.deepEqual(portraitEvents.map(event => event[0]), [0, 1, 2], 'portrait black-bar start must reach the game');
+  assert.ok(portraitEvents[0][3] > 1 && portraitEvents[1][3] < 1, 'portrait coordinates must cross into the canvas');
   const desktop = await browser.newPage();
   if (process.env.EAGLER_BLOCK_TH09_CSS === '1') {
     await desktop.setRequestInterception(true);
