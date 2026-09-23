@@ -616,7 +616,6 @@ function mpConnectLobby(reconnecting = false) {
 let mpLaunchInFlight = false;
 let mpGameCheckInFlight = false;
 let launcherOperationDepth = 0;
-let serverConfigurationWarning = "";
 async function mpLaunchRoomGame() {
   if (mpLaunchInFlight || state.launched) return;
   mpLaunchInFlight = true;
@@ -713,10 +712,7 @@ function renderServerStatusNote(_snapshot?: Readonly<AppShellClientState>) {
     ? 0 : Math.max(0, Math.floor((Date.now() - appShellUpdateNoticeStartedAt) / 1000));
   let text = "";
   let kind = "";
-  if (serverConfigurationWarning) {
-    kind = "offline";
-    text = serverConfigurationWarning;
-  } else if (appShell?.activationPending) {
+  if (appShell?.activationPending) {
     kind = "update";
     text = t("status.applyingSiteUpdate", { seconds: updateSeconds });
   } else if (appShell?.updateWaiting) {
@@ -1030,9 +1026,6 @@ function applyHostManifest(value: unknown) {
   importServer = serverResourceMode === "import";
   gameDataFallback = manifest.shared?.gameDataFallback || null;
   state.netplay.url = typeof manifest.shared?.netplayRelay === "string" ? manifest.shared.netplayRelay : "";
-  serverConfigurationWarning = importServer && !gameDataFallback
-    ? t("package.noExternalLink")
-    : "";
   if (mpUiState.room && state.netplay.url) mpReconnectLobbyNow();
   hostManifestAvailable = true;
   renderServerStatusNote();
