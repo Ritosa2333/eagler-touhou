@@ -37,6 +37,9 @@ assert.equal(manifest.shared.resourceMode, "hosted");
 assert.deepEqual(Object.keys(manifest.games), Object.keys(PRODUCT_GAMES));
 assert.doesNotThrow(() => validateHostManifest(manifest));
 assert.equal(manifest.shared.netplayRelay, undefined);
+const th09Only = await createManifest({ games: ["th09"] });
+assert.deepEqual(Object.keys(th09Only.games), ["th09"]);
+assert.doesNotThrow(() => validateHostManifest(th09Only));
 
 const relayManifest = await createManifest({ netplayRelay: "ws://127.0.0.1:18142/" });
 assert.equal(relayManifest.shared.netplayRelay, "ws://127.0.0.1:18142/");

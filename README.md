@@ -26,7 +26,10 @@
 
 ![Eagler Touhou 启动器与游戏管理界面](docs/assets/readme/launcher.webp)
 
-- 允许用户在浏览器中运行 TH06、TH07、TH08 和 TH10，并提供导入导出存档、Replay 等文件的界面。
+- 允许用户在浏览器中运行 TH06、TH07、TH08、TH09 和 TH10，并提供导入导出存档、Replay 等文件的界面。
+- TH09 使用独立的 C++/SDL3 Runtime，当前不提供 thprac；构建和发布需要部署者自行提供原版 `th09.dat`、字体表与 19 首预处理 OGG。参见 `scripts/prepare-th09-content.mjs` 和 TH09 仓库的 `web:eagler` 构建脚本。
+
+本地只测试 TH09 时，可将 `EAGLER_DEVELOPMENT_GAMES=th09`、`EAGLER_TH09_CONTENT_DIR` 指向 `prepare-th09-content.mjs` 的输出目录，并用 `EAGLER_DEVELOPMENT_VANILLA_FONT`、`EAGLER_DEVELOPMENT_UNICODE_FONT` 指定本地字体。这样开发服务器只为 TH09 生成 Host Manifest，不要求同时编译其余游戏；正式发布仍需完整的 Runtime Release 与 Host 资源。
 - 存档、Replay 等完全和原版互通。
 - 力求完美体验。解决了原 portable 分支中出现的 弹幕抖动、弹幕运动不流畅、闪烁、单线程切换音乐卡顿、手机卡顿 等大量问题。
 - 优化非常好，至少能在骁龙 660 上稳定 90Hz 运行。

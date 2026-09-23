@@ -1360,12 +1360,10 @@ const iosWebKitTouch = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
   (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
 const iosHelpPreview = new URLSearchParams(location.search).get("iosHelpPreview") === "1";
 const showIosFullscreenHelp = iosWebKitTouch || iosHelpPreview;
-// Experimental only: allow an Android browser/WebView to opt into the same
-// host-document direct-touch bridge used on iOS.  The normal Android path is
-// intentionally unchanged unless the explicit URL flag is present.
-const androidDirectTouchTrial = /\bAndroid\b/i.test(navigator.userAgent || "") &&
-  new URLSearchParams(location.search).get("androidDirectTouch") === "1";
-const hostDirectTouch = iosWebKitTouch || androidDirectTouchTrial;
+// Keep the entire player surface as the touch owner on phones. The Runtime
+// canvas is letterboxed, so a child-document gesture can lose its target when
+// the finger crosses from the image into the black bars.
+const hostDirectTouch = iosWebKitTouch || /\bAndroid\b/i.test(navigator.userAgent || "");
 const lessMotionStorageKey = "eagler-touhou-less-motion-v1";
 const runtimeDiagnosticsStorageKey = "eagler-touhou-runtime-diagnostics-v1";
 let runtimeDiagnosticsPreference: boolean | null = null;
@@ -2301,6 +2299,7 @@ function touchLayoutHasUnsavedChanges() {
   return JSON.stringify(canonicalTouchLayout(touchLayoutDraft)) !== JSON.stringify(touchLayout);
 }
 const maxImportBytes = 128 * 1024 * 1024;
+const maxGamePackageImportBytes = 256 * 1024 * 1024;
 const maxStoredFileBytes = 64 * 1024 * 1024;
 const maxReplayArchiveExpandedBytes = 128 * 1024 * 1024;
 let midiSynth: MidiSynth | null = null;
@@ -3329,7 +3328,7 @@ async function installDevelopmentPackage(show = true) {
 }
 
 async function installImportedGameData(file: File | Blob) {
-  if (!(file instanceof Blob) || file.size <= 0 || file.size > maxImportBytes) throw new Error(t("package.invalidDataSize"));
+  if (!(file instanceof Blob) || file.size <= 0 || file.size > maxGamePackageImportBytes) throw new Error(t("package.invalidDataSize"));
   if (!globalThis.indexedDB?.open) throw new Error(t("package.indexedDbUnavailable"));
   const {
     adaptLegacyGamePackToPackage,
@@ -3542,7 +3541,9 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
       // can keep configure blocked long enough to look like a dead launch.
       // Configure as MIDI first, then write the local OGG buffers directly into
       // the same-origin runtime FS before callMain().
-      music: localMusicResources ? "midi" : musicTransportMode(state.music),
+      // TH09 handles local OGG through its own configure flag rather than
+      // Module.touhouMusicMode; reporting MIDI here permanently mutes its BGM.
+      music: localMusicResources && state.game !== "th09" ? "midi" : musicTransportMode(state.music),
       resources: localMusicResources ? [] : musicResources,
       runtimeResources: [],
       runtimePack: runtimePack ? { ...runtimePack, manifest: runtimePack.manifest, files: runtimePack.files } : null,
@@ -3659,7 +3660,10 @@ function chooseDefaultMusic() {
   // Effective fallback is transient. Keep explicit preference separate so a
   // later completed install (or saving an unrelated option) cannot erase it.
   state.music = resolveEffectiveMusicMode({
-    requested: state.musicPreferenceExplicit ? state.musicPreference : state.music,
+    // Availability may temporarily force effective music to "none" before a
+    // local package is imported. Re-resolve from the saved preference so BGM
+    // returns as soon as the package's OGG component becomes available.
+    requested: state.musicPreference,
     explicit: state.musicPreferenceExplicit,
     ...availabilityContext,
   });
@@ -7782,6 +7786,7 @@ touchDirectSurface.addEventListener("pointerdown", event => {
   event.preventDefault();
   const touch = { id: nextDirectTouchId--, ...point };
   directTouchPointers.set(event.pointerId, touch);
+  try { touchDirectSurface.setPointerCapture(event.pointerId); } catch {}
   if (gameZoom.isActive()) gameZoom.beginPointer(event);
   postDirectTouch("down", touch);
 });

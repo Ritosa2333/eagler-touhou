@@ -5,8 +5,10 @@ param(
     [string] $Th06Directory,
     [string] $Th07Directory,
     [string] $Th08Directory,
+    [string] $Th09Directory,
     [string] $Th10Directory,
     [string] $Th08Build,
+    [string] $Th09Build,
     [string] $Th10Build,
     [string] $RuntimeRelease,
     [Parameter(Mandatory)] [string] $OutputDirectory,
@@ -80,6 +82,7 @@ $legacyGameDirectories = @{
     th06 = $Th06Directory
     th07 = $Th07Directory
     th08 = $Th08Directory
+    th09 = $Th09Directory
     th10 = $Th10Directory
 }
 if (-not $GameDirectories) { $GameDirectories = @{} }
@@ -104,6 +107,7 @@ foreach ($game in $Games) {
 }
 $selectedPreloadGames = @($Games | Where-Object { $_ -in @('th06', 'th07') })
 $selectedHasTh08 = $Games -contains 'th08'
+$selectedHasTh09 = $Games -contains 'th09'
 $selectedHasTh10 = $Games -contains 'th10'
 if ($null -ne $featureSettings.gameDataFallback) {
     $fallbackUrl = [string]$featureSettings.gameDataFallback.url
@@ -204,6 +208,12 @@ if ($resourceMode -eq 'import') {
                 throw "Prepared TH08 Runtime directory manifest not found: $(Join-Path $runtimeBuilds.th08 'runtime-files.json')"
             }
         }
+        if ($selectedHasTh09) {
+            $runtimeBuilds.th09 = if ($Th09Build) { (Resolve-Path -LiteralPath $Th09Build).Path } else { Get-EaglerWorkspacePath $workspaceLayout 'th09' 'th09_web\build-eagler' }
+            if (-not (Test-Path -LiteralPath (Join-Path $runtimeBuilds.th09 'runtime-files.json') -PathType Leaf)) {
+                throw "Prepared TH09 Runtime directory manifest not found: $(Join-Path $runtimeBuilds.th09 'runtime-files.json')"
+            }
+        }
         if ($selectedHasTh10) {
             if (-not $Th10Build) { throw 'Import mode without -RuntimeRelease requires -Th10Build when th10 is selected' }
             $runtimeBuilds.th10 = (Resolve-Path -LiteralPath $Th10Build).Path
@@ -241,6 +251,7 @@ if ($resourceMode -eq 'import') {
         $nodeArgs += "--th07-multiplayer-build=$($runtimeBuilds.th07Multiplayer)"
     }
     if (-not $runtimeReleasePath -and $selectedHasTh08) { $nodeArgs += "--th08-build=$($runtimeBuilds.th08)" }
+    if (-not $runtimeReleasePath -and $selectedHasTh09) { $nodeArgs += "--th09-build=$($runtimeBuilds.th09)" }
     if (-not $runtimeReleasePath -and $selectedHasTh10) { $nodeArgs += "--th10-build=$($runtimeBuilds.th10)" }
     & node @nodeArgs
     if ($LASTEXITCODE -ne 0) { throw "$resourceMode server packaging failed: $LASTEXITCODE" }
@@ -261,6 +272,7 @@ foreach ($game in $Games) {
 $th06Source = if ($Games -contains 'th06') { $gameSources.th06 } else { $null }
 $th07Source = if ($Games -contains 'th07') { $gameSources.th07 } else { $null }
 $th08Source = if ($selectedHasTh08) { $gameSources.th08 } else { $null }
+$th09Source = if ($selectedHasTh09) { $gameSources.th09 } else { $null }
 $th10Source = if ($selectedHasTh10) { $gameSources.th10 } else { $null }
 $th08Build = if ($selectedHasTh08 -and -not $runtimeReleasePath) {
     if ($Th08Build) { (Resolve-Path -LiteralPath $Th08Build).Path } else { Get-EaglerWorkspacePath $workspaceLayout 'th08' 'build-eagler' }
@@ -268,6 +280,9 @@ $th08Build = if ($selectedHasTh08 -and -not $runtimeReleasePath) {
 $th10Build = if ($selectedHasTh10 -and -not $runtimeReleasePath) {
     if (-not $Th10Build) { throw 'Hosted mode without -RuntimeRelease requires -Th10Build when th10 is selected' }
     (Resolve-Path -LiteralPath $Th10Build).Path
+} else { $null }
+$th09Build = if ($selectedHasTh09 -and -not $runtimeReleasePath) {
+    if ($Th09Build) { (Resolve-Path -LiteralPath $Th09Build).Path } else { Get-EaglerWorkspacePath $workspaceLayout 'th09' 'th09_web\build-eagler' }
 } else { $null }
 $font = (Resolve-Path -LiteralPath $FontFile).Path
 $vanillaFont = (Resolve-Path -LiteralPath $VanillaFontFile).Path
@@ -288,6 +303,7 @@ $required = @($font, $vanillaFont)
 if ($Games -contains 'th06') { $required += $th06Archives | ForEach-Object { Join-Path $th06Source $_ } }
 if ($Games -contains 'th07') { $required += Join-Path $th07Source 'th07.dat' }
 if ($selectedHasTh08) { $required += Join-Path $th08Source 'th08.dat' }
+if ($selectedHasTh09) { $required += Join-Path $th09Source 'th09.dat' }
 if ($selectedHasTh10) { $required += Join-Path $th10Source 'th10.dat' }
 if ($Music -contains 'wav' -or $Music -contains 'ogg') {
     if ($Games -contains 'th06') { $required += 1..17 | ForEach-Object { Join-Path $th06Source ('bgm\th06_{0:d2}.wav' -f $_) } }
@@ -304,6 +320,9 @@ if ($selectedHasTh08 -and -not $runtimeReleasePath) {
 }
 if ($selectedHasTh10 -and -not $runtimeReleasePath -and -not (Test-Path -LiteralPath (Join-Path $th10Build 'runtime-files.json') -PathType Leaf)) {
     throw "Prepared TH10 Runtime directory manifest not found: $(Join-Path $th10Build 'runtime-files.json')"
+}
+if ($selectedHasTh09 -and -not $runtimeReleasePath -and -not (Test-Path -LiteralPath (Join-Path $th09Build 'runtime-files.json') -PathType Leaf)) {
+    throw "Prepared TH09 Runtime directory manifest not found: $(Join-Path $th09Build 'runtime-files.json')"
 }
 
 function Find-BuildTool([string] $Value, [string] $Name, [string] $VisualStudioPattern) {
@@ -386,6 +405,12 @@ if ($selectedHasTh10) {
     $th10ContentScript = Join-Path $project 'scripts\prepare-th10-content.mjs'
     & node $th10ContentScript "--original=$th10Source" "--output=$th10DataAssets"
     if ($LASTEXITCODE -ne 0) { throw "TH10 content preparation failed: $LASTEXITCODE" }
+}
+$th09DataAssets = $null
+if ($selectedHasTh09) {
+    $th09DataAssets = Join-Path $generated 'th09'
+    & node (Join-Path $project 'scripts\prepare-th09-content.mjs') "--original=$th09Source" "--output=$th09DataAssets"
+    if ($LASTEXITCODE -ne 0) { throw 'TH09 content preparation failed' }
 }
 if (($Games -contains 'th06') -and ($Games -contains 'th07')) {
     if ($ThtkThanm) {
@@ -522,6 +547,10 @@ if (-not $runtimeReleasePath -and $Games -contains 'th07') {
 if ($selectedHasTh08) {
     if (-not $runtimeReleasePath) { $nodeArgs += "--th08-build=$th08Build" }
 }
+if ($selectedHasTh09) {
+    if (-not $runtimeReleasePath) { $nodeArgs += "--th09-build=$th09Build" }
+    $nodeArgs += "--th09-data-assets=$th09DataAssets"
+}
 if ($selectedHasTh10) {
     if (-not $runtimeReleasePath) { $nodeArgs += "--th10-build=$th10Build" }
     $nodeArgs += "--th10-data-assets=$th10DataAssets"
@@ -530,6 +559,7 @@ if ($musicSet.Contains('ogg')) {
     if ($Games -contains 'th06') { $nodeArgs += "--th06-ogg=$(Join-Path $generated 'th06')" }
     if ($Games -contains 'th07') { $nodeArgs += "--th07-ogg=$(Join-Path $generated 'th07')" }
     if ($selectedHasTh08) { $nodeArgs += "--th08-ogg=$(Join-Path $generated 'th08')" }
+    if ($selectedHasTh09) { $nodeArgs += "--th09-ogg=$th09DataAssets" }
     if ($selectedHasTh10) { $nodeArgs += "--th10-ogg=$th10DataAssets" }
 }
 foreach ($game in $Games) {

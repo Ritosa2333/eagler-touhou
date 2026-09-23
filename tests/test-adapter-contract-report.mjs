@@ -81,6 +81,13 @@ assert.equal(th10.protocol.configureOptions.debugHarness.activeForProduct, false
 assert.equal(th10.obligations.optionalProfiles.languages.active, true);
 assert.equal(th10.obligations.optionalProfiles.midi.active, false);
 
+const th09 = createAdapterContractReport("th09");
+assert.equal(th09.product.adapterProfile.runtimeLayout, "directory");
+assert.equal(th09.product.adapterProfile.dataProvider, "retail-memory");
+assert.equal(th09.obligations.optionalProductCapabilities["raw-data-import"], true);
+assert.equal(th09.obligations.optionalProfiles.thprac.active, false);
+assert.equal(th09.obligations.optionalProfiles.midi.active, false);
+
 const th06 = createAdapterContractReport("th06");
 assert.equal(th06.product.cardArtwork, PRODUCT_GAMES.th06.cardArtwork);
 assert.equal(th06.product.multiplayerRuntime, PRODUCT_GAMES.th06.multiplayerRuntime);

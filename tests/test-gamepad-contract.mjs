@@ -10,6 +10,7 @@ const sources = {
   th06: await readFile(workspacePath("th06", "src", "Controller.cpp"), "utf8"),
   th07: await readFile(workspacePath("th07", "src", "Controller.cpp"), "utf8"),
   th08: await readFile(workspacePath("th08", "th08_web", "cpp", "sdl", "GameHost.cpp"), "utf8"),
+  th09: await readFile(workspacePath("th09", "th09_web", "cpp", "sdl", "Application.cpp"), "utf8"),
   th10: await readFile(workspacePath("th10", "th10_web", "cpp", "sdl", "GameHost.cpp"), "utf8"),
 };
 const th08Runtime = await readFile(workspacePath("th08", "th08_web", "cpp", "platform", "BrowserRuntime.hpp"), "utf8");
@@ -17,6 +18,7 @@ const runtimeShells = {
   th06: await readFile(workspacePath("th06", "resources", "shell.html"), "utf8"),
   th07: await readFile(workspacePath("th07", "resources", "shell.html"), "utf8"),
   th08: await readFile(workspacePath("th08", "th08_web", "sdl-runtime", "shell.mjs"), "utf8"),
+  th09: await readFile(workspacePath("th09", "th09_web", "sdl-runtime", "managed.mjs"), "utf8"),
   th10: await readFile(workspacePath("th10", "th10_web", "sdl-runtime", "shell.mjs"), "utf8"),
 };
 assert.deepEqual(Object.keys(sources).sort(), Object.keys(PRODUCT_GAMES).sort(),
@@ -28,7 +30,7 @@ for (const game of Object.keys(sources)) {
   assert.match(sources[game], /SDL_GetGamepadAxis/,
     `${game}: required physical gamepad axis path is missing`);
 }
-for (const game of ["th08", "th10"]) {
+for (const game of ["th08", "th09", "th10"]) {
   assert.match(sources[game], /SDL_OpenGamepad/,
     `${game}: controller opening must use SDL Gamepad normalization`);
   assert.match(sources[game], /SDL_GetGamepads/,
@@ -49,7 +51,7 @@ function normalizedSlots(source, declaration) {
 }
 assert.deepEqual(normalizedSlots(sources.th07, "g_DIToSDLButton[]"), expectedSlots,
   "TH07 canonical DirectInput-style logical slots changed unexpectedly");
-for (const game of ["th08", "th10"]) {
+for (const game of ["th08", "th09", "th10"]) {
   assert.deepEqual(normalizedSlots(sources[game], "gamepad_slots[]"), expectedSlots,
     `${game}: KeyConfig logical slots must match the proven TH07 normalized mapping`);
 }
@@ -66,7 +68,7 @@ for (const game of ["th06", "th07"]) {
   assert.match(options, /pad\.buttons\[12\].*pad\.buttons\[13\].*pad\.buttons\[14\].*pad\.buttons\[15\]/s,
     `${game}: keyboard-like Gamepad fallback must use the standard D-pad buttons only`);
 }
-for (const game of ["th08", "th10"]) {
+for (const game of ["th08", "th09", "th10"]) {
   assert.match(sources[game], new RegExp(`${game}_keyboard_gamepad_dpad`),
     `${game}: mobile keyboard-like Gamepad D-pad fallback is missing`);
   assert.match(sources[game], /keyboard\|\\bkb\\b/i,

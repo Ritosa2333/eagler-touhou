@@ -35,6 +35,7 @@ function directoryProtocolFixture(game) {
   return `const protocol="eagler-touhou/1",game="${game}";
 const epoch=Number(new URLSearchParams(location.search).get("runtimeEpoch"));
 window.addEventListener("message",event=>{const m=event.data||{};if(m.epoch!==epoch)return;});
+parent.__eaglerPrepareManagedRuntimeDataV1({game,generation:"fixture",epoch});
 parent.postMessage({protocol,game,epoch,event:"ready"},location.origin);`;
 }
 

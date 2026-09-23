@@ -14,7 +14,9 @@ import { workspacePath } from "../lib/workspace-layout.mjs";
 
 const shellSources = Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([game, product]) => [game,
   product.runtimeFileLayout === "directory"
-    ? [
+    ? game === "th09"
+      ? [workspacePath(game, "th09_web", "sdl-runtime", "managed.mjs")]
+      : [
         workspacePath(game, `${game}_web`, "sdl-runtime", "shell.mjs"),
         workspacePath(game, `${game}_web`, "sdl-runtime", "eagler-host.mjs"),
       ]

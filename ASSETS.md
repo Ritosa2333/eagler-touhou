@@ -3,7 +3,7 @@
 ## Game-card backgrounds
 
 The final hosted site uses `assets/th06-card.webp`, `assets/th07-card.webp`,
-`assets/th08-card.webp`, and `assets/th10-card.webp`. Host assembly extracts the title artwork from original
+`assets/th08-card.webp`, `assets/th09-card.webp`, and `assets/th10-card.webp`. Host assembly extracts the title artwork from original
 game files supplied by the deployer and converts it to WebP without enlarging
 or cropping it. A deployer may instead provide a custom card image; WebP input
 is preserved and PNG/JPEG input is normalized to the same final WebP contract.
