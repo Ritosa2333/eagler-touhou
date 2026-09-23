@@ -2000,12 +2000,18 @@ void Gui::DrawStageElements() const
         }
         else
         {
-            this->impl->bombSpellcardBackground.pos = this->impl->bombSpellcardName.pos;
-            this->impl->bombSpellcardBackground.pos.x +=
+            // The background follows the name in presentation space. Draw can
+            // run after several rollback/catch-up ticks, so its own prevPos is
+            // not a reliable interpolation endpoint for this attached sprite.
+            AnmVm nameDraw = this->impl->bombSpellcardName;
+            nameDraw.pos = nameDraw.prevPos.Lerp(nameDraw.pos, g_RenderAlpha);
+            AnmVm backgroundDraw = this->impl->bombSpellcardBackground;
+            backgroundDraw.pos = nameDraw.pos;
+            backgroundDraw.pos.x +=
                 this->bombSpellcardBarLength * 16.0f / 15.0f / 2.0f + -128.0f - 16.0f;
-            this->impl->bombSpellcardBackground.scaleX = this->bombSpellcardBarLength / 14.0f;
-            g_AnmManager->DrawInterpNoRotation(&this->impl->bombSpellcardBackground);
-            g_AnmManager->DrawInterpNoRotation(&this->impl->bombSpellcardName);
+            backgroundDraw.scaleX = this->bombSpellcardBarLength / 14.0f;
+            g_AnmManager->DrawNoRotation(&backgroundDraw);
+            g_AnmManager->DrawNoRotation(&nameDraw);
         }
     }
     if (this->impl->enemySpellcardName.flags.isVisible)
@@ -2045,12 +2051,15 @@ void Gui::DrawStageElements() const
         }
         else
         {
-            this->impl->enemySpellcardBackground.pos = this->impl->enemySpellcardName.pos;
-            this->impl->enemySpellcardBackground.pos.x +=
+            AnmVm nameDraw = this->impl->enemySpellcardName;
+            nameDraw.pos = nameDraw.prevPos.Lerp(nameDraw.pos, g_RenderAlpha);
+            AnmVm backgroundDraw = this->impl->enemySpellcardBackground;
+            backgroundDraw.pos = nameDraw.pos;
+            backgroundDraw.pos.x +=
                 128.0f - this->blueSpellcardBarLength * 16.0f / 15.0f / 2.0f;
-            this->impl->enemySpellcardBackground.scaleX = this->blueSpellcardBarLength / 14.0f;
-            g_AnmManager->DrawInterpNoRotation(&this->impl->enemySpellcardBackground);
-            g_AnmManager->DrawInterpNoRotation(&this->impl->enemySpellcardName);
+            backgroundDraw.scaleX = this->blueSpellcardBarLength / 14.0f;
+            g_AnmManager->DrawNoRotation(&backgroundDraw);
+            g_AnmManager->DrawNoRotation(&nameDraw);
         }
     }
     if (this->impl->loadingScreenSprite.activeSpriteIndex >= 0)
