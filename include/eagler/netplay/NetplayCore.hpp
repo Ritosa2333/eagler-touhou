@@ -123,6 +123,10 @@ public:
     bool InputPresent(std::uint8_t player, std::uint32_t frame) const;
     bool UsedInput(std::uint8_t player, std::uint32_t frame, FrameInput *out,
                    bool *predicted = nullptr) const;
+    // Replay/spectators read only computed, reconciled and contiguously
+    // confirmed inputs. Failure leaves *out unchanged.
+    bool ConfirmedInputs(std::uint32_t frame,
+                         std::array<FrameInput, MAX_PLAYERS> *out) const;
 
     InputPacket BuildInputPacket(std::uint8_t peer, std::uint32_t latestFrame,
                                  std::uint32_t sequence, std::uint32_t ackSequence) const;

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(eagler-common VERSION 0.15.0 LANGUAGES CXX)
+project(eagler-common VERSION 0.16.0 LANGUAGES CXX)
 
 # Consumers such as Replay metadata readers need the shared protocol types even
 # in ordinary (non-netplay) builds. Keep that dependency header-only so title
@@ -14,6 +14,14 @@ target_include_directories(eagler_common_netplay_headers INTERFACE
 )
 
 target_compile_features(eagler_common_netplay_headers INTERFACE cxx_std_17)
+
+# File codec only: input types, not a title layout or a transport dependency.
+add_library(eagler_common_input_replay INTERFACE)
+add_library(eagler::input_replay ALIAS eagler_common_input_replay)
+target_sources(eagler_common_input_replay INTERFACE
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src/netplay/InputReplay.cpp>"
+)
+target_link_libraries(eagler_common_input_replay INTERFACE eagler::netplay_headers)
 
 # Generic rollback storage is a separate component so future titles and tools
 # can consume the validated storage layer without pulling Protocol/Core or any

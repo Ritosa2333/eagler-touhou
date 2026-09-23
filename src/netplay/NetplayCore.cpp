@@ -262,11 +262,22 @@ FrameInput RollbackCore::PredictInput(std::uint8_t player, std::uint32_t frame) 
 FrameDecision RollbackCore::PrepareFrame(std::uint32_t frame) const
 {
     FrameDecision decision;
-    if (!configured_)
+    if (!configured_ || frame == INVALID_FRAME)
         return decision;
 
     for (std::uint8_t player = 0; player < config_.playerCount; ++player)
     {
+        const std::uint32_t confirmed = confirmedThrough_[player];
+        if (player != config_.localPlayer)
+        {
+            // Exact input at this frame does not prove that the preceding
+            // simulation is confirmed. A missing older sample still needs
+            // every subsequent world/audio/Replay checkpoint for correction.
+            // Bound that entire interval before accepting the exact slot too.
+            const std::uint32_t distance = confirmed == INVALID_FRAME ? frame + 1 :
+                frame > confirmed ? frame - confirmed : 0;
+            if (distance > config_.maxRollbackFrames) return decision;
+        }
         const InputSlot *slot = FindInputSlot(player, frame);
         if (slot)
         {
@@ -276,13 +287,8 @@ FrameDecision RollbackCore::PrepareFrame(std::uint32_t frame) const
         if (player == config_.localPlayer)
             return decision;
 
-        const std::uint32_t confirmed = confirmedThrough_[player];
         if (confirmed != INVALID_FRAME && frame <= confirmed)
             return decision; // a hole inside confirmed history means corruption
-        const std::uint32_t predictionDistance =
-            confirmed == INVALID_FRAME ? frame + 1 : frame - confirmed;
-        if (predictionDistance > config_.maxRollbackFrames)
-            return decision;
         decision.inputs[player] = PredictInput(player, frame);
         decision.predictedMask |= static_cast<std::uint8_t>(1u << player);
     }
@@ -345,6 +351,26 @@ void RollbackCore::AdvanceConfirmedThrough(std::uint8_t player)
 std::uint32_t RollbackCore::ConfirmedThrough(std::uint8_t player) const
 {
     return configured_ && player < config_.playerCount ? confirmedThrough_[player] : INVALID_FRAME;
+}
+
+bool RollbackCore::ConfirmedInputs(std::uint32_t frame,
+                                   std::array<FrameInput, MAX_PLAYERS> *out) const
+{
+    if (!configured_ || !out || frame == INVALID_FRAME ||
+        lastSimulatedFrame_ == INVALID_FRAME || frame > lastSimulatedFrame_ ||
+        (rollbackFrame_ != INVALID_FRAME && rollbackFrame_ <= frame)) return false;
+    const auto *used = FindUsedSlot(frame);
+    if (!used) return false;
+    std::array<FrameInput, MAX_PLAYERS> candidate{};
+    for (std::uint8_t seat = 0; seat < config_.playerCount; ++seat)
+    {
+        if (confirmedThrough_[seat] == INVALID_FRAME || confirmedThrough_[seat] < frame)
+            return false;
+        const auto *input = FindInputSlot(seat, frame);
+        if (!input || input->input != used->inputs[seat]) return false;
+        candidate[seat] = input->input;
+    }
+    *out = candidate; return true;
 }
 
 FrameInput RollbackCore::LocalInput(std::uint32_t frame, bool *present) const

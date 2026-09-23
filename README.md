@@ -37,6 +37,12 @@ The rule is: **share algorithms and infrastructure, not object layouts**.
 
 ## Shared testkits
 
+The optional [`eagler::input_replay`](docs/input-replay.md) target supplies a
+bounded transactional all-seat file codec. Titles own their metadata, native
+record/playback lifecycle, storage and compatibility gates. The additive
+`RollbackCore::ConfirmedInputs` fence does not export predictions or replace
+title-state validation.
+
 The repository publishes source-level testkits that consumers pin and import
 directly. They are normal development infrastructure, not production Runtime
 features:
