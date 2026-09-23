@@ -5,14 +5,11 @@ AnmVm* AnmManager::allocate(AnmAllocationEnvironment& env){
     AnmVm* result;
     if(occupied[cursor])cursor=wrapping_add(cursor,1)%4096;
     if(occupied[cursor]){result=env.allocate_animation();if(result)result->clear();result->initialize();}
-    else{result=&pool[cursor];occupied[cursor]=1;
+    else{result=&pool[cursor];
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-        // Rollback can make a slot logically free again without replaying the
-        // later speculative remove() that normally re-initializes it.  A free
-        // native pool slot is semantically initialized, so re-establish that
-        // invariant before reuse instead of inheriting speculative VM bytes.
-        result->initialize();
+        env.preserve_animation_slot(*result);
 #endif
+        occupied[cursor]=1;
     }
     cursor=wrapping_add(cursor,1)%4096;return result;
 }

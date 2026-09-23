@@ -1,20 +1,39 @@
 # TH10 multiplayer adaptation
 
-Status: implementation in an isolated Eagler experiment. The cooperation-rule
-owner is a preparatory component; it is not a playable multiplayer Runtime or
-a product-capability declaration.
+Status: native multiplayer gameplay and title rollback validation in an isolated
+Eagler experiment. This is not a released multiplayer Runtime or a product-
+capability declaration. See [Rollback acceptance](rollback-acceptance.md) for
+the narrower evidence and remaining blockers.
 
 ## Baseline and isolation
 
 - Upstream tracking: `portable`, `0074e58`.
 - Eagler integration base: `eagler`, `5da6a70`.
 - Experiment: `experiment/th10-multiplayer`.
-- Shared runtime dependency: `8316c4f861dedb67e1e0e7be75ddcf0b90f63448`.
+- Shared runtime dependency: `5e74214` (`experiment/th10-rollback-frontier`,
+  shared session channel and transactional packet/frontier validation).
 - Ordinary gameplay, Replay formats, storage and build outputs retain their
   existing behavior. Multiplayer requires a separately compiled Runtime.
 
-The user requested a persistent completion goal and no commits before the
-complete adaptation is finished. Subagents must use Luna with xhigh reasoning.
+The user's current instruction is to commit after a substantial item has been
+completed and validated, not after each small patch. Preserve progress records
+between those commits. No implicit push, deployment or canonical promotion.
+Subagents must use Luna with xhigh reasoning.
+
+### Functional completion precedes performance work
+
+Finish the entire TH08/TH10 multiplayer functional and correctness profile
+before changing performance policy or implementation. Preserve the ordinary
+single-player baseline throughout this phase. Commit that complete functional
+boundary, then assess optimizations in separate changes with independent
+ordinary and multiplayer regression evidence. A shared optimization must not
+be mixed with multiplayer bring-up: otherwise a single-player divergence loses
+its independently attributable cause. Do not replace accepted goldens.
+
+The ordinary TH10 WASM rebuilt after the network slice is still exactly
+`1f5a9557f62f33c1243caa72a8649cd8335944665ceb70da763b8f0fe79f67e1`.
+`artifacts/multiplayer-tests/build-sp-after-network.log` records that build.
+This byte identity is baseline evidence, not multiplayer product acceptance.
 
 ## Agreed cooperation rules
 
@@ -40,11 +59,16 @@ resource bonus and reported resurrection/game-over defect are not TH10 rules.
 
 ## State ownership and integration
 
-`World` currently has one `GameActors::player`, bomb, input lane and economy.
-The second device profile in `Input` is not an implemented second pilot.
-`GameEconomy` mixes personal character/shot/power/lives with shared score,
-faith timer, point value, rank, difficulty and stage progression. Do not copy
-the entire economy per seat and accidentally create several shared worlds.
+The ordinary baseline has one `GameActors::player`, bomb and economy. The MP
+source set now binds explicit `World::pilots`, per-seat input/resource owners,
+and one shared stage. `GameEconomy` views bind `PilotEconomy` and `TeamEconomy`
+once; no whole-world duplication or rotating global current-player context is
+used. `GameActors::player` retains the seat-zero compatibility view.
+
+Native GUI state and authored ANM remain shared and must use the same seat-zero
+source on all endpoints. Selecting local-player resources in that owner caused
+the P1/P2 native GUI digests to diverge on a P2 Bomb. The custom MP resource
+renderer may highlight the local seat, but must not change shared GUI updates.
 
 Reuse the native Player environment seams with explicit per-pilot contexts.
 Collision, enemy targeting, shots, bomb damage and item attraction must choose
@@ -85,12 +109,12 @@ pass:
   restore the wrongly predicted rescue, donor life, recipient state and
   rescue progress, then reproduce every corrected rule-state boundary.
 
-These suites do not instantiate the native game world or constitute a
-multiplayer Runtime test. Native players, item allocation and all other world
-owners still need integration and their own restoration proof.
+Those focused suites do not instantiate the native game world. Browser tests
+and their explicitly limited owner coverage are tracked separately in
+[Rollback acceptance](rollback-acceptance.md).
 
-Current infrastructure evidence: the pinned common library's
-`netplay-base-test.cpp` passes as Emscripten/WASM under Node, covering protocol,
-core input/confirmation and session barriers. It does not exercise an actual
-browser transport. Multiplayer gameplay, title rollback, browser and
-cross-device acceptance remain pending.
+The common/title rule lane has 19 passing WASI entries, including header and
+browser-stub compatibility, transactional packet rejection and final-ACK
+generation repair. Actual native browser transport evidence now exists too;
+see [Network acceptance](network-acceptance.md). It is still not full-product,
+cross-device, Replay, spectator or Launcher acceptance.

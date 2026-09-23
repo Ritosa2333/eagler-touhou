@@ -54,6 +54,14 @@ bool interpolation_ready(){if(!application||application->stopped||!application->
 EM_BOOL frame(double timestamp,void* epoch){
     if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;
     const double now=timestamp/1000.,delta=last<0?0:std::max(0.,now-last);last=now;callback_begin=emscripten_get_now();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Keep handshake, input/ACK repair and retirement alive while loading,
+    // suspended or waiting for input. Network timing is real wall time, not
+    // sdl_loop_time(), whose simulation clock legitimately stops here.
+    if(!application->multiplayer_pump_network()){
+        browser_finish_frame(2,emscripten_get_now()-callback_begin);return running?EM_TRUE:EM_FALSE;
+    }
+#endif
     // Browser responsibilities end at resource readiness and input snapshots.
     // The C++ ApplicationLoop owns deadlines, logic, draw and the original
     // 60Hz cadence, independent of display callback frequency.

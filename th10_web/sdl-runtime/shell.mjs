@@ -1,7 +1,7 @@
 // Platform shell for the upstream eagler-touhou/1 Launcher contract.
 // Game construction, input, timing, rendering, text and sound belong to C++.
 import createModule from './th10-sdl.mjs';
-import {createPractice} from './practice.mjs';
+import {createOptionalPractice} from './practice-loader.mjs';
 import {bindOutsideTouches} from './eagler-host.mjs';
 import {exportReplayName,importReplayName} from './motion-replay.mjs';
 import {normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,ensureSharedFontAlias,installResources as installHostResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError} from './eagler-host.mjs';
@@ -129,11 +129,11 @@ const initialized=(async()=>{
  });
  storage=await initializeSaveStorage({game,runtimeVariant,setCompiledVariant:value=>core.sdl_files_variant(value),filesystem:Module.FS,idbfs:Module.IDBFS,sync,
   beforeMount(){window.Module=Module;window.FS=Module.FS;observeMusicWrites(Module,core,game);}});
- practice=createPractice({core,getApp:()=>app,canvas,clearKeys:()=>core.sdl_keys_clear(),setMusic:value=>core.sdl_music_enabled(value),setPaused:value=>core.sdl_loop_pause(value||document.hidden?1:0)});
+ practice=await createOptionalPractice({core,getApp:()=>app,canvas,clearKeys:()=>core.sdl_keys_clear(),setMusic:value=>core.sdl_music_enabled(value),setPaused:value=>core.sdl_loop_pause(value||document.hidden?1:0)});
  for(const lang of ['jp','chs'])Module.FS.mkdirTree(storage.namespace+'/'+lang+'/replay');await migrateSaves();await mountData();cstring('#screen',core.sdl_canvas);
  Module.runtimePrepare=()=>!document.hidden;
  Module.runtimeFinish=(result,duration)=>{
-  practice.tick();
+  practice?.tick();
   const now=performance.now(),p=u32(core.sdl_stats(),6)[5];if(p!==lastPresented){frames++;if(lastFrame)maxGap=Math.max(maxGap,now-lastFrame);lastFrame=now;lastPresented=p;if(!first){first=true;emit('first-frame');}}
   if(result||core.application_error(app)){if(core.application_error(app)){error('Game error '+core.application_error(app));core.sdl_loop_pause(1);}else queueMicrotask(()=>void stop().catch(error));}
   if(now-lastHealth>=1000){emit('frame-health',{fps:frames*1000/(now-lastHealth),maxGapMs:maxGap,frameMs:duration});const a=u32(core.sdl_audio_stats(),12);emit('audio-health',{queuedMs:a[5]*1000/44100,minQueuedMs:a[7]*1000/44100,backend:'script',underruns:0,robust:true});frames=0;maxGap=0;lastHealth=now;}

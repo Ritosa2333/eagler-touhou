@@ -8,6 +8,7 @@
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/PresentationCache.hpp"
 #include "../multiplayer/RollbackPool.hpp"
+namespace th10::multiplayer { class RollbackState; }
 #endif
 namespace th10::browser {
 // A complete ANM owner sharing native files and graphics with the application.
@@ -33,6 +34,7 @@ struct AnimationEngine final:AnmEnvironment,AnmAllocationEnvironment,AnmSystemEn
     // addresses as well; retail distortion is 0x4b0 and script-created vertex
     // buffers are bounded here to 64 KiB rather than falling back to the heap.
     multiplayer::RollbackPool<65536,128> rollback_geometry{};
+    multiplayer::RollbackState* rollback_state=nullptr;
 #else
     std::map<const AnmVm*,PresentationVmSample> presentation_previous;
 #endif
@@ -59,6 +61,9 @@ struct AnimationEngine final:AnmEnvironment,AnmAllocationEnvironment,AnmSystemEn
     AnmVm* spawn_child(AnmVm&,i32,u32) override;
     AnmVm* allocate_animation() override;
     void release_memory(void*) override;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    void preserve_animation_slot(AnmVm&) override;
+#endif
     void* allocate(u32) override;
     void release(void*) override;
     void clear_pixel_shader() override;

@@ -23,7 +23,7 @@ bool Startup::invoke(CallbackToken token,void* object,i32& result){if(token==upd
 #endif
 StartupScreen* Startup::allocate(){return static_cast<StartupScreen*>(std::malloc(sizeof(StartupScreen)));}
 void Startup::delete_object(void* object){std::free(object);}
-void Startup::free_bytes(void* bytes){std::free(bytes);}
+void Startup::free_bytes(void* bytes){engine.release_memory(bytes);}
 AnmFile* Startup::load_animations(i32 slot,const char* name){return engine.manager.load(slot,name,engine.resources);}
 void Startup::release_animations(AnmFile& file){file.release(engine.resources);}
 bool Startup::create_common(){auto* bytes=std::malloc(sizeof(Common));if(!bytes)return false;shared=new(bytes)Common(engine);if(!shared->initialize()){shared->~Common();std::free(shared);shared=nullptr;return false;}common_value=shared->value;return true;}

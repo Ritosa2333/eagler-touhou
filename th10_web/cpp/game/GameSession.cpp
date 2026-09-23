@@ -14,7 +14,7 @@ void GameSession::reset_timer(float* rate) noexcept {if(!(timer_flags&1)){elapse
 static void enable(GameSystemCallbacks& callbacks){if(callbacks.update)callbacks.update->flags|=2;if(callbacks.draw)callbacks.draw->flags|=2;}
 void GameSession::activate_objects(GameSessionEnvironment& env){
     session_flags&=~0x800u;env.clear_bullets();env.activate_player();
-    auto& items=**env.items;std::memset(items.regular,0,sizeof(items.regular)+sizeof(items.faith));
+    env.clear_items();
     env.clear_enemies();env.clear_lasers();env.game->stage_frames=0;env.game->section_frames=0;env.activate_replay();env.spawn_stage_controller();env.activate_gui();
     enable(**env.systems[0]);enable(**env.systems[1]);env.configure_player();
     for(i32 i=2;i<10;++i)enable(**env.systems[i]);(*env.spell_foreground)->flags|=2;enable(**env.systems[10]);

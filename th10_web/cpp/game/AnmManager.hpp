@@ -10,6 +10,9 @@ enum class AnimationPlacement { WorldBack,WorldFront,UiBack,UiFront };
 struct AnmAllocationEnvironment {
     virtual AnmVm* allocate_animation()=0;
     virtual void release_memory(void* memory)=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    virtual void preserve_animation_slot(AnmVm& vm)=0;
+#endif
 };
 struct AnmManager {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY

@@ -25,20 +25,44 @@ void AppFrames::configure_camera(Camera& camera){owner.configure_camera(camera,f
 void AppFrames::set_viewport(void*,const CameraViewport& viewport){owner.engine.device.viewport(viewport);}
 void AppFrames::clear(u32 color){owner.engine.device.clear_target(1,color,1.f,0,nullptr,0);}
 void AppFrames::flush(){owner.engine.flush();}
-AppLoop::AppLoop(Application& a):owner(a){application=&a.value;animations=&a.manager;frame_skip=&a.state.configuration.options[4];frame_duration=&a.frame_duration;graphics_state=&a.graphics_state;fog_enabled=&a.engine.fog_enabled;}
+AppLoop::AppLoop(Application& a):owner(a){application=&a.value;animations=&a.manager;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // The authored Draw can mutate ANM state and consume visual RNG.  MP must
+    // execute it once per logical 60 Hz tick regardless of a machine-local
+    // frame-skip preference; high-refresh presentation remains separate.
+    frame_skip=&a.multiplayer_frame_skip;
+#else
+    frame_skip=&a.state.configuration.options[4];
+#endif
+    frame_duration=&a.frame_duration;graphics_state=&a.graphics_state;fog_enabled=&a.engine.fog_enabled;}
 Extended AppLoop::time(){return owner.time();}void AppLoop::sleep(u32){}void AppLoop::flush(){owner.engine.flush();}
 void AppLoop::configure_flat(Camera& camera){owner.configure_camera(camera,true);}
 void AppLoop::set_viewport(void*,const CameraViewport& viewport){owner.engine.device.viewport(viewport);}
 i32 AppLoop::update(){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    owner.multiplayer_waiting=false;
     if(owner.multiplayer_active())return owner.multiplayer_update();
 #endif
     owner.engine.snapshot_presentation();const i32 result=owner.engine.update_all();if(result&&result!=-1)presentation_audit::simulation_tick();return result;
 }
-void AppLoop::update_audio(){owner.audio.update();}
+void AppLoop::update_audio(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Confirmed logical frames dispatch their native audio queues once. A
+    // stalled or resimulated update cannot tick that external queue again.
+    if(owner.multiplayer_active())return;
+#endif
+    owner.audio.update();
+}
 void AppLoop::stop_loader(){owner.value.stop_loading(owner.screens);}
 i32 AppLoop::begin_scene(void*){return owner.engine.device.begin_scene();}
-void AppLoop::draw(){presentation_audit::begin_reference();owner.engine.draw_all();}
+void AppLoop::draw(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // A stalled input frontier is not another authored tick. Keep the last
+    // framebuffer; the independent high-refresh renderer may still present it.
+    if(owner.multiplayer_waiting)return;
+#endif
+    presentation_audit::begin_reference();owner.engine.draw_all();
+}
 #ifdef TH_NATIVE_PLATFORM
 i32 AppLoop::set_fog_enabled(bool enabled){owner.engine.device.host.set_fog(enabled);return 0;}
 #else
@@ -47,8 +71,14 @@ i32 AppLoop::render_state(void*,u32 key,u32 value){return owner.engine.device.re
 void AppLoop::clear_texture(void*){owner.engine.device.texture(nullptr);}
 void AppLoop::end_scene(void*){owner.engine.device.end_scene();}
 void AppLoop::present(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(owner.multiplayer_waiting)return;
+#endif
 #ifdef TH_ENABLE_THPRAC
     if(auto* renderer=touhou::sdl::current())ThpracUi::render(owner,*renderer);
+#endif
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(owner.multiplayer_active()&&!owner.multiplayer_finalize_frame())return;
 #endif
     Presentation{owner.presentation}.submit();presentation_audit::end_frame();
 }

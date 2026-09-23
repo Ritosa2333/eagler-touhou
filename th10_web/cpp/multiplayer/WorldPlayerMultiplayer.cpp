@@ -96,13 +96,13 @@ struct Resources final:PlayerResourceEnvironment {
     }
     void configure_options(Player&) override{world.configure_player(pilot);}
     void display_lives(i32 lives) override{
-        if(pilot.seat==world.local_player&&world.actors.gui)
+        if(pilot.seat==0&&world.actors.gui)
             world.actors.gui->update_lives(lives);
     }
     void report_error() override{world.fail();}
     void release_animations(AnmFile& file) override{file.release(world.engine.resources);}
     void delete_object(void* object) override{std::free(object);}
-    void free_bytes(void* memory) override{std::free(memory);}
+    void free_bytes(void* memory) override{world.engine.release_memory(memory);}
 };
 
 struct Lifecycle final:PlayerLifecycleEnvironment {
@@ -130,7 +130,7 @@ struct Lifecycle final:PlayerLifecycleEnvironment {
     }
     void play_death_sound() override{world.sound(4);}
     void update_lives(i32 lives) override{
-        if(pilot.seat==world.local_player&&world.actors.gui)
+        if(pilot.seat==0&&world.actors.gui)
             world.actors.gui->update_lives(lives);
     }
     void show_caution(const Vec3& position) override{
@@ -263,7 +263,7 @@ struct Frame final:PlayerFrameEnvironment {
     void start_bomb() override{world.start_bomb(pilot);}
     void update_options(Player&) override{world.configure_player(pilot);}
     void update_power(i32 level,i32 fraction) override{
-        if(pilot.seat==world.local_player&&world.hud)
+        if(pilot.seat==0&&world.hud)
             world.hud->update_power(level,fraction);
     }
     void drop_power(const Vec3& point,i32 kind,float angle) override{
@@ -306,7 +306,7 @@ struct BombServices final:BombEnvironment {
     }
     void play_sound(i32 sound,float x) override{world.sound(sound,x);}
     void update_power(i32 level,i32 fraction) override{
-        if(pilot.seat==world.local_player&&world.hud)
+        if(pilot.seat==0&&world.hud)
             world.hud->update_power(level,fraction);
     }
     void cancel_bullets(const Vec3& point,float radius,bool convert,bool protection) override{
@@ -332,7 +332,7 @@ struct BombResources final:GameObjectResourceEnvironment {
     }
     void* allocate(u32 bytes) override{return std::malloc(bytes);}
     void delete_object(void* object) override{std::free(object);}
-    void release_geometry(void* geometry) override{std::free(geometry);}
+    void release_geometry(void* geometry) override{world.engine.release_memory(geometry);}
     AnmFile* load_effect_animations() override{
         return world.engine.manager.load(7,"bullet.anm",world.engine.resources);
     }
@@ -344,7 +344,7 @@ void cleanup_player(World& world,multiplayer::Pilot& pilot,bool retain_profile){
     if(!player)return;
     world.chain->remove_locked(player->update_entry,world.engine.callback_environment);
     world.chain->remove_locked(player->draw_entry,world.engine.callback_environment);
-    if(player->animation.geometry){std::free(player->animation.geometry);player->animation.geometry=nullptr;}
+    if(player->animation.geometry){world.engine.release_memory(player->animation.geometry);player->animation.geometry=nullptr;}
     if(retain_profile)pilot.cached_profile=player->profile;
     else{
         std::free(player->profile);
@@ -705,12 +705,12 @@ void World::update_cooperation(){
             }
             revive_player(*this,pilots[static_cast<u32>(event.targetSeat)],
                           event.targetLivesAfter);
-            if(donor.seat==local_player&&actors.gui)
+            if(donor.seat==0&&actors.gui)
                 actors.gui->update_lives(donor.game.lives);
         }else if(event.kind==multiplayer::EventKind::LifeItemTransferCommitted){
             auto& donor=pilots[event.seat];
             donor.game.lives=event.giverLivesAfter;
-            if(donor.seat==local_player&&actors.gui)
+            if(donor.seat==0&&actors.gui)
                 actors.gui->update_lives(donor.game.lives);
         }else if(event.kind==multiplayer::EventKind::WipeRetryRequested){
             select_screen(13);
@@ -744,8 +744,8 @@ void World::award_team_life(){
         if(revive[seat])
             revive_player(*this,pilot,pilot.game.lives);
     }
-    if(pilots[local_player].player&&actors.gui)
-        actors.gui->update_lives(pilots[local_player].game.lives);
+    if(pilots[0].player&&actors.gui)
+        actors.gui->update_lives(pilots[0].game.lives);
     if(increased){
         sound(0x2c);
         if(hud&&actors.gui)hud->notify(0x4b,0);

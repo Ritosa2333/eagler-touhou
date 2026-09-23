@@ -12,10 +12,25 @@ struct Resources final:ProjectileSystemsEnvironment {
     void discard_file_animations(AnmFile* file) override{w.engine.manager.registry.discard_file(file);}
     void missing_bullet_animations() override{w.fail();}
     void* allocate_manager(u32 size) override{return std::malloc(size);}
-    void release_manager(void* p) override{std::free(p);}
+    void release_manager(void* p) override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        // LaserManager::shutdown releases concrete beams through this resource
+        // adapter, not the ordinary LaserEnvironment::release callback.
+        if(p&&w.rollback_lasers.owns(p)){
+            if(!w.rollback_lasers.release(p))__builtin_trap();return;
+        }
+#endif
+        std::free(p);
+    }
     void destroy_laser(EnemyLaser& laser) override{w.destroy_laser(laser);}
 };
 struct Bullets final:BulletBehaviorEnvironment {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    bool preserve_bullet(EnemyBullet& bullet) override{
+        if(w.rollback.Touch(&bullet,sizeof(bullet)))return true;
+        w.fail();return false;
+    }
+#endif
     World& w;explicit Bullets(World& world,const Vec3* origin=nullptr):w(world){
         default_rate=&w.engine.speed;manager=&w.engine.manager;effect_file=w.actors.bullets->animation_file;animations=&w.engine;allocation=&w.engine;controller_flags=w.actors.session?&w.actors.session->session_flags:nullptr;player_position=&w.actors.player->position;rng=&w.engine.script_random;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -64,7 +79,13 @@ struct Bullets final:BulletBehaviorEnvironment {
 }
 bool World::create_bullets(){Resources env(*this);return EnemyBulletManager::create(env)!=nullptr;}
 void World::destroy_bullets(EnemyBulletManager* p){Resources env(*this);p->shutdown(env);std::free(p);}
-void World::clear_bullets(){Resources env(*this);actors.bullets->clear(env);}
+void World::clear_bullets(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(rollback.IsCapturing())for(auto& bullet:actors.bullets->pool)
+        if(!rollback.Touch(&bullet,sizeof(bullet))){fail();return;}
+#endif
+    Resources env(*this);actors.bullets->clear(env);
+}
 i32 World::update_bullets(){for(u32 i=0;i<2000;++i){const auto& b=actors.bullets->pool[i];auto& p=bullet_presentation[i];p.active=b.state!=0;if(p.active)p={b.motion.position,b.motion.angle,b.id,b.state,true};}Bullets env(*this);return actors.bullets->tick(env);}
 i32 World::draw_bullets(){Bullets env(*this);return actors.bullets->render(env);}
 void World::fire(const BulletEmitter& emitter){Bullets env(*this,&emitter.position);emitter.fire(*actors.bullets,env);}

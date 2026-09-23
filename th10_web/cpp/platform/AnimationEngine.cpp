@@ -1,6 +1,9 @@
 #include "../game/CallbackNames.hpp"
 #include "../game/HighRefresh.hpp"
 #include "AnimationEngine.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/RollbackState.hpp"
+#endif
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -121,6 +124,11 @@ AnmVm* AnimationEngine::allocate_animation(){
     return static_cast<AnmVm*>(std::malloc(sizeof(AnmVm)));
 #endif
 }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+void AnimationEngine::preserve_animation_slot(AnmVm& vm){
+    if(rollback_state)(void)rollback_state->Touch(&vm,sizeof(vm));
+}
+#endif
 void AnimationEngine::release_memory(void* p){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if(p&&rollback_animation_overflow.owns(p)){

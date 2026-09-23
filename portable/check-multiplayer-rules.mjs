@@ -48,10 +48,49 @@ for (const [name, sources, flags = []] of [
     resolve(common,'src/netplay/NetplayProtocol.cpp'),
     resolve(common,'src/netplay/NetplayCore.cpp'),
     resolve(common,'src/netplay/NetplaySession.cpp'),
+    resolve(common,'src/netplay/SessionChannel.cpp'),
+    resolve(common,'src/netplay/BrowserPeerTransport.cpp'),
+  ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
+  ['netplay-generation', [
+    resolve(root,'tests/netplay-generation-test.cpp'),
+    resolve(root,'th10_web/cpp/multiplayer/NetplayRuntime.cpp'),
+    resolve(root,'th10_web/cpp/multiplayer/SessionSetup.cpp'),
+    ...['NetplayProtocol','NetplayCore','NetplaySession','SessionChannel','BrowserPeerTransport']
+      .map(name=>resolve(common,'src/netplay',name+'.cpp')),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['rollback-pool', [
     resolve(root,'tests/rollback-pool-test.cpp'),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
+  ['audio-events', [
+    resolve(root,'tests/multiplayer-audio-events-test.cpp'),
+    resolve(root,'th10_web/cpp/multiplayer/AudioEvents.cpp'),
+    resolve(root,'th10_web/cpp/game/AudioManager.cpp'),
+    resolve(root,'th10_web/cpp/game/Arithmetic.cpp'),softfloat,
+  ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
+  ['common-simulation-frontier', [
+    resolve(common,'tests/simulation-frontier-test.cpp'),
+    resolve(common,'src/netplay/NetplayCore.cpp'),
+    resolve(common,'src/netplay/NetplayProtocol.cpp'),
+  ]],
+  ['common-netplay-headers', [resolve(common,'tests/netplay-headers-test.cpp')]],
+  ['common-browser-transport', [
+    resolve(common,'tests/browser-peer-transport-test.cpp'),
+    resolve(common,'src/netplay/BrowserPeerTransport.cpp'),
+  ]],
+  ['common-netplay-base', [
+    resolve(common,'tests/netplay-base-test.cpp'),
+    ...['NetplayCore','NetplayProtocol','NetplaySession','WebSocketTransport']
+      .map(name=>resolve(common,'src/netplay',name+'.cpp')),
+  ]],
+  ['common-packet-transaction', [
+    resolve(common,'tests/packet-transaction-test.cpp'),
+    ...['NetplayCore','NetplayProtocol'].map(name=>resolve(common,'src/netplay',name+'.cpp')),
+  ]],
+  ['common-session-channel', [
+    resolve(common,'tests/session-channel-test.cpp'),
+    ...['NetplayCore','NetplayProtocol','NetplaySession','SessionChannel']
+      .map(name=>resolve(common,'src/netplay',name+'.cpp')),
+  ]],
   ['cooperative-rollback', [
     resolve(root, 'tests/cooperative-rollback-test.cpp'),
     resolve(common, 'src/netplay/NetplayCore.cpp'),

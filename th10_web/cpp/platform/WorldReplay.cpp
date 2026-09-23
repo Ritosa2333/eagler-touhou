@@ -9,12 +9,28 @@ namespace th10::browser {
 namespace {
 struct Gameplay final:ReplayEnvironment {
     World& w;explicit Gameplay(World& world):w(world){game=&w.state.game;input=&w.input.player_profiles[0].input;random=&w.engine.script_random;rate=&w.engine.speed;display_flags=&w.state.configuration.display_flags;recording_mode=reinterpret_cast<const u32*>(&w.new_game);controller_flags=w.actors.session?&w.actors.session->session_flags:nullptr;measured_fps=&w.measured_fps;player=&w.actors.player;}
-    void* allocate(u32 bytes) override{return w.replay_memory.allocate(bytes);}
+    void* allocate(u32 bytes) override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        // Output storage is not a rewindable allocation graph. Bootstrap it
+        // before frame zero; future MP record output commits outside journals.
+        if(w.rollback.IsCapturing()){w.fail();return nullptr;}
+#endif
+        return w.replay_memory.allocate(bytes);
+    }
     void release(void* bytes) override{if(!bytes)return;if(w.replay_memory.owns(bytes))w.replay_memory.release(bytes);else w.replay_files.memory.release(bytes);}
     void configure_options(Player&) override{w.configure_player();}
     void activate_player(Player&) override{w.activate_player();}
     void draw_rate(const Vec3& position,u32 color,u8 fps) override{w.common.value->color=color;const u32 argument=fps;w.queue_text(position,"%3d",&argument,1);w.common.value->color=0xffffffff;}
     void timestamp(i32& destination) override{destination=w.calendar.timestamp();}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    void restart_recording_buffer(Replay& replay,i32 stage) override{
+        auto* buffer=replay.buffers[stage].next;
+        if(!buffer||!buffer->value){w.fail();return;}
+        // Native stage metadata is still captured by activate_stage. The
+        // record buffer/cursor is an external owner, not recreated on rewind.
+        replay.active_buffer=buffer;
+    }
+#endif
 };
 struct Resources final:ReplayResourceEnvironment {
     World& w;Gameplay services;explicit Resources(World& world):w(world),services(world){gameplay=&services;current=&w.state.replay;configuration=w.actors.session?w.actors.session->configuration:nullptr;chain=&w.chain;callbacks=&w.engine.callback_environment;input_callback=callback_id::ReplayUpdate;end_frame_callback=callback_id::ReplayFrame;draw_callback=callback_id::ReplayDraw;}
@@ -42,8 +58,18 @@ struct Resources final:ReplayResourceEnvironment {
 }
 bool World::create_replay(i32 mode,const char* name){motion.clear();Resources env(*this);return ReplayResources::create(mode,name,env)!=nullptr;}
 void World::destroy_replay(Replay* replay){if(!replay)return;Resources env(*this);ReplayResources{*replay,env}.shutdown();env.services.release(replay);replay_files.close();replay_files.memory.clear();}
-void World::prepare_replay(){Gameplay env(*this);state.replay->prepare_stage(env);}
-void World::activate_replay(){Gameplay env(*this);state.replay->activate_stage(env);motion.begin(state.game.stage,false,state.replay->mode!=0,state.replay->mode==0);}
+void World::prepare_replay(){Gameplay env(*this);state.replay->prepare_stage(env);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    auto& replay=*state.replay;
+    if(replay.mode==0&&!replay.buffers[state.game.stage].next)
+        if(!replay.add_buffer(state.game.stage,env))fail();
+#endif
+}
+void World::activate_replay(){Gameplay env(*this);state.replay->activate_stage(env);
+#ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    motion.begin(state.game.stage,false,state.replay->mode!=0,state.replay->mode==0);
+#endif
+}
 i32 World::update_replay(){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     for(u32 seat=0;seat<player_count;++seat)pilots[seat].input_keys=state.input_lanes.seats[seat].current;
@@ -64,10 +90,23 @@ i32 World::draw_replay(){
     }
     return result;
 }
-void World::finish_replay(i32 clear){Gameplay env(*this);state.replay->finish_recording(clear,env);}
+void World::finish_replay(i32 clear){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Result classification is deterministic; a wall-clock timestamp belongs
+    // to a confirmed save operation and must not run again during resimulation.
+    state.replay->info->last_stage=clear?wrapping_add(clear,7):state.game.stage;
+#else
+    Gameplay env(*this);state.replay->finish_recording(clear,env);
+#endif
+}
 Replay* World::preview(const char* name){auto* entry=new(std::malloc(sizeof(Preview))) Preview(scores.files,state.game.flags,previews);if(entry->document.load(name)){entry->~Preview();std::free(entry);return nullptr;}entry->document.value.mode=2;previews=entry;return &entry->document.value;}
 void World::release_replay(Replay* replay){if(!replay)return;for(auto** next=&previews;*next;next=&(*next)->next){auto* entry=*next;if(&entry->document.value==replay){*next=entry->next;entry->~Preview();std::free(entry);return;}}if(replay==state.replay){destroy_replay(replay);return;}__builtin_trap();}
 void World::save_replay(const char* file,const char* name){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Until the MP Replay adapter owns all seats and confirmed output, do not
+    // serialize this preparatory native metadata as a silently broken SP rpy.
+    (void)file;(void)name;fail();return;
+#endif
 #ifdef TH_ENABLE_THPRAC
     const auto motion_tail=motion.playing?std::vector<u8>{}:motion.trailer(10);
     std::vector<u8> tail;

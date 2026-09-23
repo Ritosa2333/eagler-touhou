@@ -27,6 +27,15 @@ struct Backgrounds final : StageResourceEnvironment,CallbackReceiver {
     Stage* current=nullptr;Stage* previous=nullptr;char source_name[260]{};i32 error=0;
     struct PresentationStage {Stage* owner=nullptr;Camera camera{};bool valid=false;};
     std::array<PresentationStage,2> presentation{};
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Physical ownership only, NOT a rewindable game-state container. A
+    // restore makes current/previous live again and cancels that retirement.
+    // Journaling this queue would resurrect already-freed pointers in newer
+    // snapshots after confirmation advanced.
+    struct RetiredStage {Stage* stage=nullptr;u32 frame=0;bool animations=false;AnmFile* file=nullptr;};
+    std::array<RetiredStage,4> retired{};
+    bool collect_retired(u32 before_frame);
+#endif
     BackgroundScript script;
     Backgrounds(GameState&,AnimationEngine&,ScreenEffects&,FileSystem&);
     ~Backgrounds();

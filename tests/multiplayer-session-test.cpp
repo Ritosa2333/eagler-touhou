@@ -29,4 +29,9 @@ int main(){
     const auto networkContract=GameplayContract(network);
     network.sessionId=0;assert(GameplayContract(network)==networkContract);
     v2[5]=v2[6]=0;SessionSetup invalid{};assert(!DecodeSessionSetup(invalid,v2,13));
+    // A short nonnull input must be rejected before dereferencing words[0].
+    for(std::size_t count=0;count<11;++count)
+        assert(!DecodeSessionSetup(invalid,reinterpret_cast<const std::uint32_t*>(1),count));
+    assert(!DecodeSessionSetup(invalid,reinterpret_cast<const std::uint32_t*>(1),12));
+    assert(!DecodeSessionSetup(invalid,reinterpret_cast<const std::uint32_t*>(1),14));
 }

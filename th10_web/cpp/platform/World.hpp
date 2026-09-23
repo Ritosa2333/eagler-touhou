@@ -15,6 +15,7 @@
 #include "../multiplayer/ItemOwnership.hpp"
 #include "../multiplayer/RollbackPool.hpp"
 #include "../multiplayer/RollbackState.hpp"
+#include "../multiplayer/AudioEvents.hpp"
 #endif
 namespace th10::browser {
 // The gameplay owner persists across sessions, including transitions that keep
@@ -30,6 +31,10 @@ struct World final:HudActions,CallbackReceiver {
     multiplayer::RollbackPool<sizeof(TimedLaser),256> rollback_lasers{};
     multiplayer::RollbackPool<sizeof(EclContext),1024> rollback_ecl{};
     multiplayer::RollbackState rollback{};
+    multiplayer::AudioEvents audio_events{};
+    bool begin_rollback_frame(u32 frame);
+    bool end_rollback_frame();
+    bool commit_audio();
     bool rollback_resimulating=false;
     u32 player_count=2,local_player=0;
     // Separate reserved ANM slots, after the native title's 0..32 slots.
@@ -45,8 +50,6 @@ struct World final:HudActions,CallbackReceiver {
     void publish_player_targets(EnemyState&);
     void award_team_life() override;
     void award_team_clear_bonus() override;
-    GameEconomy& local_economy() override{return pilots[local_player].game;}
-    Player*& local_pilot() override{return pilots[local_player].player;}
     u32 multiplayer_count()const override{return player_count;}
     u32 multiplayer_local_seat()const override{return local_player;}
     const GameEconomy& multiplayer_economy(u32 seat)const override{return pilots[seat].game;}

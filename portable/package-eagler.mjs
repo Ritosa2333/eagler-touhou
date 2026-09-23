@@ -13,6 +13,9 @@ export function sha256(bytes) {
 }
 
 export function resolvePackagePlan(root, args = []) {
+  if (args.includes('--multiplayer-fixtures')) {
+    throw Error('Multiplayer fixture binaries are diagnostic-only and cannot be packaged.');
+  }
   const game = existsSync(resolve(root, 'th08_web/cpp/game/AnmRenderer.cpp')) ? 'th08' : 'th10';
   const presentationLab = args.includes('--presentation-lab');
   const multiplayer = args.includes('--multiplayer');
@@ -111,6 +114,7 @@ export function packageEagler({
   const thprac = build.features?.thprac === true;
   const runtimeNames = [
     'shell.mjs', 'eagler-host.mjs', 'save-storage.mjs',
+    ...(game === 'th10' ? ['practice-loader.mjs'] : []),
     ...(thprac ? ['practice.mjs', 'practice-config.mjs', 'practice-sections.mjs'] : []),
   ];
   const names = [
@@ -143,6 +147,18 @@ export function packageEagler({
     const expected = ext === 'wasm' ? build.sha256 : build.loaderSha256;
     if (hash(bytes) !== expected) throw Error('Build identity mismatch: ' + name);
     binaries[name] = bytes;
+  }
+  // Inspect the hash-verified actual module, not just its declared export list.
+  // Validation happens before any output is written or old files are removed.
+  const actualExports = WebAssembly.Module.exports(new WebAssembly.Module(binaries[game + '-sdl.wasm']));
+  if (game === 'th10' && actualExports.some(entry => entry.name === 'practice_enable') !== thprac) {
+    throw Error('THPrac feature declaration does not match the native capability');
+  }
+  for (const {name} of actualExports) {
+    if (name.startsWith('mp_fixture_')) throw Error('Fixture mutation export cannot be packaged: ' + name);
+    if (!presentationLab && (name.startsWith('presentation_lab_') || name.startsWith('audit_'))) {
+      throw Error('Production binary contains diagnostic export ' + name);
+    }
   }
   const resources = fontNames.map(name => {
     const bytes = readFileSync(resolve(fonts, name));

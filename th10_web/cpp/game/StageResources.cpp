@@ -24,10 +24,10 @@ i32 StageResources::start(const char* name,i32 priority_offset){
 }
 // 0x402440. The primitive VM array is freed as a raw allocation; only the
 // embedded effect/script VMs have individual geometry destructors here.
-void StageResources::release(){
+void StageResources::release(const bool* animation_policy){
     environment.chain->remove_locked(stage.update_entry,*environment.callbacks);environment.chain->remove_locked(stage.draw_entry,*environment.callbacks);environment.chain->remove_locked(stage.foreground_entry,*environment.callbacks);
     if(stage.file){environment.release_memory(stage.file);stage.file=nullptr;}if(stage.source){environment.release_memory(stage.source);stage.source=nullptr;}if(stage.object_animations){environment.release_memory(stage.object_animations);stage.object_animations=nullptr;}
-    if(!(*environment.game_flags&1)){auto*& file=environment.animation_slots[(static_cast<u32>(stage.stage_number)&1)+4];if(file){environment.release_animations(*file);environment.release_memory(file);file=nullptr;}}
+    if(animation_policy?*animation_policy:!(*environment.game_flags&1)){auto*& file=environment.animation_slots[(static_cast<u32>(stage.stage_number)&1)+4];if(file){environment.release_animations(*file);environment.release_memory(file);file=nullptr;}}
     if(*environment.background==&stage)*environment.background=nullptr;if(*environment.overlay==&stage)*environment.overlay=nullptr;
     for(u32 i=3;i>0;--i)if(auto*& geometry=stage.effect_animations[i-1].geometry){environment.release_memory(geometry);geometry=nullptr;}
     for(u32 i=8;i>0;--i)if(auto*& geometry=stage.script_animations[i-1].geometry){environment.release_memory(geometry);geometry=nullptr;}

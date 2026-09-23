@@ -9,6 +9,9 @@
 #include <cstdlib>
 namespace th10::browser {
 World::World(GameState& s,AnimationEngine& e,Common& c,Fonts& f,Input& i,Audio& a,Scores& records,ScreenEffects& fx):state(s),engine(e),common(c),fonts(f),input(i),audio(a),scores(records),effects(fx),backgrounds(s,e,fx,records.files),chain(&e.chain_value),replay_files(records.files,s.game.flags),replay_writer(records.files,default_calendar(),s.game,s.active_time,s.total_time,s.motion.cheat_movement_used,s.chinese),calendar(default_calendar()){engine.register_receiver(*this);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    engine.rollback_state=&rollback;
+#endif
     engine.callback_environment.bind(callback_id::SessionUpdate,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.update_session();});
     engine.callback_environment.bind(callback_id::SessionDraw,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.actors.session->draw(w.engine.manager);});
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -48,8 +51,32 @@ World::World(GameState& s,AnimationEngine& e,Common& c,Fonts& f,Input& i,Audio& 
     engine.callback_environment.bind(callback_id::EnemiesDraw,this,[](void*,void*,i32){return 1;});
     engine.callback_environment.bind(callback_id::HintsDraw,this,[](void*,void*,i32){return 1;});
 }
-World::~World(){shutdown();while(previews)release_replay(&previews->document.value);release_results_services();if(hud){hud->~Hud();std::free(hud);}std::free(cached_profile);engine.callback_environment.unbind(this);engine.unregister_receiver(*this);}
+World::~World(){shutdown();while(previews)release_replay(&previews->document.value);release_results_services();if(hud){hud->~Hud();std::free(hud);}std::free(cached_profile);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(engine.rollback_state==&rollback)engine.rollback_state=nullptr;
+#endif
+    engine.callback_environment.unbind(this);engine.unregister_receiver(*this);}
 void World::select_screen(i32 screen){state.pending_screen=state.engine_flags&0x1000?2:screen;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+bool World::begin_rollback_frame(u32 frame){
+    if(!rollback.BeginFrame(*this,frame))return false;
+    if(!audio_events.BeginFrame(frame)){rollback.EndFrame();return false;}
+    audio.manager.command_sink=&audio_events;return true;
+}
+bool World::end_rollback_frame(){
+    if(audio.manager.command_sink==&audio_events)audio.manager.command_sink=nullptr;
+    const bool commands=audio_events.EndFrame();const bool state=rollback.EndFrame();
+    return commands&&state;
+}
+bool World::commit_audio(){
+    const auto& runtime=state.netplay_runtime;
+    return audio_events.CommitThrough(runtime.ConfirmedThroughAllRemotes(),
+        runtime.LastSimulatedFrame(),audio.manager,[](void* context){
+            auto& audio=*static_cast<Audio*>(context);audio.advance_fades();
+            return audio.update()>=0;
+        },&audio);
+}
+#endif
 void World::sound(i32 id){audio.manager.queue_effect(id,0,sound_definitions);}
 void World::sound(i32 id,float x){audio.manager.queue_effect_position(id,x,sound_definitions);}
 AudioGame World::music(){AudioGame game{audio.manager,&scores.data,&state.configuration.display_flags,&engine.speed};

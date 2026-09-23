@@ -8,7 +8,7 @@ namespace {
 struct Resources final:GameObjectResourceEnvironment {
     World& w;explicit Resources(World& world):w(world){items=&w.actors.items;bomb=&w.actors.bomb;effects=&w.actors.effects;chain=&w.chain;callbacks=&w.engine.callback_environment;item_update=callback_id::ItemsUpdate;item_draw=callback_id::ItemsDraw;bomb_update=callback_id::BombUpdate;bomb_draw=callback_id::BombDraw;effects_update=callback_id::EffectsUpdate;effects_draw=callback_id::EffectsDraw;}
     void* allocate(u32 size) override{return std::malloc(size);}
-    void delete_object(void* p) override{std::free(p);}void release_geometry(void* p) override{std::free(p);}
+    void delete_object(void* p) override{std::free(p);}void release_geometry(void* p) override{w.engine.release_memory(p);}
     AnmFile* load_effect_animations() override{return w.engine.manager.load(7,"bullet.anm",w.engine.resources);}
     void report_effect_error() override{w.fail();}
 };
@@ -38,13 +38,13 @@ struct Items final:ItemFrameEnvironment,ItemDrawEnvironment {
     void play_global_sound(i32 id) override{w.sound(id);}
     void update_lives(i32 lives) override{
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-        if(seat<0||u32(seat)!=w.local_player)return;
+        if(seat!=0)return;
 #endif
         w.actors.gui->update_lives(lives);
     }
     void update_power_display(i32 whole,i32 fraction) override{
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-        if(seat<0||u32(seat)!=w.local_player)return;
+        if(seat!=0)return;
 #endif
         w.hud->update_power(whole,fraction);
     }
@@ -104,8 +104,16 @@ i32 World::spawn_item(const Vec3& p,i32 kind,u32 color,float angle,float speed){
     for(u32 seat=0;seat<player_count;++seat)if(cooperation.seats[seat].lifeState==multiplayer::LifeState::Alive){any_alive=true;if(pilots[seat].game.power<minimum_power)minimum_power=pilots[seat].game.power;}
     if(!any_alive)minimum_power=0;
     env.power=&minimum_power;
-    if(kind==8){const auto index=actors.items->faith_cursor;if(!actors.items->faith[index].state)faith_item_owners[index]={};}
-    else for(u32 i=0;i<150;++i)if(!actors.items->regular[i].state){regular_item_owners[i]={};break;}
+    if(kind==8){const auto index=actors.items->faith_cursor;if(!actors.items->faith[index].state){
+        auto& item=actors.items->faith[index];
+        if(!rollback.Touch(&item,sizeof(item))){fail();return 0;}
+        faith_item_owners[index]={};
+    }}
+    else for(u32 i=0;i<150;++i)if(!actors.items->regular[i].state){
+        auto& item=actors.items->regular[i];
+        if(!rollback.Touch(&item,sizeof(item))){fail();return 0;}
+        regular_item_owners[i]={};break;
+    }
 #endif
     return actors.items->spawn(p,kind,color,angle,speed,env);
 }

@@ -20,6 +20,10 @@ int main() {
     assert(host.Reset(setup, sessionId));
     setup.localPlayer = 1;
     assert(peer.Reset(setup, sessionId));
+    assert(!host.LocalReady()&&!host.CaptureLocal(0,Netplay::FrameInput(1)));
+    assert(!host.Prepare(0).canAdvance);
+    Netplay::FrameDecision forged{};forged.canAdvance=true;
+    assert(!host.MarkSimulated(0,forged));
 
     assert(host.ApplySession(peer.Hello()) == Netplay::SessionPacketResult::Accepted);
     assert(peer.ApplySession(host.Hello()) == Netplay::SessionPacketResult::Accepted);

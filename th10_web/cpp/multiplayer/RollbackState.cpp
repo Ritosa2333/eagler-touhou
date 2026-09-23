@@ -1,8 +1,10 @@
 #include "RollbackState.hpp"
 #include "../platform/World.hpp"
 #include "../game/Dialogue.hpp"
+#include "../game/StartupScreen.hpp"
 
 #include <cstddef>
+#include <algorithm>
 
 namespace th10::multiplayer {
 namespace {
@@ -29,6 +31,8 @@ bool touch_stage(Netplay::RollbackJournal& journal,Stage* stage){
         const auto count=static_cast<std::size_t>(stage->file->primitive_count);
         if(!journal.Touch(stage->object_animations,count*sizeof(AnmVm)))return false;
     }
+    if(stage->objects&&stage->file)for(i32 i=0;i<stage->file->object_count;++i)
+        if(stage->objects[i]&&!touch(journal,stage->objects[i]->flags))return false;
     return true;
 }
 
@@ -56,7 +60,7 @@ bool touch_bullets(Netplay::RollbackJournal& journal,EnemyBulletManager* manager
         auto& bullet=manager->pool[i];
         if(bullet.state){
             if(!journal.Touch(&bullet,sizeof(bullet)))return false;
-        }else if(!journal.Touch(&bullet.state,sizeof(bullet.state)))return false;
+        }
     }
     return true;
 }
@@ -70,12 +74,12 @@ bool touch_items(Netplay::RollbackJournal& journal,ItemManager* manager){
     for(auto& item:manager->regular){
         if(item.state){
             if(!journal.Touch(&item,sizeof(item)))return false;
-        }else if(!journal.Touch(&item.state,sizeof(item.state)))return false;
+        }
     }
     for(auto& item:manager->faith){
         if(item.state){
             if(!journal.Touch(&item,sizeof(item)))return false;
-        }else if(!journal.Touch(&item.state,sizeof(item.state)))return false;
+        }
     }
     return true;
 }
@@ -91,6 +95,7 @@ bool RollbackState::Reset(){
 
 void RollbackState::Clear(){
     journal_.Clear();configured_=false;
+    last_bytes_=peak_bytes_=0;total_bytes_=0;snapshots_=0;
 }
 
 bool RollbackState::Touch(void* address,std::size_t bytes){
@@ -112,8 +117,12 @@ bool RollbackState::BeginFrame(browser::World& world,std::uint32_t frame){
        !journal_.Touch(&state.current_stage,sizeof(state.current_stage))||
        !touch(journal_,engine.script_random)||
        !touch(journal_,engine.visual_random)||
+       !touch(journal_,engine.world)||!touch(journal_,engine.ui)||
+       !touch(journal_,engine.tangent)||
+       !touch(journal_,state.application.engine_flags)||!touch(journal_,state.quitting)||
        !journal_.Touch(&engine.speed,sizeof(engine.speed))||
        !touch(journal_,world.cooperation)||
+       !touch(journal_,world.backgrounds.current)||!touch(journal_,world.backgrounds.previous)||
        !journal_.Touch(world.regular_item_owners,sizeof(world.regular_item_owners))||
        !journal_.Touch(world.faith_item_owners,sizeof(world.faith_item_owners))||
        !touch(journal_,engine.chain_value)||
@@ -123,8 +132,28 @@ bool RollbackState::BeginFrame(browser::World& world,std::uint32_t frame){
        !touch_pool(journal_,world.rollback_ecl)||
        !touch_pool(journal_,world.effects.rollback_effects))return false;
 
+    // These owners survive the title screen. Their loading/introduction ANM
+    // handles and fixed-tick counters are read by GameSession and authored
+    // Draw; restoring only the ANM registry leaves handles from the future.
+    if(state.application.startup&&!touch(journal_,*state.application.startup))return false;
+    if(world.common.value&&!touch(journal_,*world.common.value))return false;
+    if(world.hud&&!touch(journal_,world.hud->last_multiplayer_hud_frame))return false;
+    if(world.hud&&!touch_pool(journal_,world.hud->rollback_dialogues))return false;
+    // Records changed by native score/spell/statistics code are deterministic
+    // values. Codec buffers and file handles are NOT part of the snapshot.
+    if(world.scores.data&&(!touch(journal_,world.scores.data->characters)||
+                          !touch(journal_,world.scores.data->settings)))return false;
+
     if(world.actors.session&&!touch(journal_,*world.actors.session))return false;
-    if(state.replay&&!touch(journal_,*state.replay))return false;
+    if(state.replay){
+        auto& replay=*state.replay;
+        // Capture native gameplay metadata, not emitted file buffers, malloc
+        // ownership or committed output cursors. Those live outside rollback.
+        if(!touch(journal_,replay.flags)||!touch(journal_,replay.manager_state)||
+           !touch(journal_,replay.elapsed)||!touch(journal_,replay.active_stage))return false;
+        for(auto* stage:replay.stages)if(stage&&!touch(journal_,*stage))return false;
+        if(replay.info&&!touch(journal_,*replay.info))return false;
+    }
     for(std::uint32_t seat=0;seat<world.player_count;++seat){
         auto& pilot=world.pilots[seat];
         if(!journal_.Touch(&pilot.input_keys,sizeof(pilot.input_keys)))return false;
@@ -151,7 +180,11 @@ bool RollbackState::BeginFrame(browser::World& world,std::uint32_t frame){
 }
 
 bool RollbackState::EndFrame(){
-    return configured_&&journal_.EndFrame();
+    if(!configured_||!journal_.IsFrameOpen())return false;
+    const auto bytes=journal_.BytesForFrame(journal_.OpenFrame());
+    if(!journal_.EndFrame())return false;
+    last_bytes_=bytes;peak_bytes_=std::max(peak_bytes_,bytes);
+    total_bytes_+=bytes;++snapshots_;return true;
 }
 
 bool RollbackState::RestoreTo(std::uint32_t frame,std::uint32_t* replayFrom){

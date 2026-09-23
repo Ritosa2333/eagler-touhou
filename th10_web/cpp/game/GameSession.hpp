@@ -35,6 +35,10 @@ struct GameSessionEnvironment {
     virtual void hide_screen(i32 frames)=0;
     virtual void stop_loader()=0;
     virtual void clear_bullets()=0;
+    virtual void clear_items(){
+        auto& owner=**items;
+        std::memset(owner.regular,0,sizeof(owner.regular)+sizeof(owner.faith));
+    }
     virtual void activate_player()=0;
     virtual void clear_enemies()=0;
     virtual void clear_lasers()=0;

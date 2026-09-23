@@ -9,6 +9,7 @@
 #include <new>
 #include <cstdlib>
 #include <cstdio>
+#include <algorithm>
 namespace th10::browser {
 namespace {
 #ifdef TH_SDL3
@@ -62,48 +63,74 @@ bool Application::multiplayer_active()const{
            state.netplay_runtime.Configured();
 }
 
+bool Application::multiplayer_pump_network(){
+    if(state.netplay_runtime.PumpNetwork(multiplayer_active()))return true;
+    error=-5;return false;
+}
+
 i32 Application::multiplayer_update(){
     auto& runtime=state.netplay_runtime;
     auto& rollback=world->rollback;
-
-    // A pending screen/stage lifecycle may free whole resource graphs. Never
-    // cross it speculatively: wait until every remote has confirmed the frame
-    // which requested the transition, then run the lifecycle without advancing
-    // the netplay frame counter and begin a fresh journal frontier afterwards.
-    if(state.pending_screen!=value.screen){
-        const auto last=runtime.LastSimulatedFrame();
-        const auto confirmed=runtime.ConfirmedThroughAllRemotes();
-        if(last!=Netplay::INVALID_FRAME&&(confirmed==Netplay::INVALID_FRAME||confirmed<last))
-            return 1;
-        rollback.Clear();
-        const i32 result=engine.update_all();
-        if(world&&!world->loading)rollback.Reset();
-        if(result&&result!=-1)presentation_audit::simulation_tick();
-        return result;
-    }
+    if(multiplayer_frame_open){error=-4;return -1;}
 
     if(runtime.HasRollbackRequest()){
         const auto rollbackFrame=runtime.RollbackFrame();
         const auto last=runtime.LastSimulatedFrame();
         if(last!=Netplay::INVALID_FRAME&&rollbackFrame<=last){
             std::uint32_t replayFrom=rollbackFrame;
-            if(!rollback.RestoreTo(rollbackFrame,&replayFrom)){error=-4;return -1;}
-            runtime.ClearRollbackRequest();
+            if(!rollback.RestoreTo(rollbackFrame,&replayFrom)||
+               !runtime.RewindSimulationTo(replayFrom)||
+               !world->audio_events.DiscardFrom(replayFrom)){error=-4;return -1;}
+            ++multiplayer_rollbacks;
             world->rollback_resimulating=true;
             for(std::uint32_t frame=replayFrom;frame<=last;++frame){
+                // A corrected input can reach a destructive lifecycle boundary
+                // earlier than the abandoned prediction. Retire that future,
+                // preserve its captured inputs and let the confirmed fence
+                // below own graph destruction; never run it inside a journal.
+                if(state.pending_screen!=value.screen)break;
                 const auto decision=runtime.Prepare(frame);
-                if(!decision.canAdvance||!rollback.BeginFrame(*world,frame)||
+                if(!decision.canAdvance||!world->begin_rollback_frame(frame)||
                    !multiplayer::InputLanes::Commit(state.input_lanes,decision.inputs.data(),
                                                     state.multiplayer_session.playerCount)){
                     world->rollback_resimulating=false;error=-4;return -1;
                 }
                 const i32 result=engine.update_all();
-                if(!rollback.EndFrame()||!runtime.MarkSimulated(frame,decision)||result==0||result==-1){
+                if(result==0||result==-1||!multiplayer_resimulate_draw()||
+                   !world->end_rollback_frame()||!runtime.MarkSimulated(frame,decision)){
                     world->rollback_resimulating=false;error=-4;return -1;
                 }
+                ++multiplayer_resimulated_frames;
             }
             world->rollback_resimulating=false;
         }else runtime.ClearRollbackRequest();
+    }
+
+    if(!world->commit_audio()){error=-4;return -1;}
+    // Reconcile first: late input can cancel a predicted transition. Clearing
+    // the journal as soon as confirmation arrives loses that required restore.
+    // Whole resource lifetimes only cross a fully reconciled, confirmed fence.
+    if(state.pending_screen!=value.screen){
+        const auto last=runtime.LastSimulatedFrame();
+        const auto confirmed=runtime.ConfirmedThroughAllRemotes();
+        if(last!=Netplay::INVALID_FRAME&&(confirmed==Netplay::INVALID_FRAME||confirmed<last)){
+            multiplayer_waiting=true;return 1;
+        }
+        // Confirmation only proves what we received. Networked resource/run
+        // retirement also waits until peers acknowledge our final input.
+        if(runtime.NetworkEnabled()&&!runtime.CanRetireRun()){
+            multiplayer_waiting=true;return 1;
+        }
+        rollback.Clear();
+        if(!world->backgrounds.collect_retired(Netplay::INVALID_FRAME)){error=-4;return -1;}
+        if(state.pending_screen==10||state.pending_screen==13){
+            if(!runtime.RetireRun()){error=-4;return -1;}
+            multiplayer_generation_pending=true;
+        }
+        const i32 result=engine.update_all();
+        if(world&&!world->loading&&!rollback.Reset()){error=-4;return -1;}
+        if(result&&result!=-1)presentation_audit::simulation_tick();
+        return result;
     }
 
     const auto frame=runtime.NextFrame();
@@ -113,25 +140,80 @@ i32 Application::multiplayer_update(){
         if(!runtime.CaptureLocal(frame,local)){error=-4;return -1;}
     }
     const auto decision=runtime.Prepare(frame);
-    if(!decision.canAdvance)return 1;
+    if(!decision.canAdvance){multiplayer_waiting=true;return 1;}
 
     engine.snapshot_presentation();
-    if(!rollback.BeginFrame(*world,frame)||
+    if(!world->begin_rollback_frame(frame)||
        !multiplayer::InputLanes::Commit(state.input_lanes,decision.inputs.data(),
                                         state.multiplayer_session.playerCount)){
         error=-4;return -1;
     }
     const i32 result=engine.update_all();
-    if(!rollback.EndFrame()||!runtime.MarkSimulated(frame,decision)){error=-4;return -1;}
+    if(result==0||result==-1){world->end_rollback_frame();error=-4;return -1;}
+    multiplayer_pending_decision=decision;
+    multiplayer_pending_frame=frame;
+    multiplayer_frame_open=true;
     if(result&&result!=-1)presentation_audit::simulation_tick();
     return result;
+}
+
+bool Application::multiplayer_resimulate_draw(){
+    if(!world||!world->rollback_resimulating)return false;
+    if(engine.device.begin_scene()<0)return false;
+    auto& animations=*manager;
+    animations.batch_quads=0;
+    animations.vertex_write=animations.batch_start=animations.vertex_buffer;
+    graphics_state=255;
+    ApplicationLoop::disable_fog(value,engine.fog_enabled,loop);
+    engine.draw_all();
+    engine.flush();
+    engine.device.texture(nullptr);
+    engine.device.end_scene();
+    return true;
+}
+
+bool Application::multiplayer_finalize_frame(){
+    if(!multiplayer_frame_open)return true;
+    const auto frame=multiplayer_pending_frame;
+    const auto decision=multiplayer_pending_decision;
+    multiplayer_frame_open=false;
+    multiplayer_pending_frame=Netplay::INVALID_FRAME;
+    if(!world||!world->end_rollback_frame()||
+       !state.netplay_runtime.MarkSimulated(frame,decision)){
+        error=-4;return false;
+    }
+    if(world->error||world->backgrounds.error){error=-4;return false;}
+    if(!world->commit_audio()){error=-4;return false;}
+    const auto confirmed=state.netplay_runtime.ConfirmedThroughAllRemotes();
+    if(confirmed!=Netplay::INVALID_FRAME){
+        const auto frontier=std::min(confirmed,frame)+1;
+        // Drop every checkpoint which could contain the retired graph before
+        // physical reclamation. The retirement queue itself is not journaled.
+        world->rollback.DiscardBefore(frontier);
+        if(!world->backgrounds.collect_retired(frontier)){error=-4;return false;}
+    }
+    return true;
 }
 #endif
 i32 Application::step(bool scheduled_tick){
     if(stopped)return error?2:1;if(!initialized&&!initialize())return 2;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!multiplayer_pump_network()){stopped=true;return 2;}
+#endif
     advance_loading();if(error){stopped=true;return 2;}
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     auto& session=state.multiplayer_session;
+    if(multiplayer_generation_pending&&world&&!world->loading&&world->actors.session){
+        if(!state.netplay_runtime.BeginNextRun(session,engine.script_random.seed)){error=-4;return 2;}
+        state.input_lanes={};input.player_profiles[0].input={};
+        for(u32 seat=0;seat<world->player_count;++seat)world->pilots[seat].input_keys=0;
+        world->audio_events.Reset();world->rollback.Clear();
+        multiplayer_generation_pending=false;
+    }
+    // The fresh graph exists, but no tick or authored Draw may run before the
+    // peers agree on this generation's session, seed and gameplay contract.
+    if(session.sessionId&&session.started&&world&&!world->loading&&world->actors.session&&
+       !state.netplay_runtime.CanStart())return 0;
     if(session.configured&&!session.started&&value.screen==4&&title&&!title->loading){
         if(session.sessionId&&!state.netplay_runtime.CanStart())return 0;
         if(!ensure_world())return 2;
@@ -157,7 +239,7 @@ i32 Application::step(bool scheduled_tick){
     // subtraction in native double precision: the game's x87 single mode can
     // round a microsecond away after 32 seconds and accidentally skip a tick.
     if(scheduled_tick)clock.next_frame_time=time().to_double()-0.000001;
-    const i32 result=clock.step(loop);sync_views();
+    const i32 result=clock.step(loop);sync_views();if(error){stopped=true;return 2;}
     if(writer_pending){writer_pending=false;Screenshot{screenshots}.write();}
     if(result){stopped=true;save();}return result;
 }

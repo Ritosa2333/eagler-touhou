@@ -9,7 +9,13 @@
 namespace th10::browser {
 HudMessages::HudMessages(Hud& h):owner(h){gui=h.actors.gui;game=&h.state.game;registry=&h.engine.manager.registry;keys=reinterpret_cast<const u32*>(&h.input.player_profiles[0].input.current);pressed=&h.input.player_profiles[0].input.pressed;rate=&h.engine.speed;decoded_text=text;}
 AnmFile& HudMessages::file(DialogueAnimationFile kind){switch(kind){case DialogueAnimationFile::Player:return *owner.actors.player->animation_file;case DialogueAnimationFile::Boss:return *owner.actors.enemies->animation_files[2];case DialogueAnimationFile::Interface:return *gui->animations;case DialogueAnimationFile::Text:return *owner.common.value->text_animations;case DialogueAnimationFile::MusicCaption:return *gui->stage_animations;}__builtin_trap();}
-Dialogue* HudMessages::allocate(){return static_cast<Dialogue*>(std::malloc(sizeof(Dialogue)));}
+Dialogue* HudMessages::allocate(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    return static_cast<Dialogue*>(owner.rollback_dialogues.allocate(sizeof(Dialogue),true));
+#else
+    return static_cast<Dialogue*>(std::malloc(sizeof(Dialogue)));
+#endif
+}
 u32 HudMessages::create_animation(DialogueAnimationFile kind,i32 script){return owner.animation(file(kind),script);}
 void HudMessages::bind_sprite(AnmVm& vm,DialogueAnimationFile kind,i32 sprite,bool explicit_file){(explicit_file?file(kind):*vm.animation_file).bind_sprite(vm,sprite);}
 void HudMessages::draw_text(AnmVm* vm,u32 color,const char* pattern){char output[128];if(format_text(output,sizeof(output),pattern,nullptr,0)<0)__builtin_trap();AnmText::draw(*vm,color,output,TextAlignment::Left,owner.fonts);}
@@ -19,15 +25,14 @@ void HudMessages::start_music(){owner.music().play(1,static_cast<u32>(reinterpre
 void HudMessages::fade_music(float seconds){owner.music().fade(seconds);}
 void HudMessages::complete_stage(){HudProgress env(owner);th10::complete_stage(env);}
 HudFrame::HudFrame(Hud& h):owner(h){GuiFrameEnvironment::game=GuiDrawEnvironment::game=&h.state.game;player=&h.actors.player;GuiFrameEnvironment::enemies=GuiDrawEnvironment::enemies=&h.actors.enemies;spell_flags=&h.actors.spell->spell_flags;engine_flags=&h.state.engine_flags;pending_screen=&h.state.pending_screen;registry=&h.engine.manager.registry;
-#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    GuiFrameEnvironment::game=GuiDrawEnvironment::game=&h.actions.local_economy();player=&h.actions.local_pilot();
-#endif
+    // Native GUI/ANM belongs to the shared fixed-tick world. Seat zero is its
+    // source on every endpoint; the custom MP draw handles local highlighting.
 }
 void HudFrame::update_animation(AnmVm& vm){owner.engine.update(vm);}
 void HudFrame::bind_digit(AnmFile& f,AnmVm& vm,i32 digit){f.bind_sprite(vm,digit);}
 u32 HudFrame::create_animation(AnmFile& file,i32 script){return owner.animation(file,script);}
 i32 HudFrame::update_dialogue(Dialogue& dialogue){HudMessages env(owner);return dialogue.tick(env);}
-void HudFrame::release_dialogue(Dialogue* dialogue){std::free(dialogue);}
+void HudFrame::release_dialogue(Dialogue* dialogue){owner.delete_object(dialogue);}
 void HudFrame::play_sound(i32 id){owner.sound(id);}
 void HudFrame::draw_animation(AnmVm& vm){owner.engine.draw(vm);}
 void HudFrame::rectangle(const ScreenRect& rect,u32 color){const u32 colors[]={color,color,color,color};auto renderer=owner.engine.renderer();auto* manager=&owner.engine.manager;draw_screen_rectangle(rect,colors,&manager,renderer);}
@@ -141,8 +146,15 @@ AudioGame Hud::music(){AudioGame game{audio.manager,&records.data,&state.configu
 Gui* Hud::allocate(){return static_cast<Gui*>(std::malloc(sizeof(Gui)));}
 AnmFile* Hud::load_animations(i32 slot,const char* name){return engine.manager.load(slot,name,engine.resources);}
 void Hud::release_animations(AnmFile& file){file.release(engine.resources);}
-void Hud::delete_object(void* object){std::free(object);}
-void Hud::free_bytes(void* bytes){std::free(bytes);}
+void Hud::delete_object(void* object){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(object&&rollback_dialogues.owns(object)){
+        if(!rollback_dialogues.release(object))__builtin_trap();return;
+    }
+#endif
+    std::free(object);
+}
+void Hud::free_bytes(void* bytes){engine.release_memory(bytes);}
 u8* Hud::read_file(const char* name){return ResourceFiles{records.files}.load(name,nullptr,false);}
 void Hud::report_error(){error=-1;}
 u32 Hud::create_animation(AnmFile& file,i32 script){return animation(file,script);}

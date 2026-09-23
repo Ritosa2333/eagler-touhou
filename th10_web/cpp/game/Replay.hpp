@@ -101,6 +101,9 @@ struct ReplayEnvironment {
     virtual void activate_player(Player& player)=0;
     virtual void draw_rate(const Vec3& position,u32 color,u8 fps)=0;
     virtual void timestamp(i32& destination)=0;
+    virtual void restart_recording_buffer(Replay& replay,i32 stage){
+        replay.clear_buffers(stage,*this);replay.active_buffer=replay.add_buffer(stage,*this);
+    }
 };
 void restore_faith(GameEconomy& game,i32 frames,float* rate) noexcept;
 }

@@ -54,6 +54,17 @@ struct SessionFrame final:GameSessionEnvironment {
     void hide_screen(i32 frames) override{ScreenEffect::create(ScreenEffectKind::HideScreen,frames,0,0,0,43,w.effects);}
     void stop_loader() override{w.loading=false;}
     void clear_bullets() override{w.clear_bullets();}
+    void clear_items() override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(w.rollback.IsCapturing()){
+            for(auto& item:w.actors.items->regular)
+                if(!w.rollback.Touch(&item,sizeof(item))){w.fail();return;}
+            for(auto& item:w.actors.items->faith)
+                if(!w.rollback.Touch(&item,sizeof(item))){w.fail();return;}
+        }
+#endif
+        GameSessionEnvironment::clear_items();
+    }
     void activate_player() override{w.activate_player();}
     void clear_enemies() override{w.clear_enemies(true);}
     void clear_lasers() override{w.clear_lasers();}
@@ -109,7 +120,14 @@ void World::advance_loading_step(){if(!loading)return;
 #endif
 }
 void World::advance_loading(){while(loading)advance_loading_step();}
-void World::stop_session(){if(!actors.session)return;loading=false;auto* session=actors.session;SessionResources env(*this);GameSessionResources{*session,env}.shutdown();std::free(session);effects.controller_flags=nullptr;}
+void World::stop_session(){if(!actors.session)return;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(audio.manager.command_sink==&audio_events)audio.manager.command_sink=nullptr;
+    rollback.Clear();
+    if(!backgrounds.collect_retired(Netplay::INVALID_FRAME))fail();
+#endif
+    loading=false;auto* session=actors.session;SessionResources env(*this);GameSessionResources{*session,env}.shutdown();std::free(session);effects.controller_flags=nullptr;
+}
 void World::shutdown(){
     const auto previous_screen=state.pending_screen;state.pending_screen=3;stop_session();state.game.flags&=~0xb;
     SessionResources env(*this);for(u32 i=0;i<static_cast<u32>(SessionObject::Count);i++){const auto kind=static_cast<SessionObject>(i);if(auto* value=env.object(kind))destroy_object(kind,value);}state.pending_screen=previous_screen;

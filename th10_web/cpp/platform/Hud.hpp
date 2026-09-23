@@ -17,8 +17,6 @@ struct HudActions {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     virtual void award_team_life()=0;
     virtual void award_team_clear_bonus()=0;
-    virtual GameEconomy& local_economy()=0;
-    virtual Player*& local_pilot()=0;
     virtual u32 multiplayer_count()const=0;
     virtual u32 multiplayer_local_seat()const=0;
     virtual const GameEconomy& multiplayer_economy(u32 seat)const=0;
@@ -78,6 +76,7 @@ struct Hud final:GuiResourceEnvironment,CallbackReceiver {
     float previous_boss_health=0;Enemy* previous_boss=nullptr;bool boss_presentation_valid=false;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     u32 last_multiplayer_hud_frame=~u32(0);
+    multiplayer::RollbackPool<sizeof(Dialogue),16> rollback_dialogues{};
 #endif
     Hud(GameState&,GameActors&,AnimationEngine&,Common&,Fonts&,Input&,Audio&,Scores&,ScreenEffects&,HudActions&);
     ~Hud();

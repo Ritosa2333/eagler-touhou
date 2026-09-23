@@ -2,7 +2,8 @@
 namespace th10::multiplayer {
 bool DecodeSessionSetup(SessionSetup& current,const std::uint32_t* words,
                         std::size_t size) noexcept {
-    if(current.started||!words||!((words[0]==1&&size==11)||(words[0]==2&&size==13))||
+    if(current.started||!words||(size!=11&&size!=13))return false;
+    if(!((words[0]==1&&size==11)||(words[0]==2&&size==13))||
        words[1]<2||words[1]>3||
        words[2]>=words[1]||words[3]>4||words[4]>65535)return false;
     SessionSetup next{};
@@ -25,7 +26,7 @@ std::uint32_t GameplayContract(const SessionSetup& setup) noexcept {
     // identity is deliberately excluded; all peers must compute the same ABI.
     std::uint32_t hash=2166136261u;
     const auto word=[&](std::uint32_t value){for(int i=0;i<4;++i){hash^=(value>>(i*8))&255u;hash*=16777619u;}};
-    word(0x10000001u);word(setup.playerCount);word(setup.difficulty);word(setup.seed);
+    word(0x10000002u);word(setup.playerCount);word(setup.difficulty);word(setup.seed);
     for(const auto& loadout:setup.loadouts){word(loadout.character);word(loadout.shot);}
     return hash;
 }

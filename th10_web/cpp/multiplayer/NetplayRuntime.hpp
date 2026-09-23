@@ -7,8 +7,11 @@
 
 #include <eagler/netplay/NetplayCore.hpp>
 #include <eagler/netplay/NetplaySession.hpp>
+#include <eagler/netplay/BrowserPeerTransport.hpp>
+#include <eagler/netplay/SessionChannel.hpp>
 
 #include <cstdint>
+#include <vector>
 
 namespace th10::multiplayer {
 
@@ -17,8 +20,19 @@ namespace th10::multiplayer {
 // TH10's session contract and exposes one frame decision at a time.
 class NetplayRuntime {
 public:
+    enum class WireResult:std::uint32_t {Accepted=1,IgnoredSession=2,Malformed=3,ContractMismatch=4,InvalidPeer=5};
     bool Reset(const SessionSetup& setup, std::uint64_t sessionId) noexcept;
     void Clear() noexcept;
+    // The title must have reconciled/confirmed the restart fence. A real
+    // transport additionally finishes its peer ACK fence before retirement.
+    bool RetireRun() noexcept;
+    bool CanRetireRun() const;
+    bool BeginNextRun(SessionSetup& setup,std::uint32_t seed) noexcept;
+    std::uint32_t Generation()const{return generation_;}
+    bool Retired()const{return retired_;}
+    WireResult ApplyWire(const std::uint8_t* bytes,std::size_t size);
+    bool BuildInputWire(std::uint8_t peer,std::uint32_t latest,std::uint32_t sequence,
+                        std::uint32_t ack,std::vector<std::uint8_t>& out)const;
 
     Netplay::SessionPacket Hello() const { return gate_.BuildPacket(Netplay::SessionPhase::Hello); }
     Netplay::SessionPacket Ready() const { return gate_.BuildPacket(Netplay::SessionPhase::Ready); }
@@ -26,11 +40,13 @@ public:
         return gate_.Apply(packet);
     }
     bool CanSendReady() const { return gate_.CanSendReady(); }
+    bool LocalReady() const { return configured_&&gate_.LocalReady(); }
     void MarkLocalReady() { gate_.MarkLocalReady(); }
     bool CanStart() const { return configured_ && gate_.CanStart(); }
 
     bool CaptureLocal(std::uint32_t frame, const Netplay::FrameInput& input) {
-        return configured_ && core_.ScheduleLocalInput(frame, input);
+        if(!CanStart()||!Netplay::IsValidFrameInput(input)||!core_.ScheduleLocalInput(frame,input))return false;
+        return !network_enabled_||channel_.LocalCaptured(core_,frame,network_now_);
     }
     Netplay::RemoteInputResult SubmitRemote(std::uint8_t player, std::uint32_t frame,
                                             const Netplay::FrameInput& input) {
@@ -38,16 +54,19 @@ public:
                            : Netplay::RemoteInputResult::InvalidPlayer;
     }
     Netplay::FrameDecision Prepare(std::uint32_t frame) const {
-        return configured_ ? core_.PrepareFrame(frame) : Netplay::FrameDecision{};
+        return CanStart() ? core_.PrepareFrame(frame) : Netplay::FrameDecision{};
     }
     bool MarkSimulated(std::uint32_t frame, const Netplay::FrameDecision& decision) {
-        return configured_ && core_.MarkSimulated(frame, decision);
+        return CanStart() && core_.MarkSimulated(frame, decision);
     }
 
     bool HasRollbackRequest() const { return configured_ && core_.HasRollbackRequest(); }
     std::uint32_t RollbackFrame() const { return core_.RollbackFrame(); }
     void ClearRollbackRequest() { core_.ClearRollbackRequest(); }
     std::uint32_t LastSimulatedFrame() const { return core_.LastSimulatedFrame(); }
+    bool RewindSimulationTo(std::uint32_t frame) {
+        return configured_&&core_.RewindSimulationTo(frame);
+    }
     std::uint32_t NextFrame() const {
         const auto last=core_.LastSimulatedFrame();
         return last==Netplay::INVALID_FRAME?0:last+1;
@@ -59,13 +78,32 @@ public:
     std::uint32_t ConfirmedThroughAllRemotes() const {
         return core_.ConfirmedThroughAllRemotes();
     }
+    std::uint32_t AcknowledgedLocalThroughAllRemotes() const {
+        return core_.AcknowledgedLocalThroughAllRemotes();
+    }
     const Netplay::SessionConfig& Config() const { return gate_.Config(); }
     bool Configured() const { return configured_; }
 
+    bool Connect(const char* relayUrl);
+    bool PumpNetwork(bool expectsInput);
+    bool NetworkEnabled() const { return network_enabled_; }
+    const Netplay::SessionChannel& Channel() const { return channel_; }
+    const Netplay::BrowserPeerTransport& Transport() const { return transport_; }
+    const char* NetworkError() const;
+
 private:
+    bool Configure(const SessionSetup& setup,std::uint64_t id) noexcept;
     Netplay::SessionGate gate_{};
     Netplay::RollbackCore core_{};
+    SessionSetup setup_{};
+    std::uint64_t base_session_id_=0;
+    std::uint32_t generation_=0;
+    bool retired_=false;
     bool configured_ = false;
+    Netplay::BrowserPeerTransport transport_{};
+    Netplay::SessionChannel channel_{transport_};
+    std::uint64_t network_now_=0;
+    bool network_enabled_=false;
 };
 
 } // namespace th10::multiplayer
