@@ -56,12 +56,72 @@ void PlayerSimulation::fire(i32 frame){
     const auto* stream=index<0?nullptr:resource.stream(index);if(!stream){failed=true;return;}shots.emit(*stream,frame);failed|=shots.failure!=PlayerShots::Failure::None;
 }
 void PlayerSimulation::die(){state.context.focused=state.motion.form.focused;state.context.gauge=gauge.value();life.die();gauge.set(state.context.gauge);synchronize_shots();}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+void PlayerSimulation::enter_spirit(){
+    state.life.state=4;state.context.game_over=0;state.bomb.active=0;
+    state.shots.shooting_timer.set(-1);
+    for(auto& shot:state.shots.shots){shot.state=0;shot.update=ShotUpdate::None;shot.draw=ShotDraw::None;shot.hit=ShotHit::None;}
+    for(auto& laser:state.shots.lasers)laser.shot=nullptr;
+    for(auto& region:state.shots.regions.damaging)region.reset();
+    for(auto& region:state.shots.regions.cancelling)region.reset();
+    if(state.motion.form.focus_effect){state.motion.form.focus_effect->SetInterrupt(1);state.motion.form.focus_effect=nullptr;}
+    if(state.motion.gauge.effect){state.motion.gauge.effect->SetInterrupt(1);state.motion.gauge.effect=nullptr;}
+    presentation_valid=false;
+}
+bool PlayerSimulation::update_spirit(i8& drift_x,i8& drift_y){
+    if(!initialized)return false;
+    if(state.context.pause)return !failed;
+    if(presentation_marker.capture()){
+        presentation_previous_position=state.motion.movement.position;
+        presentation_previous_animation.capture(state.motion.animation);
+        presentation_valid=true;
+    }
+    auto& p=state.motion.movement.position;
+    p.x=Scalar::add(p.x,drift_x>0?.2f:-.2f);
+    p.y=Scalar::add(p.y,drift_y>0?.2f:-.2f);
+    if(p.x<8.f){p.x=8.f;drift_x=1;}else if(p.x>368.f){p.x=368.f;drift_x=-1;}
+    if(p.y<316.f){p.y=316.f;drift_y=1;}else if(p.y>416.f){p.y=416.f;drift_y=-1;}
+    state.motion.movement.delta={};
+    step_animation(state.motion.animation);
+    return !failed;
+}
+void PlayerSimulation::revive_spirit(){
+    state.life.state=3;state.life.timer.set(120);state.life.clear_frames=60;
+    state.life.predead_count=profile(false).deathbomb_limit;
+    state.context.game_over=0;state.motion.form.focused=2;
+    state.motion.animation.scale={1,1};state.motion.animation.blendMode=0;
+    state.motion.animation.color1.d3dColor=0xffffffff;
+    state.motion.movement.delta={};presentation_valid=false;
+}
+void PlayerSimulation::place_multiplayer_spawn(u32 seat,u32 count){
+    if(count<2||count>3||seat>=count)return;
+    auto& movement=state.motion.movement;
+    movement.position.x=192.f+32.f*float(i32(2*seat)-i32(count-1))*.5f;
+    movement.position.y=384.f;
+    for(auto& point:movement.history)point=movement.position;
+    state.shots.position=movement.position;
+    presentation_previous_position=movement.position;presentation_valid=false;
+}
+#endif
 void PlayerSimulation::graze(const Vec3& position,bool laser){
     PlayerGrazeContext context{state.motion.movement.position,state.bomb.active,state.context.hud_flags,state.context.replay_flags,state.context.character,state.motion.form.youkai,state.context.time_spell,u8(services.world.boss_present()),{}};
     graze_player(context,values,gauge,rank,position,laser,*this);state.context.hud_flags=context.hud_flags;state.context.replay_flags=context.replay_flags;state.context.gauge=gauge.value();
 }
 i32 PlayerSimulation::damage(const Vec3& position,const Vec3& size,i32& time_items,i32* bomb_hit){synchronize_shots();const i32 result=shots.damage(position,size,time_items,bomb_hit);failed|=shots.failure!=PlayerShots::Failure::None;return result;}
 bool PlayerSimulation::draw(const Vec2& offset,bool impacts){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(state.life.state==4){
+        if(!impacts){
+            AnmVm vm=state.motion.animation;
+            Vec3 p=state.motion.movement.position;
+            if(presentation::active&&presentation_valid&&presentation_near(presentation_previous_position,p))p=presentation_lerp(presentation_previous_position,p);
+            vm.pos={Scalar::add(offset.x,p.x),Scalar::add(offset.y,p.y),.1f};
+            vm.color1.a=u8(std::min<u32>(vm.color1.a,80));
+            services.motion.draw_player(vm);
+        }
+        return !failed;
+    }
+#endif
     TH08_AUDIT_SCOPE(Player,&state.motion,state.motion.animation.currentTimeInScript.current,impacts?1:0);
     const bool failed_before=failed;const auto shot_failure_before=shots.failure;
     if(!presentation::render_only)synchronize_shots();shots.draw(impacts,offset);if(!presentation::render_only)failed|=shots.failure!=PlayerShots::Failure::None;

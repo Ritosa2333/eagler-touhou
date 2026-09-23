@@ -166,9 +166,15 @@ JobResult GameplayScene::update_player(){
     for(u32 seat=0;seat<session.player_count;++seat){
         auto& simulation=pilot(seat);auto& services=pilot_services(seat);
         simulation.status().input.always_hitbox=always_hitbox;
-        if(!services.prepare()||!simulation.update())return JobResult::Error;
+        if(!services.prepare())return JobResult::Error;
+        const bool updated=cooperation.seats[seat].spirit
+            ?simulation.update_spirit(cooperation.seats[seat].drift_x,cooperation.seats[seat].drift_y)
+            :simulation.update();
+        if(!updated)return JobResult::Error;
         services.finish();
+        if(!cooperation.seats[seat].spirit&&simulation.status().context.game_over)enter_spirit(seat);
     }
+    update_cooperation();
 #else
     player_state.input.always_hitbox=always_hitbox;if(!player_services.prepare()||!player.update())return JobResult::Error;player_services.finish();
 #endif
@@ -183,7 +189,12 @@ JobResult GameplayScene::draw_players(bool impacts){
 #endif
 }
 JobResult GameplayScene::update_ascii(){
-    ascii.tick_popups(ascii_context,player.timing);if(menus.context.pause_state)menus.update_pause();if(menus.context.show_retry)menus.update_retry();
+    ascii.tick_popups(ascii_context,player.timing);if(menus.context.pause_state)menus.update_pause();
+    const bool had_retry=menus.context.show_retry!=0;
+    if(had_retry)menus.update_retry();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(had_retry&&!menus.context.show_retry&&menus.context.supervisor_state==2)reset_team_after_continue();
+#endif
     globals.game_flags=menus.context.flags;globals.stage_completion=menus.context.show_retry;synchronize();ascii.tick_vms(ascii_context.demo);return animations.invalid?JobResult::Error:JobResult::Continue;
 }
 JobResult GameplayScene::update_control(){control.input.active_bullets=projectile_pool.active_count;control.input.fog=u32(background.fog.color.d3dColor);control.input.dialogue=dialogue.present();const auto result=control.update();synchronize();return invalid()?JobResult::Error:result;}
@@ -233,6 +244,7 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     if(session.player_count<2||session.player_count>3||session.local_player>=session.player_count)return false;
     for(u32 seat=1;seat<session.player_count;++seat)if(session.player_characters[seat]>=12)return false;
     session.player_characters[0]=u8(wanted.character);
+    if(wanted.initial)multiplayer::reset(cooperation,u8(session.player_count));
     roster.count=session.player_count;
     for(u32 seat=0;seat<3;++seat){
         roster.seats[seat].available=seat<session.player_count;
@@ -242,6 +254,9 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     for(u32 seat=0;seat<session.player_count;++seat){pilot(seat).set_player_count(session.player_count);pilot_services(seat).set_player_count(session.player_count);}
 #endif
     if(loaded||wanted.stage<0||wanted.stage>=9||wanted.character<0||wanted.character>=12||wanted.difficulty<0||wanted.difficulty>4||((wanted.flags&0x4000)&&(wanted.spell<0||wanted.spell>=222)))return false;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    multiplayer::begin_stage(cooperation);
+#endif
     const bool retain_counters=!wanted.initial&&!(wanted.flags&0x4001)&&wanted.difficulty<4;
     const i32 previous_frames=enemies.state.frames,previous_human=enemies.state.unfocused_frames,previous_active=enemies.state.active_frames;
     failed=false;animations.invalid=false;player_services.reset();request=wanted;previous_input=0;player.timing={1,false};animations.timing=player.timing;
@@ -282,6 +297,10 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
         state.reset();services.reset();state.context.game_flags=wanted.flags;state.input.minimum={8,16};state.input.extent={368,416};simulation.timing=player.timing;
         if(!services.prepare()||!simulation.initialize({session.player_characters[seat],wanted.initial,bool(wanted.flags&0x4000),u8(section_warp),{384,448}})){unload();return false;}
         services.finish();
+    }
+    for(u32 seat=0;seat<session.player_count;++seat)pilot(seat).place_multiplayer_spawn(seat,session.player_count);
+    if(!wanted.initial)for(u32 seat=0;seat<session.player_count;++seat)if(cooperation.seats[seat].spirit){
+        pilot(seat).enter_spirit();roster.seats[seat].available=false;items.set_player_available(seat,false);
     }
 #endif
     if(initialize_values){

@@ -85,6 +85,10 @@ public:
     const ShotProfile& profile(bool focused)const noexcept{return resources[focused].settings();}
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     void set_player_count(u32 count){shots.player_count=count;}
+    void enter_spirit();
+    bool update_spirit(i8& drift_x,i8& drift_y);
+    void revive_spirit();
+    void place_multiplayer_spawn(u32 seat,u32 count);
 #endif
     i32 damage(const Vec3& position,const Vec3& size,i32& time_items,i32* bomb_hit);
     bool draw(const Vec2& screen_offset,bool impacts=false);

@@ -13,6 +13,7 @@
 #include "ReplayRecording.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/PlayerRoster.hpp"
+#include "../multiplayer/CooperativeLifecycle.hpp"
 #endif
 namespace th08 {
 struct ReplayTouchPoint {float x=0,y=0;};
@@ -115,7 +116,11 @@ public:
     };
     std::unique_ptr<GuestPilot> guest_pilots[2];
     PlayerRoster roster;
+    multiplayer::CooperativeState cooperation;
     u16 committed_buttons[3]{},previous_buttons[3]{};
+    void enter_spirit(u32 seat);
+    void update_cooperation();
+    void reset_team_after_continue();
     PlayerSimulation& pilot(u32 seat){return seat?guest_pilots[seat-1]->simulation:player;}
     PlayerScene& pilot_services(u32 seat){return seat?guest_pilots[seat-1]->services:player_services;}
 #endif

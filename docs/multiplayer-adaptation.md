@@ -22,6 +22,10 @@ The requested reference is TH07's cooperative game: one shared stage, enemies,
 bullets and score; personal lives, power and bombs; rescue of exhausted players
 and a synchronized team-wipe/retry lifecycle. TH08 retains each loadout's native
 human/youkai forms, shooting, bomb and deathbomb behavior.
+The current cooperative interaction copies TH07's 90-tick Focus rescue, lowest-
+resource recipient, 180-tick wipe delay, and eight Shoot presses within 24
+ticks to give 20 power through two big and four small targeted items. These
+rules are compiled only into multiplayer variants.
 
 TH07's implementation is evidence, not an authority for TH08-specific values.
 In particular, its shared Cherry mechanics, Stage 4 chained-card exception,
@@ -39,8 +43,17 @@ balance on every endpoint. Do not silently award each seat a private copy of
 the shared balance. Spell failure and capture are properties of the shared
 spell; individual player actions must reach that same owner.
 
-The user requested a persistent completion goal and no commits before the
-complete adaptation is finished. Subagents must use Luna with xhigh reasoning.
+The completion goal remains the entire multiplayer product. The user's newer
+instruction permits a commit after each substantial completed and validated
+piece. Subagents must use Luna with xhigh reasoning.
+
+Complete all multiplayer functionality and correctness before performance
+work. Preserve and independently verify the ordinary single-player baseline;
+commit the complete functional boundary before any later shared optimization.
+Keep optimization commits and their ordinary/multiplayer regression evidence
+separate, so a single-player divergence can be attributed to the correct
+change rather than to mixed feature and performance work. Never replace a
+golden to hide a difference.
 
 ## Implementation boundary
 
@@ -74,7 +87,40 @@ those effects while separating presentation and external side effects.
 6. MP Replay, start-only spectator, transport and Launcher lifecycle checks.
 7. Complete experiment diff review, then canonical integration and regression.
 
-Current evidence: source investigation and the pinned common library's
-`rollback-journal-test.cpp` passing as Emscripten/WASM under Node. This tests
-the journal algorithm, not restoration of TH08 owners. No multiplayer Runtime,
-browser, cross-device or title rollback acceptance has been claimed.
+## Current local evidence (2026-09-23)
+
+The newer source-matching seven-case cooperation acceptance and resumed
+ordinary/MP rebuilds are recorded in [cooperation-acceptance.md](cooperation-acceptance.md).
+That record supersedes the earlier four-case/hashes below, which remain as
+historical provenance. In particular, production MP now preserves directed
+gift affinity across homing cancellation, recipient death and pool reuse.
+
+- The ordinary and production multiplayer WASM build independently. The latest
+  ordinary WASM SHA-256 is `0d00a84ef6b214d43f2f365a6ffaa8bc6030a89c56b7d53868f3b9295b4cea3f`,
+  unchanged by the multiplayer lifecycle and power-gift changes. The production
+  multiplayer WASM SHA-256 is `2f2d6a8af6f7d1017d397f65d76c81e4ae7fa9c6b8888cbe3117deba9a6682bc`.
+- `node portable/package-eagler.mjs --multiplayer` produced the separately
+  identified `build-eagler-multiplayer` package. Package fixture tests cover
+  ordinary, multiplayer and Presentation Lab identity and hash rejection.
+- `node portable/check-multiplayer-cooperation.mjs` passes the pointer-free
+  2P/3P rescue priority, focus-release, targeted item allocation, eight-tap
+  power gift, stage-local gesture reset and 180-tick wipe rules. `python
+  portable/multiplayer/check-cooperation.py` passes four real-browser/native
+  fixtures: 2P final death/rescue, 3P spirit priority, targeted 3P power gift,
+  and full wipe followed by the original Retry menu and whole-team resource
+  reset. Its report is `artifacts/multiplayer-tests/cooperation-native.json`.
+  The diagnostic fixture WASM SHA-256 is
+  `9cd4e5016781df008def3486591f91feccc5410fe0694d13c96db3882a662dfe`.
+- `node --test portable/multiplayer/build-isolation.test.mjs` confirms the
+  fixture exports are absent from ordinary and production multiplayer WASM.
+  The diagnostic fixture WASM is a separate build and is never packaged.
+- Real TH08 DATA and native artwork were used to check 2P/3P HUD placement.
+  Screenshots are `artifacts/multiplayer-tests/hud-th08-2p-final.png` and
+  `hud-th08-3p-final.png`.
+
+These checks prove local gameplay and package construction, not a playable
+network product. The TH08 world journal/late-input correction, frame-zero
+barrier, multiplayer Replay, spectator, actual transport and Launcher room
+lifecycle still require implementation and acceptance. The pinned common
+library's `rollback-journal-test.cpp` covers its generic algorithm only, not
+restoration of TH08 owners.

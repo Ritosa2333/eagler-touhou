@@ -31,6 +31,9 @@ class ItemSystem:private ItemPoolActions,private ItemUpdateActions,private ItemR
         ItemUpdateContext input;ItemRewardContext reward_input;std::optional<ItemRewards> rewards;bool available=false;
     } owners[3];
     std::array<u8,ItemPoolState::capacity+1> item_owners{};
+    // A directed donation is not just a transient homing assignment. Native
+    // cancel/collect operations may change motion, not the promised recipient.
+    std::array<u8,ItemPoolState::capacity+1> gift_recipients{};
     static constexpr u8 no_owner=3;
 #else
     ItemUpdateContext input;ItemRewardContext reward_input;ItemRewards rewards;
@@ -75,6 +78,14 @@ public:
     void set_player_available(u32 seat,bool available);
     void award_team_extend();
     void convert_power_items(ItemState& collected);
+    bool spawn_for_player(const Vec3& position,i32 type,i32 mode,u32 seat);
+    bool spawn_power_gift(const Vec3& position,u32 seat);
+    u32 assigned_gifts(u32 seat)const noexcept{
+        if(seat>=3)return 0;u32 count=0;
+        for(u32 i=0;i<ItemPoolState::capacity;++i)
+            count+=state->items[i].active&&gift_recipients[i]==seat?1u:0u;
+        return count;
+    }
 #else
     ItemSystem(PlayerSimulation&,GameGlobals&,GameValues&,GameGauge&,GameRank&,HighScore&,Rng&,AnmLibrary&,AnmExecutor&,AnmRenderer&,ItemSystemActions&);
 #endif

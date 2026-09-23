@@ -4,9 +4,11 @@ import {resolve,dirname,relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 const workspace=resolve(fileURLToPath(new URL('../',import.meta.url))),game=process.argv.includes('--th08')?'th08':'th10',root=resolve(workspace,game+'_web');
-const presentationLab=process.argv.includes('--presentation-lab'),multiplayer=process.argv.includes('--multiplayer'),printPlan=process.argv.includes('--print-plan');
+const presentationLab=process.argv.includes('--presentation-lab'),multiplayerFixtures=process.argv.includes('--multiplayer-fixtures');
+const multiplayer=process.argv.includes('--multiplayer')||multiplayerFixtures,printPlan=process.argv.includes('--print-plan');
 if(presentationLab&&multiplayer)throw Error('Presentation Lab and multiplayer are separate build variants.');
-const profile=multiplayer?'multiplayer':presentationLab?'presentation-lab':'sdl3',out=resolve(root,'artifacts',profile);
+if(multiplayerFixtures&&game!=='th08')throw Error('TH08 owns these multiplayer fixtures.');
+const profile=multiplayerFixtures?'multiplayer-fixtures':multiplayer?'multiplayer':presentationLab?'presentation-lab':'sdl3',out=resolve(root,'artifacts',profile);
 if(!printPlan)mkdirSync(out,{recursive:true});
 const netplayRoot=resolve(workspace,'third_party/eagler-common');
 const sdk=process.env.EMSDK??(existsSync(resolve(workspace,'tools/emsdk'))?resolve(workspace,'tools/emsdk'):resolve(workspace,'../toolchains/emsdk'));
@@ -30,6 +32,7 @@ if(multiplayer){
  common.push('-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-DTH_ENABLE_NETPLAY=1','-I'+resolve(root,'cpp/multiplayer'),'-I'+resolve(netplayRoot,'include'));
  sources.push(...readdirSync(resolve(root,'cpp/multiplayer')).filter(n=>n.endsWith('.cpp')).map(n=>'cpp/multiplayer/'+n));
  sources.push(...['NetplayProtocol','NetplayCore','NetplaySession','RollbackJournal','BrowserPeerTransport','WebSocketTransport'].map(n=>relative(root,resolve(netplayRoot,'src/netplay',n+'.cpp')).replaceAll('\\','/')));
+ if(multiplayerFixtures){common.push('-DTH_MULTIPLAYER_FIXTURES=1');sources.push('../portable/multiplayer/FixtureExports.cpp');}
 }
 if(game==='th08')sources.push(...['imgui.cpp','imgui_draw.cpp','imgui_freetype.cpp','imgui_tables.cpp','imgui_widgets.cpp'].map(n=>'cpp/third_party/imgui/'+n));
 const shared=resolve(workspace,'portable/sdl'),numeric=resolve(workspace,'portable/numeric'),input=resolve(workspace,'portable/input'),renderer=resolve(shared,'Renderer.cpp');
@@ -37,7 +40,7 @@ function headers(dir){return readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.
 const capturedInputs=new Map();
 function observed(path){const bytes=readFileSync(path),digest=createHash('sha256').update(bytes).digest('hex');if(capturedInputs.has(path)&&capturedInputs.get(path)!==digest)throw Error('Source changed during build; rebuild: '+path);capturedInputs.set(path,digest);return bytes;}
 const flags=[...common,...(thcrap?['-DTH_ENABLE_THCRAP=1']:[]),'-std=c++17','-fno-exceptions','-fno-rtti'],linkFlags=multiplayer?['-lwebsocket']:[];
-if(printPlan){console.log(JSON.stringify({game,profile,variant:multiplayer?'multiplayer':'normal',outputDirectory:out,flags,linkFlags,sources},null,2));process.exit(0);}
+if(printPlan){console.log(JSON.stringify({game,profile,variant:multiplayerFixtures?'multiplayer-fixtures':multiplayer?'multiplayer':'normal',outputDirectory:out,flags,linkFlags,sources},null,2));process.exit(0);}
 const netplayHeaders=multiplayer?headers(resolve(netplayRoot,'include')):[];
 const hash=createHash('sha256');for(const path of [...headers(resolve(root,'cpp')),...headers(shared),...headers(numeric),...headers(input),...netplayHeaders].sort())hash.update(path).update(observed(path));
 const prefix=JSON.stringify([flags,hash.digest('hex')]);
@@ -62,5 +65,5 @@ const inventory=Object.fromEntries(sourceFiles.map(p=>[relative(workspace,p).rep
 for(const [path,expected] of capturedInputs)if(sha(readFileSync(path))!==expected)throw Error('Source changed during compilation; do not publish this mixed build. Rebuild: '+path);
 const sdkMetadata=resolve(sdk,'touhou-sdk.json');
 const toolchain=existsSync(sdkMetadata)?JSON.parse(readFileSync(sdkMetadata)):{emsdkRoot:relative(workspace,sdk).replaceAll('\\','/'),layout:'external'};
-const report={game,kind:'cpp-sdl3',profile,variant:multiplayer?'multiplayer':'normal',diagnostic:presentationLab,version:game==='th10'?'3.5.1-sdl3':'3.4.1-sdl3',features:{thprac:game==='th08',languages:thcrap,focusHitbox:false},...{architecture:{loop:'cpp-original-cadence-skip-expired-single-tick',audio:'miniaudio-sdl3',renderer:'cpp-gles-semantic-batched',graphicsInterface:'semantic-state-texture-matrix',vertexUpload:'web-bufferData-direct-game-batches-cached-vao',files:'sdl-io-idbfs',fonts:'sdl3-ttf',input:'cpp-sdl',launcher:'eagler-touhou/1'}},sdlVersion:'3.4.2',sources,sourceFiles:inventory,sharedSources:['Renderer.cpp','Renderer.hpp','Shaders.hpp','GraphicsState.hpp','AssetPixelFormat.hpp','RenderCommands.hpp','LegacyGraphics.hpp','ExactFloat.hpp','MotionTrack.hpp'],bytes:wasm.length,sha256:sha(wasm),loaderSha256:sha(readFileSync(output)),imports:WebAssembly.Module.imports(module),exports:WebAssembly.Module.exports(module),toolchain};
+const report={game,kind:'cpp-sdl3',profile,variant:multiplayerFixtures?'multiplayer-fixtures':multiplayer?'multiplayer':'normal',diagnostic:presentationLab||multiplayerFixtures,version:game==='th10'?'3.5.1-sdl3':'3.4.1-sdl3',features:{thprac:game==='th08',languages:thcrap,focusHitbox:false},...{architecture:{loop:'cpp-original-cadence-skip-expired-single-tick',audio:'miniaudio-sdl3',renderer:'cpp-gles-semantic-batched',graphicsInterface:'semantic-state-texture-matrix',vertexUpload:'web-bufferData-direct-game-batches-cached-vao',files:'sdl-io-idbfs',fonts:'sdl3-ttf',input:'cpp-sdl',launcher:'eagler-touhou/1'}},sdlVersion:'3.4.2',sources,sourceFiles:inventory,sharedSources:['Renderer.cpp','Renderer.hpp','Shaders.hpp','GraphicsState.hpp','AssetPixelFormat.hpp','RenderCommands.hpp','LegacyGraphics.hpp','ExactFloat.hpp','MotionTrack.hpp'],bytes:wasm.length,sha256:sha(wasm),loaderSha256:sha(readFileSync(output)),imports:WebAssembly.Module.imports(module),exports:WebAssembly.Module.exports(module),toolchain};
 writeFileSync(resolve(out,'build.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({game,bytes:wasm.length,sha256:report.sha256,output},null,2));

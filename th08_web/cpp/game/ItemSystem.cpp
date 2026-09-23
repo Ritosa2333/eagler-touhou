@@ -43,7 +43,7 @@ void ItemSystem::reset(){state->reset();failed=false;rewards.failed=false;}
 
 ItemSystem::ItemSystem(PlayerSimulation& p,PlayerResourceView& r,PlayerValues& v,GameGauge& gauge,GameRank& rank_value,HighScore& h,Rng& random,AnmLibrary& a,AnmExecutor& e,AnmRenderer& graphics,ItemSystemActions& services)
     :player(p),globals(r.shared),animations(a),executor(e),renderer(graphics),actions(services),rank(rank_value),high_score(h),pool(*state,random,*this),updater(*state,pool,*this){
-    item_owners.fill(no_owner);state->reset();pool.snapshot();bind_player(0,p,r,v,gauge,services);
+    item_owners.fill(no_owner);gift_recipients.fill(no_owner);state->reset();pool.snapshot();bind_player(0,p,r,v,gauge,services);
 }
 u32 ItemSystem::item_index(const ItemState& item)const noexcept{
     const auto first=reinterpret_cast<std::uintptr_t>(state->items);
@@ -64,7 +64,16 @@ void ItemSystem::bind_player(u32 seat,PlayerSimulation& p,PlayerResourceView& r,
     if(seat>=3)return;auto& owner=owners[seat];owner.player=&p;owner.resources=&r;owner.values=&v;owner.gauge=&gauge;owner.actions=&player_actions;owner.available=true;
     owner.rewards.emplace(owner.reward_input,r,v,gauge,rank,high_score,pool,player_actions);updater.bind_player(seat,owner.input,p.profile(false),p.profile(true));updater.set_player_available(seat,true);
 }
-void ItemSystem::set_player_available(u32 seat,bool available){if(seat>=3||!owners[seat].player)return;owners[seat].available=available;updater.set_player_available(seat,available);}
+void ItemSystem::set_player_available(u32 seat,bool available){
+    if(seat>=3||!owners[seat].player)return;
+    owners[seat].available=available;updater.set_player_available(seat,available);
+    // Permanently unavailable/spirit recipients release outstanding gifts.
+    // Reviving later must not reclaim a gift which another survivor now owns.
+    if(!available)for(u32 i=0;i<ItemPoolState::capacity;++i){
+        if(gift_recipients[i]==seat)gift_recipients[i]=no_owner;
+        if(item_owners[i]==seat)item_owners[i]=no_owner;
+    }
+}
 void ItemSystem::synchronize(Owner& owner){auto& c=owner.player->status().context;auto& r=*owner.resources;c.power=Scalar::truncate(r.power);c.lives=Scalar::truncate(r.lives);c.bombs=Scalar::truncate(r.bombs);c.time_orbs=r.time_orbs;c.last_spell_requirement=r.last_spell_requirement;c.gauge=r.gauge;owner.input.power=c.power;}
 ItemState* ItemSystem::spawn(const Vec3& position,i32 type,i32 mode){
     executor.timing=player.timing;
@@ -73,17 +82,59 @@ ItemState* ItemSystem::spawn(const Vec3& position,i32 type,i32 mode){
     const u32 nearest=nearest_owner(position);
     const i8 life=nearest<3?owners[nearest].player->status().life.state:player.status().life.state;
     auto* item=pool.spawn(position,type,mode,found?least_power:0,life);
-    if(item&&item_index(*item)<ItemPoolState::capacity)item_owners[item_index(*item)]=no_owner;
+    if(item&&item_index(*item)<ItemPoolState::capacity){
+        item_owners[item_index(*item)]=no_owner;gift_recipients[item_index(*item)]=no_owner;
+    }
     return item;
 }
-u32 ItemSystem::owner_for(ItemState& item){const u32 index=item_index(item);if(index>=ItemPoolState::capacity)return no_owner;const u8 previous=item_owners[index];if(item.state==1&&previous<3&&owners[previous].available&&owners[previous].player)return previous;const u32 result=nearest_owner(item.position);item_owners[index]=u8(result);return result;}
+bool ItemSystem::spawn_for_player(const Vec3& position,i32 type,i32 mode,u32 seat){
+    if(seat>=3||!owners[seat].available)return false;
+    auto* item=spawn(position,type,mode);
+    if(!item)return false;
+    const u32 index=item_index(*item);
+    if(index>=ItemPoolState::capacity)return false;
+    item_owners[index]=u8(seat);
+    gift_recipients[index]=u8(seat);
+    return true;
+}
+bool ItemSystem::spawn_power_gift(const Vec3& position,u32 seat){
+    if(seat>=3||!owners[seat].available)return false;
+    u32 free=0;for(u32 i=0;i<ItemPoolState::capacity&&free<6;++i)free+=!state->items[i].active;
+    if(free<6)return false;
+    ItemState* created[6]{};u32 count=0;
+    for(i32 i=0;i<6;++i){
+        Vec3 spawn_position=position;
+        spawn_position.x=Scalar::add(spawn_position.x,float((i%3-1)*10));
+        spawn_position.y=Scalar::add(spawn_position.y,float((i/3-1)*8));
+        auto* item=spawn(spawn_position,i<2?2:0,1);
+        if(!item||item_index(*item)>=ItemPoolState::capacity){
+            for(u32 j=0;j<count;++j){removed(*created[j]);pool.remove(*created[j]);}
+            return false;
+        }
+        item_owners[item_index(*item)]=u8(seat);
+        gift_recipients[item_index(*item)]=u8(seat);
+        created[count++]=item;
+    }
+    return true;
+}
+u32 ItemSystem::owner_for(ItemState& item){
+    const u32 index=item_index(item);if(index>=ItemPoolState::capacity)return no_owner;
+    const u8 recipient=gift_recipients[index];
+    if(recipient<3&&owners[recipient].available&&owners[recipient].player){
+        item_owners[index]=recipient;return recipient;
+    }
+    gift_recipients[index]=no_owner;
+    const u8 previous=item_owners[index];
+    if(item.state==1&&previous<3&&owners[previous].available&&owners[previous].player)return previous;
+    const u32 result=nearest_owner(item.position);item_owners[index]=u8(result);return result;
+}
 bool ItemSystem::touching(u32 seat,const Vec3& p,const Vec3& size){return seat<3&&owners[seat].available&&owners[seat].player&&owners[seat].player->collision().item(p,size);}
 void ItemSystem::collect(u32 seat,ItemState& item){
     if(seat>=3||!owners[seat].player||!owners[seat].resources||!owners[seat].values||!owners[seat].actions||!owners[seat].rewards)return;auto& owner=owners[seat];auto& p=*owner.player;auto& context=owner.reward_input;auto& state_context=p.status().context;
     state_context.replay_flags=owner.input.replay_flags;context.hud_flags=state_context.hud_flags;context.power_flag=state_context.miss_control;context.gauge_lock=owner.input.gauge_lock;owner.rewards->collect(item);failed|=owner.rewards->failed;owner.input.replay_flags=state_context.replay_flags;state_context.hud_flags=context.hud_flags;state_context.miss_control=context.power_flag;synchronize(owner);
 }
 void ItemSystem::item_sound(u32 seat,i32 index,i32 mode){if(seat<3&&owners[seat].actions)owners[seat].actions->sound(index,mode);else actions.sound(index,mode);}
-void ItemSystem::removed(ItemState& item){const u32 index=item_index(item);if(index<ItemPoolState::capacity)item_owners[index]=no_owner;}
+void ItemSystem::removed(ItemState& item){const u32 index=item_index(item);if(index<ItemPoolState::capacity){item_owners[index]=no_owner;gift_recipients[index]=no_owner;}}
 void ItemSystem::award_team_extend(){
     bool awarded=false;
     for(auto& owner:owners){
@@ -116,13 +167,13 @@ bool ItemSystem::update(){
     return !failed;
 }
 bool ItemSystem::draw(const Vec2& offset){if(failed)return false;pool.draw(offset);return !failed;}
-void ItemSystem::collect_all(){for(auto* item=state->head.next;item;item=item->next){const u32 seat=nearest_owner(item->position);if(seat<3){item_owners[item_index(*item)]=u8(seat);item->state=1;item->velocity={0,-.5f,0};}}}
+void ItemSystem::collect_all(){for(auto* item=state->head.next;item;item=item->next){const u32 seat=owner_for(*item);if(seat<3){item_owners[item_index(*item)]=u8(seat);item->state=1;item->velocity={0,-.5f,0};}}}
 void ItemSystem::collect_all(u32 seat){if(seat>=3||!owners[seat].available)return;for(auto* item=state->head.next;item;item=item->next)if(owner_for(*item)==seat){item_owners[item_index(*item)]=u8(seat);item->state=1;item->velocity={0,-.5f,0};}}
 void ItemSystem::cancel_homing(){for(auto* item=state->head.next;item;item=item->next)if(item->state==1){item->state=0;item->velocity={0,-.9f,0};}}
 void ItemSystem::cancel_homing(u32 seat){if(seat>=3)return;for(auto* item=state->head.next;item;item=item->next)if(item->state==1&&owner_for(*item)==seat){item->state=0;item->velocity={0,-.9f,0};}}
 void ItemSystem::time_orb(){time_orb(0);}
 void ItemSystem::time_orb(u32 seat){if(seat>=3||!owners[seat].player||!owners[seat].rewards)return;auto& owner=owners[seat];auto& p=*owner.player;auto& c=p.status().context;auto& context=owner.reward_input;context.hud_flags=c.hud_flags;context.bomb_triggered=p.status().bomb.triggered;context.bomb_active=p.status().bomb.active;context.focused=p.status().motion.form.focused;context.gauge_lock=p.status().item_gauge_lock;owner.rewards->time_orb(nullptr);failed|=owner.rewards->failed;c.hud_flags=context.hud_flags;synchronize(owner);}
-void ItemSystem::reset(){state->reset();item_owners.fill(no_owner);failed=false;for(auto& owner:owners)if(owner.rewards)owner.rewards->failed=false;}
+void ItemSystem::reset(){state->reset();item_owners.fill(no_owner);gift_recipients.fill(no_owner);failed=false;for(auto& owner:owners)if(owner.rewards)owner.rewards->failed=false;}
 
 #endif
 }
