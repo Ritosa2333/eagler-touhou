@@ -9,6 +9,7 @@
 #include "../../../portable/input/MotionTrack.hpp"
 #include <map>
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/InputLanes.hpp"
 #include "../multiplayer/PresentationCache.hpp"
 #include "../multiplayer/Pilot.hpp"
 #include "../multiplayer/CooperativeRules.hpp"
@@ -32,9 +33,23 @@ struct World final:HudActions,CallbackReceiver {
     multiplayer::RollbackPool<sizeof(EclContext),1024> rollback_ecl{};
     multiplayer::RollbackState rollback{};
     multiplayer::AudioEvents audio_events{};
+    multiplayer::ReplayCheckpoint replay_checkpoint_pending{};
+    multiplayer::ReplayCheckpoint replay_checkpoint_commit_pending{};
+    multiplayer::InputLanes::State replay_checkpoint_precommit_lanes{};
+    u32 replay_checkpoint_precommit_frame=Netplay::INVALID_FRAME;
+    u32 replay_checkpoint_commit_frame=Netplay::INVALID_FRAME;
+    bool replay_checkpoint_pending_valid=false;
+    bool replay_checkpoint_commit_valid=false;
+    bool replay_checkpoint_precommit_valid=false;
+    bool replay_checkpoint_precommit_cheat_used=false;
     bool begin_rollback_frame(u32 frame);
     bool end_rollback_frame();
     bool commit_audio();
+    void begin_replay_checkpoint();
+    void capture_replay_checkpoint_precommit(u32 archiveFrame);
+    void clear_replay_checkpoint_precommit();
+    bool restore_replay_checkpoint_bootstrap();
+    bool finalize_replay_checkpoint();
     bool rollback_resimulating=false;
     u32 player_count=2,local_player=0;
     // Separate reserved ANM slots, after the native title's 0..32 slots.
@@ -113,6 +128,9 @@ struct World final:HudActions,CallbackReceiver {
     bool create_replay(i32,const char*);void destroy_replay(Replay*);void prepare_replay();void activate_replay();
     i32 update_replay();i32 replay_frame_action();i32 draw_replay();void finish_replay(i32);
     Replay* preview(const char*);void release_replay(Replay*);void save_replay(const char*,const char*);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    bool commit_replay();
+#endif
     bool create_results();void destroy_results(Results*);void show_results(bool);i32 update_results();i32 draw_results();
     bool create_popups();void destroy_popups(ScorePopups*);i32 update_popups();i32 draw_popups();void popup(const Vec3&,i32,u32);
     bool create_hints();void destroy_hints(StageHints*);i32 update_hints();void record_hint(const char*,const Vec3&,bool caution);

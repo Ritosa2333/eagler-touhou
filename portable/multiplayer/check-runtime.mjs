@@ -7,9 +7,22 @@ import {createServer} from 'node:net';
 const root=resolve(import.meta.dirname,'../..');
 const profile=process.argv.includes('--fixtures')?'multiplayer-fixtures':'multiplayer';
 const selected=process.argv.find(value=>value.startsWith('--only='))?.slice(7).split(',');
+const replayCases=process.argv.find(value=>value.startsWith('--replay-cases='))?.slice(15)??'all';
+const completionCase=process.argv.find(value=>value.startsWith('--completion='))?.slice(13)??'stage';
+const completionPlayers=Number(process.argv.find(value=>value.startsWith('--completion-players='))?.slice(21)??2);
+const targetStage=Number(process.argv.find(value=>value.startsWith('--target-stage='))?.slice(15)??2);
+const recordOnly=process.argv.includes('--record-only');
+const recordedRun=process.argv.find(value=>value.startsWith('--recorded-run='))?.slice(15);
+const playbackPart=process.argv.find(value=>value.startsWith('--playback-part='))?.slice(16)??'all';
+if(!['stage','normal','extra'].includes(completionCase))throw Error('Unknown completion case');
+if(![2,3].includes(completionPlayers)||!Number.isInteger(targetStage)||targetStage<2||targetStage>6)throw Error('Invalid completion configuration');
+if(recordOnly&&recordedRun)throw Error('Record-only and recorded-run are exclusive');
+if(!['all','full','seek','browser-seek','escape-seek'].includes(playbackPart))throw Error('Unknown Replay playback part');
+if(completionCase!=='stage'&&!['all','full'].includes(playbackPart))throw Error('Seek playback parts require stage completion case');
+if(!['roundtrip','lifecycle','all'].includes(replayCases))throw Error('Unknown Replay case selection');
 const normal=['check-rollback','check-rollback-3p','check-rollback-bomb',
               'check-rollback-stall','check-rollback-pause','check-peer-seats'];
-const fixtures=['check-native-fixtures','check-generation','check-dense'];
+const fixtures=['check-native-fixtures','check-generation','check-dense','check-replay','check-replay-completion','check-replay-audio'];
 const tests=selected??(profile==='multiplayer'?normal:fixtures);
 if(!tests.length||tests.some(name=>![...normal,...fixtures].includes(name)))throw Error('Unknown runtime test');
 const buildPath=resolve(root,'th10_web/artifacts',profile,'build.json');
@@ -24,7 +37,8 @@ const hasFixture=WebAssembly.Module.exports(module).some(value=>value.name==='mp
 if(hasFixture!==(profile==='multiplayer-fixtures'))throw Error('Fixture export/profile mismatch');
 const id=randomUUID(),out=resolve(root,'artifacts/multiplayer-tests/suites',id);
 mkdirSync(out,{recursive:true});
-const report={passed:false,id,profile,wasmSha256:build.sha256,sourceDigest:build.sourceDigest,tests:[]};
+const report={passed:false,id,profile,wasmSha256:build.sha256,sourceDigest:build.sourceDigest,replayCases,
+ completionCase,completionPlayers,targetStage,playbackPart,phase:recordOnly?'record':recordedRun?'playback':'roundtrip',tests:[]};
 // Common test server intentionally requires a concrete loopback Host/port.
 // Probe an OS-assigned free port, then pass that explicit value; any intervening
 // bind race fails startup, never silently connects to an existing service.
@@ -49,7 +63,11 @@ try{
   console.log('BEGIN '+name+' '+profile);
   const result=await new Promise((done,reject)=>{
    const child=spawn(process.env.TH_PYTHON||'python',[
-    resolve(import.meta.dirname,name+'.py'),'--url',url,'--output',output
+    resolve(import.meta.dirname,name+'.py'),'--url',url,'--output',output,
+    ...(name==='check-replay'?['--cases',replayCases]:[]),
+    ...(name==='check-replay-completion'?['--case',completionCase,'--players',String(completionPlayers),
+       '--target-stage',String(targetStage),...(recordOnly?['--record-only']:[]),
+       ...(recordedRun?['--recorded-run',resolve(recordedRun)]:[]),'--playback-part',playbackPart]:[]),
    ],{cwd:root,windowsHide:true,stdio:['ignore','pipe','pipe']});
    let stdout='',stderr='';
    child.stdout.on('data',data=>{stdout+=data;process.stdout.write(data);});

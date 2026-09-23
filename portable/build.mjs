@@ -3,6 +3,7 @@ import {readFileSync,writeFileSync,readdirSync,mkdirSync,existsSync,statSync} fr
 import {resolve,dirname,relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
+import {responseFileContents} from './response-file.mjs';
 const workspace=resolve(fileURLToPath(new URL('../',import.meta.url))),game=process.argv.includes('--th08')?'th08':'th10',root=resolve(workspace,game+'_web');
 const presentationLab=process.argv.includes('--presentation-lab'),multiplayer=process.argv.includes('--multiplayer'),printPlan=process.argv.includes('--print-plan');
 const fixtures=process.argv.includes('--multiplayer-fixtures');
@@ -16,7 +17,16 @@ const emcc=[resolve(sdk,'install/emscripten/emcc.py'),resolve(sdk,'upstream/emsc
 if(!emcc&&!printPlan)throw Error('Install the pinned Emscripten SDK first (tools/download-emscripten.py).');
 const env={...process.env,EM_CONFIG:process.env.EM_CONFIG??resolve(sdk,'.emscripten'),EMSDK:sdk,EMCC_CORES:'4'};
 const python=process.env.TH_PYTHON??'python';
-const run=(args)=>new Promise((done,reject)=>{const p=spawn(python,[emcc,...args],{cwd:root,env,windowsHide:true,stdio:['ignore','pipe','pipe']});let log='';p.stdout.on('data',x=>{log+=x;process.stdout.write(x);});p.stderr.on('data',x=>{log+=x;process.stderr.write(x);});p.on('error',reject);p.on('exit',code=>code?reject(Error('emcc failed '+code+'\n'+log)):done());});
+const run=(args)=>new Promise((done,reject)=>{
+ let command=args;
+ if(process.platform==='win32'&&args.reduce((length,value)=>length+value.length+3,emcc.length)>20000){
+  const contents=responseFileContents(args),id=createHash('sha256').update(contents).digest('hex').slice(0,20);
+  const response=resolve(out,'arguments-'+id+'.rsp.utf-8');writeFileSync(response,contents);command=['@'+response];
+ }
+ const p=spawn(python,[emcc,...command],{cwd:root,env,windowsHide:true,stdio:['ignore','pipe','pipe']});
+ let log='';p.stdout.on('data',x=>{log+=x;process.stdout.write(x);});p.stderr.on('data',x=>{log+=x;process.stderr.write(x);});
+ p.on('error',reject);p.on('exit',code=>code?reject(Error('emcc failed '+code+'\n'+log)):done());
+});
 const thcrap=process.env.TH_ENABLE_THCRAP!=='0';
 // Phase A ships the ImGui/thprac infrastructure only. Phase D activates the
 // practice runtime/overlay call sites; without the flag every guarded call site
@@ -32,7 +42,7 @@ sources.push(...readdirSync(resolve(root,'cpp/sdl')).filter(n=>n.endsWith('.cpp'
 if(multiplayer){
  common.push('-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-DTH_ENABLE_NETPLAY=1','-I'+resolve(root,'cpp/multiplayer'),'-I'+resolve(netplayRoot,'include'));
  sources.push(...readdirSync(resolve(root,'cpp/multiplayer')).filter(n=>n.endsWith('.cpp')).map(n=>'cpp/multiplayer/'+n));
- sources.push(...['NetplayProtocol','NetplayCore','NetplaySession','SessionChannel','RollbackJournal','BrowserPeerTransport','WebSocketTransport'].map(n=>relative(root,resolve(netplayRoot,'src/netplay',n+'.cpp')).replaceAll('\\','/')));
+ sources.push(...['NetplayProtocol','NetplayCore','NetplaySession','SessionChannel','InputReplay','RollbackJournal','BrowserPeerTransport','WebSocketTransport'].map(n=>relative(root,resolve(netplayRoot,'src/netplay',n+'.cpp')).replaceAll('\\','/')));
 }
 sources.push(...['imgui.cpp','imgui_draw.cpp','imgui_freetype.cpp','imgui_tables.cpp','imgui_widgets.cpp'].map(n=>'cpp/third_party/imgui/'+n));
 // Phase C: the practice config/runtime and the thprac overlay. They compile
@@ -53,6 +63,7 @@ const capturedInputs=new Map();
 const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 function observed(path){const bytes=readFileSync(path),value=digest(bytes);if(capturedInputs.has(path)&&capturedInputs.get(path)!==value)throw Error('Source changed during build: '+path);capturedInputs.set(path,value);return bytes;}
 observed(fileURLToPath(import.meta.url));
+observed(resolve(workspace,'portable/response-file.mjs'));
 const hash=createHash('sha256');for(const path of [...headers(resolve(root,'cpp')),...headers(shared),...headers(numeric),...headers(input),...netplayHeaders].sort())hash.update(path).update(observed(path));
 const prefix=JSON.stringify([flags,hash.digest('hex')]);
 // Same flags/native translation units; share the object cache, never the
@@ -73,6 +84,7 @@ const library=resolve(out,'browser-services.js');writeFileSync(library,'addToLib
 await run([...flags,...linkFlags,'--emit-symbol-map','--js-library',library,'-sDEFAULT_TO_CXX=1','--no-entry','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,worker','-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=1048576','-sINITIAL_MEMORY=67108864','-sMAXIMUM_MEMORY=1073741824','-sFILESYSTEM=1','-lidbfs.js','-sEXPORTED_RUNTIME_METHODS=FS,IDBFS','-sINVOKE_RUN=0','-sEXIT_RUNTIME=0','-sMIN_WEBGL_VERSION=2','-sMAX_WEBGL_VERSION=2','-sGL_SUPPORT_AUTOMATIC_ENABLE_EXTENSIONS=0',...outputs,rendererObject,softObject,'-o',output]);
 const wasm=readFileSync(output.replace('.mjs','.wasm')),module=new WebAssembly.Module(wasm),sha=x=>createHash('sha256').update(x).digest('hex');
 const sourceFiles=[...sources.map(p=>resolve(root,p)),...headers(resolve(root,'cpp')),...headers(shared),...headers(numeric),...headers(input),...netplayHeaders,renderer,soft,resolve(workspace,'portable',game+'-services.json'),...(existsSync(resolve(root,'cpp/game/THPRAC-LICENSE.txt'))?[resolve(root,'cpp/game/THPRAC-LICENSE.txt')]:[]),fileURLToPath(import.meta.url)].sort();
+sourceFiles.push(resolve(workspace,'portable/response-file.mjs'));sourceFiles.sort();
 const inventory=Object.fromEntries(sourceFiles.map(p=>[relative(workspace,p).replaceAll('\\','/'),sha(observed(p))]));
 for(const [path,expected] of capturedInputs)if(digest(readFileSync(path))!==expected)throw Error('Source changed during compilation; do not publish mixed build: '+path);
 const sdkMetadata=resolve(sdk,'touhou-sdk.json');

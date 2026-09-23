@@ -7,9 +7,18 @@
 namespace th10::browser {
 namespace {
 struct ResultsServices final:ResultsEnvironment {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    static constexpr double deterministic_time=1.0;
+#endif
     World& w;explicit ResultsServices(World& world):w(world){
         game=&w.state.game;gui=&w.actors.gui;scores=&w.scores.data;replay=&w.state.replay;stages=menu_data(w.state.chinese).stages;current_stage=&w.state.current_stage;
         engine_flags=&w.state.engine_flags;display_flags=&w.state.configuration.display_flags;pending_screen=&w.state.pending_screen;pressed=reinterpret_cast<const u32*>(&w.input.player_profiles[0].input.raw_pressed);repeated=&w.input.player_profiles[0].input.raw_repeat;rate=&w.engine.speed;background_file=&w.common.value->capture;alphabet=menu_data(w.state.chinese).alphabet;active_time=&w.state.active_time;total_time=&w.state.total_time;cheat_movement_used=&w.motion.cheat_movement_used;bind_session();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        // Display cost is machine-local, not a score/ranking input. The native
+        // assisted-movement 100% marker remains driven by agreed input flags.
+        active_time=total_time=&deterministic_time;
+        cheat_movement_used=&w.state.multiplayer_cheat_movement_used;
+#endif
     }
     void bind_session(){auto* p=w.actors.session;controller_update=p?&p->update_entry:nullptr;controller_elapsed=p?&p->elapsed:nullptr;controller_flags=p?&p->session_flags:nullptr;replay_mode=p?&p->replay_mode:nullptr;}
     void sound(i32 id) override{w.sound(id);}
@@ -32,7 +41,13 @@ struct ResultsServices final:ResultsEnvironment {
     Replay* preview(const char* name) override{return w.preview(name);}
     void delete_replay(Replay* replay) override{w.release_replay(replay);}
     void save_replay(const char* file,const char* name) override{w.save_replay(file,name);}
-    void timestamp(i32& value) override{value=w.calendar.timestamp();}
+    void timestamp(i32& value) override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        value=0; // populated only when the confirmed local file is emitted
+#else
+        value=w.calendar.timestamp();
+#endif
+    }
 };
 struct Draw final:ResultsDrawEnvironment {
     World& w;explicit Draw(World& world):w(world){game=&w.state.game;scores=&w.scores.data;replay=&w.state.replay;const auto& data=menu_data(w.state.chinese);alphabet=data.alphabet;characters=data.characters;difficulties=data.difficulties;stage_names=data.stage_names;replay_stage_names=data.replay_stage_names;color=&w.common.value->color;text_mode=reinterpret_cast<u32*>(&w.common.value->shadow);}

@@ -39,6 +39,7 @@ function makeFixture({thprac = false} = {}) {
   for (const name of ['practice.mjs', 'practice-config.mjs', 'practice-sections.mjs'])
     write('th10_web/sdl-runtime/' + name, readFileSync(new URL('../th10_web/sdl-runtime/' + name, import.meta.url)));
   write('portable/browser/motion-replay.mjs', 'export const replay = true;');
+  write('portable/browser/replay-file-policy.mjs', 'export const replayPolicy = true;');
   write(join('private-fonts', 'blend.bin'), Buffer.from([1, 2, 3]));
   write(join('private-fonts', 'codepages.bin'), Buffer.from([4, 5]));
 

@@ -118,7 +118,7 @@ export function packageEagler({
     ...(thprac ? ['practice.mjs', 'practice-config.mjs', 'practice-sections.mjs'] : []),
   ];
   const names = [
-    entry, 'manifest.json', ...runtimeNames, 'motion-replay.mjs',
+    entry, 'manifest.json', ...runtimeNames, 'motion-replay.mjs', ...(game==='th10'?['replay-file-policy.mjs']:[]),
     game + '-sdl.mjs', game + '-sdl.wasm', 'resources.json',
     ...fontNames.map(name => 'fonts/' + name),
   ];
@@ -140,6 +140,7 @@ export function packageEagler({
     .replace('<head>', '<head><meta name="eagler-data-provider" content="retail-memory">');
   const shellFiles = Object.fromEntries(runtimeNames.map(name => [name, readFileSync(resolve(shellRoot, name))]));
   const replayHelper = readFileSync(resolve(root, 'portable/browser/motion-replay.mjs'));
+  const replayPolicy = game==='th10'?{'replay-file-policy.mjs':readFileSync(resolve(root,'portable/browser/replay-file-policy.mjs'))}:{};
   const binaries = {};
   for (const ext of ['mjs', 'wasm']) {
     const name = game + '-sdl.' + ext;
@@ -173,6 +174,7 @@ export function packageEagler({
     [entry]: Buffer.from(html),
     ...shellFiles,
     'motion-replay.mjs': replayHelper,
+    ...replayPolicy,
     ...binaries,
     'manifest.json': manifestBytes,
     'resources.json': resourcesBytes,

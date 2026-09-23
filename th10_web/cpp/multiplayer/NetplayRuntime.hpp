@@ -22,6 +22,9 @@ class NetplayRuntime {
 public:
     enum class WireResult:std::uint32_t {Accepted=1,IgnoredSession=2,Malformed=3,ContractMismatch=4,InvalidPeer=5};
     bool Reset(const SessionSetup& setup, std::uint64_t sessionId) noexcept;
+    bool BeginPlayback(SessionSetup& setup) noexcept;
+    bool FeedPlayback(std::uint32_t frame,const Netplay::FrameInput* inputs,std::size_t count);
+    bool Playback()const{return playback_;}
     void Clear() noexcept;
     // The title must have reconciled/confirmed the restart fence. A real
     // transport additionally finishes its peer ACK fence before retirement.
@@ -42,15 +45,15 @@ public:
     bool CanSendReady() const { return gate_.CanSendReady(); }
     bool LocalReady() const { return configured_&&gate_.LocalReady(); }
     void MarkLocalReady() { gate_.MarkLocalReady(); }
-    bool CanStart() const { return configured_ && gate_.CanStart(); }
+    bool CanStart() const { return configured_ && (playback_ || gate_.CanStart()); }
 
     bool CaptureLocal(std::uint32_t frame, const Netplay::FrameInput& input) {
-        if(!CanStart()||!Netplay::IsValidFrameInput(input)||!core_.ScheduleLocalInput(frame,input))return false;
+        if(playback_||!CanStart()||!Netplay::IsValidFrameInput(input)||!core_.ScheduleLocalInput(frame,input))return false;
         return !network_enabled_||channel_.LocalCaptured(core_,frame,network_now_);
     }
     Netplay::RemoteInputResult SubmitRemote(std::uint8_t player, std::uint32_t frame,
                                             const Netplay::FrameInput& input) {
-        return configured_ ? core_.SubmitRemoteInput(player, frame, input)
+        return configured_&&!playback_ ? core_.SubmitRemoteInput(player, frame, input)
                            : Netplay::RemoteInputResult::InvalidPlayer;
     }
     Netplay::FrameDecision Prepare(std::uint32_t frame) const {
@@ -81,6 +84,9 @@ public:
     std::uint32_t AcknowledgedLocalThroughAllRemotes() const {
         return core_.AcknowledgedLocalThroughAllRemotes();
     }
+    bool ConfirmedInputs(std::uint32_t frame,std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>* out)const {
+        return core_.ConfirmedInputs(frame,out);
+    }
     const Netplay::SessionConfig& Config() const { return gate_.Config(); }
     bool Configured() const { return configured_; }
 
@@ -104,6 +110,7 @@ private:
     Netplay::SessionChannel channel_{transport_};
     std::uint64_t network_now_=0;
     bool network_enabled_=false;
+    bool playback_=false;
 };
 
 } // namespace th10::multiplayer

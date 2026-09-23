@@ -88,7 +88,15 @@ i32 draw_title_replays(const TitleMenu& t,ResultsDrawEnvironment& env,const char
             position={220,128,0};for(i32 stage=1;stage<8;++stage){
                 *env.color=t.menu.selected==stage-1?0xffffff00:0xff808080;const auto* preview=t.previews[t.replay_index];const u32 name=reinterpret_cast<uintptr_t>(env.stage_names[stage]);
                 if(!preview->readers[stage].stage)env.print(position,"%s  ---------",{name});
-                else{const auto* next=stage<6?preview->readers[stage+1].stage:nullptr;env.print(position,"%s  %.8d%d",{name,static_cast<u32>(next?next->score:info->score),static_cast<u32>(next?next->score_units:info->score_units)});}
+                else{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                    // The all-seat input archive indexes native stages, not
+                    // retail stage-score snapshots. Do not invent scores.
+                    env.print(position,"%s",{name});
+#else
+                    const auto* next=stage<6?preview->readers[stage+1].stage:nullptr;env.print(position,"%s  %.8d%d",{name,static_cast<u32>(next?next->score:info->score),static_cast<u32>(next?next->score_units:info->score_units)});
+#endif
+                }
                 position.y=Scalar::add(position.y,18.0f);
             }
         }

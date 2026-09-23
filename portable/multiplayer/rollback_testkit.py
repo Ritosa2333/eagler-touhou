@@ -61,7 +61,7 @@ class Fixture:
         self.identities = []
         self.locals = {}
 
-    def open(self, local=0, loadouts=None, difficulty=1, seed=1234):
+    def open(self, local=0, loadouts=None, difficulty=1, seed=1234, session_id=None, history=None):
         loadouts = loadouts or [[0, 0], [1, 1]]
         context = self.browser.new_context(service_workers='block')
         self.contexts.append(context)
@@ -71,8 +71,11 @@ class Fixture:
         page.goto(self.url)
         page.wait_for_function('window.multiplayerSmoke !== undefined', timeout=120000)
         self.identities.append(call(page, 'multiplayerSmoke.identity()'))
+        low, high = session_id or (0x51455201, 0x10203040)
+        if history is not None:
+            assert call(page, '(x)=>multiplayerSmoke.historyProfile(x)', history)
         call(page, '(x)=>multiplayerSmoke.startNet(...x)',
-             [loadouts, local, difficulty, seed, 0x51455201, 0x10203040])
+             [loadouts, local, difficulty, seed, low, high])
         return page
 
     def pair(self, difficulty=1, local=0):

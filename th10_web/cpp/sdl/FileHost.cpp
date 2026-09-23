@@ -4,6 +4,9 @@
 #include <sys/stat.h>
 #include <algorithm>
 #include <cstring>
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include <cstdio>
+#endif
 #include <map>
 #include <set>
 #include <string>
@@ -60,6 +63,21 @@ u32 browser_size(u32 id){auto it=handles.find(id);return it==handles.end()?~0u:u
 __attribute__((export_name("sdl_file_seek"))) u32 browser_seek(u32 id,i32 offset,u32 origin){auto it=handles.find(id);return it==handles.end()||origin>2?~0u:u32(SDL_SeekIO(it->second,offset,static_cast<SDL_IOWhence>(origin)));}
 __attribute__((export_name("sdl_file_read"))) u32 browser_read(u32 id,u8* out,u32 size){auto it=handles.find(id);return it==handles.end()?0:SDL_ReadIO(it->second,out,size);}
 u32 browser_write(u32 id,const u8* in,u32 size){auto it=handles.find(id);return it==handles.end()?0:SDL_WriteIO(it->second,in,size);}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+u32 browser_replace(const char* raw,const u8* bytes,u32 size){
+    const auto name=normalize(raw);
+    if(!bytes||!size||size>16u*1024u*1024u||name.compare(0,7,"replay/")!=0||
+       name.find('/',7)!=std::string::npos)return 0;
+    const auto target=save_root+"/"+name,temporary=target+".pending";parents(target);
+    auto* stream=SDL_IOFromFile(temporary.c_str(),"wb");if(!stream)return 0;
+    const bool written=SDL_WriteIO(stream,bytes,size)==size;
+    const bool closed=SDL_CloseIO(stream);
+    if(!written||!closed||std::rename(temporary.c_str(),target.c_str())!=0){
+        std::remove(temporary.c_str());return 0;
+    }
+    browser_save_changed();return 1;
+}
+#endif
 u32 browser_list(const char* directory,const char* pattern,u32 index,char* out,u32 capacity){
     const auto dir=normalize(directory);std::vector<std::string> names;
     for(const auto& root:{std::string("/game"),save_root})if(auto* d=opendir((root+"/"+dir).c_str())){

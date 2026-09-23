@@ -12,6 +12,11 @@ struct FileHost {
     virtual u32 read(u32 handle,u8* bytes,u32 length)=0;
     virtual u32 write(u32 handle,const u8* bytes,u32 length)=0;
     virtual u32 list(const char* directory,const char* pattern,u32 index,char* name,u32 capacity)=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // A confirmed Replay replaces one file only after its complete bytes have
+    // been written successfully. Unsupported hosts reject without truncation.
+    virtual bool replace(const char*,const u8*,u32){return false;}
+#endif
 };
 struct ArchiveEnvironment final : ArchiveLifecycleEnvironment {
     FileHost& host;u8 dictionary[8192]{};

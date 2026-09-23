@@ -14,13 +14,26 @@ AppFrames::AppFrames(Application& a):owner(a){animations=&a.manager;pending_scre
 void AppFrames::update_audio(){owner.audio.advance_fades();}
 void AppFrames::update_input(){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    owner.input.player_profiles[0].input=multiplayer::InputLanes::HostControls(owner.state.input_lanes);
+    if(!owner.state.multiplayer_session.configured||
+       (owner.state.netplay_runtime.Playback()&&!owner.state.multiplayer_session.started))
+        InputDevices{owner.input}.update(0,false);
+    else owner.input.player_profiles[0].input=multiplayer::InputLanes::HostControls(owner.state.input_lanes);
 #else
     InputDevices{owner.input}.update(0,false);
 #endif
 }
 i32 AppFrames::process_loading(){return owner.engine.manager.process_loading(owner.engine.resources);}
-i32 AppFrames::transition(ApplicationState& app){const i32 result=app.transition(owner.screens);owner.sync_views();return owner.error?4:result;}
+i32 AppFrames::transition(ApplicationState& app){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(app.pending_screen==12){
+        if(!owner.multiplayer_begin_replay(owner.state.replay_filename,u32(owner.state.game.stage))){owner.error=-6;return 4;}
+        // The archive supplies all-seat inputs to the same native MP lifecycle
+        // as a live session; the retail single-seat decoder is not involved.
+        app.pending_screen=7;
+    }
+#endif
+    const i32 result=app.transition(owner.screens);owner.sync_views();return owner.error?4:result;
+}
 void AppFrames::configure_camera(Camera& camera){owner.configure_camera(camera,false);}
 void AppFrames::set_viewport(void*,const CameraViewport& viewport){owner.engine.device.viewport(viewport);}
 void AppFrames::clear(u32 color){owner.engine.device.clear_target(1,color,1.f,0,nullptr,0);}

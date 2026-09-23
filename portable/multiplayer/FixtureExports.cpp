@@ -4,12 +4,136 @@
 // performs the behavior under test. No custom simulation or golden update.
 #include "../../th10_web/cpp/platform/Application.hpp"
 #include "../../th10_web/cpp/game/PlayerFrame.hpp"
+#include "../../th10_web/cpp/game/Dialogue.hpp"
 
 #ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #error Multiplayer fixtures cannot enter an ordinary build
 #endif
 
 using namespace th10;
+extern "C" browser::FileSystem* files_create();
+extern "C" void files_destroy(browser::FileSystem*);
+extern "C" int sdl_replay_seek_batch(browser::Application*);
+extern "C" void sdl_audio_replay_seek_output(u32);
+extern "C" u32 sdl_audio_replay_seek_tick();
+extern "C" __attribute__((export_name("mp_fixture_audio_seek_output")))
+void mp_fixture_audio_seek_output(u32 seeking){sdl_audio_replay_seek_output(seeking);}
+extern "C" __attribute__((export_name("mp_fixture_audio_seek_tick")))
+u32 mp_fixture_audio_seek_tick(){return sdl_audio_replay_seek_tick();}
+extern "C" __attribute__((export_name("mp_fixture_replay_seek_batch")))
+i32 mp_fixture_replay_seek_batch(browser::Application* app){
+    // Exercise the exact browser seek operation, not an alternate simulator.
+    return sdl_replay_seek_batch(app);
+}
+
+// Valid pre-existing local score files, emitted by the native codec before
+// the application is created. This is not a Replay or gameplay-state injector.
+extern "C" __attribute__((export_name("mp_fixture_score_history")))
+u32 mp_fixture_score_history(u32 profile){
+    if(profile<1||profile>2)return 0;
+    auto* files=files_create();if(!files)return 0;
+    bool success=false;
+    {
+        Rng random{};random.seed=u16(profile);
+        browser::Scores records(*files,random,false);
+        if(records.data){
+            auto& data=*records.data;
+            for(auto& character:data.characters){
+                for(auto& difficulty:character.high_scores)difficulty[0].score=i32(profile)*5000000;
+                const i32 plays=i32(profile)*20;std::memcpy(character.statistics,&plays,4);
+                character.spells[0].attempts=i32(profile)*7;
+            }
+            std::memcpy(data.settings.last_name,profile==1?"ALICE   ":"BOB     ",9);
+            data.settings.statistics[profile]=1;
+            success=records.save()==0;
+        }
+    }
+    files_destroy(files);return success?1:0;
+}
+extern "C" __attribute__((export_name("mp_fixture_save_replay")))
+u32 mp_fixture_save_replay(browser::Application* app){
+    if(!app||!app->multiplayer_active()||app->multiplayer_frame_open||
+       app->state.netplay_runtime.HasRollbackRequest())return 0;
+    const auto& runtime=app->state.netplay_runtime;
+    if(runtime.LastSimulatedFrame()==Netplay::INVALID_FRAME||
+       runtime.ConfirmedThroughAllRemotes()==Netplay::INVALID_FRAME||
+       runtime.ConfirmedThroughAllRemotes()<runtime.LastSimulatedFrame())return 0;
+    app->world->save_replay("th10_01.rpy","NATIVE");
+    return app->world->error||app->error?0:1;
+}
+
+extern "C" __attribute__((export_name("mp_fixture_replay_probe")))
+const float* mp_fixture_replay_probe(browser::Application* app){
+    // Read-only observations for a keyboard-driving test robot. It receives
+    // positions just as a human sees them; it cannot alter lives, invulnerability,
+    // difficulty, ECL, collisions, stage completion or the Replay archive.
+    // Layout: 16 header floats; 3*12 pilot floats; then 7 per bullet,
+    // 8 per laser and 4 per regular item. Native pool limits bound the buffer.
+    static float out[16+3*12+2001*7+512*8+150*4]{};
+    std::fill(out,out+52,0);
+    if(!app||!app->world)return out;
+    const auto& world=*app->world;
+    out[0]=1;out[1]=float(world.player_count);out[4]=float(world.state.game.stage);
+    out[5]=float(world.state.game.stage_frames);out[13]=float(world.state.netplay_runtime.NextFrame());
+    out[14]=float(world.state.netplay_runtime.Generation());out[15]=float(world.state.multiplayer_replay.Cursor());
+    if(const auto* r=world.actors.results){out[6]=float(r->state);out[7]=float(r->menu.selected);
+        out[8]=float(r->keyboard.selected);out[9]=float(r->name_length);out[10]=float(r->elapsed.current);out[11]=float(r->cleared);}
+    for(u32 seat=0;seat<world.player_count;++seat){
+        const auto& pilot=world.pilots[seat];if(!pilot.player)continue;
+        const auto& p=*pilot.player;auto* dst=out+16+seat*12;
+        dst[0]=p.position.x;dst[1]=p.position.y;dst[2]=float(p.state);
+        dst[3]=float(pilot.game.lives);dst[4]=float(pilot.game.power);
+        dst[5]=float(p.slow_speed)/100.f;dst[6]=p.hitbox_half_size.x;
+        dst[7]=float(p.invulnerability.current);dst[8]=float(p.state_timer.current);
+        dst[9]=float(p.fast_speed)/100.f;dst[10]=p.hitbox_half_size.y;
+        dst[11]=float(world.cooperation.seats[seat].rescueTicks);
+    }
+    std::size_t at=52;u32 bullets=0,lasers=0,items=0;
+    if(world.actors.bullets)for(const auto& b:world.actors.bullets->pool){
+        if(!b.state)continue;
+        out[at++]=b.motion.position.x;out[at++]=b.motion.position.y;
+        out[at++]=b.motion.velocity.x;out[at++]=b.motion.velocity.y;
+        out[at++]=b.cancel_size;out[at++]=b.hitbox_height;out[at++]=float(b.state);++bullets;
+    }
+    if(world.actors.lasers)for(const auto* laser=world.actors.lasers->sentinel.next;laser&&lasers<512;laser=laser->next){
+        out[at++]=laser->position.x;out[at++]=laser->position.y;out[at++]=laser->angle;
+        out[at++]=laser->length;out[at++]=laser->width;out[at++]=float(laser->state);
+        out[at++]=laser->velocity.x;out[at++]=laser->velocity.y;++lasers;
+    }
+    if(world.actors.items)for(const auto& item:world.actors.items->regular){
+        if(!item.state)continue;
+        out[at++]=item.position.x;out[at++]=item.position.y;out[at++]=float(item.kind);
+        out[at++]=float(item.state);++items;
+    }
+    out[2]=float(bullets);out[3]=float(lasers);out[12]=float(items);return out;
+}
+// Separate from the projectile probe so existing rollback observations retain
+// their schema. The robot may read a visible dialogue/Boss, but only ordinary
+// recorded keyboard input is allowed to advance either native owner.
+extern "C" __attribute__((export_name("mp_fixture_replay_controls")))
+const float* mp_fixture_replay_controls(browser::Application* app){
+    static float out[16]{};std::fill(out,out+16,0);out[0]=1;
+    if(!app||!app->world)return out;
+    const auto& world=*app->world;
+    if(world.actors.gui&&world.actors.gui->dialogue){
+        const auto& dialogue=*world.actors.gui->dialogue;
+        out[1]=1;out[2]=float(dialogue.script_time.current);
+        out[3]=float(dialogue.wait.current);
+        if(dialogue.instruction)out[4]=float(dialogue.instruction->opcode);
+    }
+    if(world.actors.enemies){
+        out[11]=float(world.actors.enemies->count);
+        for(const auto* boss:world.actors.enemies->bosses){
+            if(!boss)continue;
+            out[5]=1;out[6]=boss->state.current.position.x;
+            out[7]=boss->state.current.position.y;
+            out[8]=float(boss->state.health);out[9]=float(boss->state.maximum_health);
+            out[10]=float(boss->state.lifetime.current);break;
+        }
+    }
+    if(world.actors.session)out[12]=float(world.actors.session->session_flags);
+    return out;
+}
 namespace {
 void timer(Timer& value,u32& flags,i32 ticks,float& rate){
     value.rate=&rate;flags|=1;value.initialize(ticks);

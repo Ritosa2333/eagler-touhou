@@ -90,12 +90,18 @@ i32 Application::multiplayer_update(){
                 // below own graph destruction; never run it inside a journal.
                 if(state.pending_screen!=value.screen)break;
                 const auto decision=runtime.Prepare(frame);
-                if(!decision.canAdvance||!world->begin_rollback_frame(frame)||
-                   !multiplayer::InputLanes::Commit(state.input_lanes,decision.inputs.data(),
+                if(!decision.canAdvance||!state.multiplayer_replay.Stamp(frame,u32(state.game.stage))||
+                   !world->begin_rollback_frame(frame)){
+                    world->rollback_resimulating=false;error=-4;return -1;
+                }
+                world->capture_replay_checkpoint_precommit(state.multiplayer_replay.Base()+frame);
+                if(!multiplayer::InputLanes::Commit(state.input_lanes,decision.inputs.data(),
                                                     state.multiplayer_session.playerCount)){
+                    world->clear_replay_checkpoint_precommit();
                     world->rollback_resimulating=false;error=-4;return -1;
                 }
                 const i32 result=engine.update_all();
+                world->clear_replay_checkpoint_precommit();
                 if(result==0||result==-1||!multiplayer_resimulate_draw()||
                    !world->end_rollback_frame()||!runtime.MarkSimulated(frame,decision)){
                     world->rollback_resimulating=false;error=-4;return -1;
@@ -106,7 +112,7 @@ i32 Application::multiplayer_update(){
         }else runtime.ClearRollbackRequest();
     }
 
-    if(!world->commit_audio()){error=-4;return -1;}
+    if(!world->commit_audio()||!world->commit_replay()){error=-4;return -1;}
     // Reconcile first: late input can cancel a predicted transition. Clearing
     // the journal as soon as confirmation arrives loses that required restore.
     // Whole resource lifetimes only cross a fully reconciled, confirmed fence.
@@ -121,6 +127,8 @@ i32 Application::multiplayer_update(){
         if(runtime.NetworkEnabled()&&!runtime.CanRetireRun()){
             multiplayer_waiting=true;return 1;
         }
+        if(world->scores.multiplayer_active()&&!world->scores.replay_read_only()&&
+           !world->scores.checkpoint_multiplayer(world->calendar.timestamp())){error=-6;return -1;}
         rollback.Clear();
         if(!world->backgrounds.collect_retired(Netplay::INVALID_FRAME)){error=-4;return -1;}
         if(state.pending_screen==10||state.pending_screen==13){
@@ -134,7 +142,11 @@ i32 Application::multiplayer_update(){
     }
 
     const auto frame=runtime.NextFrame();
-    if(!runtime.HasLocalCapture(frame)){
+    if(runtime.Playback()){
+        if(state.multiplayer_replay.Complete()){multiplayer_waiting=true;return 1;}
+        const auto* inputs=state.multiplayer_replay.PlaybackFrame(frame,u32(state.game.stage));
+        if(!inputs||!runtime.FeedPlayback(frame,inputs->data(),state.multiplayer_session.playerCount)){error=-6;return -1;}
+    }else if(!runtime.HasLocalCapture(frame)){
         Netplay::FrameInput local{};
         local.buttons=InputDevices{input}.sample();
         if(!runtime.CaptureLocal(frame,local)){error=-4;return -1;}
@@ -143,12 +155,17 @@ i32 Application::multiplayer_update(){
     if(!decision.canAdvance){multiplayer_waiting=true;return 1;}
 
     engine.snapshot_presentation();
-    if(!world->begin_rollback_frame(frame)||
-       !multiplayer::InputLanes::Commit(state.input_lanes,decision.inputs.data(),
+    if(!state.multiplayer_replay.Stamp(frame,u32(state.game.stage))||!world->begin_rollback_frame(frame)){
+        error=-4;return -1;
+    }
+    world->capture_replay_checkpoint_precommit(state.multiplayer_replay.Base()+frame);
+    if(!multiplayer::InputLanes::Commit(state.input_lanes,decision.inputs.data(),
                                         state.multiplayer_session.playerCount)){
+        world->clear_replay_checkpoint_precommit();
         error=-4;return -1;
     }
     const i32 result=engine.update_all();
+    world->clear_replay_checkpoint_precommit();
     if(result==0||result==-1){world->end_rollback_frame();error=-4;return -1;}
     multiplayer_pending_decision=decision;
     multiplayer_pending_frame=frame;
@@ -183,7 +200,8 @@ bool Application::multiplayer_finalize_frame(){
         error=-4;return false;
     }
     if(world->error||world->backgrounds.error){error=-4;return false;}
-    if(!world->commit_audio()){error=-4;return false;}
+    if(state.netplay_runtime.Playback()&&!state.multiplayer_replay.Played(frame)){error=-6;return false;}
+    if(!world->commit_audio()||!world->commit_replay()){error=-4;return false;}
     const auto confirmed=state.netplay_runtime.ConfirmedThroughAllRemotes();
     if(confirmed!=Netplay::INVALID_FRAME){
         const auto frontier=std::min(confirmed,frame)+1;
@@ -198,6 +216,16 @@ bool Application::multiplayer_finalize_frame(){
 i32 Application::step(bool scheduled_tick){
     if(stopped)return error?2:1;if(!initialized&&!initialize())return 2;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(multiplayer_replay_scope){
+        const bool escape=input.snapshot.virtual_keys[27]!=0;
+        if(escape&&!multiplayer_replay_escape&&world&&world->actors.session){
+            // Viewer controls are local lifecycle operations, never extra
+            // player inputs inserted into the recorded authoritative stream.
+            state.multiplayer_session.started=false;state.pending_screen=4;
+            world->rollback.Clear();state.input_lanes={};
+        }
+        multiplayer_replay_escape=escape;
+    }
     if(!multiplayer_pump_network()){stopped=true;return 2;}
 #endif
     advance_loading();if(error){stopped=true;return 2;}
@@ -205,6 +233,8 @@ i32 Application::step(bool scheduled_tick){
     auto& session=state.multiplayer_session;
     if(multiplayer_generation_pending&&world&&!world->loading&&world->actors.session){
         if(!state.netplay_runtime.BeginNextRun(session,engine.script_random.seed)){error=-4;return 2;}
+        if(!state.multiplayer_replay.NextGeneration(state.netplay_runtime.Generation())){error=-6;return 2;}
+        state.multiplayer_cheat_movement_used=false;
         state.input_lanes={};input.player_profiles[0].input={};
         for(u32 seat=0;seat<world->player_count;++seat)world->pilots[seat].input_keys=0;
         world->audio_events.Reset();world->rollback.Clear();
@@ -216,7 +246,12 @@ i32 Application::step(bool scheduled_tick){
        !state.netplay_runtime.CanStart())return 0;
     if(session.configured&&!session.started&&value.screen==4&&title&&!title->loading){
         if(session.sessionId&&!state.netplay_runtime.CanStart())return 0;
+        if(session.sessionId&&!state.netplay_runtime.Playback()&&
+           !state.multiplayer_replay.Begin(session,state.configuration)){error=-6;return 2;}
         if(!ensure_world())return 2;
+        if(!state.netplay_runtime.Playback()&&!startup->scores->multiplayer_active()&&
+           !startup->scores->begin_multiplayer()){error=-6;return 2;}
+        state.multiplayer_cheat_movement_used=false;
         world->player_count=session.playerCount;world->local_player=session.localPlayer;
         for(u32 seat=0;seat<session.playerCount;++seat){
             state.pilot_games[seat].character=i32(session.loadouts[seat].character);
@@ -239,7 +274,17 @@ i32 Application::step(bool scheduled_tick){
     // subtraction in native double precision: the game's x87 single mode can
     // round a microsecond away after 32 seconds and accidentally skip a tick.
     if(scheduled_tick)clock.next_frame_time=time().to_double()-0.000001;
-    const i32 result=clock.step(loop);sync_views();if(error){stopped=true;return 2;}
+    const i32 result=clock.step(loop);sync_views();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(multiplayer_replay_scope&&value.screen==4&&(!world||!world->actors.session))multiplayer_finish_replay();
+    if(!multiplayer_replay_scope&&value.screen==4&&(!world||!world->actors.session)&&
+       state.multiplayer_session.started&&startup&&startup->scores)
+        startup->scores->end_multiplayer();
+    // An offline MP viewer cannot fall into an ordinary single-seat attract
+    // demo after idling at its native title/Replay menu.
+    if(!state.multiplayer_session.configured)state.inactive_frames=0;
+#endif
+    if(error){stopped=true;return 2;}
     if(writer_pending){writer_pending=false;Screenshot{screenshots}.write();}
     if(result){stopped=true;save();}return result;
 }
@@ -281,6 +326,9 @@ i32 Application::draw_statistics(){
     statistics->actual_ticks=state.active_time;statistics->expected_ticks=state.total_time;const auto result=statistics->draw(rates);state.active_time=statistics->actual_ticks;state.total_time=statistics->expected_ticks;if(world)world->measured_fps=statistics->frames_per_second;return result;
 }
 void Application::save(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(multiplayer_replay_scope)return;
+#endif
     config.save("th10.cfg",state.configuration);if(startup&&startup->scores)startup->scores->save();
 }
 void Application::shutdown(){

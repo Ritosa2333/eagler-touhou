@@ -14,6 +14,11 @@
 extern "C" void sdl_audio_pump();
 extern "C" void sdl_audio_pause(th10::u32);
 extern "C" void sdl_native_input(th10::browser::Application*);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+extern "C" void sdl_audio_replay_seek_output(th10::u32);
+extern "C" th10::u32 sdl_audio_replay_seek_tick();
+extern "C" int sdl_replay_seek_batch(th10::browser::Application*);
+#endif
 EM_JS(int, browser_prepare_frame, (), { return Module['runtimePrepare'] ? Module['runtimePrepare']() : 0; });
 EM_JS(int, th10_limit_presentation_to_60, (), { return Module['eaglerOptions']?.limitPresentationTo60 ? 1 : 0; });
 EM_JS(void, browser_finish_frame, (int result,double milliseconds), { Module['runtimeFinish'](result,milliseconds); });
@@ -67,6 +72,19 @@ EM_BOOL frame(double timestamp,void* epoch){
     // 60Hz cadence, independent of display callback frequency.
     const int ready=browser_prepare_frame();if(!running)return EM_FALSE;
     if(ready<=0||suspended){sdl_audio_pause(1);cadence.reset();presentation.reset();presentation_primed=false;return EM_TRUE;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // This callback has passed its own readiness/suspension fence. Release
+    // only that pause; an active Replay seek retains its separate mute owner.
+    sdl_audio_pause(0);
+    if(application->multiplayer_replay_seeking()){
+        const int result=sdl_replay_seek_batch(application);
+        // Seek is a requested offline Replay operation, not catch-up debt.
+        // Resume the existing live/SP cadence with no accumulated backlog.
+        cadence.reset();presentation.reset();presentation_primed=false;last=-1;
+        browser_finish_frame(result,emscripten_get_now()-callback_begin);
+        return running?EM_TRUE:EM_FALSE;
+    }
+#endif
     sdl_audio_pause(0);elapsed+=delta;audio_remainder+=delta*1000;
     const auto milliseconds=th10::u32(std::floor(audio_remainder));audio_remainder-=milliseconds;
     application->audio.advance(milliseconds);
@@ -100,6 +118,28 @@ EM_BOOL frame(double timestamp,void* epoch){
 }
 }
 extern "C" {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+int sdl_replay_seek_batch(th10::browser::Application* app){
+    if(!app||app->stopped||!app->multiplayer_replay_seeking())return -1;
+    sdl_audio_replay_seek_output(1);sdl_defer(1);
+    int result=0;
+    // Bounded UI work for the new stage-selection feature. Each iteration
+    // still executes one original Update + authored Draw; no input, time,
+    // stage, state or RNG is skipped. Live multiplayer/SP never enter here.
+    for(unsigned i=0;i<4&&app->multiplayer_replay_seeking();++i){
+        elapsed+=1.0/60.0;audio_remainder+=1000.0/60.0;
+        const auto milliseconds=th10::u32(std::floor(audio_remainder));audio_remainder-=milliseconds;
+        app->audio.advance(milliseconds);sdl_native_input(app);result=app->step(true);
+        if(result||!sdl_audio_replay_seek_tick()){if(!result){app->error=-7;result=2;}break;}
+    }
+    sdl_defer(0);
+    if(result||!app->multiplayer_replay_seeking()){
+        sdl_audio_replay_seek_output(0);
+        if(!result){if(sdl_commit())app->presentation_frame();sdl_audio_pump();}
+    }
+    return result;
+}
+#endif
 __attribute__((export_name("sdl_loop_time"))) double sdl_loop_time(){return elapsed+(running&&!suspended?std::max(0.,emscripten_get_now()-callback_begin)/1000.:0.);}
 // A deterministic, stopped-loop entry point for replay/regression runners.
 // It shares native input, audio progression and the same Application tick.
@@ -112,7 +152,11 @@ __attribute__((export_name("sdl_loop_start"))) void sdl_loop_start(th10::browser
     emscripten_request_animation_frame_loop(frame,reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
 }
 __attribute__((export_name("sdl_loop_stop"))) void sdl_loop_stop(){
-    if(!running&&!application)return;running=false;++loop_epoch;sdl_audio_pause(1);browser_loop_stopped();application=nullptr;
+    if(!running&&!application)return;running=false;++loop_epoch;sdl_audio_pause(1);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    sdl_audio_replay_seek_output(0);
+#endif
+    browser_loop_stopped();application=nullptr;
 }
 #ifdef TH_PRESENTATION_AUDIT
 // Diagnostic freeze is intentionally distinct from runtime shutdown. Preserve

@@ -468,6 +468,25 @@ bool World::create_player(){
     if(!multiplayer::Initialize(cooperation,setup,static_cast<u8>(player_count))){
         fail();return false;
     }
+    if(state.netplay_runtime.Playback()){
+        if(const auto* checkpoint=state.multiplayer_replay.SelectedCheckpoint()){
+            const auto& saved=checkpoint->cooperation;
+            if(saved.seatCount!=player_count){fail();return false;}
+            cooperation.seatCount=saved.seatCount;
+            cooperation.wipeTicks=saved.wipeTicks;
+            cooperation.retryPending=saved.retryPending!=0;
+            for(u32 seat=0;seat<player_count;++seat){
+                const auto& from=saved.seats[seat];auto& to=cooperation.seats[seat];
+                if(from.lifeState>u8(multiplayer::LifeState::Eliminated)||
+                   from.waitingForFocusRelease>1||from.character!=setup[seat].character||
+                   from.shot!=setup[seat].shot||from.lives!=setup[seat].lives||
+                   from.power!=setup[seat].power){fail();return false;}
+                to.lives=from.lives;to.power=from.power;to.character=from.character;to.shot=from.shot;
+                to.lifeState=multiplayer::LifeState(from.lifeState);to.rescueTicks=from.rescueTicks;
+                to.rescueTarget=from.rescueTarget;to.waitingForFocusRelease=from.waitingForFocusRelease!=0;
+            }
+        }
+    }
 
     bool success=true;
     // UpdateChain inserts before equal priorities; creating in reverse gives

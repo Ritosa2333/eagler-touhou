@@ -41,6 +41,11 @@ for (const [name, sources, flags = []] of [
     resolve(root,'th10_web/cpp/multiplayer/InputLanes.cpp'),
     resolve(root,'th10_web/cpp/game/GameInput.cpp'),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
+  ['multiplayer-session-records', [
+    ...['tests/multiplayer-session-records-test.cpp','th10_web/cpp/multiplayer/SessionRecords.cpp',
+      'th10_web/cpp/game/ScoreData.cpp','th10_web/cpp/game/Rng.cpp',
+      'th10_web/cpp/game/Arithmetic.cpp'].map(path=>resolve(root,path)),softfloat,
+  ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['netplay-runtime', [
     resolve(root,'tests/netplay-runtime-test.cpp'),
     resolve(root,'th10_web/cpp/multiplayer/NetplayRuntime.cpp'),
@@ -58,6 +63,15 @@ for (const [name, sources, flags = []] of [
     ...['NetplayProtocol','NetplayCore','NetplaySession','SessionChannel','BrowserPeerTransport']
       .map(name=>resolve(common,'src/netplay',name+'.cpp')),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
+  ['multiplayer-replay-archive', [
+    resolve(root,'tests/multiplayer-replay-archive-test.cpp'),
+    resolve(root,'th10_web/cpp/multiplayer/ReplayArchive.cpp'),
+    resolve(root,'th10_web/cpp/multiplayer/NetplayRuntime.cpp'),
+    resolve(root,'th10_web/cpp/multiplayer/SessionSetup.cpp'),
+    resolve(root,'th10_web/cpp/game/ApplicationConfig.cpp'),
+    ...['InputReplay','NetplayProtocol','NetplayCore','NetplaySession','SessionChannel','BrowserPeerTransport']
+      .map(name=>resolve(common,'src/netplay',name+'.cpp')),
+  ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['rollback-pool', [
     resolve(root,'tests/rollback-pool-test.cpp'),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
@@ -73,6 +87,10 @@ for (const [name, sources, flags = []] of [
     resolve(common,'src/netplay/NetplayProtocol.cpp'),
   ]],
   ['common-netplay-headers', [resolve(common,'tests/netplay-headers-test.cpp')]],
+  ['common-input-replay', [
+    resolve(common,'tests/input-replay-test.cpp'),
+    ...['InputReplay','NetplayCore','NetplayProtocol'].map(name=>resolve(common,'src/netplay',name+'.cpp')),
+  ]],
   ['common-browser-transport', [
     resolve(common,'tests/browser-peer-transport-test.cpp'),
     resolve(common,'src/netplay/BrowserPeerTransport.cpp'),
@@ -89,6 +107,11 @@ for (const [name, sources, flags = []] of [
   ['common-session-channel', [
     resolve(common,'tests/session-channel-test.cpp'),
     ...['NetplayCore','NetplayProtocol','NetplaySession','SessionChannel']
+      .map(name=>resolve(common,'src/netplay',name+'.cpp')),
+  ]],
+  ['common-confirmation-window', [
+    resolve(common,'tests/confirmation-window-test.cpp'),
+    ...['NetplayCore','NetplayProtocol']
       .map(name=>resolve(common,'src/netplay',name+'.cpp')),
   ]],
   ['cooperative-rollback', [

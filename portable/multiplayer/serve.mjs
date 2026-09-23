@@ -11,7 +11,8 @@ if(build.variant!=='multiplayer')throw Error('Build --multiplayer first');
 const wasm=resolve(buildRoot,'th10-sdl.wasm');
 if(sha256(readFileSync(wasm))!==build.sha256)throw Error('Stale multiplayer WASM');
 const files=new Map([
- ['/','smoke.html'],['/smoke.mjs','smoke.mjs'],
+ ['/','smoke.html'],['/smoke.mjs','smoke.mjs'],['/replay-robot.mjs','replay-robot.mjs'],
+ ['/replay-audio-seek.mjs','replay-audio-seek.mjs'],
 ].map(([url,name])=>[url,resolve(import.meta.dirname,name)]));
 files.set('/th10-sdl.mjs',resolve(buildRoot,'th10-sdl.mjs'));
 files.set('/th10-sdl.wasm',wasm);

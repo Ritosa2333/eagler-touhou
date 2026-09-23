@@ -14,7 +14,17 @@ i32 TitleMenu::update_prompt(TitleMainEnvironment& env){
 i32 TitleMenu::update_main(TitleMainEnvironment& env){
     switch(phase){
     case 0:{
-        menu.item_count=8;bool extra=false;for(i32 i=0;i<6;++i)extra=extra||env.extra_unlocked[i];if(!extra)menu.disabled_items[menu.disabled_count++]=1;
+        menu.item_count=8;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        // A live multiplayer run is configured by its room before this title
+        // screen. An offline MP title is a Replay viewer, never another route
+        // to start an unconfigured single-seat game in the multiplayer binary.
+        menu.disabled_count=0;
+        for(i32 entry=0;entry<3;++entry)menu.disabled_items[menu.disabled_count++]=entry;
+        if(menu.selected<3)menu.select(3);
+#else
+        bool extra=false;for(i32 i=0;i<6;++i)extra=extra||env.extra_unlocked[i];if(!extra)menu.disabled_items[menu.disabled_count++]=1;
+#endif
         if(env.game->flags&0x10){menu.select(2);env.game->flags&=~0x10u;}if(!env.registry->find(animation_ids[88]))create_script(88,env);create_script(0,env);set_phase(1,env.rate);
         [[fallthrough]];}
     case 1:if(elapsed.current>10){set_phase(2,env.rate);env.interrupt_immediately(animation_ids[0],3);signal_script(0,static_cast<u16>(menu.selected+17),env);}break;

@@ -10,6 +10,7 @@
 #include "../multiplayer/SessionSetup.hpp"
 #include "../multiplayer/InputLanes.hpp"
 #include "../multiplayer/NetplayRuntime.hpp"
+#include "../multiplayer/ReplayArchive.hpp"
 #endif
 namespace th10::browser {
 // Persistent application data shared by menus, gameplay and result screens.
@@ -17,7 +18,9 @@ struct GameState {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     multiplayer::SessionSetup multiplayer_session{};
     multiplayer::NetplayRuntime netplay_runtime{};
+    multiplayer::ReplayArchive multiplayer_replay{};
     multiplayer::InputLanes::State input_lanes{};
+    bool multiplayer_cheat_movement_used=false;
     multiplayer::TeamEconomy team_economy{};
     multiplayer::PilotEconomy pilot_economies[3]{};
     GameEconomy pilot_games[3]{{team_economy,pilot_economies[0]},

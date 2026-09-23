@@ -20,7 +20,7 @@ std::uint64_t network_clock(){
 }
 
 bool NetplayRuntime::Connect(const char* relayUrl){
-    if(!configured_||network_enabled_||core_.LastSimulatedFrame()!=Netplay::INVALID_FRAME||
+    if(!configured_||playback_||network_enabled_||core_.LastSimulatedFrame()!=Netplay::INVALID_FRAME||
        !relayUrl||!relayUrl[0])return false;
     if(!transport_.Connect(relayUrl,gate_.Config().localPlayer,gate_.Config().playerCount))return false;
     network_now_=network_clock();
@@ -50,6 +50,26 @@ bool NetplayRuntime::Reset(const SessionSetup& setup, std::uint64_t sessionId) n
     Clear();
     if(!Configure(setup,sessionId)){Clear();return false;}
     setup_=setup;base_session_id_=sessionId;return true;
+}
+
+bool NetplayRuntime::BeginPlayback(SessionSetup& setup) noexcept {
+    // An offline input source owns every lane. It does not fabricate peers or
+    // send HELLO/READY messages, and can never attach a live network transport.
+    auto next=setup;next.sessionId=0x5250591000000001ull;next.started=false;
+    if(!Reset(next,next.sessionId))return false;
+    playback_=true;setup=next;return true;
+}
+
+bool NetplayRuntime::FeedPlayback(u32 frame,const Netplay::FrameInput* inputs,std::size_t count){
+    if(!playback_||!CanStart()||!inputs||frame!=NextFrame()||count!=setup_.playerCount)return false;
+    for(std::size_t seat=0;seat<count;++seat)if(!Netplay::IsValidFrameInput(inputs[seat]))return false;
+    if(!core_.ScheduleLocalInput(frame,inputs[setup_.localPlayer]))return false;
+    for(std::uint8_t seat=0;seat<count;++seat){
+        if(seat==setup_.localPlayer)continue;
+        const auto result=core_.SubmitRemoteInput(seat,frame,inputs[seat]);
+        if(result!=Netplay::RemoteInputResult::Accepted&&result!=Netplay::RemoteInputResult::Duplicate)return false;
+    }
+    return true;
 }
 
 bool NetplayRuntime::Configure(const SessionSetup& setup,std::uint64_t sessionId) noexcept {
@@ -93,7 +113,7 @@ bool NetplayRuntime::Configure(const SessionSetup& setup,std::uint64_t sessionId
 }
 
 void NetplayRuntime::Clear() noexcept {
-    transport_.Close();channel_.Clear();network_enabled_=false;network_now_=0;
+    transport_.Close();channel_.Clear();network_enabled_=false;network_now_=0;playback_=false;
     gate_.Clear();
     core_.Clear();
     configured_ = false;
@@ -118,6 +138,7 @@ bool NetplayRuntime::BeginNextRun(SessionSetup& setup,u32 seed) noexcept {
 }
 
 NetplayRuntime::WireResult NetplayRuntime::ApplyWire(const u8* bytes,std::size_t size){
+    if(playback_)return WireResult::IgnoredSession;
     if(!bytes||!size)return WireResult::Malformed;
     Netplay::PacketType type{};
     if(!Netplay::PeekPacketType(bytes,size,&type))return WireResult::Malformed;
@@ -144,7 +165,7 @@ NetplayRuntime::WireResult NetplayRuntime::ApplyWire(const u8* bytes,std::size_t
 }
 
 bool NetplayRuntime::BuildInputWire(u8 peer,u32 latest,u32 sequence,u32 ack,std::vector<u8>& out)const{
-    if(!CanStart()||peer>=setup_.playerCount||peer==setup_.localPlayer||
+    if(playback_||!CanStart()||peer>=setup_.playerCount||peer==setup_.localPlayer||
        latest==Netplay::INVALID_FRAME||!core_.HasLocalCapture(latest))return false;
     auto packet=core_.BuildInputPacket(peer,latest,sequence,ack);
     packet.senderFrame=NextFrame();

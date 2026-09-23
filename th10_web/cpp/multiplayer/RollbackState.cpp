@@ -112,6 +112,13 @@ bool RollbackState::BeginFrame(browser::World& world,std::uint32_t frame){
     if(!touch(journal_,state.team_economy)||
        !journal_.Touch(state.pilot_economies,sizeof(state.pilot_economies))||
        !touch(journal_,state.input_lanes)||
+       !touch(journal_,state.multiplayer_cheat_movement_used)||
+       !touch(journal_,state.multiplayer_replay.save)||
+       !touch(journal_,world.replay_checkpoint_pending)||
+       !touch(journal_,world.replay_checkpoint_pending_valid)||
+       !touch(journal_,world.replay_checkpoint_commit_pending)||
+       !touch(journal_,world.replay_checkpoint_commit_frame)||
+       !touch(journal_,world.replay_checkpoint_commit_valid)||
        !journal_.Touch(&state.application.pending_screen,sizeof(state.application.pending_screen))||
        !journal_.Touch(&state.application.background_color,sizeof(state.application.background_color))||
        !journal_.Touch(&state.current_stage,sizeof(state.current_stage))||

@@ -92,6 +92,9 @@ struct Application final:CallbackReceiver {
     bool multiplayer_frame_open=false;
     bool multiplayer_waiting=false;
     bool multiplayer_generation_pending=false;
+    bool multiplayer_replay_scope=false,multiplayer_replay_escape=false;
+    u32 multiplayer_replay_seek_target=0,multiplayer_replay_seek_stage=0;
+    ApplicationConfig multiplayer_replay_saved_config{};
     u32 multiplayer_rollbacks=0,multiplayer_resimulated_frames=0;
 #endif
     AppScreens screens;AppFrames frames;AppLoop loop;AppStatistics rates;AppPresentation presentation;AppScreenshot screenshots;AppConfiguration config;
@@ -103,6 +106,9 @@ struct Application final:CallbackReceiver {
     bool multiplayer_pump_network();
     bool multiplayer_resimulate_draw();
     bool multiplayer_finalize_frame();
+    bool multiplayer_begin_replay(const char* filename,u32 selected_stage);
+    bool multiplayer_replay_seeking()const;
+    void multiplayer_finish_replay();
 #endif
     void advance_loading();void sync_views();bool ensure_world();void configure_camera(Camera&,bool);
     Extended time();void bind_callbacks(Callbacks&) override;i32 draw_statistics();
