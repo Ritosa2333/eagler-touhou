@@ -37,6 +37,9 @@ public:
     PlayerShots(PlayerShotsState& state,Rng& rng):state(state),rng(rng){}
     PlayerShotActions* actions=nullptr;
     FrameTiming timing;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    u32 player_count=2;
+#endif
     enum class Failure:u32 {None,InvalidOption,InvalidLaserSlot,MissingActions,InvalidInterval,MissingSprite,MissingDefinition};
     Failure failure=Failure::None;
     bool initialize(PlayerShot& shot,const ShotDefinition& definition);

@@ -6,6 +6,13 @@
 #include <cmath>
 #include <cstring>
 namespace th08 {
+namespace {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+constexpr i32 loadable_anm_slots=70; // Original slots plus player banks at 64..69.
+#else
+constexpr i32 loadable_anm_slots=25;
+#endif
+}
 #ifdef TH_NATIVE_PLATFORM
 bool sdl_decode_rgba(const u8*,u32,u32&,u32&,std::vector<u8>&);
 #endif
@@ -95,14 +102,14 @@ void AnmLibrary::release(i32 index) {
     files[index].reset();
 }
 AnmLoaded* AnmLibrary::load(i32 index,Archive& archive,const char* name,bool deferred) {
-    if(index<0||index>=25)return nullptr;
+    if(index<0||index>=loadable_anm_slots)return nullptr;
     release(index);
     std::vector<u8> bytes;
     if(!archive.read(name,bytes))return nullptr;
     return load(index,bytes.data(),bytes.size(),deferred);
 }
 AnmLoaded* AnmLibrary::load(i32 index,const u8* bytes,u32 size,bool deferred) {
-    if(index<0||index>=25)return nullptr;
+    if(index<0||index>=loadable_anm_slots)return nullptr;
     release(index);
     auto entry=std::make_unique<Entry>();
     for(const auto& candidate:prepared)if(candidate->force_16bit==force_16bit&&candidate->resource.data().size()==size&&!std::memcmp(candidate->resource.data().data(),bytes,size)){entry->prepared=candidate.get();break;}

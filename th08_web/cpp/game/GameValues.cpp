@@ -2,6 +2,18 @@
 namespace th08 {
 i32 GameValues::random_integer(){return i32(random.bounded32(100000)+6543);}
 float GameValues::random_float(){return (random.range(100000)+number(6543)).to_float();}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+// The multiplayer economy has explicit shared/pilot owners, not the original
+// byte layout checked by TH08's anti-tamper bookkeeping. Do not hash a view or
+// consume gameplay RNG for this single-player-only checksum protocol.
+i32 GameValues::checksum_bytes(const u8*,i32){return 0;}
+i32 GameValues::checksum(){return 0;}
+void GameValues::store_checksum(bool){}
+void GameValues::initialize_integrity(){}
+void GameValues::randomize_integrity(){}
+void GameValues::update_integrity(){}
+bool GameValues::tampered()const{return false;}
+#else
 i32 GameValues::checksum_bytes(const u8* data,i32 size){
     u32 sum=0;for(i32 i=0;i<size;++i){sum+=data[i];globals.integrity_value+=u32(globals.rng8[2]);}return signed_bits(sum);
 }
@@ -28,6 +40,7 @@ bool GameValues::tampered()const{
     return globals.integrity_value!=u32(globals.rng1[2])+u32(globals.rng8[2])*628u ||
         wrapping_add(globals.integrity_checksum,globals.rng7[3])!=Scalar::truncate(expected_checksum);
 }
+#endif
 void GameValues::set_lives(i32 value){globals.lives=Extended::from_int(value).to_float();update_integrity();}
 void GameValues::set_bombs(i32 value){globals.bombs=Extended::from_int(value).to_float();store_checksum();}
 void GameValues::set_power(i32 value){globals.power=Extended::from_int(value).to_float();update_integrity();}

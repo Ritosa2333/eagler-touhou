@@ -54,6 +54,40 @@ EX("audio_tick") bool browser_audio_tick(BrowserRuntime* r,u32 now){return r&&r-
 EX("status") i32 browser_status(BrowserRuntime* r,i32 k){return r?r->status(k):-1;}
 EX("keyboard") u8* browser_keyboard(BrowserRuntime* r){return r?r->keyboard_state():nullptr;}
 EX("controller") void browser_controller(BrowserRuntime* r,i32 x,i32 y,const u8* b,u32 n,bool available){if(r)r->controller_state(x,y,b,n,available);}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+EX("multiplayer_configure") u32 browser_multiplayer_configure(BrowserRuntime* r,const u32* words,u32 count){
+    if(!r||r->app.in_game()||r->app.loading_game())return 0;
+    auto& session=r->app.session;
+    if(!multiplayer::decode_session_setup(session.multiplayer_session,words,count))return 0;
+    const auto& setup=session.multiplayer_session;
+    session.player_count=setup.player_count;session.local_player=setup.local_player;
+    for(u32 seat=0;seat<3;++seat)session.player_characters[seat]=u8(setup.characters[seat]);
+    return 1;
+}
+EX("multiplayer_contract") u32 browser_multiplayer_contract(BrowserRuntime* r){
+    return r&&r->app.session.multiplayer_session.configured?multiplayer::gameplay_contract(r->app.session.multiplayer_session):0;
+}
+EX("multiplayer_commit_inputs") u32 browser_multiplayer_commit_inputs(BrowserRuntime* r,const u16* buttons,u32 count){
+    return r&&r->app.in_game()&&r->app.game.commit_inputs(buttons,count)?1:0;
+}
+EX("multiplayer_status") const i32* browser_multiplayer_status(BrowserRuntime* r){
+    static i32 words[44]{};std::fill(words,words+44,0);
+    if(!r)return words;
+    auto& app=r->app;const auto& session=app.session;
+    words[0]=session.multiplayer_session.configured;words[1]=i32(session.player_count);words[2]=i32(session.local_player);
+    words[3]=session.multiplayer_session.started;words[4]=app.loading_game();words[5]=app.invalid();
+    words[6]=app.game.globals.stage;words[7]=app.game.enemies.state.frames;
+    if(app.in_game())for(u32 seat=0;seat<session.player_count;++seat){
+        const auto& p=app.game.pilot(seat).status();const auto& bank=session.pilot_resources[seat];
+        auto* out=words+8+seat*12;
+        out[0]=p.context.character;out[1]=Scalar::truncate(bank.lives);out[2]=Scalar::truncate(bank.power);
+        out[3]=Scalar::truncate(bank.bombs);out[4]=p.life.state;out[5]=Scalar::truncate(p.motion.movement.position.x);
+        out[6]=Scalar::truncate(p.motion.movement.position.y);out[7]=p.motion.form.focused;
+        out[8]=p.bomb.active;out[9]=app.game.roster.eligible(seat);out[10]=p.input.buttons;
+    }
+    return words;
+}
+#endif
 EX("close") void browser_close(BrowserRuntime* r){if(r)r->app.close();}
 EX("save") bool browser_save(BrowserRuntime* r){return r&&r->app.save_score();}
 // Finalize the current recording using the same owner as the result screen.

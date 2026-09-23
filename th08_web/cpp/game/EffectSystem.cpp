@@ -8,7 +8,12 @@ using E=EffectState;using S=EffectSystem;
 i32 small(E& e,S& s){return s.transforms.small_spark(e);}i32 large(E& e,S& s){return s.transforms.large_spark(e);}
 i32 accelerate(E& e,S&){return EffectTransforms::accelerate(e);}i32 orbit_init(E& e,S&){return EffectTransforms::orbit(e);}i32 orbit(E& e,S&){return EffectSpace::orbit_step(e);}
 i32 inward_init(E& e,S& s){return s.transforms.inward(e);}i32 inward60(E& e,S&){return EffectTransforms::inward60(e);}i32 inward240(E& e,S&){return EffectTransforms::inward240(e);}
-i32 outward_init(E& e,S& s){return s.transforms.outward(e);}i32 outward(E& e,S&){return EffectTransforms::outward90(e);}i32 follow(E& e,S& s){return EffectTransforms::follow(e,s.environment.player);}
+i32 outward_init(E& e,S& s){return s.transforms.outward(e);}i32 outward(E& e,S&){return EffectTransforms::outward90(e);}
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+i32 follow(E& e,S& s){return s.follow_player(e);}
+#else
+i32 follow(E& e,S& s){return EffectTransforms::follow(e,s.environment.player);}
+#endif
 i32 ambient_init(E& e,S& s){return s.space.ambient(e);}i32 ambient(E& e,S& s){return s.space.ambient_step(e);}
 i32 glow_init(E& e,S& s){return s.space.glow(e,false);}i32 glow(E& e,S& s){return s.space.glow_step(e,false);}i32 tall_init(E& e,S& s){return s.space.glow(e,true);}i32 tall(E& e,S& s){return s.space.glow_step(e,true);}
 i32 alive(E&,S&){return 1;}i32 edge(E& e,S&){return EffectTransforms::edge(e);}
@@ -17,11 +22,20 @@ i32 ring_init(E& e,S&){return EffectGeometry::initialize(e,ring_draw);}i32 alter
 i32 ring(E& e,S&){return EffectTransforms::ring(e);}i32 detailed(E& e,S&){return EffectTransforms::ring_detailed(e);}i32 timed(E& e,S&){return EffectTransforms::ring_timed(e);}i32 alpha(E& e,S&){return EffectTransforms::ring_alpha(e);}i32 moon(E& e,S&){return EffectTransforms::moon(e);}
 i32 pulse(E& e,S&){return EffectBomb::pulsing(e);}i32 expand(E& e,S&){return EffectBomb::expanding(e);}i32 quartic(E& e,S&){return EffectBomb::quartic(e);}
 template<u32 V>i32 ripple(E& e,S&){return EffectBomb::ripple(e,V);}
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+template<bool R>i32 burst(E& e,S& s){return s.burst(e,R);}
+template<bool R>i32 burst_init(E& e,S& s){
+    const auto position=e.position,parameters=e.parameters;auto* replacement=s.replace_fixed(e,35,position,0xffffffff,&parameters);
+    if(!replacement)return 0;
+    replacement->update=burst<R>;replacement->segments=R?54:44;replacement->width=R?6:4;return 0;
+}
+#else
 template<bool R>i32 burst(E& e,S& s){return s.bomb.burst(e,R);}
 template<bool R>i32 burst_init(E& e,S& s){
     const auto position=e.position,parameters=e.parameters;s.fixed(35,position,e.slot,0xffffffff,&parameters);
     e.update=burst<R>;e.segments=R?54:44;e.width=R?6:4;return 0;
 }
+#endif
 const EffectDefinition definitions[66]{
  {28,nullptr,nullptr},{29,nullptr,nullptr},{30,nullptr,nullptr},{31,accelerate,large},
  {36,accelerate,small},{37,accelerate,small},{38,accelerate,small},{39,accelerate,small},{40,accelerate,small},{41,accelerate,small},{42,accelerate,small},{43,accelerate,small},
@@ -37,9 +51,17 @@ const EffectDefinition definitions[66]{
 void add(Vec3& a,const Vec3& b){a.x=Scalar::add(a.x,b.x);a.y=Scalar::add(a.y,b.y);a.z=Scalar::add(a.z,b.z);}
 }
 EffectSystem::EffectSystem(EffectPoolState& s,EffectEnvironment& e,AnmExecutor& a,AnmRenderer& r,Rng& random,ScreenEffects& screen,DamageRegions& damage,GameValues& v,u16& flags)
- :anm(a),renderer(r),values(v),replay_flags(flags),state(s),environment(e),transforms(random,a.timing),space(random,a.timing,e),geometry(r),bomb(screen,damage){}
+ :anm(a),renderer(r),values(v),replay_flags(flags),state(s),environment(e),transforms(random,a.timing),space(random,a.timing,e),geometry(r),bomb(screen,damage)
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+ ,host_damage(damage)
+#endif
+{
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    player_owners[0]={&environment.player,&host_damage,true};
+#endif
+}
 const EffectDefinition& EffectSystem::definition(u32 kind){static const EffectDefinition empty{-1,nullptr,nullptr};return kind<66?definitions[kind]:empty;}
-void EffectSystem::release(){for(u32 i=0;i<653;++i)EffectGeometry::release(state.objects[i]);}
+void EffectSystem::release(){for(i32 i=effect_pool_layout::active_pool_begin;i<effect_pool_layout::active_object_count;++i)EffectGeometry::release(state.objects[i]);}
 void EffectSystem::reset(){release();std::memset(&state,0,sizeof(state));invalid=false;}
 void EffectSystem::begin(EffectState& e,i32 kind,u32 color,bool depth){
     e.active=1;e.kind=u8(kind);const auto& d=definition(kind);e.scriptIndex=i16(d.script);
@@ -49,26 +71,82 @@ void EffectSystem::begin(EffectState& e,i32 kind,u32 color,bool depth){
 }
 void EffectSystem::initialize(EffectState& e,i32 kind){const auto callback=definition(kind).initialize;if(callback&&callback(e,*this)!=0)e.active=0;}
 EffectState* EffectSystem::spawn(i32 kind,Vec3 position,i32 count,u32 color,const Vec3* parameters){
-    if(u32(kind)>=66){invalid=true;return &state.objects[653];}
-    for(i32 attempt=0;attempt<512;++attempt){auto& e=state.objects[state.cursor];state.cursor=(state.cursor+1)%512;if(e.active)continue;
+    if(u32(kind)>=66){invalid=true;return &state.objects[effect_pool_layout::dummy_index];}
+    for(i32 attempt=0;attempt<effect_pool_layout::active_pool_end-effect_pool_layout::active_pool_begin;++attempt){auto& e=state.objects[state.cursor];state.cursor=(state.cursor+1)%effect_pool_layout::active_pool_end;if(e.active)continue;
         EffectGeometry::release(e);std::memset(&e,0,sizeof(e));e.position=position;if(parameters)e.parameters=*parameters;begin(e,kind,color,!parameters);initialize(e,kind);
         if(--count==0){replay_flags|=0x400;return &e;}
-    }replay_flags|=0x400;return &state.objects[653];
+    }replay_flags|=0x400;return &state.objects[effect_pool_layout::dummy_index];
 }
 EffectState* EffectSystem::fixed(i32 kind,Vec3 position,i32 slot,u32 color,const Vec3* parameters){
-    auto* e=group(slot);if(!e||u32(kind)>=66){invalid=true;return &state.objects[653];}
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    auto* e=group(slot);if(!e||u32(kind)>=66){invalid=true;return &state.objects[effect_pool_layout::dummy_index];}
+    return fixed_at(slot,slot,kind,position,color,parameters);
+#else
+    auto* e=group(slot);if(!e||u32(kind)>=66){invalid=true;return &state.objects[effect_pool_layout::dummy_index];}
     EffectGeometry::release(*e);std::memset(e,0,sizeof(*e));e->slot=slot;e->position=position;if(parameters)e->parameters=*parameters;begin(*e,kind,color,true);initialize(*e,kind);replay_flags|=0x400;return e;
+#endif
 }
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+EffectState* EffectSystem::fixed_player(i32 seat,i32 local_slot,i32 kind,Vec3 position,u32 color,const Vec3* parameters){
+    const auto address=player_effect_slots::fixed_for_player(seat,local_slot);
+    if(!address||u32(kind)>=66||(seat>0&&!player_owners[size_t(seat)].bound)){invalid=true;return &state.objects[effect_pool_layout::dummy_index];}
+    return fixed_at(address.relative_slot,address.local_slot,kind,position,color,parameters);
+}
+EffectState* EffectSystem::fixed_at(i32 relative_slot,i32 local_slot,i32 kind,Vec3 position,u32 color,const Vec3* parameters){
+    const auto address=player_effect_slots::fixed_for_storage_index(player_effect_slots::fixed_pool_begin+relative_slot);
+    if(!address||address.local_slot!=local_slot||u32(kind)>=66){invalid=true;return &state.objects[effect_pool_layout::dummy_index];}
+    auto* e=&state.objects[address.storage_index];
+    EffectGeometry::release(*e);std::memset(e,0,sizeof(*e));e->slot=local_slot;e->position=position;if(parameters)e->parameters=*parameters;begin(*e,kind,color,true);initialize(*e,kind);replay_flags|=0x400;return e;
+}
+i32 EffectSystem::effect_seat(const EffectState& effect)const{
+    const auto begin=reinterpret_cast<uintptr_t>(state.objects+player_effect_slots::fixed_pool_begin);
+    const auto address=reinterpret_cast<uintptr_t>(&effect);
+    const auto bytes=uintptr_t(player_effect_slots::fixed_count)*sizeof(EffectState);
+    if(address<begin||address>=begin+bytes||(address-begin)%sizeof(EffectState)!=0)return -1;
+    const auto fixed=player_effect_slots::fixed_for_storage_index(i32(player_effect_slots::fixed_pool_begin+(address-begin)/sizeof(EffectState)));
+    return fixed?fixed.seat:-1;
+}
+bool EffectSystem::player_owner(const EffectState& effect,const Vec3*& position,DamageRegions*& damage)const{
+    const i32 seat=effect_seat(effect);
+    if(seat<0){position=&environment.player;damage=&host_damage;return true;}
+    const auto& owner=player_owners[size_t(seat)];
+    if(!owner.bound||!owner.position||!owner.damage)return false;
+    position=owner.position;damage=owner.damage;return true;
+}
+EffectState* EffectSystem::replace_fixed(EffectState& current,i32 kind,Vec3 position,u32 color,const Vec3* parameters){
+    const auto begin=reinterpret_cast<uintptr_t>(state.objects+player_effect_slots::fixed_pool_begin);
+    const auto address=reinterpret_cast<uintptr_t>(&current);
+    const auto bytes=uintptr_t(player_effect_slots::fixed_count)*sizeof(EffectState);
+    if(address<begin||address>=begin+bytes||(address-begin)%sizeof(EffectState)!=0||u32(kind)>=66){invalid=true;return nullptr;}
+    const auto fixed=player_effect_slots::fixed_for_storage_index(i32(player_effect_slots::fixed_pool_begin+(address-begin)/sizeof(EffectState)));
+    if(!fixed||(fixed.seat>0&&!player_owners[size_t(fixed.seat)].bound)){invalid=true;return nullptr;}
+    return fixed_at(fixed.relative_slot,fixed.local_slot,kind,position,color,parameters);
+}
+bool EffectSystem::bind_player(i32 seat,const Vec3& position,DamageRegions& damage){
+    if(seat<0||seat>=player_effect_slots::seat_count){invalid=true;return false;}
+    player_owners[size_t(seat)]={&position,&damage,true};return true;
+}
+i32 EffectSystem::follow_player(EffectState& effect){
+    const Vec3* position=nullptr;DamageRegions* damage=nullptr;
+    if(!player_owner(effect,position,damage)){invalid=true;return 0;}
+    (void)damage;return EffectTransforms::follow(effect,*position);
+}
+i32 EffectSystem::burst(EffectState& effect,bool rotating){
+    const Vec3* position=nullptr;DamageRegions* damage=nullptr;
+    if(!player_owner(effect,position,damage)){invalid=true;return 0;}
+    (void)position;return bomb.burst(effect,rotating,*damage);
+}
+#endif
 EffectState* EffectSystem::overlay(i32 kind,Vec3 position,i32 count,u32 color){
-    if(u32(kind)>=66){invalid=true;return &state.objects[653];}
-    for(i32 i=512;i<640;++i){auto& e=state.objects[i];if(e.active)continue;EffectGeometry::release(e);e.draw=nullptr;e.layer=0;e.position=position;begin(e,kind,color,false);
+    if(u32(kind)>=66){invalid=true;return &state.objects[effect_pool_layout::dummy_index];}
+    for(i32 i=effect_pool_layout::overlay_pool_begin;i<effect_pool_layout::fixed_pool_begin;++i){auto& e=state.objects[i];if(e.active)continue;EffectGeometry::release(e);e.draw=nullptr;e.layer=0;e.position=position;begin(e,kind,color,false);
         e.age.set(0);e.dying=0;e.fade_frames=0;e.parameters={};initialize(e,kind);if(--count==0){replay_flags|=0x400;return &e;}
-    }replay_flags|=0x400;return &state.objects[653];
+    }replay_flags|=0x400;return &state.objects[effect_pool_layout::dummy_index];
 }
-void EffectSystem::shift_glows(const Vec3& offset){for(u32 i=0;i<512;++i)if(state.objects[i].kind==51)add(state.objects[i].world_position,offset);}
-void EffectSystem::snapshot_presentation(){if(!presentation_marker.capture())return;for(size_t i=0;i<presentation_previous.size();++i){const auto& e=state.objects[i];auto& before=presentation_previous[i];before.active=e.active!=0;if(before.active){before.position=e.position;before.center=e.center;before.radius=e.radius;before.angle=e.angle;before.width=e.width;before.height=e.height;before.angle_y=e.angle_y;before.frequency=e.frequency;before.segments=e.segments;before.age=e.age.current;before.kind=e.kind;before.visual.capture(e);before.projected_offset=e.posFinal;}}}
+void EffectSystem::shift_glows(const Vec3& offset){for(i32 i=effect_pool_layout::active_pool_begin;i<effect_pool_layout::active_pool_end;++i)if(state.objects[i].kind==51)add(state.objects[i].world_position,offset);}
+void EffectSystem::snapshot_presentation(){if(!presentation_marker.capture())return;for(i32 i=0;i<effect_pool_layout::object_count;++i){const auto& e=state.objects[i];auto& before=presentation_previous[size_t(i)];before.active=e.active!=0;if(before.active){before.position=e.position;before.center=e.center;before.radius=e.radius;before.angle=e.angle;before.width=e.width;before.height=e.height;before.angle_y=e.angle_y;before.frequency=e.frequency;before.segments=e.segments;before.age=e.age.current;before.kind=e.kind;before.visual.capture(e);before.projected_offset=e.posFinal;}}}
 void EffectSystem::presentation_visual(const EffectState& source,EffectState& draw)const{
-    const size_t index=size_t(&source-state.objects);if(index>=presentation_previous.size())return;const auto& before=presentation_previous[index];
+    const size_t index=size_t(&source-state.objects);if(index>=effect_pool_layout::object_count)return;const auto& before=presentation_previous[index];
     if(!before.active||before.kind!=source.kind||source.age.current<before.age)return;
     using V=presentation::VisualSample;u32 owner_fields=0;
     // Glow tint is a continuous modulation of ANM color1. Boss-tracking glow
@@ -85,7 +163,7 @@ void EffectSystem::presentation_visual(const EffectState& source,EffectState& dr
         draw.posFinal=V::vector(before.projected_offset,source.posFinal,presentation::world_alpha);
 }
 Vec3 EffectSystem::presentation_position(const EffectState& e)const{
-    if(!presentation::active)return e.position;const size_t index=size_t(&e-state.objects);if(index>=presentation_previous.size())return e.position;const auto& before=presentation_previous[index];
+    if(!presentation::active)return e.position;const size_t index=size_t(&e-state.objects);if(index>=effect_pool_layout::object_count)return e.position;const auto& before=presentation_previous[index];
     const float dx=e.position.x-before.position.x,dy=e.position.y-before.position.y;if(!before.active||before.kind!=e.kind||e.age.current<before.age||dx*dx+dy*dy>=16384.0f)return e.position;
     return {presentation::lerp_world(before.position.x,e.position.x),presentation::lerp_world(before.position.y,e.position.y),presentation::lerp_world(before.position.z,e.position.z)};
 }
@@ -97,7 +175,7 @@ EffectState EffectSystem::presentation_copy(const EffectState& source)const{
     return draw;
 }
 void EffectSystem::presentation_geometry(const EffectState& source,EffectState& draw)const{
-    const size_t index=size_t(&source-state.objects);if(index>=presentation_previous.size())return;const auto& before=presentation_previous[index];
+    const size_t index=size_t(&source-state.objects);if(index>=effect_pool_layout::object_count)return;const auto& before=presentation_previous[index];
     const float dx=source.position.x-before.position.x,dy=source.position.y-before.position.y;if(!before.active||before.kind!=source.kind||source.age.current<before.age||dx*dx+dy*dy>=16384.0f)return;
     draw.center={presentation::lerp_world(before.center.x,source.center.x),presentation::lerp_world(before.center.y,source.center.y),presentation::lerp_world(before.center.z,source.center.z)};
     // Branch selectors and vertex layout are discrete. Blending height while
@@ -112,7 +190,7 @@ void EffectSystem::presentation_geometry(const EffectState& source,EffectState& 
 }
 JobResult EffectSystem::update(){
     state.active_count=0;for(u32 i=0;i<5;++i){state.tails[i]=&state.sentinels[i];state.sentinels[i].next=nullptr;}
-    for(u32 i=0;i<653;++i){auto& e=state.objects[i];if(!e.active){EffectGeometry::release(e);continue;}++state.active_count;
+    for(i32 i=effect_pool_layout::active_pool_begin;i<effect_pool_layout::active_object_count;++i){auto& e=state.objects[i];if(!e.active){EffectGeometry::release(e);continue;}++state.active_count;
         if(!paused||e.ignore_pause){if((e.update&&e.update(e,*this)!=1)||anm.execute(e)){e.active=0;continue;}e.age.tick(anm.timing);}
         e.next=nullptr;if(e.kind==64)continue;
         const u32 list=(i8(e.layer)==1||i8(e.layer)>2)?1:e.layer==0?(e.alternative?3:e.blendMode==1?4:0):2;
@@ -151,7 +229,7 @@ JobResult EffectSystem::draw_background(){
 #if defined(TH_PRESENTATION_AUDIT)
 const float* EffectSystem::audit_presentation_sample(uintptr_t object)const{
     static float out[16];std::fill(out,out+16,0.0f);
-    const auto* begin=state.objects;const auto* end=state.objects+654;const auto* current=reinterpret_cast<const EffectState*>(object);
+    const auto* begin=state.objects;const auto* end=state.objects+effect_pool_layout::object_count;const auto* current=reinterpret_cast<const EffectState*>(object);
     if(current<begin||current>=end)return out;const size_t index=size_t(current-begin);const auto& before=presentation_previous[index];
     out[0]=before.active?1.0f:0.0f;out[1]=float(before.age);out[2]=float(before.kind);out[3]=before.visual.scale.x;out[4]=before.visual.scale.y;
     out[5]=float(before.visual.color1.a);out[6]=float(before.visual.continuous);out[7]=before.position.x;out[8]=before.position.y;

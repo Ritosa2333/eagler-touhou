@@ -11,11 +11,17 @@ void GameplayControl::advance_stage(){
     case 3:case 4:game.stage=5;break;case 5:game.stage=(game.game_flags&0x1800)?7:6;break;case 6:game.stage=7;break;}
 }
 void GameplayControl::refresh_integrity(){
+#ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     numbers.integrity_value=u32(numbers.rng1[2]);const i32 sum=values.checksum();
     values.expected_checksum=(number(Extended::from_int(sum).to_float())+number(Extended::from_int(numbers.rng7[3]).to_float())).to_float();
     if(outside(numbers.rng1)||outside(numbers.rng3)||outside(numbers.rng2)||outside(numbers.rng7))values.expected_checksum=-9999;
+#endif
 }
-void GameplayControl::late_integrity(){if(outside(numbers.rng4)||outside(numbers.rng5)||outside(numbers.rng8))values.expected_checksum=-9999;}
+void GameplayControl::late_integrity(){
+#ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(outside(numbers.rng4)||outside(numbers.rng5)||outside(numbers.rng8))values.expected_checksum=-9999;
+#endif
+}
 void GameplayControl::display_score(){
     auto& n=numbers;if(n.score>999999999)n.score=999999999;if(n.display_score==n.score)return;
     if(n.score<n.display_score)n.score=n.display_score;u32 increase=(n.score-n.display_score)/32;

@@ -14,6 +14,9 @@ void BulletUpdate::cancel_reward(BulletState& b){
     else if(type>=0)actions->item(b.position,type);
 }
 bool BulletUpdate::normal(BulletState& b,BulletMotion& motion){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(actions)motion.player=actions->target(b.position);
+#endif
     if(!creation.initialize_extra(b))return false;motion.update(b);
     if(b.despawn_protection)b.despawn_protection=wrapping_sub(b.despawn_protection,1);
     if(!paused)move(b.position,b.velocity);
@@ -25,10 +28,17 @@ bool BulletUpdate::normal(BulletState& b,BulletMotion& motion){
     }
     bool test_hit=true;
     if(!b.reisen_illusion){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(b.active_time.current>=16){
+#else
         if(!b.grazed&&b.active_time.current>=16){
+#endif
             const i32 result=collision(1,b);
+#ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
             if(result==1)b.grazed=1;
-            else{if(result==2&&!(b.flags&0x1000)){b.state=5;cancel_reward(b);}test_hit=false;}
+            else
+#endif
+            {if(result==2&&!(b.flags&0x1000)){b.state=5;cancel_reward(b);}if(result!=1)test_hit=false;}
         }
         if(test_hit){const i32 result=collision(2,b);if(result!=0&&(result!=2||!(b.flags&0x1000))){b.state=5;if(result==2)cancel_reward(b);}}
     }

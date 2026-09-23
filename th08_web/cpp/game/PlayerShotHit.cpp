@@ -1,4 +1,7 @@
 #include "PlayerShots.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/Balance.hpp"
+#endif
 #include "GameMath.hpp"
 namespace th08 {
 namespace {
@@ -28,6 +31,9 @@ bool PlayerShots::hit_callback(PlayerShot& shot,const Vec3& position){
 i32 PlayerShots::damage(const Vec3& position,const Vec3& size,i32& time_items,i32* bomb_hit){
     failure=Failure::None;if(!state.collision_timer.changed())return 0;
     const auto target=bounds(position,size);i32 total=0;if(bomb_hit)*bomb_hit=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    i32 bomb_damage=0;
+#endif
     for(auto& shot:state.shots){
         if(!shot.state||(shot.state!=1&&shot.kind!=3)||!overlap(bounds(shot.position,shot.size),target))continue;
         if((shot.kind==4||shot.kind==5)&&shot.timer.current%2)continue;
@@ -63,11 +69,26 @@ i32 PlayerShots::damage(const Vec3& position,const Vec3& size,i32& time_items,i3
                 &&le(-number(area.dimensions.y)/number(2),number(size.y)/number(2)+number(ry))&&le(number(ry)-number(size.y)/number(2),number(area.dimensions.y)/number(2));
         }
         if(!hit)continue;
-        total=wrapping_add(total,area.hit_damage);area.damage_dealt=wrapping_add(area.damage_dealt,area.hit_damage);
-        if(area.damage_limit>0&&area.damage_dealt>=area.damage_limit){area.hit_damage=0;total=wrapping_sub(total,wrapping_sub(area.damage_dealt,area.damage_limit));}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        i32& area_total=area.padding[0]?total:bomb_damage;
+        area_total=wrapping_add(area_total,area.hit_damage);
+#else
+        total=wrapping_add(total,area.hit_damage);
+#endif
+        area.damage_dealt=wrapping_add(area.damage_dealt,area.hit_damage);
+        if(area.damage_limit>0&&area.damage_dealt>=area.damage_limit){area.hit_damage=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            area_total=wrapping_sub(area_total,wrapping_sub(area.damage_dealt,area.damage_limit));
+#else
+            total=wrapping_sub(total,wrapping_sub(area.damage_dealt,area.damage_limit));
+#endif
+        }
         if(!area.suppress_effect){++state.effect_counter;if(!(state.effect_counter&3)&&actions)actions->effect(3,position);}
         if(state.bomb&&bomb_hit)*bomb_hit=1;
     }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    total=wrapping_add(total,multiplayer::bomb_damage(bomb_damage,player_count));
+#endif
     if(state.youkai_bonus&&total)total=wrapping_add(0,signed_bits(u32(total)*106))/100;return total;
 }
 }

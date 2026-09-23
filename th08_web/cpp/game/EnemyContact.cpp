@@ -6,9 +6,18 @@ Vec3 divide(const Vec3& value,float divisor){const float inverse=Scalar::div(1,d
 void enemy_contact(EclVm& enemy,u8 character,const Vec3& position,const Vec3& size,EnemyContactActions& actions){
     const Vec3 graze_size=divide(size,.7f);
     if((enemy.flags&0x80)&&enemy.lifetime.changed()&&enemy.lifetime.current%6==0)actions.graze(position,graze_size);
+#ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if((character==0||character==4)&&enemy.parent)return;
+#else
+    (void)character;
+#endif
     const Vec3 hit_size=divide(size,1.5f);
-    if(actions.hit(position,hit_size)==1&&!(enemy.flags&2)&&!(enemy.flags&0x80))enemy.life=wrapping_sub(enemy.life,10);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    const i32 result=actions.hit(position,hit_size,enemy.parent!=nullptr);
+#else
+    const i32 result=actions.hit(position,hit_size);
+#endif
+    if(result==1&&!(enemy.flags&2)&&!(enemy.flags&0x80))enemy.life=wrapping_sub(enemy.life,10);
 }
 void damage_familiar_parent(EclVm& enemy,i32 damage,bool bomb){
     auto* parent=enemy.parent;if(!parent||bomb)return;

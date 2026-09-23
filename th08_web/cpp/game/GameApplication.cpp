@@ -57,7 +57,14 @@ bool GameApplication::enter_game(){
     const auto target=Scene(supervisor.state.target);const bool from_title=supervisor.state.previous==i32(Scene::Title);
     const bool initial=target!=Scene::Reinitialize&&target!=Scene::SpellRestart&&target!=Scene::NextStage;
     auto& g=game.globals;
-    if(from_title){const auto& c=title.context;g.stage=c.currentStage;g.difficulty=c.difficulty;g.shot=c.character;g.current_spell=c.currentSpellCardNumber;g.game_flags=flag_bits(c.flags);supervisor.state.stage=g.stage;supervisor.state.difficulty=g.difficulty;supervisor.state.practice=g.game_flags&1;}
+    if(from_title){const auto& c=title.context;g.stage=c.currentStage;g.difficulty=c.difficulty;g.shot=c.character;g.current_spell=c.currentSpellCardNumber;g.game_flags=flag_bits(c.flags);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(session.multiplayer_session.configured){const auto& setup=session.multiplayer_session;
+            g.stage=0;g.difficulty=setup.difficulty;g.shot=i32(setup.characters[0]);g.current_spell=-1;g.game_flags=0;
+            session.random={u16(setup.seed),u16(setup.seed),0};
+        }
+#endif
+        supervisor.state.stage=g.stage;supervisor.state.difficulty=g.difficulty;supervisor.state.practice=g.game_flags&1;}
     else if(target==Scene::Restart)g.stage=supervisor.state.stage;
     const auto request=GameplayLoad{i32(g.stage),i32(g.difficulty),g.shot,g.current_spell,g.game_flags,initial,supervisor.state.keep_resources,initial,i32(target)};
     if(from_title){
@@ -73,7 +80,11 @@ bool GameApplication::enter_game(){
     }
     title.detach();show_loading(from_title?Vec3{500,440,0}:Vec3{280,430,0},true);if(from_title)start_effect();
     GameplayLoad prepared=request;if((prepared.flags&0x60)>=0x40)prepared.flags=(prepared.flags&~0x60u)|0x20;
-    if(!game.load(prepared,true))return false;game_attached=true;game.menus.context.supervisor_state=2;game.control.state.load_state=1;game.control.state.replay_mode=title.context.replayMode;game.control.state.demo_index=title.context.currentDemoReplay;
+    if(!game.load(prepared,true))return false;game_attached=true;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(session.multiplayer_session.configured)session.multiplayer_session.started=true;
+#endif
+    game.menus.context.supervisor_state=2;game.control.state.load_state=1;game.control.state.replay_mode=title.context.replayMode;game.control.state.demo_index=title.context.currentDemoReplay;
     // The platform implements the original capture request. Enable the ANM
     // pause/retry background after load() resets the menu context each stage.
     game.menus.context.lockable_backbuffer=true;

@@ -6,22 +6,68 @@ BulletSystem::BulletSystem(BulletManagerState& s,EclGlobals& g,Rng& rng,PlayerSi
     creation.actions=this;updater.actions=this;updater.live_cancel_item=&p.status().cancel_item;lasers.actions=this;globals.bullet_actions=this;globals.laser_actions=this;
 }
 void BulletSystem::synchronize(){creation.timing=updater.timing=lasers.timing=player.timing;updater.player=lasers.player=globals.player;updater.paused=globals.paused;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+void BulletSystem::publish_collision(PlayerSimulation& recipient){
+    auto& p=recipient.status();globals.game_flags=p.context.game_flags;globals.paused=p.context.pause!=0;
+    if(&recipient==&player&&globals.gui)std::memcpy(&globals.gui->flags,&p.context.hud_flags,4);
+    failed|=recipient.invalid();
+}
+#endif
 void BulletSystem::publish_collision(){const auto& p=player.status();globals.player_state=p.life.state;globals.player_state_timer=p.life.timer;globals.game_flags=p.context.game_flags;globals.paused=p.context.pause!=0;if(globals.gui)std::memcpy(&globals.gui->flags,&p.context.hud_flags,4);failed|=player.invalid();}
 bool BulletSystem::initialize(AnmLoaded& file,Rng& rng){state.animation=&file;ready=state.templates.load(file,rng,player.timing);failed=!ready;if(ready)drawing.snapshot();return ready;}
 void BulletSystem::emit(BulletEmission& parameters){
-    if(!ready){failed=true;return;}synchronize();creation.emit(parameters,bullet_aim(parameters.position,globals.player),&player.status().context.replay_flags);failed|=creation.failure!=BulletCreation::Failure::None;
+    if(!ready){failed=true;return;}synchronize();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    creation.emit(parameters,bullet_aim(parameters.position,target(parameters.position)),&player.status().context.replay_flags);
+#else
+    creation.emit(parameters,bullet_aim(parameters.position,globals.player),&player.status().context.replay_flags);
+#endif
+    failed|=creation.failure!=BulletCreation::Failure::None;
 }
-LaserState* BulletSystem::laser(BulletEmission& parameters){if(!ready){failed=true;return nullptr;}synchronize();auto* result=lasers.create(parameters);failed|=lasers.invalid;return result;}
+LaserState* BulletSystem::laser(BulletEmission& parameters){if(!ready){failed=true;return nullptr;}synchronize();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    lasers.player=target(parameters.position);
+#endif
+    auto* result=lasers.create(parameters);failed|=lasers.invalid;return result;}
 void BulletSystem::clear(i32 mode){failed|=!cancel_projectiles(state,mode,player.status().cancel_item,this);}
 i32 BulletSystem::collision(i32 kind,BulletState& bullet){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!roster)return 0;
+    u32 order[3];const u32 count=roster->ordered(bullet.position,order);
+    i32 grazed=0;
+    for(u32 i=0;i<count;++i){
+        const u32 seat=order[i];
+        if(kind==1&&(bullet.grazed&(1u<<seat)))continue;
+        auto& recipient=*roster->seats[seat].player;
+        const i32 result=kind==0?recipient.collision().barrier({bullet.position.x,bullet.position.y}):
+            kind==1?recipient.collision().graze(bullet.position,bullet.sprites.hitbox):
+                    recipient.collision().bullet(bullet.position,bullet.sprites.hitbox);
+        if(result){
+            publish_collision(recipient);
+            if(kind==1&&result==1){bullet.grazed|=u8(1u<<seat);grazed=1;continue;}
+            return result;
+        }
+    }
+    return grazed;
+#else
     // Barrier tests only modify the cancellation region/item. Republishing a
     // cached player state here erased invincibility granted during boss phases.
     if(kind==0)return player.collision().barrier({bullet.position.x,bullet.position.y});
     if(globals.gui)std::memcpy(&player.status().context.hud_flags,&globals.gui->flags,4);
     auto& collision=player.collision();const i32 result=kind==1?collision.graze(bullet.position,bullet.sprites.hitbox):collision.bullet(bullet.position,bullet.sprites.hitbox);
     publish_collision();return result;
+#endif
 }
-void BulletSystem::collision(const Vec2& center,const Vec2& size,const Vec3& origin,float angle,bool graze){if(globals.gui)std::memcpy(&player.status().context.hud_flags,&globals.gui->flags,4);player.collision().laser(center,size,origin,angle,graze);publish_collision();}
+void BulletSystem::collision(const Vec2& center,const Vec2& size,const Vec3& origin,float angle,bool graze){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!roster)return;u32 order[3];const u32 count=roster->ordered(origin,order);
+    for(u32 i=0;i<count;++i){auto& recipient=*roster->seats[order[i]].player;
+        recipient.collision().laser(center,size,origin,angle,graze);publish_collision(recipient);
+    }
+#else
+    if(globals.gui)std::memcpy(&player.status().context.hud_flags,&globals.gui->flags,4);player.collision().laser(center,size,origin,angle,graze);publish_collision();
+#endif
+}
 bool BulletSystem::update(){
     if(failed||!ready)return false;
     // Enemy ECL (priority 11) can move/rotate/recolor lasers before this

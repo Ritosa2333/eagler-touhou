@@ -5,16 +5,27 @@ void PlayerScene::Patterns::spell_overlay(i32 form,const char* name,i32 style){
     auto& p=s.world->announcement;p.context.game_flags=s.state.context.game_flags;p.context.current_spell=s.world->ecl.current_spell;s.failed|=!p.player(form,name,style);
 }
 bool PlayerScene::prepare(){
-    if(!world){failed=true;return false;}sync_values();state.context.game_flags=world->ecl.game_flags;state.context.pause=world->ecl.paused;state.context.time_spell=u8(world->ecl.spell_flags&1);state.context.game_over=world->ecl.stage_completion;
-    std::memcpy(&state.context.hud_flags,&world->hud.flags,4);state.input.gui_blocked=gui_blocked();state.input.tampered=values.tampered();
+    if(!world){failed=true;return false;}sync_values();state.context.game_flags=world->ecl.game_flags;state.context.pause=world->ecl.paused;state.context.time_spell=u8(world->ecl.spell_flags&1);
+#if !defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    state.context.game_over=world->ecl.stage_completion;
+#endif
+    std::memcpy(&state.context.hud_flags,&world->hud.flags,4);state.input.gui_blocked=gui_blocked();
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    state.input.tampered=false;
+#else
+    state.input.tampered=values.tampered();
+#endif
     state.context.cheats=state.bomb_input.cheats=u8(practice_cheats());
     for(u32 i=0;i<8;i++){auto* enemy=world->ecl.boss_slots[i];boss_owners[i]=enemy;state.bomb_input.bosses[i]=enemy?&boss_views[i]:nullptr;if(enemy)boss_views[i]={enemy->life,enemy->flags};}
     return !failed;
 }
 void PlayerScene::finish(){
     for(u32 i=0;i<8;i++)if(auto* enemy=boss_owners[i]){enemy->life=boss_views[i].life;enemy->flags=boss_views[i].flags;}
-    std::memcpy(&world->hud.flags,&state.context.hud_flags,4);world->ecl.game_flags=state.context.game_flags;world->ecl.paused=u8(state.context.pause);world->ecl.player_state=state.life.state;world->ecl.player_state_timer=state.life.timer;world->ecl.player=state.motion.movement.position;
+    std::memcpy(&world->hud.flags,&state.context.hud_flags,4);world->ecl.game_flags=state.context.game_flags;world->ecl.paused=u8(state.context.pause);
+#if !defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    world->ecl.player_state=state.life.state;world->ecl.player_state_timer=state.life.timer;world->ecl.player=state.motion.movement.position;
     world->ecl.stage_completion=state.context.game_over;
+#endif
 }
 void PlayerScene::defeat_boss(u32 slot){
     if(slot>=8){failed=true;return;}auto& globals=world->ecl;

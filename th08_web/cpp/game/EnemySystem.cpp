@@ -32,10 +32,56 @@ bool EnemySystem::clear_projectiles(i32 mode){publish_player();failed|=!th08::ca
 void EnemySystem::clear_projectiles_near(const Vec3& p,float radius){th08::cancel_projectiles_near(projectiles,p,radius,*this);}
 void EnemySystem::item(const Vec3& p,i32 kind,i32 mode){publish_player();items.spawn(p,kind,mode);failed|=items.invalid();}
 AnmVm* EnemySystem::overlay(i32 kind,const Vec3& p,i32 count,u32 color){publish_player();auto* result=effects.overlay(kind,p,count,color);failed|=effects.invalid;return result;}
-i32 EnemySystem::graze(const Vec3& p,const Vec3& size){publish_player();const i32 result=player.collision().graze(p,size);read_collision();return result;}
+i32 EnemySystem::graze(const Vec3& p,const Vec3& size){
+    publish_player();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(roster){i32 result=0;for(u32 seat=0;seat<roster->count;++seat)if(roster->eligible(seat)){
+        auto& pilot=*roster->seats[seat].player;result=std::max(result,pilot.collision().graze(p,size));failed|=pilot.invalid();
+    }read_collision();return result;}
+#endif
+    const i32 result=player.collision().graze(p,size);read_collision();return result;
+}
 i32 EnemySystem::hit(const Vec3& p,const Vec3& size){publish_player();const i32 result=player.collision().bullet(p,size,false);read_collision();return result;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+bool EnemySystem::participant(u32 seat,EnemyDamageParticipant& out){
+    if(!roster||!roster->eligible(seat))return false;
+    auto& state=roster->seats[seat].player->status();
+    out={state.motion.movement.position,&state.frame,roster->seats[seat].gauge,state.context.character,u8(state.bomb.active!=0),state.motion.form.focused};
+    return true;
+}
+i32 EnemySystem::participant_damage(u32 seat,const Vec3& p,const Vec3& size,i32& count,i32& bomb){
+    if(!roster||!roster->eligible(seat))return 0;
+    auto& pilot=*roster->seats[seat].player;
+    const i32 result=pilot.damage(p,size,count,&bomb);
+    failed|=pilot.invalid();
+    return result;
+}
+i32 EnemySystem::hit(const Vec3& p,const Vec3& size,bool familiar){
+    if(!roster)return hit(p,size);
+    i32 result=0;
+    for(u32 seat=0;seat<roster->count;++seat){
+        if(!roster->eligible(seat))continue;
+        auto& pilot=*roster->seats[seat].player;
+        const u8 character=pilot.status().context.character;
+        if(familiar&&(character==0||character==4))continue;
+        result=std::max(result,pilot.collision().bullet(p,size,false));
+        failed|=pilot.invalid();
+    }
+    return result;
+}
+#endif
 i32 EnemySystem::damage(const Vec3& p,const Vec3& size,i32& count,i32& bomb){publish_player();const i32 result=player.damage(p,size,count,&bomb);read_collision();failed|=player.invalid();return result;}
-i32 EnemySystem::barrier(BulletState& b){publish_player();const i32 result=player.collision().barrier({b.position.x,b.position.y});read_collision();return result;}
+i32 EnemySystem::barrier(BulletState& b){
+    publish_player();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(roster){for(u32 seat=0;seat<roster->count;++seat)if(roster->eligible(seat)){
+        auto& pilot=*roster->seats[seat].player;
+        const i32 result=pilot.collision().barrier({b.position.x,b.position.y});
+        if(result){read_collision();return result;}
+    }read_collision();return 0;}
+#endif
+    const i32 result=player.collision().barrier({b.position.x,b.position.y});read_collision();return result;
+}
 bool EnemySystem::cancel_projectiles(i32 maximum,bool reward,i32& score){publish_player();const bool result=cancel_projectiles_for_score(projectiles,maximum,reward,player.status().cancel_item,*this,score);failed|=!result;return result&&!failed;}
 EnemySpawnResult EnemySystem::spawn(const TimelineSpawn& request){read_player();population.initial_time_items=time_item_threshold;auto* enemy=population.spawn(request);publish_player();failed|=enemy->invalid;return {enemy,population.spawn_failed};}
 JobResult EnemySystem::update(){
@@ -54,7 +100,15 @@ void EnemySystem::tint(u32 color){
     if(!native_scene){failed=true;return;}auto& current=native_scene->background.tint_color;
     if(!current.a){current.d3dColor=i32(color);return;}u32 blended=0;for(u32 shift=0;shift<32;shift+=8)blended|=((((color>>shift)&255)+((u32(current.d3dColor)>>shift)&255))/2)<<shift;current.d3dColor=i32(blended);
 }
-void EnemySystem::laser(const Vec2& center,const Vec2& size,const Vec3& origin,float angle,bool graze){publish_player();player.collision().laser(center,size,origin,angle,graze);read_collision();failed|=player.invalid();}
+void EnemySystem::laser(const Vec2& center,const Vec2& size,const Vec3& origin,float angle,bool graze){
+    publish_player();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(roster){for(u32 seat=0;seat<roster->count;++seat)if(roster->eligible(seat)){
+        auto& pilot=*roster->seats[seat].player;pilot.collision().laser(center,size,origin,angle,graze);failed|=pilot.invalid();
+    }read_collision();return;}
+#endif
+    player.collision().laser(center,size,origin,angle,graze);read_collision();failed|=player.invalid();
+}
 bool EnemySystem::spell_announcement(i32 portrait,const char* name,i32 style){
     if(!native_scene){failed=true;return false;}publish_player();auto& p=native_scene->spell_presentation;p.context.game_flags=globals.game_flags;p.context.current_spell=globals.current_spell;p.context.hud_redraw=native_scene->hud_redraw;
     failed|=!p.enemy(portrait,name,style);native_scene->hud_redraw=p.context.hud_redraw;return !failed;

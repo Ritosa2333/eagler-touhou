@@ -12,9 +12,22 @@
 EM_JS(void, th08_save_changed, (), { if(Module['runtimeFileChanged'])Module['runtimeFileChanged'](); });
 EM_JS(void, th08_replay_error, (), { if(Module['runtimeNotice'])Module['runtimeNotice']('无法读取这份永夜抄录像。'); });
 namespace th08 {
-namespace {u32 eagler_music_source=1;}
+namespace {
+u32 eagler_music_source=1;
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(TH_ENABLE_NETPLAY)
+constexpr bool multiplayer_storage_build=true;
+std::string save_root="/savesth08-multiplayer";
+#else
+constexpr bool multiplayer_storage_build=false;
+std::string save_root="/savesth08";
+#endif
+}
 extern "C" u32 sdl_music_source_mode(){return eagler_music_source;}
 extern "C" __attribute__((export_name("sdl_music_source"))) void sdl_music_source(u32 mode){eagler_music_source=mode==2?2:1;}
+extern "C" __attribute__((export_name("sdl_files_variant"))) u32 sdl_files_variant(u32 multiplayer){
+    if(multiplayer>1||(multiplayer!=0)!=multiplayer_storage_build)return 0;
+    save_root=multiplayer?"/savesth08-multiplayer":"/savesth08";return 1;
+}
 namespace {
 struct ArchiveFile final:ArchiveSource {
     SDL_IOStream* file=SDL_IOFromFile("/game/th08.dat","rb");
@@ -36,10 +49,11 @@ bool sdl_load_assets(BrowserRuntime& r){
     // still uses this format marker to select its WAV-shaped music owner.
     const u32 music_header[]{fourcc('Z','W','A','V'),1,0x800,0};
     if(!r.put("thbgm.dat",reinterpret_cast<const u8*>(music_header),sizeof(music_header)))return false;
-    for(const auto* directory:{"/savesth08","/savesth08/replay"}){
-        auto* dir=opendir(directory);if(!dir)continue;while(auto* entry=readdir(dir)){
-            const auto relative=std::string(directory==std::string("/savesth08")?"":"replay/")+entry->d_name;
-            if(save_name(relative)&&sdl_read_file((std::string(directory)+"/"+entry->d_name).c_str(),bytes))r.put(relative.c_str(),bytes.data(),bytes.size());
+    for(u32 replay=0;replay<2;++replay){
+        const auto directory=save_root+(replay?"/replay":"");
+        auto* dir=opendir(directory.c_str());if(!dir)continue;while(auto* entry=readdir(dir)){
+            const auto relative=(replay?std::string("replay/"):std::string())+entry->d_name;
+            if(save_name(relative)&&sdl_read_file((directory+"/"+entry->d_name).c_str(),bytes))r.put(relative.c_str(),bytes.data(),bytes.size());
         }closedir(dir);
     }
     GameConfiguration configuration;const auto config=r.read("th08.cfg"),wave=r.read_prefix("thbgm.dat",16);
@@ -62,7 +76,7 @@ bool sdl_decode_rgba(const u8* bytes,u32 size,u32& width,u32& height,std::vector
     width=u32(w);height=u32(h);rgba.assign(pixels,pixels+size_t(w)*h*4);stbi_image_free(pixels);return true;}
 struct SDLFiles final:FileDevice {
  bool save(const char* path,const u8* bytes,u32 size)override{const auto name=BrowserRuntime::path(path);if(!save_name(name))return false;
-    auto* stream=SDL_IOFromFile(("/savesth08/"+name).c_str(),"wb");if(!stream)return false;
+    auto* stream=SDL_IOFromFile((save_root+"/"+name).c_str(),"wb");if(!stream)return false;
     const auto written=SDL_WriteIO(stream,bytes,size);const bool closed=SDL_CloseIO(stream);if(written!=size||!closed)return false;th08_save_changed();return true;}
  void calendar(char* date,char* stamp)override{const auto now=std::time(nullptr);const auto* local=std::localtime(&now);if(!local)return;std::strftime(date,6,"%m/%d",local);std::strftime(stamp,20,"%y/%m/%d %H:%M:%S",local);}
  u32 milliseconds()override{return sdl_game_time();}u16 supplemental_input()override{return 0;}

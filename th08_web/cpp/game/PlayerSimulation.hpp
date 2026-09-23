@@ -83,6 +83,9 @@ public:
     PlayerCollision& collision()noexcept{return collisions;}
     PlayerSimulationState& status()noexcept{return state;}
     const ShotProfile& profile(bool focused)const noexcept{return resources[focused].settings();}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    void set_player_count(u32 count){shots.player_count=count;}
+#endif
     i32 damage(const Vec3& position,const Vec3& size,i32& time_items,i32* bomb_hit);
     bool draw(const Vec2& screen_offset,bool impacts=false);
     bool invalid()const noexcept{return failed;}

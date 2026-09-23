@@ -7,6 +7,9 @@
 #include "PlayerSimulation.hpp"
 #include "ItemSystem.hpp"
 #include "EffectSystem.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/PlayerRoster.hpp"
+#endif
 namespace th08 {
 struct BulletSystemAudio {
     virtual ~BulletSystemAudio()=default;
@@ -19,6 +22,11 @@ class BulletSystem:public BulletEmissionActions,public LaserEmissionActions,priv
     BulletManagerState& state;EclGlobals& globals;PlayerSimulation& player;ItemSystem& inventory;EffectSystem& effect_system;AnmRenderer& renderer;BulletSystemAudio& audio;
     BulletCreation creation;BulletUpdate updater;LaserRuntime lasers;BulletDrawing drawing;
     Vec2 arcade{32,16};bool failed=false,ready=false,presentation_prepared=false;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    PlayerRoster* roster=nullptr;
+    Vec3 target(const Vec3& origin)override{return roster?roster->target(origin):globals.player;}
+    void publish_collision(PlayerSimulation&);
+#endif
     void synchronize();void publish_collision();
     void sound(i32 index,float position,bool panned)override{audio.sound(index,position,panned);}
     void reemit(BulletEmission& emission)override{emit(emission);}
@@ -36,6 +44,9 @@ public:
     BulletSystem(BulletManagerState&,EclGlobals&,Rng&,PlayerSimulation&,ItemSystem&,EffectSystem&,AnmRenderer&,BulletSystemAudio&);
     ~BulletSystem(){if(globals.bullet_actions==this)globals.bullet_actions=nullptr;if(globals.laser_actions==this)globals.laser_actions=nullptr;}
     bool initialize(AnmLoaded&,Rng&);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    void bind_roster(PlayerRoster& value){roster=&value;}
+#endif
     void emit(BulletEmission&)override;
     LaserState* laser(BulletEmission&)override;
     void clear(i32 mode)override;

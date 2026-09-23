@@ -6,6 +6,9 @@ struct BulletUpdateActions {
     // 0: spawn/barrier 00449ff0, 1: graze 0044a470, 2: hit 0044a230.
     virtual i32 collision(i32 kind,BulletState& bullet)=0;
     virtual void item(const Vec3& position,i32 type)=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    virtual Vec3 target(const Vec3& origin)=0;
+#endif
 };
 class BulletUpdate {
 public:
