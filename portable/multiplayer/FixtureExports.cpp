@@ -5,11 +5,21 @@
 #include "enemy-journal-fixture.hpp"
 #include "screen-journal-fixture.hpp"
 #include "pools-journal-fixture.hpp"
+#include "resources-journal-fixture.hpp"
+#include "world-journal-fixture.hpp"
 #ifndef TH_MULTIPLAYER_FIXTURES
 #error Fixture exports must stay out of production builds
 #endif
 using namespace th08;
 extern "C" {
+__attribute__((export_name("mp_fixture_world_journal")))
+const u32* mp_fixture_world_journal(BrowserRuntime* runtime,u32 mode){
+    return runtime?multiplayer::fixture::world_journal_probe(*runtime,mode):nullptr;
+}
+__attribute__((export_name("mp_fixture_resources_journal")))
+const u32* mp_fixture_resources_journal(BrowserRuntime* runtime){
+    return runtime?multiplayer::fixture::resources_journal_probe(runtime->app.textures):nullptr;
+}
 __attribute__((export_name("mp_fixture_enemy_journal")))
 const u32* mp_fixture_enemy_journal(){return multiplayer::fixture::enemy_journal_probe();}
 __attribute__((export_name("mp_fixture_screen_journal")))

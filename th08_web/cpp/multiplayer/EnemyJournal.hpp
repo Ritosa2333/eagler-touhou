@@ -28,6 +28,7 @@ public:
     bool HasHistory()const{return !records.empty();}
     bool Failed()const{return failed||bytes.Failed();}
     std::size_t BytesForFrame(u32 frame)const{return bytes.BytesForFrame(frame);}
+    u32 AuditHash()const;
 private:
     struct ContextOwners {
         u32 slot=0;

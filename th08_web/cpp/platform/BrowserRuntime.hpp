@@ -8,6 +8,10 @@ namespace th08 {
 struct BrowserTexture {u32 handle,width,height,format,pitch,data,size,revision;};
 class GameAudioManager;
 class BrowserRuntime:public ApplicationPlatform {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+    u32 multiplayer_logic_frame=0;
+#endif
     struct Graphics:SpriteBackend {
         BrowserRuntime& r;explicit Graphics(BrowserRuntime& r):r(r){}
 #ifdef TH_NATIVE_PLATFORM
@@ -47,6 +51,7 @@ public:
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     bool logical_frame_advanced()const{return !app.session.netplay.Configured()||app.session.network_frame_open;}
     bool finish_network_frame();
+    void begin_multiplayer_clock(){multiplayer_logic_frame=0;app.statistics.state={};}
 #endif
     static std::string path(const char*);
     bool put(const char*,const u8*,u32);bool put_archive(const u8*,u32);bool put_font(i32,const u8*,u32);

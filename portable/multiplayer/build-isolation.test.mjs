@@ -23,7 +23,7 @@ test('fixture owner is separate from ordinary and production multiplayer source 
   assert.ok(!ordinary.flags.includes('-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1'));
   assert.ok(!multiplayer.flags.includes('-DTH_MULTIPLAYER_FIXTURES=1'));
   assert.ok(fixture.flags.includes('-DTH_MULTIPLAYER_FIXTURES=1'));
-  for(const name of ['NetplayRuntime','EnemyJournal','PoolsJournal']){
+  for(const name of ['NetplayRuntime','EnemyJournal','PoolsJournal','ResourcesJournal','WorldJournal']){
     const owner='cpp/multiplayer/'+name+'.cpp';
     assert.ok(!ordinary.sources.includes(owner));
     assert.ok(multiplayer.sources.includes(owner));
@@ -34,7 +34,7 @@ test('diagnostic fixture exports never enter ordinary or production multiplayer 
   const ordinary=exports('sdl3'),multiplayer=exports('multiplayer'),fixture=exports('multiplayer-fixtures');
   for(const [profile,names] of [['ordinary',ordinary],['multiplayer',multiplayer]])
     for(const name of names)assert.ok(!name.startsWith('mp_fixture_'),name+' leaked into '+profile+' WASM');
-  for(const name of ['mp_fixture_die','mp_fixture_place','mp_fixture_power','mp_fixture_status','mp_fixture_items','mp_fixture_item_status','mp_fixture_enemy_journal','mp_fixture_screen_journal','mp_fixture_pools_journal'])
+  for(const name of ['mp_fixture_die','mp_fixture_place','mp_fixture_power','mp_fixture_status','mp_fixture_items','mp_fixture_item_status','mp_fixture_enemy_journal','mp_fixture_screen_journal','mp_fixture_pools_journal','mp_fixture_resources_journal','mp_fixture_world_journal'])
     assert.ok(fixture.has(name),name+' missing from diagnostic WASM');
 });
 test('network admission exports are multiplayer-only, not fixture-only',()=>{
@@ -44,5 +44,15 @@ test('network admission exports are multiplayer-only, not fixture-only',()=>{
     assert.ok(!ordinary.has(name),name+' leaked into ordinary WASM');
     assert.ok(multiplayer.has(name),name+' missing from production multiplayer');
     assert.ok(fixture.has(name),name+' missing from diagnostic multiplayer');
+  }
+});
+test('diagnostic native headers participate in fixture identity only',()=>{
+  const fixture=JSON.parse(readFileSync(resolve(root,'th08_web/artifacts/multiplayer-fixtures/build.json')));
+  const production=JSON.parse(readFileSync(resolve(root,'th08_web/artifacts/multiplayer/build.json')));
+  const ordinary=JSON.parse(readFileSync(resolve(root,'th08_web/artifacts/sdl3/build.json')));
+  for(const file of ['enemy','screen','pools','resources','world'].map(name=>'portable/multiplayer/'+name+'-journal-fixture.hpp')){
+    assert.ok(fixture.sourceFiles[file],file+' missing from fixture source inventory');
+    assert.ok(!production.sourceFiles[file],file+' leaked into production source identity');
+    assert.ok(!ordinary.sourceFiles[file],file+' leaked into ordinary source identity');
   }
 });

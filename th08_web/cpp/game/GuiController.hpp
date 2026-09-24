@@ -17,6 +17,9 @@ struct GuiContext {
     u32 graphics_options=0;
 };
 class GuiController {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
 public:
     GuiController(GuiState& gui,GuiImplState& display,DialogueContext& scene,GuiContext& context,GameGlobals& globals,GameValues& values,GameConfiguration& config,AnmExecutor& executor,AsciiManager& ascii,AnmRenderer& renderer,DialogueActions& actions)
       :gui(gui),display(display),scene(scene),context(context),globals(globals),values(values),config(config),executor(executor),ascii(ascii),renderer(renderer),actions(actions){}

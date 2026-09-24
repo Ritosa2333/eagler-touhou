@@ -3,6 +3,9 @@
 #include <string>
 #include <vector>
 namespace th08 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace multiplayer {class ResourcesJournal;}
+#endif
 struct AnmTextureSource {
     u32 width=0,height=0,format=0,color_key=0,priority=0;
     u32 pixel_offset=0,pixel_size=0,pixel_format=0,pixel_width=0,pixel_height=0;
@@ -21,6 +24,11 @@ public:
     const auto& sprite_rects() const noexcept {return sprite_sources;}
     u32 script_count() const noexcept {return script_pointers.size();}
 private:
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::ResourcesJournal;
+    struct ScriptRange {u32 first=0,last=0;};
+    std::vector<ScriptRange> script_ranges;
+#endif
     struct SpriteSource {float x,y,width,height;};
     AnmLoaded loaded;
     std::vector<u8> raw;

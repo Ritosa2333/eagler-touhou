@@ -38,6 +38,9 @@ struct GameplayPlatform:PlayerScenePlatform,TextWriter,AsciiOverlay {
 // GameRuntime prototype. The supplied platform implements resource/device I/O.
 class GameplayScene:private BackgroundResources,private EnemyResources,private GuiResources,private SpellResources,private EffectResources,
                     private EnemySystemActions,private BulletSystemAudio,private SpellPresentationActions,private BackgroundActions,private BackgroundDrawActions,private DialogueActions,private EclLiveValues,private MenuActions,private GameplayStartActions {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
     GameplaySession& session;TextureStore& textures;AnmLibrary& library;AnmRenderer& renderer;GameplayPlatform& platform;
     Chain owned_chain;Chain& chain;AnmExecutor animations;
     ChainElement player_calc,player_high,player_low,ascii_calc,ascii_high,ascii_low,control_calc,control_draw,replay_calc,replay_after,record_calc,replay_bookkeeping;

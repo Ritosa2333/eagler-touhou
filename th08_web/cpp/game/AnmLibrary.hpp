@@ -3,6 +3,9 @@
 #include "Archive.hpp"
 #include "TextureStore.hpp"
 #include <array>
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace Netplay {class RollbackJournal;}
+#endif
 namespace th08 {
 struct AnmTextureEntry { u32 texture=0; const u8* external_data=nullptr; u32 external_size=0; };
 static_assert(sizeof(AnmTextureEntry)==12);
@@ -27,6 +30,12 @@ public:
     bool start(i32 index,i32 script,AnmVm& vm,AnmExecutor& executor,bool reset_position=true);
     bool has_texture(const AnmVm& vm) const noexcept;
 private:
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::ResourcesJournal;
+    Netplay::RollbackJournal* rollback_journal=nullptr;
+    bool rollback_failed=false;
+    bool rollback_locked();
+#endif
     struct Prepared {AnmResource resource;std::vector<TexturePixels> pixels;std::vector<u32> resident;mutable std::vector<u32> resident_revision;bool force_16bit=false;};
     struct Entry { AnmResource resource; std::vector<AnmTextureEntry> textures;const Prepared* prepared=nullptr; };
     std::vector<std::unique_ptr<Prepared>> prepared;u32 prepared_bytes=0,cache_hits=0,texture_cache_hits=0;

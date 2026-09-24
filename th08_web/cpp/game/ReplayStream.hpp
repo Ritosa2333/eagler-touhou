@@ -11,6 +11,9 @@ struct ReplayInputState {
     i32 timing_forced=0;
 };
 class ReplayStream {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
 public:
     i32 frame=0,transition_frames=0;
     u32 input_cursor=0,timing_cursor=0,input_end=0,timing_end=0;

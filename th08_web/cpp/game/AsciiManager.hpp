@@ -66,6 +66,9 @@ struct AsciiOverlay {
 };
 
 class AsciiManager {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
 public:
     AsciiState state;
     AsciiManager(AnmExecutor& executor,AnmRenderer& renderer,AsciiOverlay& overlay)

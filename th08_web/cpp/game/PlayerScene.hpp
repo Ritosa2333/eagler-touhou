@@ -22,6 +22,9 @@ struct PlayerSceneWorld {
 // Production services for PlayerSimulation and ItemSystem. Bind the scene
 // after constructing its owners, before calling player initialization.
 class PlayerScene:public PlayerSetupActions,public PlayerLifeActions,public PlayerBombActions,public PlayerShotActions,public PlayerSimulationWorld,public ItemSystemActions {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
     PlayerSimulationState& state;ShotResource (&shots)[2];
 #if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
     PlayerResourceView& numbers;PlayerValues& values;

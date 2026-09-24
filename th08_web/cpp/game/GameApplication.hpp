@@ -49,6 +49,10 @@ struct ApplicationPlatform:PlayerScenePlatform,TextWriter,AsciiOverlay,FrameCloc
     virtual void replay_error()=0;
 };
 class GameApplication {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+    multiplayer::WorldJournal* world_journal=nullptr;
+#endif
     ApplicationPlatform& platform;
     struct GameIo:GameplayPlatform {
         GameApplication& a;explicit GameIo(GameApplication& a):a(a){}

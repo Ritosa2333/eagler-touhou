@@ -1,4 +1,7 @@
 #include "GameApplication.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/WorldJournal.hpp"
+#endif
 #include "Presentation.hpp"
 #include "PresentationAudit.hpp"
 #include <algorithm>
@@ -153,6 +156,9 @@ JobResult GameApplication::update_supervisor(){
 }
 bool GameApplication::update(){
     if(!running||invalid())return false;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(world_journal&&!world_journal->CanAdvance()){failed=true;return false;}
+#endif
     presentation::CalculationScope presentation_tick;
     // ECL callbacks 18/28/29 write the game's persistent global time scale.
     // The browser's next presentation does not reset it to a unit timestep.
@@ -185,6 +191,9 @@ void GameApplication::export_records(){char date[6]{},stamp[20]{};platform.calen
 bool GameApplication::MusicIo::load(MusicRoom& room){if(!a.platform.load_surface(0,"result/music.jpg"))return false;auto* animation=a.load_animation(23,"music00.anm");if(!animation)return false;const auto bytes=a.platform.read("sprt/musiccmt.txt");return room.initialize(*animation,bytes.data(),bytes.size(),a.session.statistics.music_unlocked);}
 void GameApplication::MusicIo::release(){a.renderer.flush();a.library.release(23);a.platform.release_surface(0);}
 void GameApplication::shutdown(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(world_journal)world_journal->Clear();
+#endif
     if(stopping)return;stopping=true;
     if(initialized){if(game_attached){supervisor.state.target=-1;leave_game();save_score();}title.detach();results.detach();music.detach();ending.detach();platform.write("th08.cfg",reinterpret_cast<const u8*>(&session.display_config),sizeof(session.display_config));}
     finish_effect();screen.clear();chain.release();renderer.flush();platform.discard_graphics();for(i32 i=0;i<256;i++)library.release(i);platform.release_surface(8);platform.stop_audio();if(session.display_config.music==2)platform.midi_reset();game.recording.reset();initialized=running=false;

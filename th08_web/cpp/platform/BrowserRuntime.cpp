@@ -72,7 +72,15 @@ i32 BrowserRuntime::replay_touch_points(ReplayTouchPoint* points,i32 capacity){
 }
 std::vector<std::string> BrowserRuntime::user_replays(){return resources_.user_replays();}
 void BrowserRuntime::calendar(char date[6],char stamp[20]){file_device().calendar(date,stamp);}
-u32 BrowserRuntime::milliseconds(){return file_device().milliseconds();}
+u32 BrowserRuntime::milliseconds(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Game-side elapsed time/FPS is part of native Replay and score accounting.
+    // It follows admitted logic, not wall time spent waiting for another peer.
+    // SDL presentation cadence and physical audio retain their own real clock.
+    if(app.session.multiplayer_session.configured)return u32(u64(multiplayer_logic_frame)*1000/60);
+#endif
+    return file_device().milliseconds();
+}
 u64 BrowserRuntime::performance_counter(){return u64(milliseconds())*1000;}
 u16 BrowserRuntime::poll_input(){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -206,15 +214,22 @@ bool BrowserRuntime::step(bool render){
         return !render||(app.draw()&&finish_network_frame());
     }
 #endif
-    return prepared&&app.update()&&(!render||app.draw())&&!capture_failed;
+    const bool result=prepared&&app.update()&&(!render||app.draw())&&!capture_failed;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(result&&render&&app.session.multiplayer_session.configured)++multiplayer_logic_frame;
+#endif
+    return result;
 }
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 bool BrowserRuntime::finish_network_frame(){
     auto& session=app.session;auto& net=session.netplay;
-    if(!net.Configured())return true;
+    if(!net.Configured()){
+        if(session.multiplayer_session.configured)++multiplayer_logic_frame;
+        return true;
+    }
     if(!session.network_frame_open)return false;
     if(!net.MarkSimulated(net.NextFrame(),session.network_frame))return false;
-    session.network_frame_open=false;return !capture_failed;
+    session.network_frame_open=false;++multiplayer_logic_frame;return !capture_failed;
 }
 #endif
 i32 BrowserRuntime::status(i32 field)const{switch(field){case 0:return app.supervisor.state.active;case 1:return app.active();case 2:return app.invalid()||capture_failed;case 3:return app.game.globals.stage;case 4:return app.game.faults()|(u32(capture_failed)<<9);case 5:return app.textures.live_count();case 6:return app.game.enemies.state.frames;case 7:return app.loading_game();case 8:return app.title.menus.state.currentScreen;case 9:return app.title.menus.state.cursor;case 10:return app.title.modal();default:return -1;}}

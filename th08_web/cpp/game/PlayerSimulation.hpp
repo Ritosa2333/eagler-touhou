@@ -33,6 +33,9 @@ struct PlayerSimulationServices {
     PlayerBombPatternActions& patterns;PlayerShotActions& shots;PlayerSimulationWorld& world;
 };
 class PlayerSimulation:private PlayerFrameActions,private PlayerBombActions,private ShotFiringActions,private PlayerCollisionActions,private PlayerGrazeActions {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
     PlayerSimulationState& state;ShotResource (&resources)[2];GameGauge& gauge;GaugeThresholds& thresholds;PlayerSimulationServices services;
     GameGlobals& values;GameRank& rank;
     PlayerLife life;PlayerShots shots;PlayerBombPatterns patterns;PlayerCollision collisions;bool failed=false,initialized=false;

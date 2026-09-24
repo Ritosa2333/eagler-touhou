@@ -33,6 +33,9 @@ struct PlayerShotActions {
     virtual void draw(AnmVm&,bool impact)=0;
 };
 class PlayerShots {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
 public:
     PlayerShots(PlayerShotsState& state,Rng& rng):state(state),rng(rng){}
     PlayerShotActions* actions=nullptr;

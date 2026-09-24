@@ -30,6 +30,12 @@ with sync_playwright() as p:
         report['poolsProbe']=page.evaluate('multiplayerSmoke.poolsJournalProbe()')
         assert report['poolsProbe'][0:3]==[1,1,0],report['poolsProbe']
         assert report['poolsProbe'][4:]==[1]*6,report['poolsProbe']
+        report['resourcesProbe']=page.evaluate('multiplayerSmoke.resourcesJournalProbe()')
+        assert report['resourcesProbe'][0:3]==[1,1,0],report['resourcesProbe']
+        assert report['resourcesProbe'][4:]==[1]*6,report['resourcesProbe']
+        report['worldProbe']=page.evaluate('multiplayerSmoke.worldJournalProbe()')
+        assert report['worldProbe'][0:3]==[1,1,0],report['worldProbe']
+        assert report['worldProbe'][32:36]==[1]*4,report['worldProbe']
         report['passed']=True;print(json.dumps(report),flush=True)
     except BaseException as error:
         report['error']=str(error);raise

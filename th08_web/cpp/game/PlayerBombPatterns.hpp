@@ -22,6 +22,9 @@ struct PlayerBombPatternActions:PlayerBombStartActions {
     virtual void rectangle(float left,float top,float right,float bottom,u32 color)=0;
 };
 class PlayerBombPatterns {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
     PlayerBombObjects& objects;PlayerBombState& bomb;PlayerLifeState& life;PlayerLifeContext& context;
     PlayerMovementState& movement;PlayerBombContext& input;DamageRegions& regions;Rng& rng;PlayerBombPatternActions& actions;
     struct PresentationSample {Vec3 position{};float angle=0;i32 state=0,age=0;i16 script=-1;presentation::VisualSample visual;};

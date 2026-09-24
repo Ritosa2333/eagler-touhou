@@ -33,6 +33,9 @@ struct EnemySystemActions {
 // Connects the recovered manager to the actual player, items, effects,
 // projectiles and popup objects used by the same running scene.
 class EnemySystem:public SpellSystemActions,private EnemySimulationActions,private BulletScoreCancelActions,private EclSceneActions,private EclNativeActions {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
 public:
     EnemySimulationState state;
     EnemyPopulation population;

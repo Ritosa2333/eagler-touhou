@@ -78,4 +78,18 @@ void EnemyJournal::Clear(){
     population=nullptr;program=nullptr;program_data=nullptr;program_size=0;
     records.clear();bytes.Clear();failed=false;
 }
+u32 EnemyJournal::AuditHash()const{
+    if(!population)return 0;
+    u32 hash=2166136261u;
+    const auto part=[&](const void* p,std::size_t n){auto* data=static_cast<const u8*>(p);for(std::size_t i=0;i<n;++i){hash^=data[i];hash*=16777619u;}};
+    part(program->data(),program->size());
+    for(u32 slot=0;slot<population->enemies.size();++slot){
+        const auto& vm=population->enemies[slot];const bool exists=bool(vm);part(&exists,sizeof(exists));if(!vm)continue;
+        part(vm.get(),offsetof(EclVm,asynchronous));
+        constexpr auto after=offsetof(EclVm,asynchronous_generations);
+        part(reinterpret_cast<const u8*>(vm.get())+after,sizeof(EclVm)-after);
+        for(const auto& context:vm->asynchronous){const bool present=bool(context);part(&present,sizeof(present));if(context)part(context.get(),sizeof(EclContext));}
+    }
+    return hash;
+}
 }

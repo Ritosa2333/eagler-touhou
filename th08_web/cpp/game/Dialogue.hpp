@@ -30,6 +30,9 @@ struct DialogueActions {
     virtual void capture_arcade(const AnmLoadedSprite& sprite)=0;
 };
 class Dialogue {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
 public:
     Dialogue(GuiState& gui,GuiImplState& display,DialogueContext& context,GameGlobals& globals,GameValues& values,AnmExecutor& executor,TextWriter& text,AnmRenderer& renderer,DialogueActions& actions)
         :gui(gui),display(display),state(display.dialogue),context(context),globals(globals),values(values),executor(executor),text_writer(text),renderer(renderer),actions(actions){}

@@ -3,8 +3,10 @@
 Status (2026-09-24): the native 2P/3P frame-zero gate and exact input handoff
 are implemented. Enemy/ECL, screen callbacks, projectile/item/effect pools and
 effect geometry ownership journals have focused native acceptance.
-**Complete world rollback and real transport are not yet
-implemented or accepted.** This continues the cooperation slice at ea2958b.
+ResourcesJournal and WorldJournal now provide tested stable-stage native
+Update/semantic-Draw restoration. **Network correction, confirmed device
+output and real transport are not yet accepted.** This continues the
+cooperation slice at ea2958b.
 
 ## Boundaries
 
@@ -81,10 +83,10 @@ The subsequent pool-owner slice additionally passes:
 | cooperation-2c46d246-c1e4-46f0-bc26-52286de2e402 | All seven native cooperation cases after effect-geometry ownership changes. |
 | admission-5811e343-3649-46b6-b345-311ae02853ac | Rebuilt production 2P/3P admission, independent input and missing-input Update/Draw stall. |
 
-Current production MP WASM:
+Pool-slice production MP WASM:
 `c711e1f7d19793f64b6f43029a00e51846bdcd3960c72596eed646ba48943963`.
 
-Current diagnostic MP WASM:
+Pool-slice diagnostic MP WASM:
 `59b73aac62e7e92e2fda682af20843867570478ab346f01d3af73420db63fa6d`.
 
 Rebuilt ordinary WASM remains byte-for-byte equal to the pre-slice baseline:
@@ -102,15 +104,54 @@ The browser server requires TH08_MP_DATA to name a local retail th08.dat.
 The old games/web-content/th08 path now contains derived music assets only;
 do not bundle/copy retail data into source control to work around this.
 
+## Stable-stage world slice (2026-09-24)
+
+WorldJournal composes the native player, shared economy/RNG, input-edge and
+cooperation state with EnemyJournal, PoolsJournal and ResourcesJournal. The
+inventory also covers GUI/dialogue/STD, mutable ANM scripts and sprite metadata,
+semantic Draw state, supervisor fields and the native recording's owned vectors.
+Recording snapshots use deep copies, not byte copies of ownership words.
+Eight live checkpoints are allowed; a required checkpoint cannot be silently
+overwritten. A stable-stage graph and scene fence prevent resource teardown
+while its state is still referenced. Presentation sidecars are rebased after
+undo instead of being treated as authoritative inputs.
+
+The simultaneous-bomb test exposed a missing SpellFlow attachment in
+GameplayScene::load. The MP-only fix attaches its actual resource owner and
+calculation/draw jobs before gameplay. It does not fabricate spell state or
+silence failed announcements, and does not change the ordinary build.
+
+| Evidence under artifacts/multiplayer-tests/ | Actual scope |
+| --- | --- |
+| world-journal-1393a209-92b9-4e53-82df-c94bf3cc1fce | Eight fresh 2P/3P scenarios: shooting, focused bombs, unfocused bombs and native death. Each checks six Update/semantic-Draw frames, undo, exact re-execution, partial retirement and a non-destructive scene fence, then repeats at later lifecycle positions. Bomb cases assert actual activation and resource consumption. |
+| world-journal-86712b49-6540-46ef-b785-2e5b56ea554a | Twenty focused/unfocused bomb scenarios covering all twelve loadouts in 2P pairs and 3P groups, including two later-lifecycle probes per scenario. All passed. |
+| enemy-journal-2dbdbc7e-ecdb-4fbe-b89c-9d374ccf277e | ECL, screen callbacks, pools/geometry, ANM resource ownership and stable-stage world probes all pass after the SpellFlow fix. |
+| cooperation-7ae76151-d070-48b1-9b6a-df8702b7d828 | All seven native rescue, gift, pool-capacity and wipe/retry regression cases pass. |
+| admission-fcefbb98-96b0-4f73-aa0a-49e3dab6ecd5 | Production 2P/3P admission, per-seat movement and missing-input Update/Draw stall remain passing. |
+
+Current world-slice production MP WASM:
+`45379e692454c708d74badeb7a9765675c12aaf6bd2c5289f55add8b6007b298`.
+Diagnostic MP WASM:
+`b1f69b8109cdfa8cc791dffbdce119d4ff289cc2f0a812cc2deb7527bf59cd71`.
+The rebuilt ordinary WASM is still exactly the baseline hash above.
+Logs: build-world-matrix.log, build-world-production.log,
+build-world-ordinary.log. Commands:
+`node portable/multiplayer/check-admission.mjs --world-journal` and
+`node portable/multiplayer/check-admission.mjs --world-loadouts`.
+
+Diagnostic fixture headers now participate in both the build-cache fingerprint
+and source inventory. This fixes stale fixture code surviving a header edit.
+Four build-isolation tests pass, including fixture-header identity separation.
+
+These are in-process restoration comparisons. They deliberately check owned
+memory and stable pointer identity; they are not a cross-endpoint canonical
+hash schema. Texture pixels/captures, device audio and persisted files are not
+restored by WorldJournal. The native frame clock is deterministic in MP;
+physical presentation and audio still require their separate output owner.
+
 ## Next implementation boundary
 
-Compose a title-owned WorldJournal covering each player's life, movement,
-shots/bombs/regions/options; shared economy/RNG/input edges/cooperation; native
-enemy/ECL; active bullet/laser/item/effect pools and allocation writes;
-GUI/dialogue/background/STD/ANM mutable data; semantic Draw and supervisor
-lifecycle. The screen/ECL/fixed-pool modules above provide lifetime-safe pieces.
-
-Then integrate correction with confirmed external side effects (audio,
+Integrate late-input correction with confirmed external side effects (audio,
 persistence and physical presentation), loading/stage/retry fences and a
 first-divergent-owner oracle. Only that complete path may set WorldReady=true.
 Actual shared BrowserPeerTransport/Relay, MP Replay, spectator, authoritative

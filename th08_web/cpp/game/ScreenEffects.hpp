@@ -28,6 +28,9 @@ struct ScreenEffectContext {
     i32 transition_state=2;
 };
 class ScreenEffects {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
 public:
     ScreenEffectContext context;
     ScreenEffects(Chain& chain,AnmRenderer& renderer,Rng& random):chain(chain),renderer(renderer),random(random){}

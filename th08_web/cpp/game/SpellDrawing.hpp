@@ -8,6 +8,9 @@ namespace th08 {
 // Original 004178c0: overlapping portraits, name panels and the spell bonus /
 // capture-history digits use the same VMs advanced by SpellSystem.
 class SpellDrawing {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
     EclGlobals& state;const SpellRecord* records;AnmRenderer& renderer;
     std::array<AnmVm,14> presentation_previous{};u32 presentation_previous_panel_color=0,presentation_previous_spell_flags=0;u16 presentation_previous_spell_number=0;bool presentation_valid=false;
     presentation::SnapshotMarker presentation_marker;

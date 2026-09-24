@@ -321,6 +321,12 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     bullet_flow.context={wanted.initial,wanted.release_resources};enemy_flow.context={wanted.initial,wanted.keep_resources,wanted.release_resources};effect_flow.context={wanted.stage,wanted.spell,bool(wanted.flags&0x4000),wanted.keep_resources};gui_flow.context={wanted.initial,wanted.keep_resources,wanted.release_resources,u8(section_warp),wanted.spell};spell_flow.context={wanted.initial,wanted.keep_resources,wanted.release_resources};
     dialogue_context.flags=globals.game_flags;dialogue_context.stage=wanted.stage;dialogue_context.character=wanted.character;gui_context.difficulty=wanted.difficulty;items.difficulty=wanted.difficulty;
     if(!background_flow.attach(chain,wanted.stage)||!bullet_flow.attach(chain)||!enemy_flow.attach(chain)||!effect_flow.attach(chain)||!gui_flow.attach(chain)){unload();return false;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Bomb announcements and enemy spellcards share the native spell owner.
+    // Its portraits, banners and calculation/draw jobs must exist before the
+    // first gameplay tick. Keep the ordinary baseline outside this MP change.
+    if(!spell_flow.attach(chain)){unload();return false;}
+#endif
     // These three counters belong to GameManager across stages. EnemyManager
     // increments them, but replacing that owner must not reset a whole run.
     if(retain_counters){enemies.state.frames=previous_frames;enemies.state.unfocused_frames=previous_human;enemies.state.active_frames=previous_active;}

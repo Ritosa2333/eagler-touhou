@@ -63,6 +63,7 @@ EX("multiplayer_configure") u32 browser_multiplayer_configure(BrowserRuntime* r,
     if(candidate.session_id){if(!session.netplay.Reset(candidate))return 0;}
     else{if(session.netplay.Configured()&&session.netplay.LastFrame()!=Netplay::INVALID_FRAME)return 0;session.netplay.Clear();}
     session.multiplayer_session=candidate;
+    r->begin_multiplayer_clock();
     const auto& setup=session.multiplayer_session;
     session.player_count=setup.player_count;session.local_player=setup.local_player;
     for(u32 seat=0;seat<3;++seat)session.player_characters[seat]=u8(setup.characters[seat]);

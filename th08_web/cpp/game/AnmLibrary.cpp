@@ -1,4 +1,7 @@
 #include "AnmLibrary.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include <eagler/netplay/RollbackJournal.hpp>
+#endif
 #ifdef TH_ENABLE_THCRAP
 #include "RuntimeOverride.hpp"
 #endif
@@ -87,7 +90,18 @@ bool load_override(const AnmResource& resource,u32 index,bool reduced,TexturePix
 namespace { bool load_override(const AnmResource&,u32,bool,TexturePixels&){return false;} }
 #endif
 AnmLibrary::~AnmLibrary() { for(i32 i=0;i<256;++i)release(i);clear_preloads(); }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+bool AnmLibrary::rollback_locked(){
+    if(rollback_journal&&(rollback_journal->IsFrameOpen()||rollback_journal->FrameCount())){
+        rollback_failed=true;return true;
+    }
+    return false;
+}
+#endif
 void AnmLibrary::clear_preloads(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(rollback_locked())return;
+#endif
     // Active entries refer to their pristine template. Release them before
     // dropping the cache; ordinary scene release keeps resident textures alive.
     for(i32 i=0;i<256;++i)if(files[i]&&files[i]->prepared)release(i);
@@ -98,10 +112,16 @@ AnmLoaded* AnmLibrary::get(i32 index) noexcept { return index>=0&&index<256&&fil
 const AnmResource* AnmLibrary::resource(i32 index) const noexcept { return index>=0&&index<256&&files[index]?&files[index]->resource:nullptr; }
 void AnmLibrary::release(i32 index) {
     if(index<0||index>=256||!files[index])return;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(rollback_locked())return;
+#endif
     for(auto& entry:files[index]->textures)textures.release(entry.texture);
     files[index].reset();
 }
 AnmLoaded* AnmLibrary::load(i32 index,Archive& archive,const char* name,bool deferred) {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(rollback_locked())return nullptr;
+#endif
     if(index<0||index>=loadable_anm_slots)return nullptr;
     release(index);
     std::vector<u8> bytes;
@@ -109,6 +129,9 @@ AnmLoaded* AnmLibrary::load(i32 index,Archive& archive,const char* name,bool def
     return load(index,bytes.data(),bytes.size(),deferred);
 }
 AnmLoaded* AnmLibrary::load(i32 index,const u8* bytes,u32 size,bool deferred) {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(rollback_locked())return nullptr;
+#endif
     if(index<0||index>=loadable_anm_slots)return nullptr;
     release(index);
     auto entry=std::make_unique<Entry>();
@@ -155,6 +178,9 @@ bool AnmLibrary::materialize(Entry& entry,u32 index) {
     return entry.resource.configure_texture(index,handle,width,height);
 }
 bool AnmLibrary::preload(const u8* bytes,u32 size){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(rollback_locked())return false;
+#endif
     const bool reduced=force_16bit;{
         for(const auto& entry:prepared)if(entry->force_16bit==reduced&&entry->resource.data().size()==size&&!std::memcmp(entry->resource.data().data(),bytes,size))return true;
         auto entry=std::make_unique<Prepared>();entry->force_16bit=reduced;if(!entry->resource.load(0,bytes,size))return false;
@@ -183,12 +209,18 @@ bool AnmLibrary::preload(const u8* bytes,u32 size){
 bool AnmLibrary::postload(i32 index) {
     auto* view=get(index);if(!view)return false;
     if(view->numberEntriesToBeLoaded==0)return true;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(rollback_locked())return false;
+#endif
     const u32 entry=u32(view->numberEntriesToBeLoaded-1);
     if(!materialize(*files[index],entry)){view->numberEntriesToBeLoaded=0;return false;}
     view->numberEntriesToBeLoaded=entry+1<files[index]->textures.size()?i32(entry+2):0;
     return true;
 }
 bool AnmLibrary::service() {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(rollback_failed)return false;
+#endif
     for(i32 i=0;i<256;++i)if(files[i]&&files[i]->resource.view().numberEntriesToBeLoaded&&!postload(i))return false;
     return true;
 }

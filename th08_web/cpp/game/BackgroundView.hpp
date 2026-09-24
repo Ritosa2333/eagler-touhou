@@ -11,6 +11,9 @@ struct BackgroundDrawActions {
     virtual void effects()=0;
 };
 class BackgroundView {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
 public:
     BackgroundView(BackgroundState& state,BackgroundScript& script,AnmRenderer& renderer,BackgroundDrawActions& actions):state(state),script(script),renderer(renderer),objects(state,renderer),actions(actions){}
     JobResult high();JobResult low();
