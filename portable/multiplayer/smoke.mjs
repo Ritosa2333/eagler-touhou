@@ -37,12 +37,15 @@ const status=()=>Array.from(new Int32Array(core.memory.buffer,core.multiplayer_s
 const netStatus=()=>Array.from(new Int32Array(core.memory.buffer,core.multiplayer_netplay_status(app),11));
 const canonical=()=>{const words=Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_canonical_hashes(app),44));
  if(words[0]!==2)throw Error('Canonical schema 2 required');return words;};
+const portableCanonical=()=>{const words=Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_portable_hashes(app),12));
+ if(words[0]!==1)throw Error('Portable canonical schema 1 required');return words;};
 const memoryStatus=()=>({heap:core.memory.buffer.byteLength,words:Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_memory_status(app),12))});
 const enemyDebug=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_enemy_debug(app),81));
 const lifecycle=()=>Array.from(new Int32Array(core.memory.buffer,core.multiplayer_lifecycle_status(app),12));
 const audioStatus=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_audio_status(app),9));
 const generationStatus=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_generation_status(app),9));
 const replayStatus=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_replay_status(app),13));
+const spectatorStatus=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_spectator_status(app),7));
 const replayPath='/savesth10-multiplayer/jp/replay/th10_01.rpy';
 let replayTrace=[],replayTraceLast=-1,robotPreparedFrame=-1,robotPreparedGeneration=-1;
 function replayObservation(){const n=netStatus(),c=canonical();return {frame:n[3],state:status(),rng:c.slice(13,17),owners:{economy:c[2],players:c[4],enemies:c[5],bullets:c[6],lasers:c[7],items:c[8]},replay:replayStatus()};}
@@ -167,8 +170,13 @@ window.multiplayerSmoke={
    if(Module.FS.isFile(Module.FS.stat(path).mode))result[(directory+'/'+name).replace(/^\//,'')]=Array.from(Module.FS.readFile(path));}
  }return result;},
  connect(relay){if(!core.multiplayer_connect)throw Error('Network Runtime required');return !!string(relay,p=>core.multiplayer_connect(app,p));},
+ spectatorConnect(relay,id){if(!core.multiplayer_spectator_connect)throw Error('Spectator Runtime required');
+  Module.eaglerOptions={...(Module.eaglerOptions||{}),netplaySpectatorCount:0};
+  return !!string(relay,r=>string(id,s=>core.multiplayer_spectator_connect(app,r,s)));},
+ setSpectatorCount(count){Module.eaglerOptions={...(Module.eaglerOptions||{}),netplaySpectatorCount:count>>>0};return true;},
  pollNetwork(){return !!core.multiplayer_network_poll(app);},
  transportStatus,
+ spectatorStatus,
  networkError,
  peerUntilGeneration(generation){
   if(!core.multiplayer_network_poll(app))throw Error(networkError());
@@ -192,6 +200,24 @@ window.multiplayerSmoke={
   const result=core.sdl_loop_tick(app,1/60,16);
   if(result||core.application_error(app))throw Error('Native peer tick failed '+result+' '+core.application_error(app)+' '+networkError());
   return {net:netStatus(),transport:transportStatus()};
+ },
+ spectatorAdvance(target){
+  if(!core.multiplayer_network_poll(app))throw Error(networkError());
+  const before=netStatus();
+  if(before[3]>=target)return {net:before,transport:transportStatus(),spectator:spectatorStatus()};
+  const result=core.sdl_loop_tick(app,1/60,16);
+  if(result||core.application_error(app))throw Error('Native spectator tick failed '+result+' '+core.application_error(app)+' '+networkError());
+  return {net:netStatus(),transport:transportStatus(),spectator:spectatorStatus()};
+ },
+ spectatorWriteProbe(){
+  const frame=netStatus()[2],capture=capturePeerInput(frame,1),
+        remote=this.submitRemote(1,frame,1),packet=core.files_allocate(2048);
+  let packetBytes=0,helloBytes=0;
+  try{
+   packetBytes=core.multiplayer_packet_build(app,1,frame,1,0,packet,2048);
+   helloBytes=core.multiplayer_session_build(app,1,packet,2048);
+  }finally{core.files_free(packet);}
+  return {capture,remote,packetBytes,helloBytes,markReady:!!core.multiplayer_session_mark_ready(app)};
  },
  identity(){return {game:'th10',variant:'multiplayer',fixtureBuild:!!core.mp_fixture_prepare,wasmSha256:wasmIdentity,
   sourceDigest:buildIdentity.sourceDigest,profile:buildIdentity.profile,assets:assetIdentities};},
@@ -225,6 +251,7 @@ window.multiplayerSmoke={
  canStart(){return !!core.multiplayer_session_can_start(app);},
  netStatus,
  canonical,
+ portableCanonical,
  enemyDebug,
  lifecycle,
  audioStatus,

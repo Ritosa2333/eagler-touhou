@@ -104,6 +104,7 @@ struct Application final:CallbackReceiver {
     i32 multiplayer_update();
     bool multiplayer_active()const;
     bool multiplayer_pump_network();
+    u32 multiplayer_spectator_catchup_budget()const;
     bool multiplayer_resimulate_draw();
     bool multiplayer_finalize_frame();
     bool multiplayer_begin_replay(const char* filename,u32 selected_stage);

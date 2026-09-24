@@ -68,6 +68,12 @@ bool Application::multiplayer_pump_network(){
     error=-5;return false;
 }
 
+u32 Application::multiplayer_spectator_catchup_budget()const{
+    if(!multiplayer_active()||!state.netplay_runtime.Spectator()||!world||world->loading)return 1;
+    const auto backlog=state.netplay_runtime.SpectatorBacklog();
+    return backlog>8?4:backlog>4?2:1;
+}
+
 i32 Application::multiplayer_update(){
     auto& runtime=state.netplay_runtime;
     auto& rollback=world->rollback;
@@ -90,7 +96,10 @@ i32 Application::multiplayer_update(){
                 // below own graph destruction; never run it inside a journal.
                 if(state.pending_screen!=value.screen)break;
                 const auto decision=runtime.Prepare(frame);
-                if(!decision.canAdvance||!state.multiplayer_replay.Stamp(frame,u32(state.game.stage))||
+                const bool replayActive=state.multiplayer_replay.Recording()||
+                                        state.multiplayer_replay.Playing();
+                if(!decision.canAdvance||(replayActive&&
+                   !state.multiplayer_replay.Stamp(frame,u32(state.game.stage)))||
                    !world->begin_rollback_frame(frame)){
                     world->rollback_resimulating=false;error=-4;return -1;
                 }
@@ -132,8 +141,13 @@ i32 Application::multiplayer_update(){
         rollback.Clear();
         if(!world->backgrounds.collect_retired(Netplay::INVALID_FRAME)){error=-4;return -1;}
         if(state.pending_screen==10||state.pending_screen==13){
+            const bool spectator=runtime.Spectator();
             if(!runtime.RetireRun()){error=-4;return -1;}
-            multiplayer_generation_pending=true;
+            if(spectator){
+                // Spectator admission belongs to one relay run. A Retry/new
+                // generation needs a fresh lobby start and spectator grant.
+                state.pending_screen=4;
+            }else multiplayer_generation_pending=true;
         }
         const i32 result=engine.update_all();
         if(world&&!world->loading&&!rollback.Reset()){error=-4;return -1;}
@@ -142,7 +156,9 @@ i32 Application::multiplayer_update(){
     }
 
     const auto frame=runtime.NextFrame();
-    if(runtime.Playback()){
+    if(runtime.Spectator()){
+        if(!runtime.FeedSpectator(frame)){multiplayer_waiting=true;return 1;}
+    }else if(runtime.Playback()){
         if(state.multiplayer_replay.Complete()){multiplayer_waiting=true;return 1;}
         const auto* inputs=state.multiplayer_replay.PlaybackFrame(frame,u32(state.game.stage));
         if(!inputs||!runtime.FeedPlayback(frame,inputs->data(),state.multiplayer_session.playerCount)){error=-6;return -1;}
@@ -155,7 +171,10 @@ i32 Application::multiplayer_update(){
     if(!decision.canAdvance){multiplayer_waiting=true;return 1;}
 
     engine.snapshot_presentation();
-    if(!state.multiplayer_replay.Stamp(frame,u32(state.game.stage))||!world->begin_rollback_frame(frame)){
+    const bool replayActive=state.multiplayer_replay.Recording()||
+                            state.multiplayer_replay.Playing();
+    if((replayActive&&!state.multiplayer_replay.Stamp(frame,u32(state.game.stage)))||
+       !world->begin_rollback_frame(frame)){
         error=-4;return -1;
     }
     world->capture_replay_checkpoint_precommit(state.multiplayer_replay.Base()+frame);
@@ -246,13 +265,17 @@ i32 Application::step(bool scheduled_tick){
        !state.netplay_runtime.CanStart())return 0;
     if(session.configured&&!session.started&&value.screen==4&&title&&!title->loading){
         if(session.sessionId&&!state.netplay_runtime.CanStart())return 0;
-        if(session.sessionId&&!state.netplay_runtime.Playback()&&
+        if(session.sessionId&&!state.netplay_runtime.Playback()&&!state.netplay_runtime.Spectator()&&
            !state.multiplayer_replay.Begin(session,state.configuration)){error=-6;return 2;}
         if(!ensure_world())return 2;
-        if(!state.netplay_runtime.Playback()&&!startup->scores->multiplayer_active()&&
-           !startup->scores->begin_multiplayer()){error=-6;return 2;}
+        if(!startup->scores->multiplayer_active()){
+            const bool records=state.netplay_runtime.Playback()||state.netplay_runtime.Spectator()?
+                startup->scores->begin_replay():startup->scores->begin_multiplayer();
+            if(!records){error=-6;return 2;}
+        }
         state.multiplayer_cheat_movement_used=false;
-        world->player_count=session.playerCount;world->local_player=session.localPlayer;
+        world->player_count=session.playerCount;
+        world->local_player=state.netplay_runtime.Spectator()?Netplay::MAX_PLAYERS:session.localPlayer;
         for(u32 seat=0;seat<session.playerCount;++seat){
             state.pilot_games[seat].character=i32(session.loadouts[seat].character);
             state.pilot_games[seat].shot_type=i32(session.loadouts[seat].shot);

@@ -59,6 +59,42 @@ MP and diagnostic MP were rechecked on resumption. No source differences were
 found. The 19-entry rule lane was rerun successfully; its log is
 `artifacts/multiplayer-tests/rules-functional-final.log`.
 
+## Read-only start-time spectator evidence
+
+TH10 now consumes the shared SpectatorFramePacket/relay path directly in its
+native multiplayer Runtime. P1 publishes only frames for which all gameplay
+seats have authoritative confirmed input. A spectator contributes no gameplay
+seat and feeds those all-seat samples through the same NetplayRuntime,
+InputLanes and native world update path as the players.
+
+The production multiplayer WASM used by the final focused spectator run is
+`836d5528844c138ad5eff9e22e092d50471b9f6816711231572f6d50ea631932`.
+Suite `spectator-e6c2455d-ac52-4324-ac40-b497d059cfac` passes both:
+
+- real player WebRTC plus the relay-only spectator stream; and
+- forced player WebSocket Relay plus the same spectator stream.
+
+In both cases the players first advance to frame 89 before the already-admitted
+spectator Runtime connects. The Relay supplies its bounded confirmed history,
+the spectator catches up, and all three endpoints agree at frame 179 on the
+portable gameplay/ECL/authored-ANM/RNG/lifecycle hash `3029498467`, visible
+multiplayer state and committed audio.
+
+Spectator input isolation is enforced by the native Runtime, not only by the
+Launcher. The final browser probe observes local capture rejected, remote-input
+submission returning InvalidPlayer, input-packet and HELLO construction
+returning zero bytes, and READY marking rejected. The browser spectator
+transport itself has zero gameplay peers and no send/sendTo capability.
+Replay recording and persistent score updates are also read-only.
+
+The existing `multiplayer_canonical_hashes` remains the stricter
+identical-allocation rollback oracle. Spectator verification uses the separate
+pointer-independent `multiplayer_portable_hashes` schema so transport/resource
+allocation addresses are not confused with deterministic gameplay state.
+Spectator admission remains start-time and relay-run scoped; Retry/new
+generation requires a fresh lobby admission rather than reusing the old
+receive-only socket.
+
 ## Ordinary baseline
 
 The ordinary production WASM before and after this network slice is exactly
@@ -76,8 +112,7 @@ binary identity check; it is not a claim that another daily run was executed.
 
 ## Still required
 
-Multiseat Replay recording/playback, read-only start-time spectators,
-authoritative analog/touch input, real Launcher configure/start/save lifecycle,
+Authoritative analog/touch input, real Launcher configure/start/save lifecycle,
 all-stage/result and negative-protocol coverage, ordinary regressions and the
 full promotion gates remain required. Device and public deployment acceptance
 must be named separately. No push, deployment or canonical promotion is implied.

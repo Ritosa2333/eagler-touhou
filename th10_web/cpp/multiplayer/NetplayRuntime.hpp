@@ -11,6 +11,8 @@
 #include <eagler/netplay/SessionChannel.hpp>
 
 #include <cstdint>
+#include <deque>
+#include <string>
 #include <vector>
 
 namespace th10::multiplayer {
@@ -25,6 +27,10 @@ public:
     bool BeginPlayback(SessionSetup& setup) noexcept;
     bool FeedPlayback(std::uint32_t frame,const Netplay::FrameInput* inputs,std::size_t count);
     bool Playback()const{return playback_;}
+    bool Spectator()const{return spectator_;}
+    bool SpectatorRetired()const{return spectator_retired_;}
+    std::size_t SpectatorBacklog()const{return spectator_frames_.size();}
+    bool FeedSpectator(std::uint32_t frame);
     void Clear() noexcept;
     // The title must have reconciled/confirmed the restart fence. A real
     // transport additionally finishes its peer ACK fence before retirement.
@@ -40,21 +46,24 @@ public:
     Netplay::SessionPacket Hello() const { return gate_.BuildPacket(Netplay::SessionPhase::Hello); }
     Netplay::SessionPacket Ready() const { return gate_.BuildPacket(Netplay::SessionPhase::Ready); }
     Netplay::SessionPacketResult ApplySession(const Netplay::SessionPacket& packet) {
+        if(spectator_)return Netplay::SessionPacketResult::InvalidPeer;
         return gate_.Apply(packet);
     }
-    bool CanSendReady() const { return gate_.CanSendReady(); }
-    bool LocalReady() const { return configured_&&gate_.LocalReady(); }
-    void MarkLocalReady() { gate_.MarkLocalReady(); }
-    bool CanStart() const { return configured_ && (playback_ || gate_.CanStart()); }
+    bool CanSendReady() const { return !spectator_&&gate_.CanSendReady(); }
+    bool LocalReady() const { return configured_&&!spectator_&&gate_.LocalReady(); }
+    void MarkLocalReady() { if(!spectator_)gate_.MarkLocalReady(); }
+    bool CanStart() const { return configured_ && (playback_ || spectator_ || gate_.CanStart()); }
 
     bool CaptureLocal(std::uint32_t frame, const Netplay::FrameInput& input) {
-        if(playback_||!CanStart()||!Netplay::IsValidFrameInput(input)||!core_.ScheduleLocalInput(frame,input))return false;
+        if(playback_||spectator_||!CanStart()||!Netplay::IsValidFrameInput(input)||
+           !core_.ScheduleLocalInput(frame,input))return false;
         return !network_enabled_||channel_.LocalCaptured(core_,frame,network_now_);
     }
     Netplay::RemoteInputResult SubmitRemote(std::uint8_t player, std::uint32_t frame,
                                             const Netplay::FrameInput& input) {
-        return configured_&&!playback_ ? core_.SubmitRemoteInput(player, frame, input)
-                           : Netplay::RemoteInputResult::InvalidPlayer;
+        return configured_&&!playback_&&!spectator_
+            ? core_.SubmitRemoteInput(player, frame, input)
+            : Netplay::RemoteInputResult::InvalidPlayer;
     }
     Netplay::FrameDecision Prepare(std::uint32_t frame) const {
         return CanStart() ? core_.PrepareFrame(frame) : Netplay::FrameDecision{};
@@ -91,6 +100,7 @@ public:
     bool Configured() const { return configured_; }
 
     bool Connect(const char* relayUrl);
+    bool ConnectSpectator(const char* relayUrl,const char* spectatorId);
     bool PumpNetwork(bool expectsInput);
     bool NetworkEnabled() const { return network_enabled_; }
     const Netplay::SessionChannel& Channel() const { return channel_; }
@@ -99,6 +109,10 @@ public:
 
 private:
     bool Configure(const SessionSetup& setup,std::uint64_t id) noexcept;
+    bool FeedAuthoritative(std::uint32_t frame,const Netplay::FrameInput* inputs,
+                           std::size_t count);
+    bool DrainSpectatorFrames();
+    void PublishConfirmedSpectatorFrames();
     Netplay::SessionGate gate_{};
     Netplay::RollbackCore core_{};
     SessionSetup setup_{};
@@ -111,6 +125,10 @@ private:
     std::uint64_t network_now_=0;
     bool network_enabled_=false;
     bool playback_=false;
+    bool spectator_=false,spectator_retired_=false;
+    std::uint32_t spectator_publish_frame_=0,spectator_receive_frame_=0;
+    std::deque<Netplay::SpectatorFramePacket> spectator_frames_{};
+    std::string spectator_error_{};
 };
 
 } // namespace th10::multiplayer

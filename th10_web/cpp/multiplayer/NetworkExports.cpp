@@ -7,6 +7,12 @@ u32 multiplayer_connect(browser::Application* app,const char* relay){
     if(!app||app->stopped||app->world||app->state.multiplayer_session.started)return 0;
     return app->state.netplay_runtime.Connect(relay)?1:0;
 }
+extern "C" __attribute__((export_name("multiplayer_spectator_connect")))
+u32 multiplayer_spectator_connect(browser::Application* app,const char* relay,
+                                  const char* spectatorId){
+    if(!app||app->stopped||app->world||app->state.multiplayer_session.started)return 0;
+    return app->state.netplay_runtime.ConnectSpectator(relay,spectatorId)?1:0;
+}
 extern "C" __attribute__((export_name("multiplayer_network_poll")))
 u32 multiplayer_network_poll(browser::Application* app){
     return app&&!app->stopped&&app->multiplayer_pump_network()?1:0;
@@ -25,6 +31,17 @@ const u32* multiplayer_transport_status(browser::Application* app){
     words[9]=runtime.AcknowledgedLocalThroughAllRemotes();words[10]=runtime.ConfirmedThroughAllRemotes();
     words[11]=channel.Retiring();words[12]=runtime.Generation();
     const char* mode=runtime.Transport().Mode();
-    words[13]=mode&&!std::strcmp(mode,"rtc")?1:mode&&!std::strcmp(mode,"relay")?2:0;
+    words[13]=mode&&!std::strcmp(mode,"rtc")?1:
+              mode&&!std::strcmp(mode,"relay")?2:
+              mode&&!std::strcmp(mode,"spectator")?3:0;
     words[14]=u32(runtime.Transport().BufferedAmount());return words;
+}
+extern "C" __attribute__((export_name("multiplayer_spectator_status")))
+const u32* multiplayer_spectator_status(browser::Application* app){
+    static u32 words[7]{};std::memset(words,0,sizeof(words));words[0]=1;if(!app)return words;
+    const auto& runtime=app->state.netplay_runtime;
+    words[1]=runtime.Spectator();words[2]=runtime.SpectatorRetired();
+    words[3]=u32(runtime.SpectatorBacklog());
+    words[4]=runtime.Transport().HasSpectators();
+    words[5]=runtime.NetworkEnabled();words[6]=runtime.Generation();return words;
 }

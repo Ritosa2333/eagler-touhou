@@ -297,6 +297,171 @@ AnmHashes hash_anm_parts(const browser::AnimationEngine& engine){
 u32 hash_anm(const AnmHashes& parts){
     u32 hash=hash_value(parts.metadata);hash=hash_value(parts.pooled,hash);return hash_value(parts.overflow,hash);
 }
+
+// Cross-graph hashes used by read-only spectators. The rollback oracle above
+// intentionally retains exact pointer/layout identity; these helpers instead
+// describe authored state that must survive a different transport/allocation
+// bootstrap.
+u32 hash_cstring_portable(const char* value,u32 hash){
+    const bool present=value!=nullptr;hash=hash_value(present,hash);
+    if(!value)return hash;
+    for(std::size_t i=0;i<512;++i){
+        const u8 byte=static_cast<u8>(value[i]);hash=hash_value(byte,hash);
+        if(!byte)return hash;
+    }
+    return hash_value(u8(0xff),hash);
+}
+const EclSubroutine* ecl_subroutine_for(const EclProgram* program,
+                                        const EclInstruction* instruction){
+    if(!program||!instruction||!program->sorted_subroutines||program->subroutine_count<=0)return nullptr;
+    const auto target=reinterpret_cast<std::uintptr_t>(instruction);
+    const EclSubroutine* best=nullptr;std::uintptr_t bestStart=0;
+    for(i32 i=0;i<program->subroutine_count;++i){
+        const auto& sub=program->sorted_subroutines[i];
+        if(!sub.header)continue;
+        const auto start=reinterpret_cast<std::uintptr_t>(sub.header+16);
+        if(start<=target&&start>=bestStart){best=&sub;bestStart=start;}
+    }
+    return best;
+}
+u32 hash_ecl_instruction_portable(const EclProgram* program,
+                                  const EclInstruction* instruction,u32 hash){
+    const bool present=instruction!=nullptr;hash=hash_value(present,hash);
+    if(!instruction)return hash;
+    if(const auto* sub=ecl_subroutine_for(program,instruction)){
+        hash=hash_cstring_portable(sub->name,hash);
+        const auto offset=u32(reinterpret_cast<std::uintptr_t>(instruction)-
+                              reinterpret_cast<std::uintptr_t>(sub->header+16));
+        return hash_value(offset,hash);
+    }
+    // Defensive fallback for malformed diagnostic state. Valid gameplay ECL
+    // instructions are always owned by one loaded subroutine.
+    return hash_bytes(instruction,sizeof(EclInstruction),hash);
+}
+u32 hash_ecl_stack_portable(const EclContext& context,const EclProgram* program,u32 hash){
+    const i32 top=std::clamp(context.stack.top,0,4096);
+    const i32 frameBase=std::clamp(context.stack.frame_base,0,top);
+    hash=hash_value(top,hash);hash=hash_value(frameBase,hash);
+    bool returnPointer[1024]{};
+    // A call saves [time, instruction] immediately before the callee's frame
+    // base. The previous frame base lives four bytes before that caller top.
+    // Mark only these structurally known pointer slots; local integer values
+    // which happen to resemble Wasm addresses stay ordinary data.
+    i32 base=frameBase;
+    for(u32 depth=0;depth<64&&base>=8&&base<=top;++depth){
+        const i32 pointerOffset=base-4;
+        if((pointerOffset&3)==0)returnPointer[pointerOffset/4]=true;
+        if(base<12)break;
+        i32 previous=0;std::memcpy(&previous,context.stack.data+base-12,4);
+        if(previous<=0||previous>=base)break;
+        base=previous;
+    }
+    i32 offset=0;
+    for(;offset+4<=top;offset+=4){
+        u32 word=0;std::memcpy(&word,context.stack.data+offset,4);
+        if(returnPointer[offset/4]){
+            hash=hash_value(u32(0xec100001u),hash);
+            hash=hash_ecl_instruction_portable(
+                program,reinterpret_cast<const EclInstruction*>(std::uintptr_t(word)),hash);
+        }else hash=hash_value(word,hash);
+    }
+    if(offset<top)hash=hash_bytes(context.stack.data+offset,std::size_t(top-offset),hash);
+    return hash;
+}
+u32 hash_ecl_context_portable(const EclContext& context,const EclProgram* program,
+                              u32 hash=2166136261u){
+    hash=hash_value(context.time,hash);
+    hash=hash_ecl_instruction_portable(program,context.instruction,hash);
+    hash=hash_ecl_stack_portable(context,program,hash);
+    hash=hash_value(context.thread_id,hash);hash=hash_value(context.state_1018,hash);
+    // Native initialization deliberately writes only the low difficulty byte
+    // and only bit zero of flags is consumed by ECL.
+    hash=hash_value(reinterpret_cast<const u8*>(&context.difficulty)[0],hash);
+    return hash_value(context.flags&1u,hash);
+}
+template<class T>u32 hash_interpolator_portable(const T& source,u32 hash){
+    auto value=source;
+    const float rate=value.timer.rate?*value.timer.rate:0.0f;
+    value.timer.rate=nullptr;hash=hash_value(value,hash);return hash_value(rate,hash);
+}
+u32 hash_enemy_portable(const Enemy& enemy,const EclProgram* program,u32 hash=2166136261u){
+    hash=hash_ecl_context_portable(enemy.script.root,program,hash);
+    for(auto* node=enemy.script.threads.next;node;node=node->next)
+        if(node->value)hash=hash_ecl_context_portable(*node->value,program,hash);
+    EnemyState state=enemy.state;
+    std::memset(state.animations,0,sizeof(state.animations));
+    state.manager_node={};state.script_owner=nullptr;
+    for(auto& interrupt:state.interrupts){
+        hash=hash_cstring_portable(interrupt.health_subroutine,hash);
+        hash=hash_cstring_portable(interrupt.time_subroutine,hash);
+        interrupt.health_subroutine=interrupt.time_subroutine=nullptr;
+    }
+    normalize_timer(state.lifetime);normalize_timer(state.damage_immunity);
+    normalize_timer(state.collision_immunity);
+    normalize_interpolator(state.absolute_position);normalize_interpolator(state.relative_position);
+    normalize_interpolator(state.absolute_angle);normalize_interpolator(state.relative_angle);
+    normalize_interpolator(state.absolute_radius);normalize_interpolator(state.relative_radius);
+    return hash_value(state,hash);
+}
+u32 hash_enemies_portable(const browser::World& world){
+    const auto* manager=world.actors.enemies;if(!manager)return 0;
+    u32 hash=2166136261u;hash=hash_value(manager->flags,hash);
+    hash=hash_timer_state(manager->lifetime,hash);hash=hash_value(manager->lifetime_flags,hash);
+    hash=hash_value(manager->count,hash);hash=hash_value(manager->spawn_count,hash);
+    for(const auto* boss:manager->bosses)hash=hash_value(boss!=nullptr,hash);
+    u32 traversed=0;for(auto* node=manager->head;node;node=node->next){
+        if(!node->value)continue;++traversed;hash=hash_enemy_portable(*node->value,manager->program,hash);
+    }
+    return hash_value(traversed,hash);
+}
+u32 hash_anm_vm_portable(const AnmVm& vm,u32 hash){
+    hash=hash_value(vm.id,hash);hash=hash_value(vm.owner_tag,hash);
+    hash=hash_value(vm.rotation,hash);hash=hash_value(vm.angular_velocity,hash);
+    hash=hash_value(vm.scale,hash);hash=hash_value(vm.scale_velocity,hash);
+    hash=hash_value(vm.sprite_size,hash);hash=hash_value(vm.uv_offset,hash);
+    hash=hash_timer_state(vm.script_timer,hash);hash=hash_value(vm.script_timer_flags,hash);
+    hash=hash_interpolator_portable(vm.position_interpolation,hash);
+    hash=hash_interpolator_portable(vm.color_interpolation,hash);
+    hash=hash_interpolator_portable(vm.alpha_interpolation,hash);
+    hash=hash_interpolator_portable(vm.rotation_interpolation,hash);
+    hash=hash_interpolator_portable(vm.scale_interpolation,hash);
+    hash=hash_interpolator_portable(vm.color2_interpolation,hash);
+    hash=hash_interpolator_portable(vm.alpha2_interpolation,hash);
+    hash=hash_value(vm.uv_velocity,hash);hash=hash_value(vm.color,hash);
+    hash=hash_value(vm.secondary_color,hash);hash=hash_value(vm.pending_interrupt,hash);
+    hash=hash_bytes(vm.integer_variables,sizeof(vm.integer_variables),hash);
+    hash=hash_bytes(vm.float_variables,sizeof(vm.float_variables),hash);
+    hash=hash_bytes(vm.extra_integer_variables,sizeof(vm.extra_integer_variables),hash);
+    hash=hash_value(vm.script_position,hash);hash=hash_value(vm.position,hash);
+    hash=hash_value(vm.child_position,hash);
+    const u32 authoredFlags=vm.flags&~12u;hash=hash_value(authoredFlags,hash);
+    hash=hash_timer_state(vm.saved_timer,hash);hash=hash_value(vm.saved_timer_flags,hash);
+    const auto instructionOffset=[&](const AnmInstruction* instruction){
+        if(!instruction)return i32(-1);
+        if(!vm.script_begin)return i32(-2);
+        return i32(reinterpret_cast<const u8*>(instruction)-
+                   reinterpret_cast<const u8*>(vm.script_begin));
+    };
+    hash=hash_value(instructionOffset(vm.saved_instruction),hash);
+    hash=hash_value(vm.sprite_frame,hash);hash=hash_value(vm.sprite_index,hash);
+    hash=hash_value(vm.file_index,hash);hash=hash_value(vm.script_index,hash);
+    return hash_value(instructionOffset(vm.instruction),hash);
+}
+u32 hash_anm_portable(const browser::AnimationEngine& engine){
+    const auto& manager=engine.manager;u32 hash=2166136261u;
+    hash=hash_value(manager.started_scripts,hash);hash=hash_value(manager.processed_count,hash);
+    hash=hash_bytes(manager.occupied,sizeof(manager.occupied),hash);
+    hash=hash_value(manager.cursor,hash);hash=hash_value(manager.last_id,hash);
+    for(u32 i=0;i<4096;++i)if(manager.occupied[i]){
+        hash=hash_value(i,hash);hash=hash_anm_vm_portable(manager.pool[i],hash);
+    }
+    for(u32 i=0;i<2048;++i)if(engine.rollback_animation_overflow.active(i)){
+        hash=hash_value(i,hash);
+        hash=hash_anm_vm_portable(
+            *static_cast<const AnmVm*>(engine.rollback_animation_overflow.at(i)),hash);
+    }
+    return hash;
+}
 bool decode_frame_input(const u32* row,Netplay::FrameInput& input){
     if(!row||row[0]>65535||row[1]>4||row[4]>7)return false;
     input.buttons=u16(row[0]);input.analogMode=Netplay::AnalogMode(row[1]);
@@ -335,7 +500,8 @@ u32 multiplayer_contract(browser::Application* app){
 }
 extern "C" __attribute__((export_name("multiplayer_session_build")))
 u32 multiplayer_session_build(browser::Application* app,u32 phase,u8* out,u32 capacity){
-    if(!app||!app->state.netplay_runtime.Configured()||(phase!=1&&phase!=2))return 0;
+    if(!app||!app->state.netplay_runtime.Configured()||app->state.netplay_runtime.Spectator()||
+       (phase!=1&&phase!=2))return 0;
     if(phase==2&&!app->state.netplay_runtime.LocalReady())return 0;
     std::vector<u8> wire;
     const auto packet=phase==1?app->state.netplay_runtime.Hello():app->state.netplay_runtime.Ready();
@@ -344,14 +510,16 @@ u32 multiplayer_session_build(browser::Application* app,u32 phase,u8* out,u32 ca
 }
 extern "C" __attribute__((export_name("multiplayer_session_apply")))
 u32 multiplayer_session_apply(browser::Application* app,const u8* bytes,u32 size){
-    if(!app||!app->state.netplay_runtime.Configured()||!bytes||!size)return 0;
+    if(!app||!app->state.netplay_runtime.Configured()||app->state.netplay_runtime.Spectator()||
+       !bytes||!size)return 0;
     Netplay::SessionPacket packet{};if(!Netplay::DecodeSessionPacket(bytes,size,&packet))return 0;
     const auto result=app->state.netplay_runtime.ApplySession(packet);
     return result==Netplay::SessionPacketResult::Accepted||result==Netplay::SessionPacketResult::Duplicate?1:0;
 }
 extern "C" __attribute__((export_name("multiplayer_session_mark_ready")))
 u32 multiplayer_session_mark_ready(browser::Application* app){
-    if(!app||!app->state.netplay_runtime.Configured()||!app->state.netplay_runtime.CanSendReady())return 0;
+    if(!app||!app->state.netplay_runtime.Configured()||app->state.netplay_runtime.Spectator()||
+       !app->state.netplay_runtime.CanSendReady())return 0;
     app->state.netplay_runtime.MarkLocalReady();return 1;
 }
 extern "C" __attribute__((export_name("multiplayer_session_can_start")))
@@ -475,6 +643,65 @@ const u32* multiplayer_canonical_hashes(browser::Application* app){
     words[43]=w.scores.data?hash_value(w.scores.data->settings,hash_value(w.scores.data->characters)):0;
     for(u32 i=38;i<44;++i)words[1]=hash_value(words[i],words[1]);
     return words;
+}
+extern "C" __attribute__((export_name("multiplayer_portable_hashes")))
+const u32* multiplayer_portable_hashes(browser::Application* app){
+    // Pointer-independent spectator/cross-graph oracle. Keep the exact-layout
+    // rollback oracle above unchanged: it intentionally catches local graph
+    // identity drift that is meaningless for a separately bootstrapped,
+    // receive-only spectator.
+    static u32 words[12]{};std::fill(words,words+12,0);words[0]=1;
+    if(!app||!app->world)return words;
+    auto& w=*app->world;
+    u32 economy=hash_team_economy(app->state.team_economy);
+    economy=hash_bytes(app->state.pilot_economies,sizeof(app->state.pilot_economies),economy);
+    economy=hash_value(w.cooperation,economy);
+    economy=hash_input_lanes(app->state.input_lanes,economy);
+    u32 rng=hash_value(app->engine.script_random);
+    rng=hash_value(app->engine.visual_random,rng);
+    u32 players=2166136261u;
+    for(u32 seat=0;seat<w.player_count;++seat){
+        players=hash_value(w.pilots[seat].input_keys,players);
+        if(w.pilots[seat].player)players=hash_player_state(*w.pilots[seat].player,players);
+        if(w.pilots[seat].bomb)players=hash_bomb_state(*w.pilots[seat].bomb,players);
+    }
+    const u32 enemies=hash_enemies_portable(w);
+    const u32 bullets=hash_bullets(w.actors.bullets);
+    const u32 lasers=hash_lasers_semantic(w.actors.lasers);
+    u32 items=hash_items(w.actors.items);
+    items=hash_bytes(w.regular_item_owners,sizeof(w.regular_item_owners),items);
+    items=hash_bytes(w.faith_item_owners,sizeof(w.faith_item_owners),items);
+    const u32 anm=hash_anm_portable(app->engine);
+    u32 lifecycle=2166136261u;
+    lifecycle=hash_value(app->state.game.stage,lifecycle);
+    lifecycle=hash_value(app->state.game.stage_frames,lifecycle);
+    lifecycle=hash_value(app->state.game.section_frames,lifecycle);
+    lifecycle=hash_value(app->state.pending_screen,lifecycle);
+    lifecycle=hash_value(app->state.multiplayer_session.started,lifecycle);
+    lifecycle=hash_value(w.loading,lifecycle);
+    if(const auto* session=w.actors.session){
+        lifecycle=hash_value(session->flags,lifecycle);
+        lifecycle=hash_value(session->stage_identifier,lifecycle);
+        lifecycle=hash_timer_state(session->elapsed,lifecycle);
+        lifecycle=hash_value(session->timer_flags,lifecycle);
+        lifecycle=hash_bytes(session->configuration,sizeof(session->configuration),lifecycle);
+        lifecycle=hash_value(session->session_flags,lifecycle);
+        lifecycle=hash_value(session->replay_mode,lifecycle);
+    }
+    u32 replay=2166136261u;
+    if(const auto* r=app->state.replay){
+        replay=hash_value(r->flags,replay);replay=hash_value(r->manager_state,replay);
+        replay=hash_value(r->elapsed,replay);replay=hash_value(r->active_stage,replay);
+        for(auto* snapshot:r->stages)if(snapshot)replay=hash_value(*snapshot,replay);
+        if(r->info){auto info=*r->info;std::memset(info.name,0,sizeof(info.name));
+            info.timestamp=0;info.slow_rate=0;replay=hash_value(info,replay);}
+    }
+    words[2]=economy;words[3]=rng;words[4]=players;words[5]=enemies;
+    words[6]=bullets;words[7]=lasers;words[8]=items;words[9]=anm;
+    words[10]=lifecycle;words[11]=replay;
+    u32 composite=2166136261u;
+    for(u32 i=2;i<12;++i)composite=hash_value(words[i],composite);
+    words[1]=composite;return words;
 }
 extern "C" __attribute__((export_name("multiplayer_enemy_debug")))
 const u32* multiplayer_enemy_debug(browser::Application* app){

@@ -159,6 +159,9 @@ Replay* World::preview(const char* name){auto* entry=new(std::malloc(sizeof(Prev
 void World::release_replay(Replay* replay){if(!replay)return;for(auto** next=&previews;*next;next=&(*next)->next){auto* entry=*next;if(&entry->document.value==replay){*next=entry->next;entry->~Preview();std::free(entry);return;}}if(replay==state.replay){destroy_replay(replay);return;}__builtin_trap();}
 void World::save_replay(const char* file,const char* name){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // A spectator replays the players' menu inputs but owns no external
+    // recording or save decision.
+    if(state.netplay_runtime.Spectator())return;
     auto& archive=state.multiplayer_replay;
     // Replaying the recorded save-menu choice is gameplay input, not consent
     // to repeat the original user's external file write.

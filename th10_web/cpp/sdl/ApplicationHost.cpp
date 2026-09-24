@@ -105,7 +105,16 @@ EM_BOOL frame(double timestamp,void* epoch){
     const bool limit60=th10_limit_presentation_to_60()!=0;
     const bool presentation_ready=interpolation_ready()&&!limit60,fast=touhou::sdl::PresentationCadence::fast_sample(delta);if(presentation_ready)presentation.advance(delta);else presentation.reset();if(!presentation.high_refresh||!fast)presentation_primed=false;
     const bool tick_due=cadence.advance(delta)!=0;int result=0;sdl_defer(1);
-    if(tick_due){sdl_native_input(application);result=application->step(true);}
+    if(tick_due){
+        sdl_native_input(application);result=application->step(true);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        // A start-time spectator may receive the relay's bounded confirmed
+        // history after joining. Consume a few exact logical frames per
+        // display callback until caught up; live players never enter here.
+        for(th10::u32 i=1;!result&&i<application->multiplayer_spectator_catchup_budget();++i)
+            result=application->step(true);
+#endif
+    }
     const bool high=presentation.high_refresh&&interpolation_ready();if(high&&fast&&!presentation_primed&&tick_due)presentation_primed=true;const bool interpolate=high&&fast&&presentation_primed;float frame_alpha=1.0f;
     sdl_defer(0);bool presented=false;
     if(!result&&high){const bool frozen=application->world&&application->world->actors.session&&(application->world->actors.session->session_flags&0x74);frame_alpha=interpolate?float(cadence.interpolation_alpha()):1.0f;presented=application->presentation_draw(frame_alpha,interpolate,!frozen);}else presented=sdl_commit()!=0;
