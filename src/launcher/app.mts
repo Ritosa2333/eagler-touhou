@@ -3548,7 +3548,7 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
       // Write local OGG buffers into the same-origin Runtime FS before callMain().
       // Most Runtimes use MIDI as a sentinel to skip external loading; some need
       // the selected mode so they can consume those installed bytes.
-      music: localMusicResources && PRODUCT_GAMES[state.game].musicCapabilities.localOggConfigureMode === "midi-sentinel"
+      music: localMusicResources && PRODUCT_GAMES[state.game].musicRuntime.localOggConfigureMode === "midi-sentinel"
         ? "midi" : musicTransportMode(state.music),
       resources: localMusicResources ? [] : musicResources,
       runtimeResources: [],
