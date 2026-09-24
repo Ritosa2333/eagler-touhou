@@ -1,7 +1,20 @@
 #include "Ending.hpp"
+#include "Localization.hpp"
 #include <cstdio>
 #include <cstdlib>
 namespace th09 {
+namespace {
+bool utf8_line(const std::vector<u8>& script,u32 from){
+    for(u32 at=from;at<script.size()&&script[at]&&script[at]!=10&&script[at]!=13;){
+        const u8 first=script[at++];if(first<0x80)continue;
+        const u32 count=first>=0xc2&&first<=0xdf?2:first>=0xe0&&first<=0xef?3:first>=0xf0&&first<=0xf4?4:0;
+        if(!count||at+count-1>script.size())return false;
+        for(u32 n=1;n<count;++n)if((script[at++]&0xc0)!=0x80)return false;
+    }
+    return true;
+}
+u32 utf8_unit(u8 first){return first<0x80?1:(first&0xe0)==0xc0?2:(first&0xf0)==0xe0?3:4;}
+}
 bool Ending::load(const char* path){
     std::string name=path?path:"";const auto slash=name.find_last_of("/\\");if(slash!=std::string::npos)name.erase(0,slash+1);
     std::vector<u8> bytes;if(!resources.read(name.c_str(),bytes)||bytes.empty()){error="Ending resource: "+name;return false;}
@@ -45,7 +58,12 @@ bool Ending::step(const InputFrame& input){
                 while(cursor<script.size()&&(!script[cursor]||script[cursor]==10||script[cursor]==13))++cursor;
                 s.line_wait.reset((input.held&0x1001)?s.fast_delay:s.line_delay);s.line_lock=s.fast_delay;++s.line;goto finish;
             }
-            if(ch!='@'){if(cursor+1>=script.size()){error="Ending character bounds";return false;}text.push_back(char(script[cursor++]));text.push_back(char(script[cursor++]));if(text.size()>1024){error="Ending text bounds";return false;}continue;}
+            if(ch!='@'){
+                const u32 unit=Localization::Active()&&utf8_line(script,cursor)?utf8_unit(ch):2;
+                if(cursor+unit>script.size()){error="Ending character bounds";return false;}
+                text.append(reinterpret_cast<const char*>(script.data()+cursor),unit);cursor+=unit;
+                if(text.size()>1024){error="Ending text bounds";return false;}continue;
+            }
             if(cursor+1>=script.size()){error="Ending command bounds";return false;}const u8 command=script[++cursor];i32 a=0,b=0,c=0;
             const auto string_argument=[&](){const u32 first=cursor+1;u32 end=first;while(end<script.size()&&script[end])++end;return std::string(reinterpret_cast<const char*>(script.data()+first),end-first);};
             switch(command){

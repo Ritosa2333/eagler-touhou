@@ -13,6 +13,7 @@
 #include <dirent.h>
 #include <ctime>
 #include <algorithm>
+#include <iterator>
 #include "../../../portable/input/TouchController.hpp"
 #include <emscripten.h>
 #include <emscripten/html5.h>
@@ -21,6 +22,19 @@ EM_JS(void, th09_browser_frame, (int ok,double milliseconds), { Module["onGameFr
 EM_JS(void, th09_network_result, (), { Module["onNetworkResult"]?.(); });
 EM_JS(void, th09_network_request, (), { Module["onNetworkRequest"]?.(); });
 EM_JS(void, th09_network_send, (unsigned frame,unsigned keys,int moving,float x,float y), { Module["onNetworkInput"]?.(frame,keys,moving,x,y); });
+EM_JS(int, th09_keyboard_gamepad_dpad, (), {
+    if (!navigator.getGamepads) return 0;
+    let bits = 0;
+    for (const pad of navigator.getGamepads()) {
+        if (!pad || !pad.buttons || pad.buttons.length < 16) continue;
+        if (!/keyboard|\bkb\b/i.test(String(pad.id || 0))) continue;
+        if (pad.buttons[12]?.pressed) bits |= 1;
+        if (pad.buttons[13]?.pressed) bits |= 2;
+        if (pad.buttons[14]?.pressed) bits |= 4;
+        if (pad.buttons[15]?.pressed) bits |= 8;
+    }
+    return bits;
+});
 #include <memory>
 #if TH09_DEVELOPMENT_HARNESS
 #include "../../tests/world-snapshot.hpp"
@@ -163,11 +177,16 @@ bool running=false,suspended=false;u32 loop_epoch=0;double previous_frame=-1;tou
 struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
 #include "../../../portable/input/KeyboardMap.inc"
 touhou::input::TouchController gestures;
-SDL_Joystick* controllers[2]{};u32 pulse_ticks[16]{};u32 auto_fire_frame=0;
-void close_controllers(){for(auto*& p:controllers)if(p){SDL_CloseJoystick(p);p=nullptr;}}
-void add_controller(SDL_JoystickID id){for(const auto* p:controllers)if(p&&SDL_GetJoystickID(const_cast<SDL_Joystick*>(p))==id)return;for(auto*& p:controllers)if(!p){p=SDL_OpenJoystick(id);break;}}
-i32 joy_button(i32 n){if(n<0||n>1||!controllers[n])return 32;for(i32 i=0;i<std::min(32,SDL_GetNumJoystickButtons(controllers[n]));++i)if(SDL_GetJoystickButton(controllers[n],i))return i;return 32;}
-u16 joy_keys(i32 side){if(!probe||side<0||side>1)return 0;const u32 device=probe->settings.devices[side];if(device>1||!controllers[device])return 0;auto* p=controllers[device];u16 keys=0;const i32 count=SDL_GetNumJoystickButtons(p);for(i32 n=0;n<9;++n){const i32 button=probe->settings.bindings[side].gamepad[n];if(button>=0&&button<count&&SDL_GetJoystickButton(p,button))keys|=u16(1u<<n);}const i32 axes=SDL_GetNumJoystickAxes(p),x=axes>0?SDL_GetJoystickAxis(p,0):0,y=axes>1?SDL_GetJoystickAxis(p,1):0,hat=SDL_GetNumJoystickHats(p)?SDL_GetJoystickHat(p,0):0;if(x<-19660||(hat&SDL_HAT_LEFT))keys|=64;if(x>19660||(hat&SDL_HAT_RIGHT))keys|=128;if(y<-19660||(hat&SDL_HAT_UP))keys|=16;if(y>19660||(hat&SDL_HAT_DOWN))keys|=32;return keys;}
+SDL_Gamepad* controllers[2]{};u32 pulse_ticks[16]{};u32 auto_fire_frame=0;
+constexpr SDL_GamepadButton gamepad_slots[]={
+    SDL_GAMEPAD_BUTTON_SOUTH,SDL_GAMEPAD_BUTTON_EAST,SDL_GAMEPAD_BUTTON_WEST,SDL_GAMEPAD_BUTTON_NORTH,
+    SDL_GAMEPAD_BUTTON_LEFT_SHOULDER,SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER,SDL_GAMEPAD_BUTTON_BACK,
+    SDL_GAMEPAD_BUTTON_START,SDL_GAMEPAD_BUTTON_LEFT_STICK,SDL_GAMEPAD_BUTTON_RIGHT_STICK,SDL_GAMEPAD_BUTTON_GUIDE,
+};
+void close_controllers(){for(auto*& p:controllers)if(p){SDL_CloseGamepad(p);p=nullptr;}}
+void add_controller(SDL_JoystickID id){for(const auto* p:controllers)if(p&&SDL_GetGamepadID(const_cast<SDL_Gamepad*>(p))==id)return;for(auto*& p:controllers)if(!p){p=SDL_OpenGamepad(id);break;}}
+i32 joy_button(i32 n){if(n<0||n>1||!controllers[n])return 32;for(i32 i=0;i<i32(std::size(gamepad_slots));++i)if(SDL_GetGamepadButton(controllers[n],gamepad_slots[i]))return i;return 32;}
+u16 joy_keys(i32 side){if(!probe||side<0||side>1)return 0;const u32 device=probe->settings.devices[side];if(device>1||!controllers[device])return 0;auto* p=controllers[device];u16 keys=0;for(i32 n=0;n<9;++n){const i32 button=probe->settings.bindings[side].gamepad[n];if(button>=0&&button<i32(std::size(gamepad_slots))&&SDL_GetGamepadButton(p,gamepad_slots[button]))keys|=u16(1u<<n);}const i32 x=SDL_GetGamepadAxis(p,SDL_GAMEPAD_AXIS_LEFTX),y=SDL_GetGamepadAxis(p,SDL_GAMEPAD_AXIS_LEFTY);if(x<-19660||SDL_GetGamepadButton(p,SDL_GAMEPAD_BUTTON_DPAD_LEFT))keys|=64;if(x>19660||SDL_GetGamepadButton(p,SDL_GAMEPAD_BUTTON_DPAD_RIGHT))keys|=128;if(y<-19660||SDL_GetGamepadButton(p,SDL_GAMEPAD_BUTTON_DPAD_UP))keys|=16;if(y>19660||SDL_GetGamepadButton(p,SDL_GAMEPAD_BUTTON_DPAD_DOWN))keys|=32;return keys;}
 touhou::input::TouchState touch_state(){
     touhou::input::TouchState s;if(!probe)return s;if(probe->in_title||probe->paused||probe->over||probe->complete||!probe->world||!probe->session)return s;
     auto& run=*probe->session;auto& w=*probe->world;if(run.is_replay){s.context=3;return s;}if(run.phase==SessionPhase::ending){s.context=2;return s;}if(w.dialogue->id>=0){s.context=2;return s;}
@@ -176,12 +195,13 @@ touhou::input::TouchState touch_state(){
 }
 void clear_inputs(){for(auto& k:keyboard_map)k.hosted=false;gestures.reset();if(probe&&probe->session)probe->session->clear_motion();std::fill(std::begin(pulse_ticks),std::end(pulse_ticks),0);}
 void sample_keys(u16 (&out)[3]){
-    SDL_Event e;while(SDL_PollEvent(&e)){if(e.type==SDL_EVENT_JOYSTICK_ADDED)add_controller(e.jdevice.which);else if(e.type==SDL_EVENT_JOYSTICK_REMOVED)for(auto*& p:controllers)if(p&&SDL_GetJoystickID(p)==e.jdevice.which){SDL_CloseJoystick(p);p=nullptr;}}
+    SDL_Event e;while(SDL_PollEvent(&e)){if(e.type==SDL_EVENT_GAMEPAD_ADDED)add_controller(e.gdevice.which);else if(e.type==SDL_EVENT_GAMEPAD_REMOVED)for(auto*& p:controllers)if(p&&SDL_GetGamepadID(p)==e.gdevice.which){SDL_CloseGamepad(p);p=nullptr;}}
     bool keys[256]{};const auto* physical=SDL_GetKeyboardState(nullptr);for(const auto& k:keyboard_map)if(k.hosted||(k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){if(k.vk)keys[k.vk]=true;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=true;if(k.scan==28||k.scan==156)keys[13]=true;}
+    const int keyboardDpad=th09_keyboard_gamepad_dpad();if(keyboardDpad&1)keys[38]=true;if(keyboardDpad&2)keys[40]=true;if(keyboardDpad&4)keys[37]=true;if(keyboardDpad&8)keys[39]=true;
     const auto state=touch_state();auto sample=gestures.sample(state,SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);
     // TH09 shoots ordinary bullets on repeated presses, while holding Z charges.
     // Auto-fire therefore produces real press/release input, retained by .rpy.
-    if(state.context==1&&gestures.fire&&!keys[90])sample.keys[90]=((auto_fire_frame++%6)<3);
+    if(state.context==1&&gestures.enabled&&gestures.fire&&!keys[90])sample.keys[90]=((auto_fire_frame++%6)<3);
     for(u32 n=0;n<256;++n)keys[n]=keys[n]||sample.keys[n];
     if(probe->session)probe->session->clear_motion();
     if(sample.motion&&state.ready&&!keys[37]&&!keys[38]&&!keys[39]&&!keys[40]){
@@ -199,7 +219,7 @@ void sample_keys(u16 (&out)[3]){
 extern "C" {
 #define TH09_EXPORT(n) __attribute__((export_name(n)))
 TH09_EXPORT("th09_game_open") u32 th09_game_open(u32 seed){
-    network.end();clear_inputs();close_controllers();SDL_InitSubSystem(SDL_INIT_JOYSTICK);i32 count=0;auto* ids=SDL_GetJoysticks(&count);for(i32 n=0;n<count;++n)add_controller(ids[n]);SDL_free(ids);for(auto& k:keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);
+    network.end();clear_inputs();close_controllers();SDL_InitSubSystem(SDL_INIT_GAMEPAD);i32 count=0;auto* ids=SDL_GetGamepads(&count);for(i32 n=0;n<count;++n)add_controller(ids[n]);SDL_free(ids);for(auto& k:keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);
     probe=std::make_unique<Application>();if(!probe->open_title()){failure=probe->error;return 0;}probe->state.random={u16(seed),0,0};return 1;
 }
 TH09_EXPORT("th09_game_metrics") const u32* th09_game_metrics(){static u32 data[10]{};if(probe){auto& s=probe->graphics.backend.stats;data[0]=s.batches;data[1]=s.uploadBytes;data[2]=s.readBytes;data[3]=s.vertexUploadBytes;data[4]=s.programCompiles;data[5]=s.bufferReplacements;data[6]=s.bufferSubUpdates;data[7]=s.frames;data[8]=s.resamples;data[9]=s.presentations;}return data;}

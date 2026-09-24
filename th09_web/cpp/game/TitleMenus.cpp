@@ -1,4 +1,5 @@
 #include "TitleMenus.hpp"
+#include "Localization.hpp"
 #include <algorithm>
 namespace th09 {
 namespace {
@@ -37,7 +38,10 @@ bool TitleMenus::main(){
             s.selection_base=1;s.selection_count=8;select(s.selection,1,8);
             if(settings.game_flags&8){change(TitleScreen::replays);interrupt(5);return true;}settings.game_flags&=~2u;
         }
-        if(s.load_frame<8){output.title_text(descriptions[s.load_frame],title_help[s.load_frame],0xfff0e0,0x300000);++s.load_frame;return true;}
+        if(s.load_frame<8){
+            constexpr const char* ids[]={"th09 Menu Story Start","th09 Menu Extra Start","th09 Menu Match Start","th09 Menu Replay","th09 Menu Result","th09 Menu Music Room","th07 Menu Option","th07 Menu Quit"};
+            output.title_text(descriptions[s.load_frame],Localization::StringById(ids[s.load_frame],title_help[s.load_frame]),0xfff0e0,0x300000);++s.load_frame;return true;
+        }
         s.previous_selection=-1;s.load_frame=s.frames=0;s.state=1;s.idle_frames=0;
     }
     if(s.state==1){

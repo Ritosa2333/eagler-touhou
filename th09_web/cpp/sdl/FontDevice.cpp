@@ -2,6 +2,7 @@
 #include "Assets.hpp"
 #include "../game/MessageResource.hpp"
 #include "../game/ShotResource.hpp"
+#include "../game/Localization.hpp"
 #include <set>
 #include "../game/ImageResample.hpp"
 #include <SDL3_ttf/SDL_ttf.h>
@@ -11,10 +12,24 @@ struct FontDevice::Impl {
     struct Glyph {i32 advance=0,width=0,height=0;std::vector<u8> coverage;};
     std::map<i32,TTF_Font*> faces;std::map<std::pair<i32,u16>,Glyph> glyphs;std::vector<u8> encoding,blend;bool ready=false;
     ~Impl(){for(auto& f:faces)TTF_CloseFont(f.second);if(ready)TTF_Quit();}
-    u16 next(const u8*& p,const u8* end){u32 code=*p++;if((code>=0x81&&code<=0x9f)||(code>=0xe0&&code<=0xfc)){if(p==end)return 0x30fb;code=(code<<8)|*p++;}return u16(encoding[code*2])|(u16(encoding[code*2+1])<<8);}
+    u16 next(const u8*& p,const u8* end){
+        if(Localization::Active()){
+            const u8 first=*p++;if(first<0x80)return first;
+            const u32 count=(first&0xe0)==0xc0?2:(first&0xf0)==0xe0?3:(first&0xf8)==0xf0?4:0;
+            if(!count||size_t(end-p)<count-1)return 0x30fb;
+            u32 code=first&((1u<<(7-count))-1u);
+            for(u32 n=1;n<count;++n){if((*p&0xc0)!=0x80)return 0x30fb;code=(code<<6)|(*p++&0x3f);}
+            return code<=0xffff?u16(code):0x30fb;
+        }
+        u32 code=*p++;if((code>=0x81&&code<=0x9f)||(code>=0xe0&&code<=0xfc)){if(p==end)return 0x30fb;code=(code<<8)|*p++;}return u16(encoding[code*2])|(u16(encoding[code*2+1])<<8);
+    }
     const Glyph* glyph(i32 height,u16 code){
         const auto key=std::make_pair(height,code);const auto known=glyphs.find(key);if(known!=glyphs.end())return &known->second;
-        auto& font=faces[height];if(!font){font=TTF_OpenFont("/fonts/msgothic.ttc",float(height));if(!font)return nullptr;TTF_SetFontKerning(font,false);TTF_SetFontHinting(font,TTF_HINTING_NORMAL);}
+        auto& font=faces[height];if(!font){
+            if(const char* pack=Localization::FontFile())font=TTF_OpenFont((std::string("/thcrap/th09/fonts/")+pack).c_str(),float(height));
+            if(!font)font=TTF_OpenFont("/fonts/msgothic.ttc",float(height));
+            if(!font)return nullptr;TTF_SetFontKerning(font,false);TTF_SetFontHinting(font,TTF_HINTING_NORMAL);
+        }
         if(!TTF_FontHasGlyph(font,code))code=0x30fb;int left,right,bottom,top,advance;
         if(!TTF_GetGlyphMetrics(font,code,&left,&right,&bottom,&top,&advance))return nullptr;
         auto* image=TTF_RenderGlyph_Blended(font,code,{255,255,255,255});if(!image)return nullptr;auto* rgba=SDL_ConvertSurface(image,SDL_PIXELFORMAT_RGBA32);SDL_DestroySurface(image);if(!rgba)return nullptr;
@@ -23,7 +38,7 @@ struct FontDevice::Impl {
         SDL_DestroySurface(rgba);return &glyphs.emplace(key,std::move(g)).first->second;
     }
     bool draw(TextureImage& image,i32 x,i32 y,i32 height,u32 color,const char* text){
-        const auto* p=reinterpret_cast<const u8*>(text);const auto* end=p+std::strlen(text);const u32 red=color&255,green=(color>>8)&255,blue=(color>>16)&255;
+        text=Localization::Utf8(text);const auto* p=reinterpret_cast<const u8*>(text);const auto* end=p+std::strlen(text);const u32 red=color&255,green=(color>>8)&255,blue=(color>>16)&255;
         while(p<end){const auto* g=glyph(height,next(p,end));if(!g)return false;
             for(i32 iy=0;iy<g->height;++iy){const i32 dy=y+iy;if(dy<0||dy>=i32(image.height))continue;for(i32 ix=0;ix<g->width;++ix){const i32 dx=x+ix;const u32 a=g->coverage[iy*g->width+ix];if(dx<0||dx>=i32(image.width)||!a)continue;u8* out=image.pixels.data()+dy*image.pitch+dx*2;const u16 before=u16(out[0])|(u16(out[1])<<8);const u32 base=a*8192;const u16 v=(u16(blend[base+((before>>10)&31)*256+red])<<10)|(u16(blend[base+((before>>5)&31)*256+green])<<5)|blend[base+(before&31)*256+blue];out[0]=u8(v);out[1]=u8(v>>8);}}
             x+=g->advance;
@@ -33,17 +48,17 @@ struct FontDevice::Impl {
 FontDevice::FontDevice(GraphicsDevice& g):impl(std::make_unique<Impl>()),graphics(g){}
 FontDevice::~FontDevice()=default;
 bool FontDevice::initialize(){auto& f=*impl;if(!TTF_Init()){error=SDL_GetError();return false;}f.ready=true;if(!read_file("/fonts/cp932.bin",f.encoding)||f.encoding.size()!=131072||!read_file("/fonts/blend.bin",f.blend)||f.blend.size()!=131072){error="Missing Japanese font tables";return false;}return true;}
-void FontDevice::prewarm(const char* text,i32 height){if(!impl->ready||height<1||height>128)return;const auto* p=reinterpret_cast<const u8*>(text);const auto* end=p+std::strlen(text);while(p<end)impl->glyph(height,impl->next(p,end));}
+void FontDevice::prewarm(const char* text,i32 height){if(!impl->ready||height<1||height>128)return;text=Localization::Utf8(text);const auto* p=reinterpret_cast<const u8*>(text);const auto* end=p+std::strlen(text);while(p<end)impl->glyph(height,impl->next(p,end));}
 void FontDevice::prewarm_game(ResourceReader& resources){
     std::set<u16> codepoints;
-    const auto collect=[&](const char* text){const auto* p=reinterpret_cast<const u8*>(text);const auto* end=p+std::strlen(text);while(p<end){const auto code=impl->next(p,end);if(code)codepoints.insert(code);}};
+    const auto collect=[&](const char* text){text=Localization::Utf8(text);const auto* p=reinterpret_cast<const u8*>(text);const auto* end=p+std::strlen(text);while(p<end){const auto code=impl->next(p,end);if(code)codepoints.insert(code);}};
     {using namespace th09;
 #include "../game/TitleData.inc"
         for(const auto* t:title_help)collect(t);for(const auto* t:options_help)collect(t);for(const auto* t:key_help)collect(t);for(const auto* t:locked_music_help)collect(t);collect(locked_music_name);
     }
     for(i32 character=0;character<16;++character){const auto* profile=character_resources(character);for(const char* filename:{profile->story_messages,profile->versus_messages}){std::vector<u8> bytes;MessageResource messages;if(!resources.read(filename,bytes)||!messages.load(bytes.data(),u32(bytes.size())))continue;
         for(const auto& entry:messages.entries){MessageInstruction ins;u32 at=entry.offset;if(!at)continue;while(messages.instruction(at,ins)&&ins.opcode){if(ins.opcode==3||ins.opcode==16){std::string text;if(MessageResource::decode_text(ins,ins.opcode==3?4:0,text))collect(text.c_str());}at+=4+ins.size;}}}
-        std::vector<u8> bytes;ShotResource shot;if(resources.read(profile->shots,bytes)&&shot.load(bytes.data(),u32(bytes.size())))for(const auto& name:shot.spell_names)collect(name.c_str());
+        std::vector<u8> bytes;ShotResource shot;if(resources.read(profile->shots,bytes)&&shot.load(bytes.data(),u32(bytes.size())))for(u32 level=0;level<shot.spell_names.size();++level)collect(Localization::SpellName(u32(character)*10+level,shot.spell_names[level].c_str()));
     }
     std::vector<u8> comments;if(resources.read("musiccmt.txt",comments)){comments.push_back(0);collect(reinterpret_cast<const char*>(comments.data()));}
     for(i32 ending=0;ending<15;++ending){char name[24];if(ending<14)std::snprintf(name,sizeof(name),"end%02d.end",ending);else std::snprintf(name,sizeof(name),"endstaff.end");std::vector<u8> bytes;if(!resources.read(name,bytes))continue;std::string line;for(const u8 byte:bytes){if(byte==0||byte==10||byte==13){if(!line.empty()&&line[0]!='@')collect(line.c_str());line.clear();}else line+=char(byte);}if(!line.empty())collect(line.c_str());}

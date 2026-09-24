@@ -1,4 +1,5 @@
 **/artifacts/
+**/build-eagler/
 **/node_modules/
 **/.cache/
 **/.npm-cache/
@@ -8,6 +9,7 @@
 **/tools/emsdk/
 **/tools/wasi-sdk*/
 th09_web/reference/assets/
+th09_web/assets/sdl-native/music-local-verification.json
 **/assets/sdl-native/msgothic.ttc
 th10_web/tools/
 tools/*

@@ -25,7 +25,10 @@ bool AnmResource::load(i32 index,const u8* bytes,u32 size){
             if(source.pixel_size>span-offset-16)return fail();
         }
         source.first_sprite=sprite_sources.size();source.sprite_count=ns;
-        for(u32 i=0;i<ns;++i){const u32 offset=word(entry+64+i*4);if(offset>span||span-offset<20)return fail();const auto* sprite=entry+offset;sprite_sources.push_back({value(sprite+4),value(sprite+8),value(sprite+12),value(sprite+16)});}
+        for(u32 i=0;i<ns;++i){const u32 offset=word(entry+64+i*4);if(offset>span||span-offset<20)return fail();const auto* sprite=entry+offset;
+            const AnmSpriteRect rect{value(sprite+4),value(sprite+8),value(sprite+12),value(sprite+16)};
+            sprite_sources.push_back({rect.x,rect.y,rect.width,rect.height});source.sprite_rects.push_back(rect);
+        }
         for(u32 i=0;i<nt;++i){const u32 offset=word(entry+64+ns*4+i*8+4);if(offset>span||span-offset<8)return fail();
             u32 cursor=offset;bool terminated=false;
             while(cursor<=span-8){const auto* instruction=reinterpret_cast<const AnmRawInstr*>(entry+cursor);if(instruction->opcode==-1){terminated=true;break;}if(instruction->instructionSize<8||instruction->instructionSize>span-cursor)return fail();cursor+=instruction->instructionSize;}

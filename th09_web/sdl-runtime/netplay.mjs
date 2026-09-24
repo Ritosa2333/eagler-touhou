@@ -4,7 +4,7 @@ export class Netplay {
  send(message){if(this.socket?.readyState===WebSocket.OPEN)this.socket.send(JSON.stringify(message));}
  async connect(code=''){
   if(this.socket||this.connecting)throw Error('已连接房间');this.connecting=true;this.closed=false;this.prepared=false;this.settled=false;this.hashFrame=0;const attempt=++this.attempt;this.core._th09_loop_pause(1);
-  const version=await fetch('/version.json').then(r=>{if(!r.ok)throw Error('版本读取失败');return r.json();});
+  const version=await fetch('version.json').then(r=>{if(!r.ok)throw Error('版本读取失败');return r.json();});
   if(this.closed||attempt!==this.attempt)return;const url=new URL('/netplay',location.href);url.protocol=location.protocol==='https:'?'wss:':'ws:';const socket=this.socket=new WebSocket(url);this.onStatus('连接中……');
   socket.onopen=()=>{if(this.socket!==socket)return;const [unlocked,difficulty,focus]=this.info();this.send({type:code?'join':'create',code:code.trim().toUpperCase(),build:version.build,unlocked,difficulty,focus:focus?1:0});};
   socket.onerror=()=>{if(this.socket===socket)this.onStatus('连接失败，请检查服务。');};socket.onclose=()=>{if(this.socket===socket)this.finish();};

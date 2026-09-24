@@ -1,5 +1,6 @@
 #include "Assets.hpp"
 #include "../game/ResourceCrypt.hpp"
+#include "../game/RuntimeOverride.hpp"
 #include <limits>
 namespace th09::sdl {
 bool read_file(const char* name,std::vector<u8>& out){
@@ -15,6 +16,8 @@ bool Assets::open(const char* path){
 bool Assets::read(u32 offset,u8* output,u32 count){return file&&offset<=length&&count<=length-offset&&SDL_SeekIO(file,offset,SDL_IO_SEEK_SET)==offset&&SDL_ReadIO(file,output,count)==count;}
 bool Assets::read(const char* name,std::vector<u8>& out){
     if(!name)return false;const char* short_name=name;for(const char* p=name;*p;++p)if(*p=='/'||*p=='\\')short_name=p+1;
+    // thcrap's virtual file wins over DAT entries, with Japanese DAT fallback.
+    if(RuntimeOverride::Read(name,out))return true;
     if(prepared_ready&&prepared_name==short_name){out=std::move(prepared_bytes);cancel_prepare();return true;}
     const auto found=cache.find(short_name);if(found!=cache.end()){out=found->second;return true;}if(archive.read(short_name,out)){if(out.size()<=512*1024&&cached+out.size()<=12*1024*1024){cached+=out.size();cache.emplace(short_name,out);}return true;}error=std::string("Missing TH09 resource: ")+short_name;return false;
 }

@@ -1,4 +1,5 @@
 #include "TitleMenus.hpp"
+#include "Localization.hpp"
 namespace th09 {
 namespace {
 #include "TitleData.inc"
@@ -12,7 +13,9 @@ void TitleMenus::key_numbers(){
 void TitleMenus::key_enabled(){const u32 color=settings.devices[state.key_player]<2?0xffffffffu:0xff606060u;for(i32 n=40;n<45;++n)animations[n].color1.d3dColor=color;for(i32 n=50;n<60;++n)animations[n].color1.d3dColor=color;}
 bool TitleMenus::key_config(){
     auto& s=state;const auto& in=input[2];
-    if(!s.state){if(!s.load_frame){interrupt(4);advance();s.selection_base=37;s.selection_count=10;select(s.selection,37,10);s.state=s.frames=0;s.layout_changed=1;edited_bindings=settings.bindings;key_value(47,s.key_player);key_value(48,settings.devices[s.key_player]);key_value(49,settings.auto_focus[s.key_player]);key_numbers();s.previous_selection=-1;}s.state=1;for(i32 n=0;n<10;++n)output.title_text(descriptions[n],key_help[n],0xfff0e0,0x300000);}
+    if(!s.state){if(!s.load_frame){interrupt(4);advance();s.selection_base=37;s.selection_count=10;select(s.selection,37,10);s.state=s.frames=0;s.layout_changed=1;edited_bindings=settings.bindings;key_value(47,s.key_player);key_value(48,settings.devices[s.key_player]);key_value(49,settings.auto_focus[s.key_player]);key_numbers();s.previous_selection=-1;}s.state=1;
+        constexpr const char* ids[]={"th09 Key Side","th09 Key Control Type","th09 Key Charge Type","th09 Key Shot","th09 Key Bomb","th09 Key Slow","th07 Key Skip","th07 Key Pause","th07 Key Reset","th07 Key Quit"};
+        for(i32 n=0;n<10;++n)output.title_text(descriptions[n],Localization::StringById(ids[n],key_help[n]),0xfff0e0,0x300000);}
     else if(s.state!=1){tick();return true;}
     const i32 direction=navigate(s.selection,10,in);if(direction){if(settings.devices[s.key_player]>1)while(s.selection>2&&s.selection<8)s.selection+=direction;select(s.selection,37,10);}
     if(s.previous_selection!=s.selection){s.description=s.selection;descriptions[s.selection].pendingInterrupt=1;}s.previous_selection=s.selection;key_numbers();

@@ -37,6 +37,12 @@ npm start
 
 `web:package` 同时打包共用启动器和游戏运行时，不再生成旧的独立调试入口作为首页。
 
+### 接入当前 eagler-touhou 启动器
+
+在 `th09_web` 执行 `npm run web:build`，准备 `assets/sdl-native/cp932.bin` 和 `blend.bin` 后执行 `npm run web:eagler`。输出的 `build-eagler` 是无原版数据的目录 Runtime，可作为 `eagler-touhou/scripts/package-runtime-release.mjs` 的 `--th09-build` 输入。原版 `th09.dat`、共享字体和 19 首 OGG 由宿主包单独提供。TH09 适配器使用现行 `eagler-touhou/1` 通信及导航 epoch；旧 `web:package` 附带的启动器副本不应覆盖独立的 `eagler-touhou` 仓库。专用联机中继仍需另外部署，不能把启动器原有的 TH06/07 房间服务当作 TH09 的 `/netplay` 服务。
+
+只有原版安装目录时，可先在 `th09_web` 执行 `node scripts/prepare-retail-assets.mjs "原版游戏目录"`。脚本核对原版 1.50a 的 EXE/DAT 哈希，从 `th09.dat` 提取并校验 `thbgm.fmt`，以本机 ffmpeg/ffprobe 将 `thbgm.dat` 转为 19 首 OGG，逐首核验 PCM 帧数，并从工作区 TH10 共享资源准备字体表。生成的原版素材与音乐均被 Git 忽略。编译会优先使用 `TH09_EMSDK`，然后依次查找工作区 `tools/emsdk`、相邻 `th08/tools/emsdk`。
+
 开发比较器：`npm run cpp:build` 使用工作区 WASI SDK；`npm test` 跑 91 项常规比较测试。原版 EXE 必须匹配 target.json。完整重新解析原版包使用 `npm run test:archive-oracle`。`python scripts/prepare-assets.py` 从原版 BGM 生成保留 PCM 帧数和循环点的 OGG；这是有损音频编码，不应称作音频字节完全一致。
 
 独立重建需要保留原始游戏目录、portable、开发工具/对应依赖。Unicorn JS 开发依赖当前在 `../th08_web/node_modules/@alexaltea/unicorn-js`；不是浏览器运行依赖。原版 EXE 和开发工具不进入公开服务白名单。

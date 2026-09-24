@@ -1,4 +1,5 @@
 #include "TitleMenus.hpp"
+#include "Localization.hpp"
 #include <algorithm>
 namespace th09 {
 namespace {
@@ -6,7 +7,9 @@ namespace {
 }
 bool TitleMenus::options(){
     auto& s=state;const auto& in=input[2];
-    if(!s.state){if(!s.load_frame){interrupt(3);advance();s.state=s.frames=0;s.previous_selection=-1;s.selection_base=9;s.selection_count=9;select(s.selection,9,9);s.layout_changed=1;}s.state=1;for(i32 n=0;n<9;++n)output.title_text(descriptions[n],options_help[n],0xfff0e0,0x300000);}
+    if(!s.state){if(!s.load_frame){interrupt(3);advance();s.state=s.frames=0;s.previous_selection=-1;s.selection_base=9;s.selection_count=9;select(s.selection,9,9);s.layout_changed=1;}s.state=1;
+        constexpr const char* ids[]={"th07 Option Player","th07 Option Graphic","th09 Option BGM","th08 Option BGM Volume","th08 Option SE Volume","th07 Option Window Mode","th07 Option Reset","th09 Option Key Config","th07 Option Quit"};
+        for(i32 n=0;n<9;++n)output.title_text(descriptions[n],Localization::StringById(ids[n],options_help[n]),0xfff0e0,0x300000);}
     else if(s.state!=1){tick();return true;}
     const auto digit=[&](i32 n,i32 number,bool enabled){auto& a=animations[n];if(!enabled){a.color1.a=0;a.flag1=false;}else{resources.sprite(AnimationFile::menu,a,a.baseSpriteIndex+number*2);a.color1.a=255;a.flag1=true;}};
     digit(26,0,settings.music_volume>=100);digit(27,(settings.music_volume/10)%10,settings.music_volume>=10);

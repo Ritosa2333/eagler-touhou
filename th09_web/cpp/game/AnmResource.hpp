@@ -3,12 +3,14 @@
 #include <string>
 #include <vector>
 namespace th09 {
+struct AnmSpriteRect {float x=0,y=0,width=0,height=0;};
 struct AnmTextureSource {
     u32 width=0,height=0,format=0,color_key=0,priority=0;
     u32 pixel_offset=0,pixel_size=0,pixel_format=0,pixel_width=0,pixel_height=0;
     u32 first_sprite=0,sprite_count=0;
     bool embedded=false,empty=false;
     std::string name;
+    std::vector<AnmSpriteRect> sprite_rects;
 };
 class AnmResource {
 public:

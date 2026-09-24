@@ -1,9 +1,23 @@
 #include "Player.hpp"
 #include "HazardTrace.hpp"
+#include "Localization.hpp"
 #include <algorithm>
 namespace th09 {
 bool Player::initialize(const u8* data,u32 size,u32 side,u32 character,i32 controller){
     if(side>1||character>15||!resource.load(data,size))return false;
+    // thcrap th09/spells.js indexes each attack by the original .sht slot:
+    // character * 10 + level. Slots whose Japanese name repeats an earlier
+    // level (most characters repeat level 0 at level 1) have no entry of
+    // their own, so resolve those against the character's base spell instead
+    // of emitting the untranslated CP932 name, which the pack font cannot
+    // render. This mirrors TH10 SpellStart resolving the raw spell id.
+    const auto originals=resource.spell_names;
+    for(u32 level=0;level<resource.spell_names.size();++level){
+        const char* translated=Localization::SpellName(character*10+level,nullptr);
+        if(translated==nullptr&&level>0&&originals[level]==originals[0])
+            translated=Localization::SpellName(character*10,nullptr);
+        resource.spell_names[level]=translated!=nullptr?translated:originals[level];
+    }
     motion.player=side;motion.character=character;life.input_controller=controller;shots.side=i32(side);
     motion.hit_extent={resource.hit_size*.5f,resource.hit_size*.5f,5};motion.graze_extent={resource.graze_size*.5f,resource.graze_size*.5f,5};motion.item_extent={resource.item_size*.5f,resource.item_size*.5f,5};
     control.available=100;initialized=true;return true;
