@@ -119,8 +119,10 @@ gift affinity across homing cancellation, recipient death and pool reuse.
   `hud-th08-3p-final.png`.
 
 These checks prove local gameplay and package construction, not a playable
-network product. The TH08 world journal/late-input correction, frame-zero
-barrier, multiplayer Replay, spectator, actual transport and Launcher room
-lifecycle still require implementation and acceptance. The pinned common
+network product. The frame-zero barrier and two rewindable owner modules now
+have the focused evidence in [netplay-progress.md](netplay-progress.md). The
+complete TH08 world journal/late-input correction, multiplayer Replay,
+spectator, actual transport and Launcher room lifecycle still require
+implementation and acceptance. The pinned common
 library's `rollback-journal-test.cpp` covers its generic algorithm only, not
 restoration of TH08 owners.

@@ -23,11 +23,26 @@ test('fixture owner is separate from ordinary and production multiplayer source 
   assert.ok(!ordinary.flags.includes('-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1'));
   assert.ok(!multiplayer.flags.includes('-DTH_MULTIPLAYER_FIXTURES=1'));
   assert.ok(fixture.flags.includes('-DTH_MULTIPLAYER_FIXTURES=1'));
+  for(const name of ['NetplayRuntime','EnemyJournal']){
+    const owner='cpp/multiplayer/'+name+'.cpp';
+    assert.ok(!ordinary.sources.includes(owner));
+    assert.ok(multiplayer.sources.includes(owner));
+    assert.ok(fixture.sources.includes(owner));
+  }
 });
 test('diagnostic fixture exports never enter ordinary or production multiplayer WASM',()=>{
   const ordinary=exports('sdl3'),multiplayer=exports('multiplayer'),fixture=exports('multiplayer-fixtures');
   for(const [profile,names] of [['ordinary',ordinary],['multiplayer',multiplayer]])
     for(const name of names)assert.ok(!name.startsWith('mp_fixture_'),name+' leaked into '+profile+' WASM');
-  for(const name of ['mp_fixture_die','mp_fixture_place','mp_fixture_power','mp_fixture_status','mp_fixture_items','mp_fixture_item_status'])
+  for(const name of ['mp_fixture_die','mp_fixture_place','mp_fixture_power','mp_fixture_status','mp_fixture_items','mp_fixture_item_status','mp_fixture_enemy_journal','mp_fixture_screen_journal'])
     assert.ok(fixture.has(name),name+' missing from diagnostic WASM');
+});
+test('network admission exports are multiplayer-only, not fixture-only',()=>{
+  const ordinary=exports('sdl3'),multiplayer=exports('multiplayer'),fixture=exports('multiplayer-fixtures');
+  for(const name of ['multiplayer_session_build','multiplayer_wire_apply','multiplayer_session_ready',
+    'multiplayer_capture_local','multiplayer_input_build','multiplayer_netplay_status']){
+    assert.ok(!ordinary.has(name),name+' leaked into ordinary WASM');
+    assert.ok(multiplayer.has(name),name+' missing from production multiplayer');
+    assert.ok(fixture.has(name),name+' missing from diagnostic multiplayer');
+  }
 });

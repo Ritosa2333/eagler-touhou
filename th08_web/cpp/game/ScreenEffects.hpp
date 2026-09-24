@@ -3,6 +3,10 @@
 #include "Chain.hpp"
 #include "Rng.hpp"
 #include <unordered_map>
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include <array>
+#include <eagler/netplay/RollbackJournal.hpp>
+#endif
 namespace th08 {
 enum class ScreenEffectType:i32 { FadeIn,Shake,ArcadeFadeOut,Flash,FadeOut,MenuFullFade,MenuArcadeFade,EnvelopeShake };
 struct ScreenEffectState {
@@ -33,13 +37,36 @@ public:
     void remove(ScreenEffectState* state);
     JobResult calculate(ScreenEffectState& state);
     JobResult draw(ScreenEffectState& state);
-    u32 active_count()const noexcept{return active.size();}
+    u32 active_count()const noexcept{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        u32 count=0;for(const auto& entry:instances)count+=entry.occupied?1u:0u;return count;
+#else
+        return active.size();
+#endif
+    }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    static constexpr u32 MaxInstances=128;
+    bool invalid()const{return allocation_failed;}
+    // Includes chain links (exact duplicate touches are allowed). A separately
+    // owned dynamic chain node must be retired/pinned by its owner first.
+    bool capture_rollback(Netplay::RollbackJournal&);
+    void rebase_after_rollback(){presentation_previous.clear();}
+#endif
 private:
-    struct Instance {ScreenEffectState state;ScreenEffects* owner;};
+    struct Instance {ScreenEffectState state;ScreenEffects* owner=nullptr;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        ChainElement calculation,drawing;bool occupied=false;
+#endif
+    };
     Chain& chain;
     AnmRenderer& renderer;
     Rng& random;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    std::array<Instance,MaxInstances> instances;
+    bool allocation_failed=false;
+#else
     std::vector<Instance*> active;
+#endif
     struct PresentationSample {i32 alpha=0,timer=0,phase=0,a=0;ScreenEffectType type=ScreenEffectType::FadeIn;};
     std::unordered_map<ScreenEffectState*,PresentationSample> presentation_previous;
     void shake(float amplitude);

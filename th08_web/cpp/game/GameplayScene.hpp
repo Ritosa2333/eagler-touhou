@@ -156,6 +156,7 @@ public:
     u32 faults()const{return u32(failed)|(u32(animations.invalid)<<1)|(u32(player_services.invalid())<<2)|(u32(player.invalid())<<3)|(u32(enemies.invalid())<<4)|(u32(effect_system.invalid)<<5)|(u32(items.invalid())<<6)|(u32(bullets.invalid())<<7)|(u32(background_script.invalid)<<8);}
     bool invalid()const{
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(screen.invalid())return true;
         for(const auto& guest:guest_pilots)if(guest&&(guest->services.invalid()||guest->simulation.invalid()))return true;
 #endif
         return failed||animations.invalid||player_services.invalid()||player.invalid()||enemies.invalid()||effect_system.invalid||items.invalid()||bullets.invalid()||background_script.invalid;

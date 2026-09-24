@@ -2,11 +2,19 @@
 // this file; the following ticks still use native TH08 Player/Item/Menu owners.
 #include "../../th08_web/cpp/platform/BrowserRuntime.hpp"
 #include <algorithm>
+#include "enemy-journal-fixture.hpp"
+#include "screen-journal-fixture.hpp"
 #ifndef TH_MULTIPLAYER_FIXTURES
 #error Fixture exports must stay out of production builds
 #endif
 using namespace th08;
 extern "C" {
+__attribute__((export_name("mp_fixture_enemy_journal")))
+const u32* mp_fixture_enemy_journal(){return multiplayer::fixture::enemy_journal_probe();}
+__attribute__((export_name("mp_fixture_screen_journal")))
+const u32* mp_fixture_screen_journal(BrowserRuntime* runtime){
+    return runtime?multiplayer::fixture::screen_journal_probe(runtime->app.renderer):nullptr;
+}
 __attribute__((export_name("mp_fixture_die")))
 u32 mp_fixture_die(BrowserRuntime* runtime,u32 seat){
     if(!runtime||!runtime->app.in_game())return 0;

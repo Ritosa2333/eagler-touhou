@@ -44,6 +44,10 @@ public:
     i32 replay_touch_points(ReplayTouchPoint*,i32)override;
     bool cheat_movement_used()const override{return motion.cheat_movement_used;}
     BrowserRuntime();~BrowserRuntime();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    bool logical_frame_advanced()const{return !app.session.netplay.Configured()||app.session.network_frame_open;}
+    bool finish_network_frame();
+#endif
     static std::string path(const char*);
     bool put(const char*,const u8*,u32);bool put_archive(const u8*,u32);bool put_font(i32,const u8*,u32);
     bool mount_archive(std::unique_ptr<ArchiveSource> source){return !prepared&&resources_.mount_archive(std::move(source));}

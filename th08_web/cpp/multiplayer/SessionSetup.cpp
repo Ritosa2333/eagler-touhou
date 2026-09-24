@@ -1,13 +1,20 @@
 #include "SessionSetup.hpp"
 namespace th08::multiplayer {
 bool decode_session_setup(SessionSetup& current,const std::uint32_t* words,std::size_t size) noexcept {
-    if(current.started||!words||size!=11||words[0]!=1||words[1]<2||words[1]>3||
+    if(current.started||!words||(size!=11&&size!=13))return false;
+    const bool network=words[0]==2;
+    if((!network&&words[0]!=1)||size!=(network?13u:11u)||words[1]<2||words[1]>3||
        words[2]>=words[1]||words[3]>4||words[4]>65535)return false;
     SessionSetup next{};
     next.player_count=words[1];next.local_player=words[2];
     next.difficulty=words[3];next.seed=words[4];
+    if(network){
+        next.session_id=std::uint64_t(words[5])|(std::uint64_t(words[6])<<32);
+        if(!next.session_id)return false;
+    }
+    const std::size_t loadouts=network?7:5;
     for(std::uint32_t seat=0;seat<3;++seat){
-        const auto character=words[5+seat*2],shot=words[6+seat*2];
+        const auto character=words[loadouts+seat*2],shot=words[loadouts+seat*2+1];
         if(character>11||shot||(seat>=next.player_count&&character))return false;
         next.characters[seat]=character;
     }

@@ -108,7 +108,15 @@ struct EclVm {
     enum class Failure:u8 {None,MissingBoss,MissingAnimation,MissingEnemyActions,MissingEffect,MissingSceneActions,MissingNativeServices,UnsupportedNativeCallback,MissingSpellServices};Failure failure=Failure::None;
     using Interpolation=EclContext::Interpolation;
     EclProgram* program=nullptr;EclContext main_context;EclContext* active_context=nullptr;
-    std::unique_ptr<EclContext> asynchronous[4];u32 asynchronous_generations[4]{};i32 active_slot=-1,scratch_depth=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // The journal pins an old context until its speculative frame is retired.
+    // The executor still moves the active slot out while running it, so a
+    // script may cancel/replace itself without changing the native ordering.
+    std::shared_ptr<EclContext> asynchronous[4];
+#else
+    std::unique_ptr<EclContext> asynchronous[4];
+#endif
+    u32 asynchronous_generations[4]{};i32 active_slot=-1,scratch_depth=0;
     i32 shared_integer[8]{};float shared_real[8]{};
     EclContext& context()noexcept{return active_context?*active_context:main_context;}
     const EclContext& context()const noexcept{return active_context?*active_context:main_context;}

@@ -58,7 +58,11 @@ EX("controller") void browser_controller(BrowserRuntime* r,i32 x,i32 y,const u8*
 EX("multiplayer_configure") u32 browser_multiplayer_configure(BrowserRuntime* r,const u32* words,u32 count){
     if(!r||r->app.in_game()||r->app.loading_game())return 0;
     auto& session=r->app.session;
-    if(!multiplayer::decode_session_setup(session.multiplayer_session,words,count))return 0;
+    auto candidate=session.multiplayer_session;
+    if(!multiplayer::decode_session_setup(candidate,words,count))return 0;
+    if(candidate.session_id){if(!session.netplay.Reset(candidate))return 0;}
+    else{if(session.netplay.Configured()&&session.netplay.LastFrame()!=Netplay::INVALID_FRAME)return 0;session.netplay.Clear();}
+    session.multiplayer_session=candidate;
     const auto& setup=session.multiplayer_session;
     session.player_count=setup.player_count;session.local_player=setup.local_player;
     for(u32 seat=0;seat<3;++seat)session.player_characters[seat]=u8(setup.characters[seat]);
@@ -68,7 +72,33 @@ EX("multiplayer_contract") u32 browser_multiplayer_contract(BrowserRuntime* r){
     return r&&r->app.session.multiplayer_session.configured?multiplayer::gameplay_contract(r->app.session.multiplayer_session):0;
 }
 EX("multiplayer_commit_inputs") u32 browser_multiplayer_commit_inputs(BrowserRuntime* r,const u16* buttons,u32 count){
-    return r&&r->app.in_game()&&r->app.game.commit_inputs(buttons,count)?1:0;
+    return r&&!r->app.session.netplay.Configured()&&r->app.in_game()&&r->app.game.commit_inputs(buttons,count)?1:0;
+}
+EX("multiplayer_session_build") u32 browser_multiplayer_session_build(BrowserRuntime* r,u32 phase,u8* out,u32 capacity){
+    if(!r||!out||!r->app.session.netplay.Configured()||(phase!=1&&phase!=2))return 0;
+    auto& net=r->app.session.netplay;if(phase==2&&!net.Ready())return 0;
+    std::vector<u8> bytes;
+    if(!Netplay::EncodeSessionPacket(net.SessionPacket(Netplay::SessionPhase(phase)),&bytes)||bytes.size()>capacity)return 0;
+    std::memcpy(out,bytes.data(),bytes.size());return u32(bytes.size());
+}
+EX("multiplayer_wire_apply") u32 browser_multiplayer_wire_apply(BrowserRuntime* r,const u8* bytes,u32 size){
+    return r?u32(r->app.session.netplay.ApplyWire(bytes,size)):u32(multiplayer::NetplayRuntime::WireResult::Malformed);
+}
+EX("multiplayer_session_ready") u32 browser_multiplayer_session_ready(BrowserRuntime* r){return r&&r->app.session.netplay.MarkReady();}
+EX("multiplayer_capture_local") u32 browser_multiplayer_capture_local(BrowserRuntime* r,u32 frame,u32 buttons){
+    return r&&buttons<=0x7fff&&r->app.session.netplay.CaptureLocal(frame,Netplay::FrameInput(u16(buttons)));
+}
+EX("multiplayer_input_build") u32 browser_multiplayer_input_build(BrowserRuntime* r,u32 peer,u32 frame,u32 sequence,u8* out,u32 capacity){
+    if(!r||!out||peer>=3)return 0;std::vector<u8> bytes;
+    if(!r->app.session.netplay.BuildInputWire(u8(peer),frame,sequence,0,bytes)||bytes.size()>capacity)return 0;
+    std::memcpy(out,bytes.data(),bytes.size());return u32(bytes.size());
+}
+EX("multiplayer_netplay_status") const u32* browser_multiplayer_netplay_status(BrowserRuntime* r){
+    static u32 out[12]{};std::fill(out,out+12,0);out[0]=1;if(!r)return out;
+    const auto& net=r->app.session.netplay;out[1]=net.Configured();out[2]=net.CanStart();
+    out[3]=net.NextFrame();out[4]=net.LastFrame();out[5]=net.ConfirmedThrough();
+    out[6]=net.RollbackFrame();out[7]=net.WorldReady();out[8]=r->app.session.network_frame_open;
+    out[9]=r->app.session.network_waiting;out[10]=net.Generation();out[11]=net.Retired();return out;
 }
 EX("multiplayer_status") const i32* browser_multiplayer_status(BrowserRuntime* r){
     static i32 words[44]{};std::fill(words,words+44,0);

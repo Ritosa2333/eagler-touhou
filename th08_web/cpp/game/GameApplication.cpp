@@ -141,6 +141,13 @@ void GameApplication::finish_loading(){
 JobResult GameApplication::update_supervisor(){
     publish_scene();const auto result=supervisor.update();if(result!=JobResult::Continue)return result;
     synchronize();if(title.modal())return JobResult::Break;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // The lobby already selected every loadout. Use the native title->game
+    // transition once its resources and the all-seat HELLO/READY gate are ready.
+    if(session.netplay.Configured()&&session.netplay.CanStart()&&
+       !session.multiplayer_session.started&&supervisor.state.active==i32(Scene::Title)&&
+       title.ready_for_session())title.context.supervisor_state=i32(Scene::Game);
+#endif
     if(game_attached){finish_loading();if(!game.prepare_frame(supervisor.input.current,timing.rate,timing.force_step))return JobResult::Error;}
     return invalid()?JobResult::Error:JobResult::Continue;
 }

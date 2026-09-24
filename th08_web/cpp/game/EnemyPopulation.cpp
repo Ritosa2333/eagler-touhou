@@ -1,13 +1,26 @@
 #include "EnemyPopulation.hpp"
 #include "EnemyRetirement.hpp"
 #include "EclSpawn.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/EnemyJournal.hpp"
+#endif
 namespace th08 {
-void EnemyPopulation::reset(i32 time_items)noexcept{for(auto& enemy:enemies)enemy.reset();spawn_failed=false;replay_flags=0;initial_time_items=time_items;practice_familiar=0;}
+void EnemyPopulation::reset(i32 time_items)noexcept{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Destructive stage teardown must follow the confirmed retirement fence.
+    // Silently freeing journal-owned VM addresses would be a use-after-free.
+    if(journal&&journal->HasHistory()){spawn_failed=true;return;}
+#endif
+    for(auto& enemy:enemies)enemy.reset();spawn_failed=false;replay_flags=0;initial_time_items=time_items;practice_familiar=0;
+}
 EclVm* EnemyPopulation::spawn(const TimelineSpawn& request){return spawn_impl(request,nullptr);}
 EclVm* EnemyPopulation::spawn_impl(const TimelineSpawn& request,const EclContext::Locals* inherited){
     replay_flags|=0x1000;u32 index=0;
     while(index<480&&enemies[index]&&(enemies[index]->flags&1))++index;
     if(!enemies[index])enemies[index]=std::make_unique<EclVm>();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(journal&&!journal->Capture(index)){spawn_failed=true;return nullptr;}
+#endif
     auto& enemy=*enemies[index];bool failed=index==480;
     if(!failed){
         // Defaults of fields already recovered from Initialize (0x429e00).

@@ -74,7 +74,21 @@ std::vector<std::string> BrowserRuntime::user_replays(){return resources_.user_r
 void BrowserRuntime::calendar(char date[6],char stamp[20]){file_device().calendar(date,stamp);}
 u32 BrowserRuntime::milliseconds(){return file_device().milliseconds();}
 u64 BrowserRuntime::performance_counter(){return u64(milliseconds())*1000;}
-u16 BrowserRuntime::poll_input(){const auto touch=u16(file_device().supplemental_input());return input.controller(InputController::keyboard(keys,false)|touch,pad,app.session.display_config);}
+u16 BrowserRuntime::poll_input(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(app.session.netplay.Configured()){
+        // Menu authority is P1; any player's Menu press may pause the shared
+        // game. All physical producers were sampled at the frame admission
+        // boundary, never during an update or a later correction.
+        if(!app.session.network_frame_open)return 0;
+        u16 buttons=app.session.network_frame.inputs[0].buttons;
+        for(u32 seat=1;seat<app.session.player_count;++seat)
+            buttons|=app.session.network_frame.inputs[seat].buttons&InputButton::Menu;
+        return buttons;
+    }
+#endif
+    const auto touch=u16(file_device().supplemental_input());return input.controller(InputController::keyboard(keys,false)|touch,pad,app.session.display_config);
+}
 void BrowserRuntime::Graphics::bind_texture(u32 h){graphics_device().texture(h);}
 #ifdef TH_NATIVE_PLATFORM
 PipelineState& BrowserRuntime::Graphics::pipeline(){return graphics_device().pipeline();}
@@ -168,7 +182,41 @@ bool BrowserRuntime::initialize(){
     reset_device();if(!audio->prepare_samples())return false;
     prepared=true;if(!app.initialize(1000000))return false;reset_device();return true;
 }
-bool BrowserRuntime::step(bool render){return prepared&&app.update()&&(!render||app.draw())&&!capture_failed;}
+bool BrowserRuntime::step(bool render){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    auto& session=app.session;auto& net=session.netplay;
+    if(net.Configured()){
+        if(!prepared||session.network_frame_open||capture_failed)return false;
+        session.network_waiting=false;
+        if(!net.CanStart()){session.network_waiting=true;return true;}
+        const auto frame=net.NextFrame();
+        if(!net.HasLocal(frame)){
+            const auto touch=u16(file_device().supplemental_input());
+            const u16 physical=input.controller(InputController::keyboard(keys,false)|touch,pad,session.display_config);
+            if(!net.CaptureLocal(frame,Netplay::FrameInput(physical)))return false;
+        }
+        const auto decision=net.Prepare(frame);
+        if(!decision.canAdvance){session.network_waiting=true;return true;}
+        session.network_frame=decision;session.network_frame_open=true;
+        if(app.in_game()){
+            u16 buttons[3]{};for(u32 seat=0;seat<session.player_count;++seat)buttons[seat]=decision.inputs[seat].buttons;
+            if(!app.game.commit_inputs(buttons,session.player_count))return false;
+        }
+        if(!app.update()||capture_failed)return false;
+        return !render||(app.draw()&&finish_network_frame());
+    }
+#endif
+    return prepared&&app.update()&&(!render||app.draw())&&!capture_failed;
+}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+bool BrowserRuntime::finish_network_frame(){
+    auto& session=app.session;auto& net=session.netplay;
+    if(!net.Configured())return true;
+    if(!session.network_frame_open)return false;
+    if(!net.MarkSimulated(net.NextFrame(),session.network_frame))return false;
+    session.network_frame_open=false;return !capture_failed;
+}
+#endif
 i32 BrowserRuntime::status(i32 field)const{switch(field){case 0:return app.supervisor.state.active;case 1:return app.active();case 2:return app.invalid()||capture_failed;case 3:return app.game.globals.stage;case 4:return app.game.faults()|(u32(capture_failed)<<9);case 5:return app.textures.live_count();case 6:return app.game.enemies.state.frames;case 7:return app.loading_game();case 8:return app.title.menus.state.currentScreen;case 9:return app.title.menus.state.cursor;case 10:return app.title.modal();default:return -1;}}
 void BrowserRuntime::sound(i32 i,i32 m,float x,bool p){audio->sound(i,m,x,p);}
 bool BrowserRuntime::play_music(i32 i,i32 s){return audio->play_music(i,s);}

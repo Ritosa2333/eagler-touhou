@@ -183,7 +183,11 @@ public:
     void shutdown();bool save_score();
     bool finalize_replay(i32 slot,const char* name){if(!game.recording.ready()||(game.globals.game_flags&8)||slot<1||slot>15||!name)return false;last_game=result_context();save_replay(slot,name);return !invalid();}
     bool active()const{return running;}
-    bool invalid()const{return failed||animations.invalid||title.invalid()||results.invalid()||(game_attached&&game.invalid());}
+    bool invalid()const{return failed||animations.invalid||title.invalid()||results.invalid()||(game_attached&&game.invalid())
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        ||screen.invalid()
+#endif
+        ;}
     bool in_game()const{return game_attached;}
     bool loading_game()const{return loading_gate;}
     void close(){supervisor.state.close_requested=true;}

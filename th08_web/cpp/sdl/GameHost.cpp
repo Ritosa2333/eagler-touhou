@@ -105,7 +105,11 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
     const bool high=display_cadence.high_refresh&&interpolation_ready();const bool interpolate=presentation_gate.advance(high,tick_due);bool presented=false;
     if(tick_due&&!result){
         elapsed+=touhou::sdl::FrameCadence::interval;result=tick();
-        if(!result&&runtime){
+        if(!result&&runtime
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+           &&runtime->logical_frame_advanced()
+#endif
+        ){
             // Preserve TH08's authoritative update+draw tick exactly. At high
             // presentation rates every fixed-tick draw is semantic but hidden;
             // the visible frame below is a second, side-effect-free presentation
@@ -114,7 +118,12 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
             if(!runtime->app.draw(1.0f,false,false))result=(runtime->status(2)||runtime->status(4))?2:1;
             else if(runtime->status(2)||runtime->status(4))result=2;
             if(hidden)sdl_defer(0);else presented=true;
-            if(!result){++frames;if(!runtime->audio_tick(u32(elapsed*1000)))result=2;}
+            if(!result){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                if(!runtime->finish_network_frame())result=2;
+#endif
+                ++frames;if(!runtime->audio_tick(u32(elapsed*1000)))result=2;
+            }
         }
     }
     float presentation_alpha=1.0f;
@@ -207,8 +216,14 @@ EX("audit_state") const u32* audit_state(){
 #endif
 EX("sdl_loop_tick") i32 sdl_loop_tick(BrowserRuntime* r,double seconds,u32){
     if(running||r!=runtime.get())return -1;elapsed+=seconds;int result=tick();if(result||!runtime)return result;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!runtime->logical_frame_advanced())return 0;
+#endif
     if(!runtime->app.draw(1.0f,false,false))return (runtime->status(2)||runtime->status(4))?2:1;
     if(runtime->status(2)||runtime->status(4))return 2;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!runtime->finish_network_frame())return 2;
+#endif
     ++frames;return runtime->audio_tick(u32(elapsed*1000))?0:2;
 }
 EX("sdl_game_close") void sdl_game_close(){sdl_loop_stop();touch.reset();ThpracUi::shutdown();runtime.reset();if(gamepad)SDL_CloseGamepad(gamepad);gamepad=nullptr;sdl_audio_shutdown();sdl_fonts_shutdown();sdl_detach();}

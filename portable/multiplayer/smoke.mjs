@@ -23,15 +23,15 @@ let app=0;
 const nativeStatus=()=>Array.from(new Int32Array(core.memory.buffer,core.sdl_game_status(),10));
 window.multiplayerSmoke={
   identity(){return {...buildIdentity,wasmSha256:instantiatedSha256,fixtureBuild:typeof core.mp_fixture_die==='function'};},
-  start(seed=1234,loadouts=null){
+  start(seed=1234,loadouts=null,local=0,sessionId=null){
     if(app)throw Error('Use a fresh page for a new run');
     app=core.sdl_game_open(seed);if(!app)throw Error('Native app creation failed');
     if(loadouts){
-      const words=[1,loadouts.length,0,1,seed,...loadouts.flatMap(character=>[character,0])];
-      while(words.length<11)words.push(0);
-      const ptr=core.allocate(44);try{
-        new Uint32Array(core.memory.buffer,ptr,11).set(words);
-        if(!core.multiplayer_configure(app,ptr,11))throw Error('Session rejected');
+      const words=[sessionId?2:1,loadouts.length,local,1,seed,...(sessionId||[]),...loadouts.flatMap(character=>[character,0])];
+      const count=sessionId?13:11;while(words.length<count)words.push(0);
+      const ptr=core.allocate(count*4);try{
+        new Uint32Array(core.memory.buffer,ptr,count).set(words);
+        if(!core.multiplayer_configure(app,ptr,count))throw Error('Session rejected');
       }finally{core.deallocate(ptr);}
     }
     const total=core.sdl_prepare_total();for(let i=0;i<total;i++)if(core.sdl_prepare_next()<0)throw Error('Prepare failed '+i);
@@ -46,6 +46,24 @@ window.multiplayerSmoke={
     finally{core.deallocate(ptr);}
   },
   nativeStatus,
+  enemyJournalProbe(){if(!core.mp_fixture_enemy_journal)throw Error('Diagnostic fixture required');
+    return Array.from(new Uint32Array(core.memory.buffer,core.mp_fixture_enemy_journal(),10));},
+  screenJournalProbe(){if(!core.mp_fixture_screen_journal||!app)throw Error('Initialized diagnostic fixture required');
+    return Array.from(new Uint32Array(core.memory.buffer,core.mp_fixture_screen_journal(app),10));},
+  netStatus(){return Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_netplay_status(app),12));},
+  sessionPacket(phase){const p=core.allocate(128);try{
+    const size=core.multiplayer_session_build(app,phase,p,128);if(!size)throw Error('Session packet unavailable');
+    return Array.from(new Uint8Array(core.memory.buffer,p,size));
+  }finally{core.deallocate(p);}},
+  applyWire(bytes){const p=core.allocate(bytes.length);try{
+    new Uint8Array(core.memory.buffer,p,bytes.length).set(bytes);return core.multiplayer_wire_apply(app,p,bytes.length);
+  }finally{core.deallocate(p);}},
+  markReady(){return !!core.multiplayer_session_ready(app);},
+  capture(frame,buttons){return !!core.multiplayer_capture_local(app,frame,buttons);},
+  inputPacket(peer,frame,sequence=1){const p=core.allocate(2048);try{
+    const size=core.multiplayer_input_build(app,peer,frame,sequence,p,2048);if(!size)throw Error('Input packet unavailable');
+    return Array.from(new Uint8Array(core.memory.buffer,p,size));
+  }finally{core.deallocate(p);}},
   status(){return Array.from(new Int32Array(core.memory.buffer,core.multiplayer_status(app),44));},
   fixtureDie(seat){if(!core.mp_fixture_die)throw Error('Not a fixture build');return core.mp_fixture_die(app,seat);},
   fixturePlace(seat,x,y,dx=1,dy=1){if(!core.mp_fixture_place)throw Error('Not a fixture build');return core.mp_fixture_place(app,seat,x,y,dx,dy);},

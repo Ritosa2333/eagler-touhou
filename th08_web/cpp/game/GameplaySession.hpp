@@ -4,6 +4,7 @@
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/PlayerResources.hpp"
 #include "../multiplayer/SessionSetup.hpp"
+#include "../multiplayer/NetplayRuntime.hpp"
 #endif
 namespace th08 {
 // Persistent game data shared by title, stage, results and replay owners.
@@ -13,6 +14,9 @@ struct GameplaySession {
     SpellRecord records[spell_count],previous_records[spell_count];ClearRecord clears[13];PracticeRecord practices[12];PlayRecord statistics;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     multiplayer::SessionSetup multiplayer_session;
+    multiplayer::NetplayRuntime netplay;
+    Netplay::FrameDecision network_frame;
+    bool network_frame_open=false,network_waiting=false;
     PilotResources pilot_resources[3]{};
     PlayerResourceView pilot_views[3]{{numbers,pilot_resources[0]},
                                     {numbers,pilot_resources[1]},
