@@ -169,6 +169,30 @@ bool ApplyLifeAward(State& state, std::uint8_t seat, std::int16_t amount,
     return true;
 }
 
+bool BeginNextStage(State& state) noexcept {
+    if (state.seatCount < kMinSeats || state.seatCount > kMaxSeats) {
+        return false;
+    }
+    for (std::uint8_t seat = 0; seat < state.seatCount; ++seat) {
+        SeatState& current = state.seats[seat];
+        if (!valid_life_state(current.lifeState) ||
+            current.character > 1 || current.shot > 2 ||
+            current.lives < kMinNativeLives || current.lives > kMaxLives ||
+            current.power < 0 || current.power > kMaxPower) {
+            return false;
+        }
+        if (current.lives < 0) {
+            current.lives = 0;
+        }
+        current.lifeState = LifeState::Alive;
+        current.waitingForFocusRelease = false;
+        reset_rescue(current);
+    }
+    state.wipeTicks = 0;
+    state.retryPending = false;
+    return true;
+}
+
 TickResult AdvanceOneTick(State& state, const FrameInput& input,
                           LifeItemAllocator allocator) noexcept {
     TickResult result{};

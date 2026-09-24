@@ -11,6 +11,21 @@ static void handshake(NetplayRuntime& a,NetplayRuntime& b){
     assert(a.CanSendReady()&&b.CanSendReady());a.MarkLocalReady();b.MarkLocalReady();
     a.ApplySession(b.Ready());b.ApplySession(a.Ready());assert(a.CanStart()&&b.CanStart());
 }
+static std::vector<std::uint8_t> rewrite_description(const std::vector<std::uint8_t>& source,
+                                                      std::vector<std::uint8_t> description){
+    InputReplayInfo info;assert(InputReplay::Inspect(source.data(),source.size(),&info));
+    info.config.description=std::move(description);InputReplay rewritten;
+    assert(rewritten.Begin(info.config));ReplayArchive frames;
+    assert(frames.Load(source.data(),source.size()));th10::u32 chapter=0;
+    for(th10::u32 frame=0;frame<info.frameCount;++frame){
+        while(chapter+1<info.chapterCount&&info.chapters[chapter+1].firstFrame<=frame)++chapter;
+        const auto label=info.chapters[chapter].label;
+        const auto* row=frames.PlaybackFrame(frame,label&255u);assert(row);
+        assert(rewritten.Append(frame,label,row->data(),info.config.playerCount));
+        assert(frames.Played(frame));
+    }
+    std::vector<std::uint8_t> bytes;assert(rewritten.Encode(&bytes));return bytes;
+}
 static void check_terminal_stage(){
     SessionSetup setup;const std::uint32_t words[]{1,2,1,4,1234,0,0,1,1,0,0};
     assert(DecodeSessionSetup(setup,words,11));
@@ -75,6 +90,9 @@ static ReplayCheckpoint checkpoint(unsigned stage,unsigned frame,unsigned player
     cp.activationScriptRandom={static_cast<th10::u16>(seed+14),0,17};
     cp.activationVisualRandom={static_cast<th10::u16>(seed+21),0,29};
     cp.activationRandomValid=true;
+    cp.faithCursor=static_cast<th10::u32>(120+stage);cp.laserLastId=456+stage;
+    cp.reservedStage=stage==7?7:1;
+    cp.retainedStateValid=true;
     cp.cooperation.seatCount=static_cast<th10::u8>(players);
     for(unsigned seat=0;seat<players;++seat){
         cp.inputSeats[seat].raw=static_cast<th10::u16>(0x10u<<seat);
@@ -122,6 +140,8 @@ static void check_stage_checkpoint_codec(){
     assert(loaded->firstFrame==2&&loaded->scriptRandom.seed==333&&loaded->visualRandom.calls==13);
     assert(loaded->activationScriptRandom.seed==347&&loaded->activationVisualRandom.calls==29);
     assert(loaded->inputSeats[1].raw==0x20&&loaded->pilots[1].position.x==100);
+    assert(loaded->retainedStateValid&&loaded->faithCursor==122&&loaded->laserLastId==458);
+    assert(loaded->reservedStage==1);
     assert(restored.SelectCheckpoint(2)&&restored.Base()==2&&restored.Cursor()==2);
     assert(restored.SelectedCheckpoint()==loaded);
     const auto* row=restored.PlaybackFrame(0,2);assert(row&&(*row)[0].buttons==4&&(*row)[1].buttons==16);
@@ -129,9 +149,8 @@ static void check_stage_checkpoint_codec(){
     ReplayArchive truncated;assert(truncated.Load(prefix.data(),prefix.size()));
     assert(truncated.Checkpoint(1)&&!truncated.Checkpoint(2)&&!truncated.SelectCheckpoint(2));
 
-    // Re-encoding a legacy v2 tape must keep its old checkpoint layout. The
-    // v2 records lack activation RNG, so promoting them to v3 would make the
-    // placeholder values look like valid direct-bootstrap state.
+    // Malformed external stage snapshots must fail import before native restore
+    // can index score sprites or extend thresholds with an invalid value.
     Netplay::InputReplayInfo inspected;ReplayDescription metadata;
     assert(ReplayArchive::Inspect(bytes.data(),bytes.size(),inspected,metadata));
     const auto read_word=[](const std::vector<std::uint8_t>& data,std::size_t at){
@@ -141,34 +160,71 @@ static void check_stage_checkpoint_codec(){
     const auto write_word=[](std::vector<std::uint8_t>& data,std::size_t at,std::uint32_t value){
         for(unsigned byte=0;byte<4;++byte)data[at+byte]=std::uint8_t(value>>(byte*8));
     };
-    const auto& v3Description=inspected.config.description;
-    const auto checkpointCount=read_word(v3Description,120),v3RecordBytes=read_word(v3Description,124);
-    assert(checkpointCount==2&&v3RecordBytes>40);
-    std::vector<std::uint8_t> v2Description(v3Description.begin(),v3Description.begin()+128);
-    write_word(v2Description,0,2);write_word(v2Description,124,v3RecordBytes-16);
+    const auto write_half=[](std::vector<std::uint8_t>& data,std::size_t at,std::uint16_t value){
+        data[at]=std::uint8_t(value);data[at+1]=std::uint8_t(value>>8);
+    };
+    const auto& v4Description=inspected.config.description;
+    const auto checkpointCount=read_word(v4Description,120),v4RecordBytes=read_word(v4Description,124);
+    assert(checkpointCount==2&&read_word(v4Description,0)==4&&v4RecordBytes>40);
+    const std::size_t firstRecord=128;
+    const auto cooperationStart=firstRecord+40+MAX_PLAYERS*sizeof(th10::GameInput);
+    const auto pilotStart=cooperationStart+34+MAX_PLAYERS*2+4;
+    const auto reject_description=[&](const auto& mutate){
+        auto description=v4Description;mutate(description);
+        const auto malformed=rewrite_description(bytes,std::move(description));
+        ReplayArchive rejected;assert(!rejected.Load(malformed.data(),malformed.size()));
+    };
+    reject_description([&](auto& description){
+        write_word(description,pilotStart+offsetof(th10::ReplayStage,score_units),10);
+    });
+    reject_description([&](auto& description){
+        write_word(description,pilotStart+offsetof(th10::ReplayStage,extend_index),5);
+    });
+    reject_description([&](auto& description){
+        write_word(description,pilotStart+offsetof(th10::ReplayStage,focused),2);
+    });
+    reject_description([&](auto& description){description[cooperationStart+8]=1;});
+    reject_description([&](auto& description){write_half(description,cooperationStart+4,3);});
+    reject_description([&](auto& description){
+        write_word(description,firstRecord+v4RecordBytes-12,2048);
+    });
+    reject_description([&](auto& description){
+        write_word(description,firstRecord+v4RecordBytes-4,0);
+    });
+
+    // Version 3 has activation RNG but no retained manager state. It remains
+    // readable and re-encodes as v3, while Stage selection falls back to the
+    // chapter start. Version 2 also keeps its original record layout.
+    const auto v3RecordBytes=v4RecordBytes-12;
+    std::vector<std::uint8_t> v3Description(v4Description.begin(),v4Description.begin()+128);
+    write_word(v3Description,0,3);write_word(v3Description,124,v3RecordBytes);
     for(std::uint32_t i=0;i<checkpointCount;++i){
-        const auto start=std::size_t(128)+std::size_t(i)*v3RecordBytes;
-        v2Description.insert(v2Description.end(),v3Description.begin()+start,v3Description.begin()+start+24);
-        v2Description.insert(v2Description.end(),v3Description.begin()+start+40,
-                             v3Description.begin()+start+v3RecordBytes);
+        const auto start=std::size_t(128)+std::size_t(i)*v4RecordBytes;
+        v3Description.insert(v3Description.end(),v4Description.begin()+start,
+                             v4Description.begin()+start+v3RecordBytes);
     }
-    Netplay::InputReplayConfig legacyConfig=inspected.config;legacyConfig.description=std::move(v2Description);
-    Netplay::InputReplay legacyWriter;assert(legacyWriter.Begin(legacyConfig));
-    ReplayArchive legacySource;assert(legacySource.Load(bytes.data(),bytes.size()));
-    for(std::uint32_t frame=0;frame<legacySource.Frames();++frame){
-        std::uint32_t chapter=0;
-        for(std::uint32_t i=0;i<legacySource.Info().chapterCount;++i){
-            if(legacySource.Info().chapters[i].firstFrame>frame)break;
-            chapter=legacySource.Info().chapters[i].label;
-        }
-        const auto* row=legacySource.PlaybackFrame(frame,chapter&255u);assert(row);
-        assert(legacyWriter.Append(frame,chapter,row->data(),legacySource.Info().config.playerCount));
-        assert(legacySource.Played(frame));
+    auto v3Bytes=rewrite_description(bytes,std::move(v3Description));
+    ReplayArchive v3;assert(v3.Load(v3Bytes.data(),v3Bytes.size()));
+    assert(v3.Checkpoint(2)&&v3.Checkpoint(2)->activationRandomValid&&!v3.Checkpoint(2)->retainedStateValid);
+    assert(!v3.SelectCheckpoint(2)&&v3.SeekFrame(2)==v3.Info().chapters[1].firstFrame);
+    std::vector<std::uint8_t> v3Roundtrip;assert(v3.Encode(v3Roundtrip));
+    Netplay::InputReplayInfo v3RoundtripInfo;ReplayDescription v3Metadata;
+    assert(ReplayArchive::Inspect(v3Roundtrip.data(),v3Roundtrip.size(),v3RoundtripInfo,v3Metadata));
+    assert(read_word(v3RoundtripInfo.config.description,0)==3);
+
+    std::vector<std::uint8_t> v2Description(v4Description.begin(),v4Description.begin()+128);
+    write_word(v2Description,0,2);write_word(v2Description,124,v4RecordBytes-28);
+    for(std::uint32_t i=0;i<checkpointCount;++i){
+        const auto start=std::size_t(128)+std::size_t(i)*v4RecordBytes;
+        v2Description.insert(v2Description.end(),v4Description.begin()+start,v4Description.begin()+start+24);
+        v2Description.insert(v2Description.end(),v4Description.begin()+start+40,
+                             v4Description.begin()+start+v4RecordBytes-12);
     }
-    std::vector<std::uint8_t> legacyBytes;assert(legacyWriter.Encode(&legacyBytes));
+    auto legacyBytes=rewrite_description(bytes,std::move(v2Description));
     ReplayArchive legacy;assert(legacy.Load(legacyBytes.data(),legacyBytes.size()));
     assert(legacy.Checkpoint(1)&&!legacy.Checkpoint(1)->activationRandomValid);
     assert(!legacy.SelectCheckpoint(1)&&legacy.Base()==0&&legacy.Cursor()==0);
+    assert(legacy.SeekFrame(2)==legacy.Info().chapters[1].firstFrame);
     std::vector<std::uint8_t> legacyRoundtrip;assert(legacy.Encode(legacyRoundtrip));
     Netplay::InputReplayInfo legacyRoundtripInfo;ReplayDescription legacyMetadata;
     assert(ReplayArchive::Inspect(legacyRoundtrip.data(),legacyRoundtrip.size(),
@@ -176,6 +232,37 @@ static void check_stage_checkpoint_codec(){
     assert(read_word(legacyRoundtripInfo.config.description,0)==2);
     ReplayArchive legacyReloaded;assert(legacyReloaded.Load(legacyRoundtrip.data(),legacyRoundtrip.size()));
     assert(legacyReloaded.Checkpoint(1)&&!legacyReloaded.Checkpoint(1)->activationRandomValid);
+}
+static void check_extra_checkpoint_extend_limit(){
+    SessionSetup setup;const std::uint32_t words[]{1,2,1,4,654,0,0,1,1,0,0};
+    assert(DecodeSessionSetup(setup,words,11));
+    th10::ApplicationConfig options{};th10::u16 keys[9]{};options.initialize(keys);
+    ReplayArchive tape;assert(tape.Begin(setup,options));
+    NetplayRuntime runtime,peer;setup.sessionId=654;assert(runtime.Reset(setup,654));
+    auto other=setup;other.localPlayer=0;assert(peer.Reset(other,654));handshake(runtime,peer);
+    assert(runtime.CaptureLocal(0,FrameInput(4)));
+    assert(runtime.SubmitRemote(0,0,FrameInput(1))==RemoteInputResult::Accepted);
+    assert(tape.Stamp(0,7));assert(runtime.MarkSimulated(0,runtime.Prepare(0)));assert(tape.Commit(runtime));
+    auto valid=checkpoint(7,0,2,654);
+    for(auto& pilot:valid.pilots)pilot.extend_index=2;
+    assert(tape.CaptureCheckpoint(valid));
+    auto invalid=valid;invalid.pilots[0].extend_index=3;
+    assert(!tape.CaptureCheckpoint(invalid));
+    invalid=valid;invalid.reservedStage=6;
+    assert(!tape.CaptureCheckpoint(invalid));
+    std::vector<std::uint8_t> bytes;assert(tape.Encode(bytes));
+    Netplay::InputReplayInfo inspected;ReplayDescription metadata;
+    assert(ReplayArchive::Inspect(bytes.data(),bytes.size(),inspected,metadata));
+    auto description=inspected.config.description;
+    const auto recordBytes=std::size_t(description[124])|(std::size_t(description[125])<<8)|
+        (std::size_t(description[126])<<16)|(std::size_t(description[127])<<24);
+    const auto coop=std::size_t(128)+40+MAX_PLAYERS*sizeof(th10::GameInput);
+    const auto pilots=coop+34+MAX_PLAYERS*2+4;
+    const auto at=pilots+offsetof(th10::ReplayStage,extend_index);
+    description[at]=3;description[at+1]=description[at+2]=description[at+3]=0;
+    assert(recordBytes>at-128);
+    const auto malformed=rewrite_description(bytes,std::move(description));
+    ReplayArchive rejected;assert(!rejected.Load(malformed.data(),malformed.size()));
 }
 int main(){
     SessionSetup setup;const std::uint32_t words[]{1,2,1,4,1234,0,0,1,1,0,0};
@@ -241,5 +328,6 @@ int main(){
     check_terminal_stage();
     check_seek_after_generation();
     check_stage_checkpoint_codec();
+    check_extra_checkpoint_extend_limit();
     std::puts("TH10 Replay archive, corrected input and generation continuity: PASS");
 }

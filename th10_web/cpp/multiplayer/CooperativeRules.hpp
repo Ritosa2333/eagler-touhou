@@ -104,6 +104,12 @@ bool ReportNativeSeatOutcome(State& state, std::uint8_t seat, LifeState lifeStat
 bool ApplyLifeAward(State& state, std::uint8_t seat, std::int16_t amount,
                     LifeState resultingState) noexcept;
 
+// A real next-stage transition is a clean cooperative boundary. Every seat
+// becomes playable again; a final-death -1 is promoted to the minimum playable
+// zero-life state, while surviving life/power values are retained. Rescue and
+// wipe gestures never leak across stages.
+bool BeginNextStage(State& state) noexcept;
+
 // One call equals one logical gameplay tick. Repeated identical inputs count
 // as repeated ticks; the caller is responsible for invoking this once per tick.
 // The optional allocator is called synchronously in seat order. A missing or

@@ -30,8 +30,9 @@ report = {'passed': False, 'scope': 'native keyboard-driven MP Replay completion
           'case': args.case, 'players': args.players, 'targetStage': args.target_stage,
           'phase': 'record' if args.record_only else 'playback' if args.recorded_run else 'roundtrip',
           'playbackPart': args.playback_part,
-          'coverage': ['all exposed pilot/economy values', 'both RNG seed/call counts',
-                       'read-only playback', 'native stage/menu lifecycle'],
+          'coverage': ['multiplayer status and Replay cursor/frame',
+                       'canonical economy, players, enemies, bullets, lasers, and items owner hashes',
+                       'both RNG seed/call counts', 'read-only playback', 'native stage/menu lifecycle'],
           'notClaimed': ['human gameplay acceptance', 'complete portable world hash', 'device performance'],
           'robotSourceSha256': hashlib.sha256(Path(__file__).with_name('replay-robot.mjs').read_bytes()).hexdigest()}
 
@@ -50,6 +51,21 @@ def compare(actual, original):
         assert actual[key] == original[key], {
             'firstMismatch': actual['replay'][4]-1, 'category': key,
             'expected': original[key], 'actual': actual[key]}
+    for owner in ('economy', 'players', 'enemies', 'bullets', 'lasers', 'items'):
+        assert actual['owners'][owner] == original['owners'][owner], {
+            'firstMismatch': actual['replay'][4]-1, 'category': owner,
+            'expected': original['owners'][owner], 'actual': actual['owners'][owner]}
+
+
+def assert_same_build(test):
+    playback_identity = test.identities[-1]
+    recording_identity = report.get('recordingIdentity')
+    assert recording_identity, 'Recording build identity is missing'
+    for key in ('wasmSha256', 'sourceDigest', 'assets'):
+        assert playback_identity[key] == recording_identity[key], (
+            'Recording/playback identity differs', key,
+            recording_identity[key], playback_identity[key])
+    return {key: playback_identity[key] for key in ('wasmSha256', 'sourceDigest', 'assets')}
 
 
 def open_viewer(test, data, selected_stage=1):
@@ -139,8 +155,7 @@ def record_run(test):
 def playback_run(test, data, trace):
     if args.playback_part in ('all', 'full'):
         playback, before_files, press = open_viewer(test, data, 7 if args.case == 'extra' else 1)
-        for key in ('wasmSha256', 'sourceDigest', 'assets'):
-            assert test.identities[-1][key] == report['recordingIdentity'][key], ('Recording/playback identity differs', key)
+        playback_identity = assert_same_build(test)
         compared = 0
         for _ in range(len(trace)//200+20):
             rows = call(playback, 'multiplayerSmoke.takeReplayTrace()')
@@ -160,7 +175,8 @@ def playback_run(test, data, trace):
         press('Escape',100)
         assert call(playback, 'multiplayerSmoke.replayStatus()')[8] == 0
         assert call(playback, 'multiplayerSmoke.savedFiles()') == before_files
-        report['fullPlayback'] = {'passed':True,'comparedFrames':compared,'readOnly':True}
+        report['fullPlayback'] = {'passed':True,'comparedFrames':compared,'readOnly':True,
+                                  'playbackIdentity':playback_identity}
         checkpoint()
         test.close_contexts()
         if args.playback_part == 'full':
@@ -169,11 +185,14 @@ def playback_run(test, data, trace):
     if args.case == 'stage':
         if args.playback_part in ('all', 'seek'):
             seek, before_files, press = open_viewer(test,data,args.target_stage)
+            playback_identity = assert_same_build(test)
             status = call(seek,'multiplayerSmoke.replayStatus()')
             target = status[10]
             assert target > 0 and status[7] == 0 and status[11] == 0 and status[12] == args.target_stage, status
             rows = call(seek,'multiplayerSmoke.takeReplayTrace()')
             assert rows and rows[0]['replay'][4] == target+1, (target, rows[:1])
+            report['directProbe'] = call(seek,'multiplayerSmoke.replayProbe()')
+            checkpoint()
             compared = 0
             for row in rows:
                 compare(row,trace[row['replay'][4]-1]);compared += 1
@@ -186,7 +205,7 @@ def playback_run(test, data, trace):
             assert call(seek,'multiplayerSmoke.savedFiles()') == before_files
             report['stageSelection'] = {'passed':True,'targetFrame':target,
                                         'directCheckpoint':True,'comparedFrames':compared,
-                                        'readOnly':True}
+                                        'readOnly':True,'playbackIdentity':playback_identity}
             checkpoint()
             test.close_contexts()
             if args.playback_part == 'seek':
@@ -194,6 +213,7 @@ def playback_run(test, data, trace):
 
         if args.playback_part in ('all', 'browser-seek'):
             raf, before_files, press = open_viewer(test, data, args.target_stage)
+            playback_identity = assert_same_build(test)
             status = call(raf,'multiplayerSmoke.replayStatus()')
             assert status[7] > 0 and status[11] == 1 and status[12] == args.target_stage, status
             target = status[7]
@@ -226,7 +246,8 @@ def playback_run(test, data, trace):
             report['browserSeek'] = {'passed':True, 'callbacks':len(browser_loop['samples']),
                                      'targetFrame':target, 'presentationFence':True,
                                      'outputSuppression':True, 'normalCadenceReset':True,
-                                     'physicalInputIsolation':True, 'readOnly':True}
+                                     'physicalInputIsolation':True, 'readOnly':True,
+                                     'playbackIdentity':playback_identity}
             checkpoint()
             test.close_contexts()
             if args.playback_part == 'browser-seek':
@@ -234,6 +255,7 @@ def playback_run(test, data, trace):
 
         if args.playback_part in ('all', 'escape-seek'):
             escape, before_files, _ = open_viewer(test, data, args.target_stage)
+            playback_identity = assert_same_build(test)
             status = call(escape,'multiplayerSmoke.replayStatus()')
             assert status[7] > 0 and status[11] == 1 and status[12] == args.target_stage, status
             target = status[7]
@@ -241,7 +263,8 @@ def playback_run(test, data, trace):
             assert cancelled['escaped'] and cancelled['final'][8] == 0
             assert cancelled['life'][1] == 4 and cancelled['life'][2] == 4
             assert call(escape, 'multiplayerSmoke.savedFiles()') == before_files
-            report['escapeDuringSeek'] = {'passed':True, 'nativeTitleReturn':True, 'readOnly':True}
+            report['escapeDuringSeek'] = {'passed':True, 'nativeTitleReturn':True,
+                                          'readOnly':True,'playbackIdentity':playback_identity}
             checkpoint()
             test.close_contexts()
 

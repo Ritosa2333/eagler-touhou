@@ -217,6 +217,30 @@ void life_awards_require_explicit_status_and_clamp_to_th10_cap() {
     assert(state.seats[1].lives == kMaxLives);
 }
 
+void next_stage_revives_every_seat_and_drops_transient_coop_state() {
+    State state = make_state(3);
+    assert(ReportNativeSeatOutcome(state, 0, LifeState::Dying, -1, 17));
+    assert(ReportNativeSeatOutcome(state, 1, LifeState::Spirit, -1, 40));
+    assert(ReportNativeSeatOutcome(state, 2, LifeState::Eliminated, 3, 60));
+    state.seats[0].rescueTicks = 42;
+    state.seats[0].rescueTarget = 1;
+    state.seats[1].waitingForFocusRelease = true;
+    state.wipeTicks = 99;
+    state.retryPending = true;
+    assert(BeginNextStage(state));
+    assert(state.wipeTicks == 0 && !state.retryPending);
+    assert(state.seats[0].lifeState == LifeState::Alive && state.seats[0].lives == 0);
+    assert(state.seats[1].lifeState == LifeState::Alive && state.seats[1].lives == 0);
+    assert(state.seats[2].lifeState == LifeState::Alive && state.seats[2].lives == 3);
+    assert(state.seats[0].power == 17 && state.seats[1].power == 40 &&
+           state.seats[2].power == 60);
+    for (std::uint8_t seat = 0; seat < state.seatCount; ++seat) {
+        assert(state.seats[seat].rescueTicks == 0);
+        assert(state.seats[seat].rescueTarget == -1);
+        assert(!state.seats[seat].waitingForFocusRelease);
+    }
+}
+
 void spirit_alive_spirit_fullwipe_resets_then_retries_at_exactly_180_ticks() {
     State state = make_state(2);
     spirit(state, 0);
@@ -302,6 +326,7 @@ int main() {
     each_seat_sees_prior_life_debits_when_selecting_a_recipient();
     sequential_givers_keep_th07_rescue_frame_semantics();
     life_awards_require_explicit_status_and_clamp_to_th10_cap();
+    next_stage_revives_every_seat_and_drops_transient_coop_state();
     final_death_waits_for_native_transition_and_can_receive_a_team_extend();
     spirit_alive_spirit_fullwipe_resets_then_retries_at_exactly_180_ticks();
     invalid_rosters_and_loadouts_are_rejected();

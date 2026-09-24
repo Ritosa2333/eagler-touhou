@@ -31,13 +31,16 @@ struct ReplayCheckpointCooperation {
 };
 
 // Portable stage-entry state. ReplayStage is already TH10's retail on-disk
-// stage snapshot (no pointers); the extra owners below are multiplayer-only
-// state that retail Replay never had to preserve.
+// stage snapshot (no pointers); the extra values preserve state needed when
+// multiplayer Replay bootstraps directly into a later stage.
 struct ReplayCheckpoint {
     u32 label=0,firstFrame=Netplay::INVALID_FRAME;
     Rng scriptRandom{},visualRandom{};
     Rng activationScriptRandom{},activationVisualRandom{};
     bool activationRandomValid=false;
+    u32 faithCursor=0,laserLastId=0;
+    u32 reservedStage=1;
+    bool retainedStateValid=false;
     GameInput inputSeats[Netplay::MAX_PLAYERS]{};
     ReplayCheckpointCooperation cooperation{};
     ReplayStage pilots[Netplay::MAX_PLAYERS]{};
@@ -96,7 +99,7 @@ private:
     std::array<StampEntry,Netplay::INPUT_HISTORY_SIZE> stamps_{};
     std::array<ReplayCheckpoint,7> checkpoints_{};
     u32 base_=0,next_=0,generation_=0,cursor_=0,saved_=Netplay::INVALID_FRAME;
-    u32 format_version_=3;
+    u32 format_version_=4;
     u8 checkpoint_count_=0,selected_checkpoint_=0xff;
 };
 }

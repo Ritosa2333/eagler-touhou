@@ -88,6 +88,13 @@ void World::activate_replay(){Gameplay env(*this);state.replay->activate_stage(e
         if((checkpoint->label&255u)!=u32(state.game.stage)||checkpoint->firstFrame!=state.multiplayer_replay.Base()){
             fail();return;
         }
+        if(!checkpoint->retainedStateValid||checkpoint->faithCursor>=2048||
+           !actors.items||!actors.lasers){
+            fail();return;
+        }
+        actors.items->faith_cursor=static_cast<i32>(checkpoint->faithCursor);
+        actors.lasers->last_id=checkpoint->laserLastId;
+        state.game.reserved_040=checkpoint->reservedStage;
         for(u32 seat=0;seat<player_count;++seat){
             auto& pilot=pilots[seat];auto* player=pilot.player;const auto& snap=checkpoint->pilots[seat];
             if(!player){fail();return;}
@@ -249,6 +256,8 @@ bool World::restore_replay_checkpoint_bootstrap(){
 
 bool World::finalize_replay_checkpoint(){
     if(!replay_checkpoint_pending_valid)return false;
+    if(!actors.items||!actors.lasers||actors.items->faith_cursor<0||
+       actors.items->faith_cursor>=2048)return false;
     auto& cp=replay_checkpoint_pending;
     // Activation happens inside the current logical tick. Use that tick's
     // pre-Commit global frame; the archive checkpoint itself is queued until
@@ -284,6 +293,10 @@ bool World::finalize_replay_checkpoint(){
     cp.activationScriptRandom=engine.script_random;
     cp.activationVisualRandom=engine.visual_random;
     cp.activationRandomValid=true;
+    cp.faithCursor=static_cast<u32>(actors.items->faith_cursor);
+    cp.laserLastId=actors.lasers->last_id;
+    cp.reservedStage=static_cast<u32>(state.game.reserved_040);
+    cp.retainedStateValid=true;
     if(replay_checkpoint_commit_valid)return false;
     replay_checkpoint_commit_pending=cp;
     replay_checkpoint_commit_frame=cp.firstFrame;

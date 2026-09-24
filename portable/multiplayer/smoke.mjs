@@ -45,7 +45,7 @@ const generationStatus=()=>Array.from(new Uint32Array(core.memory.buffer,core.mu
 const replayStatus=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_replay_status(app),13));
 const replayPath='/savesth10-multiplayer/jp/replay/th10_01.rpy';
 let replayTrace=[],replayTraceLast=-1,robotPreparedFrame=-1,robotPreparedGeneration=-1;
-function replayObservation(){const n=netStatus(),c=canonical();return {frame:n[3],state:status(),rng:c.slice(13,17),enemy:c[5],replay:replayStatus()};}
+function replayObservation(){const n=netStatus(),c=canonical();return {frame:n[3],state:status(),rng:c.slice(13,17),owners:{economy:c[2],players:c[4],enemies:c[5],bullets:c[6],lasers:c[7],items:c[8]},replay:replayStatus()};}
 function observedTick(){const result=core.sdl_loop_tick(app,1/60,16);
  if(result||core.application_error(app))throw Error('Native Replay tick failed '+result+' '+core.application_error(app));
  const n=netStatus();if(n[3]>=0&&n[3]!==replayTraceLast){replayTraceLast=n[3];replayTrace.push(replayObservation());}

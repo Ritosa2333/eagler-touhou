@@ -49,6 +49,44 @@ void clear_player_offense(Player& player,AnmRegistry& registry){
     player.fire_timer.previous=-2;
 }
 
+void canonicalize_next_stage_player(World& world,multiplayer::Pilot& pilot){
+    if(!pilot.player)return;
+    auto& player=*pilot.player;
+    auto& registry=world.engine.manager.registry;
+
+    // Unlike an in-stage rescue, a new stage is a portable Replay boundary.
+    // Rebuild the transient combat portion of Player to the same semantics as
+    // PlayerResources::start(), while ReplayStage remains responsible for the
+    // authored position/history/focus/option geometry captured at activation.
+    for(auto& shot:player.shots){
+        if(shot.animation)registry.request_delete(shot.animation);
+        if(shot.secondary_animation)registry.request_delete(shot.secondary_animation);
+        std::memset(&shot,0,sizeof(shot));
+    }
+    for(auto& area:player.damage_areas)std::memset(&area,0,sizeof(area));
+    for(auto& laser:player.active_lasers)laser=0;
+    for(auto& option:player.options){
+        for(auto animation:option.animations)if(animation)registry.request_delete(animation);
+        std::memset(&option,0,sizeof(option));
+    }
+    player.option_count=0;
+    player.state=0;
+    player.death_position={};
+    player.input_velocity={};
+    player.velocity={};
+    player.direction=0;
+    player.target=nullptr;
+    player.target_seen=0;
+    player.focused=0;
+    player.option_follow_speed=30;
+    set_timer(player.invulnerability,player.invulnerability_flags,120,&world.engine.speed);
+    world.configure_player(pilot);
+    // ReplayStage restores its captured option geometry with snap_next clear.
+    // A real next-stage boundary must expose the same first-tick semantics;
+    // reconfigure_options sets this latch only for ordinary power changes.
+    for(auto& option:player.options)option.snap_next=0;
+}
+
 struct Profiles final:PlayerProfileEnvironment {
     World& world;
     explicit Profiles(World& value):world(value){
@@ -536,15 +574,31 @@ void World::destroy_player(Player*){
 }
 
 void World::activate_player(){
+    const bool next_stage=backgrounds.previous!=nullptr;
+    if(next_stage){
+        multiplayer::State normalized=cooperation;
+        if(!refresh_cooperation_from_native(*this,normalized)||
+           !multiplayer::BeginNextStage(normalized)){
+            fail();return;
+        }
+        cooperation=normalized;
+        for(u32 seat=0;seat<player_count;++seat){
+            auto& pilot=pilots[seat];
+            pilot.game.lives=cooperation.seats[seat].lives;
+            pilot.game.power=cooperation.seats[seat].power;
+            canonicalize_next_stage_player(*this,pilot);
+        }
+        if(pilots[0].player&&actors.gui)actors.gui->update_lives(pilots[0].game.lives);
+    }
     for(u32 seat=0;seat<player_count;++seat){
         auto& pilot=pilots[seat];
         if(!pilot.player)continue;
         if(pilot.player->update_entry)pilot.player->update_entry->flags|=2;
         if(pilot.player->draw_entry)pilot.player->draw_entry->flags|=2;
-        const bool spirit=cooperation.seatCount>seat&&
+        const bool spirit=!next_stage&&cooperation.seatCount>seat&&
             cooperation.seats[seat].lifeState==multiplayer::LifeState::Spirit;
         if(spirit){pilot.player->state=3;continue;}
-        if(cooperation.seatCount>seat&&
+        if(!next_stage&&cooperation.seatCount>seat&&
            cooperation.seats[seat].lifeState==multiplayer::LifeState::Dying){
             pilot.player->state=2;continue;
         }

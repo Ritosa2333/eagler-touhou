@@ -15,6 +15,130 @@ u32 hash_bytes(const void* data,std::size_t bytes,u32 hash=2166136261u){
 template<class T>u32 hash_value(const T& value,u32 hash=2166136261u){
     return hash_bytes(&value,sizeof(value),hash);
 }
+u32 hash_input_lanes(const multiplayer::InputLanes::State& state,u32 hash=2166136261u){
+    for(const auto& seat:state.seats)hash=hash_value(seat,hash);
+    // FrameInput has tail padding on wasm32; hash its fields so allocator or
+    // copy details cannot masquerade as divergent input state.
+    for(const auto& input:state.inputs){
+        hash=hash_value(input.buttons,hash);hash=hash_value(input.analogMode,hash);
+        hash=hash_value(input.x,hash);hash=hash_value(input.y,hash);
+        hash=hash_value(input.unlimited,hash);hash=hash_value(input.touchUsed,hash);
+        hash=hash_value(input.touchBomb,hash);
+    }
+    hash=hash_value(state.host,hash);
+    return hash_value(state.pause_rising,hash);
+}
+u32 hash_team_economy(const multiplayer::TeamEconomy& source){
+    auto value=source;
+    // High score and bit 2 only track personal-record display/persistence.
+    value.high_score=0;value.high_score_units=0;value.flags&=~4u;
+    const float rate=value.faith_timer.rate?*value.faith_timer.rate:0.0f;
+    value.faith_timer.rate=nullptr;
+    return hash_value(rate,hash_value(value));
+}
+u32 hash_timer_state(const Timer& timer,u32 hash){
+    hash=hash_value(timer.previous,hash);hash=hash_value(timer.current,hash);
+    hash=hash_value(timer.fractional,hash);
+    const float rate=timer.rate?*timer.rate:0.0f;
+    return hash_value(rate,hash);
+}
+u32 hash_movement_state(const Movement& movement,u32 hash){
+    hash=hash_value(movement.position,hash);hash=hash_value(movement.velocity,hash);
+    hash=hash_value(movement.speed,hash);hash=hash_value(movement.angle,hash);
+    hash=hash_value(movement.radius,hash);hash=hash_value(movement.radial_velocity,hash);
+    return hash_value(movement.flags,hash);
+}
+u32 hash_shot_definition(const PlayerShotDefinition& definition,u32 hash){
+    hash=hash_value(definition.fire_interval,hash);hash=hash_value(definition.fire_offset,hash);
+    hash=hash_value(definition.damage,hash);hash=hash_value(definition.offset,hash);
+    hash=hash_value(definition.hitbox,hash);hash=hash_value(definition.angle,hash);
+    hash=hash_value(definition.speed,hash);hash=hash_value(definition.option,hash);
+    hash=hash_value(definition.type,hash);hash=hash_value(definition.on_initialize,hash);
+    hash=hash_value(definition.on_update,hash);return hash_value(definition.on_hit,hash);
+}
+u32 hash_player_shot(const PlayerShot& shot,u32 hash){
+    hash=hash_value(shot.state,hash);hash=hash_timer_state(shot.timer,hash);
+    hash=hash_value(shot.timer_flags,hash);hash=hash_movement_state(shot.motion,hash);
+    hash=hash_value(shot.collided,hash);hash=hash_value(shot.first_collision,hash);
+    const bool hasTarget=shot.homing_target!=nullptr;hash=hash_value(hasTarget,hash);
+    const bool hasDefinition=shot.definition!=nullptr;hash=hash_value(hasDefinition,hash);
+    if(shot.definition)hash=hash_shot_definition(*shot.definition,hash);
+    return hash;
+}
+struct PlayerHashParts {
+    u32 core=0,timers=0,shots=0,shotCount=0,options=0,damage=0;
+    u32 activeLasers=0,optionSpeed=0,invulnerability=0,bounds=0,history=0;
+};
+PlayerHashParts hash_player_parts(const Player& player){
+    PlayerHashParts parts;parts.core=2166136261u;parts.timers=2166136261u;
+    parts.shots=2166136261u;parts.options=2166136261u;parts.damage=2166136261u;
+    parts.activeLasers=parts.optionSpeed=parts.invulnerability=parts.bounds=parts.history=2166136261u;
+    auto& core=parts.core;auto& timers=parts.timers;auto& shots=parts.shots;
+    auto& options=parts.options;auto& damage=parts.damage;
+    // Hash simulation fields explicitly. Player also owns ANM VMs, update-chain
+    // links, callbacks and profile pointers whose addresses are not Replay state.
+    core=hash_value(player.flags,core);core=hash_value(player.position,core);
+    core=hash_value(player.fixed_position,core);core=hash_value(player.fast_speed,core);
+    core=hash_value(player.slow_speed,core);core=hash_value(player.fast_diagonal,core);
+    core=hash_value(player.slow_diagonal,core);core=hash_value(player.velocity,core);
+    core=hash_value(player.collision_bounds,core);core=hash_value(player.hitbox_half_size,core);
+    core=hash_value(player.fast_pickup_size,core);core=hash_value(player.slow_pickup_size,core);
+    core=hash_value(player.death_position,core);core=hash_value(player.input_velocity,core);
+    core=hash_value(player.direction,core);core=hash_value(player.state,core);
+    const bool hasTarget=player.target!=nullptr;core=hash_value(hasTarget,core);
+    core=hash_value(player.target_seen,core);
+    timers=hash_timer_state(player.fire_timer,timers);timers=hash_value(player.fire_timer_flags,timers);
+    timers=hash_timer_state(player.state_timer,timers);timers=hash_value(player.state_timer_flags,timers);
+    timers=hash_timer_state(player.focus_timer,timers);timers=hash_value(player.focus_timer_flags,timers);
+    for(u32 i=0;i<128;++i){
+        const auto& shot=player.shots[i];if(!shot.state)continue;
+        ++parts.shotCount;
+        shots=hash_value(i,hash_player_shot(shot,shots));
+    }
+    for(const auto& option:player.options){
+        options=hash_value(option.active,options);options=hash_value(option.target,options);
+        options=hash_value(option.position,options);options=hash_value(option.offset,options);
+        options=hash_value(option.focused_offset,options);options=hash_value(option.previous_focus,options);
+        options=hash_value(option.index,options);options=hash_value(option.snap_next,options);
+    }
+    options=hash_value(player.option_count,options);
+    for(u32 i=0;i<32;++i){
+        const auto& area=player.damage_areas[i];if(!(area.flags&1u))continue;
+        damage=hash_value(i,damage);damage=hash_value(area.radius,damage);
+        damage=hash_value(area.radial_speed,damage);damage=hash_value(area.angle,damage);
+        damage=hash_value(area.angular_velocity,damage);damage=hash_value(area.size,damage);
+        damage=hash_movement_state(area.motion,damage);damage=hash_timer_state(area.timer,damage);
+        damage=hash_value(area.timer_flags,damage);damage=hash_value(area.damage,damage);
+        damage=hash_value(area.total_damage,damage);damage=hash_value(area.damage_limit,damage);
+        damage=hash_value(area.interval,damage);damage=hash_value(area.flags,damage);
+    }
+    for(const auto laser:player.active_lasers)parts.activeLasers=hash_value(laser,parts.activeLasers);
+    parts.optionSpeed=hash_value(player.option_follow_speed,parts.optionSpeed);
+    parts.invulnerability=hash_timer_state(player.invulnerability,parts.invulnerability);
+    parts.invulnerability=hash_value(player.invulnerability_flags,parts.invulnerability);
+    parts.bounds=hash_value(player.pickup_bounds,parts.bounds);
+    parts.bounds=hash_value(player.slow_pickup_bounds,parts.bounds);
+    parts.bounds=hash_value(player.fast_pickup_bounds,parts.bounds);
+    parts.history=hash_bytes(player.position_history,sizeof(player.position_history),parts.history);
+    parts.history=hash_value(player.focused,parts.history);
+    return parts;
+}
+u32 hash_player_state(const Player& player,u32 hash){
+    const auto parts=hash_player_parts(player);
+    hash=hash_value(parts.core,hash);hash=hash_value(parts.timers,hash);
+    hash=hash_value(parts.shotCount,hash);hash=hash_value(parts.shots,hash);
+    hash=hash_value(parts.options,hash);hash=hash_value(parts.damage,hash);
+    hash=hash_value(parts.activeLasers,hash);hash=hash_value(parts.optionSpeed,hash);
+    hash=hash_value(parts.invulnerability,hash);hash=hash_value(parts.bounds,hash);
+    return hash_value(parts.history,hash);
+}
+u32 hash_bomb_state(const Bomb& bomb,u32 hash){
+    hash=hash_value(bomb.flags,hash);hash=hash_timer_state(bomb.timer,hash);
+    hash=hash_value(bomb.timer_flags,hash);hash=hash_value(bomb.active,hash);
+    if(bomb.active){hash=hash_value(bomb.position,hash);hash=hash_value(bomb.radius,hash);
+        hash=hash_value(bomb.radial_speed,hash);hash=hash_value(bomb.mode,hash);}
+    return hash;
+}
 template<std::size_t BlockSize,std::size_t Capacity>
 u32 hash_pool(const multiplayer::RollbackPool<BlockSize,Capacity>& pool,u32 hash=2166136261u){
     hash=hash_bytes(pool.occupied,sizeof(pool.occupied),hash);
@@ -26,18 +150,56 @@ u32 hash_pool(const multiplayer::RollbackPool<BlockSize,Capacity>& pool,u32 hash
 }
 u32 hash_bullets(const EnemyBulletManager* manager){
     if(!manager)return 0;u32 hash=2166136261u;
-    hash=hash_bytes(manager,offsetof(EnemyBulletManager,pool),hash);
+    // The manager survives a native stage transition, while direct Replay
+    // bootstrap creates a fresh owner. Update/draw handles, draw-list links,
+    // the animation-file pointer and the absolute pool cursor are graph
+    // addresses, not gameplay identity. Hash the cursor as a pool index and
+    // keep only scalar state that can affect later bullet operations.
+    hash=hash_bytes(manager->manager_fields,sizeof(manager->manager_fields),hash);
+    const u32 cursor=manager->cursor>=manager->pool&&manager->cursor<=manager->pool+2000?
+        u32(manager->cursor-manager->pool):0xffffffffu;
+    hash=hash_value(cursor,hash);
+    hash=hash_value(manager->last_cancel_position,hash);
+    hash=hash_value(manager->last_cancel_size,hash);
+    hash=hash_value(manager->active_count,hash);
     for(u32 i=0;i<2000;++i)if(manager->pool[i].state){
         hash=hash_value(i,hash);hash=hash_value(manager->pool[i],hash);
     }
-    return hash_value(manager->animation_file,hash);
+    return hash;
 }
 u32 hash_items(const ItemManager* manager){
     if(!manager)return 0;u32 hash=2166136261u;
-    hash=hash_bytes(manager,offsetof(ItemManager,regular),hash);
+    // Stage transitions retain this manager, while direct Replay creates a
+    // fresh one. Callback/resource pointers are graph identity, not gameplay
+    // state. Keep only scalar manager state plus active item contents.
+    hash=hash_value(manager->flags,hash);
+    hash=hash_value(manager->manager_state,hash);
     for(u32 i=0;i<150;++i)if(manager->regular[i].state){hash=hash_value(i,hash);hash=hash_value(manager->regular[i],hash);}
     for(u32 i=0;i<2048;++i)if(manager->faith[i].state){hash=hash_value(i,hash);hash=hash_value(manager->faith[i],hash);}
     hash=hash_value(manager->active_count,hash);hash=hash_value(manager->faith_cursor,hash);hash=hash_value(manager->faith_count,hash);return hash;
+}
+u32 hash_laser_semantic(const EnemyLaser& laser,u32 hash){
+    auto value=laser;
+    value.previous=value.next=nullptr;
+    value.timer.rate=nullptr;value.acceleration_timer.rate=nullptr;
+    value.vector_timer.rate=nullptr;value.angular_timer.rate=nullptr;
+    value.turn_timer.rate=nullptr;value.feature_delay.rate=nullptr;
+    value.size_timer.rate=nullptr;value.blend_timer.rate=nullptr;
+    value.outside_delay.rate=nullptr;
+    return hash_value(value,hash);
+}
+u32 hash_lasers_semantic(const LaserManager* manager){
+    if(!manager)return 0;u32 hash=2166136261u;
+    // The native manager is retained across stages, while direct Replay owns a
+    // fresh graph. Linked-list addresses, tail, resource pointers and rollback
+    // allocator slots are representation identity. count and last_id affect
+    // subsequent creation and therefore remain authoritative.
+    hash=hash_value(manager->count,hash);hash=hash_value(manager->last_id,hash);
+    u32 traversed=0;
+    for(const auto* laser=manager->sentinel.next;laser;laser=laser->next){
+        ++traversed;hash=hash_laser_semantic(*laser,hash);
+    }
+    return hash_value(traversed,hash);
 }
 u32 hash_stage(const Stage* stage){
     if(!stage)return 0;u32 hash=hash_value(*stage);
@@ -247,14 +409,18 @@ const i32* multiplayer_netplay_status(browser::Application* app){
 extern "C" __attribute__((export_name("multiplayer_canonical_hashes")))
 const u32* multiplayer_canonical_hashes(browser::Application* app){
     static u32 words[44]{};std::fill(words,words+44,0);if(!app||!app->world)return words;
-    auto& w=*app->world;u32 economy=hash_value(app->state.team_economy);
+    auto& w=*app->world;u32 economy=hash_team_economy(app->state.team_economy);
     economy=hash_bytes(app->state.pilot_economies,sizeof(app->state.pilot_economies),economy);
-    economy=hash_value(w.cooperation,economy);economy=hash_value(app->state.input_lanes,economy);
+    economy=hash_value(w.cooperation,economy);economy=hash_input_lanes(app->state.input_lanes,economy);
     u32 rng=hash_value(app->engine.script_random);rng=hash_value(app->engine.visual_random,rng);
     u32 players=2166136261u;
-    for(u32 seat=0;seat<w.player_count;++seat){players=hash_value(w.pilots[seat].input_keys,players);if(w.pilots[seat].player)players=hash_value(*w.pilots[seat].player,players);if(w.pilots[seat].bomb)players=hash_value(*w.pilots[seat].bomb,players);}
+    for(u32 seat=0;seat<w.player_count;++seat){
+        players=hash_value(w.pilots[seat].input_keys,players);
+        if(w.pilots[seat].player)players=hash_player_state(*w.pilots[seat].player,players);
+        if(w.pilots[seat].bomb)players=hash_bomb_state(*w.pilots[seat].bomb,players);
+    }
     const u32 enemies=hash_enemies_semantic(w);
-    u32 lasers=w.actors.lasers?hash_value(*w.actors.lasers):0;lasers=hash_pool(w.rollback_lasers,lasers);
+    const u32 lasers=hash_lasers_semantic(w.actors.lasers);
     u32 items=hash_items(w.actors.items);items=hash_bytes(w.regular_item_owners,sizeof(w.regular_item_owners),items);items=hash_bytes(w.faith_item_owners,sizeof(w.faith_item_owners),items);
     u32 scene=2166136261u;if(w.actors.session)scene=hash_value(*w.actors.session,scene);if(w.actors.spell)scene=hash_value(*w.actors.spell,scene);if(w.actors.gui)scene=hash_value(*w.actors.gui,scene);if(w.actors.results)scene=hash_value(*w.actors.results,scene);if(w.actors.popups)scene=hash_value(*w.actors.popups,scene);if(w.actors.hints)scene=hash_value(*w.actors.hints,scene);if(w.actors.effects)scene=hash_value(*w.actors.effects,scene);scene=hash_value(hash_stage(w.backgrounds.current),scene);scene=hash_value(hash_stage(w.backgrounds.previous),scene);
     u32 chain=hash_value(app->engine.chain_value);chain=hash_pool(app->engine.callback_environment.rollback_entries,chain);chain=hash_pool(app->effects.rollback_effects,chain);

@@ -6,11 +6,13 @@
 namespace th10::multiplayer {
 namespace {
 constexpr std::size_t BaseDescriptionBytes=120,DescriptionHeaderBytes=128;
-constexpr u32 DescriptionVersion=3;
+constexpr u32 DescriptionVersion=4;
 constexpr std::size_t LegacyCheckpointBytes=
     8+16+Netplay::MAX_PLAYERS*sizeof(GameInput)+34+
     Netplay::MAX_PLAYERS*2+4+Netplay::MAX_PLAYERS*sizeof(ReplayStage);
-constexpr std::size_t CheckpointBytes=LegacyCheckpointBytes+16;
+constexpr std::size_t ActivationCheckpointBytes=LegacyCheckpointBytes+16;
+constexpr std::size_t RetainedCheckpointBytes=ActivationCheckpointBytes+12;
+constexpr std::size_t CheckpointBytes=RetainedCheckpointBytes;
 static_assert(sizeof(GameInput)==0x58);
 static_assert(sizeof(ReplayStage)==0x1c4);
 static_assert(sizeof(Rng)==8);
@@ -55,7 +57,8 @@ bool get_cooperation(const u8*& p,u8 players,ReplayCheckpointCooperation& s){
     }
     return true;
 }
-bool checkpoint_valid(const Netplay::InputReplayInfo& tape,const ReplayCheckpoint& cp){
+bool checkpoint_valid(const Netplay::InputReplayInfo& tape,const ReplayDescription& description,
+                      const ReplayCheckpoint& cp){
     const u32 stage=cp.label&255u;
     if(stage<1||stage>7||cp.firstFrame>=tape.frameCount||
        cp.cooperation.seatCount!=tape.config.playerCount)return false;
@@ -68,9 +71,19 @@ bool checkpoint_valid(const Netplay::InputReplayInfo& tape,const ReplayCheckpoin
     if(!chapter)return false;
     for(u32 seat=0;seat<tape.config.playerCount;++seat){
         const auto& snap=cp.pilots[seat];
+        const auto& coop=cp.cooperation.seats[seat];
+        const auto& loadout=description.setup.loadouts[seat];
+        const auto extendMax=description.setup.difficulty==4?2:4;
         if(snap.stage!=static_cast<std::int16_t>(stage)||snap.power<0||snap.power>kMaxPower||
-           snap.lives<-1||snap.lives>kMaxLives||cp.reservedPower[seat]>kMaxPower)return false;
+           snap.lives<-1||snap.lives>kMaxLives||cp.reservedPower[seat]>kMaxPower||
+           snap.score_units<0||snap.score_units>9||snap.extend_index<0||snap.extend_index>extendMax||
+           (snap.focused!=0&&snap.focused!=1)||
+           coop.character!=loadout.character||coop.shot!=loadout.shot||
+           coop.lives!=snap.lives||coop.power!=snap.power)return false;
     }
+    if(cp.retainedStateValid&&(cp.faithCursor>=2048||
+       (description.setup.difficulty==4?cp.reservedStage!=7:
+        cp.reservedStage<1||cp.reservedStage>6)))return false;
     return true;
 }
 std::vector<u8> encode(const ReplayDescription& info,const ReplayCheckpoint* checkpoints,
@@ -78,7 +91,8 @@ std::vector<u8> encode(const ReplayDescription& info,const ReplayCheckpoint* che
     u32 included=0;for(u32 i=0;i<checkpointCount;++i)
         if(frameCount==Netplay::INVALID_FRAME||checkpoints[i].firstFrame<frameCount)++included;
     if(version<1||version>DescriptionVersion||(version==1&&included))return {};
-    const auto recordBytes=version>=3?CheckpointBytes:LegacyCheckpointBytes;
+    const auto recordBytes=version>=4?CheckpointBytes:
+                           version>=3?ActivationCheckpointBytes:LegacyCheckpointBytes;
     std::vector<u8> out;out.reserve((version==1?BaseDescriptionBytes:DescriptionHeaderBytes)+included*recordBytes);
     put(out,version);put(out,info.setup.seed);
     put(out,info.setup.difficulty);put(out,info.setup.difficulty==4?7:1);
@@ -102,6 +116,10 @@ std::vector<u8> encode(const ReplayDescription& info,const ReplayCheckpoint* che
         for(const auto& snap:cp.pilots){
             const auto* raw=reinterpret_cast<const u8*>(&snap);
             out.insert(out.end(),raw,raw+sizeof(snap));
+        }
+        if(version>=4){
+            if(!cp.retainedStateValid||cp.faithCursor>=2048)return {};
+            put(out,cp.faithCursor);put(out,cp.laserLastId);put(out,cp.reservedStage);
         }
     }
     return out;
@@ -137,7 +155,8 @@ bool decode(const Netplay::InputReplayInfo& tape,ReplayDescription& out,
     if(version>=2){
         if(bytes.size()<DescriptionHeaderBytes)return false;
         const u32 count=word(p+120),recordBytes=word(p+124);
-        const std::size_t expectedRecordBytes=version>=3?CheckpointBytes:LegacyCheckpointBytes;
+        const std::size_t expectedRecordBytes=version>=4?CheckpointBytes:
+                                              version>=3?ActivationCheckpointBytes:LegacyCheckpointBytes;
         if(count>checkpoints.size()||recordBytes!=expectedRecordBytes||
            bytes.size()!=DescriptionHeaderBytes+std::size_t(count)*expectedRecordBytes)return false;
         const u8* at=p+DescriptionHeaderBytes;
@@ -156,7 +175,12 @@ bool decode(const Netplay::InputReplayInfo& tape,ReplayDescription& out,
             for(auto& value:cp.reservedPower){value=half(at);at+=2;}
             const u32 cheat=word(at);at+=4;if(cheat>1)return false;cp.cheatMovementUsed=cheat!=0;
             for(auto& snap:cp.pilots){std::memcpy(&snap,at,sizeof(snap));at+=sizeof(snap);}
-            if(!checkpoint_valid(tape,cp))return false;
+            if(version>=4){
+                cp.faithCursor=word(at);at+=4;cp.laserLastId=word(at);at+=4;
+                cp.reservedStage=word(at);at+=4;
+                cp.retainedStateValid=true;
+            }
+            if(!checkpoint_valid(tape,next,cp))return false;
             for(u32 prior=0;prior<i;++prior)if((checkpoints[prior].label&255u)==(cp.label&255u))return false;
             checkpoints[i]=cp;++checkpointCount;at=p+DescriptionHeaderBytes+std::size_t(i+1)*expectedRecordBytes;
         }
@@ -222,7 +246,7 @@ bool ReplayArchive::CaptureCheckpoint(const ReplayCheckpoint& checkpoint){
     const u32 stage=checkpoint.label&255u;
     if(stage<1||stage>7||checkpoint.label!=((generation_<<8)|stage)||
        checkpoint.firstFrame>=cursor_||!checkpoint.activationRandomValid||
-       !checkpoint_valid(tape_.Info(),checkpoint))return false;
+       !checkpoint.retainedStateValid||!checkpoint_valid(tape_.Info(),description_,checkpoint))return false;
     for(u32 i=0;i<checkpoint_count_;++i)
         if((checkpoints_[i].label&255u)==stage)return true;
     if(checkpoint_count_>=checkpoints_.size())return false;
@@ -237,7 +261,8 @@ bool ReplayArchive::SelectCheckpoint(u32 stage){
         // proven frame-zero reconstruction fallback until generation bootstrap
         // is made independently portable.
         if((cp.label&255u)==stage&&(cp.label>>8)==0){
-            if(!cp.activationRandomValid||!checkpoint_valid(tape_.Info(),cp))return false;
+            if(!cp.activationRandomValid||!cp.retainedStateValid||
+               !checkpoint_valid(tape_.Info(),description_,cp))return false;
             base_=cursor_=cp.firstFrame;next_=0;generation_=0;selected_checkpoint_=u8(i);return true;
         }
     }
@@ -266,9 +291,12 @@ bool ReplayArchive::Encode(std::vector<u8>& out,const ReplayDescription* descrip
 u32 ReplayArchive::SeekFrame(u32 stage)const{
     // Native Extra Results uses 8 as a terminal marker, not a playable stage.
     if(stage<1||stage>7)return Netplay::INVALID_FRAME;
-    for(u32 i=0;i<checkpoint_count_;++i)
-        if((checkpoints_[i].label&255u)==stage&&(checkpoints_[i].label>>8)==0)
-            return checkpoints_[i].firstFrame;
+    for(u32 i=0;i<checkpoint_count_;++i){
+        const auto& cp=checkpoints_[i];
+        if((cp.label&255u)==stage&&(cp.label>>8)==0&&cp.activationRandomValid&&
+           cp.retainedStateValid&&checkpoint_valid(tape_.Info(),description_,cp))
+            return cp.firstFrame;
+    }
     for(u32 i=0;i<tape_.Info().chapterCount;++i)
         if((tape_.Info().chapters[i].label&255u)==stage)return tape_.Info().chapters[i].firstFrame;
     return Netplay::INVALID_FRAME;
