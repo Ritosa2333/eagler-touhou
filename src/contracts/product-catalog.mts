@@ -48,6 +48,12 @@ const TH07_MULTIPLAYER_LOADOUTS = Object.freeze([...TH06_MULTIPLAYER_LOADOUTS, S
 const STANDARD_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Easy", "Normal", "Hard", "Lunatic", "Extra"]);
 const TH07_MULTIPLAYER_DIFFICULTIES = Object.freeze([...STANDARD_MULTIPLAYER_DIFFICULTIES, "Phantasm"]);
 const STANDARD_MULTIPLAYER_PLAYER_COUNTS = Object.freeze([2, 3] as const);
+const TOGGLE_TOUCH_FIRE = Object.freeze({ mode: "toggle", labelKey: "touch.tapToggle" } as const);
+const CHARGE_TOUCH_FIRE = Object.freeze({
+  mode: "held-key",
+  labelKey: "touch.holdFireCharge",
+  key: Object.freeze({ code: "KeyZ", key: "z", keyCode: 90 }),
+} as const);
 
 export const PRODUCT_GAMES = Object.freeze({
   th06: Object.freeze({
@@ -61,7 +67,8 @@ export const PRODUCT_GAMES = Object.freeze({
       configFiles: Object.freeze(["東方紅魔郷.cfg", "th06.cfg"]),
     }),
     runtime: "./runtime/th06/th06.html",
-    musicCapabilities: Object.freeze({ midi: true }),
+    musicCapabilities: Object.freeze({ midi: true, localOggConfigureMode: "midi-sentinel" }),
+    touchFire: TOGGLE_TOUCH_FIRE,
     support: Object.freeze({
       sourceRepository: "https://github.com/YomotsuHisami/th06",
     }),
@@ -101,7 +108,8 @@ export const PRODUCT_GAMES = Object.freeze({
       configFiles: Object.freeze(["th07.cfg"]),
     }),
     runtime: "./runtime/th07/th07.html",
-    musicCapabilities: Object.freeze({ midi: true }),
+    musicCapabilities: Object.freeze({ midi: true, localOggConfigureMode: "midi-sentinel" }),
+    touchFire: TOGGLE_TOUCH_FIRE,
     support: Object.freeze({
       sourceRepository: "https://github.com/YomotsuHisami/th07",
     }),
@@ -134,7 +142,8 @@ export const PRODUCT_GAMES = Object.freeze({
       configFiles: Object.freeze(["th08.cfg"]),
     }),
     runtime: "./runtime/th08/th08.html",
-    musicCapabilities: Object.freeze({ midi: true }),
+    musicCapabilities: Object.freeze({ midi: true, localOggConfigureMode: "midi-sentinel" }),
+    touchFire: TOGGLE_TOUCH_FIRE,
     support: Object.freeze({
       sourceRepository: "https://github.com/YomotsuHisami/th08",
       adaptationNotice: "early-test",
@@ -174,7 +183,8 @@ export const PRODUCT_GAMES = Object.freeze({
     subtitle: "Phantasmagoria of Flower View",
     storage: Object.freeze({ saveRoot: "/savesth09", scoreFile: "score.dat", configFiles: Object.freeze(["th09.cfg"]) }),
     runtime: "./runtime/th09/th09.html",
-    musicCapabilities: Object.freeze({ midi: false }),
+    musicCapabilities: Object.freeze({ midi: false, localOggConfigureMode: "runtime-selection" }),
+    touchFire: CHARGE_TOUCH_FIRE,
     support: Object.freeze({ sourceRepository: "https://github.com/YomotsuHisami/th09", adaptationNotice: "early-test" }),
     runtimeFileLayout: "directory",
     requiredShared: Object.freeze(["/msgothic.ttc"]),
@@ -200,7 +210,8 @@ export const PRODUCT_GAMES = Object.freeze({
     subtitle: "Mountain of Faith",
     storage: Object.freeze({ saveRoot: "/savesth10", scoreFile: "scoreth10.dat", configFiles: Object.freeze(["th10.cfg"]) }),
     runtime: "./runtime/th10/th10.html",
-    musicCapabilities: Object.freeze({ midi: false }),
+    musicCapabilities: Object.freeze({ midi: false, localOggConfigureMode: "midi-sentinel" }),
+    touchFire: TOGGLE_TOUCH_FIRE,
     support: Object.freeze({
       sourceRepository: "https://github.com/YomotsuHisami/th10",
       adaptationNotice: "early-test",
