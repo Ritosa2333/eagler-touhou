@@ -8,7 +8,7 @@ parser=argparse.ArgumentParser()
 parser.add_argument('--url',required=True)
 parser.add_argument('--output',type=Path,required=True)
 args=parser.parse_args()
-report={'passed':False,'scope':'stable-stage native input prediction/correction; transport, startup, device output and cross-endpoint canonical state not accepted','identities':[],'cases':[],'errors':[]}
+report={'passed':False,'scope':'stable-stage native input correction and confirmed native audio commands; transport, startup, physical audio/graphics/files and cross-endpoint canonical state not accepted','identities':[],'cases':[],'errors':[]}
 def save():
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps(report,indent=2),encoding='utf-8')
@@ -31,11 +31,14 @@ with sync_playwright() as p:
                         page.evaluate("multiplayerSmoke.key('KeyZ',false)");page.evaluate('multiplayerSmoke.ticks(120)')
                     clock=page.evaluate('multiplayerSmoke.audioClockIndependent()')
                     assert clock,'Native audio clock incorrectly follows rewindable game time'
+                    routing=page.evaluate('multiplayerSmoke.audioRouting()')
+                    assert routing,'Native WAV/MIDI routing or logical music unlock was not preserved'
                     report['running']['phase']='native-correction';save()
                     probe=page.evaluate('multiplayerSmoke.correctionProbe()')
-                    case={'players':count,'local':local,'audioClockIndependent':clock,'probe':probe};report['cases'].append(case);save()
+                    case={'players':count,'local':local,'audioClockIndependent':clock,'audioRouting':routing,'probe':probe};report['cases'].append(case);save()
                     assert probe[:3]==[1,1,0] and probe[3:5]==[8,8] and probe[32:36]==[1]*4,case
                     assert probe[6]&8 and probe[38]==1,case
+                    assert probe[39]==1 and probe[40]>0 and probe[41]==probe[42]>16 and probe[43]==probe[44] and probe[45]==1,case
                     print('TH08 native correction:',count,'players, local',local,'PASS',flush=True)
                 finally:page.close()
         assert not report['errors'],report['errors']

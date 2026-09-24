@@ -13,6 +13,8 @@
 #endif
 using namespace th08;
 extern "C" {
+__attribute__((export_name("mp_fixture_audio_routing")))
+u32 mp_fixture_audio_routing(BrowserRuntime* runtime){return runtime&&runtime->diagnostic_audio_routing()?1u:0u;}
 __attribute__((export_name("mp_fixture_audio_clock")))
 u32 mp_fixture_audio_clock(BrowserRuntime* runtime){return runtime&&runtime->diagnostic_audio_clock_independent()?1u:0u;}
 __attribute__((export_name("mp_fixture_native_correction")))

@@ -5,6 +5,9 @@
 #include "ResourceManager.hpp"
 #include "../../../portable/input/MotionTrack.hpp"
 namespace th08 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace multiplayer {class AudioEvents;}
+#endif
 struct BrowserTexture {u32 handle,width,height,format,pitch,data,size,revision;};
 class GameAudioManager;
 class BrowserRuntime:public ApplicationPlatform {
@@ -50,10 +53,13 @@ public:
     BrowserRuntime();~BrowserRuntime();
 #ifdef TH_MULTIPLAYER_FIXTURES
     bool diagnostic_audio_clock_independent();
+    bool diagnostic_audio_routing();
 #endif
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     bool logical_frame_advanced()const{return !app.session.netplay.Configured()||app.session.network_frame_open;}
     bool finish_network_frame();
+    bool bind_audio_events(multiplayer::AudioEvents*);
+    bool commit_audio_events(multiplayer::AudioEvents&,u32 confirmed,u32 simulated);
     void begin_multiplayer_clock(){multiplayer_logic_frame=0;app.statistics.state={};}
 #endif
     static std::string path(const char*);

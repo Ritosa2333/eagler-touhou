@@ -231,6 +231,14 @@ bool BrowserRuntime::finish_network_frame(){
     if(!net.MarkSimulated(net.NextFrame(),session.network_frame))return false;
     session.network_frame_open=false;++multiplayer_logic_frame;return !capture_failed;
 }
+bool BrowserRuntime::bind_audio_events(multiplayer::AudioEvents* events){return audio&&audio->bind_audio_events(events);}
+bool BrowserRuntime::commit_audio_events(multiplayer::AudioEvents& events,u32 confirmed,u32 simulated){
+    const auto& net=app.session.netplay;
+    if(!net.CanStart()||net.Correcting()||net.RollbackFrame()!=Netplay::INVALID_FRAME)return false;
+    if(confirmed!=Netplay::INVALID_FRAME&&(net.ConfirmedThrough()==Netplay::INVALID_FRAME||confirmed>net.ConfirmedThrough()))return false;
+    if(simulated!=Netplay::INVALID_FRAME&&(net.LastFrame()==Netplay::INVALID_FRAME||simulated>net.LastFrame()))return false;
+    return audio&&audio->commit_audio_events(events,confirmed,simulated);
+}
 #endif
 i32 BrowserRuntime::status(i32 field)const{switch(field){case 0:return app.supervisor.state.active;case 1:return app.active();case 2:return app.invalid()||capture_failed;case 3:return app.game.globals.stage;case 4:return app.game.faults()|(u32(capture_failed)<<9);case 5:return app.textures.live_count();case 6:return app.game.enemies.state.frames;case 7:return app.loading_game();case 8:return app.title.menus.state.currentScreen;case 9:return app.title.menus.state.cursor;case 10:return app.title.modal();default:return -1;}}
 void BrowserRuntime::sound(i32 i,i32 m,float x,bool p){audio->sound(i,m,x,p);}
@@ -255,6 +263,41 @@ bool BrowserRuntime::diagnostic_audio_clock_independent(){
     const auto measured=audio->diagnostic_milliseconds(),after=file_device().milliseconds();
     multiplayer_logic_frame=saved;
     return u32(measured-before)<=u32(after-before)&&measured!=logical;
+}
+bool BrowserRuntime::diagnostic_audio_routing(){
+    if(!audio||!app.in_game()||app.session.netplay.Configured())return false;
+    multiplayer::AudioEvents events;events.Reset();if(!bind_audio_events(&events))return false;
+    struct Restore {BrowserRuntime& runtime;GameConfiguration config;PlayRecord statistics;
+        ~Restore(){runtime.bind_audio_events(nullptr);runtime.app.session.display_config=config;runtime.app.session.statistics=statistics;}
+    } restore{*this,app.session.display_config,app.session.statistics};
+    const auto device_before=audio->diagnostic_device_fingerprint();
+    auto& config=app.session.display_config;auto& records=app.session.statistics;
+    records.music_unlocked[3]=records.music_unlocked[5]=0;
+    if(!events.BeginFrame(0))return false;
+    config.music=1;config.options&=~8192u;
+    sound(5,0,192,true);load_music(1,"stage2.mid");play_music(1,3);fade_music(1.25f);
+    menu_music(MenuMusic::Pause,0);menu_music(MenuMusic::Resume,0);menu_music(MenuMusic::FadeIn,2);
+    process_sounds();update_audio_fades();
+    if(!records.music_unlocked[3]||!events.EndFrame()||!events.BeginFrame(1))return false;
+    config.music=2;load_music(2,"stage3.mid");play_music(2,5);fade_music(1);
+    midi_reset();stop_audio();process_sounds();update_audio_fades();apply_volume(config);
+    if(!records.music_unlocked[5]||!events.EndFrame()||events.Failed()||
+       audio->diagnostic_device_fingerprint()!=device_before)return false;
+    struct Trace:multiplayer::AudioEventOutput {std::vector<multiplayer::AudioEvent> events;
+        bool apply_audio_event(const multiplayer::AudioEvent& value)override{events.push_back(value);return true;}
+    } trace;
+    if(!events.CommitThrough(1,1,trace))return false;
+    using Kind=multiplayer::AudioEventKind;
+    const Kind expected[]{Kind::Sound,Kind::WaveCommand,Kind::WaveCommand,Kind::WaveCommand,Kind::WaveCommand,
+        Kind::WaveCommand,Kind::Fade,Kind::Process,Kind::TickFades,Kind::MidiLoad,Kind::MidiStop,Kind::MidiPlay,
+        Kind::MidiStart,Kind::MidiFade,Kind::MidiReset,Kind::MidiStop,Kind::Process,Kind::TickFades,Kind::Volumes};
+    if(trace.events.size()!=std::size(expected))return false;
+    for(std::size_t i=0;i<std::size(expected);++i)if(trace.events[i].kind!=expected[i])return false;
+    return trace.events[1].first==1&&trace.events[1].second==1&&!std::strcmp(trace.events[1].text,"stage2.wav")&&
+        trace.events[2].first==2&&trace.events[2].second==1&&trace.events[3].first==5&&trace.events[3].second==1&&
+        trace.events[4].first==6&&trace.events[5].first==7&&trace.events[6].first==2&&trace.events[6].value==2&&
+        trace.events[9].first==2&&!std::strcmp(trace.events[9].text,"stage3.mid")&&trace.events[11].first==2&&
+        trace.events[13].first==1000;
 }
 #endif
 void BrowserRuntime::replay_error(){file_device().replay_error();}

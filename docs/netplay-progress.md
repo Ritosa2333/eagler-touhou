@@ -197,6 +197,61 @@ and after each run. Command:
 Logs: build-correction-sampler.log, build-correction-sampler-production.log,
 build-correction-sampler-ordinary.log.
 
+## Confirmed native audio command boundary
+
+AudioEvents is a title command outbox, not a replacement mixer or MIDI player.
+GameAudioManager captures primitive WAV/MIDI commands, one-shot SFX requests,
+fade updates, native Process steps and volume settings in authored order.
+MusicControl still runs during simulation: music unlocks and the choice of
+commands are not delayed until output confirmation. Event arguments/paths and
+the applicable audio configuration are captured by value, not read from a
+later predicted state. The existing device clock remains non-rewindable.
+
+DiscardFrom replaces only uncommitted frames. CommitThrough requires complete
+closed records, executes only through the smaller confirmed/simulated frontier,
+and never rewinds or repeats the emitted cursor. BrowserRuntime additionally
+rejects a commit while input correction is pending or active, or when a caller
+claims a frontier beyond the real NetplayRuntime. Overflow or an external
+output failure latches failure rather than dropping events or retrying an
+uncertain side effect. The bounds are sixteen pending frames, 4096 events per
+frame and 256 bytes per copied path including its terminator.
+
+The native correction diagnostic now compares the complete corrected audio
+event sequence against the exact-input branch and commits that surviving
+sequence through GameAudioManager once. It verifies that the predicted branch
+really produced a different audio sequence and that redundant confirmation
+does not emit it again. A separate native routing probe exercises WAV and MIDI
+load/play/stop/fade/reset routes and logical music unlocks without changing the
+checked native audio queues/device-control state before commitment. The routing
+probe's command trace uses a diagnostic output sink; it is not an audible BGM
+or MIDI playback test.
+
+| Evidence under artifacts/multiplayer-tests/ | Actual scope |
+| --- | --- |
+| native-correction-bce5ae12-c6a7-4cf4-9eff-36590eb9cbf0 | All five 2P/3P local-seat cases pass native correction, corrected audio ordering/one-time commit, WAV/MIDI routing, immediate logical unlocks and device-clock/sampler separation. |
+| world-journal-26436428-8c1c-4581-8c8e-27d882f67629 | All eight stable-stage world scenarios and later-lifecycle probes pass with the new audio owner present. |
+| cooperation-407416d6-4497-4488-b4b6-f7fabda371a2 | All seven native cooperation/gift/wipe/retry regression cases pass. |
+| admission-a82fdab0-95ea-4d83-a7c8-6d4fd8b9d205 | Rebuilt production 2P/3P admission and exact input/stall regression pass. |
+
+Unit entry: `node portable/check-multiplayer-audio.mjs`. It covers replacement
+of wrong music commands, WAV/MIDI order, partial confirmation, duplicate
+confirmation, retained-history/event bounds, malformed commands and partial
+external-output failure without retrying already emitted effects.
+Audio-slice production MP WASM:
+`740707677cb5538aa0bfdc5c03f7b09e26761ea1ee898ec05a8d43b38e8a3fa0`.
+Diagnostic MP WASM:
+`4a5e02f8c1ba0fc693748c227503ef273800c6a146fe70b9713bf5c47a3ca802`.
+Logs: build-audio-routing.log, build-audio-production.log, build-audio-ordinary.log.
+The rebuilt ordinary WASM remains exactly
+`0d00a84ef6b214d43f2f365a6ffaa8bc6030a89c56b7d53868f3b9295b4cea3f`.
+All four build-isolation tests and the native netplay/cooperation/audio unit
+entry points pass. This still does not replace a full golden Replay run.
+
+Only diagnostics currently attach this outbox to the correction loop. The
+production driver still needs graphics/capture and persistence protection,
+confirmed scene-transition lifecycle and cross-endpoint canonical validation
+before enabling WorldReady. No speaker/device listening acceptance is claimed.
+
 ## Next implementation boundary
 
 Integrate late-input correction with confirmed external side effects (audio,

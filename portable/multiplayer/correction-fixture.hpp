@@ -3,6 +3,7 @@
 #error Native correction diagnostics must not enter production
 #endif
 #include "../../th08_web/cpp/multiplayer/WorldJournal.hpp"
+#include "../../th08_web/cpp/multiplayer/AudioEvents.hpp"
 #include "../../th08_web/cpp/platform/BrowserRuntime.hpp"
 #include <cstdio>
 
@@ -26,6 +27,9 @@ inline const u32* correction_probe(BrowserRuntime& runtime){
     if(!journal.Bind(runtime))return fail(2);
     if(!journal.DiagnosticInputSampler())return fail(4);
     result[38]=1;
+    AudioEvents audio;audio.Reset();
+    if(!runtime.bind_audio_events(&audio))return fail(5);
+    struct AudioCleanup {BrowserRuntime& runtime;~AudioCleanup(){runtime.bind_audio_events(nullptr);}} audio_cleanup{runtime};
     constexpr u32 frames=NetplayRuntime::MaxRollbackFrames;
     static_assert(frames==WorldJournal::History);
     auto setup=session.multiplayer_session;setup.started=false;setup.session_id=0x800020260924ull;
@@ -65,24 +69,30 @@ inline const u32* correction_probe(BrowserRuntime& runtime){
     };
     const auto step=[&](u32 frame,bool capture){
         if(capture&&!net.CaptureLocal(frame,input(setup.local_player,frame)))return false;
-        return journal.BeginFrame(frame)&&runtime.step(true)&&!session.network_frame_open&&
-            net.NextFrame()==frame+1&&journal.EndFrame();
+        return journal.BeginFrame(frame)&&audio.BeginFrame(frame)&&runtime.step(true)&&!session.network_frame_open&&
+            net.NextFrame()==frame+1&&journal.EndFrame()&&audio.EndFrame();
     };
     if(!barrier())return fail(3);
     const auto initial=journal.AuditHash();
     std::array<std::array<u32,WorldJournal::GroupCount>,frames> expected{};
     std::array<std::vector<u32>,frames> blocks;
+    std::array<u32,frames> expected_audio{};
     for(u32 frame=0;frame<frames;++frame){
         for(u32 seat=0;seat<setup.player_count;++seat)if(seat!=setup.local_player&&!deliver(seat,frame))return fail(10+frame);
         if(!step(frame,true))return fail(20+frame);
-        expected[frame]=journal.AuditHash();blocks[frame]=journal.BlockHashes();
+        expected[frame]=journal.AuditHash();blocks[frame]=journal.BlockHashes();expected_audio[frame]=audio.FrameDigest(frame);
     }
-    if(!journal.UndoTo(0)||journal.AuditHash()!=initial||!barrier())return fail(30);
+    auto reference_audio=audio;
+    struct ReferenceOutput:AudioEventOutput {bool apply_audio_event(const AudioEvent&)override{return true;}} reference;
+    if(!reference_audio.CommitThrough(frames-1,frames-1,reference))return fail(31);
+    result[41]=reference_audio.CommittedEvents();result[43]=reference_audio.CommittedDigest();
+    if(!journal.UndoTo(0)||journal.AuditHash()!=initial||!barrier()||!audio.DiscardFrom(0))return fail(30);
     for(u32 frame=0;frame<frames;++frame){
         if(!net.CaptureLocal(frame,input(setup.local_player,frame)))return fail(40+frame);
         const auto decision=net.Prepare(frame);
         if(!decision.canAdvance||!decision.predictedMask)return fail(50+frame);
         ++result[4];if(!step(frame,false))return fail(60+frame);
+        result[40]+=audio.FrameDigest(frame)!=expected_audio[frame];
     }
     // The ninth local input is sampled once, but the frame-zero gap must stall
     // both Update and semantic Draw without overwriting required history.
@@ -95,7 +105,10 @@ inline const u32* correction_probe(BrowserRuntime& runtime){
     for(u32 frame=frames;frame-->0;)for(u32 seat=0;seat<setup.player_count;++seat)if(seat!=setup.local_player)
         if(!deliver(seat,frame)||!deliver(seat,frame))return fail(72);
     std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS> confirmed{};
-    if(net.RollbackFrame()!=0||net.ConfirmedInputs(0,confirmed)||!net.BeginCorrection(0)||!journal.UndoTo(0))return fail(73);
+    if(!result[40]||audio.CommittedEvents()||audio.NextCommit())return fail(75);
+    if(runtime.commit_audio_events(audio,net.ConfirmedThrough(),net.LastFrame())||audio.CommittedEvents())return fail(76);
+    result[39]=1;
+    if(net.RollbackFrame()!=0||net.ConfirmedInputs(0,confirmed)||!net.BeginCorrection(0)||!journal.UndoTo(0)||!audio.DiscardFrom(0))return fail(73);
     std::memset(runtime.keyboard_state(),128,256);
     result[6]=InputController::keyboard(runtime.keyboard_state(),false);
     if(!(result[6]&InputButton::Menu))return fail(74);
@@ -109,10 +122,16 @@ inline const u32* correction_probe(BrowserRuntime& runtime){
                 result[5]=index+1;std::printf("native correction frame=%u first block=%s\n",frame,journal.BlockName(index));break;}
             return fail(90+frame);
         }
+        if(audio.FrameDigest(frame)!=expected_audio[frame])return fail(110+frame);
     }
     result[32]=result[35]=1;
     if(!net.EndCorrection()||!net.ConfirmedInputs(frames-1,confirmed)||!net.CanRetire())return fail(100);
     for(u32 seat=0;seat<setup.player_count;++seat)if(confirmed[seat]!=input(seat,frames-1))return fail(101);
+    if(!runtime.commit_audio_events(audio,net.ConfirmedThrough(),net.LastFrame())||audio.NextCommit()!=frames||audio.PendingFrames())return fail(120);
+    result[42]=audio.CommittedEvents();result[44]=audio.CommittedDigest();
+    if(result[41]<=frames*2||result[41]!=result[42]||result[43]!=result[44])return fail(121);
+    if(!runtime.commit_audio_events(audio,net.ConfirmedThrough(),net.LastFrame())||audio.CommittedEvents()!=result[42])return fail(122);
+    result[45]=1;
     if(!net.SetWorldReady(false))return fail(102);
     result[34]=1;result[3]=frames;result[1]=1;return result;
 }
