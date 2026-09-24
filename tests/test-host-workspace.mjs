@@ -29,6 +29,9 @@ await assert.rejects(() => inspectHostWorkspace(root), /TH06 OGG source bgm[\\/]
 for (const game of ["th06", "th07", "th08"]) {
   for (const name of PRODUCT_CONTENT[game].original.oggSourceFiles) await put(join(layout.games[game], name));
 }
+await assert.rejects(() => inspectHostWorkspace(root), /TH09 OGG source thbgm\.dat not found/);
+const th09Alternative = PRODUCT_CONTENT.th09.original.preparedAlternative;
+for (const marker of th09Alternative.markerFiles) await put(join(layout.games.th09, th09Alternative.directory, marker));
 await assert.rejects(() => inspectHostWorkspace(root), /TH10 OGG source thbgm\.dat not found/);
 const alternative = PRODUCT_CONTENT.th10.original.preparedAlternative;
 for (const marker of alternative.markerFiles) await put(join(layout.games.th10, alternative.directory, marker));

@@ -23,6 +23,12 @@
       "thprac": false,
       "runtimeVariants": ["normal"]
     },
+    "th09": {
+      "languages": ["ja"],
+      "music": ["ogg"],
+      "thprac": false,
+      "runtimeVariants": ["normal"]
+    },
     "th10": {
       "languages": ["ja"],
       "music": ["midi"],

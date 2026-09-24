@@ -48,9 +48,11 @@ if (process.env.EAGLER_TOUHOU_ARTWORK_DIR && !existsSync(configuredArtworkDirect
 }
 const configuredNetplayRelay = process.env.EAGLER_TOUHOU_NETPLAY_RELAY?.trim() || undefined;
 const hostArtwork = new Set(hostArtworkFiles(Object.keys(DEVELOPMENT_CONTENT.games)));
+const selectedDevelopmentGames = process.env.EAGLER_DEVELOPMENT_GAMES?.split(",").map(value => value.trim()).filter(Boolean);
 const developmentMetadata = sourceDevelopmentServer ? new Map([
   [HOST_MANIFEST_FILE, `${JSON.stringify(await createDevelopmentHostManifest({
     netplayRelay: configuredNetplayRelay,
+    games: selectedDevelopmentGames,
   }), null, 2)}\n`],
   [RELEASE_CATALOG_FILE, `${JSON.stringify({ schema: RELEASE_CATALOG_SCHEMA, games: {} }, null, 2)}\n`],
 ]) : null;

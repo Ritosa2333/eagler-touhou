@@ -48,6 +48,12 @@ const TH07_MULTIPLAYER_LOADOUTS = Object.freeze([...TH06_MULTIPLAYER_LOADOUTS, S
 const STANDARD_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Easy", "Normal", "Hard", "Lunatic", "Extra"]);
 const TH07_MULTIPLAYER_DIFFICULTIES = Object.freeze([...STANDARD_MULTIPLAYER_DIFFICULTIES, "Phantasm"]);
 const STANDARD_MULTIPLAYER_PLAYER_COUNTS = Object.freeze([2, 3] as const);
+const TOGGLE_TOUCH_FIRE = Object.freeze({ mode: "toggle", labelKey: "touch.tapToggle" } as const);
+const CHARGE_TOUCH_FIRE = Object.freeze({
+  mode: "held-key",
+  labelKey: "touch.holdFireCharge",
+  key: Object.freeze({ code: "KeyZ", key: "z", keyCode: 90 }),
+} as const);
 
 export const PRODUCT_GAMES = Object.freeze({
   th06: Object.freeze({
@@ -62,6 +68,8 @@ export const PRODUCT_GAMES = Object.freeze({
     }),
     runtime: "./runtime/th06/th06.html",
     musicCapabilities: Object.freeze({ midi: true }),
+    musicRuntime: Object.freeze({ localOggConfigureMode: "midi-sentinel" }),
+    touchFire: TOGGLE_TOUCH_FIRE,
     support: Object.freeze({
       sourceRepository: "https://github.com/YomotsuHisami/th06",
     }),
@@ -102,6 +110,8 @@ export const PRODUCT_GAMES = Object.freeze({
     }),
     runtime: "./runtime/th07/th07.html",
     musicCapabilities: Object.freeze({ midi: true }),
+    musicRuntime: Object.freeze({ localOggConfigureMode: "midi-sentinel" }),
+    touchFire: TOGGLE_TOUCH_FIRE,
     support: Object.freeze({
       sourceRepository: "https://github.com/YomotsuHisami/th07",
     }),
@@ -135,6 +145,8 @@ export const PRODUCT_GAMES = Object.freeze({
     }),
     runtime: "./runtime/th08/th08.html",
     musicCapabilities: Object.freeze({ midi: true }),
+    musicRuntime: Object.freeze({ localOggConfigureMode: "midi-sentinel" }),
+    touchFire: TOGGLE_TOUCH_FIRE,
     support: Object.freeze({
       sourceRepository: "https://github.com/YomotsuHisami/th08",
       adaptationNotice: "early-test",
@@ -167,6 +179,34 @@ export const PRODUCT_GAMES = Object.freeze({
     replay: Object.freeze({ prefix: "th8" }),
     features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
   }),
+  th09: Object.freeze({
+    cardArtwork: "th09-card.webp",
+    number: "09",
+    title: "東方花映塚",
+    subtitle: "Phantasmagoria of Flower View",
+    storage: Object.freeze({ saveRoot: "/savesth09", scoreFile: "score.dat", configFiles: Object.freeze(["th09.cfg"]) }),
+    runtime: "./runtime/th09/th09.html",
+    musicCapabilities: Object.freeze({ midi: false }),
+    musicRuntime: Object.freeze({ localOggConfigureMode: "runtime-selection" }),
+    touchFire: CHARGE_TOUCH_FIRE,
+    support: Object.freeze({ sourceRepository: "https://github.com/YomotsuHisami/th09", adaptationNotice: "early-test" }),
+    runtimeFileLayout: "directory",
+    requiredShared: Object.freeze(["/msgothic.ttc"]),
+    runtimeAssets: Object.freeze([
+      "th09.html", "manifest.json", "shell.mjs", "managed.css", "keyboard.mjs",
+      "netplay.mjs", "motion-replay.mjs", "th09.mjs", "th09.wasm",
+      "fonts/blend.bin", "fonts/cp932.bin",
+    ]),
+    dataProvider: "retail-memory",
+    package: Object.freeze({
+      dataFileId: "game-data", dataTarget: "/th09.data",
+      rawDataImport: Object.freeze({ fileNames: Object.freeze(["th09.dat"]) }),
+      musicSourceDirectories: Object.freeze({ ogg: "music" }),
+      musicMounts: Object.freeze({ ogg: "/music" }),
+    }),
+    replay: Object.freeze({ prefix: "th9" }),
+    features: Object.freeze({ thprac: false, languages: false, focusHitbox: false }),
+  }),
   th10: Object.freeze({
     cardArtwork: "th10-card.webp",
     number: "10",
@@ -175,6 +215,8 @@ export const PRODUCT_GAMES = Object.freeze({
     storage: Object.freeze({ saveRoot: "/savesth10", scoreFile: "scoreth10.dat", configFiles: Object.freeze(["th10.cfg"]) }),
     runtime: "./runtime/th10/th10.html",
     musicCapabilities: Object.freeze({ midi: false }),
+    musicRuntime: Object.freeze({ localOggConfigureMode: "midi-sentinel" }),
+    touchFire: TOGGLE_TOUCH_FIRE,
     support: Object.freeze({
       sourceRepository: "https://github.com/YomotsuHisami/th10",
       adaptationNotice: "early-test",

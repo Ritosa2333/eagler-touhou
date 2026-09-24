@@ -26,7 +26,7 @@ In a secure context, the Launcher **can run offline**. If the player goes offlin
 
 ![The Eagler Touhou Launcher and game management interface](docs/assets/readme/launcher.webp)
 
-- Run TH06, TH07, TH08, and TH10 in the browser. The Launcher provides interfaces for importing and exporting saves, Replays, and other files.
+- Run TH06, TH07, TH08, TH09, and TH10 in the browser. The Launcher provides interfaces for importing and exporting saves, Replays, and other files.
 - Saves and Replays are fully interoperable with the original games.
 - Aims for a polished experience. It fixes numerous issues inherited from the original portable branches, including jittery bullets, uneven bullet movement, flickering, music stutters when switching tracks in single-threaded mode, and poor performance on phones.
 - Highly optimized: it can sustain 90 Hz on at least a Snapdragon 660.

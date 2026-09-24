@@ -16,6 +16,8 @@ const project = directoryArgument ? resolve(directoryArgument.slice("--directory
   : resolve(fileURLToPath(new URL("..", import.meta.url)));
 const forbiddenExtensions = new Set([".dat", ".data", ".wav", ".ogg", ".mid", ".midi", ".rpy", ".ttc"]);
 const publicAssets = new Set([
+  "assets/launcher-background.webp",
+  "assets/donation.webp",
   "assets/touch-rotate-landscape.webp",
   "assets/notice-bilibili.svg",
   "assets/notice-touhou-cloud.png",

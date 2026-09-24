@@ -34,7 +34,7 @@ assert.deepEqual(
   ["ja", "lang_zh-hans", "lang_zh-hant", "lang_en", "lang_de", "lang_ru"],
 );
 
-assert.deepEqual(PRODUCT_IDS, ["th06", "th07", "th08", "th10", "th06mp", "th07mp"]);
+assert.deepEqual(PRODUCT_IDS, ["th06", "th07", "th08", "th09", "th10", "th06mp", "th07mp"]);
 assert.equal(DEFAULT_PRODUCT_ID, "th06");
 assert.ok(PRODUCT_IDS.includes(DEFAULT_PRODUCT_ID));
 assert.equal(DEFAULT_MULTIPLAYER_PRODUCT_ID, "th07mp");
@@ -59,6 +59,9 @@ assert.equal(productFeatureAvailable("th06", "focusHitbox", { focusHitbox: false
 assert.equal(productFeatureAvailable("th07", "focusHitbox", { focusHitbox: true }), false);
 assert.equal(productFeatureAvailable("th06", "languages", { languages: false }), true);
 assert.equal(PRODUCT_GAMES.th08.replay.prefix, "th8");
+assert.equal(PRODUCT_GAMES.th09.replay.prefix, "th9");
+assert.deepEqual(PRODUCT_GAMES.th09.package.rawDataImport.fileNames, ["th09.dat"]);
+assert.equal(PRODUCT_GAMES.th09.features.thprac, false);
 assert.equal(PRODUCT_GAMES.th10.replay.prefix, "th10");
 assert.deepEqual(PRODUCT_GAMES.th08.package.rawDataImport.fileNames, ["th08.dat"]);
 assert.equal(PRODUCT_GAMES.th08.musicCapabilities.midi, true);
@@ -225,7 +228,7 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
 }
 console.log("Product catalog policy: PASS");
 
-for (const id of ["th06", "th07", "th08", "th10", "th06mp", "th07mp"]) {
+for (const id of ["th06", "th07", "th08", "th09", "th10", "th06mp", "th07mp"]) {
   assert.equal(productEnabledForBuild(id), true);
   assert.equal(productEnabledForBuild(id, false), true);
   assert.equal(productEnabledForBuild(id, true), true);
