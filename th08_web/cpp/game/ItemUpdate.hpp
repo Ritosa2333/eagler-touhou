@@ -3,6 +3,9 @@
 #include "ShotResource.hpp"
 #include <array>
 namespace th08 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace multiplayer {class PoolsJournal;}
+#endif
 struct ItemUpdateContext {
     Vec3 player;float height=448;i32 power=0;u8 focused=0,character=0;i8 player_state=0;u8 padding=0;
     Timer shooting,gauge_lock;u16 replay_flags=0,reserved=0;
@@ -32,6 +35,9 @@ struct ItemUpdateActions {
     virtual void subtract_rank(i32 value)=0;
 };
 class ItemUpdate {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::PoolsJournal;
+#endif
     ItemPoolState& state;ItemPool& pool;ItemUpdateActions& actions;std::array<ItemUpdatePlayer,3> players{};u32 player_count=0;
     ItemUpdatePlayer* first_player()noexcept;
     ItemUpdatePlayer* player(u32 seat)noexcept{return seat<players.size()&&players[seat].context?&players[seat]:nullptr;}

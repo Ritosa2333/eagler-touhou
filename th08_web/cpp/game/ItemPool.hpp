@@ -3,7 +3,13 @@
 #include "GameValues.hpp"
 #include "PresentationVisual.hpp"
 #include <array>
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace Netplay {class RollbackJournal;}
+#endif
 namespace th08 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace multiplayer {class PoolsJournal;}
+#endif
 struct ItemState {
     AnmVm animation;Vec3 position,velocity,target;Timer timer;
     i8 type=0,active=0,onscreen=0,state=0,max_value=0;u8 padding[3]{};ItemState* next=nullptr;ItemState* previous=nullptr;
@@ -22,11 +28,18 @@ struct ItemPoolActions {
     virtual void draw(AnmVm&)=0;
 };
 class ItemPool {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::PoolsJournal;
+#endif
     ItemPoolState& state;Rng& rng;ItemPoolActions& actions;
     struct PresentationSample {Vec3 position{};i32 age=0;i8 type=0;bool active=false;presentation::VisualSample visual;};
     std::array<PresentationSample,ItemPoolState::capacity+1> previous{};
     presentation::SnapshotMarker presentation_marker;
 public:
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    Netplay::RollbackJournal* rollback_journal=nullptr;
+    bool rollback_failed=false;
+#endif
     ItemPool(ItemPoolState& s,Rng& r,ItemPoolActions& a):state(s),rng(r),actions(a){}
     ItemState* spawn(const Vec3& position,i32 type,i32 mode,i32 power,i8 player_state);
     void remove(ItemState&);

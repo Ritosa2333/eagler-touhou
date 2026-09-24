@@ -11,6 +11,11 @@
 #include "../multiplayer/PlayerEffectSlots.hpp"
 #endif
 #include <array>
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include <memory>
+namespace Netplay {class RollbackJournal;}
+namespace th08::multiplayer {class PoolsJournal;}
+#endif
 namespace th08 {
 struct EffectPoolState {
     i32 cursor;u32 reserved4;i32 active_count;u32 reserved0c[4];
@@ -39,6 +44,11 @@ class EffectSystem {
     void begin(EffectState&,i32 kind,u32 color,bool depth);
     void initialize(EffectState&,i32 kind);
 #if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    friend class multiplayer::PoolsJournal;
+    std::array<std::unique_ptr<SpriteVertex[]>,effect_pool_layout::object_count> geometry_storage;
+    Netplay::RollbackJournal* rollback_journal=nullptr;
+    bool capture_slot(EffectState&);
+    void release_geometry(EffectState&);
     EffectState* fixed_at(i32 relative_slot,i32 local_slot,i32 kind,Vec3 position,u32 color,const Vec3* parameters);
     i32 effect_seat(const EffectState&)const;
     bool player_owner(const EffectState&,const Vec3*&,DamageRegions*&)const;
@@ -46,6 +56,9 @@ class EffectSystem {
     void draw_list(u32 index,float depth,bool offset_before_depth);
     static void projected(AnmVm&,Vec3&,void*);
 public:
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    i32 initialize_geometry(EffectState&,EffectDraw callback,bool alternative=false);
+#endif
     EffectPoolState& state;EffectEnvironment& environment;Vec2 arcade{32,16};bool paused=false,invalid=false;u8 quality=2;
     EffectTransforms transforms;EffectSpace space;EffectGeometry geometry;EffectBomb bomb;
     EffectSystem(EffectPoolState&,EffectEnvironment&,AnmExecutor&,AnmRenderer&,Rng&,ScreenEffects&,DamageRegions&,GameValues&,u16& replay_flags);

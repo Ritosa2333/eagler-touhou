@@ -10,6 +10,12 @@ Vec2 rotate(Vec2 v,float angle){const auto s=number(sine(angle).to_float()),c=nu
 }
 i32 EffectGeometry::initialize(EffectState& e,EffectDraw callback,bool alternative){
     e.vertices=static_cast<SpriteVertex*>(std::malloc(258*sizeof(SpriteVertex)));
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    return initialize_borrowed(e,e.vertices,callback,alternative);
+}
+i32 EffectGeometry::initialize_borrowed(EffectState& e,SpriteVertex* vertices,EffectDraw callback,bool alternative){
+    e.vertices=vertices;
+#endif
     if(!e.vertices){if(alternative)e.alternative=1;return alternative?0:-1;}
     e.segments=3;e.center=e.position;e.direction={0,0,1};e.up={0,-1,0};
     e.angle=e.parameters.x;e.radius=e.parameters.y;e.width=e.parameters.z;

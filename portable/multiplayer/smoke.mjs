@@ -50,6 +50,9 @@ window.multiplayerSmoke={
     return Array.from(new Uint32Array(core.memory.buffer,core.mp_fixture_enemy_journal(),10));},
   screenJournalProbe(){if(!core.mp_fixture_screen_journal||!app)throw Error('Initialized diagnostic fixture required');
     return Array.from(new Uint32Array(core.memory.buffer,core.mp_fixture_screen_journal(app),10));},
+  poolsJournalProbe(){if(!core.mp_fixture_pools_journal||!app)throw Error('Gameplay diagnostic fixture required');
+    const ptr=core.mp_fixture_pools_journal(app);if(!ptr)throw Error('Native game is not ready');
+    return Array.from(new Uint32Array(core.memory.buffer,ptr,10));},
   netStatus(){return Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_netplay_status(app),12));},
   sessionPacket(phase){const p=core.allocate(128);try{
     const size=core.multiplayer_session_build(app,phase,p,128);if(!size)throw Error('Session packet unavailable');

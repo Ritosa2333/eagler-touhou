@@ -1,4 +1,7 @@
 #include "ItemSystem.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/JournalTouch.hpp"
+#endif
 
 namespace th08 {
 
@@ -173,7 +176,11 @@ void ItemSystem::cancel_homing(){for(auto* item=state->head.next;item;item=item-
 void ItemSystem::cancel_homing(u32 seat){if(seat>=3)return;for(auto* item=state->head.next;item;item=item->next)if(item->state==1&&owner_for(*item)==seat){item->state=0;item->velocity={0,-.9f,0};}}
 void ItemSystem::time_orb(){time_orb(0);}
 void ItemSystem::time_orb(u32 seat){if(seat>=3||!owners[seat].player||!owners[seat].rewards)return;auto& owner=owners[seat];auto& p=*owner.player;auto& c=p.status().context;auto& context=owner.reward_input;context.hud_flags=c.hud_flags;context.bomb_triggered=p.status().bomb.triggered;context.bomb_active=p.status().bomb.active;context.focused=p.status().motion.form.focused;context.gauge_lock=p.status().item_gauge_lock;owner.rewards->time_orb(nullptr);failed|=owner.rewards->failed;c.hud_flags=context.hud_flags;synchronize(owner);}
-void ItemSystem::reset(){state->reset();item_owners.fill(no_owner);gift_recipients.fill(no_owner);failed=false;for(auto& owner:owners)if(owner.rewards)owner.rewards->failed=false;}
+void ItemSystem::reset(){
+    if(pool.rollback_journal&&(pool.rollback_journal->IsFrameOpen()||pool.rollback_journal->FrameCount())){failed=true;return;}
+    state->reset();item_owners.fill(no_owner);gift_recipients.fill(no_owner);failed=false;pool.rollback_failed=false;
+    for(auto& owner:owners)if(owner.rewards)owner.rewards->failed=false;
+}
 
 #endif
 }

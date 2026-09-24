@@ -9,12 +9,18 @@
 #include <array>
 #include <optional>
 namespace th08 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace multiplayer {class PoolsJournal;}
+#endif
 struct ItemSystemActions:ItemRewardActions {
     virtual void effect(i32 kind,const Vec3& position,i32 count,u32 color)=0;
 };
 // Resource-backed owner of the original item phases. It shares the player's
 // collision geometry and values rather than maintaining another game state.
 class ItemSystem:private ItemPoolActions,private ItemUpdateActions,private ItemRewardActions {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::PoolsJournal;
+#endif
     PlayerSimulation& player;GameGlobals& globals;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     using ResourceView=PlayerResourceView;
@@ -99,7 +105,11 @@ public:
     void time_orb();
     void time_orb(u32 seat);
     void reset();
-    bool invalid()const noexcept{return failed;}
+    bool invalid()const noexcept{return failed
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        ||pool.rollback_failed
+#endif
+        ;}
     const ItemPoolState& status()const noexcept{return *state;}
     i32 time_orb_count()const{return pool.time_orb_count();}
 };

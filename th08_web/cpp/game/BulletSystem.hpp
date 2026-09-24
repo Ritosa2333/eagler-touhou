@@ -11,6 +11,9 @@
 #include "../multiplayer/PlayerRoster.hpp"
 #endif
 namespace th08 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace multiplayer {class PoolsJournal;}
+#endif
 struct BulletSystemAudio {
     virtual ~BulletSystemAudio()=default;
     virtual void sound(i32 index,float position,bool panned)=0;
@@ -19,6 +22,9 @@ struct BulletSystemAudio {
 // item -> laser -> layered bullet -> effect drawing order. The enemy emitter,
 // native callbacks and player collisions all reference this same pool.
 class BulletSystem:public BulletEmissionActions,public LaserEmissionActions,private BulletCreationActions,private BulletUpdateActions,private LaserActions,private BulletCancelActions,private BulletDrawingActions {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::PoolsJournal;
+#endif
     BulletManagerState& state;EclGlobals& globals;PlayerSimulation& player;ItemSystem& inventory;EffectSystem& effect_system;AnmRenderer& renderer;BulletSystemAudio& audio;
     BulletCreation creation;BulletUpdate updater;LaserRuntime lasers;BulletDrawing drawing;
     Vec2 arcade{32,16};bool failed=false,ready=false,presentation_prepared=false;

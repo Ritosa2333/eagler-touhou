@@ -1,5 +1,8 @@
 #include "BulletSystem.hpp"
 #include "Presentation.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/JournalTouch.hpp"
+#endif
 namespace th08 {
 BulletSystem::BulletSystem(BulletManagerState& s,EclGlobals& g,Rng& rng,PlayerSimulation& p,ItemSystem& i,EffectSystem& e,AnmRenderer& r,BulletSystemAudio& a)
  :state(s),globals(g),player(p),inventory(i),effect_system(e),renderer(r),audio(a),creation(s,rng),updater(s,creation,rng),lasers(s,rng),drawing(s,*this){
@@ -14,7 +17,12 @@ void BulletSystem::publish_collision(PlayerSimulation& recipient){
 }
 #endif
 void BulletSystem::publish_collision(){const auto& p=player.status();globals.player_state=p.life.state;globals.player_state_timer=p.life.timer;globals.game_flags=p.context.game_flags;globals.paused=p.context.pause!=0;if(globals.gui)std::memcpy(&globals.gui->flags,&p.context.hud_flags,4);failed|=player.invalid();}
-bool BulletSystem::initialize(AnmLoaded& file,Rng& rng){state.animation=&file;ready=state.templates.load(file,rng,player.timing);failed=!ready;if(ready)drawing.snapshot();return ready;}
+bool BulletSystem::initialize(AnmLoaded& file,Rng& rng){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(creation.rollback_journal&&(creation.rollback_journal->IsFrameOpen()||creation.rollback_journal->FrameCount())){failed=true;return false;}
+#endif
+    state.animation=&file;ready=state.templates.load(file,rng,player.timing);failed=!ready;if(ready)drawing.snapshot();return ready;
+}
 void BulletSystem::emit(BulletEmission& parameters){
     if(!ready){failed=true;return;}synchronize();
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY

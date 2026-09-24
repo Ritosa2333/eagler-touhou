@@ -1,6 +1,9 @@
 #pragma once
 #include "BulletState.hpp"
 #include "BulletPattern.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace Netplay {class RollbackJournal;}
+#endif
 namespace th08 {
 struct BulletCreationActions {
     virtual ~BulletCreationActions()=default;
@@ -10,9 +13,16 @@ struct BulletCreationActions {
 // TH08 1.00d 0042f5f0 / 0042ffc0 / 00430e10. Owns no emulated memory.
 class BulletCreation {
 public:
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    Netplay::RollbackJournal* rollback_journal=nullptr;
+#endif
     BulletCreation(BulletManagerState& state,Rng& random):state(state),random(random){}
     FrameTiming timing;BulletCreationActions* actions=nullptr;
-    enum class Failure {None,MissingAnimation,InvalidTemplate,InvalidExtra};
+    enum class Failure {None,MissingAnimation,InvalidTemplate,InvalidExtra
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        ,Journal
+#endif
+    };
     Failure failure=Failure::None;
     i32 create(const BulletEmission&,i32 index,i32 layer,float aim);
     bool initialize_extra(BulletState&);

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include "enemy-journal-fixture.hpp"
 #include "screen-journal-fixture.hpp"
+#include "pools-journal-fixture.hpp"
 #ifndef TH_MULTIPLAYER_FIXTURES
 #error Fixture exports must stay out of production builds
 #endif
@@ -14,6 +15,10 @@ const u32* mp_fixture_enemy_journal(){return multiplayer::fixture::enemy_journal
 __attribute__((export_name("mp_fixture_screen_journal")))
 const u32* mp_fixture_screen_journal(BrowserRuntime* runtime){
     return runtime?multiplayer::fixture::screen_journal_probe(runtime->app.renderer):nullptr;
+}
+__attribute__((export_name("mp_fixture_pools_journal")))
+const u32* mp_fixture_pools_journal(BrowserRuntime* runtime){
+    return runtime&&runtime->app.in_game()?multiplayer::fixture::pools_journal_probe(runtime->app.game,runtime->app.session):nullptr;
 }
 __attribute__((export_name("mp_fixture_die")))
 u32 mp_fixture_die(BrowserRuntime* runtime,u32 seat){

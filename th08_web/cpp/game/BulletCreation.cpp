@@ -1,5 +1,8 @@
 #include "BulletCreation.hpp"
 #include "GameMath.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/JournalTouch.hpp"
+#endif
 namespace th08 {
 static constexpr i32 palette16[]{0,1,1,1,1,2,2,2,2,3,3,3,4,4,4,0};
 static constexpr i32 palette32[]{0,1,1,2,2,3,4,0};
@@ -28,6 +31,9 @@ i32 BulletCreation::create(const BulletEmission& e,i32 index,i32 layer,float aim
         if(checked==1535)return 1;
     }
     if(!e.type){failure=Failure::InvalidTemplate;return 1;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!multiplayer::before_write(rollback_journal,*slot)){failure=Failure::Journal;return 1;}
+#endif
     const auto values=bullet_pattern(e,index,layer,aim,random);auto& b=*slot;const auto& type=*e.type;
     b.state=1;b.unknown_dbc=1;b.grazed=0;b.since_fired.set(0);b.reisen_illusion=0;b.active_time.set(0);
     b.speed=values.speed;b.angle=add_angle(values.angle,0);b.position=e.position;b.position.z=.1f;

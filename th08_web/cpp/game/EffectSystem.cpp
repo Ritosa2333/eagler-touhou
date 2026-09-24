@@ -2,6 +2,10 @@
 #include "Presentation.hpp"
 #include "PresentationAudit.hpp"
 #include "GameMath.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/JournalTouch.hpp"
+#include <new>
+#endif
 namespace th08 {
 namespace {
 using E=EffectState;using S=EffectSystem;
@@ -18,7 +22,11 @@ i32 ambient_init(E& e,S& s){return s.space.ambient(e);}i32 ambient(E& e,S& s){re
 i32 glow_init(E& e,S& s){return s.space.glow(e,false);}i32 glow(E& e,S& s){return s.space.glow_step(e,false);}i32 tall_init(E& e,S& s){return s.space.glow(e,true);}i32 tall(E& e,S& s){return s.space.glow_step(e,true);}
 i32 alive(E&,S&){return 1;}i32 edge(E& e,S&){return EffectTransforms::edge(e);}
 void ring_draw(E& e,S& s){s.geometry.arcade=s.arcade;s.geometry.draw(e);}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+i32 ring_init(E& e,S& s){return s.initialize_geometry(e,ring_draw);}i32 alternative_init(E& e,S& s){return s.initialize_geometry(e,ring_draw,true);}
+#else
 i32 ring_init(E& e,S&){return EffectGeometry::initialize(e,ring_draw);}i32 alternative_init(E& e,S&){return EffectGeometry::initialize(e,ring_draw,true);}
+#endif
 i32 ring(E& e,S&){return EffectTransforms::ring(e);}i32 detailed(E& e,S&){return EffectTransforms::ring_detailed(e);}i32 timed(E& e,S&){return EffectTransforms::ring_timed(e);}i32 alpha(E& e,S&){return EffectTransforms::ring_alpha(e);}i32 moon(E& e,S&){return EffectTransforms::moon(e);}
 i32 pulse(E& e,S&){return EffectBomb::pulsing(e);}i32 expand(E& e,S&){return EffectBomb::expanding(e);}i32 quartic(E& e,S&){return EffectBomb::quartic(e);}
 template<u32 V>i32 ripple(E& e,S&){return EffectBomb::ripple(e,V);}
@@ -61,8 +69,51 @@ EffectSystem::EffectSystem(EffectPoolState& s,EffectEnvironment& e,AnmExecutor& 
 #endif
 }
 const EffectDefinition& EffectSystem::definition(u32 kind){static const EffectDefinition empty{-1,nullptr,nullptr};return kind<66?definitions[kind]:empty;}
-void EffectSystem::release(){for(i32 i=effect_pool_layout::active_pool_begin;i<effect_pool_layout::active_object_count;++i)EffectGeometry::release(state.objects[i]);}
-void EffectSystem::reset(){release();std::memset(&state,0,sizeof(state));invalid=false;}
+void EffectSystem::release(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(rollback_journal&&(rollback_journal->IsFrameOpen()||rollback_journal->FrameCount())){invalid=true;return;}
+    for(i32 i=effect_pool_layout::active_pool_begin;i<effect_pool_layout::active_object_count;++i)state.objects[i].vertices=nullptr;
+    for(auto& vertices:geometry_storage)vertices.reset();
+#else
+    for(i32 i=effect_pool_layout::active_pool_begin;i<effect_pool_layout::active_object_count;++i)EffectGeometry::release(state.objects[i]);
+#endif
+}
+void EffectSystem::reset(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(rollback_journal&&(rollback_journal->IsFrameOpen()||rollback_journal->FrameCount())){invalid=true;return;}
+#endif
+    release();std::memset(&state,0,sizeof(state));invalid=false;
+}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+bool EffectSystem::capture_slot(EffectState& e){
+    if(!multiplayer::before_write(rollback_journal,e)){invalid=true;return false;}
+    if(rollback_journal&&rollback_journal->IsFrameOpen()&&e.vertices&&
+       !rollback_journal->Touch(e.vertices,258*sizeof(SpriteVertex))){invalid=true;return false;}
+    return true;
+}
+void EffectSystem::release_geometry(EffectState& e){
+    if(!capture_slot(e))return;
+    const auto address=reinterpret_cast<std::uintptr_t>(&e),base=reinterpret_cast<std::uintptr_t>(state.objects);
+    if(address<base||(address-base)%sizeof(EffectState)||
+       (address-base)/sizeof(EffectState)>=geometry_storage.size()){invalid=true;return;}
+    if(e.vertices&&e.vertices!=geometry_storage[(address-base)/sizeof(EffectState)].get()){invalid=true;return;}
+    // Retain allocation through this stage, including speculative deletion and
+    // slot reuse. The EffectState pointer and its payload can then both rewind.
+    e.vertices=nullptr;
+}
+i32 EffectSystem::initialize_geometry(EffectState& e,EffectDraw callback,bool alternative){
+    if(!capture_slot(e))return -1;
+    const auto address=reinterpret_cast<std::uintptr_t>(&e),base=reinterpret_cast<std::uintptr_t>(state.objects);
+    if(address<base||(address-base)%sizeof(EffectState)||
+       (address-base)/sizeof(EffectState)>=geometry_storage.size()){invalid=true;return -1;}
+    auto& storage=geometry_storage[(address-base)/sizeof(EffectState)];
+    if(!storage)storage.reset(new(std::nothrow) SpriteVertex[258]{});
+    if(!storage){invalid=true;return -1;}
+    if(rollback_journal&&rollback_journal->IsFrameOpen()&&
+       !rollback_journal->Touch(storage.get(),258*sizeof(SpriteVertex))){invalid=true;return -1;}
+    return EffectGeometry::initialize_borrowed(e,storage.get(),callback,alternative);
+}
+#endif
 void EffectSystem::begin(EffectState& e,i32 kind,u32 color,bool depth){
     e.active=1;e.kind=u8(kind);const auto& d=definition(kind);e.scriptIndex=i16(d.script);
     auto* file=state.base_animation;
@@ -73,7 +124,13 @@ void EffectSystem::initialize(EffectState& e,i32 kind){const auto callback=defin
 EffectState* EffectSystem::spawn(i32 kind,Vec3 position,i32 count,u32 color,const Vec3* parameters){
     if(u32(kind)>=66){invalid=true;return &state.objects[effect_pool_layout::dummy_index];}
     for(i32 attempt=0;attempt<effect_pool_layout::active_pool_end-effect_pool_layout::active_pool_begin;++attempt){auto& e=state.objects[state.cursor];state.cursor=(state.cursor+1)%effect_pool_layout::active_pool_end;if(e.active)continue;
-        EffectGeometry::release(e);std::memset(&e,0,sizeof(e));e.position=position;if(parameters)e.parameters=*parameters;begin(e,kind,color,!parameters);initialize(e,kind);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(!capture_slot(e))return &state.objects[effect_pool_layout::dummy_index];
+        release_geometry(e);if(invalid)return &state.objects[effect_pool_layout::dummy_index];
+#else
+        EffectGeometry::release(e);
+#endif
+        std::memset(&e,0,sizeof(e));e.position=position;if(parameters)e.parameters=*parameters;begin(e,kind,color,!parameters);initialize(e,kind);
         if(--count==0){replay_flags|=0x400;return &e;}
     }replay_flags|=0x400;return &state.objects[effect_pool_layout::dummy_index];
 }
@@ -96,7 +153,9 @@ EffectState* EffectSystem::fixed_at(i32 relative_slot,i32 local_slot,i32 kind,Ve
     const auto address=player_effect_slots::fixed_for_storage_index(player_effect_slots::fixed_pool_begin+relative_slot);
     if(!address||address.local_slot!=local_slot||u32(kind)>=66){invalid=true;return &state.objects[effect_pool_layout::dummy_index];}
     auto* e=&state.objects[address.storage_index];
-    EffectGeometry::release(*e);std::memset(e,0,sizeof(*e));e->slot=local_slot;e->position=position;if(parameters)e->parameters=*parameters;begin(*e,kind,color,true);initialize(*e,kind);replay_flags|=0x400;return e;
+    if(!capture_slot(*e))return &state.objects[effect_pool_layout::dummy_index];
+    release_geometry(*e);if(invalid)return &state.objects[effect_pool_layout::dummy_index];
+    std::memset(e,0,sizeof(*e));e->slot=local_slot;e->position=position;if(parameters)e->parameters=*parameters;begin(*e,kind,color,true);initialize(*e,kind);replay_flags|=0x400;return e;
 }
 i32 EffectSystem::effect_seat(const EffectState& effect)const{
     const auto begin=reinterpret_cast<uintptr_t>(state.objects+player_effect_slots::fixed_pool_begin);
@@ -139,11 +198,23 @@ i32 EffectSystem::burst(EffectState& effect,bool rotating){
 #endif
 EffectState* EffectSystem::overlay(i32 kind,Vec3 position,i32 count,u32 color){
     if(u32(kind)>=66){invalid=true;return &state.objects[effect_pool_layout::dummy_index];}
-    for(i32 i=effect_pool_layout::overlay_pool_begin;i<effect_pool_layout::fixed_pool_begin;++i){auto& e=state.objects[i];if(e.active)continue;EffectGeometry::release(e);e.draw=nullptr;e.layer=0;e.position=position;begin(e,kind,color,false);
+    for(i32 i=effect_pool_layout::overlay_pool_begin;i<effect_pool_layout::fixed_pool_begin;++i){auto& e=state.objects[i];if(e.active)continue;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(!capture_slot(e))return &state.objects[effect_pool_layout::dummy_index];
+        release_geometry(e);if(invalid)return &state.objects[effect_pool_layout::dummy_index];
+#else
+        EffectGeometry::release(e);
+#endif
+        e.draw=nullptr;e.layer=0;e.position=position;begin(e,kind,color,false);
         e.age.set(0);e.dying=0;e.fade_frames=0;e.parameters={};initialize(e,kind);if(--count==0){replay_flags|=0x400;return &e;}
     }replay_flags|=0x400;return &state.objects[effect_pool_layout::dummy_index];
 }
-void EffectSystem::shift_glows(const Vec3& offset){for(i32 i=effect_pool_layout::active_pool_begin;i<effect_pool_layout::active_pool_end;++i)if(state.objects[i].kind==51)add(state.objects[i].world_position,offset);}
+void EffectSystem::shift_glows(const Vec3& offset){for(i32 i=effect_pool_layout::active_pool_begin;i<effect_pool_layout::active_pool_end;++i)if(state.objects[i].kind==51){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!capture_slot(state.objects[i]))return;
+#endif
+    add(state.objects[i].world_position,offset);
+}}
 void EffectSystem::snapshot_presentation(){if(!presentation_marker.capture())return;for(i32 i=0;i<effect_pool_layout::object_count;++i){const auto& e=state.objects[i];auto& before=presentation_previous[size_t(i)];before.active=e.active!=0;if(before.active){before.position=e.position;before.center=e.center;before.radius=e.radius;before.angle=e.angle;before.width=e.width;before.height=e.height;before.angle_y=e.angle_y;before.frequency=e.frequency;before.segments=e.segments;before.age=e.age.current;before.kind=e.kind;before.visual.capture(e);before.projected_offset=e.posFinal;}}}
 void EffectSystem::presentation_visual(const EffectState& source,EffectState& draw)const{
     const size_t index=size_t(&source-state.objects);if(index>=effect_pool_layout::object_count)return;const auto& before=presentation_previous[index];
@@ -190,7 +261,13 @@ void EffectSystem::presentation_geometry(const EffectState& source,EffectState& 
 }
 JobResult EffectSystem::update(){
     state.active_count=0;for(u32 i=0;i<5;++i){state.tails[i]=&state.sentinels[i];state.sentinels[i].next=nullptr;}
-    for(i32 i=effect_pool_layout::active_pool_begin;i<effect_pool_layout::active_object_count;++i){auto& e=state.objects[i];if(!e.active){EffectGeometry::release(e);continue;}++state.active_count;
+    for(i32 i=effect_pool_layout::active_pool_begin;i<effect_pool_layout::active_object_count;++i){auto& e=state.objects[i];if(!e.active){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(e.vertices){release_geometry(e);if(invalid)return JobResult::Error;}
+#else
+        EffectGeometry::release(e);
+#endif
+        continue;}++state.active_count;
         if(!paused||e.ignore_pause){if((e.update&&e.update(e,*this)!=1)||anm.execute(e)){e.active=0;continue;}e.age.tick(anm.timing);}
         e.next=nullptr;if(e.kind==64)continue;
         const u32 list=(i8(e.layer)==1||i8(e.layer)>2)?1:e.layer==0?(e.alternative?3:e.blendMode==1?4:0):2;

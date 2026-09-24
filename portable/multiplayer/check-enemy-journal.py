@@ -7,7 +7,7 @@ parser=argparse.ArgumentParser()
 parser.add_argument('--url',required=True)
 parser.add_argument('--output',type=Path,required=True)
 args=parser.parse_args()
-report={'passed':False,'scope':'TH08 native ECL and screen callback owner journals; not full-world rollback acceptance'}
+report={'passed':False,'scope':'TH08 native ECL, screen callbacks and fixed pools/geometry journals; not full-world rollback acceptance'}
 with sync_playwright() as p:
     browser=p.chromium.launch(headless=True,args=['--enable-unsafe-swiftshader'])
     try:
@@ -21,6 +21,15 @@ with sync_playwright() as p:
         report['screenProbe']=page.evaluate('multiplayerSmoke.screenJournalProbe()')
         assert report['screenProbe'][0:3]==[1,1,0],report['screenProbe']
         assert report['screenProbe'][4:]==[1]*6,report['screenProbe']
+        page.evaluate('multiplayerSmoke.ticks(120)')
+        for _ in range(3):
+            page.evaluate("multiplayerSmoke.key('KeyZ',true)")
+            page.evaluate('multiplayerSmoke.ticks(2)')
+            page.evaluate("multiplayerSmoke.key('KeyZ',false)")
+            page.evaluate('multiplayerSmoke.ticks(120)')
+        report['poolsProbe']=page.evaluate('multiplayerSmoke.poolsJournalProbe()')
+        assert report['poolsProbe'][0:3]==[1,1,0],report['poolsProbe']
+        assert report['poolsProbe'][4:]==[1]*6,report['poolsProbe']
         report['passed']=True;print(json.dumps(report),flush=True)
     except BaseException as error:
         report['error']=str(error);raise

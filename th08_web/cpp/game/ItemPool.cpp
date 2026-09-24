@@ -1,6 +1,9 @@
 #include "ItemPool.hpp"
 #include "Presentation.hpp"
 #include "PresentationAudit.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/JournalTouch.hpp"
+#endif
 namespace th08 {
 ItemState* ItemPool::spawn(const Vec3& position,i32 type,i32 mode,i32 power,i8 player_state){
     auto* item=&state.items[state.next_index];auto* overflow=&state.items[ItemPoolState::capacity];
@@ -10,6 +13,9 @@ ItemState* ItemPool::spawn(const Vec3& position,i32 type,i32 mode,i32 power,i8 p
         ++state.next_index;
         if(item->active){if(state.next_index>=i32(ItemPoolState::capacity)){state.next_index=0;item=state.items;}else ++item;if(type==7)return overflow;continue;}
         if(state.next_index>=i32(ItemPoolState::capacity))state.next_index=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(!multiplayer::before_write(rollback_journal,*item)){rollback_failed=true;return overflow;}
+#endif
         item->active=1;item->position=position;item->velocity={0,-2.2f,0};item->type=i8(type);item->state=i8(mode);item->timer.set(0);
         if(mode==2){item->target={(rng.range(288)+number(48)).to_float(),(rng.range(192)-number(64)).to_float(),0};item->velocity=position;}
         else if(mode==3||mode==5){item->velocity.y=(number(-2)-rng.range(.2f)).to_float();item->velocity.x=rng.signed_range(.6f).to_float();

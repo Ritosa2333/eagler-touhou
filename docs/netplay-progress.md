@@ -1,8 +1,9 @@
 # TH08 session admission and rewindable owners
 
 Status (2026-09-24): the native 2P/3P frame-zero gate and exact input handoff
-are implemented. Enemy/ECL and screen-effect ownership journals have focused
-native acceptance. **Complete world rollback and real transport are not yet
+are implemented. Enemy/ECL, screen callbacks, projectile/item/effect pools and
+effect geometry ownership journals have focused native acceptance.
+**Complete world rollback and real transport are not yet
 implemented or accepted.** This continues the cooperation slice at ea2958b.
 
 ## Boundaries
@@ -49,6 +50,19 @@ closed, and an unowned heap callback is rejected. Ordinary single-player keeps
 its original allocation/lifetime implementation. Neither journal by itself
 restores the entire game world.
 
+PoolsJournal captures active native bullet/laser/item/effect objects and small
+pool metadata, with first-write capture in the real native allocators for
+new or reused slots. Linked lists, per-seat item ownership and directed gifts
+are included. The independent fixture oracle hashes whole pools, including
+inactive slots, so a missed first-write cannot hide behind the sparse capture.
+
+MP effect vertex arrays are owned by their stable effect slots for the stage.
+Native deletion detaches the effect's raw pointer without freeing a buffer
+referenced by earlier checkpoints. Reuse captures both state and 258-vertex
+payload before initialization. Destructive template/item/effect resets reject
+live history instead of freeing borrowed state. This is lifetime correctness,
+not a claim that the full world adapter or prediction is enabled.
+
 ## Evidence
 
 All paths below are under artifacts/multiplayer-tests/.
@@ -59,18 +73,28 @@ All paths below are under artifacts/multiplayer-tests/.
 | enemy-journal-40dfb09d-a148-40e9-a691-df16ad09a123 | Real ECL execution with async self-replacement/return, literal bytecode writes, slot reuse, undo/re-execution, confirmed pin release, history bound. Real screen callback deletion/reuse, chain order/timer restoration, pool overflow rejection. |
 | cooperation-a3eb8688-f087-4540-8c45-30e5fb479eb5 | All seven existing native cooperation/gift/wipe/retry cases remain passing. |
 
-Production MP WASM:
-`7fa48c73eba41f2b54e2693bfea88832e63dda091bb6872628944043e1717ff4`.
+The subsequent pool-owner slice additionally passes:
 
-Diagnostic MP WASM:
-`ea55e195ce6a979b1e1337a2d86704f32c270869e423ac12fb2e5e7b03f9bdfb`.
+| Evidence | Actual scope |
+| --- | --- |
+| enemy-journal-ce3c3145-6d66-4a00-b4c3-1f9ea0073ff0 | Existing ECL/screen probes plus real bullet, laser, item, targeted gift, fixed effect replacement, vertex payload restore and rerun. The pool fixture records 63,223 bytes and compares complete pool/RNG contents. |
+| cooperation-2c46d246-c1e4-46f0-bc26-52286de2e402 | All seven native cooperation cases after effect-geometry ownership changes. |
+| admission-5811e343-3649-46b6-b345-311ae02853ac | Rebuilt production 2P/3P admission, independent input and missing-input Update/Draw stall. |
+
+Current production MP WASM:
+`c711e1f7d19793f64b6f43029a00e51846bdcd3960c72596eed646ba48943963`.
+
+Current diagnostic MP WASM:
+`59b73aac62e7e92e2fda682af20843867570478ab346f01d3af73420db63fa6d`.
 
 Rebuilt ordinary WASM remains byte-for-byte equal to the pre-slice baseline:
 `0d00a84ef6b214d43f2f365a6ffaa8bc6030a89c56b7d53868f3b9295b4cea3f`.
 This is a binary identity check, not a new full golden Replay run.
 
 Build logs: build-netplay-production.log, build-netplay-ordinary.log and
-build-owners.log. Unit entry points are check-multiplayer-netplay.mjs and
+build-owners.log for the session/ECL slice; build-pool-owners.log,
+build-pools-production.log and build-pools-ordinary.log for the pool slice.
+Unit entry points are check-multiplayer-netplay.mjs and
 check-multiplayer-cooperation.mjs under portable/. Build-isolation tests check
 ordinary exclusion and production/fixture export boundaries.
 
@@ -84,7 +108,7 @@ Compose a title-owned WorldJournal covering each player's life, movement,
 shots/bombs/regions/options; shared economy/RNG/input edges/cooperation; native
 enemy/ECL; active bullet/laser/item/effect pools and allocation writes;
 GUI/dialogue/background/STD/ANM mutable data; semantic Draw and supervisor
-lifecycle. Screen and ECL modules above provide two lifetime-safe pieces.
+lifecycle. The screen/ECL/fixed-pool modules above provide lifetime-safe pieces.
 
 Then integrate correction with confirmed external side effects (audio,
 persistence and physical presentation), loading/stage/retry fences and a

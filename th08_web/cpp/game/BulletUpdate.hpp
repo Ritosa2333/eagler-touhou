@@ -1,6 +1,9 @@
 #pragma once
 #include "BulletMotion.hpp"
 namespace th08 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace multiplayer {class PoolsJournal;}
+#endif
 struct BulletUpdateActions {
     virtual ~BulletUpdateActions()=default;
     // 0: spawn/barrier 00449ff0, 1: graze 0044a470, 2: hit 0044a230.
@@ -11,6 +14,9 @@ struct BulletUpdateActions {
 #endif
 };
 class BulletUpdate {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::PoolsJournal;
+#endif
 public:
     BulletUpdate(BulletManagerState& state,BulletCreation& creation,Rng& rng):state(state),creation(creation),animation(rng){}
     FrameTiming timing;Vec3 player;bool paused=false;
