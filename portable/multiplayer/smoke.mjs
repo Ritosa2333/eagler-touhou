@@ -46,6 +46,9 @@ window.multiplayerSmoke={
     finally{core.deallocate(ptr);}
   },
   nativeStatus,
+  audioClockIndependent(){if(!core.mp_fixture_audio_clock||!app)throw Error('Initialized diagnostic fixture required');return !!core.mp_fixture_audio_clock(app);},
+  correctionProbe(){if(!core.mp_fixture_native_correction||!app)throw Error('Initialized diagnostic fixture required');
+    const ptr=core.mp_fixture_native_correction(app);return Array.from(new Uint32Array(core.memory.buffer,ptr,64));},
   enemyJournalProbe(){if(!core.mp_fixture_enemy_journal)throw Error('Diagnostic fixture required');
     const ptr=core.mp_fixture_enemy_journal();return Array.from(new Uint32Array(core.memory.buffer,ptr,10));},
   screenJournalProbe(){if(!core.mp_fixture_screen_journal||!app)throw Error('Initialized diagnostic fixture required');

@@ -7,11 +7,18 @@
 #include "pools-journal-fixture.hpp"
 #include "resources-journal-fixture.hpp"
 #include "world-journal-fixture.hpp"
+#include "correction-fixture.hpp"
 #ifndef TH_MULTIPLAYER_FIXTURES
 #error Fixture exports must stay out of production builds
 #endif
 using namespace th08;
 extern "C" {
+__attribute__((export_name("mp_fixture_audio_clock")))
+u32 mp_fixture_audio_clock(BrowserRuntime* runtime){return runtime&&runtime->diagnostic_audio_clock_independent()?1u:0u;}
+__attribute__((export_name("mp_fixture_native_correction")))
+const u32* mp_fixture_native_correction(BrowserRuntime* runtime){
+    return runtime?multiplayer::fixture::correction_probe(*runtime):nullptr;
+}
 __attribute__((export_name("mp_fixture_world_journal")))
 const u32* mp_fixture_world_journal(BrowserRuntime* runtime,u32 mode){
     return runtime?multiplayer::fixture::world_journal_probe(*runtime,mode):nullptr;

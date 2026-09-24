@@ -3,10 +3,11 @@
 Status (2026-09-24): the native 2P/3P frame-zero gate and exact input handoff
 are implemented. Enemy/ECL, screen callbacks, projectile/item/effect pools and
 effect geometry ownership journals have focused native acceptance.
-ResourcesJournal and WorldJournal now provide tested stable-stage native
-Update/semantic-Draw restoration. **Network correction, confirmed device
-output and real transport are not yet accepted.** This continues the
-cooperation slice at ea2958b.
+ResourcesJournal and WorldJournal provide tested stable-stage native
+Update/semantic-Draw restoration. Diagnostic late-input correction passes
+through the actual NetplayRuntime and BrowserRuntime on every 2P/3P local seat.
+**The production correction driver, confirmed device output and real transport
+are not yet accepted.** This continues the cooperation slice at ea2958b.
 
 ## Boundaries
 
@@ -148,6 +149,53 @@ memory and stable pointer identity; they are not a cross-endpoint canonical
 hash schema. Texture pixels/captures, device audio and persisted files are not
 restored by WorldJournal. The native frame clock is deterministic in MP;
 physical presentation and audio still require their separate output owner.
+
+## Native late-input correction and device boundaries
+
+The diagnostic correction case first records eight exact native frames, then
+rewinds and runs eight frames with missing remote input through the real
+NetplayRuntime predictor. The ninth frame must stall both Update and semantic
+Draw without replacing required history. Reversed and duplicate encoded input
+packets then trigger correction; every re-executed native frame must match its
+timely-input counterpart, including bombs and shot/focus/direction changes.
+Confirmed input publication is blocked until correction finishes. This runs
+for both 2P local seats and all three 3P local seats.
+
+The test configures netplay at an already loaded stage. Its fixture drives
+WorldJournal Begin/End/Undo and NetplayRuntime Begin/EndCorrection; it does not
+yet prove the automatic production driver, startup or transport. Production
+WorldReady remains false. Hashes here compare in-process native state and
+stable ownership, not a cross-endpoint canonical schema.
+
+Two device-boundary corrections accompany this evidence:
+
+- The live InputController sampler is outside WorldJournal. Its shot-slow
+  hold count advances at physical capture and must not rewind when already
+  captured FrameInputs are replayed. A native controller-call probe verifies
+  its count survives undo. During correction, real pressed keyboard bytes
+  (0x80, including Menu) are present but must not be sampled again.
+- GameAudioManager MIDI start/reset now uses the same non-rewindable device
+  clock as audio_tick, not BrowserRuntime's admitted logical frame clock. A
+  probe moves only logical time by ten minutes and verifies audio time stays
+  within the device clock interval. Ordinary builds keep the original path.
+
+| Evidence under artifacts/multiplayer-tests/ | Actual scope |
+| --- | --- |
+| native-correction-1da7c453-5fa2-48f5-a781-ec0ebf9284f2 | All five local-seat native correction cases, eight-frame bound, reverse/duplicate packets, confirmed publication fence, pressed-key non-resampling, physical sampler preservation and independent audio clock pass. |
+| world-journal-9366e684-d55d-4785-9c08-d8eb43ed2332 | All eight stable-stage world scenarios and their two later-lifecycle probes pass after sampler separation. |
+| enemy-journal-38d47f01-c482-464e-8bdf-118b2fc8a142 | All ECL/screen/pools/geometry/resources/world ownership probes pass. |
+| admission-43b8c73f-dd23-45b9-8ab6-770953f70686 | Rebuilt production 2P/3P session admission and input/stall regression passes. |
+
+Latest production MP WASM:
+`c4a231bada816399a4ea498dadd653c2c69db2b08ae00ce63516e9f74a287b3f`.
+Latest diagnostic MP WASM:
+`75bcc1dc226f7c61c258312701d932d177884d9b2cc47188425d1634b6950307`.
+Ordinary WASM is still the exact baseline above. Four build-isolation tests
+pass. The runner now also captures/checks its Python/JS harness hashes before
+and after each run. Command:
+`node portable/multiplayer/check-admission.mjs --native-correction`.
+Logs: build-correction-sampler.log, build-correction-sampler-production.log,
+build-correction-sampler-ordinary.log.
 
 ## Next implementation boundary
 

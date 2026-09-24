@@ -7,7 +7,15 @@ extern "C" u32 sdl_music_source_mode();
 #endif
 GameAudioManager::GameAudioManager(BrowserRuntime& runtime):host(runtime){control=std::make_unique<MusicControl>(host.app.session.display_config,host.app.session.statistics,*this);}
 std::vector<u8> GameAudioManager::read(const char* p){return host.read(p);}
-u32 GameAudioManager::milliseconds(){return host.milliseconds();}
+u32 GameAudioManager::milliseconds(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // MIDI start/reset and audio_tick must use the same non-rewindable clock.
+    // BrowserRuntime::milliseconds is the admitted simulation clock in MP.
+    return file_device().milliseconds();
+#else
+    return host.milliseconds();
+#endif
+}
 bool GameAudioManager::prepare_formats(){const auto fmt=read("thbgm.fmt");return formats.load(fmt.data(),fmt.size());}
 bool GameAudioManager::prepare_samples(){
     const auto init_midi=read("init.mid");if(!midi.load(30,init_midi.data(),init_midi.size()))return false;

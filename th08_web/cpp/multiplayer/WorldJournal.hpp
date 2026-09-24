@@ -27,6 +27,9 @@ public:
     void DiscardBefore(u32 frame);
     void Clear();
     bool CanAdvance()const;
+#ifdef TH_MULTIPLAYER_FIXTURES
+    bool DiagnosticInputSampler();
+#endif
     bool Failed()const{return failed||main.Failed()||enemies.Failed()||pools.Failed()||resources.Failed();}
     bool HasHistory()const{return !records.empty();}
     const char* Error()const{return error;}

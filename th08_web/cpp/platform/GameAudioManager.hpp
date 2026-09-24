@@ -17,6 +17,9 @@ class GameAudioManager:public AudioSink,public MusicControlActions,public MusicA
     std::vector<u8> read(const char*);u32 milliseconds();
 public:
     explicit GameAudioManager(BrowserRuntime&);
+#ifdef TH_MULTIPLAYER_FIXTURES
+    u32 diagnostic_milliseconds(){return milliseconds();}
+#endif
     bool prepare_formats();bool prepare_samples();void shutdown();
     void sound(i32,i32,float,bool);bool play_music(i32,i32);void load_music(i32,const char*);void play_audio(const char*,i32);
     void stop_audio();void fade_music(float);void menu_music(MenuMusic,float);void midi_reset();void start_bgm();

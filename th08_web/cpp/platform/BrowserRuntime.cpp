@@ -246,5 +246,16 @@ void BrowserRuntime::process_sounds(){audio->process_sounds();}
 void BrowserRuntime::update_audio_fades(){audio->update_audio_fades();}
 void BrowserRuntime::apply_volume(const GameConfiguration& c){audio->apply_volume(c);}
 bool BrowserRuntime::audio_tick(u32 now){return audio->audio_tick(now);}
+#ifdef TH_MULTIPLAYER_FIXTURES
+bool BrowserRuntime::diagnostic_audio_clock_independent(){
+    if(!audio||!app.session.multiplayer_session.configured)return false;
+    const auto saved=multiplayer_logic_frame;
+    multiplayer_logic_frame+=36000; // Move only the logical clock by ten minutes.
+    const auto logical=milliseconds(),before=file_device().milliseconds();
+    const auto measured=audio->diagnostic_milliseconds(),after=file_device().milliseconds();
+    multiplayer_logic_frame=saved;
+    return u32(measured-before)<=u32(after-before)&&measured!=logical;
+}
+#endif
 void BrowserRuntime::replay_error(){file_device().replay_error();}
 }

@@ -60,7 +60,10 @@ bool WorldJournal::Inventory(){
     ADD(a.loading.phase,Clock);ADD(a.loading.vms,Clock);ADD(a.loading.software_texturing,Clock);
     ADD(a.title.context,Clock);ADD(a.results.controls.context,Clock);ADD(a.music.context,Clock);
     ADD(a.animations.timing,Clock);ADD(a.animations.executed,Clock);ADD(a.animations.invalid,Clock);
-    ADD(r.multiplayer_logic_frame,Clock);ADD(r.input,Clock);
+    ADD(r.multiplayer_logic_frame,Clock);
+    // r.input is the live device sampler (including shot-slow hold counting),
+    // not an input lane. Rewinding it would replay physical sampling time even
+    // though correction reuses captures and never polls those devices again.
     // Authoritative camera/projection/mix state. Device command buffers and
     // redundant bind caches are invalidated after undo instead of copied.
     auto& v=a.renderer;
@@ -100,6 +103,17 @@ bool WorldJournal::CanAdvance()const{
         app->game.globals.stage==stage&&app->supervisor.state.target==i32(th08::Scene::Game)&&
         app->game.menus.context.supervisor_state==i32(th08::Scene::Game)&&!app->supervisor.state.close_requested;
 }
+#ifdef TH_MULTIPLAYER_FIXTURES
+bool WorldJournal::DiagnosticInputSampler(){
+    if(!runtime||HasHistory())return false;
+    auto& sampler=runtime->input;const auto before=sampler.focus_conflict;
+    if(!BeginFrame(0))return false;
+    ControllerSnapshot pad;pad.available=true;pad.buttons[0]=128;
+    auto config=app->session.display_config;config.shot_slow=1;config.controller[0]=0;
+    sampler.controller(0,pad,config);const auto sampled=sampler.focus_conflict;
+    return sampled!=before&&EndFrame()&&UndoTo(0)&&sampler.focus_conflict==sampled;
+}
+#endif
 bool WorldJournal::BeginFrame(u32 frame){
     if(!CanAdvance()||main.IsFrameOpen()||records.size()>=History)return Fail("frame admission or retirement fence");
     if(replay_bytes(app->game.recording)>16*1024*1024)return Fail("native recording exceeds checkpoint budget");

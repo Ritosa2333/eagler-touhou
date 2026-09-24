@@ -48,6 +48,9 @@ public:
     i32 replay_touch_points(ReplayTouchPoint*,i32)override;
     bool cheat_movement_used()const override{return motion.cheat_movement_used;}
     BrowserRuntime();~BrowserRuntime();
+#ifdef TH_MULTIPLAYER_FIXTURES
+    bool diagnostic_audio_clock_independent();
+#endif
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     bool logical_frame_advanced()const{return !app.session.netplay.Configured()||app.session.network_frame_open;}
     bool finish_network_frame();
