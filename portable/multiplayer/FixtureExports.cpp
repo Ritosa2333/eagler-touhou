@@ -8,11 +8,35 @@
 #include "resources-journal-fixture.hpp"
 #include "world-journal-fixture.hpp"
 #include "correction-fixture.hpp"
+#include "../../th08_web/cpp/multiplayer/TextureJournal.hpp"
 #ifndef TH_MULTIPLAYER_FIXTURES
 #error Fixture exports must stay out of production builds
 #endif
 using namespace th08;
 extern "C" {
+__attribute__((export_name("mp_fixture_texture_restore")))
+u32 mp_fixture_texture_restore(BrowserRuntime* r){
+    if(!r||r->app.session.netplay.Configured())return 0;
+    auto& store=r->app.textures;TexturePixels pixels;if(!pixels.create(4,4,22))return 0;
+    const auto handle=store.insert(std::move(pixels));auto* original=store.get(handle);if(!original)return 0;
+    const auto before=original->image.pixels;const auto revision=original->revision,live=store.live_count();
+    multiplayer::TextureJournal journal;if(!journal.Bind(*r))return 0;
+    if(!journal.BeginFrame(0)||!store.before_write(handle))return 0;
+    original->image.pixels[0]=37;store.changed(handle);r->capture_screen(250);
+    if(!journal.EndFrame()||!r->has_surface(250))return 0;
+    if(!journal.BeginFrame(1))return 0;store.release(handle);
+    TexturePixels replacement;if(!replacement.create(4,4,22))return 0;
+    const auto created=store.insert(std::move(replacement));
+    if(!journal.EndFrame()||store.get(handle)||!journal.UndoTo(0))return 0;
+    const bool restored=store.get(handle)==original&&original->references==1&&
+        original->revision==revision&&original->image.pixels==before&&
+        !store.get(created)&&!r->has_surface(250)&&store.live_count()==live;
+    journal.Clear();store.release(handle);return restored?1:0;
+}
+__attribute__((export_name("mp_fixture_presentation_frame")))
+u32 mp_fixture_presentation_frame(BrowserRuntime* r,float alpha){
+    return r&&alpha>=0&&alpha<=1&&r->app.draw(alpha,true,true,false)?1:0;
+}
 __attribute__((export_name("mp_fixture_audio_routing")))
 u32 mp_fixture_audio_routing(BrowserRuntime* runtime){return runtime&&runtime->diagnostic_audio_routing()?1u:0u;}
 __attribute__((export_name("mp_fixture_audio_clock")))

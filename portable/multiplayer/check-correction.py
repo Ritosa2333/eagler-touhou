@@ -33,9 +33,11 @@ with sync_playwright() as p:
                     assert clock,'Native audio clock incorrectly follows rewindable game time'
                     routing=page.evaluate('multiplayerSmoke.audioRouting()')
                     assert routing,'Native WAV/MIDI routing or logical music unlock was not preserved'
+                    textures=page.evaluate('multiplayerSmoke.textureRestore()')
+                    assert textures,'Texture before-write, release/replace or screenshot owner restore failed'
                     report['running']['phase']='native-correction';save()
                     probe=page.evaluate('multiplayerSmoke.correctionProbe()')
-                    case={'players':count,'local':local,'audioClockIndependent':clock,'audioRouting':routing,'probe':probe};report['cases'].append(case);save()
+                    case={'players':count,'local':local,'audioClockIndependent':clock,'audioRouting':routing,'textureRestore':textures,'probe':probe};report['cases'].append(case);save()
                     assert probe[:3]==[1,1,0] and probe[3:5]==[8,8] and probe[32:36]==[1]*4,case
                     assert probe[6]&8 and probe[38]==1,case
                     assert probe[39]==1 and probe[40]>0 and probe[41]==probe[42]>16 and probe[43]==probe[44] and probe[45]==1,case

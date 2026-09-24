@@ -97,6 +97,17 @@ void poll(){if(!runtime)return;SDL_Event event;while(SDL_PollEvent(&event)){
     if(ThpracUi::captures_game_input())for(const int vk:{16,27,37,38,39,40,88,90})keys[vk]=0;
 }
 int tick(){poll();return !runtime||!runtime->step(false)?runtime&&(runtime->status(2)||runtime->status(4))?2:1:0;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#ifdef TH_MULTIPLAYER_FIXTURES
+u32 audio_service_calls=0;
+#endif
+bool service_frame_audio(){
+#ifdef TH_MULTIPLAYER_FIXTURES
+    ++audio_service_calls;
+#endif
+    return runtime&&runtime->audio_tick(u32(elapsed*1000));
+}
+#endif
 EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double delta=last<0?0:std::max(0.,(now-last)/1000.);last=now;frame_begin=emscripten_get_now();
     if(suspended||!th08_frame_ready()){sdl_audio_pause(true);cadence.reset();display_cadence.reset();presentation_gate.reset();return EM_TRUE;}sdl_audio_pause(false);int result=0;
     const bool limit60=th08_limit_presentation_to_60()!=0;
@@ -122,9 +133,17 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                 if(!runtime->finish_network_frame())result=2;
 #endif
-                ++frames;if(!runtime->audio_tick(u32(elapsed*1000)))result=2;
+                ++frames;
+#ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                if(!runtime->audio_tick(u32(elapsed*1000)))result=2;
+#endif
             }
         }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        // Real-time MIDI sequencing is independent of frame admission. The
+        // confirmed command outbox still owns which track/notes are started.
+        if(!result&&!service_frame_audio())result=2;
+#endif
     }
     float presentation_alpha=1.0f;
     if(!result&&runtime&&high){
@@ -217,15 +236,23 @@ EX("audit_state") const u32* audit_state(){
 EX("sdl_loop_tick") i32 sdl_loop_tick(BrowserRuntime* r,double seconds,u32){
     if(running||r!=runtime.get())return -1;elapsed+=seconds;int result=tick();if(result||!runtime)return result;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if(!runtime->logical_frame_advanced())return 0;
+    if(!runtime->logical_frame_advanced())return service_frame_audio()?0:2;
 #endif
     if(!runtime->app.draw(1.0f,false,false))return (runtime->status(2)||runtime->status(4))?2:1;
     if(runtime->status(2)||runtime->status(4))return 2;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if(!runtime->finish_network_frame())return 2;
 #endif
-    ++frames;return runtime->audio_tick(u32(elapsed*1000))?0:2;
+    ++frames;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    return service_frame_audio()?0:2;
+#else
+    return runtime->audio_tick(u32(elapsed*1000))?0:2;
+#endif
 }
+#ifdef TH_MULTIPLAYER_FIXTURES
+EX("mp_fixture_audio_service_calls") u32 mp_fixture_audio_service_calls(){return audio_service_calls;}
+#endif
 EX("sdl_game_close") void sdl_game_close(){sdl_loop_stop();touch.reset();ThpracUi::shutdown();runtime.reset();if(gamepad)SDL_CloseGamepad(gamepad);gamepad=nullptr;sdl_audio_shutdown();sdl_fonts_shutdown();sdl_detach();}
 EX("sdl_key") void sdl_key(const char* code,u32 down){for(auto& key:keyboard_map)if(!std::strcmp(key.code,code)){key.hosted=down!=0;break;}}
 EX("sdl_keys_clear") void sdl_keys_clear(){for(auto& key:keyboard_map)key.hosted=false;cancel_touch();touch.reset();}

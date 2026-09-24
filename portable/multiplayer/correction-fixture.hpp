@@ -69,7 +69,14 @@ inline const u32* correction_probe(BrowserRuntime& runtime){
     };
     const auto step=[&](u32 frame,bool capture){
         if(capture&&!net.CaptureLocal(frame,input(setup.local_player,frame)))return false;
-        return journal.BeginFrame(frame)&&audio.BeginFrame(frame)&&runtime.step(true)&&!session.network_frame_open&&
+        // Independent low-level oracle: production Step owns different
+        // journals and must not bind them over this fixture's existing owner.
+        const auto decision=net.Prepare(frame);
+        if(!decision.canAdvance||!journal.BeginFrame(frame)||!audio.BeginFrame(frame))return false;
+        session.network_frame=decision;session.network_frame_open=true;
+        u16 buttons[3]{};for(u32 seat=0;seat<setup.player_count;++seat)buttons[seat]=decision.inputs[seat].buttons;
+        return runtime.app.game.commit_inputs(buttons,setup.player_count)&&runtime.app.update()&&
+            runtime.app.draw()&&runtime.finish_network_frame()&&!session.network_frame_open&&
             net.NextFrame()==frame+1&&journal.EndFrame()&&audio.EndFrame();
     };
     if(!barrier())return fail(3);
@@ -94,11 +101,12 @@ inline const u32* correction_probe(BrowserRuntime& runtime){
         ++result[4];if(!step(frame,false))return fail(60+frame);
         result[40]+=audio.FrameDigest(frame)!=expected_audio[frame];
     }
-    // The ninth local input is sampled once, but the frame-zero gap must stall
-    // both Update and semantic Draw without overwriting required history.
+    // Low-level admission must reject the ninth frame. The production driver's
+    // actual Update/Draw stall is tested independently in check-admission.py;
+    // do not bind that driver over this fixture's already-open journal owner.
     if(!net.CaptureLocal(frames,input(setup.local_player,frames)))return fail(70);
     const auto stalled=journal.AuditHash();
-    if(net.Prepare(frames).canAdvance||!runtime.step(true)||net.NextFrame()!=frames||journal.AuditHash()!=stalled)return fail(71);
+    if(net.Prepare(frames).canAdvance||net.NextFrame()!=frames||journal.AuditHash()!=stalled)return fail(71);
     result[33]=1;
     // Reverse-order packets and duplicates travel through the production
     // decoder. The fixture never writes an InputLane or FrameDecision.

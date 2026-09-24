@@ -38,7 +38,7 @@ window.multiplayerSmoke={
     if(!core.sdl_game_initialize())throw Error('Initialize failed');
     return nativeStatus();
   },
-  ticks(count){for(let i=0;i<count;++i){const result=core.sdl_loop_tick(app,1/60,16);if(result)throw Error('Native tick failed '+result+' '+JSON.stringify(Array.from(new Int32Array(core.memory.buffer,core.diagnostics(app),16))));}return nativeStatus();},
+  ticks(count){for(let i=0;i<count;++i){const result=core.sdl_loop_tick(app,1/60,16);if(result)throw Error('Native tick failed '+result+' '+this.networkError()+' '+JSON.stringify(Array.from(new Int32Array(core.memory.buffer,core.diagnostics(app),16))));}return nativeStatus();},
   key(code,down){string(code,p=>core.sdl_key(p,down?1:0));},
   commit(buttons){
     const ptr=core.allocate(buttons.length*2);
@@ -62,6 +62,20 @@ window.multiplayerSmoke={
   worldJournalProbe(mode=0){if(!core.mp_fixture_world_journal||!app)throw Error('Gameplay diagnostic fixture required');
     const ptr=core.mp_fixture_world_journal(app,mode);return Array.from(new Uint32Array(core.memory.buffer,ptr,64));},
   netStatus(){return Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_netplay_status(app),12));},
+  driverStatus(){const p=core.multiplayer_driver_status(app);return Array.from(new Uint32Array(core.memory.buffer,p,16));},
+  canonical(){const p=core.multiplayer_canonical_state(app);return Array.from(new Uint32Array(core.memory.buffer,p,13));},
+  textureRestore(){return !!core.mp_fixture_texture_restore?.(app);},
+  presented(alpha){if(!core.mp_fixture_presentation_frame?.(app,alpha))throw Error('Native presentation failed');return true;},
+  audioServices(){return core.mp_fixture_audio_service_calls?.()??null;},
+  async frameDigest(){
+    const p=core.sdl_read_back(),bytes=new Uint8Array(core.memory.buffer,p,640*480*4),crop=new Uint8Array(384*448*4);
+    for(let y=0;y<448;y++)crop.set(bytes.subarray(((y+16)*640+32)*4,((y+16)*640+416)*4),y*384*4);
+    return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',crop)),v=>v.toString(16).padStart(2,'0')).join('');
+  },
+  networkError(){const p=core.multiplayer_network_error(app);let end=p;const bytes=new Uint8Array(core.memory.buffer);while(bytes[end])++end;return new TextDecoder().decode(bytes.subarray(p,end));},
+  connect(relay){return string(relay,p=>!!core.multiplayer_connect(app,p));},
+  pollNetwork(){const result=!!core.multiplayer_network_poll(app);if(!result)throw Error(this.networkError());return true;},
+  reconcile(){if(!core.multiplayer_reconcile(app))throw Error(this.networkError());return this.netStatus();},
   sessionPacket(phase){const p=core.allocate(128);try{
     const size=core.multiplayer_session_build(app,phase,p,128);if(!size)throw Error('Session packet unavailable');
     return Array.from(new Uint8Array(core.memory.buffer,p,size));

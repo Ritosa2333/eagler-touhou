@@ -1,13 +1,12 @@
 # TH08 session admission and rewindable owners
 
-Status (2026-09-24): the native 2P/3P frame-zero gate and exact input handoff
-are implemented. Enemy/ECL, screen callbacks, projectile/item/effect pools and
-effect geometry ownership journals have focused native acceptance.
-ResourcesJournal and WorldJournal provide tested stable-stage native
-Update/semantic-Draw restoration. Diagnostic late-input correction passes
-through the actual NetplayRuntime and BrowserRuntime on every 2P/3P local seat.
-**The production correction driver, confirmed device output and real transport
-are not yet accepted.** This continues the cooperation slice at ea2958b.
+Status (2026-09-24): the production 2P/3P frame-zero gate, zero-added-delay
+input, bounded automatic world correction and confirmed audio/file output are
+implemented. Real BrowserPeerTransport WebRTC full mesh and forced WebSocket
+Relay both pass 2P and 3P gameplay, native pause/restart and new-generation
+handshake tests. The sections below preserve earlier implementation evidence;
+the latest production boundary and its exact evidence appear at the end.
+This is not a Launcher capability declaration or human-device acceptance.
 
 ## Boundaries
 
@@ -23,17 +22,18 @@ request the shared pause. A logical frame commits only after native Update
 execute Draw while waiting. Direct local-fixture input injection is rejected
 once a v2 session is configured.
 
-NetplayRuntime defaults to WorldReady=false. Therefore its native production
-bridge currently advances only exact inputs, never unprotected predictions.
-The unit-tested correction/frontier machinery is not a claim that TH08 world
-undo is already connected. Enabling prediction requires the complete owner
-inventory and the actual late-input world comparison, not just these tests.
+NetplayRuntime defaults to WorldReady=false. RollbackDriver changes it only
+after the stable native stage and its world/texture/output owners are bound.
+Loading and unregistered scene states remain exact-only. A prediction window
+is bounded by the oldest unconfirmed frame, including holes followed by newer
+exact input; no needed state is overwritten to make progress.
 
-The pinned common core predates transactional input-packet application. The
-title adapter applies a validated packet to a temporary core and commits it
-only on success; a conflicting redundant tail cannot partially advance the
-live confirmation frontier. Analog/touch samples are rejected until their
-authoritative simulation owner is implemented, rather than silently dropped.
+The dependency is now common 5e14ad8, fast-forwarded from the title's earlier
+8316c4f. Atomic input-packet application, simulation-frontier rewind, session
+health/retransmission and retirement ACKs use the shared implementation.
+Gameplay contract revision 0x08000002 rejects earlier exact-only experimental
+peers. Analog/touch samples are rejected until their authoritative simulation
+owner is implemented, rather than silently dropped.
 
 ## Lifetime-safe owner modules
 
@@ -247,16 +247,96 @@ The rebuilt ordinary WASM remains exactly
 All four build-isolation tests and the native netplay/cooperation/audio unit
 entry points pass. This still does not replace a full golden Replay run.
 
-Only diagnostics currently attach this outbox to the correction loop. The
-production driver still needs graphics/capture and persistence protection,
-confirmed scene-transition lifecycle and cross-endpoint canonical validation
-before enabling WorldReady. No speaker/device listening acceptance is claimed.
+At the audio-slice boundary only diagnostics attached this outbox. The next
+section records its production integration. No speaker/device listening
+acceptance is claimed.
+
+## Production correction and real network boundary
+
+RollbackDriver now owns the actual BrowserRuntime path, not a diagnostic
+replacement loop. It opens a native world snapshot, texture before-images and
+audio/file records together. Forward native Update is followed by exactly one
+semantic Draw. Correcting reuses captured local input and common's corrected
+remote input, executes those same native Update/Draw jobs, and never samples a
+device or physically presents intermediate frames. The original journals are
+retained as independent low-level oracles rather than nested over this driver.
+
+TextureJournal pins released texture records, copies pixels lazily before
+native text/name-atlas/capture writes, and restores the surface map, capture
+request and renderer state. The stage backbuffer is captured before a
+speculative draw because a later pause can copy it. Undo invalidates device
+caches instead of copying GPU handles. Render-only writes are associated with
+the last frame's output history without creating a simulation tick. The
+isolated texture fixture proves write, release, replacement and capture undo.
+
+FileEvents owns copied, bounded pending file writes and read-your-writes
+semantics. Only corrected confirmed frames reach ResourceManager and the
+physical FileDevice. Failed external output latches failure; it cannot retry
+an uncertain earlier write. External sync does not attach the result-screen
+owner during network gameplay, and shutdown does not serialize predicted
+state. Multiplayer Replay remains a separate product task; ordinary Replay
+exports are not passed off as all-seat recordings.
+
+The new driver defers scene destruction until the selecting frame is
+reconciled and confirmed. Native Restart/SpellRestart additionally waits for
+common's ACK retirement, creates a new session identity and repeats HELLO/READY
+on the same transport. Corrected scene branches discard the abandoned future.
+Local physical sampler state is not rewound. MIDI service uses the device
+clock and runs even when a cadenced callback cannot advance the game; only
+confirmed commands may select/start music.
+
+NetworkConnection is a small title seam over shared BrowserPeerTransport and
+SessionChannel. It validates TH08's supported input fields/window; signaling,
+ICE, mesh, Relay fallback, ACK/retransmission, health and epoch assistance stay
+in common. No title-specific Relay or second simulator was added.
+
+### Latest evidence
+
+Production WASM:
+`ec963f8bfa65502b25d7858f3b2d8dbdbf42843b96cb494345cd83e8cc781425`.
+Diagnostic WASM:
+`ac35403b255f3f8bc5db8e72ae1210038fb7d4f14bd931173c410e351315bbb4`.
+Ordinary WASM, rebuilt after the MIDI servicing fix, is byte-identical to:
+`0d00a84ef6b214d43f2f365a6ffaa8bc6030a89c56b7d53868f3b9295b4cea3f`.
+
+| Evidence under artifacts/multiplayer-tests/ | Actual scope |
+| --- | --- |
+| network-4099b5f5-f3b3-47e4-bc07-bbf224679bc9 | Production 2P/3P x real RTC/forced Relay: native frames through 379, pointer-independent gameplay/resource canonical comparison, committed audio comparison, pause/resume, native Restart, generation-1 frame 119, stale old HELLO rejection. All four cases pass. |
+| network-4ba553eb-f9ae-4de0-9d78-bbed513020b7 | Production automatic driver in the diagnostic binary: four-frame late, reordered and duplicate encoded packets for 2P/3P; independent zero-delay reference; shooting, focused/unfocused motion, bombs and pause/resume; full gameplay-owner hash and cropped framebuffer equality; extra render-only draws; eight-frame bound with frozen game/image and eight MIDI service calls while stalled. Both cases pass. |
+| native-correction-f38197c0-10e0-4bc9-81e4-61c88c98c8f5 | All five manual owner/correction local-seat oracles plus native texture/capture restore, unchanged physical sampler, independent audio clock and corrected audio routing pass. |
+| admission-b6e98a8d-7dae-4fac-a308-d65ba0a02328 | Production 2P/3P barrier, per-seat native input, bounded prediction then Update/Draw stall pass. |
+| cooperation-3ef13500-2370-4ebb-a13c-14812973e35f | All seven native cooperation, directed gift, final-death rescue and team-wipe/retry cases pass. |
+| enemy-journal-85366e11-47db-4dea-9897-ec0f7ac2b957 | Independent ECL/screen/pool/resource/world ownership oracles remain passing after production-driver integration. |
+
+The deterministic packet case produces actual correction, not just a joined
+room: 2P endpoints correct 64/52 times and resimulate 255/207 frames; 3P
+endpoints correct 64/66/66 times and resimulate 255/263/263 frames. Independent
+timely-input references perform zero corrections. At frame 379 canonical
+composites match 2861016556 for 2P and 1430406737 for 3P. Cropped GPU framebuffer
+SHA-256 matches each reference:
+2P `8bd131550f91a4fbb29941b72224565fa0295b69577383abb0fa792fc4af36af`;
+3P `12e3734538c4143c7af2fb1aaf95e29c0df3bad2713b430f29fa59561f87ba4c`.
+
+The cross-endpoint canonical export maps pointer identities to native pool
+slots, resource indices and byte offsets in diagnostic copies. It is never
+used to restore state or gate gameplay. The exact in-process WorldJournal
+oracle remains unchanged. Personal high score is omitted; authoritative
+economy, input edges, native player/shot/bomb state, ECL, pools, RNG, resources,
+spell/camera state and scene lifecycle remain compared.
+
+Reproduction entries: check-network.mjs (production RTC/Relay or --fixtures
+--only=packets), check-admission.mjs --native-correction, and
+check-multiplayer-files.mjs. The network runner records native build identity
+and harness hashes before and after execution. Source-build logs are
+build-driver-verified-production.log, build-driver-verified-fixtures.log and
+build-driver-verified-ordinary.log. Native netplay/cooperation/audio/files units,
+four build-isolation tests and diff whitespace checks pass.
 
 ## Next implementation boundary
 
-Integrate late-input correction with confirmed external side effects (audio,
-persistence and physical presentation), loading/stage/retry fences and a
-first-divergent-owner oracle. Only that complete path may set WorldReady=true.
-Actual shared BrowserPeerTransport/Relay, MP Replay, spectator, authoritative
-touch and Launcher lifecycle remain subsequent work. No performance change,
-canonical promotion, push, deployment or human-device acceptance is claimed.
+Production networking and automatic correction are connected. MP Replay,
+spectator, authoritative analog/touch and real Launcher room/start/exit/storage
+integration remain separate product work before declaring the complete TH08MP
+profile. Full-stage coverage, real-device acceptance and public deployment are
+not implied by these focused local-browser tests. No performance change,
+canonical promotion, push or deployment is claimed.

@@ -10,9 +10,17 @@ namespace multiplayer {class AudioEvents;}
 #endif
 struct BrowserTexture {u32 handle,width,height,format,pitch,data,size,revision;};
 class GameAudioManager;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace multiplayer {class TextureJournal;class RollbackDriver;}
+#endif
 class BrowserRuntime:public ApplicationPlatform {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     friend class multiplayer::WorldJournal;
+    friend class multiplayer::TextureJournal;
+    friend class multiplayer::RollbackDriver;
+    bool correction_present_suppressed=false;
+    bool discard_network_shutdown_writes=false;
+    std::unique_ptr<multiplayer::RollbackDriver> multiplayer_driver;
     u32 multiplayer_logic_frame=0;
 #endif
     struct Graphics:SpriteBackend {
@@ -58,6 +66,9 @@ public:
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     bool logical_frame_advanced()const{return !app.session.netplay.Configured()||app.session.network_frame_open;}
     bool finish_network_frame();
+    bool connect_network(const char* relay);
+    bool pump_network();
+    multiplayer::RollbackDriver* network_driver(){return multiplayer_driver.get();}
     bool bind_audio_events(multiplayer::AudioEvents*);
     bool commit_audio_events(multiplayer::AudioEvents&,u32 confirmed,u32 simulated);
     void begin_multiplayer_clock(){multiplayer_logic_frame=0;app.statistics.state={};}

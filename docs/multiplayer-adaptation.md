@@ -1,14 +1,16 @@
 # TH08 multiplayer adaptation
 
-Status: design and implementation in an isolated Eagler experiment. This is not
-a multiplayer-capability declaration or a playable Runtime.
+Status: implementation in an isolated Eagler experiment. Production native
+2P/3P networking and automatic rollback have focused browser acceptance (see
+netplay-progress.md). This is not yet a complete Multiplayer product-capability
+declaration or a public Launcher release.
 
 ## Baseline and isolation
 
 - Upstream tracking: `main`, `fa94b0d`.
 - Eagler integration base: `eagler`, `cb1bad6`.
 - Experiment: `experiment/th08-multiplayer`.
-- Shared runtime dependency: `8316c4f861dedb67e1e0e7be75ddcf0b90f63448`.
+- Shared runtime dependency: `5e14ad8` (fast-forward from `8316c4f`).
 - Ordinary gameplay, Replay formats, storage and build outputs retain their
   existing behavior. Multiplayer requires a separately compiled Runtime.
 

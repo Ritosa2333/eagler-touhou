@@ -11,6 +11,9 @@ struct ZunGraphics
 {
     virtual ~ZunGraphics()=default;
     virtual void prepare_texture(u32){}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    virtual void invalidate_texture(u32){}
+#endif
     virtual bool resample(u32,const TextureRect&,u32,const TextureRect&,bool){return false;}
     virtual void flush()=0;virtual void texture(u32)=0;
 #ifndef TH_NATIVE_PLATFORM

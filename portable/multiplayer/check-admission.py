@@ -59,14 +59,17 @@ with sync_playwright() as p:
                 states=[call(page,'multiplayerSmoke.status()') for page in pages]
                 assert states[0][3]==1 and states[0][4]==0 and states[0][7]>120,states
                 assert states[0][13]!=states[0][25],'Independent seat movement was lost'
-                # One local capture is not permission to mutate the world.
+                # Production permits eight bounded predicted gameplay frames;
+                # it must then freeze both Update and authored Draw at the cap.
                 assert call(pages[0],'multiplayerSmoke.capture(360,1)')
+                assert call(pages[0],'multiplayerSmoke.netStatus()')[7]==1
+                call(pages[0],'multiplayerSmoke.ticks(8)')
                 before=call(pages[0],'multiplayerSmoke.status()')
                 native_before=call(pages[0],'multiplayerSmoke.nativeStatus()')
                 call(pages[0],'multiplayerSmoke.ticks(8)')
                 assert call(pages[0],'multiplayerSmoke.status()')==before
                 assert logical_native(call(pages[0],'multiplayerSmoke.nativeStatus()'))==logical_native(native_before)
-                assert call(pages[0],'multiplayerSmoke.netStatus()')[3]==360
+                assert call(pages[0],'multiplayerSmoke.netStatus()')[3]==368
                 assert not call(pages[0],'multiplayerSmoke.commit([1,1])')
                 report['cases'].append({'players':count,'passed':True,'logicalFrames':360,'states':states,'stallPreservedUpdateAndDraw':True})
                 print(f'TH08 {count}P native session admission/input/stall: PASS',flush=True)

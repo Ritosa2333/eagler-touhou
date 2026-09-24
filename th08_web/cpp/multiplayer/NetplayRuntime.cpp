@@ -99,10 +99,12 @@ bool NetplayRuntime::SetWorldReady(bool ready){
 bool NetplayRuntime::BeginCorrection(std::uint32_t first){
     if(!CanStart()||!world_ready_||Correcting()||!core_.HasRollbackRequest()||
        first!=core_.RollbackFrame()||first>=next_||next_-first>MaxRollbackFrames)return false;
-    correction_end_=next_;next_=first;return true;
+    const auto end=next_;
+    if(!core_.RewindSimulationTo(first))return false;
+    correction_end_=end;next_=first;return true;
 }
-bool NetplayRuntime::EndCorrection(){
-    if(!Correcting()||next_!=correction_end_)return false;
+bool NetplayRuntime::EndCorrection(bool lifecycle_boundary){
+    if(!Correcting()||(!lifecycle_boundary&&next_!=correction_end_))return false;
     core_.ClearRollbackRequest();correction_end_=Netplay::INVALID_FRAME;return true;
 }
 bool NetplayRuntime::CanRetire()const {
@@ -141,12 +143,7 @@ NetplayRuntime::WireResult NetplayRuntime::ApplyWire(const std::uint8_t* bytes,s
     if(!CanStart()||(packet.inputCount&&
        (!receive_frame(packet.latestFrame)||!receive_frame(packet.firstInputFrame))))return WireResult::Rejected;
     for(std::uint8_t i=0;i<packet.inputCount;++i)if(!ValidInput(packet.inputs[i]))return WireResult::Rejected;
-    // The pinned common core predates its transaction wrapper. Apply to a
-    // temporary core so a conflicting redundant tail cannot partially advance
-    // confirmation. This belongs in common when the dependency is upgraded.
-    auto candidate=core_;
-    if(!candidate.ApplyInputPacket(packet))return WireResult::Rejected;
-    core_=candidate;return WireResult::Accepted;
+    return core_.ApplyInputPacket(packet)?WireResult::Accepted:WireResult::Rejected;
 }
 bool NetplayRuntime::BuildInputWire(std::uint8_t peer,std::uint32_t frame,std::uint32_t sequence,
                                     std::uint32_t ack,std::vector<std::uint8_t>& out)const {

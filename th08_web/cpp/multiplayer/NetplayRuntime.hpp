@@ -7,10 +7,12 @@
 #include <vector>
 
 namespace th08::multiplayer {
+class NetworkConnection;
 // Title admission/frontiers only. Session packets, history, prediction and
 // packet encoding stay in eagler-common. Physical sampling and world undo are
 // owned by the application, never by packet delivery.
 class NetplayRuntime {
+    friend class NetworkConnection;
 public:
     static constexpr std::uint8_t MaxRollbackFrames=8;
     enum class WireResult {Accepted,IgnoredSession,Malformed,Rejected};
@@ -45,7 +47,7 @@ public:
     bool SetWorldReady(bool ready);
     bool WorldReady()const{return world_ready_;}
     bool BeginCorrection(std::uint32_t first);
-    bool EndCorrection();
+    bool EndCorrection(bool lifecycle_boundary=false);
     bool Correcting()const{return correction_end_!=Netplay::INVALID_FRAME;}
     bool CanRetire()const;
     bool Retire();

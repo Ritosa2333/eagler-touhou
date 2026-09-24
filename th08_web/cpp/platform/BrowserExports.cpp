@@ -120,9 +120,21 @@ EX("multiplayer_status") const i32* browser_multiplayer_status(BrowserRuntime* r
 }
 #endif
 EX("close") void browser_close(BrowserRuntime* r){if(r)r->app.close();}
-EX("save") bool browser_save(BrowserRuntime* r){return r&&r->app.save_score();}
+EX("save") bool browser_save(BrowserRuntime* r){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // An external sync flushes already committed files; it must not run the
+    // result-screen owner against an in-flight speculative world.
+    if(r&&r->app.session.netplay.Configured())return true;
+#endif
+    return r&&r->app.save_score();
+}
 // Finalize the current recording using the same owner as the result screen.
-EX("save_replay") bool browser_save_replay(BrowserRuntime* r,i32 slot,const char* name){return r&&r->app.finalize_replay(slot,name);}
+EX("save_replay") bool browser_save_replay(BrowserRuntime* r,i32 slot,const char* name){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(r&&r->app.session.netplay.Configured())return false;
+#endif
+    return r&&r->app.finalize_replay(slot,name);
+}
 EX("touch_target") void browser_touch_target(BrowserRuntime* r,i32 mode,float x,float y){if(r)r->motion.target(mode,x,y);}
 // Read-only touch metadata for the browser's movement target and controls.
 EX("touch_state") void browser_touch_state(BrowserRuntime* r,float* out){

@@ -20,6 +20,9 @@ template<class T=u32>T* ptr(u32 p){return reinterpret_cast<T*>(uintptr_t(p));}
 bool sdl_attach(BrowserRuntime* r){runtime=r;known.clear();capture_checked=capture_exact=capture_testing=false;capture_mismatches=0;gpu=std::make_unique<touhou::sdl::Renderer>(8,resolve,nullptr);return gpu->initialize();}
 void sdl_detach(){gpu.reset();runtime=nullptr;known.clear();}
 struct SDLGraphics final:ZunGraphics {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+ void invalidate_texture(u32 handle)override{frame().release(handle);known.erase(handle);}
+#endif
  bool resample(u32 source,const TextureRect& from,u32 target,const TextureRect& to,bool triangle)override{
   if(!capture_testing&&(!capture_checked||!capture_exact))return false;
   if(arithmetic_precision()!=Precision::Single||arithmetic_rounding()!=Rounding::NearestEven)return false;
