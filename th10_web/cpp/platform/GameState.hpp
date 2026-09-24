@@ -20,6 +20,7 @@ struct GameState {
     multiplayer::NetplayRuntime netplay_runtime{};
     multiplayer::ReplayArchive multiplayer_replay{};
     multiplayer::InputLanes::State input_lanes{};
+    multiplayer::InputLanes::LocalAnalogSample multiplayer_local_analog{};
     bool multiplayer_cheat_movement_used=false;
     multiplayer::TeamEconomy team_economy{};
     multiplayer::PilotEconomy pilot_economies[3]{};

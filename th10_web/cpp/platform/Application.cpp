@@ -164,7 +164,15 @@ i32 Application::multiplayer_update(){
         if(!inputs||!runtime.FeedPlayback(frame,inputs->data(),state.multiplayer_session.playerCount)){error=-6;return -1;}
     }else if(!runtime.HasLocalCapture(frame)){
         Netplay::FrameInput local{};
-        local.buttons=InputDevices{input}.sample();
+        const auto buttons=static_cast<u16>(InputDevices{input}.sample());
+        if(world->local_player>=world->player_count||!world->pilots[world->local_player].player||
+           !multiplayer::InputLanes::BuildLocalFrame(
+               state.multiplayer_local_analog,buttons,
+               world->pilots[world->local_player].player->fixed_position.x,
+               world->pilots[world->local_player].player->fixed_position.y,
+               engine.speed,local)){
+            error=-4;return -1;
+        }
         if(!runtime.CaptureLocal(frame,local)){error=-4;return -1;}
     }
     const auto decision=runtime.Prepare(frame);

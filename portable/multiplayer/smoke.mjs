@@ -27,6 +27,13 @@ function string(value,callback){const bytes=new TextEncoder().encode(value+'\0')
 string('#screen',core.sdl_canvas);core.sdl_music_enabled(0);
 let app=0,seatCount=0;
 const networkInput=core.files_allocate(20);
+function writeFrameInput(pointer,input=0){
+ const value=typeof input==='number'?{buttons:input}:input||{};
+ const words=new Uint32Array(core.memory.buffer,pointer,5),view=new DataView(core.memory.buffer,pointer,20);words.fill(0);
+ words[0]=(value.buttons||0)>>>0;words[1]=(value.analogMode||0)>>>0;
+ view.setFloat32(8,Number(value.x)||0,true);view.setFloat32(12,Number(value.y)||0,true);
+ words[4]=(value.unlimited?1:0)|(value.touchUsed?2:0)|(value.touchBomb?4:0);
+}
 function networkError(){const pointer=core.multiplayer_network_error?.(app)||0;
  if(!pointer)return '';const bytes=new Uint8Array(core.memory.buffer);const end=bytes.indexOf(0,pointer);
  return new TextDecoder().decode(bytes.subarray(pointer,end<0?pointer+256:Math.min(end,pointer+256)));}
@@ -223,7 +230,7 @@ window.multiplayerSmoke={
   sourceDigest:buildIdentity.sourceDigest,profile:buildIdentity.profile,assets:assetIdentities};},
  fixture(kind){if(!core.mp_fixture_prepare)throw Error('Fixture export absent from production Runtime');return !!core.mp_fixture_prepare(app,kind);},
  historyProfile(profile){if(app||!core.mp_fixture_score_history)throw Error('History setup requires a fresh diagnostic page');return !!core.mp_fixture_score_history(profile);},
- fixtureStatus(){if(!core.mp_fixture_status)throw Error('Fixture export absent');return Array.from(new Int32Array(core.memory.buffer,core.mp_fixture_status(app),18));},
+ fixtureStatus(){if(!core.mp_fixture_status)throw Error('Fixture export absent');return Array.from(new Int32Array(core.memory.buffer,core.mp_fixture_status(app),19));},
  close(){if(app){core.sdl_game_close();app=0;}return true;},
  start(loadouts,local=0,difficulty=1,seed=1234){
   if(app)throw Error('Use a fresh page for a new run');
@@ -271,13 +278,23 @@ window.multiplayerSmoke={
   return core.multiplayer_packet_apply(app,ptr,bytes.length);
  }finally{core.files_free(ptr);}},
  captureLocal(frame,buttons=0){const ptr=core.files_allocate(20);try{
-  const row=new Uint32Array(core.memory.buffer,ptr,5);row.fill(0);row[0]=buttons>>>0;
+  writeFrameInput(ptr,buttons);
   return !!core.multiplayer_capture_local(app,frame,ptr,5);
  }finally{core.files_free(ptr);}},
+ captureLocalInput(frame,input){const ptr=core.files_allocate(20);try{
+  writeFrameInput(ptr,input);return !!core.multiplayer_capture_local(app,frame,ptr,5);
+ }finally{core.files_free(ptr);}},
  submitRemote(player,frame,buttons=0){const ptr=core.files_allocate(20);try{
-  const row=new Uint32Array(core.memory.buffer,ptr,5);row.fill(0);row[0]=buttons>>>0;
+  writeFrameInput(ptr,buttons);
   return core.multiplayer_submit_remote(app,player,frame,ptr,5);
  }finally{core.files_free(ptr);}},
+ submitRemoteInput(player,frame,input){const ptr=core.files_allocate(20);try{
+  writeFrameInput(ptr,input);return core.multiplayer_submit_remote(app,player,frame,ptr,5);
+ }finally{core.files_free(ptr);}},
+ touchMode(mode){core.sdl_touch_mode(mode>>>0);return true;},
+ touchOptions(on=true,unlimited=false,sensitivity=1){core.sdl_touch_options(on?1:0,unlimited?1:0,sensitivity);return true;},
+ touchControls(shoot=false,slow=false,bomb=0,escape=0,x=0,y=0){core.sdl_touch_controls(shoot?1:0,slow?1:0,bomb>>>0,escape>>>0,x,y);return true;},
+ touch(type,id,x,y){core.sdl_touch(type>>>0,id|0,x,y);return this.nativeStatus();},
  menuTicks(count,buttons=[]){for(let i=0;i<count;++i){
   if(!commitInputs(buttons))throw Error('Menu input rejected');
   const result=core.sdl_loop_tick(app,1/60,16);if(result||core.application_error(app))throw Error('Native tick failed '+result+' '+core.application_error(app));

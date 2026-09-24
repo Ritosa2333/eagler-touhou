@@ -28,6 +28,21 @@ struct State {
     u16 pause_rising = 0;
 };
 
+// Device-facing analog sample owned by the local browser tick. Direct touch
+// stores its absolute game-space target here only until the logical netplay
+// frame is captured; it is converted to a per-frame displacement after any
+// rollback reconciliation, so speculative player position never leaks into
+// the authoritative input stream.
+struct LocalAnalogSample {
+    enum class Kind { None, Joystick, DirectTarget };
+    Kind kind = Kind::None;
+    float x = 0.0f;
+    float y = 0.0f;
+    bool unlimited = false;
+    bool touchUsed = false;
+    bool touchBomb = false;
+};
+
 static_assert(std::is_trivially_copyable<State>::value,
               "input lanes must remain rollback-copyable");
 
@@ -36,6 +51,19 @@ static_assert(std::is_trivially_copyable<State>::value,
 // lanes, including their edge transition, so stale input cannot leak across a
 // session boundary. No device or local configuration is read here.
 bool Commit(State& state, const Netplay::FrameInput* inputs, u32 count) noexcept;
+
+// Resolve one local device sample into the transport-neutral logical frame.
+// fixedX/fixedY are the corrected native hundredths position after rollback;
+// rate is the title timescale used by Player::move.
+bool BuildLocalFrame(const LocalAnalogSample& sample, u16 buttons,
+                     i32 fixedX, i32 fixedY, float rate,
+                     Netplay::FrameInput& out) noexcept;
+
+// Convert synchronized analog payload into Player::move's pre-timescale
+// hundredths velocity. Returns false when this frame has no analog owner, so
+// ordinary digital direction bits remain authoritative.
+bool ResolveMovement(const Netplay::FrameInput& input, i32 speed,
+                     i32& x, i32& y) noexcept;
 
 // Return the menu/dialogue lane. `raw` and raw edge fields come from the host
 // seat; raw_pressed additionally carries one Pause event when any seat newly

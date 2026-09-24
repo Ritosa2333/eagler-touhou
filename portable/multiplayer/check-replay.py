@@ -15,9 +15,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--url', default='http://127.0.0.1:8140/')
 parser.add_argument('--output', default='artifacts/multiplayer-tests/replay-native.json')
 parser.add_argument('--cases', choices=('roundtrip', 'lifecycle', 'all'), default='all')
+parser.add_argument('--input-profile', choices=('keyboard', 'analog'), default='keyboard')
+parser.add_argument('--players', choices=('2', '3', 'all'), default='all')
+parser.add_argument('--lags', choices=('0', '4', 'all'), default='all')
 args = parser.parse_args()
 report = {'scope': 'TH10 native multiseat file/menu roundtrip; local algorithm harness, not transport',
           'coverage': ['every exposed player/economy word', 'script RNG seed/calls', 'visual RNG seed/calls'],
+          'inputProfile': args.input_profile,
           'notClaimed': ['portable complete-world hash', 'later-stage seeking', 'Launcher persistence'],
           'cases': []}
 
@@ -30,6 +34,46 @@ def inputs(frame, players):
     if frame == 350:
         values[-1] |= 2
     return values
+
+
+def frame_inputs(frame, players):
+    values = inputs(frame, players)
+    if args.input_profile == 'keyboard':
+        return values
+    result = []
+    for seat, buttons in enumerate(values):
+        phase = (frame // 45 + seat) % 3
+        if phase == 0:
+            result.append({'buttons': buttons, 'analogMode': 1,
+                           'x': 0.65 if seat % 2 == 0 else -0.65,
+                           'y': 0.25 if (frame // 15) % 2 == 0 else -0.25,
+                           'touchUsed': True,
+                           'touchBomb': bool(buttons & 2)})
+        elif phase == 1:
+            result.append({'buttons': buttons, 'analogMode': 3,
+                           'x': 220.0 if seat % 2 == 0 else -220.0,
+                           'y': 80.0 if (frame // 15) % 2 == 0 else -80.0,
+                           'touchUsed': True,
+                           'touchBomb': bool(buttons & 2)})
+        else:
+            result.append({'buttons': buttons})
+    return result
+
+
+def capture(page, frame, value):
+    if isinstance(value, dict):
+        return call(page, '(x)=>multiplayerSmoke.captureLocalInput(x[0],x[1])',
+                    [frame, value])
+    return call(page, '(x)=>multiplayerSmoke.captureLocal(...x)', [frame, value])
+
+
+def submit_input(page, seat, frame, value):
+    if isinstance(value, dict):
+        result = call(page, '(x)=>multiplayerSmoke.submitRemoteInput(x[0],x[1],x[2])',
+                      [seat, frame, value])
+        assert result in (1, 2, 3, 4), (seat, frame, value, result, net(page))
+        return result
+    return submit(page, seat, frame, value)
 
 
 def record(test, players=2, lag=0, last=599):
@@ -46,12 +90,12 @@ def record(test, players=2, lag=0, last=599):
         if n[3] >= last:
             break
         frame = n[2]
-        values = inputs(frame, players)
-        assert call(page, '(x)=>multiplayerSmoke.captureLocal(...x)', [frame, values[-1]])
+        values = frame_inputs(frame, players)
+        assert capture(page, frame, values[-1])
         for seat in range(players - 1):
             through = frame - lag
             for remote in range(sent[seat] + 1, through + 1):
-                submit(page, seat, remote, inputs(remote, players)[seat])
+                submit_input(page, seat, remote, frame_inputs(remote, players)[seat])
             sent[seat] = max(sent[seat], through)
         tick(page)
         now = net(page)
@@ -62,11 +106,11 @@ def record(test, players=2, lag=0, last=599):
     # One final fully confirmed frame performs all outstanding reconciliation
     # through the real loop; no uncomputed or predicted tail is called saved.
     frame = last + 1
-    values = inputs(frame, players)
-    assert call(page, '(x)=>multiplayerSmoke.captureLocal(...x)', [frame, values[-1]])
+    values = frame_inputs(frame, players)
+    assert capture(page, frame, values[-1])
     for seat in range(players - 1):
         for remote in range(sent[seat] + 1, frame + 1):
-            submit(page, seat, remote, inputs(remote, players)[seat])
+            submit_input(page, seat, remote, frame_inputs(remote, players)[seat])
     tick(page)
     assert net(page)[3] == frame and net(page)[4] >= frame and net(page)[5] == -1
     final = call(page, 'multiplayerSmoke.replayObservation()')
@@ -187,9 +231,11 @@ def record_retry(test, players):
 
 
 with fixture(args.url, report, args.output) as test:
-    for players in ((2, 3) if args.cases in ('roundtrip', 'all') else ()):
+    selected_players = (2, 3) if args.players == 'all' else (int(args.players),)
+    selected_lags = (0, 4) if args.lags == 'all' else (int(args.lags),)
+    for players in (selected_players if args.cases in ('roundtrip', 'all') else ()):
         data, trace, final = record(test, players=players)
-        for lag in (0, 4):
+        for lag in selected_lags:
             if lag:
                 data, _, corrected = record(test, players=players, lag=lag)
                 for key in ('state', 'rng'):
@@ -205,7 +251,7 @@ with fixture(args.url, report, args.output) as test:
             case['passed'] = True
             print(json.dumps(case), flush=True)
         test.close_contexts()
-    for players in ((2, 3) if args.cases in ('lifecycle', 'all') else ()):
+    for players in (selected_players if args.cases in ('lifecycle', 'all') else ()):
         data, trace, transitions = record_retry(test, players)
         case = {'name': f'{players}p-native-restart-file-menu-roundtrip',
                 'fileBytes': len(data), 'fileSha256': hashlib.sha256(bytes(data)).hexdigest(),

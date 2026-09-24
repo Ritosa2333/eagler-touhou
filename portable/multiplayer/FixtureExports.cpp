@@ -219,7 +219,7 @@ u32 mp_fixture_prepare(browser::Application* app,u32 kind){
 
 extern "C" __attribute__((export_name("mp_fixture_status")))
 const i32* mp_fixture_status(browser::Application* app){
-    static i32 words[18]{};std::fill(words,words+18,0);
+    static i32 words[19]{};std::fill(words,words+19,0);
     if(!app||!app->world)return words;auto& world=*app->world;
     words[0]=1;words[1]=world.cooperation.wipeTicks;
     words[2]=world.cooperation.retryPending;
@@ -236,5 +236,6 @@ const i32* mp_fixture_status(browser::Application* app){
     words[15]=world.backgrounds.previous?world.backgrounds.previous->stage_number:0;
     words[16]=world.backgrounds.previous?world.backgrounds.previous->fade_timer.current:-1;
     for(const auto& entry:world.backgrounds.retired)words[17]+=entry.stage?1:0;
+    words[18]=world.state.multiplayer_cheat_movement_used?1:0;
     return words;
 }

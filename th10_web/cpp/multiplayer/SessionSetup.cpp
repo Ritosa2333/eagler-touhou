@@ -26,7 +26,7 @@ std::uint32_t GameplayContract(const SessionSetup& setup) noexcept {
     // identity is deliberately excluded; all peers must compute the same ABI.
     std::uint32_t hash=2166136261u;
     const auto word=[&](std::uint32_t value){for(int i=0;i<4;++i){hash^=(value>>(i*8))&255u;hash*=16777619u;}};
-    word(0x10000003u);word(setup.playerCount);word(setup.difficulty);word(setup.seed);
+    word(0x10000004u);word(setup.playerCount);word(setup.difficulty);word(setup.seed);
     for(const auto& loadout:setup.loadouts){word(loadout.character);word(loadout.shot);}
     return hash;
 }

@@ -103,6 +103,42 @@ int main() {
     assert(resim.inputs[2].buttons == 0);
     assert(resim.seats[2].current == 0);
 
+    // Local direct touch is captured only after rollback reconciliation. The
+    // device owns an absolute target; the network frame owns a fresh
+    // pre-timescale displacement, so prediction cannot repeat a browser event.
+    LocalAnalogSample direct{};
+    direct.kind = LocalAnalogSample::Kind::DirectTarget;
+    direct.x = 14.0f;
+    direct.y = 16.0f;
+    direct.touchUsed = true;
+    direct.touchBomb = true;
+    Netplay::FrameInput logical{};
+    assert(BuildLocalFrame(direct, kBomb, 1000, 2000, 2.0f, logical));
+    assert(logical.buttons == kBomb);
+    assert(logical.analogMode == Netplay::AnalogMode::DirectTouchDelta);
+    assert(logical.x == 200.0f && logical.y == -200.0f);
+    assert(logical.touchUsed && logical.touchBomb && !logical.unlimited);
+    th10::i32 x = 0, y = 0;
+    assert(ResolveMovement(logical, 150, x, y));
+    assert(x == 106 && y == -106);
+    logical.unlimited = true;
+    assert(ResolveMovement(logical, 150, x, y));
+    assert(x == 200 && y == -200);
+
+    LocalAnalogSample joystick{};
+    joystick.kind = LocalAnalogSample::Kind::Joystick;
+    joystick.x = 1.0f;
+    joystick.y = 1.0f;
+    assert(BuildLocalFrame(joystick, kFocus, 0, 0, 1.0f, logical));
+    assert(logical.analogMode == Netplay::AnalogMode::Joystick);
+    assert(ResolveMovement(logical, 100, x, y));
+    assert(x == 71 && y == 71);
+
+    LocalAnalogSample neutral{};
+    assert(BuildLocalFrame(neutral, kShoot, 0, 0, 1.0f, logical));
+    assert(logical.analogMode == Netplay::AnalogMode::None);
+    assert(!ResolveMovement(logical, 100, x, y));
+
     // Invalid count and null payload are also transactional.
     const State before_count = state;
     assert(!Commit(state, two_seat, 1));

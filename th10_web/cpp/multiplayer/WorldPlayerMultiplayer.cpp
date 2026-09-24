@@ -202,7 +202,10 @@ struct Movement final:PlayerMovementEnvironment {
             player->update_anchored_option(option,manager->registry);
         else __builtin_trap();
     }
-    bool movement(const Player&,i32,i32&,i32&) override{return false;}
+    bool movement(const Player&,i32 speed,i32& x,i32& y) override{
+        return multiplayer::InputLanes::ResolveMovement(
+            world.state.input_lanes.inputs[pilot.seat],speed,x,y);
+    }
 };
 
 struct Shooting final:PlayerShootingEnvironment {

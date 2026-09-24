@@ -25,8 +25,18 @@ APP_EXPORT("application_touch_target") void application_touch_target(browser::Ap
 APP_EXPORT("application_touch_display") void application_touch_display(browser::Application* app,i32 hitbox){if(app&&app->world)app->world->always_hitbox=hitbox!=0;}
 APP_EXPORT("application_touch_state") void application_touch_state(browser::Application* app,u32* output){
     std::memset(output,0,32);auto* w=app->world;auto* p=w?w->actors.player:nullptr;auto* session=w?w->actors.session:nullptr;auto* gui=w?w->actors.gui:nullptr;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    auto* economy=&app->state.game;
+    if(w&&app->state.multiplayer_session.configured&&w->local_player<w->player_count){
+        p=w->pilots[w->local_player].player;economy=&w->pilots[w->local_player].game;
+    }
+#endif
     if(app->state.return_screen==2||(app->state.game.flags&0x20)){output[0]=3;return;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!p||!session||economy->lives<0||(session->session_flags&0x70)||!session->update_entry||!(session->update_entry->flags&2))return;
+#else
     if(!p||!session||app->state.game.lives<0||(session->session_flags&0x70)||!session->update_entry||!(session->update_entry->flags&2))return;
+#endif
     if(gui&&gui->dialogue){output[0]=2;return;}output[0]=1;output[1]=static_cast<u32>(reinterpret_cast<uintptr_t>(p));output[2]=p->state==1;
     const float values[]={p->position.x,p->position.y,p->fast_speed*.01f*app->engine.speed,p->slow_speed*.01f*app->engine.speed,app->engine.speed};std::memcpy(output+3,values,sizeof(values));
 }

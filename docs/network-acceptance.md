@@ -67,9 +67,9 @@ seats have authoritative confirmed input. A spectator contributes no gameplay
 seat and feeds those all-seat samples through the same NetplayRuntime,
 InputLanes and native world update path as the players.
 
-The production multiplayer WASM used by the final focused spectator run is
-`836d5528844c138ad5eff9e22e092d50471b9f6816711231572f6d50ea631932`.
-Suite `spectator-e6c2455d-ac52-4324-ac40-b497d059cfac` passes both:
+The production multiplayer WASM used by the final focused spectator rerun is
+`2e2a417b6132e52221f200c3e538d4df0b88d5439178ef341291c3f7eb0bddcd`.
+Suite `spectator-77e33971-45e9-4108-b49f-996a0aa8c598` passes both:
 
 - real player WebRTC plus the relay-only spectator stream; and
 - forced player WebSocket Relay plus the same spectator stream.
@@ -95,6 +95,56 @@ Spectator admission remains start-time and relay-run scoped; Retry/new
 generation requires a fresh lobby admission rather than reusing the old
 receive-only socket.
 
+## Authoritative touch and analog evidence
+
+TH10 multiplayer now captures touch/analog at the local logical-frame owner,
+not as raw browser events. The browser TouchController retains its local
+absolute drag target; after any pending rollback has been reconciled, the
+Runtime converts that target into a fresh pre-timescale DirectTouchDelta for
+the corrected native pilot position. Joystick samples are carried as normalized
+axes. Both forms enter the existing FrameInput/InputLanes/RollbackCore path and
+the multiplayer Player movement seam consumes the synchronized per-seat value.
+Digital keyboard ownership is unchanged.
+
+This deterministic interpretation changes the title gameplay contract, so the
+TH10 Multiplayer Gameplay ABI seed was advanced from `0x10000003` to
+`0x10000004`; mixed old/new peers therefore fail the existing HELLO contract
+instead of silently disagreeing about analog movement.
+
+Production MP WASM for this slice is
+`2e2a417b6132e52221f200c3e538d4df0b88d5439178ef341291c3f7eb0bddcd`;
+the diagnostic fixture WASM is
+`f4b07461cf8e7561ce85cba9213b8eb7205229bb21eebcf718bb1dd9f0add7bf`.
+`artifacts/multiplayer-tests/browser-touch-final.json` is an automated browser
+PASS over the real native world. Its local endpoint owns P2 and proves:
+
+- Launcher joystick input moves P2 from x=0 to x=40 while P1 remains fixed;
+- local direct touch then moves P2 from x=40 to x=80 while P1 remains fixed;
+- synchronized remote DirectTouchDelta moves only P1;
+- enabling Unlimited alone does not mark the run, while actual Unlimited
+  movement sets the multiplayer assisted-movement marker;
+- a Touch Bomb generated through the live TouchController inside P2's native
+  eight-tick deathbomb window restores the pilot to the native alive state and
+  consumes the native bomb power cost; and
+- a late DirectTouchDelta correction requests rollback from frame zero and,
+  after restore/resimulation, reaches an identical 44-word canonical state to
+  the exact-input reference at frame 5.
+
+The Multiplayer Replay file/menu path also preserves analog FrameInput data.
+Focused final reports are:
+
+| Report | Passing cases |
+| --- | --- |
+| `replay-analog-2p-final.json` | 2P lag0 and lag4, 601 frames each |
+| `replay-analog-3p-lag0-final.json` | 3P lag0, 601 frames |
+| `replay-analog-3p-lag4-final.json` | 3P lag4, 601 frames |
+
+Each recording is saved through the native multiplayer Replay writer, reopened
+from a fresh browser context through the native Replay menus, and compared
+frame-for-frame for exposed gameplay state and both RNGs. Playback remains
+read-only. These are browser-automation claims; they do not substitute for
+named-phone manual touch/orientation acceptance.
+
 ## Ordinary baseline
 
 The ordinary production WASM before and after this network slice is exactly
@@ -112,7 +162,7 @@ binary identity check; it is not a claim that another daily run was executed.
 
 ## Still required
 
-Authoritative analog/touch input, real Launcher configure/start/save lifecycle,
-all-stage/result and negative-protocol coverage, ordinary regressions and the
-full promotion gates remain required. Device and public deployment acceptance
+Real Launcher configure/start/save/spectator lifecycle, all-stage/result and
+negative-protocol coverage, ordinary regressions and the full promotion gates
+remain required. Device and public deployment acceptance
 must be named separately. No push, deployment or canonical promotion is implied.

@@ -1,5 +1,6 @@
 #include "InputLanes.hpp"
 
+#include <algorithm>
 #include <cmath>
 
 namespace th10::multiplayer::InputLanes {
@@ -11,6 +12,18 @@ bool valid_input(const Netplay::FrameInput& input) noexcept {
     // motion/configuration state, so no device-specific range is imposed here.
     const auto mode = static_cast<unsigned>(input.analogMode);
     return mode <= 4u && std::isfinite(input.x) && std::isfinite(input.y);
+}
+
+constexpr float kVelocityLimit = 10000000.0f;
+
+void limit_vector(float& x, float& y, float speed) noexcept {
+    speed = std::abs(speed);
+    const float square = x * x + y * y;
+    if (square > speed * speed && square > 0.0f) {
+        const float scale = speed / std::sqrt(square);
+        x *= scale;
+        y *= scale;
+    }
 }
 
 void update_host_lane(State& state, u16 raw_repeat) noexcept {
@@ -62,6 +75,70 @@ bool Commit(State& state, const Netplay::FrameInput* inputs, u32 count) noexcept
     }
     update_host_lane(next, host_raw_repeat);
     state = next;
+    return true;
+}
+
+bool BuildLocalFrame(const LocalAnalogSample& sample, u16 buttons,
+                     i32 fixedX, i32 fixedY, float rate,
+                     Netplay::FrameInput& out) noexcept {
+    if (!std::isfinite(sample.x) || !std::isfinite(sample.y) ||
+        !std::isfinite(rate)) {
+        return false;
+    }
+
+    Netplay::FrameInput next{};
+    next.buttons = buttons;
+    next.touchUsed = sample.touchUsed;
+    next.touchBomb = sample.touchBomb;
+    switch (sample.kind) {
+    case LocalAnalogSample::Kind::None:
+        break;
+    case LocalAnalogSample::Kind::Joystick:
+        next.analogMode = Netplay::AnalogMode::Joystick;
+        next.x = std::clamp(sample.x, -1.0f, 1.0f);
+        next.y = std::clamp(sample.y, -1.0f, 1.0f);
+        break;
+    case LocalAnalogSample::Kind::DirectTarget:
+        next.analogMode = Netplay::AnalogMode::DirectTouchDelta;
+        next.unlimited = sample.unlimited;
+        if (rate != 0.0f) {
+            next.x = (sample.x * 100.0f - static_cast<float>(fixedX)) / rate;
+            next.y = (sample.y * 100.0f - static_cast<float>(fixedY)) / rate;
+        }
+        if (!std::isfinite(next.x) || !std::isfinite(next.y) ||
+            std::abs(next.x) > kVelocityLimit || std::abs(next.y) > kVelocityLimit) {
+            return false;
+        }
+        break;
+    }
+    if (!Netplay::IsValidFrameInput(next)) return false;
+    out = next;
+    return true;
+}
+
+bool ResolveMovement(const Netplay::FrameInput& input, i32 speed,
+                     i32& x, i32& y) noexcept {
+    if (!valid_input(input) || input.analogMode == Netplay::AnalogMode::None) {
+        return false;
+    }
+
+    float dx = input.x, dy = input.y;
+    if (input.analogMode == Netplay::AnalogMode::Joystick) {
+        dx = std::clamp(dx, -1.0f, 1.0f) * static_cast<float>(speed);
+        dy = std::clamp(dy, -1.0f, 1.0f) * static_cast<float>(speed);
+        limit_vector(dx, dy, static_cast<float>(speed));
+    } else if (input.analogMode == Netplay::AnalogMode::DirectTouch ||
+               input.analogMode == Netplay::AnalogMode::DirectTouchDelta ||
+               input.analogMode == Netplay::AnalogMode::DirectTouchBegin) {
+        if (!input.unlimited) limit_vector(dx, dy, static_cast<float>(speed));
+        dx = std::clamp(dx, -kVelocityLimit, kVelocityLimit);
+        dy = std::clamp(dy, -kVelocityLimit, kVelocityLimit);
+    } else {
+        return false;
+    }
+
+    x = static_cast<i32>(std::round(dx));
+    y = static_cast<i32>(std::round(dy));
     return true;
 }
 
