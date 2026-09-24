@@ -59,6 +59,7 @@ constexpr u32 warmCount=sizeof(warmAnimations)/sizeof(*warmAnimations);
 touhou::input::TouchState touch_state(){touhou::input::TouchState s;if(!runtime)return s;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     auto& a=runtime->app;auto& g=a.game;
+    if(a.session.netplay.Spectator()){s.context=3;return s;}
     if(a.in_game()&&(g.globals.game_flags&8)){s.context=3;return s;}
     if(!a.in_game()||a.loading_game()||!g.ready()||g.paused||g.menus.context.pause_state||(g.globals.game_flags&0x60))return s;
     const auto seat=a.session.local_player;if(seat>=a.session.player_count)return s;
@@ -108,7 +109,7 @@ void poll(){if(!runtime)return;SDL_Event event;while(SDL_PollEvent(&event)){
     const auto state=touch_state();sync_touch_context(state);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     const auto& net=runtime->app.session.netplay;
-    const bool sample=!net.Configured()||(net.CanStart()&&!net.Correcting()&&!net.HasLocal(net.NextFrame()));
+    const bool sample=!net.Configured()||(!net.Spectator()&&net.CanStart()&&!net.Correcting()&&!net.HasLocal(net.NextFrame()));
     if(sample){
 #endif
     const auto input=touch.sample(state,SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);for(int i=0;i<256;i++)if(input.keys[i])keys[i]=128;

@@ -1,4 +1,5 @@
 #include "../th08_web/cpp/multiplayer/NetplayRuntime.hpp"
+#include "../th08_web/cpp/multiplayer/SpectatorStream.hpp"
 #include <cassert>
 #include <cstdio>
 #include <limits>
@@ -128,8 +129,48 @@ static void packet_transaction_and_negative_inputs(){
     const auto d=r.Prepare(0);assert(r.MarkSimulated(0,d));
     assert(!r.Reset(setup(2,0))&&r.NextFrame()==1); // active history cannot be silently replaced
 }
+static void spectator_is_exact_read_only_and_bounded(){
+    using th08::multiplayer::SpectatorStream;
+    for(const unsigned count:{2u,3u}){
+        NetplayRuntime r;assert(r.Reset(setup(count,0))&&r.BeginSpectator());
+        assert(r.Spectator()&&r.CanStart()&&!r.Ready()&&!r.MarkReady());
+        assert(!r.SetWorldReady(true)&&!r.CaptureLocal(0,FrameInput(1)));
+        assert(r.SubmitRemote(1,0,FrameInput(1))==RemoteInputResult::InvalidPlayer);
+        assert(!r.Prepare(0).canAdvance&&!r.Reset(setup(count,0)));
+        Netplay::SpectatorFramePacket p;p.sessionId=r.Config().sessionId;p.gameplayAbi=r.Config().gameplayAbi;
+        p.playerCount=static_cast<std::uint8_t>(count);p.frame=0;
+        p.inputs[0]=FrameInput(1);p.inputs[1]=FrameInput(2);
+        p.inputs[1].analogMode=Netplay::AnalogMode::DirectTouch;
+        p.inputs[1].x=1.25f;p.inputs[1].y=-2.5f;p.inputs[1].touchUsed=p.inputs[1].touchBomb=true;
+        auto wrong=p;wrong.gameplayAbi^=1;assert(!r.FeedSpectator(wrong)&&!r.HasLocal(0));
+        wrong=p;wrong.inputs[1].x=std::numeric_limits<float>::quiet_NaN();
+        assert(!r.FeedSpectator(wrong)&&!r.HasLocal(0));
+        SpectatorStream queue;assert(queue.Append(p,r.Config())&&queue.Size()==1);
+        assert(r.FeedSpectator(*queue.Front()));queue.Pop();assert(!r.FeedSpectator(p));
+        auto decision=r.Prepare(0);assert(decision.canAdvance&&!decision.predictedMask);
+        assert(r.MarkSimulated(0,decision));
+        std::array<FrameInput,Netplay::MAX_PLAYERS> inputs{};assert(r.ConfirmedInputs(0,inputs)&&inputs[1]==p.inputs[1]);
+        assert(!r.Prepare(1).canAdvance); // A stalled observer never predicts.
+        std::vector<std::uint8_t> bytes;assert(!r.BuildInputWire(1,0,1,0,bytes));
+        assert(r.ApplyWire(nullptr,0)==Wire::IgnoredSession);
+        assert(!r.BeginCorrection(0));
+        assert(r.CanRetire()&&r.Retire());SessionSetup next;assert(!r.BeginNextRun(next,1234));
+        const auto config=r.Config();
+        r.Clear();assert(!r.Spectator());
+        queue.Clear();p.frame=1;assert(!queue.Append(p,config)&&queue.Failed());
+        p.frame=0;assert(!queue.Append(p,config)); // Failure remains latched.
+        queue.Clear();assert(queue.Append(p,config));assert(!queue.Append(p,config));
+        queue.Clear();p.playerCount=4;auto badconfig=config;badconfig.playerCount=4;
+        assert(!queue.Append(p,badconfig));
+        queue.Clear();p.playerCount=static_cast<std::uint8_t>(count);
+        for(std::uint32_t frame=0;frame<SpectatorStream::Capacity;++frame){p.frame=frame;assert(queue.Append(p,config));}
+        p.frame=SpectatorStream::Capacity;assert(!queue.Append(p,config));
+        assert(queue.Size()==SpectatorStream::Capacity&&queue.Failed());
+    }
+}
 int main(){
     decode_atomicity();session_and_inputs(2);session_and_inputs(3);
     confirmation_gap_is_bounded();packet_transaction_and_negative_inputs();
+    spectator_is_exact_read_only_and_bounded();
     std::puts("TH08 frame-zero admission, corrected frontiers, atomic packets and generation fences: PASS");
 }

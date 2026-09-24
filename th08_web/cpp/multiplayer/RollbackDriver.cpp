@@ -7,6 +7,7 @@ namespace th08::multiplayer {
 RollbackDriver::RollbackDriver(BrowserRuntime& r):runtime(r),network(r.app.session.netplay){}
 const char* RollbackDriver::Error()const{return failed?error:network.Error();}
 bool RollbackDriver::Connect(const char* relay){return !failed&&network.Connect(relay);}
+bool RollbackDriver::ConnectSpectator(const char* relay,const char* id){return !failed&&network.ConnectSpectator(relay,id);}
 bool RollbackDriver::Pump(){
     const auto& a=runtime.app;
     return !failed&&(network.Pump(a.session.multiplayer_session.started&&!a.loading_game())||Fail("network channel failed"));
@@ -35,6 +36,7 @@ bool RollbackDriver::Commit(){
     if(net.Correcting()||net.RollbackFrame()!=Netplay::INVALID_FRAME)return true;
     const auto through=net.ConfirmedThrough(),last=net.LastFrame();
     if(!runtime.commit_audio_events(audio,through,last)||!files.CommitThrough(through,last,*this))return Fail("confirmed external output failed");
+    network.PublishConfirmedSpectatorFrames();
     if(through!=Netplay::INVALID_FRAME&&last!=Netplay::INVALID_FRAME&&bound){
         const auto next=std::min(through,last)+1;world.DiscardBefore(next);textures.DiscardBefore(next);
     }
@@ -42,6 +44,19 @@ bool RollbackDriver::Commit(){
 }
 bool RollbackDriver::Admit(){
     auto& a=runtime.app;auto& net=a.session.netplay;
+    if(net.Spectator()){
+        // Observers have exact all-seat input. They use the same native
+        // lifecycle, but never allocate prediction history or invent a new
+        // session when the observed players select Restart.
+        const auto target=th08::Scene(a.supervisor.state.target);
+        if(a.supervisor.state.active==i32(th08::Scene::Game)&&
+           (target==th08::Scene::Restart||target==th08::Scene::SpellRestart)){
+            if(!net.CanRetire()){a.session.network_waiting=true;return true;}
+            if(!Commit())return false;
+            network.FinishSpectator();a.session.network_waiting=true;
+        }
+        return true;
+    }
     if(bound&&!world.CanAdvance()){
         // Do not execute the next scene's resource destructors until the frame
         // that selected that scene is reconciled and confirmed.
@@ -116,19 +131,37 @@ bool RollbackDriver::Step(bool render){
     if(failed||open||session.network_frame_open||!runtime.prepared||runtime.capture_failed)return false;
     session.network_waiting=false;
     if(!Pump())return false;
+    if(network.SpectatorFinished()){session.network_waiting=true;return true;}
     if(!net.CanStart()){session.network_waiting=true;return true;}
     if(!initialized){audio.Reset(net.NextFrame());files.Reset(net.NextFrame());
         if(!runtime.bind_audio_events(&audio))return Fail("audio sink binding failed");
         initialized=true;generation=net.Generation();}
     if(!Correct()||!Commit()||!Admit())return false;
     if(session.network_waiting)return PresentCorrection();
+    // Bounded observer catch-up executes the original semantic Update/Draw
+    // jobs, with no device resampling and no intermediate physical Present.
+    // The device audio clock advances only in the outer SDL callback.
+    for(u32 extra=0;net.Spectator()&&extra<3&&Stable()&&network.SpectatorBacklog()>4;++extra){
+        if(!network.ConsumeSpectator())return Fail("observer catch-up input rejected");
+        runtime.correction_present_suppressed=true;
+        const auto before=net.NextFrame();const bool ok=RunFrame(true);
+        runtime.correction_present_suppressed=false;
+        if(!ok||net.NextFrame()==before)return Fail("observer catch-up stalled");
+        if(!Admit())return false;
+        if(session.network_waiting)return true;
+    }
     const auto frame=net.NextFrame();
     if(!net.HasLocal(frame)){
+        if(net.Spectator()){
+            if(!network.SpectatorBacklog()){session.network_waiting=true;return true;}
+            if(!network.ConsumeSpectator())return Fail("observer input consumption failed");
+        }else{
         const auto touch=u16(file_device().supplemental_input());
         const auto physical=runtime.input.controller(InputController::keyboard(runtime.keys,false)|touch,runtime.pad,session.display_config);
         if(!net.CaptureLocal(frame,runtime.device_sample(physical)))return Fail("local capture failed");
+        }
     }
-    if(!network.Captured(frame))return Fail("captured input send failed");
+    if(!net.Spectator()&&!network.Captured(frame))return Fail("captured input send failed");
     const bool success=RunFrame(render);
     return success&&(!session.network_waiting||PresentCorrection());
 }

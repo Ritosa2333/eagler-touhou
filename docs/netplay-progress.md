@@ -377,11 +377,73 @@ log: build-input-host-ordinary.log. Host-option/native input units, the four
 build-isolation tests and diff whitespace checks pass. These are automated
 local-browser checks, not human mobile/device or public deployment acceptance.
 
+## Start-time read-only spectator
+
+The TH08 adapter now uses the shared SpectatorFramePacket and
+BrowserPeerTransport::ConnectSpectator path. P1 publishes only already
+simulated, reconciled all-seat confirmed input, including the authoritative
+analog/touch payload. Observers have no gameplay peer/seat and no input
+prediction. They consume the exact rows through the same RollbackDriver,
+GameApplication and native Update/semantic Draw path as live players.
+
+The receiver requires frame zero and a contiguous session/ABI-matched stream;
+malformed samples, gaps, duplicates and a backlog above 4096 frames fail
+closed. A delayed already-admitted observer catches up with at most four
+native logical frames per callback, without resampling devices or physically
+presenting intermediate catch-up frames. The MIDI clock remains outside that
+logical frame count. There is no mid-run admission or reconnect shortcut.
+
+Native capture, analog capture, HELLO/READY, input-packet construction, direct
+input submission, local cooperation input and THPrac mutation are rejected for
+the spectator role. The shell also discards spectator keyboard/touch commands
+and rejects resource replacement after multiplayer launch. Read-only native
+file policy is active BEFORE native initialize(), so config/score writes at
+startup are not an exception. Existing records remain byte-identical through
+startup, gameplay and exit.
+
+The observed players' confirmed Restart ends the current observation. The
+observer does not create the players' next generation: its Runtime exits once,
+while the parent lobby remains owned/open in Launcher. The players continue
+their own ACK-retired generation and handshake normally. Spectator failure or
+publication backlog exhaustion never rewrites or stalls a player's world.
+
+Production evidence under artifacts/multiplayer-tests/:
+
+- network-28cd501d-4c28-4005-854d-3c268353330c: all four combinations of
+  2P/3P and real RTC/forced Relay, using the actual Runtime shell and room/run
+  admission. Players reach frame 89 before the observer Runtime launches.
+  All endpoints agree at frame 239 on every exposed canonical owner and
+  committed audio; deliberate local observer input has no effect. Native
+  Restart ends the observer at the old generation while players reach
+  generation one/frame 119. Imported record bytes and the parent lobby survive.
+- network-e6bf4c4f-9a18-4959-885c-3c9db65d31fe: final host-only resource-write
+  hardening, actual player touch/storage host regression and 2P RTC spectator
+  regression, including live resource-replacement rejection in both roles.
+- network-00146889-8317-496a-8651-1f5948b4a4db: isolated 3P analog delayed /
+  duplicate / reordered packet correction, independent timely-input reference,
+  canonical and framebuffer equality and bounded prediction stall all pass.
+  The preceding combined run network-5e8b2e23-9419-4fe0-8680-60c5ff798eda
+  passed 2P but stalled during 3P resource bootstrap; it was terminated and its
+  incomplete report is preserved, not counted as a 3P result. The harness now
+  yields every twelve preload operations, matching the real Runtime shell,
+  and records the boot endpoint/step. No gameplay tick or input was added.
+
+Production WASM:
+`47b88a6088485452f45232aa8d30be72d81c974095d11472e32f8802a105b0d7`.
+Diagnostic WASM:
+`4955b0712e8ec07d7f1cd40abbd1c4e6e0b1fb0953c768450af8f7ed9a83609a`.
+Rebuilt ordinary WASM remains
+`0d00a84ef6b214d43f2f365a6ffaa8bc6030a89c56b7d53868f3b9295b4cea3f`.
+The shared Relay whitelist additionally recognizes TH08's existing '8' magic;
+its product-policy regression remains passing. This does not itself declare
+or publish a TH08MP product. These are automated local-browser results, not
+human-device or public-network acceptance.
+
 ## Next implementation boundary
 
-Production networking, automatic correction, authoritative analog/touch and
-the Runtime room/start/exit/storage contract are connected. MP Replay,
-spectator and public Launcher product integration remain before declaring the complete TH08MP
+Production networking, automatic correction, authoritative analog/touch,
+start-time spectators and the Runtime room/start/exit/storage contract are
+connected. MP Replay and public Launcher product integration remain before declaring the complete TH08MP
 profile. Full-stage coverage, real-device acceptance and public deployment are
 not implied by these focused local-browser tests. No performance change,
 canonical promotion, push or deployment is claimed.

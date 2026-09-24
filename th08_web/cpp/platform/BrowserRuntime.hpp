@@ -77,6 +77,7 @@ public:
     bool logical_frame_advanced()const{return !app.session.netplay.Configured()||app.session.network_frame_open;}
     bool finish_network_frame();
     bool connect_network(const char* relay);
+    bool connect_spectator(const char* relay,const char* id);
     bool pump_network();
     multiplayer::RollbackDriver* network_driver(){return multiplayer_driver.get();}
     void set_device_motion(i32 mode,float x,float y,bool touch,bool bomb){

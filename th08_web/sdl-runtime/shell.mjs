@@ -65,7 +65,7 @@ async function installRuntimePack(pack){
   Module.FS.writeFile(file.path,file.bytes,{canOwn:true});runtimePackFiles.push(file.path);
  }
 }
-function applyOptions(){applyTouchOptions(core,options);core.sdl_touch_display?.(options.alwaysHitbox?1:0);practice?.configure({...options,thpracEnabled:options.thpracEnabled&&options.netplayMode!=='lan'});}
+function applyOptions(){applyTouchOptions(core,options.netplaySpectator?{...options,touchEnabled:false}:options);core.sdl_touch_display?.(options.alwaysHitbox?1:0);practice?.configure({...options,thpracEnabled:options.thpracEnabled&&options.netplayMode!=='lan'});}
 function status(){return Array.from(new Int32Array(core.memory.buffer,core.sdl_game_status(),10));}
 function save(){if(app)core.save(app);return sync(false);}
 // Backgrounding only persists the runtime filesystem. core.save() runs the
@@ -96,8 +96,11 @@ async function launch(){
  core.sdl_music_enabled?.(music);app=core.sdl_game_open(multiplayer?multiplayer.seed:Date.now()>>>0);if(!app)throw Error('C++ game initialization failed');
  try{
  const total=core.sdl_prepare_total();for(let i=0;i<total;i++){if(core.sdl_prepare_next()<0)throw Error('资源预载失败 '+i);if(i%12===11){document.querySelector('#loading').textContent='正在准备游戏资源 '+(i+1)+' / '+total;await new Promise(resolve=>setTimeout(resolve,0));}}
+ // Spectator protection precedes native initialize(), which itself writes the
+ // config/score namespace. Waiting until the first gameplay frame is too late.
+ if(multiplayer?.spectator)await configureMultiplayer(core,app,options);
  if(!core.sdl_game_initialize())throw Error('永夜抄初始化失败');document.querySelector('#loading').textContent='';
- if(multiplayer)await configureMultiplayer(core,app,options);
+ if(multiplayer&&!multiplayer.spectator)await configureMultiplayer(core,app,options);
  }catch(reason){core.sdl_game_close();app=0;throw reason;}
  if(multiplayer){window.__eaglerNetplayFailed=false;window.__eaglerNetplayError='';updateNetworkDiagnostics(core,app);}
  applyOptions();launched=true;first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
@@ -105,9 +108,11 @@ async function launch(){
  emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:'eagler-touhou/1',version:'3.4.1-sdl3'});
 }
 async function command(message){
+ if(multiplayerRuntime&&launched&&options.netplaySpectator&&
+    ['keyboard','thprac-mouse','direct-touch','touch-controls'].includes(message.command))return {};
  switch(message.command){
  case 'configure':if(launched)throw Error('Cannot configure a running game');language=message.language==='lang_zh-hans'?'chs':'jp';options=normalizeOptions(message.options);if(multiplayerRuntime)options.thpracEnabled=false;if(!['ogg','midi','none'].includes(message.music))throw Error('Invalid music mode');Module.touhouMusicMode=message.music;Module.eaglerOptions=options;music=message.music!=='none';await installResources(message.sharedResources);await installResources(message.runtimeResources);await installResources(message.resources);if(message.runtimePack)await installRuntimePack(message.runtimePack);applyOptions();return {};
- case 'resources':await installResources(message.resources);return {};
+ case 'resources':if(multiplayerRuntime&&launched)throw Error('Cannot replace resources during a multiplayer run');await installResources(message.resources);return {};
  case 'keyboard':{const code=runtimeKeyboardCode(message);if(!code)return {};if(!practice?.key(code,!!message.down))cstring(code,p=>core.sdl_key(p,!!message.down));return {};}
  case 'thprac-mouse':practice?.mouse(message);return {};
  case 'keyboard-clear':practice?.clear();core.sdl_keys_clear();return {};
@@ -158,6 +163,11 @@ const initialized=(async()=>{
  Module.runtimeFinish=(result,duration)=>{
   practice.tick();
   if(multiplayerRuntime)updateNetworkDiagnostics(core,app);
+  if(multiplayerRuntime&&window.__eaglerNetplaySpectatorFinished&&!closing){
+   // Admission belongs to the observed run. Close this Runtime, not the
+   // parent-owned room; a new generation requires a new lobby admission.
+   core.sdl_loop_pause(1);queueMicrotask(()=>void stop().catch(error));return;
+  }
   const now=performance.now(),p=u32(core.sdl_stats(),6)[5];if(p!==lastPresented){frames++;if(lastFrame)maxGap=Math.max(maxGap,now-lastFrame);lastFrame=now;lastPresented=p;if(!first){first=true;emit('first-frame');}}
   if(result||status()[2]){if(status()[2]){error((multiplayerRuntime&&networkError(core,app))||'Game error '+status()[2]);core.sdl_loop_pause(1);}else queueMicrotask(()=>void stop().catch(error));}
   if(now-lastHealth>=1000){emit('frame-health',{fps:frames*1000/(now-lastHealth),maxGapMs:maxGap,frameMs:duration});const a=u32(core.sdl_audio_stats(),12);emit('audio-health',{queuedMs:a[5]*1000/44100,minQueuedMs:a[7]*1000/44100,backend:'script',underruns:0,robust:true});frames=0;maxGap=0;lastHealth=now;}

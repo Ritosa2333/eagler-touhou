@@ -23,7 +23,7 @@ let app=0;
 const nativeStatus=()=>Array.from(new Int32Array(core.memory.buffer,core.sdl_game_status(),10));
 window.multiplayerSmoke={
   identity(){return {...buildIdentity,wasmSha256:instantiatedSha256,fixtureBuild:typeof core.mp_fixture_die==='function'};},
-  start(seed=1234,loadouts=null,local=0,sessionId=null){
+  async start(seed=1234,loadouts=null,local=0,sessionId=null){
     if(app)throw Error('Use a fresh page for a new run');
     app=core.sdl_game_open(seed);if(!app)throw Error('Native app creation failed');
     if(loadouts){
@@ -34,8 +34,17 @@ window.multiplayerSmoke={
         if(!core.multiplayer_configure(app,ptr,count))throw Error('Session rejected');
       }finally{core.deallocate(ptr);}
     }
-    const total=core.sdl_prepare_total();for(let i=0;i<total;i++)if(core.sdl_prepare_next()<0)throw Error('Prepare failed '+i);
+    const total=core.sdl_prepare_total();
+    for(let i=0;i<total;i++){
+      window.__th08TestBoot={phase:'prepare',step:i,total};
+      if(core.sdl_prepare_next()<0)throw Error('Prepare failed '+i);
+      // Match the real Runtime shell: resource preparation is not a logical
+      // gameplay frame, and must allow browser/GPU work to drain between lots.
+      if(i%12===11)await new Promise(resolve=>setTimeout(resolve,0));
+    }
+    window.__th08TestBoot={phase:'initialize',step:total,total};
     if(!core.sdl_game_initialize())throw Error('Initialize failed');
+    window.__th08TestBoot={phase:'ready',step:total,total};
     return nativeStatus();
   },
   ticks(count){for(let i=0;i<count;++i){const result=core.sdl_loop_tick(app,1/60,16);if(result)throw Error('Native tick failed '+result+' '+this.networkError()+' '+JSON.stringify(Array.from(new Int32Array(core.memory.buffer,core.diagnostics(app),16))));}return nativeStatus();},

@@ -39,7 +39,7 @@ test('diagnostic fixture exports never enter ordinary or production multiplayer 
 });
 test('network admission exports are multiplayer-only, not fixture-only',()=>{
   const ordinary=exports('sdl3'),multiplayer=exports('multiplayer'),fixture=exports('multiplayer-fixtures');
-  for(const name of ['multiplayer_session_build','multiplayer_wire_apply','multiplayer_session_ready',
+  for(const name of ['multiplayer_spectator_connect','multiplayer_spectator_status','multiplayer_session_build','multiplayer_wire_apply','multiplayer_session_ready',
     'multiplayer_capture_local','multiplayer_capture_input','multiplayer_input_build','multiplayer_netplay_status',
     'multiplayer_connect','multiplayer_network_poll','multiplayer_network_error','multiplayer_driver_status','multiplayer_reconcile','multiplayer_canonical_state']){
     assert.ok(!ordinary.has(name),name+' leaked into ordinary WASM');

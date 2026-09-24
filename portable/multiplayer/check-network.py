@@ -55,12 +55,15 @@ with sync_playwright() as pw:
             case={'players':count,'passed':False,'phase':'boot','checkpoints':[]};report['cases'].append(case);save()
             try:
                 for endpoint in range(count+(1 if args.mode=='packets' else 0)):
+                    case['bootEndpoint']=endpoint;case['bootStep']='context';save()
                     seat=endpoint if endpoint<count else 0
                     context=browser.new_context(service_workers='block');contexts.append(context)
                     if args.mode=='relay':context.add_init_script("Object.defineProperty(globalThis,'RTCPeerConnection',{value:undefined,configurable:true})")
                     page=context.new_page();pages.append(page)
                     page.on('pageerror',lambda error:report['errors'].append(str(error)))
-                    page.goto(args.url);page.wait_for_function('window.multiplayerSmoke !== undefined',timeout=120000)
+                    page.goto(args.url);case['bootStep']='module';save()
+                    page.wait_for_function('window.multiplayerSmoke !== undefined',timeout=120000)
+                    case['bootStep']='native-prepare';save()
                     call(page,'v=>multiplayerSmoke.start(...v)',[1234,list(range(count)),seat,[0x12345678,0x10203040]])
                 case['identities']=[call(page,'multiplayerSmoke.identity()') for page in pages]
                 oracle=pages.pop() if args.mode=='packets' else None

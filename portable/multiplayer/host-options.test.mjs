@@ -7,9 +7,13 @@ const base={netplayMode:'lan',netplayUrl:'wss://relay.test/peer?room=th08mp-demo
  netplayPlayerCount:2,netplayPlayer:0,netplaySeed:1234,netplayDifficulty:1,
  netplayLoadouts:[{character:4,shot:0},{character:11,shot:0}]};
 function fake(){
- const c={memory:new WebAssembly.Memory({initial:1}),words:[],freed:[],connects:[],allocate:()=>128,deallocate:p=>c.freed.push(p),
+ let cursor=128;
+ const c={memory:new WebAssembly.Memory({initial:1}),words:[],freed:[],connects:[],observers:[],allocate:n=>{const p=cursor;cursor+=n+16;return p;},deallocate:p=>c.freed.push(p),
   multiplayer_configure(app,p,n){assert.equal(app,42);c.words=Array.from(new Uint32Array(c.memory.buffer,p,n));c.memory.grow(1);return 1;},
-  multiplayer_connect(app,p){assert.equal(app,42);const b=new Uint8Array(c.memory.buffer);let end=p;while(b[end])++end;c.connects.push(new TextDecoder().decode(b.subarray(p,end)));return 1;}};
+  multiplayer_connect(app,p){assert.equal(app,42);const b=new Uint8Array(c.memory.buffer);let end=p;while(b[end])++end;c.connects.push(new TextDecoder().decode(b.subarray(p,end)));return 1;},
+  multiplayer_spectator_connect(app,p,id){assert.equal(app,42);c.memory.grow(1);const b=new Uint8Array(c.memory.buffer);
+   const read=q=>{let end=q;while(b[end])++end;return new TextDecoder().decode(b.subarray(q,end));};
+   c.observers.push({url:read(p),id:read(id)});return 1;}};
  return c;
 }
 test('host maps TH08 twelve loadouts and room identity without controlling frames',async()=>{
@@ -29,6 +33,22 @@ test('malformed room/role/config fails before a native mutation',async()=>{
    const c=fake();await assert.rejects(configureMultiplayer(c,42,{...base,...changed},{crypto:webcrypto}));assert.equal(c.words.length,0);
  }
  assert.equal(validateMultiplayerOptions({}),null);
+});
+
+test('admitted spectator gets a receive-only connection and the same room identity',async()=>{
+ const options={...base,netplaySpectator:true,netplaySpectatorId:'viewer_1234',netplayPlayer:-1};
+ const c=fake();assert.equal(await configureMultiplayer(c,42,options,{crypto:webcrypto}),true);
+ assert.equal(c.connects.length,0);assert.deepEqual(c.observers,[{url:base.netplayUrl,id:'viewer_1234'}]);
+ assert.equal(c.words[2],0,'internal authoritative P1 lane is not an admitted gameplay seat');
+ const player=fake();await configureMultiplayer(player,42,base,{crypto:webcrypto});
+ assert.deepEqual(c.words.slice(5,7),player.words.slice(5,7));
+ assert.equal(c.freed.length,3);
+ for(const id of ['', 'bad', '../bad_viewer', 'a'.repeat(65)]){
+  const c=fake();await assert.rejects(configureMultiplayer(c,42,{...options,netplaySpectatorId:id},{crypto:webcrypto}));
+  assert.equal(c.words.length,0);
+ }
+ const missing=fake();delete missing.multiplayer_spectator_connect;
+ await assert.rejects(configureMultiplayer(missing,42,options,{crypto:webcrypto}));assert.equal(missing.words.length,0);
 });
 test('diagnostics never admit input and survive native memory growth',()=>{
  const memory=new WebAssembly.Memory({initial:1});const target={};let hashes=0;

@@ -1,5 +1,6 @@
 #pragma once
 #include "NetplayRuntime.hpp"
+#include "SpectatorStream.hpp"
 #include "../game/Types.hpp"
 #include <eagler/netplay/BrowserPeerTransport.hpp>
 #include <eagler/netplay/SessionChannel.hpp>
@@ -11,6 +12,15 @@ class NetworkConnection final:private Netplay::PeerTransport {
 public:
     explicit NetworkConnection(NetplayRuntime& n):net(n),channel(*this){}
     bool Connect(const char* relay);
+    bool ConnectSpectator(const char* relay,const char* id);
+    bool ConsumeSpectator();
+    void PublishConfirmedSpectatorFrames();
+    void FinishSpectator();
+    bool SpectatorFinished()const{return spectator_finished;}
+    std::size_t SpectatorBacklog()const{return spectator_frames.Size();}
+    u32 SpectatorReceived()const{return spectator_frames.Received();}
+    u32 SpectatorPublished()const{return spectator_publish;}
+    bool SpectatorPublishFailed()const{return spectator_publish_failed;}
     bool Pump(bool expects_input);
     bool Captured(u32 frame);
     bool CanRetire()const;
@@ -26,6 +36,10 @@ private:
     NetplayRuntime& net;
     Netplay::BrowserPeerTransport transport;
     Netplay::SessionChannel channel;
+    SpectatorStream spectator_frames;
+    u32 spectator_publish=0;
+    bool spectator_finished=false,spectator_publish_failed=false;
+    const char* spectator_error="";
     bool enabled=false,invalid_input=false;
     static std::uint64_t Now();
     bool IsOpen()const override{return transport.IsOpen();}

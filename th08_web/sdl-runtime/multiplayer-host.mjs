@@ -5,7 +5,9 @@ export function validateMultiplayerOptions(value={}) {
  const url=new URL(value.netplayUrl),room=url.searchParams.get('room'),run=url.searchParams.get('run');
  if(!['ws:','wss:'].includes(url.protocol)||url.username||url.password||!room||!/^\d+$/.test(run||'')||Number(run)<1)
   throw Error('Invalid TH08 multiplayer room/run URL');
- const count=value.netplayPlayerCount,seat=value.netplayPlayer;
+ const spectator=value.netplaySpectator===true,spectatorId=String(value.netplaySpectatorId||'');
+ if(spectator&&!/^[A-Za-z0-9_-]{8,64}$/.test(spectatorId))throw Error('Invalid TH08 spectator admission');
+ const count=value.netplayPlayerCount,seat=spectator?0:value.netplayPlayer;
  if(![2,3].includes(count)||!Number.isInteger(seat)||seat<0||seat>=count)
   throw Error('Invalid TH08 multiplayer seat');
  if(!Number.isInteger(value.netplaySeed)||value.netplaySeed<0||value.netplaySeed>65535||
@@ -18,8 +20,7 @@ export function validateMultiplayerOptions(value={}) {
    throw Error('Invalid TH08 multiplayer loadout');
   return {character:v.character,shot:0};
  });
- if(value.netplaySpectator)throw Error('TH08 spectator admission is not connected in this build');
- return {url,room,run,count,seat,seed:value.netplaySeed,difficulty:value.netplayDifficulty,loadouts};
+ return {url,room,run,count,seat,spectator,spectatorId,seed:value.netplaySeed,difficulty:value.netplayDifficulty,loadouts};
 }
 function string(core,text,fn){
  const bytes=new TextEncoder().encode(text+'\0'),pointer=core.allocate(bytes.length);
@@ -29,7 +30,8 @@ function string(core,text,fn){
 }
 export async function configureMultiplayer(core,app,options,{crypto=globalThis.crypto}={}) {
  const o=validateMultiplayerOptions(options);if(!o)return false;
- if(!app||typeof core.multiplayer_configure!=='function'||typeof core.multiplayer_connect!=='function')
+ if(!app||typeof core.multiplayer_configure!=='function'||
+    typeof core[o.spectator?'multiplayer_spectator_connect':'multiplayer_connect']!=='function')
   throw Error('TH08 multiplayer Runtime capability is missing');
  const identity=new TextEncoder().encode(`th08mp:${o.url.origin}${o.url.pathname}:${o.room}:${o.run}`);
  const digest=new DataView(await crypto.subtle.digest('SHA-256',identity));
@@ -40,7 +42,9 @@ export async function configureMultiplayer(core,app,options,{crypto=globalThis.c
   new Uint32Array(core.memory.buffer,pointer,words.length).set(words);
   if(!core.multiplayer_configure(app,pointer,words.length))throw Error('TH08 native admission rejected the room configuration');
  }finally{core.deallocate(pointer);}
- if(!string(core,o.url.href,p=>core.multiplayer_connect(app,p)))throw Error('TH08 native transport rejected the room');
+ if(!string(core,o.url.href,p=>o.spectator?
+    string(core,o.spectatorId,id=>core.multiplayer_spectator_connect(app,p,id)):
+    core.multiplayer_connect(app,p)))throw Error('TH08 native transport rejected the room');
  return true;
 }
 export function networkError(core,app){
@@ -62,7 +66,12 @@ export function updateNetworkDiagnostics(core,app,target=globalThis) {
   target.__eaglerNetplayLanHashes=Object.create(null);target.__eaglerNetplayHashFrame=-1;
  }
  target.__eaglerNetplayGeneration=state[10];
- target.__eaglerNetplayTransport=driver[12]===1?'rtc':driver[12]===2?'relay':'';
+ target.__eaglerNetplayTransport=driver[12]===1?'rtc':driver[12]===2?'relay':driver[12]===3?'spectator':'';
+ if(core.multiplayer_spectator_status){
+  const p=core.multiplayer_spectator_status(app),s=Array.from(new Uint32Array(core.memory.buffer,p,8));
+  target.__eaglerNetplaySpectator=!!s[1];target.__eaglerNetplaySpectatorFinished=!!s[2];
+  target.__eaglerNetplaySpectatorBacklog=s[3];
+ }
  if(driver[2]){target.__eaglerNetplayFailed=true;target.__eaglerNetplayError=networkError(core,app);}
  // Read-only debugging follows a bounded sample; no hash participates in
  // frame admission or masks a native desynchronization.

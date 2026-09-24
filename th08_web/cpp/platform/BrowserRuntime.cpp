@@ -61,7 +61,7 @@ const std::vector<u8>& BrowserRuntime::file(const char* p){
 }
 bool BrowserRuntime::write(const char* p,const u8* b,u32 size){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if(discard_network_shutdown_writes)return true;
+    if(discard_network_shutdown_writes||app.session.netplay.Spectator())return true;
 #endif
     const auto name=path(p);std::vector<u8> extended;
     // Upstream th08_save_replay appends the thprac 'USER'/'PRAC' block right
@@ -255,6 +255,12 @@ bool BrowserRuntime::connect_network(const char* relay){
     if(!app.session.netplay.Configured()||app.session.netplay.LastFrame()!=Netplay::INVALID_FRAME)return false;
     if(!multiplayer_driver)multiplayer_driver=std::make_unique<multiplayer::RollbackDriver>(*this);
     return multiplayer_driver->Connect(relay);
+}
+bool BrowserRuntime::connect_spectator(const char* relay,const char* id){
+    if(!app.session.netplay.Configured()||app.session.netplay.LastFrame()!=Netplay::INVALID_FRAME||
+       app.session.multiplayer_session.started)return false;
+    if(!multiplayer_driver)multiplayer_driver=std::make_unique<multiplayer::RollbackDriver>(*this);
+    return multiplayer_driver->ConnectSpectator(relay,id);
 }
 bool BrowserRuntime::pump_network(){return !multiplayer_driver||multiplayer_driver->Pump();}
 bool BrowserRuntime::bind_audio_events(multiplayer::AudioEvents* events){return audio&&audio->bind_audio_events(events);}

@@ -17,6 +17,7 @@ public:
     bool Pump();
     bool Reconcile();
     bool Connect(const char*);
+    bool ConnectSpectator(const char*,const char*);
     void Shutdown();
     bool Failed()const{return failed;}
     bool FrameOpen()const{return open;}

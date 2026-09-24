@@ -18,8 +18,21 @@ window.host={
   pending.set(request,{resolve,reject,timer});iframe.contentWindow.postMessage({protocol,game:'th08',epoch,request,command,...fields},location.origin);
  });},
  snapshot(){const r=iframe.contentWindow.__th08Runtime;if(!r?.app)return {app:0};const {core,app}=r;
-  const words=(name,n)=>{const p=core[name](app);return Array.from(new Uint32Array(core.memory.buffer,p,n));};
-  return {app,net:words('multiplayer_netplay_status',12),driver:words('multiplayer_driver_status',16),state:words('multiplayer_status',44),canonical:words('multiplayer_canonical_state',13)};},
+  const words=(name,n)=>{const p=core[name](app),View=name==='multiplayer_status'?Int32Array:Uint32Array;return Array.from(new View(core.memory.buffer,p,n));};
+  return {app,net:words('multiplayer_netplay_status',12),driver:words('multiplayer_driver_status',16),state:words('multiplayer_status',44),canonical:words('multiplayer_canonical_state',13),
+   spectator:core.multiplayer_spectator_status?words('multiplayer_spectator_status',8):null};},
+ nativeCapture(frame,buttons){const {core,app}=iframe.contentWindow.__th08Runtime;return core.multiplayer_capture_local(app,frame,buttons);},
+ spectatorWriteProbe(){const {core,app}=iframe.contentWindow.__th08Runtime;
+  const p=core.multiplayer_netplay_status(app),next=new Uint32Array(core.memory.buffer,p,12)[3];
+  const buffer=core.allocate(2048);
+  try{return {local:core.multiplayer_capture_local(app,next,1),analog:core.multiplayer_capture_input(app,next,2,2,10,0,6),
+   ready:core.multiplayer_session_ready(app),hello:core.multiplayer_session_build(app,1,buffer,2048),
+   packet:core.multiplayer_input_build(app,1,next,1,buffer,2048),wire:core.multiplayer_wire_apply(app,buffer,0),
+   practice:core.practice_cheats(app,1)};}finally{core.deallocate(buffer);}
+ },
+ observerPeer(){const t=iframe.contentWindow.__eaglerPeerTransport;
+  return {route:t?.route||'',peers:t?.peers?.size||0,canSend:typeof t?.send==='function'||typeof t?.sendTo==='function'};},
+ finishCallback(){const r=iframe.contentWindow.__th08Runtime;r.Module.runtimeFinish(0,0);},
  tickTo(target){const r=iframe.contentWindow.__th08Runtime,{core,app}=r;
   if(!core.multiplayer_network_poll(app))throw Error('Network poll failed');
   const p=core.multiplayer_netplay_status(app),next=new Uint32Array(core.memory.buffer,p,12)[3];
@@ -34,17 +47,23 @@ window.host={
   await iframe.contentWindow.__th08Runtime.stop();await done;return this.events.filter(e=>e.event==='exit');
  },
  directories(){return iframe.contentWindow.__th08Runtime.Module.FS.readdir('/').filter(p=>p.startsWith('savesth08'));},
- async lobby(relay,room){
+ async lobby(relay,room,count=2,spectatorId=''){
   const open=id=>new Promise((resolve,reject)=>{const ws=new WebSocket(relay+'/?room='+room+'&lobby='+id),queue=[],waiters=[];
    ws.onerror=()=>reject(Error('Lobby error'));ws.onmessage=e=>{const v=JSON.parse(e.data),w=waiters.shift();w?w(v):queue.push(v);};
    ws.onopen=()=>resolve({ws,next:()=>queue.length?Promise.resolve(queue.shift()):new Promise((done,fail)=>{const t=setTimeout(()=>fail(Error('Lobby timeout')),10000);waiters.push(v=>{clearTimeout(t);done(v);});})});});
-  const clients=[await open('host_contract_p1'),await open('host_contract_p2')];window.__hostLobbies=clients;
+  const clients=[];for(let seat=0;seat<count;seat++)clients.push(await open('host_contract_p'+(seat+1)));
+  window.__hostLobbies=clients.slice();
   for(const c of clients)await c.next();
-  clients.forEach((c,seat)=>c.ws.send(JSON.stringify({type:'take-seat',seat,loadout:seat})));
   const awaitState=async(predicate)=>{for(;;){const v=await clients[0].next();if(v.type==='error')throw Error(JSON.stringify(v));if(predicate(v))return v;}};
-  const state=await awaitState(v=>v.type==='state'&&v.room?.seats?.[0]&&v.room?.seats?.[1]);
+  clients[0].ws.send(JSON.stringify({type:'take-seat',seat:0,loadout:0}));
+  await awaitState(v=>v.type==='state'&&v.room?.seats?.[0]);
+  clients[0].ws.send(JSON.stringify({type:'settings',playerCount:count,difficulty:1}));
+  await awaitState(v=>v.type==='state'&&v.room?.playerCount===count&&v.room?.difficulty===1);
+  clients.forEach((c,seat)=>{if(seat)c.ws.send(JSON.stringify({type:'take-seat',seat,loadout:seat}));});
+  if(spectatorId){const viewer=await open(spectatorId);window.__hostLobbies.push(viewer);await viewer.next();viewer.ws.send(JSON.stringify({type:'spectate'}));}
+  const state=await awaitState(v=>v.type==='state'&&v.room?.seats?.slice(0,count).every(Boolean)&&(!spectatorId||v.room.spectatorCount===1));
   for(const c of clients)c.ws.send(JSON.stringify({type:'set-ready',ready:true,settingsVersion:state.room.settingsVersion}));
-  await awaitState(v=>v.type==='state'&&v.room.seats[0]?.ready&&v.room.seats[1]?.ready);
+  await awaitState(v=>v.type==='state'&&v.room.seats.slice(0,count).every(s=>s?.ready));
   clients[0].ws.send(JSON.stringify({type:'start'}));return await awaitState(v=>v.type==='start');
  },
  lobbyOpen(){return (window.__hostLobbies||[]).every(c=>c.ws.readyState===WebSocket.OPEN);}
