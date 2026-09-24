@@ -15,9 +15,60 @@ let Module,core,app=0,launched=false,first=false,closing=false,language=query.ge
 let practice;
 let frames=0,lastHealth=0,lastFrame=0,maxGap=0,lastPresented=0,saveTimer=null;
 const cancelTouches=bindOutsideTouches(document,canvas,()=>core,()=>launched&&options.touchEnabled);
-const error=reason=>{const message=reason?.stack||String(reason);document.querySelector('#error').textContent=message;emit('error',{message,error:message});console.error(reason);};
+const error=reason=>{const message=reason?.stack||String(reason);if(multiplayerRuntime){window.__eaglerNetplayFailed=true;window.__eaglerNetplayError=message;}document.querySelector('#error').textContent=message;emit('error',{message,error:message});console.error(reason);};
 const u32=(ptr,count)=>new Uint32Array(core.memory.buffer,ptr,count);
 const cstring=(text,fn)=>{const bytes=new TextEncoder().encode(text+'\0'),p=core.graphics_allocate(bytes.length);try{new Uint8Array(core.memory.buffer,p,bytes.length).set(bytes);return fn(p);}finally{core.graphics_free(p);}};
+const netplayHashes=Object.create(null);
+function updateNetplayDiagnostics(){
+ if(!multiplayerRuntime||!app||!core.multiplayer_netplay_status)return;
+ const state=Array.from(new Int32Array(core.memory.buffer,core.multiplayer_netplay_status(app),11));
+ const transport=Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_transport_status(app),15));
+ const frame=state[3];
+ window.__eaglerNetplayLanActive=state[9]===1;
+ window.__eaglerNetplayLanFrame=frame;
+ window.__eaglerNetplayLanConfirmed=state[4]>=0?state[4]:undefined;
+ window.__eaglerNetplayTransport=transport[13]===1?'rtc':transport[13]===2?'relay':transport[13]===3?'spectator':'';
+ const lifecycle=new Int32Array(core.memory.buffer,core.multiplayer_lifecycle_status(app),12);
+ window.__eaglerNetplayLanRollback=lifecycle[8];
+ window.__eaglerNetplayLanResimulated=lifecycle[9];
+ if(frame>=0&&frame<=1000000&&state[9]===1){
+  const hash=new Uint32Array(core.memory.buffer,core.multiplayer_portable_hashes(app),12);
+  if(hash[0]===1){netplayHashes[String(frame)]=String(hash[1]>>>0);delete netplayHashes[String(frame-512)];}
+ }
+ window.__eaglerNetplayLanHashes=netplayHashes;
+}
+async function configureNetplay(){
+ if(!multiplayerRuntime||options.netplayMode!=='lan')return;
+ const url=new URL(options.netplayUrl),room=url.searchParams.get('room'),run=url.searchParams.get('run');
+ const count=options.netplayPlayerCount,seat=options.netplaySpectator?0:options.netplayPlayer;
+ const loadouts=options.netplayLoadouts;
+ if(!['ws:','wss:'].includes(url.protocol)||!room||!run||![2,3].includes(count)||
+    !Number.isInteger(seat)||seat<0||seat>=count||
+    !Number.isInteger(options.netplaySeed)||options.netplaySeed<0||options.netplaySeed>65535||
+    !Number.isInteger(options.netplayDifficulty)||options.netplayDifficulty<0||options.netplayDifficulty>4||
+    !Array.isArray(loadouts)||loadouts.length!==count)throw Error('Invalid TH10 multiplayer options');
+ const identity=new TextEncoder().encode(`th10mp:${url.origin}${url.pathname}:${room}:${run}`);
+ const digest=new DataView(await crypto.subtle.digest('SHA-256',identity));
+ const low=digest.getUint32(0,true),high=digest.getUint32(4,true)||1;
+ const words=[2,count,seat,options.netplayDifficulty,options.netplaySeed,low,high];
+ for(let i=0;i<3;i++){
+  const value=loadouts[i]||{character:0,shot:0};
+  if(!Number.isInteger(value.character)||value.character<0||value.character>1||
+     !Number.isInteger(value.shot)||value.shot<0||value.shot>2)throw Error('Invalid TH10 multiplayer loadout');
+  words.push(value.character,value.shot);
+ }
+ const pointer=core.files_allocate(words.length*4);
+ try{
+  new Uint32Array(core.memory.buffer,pointer,words.length).set(words);
+  if(!core.multiplayer_configure(app,pointer,words.length))throw Error('TH10 multiplayer session rejected');
+ }finally{core.files_free(pointer);}
+ const connected=options.netplaySpectator
+  ?cstring(options.netplayUrl,relay=>cstring(options.netplaySpectatorId,id=>core.multiplayer_spectator_connect(app,relay,id)))
+  :cstring(options.netplayUrl,relay=>core.multiplayer_connect(app,relay));
+ if(!connected)throw Error('TH10 multiplayer transport rejected');
+ window.__eaglerNetplayFailed=false;window.__eaglerNetplayError='';
+ updateNetplayDiagnostics();
+}
 const replayFiles=createReplayFilePolicy({game:10,multiplayer:multiplayerRuntime,validateMultiplayer(bytes){
  if(typeof core.multiplayer_replay_validate!=='function')throw Error('Multiplayer Replay capability is missing');
  const p=core.files_allocate(bytes.length);if(!p)throw Error('Replay allocation failed');
@@ -100,11 +151,12 @@ async function resumeForegroundAudio(forcePause=false){
  return resumeRuntimeAudio(Module,core,()=>!!core&&launched&&!document.hidden);
 }
 async function stop(){if(closing)return;closing=true;try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();await sync(false);app=0;launched=false;updateReplaySeek();emit('exit',{code:0,status:'success'});}finally{closing=false;}}
-function launch(){
+async function launch(){
  if(launched)return;
  ensureSharedFontAlias(Module,language);
  const mode=Module.touhouMusicMode||'none';music=mode!=='none'&&mode!=='midi';core.sdl_ogg_decode_mode?.(options.oggDecodeMode==='full');
- core.sdl_music_enabled?.(music);app=core.sdl_game_open(false,Date.now()&65535);if(!app)throw Error('C++ game initialization failed');
+ core.sdl_music_enabled?.(music);app=core.sdl_game_open(false,options.netplayMode==='lan'?options.netplaySeed:Date.now()&65535);if(!app)throw Error('C++ game initialization failed');
+ try{await configureNetplay();}catch(reason){core.sdl_game_close();app=0;throw reason;}
  applyOptions();launched=true;first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
  canvas.focus({preventScroll:true});core.sdl_loop_pause(1);if(!document.hidden)void resumeForegroundAudio();core.sdl_loop_start(app);
  emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:'eagler-touhou/1',version:'3.5.1-sdl3'});
@@ -119,7 +171,7 @@ async function command(message){
  case 'touch-cancel':cancelTouches();return {};
  case 'direct-touch':directTouch(core,canvas,message,{width:innerWidth,height:innerHeight});return {};
  case 'touch-controls':touchControls(core,options,message);return {};
- case 'launch':launch();return {};
+ case 'launch':await launch();return {};
  case 'sync':await save();return {};
  case 'list':{const files=[];for(const dir of ['', '/replay'])for(const name of Module.FS.readdir(root()+dir)){const path=(dir+'/'+name).replace(/^\//,'');try{storage.relativeSave(path);}catch{continue;}const full=root()+'/'+path,s=Module.FS.stat(full);if(Module.FS.isFile(s.mode)){const bytes=Module.FS.readFile(full);files.push({path:replayFiles.exported(path,bytes),size:s.size});}}return {files};}
  case 'read':{const path=replayFiles.physical(storage.relativeSave(message.path));return {bytes:Array.from(Module.FS.readFile(root()+'/'+path))};}
@@ -166,6 +218,7 @@ const initialized=(async()=>{
  Module.runtimeFinish=(result,duration)=>{
   updateReplaySeek();
   practice?.tick();
+  updateNetplayDiagnostics();
   const now=performance.now(),p=u32(core.sdl_stats(),6)[5];if(p!==lastPresented){frames++;if(lastFrame)maxGap=Math.max(maxGap,now-lastFrame);lastFrame=now;lastPresented=p;if(!first){first=true;emit('first-frame');}}
   if(result||core.application_error(app)){if(core.application_error(app)){error('Game error '+core.application_error(app));core.sdl_loop_pause(1);}else queueMicrotask(()=>void stop().catch(error));}
   if(now-lastHealth>=1000){emit('frame-health',{fps:frames*1000/(now-lastHealth),maxGapMs:maxGap,frameMs:duration});const a=u32(core.sdl_audio_stats(),12);emit('audio-health',{queuedMs:a[5]*1000/44100,minQueuedMs:a[7]*1000/44100,backend:'script',underruns:0,robust:true});frames=0;maxGap=0;lastHealth=now;}

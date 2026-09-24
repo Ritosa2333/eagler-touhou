@@ -140,8 +140,9 @@ test('normal and multiplayer packages emit isolated manifests with verified iden
     for (const output of [normal.out, multiplayer.out, lab.out]) {
       assert(existsSync(resolve(output, 'practice-loader.mjs')));
       for (const optional of ['practice.mjs', 'practice-config.mjs', 'practice-sections.mjs'])
-        assert.equal(existsSync(resolve(output, optional)), false, optional);
+        assert.equal(existsSync(resolve(output, optional)), output === multiplayer.out, optional);
     }
+    assert.equal(multiplayerManifest.features.thprac, false);
     const labManifest = JSON.parse(readFileSync(resolve(lab.out, 'manifest.json'), 'utf8'));
     assert.equal(labManifest.profile, 'presentation-lab');
     assert.equal(labManifest.features.multiplayer, undefined);

@@ -115,7 +115,7 @@ export function packageEagler({
   const runtimeNames = [
     'shell.mjs', 'eagler-host.mjs', 'save-storage.mjs',
     ...(game === 'th10' ? ['practice-loader.mjs'] : []),
-    ...(thprac ? ['practice.mjs', 'practice-config.mjs', 'practice-sections.mjs'] : []),
+    ...(thprac || multiplayer ? ['practice.mjs', 'practice-config.mjs', 'practice-sections.mjs'] : []),
   ];
   const names = [
     entry, 'manifest.json', ...runtimeNames, 'motion-replay.mjs', ...(game==='th10'?['replay-file-policy.mjs']:[]),
