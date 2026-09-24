@@ -5,10 +5,17 @@
 #include "PlayerBombPatterns.hpp"
 #include "PlayerCollision.hpp"
 #include "PlayerGraze.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/AnalogMovement.hpp"
+#endif
 namespace th08 {
 // One owner for the state shared by all recovered player phases. In particular,
 // shots, spells and the effect system use the same damage/cancellation pools.
 struct PlayerSimulationState {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    multiplayer::AnalogInput analog;
+    u32 unlimited_movement_used=0;
+#endif
     PlayerMotionState motion;PlayerLifeState life;PlayerLifeContext context;PlayerBombState bomb;PlayerBombContext bomb_input;
     PlayerShotsState shots;PlayerBombObjects bomb_objects;PlayerFrameState frame;PlayerMotionInput input;Vec3 enemy_origin;i32 cancel_item=6;Timer item_gauge_lock;
     // GameManager 0164d2c8, advanced before the player callback. Player's

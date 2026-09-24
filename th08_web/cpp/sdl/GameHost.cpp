@@ -56,12 +56,26 @@ constexpr SDL_GamepadButton gamepad_slots[]={
 int gamepad_axis(SDL_GamepadAxis axis){const int value=SDL_GetGamepadAxis(gamepad,axis);return value<0?value*1000/32768:value*1000/32767;}
 constexpr const char* warmAnimations[]={"etama.anm","enemy.anm","front.anm","times.anm","stg1bg.anm","stg1enm.anm","eff01.anm","stg1txt.anm","stg2bg.anm","stg2enm.anm","eff02.anm","stg2txt.anm","player00.anm","player01.anm","player02.anm","player03.anm","staff01.anm"};
 constexpr u32 warmCount=sizeof(warmAnimations)/sizeof(*warmAnimations);
-touhou::input::TouchState touch_state(){touhou::input::TouchState s;if(!runtime)return s;const auto& a=runtime->app;const auto& g=a.game;const auto& p=g.player_state;
+touhou::input::TouchState touch_state(){touhou::input::TouchState s;if(!runtime)return s;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    auto& a=runtime->app;auto& g=a.game;
+    if(a.in_game()&&(g.globals.game_flags&8)){s.context=3;return s;}
+    if(!a.in_game()||a.loading_game()||!g.ready()||g.paused||g.menus.context.pause_state||(g.globals.game_flags&0x60))return s;
+    const auto seat=a.session.local_player;if(seat>=a.session.player_count)return s;
+    auto& player=g.pilot(seat);const auto& p=player.status();if(p.context.game_over)return s;
+    s.context=g.dialogue.present()?2:1;s.ready=p.life.state==0||p.life.state==3;
+    s.instance=i32(g.globals.stage+1+a.session.netplay.Generation()*16);
+    s.x=p.motion.movement.position.x;s.y=p.motion.movement.position.y;
+    s.fast=player.profile(false).normal_speed*player.timing.rate;s.slow=player.profile(true).focus_speed*player.timing.rate;
+    s.min_x=p.input.minimum.x;s.min_y=p.input.minimum.y;s.max_x=s.min_x+p.input.extent.x;s.max_y=s.min_y+p.input.extent.y;return s;
+#else
+    const auto& a=runtime->app;const auto& g=a.game;const auto& p=g.player_state;
     if(a.in_game()&&(g.globals.game_flags&8)){s.context=3;return s;}
     if(!a.in_game()||a.loading_game()||!g.ready()||g.paused||g.menus.context.pause_state||p.context.game_over||(g.globals.game_flags&0x60))return s;
     s.context=g.dialogue.present()?2:1;s.ready=p.life.state!=1&&p.life.state!=2;s.instance=g.globals.stage+1;
     s.x=p.motion.movement.position.x;s.y=p.motion.movement.position.y;s.fast=g.shots[0].settings().normal_speed*g.player.timing.rate;s.slow=g.shots[1].settings().focus_speed*g.player.timing.rate;
     s.min_x=p.input.minimum.x;s.min_y=p.input.minimum.y;s.max_x=s.min_x+p.input.extent.x;s.max_y=s.min_y+p.input.extent.y;return s;
+#endif
 }
 int touch_stage(){return runtime&&runtime->app.in_game()?runtime->app.game.globals.stage:-1;}
 void sync_touch_context(const touhou::input::TouchState& state){const int previous=touch.current_context();if(runtime&&previous!=state.context&&(previous==1||previous==2))runtime->motion.touch_cancel(touch_stage());}
@@ -91,8 +105,19 @@ void poll(){if(!runtime)return;SDL_Event event;while(SDL_PollEvent(&event)){
     }else runtime->controller_state(0,0,nullptr,0,false);
     const int keyboardDpad=th08_keyboard_gamepad_dpad();
     if(keyboardDpad&1)keys[38]=128;if(keyboardDpad&2)keys[40]=128;if(keyboardDpad&4)keys[37]=128;if(keyboardDpad&8)keys[39]=128;
-    const auto state=touch_state();sync_touch_context(state);const auto input=touch.sample(state,SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);for(int i=0;i<256;i++)if(input.keys[i])keys[i]=128;
+    const auto state=touch_state();sync_touch_context(state);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    const auto& net=runtime->app.session.netplay;
+    const bool sample=!net.Configured()||(net.CanStart()&&!net.Correcting()&&!net.HasLocal(net.NextFrame()));
+    if(sample){
+#endif
+    const auto input=touch.sample(state,SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);for(int i=0;i<256;i++)if(input.keys[i])keys[i]=128;
     runtime->motion.target(input.motion,input.x,input.y);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    runtime->set_device_motion(input.motion,input.motion?input.x-state.x:0,input.motion?input.y-state.y:0,
+        touch.enabled&&state.context==1,input.keys[88]);
+    }
+#endif
     ThpracUi::update_input(*runtime);
     if(ThpracUi::captures_game_input())for(const int vk:{16,27,37,38,39,40,88,90})keys[vk]=0;
 }

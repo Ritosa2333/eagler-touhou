@@ -151,6 +151,7 @@ public:
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     // Exactly one committed input lane per active seat per logical tick.
     bool commit_inputs(const u16* buttons,u32 count);
+    bool commit_frame_inputs(const Netplay::FrameInput*,u32);
 #endif
     // Application-owned chains run the same jobs alongside the supervisor,
     // loading display and FPS counter, preserving their original priorities.

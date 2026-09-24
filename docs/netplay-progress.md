@@ -332,11 +332,56 @@ build-driver-verified-production.log, build-driver-verified-fixtures.log and
 build-driver-verified-ordinary.log. Native netplay/cooperation/audio/files units,
 four build-isolation tests and diff whitespace checks pass.
 
+## Authoritative analog input and Runtime host boundary
+
+The room input ABI is revision 3. Validated joystick vectors and direct-touch
+displacements enter each native Player through commit_frame_inputs; they are
+recorded and corrected by the same common input history as keyboard buttons.
+Physical touch sampling runs once per uncaptured local frame, and local
+coordinates refer to that seat's player rather than implicitly to P1. Missing
+samples use common's bounded prediction, not a second device read. Unlimited
+movement marks the run only when a nonzero movement is actually consumed; the
+marker survives stage transitions. Practice mutation is disabled in the native
+network entry points as well as the host UI.
+
+multiplayer-host.mjs maps the existing Launcher room/run options to the native
+session gate and BrowserPeerTransport. It does not own a simulation loop or
+the parent lobby. The actual shell validates the role/configuration before
+launch, initializes native resources, connects the room, and exposes read-only
+network diagnostics. Storage uses savesth08-multiplayer in both native and
+IDBFS owners; live save import/removal is rejected. Packaging includes this
+Runtime module without declaring an unfinished public TH08MP product.
+
+Evidence under artifacts/multiplayer-tests/:
+
+- network-599523af-7bda-4fc9-a6e2-dbe1e4f4c8a1: production 2P/3P RTC and
+  forced Relay, with native restart/generation and stale-session rejection.
+- network-a99c699f-114d-4b04-b6f7-e9384c424f71: current diagnostic build,
+  2P/3P analog input with delayed/reordered/duplicate packets, independent
+  timely-input reference, canonical owner and framebuffer equality, and the
+  bounded prediction stall. Direct rate-limited, joystick and unlimited
+  displacement are exercised in one short run, not long Replay screenings.
+- network-e29d00dd-8c25-42b1-ba23-110d6628b76a: PRODUCTION Runtime shell and
+  real room/run admission; P2 direct-touch movement and bomb arrive identically
+  on both endpoints, P1 does not move with P2's gesture, live save import is
+  rejected, one exit notification is emitted, the parent lobby survives, and
+  isolated score data survives a newly created iframe/IDBFS mount.
+
+Production WASM:
+`0e7e89691f56b1556f862bc51b06ae46b48ed46eb9265e383e2df81d01118ee5`.
+Diagnostic WASM:
+`547250831e0d19eb4f62405b762cbdcbca9c72fc5cbcbf029233f5e0287aa313`.
+The ordinary build was rebuilt and remains byte-for-byte
+`0d00a84ef6b214d43f2f365a6ffaa8bc6030a89c56b7d53868f3b9295b4cea3f`;
+log: build-input-host-ordinary.log. Host-option/native input units, the four
+build-isolation tests and diff whitespace checks pass. These are automated
+local-browser checks, not human mobile/device or public deployment acceptance.
+
 ## Next implementation boundary
 
-Production networking and automatic correction are connected. MP Replay,
-spectator, authoritative analog/touch and real Launcher room/start/exit/storage
-integration remain separate product work before declaring the complete TH08MP
+Production networking, automatic correction, authoritative analog/touch and
+the Runtime room/start/exit/storage contract are connected. MP Replay,
+spectator and public Launcher product integration remain before declaring the complete TH08MP
 profile. Full-stage coverage, real-device acceptance and public deployment are
 not implied by these focused local-browser tests. No performance change,
 canonical promotion, push or deployment is claimed.

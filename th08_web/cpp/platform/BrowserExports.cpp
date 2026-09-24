@@ -11,7 +11,12 @@ using namespace th08;
 #define EX(name)
 #endif
 extern "C" {
-EX("practice_enable") void browser_practice_enable(BrowserRuntime* r,bool enabled){if(r&&!r->app.in_game()){auto& p=r->app.session.practice;p.enabled=enabled;if(!enabled)p.menu=p.accepted=p.active=false;}}
+EX("practice_enable") void browser_practice_enable(BrowserRuntime* r,bool enabled){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(r&&r->app.session.netplay.Configured())enabled=false;
+#endif
+    if(r&&!r->app.in_game()){auto& p=r->app.session.practice;p.enabled=enabled;if(!enabled)p.menu=p.accepted=p.active=false;}
+}
 EX("practice_status") const i32* browser_practice_status(BrowserRuntime* r){static i32 out[7]{};if(!r)return out;const auto& p=r->app.session.practice;
     out[0]=p.menu;out[1]=r->app.title.context.difficulty;out[2]=r->app.title.context.character;out[3]=p.active;out[4]=p.replay;out[5]=p.cheats;out[6]=p.assisted;return out;}
 EX("practice_tracker_status") const i32* browser_practice_tracker_status(BrowserRuntime* r){static i32 out[7]{};std::fill(out,out+7,0);if(!r)return out;
@@ -19,13 +24,21 @@ EX("practice_tracker_status") const i32* browser_practice_tracker_status(Browser
     out[0]=1;out[1]=app.game.globals.shot;out[2]=Scalar::truncate(n.deaths);out[3]=app.session.practice.tracker_dissolve_count;
     out[4]=Scalar::truncate(n.bombs_used);out[5]=n.captured_spells;out[6]=app.session.practice.tracker_last_spell_captures;return out;}
 EX("practice_configure") bool browser_practice_configure(BrowserRuntime* r,const double* words,u32 count,bool accept){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(r&&r->app.session.netplay.Configured())return false;
+#endif
     if(!r||!r->app.session.practice.enabled||r->app.in_game())return false;auto& p=r->app.session.practice;PracticeConfig config;
     if(!config.decode(words,count)||(accept&&!p.menu))return false;p.configured=config;
     if(accept){p.run=config;p.accepted=true;}return true;
 }
 EX("practice_cancel") void browser_practice_cancel(BrowserRuntime* r){if(!r||!r->app.session.practice.menu)return;auto& p=r->app.session.practice;p.menu=p.accepted=false;
     r->app.title.menus.state.cursor=r->app.title.context.character;r->app.title.menus.ChangeCurrentScreen(TitleCurrentScreen_CharacterSelectPractice);}
-EX("practice_cheats") bool browser_practice_cheats(BrowserRuntime* r,u32 mask){if(!r||!r->app.in_game()||!r->app.session.practice.enabled||r->app.session.practice.replay||mask>63)return false;auto& p=r->app.session.practice;p.cheats=mask;if(mask)p.assisted=true;return true;}
+EX("practice_cheats") bool browser_practice_cheats(BrowserRuntime* r,u32 mask){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(r&&r->app.session.netplay.Configured())return false;
+#endif
+    if(!r||!r->app.in_game()||!r->app.session.practice.enabled||r->app.session.practice.replay||mask>63)return false;auto& p=r->app.session.practice;p.cheats=mask;if(mask)p.assisted=true;return true;
+}
 EX("resident_hits") u32 browser_resident_hits(BrowserRuntime* r){return r->app.library.resident_hits();}
 EX("preload_stats") const u32* browser_preload_stats(BrowserRuntime* r){static u32 out[2];out[0]=r->app.library.preload_count();out[1]=r->app.library.preload_hits();return out;}
 EX("allocate") void* browser_allocate(u32 n){return std::calloc(n,1);}
@@ -63,6 +76,11 @@ EX("multiplayer_configure") u32 browser_multiplayer_configure(BrowserRuntime* r,
     if(candidate.session_id){if(!session.netplay.Reset(candidate))return 0;}
     else{if(session.netplay.Configured()&&session.netplay.LastFrame()!=Netplay::INVALID_FRAME)return 0;session.netplay.Clear();}
     session.multiplayer_session=candidate;
+    if(candidate.session_id){
+        // Live local practice state is not a synchronized room command.
+        auto& p=session.practice;p.enabled=p.menu=p.accepted=p.active=false;p.cheats=0;
+        p.everlasting_bgm=false;
+    }
     r->begin_multiplayer_clock();
     const auto& setup=session.multiplayer_session;
     session.player_count=setup.player_count;session.local_player=setup.local_player;
@@ -88,6 +106,12 @@ EX("multiplayer_wire_apply") u32 browser_multiplayer_wire_apply(BrowserRuntime* 
 EX("multiplayer_session_ready") u32 browser_multiplayer_session_ready(BrowserRuntime* r){return r&&r->app.session.netplay.MarkReady();}
 EX("multiplayer_capture_local") u32 browser_multiplayer_capture_local(BrowserRuntime* r,u32 frame,u32 buttons){
     return r&&buttons<=0x7fff&&r->app.session.netplay.CaptureLocal(frame,Netplay::FrameInput(u16(buttons)));
+}
+EX("multiplayer_capture_input") u32 browser_multiplayer_capture_input(BrowserRuntime* r,u32 frame,u32 buttons,u32 mode,float x,float y,u32 flags){
+    if(!r||buttons>0x7fff||mode>4||flags>7)return 0;
+    Netplay::FrameInput sample{u16(buttons)};sample.analogMode=Netplay::AnalogMode(mode);sample.x=x;sample.y=y;
+    sample.unlimited=flags&1;sample.touchUsed=flags&2;sample.touchBomb=flags&4;
+    return r->app.session.netplay.CaptureLocal(frame,sample);
 }
 EX("multiplayer_input_build") u32 browser_multiplayer_input_build(BrowserRuntime* r,u32 peer,u32 frame,u32 sequence,u8* out,u32 capacity){
     if(!r||!out||peer>=3)return 0;std::vector<u8> bytes;

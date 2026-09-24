@@ -85,6 +85,12 @@ window.multiplayerSmoke={
   }finally{core.deallocate(p);}},
   markReady(){return !!core.multiplayer_session_ready(app);},
   capture(frame,buttons){return !!core.multiplayer_capture_local(app,frame,buttons);},
+  captureInput(frame,buttons,mode=0,x=0,y=0,flags=0){return !!core.multiplayer_capture_input(app,frame,buttons,mode,x,y,flags);},
+  touchConfigure(mode=0,unlimited=false){core.sdl_touch_options(1,unlimited?1:0,1);core.sdl_touch_mode(mode);core.sdl_touch_gestures(1,0);core.sdl_touch_controls(0,0,0,0,0,0);},
+  touch(type,id,x,y){core.sdl_touch(type,id,x,y);},
+  touchControls(shoot,focus,bomb,escape,x=0,y=0){core.sdl_touch_controls(shoot,focus,bomb,escape,x,y);},
+  touchCancel(){core.sdl_touch_cancel();},
+  practiceWriteProbe(){core.practice_enable(app,1);const accepted=!!core.practice_cheats(app,1),p=core.practice_status(app);return {accepted,state:Array.from(new Int32Array(core.memory.buffer,p,7))};},
   inputPacket(peer,frame,sequence=1){const p=core.allocate(2048);try{
     const size=core.multiplayer_input_build(app,peer,frame,sequence,p,2048);if(!size)throw Error('Input packet unavailable');
     return Array.from(new Uint8Array(core.memory.buffer,p,size));

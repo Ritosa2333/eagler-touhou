@@ -1,0 +1,52 @@
+<!doctype html><meta charset="utf-8"><title>TH08 Runtime host contract test</title>
+<style>body{margin:0}iframe{border:0;width:640px;height:480px}</style>
+<script>
+const protocol='eagler-touhou/1';let iframe,epoch=0,serial=0,ready=false;
+const pending=new Map(),events=[];
+window.__eaglerPrepareManagedRuntimeDataV1=async()=>({buffer:await(await fetch('/input/th08.dat')).arrayBuffer()});
+window.addEventListener('message',e=>{
+ const m=e.data;if(e.origin!==location.origin||e.source!==iframe?.contentWindow||m?.protocol!==protocol||m.epoch!==epoch)return;
+ if(m.event){events.push(m);if(m.event==='ready')ready=true;}
+ if(m.request&&pending.has(m.request)){const p=pending.get(m.request);pending.delete(m.request);clearTimeout(p.timer);m.ok?p.resolve(m):p.reject(Error(m.error));}
+});
+window.host={
+ events,
+ open(){iframe?.remove();ready=false;epoch++;iframe=document.createElement('iframe');iframe.src='/runtime/th08.html?managedData=1&gameGeneration=test&runtimeEpoch='+epoch+'&runtimeVariant=multiplayer&manual=1';document.body.append(iframe);},
+ ready(){return ready;},
+ request(command,fields={}){return new Promise((resolve,reject)=>{
+  const request='r'+(++serial),timer=setTimeout(()=>{pending.delete(request);reject(Error('Runtime request timeout '+command));},120000);
+  pending.set(request,{resolve,reject,timer});iframe.contentWindow.postMessage({protocol,game:'th08',epoch,request,command,...fields},location.origin);
+ });},
+ snapshot(){const r=iframe.contentWindow.__th08Runtime;if(!r?.app)return {app:0};const {core,app}=r;
+  const words=(name,n)=>{const p=core[name](app);return Array.from(new Uint32Array(core.memory.buffer,p,n));};
+  return {app,net:words('multiplayer_netplay_status',12),driver:words('multiplayer_driver_status',16),state:words('multiplayer_status',44),canonical:words('multiplayer_canonical_state',13)};},
+ tickTo(target){const r=iframe.contentWindow.__th08Runtime,{core,app}=r;
+  if(!core.multiplayer_network_poll(app))throw Error('Network poll failed');
+  const p=core.multiplayer_netplay_status(app),next=new Uint32Array(core.memory.buffer,p,12)[3];
+  if(next<=target){const code=core.sdl_loop_tick(app,1/60,16);if(code)throw Error('Native Runtime tick failed '+code);}
+  else if(!core.multiplayer_reconcile(app))throw Error('Reconcile failed');return this.snapshot();},
+ physicalTick(){const r=iframe.contentWindow.__th08Runtime;const code=r.core.sdl_loop_tick(r.app,1/60,16);if(code)throw Error('Native tick '+code);return this.snapshot();},
+ async close(){
+  const done=new Promise((resolve,reject)=>{const timer=setTimeout(()=>{window.removeEventListener('message',finish);reject(Error('Runtime exit event timeout'));},10000);
+   function finish(e){if(e.origin===location.origin&&e.source===iframe.contentWindow&&e.data?.protocol===protocol&&e.data.epoch===epoch&&e.data.event==='exit'){clearTimeout(timer);window.removeEventListener('message',finish);resolve();}}
+   window.addEventListener('message',finish);
+  });
+  await iframe.contentWindow.__th08Runtime.stop();await done;return this.events.filter(e=>e.event==='exit');
+ },
+ directories(){return iframe.contentWindow.__th08Runtime.Module.FS.readdir('/').filter(p=>p.startsWith('savesth08'));},
+ async lobby(relay,room){
+  const open=id=>new Promise((resolve,reject)=>{const ws=new WebSocket(relay+'/?room='+room+'&lobby='+id),queue=[],waiters=[];
+   ws.onerror=()=>reject(Error('Lobby error'));ws.onmessage=e=>{const v=JSON.parse(e.data),w=waiters.shift();w?w(v):queue.push(v);};
+   ws.onopen=()=>resolve({ws,next:()=>queue.length?Promise.resolve(queue.shift()):new Promise((done,fail)=>{const t=setTimeout(()=>fail(Error('Lobby timeout')),10000);waiters.push(v=>{clearTimeout(t);done(v);});})});});
+  const clients=[await open('host_contract_p1'),await open('host_contract_p2')];window.__hostLobbies=clients;
+  for(const c of clients)await c.next();
+  clients.forEach((c,seat)=>c.ws.send(JSON.stringify({type:'take-seat',seat,loadout:seat})));
+  const awaitState=async(predicate)=>{for(;;){const v=await clients[0].next();if(v.type==='error')throw Error(JSON.stringify(v));if(predicate(v))return v;}};
+  const state=await awaitState(v=>v.type==='state'&&v.room?.seats?.[0]&&v.room?.seats?.[1]);
+  for(const c of clients)c.ws.send(JSON.stringify({type:'set-ready',ready:true,settingsVersion:state.room.settingsVersion}));
+  await awaitState(v=>v.type==='state'&&v.room.seats[0]?.ready&&v.room.seats[1]?.ready);
+  clients[0].ws.send(JSON.stringify({type:'start'}));return await awaitState(v=>v.type==='start');
+ },
+ lobbyOpen(){return (window.__hostLobbies||[]).every(c=>c.ws.readyState===WebSocket.OPEN);}
+};
+</script>

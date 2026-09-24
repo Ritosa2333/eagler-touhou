@@ -6,6 +6,7 @@ import {bindOutsideTouches} from './eagler-host.mjs';
 import {exportReplayName,importReplayName} from './motion-replay.mjs';
 import {normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,ensureSharedFontAlias,installResources as installHostResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError} from './eagler-host.mjs';
 import {initializeSaveStorage,migrateLegacySaves} from './save-storage.mjs';
+import {validateMultiplayerOptions,configureMultiplayer,updateNetworkDiagnostics,networkError} from './multiplayer-host.mjs';
 const protocol='eagler-touhou/1',game='th08',query=new URLSearchParams(location.search),canvas=document.querySelector('canvas');
 const runtimeVariant=query.get('runtimeVariant')??'normal',multiplayerRuntime=runtimeVariant==='multiplayer';
 const epoch=Number(query.get('runtimeEpoch'));
@@ -15,7 +16,7 @@ let Module,core,app=0,launched=false,first=false,closing=false,language=query.ge
 let practice;
 let frames=0,lastHealth=0,lastFrame=0,maxGap=0,lastPresented=0,saveTimer=null;
 const cancelTouches=bindOutsideTouches(document,canvas,()=>core,()=>launched&&options.touchEnabled);
-const error=reason=>{const message=reason?.stack||String(reason);document.querySelector('#error').textContent=message;emit('error',{message,error:message});console.error(reason);};
+const error=reason=>{const message=reason?.stack||String(reason);if(multiplayerRuntime){window.__eaglerNetplayFailed=true;window.__eaglerNetplayError=message;}document.querySelector('#error').textContent=message;emit('error',{message,error:message});console.error(reason);};
 const u32=(ptr,count)=>new Uint32Array(core.memory.buffer,ptr,count);
 const cstring=(text,fn)=>{const bytes=new TextEncoder().encode(text+'\0'),p=core.allocate(bytes.length);try{new Uint8Array(core.memory.buffer,p,bytes.length).set(bytes);return fn(p);}finally{core.deallocate(p);}};
 let storage;
@@ -64,7 +65,7 @@ async function installRuntimePack(pack){
   Module.FS.writeFile(file.path,file.bytes,{canOwn:true});runtimePackFiles.push(file.path);
  }
 }
-function applyOptions(){applyTouchOptions(core,options);core.sdl_touch_display?.(options.alwaysHitbox?1:0);practice?.configure(options);}
+function applyOptions(){applyTouchOptions(core,options);core.sdl_touch_display?.(options.alwaysHitbox?1:0);practice?.configure({...options,thpracEnabled:options.thpracEnabled&&options.netplayMode!=='lan'});}
 function status(){return Array.from(new Int32Array(core.memory.buffer,core.sdl_game_status(),10));}
 function save(){if(app)core.save(app);return sync(false);}
 // Backgrounding only persists the runtime filesystem. core.save() runs the
@@ -89,16 +90,23 @@ async function launch(){
   catch{console.warn('th08: /unifont.otf unavailable; CJK glyph fallback disabled');}
  }
  const mode=Module.touhouMusicMode||'none';music=mode!=='none';core.sdl_ogg_decode_mode?.(options.oggDecodeMode==='full');core.sdl_music_source?.(mode==='midi'?2:1);
- core.sdl_music_enabled?.(music);app=core.sdl_game_open(Date.now()>>>0);if(!app)throw Error('C++ game initialization failed');
+ const multiplayer=multiplayerRuntime?validateMultiplayerOptions(options):null;
+ if(multiplayerRuntime&&!multiplayer)throw Error('TH08 multiplayer Runtime requires a room start');
+ if(!multiplayerRuntime&&options.netplayMode==='lan')throw Error('Network session requires the multiplayer Runtime');
+ core.sdl_music_enabled?.(music);app=core.sdl_game_open(multiplayer?multiplayer.seed:Date.now()>>>0);if(!app)throw Error('C++ game initialization failed');
+ try{
  const total=core.sdl_prepare_total();for(let i=0;i<total;i++){if(core.sdl_prepare_next()<0)throw Error('资源预载失败 '+i);if(i%12===11){document.querySelector('#loading').textContent='正在准备游戏资源 '+(i+1)+' / '+total;await new Promise(resolve=>setTimeout(resolve,0));}}
  if(!core.sdl_game_initialize())throw Error('永夜抄初始化失败');document.querySelector('#loading').textContent='';
+ if(multiplayer)await configureMultiplayer(core,app,options);
+ }catch(reason){core.sdl_game_close();app=0;throw reason;}
+ if(multiplayer){window.__eaglerNetplayFailed=false;window.__eaglerNetplayError='';updateNetworkDiagnostics(core,app);}
  applyOptions();launched=true;first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
  canvas.focus({preventScroll:true});core.sdl_loop_pause(1);if(!document.hidden)await resumeForegroundAudio();if(query.get('manual')!=='1')core.sdl_loop_start();
  emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:'eagler-touhou/1',version:'3.4.1-sdl3'});
 }
 async function command(message){
  switch(message.command){
- case 'configure':if(launched)throw Error('Cannot configure a running game');language=message.language==='lang_zh-hans'?'chs':'jp';options=normalizeOptions(message.options);if(!['ogg','midi','none'].includes(message.music))throw Error('Invalid music mode');Module.touhouMusicMode=message.music;Module.eaglerOptions=options;music=message.music!=='none';await installResources(message.sharedResources);await installResources(message.runtimeResources);await installResources(message.resources);if(message.runtimePack)await installRuntimePack(message.runtimePack);applyOptions();return {};
+ case 'configure':if(launched)throw Error('Cannot configure a running game');language=message.language==='lang_zh-hans'?'chs':'jp';options=normalizeOptions(message.options);if(multiplayerRuntime)options.thpracEnabled=false;if(!['ogg','midi','none'].includes(message.music))throw Error('Invalid music mode');Module.touhouMusicMode=message.music;Module.eaglerOptions=options;music=message.music!=='none';await installResources(message.sharedResources);await installResources(message.runtimeResources);await installResources(message.resources);if(message.runtimePack)await installRuntimePack(message.runtimePack);applyOptions();return {};
  case 'resources':await installResources(message.resources);return {};
  case 'keyboard':{const code=runtimeKeyboardCode(message);if(!code)return {};if(!practice?.key(code,!!message.down))cstring(code,p=>core.sdl_key(p,!!message.down));return {};}
  case 'thprac-mouse':practice?.mouse(message);return {};
@@ -110,8 +118,8 @@ async function command(message){
  case 'sync':await save();return {};
  case 'list':{const files=[];for(const dir of ['', '/replay'])for(const name of Module.FS.readdir(root()+dir)){const path=(dir+'/'+name).replace(/^\//,'');try{storage.relativeSave(path);}catch{continue;}const full=root()+'/'+path,s=Module.FS.stat(full);if(Module.FS.isFile(s.mode)){const bytes=Module.FS.readFile(full);files.push({path:exportReplayName(path,bytes,8),size:s.size});}}return {files};}
  case 'read':{let path=storage.relativeSave(message.path);if(path.endsWith('.rpyx'))path=path.slice(0,-1);return {bytes:Array.from(Module.FS.readFile(root()+'/'+path))};}
- case 'write':{if(!Array.isArray(message.bytes)||message.bytes.length>16*1024*1024||message.bytes.some(b=>!Number.isInteger(b)||b<0||b>255))throw Error('Invalid save bytes');const bytes=new Uint8Array(message.bytes),path=importReplayName(storage.relativeSave(message.path),bytes,8);Module.FS.writeFile(root()+'/'+path,bytes);await sync(false);return {};}
- case 'remove':{let path=storage.relativeSave(message.path);if(path.endsWith('.rpyx'))path=path.slice(0,-1);Module.FS.unlink(root()+'/'+path);await sync(false);return {};}
+ case 'write':{if(multiplayerRuntime&&launched)throw Error('Cannot import saves during a multiplayer run');if(!Array.isArray(message.bytes)||message.bytes.length>16*1024*1024||message.bytes.some(b=>!Number.isInteger(b)||b<0||b>255))throw Error('Invalid save bytes');const bytes=new Uint8Array(message.bytes),path=importReplayName(storage.relativeSave(message.path),bytes,8);Module.FS.writeFile(root()+'/'+path,bytes);await sync(false);return {};}
+ case 'remove':{if(multiplayerRuntime&&launched)throw Error('Cannot remove saves during a multiplayer run');let path=storage.relativeSave(message.path);if(path.endsWith('.rpyx'))path=path.slice(0,-1);Module.FS.unlink(root()+'/'+path);await sync(false);return {};}
  default:throw Error('Unsupported runtime command: '+message.command);
  }
 }
@@ -149,8 +157,9 @@ const initialized=(async()=>{
  Module.runtimePrepare=()=>!document.hidden;
  Module.runtimeFinish=(result,duration)=>{
   practice.tick();
+  if(multiplayerRuntime)updateNetworkDiagnostics(core,app);
   const now=performance.now(),p=u32(core.sdl_stats(),6)[5];if(p!==lastPresented){frames++;if(lastFrame)maxGap=Math.max(maxGap,now-lastFrame);lastFrame=now;lastPresented=p;if(!first){first=true;emit('first-frame');}}
-  if(result||status()[2]){if(status()[2]){error('Game error '+status()[2]);core.sdl_loop_pause(1);}else queueMicrotask(()=>void stop().catch(error));}
+  if(result||status()[2]){if(status()[2]){error((multiplayerRuntime&&networkError(core,app))||'Game error '+status()[2]);core.sdl_loop_pause(1);}else queueMicrotask(()=>void stop().catch(error));}
   if(now-lastHealth>=1000){emit('frame-health',{fps:frames*1000/(now-lastHealth),maxGapMs:maxGap,frameMs:duration});const a=u32(core.sdl_audio_stats(),12);emit('audio-health',{queuedMs:a[5]*1000/44100,minQueuedMs:a[7]*1000/44100,backend:'script',underruns:0,robust:true});frames=0;maxGap=0;lastHealth=now;}
  };
  Module.runtimeFileChanged=()=>{if(saveTimer!==null)return;saveTimer=setTimeout(()=>{saveTimer=null;queue=queue.then(()=>sync(false)).catch(error);},0);};

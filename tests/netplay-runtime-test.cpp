@@ -116,7 +116,12 @@ static void packet_transaction_and_negative_inputs(){
     packet.sessionId^=1;assert(apply_wire(r,wire(packet))==Wire::IgnoredSession);
     const std::uint8_t junk[]{0,1,2};assert(r.ApplyWire(junk,sizeof(junk))==Wire::Malformed);
     FrameInput bad(0);bad.buttons=0x8000;assert(!NetplayRuntime::ValidInput(bad));
-    bad=FrameInput(0);bad.analogMode=Netplay::AnalogMode::DirectTouch;assert(!NetplayRuntime::ValidInput(bad));
+    bad=FrameInput(0);bad.analogMode=Netplay::AnalogMode::DirectTouchDelta;assert(!NetplayRuntime::ValidInput(bad));
+    FrameInput touch(2);touch.analogMode=Netplay::AnalogMode::DirectTouch;touch.touchUsed=touch.touchBomb=true;
+    touch.x=12.5f;touch.y=-8.25f;assert(NetplayRuntime::ValidInput(touch));
+    touch.x=9000;assert(!NetplayRuntime::ValidInput(touch));
+    touch.x=0.5f;touch.y=-0.25f;touch.analogMode=Netplay::AnalogMode::Joystick;
+    assert(NetplayRuntime::ValidInput(touch));touch.unlimited=true;assert(!NetplayRuntime::ValidInput(touch));
     bad=FrameInput(0);bad.x=std::numeric_limits<float>::quiet_NaN();assert(!NetplayRuntime::ValidInput(bad));
     bad=FrameInput(0);bad.touchBomb=true;assert(!r.CaptureLocal(0,bad));
     assert(r.CaptureLocal(0,FrameInput(1))&&r.CaptureLocal(0,FrameInput(1))&&!r.CaptureLocal(0,FrameInput(2)));

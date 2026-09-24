@@ -118,7 +118,7 @@ export function packageEagler({
   const thprac = build.features?.thprac === true;
   const runtimeNames = [
     'shell.mjs', 'eagler-host.mjs', 'save-storage.mjs',
-    ...(game === 'th08' ? ['practice.mjs', 'practice-config.mjs', 'practice-sections.mjs'] : []),
+    ...(game === 'th08' ? ['practice.mjs', 'practice-config.mjs', 'practice-sections.mjs','multiplayer-host.mjs'] : []),
   ];
   const names = [
     entry, 'manifest.json', ...runtimeNames, 'motion-replay.mjs',

@@ -51,9 +51,8 @@ class PlayerScene:public PlayerSetupActions,public PlayerLifeActions,public Play
         void pose(i32 id)override{s.animation(id);}
         bool movement(const PlayerMovementState& state,float speed,const FrameTiming& timing,float& x,float& y)override{
 #if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
-            // MP movement consumes the roster's committed buttons. Device
-            // platform motion is outside the deterministic simulation lane.
-            (void)state;(void)speed;(void)timing;(void)x;(void)y;return false;
+            if(!s.world||(s.world->ecl.game_flags&516)!=4||s.state.input.gui_blocked)return false;
+            return multiplayer::ResolveAnalogMovement(s.state.analog,state,speed,timing,x,y);
 #else
             return s.platform.player_motion(state,speed,timing,x,y);
 #endif

@@ -76,8 +76,7 @@ bool RollbackDriver::RunFrame(bool render){
     if(!audio.BeginFrame(frame)||!files.BeginFrame(frame))return Fail("begin output frame failed");
     open=true;session.network_frame=decision;session.network_frame_open=true;
     if(a.in_game()){
-        u16 buttons[3]{};for(u32 seat=0;seat<session.player_count;++seat)buttons[seat]=decision.inputs[seat].buttons;
-        if(!a.game.commit_inputs(buttons,session.player_count))return Fail("committed input handoff failed");
+        if(!a.game.commit_frame_inputs(decision.inputs.data(),session.player_count))return Fail("committed input handoff failed");
     }
     if(decision.predictedMask)++predicted;
     if(!a.update()||runtime.capture_failed)return Fail("native update failed");
@@ -127,7 +126,7 @@ bool RollbackDriver::Step(bool render){
     if(!net.HasLocal(frame)){
         const auto touch=u16(file_device().supplemental_input());
         const auto physical=runtime.input.controller(InputController::keyboard(runtime.keys,false)|touch,runtime.pad,session.display_config);
-        if(!net.CaptureLocal(frame,Netplay::FrameInput(physical)))return Fail("local capture failed");
+        if(!net.CaptureLocal(frame,runtime.device_sample(physical)))return Fail("local capture failed");
     }
     if(!network.Captured(frame))return Fail("captured input send failed");
     const bool success=RunFrame(render);

@@ -18,6 +18,12 @@ files.set('/th08-sdl.wasm',wasm);
 const data=process.env.TH08_MP_DATA||resolve(workspace,'games/web-content/th08/th08.dat');
 if(!existsSync(data))throw Error('Set TH08_MP_DATA to your retail th08.dat; diagnostic tests never bundle retail DATA');
 files.set('/input/th08.dat',data);
+files.set('/host.html',resolve(import.meta.dirname,'runtime-host.html'));
+files.set('/runtime/resources.json',resolve(import.meta.dirname,'host-resources.json'));
+files.set('/runtime/th08-sdl.mjs',resolve(buildRoot,'th08-sdl.mjs'));files.set('/runtime/th08-sdl.wasm',wasm);
+for(const file of ['th08.html','shell.mjs','eagler-host.mjs','save-storage.mjs','multiplayer-host.mjs','practice.mjs','practice-config.mjs','practice-sections.mjs','midi-worklet.mjs'])
+ files.set('/runtime/'+file,resolve(root,'th08_web/sdl-runtime',file));
+files.set('/runtime/motion-replay.mjs',resolve(root,'portable/browser/motion-replay.mjs'));
 files.set('/fonts/msgothic.ttc',process.env.TH08_MP_FONT||resolve(workspace,'th06-eagler/assets/msgothic.ttc'));
 for(const name of ['blend.bin','cp932.bin'])files.set('/fonts/'+name,resolve(workspace,'th08-eagler/build-eagler/fonts',name));
 for(const path of files.values())if(!existsSync(path))throw Error('Missing smoke resource: '+path);

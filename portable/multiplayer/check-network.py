@@ -11,8 +11,9 @@ p.add_argument('--url',required=True);p.add_argument('--relay',required=True)
 p.add_argument('--mode',choices=['packets','rtc','relay'],required=True)
 p.add_argument('--players',choices=['all','2','3'],default='all')
 p.add_argument('--output',type=Path,required=True)
+p.add_argument('--analog',action='store_true')
 args=p.parse_args()
-report={'passed':False,'mode':args.mode,'cases':[],'errors':[]}
+report={'passed':False,'mode':args.mode,'analog':args.analog,'cases':[],'errors':[]}
 def save():args.output.write_text(json.dumps(report,indent=2),encoding='utf-8')
 def call(page,code,arg=None):return page.evaluate(code,arg)
 def apply(page,wire):
@@ -28,6 +29,18 @@ def observe(page):
             'driver':call(page,'multiplayerSmoke.driverStatus()'),'native':call(page,'multiplayerSmoke.nativeStatus()')}
     if call(page,"typeof multiplayerSmoke.canonical === 'function'"):result['canonical']=call(page,'multiplayerSmoke.canonical()')
     return result
+def capture(page,seat,frame):
+    buttons=input_for(seat,frame)
+    if not args.analog or frame<180 or 250<=frame<290:
+        return call(page,'v=>multiplayerSmoke.capture(...v)',[frame,buttons])
+    buttons&=~(16|32|64|128)
+    if frame<240:
+        mode=2;x=1.375 if (frame//9+seat)%2 else -2.625;y=-0.25;flags=2|(4 if buttons&2 else 0)
+    elif frame<320:
+        mode=1;x=0.375 if seat%2 else -0.625;y=0.125;flags=2|(4 if buttons&2 else 0)
+    else:
+        mode=2;x=12.125 if (frame//8+seat)%2 else -13.625;y=0;flags=3
+    return call(page,'v=>multiplayerSmoke.captureInput(...v)',[frame,buttons,mode,x,y,flags])
 def equal(values):
     a=values[0]['state'];assert all(v['state'][:2]+v['state'][3:]==a[:2]+a[3:] for v in values),values
     if 'canonical' in values[0]:assert all(v['canonical']==values[0]['canonical'] for v in values),values
@@ -73,11 +86,14 @@ with sync_playwright() as pw:
                     expected_route=1 if args.mode=='rtc' else 2
                     assert all(call(page,'multiplayerSmoke.driverStatus()')[12]==expected_route for page in pages)
                 case['phase']='gameplay';save()
+                for page in pages:
+                    probe=call(page,'multiplayerSmoke.practiceWriteProbe()')
+                    assert not probe['accepted'] and probe['state'][3]==probe['state'][5]==0,probe
                 if args.mode=='packets':
                     queue=[]
                     for frame in range(380):
-                        for seat,page in enumerate(pages):assert call(page,'v=>multiplayerSmoke.capture(...v)',[frame,input_for(seat,frame)])
-                        assert call(oracle,'v=>multiplayerSmoke.capture(...v)',[frame,input_for(0,frame)])
+                        for seat,page in enumerate(pages):assert capture(page,seat,frame)
+                        assert capture(oracle,0,frame)
                         for seat in range(1,count):apply(oracle,call(pages[seat],'v=>multiplayerSmoke.inputPacket(...v)',[0,frame,frame+1]))
                         call(oracle,'multiplayerSmoke.ticks(1)')
                         delayed=frame>=180 and frame<360
@@ -123,7 +139,7 @@ with sync_playwright() as pw:
                                 call(page,'multiplayerSmoke.pollNetwork()');n=call(page,'multiplayerSmoke.netStatus()')
                                 if n[3]<=target:
                                     # Capture once; waiting never changes this frame.
-                                    call(page,'v=>multiplayerSmoke.capture(...v)',[n[3],input_for(seat,n[3])])
+                                    capture(page,seat,n[3])
                                     call(page,'multiplayerSmoke.ticks(1)')
                                 else:call(page,'multiplayerSmoke.reconcile()')
                                 n=call(page,'multiplayerSmoke.netStatus()')

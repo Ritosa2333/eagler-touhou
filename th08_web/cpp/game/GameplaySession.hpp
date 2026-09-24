@@ -17,6 +17,7 @@ struct GameplaySession {
     multiplayer::NetplayRuntime netplay;
     Netplay::FrameDecision network_frame;
     bool network_frame_open=false,network_waiting=false;
+    bool multiplayer_cheat_movement_used=false;
     PilotResources pilot_resources[3]{};
     PlayerResourceView pilot_views[3]{{numbers,pilot_resources[0]},
                                     {numbers,pilot_resources[1]},

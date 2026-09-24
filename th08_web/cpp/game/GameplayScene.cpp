@@ -49,6 +49,14 @@ GameplayScene::GuestPilot::GuestPilot(GameplayScene& scene,u32 seat)
 bool GameplayScene::commit_inputs(const u16* buttons,u32 count){
     if(!buttons||count!=session.player_count||count<2||count>3)return false;
     for(u32 seat=0;seat<3;++seat)committed_buttons[seat]=seat<count?buttons[seat]:0;
+    for(u32 seat=0;seat<count;++seat)pilot(seat).status().analog={};
+    return true;
+}
+bool GameplayScene::commit_frame_inputs(const Netplay::FrameInput* inputs,u32 count){
+    if(!inputs||count!=session.player_count||count<2||count>3)return false;
+    for(u32 seat=0;seat<count;++seat)if(!multiplayer::ValidInputSample(inputs[seat]))return false;
+    for(u32 seat=0;seat<count;++seat){committed_buttons[seat]=inputs[seat].buttons;pilot(seat).status().analog=multiplayer::MovementSample(inputs[seat]);}
+    for(u32 seat=count;seat<3;++seat)committed_buttons[seat]=0;
     return true;
 }
 #endif
@@ -124,6 +132,10 @@ void GameplayScene::publish_dialogue(){
 }
 void GameplayScene::message(i32 entry){synchronize();failed|=!dialogue.read(entry);publish_dialogue();}
 void GameplayScene::synchronize(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    for(u32 seat=0;seat<session.player_count;++seat)if(roster.seats[seat].player&&roster.seats[seat].player->status().unlimited_movement_used)
+        session.multiplayer_cheat_movement_used=true;
+#endif
     auto& p=player_state;auto& n=session.numbers;const auto& limits=session.thresholds;
     auto& m=menus.context;m.flags=globals.game_flags;m.show_retry=globals.stage_completion;m.stage=globals.stage;m.character=globals.shot;m.spell=globals.current_spell;m.difficulty=globals.difficulty;m.spell_captured=bool(globals.spell_flags&512);m.times=hud.times;
     paused=m.pause_state!=0;retrying=m.show_retry!=0;
@@ -241,6 +253,7 @@ void GameplayScene::bind_jobs(){
 }
 bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(wanted.initial)session.multiplayer_cheat_movement_used=false;
     if(session.player_count<2||session.player_count>3||session.local_player>=session.player_count)return false;
     for(u32 seat=1;seat<session.player_count;++seat)if(session.player_characters[seat]>=12)return false;
     session.player_characters[0]=u8(wanted.character);

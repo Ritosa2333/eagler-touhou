@@ -25,6 +25,7 @@ bool WorldJournal::Inventory(){
     ADD(s.practices,Session);ADD(s.statistics,Session);ADD(s.pilot_resources,Session);
     ADD(s.thresholds,Session);ADD(s.guest_thresholds,Session);ADD(s.rank,Session);
     ADD(s.stall_frames,Session);ADD(s.stage_copy,Session);ADD(s.replay_seed,Session);
+    ADD(s.multiplayer_cheat_movement_used,Session);
     ADD(s.last_words,Session);ADD(s.last_name,Session);ADD(s.total_clock,Session);
     ADD(g.roster,Player);ADD(g.cooperation,Player);ADD(g.committed_buttons,Player);ADD(g.previous_buttons,Player);
     for(u32 seat=0;seat<s.player_count;++seat){

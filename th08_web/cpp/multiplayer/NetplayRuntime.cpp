@@ -1,14 +1,11 @@
 #include "NetplayRuntime.hpp"
+#include "InputSample.hpp"
 #include <algorithm>
 #include <cmath>
 
 namespace th08::multiplayer {
 bool NetplayRuntime::ValidInput(const Netplay::FrameInput& input) noexcept {
-    // This first adapter implements keyboard/button lanes. Do not accept and
-    // silently drop the analog/touch fields before their title owner exists.
-    return !(input.buttons&0x8000u)&&input.analogMode==Netplay::AnalogMode::None&&
-        std::isfinite(input.x)&&std::isfinite(input.y)&&input.x==0&&input.y==0&&
-        !input.unlimited&&!input.touchUsed&&!input.touchBomb;
+    return ValidInputSample(input);
 }
 bool NetplayRuntime::configure(const SessionSetup& setup) noexcept {
     const std::uint32_t words[]{2,setup.player_count,setup.local_player,setup.difficulty,setup.seed,

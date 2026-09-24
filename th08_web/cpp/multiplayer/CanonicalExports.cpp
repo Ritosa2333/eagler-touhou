@@ -93,6 +93,7 @@ const u32* multiplayer_canonical_state(BrowserRuntime* runtime){
     auto economy=a.session.numbers;economy.high_score=0;economy.high_score_retries=0;
     h[0].add(economy);h[0].add(a.session.pilot_resources);h[0].add(a.session.rank);h[0].add(g.cooperation);
     h[0].add(g.committed_buttons);h[0].add(g.previous_buttons);
+    h[0].add(a.session.multiplayer_cheat_movement_used);
     for(u32 seat=0;seat<a.session.player_count;++seat)world.player(g.pilot(seat).status(),h[1]);
     h[2].add(a.session.random);
     auto manager=g.enemies.state;

@@ -20,6 +20,7 @@ class BrowserRuntime:public ApplicationPlatform {
     friend class multiplayer::RollbackDriver;
     bool correction_present_suppressed=false;
     bool discard_network_shutdown_writes=false;
+    Netplay::FrameInput device_motion{};
     std::unique_ptr<multiplayer::RollbackDriver> multiplayer_driver;
     u32 multiplayer_logic_frame=0;
 #endif
@@ -57,7 +58,16 @@ public:
     void begin_motion(i32 stage,bool initial,bool replay,bool record)override{motion.begin(stage,initial,replay,record);}
     bool load_motion(const u8* data,u32 size)override{return motion.load(data,size,8);}
     i32 replay_touch_points(ReplayTouchPoint*,i32)override;
-    bool cheat_movement_used()const override{return motion.cheat_movement_used;}
+    bool cheat_movement_used()const override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(app.session.multiplayer_session.configured){
+            if(app.session.multiplayer_cheat_movement_used)return true;
+            for(const auto& seat:app.game.roster.seats)if(seat.player&&seat.player->status().unlimited_movement_used)return true;
+            return false;
+        }
+#endif
+        return motion.cheat_movement_used;
+    }
     BrowserRuntime();~BrowserRuntime();
 #ifdef TH_MULTIPLAYER_FIXTURES
     bool diagnostic_audio_clock_independent();
@@ -69,6 +79,11 @@ public:
     bool connect_network(const char* relay);
     bool pump_network();
     multiplayer::RollbackDriver* network_driver(){return multiplayer_driver.get();}
+    void set_device_motion(i32 mode,float x,float y,bool touch,bool bomb){
+        device_motion={};device_motion.touchUsed=touch;device_motion.touchBomb=bomb;
+        if(mode==1||mode==2){device_motion.analogMode=Netplay::AnalogMode::DirectTouch;device_motion.x=x;device_motion.y=y;device_motion.unlimited=mode==2;}
+    }
+    Netplay::FrameInput device_sample(u16 buttons)const{auto result=device_motion;result.buttons=buttons;result.touchBomb=result.touchBomb&&(buttons&2);return result;}
     bool bind_audio_events(multiplayer::AudioEvents*);
     bool commit_audio_events(multiplayer::AudioEvents&,u32 confirmed,u32 simulated);
     void begin_multiplayer_clock(){multiplayer_logic_frame=0;app.statistics.state={};}

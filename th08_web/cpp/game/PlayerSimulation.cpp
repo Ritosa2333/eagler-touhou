@@ -41,8 +41,16 @@ bool PlayerSimulation::resolve_death(){return life.resolve_death(resources[0].se
 void PlayerSimulation::respawn(){life.respawn(resources[0].settings());}
 void PlayerSimulation::update_invincibility(){life.update_invincibility(timing);}
 void PlayerSimulation::update_motion(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    const auto previous=state.motion.movement.position;
+#endif
     state.input.bomb=state.bomb.active;state.input.bomb_type=state.bomb.type;state.input.character=state.context.character;
     update_player_motion(state.motion,state.input,state.shots.shooting_timer,gauge,resources[0].settings(),resources[1].settings(),timing,services.motion);state.context.focused=state.motion.form.focused;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(state.analog.unlimited&&(state.analog.x!=0||state.analog.y!=0)&&
+       (state.context.game_flags&516)==4&&!state.input.gui_blocked&&
+       (previous.x!=state.motion.movement.position.x||previous.y!=state.motion.movement.position.y))state.unlimited_movement_used=1;
+#endif
     if(!state.input.enemy_present)state.frame.target_reference=nullptr;
 }
 void PlayerSimulation::step_animation(AnmVm& vm){services.shots.step_animation(vm);}
