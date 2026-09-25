@@ -92,8 +92,11 @@ async function launch(){
  const mode=Module.touhouMusicMode||'none';music=mode!=='none';core.sdl_ogg_decode_mode?.(options.oggDecodeMode==='full');core.sdl_music_source?.(mode==='midi'?2:1);
  const multiplayer=multiplayerRuntime?validateMultiplayerOptions(options):null;
  const replayViewer=multiplayerRuntime&&options.replayViewer===true;
- if(replayViewer&&multiplayer)throw Error('Replay viewer cannot join a live room');
- if(multiplayerRuntime&&!multiplayer&&!replayViewer)throw Error('TH08 multiplayer Runtime requires a room start or Replay viewer');
+ const multiplayerPreflight=multiplayerRuntime&&options.multiplayerPreflight===true;
+ if((replayViewer&&multiplayer)||(multiplayerPreflight&&(multiplayer||replayViewer)))
+  throw Error('Conflicting TH08 multiplayer Runtime role');
+ if(multiplayerRuntime&&!multiplayer&&!replayViewer&&!multiplayerPreflight)
+  throw Error('TH08 multiplayer Runtime requires a room start, preflight or Replay viewer');
  if(!multiplayerRuntime&&options.netplayMode==='lan')throw Error('Network session requires the multiplayer Runtime');
  core.sdl_music_enabled?.(music);app=core.sdl_game_open(multiplayer?multiplayer.seed:Date.now()>>>0);if(!app)throw Error('C++ game initialization failed');
  try{

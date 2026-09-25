@@ -501,12 +501,46 @@ The packaged multiplayer Runtime now contains multiplayer-host.mjs and the
 Replay/observer native ABI. Stage-select seek performance and any direct world
 checkpoint optimization remain deliberately outside this correctness slice.
 
+## Launcher product integration
+
+The shared Launcher now registers TH08 MP as a first-class multiplayer product.
+It uses the existing room/spectator/Replay surfaces rather than a TH08-specific
+UI fork, exposes 2P/3P, Easy through Extra and all twelve native TH08
+team/solo loadouts, and publishes an isolated directory Runtime through the
+canonical runtime-builds multiplayer variant. Runtime Release/Host assembly
+includes that isolated TH08 multiplayer Runtime.
+
+The Launcher Check Game flow has an explicit multiplayerPreflight Runtime role.
+Only that role may boot the multiplayer Runtime without room/run parameters;
+normal player, spectator and Replay roles retain their strict admission
+requirements. This closes the actual first-run path where Launcher validates
+the multiplayer Runtime and local retail data before Ready/Start.
+
+Final product-level browser evidence uses the real Launcher, real TH08 retail
+data, real packaged multiplayer Runtime and real local Relay. Both 2P seats
+complete Check Game, Ready and Start; the two native runtimes are then stopped
+at one exact logical boundary and agree after confirmation on every canonical
+owner. The final stable run reaches frame 66 with composite hash 3846058842.
+The product catalog and shared room contracts declare/validate 3P, while the
+TH08 native RTC/Relay, rollback, spectator and Replay suites independently
+exercise three-player simulation. A focused three-Launcher run also reached
+frame 69 with matching hash 2311740213; the persistent CI product gate remains
+2P because three simultaneous TH08 WebGL canvases exceed the headless
+SwiftShader context budget on this validation host.
+
+Shared Launcher regression gates pass after registration: runtime-build
+profiles, product catalog, Runtime protocol/options and adapter-capability
+models, Multiplayer Replay Viewer, spectator Launcher contract and Runtime
+Release/Host assembly. The TH08 multiplayer package contains 15 validated
+Runtime files and production WASM
+`d7a47c484bf13382dc04e19db0577e2453b762ab9f719c4d7cf82ded192fdc7f`.
+
 ## Next implementation boundary
 
 Production networking, automatic correction, authoritative analog/touch,
-start-time spectators, confirmed all-seat Replay and the Runtime
-room/start/exit/storage contract are connected. Public Launcher product
-integration remains before declaring the complete TH08MP profile. Full-stage
-coverage, real-device acceptance and public deployment are not implied by these
-focused local-browser tests. No performance change, canonical promotion, push
-or deployment is claimed.
+start-time spectators, confirmed all-seat Replay, the Runtime
+room/start/exit/storage contract and shared Launcher product integration are
+connected. The functional TH08MP profile is therefore complete at the
+automated local-browser boundary. The next work is explicitly performance,
+real-device/full-stage acceptance and public deployment. No performance
+change, canonical promotion, push or deployment is claimed by this document.
