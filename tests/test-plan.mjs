@@ -131,6 +131,7 @@ export const WORKSPACE_NODE_TESTS = Object.freeze([
   "tests/test-shell-protocol.mjs",
   "tests/test-server.mjs",
   "tests/test-runtime-release-host-assembly.mjs",
+  "tests/test-th09-integration.mjs",
   "tests/test-th10-runtime-directory.mjs",
 ]);
 

@@ -1363,12 +1363,10 @@ const iosWebKitTouch = /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
   (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent));
 const iosHelpPreview = new URLSearchParams(location.search).get("iosHelpPreview") === "1";
 const showIosFullscreenHelp = iosWebKitTouch || iosHelpPreview;
-// Experimental only: allow an Android browser/WebView to opt into the same
-// host-document direct-touch bridge used on iOS.  The normal Android path is
-// intentionally unchanged unless the explicit URL flag is present.
-const androidDirectTouchTrial = /\bAndroid\b/i.test(navigator.userAgent || "") &&
-  new URLSearchParams(location.search).get("androidDirectTouch") === "1";
-const hostDirectTouch = iosWebKitTouch || androidDirectTouchTrial;
+// Keep the entire player surface as the touch owner on phones. The Runtime
+// canvas is letterboxed, so a child-document gesture can lose its target when
+// the finger crosses from the image into the black bars.
+const hostDirectTouch = iosWebKitTouch || /\bAndroid\b/i.test(navigator.userAgent || "");
 const lessMotionStorageKey = "eagler-touhou-less-motion-v1";
 const runtimeDiagnosticsStorageKey = "eagler-touhou-runtime-diagnostics-v1";
 let runtimeDiagnosticsPreference: boolean | null = null;
@@ -2307,6 +2305,7 @@ function touchLayoutHasUnsavedChanges() {
   return JSON.stringify(canonicalTouchLayout(touchLayoutDraft)) !== JSON.stringify(touchLayout);
 }
 const maxImportBytes = 128 * 1024 * 1024;
+const maxGamePackageImportBytes = 256 * 1024 * 1024;
 const maxStoredFileBytes = 64 * 1024 * 1024;
 const maxReplayArchiveExpandedBytes = 128 * 1024 * 1024;
 let midiSynth: MidiSynth | null = null;
@@ -3335,7 +3334,7 @@ async function installDevelopmentPackage(show = true) {
 }
 
 async function installImportedGameData(file: File | Blob) {
-  if (!(file instanceof Blob) || file.size <= 0 || file.size > maxImportBytes) throw new Error(t("package.invalidDataSize"));
+  if (!(file instanceof Blob) || file.size <= 0 || file.size > maxGamePackageImportBytes) throw new Error(t("package.invalidDataSize"));
   if (!globalThis.indexedDB?.open) throw new Error(t("package.indexedDbUnavailable"));
   const {
     adaptLegacyGamePackToPackage,
@@ -3546,9 +3545,11 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
       // bytes back through blob: URLs and fetch() inside the iframe: on mobile
       // and ordinary HTTP origins that duplicates the whole audio payload and
       // can keep configure blocked long enough to look like a dead launch.
-      // Configure as MIDI first, then write the local OGG buffers directly into
-      // the same-origin runtime FS before callMain().
-      music: localMusicResources ? "midi" : musicTransportMode(state.music),
+      // Write local OGG buffers into the same-origin Runtime FS before callMain().
+      // Most Runtimes use MIDI as a sentinel to skip external loading; some need
+      // the selected mode so they can consume those installed bytes.
+      music: localMusicResources && PRODUCT_GAMES[state.game].musicRuntime.localOggConfigureMode === "midi-sentinel"
+        ? "midi" : musicTransportMode(state.music),
       resources: localMusicResources ? [] : musicResources,
       runtimeResources: [],
       runtimePack: runtimePack ? { ...runtimePack, manifest: runtimePack.manifest, files: runtimePack.files } : null,
@@ -3665,7 +3666,10 @@ function chooseDefaultMusic() {
   // Effective fallback is transient. Keep explicit preference separate so a
   // later completed install (or saving an unrelated option) cannot erase it.
   state.music = resolveEffectiveMusicMode({
-    requested: state.musicPreferenceExplicit ? state.musicPreference : state.music,
+    // Availability may temporarily force effective music to "none" before a
+    // local package is imported. Re-resolve from the saved preference so BGM
+    // returns as soon as the package's OGG component becomes available.
+    requested: state.musicPreference,
     explicit: state.musicPreferenceExplicit,
     ...availabilityContext,
   });
@@ -3898,11 +3902,13 @@ function renderTouchFocusState(updateCopy = true) {
 }
 function renderTouchFireState(updateCopy = true) {
   const fireButton = $("#touchFire");
-  fireButton.classList.toggle("is-on", touchControls.fireEnabled);
-  const pressed = String(touchControls.fireEnabled);
+  const touchFire = PRODUCT_GAMES[state.game].touchFire;
+  const enabled = touchFire.mode === "held-key" ? heldTouchFire : touchControls.fireEnabled;
+  fireButton.classList.toggle("is-on", enabled);
+  const pressed = String(enabled);
   if (fireButton.getAttribute("aria-pressed") !== pressed) fireButton.setAttribute("aria-pressed", pressed);
   if (!updateCopy) return;
-  const copy = t("touch.tapToggle");
+  const copy = t(touchFire.labelKey);
   const small = requiredDescendant(fireButton, "small", HTMLElement);
   if (small.textContent !== copy) small.textContent = copy;
 }
@@ -4216,6 +4222,7 @@ async function confirmInputWarnings() {
 }
 
 function resetRuntime() {
+  releaseHeldTouchFire();
   activeLocalMusicInstall?.cancel();
   activeLocalMusicInstall = null;
   cancelBlockingNetworkOperation();
@@ -4424,6 +4431,7 @@ function forwardHostedKeyboard(event: KeyboardEvent) {
 window.addEventListener("keydown", forwardHostedKeyboard, true);
 window.addEventListener("keyup", forwardHostedKeyboard, true);
 function clearHostedKeyboard() {
+  releaseHeldTouchFire();
   if (!state.launched || !frame.contentWindow) return;
   const context = touchRuntimeMessageContext();
   deliverRuntimeInput(context,
@@ -4486,7 +4494,10 @@ async function syncTouchControls() {
   pushTouchControlsLive();
 }
 function pushTouchControlsLive() {
-  return postRuntimeTouchControls(touchRuntimeMessageContext(), touchControls, state.options.touchSensitivity);
+  // Held-key Fire is delivered separately; do not also send its automatic pulse stream.
+  const controls = PRODUCT_GAMES[state.game].touchFire.mode === "held-key"
+    ? { ...touchControls, fireEnabled: false } : touchControls;
+  return postRuntimeTouchControls(touchRuntimeMessageContext(), controls, state.options.touchSensitivity);
 }
 function refocusGameIfNeeded() {
   // Keep the historical gameplay hot path: HUD pointerdown handlers prevent
@@ -7788,6 +7799,7 @@ touchDirectSurface.addEventListener("pointerdown", event => {
   event.preventDefault();
   const touch = { id: nextDirectTouchId--, ...point };
   directTouchPointers.set(event.pointerId, touch);
+  try { touchDirectSurface.setPointerCapture(event.pointerId); } catch {}
   if (gameZoom.isActive()) gameZoom.beginPointer(event);
   postDirectTouch("down", touch);
 });
@@ -7932,6 +7944,62 @@ touchFocusButton.addEventListener("click", event => {
   void setTouchFocus(!touchControls.focusEnabled);
 });
 
+// Some game Fire controls hold a Runtime key for actions such as charging.
+const touchFireButton = $("#touchFire");
+let heldTouchFire = false;
+let heldTouchFirePointerId: number | null = null;
+let heldTouchFireKey: Readonly<{ code: string; key: string; keyCode: number }> | null = null;
+function usesHeldTouchFire() {
+  return PRODUCT_GAMES[state.game].touchFire.mode === "held-key";
+}
+function setHeldTouchFire(held: boolean) {
+  if (held) {
+    const touchFire = PRODUCT_GAMES[state.game].touchFire;
+    if (!state.launched || touchFire.mode !== "held-key" || !state.options.touchEnabled || touchLayoutEditing || heldTouchFire) return;
+    heldTouchFire = true;
+    heldTouchFireKey = touchFire.key;
+    renderTouchFireState(false);
+    postRuntimeHostedKey(touchRuntimeMessageContext(), touchFire.key, true);
+    return;
+  }
+  if (!heldTouchFire) return;
+  heldTouchFire = false;
+  const key = heldTouchFireKey;
+  heldTouchFireKey = null;
+  renderTouchFireState(false);
+  if (key) postRuntimeHostedKey(touchRuntimeMessageContext(), key, false);
+}
+function releaseHeldTouchFire() {
+  heldTouchFirePointerId = null;
+  setHeldTouchFire(false);
+}
+touchFireButton.addEventListener("pointerdown", event => {
+  if (iosWebKitTouch || heldTouchFirePointerId !== null || !state.launched || !usesHeldTouchFire() || touchLayoutEditing) return;
+  event.preventDefault();
+  heldTouchFirePointerId = event.pointerId;
+  try { touchFireButton.setPointerCapture(event.pointerId); } catch {}
+  setHeldTouchFire(true);
+});
+for (const type of ["pointerup", "pointercancel", "lostpointercapture"] as const) {
+  touchFireButton.addEventListener(type, event => {
+    if (iosWebKitTouch || heldTouchFirePointerId !== event.pointerId) return;
+    event.preventDefault();
+    releaseHeldTouchFire();
+  });
+}
+touchFireButton.addEventListener("touchstart", event => {
+  if (!iosWebKitTouch || !state.launched || !usesHeldTouchFire() || touchLayoutEditing) return;
+  event.preventDefault();
+  setHeldTouchFire(true);
+}, { passive: false });
+for (const type of ["touchend", "touchcancel"] as const) {
+  touchFireButton.addEventListener(type, event => {
+    if (!iosWebKitTouch) return;
+    event.preventDefault();
+    releaseHeldTouchFire();
+  }, { passive: false });
+}
+
 async function triggerTouchBomb() {
   touchControls.bombSerial++;
   refocusGameIfNeeded();
@@ -8018,12 +8086,14 @@ for (const [button, activate] of touchActionButtons) {
   // keyboard and assistive-technology activation without firing twice.
   button.addEventListener("pointerdown", event => {
     if (!state.launched) return;
+    if (button === touchFireButton && usesHeldTouchFire()) return;
     event.preventDefault();
     try { button.setPointerCapture(event.pointerId); } catch {}
     activate();
   });
   button.addEventListener("click", event => {
     if (event.detail !== 0 || !state.launched) return;
+    if (button === touchFireButton && usesHeldTouchFire()) return;
     activate();
   });
 }

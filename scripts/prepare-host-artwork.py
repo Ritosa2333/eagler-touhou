@@ -33,6 +33,7 @@ ARTWORK_BY_GAME = {
     ),
     "th07": ("th07-card.webp",),
     "th08": ("th08-card.webp",),
+    "th09": ("th09-card.webp",),
     "th10": ("th10-card.webp",),
 }
 # Launcher cards are presentation derivatives, not archival copies of the
@@ -165,6 +166,8 @@ def _default_artwork(game: str, name: str, roots: dict[str, Path], thdat: str = 
         return extract_pbg4_entry(root / "th07.dat", "title00.jpg")
     if name == "th08-card.webp":
         return extract_pbgz_entry(root / "th08.dat", "title/title00.png")
+    if name == "th09-card.webp":
+        return extract_pbgz_entry(root / "th09.dat", "title00.png")
     if name == "th10-card.webp":
         return _extract_th10_title(root, thdat, thanm)
     raise AssertionError(name)
