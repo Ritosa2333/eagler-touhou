@@ -942,6 +942,14 @@ body.mp-room-active .mp-spectator-join:disabled{opacity:.35;cursor:not-allowed}
 .player.help-visible>.touch-restart{visibility:hidden}.player #touchRestart{z-index:36}
 @media(max-width:760px){.touch-restart{left:max(8px,env(safe-area-inset-left));top:calc(max(10px,env(safe-area-inset-top)) + 48px);width:40px;height:40px}}
 
+/* Function keys are shared across games; keep their touch labels to the key names. */
+.touch-thprac-function-keys button{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+
 /* Final gameplay transparency pass: preserve label/icon contrast while making
    touch control surfaces less intrusive over the playfield. */
 .touch-hud button,.touch-escape,.touch-restart,.touch-thprac-input,.touch-thprac-tab,.touch-thprac-menu button{

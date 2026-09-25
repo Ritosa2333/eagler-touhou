@@ -191,7 +191,7 @@ export const PRODUCT_GAMES = Object.freeze({
       musicMounts: Object.freeze({ ogg: "/music" }),
     }),
     replay: Object.freeze({ prefix: "th9" }),
-    features: Object.freeze({ thprac: false, languages: false, focusHitbox: false }),
+    features: Object.freeze({ thprac: false, languages: true, focusHitbox: false }),
   }),
   th10: Object.freeze({
     cardArtwork: "th10-card.webp",

@@ -262,7 +262,7 @@ assert.match(th08Patched, /\t8;2;0;intro stays original/);
 assert.doesNotMatch(th08Patched, /originalA|originalB1|boss0/);
 const th08Unpatched = patchThmsgDump(th08Source, { "0": {} }, 8).toString("utf8");
 assert.match(th08Unpatched, /\t16;originalA/);
-assert.throws(() => patchThmsgDump(th08Source, th08Diff, 9), /unsupported message version/);
+assert.throws(() => patchThmsgDump(th08Source, th08Diff, 11), /unsupported message version/);
 
 const ending = Buffer.concat([
   Buffer.from("@cmd\0\n", "ascii"),
@@ -427,6 +427,42 @@ const th08Ending = await th08Compiler.process({
 assert.equal(th08Ending.format, "touhou-ending/1");
 assert.equal(th08Ending.extension, ".end");
 assert.equal(th08Ending.targetPath, "/thcrap/th08/end00a.end");
+
+// TH09 is MSG_TH09 (auto-line opcode 16, closes on 4/15) in both its story
+// and match scripts. Its endings remain the pre-TH10 .end format.
+const th09Compiler = new ThcrapRuntimeCompiler({
+  archives: { th09: ["fixture-th09.dat"] },
+  runner: {
+    async extractArchiveEntry(archive, entry, version) {
+      assert.equal(archive, "fixture-th09.dat");
+      assert.equal(version, 9);
+      return Buffer.from(`base:${entry}`);
+    },
+    async dumpMessage(message, version) {
+      assert.equal(version, 9);
+      return Buffer.from("entry 50 (80)\n@140\n\t16;original\n\t4;500\n", "utf8");
+    },
+    async compileMessage(source, version) {
+      assert.equal(version, 9);
+      return source;
+    }
+  }
+});
+for (const entry of ["pl00.msg", "pl00_match.msg"]) {
+  const result = await th09Compiler.process({
+    game: "th09", path: `th09/${entry}.jdiff`, mountPath: `/thcrap/th09/${entry}.jdiff`, kind: "jdiff",
+    bytes: Buffer.from('{"50":{"140_0":{"lines":["译文一","译文二"]}}}')
+  });
+  assert.equal(result.format, "touhou-message/1");
+  assert.equal(result.targetPath, `/thcrap/th09/${entry}`);
+  assert.equal(result.bytes.toString("utf8"), "entry 50 (80)\n@140\n\t16;译文一\n\t16;译文二\n\t4;500\n");
+}
+const th09Ending = await th09Compiler.process({
+  game: "th09", path: "th09/end00.end.jdiff", mountPath: "/thcrap/th09/end00.end.jdiff", kind: "jdiff",
+  bytes: Buffer.from('{"1":{"lines":["结局"]}}')
+});
+assert.equal(th09Ending.format, "touhou-ending/1");
+assert.equal(th09Ending.targetPath, "/thcrap/th09/end00.end");
 
 // TH08 spellcomments.js: TSA's spell_comment_line uses comment_1[0] for the
 // first displayed line and comment_1[1] for the second, so the ETL packs

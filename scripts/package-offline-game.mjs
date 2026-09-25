@@ -13,6 +13,24 @@ if (!process.argv[2] || !/^th\d{2}$/.test(game)) {
 
 const descriptorPath = resolve(site, `${game}.package.json`);
 const descriptor = JSON.parse(await readFile(descriptorPath, "utf8"));
+const hasLanguagePacks = Array.isArray(descriptor.components?.language?.entries) &&
+  descriptor.components.language.entries.length > 0;
+if (hasLanguagePacks && !descriptor.base.files.some(fileId =>
+  descriptor.files[fileId]?.target === "/unifont.otf")) {
+  const source = "shared/unifont.otf";
+  const info = await stat(resolve(site, source)).catch(() => null);
+  if (!info?.isFile() || !info.size) {
+    throw new Error(`${game}: language-enabled offline package requires ${source}`);
+  }
+  const fileId = "shared-unifont";
+  if (Object.hasOwn(descriptor.files, fileId)) throw new Error(`${game}: package file ID is already in use: ${fileId}`);
+  descriptor.files[fileId] = {
+    source,
+    target: "/unifont.otf",
+    revision: "pending",
+  };
+  descriptor.base.files.push(fileId);
+}
 if (withoutOgg) {
   for (const fileId of Object.keys(descriptor.files)) {
     if (fileId.toLowerCase().startsWith("ogg:")) delete descriptor.files[fileId];

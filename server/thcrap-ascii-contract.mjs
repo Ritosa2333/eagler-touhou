@@ -208,7 +208,11 @@ export const THCRAP_ASCII_CONTRACT = Object.freeze({
   // TH10's overlay text is translated through the pack's ASCII/PNG atlas, and
   // zh-hans carries no th10_ascii_* stringdefs. Keep an explicit empty contract
   // so the compiler still validates and emits a (valid, zero-record) EAS1 table.
-  th10: Object.freeze([])
+  th10: Object.freeze([]),
+  // TH09 v1.50a routes its addressed strings through stringlocs.js; its
+  // rendered UI labels without stringloc addresses are PNG/ANM replacements.
+  // There is no th09_ascii_* stringdefs surface in base_tsa or lang_zh-hans.
+  th09: Object.freeze([])
 });
 
 export function validateAsciiContract(game) {
