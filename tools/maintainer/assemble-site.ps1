@@ -5,10 +5,8 @@ param(
     [string] $Th06Directory,
     [string] $Th07Directory,
     [string] $Th08Directory,
-    [string] $Th09Directory,
     [string] $Th10Directory,
     [string] $Th08Build,
-    [string] $Th09Build,
     [string] $Th10Build,
     [string] $RuntimeRelease,
     [Parameter(Mandatory)] [string] $OutputDirectory,
@@ -82,7 +80,6 @@ $legacyGameDirectories = @{
     th06 = $Th06Directory
     th07 = $Th07Directory
     th08 = $Th08Directory
-    th09 = $Th09Directory
     th10 = $Th10Directory
 }
 if (-not $GameDirectories) { $GameDirectories = @{} }
@@ -209,7 +206,7 @@ if ($resourceMode -eq 'import') {
             }
         }
         if ($selectedHasTh09) {
-            $runtimeBuilds.th09 = if ($Th09Build) { (Resolve-Path -LiteralPath $Th09Build).Path } else { Get-EaglerWorkspacePath $workspaceLayout 'th09' 'th09_web\build-eagler' }
+            $runtimeBuilds.th09 = Get-EaglerWorkspacePath $workspaceLayout 'th09' 'th09_web\build-eagler'
             if (-not (Test-Path -LiteralPath (Join-Path $runtimeBuilds.th09 'runtime-files.json') -PathType Leaf)) {
                 throw "Prepared TH09 Runtime directory manifest not found: $(Join-Path $runtimeBuilds.th09 'runtime-files.json')"
             }
@@ -282,7 +279,7 @@ $th10Build = if ($selectedHasTh10 -and -not $runtimeReleasePath) {
     (Resolve-Path -LiteralPath $Th10Build).Path
 } else { $null }
 $th09Build = if ($selectedHasTh09 -and -not $runtimeReleasePath) {
-    if ($Th09Build) { (Resolve-Path -LiteralPath $Th09Build).Path } else { Get-EaglerWorkspacePath $workspaceLayout 'th09' 'th09_web\build-eagler' }
+    Get-EaglerWorkspacePath $workspaceLayout 'th09' 'th09_web\build-eagler'
 } else { $null }
 $font = (Resolve-Path -LiteralPath $FontFile).Path
 $vanillaFont = (Resolve-Path -LiteralPath $VanillaFontFile).Path
