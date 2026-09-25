@@ -36,6 +36,9 @@ bool RollbackDriver::Commit(){
     if(net.Correcting()||net.RollbackFrame()!=Netplay::INVALID_FRAME)return true;
     const auto through=net.ConfirmedThrough(),last=net.LastFrame();
     if(!runtime.commit_audio_events(audio,through,last)||!files.CommitThrough(through,last,*this))return Fail("confirmed external output failed");
+    if(!runtime.replay_archive.Commit(net,[](void* context,const char* path,const u8* bytes,u32 size){
+        return static_cast<RollbackDriver*>(context)->apply_file_event(path,bytes,size);
+    },this))return Fail("confirmed Replay commit failed");
     network.PublishConfirmedSpectatorFrames();
     if(through!=Netplay::INVALID_FRAME&&last!=Netplay::INVALID_FRAME&&bound){
         const auto next=std::min(through,last)+1;world.DiscardBefore(next);textures.DiscardBefore(next);
@@ -72,12 +75,13 @@ bool RollbackDriver::Admit(){
         if(!Commit()||!network.Retire())return Fail("generation retirement failed");
         SessionSetup next;
         if(!net.BeginNextRun(next,a.session.random.seed)||!network.BeginGeneration())return Fail("generation bootstrap failed");
+        if(!runtime.replay_archive.NextGeneration(net.Generation()))return Fail("Replay generation failed");
         next.started=true;a.session.multiplayer_session=next;
         a.session.random={u16(next.seed),u16(next.seed),0};
         audio.Reset();files.Reset();generation=net.Generation();generation_transition_pending=true;
         a.session.network_waiting=true;return true;
     }
-    if(!bound&&Stable()){
+    if(!net.Playback()&&!bound&&Stable()){
         if(!world.Bind(runtime)||!textures.Bind(runtime)||!net.SetWorldReady(true))return Fail("production owner bootstrap failed");
         bound=true;
     }
@@ -87,6 +91,7 @@ bool RollbackDriver::RunFrame(bool render){
     auto& a=runtime.app;auto& session=a.session;auto& net=session.netplay;
     const auto frame=net.NextFrame();const auto decision=net.Prepare(frame);
     if(!decision.canAdvance){session.network_waiting=true;return true;}
+    if(runtime.replay_archive.Recording()&&!runtime.replay_archive.BeginFrame(frame))return Fail("Replay frame stamp failed");
     if(bound&&(!world.BeginFrame(frame)||!textures.BeginFrame(frame)))return Fail("begin world frame failed");
     if(!audio.BeginFrame(frame)||!files.BeginFrame(frame))return Fail("begin output frame failed");
     open=true;session.network_frame=decision;session.network_frame_open=true;
@@ -103,6 +108,9 @@ bool RollbackDriver::FinishFrame(){
     auto& session=runtime.app.session;auto& net=session.netplay;const auto frame=net.NextFrame();
     if((bound&&(!world.EndFrame()||!textures.EndFrame()))||!audio.EndFrame()||!files.EndFrame())return Fail("end frame ownership failed");
     if(!net.MarkSimulated(frame,session.network_frame))return Fail("simulated input mismatch");
+    const auto stage=u32(runtime.app.game.globals.stage);
+    if(runtime.replay_archive.Recording()&&!runtime.replay_archive.Stamp(frame,stage,session.numbers.score))return Fail("Replay stage stamp failed");
+    if(net.Playback()&&!runtime.replay_archive.AdvancePlayback(frame,stage))return Fail("Replay native stage diverged");
     if(bound)max_bytes=std::max(max_bytes,u32(world.BytesForFrame(frame)+textures.BytesForFrame(frame)));
     open=false;session.network_frame_open=false;++runtime.multiplayer_logic_frame;
     if(!correcting)corrected_present_pending=false;
@@ -133,7 +141,11 @@ bool RollbackDriver::Step(bool render){
     if(!Pump())return false;
     if(network.SpectatorFinished()){session.network_waiting=true;return true;}
     if(!net.CanStart()){session.network_waiting=true;return true;}
+    if(net.Playback()&&(runtime.replay_finished||runtime.replay_archive.Complete())){
+        runtime.replay_finished=true;session.network_waiting=true;return true;
+    }
     if(!initialized){audio.Reset(net.NextFrame());files.Reset(net.NextFrame());
+        if(!runtime.begin_replay_recording())return Fail("Replay recording bootstrap failed");
         if(!runtime.bind_audio_events(&audio))return Fail("audio sink binding failed");
         initialized=true;generation=net.Generation();}
     if(!Correct()||!Commit()||!Admit())return false;
@@ -152,7 +164,10 @@ bool RollbackDriver::Step(bool render){
     }
     const auto frame=net.NextFrame();
     if(!net.HasLocal(frame)){
-        if(net.Spectator()){
+        if(net.Playback()){
+            const auto* inputs=runtime.replay_archive.PlaybackFrame(frame);
+            if(!inputs||!net.FeedPlayback(frame,*inputs))return Fail("Replay input rejected");
+        }else if(net.Spectator()){
             if(!network.SpectatorBacklog()){session.network_waiting=true;return true;}
             if(!network.ConsumeSpectator())return Fail("observer input consumption failed");
         }else{
@@ -161,7 +176,7 @@ bool RollbackDriver::Step(bool render){
         if(!net.CaptureLocal(frame,runtime.device_sample(physical)))return Fail("local capture failed");
         }
     }
-    if(!net.Spectator()&&!network.Captured(frame))return Fail("captured input send failed");
+    if(!net.ReadOnly()&&!network.Captured(frame))return Fail("captured input send failed");
     const bool success=RunFrame(render);
     return success&&(!session.network_waiting||PresentCorrection());
 }

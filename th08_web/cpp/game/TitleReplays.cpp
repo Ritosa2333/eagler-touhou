@@ -1,17 +1,30 @@
 // TH08 replay menu. Platform file enumeration is explicit; decoded metadata
 // and stage offsets are ordinary C++ data and never executable addresses.
 #include "TitleMenus.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/ReplayArchive.hpp"
+#endif
 #include "Localization.hpp"
 #include <cstdio>
 namespace th08 {
 void TitleMenus::scan_replays(){
     i32 count=0;
     const auto add=[&](const char* path,const char* label,const std::vector<u8>& file){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        auto& metadata=state.replays[count];if(!multiplayer::ReplayArchive::Preview(file.data(),file.size(),metadata))return;
+#else
         ReplayFile replay;if(!replay.decode(file.data(),file.size()))return;
         auto& metadata=state.replays[count];std::memcpy(&metadata,replay.decoded().data(),sizeof(metadata));
+#endif
         std::snprintf(state.replayFilePaths[count],512,"%s",path);std::snprintf(state.replayNumbers[count],8,"%s",label);++count;
     };
-    for(i32 i=1;i<=15;++i){char path[64],label[8];std::snprintf(path,sizeof(path),"./replay/th8_%02d.rpy",i);std::snprintf(label,sizeof(label),"No.%02d",i);auto file=actions.read_replay(path);if(!file.empty())add(path,label,file);}
+    for(i32 i=1;i<=15;++i){char path[64],label[8];
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        std::snprintf(path,sizeof(path),"./replay/th8_%02d.rpyx",i);
+#else
+        std::snprintf(path,sizeof(path),"./replay/th8_%02d.rpy",i);
+#endif
+        std::snprintf(label,sizeof(label),"No.%02d",i);auto file=actions.read_replay(path);if(!file.empty())add(path,label,file);}
     const auto names=actions.list_user_replays();u32 index=0;
     for(i32 attempt=0;attempt<45&&index<names.size();++attempt){
         const auto path=std::string("./replay/")+names[index];auto file=actions.read_replay(path.c_str());
@@ -23,6 +36,11 @@ void TitleMenus::scan_replays(){
     state.replayCount=count;state.unk0xc284=0;
 }
 bool TitleMenus::open_replay(const char* path){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    close_replay();auto file=actions.read_replay(path);
+    if(!multiplayer::ReplayArchive::Preview(file.data(),file.size(),selected_metadata,multiplayer_stage_scores))return false;
+    selected_replay=std::move(file);state.currentReplay=&selected_metadata;return true;
+#else
     close_replay();auto file=actions.read_replay(path);ReplayFile replay;
     if(!replay.decode(file.data(),file.size()))return false;
     std::memcpy(&selected_metadata,replay.decoded().data(),sizeof(selected_metadata));
@@ -31,13 +49,18 @@ bool TitleMenus::open_replay(const char* path){
     // candidate block without mutating the live practice run.
     if(practice)practice_replay_menu_check(*practice,file.data(),u32(file.size()));
     selected_replay=replay.decoded();state.currentReplay=&selected_metadata;return true;
+#endif
 }
 void TitleMenus::close_replay(){state.currentReplay=nullptr;selected_replay.clear();}
 i32 TitleMenus::corrupt_replay(){actions.replay_error();context.supervisor_state=-1;return 0;}
 bool TitleMenus::replay_stage(i32 stage,ReplayStage& out)const{
     if(!state.currentReplay||stage<0||stage>=9)return false;const u32 offset=selected_metadata.header.stage_offsets[stage];
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!offset)return false;out={};out.end_score=multiplayer_stage_scores[stage];return true;
+#else
     if(!offset||offset>selected_replay.size()||selected_replay.size()-offset<sizeof(out))return false;
     std::memcpy(&out,selected_replay.data()+offset,sizeof(out));return true;
+#endif
 }
 i32 TitleMenus::OnUpdateReplayMenu(){
     const auto pressed=[&](u16 mask){return (context.input.current&mask)&&((context.input.current&mask)!=(context.input.previous&mask));};
@@ -81,10 +104,15 @@ i32 TitleMenus::OnUpdateReplayMenu(){
         else if(movement>0)while(!stage_present(state.cursor)){++state.cursor;if(state.cursor>=9)state.cursor=0;if(++guard>9)return corrupt_replay();}
         state.selectedReplayStage=state.cursor;
         if(pressed(4097)){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            if(!actions.request_multiplayer_replay(state.replayFilePaths[state.selectedReplay],u32(state.selectedReplayStage)))return corrupt_replay();
+            return 1;
+#else
             SetInterruptArray(state.vms,state.vmCount,19);state.vms[state.selectedReplay%15+80].SetInterrupt(17);state.currentScreenState=3;state.cursor=0;
             state.vms[108].pendingInterrupt=state.vms[109].pendingInterrupt=21;
             if(state.currentReplay->spell_number<0)state.vms[110].pendingInterrupt=21;else state.vms[110].color1.a=0;
             state.vms[state.cursor+108].pendingInterrupt=20;break;
+#endif
         }
         if(pressed(10)){close_replay();state.currentScreenState=1;state.stateTimer2=0;SetInterruptArray(state.vms,state.vmCount,14);state.cursor=state.selectedReplay;}break;
     }

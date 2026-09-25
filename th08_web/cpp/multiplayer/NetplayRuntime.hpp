@@ -20,7 +20,7 @@ public:
     bool Reset(const SessionSetup&) noexcept;
     void Clear() noexcept;
     bool Configured()const{return configured_;}
-    bool CanStart()const{return configured_&&!retired_&&(spectator_||gate_.CanStart());}
+    bool CanStart()const{return configured_&&!retired_&&(spectator_||playback_||gate_.CanStart());}
     const Netplay::SessionConfig& Config()const{return gate_.Config();}
     const SessionSetup& Setup()const{return setup_;}
     std::uint32_t NextFrame()const{return next_;}
@@ -28,6 +28,10 @@ public:
     std::uint32_t Generation()const{return generation_;}
     bool Retired()const{return retired_;}
     bool Spectator()const{return spectator_;}
+    bool Playback()const{return playback_;}
+    bool ReadOnly()const{return spectator_||playback_;}
+    bool BeginPlayback();
+    bool FeedPlayback(std::uint32_t frame,const std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>&);
     bool BeginSpectator();
     // Only the validated receive-only transport calls this. There is no
     // browser export for injecting an observer frame into the simulation.
@@ -35,10 +39,10 @@ public:
 
     Netplay::SessionPacket SessionPacket(Netplay::SessionPhase phase)const{return gate_.BuildPacket(phase);}
     Netplay::SessionPacketResult ApplySession(const Netplay::SessionPacket& packet){
-        return spectator_?Netplay::SessionPacketResult::InvalidPeer:gate_.Apply(packet);
+        return ReadOnly()?Netplay::SessionPacketResult::InvalidPeer:gate_.Apply(packet);
     }
     bool MarkReady();
-    bool Ready()const{return !spectator_&&gate_.LocalReady();}
+    bool Ready()const{return !ReadOnly()&&gate_.LocalReady();}
 
     bool CaptureLocal(std::uint32_t frame,const Netplay::FrameInput&);
     bool HasLocal(std::uint32_t frame)const{return core_.HasLocalCapture(frame);}
@@ -68,11 +72,12 @@ public:
 private:
     bool configure(const SessionSetup&) noexcept;
     bool receive_frame(std::uint32_t frame)const;
+    bool FeedAuthoritative(std::uint32_t frame,const std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>&);
     Netplay::SessionGate gate_;
     Netplay::RollbackCore core_;
     SessionSetup setup_{};
     std::uint64_t base_session_id_=0;
     std::uint32_t next_=0,generation_=0,correction_end_=Netplay::INVALID_FRAME;
-    bool configured_=false,retired_=false,world_ready_=false,spectator_=false;
+    bool configured_=false,retired_=false,world_ready_=false,spectator_=false,playback_=false;
 };
 }

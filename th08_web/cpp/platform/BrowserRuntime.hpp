@@ -4,6 +4,9 @@
 #include <map>
 #include "ResourceManager.hpp"
 #include "../../../portable/input/MotionTrack.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/ReplayArchive.hpp"
+#endif
 namespace th08 {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 namespace multiplayer {class AudioEvents;}
@@ -23,6 +26,12 @@ class BrowserRuntime:public ApplicationPlatform {
     Netplay::FrameInput device_motion{};
     std::unique_ptr<multiplayer::RollbackDriver> multiplayer_driver;
     u32 multiplayer_logic_frame=0;
+    GameConfiguration replay_boot_configuration{};
+    std::vector<u8> replay_boot_score;
+    std::map<std::string,std::vector<u8>> replay_shadow_files;
+    bool replay_viewer=false,replay_menu_opened=false,replay_finished=false;
+    std::string replay_request;
+    u32 replay_requested_stage=0,replay_seek_target=0;
 #endif
     struct Graphics:SpriteBackend {
         BrowserRuntime& r;explicit Graphics(BrowserRuntime& r):r(r){}
@@ -74,6 +83,21 @@ public:
     bool diagnostic_audio_routing();
 #endif
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    multiplayer::ReplayArchive replay_archive;
+    bool prepare_replay(const u8*,u32,u32 stage);
+    bool begin_replay_recording();
+    bool set_replay_viewer();
+    bool ReplayViewer()const{return replay_viewer;}
+    bool ReplayFinished()const{return replay_finished;}
+    bool ReplaySeeking()const{return replay_archive.Playing()&&replay_archive.Cursor()<replay_seek_target;}
+    u32 ReplaySeekTarget()const{return replay_seek_target;}
+    const char* ReplayRequest()const{return replay_request.c_str();}
+    u32 ReplayRequestedStage()const{return replay_requested_stage;}
+    void exit_replay(){if(app.session.netplay.Playback())replay_finished=true;}
+    bool request_multiplayer_replay(const char*,u32)override;
+    bool save_multiplayer_replay(i32,const char*)override;
+    bool save_confirmed_multiplayer_replay(i32,const char*);
+    bool export_multiplayer_replay(std::vector<u8>& out){return replay_archive.Encode(out);}
     bool logical_frame_advanced()const{return !app.session.netplay.Configured()||app.session.network_frame_open;}
     bool finish_network_frame();
     bool connect_network(const char* relay);

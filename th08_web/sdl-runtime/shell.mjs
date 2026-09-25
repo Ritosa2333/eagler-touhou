@@ -91,11 +91,14 @@ async function launch(){
  }
  const mode=Module.touhouMusicMode||'none';music=mode!=='none';core.sdl_ogg_decode_mode?.(options.oggDecodeMode==='full');core.sdl_music_source?.(mode==='midi'?2:1);
  const multiplayer=multiplayerRuntime?validateMultiplayerOptions(options):null;
- if(multiplayerRuntime&&!multiplayer)throw Error('TH08 multiplayer Runtime requires a room start');
+ const replayViewer=multiplayerRuntime&&options.replayViewer===true;
+ if(replayViewer&&multiplayer)throw Error('Replay viewer cannot join a live room');
+ if(multiplayerRuntime&&!multiplayer&&!replayViewer)throw Error('TH08 multiplayer Runtime requires a room start or Replay viewer');
  if(!multiplayerRuntime&&options.netplayMode==='lan')throw Error('Network session requires the multiplayer Runtime');
  core.sdl_music_enabled?.(music);app=core.sdl_game_open(multiplayer?multiplayer.seed:Date.now()>>>0);if(!app)throw Error('C++ game initialization failed');
  try{
  const total=core.sdl_prepare_total();for(let i=0;i<total;i++){if(core.sdl_prepare_next()<0)throw Error('资源预载失败 '+i);if(i%12===11){document.querySelector('#loading').textContent='正在准备游戏资源 '+(i+1)+' / '+total;await new Promise(resolve=>setTimeout(resolve,0));}}
+ if(replayViewer&&!core.multiplayer_replay_viewer(app))throw Error('TH08 native Replay viewer rejected');
  // Spectator protection precedes native initialize(), which itself writes the
  // config/score namespace. Waiting until the first gameplay frame is too late.
  if(multiplayer?.spectator)await configureMultiplayer(core,app,options);
@@ -106,6 +109,31 @@ async function launch(){
  applyOptions();launched=true;first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
  canvas.focus({preventScroll:true});core.sdl_loop_pause(1);if(!document.hidden)await resumeForegroundAudio();if(query.get('manual')!=='1')core.sdl_loop_start();
  emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:'eagler-touhou/1',version:'3.4.1-sdl3'});
+}
+let replayReopening=false;
+function replayWords(){const p=core.multiplayer_replay_status(app);return Array.from(new Uint32Array(core.memory.buffer,p,12));}
+function replayByteCall(bytes,callback){const p=core.allocate(bytes.length);if(!p)throw Error('Replay allocation failed');
+ try{new Uint8Array(core.memory.buffer,p,bytes.length).set(bytes);return callback(p,bytes.length);}finally{core.deallocate(p);}}
+async function reopenReplay(path,stage){
+ // This is an internal Runtime lifecycle, not a Launcher room command or
+ // synthetic playback engine. Reconstruct a fresh native world and leave the
+ // parent epoch, filesystem mount and room ownership unchanged.
+ const bytes=path?Module.FS.readFile(root()+'/'+storage.relativeSave(path)):null;
+ const seed=bytes?replayByteCall(bytes,(p,n)=>core.multiplayer_replay_seed(p,n)):0;
+ if(seed===0xffffffff)throw Error('Invalid multiplayer Replay');
+ core.sdl_loop_stop();
+ window.dispatchEvent(new CustomEvent('touhou-midi-close'));
+ app=core.multiplayer_replay_reopen(seed);if(!app)throw Error('Replay native world allocation failed');
+ if(bytes){if(!replayByteCall(bytes,(p,n)=>core.multiplayer_replay_load(app,p,n,stage)))throw Error('Replay native bootstrap rejected');}
+ else if(!core.multiplayer_replay_viewer(app))throw Error('Replay viewer bootstrap rejected');
+ const total=core.sdl_prepare_total();for(let i=0;i<total;++i){
+  if(core.sdl_prepare_next()<0)throw Error('Replay resource preparation failed');
+  if(i%12===11)await new Promise(resolve=>setTimeout(resolve,0));
+ }
+ if(!core.sdl_game_initialize())throw Error('Replay native initialization failed');
+ core.sdl_keys_clear();applyOptions();replayReopening=false;
+ core.sdl_loop_pause(1);if(!document.hidden)await resumeForegroundAudio();
+ if(query.get('manual')!=='1')core.sdl_loop_start();
 }
 async function command(message){
  if(multiplayerRuntime&&launched&&options.netplaySpectator&&
@@ -121,10 +149,12 @@ async function command(message){
  case 'touch-controls':touchControls(core,options,message);return {};
  case 'launch':await launch();return {};
  case 'sync':await save();return {};
- case 'list':{const files=[];for(const dir of ['', '/replay'])for(const name of Module.FS.readdir(root()+dir)){const path=(dir+'/'+name).replace(/^\//,'');try{storage.relativeSave(path);}catch{continue;}const full=root()+'/'+path,s=Module.FS.stat(full);if(Module.FS.isFile(s.mode)){const bytes=Module.FS.readFile(full);files.push({path:exportReplayName(path,bytes,8),size:s.size});}}return {files};}
- case 'read':{let path=storage.relativeSave(message.path);if(path.endsWith('.rpyx'))path=path.slice(0,-1);return {bytes:Array.from(Module.FS.readFile(root()+'/'+path))};}
- case 'write':{if(multiplayerRuntime&&launched)throw Error('Cannot import saves during a multiplayer run');if(!Array.isArray(message.bytes)||message.bytes.length>16*1024*1024||message.bytes.some(b=>!Number.isInteger(b)||b<0||b>255))throw Error('Invalid save bytes');const bytes=new Uint8Array(message.bytes),path=importReplayName(storage.relativeSave(message.path),bytes,8);Module.FS.writeFile(root()+'/'+path,bytes);await sync(false);return {};}
- case 'remove':{if(multiplayerRuntime&&launched)throw Error('Cannot remove saves during a multiplayer run');let path=storage.relativeSave(message.path);if(path.endsWith('.rpyx'))path=path.slice(0,-1);Module.FS.unlink(root()+'/'+path);await sync(false);return {};}
+ case 'list':{const files=[];for(const dir of ['', '/replay'])for(const name of Module.FS.readdir(root()+dir)){const path=(dir+'/'+name).replace(/^\//,'');try{storage.relativeSave(path);}catch{continue;}const full=root()+'/'+path,s=Module.FS.stat(full);if(Module.FS.isFile(s.mode)){const bytes=Module.FS.readFile(full);files.push({path:multiplayerRuntime?path:exportReplayName(path,bytes,8),size:s.size});}}return {files};}
+ case 'read':{let path=storage.relativeSave(message.path);if(!multiplayerRuntime&&path.endsWith('.rpyx'))path=path.slice(0,-1);return {bytes:Array.from(Module.FS.readFile(root()+'/'+path))};}
+ case 'write':{if(multiplayerRuntime&&launched)throw Error('Cannot import saves during a multiplayer run');if(!Array.isArray(message.bytes)||message.bytes.length>16*1024*1024||message.bytes.some(b=>!Number.isInteger(b)||b<0||b>255))throw Error('Invalid save bytes');const bytes=new Uint8Array(message.bytes),relative=storage.relativeSave(message.path);
+  if(multiplayerRuntime&&relative.startsWith('replay/')&&(!relative.endsWith('.rpyx')||!replayByteCall(bytes,(p,n)=>core.multiplayer_replay_validate(p,n))))throw Error('Invalid TH08 multiplayer Replay');
+  const path=multiplayerRuntime?relative:importReplayName(relative,bytes,8);Module.FS.writeFile(root()+'/'+path,bytes);await sync(false);return {};}
+ case 'remove':{if(multiplayerRuntime&&launched)throw Error('Cannot remove saves during a multiplayer run');let path=storage.relativeSave(message.path);if(!multiplayerRuntime&&path.endsWith('.rpyx'))path=path.slice(0,-1);Module.FS.unlink(root()+'/'+path);await sync(false);return {};}
  default:throw Error('Unsupported runtime command: '+message.command);
  }
 }
@@ -161,6 +191,14 @@ const initialized=(async()=>{
  Module.FS.mkdirTree(storage.namespace+'/replay');await migrateSaves();await mountData();cstring('#screen',core.sdl_canvas);
  Module.runtimePrepare=()=>!document.hidden;
  Module.runtimeFinish=(result,duration)=>{
+  if(replayReopening)return;
+  if(multiplayerRuntime&&app&&options.replayViewer&&core.multiplayer_replay_status){
+   const state=replayWords(),pointer=core.multiplayer_replay_request(app);
+   const memory=new Uint8Array(core.memory.buffer);let end=pointer;while(pointer&&end<memory.length&&memory[end]&&end-pointer<512)++end;
+   const path=pointer?new TextDecoder().decode(memory.subarray(pointer,end)):'';
+   if(path||state[9]){replayReopening=true;core.sdl_loop_pause(1);
+    queue=queue.then(()=>reopenReplay(path,state[10])).catch(error);return;}
+  }
   practice.tick();
   if(multiplayerRuntime)updateNetworkDiagnostics(core,app);
   if(multiplayerRuntime&&window.__eaglerNetplaySpectatorFinished&&!closing){

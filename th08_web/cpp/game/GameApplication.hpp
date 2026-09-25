@@ -14,6 +14,10 @@ namespace th08 {
 // Files, calendar, input and device operations are host boundaries. Scene
 // selection, record handling, loading gates and ordered game jobs remain here.
 struct ApplicationPlatform:PlayerScenePlatform,TextWriter,AsciiOverlay,FrameClock {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    virtual bool request_multiplayer_replay(const char*,u32){return false;}
+    virtual bool save_multiplayer_replay(i32,const char*){return false;}
+#endif
     virtual void begin_motion(i32,bool,bool,bool){}
     virtual bool load_motion(const u8*,u32){return true;}
     virtual i32 replay_touch_points(ReplayTouchPoint*,i32){return 0;}
@@ -89,6 +93,9 @@ class GameApplication {
         void apply_volume()override{a.platform.apply_volume(a.session.display_config);}
         std::vector<u8> read_replay(const char* p)override{return a.platform.read(p);}
         std::vector<std::string> list_user_replays()override{return a.platform.user_replays();}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        bool request_multiplayer_replay(const char* p,u32 stage)override{return a.platform.request_multiplayer_replay(p,stage);}
+#endif
         void replay_error()override{a.platform.replay_error();}
         void background()override{a.platform.draw_surface(0);}
         void load_image(const char* p)override{a.failed|=!a.platform.load_surface(0,p);}

@@ -59,7 +59,7 @@ constexpr u32 warmCount=sizeof(warmAnimations)/sizeof(*warmAnimations);
 touhou::input::TouchState touch_state(){touhou::input::TouchState s;if(!runtime)return s;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     auto& a=runtime->app;auto& g=a.game;
-    if(a.session.netplay.Spectator()){s.context=3;return s;}
+    if(a.session.netplay.ReadOnly()){s.context=3;return s;}
     if(a.in_game()&&(g.globals.game_flags&8)){s.context=3;return s;}
     if(!a.in_game()||a.loading_game()||!g.ready()||g.paused||g.menus.context.pause_state||(g.globals.game_flags&0x60))return s;
     const auto seat=a.session.local_player;if(seat>=a.session.player_count)return s;
@@ -109,7 +109,8 @@ void poll(){if(!runtime)return;SDL_Event event;while(SDL_PollEvent(&event)){
     const auto state=touch_state();sync_touch_context(state);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     const auto& net=runtime->app.session.netplay;
-    const bool sample=!net.Configured()||(!net.Spectator()&&net.CanStart()&&!net.Correcting()&&!net.HasLocal(net.NextFrame()));
+    const bool sample=!net.Configured()||(!net.ReadOnly()&&net.CanStart()&&!net.Correcting()&&!net.HasLocal(net.NextFrame()));
+    if(net.Playback()&&(keys[27]&128))runtime->exit_replay();
     if(sample){
 #endif
     const auto input=touch.sample(state,SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);for(int i=0;i<256;i++)if(input.keys[i])keys[i]=128;
@@ -280,6 +281,19 @@ EX("sdl_loop_tick") i32 sdl_loop_tick(BrowserRuntime* r,double seconds,u32){
 EX("mp_fixture_audio_service_calls") u32 mp_fixture_audio_service_calls(){return audio_service_calls;}
 #endif
 EX("sdl_game_close") void sdl_game_close(){sdl_loop_stop();touch.reset();ThpracUi::shutdown();runtime.reset();if(gamepad)SDL_CloseGamepad(gamepad);gamepad=nullptr;sdl_audio_shutdown();sdl_fonts_shutdown();sdl_detach();}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+EX("multiplayer_replay_reopen") BrowserRuntime* multiplayer_replay_reopen(u32 milliseconds){
+    if(!runtime||!runtime->ReplayViewer())return nullptr;
+    sdl_loop_stop();touch.reset();ThpracUi::shutdown();runtime.reset();
+    sdl_audio_shutdown();sdl_fonts_shutdown();
+    prepared=frames=warm_mask=0;elapsed=double(milliseconds)/1000.;
+    cadence.reset();display_cadence.reset();presentation_gate.reset();last=-1;touch.begin_session();
+    for(auto& key:keyboard_map)key.hosted=false;
+    runtime=std::make_unique<BrowserRuntime>();
+    if(!sdl_rebind(runtime.get())||!sdl_load_assets(*runtime)){runtime.reset();return nullptr;}
+    return runtime.get();
+}
+#endif
 EX("sdl_key") void sdl_key(const char* code,u32 down){for(auto& key:keyboard_map)if(!std::strcmp(key.code,code)){key.hosted=down!=0;break;}}
 EX("sdl_keys_clear") void sdl_keys_clear(){for(auto& key:keyboard_map)key.hosted=false;cancel_touch();touch.reset();}
 EX("sdl_touch") void sdl_touch(u32 type,i32 id,float x,float y){

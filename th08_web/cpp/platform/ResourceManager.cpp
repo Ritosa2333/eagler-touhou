@@ -35,5 +35,11 @@ std::vector<u8> ResourceManager::read(const char* name){
 }
 std::vector<u8> ResourceManager::read_prefix(const char* p,u32 size){auto b=read(p);if(b.size()>size)b.resize(size);return b;}
 const std::vector<u8>& ResourceManager::file(const char* p){file_result=read(p);return file_result;}
-std::vector<std::string> ResourceManager::user_replays(){std::vector<std::string> result;for(auto& f:files)if(f.first.find("replay/th8_ud")==0&&f.first.size()>4&&f.first.substr(f.first.size()-4)==".rpy")result.push_back(f.first.substr(7));return result;}
+std::vector<std::string> ResourceManager::user_replays(){std::vector<std::string> result;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    for(auto& f:files)if(f.first.find("replay/th8_ud")==0&&f.first.size()>5&&f.first.substr(f.first.size()-5)==".rpyx")result.push_back(f.first.substr(7));
+#else
+    for(auto& f:files)if(f.first.find("replay/th8_ud")==0&&f.first.size()>4&&f.first.substr(f.first.size()-4)==".rpy")result.push_back(f.first.substr(7));
+#endif
+    return result;}
 }

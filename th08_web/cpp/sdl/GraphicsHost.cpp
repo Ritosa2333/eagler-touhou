@@ -19,6 +19,17 @@ template<class T=u32>T* ptr(u32 p){return reinterpret_cast<T*>(uintptr_t(p));}
 }
 bool sdl_attach(BrowserRuntime* r){runtime=r;known.clear();capture_checked=capture_exact=capture_testing=false;capture_mismatches=0;gpu=std::make_unique<touhou::sdl::Renderer>(8,resolve,nullptr);return gpu->initialize();}
 void sdl_detach(){gpu.reset();runtime=nullptr;known.clear();}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+bool sdl_rebind(BrowserRuntime* next){
+ if(!gpu||!next)return false;
+ // The browser owns one canvas/WebGL context for the iframe lifetime. Replay
+ // replaces the native world, not that context. Purge its old title texture
+ // handles before the fresh TextureStore reuses the same integer handles.
+ gpu->discard();for(const auto& entry:known)gpu->release(entry.first);
+ gpu->release(0xffffffffu);known.clear();gpu->state=touhou::sdl::State{};
+ runtime=next;capture_checked=capture_exact=capture_testing=false;capture_mismatches=0;return true;
+}
+#endif
 struct SDLGraphics final:ZunGraphics {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
  void invalidate_texture(u32 handle)override{frame().release(handle);known.erase(handle);}

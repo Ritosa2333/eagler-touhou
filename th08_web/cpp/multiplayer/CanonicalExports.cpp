@@ -81,6 +81,19 @@ struct StateHash {
         for(const auto& p:source.asynchronous){const bool present=bool(p);h.add(present);if(p){auto c=*p;context(c);h.add(c);}}
     }
 };
+void pilot_resources(Hash& h,const PilotResources& p){
+    h.add(p.lives);h.add(p.bombs);h.add(p.power);
+    h.add(p.gauge);h.add(p.gauge_copy);
+    h.add(p.deaths);h.add(p.deaths_stage);h.add(p.bombs_used);h.add(p.bombs_used_stage);
+}
+void cooperation(Hash& h,const CooperativeState& c){
+    h.add(c.count);h.add(c.wipe_progress);h.add(c.retry_pending);
+    for(const auto& s:c.seats){
+        h.add(s.spirit);h.add(s.waiting_for_focus_release);
+        h.add(s.progress);h.add(s.power_taps);h.add(s.power_window);
+        h.add(s.target);h.add(s.drift_x);h.add(s.drift_y);
+    }
+}
 }
 }
 namespace th08 {
@@ -91,7 +104,9 @@ const u32* multiplayer_canonical_state(BrowserRuntime* runtime){
     if(!runtime||!runtime->app.in_game())return result;
     auto& a=runtime->app;auto& g=a.game;StateHash world{g};Hash h[11];
     auto economy=a.session.numbers;economy.high_score=0;economy.high_score_retries=0;
-    h[0].add(economy);h[0].add(a.session.pilot_resources);h[0].add(a.session.rank);h[0].add(g.cooperation);
+    h[0].add(economy);
+    for(const auto& p:a.session.pilot_resources)pilot_resources(h[0],p);
+    h[0].add(a.session.rank);cooperation(h[0],g.cooperation);
     h[0].add(g.committed_buttons);h[0].add(g.previous_buttons);
     h[0].add(a.session.multiplayer_cheat_movement_used);
     for(u32 seat=0;seat<a.session.player_count;++seat)world.player(g.pilot(seat).status(),h[1]);

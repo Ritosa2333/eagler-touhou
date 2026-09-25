@@ -5,13 +5,13 @@
 namespace th08::multiplayer {
 std::uint64_t NetworkConnection::Now(){return std::uint64_t(emscripten_get_now());}
 bool NetworkConnection::Connect(const char* relay){
-    if(enabled||net.Spectator()||!relay||!*relay||!net.Configured()||net.LastFrame()!=Netplay::INVALID_FRAME)return false;
+    if(enabled||net.ReadOnly()||!relay||!*relay||!net.Configured()||net.LastFrame()!=Netplay::INVALID_FRAME)return false;
     if(!transport.Connect(relay,u8(net.Setup().local_player),u8(net.Setup().player_count)))return false;
     if(!channel.BeginSession(net.Config(),Now())){transport.Close();return false;}
     enabled=true;invalid_input=false;return true;
 }
 bool NetworkConnection::ConnectSpectator(const char* relay,const char* id){
-    if(enabled||!relay||!*relay||!id||!net.Configured()||net.LastFrame()!=Netplay::INVALID_FRAME)return false;
+    if(enabled||net.ReadOnly()||!relay||!*relay||!id||!net.Configured()||net.LastFrame()!=Netplay::INVALID_FRAME)return false;
     const auto length=std::strlen(id);if(length<8||length>64)return false;
     for(std::size_t i=0;i<length;++i){const auto c=id[i];
         if(!((c>='A'&&c<='Z')||(c>='a'&&c<='z')||(c>='0'&&c<='9')||c=='_'||c=='-'))return false;

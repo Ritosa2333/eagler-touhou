@@ -439,11 +439,74 @@ its product-policy regression remains passing. This does not itself declare
 or publish a TH08MP product. These are automated local-browser results, not
 human-device or public-network acceptance.
 
+## Confirmed all-seat Multiplayer Replay
+
+TH08 Multiplayer Replay is a separate .rpyx contract built on common
+InputReplay. Only reconciled all-seat confirmed FrameInput rows are committed;
+predicted rows and abandoned rollback futures never enter the file. The TH08
+envelope additionally carries the validated boot configuration and bounded
+ordinary score-file state needed to reconstruct the same fresh native world.
+No pointers, native object graph or world snapshot are serialized.
+
+The native Runtime reuses the TH08 Replay menu for discovery, metadata/stage
+display and selection. .rpyx metadata is projected into ReplayMetadata only for
+that UI; it is never passed to the vanilla ReplayFile decoder. Selecting a
+chapter reconstructs from frame zero rather than pretending an incomplete
+stage boundary is a save state. The fresh world is rebuilt inside the existing
+iframe/WebGL lifetime so internal Replay selection does not destroy/recreate
+the browser GL context.
+
+Playback is read-only at the NetplayRuntime boundary: local/remote input
+injection, HELLO/READY, packet construction, practice mutation and Replay save
+are rejected. The viewer uses ephemeral score/config shadows and does not
+modify the user's persistent score, configuration or Replay namespace.
+Malformed checksums, oversized boot state, invalid configuration/input samples,
+unsupported chapter layouts and corrupt imports fail closed without mutating an
+already loaded Replay. Replay generation labels preserve native Restart/new-run
+boundaries while retaining one continuous portable file.
+
+Canonical validation was tightened while closing 3P playback: PilotResources
+and CooperativeState are hashed field by field instead of including C++ padding
+bytes. This changes only the diagnostic cross-endpoint oracle, not gameplay or
+rollback ownership. A previously observed 3P frame-1 mismatch disappeared
+without changing the simulated state.
+
+Final evidence:
+
+- network-f444d955-0fb5-4d3f-aa3a-70f5327810b3: production 2P, 500 recorded
+  frames and 500 native playback frames, including Restart generation 0->1,
+  native Replay-menu lifecycle, corrupt import rejection, read-only probes,
+  boot-file isolation and Escape back to the menu.
+- network-326a893d-e89f-4cc3-87a1-e37ed57a229c: final-source production 3P,
+  500/500 frames through the same generation transition and native menu path.
+- network-8442e094-5ffe-4db3-90dd-7a8dc1f49f2a: current-source focused 2P
+  five-frame Replay regression after the final semantic-hash cleanup.
+- network-16540ec3-e2b9-44ea-887f-b71b5fbebc4a: rebuilt diagnostic packet
+  driver, 2P and 3P delayed/reordered/duplicate input with authoritative analog
+  payload, prediction/correction and bounded stall all passing after Replay
+  gained its read-only NetplayRuntime mode.
+- check-multiplayer-replay.mjs passes 2P/3P all-local-seat codec/boot-state
+  roundtrip, malformed/bounds/atomic rejection and replacement of speculative
+  Replay-save requests by corrected confirmed history.
+- check-multiplayer-netplay.mjs passes the frame-zero/session/generation fences
+  with the Replay/read-only role present.
+
+Production MP WASM:
+`d7a47c484bf13382dc04e19db0577e2453b762ab9f719c4d7cf82ded192fdc7f`.
+Diagnostic MP WASM:
+`5109f165bb83b01543067c9a934f85d9d385a5ffd7728396c76f7524fe8f886c`.
+The ordinary rebuild remains byte-for-byte
+`0d00a84ef6b214d43f2f365a6ffaa8bc6030a89c56b7d53868f3b9295b4cea3f`.
+The packaged multiplayer Runtime now contains multiplayer-host.mjs and the
+Replay/observer native ABI. Stage-select seek performance and any direct world
+checkpoint optimization remain deliberately outside this correctness slice.
+
 ## Next implementation boundary
 
 Production networking, automatic correction, authoritative analog/touch,
-start-time spectators and the Runtime room/start/exit/storage contract are
-connected. MP Replay and public Launcher product integration remain before declaring the complete TH08MP
-profile. Full-stage coverage, real-device acceptance and public deployment are
-not implied by these focused local-browser tests. No performance change,
-canonical promotion, push or deployment is claimed.
+start-time spectators, confirmed all-seat Replay and the Runtime
+room/start/exit/storage contract are connected. Public Launcher product
+integration remains before declaring the complete TH08MP profile. Full-stage
+coverage, real-device acceptance and public deployment are not implied by these
+focused local-browser tests. No performance change, canonical promotion, push
+or deployment is claimed.

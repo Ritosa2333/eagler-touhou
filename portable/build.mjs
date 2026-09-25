@@ -31,7 +31,7 @@ sources.push(...readdirSync(resolve(root,'cpp/sdl')).filter(n=>n.endsWith('.cpp'
 if(multiplayer){
  common.push('-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-DTH_ENABLE_NETPLAY=1','-I'+resolve(root,'cpp/multiplayer'),'-I'+resolve(netplayRoot,'include'));
  sources.push(...readdirSync(resolve(root,'cpp/multiplayer')).filter(n=>n.endsWith('.cpp')).map(n=>'cpp/multiplayer/'+n));
- sources.push(...['NetplayProtocol','NetplayCore','NetplaySession','SessionChannel','RollbackJournal','BrowserPeerTransport','WebSocketTransport'].map(n=>relative(root,resolve(netplayRoot,'src/netplay',n+'.cpp')).replaceAll('\\','/')));
+ sources.push(...['NetplayProtocol','NetplayCore','NetplaySession','SessionChannel','RollbackJournal','BrowserPeerTransport','WebSocketTransport','InputReplay'].map(n=>relative(root,resolve(netplayRoot,'src/netplay',n+'.cpp')).replaceAll('\\','/')));
  if(multiplayerFixtures){common.push('-DTH_MULTIPLAYER_FIXTURES=1');sources.push('../portable/multiplayer/FixtureExports.cpp');}
 }
 if(game==='th08')sources.push(...['imgui.cpp','imgui_draw.cpp','imgui_freetype.cpp','imgui_tables.cpp','imgui_widgets.cpp'].map(n=>'cpp/third_party/imgui/'+n));

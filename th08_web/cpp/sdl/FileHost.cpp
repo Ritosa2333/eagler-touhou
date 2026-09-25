@@ -37,8 +37,13 @@ struct ArchiveFile final:ArchiveSource {
 };
 bool save_name(const std::string& name){
     if(name=="score.dat"||name=="th08.cfg")return true;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(name.rfind("replay/th8_",0)||name.size()<18||name.size()>22||name.substr(name.size()-5)!=".rpyx")return false;
+    const auto id=name.substr(11,name.size()-16);if(id.size()!=2&&(id.size()!=6||id.substr(0,2)!="ud"))return false;
+#else
     if(name.rfind("replay/th8_",0)||name.size()<16||name.size()>24||name.substr(name.size()-4)!=".rpy")return false;
     const auto id=name.substr(11,name.size()-15);if(id.size()!=2&&(id.size()!=6||id.substr(0,2)!="ud"))return false;
+#endif
     for(char c:id)if(!std::isalnum(static_cast<unsigned char>(c)))return false;return true;
 }
 }

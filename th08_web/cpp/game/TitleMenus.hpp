@@ -133,6 +133,9 @@ struct TitleContext {
     bool IsLastWordSpellCardAttempted(i32 number)const{return number<205?HasSpellCardBeenEncountered(number,12):number<222&&last_words.unlocked[number-205]==number;}
 };
 struct TitleActions {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    virtual bool request_multiplayer_replay(const char*,u32){return false;}
+#endif
     virtual ~TitleActions()=default;
     virtual i32 load_surface(i32 slot,const char* path)=0;
     virtual void sound(i32 index,i32 pan)=0;
@@ -194,6 +197,9 @@ private:
     void InitializeAndSetSprite(AnmLoaded* file,AnmVm* vm,i32 index);
     bool start_demo();
     ReplayMetadata selected_metadata;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    u32 multiplayer_stage_scores[9]{};
+#endif
     std::vector<u8> selected_replay;
     void scan_replays();
     bool open_replay(const char* path);

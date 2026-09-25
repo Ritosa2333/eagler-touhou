@@ -43,24 +43,37 @@ bool BrowserRuntime::put_image(const char* name,u32 w,u32 h,const u8* b,u32 size
     images[path(name)]=std::move(image);return true;}
 std::vector<u8> BrowserRuntime::read(const char* p){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(replay_viewer){const auto found=replay_shadow_files.find(path(p));if(found!=replay_shadow_files.end())return found->second;}
     if(multiplayer_driver)if(const auto* pending=multiplayer_driver->PendingFile(path(p)))return *pending;
 #endif
     return resources_.read(p);
 }
 std::vector<u8> BrowserRuntime::read_prefix(const char* p,u32 size){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(replay_viewer){auto bytes=read(p);if(bytes.size()>size)bytes.resize(size);return bytes;}
     if(multiplayer_driver)if(const auto* pending=multiplayer_driver->PendingFile(path(p)))return {pending->begin(),pending->begin()+std::min<std::size_t>(size,pending->size())};
 #endif
     return resources_.read_prefix(p,size);
 }
 const std::vector<u8>& BrowserRuntime::file(const char* p){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(replay_viewer){const auto found=replay_shadow_files.find(path(p));if(found!=replay_shadow_files.end())return found->second;}
     if(multiplayer_driver)if(const auto* pending=multiplayer_driver->PendingFile(path(p)))return *pending;
 #endif
     return resources_.file(p);
 }
 bool BrowserRuntime::write(const char* p,const u8* b,u32 size){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(replay_viewer){
+        // Keep native read-after-write semantics inside this ephemeral viewer,
+        // without changing its owner's actual config/records or Replay files.
+        const auto name=path(p);
+        if(name=="score.dat"||name=="th08.cfg"){
+            if((!b&&size)||size>multiplayer::ReplayArchive::MaxBootScore)return false;
+            replay_shadow_files[name]=size?std::vector<u8>(b,b+size):std::vector<u8>{};
+        }
+        return true;
+    }
     if(discard_network_shutdown_writes||app.session.netplay.Spectator())return true;
 #endif
     const auto name=path(p);std::vector<u8> extended;
@@ -220,13 +233,27 @@ void BrowserRuntime::begin(bool disable_fog){if(disable_fog)app.renderer.set_fog
 void BrowserRuntime::rectangle(const OverlayRect& r,u32 c){const u32 colors[4]{c,c,c,c};app.renderer.draw_rectangle(r.left,r.top,r.right,r.bottom,colors);}
 bool BrowserRuntime::initialize(){
     if(prepared||!fonts.encoding.loaded())return false;arithmetic_mode(Precision::Single,Rounding::NearestEven);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!replay_viewer){replay_boot_score=read("score.dat");
+        // The native decoder treats an oversized/malformed save as an empty
+        // record set. Preserve that meaning, not an unbounded opaque payload.
+        ScoreFile score;if(!score.decode(replay_boot_score.data(),u32(replay_boot_score.size())))replay_boot_score.clear();}
+#endif
     if(!audio->prepare_formats())return false;
     TexturePixels pixels;if(!pixels.create(640,480,22))return false;back=app.textures.insert(std::move(pixels),0,true);
     reset_device();if(!audio->prepare_samples())return false;
-    prepared=true;if(!app.initialize(1000000))return false;reset_device();return true;
+    prepared=true;if(!app.initialize(1000000))return false;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    replay_boot_configuration=app.session.display_config;
+#endif
+    reset_device();return true;
 }
 bool BrowserRuntime::step(bool render){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(replay_viewer&&!replay_request.empty())return true;
+    if(replay_viewer&&!app.session.netplay.Configured()&&!replay_menu_opened&&app.title.ready_for_session()){
+        app.title.menus.ChangeCurrentScreen(TitleCurrentScreen_Replay);replay_menu_opened=true;
+    }
     auto& session=app.session;auto& net=session.netplay;
     if(net.Configured()){
         if(!multiplayer_driver)multiplayer_driver=std::make_unique<multiplayer::RollbackDriver>(*this);
