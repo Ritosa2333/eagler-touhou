@@ -49,6 +49,8 @@ __pycache__/
 /archive/
 /archivetemporary/
 /artifacts/
+/prepared/
+/dependencies/
 /debug.log
 /local.log
 /ref-wzq-*.png

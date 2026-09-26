@@ -47,6 +47,11 @@ const TH06_MULTIPLAYER_LOADOUTS = Object.freeze([REIMU_A, REIMU_B, MARISA_A, MAR
 const TH07_MULTIPLAYER_LOADOUTS = Object.freeze([...TH06_MULTIPLAYER_LOADOUTS, SAKUYA_A, SAKUYA_B]);
 const STANDARD_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Easy", "Normal", "Hard", "Lunatic", "Extra"]);
 const TH07_MULTIPLAYER_DIFFICULTIES = Object.freeze([...STANDARD_MULTIPLAYER_DIFFICULTIES, "Phantasm"]);
+const TH09_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Easy", "Normal", "Hard", "Lunatic"]);
+// Character IDs follow TH09's original character_labels table in TitleData.inc.
+const TH09_MULTIPLAYER_GLYPHS = Object.freeze(["霊", "魔", "咲", "妖", "鈴", "チ", "リ", "ミ", "て", "幽", "文", "メ", "小", "映", "メ", "ル"]);
+const TH09_MULTIPLAYER_LOADOUTS = Object.freeze(Array.from({ length: 16 }, (_, character) =>
+  Object.freeze({ labelKey: `multiplayer.loadout.th09_${character}`, glyph: TH09_MULTIPLAYER_GLYPHS[character], character, shot: 0 })));
 const STANDARD_MULTIPLAYER_PLAYER_COUNTS = Object.freeze([2, 3] as const);
 const TOGGLE_TOUCH_FIRE = Object.freeze({ mode: "toggle", labelKey: "touch.tapToggle" } as const);
 const CHARGE_TOUCH_FIRE = Object.freeze({
@@ -88,6 +93,8 @@ export const PRODUCT_GAMES = Object.freeze({
       difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
       loadouts: TH06_MULTIPLAYER_LOADOUTS,
       peerTransportGlobal: "__th06PeerTransport",
+      spectator: true,
+      titleRoomEntry: false,
     }),
     features: Object.freeze({ thprac: true, languages: true, focusHitbox: true }),
   }),
@@ -130,6 +137,8 @@ export const PRODUCT_GAMES = Object.freeze({
       difficulties: TH07_MULTIPLAYER_DIFFICULTIES,
       loadouts: TH07_MULTIPLAYER_LOADOUTS,
       peerTransportGlobal: "__th07PeerTransport",
+      spectator: true,
+      titleRoomEntry: false,
     }),
     features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
   }),
@@ -193,8 +202,8 @@ export const PRODUCT_GAMES = Object.freeze({
     runtimeFileLayout: "directory",
     requiredShared: Object.freeze(["/msgothic.ttc"]),
     runtimeAssets: Object.freeze([
-      "th09.html", "manifest.json", "shell.mjs", "managed.css", "keyboard.mjs",
-      "netplay.mjs", "motion-replay.mjs", "th09.mjs", "th09.wasm",
+      "th09.html", "manifest.json", "version.json", "shell.mjs", "managed.css", "keyboard.mjs",
+      "shared-netplay.mjs", "motion-replay.mjs", "th09.mjs", "th09.wasm",
       "fonts/blend.bin", "fonts/cp932.bin",
     ]),
     dataProvider: "retail-memory",
@@ -205,7 +214,19 @@ export const PRODUCT_GAMES = Object.freeze({
       musicMounts: Object.freeze({ ogg: "/music" }),
     }),
     replay: Object.freeze({ prefix: "th9" }),
-    features: Object.freeze({ thprac: false, languages: false, focusHitbox: false }),
+    multiplayerRuntime: "./runtime/th09/multiplayer/th09.html",
+    multiplayer: Object.freeze({
+      titleKey: "game.title.th09mp",
+      playerCounts: Object.freeze([2] as const),
+      difficulties: TH09_MULTIPLAYER_DIFFICULTIES,
+      loadouts: TH09_MULTIPLAYER_LOADOUTS,
+      peerTransportGlobal: "__th09PeerTransport",
+      // TH09's two-player lockstep publishes confirmed inputs to admitted
+      // spectators through the same relay backlog used by TH06/07.
+      spectator: true,
+      titleRoomEntry: true,
+    }),
+    features: Object.freeze({ thprac: false, languages: true, focusHitbox: false }),
   }),
   th10: Object.freeze({
     cardArtwork: "th10-card.webp",

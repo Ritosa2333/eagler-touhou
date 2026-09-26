@@ -34,19 +34,21 @@ assert.deepEqual(
   ["ja", "lang_zh-hans", "lang_zh-hant", "lang_en", "lang_de", "lang_ru"],
 );
 
-assert.deepEqual(PRODUCT_IDS, ["th06", "th07", "th08", "th09", "th10", "th06mp", "th07mp"]);
+assert.deepEqual(PRODUCT_IDS, ["th06", "th07", "th08", "th09", "th10", "th06mp", "th07mp", "th09mp"]);
 assert.equal(DEFAULT_PRODUCT_ID, "th06");
 assert.ok(PRODUCT_IDS.includes(DEFAULT_PRODUCT_ID));
 assert.equal(DEFAULT_MULTIPLAYER_PRODUCT_ID, "th07mp");
 assert.equal(isMultiplayerProductId(DEFAULT_MULTIPLAYER_PRODUCT_ID), true);
 assert.equal(isMultiplayerProductId("th06mp"), true);
 assert.equal(isMultiplayerProductId("th07mp"), true);
+assert.equal(isMultiplayerProductId("th09mp"), true);
 assert.equal(isMultiplayerProductId("th06"), false);
 assert.equal(isMultiplayerProductId("th08mp"), false);
 assert.equal(gameIdForProduct("th06mp"), "th06");
 assert.equal(gameIdForProduct("th07"), "th07");
 assert.equal(multiplayerProductIdForGame("th06"), "th06mp");
 assert.equal(multiplayerProductIdForGame("th07"), "th07mp");
+assert.equal(multiplayerProductIdForGame("th09"), "th09mp");
 assert.equal(multiplayerProductIdForGame("th08"), null);
 assert.equal(multiplayerConfigForProduct("th06mp"), PRODUCT_GAMES.th06.multiplayer);
 assert.equal(multiplayerConfigForProduct("th07"), PRODUCT_GAMES.th07.multiplayer);
@@ -92,6 +94,23 @@ assert.deepEqual(PRODUCT_GAMES.th07.multiplayer.loadouts.slice(-2).map(item => [
 ]);
 assert.deepEqual(PRODUCT_GAMES.th07.multiplayer.difficulties, ["Easy", "Normal", "Hard", "Lunatic", "Extra", "Phantasm"]);
 assert.equal(PRODUCT_GAMES.th07.multiplayer.peerTransportGlobal, "__th07PeerTransport");
+assert.equal(PRODUCT_GAMES.th09.multiplayerRuntime, "./runtime/th09/multiplayer/th09.html");
+assert.deepEqual(PRODUCT_GAMES.th09.multiplayer.playerCounts, [2]);
+assert.deepEqual(PRODUCT_GAMES.th09.multiplayer.difficulties, ["Easy", "Normal", "Hard", "Lunatic"]);
+assert.deepEqual(PRODUCT_GAMES.th09.multiplayer.loadouts.map(item => item.character), Array.from({ length: 16 }, (_, index) => index));
+// Room facts shared Launcher orchestration reads instead of branching on the
+// title number: the in-game versus entry, and whether a spectator seat exists.
+assert.equal(PRODUCT_GAMES.th06.multiplayer.titleRoomEntry, false);
+assert.equal(PRODUCT_GAMES.th07.multiplayer.titleRoomEntry, false);
+assert.equal(PRODUCT_GAMES.th09.multiplayer.titleRoomEntry, true);
+assert.equal(PRODUCT_GAMES.th06.multiplayer.spectator, true);
+assert.equal(PRODUCT_GAMES.th07.multiplayer.spectator, true);
+assert.equal(PRODUCT_GAMES.th09.multiplayer.spectator, true);
+for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
+  if (!product.multiplayer) continue;
+  assert.equal(typeof product.multiplayer.spectator, "boolean", `${game}: multiplayer room must declare spectator availability`);
+  assert.equal(typeof product.multiplayer.titleRoomEntry, "boolean", `${game}: multiplayer room must declare the in-game title entry`);
+}
 
 const roots = new Set();
 assert.deepEqual(Object.keys(PRODUCT_CONTENT), Object.keys(PRODUCT_GAMES),
@@ -228,7 +247,7 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
 }
 console.log("Product catalog policy: PASS");
 
-for (const id of ["th06", "th07", "th08", "th09", "th10", "th06mp", "th07mp"]) {
+for (const id of ["th06", "th07", "th08", "th09", "th10", "th06mp", "th07mp", "th09mp"]) {
   assert.equal(productEnabledForBuild(id), true);
   assert.equal(productEnabledForBuild(id, false), true);
   assert.equal(productEnabledForBuild(id, true), true);

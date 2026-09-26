@@ -80,4 +80,17 @@ const th08Omitted = structuredClone(th08Descriptor);
 th08Omitted.components.language.entries.pop();
 assert.throws(() => assertLanguagePublicationConsistency("th08", th08Host, th08Omitted), /entry set mismatch/);
 
-console.log(JSON.stringify({ languagePublication: "PASS", surfaces: ["languages", "languageOptions", "descriptor"], th08: "directory-layout" }));
+// TH09 uses the same directory-layout publication contract as TH08.
+const th09Host = structuredClone(th08Host);
+for (const language of th09Host.languages) language.pack.url = language.pack.url.replace("/th08/", "/th09/");
+for (const language of th09Host.languageOptions) {
+  if (language.pack) language.pack.url = language.pack.url.replace("/th08/", "/th09/");
+}
+const th09Descriptor = structuredClone(th08Descriptor);
+for (const file of Object.values(th09Descriptor.files)) file.source = file.source.replace("/th08/", "/th09/");
+assert.doesNotThrow(() => assertLanguagePublicationConsistency("th09", th09Host, th09Descriptor));
+const th09Broken = structuredClone(th09Descriptor);
+th09Broken.files["language:lang_en"].source = "games/th08/language/lang_en.zip";
+assert.throws(() => assertLanguagePublicationConsistency("th09", th09Host, th09Broken), /language identity mismatch/);
+
+console.log(JSON.stringify({ languagePublication: "PASS", surfaces: ["languages", "languageOptions", "descriptor"], th08: "directory-layout", th09: "directory-layout" }));

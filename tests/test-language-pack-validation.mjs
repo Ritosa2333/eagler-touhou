@@ -64,4 +64,21 @@ assert.throws(() => validateStaticLanguagePackEntries({
   "thcrap/th08/localization/strings.etl": payload,
 }, { game: "th06", language: "lang_zh-hans" }), /清单不兼容/);
 
-console.log(JSON.stringify({ languagePackValidation: "PASS", duplicatePaths: "rejected", fileSha256: "not-a-contract", th08: "accepted" }));
+const th09Path = "/thcrap/th09/localization/strings.etl";
+const th09Manifest = {
+  ...th08Manifest,
+  game: "th09",
+  files: [{ path: th09Path, bytes: payload.length }],
+};
+const th09Valid = validateStaticLanguagePackEntries({
+  "manifest.json": encoder.encode(JSON.stringify(th09Manifest)),
+  "thcrap/th09/localization/strings.etl": payload,
+}, { game: "th09", language: "lang_zh-hans" });
+assert.equal(th09Valid.manifest.game, "th09");
+assert.deepEqual(th09Valid.files.map(file => file.path), [th09Path]);
+assert.throws(() => validateStaticLanguagePackEntries({
+  "manifest.json": encoder.encode(JSON.stringify(th09Manifest)),
+  "thcrap/th09/localization/strings.etl": payload,
+}, { game: "th08", language: "lang_zh-hans" }), /清单不兼容/);
+
+console.log(JSON.stringify({ languagePackValidation: "PASS", duplicatePaths: "rejected", fileSha256: "not-a-contract", th08: "accepted", th09: "accepted" }));

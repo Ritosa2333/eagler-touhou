@@ -25,6 +25,7 @@ export const RUNTIME_PROTOCOL_COMMANDS = Object.freeze([
 export const RUNTIME_PROTOCOL_OPTIONAL_COMMANDS = Object.freeze([
   "retry-music",
   "thprac-mouse",
+  "network-cancel",
 ] as const);
 
 export const RUNTIME_PROTOCOL_EVENTS = Object.freeze([
@@ -45,6 +46,7 @@ export const RUNTIME_PROTOCOL_OPTIONAL_EVENTS = Object.freeze([
   "music-incomplete",
   "notice",
   "player-debug",
+  "network-request",
 ] as const);
 
 export type RuntimeProtocolCommand =
@@ -189,6 +191,7 @@ export const RUNTIME_PROTOCOL_COMMAND_BEHAVIOR = Object.freeze({
   sync: Object.freeze({ phase: "ready", response: "required", requirement: "required" }),
   "retry-music": Object.freeze({ phase: "live", response: "required", requirement: "conditional", when: "Runtime-managed music transfer can fail before launch and advertise retry" }),
   "thprac-mouse": Object.freeze({ phase: "live", response: "optional", requirement: "profile-required", when: "thprac capability is declared" }),
+  "network-cancel": Object.freeze({ phase: "live", response: "optional", requirement: "conditional", when: "TH09 game-title multiplayer dialog is dismissed" }),
 } satisfies Readonly<Record<RuntimeProtocolCommand, Readonly<{
   phase: RuntimeCommandPhase;
   response: RuntimeCommandResponseMode;
@@ -220,6 +223,7 @@ export const RUNTIME_PROTOCOL_EVENT_BEHAVIOR = Object.freeze({
   "music-incomplete": Object.freeze({ phase: "live", cadence: "contextual", requirement: "conditional" }),
   notice: Object.freeze({ phase: "any", cadence: "contextual", requirement: "optional" }),
   "player-debug": Object.freeze({ phase: "live", cadence: "periodic", requirement: "optional" }),
+  "network-request": Object.freeze({ phase: "live", cadence: "contextual", requirement: "conditional" }),
 } satisfies Readonly<Record<RuntimeProtocolEvent, Readonly<{
   phase: RuntimeEventPhase;
   cadence: RuntimeEventCadence;
@@ -259,6 +263,7 @@ export interface RuntimeCommandPayloads {
   sync: Record<string, never>;
   "retry-music": Record<string, never>;
   "thprac-mouse": { type: "move" | "down" | "up"; x: number; y: number };
+  "network-cancel": Record<string, never>;
 }
 
 /**
@@ -283,6 +288,7 @@ export interface RuntimeEventPayloads {
   "music-incomplete": { failed?: number; [key: string]: unknown };
   notice: { message?: string; [key: string]: unknown };
   "player-debug": Record<string, unknown>;
+  "network-request": Record<string, never>;
 }
 
 export interface RuntimeProtocolEnvelope {

@@ -722,14 +722,14 @@
     <div class="touch-thprac-menu" id="touchThpracMenu" data-touch-layout-control="thpracMenu" hidden>
       <button class="touch-thprac-backspace" id="touchThpracBackspace" type="button" data-i18n="touch.cheatMenu">作弊菜单</button>
       <div class="touch-thprac-function-keys" id="touchThpracFunctionKeys" hidden>
-        <button type="button" data-thprac-key="F12"><strong>F12</strong><small data-i18n="touch.advancedMenu">高级选项</small></button>
-        <button type="button" data-thprac-key="F1"><strong>F1</strong><small data-i18n="touch.invincible">无敌</small></button>
-        <button type="button" data-thprac-key="F2"><strong>F2</strong><small data-i18n="touch.infiniteLives">无限残机</small></button>
-        <button type="button" data-thprac-key="F3"><strong>F3</strong><small data-i18n="touch.infiniteBombs">无限 Bomb</small></button>
-        <button type="button" data-thprac-key="F4"><strong>F4</strong><small data-i18n="touch.infinitePower">无限火力</small></button>
-        <button type="button" data-thprac-key="F5"><strong>F5</strong><small data-i18n="touch.timeLock">时间锁</small></button>
-        <button type="button" data-thprac-key="F6"><strong>F6</strong><small data-i18n="touch.autoBomb">自动 Bomb</small></button>
-        <button type="button" data-thprac-key="F7"><strong>F7</strong><small data-i18n="touch.enemyBgm">敌方 BGM</small></button>
+        <button type="button" data-thprac-key="F12"><strong>F12</strong></button>
+        <button type="button" data-thprac-key="F1"><strong>F1</strong></button>
+        <button type="button" data-thprac-key="F2"><strong>F2</strong></button>
+        <button type="button" data-thprac-key="F3"><strong>F3</strong></button>
+        <button type="button" data-thprac-key="F4"><strong>F4</strong></button>
+        <button type="button" data-thprac-key="F5"><strong>F5</strong></button>
+        <button type="button" data-thprac-key="F6"><strong>F6</strong></button>
+        <button type="button" data-thprac-key="F7"><strong>F7</strong></button>
       </div>
       <span class="touch-layout-resize-handle" aria-hidden="true">↘</span>
     </div>
@@ -875,6 +875,16 @@
       <span id="runtimeNetplayIceDiag" hidden>ICE --</span>
     </aside>
     <div class="game-viewport" id="gameViewport"><iframe id="gameFrame" title="Touhou game" allow="autoplay; fullscreen" tabindex="0"></iframe></div>
+    <section class="th09-network-dialog" id="th09NetworkDialog" role="dialog" aria-modal="true" aria-label="花映塚联机房间" data-i18n-aria-label="multiplayer.th09DialogTitle" hidden>
+      <div class="th09-network-window">
+        <div id="th09NetworkEntry">
+          <header><strong data-i18n="multiplayer.th09DialogTitle">花映塚 · 妖怪对妖怪</strong><button type="button" id="th09NetworkClose" aria-label="关闭" data-i18n-aria-label="action.close">×</button></header>
+          <p data-i18n="multiplayer.th09DialogHint">创建房间，或输入与 launcher 相同的四位房间码。进入后双方选择角色、准备，由房主开始。</p>
+          <div class="th09-network-actions"><button type="button" id="th09NetworkCreate" data-i18n="multiplayer.createRoom">创建房间</button><label><span data-i18n="multiplayer.roomCode">房间码</span> <input id="th09NetworkCode" maxlength="4" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="0000"></label><button type="button" id="th09NetworkJoin" data-i18n="multiplayer.joinRoom">加入房间</button></div>
+        </div>
+        <div id="th09NetworkRoom" hidden></div>
+      </div>
+    </section>
   </section>
   <noscript><p class="noscript-message">此启动器需要 JavaScript。你仍可查看<a href="faq.html">常见问题</a>和<a href="about.html">项目说明</a>。</p></noscript>
   <script>window.__eaglerBoot && window.__eaglerBoot.mark("app-module-request");</script>

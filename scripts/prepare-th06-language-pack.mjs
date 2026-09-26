@@ -58,8 +58,11 @@ async function localInputFingerprint() {
     resolve(project, "scripts/subset-font.py"),
     resolve(project, "integrations/thcrap.mjs"),
     resolve(project, "server/thcrap-compiler.mjs"),
+    resolve(project, "server/thcrap-ascii-contract.mjs"),
+    resolve(project, "server/thcrap-string-contract.mjs"),
     resolve(project, "server/thcrap-static-pack.mjs"),
     resolve(project, "server/thtk-runner.mjs"),
+    resolve(project, "lib/content-definition.mjs"),
   ];
   const builders = [];
   for (const path of builderFiles) {
@@ -119,7 +122,7 @@ if (cached) {
 const thdat = required("thdat");
 const thmsg = required("thmsg");
 const client = createThcrapClient({ repository });
-const runner = new ThtkRunner({ thdat, thmsg });
+const runner = new ThtkRunner({ thdat, thmsg, temporaryRoot: args.get("temporary-root") || undefined });
 const compiler = new ThcrapRuntimeCompiler({ runner, archives: { [game]: archives } });
 
 const pack = await client.resolveLanguage(language, game);

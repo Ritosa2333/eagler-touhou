@@ -616,12 +616,95 @@ function mpConnectLobby(reconnecting = false) {
 let mpLaunchInFlight = false;
 let mpGameCheckInFlight = false;
 let launcherOperationDepth = 0;
+let th09RoomHome: { parent: Node; next: Node | null } | null = null;
+let th09RailHome: { parent: Node; next: Node | null } | null = null;
+
+function th09NetworkOverlayOpen() { return !$("#th09NetworkDialog").hidden; }
+
+function th09CloseNetworkOverlay(resume: boolean) {
+  const dialog = $("#th09NetworkDialog");
+  if (dialog.hidden) return;
+  dialog.hidden = true;
+  player.classList.remove("th09-network-open");
+  $("#th09NetworkEntry").hidden = false;
+  $("#th09NetworkRoom").hidden = true;
+  const roomView = $("#mpRoomView");
+  const rail = $("#mpSpectatorRail");
+  if (th09RailHome) {
+    if (th09RailHome.next?.parentNode === th09RailHome.parent)
+      th09RailHome.parent.insertBefore(rail, th09RailHome.next);
+    else th09RailHome.parent.appendChild(rail);
+    th09RailHome = null;
+  }
+  if (th09RoomHome) {
+    if (th09RoomHome.next?.parentNode === th09RoomHome.parent)
+      th09RoomHome.parent.insertBefore(roomView, th09RoomHome.next);
+    else th09RoomHome.parent.appendChild(roomView);
+    th09RoomHome = null;
+  }
+  mpRestoreSpectatorRailPosition();
+  if (resume && state.launched) void send("network-cancel", {}).catch(error => showToast(errorMessage(error)));
+}
+
+function th09OpenNetworkOverlay() {
+  if (!game().multiplayer?.titleRoomEntry || isMultiplayerProduct() || !state.launched) return;
+  if (!state.netplay.url) {
+    showToast(t("multiplayer.serviceMissing"));
+    void send("network-cancel", {}).catch(() => {});
+    return;
+  }
+  $("#th09NetworkDialog").hidden = false;
+  player.classList.add("th09-network-open");
+  $("#th09NetworkEntry").hidden = false;
+  $("#th09NetworkRoom").hidden = true;
+  $("#th09NetworkCode").value = "";
+  $("#th09NetworkCreate").focus();
+}
+
+function th09EnterNetworkRoom(code: string, created: boolean) {
+  if (!th09NetworkOverlayOpen() || !state.launched) return;
+  const product = multiplayerProductIdForGame(state.game);
+  if (!product) return;
+  state.product = product;
+  state.hasSelection = true;
+  restoreMpProductPreferences(product);
+  const roomView = $("#mpRoomView");
+  th09RoomHome = { parent: roomView.parentNode!, next: roomView.nextSibling };
+  $("#th09NetworkRoom").append(roomView);
+  const rail = $("#mpSpectatorRail");
+  th09RailHome = { parent: rail.parentNode!, next: rail.nextSibling };
+  $("#th09NetworkDialog").append(rail);
+  mpRestoreSpectatorRailPosition();
+  $("#th09NetworkEntry").hidden = true;
+  $("#th09NetworkRoom").hidden = false;
+  mpEnterRoom(code, created);
+}
+
+function th09LeaveNetworkRoom() {
+  mpResetRoomState();
+  state.product = state.game;
+  state.runtimeVariant = "normal";
+  const url = new URL(location.href);
+  url.searchParams.set("game", state.game);
+  url.searchParams.delete(mpRoomUrlKey);
+  history.replaceState(history.state, "", url);
+  th09CloseNetworkOverlay(true);
+  render();
+}
+
 async function mpLaunchRoomGame() {
-  if (mpLaunchInFlight || state.launched) return;
+  if (mpLaunchInFlight || (state.launched && !th09NetworkOverlayOpen())) return;
   mpLaunchInFlight = true;
   try {
+    const fromTh09Overlay = th09NetworkOverlayOpen();
+    if (fromTh09Overlay && mpUiState.seat != null && !await confirmInputWarnings()) return;
+    if (fromTh09Overlay) {
+      await send("sync", {}, 10000);
+      th09CloseNetworkOverlay(false);
+      resetRuntime();
+    }
     mpConfigureRuntimeSession();
-    if (mpUiState.seat != null && !await confirmInputWarnings()) return;
+    if (!fromTh09Overlay && mpUiState.seat != null && !await confirmInputWarnings()) return;
     openPlayerView();
     try { await enterPlayerFullscreen({ focusGame: false }); }
     catch (error) { showToast(t("fullscreen.autoBlocked", { reason: errorMessage(error) })); }
@@ -1478,7 +1561,7 @@ function saveGamePreferences() {
   });
 }
 const inputElementSelectors = [
-  "#fileInput", "#gameDataImportInput", "#mpJoinCode", "#mpDisplayName",
+  "#fileInput", "#gameDataImportInput", "#mpJoinCode", "#mpDisplayName", "#th09NetworkCode",
   "#touchLayoutScale", "#touchSensitivity",
 ] as const;
 const selectElementSelectors = [
@@ -1496,7 +1579,7 @@ const buttonElementSelectors = [
   "#siteNoticeToggle", "#runtimeDiagnosticsToggle", "#firstUseNoticeOpen", "#mpShareSettingsToggle", "#mpFrameLimitAppleNote",
   "#mpFrameLimitToggle", "#mpFocusHitboxToggle", "#mpLocalPlayerVisibilityToggle", "#mpMobileOptionsToggle",
   "#mpTouchToggle", "#mpTouchLayoutEdit", "#mpAlwaysHitboxToggle", "#mpMagnifierToggle",
-  "#mpReplayViewer", "#mpCreateRoom", "#mpJoinRoom", "#frameLimitAppleNote",
+  "#mpReplayViewer", "#mpCreateRoom", "#mpJoinRoom", "#th09NetworkClose", "#th09NetworkCreate", "#th09NetworkJoin", "#frameLimitAppleNote",
   "#mpGuideOpen", "#mpNetworkCheck",
   "#frameLimitToggle", "#focusHitboxToggle", "#thpracToggle", "#mobileOptionsToggle",
   "#touchToggle", "#touchLayoutEdit", "#alwaysHitboxToggle", "#magnifierToggle",
@@ -3172,6 +3255,11 @@ interface LauncherGameView {
       shot: number;
     }[];
     peerTransportGlobal: string;
+    // Optional Launcher capabilities that a title may withhold: the room
+    // spectator seat, and a game-title entry that opens the shared room dialog
+    // on top of the already running normal Runtime.
+    spectator?: boolean;
+    titleRoomEntry?: boolean;
   };
   storage: {
     saveRoot: string;
@@ -4417,6 +4505,9 @@ const hostedGameLegacyKeyCodes = new Set([8, 9, 13, 16, 17, 27, 36, 37, 38, 39, 
 function forwardHostedKeyboard(event: KeyboardEvent) {
   if (!state.launched || !player.classList.contains("open") || !frame.contentWindow) return;
   if (event.metaKey || event.altKey) return;
+  // While the Launcher's own chrome holds focus the keys belong to it: room
+  // codes, decision buttons and dialogs must never drive the running game.
+  if (event.target instanceof Element && event.target.closest("input, select, textarea, button, dialog, [role='dialog']")) return;
   const key = String(event.key || "").toLowerCase();
   const keyCode = Number.isInteger(event.keyCode) ? event.keyCode : 0;
   if (!hostedGameKeyCodes.has(event.code || "") && !hostedGameKeys.has(key) && !hostedGameLegacyKeyCodes.has(keyCode)) return;
@@ -4544,6 +4635,12 @@ async function closePlayerView(fromHistory = false, { skipSync = false, returnTo
   // fullscreen state) intact until persistence has either succeeded or the
   // user explicitly chooses to leave without it.
   if (!skipSync && !await confirmRuntimeSyncBeforeClose()) return false;
+  if (th09NetworkOverlayOpen()) {
+    mpResetRoomState();
+    th09CloseNetworkOverlay(false);
+    state.product = state.game;
+    state.runtimeVariant = "normal";
+  }
   if (isPlayerFullscreen()) await exitPlayerFullscreen().catch(() => {});
   cancelLauncherInteractionAnimations();
   $("#touchHelp").hidden = true;
@@ -4724,6 +4821,10 @@ window.addEventListener("message", event => {
   }
   if (message.event === "notice") {
     if (typeof message.message === "string" && message.message) showToast(message.message);
+    return;
+  }
+  if (message.event === "network-request") {
+    th09OpenNetworkOverlay();
     return;
   }
   if (message.event === "exit") {
@@ -5820,6 +5921,17 @@ $("#mpJoinRoom").addEventListener("click", () => {
   if (!code) { showToast(t("status.enterRoomCode")); return; }
   mpEnterRoom(code, false);
 });
+$("#th09NetworkClose").addEventListener("click", () => th09CloseNetworkOverlay(true));
+$("#th09NetworkCreate").addEventListener("click", () => th09EnterNetworkRoom(mpGenerateRoomCode(), true));
+$("#th09NetworkCode").addEventListener("input", () => {
+  const field = $("#th09NetworkCode");
+  field.value = mpNormalizeRoomCode(field.value);
+});
+$("#th09NetworkJoin").addEventListener("click", () => {
+  const code = mpNormalizeRoomCode($("#th09NetworkCode").value);
+  if (!code) { showToast(t("status.enterRoomCode")); return; }
+  th09EnterNetworkRoom(code, false);
+});
 $("#mpReplayViewer").addEventListener("click", async () => {
   if (mpLaunchInFlight) return;
   mpLaunchInFlight = true;
@@ -5902,11 +6014,13 @@ $("#mpSpectatorJoin").addEventListener("click", () => {
   else mpTakeSpectatorSeat();
 });
 
+let mpRestoreSpectatorRailPosition = () => {};
 function mpSetupSpectatorRailDrag() {
   const rail = $("#mpSpectatorRail");
   const handle = rail?.querySelector<HTMLElement>(".mp-spectator-rail-head");
   if (!rail || !handle) return;
   const mobile = window.matchMedia("(max-width:780px)");
+  const movable = () => mobile.matches || !!rail.closest(".th09-network-dialog");
   let drag: { pointerId: number; dx: number; dy: number } | null = null;
 
   const clearInlinePosition = () => {
@@ -5915,6 +6029,7 @@ function mpSetupSpectatorRailDrag() {
   const mobileViewportSize = () => {
     const viewport = window.visualViewport;
     return {
+      left: viewport?.offsetLeft || 0, top: viewport?.offsetTop || 0,
       width: Math.max(1, viewport?.width || window.innerWidth || document.documentElement.clientWidth || 1),
       height: Math.max(1, viewport?.height || window.innerHeight || document.documentElement.clientHeight || 1),
     };
@@ -5923,27 +6038,29 @@ function mpSetupSpectatorRailDrag() {
     const margin = 6;
     const rect = rail.getBoundingClientRect();
     const viewport = mobileViewportSize();
-    const maxLeft = Math.max(margin, viewport.width - rect.width - margin);
-    const maxTop = Math.max(margin, viewport.height - rect.height - margin);
-    const x = Math.max(margin, Math.min(maxLeft, left));
-    const y = Math.max(margin, Math.min(maxTop, top));
+    const minLeft = viewport.left + margin, minTop = viewport.top + margin;
+    const maxLeft = Math.max(minLeft, viewport.left + viewport.width - rect.width - margin);
+    const maxTop = Math.max(minTop, viewport.top + viewport.height - rect.height - margin);
+    const x = Math.max(minLeft, Math.min(maxLeft, left));
+    const y = Math.max(minTop, Math.min(maxTop, top));
     rail.style.setProperty("left", `${Math.round(x)}px`, "important");
     rail.style.setProperty("top", `${Math.round(y)}px`, "important");
     rail.style.setProperty("right", "auto", "important");
     rail.style.setProperty("bottom", "auto", "important");
-    if (save) multiplayerSpectatorRailPositions.save({ x, y });
+    if (save && mobile.matches) multiplayerSpectatorRailPositions.save({ x, y });
   };
   const restore = () => {
-    if (!mobile.matches) {
+    if (!movable()) {
       clearInlinePosition();
       return;
     }
+    if (!mobile.matches) { clearInlinePosition(); return; }
     const saved = multiplayerSpectatorRailPositions.load();
     if (saved) setMobilePosition(saved.x, saved.y, false);
   };
 
   handle.addEventListener("pointerdown", event => {
-    if (!mobile.matches || event.button !== 0) return;
+    if (!movable() || event.button !== 0) return;
     const rect = rail.getBoundingClientRect();
     drag = { pointerId: event.pointerId, dx: event.clientX - rect.left, dy: event.clientY - rect.top };
     handle.setPointerCapture?.(event.pointerId);
@@ -5951,7 +6068,7 @@ function mpSetupSpectatorRailDrag() {
     event.preventDefault();
   });
   handle.addEventListener("pointermove", event => {
-    if (!drag || drag.pointerId !== event.pointerId || !mobile.matches) return;
+    if (!drag || drag.pointerId !== event.pointerId || !movable()) return;
     setMobilePosition(event.clientX - drag.dx, event.clientY - drag.dy, false);
     event.preventDefault();
   });
@@ -5965,7 +6082,7 @@ function mpSetupSpectatorRailDrag() {
   handle.addEventListener("pointerup", finish);
   handle.addEventListener("pointercancel", finish);
   const clampToVisibleViewport = () => {
-    if (!mobile.matches) { clearInlinePosition(); return; }
+    if (!movable()) { clearInlinePosition(); return; }
     if (!rail.style.left) return;
     const rect = rail.getBoundingClientRect();
     setMobilePosition(rect.left, rect.top, false);
@@ -5974,6 +6091,7 @@ function mpSetupSpectatorRailDrag() {
   window.visualViewport?.addEventListener("resize", clampToVisibleViewport, { passive: true });
   window.visualViewport?.addEventListener("scroll", clampToVisibleViewport, { passive: true });
   mobile.addEventListener?.("change", restore);
+  mpRestoreSpectatorRailPosition = restore;
   restore();
 }
 mpSetupSpectatorRailDrag();
@@ -6829,6 +6947,7 @@ function mpResetRoomState() {
 }
 
 function mpLeaveRoom(fromHistory = false) {
+  if (th09NetworkOverlayOpen()) { th09LeaveNetworkRoom(); return; }
   mpResetRoomState();
   if (!fromHistory) replaceLauncherHomeHistory();
   showLauncherHome();
@@ -7091,6 +7210,7 @@ function renderMpRoom() {
     spectatorList.append(empty);
   }
   const spectatorJoin = $("#mpSpectatorJoin");
+  spectatorJoin.hidden = game().multiplayer?.spectator === false;
   spectatorJoin.disabled = !roomReady || mpUiState.seat != null;
   spectatorJoin.textContent = t(mpUiState.spectatorRequested ? "multiplayer.leaveSpectator" : "multiplayer.joinSpectator");
 
@@ -7121,7 +7241,7 @@ function renderMpRoom() {
   ready.classList.toggle("ready", mpUiState.ready && mpUiState.seat != null);
   ready.textContent = t(mpUiState.ready && mpUiState.seat != null ? "multiplayer.readyDone" : "multiplayer.ready");
   const gameCheck = $("#mpCheckGame");
-  gameCheck.hidden = mpUiState.seat == null;
+  gameCheck.hidden = mpUiState.seat == null || th09NetworkOverlayOpen();
   gameCheck.disabled = mpUiState.seat == null || (!!room.phase && room.phase !== "lobby") ||
     mpUiState.ready || mpGameCheckInFlight || mpLaunchInFlight;
   gameCheck.textContent = t(mpGameCheckInFlight ? "multiplayer.checkingGame" : "multiplayer.checkGame");
