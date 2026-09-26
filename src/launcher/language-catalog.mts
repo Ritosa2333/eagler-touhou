@@ -177,3 +177,16 @@ export function resolveLanguagePackSource(entry: LanguageCatalogEntry | null, ba
 export function thpracLocaleForLanguage(id: string) {
   return id === "lang_zh-hans" ? "zh-CN" : id === "ja" ? "ja-JP" : "en-US";
 }
+
+/** Stored choices win; otherwise use an available translation for the launcher locale. */
+export function resolvePreferredGameLanguage(
+  catalog: readonly LanguageCatalogEntry[],
+  savedLanguage: string | null,
+  uiLocale: string,
+): string {
+  const available = new Set(catalog.map(entry => entry.id));
+  if (savedLanguage && available.has(savedLanguage)) return savedLanguage;
+  const defaults = /^zh(?:-|$)/i.test(uiLocale) ? ["lang_zh-hans", "lang_zh-hant"]
+    : /^en(?:-|$)/i.test(uiLocale) ? ["lang_en"] : [];
+  return defaults.find(id => available.has(id)) || "ja";
+}

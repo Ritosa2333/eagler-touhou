@@ -217,8 +217,12 @@ function validGame(gameId: string, value: unknown, resourceMode: ResourceMode): 
   const gameData = value.gameData;
   if (!isRecord(music) || !validMidiManifest(music.midi) || !isRecord(gameData)) return false;
   const product = PRODUCT_GAMES[gameId];
-  if ("multiplayerRuntime" in product &&
-      (typeof value.multiplayerRuntime !== "string" || !value.multiplayerRuntime)) return false;
+  // Multiplayer support is a product capability ceiling, not a requirement
+  // that every deployment publish the multiplayer Runtime. A deployment may
+  // deliberately withhold one title's MP build while keeping the ordinary
+  // game available; Launcher availability is derived from this Host field.
+  if (value.multiplayerRuntime != null &&
+      (!("multiplayerRuntime" in product) || typeof value.multiplayerRuntime !== "string" || !value.multiplayerRuntime)) return false;
   const expectedDataPath = product.package.dataTarget.slice(1);
   const packagePointer = value.package;
   const validExternalPackage = resourceMode !== RESOURCE_MODE_EXTERNAL ||

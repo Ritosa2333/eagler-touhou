@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import {
   buildLanguageCatalog,
+  resolvePreferredGameLanguage,
   resolveLanguagePackSource,
   selectLanguageEntry,
   thpracLocaleForLanguage,
@@ -97,3 +98,14 @@ console.log(JSON.stringify({
   legacyReadFallback: "languages",
   packageOverlay: true,
 }));
+
+const translatedCatalog = ["ja", "lang_zh-hans", "lang_zh-hant", "lang_en"].map(id => ({ id }));
+assert.equal(resolvePreferredGameLanguage(translatedCatalog, null, "zh-CN"), "lang_zh-hans");
+assert.equal(resolvePreferredGameLanguage(translatedCatalog, null, "en-US"), "lang_en");
+assert.equal(resolvePreferredGameLanguage(translatedCatalog, "ja", "zh-CN"), "ja", "explicit original language must be preserved");
+assert.equal(resolvePreferredGameLanguage(translatedCatalog, "lang_zh-hans", "en"), "lang_zh-hans");
+assert.equal(resolvePreferredGameLanguage([{ id: "ja" }], null, "en"), "ja", "unpublished translations cannot be selected");
+assert.equal(resolvePreferredGameLanguage([{ id: "ja" }], null, "zh-CN"), "ja");
+assert.equal(resolvePreferredGameLanguage(translatedCatalog, null, "ja"), "ja");
+assert.equal(resolvePreferredGameLanguage([{ id: "ja" }, { id: "lang_zh-hant" }], null, "zh-CN"), "lang_zh-hant");
+assert.equal(resolvePreferredGameLanguage(translatedCatalog, "unavailable", "en"), "lang_en");

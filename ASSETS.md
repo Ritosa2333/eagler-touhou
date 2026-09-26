@@ -84,3 +84,10 @@ The masthead collection menu and TH08 maintenance warning embed the `language`,
 system. They are inline in `index.html`, so they add no separate delivery asset
 and remain available offline. Material Symbols are licensed under Apache
 License 2.0.
+
+## Multiplayer room UI
+
+The room reuses `assets/launcher-background.webp` without runtime blur. Player
+and spectator avatars are intentional initial placeholders; no generated artwork
+is published. `assets/room-*.svg` are unmodified Phosphor regular icons, with
+license in `assets/room-icons-LICENSE.txt`. They ship in the offline App Shell.

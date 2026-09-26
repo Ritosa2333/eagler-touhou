@@ -19,16 +19,18 @@ import {
 assert.deepEqual(Object.keys(WORKSPACE_REPOSITORIES), [
   "launcher", ...Object.keys(PRODUCT_GAMES), "thprac", "dependencies", "toolchains",
 ]);
-assert.deepEqual(workspaceRepositoryNames(["launcher", "th06", "th08"]), [
-  "eagler-touhou", "th06", "th08",
+assert.deepEqual(workspaceRepositoryNames(["launcher", "th06", "th08", "th09"]), [
+  "eagler-touhou", "th06", "th08", "th09-eagler",
 ]);
 assert.equal(WORKSPACE_REPOSITORIES.th08, "th08");
 assert.equal(WORKSPACE_REPOSITORIES.th10, "th10");
+assert.equal(WORKSPACE_REPOSITORIES.th09, "th09-eagler");
 assert.ok(isAbsolute(workspacePath("th07", "resources", "shell.html")));
 assert.equal(workspacePath("launcher"), launcherRoot());
 assert.equal(projectRelativeWorkspacePath("th06", "src", "FileSystem.cpp"), "../th06/src/FileSystem.cpp");
 assert.equal(projectRelativeWorkspacePath("th08", "build-eagler"), "../th08/build-eagler");
 assert.equal(projectRelativeWorkspacePath("th10", "build-eagler"), "../th10/build-eagler");
+assert.equal(projectRelativeWorkspacePath("th09", "th09_web", "build-eagler"), "../th09-eagler/th09_web/build-eagler");
 assert.throws(() => workspacePath("missing"), /unknown workspace repository/);
 const listedProducts = JSON.parse(execFileSync(process.execPath, ["scripts/list-product-games.mjs"], {
   cwd: resolve(import.meta.dirname, ".."),

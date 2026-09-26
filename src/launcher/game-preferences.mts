@@ -145,6 +145,7 @@ function normalizeMusicMode(value: unknown): MusicMode {
 }
 
 export interface NormalizeGamePreferencesContext {
+  uiLocale?: string;
   thpracAvailable: boolean;
   webAudioAvailable: boolean;
 }
@@ -214,7 +215,7 @@ export function normalizeStoredGamePreferences(
     : DEFAULT_GAME_OPTIONS.touchSensitivity;
 
   const options: GameOptions = {
-    thpracEnabled: context.thpracAvailable && booleanOption(rawOptions, "thpracEnabled", DEFAULT_GAME_OPTIONS.thpracEnabled),
+    thpracEnabled: context.thpracAvailable && booleanOption(rawOptions, "thpracEnabled", /^zh(?:-|$)/i.test(context.uiLocale || "") || DEFAULT_GAME_OPTIONS.thpracEnabled),
     thpracTouchControlsEnabled: booleanOption(rawOptions, "thpracTouchControlsEnabled", DEFAULT_GAME_OPTIONS.thpracTouchControlsEnabled),
     magnifierEnabled: booleanOption(rawOptions, "magnifierEnabled", DEFAULT_GAME_OPTIONS.magnifierEnabled),
     focusHitboxEnabled: booleanOption(rawOptions, "focusHitboxEnabled", DEFAULT_GAME_OPTIONS.focusHitboxEnabled),

@@ -195,3 +195,16 @@ console.log(JSON.stringify({
   persistenceKeys: "game-language-shared-touch",
   storage: "primary-fallback-non-fatal",
 }));
+
+const chineseContext = { uiLocale: "zh-CN", thpracAvailable: true, webAudioAvailable: true };
+const chineseDefaults = normalizeStoredGamePreferences(null, chineseContext);
+assert.equal(chineseDefaults.options.thpracEnabled, true);
+assert.equal(chineseDefaults.music, "ogg-stream");
+assert.equal(normalizeStoredGamePreferences(null, { ...chineseContext, thpracAvailable: false }).options.thpracEnabled, false);
+assert.equal(normalizeStoredGamePreferences(null, { ...chineseContext, uiLocale: "en" }).options.thpracEnabled, false);
+const explicitChinese = normalizeStoredGamePreferences({ options: { thpracEnabled: false }, music: "ogg-full", musicPreferenceExplicit: true }, chineseContext);
+assert.equal(explicitChinese.options.thpracEnabled, false, "explicitly disabled thprac must survive locale defaults");
+assert.equal(explicitChinese.musicPreference, "ogg-full", "saved music must survive locale defaults");
+const chineseInherited = loadStoredGamePreferences({ storage, preferenceId: "th07mp", fallbackPreferenceId: "th07", context: chineseContext });
+assert.equal(chineseInherited.musicPreference, "ogg-full");
+assert.equal(chineseInherited.options.thpracEnabled, false, "existing multiplayer preferences still win");

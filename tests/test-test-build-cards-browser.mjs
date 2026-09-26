@@ -54,13 +54,13 @@ try{
     await page.$eval('.game[data-game=th08]',card=>card.click());
     assert.equal(await page.$eval('.tools',element=>element.getAttribute('aria-hidden')),'false');
     assert.equal(await page.$eval('#gameId',element=>element.textContent),'TH08');
-    await page.$eval('[data-card-filter=original]',button=>button.click());
-    await page.waitForFunction(()=>!document.querySelector('#main').classList.contains('card-filter-motion'));
-    assert.deepEqual(await visible(),expected.filter(p=>!p.endsWith('mp')));
+    await page.$eval('#libraryBack',button=>button.click());
+    assert.equal(await page.$('#cardFilterBar'),null);
+    assert.deepEqual(await visible(),expected);
     await page.reload();await page.waitForFunction(()=>document.querySelector('.game[data-game=th06]').hasAttribute('aria-current'));
     await page.waitForFunction(()=>!document.querySelector('.game[data-game=th10]').hidden);
-    assert.deepEqual(await visible(),expected.filter(p=>!p.endsWith('mp')));
-    checks.push(scenario.name+': ordinary TH08 selection, TH10 visibility, direct route, hidden click, category and reload');await context.close();
+    assert.deepEqual(await visible(),expected);
+    checks.push(scenario.name+': ordinary TH08 selection, TH10 visibility, direct route, library return and reload');await context.close();
   }
   const context=await browser.createBrowserContext(),page=await context.newPage();await page.setJavaScriptEnabled(false);await page.goto(url);
   const visible=selector=>page.$eval(selector,element=>!element.hidden&&element.getBoundingClientRect().width>0&&element.getBoundingClientRect().height>0);

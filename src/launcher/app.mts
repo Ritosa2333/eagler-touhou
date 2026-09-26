@@ -1,4 +1,6 @@
 import { prepareRuntimeLaunch } from "./runtime-launch.mjs";
+import { createRoomNetwork } from "./room-network.mjs";
+import { initializeGameLibrary } from "./game-library.mjs";
 import { PACKAGE_DESCRIPTOR_SCHEMA } from "../../package/package-descriptor.mjs";
 import { componentFileIds } from "../../package/package-generation.mjs";
 import {
@@ -21,6 +23,7 @@ import { validateStaticLanguagePackEntries } from "./language-pack-validation.mj
 import { sha256Hex } from "./sha256.mjs";
 import {
   buildLanguageCatalog,
+  resolvePreferredGameLanguage,
   resolveLanguagePackSource,
   selectLanguageEntry,
   thpracLocaleForLanguage,
@@ -138,7 +141,7 @@ import {
 } from "./runtime-diagnostics-model.mjs";
 import {
   createMultiplayerIdentityStore,
-  multiplayerDisplayInitial as mpDisplayInitial,
+  multiplayerDisplayInitial,
   normalizeMultiplayerDisplayName as mpNormalizeDisplayName,
 } from "./multiplayer-identity.mjs";
 import { normalizeMultiplayerLobbySnapshot } from "./multiplayer-lobby-snapshot.mjs";
@@ -152,7 +155,6 @@ import {
 } from "./multiplayer-relay-url.mjs";
 import { buildMultiplayerRuntimeOptions } from "./multiplayer-runtime-options.mjs";
 import { createMultiplayerRoomSessionStore } from "./multiplayer-room-session.mjs";
-import { createMultiplayerSpectatorRailPositionStore } from "./multiplayer-spectator-rail-position.mjs";
 import {
   MP_ROOM_HISTORY_KEY as mpRoomHistoryKey,
   MP_ROOM_URL_KEY as mpRoomUrlKey,
@@ -401,7 +403,10 @@ function showPlayerDebug(message: unknown) {
 
 function mpLobbySend(message: UnknownRecord) {
   if (!mpLobby.connected || mpLobby.socket?.readyState !== WebSocket.OPEN) return false;
-  mpLobby.socket.send(JSON.stringify(message));
+  const payload = typeof message.name === "string"
+    ? { ...message, name: multiplayerDisplayInitial(message.name, "") }
+    : message;
+  mpLobby.socket.send(JSON.stringify(payload));
   return true;
 }
 
@@ -488,6 +493,7 @@ function mpApplyLobbyRoom(next: unknown) {
 }
 
 function mpDisconnectLobby() {
+  roomNetwork.reset();
   clearOptionalTimeout(mpLobby.reconnectTimer);
   mpLobby.reconnectTimer = null;
   mpLobby.reconnectAttempt = 0;
@@ -543,6 +549,7 @@ function mpConnectLobby(reconnecting = false) {
     try { previous.close(1000, "replace lobby socket"); } catch {}
   }
   const socket = new WebSocket(lobbyRelay.url);
+  roomNetwork.reset();
   mpLobby.socket = socket;
   mpLobby.roomCode = transportRoomId;
   room.connection = reconnecting ? "reconnecting" : "connecting";
@@ -569,7 +576,13 @@ function mpConnectLobby(reconnecting = false) {
     try { message = JSON.parse(String(event.data)); } catch { return; }
     message = record(message);
     if (!message) return;
+    if (message.type === "room-probe-config" || message.type === "room-probe") {
+      void roomNetwork.receive(message);
+      return;
+    }
     if (message.type === "state") {
+      const probe = record(message.roomProbe);
+      if (probe) void roomNetwork.receive({ type: "room-probe-config", iceServers: probe.iceServers });
       // The relay snapshot is authoritative for the current room generation.
       // This also prevents a serial remembered from a previous, deleted room
       // with the same code from suppressing the next start event.
@@ -599,6 +612,7 @@ function mpConnectLobby(reconnecting = false) {
   });
   socket.addEventListener("close", () => {
     if (mpLobby.socket !== socket) return;
+    roomNetwork.reset();
     mpLobby.socket = null;
     mpLobby.connected = false;
     if (mpUiState.room?.code === room.code) {
@@ -1016,11 +1030,11 @@ function applyHostManifest(value: unknown) {
   // single-title review package). Keep the Launcher state inside that subset
   // before render() asks game() for music and feature capabilities.
   selectAvailableHostProduct(nextManifest);
-  // Startup preferences were read against the local Japanese-only catalog.
-  // Recheck the stored language once the Host supplies its real language list,
+  // Startup used the local catalog and provisional feature availability.
+  // Reapply saved choices and locale defaults against the first real Host,
   // including when a player opens a multiplayer room link directly.
   if (!hostManifestAvailable && !state.launched) {
-    restoreStoredLanguagePreference(state.game, currentPreferenceId());
+    restoreGamePreferences(state.game, currentPreferenceId());
   }
   if (originMigrationOpen) {
     originMigrationOpen.dataset.policy = "host-manifest-origin-migration-policy/1";
@@ -1259,7 +1273,6 @@ const mpUiState: MultiplayerUiState = {
 const multiplayerIdentity = createMultiplayerIdentityStore();
 const multiplayerPreferences = createMultiplayerPreferenceStore();
 const multiplayerRoomSessions = createMultiplayerRoomSessionStore();
-const multiplayerSpectatorRailPositions = createMultiplayerSpectatorRailPositionStore();
 let mpShareSingleplayerSettings = true;
 function restoreMpProductPreferences(product: ProductId = state.product) {
   const maxLoadout = multiplayerConfigForProduct(product)?.loadouts.length ?? 0;
@@ -1374,26 +1387,17 @@ try {
   const saved = localStorage.getItem(runtimeDiagnosticsStorageKey);
   if (saved === "1" || saved === "0") runtimeDiagnosticsPreference = saved === "1";
 } catch {}
-const cardFilterStorageKey = "eagler-touhou-card-filter-v1";
-type CardFilter = "all" | "original" | "multiplayer";
-const cardFilters = new Set<CardFilter>(["all", "original", "multiplayer"]);
-function isCardFilter(value: string | undefined): value is CardFilter {
-  return value === "all" || value === "original" || value === "multiplayer";
-}
-let cardFilter: CardFilter = "all";
-try {
-  const saved = localStorage.getItem(cardFilterStorageKey);
-  if (saved && isCardFilter(saved)) cardFilter = saved;
-} catch {}
 function productEnabled(product: string) {
   if (!productEnabledForBuild(product, manifest.shared.testBuild === true)) return false;
   if (!hostManifestAvailable) return true;
   const gameId = gameIdForProduct(product);
-  return isGameId(gameId) && Object.hasOwn(manifest.games, gameId);
-}
-function matchesCardFilter(product: ProductId) {
-  if (!productEnabled(product)) return false;
-  return cardFilter === "all" || isMultiplayerProduct(product) === (cardFilter === "multiplayer");
+  if (!isGameId(gameId) || !Object.hasOwn(manifest.games, gameId)) return false;
+  if (isMultiplayerProductId(product)) {
+    const hosted = manifest.games[gameId];
+    return !!hosted && "multiplayerRuntime" in hosted &&
+      typeof hosted.multiplayerRuntime === "string" && hosted.multiplayerRuntime.length > 0;
+  }
+  return true;
 }
 const currentPreferenceId = () => isMultiplayerProduct() && !mpShareSingleplayerSettings ? state.product : state.game;
 const mpLobby: {
@@ -1414,6 +1418,9 @@ const mpLobby: {
   reconnectAttempt: 0,
 };
 window.addEventListener("online", mpReconnectLobbyNow);
+const roomNetwork = createRoomNetwork({ send: mpLobbySend, changed: renderRoomNetwork });
+window.addEventListener("pagehide", () => roomNetwork.suspend());
+window.addEventListener("pageshow", event => { if (event.persisted) renderMpRoom(); });
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") mpReconnectLobbyNow();
 });
@@ -1439,8 +1446,7 @@ function restoreStoredLanguagePreference(gameId: GameId, preferenceId: ProductId
     preferenceId,
     fallbackPreferenceId: isMultiplayerProductId(preferenceId) ? gameId : null,
   });
-  state.language = savedLanguage && languageCatalog(gameId).some(item => item.id === savedLanguage)
-    ? savedLanguage : "ja";
+  state.language = resolvePreferredGameLanguage(languageCatalog(gameId), savedLanguage, getUiLocale());
 }
 function restoreGamePreferences(gameId: GameId, preferenceId: ProductId = gameId) {
   const fallbackPreferenceId = isMultiplayerProductId(preferenceId) ? gameIdForProduct(preferenceId) : null;
@@ -1449,6 +1455,7 @@ function restoreGamePreferences(gameId: GameId, preferenceId: ProductId = gameId
     preferenceId,
     fallbackPreferenceId,
     context: {
+      uiLocale: getUiLocale(),
       thpracAvailable: gameFeatureAvailable(gameId, "thprac"),
       webAudioAvailable,
     },
@@ -1500,13 +1507,13 @@ const buttonElementSelectors = [
   "#mpGuideOpen", "#mpNetworkCheck",
   "#frameLimitToggle", "#focusHitboxToggle", "#thpracToggle", "#mobileOptionsToggle",
   "#touchToggle", "#touchLayoutEdit", "#alwaysHitboxToggle", "#magnifierToggle",
-  "#launch", "#gamePackageImport", "#mpLeaveRoom", "#mpSpectatorJoin",
+  "#launch", "#gamePackageImport", "#mpGamePackageImport", "#mpLeaveRoom", "#mpSpectatorJoin",
   "#mpLoadoutPrev", "#mpLoadoutNext", "#mpStandUp", "#mpLoadoutPrevSeat",
   "#mpLoadoutNextSeat", "#mpCopyRoomCode", "#mpReady", "#mpCheckGame", "#mpStartGame",
   "#mpRoomSettingsToggle", "#toastClose", "#startupErrorClose", "#startupErrorCopy", "#decisionCancel",
-  "#mpSettingsRoomDrawerToggle", "#mpSettingsRoomDrawerCloseHint",
+  "#mpSettingsRoomDrawerToggle", "#libraryBack",
   "#decisionSecondary", "#decisionConfirm", "#firstUseNoticeClose", "#firstUseNoticeCloseHint", "#mpGuideClose",
-  "#appleRefreshClose", "#donationOpen", "#donationClose", "#transferCancel", "#transferRetry", "#gameDataImportClose",
+  "#appleRefreshClose", "#donationOpen", "#donationOpenTop", "#donationClose", "#transferCancel", "#transferRetry", "#gameDataImportClose",
   "#transferImport", "#transferDownload", "#gameDataLinkClose", "#touchLayoutOrientationHelpOpen",
   "#touchLayoutReset", "#touchLayoutSave", "#touchLayoutExit", "#doubleTapBombToggle",
   "#restartButtonToggle", "#thpracTouchControlsToggle", "#touchSensitivityCustomToggle", "#touchViewportAdjust",
@@ -1562,6 +1569,10 @@ function setMpSettingsRoomDrawerOpen(open: boolean) {
   const roomOpen = !!mpUiState.room;
   const drawer = $("#mpSettingsRoomDrawer");
   const cue = $("#mpSettingsRoomDrawerToggle");
+  const returnFocus = drawer.contains(document.activeElement);
+  const backdrop = $("#mpSettingsRoomBackdrop");
+  backdrop.hidden = !(roomOpen && open);
+  $("#mpRoomView").inert = roomOpen && open;
   const generation = ++mpSettingsRoomDrawerCloseGeneration;
   if (roomOpen && open) {
     mpSettingsRoomDrawerOpen = true;
@@ -1570,6 +1581,7 @@ function setMpSettingsRoomDrawerOpen(open: boolean) {
     drawer.hidden = false;
     cue.hidden = true;
     cue.setAttribute("aria-expanded", "true");
+    $("#libraryBack").focus({ preventScroll: true });
     return;
   }
   mpSettingsRoomDrawerOpen = false;
@@ -1580,11 +1592,12 @@ function setMpSettingsRoomDrawerOpen(open: boolean) {
     cue.hidden = !roomOpen;
     return;
   }
-  if (!roomOpen || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  if (!roomOpen || state.lessMotion || matchMedia("(prefers-reduced-motion: reduce)").matches) {
     mpSettingsRoomDrawerClosing = false;
     drawer.classList.remove("closing");
     drawer.hidden = true;
     cue.hidden = !roomOpen;
+    if (returnFocus && roomOpen) cue.focus({ preventScroll: true });
     return;
   }
   mpSettingsRoomDrawerClosing = true;
@@ -1596,6 +1609,7 @@ function setMpSettingsRoomDrawerOpen(open: boolean) {
     drawer.classList.remove("closing");
     drawer.hidden = true;
     cue.hidden = !mpUiState.room;
+    if (returnFocus && mpUiState.room) cue.focus({ preventScroll: true });
   }, 220);
 }
 
@@ -1608,8 +1622,16 @@ function syncMpSettingsRoomDrawer(roomOpen: boolean) {
   const drawerContent = $("#mpSettingsRoomDrawerContent");
   const shell = $("#mpShell");
   const onlineFold = $("#mpOnlineFold");
+  const settingsHeader = $(".tools-head");
+  const tools = $(".tools");
+  const backLabel = roomOpen ? "settings.drawerClose" : "library.back";
+  $("#libraryBack").dataset.i18nAriaLabel = backLabel;
+  $("#libraryBack").setAttribute("aria-label", t(backLabel));
+  // Reparent the existing menu nodes. Never clone controls: listeners, local
+  // preferences and disclosure state must have one owner across both entries.
   cue.hidden = !roomOpen || mpSettingsRoomDrawerOpen || mpSettingsRoomDrawerClosing;
   if (roomOpen) {
+    if (settingsHeader.parentElement !== drawer) drawer.prepend(settingsHeader);
     if (fold.parentElement !== drawerContent) drawerContent.append(fold);
     fold.classList.add("mp-room-drawer-mounted");
     if (head) head.hidden = true;
@@ -1621,7 +1643,8 @@ function syncMpSettingsRoomDrawer(roomOpen: boolean) {
     return;
   }
   setMpSettingsRoomDrawerOpen(false);
-  if (fold.parentElement !== shell) shell.insertBefore(fold, onlineFold);
+  if (settingsHeader.parentElement !== tools) tools.prepend(settingsHeader);
+  if (fold.parentElement !== shell) shell.insertBefore(fold, onlineFold.nextSibling);
   fold.classList.remove("mp-room-drawer-mounted");
   if (head) head.hidden = false;
   mpSetFold("settings", mpUiState.folds.settings);
@@ -2319,7 +2342,6 @@ function replaceLauncherHomeHistory() {
   })]);
 }
 function showLauncherHome() {
-  if ($("#main").classList.contains("card-filter-motion")) cancelCardFilterMotion();
   if ($("#main").classList.contains("card-layout-motion")) cancelCardLayoutMotion();
   state.hasSelection = false;
   if (isMultiplayerProduct()) {
@@ -3836,7 +3858,7 @@ function installCustomSelect(select: HTMLSelectElement) {
   });
   trigger.addEventListener("keydown", event => {
     if (!["Enter", " ", "ArrowDown", "ArrowUp", "Escape"].includes(event.key)) return;
-    if (event.key === "Escape") { closeCustomSelect(select); return; }
+    if (event.key === "Escape") { event.preventDefault(); closeCustomSelect(select); return; }
     event.preventDefault();
     if (trigger.getAttribute("aria-expanded") !== "true") openCustomSelect(select);
     if (event.key === "Enter" || event.key === " ") return;
@@ -3950,7 +3972,7 @@ function render() {
     const candidate = card.dataset.product || card.dataset.game || "";
     if (!isProductId(candidate)) return;
     const product = candidate;
-    card.hidden = !matchesCardFilter(product);
+    card.hidden = !productEnabled(product);
     const selected = state.hasSelection && product === state.product;
     card.classList.toggle("selected", selected);
     if (card instanceof HTMLAnchorElement) card.setAttribute("aria-current", selected ? "page" : "false");
@@ -3958,6 +3980,12 @@ function render() {
   $("#gameId").textContent = multiplayerProduct ? `${state.game.toUpperCase()} MP` : state.game.toUpperCase();
   $("#gameId").dataset.game = state.game;
   $("#gameTitle").textContent = game().title;
+  const identity = PRODUCT_GAMES[state.game];
+  const cover = $("#optionsCover") as HTMLImageElement;
+  const coverSource = `assets/${identity.cardArtwork}`;
+  if (cover.getAttribute("src") !== coverSource) cover.src = coverSource;
+  $("#optionsNumber").textContent = identity.number;
+  $("#optionsSubtitle").textContent = identity.subtitle;
   $("#mpTitleBadge").hidden = !multiplayerProduct;
   const support = PRODUCT_GAMES[state.game].support;
   const noticeGame = "adaptationNotice" in support && support.adaptationNotice === "early-test" && !multiplayerProduct;
@@ -3984,13 +4012,17 @@ function render() {
     }
   }
   const multiplayerRoomOpen = multiplayerProduct && !!mpUiState.room;
+  const libraryToolsOpen = state.hasSelection && !multiplayerRoomOpen && !state.launched;
+  document.body.classList.toggle("library-tools-open", libraryToolsOpen);
+  $(".game-library").inert = libraryToolsOpen;
+  tools.setAttribute("role", libraryToolsOpen ? "dialog" : "complementary");
+  tools.setAttribute("aria-labelledby", "gameTitle");
+  tools.setAttribute("aria-modal", String(libraryToolsOpen));
+  tools.setAttribute("aria-hidden", String(!libraryToolsOpen));
   if (multiplayerRoomOpen && $("#main").classList.contains("card-layout-motion")) cancelCardLayoutMotion();
-  $("#cardFilterBar").hidden = multiplayerRoomOpen;
-  document.querySelectorAll<HTMLElement>("[data-card-filter]").forEach(button => {
-    button.setAttribute("aria-pressed", String(button.dataset.cardFilter === cardFilter));
-  });
   $("#main").classList.toggle("mp-room-open", multiplayerRoomOpen);
   document.body.classList.toggle("mp-room-active", multiplayerRoomOpen);
+  if (!multiplayerRoomOpen && roomPanel.open) roomPanel.close();
   $("#mpRoomView").hidden = !multiplayerRoomOpen;
   syncMpSettingsRoomDrawer(multiplayerRoomOpen);
   const hasInstalledPackage = installedPackageSnapshots.has(state.game);
@@ -4042,6 +4074,7 @@ function render() {
   $("#mpMagnifierConflict").hidden = state.options.touchFocusMode !== "two-finger";
   $("#mpMobileOptions").classList.toggle("open", mpUiState.mobileOpen);
   $("#mpMobileOptionsToggle").setAttribute("aria-expanded", String(mpUiState.mobileOpen));
+  $("#mpMobileOptionsBody").inert = !mpUiState.mobileOpen;
   const selectedLanguage = languageEntry();
   const selectedPack = record(selectedLanguage.offlinePack) || record(selectedLanguage.pack);
   $("#languagePackSize").textContent = selectedPack ? formatBytes(Number(selectedPack.bytes) || 0) : t("settings.builtin");
@@ -4051,6 +4084,7 @@ function render() {
   $("#focusHitboxOption").hidden = !gameFeatureAvailable(state.game, "focusHitbox");
   $("#mobileOptions").classList.toggle("open", state.mobileOpen);
   $("#mobileOptionsToggle").setAttribute("aria-expanded", String(state.mobileOpen));
+  $("#mobileOptionsBody").inert = !state.mobileOpen;
   const switches = { thpracToggle: state.options.thpracEnabled, thpracTouchControlsToggle: state.options.thpracTouchControlsEnabled, restartButtonToggle: state.options.restartButtonEnabled, magnifierToggle: state.options.magnifierEnabled, frameLimitToggle: state.options.frameLimit60Enabled, focusHitboxToggle: state.options.focusHitboxEnabled, touchToggle: state.options.touchEnabled, doubleTapBombToggle: state.options.doubleTapBombEnabled, alwaysHitboxToggle: state.options.alwaysHitbox };
   for (const [id, enabled] of Object.entries(switches)) {
     $("#" + id).setAttribute("aria-checked", String(enabled));
@@ -4126,6 +4160,7 @@ function render() {
 
 window.addEventListener("eagler-ui-locale-change", () => {
   document.documentElement.lang = getUiLocale();
+  if (!state.launched) restoreGamePreferences(state.game, currentPreferenceId());
   renderBrandUpdateAge();
   render();
   renderServerStatusNote();
@@ -5773,7 +5808,20 @@ document.querySelectorAll<HTMLButtonElement>("[data-mp-fold]").forEach(button =>
 $("#mpSettingsRoomDrawerToggle").addEventListener("click", () => {
   setMpSettingsRoomDrawerOpen(!mpSettingsRoomDrawerOpen);
 });
-$("#mpSettingsRoomDrawerCloseHint").addEventListener("click", () => setMpSettingsRoomDrawerOpen(false));
+$("#mpSettingsRoomDrawer").addEventListener("keydown", event => {
+  if (event.key === "Escape") { event.preventDefault(); setMpSettingsRoomDrawerOpen(false); }
+  if (event.key !== "Tab") return;
+  const controls = Array.from($("#mpSettingsRoomDrawer").querySelectorAll<HTMLElement>(
+    'button:not(:disabled), summary, a[href], input:not(:disabled), select:not(:disabled), [tabindex="0"]',
+  )).filter(element => element.tabIndex >= 0 && element.getClientRects().length > 0
+    && getComputedStyle(element).visibility !== "hidden");
+  const first = controls[0], last = controls[controls.length - 1];
+  if (event.shiftKey && document.activeElement === first && last) {
+    event.preventDefault(); last.focus();
+  } else if (!event.shiftKey && document.activeElement === last && first) {
+    event.preventDefault(); first.focus();
+  }
+});
 $("#mpLanguageSelect").addEventListener("change", event => {
   const value = $("#mpLanguageSelect").value;
   if (!languageCatalog(state.game).some(entry => entry.id === value)) return;
@@ -5862,10 +5910,11 @@ $("#mpCopyRoomCode").addEventListener("click", mpCopyRoomCode);
 // behind in the address bar.
 $("#mpLeaveRoom").addEventListener("click", () => mpLeaveRoom());
 $("#mpRoomSettingsToggle").addEventListener("click", () => {
-  if (!mpRoomOwnerLocal()) return;
-  mpUiState.roomSettingsOpen = !mpUiState.roomSettingsOpen;
+  mpUiState.roomSettingsOpen = true;
+  openRoomPanel("game", $("#mpRoomSettingsToggle"));
   renderMpRoom();
 });
+document.getElementById("mpTakeHostSeat")!.addEventListener("click", () => mpTakeSeat(0));
 $("#mpRoomPlayerCount").addEventListener("change", event => {
   const room = mpUiState.room;
   if (!room || !mpRoomOwnerLocal() || !mpLobby.connected) return;
@@ -5902,81 +5951,47 @@ $("#mpSpectatorJoin").addEventListener("click", () => {
   else mpTakeSpectatorSeat();
 });
 
-function mpSetupSpectatorRailDrag() {
-  const rail = $("#mpSpectatorRail");
-  const handle = rail?.querySelector<HTMLElement>(".mp-spectator-rail-head");
-  if (!rail || !handle) return;
-  const mobile = window.matchMedia("(max-width:780px)");
-  let drag: { pointerId: number; dx: number; dy: number } | null = null;
-
-  const clearInlinePosition = () => {
-    for (const prop of ["left", "top", "right", "bottom"]) rail.style.removeProperty(prop);
-  };
-  const mobileViewportSize = () => {
-    const viewport = window.visualViewport;
-    return {
-      width: Math.max(1, viewport?.width || window.innerWidth || document.documentElement.clientWidth || 1),
-      height: Math.max(1, viewport?.height || window.innerHeight || document.documentElement.clientHeight || 1),
-    };
-  };
-  const setMobilePosition = (left: number, top: number, save = false) => {
-    const margin = 6;
-    const rect = rail.getBoundingClientRect();
-    const viewport = mobileViewportSize();
-    const maxLeft = Math.max(margin, viewport.width - rect.width - margin);
-    const maxTop = Math.max(margin, viewport.height - rect.height - margin);
-    const x = Math.max(margin, Math.min(maxLeft, left));
-    const y = Math.max(margin, Math.min(maxTop, top));
-    rail.style.setProperty("left", `${Math.round(x)}px`, "important");
-    rail.style.setProperty("top", `${Math.round(y)}px`, "important");
-    rail.style.setProperty("right", "auto", "important");
-    rail.style.setProperty("bottom", "auto", "important");
-    if (save) multiplayerSpectatorRailPositions.save({ x, y });
-  };
-  const restore = () => {
-    if (!mobile.matches) {
-      clearInlinePosition();
-      return;
-    }
-    const saved = multiplayerSpectatorRailPositions.load();
-    if (saved) setMobilePosition(saved.x, saved.y, false);
-  };
-
-  handle.addEventListener("pointerdown", event => {
-    if (!mobile.matches || event.button !== 0) return;
-    const rect = rail.getBoundingClientRect();
-    drag = { pointerId: event.pointerId, dx: event.clientX - rect.left, dy: event.clientY - rect.top };
-    handle.setPointerCapture?.(event.pointerId);
-    rail.classList.add("dragging");
-    event.preventDefault();
-  });
-  handle.addEventListener("pointermove", event => {
-    if (!drag || drag.pointerId !== event.pointerId || !mobile.matches) return;
-    setMobilePosition(event.clientX - drag.dx, event.clientY - drag.dy, false);
-    event.preventDefault();
-  });
-  const finish = (event: PointerEvent) => {
-    if (!drag || (event && drag.pointerId !== event.pointerId)) return;
-    const rect = rail.getBoundingClientRect();
-    setMobilePosition(rect.left, rect.top, true);
-    rail.classList.remove("dragging");
-    drag = null;
-  };
-  handle.addEventListener("pointerup", finish);
-  handle.addEventListener("pointercancel", finish);
-  const clampToVisibleViewport = () => {
-    if (!mobile.matches) { clearInlinePosition(); return; }
-    if (!rail.style.left) return;
-    const rect = rail.getBoundingClientRect();
-    setMobilePosition(rect.left, rect.top, false);
-  };
-  window.addEventListener("resize", clampToVisibleViewport, { passive: true });
-  window.visualViewport?.addEventListener("resize", clampToVisibleViewport, { passive: true });
-  window.visualViewport?.addEventListener("scroll", clampToVisibleViewport, { passive: true });
-  mobile.addEventListener?.("change", restore);
-  restore();
+// One native modal owns secondary room controls, focus containment and Escape.
+const roomPanel = document.querySelector<HTMLDialogElement>("#mpRoomPanel")!;
+let roomPanelTrigger: HTMLElement | null = null;
+let roomPanelClosing = false;
+function closeRoomPanel() {
+  if (!roomPanel.open || roomPanelClosing) return;
+  if (state.lessMotion || matchMedia("(prefers-reduced-motion: reduce)").matches) { roomPanel.close(); return; }
+  roomPanelClosing = true;
+  const motion = roomPanel.animate([{ opacity: 1, transform: "translateY(0) scale(1)" }, { opacity: 0, transform: "translateY(14px) scale(.985)" }], { duration: 160, easing: "cubic-bezier(.4,0,1,1)" });
+  void motion.finished.catch(() => {}).then(() => { roomPanelClosing = false; if (roomPanel.open) roomPanel.close(); });
 }
-mpSetupSpectatorRailDrag();
+roomPanel.addEventListener("cancel", event => { event.preventDefault(); closeRoomPanel(); });
+function openRoomPanel(kind: "personal" | "network" | "spectators" | "game", trigger: HTMLElement) {
+  roomPanelTrigger = trigger;
+  roomPanel.dataset.panel = kind;
+  document.querySelectorAll<HTMLElement>("[data-room-panel]").forEach(panel => { panel.hidden = panel.dataset.roomPanel !== kind; });
+  document.getElementById("mpRoomPanelTitle")!.textContent = t(kind === "personal" ? "room.playerOptions" : kind === "network" ? "room.network" : kind === "game" ? "multiplayer.gameSettings" : "room.spectatorLounge");
+  $("#mpSpectatorToggle").setAttribute("aria-expanded", String(kind === "spectators"));
+  if (!roomPanel.open) roomPanel.showModal();
+}
+roomPanel.addEventListener("close", () => {
+  mpUiState.roomSettingsOpen = false;
+  $("#mpRoomSettingsToggle").setAttribute("aria-expanded", "false");
+  $("#mpSpectatorToggle").setAttribute("aria-expanded", "false");
+  roomPanelTrigger?.focus();
+});
+roomPanel.addEventListener("click", event => {
+  if (event.target !== roomPanel) return;
+  const rect = roomPanel.getBoundingClientRect();
+  if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) closeRoomPanel();
+});
+document.getElementById("mpRoomPanelClose")!.addEventListener("click", closeRoomPanel);
+$("#mpSpectatorToggle").addEventListener("click", () => openRoomPanel("spectators", $("#mpSpectatorToggle")));
+document.getElementById("mpNetworkToggle")!.addEventListener("click", event => {
+  const trigger = (event.target as Element).closest<HTMLButtonElement>("button[data-network-peer]");
+  if (!trigger) return;
+  roomPanel.dataset.networkPeer = trigger.dataset.networkPeer;
+  openRoomPanel("network", trigger);
+  renderRoomNetwork();
+});
+$("#mpRoomNetworkRetry").addEventListener("click", () => { roomNetwork.retry(roomPanel.dataset.networkPeer); renderMpRoom(); });
 $("#mpDisplayName").addEventListener("change", () => mpSetDisplayName($("#mpDisplayName").value));
 $("#mpDisplayName").addEventListener("blur", () => mpSetDisplayName($("#mpDisplayName").value));
 $("#mpLoadoutPrev").addEventListener("click", () => mpSetLoadout(-1));
@@ -6828,38 +6843,68 @@ function mpResetRoomState() {
   multiplayerRoomSessions.clear(state.product);
 }
 
+let mpRoomLeavePending = false;
+let mpRoomReturnTimer: number | null = null;
 function mpLeaveRoom(fromHistory = false) {
-  mpResetRoomState();
-  if (!fromHistory) replaceLauncherHomeHistory();
-  showLauncherHome();
-  setTranslatedStatus("status.roomLeft");
+  const leavingRoom = mpUiState.room;
+  if (!leavingRoom || mpRoomLeavePending) return;
+  const roomView = $("#mpRoomView");
+  const reducedMotion = state.lessMotion || matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const finish = () => {
+    mpRoomLeavePending = false;
+    document.body.classList.remove("mp-room-leaving");
+    roomView.inert = false;
+    if (mpUiState.room !== leavingRoom) return;
+    mpResetRoomState();
+    if (!fromHistory) replaceLauncherHomeHistory();
+    if (!reducedMotion) document.body.classList.add("mp-room-returning");
+    showLauncherHome();
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    setTranslatedStatus("status.roomLeft");
+    if (!reducedMotion) {
+      if (mpRoomReturnTimer !== null) window.clearTimeout(mpRoomReturnTimer);
+      mpRoomReturnTimer = window.setTimeout(() => {
+        document.body.classList.remove("mp-room-returning");
+        mpRoomReturnTimer = null;
+      }, 320);
+    }
+  };
+  if (reducedMotion) { finish(); return; }
+  mpRoomLeavePending = true;
+  roomView.inert = true;
+  document.body.classList.remove("mp-room-returning");
+  document.body.classList.add("mp-room-leaving");
+  window.setTimeout(finish, 220);
 }
 
-function mpAnimateLocalPlayerMove(before: DOMRect | null) {
-  const playerCard = $("#mpLocalPlayer");
-  if (!before || playerCard.hidden || typeof playerCard.animate !== "function") return;
-  const after = playerCard.getBoundingClientRect();
-  const dx = before.left - after.left;
-  const dy = before.top - after.top;
-  if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
-  playerCard.animate([
-    { transform: `translate(${dx}px,${dy}px)`, opacity: .76 },
-    { transform: "translate(0,0)", opacity: 1 },
-  ], { duration: state.lessMotion ? 1 : 320, easing: "cubic-bezier(.2,.75,.2,1)" });
+const mpSeatPresentations = new WeakMap<HTMLElement, { room: string; occupant: string; animations: Animation[] }>();
+function mpAnimateSeatContents(seat: HTMLElement, occupant: string) {
+  const room = mpUiState.room;
+  const previous = mpSeatPresentations.get(seat);
+  if (previous && previous.room === room?.code && previous.occupant === occupant) return;
+  previous?.animations.forEach(animation => animation.cancel());
+  const presentation = { room: room?.code || "", occupant, animations: [] as Animation[] };
+  mpSeatPresentations.set(seat, presentation);
+  if (!previous || previous.room !== room?.code || !room?.synced || seat.hidden ||
+      state.lessMotion || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  // Only the changed content fades. Seat boundaries and the dock never travel.
+  for (const child of seat.querySelectorAll<HTMLElement>(":scope > .mp-seat-face, :scope > .mp-seat-index, :scope > .mp-seat-name, :scope > .mp-seat-state")) {
+    if (child.hidden || typeof child.animate !== "function") continue;
+    const animation = child.animate([{ opacity: .25 }, { opacity: 1 }], {
+      duration: 180, easing: "cubic-bezier(.2,.8,.2,1)",
+    });
+    presentation.animations.push(animation);
+  }
 }
 
 function mpTakeSeat(index: number) {
   if (!mpUiState.room?.synced || !mpLobby.connected || !Number.isInteger(index) || index < 0 || index >= mpUiState.room.playerCount) return;
-  const playerCard = $("#mpLocalPlayer");
-  const before = !playerCard.hidden ? playerCard.getBoundingClientRect() : null;
-  if (!mpLobbySend({
+  if (index === mpUiState.seat || mpUiState.room.seats?.[index]) return;
+  mpLobbySend({
     type: "take-seat", seat: index, loadout: mpUiState.preferredLoadout,
     ready: mpUiState.ready, name: mpUiState.displayName,
-  })) return;
-  mpUiState.seat = index;
-  mpUiState.spectatorRequested = false;
-  renderMpRoom();
-  requestAnimationFrame(() => mpAnimateLocalPlayerMove(before));
+  });
+  // The lobby snapshot commits old/new occupancy together, including rejection.
 }
 
 function mpStandUp() {
@@ -6958,10 +7003,93 @@ function mpSetLoadout(delta: number) {
   renderMpRoom();
 }
 
+function renderRoomNetwork() {
+  const container = document.getElementById("mpRoomNetworkRows");
+  const room = mpUiState.room;
+  if (!container || !room) return;
+  const peers = (room.seats || []).slice(0, room.playerCount).flatMap((seat, index) => seat && index !== mpUiState.seat ? [{ seat, index }] : []);
+  const unavailable = !mpLobby.connected || !room.synced;
+  const paused = room.phase !== "lobby" || state.launched;
+  const message = unavailable ? t("multiplayer.reconnecting") : paused ? t("room.pausedTest") : mpUiState.seat == null ? t("room.seatToTest") : !peers.length ? t("room.waitPeer") : "";
+  const retry = document.querySelector<HTMLButtonElement>("#mpRoomNetworkRetry");
+  if (retry) retry.disabled = !!message;
+  const summary = document.getElementById("mpNetworkSummary");
+  const peerLoadout = (seat: typeof peers[number]["seat"]) => mpLoadoutLabel(mpLoadouts()[mpNormalizeLoadoutIndex(seat.loadout)]!);
+  const peerTitle = ({ seat, index }: typeof peers[number]) => `${t("multiplayer.you")} → P${index + 1} · ${peerLoadout(seat)}`;
+  if (summary) {
+    const noTeammates = !unavailable && !paused && !peers.length;
+    document.getElementById("mpNetworkToggle")!.hidden = noTeammates;
+    if (noTeammates) summary.replaceChildren();
+    else if (message) summary.textContent = message;
+    else {
+      // Keep live buttons mounted while samples update, preserving keyboard focus.
+      if (!summary.querySelector("button")) summary.replaceChildren();
+      const existing = new Map(Array.from(summary.querySelectorAll<HTMLButtonElement>("button[data-network-peer]")).map(button => [button.dataset.networkPeer, button]));
+      for (const peer of peers) {
+        const { seat } = peer;
+        let button = existing.get(seat.clientId);
+        if (!button) {
+          button = document.createElement("button"); button.type = "button"; button.className = "mp-peer-connection";
+          button.dataset.networkPeer = seat.clientId; button.setAttribute("aria-haspopup", "dialog");
+          const title = document.createElement("span"); title.className = "mp-peer-connection-title";
+          const values = document.createElement("span"); values.className = "mp-peer-connection-values";
+          const arrow = document.createElement("img"); arrow.className = "room-icon"; arrow.src = "assets/room-caret-right.svg"; arrow.alt = "";
+          button.append(title, values, arrow); summary.append(button);
+        }
+        const title = peerTitle(peer);
+        button.querySelector(".mp-peer-connection-title")!.textContent = title;
+        button.querySelector(".mp-peer-connection-values")!.textContent = (["direct", "turn"] as const).map(lane => {
+          const metric = roomNetwork.metric(seat.clientId, lane);
+          const measured = !seat.offline && metric.state === "connected" && metric.rtt != null;
+          return `${t(`room.${lane}`)} ${measured ? `${Math.max(1, Math.round(metric.rtt!))} ms` : t(seat.offline || metric.state === "unavailable" ? "room.unavailable" : "room.checking")}`;
+        }).join(" · ");
+        button.setAttribute("aria-label", `${title} · ${button.querySelector(".mp-peer-connection-values")!.textContent} · ${t("room.connections")}`);
+        existing.delete(seat.clientId);
+      }
+      for (const button of existing.values()) button.remove();
+    }
+  }
+  if (message) {
+    if (container.textContent !== message) { const note = document.createElement("p"); note.className = "mp-network-empty"; note.textContent = message; container.replaceChildren(note); }
+    return;
+  }
+  const selectedPeer = roomPanel.dataset.networkPeer;
+  const detailPeers = selectedPeer ? peers.filter(({ seat }) => seat.clientId === selectedPeer) : peers;
+  if (!detailPeers.length) {
+    const note = document.createElement("p"); note.className = "mp-network-empty"; note.textContent = t("room.peerLeft"); container.replaceChildren(note); return;
+  }
+  container.replaceChildren(...detailPeers.map(({ seat, index }) => {
+    const row = document.createElement("div"); row.className = "mp-network-peer";
+    const name = document.createElement("div"); name.className = "mp-network-peer-name";
+    const badge = document.createElement("span"); badge.textContent = `${t("multiplayer.you")} → P${index + 1}`;
+    const label = document.createElement("strong"); label.textContent = peerLoadout(seat); name.append(badge, label); row.append(name);
+    for (const lane of ["direct", "turn", "relay"] as const) {
+      const metric = roomNetwork.metric(seat.clientId, lane);
+      const cell = document.createElement("div"); cell.className = "mp-network-metric";
+      const title = document.createElement("span"); title.textContent = t(`room.${lane}`);
+      const value = document.createElement("strong");
+      const measured = !seat.offline && metric.state === "connected" && metric.rtt != null;
+      value.textContent = measured ? `${Math.max(1, Math.round(metric.rtt!))} ms` : t(seat.offline || metric.state === "unavailable" ? "room.unavailable" : "room.checking");
+      cell.dataset.quality = measured ? metric.rtt! < 100 ? "good" : metric.rtt! < 200 ? "fair" : "poor" : "unknown";
+      cell.append(title, value);
+      const detail = document.createElement("small"); detail.textContent = measured && metric.jitter != null ? t("room.jitter", { value: Math.round(metric.jitter) }) : "—";
+      cell.append(detail); row.append(cell);
+    }
+    return row;
+  }));
+}
+
 function renderMpRoom() {
   const room = mpUiState.room;
   if (!room) return;
   const roomReady = room.synced === true && mpLobby.connected;
+  roomNetwork.update({ localId: mpLobby.clientId, peers: (room.seats || []).slice(0, room.playerCount).filter(seat => seat && !seat.offline).map(seat => seat!.clientId), active: roomReady && mpUiState.seat != null && room.phase === "lobby" && !state.launched });
+  renderRoomNetwork();
+  $("#mpRoomConnection").textContent = t(roomReady ? "room.online" : "multiplayer.reconnecting");
+  $("#mpRoomConnection").classList.toggle("connected", roomReady);
+  $("#mpRoomPhase").textContent = t(room.phase === "running" ? "room.running" : room.phase === "starting" ? "room.starting" : "room.lobby");
+  $("#mpRoomMode").textContent = t("room.coop", { count: room.playerCount });
+  $("#mpRoomDifficultyBadge").textContent = game().multiplayer?.difficulties?.[room.difficulty] || "Normal";
   const ownerLocal = mpRoomOwnerLocal();
   mpUiState.preferredLoadout = mpNormalizeLoadoutIndex(mpUiState.preferredLoadout);
   const loadouts = mpLoadouts();
@@ -6973,21 +7101,22 @@ function renderMpRoom() {
   $("#mpRoomCode").textContent = room.code;
   $("#mpRoomPlayerCount").value = String(room.playerCount);
   $("#mpRoomDifficulty").value = String(room.difficulty);
-  if (!ownerLocal) mpUiState.roomSettingsOpen = false;
-  $("#mpRoomSettingsDrawer").hidden = !ownerLocal;
-  $("#mpRoomSettings").hidden = !ownerLocal || !mpUiState.roomSettingsOpen;
-  $("#mpRoomSettingsToggle").setAttribute("aria-expanded", String(ownerLocal && mpUiState.roomSettingsOpen));
-  $("#mpRoomSettingsToggle").classList.toggle("open", ownerLocal && mpUiState.roomSettingsOpen);
+  // Room configuration is public to everyone; only P1 may mutate it.
+  // Losing or acquiring P1 must update the open panel rather than close it.
+  mpUiState.roomSettingsOpen = roomPanel.open && roomPanel.dataset.panel === "game";
+  $("#mpRoomSettingsDrawer").hidden = false;
+  $("#mpRoomSettings").hidden = !mpUiState.roomSettingsOpen;
+  $("#mpRoomSettingsToggle").setAttribute("aria-expanded", String(mpUiState.roomSettingsOpen));
+  $("#mpRoomSettingsToggle").classList.toggle("open", mpUiState.roomSettingsOpen);
+  const takeHost = document.querySelector<HTMLButtonElement>("#mpTakeHostSeat")!;
+  takeHost.hidden = !!room.seats?.[0] || ownerLocal;
+  takeHost.disabled = !roomReady || room.phase !== "lobby";
   $("#mpRoomDifficultyText").textContent = difficultyLabels[room.difficulty] || "Normal";
   $("#mpSeatStage").dataset.playerCount = String(room.playerCount);
   $("#mpRoomPlayerCount").disabled = !roomReady || !ownerLocal;
   $("#mpRoomDifficulty").disabled = !roomReady || !ownerLocal;
-  $("#mpRoomSettingsHint").textContent = t(ownerLocal ? "multiplayer.ownerLocalHint" : "multiplayer.ownerRemoteHint");
-  $("#mpOwnerStatus").textContent = !room.synced
-    ? t("multiplayer.syncingMembers")
-    : !mpLobby.connected
-      ? t("multiplayer.reconnecting")
-      : t(ownerLocal ? "multiplayer.youAreHost" : "multiplayer.takeHostSeat");
+  $("#mpRoomSettingsHint").textContent = t(ownerLocal ? "multiplayer.ownerLocalHint" : !room.seats?.[0] ? "room.hostAvailable" : "multiplayer.ownerRemoteHint");
+
 
   document.querySelectorAll<HTMLButtonElement>("[data-mp-player-count]").forEach(button => {
     const value = Number(button.dataset.mpPlayerCount);
@@ -7024,9 +7153,17 @@ function renderMpRoom() {
     const networkSeat = room.synced ? room.seats?.[index] || null : null;
     const occupied = room.synced === true && (!!networkSeat || mpUiState.seat === index);
     seat.hidden = !active;
+    const seatIndex = seat.querySelector<HTMLElement>(".mp-seat-index");
+    if (seatIndex) seatIndex.textContent = `P${index + 1}`;
     seat.classList.toggle("occupied", occupied);
     seat.classList.toggle("owner", index === 0 && ownerLocal);
     seat.classList.toggle("reconnecting", !!networkSeat?.offline);
+    seat.classList.toggle("is-ready", occupied && !!networkSeat?.ready);
+    const nameLabel = seat.querySelector<HTMLElement>("[data-mp-seat-name]");
+    const statusLabel = seat.querySelector<HTMLElement>("[data-mp-seat-state]");
+    const seatLoadout = (networkSeat ? loadouts[mpNormalizeLoadoutIndex(networkSeat.loadout)] : loadout) || loadout;
+    if (nameLabel) nameLabel.textContent = occupied ? mpLoadoutLabel(seatLoadout) : "";
+    if (statusLabel) statusLabel.textContent = !occupied ? "" : t(networkSeat?.offline ? "multiplayer.playerReconnecting" : networkSeat?.ready ? "room.ready" : "room.notReady");
     seat.title = networkSeat?.offline ? t("multiplayer.playerReconnecting") : "";
     const drop = seat.querySelector<HTMLElement>("[data-mp-seat-drop]");
     const button = drop?.querySelector<HTMLButtonElement>("button");
@@ -7035,24 +7172,22 @@ function renderMpRoom() {
     if (drop) drop.hidden = occupied;
     if (glyph) {
       glyph.hidden = !occupied;
-      const seatLoadout = networkSeat ? loadouts[mpNormalizeLoadoutIndex(networkSeat.loadout)] : loadout;
-      const seatName = networkSeat?.name || (mpUiState.seat === index ? mpUiState.displayName : "");
-      glyph.textContent = mpDisplayInitial(seatName, seatLoadout?.glyph || loadout.glyph);
-      seat.title = seatName ? `${seatName} - ${mpLoadoutLabel(seatLoadout || loadout)}` : mpLoadoutLabel(seatLoadout || loadout);
-      let loadoutLabel = seat.querySelector<HTMLElement>(".mp-seat-loadout");
-      if (!loadoutLabel) {
-        loadoutLabel = document.createElement("span");
-        loadoutLabel.className = "mp-seat-loadout";
-        seat.append(loadoutLabel);
-      }
-      loadoutLabel.hidden = !occupied;
-      loadoutLabel.textContent = mpLoadoutLabel(seatLoadout || loadout);
+      glyph.textContent = multiplayerDisplayInitial(networkSeat?.name ?? (mpUiState.seat === index ? mpUiState.displayName : ""), "?");
+      seat.title = occupied ? mpLoadoutLabel(seatLoadout) : "";
     }
+    let edit = seat.querySelector<HTMLButtonElement>(".mp-seat-edit");
+    if (!edit) {
+      edit = document.createElement("button"); edit.type = "button"; edit.className = "mp-seat-edit";
+      edit.addEventListener("click", () => openRoomPanel("personal", edit!)); seat.append(edit);
+    }
+    edit.hidden = mpUiState.seat !== index || !occupied;
+    edit.setAttribute("aria-label", t("room.playerOptions"));
     if (me) me.hidden = mpUiState.seat !== index;
     if (button) {
       button.disabled = !roomReady || !active || occupied;
-      button.textContent = t("multiplayer.join");
+      button.textContent = `${t("multiplayer.join")} P${index + 1}`;
     }
+    mpAnimateSeatContents(seat, occupied ? networkSeat?.clientId || mpLobby.clientId : "");
   });
 
   const playerCard = $("#mpLocalPlayer");
@@ -7070,18 +7205,27 @@ function renderMpRoom() {
   $("#mpSpectatorCount").textContent = String(spectatorCount);
   const spectatorList = $("#mpSpectatorList");
   spectatorList.replaceChildren();
-  for (const entry of spectatorEntries) {
+  const avatarStack = document.getElementById("mpSpectatorAvatars")!;
+  avatarStack.replaceChildren(...spectatorEntries.slice(0, 3).map(entry => {
+    const avatar = document.createElement("span"); avatar.textContent = multiplayerDisplayInitial(entry.name, "?"); return avatar;
+  }));
+  avatarStack.hidden = !spectatorEntries.length;
+  for (const [spectatorIndex, entry] of spectatorEntries.entries()) {
     const row = document.createElement("div");
     row.className = "mp-spectator-entry";
     if (entry.clientId === mpLobby.clientId) row.classList.add("mine");
     const avatar = document.createElement("span");
     avatar.className = "mp-spectator-avatar";
-    avatar.textContent = mpDisplayInitial(entry.name);
+    avatar.textContent = multiplayerDisplayInitial(entry.name, "?");
     const marker = document.createElement("span");
     marker.className = "mp-spectator-marker";
     marker.textContent = entry.clientId === mpLobby.clientId ? t("multiplayer.you") : "";
-    row.title = entry.name || t("multiplayer.unnamedSpectator");
-    row.append(avatar, marker);
+    const spectatorLabel = t("room.spectatorNumber", { number: spectatorIndex + 1 });
+    row.title = spectatorLabel;
+    const copy = document.createElement("div"); copy.className = "mp-spectator-copy";
+    const name = document.createElement("strong"); name.textContent = spectatorLabel;
+    const status = document.createElement("small"); status.textContent = t("room.watching");
+    copy.append(name, status); row.append(avatar, copy, marker);
     spectatorList.append(row);
   }
   if (!spectatorEntries.length) {
@@ -7091,6 +7235,7 @@ function renderMpRoom() {
     spectatorList.append(empty);
   }
   const spectatorJoin = $("#mpSpectatorJoin");
+  spectatorJoin.hidden = mpUiState.seat != null;
   spectatorJoin.disabled = !roomReady || mpUiState.seat != null;
   spectatorJoin.textContent = t(mpUiState.spectatorRequested ? "multiplayer.leaveSpectator" : "multiplayer.joinSpectator");
 
@@ -7119,6 +7264,7 @@ function renderMpRoom() {
   ready.hidden = mpUiState.seat == null;
   ready.disabled = !roomReady || mpUiState.seat == null || room.phase !== "lobby" || mpGameCheckInFlight;
   ready.classList.toggle("ready", mpUiState.ready && mpUiState.seat != null);
+  ready.setAttribute("aria-pressed", String(mpUiState.ready && mpUiState.seat != null));
   ready.textContent = t(mpUiState.ready && mpUiState.seat != null ? "multiplayer.readyDone" : "multiplayer.ready");
   const gameCheck = $("#mpCheckGame");
   gameCheck.hidden = mpUiState.seat == null;
@@ -7128,7 +7274,7 @@ function renderMpRoom() {
   const start = $("#mpStartGame");
   const synchronizedReady = roomReady && room.phase === "lobby" && Array.isArray(room.seats) &&
     room.seats.slice(0, room.playerCount).every(seat => seat && !seat.offline && seat.ready);
-  start.hidden = !ownerLocal;
+  start.hidden = !ownerLocal || !mpUiState.ready;
   start.disabled = !roomReady || room.phase !== "lobby" || (ownerLocal && !synchronizedReady);
   start.textContent = t(!synchronizedReady ? "multiplayer.waitReady" : "multiplayer.startGame");
   mpPersistRoomState();
@@ -7162,6 +7308,7 @@ function cancelLauncherInteractionAnimations() {
   }
 }
 function captureCardLayout(): CardLayoutSnapshot | null {
+  if ($("#main").classList.contains("library-layout")) return null;
   if (!cardLayoutMedia.matches || state.lessMotion) {
     cancelCardLayoutMotion();
     return null;
@@ -7283,104 +7430,31 @@ function animateMobileHomeCards() {
 }
 matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", cancelMobileHomeCards);
 
-interface CardFilterTransition { animation?: Animation }
-let cardFilterTransition: CardFilterTransition | null = null;
-const cardFilterReducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
-let cardFilterIndicatorAnimation: Animation | null = null;
-function moveCardFilterIndicator(button: HTMLElement | null, animate = true) {
-  const indicator = $(".card-filter-indicator");
-  if (!indicator || !button || $("#cardFilterBar").hidden) return;
-  const start = indicator.getBoundingClientRect();
-  cardFilterIndicatorAnimation?.cancel();
-  indicator.style.left = `${button.offsetLeft}px`;
-  indicator.style.width = `${button.offsetWidth}px`;
-  const end = indicator.getBoundingClientRect();
-  if (!animate || state.lessMotion || cardFilterReducedMotion.matches || !start.width) return;
-  const dx = start.left - end.left;
-  const scale = start.width / end.width;
-  const animation = indicator.animate([
-    { transform: `translateX(${dx}px) scaleX(${scale})` },
-    { transform: "translateX(0) scaleX(1)" }
-  ], { duration: 380, easing: "cubic-bezier(.22,.8,.22,1)" });
-  cardFilterIndicatorAnimation = animation;
-  animation.finished.catch(() => {}).finally(() => {
-    if (cardFilterIndicatorAnimation !== animation) return;
-    animation.cancel();
-    cardFilterIndicatorAnimation = null;
-  });
+initializeGameLibrary();
+function closeLibraryTools() {
+  if (mpUiState.room) { setMpSettingsRoomDrawerOpen(false); return; }
+  if (state.launched) return;
+  const selected = document.querySelector<HTMLElement>(".game.selected");
+  closeOtherCustomSelects();
+  replaceLauncherHomeHistory();
+  showLauncherHome();
+  selected?.focus({ preventScroll: true });
 }
-function cancelCardFilterMotion() {
-  const pending = cardFilterTransition;
-  cardFilterTransition = null;
-  pending?.animation?.cancel();
-  const main = $("#main");
-  main.classList.remove("card-filter-motion");
-  main.inert = false;
-}
-function finishCardFilterMotion() {
-  cardFilterTransition?.animation?.finish();
-}
-cardFilterReducedMotion.addEventListener("change", finishCardFilterMotion);
-
-async function switchCardFilter(next: string | undefined) {
-  if (!isCardFilter(next) || mpUiState.room || state.launched) return;
-  if (next === cardFilter && !state.hasSelection && !cardFilterTransition) return;
-  moveCardFilterIndicator(document.querySelector<HTMLElement>(`[data-card-filter="${next}"]`));
-  const main = $("#main");
-  const appearance = getComputedStyle(main);
-  const opacity = appearance.opacity, transform = appearance.transform;
-  cancelCardFilterMotion();
-  // Preserve the current card frame until it has faded away. Cancelling FLIP
-  // here would expose the final geometry for a frame during a quick tab click.
-  const transition: CardFilterTransition = {};
-  cardFilterTransition = transition;
-  main.classList.add("card-filter-motion");
-  main.inert = true;
-  const reduced = () => state.lessMotion || cardFilterReducedMotion.matches;
-  try {
-    if (!reduced()) {
-      transition.animation = main.animate([{ opacity, transform }, { opacity: 0, transform }],
-        { duration: 140, easing: "ease-out", fill: "forwards" });
-      await transition.animation.finished;
-    }
-    if (cardFilterTransition !== transition) return;
-    // All categories return through the same home route, even when the
-    // previously selected game also belongs to the destination category.
-    cancelCardFilterMotion();
-    cancelCardLayoutMotion();
-    closeOtherCustomSelects();
-    if (state.hasSelection) resetRuntime();
-    cardFilter = next;
-    try { localStorage.setItem(cardFilterStorageKey, cardFilter); } catch {}
-    replaceLauncherHomeHistory();
-    showLauncherHome();
-    window.scrollTo({ top: 0, behavior: "instant" });
-    if (!reduced()) {
-      cardFilterTransition = transition;
-      main.classList.add("card-filter-motion");
-      main.inert = true;
-      transition.animation = main.animate([
-        { opacity: 0, transform: "translateY(8px)" },
-        { opacity: 1, transform: "translateY(0)" }
-      ], { duration: 360, easing: getComputedStyle(main).getPropertyValue("--ease"), fill: "both" });
-      await transition.animation.finished;
-    }
-  } catch (error) {
-    if (!(error instanceof DOMException && error.name === "AbortError")) throw error;
-  } finally {
-    if (cardFilterTransition === transition) cancelCardFilterMotion();
+$("#libraryBack").addEventListener("click", closeLibraryTools);
+$("#libraryBackdrop").addEventListener("click", closeLibraryTools);
+$(".tools").addEventListener("keydown", event => {
+  if (!document.body.classList.contains("library-tools-open") || event.defaultPrevented) return;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeLibraryTools();
+  } else if (event.key === "Tab") {
+    const controls = [...$(".tools").querySelectorAll<HTMLElement>('button,a[href],input,select,textarea,summary,[tabindex]')]
+      .filter(control => control.tabIndex >= 0 && !control.matches(":disabled") && control.getClientRects().length && getComputedStyle(control).visibility !== "hidden");
+    const destination = event.shiftKey && document.activeElement === controls[0] ? controls.at(-1)
+      : !event.shiftKey && document.activeElement === controls.at(-1) ? controls[0] : null;
+    if (destination) { event.preventDefault(); destination.focus(); }
   }
-}
-document.querySelectorAll<HTMLButtonElement>("[data-card-filter]").forEach(button => {
-  button.addEventListener("click", () => switchCardFilter(button.dataset.cardFilter));
 });
-moveCardFilterIndicator(document.querySelector<HTMLElement>(`[data-card-filter="${cardFilter}"]`), false);
-new ResizeObserver(() => {
-  if (!cardFilterIndicatorAnimation) {
-    moveCardFilterIndicator(document.querySelector<HTMLElement>(`[data-card-filter="${cardFilter}"]`), false);
-  }
-}).observe($("#cardFilterBar"));
-
 document.querySelectorAll<HTMLElement>(".game").forEach(card => {
   card.addEventListener("click", event => {
     event.preventDefault();
@@ -7411,8 +7485,9 @@ document.querySelectorAll<HTMLElement>(".game").forEach(card => {
     if (routeOperation) applyHistoryOperations(history, [routeOperation]);
     render();
     animateCardLayout(previousLayout);
+    $("#libraryBack").focus({ preventScroll: true });
     setTranslatedStatus(changed ? "status.switchedProduct" : "status.selectedProduct", { product: productTitle(product) });
-    if (mobileLite && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (!main.classList.contains("library-layout") && mobileLite && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
       main.classList.remove("mobile-selection-enter");
       requestAnimationFrame(() => {
         main.classList.add("mobile-selection-enter");
@@ -7546,7 +7621,6 @@ $("#lessMotionToggle").addEventListener("click", () => {
   cancelCardLayoutMotion();
   state.lessMotion = !state.lessMotion;
   if (state.lessMotion) cancelMobileHomeCards();
-  if (state.lessMotion) finishCardFilterMotion();
   try { localStorage.setItem(lessMotionStorageKey, state.lessMotion ? "1" : "0"); } catch {}
   if (state.lessMotion) document.querySelectorAll<HTMLElement>(".game").forEach(card => {
     card.style.setProperty("--rx", "0deg");
@@ -7587,11 +7661,11 @@ $("#frameLimitAppleNote").addEventListener("click", () => openSmallDialog(appleR
 $("#mpFrameLimitAppleNote").addEventListener("click", () => openSmallDialog(appleRefreshDialog));
 bindSmallDialog(appleRefreshDialog, $("#appleRefreshClose"));
 const donationDialog = $("#donationDialog");
-const donationOpen = $("#donationOpen");
-donationOpen.addEventListener("click", () => openSmallDialog(donationDialog));
+const donationTriggers = [$("#donationOpen"), $("#donationOpenTop")];
+for (const trigger of donationTriggers) trigger.addEventListener("click", () => openSmallDialog(donationDialog));
 bindSmallDialog(donationDialog, $("#donationClose"));
 $("#donationImage").addEventListener("error", () => {
-  donationOpen.hidden = true;
+  for (const trigger of donationTriggers) trigger.hidden = true;
   if (donationDialog.open) donationDialog.close();
 });
 const siteNotice = createSiteNoticeController({
@@ -7604,6 +7678,7 @@ async function ensureMultiplayerGuideController(): Promise<MultiplayerGuideContr
   const module = await loadMultiplayerGuide();
   return multiplayerGuideController ??= module.createMultiplayerGuideController({
     readFailureText: error => t("multiplayerGuide.readFailed", { reason: errorMessage(error) }),
+    getGameId: () => state.game,
   });
 }
 $("#mpGuideOpen").addEventListener("click", () => {
@@ -8236,12 +8311,15 @@ document.querySelectorAll<HTMLButtonElement>(".guide-replay").forEach(button => 
 $("#touchHelpOpen").addEventListener("click", () => { collapseTouchGuides(); $("#touchHelp").hidden = false; player.classList.add("help-visible"); });
 $("#touchHelpClose").addEventListener("click", closeTouchHelp);
 $("#touchHelp").addEventListener("click", event => { if (event.target === $("#touchHelp")) closeTouchHelp(); });
-$("#gamePackageImport").addEventListener("click", () => {
+function openManualGamePackageImport() {
   beginManualGamePackageImport(
     t("package.manualImportIntro"),
     captureGameDataContinuation("install-only"),
   );
-});
+}
+$("#gamePackageImport").addEventListener("click", openManualGamePackageImport);
+$("#mpGamePackageImport").addEventListener("click", openManualGamePackageImport);
+$("#mpSettingsRoomBackdrop").addEventListener("click", () => setMpSettingsRoomDrawerOpen(false));
 $("#launch").addEventListener("click", async () => {
   try {
     // Via and other mobile browsers can restore a BFCache/history entry with
@@ -8417,14 +8495,31 @@ if (touchPreview === "touch" || touchPreview === "touch-hud") {
 }
 
 try { state.lessMotion = localStorage.getItem(lessMotionStorageKey) === "1"; } catch {}
-state.mobileOpen = mobileDevice || document.documentElement.clientWidth <= 780;
+const compactOptionsLayout = matchMedia("(max-width: 780px)");
+const touchInputAvailable = () => mobileDevice || navigator.maxTouchPoints > 0 || matchMedia("(any-pointer: coarse)").matches;
+const touchSettingsFirst = () => touchInputAvailable() || compactOptionsLayout.matches;
+function syncTouchSettingsOrder() {
+  // Move the actual groups so keyboard and reading order match the visible order.
+  for (const selector of ["#mobileOptions", "#mpMobileOptions"]) {
+    const touchSettings = $(selector);
+    const groups = touchSettings.parentElement!;
+    if (touchSettingsFirst()) {
+      const firstGroup = groups.querySelector(":scope > .options-group");
+      if (firstGroup !== touchSettings) groups.insertBefore(touchSettings, firstGroup);
+    } else if (groups.lastElementChild !== touchSettings) groups.append(touchSettings);
+  }
+}
+state.mobileOpen = touchInputAvailable();
+mpUiState.mobileOpen = touchInputAvailable();
+syncTouchSettingsOrder();
+compactOptionsLayout.addEventListener("change", syncTouchSettingsOrder);
 mpUiState.displayName = multiplayerIdentity.loadDisplayName();
 for (const [name, open] of Object.entries(mpUiState.folds)) if (isMpFoldName(name)) mpSetFold(name, open);
 if (mpRestoreRoomFromLocation()) {
   renderMpRoom();
   mpConnectLobby();
 }
-if (!mpUiState.room && !state.launched && !matchesCardFilter(state.product)) state.hasSelection = false;
+if (!mpUiState.room && !state.launched && !productEnabled(state.product)) state.hasSelection = false;
 render(); setTranslatedStatus("status.selectGame");
 animateMobileHomeCards();
 bootWatchdog?.ready?.();

@@ -58,6 +58,9 @@ renderer.image = function image(token) {
   const title = token.title ? ` title="${escapeAttribute(token.title)}"` : "";
   return `<img src="${escapeAttribute(href)}" alt="${escapeAttribute(token.text || "")}"${title} loading="lazy">`;
 };
+renderer.blockquote = function blockquote(token) {
+  return `<blockquote class="markdown-blockquote">\n${this.parser.parse(token.tokens)}</blockquote>\n`;
+};
 // Browser-facing Markdown is compiled into trusted static HTML. Raw authored
 // HTML remains text rather than becoming a second, unsanitized markup channel.
 renderer.html = token => escapeHtml(token.text || "");

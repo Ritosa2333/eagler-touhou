@@ -43,8 +43,25 @@ const MARISA_A = Object.freeze({ labelKey: "multiplayer.loadout.marisaA", glyph:
 const MARISA_B = Object.freeze({ labelKey: "multiplayer.loadout.marisaB", glyph: "魔", character: 1, shot: 1 });
 const SAKUYA_A = Object.freeze({ labelKey: "multiplayer.loadout.sakuyaA", glyph: "咲", character: 2, shot: 0 });
 const SAKUYA_B = Object.freeze({ labelKey: "multiplayer.loadout.sakuyaB", glyph: "咲", character: 2, shot: 1 });
+const REIMU_C = Object.freeze({ labelKey: "multiplayer.loadout.reimuC", glyph: "霊", character: 0, shot: 2 });
+const MARISA_C = Object.freeze({ labelKey: "multiplayer.loadout.marisaC", glyph: "魔", character: 1, shot: 2 });
 const TH06_MULTIPLAYER_LOADOUTS = Object.freeze([REIMU_A, REIMU_B, MARISA_A, MARISA_B]);
 const TH07_MULTIPLAYER_LOADOUTS = Object.freeze([...TH06_MULTIPLAYER_LOADOUTS, SAKUYA_A, SAKUYA_B]);
+const TH08_MULTIPLAYER_LOADOUTS = Object.freeze([
+  Object.freeze({ labelKey: "multiplayer.loadout.th08.reimuYukari", glyph: "霊", character: 0, shot: 0 }),
+  Object.freeze({ labelKey: "multiplayer.loadout.th08.marisaAlice", glyph: "魔", character: 1, shot: 0 }),
+  Object.freeze({ labelKey: "multiplayer.loadout.th08.sakuyaRemilia", glyph: "咲", character: 2, shot: 0 }),
+  Object.freeze({ labelKey: "multiplayer.loadout.th08.youmuYuyuko", glyph: "妖", character: 3, shot: 0 }),
+  Object.freeze({ labelKey: "multiplayer.loadout.th08.reimu", glyph: "霊", character: 4, shot: 0 }),
+  Object.freeze({ labelKey: "multiplayer.loadout.th08.yukari", glyph: "紫", character: 5, shot: 0 }),
+  Object.freeze({ labelKey: "multiplayer.loadout.th08.marisa", glyph: "魔", character: 6, shot: 0 }),
+  Object.freeze({ labelKey: "multiplayer.loadout.th08.alice", glyph: "愛", character: 7, shot: 0 }),
+  Object.freeze({ labelKey: "multiplayer.loadout.th08.sakuya", glyph: "咲", character: 8, shot: 0 }),
+  Object.freeze({ labelKey: "multiplayer.loadout.th08.remilia", glyph: "蕾", character: 9, shot: 0 }),
+  Object.freeze({ labelKey: "multiplayer.loadout.th08.youmu", glyph: "妖", character: 10, shot: 0 }),
+  Object.freeze({ labelKey: "multiplayer.loadout.th08.yuyuko", glyph: "幽", character: 11, shot: 0 }),
+]);
+const TH10_MULTIPLAYER_LOADOUTS = Object.freeze([REIMU_A, REIMU_B, REIMU_C, MARISA_A, MARISA_B, MARISA_C]);
 const STANDARD_MULTIPLAYER_DIFFICULTIES = Object.freeze(["Easy", "Normal", "Hard", "Lunatic", "Extra"]);
 const TH07_MULTIPLAYER_DIFFICULTIES = Object.freeze([...STANDARD_MULTIPLAYER_DIFFICULTIES, "Phantasm"]);
 const STANDARD_MULTIPLAYER_PLAYER_COUNTS = Object.freeze([2, 3] as const);
@@ -177,6 +194,14 @@ export const PRODUCT_GAMES = Object.freeze({
       musicMounts: Object.freeze({ ogg: "/bgm-ogg" }),
     }),
     replay: Object.freeze({ prefix: "th8" }),
+    multiplayerRuntime: "./runtime/th08/multiplayer/th08.html",
+    multiplayer: Object.freeze({
+      titleKey: "game.title.th08mp",
+      playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS,
+      difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
+      loadouts: TH08_MULTIPLAYER_LOADOUTS,
+      peerTransportGlobal: "__th08PeerTransport",
+    }),
     features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
   }),
   th09: Object.freeze({
@@ -245,6 +270,14 @@ export const PRODUCT_GAMES = Object.freeze({
       musicMounts: Object.freeze({ ogg: "/bgm-ogg" }),
     }),
     replay: Object.freeze({ prefix: "th10" }),
+    multiplayerRuntime: "./runtime/th10/multiplayer/th10.html",
+    multiplayer: Object.freeze({
+      titleKey: "game.title.th10mp",
+      playerCounts: STANDARD_MULTIPLAYER_PLAYER_COUNTS,
+      difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
+      loadouts: TH10_MULTIPLAYER_LOADOUTS,
+      peerTransportGlobal: "__th10PeerTransport",
+    }),
     features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
   }),
 });

@@ -18,11 +18,18 @@ const css = await readFile(resolveFrontendPackageSource("styles.css"), "utf8");
 const launcherSource = await readFile(new URL("../src/launcher/app.mts", import.meta.url), "utf8");
 const document = parse(html);
 const cards = [];
+const navigationChoices = [];
 
 function attribute(node, name) {
   return node.attrs?.find(item => item.name === name)?.value ?? null;
 }
 function walk(node) {
+  if (attribute(node, "data-minimap-preview")) {
+    const id = attribute(node, "data-minimap-preview");
+    navigationChoices.push(id);
+    const number = node.childNodes?.find(child => attribute(child, "class") === "minimap-index");
+    assert.equal(number?.childNodes?.[0]?.value, PRODUCT_GAMES[gameIdForProduct(id)].number);
+  }
   if (node.tagName === "a" && String(attribute(node, "class") || "").split(/\s+/).includes("game")) {
     const game = attribute(node, "data-game");
     const product = attribute(node, "data-product") || game;
@@ -32,11 +39,14 @@ function walk(node) {
       for (const nested of child.childNodes || []) collectImages(nested);
     };
     collectImages(node);
-    cards.push({ game, product, images, style: attribute(node, "style") || "" });
+    cards.push({ game, product, images, style: attribute(node, "style") || "", rail: attribute(node.parentNode, "id") });
   }
   for (const child of node.childNodes || []) walk(child);
 }
 walk(document);
+assert.doesNotMatch(html, /id="cardFilterBar"/, "the removed category filter must not return");
+assert.deepEqual(navigationChoices.sort(), [...PRODUCT_IDS].sort(), "every catalog product needs a numbered navigation choice");
+assert.doesNotMatch(html, /minimap-swatch|--swatch-|minimap-panel/, "retired color-sample navigation must not return");
 
 assert.equal(new Set(cards.map(card => card.product)).size, cards.length,
   "Launcher product cards must have unique product identities");
@@ -45,6 +55,8 @@ assert.deepEqual(cards.map(card => card.product).sort(), [...PRODUCT_IDS].sort()
 
 for (const card of cards) {
   const game = gameIdForProduct(card.product);
+  assert.equal(card.rail, isMultiplayerProductId(card.product) ? "multiplayerRail" : "singleplayerRail",
+    `${card.product}: card must belong to its single-player or multiplayer shelf`);
   assert.ok(PRODUCT_GAMES[game], `${card.product}: card points at an unregistered game`);
   assert.equal(card.game, game, `${card.product}: card data-game must resolve to the catalog owner`);
   assert.ok(card.images.includes(`assets/${PRODUCT_GAMES[game].cardArtwork}`),

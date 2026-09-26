@@ -114,3 +114,11 @@ Iconify collection and version referenced by Mizuki.
 - Glyphs: `language`, `history`, `person`, and `warning`
 - Purpose: identify interface language, first-use notice, and about actions without a
   runtime icon service or network dependency.
+
+## Phosphor room controls
+
+- Project: https://github.com/phosphor-icons/core
+- Package: `@phosphor-icons/core@2.1.1`
+- License: MIT, included in `public/assets/room-icons-LICENSE.txt`
+- Unmodified regular icons: caret-left, caret-right, copy, gear-six,
+  sliders-horizontal, chart-bar, users.

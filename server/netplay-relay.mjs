@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto';
 import { WebSocket, WebSocketServer } from 'ws';
+import { roomProbeEnvelope } from './room-probe-policy.mjs';
 
 import { multiplayerConfigForProduct } from '../lib/contracts/product-catalog.mjs';
 
@@ -465,8 +466,9 @@ function handleLobbyConnection(socket, roomId, clientId) {
     previous.close(1000, 'lobby reconnected');
   room.lobbyClients.set(clientId, socket);
   console.log(`LOBBY JOIN room=${roomId} client=${clientId} peers=${room.lobbyClients.size}`);
-  sendLobby(socket, { type: 'state', room: lobbySnapshot(room) });
+  sendLobby(socket, { type: 'state', room: lobbySnapshot(room), roomProbe: { iceServers: iceServersFor(roomId, 'lobby-probe', 0) } });
   if (pendingDisconnect) broadcastLobby(room);
+  let probeBudget = 0, probeWindow = Date.now();
 
   socket.on('message', (data, isBinary) => {
     if (isBinary) {
@@ -476,6 +478,17 @@ function handleLobbyConnection(socket, roomId, clientId) {
     let message;
     try { message = JSON.parse(String(data)); }
     catch { sendLobby(socket, { type: 'error', error: 'invalid lobby message' }); return; }
+
+    if (message?.type === 'room-probe') {
+      if (room.lobby.phase !== 'lobby' || room.lobbyClients.get(clientId) !== socket || lobbySeatOf(room, clientId) < 0) return;
+      if (Date.now() - probeWindow > 10000) { probeWindow = Date.now(); probeBudget = 0; }
+      if (++probeBudget > 180) return;
+      const onlinePeers = new Set(room.lobby.seats.slice(0, room.lobby.playerCount)
+        .filter(seat => seat && room.lobbyClients.has(seat.clientId)).map(seat => seat.clientId));
+      const envelope = roomProbeEnvelope(message, clientId, onlinePeers);
+      if (envelope) sendLobby(room.lobbyClients.get(message.to), envelope);
+      return;
+    }
 
     if (message.type === 'take-seat') {
       if (room.lobby.phase !== 'lobby') {

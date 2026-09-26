@@ -121,6 +121,7 @@ try {
 
   const mappings = [
     ["server/netplay-relay.mjs", "services/relay/server/netplay-relay.mjs"],
+    ["server/room-probe-policy.mjs", "services/relay/server/room-probe-policy.mjs"],
     ["lib/contracts/load-compiled-contract.mjs", "services/relay/lib/contracts/load-compiled-contract.mjs"],
     ["lib/contracts/product-catalog.mjs", "services/relay/lib/contracts/product-catalog.mjs"],
     ["server/render-coturn-config.cjs", "services/turn/render-coturn-config.cjs"],
