@@ -26,6 +26,8 @@ const economySources = [
   'th10_web/cpp/game/Timer.cpp', 'th10_web/cpp/game/Arithmetic.cpp',
 ].map(path => resolve(root, path));
 for (const [name, sources, flags = []] of [
+  ['netplay-pacing', [resolve(root,'tests/netplay-pacing-test.cpp')]],
+  ['common-session-pacing', [resolve(common,'tests/session-pacing-test.cpp')]],
   ['cooperative-rules', [resolve(root, 'tests/cooperative-rules-test.cpp')]],
   ['multiplayer-balance', [
     resolve(root,'tests/multiplayer-balance-test.cpp'),

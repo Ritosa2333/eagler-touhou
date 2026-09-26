@@ -21,6 +21,18 @@ extern "C" __attribute__((export_name("multiplayer_network_error")))
 const char* multiplayer_network_error(browser::Application* app){
     return app?app->state.netplay_runtime.NetworkError():"Application unavailable";
 }
+extern "C" __attribute__((export_name("multiplayer_error_detail")))
+const char* multiplayer_error_detail(browser::Application* app){
+    if(!app)return "Application unavailable";
+    return app->error==-4?app->multiplayer_failure_detail:app->state.netplay_runtime.NetworkError();
+}
+extern "C" __attribute__((export_name("multiplayer_pacing_status")))
+const double* multiplayer_pacing_status(browser::Application* app){
+    static double values[2]{1,0};
+    values[0]=app?app->state.netplay_runtime.Channel().SimulationIntervalScale():1;
+    values[1]=app?app->state.netplay_runtime.Channel().EstimatedLead():0;
+    return values;
+}
 extern "C" __attribute__((export_name("multiplayer_transport_status")))
 const u32* multiplayer_transport_status(browser::Application* app){
     static u32 words[15]{};std::memset(words,0,sizeof(words));words[0]=1;if(!app)return words;

@@ -97,5 +97,17 @@ void AppLoop::present(){
 }
 AppStatistics::AppStatistics(Application& a):owner(a){current=&a.statistics;chain=&a.chain;callbacks=&a.engine.callback_environment;game=&a.session_view;text=&a.common_view;timing_counters=a.timing_counters;timing_samples=a.timing_samples;pending_screen=&a.state.pending_screen;frame_skip=&a.state.configuration.options[4];draw_callback=callback_id::FrameStatisticsDraw;}
 void* AppStatistics::allocate(u32 bytes){return std::malloc(bytes);}Extended AppStatistics::time(){return owner.time();}
-void AppStatistics::draw_rate(CommonResources& common,const Vec3& position,float rate){char output[512];const double value=rate;u32 bits[2];std::memcpy(bits,&value,8);format_text(output,sizeof(output),"%2.1ffps",bits,2);Vec3 adjusted=position;const auto length=std::strlen(output);if(length>7)adjusted.x-=float((length-7)*7);common.queue(output,adjusted,false);common.mark_small();}
+void AppStatistics::draw_rate(CommonResources& common,const Vec3& position,float rate){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Authored Draw also runs during rollback. Its legacy counter measures
+    // work, not visible frames; above 99.9 it shifts the text left and the
+    // high-refresh replacement (which looked for x=590) used to miss it.
+    // Keep native timing/Replay accounting intact, but display actual Presents.
+    if(owner.state.multiplayer_session.configured){
+        rate=owner.presentation_fps;
+        common.color=rate<30?0xff5050ff:rate<40?0xffa0a0ff:0xffffffff;
+    }
+#endif
+    char output[512];const double value=rate;u32 bits[2];std::memcpy(bits,&value,8);format_text(output,sizeof(output),"%2.1ffps",bits,2);Vec3 adjusted=position;const auto length=std::strlen(output);if(length>7)adjusted.x-=float((length-7)*7);common.queue(output,adjusted,false);common.mark_small();
+}
 }

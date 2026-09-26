@@ -104,7 +104,15 @@ EM_BOOL frame(double timestamp,void* epoch){
     // no extra interpolated draws. Keep logic/input and audio cadence intact.
     const bool limit60=th10_limit_presentation_to_60()!=0;
     const bool presentation_ready=interpolation_ready()&&!limit60,fast=touhou::sdl::PresentationCadence::fast_sample(delta);if(presentation_ready)presentation.advance(delta);else presentation.reset();if(!presentation.high_refresh||!fast)presentation_primed=false;
-    const bool tick_due=cadence.advance(delta)!=0;int result=0;sdl_defer(1);
+    double simulation_delta=delta;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    const auto& runtime=application->state.netplay_runtime;
+    if(application->multiplayer_active()&&runtime.NetworkEnabled()&&!runtime.Spectator())
+        simulation_delta/=runtime.Channel().SimulationIntervalScale();
+#endif
+    // Clock calibration changes only when the next fixed tick is due. Every
+    // admitted tick still executes the original 60 Hz simulation and Draw.
+    const bool tick_due=cadence.advance(simulation_delta)!=0;int result=0;sdl_defer(1);
     if(tick_due){
         sdl_native_input(application);result=application->step(true);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY

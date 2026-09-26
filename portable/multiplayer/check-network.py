@@ -148,7 +148,10 @@ with sync_playwright() as p:
         # Closing an actual native endpoint tears down the real connection;
         # its partner must report failure instead of silently playing alone.
         call(pages[-1],'multiplayerSmoke.close()')
-        deadline=time.monotonic()+10
+        # A relay peer leaving does not close our own WebSocket. Its liveness
+        # failure comes from SessionChannel's 15-second confirmed-input guard;
+        # RTC instead reports its DataChannel close immediately.
+        deadline=time.monotonic()+(20 if args.mode=='relay' else 10)
         while call(pages[0],'multiplayerSmoke.pollNetwork()'):
             assert time.monotonic()<deadline,'closed peer did not fail transport'
             pages[0].wait_for_timeout(10)

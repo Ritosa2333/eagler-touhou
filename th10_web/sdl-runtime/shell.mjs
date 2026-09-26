@@ -18,6 +18,7 @@ const cancelTouches=bindOutsideTouches(document,canvas,()=>core,()=>launched&&op
 const error=reason=>{const message=reason?.stack||String(reason);if(multiplayerRuntime){window.__eaglerNetplayFailed=true;window.__eaglerNetplayError=message;}document.querySelector('#error').textContent=message;emit('error',{message,error:message});console.error(reason);};
 const u32=(ptr,count)=>new Uint32Array(core.memory.buffer,ptr,count);
 const cstring=(text,fn)=>{const bytes=new TextEncoder().encode(text+'\0'),p=core.graphics_allocate(bytes.length);try{new Uint8Array(core.memory.buffer,p,bytes.length).set(bytes);return fn(p);}finally{core.graphics_free(p);}};
+const readCString=ptr=>{if(!ptr)return '';const heap=new Uint8Array(core.memory.buffer);let end=ptr;while(end<heap.length&&heap[end])++end;return new TextDecoder().decode(heap.subarray(ptr,end));};
 const netplayHashes=Object.create(null);
 function updateNetplayDiagnostics(){
  if(!multiplayerRuntime||!app||!core.multiplayer_netplay_status)return;
@@ -220,7 +221,7 @@ const initialized=(async()=>{
   practice?.tick();
   updateNetplayDiagnostics();
   const now=performance.now(),p=u32(core.sdl_stats(),6)[5];if(p!==lastPresented){frames++;if(lastFrame)maxGap=Math.max(maxGap,now-lastFrame);lastFrame=now;lastPresented=p;if(!first){first=true;emit('first-frame');}}
-  if(result||core.application_error(app)){if(core.application_error(app)){error('Game error '+core.application_error(app));core.sdl_loop_pause(1);}else queueMicrotask(()=>void stop().catch(error));}
+  if(result||core.application_error(app)){const code=core.application_error(app);if(code){let message='Game error '+code;if(multiplayerRuntime&&(code===-4||code===-5)){const describe=core.multiplayer_error_detail||(code===-5?core.multiplayer_network_error:null);const detail=describe?readCString(describe(app)):'';if(detail)message+=': '+detail;}error(message);core.sdl_loop_pause(1);}else queueMicrotask(()=>void stop().catch(error));}
   if(now-lastHealth>=1000){emit('frame-health',{fps:frames*1000/(now-lastHealth),maxGapMs:maxGap,frameMs:duration});const a=u32(core.sdl_audio_stats(),12);emit('audio-health',{queuedMs:a[5]*1000/44100,minQueuedMs:a[7]*1000/44100,backend:'script',underruns:0,robust:true});frames=0;maxGap=0;lastHealth=now;}
  };
  Module.runtimeFileChanged=()=>{if(saveTimer!==null)return;saveTimer=setTimeout(()=>{saveTimer=null;queue=queue.then(()=>sync(false)).catch(error);},0);};
