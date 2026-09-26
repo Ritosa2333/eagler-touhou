@@ -6,17 +6,17 @@ import {resolve,relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 const release=process.argv.includes('--release');
-const root=fileURLToPath(new URL('../',import.meta.url)),workspace=resolve(root,'..');
+const root=fileURLToPath(new URL('../',import.meta.url)),workspace=resolve(root,'..'),commonRoot=resolve(workspace,'../eagler-common');
 const sdkCandidates=[process.env.TH09_EMSDK,resolve(workspace,'tools/emsdk'),resolve(workspace,'../th08/tools/emsdk')].filter(Boolean);
 const sdk=sdkCandidates.find(path=>existsSync(resolve(path,'install/emscripten/emcc.py'))&&existsSync(resolve(path,'.emscripten')));
 if(!sdk)throw Error('Emscripten SDK not found; set TH09_EMSDK to an installed emsdk directory');
 const out=resolve(root,process.env.TH09_OUTPUT||(release?'artifacts/sdl-release':'artifacts/sdl3')),objects=resolve(out,'objects');mkdirSync(objects,{recursive:true});
 const env={...process.env,EM_CONFIG:resolve(sdk,'.emscripten'),EMSDK:sdk,EMCC_CORES:'4'};
-const common=['-O2','-g0','-std=c++17','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti','-DTH_NATIVE_PLATFORM=1','-DTH_ENABLE_THCRAP=1','-DTH09_DEVELOPMENT_HARNESS='+Number(!release),'--use-port=sdl3','--use-port=sdl3_ttf'];
+const common=['-O2','-g0','-std=c++17','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti','-I'+resolve(commonRoot,'include'),'-I'+resolve(root,'cpp/sdl'),'-DTH_NATIVE_PLATFORM=1','-DTH_ENABLE_THCRAP=1','-DTH09_DEVELOPMENT_HARNESS='+Number(!release),'--use-port=sdl3','--use-port=sdl3_ttf'];
 const run=args=>new Promise((accept,reject)=>{const child=spawn('python',[resolve(sdk,'install/emscripten/emcc.py'),...args],{cwd:root,env,windowsHide:true,stdio:['ignore','pipe','pipe']});let log='';for(const stream of [child.stdout,child.stderr])stream.on('data',b=>{log+=b;process.stdout.write(b);});child.on('error',reject);child.on('exit',code=>code?reject(Error('TH09 Emscripten build failed '+code+'\n'+log)):accept());});
-const source=[];for(const dir of ['cpp/game','cpp/sdl'])for(const name of readdirSync(resolve(root,dir)).filter(n=>n.endsWith('.cpp')).sort())source.push(resolve(root,dir,name));source.push(resolve(workspace,'portable/sdl/Renderer.cpp'));
+const source=[];for(const dir of ['cpp/game','cpp/sdl'])for(const name of readdirSync(resolve(root,dir)).filter(n=>n.endsWith('.cpp')).sort())source.push(resolve(root,dir,name));source.push(resolve(commonRoot,'src/netplay/BrowserPeerTransport.cpp'));source.push(resolve(workspace,'portable/sdl/Renderer.cpp'));
 const allHeaders=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?allHeaders(resolve(dir,e.name)):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);
-const headers=[...allHeaders(resolve(root,'cpp')),...allHeaders(resolve(workspace,'portable/sdl')),...allHeaders(resolve(workspace,'portable/input'))].sort();
+const headers=[...allHeaders(resolve(root,'cpp')),...allHeaders(resolve(workspace,'portable/sdl')),...allHeaders(resolve(workspace,'portable/input')),resolve(commonRoot,'include/eagler/netplay/BrowserPeerTransport.hpp')].sort();
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex'),headerHash=createHash('sha256');for(const name of headers)headerHash.update(name).update(readFileSync(name));const settings=JSON.stringify([common,headerHash.digest('hex')]);
 async function compile(file){const name=relative(workspace,file).replaceAll('\\','_').replaceAll('/','_'),object=resolve(objects,name+'.o'),key=sha(settings+sha(readFileSync(file)));if(existsSync(object)&&existsSync(object+'.key')&&readFileSync(object+'.key','utf8')===key)return object;await run([...common,'-c',file,'-o',object]);writeFileSync(object+'.key',key);return object;}
 // The shared unit warms SDL's cached ports before independent compilations.

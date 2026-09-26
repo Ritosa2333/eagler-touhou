@@ -10,6 +10,7 @@
     "test:archive-oracle": "node --test tests/oracle/archive.test.mjs",
     "web:build": "node scripts/build-sdl.mjs --release",
     "web:eagler": "node scripts/build-eagler.mjs",
+    "web:eagler:multiplayer": "node scripts/build-eagler.mjs --multiplayer",
     "web:package": "node scripts/package-release.mjs",
     "start": "node artifacts/sdl-release/scripts/serve.mjs --port 8096",
     "test:server": "node --test tests/server/*.test.mjs",
