@@ -58,9 +58,11 @@ struct World final:HudActions,CallbackReceiver {
     multiplayer::Pilot* pilot_for(Bomb*);
     void configure_player(multiplayer::Pilot&);
     i32 update_player(Player*);i32 draw_player(Player*);i32 update_bomb(Bomb*);
+    u8 player_visual_alpha(const AnmVm&)const;
     i32 start_bomb(multiplayer::Pilot&);i32 bomb_damage(multiplayer::Pilot&,const Vec3&);
     void update_cooperation();
     bool spawn_life_transfer(u32 donor,u32 recipient);
+    bool spawn_power_transfer(u32 donor,u32 recipient);
     const Vec3& target_player(const Vec3& origin) const;
     void publish_player_targets(EnemyState&);
     void award_team_life() override;
@@ -68,7 +70,6 @@ struct World final:HudActions,CallbackReceiver {
     u32 multiplayer_count()const override{return player_count;}
     u32 multiplayer_local_seat()const override{return local_player;}
     const GameEconomy& multiplayer_economy(u32 seat)const override{return pilots[seat].game;}
-    bool multiplayer_spirit(u32 seat)const override{return cooperation.seats[seat].lifeState==multiplayer::LifeState::Spirit;}
 #endif
     PlayerProfile* cached_profile=nullptr;ReplayDocument replay_files;MemoryPool replay_memory;
     ReplayWriter replay_writer;ReplayCalendar& calendar;

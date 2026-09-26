@@ -140,14 +140,11 @@ i32 Application::multiplayer_update(){
     // the journal as soon as confirmation arrives loses that required restore.
     // Whole resource lifetimes only cross a fully reconciled, confirmed fence.
     if(state.pending_screen!=value.screen){
-        const auto last=runtime.LastSimulatedFrame();
-        const auto confirmed=runtime.ConfirmedThroughAllRemotes();
-        if(last!=Netplay::INVALID_FRAME&&(confirmed==Netplay::INVALID_FRAME||confirmed<last)){
-            multiplayer_waiting=true;return 1;
-        }
-        // Confirmation only proves what we received. Networked resource/run
-        // retirement also waits until peers acknowledge our final input.
-        if(runtime.NetworkEnabled()&&!runtime.CanRetireRun()){
+        // A screen boundary stops normal gameplay capture. Explicitly flush
+        // the current input/ACK tail over the reliable lane before waiting,
+        // otherwise one lost final RTC fast packet can strand both endpoints
+        // at this fence and eventually surface as network error -5.
+        if(!runtime.PrepareTransitionFence()){
             multiplayer_waiting=true;return 1;
         }
         if(world->scores.multiplayer_active()&&!world->scores.replay_read_only()&&

@@ -11,6 +11,10 @@ constexpr std::int16_t kMaxPower = 100;
 constexpr std::uint8_t kRescueTicks = 90;
 constexpr std::uint16_t kWipeRetryTicks = 180;
 constexpr std::int32_t kRescueRadiusHundredths = 2000;
+constexpr std::int16_t kPowerTransferAmount = 20;
+constexpr std::int16_t kMaxPowerTransferRecipient = kMaxPower - kPowerTransferAmount;
+constexpr std::uint8_t kPowerTapCount = 8;
+constexpr std::uint8_t kPowerTapWindow = 24;
 
 enum class LifeState : std::uint8_t {
     Alive,
@@ -38,6 +42,13 @@ struct SeatState {
     bool waitingForFocusRelease;
 };
 
+// Life-transfer progress and the rapid-shot Power gesture are mutually
+// exclusive. To preserve the already-published rollback/canonical state
+// layout, an in-progress Power gesture uses rescueTarget -2..-8 for taps 1..7
+// and rescueTicks for its expiry window. Stage checkpoints only admit the
+// clean -1/0 state, so this transient encoding does not change Replay format.
+std::uint8_t PowerTapProgress(const SeatState& seat) noexcept;
+
 // This is the complete rollback-owned policy state. It contains no pointers,
 // clocks, platform handles, or native game objects.
 struct State {
@@ -53,8 +64,10 @@ struct SeatFrameInput {
     std::int32_t y;
     bool canInitiateLifeTransfer;
     bool canReceiveLifeTransfer;
+    bool canReceivePowerTransfer;
     bool focus;
     bool shoot;
+    bool shootPressed;
 };
 
 struct FrameInput {
@@ -64,6 +77,7 @@ struct FrameInput {
 enum class EventKind : std::uint8_t {
     SpiritRevived,
     LifeItemTransferCommitted,
+    PowerItemTransferCommitted,
     WipeRetryRequested,
 };
 
@@ -86,6 +100,12 @@ using AllocateTargetedLifeItem = bool (*)(void* context, std::uint8_t giver,
 struct LifeItemAllocator {
     void* context;
     AllocateTargetedLifeItem allocate;
+};
+using AllocateTargetedPowerItem = bool (*)(void* context, std::uint8_t giver,
+                                           std::uint8_t target) noexcept;
+struct PowerItemAllocator {
+    void* context;
+    AllocateTargetedPowerItem allocate;
 };
 
 // Invalid setup leaves state cleared and returns false. A successful setup
@@ -115,6 +135,7 @@ bool BeginNextStage(State& state) noexcept;
 // The optional allocator is called synchronously in seat order. A missing or
 // failed allocator leaves the giver's life untouched and permits a later retry.
 TickResult AdvanceOneTick(State& state, const FrameInput& input,
-                          LifeItemAllocator allocator = {}) noexcept;
+                          LifeItemAllocator allocator = {},
+                          PowerItemAllocator powerAllocator = {}) noexcept;
 
 } // namespace th10::multiplayer

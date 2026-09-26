@@ -44,48 +44,54 @@ float HudFrame::presentation_boss_health(float current){
 void HudFrame::draw_multiplayer_resources(Gui& gui){
     auto* text=owner.common.value;
     if(!text)return;
-    const u32 count=owner.actions.multiplayer_count();
-    rectangle({438,104,639,122.0f+48.0f*float(count>3?3:count)},0xff11121a);
-    rectangle({438,104,639,106},0xff9fa8b8);
+    const u32 count=owner.actions.multiplayer_count()>3?3:owner.actions.multiplayer_count();
+    const u32 local=owner.actions.multiplayer_local_seat();
     const bool write_text=owner.last_multiplayer_hud_frame!=u32(text->frames);
     if(write_text)owner.last_multiplayer_hud_frame=u32(text->frames);
     const u32 saved_color=text->color;
     const Vec2 saved_scale=text->scale;
     const i32 saved_camera=text->camera,saved_shadow=text->shadow;
-    if(write_text){text->scale={.83f,.83f};text->camera=0;text->shadow=1;}
-    static constexpr const char* loadouts[]{"ReimuA","ReimuB","ReimuC","MarisaA","MarisaB","MarisaC"};
-    for(u32 seat=0;seat<count&&seat<3;++seat){
+    if(write_text){text->scale={1.25f,1.25f};text->camera=0;text->shadow=1;}
+    static constexpr const char* loadouts[]{"Reimu A","Reimu B","Reimu C","Marisa A","Marisa B","Marisa C"};
+    // front.anm already contains separate Player/Power labels (sprites 6/7),
+    // native star (18) and number/dot sprites. Reuse those resources directly;
+    // never erase the original background or advance a new animation in Draw.
+    const auto sprite=[&](i32 index,float x,float y,float scale,u32 tint=0xffffffffu){
+        if(!gui.animations||index<0||index>=gui.animations->sprite_count)return;
+        auto vm=gui.power_digits[0];
+        gui.animations->bind_sprite(vm,index);
+        vm.id=0;vm.script_position=vm.child_position=vm.rotation={};
+        vm.position={x,y,.47f};vm.scale={scale,scale};
+        vm.flags=(vm.flags&~((3u<<18)|(3u<<20)|(15u<<22)|0x8030u))|3u|(1u<<18)|(1u<<20);
+        vm.color=(gui.power_digits[0].color&0xff000000u)|(tint&0x00ffffffu);
+        vm.secondary_color=vm.color;
+        draw_animation(vm);
+    };
+    for(u32 seat=0;seat<count;++seat){
         const auto& economy=owner.actions.multiplayer_economy(seat);
-        const bool spirit=owner.actions.multiplayer_spirit(seat);
-        const i32 power=economy.power<0?0:economy.power;
+        const i32 power=economy.power<0?0:economy.power>100?100:economy.power;
         const i32 lives=economy.lives<0?0:economy.lives;
         const i32 loadout=economy.character*3+economy.shot_type;
         const char* name=loadout>=0&&loadout<6?loadouts[loadout]:"Unknown";
-        const float y=108.0f+48.0f*float(seat);
+        const float y=94.0f+60.0f*float(seat);
+        const u32 accent=seat==local?0xffffe3a6:0xffe8d5aa;
         if(write_text){
             char label[64];
-            if(spirit)std::snprintf(label,sizeof(label),"%cP%u %s  SPIRIT",seat==owner.actions.multiplayer_local_seat()?'>':' ',seat+1,name);
-            else std::snprintf(label,sizeof(label),"%cP%u %s  B%d",seat==owner.actions.multiplayer_local_seat()?'>':' ',seat+1,name,power/20);
-            text->color=spirit?0xff90a8e8:seat==owner.actions.multiplayer_local_seat()?0xffffe080:0xfff0f0f0;
-            text->queue(label,{453.0f,y,.47f},false);
-            text->color=0xfff0f0f0;
-            text->queue("Player",{453.0f,y+17.0f,.47f},false);
-            text->queue("Power",{453.0f,y+34.0f,.47f},false);
+            text->scale={1.25f,1.25f};
+            std::snprintf(label,sizeof(label),"P%u",seat+1);
+            text->color=accent;text->queue(label,{444.0f,y,.47f},false);
+            text->scale={1.1f,1.1f};
+            text->queue(name,{484.0f,y,.47f},false);
         }
-        for(i32 icon=0;icon<lives&&icon<9&&!spirit;++icon){
-            auto vm=gui.life_icons[0];vm.flags|=3;
-            vm.script_position=vm.child_position={};vm.position={530.0f+12.0f*float(icon),y+22.0f,.47f};
-            vm.scale={.8f,.8f};draw_animation(vm);
-        }
-        const i32 digits[]{power/20,0,(power%20)*5/10,(power%20)*5%10};
-        const float digit_x[]{521.0f,530.0f,536.0f,545.0f};
-        for(u32 i=0;i<4;++i){
-            auto vm=gui.power_digits[i];vm.flags|=3;
-            if(i!=1)gui.animations->bind_sprite(vm,digits[i]+8);
-            vm.script_position=vm.child_position={};vm.position={digit_x[i],y+36.0f,.47f};
-            vm.scale={.6f,.6f};
-            draw_animation(vm);
-        }
+        sprite(6,436.0f,y+16.0f,.8f);
+        sprite(7,436.0f,y+34.0f,.8f);
+        // Keep the side HUD resource-only. Rescue, Spirit, Power-transfer and
+        // wipe state are shown in the playfield/native lifecycle, matching TH07MP.
+        for(i32 icon=0;icon<lives&&icon<9;++icon)
+            sprite(18,514.0f+13.0f*float(icon),y+16.0f,.8f);
+        const i32 digits[]{power/20+8,gui.power_digits[1].sprite_index,(power%20)*5/10+8,(power%20)*5%10+8};
+        const float x[]{514.0f,526.0f,532.0f,545.0f};
+        for(u32 i=0;i<4;++i)sprite(digits[i],x[i],y+34.0f,.8f);
     }
     if(write_text){text->color=saved_color;text->scale=saved_scale;text->camera=saved_camera;text->shadow=saved_shadow;}
 }

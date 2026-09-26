@@ -20,7 +20,6 @@ struct HudActions {
     virtual u32 multiplayer_count()const=0;
     virtual u32 multiplayer_local_seat()const=0;
     virtual const GameEconomy& multiplayer_economy(u32 seat)const=0;
-    virtual bool multiplayer_spirit(u32 seat)const=0;
 #endif
 };
 struct Hud;

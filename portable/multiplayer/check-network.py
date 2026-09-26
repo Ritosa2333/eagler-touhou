@@ -14,6 +14,8 @@ parser.add_argument('--mode',choices=['rtc','relay'],default='rtc')
 parser.add_argument('--players',type=int,choices=[2,3],default=2)
 parser.add_argument('--drop-fast',action='store_true')
 parser.add_argument('--retry',action='store_true')
+parser.add_argument('--p1-death',action='store_true')
+parser.add_argument('--p1-rescue-death',action='store_true')
 args=parser.parse_args()
 report={'passed':False,'scope':'native TH10 over actual browser peer transport','mode':args.mode,
         'players':args.players,'dropFast':args.drop_fast,'checkpoints':[],'errors':[]}
@@ -65,7 +67,7 @@ with sync_playwright() as p:
         assert all(call(page,'multiplayerSmoke.transportStatus()')[13]==mode for page in pages)
         print('network-check: actual route',args.mode,args.players,'players, frame-zero gate complete',flush=True)
 
-        for target in ([59] if args.retry else [59,119,179]):
+        for target in ([59] if (args.retry or args.p1_death or args.p1_rescue_death) else [59,119,179]):
             deadline=time.monotonic()+150
             while True:
                 ready=True
@@ -89,6 +91,90 @@ with sync_playwright() as p:
                 assert hashes[0][1]==hashes[seat][1],checkpoint
                 assert audio[0]==audio[seat],checkpoint
             print('network-check: native confirmed frame',target,'state/ANM/RNG/audio match',flush=True)
+
+        if args.p1_death:
+            assert args.players==2,'P1 final-death fixture currently owns two seats'
+            for page in pages:
+                assert call(page,'multiplayerSmoke.fixture(11)')
+            deadline=time.monotonic()+90
+            target=239
+            while True:
+                frontier=[]
+                for page in pages:
+                    current=call(page,'multiplayerSmoke.netStatus()')
+                    frontier.append(call(page,'v=>multiplayerSmoke.peerAdvance(...v)',[target,0 if current[2]<=target else 0]))
+                ready=all(value['net'][3]==target and value['net'][5]==-1 and
+                          value['transport'][9]!=0xffffffff and value['transport'][9]>=target
+                          for value in frontier)
+                if ready:break
+                assert time.monotonic()<deadline,('P1 final death network deadline',frontier,
+                    [call(page,'multiplayerSmoke.networkError()') for page in pages])
+                pages[0].wait_for_timeout(2)
+            states=[call(page,'multiplayerSmoke.status()') for page in pages]
+            hashes=[call(page,'multiplayerSmoke.canonical()') for page in pages]
+            transport=[call(page,'multiplayerSmoke.transportStatus()') for page in pages]
+            # Seat 0 is now the non-colliding Spirit with native final-death
+            # lives=-1.  P2 stays alive and receives the cooperation life.
+            assert all(value[10]==-1 and value[12]==3 and value[17]==2 for value in states),states
+            assert all(value[22]>=0 and value[24]!=3 for value in states),states
+            assert states[0][:2]+states[0][3:]==states[1][:2]+states[1][3:],states
+            assert hashes[0][1]==hashes[1][1],hashes
+            assert all(value[3]==0 for value in transport),transport
+            report['p1FinalDeath']={'states':states,'hashes':hashes,'network':transport}
+            print('network-check: P1 final death stays synchronized over live transport',flush=True)
+
+        if args.p1_rescue_death:
+            assert args.players==2,'P1 rescue/death fixture currently owns two seats'
+            for page in pages:
+                assert call(page,'multiplayerSmoke.fixture(12)')
+
+            # Frames 60..149 are the exact ninety authoritative focus-hold
+            # ticks that let P2 spend a life to revive P1. Drive only each
+            # endpoint's real local input through BrowserPeerTransport.
+            deadline=time.monotonic()+90
+            target=154
+            while True:
+                frontier=[]
+                for seat,page in enumerate(pages):
+                    current=call(page,'multiplayerSmoke.netStatus()')
+                    buttons=4 if seat==1 and current[2]<=149 else 0
+                    frontier.append(call(page,'v=>multiplayerSmoke.peerAdvance(...v)',[target,buttons]))
+                ready=all(value['net'][3]==target and value['net'][5]==-1 and
+                          value['transport'][9]!=0xffffffff and value['transport'][9]>=target
+                          for value in frontier)
+                if ready:break
+                assert time.monotonic()<deadline,('P1 rescue network deadline',frontier,
+                    [call(page,'multiplayerSmoke.networkError()') for page in pages])
+                pages[0].wait_for_timeout(2)
+            rescued=[call(page,'multiplayerSmoke.status()') for page in pages]
+            assert all(value[10]==0 and value[12]==1 and value[17]==0 for value in rescued),rescued
+            assert all(value[22]==1 and value[24]==1 for value in rescued),rescued
+            for page in pages:
+                assert call(page,'multiplayerSmoke.fixture(13)')
+
+            deadline=time.monotonic()+90
+            target=259
+            while True:
+                frontier=[]
+                for page in pages:
+                    frontier.append(call(page,'v=>multiplayerSmoke.peerAdvance(...v)',[target,0]))
+                ready=all(value['net'][3]==target and value['net'][5]==-1 and
+                          value['transport'][9]!=0xffffffff and value['transport'][9]>=target
+                          for value in frontier)
+                if ready:break
+                assert time.monotonic()<deadline,('rescued P1 death network deadline',frontier,
+                    [call(page,'multiplayerSmoke.networkError()') for page in pages])
+                pages[0].wait_for_timeout(2)
+            states=[call(page,'multiplayerSmoke.status()') for page in pages]
+            hashes=[call(page,'multiplayerSmoke.canonical()') for page in pages]
+            transport=[call(page,'multiplayerSmoke.transportStatus()') for page in pages]
+            assert all(value[10]==-1 and value[12]==3 and value[17]==2 for value in states),states
+            assert all(value[22]==2 and value[24]==1 for value in states),states
+            assert states[0][:2]+states[0][3:]==states[1][:2]+states[1][3:],states
+            assert hashes[0][1]==hashes[1][1],hashes
+            assert all(value[3]==0 for value in transport),transport
+            report['p1RescueThenDeath']={'rescued':rescued,'states':states,'hashes':hashes,'network':transport}
+            print('network-check: rescued P1 can die again without transport failure',flush=True)
 
         if args.retry:
             assert args.players==2,'retry fixture currently owns two seats'

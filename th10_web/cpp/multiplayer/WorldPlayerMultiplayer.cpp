@@ -13,6 +13,7 @@
 #endif
 #include <cstdlib>
 #include <cstring>
+#include <cmath>
 
 namespace th10::browser {
 namespace {
@@ -27,6 +28,38 @@ constexpr u32 kOptionUpdates[]={0,callback_id::HomingShotUpdate,
                                 callback_id::LaserShotUpdate,0};
 constexpr u32 kEmptyCallbacks[]={0};
 constexpr u32 kOptionIndices[]={0,1,3,4,5,6,7};
+constexpr i32 kSpiritDrift=20;
+constexpr i32 kSpiritMinY=31600,kSpiritMaxY=41600;
+
+i32 multiplayer_spawn_x(u32 seat,u32 count){
+    if(count==2)return seat==0?-3200:3200;
+    if(count==3)return (static_cast<i32>(seat)-1)*4800;
+    return 0;
+}
+
+void initialize_spirit_drift(World& world,Player& player){
+    auto& random=world.engine.script_random;
+    const i32 x=(random.next_word()&1)?kSpiritDrift:-kSpiritDrift;
+    const i32 y=(random.next_word()&1)?kSpiritDrift:-kSpiritDrift;
+    player.input_velocity={x,y};player.velocity={x,y};
+    player.focused=0;player.direction=0;
+    if(player.focus_animation){
+        world.engine.manager.registry.request_delete(player.focus_animation);
+        player.focus_animation=0;
+    }
+}
+
+void update_spirit_drift(Player& player){
+    i32 x=wrapping_add(player.fixed_position.x,player.velocity.x);
+    i32 y=wrapping_add(player.fixed_position.y,player.velocity.y);
+    if(x< -18400){x=-18400;player.velocity.x=std::abs(player.velocity.x);}
+    else if(x>18400){x=18400;player.velocity.x=-std::abs(player.velocity.x);}
+    if(y<kSpiritMinY){y=kSpiritMinY;player.velocity.y=std::abs(player.velocity.y);}
+    else if(y>kSpiritMaxY){y=kSpiritMaxY;player.velocity.y=-std::abs(player.velocity.y);}
+    player.fixed_position={x,y};
+    player.position.x=Scalar::mul_int(x,.01f);player.position.y=Scalar::mul_int(y,.01f);
+    player.position_history[0]=player.fixed_position;
+}
 
 void set_timer(Timer& timer,u32& flags,i32 frames,const float* rate){
     if(!(flags&1)){timer.rate=rate;flags|=1;}
@@ -316,6 +349,28 @@ struct Frame final:PlayerFrameEnvironment {
         player.state=3;
         if(pilot.bomb)pilot.bomb->active=0;
         clear_player_offense(player,world.engine.manager.registry);
+        initialize_spirit_drift(world,player);
+
+        // Final death grants one immediately usable life to the nearest
+        // surviving partner.  This is deliberately direct state, not a life
+        // item: the five-F death reward and the cooperation life award are two
+        // separate player-facing rules.
+        i32 recipient=-1;std::int64_t best=0;
+        for(u32 seat=0;seat<world.player_count;++seat){
+            if(seat==pilot.seat)continue;
+            auto& candidate=world.pilots[seat];
+            if(!candidate.player||candidate.player->state==3||candidate.game.lives<0)continue;
+            const std::int64_t dx=std::int64_t(candidate.player->fixed_position.x)-player.fixed_position.x;
+            const std::int64_t dy=std::int64_t(candidate.player->fixed_position.y)-player.fixed_position.y;
+            const std::int64_t distance=dx*dx+dy*dy;
+            if(recipient<0||distance<best){recipient=i32(seat);best=distance;}
+        }
+        if(recipient>=0){
+            auto& target=world.pilots[u32(recipient)];
+            if(target.game.lives<multiplayer::kMaxLives)++target.game.lives;
+            if(target.seat==0&&world.actors.gui)world.actors.gui->update_lives(target.game.lives);
+            world.sound(0x2c);
+        }
     }
 };
 
@@ -401,6 +456,10 @@ bool allocate_life_item(void* context,u8 donor,u8 recipient) noexcept{
     auto& world=*static_cast<World*>(context);
     return world.spawn_life_transfer(donor,recipient);
 }
+bool allocate_power_item(void* context,u8 donor,u8 recipient) noexcept{
+    auto& world=*static_cast<World*>(context);
+    return world.spawn_power_transfer(donor,recipient);
+}
 
 bool nearer(const Player& a,const Player& b,const Vec3& point){
     const double adx=double(a.position.x)-point.x,ady=double(a.position.y)-point.y;
@@ -439,9 +498,10 @@ void revive_player(World& world,multiplayer::Pilot& pilot,i32 lives){
     Player& player=*pilot.player;
     pilot.game.lives=lives;
     player.death_position=player.position;
-    player.state=0;
-    player.fixed_position={0,48000};
-    player.position={0,480,0};
+    // A cooperation rescue is not TH10's native respawn.  Keep the Spirit's
+    // current world position and resume play there; state 0 would run the
+    // authored 60-frame bottom-of-screen respawn path and move the player.
+    player.state=1;
     player.input_velocity={0,0};
     player.velocity={0,0};
     for(auto& position:player.position_history)position=player.fixed_position;
@@ -548,6 +608,12 @@ bool World::create_player(){
             cleanup_player(*this,pilot,false);
             success=false;break;
         }
+        // Native TH10 starts every Player at x=0.  Spread multiplayer seats
+        // around that authored centre point, matching TH07's presentation
+        // invariant instead of stacking all ships/options on the first frame.
+        const i32 spawn_x=multiplayer_spawn_x(seat,player_count);
+        player->set_position({spawn_x,player->fixed_position.y});
+        for(auto& point:player->position_history)point=player->fixed_position;
     }
     if(!success){
         const bool retain=(state.game.flags&1u)!=0;
@@ -621,7 +687,7 @@ i32 World::update_player(Player* player){
     pilot->presentation={player->position,player->state,true};
     if(pilot->seat==0)player_presentation={player->position,player->state,true};
     Frame environment(*this,*pilot,spirit);
-    if(spirit)player->move(environment.movement_env);
+    if(spirit)update_spirit_drift(*player);
     const i32 result=player->update(environment);
     if(pilot->seat+1==player_count){
         // Rank is shared; adding its timed increase once per pilot would
@@ -633,6 +699,26 @@ i32 World::update_player(Player* player){
         update_cooperation();
     }
     return result;
+}
+
+u8 World::player_visual_alpha(const AnmVm& vm)const{
+    if(!vm.id||!engine.enhance_local_player_visibility||local_player>=player_count||
+       state.netplay_runtime.Spectator()||state.netplay_runtime.Playback()||!pilots[local_player].player)return 255;
+    const auto* root=&vm.child_node;
+    for(u32 i=0;root->previous&&i<4096;++i)root=root->previous;
+    const u32 id=root->value?root->value->id:vm.id;
+    const auto& local=*pilots[local_player].player;
+    for(u32 seat=0;seat<player_count;++seat){
+        const auto* p=pilots[seat].player;if(!p||seat==local_player)continue;
+        if(vm.animation_file!=p->animation_file)continue;
+        const float dx=p->position.x-local.position.x,dy=p->position.y-local.position.y;
+        if(dx*dx+dy*dy>=84.f*84.f)continue;
+        if(id==p->focus_animation)return 104;
+        for(const auto& option:p->options)for(auto animation:option.animations)if(animation&&animation==id)return 104;
+        for(const auto& shot:p->shots)if(shot.state&&
+           ((shot.animation&&shot.animation==id)||(shot.secondary_animation&&shot.secondary_animation==id)))return 104;
+    }
+    return 255;
 }
 
 i32 World::draw_player(Player* player){
@@ -652,7 +738,72 @@ i32 World::draw_player(Player* player){
                                high_refresh::lerp_world(previous.position.z,player->position.z)};
         }
     }
-    return draw->draw(environment);
+    // These alpha changes belong to presentation only. Restore the native VM
+    // after drawing so rollback snapshots never retain a display decision.
+    u32 alpha=player->state==3?0x50u:0xffu;
+    if(player->state==3){
+        u32 rescue_ticks=0;
+        for(u32 seat=0;seat<player_count;++seat){
+            const auto& rescue=cooperation.seats[seat];
+            if(rescue.rescueTarget==static_cast<std::int8_t>(pilot->seat)&&rescue.rescueTicks>rescue_ticks)
+                rescue_ticks=rescue.rescueTicks;
+        }
+        if(rescue_ticks){
+            const u32 capped=std::min<u32>(rescue_ticks,multiplayer::kRescueTicks);
+            alpha=0x50u+(0xafu*capped)/multiplayer::kRescueTicks;
+        }
+    }
+    if(engine.enhance_local_player_visibility&&!state.netplay_runtime.Spectator()&&!state.netplay_runtime.Playback()&&
+       pilot->seat!=local_player&&local_player<player_count&&pilots[local_player].player){
+        const auto& local=pilots[local_player].player->position;
+        const float dx=draw->position.x-local.x,dy=draw->position.y-local.y;
+        const float distance=std::sqrt(dx*dx+dy*dy);
+        if(distance<100.0f){
+            const u32 overlap=distance<=50.0f?0x50u:u32(0x50u+0xafu*(distance-50.0f)/50.0f);
+            if(overlap<alpha)alpha=overlap;
+        }
+    }
+    const u32 color=draw->animation.color,secondary=draw->animation.secondary_color;
+    if(alpha<0xffu){
+        auto clamp_alpha=[alpha](u32 value){
+            const u32 current=value>>24;
+            return (value&0x00ffffffu)|((current<alpha?current:alpha)<<24);
+        };
+        draw->animation.color=clamp_alpha(color);
+        draw->animation.secondary_color=clamp_alpha(secondary);
+    }
+    const i32 result=draw->draw(environment);
+    draw->animation.color=color;
+    draw->animation.secondary_color=secondary;
+    if(!high_refresh::render_only&&engine.enhance_local_player_visibility&&!state.netplay_runtime.Spectator()&&
+       !state.netplay_runtime.Playback()&&pilot->seat==local_player&&common.value){
+        auto& text=*common.value;const auto saved_color=text.color;const auto scale=text.scale;
+        const auto camera=text.camera,shadow=text.shadow;
+        char label[8];std::snprintf(label,sizeof(label),"P%u",pilot->seat+1);
+        text.color=0xfff3eee4;text.scale={1,1};text.camera=0;text.shadow=1;
+        text.queue(label,{draw->position.x+239.f,draw->position.y+10.f,.47f},false);
+        text.color=saved_color;text.scale=scale;text.camera=camera;text.shadow=shadow;
+    }
+    const auto& rescue=cooperation.seats[pilot->seat];
+    if(!high_refresh::render_only&&common.value&&rescue.rescueTarget>=0&&rescue.rescueTicks){
+        auto& text=*common.value;
+        const auto scale=text.scale;const auto color=text.color;
+        const auto camera=text.camera,shadow=text.shadow;
+        const u32 ticks=rescue.rescueTicks<multiplayer::kRescueTicks?rescue.rescueTicks:multiplayer::kRescueTicks;
+        char label[32];std::snprintf(label,sizeof(label),"%u%%",ticks*100u/multiplayer::kRescueTicks);
+        text.scale={1,1};text.color=0xffd5efc8;text.camera=0;text.shadow=1;
+        text.queue(label,{draw->position.x+194.0f,draw->position.y-10.0f,.47f},false);
+        text.scale=scale;text.color=color;text.camera=camera;text.shadow=shadow;
+    }else if(!high_refresh::render_only&&common.value&&multiplayer::PowerTapProgress(rescue)>=4){
+        auto& text=*common.value;
+        const auto scale=text.scale;const auto color=text.color;
+        const auto camera=text.camera,shadow=text.shadow;
+        char label[16];std::snprintf(label,sizeof(label),"P %u/8",u32(multiplayer::PowerTapProgress(rescue)));
+        text.scale={1,1};text.color=0xffe2edbd;text.camera=0;text.shadow=1;
+        text.queue(label,{draw->position.x+222.0f,draw->position.y-10.0f,.47f},false);
+        text.scale=scale;text.color=color;text.camera=camera;text.shadow=shadow;
+    }
+    return result;
 }
 
 void World::hit_player(){
@@ -766,11 +917,14 @@ void World::update_cooperation(){
         controls.y=player.fixed_position.y;
         controls.canInitiateLifeTransfer=player.state==1;
         controls.canReceiveLifeTransfer=player.state==1&&pilot.game.lives<9;
+        controls.canReceivePowerTransfer=player.state==1&&
+            pilot.game.power<=multiplayer::kMaxPowerTransferRecipient;
         controls.focus=(pilot.input_keys&4u)!=0;
         controls.shoot=(pilot.input_keys&1u)!=0;
+        controls.shootPressed=(state.input_lanes.seats[seat].pressed&multiplayer::InputLanes::kShoot)!=0;
     }
     const auto result=multiplayer::AdvanceOneTick(
-        cooperation,input_frame,{this,allocate_life_item});
+        cooperation,input_frame,{this,allocate_life_item},{this,allocate_power_item});
     for(u32 i=0;i<result.eventCount;++i){
         const auto& event=result.events[i];
         if(event.kind==multiplayer::EventKind::SpiritRevived){
@@ -788,8 +942,17 @@ void World::update_cooperation(){
             donor.game.lives=event.giverLivesAfter;
             if(donor.seat==0&&actors.gui)
                 actors.gui->update_lives(donor.game.lives);
+        }else if(event.kind==multiplayer::EventKind::PowerItemTransferCommitted){
+            auto& donor=pilots[event.seat];
+            donor.game.power=cooperation.seats[event.seat].power;
+            configure_player(donor);
+            if(donor.seat==0&&hud)
+                hud->update_power(donor.game.power/20,(donor.game.power%20)*100/20);
         }else if(event.kind==multiplayer::EventKind::WipeRetryRequested){
-            select_screen(13);
+            // Multiplayer never enters TH10's Continue/Retry path.  Once the
+            // 180-tick wipe grace period expires, finish the run through the
+            // same native Game Over results flow used by ordinary play.
+            show_results(false);
         }
     }
 }
@@ -800,14 +963,10 @@ void World::award_team_life(){
         fail();return;
     }
     bool increased=false;
-    bool revive[multiplayer::kMaxSeats]{};
     for(u32 seat=0;seat<player_count;++seat){
-        revive[seat]=next.seats[seat].lifeState==multiplayer::LifeState::Spirit;
-        const auto resulting_state=revive[seat]?multiplayer::LifeState::Alive:
-                                                     next.seats[seat].lifeState;
         const auto before=next.seats[seat].lives;
         if(!multiplayer::ApplyLifeAward(next,static_cast<u8>(seat),1,
-                                        resulting_state)){
+                                        next.seats[seat].lifeState)){
             fail();return;
         }
         increased|=next.seats[seat].lives>before;
@@ -817,8 +976,6 @@ void World::award_team_life(){
     for(u32 seat=0;seat<player_count;++seat){
         auto& pilot=pilots[seat];
         pilot.game.lives=cooperation.seats[seat].lives;
-        if(revive[seat])
-            revive_player(*this,pilot,pilot.game.lives);
     }
     if(pilots[0].player&&actors.gui)
         actors.gui->update_lives(pilots[0].game.lives);

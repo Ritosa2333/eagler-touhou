@@ -61,7 +61,8 @@ bool checkpoint_valid(const Netplay::InputReplayInfo& tape,const ReplayDescripti
                       const ReplayCheckpoint& cp){
     const u32 stage=cp.label&255u;
     if(stage<1||stage>7||cp.firstFrame>=tape.frameCount||
-       cp.cooperation.seatCount!=tape.config.playerCount)return false;
+       cp.cooperation.seatCount!=tape.config.playerCount||
+       cp.cooperation.retryPending||cp.cooperation.wipeTicks)return false;
     bool chapter=false;
     for(u32 i=0;i<tape.chapterCount;++i){
         if(tape.chapters[i].label!=cp.label||tape.chapters[i].firstFrame>cp.firstFrame)continue;
@@ -78,6 +79,8 @@ bool checkpoint_valid(const Netplay::InputReplayInfo& tape,const ReplayDescripti
            snap.lives<-1||snap.lives>kMaxLives||cp.reservedPower[seat]>kMaxPower||
            snap.score_units<0||snap.score_units>9||snap.extend_index<0||snap.extend_index>extendMax||
            (snap.focused!=0&&snap.focused!=1)||
+           coop.lifeState!=u8(LifeState::Alive)||coop.lives<0||
+           coop.rescueTicks||coop.rescueTarget!=-1||coop.waitingForFocusRelease||
            coop.character!=loadout.character||coop.shot!=loadout.shot||
            coop.lives!=snap.lives||coop.power!=snap.power)return false;
     }

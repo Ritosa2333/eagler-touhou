@@ -2,6 +2,13 @@
 #include <cstring>
 
 using namespace th10;
+extern "C" __attribute__((export_name("multiplayer_local_player_visibility")))
+u32 multiplayer_local_player_visibility(browser::Application* app,u32 enabled){
+    if(!app||app->stopped||enabled>1)return 0;
+    const bool readOnly=app->state.netplay_runtime.Spectator()||app->state.netplay_runtime.Playback();
+    app->engine.enhance_local_player_visibility=enabled&&!readOnly;
+    return !enabled||!readOnly;
+}
 extern "C" __attribute__((export_name("multiplayer_connect")))
 u32 multiplayer_connect(browser::Application* app,const char* relay){
     if(!app||app->stopped||app->world||app->state.multiplayer_session.started)return 0;

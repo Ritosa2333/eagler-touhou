@@ -35,6 +35,9 @@ struct AnimationEngine final:AnmEnvironment,AnmAllocationEnvironment,AnmSystemEn
     // buffers are bounded here to 64 KiB rather than falling back to the heap.
     multiplayer::RollbackPool<65536,128> rollback_geometry{};
     multiplayer::RollbackState* rollback_state=nullptr;
+    bool enhance_local_player_visibility=false;
+    const void* player_view_owner=nullptr;
+    u8 (*player_view_alpha)(const void*,const AnmVm&)=nullptr;
 #else
     std::map<const AnmVm*,PresentationVmSample> presentation_previous;
 #endif

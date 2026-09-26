@@ -140,6 +140,18 @@ bool World::spawn_life_transfer(u32 donor,u32 recipient){
     regular_item_owners[index]={std::int8_t(recipient),std::int8_t(recipient)};
     return true;
 }
+bool World::spawn_power_transfer(u32 donor,u32 recipient){
+    if(donor>=player_count||recipient>=player_count||donor==recipient||!actors.items||!pilots[donor].player)return false;
+    u32 index=0;while(index<150&&actors.items->regular[index].state)++index;
+    if(index==150)return false;
+    // TH10's native big-P adds exactly twenty units on the title's 0..100
+    // Power scale. Target it through the same deterministic ownership path as
+    // transferred life items rather than writing the recipient's Power here.
+    spawn_item(pilots[donor].player->position,4,0xffffffff,-1.5707963705062866f,2.2f);
+    auto& item=actors.items->regular[index];if(!item.state||item.kind!=4)return false;
+    regular_item_owners[index]={std::int8_t(recipient),std::int8_t(recipient)};
+    return true;
+}
 #endif
 #ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 bool World::create_bomb(){Resources env(*this);return GameObjectResources{env}.create(GameObjectKind::Bomb)!=nullptr;}

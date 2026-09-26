@@ -43,6 +43,22 @@ void reset_rescue(SeatState& seat) noexcept {
     seat.rescueTarget = -1;
 }
 
+std::uint8_t power_taps(const SeatState& seat) noexcept {
+    if (seat.rescueTarget >= -1) return 0;
+    const int value = -static_cast<int>(seat.rescueTarget) - 1;
+    return value > 0 && value < kPowerTapCount ? static_cast<std::uint8_t>(value) : 0;
+}
+
+void set_power_gesture(SeatState& seat, std::uint8_t taps,
+                       std::uint8_t window) noexcept {
+    if (!taps || taps >= kPowerTapCount || !window) {
+        reset_rescue(seat);
+        return;
+    }
+    seat.rescueTarget = static_cast<std::int8_t>(-1 - static_cast<int>(taps));
+    seat.rescueTicks = window;
+}
+
 void reset_wipe_if_anyone_alive(State& state) noexcept {
     for (std::uint8_t i = 0; i < state.seatCount; ++i) {
         if (state.seats[i].lifeState == LifeState::Alive ||
@@ -87,6 +103,31 @@ std::int8_t select_receiver(const State& state, const FrameInput& input,
     return best;
 }
 
+std::int8_t select_power_receiver(const State& state, const FrameInput& input,
+                                  std::uint8_t giver) noexcept {
+    std::int8_t best = -1;
+    for (std::uint8_t candidate = 0; candidate < state.seatCount; ++candidate) {
+        if (candidate == giver || !valid_position(input.seats[giver]) ||
+            !valid_position(input.seats[candidate]) ||
+            distance_squared(input.seats[giver], input.seats[candidate]) >
+                kRescueRadiusSquared) {
+            continue;
+        }
+        const SeatState& target = state.seats[candidate];
+        if (target.lifeState != LifeState::Alive ||
+            !input.seats[candidate].canReceivePowerTransfer ||
+            target.power > kMaxPowerTransferRecipient) {
+            continue;
+        }
+        if (best < 0 || target.power < state.seats[best].power ||
+            (target.power == state.seats[best].power &&
+             candidate < static_cast<std::uint8_t>(best))) {
+            best = static_cast<std::int8_t>(candidate);
+        }
+    }
+    return best;
+}
+
 void append_event(TickResult& result, EventKind kind, std::uint8_t seat,
                   std::int8_t target, std::int16_t giverLives,
                   std::int16_t targetLives) noexcept {
@@ -98,6 +139,10 @@ void append_event(TickResult& result, EventKind kind, std::uint8_t seat,
 }
 
 } // namespace
+
+std::uint8_t PowerTapProgress(const SeatState& seat) noexcept {
+    return power_taps(seat);
+}
 
 bool Initialize(State& state, const SeatSetup* setup,
                 std::uint8_t seatCount) noexcept {
@@ -194,7 +239,8 @@ bool BeginNextStage(State& state) noexcept {
 }
 
 TickResult AdvanceOneTick(State& state, const FrameInput& input,
-                          LifeItemAllocator allocator) noexcept {
+                          LifeItemAllocator allocator,
+                          PowerItemAllocator powerAllocator) noexcept {
     TickResult result{};
     if (state.seatCount < kMinSeats || state.seatCount > kMaxSeats) {
         return result;
@@ -203,6 +249,48 @@ TickResult AdvanceOneTick(State& state, const FrameInput& input,
     for (std::uint8_t giver = 0; giver < state.seatCount; ++giver) {
         SeatState& source = state.seats[giver];
         const SeatFrameInput& controls = input.seats[giver];
+
+        // TH10's native big-P is exactly twenty units on its 0..100 scale.
+        // Only the authoritative pressed edge advances this counter; a held
+        // button, prediction retry, or packet retransmission cannot add taps.
+        if (source.lifeState != LifeState::Alive ||
+            !controls.canInitiateLifeTransfer || source.waitingForFocusRelease ||
+            source.power < kPowerTransferAmount) {
+            if (power_taps(source)) reset_rescue(source);
+        } else {
+            const std::int8_t powerTarget = select_power_receiver(state, input, giver);
+            if (powerTarget < 0) {
+                if (power_taps(source)) reset_rescue(source);
+            } else {
+                std::uint8_t taps = power_taps(source);
+                std::uint8_t window = taps ? source.rescueTicks : 0;
+                if (taps && window && --window == 0) {
+                    taps = 0;
+                    reset_rescue(source);
+                } else if (taps) {
+                    set_power_gesture(source, taps, window);
+                }
+                if (controls.shootPressed) {
+                    taps = power_taps(source);
+                    ++taps;
+                    if (taps >= kPowerTapCount) {
+                        reset_rescue(source);
+                        if (powerAllocator.allocate &&
+                            powerAllocator.allocate(powerAllocator.context, giver,
+                                                    static_cast<std::uint8_t>(powerTarget))) {
+                            source.power = static_cast<std::int16_t>(
+                                source.power - kPowerTransferAmount);
+                            append_event(result, EventKind::PowerItemTransferCommitted,
+                                         giver, powerTarget, source.lives,
+                                         state.seats[static_cast<std::uint8_t>(powerTarget)].lives);
+                        }
+                    } else {
+                        set_power_gesture(source, taps, kPowerTapWindow);
+                    }
+                }
+            }
+        }
+
         if (source.waitingForFocusRelease) {
             reset_rescue(source);
             if (!controls.focus) {
@@ -213,6 +301,12 @@ TickResult AdvanceOneTick(State& state, const FrameInput& input,
         if (source.lifeState != LifeState::Alive ||
             !controls.canInitiateLifeTransfer || state.seatCount < 2) {
             reset_rescue(source);
+            continue;
+        }
+
+        // Rapid-shot Power transfer and the continuous focus-hold life
+        // transfer intentionally cannot accumulate in the same two fields.
+        if (power_taps(source)) {
             continue;
         }
 

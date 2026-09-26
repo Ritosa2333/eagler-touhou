@@ -11,6 +11,8 @@ namespace th10::browser {
 World::World(GameState& s,AnimationEngine& e,Common& c,Fonts& f,Input& i,Audio& a,Scores& records,ScreenEffects& fx):state(s),engine(e),common(c),fonts(f),input(i),audio(a),scores(records),effects(fx),backgrounds(s,e,fx,records.files),chain(&e.chain_value),replay_files(records.files,s.game.flags),replay_writer(records.files,default_calendar(),s.game,s.active_time,s.total_time,s.motion.cheat_movement_used,s.chinese),calendar(default_calendar()){engine.register_receiver(*this);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     engine.rollback_state=&rollback;
+    engine.player_view_owner=this;
+    engine.player_view_alpha=[](const void* owner,const AnmVm& vm){return static_cast<const World*>(owner)->player_visual_alpha(vm);};
 #endif
     engine.callback_environment.bind(callback_id::SessionUpdate,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.update_session();});
     engine.callback_environment.bind(callback_id::SessionDraw,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.actors.session->draw(w.engine.manager);});
@@ -54,6 +56,7 @@ World::World(GameState& s,AnimationEngine& e,Common& c,Fonts& f,Input& i,Audio& 
 World::~World(){shutdown();while(previews)release_replay(&previews->document.value);release_results_services();if(hud){hud->~Hud();std::free(hud);}std::free(cached_profile);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if(engine.rollback_state==&rollback)engine.rollback_state=nullptr;
+    if(engine.player_view_owner==this){engine.player_view_owner=nullptr;engine.player_view_alpha=nullptr;}
 #endif
     engine.callback_environment.unbind(this);engine.unregister_receiver(*this);}
 void World::select_screen(i32 screen){state.pending_screen=state.engine_flags&0x1000?2:screen;}

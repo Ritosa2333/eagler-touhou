@@ -124,6 +124,10 @@ static void check_stage_checkpoint_codec(){
     assert(runtime.CaptureLocal(0,Netplay::FrameInput(4)));
     assert(runtime.SubmitRemote(0,0,Netplay::FrameInput(1))==RemoteInputResult::Accepted);
     assert(tape.Stamp(0,1));assert(runtime.MarkSimulated(0,runtime.Prepare(0)));assert(tape.Commit(runtime));
+    auto transient=first;
+    transient.cooperation.seats[0].rescueTicks=24;
+    transient.cooperation.seats[0].rescueTarget=-4;
+    assert(!tape.CaptureCheckpoint(transient));
     assert(tape.CaptureCheckpoint(first));
     assert(runtime.CaptureLocal(1,Netplay::FrameInput(8)));
     assert(runtime.SubmitRemote(0,1,Netplay::FrameInput(2))==RemoteInputResult::Accepted);

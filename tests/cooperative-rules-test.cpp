@@ -36,9 +36,9 @@ State make_state(std::uint8_t count) {
 FrameInput input_at(std::int32_t x0 = 0, std::int32_t x1 = 1000,
                     std::int32_t x2 = 0) {
     FrameInput input{};
-    input.seats[0] = {x0, 10000, true, true, true, false};
-    input.seats[1] = {x1, 10000, true, true, true, false};
-    input.seats[2] = {x2, 10000, true, true, true, false};
+    input.seats[0] = {x0, 10000, true, true, true, true, false, false};
+    input.seats[1] = {x1, 10000, true, true, true, true, false, false};
+    input.seats[2] = {x2, 10000, true, true, true, true, false, false};
     return input;
 }
 
@@ -107,6 +107,87 @@ void shoot_breaks_continuous_rescue_progress() {
     AdvanceOneTick(state, input);
     assert(state.seats[0].rescueTicks == 0);
     assert(state.seats[0].rescueTarget == -1);
+}
+
+void eight_rapid_shoot_presses_transfer_one_native_big_power_item() {
+    State state = make_state(2);
+    assert(ReportNativeSeatOutcome(state, 0, LifeState::Alive, 2, 40));
+    assert(ReportNativeSeatOutcome(state, 1, LifeState::Alive, 2, 0));
+    FrameInput input = input_at();
+    ItemProbe probe{true, 0, {}, {}};
+    TickResult result{};
+    for (std::uint8_t tap = 1; tap <= kPowerTapCount; ++tap) {
+        input.seats[0].shoot = true;
+        input.seats[0].shootPressed = true;
+        result = AdvanceOneTick(state, input, {}, {&probe, allocate_item});
+        if (tap < kPowerTapCount) {
+            assert(result.eventCount == 0);
+            assert(PowerTapProgress(state.seats[0]) == tap);
+        }
+        input.seats[0].shoot = false;
+        input.seats[0].shootPressed = false;
+        if (tap < kPowerTapCount) AdvanceOneTick(state, input, {}, {&probe, allocate_item});
+    }
+    assert(result.eventCount == 1);
+    assert(result.events[0].kind == EventKind::PowerItemTransferCommitted);
+    assert(result.events[0].seat == 0 && result.events[0].targetSeat == 1);
+    assert(probe.callCount == 1 && probe.givers[0] == 0 && probe.targets[0] == 1);
+    assert(state.seats[0].power == 20);
+    assert(state.seats[1].power == 0);
+    assert(PowerTapProgress(state.seats[0]) == 0);
+}
+
+void power_taps_expire_and_never_count_a_held_shot_twice() {
+    State state = make_state(2);
+    assert(ReportNativeSeatOutcome(state, 0, LifeState::Alive, 2, 40));
+    assert(ReportNativeSeatOutcome(state, 1, LifeState::Alive, 2, 0));
+    FrameInput input = input_at();
+    input.seats[0].shoot = true;
+    input.seats[0].shootPressed = true;
+    assert(AdvanceOneTick(state, input).eventCount == 0);
+    assert(PowerTapProgress(state.seats[0]) == 1);
+    input.seats[0].shootPressed = false;
+    for (int tick = 0; tick < 10; ++tick) AdvanceOneTick(state, input);
+    assert(PowerTapProgress(state.seats[0]) == 1);
+    input.seats[0].shoot = false;
+    for (int tick = 10; tick < kPowerTapWindow; ++tick) AdvanceOneTick(state, input);
+    assert(PowerTapProgress(state.seats[0]) == 0);
+}
+
+void power_transfer_rejects_full_or_spirit_recipients_and_failed_allocation() {
+    State state = make_state(2);
+    assert(ReportNativeSeatOutcome(state, 0, LifeState::Alive, 2, 40));
+    assert(ReportNativeSeatOutcome(state, 1, LifeState::Alive, 2, kMaxPower));
+    FrameInput input = input_at();
+    input.seats[0].shoot = true;
+    input.seats[0].shootPressed = true;
+    AdvanceOneTick(state, input);
+    assert(PowerTapProgress(state.seats[0]) == 0);
+
+    // A transfer is exactly +1.00 Power.  Do not debit the donor when the
+    // recipient has less than a full 1.00 of room before the native 5.00 cap.
+    assert(ReportNativeSeatOutcome(state, 1, LifeState::Alive, 2,
+                                   kMaxPowerTransferRecipient + 1));
+    AdvanceOneTick(state, input);
+    assert(PowerTapProgress(state.seats[0]) == 0);
+
+    assert(ReportNativeSeatOutcome(state, 1, LifeState::Alive, 2, 0));
+    ItemProbe probe{false, 0, {}, {}};
+    for (int tap = 0; tap < kPowerTapCount; ++tap) {
+        input.seats[0].shoot = true;
+        input.seats[0].shootPressed = true;
+        AdvanceOneTick(state, input, {}, {&probe, allocate_item});
+        input.seats[0].shoot = false;
+        input.seats[0].shootPressed = false;
+        if (tap + 1 < kPowerTapCount) AdvanceOneTick(state, input, {}, {&probe, allocate_item});
+    }
+    assert(probe.callCount == 1 && state.seats[0].power == 40);
+
+    spirit(state, 1);
+    input.seats[0].shoot = true;
+    input.seats[0].shootPressed = true;
+    AdvanceOneTick(state, input, {}, {&probe, allocate_item});
+    assert(PowerTapProgress(state.seats[0]) == 0);
 }
 
 void three_seat_life_items_commit_synchronously_and_independently() {
@@ -217,6 +298,17 @@ void life_awards_require_explicit_status_and_clamp_to_th10_cap() {
     assert(state.seats[1].lives == kMaxLives);
 }
 
+void team_extend_can_bank_a_spirit_life_without_reviving_it() {
+    State state = make_state(2);
+    spirit(state, 1);
+    assert(state.seats[1].lives == -1);
+    assert(ApplyLifeAward(state, 1, 1, state.seats[1].lifeState));
+    assert(state.seats[1].lives == 0);
+    assert(state.seats[1].lifeState == LifeState::Spirit);
+    assert(state.seats[1].rescueTicks == 0);
+    assert(state.seats[1].rescueTarget == -1);
+}
+
 void next_stage_revives_every_seat_and_drops_transient_coop_state() {
     State state = make_state(3);
     assert(ReportNativeSeatOutcome(state, 0, LifeState::Dying, -1, 17));
@@ -225,6 +317,11 @@ void next_stage_revives_every_seat_and_drops_transient_coop_state() {
     state.seats[0].rescueTicks = 42;
     state.seats[0].rescueTarget = 1;
     state.seats[1].waitingForFocusRelease = true;
+    // The Power gesture shares the rescue transient bytes using a negative
+    // target token.  A stage boundary must clear this too before Replay takes
+    // its stage-entry checkpoint.
+    state.seats[2].rescueTicks = kPowerTapWindow;
+    state.seats[2].rescueTarget = -4;
     state.wipeTicks = 99;
     state.retryPending = true;
     assert(BeginNextStage(state));
@@ -321,11 +418,15 @@ int main() {
     radius_is_inclusive_at_twenty_pixels();
     repeated_inputs_advance_logical_ticks_and_focus_release_gates_next_use();
     shoot_breaks_continuous_rescue_progress();
+    eight_rapid_shoot_presses_transfer_one_native_big_power_item();
+    power_taps_expire_and_never_count_a_held_shot_twice();
+    power_transfer_rejects_full_or_spirit_recipients_and_failed_allocation();
     three_seat_life_items_commit_synchronously_and_independently();
     failed_item_allocation_costs_no_life_and_retries_after_full_progress();
     each_seat_sees_prior_life_debits_when_selecting_a_recipient();
     sequential_givers_keep_th07_rescue_frame_semantics();
     life_awards_require_explicit_status_and_clamp_to_th10_cap();
+    team_extend_can_bank_a_spirit_life_without_reviving_it();
     next_stage_revives_every_seat_and_drops_transient_coop_state();
     final_death_waits_for_native_transition_and_can_receive_a_team_extend();
     spirit_alive_spirit_fullwipe_resets_then_retries_at_exactly_180_ticks();

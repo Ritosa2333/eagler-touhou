@@ -34,6 +34,7 @@ public:
     void Clear() noexcept;
     // The title must have reconciled/confirmed the restart fence. A real
     // transport additionally finishes its peer ACK fence before retirement.
+    bool PrepareTransitionFence();
     bool RetireRun() noexcept;
     bool CanRetireRun() const;
     bool BeginNextRun(SessionSetup& setup,std::uint32_t seed) noexcept;

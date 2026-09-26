@@ -105,6 +105,22 @@ bool NetplayRuntime::CanRetireRun()const{
     return !network_enabled_||channel_.CanRetire(core_,last);
 }
 
+bool NetplayRuntime::PrepareTransitionFence(){
+    const auto last=core_.LastSimulatedFrame();
+    if(!CanStart()||core_.HasRollbackRequest()||last==Netplay::INVALID_FRAME)return false;
+    if(spectator_||!network_enabled_){
+        const auto confirmed=core_.ConfirmedThroughAllRemotes();
+        return confirmed!=Netplay::INVALID_FRAME&&confirmed>=last;
+    }
+    // Once the title has selected a different screen it no longer owns a
+    // future gameplay frame that can naturally repair the current fast-lane
+    // tail. Push the terminal input and ACK over the reliable lane now; both
+    // peers keep pumping until SessionChannel's ordinary retirement fence is
+    // actually satisfied.
+    if(!channel_.FlushRetirementFence(core_,last,network_now_))return false;
+    return channel_.CanRetire(core_,last);
+}
+
 bool NetplayRuntime::Reset(const SessionSetup& setup, std::uint64_t sessionId) noexcept {
     Clear();
     if(!Configure(setup,sessionId)){Clear();return false;}

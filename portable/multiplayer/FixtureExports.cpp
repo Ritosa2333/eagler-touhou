@@ -164,7 +164,7 @@ u32 mp_fixture_prepare(browser::Application* app,u32 kind){
     if(runtime.LastSimulatedFrame()==Netplay::INVALID_FRAME||
        runtime.ConfirmedThroughAllRemotes()<runtime.LastSimulatedFrame()||
        runtime.ConfirmedThroughAllRemotes()==Netplay::INVALID_FRAME)return 0;
-    if(kind<1||kind>7)return 0;
+    if(kind<1||kind>13)return 0;
     auto& world=*app->world;
     if(world.player_count!=2||!world.pilots[0].player||!world.pilots[1].player)return 0;
     if(kind==6&&(world.state.game.stage<1||world.state.game.stage>=6||!world.hud))return 0;
@@ -204,6 +204,55 @@ u32 mp_fixture_prepare(browser::Application* app,u32 kind){
         pose(world,0,-15,400,1,2,0);pose(world,1,15,400,1,2,0);
         world.spawn_item({0,400,0},1,0xffffffff,0,0);
         return world.actors.items->regular[0].state?1:0;
+    }
+    if(kind==8){
+        // Power-transfer integration fixture: P2 is the donor so the browser
+        // test can drive it through the normal remote input lane.  The players
+        // start inside the real twenty-pixel cooperation radius; no item or
+        // cooperation event is fabricated here.
+        pose(world,0,0,400,1,2,0);pose(world,1,10,400,1,2,40);
+        return 1;
+    }
+    if(kind==9){
+        // No-Bomb fixture: 0.95 Power is below TH10's native 1.00 Bomb cost.
+        // Keep P2 alive so a normal Bomb edge can prove it is ignored without
+        // any cooperation-layer substitute or resource debit.
+        pose(world,0,0,400,1,2,80);pose(world,1,10,400,1,0,19);
+        return 1;
+    }
+    if(kind==10){
+        // Same resource boundary while inside the native eight-tick deathbomb
+        // window.  The Bomb edge must not rescue the player; native death then
+        // owns the ordinary Power loss/drop before multiplayer enters Spirit.
+        pose(world,0,0,400,1,2,80);pose(world,1,10,400,1,0,19);
+        auto& player=*world.pilots[1].player;
+        timer(player.invulnerability,player.invulnerability_flags,0,world.engine.speed);
+        return world.collide_player(player.position,{4,4})==1?1:0;
+    }
+    if(kind==11){
+        // P1 final-death fixture matching the live report: one remaining stock,
+        // then an intentional collision. Keep P2 well away so the collision
+        // deterministically belongs to P1 on every endpoint.
+        pose(world,0,0,400,1,0,80);pose(world,1,-100,400,1,2,80);
+        auto& player=*world.pilots[0].player;
+        timer(player.invulnerability,player.invulnerability_flags,0,world.engine.speed);
+        return world.collide_player(player.position,{4,4})==1?1:0;
+    }
+    if(kind==12){
+        // Rescue setup for the reported sequence: P1 is already a Spirit and
+        // P2 has a spare life while standing inside the cooperation radius.
+        pose(world,0,0,400,3,-1,0);pose(world,1,10,400,1,2,80);
+        world.cooperation.wipeTicks=0;world.cooperation.retryPending=false;
+        return 1;
+    }
+    if(kind==13){
+        // Preserve the just-rescued P1 state and only remove spawn protection,
+        // then collide that exact native Player. This catches lifecycle bugs in
+        // revive_player() instead of replacing the revived player with a pose.
+        auto& player=*world.pilots[0].player;
+        if(player.state!=1||world.pilots[0].game.lives<0)return 0;
+        timer(player.invulnerability,player.invulnerability_flags,0,world.engine.speed);
+        return world.collide_player(player.position,{4,4})==1?1:0;
     }
     if(kind==4){
         StraightLaserParameters parameters{};

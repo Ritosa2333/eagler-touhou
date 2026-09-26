@@ -111,7 +111,10 @@ struct Enemies final:EnemyManagerEnvironment {
     i32 update_enemy(Enemy& enemy) override{return w.update_enemy(enemy);}
     void destroy_enemy(Enemy& enemy) override{
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-        for(u32 seat=0;seat<w.player_count;++seat)if(auto* player=w.pilots[seat].player)if(player->target==&enemy){player->target=nullptr;player->target_seen=0;}
+        // The native teardown below only visits actors.player. Every pilot's
+        // already-fired homing shots must also forget the reclaimed enemy.
+        for(u32 seat=0;seat<w.player_count;++seat)
+            if(auto* player=w.pilots[seat].player)player->forget_enemy(&enemy);
 #endif
         enemy.shutdown(*w.actors.enemies,*this);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY

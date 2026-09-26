@@ -100,6 +100,22 @@ bool AnimationEngine::present(AnmVm& copy,const AnmVm& source) const{
     return true;
 }
 void AnimationEngine::draw(AnmVm& vm){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // front.anm's stock Player/Power label VMs remain alive and updated for
+    // native lifecycle/rollback identity. Their pixels are supplied by the
+    // equal per-seat resource rows instead, using these same native sprites.
+    if(vm.id&&vm.animation_file&&vm.animation_file->file_index==6&&
+       (vm.script_index==8||vm.script_index==9))return;
+    if(enhance_local_player_visibility&&player_view_alpha&&player_view_owner){
+        const u8 alpha=player_view_alpha(player_view_owner,vm);
+        if(alpha<255){
+            auto copy=vm;present(copy,vm);
+            copy.color=(copy.color&0x00ffffffu)|(((copy.color>>24)*alpha/255u)<<24);
+            copy.secondary_color=(copy.secondary_color&0x00ffffffu)|(((copy.secondary_color>>24)*alpha/255u)<<24);
+            auto env=renderer();AnmRenderer{manager,env}.draw(copy);return;
+        }
+    }
+#endif
     auto env=renderer();if(!high_refresh::render_only||!high_refresh::active){AnmRenderer{manager,env}.draw(vm);return;}
     auto copy=vm;present(copy,vm);
     AnmRenderer{manager,env}.draw(copy);

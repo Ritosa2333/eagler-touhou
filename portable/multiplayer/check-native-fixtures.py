@@ -10,7 +10,7 @@ from rollback_testkit import call, equal, fixture, hashes, net, state, submit, t
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--url', default='http://127.0.0.1:8140/')
-parser.add_argument('--case', choices=['all', 'deathbomb', 'rescue', 'pickup', 'wipe-cancel', 'laser-close', 'retry', 'stage'], default='all')
+parser.add_argument('--case', choices=['all', 'deathbomb', 'rescue', 'pickup', 'power-transfer', 'no-bomb', 'wipe-cancel', 'laser-close', 'retry', 'stage'], default='all')
 parser.add_argument('--output', default='artifacts/multiplayer-tests/native-fixtures.json')
 args = parser.parse_args()
 report = {'scope': 'TH10 controlled native initial-state fixtures; full owner comparison', 'cases': []}
@@ -20,6 +20,8 @@ def prepare(test, kind, local=0, difficulty=4):
     a, b = test.pair(difficulty=difficulty, local=local)
     for page in (a, b):
         test.advance(page, 59)
+        probe = call(page, 'multiplayerSmoke.replayProbe()')
+        assert probe[16] == -32 and probe[28] == 32, ('multiplayer spawn overlap', probe[16], probe[28])
         assert call(page, '(k)=>multiplayerSmoke.fixture(k)', kind), (kind, state(page))
     equal(a, b, 'fixture initial state')
     return a, b
@@ -41,7 +43,7 @@ def evidence(page):
 
 
 with fixture(args.url, report, args.output) as test:
-    cases = ['deathbomb', 'rescue', 'pickup', 'wipe-cancel', 'laser-close', 'retry', 'stage'] if args.case == 'all' else [args.case]
+    cases = ['deathbomb', 'rescue', 'pickup', 'power-transfer', 'no-bomb', 'wipe-cancel', 'laser-close', 'retry', 'stage'] if args.case == 'all' else [args.case]
     for name in cases:
         print('native-fixture:', name, 'begin', flush=True)
         result = {'case': name, 'passed': False}
@@ -94,6 +96,54 @@ with fixture(args.url, report, args.output) as test:
             for frame in range(66, 90):
                 advance_pair(a, b, frame, 1)
             result['corrected'] = evidence(b)
+        elif name == 'power-transfer':
+            a, b = prepare(test, 8)
+            initial = state(a)
+            assert initial[11] == 0 and initial[23] == 40, initial
+            frame = 60
+            for tap in range(8):
+                advance_pair(a, b, frame, 1, 1); frame += 1
+                if tap != 7:
+                    advance_pair(a, b, frame, 1, 0); frame += 1
+            after_gesture = state(a)
+            assert after_gesture[23] == 20, ('donor did not spend 20 Power', after_gesture)
+            # The committed event spawns a real native kind-4 big-P targeted to
+            # P1.  Let Item::update perform homing/pickup and prove that the
+            # recipient, not the donor, receives the native +20 reward.
+            for _ in range(90):
+                if state(a)[11] == 20:
+                    break
+                advance_pair(a, b, frame, 1, 0); frame += 1
+            final = state(a)
+            assert final[11] == 20 and final[23] == 20, ('native Power transfer incomplete', final)
+            equal(a, b, 'native power transfer')
+            result['afterGesture'] = after_gesture
+            result['completed'] = evidence(b)
+        elif name == 'no-bomb':
+            # Normal Bomb: 0.95 Power cannot pay TH10's native 1.00 cost.
+            a, b = prepare(test, 9)
+            initial = state(a)
+            assert initial[23] == 19 and initial[24] == 1, initial
+            advance_pair(a, b, 60, 1, 2)
+            for frame in range(61, 66):
+                advance_pair(a, b, frame, 1, 0)
+            alive = state(a)
+            assert alive[23] == 19 and alive[24] == 1 and alive[22] == 0, (
+                'sub-1.00 normal Bomb changed native state', alive)
+
+            # Deathbomb: the same insufficient Power cannot cancel the hit.
+            a, b = prepare(test, 10)
+            assert state(a)[23] == 19 and state(a)[24] == 4, state(a)
+            frame = 60
+            advance_pair(a, b, frame, 1, 2); frame += 1
+            while frame < 108:
+                advance_pair(a, b, frame, 1, 0); frame += 1
+            dead = state(a)
+            assert dead[22] == -1 and dead[23] == 0 and dead[24] == 3, (
+                'sub-1.00 deathbomb incorrectly rescued pilot', dead)
+            assert dead[10] == 3, ('final death did not grant nearest survivor one life', dead)
+            result['normalBombRejected'] = alive
+            result['deathbombRejected'] = evidence(b)
         elif name == 'wipe-cancel':
             a, b = prepare(test, 5)
             for frame in range(60, 65):
@@ -122,20 +172,13 @@ with fixture(args.url, report, args.output) as test:
             a, b = prepare(test, 5)
             for frame in range(60, 65):
                 advance_pair(a, b, frame, 1)
-            assert call(a, 'multiplayerSmoke.lifecycle()')[2] == 13
             for page in (a, b):
-                for _ in range(150):
-                    tick(page)
-                    generation = call(page, 'multiplayerSmoke.generationStatus()')
-                    if generation[1] == 1 and not generation[8]:
-                        break
-                assert generation[1] == 1 and not generation[8], generation
-                assert state(page)[10] == state(page)[22] == 2, state(page)
-                assert net(page)[2:4] == [0, -1], net(page)
-            # Retry changes resource addresses. This fixture checks native
-            # lifecycle and resources, not a pointer-independent canonical ABI.
-            assert state(a) == state(b), (state(a), state(b))
-            result['afterRetry'] = evidence(b)
+                lifecycle = call(page, 'multiplayerSmoke.lifecycle()')
+                assert lifecycle[2] != 13, ('multiplayer wipe entered Continue/Retry screen', lifecycle)
+                assert lifecycle[4] == 6, ('multiplayer wipe did not open native Game Over results', lifecycle)
+                assert call(page, 'multiplayerSmoke.generationStatus()')[1] == 0
+            equal(a, b, 'wipe ends without Continue')
+            result['afterWipe'] = evidence(b)
         elif name == 'stage':
             a, b = prepare(test, 6, difficulty=1)
             # Real native stage completion/load; the old background then fades

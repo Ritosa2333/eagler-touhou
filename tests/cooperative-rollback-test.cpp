@@ -26,8 +26,8 @@ State initial_state() {
 
 FrameInput rule_input(std::uint16_t remoteButtons) {
     FrameInput input{};
-    input.seats[0] = {0, 10000, false, false, false, false};
-    input.seats[1] = {1000, 10000, true, true, (remoteButtons & focus) != 0, false};
+    input.seats[0] = {0, 10000, false, false, false, false, false, false};
+    input.seats[1] = {1000, 10000, true, true, true, (remoteButtons & focus) != 0, false, false};
     return input;
 }
 
