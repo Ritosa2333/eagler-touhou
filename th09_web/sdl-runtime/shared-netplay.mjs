@@ -138,7 +138,10 @@ export class SharedNetplay {
           if (frame !== this.spectatorFrame) throw Error('TH09 观战帧序号不连续');
           const side = at => [data.getUint16(at, true), bytes[at + 2],
             data.getFloat32(at + 3, true), data.getFloat32(at + 7, true)];
-          if (!this.core._th09_spectator_feed(frame, ...side(24), ...side(35)))
+          const [left, leftMode, leftX, leftY] = side(24);
+          const [right, rightMode, rightX, rightY] = side(35);
+          if (!this.core._th09_spectator_feed(frame, left, right,
+              leftMode, leftX, leftY, rightMode, rightX, rightY))
             throw Error('TH09 观战输入无效或过于滞后');
           ++this.spectatorFrame;
           return;

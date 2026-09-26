@@ -48,7 +48,11 @@ function harness() {
       _th09_network_hash: () => 123,
       _th09_network_end: () => {},
       _th09_spectator_begin: (...args) => { calls.spectatorBegin.push(args); return 1; },
-      _th09_spectator_feed: (...args) => { calls.spectatorFeed.push(args); return 1; },
+      // Match Application.cpp's exported ABI: both key words precede motion.
+      _th09_spectator_feed: (frame, left, right, leftMode, leftX, leftY, rightMode, rightX, rightY) => {
+        calls.spectatorFeed.push([frame, left, right, leftMode, leftX, leftY, rightMode, rightX, rightY]);
+        return +([leftMode, rightMode].every(mode => Number.isInteger(mode) && mode >= 0 && mode <= 3));
+      },
       _th09_spectator_frame: () => calls.spectatorFeed.length,
       _th09_spectator_end: () => {},
       _th09_loop_pause: value => calls.pauses.push(value),
@@ -158,8 +162,9 @@ test('an admitted spectator receives both players\' ordered keys and motion with
     left.options.netplaySpectatorCount = 1;
     left.publish(0, 0x101, 0x204, 2, 350.5, 410.25, 3, 200.75, 150.5);
     viewer.pump();
-    assert.deepEqual(viewerCore.calls.spectatorFeed, [[0, 0x101, 2, 350.5, 410.25,
-      0x204, 3, 200.75, 150.5]]);
+    assert.deepEqual(viewerCore.calls.spectatorFeed, [[0, 0x101, 0x204,
+      2, 350.5, 410.25, 3, 200.75, 150.5]]);
+    assert.equal(viewer.connected, true);
     assert.equal(viewer.spectatorFrame, 1);
     assert.equal(viewerCore.calls.receive.length, 0);
     viewer.close(); left.close(); right.close();

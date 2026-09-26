@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const compiled = resolve(root, process.env.TH09_OUTPUT || 'artifacts/sdl-release');
-const output = resolve(root, process.argv.includes('--multiplayer') ? 'build-eagler-multiplayer' : 'build-eagler');
+const variant = process.argv.includes('--multiplayer') ? 'multiplayer' : 'normal';
+const output = resolve(root, variant === 'multiplayer' ? 'build-eagler-multiplayer' : 'build-eagler');
 const native = resolve(root, 'assets/sdl-native');
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const inputs = [
@@ -28,7 +29,12 @@ if (build.kind !== 'th09-native-web-release-candidate' || build.sha256 !== sha25
 mkdirSync(output, { recursive: true });
 for (const [name, source] of inputs) {
   mkdirSync(resolve(output, name, '..'), { recursive: true });
-  copyFileSync(source, resolve(output, name));
+  if (name === 'th09.html') {
+    const marker = '<meta name="eagler-runtime-variant" content="normal">';
+    const html = readFileSync(source, 'utf8');
+    if (html.split(marker).length !== 2) throw Error('Missing or ambiguous TH09 Runtime variant marker');
+    writeFileSync(resolve(output, name), html.replace(marker, `<meta name="eagler-runtime-variant" content="${variant}">`));
+  } else copyFileSync(source, resolve(output, name));
 }
 writeFileSync(resolve(output, 'manifest.json'), JSON.stringify({
   game: 'th09', protocol: 'eagler-touhou/1', features: { thprac: false, languages: true, focusHitbox: false },
