@@ -316,7 +316,7 @@ export const PRODUCT_GAMES = Object.freeze({
     }),
     runtime: "./runtime/th20/th20.html",
     musicCapabilities: Object.freeze({ midi: false }),
-    musicRuntime: Object.freeze({ localOggConfigureMode: "midi-sentinel" }),
+    musicRuntime: Object.freeze({ localOggConfigureMode: "runtime-selection" }),
     touchFire: TOGGLE_TOUCH_FIRE,
     support: Object.freeze({
       sourceRepository: "https://github.com/Goan114/touhou20",
