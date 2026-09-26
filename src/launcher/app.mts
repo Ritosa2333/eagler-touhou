@@ -3355,10 +3355,14 @@ function requiredSharedForGame(gameId: GameId = state.game): readonly string[] {
   return "requiredShared" in product ? product.requiredShared : [];
 }
 
-function cardArtworkCss(gameId: GameId = state.game): string {
+function cardArtworkAsset(gameId: GameId = state.game): string | null {
   const product = PRODUCT_GAMES[gameId];
-  const artwork = "cardArtwork" in product ? product.cardArtwork : undefined;
-  return artwork ? `url("assets/${artwork}")` : "none";
+  return "cardArtwork" in product ? `assets/${product.cardArtwork}` : null;
+}
+
+function cardArtworkCss(gameId: GameId = state.game): string {
+  const artwork = cardArtworkAsset(gameId);
+  return artwork ? `url("${artwork}")` : "none";
 }
 
 function runtimeUrl() {
@@ -4097,8 +4101,13 @@ function render() {
   $("#gameTitle").textContent = game().title;
   const identity = PRODUCT_GAMES[state.game];
   const cover = $("#optionsCover") as HTMLImageElement;
-  const coverSource = `assets/${identity.cardArtwork}`;
-  if (cover.getAttribute("src") !== coverSource) cover.src = coverSource;
+  const coverSource = cardArtworkAsset(state.game);
+  if (coverSource) {
+    cover.hidden = false;
+    if (cover.getAttribute("src") !== coverSource) cover.src = coverSource;
+  } else {
+    cover.hidden = true;
+  }
   $("#optionsNumber").textContent = identity.number;
   $("#optionsSubtitle").textContent = identity.subtitle;
   $("#mpTitleBadge").hidden = !multiplayerProduct;
