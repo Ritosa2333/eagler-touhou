@@ -12,7 +12,7 @@
 - 手机：拖动移动；“射击 开”自动连按射击，“蓄力”按住蓄力后松开释放，B 对应 X，“低速”按住使用。菜单拖动选择，点击确认；对话可点击继续或按住快进。
 - 花映塚的攻击和蓄力规则保留本作实现。
 - 双人本机对战可在 Key Config 选择原版 1P / 2P 键盘模式或两个手柄。浏览器联机从标题的 Network 或网页“联机”创建／加入房间。
-- 联机使用双方输入同步，有 6 帧输入缓冲；网络等待时暂停推进。每局结束后回到各自录像保存界面，下局可重新建房。浏览器联机不能与 Windows 原版网络协议互通。
+- 联机使用双方输入同步，有 6 帧输入缓冲；网络等待时暂停推进。房间内可选择旁观席，观战端从本局第 0 帧顺序回放已确认的双人输入，不占用玩家席或发送操作。对战结束后在原版结算菜单选择“保存成绩”，各自进入录像存槽／命名界面；保存或跳过后返回联机房间，下局可重新开始。两名玩家的操作记录在同一份原版格式录像中，双方可各自保存。浏览器联机不能与 Windows 原版网络协议互通。
 - 存档、设置和录像在当前浏览器的独立 `/savesth09` IndexedDB 中；“存档 / 录像”可导入或下载备份。联机服务器只转发输入和校验值，没有存档或录像。
 
 首次资源与运行时下载共约 159 MiB（19 首 OGG、原版数据包、字体、Wasm）。后续资源通过浏览器 Cache Storage 按 SHA-256 复用。短暂断网或 502/503/504 会最多自动重试三次；连续失败可重新点击开始。资源缓存和玩家存档分开；服务器只提供明确列出的游戏文件。
@@ -39,7 +39,7 @@ npm start
 
 ### 接入当前 eagler-touhou 启动器
 
-在 `th09_web` 执行 `npm run web:build`，准备 `assets/sdl-native/cp932.bin` 和 `blend.bin` 后执行 `npm run web:eagler`。输出的 `build-eagler` 是无原版数据的目录 Runtime，可作为 `eagler-touhou/scripts/package-runtime-release.mjs` 的 `--th09-build` 输入。原版 `th09.dat`、共享字体和 19 首 OGG 由宿主包单独提供。TH09 适配器使用现行 `eagler-touhou/1` 通信及导航 epoch；旧 `web:package` 附带的启动器副本不应覆盖独立的 `eagler-touhou` 仓库。专用联机中继仍需另外部署，不能把启动器原有的 TH06/07 房间服务当作 TH09 的 `/netplay` 服务。
+在 `th09_web` 执行 `npm run web:build`，准备 `assets/sdl-native/cp932.bin` 和 `blend.bin` 后执行 `npm run web:eagler`，再执行 `npm run web:eagler:multiplayer`。两个输出目录 `build-eagler`、`build-eagler-multiplayer` 分别作为 `eagler-touhou/scripts/package-runtime-release.mjs` 的 `--th09-build`、`--th09-multiplayer-build` 输入。两者使用同一 WASM 游戏核心，但联机版由 launcher 房间的 `netplay*` 配置直启双人对局；游戏内“妖怪对妖怪”的 Network 入口唤起同一个 launcher 房间弹窗。原版 `th09.dat`、共享字体和 19 首 OGG 由宿主包单独提供。TH09 适配器使用现行 `eagler-touhou/1` 通信及导航 epoch；旧 `web:package` 附带的启动器副本不应覆盖独立的 `eagler-touhou` 仓库。TH09 已改用 launcher 的共用房间服务，不再需要单独部署旧 `/netplay` 中继。对局传输直接链接 `eagler-common` 的 `BrowserPeerTransport`，与 TH06/07 一样在 WebRTC 与 WebSocket 中继间选择；TH09 的帧输入仍使用本作的有序双人 lockstep，而不是 TH06/07 的 rollback。
 
 只有原版安装目录时，可先在 `th09_web` 执行 `node scripts/prepare-retail-assets.mjs "原版游戏目录"`。脚本核对原版 1.50a 的 EXE/DAT 哈希，从 `th09.dat` 提取并校验 `thbgm.fmt`，以本机 ffmpeg/ffprobe 将 `thbgm.dat` 转为 19 首 OGG，逐首核验 PCM 帧数，并从工作区 TH10 共享资源准备字体表。生成的原版素材与音乐均被 Git 忽略。编译会优先使用 `TH09_EMSDK`，然后依次查找工作区 `tools/emsdk`、相邻 `th08/tools/emsdk`。
 
@@ -54,5 +54,9 @@ npm start
 详细结果见 `docs/RECONSTRUCTION.md` 和 `artifacts/cpp/verification`。2026-09-20：91 项常规比较测试通过；原版三个演示录像 17,108 帧完整世界状态对照；28 条 Story/Extra 路径、252 次换关和 28 次结局流程验证。流程测试中的强制胜利有明确标注，并不代表原版所有通关录像都已逐帧对照。
 
 发布版已检查手机尺寸／触控、音效与音乐输出、存档刷新、录像导入保存、联机双方状态、旧站点 Service Worker 迁移和资源白名单。电脑上的手机模拟不是 Android/iOS 真机性能证明。字体使用原版 MS Gothic 的 SDL_ttf 光栅化，音频使用 OGG；不承诺所有像素、所有浮点输入或所有手机驱动都与 Windows 版完全一致。
+
+音乐“无”模式下宿主不传输任何 OGG，因此 `AudioDevice::music` 在静音时只登记曲目、不打开解码器：否则标题与对局会因缺少 `/music/*.ogg` 直接报错。原版 OGG 挂载后仍逐首核对 PCM 帧数，缺失或帧数不符依旧是错误。
+
+联机手势传输的是**绝对目标点**而不是按下采样瞬间算出的速度：锁步输入本身带有 `lead` 帧延迟，若在发送端用当时的机体位置换算速度，接收端会在“未来位置”上朝向目标，机体就会绕着手指打转。现在两端都在实际移动该机体的那一帧用各自的位置换算（`MotionSample.target`，协议动作模式 2/3），因此落点与手指一致且两端确定性相同。单机路径仍是原来的本地换算，录像中记录的仍是换算后的速度。
 
 第三方组件及原版资源归属见 THIRD-PARTY-NOTICES.txt。
