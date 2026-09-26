@@ -305,6 +305,48 @@ export const PRODUCT_GAMES = Object.freeze({
     }),
     features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
   }),
+  th20: Object.freeze({
+    number: "20",
+    title: "東方錦上京",
+    subtitle: "Fossilized Wonders",
+    storage: Object.freeze({
+      saveRoot: "/savesth20",
+      scoreFile: "scoreth20.dat",
+      configFiles: Object.freeze(["th20.cfg"]),
+    }),
+    runtime: "./runtime/th20/th20.html",
+    musicCapabilities: Object.freeze({ midi: false }),
+    musicRuntime: Object.freeze({ localOggConfigureMode: "midi-sentinel" }),
+    touchFire: TOGGLE_TOUCH_FIRE,
+    support: Object.freeze({
+      sourceRepository: "https://github.com/Goan114/touhou20",
+      adaptationNotice: "early-test",
+    }),
+    runtimeFileLayout: "directory",
+    requiredShared: Object.freeze(["/msgothic.ttc", "/unifont.otf"]),
+    runtimeAssets: Object.freeze([
+      "th20.html",
+      "manifest.json",
+      "shell.mjs",
+      "eagler-host.mjs",
+      "motion-replay.mjs",
+      "th20-sdl.mjs",
+      "th20-sdl.wasm",
+      "resources.json",
+    ]),
+    dataProvider: "retail-memory",
+    package: Object.freeze({
+      dataFileId: "game-data",
+      dataTarget: "/th20.data",
+      // TH20's canonical BGM is the /bgm-ogg OGG set decoded by the Runtime;
+      // retail thbgm.dat is no longer a shipped resource.
+      musicSourceDirectories: Object.freeze({ ogg: "bgm-ogg" }),
+      musicMounts: Object.freeze({ ogg: "/bgm-ogg" }),
+      rawDataImport: Object.freeze({ fileNames: Object.freeze(["th20.dat"]) }),
+    }),
+    replay: Object.freeze({ prefix: "th20" }),
+    features: Object.freeze({ thprac: false, languages: true, focusHitbox: false }),
+  }),
 });
 
 export type GameId = keyof typeof PRODUCT_GAMES;

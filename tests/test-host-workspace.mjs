@@ -35,6 +35,9 @@ for (const marker of th09Alternative.markerFiles) await put(join(layout.games.th
 await assert.rejects(() => inspectHostWorkspace(root), /TH10 OGG source thbgm\.dat not found/);
 const alternative = PRODUCT_CONTENT.th10.original.preparedAlternative;
 for (const marker of alternative.markerFiles) await put(join(layout.games.th10, alternative.directory, marker));
+// TH20 streams retail thbgm.dat directly; the self-host workspace still requires
+// the declared BGM source input.
+for (const name of PRODUCT_CONTENT.th20.original.oggSourceFiles) await put(join(layout.games.th20, name));
 const full = await inspectHostWorkspace(root);
 assert.deepEqual(full.music, ["midi", "ogg"]);
 assert.equal(full.runtimeReleaseSchema, "eagler-touhou/runtime-release/2");
