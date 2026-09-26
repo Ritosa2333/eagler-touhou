@@ -18,7 +18,16 @@ worktree. Promotion follows
 [Adaptation Worktree Isolation](adaptation-worktrees.md).
 
 - TH06MP and TH07MP provide the reusable architecture and test evidence for the
-  products that currently declare Multiplayer.
+  products that currently declare Multiplayer. TH09MP declares the same
+  room/loadout surface, but reuses TH09's ordered two-player lockstep input
+  protocol over the shared `eagler-common` browser transport instead of
+  rollback. TH09MP publishes its confirmed two-player input frames through
+  the shared relay's admitted-spectator backlog; spectators replay from frame
+  zero without taking a player seat. Record that as TH09MP coverage, not as a new
+  per-title feature switch: the room facts stay in `product-catalog`.
+- TH09MP touch movement ships the gesture's absolute field target (motion modes
+  2/3 of its input frame) rather than a velocity sampled on the sending machine,
+  and the Launcher keeps game keys flowing from the realm that owns focus.
 - Titles that do not declare `multiplayerRuntime + multiplayer` are outside
   this profile; do not describe that absence as unfinished adapter work.
 - Multiplayer itself is an **optional product capability**. Once a product
@@ -54,6 +63,12 @@ Spectator is a start-only, read-only product path. It consumes confirmed history
 ## Invariants and pitfalls
 
 - One logical frame samples input once. Retransmit, retry and prediction never resample a device.
+- A lockstep payload must not carry a value derived from the sender's simulation
+  state at send time. Sampling happens `lead` frames before the frame that
+  applies it, so a derived velocity aims from a position the receiver has not
+  reached: TH09's touch gesture shipped that way made a dragged player orbit the
+  finger forever. Ship the absolute target (or sample on the applied frame) and
+  let every peer derive the frame-local value identically.
 - Delivery, prediction, confirmation and rollback each have explicit owners.
 - Restart creates a new generation/session identity; a visible canvas is not proof that transport is healthy.
 - Reconnection waits are bounded; an ICE restart requires missing health or confirmation progress, not just a transient `disconnected` state.
@@ -93,6 +108,13 @@ The early TH06 LCConnect/`MultiplayerRuntime.*`/`g_Player2` route is withdrawn. 
 - `tests/test-netplay-relay-product-policy.mjs` and
   `test-netplay-service-config.mjs`: product-policy and deployment-namespace
   gates.
+- `tests/test-th09-mixed-entry-launcher-browser.py`
+  (`npm run test:th09-mixed-entry:browser`) and `tests/test-th09mp-launch.py`
+  (`npm run test:th09mp-launch:browser`): TH09 room interop in both directions
+  (in-game title dialog hosting the Launcher card joining, and the reverse) and
+  a real two-Runtime versus match over the shared transport, respectively. The
+  launch gate runs the muted music path too, and can take its content from an
+  offline package with `--package-zip=PATH`.
 - `tests/test-multiplayer-spectator-launcher-contract.mjs` and
   `tests/test-multiplayer-replay-launcher-contract.mjs`: Launcher product
   contracts.

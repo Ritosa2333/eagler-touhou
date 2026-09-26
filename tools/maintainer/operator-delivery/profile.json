@@ -27,7 +27,7 @@
       "languages": ["ja"],
       "music": ["ogg"],
       "thprac": false,
-      "runtimeVariants": ["normal"]
+      "runtimeVariants": ["normal", "multiplayer"]
     },
     "th10": {
       "languages": ["ja"],

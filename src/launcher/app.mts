@@ -630,12 +630,82 @@ function mpConnectLobby(reconnecting = false) {
 let mpLaunchInFlight = false;
 let mpGameCheckInFlight = false;
 let launcherOperationDepth = 0;
+let th09RoomHome: { parent: Node; next: Node | null } | null = null;
+
+function th09NetworkOverlayOpen() { return !$("#th09NetworkDialog").hidden; }
+
+function th09CloseNetworkOverlay(resume: boolean) {
+  const dialog = $("#th09NetworkDialog");
+  if (dialog.hidden) return;
+  dialog.hidden = true;
+  player.classList.remove("th09-network-open");
+  $("#th09NetworkEntry").hidden = false;
+  $("#th09NetworkRoom").hidden = true;
+  const roomView = $("#mpRoomView");
+  if (th09RoomHome) {
+    if (th09RoomHome.next?.parentNode === th09RoomHome.parent)
+      th09RoomHome.parent.insertBefore(roomView, th09RoomHome.next);
+    else th09RoomHome.parent.appendChild(roomView);
+    th09RoomHome = null;
+  }
+  if (resume && state.launched) void send("network-cancel", {}).catch(error => showToast(errorMessage(error)));
+}
+
+function th09OpenNetworkOverlay() {
+  if (!game().multiplayer?.titleRoomEntry || isMultiplayerProduct() || !state.launched) return;
+  if (!state.netplay.url) {
+    showToast(t("multiplayer.serviceMissing"));
+    void send("network-cancel", {}).catch(() => {});
+    return;
+  }
+  $("#th09NetworkDialog").hidden = false;
+  player.classList.add("th09-network-open");
+  $("#th09NetworkEntry").hidden = false;
+  $("#th09NetworkRoom").hidden = true;
+  $("#th09NetworkCode").value = "";
+  $("#th09NetworkCreate").focus();
+}
+
+function th09EnterNetworkRoom(code: string, created: boolean) {
+  if (!th09NetworkOverlayOpen() || !state.launched) return;
+  const product = multiplayerProductIdForGame(state.game);
+  if (!product) return;
+  state.product = product;
+  state.hasSelection = true;
+  restoreMpProductPreferences(product);
+  const roomView = $("#mpRoomView");
+  th09RoomHome = { parent: roomView.parentNode!, next: roomView.nextSibling };
+  $("#th09NetworkRoom").append(roomView);
+  $("#th09NetworkEntry").hidden = true;
+  $("#th09NetworkRoom").hidden = false;
+  mpEnterRoom(code, created);
+}
+
+function th09LeaveNetworkRoom() {
+  mpResetRoomState();
+  state.product = state.game;
+  state.runtimeVariant = "normal";
+  const url = new URL(location.href);
+  url.searchParams.set("game", state.game);
+  url.searchParams.delete(mpRoomUrlKey);
+  history.replaceState(history.state, "", url);
+  th09CloseNetworkOverlay(true);
+  render();
+}
+
 async function mpLaunchRoomGame() {
-  if (mpLaunchInFlight || state.launched) return;
+  if (mpLaunchInFlight || (state.launched && !th09NetworkOverlayOpen())) return;
   mpLaunchInFlight = true;
   try {
+    const fromTh09Overlay = th09NetworkOverlayOpen();
+    if (fromTh09Overlay && mpUiState.seat != null && !await confirmInputWarnings()) return;
+    if (fromTh09Overlay) {
+      await send("sync", {}, 10000);
+      th09CloseNetworkOverlay(false);
+      resetRuntime();
+    }
     mpConfigureRuntimeSession();
-    if (mpUiState.seat != null && !await confirmInputWarnings()) return;
+    if (!fromTh09Overlay && mpUiState.seat != null && !await confirmInputWarnings()) return;
     openPlayerView();
     try { await enterPlayerFullscreen({ focusGame: false }); }
     catch (error) { showToast(t("fullscreen.autoBlocked", { reason: errorMessage(error) })); }
@@ -1485,7 +1555,7 @@ function saveGamePreferences() {
   });
 }
 const inputElementSelectors = [
-  "#fileInput", "#gameDataImportInput", "#mpJoinCode", "#mpDisplayName",
+  "#fileInput", "#gameDataImportInput", "#mpJoinCode", "#mpDisplayName", "#th09NetworkCode",
   "#touchLayoutScale", "#touchSensitivity",
 ] as const;
 const selectElementSelectors = [
@@ -1503,7 +1573,7 @@ const buttonElementSelectors = [
   "#siteNoticeToggle", "#runtimeDiagnosticsToggle", "#firstUseNoticeOpen", "#mpShareSettingsToggle", "#mpFrameLimitAppleNote",
   "#mpFrameLimitToggle", "#mpFocusHitboxToggle", "#mpLocalPlayerVisibilityToggle", "#mpMobileOptionsToggle",
   "#mpTouchToggle", "#mpTouchLayoutEdit", "#mpAlwaysHitboxToggle", "#mpMagnifierToggle",
-  "#mpReplayViewer", "#mpCreateRoom", "#mpJoinRoom", "#frameLimitAppleNote",
+  "#mpReplayViewer", "#mpCreateRoom", "#mpJoinRoom", "#th09NetworkClose", "#th09NetworkCreate", "#th09NetworkJoin", "#frameLimitAppleNote",
   "#mpGuideOpen", "#mpNetworkCheck",
   "#frameLimitToggle", "#focusHitboxToggle", "#thpracToggle", "#mobileOptionsToggle",
   "#touchToggle", "#touchLayoutEdit", "#alwaysHitboxToggle", "#magnifierToggle",
@@ -3194,6 +3264,11 @@ interface LauncherGameView {
       shot: number;
     }[];
     peerTransportGlobal: string;
+    // Optional Launcher capabilities that a title may withhold: the room
+    // spectator seat, and a game-title entry that opens the shared room dialog
+    // on top of the already running normal Runtime.
+    spectator?: boolean;
+    titleRoomEntry?: boolean;
   };
   storage: {
     saveRoot: string;
@@ -4452,6 +4527,9 @@ const hostedGameLegacyKeyCodes = new Set([8, 9, 13, 16, 17, 27, 36, 37, 38, 39, 
 function forwardHostedKeyboard(event: KeyboardEvent) {
   if (!state.launched || !player.classList.contains("open") || !frame.contentWindow) return;
   if (event.metaKey || event.altKey) return;
+  // While the Launcher's own chrome holds focus the keys belong to it: room
+  // codes, decision buttons and dialogs must never drive the running game.
+  if (event.target instanceof Element && event.target.closest("input, select, textarea, button, dialog, [role='dialog']")) return;
   const key = String(event.key || "").toLowerCase();
   const keyCode = Number.isInteger(event.keyCode) ? event.keyCode : 0;
   if (!hostedGameKeyCodes.has(event.code || "") && !hostedGameKeys.has(key) && !hostedGameLegacyKeyCodes.has(keyCode)) return;
@@ -4579,6 +4657,12 @@ async function closePlayerView(fromHistory = false, { skipSync = false, returnTo
   // fullscreen state) intact until persistence has either succeeded or the
   // user explicitly chooses to leave without it.
   if (!skipSync && !await confirmRuntimeSyncBeforeClose()) return false;
+  if (th09NetworkOverlayOpen()) {
+    mpResetRoomState();
+    th09CloseNetworkOverlay(false);
+    state.product = state.game;
+    state.runtimeVariant = "normal";
+  }
   if (isPlayerFullscreen()) await exitPlayerFullscreen().catch(() => {});
   cancelLauncherInteractionAnimations();
   $("#touchHelp").hidden = true;
@@ -4759,6 +4843,10 @@ window.addEventListener("message", event => {
   }
   if (message.event === "notice") {
     if (typeof message.message === "string" && message.message) showToast(message.message);
+    return;
+  }
+  if (message.event === "network-request") {
+    th09OpenNetworkOverlay();
     return;
   }
   if (message.event === "exit") {
@@ -5868,6 +5956,17 @@ $("#mpJoinRoom").addEventListener("click", () => {
   if (!code) { showToast(t("status.enterRoomCode")); return; }
   mpEnterRoom(code, false);
 });
+$("#th09NetworkClose").addEventListener("click", () => th09CloseNetworkOverlay(true));
+$("#th09NetworkCreate").addEventListener("click", () => th09EnterNetworkRoom(mpGenerateRoomCode(), true));
+$("#th09NetworkCode").addEventListener("input", () => {
+  const field = $("#th09NetworkCode");
+  field.value = mpNormalizeRoomCode(field.value);
+});
+$("#th09NetworkJoin").addEventListener("click", () => {
+  const code = mpNormalizeRoomCode($("#th09NetworkCode").value);
+  if (!code) { showToast(t("status.enterRoomCode")); return; }
+  th09EnterNetworkRoom(code, false);
+});
 $("#mpReplayViewer").addEventListener("click", async () => {
   if (mpLaunchInFlight) return;
   mpLaunchInFlight = true;
@@ -5962,6 +6061,7 @@ function closeRoomPanel() {
   const motion = roomPanel.animate([{ opacity: 1, transform: "translateY(0) scale(1)" }, { opacity: 0, transform: "translateY(14px) scale(.985)" }], { duration: 160, easing: "cubic-bezier(.4,0,1,1)" });
   void motion.finished.catch(() => {}).then(() => { roomPanelClosing = false; if (roomPanel.open) roomPanel.close(); });
 }
+
 roomPanel.addEventListener("cancel", event => { event.preventDefault(); closeRoomPanel(); });
 function openRoomPanel(kind: "personal" | "network" | "spectators" | "game", trigger: HTMLElement) {
   roomPanelTrigger = trigger;
@@ -6846,6 +6946,7 @@ function mpResetRoomState() {
 let mpRoomLeavePending = false;
 let mpRoomReturnTimer: number | null = null;
 function mpLeaveRoom(fromHistory = false) {
+  if (th09NetworkOverlayOpen()) { th09LeaveNetworkRoom(); return; }
   const leavingRoom = mpUiState.room;
   if (!leavingRoom || mpRoomLeavePending) return;
   const roomView = $("#mpRoomView");
@@ -7235,7 +7336,7 @@ function renderMpRoom() {
     spectatorList.append(empty);
   }
   const spectatorJoin = $("#mpSpectatorJoin");
-  spectatorJoin.hidden = mpUiState.seat != null;
+  spectatorJoin.hidden = mpUiState.seat != null || game().multiplayer?.spectator === false;
   spectatorJoin.disabled = !roomReady || mpUiState.seat != null;
   spectatorJoin.textContent = t(mpUiState.spectatorRequested ? "multiplayer.leaveSpectator" : "multiplayer.joinSpectator");
 
@@ -7267,7 +7368,7 @@ function renderMpRoom() {
   ready.setAttribute("aria-pressed", String(mpUiState.ready && mpUiState.seat != null));
   ready.textContent = t(mpUiState.ready && mpUiState.seat != null ? "multiplayer.readyDone" : "multiplayer.ready");
   const gameCheck = $("#mpCheckGame");
-  gameCheck.hidden = mpUiState.seat == null;
+  gameCheck.hidden = mpUiState.seat == null || th09NetworkOverlayOpen();
   gameCheck.disabled = mpUiState.seat == null || (!!room.phase && room.phase !== "lobby") ||
     mpUiState.ready || mpGameCheckInFlight || mpLaunchInFlight;
   gameCheck.textContent = t(mpGameCheckInFlight ? "multiplayer.checkingGame" : "multiplayer.checkGame");

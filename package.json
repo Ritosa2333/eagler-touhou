@@ -77,6 +77,8 @@
     "test:th07mp-launch:browser": "python tests/test-th07mp-launch.py",
     "test:th07mp-ui:browser": "python tests/test-th07mp-ui.py",
     "test:th07mp-webrtc:browser": "python tests/test-th07mp-webrtc.py",
+    "test:th09-mixed-entry:browser": "npm run build:launcher && python tests/test-th09-mixed-entry-launcher-browser.py",
+    "test:th09mp-launch:browser": "python tests/test-th09mp-launch.py --host-entry=title --touch-check && python tests/test-th09mp-launch.py --music=none",
     "test:origin-migration": "node tests/test-origin-migration.mjs",
     "test:origin-migration:browser": "python tests/test-origin-migration-browser.py",
     "test:music-selection:browser": "python tests/browser/test-music-selection.py",

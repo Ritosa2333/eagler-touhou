@@ -28,8 +28,11 @@ try {
     resolve(project, "scripts/subset-font.py"),
     resolve(project, "integrations/thcrap.mjs"),
     resolve(project, "server/thcrap-compiler.mjs"),
+    resolve(project, "server/thcrap-ascii-contract.mjs"),
+    resolve(project, "server/thcrap-string-contract.mjs"),
     resolve(project, "server/thcrap-static-pack.mjs"),
     resolve(project, "server/thtk-runner.mjs"),
+    resolve(project, "lib/content-definition.mjs"),
   ];
   const builders = [];
   for (const path of builderFiles) {

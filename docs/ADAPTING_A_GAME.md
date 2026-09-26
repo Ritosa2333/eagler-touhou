@@ -593,6 +593,20 @@ current TH06/TH07 assumptions that every title has A/B shots, the same character
 ordering, or the same difficulty list. Every loadout `labelKey` must exist in
 both Launcher UI locales; the repository i18n gate checks this.
 
+Two further room facts are declared per product, because shared Launcher
+orchestration must not branch on a title number:
+
+- `multiplayer.titleRoomEntry` — the ordinary Runtime's own game title exposes
+  the match entry that asks the Launcher to open the shared room dialog on top of
+  the running game (TH09's "妖怪対妖怪"). The dialog creates or joins the same
+  room the Launcher card uses, so both entry points stay one room and one lobby.
+- `multiplayer.spectator` — whether the room offers the spectator seat. TH09
+  currently declares `false`: its two-player ordered-lockstep transport has no
+  spectator stream, so the Runtime rejects a spectator session instead of
+  appearing to join one. This is a recorded coverage gap, not a general opt-out;
+  the profile-required spectator obligation applies again as soon as a title
+  declares the seat.
+
 Those three lists are the product authority. Do **not** add parallel
 `difficultyMax`, `characterMax` or `loadoutCount` declarations: difficulty and
 loadout bounds are derived from the declared tables, and valid character/shot

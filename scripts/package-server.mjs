@@ -610,6 +610,22 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
   }
   await writeFile(resolve(appRuntimeRoot, "runtime-files.json"), JSON.stringify({ schema: "eagler-touhou/runtime-directory/1", files: declared }, null, 2));
   entry.runtime = `runtime/${game}/${stem}.html?hosted=1&v=${await versionFiles(appRuntimeRoot, names)}`;
+  if (product.multiplayerRuntime) {
+    const multiplayerBuild = builds[`${game}Multiplayer`];
+    const multiplayerDeclared = runtimeRelease?.games[game]?.multiplayerRuntime?.files ||
+      JSON.parse(await readFile(resolve(multiplayerBuild, "runtime-files.json"), "utf8")).files;
+    const multiplayerNames = runtimeFileNames(game, multiplayerDeclared);
+    const multiplayerRoot = resolve(appRuntimeRoot, "multiplayer");
+    await assertAppManagedRuntimeShell(multiplayerBuild, game, "multiplayer", stem, multiplayerDeclared);
+    for (const name of multiplayerNames) {
+      const source = resolve(multiplayerBuild, name), identity = await fileIdentity(source), expected = multiplayerDeclared[name];
+      if (identity.bytes !== expected.bytes || identity.sha256 !== expected.sha256) throw new Error(`${game}: multiplayer Runtime identity mismatch: ${name}`);
+      await mkdir(dirname(resolve(multiplayerRoot, name)), { recursive: true });
+      await cp(source, resolve(multiplayerRoot, name));
+    }
+    await writeFile(resolve(multiplayerRoot, "runtime-files.json"), JSON.stringify({ schema: "eagler-touhou/runtime-directory/1", files: multiplayerDeclared }, null, 2));
+    entry.multiplayerRuntime = `runtime/${game}/multiplayer/${stem}.html?hosted=1&v=${await versionFiles(multiplayerRoot, multiplayerNames)}`;
+  }
   entry.features = publishedHostRuntimeFeatures(game, requestedFeatures, runtimeCapabilities);
   // External packaging inherits the hosted manifest's language catalogs; only
   // hosted/import assembly resets them before (re)publishing.

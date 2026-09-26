@@ -3,6 +3,7 @@ import { WebSocket, WebSocketServer } from 'ws';
 import { roomProbeEnvelope } from './room-probe-policy.mjs';
 
 import { multiplayerConfigForProduct } from '../lib/contracts/product-catalog.mjs';
+import { isSpectatorFrameForRoom } from './spectator-frame.mjs';
 
 function multiplayerPolicyForRoomId(roomId) {
   const separator = roomId.indexOf('-');
@@ -766,12 +767,7 @@ server.on('connection', (socket, request) => {
     if (incoming.length >= 2 && incoming[0] === 0xe8) {
       if (player !== 0 || (!run.spectatorAdmissionOpen && run.spectatorClients.size === 0)) return;
       const payload = Buffer.from(incoming.subarray(1));
-      const streamPlayers = payload[6];
-      if ((streamPlayers !== 2 && streamPlayers !== 3) ||
-          payload.length !== 24 + streamPlayers * 12 ||
-          payload[0] !== 0x45 || (payload[1] !== 0x36 && payload[1] !== 0x37) || payload[2] !== 0x4e ||
-          payload[3] !== 0x50 || payload[4] !== 4 || payload[5] !== 3 ||
-          payload[7] !== 0 || streamPlayers !== run.playerCount) return;
+      if (!isSpectatorFrameForRoom(roomId, payload, run.playerCount)) return;
       if (run.spectatorAdmissionOpen)
         run.spectatorHistory.push(payload);
       for (const [spectatorId, target] of run.spectatorClients)
