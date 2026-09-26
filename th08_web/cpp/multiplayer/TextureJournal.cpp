@@ -46,8 +46,16 @@ bool TextureJournal::Touch(u32 handle,bool pixels){
     if(pixels&&!saved.has_pixels){
         const auto size=saved.owner->image.pixels.size();
         if(size>32*1024*1024||f.bytes>32*1024*1024-size)return Fail();
-        graphics_device().read(handle);
-        saved.pixels=saved.owner->image;saved.has_pixels=true;f.bytes+=size;
+        // Preserve the backbuffer on the GPU. A synchronous full-screen
+        // readback here stalls every forward AND resimulated logical frame.
+        // Other textures can have CPU writers, so retain their byte snapshots.
+        if(handle==runtime->back){
+            saved.gpu_image=touhou::sdl::current()->save_color(handle);
+            if(!saved.gpu_image)return Fail();
+        }else{
+            graphics_device().read(handle);saved.pixels=saved.owner->image;
+        }
+        saved.has_pixels=true;f.bytes+=size;
     }
     return true;
 }
@@ -65,19 +73,25 @@ bool TextureJournal::UndoTo(u32 number){
             store.records[handle-1]=image.owner;auto& restored=*image.owner;
             restored.references=image.references;restored.revision=image.revision;
             restored.priority=image.priority;restored.render_target=image.target;
-            if(image.has_pixels)restored.image=image.pixels;
-            graphics_device().invalidate_texture(handle);
+            if(image.gpu_image){
+                if(!touhou::sdl::current()->restore_color(handle,image.gpu_image)){restoring=false;return Fail();}
+            }else{
+                if(image.has_pixels)restored.image=image.pixels;
+                graphics_device().invalidate_texture(handle);
+            }
         }
         store.live=f.live;runtime->surfaces=f.surfaces;
         runtime->pending_capture={f.capture_target,f.source,f.destination,f.triangle};
         runtime->captured=f.captured;runtime->capture_failed=f.capture_failed;
-        touhou::sdl::current()->state=f.graphics;frames.pop_back();
+        touhou::sdl::current()->state=f.graphics;ReleaseImages(f);frames.pop_back();
     }
     restoring=false;return true;
 }
-void TextureJournal::DiscardBefore(u32 frame){if(open==Invalid)while(!frames.empty()&&frames.front().number<frame)frames.pop_front();}
+void TextureJournal::ReleaseImages(Frame& frame){if(auto* renderer=touhou::sdl::current())for(auto& [handle,image]:frame.images)renderer->discard_color(image.gpu_image);}
+void TextureJournal::DiscardBefore(u32 frame){if(open==Invalid)while(!frames.empty()&&frames.front().number<frame){ReleaseImages(frames.front());frames.pop_front();}}
 void TextureJournal::Clear(){
     if(runtime&&runtime->app.textures.journal==this)runtime->app.textures.journal=nullptr;
+    for(auto& frame:frames)ReleaseImages(frame);
     frames.clear();runtime=nullptr;open=Invalid;failed=restoring=false;
 }
 std::size_t TextureJournal::BytesForFrame(u32 number)const{for(const auto& f:frames)if(f.number==number)return f.bytes;return 0;}

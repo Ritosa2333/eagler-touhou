@@ -30,6 +30,7 @@ private:
         std::shared_ptr<TextureRecord> owner;
         u32 references=0,revision=0,priority=0;
         bool target=false,has_pixels=false;
+        u32 gpu_image=0;
         TexturePixels pixels;
     };
     struct Frame {
@@ -44,5 +45,6 @@ private:
     std::deque<Frame> frames;
     u32 open=Invalid;bool failed=false,restoring=false;
     bool Fail(){failed=true;return false;}
+    void ReleaseImages(Frame&);
 };
 }}

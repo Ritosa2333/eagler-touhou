@@ -33,6 +33,30 @@ u32 mp_fixture_texture_restore(BrowserRuntime* r){
         !store.get(created)&&!r->has_surface(250)&&store.live_count()==live;
     journal.Clear();store.release(handle);return restored?1:0;
 }
+__attribute__((export_name("mp_fixture_gpu_history")))
+u32 mp_fixture_gpu_history(BrowserRuntime* r){
+    if(!r||r->app.session.netplay.Configured())return 0;
+    auto* renderer=touhou::sdl::current();if(!renderer)return 0;renderer->state.target=r->backbuffer();
+    r->app.renderer.flush();renderer->read(r->backbuffer());const auto original=r->app.textures.get(r->backbuffer())->image.pixels;
+    multiplayer::TextureJournal journal;if(!journal.Bind(*r))return 0;
+    for(u32 cycle=0;cycle<16;++cycle){
+        if(!journal.BeginFrame(0))return 0;
+        renderer->clear(1,0xff123456u+cycle*0x010101u,1,0);
+        r->app.renderer.flush();renderer->read(r->backbuffer());const auto first=r->app.textures.get(r->backbuffer())->image.pixels;
+        if(first==original||!journal.EndFrame()||!journal.BeginFrame(1))return 0;
+        renderer->clear(1,0xffabcdefu-cycle*0x010101u,1,0);
+        if(!journal.EndFrame()||!journal.UndoTo(1))return 0;
+        r->app.renderer.flush();renderer->read(r->backbuffer());if(r->app.textures.get(r->backbuffer())->image.pixels!=first)return 0;
+        if(!journal.UndoTo(0))return 0;
+        r->app.renderer.flush();renderer->read(r->backbuffer());if(r->app.textures.get(r->backbuffer())->image.pixels!=original)return 0;
+    }
+    // Confirmation retires images for reuse without restoring old pixels.
+    for(u32 frame=0;frame<24;++frame){
+        if(!journal.BeginFrame(frame)||!journal.EndFrame())return 0;
+        journal.DiscardBefore(frame+1);
+    }
+    journal.Clear();return 1;
+}
 __attribute__((export_name("mp_fixture_presentation_frame")))
 u32 mp_fixture_presentation_frame(BrowserRuntime* r,float alpha){
     return r&&alpha>=0&&alpha<=1&&r->app.draw(alpha,true,true,false)?1:0;

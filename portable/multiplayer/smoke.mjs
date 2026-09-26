@@ -74,6 +74,7 @@ window.multiplayerSmoke={
   driverStatus(){const p=core.multiplayer_driver_status(app);return Array.from(new Uint32Array(core.memory.buffer,p,16));},
   canonical(){const p=core.multiplayer_canonical_state(app);return Array.from(new Uint32Array(core.memory.buffer,p,13));},
   textureRestore(){return !!core.mp_fixture_texture_restore?.(app);},
+  gpuHistory(){return !!core.mp_fixture_gpu_history?.(app);},
   presented(alpha){if(!core.mp_fixture_presentation_frame?.(app,alpha))throw Error('Native presentation failed');return true;},
   audioServices(){return core.mp_fixture_audio_service_calls?.()??null;},
   async frameDigest(){

@@ -80,7 +80,7 @@ bool Renderer::initialize(){
  glGenVertexArrays(1,&resampleVao);glGenTextures(1,&weightTexture);
  warming=false;set_current(this);return true;
 }
-Renderer::~Renderer(){discard();for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);glDeleteProgram(imguiProgram);glDeleteVertexArrays(1,&imguiVao);glDeleteBuffers(1,&imguiVbo);glDeleteBuffers(1,&imguiEbo);glDeleteTextures(1,&imguiFontTexture);if(context)SDL_GL_DestroyContext(context);if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;SDL_Quit();}
+Renderer::~Renderer(){discard();for(auto& image:colorImages){glDeleteTextures(1,&image.texture);glDeleteFramebuffers(1,&image.framebuffer);}for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);glDeleteProgram(imguiProgram);glDeleteVertexArrays(1,&imguiVao);glDeleteBuffers(1,&imguiVbo);glDeleteBuffers(1,&imguiEbo);glDeleteTextures(1,&imguiFontTexture);if(context)SDL_GL_DestroyContext(context);if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;SDL_Quit();}
 void Renderer::bind_texture(GLuint id){if(boundTexture!=id){glBindTexture(GL_TEXTURE_2D,id);boundTexture=id;++stats.textureBinds;}}
 void Renderer::bind_framebuffer(GLenum target,GLuint id){
  const bool read=target!=GL_DRAW_FRAMEBUFFER,draw=target!=GL_READ_FRAMEBUFFER;
@@ -146,6 +146,36 @@ Renderer::GPU& Renderer::surface(u32 h){
 }
 Renderer::GPU& Renderer::target(u32 id,u32 depthId){auto& g=surface(id);GLuint buffer=0;bool stencil=false;if(depthId){auto& d=depths[depthId];if(!d.buffer){auto s=resolve(owner,depthId);d.stencil=s.format==PixelFormat::Depth24Stencil8;glGenRenderbuffers(1,&d.buffer);glBindRenderbuffer(GL_RENDERBUFFER,d.buffer);glRenderbufferStorage(GL_RENDERBUFFER,d.stencil?GL_DEPTH24_STENCIL8:s.format==PixelFormat::Depth16?GL_DEPTH_COMPONENT16:GL_DEPTH_COMPONENT24,s.width,s.height);}buffer=d.buffer;stencil=d.stencil;}bind_framebuffer(GL_FRAMEBUFFER,g.framebuffer);if(g.attached!=buffer){glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,buffer);glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_STENCIL_ATTACHMENT,GL_RENDERBUFFER,stencil?buffer:0);g.attached=buffer;}return g;}
 void Renderer::prepare(u32 h){surface(h);}
+u32 Renderer::save_color(u32 id){
+ flush();const auto s=resolve(owner,id);
+ // The rollback backbuffer is XRGB8. Limit admission to lossless RGBA8
+ // storage; other formats retain their existing CPU before-image path.
+ if(!s.width||!s.height||(s.format!=PixelFormat::Bgra8&&s.format!=PixelFormat::Bgrx8))return 0;
+ auto& source=surface(id);std::size_t slot=0;
+ while(slot<colorImages.size()&&colorImages[slot].used)++slot;
+ if(slot==colorImages.size())colorImages.emplace_back();auto& image=colorImages[slot];
+ if(!image.texture){glGenTextures(1,&image.texture);glGenFramebuffers(1,&image.framebuffer);}
+ if(image.width!=s.width||image.height!=s.height){
+  bind_texture(image.texture);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+  glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,s.width,s.height,0,GL_RGBA,GL_UNSIGNED_BYTE,nullptr);
+  bind_framebuffer(GL_FRAMEBUFFER,image.framebuffer);glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,image.texture,0);
+  image.width=s.width;image.height=s.height;
+ }
+ bind_framebuffer(GL_READ_FRAMEBUFFER,source.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,image.framebuffer);glDisable(GL_SCISSOR_TEST);
+ glBlitFramebuffer(0,0,s.width,s.height,0,0,s.width,s.height,GL_COLOR_BUFFER_BIT,GL_NEAREST);
+ image.used=true;return u32(slot+1);
+}
+bool Renderer::restore_color(u32 id,u32 token){
+ if(!token||token>colorImages.size())return false;const auto& image=colorImages[token-1];const auto s=resolve(owner,id);
+ if(!image.used||image.width!=s.width||image.height!=s.height)return false;
+ flush();auto& destination=surface(id);
+ bind_framebuffer(GL_READ_FRAMEBUFFER,image.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,destination.framebuffer);glDisable(GL_SCISSOR_TEST);
+ glBlitFramebuffer(0,0,s.width,s.height,0,0,s.width,s.height,GL_COLOR_BUFFER_BIT,GL_NEAREST);
+ // CPU pixels may be stale now. A later screenshot/capture must read this
+ // restored GPU image instead of uploading the abandoned prediction.
+ destination.version=s.version;destination.rendered=true;return true;
+}
+void Renderer::discard_color(u32 token){if(token&&token<=colorImages.size())colorImages[token-1].used=false;}
 void Renderer::draw(Topology primitive,u32 count,const void* data,u32 stride,const void* index,IndexType indexFormat){
  stats.calls++;state.stride=stride;
  if(index||primitive<Topology::Triangles||primitive>Topology::Fan){flush();issue(state,primitive,count,data,vertex_count(primitive,count)*stride,index,indexFormat,nullptr,0);return;}
