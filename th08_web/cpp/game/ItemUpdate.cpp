@@ -20,7 +20,11 @@ ItemUpdatePlayer* ItemUpdate::first_player()noexcept{
 void ItemUpdate::update(){
     u32 sound_owner=3;i32 sound=0;state.count=0;
     for(auto* p=state.head.next;p;p=p->next){++state.count;bool common_motion=true,can_collect=true;
-        const u32 owner=actions.owner_for(*p);ItemUpdatePlayer* selected=owner<players.size()?player(owner):nullptr;
+        u32 owner=actions.owner_for(*p);bool point_of_collection=false;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(p->state==0){const u32 claimed=actions.auto_collect_owner(*p);if(claimed<players.size()){owner=claimed;point_of_collection=true;}}
+#endif
+        ItemUpdatePlayer* selected=owner<players.size()?player(owner):nullptr;
         if(selected&&!selected->available)selected=nullptr;
         ItemUpdatePlayer* physics=selected?selected:first_player();
         if(!physics||!physics->context||!physics->human||!physics->focused){
@@ -49,7 +53,11 @@ void ItemUpdate::update(){
             p->velocity.y=(number(.05f)*number(timing.rate)+number(p->velocity.y)).to_float();move(*p,falling);
             if(p->velocity.y>0){p->state=1;if(context.player_state==2){p->state=0;p->velocity={0,-.7f,0};}}
             else{common_motion=false;can_collect=false;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        }else if(selected&&(p->state==1||point_of_collection)){
+#else
         }else if(selected&&(p->state==1||(context.player.y<human.item_collect_line&&(context.power>=128||context.focused||context.character==1||context.character==6)))){
+#endif
             if(context.player_state!=2&&context.player_state!=1){
                 const float angle=aim(context.player,p->position);p->velocity.x=(cosine(angle)*number(human.item_homing_speed)).to_float();p->velocity.y=(sine(angle)*number(human.item_homing_speed)).to_float();
                 p->state=1;move(*p,timing.rate);common_motion=false;

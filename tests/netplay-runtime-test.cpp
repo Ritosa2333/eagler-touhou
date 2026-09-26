@@ -12,9 +12,10 @@ using Netplay::SessionPhase;
 using Wire=NetplayRuntime::WireResult;
 
 static SessionSetup setup(unsigned count,unsigned local,std::uint64_t id=0x1020304055667788ull){
-    const std::uint32_t words[]{2,count,local,1,1234,std::uint32_t(id),std::uint32_t(id>>32),0,0,7,0,count==3?11u:0u,0};
+    const std::uint32_t words[]{3,count,local,1,1234,std::uint32_t(id),std::uint32_t(id>>32),
+        0x11223344u,0x55667788u,0x99aabbccu,0xddeeff00u,0,0,7,0,count==3?11u:0u,0};
     SessionSetup result;
-    assert(th08::multiplayer::decode_session_setup(result,words,13));return result;
+    assert(th08::multiplayer::decode_session_setup(result,words,17));return result;
 }
 static void barrier(NetplayRuntime* peers,unsigned count){
     for(unsigned seat=0;seat<count;++seat)assert(!peers[seat].CanStart());
@@ -33,11 +34,11 @@ static std::vector<std::uint8_t> wire(const Netplay::InputPacket& packet){
 static Wire apply_wire(NetplayRuntime& runtime,const std::vector<std::uint8_t>& bytes){return runtime.ApplyWire(bytes.data(),bytes.size());}
 static void decode_atomicity(){
     auto valid=setup(3,2),candidate=valid;
-    const std::uint32_t invalid[]{2,3,2,1,1234,5,6,0,0,7,1,11,0};
-    assert(!th08::multiplayer::decode_session_setup(candidate,invalid,13));
+    const std::uint32_t invalid[]{3,3,2,1,1234,5,6,1,2,3,4,0,0,7,1,11,0};
+    assert(!th08::multiplayer::decode_session_setup(candidate,invalid,17));
     assert(candidate.session_id==valid.session_id&&candidate.characters[1]==7);
     auto started=valid;started.started=true;
-    assert(!th08::multiplayer::decode_session_setup(started,invalid,13)&&started.started);
+    assert(!th08::multiplayer::decode_session_setup(started,invalid,17)&&started.started);
     const std::uint32_t local[]{1,2,0,1,1234,0,0,7,0,0,0};
     SessionSetup legacy;assert(th08::multiplayer::decode_session_setup(legacy,local,11)&&!legacy.session_id);
     NetplayRuntime runtime;assert(runtime.Reset(valid));
@@ -52,6 +53,16 @@ static void session_and_inputs(unsigned count){
     assert(peers[0].ApplySession(peers[1].SessionPacket(SessionPhase::Ready))==Netplay::SessionPacketResult::ReadyBeforeHello);
     auto wrong=peers[1].SessionPacket(SessionPhase::Hello);++wrong.seed;
     assert(peers[0].ApplySession(wrong)==Netplay::SessionPacketResult::ContractMismatch);
+    auto other_build=setup(count,1);++other_build.build[0];NetplayRuntime mismatched;
+    assert(mismatched.Reset(other_build));
+    assert(peers[0].ApplySession(mismatched.SessionPacket(SessionPhase::Hello))==Netplay::SessionPacketResult::ContractMismatch);
+    auto old=peers[1].SessionPacket(SessionPhase::Hello);
+    const auto previous=setup(count,1);std::uint32_t legacy=2166136261u;
+    const auto add=[&](std::uint32_t value){for(int i=0;i<4;++i){legacy^=(value>>(i*8))&255u;legacy*=16777619u;}};
+    add(0x08000005u);add(previous.player_count);add(previous.difficulty);add(previous.seed);
+    for(const auto character:previous.characters)add(character);
+    old.gameplayAbi=legacy;
+    assert(peers[0].ApplySession(old)==Netplay::SessionPacketResult::ContractMismatch);
     barrier(peers,count);
     assert(peers[0].CaptureLocal(0,FrameInput(1)));
     assert(!peers[0].Prepare(0).canAdvance); // no title journal => no prediction

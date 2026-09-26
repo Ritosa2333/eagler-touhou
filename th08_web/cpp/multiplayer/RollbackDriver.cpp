@@ -1,9 +1,23 @@
 #include "RollbackDriver.hpp"
+#include "ResourceTrace.hpp"
 #include "../platform/BrowserRuntime.hpp"
 #include "../platform/PlatformDevices.hpp"
 #include <algorithm>
 
 namespace th08::multiplayer {
+namespace {
+u8 route_state(const GameplaySession& session,const SessionSetup& setup){
+    if(session.multiplayer_route_state<=2)return session.multiplayer_route_state;
+    if(setup.characters[0]>=12)return 0;
+    const auto& record=session.clears[setup.characters[0]];
+    bool cleared_a=false,cleared_b=setup.characters[0]>3;
+    for(i32 difficulty=0;difficulty<4;++difficulty){
+        cleared_a|=bool(record.with_retries[difficulty]&64);
+        cleared_b|=bool(record.without_retries[difficulty]&128);
+    }
+    return cleared_b?2:cleared_a?1:0;
+}
+}
 RollbackDriver::RollbackDriver(BrowserRuntime& r):runtime(r),network(r.app.session.netplay){}
 const char* RollbackDriver::Error()const{return failed?error:network.Error();}
 bool RollbackDriver::Connect(const char* relay){return !failed&&network.Connect(relay);}
@@ -89,23 +103,37 @@ bool RollbackDriver::Admit(){
 }
 bool RollbackDriver::RunFrame(bool render){
     auto& a=runtime.app;auto& session=a.session;auto& net=session.netplay;
-    const auto frame=net.NextFrame();const auto decision=net.Prepare(frame);
+    const auto frame=net.NextFrame();auto decision=net.Prepare(frame);
     if(!decision.canAdvance){session.network_waiting=true;return true;}
+    if(frame==0){
+        u8 route=0;if(!DecodeRouteBootstrap(decision.inputs[0],route))return Fail("missing route bootstrap");
+        session.multiplayer_route_state=route;
+    }
     if(runtime.replay_archive.Recording()&&!runtime.replay_archive.BeginFrame(frame))return Fail("Replay frame stamp failed");
     if(bound&&(!world.BeginFrame(frame)||!textures.BeginFrame(frame)))return Fail("begin world frame failed");
     if(!audio.BeginFrame(frame)||!files.BeginFrame(frame))return Fail("begin output frame failed");
     open=true;session.network_frame=decision;session.network_frame_open=true;
+#if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
+    diagnostic::Begin(runtime,frame,decision.predictedMask,correcting);
+#endif
     if(a.in_game()){
-        if(!a.game.commit_frame_inputs(decision.inputs.data(),session.player_count))return Fail("committed input handoff failed");
+        auto gameplay=decision.inputs;if(frame==0)gameplay[0]=StripRouteBootstrap(gameplay[0]);
+        if(!a.game.commit_frame_inputs(gameplay.data(),session.player_count))return Fail("committed input handoff failed");
     }
     if(decision.predictedMask)++predicted;
     if(!a.update()||runtime.capture_failed)return Fail("native update failed");
+#if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
+    diagnostic::Event("frame.after_update");
+#endif
     if(generation_transition_pending&&a.supervisor.state.target==i32(th08::Scene::Game))generation_transition_pending=false;
     return !render||(a.draw()&&FinishFrame());
 }
 bool RollbackDriver::FinishFrame(){
     if(failed||!open)return false;
     auto& session=runtime.app.session;auto& net=session.netplay;const auto frame=net.NextFrame();
+#if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
+    diagnostic::End(runtime);
+#endif
     if((bound&&(!world.EndFrame()||!textures.EndFrame()))||!audio.EndFrame()||!files.EndFrame())return Fail("end frame ownership failed");
     if(!net.MarkSimulated(frame,session.network_frame))return Fail("simulated input mismatch");
     const auto stage=u32(runtime.app.game.globals.stage);
@@ -123,6 +151,9 @@ bool RollbackDriver::Correct(){
     if(!bound||!net.BeginCorrection(first)||!world.UndoTo(first)||!textures.UndoTo(first)||
        !audio.DiscardFrom(first)||!files.DiscardFrom(first))return Fail("rollback restore failed");
     runtime.correction_present_suppressed=true;correcting=true;++corrections;
+#if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
+    diagnostic::Restored(runtime,first);
+#endif
     while(net.NextFrame()<end&&world.CanAdvance()){
         const auto before=net.NextFrame();
         if(!RunFrame(true)||net.NextFrame()==before){correcting=false;runtime.correction_present_suppressed=false;return Fail("resimulation stalled");}
@@ -173,7 +204,9 @@ bool RollbackDriver::Step(bool render){
         }else{
         const auto touch=u16(file_device().supplemental_input());
         const auto physical=runtime.input.controller(InputController::keyboard(runtime.keys,false)|touch,runtime.pad,session.display_config);
-        if(!net.CaptureLocal(frame,runtime.device_sample(physical)))return Fail("local capture failed");
+        auto sample=runtime.device_sample(physical);
+        if(frame==0&&net.Setup().local_player==0)sample=RouteBootstrap(sample,route_state(session,net.Setup()));
+        if(!net.CaptureLocal(frame,sample))return Fail("local capture failed");
         }
     }
     if(!net.ReadOnly()&&!network.Captured(frame))return Fail("captured input send failed");
@@ -181,6 +214,9 @@ bool RollbackDriver::Step(bool render){
     return success&&(!session.network_waiting||PresentCorrection());
 }
 void RollbackDriver::Shutdown(){
+#if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
+    diagnostic::Disable(runtime);
+#endif
     if(!initialized&&!bound&&!network.Enabled())return;
     runtime.correction_present_suppressed=false;
     // Shutdown may arrive while the displayed state is still predicted. Never

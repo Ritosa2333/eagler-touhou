@@ -13,6 +13,7 @@ bool ResourcesJournal::Bind(AnmLibrary& value){
     }
     Netplay::RollbackJournalConfig config;config.maxFrames=History;
     config.maxBytesPerFrame=16*1024*1024;config.maxBlocksPerFrame=10000;
+    config.fastBulkCopy=true;config.coalesceRestore=true;
     if(!bytes.Reset(config))return false;
     library=&value;library->rollback_journal=&bytes;failed=false;return true;
 }

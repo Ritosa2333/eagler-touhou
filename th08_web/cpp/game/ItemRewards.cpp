@@ -6,6 +6,15 @@ i32 times(i32 a,i32 b){return signed_bits(u32(a)*u32(b));}
 i32 power_level(i32 power){static constexpr i32 thresholds[]{8,24,48,80,128,999};i32 level=0;while(level<5&&power>=thresholds[level])++level;return level;}
 }
 void ItemRewards::power(ItemState& item,bool big){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Retail turns field Power items into type 8 once its single player is at
+    // full Power. A shared multiplayer field cannot do that globally because
+    // another pilot may still need the same Power item. Preserve the retail
+    // reward locally instead: a full-Power collector receives the type-8
+    // small-point reward, while the field item remains usable as Power for a
+    // different non-full pilot until somebody actually collects it.
+    if(integer(resources.power)>=128){point(item,true);return;}
+#endif
     if(integer(resources.power)<128){
         const i32 level=power_level(integer(resources.power));if(!big)context.power_flag=0;
         if(!values.add_power(big?8:1)){failed=true;return;}

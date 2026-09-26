@@ -5,8 +5,9 @@
 using namespace th08::multiplayer;
 using Netplay::FrameInput;
 static ReplayDescription description(unsigned count,unsigned local){
-    ReplayDescription d;const std::uint32_t words[]{2,count,local,1,1234,71,0,0,0,1,0,count==3?2u:0u,0};
-    assert(decode_session_setup(d.setup,words,13));std::memcpy(d.name,"Test",4);return d;
+    ReplayDescription d;const std::uint32_t words[]{3,count,local,1,1234,71,0,
+        0x11223344u,0x55667788u,0x99aabbccu,0xddeeff00u,0,0,1,0,count==3?2u:0u,0};
+    assert(decode_session_setup(d.setup,words,17));std::memcpy(d.name,"Test",4);return d;
 }
 static void barrier(NetplayRuntime* peers,unsigned count){
     for(unsigned i=0;i<count;++i)for(unsigned j=0;j<count;++j)if(i!=j)

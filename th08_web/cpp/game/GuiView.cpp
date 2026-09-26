@@ -1,19 +1,19 @@
 #include "GuiController.hpp"
 #include "Presentation.hpp"
 #include "PresentationAudit.hpp"
+#include <algorithm>
 namespace th08 {
 namespace {
 float add(float a,float b){return Scalar::add(a,b);}
 Extended integer(i32 n){return Extended::from_int(n);}
 }
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-// TH07MP uses one compact row per pilot, leaving the lower panel for shared
-// graze/point counters. Keep the TH08 sprite artwork and its own time counter.
+// Native TH08 artwork with equal per-seat rows. Resource counts stay readable
+// at the authored 640x480 resolution; no separate card/panel UI is introduced.
 void GuiController::draw_multiplayer_hud(){
     auto& a=ascii.state;auto viewport=renderer.viewport;viewport.x=viewport.y=0;viewport.width=640;viewport.height=480;renderer.set_viewport(viewport);
-    const auto positioned=[&](AnmVm& vm,float x,float y,float z){
-        if(presentation::render_only){auto draw=vm;draw.pos={x,y,z};renderer.draw_no_rotation(draw);}
-        else{vm.pos={x,y,z};renderer.draw_no_rotation(vm);}
+    const auto positioned=[&](const AnmVm& vm,float x,float y,float z){
+        auto draw=vm;draw.pos={x,y,z};renderer.draw_no_rotation(draw);
     };
     // The rows are cleared on every draw so shrinking resources leave no
     // ghost icons. This is the same lifetime choice as TH07's compact HUD.
@@ -21,13 +21,19 @@ void GuiController::draw_multiplayer_hud(){
     for(i32 y=16;y<464;y+=32)for(i32 x=416;x<624;x+=32)positioned(tile,float(x),float(y),.49f);
     for(i32 y=0;y<464;y+=32)positioned(tile,0,float(y),.49f);
     for(i32 x=0;x<624;x+=128){positioned(display.front[14],float(x),0,.49f);positioned(display.front[14],float(x),464,.49f);}
-    for(i32 i=0;i<4;++i){if(i==1)draw_presented_2d(display.front[i]);else draw_presented_no_rotation(display.front[i]);}
-    draw_presented_no_rotation(display.difficulty);
+    for(i32 i=0;i<4;++i){
+        if(i==1){
+            auto logo=presentation_vm(display.front[i]);
+            if(pilot_count==3){logo.scale.x*=.65f;logo.scale.y*=.65f;logo.pos.y+=68.f;}
+            renderer.draw_2d(logo,true);
+        }else draw_presented_no_rotation(display.front[i]);
+    }
+    {auto difficulty=presentation_vm(display.difficulty);difficulty.pos={560,20,.47f};renderer.draw_no_rotation(difficulty);}
     const auto original_label=[&](u32 index,float x,float y){
-        auto vm=display.front[index];vm.scale={.68f,.68f};vm.pos={x,y,.47f};
+        auto vm=presentation_vm(display.front[index]);vm.scale={1,1};vm.pos={x,y,.47f};
         renderer.draw_no_rotation(vm);
     };
-    static constexpr const char* names[]{"Rm & Yk","Ms & Al","Sk & Rr","Ym & Yy","Reimu","Yukari","Marisa","Alice","Sakuya","Remilia","Youmu","Yuyuko"};
+    static constexpr const char* names[]{"Reimu/Yukari","Marisa/Alice","Sakuya/Remilia","Youmu/Yuyuko","Reimu","Yukari","Marisa","Alice","Sakuya","Remilia","Youmu","Yuyuko"};
     const Vec2 previous_scale{a.scale_x,a.scale_y};const u32 previous_color=a.color;const i32 previous_gui=a.gui,previous_selected=a.selected;
     a.gui=a.selected=0;a.color=0xffffffff;
     // Shared score retains the original TH08 digit size and positions.
@@ -36,35 +42,36 @@ void GuiController::draw_multiplayer_hud(){
     ascii.add_format({488,56,0},false,"%.9d",signed_bits(globals.display_score));
     ascii.add_format({605,40,0},false,"%1d",globals.high_score_retries>9?9:globals.high_score_retries);
     ascii.add_format({605,56,0},false,"%1d",globals.retries>9?9:globals.retries);
-    const bool compact=pilot_count==3;
     for(u32 seat=0;seat<pilot_count;++seat){
-        const float y=72.f+(compact?36.f:48.f)*float(seat);const auto& bank=pilot_resources[seat];
+        const float y=80.f+54.f*float(seat);const auto& bank=pilot_resources[seat];
         const u8 character=roster&&roster->seats[seat].player?roster->seats[seat].player->status().context.character:0;
-        a.scale_x=a.scale_y=.56f;a.color=seat==local_player?0xfffff0c0:0xffb0d8ff;
-        ascii.add_format({444,y,0},false,"P%u  %s",seat+1,names[character<12?character:0]);
-        if(roster&&!roster->eligible(seat)){
-            a.color=0xffffc080;ascii.add_string({488,y+17,0},"SPIRIT",false);continue;
-        }
-        a.color=0xffffffff;a.scale_x=a.scale_y=.5f;
-        original_label(4,444.f,y+12);
-        original_label(5,compact?540.f:444.f,compact?y+12:y+24);
-        original_label(6,444.f,compact?y+24:y+36);
-        const i32 lives=Scalar::truncate(bank.lives),bombs=Scalar::truncate(bank.bombs),power=Scalar::truncate(bank.power);
-        for(i32 i=0;i<lives&&i<(compact?4:8);++i)positioned(display.front[10],(compact?488.f:541.f)+float(i*13),y+12,.46f);
-        for(i32 i=0;i<bombs&&i<(compact?3:8);++i)positioned(display.front[11],(compact?580.f:488.f)+float(i*13),compact?y+12:y+24,.46f);
-        a.scale_x=a.scale_y=.5f;
-        if(compact&&lives>4)ascii.add_format({529,y+12,0},false,"+%d",lives-4);
-        if(compact&&bombs>3)ascii.add_format({609,y+12,0},false,"+%d",bombs-3);
-        ascii.add_format({488,compact?y+24:y+36,0},false,"%3d/128",power);
+        a.scale_x=a.scale_y=.9f;a.color=seat==local_player?0xfffff0c0:0xffc8dcff;
+        ascii.add_format({436,y,0},false,"P%u",seat+1);
+        a.scale_x=a.scale_y=.85f;
+        ascii.add_string({472,y,0},names[character<12?character:0],false);
+        original_label(4,436.f,y+17.f);original_label(5,540.f,y+17.f);
+        original_label(6,436.f,y+35.f);
+        a.color=0xffffffff;a.scale_x=a.scale_y=1.f;
+        const i32 lives=std::max(0,Scalar::truncate(bank.lives));
+        const i32 bombs=std::max(0,Scalar::truncate(bank.bombs));
+        const i32 power=Scalar::truncate(bank.power);
+        // A native icon plus an unabridged count fits all legal resources in
+        // both 2P and 3P. Cooperative/transient states are presented beside
+        // the player in the playfield, as in TH07MP, not inside this resource HUD.
+        positioned(display.front[10],480.f,y+17.f,.46f);
+        positioned(display.front[11],583.f,y+17.f,.46f);
+        ascii.add_format({499,y+17,0},false,"%d",lives);
+        ascii.add_format({602,y+17,0},false,"%d",bombs);
+        ascii.add_format({488,y+35,0},false,power>=128?"MAX":"%d",power);
     }
-    const float statistics_y=compact?184.f:76.f+48.f*float(pilot_count);
+    const float statistics_y=82.f+54.f*float(pilot_count);
     // Retain TH08's own number-strip artwork instead of covering the logo
     // with a new opaque panel.
     for(u32 i=0;i<3;++i)positioned(display.front[15],480.f,statistics_y+16.f*float(i),.48f);
-    a.color=0xffffffff;a.scale_x=a.scale_y=.7f;
-    original_label(7,444.f,statistics_y);
-    original_label(8,444.f,statistics_y+16.f);
-    original_label(9,444.f,statistics_y+32.f);
+    a.color=0xffffffff;a.scale_x=a.scale_y=.9f;
+    original_label(7,436.f,statistics_y);
+    original_label(8,436.f,statistics_y+16.f);
+    original_label(9,436.f,statistics_y+32.f);
     ascii.add_format({488,statistics_y,0},false,"%d",globals.graze);
     ascii.add_format({488,statistics_y+16.f,0},false,"%d/%d",globals.points,globals.next_point_extend);
     ascii.add_format({488,statistics_y+32.f,0},false,"%d/%d",globals.time_orbs,globals.last_spell_requirement);

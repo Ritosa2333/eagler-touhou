@@ -1,4 +1,5 @@
 #include "PlayerResources.hpp"
+#include "ResourceTrace.hpp"
 
 namespace th08 {
 
@@ -17,11 +18,19 @@ PlayerResourceView::PlayerResourceView(GameGlobals& shared, PilotResources& pilo
 
 void PlayerValues::set_lives(i32 value){resources.lives=Extended::from_int(value).to_float();}
 void PlayerValues::set_bombs(i32 value){resources.bombs=Extended::from_int(value).to_float();}
-void PlayerValues::set_power(i32 value){resources.power=Extended::from_int(value).to_float();}
+void PlayerValues::set_power(i32 value){
+#if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
+    multiplayer::diagnostic::Scope trace("power.set",multiplayer::diagnostic::Seat(&resources.pilot),value);
+#endif
+    resources.power=Extended::from_int(value).to_float();
+}
 void PlayerValues::set_deaths_stage(i32 value){resources.deaths_stage=Extended::from_int(value).to_float();}
 void PlayerValues::set_bombs_stage(i32 value){resources.bombs_used_stage=Extended::from_int(value).to_float();}
 
 bool PlayerValues::add_lives(i32 value){
+#if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
+    multiplayer::diagnostic::Scope trace("lives.add",multiplayer::diagnostic::Seat(&resources.pilot),value);
+#endif
     resources.lives=(number(resources.lives)+Extended::from_int(value)).to_float();
     return true;
 }
@@ -30,6 +39,9 @@ bool PlayerValues::add_bombs(i32 value){
     return true;
 }
 bool PlayerValues::add_power(i32 value){
+#if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
+    multiplayer::diagnostic::Scope trace("power.add",multiplayer::diagnostic::Seat(&resources.pilot),value);
+#endif
     resources.power=(number(resources.power)+Extended::from_int(value)).to_float();
     return true;
 }
@@ -45,6 +57,9 @@ bool PlayerValues::count_bombs(i32 value){
     return true;
 }
 void PlayerValues::add_time_orbs(i32 value){
+#if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
+    multiplayer::diagnostic::Scope trace("time.add",multiplayer::diagnostic::Seat(&resources.pilot),value);
+#endif
     if(value<0&&resources.time_orbs<wrapping_sub(0,value)){
         resources.time_orbs=0;
         return;

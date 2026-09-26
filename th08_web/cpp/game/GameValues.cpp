@@ -1,4 +1,5 @@
 #include "GameValues.hpp"
+#include "../multiplayer/ResourceTrace.hpp"
 namespace th08 {
 i32 GameValues::random_integer(){return i32(random.bounded32(100000)+6543);}
 float GameValues::random_float(){return (random.range(100000)+number(6543)).to_float();}
@@ -52,6 +53,9 @@ bool GameValues::add_power(i32 value){if(tampered())return false;globals.power=(
 bool GameValues::add_deaths(i32 value){if(tampered())return false;globals.deaths=(Extended::from_int(value)+number(globals.deaths)).to_float();globals.deaths_stage=(Extended::from_int(value)+number(globals.deaths_stage)).to_float();high_score.deaths=wrapping_add(high_score.deaths,1);update_integrity();return true;}
 bool GameValues::count_bombs(i32 value){if(tampered())return false;globals.bombs_used=(Extended::from_int(value)+number(globals.bombs_used)).to_float();globals.bombs_used_stage=(Extended::from_int(value)+number(globals.bombs_used_stage)).to_float();update_integrity();return true;}
 void GameValues::add_time_orbs(i32 value){
+#if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
+    multiplayer::diagnostic::Scope trace("time.shared_add",-1,value);
+#endif
     if(value<0&&globals.time_orbs<wrapping_sub(0,value)){globals.time_orbs=0;return;}
     globals.time_orbs=wrapping_add(globals.time_orbs,value);globals.total_time_orbs=wrapping_add(globals.total_time_orbs,value);high_score.time_orbs=wrapping_add(high_score.time_orbs,value);update_integrity();
     if(value>0){const i32 half=wrapping_add(value,globals.total_time_orbs&1)/2;globals.point_value=wrapping_add(globals.point_value,signed_bits(u32(half)*10));}

@@ -8,19 +8,48 @@ void GameplayStart::initialize_rank(){
 void GameplayStart::initialize_score(){
     auto& s=session;actions.save_score();std::memset(s.records,0,sizeof(s.records));
     for(u32 i=0;i<spell_count;i++){auto& r=s.records[i];r.header={fourcc('C','A','T','K'),sizeof(r),sizeof(r),3,0,0};r.number=u16(i);}
-    const auto bytes=actions.read_score();ScoreFile score;score.decode(bytes.data(),bytes.size());
-    s.numbers.high_score=score.high_score(game.shot,game.difficulty,s.numbers.high_score_retries);score.spells(s.records);score.clears(s.clears);score.practice(s.practices);
+    const bool multiplayer=
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        s.multiplayer_session.configured;
+#else
+        false;
+#endif
+    if(multiplayer){
+        s.numbers.high_score=100000;s.numbers.high_score_retries=0;
+        std::memset(s.clears,0,sizeof(s.clears));std::memset(s.practices,0,sizeof(s.practices));
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(game.shot>=0&&game.shot<12){
+            auto& route=s.clears[game.shot];
+            if(s.multiplayer_route_state==1)route.with_retries[0]|=64;
+            else if(s.multiplayer_route_state==2)route.without_retries[0]|=128;
+        }
+#endif
+    }else{
+        const auto bytes=actions.read_score();ScoreFile score;score.decode(bytes.data(),bytes.size());
+        s.numbers.high_score=score.high_score(game.shot,game.difficulty,s.numbers.high_score_retries);score.spells(s.records);score.clears(s.clears);score.practice(s.practices);
+    }
     if(game.game_flags&1){auto& p=s.practices[game.shot];s.numbers.high_score=u32(p.high_scores[game.stage][game.difficulty]);p.attempts[game.stage][game.difficulty]=wrapping_add(p.attempts[game.stage][game.difficulty],1);p.used=1;}
-    std::memcpy(s.previous_records,s.records,sizeof(s.records));s.history=HighScore{};s.history.character=u8(game.shot);s.history.difficulty=u8(game.difficulty);s.history.config=s.display_config;control.frames=0;
+    std::memcpy(s.previous_records,s.records,sizeof(s.records));s.history=HighScore{};s.history.character=u8(game.shot);s.history.difficulty=u8(game.difficulty);s.history.config=multiplayer?s.config:s.display_config;control.frames=0;
 }
 bool GameplayStart::before_player(bool initial){
     if(game.stage>=9||game.difficulty>=5||game.shot<0||game.shot>=12||((game.game_flags&0x4000)&&(game.current_spell<0||game.current_spell>=222)))return false;
-    auto& s=session;auto& n=s.numbers;control.load_frames=0;control.stage_mask=u16(1u<<game.stage);s.stage_copy=i32(game.stage);game.difficulty_mask=game.difficulty<4?1u<<game.difficulty:15;game.game_flags&=~1024u;
+    auto& s=session;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(s.multiplayer_session.configured&&s.multiplayer_route_state>2)return false;
+#endif
+    auto& n=s.numbers;control.load_frames=0;control.stage_mask=u16(1u<<game.stage);s.stage_copy=i32(game.stage);game.difficulty_mask=game.difficulty<4?1u<<game.difficulty:15;game.game_flags&=~1024u;
     fresh=initial||(game.game_flags&0x4001)||game.difficulty>=4;
     if(fresh){
         // The original allocates an unused random-sized decoy. Preserve its RNG
         // consumption without keeping an allocation that has no game behavior.
         s.random.bounded32(0xffff);s.config=GameConfiguration{};n=GameGlobals{};s.values.initialize_integrity();s.config=s.display_config;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        // A room admits difficulty/loadouts/seed, not each peer's single-player
+        // starting lives or bullet-load slowdown. Keep those local preferences
+        // in display_config/on disk, but never let them change the shared run.
+        // In particular slow_mode skips native updates once bullets accumulate.
+        if(s.multiplayer_session.configured){s.config.lives=2;s.config.slow_mode=0;}
+#endif
         n.gauge=0;n.clock_time=game.stage==8?6:0;if(game.difficulty>=4)s.config.lives=2;if(game.game_flags&1)s.config.lives=8;
     }else{n.display_score=n.score;n.score_increment=0;s.values.set_deaths_stage(0);s.values.set_bombs_stage(0);}
     return true;

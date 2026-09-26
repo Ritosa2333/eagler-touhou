@@ -19,7 +19,8 @@ std::int8_t recipient(const CooperativeState& state,const CooperativeFrameInput&
         const bool spirit=state.seats[seat].spirit;
         if(!spirit&&(!input.seats[seat].available||!input.seats[seat].can_receive||input.seats[seat].lives>=8))continue;
         if(best<0||(spirit&&!best_spirit)||
-           (spirit==best_spirit&&input.seats[seat].lives<input.seats[best].lives)){
+           (spirit==best_spirit&&input.seats[seat].lives<input.seats[best].lives)||
+           (spirit==best_spirit&&input.seats[seat].lives==input.seats[best].lives&&seat<std::uint8_t(best))){
             best=std::int8_t(seat);best_spirit=spirit;
         }
     }
@@ -31,7 +32,8 @@ std::int8_t power_recipient(const CooperativeState& state,const CooperativeFrame
         if(seat==giver||state.seats[seat].spirit||!input.seats[seat].available||
            !input.seats[seat].can_receive||input.seats[seat].power>=128||
            !nearby(input.seats[giver],input.seats[seat]))continue;
-        if(best<0||input.seats[seat].power<input.seats[best].power)best=std::int8_t(seat);
+        if(best<0||input.seats[seat].power<input.seats[best].power||
+           (input.seats[seat].power==input.seats[best].power&&seat<std::uint8_t(best)))best=std::int8_t(seat);
     }
     return best;
 }
@@ -44,7 +46,15 @@ void reset(CooperativeState& state,std::uint8_t count) noexcept {
     for(auto& seat:state.seats)seat.target=-1;
 }
 void begin_stage(CooperativeState& state) noexcept {
-    for(auto& seat:state.seats){clear_progress(seat);clear_power(seat);seat.waiting_for_focus_release=false;}
+    for(std::uint8_t index=0;index<state.count;++index){
+        auto& seat=state.seats[index];
+        clear_progress(seat);clear_power(seat);seat.waiting_for_focus_release=false;
+        // A completed stage is a clean cooperative boundary.  The next native
+        // Player graph is freshly initialized, so keeping the policy seat in
+        // Spirit would immediately disable that new Player again and contradict
+        // the shared multiplayer rule that ghosts return for the next stage.
+        seat.spirit=false;
+    }
     state.wipe_progress=0;state.retry_pending=false;
 }
 bool enter_spirit(CooperativeState& state,std::uint8_t seat,std::int8_t drift_x,std::int8_t drift_y) noexcept {

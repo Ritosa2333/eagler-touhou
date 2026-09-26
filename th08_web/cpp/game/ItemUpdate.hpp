@@ -24,6 +24,12 @@ struct ItemUpdateActions {
     // Select and retain the logical owner for this item. The implementation
     // owns the ItemState* -> seat index; ItemUpdate only consumes the result.
     virtual u32 owner_for(ItemState& item)=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Normal multiplayer Point-of-Collection admission. Returns a stable seat
+    // and fixes the item's owner when one or more pilots qualify; directed
+    // gifts remain owned by their promised recipient.
+    virtual u32 auto_collect_owner(ItemState& item)=0;
+#endif
     virtual bool touching(u32 seat,const Vec3& position,const Vec3& size)=0;
     // Collection may change power or item max_value; the shared context must
     // reflect value changes before the next item in the same update.

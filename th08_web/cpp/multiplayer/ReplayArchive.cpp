@@ -6,7 +6,7 @@
 namespace th08::multiplayer {
 namespace {
 constexpr u8 signature[]{'T','8','M','P','R','P','Y','1'};
-constexpr std::size_t DescriptionBytes=84;
+constexpr std::size_t DescriptionBytes=100;
 u32 word(const u8* p){return u32(p[0])|(u32(p[1])<<8)|(u32(p[2])<<16)|(u32(p[3])<<24);}
 void put(std::vector<u8>& out,u32 v){for(unsigned i=0;i<4;++i)out.push_back(u8(v>>(8*i)));}
 u32 checksum(const u8* p,std::size_t size){
@@ -20,23 +20,25 @@ bool valid_config(const GameConfiguration& c){
 }
 std::vector<u8> metadata(const ReplayDescription& d){
     std::vector<u8> out;out.reserve(DescriptionBytes);
-    put(out,1);put(out,d.setup.seed);put(out,d.setup.difficulty);
+    put(out,2);put(out,d.setup.seed);put(out,d.setup.difficulty);
     for(auto character:d.setup.characters)put(out,character);
+    for(auto build:d.setup.build)put(out,build);
     put(out,d.score);put(out,d.last_stage);
     out.insert(out.end(),d.name,d.name+8);out.insert(out.end(),d.date,d.date+6);out.push_back(0);out.push_back(0);
     for(auto score:d.stage_scores)put(out,score);return out;
 }
 bool decode_description(const Netplay::InputReplayInfo& info,ReplayDescription& d){
     const auto& c=info.config;const auto& v=c.description;
-    if(c.gameId!=8||v.size()!=DescriptionBytes||word(v.data())!=1||v[46]||v[47])return false;
-    const u32 fields[]{2,c.playerCount,c.recordedPlayer,word(v.data()+8),word(v.data()+4),1,0,
+    if(c.gameId!=8||v.size()!=DescriptionBytes||word(v.data())!=2||v[62]||v[63])return false;
+    const u32 fields[]{3,c.playerCount,c.recordedPlayer,word(v.data()+8),word(v.data()+4),1,0,
+        word(v.data()+24),word(v.data()+28),word(v.data()+32),word(v.data()+36),
         word(v.data()+12),0,word(v.data()+16),0,word(v.data()+20),0};
     ReplayDescription next;
-    if(!decode_session_setup(next.setup,fields,13)||c.gameplayAbi!=gameplay_contract(next.setup))return false;
-    next.score=word(v.data()+24);next.last_stage=word(v.data()+28);
+    if(!decode_session_setup(next.setup,fields,17)||c.gameplayAbi!=gameplay_contract(next.setup))return false;
+    next.score=word(v.data()+40);next.last_stage=word(v.data()+44);
     if(next.score>999999999||next.last_stage>8)return false;
-    std::memcpy(next.name,v.data()+32,8);std::memcpy(next.date,v.data()+40,6);
-    for(unsigned i=0;i<9;++i){next.stage_scores[i]=word(v.data()+48+4*i);if(next.stage_scores[i]>999999999)return false;}
+    std::memcpy(next.name,v.data()+48,8);std::memcpy(next.date,v.data()+56,6);
+    for(unsigned i=0;i<9;++i){next.stage_scores[i]=word(v.data()+64+4*i);if(next.stage_scores[i]>999999999)return false;}
     u32 previous_generation=0;
     for(u32 i=0;i<info.chapterCount;++i){const auto label=info.chapters[i].label,gen=label>>4;
         if(!(label&15)||(label&15)>9||(i==0&&gen)||gen<previous_generation||gen>previous_generation+1)return false;

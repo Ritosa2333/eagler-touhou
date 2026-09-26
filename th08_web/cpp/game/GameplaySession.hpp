@@ -29,6 +29,7 @@ struct GameplaySession {
                              {pilot_resources[2].gauge,pilot_resources[2].gauge_copy,guest_thresholds[1]}};
     u32 player_count=2,local_player=0;
     u8 player_characters[3]{};
+    u8 multiplayer_route_state=0xff;
 #endif
     GameRank rank;GaugeThresholds thresholds;i32 stall_frames=0,stage_copy=0;u16 replay_seed=0;
     GameValues values{numbers,config,display_config,history,random};

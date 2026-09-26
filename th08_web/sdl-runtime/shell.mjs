@@ -13,6 +13,70 @@ const epoch=Number(query.get('runtimeEpoch'));
 const validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
 let Module,core,app=0,launched=false,first=false,closing=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true;
+let runtimeBuildWords=null;
+let runtimeBuildIdentity='',runtimeWasmIdentity='';
+let traceRequested=false,traceStarted=false,traceHostButton=null;
+const traceGlobalFields=['time','totalTime','timeRequirement','pointValue','clock','score','points','graze','rngSeed','rngBackup','rngCalls','stage','gameFlags','spellFlags','pendingTime',
+ 'pauseState','scenePaused','retrying','enemyFrames','bulletActive','bulletTimer','bulletCancelFrames','bulletCounter',
+ 'effectCursor','effectActive','effectFrames','supervisorActive','supervisorTarget','playFrames','gameSupervisor'];
+const tracePilotFields=['power','lives','bombs','gauge','deaths','life','predead','lifeTimer','clearFrames','contextPower','contextTime','contextBombs','contextGauge','gameFlags','focus','bombActive','bombTimer','shootTimer','xBits','yBits','buttons','spirit','cancelItem','gaugeLock'];
+const traceItemFields=['slot','active','type','state','age','owner','recipient','xBits','yBits','vxBits','vyBits','targetXBits','targetYBits','next','previous','maxValue'];
+function traceRead(frame=0xffffffff,detail=false){
+ if(!app||!core?.multiplayer_resource_trace_read)return null;
+ const pointer=core.multiplayer_resource_trace_read(app,frame,detail?1:0),heap=new Uint8Array(core.memory.buffer);let end=pointer;
+ while(end<heap.length&&heap[end])++end;
+ return JSON.parse(new TextDecoder().decode(heap.subarray(pointer,end)));
+}
+function traceStart(){
+ if(!multiplayerRuntime||!app||!core?.multiplayer_resource_trace_enable)return false;
+ const frame=u32(core.multiplayer_netplay_status(app),12)[3];
+ if(!core.multiplayer_resource_trace_enable(app,frame))return false;
+ traceStarted=true;
+ if(traceHostButton){traceHostButton.disabled=false;traceHostButton.textContent='导出同步记录';}
+ return true;
+}
+function exportResourceTrace(download=true){
+ if(!traceStarted||!core.multiplayer_resource_trace_freeze(app))throw Error('同步记录尚未开始，请在进入游戏后导出');
+ const meta=traceRead(),records=[];
+ if(meta.oldestFrame!==0xffffffff&&meta.latestFrame!==0xffffffff){
+  if(meta.latestFrame-meta.oldestFrame>4096)throw Error('Invalid diagnostic frame window');
+  for(let frame=meta.oldestFrame;frame<=meta.latestFrame;frame++){
+   const sample=traceRead(frame,true);if(sample?.record)records.push(sample.record);
+  }
+ }
+ const {record:_record,...metadata}=traceRead(0xffffffff,true);
+ const report={schema:'th08mp/resource-trace/1',runtimeGeneration:runtimeBuildIdentity,wasmSha256:runtimeWasmIdentity,
+  capturedAt:new Date().toISOString(),userAgent:navigator.userAgent,metadata,
+  valueFields:[...traceGlobalFields,...Array.from({length:meta.playerCount},(_,seat)=>tracePilotFields.map(field=>`P${seat+1}.${field}`)).flat(),'itemCursor','itemCount','itemHead','itemTail'],
+  itemFields:traceItemFields,inputFields:['buttons','analogMode','xBits','yBits','unlimited','touchUsed','touchBomb'],
+  options:{touchMovementMode:options.touchMovementMode,alwaysHitbox:!!options.alwaysHitbox,multiplayerLocalPlayerVisibility:!!options.multiplayerLocalPlayerVisibility},records};
+ // Export reads a frozen observer, not a paused or modified simulation. No
+ // Relay URL, TURN credential, save file or private configuration is included.
+ if(download){const url=URL.createObjectURL(new Blob([JSON.stringify(report)],{type:'application/json'}));const owner=traceHostButton?.ownerDocument||document;const a=owner.createElement('a');
+  a.href=url;a.download=`th08mp-P${meta.localPlayer+1}-${meta.sessionId}-${meta.latestFrame}.json`;owner.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
+ if(traceHostButton){traceHostButton.textContent='同步记录已导出';traceHostButton.disabled=true;}
+ return report;
+}
+function removeResourceTraceHostButton(){
+ if(traceHostButton){traceHostButton.remove();traceHostButton=null;}
+}
+function installResourceTrace(){
+ if(!multiplayerRuntime||!core.multiplayer_resource_trace_enable)return;
+ traceRequested=query.get('th08Trace')==='1';
+ try{traceRequested||=new URL(parent.location.href).searchParams.get('th08Trace')==='1';}catch{}
+ if(!traceRequested)return;
+ try{
+  const host=parent.document.querySelector('#player');if(!host)return;
+  parent.document.getElementById('th08ResourceTraceExport')?.remove();
+  const button=parent.document.createElement('button');button.id='th08ResourceTraceExport';button.type='button';button.textContent='同步记录：待开局';button.disabled=true;
+  button.setAttribute('aria-label','导出 TH08 联机同步记录');
+  button.style.cssText='position:absolute;z-index:70;top:calc(max(10px,env(safe-area-inset-top)) + 50px);right:max(10px,env(safe-area-inset-right));min-width:104px;height:42px;padding:0 10px;border:0;border-radius:10px;background:rgba(91,27,37,.96);color:#ffe9eb;box-shadow:0 4px 14px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,126,137,.14);font:700 10px/1 sans-serif;letter-spacing:.03em;pointer-events:auto;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent';
+  for(const name of ['pointerdown','pointermove','pointerup','pointercancel','touchstart','touchmove','touchend','touchcancel','mousedown','mouseup'])
+   button.addEventListener(name,event=>event.stopPropagation(),{passive:true});
+  button.addEventListener('click',event=>{event.stopPropagation();try{exportResourceTrace(true);}catch(reason){button.disabled=false;button.textContent=String(reason?.message||reason);}});
+  host.append(button);traceHostButton=button;
+ }catch{}
+}
 let practice;
 let frames=0,lastHealth=0,lastFrame=0,maxGap=0,lastPresented=0,saveTimer=null;
 const cancelTouches=bindOutsideTouches(document,canvas,()=>core,()=>launched&&options.touchEnabled);
@@ -65,7 +129,7 @@ async function installRuntimePack(pack){
   Module.FS.writeFile(file.path,file.bytes,{canOwn:true});runtimePackFiles.push(file.path);
  }
 }
-function applyOptions(){applyTouchOptions(core,options.netplaySpectator?{...options,touchEnabled:false}:options);core.sdl_touch_display?.(options.alwaysHitbox?1:0);practice?.configure({...options,thpracEnabled:options.thpracEnabled&&options.netplayMode!=='lan'});}
+function applyOptions(){applyTouchOptions(core,options.netplaySpectator?{...options,touchEnabled:false}:options);core.sdl_touch_display?.(options.alwaysHitbox?1:0);if(app&&multiplayerRuntime)core.multiplayer_local_player_visibility?.(app,options.multiplayerLocalPlayerVisibility&&!options.netplaySpectator&&!options.replayViewer?1:0);practice?.configure({...options,thpracEnabled:options.thpracEnabled&&options.netplayMode!=='lan'});}
 function status(){return Array.from(new Int32Array(core.memory.buffer,core.sdl_game_status(),10));}
 function save(){if(app)core.save(app);return sync(false);}
 // Backgrounding only persists the runtime filesystem. core.save() runs the
@@ -78,7 +142,7 @@ async function resumeForegroundAudio(forcePause=false){
  if(forcePause)core.sdl_loop_pause(1);
  return resumeRuntimeAudio(Module,core,()=>!!core&&launched&&!document.hidden);
 }
-async function stop(){if(closing)return;closing=true;try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();window.dispatchEvent(new CustomEvent('touhou-midi-close'));await sync(false);app=0;launched=false;emit('exit',{code:0,status:'success'});}finally{closing=false;}}
+async function stop(){if(closing)return;closing=true;try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();window.dispatchEvent(new CustomEvent('touhou-midi-close'));await sync(false);app=0;launched=false;emit('exit',{code:0,status:'success'});}finally{removeResourceTraceHostButton();closing=false;}}
 async function launch(){
  if(launched)return;
  ensureSharedFontAlias(Module);
@@ -89,6 +153,7 @@ async function launch(){
   try{Module.FS.stat('/unifont.otf');try{Module.FS.unlink('/fonts/unifont.otf');}catch{}Module.FS.symlink('/unifont.otf','/fonts/unifont.otf');}
   catch{console.warn('th08: /unifont.otf unavailable; CJK glyph fallback disabled');}
  }
+ traceStarted=false;
  const mode=Module.touhouMusicMode||'none';music=mode!=='none';core.sdl_ogg_decode_mode?.(options.oggDecodeMode==='full');core.sdl_music_source?.(mode==='midi'?2:1);
  const multiplayer=multiplayerRuntime?validateMultiplayerOptions(options):null;
  const replayViewer=multiplayerRuntime&&options.replayViewer===true;
@@ -104,9 +169,9 @@ async function launch(){
  if(replayViewer&&!core.multiplayer_replay_viewer(app))throw Error('TH08 native Replay viewer rejected');
  // Spectator protection precedes native initialize(), which itself writes the
  // config/score namespace. Waiting until the first gameplay frame is too late.
- if(multiplayer?.spectator)await configureMultiplayer(core,app,options);
+ if(multiplayer?.spectator)await configureMultiplayer(core,app,options,{runtimeBuildWords});
  if(!core.sdl_game_initialize())throw Error('永夜抄初始化失败');document.querySelector('#loading').textContent='';
- if(multiplayer&&!multiplayer.spectator)await configureMultiplayer(core,app,options);
+ if(multiplayer&&!multiplayer.spectator)await configureMultiplayer(core,app,options,{runtimeBuildWords});
  }catch(reason){core.sdl_game_close();app=0;throw reason;}
  if(multiplayer){window.__eaglerNetplayFailed=false;window.__eaglerNetplayError='';updateNetworkDiagnostics(core,app);}
  applyOptions();launched=true;first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
@@ -175,7 +240,7 @@ window.addEventListener('message',event=>{const m=event.data;if(!validEpoch||eve
 });
 document.addEventListener('visibilitychange',()=>{if(!core||!launched)return;core.sdl_keys_clear();cancelTouches();if(document.hidden){suspendRuntimeAudio(Module,core);queue=queue.then(persist).catch(error);}else void resumeForegroundAudio(true);});
 window.addEventListener('blur',()=>{if(core){practice?.clear();core.sdl_keys_clear();cancelTouches();}});
-window.addEventListener('pagehide',()=>{cancelTouches();if(core&&launched){suspendRuntimeAudio(Module,core);void persist().catch(console.error);}});
+window.addEventListener('pagehide',()=>{cancelTouches();removeResourceTraceHostButton();if(core&&launched){suspendRuntimeAudio(Module,core);void persist().catch(console.error);}});
 window.addEventListener('pageshow',()=>{if(core&&launched&&!document.hidden)void resumeForegroundAudio(true);});
 canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();core?.sdl_loop_pause(1);error('图形环境已失效，请退出后重新开始。');});
 for(const name of ['pointerdown','keydown'])window.addEventListener(name,()=>{if(Module?.SDL3?.audioContext?.state!=='running')void resumeForegroundAudio(true);},{capture:true});
@@ -184,6 +249,15 @@ for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
 },{capture:true});
 const initialized=(async()=>{
  if(!Number.isSafeInteger(epoch)||epoch<=0)throw Error('Invalid runtimeEpoch navigation binding');
+ if(multiplayerRuntime){
+  const manifest=await fetch('./manifest.json').then(response=>{if(!response.ok)throw Error('Missing TH08 Runtime manifest');return response.json();});
+  const directory=new URL('.',location.href).pathname.split('/').filter(Boolean).at(-1)||'';
+  const sha=/^[a-f0-9]{64}$/i.test(directory)?directory:manifest?.execution?.sha256;
+  runtimeBuildIdentity=sha;runtimeWasmIdentity=manifest?.execution?.sha256||'';
+  if(typeof sha!=='string'||!/^[a-f0-9]{64}$/i.test(sha))throw Error('Invalid TH08 Runtime build identity');
+  runtimeBuildWords=Array.from({length:4},(_,i)=>Number.parseInt(sha.slice(i*8,i*8+8),16)>>>0);
+  if(!runtimeBuildWords.some(Boolean))throw Error('Empty TH08 Runtime build identity');
+ }
  let audioContext;try{audioContext=parent.__touhouAudioContext||parent.__th10AudioContext;}catch{}
  Module=await createModule({canvas,noInitialRun:true,...(audioContext?{SDL3:{audioContext}}:{}),print:console.log,printErr:console.error,
   instantiateWasm(imports,ready){return WebAssembly.instantiateStreaming(fetch('./th08-sdl.wasm'),imports).then(({instance,module})=>{core=instance.exports;ready(instance,module);return core;});}
@@ -195,6 +269,7 @@ const initialized=(async()=>{
  Module.runtimePrepare=()=>!document.hidden;
  Module.runtimeFinish=(result,duration)=>{
   if(replayReopening)return;
+  if(traceRequested&&!traceStarted&&app)traceStart();
   if(multiplayerRuntime&&app&&options.replayViewer&&core.multiplayer_replay_status){
    const state=replayWords(),pointer=core.multiplayer_replay_request(app);
    const memory=new Uint8Array(core.memory.buffer);let end=pointer;while(pointer&&end<memory.length&&memory[end]&&end-pointer<512)++end;
@@ -215,6 +290,7 @@ const initialized=(async()=>{
  };
  Module.runtimeFileChanged=()=>{if(saveTimer!==null)return;saveTimer=setTimeout(()=>{saveTimer=null;queue=queue.then(()=>sync(false)).catch(error);},0);};
  Module.runtimeStopped=()=>{};Module.runtimeNotice=message=>emit('notice',{message});Module.runtimeMidi=(op,data)=>{if(op===62&&music&&Module.touhouMusicMode==='midi')window.dispatchEvent(new CustomEvent('touhou-midi',{detail:{bytes:Array.from(data||[])}}));if(op===61)window.dispatchEvent(new CustomEvent('touhou-midi-close'));};Module.callMain=launch;
- window.__th08Runtime={core,Module,get app(){return app;},status,launch,stop,command};
+ window.__th08Runtime={core,Module,get app(){return app;},status,launch,stop,command,resourceTrace:{start:traceStart,read:traceRead,export:exportResourceTrace}};
+ installResourceTrace();
  emit('ready');
 })().catch(e=>{if(isSupersededRuntimeError(e)){console.debug('Runtime navigation superseded');return false;}error(e);throw e;});

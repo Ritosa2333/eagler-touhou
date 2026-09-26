@@ -29,6 +29,9 @@ public:
     bool CanAdvance()const;
 #ifdef TH_MULTIPLAYER_FIXTURES
     bool DiagnosticInputSampler();
+    std::array<std::size_t,5> DiagnosticBytesForFrame(u32 frame)const;
+    std::size_t DiagnosticBlockCount()const{return blocks.size();}
+    std::size_t DiagnosticBlockBytes(u32 index)const{return index<blocks.size()?blocks[index].bytes:0;}
 #endif
     bool Failed()const{return failed||main.Failed()||enemies.Failed()||pools.Failed()||resources.Failed();}
     bool HasHistory()const{return !records.empty();}

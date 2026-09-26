@@ -21,6 +21,15 @@ inline const u32* world_journal_probe(BrowserRuntime& runtime,u32 mode=0){
     auto& app=runtime.app;auto& game=app.game;
     if(!app.in_game()||app.invalid()||app.session.netplay.Configured()||mode>3)return fail(1);
     if(!journal.Bind(runtime))return fail(2);
+    {
+        std::vector<u32> order(journal.DiagnosticBlockCount());
+        for(u32 i=0;i<order.size();++i)order[i]=i;
+        std::sort(order.begin(),order.end(),[&](u32 a,u32 b){return journal.DiagnosticBlockBytes(a)>journal.DiagnosticBlockBytes(b);});
+        for(u32 rank=0;rank<std::min<u32>(12,order.size());++rank){
+            const u32 i=order[rank];
+            std::printf("world-journal block %u: %zu bytes %s\n",rank,journal.DiagnosticBlockBytes(i),journal.BlockName(i));
+        }
+    }
     const auto before=journal.AuditHash();const auto blocks_before=journal.BlockHashes();
     std::array<std::array<u32,WorldJournal::GroupCount>,6> expected{};
     std::array<std::vector<u32>,6> expectedBlocks;
@@ -49,6 +58,8 @@ inline const u32* world_journal_probe(BrowserRuntime& runtime,u32 mode=0){
         if(!execute(frame))return fail(20+frame);
         if(!journal.EndFrame())return fail(30+frame);
         expected[frame]=journal.AuditHash();result[3]=std::max(result[3],u32(journal.BytesForFrame(frame)));
+        const auto bytes=journal.DiagnosticBytesForFrame(frame);
+        for(u32 i=0;i<bytes.size();++i)result[54+i]=std::max(result[54+i],u32(bytes[i]));
         expectedBlocks[frame]=journal.BlockHashes();
     }
     if(!journal.UndoTo(0))return fail(40);

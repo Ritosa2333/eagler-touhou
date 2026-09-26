@@ -39,6 +39,12 @@ i32 BulletCreation::create(const BulletEmission& e,i32 index,i32 layer,float aim
     b.speed=values.speed;b.angle=add_angle(values.angle,0);b.position=e.position;b.position.z=.1f;
     direction(b.velocity,values.angle,Scalar::mul(values.speed,timing.rate));
     b.extra_flags=e.flags;b.sprite_offset=e.color;b.barrier_cooldown=0;b.unknown_dbe=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Multiplayer reuses this original padding byte to remember the item
+    // reward selected by the exact seat whose cancellation barrier hit this
+    // bullet. Zero encodes cancel_item == -1 (clear without a drop).
+    b.padding_dbf=0;
+#endif
     b.sprites.animation[0]=type.animation[0];b.sprites.animation[4]=type.animation[4];
     b.sprites.hitbox=type.hitbox;b.sprites.reserved_d40=type.reserved_d40;b.sprites.height=type.height;b.sprites.layer=type.layer;
     b.transform_sound=e.transform_sound;b.despawn_protection=0;

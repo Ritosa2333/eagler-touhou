@@ -119,6 +119,7 @@ public:
     };
     std::unique_ptr<GuestPilot> guest_pilots[2];
     PlayerRoster roster;
+    bool enhance_local_player_visibility=false; // non-authoritative viewer option
     multiplayer::CooperativeState cooperation;
     u16 committed_buttons[3]{},previous_buttons[3]{};
     void enter_spirit(u32 seat);

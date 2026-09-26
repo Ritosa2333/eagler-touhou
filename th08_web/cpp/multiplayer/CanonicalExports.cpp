@@ -6,7 +6,14 @@ namespace th08::multiplayer {
 namespace {
 struct Hash {
     u32 value=2166136261u;
-    void bytes(const void* p,std::size_t n){auto* b=static_cast<const u8*>(p);for(std::size_t i=0;i<n;++i){value^=b[i];value*=16777619u;}}
+#ifdef TH_MULTIPLAYER_FIXTURES
+    std::vector<u8>* trace=nullptr;
+#endif
+    void bytes(const void* p,std::size_t n){auto* b=static_cast<const u8*>(p);
+#ifdef TH_MULTIPLAYER_FIXTURES
+        if(trace)trace->insert(trace->end(),b,b+n);
+#endif
+        for(std::size_t i=0;i<n;++i){value^=b[i];value*=16777619u;}}
     template<class T>void add(const T& v){static_assert(std::is_trivially_copyable_v<T>);bytes(&v,sizeof(v));}
 };
 // Diagnostic pointer tokens only. These copies are never executed or restored.
@@ -66,7 +73,27 @@ struct StateHash {
         for(auto& frame:c.call_frames)frame.native_instruction=instruction(frame.native_instruction);
     }
     void ecl(const EclVm& source,Hash& h){
-        EclVm e=source;context(e.main_context);e.program=nullptr;e.random=nullptr;e.environment=nullptr;e.active_context=nullptr;
+        EclVm e=source;
+        // EclVm has non-trivial asynchronous owners. Its C++ copy constructor
+        // does not copy padding (notably the byte after `invalid`), so hashing
+        // that copy can hash stack residue left by an extra presentation.
+        // Preserve the native representation of the two trivially-owned
+        // ranges, without byte-copying the shared_ptr ownership words. Only
+        // pointer tokens below differ from the observed world.
+        constexpr auto prefix=offsetof(EclVm,asynchronous);
+        constexpr auto tail=offsetof(EclVm,asynchronous_generations);
+        std::memcpy(&e,&source,prefix);
+        std::memcpy(reinterpret_cast<u8*>(&e)+tail,reinterpret_cast<const u8*>(&source)+tail,sizeof(e)-tail);
+        // Allocation/reuse also leaves padding in the source indeterminate.
+        // Clear only layout gaps, never an ECL variable or animation field.
+        const auto gap=[&](std::size_t first,std::size_t last){std::memset(reinterpret_cast<u8*>(&e)+first,0,last-first);};
+        gap(offsetof(EclVm,failure)+sizeof(e.failure),offsetof(EclVm,program));
+        gap(offsetof(EclVm,pose_direction)+sizeof(e.pose_direction),offsetof(EclVm,emitter));
+        gap(offsetof(EclVm,difficulty_flags)+sizeof(e.difficulty_flags),offsetof(EclVm,angular_velocity));
+        gap(offsetof(EclVm,invalid)+sizeof(e.invalid),offsetof(EclVm,damage_protection));
+        gap(offsetof(EclVm,death_effects)+sizeof(e.death_effects),offsetof(EclVm,previous_familiar));
+        gap(offsetof(EclVm,hit_flash)+sizeof(e.hit_flash),offsetof(EclVm,trail));
+        context(e.main_context);e.program=nullptr;e.random=nullptr;e.environment=nullptr;e.active_context=nullptr;
         e.parent=token<EclVm>(enemy(e.parent));e.next_familiar=token<EclVm>(enemy(e.next_familiar));
         e.previous_familiar=token<EclVm>(enemy(e.previous_familiar));e.next_in_layer=token<EclVm>(enemy(e.next_in_layer));
         for(auto& v:e.animation)anm(v);
@@ -76,7 +103,6 @@ struct StateHash {
         for(auto& v:e.effects)v=token<EffectState>(effect(v));
         e.familiar_effect=token<AnmVm>(effect(e.familiar_effect));
         h.bytes(&e,offsetof(EclVm,asynchronous));
-        const auto tail=offsetof(EclVm,asynchronous_generations);
         h.bytes(reinterpret_cast<const u8*>(&e)+tail,sizeof(e)-tail);
         for(const auto& p:source.asynchronous){const bool present=bool(p);h.add(present);if(p){auto c=*p;context(c);h.add(c);}}
     }
@@ -97,6 +123,29 @@ void cooperation(Hash& h,const CooperativeState& c){
 }
 }
 namespace th08 {
+#ifdef TH_MULTIPLAYER_FIXTURES
+extern "C" __attribute__((export_name("mp_fixture_enemy_canonical")))
+const u32* mp_fixture_enemy_canonical(BrowserRuntime* runtime,u32 index){
+    using namespace multiplayer;
+    static std::vector<u32> out;out.assign(16,0);
+    if(!runtime||!runtime->app.in_game()||index>481)return out.data();
+    auto& g=runtime->app.game;StateHash world{g};Hash h;std::vector<u8> bytes;h.trace=&bytes;
+    if(index==481){
+        auto manager=g.enemies.state;
+        for(auto& layer:manager.layers)layer=token<EclVm>(world.enemy(layer));
+        for(auto& timeline:manager.timelines){timeline.program=nullptr;timeline.instruction=token<EclTimelineInstruction>(offset(timeline.instruction,g.program.data(),g.program.size()));}
+        h.add(manager);
+    }else{
+        const auto* enemy=g.enemies.population.at(index);if(!enemy)return out.data();
+        world.ecl(*enemy,h);
+    }
+    out[0]=1;out[1]=bytes.size();out[2]=h.value;out[3]=offsetof(EclVm,asynchronous);
+    out[4]=offsetof(EclVm,asynchronous_generations);out[5]=sizeof(EclVm);
+    out[6]=offsetof(EclVm,animation);out[7]=sizeof(AnmVm);out[8]=offsetof(EclVm,resolved_position);
+    out[9]=offsetof(EclVm,position);out[10]=offsetof(EclVm,trail);
+    out.resize(16+(bytes.size()+3)/4);std::memcpy(out.data()+16,bytes.data(),bytes.size());return out.data();
+}
+#endif
 extern "C" __attribute__((export_name("multiplayer_canonical_state")))
 const u32* multiplayer_canonical_state(BrowserRuntime* runtime){
     using namespace multiplayer;
@@ -106,7 +155,7 @@ const u32* multiplayer_canonical_state(BrowserRuntime* runtime){
     auto economy=a.session.numbers;economy.high_score=0;economy.high_score_retries=0;
     h[0].add(economy);
     for(const auto& p:a.session.pilot_resources)pilot_resources(h[0],p);
-    h[0].add(a.session.rank);cooperation(h[0],g.cooperation);
+    h[0].add(a.session.rank);cooperation(h[0],g.cooperation);h[0].add(a.session.multiplayer_route_state);
     h[0].add(g.committed_buttons);h[0].add(g.previous_buttons);
     h[0].add(a.session.multiplayer_cheat_movement_used);
     for(u32 seat=0;seat<a.session.player_count;++seat)world.player(g.pilot(seat).status(),h[1]);

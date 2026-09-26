@@ -28,14 +28,17 @@ function string(core,text,fn){
  try{new Uint8Array(core.memory.buffer,pointer,bytes.length).set(bytes);return fn(pointer);}
  finally{core.deallocate(pointer);}
 }
-export async function configureMultiplayer(core,app,options,{crypto=globalThis.crypto}={}) {
+export async function configureMultiplayer(core,app,options,{crypto=globalThis.crypto,runtimeBuildWords}={}) {
  const o=validateMultiplayerOptions(options);if(!o)return false;
  if(!app||typeof core.multiplayer_configure!=='function'||
     typeof core[o.spectator?'multiplayer_spectator_connect':'multiplayer_connect']!=='function')
   throw Error('TH08 multiplayer Runtime capability is missing');
+ if(!Array.isArray(runtimeBuildWords)||runtimeBuildWords.length!==4||
+    runtimeBuildWords.some(value=>!Number.isInteger(value)||value<0||value>0xffffffff)||
+    !runtimeBuildWords.some(Boolean))throw Error('TH08 multiplayer Runtime build identity is missing');
  const identity=new TextEncoder().encode(`th08mp:${o.url.origin}${o.url.pathname}:${o.room}:${o.run}`);
  const digest=new DataView(await crypto.subtle.digest('SHA-256',identity));
- const words=[2,o.count,o.seat,o.difficulty,o.seed,digest.getUint32(0,true),digest.getUint32(4,true)||1];
+ const words=[3,o.count,o.seat,o.difficulty,o.seed,digest.getUint32(0,true),digest.getUint32(4,true)||1,...runtimeBuildWords];
  for(let seat=0;seat<3;++seat)words.push(o.loadouts[seat]?.character||0,0);
  const pointer=core.allocate(words.length*4);if(!pointer)throw Error('Multiplayer setup allocation failed');
  try{

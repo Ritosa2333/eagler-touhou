@@ -9,7 +9,11 @@ void move(Vec3& position,const Vec3& velocity,float divisor=1){
 }
 void BulletUpdate::cancel_reward(BulletState& b){
     if(!actions)return;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    const i32 type=i32(b.padding_dbf)-1;
+#else
     const i32 type=live_cancel_item?*live_cancel_item:cancel_item;
+#endif
     if(type==9){actions->item(b.position,7);actions->item(b.position,7);}
     else if(type>=0)actions->item(b.position,type);
 }
@@ -30,16 +34,25 @@ bool BulletUpdate::normal(BulletState& b,BulletMotion& motion){
     if(!b.reisen_illusion){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         if(b.active_time.current>=16){
+            // Per-seat graze ownership is a bitmask in multiplayer. Once a
+            // seat has grazed this bullet, the graze pass deliberately skips
+            // that seat on later frames. A zero aggregate graze result
+            // therefore does NOT mean the bullet is too far away to hit;
+            // suppressing the hit pass here made already-grazed bullets pass
+            // straight through player hitboxes. Only a barrier/cancel result
+            // may stop the subsequent lethal collision test.
+            const i32 result=collision(1,b);
+            if(result==2&&!(b.flags&0x1000)){b.state=5;cancel_reward(b);}
+            if(result==2)test_hit=false;
+        }
 #else
         if(!b.grazed&&b.active_time.current>=16){
-#endif
             const i32 result=collision(1,b);
-#ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
             if(result==1)b.grazed=1;
             else
-#endif
             {if(result==2&&!(b.flags&0x1000)){b.state=5;cancel_reward(b);}if(result!=1)test_hit=false;}
         }
+#endif
         if(test_hit){const i32 result=collision(2,b);if(result!=0&&(result!=2||!(b.flags&0x1000))){b.state=5;if(result==2)cancel_reward(b);}}
     }
     if(b.sprites.animation[0].currentInstruction)animation.execute(b.sprites.animation[0]);

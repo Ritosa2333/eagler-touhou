@@ -57,6 +57,32 @@ bool GameplayScene::commit_frame_inputs(const Netplay::FrameInput* inputs,u32 co
     for(u32 seat=0;seat<count;++seat)if(!multiplayer::ValidInputSample(inputs[seat]))return false;
     for(u32 seat=0;seat<count;++seat){committed_buttons[seat]=inputs[seat].buttons;pilot(seat).status().analog=multiplayer::MovementSample(inputs[seat]);}
     for(u32 seat=count;seat<3;++seat)committed_buttons[seat]=0;
+#ifdef TH_MULTIPLAYER_FIXTURES
+    // Diagnostic-only lethal hit. InputButton::D is otherwise unused by the
+    // recovered gameplay path. Because commit_frame_inputs runs after
+    // WorldJournal/Audio BeginFrame, this exercises the same rollback/output
+    // ownership as a real bullet collision while allowing one endpoint to
+    // predict "no hit" until the delayed authoritative frame arrives.
+    constexpr u16 fixture_death_button=8192;
+    for(u32 seat=0;seat<count;++seat)if(committed_buttons[seat]&fixture_death_button){
+        committed_buttons[seat]&=~fixture_death_button;
+        auto& simulation=pilot(seat);auto& state=simulation.status();
+        if(state.life.state==0){
+            auto* created=projectile_pool.next_slot;if(!created)return false;
+            for(i32 checked=0;checked<1536&&created->state;++checked)
+                if((++created)->state==6)created=projectile_pool.bullets;
+            if(created->state)return false;
+            BulletEmission shot;shot.sprite=0;shot.color=0;shot.position=state.motion.movement.position;
+            shot.angle=0;shot.speed=0;shot.ending_speed=0;shot.count=1;shot.layers=1;shot.pattern=0;
+            bullets.emit(shot);if(bullets.invalid()||!created->state)return false;
+            // The normal BulletSystem update later in this same game frame
+            // performs the lethal collision. Keep the projectile stationary
+            // and old enough to execute graze/hit checks immediately.
+            created->state=1;created->position=state.motion.movement.position;
+            created->velocity={};created->active_time.set(20);
+        }
+    }
+#endif
     return true;
 }
 #endif
@@ -170,6 +196,11 @@ void GameplayScene::synchronize(){
     effect_system.paused=bool(globals.game_flags&1024);
     screen.context.timing=player.timing;screen.context.frozen=bool(globals.game_flags&1024);screen.context.paused=paused;screen.context.retry=retrying;
     ascii_context.player=p.motion.movement.position;ascii_context.gauge=n.gauge;ascii_context.point_value=n.point_value;ascii_context.human_limit=limits.minimum;ascii_context.youkai_limit=limits.maximum;ascii_context.human_effects=limits.human_bonus;ascii_context.youkai_effects=limits.youkai_bonus;ascii_context.human_tint=limits.human;ascii_context.youkai_tint=limits.youkai;ascii_context.paused=paused;ascii_context.retry=retrying;ascii_context.freeze_popups=bool(globals.game_flags&1024);ascii_context.effects=effect_pool.base_animation;ascii_context.demo=bool(globals.game_flags&2);ascii_context.arcade_origin=m.arcade_origin;ascii_context.arcade_size=m.arcade_size;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Shared gameplay context remains seat-zero and deterministic. The
+    // bottom gauge's viewer-local selection is bound separately in AsciiManager.
+    ascii_context.gauge=session.pilot_resources[0].gauge;
+#endif
     presentation.context.game_flags=globals.game_flags;presentation.context.current_spell=globals.current_spell;
 }
 JobResult GameplayScene::boundary(i32 phase){if(phase==11)session.stall_frames=enemies.state.frames;if(phase==15)publish_dialogue();synchronize();return invalid()?JobResult::Error:JobResult::Continue;}
@@ -177,7 +208,12 @@ JobResult GameplayScene::update_player(){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     for(u32 seat=0;seat<session.player_count;++seat){
         auto& simulation=pilot(seat);auto& services=pilot_services(seat);
-        simulation.status().input.always_hitbox=always_hitbox;
+        // Multiplayer's hitbox display is an invariant, not a viewer-local
+        // simulation option. A local Launcher preference used to enter
+        // PlayerMotionState and fixed EffectPool state here, so endpoints with
+        // different display settings could start from different canonical
+        // worlds before any network input differed.
+        simulation.status().input.always_hitbox=1;
         if(!services.prepare())return JobResult::Error;
         const bool updated=cooperation.seats[seat].spirit
             ?simulation.update_spirit(cooperation.seats[seat].drift_x,cooperation.seats[seat].drift_y)
@@ -194,7 +230,33 @@ JobResult GameplayScene::update_player(){
 }
 JobResult GameplayScene::draw_players(bool impacts){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    for(u32 seat=0;seat<session.player_count;++seat)if(!pilot(seat).draw(ascii_context.arcade_origin,impacts))return JobResult::Error;
+    const bool enhance=enhance_local_player_visibility&&!session.netplay.ReadOnly()&&
+        session.local_player<session.player_count&&roster.eligible(session.local_player);
+    for(u32 seat=0;seat<session.player_count;++seat){
+        const auto old_alpha=renderer.multiplayer_player_alpha;
+        if(enhance&&seat!=session.local_player){
+            const auto& a=pilot(seat).status().motion.movement.position;
+            const auto& b=pilot(session.local_player).status().motion.movement.position;
+            const float dx=a.x-b.x,dy=a.y-b.y;
+            if(dx*dx+dy*dy<84.f*84.f)renderer.multiplayer_player_alpha=104;
+        }
+        const bool drawn=pilot(seat).draw(ascii_context.arcade_origin,impacts);
+        renderer.multiplayer_player_alpha=old_alpha;
+        if(!drawn)return JobResult::Error;
+    }
+    if(!impacts){
+        auto& text=ascii.state;const auto color=text.color;
+        const Vec2 scale{text.scale_x,text.scale_y};const auto gui=text.gui,selected=text.selected;
+        text.gui=text.selected=0;text.scale_x=text.scale_y=.8f;
+        for(u32 seat=0;seat<session.player_count;++seat){
+            const auto& p=pilot(seat).status().motion.movement.position;
+            const auto& c=cooperation.seats[seat];
+            if(c.power_taps>=4){text.color=0xffe2edbd;ascii.add_format({p.x+32.f,p.y-6.f,0},false,"P %u/8",u32(c.power_taps));}
+            else if(c.progress&&c.target>=0){text.color=0xffd5efc8;ascii.add_format({p.x+30.f,p.y-8.f,0},false,"%u%%",u32(c.progress)*100/multiplayer::rescue_ticks);}
+            if(enhance&&seat==session.local_player){text.color=0xfff3eee4;ascii.add_format({p.x+48.f,p.y+10.f,0},false,"P%u",seat+1);}
+        }
+        text.color=color;text.scale_x=scale.x;text.scale_y=scale.y;text.gui=gui;text.selected=selected;
+    }
     return JobResult::Continue;
 #else
     return player.draw(ascii_context.arcade_origin,impacts)?JobResult::Continue:JobResult::Error;
@@ -263,7 +325,9 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
         roster.seats[seat].available=seat<session.player_count;
         items.set_player_available(seat,seat<session.player_count);
     }
-    gui.bind_multiplayer_resources(session.pilot_resources,session.player_count,session.local_player,roster);
+    gui.bind_multiplayer_resources(session.pilot_resources,session.player_count,session.local_player,roster,cooperation);
+    ascii.bind_multiplayer_gauge(session.pilot_resources[session.local_player].gauge,
+        session.local_player?session.guest_thresholds[session.local_player-1]:session.thresholds);
     for(u32 seat=0;seat<session.player_count;++seat){pilot(seat).set_player_count(session.player_count);pilot_services(seat).set_player_count(session.player_count);}
 #endif
     if(loaded||wanted.stage<0||wanted.stage>=9||wanted.character<0||wanted.character>=12||wanted.difficulty<0||wanted.difficulty>4||((wanted.flags&0x4000)&&(wanted.spell<0||wanted.spell>=222)))return false;
@@ -312,9 +376,6 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
         services.finish();
     }
     for(u32 seat=0;seat<session.player_count;++seat)pilot(seat).place_multiplayer_spawn(seat,session.player_count);
-    if(!wanted.initial)for(u32 seat=0;seat<session.player_count;++seat)if(cooperation.seats[seat].spirit){
-        pilot(seat).enter_spirit();roster.seats[seat].available=false;items.set_player_available(seat,false);
-    }
 #endif
     if(initialize_values){
         startup.after_player(player.profile(false).initial_bombs);

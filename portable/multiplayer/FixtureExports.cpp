@@ -8,12 +8,71 @@
 #include "resources-journal-fixture.hpp"
 #include "world-journal-fixture.hpp"
 #include "correction-fixture.hpp"
+#include "product-fixture.hpp"
 #include "../../th08_web/cpp/multiplayer/TextureJournal.hpp"
 #ifndef TH_MULTIPLAYER_FIXTURES
 #error Fixture exports must stay out of production builds
 #endif
 using namespace th08;
 extern "C" {
+__attribute__((export_name("mp_fixture_death_field")))
+u32 mp_fixture_death_field(BrowserRuntime* r,u32 victim,u32 bombs,u32 scenario){
+    if(!r||!r->app.in_game()||!r->app.game.ready()||r->app.session.player_count!=2||victim>1||bombs>3||scenario>1)return 0;
+    auto& g=r->app.game;auto& s=r->app.session;
+    // Author initial conditions only at a fully confirmed boundary. No reset,
+    // no direct die(), no injected death button; movement must cause the hit.
+    const float y=scenario==0?128.f:320.f;
+    for(u32 seat=0;seat<2;++seat){
+        auto& p=g.pilot(seat).status();
+        if(g.cooperation.seats[seat].spirit||p.life.state==2)return 0;
+        s.pilot_values[seat].set_lives(2);s.pilot_values[seat].set_power(seat==victim?80:48);
+        s.pilot_values[seat].set_bombs(i32(bombs));g.roster.seats[seat].gauge->set(seat==victim?6000:-6000);
+        p.life.state=0;p.life.timer.set(0);p.life.clear_frames=0;
+        p.context.game_over=0;p.context.pause=0;
+        p.motion.movement.position={seat==victim?112.f:256.f,seat==victim?y:y+16.f,0};
+        for(auto& point:p.motion.movement.history)point=p.motion.movement.position;
+        g.pilot_services(seat).sync_values();
+    }
+    s.pilot_values[0].add_time_orbs(2400-s.numbers.time_orbs);
+    s.numbers.last_spell_requirement=1000;
+    for(u32 seat=0;seat<2;++seat)g.pilot_services(seat).sync_values();
+    for(u32 i=0;i<48;++i){
+        // Keep this control below full Power: otherwise the pickup clear can
+        // legitimately remove the lethal projectile before the player hits it.
+        const i32 type=i%4==0?(i<8?2:0):i%4==1?7:i%4==2?10:0;
+        const Vec3 p{88.f+float(i%8)*24.f,scenario==0?190.f+float(i/8)*24.f:260.f+float(i/8)*16.f,0};
+        const auto* item=g.items.spawn(p,type,i%3==0?1:0);if(!item||!item->active)return 0;
+    }
+    // A stationary normal projectile lies ahead of the victim's Up path.
+    // Other stationary projectiles survive until native respawn clears them.
+    for(u32 i=0;i<25;++i){
+        BulletEmission shot;shot.sprite=0;shot.color=0;shot.position=i==0?Vec3{112,y-32.f,0}:Vec3{32.f+float(i%8)*44.f,24.f+float(i/8)*16.f,0};
+        shot.speed=shot.ending_speed=0;shot.angle=0;shot.count=shot.layers=1;shot.pattern=0;
+        g.bullets.emit(shot);if(g.bullets.invalid())return 0;
+    }
+    return !g.items.invalid();
+}
+__attribute__((export_name("mp_fixture_route_history")))
+u32 mp_fixture_route_history(BrowserRuntime* r,u32 route){
+    if(!r||route>2||r->app.in_game())return 0;
+    auto& s=r->app.session;const auto shot=s.multiplayer_session.characters[0];
+    if(shot>=12)return 0;
+    std::memset(s.clears,0,sizeof(s.clears));
+    if(route==1)s.clears[shot].with_retries[0]|=64;
+    else if(route==2)s.clears[shot].without_retries[0]|=128;
+    return 1;
+}
+__attribute__((export_name("mp_fixture_local_route")))
+u32 mp_fixture_local_route(BrowserRuntime* r,u32 route){
+    if(!r||route>2||r->app.in_game()||r->app.session.multiplayer_session.session_id)return 0;
+    r->app.session.multiplayer_route_state=u8(route);return 1;
+}
+__attribute__((export_name("mp_fixture_product_hud")))
+const float* mp_fixture_product_hud(BrowserRuntime* r){return r?multiplayer::fixture::product_hud(*r):nullptr;}
+__attribute__((export_name("mp_fixture_product_gauge")))
+u32 mp_fixture_product_gauge(BrowserRuntime* r,u32 viewer){return r&&multiplayer::fixture::product_gauge(*r,viewer);}
+__attribute__((export_name("mp_fixture_product_gauge_purity")))
+u32 mp_fixture_product_gauge_purity(BrowserRuntime* r){return r&&multiplayer::fixture::product_gauge_draw_pure(*r);}
 __attribute__((export_name("mp_fixture_texture_restore")))
 u32 mp_fixture_texture_restore(BrowserRuntime* r){
     if(!r||r->app.session.netplay.Configured())return 0;
@@ -59,7 +118,35 @@ u32 mp_fixture_gpu_history(BrowserRuntime* r){
 }
 __attribute__((export_name("mp_fixture_presentation_frame")))
 u32 mp_fixture_presentation_frame(BrowserRuntime* r,float alpha){
-    return r&&alpha>=0&&alpha<=1&&r->app.draw(alpha,true,true,false)?1:0;
+    if(!r||alpha<0||alpha>1)return 0;
+    const auto& g=r->app.game;
+    const bool frozen=r->app.in_game()&&(g.paused||g.retrying||g.menus.context.pause_state||g.menus.context.show_retry);
+    return r->app.draw(alpha,true,true,!frozen)?1:0;
+}
+__attribute__((export_name("mp_fixture_enemy_draw_purity")))
+const u32* mp_fixture_enemy_draw_purity(BrowserRuntime* r,float alpha){
+    static u32 out[128]{};std::fill(out,out+128,0);
+    if(!r||!r->app.in_game())return out;
+    std::vector<std::pair<u32,std::vector<u8>>> before;
+    for(u32 index=0;index<481;++index)if(const auto* e=r->app.game.enemies.population.at(index)){
+        const auto* p=reinterpret_cast<const u8*>(e);
+        before.emplace_back(index,std::vector<u8>(p,p+sizeof(*e)));
+    }
+    if(!mp_fixture_presentation_frame(r,alpha))return out;
+    out[0]=1;out[3]=sizeof(EclVm);out[4]=offsetof(EclVm,animation);out[5]=sizeof(AnmVm);
+    out[6]=offsetof(EclVm,resolved_position);out[7]=offsetof(EclVm,position);out[8]=offsetof(EclVm,trail);
+    for(const auto& [index,bytes]:before){
+        const auto* e=r->app.game.enemies.population.at(index);
+        if(!e){out[0]=3;out[1]=index;return out;}
+        const auto* p=reinterpret_cast<const u8*>(e);
+        for(u32 offset=0;offset<sizeof(*e);++offset)if(bytes[offset]!=p[offset]){
+            if(out[0]==1){out[0]=2;out[1]=index;}
+            if(out[1]!=index)continue;
+            const u32 count=out[2]++;
+            if(count<38){out[12+count*3]=offset;out[13+count*3]=bytes[offset];out[14+count*3]=p[offset];}
+        }
+    }
+    return out;
 }
 __attribute__((export_name("mp_fixture_audio_routing")))
 u32 mp_fixture_audio_routing(BrowserRuntime* runtime){return runtime&&runtime->diagnostic_audio_routing()?1u:0u;}
@@ -99,6 +186,71 @@ u32 mp_fixture_die(BrowserRuntime* runtime,u32 seat){
     if(!services.prepare())return 0;
     simulation.die();services.finish();
     return !simulation.invalid()&&!services.invalid();
+}
+__attribute__((export_name("mp_fixture_ordinary_death_setup")))
+u32 mp_fixture_ordinary_death_setup(BrowserRuntime* runtime,u32 seat){
+    if(!runtime||!runtime->app.in_game())return 0;
+    auto& app=runtime->app;auto& game=app.game;
+    if(!game.ready()||seat>=app.session.player_count||!game.roster.eligible(seat)||game.retrying)return 0;
+    auto& simulation=game.pilot(seat);auto& services=game.pilot_services(seat);auto& state=simulation.status();
+    // Prepare a first ordinary death without causing it here. The actual hit is
+    // injected by a fixture-only committed input bit from inside the netplay
+    // frame, after rollback/audio ownership has opened.
+    app.session.pilot_values[seat].set_lives(2);
+    app.session.pilot_values[seat].set_power(80);
+    app.session.pilot_values[seat].set_bombs(0);
+    services.sync_values();
+    state.context.pause=0;state.context.gauge=0;state.context.game_over=0;
+    state.life.state=0;state.life.timer.set(0);state.life.predead_count=0;
+    state.life.auto_bomb=0;state.life.deathbomb=0;state.life.predead_effect=nullptr;
+    state.motion.animation.flag17=0;
+    game.items.cancel_homing(seat);
+    return state.life.state==0&&!simulation.invalid()&&!services.invalid();
+}
+__attribute__((export_name("mp_fixture_grazed_bullet_hit")))
+u32 mp_fixture_grazed_bullet_hit(BrowserRuntime* runtime,u32 seat){
+    if(!runtime||!runtime->app.in_game())return 0;
+    auto& app=runtime->app;auto& game=app.game;
+    if(!game.ready()||seat>=app.session.player_count||!game.roster.eligible(seat)||game.retrying)return 0;
+    auto& pilot=game.pilot(seat);auto& state=pilot.status();
+    state.life.state=0;state.life.timer.set(0);state.context.game_over=0;
+    const auto position=state.motion.movement.position;
+    BulletEmission shot;shot.sprite=0;shot.color=0;shot.position=position;
+    shot.angle=0;shot.speed=0;shot.ending_speed=0;shot.count=1;shot.layers=1;shot.pattern=0;
+    game.bullets.emit(shot);
+    BulletState* bullet=nullptr;
+    for(auto& candidate:game.projectile_pool.bullets)if(candidate.state){bullet=&candidate;break;}
+    if(!bullet)return 0;
+    bullet->state=1;bullet->position=position;bullet->velocity={};bullet->active_time.set(20);
+    bullet->grazed|=u8(1u<<seat);
+    if(!game.bullets.update())return 0;
+    return state.life.state==2?1:0;
+}
+__attribute__((export_name("mp_fixture_cancel_reward_owner")))
+u32 mp_fixture_cancel_reward_owner(BrowserRuntime* runtime){
+    if(!runtime||!runtime->app.in_game())return 0;
+    auto& app=runtime->app;auto& game=app.game;
+    if(!game.ready()||app.session.player_count!=2||game.retrying)return 0;
+    game.items.reset();
+    auto& p1=game.pilot(0).status();auto& p2=game.pilot(1).status();
+    p1.cancel_item=6;p2.cancel_item=6;
+    p1.motion.movement.position={72,352,0};p2.motion.movement.position={210,352,0};
+    for(auto& point:p1.motion.movement.history)point=p1.motion.movement.position;
+    for(auto& point:p2.motion.movement.history)point=p2.motion.movement.position;
+    // Reproduce the first ordinary-death clear: this seat's barrier explicitly
+    // requests no reward. The old multiplayer path nevertheless read P1's
+    // live cancel_item (normally 6) after P2 returned the barrier hit.
+    p2.shots.regions.rectangle(false,{p2.motion.movement.position.x,p2.motion.movement.position.y},64,64,-1,2);
+    BulletEmission shot;shot.sprite=0;shot.color=0;shot.position=p2.motion.movement.position;
+    shot.angle=0;shot.speed=0;shot.ending_speed=0;shot.count=1;shot.layers=1;shot.pattern=0;
+    game.bullets.emit(shot);
+    BulletState* bullet=nullptr;
+    for(auto& candidate:game.projectile_pool.bullets)if(candidate.state){bullet=&candidate;break;}
+    if(!bullet)return 0;
+    bullet->state=1;bullet->position=p2.motion.movement.position;bullet->velocity={};bullet->active_time.set(20);
+    if(!game.bullets.update())return 0;
+    u32 items=0;for(u32 n=0;n<ItemPoolState::capacity;++n)items+=game.items.status().items[n].active?1u:0u;
+    return p1.cancel_item==6&&p2.cancel_item==-1&&items==0?1u:0u;
 }
 __attribute__((export_name("mp_fixture_place")))
 u32 mp_fixture_place(BrowserRuntime* runtime,u32 seat,i32 x,i32 y,i32 drift_x,i32 drift_y){
@@ -175,5 +327,60 @@ const u32* mp_fixture_item_status(BrowserRuntime* runtime){
     for(u32 n=0;n<6;++n)out[5]+=pool.items[n].active?1u:0u;
     for(u32 seat=0;seat<3;++seat)out[6+seat]=runtime->app.game.items.assigned_gifts(seat);
     return out;
+}
+__attribute__((export_name("mp_fixture_poc_setup")))
+u32 mp_fixture_poc_setup(BrowserRuntime* runtime,u32 collector){
+    if(!runtime||!runtime->app.in_game()||!runtime->app.game.ready()||
+       runtime->app.session.player_count!=2||collector>2)return 0;
+    auto& app=runtime->app;auto& game=app.game;auto& items=game.items;
+    items.reset();
+    for(u32 seat=0;seat<2;++seat){
+        app.session.pilot_values[seat].set_power(0);game.pilot_services(seat).sync_values();
+        auto& movement=game.pilot(seat).status().motion.movement;
+        const bool collecting=collector==2||seat==collector;
+        movement.position={seat?210.f:72.f,collecting?64.f:352.f,0};
+        for(auto& point:movement.history)point=movement.position;
+    }
+    for(u32 i=0;i<8;++i){
+        const Vec3 p{200.f+float(i%4)*6.f,300.f+float(i/4)*8.f,0};
+        auto* item=items.spawn(p,0,0);if(!item||!item->active)return 0;
+    }
+    return 1;
+}
+__attribute__((export_name("mp_fixture_poc_crossing_setup")))
+u32 mp_fixture_poc_crossing_setup(BrowserRuntime* runtime,u32 collector){
+    if(!runtime||!runtime->app.in_game()||!runtime->app.game.ready()||
+       runtime->app.session.player_count!=2||collector>1)return 0;
+    auto& app=runtime->app;auto& game=app.game;auto& items=game.items;
+    // This setup is intentionally safe after rollback history already exists:
+    // do not reset the pool.  Both independent worlds receive the same eight
+    // authored Power items immediately before frame 180, then only netplay
+    // input moves the collector across the POC line.  A remote endpoint will
+    // predict the old position for a few frames and must repair the claim via
+    // rollback once the delayed Up input arrives.
+    for(u32 seat=0;seat<2;++seat){
+        app.session.pilot_values[seat].set_power(0);game.pilot_services(seat).sync_values();
+        auto& movement=game.pilot(seat).status().motion.movement;
+        movement.position={seat?210.f:72.f,seat==collector?140.f:352.f,0};
+        for(auto& point:movement.history)point=movement.position;
+    }
+    for(u32 i=0;i<8;++i){
+        const Vec3 p{180.f+float(i%4)*8.f,220.f+float(i/4)*8.f,0};
+        auto* item=items.spawn(p,0,0);if(!item||!item->active)return 0;
+    }
+    return 1;
+}
+__attribute__((export_name("mp_fixture_power_type_guard")))
+u32 mp_fixture_power_type_guard(BrowserRuntime* runtime){
+    if(!runtime||!runtime->app.in_game()||!runtime->app.game.ready()||runtime->app.session.player_count<2)return 0;
+    auto& app=runtime->app;auto& game=app.game;auto& items=game.items;
+    items.reset();
+    for(u32 seat=0;seat<app.session.player_count;++seat){
+        app.session.pilot_values[seat].set_power(128);game.pilot_services(seat).sync_values();
+    }
+    auto* ordinary=items.spawn({180,280,0},0,0);if(!ordinary||!ordinary->active||ordinary->type!=0)return 0;
+    auto* full=items.spawn({200,280,0},4,0);if(!full||!full->active||full->type!=4)return 0;
+    items.convert_power_items(*full);
+    return ordinary->active&&ordinary->type==0?1:0;
 }
 }

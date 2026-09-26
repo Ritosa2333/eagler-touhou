@@ -42,6 +42,49 @@ def status(page):
     return call(page, 'multiplayerSmoke.fixtureStatus()')
 
 
+def grazed_bullet_still_hits(browser):
+    page = boot(browser)
+    before = status(page)
+    assert call(page, 'multiplayerSmoke.fixtureGrazedBulletHit(0)') is True
+    after = status(page)
+    assert after[9] == 2, after
+    page.close()
+    return {'case':'grazed-bullet-still-hits','passed':True,'before':before,'after':after}
+
+
+def death_clear_uses_barrier_owner(browser):
+    page = boot(browser)
+    assert call(page, 'multiplayerSmoke.fixtureCancelRewardOwner()') is True
+    page.close()
+    return {'case':'death-clear-uses-barrier-owner','passed':True}
+
+
+def point_of_collection_owner(browser):
+    results=[]
+    for collector in (0,1):
+        page=boot(browser,[1,0] if collector==0 else [0,1])
+        assert call(page,f'multiplayerSmoke.fixturePocSetup({collector})') is True
+        call(page,'multiplayerSmoke.ticks(150)')
+        value=call(page,'multiplayerSmoke.status()')
+        power=[value[10],value[22]]
+        assert power[collector]==8 and power[1-collector]==0,(collector,power,value)
+        results.append(power);page.close()
+    page=boot(browser,[1,1])
+    assert call(page,'multiplayerSmoke.fixturePocSetup(2)') is True
+    call(page,'multiplayerSmoke.ticks(150)')
+    value=call(page,'multiplayerSmoke.status()');power=[value[10],value[22]]
+    assert power==[8,0],(power,value)
+    results.append(power);page.close()
+    return {'case':'point-of-collection-claimant','passed':True,'power':results}
+
+
+def no_global_power_conversion(browser):
+    page=boot(browser)
+    assert call(page,'multiplayerSmoke.fixturePowerTypeGuard()') is True
+    page.close()
+    return {'case':'no-global-power-to-point-conversion','passed':True}
+
+
 def press(page, key):
     call(page, f"multiplayerSmoke.key('{key}',true)")
     call(page, 'multiplayerSmoke.ticks(2)')
@@ -71,9 +114,16 @@ def rescue(browser):
             'spirit': initial, 'at_89': pending, 'revived': revived}
 
 
-def wipe_retry(browser):
+def wipe_ends_run(browser):
     page = boot(browser)
+    positions = call(page, 'multiplayerSmoke.status()')
+    assert positions[13] != positions[25], 'pilots spawned on top of each other'
     assert call(page, 'multiplayerSmoke.fixtureDie(0)') == 1
+    # Let P1 actually reach Spirit first. Its final-death rule awards the
+    # nearest survivor one life; only then force P2 to a real final death.
+    call(page, 'multiplayerSmoke.ticks(40)')
+    first = status(page)
+    assert first[5] == 1 and first[10] == 0, first
     assert call(page, 'multiplayerSmoke.fixtureDie(1)') == 1
     call(page, 'multiplayerSmoke.ticks(40)')
     spirit = status(page)
@@ -82,31 +132,29 @@ def wipe_retry(browser):
     before = status(page)
     assert before[2] == 179 and before[1] == before[3] == 0, before
     call(page, 'multiplayerSmoke.ticks(1)')
-    retry = status(page)
-    assert retry[2] == 180 and retry[1] == retry[3] == 1, retry
-    call(page, 'multiplayerSmoke.ticks(70)')
-    press(page, 'ArrowUp')
-    call(page, 'multiplayerSmoke.ticks(6)')
-    press(page, 'KeyZ')
-    call(page, 'multiplayerSmoke.ticks(120)')
-    continued = status(page)
-    assert continued[1] == continued[2] == continued[3] == 0, continued
-    assert continued[5] == continued[10] == 0, continued
-    assert continued[8] == continued[13] == 2, continued
-    positions = call(page, 'multiplayerSmoke.status()')
-    assert positions[13] != positions[25], 'pilots respawned on top of each other'
+    ended = status(page)
+    assert ended[2] == 180 and ended[3] == 1, ended
+    assert ended[1] == 0, ('multiplayer wipe opened Continue/Retry menu', ended)
+    assert ended[4] == 6, ('multiplayer wipe did not target Game Results', ended)
     page.close()
-    return {'case': 'full-wipe-and-native-retry', 'passed': True,
-            'spirit': spirit, 'at_179': before, 'at_180': retry, 'continued': continued,
+    return {'case': 'full-wipe-ends-without-continue', 'passed': True,
+            'spirit': spirit, 'at_179': before, 'at_180': ended,
             'spawn_x': [positions[13], positions[25]]}
 
 
 def three_player_rescue(browser):
     page = boot(browser, [0, 1, 2])
+    before_death = status(page)
     assert call(page, 'multiplayerSmoke.fixtureDie(2)') == 1
     call(page, 'multiplayerSmoke.ticks(40)')
     spirit = status(page)
     assert spirit[15] == 1 and spirit[19] == 4, spirit
+    # Initial 3P spawn is left/centre/right, so P2 is nearest to P3.  Final
+    # death must award that nearest survivor one immediately usable life; the
+    # old implementation incorrectly targeted the lowest-life survivor with a
+    # life item instead.
+    assert spirit[8] == before_death[8], (before_death, spirit)
+    assert spirit[13] == before_death[13] + 1, (before_death, spirit)
     assert call(page, 'multiplayerSmoke.fixturePlace(0,180,384)') == 1
     # Both alternatives really compete within the twenty-pixel radius. The
     # spirit must beat a closer living recipient, not just an out-of-range one.
@@ -216,7 +264,7 @@ with sync_playwright() as playwright:
     browser = playwright.chromium.launch(headless=True, args=['--enable-unsafe-swiftshader'])
     try:
         report['browser']=browser.version
-        cases=(rescue,three_player_rescue,three_player_power_gift,wipe_retry,targeted_item_lifetime,full_item_pool,released_gift_and_reuse)
+        cases=(grazed_bullet_still_hits,death_clear_uses_barrier_owner,point_of_collection_owner,no_global_power_conversion,rescue,three_player_rescue,three_player_power_gift,wipe_ends_run,targeted_item_lifetime,full_item_pool,released_gift_and_reuse)
         selected=[case for case in cases if args.case=='all' or case.__name__==args.case]
         assert selected,'unknown native cooperation case'
         for case in selected:

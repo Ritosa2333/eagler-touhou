@@ -6,6 +6,7 @@
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/PlayerResources.hpp"
 #include "../multiplayer/PlayerRoster.hpp"
+#include "../multiplayer/CooperativeLifecycle.hpp"
 #endif
 namespace th08 {
 struct GuiContext {
@@ -39,8 +40,8 @@ public:
     // never execute then (upstream th08_disable_title). Set by GuiFlow::setup.
     bool clock_intro_enabled=true;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    void bind_multiplayer_resources(const PilotResources* resources,u32 count,u32 local,const PlayerRoster& player_roster){
-        pilot_resources=resources;pilot_count=count;local_player=local;roster=&player_roster;
+    void bind_multiplayer_resources(const PilotResources* resources,u32 count,u32 local,const PlayerRoster& player_roster,const multiplayer::CooperativeState& cooperative_state){
+        pilot_resources=resources;pilot_count=count;local_player=local;roster=&player_roster;cooperation=&cooperative_state;
     }
 #endif
 private:
@@ -49,6 +50,7 @@ private:
     GameGlobals& globals;GameValues& values;GameConfiguration& config;AnmExecutor& executor;AsciiManager& ascii;AnmRenderer& renderer;DialogueActions& actions;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     const PilotResources* pilot_resources=nullptr;const PlayerRoster* roster=nullptr;u32 pilot_count=0,local_player=0;
+    const multiplayer::CooperativeState* cooperation=nullptr;
     void draw_multiplayer_hud();
     float display_lives()const{return pilot_resources?pilot_resources[local_player].lives:0;}
     float display_bombs()const{return pilot_resources?pilot_resources[local_player].bombs:0;}

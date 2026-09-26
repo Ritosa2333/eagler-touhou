@@ -1,6 +1,10 @@
 #include "PlayerLife.hpp"
+#include "../multiplayer/ResourceTrace.hpp"
 namespace th08 {
 void PlayerLife::die(){
+#if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
+    multiplayer::diagnostic::Scope trace("death.hit",multiplayer::diagnostic::Seat(&context));
+#endif
     // th08_dissolve @ 0044abe9: count every entry into the deathbomb window,
     // including hits later rescued by a deathbomb.
     actions.dissolve();
@@ -28,6 +32,9 @@ void PlayerLife::die(){
     actions.cancel_item_homing();
 }
 bool PlayerLife::resolve_death(const ShotProfile& profile){
+#if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
+    multiplayer::diagnostic::Scope trace("death.resolve",multiplayer::diagnostic::Seat(&context));
+#endif
     if(state.predead_count!=0){
         actions.add_time_orbs(-15);state.predead_count=wrapping_sub(state.predead_count,1);state.deathbomb=1;
         if(state.predead_count==0){

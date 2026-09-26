@@ -6,6 +6,7 @@ bool EnemyJournal::Bind(EnemyPopulation& value){
     if(population||value.journal)return false;
     Netplay::RollbackJournalConfig config;config.maxFrames=History;
     config.maxBytesPerFrame=24*1024*1024;config.maxBlocksPerFrame=4096;
+    config.fastBulkCopy=true;config.coalesceRestore=true;
     if(!bytes.Reset(config))return false;
     population=&value;program=&value.program;
     program_data=program->mutable_data();program_size=program->size();

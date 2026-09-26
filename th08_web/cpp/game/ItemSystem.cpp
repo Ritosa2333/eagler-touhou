@@ -1,4 +1,5 @@
 #include "ItemSystem.hpp"
+#include "../multiplayer/ResourceTrace.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/JournalTouch.hpp"
 #endif
@@ -80,14 +81,19 @@ void ItemSystem::set_player_available(u32 seat,bool available){
 void ItemSystem::synchronize(Owner& owner){auto& c=owner.player->status().context;auto& r=*owner.resources;c.power=Scalar::truncate(r.power);c.lives=Scalar::truncate(r.lives);c.bombs=Scalar::truncate(r.bombs);c.time_orbs=r.time_orbs;c.last_spell_requirement=r.last_spell_requirement;c.gauge=r.gauge;owner.input.power=c.power;}
 ItemState* ItemSystem::spawn(const Vec3& position,i32 type,i32 mode){
     executor.timing=player.timing;
-    i32 least_power=128;bool found=false;
-    for(const auto& owner:owners)if(owner.available&&owner.resources){least_power=std::min(least_power,Scalar::truncate(owner.resources->power));found=true;}
     const u32 nearest=nearest_owner(position);
     const i8 life=nearest<3?owners[nearest].player->status().life.state:player.status().life.state;
-    auto* item=pool.spawn(position,type,mode,found?least_power:0,life);
+    // TH08 has personal Power in multiplayer. There is no single shared
+    // Power value which may reinterpret an authored Power drop as the retail
+    // full-Power point-item type. Preserve the authored item type here; the
+    // eventual collector's own Power decides the normal collection reward.
+    auto* item=pool.spawn(position,type,mode,0,life);
     if(item&&item_index(*item)<ItemPoolState::capacity){
         item_owners[item_index(*item)]=no_owner;gift_recipients[item_index(*item)]=no_owner;
     }
+#if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
+    multiplayer::diagnostic::Event("item.spawn",int(nearest),type,item);
+#endif
     return item;
 }
 bool ItemSystem::spawn_for_player(const Vec3& position,i32 type,i32 mode,u32 seat){
@@ -129,15 +135,50 @@ u32 ItemSystem::owner_for(ItemState& item){
     gift_recipients[index]=no_owner;
     const u8 previous=item_owners[index];
     if(item.state==1&&previous<3&&owners[previous].available&&owners[previous].player)return previous;
-    const u32 result=nearest_owner(item.position);item_owners[index]=u8(result);return result;
+    const u32 result=nearest_owner(item.position);item_owners[index]=u8(result);
+#if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
+    if(previous!=result)multiplayer::diagnostic::Event("item.owner",int(result),previous,&item);
+#endif
+    return result;
+}
+u32 ItemSystem::auto_collect_owner(ItemState& item){
+    const u32 index=item_index(item);if(index>=ItemPoolState::capacity||item.state!=0)return no_owner;
+    // Directed gifts are an explicit cooperation promise and cannot be stolen
+    // by another pilot crossing the Point of Collection line.
+    const u8 recipient=gift_recipients[index];
+    if(recipient<3&&owners[recipient].available&&owners[recipient].player)return no_owner;
+    u32 claimant=no_owner;
+    for(u32 seat=0;seat<3;++seat){
+        const auto& owner=owners[seat];if(!owner.available||!owner.player||!owner.resources)continue;
+        const auto& input=owner.input;const auto& profile=owner.player->profile(false);
+        if(input.player.y<profile.item_collect_line&&
+           (input.power>=128||input.focused||input.character==1||input.character==6)){claimant=seat;break;}
+    }
+    if(claimant==no_owner)return no_owner;
+    // One retail player crossing the POC claims the field. Multiplayer keeps
+    // that semantic; the seat order is only the deterministic tie-break for
+    // the simultaneous multi-claim edge, never a round-robin item split.
+    item_owners[index]=u8(claimant);
+#if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
+    multiplayer::diagnostic::Event("item.poc",int(claimant),0,&item);
+#endif
+    return claimant;
 }
 bool ItemSystem::touching(u32 seat,const Vec3& p,const Vec3& size){return seat<3&&owners[seat].available&&owners[seat].player&&owners[seat].player->collision().item(p,size);}
 void ItemSystem::collect(u32 seat,ItemState& item){
     if(seat>=3||!owners[seat].player||!owners[seat].resources||!owners[seat].values||!owners[seat].actions||!owners[seat].rewards)return;auto& owner=owners[seat];auto& p=*owner.player;auto& context=owner.reward_input;auto& state_context=p.status().context;
+#if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
+    multiplayer::diagnostic::Scope trace("item.collect",int(seat),item.type,&item);
+#endif
     state_context.replay_flags=owner.input.replay_flags;context.hud_flags=state_context.hud_flags;context.power_flag=state_context.miss_control;context.gauge_lock=owner.input.gauge_lock;owner.rewards->collect(item);failed|=owner.rewards->failed;owner.input.replay_flags=state_context.replay_flags;state_context.hud_flags=context.hud_flags;state_context.miss_control=context.power_flag;synchronize(owner);
 }
 void ItemSystem::item_sound(u32 seat,i32 index,i32 mode){if(seat<3&&owners[seat].actions)owners[seat].actions->sound(index,mode);else actions.sound(index,mode);}
-void ItemSystem::removed(ItemState& item){const u32 index=item_index(item);if(index<ItemPoolState::capacity){item_owners[index]=no_owner;gift_recipients[index]=no_owner;}}
+void ItemSystem::removed(ItemState& item){
+#if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
+    multiplayer::diagnostic::Event("item.remove",-1,0,&item);
+#endif
+    const u32 index=item_index(item);if(index<ItemPoolState::capacity){item_owners[index]=no_owner;gift_recipients[index]=no_owner;}
+}
 void ItemSystem::award_team_extend(){
     bool awarded=false;
     for(auto& owner:owners){
@@ -158,9 +199,12 @@ void ItemSystem::award_team_extend(){
     if(awarded){actions.sound(28,0);rank.add(200);}
 }
 void ItemSystem::convert_power_items(ItemState& collected){
-    for(const auto& owner:owners)
-        if(owner.available&&owner.resources&&Scalar::truncate(owner.resources->power)<128)return;
-    pool.convert_power(&collected);
+    (void)collected;
+    // Retail's global conversion assumes one player's Power is the world's
+    // Power. TH08MP has personal Power, so converting the shared field when
+    // one/all currently-operable pilots reach 128 corrupts other pilots'
+    // resources and can create point talismans after a teammate becomes a
+    // Spirit. Keep the authored field items unchanged.
 }
 bool ItemSystem::update(){
     if(failed)return false;pool.snapshot();executor.timing=updater.timing=player.timing;
@@ -173,7 +217,15 @@ bool ItemSystem::draw(const Vec2& offset){if(failed)return false;pool.draw(offse
 void ItemSystem::collect_all(){for(auto* item=state->head.next;item;item=item->next){const u32 seat=owner_for(*item);if(seat<3){item_owners[item_index(*item)]=u8(seat);item->state=1;item->velocity={0,-.5f,0};}}}
 void ItemSystem::collect_all(u32 seat){if(seat>=3||!owners[seat].available)return;for(auto* item=state->head.next;item;item=item->next)if(owner_for(*item)==seat){item_owners[item_index(*item)]=u8(seat);item->state=1;item->velocity={0,-.5f,0};}}
 void ItemSystem::cancel_homing(){for(auto* item=state->head.next;item;item=item->next)if(item->state==1){item->state=0;item->velocity={0,-.9f,0};}}
-void ItemSystem::cancel_homing(u32 seat){if(seat>=3)return;for(auto* item=state->head.next;item;item=item->next)if(item->state==1&&owner_for(*item)==seat){item->state=0;item->velocity={0,-.9f,0};}}
+void ItemSystem::cancel_homing(u32 seat){
+    if(seat>=3)return;
+    for(auto* item=state->head.next;item;item=item->next)if(item->state==1&&owner_for(*item)==seat){
+#if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
+        multiplayer::diagnostic::Scope trace("item.cancel_homing",int(seat),0,item);
+#endif
+        item->state=0;item->velocity={0,-.9f,0};
+    }
+}
 void ItemSystem::time_orb(){time_orb(0);}
 void ItemSystem::time_orb(u32 seat){if(seat>=3||!owners[seat].player||!owners[seat].rewards)return;auto& owner=owners[seat];auto& p=*owner.player;auto& c=p.status().context;auto& context=owner.reward_input;context.hud_flags=c.hud_flags;context.bomb_triggered=p.status().bomb.triggered;context.bomb_active=p.status().bomb.active;context.focused=p.status().motion.form.focused;context.gauge_lock=p.status().item_gauge_lock;owner.rewards->time_orb(nullptr);failed|=owner.rewards->failed;c.hud_flags=context.hud_flags;synchronize(owner);}
 void ItemSystem::reset(){

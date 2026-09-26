@@ -6,6 +6,8 @@ import {createHash} from 'node:crypto';
 const workspace=resolve(fileURLToPath(new URL('../',import.meta.url))),game=process.argv.includes('--th08')?'th08':'th10',root=resolve(workspace,game+'_web');
 const presentationLab=process.argv.includes('--presentation-lab'),multiplayerFixtures=process.argv.includes('--multiplayer-fixtures');
 const multiplayer=process.argv.includes('--multiplayer')||multiplayerFixtures,printPlan=process.argv.includes('--print-plan');
+const resourceTrace=process.argv.includes('--resource-trace');
+if(resourceTrace&&!multiplayer)throw Error('--resource-trace requires a multiplayer build');
 if(presentationLab&&multiplayer)throw Error('Presentation Lab and multiplayer are separate build variants.');
 if(multiplayerFixtures&&game!=='th08')throw Error('TH08 owns these multiplayer fixtures.');
 const profile=multiplayerFixtures?'multiplayer-fixtures':multiplayer?'multiplayer':presentationLab?'presentation-lab':'sdl3',out=resolve(root,'artifacts',profile);
@@ -19,6 +21,7 @@ const python=process.env.TH_PYTHON??'python';
 const run=(args)=>new Promise((done,reject)=>{const p=spawn(python,[emcc,...args],{cwd:root,env,windowsHide:true,stdio:['ignore','pipe','pipe']});let log='';p.stdout.on('data',x=>{log+=x;process.stdout.write(x);});p.stderr.on('data',x=>{log+=x;process.stderr.write(x);});p.on('error',reject);p.on('exit',code=>code?reject(Error('emcc failed '+code+'\n'+log)):done());});
 const imgui=resolve(root,'cpp/third_party/imgui');
 const common=['-O2','-g0','-fno-strict-aliasing','-ffp-contract=off','-DTH_SDL3=1','-DTH_NATIVE_PLATFORM=1','-DIMGUI_DISABLE_WIN32_FUNCTIONS','--use-port=sdl3','--use-port=sdl3_ttf','-I'+resolve(workspace,'portable/sdl'),'-I'+imgui];
+if(resourceTrace)common.push('-DTH_MULTIPLAYER_RESOURCE_TRACE=1');
 if(presentationLab){if(game!=='th08')throw Error('Presentation lab currently supports TH08 only');common.push('-DTH_PRESENTATION_AUDIT=1');}
 // thcrap-style offline language pack for th08. ON by default, matching the
 // always-on thprac convention; TH_ENABLE_THCRAP=0 builds the strict Japanese

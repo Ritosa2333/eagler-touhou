@@ -7,6 +7,9 @@
 #include <cstdint>
 
 namespace th08::multiplayer {
+inline constexpr float route_bootstrap_x=8188.0f;
+inline constexpr float route_bootstrap_y=-8192.0f;
+
 // A fully initialized movement payload inside native Player state. Transport
 // flags are explicit; physical device state never enters the rollback owner.
 struct AnalogInput {
@@ -26,5 +29,19 @@ inline bool ValidInputSample(const Netplay::FrameInput& in) noexcept {
 }
 inline AnalogInput MovementSample(const Netplay::FrameInput& in) noexcept {
     return {in.x,in.y,std::uint8_t(in.analogMode),std::uint8_t(in.unlimited),std::uint8_t(in.touchUsed),std::uint8_t(in.touchBomb)};
+}
+inline Netplay::FrameInput RouteBootstrap(Netplay::FrameInput input,std::uint8_t route) noexcept {
+    input.analogMode=Netplay::AnalogMode::DirectTouch;
+    input.x=route_bootstrap_x+float(route);input.y=route_bootstrap_y;
+    input.unlimited=false;input.touchUsed=false;input.touchBomb=false;return input;
+}
+inline bool DecodeRouteBootstrap(const Netplay::FrameInput& input,std::uint8_t& route) noexcept {
+    if(input.analogMode!=Netplay::AnalogMode::DirectTouch||input.unlimited||input.touchUsed||input.touchBomb||
+       input.y!=route_bootstrap_y||input.x<route_bootstrap_x||input.x>route_bootstrap_x+2.0f)return false;
+    const float value=input.x-route_bootstrap_x;const auto candidate=std::uint8_t(value);
+    if(value!=float(candidate)||candidate>2)return false;route=candidate;return true;
+}
+inline Netplay::FrameInput StripRouteBootstrap(const Netplay::FrameInput& input) noexcept {
+    return Netplay::FrameInput(input.buttons);
 }
 }

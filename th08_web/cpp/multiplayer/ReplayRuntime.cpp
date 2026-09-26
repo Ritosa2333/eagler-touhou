@@ -14,9 +14,10 @@ bool BrowserRuntime::prepare_replay(const u8* bytes,u32 size,u32 stage){
     multiplayer::ReplayArchive candidate;if(!candidate.Load(bytes,size))return false;
     const auto target=candidate.StageFrame(stage);if(target==Netplay::INVALID_FRAME)return false;
     auto setup=candidate.Description().setup;
-    const u32 words[]{2,setup.player_count,setup.local_player,setup.difficulty,setup.seed,
-        u32(setup.session_id),u32(setup.session_id>>32),setup.characters[0],0,setup.characters[1],0,setup.characters[2],0};
-    if(!browser_multiplayer_configure(this,words,13)||!app.session.netplay.BeginPlayback())return false;
+    const u32 words[]{3,setup.player_count,setup.local_player,setup.difficulty,setup.seed,
+        u32(setup.session_id),u32(setup.session_id>>32),setup.build[0],setup.build[1],setup.build[2],setup.build[3],
+        setup.characters[0],0,setup.characters[1],0,setup.characters[2],0};
+    if(!browser_multiplayer_configure(this,words,17)||!app.session.netplay.BeginPlayback())return false;
     replay_archive=std::move(candidate);replay_viewer=true;replay_finished=false;replay_seek_target=target;
     replay_shadow_files["score.dat"]=replay_archive.BootScore();
     const auto& config=replay_archive.Description().configuration;

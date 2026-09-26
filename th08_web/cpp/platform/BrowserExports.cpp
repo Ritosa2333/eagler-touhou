@@ -76,6 +76,7 @@ EX("multiplayer_configure") u32 browser_multiplayer_configure(BrowserRuntime* r,
     if(candidate.session_id){if(!session.netplay.Reset(candidate))return 0;}
     else{if(session.netplay.Configured()&&session.netplay.LastFrame()!=Netplay::INVALID_FRAME)return 0;session.netplay.Clear();}
     session.multiplayer_session=candidate;
+    session.multiplayer_route_state=0xff;
     if(candidate.session_id){
         // Live local practice state is not a synchronized room command.
         auto& p=session.practice;p.enabled=p.menu=p.accepted=p.active=false;p.cheats=0;
@@ -140,7 +141,7 @@ EX("multiplayer_status") const i32* browser_multiplayer_status(BrowserRuntime* r
         out[6]=Scalar::truncate(p.motion.movement.position.y);out[7]=p.motion.form.focused;
         out[8]=p.bomb.active;out[9]=app.game.roster.eligible(seat);out[10]=p.input.buttons;
     }
-    return words;
+    words[43]=session.multiplayer_route_state;return words;
 }
 #endif
 EX("close") void browser_close(BrowserRuntime* r){if(r)r->app.close();}

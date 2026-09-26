@@ -26,6 +26,7 @@ bool WorldJournal::Inventory(){
     ADD(s.thresholds,Session);ADD(s.guest_thresholds,Session);ADD(s.rank,Session);
     ADD(s.stall_frames,Session);ADD(s.stage_copy,Session);ADD(s.replay_seed,Session);
     ADD(s.multiplayer_cheat_movement_used,Session);
+    ADD(s.multiplayer_route_state,Session);
     ADD(s.last_words,Session);ADD(s.last_name,Session);ADD(s.total_clock,Session);
     ADD(g.roster,Player);ADD(g.cooperation,Player);ADD(g.committed_buttons,Player);ADD(g.previous_buttons,Player);
     for(u32 seat=0;seat<s.player_count;++seat){
@@ -86,6 +87,7 @@ bool WorldJournal::Bind(BrowserRuntime& value){
     msgData=g.dialogue.program.bytes();msgSize=g.dialogue.program.size();
     Netplay::RollbackJournalConfig config;config.maxFrames=History;
     config.maxBytesPerFrame=16*1024*1024;config.maxBlocksPerFrame=10000;
+    config.fastBulkCopy=true;config.coalesceRestore=true;
     if(!main.Reset(config)||!Inventory()||!enemies.Bind(g.enemies.population)||
        !pools.Bind(g.bullets,g.items,g.effect_system,app->session.random)||!resources.Bind(app->library)){
         Clear();error="world journal bootstrap failed";return false;
@@ -169,6 +171,13 @@ std::size_t WorldJournal::BytesForFrame(u32 frame)const{
     for(const auto& record:records)if(record.frame==frame)size+=replay_bytes(*record.replay);
     return size;
 }
+#ifdef TH_MULTIPLAYER_FIXTURES
+std::array<std::size_t,5> WorldJournal::DiagnosticBytesForFrame(u32 frame)const{
+    std::size_t replay=0;
+    for(const auto& record:records)if(record.frame==frame){replay=replay_bytes(*record.replay);break;}
+    return {main.BytesForFrame(frame),enemies.BytesForFrame(frame),pools.BytesForFrame(frame),resources.BytesForFrame(frame),replay};
+}
+#endif
 std::vector<u32> WorldJournal::BlockHashes()const{
     std::vector<u32> values;values.reserve(blocks.size());
     for(const auto& block:blocks)values.push_back(hash_bytes(block.address,block.bytes));return values;

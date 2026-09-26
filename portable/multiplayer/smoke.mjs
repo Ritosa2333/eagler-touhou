@@ -2,6 +2,7 @@ import createModule from '/th08-sdl.mjs';
 
 let core;
 const buildIdentity=await fetch('/build.json').then(response=>{if(!response.ok)throw Error('Missing Runtime identity');return response.json();});
+const fixtureBuildWords=Array.from({length:4},(_,i)=>Number.parseInt(buildIdentity.wasm.slice(i*8,i*8+8),16)>>>0);
 let instantiatedSha256='';
 const Module=await createModule({canvas:document.getElementById('screen'),noInitialRun:true,
   async instantiateWasm(imports,ready){
@@ -23,16 +24,30 @@ let app=0;
 const nativeStatus=()=>Array.from(new Int32Array(core.memory.buffer,core.sdl_game_status(),10));
 window.multiplayerSmoke={
   identity(){return {...buildIdentity,wasmSha256:instantiatedSha256,fixtureBuild:typeof core.mp_fixture_die==='function'};},
-  async start(seed=1234,loadouts=null,local=0,sessionId=null){
+  traceEnable(frame){if(!core.multiplayer_resource_trace_enable?.(app,frame))throw Error('Trace enable rejected');},
+  deathField(victim,bombs=3,scenario=0){if(!core.mp_fixture_death_field?.(app,victim,bombs,scenario))throw Error('Death field setup rejected');},
+  traceRead(frame,detail=false){const p=core.multiplayer_resource_trace_read(app,frame,detail?1:0);const heap=new Uint8Array(core.memory.buffer);let end=p;while(heap[end])++end;return JSON.parse(new TextDecoder().decode(heap.subarray(p,end)));},
+  async start(seed=1234,loadouts=null,local=0,sessionId=null,configuration=null){
     if(app)throw Error('Use a fresh page for a new run');
+    if(configuration){
+      const bytes=new Uint8Array(60),v=new DataView(bytes.buffer);
+      [0,1,2,4,-1,-1,-1,-1,3].forEach((n,i)=>v.setInt16(i*2,n,true));
+      v.setUint32(20,0x80001,true);v.setInt16(24,600,true);v.setInt16(26,600,true);
+      bytes[28]=2;bytes[29]=3;bytes[31]=2;bytes[32]=1;bytes[33]=1;bytes[36]=2;bytes[39]=100;bytes[40]=80;
+      for(const [field,offset] of Object.entries({lives:28,frameskip:35,effects:36,slowMode:37,shotSlow:38}))
+        if(configuration[field]!==undefined)bytes[offset]=configuration[field];
+      if(configuration.options!==undefined)v.setUint32(56,configuration.options,true);
+      Module.FS.writeFile('/savesth08-multiplayer/th08.cfg',bytes);
+    }
     app=core.sdl_game_open(seed);if(!app)throw Error('Native app creation failed');
     if(loadouts){
-      const words=[sessionId?2:1,loadouts.length,local,1,seed,...(sessionId||[]),...loadouts.flatMap(character=>[character,0])];
-      const count=sessionId?13:11;while(words.length<count)words.push(0);
+      const words=[sessionId?3:1,loadouts.length,local,1,seed,...(sessionId||[]),...(sessionId?fixtureBuildWords:[]),...loadouts.flatMap(character=>[character,0])];
+      const count=sessionId?17:11;while(words.length<count)words.push(0);
       const ptr=core.allocate(count*4);try{
         new Uint32Array(core.memory.buffer,ptr,count).set(words);
         if(!core.multiplayer_configure(app,ptr,count))throw Error('Session rejected');
       }finally{core.deallocate(ptr);}
+      if(!sessionId&&core.mp_fixture_local_route&&!core.mp_fixture_local_route(app,0))throw Error('Local fixture route rejected');
     }
     const total=core.sdl_prepare_total();
     for(let i=0;i<total;i++){
@@ -76,6 +91,8 @@ window.multiplayerSmoke={
   textureRestore(){return !!core.mp_fixture_texture_restore?.(app);},
   gpuHistory(){return !!core.mp_fixture_gpu_history?.(app);},
   presented(alpha){if(!core.mp_fixture_presentation_frame?.(app,alpha))throw Error('Native presentation failed');return true;},
+  enemyDrawPurity(alpha){const p=core.mp_fixture_enemy_draw_purity(app,alpha);return Array.from(new Uint32Array(core.memory.buffer,p,128));},
+  enemyCanonical(index){const p=core.mp_fixture_enemy_canonical(app,index),header=Array.from(new Uint32Array(core.memory.buffer,p,16));return {header,bytes:Array.from(new Uint8Array(core.memory.buffer,p+64,header[1]))};},
   audioServices(){return core.mp_fixture_audio_service_calls?.()??null;},
   async frameDigest(){
     const p=core.sdl_read_back(),bytes=new Uint8Array(core.memory.buffer,p,640*480*4),crop=new Uint8Array(384*448*4);
@@ -107,10 +124,20 @@ window.multiplayerSmoke={
   }finally{core.deallocate(p);}},
   status(){return Array.from(new Int32Array(core.memory.buffer,core.multiplayer_status(app),44));},
   fixtureDie(seat){if(!core.mp_fixture_die)throw Error('Not a fixture build');return core.mp_fixture_die(app,seat);},
+  fixtureOrdinaryDeathSetup(seat){if(!core.mp_fixture_ordinary_death_setup)throw Error('Not a fixture build');return !!core.mp_fixture_ordinary_death_setup(app,seat);},
+  fixtureGrazedBulletHit(seat){if(!core.mp_fixture_grazed_bullet_hit)throw Error('Not a fixture build');return !!core.mp_fixture_grazed_bullet_hit(app,seat);},
+  fixtureCancelRewardOwner(){if(!core.mp_fixture_cancel_reward_owner)throw Error('Not a fixture build');return !!core.mp_fixture_cancel_reward_owner(app);},
   fixturePlace(seat,x,y,dx=1,dy=1){if(!core.mp_fixture_place)throw Error('Not a fixture build');return core.mp_fixture_place(app,seat,x,y,dx,dy);},
   fixturePower(seat,power){if(!core.mp_fixture_power)throw Error('Not a fixture build');return core.mp_fixture_power(app,seat,power);},
   fixtureItems(kind,seat=0){if(!core.mp_fixture_items)throw Error('Not a fixture build');return core.mp_fixture_items(app,kind,seat);},
   fixtureItemStatus(){if(!core.mp_fixture_item_status)throw Error('Not a fixture build');return Array.from(new Uint32Array(core.memory.buffer,core.mp_fixture_item_status(app),9));},
+  fixturePocSetup(seat){if(!core.mp_fixture_poc_setup)throw Error('Not a fixture build');return !!core.mp_fixture_poc_setup(app,seat);},
+  fixturePocCrossingSetup(seat){if(!core.mp_fixture_poc_crossing_setup)throw Error('Not a fixture build');return !!core.mp_fixture_poc_crossing_setup(app,seat);},
+  fixturePowerTypeGuard(){if(!core.mp_fixture_power_type_guard)throw Error('Not a fixture build');return !!core.mp_fixture_power_type_guard(app);},
   fixtureStatus(){if(!core.mp_fixture_status)throw Error('Not a fixture build');return Array.from(new Int32Array(core.memory.buffer,core.mp_fixture_status(app),20));},
+  fixtureRouteHistory(route){if(!core.mp_fixture_route_history)throw Error('Not a fixture build');return !!core.mp_fixture_route_history(app,route);},
   diagnostics(){return Array.from(new Int32Array(core.memory.buffer,core.diagnostics(app),16));},
+  productHUD(){if(!core.mp_fixture_product_hud)throw Error('Product fixture required');return Array.from(new Float32Array(core.memory.buffer,core.mp_fixture_product_hud(app),160));},
+  productGauge(viewer){return !!core.mp_fixture_product_gauge?.(app,viewer);},
+  productGaugePure(){return !!core.mp_fixture_product_gauge_purity?.(app);},
 };

@@ -8,11 +8,12 @@ bool NetplayRuntime::ValidInput(const Netplay::FrameInput& input) noexcept {
     return ValidInputSample(input);
 }
 bool NetplayRuntime::configure(const SessionSetup& setup) noexcept {
-    const std::uint32_t words[]{2,setup.player_count,setup.local_player,setup.difficulty,setup.seed,
+    const std::uint32_t words[]{3,setup.player_count,setup.local_player,setup.difficulty,setup.seed,
         std::uint32_t(setup.session_id),std::uint32_t(setup.session_id>>32),
+        setup.build[0],setup.build[1],setup.build[2],setup.build[3],
         setup.characters[0],0,setup.characters[1],0,setup.characters[2],0};
     SessionSetup validated;
-    if(!setup.configured||!decode_session_setup(validated,words,13))return false;
+    if(!setup.configured||!decode_session_setup(validated,words,17))return false;
     Netplay::SessionConfig session;
     session.sessionId=setup.session_id;session.seed=setup.seed;
     session.gameplayAbi=gameplay_contract(setup);session.gameId=8;

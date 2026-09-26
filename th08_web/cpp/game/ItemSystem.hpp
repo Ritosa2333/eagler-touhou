@@ -64,6 +64,9 @@ class ItemSystem:private ItemPoolActions,private ItemUpdateActions,private ItemR
     void item_sound(u32 seat,i32 index,i32 mode)override;
     void removed(ItemState&)override;
     u32 owner_for(ItemState&)override;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    u32 auto_collect_owner(ItemState&)override;
+#endif
     void animation_step(AnmVm& vm)override{executor.execute(vm);failed|=executor.invalid;}
     void sound(i32 index,i32 mode)override{actions.sound(index,mode);}
     void subtract_rank(i32 value)override{rank.subtract(value);}
@@ -76,6 +79,10 @@ class ItemSystem:private ItemPoolActions,private ItemUpdateActions,private ItemR
     void convert_team_power(ItemState& collected)override{convert_power_items(collected);}
 #endif
 public:
+#if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
+    u32 diagnostic_owner(u32 slot)const{return slot<item_owners.size()?item_owners[slot]:3;}
+    u32 diagnostic_recipient(u32 slot)const{return slot<gift_recipients.size()?gift_recipients[slot]:3;}
+#endif
     i32 difficulty=0;
     void bind_hud(GuiState& value){hud=&value;}
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY

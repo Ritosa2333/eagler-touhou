@@ -6,7 +6,11 @@
 namespace th08 {
 BulletSystem::BulletSystem(BulletManagerState& s,EclGlobals& g,Rng& rng,PlayerSimulation& p,ItemSystem& i,EffectSystem& e,AnmRenderer& r,BulletSystemAudio& a)
  :state(s),globals(g),player(p),inventory(i),effect_system(e),renderer(r),audio(a),creation(s,rng),updater(s,creation,rng),lasers(s,rng),drawing(s,*this){
-    creation.actions=this;updater.actions=this;updater.live_cancel_item=&p.status().cancel_item;lasers.actions=this;globals.bullet_actions=this;globals.laser_actions=this;
+    creation.actions=this;updater.actions=this;
+#ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    updater.live_cancel_item=&p.status().cancel_item;
+#endif
+    lasers.actions=this;globals.bullet_actions=this;globals.laser_actions=this;
 }
 void BulletSystem::synchronize(){creation.timing=updater.timing=lasers.timing=player.timing;updater.player=lasers.player=globals.player;updater.paused=globals.paused;}
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -51,6 +55,13 @@ i32 BulletSystem::collision(i32 kind,BulletState& bullet){
             kind==1?recipient.collision().graze(bullet.position,bullet.sprites.hitbox):
                     recipient.collision().bullet(bullet.position,bullet.sprites.hitbox);
         if(result){
+            if(result==2){
+                // The cancellation reward belongs to the barrier that actually
+                // hit this bullet. In multiplayer the old live pointer always
+                // referenced P1, so P2's death-clear (-1) could incorrectly
+                // drop P1's current cancel item (usually type 6).
+                bullet.padding_dbf=u8(recipient.status().cancel_item+1);
+            }
             publish_collision(recipient);
             if(kind==1&&result==1){bullet.grazed|=u8(1u<<seat);grazed=1;continue;}
             return result;

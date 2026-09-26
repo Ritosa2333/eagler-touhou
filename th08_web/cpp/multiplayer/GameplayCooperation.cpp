@@ -12,15 +12,27 @@ void GameplayScene::enter_spirit(u32 seat){
     roster.seats[seat].available=false;items.set_player_available(seat,false);
     session.pilot_values[seat].set_bombs(Scalar::truncate(simulation.profile(false).initial_bombs));
     pilot_services(seat).sync_values();
-    // TH07 drops a life for the least supplied surviving partner. Keep that
-    // reward targeted so the dead seat or a closer third pilot cannot steal it.
-    i32 recipient=-1,lives=0;
+    // PlayerLife::resolve_death has already emitted TH08's five native Full
+    // Power items for a final death.  Multiplayer adds only the cooperation
+    // reward here: the surviving pilot nearest to the new Spirit receives one
+    // life immediately.  Do not turn this into a targeted life item; the
+    // player-facing rule intentionally makes the life available at once.
+    i32 recipient=-1;float best_distance=0;
     for(u32 candidate=0;candidate<session.player_count;++candidate){
         if(candidate==seat||!roster.eligible(candidate))continue;
-        const i32 amount=Scalar::truncate(session.pilot_resources[candidate].lives);
-        if(recipient<0||amount<lives){recipient=i32(candidate);lives=amount;}
+        const auto other=pilot(candidate).status().motion.movement.position;
+        const float dx=Scalar::sub(other.x,position.x),dy=Scalar::sub(other.y,position.y);
+        const float distance=Scalar::add(Scalar::mul(dx,dx),Scalar::mul(dy,dy));
+        if(recipient<0||distance<best_distance){recipient=i32(candidate);best_distance=distance;}
     }
-    if(recipient>=0)items.spawn_for_player(position,5,1,u32(recipient));
+    if(recipient>=0){
+        const u32 target=u32(recipient);
+        const i32 lives=Scalar::truncate(session.pilot_resources[target].lives);
+        if(lives<8)session.pilot_values[target].set_lives(lives+1);
+        auto& state=pilot(target).status();state.context.hud_flags=(state.context.hud_flags&~3u)|2;
+        pilot_services(target).sync_values();
+        pilot_services(target).sound(28,0);
+    }
 }
 void GameplayScene::update_cooperation(){
     if(paused||retrying||time_stopped||globals.paused||(globals.game_flags&0x460))return;
@@ -52,7 +64,11 @@ void GameplayScene::update_cooperation(){
     for(u32 i=0;i<result.count;++i){
         const auto& event=result.events[i];
         if(event.kind==multiplayer::CooperativeEventKind::Retry){
-            globals.stage_completion=1;menus.context.show_retry=1;retrying=true;
+            // Multiplayer has no Continue flow.  The cooperation policy still
+            // emits one terminal wipe event after 180 ticks, but presentation
+            // skips the native retry menu and goes straight to Game Results.
+            globals.stage_completion=0;menus.context.show_retry=0;retrying=false;
+            menus.context.supervisor_state=6;
             continue;
         }
         const u32 giver=event.giver;

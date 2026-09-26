@@ -2,6 +2,12 @@
 #include "../platform/BrowserRuntime.hpp"
 #include <cstring>
 namespace th08 {
+extern "C" __attribute__((export_name("multiplayer_local_player_visibility")))
+u32 multiplayer_local_player_visibility(BrowserRuntime* r,u32 enabled){
+    if(!r||enabled>1)return 0;
+    r->app.game.enhance_local_player_visibility=enabled&&!r->app.session.netplay.ReadOnly();
+    return !enabled||!r->app.session.netplay.ReadOnly();
+}
 extern "C" __attribute__((export_name("multiplayer_connect")))
 u32 multiplayer_connect(BrowserRuntime* r,const char* relay){return r&&r->connect_network(relay);}
 extern "C" __attribute__((export_name("multiplayer_spectator_connect")))

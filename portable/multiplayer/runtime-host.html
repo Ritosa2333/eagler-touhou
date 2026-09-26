@@ -1,5 +1,6 @@
 <!doctype html><meta charset="utf-8"><title>TH08 Runtime host contract test</title>
-<style>body{margin:0}iframe{border:0;width:640px;height:480px}</style>
+<style>body{margin:0}#player{position:relative;width:640px;height:480px}iframe{border:0;width:640px;height:480px}</style>
+<div id="player"></div>
 <script>
 const protocol='eagler-touhou/1';let iframe,epoch=0,serial=0,ready=false;
 const pending=new Map(),events=[];
@@ -11,7 +12,7 @@ window.addEventListener('message',e=>{
 });
 window.host={
  events,
- open(){iframe?.remove();ready=false;epoch++;iframe=document.createElement('iframe');iframe.src='/runtime/th08.html?managedData=1&gameGeneration=test&runtimeEpoch='+epoch+'&runtimeVariant=multiplayer&manual=1';document.body.append(iframe);},
+ open(){iframe?.remove();ready=false;epoch++;iframe=document.createElement('iframe');iframe.src='/runtime/th08.html?managedData=1&gameGeneration=test&runtimeEpoch='+epoch+'&runtimeVariant=multiplayer&manual=1';document.querySelector('#player').append(iframe);},
  ready(){return ready;},
  request(command,fields={}){return new Promise((resolve,reject)=>{
   const request='r'+(++serial),timer=setTimeout(()=>{pending.delete(request);reject(Error('Runtime request timeout '+command));},120000);

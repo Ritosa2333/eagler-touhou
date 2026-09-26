@@ -17,6 +17,7 @@ bool PoolsJournal::Bind(BulletSystem& b,ItemSystem& i,EffectSystem& e,Rng& rando
     if(bullets||b.creation.rollback_journal||b.lasers.rollback_journal||i.pool.rollback_journal||e.rollback_journal)return false;
     Netplay::RollbackJournalConfig config;config.maxFrames=History;
     config.maxBytesPerFrame=16*1024*1024;config.maxBlocksPerFrame=10000;
+    config.fastBulkCopy=true;config.coalesceRestore=true;
     if(!bytes.Reset(config))return false;
     bullets=&b;items=&i;effects=&e;rng=&random;failed=false;
     b.creation.rollback_journal=b.lasers.rollback_journal=i.pool.rollback_journal=e.rollback_journal=&bytes;

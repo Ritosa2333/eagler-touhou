@@ -136,6 +136,9 @@ void AsciiManager::snapshot_presentation(const AsciiContext& c){
     presentation_state.gauge_vm.capture(state.gauge);presentation_state.human_icon_vm.capture(state.human_icon);presentation_state.youkai_icon_vm.capture(state.youkai_icon);
     presentation_state.cursor_vm.capture(state.cursor);presentation_state.percentage_vm.capture(state.percentage);presentation_state.border_vm.capture(state.border);
     presentation_state.player=c.player;presentation_state.gauge=c.gauge;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    presentation_state.gauge=displayed_gauge(c);
+#endif
     presentation_state.blindness_radius=state.blindness_radius;presentation_state.blindness_color=state.blindness_color;presentation_state.valid=true;
 }
 void AsciiManager::initialize_vms(const AsciiContext& c){
@@ -238,7 +241,11 @@ void AsciiManager::draw_strings(const AsciiContext& c){
     }
 }
 void AsciiManager::draw_percentage(const Vec3& position,i32 percentage,u32 color){
-    AnmVm local;if(presentation::render_only)local=state.percentage;auto& vm=presentation::render_only?local:state.percentage;const u32 absolute=percentage<0?0u-u32(percentage):u32(percentage);
+    bool temporary=presentation::render_only;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    temporary=temporary||display_gauge;
+#endif
+    AnmVm local;if(temporary)local=state.percentage;auto& vm=temporary?local:state.percentage;const u32 absolute=percentage<0?0u-u32(percentage):u32(percentage);
     const i32 count=4+(percentage<0)+(absolute>=10000?3:absolute>=1000?2:1);
     const float offset=(integer(count)*number(3.5f)-number(3.5f)-number(4)).to_float();
     vm.pos=position;vm.pos.x=sub(vm.pos.x,offset);vm.color1.d3dColor=color;
@@ -252,10 +259,24 @@ void AsciiManager::draw_percentage(const Vec3& position,i32 percentage,u32 color
 }
 void AsciiManager::draw_overlays(const AsciiContext& c){
     auto& s=state;overlay.begin(!c.fog_disabled);
-    Vec3 presented_player=c.player;float presented_gauge=float(c.gauge);float presented_blindness_radius=s.blindness_radius;u32 presented_blindness_color=s.blindness_color;
+    auto gauge_context=c;
+    bool temporary_gauge=presentation::render_only;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(display_gauge&&display_limits){
+        gauge_context.gauge=*display_gauge;
+        gauge_context.human_limit=display_limits->minimum;gauge_context.youkai_limit=display_limits->maximum;
+        gauge_context.human_effects=display_limits->human_bonus;gauge_context.youkai_effects=display_limits->youkai_bonus;
+        gauge_context.human_tint=display_limits->human;gauge_context.youkai_tint=display_limits->youkai;
+        // Cursor/color/number glyph writes below are draw scratch. Each viewer
+        // uses copies even on semantic Draw, leaving shared authored VMs and
+        // native player/economy state identical across all endpoints.
+        temporary_gauge=true;
+    }
+#endif
+    Vec3 presented_player=c.player;float presented_gauge=float(gauge_context.gauge);float presented_blindness_radius=s.blindness_radius;u32 presented_blindness_color=s.blindness_color;
     if(presentation::active&&presentation_state.valid){
         const float dx=c.player.x-presentation_state.player.x,dy=c.player.y-presentation_state.player.y;if(dx*dx+dy*dy<16384.0f)presented_player={presentation::lerp_world(presentation_state.player.x,c.player.x),presentation::lerp_world(presentation_state.player.y,c.player.y),presentation::lerp_world(presentation_state.player.z,c.player.z)};
-        presented_gauge=presentation::lerp_world(float(presentation_state.gauge),float(c.gauge));
+        presented_gauge=presentation::lerp_world(float(presentation_state.gauge),float(gauge_context.gauge));
         if(presentation_state.blindness_color&&s.blindness_color){presented_blindness_radius=presentation::lerp_world(presentation_state.blindness_radius,s.blindness_radius);presented_blindness_color=u32(std::clamp(presentation::lerp_world(float(presentation_state.blindness_color&255),float(s.blindness_color&255)),0.0f,255.0f));}
     }
     AnmVm small_copy;if(presentation::render_only)small_copy=s.small_score_text;auto& small=presentation::render_only?small_copy:s.small_score_text;
@@ -294,9 +315,9 @@ void AsciiManager::draw_overlays(const AsciiContext& c){
     renderer.shake={};
     if(s.gauge.visible){
         AnmVm cursor_copy,percentage_copy,gauge_copy,human_copy,youkai_copy;
-        if(presentation::render_only){
+        if(temporary_gauge){
             cursor_copy=s.cursor;percentage_copy=s.percentage;gauge_copy=s.gauge;human_copy=s.human_icon;youkai_copy=s.youkai_icon;
-            if(presentation::active&&presentation_state.valid){
+            if(presentation::render_only&&presentation::active&&presentation_state.valid){
                 using V=presentation::VisualSample;constexpr u32 fields=V::Position|V::Offset|V::Attributes;
                 presentation_state.cursor_vm.apply(s.cursor,cursor_copy,presentation::world_alpha,fields);
                 presentation_state.percentage_vm.apply(s.percentage,percentage_copy,presentation::world_alpha,fields);
@@ -305,13 +326,20 @@ void AsciiManager::draw_overlays(const AsciiContext& c){
                 presentation_state.youkai_icon_vm.apply(s.youkai_icon,youkai_copy,presentation::world_alpha,fields);
             }
         }
-        auto& cursor=presentation::render_only?cursor_copy:s.cursor;auto& percentage_vm=presentation::render_only?percentage_copy:s.percentage;auto& gauge=presentation::render_only?gauge_copy:s.gauge;
-        auto& human=presentation::render_only?human_copy:s.human_icon;auto& youkai=presentation::render_only?youkai_copy:s.youkai_icon;
+        auto& cursor=temporary_gauge?cursor_copy:s.cursor;auto& percentage_vm=temporary_gauge?percentage_copy:s.percentage;auto& gauge=temporary_gauge?gauge_copy:s.gauge;
+        auto& human=temporary_gauge?human_copy:s.human_icon;auto& youkai=temporary_gauge?youkai_copy:s.youkai_icon;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(display_limits){
+            human.pos.x=add(human.pos.x,float(gauge_context.human_limit-c.human_limit)*.0056f);
+            youkai.pos.x=add(youkai.pos.x,float(gauge_context.youkai_limit-c.youkai_limit)*.0056f);
+        }
+#endif
         cursor.pos.x=(number(presented_gauge)*number(112)/number(2)/number(10000)+number(gauge.pos.x)+number(64)).to_float();{TH08_AUDIT_SCOPE(Ascii,&s.cursor,s.cursor.currentTimeInScript.current,0x300u);renderer.draw_2d(cursor,true);}
         percentage_vm.pos.x=(number(presented_gauge)*number(80)/number(2)/number(10000)+number(gauge.pos.x)+number(64)).to_float();percentage_vm.pos.y=sub(cursor.pos.y,7);percentage_vm.pos.z=cursor.pos.z;
-        const u32 rgb=c.gauge<=c.human_effects?0x7070ff:c.gauge<=c.human_tint?0xb0b0ff:c.gauge>=c.youkai_effects?0xff7070:c.gauge>=c.youkai_tint?0xffb0b0:0xffffff;
+        const auto& gc=gauge_context;
+        const u32 rgb=gc.gauge<=gc.human_effects?0x7070ff:gc.gauge<=gc.human_tint?0xb0b0ff:gc.gauge>=gc.youkai_effects?0xff7070:gc.gauge>=gc.youkai_tint?0xffb0b0:0xffffff;
         percentage_vm.color1.d3dColor=(gauge.color1.d3dColor&0xff000000)|rgb;gauge.color1=percentage_vm.color1;
-        {TH08_AUDIT_SCOPE(Ascii,&s.gauge,s.gauge.currentTimeInScript.current,0x301u);renderer.draw_no_rotation(gauge);}{TH08_AUDIT_SCOPE(Ascii,&s.human_icon,s.human_icon.currentTimeInScript.current,0x302u);renderer.draw_no_rotation(human);}{TH08_AUDIT_SCOPE(Ascii,&s.youkai_icon,s.youkai_icon.currentTimeInScript.current,0x303u);renderer.draw_no_rotation(youkai);}draw_percentage(percentage_vm.pos,c.gauge,percentage_vm.color1.d3dColor);
+        {TH08_AUDIT_SCOPE(Ascii,&s.gauge,s.gauge.currentTimeInScript.current,0x301u);renderer.draw_no_rotation(gauge);}{TH08_AUDIT_SCOPE(Ascii,&s.human_icon,s.human_icon.currentTimeInScript.current,0x302u);renderer.draw_no_rotation(human);}{TH08_AUDIT_SCOPE(Ascii,&s.youkai_icon,s.youkai_icon.currentTimeInScript.current,0x303u);renderer.draw_no_rotation(youkai);}draw_percentage(percentage_vm.pos,gc.gauge,percentage_vm.color1.d3dColor);
         percentage_vm.pos.x=(number(gauge.pos.x)+number(62)-number(14)).to_float();percentage_vm.pos.y=(number(gauge.pos.y)+number(3)+number(8)).to_float();
         i32 divisor=10000000,value=c.point_value,seen=0;
         for(i32 i=0;i<8;++i){seen+=value/divisor;if(seen){set_sprite(percentage_vm,value/divisor+136);TH08_AUDIT_SCOPE(Ascii,&s.percentage,s.percentage.currentTimeInScript.current,0x400u+u32(i));renderer.draw_no_rotation(percentage_vm);percentage_vm.pos.x=add(percentage_vm.pos.x,7);}value%=divisor;divisor/=10;}
