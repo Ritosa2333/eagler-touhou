@@ -83,7 +83,13 @@ bool GameSession::movement(const PlayerMotion& p,float speed,float,float& x,floa
     const i32 track=current.selection.stage*2+i32(p.player);
     if(is_replay)return motion.playback(track,x,y);
     const auto& input=motion_input[p.player];const bool enabled=input.enabled&&world&&world->dialogue->id<0&&world->dialogue->id!=-2;
-    if(enabled){x=input.x;y=input.y;if(!input.unlimited)touch::limit_vector(x,y,speed);}
+    if(enabled){x=input.x;y=input.y;
+        // A networked gesture ships the absolute field target, so both peers
+        // convert it here, at the frame that moves the player. Converting at
+        // send time aims from a position `lead` frames ahead of this frame and
+        // the player orbits the finger instead of reaching it.
+        if(input.target){const float sx=p.base_scale.x*p.effect_scale.x,sy=p.base_scale.y*p.effect_scale.y;x=sx?(x-p.position.x)/sx:0;y=sy?(y-p.position.y)/sy:0;}
+        if(!input.unlimited)touch::limit_vector(x,y,speed);}
     motion.record(track,enabled,x,y);return enabled;
 }
 ReplayFile GameSession::save_replay(const char* name){if(!recordable||is_replay){error="This run cannot be saved as a replay";return {};}const auto& c=world?world->configuration:current;auto file=recording.finish(state.random,name,result.date.data(),c.selection.characters[0],c.selection.characters[1]);if(file.data().empty()){error=recording.error;return file;}if(motion.used()){const auto tail=motion.trailer(9);if(tail.empty()){error="Touch replay recording exceeded its limit";return {};}auto extended=file.data();extended.insert(extended.end(),tail.begin(),tail.end());if(!file.assign(extended.data(),u32(extended.size()))){error="Touch replay size";return {};}}return file;}
