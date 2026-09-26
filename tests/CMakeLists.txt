@@ -134,6 +134,11 @@ add_test(
 add_executable(eagler_common_frame_pacing_policy_test
     frame-pacing-policy-test.cpp
 )
+
+add_executable(eagler_common_session_pacing_test session-pacing-test.cpp)
+target_include_directories(eagler_common_session_pacing_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/include")
+target_link_libraries(eagler_common_session_pacing_test PRIVATE eagler::netplay_headers)
+add_test(NAME eagler-common.session-pacing COMMAND eagler_common_session_pacing_test)
 target_link_libraries(eagler_common_frame_pacing_policy_test PRIVATE
     eagler::netplay_headers
 )
