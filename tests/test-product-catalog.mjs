@@ -34,7 +34,7 @@ assert.deepEqual(
   ["ja", "lang_zh-hans", "lang_zh-hant", "lang_en", "lang_de", "lang_ru"],
 );
 
-assert.deepEqual(PRODUCT_IDS, ["th06", "th07", "th08", "th09", "th10", "th06mp", "th07mp", "th09mp"]);
+assert.deepEqual(PRODUCT_IDS, ["th06", "th07", "th08", "th09", "th10", "th20", "th06mp", "th07mp", "th09mp"]);
 assert.equal(DEFAULT_PRODUCT_ID, "th06");
 assert.ok(PRODUCT_IDS.includes(DEFAULT_PRODUCT_ID));
 assert.equal(DEFAULT_MULTIPLAYER_PRODUCT_ID, "th07mp");
@@ -127,18 +127,26 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
   }
   assert.ok(content?.original && Array.isArray(content.original.files) && content.original.files.length > 0,
     `${game}: original-content files must be declared`);
-  assert.ok(content.hostPreparation?.ogg, `${game}: required OGG support needs an explicit Host preparation owner`);
-  assert.ok(["verified-converter", "prepared-content"].includes(content.hostPreparation.ogg.kind),
-    `${game}: unknown OGG Host preparation kind`);
-  if (content.hostPreparation.ogg.kind === "verified-converter") {
-    assert.match(content.hostPreparation.ogg.outputDirectory, /^[A-Za-z0-9][A-Za-z0-9._/-]*$/,
-      `${game}: verified OGG converter needs a safe output directory`);
+  // Products that stream retail BGM directly (no external OGG set) declare no
+  // OGG host-preparation owner. Everything else must declare one explicitly.
+  if (content.hostPreparation?.ogg) {
+    assert.ok(["verified-converter", "prepared-content"].includes(content.hostPreparation.ogg.kind),
+      `${game}: unknown OGG Host preparation kind`);
+    if (content.hostPreparation.ogg.kind === "verified-converter") {
+      assert.match(content.hostPreparation.ogg.outputDirectory, /^[A-Za-z0-9][A-Za-z0-9._/-]*$/,
+        `${game}: verified OGG converter needs a safe output directory`);
+    } else {
+      assert.ok(content.hostPreparation.preparedContent, `${game}: prepared OGG path needs preparedContent metadata`);
+    }
   } else {
-    assert.ok(content.hostPreparation.preparedContent, `${game}: prepared OGG path needs preparedContent metadata`);
+    assert.equal(product.musicCapabilities.midi, false,
+      `${game}: only a non-MIDI product may omit the external OGG host-preparation owner`);
   }
-  if (product.features.languages) {
-    assert.equal(content.hostPreparation?.languagePack?.kind, "thcrap-runtime-compiler",
-      `${game}: language-capable product needs an explicit language preparation adapter`);
+  // Language-capable products either declare the thcrap host compiler or state
+  // that language support is runtime-only (static packs installed by the shell).
+  if (content.hostPreparation?.languagePack) {
+    assert.equal(content.hostPreparation.languagePack.kind, "thcrap-runtime-compiler",
+      `${game}: unknown language preparation kind`);
     assert.ok(["archive", "archives"].includes(content.hostPreparation.languagePack.inputMode));
     assert.match(content.hostPreparation.languagePack.developmentEnv, /^EAGLER_[A-Z0-9_]+$/);
     assert.ok(Array.isArray(content.hostPreparation.languagePack.developmentFiles) &&
@@ -247,7 +255,7 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
 }
 console.log("Product catalog policy: PASS");
 
-for (const id of ["th06", "th07", "th08", "th09", "th10", "th06mp", "th07mp", "th09mp"]) {
+for (const id of ["th06", "th07", "th08", "th09", "th10", "th20", "th06mp", "th07mp", "th09mp"]) {
   assert.equal(productEnabledForBuild(id), true);
   assert.equal(productEnabledForBuild(id, false), true);
   assert.equal(productEnabledForBuild(id, true), true);

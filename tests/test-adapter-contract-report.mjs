@@ -48,13 +48,15 @@ for (const game of Object.keys(PRODUCT_GAMES)) {
   );
   assert.equal(report.product.music.mounts.ogg, PRODUCT_GAMES[game].package.musicMounts.ogg);
   assert.equal(report.product.activeFormatPreparation.artwork, PRODUCT_CONTENT[game].hostPreparation.artwork.kind);
-  assert.equal(report.product.activeFormatPreparation.ogg, PRODUCT_CONTENT[game].hostPreparation.ogg.kind);
+  assert.equal(report.product.activeFormatPreparation.ogg, PRODUCT_CONTENT[game].hostPreparation.ogg?.kind ?? null);
   assert.ok(report.protocol.legacyConfigureAliases.includes("touchBombZoneEnabled"));
   assert.deepEqual(report.protocol.legacyMusicModes, ["wav"]);
   assert.equal(report.protocol.commands["touch-controls"].requirement, "required");
   assert.equal(report.protocol.events["first-frame"].requirement, "required");
   assert.equal(report.nonObligations.compatibilityAdapters.includes("legacy-package-reader"), true);
-  assert.ok(report.product.hostPreparation?.ogg, `${game}: adapter report must expose Host content preparation ownership`);
+  if (PRODUCT_GAMES[game].package.musicMounts?.ogg) {
+    assert.ok(report.product.hostPreparation?.ogg, `${game}: adapter report must expose Host content preparation ownership`);
+  }
 }
 
 const th08 = createAdapterContractReport("th08");

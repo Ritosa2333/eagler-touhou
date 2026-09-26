@@ -92,6 +92,13 @@
           "cache": {}
         }
       }
+    },
+    "th20": {
+      "builder": "prebuilt",
+      "workspaceRepository": "th20",
+      "variants": {
+        "normal": { "features": { "thcrap": false, "thprac": false }, "cache": {} }
+      }
     }
   }
 }
