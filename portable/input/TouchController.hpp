@@ -8,7 +8,7 @@
 // lives here. The original 60Hz game determines the actual movement distance.
 namespace touhou::input {
 struct TouchState {int context=0,instance=0;bool ready=false;float x=0,y=0,fast=0,slow=0,min_x=0,min_y=0,max_x=640,max_y=480;};
-struct TouchSample {bool keys[256]{};int motion=0;float x=0,y=0;};
+struct TouchSample {bool keys[256]{};int motion=0;bool stick=false;float x=0,y=0;};
 class TouchController {
     struct Gesture {bool active=false;int id=0,count=0;float x=0,y=0,last_x=0,last_y=0;std::uint64_t start=0;};
     Gesture menu,dialogue,tap;std::set<int> fingers;int primary=0,instance=0,context=-1;
@@ -55,9 +55,9 @@ public:
         if(s.context!=1&&menu.active){const float dx=menu.last_x-menu.x,dy=menu.last_y-menu.y;if(std::abs(dx)>24||std::abs(dy)>24){if(std::abs(dx)>std::abs(dy))out.keys[dx>0?39:37]=true;else out.keys[dy>0?40:38]=true;}}
         if(s.context==1){out.keys[90]=fire||out.keys[90];out.keys[16]=focus||(two_finger&&fingers.size()>1);out.keys[88]=bomb;
           if(s.ready){
-            if(!arrows&&mode==3&&(stick_x||stick_y)){const float speed=key_slow||out.keys[16]?s.slow:s.fast;out.motion=1;out.x=s.x+stick_x*speed;out.y=s.y+stick_y*speed;}
+            if(!arrows&&mode==3&&(stick_x||stick_y)){const float speed=key_slow||out.keys[16]?s.slow:s.fast;out.motion=1;out.stick=true;out.x=s.x+stick_x*speed;out.y=s.y+stick_y*speed;}
             else if(mode>=2){out.keys[37]=stick_x<-.25f;out.keys[39]=stick_x>.25f;out.keys[38]=stick_y<-.25f;out.keys[40]=stick_y>.25f;}
-            if(dragging&&instance==s.instance){out.motion=unlimited?2:1;out.x=target_x;out.y=target_y;}
+            if(dragging&&instance==s.instance){out.motion=unlimited?2:1;out.stick=false;out.x=target_x;out.y=target_y;}
           }
         }else if(s.context!=3){out.keys[37]=out.keys[37]||stick_x<-.25f;out.keys[39]=out.keys[39]||stick_x>.25f;out.keys[38]=out.keys[38]||stick_y<-.25f;out.keys[40]=out.keys[40]||stick_y>.25f;}
         return out;

@@ -1,5 +1,6 @@
 **/artifacts/
 **/build-eagler/
+**/build-eagler-multiplayer/
 **/node_modules/
 **/.cache/
 **/.npm-cache/

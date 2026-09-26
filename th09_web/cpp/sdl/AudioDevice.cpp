@@ -43,6 +43,9 @@ bool AudioDevice::initialize(ResourceReader& resources){
 }
 bool AudioDevice::music(i32 track){
     auto& a=*impl;if(!a.ready)return false;if(track<0){if(a.music)ma_sound_stop(&a.music->sound);a.track=-1;return true;}
+    // A muted host transfers no OGG at all, so selecting the track must not open
+    // the decoder; otherwise the title and every match fail on a missing file.
+    if(!music_enabled){if(a.music){ma_sound_stop(&a.music->sound);a.music.reset();}a.track=track;a.fade=0;a.music_paused=false;error.clear();return true;}
     const char* stem=nullptr;for(const auto& t:music_tracks)if(t.cue==track){stem=t.file;break;}if(!stem){error="Unknown TH09 music cue";return false;}
     const auto filename=std::string(stem)+".wav";const u8* format=nullptr;
     for(u32 n=0;n+52<=a.formats.size();n+=52)if(std::strncmp(reinterpret_cast<const char*>(a.formats.data()+n),filename.c_str(),16)==0){format=a.formats.data()+n;break;}
