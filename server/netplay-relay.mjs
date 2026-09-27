@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto';
 import { WebSocket, WebSocketServer } from 'ws';
 import { roomProbeEnvelope } from './room-probe-policy.mjs';
+import { createRoomDirectory } from './room-directory.mjs';
 
 import { multiplayerConfigForProduct } from '../lib/contracts/product-catalog.mjs';
 import { isSpectatorFrameForRoom } from './spectator-frame.mjs';
@@ -134,6 +135,8 @@ function getRoom(id) {
   if (!room) {
     const multiplayer = multiplayerPolicyForRoomId(id);
     room = {
+      createdAt: Date.now(),
+      lastActivityAt: Date.now(),
       multiplayer,
       clients: new Map(),
       lobbyClients: new Map(),
@@ -219,7 +222,7 @@ function sendSpectatorPayload(socket, payload, roomId, runId, spectatorId) {
 
 function maybeDeleteRoom(roomId, room) {
   if (room.clients.size === 0 && room.lobbyClients.size === 0 &&
-      room.lobbyDisconnectTimers.size === 0 && room.runs.size === 0)
+      room.lobbyDisconnectTimers.size === 0 && room.runs.size === 0 && rooms.get(roomId) === room)
     rooms.delete(roomId);
 }
 
@@ -414,6 +417,7 @@ function broadcastLobby(room, payload = null) {
   const message = JSON.stringify(payload || { type: 'state', room: lobbySnapshot(room) });
   for (const socket of room.lobbyClients.values())
     if (socket.readyState === WebSocket.OPEN) socket.send(message);
+  roomDirectory.changed();
 }
 
 function clearLobbySeat(room, clientId) {
@@ -451,11 +455,19 @@ function invalidateLobbyReady(room) {
 function resetLobbyAfterRun(room) {
   if (room.lobby.phase === 'lobby') return;
   room.lobby.phase = 'lobby';
+  roomDirectory.activity(room);
   invalidateLobbyReady(room);
   broadcastLobby(room);
 }
 
-function handleLobbyConnection(socket, roomId, clientId) {
+function handleLobbyConnection(socket, roomId, clientId, memberId, intent) {
+  const existing = rooms.get(roomId);
+  if ((intent === 'join' && !existing) || (intent === 'create' && existing && !existing.lobbyClients.has(clientId) && lobbySeatOf(existing, clientId) < 0)) {
+    sendLobby(socket, { type: 'error', error: intent === 'join' ? '房间已关闭，请返回大厅刷新。' : '房间号已被使用，请重新创建。' });
+    socket.close(4007, 'room unavailable');
+    return;
+  }
+  if (!roomDirectory.admit(socket, roomId, clientId, memberId)) return;
   const room = getRoom(roomId);
   const pendingDisconnect = room.lobbyDisconnectTimers.get(clientId);
   if (pendingDisconnect) {
@@ -467,11 +479,12 @@ function handleLobbyConnection(socket, roomId, clientId) {
     previous.close(1000, 'lobby reconnected');
   room.lobbyClients.set(clientId, socket);
   console.log(`LOBBY JOIN room=${roomId} client=${clientId} peers=${room.lobbyClients.size}`);
-  sendLobby(socket, { type: 'state', room: lobbySnapshot(room), roomProbe: { iceServers: iceServersFor(roomId, 'lobby-probe', 0) } });
+  sendLobby(socket, { type: 'state', room: lobbySnapshot(room), roomDirectory: { version: 1 }, roomProbe: { iceServers: iceServersFor(roomId, 'lobby-probe', 0) } });
   if (pendingDisconnect) broadcastLobby(room);
   let probeBudget = 0, probeWindow = Date.now();
 
   socket.on('message', (data, isBinary) => {
+    if (room.lobbyClients.get(clientId) !== socket) return;
     if (isBinary) {
       socket.close(1003, 'lobby expects text frames');
       return;
@@ -479,6 +492,12 @@ function handleLobbyConnection(socket, roomId, clientId) {
     let message;
     try { message = JSON.parse(String(data)); }
     catch { sendLobby(socket, { type: 'error', error: 'invalid lobby message' }); return; }
+    if (!message || typeof message !== 'object') return;
+    if (message.type === 'activity') {
+      if (lobbySeatOf(room, clientId) >= 0 || room.lobby.spectators.has(clientId)) roomDirectory.activity(room);
+      return;
+    }
+    if (['take-seat', 'stand-up', 'spectate', 'leave-spectator', 'set-name', 'set-loadout', 'set-ready', 'settings', 'start'].includes(message.type)) roomDirectory.activity(room);
 
     if (message?.type === 'room-probe') {
       if (room.lobby.phase !== 'lobby' || room.lobbyClients.get(clientId) !== socket || lobbySeatOf(room, clientId) < 0) return;
@@ -626,6 +645,7 @@ function handleLobbyConnection(socket, roomId, clientId) {
       room.lobby.phase = 'starting';
       room.lobby.startSerial++;
       const run = getRun(room, String(room.lobby.startSerial));
+      run.lobbyClientIds = activeSeats.map(entry => entry.clientId);
       const seatedClients = new Set(activeSeats.map(entry => entry.clientId));
       run.playerCount = room.lobby.playerCount;
       run.admittedSpectators = new Set(
@@ -646,6 +666,7 @@ function handleLobbyConnection(socket, roomId, clientId) {
       const spectatorChanged = room.lobby.spectators.delete(clientId);
       const deliberateLeave = code === 1000 && String(reason || '') === 'leave room';
       if (deliberateLeave) {
+        roomDirectory.depart(clientId, socket);
         const seatChanged = clearLobbySeat(room, clientId);
         if (seatChanged) invalidateLobbyReady(room);
         if (seatChanged || spectatorChanged) broadcastLobby(room);
@@ -707,9 +728,18 @@ function handleSpectatorConnection(socket, roomId, runId, spectatorId, playerCou
 }
 
 const server = new WebSocketServer({ host, port, perMessageDeflate: false });
+const roomDirectory = createRoomDirectory({ rooms, clearSeat: clearLobbySeat,
+  invalidateReady: invalidateLobbyReady, broadcast: broadcastLobby, maybeDelete: maybeDeleteRoom });
+server.on('close', () => roomDirectory.close());
 
 server.on('connection', (socket, request) => {
+  roomDirectory.track(socket);
   const url = new URL(request.url || '/', `ws://${request.headers.host || 'localhost'}`);
+  const memberId = url.searchParams.get('member') || '';
+  if (url.searchParams.get('directory') === '1') {
+    roomDirectory.connect(socket, /^[A-Za-z0-9_-]{8,64}$/.test(memberId) ? memberId : '');
+    return;
+  }
   if (url.searchParams.get('diagnostic') === '1') {
     handleDiagnosticConnection(socket);
     return;
@@ -718,7 +748,8 @@ server.on('connection', (socket, request) => {
   const runId = url.searchParams.get('run') || '0';
   const lobbyClient = url.searchParams.get('lobby') || '';
   if (/^[A-Za-z0-9_-]{1,64}$/.test(roomId) && /^[A-Za-z0-9_-]{8,64}$/.test(lobbyClient)) {
-    handleLobbyConnection(socket, roomId, lobbyClient);
+    handleLobbyConnection(socket, roomId, lobbyClient,
+      /^[A-Za-z0-9_-]{8,64}$/.test(memberId) ? memberId : lobbyClient, url.searchParams.get('intent'));
     return;
   }
   const spectator = url.searchParams.get('spectator') || '';

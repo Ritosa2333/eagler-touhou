@@ -1,5 +1,13 @@
 .replay-loading{min-height:132px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#aaa;font:11px/1.2 var(--ui-font);letter-spacing:.08em}.replay-loading i{display:block;width:24px;height:24px;box-sizing:border-box;border:2px solid #555;border-top-color:#eee;border-radius:50%;animation:replay-loading-spin .72s linear infinite}.replay-load-error{color:#ef777d}@keyframes replay-loading-spin{to{transform:rotate(360deg)}}
 .toast{z-index:80}
+/* Launcher / directory navigation: one short dissolve, including browser Back. */
+::view-transition-group(root){animation-duration:.18s}
+::view-transition-old(root){animation:launcher-page-out .18s ease-out both}
+::view-transition-new(root){animation:launcher-page-in .18s ease-out both}
+@keyframes launcher-page-out{to{opacity:0}}
+@keyframes launcher-page-in{from{opacity:0}}
+html:has(body.less-motion)::view-transition-group(root),html:has(body.less-motion)::view-transition-old(root),html:has(body.less-motion)::view-transition-new(root){animation:none!important}
+@media(prefers-reduced-motion:reduce){::view-transition-group(root),::view-transition-old(root),::view-transition-new(root){animation:none!important}}
 .site-notice-opt-out[hidden]{display:none}
 @font-face{font-family:"touhou98";font-style:normal;font-weight:400;font-display:swap;src:url("assets/fonts/touhou98.woff2") format("woff2")}
 @font-face{font-family:"ET Yatra";font-style:normal;font-weight:400;font-display:swap;src:url("assets/fonts/yatra-one-latin.woff2") format("woff2")}
@@ -1021,6 +1029,7 @@ body:has(.library-layout) .site-footer{background:none}
 .game-shelf[hidden],.library-layout .game[hidden]{display:none!important}
 .shelf-heading{display:flex;align-items:center;gap:18px;padding:0 6px 10px;min-height:44px}
 .shelf-heading h2{margin:0;color:var(--paper);font:700 22px/1.3 var(--ui-font);letter-spacing:.04em}
+.shelf-lobby-link{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-left:auto;min-height:44px;padding:9px 15px;border-radius:14px;background:#f1e4e6;color:#a93243;text-decoration:none;font:700 13px/1.3 var(--ui-font);white-space:nowrap;transition:opacity .18s ease}.shelf-lobby-link img{filter:brightness(0);opacity:.65}.shelf-lobby-link:hover{opacity:.88}.shelf-lobby-link:focus-visible{outline:2px solid var(--paper);outline-offset:3px}
 .shelf-caption{display:none}
 .game-rail{display:flex;gap:20px;overflow-x:auto;overflow-y:hidden;scroll-padding-inline:6px;padding:6px 6px 14px;scrollbar-width:none;overscroll-behavior-x:contain;min-width:0}
 .game-rail::-webkit-scrollbar{display:none}
@@ -1086,6 +1095,11 @@ body.library-tools-open .main.library-layout.has-selection>.tools{opacity:1;visi
 .options-subtitle{display:block;min-width:0;margin:0;overflow-wrap:anywhere;font:400 16px/1.3 var(--art-font);color:var(--paper);text-shadow:0 1px 4px #000}
 :is(.library-layout,.mp-settings-room-drawer) .tools-head .mp-title-badge{flex:0 0 auto;margin:0;white-space:nowrap}
 .options-scroll{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;padding:0 24px;scrollbar-width:thin;scrollbar-color:#ebe7df30 transparent}
+.options-lobby-link{display:flex;align-items:center;gap:12px;min-height:48px;margin:12px 0 16px;padding:12px 16px;border-radius:16px;background:var(--md-surface-container,#ffffff0a);color:var(--paper);font:600 14px/1.4 var(--ui-font);text-decoration:none;transition:background-color .16s ease}
+.options-lobby-link[hidden]{display:none}.options-lobby-link img{opacity:.8}.options-lobby-link svg{margin-left:auto;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;opacity:.6}
+.options-lobby-link:focus-visible{outline:2px solid var(--paper);outline-offset:3px}
+@media(hover:hover){.options-lobby-link:hover{background:#ffffff14}}
+.options-lobby-link:active{background:#ffffff1c}
 .tools.mp-mode .options-singleplayer{display:none}
 .library-layout .tools-callout{padding:0;margin:0 0 6px;border:0;border-radius:0;background:none}
 .library-layout .tools-callout-title{min-height:32px;margin:0;list-style:none;cursor:pointer;color:var(--paper);font:400 12px/1.4 var(--ui-font)}
@@ -1340,18 +1354,16 @@ body.mp-room-active .sheet:has(.library-layout) .masthead{display:grid!important
 body.mp-room-active .sheet:has(.library-layout) .main{display:grid!important}
 body.mp-room-active .game-library{display:grid;visibility:hidden;pointer-events:none}
 body.mp-room-active #mpRoomView.mp-room-view{position:fixed!important;inset:0!important;z-index:45!important;width:100%!important;max-width:1600px!important;height:100dvh!important;min-height:0!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain}
-/* Return from the room as one surface, then reveal the launcher beneath it. */
-body.mp-room-leaving #mpRoomView.mp-room-view{animation:mp-room-leave .22s cubic-bezier(.4,0,1,1) both!important;pointer-events:none}
-body.mp-room-returning .game-library{animation:mp-room-home-lite .25s ease-out both}
-body.mp-room-returning .main.library-layout>.tools{animation:mp-room-options-in .32s ease-out both!important}
-@keyframes mp-room-leave{from{opacity:1;transform:translateX(0) scale(1)}to{opacity:0;transform:translateX(22px) scale(.985)}}
+/* Return immediately; animate only the destination surface. */
+body.mp-room-active #mpRoomView.mp-room-view{animation:mp-room-surface-in .18s cubic-bezier(.2,.7,.3,1) both}
+#mpRoomView .mp-session-dock{animation:none}
+body.mp-room-returning .game-library{animation:none}
+body.mp-room-returning .main.library-layout>.tools{animation:mp-room-options-in .18s ease-out both!important}
+@keyframes mp-room-surface-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes mp-room-options-in{from{opacity:0}to{opacity:1}}
 @media(max-width:780px),(hover:none),(pointer:coarse){
   body.mp-room-active .sheet:has(.library-layout){display:grid!important;grid-template-rows:auto 1fr!important;gap:22px!important;padding:0 18px 20px!important}
   body.mp-room-active .sheet:has(.library-layout) .masthead{display:grid!important;visibility:hidden!important;margin-inline:-18px;padding-inline:18px}
-  body.mp-room-active #mpRoomView.mp-room-view{animation:mp-room-fade .18s ease-out both}
-  body.mp-room-leaving #mpRoomView.mp-room-view{animation:mp-room-leave-lite .16s ease-in both!important}
-  body.mp-room-returning .game-library{animation:mp-room-home-lite .18s ease-out both}
   body.mp-room-returning .main.library-layout>.tools{animation-duration:.18s!important}
   .main.library-layout>.tools,.main.library-layout.has-selection>.tools.mp-mode{transform:translateY(14px)!important;transition:opacity .18s ease-out,transform .22s ease-out,visibility 0s .22s!important;will-change:opacity,transform}
   body.library-tools-open .main.library-layout.has-selection>.tools{transform:translateY(0)!important;transition-delay:0s!important}
@@ -1368,7 +1380,8 @@ body.mp-room-returning .main.library-layout>.tools{animation:mp-room-options-in 
 @keyframes mp-room-leave-lite{from{opacity:1}to{opacity:0}}
 @keyframes mp-room-home-lite{from{opacity:0}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){body.mp-room-active #mpRoomView.mp-room-view,body.mp-room-leaving #mpRoomView.mp-room-view,body.mp-room-returning :is(.sheet,.game-library){animation:none!important}.main.library-layout>.tools,.main.library-layout.has-selection>.tools.mp-mode,.library-backdrop{transition:none!important}}
-.less-motion.mp-room-active #mpRoomView.mp-room-view,.less-motion.mp-room-leaving #mpRoomView.mp-room-view,.less-motion.mp-room-returning :is(.sheet,.game-library){animation:none!important}
+.less-motion.mp-room-active #mpRoomView.mp-room-view,.less-motion.mp-room-leaving #mpRoomView.mp-room-view,.less-motion.mp-room-returning :is(.sheet,.game-library,.tools){animation:none!important}
+@media(prefers-reduced-motion:reduce){body.mp-room-returning .main.library-layout>.tools{animation:none!important}}
 .less-motion .main.library-layout>.tools,.less-motion .main.library-layout.has-selection>.tools.mp-mode,.less-motion .library-backdrop{transition:none!important}
 .player.open.th09-network-open{touch-action:auto}
 .th09-network-dialog{position:absolute;z-index:90;inset:0;display:grid;place-items:center;box-sizing:border-box;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));overflow:auto;overscroll-behavior:contain;touch-action:auto;-webkit-user-select:text;user-select:text;background:var(--ink);color:var(--paper);font-family:var(--ui-font)}

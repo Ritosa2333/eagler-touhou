@@ -141,6 +141,7 @@ import {
 } from "./runtime-diagnostics-model.mjs";
 import {
   createMultiplayerIdentityStore,
+  multiplayerMemberId,
   multiplayerDisplayInitial,
   normalizeMultiplayerDisplayName as mpNormalizeDisplayName,
 } from "./multiplayer-identity.mjs";
@@ -537,9 +538,13 @@ function mpReconnectLobbyNow() {
   mpConnectLobby(true);
 }
 
+let mpLobbyIntent = new URL(location.href).searchParams.get("lobbyAction") || "";
+let mpDirectoryAutoSeat = new URL(location.href).searchParams.get("fromLobby") === "1" && mpLobbyIntent === "join";
+let mpLobbyStopped = false;
+let mpDirectorySupported = false;
 function mpConnectLobby(reconnecting = false) {
   const room = mpUiState.room;
-  if (!room || typeof WebSocket !== "function") return;
+  if (!room || mpLobbyStopped || typeof WebSocket !== "function") return;
   mpLobby.clientId = multiplayerIdentity.lobbyClientId(isMultiplayerProduct(state.product) ? state.product : DEFAULT_MULTIPLAYER_PRODUCT_ID);
   let lobbyRelay;
   try {
@@ -547,6 +552,8 @@ function mpConnectLobby(reconnecting = false) {
       product: state.product,
       roomCode: room.code,
       clientId: mpLobby.clientId,
+      memberId: multiplayerMemberId(),
+      intent: mpLobbyIntent,
     });
   } catch { return; }
   const transportRoomId = lobbyRelay.roomId;
@@ -561,6 +568,7 @@ function mpConnectLobby(reconnecting = false) {
     try { previous.close(1000, "replace lobby socket"); } catch {}
   }
   const socket = new WebSocket(lobbyRelay.url);
+  mpDirectorySupported = false;
   roomNetwork.reset();
   mpLobby.socket = socket;
   mpLobby.roomCode = transportRoomId;
@@ -593,6 +601,15 @@ function mpConnectLobby(reconnecting = false) {
       return;
     }
     if (message.type === "state") {
+      if (record(message.roomDirectory)?.version === 1) mpDirectorySupported = true;
+      mpLobbyIntent = "join";
+      const route = new URL(location.href);
+      if (route.searchParams.has("lobbyAction")) {
+        route.searchParams.delete("lobbyAction");
+        route.searchParams.delete("lobbyPlayers");
+        route.searchParams.delete("lobbyDifficulty");
+        history.replaceState(history.state, "", route);
+      }
       const probe = record(message.roomProbe);
       if (probe) void roomNetwork.receive({ type: "room-probe-config", iceServers: probe.iceServers });
       // The relay snapshot is authoritative for the current room generation.
@@ -600,6 +617,12 @@ function mpConnectLobby(reconnecting = false) {
       // with the same code from suppressing the next start event.
       mpLobby.startSerial = Math.max(0, Number(record(message.room)?.startSerial) || 0);
       mpApplyLobbyRoom(message.room);
+      if (mpDirectoryAutoSeat) {
+        mpDirectoryAutoSeat = false;
+        const joinedRoom = mpUiState.room;
+        const emptySeat = joinedRoom?.seats?.slice(0, joinedRoom.playerCount).findIndex(seat => !seat) ?? -1;
+        if (mpUiState.seat == null && emptySeat >= 0) mpTakeSeat(emptySeat);
+      }
       return;
     }
     if (message.type === "start") {
@@ -622,11 +645,28 @@ function mpConnectLobby(reconnecting = false) {
       showToast(String(message.error));
     }
   });
-  socket.addEventListener("close", () => {
+  socket.addEventListener("close", event => {
     if (mpLobby.socket !== socket) return;
     roomNetwork.reset();
     mpLobby.socket = null;
     mpLobby.connected = false;
+    if ([4004, 4007, 4008, 4009].includes(event.code)) {
+      mpLobbyStopped = true;
+      const explanation = t(event.code === 4004 ? "lobby.expired" : event.code === 4008 ? "lobby.replaced" : event.code === 4009 ? "lobby.conflict" : "lobby.gone");
+      if (!state.launched) {
+        mpResetRoomState();
+        if (mpFromDirectory()) {
+          try { sessionStorage.setItem("eagler-lobby-message", explanation); } catch {}
+          mpReturnToDirectory();
+          return;
+        }
+        applyHistoryOperations(history, [launcherOptionsHistoryOperation({ currentUrl: location.href, currentState: history.state, product: state.product })]);
+        state.hasSelection = true;
+        render();
+      }
+      showToast(explanation);
+      return;
+    }
     if (mpUiState.room?.code === room.code) {
       room.connection = "reconnecting";
       mpScheduleLobbyReconnect(room.code);
@@ -1504,8 +1544,16 @@ const mpLobby: {
 };
 window.addEventListener("online", mpReconnectLobbyNow);
 const roomNetwork = createRoomNetwork({ send: mpLobbySend, changed: renderRoomNetwork });
-window.addEventListener("pagehide", () => roomNetwork.suspend());
-window.addEventListener("pageshow", event => { if (event.persisted) renderMpRoom(); });
+window.addEventListener("pagehide", () => { roomNetwork.suspend(); mpDisconnectLobby(); });
+window.addEventListener("pageshow", event => { if (event.persisted) { mpReconnectLobbyNow(); renderMpRoom(); } });
+let mpLastActivitySent = 0;
+function mpNoteRoomActivity(event: Event) {
+  if (!event.isTrusted || !mpDirectorySupported || document.visibilityState !== "visible" || !mpUiState.room || Date.now() - mpLastActivitySent < 15_000) return;
+  mpLastActivitySent = Date.now();
+  mpLobbySend({ type: "activity" });
+}
+document.addEventListener("pointerdown", mpNoteRoomActivity, { passive: true });
+document.addEventListener("keydown", mpNoteRoomActivity);
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") mpReconnectLobbyNow();
 });
@@ -4091,6 +4139,15 @@ function render() {
   if (cover.getAttribute("src") !== coverSource) cover.src = coverSource;
   $("#optionsNumber").textContent = identity.number;
   $("#optionsSubtitle").textContent = identity.subtitle;
+  const lobbyProduct = multiplayerProductIdForGame(state.game);
+  const lobbyLink = $("#optionsLobbyLink") as HTMLAnchorElement;
+  lobbyLink.hidden = !lobbyProduct || !productEnabled(lobbyProduct);
+  if (lobbyProduct) {
+    const lobbyUrl = new URL("lobby.html", location.href);
+    lobbyUrl.searchParams.set("game", lobbyProduct);
+    lobbyLink.href = lobbyUrl.href;
+    lobbyLink.setAttribute("aria-label", `${identity.title} · ${t("lobby.title")}`);
+  }
   $("#mpTitleBadge").hidden = !multiplayerProduct;
   const support = PRODUCT_GAMES[state.game].support;
   const noticeGame = "adaptationNotice" in support && support.adaptationNotice === "early-test" && !multiplayerProduct;
@@ -6067,6 +6124,7 @@ async function mpCopyRoomCode() {
 }
 $("#mpCopyRoomCode").addEventListener("click", mpCopyRoomCode);
 $("#mpLeaveRoom").addEventListener("click", () => {
+  if (mpFromDirectory()) { mpLeaveRoom(); return; }
   if (history.state?.[mpRoomHistoryKey] === mpUiState.room?.code) history.back();
   else mpLeaveRoom();
 });
@@ -6908,6 +6966,16 @@ function mpClearPersistedRoom() {
   mpSyncRoomUrl("");
 }
 
+function mpFromDirectory() { return new URL(location.href).searchParams.get("fromLobby") === "1"; }
+function mpReturnToDirectory() {
+  const target = new URL("lobby.html", location.href);
+  target.searchParams.set("game", state.product);
+  let cameFromDirectory = false;
+  try { const previous = new URL(document.referrer); cameFromDirectory = previous.origin === target.origin && previous.pathname === target.pathname; } catch {}
+  if (cameFromDirectory && history.length > 1) history.back();
+  else location.replace(target.href);
+}
+
 function mpRestoreRoomFromLocation() {
   const code = mpNormalizeRoomCode(new URL(location.href).searchParams.get(mpRoomUrlKey));
   if (!code) return false;
@@ -6916,7 +6984,8 @@ function mpRestoreRoomFromLocation() {
   // Seed one once, then push the room route so the browser Back action is as
   // deterministic as the in-page return button. A managed room entry keeps
   // this marker across refreshes and must not grow history again.
-  applyHistoryOperations(history, directRoomHistorySeed({
+  if (mpFromDirectory()) history.replaceState({ ...history.state, [mpRoomHistoryKey]: code }, "", location.href);
+  else applyHistoryOperations(history, directRoomHistorySeed({
     currentUrl: location.href,
     currentState: history.state,
     roomCode: code,
@@ -6927,11 +6996,14 @@ function mpRestoreRoomFromLocation() {
     playerCounts: mpPlayerCounts(routedProduct),
     difficulties: multiplayerConfigForProduct(routedProduct)?.difficulties || [],
   });
-  const playerCount = saved?.room.playerCount ?? mpDefaultPlayerCount(routedProduct);
-  const difficulty = saved?.room.difficulty ?? 1;
-  const seat = saved?.seat ?? null;
+  const requested = new URL(location.href).searchParams;
+  const createdInDirectory = mpFromDirectory() && requested.get("lobbyAction") === "create";
+  const requestedCount = Number(requested.get("lobbyPlayers")) as 2 | 3;
+  const playerCount = saved?.room.playerCount ?? (createdInDirectory && mpPlayerCounts(routedProduct).includes(requestedCount) ? requestedCount : mpDefaultPlayerCount(routedProduct));
+  const difficulty = saved?.room.difficulty ?? (createdInDirectory ? Math.max(0, Math.min((multiplayerConfigForProduct(routedProduct)?.difficulties.length || 1) - 1, Math.trunc(Number(requested.get("lobbyDifficulty")) || 0))) : 1);
+  const seat = saved?.seat ?? (createdInDirectory ? 0 : null);
   mpUiState.room = {
-    code, playerCount, difficulty, created: !!saved?.room.created,
+    code, playerCount, difficulty, created: createdInDirectory || !!saved?.room.created,
     seats: null, synced: false, connection: "connecting",
   };
   mpUiState.seat = seat;
@@ -6948,6 +7020,9 @@ function mpRestoreRoomFromLocation() {
 }
 
 function mpEnterRoom(code: string, created: boolean) {
+  mpLobbyStopped = false;
+  mpDirectoryAutoSeat = false;
+  mpLobbyIntent = created ? "create" : "join";
   if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   // A relay room is ephemeral: once every lobby/game client leaves, recreating
   // the same room code starts its server-side startSerial from zero again.
@@ -6981,53 +7056,34 @@ function mpResetRoomState() {
   multiplayerRoomSessions.clear(state.product);
 }
 
-let mpRoomLeavePending = false;
 let mpRoomReturnTimer: number | null = null;
 function mpLeaveRoom() {
   if (th09NetworkOverlayOpen()) { th09LeaveNetworkRoom(); return; }
-  const leavingRoom = mpUiState.room;
-  if (!leavingRoom || mpRoomLeavePending) return;
-  const returnLocation = location.href;
-  const roomView = $("#mpRoomView");
+  if (!mpUiState.room) return;
   const reducedMotion = state.lessMotion || matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const compactMotion = matchMedia("(max-width: 780px), (hover: none), (pointer: coarse)").matches;
-  const leaveDuration = compactMotion ? 160 : 220;
-  const returnDuration = compactMotion ? 180 : 320;
-  const finish = () => {
-    mpRoomLeavePending = false;
-    document.body.classList.remove("mp-room-leaving");
-    roomView.inert = false;
-    if (mpUiState.room !== leavingRoom) return;
-    mpResetRoomState();
-    if (!reducedMotion) document.body.classList.add("mp-room-returning");
-    if (location.href === returnLocation) {
-      applyHistoryOperations(history, [launcherOptionsHistoryOperation({
-        currentUrl: location.href,
-        currentState: history.state,
-        product: state.product,
-      })]);
-      state.hasSelection = true;
-      render();
-    } else if (!syncSelectionFromPlayerRoute()) {
-      showLauncherHome();
-    }
-    if (state.hasSelection) $("#libraryBack").focus({ preventScroll: true });
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-    setTranslatedStatus("status.roomLeft");
-    if (!reducedMotion) {
-      if (mpRoomReturnTimer !== null) window.clearTimeout(mpRoomReturnTimer);
-      mpRoomReturnTimer = window.setTimeout(() => {
-        document.body.classList.remove("mp-room-returning");
-        mpRoomReturnTimer = null;
-      }, returnDuration);
-    }
-  };
-  if (reducedMotion) { finish(); return; }
-  mpRoomLeavePending = true;
-  roomView.inert = true;
-  document.body.classList.remove("mp-room-returning");
-  document.body.classList.add("mp-room-leaving");
-  window.setTimeout(finish, leaveDuration);
+  // Commit departure immediately; only the destination animates. Waiting for
+  // the room to fade first stalls both the return button and system Back.
+  mpResetRoomState();
+  if (mpFromDirectory()) { mpReturnToDirectory(); return; }
+  if (mpRoomReturnTimer !== null) window.clearTimeout(mpRoomReturnTimer);
+  mpRoomReturnTimer = null;
+  document.body.classList.toggle("mp-room-returning", !reducedMotion);
+  applyHistoryOperations(history, [launcherOptionsHistoryOperation({
+    currentUrl: location.href,
+    currentState: history.state,
+    product: state.product,
+  })]);
+  state.hasSelection = true;
+  render();
+  $("#libraryBack").focus({ preventScroll: true });
+  window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  setTranslatedStatus("status.roomLeft");
+  if (!reducedMotion) {
+    mpRoomReturnTimer = window.setTimeout(() => {
+      document.body.classList.remove("mp-room-returning");
+      mpRoomReturnTimer = null;
+    }, 180);
+  }
 }
 
 const mpSeatPresentations = new WeakMap<HTMLElement, { room: string; occupant: string; animations: Animation[] }>();

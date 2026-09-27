@@ -7,6 +7,9 @@ const relayRoleParams = Object.freeze([
   "signal",
   "spectator",
   "diagnostic",
+  "directory",
+  "member",
+  "intent",
 ]);
 
 export interface MultiplayerLobbyRelayUrl {
@@ -45,14 +48,24 @@ export function multiplayerTransportRoomId(product: string, roomCode: string): s
 
 export function buildMultiplayerLobbyRelayUrl(
   baseUrl: string,
-  { product, roomCode, clientId }: { product: string; roomCode: string; clientId: string },
+  { product, roomCode, clientId, memberId, intent }: { product: string; roomCode: string; clientId: string; memberId?: string; intent?: string },
 ): MultiplayerLobbyRelayUrl {
   const url = relayUrl(baseUrl);
   clearRelayRole(url);
   const roomId = multiplayerTransportRoomId(product, roomCode);
   url.searchParams.set("room", roomId);
   url.searchParams.set("lobby", clientId);
+  if (memberId) url.searchParams.set("member", memberId);
+  if (intent === "join" || intent === "create") url.searchParams.set("intent", intent);
   return { roomId, url: url.href };
+}
+
+export function buildMultiplayerDirectoryRelayUrl(baseUrl: string, memberId: string): string {
+  const url = relayUrl(baseUrl);
+  clearRelayRole(url);
+  url.searchParams.set("directory", "1");
+  url.searchParams.set("member", memberId);
+  return url.href;
 }
 
 export function buildMultiplayerGameplayRelayUrl(
