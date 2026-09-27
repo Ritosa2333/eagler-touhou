@@ -3709,13 +3709,18 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
     const selectedProduct = PRODUCT_GAMES[state.game];
     const directoryRuntime = "runtimeFileLayout" in selectedProduct &&
       selectedProduct.runtimeFileLayout === "directory";
+    const networkedLaunch = "netplayMode" in netplayOptions && netplayOptions.netplayMode === "lan";
     const firstFramePromise = options.awaitFirstFrame
       ? waitForRuntimeFirstFrame(session, directoryRuntime ? 122_000 : firstFrameFallbackMs + 2000)
       : null;
     // Session invalidation owns cancellation. Observe rejection immediately so
     // an earlier launch failure cannot leave a transient unhandled promise.
     if (firstFramePromise) void firstFramePromise.catch(() => {});
-    armFirstFrameWatchdog(directoryRuntime ? 122_000 : firstFrameFallbackMs);
+    // A live multiplayer Runtime can wait for another device before it is
+    // allowed to present frame zero. That wait has no local 12-second bound;
+    // Runtime errors and the launch request still report actual failures.
+    if (networkedLaunch) clearFirstFrameWatchdog();
+    else armFirstFrameWatchdog(directoryRuntime ? 122_000 : firstFrameFallbackMs);
     // The Runtime is once again the direct child browsing context. Keep the
     // bounded Android focus relay that fixed the historical first-frame stall,
     // but there is no longer a Player -> Runtime focus hop.
