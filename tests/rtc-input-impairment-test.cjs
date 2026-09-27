@@ -50,3 +50,24 @@ fixture.uninstall();
 assert.equal(fixture.stats.queuedBytes, 0);
 assert.equal(jobs.size, 0);
 console.log('eagler-common RTC input impairment: PASS blackout/delayed-repair/cleanup');
+
+time = 0; delivered.length = 0;
+const spike = installRtcInputImpairment({
+  inputLabel: 'th06-input', controlLabel: 'th06-control',
+  oneWayMs: 50, jitterMs: 0, spikeFrame: 900, spikeMs: 1000, spikeDelayMs: 800,
+}, env);
+fast.send(packet); control.send(packet);
+advance(50); assert.equal(delivered.length, 0, 'repair must see the latency spike too');
+advance(850); assert.equal(delivered.length, 2);
+assert.equal(spike.stats.spikeControlDelayed, 1);
+fast.send(packet); // queued until 1700, after the impairment window ends
+advance(1000); fast.send(packet);
+advance(1050); assert.equal(delivered.length, 3, 'new packets recover without waiting for the old queue');
+advance(1700); assert.equal(delivered.length, 4, 'late old packet remains deliverable');
+assert.equal(spike.stats.spikeStartMs, 0);
+assert.equal(spike.stats.spikeEndMs, 1000);
+assert.equal(spike.stats.spikeLastDeliveryMs, 1700);
+assert.equal(spike.stats.spikeDelayed, 3);
+spike.uninstall(); assert.equal(jobs.size, 0); assert.equal(spike.stats.queuedBytes, 0);
+assert.throws(() => installRtcInputImpairment({spikeMs: -1}, env), /invalid/);
+console.log('eagler-common RTC input impairment: PASS spike/both-lanes/recovery/late-tail');

@@ -14,6 +14,8 @@
     const inputLabel = options.inputLabel ?? "eagler-input";
     const controlLabel = options.controlLabel ?? "eagler-control";
     const blackoutFrame = options.blackoutFrame ?? 900, blackoutMs = options.blackoutMs ?? 0;
+    const spikeFrame = options.spikeFrame ?? 450, spikeMs = options.spikeMs ?? 0;
+    const spikeDelayMs = options.spikeDelayMs ?? 800;
     const includeControlInputs = options.includeControlInputs !== false;
     const maxBytes = options.maxQueuedBytes ?? 1048576;
     if (![latency, jitter].every(v => Number.isFinite(v) && v >= 0 && v <= 10000) ||
@@ -23,6 +25,8 @@
         !Number.isSafeInteger(maxBytes) || maxBytes <= 0 ||
         !Number.isInteger(blackoutFrame) || blackoutFrame < 0 ||
         !Number.isFinite(blackoutMs) || blackoutMs < 0 || blackoutMs > 10000 ||
+        !Number.isInteger(spikeFrame) || spikeFrame < 0 ||
+        ![spikeMs, spikeDelayMs].every(v => Number.isFinite(v) && v >= 0 && v <= 10000) ||
         !Number.isInteger(options.seed ?? 7135) || (options.seed ?? 7135) <= 0 ||
         (options.seed ?? 7135) > 0xffffffff)
       throw new Error("invalid RTC impairment settings");
@@ -36,6 +40,8 @@
     const stats = { scope: "application-send-delay-not-wire-latency", oneWayMs: latency,
       jitterMs: jitter, matched: 0, scheduled: 0, sent: 0, dropped: 0, canceled: 0,
       controlInputs: 0, blackoutDropped: 0,
+      spikeStartMs: null, spikeEndMs: null, spikeDelayed: 0, spikeControlDelayed: 0,
+      spikeLastDeliveryMs: null,
       overflow: 0, errors: 0, queuedBytes: 0, peakQueuedBytes: 0,
       plannedDelayTotalMs: 0, deliveredDelayTotalMs: 0, maxDeliveredDelayMs: 0,
       timerOverrunTotalMs: 0, maxTimerOverrunMs: 0 };
@@ -51,9 +57,13 @@
       if (!active || (this.label !== inputLabel && !reliableInput) || !bytes || bytes.length < 32 || bytes[5] !== 1 ||
           this.readyState !== "open") return original.call(this, data);
       ++stats.matched;
+      const frame = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(24, true);
+      if (spikeMs && stats.spikeStartMs === null && frame >= spikeFrame) {
+        stats.spikeStartMs = now(); stats.spikeEndMs = now() + spikeMs;
+      }
+      const spiking = stats.spikeEndMs !== null && now() < stats.spikeEndMs;
       if (reliableInput) ++stats.controlInputs;
       else {
-        const frame = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(24, true);
         if (blackoutMs && blackoutUntil === null && frame >= blackoutFrame) blackoutUntil = now() + blackoutMs;
         if (blackoutUntil !== null && now() < blackoutUntil) { ++stats.dropped; ++stats.blackoutDropped; return; }
         if (dropEvery && stats.matched % dropEvery === 0) { ++stats.dropped; return; }
@@ -61,7 +71,10 @@
       if (pending.size >= 1024 || stats.queuedBytes + bytes.byteLength > maxBytes) {
         ++stats.overflow; throw new Error("RTC impairment queue capacity exceeded");
       }
-      const delay = Math.max(0, latency + (random() * 2 - 1) * jitter);
+      // Both input lanes see the spike. Unlike fast-lane blackout, reliable
+      // repair cannot bypass it. Old delayed packets may arrive after recovery.
+      const delay = Math.max(0, latency + (random() * 2 - 1) * jitter) + (spiking ? spikeDelayMs : 0);
+      if (spiking) { ++stats.spikeDelayed; if (reliableInput) ++stats.spikeControlDelayed; }
       const job = { bytes: bytes.slice(), channel: this, start: now(), timer: null };
       pending.add(job); stats.queuedBytes += job.bytes.byteLength;
       stats.peakQueuedBytes = Math.max(stats.peakQueuedBytes, stats.queuedBytes);
@@ -73,6 +86,7 @@
         try { original.call(job.channel, job.bytes); }
         catch (error) { ++stats.errors; stats.lastError = String(error?.message || error); return; }
         ++stats.sent; stats.deliveredDelayTotalMs += elapsed;
+        if (spiking) stats.spikeLastDeliveryMs = now();
         stats.maxDeliveredDelayMs = Math.max(stats.maxDeliveredDelayMs, elapsed);
         stats.timerOverrunTotalMs += overrun;
         stats.maxTimerOverrunMs = Math.max(stats.maxTimerOverrunMs, overrun);
