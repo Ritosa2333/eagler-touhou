@@ -18,6 +18,10 @@ assert.equal(gamePreferenceStorageKey("th06"), "eagler-touhou-game-options-v1-th
 assert.equal(languagePreferenceStorageKey("th07mp"), "eagler-touhou-language-v1-th07mp");
 assert.equal(sharedTouchPreferenceStorageKey, "eagler-touhou-touch-options-v1");
 assert.equal(DEFAULT_GAME_OPTIONS.restartButtonEnabled, false, "R must be hidden by default");
+assert.equal(DEFAULT_GAME_OPTIONS.touchSensitivity, 150, "new touch settings default to 150%");
+assert.equal(normalizeStoredGamePreferences(null, { thpracAvailable: true, webAudioAvailable: true }).options.touchSensitivity, 150);
+assert.equal(normalizeStoredGamePreferences({ options: { touchSensitivity: 100 } }, { thpracAvailable: true, webAudioAvailable: true }).options.touchSensitivity, 100,
+  "an existing 100% preference remains explicit");
 
 const legacyFrameLimit = normalizeStoredGamePreferences({
   music: "midi",

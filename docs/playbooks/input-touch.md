@@ -34,7 +34,7 @@ DOM/device event
 ```
 
 Touch manager availability and the enable macro are separate concerns. The
-shared sensitivity protocol is **100–300%** with 100 as the default; a Runtime
+shared sensitivity protocol is **100–300%** with 150 as the Launcher default; a Runtime
 must not retain an older hidden 50% (or wider native) range when the Launcher no
 longer exposes it. Preset/preview and four-tap copy are different operations.
 

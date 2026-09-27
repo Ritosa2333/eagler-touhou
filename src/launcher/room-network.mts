@@ -1,7 +1,7 @@
 /** Lobby-only probes. These connections never carry input or join a Runtime run. */
 export type ProbeLane = "direct" | "turn" | "relay";
 export interface ProbeMetric { rtt: number | null; jitter: number | null; state: "checking" | "connected" | "unavailable"; at: number }
-interface Link { pc: RTCPeerConnection; channel?: RTCDataChannel; token: string; pending: RTCIceCandidateInit[]; started: number }
+interface Link { pc: RTCPeerConnection; channel?: RTCDataChannel; token: string; pending: RTCIceCandidateInit[]; outbound: RTCIceCandidateInit[]; signaled: boolean; started: number }
 interface Peer { id: string; started: number; metrics: Record<ProbeLane, ProbeMetric>; links: Partial<Record<"direct" | "turn", Link>>; pings: Map<string, { lane: ProbeLane; at: number }> }
 const emptyMetric = (): ProbeMetric => ({ rtt: null, jitter: null, state: "checking", at: 0 });
 export function recordProbeSample(metric: ProbeMetric, elapsed: number, now: number): ProbeMetric {
@@ -38,6 +38,19 @@ export function createRoomNetwork(options: { send: (message: Record<string, unkn
     channel.onopen = () => tick();
     channel.onclose = () => { if (current(peer, lane, link)) { peer.metrics[lane] = { ...emptyMetric(), state: "unavailable" }; options.changed(); } };
   };
+  const signalDescription = (peer: Peer, lane: "direct" | "turn", link: Link) => {
+    if (!current(peer, lane, link)) return;
+    const description = link.pc.localDescription?.toJSON();
+    if (!description || !send(peer.id, lane, { token: link.token, description })) throw new Error("room probe signaling unavailable");
+    // WebSocket preserves message order. Send the description before any ICE
+    // candidates gathered during setLocalDescription, so the receiver has a
+    // link with the matching token when those candidates arrive.
+    link.signaled = true;
+    for (const candidate of link.outbound.splice(0)) {
+      if (!current(peer, lane, link)) break;
+      send(peer.id, lane, { token: link.token, candidate });
+    }
+  };
   const createLink = (peer: Peer, lane: "direct" | "turn", token: string): Link | null => {
     const urlsFor = (server: RTCIceServer) => (typeof server.urls === "string" ? [server.urls] : server.urls).filter(url => lane === "turn" ? /^turns?:/i.test(url) : /^stuns?:/i.test(url));
     const iceServers = servers.map(server => ({ ...server, urls: urlsFor(server) })).filter(server => server.urls.length);
@@ -46,9 +59,14 @@ export function createRoomNetwork(options: { send: (message: Record<string, unkn
     }
     peer.links[lane]?.pc.close();
     const pc = new RTCPeerConnection({ iceServers, iceTransportPolicy: lane === "turn" ? "relay" : "all" });
-    const link: Link = { pc, token, pending: [], started: performance.now() };
+    const link: Link = { pc, token, pending: [], outbound: [], signaled: false, started: performance.now() };
     peer.links[lane] = link;
-    pc.onicecandidate = event => { if (event.candidate && current(peer, lane, link)) send(peer.id, lane, { token, candidate: event.candidate.toJSON() }); };
+    pc.onicecandidate = event => {
+      if (!event.candidate || !current(peer, lane, link)) return;
+      const candidate = event.candidate.toJSON();
+      if (link.signaled) send(peer.id, lane, { token, candidate });
+      else if (link.outbound.length < 64) link.outbound.push(candidate);
+    };
     pc.ondatachannel = event => bind(peer, lane, link, event.channel);
     pc.onconnectionstatechange = () => {
       if (current(peer, lane, link) && ["failed", "disconnected", "closed"].includes(pc.connectionState)) {
@@ -63,7 +81,7 @@ export function createRoomNetwork(options: { send: (message: Record<string, unkn
       if (!link) return;
       bind(peer, lane, link, link.pc.createDataChannel("room-latency"));
       await link.pc.setLocalDescription(await link.pc.createOffer());
-      if (current(peer, lane, link)) send(peer.id, lane, { token: link.token, description: link.pc.localDescription?.toJSON() });
+      signalDescription(peer, lane, link);
     } catch { if (peers.get(peer.id) === peer) { peer.metrics[lane].state = "unavailable"; options.changed(); } }
   };
   const tick = () => {
@@ -124,7 +142,7 @@ export function createRoomNetwork(options: { send: (message: Record<string, unkn
         for (const candidate of link.pending.splice(0)) await link.pc.addIceCandidate(candidate);
         if (description.type === "offer") {
           await link.pc.setLocalDescription(await link.pc.createAnswer());
-          if (current(peer, lane, link)) send(peer.id, lane, { token: link.token, description: link.pc.localDescription?.toJSON() });
+          signalDescription(peer, lane, link);
         }
       } else if (message.candidate) {
         if (link.pc.remoteDescription) await link.pc.addIceCandidate(message.candidate as RTCIceCandidateInit);
@@ -140,6 +158,11 @@ export function createRoomNetwork(options: { send: (message: Record<string, unkn
     }
     if (!peerId) clear();
   }, suspend: clear, reset: () => { clear(); supported = false; servers = []; },
+    capabilities: () => ({
+      supported,
+      rtcAvailable: typeof RTCPeerConnection === "function",
+      turnConfigured: servers.some(server => (typeof server.urls === "string" ? [server.urls] : server.urls).some(url => /^turns?:/i.test(url))),
+    }),
     metric: (id: string, lane: ProbeLane) => freshProbeMetric(peers.get(id)?.metrics[lane] ?? { ...emptyMetric(), state: supported ? "checking" : "unavailable" }, performance.now()),
   };
 }

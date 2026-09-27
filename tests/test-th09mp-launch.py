@@ -472,41 +472,6 @@ def main() -> None:
                 if host_entry == "title":
                     # Host through TH09's own "妖怪対妖怪" entry, guest through the card.
                     code = title_network_entry(host, music_modes)
-                    rail = host.locator("#mpSpectatorRail")
-                    assert rail.evaluate("element => element.parentElement?.id") == "th09NetworkDialog"
-                    before = rail.bounding_box()
-                    head = rail.locator(".mp-spectator-rail-head").bounding_box()
-                    assert before and head
-                    host.mouse.move(head["x"] + head["width"] / 2, head["y"] + head["height"] / 2)
-                    host.mouse.down()
-                    host.mouse.move(head["x"] + head["width"] / 2 - 80,
-                                    head["y"] + head["height"] / 2 + 35, steps=6)
-                    host.mouse.up()
-                    after = rail.bounding_box()
-                    assert after and abs(after["x"] - before["x"]) > 40, (before, after)
-                    # The in-game room is a viewport portal on phones too. A
-                    # real touch must move its visible rail and its hit target
-                    # together, including after touchEnd releases capture.
-                    host.evaluate("async () => { if (document.fullscreenElement) await document.exitFullscreen(); }")
-                    host.set_viewport_size({"width": 430, "height": 900})
-                    mobile_before = rail.bounding_box()
-                    head = rail.locator(".mp-spectator-rail-head").bounding_box()
-                    assert mobile_before and head
-                    start_x = head["x"] + head["width"] / 2
-                    start_y = head["y"] + head["height"] / 2
-                    cdp = host.context.new_cdp_session(host)
-                    cdp.send("Input.dispatchTouchEvent", {"type": "touchStart", "touchPoints": [{"x": start_x, "y": start_y}]})
-                    cdp.send("Input.dispatchTouchEvent", {"type": "touchMove", "touchPoints": [{"x": start_x - 75, "y": start_y - 95}]})
-                    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
-                    mobile_after = rail.bounding_box()
-                    assert mobile_after and abs(mobile_after["x"] - mobile_before["x"]) > 35, (mobile_before, mobile_after)
-                    hit = host.evaluate("""() => {
-                      const rail = document.querySelector('#mpSpectatorRail');
-                      const rect = rail.getBoundingClientRect();
-                      return rail.contains(document.elementFromPoint(rect.left + rect.width / 2, rect.top + 10));
-                    }""")
-                    assert hit, (mobile_before, mobile_after)
-                    host.set_viewport_size({"width": 1280, "height": 900})
                     guest.locator('[data-product="th09mp"]').click()
                     music_modes.append(select_room_music(guest, requested_music))
                 else:

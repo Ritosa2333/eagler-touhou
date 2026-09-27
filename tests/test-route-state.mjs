@@ -59,10 +59,10 @@ const reloadSingle = initialRoutedHistoryOperations({
 });
 assert.equal(reloadSingle.length, 1);
 assert.equal(reloadSingle[0].kind, "replace");
-assert.equal(new URL(reloadSingle[0].url).searchParams.get("game"), null,
-  "ordinary player refresh returns to the persistent launcher route");
-assert.equal(reloadSingle[0].state[PLAYER_HISTORY_KEY], false);
-assert.equal("game" in reloadSingle[0].state, false);
+assert.equal(new URL(reloadSingle[0].url).searchParams.get("game"), "th07",
+  "refresh preserves the selected product options and their existing Back entry");
+assert.equal(reloadSingle[0].state[PLAYER_HISTORY_KEY], true);
+assert.equal(reloadSingle[0].state.game, "th07");
 
 const reloadRoom = initialRoutedHistoryOperations({
   currentUrl: "https://launcher.invalid/?game=th06mp&mpRoom=9876",
@@ -191,7 +191,7 @@ assert.deepEqual(directRoomHistorySeed({
 
 console.log(JSON.stringify({
   routeState: "PASS",
-  reload: ["launcher", "multiplayer-room"],
+  reload: ["product-options", "multiplayer-room"],
   playerHistory: ["push", "replace", "stable"],
   directRoomBackPredecessor: true,
 }));

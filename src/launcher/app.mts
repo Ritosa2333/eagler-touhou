@@ -157,6 +157,8 @@ import { buildMultiplayerRuntimeOptions } from "./multiplayer-runtime-options.mj
 import { createMultiplayerRoomSessionStore } from "./multiplayer-room-session.mjs";
 import {
   MP_ROOM_HISTORY_KEY as mpRoomHistoryKey,
+  MP_PANEL_HISTORY_KEY as mpPanelHistoryKey,
+  MP_SETTINGS_HISTORY_KEY as mpSettingsHistoryKey,
   MP_ROOM_URL_KEY as mpRoomUrlKey,
   PLAYER_HISTORY_KEY as playerHistoryKey,
   TOUCH_LAYOUT_HISTORY_KEY as touchLayoutHistoryKey,
@@ -164,10 +166,13 @@ import {
   directRoomHistorySeed,
   initialRoutedHistoryOperations,
   launcherHomeHistoryOperation,
+  launcherOptionsHistoryOperation,
   normalizeRoomCode as mpNormalizeRoomCode,
   playerRouteHistoryOperation,
   returnToRoomHistoryOperation,
   roomRouteHistoryOperation,
+  roomPanelHistoryOperation,
+  roomSettingsHistoryOperation,
   routedProductFromUrl,
   touchLayoutEditorHistoryOperation,
 } from "./route-state.mjs";
@@ -361,6 +366,13 @@ function errorMessage(error: unknown): string {
 
 class RuntimeOperationError extends Error {
   errno?: number;
+}
+
+class RuntimeSwitchedError extends Error {
+  constructor() {
+    super(t("runtime.switched"));
+    this.name = "RuntimeSwitchedError";
+  }
 }
 
 function clearOptionalTimeout(handle: ReturnType<typeof setTimeout> | null | undefined): void {
@@ -746,6 +758,7 @@ async function mpLaunchRoomGame() {
     await launchConfiguredRuntime();
     if (isPlayerFullscreen()) await lockEscapeForGame();
   } catch (error) {
+    if (error instanceof RuntimeSwitchedError) return;
     if (!state.launched && isCancelledDownload(error)) {
       if (player.classList.contains("open")) {
         if (!await closePlayerView()) return;
@@ -794,6 +807,7 @@ async function mpCheckGame() {
     setStatus(t("multiplayer.checkGamePassed"));
     showToast(t("multiplayer.checkGamePassed"));
   } catch (error) {
+    if (error instanceof RuntimeSwitchedError) return;
     const reason = errorMessage(error);
     if (player.classList.contains("open")) {
       await closePlayerView(false, { skipSync: true, returnToMpRoom: true });
@@ -1465,8 +1479,9 @@ type TouchLayoutDrag =
   | ({ kind: "move"; name: TouchLayoutControlName } & PointerDrag)
   | { kind: "resize"; name: TouchLayoutControlName; pointerId: number; anchorX: number; anchorY: number; baseWidth: number; baseHeight: number; startScale: number };
 let touchLayoutDrag: TouchLayoutDrag | null = null;
-let touchLayoutEditorDrag: PointerDrag | null = null;
-let touchLayoutSettingsDrag: PointerDrag | null = null;
+let touchLayoutEditorDrag: (PointerDrag & { left: number; top: number; maxLeft: number; maxTop: number }) | null = null;
+let touchLayoutEditorCollapsed = false;
+let touchLayoutEntryAnimations: Animation[] = [];
 let touchViewportEditing = false;
 let touchViewportDrag: { pointerId: number; x: number } | null = null;
 let touchSensitivityPreviewGesture: { pointerId: number; startX: number; startY: number } | null = null;
@@ -1590,7 +1605,7 @@ function saveGamePreferences() {
 }
 const inputElementSelectors = [
   "#fileInput", "#gameDataImportInput", "#mpJoinCode", "#mpDisplayName", "#th09NetworkCode",
-  "#touchLayoutScale", "#touchSensitivity",
+  "#touchSensitivity",
 ] as const;
 const selectElementSelectors = [
   "#uiLanguageSelect", "#mpLanguageSelect", "#mpMusicSelect", "#musicSelect",
@@ -1601,7 +1616,7 @@ const dialogElementSelectors = [
   "#decisionDialog", "#firstUseNoticeDialog", "#mpGuideDialog", "#appleRefreshDialog", "#donationDialog", "#replayDialog",
 ] as const;
 const anchorElementSelectors = ["#originMigrationOpen", "#gameDataFallbackUrl", "#gameNoticeRepo"] as const;
-const outputElementSelectors = ["#touchLayoutScaleValue", "#touchSensitivityValue"] as const;
+const outputElementSelectors = ["#touchSensitivityValue"] as const;
 const buttonElementSelectors = [
   "#siteNoticeOptOut", "#siteNoticeClose", "#lessMotionToggle", "#mastheadMenuToggle",
   "#siteNoticeToggle", "#runtimeDiagnosticsToggle", "#firstUseNoticeOpen", "#mpShareSettingsToggle", "#mpFrameLimitAppleNote",
@@ -1669,8 +1684,12 @@ function $<S extends string>(selector: S): LauncherElementForSelector<S> {
 let mpSettingsRoomDrawerOpen = false;
 let mpSettingsRoomDrawerClosing = false;
 let mpSettingsRoomDrawerCloseGeneration = 0;
-function setMpSettingsRoomDrawerOpen(open: boolean) {
+function setMpSettingsRoomDrawerOpen(open: boolean, fromHistory = false) {
   const roomOpen = !!mpUiState.room;
+  if (roomOpen && !open && !fromHistory && mpSettingsRoomDrawerOpen && history.state?.[mpSettingsHistoryKey]) {
+    history.back();
+    return;
+  }
   const drawer = $("#mpSettingsRoomDrawer");
   const cue = $("#mpSettingsRoomDrawerToggle");
   const returnFocus = drawer.contains(document.activeElement);
@@ -1679,6 +1698,10 @@ function setMpSettingsRoomDrawerOpen(open: boolean) {
   $("#mpRoomView").inert = roomOpen && open;
   const generation = ++mpSettingsRoomDrawerCloseGeneration;
   if (roomOpen && open) {
+    if (!mpSettingsRoomDrawerOpen) applyHistoryOperations(history, [roomSettingsHistoryOperation({
+      currentUrl: location.href,
+      currentState: history.state,
+    })]);
     mpSettingsRoomDrawerOpen = true;
     mpSettingsRoomDrawerClosing = false;
     drawer.classList.remove("closing");
@@ -2448,12 +2471,7 @@ function replaceLauncherHomeHistory() {
 function showLauncherHome() {
   if ($("#main").classList.contains("card-layout-motion")) cancelCardLayoutMotion();
   state.hasSelection = false;
-  if (isMultiplayerProduct()) {
-    state.product = state.game;
-    state.runtimeVariant = "normal";
-  }
   render();
-  animateMobileHomeCards();
 }
 const routedGame = routedGameFromLocation();
 const navigationEntry = performance.getEntriesByType?.("navigation")?.[0];
@@ -2879,11 +2897,12 @@ function clearGameDataAttempt() {
 function beginManualGamePackageImport(
   reason = t("package.manualCancelledReason"),
   continuation: GameDataContinuation = captureGameDataContinuation("install-only"),
+  useReasonVerbatim = false,
 ) {
   clearGameDataAttempt();
   const id = ++gameDataAttemptSerial;
   gameDataAttempt = { id, firstByte: false, downloadComplete: false, unlocked: true, dialogDismissed: false, startTimer: null, completeTimer: null, importFlow: true, continuation, manual: true };
-  $("#gameDataImportReason").textContent = t("package.manualImportReason", { reason });
+  $("#gameDataImportReason").textContent = useReasonVerbatim ? reason : t("package.manualImportReason", { reason });
   updateGameDataLinkWindow();
   openGameDataImportWindow();
 }
@@ -3614,8 +3633,11 @@ async function launchConfiguredRuntime(options: LaunchConfiguredRuntimeOptions =
 async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptions = {}) {
   clearStartupError();
   await ensureRuntime(true);
-  const session = runtimeSessions.assertCurrent(currentRuntimeSession());
-  const assertSession = () => runtimeSessions.assertCurrent(session);
+  const session = currentRuntimeSession();
+  if (!session) throw new RuntimeSwitchedError();
+  const assertSession = () => {
+    if (!runtimeSessionCurrent(session)) throw new RuntimeSwitchedError();
+  };
   try {
     launchMusicFallback = null;
     chooseDefaultMusic();
@@ -3676,6 +3698,8 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
         ? {
             multiplayerLocalPlayerVisibility: state.options.multiplayerLocalPlayerVisibility,
             ...(state.replayViewer ? { replayViewer: true } : {}),
+            ...(options.omitNetplay && "preflightWithoutRoom" in PRODUCT_GAMES[state.game].multiplayer
+              ? { multiplayerPreflight: true } : {}),
             ...netplayOptions,
           }
         : {}),
@@ -3774,7 +3798,8 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
     startManagedOggProgressiveInstall();
     if (firstFramePromise) await firstFramePromise;
   } catch (error) {
-    if (runtimeSessionCurrent(session) && !state.launched) resetRuntime();
+    if (!runtimeSessionCurrent(session)) throw new RuntimeSwitchedError();
+    if (!state.launched) resetRuntime();
     throw error;
   }
 }
@@ -4392,7 +4417,7 @@ function resetRuntime() {
   hideTransfer();
   for (const pending of state.pending.values()) {
     clearTimeout(pending.timer);
-    pending.reject(new Error(t("runtime.switched")));
+    pending.reject(new RuntimeSwitchedError());
   }
   state.pending.clear(); state.ready = false; state.launched = false; state.source = ""; state.sourceIdentity = "";
   syncDirectTouchSurfaceVisibility();
@@ -4726,19 +4751,28 @@ async function closePlayerView(fromHistory = false, { skipSync = false, returnTo
     state.hasSelection = true;
     state.runtimeVariant = "multiplayer";
     const roomCode = mpUiState.room.code;
-    applyHistoryOperations(history, [returnToRoomHistoryOperation({
-      currentUrl: location.href,
-      currentState: history.state,
-      product: state.product,
-      roomCode,
-    })]);
+    if (fromHistory && mpNormalizeRoomCode(new URL(location.href).searchParams.get(mpRoomUrlKey)) !== roomCode) {
+      // Back was pressed while the game covered its room. Restore the room
+      // entry without consuming the options entry beneath it.
+      history.forward();
+    } else {
+      applyHistoryOperations(history, [returnToRoomHistoryOperation({
+        currentUrl: location.href,
+        currentState: history.state,
+        product: state.product,
+        roomCode,
+      })]);
+    }
     renderMpRoom();
     render();
     if (!mpLobby.connected) mpReconnectLobbyNow();
     appShellClient?.maybeReload();
     return true;
   }
-  if (!fromHistory) replaceLauncherHomeHistory();
+  if (!fromHistory) {
+    if (!mpUiState.room && history.state?.[playerHistoryKey]) history.back();
+    else replaceLauncherHomeHistory();
+  }
   showLauncherHome();
   appShellClient?.maybeReload();
   return true;
@@ -4761,7 +4795,7 @@ function syncSelectionFromPlayerRoute() {
   return true;
 }
 
-window.addEventListener("popstate", async () => {
+window.addEventListener("popstate", async event => {
   if (touchLayoutEditing) {
     const editorHistoryWasPopped = touchLayoutHistoryEntryOwned;
     touchLayoutHistoryEntryOwned = false;
@@ -4769,13 +4803,32 @@ window.addEventListener("popstate", async () => {
     if (!closed && editorHistoryWasPopped) pushTouchLayoutEditorHistory();
     return;
   }
+  if (mpSettingsRoomDrawerOpen && !history.state?.[mpSettingsHistoryKey]) {
+    setMpSettingsRoomDrawerOpen(false, true);
+    return;
+  }
+  if (roomPanel.open && !roomPanelClosing && !history.state?.[mpPanelHistoryKey]) {
+    closeRoomPanel(true);
+    return;
+  }
+  if (th09NetworkOverlayOpen() && mpUiState.room) {
+    mpLeaveRoom();
+    return;
+  }
+  if (player.classList.contains("open") && mpUiState.room) {
+    if (!await closePlayerView(true, { returnToMpRoom: true })) history.forward();
+    return;
+  }
   if (mpUiState.room) {
     const routedRoom = mpNormalizeRoomCode(new URL(location.href).searchParams.get(mpRoomUrlKey));
     if (!routedRoom || routedRoom !== mpUiState.room.code) {
-      mpLeaveRoom(true);
+      mpLeaveRoom();
       return;
     }
   }
+  // A same-route history notification does not mean the Player was left.
+  if (player.classList.contains("open") && record(event.state)?.[playerHistoryKey] === true &&
+      routedGameFromLocation() === state.product) return;
   if (player.classList.contains("open") && !await closePlayerView(true)) {
     const restore = playerRouteHistoryOperation({
       currentUrl: location.href, currentState: history.state,
@@ -4784,7 +4837,10 @@ window.addEventListener("popstate", async () => {
     if (restore) applyHistoryOperations(history, [restore]);
     return;
   }
-  if (!syncSelectionFromPlayerRoute()) showLauncherHome();
+  if (!syncSelectionFromPlayerRoute()) {
+    if (state.hasSelection && !state.launched) closeLibraryTools(true);
+    else showLauncherHome();
+  }
 });
 window.addEventListener("pageshow", event => {
   if (event.persisted && !mpUiState.room && !syncSelectionFromPlayerRoute()) showLauncherHome();
@@ -4961,13 +5017,13 @@ function waitForRuntimeReady(session: RuntimeSessionToken, timeoutMessage: strin
     };
     const timer = setTimeout(() => {
       if (!runtimeSessionCurrent(session)) {
-        finish(() => reject(new Error(t("runtime.switched"))));
+        finish(() => reject(new RuntimeSwitchedError()));
         return;
       }
       finish(() => reject(new Error(timeoutMessage)));
     }, 120000);
     unsubscribe = runtimeSessions.subscribe(() => {
-      if (!runtimeSessionCurrent(session)) finish(() => reject(new Error(t("runtime.switched"))));
+      if (!runtimeSessionCurrent(session)) finish(() => reject(new RuntimeSwitchedError()));
     });
     frame.addEventListener("runtime-ready", ready);
     frame.addEventListener("runtime-error", failed);
@@ -5002,7 +5058,7 @@ function waitForRuntimeFirstFrame(session: RuntimeSessionToken, timeoutMs = firs
       finish(() => reject(new Error(t("runtime.firstFrameLate"))));
     }, timeoutMs);
     unsubscribe = runtimeSessions.subscribe(() => {
-      if (!runtimeSessionCurrent(session)) finish(() => reject(new Error(t("runtime.switched"))));
+      if (!runtimeSessionCurrent(session)) finish(() => reject(new RuntimeSwitchedError()));
     });
     frame.addEventListener("runtime-first-frame", firstFrame);
     frame.addEventListener("runtime-error", failed);
@@ -5052,7 +5108,7 @@ async function ensureInstalledPackageRuntime(show = true) {
         selectedGeneration = selected.generation;
       }
       if (!runtimeSessionCurrent(runtimeSession) || state.game !== gameId || state.runtimeVariant !== variant) {
-        throw new Error(t("runtime.switched"));
+        throw new RuntimeSwitchedError();
       }
       // gameGeneration is the Package Store identity, NOT the code generation.
       const source = new URL(managedRuntimeUrl(entry, generation, variant, location.href));
@@ -6030,6 +6086,7 @@ $("#mpReplayViewer").addEventListener("click", async () => {
     await launchConfiguredRuntime();
     setStatus(t("multiplayer.replayMenuOpened", { game: state.game.toUpperCase() }));
   } catch (error) {
+    if (error instanceof RuntimeSwitchedError) return;
     const message = errorMessage(error);
     if (!state.launched && isResourceLoadFailure(error)) {
       // Preserve replayViewer while importing. Closing Player here would reset
@@ -6053,10 +6110,10 @@ async function mpCopyRoomCode() {
   else showToast(t("status.roomCode", { code: mpUiState.room.code }));
 }
 $("#mpCopyRoomCode").addEventListener("click", mpCopyRoomCode);
-// Do not pass the click Event into mpLeaveRoom(fromHistory). An Event is
-// truthy and would be mistaken for a popstate-driven leave, leaving ?mpRoom=
-// behind in the address bar.
-$("#mpLeaveRoom").addEventListener("click", () => mpLeaveRoom());
+$("#mpLeaveRoom").addEventListener("click", () => {
+  if (history.state?.[mpRoomHistoryKey] === mpUiState.room?.code) history.back();
+  else mpLeaveRoom();
+});
 $("#mpRoomSettingsToggle").addEventListener("click", () => {
   mpUiState.roomSettingsOpen = true;
   openRoomPanel("game", $("#mpRoomSettingsToggle"));
@@ -6103,8 +6160,12 @@ $("#mpSpectatorJoin").addEventListener("click", () => {
 const roomPanel = document.querySelector<HTMLDialogElement>("#mpRoomPanel")!;
 let roomPanelTrigger: HTMLElement | null = null;
 let roomPanelClosing = false;
-function closeRoomPanel() {
+function closeRoomPanel(fromHistory = false) {
   if (!roomPanel.open || roomPanelClosing) return;
+  if (!fromHistory && history.state?.[mpPanelHistoryKey]) {
+    history.back();
+    return;
+  }
   if (state.lessMotion || matchMedia("(prefers-reduced-motion: reduce)").matches) { roomPanel.close(); return; }
   roomPanelClosing = true;
   const motion = roomPanel.animate([{ opacity: 1, transform: "translateY(0) scale(1)" }, { opacity: 0, transform: "translateY(14px) scale(.985)" }], { duration: 160, easing: "cubic-bezier(.4,0,1,1)" });
@@ -6118,7 +6179,13 @@ function openRoomPanel(kind: "personal" | "network" | "spectators" | "game", tri
   document.querySelectorAll<HTMLElement>("[data-room-panel]").forEach(panel => { panel.hidden = panel.dataset.roomPanel !== kind; });
   document.getElementById("mpRoomPanelTitle")!.textContent = t(kind === "personal" ? "room.playerOptions" : kind === "network" ? "room.network" : kind === "game" ? "multiplayer.gameSettings" : "room.spectatorLounge");
   $("#mpSpectatorToggle").setAttribute("aria-expanded", String(kind === "spectators"));
-  if (!roomPanel.open) roomPanel.showModal();
+  if (!roomPanel.open) {
+    applyHistoryOperations(history, [roomPanelHistoryOperation({
+      currentUrl: location.href,
+      currentState: history.state,
+    })]);
+    roomPanel.showModal();
+  }
 }
 roomPanel.addEventListener("close", () => {
   mpUiState.roomSettingsOpen = false;
@@ -6131,7 +6198,7 @@ roomPanel.addEventListener("click", event => {
   const rect = roomPanel.getBoundingClientRect();
   if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) closeRoomPanel();
 });
-document.getElementById("mpRoomPanelClose")!.addEventListener("click", closeRoomPanel);
+document.getElementById("mpRoomPanelClose")!.addEventListener("click", () => closeRoomPanel());
 $("#mpSpectatorToggle").addEventListener("click", () => openRoomPanel("spectators", $("#mpSpectatorToggle")));
 document.getElementById("mpNetworkToggle")!.addEventListener("click", event => {
   const trigger = (event.target as Element).closest<HTMLButtonElement>("button[data-network-peer]");
@@ -6222,12 +6289,7 @@ function updateTouchLayoutEditorUi() {
     touchLayoutElement(name).classList.toggle("touch-layout-selected", name === touchLayoutSelected);
   }
   const orientation = touchLayoutOrientation();
-  const item = touchLayoutDraft?.profiles?.[orientation]?.controls?.[touchLayoutSelected];
-  const scale = Math.round((item?.scale ?? 1) * 100);
-  $("#touchLayoutScale").value = String(scale);
-  $("#touchLayoutScaleValue").value = `${scale}%`;
   $("#touchLayoutOrientation").textContent = t(orientation === "landscape" ? "touch.landscape" : "touch.portrait");
-  $("#touchLayoutSelection").textContent = t("touch.selected", { control: touchLayoutControlTitle(touchLayoutSelected) });
   updateTouchLayoutOrientationActionUi();
   updateTouchLayoutWarnings();
 }
@@ -6245,8 +6307,23 @@ function selectTouchLayoutControl(name: TouchLayoutControlName) {
   updateTouchLayoutEditorUi();
 }
 
+function syncTouchLayoutWorkbench() {
+  const panel = $("#touchLayoutEditor");
+  panel.classList.toggle("is-collapsed", touchLayoutEditorCollapsed);
+  $("#touchWorkbenchBody").hidden = touchLayoutEditorCollapsed;
+  const collapse = $("#touchLayoutCollapse");
+  collapse.setAttribute("aria-expanded", String(!touchLayoutEditorCollapsed));
+  const collapseLabel = touchLayoutEditorCollapsed ? "touch.expandPanel" : "touch.collapsePanel";
+  collapse.dataset.i18nAriaLabel = collapseLabel;
+  collapse.setAttribute("aria-label", t(collapseLabel));
+  const settings = touchLayoutSettingsElement();
+  if (settings) settings.hidden = false;
+  closeOtherCustomSelects();
+  if (touchLayoutEditing) clampTouchLayoutEditorPosition();
+}
+
 function touchLayoutSettingsElement() {
-  return $("#touchLayoutSettingsDragHandle").closest<HTMLElement>(".touch-layout-settings");
+  return document.querySelector<HTMLElement>("#touchLayoutSettingsPanel");
 }
 
 const touchLayoutWindowMargin = 16;
@@ -6255,7 +6332,6 @@ let touchLayoutWindowOrientation: TouchLayoutOrientation | null = null;
 
 function rememberTouchLayoutWindowsNow() {
   rememberTouchLayoutWindowPosition("editor", $("#touchLayoutEditor"));
-  rememberTouchLayoutWindowPosition("settings", touchLayoutSettingsElement());
 }
 
 function rememberTouchLayoutWindowPosition(kind: TouchLayoutWindowKind, element: HTMLElement | null) {
@@ -6288,47 +6364,25 @@ function restoreTouchLayoutWindowPosition(kind: TouchLayoutWindowKind, element: 
 
 function resetTouchLayoutEditorPosition() {
   const panel = $("#touchLayoutEditor");
-  const settings = touchLayoutSettingsElement();
   panel.style.removeProperty("left");
   panel.style.removeProperty("top");
   panel.style.removeProperty("transform");
-  settings?.style.removeProperty("left");
-  settings?.style.removeProperty("right");
-  settings?.style.removeProperty("top");
-  settings?.style.removeProperty("height");
 }
 
 function positionTouchLayoutWindowsInitial() {
   const panel = $("#touchLayoutEditor");
-  const settings = touchLayoutSettingsElement();
-  if (!settings || settings.hidden) return;
   const host = player.getBoundingClientRect();
-  const panelRect = panel.getBoundingClientRect();
-  const settingsRect = settings.getBoundingClientRect();
-  const inset = touchLayoutWindowMargin;
-  const gap = window.matchMedia("(max-width:760px)").matches ? 6 : 14;
-  const sideBySideWidth = panelRect.width + gap + settingsRect.width;
-  // The two editors always start as a left/right pair.  On narrow portrait
-  // screens their mobile widths are intentionally small enough to preserve
-  // this arrangement rather than switching to a vertical stack.
-  const groupLeft = (host.width - sideBySideWidth) / 2;
-  const panelLeft = groupLeft;
-  const settingsLeft = groupLeft + panelRect.width + gap;
-  const panelTop = (host.height - panelRect.height) / 2;
-  const settingsTop = (host.height - settingsRect.height) / 2;
-  panel.style.left = `${Math.max(inset, Math.min(host.width - panelRect.width - inset, panelLeft))}px`;
-  panel.style.top = `${Math.max(inset, Math.min(host.height - panelRect.height - inset, panelTop))}px`;
+  const rect = panel.getBoundingClientRect();
+  const portrait = host.height > host.width;
+  panel.style.left = `${portrait ? (host.width - rect.width) / 2 : host.width - rect.width - touchLayoutWindowMargin}px`;
+  panel.style.top = `${Math.min(76, Math.max(touchLayoutWindowMargin, host.height - rect.height - touchLayoutWindowMargin))}px`;
   panel.style.transform = "none";
-  settings.style.right = "auto";
-  settings.style.left = `${Math.max(inset, Math.min(host.width - settingsRect.width - inset, settingsLeft))}px`;
-  settings.style.top = `${Math.max(inset, Math.min(host.height - settingsRect.height - inset, settingsTop))}px`;
 }
 
 function positionTouchLayoutWindows() {
   touchLayoutWindowPositions.reload();
   positionTouchLayoutWindowsInitial();
   restoreTouchLayoutWindowPosition("editor", $("#touchLayoutEditor"));
-  restoreTouchLayoutWindowPosition("settings", touchLayoutSettingsElement());
   clampTouchLayoutEditorPosition();
   touchLayoutWindowOrientation = touchLayoutOrientation();
 }
@@ -6347,79 +6401,47 @@ function clampTouchLayoutEditorPosition() {
   const panel = $("#touchLayoutEditor");
   clampPanel(panel);
   panel.style.transform = "none";
-  const settings = touchLayoutSettingsElement();
-  if (settings) settings.style.right = "auto";
-  clampPanel(settings);
 }
 
 function beginTouchLayoutEditorDrag(event: PointerEvent) {
   if (!touchLayoutEditing || (event.pointerType === "mouse" && event.button !== 0)) return;
   event.preventDefault();
+  cancelTouchLayoutEntry();
   const panel = $("#touchLayoutEditor");
   const host = player.getBoundingClientRect();
   const rect = panel.getBoundingClientRect();
   panel.style.left = `${rect.left - host.left}px`;
   panel.style.top = `${rect.top - host.top}px`;
   panel.style.transform = "none";
-  touchLayoutEditorDrag = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+  touchLayoutEditorDrag = {
+    pointerId: event.pointerId, x: event.clientX, y: event.clientY,
+    left: rect.left - host.left, top: rect.top - host.top,
+    maxLeft: Math.max(touchLayoutWindowMargin, host.width - rect.width - touchLayoutWindowMargin),
+    maxTop: Math.max(touchLayoutWindowMargin, host.height - rect.height - touchLayoutWindowMargin),
+  };
+  try { $("#touchLayoutEditorDragHandle").setPointerCapture(event.pointerId); } catch {}
 }
 
 function moveTouchLayoutEditorDrag(event: PointerEvent) {
   if (!touchLayoutEditorDrag || event.pointerId !== touchLayoutEditorDrag.pointerId) return;
   event.preventDefault();
   const panel = $("#touchLayoutEditor");
-  const host = player.getBoundingClientRect();
-  const panelRect = panel.getBoundingClientRect();
   const dx = event.clientX - touchLayoutEditorDrag.x;
   const dy = event.clientY - touchLayoutEditorDrag.y;
   touchLayoutEditorDrag.x = event.clientX;
   touchLayoutEditorDrag.y = event.clientY;
-  const safeDx = Math.max(host.left + touchLayoutWindowMargin - panelRect.left, Math.min(host.right - touchLayoutWindowMargin - panelRect.right, dx));
-  const safeDy = Math.max(host.top + touchLayoutWindowMargin - panelRect.top, Math.min(host.bottom - touchLayoutWindowMargin - panelRect.bottom, dy));
-  panel.style.left = `${panelRect.left - host.left + safeDx}px`;
-  panel.style.top = `${panelRect.top - host.top + safeDy}px`;
+  touchLayoutEditorDrag.left = Math.max(touchLayoutWindowMargin, Math.min(touchLayoutEditorDrag.maxLeft, touchLayoutEditorDrag.left + dx));
+  touchLayoutEditorDrag.top = Math.max(touchLayoutWindowMargin, Math.min(touchLayoutEditorDrag.maxTop, touchLayoutEditorDrag.top + dy));
+  panel.style.left = `${touchLayoutEditorDrag.left}px`;
+  panel.style.top = `${touchLayoutEditorDrag.top}px`;
 }
 
 function endTouchLayoutEditorDrag(event?: PointerEvent) {
   if (!touchLayoutEditorDrag || (event && event.pointerId !== touchLayoutEditorDrag.pointerId)) return;
+  const pointerId = touchLayoutEditorDrag.pointerId;
   touchLayoutEditorDrag = null;
+  try { $("#touchLayoutEditorDragHandle").releasePointerCapture(pointerId); } catch {}
   rememberTouchLayoutWindowPosition("editor", $("#touchLayoutEditor"));
-}
-
-function beginTouchLayoutSettingsDrag(event: PointerEvent) {
-  if (!touchLayoutEditing || (event.pointerType === "mouse" && event.button !== 0)) return;
-  event.preventDefault();
-  const settings = touchLayoutSettingsElement();
-  if (!settings) return;
-  const host = player.getBoundingClientRect();
-  const rect = settings.getBoundingClientRect();
-  settings.style.right = "auto";
-  settings.style.left = `${rect.left - host.left}px`;
-  settings.style.top = `${rect.top - host.top}px`;
-  touchLayoutSettingsDrag = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
-}
-
-function moveTouchLayoutSettingsDrag(event: PointerEvent) {
-  if (!touchLayoutSettingsDrag || event.pointerId !== touchLayoutSettingsDrag.pointerId) return;
-  event.preventDefault();
-  const settings = touchLayoutSettingsElement();
-  if (!settings) return;
-  const host = player.getBoundingClientRect();
-  const rect = settings.getBoundingClientRect();
-  const dx = event.clientX - touchLayoutSettingsDrag.x;
-  const dy = event.clientY - touchLayoutSettingsDrag.y;
-  touchLayoutSettingsDrag.x = event.clientX;
-  touchLayoutSettingsDrag.y = event.clientY;
-  const maxLeft = Math.max(touchLayoutWindowMargin, host.width - rect.width - touchLayoutWindowMargin);
-  const maxTop = Math.max(touchLayoutWindowMargin, host.height - rect.height - touchLayoutWindowMargin);
-  settings.style.left = `${Math.max(touchLayoutWindowMargin, Math.min(maxLeft, rect.left - host.left + dx))}px`;
-  settings.style.top = `${Math.max(touchLayoutWindowMargin, Math.min(maxTop, rect.top - host.top + dy))}px`;
-}
-
-function endTouchLayoutSettingsDrag(event?: PointerEvent) {
-  if (!touchLayoutSettingsDrag || (event && event.pointerId !== touchLayoutSettingsDrag.pointerId)) return;
-  touchLayoutSettingsDrag = null;
-  rememberTouchLayoutWindowPosition("settings", touchLayoutSettingsElement());
 }
 
 function updateTouchLayoutOrientationActionUi() {
@@ -6504,16 +6526,40 @@ function cancelTouchSensitivityPreview() {
   endTouchSensitivityPreview();
 }
 
+function cancelTouchLayoutEntry() {
+  for (const animation of touchLayoutEntryAnimations) animation.cancel();
+  touchLayoutEntryAnimations = [];
+  player.classList.remove("touch-layout-preparing");
+}
+
+function animateTouchLayoutEntry() {
+  cancelTouchLayoutEntry();
+  if (state.lessMotion || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  // Start only after fullscreen and positioning settle. Animate composited
+  // properties, never the viewport geometry or the preview image's filter.
+  const animations = [
+    player.animate([{ opacity: 0 }, { opacity: 1 }], {
+      duration: 340, easing: "cubic-bezier(.2,0,.2,1)"
+    })
+  ];
+  touchLayoutEntryAnimations = animations;
+  for (const animation of animations) animation.onfinish = () => {
+    animation.cancel();
+    touchLayoutEntryAnimations = touchLayoutEntryAnimations.filter(active => active !== animation);
+  };
+}
+
 async function openTouchLayoutEditor() {
   if (touchLayoutEditing) return;
   if (state.launched) throw new Error(t("touch.editWhileRunning"));
   touchLayoutEditing = true;
+  cancelTouchLayoutEntry();
+  player.classList.add("touch-layout-preparing");
   touchViewportEditing = false;
   touchViewportDrag = null;
   touchLayoutDraft = cloneTouchLayout(touchLayout) || emptyTouchLayout();
   touchLayoutDrag = null;
   touchLayoutEditorDrag = null;
-  touchLayoutSettingsDrag = null;
   touchSensitivityCustomOpen = false;
   cancelTouchSensitivityPreview();
   touchLayoutSelected = "bomb";
@@ -6528,7 +6574,8 @@ async function openTouchLayoutEditor() {
   $("#touchLayoutEditor").hidden = false;
   const settings = touchLayoutSettingsElement();
   if (!settings) throw new Error(t("touch.settingsMissing"));
-  settings.hidden = false;
+  touchLayoutEditorCollapsed = false;
+  syncTouchLayoutWorkbench();
   render();
   pushTouchLayoutEditorHistory();
   const wasFullscreen = isPlayerFullscreen();
@@ -6540,6 +6587,7 @@ async function openTouchLayoutEditor() {
     showToast(t("fullscreen.autoBlocked", { reason: errorMessage(error) }));
   }
   await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  if (!touchLayoutEditing) return;
   const profile = ensureTouchLayoutDraftProfile();
   const visibleControls = visibleTouchLayoutControlNames();
   if (visibleControls.length) {
@@ -6553,6 +6601,7 @@ async function openTouchLayoutEditor() {
   updateTouchLayoutEditorUi();
   applyTouchViewportDraftPosition();
   positionTouchLayoutWindows();
+  animateTouchLayoutEntry();
   setStatus(t("touch.editorStatus"));
 }
 
@@ -6599,9 +6648,9 @@ async function closeTouchLayoutEditor(): Promise<boolean> {
     tone: "danger"
   })) return false;
   rememberTouchLayoutWindowsNow();
+  cancelTouchLayoutEntry();
   touchLayoutDrag = null;
   touchLayoutEditorDrag = null;
-  touchLayoutSettingsDrag = null;
   touchViewportDrag = null;
   touchViewportEditing = false;
   touchLayoutEditing = false;
@@ -6610,7 +6659,7 @@ async function closeTouchLayoutEditor(): Promise<boolean> {
   $("#touchLayoutEditor").hidden = true;
   const settings = touchLayoutSettingsElement();
   if (settings) settings.hidden = true;
-  player.classList.remove("touch-layout-edit", "touch-preview", "open");
+  player.classList.remove("touch-layout-edit", "touch-preview", "open", "touch-layout-manipulating");
   for (const name of touchLayoutControlNames) touchLayoutElement(name).classList.remove("touch-layout-selected");
   player.style.removeProperty("--touch-preview-image");
   player.setAttribute("aria-hidden", "true");
@@ -6634,9 +6683,7 @@ function rectOverlapRatio(a: DOMRect, b: DOMRect) {
 
 function updateTouchLayoutWarnings() {
   if (!touchLayoutEditing) return;
-  const warning = $("#touchLayoutWarning");
   const names = visibleTouchLayoutControlNames();
-  const issues: string[] = [];
   for (const name of touchLayoutControlNames) touchLayoutElement(name).classList.remove("touch-layout-collision");
   for (let i = 0; i < names.length; i++) {
     for (let j = i + 1; j < names.length; j++) {
@@ -6645,7 +6692,6 @@ function updateTouchLayoutWarnings() {
       if (rectOverlapRatio(a.getBoundingClientRect(), b.getBoundingClientRect()) >= .28) {
         a.classList.add("touch-layout-collision");
         b.classList.add("touch-layout-collision");
-        issues.push(t("touch.controlOverlap", { first: touchLayoutControlTitle(names[i]), second: touchLayoutControlTitle(names[j]) }));
       }
     }
   }
@@ -6654,12 +6700,8 @@ function updateTouchLayoutWarnings() {
     const element = touchLayoutElement(name);
     if (rectOverlapRatio(element.getBoundingClientRect(), reserved) >= .18) {
       element.classList.add("touch-layout-collision");
-      issues.push(t("touch.controlReserved", { control: touchLayoutControlTitle(name) }));
     }
   }
-  const unique = [...new Set(issues)];
-  warning.hidden = unique.length === 0;
-  warning.textContent = unique.length ? t("touch.warningSummary", { issues: unique.join(t("touch.warningSeparator")) }) : "";
 }
 
 function moveTouchLayoutItem(name: TouchLayoutControlName, dx: number, dy: number) {
@@ -6676,20 +6718,10 @@ function moveTouchLayoutItem(name: TouchLayoutControlName, dx: number, dy: numbe
   updateTouchLayoutWarnings();
 }
 
-function scaleTouchLayoutItem(name: TouchLayoutControlName, scale: number) {
-  const profile = ensureTouchLayoutDraftProfile();
-  const item = requiredTouchLayoutPlacement(profile, name);
-  item.scale = Math.max(touchLayoutScaleMin, Math.min(touchLayoutScaleMax, scale));
-  const position = effectiveTouchLayoutPosition(touchLayoutElement(name), item);
-  item.x = position.x;
-  item.y = position.y;
-  applyTouchLayout(touchLayoutDraft);
-  updateTouchLayoutEditorUi();
-}
-
 function beginTouchLayoutDrag(name: TouchLayoutControlName, event: PointerEvent) {
   if (!touchLayoutEditing || (event.pointerType === "mouse" && event.button !== 0)) return;
   event.preventDefault();
+  cancelTouchLayoutEntry();
   const profile = ensureTouchLayoutDraftProfile();
   applyTouchLayout(touchLayoutDraft);
   selectTouchLayoutControl(name);
@@ -6727,6 +6759,7 @@ function resizeTouchLayoutItem(drag: Extract<TouchLayoutDrag, { kind: "resize" }
 function moveTouchLayoutDrag(event: PointerEvent) {
   if (!touchLayoutEditing || !touchLayoutDrag || event.pointerId !== touchLayoutDrag.pointerId) return;
   event.preventDefault();
+  player.classList.add("touch-layout-manipulating");
   if (touchLayoutDrag.kind === "resize") {
     resizeTouchLayoutItem(touchLayoutDrag, event);
     return;
@@ -6741,6 +6774,7 @@ function moveTouchLayoutDrag(event: PointerEvent) {
 function endTouchLayoutDrag(event?: PointerEvent) {
   if (!touchLayoutDrag || (event && event.pointerId !== touchLayoutDrag.pointerId)) return;
   touchLayoutDrag = null;
+  player.classList.remove("touch-layout-manipulating");
 }
 
 function applyTouchViewportDraftPosition() {
@@ -6774,7 +6808,7 @@ function finishTouchViewportEditing() {
   $("#touchViewportDone").hidden = true;
   $("#touchLayoutEditor").hidden = false;
   const settings = touchLayoutSettingsElement();
-  if (settings) settings.hidden = false;
+  syncTouchLayoutWorkbench();
   applyTouchLayout(touchLayoutDraft);
   updateTouchLayoutEditorUi();
   applyTouchViewportDraftPosition();
@@ -6821,11 +6855,10 @@ function endTouchViewportDrag(event?: PointerEvent) {
 
 function cancelTouchLayoutGestures() {
   if (touchLayoutEditorDrag) rememberTouchLayoutWindowPosition("editor", $("#touchLayoutEditor"));
-  if (touchLayoutSettingsDrag) rememberTouchLayoutWindowPosition("settings", touchLayoutSettingsElement());
   touchLayoutDrag = null;
   touchLayoutEditorDrag = null;
-  touchLayoutSettingsDrag = null;
   touchViewportDrag = null;
+  player.classList.remove("touch-layout-manipulating");
   cancelTouchSensitivityPreview();
 }
 
@@ -6994,21 +7027,35 @@ function mpResetRoomState() {
 
 let mpRoomLeavePending = false;
 let mpRoomReturnTimer: number | null = null;
-function mpLeaveRoom(fromHistory = false) {
+function mpLeaveRoom() {
   if (th09NetworkOverlayOpen()) { th09LeaveNetworkRoom(); return; }
   const leavingRoom = mpUiState.room;
   if (!leavingRoom || mpRoomLeavePending) return;
+  const returnLocation = location.href;
   const roomView = $("#mpRoomView");
   const reducedMotion = state.lessMotion || matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const compactMotion = matchMedia("(max-width: 780px), (hover: none), (pointer: coarse)").matches;
+  const leaveDuration = compactMotion ? 160 : 220;
+  const returnDuration = compactMotion ? 180 : 320;
   const finish = () => {
     mpRoomLeavePending = false;
     document.body.classList.remove("mp-room-leaving");
     roomView.inert = false;
     if (mpUiState.room !== leavingRoom) return;
     mpResetRoomState();
-    if (!fromHistory) replaceLauncherHomeHistory();
     if (!reducedMotion) document.body.classList.add("mp-room-returning");
-    showLauncherHome();
+    if (location.href === returnLocation) {
+      applyHistoryOperations(history, [launcherOptionsHistoryOperation({
+        currentUrl: location.href,
+        currentState: history.state,
+        product: state.product,
+      })]);
+      state.hasSelection = true;
+      render();
+    } else if (!syncSelectionFromPlayerRoute()) {
+      showLauncherHome();
+    }
+    if (state.hasSelection) $("#libraryBack").focus({ preventScroll: true });
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     setTranslatedStatus("status.roomLeft");
     if (!reducedMotion) {
@@ -7016,7 +7063,7 @@ function mpLeaveRoom(fromHistory = false) {
       mpRoomReturnTimer = window.setTimeout(() => {
         document.body.classList.remove("mp-room-returning");
         mpRoomReturnTimer = null;
-      }, 320);
+      }, returnDuration);
     }
   };
   if (reducedMotion) { finish(); return; }
@@ -7024,7 +7071,7 @@ function mpLeaveRoom(fromHistory = false) {
   roomView.inert = true;
   document.body.classList.remove("mp-room-returning");
   document.body.classList.add("mp-room-leaving");
-  window.setTimeout(finish, 220);
+  window.setTimeout(finish, leaveDuration);
 }
 
 const mpSeatPresentations = new WeakMap<HTMLElement, { room: string; occupant: string; animations: Animation[] }>();
@@ -7159,8 +7206,13 @@ function renderRoomNetwork() {
   if (!container || !room) return;
   const peers = (room.seats || []).slice(0, room.playerCount).flatMap((seat, index) => seat && index !== mpUiState.seat ? [{ seat, index }] : []);
   const unavailable = !mpLobby.connected || !room.synced;
-  const paused = room.phase !== "lobby" || state.launched;
+  const paused = room.phase !== "lobby" || (state.launched && !th09NetworkOverlayOpen());
   const message = unavailable ? t("multiplayer.reconnecting") : paused ? t("room.pausedTest") : mpUiState.seat == null ? t("room.seatToTest") : !peers.length ? t("room.waitPeer") : "";
+  const capabilities = roomNetwork.capabilities();
+  const networkNote = document.querySelector<HTMLElement>("#mpRoomPanel .mp-network-footnote");
+  if (networkNote) networkNote.textContent = t(unavailable ? "room.networkNote" : !capabilities.supported
+    ? "room.probeUnsupported" : !capabilities.rtcAvailable ? "room.rtcUnavailable"
+      : !capabilities.turnConfigured ? "room.turnUnconfigured" : "room.networkNote");
   const retry = document.querySelector<HTMLButtonElement>("#mpRoomNetworkRetry");
   if (retry) retry.disabled = !!message;
   const summary = document.getElementById("mpNetworkSummary");
@@ -7233,7 +7285,7 @@ function renderMpRoom() {
   const room = mpUiState.room;
   if (!room) return;
   const roomReady = room.synced === true && mpLobby.connected;
-  roomNetwork.update({ localId: mpLobby.clientId, peers: (room.seats || []).slice(0, room.playerCount).filter(seat => seat && !seat.offline).map(seat => seat!.clientId), active: roomReady && mpUiState.seat != null && room.phase === "lobby" && !state.launched });
+  roomNetwork.update({ localId: mpLobby.clientId, peers: (room.seats || []).slice(0, room.playerCount).filter(seat => seat && !seat.offline).map(seat => seat!.clientId), active: roomReady && mpUiState.seat != null && room.phase === "lobby" && (!state.launched || th09NetworkOverlayOpen()) });
   renderRoomNetwork();
   $("#mpRoomConnection").textContent = t(roomReady ? "room.online" : "multiplayer.reconnecting");
   $("#mpRoomConnection").classList.toggle("connected", roomReady);
@@ -7581,17 +7633,47 @@ function animateMobileHomeCards() {
 matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", cancelMobileHomeCards);
 
 initializeGameLibrary();
-function closeLibraryTools() {
+const mobileLibraryMotion = matchMedia("(max-width: 780px), (hover: none), (pointer: coarse)");
+let libraryToolsCloseTimer = 0;
+function closeLibraryTools(fromHistory = false) {
   if (mpUiState.room) { setMpSettingsRoomDrawerOpen(false); return; }
-  if (state.launched) return;
+  if (state.launched || !state.hasSelection || libraryToolsCloseTimer) return;
+  if (!fromHistory && history.state?.[playerHistoryKey] && routedGameFromLocation() === state.product) {
+    history.back();
+    return;
+  }
   const selected = document.querySelector<HTMLElement>(".game.selected");
   closeOtherCustomSelects();
-  replaceLauncherHomeHistory();
-  showLauncherHome();
-  selected?.focus({ preventScroll: true });
+  const finish = () => {
+    libraryToolsCloseTimer = 0;
+    if (state.hasSelection) {
+      if (!fromHistory) replaceLauncherHomeHistory();
+      state.hasSelection = false;
+      $("#main").classList.remove("has-selection");
+      document.body.classList.remove("library-tools-open");
+      $(".game-library").inert = false;
+      const tools = $(".tools");
+      tools.setAttribute("role", "complementary");
+      tools.setAttribute("aria-modal", "false");
+      tools.setAttribute("aria-hidden", "true");
+      for (const card of document.querySelectorAll<HTMLElement>(".game.selected")) {
+        card.classList.remove("selected");
+        if (card instanceof HTMLAnchorElement) card.setAttribute("aria-current", "false");
+      }
+    }
+    document.body.classList.remove("library-tools-closing");
+    selected?.focus({ preventScroll: true });
+  };
+  if (!mobileLibraryMotion.matches || state.lessMotion || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    finish();
+    return;
+  }
+  // Let the panel exit before changing the library's selected state.
+  document.body.classList.add("library-tools-closing");
+  libraryToolsCloseTimer = window.setTimeout(finish, 360);
 }
-$("#libraryBack").addEventListener("click", closeLibraryTools);
-$("#libraryBackdrop").addEventListener("click", closeLibraryTools);
+$("#libraryBack").addEventListener("click", () => closeLibraryTools());
+$("#libraryBackdrop").addEventListener("click", () => closeLibraryTools());
 $(".tools").addEventListener("keydown", event => {
   if (!document.body.classList.contains("library-tools-open") || event.defaultPrevented) return;
   if (event.key === "Escape") {
@@ -7615,6 +7697,9 @@ document.querySelectorAll<HTMLElement>(".game").forEach(card => {
     const product = card.dataset.product || card.dataset.game;
     const gameId = card.dataset.game;
     if (!product || !gameId || !isProductId(product) || !isGameId(gameId) || !productEnabled(product)) return;
+    const prepareTools = main.classList.contains("library-layout") && mobileLibraryMotion.matches && !state.hasSelection && !state.lessMotion &&
+      !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prepareTools) document.body.classList.add("library-tools-preparing");
     const changed = state.product !== product;
     const previousLayout = changed || !state.hasSelection ? captureCardLayout() : null;
     if (changed) {
@@ -7634,6 +7719,9 @@ document.querySelectorAll<HTMLElement>(".game").forEach(card => {
     });
     if (routeOperation) applyHistoryOperations(history, [routeOperation]);
     render();
+    if (prepareTools) requestAnimationFrame(() => requestAnimationFrame(() => {
+      document.body.classList.remove("library-tools-preparing");
+    }));
     animateCardLayout(previousLayout);
     $("#libraryBack").focus({ preventScroll: true });
     setTranslatedStatus(changed ? "status.switchedProduct" : "status.selectedProduct", { product: productTitle(product) });
@@ -7696,11 +7784,6 @@ document.querySelectorAll<HTMLButtonElement>("[data-action]").forEach(button => 
 }));
 $("#mobileOptionsToggle").addEventListener("click", () => { state.mobileOpen = !state.mobileOpen; render(); });
 $("#touchLayoutEdit").addEventListener("click", () => { void openTouchLayoutEditor().catch(error => { const reason = errorMessage(error); showToast(reason); setStatus(t("status.errorReason", { reason })); }); });
-$("#touchLayoutScale").addEventListener("input", event => {
-  if (!touchLayoutEditing) return;
-  const scale = Math.max(touchLayoutScaleMin, Math.min(touchLayoutScaleMax, Number($("#touchLayoutScale").value) / 100));
-  scaleTouchLayoutItem(touchLayoutSelected, scale);
-});
 $("#touchLayoutOrientationHelpOpen").addEventListener("click", () => { if (touchLayoutEditing) void switchTouchLayoutOrientation(); });
 $("#touchViewportAdjust").addEventListener("click", startTouchViewportEditing);
 $("#touchViewportReset").addEventListener("click", resetTouchViewportPosition);
@@ -8402,10 +8485,13 @@ touchJoystick.addEventListener("lostpointercapture", releaseTouchJoystick);
 for (const name of touchLayoutControlNames) {
   touchLayoutElement(name).addEventListener("pointerdown", event => beginTouchLayoutDrag(name, event));
 }
+$("#touchLayoutCollapse").addEventListener("click", () => {
+  touchLayoutEditorCollapsed = !touchLayoutEditorCollapsed;
+  syncTouchLayoutWorkbench();
+});
 const touchLayoutEditorDragHandle = $("#touchLayoutEditorDragHandle");
 touchLayoutEditorDragHandle.addEventListener("pointerdown", beginTouchLayoutEditorDrag);
-const touchLayoutSettingsDragHandle = $("#touchLayoutSettingsDragHandle");
-touchLayoutSettingsDragHandle.addEventListener("pointerdown", beginTouchLayoutSettingsDrag);
+touchLayoutEditorDragHandle.addEventListener("lostpointercapture", endTouchLayoutEditorDrag);
 const touchViewportDragSurface = $("#touchViewportDragSurface");
 touchViewportDragSurface.addEventListener("pointerdown", beginTouchViewportDrag);
 touchViewportDragSurface.addEventListener("pointermove", moveTouchViewportDrag);
@@ -8420,17 +8506,14 @@ player.addEventListener("lostpointercapture", endTouchSensitivityPreview);
 document.addEventListener("pointermove", event => {
   moveTouchLayoutDrag(event);
   moveTouchLayoutEditorDrag(event);
-  moveTouchLayoutSettingsDrag(event);
 }, true);
 document.addEventListener("pointerup", event => {
   endTouchLayoutDrag(event);
   endTouchLayoutEditorDrag(event);
-  endTouchLayoutSettingsDrag(event);
 }, true);
 document.addEventListener("pointercancel", event => {
   endTouchLayoutDrag(event);
   endTouchLayoutEditorDrag(event);
-  endTouchLayoutSettingsDrag(event);
 }, true);
 window.addEventListener("blur", cancelTouchLayoutGestures);
 document.addEventListener("visibilitychange", () => { if (document.hidden) cancelTouchLayoutGestures(); });
@@ -8494,6 +8577,10 @@ $("#launch").addEventListener("click", async () => {
       if (isPlayerFullscreen()) await lockEscapeForGame();
     } else refocusGameIfNeeded();
   } catch (error) {
+    // Browser Back (or another intentional route change) invalidates the
+    // pending Runtime session. Its rejected startup request is cancellation,
+    // not a failed OGG decode or a game crash.
+    if (error instanceof RuntimeSwitchedError) return;
     if (!state.launched && isCancelledDownload(error)) {
       if (player.classList.contains("open")) {
         if (!await closePlayerView()) return;
@@ -8519,8 +8606,9 @@ $("#launch").addEventListener("click", async () => {
         if (!await closePlayerView()) return;
       } else resetRuntime();
       beginManualGamePackageImport(
-        t("package.resourceFailureLocal", { reason: message }),
+        t("package.resourceFailureLocal"),
         captureGameDataContinuation("launch"),
+        true,
       );
       setStatus(t("package.resourceFailureStatus"));
       return;
@@ -8645,24 +8733,26 @@ if (touchPreview === "touch" || touchPreview === "touch-hud") {
 }
 
 try { state.lessMotion = localStorage.getItem(lessMotionStorageKey) === "1"; } catch {}
-const compactOptionsLayout = matchMedia("(max-width: 780px)");
-const touchInputAvailable = () => mobileDevice || navigator.maxTouchPoints > 0 || matchMedia("(any-pointer: coarse)").matches;
-const touchSettingsFirst = () => touchInputAvailable() || compactOptionsLayout.matches;
+// An optional touchscreen (or a narrow desktop window) does not make touch
+// controls the primary way to use the launcher. Keep them prominent on mobile
+// devices and when the browser's primary pointer is touch.
+const primaryTouchPointer = matchMedia("(pointer: coarse)");
+const preferTouchSettings = () => mobileDevice || primaryTouchPointer.matches;
 function syncTouchSettingsOrder() {
   // Move the actual groups so keyboard and reading order match the visible order.
   for (const selector of ["#mobileOptions", "#mpMobileOptions"]) {
     const touchSettings = $(selector);
     const groups = touchSettings.parentElement!;
-    if (touchSettingsFirst()) {
+    if (preferTouchSettings()) {
       const firstGroup = groups.querySelector(":scope > .options-group");
       if (firstGroup !== touchSettings) groups.insertBefore(touchSettings, firstGroup);
     } else if (groups.lastElementChild !== touchSettings) groups.append(touchSettings);
   }
 }
-state.mobileOpen = touchInputAvailable();
-mpUiState.mobileOpen = touchInputAvailable();
+state.mobileOpen = preferTouchSettings();
+mpUiState.mobileOpen = preferTouchSettings();
 syncTouchSettingsOrder();
-compactOptionsLayout.addEventListener("change", syncTouchSettingsOrder);
+primaryTouchPointer.addEventListener("change", syncTouchSettingsOrder);
 mpUiState.displayName = multiplayerIdentity.loadDisplayName();
 for (const [name, open] of Object.entries(mpUiState.folds)) if (isMpFoldName(name)) mpSetFold(name, open);
 if (mpRestoreRoomFromLocation()) {
@@ -8671,7 +8761,6 @@ if (mpRestoreRoomFromLocation()) {
 }
 if (!mpUiState.room && !state.launched && !productEnabled(state.product)) state.hasSelection = false;
 render(); setTranslatedStatus("status.selectGame");
-animateMobileHomeCards();
 bootWatchdog?.ready?.();
 const launcherRoomRoute = !!mpNormalizeRoomCode(new URL(location.href).searchParams.get(mpRoomUrlKey));
 const loadEntryNotices = () => {
