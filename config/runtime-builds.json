@@ -73,7 +73,10 @@
     "th10": {
       "builder": "prebuilt",
       "workspaceRepository": "th10",
-      "variants": { "normal": { "features": { "thcrap": true, "thprac": true }, "cache": {} } }
+      "variants": {
+        "normal": { "features": { "thcrap": true, "thprac": true }, "cache": {} },
+        "multiplayer": { "features": { "thcrap": true, "thprac": false }, "cache": {} }
+      }
     },
     "th09": {
       "builder": "prebuilt",
@@ -89,6 +92,10 @@
       "variants": {
         "normal": {
           "features": { "thcrap": true, "thprac": true },
+          "cache": {}
+        },
+        "multiplayer": {
+          "features": { "thcrap": true, "thprac": false },
           "cache": {}
         }
       }

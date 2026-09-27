@@ -65,8 +65,8 @@ assert.equal(th08.obligations.optionalProductCapabilities["raw-data-import"], tr
 assert.equal(th08.product.music.midiOptional, true);
 assert.equal(th08.protocol.configureOptions.focusHitboxEnabled.activeForProduct, false);
 assert.equal(th08.protocol.configureOptions.thpracEnabled.activeForProduct, true);
-assert.equal(th08.protocol.configureOptions.netplayMode.activeForProduct, false);
-assert.equal(th08.obligations.optionalProfiles.multiplayer.active, false);
+assert.equal(th08.protocol.configureOptions.netplayMode.activeForProduct, true);
+assert.equal(th08.obligations.optionalProfiles.multiplayer.active, true);
 assert.equal(th08.obligations.optionalProfiles.thprac.active, true);
 assert.equal(th08.obligations.optionalProfiles.languages.active, true);
 assert.equal(th08.obligations.optionalProfiles.midi.active, true);
@@ -74,14 +74,33 @@ assert.ok(th08.obligations.optionalProfiles.midi.behaviors.includes("audible-mid
 
 const th10 = createAdapterContractReport("th10");
 assert.equal(th10.product.music.midiOptional, false);
-assert.equal(th10.product.multiplayerRuntime, null);
-assert.equal(th10.product.multiplayer, null);
+assert.equal(th10.product.multiplayerRuntime, PRODUCT_GAMES.th10.multiplayerRuntime);
+assert.equal(th10.product.multiplayerRuntime, "./runtime/th10/multiplayer/th10.html");
 assert.equal(th10.obligations.optionalProductCapabilities["raw-data-import"], false);
-assert.deepEqual(th10.obligations.activeProfileRequired, ["thprac-touch-bridge", "language-runtime-application"]);
+assert.equal(th10.obligations.optionalProfiles.multiplayer.active, true);
+assert.deepEqual(th10.obligations.activeProfileRequired,
+  ["multiplayer-local-player-visibility", "multiplayer-spectator-input-isolation", "thprac-touch-bridge", "language-runtime-application"]);
 assert.equal(th10.protocol.configureOptions.focusHitboxEnabled.activeForProduct, false);
 assert.equal(th10.protocol.configureOptions.debugHarness.activeForProduct, false);
 assert.equal(th10.obligations.optionalProfiles.languages.active, true);
 assert.equal(th10.obligations.optionalProfiles.midi.active, false);
+
+// TH20 is a single-player early-test adapter: directory Runtime, retail-memory
+// DATA, no multiplayer, no thprac, no host card artwork yet.
+const th20 = createAdapterContractReport("th20");
+assert.equal(th20.product.adapterProfile.runtimeLayout, "directory");
+assert.equal(th20.product.adapterProfile.dataProvider, "retail-memory");
+assert.equal(th20.product.cardArtwork ?? null, PRODUCT_GAMES.th20.cardArtwork ?? null);
+assert.equal(th20.product.multiplayerRuntime, null);
+assert.equal(th20.product.multiplayer, null);
+assert.equal(th20.obligations.optionalProductCapabilities["raw-data-import"], true);
+assert.deepEqual(th20.obligations.activeProfileRequired, ["language-runtime-application"]);
+assert.equal(th20.obligations.optionalProfiles.multiplayer.active, false);
+assert.equal(th20.obligations.optionalProfiles.thprac.active, false);
+assert.equal(th20.obligations.optionalProfiles.languages.active, true);
+assert.equal(th20.obligations.optionalProfiles.midi.active, false);
+assert.equal(th20.protocol.configureOptions.thpracEnabled.activeForProduct, false);
+assert.equal(th20.protocol.configureOptions.netplayMode.activeForProduct, false);
 
 const th09 = createAdapterContractReport("th09");
 assert.equal(th09.product.adapterProfile.runtimeLayout, "directory");

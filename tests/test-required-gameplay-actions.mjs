@@ -38,6 +38,16 @@ assert.match(th10Pause, /pressed\s*&\s*0x4000/,
   "th10: Pause must consume the restart input bit");
 coveredGames.add("th10");
 
+// TH20 recovers the original VK table: R (0x52) sets 0x200000, and the pause
+// menu consumes that bit to confirm the retry action.
+const th20Input = await readFile(workspacePath("th20", "source_reconstruction", "input", "input_state.cpp"), "utf8");
+const th20Pause = await readFile(workspacePath("th20", "source_reconstruction", "pause_system", "menu.cpp"), "utf8");
+assert.match(th20Input, /key\(0x52\s*,\s*0x200000\)/,
+  "th20: R must map to the native restart input bit");
+assert.match(th20Pause, /e\.pressed\(0x200000\)[\s\S]{0,80}confirm_retry/,
+  "th20: Pause restart must consume the restart input bit");
+coveredGames.add("th20");
+
 assert.deepEqual([...coveredGames].sort(), Object.keys(PRODUCT_GAMES).sort(),
   "required restart-action verification must be updated when a formal game adapter is registered");
 console.log(`Required gameplay actions: PASS (R -> pause restart for ${Object.keys(PRODUCT_GAMES).map(game => game.toUpperCase()).join("/")})`);
