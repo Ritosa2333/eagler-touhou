@@ -69,7 +69,11 @@ function createRailMotion(rail: HTMLElement, reduced: () => boolean) {
     };
     frame = requestAnimationFrame(tick);
   };
-  return { move, cancel };
+  const settle = (destination: number) => {
+    cancel();
+    rail.scrollLeft = Math.max(0, Math.min(rail.scrollWidth - rail.clientWidth, destination));
+  };
+  return { move, settle, cancel };
 }
 
 export function initializeGameLibrary() {
@@ -85,9 +89,12 @@ export function initializeGameLibrary() {
     const motion = createRailMotion(rail, reduced);
     const productOf = (card: HTMLElement) => card.dataset.product || card.dataset.game;
     const cardFor = (id?: string) => cards.find(card => productOf(card) === id && !card.hidden);
-    let activeId = "", followScroll = false, holdTimer = 0, suppressClickUntil = 0;
-    let pointer: { id: number; x: number; y: number; held: boolean; choice: string | null; owner: HTMLButtonElement } | null = null;
+    let activeId = "", holdTimer = 0, suppressClickUntil = 0;
+    let visibleCards: HTMLAnchorElement[] = [];
+    let cardLefts: number[] = [];
+    let pointer: { id: number; x: number; y: number; held: boolean; choice: string | null; touch: boolean; owner: HTMLButtonElement } | null = null;
     const highlight = (id: string) => {
+      if (activeId === id) return;
       activeId = id;
       cards.forEach(card => card.classList.toggle("nav-preview", productOf(card) === id));
       for (const button of toggles) {
@@ -104,20 +111,22 @@ export function initializeGameLibrary() {
       root.classList.remove("is-scrubbing");
     };
     const retire = cancelHold;
-    const select = (id?: string, focusCard = false) => {
+    const select = (id?: string, focusCard = false, settle = false) => {
       const card = cardFor(id);
       if (!card) return;
-      followScroll = false;
       highlight(id!);
       // Match the rail gutter in one motion. Free scrolling has no CSS snap
       // correction, so small wheel deltas and touch momentum stay continuous.
-      motion.move(rail.scrollLeft + card.getBoundingClientRect().left - rail.getBoundingClientRect().left - 6);
+      const index = visibleCards.indexOf(card);
+      const left = index >= 0 ? cardLefts[index] : rail.scrollLeft + card.getBoundingClientRect().left - rail.getBoundingClientRect().left;
+      if (settle) motion.settle(left - 6);
+      else motion.move(left - 6);
       if (focusCard) card.focus({ preventScroll: true });
     };
-    const openTools = (id?: string) => {
+    const openTools = (id?: string, settle = false) => {
       const card = cardFor(id);
       if (!card) return;
-      retire(); select(id); card.click();
+      retire(); select(id, false, settle); card.click();
     };
     const candidate = (id: string) => {
       if (!pointer || pointer.choice === id) return;
@@ -129,6 +138,7 @@ export function initializeGameLibrary() {
       if (!pointer || pointer.held || document.hidden || !pointer.owner.getClientRects().length) return;
       clearTimeout(holdTimer); holdTimer = 0;
       pointer.held = true;
+      if (!pointer.owner.hasPointerCapture(pointer.id)) pointer.owner.setPointerCapture(pointer.id);
       root.classList.remove("is-holding"); root.classList.add("is-scrubbing");
       const id = pointer.owner.dataset.minimapPreview!;
       candidate(id);
@@ -149,19 +159,16 @@ export function initializeGameLibrary() {
       candidate(nearest.dataset.minimapPreview!);
     };
     const update = () => {
-      const visible = cards.filter(card => !card.hidden);
-      shelf.hidden = visible.length === 0;
+      visibleCards = cards.filter(card => !card.hidden);
+      shelf.hidden = visibleCards.length === 0;
       for (const button of toggles) button.hidden = !cardFor(button.dataset.minimapPreview);
-      root.hidden = visible.length < 2;
+      root.hidden = visibleCards.length < 2;
       if (shelf.hidden || !rail.getClientRects().length) { retire(); motion.cancel(); return; }
-      if (!cardFor(activeId)) highlight(productOf(visible[0])!);
-      if (followScroll) {
-        const left = rail.getBoundingClientRect().left + 6;
-        const nearest = visible.reduce((best, card) => Math.abs(card.getBoundingClientRect().left - left) < Math.abs(best.getBoundingClientRect().left - left) ? card : best);
-        highlight(productOf(nearest)!);
-      }
+      const railLeft = rail.getBoundingClientRect().left;
+      cardLefts = visibleCards.map(card => rail.scrollLeft + card.getBoundingClientRect().left - railLeft);
+      if (!cardFor(activeId)) highlight(productOf(visibleCards[0])!);
     };
-    const manualScroll = () => { motion.cancel(); followScroll = true; retire(); };
+    const manualScroll = () => { motion.cancel(); retire(); };
     let dragTimer = 0, suppressRailClickUntil = 0;
     let drag: { id: number; x: number; startX: number; startY: number; scrollLeft: number; held: boolean; moved: boolean } | null = null;
     const beginDrag = () => {
@@ -217,7 +224,6 @@ export function initializeGameLibrary() {
       // not bypass the deliberate drag gesture through native rail scrolling.
       if (event.deltaX !== 0 || event.shiftKey) event.preventDefault();
     }, { passive: false });
-    rail.addEventListener("scroll", update, { passive: true });
     new ResizeObserver(update).observe(rail);
     new MutationObserver(update).observe(rail, { subtree: true, attributes: true, attributeFilter: ["hidden"] });
     rail.addEventListener("keydown", event => {
@@ -236,21 +242,21 @@ export function initializeGameLibrary() {
       if (activeId !== id) {
         event.preventDefault(); event.stopImmediatePropagation();
         select(id);
-      } else followScroll = false;
+      }
     }, { capture: true }));
     for (const toggle of toggles) {
-      toggle.addEventListener("click", () => {
+      toggle.addEventListener("click", event => {
         if (performance.now() < suppressClickUntil) return;
         const id = toggle.dataset.minimapPreview;
-        if (activeId === id) openTools(id);
+        const touch = (event as PointerEvent).pointerType === "touch" || matchMedia("(pointer: coarse)").matches;
+        if (activeId === id) openTools(id, touch);
         else select(id);
       });
       toggle.addEventListener("pointerdown", event => {
         if (!event.isPrimary || event.button !== 0) return;
         cancelHold();
         suppressClickUntil = 0;
-        pointer = { id: event.pointerId, x: event.clientX, y: event.clientY, held: false, choice: null, owner: toggle };
-        toggle.setPointerCapture(event.pointerId);
+        pointer = { id: event.pointerId, x: event.clientX, y: event.clientY, held: false, choice: null, touch: event.pointerType !== "mouse", owner: toggle };
         root.classList.add("is-holding");
         holdTimer = window.setTimeout(beginHold, 350);
       });
@@ -273,10 +279,10 @@ export function initializeGameLibrary() {
     document.addEventListener("pointerup", event => {
       if (pointer?.id !== event.pointerId) return;
       if (pointer.held && pointer.choice) scrub(event.clientX, event.clientY);
-      const { held, choice } = pointer;
+      const { held, choice, touch } = pointer;
       if (held) suppressClickUntil = performance.now() + 500;
       cancelHold();
-      if (held && choice) select(choice, true);
+      if (held && choice) select(choice, true, touch);
     });
     document.addEventListener("pointercancel", event => {
       if (pointer?.id === event.pointerId) { suppressClickUntil = performance.now() + 500; retire(); }

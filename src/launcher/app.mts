@@ -157,6 +157,8 @@ import { buildMultiplayerRuntimeOptions } from "./multiplayer-runtime-options.mj
 import { createMultiplayerRoomSessionStore } from "./multiplayer-room-session.mjs";
 import {
   MP_ROOM_HISTORY_KEY as mpRoomHistoryKey,
+  MP_PANEL_HISTORY_KEY as mpPanelHistoryKey,
+  MP_SETTINGS_HISTORY_KEY as mpSettingsHistoryKey,
   MP_ROOM_URL_KEY as mpRoomUrlKey,
   PLAYER_HISTORY_KEY as playerHistoryKey,
   TOUCH_LAYOUT_HISTORY_KEY as touchLayoutHistoryKey,
@@ -164,10 +166,13 @@ import {
   directRoomHistorySeed,
   initialRoutedHistoryOperations,
   launcherHomeHistoryOperation,
+  launcherOptionsHistoryOperation,
   normalizeRoomCode as mpNormalizeRoomCode,
   playerRouteHistoryOperation,
   returnToRoomHistoryOperation,
   roomRouteHistoryOperation,
+  roomPanelHistoryOperation,
+  roomSettingsHistoryOperation,
   routedProductFromUrl,
   touchLayoutEditorHistoryOperation,
 } from "./route-state.mjs";
@@ -1645,8 +1650,12 @@ function $<S extends string>(selector: S): LauncherElementForSelector<S> {
 let mpSettingsRoomDrawerOpen = false;
 let mpSettingsRoomDrawerClosing = false;
 let mpSettingsRoomDrawerCloseGeneration = 0;
-function setMpSettingsRoomDrawerOpen(open: boolean) {
+function setMpSettingsRoomDrawerOpen(open: boolean, fromHistory = false) {
   const roomOpen = !!mpUiState.room;
+  if (roomOpen && !open && !fromHistory && mpSettingsRoomDrawerOpen && history.state?.[mpSettingsHistoryKey]) {
+    history.back();
+    return;
+  }
   const drawer = $("#mpSettingsRoomDrawer");
   const cue = $("#mpSettingsRoomDrawerToggle");
   const returnFocus = drawer.contains(document.activeElement);
@@ -1655,6 +1664,10 @@ function setMpSettingsRoomDrawerOpen(open: boolean) {
   $("#mpRoomView").inert = roomOpen && open;
   const generation = ++mpSettingsRoomDrawerCloseGeneration;
   if (roomOpen && open) {
+    if (!mpSettingsRoomDrawerOpen) applyHistoryOperations(history, [roomSettingsHistoryOperation({
+      currentUrl: location.href,
+      currentState: history.state,
+    })]);
     mpSettingsRoomDrawerOpen = true;
     mpSettingsRoomDrawerClosing = false;
     drawer.classList.remove("closing");
@@ -2425,7 +2438,6 @@ function showLauncherHome() {
   if ($("#main").classList.contains("card-layout-motion")) cancelCardLayoutMotion();
   state.hasSelection = false;
   render();
-  animateMobileHomeCards();
 }
 const routedGame = routedGameFromLocation();
 const navigationEntry = performance.getEntriesByType?.("navigation")?.[0];
@@ -4690,19 +4702,28 @@ async function closePlayerView(fromHistory = false, { skipSync = false, returnTo
     state.hasSelection = true;
     state.runtimeVariant = "multiplayer";
     const roomCode = mpUiState.room.code;
-    applyHistoryOperations(history, [returnToRoomHistoryOperation({
-      currentUrl: location.href,
-      currentState: history.state,
-      product: state.product,
-      roomCode,
-    })]);
+    if (fromHistory && mpNormalizeRoomCode(new URL(location.href).searchParams.get(mpRoomUrlKey)) !== roomCode) {
+      // Back was pressed while the game covered its room. Restore the room
+      // entry without consuming the options entry beneath it.
+      history.forward();
+    } else {
+      applyHistoryOperations(history, [returnToRoomHistoryOperation({
+        currentUrl: location.href,
+        currentState: history.state,
+        product: state.product,
+        roomCode,
+      })]);
+    }
     renderMpRoom();
     render();
     if (!mpLobby.connected) mpReconnectLobbyNow();
     appShellClient?.maybeReload();
     return true;
   }
-  if (!fromHistory) replaceLauncherHomeHistory();
+  if (!fromHistory) {
+    if (!mpUiState.room && history.state?.[playerHistoryKey]) history.back();
+    else replaceLauncherHomeHistory();
+  }
   showLauncherHome();
   appShellClient?.maybeReload();
   return true;
@@ -4733,10 +4754,26 @@ window.addEventListener("popstate", async event => {
     if (!closed && editorHistoryWasPopped) pushTouchLayoutEditorHistory();
     return;
   }
+  if (mpSettingsRoomDrawerOpen && !history.state?.[mpSettingsHistoryKey]) {
+    setMpSettingsRoomDrawerOpen(false, true);
+    return;
+  }
+  if (roomPanel.open && !roomPanelClosing && !history.state?.[mpPanelHistoryKey]) {
+    closeRoomPanel(true);
+    return;
+  }
+  if (th09NetworkOverlayOpen() && mpUiState.room) {
+    mpLeaveRoom();
+    return;
+  }
+  if (player.classList.contains("open") && mpUiState.room) {
+    if (!await closePlayerView(true, { returnToMpRoom: true })) history.forward();
+    return;
+  }
   if (mpUiState.room) {
     const routedRoom = mpNormalizeRoomCode(new URL(location.href).searchParams.get(mpRoomUrlKey));
     if (!routedRoom || routedRoom !== mpUiState.room.code) {
-      mpLeaveRoom(true);
+      mpLeaveRoom();
       return;
     }
   }
@@ -4751,7 +4788,10 @@ window.addEventListener("popstate", async event => {
     if (restore) applyHistoryOperations(history, [restore]);
     return;
   }
-  if (!syncSelectionFromPlayerRoute()) showLauncherHome();
+  if (!syncSelectionFromPlayerRoute()) {
+    if (state.hasSelection && !state.launched) closeLibraryTools(true);
+    else showLauncherHome();
+  }
 });
 window.addEventListener("pageshow", event => {
   if (event.persisted && !mpUiState.room && !syncSelectionFromPlayerRoute()) showLauncherHome();
@@ -6021,10 +6061,10 @@ async function mpCopyRoomCode() {
   else showToast(t("status.roomCode", { code: mpUiState.room.code }));
 }
 $("#mpCopyRoomCode").addEventListener("click", mpCopyRoomCode);
-// Do not pass the click Event into mpLeaveRoom(fromHistory). An Event is
-// truthy and would be mistaken for a popstate-driven leave, leaving ?mpRoom=
-// behind in the address bar.
-$("#mpLeaveRoom").addEventListener("click", () => mpLeaveRoom());
+$("#mpLeaveRoom").addEventListener("click", () => {
+  if (history.state?.[mpRoomHistoryKey] === mpUiState.room?.code) history.back();
+  else mpLeaveRoom();
+});
 $("#mpRoomSettingsToggle").addEventListener("click", () => {
   mpUiState.roomSettingsOpen = true;
   openRoomPanel("game", $("#mpRoomSettingsToggle"));
@@ -6071,8 +6111,12 @@ $("#mpSpectatorJoin").addEventListener("click", () => {
 const roomPanel = document.querySelector<HTMLDialogElement>("#mpRoomPanel")!;
 let roomPanelTrigger: HTMLElement | null = null;
 let roomPanelClosing = false;
-function closeRoomPanel() {
+function closeRoomPanel(fromHistory = false) {
   if (!roomPanel.open || roomPanelClosing) return;
+  if (!fromHistory && history.state?.[mpPanelHistoryKey]) {
+    history.back();
+    return;
+  }
   if (state.lessMotion || matchMedia("(prefers-reduced-motion: reduce)").matches) { roomPanel.close(); return; }
   roomPanelClosing = true;
   const motion = roomPanel.animate([{ opacity: 1, transform: "translateY(0) scale(1)" }, { opacity: 0, transform: "translateY(14px) scale(.985)" }], { duration: 160, easing: "cubic-bezier(.4,0,1,1)" });
@@ -6086,7 +6130,13 @@ function openRoomPanel(kind: "personal" | "network" | "spectators" | "game", tri
   document.querySelectorAll<HTMLElement>("[data-room-panel]").forEach(panel => { panel.hidden = panel.dataset.roomPanel !== kind; });
   document.getElementById("mpRoomPanelTitle")!.textContent = t(kind === "personal" ? "room.playerOptions" : kind === "network" ? "room.network" : kind === "game" ? "multiplayer.gameSettings" : "room.spectatorLounge");
   $("#mpSpectatorToggle").setAttribute("aria-expanded", String(kind === "spectators"));
-  if (!roomPanel.open) roomPanel.showModal();
+  if (!roomPanel.open) {
+    applyHistoryOperations(history, [roomPanelHistoryOperation({
+      currentUrl: location.href,
+      currentState: history.state,
+    })]);
+    roomPanel.showModal();
+  }
 }
 roomPanel.addEventListener("close", () => {
   mpUiState.roomSettingsOpen = false;
@@ -6099,7 +6149,7 @@ roomPanel.addEventListener("click", event => {
   const rect = roomPanel.getBoundingClientRect();
   if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) closeRoomPanel();
 });
-document.getElementById("mpRoomPanelClose")!.addEventListener("click", closeRoomPanel);
+document.getElementById("mpRoomPanelClose")!.addEventListener("click", () => closeRoomPanel());
 $("#mpSpectatorToggle").addEventListener("click", () => openRoomPanel("spectators", $("#mpSpectatorToggle")));
 document.getElementById("mpNetworkToggle")!.addEventListener("click", event => {
   const trigger = (event.target as Element).closest<HTMLButtonElement>("button[data-network-peer]");
@@ -6928,10 +6978,11 @@ function mpResetRoomState() {
 
 let mpRoomLeavePending = false;
 let mpRoomReturnTimer: number | null = null;
-function mpLeaveRoom(fromHistory = false) {
+function mpLeaveRoom() {
   if (th09NetworkOverlayOpen()) { th09LeaveNetworkRoom(); return; }
   const leavingRoom = mpUiState.room;
   if (!leavingRoom || mpRoomLeavePending) return;
+  const returnLocation = location.href;
   const roomView = $("#mpRoomView");
   const reducedMotion = state.lessMotion || matchMedia("(prefers-reduced-motion: reduce)").matches;
   const compactMotion = matchMedia("(max-width: 780px), (hover: none), (pointer: coarse)").matches;
@@ -6943,9 +6994,19 @@ function mpLeaveRoom(fromHistory = false) {
     roomView.inert = false;
     if (mpUiState.room !== leavingRoom) return;
     mpResetRoomState();
-    if (!fromHistory) replaceLauncherHomeHistory();
     if (!reducedMotion) document.body.classList.add("mp-room-returning");
-    showLauncherHome();
+    if (location.href === returnLocation) {
+      applyHistoryOperations(history, [launcherOptionsHistoryOperation({
+        currentUrl: location.href,
+        currentState: history.state,
+        product: state.product,
+      })]);
+      state.hasSelection = true;
+      render();
+    } else if (!syncSelectionFromPlayerRoute()) {
+      showLauncherHome();
+    }
+    if (state.hasSelection) $("#libraryBack").focus({ preventScroll: true });
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     setTranslatedStatus("status.roomLeft");
     if (!reducedMotion) {
@@ -7523,17 +7584,47 @@ function animateMobileHomeCards() {
 matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", cancelMobileHomeCards);
 
 initializeGameLibrary();
-function closeLibraryTools() {
+const mobileLibraryMotion = matchMedia("(max-width: 780px), (hover: none), (pointer: coarse)");
+let libraryToolsCloseTimer = 0;
+function closeLibraryTools(fromHistory = false) {
   if (mpUiState.room) { setMpSettingsRoomDrawerOpen(false); return; }
-  if (state.launched) return;
+  if (state.launched || !state.hasSelection || libraryToolsCloseTimer) return;
+  if (!fromHistory && history.state?.[playerHistoryKey] && routedGameFromLocation() === state.product) {
+    history.back();
+    return;
+  }
   const selected = document.querySelector<HTMLElement>(".game.selected");
   closeOtherCustomSelects();
-  replaceLauncherHomeHistory();
-  showLauncherHome();
-  selected?.focus({ preventScroll: true });
+  const finish = () => {
+    libraryToolsCloseTimer = 0;
+    if (state.hasSelection) {
+      if (!fromHistory) replaceLauncherHomeHistory();
+      state.hasSelection = false;
+      $("#main").classList.remove("has-selection");
+      document.body.classList.remove("library-tools-open");
+      $(".game-library").inert = false;
+      const tools = $(".tools");
+      tools.setAttribute("role", "complementary");
+      tools.setAttribute("aria-modal", "false");
+      tools.setAttribute("aria-hidden", "true");
+      for (const card of document.querySelectorAll<HTMLElement>(".game.selected")) {
+        card.classList.remove("selected");
+        if (card instanceof HTMLAnchorElement) card.setAttribute("aria-current", "false");
+      }
+    }
+    document.body.classList.remove("library-tools-closing");
+    selected?.focus({ preventScroll: true });
+  };
+  if (!mobileLibraryMotion.matches || state.lessMotion || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    finish();
+    return;
+  }
+  // Let the panel exit before changing the library's selected state.
+  document.body.classList.add("library-tools-closing");
+  libraryToolsCloseTimer = window.setTimeout(finish, 360);
 }
-$("#libraryBack").addEventListener("click", closeLibraryTools);
-$("#libraryBackdrop").addEventListener("click", closeLibraryTools);
+$("#libraryBack").addEventListener("click", () => closeLibraryTools());
+$("#libraryBackdrop").addEventListener("click", () => closeLibraryTools());
 $(".tools").addEventListener("keydown", event => {
   if (!document.body.classList.contains("library-tools-open") || event.defaultPrevented) return;
   if (event.key === "Escape") {
@@ -7557,6 +7648,9 @@ document.querySelectorAll<HTMLElement>(".game").forEach(card => {
     const product = card.dataset.product || card.dataset.game;
     const gameId = card.dataset.game;
     if (!product || !gameId || !isProductId(product) || !isGameId(gameId) || !productEnabled(product)) return;
+    const prepareTools = main.classList.contains("library-layout") && mobileLibraryMotion.matches && !state.hasSelection && !state.lessMotion &&
+      !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prepareTools) document.body.classList.add("library-tools-preparing");
     const changed = state.product !== product;
     const previousLayout = changed || !state.hasSelection ? captureCardLayout() : null;
     if (changed) {
@@ -7576,6 +7670,9 @@ document.querySelectorAll<HTMLElement>(".game").forEach(card => {
     });
     if (routeOperation) applyHistoryOperations(history, [routeOperation]);
     render();
+    if (prepareTools) requestAnimationFrame(() => requestAnimationFrame(() => {
+      document.body.classList.remove("library-tools-preparing");
+    }));
     animateCardLayout(previousLayout);
     $("#libraryBack").focus({ preventScroll: true });
     setTranslatedStatus(changed ? "status.switchedProduct" : "status.selectedProduct", { product: productTitle(product) });
@@ -8615,7 +8712,6 @@ if (mpRestoreRoomFromLocation()) {
 }
 if (!mpUiState.room && !state.launched && !productEnabled(state.product)) state.hasSelection = false;
 render(); setTranslatedStatus("status.selectGame");
-animateMobileHomeCards();
 bootWatchdog?.ready?.();
 const launcherRoomRoute = !!mpNormalizeRoomCode(new URL(location.href).searchParams.get(mpRoomUrlKey));
 const loadEntryNotices = () => {

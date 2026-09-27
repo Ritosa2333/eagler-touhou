@@ -8,7 +8,7 @@
 @font-face{font-family:"ET Chill Round";font-style:normal;font-weight:900;font-display:swap;src:url("assets/fonts/chill-round-gothic-site-heavy.woff2") format("woff2")}
 @font-face{font-family:"ET Unifont";font-style:normal;font-weight:400;font-display:swap;src:url("assets/fonts/unifont-site.woff2") format("woff2")}
 *{box-sizing:border-box}
-:root{--paper:#ebe7df;--ink:#141413;--muted:#8d887f;--line:rgba(235,231,223,.2);--red:#bd4438;--red-bright:#ef6a58;--panel:#171715;--ease:cubic-bezier(.22,.8,.22,1);--ui-font:"ET Yatra","ET Chill Round",sans-serif;--art-font:var(--ui-font)}
+:root{color-scheme:dark;color-scheme:dark only;--paper:#ebe7df;--ink:#141413;--muted:#8d887f;--line:rgba(235,231,223,.2);--red:#bd4438;--red-bright:#ef6a58;--panel:#171715;--ease:cubic-bezier(.22,.8,.22,1);--ui-font:"ET Yatra","ET Chill Round",sans-serif;--art-font:var(--ui-font)}
 html,body{margin:0;min-height:100%;background:#0d0d0c;color:var(--paper)}
 body{font-family:var(--ui-font);overflow-x:hidden}
 body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;opacity:.045;background-image:repeating-linear-gradient(27deg,rgba(255,255,255,.18) 0 1px,transparent 1px 5px),repeating-linear-gradient(117deg,rgba(0,0,0,.16) 0 1px,transparent 1px 7px);background-size:13px 17px,19px 23px}
@@ -129,7 +129,7 @@ footer{padding-top:2px;display:flex;justify-content:space-between;gap:20px;font-
 
 .sheet{--sheet-edge:clamp(18px,3.5vw,56px);padding-top:0}
 .masthead{position:relative;z-index:10;margin:0 calc(var(--sheet-edge)*-1);padding:max(12px,env(safe-area-inset-top)) var(--sheet-edge) 14px;border:0;border-bottom:1px solid rgba(132,138,134,.24);border-radius:0 0 20px 20px;background:rgba(22,23,22,.7);box-shadow:0 8px 24px rgba(0,0,0,.18)}
-.masthead-links{gap:8px}.masthead-link{position:relative;isolation:isolate;min-width:0;min-height:36px;box-sizing:border-box;padding:0 12px;border:0;border-radius:8px;background:transparent;color:#c6c0b7;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;font-weight:700;transition:color .15s ease,transform 75ms ease-out}.masthead-link:before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;background:transparent;transform:scale(.85);transition:transform 75ms ease-out,background-color 75ms ease-out}.masthead-link[hidden]{display:none}.masthead-link:hover{background:transparent;color:#b33142}.masthead-link:hover:before{background:#f1e4e6;transform:scale(1)}.masthead-link:active{background:transparent;color:#8f2633;transform:scale(.9)}.masthead-link:active:before{background:#f8eff0}.masthead-link:focus-visible{outline:2px solid rgba(217,77,85,.72);outline-offset:2px}.masthead-label{display:inline-block;min-width:0;text-align:center;line-height:1.05;white-space:normal}.masthead-label>span{display:inline}.motion-toggle i{display:none}.motion-toggle[aria-pressed="true"]{color:#8f2633}.motion-toggle[aria-pressed="true"]:before{background:#f1e4e6;transform:scale(1)}
+.masthead-links{gap:8px}.masthead-link{position:relative;isolation:isolate;min-width:0;min-height:36px;box-sizing:border-box;padding:0 12px;border:0;border-radius:8px;background:transparent;color:#c6c0b7;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;font-weight:700;transition:color .15s ease,transform 75ms ease-out}.masthead-link:before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;background:transparent;transform:scale(.85);transition:transform 75ms ease-out,background-color 75ms ease-out}.masthead-link[hidden]{display:none}.masthead-link:hover{background:transparent;color:#b33142}.masthead-link:hover:before{background:#f1e4e6;transform:scale(1)}.masthead-link:active{background:transparent;color:#8f2633;transform:scale(.9)}.masthead-link:active:before{background:#f8eff0}.masthead-link:focus-visible{outline:2px solid rgba(217,77,85,.72);outline-offset:2px}.masthead-label{display:inline-block;min-width:0;text-align:center;line-height:1.05;white-space:normal}.masthead-label>span{display:inline;white-space:nowrap}.motion-toggle i{display:none}.motion-toggle[aria-pressed="true"]{color:#8f2633}.motion-toggle[aria-pressed="true"]:before{background:#f1e4e6;transform:scale(1)}
 .masthead-github{width:38px;padding:0}.masthead-github svg{width:20px;height:20px;fill:currentColor}
 .masthead-menu{position:relative}.masthead-menu-toggle{width:40px;padding:0}.masthead-menu-toggle svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .2s ease}.masthead-menu-toggle[aria-expanded="true"] svg{transform:rotate(180deg)}.masthead-menu-panel{position:absolute;z-index:120;top:calc(100% + 7px);right:0;display:grid;gap:3px;min-width:160px;padding:8px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:#191a17;box-shadow:0 12px 32px rgba(0,0,0,.5);opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-8px);transition:opacity .2s ease,visibility .2s ease,transform .2s ease}.masthead-menu-toggle[aria-expanded="true"]+.masthead-menu-panel{opacity:1;visibility:visible;pointer-events:auto;transform:translateY(0)}.masthead-menu-item{appearance:none;position:relative;isolation:isolate;display:flex;align-items:center;gap:10px;width:100%;min-height:38px;box-sizing:border-box;padding:0 12px;border:0;border-radius:8px;background:transparent;color:rgba(255,255,255,.74);text-decoration:none;font:600 10px/1.25 var(--ui-font);letter-spacing:.08em;text-align:left;cursor:pointer;transition:color .15s ease,transform 75ms ease-out}.masthead-menu-item:before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;background:transparent;transform:scale(.85);transition:transform 75ms ease-out,background-color 75ms ease-out}.masthead-menu-icon{flex:0 0 18px;width:18px;height:18px;fill:currentColor;color:rgba(255,255,255,.48);transition:color .15s ease}.masthead-menu-item:hover,.masthead-menu-item:focus-visible{background:transparent;color:#b33142;outline:none}.masthead-menu-item:hover:before,.masthead-menu-item:focus-visible:before{background:#f1e4e6;transform:scale(1)}.masthead-menu-item:hover .masthead-menu-icon,.masthead-menu-item:focus-visible .masthead-menu-icon{color:currentColor}.masthead-menu-item:active{background:transparent;color:#8f2633;transform:scale(.9)}.masthead-menu-item:active:before{background:#f8eff0}
 .game{border-radius:14px}.tools{border-radius:14px}.mini button,.option-action,.option-select,.thprac-options input{border-radius:8px}.option-switch{border-radius:999px}.option-switch i{border-radius:50%}.launch{border-radius:10px}.first-use-notice-dialog,.replay-dialog{border-radius:14px}.first-use-notice-window header button,.first-use-notice-window footer button,.replay-window button{border-radius:7px}
@@ -956,6 +956,14 @@ body.mp-room-active .main{display:block!important;min-height:0!important;width:1
 #mpRoomView .mp-room-head .mp-room-code .room-icon{order:-1}
 #mpRoomView .mp-room-head .mp-room-top-action:hover,#mpRoomView .mp-room-head #mpSettingsRoomDrawerToggle:hover{background:var(--room-raised)!important}
 #mpRoomView .mp-room-head .mp-room-top-action:active,#mpRoomView .mp-room-head #mpSettingsRoomDrawerToggle:active{transform:scale(.96)!important;background:var(--room-tonal)!important}
+@media(max-width:780px){.masthead .motion-toggle{display:inline-flex}}
+.masthead-link:active,.masthead-menu-item:active,.ui-language-control .mizuki-select-trigger:active{transform:scale(.97)}
+.masthead-link:before,.masthead-menu-item:before,.ui-language-control .mizuki-select-trigger:before{transform:scale(.96)}
+.masthead-link:active:before,.masthead-menu-item:active:before,.ui-language-control .mizuki-select-trigger:active:before{background:#f1e4e6}
+@media(hover:none),(pointer:coarse){
+  .motion-toggle[aria-pressed="false"]:hover:not(:active),.motion-toggle[aria-pressed="false"]:focus:not(:focus-visible){color:#c6c0b7}
+  .motion-toggle[aria-pressed="false"]:hover:not(:active):before,.motion-toggle[aria-pressed="false"]:focus:not(:focus-visible):before{background:transparent;transform:scale(.96)}
+}
 /* The character is the public display name; avoid a duplicate loadout line. */
 #mpRoomView .mp-seat-stage .mp-seat.occupied{grid-template-rows:20px 28px 0 34px!important}
 #mpRoomView .mp-seat.occupied .mp-seat-state{box-sizing:border-box!important;width:7.6em!important;max-width:100%!important;height:26px!important;justify-content:center!important;flex-shrink:0!important;margin-top:8px!important;padding:0 6px!important}
@@ -1025,16 +1033,18 @@ body:has(.library-layout) .site-footer{background:none}
 .shelf-minimap[hidden],.minimap-toggle[hidden]{display:none}
 .shelf-minimap>.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 .minimap-dock{display:flex;gap:8px;padding:0;background:none}
-.minimap-toggle{position:relative;display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:8px;background:transparent;color:#8e8982;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent;transition:color .15s ease,background-color .15s ease,transform 75ms ease-out}
+.minimap-toggle{position:relative;display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:8px;background:transparent;color:#8e8982;cursor:pointer;touch-action:pan-y;-webkit-tap-highlight-color:transparent;transition:color .15s ease,background-color .15s ease,transform 75ms ease-out}
 .minimap-index{display:block;font:600 16px/1 var(--art-font);letter-spacing:.04em}
 .minimap-toggle.is-current{background:#f1e4e6;color:#b33142}
 .minimap-toggle:focus-visible{outline:2px solid rgba(217,77,85,.72);outline-offset:2px}
 .shelf-minimap:not(.is-scrubbing) .minimap-toggle:active{transform:scale(.9)}
 @media(prefers-reduced-motion:reduce){.shelf-minimap *{transition:none!important}}
 .less-motion .shelf-minimap *{transition:none!important}
-.main.library-layout .game-rail .game{flex:0 0 clamp(230px,24vw,360px);width:clamp(230px,24vw,360px);height:clamp(220px,32vh,350px);min-height:0;max-height:none;aspect-ratio:auto;padding:22px;border:1px solid #ffffff20;border-radius:24px;transform:none!important;filter:none;background:#171715;box-shadow:0 4px 16px #0a07112b;transition:border-color .3s,box-shadow .3s}
+.main.library-layout .game-rail .game{flex:0 0 clamp(230px,24vw,360px);width:clamp(230px,24vw,360px);height:clamp(220px,32vh,350px);min-height:0;max-height:none;aspect-ratio:auto;padding:22px;border:1px solid #ffffff20;border-radius:24px;transform:none!important;filter:none;background:#171715;box-shadow:0 4px 16px #0a07112b;transition:border-color .2s}
 .main.library-layout .game-rail .game:focus-visible{outline:2px solid var(--cover-accent,var(--paper));outline-offset:4px}
-.main.library-layout .game-rail .game .card-art{display:block;inset:0;filter:brightness(.82) saturate(.88);transform:none;--shade-rail:0;--shade-selected:0}
+.main.library-layout .game-rail .game .card-art{display:block;inset:0;filter:none;transform:none;--shade-rail:0;--shade-selected:0}
+.main.library-layout .game-rail .game .card-art:before{opacity:0}
+.main.library-layout .game-rail .game .card-art:after{background:linear-gradient(180deg,rgba(10,10,9,.18),rgba(10,10,9,.78));opacity:1;transition:opacity .24s ease-out}
 .main.library-layout .game-rail .game .card-glow,.main.library-layout .game-rail .game:after,.main.library-layout .game-rail .game .rail-title,.main.library-layout .game-rail .mp-card-mark,.main.library-layout .game-rail .mp-game-title-badge{display:none}
 .main.library-layout .game-rail .game .no{opacity:1;transform:none;font:500 52px/1 var(--art-font);font-variant-numeric:tabular-nums;letter-spacing:-.055em;color:#ffffffb8;transform-origin:top left;transition:color .3s,scale .48s var(--ease)!important}
 .main.library-layout .game-rail .no-mp{display:none}
@@ -1044,7 +1054,15 @@ body:has(.library-layout) .site-footer{background:none}
 .main.library-layout .game-rail .game small{margin-top:8px;font:12px/1.4 var(--art-font);color:#ebe7df;letter-spacing:.02em;opacity:.55;transform:translateY(3px);transition:opacity .4s,transform .48s var(--ease)}
 /* The settings sheet floats above a stable library; selection never reallocates columns. */
 html:has(.library-layout){scrollbar-gutter:stable}
-body.library-tools-open{overflow:hidden}
+/* Lock the actual document scroller, not body: Android WebView can repaint
+   every cover when body overflow changes and expose the root scrollbar. */
+html:has(body.library-tools-open),html:has(body.mp-room-active){overflow-y:hidden}
+@media(hover:none),(pointer:coarse){
+  /* Touch scrolling stays on its existing owner; the backdrop absorbs gestures
+     outside the sheet without changing the viewport during image compositing. */
+  html:has(body.library-tools-open),html:has(body.mp-room-active){overflow-y:auto}
+  .library-backdrop{touch-action:none}
+}
 .main.library-layout{isolation:auto;transform:none!important;animation:none!important}
 .library-layout.has-selection{grid-template-columns:minmax(0,1fr)}
 .library-backdrop{position:fixed;inset:0;z-index:30;border:0;padding:0;background:rgba(13,13,12,.52);backdrop-filter:none;-webkit-backdrop-filter:none;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .35s,visibility 0s .4s}
@@ -1129,12 +1147,13 @@ body.library-tools-open .main.library-layout.has-selection>.tools{opacity:1;visi
 .less-motion :is(.library-layout,.mp-settings-room-drawer) .launch-actions .launch,.less-motion :is(.library-layout,.mp-settings-room-drawer) .options-group-head i,.less-motion :is(.library-layout,.mp-settings-room-drawer) .options-settings .mobile-options-body{transition:none!important}
 
 .library-layout .game-library{filter:none}
-.main.library-layout .game-rail .game.nav-preview{border-color:var(--cover-accent,var(--paper));box-shadow:0 0 0 2px var(--cover-accent,var(--paper)),0 6px 24px #0003}
+.main.library-layout .game-rail .game.nav-preview{border-color:var(--cover-accent,var(--paper));outline:2px solid var(--cover-accent,var(--paper));outline-offset:2px}
 .main.library-layout .game-rail .game.nav-preview .no{color:var(--paper);scale:1.08}
 .main.library-layout .game-rail .game.nav-preview h2{transform:translateY(-3px) scale(1.025);color:var(--paper)}
 .main.library-layout .game-rail .game.nav-preview small{opacity:1;transform:translateY(-1px)}
-.main.library-layout .game-rail .game .card-art{transition:filter .45s,scale .7s cubic-bezier(.2,.8,.2,1)}
-.main.library-layout .game-rail .game.nav-preview .card-art{filter:brightness(1.07) saturate(1.05);scale:1.025}
+.main.library-layout .game-rail .game .card-art{transition:scale .32s cubic-bezier(.2,.8,.2,1)}
+.main.library-layout .game-rail .game.nav-preview .card-art{scale:1.018}
+.main.library-layout .game-rail .game.nav-preview .card-art:after{opacity:.3}
 .main.library-layout .game-rail .game.card-art-missing .card-art{background:radial-gradient(ellipse at 76% 22%,#819d7350,transparent 32%),radial-gradient(ellipse at 20% 84%,#d16d6852,transparent 38%),linear-gradient(145deg,#29352a,#171b18 64%,#30201f)}
 .main.library-layout .game-rail .game.card-art-missing .card-art-image{display:none}
 
@@ -1158,6 +1177,7 @@ body.mp-room-active .sheet:has(.library-layout){display:block}
   .main.library-layout .game-rail .game small{font-size:11px}
   .main.library-layout>.tools,.main.library-layout.has-selection>.tools.mp-mode{top:auto;right:8px;bottom:8px;width:calc(100% - 16px)!important;height:min(880px,calc(94dvh - 8px))!important;max-height:calc(94dvh - 8px);padding:0;border-radius:26px;transform:translateY(40px) scale(.98);transform-origin:center bottom}
   body.library-tools-open .main.library-layout.has-selection>.tools{transform:translateY(0) scale(1)}
+  body.library-tools-preparing.library-tools-open .main.library-layout.has-selection>.tools{transform:translateY(40px) scale(.98)}
   :is(.library-layout,.mp-settings-room-drawer) .tools-head{margin-top:0}
   .main.library-layout>.tools:before{content:none}
   :is(.library-layout,.mp-settings-room-drawer) .tools-head{flex-basis:clamp(150px,25dvh,210px)}
@@ -1312,7 +1332,7 @@ body.mp-room-active .sheet:has(.library-layout){display:block}
 .less-motion .mp-settings-room-drawer.settings-ui,.less-motion .settings-room-backdrop{animation:none!important}
 
 /* Keep the library geometry stable behind the room at every viewport size. */
-body.mp-room-active{overflow:hidden!important}
+body.mp-room-active{overflow-x:hidden!important}
 body.mp-room-active:has(.library-layout):after{background-image:linear-gradient(180deg,rgba(3,5,7,.78),rgba(3,4,5,.86)),url("assets/launcher-background.webp")}
 body.mp-room-active .sheet:before{content:none!important}
 body.mp-room-active .sheet:has(.library-layout){display:grid!important;grid-template-rows:auto 1fr!important;gap:24px!important;padding:clamp(18px,2.5vw,38px) clamp(18px,3.5vw,56px) 32px!important}
@@ -1323,18 +1343,24 @@ body.mp-room-active #mpRoomView.mp-room-view{position:fixed!important;inset:0!im
 /* Return from the room as one surface, then reveal the launcher beneath it. */
 body.mp-room-leaving #mpRoomView.mp-room-view{animation:mp-room-leave .22s cubic-bezier(.4,0,1,1) both!important;pointer-events:none}
 body.mp-room-returning .game-library{animation:mp-room-home-lite .25s ease-out both}
-body.mp-room-returning .main.library-layout>.tools{opacity:0!important;visibility:hidden!important;transition:none!important;animation:none!important}
+body.mp-room-returning .main.library-layout>.tools{animation:mp-room-options-in .32s ease-out both!important}
 @keyframes mp-room-leave{from{opacity:1;transform:translateX(0) scale(1)}to{opacity:0;transform:translateX(22px) scale(.985)}}
+@keyframes mp-room-options-in{from{opacity:0}to{opacity:1}}
 @media(max-width:780px),(hover:none),(pointer:coarse){
   body.mp-room-active .sheet:has(.library-layout){display:grid!important;grid-template-rows:auto 1fr!important;gap:22px!important;padding:0 18px 20px!important}
   body.mp-room-active .sheet:has(.library-layout) .masthead{display:grid!important;visibility:hidden!important;margin-inline:-18px;padding-inline:18px}
   body.mp-room-active #mpRoomView.mp-room-view{animation:mp-room-fade .18s ease-out both}
   body.mp-room-leaving #mpRoomView.mp-room-view{animation:mp-room-leave-lite .16s ease-in both!important}
   body.mp-room-returning .game-library{animation:mp-room-home-lite .18s ease-out both}
-  .main.library-layout>.tools,.main.library-layout.has-selection>.tools.mp-mode{transform:translateY(14px)!important;transition:opacity .18s ease-out,transform .22s ease-out,visibility 0s .22s!important}
+  body.mp-room-returning .main.library-layout>.tools{animation-duration:.18s!important}
+  .main.library-layout>.tools,.main.library-layout.has-selection>.tools.mp-mode{transform:translateY(14px)!important;transition:opacity .18s ease-out,transform .22s ease-out,visibility 0s .22s!important;will-change:opacity,transform}
   body.library-tools-open .main.library-layout.has-selection>.tools{transform:translateY(0)!important;transition-delay:0s!important}
-  .library-backdrop{transition:opacity .18s ease-out,visibility 0s .22s!important}
+  body.library-tools-preparing.library-tools-open .main.library-layout.has-selection>.tools{opacity:0!important;visibility:visible!important;pointer-events:none!important;transform:translateY(14px)!important}
+  body.library-tools-closing.library-tools-open .main.library-layout.has-selection>.tools{opacity:0!important;transform:translateY(14px)!important;pointer-events:none!important;transition:opacity .3s ease-in,transform .34s cubic-bezier(.4,0,1,1)!important}
+  .library-backdrop{background:transparent!important;transition:none!important;will-change:auto}
+  body.library-tools-closing .library-backdrop{opacity:0!important;pointer-events:none!important;transition:opacity .3s ease-in!important}
   .main.library-layout .game-rail .game .card-art{transition:none!important}
+  .main.library-layout .game-rail .game .card-art:after{transition:none!important}
   .main.library-layout .game-rail .game.nav-preview .card-art{scale:1}
   #mpRoomView .mp-session-dock{animation:none!important}
 }

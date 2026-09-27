@@ -1,5 +1,7 @@
 export const PLAYER_HISTORY_KEY = "eaglerTouhouPlayer";
 export const MP_ROOM_HISTORY_KEY = "eaglerTouhouMpRoom";
+export const MP_SETTINGS_HISTORY_KEY = "eaglerTouhouMpSettings";
+export const MP_PANEL_HISTORY_KEY = "eaglerTouhouMpPanel";
 export const MP_ROOM_URL_KEY = "mpRoom";
 export const TOUCH_LAYOUT_HISTORY_KEY = "eaglerTouhouTouchLayoutEditor";
 
@@ -55,6 +57,31 @@ export function launcherHomeHistoryOperation({
     kind: "replace",
     state: launcherHomeHistoryState(currentState),
     url: launcherHomeUrl(currentUrl).href,
+  };
+}
+
+export function launcherOptionsHistoryOperation({
+  currentUrl,
+  currentState,
+  product,
+}: {
+  currentUrl: string | URL;
+  currentState: unknown;
+  product: string;
+}): HistoryOperation {
+  const url = new URL(currentUrl);
+  const alreadyOnOptions = url.searchParams.get("game") === product;
+  url.searchParams.set("game", product);
+  url.searchParams.delete(MP_ROOM_URL_KEY);
+  return {
+    kind: alreadyOnOptions ? "replace" : "push",
+    state: {
+      ...historyState(currentState),
+      [PLAYER_HISTORY_KEY]: true,
+      [MP_ROOM_HISTORY_KEY]: false,
+      game: product,
+    },
+    url: url.href,
   };
 }
 
@@ -114,6 +141,34 @@ export function returnToRoomHistoryOperation({
   return { kind: "replace", state: nextState, url: url.href };
 }
 
+export function roomSettingsHistoryOperation({
+  currentUrl,
+  currentState,
+}: {
+  currentUrl: string | URL;
+  currentState: unknown;
+}): HistoryOperation {
+  return {
+    kind: "push",
+    state: { ...historyState(currentState), [MP_SETTINGS_HISTORY_KEY]: true },
+    url: new URL(currentUrl).href,
+  };
+}
+
+export function roomPanelHistoryOperation({
+  currentUrl,
+  currentState,
+}: {
+  currentUrl: string | URL;
+  currentState: unknown;
+}): HistoryOperation {
+  return {
+    kind: "push",
+    state: { ...historyState(currentState), [MP_PANEL_HISTORY_KEY]: true },
+    url: new URL(currentUrl).href,
+  };
+}
+
 export function initialRoutedHistoryOperations({
   currentUrl,
   currentState,
@@ -127,22 +182,26 @@ export function initialRoutedHistoryOperations({
   navigationType: string;
   multiplayerProduct: boolean;
 }): HistoryOperation[] {
+  const requestedRoom = multiplayerProduct && normalizeRoomCode(new URL(currentUrl).searchParams.get(MP_ROOM_URL_KEY));
   if (navigationType === "reload") {
     const reloadUrl = new URL(currentUrl);
-    const reloadRoom = normalizeRoomCode(reloadUrl.searchParams.get(MP_ROOM_URL_KEY));
     const reloadState = historyState(currentState);
-    reloadState[PLAYER_HISTORY_KEY] = false;
-    if (reloadRoom && multiplayerProduct) {
+    if (requestedRoom) {
+      reloadState[PLAYER_HISTORY_KEY] = false;
       reloadUrl.searchParams.set("game", routedProduct);
       reloadState.game = routedProduct;
-      reloadState[MP_ROOM_HISTORY_KEY] = reloadRoom;
-    } else {
-      reloadUrl.searchParams.delete("game");
-      delete reloadState.game;
+      reloadState[MP_ROOM_HISTORY_KEY] = requestedRoom;
+      return [{ kind: "replace", state: reloadState, url: reloadUrl.href }];
     }
-    return [{ kind: "replace", state: reloadState, url: reloadUrl.href }];
+    if (reloadState[PLAYER_HISTORY_KEY]) {
+      reloadState.game = routedProduct;
+      reloadState[MP_ROOM_HISTORY_KEY] = false;
+      return [{ kind: "replace", state: reloadState, url: reloadUrl.href }];
+    }
   }
 
+  // The room restorer seeds its own home/room pair for a direct room URL.
+  if (requestedRoom) return [];
   const previous = historyState(currentState);
   if (previous[PLAYER_HISTORY_KEY]) return [];
   const gameUrl = new URL(currentUrl);
