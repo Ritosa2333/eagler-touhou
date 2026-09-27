@@ -86,6 +86,7 @@ export interface RuntimeConfigureOptions {
   multiplayerLocalPlayerVisibility?: boolean;
   focusHitboxEnabled?: boolean;
   replayViewer?: boolean;
+  multiplayerPreflight?: boolean;
   thpracLocale?: string;
   oggDecodeMode?: RuntimeOggDecodeMode;
   debugHarness?: string | null;
@@ -122,6 +123,7 @@ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   multiplayerLocalPlayerVisibility: Object.freeze({ requirement: "profile-required", capability: "multiplayer-local-player-visibility", when: "multiplayer" }),
   focusHitboxEnabled: Object.freeze({ requirement: "optional", capability: "focus-hitbox", when: "product declares focus-hitbox" }),
   replayViewer: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer Replay viewer is launched" }),
+  multiplayerPreflight: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer room checks its Runtime before joining gameplay" }),
   thpracLocale: Object.freeze({ requirement: "profile-required", capability: "thprac", when: "thprac" }),
   oggDecodeMode: Object.freeze({ requirement: "required", capability: "normal-music-ogg" }),
   debugHarness: Object.freeze({ requirement: "diagnostic", capability: "runtime-health-diagnostics", when: "explicit debug/test launch" }),

@@ -210,6 +210,7 @@ export const PRODUCT_GAMES = Object.freeze({
       difficulties: STANDARD_MULTIPLAYER_DIFFICULTIES,
       loadouts: TH08_MULTIPLAYER_LOADOUTS,
       peerTransportGlobal: "__th08PeerTransport",
+      preflightWithoutRoom: true,
       spectator: true,
       titleRoomEntry: false,
     }),

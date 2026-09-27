@@ -3642,6 +3642,8 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
         ? {
             multiplayerLocalPlayerVisibility: state.options.multiplayerLocalPlayerVisibility,
             ...(state.replayViewer ? { replayViewer: true } : {}),
+            ...(options.omitNetplay && "preflightWithoutRoom" in PRODUCT_GAMES[state.game].multiplayer
+              ? { multiplayerPreflight: true } : {}),
             ...netplayOptions,
           }
         : {}),
