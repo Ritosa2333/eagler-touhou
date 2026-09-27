@@ -7096,8 +7096,13 @@ function renderRoomNetwork() {
   if (!container || !room) return;
   const peers = (room.seats || []).slice(0, room.playerCount).flatMap((seat, index) => seat && index !== mpUiState.seat ? [{ seat, index }] : []);
   const unavailable = !mpLobby.connected || !room.synced;
-  const paused = room.phase !== "lobby" || state.launched;
+  const paused = room.phase !== "lobby" || (state.launched && !th09NetworkOverlayOpen());
   const message = unavailable ? t("multiplayer.reconnecting") : paused ? t("room.pausedTest") : mpUiState.seat == null ? t("room.seatToTest") : !peers.length ? t("room.waitPeer") : "";
+  const capabilities = roomNetwork.capabilities();
+  const networkNote = document.querySelector<HTMLElement>("#mpRoomPanel .mp-network-footnote");
+  if (networkNote) networkNote.textContent = t(unavailable ? "room.networkNote" : !capabilities.supported
+    ? "room.probeUnsupported" : !capabilities.rtcAvailable ? "room.rtcUnavailable"
+      : !capabilities.turnConfigured ? "room.turnUnconfigured" : "room.networkNote");
   const retry = document.querySelector<HTMLButtonElement>("#mpRoomNetworkRetry");
   if (retry) retry.disabled = !!message;
   const summary = document.getElementById("mpNetworkSummary");
@@ -7170,7 +7175,7 @@ function renderMpRoom() {
   const room = mpUiState.room;
   if (!room) return;
   const roomReady = room.synced === true && mpLobby.connected;
-  roomNetwork.update({ localId: mpLobby.clientId, peers: (room.seats || []).slice(0, room.playerCount).filter(seat => seat && !seat.offline).map(seat => seat!.clientId), active: roomReady && mpUiState.seat != null && room.phase === "lobby" && !state.launched });
+  roomNetwork.update({ localId: mpLobby.clientId, peers: (room.seats || []).slice(0, room.playerCount).filter(seat => seat && !seat.offline).map(seat => seat!.clientId), active: roomReady && mpUiState.seat != null && room.phase === "lobby" && (!state.launched || th09NetworkOverlayOpen()) });
   renderRoomNetwork();
   $("#mpRoomConnection").textContent = t(roomReady ? "room.online" : "multiplayer.reconnecting");
   $("#mpRoomConnection").classList.toggle("connected", roomReady);
