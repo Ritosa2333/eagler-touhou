@@ -1,6 +1,7 @@
-import {readFileSync,existsSync} from 'node:fs';
+import {readFileSync,writeFileSync,existsSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {createPresentationLabServer,sha256} from '../../third_party/eagler-common/testkit/presentation-lab/server-core.mjs';
+import {createRuntimeManifest} from '../package-eagler.mjs';
 
 const root=resolve(import.meta.dirname,'../..');
 const workspace=resolve(process.env.EAGLER_WORKSPACE||root+'/../..');
@@ -19,6 +20,11 @@ const data=process.env.TH08_MP_DATA||resolve(workspace,'games/web-content/th08/t
 if(!existsSync(data))throw Error('Set TH08_MP_DATA to your retail th08.dat; diagnostic tests never bundle retail DATA');
 files.set('/input/th08.dat',data);
 files.set('/host.html',resolve(import.meta.dirname,'runtime-host.html'));
+// The production shell binds admission to this build identity. Keep the local
+// host lane on the same manifest contract as a packaged Runtime.
+const hostManifest=resolve(buildRoot,'host-runtime-manifest.json');
+writeFileSync(hostManifest,JSON.stringify(createRuntimeManifest({game:'th08',build,presentationLab:false,multiplayer:true})));
+files.set('/runtime/manifest.json',hostManifest);
 files.set('/runtime/resources.json',resolve(import.meta.dirname,'host-resources.json'));
 files.set('/runtime/th08-sdl.mjs',resolve(buildRoot,'th08-sdl.mjs'));files.set('/runtime/th08-sdl.wasm',wasm);
 for(const file of ['th08.html','shell.mjs','eagler-host.mjs','save-storage.mjs','multiplayer-host.mjs','practice.mjs','practice-config.mjs','practice-sections.mjs','midi-worklet.mjs'])

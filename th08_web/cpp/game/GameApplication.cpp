@@ -69,7 +69,8 @@ bool GameApplication::enter_game(){
     if(from_title){const auto& c=title.context;g.stage=c.currentStage;g.difficulty=c.difficulty;g.shot=c.character;g.current_spell=c.currentSpellCardNumber;g.game_flags=flag_bits(c.flags);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         if(session.multiplayer_session.configured){const auto& setup=session.multiplayer_session;
-            g.stage=0;g.difficulty=setup.difficulty;g.shot=i32(setup.characters[0]);g.current_spell=-1;g.game_flags=0;
+            // Extra uses its own stage, exactly as the native Extra title route does.
+            g.stage=setup.difficulty==4?8:0;g.difficulty=setup.difficulty;g.shot=i32(setup.characters[0]);g.current_spell=-1;g.game_flags=0;
             session.random={u16(setup.seed),u16(setup.seed),0};
         }
 #endif
@@ -161,16 +162,30 @@ JobResult GameApplication::update_supervisor(){
     return invalid()?JobResult::Error:JobResult::Continue;
 }
 bool GameApplication::update(){
-    if(!running||invalid())return false;
+    if(!running||invalid()){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if(world_journal&&!world_journal->CanAdvance()){failed=true;return false;}
+        last_update_result=-2;
+#endif
+        return false;
+    }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(world_journal&&!world_journal->CanAdvance()){last_update_result=-3;failed=true;return false;}
 #endif
     presentation::CalculationScope presentation_tick;
     // ECL callbacks 18/28/29 write the game's persistent global time scale.
     // The browser's next presentation does not reset it to a unit timestep.
     if(game_attached)timing=game.player.timing;animations.timing=timing;
-    if(title.modal()){title.modal_step();return !invalid();}
+    if(title.modal()){
+        title.modal_step();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        last_update_result=invalid()?-4:1;
+#endif
+        return !invalid();
+    }
     platform.begin_frame();const i32 value=chain.run();publish_scene();synchronize();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    last_update_result=value;
+#endif
     if(value<=0){failed|=value<0;running=false;}failed|=invalid();return running&&!failed;
 }
 bool GameApplication::draw(float presentation_alpha,bool presentation_active,bool presentation_only,bool world_interpolate){

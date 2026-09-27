@@ -18,6 +18,9 @@ struct BulletEmissionActions {
     virtual ~BulletEmissionActions()=default;
     virtual void emit(BulletEmission& parameters)=0;
     virtual void clear(i32 mode)=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    virtual bool before_bullet_overwrite(struct BulletState&){return true;}
+#endif
 };
 struct LaserEmissionActions {virtual ~LaserEmissionActions()=default;virtual struct LaserState* laser(BulletEmission& parameters)=0;};
 }

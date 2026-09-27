@@ -27,7 +27,7 @@ window.multiplayerSmoke={
   traceEnable(frame){if(!core.multiplayer_resource_trace_enable?.(app,frame))throw Error('Trace enable rejected');},
   deathField(victim,bombs=3,scenario=0){if(!core.mp_fixture_death_field?.(app,victim,bombs,scenario))throw Error('Death field setup rejected');},
   traceRead(frame,detail=false){const p=core.multiplayer_resource_trace_read(app,frame,detail?1:0);const heap=new Uint8Array(core.memory.buffer);let end=p;while(heap[end])++end;return JSON.parse(new TextDecoder().decode(heap.subarray(p,end)));},
-  async start(seed=1234,loadouts=null,local=0,sessionId=null,configuration=null){
+  async start(seed=1234,loadouts=null,local=0,sessionId=null,configuration=null,difficulty=1){
     if(app)throw Error('Use a fresh page for a new run');
     if(configuration){
       const bytes=new Uint8Array(60),v=new DataView(bytes.buffer);
@@ -41,7 +41,7 @@ window.multiplayerSmoke={
     }
     app=core.sdl_game_open(seed);if(!app)throw Error('Native app creation failed');
     if(loadouts){
-      const words=[sessionId?3:1,loadouts.length,local,1,seed,...(sessionId||[]),...(sessionId?fixtureBuildWords:[]),...loadouts.flatMap(character=>[character,0])];
+      const words=[sessionId?3:1,loadouts.length,local,difficulty,seed,...(sessionId||[]),...(sessionId?fixtureBuildWords:[]),...loadouts.flatMap(character=>[character,0])];
       const count=sessionId?17:11;while(words.length<count)words.push(0);
       const ptr=core.allocate(count*4);try{
         new Uint32Array(core.memory.buffer,ptr,count).set(words);
@@ -70,6 +70,15 @@ window.multiplayerSmoke={
     finally{core.deallocate(ptr);}
   },
   nativeStatus,
+  stageClearSetup(){return !!core.mp_fixture_stage_clear_setup?.(app);},
+  denseBullets(count){return !!core.mp_fixture_dense_bullets?.(app,count);},
+  optimizationMode(target,broadphase,cache=true){return core.mp_fixture_target_filter(+target)===+target&&core.mp_fixture_collision_broadphase(+broadphase)===+broadphase&&core.mp_fixture_barrier_cache(+cache)===+cache;},
+  chainProfile(){return Array.from(new Float64Array(core.memory.buffer,core.mp_fixture_chain_profile(),64));},
+  bulletUpdateProfile(){return Array.from(new Float64Array(core.memory.buffer,core.mp_fixture_bullet_update_profile(),8));},
+  collisionProbe(){return !!core.mp_fixture_collision_probe();},
+  bulletBackend(mode=2,audit=false){return core.mp_fixture_bullet_backend(app,mode,audit?1:0);},
+  liveBulletProbe(){const p=core.mp_fixture_live_bullet_probe(app);return Array.from(new Uint32Array(core.memory.buffer,p,10));},
+  snapshotProfile(policy=2){const p=core.mp_fixture_snapshot_profile(app,policy);return Array.from(new Float64Array(core.memory.buffer,p,10));},
   audioRouting(){if(!core.mp_fixture_audio_routing||!app)throw Error('Initialized diagnostic fixture required');return !!core.mp_fixture_audio_routing(app);},
   audioClockIndependent(){if(!core.mp_fixture_audio_clock||!app)throw Error('Initialized diagnostic fixture required');return !!core.mp_fixture_audio_clock(app);},
   correctionProbe(){if(!core.mp_fixture_native_correction||!app)throw Error('Initialized diagnostic fixture required');
@@ -83,6 +92,8 @@ window.multiplayerSmoke={
     return Array.from(new Uint32Array(core.memory.buffer,ptr,10));},
   resourcesJournalProbe(){if(!core.mp_fixture_resources_journal||!app)throw Error('Initialized diagnostic fixture required');
     const ptr=core.mp_fixture_resources_journal(app);return Array.from(new Uint32Array(core.memory.buffer,ptr,10));},
+  updateOptimizationProbe(mode=0){if(!core.mp_fixture_update_optimizations||!app)throw Error('Gameplay diagnostic fixture required');
+    const ptr=core.mp_fixture_update_optimizations(app,mode);return Array.from(new Uint32Array(core.memory.buffer,ptr,64));},
   worldJournalProbe(mode=0){if(!core.mp_fixture_world_journal||!app)throw Error('Gameplay diagnostic fixture required');
     const ptr=core.mp_fixture_world_journal(app,mode);return Array.from(new Uint32Array(core.memory.buffer,ptr,64));},
   netStatus(){return Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_netplay_status(app),12));},

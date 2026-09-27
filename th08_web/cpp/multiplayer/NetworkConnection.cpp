@@ -65,7 +65,17 @@ void NetworkConnection::FinishSpectator(){
     transport.Close();enabled=false;spectator_finished=true;
     spectator_frames.Clear();
 }
-bool NetworkConnection::Captured(u32 frame){return !net.Spectator()&&(!enabled||channel.LocalCaptured(net.core_,frame,Now()));}
+bool NetworkConnection::Captured(u32 frame){
+    if(net.Spectator())return false;
+    if(!enabled)return true;
+    // A correction can reach a stage boundary before the predicted timeline
+    // did. The following loading ticks reuse already captured input. Pump owns
+    // retransmission of the highest capture; never announce the older replayed
+    // frame as a new capture or move the channel's capture frontier backwards.
+    if(channel.LatestCapture()!=Netplay::INVALID_FRAME&&frame<channel.LatestCapture())
+        return net.core_.HasLocalCapture(frame)&&channel.Error()==Netplay::SessionChannel::Failure::None;
+    return channel.LocalCaptured(net.core_,frame,Now());
+}
 bool NetworkConnection::CanRetire()const{return net.CanRetire()&&(!enabled||channel.CanRetire(net.core_,net.LastFrame()));}
 bool NetworkConnection::Retire(){return CanRetire()&&(!enabled||channel.Retire(net.core_,net.LastFrame(),Now()))&&net.Retire();}
 bool NetworkConnection::BeginGeneration(){return !enabled||channel.BeginSession(net.Config(),Now());}

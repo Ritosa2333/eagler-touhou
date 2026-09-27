@@ -1,9 +1,17 @@
 #include "BulletSystem.hpp"
 #include "Presentation.hpp"
+#ifdef TH_MULTIPLAYER_FIXTURES
+#include <emscripten.h>
+#include <array>
+#endif
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/JournalTouch.hpp"
 #endif
 namespace th08 {
+#ifdef TH_MULTIPLAYER_FIXTURES
+namespace {std::array<double,8> bullet_profile{};}
+const double* fixture_bullet_profile() noexcept {return bullet_profile.data();}
+#endif
 BulletSystem::BulletSystem(BulletManagerState& s,EclGlobals& g,Rng& rng,PlayerSimulation& p,ItemSystem& i,EffectSystem& e,AnmRenderer& r,BulletSystemAudio& a)
  :state(s),globals(g),player(p),inventory(i),effect_system(e),renderer(r),audio(a),creation(s,rng),updater(s,creation,rng),lasers(s,rng),drawing(s,*this){
     creation.actions=this;updater.actions=this;
@@ -92,10 +100,55 @@ bool BulletSystem::update(){
     // Enemy ECL (priority 11) can move/rotate/recolor lasers before this
     // priority-14 job. The scene supplies the pre-ECL endpoint; standalone
     // BulletSystem callers retain their original self-contained sampling.
-    if(!presentation_prepared)drawing.snapshot();presentation_prepared=false;
+    if(!presentation_prepared){
+#ifdef TH_MULTIPLAYER_FIXTURES
+        const double start=emscripten_get_now();
+#endif
+        drawing.snapshot();
+#ifdef TH_MULTIPLAYER_FIXTURES
+        bullet_profile[0]+=emscripten_get_now()-start;
+#endif
+    }
+    presentation_prepared=false;
     if(globals.game_flags&1024)return true;
-    if(!inventory.update())return false;synchronize();if(!updater.update_bullets()||!lasers.update())return false;
+#ifdef TH_MULTIPLAYER_FIXTURES
+    double start=emscripten_get_now();
+#endif
+    if(!inventory.update())return false;
+#ifdef TH_MULTIPLAYER_FIXTURES
+    bullet_profile[1]+=emscripten_get_now()-start;start=emscripten_get_now();
+#endif
+    synchronize();
+#ifdef TH_MULTIPLAYER_FIXTURES
+    bullet_profile[2]+=emscripten_get_now()-start;start=emscripten_get_now();
+#endif
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Player/Bomb, Enemy and Item jobs have finished creating regions. Bullet
+    // hit/graze creates effects/items but does not create cancellation regions.
+    // Rebuild on every forward/resim tick; scopes end before any later job.
+    PlayerCollision::BarrierBatch host_barriers(&player.collision());
+    PlayerCollision::BarrierBatch guest1_barriers(roster&&roster->count>1&&roster->seats[1].player?&roster->seats[1].player->collision():nullptr);
+    PlayerCollision::BarrierBatch guest2_barriers(roster&&roster->count>2&&roster->seats[2].player?&roster->seats[2].player->collision():nullptr);
+#endif
+    if(!updater.update_bullets())return false;
+#ifdef TH_MULTIPLAYER_FIXTURES
+    bullet_profile[3]+=emscripten_get_now()-start;start=emscripten_get_now();
+#endif
+    if(!lasers.update())return false;
+#ifdef TH_MULTIPLAYER_FIXTURES
+    bullet_profile[4]+=emscripten_get_now()-start;
+#endif
     if(state.cancel_frames)state.cancel_frames=wrapping_sub(state.cancel_frames,1);state.timer.tick(player.timing);state.unknown_counter=wrapping_add(state.unknown_counter,1);return !failed;
+}
+void BulletSystem::snapshot_presentation(){
+    if(!ready)return;
+#ifdef TH_MULTIPLAYER_FIXTURES
+    const double start=emscripten_get_now();
+#endif
+    drawing.snapshot();presentation_prepared=true;
+#ifdef TH_MULTIPLAYER_FIXTURES
+    bullet_profile[0]+=emscripten_get_now()-start;
+#endif
 }
 bool BulletSystem::draw(const Vec2& origin){
     if(failed||!ready)return false;const bool failed_before=failed;const Vec2 arcade_before=arcade;arcade=origin;const bool result=drawing.draw(globals.game_flags,origin);

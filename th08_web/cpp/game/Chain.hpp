@@ -26,5 +26,10 @@ public:
 private:
     bool contains(ChainElement* element) const noexcept;
 };
+#ifdef TH_MULTIPLAYER_FIXTURES
+// Diagnostic wall time by calculation/drawing priority, indexed as
+// calculation 0..31 and drawing 32..63. Never linked into retail builds.
+const double* fixture_chain_profile() noexcept;
+#endif
 static_assert(sizeof(void*)!=4||sizeof(ChainElement)==32);
 }

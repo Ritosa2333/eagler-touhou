@@ -52,13 +52,19 @@ public:
     bool initialize(AnmLoaded&,Rng&);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     void bind_roster(PlayerRoster& value){roster=&value;}
+    bool before_bullet_overwrite(BulletState& bullet)override{
+        if(!creation.capture_overwrite(bullet)){failed=true;return false;}return true;
+    }
 #endif
     void emit(BulletEmission&)override;
     LaserState* laser(BulletEmission&)override;
     void clear(i32 mode)override;
     bool update();
-    void snapshot_presentation(){if(ready){drawing.snapshot();presentation_prepared=true;}}
+    void snapshot_presentation();
     bool draw(const Vec2& origin={32,16});
     bool invalid()const{return failed;}
 };
+#ifdef TH_MULTIPLAYER_FIXTURES
+const double* fixture_bullet_profile() noexcept;
+#endif
 }

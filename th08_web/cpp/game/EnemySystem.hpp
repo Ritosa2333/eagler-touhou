@@ -47,6 +47,9 @@ private:
     EclNativeServices native_services;EnemyNativeScene* native_scene=nullptr;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     PlayerRoster* roster=nullptr;
+    bool before_bullet_overwrite(BulletState& bullet)override{
+        if(globals.bullet_actions&&!globals.bullet_actions->before_bullet_overwrite(bullet)){failed=true;return false;}return true;
+    }
     u32 participant_count()const override{return roster?roster->count:1;}
     bool participant(u32 seat,EnemyDamageParticipant&)override;
     i32 participant_damage(u32 seat,const Vec3&,const Vec3&,i32& time_items,i32& bomb_hit)override;

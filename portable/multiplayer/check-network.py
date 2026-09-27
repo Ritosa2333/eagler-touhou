@@ -31,6 +31,10 @@ def observe(page):
     return result
 def capture(page,seat,frame):
     buttons=input_for(seat,frame)
+    if frame==0 and seat==0:
+        # Live v3 frame zero carries the host's route bootstrap; the native
+        # driver strips it before gameplay. Keep the packet fixture current.
+        return call(page,'multiplayerSmoke.captureInput(0,0,2,8188,-8192,0)')
     if not args.analog or frame<180 or 250<=frame<290:
         return call(page,'v=>multiplayerSmoke.capture(...v)',[frame,buttons])
     buttons&=~(16|32|64|128)
@@ -164,7 +168,9 @@ with sync_playwright() as pw:
                             call(page,'multiplayerSmoke.pollNetwork()');n=call(page,'multiplayerSmoke.netStatus()')
                             if n[10]==0 or n[3]<120:
                                 buttons=8 if seat==0 and n[10]==0 and n[3]==400 else 16384 if seat==0 and n[10]==0 and n[3]==410 else 0
-                                if n[2]:call(page,'v=>multiplayerSmoke.capture(...v)',[n[3],buttons])
+                                if n[2]:
+                                    if n[3]==0 and seat==0:call(page,'multiplayerSmoke.captureInput(0,0,2,8188,-8192,0)')
+                                    else:call(page,'v=>multiplayerSmoke.capture(...v)',[n[3],buttons])
                                 call(page,'multiplayerSmoke.ticks(1)')
                             else:call(page,'multiplayerSmoke.reconcile()')
                             n=call(page,'multiplayerSmoke.netStatus()')

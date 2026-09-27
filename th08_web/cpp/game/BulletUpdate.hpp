@@ -1,6 +1,10 @@
 #pragma once
 #include "BulletMotion.hpp"
 namespace th08 {
+#ifdef TH_MULTIPLAYER_FIXTURES
+const double* fixture_bullet_update_profile() noexcept;
+bool fixture_bullet_target_filter(bool enabled) noexcept;
+#endif
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 namespace multiplayer {class PoolsJournal;}
 #endif

@@ -15,6 +15,7 @@ inline const u32* pools_journal_probe(GameplayScene& game,GameplaySession& sessi
     if(!require(initial&&initial->active&&initial->vertices&&game.effect_system.geometry.prepare(*initial)>0,2))return result;
     const auto* vertices=initial->vertices;
     PoolsJournal journal;
+    journal.audit_bullets=true;
     if(!require(journal.Bind(game.bullets,game.items,game.effect_system,session.random),3))return result;
     const u32 before=journal.AuditHash();
     const auto mutate=[&](){

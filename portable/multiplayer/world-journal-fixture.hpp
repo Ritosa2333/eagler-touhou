@@ -4,12 +4,14 @@
 #endif
 #include "../../th08_web/cpp/multiplayer/WorldJournal.hpp"
 #include "../../th08_web/cpp/platform/BrowserRuntime.hpp"
+#include "../../th08_web/cpp/game/PlayerCollision.hpp"
 #include <cstdio>
 
 namespace th08::multiplayer::fixture {
-inline const u32* world_journal_probe(BrowserRuntime& runtime,u32 mode=0){
+inline const u32* world_journal_probe(BrowserRuntime& runtime,u32 mode=0,bool optimization_oracle=false){
     static u32 result[64]{};std::fill(result,result+64,0);result[0]=1;
     WorldJournal journal;
+    journal.AuditBullets(true);
     const auto fail=[&](u32 step){result[2]=step;result[36]=runtime.status(4);result[37]=journal.OwnerFaults();
         std::printf("world-journal step=%u nativeFaults=%u ownerFaults=%u reason=%s\n",step,result[36],result[37],journal.Error());
         auto& e=runtime.app.game.globals;auto& p=runtime.app.game.presentation;
@@ -20,6 +22,24 @@ inline const u32* world_journal_probe(BrowserRuntime& runtime,u32 mode=0){
         return result;};
     auto& app=runtime.app;auto& game=app.game;
     if(!app.in_game()||app.invalid()||app.session.netplay.Configured()||mode>3)return fail(1);
+    // This diagnostic starts and ends with the production defaults. Compare
+    // legacy forward execution against optimized replay of the same world.
+    struct ResetOptimizations {bool active;~ResetOptimizations(){if(active){
+        fixture_bullet_target_filter(true);fixture_collision_broadphase(true);fixture_barrier_cache(true);fixture_barrier_cache_audit(false);
+    }}} reset_optimizations{optimization_oracle};
+    if(optimization_oracle){
+        fixture_bullet_target_filter(false);fixture_collision_broadphase(false);fixture_barrier_cache(false);
+        // Force an aiming extra to become active inside normal(), rather than
+        // only testing ordinary straight bullets. Both policies see this seed.
+        auto* bullet=game.projectile_pool.next_slot;
+        if(bullet->state!=0)return fail(3);
+        BulletEmission shot;shot.sprite=0;shot.color=2;shot.position={190,100,.1f};
+        shot.speed=.1f;shot.ending_speed=.1f;shot.count=1;shot.layers=1;
+        game.bullets.emit(shot);
+        if(game.bullets.invalid()||bullet->state!=1)return fail(4);
+        bullet->flags|=0x80;bullet->extra_flags=0;bullet->current_extra=0;
+        bullet->extras[0]={0,2,0,1,0x80,0};
+    }
     if(!journal.Bind(runtime))return fail(2);
     {
         std::vector<u32> order(journal.DiagnosticBlockCount());
@@ -45,6 +65,7 @@ inline const u32* world_journal_probe(BrowserRuntime& runtime,u32 mode=0){
         if((mode==1||mode==3)&&frame==0)for(u32 seat=0;seat<app.session.player_count;++seat)buttons[seat]|=InputButton::Bomb;
         if(mode==2&&frame==0)game.pilot(app.session.player_count-1).die();
         if(!game.commit_inputs(buttons,app.session.player_count)||!runtime.step(true))return false;
+        if(optimization_oracle&&fixture_barrier_cache_mismatches())return false;
         if((mode==1||mode==3)&&frame==0){
             for(u32 seat=0;seat<app.session.player_count;++seat){
                 if(!game.pilot(seat).status().bomb.active||app.session.pilot_resources[seat].bombs>=bombs[seat])return false;
@@ -71,6 +92,7 @@ inline const u32* world_journal_probe(BrowserRuntime& runtime,u32 mode=0){
         return fail(41);
     }
     result[32]=1;
+    if(optimization_oracle){fixture_bullet_target_filter(true);fixture_collision_broadphase(true);fixture_barrier_cache(true);fixture_barrier_cache_audit(true);}
     for(u32 frame=0;frame<6;++frame){
         if(!journal.BeginFrame(frame)||!execute(frame)||!journal.EndFrame())return fail(50+frame);
         const auto actual=journal.AuditHash();

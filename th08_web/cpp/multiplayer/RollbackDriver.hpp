@@ -33,6 +33,19 @@ public:
     u32 Resimulated()const{return resimulated;}
     u32 Predicted()const{return predicted;}
     u32 MaxBytes()const{return max_bytes;}
+#ifdef TH_MULTIPLAYER_FIXTURES
+    bool SetLiveBullets(bool enabled){return world.SetLiveBullets(enabled);}
+    bool LiveBullets()const{return world.LiveBullets();}
+    void AuditBullets(bool enabled){world.AuditBullets(enabled);}
+    u32 BulletAuditRestores()const{return world.BulletAuditRestores();}
+    bool diagnostic_always_snapshot=false;
+    bool diagnostic_exact_only=false;
+    bool diagnostic_early_input=true;
+    double diagnostic_snapshots=0,diagnostic_skipped=0,diagnostic_capture_ms=0;
+    double diagnostic_restore_ms=0,diagnostic_update_ms=0,diagnostic_draw_ms=0;
+    double diagnostic_snapshot_bytes=0;
+    double diagnostic_correction_ms=0,diagnostic_correction_max_ms=0;
+#endif
 private:
     BrowserRuntime& runtime;
     WorldJournal world;TextureJournal textures;AudioEvents audio;FileEvents files;
@@ -40,13 +53,17 @@ private:
     bool bound=false,open=false,initialized=false,failed=false,correcting=false;
     bool generation_transition_pending=false;
     bool corrected_present_pending=false;
+    bool checkpoint_open=false;
     u32 generation=0,corrections=0,resimulated=0,predicted=0,max_bytes=0;
     const char* error="";
+    char native_error[256]{};
     bool Fail(const char* text){failed=true;error=text;return false;}
+    bool FailNativeUpdate(u32 frame,bool updated);
     bool Stable()const;
     bool Commit();
     bool Admit();
     bool RunFrame(bool render);
+    bool CaptureLocalInput();
     bool Correct();
     bool PresentCorrection();
     bool apply_file_event(const char*,const u8*,u32)override;

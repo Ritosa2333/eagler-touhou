@@ -184,6 +184,10 @@ class GameApplication {
     void start_effect();void finish_effect();void show_loading(const Vec3&,bool);void fade_loading();
     ResultContext result_context()const;void save_replay(i32,const char*);void export_records();
 public:
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Failure-only diagnostic; never contributes to the simulated world.
+    i32 last_update_result=1;
+#endif
     GameplaySession session;TextureStore textures;AnmLibrary library;AnmRenderer renderer;Chain chain;AnmExecutor animations;
     AsciiManager ascii;AsciiContext ascii_context;ScreenEffects screen;LoadingScreen loading;FrameStatistics statistics;
     SupervisorFrame supervisor;TitleScene title;GameplayScene game;ResultScene results;MusicRoom music;Ending ending;

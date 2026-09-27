@@ -5,12 +5,19 @@ void cancel_projectiles_near(BulletManagerState& state,const Vec3& p,float radiu
     const float squared=Scalar::mul(radius,radius);
     for(u32 i=0;i<1536;++i){auto& bullet=state.bullets[i];if(!bullet.state||bullet.state==5)continue;
         const auto x=number(Scalar::sub(bullet.position.x,p.x)),y=number(Scalar::sub(bullet.position.y,p.y)),z=number(Scalar::sub(bullet.position.z,p.z));
-        if(!(number(squared)<x*x+y*y+z*z)){actions.drop(bullet.position,6,1);std::memset(&bullet,0,sizeof(bullet));}
+        if(!(number(squared)<x*x+y*y+z*z)){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            if(!actions.before_bullet_overwrite(bullet))return;
+#endif
+            actions.drop(bullet.position,6,1);std::memset(&bullet,0,sizeof(bullet));}
     }
 }
 bool cancel_projectiles(BulletManagerState& state,i32 mode,const i32& cancel_item,BulletCancelActions* actions){
     for(u32 i=0;i<1536;++i){auto& bullet=state.bullets[i];if(!bullet.state||bullet.state==5)continue;
         if(actions)actions->barrier(bullet);const i32 result=actions?actions->barrier(bullet):0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if((result==2||mode!=4)&&actions&&!actions->before_bullet_overwrite(bullet))return false;
+#endif
         if(result==2){if(actions)actions->drop(bullet.position,cancel_item,1);std::memset(&bullet,0,sizeof(bullet));}
         else if(mode==4)bullet.state=5;
         else{if(actions)actions->drop(bullet.position,state.bonus_item,mode);std::memset(&bullet,0,sizeof(bullet));}

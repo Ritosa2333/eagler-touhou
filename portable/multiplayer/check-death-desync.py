@@ -16,7 +16,11 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[2]
 GLOBAL_FIELDS = ['time', 'totalTime', 'timeRequirement', 'pointValue', 'clock', 'score',
                  'points', 'graze', 'rngSeed', 'rngBackup', 'rngCalls', 'stage',
-                 'gameFlags', 'spellFlags', 'pendingTime']
+                 'gameFlags', 'spellFlags', 'pendingTime', 'pauseState', 'paused',
+                 'retrying', 'enemyFrames', 'bulletCount', 'bulletTimer',
+                 'bulletCancelFrames', 'bulletUnknownCounter', 'effectCursor',
+                 'effectCount', 'effectFrames', 'supervisorActive', 'supervisorTarget',
+                 'playFrames', 'menuSupervisorState']
 PILOT_FIELDS = ['power', 'lives', 'bombs', 'gauge', 'deaths', 'life', 'predead', 'lifeTimer',
                 'clearFrames', 'contextPower', 'contextTime', 'contextBombs', 'contextGauge',
                 'gameFlags', 'focus', 'bombActive', 'bombTimer', 'shootTimer', 'xBits', 'yBits',
@@ -31,8 +35,8 @@ parser.add_argument('--victim', type=int, choices=(0, 1), required=True)
 parser.add_argument('--scenario', choices=('poc', 'field'), default='poc')
 parser.add_argument('--bombs', type=int, choices=(0, 1, 2, 3), default=3)
 parser.add_argument('--frames', type=int, default=480)
-parser.add_argument('--delay', type=int, default=6)
-parser.add_argument('--jitter', type=int, default=6)
+parser.add_argument('--delay', type=int, default=3)
+parser.add_argument('--jitter', type=int, default=3)
 parser.add_argument('--presentations', type=int, choices=(0, 1, 2), default=1)
 parser.add_argument('--loadouts', default='0,1')
 parser.add_argument('--browser', choices=('chromium', 'firefox', 'webkit'), default='chromium')
@@ -104,7 +108,7 @@ try:
         options = {'url': url, 'victim': args.victim, 'scenario': 0 if args.scenario == 'poc' else 1,
                    'bombs': args.bombs, 'frames': args.frames, 'delay': args.delay, 'jitter': args.jitter,
                    'presentations': args.presentations, 'loadouts': loadouts, 'fields': FIELDS,
-                   'movement': args.movement}
+                   'movement': args.movement,'pilotOffset':len(GLOBAL_FIELDS),'pilotWidth':len(PILOT_FIELDS)}
         result = page.evaluate('''async o => {
           const result=window.__deathMeasurement={passed:false,inputs:[],packets:[],coverage:{},checkpoints:[],firstDivergence:null};
           const worlds=[],wait=ms=>new Promise(r=>setTimeout(r,ms));let queue=[],checked=179;
@@ -133,6 +137,7 @@ try:
               if(row.worlds.some(t=>t.traceOverflow))throw Error('Trace overflow; incomplete evidence');
               const oracle=await window.storeMeasurementFrame(row);
               const ends=row.worlds.map(t=>t.record.attempt.end),a=ends[0],b=ends[1];
+              if(ends.some(x=>x.values.length!==o.fields.length))throw Error('Native trace field layout changed');
               const valueDiff=a.values.flatMap((v,i)=>v===b.values[i]?[]:[{field:o.fields[i],values:[v,b.values[i]]}]);
               for(let i=0;i<2;i++){
                 const record=row.worlds[i].record;
@@ -140,7 +145,7 @@ try:
                   if(!event.after)result.coverage[event.kind]=(result.coverage[event.kind]||0)+1;
                   if(event.kind==='time.add'&&event.argument<0&&!event.after)result.coverage.timePenalty=(result.coverage.timePenalty||0)+1;
                 }
-                if(record.firstAttempt&&record.firstAttempt.end.values[15+o.victim*24+5]!==record.attempt.end.values[15+o.victim*24+5])
+                if(record.firstAttempt&&record.firstAttempt.end.values[o.pilotOffset+o.victim*o.pilotWidth+5]!==record.attempt.end.values[o.pilotOffset+o.victim*o.pilotWidth+5])
                   result.coverage.correctedDeathState=(result.coverage.correctedDeathState||0)+1;
               }
               if(valueDiff.length||JSON.stringify(a.items)!==JSON.stringify(b.items)||oracle){
@@ -207,7 +212,7 @@ try:
             }
             if(checked!==o.frames-1)throw Error('Incomplete confirmation frontier');
             result.final=worlds.map(w=>({net:w.netStatus(),driver:w.driverStatus(),state:w.status(),canonical:w.canonical(),trace:w.traceRead(checked)}));
-            const values=result.final[0].trace.record.attempt.end.values,offset=15+o.victim*24;
+            const values=result.final[0].trace.record.attempt.end.values,offset=o.pilotOffset+o.victim*o.pilotWidth;
             result.coverage.oneOrdinaryDeath=values[offset+1]===1&&values[offset+4]===1&&values[offset+21]===0;
             result.passed=!!(result.coverage.oneOrdinaryDeath&&result.coverage['item.collect']&&result.coverage.timePenalty&&
                 (o.delay===0&&o.jitter===0||result.coverage.correctedDeathState));

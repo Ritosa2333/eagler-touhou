@@ -2,6 +2,7 @@
 #include "BulletState.hpp"
 #include "BulletPattern.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/LiveBulletSnapshot.hpp"
 namespace Netplay {class RollbackJournal;}
 #endif
 namespace th08 {
@@ -15,6 +16,8 @@ class BulletCreation {
 public:
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     Netplay::RollbackJournal* rollback_journal=nullptr;
+    multiplayer::LiveBulletJournal* live_bullets=nullptr;
+    bool capture_overwrite(BulletState&);
 #endif
     BulletCreation(BulletManagerState& state,Rng& random):state(state),random(random){}
     FrameTiming timing;BulletCreationActions* actions=nullptr;

@@ -28,6 +28,10 @@ public:
     void Clear();
     bool CanAdvance()const;
 #ifdef TH_MULTIPLAYER_FIXTURES
+    bool SetLiveBullets(bool enabled){return pools.SetLiveBullets(enabled);}
+    bool LiveBullets()const{return pools.LiveBullets();}
+    void AuditBullets(bool enabled){pools.audit_bullets=enabled;}
+    u32 BulletAuditRestores()const{return pools.bullet_audit_restores;}
     bool DiagnosticInputSampler();
     std::array<std::size_t,5> DiagnosticBytesForFrame(u32 frame)const;
     std::size_t DiagnosticBlockCount()const{return blocks.size();}

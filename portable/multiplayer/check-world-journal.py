@@ -7,8 +7,11 @@ parser=argparse.ArgumentParser()
 parser.add_argument('--url',required=True)
 parser.add_argument('--output',type=Path,required=True)
 parser.add_argument('--loadouts',action='store_true')
+parser.add_argument('--optimization-oracle',action='store_true',help='Compare legacy Update against optimized replay at every checkpoint')
 args=parser.parse_args()
 report={'passed':False,'scope':'TH08 stable-stage world rollback with native Update and semantic Draw; network correction/output fences not yet accepted','cases':[],'identities':[],'errors':[]}
+report['optimizationOracle']=args.optimization_oracle
+probe_method='updateOptimizationProbe' if args.optimization_oracle else 'worldJournalProbe'
 with sync_playwright() as p:
     browser=p.chromium.launch(headless=True,args=['--enable-unsafe-swiftshader'])
     try:
@@ -29,7 +32,7 @@ with sync_playwright() as p:
                 page.evaluate('buttons=>multiplayerSmoke.commit(buttons)',[4 if mode==1 else 0]*count)
                 page.evaluate('multiplayerSmoke.ticks(60)')
                 state=page.evaluate('multiplayerSmoke.status()')
-                probe=page.evaluate('mode=>multiplayerSmoke.worldJournalProbe(mode)',mode)
+                probe=page.evaluate(f'mode=>multiplayerSmoke.{probe_method}(mode)',mode)
                 case={'players':count,'loadouts':layout,'mode':['shooting','focused-bombs','native-death','unfocused-bombs'][mode],'nativeState':state,'probe':probe,'later':[]}
                 report['cases'].append(case)
                 assert probe[:3]==[1,1,0] and probe[32:36]==[1]*4,case
@@ -39,7 +42,7 @@ with sync_playwright() as p:
                 # allocation tick. Each probe still runs original Update+Draw.
                 for advance in (24,60):
                     page.evaluate('n=>multiplayerSmoke.ticks(n)',advance)
-                    later=page.evaluate('multiplayerSmoke.worldJournalProbe(0)')
+                    later=page.evaluate(f'multiplayerSmoke.{probe_method}(0)')
                     case['later'].append({'advance':advance,'probe':later})
                     assert later[:3]==[1,1,0] and later[32:36]==[1]*4,case
                 print('TH08 world journal:',layout,case['mode'],'PASS max checkpoint bytes',max([probe[3]]+[x['probe'][3] for x in case['later']]),flush=True)

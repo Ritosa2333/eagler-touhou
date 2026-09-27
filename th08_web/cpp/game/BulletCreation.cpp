@@ -4,6 +4,19 @@
 #include "../multiplayer/JournalTouch.hpp"
 #endif
 namespace th08 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+bool BulletCreation::capture_overwrite(BulletState& bullet){
+    bool okay=true;
+    if(live_bullets){
+        okay=rollback_journal&&!rollback_journal->Failed()&&!live_bullets->Failed();
+        if(okay&&rollback_journal->IsFrameOpen())
+            okay=live_bullets->Touch(&bullet-state.bullets,multiplayer::LiveBulletJournal::AllParts);
+        else if(okay)okay=rollback_journal->FrameCount()==0;
+    }else okay=multiplayer::before_write(rollback_journal,bullet);
+    if(!okay)failure=Failure::Journal;
+    return okay;
+}
+#endif
 static constexpr i32 palette16[]{0,1,1,1,1,2,2,2,2,3,3,3,4,4,4,0};
 static constexpr i32 palette32[]{0,1,1,2,2,3,4,0};
 static void direction(Vec3& vector,float angle,float speed){
@@ -32,7 +45,7 @@ i32 BulletCreation::create(const BulletEmission& e,i32 index,i32 layer,float aim
     }
     if(!e.type){failure=Failure::InvalidTemplate;return 1;}
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if(!multiplayer::before_write(rollback_journal,*slot)){failure=Failure::Journal;return 1;}
+    if(!capture_overwrite(*slot))return 1;
 #endif
     const auto values=bullet_pattern(e,index,layer,aim,random);auto& b=*slot;const auto& type=*e.type;
     b.state=1;b.unknown_dbc=1;b.grazed=0;b.since_fired.set(0);b.reisen_illusion=0;b.active_time.set(0);
@@ -92,6 +105,11 @@ bool BulletCreation::initialize_extra(BulletState& b){
         case 0x2000:b.despawn_protection=e.integer_a;++b.current_extra;continue;
         case 0x4000:
             if(u32(e.integer_a)>=32){failure=Failure::InvalidTemplate;return false;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            // Native extra transforms overwrite every VM, including dormant
+            // spawn VMs. This writer also runs on already-live bullets.
+            if(!capture_overwrite(b))return false;
+#endif
             b.sprites=state.templates.types[e.integer_a];
             if(!set_sprite(b.sprites.animation[0],wrapping_add(b.sprites.animation[0].activeSpriteIndex,e.integer_b)))return false;
             ++b.current_extra;continue;

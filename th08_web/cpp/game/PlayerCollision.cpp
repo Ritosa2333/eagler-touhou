@@ -1,7 +1,32 @@
 #include "PlayerCollision.hpp"
 #include "GameMath.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include <cmath>
+#endif
+#ifdef TH_MULTIPLAYER_FIXTURES
+#include <array>
+#endif
 namespace th08 {
 namespace {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+bool collision_broadphase_enabled=true;
+bool barrier_cache_enabled=true;
+#ifdef TH_MULTIPLAYER_FIXTURES
+std::array<double,4> broadphase_counts{};
+bool audit_barrier_cache=false;
+u32 barrier_cache_mismatches=0;
+#endif
+// Reject only widely separated, ordinary finite coordinates. The two-unit
+// guard is much larger than float endpoint rounding within this bounded
+// domain; near boundaries and unusual values retain the exact original box.
+bool definitely_outside(const Vec3& p,const Vec3& size,const Vec3& lower,const Vec3& upper,float margin){
+    const float values[]{p.x,p.y,size.x,size.y,lower.x,lower.y,upper.x,upper.y};
+    for(float v:values)if(!std::isfinite(v)||std::fabs(v)>8192.f)return false;
+    if(size.x<0||size.y<0||lower.x>upper.x||lower.y>upper.y)return false;
+    const float x=size.x*.5f+margin+2.f,y=size.y*.5f+margin+2.f;
+    return p.x+x<lower.x||p.x-x>upper.x||p.y+y<lower.y||p.y-y>upper.y;
+}
+#endif
 struct Box {Vec2 lower,upper;};
 Vec2 rotate(const Vec2& point,float angle){
     // 0043ee30 stores both trigonometric results before multiplying.
@@ -27,8 +52,58 @@ bool overlap(const Vec2& lower,const Vec2& upper,const Box& b){
 }
 Vec2 xy(const Vec3& p){return {p.x,p.y};}
 }
+#ifdef TH_MULTIPLAYER_FIXTURES
+bool fixture_collision_broadphase(bool enabled) noexcept {collision_broadphase_enabled=enabled;return collision_broadphase_enabled;}
+bool fixture_barrier_cache(bool enabled) noexcept {barrier_cache_enabled=enabled;return enabled;}
+void fixture_barrier_cache_audit(bool enabled) noexcept {audit_barrier_cache=enabled;}
+u32 fixture_barrier_cache_mismatches() noexcept {return barrier_cache_mismatches;}
+const double* fixture_collision_broadphase_counts() noexcept {return broadphase_counts.data();}
+bool fixture_collision_broadphase_probe() noexcept {
+    // Include far, near, touching, and representative maximum-domain values.
+    constexpr float coordinates[]{-8192.f,-448.f,-32.f,-2.f,0.f,2.f,32.f,384.f,8192.f};
+    constexpr float sizes[]{0.f,.1f,2.f,16.f,64.f,1024.f,8192.f};
+    for(float px:coordinates)for(float py:coordinates)for(float sx:sizes)for(float sy:sizes){
+        const Vec3 p{px,py,0},size{sx,sy,0};
+        for(float margin:{0.f,20.f}){
+            const Box exact=box({px,py},{sx,sy},margin);
+            for(float bx:coordinates)for(float by:coordinates){
+                const Vec3 lower{bx,by,0},upper{bx+4.f,by+4.f,0};
+                if(definitely_outside(p,size,lower,upper,margin)&&
+                   overlap({lower.x,lower.y},{upper.x,upper.y},exact))return false;
+            }
+        }
+    }
+    return true;
+}
+#endif
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+PlayerCollision::BarrierBatch::BarrierBatch(PlayerCollision* value):owner(value){
+    if(!owner)return;
+    previous=owner->barrier_batch;
+    if(!barrier_cache_enabled)return;
+    for(u16 slot=0;slot<192;++slot)if(owner->regions.cancelling[slot].active)slots[count++]=slot;
+    owner->barrier_batch=this;
+}
+PlayerCollision::BarrierBatch::~BarrierBatch(){if(owner)owner->barrier_batch=previous;}
+#endif
 i32 PlayerCollision::barrier(const Vec2& p){
-    for(auto& r:regions.cancelling){if(!r.active)continue;bool hit=false;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#ifdef TH_MULTIPLAYER_FIXTURES
+    if(barrier_batch&&audit_barrier_cache){
+        u32 found=0;
+        for(u16 slot=0;slot<192;++slot)if(regions.cancelling[slot].active){
+            if(found>=barrier_batch->count||barrier_batch->slots[found]!=slot)++barrier_cache_mismatches;
+            ++found;
+        }
+        if(found!=barrier_batch->count)++barrier_cache_mismatches;
+    }
+#endif
+    const u32 count=barrier_batch?barrier_batch->count:192;
+    for(u32 i=0;i<count;++i){auto& r=regions.cancelling[barrier_batch?barrier_batch->slots[i]:i];
+#else
+    for(auto& r:regions.cancelling){
+#endif
+        if(!r.active)continue;bool hit=false;
         if(r.radius!=0){
             const auto x=number(Scalar::sub(p.x,r.position.x)),y=number(Scalar::sub(p.y,r.position.y));
             hit=x*x+y*y<number(r.radius)*number(r.radius);
@@ -42,11 +117,33 @@ i32 PlayerCollision::barrier(const Vec2& p){
 }
 i32 PlayerCollision::bullet(const Vec3& p,const Vec3& size,bool cancellation){
     cancel_item=6;if(cancellation&&barrier(xy(p)))return 2;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#ifdef TH_MULTIPLAYER_FIXTURES
+    ++broadphase_counts[0];
+#endif
+    if(collision_broadphase_enabled&&definitely_outside(p,size,movement.bounds[0],movement.bounds[1],0)){
+#ifdef TH_MULTIPLAYER_FIXTURES
+        ++broadphase_counts[1];
+#endif
+        return 0;
+    }
+#endif
     if(!overlap(xy(movement.bounds[0]),xy(movement.bounds[1]),box(xy(p),xy(size))))return 0;
     context.replay_flags|=2;if(life.state==0&&!actions.invincible()){actions.randomize_integrity();actions.die();}return 1;
 }
 i32 PlayerCollision::graze(const Vec3& p,const Vec3& size){
     cancel_item=6;if(barrier(xy(p)))return 2;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#ifdef TH_MULTIPLAYER_FIXTURES
+    ++broadphase_counts[2];
+#endif
+    if(collision_broadphase_enabled&&definitely_outside(p,size,movement.bounds[2],movement.bounds[3],20)){
+#ifdef TH_MULTIPLAYER_FIXTURES
+        ++broadphase_counts[3];
+#endif
+        return 0;
+    }
+#endif
     const Box b=box(xy(p),xy(size),20);if(life.state==2||life.state==1)return 0;
     if(!overlap(xy(movement.bounds[2]),xy(movement.bounds[3]),b))return 0;
     actions.graze(p,false);return 1;

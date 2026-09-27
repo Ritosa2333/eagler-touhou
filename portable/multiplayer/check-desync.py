@@ -24,6 +24,10 @@ parser.add_argument('--route-history', choices=('none', 'a', 'b'), default='none
 parser.add_argument('--relay', help='Use the native connection over this real Relay instead of manually delivering packets')
 parser.add_argument('--transport', choices=('rtc', 'relay'), default='rtc')
 parser.add_argument('--analog', action='store_true')
+parser.add_argument('--dense-bullets', type=int, default=0)
+parser.add_argument('--snapshot-policy', choices=('default','frontier','always','mixed','mixed-reverse'), default='default')
+parser.add_argument('--bullet-backend', choices=('default','live','legacy','mixed','mixed-reverse'), default='default')
+parser.add_argument('--bullet-audit', action='store_true')
 parser.add_argument('--collision-stress', action='store_true')
 parser.add_argument('--poc-collector', type=int, choices=(0, 1, 2))
 parser.add_argument('--poc-crossing', type=int, choices=(0, 1),
@@ -36,7 +40,9 @@ args.output.parent.mkdir(parents=True, exist_ok=True)
 report = {'passed': False, 'frames': args.frames, 'delay': args.delay, 'players': args.players,
           'presentations': args.presentations, 'asymmetric': args.asymmetric,
           'guestConfig': args.guest_config, 'transport': args.transport if args.relay else 'packets',
-          'analog': args.analog, 'ordinaryDeath': args.ordinary_death}
+          'analog': args.analog, 'ordinaryDeath': args.ordinary_death,
+          'denseBullets': args.dense_bullets, 'snapshotPolicy': args.snapshot_policy,
+          'bulletBackend':args.bullet_backend,'bulletAudit':args.bullet_audit}
 
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True, args=['--enable-unsafe-swiftshader'])
@@ -113,6 +119,20 @@ with sync_playwright() as p:
           let queue=[],pocReady=o.pocCollector===null&&o.pocCrossing===null,deathReady=o.ordinaryDeath===null;
           const owners=['economy','players','rng','enemies','bullets','lasers','items','effects','lifecycle','assets','spell'];
           for(let f=0;f<o.frames;f++) {
+            if(f===180&&(o.denseBullets||o.snapshotPolicy!=='default'||o.bulletBackend!=='default'||o.bulletAudit)){
+              for(let seat=0;seat<worlds.length;++seat){
+                const w=worlds[seat];
+                const policy=o.snapshotPolicy==='always'||(o.snapshotPolicy==='mixed'&&seat===0)||
+                  (o.snapshotPolicy==='mixed-reverse'&&seat!==0)?1:0;
+                if(w.snapshotProfile(policy)[0]!==1)throw Error('Snapshot policy fixture rejected');
+                const live=['default','live'].includes(o.bulletBackend)||(o.bulletBackend==='mixed'&&seat!==0)||
+                  (o.bulletBackend==='mixed-reverse'&&seat===0);
+                if(w.bulletBackend(live?1:0,o.bulletAudit)!==1+Number(live))throw Error('Bullet backend rejected');
+                if(o.denseBullets&&!w.denseBullets(o.denseBullets))throw Error('Dense bullet setup rejected');
+              }
+              result.profileBefore=worlds.map(w=>w.snapshotProfile());
+              result.denseStarted=performance.now();
+            }
             if(o.relay){
               const deadline=performance.now()+30000, sampled=new Set();
               while(!worlds.every(w=>w.netStatus()[3]>f)){
@@ -229,6 +249,11 @@ with sync_playwright() as p:
               await wait(0);
             }
           }
+          if(result.profileBefore){result.profileAfter=worlds.map(w=>w.snapshotProfile());result.denseElapsedMs=performance.now()-result.denseStarted;}
+          if(o.bulletBackend!=='default'||o.bulletAudit){
+            result.bulletBackends=worlds.map(w=>w.bulletBackend(2,o.bulletAudit));
+            if(o.bulletAudit&&result.bulletBackends.some(value=>Math.floor(value/4)<1))throw Error('No complete-byte restores audited');
+          }
           result.passed=true;return result;
         }""", {'url': args.url, 'players': args.players, 'frames': args.frames,
                  'delay': args.delay, 'interval': args.interval, 'presentations': args.presentations,
@@ -236,7 +261,8 @@ with sync_playwright() as p:
                  'relay': args.relay, 'transport': args.transport, 'room': 'desync-'+uuid.uuid4().hex[:14], 'analog': args.analog,
                  'routeHistory': args.route_history, 'collisionStress': args.collision_stress,
                  'pocCollector': args.poc_collector, 'pocCrossing': args.poc_crossing,
-                 'ordinaryDeath': args.ordinary_death})
+                 'ordinaryDeath': args.ordinary_death,'denseBullets':args.dense_bullets,'snapshotPolicy':args.snapshot_policy,
+                 'bulletBackend':args.bullet_backend,'bulletAudit':args.bullet_audit})
         report.update(result)
     except BaseException as error:
         report['error'] = str(error)

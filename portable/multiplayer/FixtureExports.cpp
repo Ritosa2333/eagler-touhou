@@ -2,19 +2,108 @@
 // this file; the following ticks still use native TH08 Player/Item/Menu owners.
 #include "../../th08_web/cpp/platform/BrowserRuntime.hpp"
 #include <algorithm>
+#include <array>
+#include <emscripten.h>
 #include "enemy-journal-fixture.hpp"
 #include "screen-journal-fixture.hpp"
 #include "pools-journal-fixture.hpp"
+#include "live-bullet-fixture.hpp"
 #include "resources-journal-fixture.hpp"
 #include "world-journal-fixture.hpp"
 #include "correction-fixture.hpp"
 #include "product-fixture.hpp"
 #include "../../th08_web/cpp/multiplayer/TextureJournal.hpp"
+#include "../../th08_web/cpp/multiplayer/RollbackDriver.hpp"
+#include "../../th08_web/cpp/game/Chain.hpp"
+#include "../../th08_web/cpp/game/PlayerCollision.hpp"
 #ifndef TH_MULTIPLAYER_FIXTURES
 #error Fixture exports must stay out of production builds
 #endif
 using namespace th08;
 extern "C" {
+__attribute__((export_name("mp_fixture_barrier_cache")))
+u32 mp_fixture_barrier_cache(u32 enabled){return fixture_barrier_cache(enabled!=0);}
+__attribute__((export_name("mp_fixture_update_optimizations")))
+const u32* mp_fixture_update_optimizations(BrowserRuntime* r,u32 mode){
+    return r?multiplayer::fixture::world_journal_probe(*r,mode,true):nullptr;
+}
+__attribute__((export_name("mp_fixture_chain_profile")))
+const double* mp_fixture_chain_profile(){return fixture_chain_profile();}
+__attribute__((export_name("mp_fixture_bullet_profile")))
+const double* mp_fixture_bullet_profile(){return fixture_bullet_profile();}
+__attribute__((export_name("mp_fixture_bullet_update_profile")))
+const double* mp_fixture_bullet_update_profile(){return fixture_bullet_update_profile();}
+__attribute__((export_name("mp_fixture_target_filter")))
+u32 mp_fixture_target_filter(u32 enabled){return fixture_bullet_target_filter(enabled!=0)?1u:0u;}
+__attribute__((export_name("mp_fixture_collision_broadphase")))
+u32 mp_fixture_collision_broadphase(u32 enabled){return fixture_collision_broadphase(enabled!=0)?1u:0u;}
+__attribute__((export_name("mp_fixture_collision_probe")))
+u32 mp_fixture_collision_probe(){return fixture_collision_broadphase_probe()?1u:0u;}
+__attribute__((export_name("mp_fixture_collision_counts")))
+const double* mp_fixture_collision_counts(){return fixture_collision_broadphase_counts();}
+__attribute__((export_name("mp_fixture_bullet_backend")))
+u32 mp_fixture_bullet_backend(BrowserRuntime* r,u32 mode,u32 audit){
+    auto* driver=r?r->network_driver():nullptr;if(!driver)return 0;
+    if(mode<=1&&!driver->SetLiveBullets(mode!=0))return 0;
+    driver->AuditBullets(audit!=0);
+    return 1u+u32(driver->LiveBullets())+4u*driver->BulletAuditRestores();
+}
+__attribute__((export_name("mp_fixture_live_bullet_probe")))
+const u32* mp_fixture_live_bullet_probe(BrowserRuntime* r){return r?multiplayer::fixture::live_bullet_probe(*r):nullptr;}
+__attribute__((export_name("mp_fixture_early_input")))
+u32 mp_fixture_early_input(BrowserRuntime* r,u32 value){
+    auto* d=r?r->network_driver():nullptr;if(!d)return 2;
+    if(value<2)d->diagnostic_early_input=value!=0;
+    return d->diagnostic_early_input;
+}
+__attribute__((export_name("mp_fixture_performance_mode")))
+u32 mp_fixture_performance_mode(BrowserRuntime* r,u32 mode){
+    auto* d=r?r->network_driver():nullptr;
+    if(!d||mode>3||r->app.session.network_frame_open||r->app.session.netplay.RollbackFrame()!=Netplay::INVALID_FRAME)return 0;
+    // 0 frontier; 1 always; 2 exact without snapshots; 3 exact with snapshots.
+    d->diagnostic_exact_only=mode>=2;d->diagnostic_always_snapshot=mode==1||mode==3;
+    return 1;
+}
+__attribute__((export_name("mp_fixture_performance_cost")))
+const double* mp_fixture_performance_cost(BrowserRuntime* r){
+    static double out[4]{};std::fill(out,out+4,0);
+    const auto* d=r?r->network_driver():nullptr;if(!d)return out;
+    out[0]=d->diagnostic_exact_only;out[1]=d->diagnostic_always_snapshot;
+    out[2]=d->diagnostic_correction_ms;out[3]=d->diagnostic_correction_max_ms;return out;
+}
+__attribute__((export_name("mp_fixture_stage_clear_setup")))
+u32 mp_fixture_stage_clear_setup(BrowserRuntime* r){
+    if(!r||!r->app.in_game()||r->app.loading_game()||r->app.game.globals.stage!=0)return 0;
+    auto& g=r->app.game;
+    // Start at the native clear-clock animation, just before Shoot can shorten
+    // it. Delayed P1 input then changes the exact stage-transition frame.
+    g.display.clear_frames=2;g.display.clear_clock_old=660;
+    g.display.clear_clock=690;g.display.clear_clock_display=682;g.display.clear_clock_delay=60;
+    g.globals.game_flags&=~0x60u;
+    return 1;
+}
+__attribute__((export_name("mp_fixture_dense_bullets")))
+u32 mp_fixture_dense_bullets(BrowserRuntime* r,u32 count){
+    if(!r||!r->app.in_game()||r->app.loading_game()||count>1200)return 0;
+    auto& g=r->app.game;
+    for(u32 i=0;i<count;++i){
+        BulletEmission shot;shot.sprite=0;shot.color=i%8;
+        shot.position={24.f+float(i%40)*8.f,32.f+float(i/40)*5.f,0};
+        shot.speed=shot.ending_speed=0;shot.angle=0;shot.count=shot.layers=1;shot.pattern=0;
+        g.bullets.emit(shot);if(g.bullets.invalid())return 0;
+    }
+    return 1;
+}
+__attribute__((export_name("mp_fixture_snapshot_profile")))
+const double* mp_fixture_snapshot_profile(BrowserRuntime* r,u32 policy){
+    static double out[10]{};std::fill(out,out+10,0);
+    auto* d=r?r->network_driver():nullptr;if(!d)return out;
+    if(policy<2)d->diagnostic_always_snapshot=policy==1;
+    out[0]=1;out[1]=d->diagnostic_always_snapshot;out[2]=d->diagnostic_snapshots;out[3]=d->diagnostic_skipped;
+    out[4]=d->diagnostic_capture_ms;out[5]=d->diagnostic_restore_ms;out[6]=d->diagnostic_update_ms;
+    out[7]=d->diagnostic_draw_ms;out[8]=d->diagnostic_snapshot_bytes;out[9]=r->app.game.projectile_pool.active_count;
+    return out;
+}
 __attribute__((export_name("mp_fixture_death_field")))
 u32 mp_fixture_death_field(BrowserRuntime* r,u32 victim,u32 bombs,u32 scenario){
     if(!r||!r->app.in_game()||!r->app.game.ready()||r->app.session.player_count!=2||victim>1||bombs>3||scenario>1)return 0;

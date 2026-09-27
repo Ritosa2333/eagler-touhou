@@ -3,6 +3,10 @@
 #include "../platform/BrowserRuntime.hpp"
 #include "../platform/PlatformDevices.hpp"
 #include <algorithm>
+#include <cstdio>
+#ifdef TH_MULTIPLAYER_FIXTURES
+#include <emscripten/emscripten.h>
+#endif
 
 namespace th08::multiplayer {
 namespace {
@@ -20,6 +24,18 @@ u8 route_state(const GameplaySession& session,const SessionSetup& setup){
 }
 RollbackDriver::RollbackDriver(BrowserRuntime& r):runtime(r),network(r.app.session.netplay){}
 const char* RollbackDriver::Error()const{return failed?error:network.Error();}
+bool RollbackDriver::FailNativeUpdate(u32 frame,bool updated){
+    const auto& a=runtime.app;
+    u32 guests=0;
+    for(u32 seat=0;seat<2;++seat){const auto& guest=a.game.guest_pilots[seat];
+        if(guest){if(guest->services.invalid())guests|=1u<<(seat*2);if(guest->simulation.invalid())guests|=2u<<(seat*2);}}
+    std::snprintf(native_error,sizeof(native_error),
+        "native update failed: frame=%u stage=%u scene=%d target=%d chain=%d updated=%u capture=%u gameFaults=0x%03x guestFaults=0x%x appFaults=0x%x",
+        frame,a.game.globals.stage,a.supervisor.state.active,a.supervisor.state.target,a.last_update_result,u32(updated),
+        u32(runtime.capture_failed),a.game.faults(),guests,
+        u32(a.animations.invalid)|(u32(a.title.invalid())<<1)|(u32(a.results.invalid())<<2)|(u32(a.screen.invalid())<<3));
+    return Fail(native_error);
+}
 bool RollbackDriver::Connect(const char* relay){return !failed&&network.Connect(relay);}
 bool RollbackDriver::ConnectSpectator(const char* relay,const char* id){return !failed&&network.ConnectSpectator(relay,id);}
 bool RollbackDriver::Pump(){
@@ -104,13 +120,33 @@ bool RollbackDriver::Admit(){
 bool RollbackDriver::RunFrame(bool render){
     auto& a=runtime.app;auto& session=a.session;auto& net=session.netplay;
     const auto frame=net.NextFrame();auto decision=net.Prepare(frame);
+#ifdef TH_MULTIPLAYER_FIXTURES
+    // Measurement control only: keep the native simulation/render workload,
+    // but wait for exact input instead of predicting. Step still captures and
+    // transmits input before admission; this is not a shipped netplay policy.
+    if(diagnostic_exact_only&&decision.predictedMask){session.network_waiting=true;return true;}
+#endif
     if(!decision.canAdvance){session.network_waiting=true;return true;}
     if(frame==0){
         u8 route=0;if(!DecodeRouteBootstrap(decision.inputs[0],route))return Fail("missing route bootstrap");
         session.multiplayer_route_state=route;
     }
     if(runtime.replay_archive.Recording()&&!runtime.replay_archive.BeginFrame(frame))return Fail("Replay frame stamp failed");
-    if(bound&&(!world.BeginFrame(frame)||!textures.BeginFrame(frame)))return Fail("begin world frame failed");
+    const auto confirmed=net.ConfirmedThrough();
+    checkpoint_open=bound&&(confirmed==Netplay::INVALID_FRAME||frame>confirmed);
+#ifdef TH_MULTIPLAYER_FIXTURES
+    checkpoint_open=checkpoint_open||(bound&&diagnostic_always_snapshot);
+    const auto capture_start=emscripten_get_now();
+#endif
+    // No future correction can target an exact, contiguous confirmed prefix.
+    // Release its older records before running without an open checkpoint, so
+    // native first-write hooks see no outstanding rewindable ownership.
+    if(bound&&!checkpoint_open){world.DiscardBefore(frame+1);textures.DiscardBefore(frame+1);}
+    if(checkpoint_open&&(!world.BeginFrame(frame)||!textures.BeginFrame(frame)))return Fail("begin world frame failed");
+#ifdef TH_MULTIPLAYER_FIXTURES
+    diagnostic_capture_ms+=emscripten_get_now()-capture_start;
+    if(checkpoint_open)++diagnostic_snapshots;else if(bound)++diagnostic_skipped;
+#endif
     if(!audio.BeginFrame(frame)||!files.BeginFrame(frame))return Fail("begin output frame failed");
     open=true;session.network_frame=decision;session.network_frame_open=true;
 #if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
@@ -121,12 +157,27 @@ bool RollbackDriver::RunFrame(bool render){
         if(!a.game.commit_frame_inputs(gameplay.data(),session.player_count))return Fail("committed input handoff failed");
     }
     if(decision.predictedMask)++predicted;
-    if(!a.update()||runtime.capture_failed)return Fail("native update failed");
+#ifdef TH_MULTIPLAYER_FIXTURES
+    const auto update_start=emscripten_get_now();
+#endif
+    const bool updated=a.update();
+    if(!updated||runtime.capture_failed)return FailNativeUpdate(frame,updated);
+#ifdef TH_MULTIPLAYER_FIXTURES
+    diagnostic_update_ms+=emscripten_get_now()-update_start;
+#endif
 #if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
     diagnostic::Event("frame.after_update");
 #endif
     if(generation_transition_pending&&a.supervisor.state.target==i32(th08::Scene::Game))generation_transition_pending=false;
-    return !render||(a.draw()&&FinishFrame());
+    if(!render)return true;
+#ifdef TH_MULTIPLAYER_FIXTURES
+    const auto draw_start=emscripten_get_now();
+#endif
+    const bool drawn=a.draw();
+#ifdef TH_MULTIPLAYER_FIXTURES
+    diagnostic_draw_ms+=emscripten_get_now()-draw_start;
+#endif
+    return drawn&&FinishFrame();
 }
 bool RollbackDriver::FinishFrame(){
     if(failed||!open)return false;
@@ -134,22 +185,36 @@ bool RollbackDriver::FinishFrame(){
 #if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
     diagnostic::End(runtime);
 #endif
-    if((bound&&(!world.EndFrame()||!textures.EndFrame()))||!audio.EndFrame()||!files.EndFrame())return Fail("end frame ownership failed");
+    if((checkpoint_open&&(!world.EndFrame()||!textures.EndFrame()))||!audio.EndFrame()||!files.EndFrame())return Fail("end frame ownership failed");
     if(!net.MarkSimulated(frame,session.network_frame))return Fail("simulated input mismatch");
     const auto stage=u32(runtime.app.game.globals.stage);
     if(runtime.replay_archive.Recording()&&!runtime.replay_archive.Stamp(frame,stage,session.numbers.score))return Fail("Replay stage stamp failed");
     if(net.Playback()&&!runtime.replay_archive.AdvancePlayback(frame,stage))return Fail("Replay native stage diverged");
-    if(bound)max_bytes=std::max(max_bytes,u32(world.BytesForFrame(frame)+textures.BytesForFrame(frame)));
+    if(checkpoint_open){
+        const auto size=world.BytesForFrame(frame)+textures.BytesForFrame(frame);
+        max_bytes=std::max(max_bytes,u32(size));
+#ifdef TH_MULTIPLAYER_FIXTURES
+        diagnostic_snapshot_bytes+=size;
+#endif
+    }
+    checkpoint_open=false;
     open=false;session.network_frame_open=false;++runtime.multiplayer_logic_frame;
     if(!correcting)corrected_present_pending=false;
     return correcting||Commit();
 }
 bool RollbackDriver::Correct(){
-    auto& net=runtime.app.session.netplay;const auto first=net.RollbackFrame();
-    if(first==Netplay::INVALID_FRAME)return true;
+    auto& net=runtime.app.session.netplay;const auto requested=net.RollbackFrame();
+    if(requested==Netplay::INVALID_FRAME)return true;
+    const auto first=requested;
     const auto end=net.NextFrame();
-    if(!bound||!net.BeginCorrection(first)||!world.UndoTo(first)||!textures.UndoTo(first)||
+#ifdef TH_MULTIPLAYER_FIXTURES
+    const auto restore_start=emscripten_get_now();
+#endif
+    if(!bound||first==Netplay::INVALID_FRAME||!net.BeginCorrection(first)||!world.UndoTo(first)||!textures.UndoTo(first)||
        !audio.DiscardFrom(first)||!files.DiscardFrom(first))return Fail("rollback restore failed");
+#ifdef TH_MULTIPLAYER_FIXTURES
+    diagnostic_restore_ms+=emscripten_get_now()-restore_start;
+#endif
     runtime.correction_present_suppressed=true;correcting=true;++corrections;
 #if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
     diagnostic::Restored(runtime,first);
@@ -163,7 +228,22 @@ bool RollbackDriver::Correct(){
     if(!net.EndCorrection(boundary)){correcting=false;runtime.correction_present_suppressed=false;return Fail("correction frontier failed");}
     correcting=false;runtime.correction_present_suppressed=false;
     corrected_present_pending=true;
+#ifdef TH_MULTIPLAYER_FIXTURES
+    const auto correction_ms=emscripten_get_now()-restore_start;
+    diagnostic_correction_ms+=correction_ms;
+    diagnostic_correction_max_ms=std::max(diagnostic_correction_max_ms,correction_ms);
+#endif
     return Commit();
+}
+bool RollbackDriver::CaptureLocalInput(){
+    auto& session=runtime.app.session;auto& net=session.netplay;
+    const auto frame=net.NextFrame();
+    if(net.HasLocal(frame))return true;
+    const auto touch=u16(file_device().supplemental_input());
+    const auto physical=runtime.input.controller(InputController::keyboard(runtime.keys,false)|touch,runtime.pad,session.display_config);
+    auto sample=runtime.device_sample(physical);
+    if(frame==0&&net.Setup().local_player==0)sample=RouteBootstrap(sample,route_state(session,net.Setup()));
+    return net.CaptureLocal(frame,sample);
 }
 bool RollbackDriver::Step(bool render){
     auto& session=runtime.app.session;auto& net=session.netplay;
@@ -179,6 +259,19 @@ bool RollbackDriver::Step(bool render){
         if(!runtime.begin_replay_recording())return Fail("Replay recording bootstrap failed");
         if(!runtime.bind_audio_events(&audio))return Fail("audio sink binding failed");
         initialized=true;generation=net.Generation();}
+    // TH07's early once-only send rule: network threads can transmit while
+    // this endpoint restores/replays. Restrict it to the current live world;
+    // loading, retirement and generation bootstrap retain their admission fence.
+    u32 sent_frame=Netplay::INVALID_FRAME,sent_generation=net.Generation();
+    bool early_input=bound&&world.CanAdvance()&&!net.ReadOnly();
+#ifdef TH_MULTIPLAYER_FIXTURES
+    early_input=early_input&&diagnostic_early_input;
+#endif
+    if(early_input){
+        if(!CaptureLocalInput())return Fail("local capture failed");
+        sent_frame=net.NextFrame();
+        if(!network.Captured(sent_frame))return Fail("captured input send failed");
+    }
     if(!Correct()||!Commit()||!Admit())return false;
     if(session.network_waiting)return PresentCorrection();
     // Bounded observer catch-up executes the original semantic Update/Draw
@@ -202,14 +295,10 @@ bool RollbackDriver::Step(bool render){
             if(!network.SpectatorBacklog()){session.network_waiting=true;return true;}
             if(!network.ConsumeSpectator())return Fail("observer input consumption failed");
         }else{
-        const auto touch=u16(file_device().supplemental_input());
-        const auto physical=runtime.input.controller(InputController::keyboard(runtime.keys,false)|touch,runtime.pad,session.display_config);
-        auto sample=runtime.device_sample(physical);
-        if(frame==0&&net.Setup().local_player==0)sample=RouteBootstrap(sample,route_state(session,net.Setup()));
-        if(!net.CaptureLocal(frame,sample))return Fail("local capture failed");
+        if(!CaptureLocalInput())return Fail("local capture failed");
         }
     }
-    if(!net.ReadOnly()&&!network.Captured(frame))return Fail("captured input send failed");
+    if(!net.ReadOnly()&&(frame!=sent_frame||net.Generation()!=sent_generation)&&!network.Captured(frame))return Fail("captured input send failed");
     const bool success=RunFrame(render);
     return success&&(!session.network_waiting||PresentCorrection());
 }
