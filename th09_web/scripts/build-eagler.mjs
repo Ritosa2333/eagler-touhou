@@ -23,8 +23,23 @@ const inputs = [
 ];
 for (const [, source] of inputs) if (!existsSync(source)) throw Error(`Missing TH09 Runtime input: ${source}`);
 const build = JSON.parse(readFileSync(resolve(compiled, 'build.json'), 'utf8'));
-if (build.kind !== 'th09-native-web-release-candidate' || build.sha256 !== sha256(readFileSync(resolve(compiled, 'th09.wasm')))) {
+const wasm = readFileSync(resolve(compiled, 'th09.wasm'));
+if (build.kind !== 'th09-native-web-release-candidate' || build.sha256 !== sha256(wasm)) {
   throw Error('TH09 release WASM does not match its build attestation');
+}
+if (variant === 'multiplayer') {
+  const exports = new Set(WebAssembly.Module.exports(new WebAssembly.Module(wasm)).map(entry => entry.name));
+  const required = [
+    'th09_peer_url_buffer', 'th09_peer_spectator_id_buffer', 'th09_peer_packet_buffer',
+    'th09_peer_error', 'th09_peer_connect', 'th09_peer_connect_spectator',
+    'th09_peer_state', 'th09_peer_send', 'th09_peer_has_spectators',
+    'th09_peer_send_spectator', 'th09_peer_poll', 'th09_peer_close',
+    'th09_network_info', 'th09_network_room_begin', 'th09_network_receive',
+    'th09_network_hash', 'th09_network_end', 'th09_spectator_begin',
+    'th09_spectator_feed', 'th09_spectator_frame', 'th09_spectator_end',
+  ];
+  const missing = required.filter(name => !exports.has(name));
+  if (missing.length) throw Error(`TH09 multiplayer WASM is missing exports: ${missing.join(', ')}`);
 }
 mkdirSync(output, { recursive: true });
 for (const [name, source] of inputs) {
