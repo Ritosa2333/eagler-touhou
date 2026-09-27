@@ -1431,8 +1431,9 @@ type TouchLayoutDrag =
   | ({ kind: "move"; name: TouchLayoutControlName } & PointerDrag)
   | { kind: "resize"; name: TouchLayoutControlName; pointerId: number; anchorX: number; anchorY: number; baseWidth: number; baseHeight: number; startScale: number };
 let touchLayoutDrag: TouchLayoutDrag | null = null;
-let touchLayoutEditorDrag: PointerDrag | null = null;
-let touchLayoutSettingsDrag: PointerDrag | null = null;
+let touchLayoutEditorDrag: (PointerDrag & { left: number; top: number; maxLeft: number; maxTop: number }) | null = null;
+let touchLayoutEditorCollapsed = false;
+let touchLayoutEntryAnimations: Animation[] = [];
 let touchViewportEditing = false;
 let touchViewportDrag: { pointerId: number; x: number } | null = null;
 let touchSensitivityPreviewGesture: { pointerId: number; startX: number; startY: number } | null = null;
@@ -1556,7 +1557,7 @@ function saveGamePreferences() {
 }
 const inputElementSelectors = [
   "#fileInput", "#gameDataImportInput", "#mpJoinCode", "#mpDisplayName", "#th09NetworkCode",
-  "#touchLayoutScale", "#touchSensitivity",
+  "#touchSensitivity",
 ] as const;
 const selectElementSelectors = [
   "#uiLanguageSelect", "#mpLanguageSelect", "#mpMusicSelect", "#musicSelect",
@@ -1567,7 +1568,7 @@ const dialogElementSelectors = [
   "#decisionDialog", "#firstUseNoticeDialog", "#mpGuideDialog", "#appleRefreshDialog", "#donationDialog", "#replayDialog",
 ] as const;
 const anchorElementSelectors = ["#originMigrationOpen", "#gameDataFallbackUrl", "#gameNoticeRepo"] as const;
-const outputElementSelectors = ["#touchLayoutScaleValue", "#touchSensitivityValue"] as const;
+const outputElementSelectors = ["#touchSensitivityValue"] as const;
 const buttonElementSelectors = [
   "#siteNoticeOptOut", "#siteNoticeClose", "#lessMotionToggle", "#mastheadMenuToggle",
   "#siteNoticeToggle", "#runtimeDiagnosticsToggle", "#firstUseNoticeOpen", "#mpShareSettingsToggle", "#mpFrameLimitAppleNote",
@@ -6169,12 +6170,7 @@ function updateTouchLayoutEditorUi() {
     touchLayoutElement(name).classList.toggle("touch-layout-selected", name === touchLayoutSelected);
   }
   const orientation = touchLayoutOrientation();
-  const item = touchLayoutDraft?.profiles?.[orientation]?.controls?.[touchLayoutSelected];
-  const scale = Math.round((item?.scale ?? 1) * 100);
-  $("#touchLayoutScale").value = String(scale);
-  $("#touchLayoutScaleValue").value = `${scale}%`;
   $("#touchLayoutOrientation").textContent = t(orientation === "landscape" ? "touch.landscape" : "touch.portrait");
-  $("#touchLayoutSelection").textContent = t("touch.selected", { control: touchLayoutControlTitle(touchLayoutSelected) });
   updateTouchLayoutOrientationActionUi();
   updateTouchLayoutWarnings();
 }
@@ -6192,8 +6188,23 @@ function selectTouchLayoutControl(name: TouchLayoutControlName) {
   updateTouchLayoutEditorUi();
 }
 
+function syncTouchLayoutWorkbench() {
+  const panel = $("#touchLayoutEditor");
+  panel.classList.toggle("is-collapsed", touchLayoutEditorCollapsed);
+  $("#touchWorkbenchBody").hidden = touchLayoutEditorCollapsed;
+  const collapse = $("#touchLayoutCollapse");
+  collapse.setAttribute("aria-expanded", String(!touchLayoutEditorCollapsed));
+  const collapseLabel = touchLayoutEditorCollapsed ? "touch.expandPanel" : "touch.collapsePanel";
+  collapse.dataset.i18nAriaLabel = collapseLabel;
+  collapse.setAttribute("aria-label", t(collapseLabel));
+  const settings = touchLayoutSettingsElement();
+  if (settings) settings.hidden = false;
+  closeOtherCustomSelects();
+  if (touchLayoutEditing) clampTouchLayoutEditorPosition();
+}
+
 function touchLayoutSettingsElement() {
-  return $("#touchLayoutSettingsDragHandle").closest<HTMLElement>(".touch-layout-settings");
+  return document.querySelector<HTMLElement>("#touchLayoutSettingsPanel");
 }
 
 const touchLayoutWindowMargin = 16;
@@ -6202,7 +6213,6 @@ let touchLayoutWindowOrientation: TouchLayoutOrientation | null = null;
 
 function rememberTouchLayoutWindowsNow() {
   rememberTouchLayoutWindowPosition("editor", $("#touchLayoutEditor"));
-  rememberTouchLayoutWindowPosition("settings", touchLayoutSettingsElement());
 }
 
 function rememberTouchLayoutWindowPosition(kind: TouchLayoutWindowKind, element: HTMLElement | null) {
@@ -6235,47 +6245,25 @@ function restoreTouchLayoutWindowPosition(kind: TouchLayoutWindowKind, element: 
 
 function resetTouchLayoutEditorPosition() {
   const panel = $("#touchLayoutEditor");
-  const settings = touchLayoutSettingsElement();
   panel.style.removeProperty("left");
   panel.style.removeProperty("top");
   panel.style.removeProperty("transform");
-  settings?.style.removeProperty("left");
-  settings?.style.removeProperty("right");
-  settings?.style.removeProperty("top");
-  settings?.style.removeProperty("height");
 }
 
 function positionTouchLayoutWindowsInitial() {
   const panel = $("#touchLayoutEditor");
-  const settings = touchLayoutSettingsElement();
-  if (!settings || settings.hidden) return;
   const host = player.getBoundingClientRect();
-  const panelRect = panel.getBoundingClientRect();
-  const settingsRect = settings.getBoundingClientRect();
-  const inset = touchLayoutWindowMargin;
-  const gap = window.matchMedia("(max-width:760px)").matches ? 6 : 14;
-  const sideBySideWidth = panelRect.width + gap + settingsRect.width;
-  // The two editors always start as a left/right pair.  On narrow portrait
-  // screens their mobile widths are intentionally small enough to preserve
-  // this arrangement rather than switching to a vertical stack.
-  const groupLeft = (host.width - sideBySideWidth) / 2;
-  const panelLeft = groupLeft;
-  const settingsLeft = groupLeft + panelRect.width + gap;
-  const panelTop = (host.height - panelRect.height) / 2;
-  const settingsTop = (host.height - settingsRect.height) / 2;
-  panel.style.left = `${Math.max(inset, Math.min(host.width - panelRect.width - inset, panelLeft))}px`;
-  panel.style.top = `${Math.max(inset, Math.min(host.height - panelRect.height - inset, panelTop))}px`;
+  const rect = panel.getBoundingClientRect();
+  const portrait = host.height > host.width;
+  panel.style.left = `${portrait ? (host.width - rect.width) / 2 : host.width - rect.width - touchLayoutWindowMargin}px`;
+  panel.style.top = `${Math.min(76, Math.max(touchLayoutWindowMargin, host.height - rect.height - touchLayoutWindowMargin))}px`;
   panel.style.transform = "none";
-  settings.style.right = "auto";
-  settings.style.left = `${Math.max(inset, Math.min(host.width - settingsRect.width - inset, settingsLeft))}px`;
-  settings.style.top = `${Math.max(inset, Math.min(host.height - settingsRect.height - inset, settingsTop))}px`;
 }
 
 function positionTouchLayoutWindows() {
   touchLayoutWindowPositions.reload();
   positionTouchLayoutWindowsInitial();
   restoreTouchLayoutWindowPosition("editor", $("#touchLayoutEditor"));
-  restoreTouchLayoutWindowPosition("settings", touchLayoutSettingsElement());
   clampTouchLayoutEditorPosition();
   touchLayoutWindowOrientation = touchLayoutOrientation();
 }
@@ -6294,79 +6282,47 @@ function clampTouchLayoutEditorPosition() {
   const panel = $("#touchLayoutEditor");
   clampPanel(panel);
   panel.style.transform = "none";
-  const settings = touchLayoutSettingsElement();
-  if (settings) settings.style.right = "auto";
-  clampPanel(settings);
 }
 
 function beginTouchLayoutEditorDrag(event: PointerEvent) {
   if (!touchLayoutEditing || (event.pointerType === "mouse" && event.button !== 0)) return;
   event.preventDefault();
+  cancelTouchLayoutEntry();
   const panel = $("#touchLayoutEditor");
   const host = player.getBoundingClientRect();
   const rect = panel.getBoundingClientRect();
   panel.style.left = `${rect.left - host.left}px`;
   panel.style.top = `${rect.top - host.top}px`;
   panel.style.transform = "none";
-  touchLayoutEditorDrag = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+  touchLayoutEditorDrag = {
+    pointerId: event.pointerId, x: event.clientX, y: event.clientY,
+    left: rect.left - host.left, top: rect.top - host.top,
+    maxLeft: Math.max(touchLayoutWindowMargin, host.width - rect.width - touchLayoutWindowMargin),
+    maxTop: Math.max(touchLayoutWindowMargin, host.height - rect.height - touchLayoutWindowMargin),
+  };
+  try { $("#touchLayoutEditorDragHandle").setPointerCapture(event.pointerId); } catch {}
 }
 
 function moveTouchLayoutEditorDrag(event: PointerEvent) {
   if (!touchLayoutEditorDrag || event.pointerId !== touchLayoutEditorDrag.pointerId) return;
   event.preventDefault();
   const panel = $("#touchLayoutEditor");
-  const host = player.getBoundingClientRect();
-  const panelRect = panel.getBoundingClientRect();
   const dx = event.clientX - touchLayoutEditorDrag.x;
   const dy = event.clientY - touchLayoutEditorDrag.y;
   touchLayoutEditorDrag.x = event.clientX;
   touchLayoutEditorDrag.y = event.clientY;
-  const safeDx = Math.max(host.left + touchLayoutWindowMargin - panelRect.left, Math.min(host.right - touchLayoutWindowMargin - panelRect.right, dx));
-  const safeDy = Math.max(host.top + touchLayoutWindowMargin - panelRect.top, Math.min(host.bottom - touchLayoutWindowMargin - panelRect.bottom, dy));
-  panel.style.left = `${panelRect.left - host.left + safeDx}px`;
-  panel.style.top = `${panelRect.top - host.top + safeDy}px`;
+  touchLayoutEditorDrag.left = Math.max(touchLayoutWindowMargin, Math.min(touchLayoutEditorDrag.maxLeft, touchLayoutEditorDrag.left + dx));
+  touchLayoutEditorDrag.top = Math.max(touchLayoutWindowMargin, Math.min(touchLayoutEditorDrag.maxTop, touchLayoutEditorDrag.top + dy));
+  panel.style.left = `${touchLayoutEditorDrag.left}px`;
+  panel.style.top = `${touchLayoutEditorDrag.top}px`;
 }
 
 function endTouchLayoutEditorDrag(event?: PointerEvent) {
   if (!touchLayoutEditorDrag || (event && event.pointerId !== touchLayoutEditorDrag.pointerId)) return;
+  const pointerId = touchLayoutEditorDrag.pointerId;
   touchLayoutEditorDrag = null;
+  try { $("#touchLayoutEditorDragHandle").releasePointerCapture(pointerId); } catch {}
   rememberTouchLayoutWindowPosition("editor", $("#touchLayoutEditor"));
-}
-
-function beginTouchLayoutSettingsDrag(event: PointerEvent) {
-  if (!touchLayoutEditing || (event.pointerType === "mouse" && event.button !== 0)) return;
-  event.preventDefault();
-  const settings = touchLayoutSettingsElement();
-  if (!settings) return;
-  const host = player.getBoundingClientRect();
-  const rect = settings.getBoundingClientRect();
-  settings.style.right = "auto";
-  settings.style.left = `${rect.left - host.left}px`;
-  settings.style.top = `${rect.top - host.top}px`;
-  touchLayoutSettingsDrag = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
-}
-
-function moveTouchLayoutSettingsDrag(event: PointerEvent) {
-  if (!touchLayoutSettingsDrag || event.pointerId !== touchLayoutSettingsDrag.pointerId) return;
-  event.preventDefault();
-  const settings = touchLayoutSettingsElement();
-  if (!settings) return;
-  const host = player.getBoundingClientRect();
-  const rect = settings.getBoundingClientRect();
-  const dx = event.clientX - touchLayoutSettingsDrag.x;
-  const dy = event.clientY - touchLayoutSettingsDrag.y;
-  touchLayoutSettingsDrag.x = event.clientX;
-  touchLayoutSettingsDrag.y = event.clientY;
-  const maxLeft = Math.max(touchLayoutWindowMargin, host.width - rect.width - touchLayoutWindowMargin);
-  const maxTop = Math.max(touchLayoutWindowMargin, host.height - rect.height - touchLayoutWindowMargin);
-  settings.style.left = `${Math.max(touchLayoutWindowMargin, Math.min(maxLeft, rect.left - host.left + dx))}px`;
-  settings.style.top = `${Math.max(touchLayoutWindowMargin, Math.min(maxTop, rect.top - host.top + dy))}px`;
-}
-
-function endTouchLayoutSettingsDrag(event?: PointerEvent) {
-  if (!touchLayoutSettingsDrag || (event && event.pointerId !== touchLayoutSettingsDrag.pointerId)) return;
-  touchLayoutSettingsDrag = null;
-  rememberTouchLayoutWindowPosition("settings", touchLayoutSettingsElement());
 }
 
 function updateTouchLayoutOrientationActionUi() {
@@ -6451,16 +6407,40 @@ function cancelTouchSensitivityPreview() {
   endTouchSensitivityPreview();
 }
 
+function cancelTouchLayoutEntry() {
+  for (const animation of touchLayoutEntryAnimations) animation.cancel();
+  touchLayoutEntryAnimations = [];
+  player.classList.remove("touch-layout-preparing");
+}
+
+function animateTouchLayoutEntry() {
+  cancelTouchLayoutEntry();
+  if (state.lessMotion || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  // Start only after fullscreen and positioning settle. Animate composited
+  // properties, never the viewport geometry or the preview image's filter.
+  const animations = [
+    player.animate([{ opacity: 0 }, { opacity: 1 }], {
+      duration: 340, easing: "cubic-bezier(.2,0,.2,1)"
+    })
+  ];
+  touchLayoutEntryAnimations = animations;
+  for (const animation of animations) animation.onfinish = () => {
+    animation.cancel();
+    touchLayoutEntryAnimations = touchLayoutEntryAnimations.filter(active => active !== animation);
+  };
+}
+
 async function openTouchLayoutEditor() {
   if (touchLayoutEditing) return;
   if (state.launched) throw new Error(t("touch.editWhileRunning"));
   touchLayoutEditing = true;
+  cancelTouchLayoutEntry();
+  player.classList.add("touch-layout-preparing");
   touchViewportEditing = false;
   touchViewportDrag = null;
   touchLayoutDraft = cloneTouchLayout(touchLayout) || emptyTouchLayout();
   touchLayoutDrag = null;
   touchLayoutEditorDrag = null;
-  touchLayoutSettingsDrag = null;
   touchSensitivityCustomOpen = false;
   cancelTouchSensitivityPreview();
   touchLayoutSelected = "bomb";
@@ -6475,7 +6455,8 @@ async function openTouchLayoutEditor() {
   $("#touchLayoutEditor").hidden = false;
   const settings = touchLayoutSettingsElement();
   if (!settings) throw new Error(t("touch.settingsMissing"));
-  settings.hidden = false;
+  touchLayoutEditorCollapsed = false;
+  syncTouchLayoutWorkbench();
   render();
   pushTouchLayoutEditorHistory();
   const wasFullscreen = isPlayerFullscreen();
@@ -6487,6 +6468,7 @@ async function openTouchLayoutEditor() {
     showToast(t("fullscreen.autoBlocked", { reason: errorMessage(error) }));
   }
   await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  if (!touchLayoutEditing) return;
   const profile = ensureTouchLayoutDraftProfile();
   const visibleControls = visibleTouchLayoutControlNames();
   if (visibleControls.length) {
@@ -6500,6 +6482,7 @@ async function openTouchLayoutEditor() {
   updateTouchLayoutEditorUi();
   applyTouchViewportDraftPosition();
   positionTouchLayoutWindows();
+  animateTouchLayoutEntry();
   setStatus(t("touch.editorStatus"));
 }
 
@@ -6546,9 +6529,9 @@ async function closeTouchLayoutEditor(): Promise<boolean> {
     tone: "danger"
   })) return false;
   rememberTouchLayoutWindowsNow();
+  cancelTouchLayoutEntry();
   touchLayoutDrag = null;
   touchLayoutEditorDrag = null;
-  touchLayoutSettingsDrag = null;
   touchViewportDrag = null;
   touchViewportEditing = false;
   touchLayoutEditing = false;
@@ -6557,7 +6540,7 @@ async function closeTouchLayoutEditor(): Promise<boolean> {
   $("#touchLayoutEditor").hidden = true;
   const settings = touchLayoutSettingsElement();
   if (settings) settings.hidden = true;
-  player.classList.remove("touch-layout-edit", "touch-preview", "open");
+  player.classList.remove("touch-layout-edit", "touch-preview", "open", "touch-layout-manipulating");
   for (const name of touchLayoutControlNames) touchLayoutElement(name).classList.remove("touch-layout-selected");
   player.style.removeProperty("--touch-preview-image");
   player.setAttribute("aria-hidden", "true");
@@ -6581,9 +6564,7 @@ function rectOverlapRatio(a: DOMRect, b: DOMRect) {
 
 function updateTouchLayoutWarnings() {
   if (!touchLayoutEditing) return;
-  const warning = $("#touchLayoutWarning");
   const names = visibleTouchLayoutControlNames();
-  const issues: string[] = [];
   for (const name of touchLayoutControlNames) touchLayoutElement(name).classList.remove("touch-layout-collision");
   for (let i = 0; i < names.length; i++) {
     for (let j = i + 1; j < names.length; j++) {
@@ -6592,7 +6573,6 @@ function updateTouchLayoutWarnings() {
       if (rectOverlapRatio(a.getBoundingClientRect(), b.getBoundingClientRect()) >= .28) {
         a.classList.add("touch-layout-collision");
         b.classList.add("touch-layout-collision");
-        issues.push(t("touch.controlOverlap", { first: touchLayoutControlTitle(names[i]), second: touchLayoutControlTitle(names[j]) }));
       }
     }
   }
@@ -6601,12 +6581,8 @@ function updateTouchLayoutWarnings() {
     const element = touchLayoutElement(name);
     if (rectOverlapRatio(element.getBoundingClientRect(), reserved) >= .18) {
       element.classList.add("touch-layout-collision");
-      issues.push(t("touch.controlReserved", { control: touchLayoutControlTitle(name) }));
     }
   }
-  const unique = [...new Set(issues)];
-  warning.hidden = unique.length === 0;
-  warning.textContent = unique.length ? t("touch.warningSummary", { issues: unique.join(t("touch.warningSeparator")) }) : "";
 }
 
 function moveTouchLayoutItem(name: TouchLayoutControlName, dx: number, dy: number) {
@@ -6623,20 +6599,10 @@ function moveTouchLayoutItem(name: TouchLayoutControlName, dx: number, dy: numbe
   updateTouchLayoutWarnings();
 }
 
-function scaleTouchLayoutItem(name: TouchLayoutControlName, scale: number) {
-  const profile = ensureTouchLayoutDraftProfile();
-  const item = requiredTouchLayoutPlacement(profile, name);
-  item.scale = Math.max(touchLayoutScaleMin, Math.min(touchLayoutScaleMax, scale));
-  const position = effectiveTouchLayoutPosition(touchLayoutElement(name), item);
-  item.x = position.x;
-  item.y = position.y;
-  applyTouchLayout(touchLayoutDraft);
-  updateTouchLayoutEditorUi();
-}
-
 function beginTouchLayoutDrag(name: TouchLayoutControlName, event: PointerEvent) {
   if (!touchLayoutEditing || (event.pointerType === "mouse" && event.button !== 0)) return;
   event.preventDefault();
+  cancelTouchLayoutEntry();
   const profile = ensureTouchLayoutDraftProfile();
   applyTouchLayout(touchLayoutDraft);
   selectTouchLayoutControl(name);
@@ -6674,6 +6640,7 @@ function resizeTouchLayoutItem(drag: Extract<TouchLayoutDrag, { kind: "resize" }
 function moveTouchLayoutDrag(event: PointerEvent) {
   if (!touchLayoutEditing || !touchLayoutDrag || event.pointerId !== touchLayoutDrag.pointerId) return;
   event.preventDefault();
+  player.classList.add("touch-layout-manipulating");
   if (touchLayoutDrag.kind === "resize") {
     resizeTouchLayoutItem(touchLayoutDrag, event);
     return;
@@ -6688,6 +6655,7 @@ function moveTouchLayoutDrag(event: PointerEvent) {
 function endTouchLayoutDrag(event?: PointerEvent) {
   if (!touchLayoutDrag || (event && event.pointerId !== touchLayoutDrag.pointerId)) return;
   touchLayoutDrag = null;
+  player.classList.remove("touch-layout-manipulating");
 }
 
 function applyTouchViewportDraftPosition() {
@@ -6721,7 +6689,7 @@ function finishTouchViewportEditing() {
   $("#touchViewportDone").hidden = true;
   $("#touchLayoutEditor").hidden = false;
   const settings = touchLayoutSettingsElement();
-  if (settings) settings.hidden = false;
+  syncTouchLayoutWorkbench();
   applyTouchLayout(touchLayoutDraft);
   updateTouchLayoutEditorUi();
   applyTouchViewportDraftPosition();
@@ -6768,11 +6736,10 @@ function endTouchViewportDrag(event?: PointerEvent) {
 
 function cancelTouchLayoutGestures() {
   if (touchLayoutEditorDrag) rememberTouchLayoutWindowPosition("editor", $("#touchLayoutEditor"));
-  if (touchLayoutSettingsDrag) rememberTouchLayoutWindowPosition("settings", touchLayoutSettingsElement());
   touchLayoutDrag = null;
   touchLayoutEditorDrag = null;
-  touchLayoutSettingsDrag = null;
   touchViewportDrag = null;
+  player.classList.remove("touch-layout-manipulating");
   cancelTouchSensitivityPreview();
 }
 
@@ -7646,11 +7613,6 @@ document.querySelectorAll<HTMLButtonElement>("[data-action]").forEach(button => 
 }));
 $("#mobileOptionsToggle").addEventListener("click", () => { state.mobileOpen = !state.mobileOpen; render(); });
 $("#touchLayoutEdit").addEventListener("click", () => { void openTouchLayoutEditor().catch(error => { const reason = errorMessage(error); showToast(reason); setStatus(t("status.errorReason", { reason })); }); });
-$("#touchLayoutScale").addEventListener("input", event => {
-  if (!touchLayoutEditing) return;
-  const scale = Math.max(touchLayoutScaleMin, Math.min(touchLayoutScaleMax, Number($("#touchLayoutScale").value) / 100));
-  scaleTouchLayoutItem(touchLayoutSelected, scale);
-});
 $("#touchLayoutOrientationHelpOpen").addEventListener("click", () => { if (touchLayoutEditing) void switchTouchLayoutOrientation(); });
 $("#touchViewportAdjust").addEventListener("click", startTouchViewportEditing);
 $("#touchViewportReset").addEventListener("click", resetTouchViewportPosition);
@@ -8352,10 +8314,13 @@ touchJoystick.addEventListener("lostpointercapture", releaseTouchJoystick);
 for (const name of touchLayoutControlNames) {
   touchLayoutElement(name).addEventListener("pointerdown", event => beginTouchLayoutDrag(name, event));
 }
+$("#touchLayoutCollapse").addEventListener("click", () => {
+  touchLayoutEditorCollapsed = !touchLayoutEditorCollapsed;
+  syncTouchLayoutWorkbench();
+});
 const touchLayoutEditorDragHandle = $("#touchLayoutEditorDragHandle");
 touchLayoutEditorDragHandle.addEventListener("pointerdown", beginTouchLayoutEditorDrag);
-const touchLayoutSettingsDragHandle = $("#touchLayoutSettingsDragHandle");
-touchLayoutSettingsDragHandle.addEventListener("pointerdown", beginTouchLayoutSettingsDrag);
+touchLayoutEditorDragHandle.addEventListener("lostpointercapture", endTouchLayoutEditorDrag);
 const touchViewportDragSurface = $("#touchViewportDragSurface");
 touchViewportDragSurface.addEventListener("pointerdown", beginTouchViewportDrag);
 touchViewportDragSurface.addEventListener("pointermove", moveTouchViewportDrag);
@@ -8370,17 +8335,14 @@ player.addEventListener("lostpointercapture", endTouchSensitivityPreview);
 document.addEventListener("pointermove", event => {
   moveTouchLayoutDrag(event);
   moveTouchLayoutEditorDrag(event);
-  moveTouchLayoutSettingsDrag(event);
 }, true);
 document.addEventListener("pointerup", event => {
   endTouchLayoutDrag(event);
   endTouchLayoutEditorDrag(event);
-  endTouchLayoutSettingsDrag(event);
 }, true);
 document.addEventListener("pointercancel", event => {
   endTouchLayoutDrag(event);
   endTouchLayoutEditorDrag(event);
-  endTouchLayoutSettingsDrag(event);
 }, true);
 window.addEventListener("blur", cancelTouchLayoutGestures);
 document.addEventListener("visibilitychange", () => { if (document.hidden) cancelTouchLayoutGestures(); });
@@ -8595,24 +8557,26 @@ if (touchPreview === "touch" || touchPreview === "touch-hud") {
 }
 
 try { state.lessMotion = localStorage.getItem(lessMotionStorageKey) === "1"; } catch {}
-const compactOptionsLayout = matchMedia("(max-width: 780px)");
-const touchInputAvailable = () => mobileDevice || navigator.maxTouchPoints > 0 || matchMedia("(any-pointer: coarse)").matches;
-const touchSettingsFirst = () => touchInputAvailable() || compactOptionsLayout.matches;
+// An optional touchscreen (or a narrow desktop window) does not make touch
+// controls the primary way to use the launcher. Keep them prominent on mobile
+// devices and when the browser's primary pointer is touch.
+const primaryTouchPointer = matchMedia("(pointer: coarse)");
+const preferTouchSettings = () => mobileDevice || primaryTouchPointer.matches;
 function syncTouchSettingsOrder() {
   // Move the actual groups so keyboard and reading order match the visible order.
   for (const selector of ["#mobileOptions", "#mpMobileOptions"]) {
     const touchSettings = $(selector);
     const groups = touchSettings.parentElement!;
-    if (touchSettingsFirst()) {
+    if (preferTouchSettings()) {
       const firstGroup = groups.querySelector(":scope > .options-group");
       if (firstGroup !== touchSettings) groups.insertBefore(touchSettings, firstGroup);
     } else if (groups.lastElementChild !== touchSettings) groups.append(touchSettings);
   }
 }
-state.mobileOpen = touchInputAvailable();
-mpUiState.mobileOpen = touchInputAvailable();
+state.mobileOpen = preferTouchSettings();
+mpUiState.mobileOpen = preferTouchSettings();
 syncTouchSettingsOrder();
-compactOptionsLayout.addEventListener("change", syncTouchSettingsOrder);
+primaryTouchPointer.addEventListener("change", syncTouchSettingsOrder);
 mpUiState.displayName = multiplayerIdentity.loadDisplayName();
 for (const [name, open] of Object.entries(mpUiState.folds)) if (isMpFoldName(name)) mpSetFold(name, open);
 if (mpRestoreRoomFromLocation()) {
