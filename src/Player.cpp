@@ -486,20 +486,26 @@ Player *SelectLifeTransferReceiver(const Player *giver)
     return best;
 }
 
-i32 SelectLowestLifeRecipient(u8 excludedPlayerId)
+i32 SelectNearestLivingRecipient(const Player *source)
 {
+    if (!source)
+        return -1;
     i32 bestId = -1;
-    i32 bestLives = 0;
+    f32 bestDistanceSq = 0.0f;
     for (u8 playerId = 0; playerId < TH07_MULTI_MAX_PLAYERS; ++playerId)
     {
-        if (playerId == excludedPlayerId || !IsPlayerSlotActive(playerId) ||
+        if (playerId == source->initParam || !IsPlayerSlotActive(playerId) ||
             !IsPlayerActiveForLifeTransfer(&g_Players[playerId]))
             continue;
-        const i32 lives = GetPlayerLives(playerId);
-        if (bestId < 0 || lives < bestLives)
+        const Player *candidate = &g_Players[playerId];
+        const f32 dx = source->pos.x - candidate->pos.x;
+        const f32 dy = source->pos.y - candidate->pos.y;
+        const f32 distanceSq = dx * dx + dy * dy;
+        if (bestId < 0 || distanceSq < bestDistanceSq ||
+            (distanceSq == bestDistanceSq && playerId < static_cast<u8>(bestId)))
         {
             bestId = playerId;
-            bestLives = lives;
+            bestDistanceSq = distanceSq;
         }
     }
     return bestId;
@@ -961,12 +967,13 @@ i32 UpdateMultiplayerDeath(Player *player)
                                        : -PLAYER_SPIRIT_DRIFT_SPEED;
         SetPlayerBombs(player->initParam, 3);
         g_Gui.bombDisplayUpdateFrames = 2;
-        const i32 recipientId = SelectLowestLifeRecipient(player->initParam);
+        const i32 recipientId = SelectNearestLivingRecipient(player);
         if (recipientId >= 0)
         {
-            g_ItemManager.SpawnItem(
-                &player->pos, ITEM_LIFE,
-                GetLifeTransferSpawnState((u8)recipientId));
+            if (GetPlayerLives((u8)recipientId) < 8)
+                AddPlayerLives((u8)recipientId, 1);
+            g_Gui.lifeDisplayUpdateFrames = 2;
+            g_SoundPlayer.PlaySoundByIdx(SOUND_EXTEND, 0);
         }
         player->playerSprite.color.color = 0x50ffffff;
 
@@ -1104,9 +1111,7 @@ void UpdateTeamWipeRetryCountdown()
         return;
 
     // The grace window is gameplay time, not wall-clock time. Do not consume
-    // it while the synchronized pause/retry UI or TH07's ordinary time-stop is
-    // active; otherwise opening Pause after a team wipe could make Retry fire
-    // behind the menu.
+    // it while synchronized UI or TH07's ordinary time-stop is active.
     if (g_GameManager.isPaused || g_GameManager.isInPauseMenu ||
         g_GameManager.isInRetryMenu || g_GameManager.isTimeStopped)
         return;
@@ -1135,7 +1140,12 @@ void UpdateTeamWipeRetryCountdown()
     if (--g_teamWipeRetryFrames <= 0)
     {
         g_teamWipeRetryFrames = 0;
-        g_GameManager.isInRetryMenu = 1;
+        // Multiplayer never exposes TH07's Continue/Retry menu after a team
+        // wipe. Match the native no-continue branch and finish the run through
+        // the ordinary Result screen.
+        g_GameManager.isInRetryMenu = 0;
+        g_GameManager.globals->guiScore = g_GameManager.globals->score;
+        g_Supervisor.curState = SUPERVISOR_STATE_RESULTSCREEN_FROM_GAME;
     }
 #endif
 }
