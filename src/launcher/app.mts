@@ -363,6 +363,13 @@ class RuntimeOperationError extends Error {
   errno?: number;
 }
 
+class RuntimeSwitchedError extends Error {
+  constructor() {
+    super(t("runtime.switched"));
+    this.name = "RuntimeSwitchedError";
+  }
+}
+
 function clearOptionalTimeout(handle: ReturnType<typeof setTimeout> | null | undefined): void {
   if (handle != null) globalThis.clearTimeout(handle);
 }
@@ -712,6 +719,7 @@ async function mpLaunchRoomGame() {
     await launchConfiguredRuntime();
     if (isPlayerFullscreen()) await lockEscapeForGame();
   } catch (error) {
+    if (error instanceof RuntimeSwitchedError) return;
     if (!state.launched && isCancelledDownload(error)) {
       if (player.classList.contains("open")) {
         if (!await closePlayerView()) return;
@@ -760,6 +768,7 @@ async function mpCheckGame() {
     setStatus(t("multiplayer.checkGamePassed"));
     showToast(t("multiplayer.checkGamePassed"));
   } catch (error) {
+    if (error instanceof RuntimeSwitchedError) return;
     const reason = errorMessage(error);
     if (player.classList.contains("open")) {
       await closePlayerView(false, { skipSync: true, returnToMpRoom: true });
@@ -2842,11 +2851,12 @@ function clearGameDataAttempt() {
 function beginManualGamePackageImport(
   reason = t("package.manualCancelledReason"),
   continuation: GameDataContinuation = captureGameDataContinuation("install-only"),
+  useReasonVerbatim = false,
 ) {
   clearGameDataAttempt();
   const id = ++gameDataAttemptSerial;
   gameDataAttempt = { id, firstByte: false, downloadComplete: false, unlocked: true, dialogDismissed: false, startTimer: null, completeTimer: null, importFlow: true, continuation, manual: true };
-  $("#gameDataImportReason").textContent = t("package.manualImportReason", { reason });
+  $("#gameDataImportReason").textContent = useReasonVerbatim ? reason : t("package.manualImportReason", { reason });
   updateGameDataLinkWindow();
   openGameDataImportWindow();
 }
@@ -3567,8 +3577,11 @@ async function launchConfiguredRuntime(options: LaunchConfiguredRuntimeOptions =
 async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptions = {}) {
   clearStartupError();
   await ensureRuntime(true);
-  const session = runtimeSessions.assertCurrent(currentRuntimeSession());
-  const assertSession = () => runtimeSessions.assertCurrent(session);
+  const session = currentRuntimeSession();
+  if (!session) throw new RuntimeSwitchedError();
+  const assertSession = () => {
+    if (!runtimeSessionCurrent(session)) throw new RuntimeSwitchedError();
+  };
   try {
     launchMusicFallback = null;
     chooseDefaultMusic();
@@ -3727,7 +3740,8 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
     startManagedOggProgressiveInstall();
     if (firstFramePromise) await firstFramePromise;
   } catch (error) {
-    if (runtimeSessionCurrent(session) && !state.launched) resetRuntime();
+    if (!runtimeSessionCurrent(session)) throw new RuntimeSwitchedError();
+    if (!state.launched) resetRuntime();
     throw error;
   }
 }
@@ -4340,7 +4354,7 @@ function resetRuntime() {
   hideTransfer();
   for (const pending of state.pending.values()) {
     clearTimeout(pending.timer);
-    pending.reject(new Error(t("runtime.switched")));
+    pending.reject(new RuntimeSwitchedError());
   }
   state.pending.clear(); state.ready = false; state.launched = false; state.source = ""; state.sourceIdentity = "";
   syncDirectTouchSurfaceVisibility();
@@ -4709,7 +4723,7 @@ function syncSelectionFromPlayerRoute() {
   return true;
 }
 
-window.addEventListener("popstate", async () => {
+window.addEventListener("popstate", async event => {
   if (touchLayoutEditing) {
     const editorHistoryWasPopped = touchLayoutHistoryEntryOwned;
     touchLayoutHistoryEntryOwned = false;
@@ -4724,6 +4738,9 @@ window.addEventListener("popstate", async () => {
       return;
     }
   }
+  // A same-route history notification does not mean the Player was left.
+  if (player.classList.contains("open") && record(event.state)?.[playerHistoryKey] === true &&
+      routedGameFromLocation() === state.product) return;
   if (player.classList.contains("open") && !await closePlayerView(true)) {
     const restore = playerRouteHistoryOperation({
       currentUrl: location.href, currentState: history.state,
@@ -4909,13 +4926,13 @@ function waitForRuntimeReady(session: RuntimeSessionToken, timeoutMessage: strin
     };
     const timer = setTimeout(() => {
       if (!runtimeSessionCurrent(session)) {
-        finish(() => reject(new Error(t("runtime.switched"))));
+        finish(() => reject(new RuntimeSwitchedError()));
         return;
       }
       finish(() => reject(new Error(timeoutMessage)));
     }, 120000);
     unsubscribe = runtimeSessions.subscribe(() => {
-      if (!runtimeSessionCurrent(session)) finish(() => reject(new Error(t("runtime.switched"))));
+      if (!runtimeSessionCurrent(session)) finish(() => reject(new RuntimeSwitchedError()));
     });
     frame.addEventListener("runtime-ready", ready);
     frame.addEventListener("runtime-error", failed);
@@ -4950,7 +4967,7 @@ function waitForRuntimeFirstFrame(session: RuntimeSessionToken, timeoutMs = firs
       finish(() => reject(new Error(t("runtime.firstFrameLate"))));
     }, timeoutMs);
     unsubscribe = runtimeSessions.subscribe(() => {
-      if (!runtimeSessionCurrent(session)) finish(() => reject(new Error(t("runtime.switched"))));
+      if (!runtimeSessionCurrent(session)) finish(() => reject(new RuntimeSwitchedError()));
     });
     frame.addEventListener("runtime-first-frame", firstFrame);
     frame.addEventListener("runtime-error", failed);
@@ -5000,7 +5017,7 @@ async function ensureInstalledPackageRuntime(show = true) {
         selectedGeneration = selected.generation;
       }
       if (!runtimeSessionCurrent(runtimeSession) || state.game !== gameId || state.runtimeVariant !== variant) {
-        throw new Error(t("runtime.switched"));
+        throw new RuntimeSwitchedError();
       }
       // gameGeneration is the Package Store identity, NOT the code generation.
       const source = new URL(managedRuntimeUrl(entry, generation, variant, location.href));
@@ -5978,6 +5995,7 @@ $("#mpReplayViewer").addEventListener("click", async () => {
     await launchConfiguredRuntime();
     setStatus(t("multiplayer.replayMenuOpened", { game: state.game.toUpperCase() }));
   } catch (error) {
+    if (error instanceof RuntimeSwitchedError) return;
     const message = errorMessage(error);
     if (!state.launched && isResourceLoadFailure(error)) {
       // Preserve replayViewer while importing. Closing Player here would reset
@@ -8406,6 +8424,10 @@ $("#launch").addEventListener("click", async () => {
       if (isPlayerFullscreen()) await lockEscapeForGame();
     } else refocusGameIfNeeded();
   } catch (error) {
+    // Browser Back (or another intentional route change) invalidates the
+    // pending Runtime session. Its rejected startup request is cancellation,
+    // not a failed OGG decode or a game crash.
+    if (error instanceof RuntimeSwitchedError) return;
     if (!state.launched && isCancelledDownload(error)) {
       if (player.classList.contains("open")) {
         if (!await closePlayerView()) return;
@@ -8431,8 +8453,9 @@ $("#launch").addEventListener("click", async () => {
         if (!await closePlayerView()) return;
       } else resetRuntime();
       beginManualGamePackageImport(
-        t("package.resourceFailureLocal", { reason: message }),
+        t("package.resourceFailureLocal"),
         captureGameDataContinuation("launch"),
+        true,
       );
       setStatus(t("package.resourceFailureStatus"));
       return;

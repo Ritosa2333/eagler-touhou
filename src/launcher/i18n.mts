@@ -180,7 +180,7 @@ const entries = [
   ["package.manualImportIntro", "请选择要导入的本地游戏包。已安装游戏时，导入新包会更新本地版本。", "Choose a local game package to import. If a game is already installed, importing another package updates the local version."],
   ["package.needImport", "需要导入本地游戏包", "A local game package is required"],
   ["package.downloadCancelledImport", "下载已取消，可以导入本地游戏包", "Download cancelled; you can import a local game package"],
-  ["package.resourceFailureLocal", "启动资源请求失败：{reason}\n网页启动器本身仍在运行，可以改用本地游戏包。", "Startup resource request failed: {reason}\nThe launcher is still running; you can use a local game package instead."],
+  ["package.resourceFailureLocal", "服务器上没有这个游戏的资源，或是出现了一些问题。\n请点击「打开链接」下载游戏包，然后手动导入游戏包来进行游戏。", "The server does not have this game's resources, or something went wrong.\nUse Open link to download the game package, then import it manually to play."],
   ["package.resourceFailureStatus", "资源加载失败，可改用本地游戏包", "Resource loading failed; you can use a local game package"],
   ["package.noLaunchableLocal", "当前没有可启动的本地游戏资源。", "No launchable local game data is available."],
   ["package.fallbackLinkTitle", "查看备用游戏下载链接和提取码", "View the fallback game-package download link and code"],
