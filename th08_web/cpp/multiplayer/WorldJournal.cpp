@@ -117,16 +117,27 @@ bool WorldJournal::DiagnosticInputSampler(){
     return sampled!=before&&EndFrame()&&UndoTo(0)&&sampler.focus_conflict==sampled;
 }
 #endif
-bool WorldJournal::BeginFrame(u32 frame){
-    if(!CanAdvance()||main.IsFrameOpen()||records.size()>=History)return Fail("frame admission or retirement fence");
+bool WorldJournal::CanExtend(u32 frame,u32 span)const{
+    return !records.empty()&&records.back().end+1==frame&&frame-records.back().frame<span;
+}
+u32 WorldJournal::CheckpointStart(u32 frame)const{
+    for(const auto& r:records)if(r.frame<=frame&&frame<=r.end)return r.frame;
+    return Netplay::INVALID_FRAME;
+}
+bool WorldJournal::BeginFrame(u32 frame,bool extend){
+    if(!CanAdvance()||main.IsFrameOpen()||(!extend&&records.size()>=History)||
+       (extend&&!CanExtend(frame,3)))return Fail("frame admission or retirement fence");
     if(replay_bytes(app->game.recording)>16*1024*1024)return Fail("native recording exceeds checkpoint budget");
-    if(!main.BeginFrame(frame))return Fail("main frame order");
-    records.push_back({frame,std::make_unique<ReplayRecording>(app->game.recording)});
-    for(const auto& block:blocks)if(!main.Touch(block.address,block.bytes))return Fail(block.name);
+    if(!main.BeginFrame(frame,extend))return Fail("main frame order");
+    if(extend)records.back().end=frame;
+    else{
+        records.push_back({frame,frame,std::make_unique<ReplayRecording>(app->game.recording)});
+        for(const auto& block:blocks)if(!main.Touch(block.address,block.bytes))return Fail(block.name);
+    }
     if(!app->screen.capture_rollback(main)||!app->game.screen.capture_rollback(main))return Fail("screen callback ownership");
-    if(!enemies.BeginFrame(frame))return Fail("enemy ownership");
-    if(!pools.BeginFrame(frame))return Fail("pool ownership");
-    if(!resources.BeginFrame(frame))return Fail("resource ownership");
+    if(!enemies.BeginFrame(frame,extend))return Fail("enemy ownership");
+    if(!pools.BeginFrame(frame,extend))return Fail("pool ownership");
+    if(!resources.BeginFrame(frame,extend))return Fail("resource ownership");
     return true;
 }
 bool WorldJournal::EndFrame(){
@@ -159,7 +170,7 @@ void WorldJournal::RebasePresentation(){
 void WorldJournal::DiscardBefore(u32 frame){
     if(main.IsFrameOpen())return;
     enemies.DiscardBefore(frame);pools.DiscardBefore(frame);resources.DiscardBefore(frame);main.DiscardBefore(frame);
-    while(!records.empty()&&records.front().frame<frame)records.pop_front();
+    while(!records.empty()&&records.front().end<frame)records.pop_front();
 }
 void WorldJournal::Clear(){
     if(app&&app->world_journal==this)app->world_journal=nullptr;
@@ -168,13 +179,13 @@ void WorldJournal::Clear(){
 }
 std::size_t WorldJournal::BytesForFrame(u32 frame)const{
     std::size_t size=main.BytesForFrame(frame)+enemies.BytesForFrame(frame)+pools.BytesForFrame(frame)+resources.BytesForFrame(frame);
-    for(const auto& record:records)if(record.frame==frame)size+=replay_bytes(*record.replay);
+    for(const auto& record:records)if(record.frame<=frame&&frame<=record.end)size+=replay_bytes(*record.replay);
     return size;
 }
 #ifdef TH_MULTIPLAYER_FIXTURES
 std::array<std::size_t,5> WorldJournal::DiagnosticBytesForFrame(u32 frame)const{
     std::size_t replay=0;
-    for(const auto& record:records)if(record.frame==frame){replay=replay_bytes(*record.replay);break;}
+    for(const auto& record:records)if(record.frame<=frame&&frame<=record.end){replay=replay_bytes(*record.replay);break;}
     return {main.BytesForFrame(frame),enemies.BytesForFrame(frame),pools.BytesForFrame(frame),resources.BytesForFrame(frame),replay};
 }
 #endif

@@ -16,7 +16,7 @@ public:
     static constexpr u32 History=8,Invalid=~u32(0);
     ~TextureJournal(){Clear();}
     bool Bind(BrowserRuntime&);
-    bool BeginFrame(u32);
+    bool BeginFrame(u32,bool extend=false);
     bool EndFrame();
     bool UndoTo(u32);
     void DiscardBefore(u32);
@@ -34,7 +34,7 @@ private:
         TexturePixels pixels;
     };
     struct Frame {
-        u32 number=0,live=0;std::size_t slots=0,bytes=0;
+        u32 number=0,end=0,live=0;std::size_t slots=0,bytes=0;
         std::map<u32,Image> images;
         std::map<i32,u32> surfaces;
         u32 capture_target=0;TextureRect source{},destination{};

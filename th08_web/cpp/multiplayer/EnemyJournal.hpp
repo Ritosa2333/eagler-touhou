@@ -19,7 +19,7 @@ public:
     EnemyJournal(const EnemyJournal&)=delete;
     EnemyJournal& operator=(const EnemyJournal&)=delete;
     bool Bind(EnemyPopulation&);
-    bool BeginFrame(u32 frame);
+    bool BeginFrame(u32 frame,bool extend=false);
     bool Capture(u32 slot);
     bool EndFrame();
     bool UndoTo(u32 frame);
@@ -35,7 +35,7 @@ private:
         std::array<std::shared_ptr<EclContext>,4> contexts{};
     };
     struct Record {
-        u32 frame=0;
+        u32 frame=0,end=0;
         std::array<bool,481> existed{},captured{};
         std::vector<ContextOwners> owners;
     };

@@ -57,7 +57,7 @@ public:
     // Loading or an unregistered owner cannot silently run speculative ticks.
     bool SetWorldReady(bool ready);
     bool WorldReady()const{return world_ready_;}
-    bool BeginCorrection(std::uint32_t first);
+    bool BeginCorrection(std::uint32_t first,std::uint32_t checkpointSpan=1);
     bool EndCorrection(bool lifecycle_boundary=false);
     bool Correcting()const{return correction_end_!=Netplay::INVALID_FRAME;}
     bool CanRetire()const;

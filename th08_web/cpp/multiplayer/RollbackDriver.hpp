@@ -33,7 +33,9 @@ public:
     u32 Resimulated()const{return resimulated;}
     u32 Predicted()const{return predicted;}
     u32 MaxBytes()const{return max_bytes;}
+    u32 CheckpointSpan()const{return checkpoint_span;}
 #ifdef TH_MULTIPLAYER_FIXTURES
+    bool SetCheckpointSpan(u32 span){if(open||world.HasHistory()||span<1||span>3)return false;checkpoint_span=span;return true;}
     bool SetLiveBullets(bool enabled){return world.SetLiveBullets(enabled);}
     bool LiveBullets()const{return world.LiveBullets();}
     void AuditBullets(bool enabled){world.AuditBullets(enabled);}
@@ -54,6 +56,10 @@ private:
     bool generation_transition_pending=false;
     bool corrected_present_pending=false;
     bool checkpoint_open=false;
+    // Three-tick intervals are unfinished experimental work. Keep the proven
+    // per-tick policy until interval ownership/output tests and A/B pass.
+    u32 checkpoint_span=1;
+    std::size_t checkpoint_previous_bytes=0;
     u32 generation=0,corrections=0,resimulated=0,predicted=0,max_bytes=0;
     const char* error="";
     char native_error[256]{};

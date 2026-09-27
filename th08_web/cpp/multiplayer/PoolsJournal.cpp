@@ -44,17 +44,22 @@ bool PoolsJournal::Bind(BulletSystem& b,ItemSystem& i,EffectSystem& e,Rng& rando
     b.creation.live_bullets=use_live?&live:nullptr;
     return true;
 }
-bool PoolsJournal::BeginFrame(u32 frame){
-    if(!bullets||Failed()||bytes.IsFrameOpen()||bytes.FrameCount()>=History)return Fail();
-    if(!bytes.BeginFrame(frame)||(use_live&&!live.BeginFrame(frame)))return Fail();
+bool PoolsJournal::BeginFrame(u32 frame,bool extend){
+    if(!bullets||Failed()||bytes.IsFrameOpen()||(!extend&&bytes.FrameCount()>=History))return Fail();
+    if(!bytes.BeginFrame(frame,extend)||(use_live&&!live.BeginFrame(frame,extend)))return Fail();
     auto& b=*bullets;auto& i=*items;auto& e=*effects;
 #ifdef TH_MULTIPLAYER_FIXTURES
-    if(audit_bullets){
-        BulletAudit audit{frame,std::vector<u8>(sizeof(b.state.bullets))};
+    if(audit_bullets&&extend){
+        if(bullet_audits.empty())return Fail();
+        bullet_audits.back().end=frame;
+    }else if(audit_bullets){
+        BulletAudit audit{frame,frame,std::vector<u8>(sizeof(b.state.bullets))};
         std::memcpy(audit.bytes.data(),b.state.bullets,audit.bytes.size());
         bullet_audits.push_back(std::move(audit));
     }
 #endif
+    // Birth/reuse/cold-write hooks preserve the first value for the interval.
+    if(extend)return true;
     if(!touch(bytes,*rng))return Fail();
     // Templates are constructed before native frame zero and then read-only.
     // Capture the small linked-layer/cursor/timer tail and only live bullets,
@@ -120,7 +125,7 @@ bool PoolsJournal::UndoTo(u32 frame){
 void PoolsJournal::DiscardBefore(u32 frame){
     bytes.DiscardBefore(frame);live.DiscardBefore(frame);
 #ifdef TH_MULTIPLAYER_FIXTURES
-    while(!bullet_audits.empty()&&bullet_audits.front().frame<frame)bullet_audits.pop_front();
+    while(!bullet_audits.empty()&&bullet_audits.front().end<frame)bullet_audits.pop_front();
 #endif
 }
 #ifdef TH_MULTIPLAYER_FIXTURES

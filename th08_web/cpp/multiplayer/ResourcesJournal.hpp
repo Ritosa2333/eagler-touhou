@@ -13,7 +13,7 @@ public:
     ResourcesJournal(const ResourcesJournal&)=delete;
     ResourcesJournal& operator=(const ResourcesJournal&)=delete;
     bool Bind(AnmLibrary&);
-    bool BeginFrame(u32);
+    bool BeginFrame(u32,bool extend=false);
     bool EndFrame(){return !Failed()&&bytes.EndFrame();}
     bool UndoTo(u32 frame){return !failed&&stable()&&bytes.UndoTo(frame);}
     void DiscardBefore(u32 frame){bytes.DiscardBefore(frame);}

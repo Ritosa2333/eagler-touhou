@@ -23,7 +23,7 @@ public:
     PoolsJournal(const PoolsJournal&)=delete;
     PoolsJournal& operator=(const PoolsJournal&)=delete;
     bool Bind(BulletSystem&,ItemSystem&,EffectSystem&,Rng&);
-    bool BeginFrame(u32 frame);
+    bool BeginFrame(u32 frame,bool extend=false);
     bool EndFrame();
     bool UndoTo(u32 frame);
     void DiscardBefore(u32 frame);
@@ -46,7 +46,7 @@ private:
     LiveBulletJournal live;
     bool use_live=true;
 #ifdef TH_MULTIPLAYER_FIXTURES
-    struct BulletAudit {u32 frame;std::vector<u8> bytes;};
+    struct BulletAudit {u32 frame,end;std::vector<u8> bytes;};
     std::deque<BulletAudit> bullet_audits;
 #endif
     bool failed=false;

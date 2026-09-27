@@ -120,12 +120,12 @@ bool ReplayArchive::RequestSave(u32 local,i32 slot,const char* name,const char* 
     s.save_slot=slot;std::memset(s.name,0,8);std::memcpy(s.name,name,std::min<std::size_t>(8,std::strlen(name)));
     std::memcpy(s.date,date,6);return true;
 }
-bool ReplayArchive::Commit(const NetplayRuntime& net,SaveCallback save,void* context){
+bool ReplayArchive::Commit(const NetplayRuntime& net,SaveCallback save,void* context,u32 before){
     if(!Recording())return true;
     const auto confirmed=net.ConfirmedThrough(),last=net.LastFrame();
     if(net.Correcting()||net.RollbackFrame()!=Netplay::INVALID_FRAME||confirmed==Netplay::INVALID_FRAME||last==Netplay::INVALID_FRAME)return true;
     if(net.Generation()!=generation)return false;
-    for(u32 local=tape.Info().frameCount-base;local<=std::min(confirmed,last);++local){
+    for(u32 local=tape.Info().frameCount-base;local<before&&local<=std::min(confirmed,last);++local){
         const auto& stamp=stamps[local%stamps.size()];Frame inputs{};
         if(stamp.frame!=local||!net.ConfirmedInputs(local,inputs)||
            !tape.Append(base+local,stamp.label,inputs.data(),description.setup.player_count))return false;

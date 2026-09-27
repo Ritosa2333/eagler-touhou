@@ -64,15 +64,20 @@ bool RollbackDriver::apply_file_event(const char* path,const u8* data,u32 size){
 bool RollbackDriver::Commit(){
     auto& net=runtime.app.session.netplay;
     if(net.Correcting()||net.RollbackFrame()!=Netplay::INVALID_FRAME)return true;
-    const auto through=net.ConfirmedThrough(),last=net.LastFrame();
-    if(!runtime.commit_audio_events(audio,through,last)||!files.CommitThrough(through,last,*this))return Fail("confirmed external output failed");
-    if(!runtime.replay_archive.Commit(net,[](void* context,const char* path,const u8* bytes,u32 size){
-        return static_cast<RollbackDriver*>(context)->apply_file_event(path,bytes,size);
-    },this))return Fail("confirmed Replay commit failed");
-    network.PublishConfirmedSpectatorFrames();
+    auto through=net.ConfirmedThrough();const auto last=net.LastFrame();
     if(through!=Netplay::INVALID_FRAME&&last!=Netplay::INVALID_FRAME&&bound){
         const auto next=std::min(through,last)+1;world.DiscardBefore(next);textures.DiscardBefore(next);
     }
+    // A partially confirmed interval can still rewind its exact prefix.
+    // Defer irreversible outputs until the whole checkpoint is retired.
+    const auto before=world.FirstCheckpoint();
+    if(before!=Netplay::INVALID_FRAME&&through!=Netplay::INVALID_FRAME&&before<=through)
+        through=before?before-1:Netplay::INVALID_FRAME;
+    if(!runtime.commit_audio_events(audio,through,last)||!files.CommitThrough(through,last,*this))return Fail("confirmed external output failed");
+    if(!runtime.replay_archive.Commit(net,[](void* context,const char* path,const u8* bytes,u32 size){
+        return static_cast<RollbackDriver*>(context)->apply_file_event(path,bytes,size);
+    },this,before))return Fail("confirmed Replay commit failed");
+    network.PublishConfirmedSpectatorFrames();
     return true;
 }
 bool RollbackDriver::Admit(){
@@ -142,10 +147,12 @@ bool RollbackDriver::RunFrame(bool render){
     // Release its older records before running without an open checkpoint, so
     // native first-write hooks see no outstanding rewindable ownership.
     if(bound&&!checkpoint_open){world.DiscardBefore(frame+1);textures.DiscardBefore(frame+1);}
-    if(checkpoint_open&&(!world.BeginFrame(frame)||!textures.BeginFrame(frame)))return Fail("begin world frame failed");
+    const bool extend=checkpoint_open&&world.CanExtend(frame,checkpoint_span);
+    checkpoint_previous_bytes=extend?world.BytesForFrame(frame-1)+textures.BytesForFrame(frame-1):0;
+    if(checkpoint_open&&(!world.BeginFrame(frame,extend)||!textures.BeginFrame(frame,extend)))return Fail("begin world frame failed");
 #ifdef TH_MULTIPLAYER_FIXTURES
     diagnostic_capture_ms+=emscripten_get_now()-capture_start;
-    if(checkpoint_open)++diagnostic_snapshots;else if(bound)++diagnostic_skipped;
+    if(checkpoint_open&&!extend)++diagnostic_snapshots;else if(bound)++diagnostic_skipped;
 #endif
     if(!audio.BeginFrame(frame)||!files.BeginFrame(frame))return Fail("begin output frame failed");
     open=true;session.network_frame=decision;session.network_frame_open=true;
@@ -194,7 +201,7 @@ bool RollbackDriver::FinishFrame(){
         const auto size=world.BytesForFrame(frame)+textures.BytesForFrame(frame);
         max_bytes=std::max(max_bytes,u32(size));
 #ifdef TH_MULTIPLAYER_FIXTURES
-        diagnostic_snapshot_bytes+=size;
+        diagnostic_snapshot_bytes+=size-checkpoint_previous_bytes;
 #endif
     }
     checkpoint_open=false;
@@ -205,12 +212,12 @@ bool RollbackDriver::FinishFrame(){
 bool RollbackDriver::Correct(){
     auto& net=runtime.app.session.netplay;const auto requested=net.RollbackFrame();
     if(requested==Netplay::INVALID_FRAME)return true;
-    const auto first=requested;
+    const auto first=world.CheckpointStart(requested);
     const auto end=net.NextFrame();
 #ifdef TH_MULTIPLAYER_FIXTURES
     const auto restore_start=emscripten_get_now();
 #endif
-    if(!bound||first==Netplay::INVALID_FRAME||!net.BeginCorrection(first)||!world.UndoTo(first)||!textures.UndoTo(first)||
+    if(!bound||first==Netplay::INVALID_FRAME||!net.BeginCorrection(first,checkpoint_span)||!world.UndoTo(first)||!textures.UndoTo(first)||
        !audio.DiscardFrom(first)||!files.DiscardFrom(first))return Fail("rollback restore failed");
 #ifdef TH_MULTIPLAYER_FIXTURES
     diagnostic_restore_ms+=emscripten_get_now()-restore_start;

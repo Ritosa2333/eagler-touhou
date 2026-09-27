@@ -21,7 +21,10 @@ public:
     WorldJournal(const WorldJournal&)=delete;
     WorldJournal& operator=(const WorldJournal&)=delete;
     bool Bind(BrowserRuntime&);
-    bool BeginFrame(u32 frame);
+    bool BeginFrame(u32 frame,bool extend=false);
+    bool CanExtend(u32 frame,u32 span)const;
+    u32 CheckpointStart(u32 frame)const;
+    u32 FirstCheckpoint()const{return records.empty()?Netplay::INVALID_FRAME:records.front().frame;}
     bool EndFrame();
     bool UndoTo(u32 frame);
     void DiscardBefore(u32 frame);
@@ -47,7 +50,7 @@ public:
     const char* BlockName(u32 index)const{return index<blocks.size()?blocks[index].name:"outside inventory";}
 private:
     struct Block {void* address;std::size_t bytes;Group group;const char* name;};
-    struct Record {u32 frame;std::unique_ptr<ReplayRecording> replay;};
+    struct Record {u32 frame,end;std::unique_ptr<ReplayRecording> replay;};
     BrowserRuntime* runtime=nullptr;GameApplication* app=nullptr;
     i32 stage=-1;const void *stdData=nullptr,*quads=nullptr,*msgData=nullptr;
     std::size_t stdSize=0,quadCount=0,msgSize=0;

@@ -28,8 +28,9 @@ bool ResourcesJournal::stable()const{
     }
     return true;
 }
-bool ResourcesJournal::BeginFrame(u32 frame){
-    if(Failed()||!stable()||bytes.FrameCount()>=History||!bytes.BeginFrame(frame))return Fail();
+bool ResourcesJournal::BeginFrame(u32 frame,bool extend){
+    if(Failed()||!stable()||(!extend&&bytes.FrameCount()>=History)||!bytes.BeginFrame(frame,extend))return Fail();
+    if(extend)return true;
     if(!touch(bytes,library->rollback_failed)||!touch(bytes,library->force_16bit))return Fail();
     for(auto& id:identities){
         auto* owner=id.owner;if(!owner)continue;

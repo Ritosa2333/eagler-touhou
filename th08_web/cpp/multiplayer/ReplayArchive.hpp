@@ -31,7 +31,7 @@ public:
     bool Stamp(u32 local,u32 stage,u32 score);
     bool RequestSave(u32 local,i32 slot,const char* name,const char* date);
     using SaveCallback=bool(*)(void*,const char*,const u8*,u32);
-    bool Commit(const NetplayRuntime&,SaveCallback=nullptr,void* context=nullptr);
+    bool Commit(const NetplayRuntime&,SaveCallback=nullptr,void* context=nullptr,u32 before=Netplay::INVALID_FRAME);
     bool NextGeneration(u32 generation);
     const Frame* PlaybackFrame(u32 local)const;
     bool AdvancePlayback(u32 local,u32 stage);

@@ -12,11 +12,13 @@ bool EnemyJournal::Bind(EnemyPopulation& value){
     program_data=program->mutable_data();program_size=program->size();
     value.journal=this;failed=false;return true;
 }
-bool EnemyJournal::BeginFrame(u32 frame){
-    if(!population||Failed()||bytes.IsFrameOpen()||records.size()>=History||
+bool EnemyJournal::BeginFrame(u32 frame,bool extend){
+    if(!population||Failed()||bytes.IsFrameOpen()||(!extend&&records.size()>=History)||
+       (extend&&(records.empty()||records.back().end+1!=frame))||
        program->mutable_data()!=program_data||program->size()!=program_size)return Fail();
-    if(!bytes.BeginFrame(frame))return Fail();
-    records.emplace_back();auto& record=records.back();record.frame=frame;
+    if(!bytes.BeginFrame(frame,extend))return Fail();
+    if(extend){records.back().end=frame;return true;}
+    records.emplace_back();auto& record=records.back();record.frame=record.end=frame;
     // ECL can write literal bytecode arguments. The loaded buffer is an
     // authoritative mutable owner even though its allocation remains stable.
     if(program_size&&!bytes.Touch(program_data,program_size))return Fail();
@@ -72,7 +74,7 @@ bool EnemyJournal::UndoTo(u32 frame){
 void EnemyJournal::DiscardBefore(u32 frame){
     if(bytes.IsFrameOpen())return;
     bytes.DiscardBefore(frame);
-    while(!records.empty()&&records.front().frame<frame)records.pop_front();
+    while(!records.empty()&&records.front().end<frame)records.pop_front();
 }
 void EnemyJournal::Clear(){
     if(population&&population->journal==this)population->journal=nullptr;

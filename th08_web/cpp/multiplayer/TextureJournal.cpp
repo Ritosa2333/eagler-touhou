@@ -12,11 +12,12 @@ bool TextureJournal::MayMutate(){
     if(failed)return false;
     return restoring||open!=Invalid||frames.empty()||presentation::render_only?true:Fail();
 }
-bool TextureJournal::BeginFrame(u32 number){
-    if(!runtime||failed||open!=Invalid||frames.size()>=History||
-       (!frames.empty()&&number!=frames.back().number+1))return Fail();
+bool TextureJournal::BeginFrame(u32 number,bool extend){
+    if(!runtime||failed||open!=Invalid||(!extend&&frames.size()>=History)||
+       (extend&&frames.empty())||(!frames.empty()&&number!=frames.back().end+1))return Fail();
     runtime->flush();
-    frames.emplace_back();auto& f=frames.back();f.number=open=number;
+    if(extend){frames.back().end=open=number;return true;}
+    frames.emplace_back();auto& f=frames.back();f.number=f.end=open=number;
     f.slots=runtime->app.textures.records.size();f.live=runtime->app.textures.live;
     f.surfaces=runtime->surfaces;f.captured=runtime->captured;f.capture_failed=runtime->capture_failed;
     const auto& c=runtime->pending_capture;f.capture_target=c.target;f.source=c.source;f.destination=c.destination;f.triangle=c.triangle;
@@ -88,11 +89,11 @@ bool TextureJournal::UndoTo(u32 number){
     restoring=false;return true;
 }
 void TextureJournal::ReleaseImages(Frame& frame){if(auto* renderer=touhou::sdl::current())for(auto& [handle,image]:frame.images)renderer->discard_color(image.gpu_image);}
-void TextureJournal::DiscardBefore(u32 frame){if(open==Invalid)while(!frames.empty()&&frames.front().number<frame){ReleaseImages(frames.front());frames.pop_front();}}
+void TextureJournal::DiscardBefore(u32 frame){if(open==Invalid)while(!frames.empty()&&frames.front().end<frame){ReleaseImages(frames.front());frames.pop_front();}}
 void TextureJournal::Clear(){
     if(runtime&&runtime->app.textures.journal==this)runtime->app.textures.journal=nullptr;
     for(auto& frame:frames)ReleaseImages(frame);
     frames.clear();runtime=nullptr;open=Invalid;failed=restoring=false;
 }
-std::size_t TextureJournal::BytesForFrame(u32 number)const{for(const auto& f:frames)if(f.number==number)return f.bytes;return 0;}
+std::size_t TextureJournal::BytesForFrame(u32 number)const{for(const auto& f:frames)if(f.number<=number&&number<=f.end)return f.bytes;return 0;}
 }

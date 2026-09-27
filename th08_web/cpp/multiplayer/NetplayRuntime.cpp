@@ -126,10 +126,13 @@ bool NetplayRuntime::SetWorldReady(bool ready){
        (ConfirmedThrough()==Netplay::INVALID_FRAME||ConfirmedThrough()<LastFrame()))return false;
     world_ready_=ready;return true;
 }
-bool NetplayRuntime::BeginCorrection(std::uint32_t first){
+bool NetplayRuntime::BeginCorrection(std::uint32_t first,std::uint32_t checkpointSpan){
     if(ReadOnly())return false;
     if(!CanStart()||!world_ready_||Correcting()||!core_.HasRollbackRequest()||
-       first!=core_.RollbackFrame()||first>=next_||next_-first>MaxRollbackFrames)return false;
+       checkpointSpan<1||checkpointSpan>3||first>core_.RollbackFrame()||
+       core_.RollbackFrame()-first>=checkpointSpan||first>=next_||
+       next_-core_.RollbackFrame()>MaxRollbackFrames||
+       next_-first>MaxRollbackFrames+checkpointSpan-1)return false;
     const auto end=next_;
     if(!core_.RewindSimulationTo(first))return false;
     correction_end_=end;next_=first;return true;
