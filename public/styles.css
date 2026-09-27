@@ -990,6 +990,10 @@ body.mp-room-active .main{display:block!important;min-height:0!important;width:1
 #mpRoomView .mp-seat-stage .mp-seat:not(.occupied) .mp-seat-drop button:before{content:"+"!important;display:block!important;width:auto!important;height:auto!important;margin:0!important;background:none!important;color:inherit!important;font:300 22px/1 system-ui!important}
 #mpRoomView .mp-seat-stage .mp-seat:not(.occupied) .mp-seat-drop button:hover{background:#f1dedc09!important;border-color:var(--room-muted)!important;color:var(--room-text)!important}
 #mpRoomView .mp-seat-stage .mp-seat:not(.occupied) .mp-seat-drop button:active{transform:scale(.96)}
+#mpRoomView .mp-seat.occupied .mp-seat-face{position:relative!important;overflow:visible!important}
+#mpRoomView .mp-seat-control{position:absolute;top:calc(100% + 3px);left:50%;transform:translateX(-50%);font:500 10px/12px var(--ui-font);color:var(--room-muted);white-space:nowrap;pointer-events:none}
+#mpRoomView .mp-seat-control[data-mode="cheat"]{color:#dfb78e}
+@media(max-width:1100px){#mpRoomView .mp-seat-stage[data-player-count="3"] .mp-seat.occupied .mp-seat-face{translate:0 -7px}#mpRoomView .mp-seat-stage[data-player-count="3"] .mp-seat-control{top:calc(100% + 1px);font-size:9px;line-height:10px}}
 #mpRoomView .mp-room-settings-hint{margin:20px 0 0;color:var(--room-muted);font-size:12px;line-height:1.7}
 #mpRoomView #mpTakeHostSeat{width:100%;margin-top:16px;padding:12px 18px;border:0;border-radius:14px;background:var(--room-accent);color:#561e18;font-size:14px;font-weight:600}
 /* Persistent game category dock; reserve space so it never covers the tools. */

@@ -486,6 +486,9 @@ function mpApplyLobbyRoom(next: unknown) {
   mpUiState.room.connection = "connected";
   mpUiState.room.playerCount = normalized.playerCount;
   mpUiState.room.difficulty = normalized.difficulty;
+  const movementPolicyChanged = !mpUiState.room.disableCheatMovement && normalized.disableCheatMovement;
+  mpUiState.room.visibility = normalized.visibility;
+  mpUiState.room.disableCheatMovement = normalized.disableCheatMovement;
   mpUiState.room.settingsVersion = normalized.settingsVersion;
   mpUiState.room.phase = normalized.phase;
   mpUiState.room.spectators = normalized.spectators;
@@ -503,6 +506,7 @@ function mpApplyLobbyRoom(next: unknown) {
     mpUiState.ready = false;
   }
   renderMpRoom();
+  if (movementPolicyChanged && normalized.localSeat != null) void mpEnsureMovementAllowed();
 }
 
 function mpDisconnectLobby() {
@@ -542,6 +546,7 @@ let mpLobbyIntent = new URL(location.href).searchParams.get("lobbyAction") || ""
 let mpDirectoryAutoSeat = new URL(location.href).searchParams.get("fromLobby") === "1" && mpLobbyIntent === "join";
 let mpLobbyStopped = false;
 let mpDirectorySupported = false;
+let mpControlModesSupported = false;
 function mpConnectLobby(reconnecting = false) {
   const room = mpUiState.room;
   if (!room || mpLobbyStopped || typeof WebSocket !== "function") return;
@@ -554,6 +559,10 @@ function mpConnectLobby(reconnecting = false) {
       clientId: mpLobby.clientId,
       memberId: multiplayerMemberId(),
       intent: mpLobbyIntent,
+      visibility: room.visibility,
+      disableCheatMovement: room.disableCheatMovement,
+      playerCount: room.playerCount,
+      difficulty: room.difficulty,
     });
   } catch { return; }
   const transportRoomId = lobbyRelay.roomId;
@@ -569,6 +578,7 @@ function mpConnectLobby(reconnecting = false) {
   }
   const socket = new WebSocket(lobbyRelay.url);
   mpDirectorySupported = false;
+  mpControlModesSupported = false;
   roomNetwork.reset();
   mpLobby.socket = socket;
   mpLobby.roomCode = transportRoomId;
@@ -583,8 +593,9 @@ function mpConnectLobby(reconnecting = false) {
       mpLobbySend({
         type: "take-seat", seat: mpUiState.seat, loadout: mpUiState.preferredLoadout,
         ready: mpUiState.ready, name: mpUiState.displayName,
+        movementMode: state.options.touchMovementMode, touchEnabled: state.options.touchEnabled,
       });
-      if (mpUiState.seat === 0) mpLobbySend({ type: "settings", playerCount: mpUiState.room.playerCount, difficulty: mpUiState.room.difficulty });
+      if (mpUiState.seat === 0 && !(room.disableCheatMovement && state.options.touchMovementMode === "touch-unlimited")) mpSendRoomSettings();
     } else if (mpUiState.spectatorRequested) {
       mpLobbySend({ type: "spectate", name: mpUiState.displayName });
     }
@@ -602,12 +613,15 @@ function mpConnectLobby(reconnecting = false) {
     }
     if (message.type === "state") {
       if (record(message.roomDirectory)?.version === 1) mpDirectorySupported = true;
+      if (record(message.roomDirectory)?.controlModes === true) mpControlModesSupported = true;
       mpLobbyIntent = "join";
       const route = new URL(location.href);
       if (route.searchParams.has("lobbyAction")) {
         route.searchParams.delete("lobbyAction");
         route.searchParams.delete("lobbyPlayers");
         route.searchParams.delete("lobbyDifficulty");
+        route.searchParams.delete("lobbyVisibility");
+        route.searchParams.delete("lobbyDisableCheatMovement");
         history.replaceState(history.state, "", route);
       }
       const probe = record(message.roomProbe);
@@ -642,6 +656,14 @@ function mpConnectLobby(reconnecting = false) {
       return;
     }
     if (message.type === "error" && message.error) {
+      if (message.code === "movement-policy") {
+        const seat = Number(message.seat);
+        if (mpUiState.room) mpUiState.room.disableCheatMovement = true;
+        void mpEnsureMovementAllowed().then(ok => {
+          if (ok && mpUiState.seat == null && Number.isInteger(seat)) void mpTakeSeat(seat);
+        });
+        return;
+      }
       showToast(String(message.error));
     }
   });
@@ -749,6 +771,7 @@ async function mpLaunchRoomGame() {
   if (mpLaunchInFlight || (state.launched && !th09NetworkOverlayOpen())) return;
   mpLaunchInFlight = true;
   try {
+    if (mpUiState.seat != null && !await mpEnsureMovementAllowed()) return;
     const fromTh09Overlay = th09NetworkOverlayOpen();
     if (fromTh09Overlay && mpUiState.seat != null && !await confirmInputWarnings()) return;
     if (fromTh09Overlay) {
@@ -4351,6 +4374,9 @@ function validatedNetplayOptions() {
 }
 
 function setOption<K extends keyof GameOptions>(name: K, value: GameOptions[K]) {
+  if (name === "touchMovementMode" && value === "touch-unlimited" && mpUiState.room?.disableCheatMovement && mpUiState.seat != null) {
+    showToast(t("room.movementRequired")); render(); return;
+  }
   if (name === "thpracEnabled" && !gameFeatureAvailable(state.game, "thprac")) return;
   if (state.options[name] === value) return;
   state.options[name] = value;
@@ -4369,6 +4395,7 @@ function setOption<K extends keyof GameOptions>(name: K, value: GameOptions[K]) 
   }
   if (name === "touchFocusMode") touchControls.focusEnabled = false;
   saveGamePreferences();
+  if ((name === "touchMovementMode" || name === "touchEnabled") && (mpControlModesSupported || mpUiState.room?.disableCheatMovement) && mpUiState.room?.phase === "lobby" && mpUiState.seat != null) mpLobbySend({ type: "movement", movementMode: state.options.touchMovementMode, touchEnabled: state.options.touchEnabled });
   resetRuntime();
   render();
 }
@@ -6047,6 +6074,10 @@ $("#mpShareSettingsToggle").addEventListener("click", () => {
   mpShareSingleplayerSettings = !mpShareSingleplayerSettings;
   multiplayerPreferences.persistShareSingleplayerSettings(state.product, mpShareSingleplayerSettings);
   restoreGamePreferences(state.game, currentPreferenceId());
+  if ((mpControlModesSupported || mpUiState.room?.disableCheatMovement) && mpUiState.room?.phase === "lobby" && mpUiState.seat != null) {
+    mpLobbySend({ type: "movement", movementMode: state.options.touchMovementMode, touchEnabled: state.options.touchEnabled });
+    void mpEnsureMovementAllowed();
+  }
   resetRuntime();
   render();
   setTranslatedStatus(mpShareSingleplayerSettings ? "status.shareSettings" : "status.separateSettings");
@@ -6140,14 +6171,14 @@ $("#mpRoomPlayerCount").addEventListener("change", event => {
   const count = mpNormalizePlayerCount($("#mpRoomPlayerCount").value);
   room.playerCount = count;
   if (mpUiState.seat != null && mpUiState.seat >= count) mpUiState.seat = null;
-  mpLobbySend({ type: "settings", playerCount: count, difficulty: room.difficulty });
+  mpSendRoomSettings();
   renderMpRoom();
 });
 $("#mpRoomDifficulty").addEventListener("change", event => {
   const room = mpUiState.room;
   if (!room || !mpRoomOwnerLocal() || !mpLobby.connected) return;
   room.difficulty = Math.max(0, Math.min(mpDifficultyMax(), Number($("#mpRoomDifficulty").value) || 0));
-  mpLobbySend({ type: "settings", playerCount: room.playerCount, difficulty: room.difficulty });
+  mpSendRoomSettings();
   renderMpRoom();
 });
 document.querySelectorAll<HTMLElement>("[data-mp-player-count]").forEach(button => button.addEventListener("click", () => {
@@ -6228,10 +6259,13 @@ $("#mpLoadoutPrev").addEventListener("click", () => mpSetLoadout(-1));
 $("#mpLoadoutNext").addEventListener("click", () => mpSetLoadout(1));
 $("#mpLoadoutPrevSeat").addEventListener("click", () => mpSetLoadout(-1));
 $("#mpLoadoutNextSeat").addEventListener("click", () => mpSetLoadout(1));
-$("#mpReady").addEventListener("click", () => {
+$("#mpReady").addEventListener("click", async () => {
   if (mpUiState.seat == null || !mpLobby.connected) return;
+  const room = mpUiState.room;
   const ready = !mpUiState.ready;
-  if (!mpLobbySend({ type: "set-ready", ready })) return;
+  if (ready && !await mpEnsureMovementAllowed()) return;
+  if (mpUiState.room !== room || mpUiState.seat == null || room?.phase !== "lobby") return;
+  if (!mpLobbySend({ type: "set-ready", ready, movementMode: state.options.touchMovementMode, touchEnabled: state.options.touchEnabled })) return;
   mpUiState.ready = ready;
   renderMpRoom();
 });
@@ -6950,6 +6984,8 @@ function mpPersistRoomState() {
   multiplayerRoomSessions.save(state.product, {
     room: {
       code: mpUiState.room.code,
+      visibility: mpUiState.room.visibility,
+      disableCheatMovement: mpUiState.room.disableCheatMovement,
       playerCount: mpUiState.room.playerCount,
       difficulty: mpUiState.room.difficulty,
       created: !!mpUiState.room.created,
@@ -7004,6 +7040,8 @@ function mpRestoreRoomFromLocation() {
   const seat = saved?.seat ?? (createdInDirectory ? 0 : null);
   mpUiState.room = {
     code, playerCount, difficulty, created: createdInDirectory || !!saved?.room.created,
+    visibility: saved?.room.visibility ?? (requested.get("lobbyVisibility") === "private" ? "private" : "public"),
+    disableCheatMovement: saved?.room.disableCheatMovement ?? requested.get("lobbyDisableCheatMovement") === "1",
     seats: null, synced: false, connection: "connecting",
   };
   mpUiState.seat = seat;
@@ -7056,6 +7094,36 @@ function mpResetRoomState() {
   multiplayerRoomSessions.clear(state.product);
 }
 
+function mpSendRoomSettings() {
+  const room = mpUiState.room;
+  if (!room || mpUiState.seat !== 0) return;
+  mpLobbySend({ type: "settings", playerCount: room.playerCount, difficulty: room.difficulty,
+    visibility: room.visibility || "public", disableCheatMovement: !!room.disableCheatMovement });
+}
+
+document.querySelectorAll<HTMLButtonElement>("[data-room-visibility], [data-room-cheat]").forEach(button => button.addEventListener("click", () => {
+  const room = mpUiState.room;
+  if (!room || !mpRoomOwnerLocal() || !mpLobby.connected || room.phase !== "lobby") return;
+  mpLobbySend({ type: "settings", playerCount: room.playerCount, difficulty: room.difficulty,
+    visibility: button.dataset.roomVisibility ?? room.visibility ?? "public",
+    disableCheatMovement: button.dataset.roomCheat != null ? button.dataset.roomCheat === "1" : !!room.disableCheatMovement });
+}));
+
+let mpMovementDecision: Promise<boolean> | null = null;
+function mpEnsureMovementAllowed(): Promise<boolean> {
+  const room = mpUiState.room;
+  if (!room?.disableCheatMovement || state.options.touchMovementMode !== "touch-unlimited") return Promise.resolve(true);
+  if (mpMovementDecision) return mpMovementDecision;
+  mpMovementDecision = askDecision({ title: t("room.movementRequired"), message: t("room.movementRequiredHint"),
+    confirmText: t("room.useTouch"), secondaryText: t("room.useJoystick"), cancelText: t("action.cancel") })
+    .then(choice => {
+      if (choice === "cancel" || mpUiState.room !== room) return false;
+      setOption("touchMovementMode", choice === "secondary" ? "joystick" : "touch");
+      return true;
+    }).finally(() => { mpMovementDecision = null; });
+  return mpMovementDecision;
+}
+
 let mpRoomReturnTimer: number | null = null;
 function mpLeaveRoom() {
   if (th09NetworkOverlayOpen()) { th09LeaveNetworkRoom(); return; }
@@ -7106,12 +7174,15 @@ function mpAnimateSeatContents(seat: HTMLElement, occupant: string) {
   }
 }
 
-function mpTakeSeat(index: number) {
+async function mpTakeSeat(index: number) {
   if (!mpUiState.room?.synced || !mpLobby.connected || !Number.isInteger(index) || index < 0 || index >= mpUiState.room.playerCount) return;
   if (index === mpUiState.seat || mpUiState.room.seats?.[index]) return;
+  const room = mpUiState.room;
+  if (!await mpEnsureMovementAllowed() || mpUiState.room !== room || room.phase !== "lobby" || room.seats?.[index]) return;
   mpLobbySend({
     type: "take-seat", seat: index, loadout: mpUiState.preferredLoadout,
     ready: mpUiState.ready, name: mpUiState.displayName,
+    movementMode: state.options.touchMovementMode, touchEnabled: state.options.touchEnabled,
   });
   // The lobby snapshot commits old/new occupancy together, including rejection.
 }
@@ -7315,6 +7386,14 @@ function renderMpRoom() {
   $("#mpRoomCode").textContent = room.code;
   $("#mpRoomPlayerCount").value = String(room.playerCount);
   $("#mpRoomDifficulty").value = String(room.difficulty);
+  document.querySelectorAll<HTMLButtonElement>("[data-room-visibility], [data-room-cheat]").forEach(button => {
+    const selected = button.dataset.roomVisibility != null
+      ? button.dataset.roomVisibility === (room.visibility || "public")
+      : (button.dataset.roomCheat === "1") === !!room.disableCheatMovement;
+    button.classList.toggle("selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
+    button.disabled = !roomReady || !ownerLocal || room.phase !== "lobby" || selected;
+  });
   // Room configuration is public to everyone; only P1 may mutate it.
   // Losing or acquiring P1 must update the open panel rather than close it.
   mpUiState.roomSettingsOpen = roomPanel.open && roomPanel.dataset.panel === "game";
@@ -7389,6 +7468,17 @@ function renderMpRoom() {
       glyph.textContent = multiplayerDisplayInitial(networkSeat?.name ?? (mpUiState.seat === index ? mpUiState.displayName : ""), "?");
       seat.title = occupied ? mpLoadoutLabel(seatLoadout) : "";
     }
+    const face = seat.querySelector<HTMLElement>(".mp-seat-face")!;
+    let controlLabel = face.querySelector<HTMLElement>(".mp-seat-control");
+    if (!controlLabel) {
+      controlLabel = document.createElement("span"); controlLabel.className = "mp-seat-control"; face.append(controlLabel);
+    }
+    const controlMode = mpUiState.seat === index
+      ? !state.options.touchEnabled || touchMovementUsesJoystick(state.options.touchMovementMode) ? "normal" : state.options.touchMovementMode === "touch-unlimited" ? "cheat" : "touch"
+      : networkSeat?.controlMode;
+    controlLabel.hidden = !occupied || !controlMode;
+    controlLabel.textContent = controlMode ? t(`multiplayer.control.${controlMode}`) : "";
+    controlLabel.dataset.mode = controlMode || "";
     let edit = seat.querySelector<HTMLButtonElement>(".mp-seat-edit");
     if (!edit) {
       edit = document.createElement("button"); edit.type = "button"; edit.className = "mp-seat-edit";

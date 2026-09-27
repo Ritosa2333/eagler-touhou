@@ -109,12 +109,29 @@ Launcher room route for creation/joining. Browsing the
 directory never creates a room or takes a seat. No generated mockup is shipped
 as a UI asset. Both the page and its ESM closure belong to `frontend-manifest`.
 
+P1 can select public/private discovery and disallow unlimited-speed touch
+movement. Private means hidden from the directory, not password protection;
+room-code joins still work. Creation applies these rules before the first
+snapshot, including a private host whose seat is pending a movement change.
+Changing the movement rule invalidates readiness. Restricted rooms require an
+explicit permitted movement mode at seat admission, readiness and game start;
+the Launcher offers normal touch / joystick in the shared decision dialog and
+blocks switching back to unlimited movement while seated. This is a client
+settings agreement enforced by the relay, not anti-cheat against modified clients.
+Player avatars show a compact control-mode caption in both room and directory:
+unlimited touch / touch / normal (touch disabled or either joystick mode).
+The relay derives this from declared touch settings, advertises support, and
+publishes updates. Empty seats and legacy peers with unknown settings have no caption.
+
 `server/room-directory.mjs` is owned by the shared netplay relay. The same relay
 URL from Host Manifest accepts `?directory=1&member=<anonymous-browser-id>` and
 sends version-1 `directory` messages. Snapshots expose room code/product,
 capacity, occupancy, difficulty, ready status, spectator count and **initials
 only**. They exclude internal client IDs and full display names. `refresh`
 messages optionally select a product; responses are bounded to 200 rooms.
+Snapshots echo the selected `product`. The directory shows a loading indicator
+until the requested filter's snapshot arrives, and only then shows an empty
+state when there are no rooms. Earlier filter replies cannot settle a new filter.
 
 - The new Launcher shares one anonymous local-storage membership ID across
   titles and tabs, while retaining per-tab client IDs. The relay rejects a
@@ -126,6 +143,12 @@ messages optionally select a product; responses are bounded to 200 rooms.
 - Socket ping/pong runs every 30 seconds, with the next missed heartbeat
   terminating the connection. Existing room reconnect grace remains 12 seconds.
   An explicit departure releases the seat immediately.
+- A force-closed mobile page may retain a server-side socket until heartbeat
+  expiry. The directory provides an explicit “leave old room” action scoped to
+  its anonymous member and the exact observed session token. It releases that
+  member's seat, spectator admission and game/signaling transports, never another
+  member or a newer session. The page unlocks only after server confirmation;
+  old relays show a compatibility hint rather than pretending to release locally.
 - Waiting rooms with no action for 5 minutes are hidden; after 30 minutes they
   are closed (4004), with maintenance running every 30 seconds. Room operations
   and throttled trusted interaction refresh activity; network probes/heartbeat

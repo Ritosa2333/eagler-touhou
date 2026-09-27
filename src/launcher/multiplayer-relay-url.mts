@@ -10,6 +10,9 @@ const relayRoleParams = Object.freeze([
   "directory",
   "member",
   "intent",
+  "visibility",
+  "disableCheatMovement",
+  "difficulty",
 ]);
 
 export interface MultiplayerLobbyRelayUrl {
@@ -48,7 +51,7 @@ export function multiplayerTransportRoomId(product: string, roomCode: string): s
 
 export function buildMultiplayerLobbyRelayUrl(
   baseUrl: string,
-  { product, roomCode, clientId, memberId, intent }: { product: string; roomCode: string; clientId: string; memberId?: string; intent?: string },
+  { product, roomCode, clientId, memberId, intent, visibility, disableCheatMovement, playerCount, difficulty }: { product: string; roomCode: string; clientId: string; memberId?: string; intent?: string; visibility?: "public" | "private"; disableCheatMovement?: boolean; playerCount?: number; difficulty?: number },
 ): MultiplayerLobbyRelayUrl {
   const url = relayUrl(baseUrl);
   clearRelayRole(url);
@@ -57,6 +60,12 @@ export function buildMultiplayerLobbyRelayUrl(
   url.searchParams.set("lobby", clientId);
   if (memberId) url.searchParams.set("member", memberId);
   if (intent === "join" || intent === "create") url.searchParams.set("intent", intent);
+  if (intent === "create") {
+    url.searchParams.set("visibility", visibility === "private" ? "private" : "public");
+    url.searchParams.set("disableCheatMovement", disableCheatMovement ? "1" : "0");
+    if (playerCount != null) url.searchParams.set("players", String(playerCount));
+    if (difficulty != null) url.searchParams.set("difficulty", String(difficulty));
+  }
   return { roomId, url: url.href };
 }
 

@@ -1,5 +1,6 @@
 import {
   normalizeMultiplayerDisplayName,
+  multiplayerControlMode,
   validMultiplayerClientId,
 } from "./multiplayer-identity.mjs";
 
@@ -9,6 +10,7 @@ export interface MultiplayerLobbySeat {
   loadout: number;
   ready: boolean;
   offline: boolean;
+  controlMode: ReturnType<typeof multiplayerControlMode>;
 }
 
 export interface MultiplayerLobbySpectator {
@@ -17,6 +19,8 @@ export interface MultiplayerLobbySpectator {
 }
 
 export interface NormalizedMultiplayerLobbySnapshot {
+  visibility: "public" | "private";
+  disableCheatMovement: boolean;
   playerCount: 2 | 3;
   difficulty: number;
   settingsVersion: number;
@@ -90,6 +94,7 @@ export function normalizeMultiplayerLobbySnapshot(value: unknown, {
       loadout,
       ready: !!seat.ready,
       offline: !!seat.offline,
+      controlMode: multiplayerControlMode(seat.controlMode),
     };
   });
 
@@ -101,6 +106,8 @@ export function normalizeMultiplayerLobbySnapshot(value: unknown, {
 
   return {
     playerCount,
+    visibility: source.visibility === "private" ? "private" : "public",
+    disableCheatMovement: source.disableCheatMovement === true,
     difficulty,
     settingsVersion,
     phase,

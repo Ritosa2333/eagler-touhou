@@ -3,14 +3,14 @@ import type { MultiplayerProductId } from "../contracts/product-catalog.mjs";
 import { validateHostManifest } from "../contracts/host-manifest.mjs";
 import { getUiLocale, initUiLocale, t } from "./i18n.mjs";
 import type { UiMessageKey } from "./i18n.mjs";
-import { multiplayerMemberId, createMultiplayerIdentityStore } from "./multiplayer-identity.mjs";
+import { multiplayerMemberId, createMultiplayerIdentityStore, multiplayerControlMode } from "./multiplayer-identity.mjs";
 import { buildMultiplayerDirectoryRelayUrl } from "./multiplayer-relay-url.mjs";
 import { createMultiplayerRoomSessionStore } from "./multiplayer-room-session.mjs";
 
-type Seat = { initial: string; ready: boolean; online: boolean } | null;
+type Seat = { initial: string; ready: boolean; online: boolean; controlMode: ReturnType<typeof multiplayerControlMode> } | null;
 type Room = { product: MultiplayerProductId; code: string; capacity: 2 | 3; players: number; ready: number;
-  difficulty: number; spectators: number; phase: string; joinable: boolean; seats: Seat[] };
-type Mine = { product: MultiplayerProductId; code: string } | null;
+  difficulty: number; spectators: number; phase: string; joinable: boolean; seats: Seat[]; disableCheatMovement: boolean };
+type Mine = { product: MultiplayerProductId; code: string; recoveryToken: string } | null;
 type Connection = "loading" | "live" | "offline" | "unsupported" | "missing";
 const el = <T extends HTMLElement = HTMLElement>(id: string): T => document.getElementById(id) as T;
 const record = (value: unknown): Record<string, unknown> | null => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
@@ -28,12 +28,15 @@ const rowNodes = new Map<string, { node: HTMLElement; signature: string }>();
 let products: MultiplayerProductId[] = [];
 let rooms: Room[] = [];
 let mine: Mine = null;
+let recovering: Mine = null, recoveryTimer = 0, supportsRecovery = false;
 let relay = "";
 let selectedProduct = new URL(location.href).searchParams.get("game") || "";
 let connection: Connection = "loading";
+let connectionInterrupted = false;
 let socket: WebSocket | null = null;
 let reconnectTimer = 0, handshakeTimer = 0, filterTimer = 0, retryCount = 0;
 let total = 0, leaving = false;
+let loadedProduct: string | null = null, requestedProduct = "", listTimer = 0;
 let dialogMode: "create" | "join" = "create";
 let afterDialogClose: (() => void) | null = null;
 let initialRevealStarted = false;
@@ -110,9 +113,10 @@ function parseRoom(value: unknown): Room | null {
     if (value == null) return null;
     const seat = record(value);
     const initial = [...String(seat?.initial ?? value).replace(/[\u0000-\u001f\u007f]/g, "").trim()][0] || "?";
-    return { initial, ready: seat?.ready === true, online: seat?.online !== false };
+    return { initial, ready: seat?.ready === true, online: seat?.online !== false, controlMode: multiplayerControlMode(seat?.controlMode) };
   });
   return { product: row.product, code: row.code, capacity, seats,
+    disableCheatMovement: row.disableCheatMovement === true,
     players: seats.filter(Boolean).length, ready: bounded(row.ready, capacity),
     spectators: bounded(row.spectators, 999), difficulty: bounded(row.difficulty, policy.difficulties.length - 1),
     phase: row.phase === "lobby" ? "lobby" : "playing", joinable: row.joinable === true };
@@ -155,6 +159,12 @@ function rowFor(room: Room): HTMLElement {
   node.querySelector(".lobby-room-code")!.textContent = `#${room.code}`;
   node.querySelector(".lobby-difficulty")!.textContent = difficulty;
   node.querySelector(".lobby-mobile-difficulty")!.textContent = difficulty;
+  let movementRule = node.querySelector<HTMLElement>(".lobby-movement-rule");
+  if (!movementRule) {
+    movementRule = document.createElement("span"); movementRule.className = "lobby-movement-rule";
+    node.querySelector(".lobby-room-title")!.append(movementRule);
+  }
+  movementRule.textContent = t("lobby.noCheat"); movementRule.hidden = !room.disableCheatMovement;
   node.querySelector(".lobby-occupancy")!.textContent = t("lobby.count", { players: room.players, capacity: room.capacity });
   const party = node.querySelector<HTMLElement>(".lobby-party")!;
   party.setAttribute("aria-label", t("lobby.count", { players: room.players, capacity: room.capacity }));
@@ -166,11 +176,19 @@ function rowFor(room: Room): HTMLElement {
     item.dataset.ready = String(!!seat?.ready);
     item.dataset.offline = String(!!seat && !seat.online);
     item.title = t(!seat ? "lobby.seatEmpty" : !seat.online ? "lobby.seatOffline" : seat.ready ? "lobby.seatReady" : "lobby.seatWaiting", { seat: index + 1, name: seat?.initial || "?" });
+    if (seat?.controlMode) {
+      const label = document.createElement("span"); label.className = "lobby-seat-control";
+      label.textContent = t(`multiplayer.control.${seat.controlMode}`);
+      label.dataset.mode = seat.controlMode;
+      item.append(label);
+      item.title += ` · ${label.textContent}`;
+    }
     item.setAttribute("aria-label", item.title);
     item.setAttribute("role", "img");
     return item;
   });
   node.querySelector(".lobby-seats")!.replaceChildren(...seatNodes);
+  node.querySelector(".lobby-seats")!.classList.toggle("has-controls", room.seats.some(seat => !!seat?.controlMode));
   const playerCount = node.querySelector<HTMLElement>(".lobby-player-count")!;
   playerCount.textContent = `${room.players} / ${room.capacity}`;
   playerCount.setAttribute("aria-label", t("lobby.count", { players: room.players, capacity: room.capacity }));
@@ -187,9 +205,16 @@ function rowFor(room: Room): HTMLElement {
 }
 
 function render() {
-  const visible = rooms.filter(room => !selectedProduct || room.product === selectedProduct);
+  if (connection === "live") connectionInterrupted = false;
+  else if (connection !== "loading") connectionInterrupted = true;
+  const showConnectionWarning = connectionInterrupted;
+  el("connectionWarning").hidden = !showConnectionWarning;
+  el("connectionWarningTitle").textContent = t(connection === "unsupported" ? "lobby.unsupported" : rooms.length ? "lobby.disconnected" : "lobby.offline");
+  el("connectionWarningHint").textContent = t(connection === "unsupported" ? "lobby.unsupportedHint" : connection === "missing" ? "lobby.noService" : "lobby.refreshHint");
+  const loading = connection === "loading" || (connection === "live" && loadedProduct !== selectedProduct);
+  const visible = loading ? [] : rooms.filter(room => !selectedProduct || room.product === selectedProduct);
   const list = el("roomList");
-  list.setAttribute("aria-busy", String(connection === "loading"));
+  list.setAttribute("aria-busy", String(loading));
   const keep = new Set(visible.map(room => `${room.product}-${room.code}`));
   for (const [key, entry] of rowNodes) if (!keep.has(key)) { entry.node.remove(); rowNodes.delete(key); }
   let cursor = list.firstElementChild;
@@ -199,8 +224,9 @@ function render() {
     cursor = row.nextElementSibling;
   }
   el("listHead").hidden = !visible.length;
-  el("emptyState").hidden = !!visible.length;
-  el("roomCount").textContent = t("lobby.roomCount", { count: visible.length });
+  el("listLoading").hidden = !loading;
+  el("emptyState").hidden = loading || !!visible.length || showConnectionWarning;
+  el("roomCount").textContent = loading ? "" : t("lobby.roomCount", { count: visible.length });
   const emptyTitle: UiMessageKey = connection === "live" ? "lobby.empty" : connection === "loading" ? "lobby.connecting" : connection === "unsupported" ? "lobby.unsupported" : "lobby.offline";
   const emptyHint: UiMessageKey = connection === "live" ? "lobby.emptyHint" : connection === "loading" ? "lobby.loadingHint" : connection === "unsupported" ? "lobby.unsupportedHint" : connection === "missing" ? "lobby.noService" : "lobby.offlineHint";
   el("emptyTitle").textContent = t(emptyTitle);
@@ -213,9 +239,14 @@ function render() {
   el<HTMLButtonElement>("submitRoom").disabled = disabled;
   el("membership").hidden = !mine;
   if (mine) el("membershipTitle").textContent = t("lobby.mine", { code: mine.code });
+  el("membershipHint").textContent = t(supportsRecovery ? "lobby.mineHint" : "lobby.releaseUnsupported");
+  const releaseButton = el<HTMLButtonElement>("releaseMembership");
+  releaseButton.hidden = !mine || !supportsRecovery;
+  releaseButton.disabled = !!recovering || connection !== "live" || leaving || !mine?.recoveryToken;
+  releaseButton.textContent = t(recovering ? "lobby.releasing" : "lobby.release");
   const connectionNote = el("connectionNote");
-  connectionNote.hidden = !(visible.length && connection !== "live") && !(connection === "live" && total > rooms.length);
-  connectionNote.textContent = t(connection !== "live" ? "lobby.stale" : "lobby.truncated", { count: rooms.length });
+  connectionNote.hidden = connection !== "live" || total <= rooms.length;
+  connectionNote.textContent = t("lobby.truncated", { count: rooms.length });
   revealInitialPage();
 }
 
@@ -229,7 +260,9 @@ function renderFilters() {
     button.title = product ? titleFor(product as MultiplayerProductId) : t("lobby.all");
     button.setAttribute("aria-pressed", String(selectedProduct === product));
     button.addEventListener("click", () => {
+      if (selectedProduct === product) return;
       selectedProduct = product;
+      loadedProduct = null;
       const route = new URL(location.href);
       if (product) route.searchParams.set("game", product); else route.searchParams.delete("game");
       history.replaceState(history.state, "", route);
@@ -243,10 +276,17 @@ function renderFilters() {
   el("filters").replaceChildren(...filters);
 }
 function refresh() {
-  if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: "refresh", product: selectedProduct }));
+  if (socket?.readyState !== WebSocket.OPEN) return;
+  requestedProduct = selectedProduct;
+  socket.send(JSON.stringify({ type: "refresh", product: selectedProduct }));
+  clearTimeout(listTimer);
+  if (loadedProduct !== selectedProduct) listTimer = window.setTimeout(() => {
+    disconnect(); connection = "offline"; render();
+  }, 10000);
 }
 function disconnect() {
-  clearTimeout(reconnectTimer); clearTimeout(handshakeTimer);
+  clearTimeout(reconnectTimer); clearTimeout(handshakeTimer); clearTimeout(listTimer);
+  clearTimeout(recoveryTimer); recovering = null;
   const previous = socket;
   socket = null;
   if (previous && previous.readyState < WebSocket.CLOSING) previous.close(1000, "leave directory");
@@ -256,6 +296,7 @@ function connect() {
   if (!relay || leaving) return;
   if (navigator.onLine === false) { connection = "offline"; render(); return; }
   connection = "loading";
+  loadedProduct = null; requestedProduct = "";
   render();
   let next: WebSocket;
   try { next = new WebSocket(buildMultiplayerDirectoryRelayUrl(relay, memberId)); }
@@ -276,9 +317,18 @@ function connect() {
     received = true; retryCount = 0;
     clearTimeout(handshakeTimer);
     const active = record(message.mine);
+    supportsRecovery = message.membershipRecovery === true;
     mine = active && typeof active.product === "string" && isMultiplayerProductId(active.product) && typeof active.code === "string" && /^\d{4,8}$/.test(active.code)
-      ? { product: active.product, code: active.code } : null;
+      ? { product: active.product, code: active.code, recoveryToken: typeof active.recoveryToken === "string" ? active.recoveryToken : "" } : null;
+    if (recovering && mine?.recoveryToken !== recovering.recoveryToken) {
+      clearTimeout(recoveryTimer);
+      if (!mine) sessions.clear(recovering.product);
+      recovering = null;
+      notice(t(mine ? "lobby.releaseChanged" : "lobby.released"));
+    }
     rooms = message.rooms.slice(0, 200).map(parseRoom).filter((room): room is Room => !!room);
+    loadedProduct = typeof message.product === "string" ? message.product : first ? "" : requestedProduct;
+    if (loadedProduct === selectedProduct) clearTimeout(listTimer);
     total = bounded(message.total, 100000);
     connection = "live";
     render();
@@ -287,6 +337,8 @@ function connect() {
   next.addEventListener("close", event => {
     if (socket !== next) return;
     socket = null;
+    if (recovering) notice(t("lobby.releaseFailed"));
+    clearTimeout(recoveryTimer); recovering = null;
     clearTimeout(handshakeTimer);
     connection = !received && event.code === 1008 ? "unsupported" : "offline";
     render();
@@ -309,9 +361,10 @@ function setDialogMode(mode: "create" | "join") {
   el("dialogTitle").textContent = t(mode === "create" ? "lobby.create" : "lobby.byCode");
   el("submitRoom").textContent = t(mode === "create" ? "lobby.create" : "lobby.joinRoom");
   el("createFields").hidden = mode !== "create";
+  el("policyFields").hidden = mode !== "create";
   el("codeField").hidden = mode !== "join";
   codeInput.required = mode === "join";
-  el("formNote").textContent = t(mode === "create" ? "lobby.publicRoom" : "lobby.codeHint");
+  el("formNote").textContent = t(mode === "create" ? (el<HTMLSelectElement>("visibilitySelect").value === "private" ? "room.privateHint" : "lobby.publicRoom") : "lobby.codeHint");
   el("formError").hidden = true;
 }
 function openDialog(mode: "create" | "join") {
@@ -349,6 +402,18 @@ el("closeDialog").addEventListener("click", closeDialog);
 gameSelect.addEventListener("change", updateGameOptions);
 el("createButton").addEventListener("click", () => openDialog("create"));
 el("codeButton").addEventListener("click", () => openDialog("join"));
+el("releaseMembership").addEventListener("click", () => {
+  if (!supportsRecovery || !mine?.recoveryToken || recovering || socket?.readyState !== WebSocket.OPEN) return;
+  recovering = { ...mine };
+  socket.send(JSON.stringify({ type: "release-membership", recoveryToken: recovering.recoveryToken }));
+  recoveryTimer = window.setTimeout(() => {
+    recovering = null;
+    notice(t("lobby.releaseFailed")); render();
+  }, 8000);
+  render();
+});
+el("visibilitySelect").addEventListener("change", () => setDialogMode(dialogMode));
+el("connectionRefresh").addEventListener("click", () => location.reload());
 el("emptyAction").addEventListener("click", () => {
   if (connection === "live") openDialog("create");
   else if (!relay) void boot();
@@ -373,16 +438,18 @@ el<HTMLFormElement>("roomForm").addEventListener("submit", event => {
   }
   const capacity = Number(capacitySelect.value) as 2 | 3;
   const difficulty = Number(difficultySelect.value);
-  afterDialogClose = () => enterRoom(product, code, created, capacity, difficulty);
+  const visibility = el<HTMLSelectElement>("visibilitySelect").value === "private" ? "private" : "public";
+  const disableCheatMovement = el<HTMLSelectElement>("cheatSelect").value === "1";
+  afterDialogClose = () => enterRoom(product, code, created, capacity, difficulty, visibility, disableCheatMovement);
   closeDialog();
 });
 
-function enterRoom(product: MultiplayerProductId, code: string, created: boolean, playerCount?: 2 | 3, difficulty = 1) {
+function enterRoom(product: MultiplayerProductId, code: string, created: boolean, playerCount?: 2 | 3, difficulty = 1, visibility: "public" | "private" = "public", disableCheatMovement = false) {
   if (leaving || connection !== "live") return;
   if (mine) { notice(t("lobby.conflict")); return; }
   const policy = multiplayerConfigForProduct(product)!;
   identity.lobbyClientId(product);
-  if (created) sessions.save(product, { room: { code, playerCount: playerCount || policy.playerCounts[0], difficulty, created: true }, seat: 0, ready: false, spectatorRequested: false, roomSettingsOpen: false });
+  if (created) sessions.save(product, { room: { code, playerCount: playerCount || policy.playerCounts[0], difficulty, created: true, visibility, disableCheatMovement }, seat: 0, ready: false, spectatorRequested: false, roomSettingsOpen: false });
   else sessions.clear(product);
   const url = new URL(launcherUrl);
   url.searchParams.set("game", product);
@@ -393,6 +460,8 @@ function enterRoom(product: MultiplayerProductId, code: string, created: boolean
   if (created) {
     url.searchParams.set("lobbyPlayers", String(playerCount || policy.playerCounts[0]));
     url.searchParams.set("lobbyDifficulty", String(difficulty));
+    url.searchParams.set("lobbyVisibility", visibility);
+    url.searchParams.set("lobbyDisableCheatMovement", disableCheatMovement ? "1" : "0");
   }
   leaving = true;
   render();

@@ -1,6 +1,16 @@
+import { randomUUID } from 'node:crypto';
+
+export function publicControlMode(seat) {
+  if (seat.touchEnabled === false) return 'normal';
+  if (seat.touchEnabled !== true) return null;
+  if (seat.movementMode === 'touch-unlimited') return 'cheat';
+  if (seat.movementMode === 'touch') return 'touch';
+  return ['joystick', 'joystick-free'].includes(seat.movementMode) ? 'normal' : null;
+}
+
 // Discovery never joins a room. Membership is anonymous and browser-scoped;
 // it prevents accidental multi-tab seats, not multiple accounts/devices.
-export function createRoomDirectory({ rooms, clearSeat, invalidateReady, broadcast, maybeDelete,
+export function createRoomDirectory({ rooms, clearSeat, invalidateReady, broadcast, maybeDelete, releaseTransports,
   idleHideMs = 5 * 60_000, idleCloseMs = 30 * 60_000 }) {
   const members = new Map(), clients = new Map(), viewers = new Map(), tracked = new Set();
   let updateTimer;
@@ -16,7 +26,7 @@ export function createRoomDirectory({ rooms, clearSeat, invalidateReady, broadca
   const send = (socket, value) => { if (online(socket) && socket.bufferedAmount < 128 * 1024) socket.send(JSON.stringify(value)); };
   function summary(id, room) {
     const match = /^(th\d+mp)-(\d{4,8})$/.exec(id);
-    if (!match || !room.multiplayer) return null;
+    if (!match || !room.multiplayer || room.lobby.visibility === 'private') return null;
     const seats = room.lobby.seats.slice(0, room.lobby.playerCount);
     const occupied = seats.filter(Boolean);
     const connected = occupied.filter(seat => online(room.lobbyClients.get(seat.clientId)));
@@ -27,9 +37,11 @@ export function createRoomDirectory({ rooms, clearSeat, invalidateReady, broadca
       capacity: room.lobby.playerCount, players: occupied.length, online: connected.length,
       ready: connected.filter(seat => seat.ready && seat.readyVersion === room.lobby.settingsVersion).length,
       difficulty: room.lobby.difficulty, host: initial(seats[0]?.name),
+      disableCheatMovement: room.lobby.disableCheatMovement === true,
       spectators: [...room.lobby.spectators.keys()].filter(id => online(room.lobbyClients.get(id))).length,
       initials: seats.map(seat => seat ? initial(seat.name) : null),
       seats: seats.map(seat => seat ? { initial: initial(seat.name),
+        controlMode: publicControlMode(seat),
         online: online(room.lobbyClients.get(seat.clientId)),
         ready: !!seat.ready && seat.readyVersion === room.lobby.settingsVersion } : null),
       createdAt: room.createdAt, joinable: room.lobby.phase === 'lobby' && occupied.length < room.lobby.playerCount };
@@ -38,10 +50,10 @@ export function createRoomDirectory({ rooms, clearSeat, invalidateReady, broadca
     const active = members.get(memberId);
     const activeRoom = active && rooms.get(active.roomId);
     const mine = activeRoom && (online(active.socket) || activeRoom.lobbyDisconnectTimers.has(active.clientId) || ownsGame(activeRoom, active.clientId))
-      ? { product: active.roomId.split('-')[0], code: active.roomId.split('-')[1] } : null;
+      ? { product: active.roomId.split('-')[0], code: active.roomId.split('-')[1], recoveryToken: active.recoveryToken } : null;
     const entries = [...rooms].map(([id, room]) => summary(id, room)).filter(value => value && (!product || value.product === product))
       .sort((a, b) => Number(b.joinable) - Number(a.joinable) || b.createdAt - a.createdAt);
-    return { type: 'directory', version: 1, rooms: entries.slice(0, 200), total: entries.length, mine };
+    return { type: 'directory', version: 1, membershipRecovery: true, product, rooms: entries.slice(0, 200), total: entries.length, mine };
   }
   function publish() {
     updateTimer = undefined;
@@ -87,7 +99,7 @@ export function createRoomDirectory({ rooms, clearSeat, invalidateReady, broadca
     }
     if (previous && previous.socket !== socket && online(previous.socket)) previous.socket.close(4008, 'session replaced');
     if (previous && members.get(previous.memberId) === previous) members.delete(previous.memberId);
-    const entry = { roomId, clientId, memberId, socket };
+    const entry = { roomId, clientId, memberId, socket, recoveryToken: randomUUID() };
     members.set(memberId, entry); clients.set(clientId, entry);
     track(socket);
     changed();
@@ -100,11 +112,24 @@ export function createRoomDirectory({ rooms, clearSeat, invalidateReady, broadca
     socket.on('message', (data, binary) => {
       const viewer = viewers.get(socket);
       if (!viewer || binary || data.length > 256) { socket.close(1008, 'invalid directory request'); return; }
-      if (Date.now() - viewer.lastRequest < 150) return;
-      viewer.lastRequest = Date.now();
       let message;
       try { message = JSON.parse(String(data)); } catch { return; }
+      if (message?.type === 'release-membership') {
+        const entry = members.get(memberId);
+        // Compare the observed session, not just the room code: a delayed click
+        // must never disconnect a newer session opened by another tab.
+        if (memberId && entry && message.recoveryToken === entry.recoveryToken) {
+          releaseTransports?.(entry.roomId, entry.clientId);
+          remove(entry);
+          entry.socket.close(4008, 'membership released');
+          changed();
+        }
+        send(socket, snapshot(memberId, viewer.product));
+        return;
+      }
       if (message?.type === 'refresh') {
+        if (Date.now() - viewer.lastRequest < 150) return;
+        viewer.lastRequest = Date.now();
         viewer.product = /^th\d+mp$/.test(message.product) ? message.product : '';
         send(socket, snapshot(memberId, viewer.product));
       }

@@ -37,13 +37,19 @@
         <button class="lobby-button lobby-secondary" id="codeButton" type="button" disabled data-i18n="lobby.byCode">输入房间号</button>
       </div>
     </header>
+    <aside class="lobby-warning lobby-connection-warning" id="connectionWarning" role="alert" hidden>
+      <div><strong><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 4.7 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.7a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 4h.01"/></svg><span id="connectionWarningTitle"></span></strong><p id="connectionWarningHint"></p></div>
+      <button class="lobby-button" id="connectionRefresh" type="button" data-i18n="lobby.refresh">刷新</button>
+    </aside>
     <p class="lobby-notice" id="notice" role="status" hidden></p>
-    <aside class="lobby-membership" id="membership" hidden><strong id="membershipTitle"></strong><p data-i18n="lobby.mineHint">请回到原标签页继续，或先退出原房间，再加入其他房间。</p></aside>
+    <aside class="lobby-membership" id="membership" hidden><strong id="membershipTitle"></strong><p id="membershipHint" data-i18n="lobby.mineHint">可回到原标签页继续。如果已关闭原页面，可在这里退出原房间；这也会断开原标签页的联机。</p><button class="lobby-button" id="releaseMembership" type="button" data-i18n="lobby.release" hidden>退出原房间</button></aside>
     <nav class="lobby-filters" id="filters" aria-label="作品" data-i18n-aria-label="lobby.game"></nav>
+    <aside class="lobby-warning" aria-labelledby="mobileWarningTitle"><strong id="mobileWarningTitle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 4.7 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.7a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 4h.01"/></svg><span data-i18n="lobby.mobileWarningTitle">手机游玩提醒</span></strong><p data-i18n="lobby.mobileWarning">永夜抄联机 和 风神录联机 暂时不推荐用手机游玩。联机若想无输入延迟，天生就不适合给触控玩。</p><p data-i18n="lobby.mobileWarningRollback">不过，红魔乡联机 和 妖妖梦联机 优化得相当好。</p></aside>
     <section class="lobby-list-surface" aria-label="房间列表" data-i18n-aria-label="lobby.rooms">
       <div class="lobby-list-head" id="listHead" aria-hidden="true" hidden><span data-i18n="lobby.gameAndRoom">游戏与房间</span><span data-i18n="lobby.difficulty">难度</span><span></span><span data-i18n="lobby.capacity">人数</span><span data-i18n="lobby.state">状态</span><span></span></div>
       <div class="lobby-room-list" id="roomList" role="list" aria-busy="true"></div>
-      <div class="lobby-empty" id="emptyState"><img src="assets/room-users.svg" alt="" width="36" height="36"><h2 id="emptyTitle" data-i18n="lobby.connecting">正在连接大厅…</h2><p id="emptyHint" data-i18n="lobby.loadingHint">正在获取实时房间信息。</p><button class="lobby-button" id="emptyAction" type="button" hidden data-i18n="lobby.retry">重新连接</button></div>
+      <div class="lobby-list-loading" id="listLoading" role="status"><i class="lobby-preload-spinner" aria-hidden="true"></i><span class="lobby-sr-only" data-i18n="lobby.loadingHint">正在获取实时房间信息。</span></div>
+      <div class="lobby-empty" id="emptyState" hidden><img src="assets/room-users.svg" alt="" width="36" height="36"><h2 id="emptyTitle" data-i18n="lobby.connecting">正在连接大厅…</h2><p id="emptyHint" data-i18n="lobby.loadingHint">正在获取实时房间信息。</p><button class="lobby-button" id="emptyAction" type="button" hidden data-i18n="lobby.retry">重新连接</button></div>
     </section>
     <p class="lobby-notice" id="connectionNote" role="status" hidden></p>
     <p class="lobby-sr-only" id="roomCount" aria-live="polite"></p>
@@ -67,6 +73,7 @@
       <label class="lobby-field"><span data-i18n="lobby.game">作品</span><select id="gameSelect" required></select></label>
       <div id="createFields" class="lobby-form-pair"><label class="lobby-field"><span data-i18n="lobby.capacity">人数</span><select id="capacitySelect"></select></label><label class="lobby-field"><span data-i18n="lobby.difficulty">难度</span><select id="difficultySelect"></select></label></div>
       <label class="lobby-field" id="codeField" hidden><span data-i18n="lobby.roomCode">房间号</span><input id="roomCodeInput" type="text" inputmode="numeric" autocomplete="off" pattern="[0-9]{4,8}" minlength="4" maxlength="8" placeholder="0000"></label>
+      <div class="lobby-form-pair" id="policyFields"><label class="lobby-field"><span data-i18n="room.visibility">房间可见性</span><select id="visibilitySelect"><option value="public" data-i18n="room.public">公共</option><option value="private" data-i18n="room.private">私密</option></select></label><label class="lobby-field"><span data-i18n="room.cheatMovement">作弊移动</span><select id="cheatSelect"><option value="0" data-i18n="room.cheatAllowed">不禁用</option><option value="1" data-i18n="room.cheatDisabled">禁用</option></select></label></div>
       <p class="lobby-form-note" id="formNote" data-i18n="lobby.publicRoom">创建后会出现在大厅中，其他玩家可直接加入。</p>
       <p class="lobby-form-error" id="formError" role="alert" hidden></p>
       <button class="lobby-button lobby-primary lobby-submit" id="submitRoom" type="submit" data-i18n="lobby.create">创建房间</button>

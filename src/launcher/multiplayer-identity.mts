@@ -1,4 +1,7 @@
 export const multiplayerDisplayNameStorageKey = "eagler-touhou-mp-display-name-v1";
+export function multiplayerControlMode(value: unknown): "normal" | "touch" | "cheat" | null {
+  return value === "normal" || value === "touch" || value === "cheat" ? value : null;
+}
 export const multiplayerDisplayNameLockedStorageKey = "eagler-touhou-mp-display-name-locked-v1";
 export const multiplayerLobbyClientStorageKey = (product: string): string =>
   `eagler-touhou-${product}-lobby-client-v1`;

@@ -60,6 +60,8 @@ export interface LauncherState {
 }
 
 export interface MultiplayerRoomState {
+  visibility?: "public" | "private";
+  disableCheatMovement?: boolean;
   code: string;
   playerCount: 2 | 3;
   difficulty: number;

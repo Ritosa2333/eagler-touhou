@@ -488,7 +488,7 @@
         <section class="mp-room-summary">
           <h2 class="mp-room-title" id="mpRoomTitle"></h2>
           <div class="mp-room-tags"><span id="mpRoomMode"></span><span id="mpRoomDifficultyBadge"></span><span id="mpRoomPhase"></span></div>
-          <div id="mpRoomSettingsDrawer"><button class="mp-room-settings-toggle" id="mpRoomSettingsToggle" type="button" aria-expanded="false" aria-controls="mpRoomPanel"><img class="room-icon" src="assets/room-sliders-horizontal.svg" alt=""><span data-i18n="multiplayer.gameSettings">游戏设置</span></button></div>
+          <div id="mpRoomSettingsDrawer"><button class="mp-room-settings-toggle" id="mpRoomSettingsToggle" type="button" aria-expanded="false" aria-controls="mpRoomPanel"><img class="room-icon" src="assets/room-sliders-horizontal.svg" alt=""><span data-i18n="multiplayer.gameSettings">房间 / 难度设置</span></button></div>
         </section>
         <div class="mp-session-dock">
           <div class="mp-dock-players">
@@ -569,6 +569,11 @@
           <div class="mp-spectator-list" id="mpSpectatorList"></div>
           <button class="mp-spectator-join" id="mpSpectatorJoin" type="button" data-i18n="multiplayer.joinSpectator">加入旁观</button></div>
           <section class="mp-room-settings" data-room-panel="game" id="mpRoomSettings" hidden>
+            <div class="mp-room-setting-title" data-i18n="room.visibility">房间可见性</div>
+            <div class="mp-room-choice-group"><button type="button" data-room-visibility="public" data-i18n="room.public">公共</button><button type="button" data-room-visibility="private" data-i18n="room.private">私密</button></div>
+            <p class="mp-room-settings-hint" data-i18n="room.privateHint">私密房间不在大厅展示，仍可凭房间号加入。</p>
+            <div class="mp-room-setting-title" data-i18n="room.cheatMovement">作弊移动</div>
+            <div class="mp-room-choice-group"><button type="button" data-room-cheat="1" data-i18n="room.cheatDisabled">禁用</button><button type="button" data-room-cheat="0" data-i18n="room.cheatAllowed">不禁用</button></div>
             <div class="mp-room-setting-title" data-i18n="multiplayer.players">游戏人数</div>
             <div class="mp-room-choice-group" data-mp-room-choice="playerCount">
               <button type="button" data-mp-player-count="2">2P</button>
