@@ -4,6 +4,7 @@
 #include <eagler/netplay/NetplayCore.hpp>
 #include <eagler/netplay/NetplaySession.hpp>
 #include <eagler/netplay/PeerTransport.hpp>
+#include <eagler/netplay/SessionPacing.hpp>
 
 #include <array>
 #include <cstddef>
@@ -64,6 +65,10 @@ public:
     std::uint32_t PacketsIgnored() const { return ignored_; }
     std::uint32_t RepairsSent() const { return repairs_; }
     std::uint32_t PeerFrame(std::uint8_t peer) const;
+    // Optional wall-clock advice. The consumer owns whether to apply it;
+    // this channel never changes logical input or simulation frames.
+    double IntervalScale() const { return pacing_.IntervalScale(); }
+    double FrameLead() const { return pacing_.Lead(); }
     const char *ErrorText() const;
 
 private:
@@ -87,6 +92,7 @@ private:
     std::array<std::uint64_t, MAX_PLAYERS> lastRepair_{};
     std::array<bool, MAX_PLAYERS> peerNeedsAck_{};
     std::array<ConfirmedInputWatchdog, MAX_PLAYERS> watchdog_{};
+    SessionPacing pacing_;
     std::vector<std::uint8_t> incoming_, outgoing_;
 
     // One retired epoch's terminal ACKs remain answerable until each peer

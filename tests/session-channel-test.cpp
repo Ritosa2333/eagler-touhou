@@ -1,4 +1,5 @@
 #include <eagler/netplay/SessionChannel.hpp>
+#include <eagler/netplay/InputRepairBudget.hpp>
 #include <cstdio>
 #include <cstdlib>
 #include <deque>
@@ -179,8 +180,51 @@ void timeouts_and_invalid_ack(){
         CHECK(!p.channel.Pump(p.gate,p.core,mesh.now,false));CHECK(p.channel.Error()==SessionChannel::Failure::Transport);
     }
 }
+void pacing_validated_packets_and_reset(){
+    Mesh mesh(2);mesh.barrier();auto& p=*mesh.peers[0];
+    const auto send=[&](std::uint32_t sequence,std::uint32_t frame,std::int16_t lead,std::uint64_t session=100){
+        InputPacket packet{};packet.sessionId=session;packet.playerCount=2;packet.senderPlayer=1;
+        packet.sequence=sequence;packet.senderFrame=frame;packet.frameAdvantage=lead;
+        std::vector<std::uint8_t> wire;CHECK(EncodeInputPacket(packet,&wire));p.link.inbox.push_back(wire);
+        CHECK(p.channel.Pump(p.gate,p.core,mesh.now,false));
+    };
+    for(unsigned frame=1;frame<=40;++frame)send(frame,frame,-50);
+    CHECK(p.channel.IntervalScale()>1.005&&p.channel.IntervalScale()<=1.02);
+    const auto scale=p.channel.IntervalScale(),lead=p.channel.FrameLead();
+    for(unsigned i=0;i<40;++i){send(100+i,40,50);send(1,41,50);send(200+i,41,50,999);}
+    CHECK(p.channel.IntervalScale()==scale&&p.channel.FrameLead()==lead);
+    // Pacing observations neither admit input nor move the simulation frontier.
+    CHECK(p.core.LastSimulatedFrame()==INVALID_FRAME&&p.core.ConfirmedThroughAllRemotes()==INVALID_FRAME);
+    p.channel.Clear();mesh.begin(0,200);
+    CHECK(p.channel.IntervalScale()==1&&p.channel.FrameLead()==0);
+}
+void short_repair_policy(){
+    // Compare the complete input + ACK exchange under all-fast-lane loss.
+    // The test clock includes receive/pump cadence; no sleeping or game ticks.
+    const auto recover=[](std::uint64_t interval){
+        Mesh mesh(2);SessionChannelConfig policy;policy.repairIntervalMs=interval;
+        for(auto& owner:mesh.peers){auto& p=*owner;p.channel.Clear();CHECK(p.channel.BeginSession(p.gate.Config(),mesh.now,policy));}
+        mesh.barrier();mesh.drop=[](std::uint8_t,std::uint8_t,bool reliable,const std::vector<std::uint8_t>&){return !reliable;};
+        const auto start=mesh.now;for(auto& p:mesh.peers)capture(*p,0,mesh.now);
+        for(unsigned step=0;step<200;++step){
+            mesh.pump(true,5);
+            if(mesh.peers[0]->core.AcknowledgedLocalThroughAllRemotes()==0&&mesh.peers[1]->core.AcknowledgedLocalThroughAllRemotes()==0){
+                CHECK(mesh.peers[0]->captures==1&&mesh.peers[1]->captures==1);
+                CHECK(mesh.peers[0]->channel.RepairsSent()<=3&&mesh.peers[1]->channel.RepairsSent()<=3);
+                return mesh.now-start;
+            }
+        }
+        CHECK(false);return std::uint64_t(0);
+    };
+    const auto previous=recover(250),current=recover(InputRepairBudget::StalledMs);
+    CHECK(current<=200&&previous>=500&&current<previous);
+    std::printf("tail repair (input+ACK, all fast packets lost): %llu -> %llu ms\n",
+        static_cast<unsigned long long>(previous),static_cast<unsigned long long>(current));
+}
 }
 int main(){
     lossy_three_peer_stream();retired_final_ack_echo();reliable_tail_repairs_blackout();timeouts_and_invalid_ack();
+    pacing_validated_packets_and_reset();
+    short_repair_policy();
     std::puts("eagler-common session channel: PASS");
 }

@@ -30,6 +30,7 @@ SessionChannel::SessionChannel(PeerTransport &transport) : transport_(transport)
 
 void SessionChannel::Clear()
 {
+    pacing_.Reset();
     policy_ = {};
     session_ = {};
     active_ = observedClock_ = helloSent_ = forceControl_ = forceInputs_ = false;
@@ -81,6 +82,7 @@ bool SessionChannel::BeginSession(const SessionConfig &session, std::uint64_t no
         return Fail(Failure::InvalidConfiguration);
     if (!ObserveClock(nowMs)) return false;
     policy_ = config;
+    pacing_.Reset();
     session_ = session;
     active_ = true;
     helloSent_ = false;
@@ -242,6 +244,10 @@ bool SessionChannel::Receive(SessionGate &gate, RollbackCore &core, std::uint64_
                 receivedSequence_[packet.senderPlayer] = packet.sequence;
                 peerFrame_[packet.senderPlayer] = packet.senderFrame;
                 peerNeedsAck_[packet.senderPlayer] = packet.inputCount != 0;
+                // Only validated, newest packets can affect clock advice.
+                // SessionPacing additionally ignores repeated sender frames,
+                // so ACK-only retransmits cannot overweight a stalled peer.
+                pacing_.Observe(static_cast<std::uint32_t>(next), packet);
             }
         }
         else return Fail(Failure::MalformedPacket);
