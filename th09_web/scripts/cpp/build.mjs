@@ -1,17 +1,24 @@
 // Build only the verified-module comparison fixture. This is not a playable game.
 import {spawnSync,spawn} from 'node:child_process';
 import {mkdirSync,readdirSync,readFileSync,writeFileSync,existsSync} from 'node:fs';
-import {resolve} from 'node:path';
+import {resolve,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 const root=fileURLToPath(new URL('../../',import.meta.url));
-const compiler=resolve(root,'../th10_web/tools/wasi-sdk-34.0-x86_64-windows/bin/clang++.exe');
+const compiler=[
+    process.env.WASI_SDK_BIN&&resolve(process.env.WASI_SDK_BIN,'clang++.exe'),
+    resolve(root,'../../toolchains/wasi-sdk-34.0-x86_64-windows/bin/clang++.exe'),
+    resolve(root,'../th10_web/tools/wasi-sdk-34.0-x86_64-windows/bin/clang++.exe'),
+].filter(Boolean).find(existsSync);
+if(!compiler)throw Error('WASI clang++ not found; set WASI_SDK_BIN or install the workspace wasi-sdk-34.0 toolchain');
+const sdk=resolve(dirname(compiler),'..'),sysroot=resolve(sdk,'share/wasi-sysroot');
+const libcxxInclude=resolve(sysroot,'include/wasm32-wasip1/noeh/c++/v1'),libcxxLib=resolve(sysroot,'lib/wasm32-wasip1/noeh');
 const out=resolve(root,'artifacts/cpp');mkdirSync(out,{recursive:true});
 const sources=readdirSync(resolve(root,'cpp/game')).filter(n=>n.endsWith('.cpp')).sort().map(n=>'cpp/game/'+n);
 sources.push('tests/cpp/core-exports.cpp');
 const headers=[...readdirSync(resolve(root,'cpp/game')).filter(n=>/\.(hpp|inc)$/.test(n)).map(n=>'cpp/game/'+n),...readdirSync(resolve(root,'tests/cpp')).filter(n=>n.endsWith('.hpp')).map(n=>'tests/cpp/'+n)].sort();
 const wasm=resolve(out,'game-core-test.wasm');
-const flags=['-DTH09_REPLAY_DIAGNOSTICS=1','--target=wasm32-wasip1','-std=c++17','-O2','-g0','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti','-mexec-model=reactor','-Wl,--no-entry','-Wl,-z,stack-size=1048576','-Wl,--export-memory','-Wl,--strip-all'];
+const flags=['-DTH09_REPLAY_DIAGNOSTICS=1','--target=wasm32-wasip1','-std=c++17','-O2','-g0','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti','-isystem',libcxxInclude,'-L'+libcxxLib,'-mexec-model=reactor','-Wl,--no-entry','-Wl,-z,stack-size=1048576','-Wl,--export-memory','-Wl,--strip-all'];
 const objects=resolve(out,'objects');mkdirSync(objects,{recursive:true});
 const hash=b=>createHash('sha256').update(b).digest('hex'),headersKey=hash(headers.map(n=>n+hash(readFileSync(resolve(root,n)))).join('\n')),compileFlags=flags.filter(s=>!s.startsWith('-Wl,')&&s!=='-mexec-model=reactor');
 const run=args=>new Promise((accept,reject)=>{const child=spawn(compiler,args,{cwd:root,windowsHide:true,stdio:['ignore','pipe','pipe']});let log='';child.stdout.on('data',b=>log+=b);child.stderr.on('data',b=>log+=b);child.on('error',reject);child.on('exit',code=>code?reject(Error(log)):accept());});

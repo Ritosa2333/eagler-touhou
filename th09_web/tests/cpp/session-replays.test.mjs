@@ -2,8 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,readdirSync} from 'node:fs';
 import {resolve} from 'node:path';
+import {createHash} from 'node:crypto';
 import {oracle,core,memory,report,root,d3dxScalar} from './helpers.mjs';
 import {installAnm,normalizedAnm} from './anm-oracle.mjs';
+import {compareDemoRows} from '../../../tools/replay-verifier/adapter.mjs';
 
 test('All shipped demonstration replays retain full world state through the C++ session',async()=>{
  const m=await oracle(),c=await core(),f=c.session_create(),name=c.allocate(128),data=c.allocate(16000000),scratch=c.allocate(88),files=new Map();
@@ -14,7 +16,7 @@ test('All shipped demonstration replays retain full world state through the C++ 
  const motion=fields(c.motion_fields,c.motion_field_count),control=fields(c.shot_control_fields,c.shot_control_field_count),sceneFields=fields(c.match_scene_fields,c.match_scene_field_count),dialogueFields=fields(c.dialogue_fields,c.dialogue_field_count).filter(x=>x[0]!==0x14),bgFields=fields(c.background_fields,c.background_field_count).filter(x=>![0x2c,0xce0].includes(x[0])),progressFields=fields(c.match_rules_fields,c.match_rules_field_count,2),selectionFields=fields(c.stage_selection_fields,c.stage_selection_field_count);
  const sceneOffsets=[...Array.from({length:7},(_,i)=>12+i*676),0x123f4,0x12698,0x106b4,...Array.from({length:7},(_,i)=>0x10968+i*676),0x11eac,0x12150];
  const err=()=>{const p=c.session_error(f),bytes=memory(c,p,256);return new TextDecoder().decode(bytes.subarray(0,bytes.indexOf(0)));};
- let anms=[],checks=0,frames=0,roundEnds=0;const scenarios=process.env.TH09_DEMO_CASE?[Number(process.env.TH09_DEMO_CASE)]:[0,1,2];
+ let anms=[],checks=0,frames=0,roundEnds=0;const verifierResults=[],verifierOnly=process.env.TH09_REPLAY_VERIFIER_LIGHT==='1';const scenarios=process.env.TH09_DEMO_CASE?[Number(process.env.TH09_DEMO_CASE)]:[0,1,2];
  d3dxScalar(m);
  m.replace(0x47b24e,'world-new',()=>alloc(arg(0)));m.replace(0x47b249,'world-free',()=>0);
  m.replace(0x401660,'world-animation',()=>{assert.ok(anms[arg(0)],'ANM slot '+arg(0));return anms[arg(0)].file;},1);
@@ -30,6 +32,7 @@ test('All shipped demonstration replays retain full world state through the C++ 
   for(const replayIndex of scenarios){
    m.heap=heapBase;
    const raw=source(`demorpy${replayIndex}.rpy`),rawPointer=alloc(raw.length);m.write(rawPointer,raw);const decoded=m.call(0x4205e0,{ecx:rawPointer,edx:raw.length,limit:200000000}),replayManager=alloc(0x164);m.u32(replayManager+8,decoded);const mode=2;
+   const expectedRows=[],actualRows=[],fixture={id:`demo${replayIndex}`,replaySha256:createHash('sha256').update(raw).digest('hex')};
    anms=[];m.view(0x4a7d88,0x420).fill(0);m.view(0x4ace18,3*0x8e).fill(0);m.view(0x4acfc8,64).fill(0);m.view(0x4b3178,0x2d0).fill(0);m.view(0x4b3488,0xcc).fill(0);m.u32(0x4b36d4,0);m.f32(0x4b36b8,1);m.u32(0x4ac884,0);m.u32(0x4b3690,0);m.i32(0x4dc690,-1);
    const scores=[alloc(160),alloc(160)],config=alloc(204);m.u32(0x4b42d0,config);m.u32(0x4a7dac,scores[0]);m.u32(0x4a7de4,scores[1]);m.u32(0x4a7e78,config);m.u32(0x4a7ea8,2);m.u32(0x4a7e8c,9);m.u32(0x4a7ec4,12);m.u32(0x4ace0c,0);m.u32(0x4ace10,0);m.call(0x420840,{ecx:replayManager});m.write(0x4b3488,m.bytes(config,204));
    // The original route-selection routine has its own exhaustive oracle. Here
@@ -59,15 +62,19 @@ test('All shipped demonstration replays retain full world state through the C++ 
      for(const [o,a,n] of fields(c.background_fields,c.background_field_count).filter(x=>[0x2c,0xce0].includes(x[0])))for(let i=0;i<n/676;++i){const q=backgrounds[s]+o+i*676,file=m.u32(q+0x204);compareAnimation(c.session_part(f,s,22)+a+i*676,q,file?m.u32(file):4,label+' background ANM'+s+'/'+i);}
     }++checks;
    };
-   compare('initial');
+   const word16=p=>new DataView(m.view(p,2).buffer,m.view(p,2).byteOffset,2).getUint16(0,true);
+   const nativeRow=()=>({frame:m.u32(replayManager)|0,flags:m.u32(0x4a7ec4)|0,rng:[word16(0x4ace0c),m.u32(0x4ace10)|0],players:players.map((p,s)=>({x:m.u32(p+0x1b88)|0,y:m.u32(p+0x1b8c)|0,score:m.u32(scores[s]+8)|0,held:word16(0x4ace18+s*0x8e+44),pressed:word16(0x4ace18+s*0x8e+50)}))});
+   const candidateRow=()=>{const v=Array.from(new Int32Array(c.memory.buffer,c.session_snapshot(f),48));return {frame:c.session_value(f,2)|0,flags:v[2],rng:[v[0]&0xffff,v[1]],players:[0,1].map(s=>{const q=6+s*20;return {x:v[q],y:v[q+1],score:v[q+6],held:v[q+10]&0xffff,pressed:v[q+11]&0xffff};})};};
+   if(!verifierOnly)compare('initial');
    for(let frame=0;frame<c.session_value(f,3);++frame){
     m.call(0x4204b0,{ecx:replayManager});assert.equal(c.session_step(f,0,0,0),1,err());
     m.call(0x41aa5f,{ecx:0x4a7d90});
     for(let node=m.u32(0x4acfc8+20),budget=0;node;){assert.ok(++budget<1000,'scheduler list');const next=m.u32(node+20),priority=m.bytes(node,2)[0];if(priority===3){const live=m.call(m.u32(node+4),{ecx:m.u32(node+28)});if(!live)m.call(0x42c8c0,{ecx:0x4acfc8,args:[node]});}node=next;}
     for(let s=0;s<2;++s)m.call(0x402350,{ecx:backgrounds[s]});for(let s=0;s<2;++s)m.call(0x410730,{ecx:enemies[s]});for(let s=0;s<2;++s)m.call(0x4146f0,{ecx:bullets[s]});m.call(0x415340,{ecx:m.u32(0x4a7e3c)});for(let s=0;s<2;++s)m.call(0x41e900,{ecx:players[s]});for(let s=0;s<2;++s)m.call(0x4041f0,{ecx:controllers[s]});for(let s=0;s<3;++s)m.call(0x40cdd0,{ecx:effects[s]});m.call(0x417630,{ecx:scene});for(let s=0;s<2;++s)m.call(0x418a90,{ecx:huds[s]});
-    compare(`demo ${replayIndex} frame ${frame}`);++frames;if(c.session_value(f,0)!==1)break;
+    if(!verifierOnly)compare(`demo ${replayIndex} frame ${frame}`);expectedRows.push(nativeRow());actualRows.push(candidateRow());++frames;if(c.session_value(f,0)!==1)break;
    }
+   const verification=await compareDemoRows(fixture,expectedRows,actualRows);assert.equal(verification.status,'PASS',JSON.stringify(verification));verifierResults.push({id:fixture.id,...verification});
   }
-  report('session-replays',{checks,frames,scenarios,scope:'All shipped demonstration streams drive the native world and authored C++ session. Original constructors and full update chain, RNG, scores, movement, collisions, combo, dialogue, backgrounds, all HUD and scene animations; no forced battle outcome.'});
+  report('session-replays',{checks,frames,scenarios,verifier:{schema:'th09/replay-verifier-suite-result/v1',suite:'quick-demo',passed:verifierResults.length===scenarios.length&&verifierResults.every(result=>result.status==='PASS'),results:verifierResults},scope:'All shipped demonstration streams drive the native world and authored C++ session. Original constructors and full update chain, RNG, scores, movement, collisions, combo, dialogue, backgrounds, all HUD and scene animations; no forced battle outcome.'});
  }finally{c.session_delete(f);c.release(name);c.release(data);c.release(scratch);m.close();}
 });
