@@ -13,6 +13,7 @@
 #include <dirent.h>
 #include <ctime>
 #include <algorithm>
+#include <deque>
 #include <iterator>
 #include "../../../portable/input/TouchController.hpp"
 #include <emscripten.h>
@@ -22,6 +23,10 @@ EM_JS(void, th09_browser_frame, (int ok,double milliseconds), { Module["onGameFr
 EM_JS(void, th09_network_result, (), { Module["onNetworkResult"]?.(); });
 EM_JS(void, th09_network_request, (), { Module["onNetworkRequest"]?.(); });
 EM_JS(void, th09_network_send, (unsigned frame,unsigned keys,int moving,float x,float y), { Module["onNetworkInput"]?.(frame,keys,moving,x,y); });
+EM_JS(void, th09_network_spectator_frame,
+      (unsigned frame,unsigned left,unsigned right,int leftMode,float leftX,float leftY,int rightMode,float rightX,float rightY), {
+    Module["onNetworkSpectatorFrame"]?.(frame,left,right,leftMode,leftX,leftY,rightMode,rightX,rightY);
+});
 EM_JS(int, th09_keyboard_gamepad_dpad, (), {
     if (!navigator.getGamepads) return 0;
     let bits = 0;
@@ -43,6 +48,10 @@ namespace th09::sdl {
 namespace {
 i32 joy_button(i32);
 NetworkInput network;
+struct SpectatorFrame { u32 frame=0;u16 keys[2]{};NetworkInput::Motion motion[2]; };
+std::deque<SpectatorFrame> spectator_frames;
+bool spectator_mode=false;
+u32 spectator_next=0,spectator_simulated=0;
 struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServices {
     Assets assets;GraphicsDevice graphics;FontDevice fonts{graphics};AudioDevice audio;
     EclWorldState state;AnmExecutor executor{state.random};GameResources resources{assets,graphics,executor};
@@ -91,7 +100,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     i32 pending_action=-1;
     bool tick_title(u16 left,u16 right,u16 keys,bool render=true){
         update_clocks();device.update(keys);left_device.update(left);right_device.update(right);if(!title||!error.empty())return false;
-        title->update(left_device,right_device,device);if(network.active&&title->state.screen==TitleScreen::versus_type){release_network();title->state={};th09_network_result();}save_configuration();if(!title->error.empty()){error=title->error;return false;}
+        if(!launch_pending)title->update(left_device,right_device,device);if(network.active&&title->state.screen==TitleScreen::versus_type){release_network();title->state={};th09_network_result();}save_configuration();if(!title->error.empty()){error=title->error;return false;}
         if(launch_pending){launch_pending=false;in_title=false;if(!start())return false;}
         else{if(render)draw();audio.update();audio.pump();++frames;}return error.empty();
     }
@@ -110,10 +119,10 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     }
     void title_configuration()override{audio.music_volume=settings.music_volume;audio.music_enabled=host_music_enabled&&settings.music_mode!=0;audio.effects.enabled=settings.effects!=0;audio.effects.master_volume=settings.sound_volume;audio.refresh_volume();}
     bool write_file(const char* path,const u8* bytes,u32 size){auto* file=SDL_IOFromFile(path,"wb");const bool ok=file&&SDL_WriteIO(file,bytes,size)==size;if(file)SDL_CloseIO(file);if(ok)++storage_revision;return ok;}
-    void save_configuration(){if(network.active)return;if(saved_configuration.capture(settings)){title_configuration();const auto& bytes=saved_configuration.data();if(!write_file("/save/th09.cfg",bytes.data(),u32(bytes.size())))error="Unable to save th09.cfg";}}
+    void save_configuration(){if(network.active||spectator_mode)return;if(saved_configuration.capture(settings)){title_configuration();const auto& bytes=saved_configuration.data();if(!write_file("/save/th09.cfg",bytes.data(),u32(bytes.size())))error="Unable to save th09.cfg";}}
     u32 title_clear_count(i32 c,i32 d)override{return records.clear_count(c,d);}
     PlayerRecords& title_records()override{return records;}
-    void title_save_records()override{update_clocks();auto local_random=state.random;auto bytes=records.save(network.active?local_random:state.random);if(!write_file("/save/score.dat",bytes.data(),u32(bytes.size())))error="Unable to save score.dat";}
+    void title_save_records()override{if(spectator_mode)return;update_clocks();auto local_random=state.random;auto bytes=records.save(network.active?local_random:state.random);if(!write_file("/save/score.dat",bytes.data(),u32(bytes.size())))error="Unable to save score.dat";}
     void title_ascii(const Vec3& p,const char* text,u32 color,const Vec2& scale)override{presentation.ascii.color=color;presentation.ascii.scale=scale;presentation.ascii.field_view=0;presentation.ascii.text(p,text);}
     i32 title_joy_button(i32 device)override{return joy_button(device);}
     static std::string replay_path(const char* name){std::string path=name?name:"";if(path.rfind("./",0)==0)path.erase(0,2);if(path.rfind("replay/",0)!=0||path.find("..")!=std::string::npos||path.find('\\')!=std::string::npos||path.find('/',7)!=std::string::npos||path.size()>64)return {};return "/save/"+path;}
@@ -206,9 +215,17 @@ void sample_keys(u16 (&out)[3]){
     if(probe->session)probe->session->clear_motion();
     if(sample.motion&&state.ready&&!keys[37]&&!keys[38]&&!keys[39]&&!keys[40]){
         const i32 side=network.active?network.side:probe->world->configuration.controllers[0]?1:0;const auto& player=*probe->world->battle->fields[side].player;const auto& m=player.motion;
-        const bool focus=probe->world->configuration.automatic_focus[side]?player.input.fire_frames>=7:keys[16];const float speed=focus?player.resource.movement.focused:player.resource.movement.normal;
-        const float sx=m.base_scale.x*m.effect_scale.x,sy=m.base_scale.y*m.effect_scale.y;float x=sx?(sample.x-state.x)/sx:0,y=sy?(sample.y-state.y)/sy:0;if(sample.motion!=2||network.active)touch::limit_vector(x,y,speed);
-        probe->session->motion_input[side]={true,x,y,sample.motion==2&&!network.active};
+        // A LAN drag ships the absolute field target and each peer converts it on
+        // the frame it simulates: converting here would aim from a position the
+        // lockstep delay made stale, so the player would orbit the finger. The
+        // analog stick is a velocity device whose vector does not depend on the
+        // player's position, so it converts here exactly as in single player.
+        if(network.active&&!sample.stick)probe->session->motion_input[side]={true,sample.x,sample.y,sample.motion==2,true};
+        else{
+            const bool focus=probe->world->configuration.automatic_focus[side]?player.input.fire_frames>=7:keys[16];const float speed=focus?player.resource.movement.focused:player.resource.movement.normal;
+            const float sx=m.base_scale.x*m.effect_scale.x,sy=m.base_scale.y*m.effect_scale.y;float x=sx?(sample.x-state.x)/sx:0,y=sy?(sample.y-state.y)/sy:0;if(sample.motion!=2)touch::limit_vector(x,y,speed);
+            probe->session->motion_input[side]={true,x,y,sample.motion==2,false};
+        }
     }
     out[2]=keyboard_input(keys,2)|joy_keys(0)|joy_keys(1);for(u32 n=0;n<16;++n)if(pulse_ticks[n]){out[2]|=u16(1u<<n);--pulse_ticks[n];}
     const bool paired=probe->in_title?(probe->settings.versus==0&&probe->title&&probe->title->state.screen==TitleScreen::versus_character):(probe->world&&probe->world->rules.mode==GameMode::versus&&!probe->world->configuration.controllers[0]&&!probe->world->configuration.controllers[1]);
@@ -219,7 +236,7 @@ void sample_keys(u16 (&out)[3]){
 extern "C" {
 #define TH09_EXPORT(n) __attribute__((export_name(n)))
 TH09_EXPORT("th09_game_open") u32 th09_game_open(u32 seed){
-    network.end();clear_inputs();close_controllers();SDL_InitSubSystem(SDL_INIT_GAMEPAD);i32 count=0;auto* ids=SDL_GetGamepads(&count);for(i32 n=0;n<count;++n)add_controller(ids[n]);SDL_free(ids);for(auto& k:keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);
+    network.end();spectator_mode=false;spectator_frames.clear();spectator_next=spectator_simulated=0;clear_inputs();close_controllers();SDL_InitSubSystem(SDL_INIT_GAMEPAD);i32 count=0;auto* ids=SDL_GetGamepads(&count);for(i32 n=0;n<count;++n)add_controller(ids[n]);SDL_free(ids);for(auto& k:keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);
     probe=std::make_unique<Application>();if(!probe->open_title()){failure=probe->error;return 0;}probe->state.random={u16(seed),0,0};return 1;
 }
 TH09_EXPORT("th09_game_metrics") const u32* th09_game_metrics(){static u32 data[10]{};if(probe){auto& s=probe->graphics.backend.stats;data[0]=s.batches;data[1]=s.uploadBytes;data[2]=s.readBytes;data[3]=s.vertexUploadBytes;data[4]=s.programCompiles;data[5]=s.bufferReplacements;data[6]=s.bufferSubUpdates;data[7]=s.frames;data[8]=s.resamples;data[9]=s.presentations;}return data;}
@@ -228,7 +245,32 @@ TH09_EXPORT("th09_network_begin") u32 th09_network_begin(u32 seed,i32 side,u32 u
     for(u32 n=0;n<16;++n)probe->settings.versus_unlocked[n]=bool(unlocked&(1u<<n));for(u32 n=0;n<2;++n){probe->settings.auto_focus[n]=bool(focus&(1u<<n));probe->settings.health[n]=10;probe->settings.alternate[n]=false;}
     probe->title->state={};probe->title->leaving=false;probe->title->change(TitleScreen::versus_difficulty);probe->device=probe->left_device=probe->right_device={};network.begin(side);return !network.failed;
 }
-TH09_EXPORT("th09_network_receive") u32 th09_network_receive(u32 frame,u32 keys,u32 moving,float x,float y){return keys<=65535&&moving<=1&&network.submit(1-network.side,frame,u16(keys),moving!=0,x,y);}
+TH09_EXPORT("th09_network_room_begin") u32 th09_network_room_begin(u32 seed,i32 side,u32 unlocked,u32 difficulty,u32 focus,u32 left,u32 right){
+    if(left>=16||right>=16)return 0;
+    if(!th09_network_begin(seed,side,unlocked|(1u<<left)|(1u<<right),difficulty,focus))return 0;
+    probe->settings.characters[0]=i32(left);probe->settings.characters[1]=i32(right);
+    probe->title->launch_network_match();
+    return 1;
+}
+TH09_EXPORT("th09_spectator_begin") u32 th09_spectator_begin(u32 seed,u32 difficulty,u32 left,u32 right){
+    if(!th09_network_room_begin(seed,0,0xffff,difficulty,0,left,right))return 0;
+    network.end();spectator_frames.clear();spectator_next=spectator_simulated=0;spectator_mode=true;return 1;
+}
+TH09_EXPORT("th09_spectator_feed") u32 th09_spectator_feed(u32 frame,u32 left,u32 right,u32 leftMode,float leftX,float leftY,u32 rightMode,float rightX,float rightY){
+    if(!spectator_mode||frame!=spectator_next||left>65535||right>65535||spectator_frames.size()>=8192)return 0;
+    const auto motion=[](u32 mode,float x,float y,NetworkInput::Motion& out){
+        const bool target=mode==NetworkInput::MotionTarget||mode==NetworkInput::MotionTargetUnlimited;
+        const float limit=target?4096.f:16.f;
+        if(mode>NetworkInput::MotionTargetUnlimited||!std::isfinite(x)||!std::isfinite(y)||std::abs(x)>limit||std::abs(y)>limit)return false;
+        out={mode!=NetworkInput::MotionNone,target,mode==NetworkInput::MotionTargetUnlimited,x,y};return true;
+    };
+    SpectatorFrame packet;packet.frame=frame;packet.keys[0]=u16(left);packet.keys[1]=u16(right);
+    if(!motion(leftMode,leftX,leftY,packet.motion[0])||!motion(rightMode,rightX,rightY,packet.motion[1]))return 0;
+    spectator_frames.push_back(packet);++spectator_next;return 1;
+}
+TH09_EXPORT("th09_spectator_frame") u32 th09_spectator_frame(){return spectator_simulated;}
+TH09_EXPORT("th09_spectator_end") void th09_spectator_end(){spectator_mode=false;spectator_frames.clear();}
+TH09_EXPORT("th09_network_receive") u32 th09_network_receive(u32 frame,u32 keys,u32 mode,float x,float y){return keys<=65535&&mode<=NetworkInput::MotionTargetUnlimited&&network.submit(1-network.side,frame,u16(keys),u8(mode),x,y);}
 TH09_EXPORT("th09_network_end") void th09_network_end(){if(!network.active)return;if(probe)probe->release_network();else network.end();clear_inputs();if(probe){probe->requested_transition=-1;probe->settings.game_flags=0;if(probe->session&&!probe->in_title){probe->session->finish();probe->return_title(false);}else if(probe->title){probe->return_title(false);}probe->sync_records();}}
 TH09_EXPORT("th09_network_hash") u32 th09_network_hash(){
     if(!probe)return 0;u32 hash=2166136261u;const auto word=[&](u32 value){for(u32 n=0;n<4;++n){hash^=u8(value>>(n*8));hash*=16777619u;}};const auto real=[&](float f){u32 value;std::memcpy(&value,&f,4);word(value);};
@@ -238,12 +280,27 @@ TH09_EXPORT("th09_network_hash") u32 th09_network_hash(){
     return hash;
 }
 TH09_EXPORT("th09_network_info") const u32* th09_network_info(){static u32 data[6]{};if(probe){data[0]=0;for(u32 n=0;n<16;++n)if(probe->records.versus_unlocked[n])data[0]|=1u<<n;data[1]=std::min(3u,u32(probe->settings.difficulty));data[2]=probe->settings.auto_focus[0];data[3]=network.frame();data[4]=network.active;data[5]=network.side;}return data;}
-TH09_EXPORT("th09_game_close") void th09_game_close(){running=false;++loop_epoch;close_controllers();clear_inputs();network.end();probe.reset();}
+TH09_EXPORT("th09_game_close") void th09_game_close(){running=false;++loop_epoch;close_controllers();clear_inputs();network.end();spectator_mode=false;spectator_frames.clear();probe.reset();}
 TH09_EXPORT("th09_music_enabled") void th09_music_enabled(u32 enabled){if(probe){probe->host_music_enabled=enabled!=0;probe->title_configuration();}}
 TH09_EXPORT("th09_game_restart") u32 th09_game_restart(){if(!probe||!probe->in_title)return 0;clear_inputs();probe->requested_transition=-1;probe->settings.game_flags=0;return probe->return_title(false);}
 TH09_EXPORT("th09_game_tick") u32 th09_game_tick(u32 render){if(!probe)return 0;u16 keys[3]{};
-    if(network.active){if(network.wants_input()){sample_keys(keys);const u32 frame=network.sending_frame();const auto m=probe->session&&!probe->in_title?probe->session->motion_input[network.side]:GameSession::MotionSample{};if(!network.submit(network.side,frame,keys[2],m.enabled,m.x,m.y))return 0;th09_network_send(frame,keys[2],m.enabled,m.x,m.y);}if(network.failed){probe->error="Network input order invalid";return 0;}NetworkInput::Motion motion[2];if(!network.take(keys,motion))return 2;if(probe->session)for(i32 s=0;s<2;++s)probe->session->motion_input[s]={motion[s].enabled,motion[s].x,motion[s].y};
-        return probe->tick_inputs(keys[0],keys[1],keys[2],render!=0);}
+    if(spectator_mode){
+        if(spectator_frames.empty())return 2;
+        const u32 count=u32(spectator_frames.size()>8?4:spectator_frames.size()>4?2:1);u32 ok=1;
+        for(u32 n=0;n<count&&ok&&!spectator_frames.empty();++n){const auto packet=spectator_frames.front();spectator_frames.pop_front();
+            if(packet.frame!=spectator_simulated)return 0;
+            const bool was_title=probe->in_title;
+            if(!was_title&&probe->session)for(i32 s=0;s<2;++s)probe->session->motion_input[s]={packet.motion[s].enabled,packet.motion[s].x,packet.motion[s].y,packet.motion[s].unlimited,packet.motion[s].target};
+            ok=probe->tick_inputs(packet.keys[0],packet.keys[1],u16(packet.keys[0]|packet.keys[1]),render!=0&&n+1==count);++spectator_simulated;
+            if(!was_title&&probe->in_title){spectator_mode=false;spectator_frames.clear();break;}
+        }
+        return ok;
+    }
+    if(network.active){if(network.wants_input()){sample_keys(keys);const u32 frame=network.sending_frame();const auto m=probe->session&&!probe->in_title?probe->session->motion_input[network.side]:GameSession::MotionSample{};const u8 mode=!m.enabled?NetworkInput::MotionNone:m.target?(m.unlimited?NetworkInput::MotionTargetUnlimited:NetworkInput::MotionTarget):NetworkInput::MotionVelocity;if(!network.submit(network.side,frame,keys[2],mode,m.x,m.y))return 0;th09_network_send(frame,keys[2],i32(mode),m.x,m.y);}if(network.failed){probe->error="Network input order invalid";return 0;}NetworkInput::Motion motion[2];const u32 frame=network.frame();const bool publisher=network.side==0;if(!network.take(keys,motion))return 2;if(probe->session)for(i32 s=0;s<2;++s)probe->session->motion_input[s]={motion[s].enabled,motion[s].x,motion[s].y,motion[s].unlimited,motion[s].target};
+        const u32 ok=probe->tick_inputs(keys[0],keys[1],keys[2],render!=0);
+        if(ok&&publisher){const auto mode=[](const NetworkInput::Motion& m){return !m.enabled?0:m.target?(m.unlimited?3:2):1;};
+            th09_network_spectator_frame(frame,keys[0],keys[1],mode(motion[0]),motion[0].x,motion[0].y,mode(motion[1]),motion[1].x,motion[1].y);}
+        return ok;}
     sample_keys(keys);u32 ok=1;for(u32 extra=0;extra<3&&ok;++extra){ok=probe->tick_inputs(keys[0],keys[1],keys[2],false);if(!ok||probe->in_title||probe->paused||probe->over||probe->complete||!probe->session->is_replay||probe->session->phase!=SessionPhase::match||probe->session->playback_schedule()!=6)break;}if(ok&&render)probe->draw();return ok;
 }
 TH09_EXPORT("th09_loop_pause") void th09_loop_pause(u32 on){suspended=on!=0;previous_frame=-1;cadence.reset();clear_inputs();if(probe){probe->clock_pause(suspended);probe->audio.suspend(suspended);}}
@@ -266,6 +323,11 @@ TH09_EXPORT("th09_touch_controls") void th09_touch_controls(u32 enabled,u32 fire
 TH09_EXPORT("th09_touch_options") void th09_touch_options(u32 enabled,u32 mode,float sensitivity,u32 two_finger,u32 double_tap){gestures.enabled=enabled!=0;gestures.mode=mode<=3?i32(mode):0;gestures.unlimited=mode==1;gestures.sensitivity=std::clamp(sensitivity,.25f,4.f);gestures.two_finger=two_finger!=0;gestures.double_tap=double_tap!=0;}
 TH09_EXPORT("th09_touch_stick") void th09_touch_stick(float x,float y){gestures.stick_x=std::clamp(x/32767.f,-1.f,1.f);gestures.stick_y=std::clamp(y/32767.f,-1.f,1.f);}
 TH09_EXPORT("th09_touch_state") const i32* th09_touch_state(){static i32 data[4]{};const auto s=touch_state();data[0]=s.context;data[1]=s.ready;data[2]=gestures.active();data[3]=probe&&probe->in_title;return data;}
+// Read-only touch/lockstep diagnostics: the local side plus its player's
+// position, velocity and the motion sample it is currently applying. The touch
+// regression gate needs this because a gesture that never converges looks the
+// same as one that does when only the drawn canvas is observed.
+TH09_EXPORT("th09_touch_probe") const float* th09_touch_probe(){static float data[8]{};if(!probe||!probe->world)return data;const i32 side=network.active?network.side:0;const auto& p=*probe->world->battle->fields[side].player;const auto& m=probe->session?probe->session->motion_input[side]:GameSession::MotionSample{};data[0]=p.motion.position.x;data[1]=p.motion.position.y;data[2]=p.motion.velocity.x;data[3]=p.motion.velocity.y;data[4]=m.enabled?1.f:0.f;data[5]=m.target?1.f:0.f;data[6]=m.x;data[7]=m.y;return data;}
 #if TH09_DEVELOPMENT_HARNESS
 TH09_EXPORT("th09_title_open") u32 th09_title_open(){probe=std::make_unique<Application>();if(!probe->open_title()){failure=probe->error;return 0;}return 1;}
 #endif
