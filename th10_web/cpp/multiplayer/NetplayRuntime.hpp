@@ -91,6 +91,9 @@ public:
     std::uint32_t ConfirmedThroughAllRemotes() const {
         return core_.ConfirmedThroughAllRemotes();
     }
+    std::uint32_t ConfirmedThrough(std::uint8_t seat) const {
+        return core_.ConfirmedThrough(seat);
+    }
     std::uint32_t AcknowledgedLocalThroughAllRemotes() const {
         return core_.AcknowledgedLocalThroughAllRemotes();
     }

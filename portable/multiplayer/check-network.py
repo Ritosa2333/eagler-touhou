@@ -242,8 +242,11 @@ with sync_playwright() as p:
             assert time.monotonic()<deadline,'closed peer did not fail transport'
             pages[0].wait_for_timeout(10)
         report['disconnect']={'status':call(pages[0],'multiplayerSmoke.transportStatus()'),
-                              'error':call(pages[0],'multiplayerSmoke.networkError()')}
+                              'error':call(pages[0],'multiplayerSmoke.networkError()'),
+                              'detail':call(pages[0],'multiplayerSmoke.errorDetail()')}
         assert report['disconnect']['status'][3]!=0,report['disconnect']
+        assert report['disconnect']['error'] in report['disconnect']['detail'],report['disconnect']
+        assert 'confirmed [' in report['disconnect']['detail'] and 'recv ' in report['disconnect']['detail'],report['disconnect']
         report['passed']=True
     except BaseException as error:
         report['failure']=str(error)

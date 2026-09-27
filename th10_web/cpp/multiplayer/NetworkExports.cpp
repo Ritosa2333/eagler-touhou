@@ -31,7 +31,8 @@ const char* multiplayer_network_error(browser::Application* app){
 extern "C" __attribute__((export_name("multiplayer_error_detail")))
 const char* multiplayer_error_detail(browser::Application* app){
     if(!app)return "Application unavailable";
-    return app->error==-4?app->multiplayer_failure_detail:app->state.netplay_runtime.NetworkError();
+    return (app->error==-4||app->error==-5)&&app->multiplayer_failure_detail[0]
+        ?app->multiplayer_failure_detail:app->state.netplay_runtime.NetworkError();
 }
 extern "C" __attribute__((export_name("multiplayer_pacing_status")))
 const double* multiplayer_pacing_status(browser::Application* app){

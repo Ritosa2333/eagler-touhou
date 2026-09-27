@@ -69,6 +69,23 @@ bool Application::multiplayer_pump_network(){
     // confirmed-input timeout from the now-stopped simulation.
     if(error)return false;
     if(state.netplay_runtime.PumpNetwork(multiplayer_active()))return true;
+    const auto& runtime=state.netplay_runtime;
+    const auto& channel=runtime.Channel();
+    const auto frame=[](u32 value)->i32{
+        return value==Netplay::INVALID_FRAME?-1:i32(value);
+    };
+    // Preserve the transport fault with the exact per-seat frontiers at the
+    // failing pump. The peer may itself have stopped first; a generic -5
+    // cannot distinguish that from lost delivery after the fact.
+    std::snprintf(multiplayer_failure_detail,sizeof(multiplayer_failure_detail),
+        "%s (seat %u, next %u, confirmed [%d,%d,%d], peer next [%d,%d,%d], "
+        "capture %d, sent %u, recv %u, repair %u, queued %zu, screen %d->%d)",
+        runtime.NetworkError(),runtime.Config().localPlayer,runtime.NextFrame(),
+        frame(runtime.ConfirmedThrough(0)),frame(runtime.ConfirmedThrough(1)),
+        frame(runtime.ConfirmedThrough(2)),
+        frame(channel.PeerFrame(0)),frame(channel.PeerFrame(1)),frame(channel.PeerFrame(2)),
+        frame(channel.LatestCapture()),channel.PacketsSent(),channel.PacketsReceived(),
+        channel.RepairsSent(),runtime.Transport().BufferedAmount(),value.screen,state.pending_screen);
     error=-5;return false;
 }
 

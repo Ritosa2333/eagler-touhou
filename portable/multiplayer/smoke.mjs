@@ -37,6 +37,9 @@ function writeFrameInput(pointer,input=0){
 function networkError(){const pointer=core.multiplayer_network_error?.(app)||0;
  if(!pointer)return '';const bytes=new Uint8Array(core.memory.buffer);const end=bytes.indexOf(0,pointer);
  return new TextDecoder().decode(bytes.subarray(pointer,end<0?pointer+256:Math.min(end,pointer+256)));}
+function errorDetail(){const pointer=core.multiplayer_error_detail?.(app)||0;
+ if(!pointer)return '';const bytes=new Uint8Array(core.memory.buffer);const end=bytes.indexOf(0,pointer);
+ return new TextDecoder().decode(bytes.subarray(pointer,end<0?pointer+256:Math.min(end,pointer+256)));}
 function transportStatus(){return Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_transport_status(app),15));}
 function capturePeerInput(frame,buttons){const words=new Uint32Array(core.memory.buffer,networkInput,5);words.fill(0);words[0]=buttons>>>0;
  return !!core.multiplayer_capture_local(app,frame,networkInput,5);}
@@ -257,6 +260,7 @@ window.multiplayerSmoke={
  markReady(){return !!core.multiplayer_session_mark_ready(app);},
  canStart(){return !!core.multiplayer_session_can_start(app);},
  netStatus,
+ errorDetail,
  canonical,
  portableCanonical,
  enemyDebug,
