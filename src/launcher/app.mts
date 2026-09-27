@@ -2414,10 +2414,6 @@ function replaceLauncherHomeHistory() {
 function showLauncherHome() {
   if ($("#main").classList.contains("card-layout-motion")) cancelCardLayoutMotion();
   state.hasSelection = false;
-  if (isMultiplayerProduct()) {
-    state.product = state.game;
-    state.runtimeVariant = "normal";
-  }
   render();
   animateMobileHomeCards();
 }
@@ -6951,6 +6947,9 @@ function mpLeaveRoom(fromHistory = false) {
   if (!leavingRoom || mpRoomLeavePending) return;
   const roomView = $("#mpRoomView");
   const reducedMotion = state.lessMotion || matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const compactMotion = matchMedia("(max-width: 780px), (hover: none), (pointer: coarse)").matches;
+  const leaveDuration = compactMotion ? 160 : 220;
+  const returnDuration = compactMotion ? 180 : 320;
   const finish = () => {
     mpRoomLeavePending = false;
     document.body.classList.remove("mp-room-leaving");
@@ -6967,7 +6966,7 @@ function mpLeaveRoom(fromHistory = false) {
       mpRoomReturnTimer = window.setTimeout(() => {
         document.body.classList.remove("mp-room-returning");
         mpRoomReturnTimer = null;
-      }, 320);
+      }, returnDuration);
     }
   };
   if (reducedMotion) { finish(); return; }
@@ -6975,7 +6974,7 @@ function mpLeaveRoom(fromHistory = false) {
   roomView.inert = true;
   document.body.classList.remove("mp-room-returning");
   document.body.classList.add("mp-room-leaving");
-  window.setTimeout(finish, 220);
+  window.setTimeout(finish, leaveDuration);
 }
 
 const mpSeatPresentations = new WeakMap<HTMLElement, { room: string; occupant: string; animations: Animation[] }>();

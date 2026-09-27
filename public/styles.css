@@ -1311,13 +1311,39 @@ body.mp-room-active .sheet:has(.library-layout){display:block}
 @media(prefers-reduced-motion:reduce){.mp-settings-room-drawer.settings-ui,.settings-room-backdrop{animation:none!important}}
 .less-motion .mp-settings-room-drawer.settings-ui,.less-motion .settings-room-backdrop{animation:none!important}
 
+/* Keep the library geometry stable behind the room at every viewport size. */
+body.mp-room-active{overflow:hidden!important}
+body.mp-room-active:has(.library-layout):after{background-image:linear-gradient(180deg,rgba(3,5,7,.78),rgba(3,4,5,.86)),url("assets/launcher-background.webp")}
+body.mp-room-active .sheet:before{content:none!important}
+body.mp-room-active .sheet:has(.library-layout){display:grid!important;grid-template-rows:auto 1fr!important;gap:24px!important;padding:clamp(18px,2.5vw,38px) clamp(18px,3.5vw,56px) 32px!important}
+body.mp-room-active .sheet:has(.library-layout) .masthead{display:grid!important;visibility:hidden!important}
+body.mp-room-active .sheet:has(.library-layout) .main{display:grid!important}
+body.mp-room-active .game-library{display:grid;visibility:hidden;pointer-events:none}
+body.mp-room-active #mpRoomView.mp-room-view{position:fixed!important;inset:0!important;z-index:45!important;width:100%!important;max-width:1600px!important;height:100dvh!important;min-height:0!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain}
 /* Return from the room as one surface, then reveal the launcher beneath it. */
 body.mp-room-leaving #mpRoomView.mp-room-view{animation:mp-room-leave .22s cubic-bezier(.4,0,1,1) both!important;pointer-events:none}
-body.mp-room-returning .sheet{animation:mp-room-home .32s cubic-bezier(.18,.8,.2,1) both}
+body.mp-room-returning .game-library{animation:mp-room-home-lite .25s ease-out both}
+body.mp-room-returning .main.library-layout>.tools{opacity:0!important;visibility:hidden!important;transition:none!important;animation:none!important}
 @keyframes mp-room-leave{from{opacity:1;transform:translateX(0) scale(1)}to{opacity:0;transform:translateX(22px) scale(.985)}}
-@keyframes mp-room-home{from{opacity:.55;transform:translateX(-12px)}to{opacity:1;transform:none}}
-@media(prefers-reduced-motion:reduce){body.mp-room-leaving #mpRoomView.mp-room-view,body.mp-room-returning .sheet{animation:none!important}}
-.less-motion.mp-room-leaving #mpRoomView.mp-room-view,.less-motion.mp-room-returning .sheet{animation:none!important}
+@media(max-width:780px),(hover:none),(pointer:coarse){
+  body.mp-room-active .sheet:has(.library-layout){display:grid!important;grid-template-rows:auto 1fr!important;gap:22px!important;padding:0 18px 20px!important}
+  body.mp-room-active .sheet:has(.library-layout) .masthead{display:grid!important;visibility:hidden!important;margin-inline:-18px;padding-inline:18px}
+  body.mp-room-active #mpRoomView.mp-room-view{animation:mp-room-fade .18s ease-out both}
+  body.mp-room-leaving #mpRoomView.mp-room-view{animation:mp-room-leave-lite .16s ease-in both!important}
+  body.mp-room-returning .game-library{animation:mp-room-home-lite .18s ease-out both}
+  .main.library-layout>.tools,.main.library-layout.has-selection>.tools.mp-mode{transform:translateY(14px)!important;transition:opacity .18s ease-out,transform .22s ease-out,visibility 0s .22s!important}
+  body.library-tools-open .main.library-layout.has-selection>.tools{transform:translateY(0)!important;transition-delay:0s!important}
+  .library-backdrop{transition:opacity .18s ease-out,visibility 0s .22s!important}
+  .main.library-layout .game-rail .game .card-art{transition:none!important}
+  .main.library-layout .game-rail .game.nav-preview .card-art{scale:1}
+  #mpRoomView .mp-session-dock{animation:none!important}
+}
+@keyframes mp-room-fade{from{opacity:0}to{opacity:1}}
+@keyframes mp-room-leave-lite{from{opacity:1}to{opacity:0}}
+@keyframes mp-room-home-lite{from{opacity:0}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){body.mp-room-active #mpRoomView.mp-room-view,body.mp-room-leaving #mpRoomView.mp-room-view,body.mp-room-returning :is(.sheet,.game-library){animation:none!important}.main.library-layout>.tools,.main.library-layout.has-selection>.tools.mp-mode,.library-backdrop{transition:none!important}}
+.less-motion.mp-room-active #mpRoomView.mp-room-view,.less-motion.mp-room-leaving #mpRoomView.mp-room-view,.less-motion.mp-room-returning :is(.sheet,.game-library){animation:none!important}
+.less-motion .main.library-layout>.tools,.less-motion .main.library-layout.has-selection>.tools.mp-mode,.less-motion .library-backdrop{transition:none!important}
 .player.open.th09-network-open{touch-action:auto}
 .th09-network-dialog{position:absolute;z-index:90;inset:0;display:grid;place-items:center;box-sizing:border-box;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));overflow:auto;overscroll-behavior:contain;touch-action:auto;-webkit-user-select:text;user-select:text;background:var(--ink);color:var(--paper);font-family:var(--ui-font)}
 .th09-network-dialog[hidden]{display:none}
