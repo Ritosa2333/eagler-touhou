@@ -99,6 +99,10 @@ history navigation where supported; room transitions use one surface without
 nested dock entry animations. Reduced motion suppresses both.
 Room departure commits immediately for both the return button and system Back;
 the destination animates without waiting for an outgoing-room fade timer.
+The room button invokes departure directly, without waiting for `history.back()`
+or `popstate`. Directory returns replace the URL with the matching game's lobby;
+`document.referrer` cannot identify the preceding entry after settings/panel
+navigation. Options returns clear panel history flags and modal/inert state.
 The directory reveals its first screen only after a relay result (or explicit
 connection failure) and critical fonts/background/visible covers have settled,
 with a bounded visual wait matching the Launcher. Initial rows do not replay

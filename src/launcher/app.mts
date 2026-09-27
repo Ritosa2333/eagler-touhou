@@ -6154,11 +6154,9 @@ async function mpCopyRoomCode() {
   else showToast(t("status.roomCode", { code: mpUiState.room.code }));
 }
 $("#mpCopyRoomCode").addEventListener("click", mpCopyRoomCode);
-$("#mpLeaveRoom").addEventListener("click", () => {
-  if (mpFromDirectory()) { mpLeaveRoom(); return; }
-  if (history.state?.[mpRoomHistoryKey] === mpUiState.room?.code) history.back();
-  else mpLeaveRoom();
-});
+// The room action must work even when WebView history traversal is ignored or
+// the previous entry is another panel on this same room URL.
+$("#mpLeaveRoom").addEventListener("click", () => mpLeaveRoom());
 $("#mpRoomSettingsToggle").addEventListener("click", () => {
   mpUiState.roomSettingsOpen = true;
   openRoomPanel("game", $("#mpRoomSettingsToggle"));
@@ -7006,10 +7004,9 @@ function mpFromDirectory() { return new URL(location.href).searchParams.get("fro
 function mpReturnToDirectory() {
   const target = new URL("lobby.html", location.href);
   target.searchParams.set("game", state.product);
-  let cameFromDirectory = false;
-  try { const previous = new URL(document.referrer); cameFromDirectory = previous.origin === target.origin && previous.pathname === target.pathname; } catch {}
-  if (cameFromDirectory && history.length > 1) history.back();
-  else location.replace(target.href);
+  // Referrer identifies the source document, not the immediately preceding
+  // history entry after room settings/panels have added their own entries.
+  location.replace(target.href);
 }
 
 function mpRestoreRoomFromLocation() {
@@ -7132,6 +7129,11 @@ function mpLeaveRoom() {
   // Commit departure immediately; only the destination animates. Waiting for
   // the room to fade first stalls both the return button and system Back.
   mpResetRoomState();
+  // Clear modal/inert state synchronously; no overlay history traversal or
+  // exit animation may keep the destination blocked after the room is gone.
+  setMpSettingsRoomDrawerOpen(false, true);
+  if (roomPanel.open) roomPanel.close();
+  roomPanelClosing = false;
   if (mpFromDirectory()) { mpReturnToDirectory(); return; }
   if (mpRoomReturnTimer !== null) window.clearTimeout(mpRoomReturnTimer);
   mpRoomReturnTimer = null;
