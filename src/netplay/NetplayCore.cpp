@@ -100,6 +100,21 @@ bool RollbackCore::ScheduleLocalInput(std::uint32_t captureFrame, const FrameInp
     return true;
 }
 
+bool RollbackCore::SetLocalLeadInInput(std::uint32_t frame, const FrameInput &input)
+{
+    if (!configured_ || frame >= config_.inputDelay ||
+        lastSimulatedFrame_ != INVALID_FRAME)
+        return false;
+    for (std::uint8_t peer = 0; peer < config_.playerCount; ++peer)
+        if (peer != config_.localPlayer && peerAckOfLocal_[peer] != INVALID_FRAME)
+            return false;
+    InputSlot *slot = GetInputSlot(config_.localPlayer, frame);
+    if (!slot->present || (slot->input != FrameInput{} && slot->input != input))
+        return false;
+    slot->input = input;
+    return true;
+}
+
 std::uint32_t RollbackCore::LocalFrameForCapture(std::uint32_t captureFrame) const
 {
     // INVALID_FRAME is a sentinel, never an addressable input frame.

@@ -69,6 +69,9 @@ public:
     // Physical input captured on captureFrame becomes the local input for
     // captureFrame + inputDelay. Frames introduced by delay are neutral.
     bool ScheduleLocalInput(std::uint32_t captureFrame, const FrameInput &input);
+    // A title may replace a neutral startup frame with agreed bootstrap data
+    // before any simulation or peer acknowledgement. Gameplay input remains delayed.
+    bool SetLocalLeadInInput(std::uint32_t frame, const FrameInput &input);
     std::uint32_t LocalFrameForCapture(std::uint32_t captureFrame) const;
     bool HasLocalCapture(std::uint32_t captureFrame) const;
     bool ScheduleLocalInput(std::uint32_t captureFrame, std::uint16_t bits)
