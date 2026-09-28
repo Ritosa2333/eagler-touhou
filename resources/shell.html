@@ -636,8 +636,14 @@
           if (down) {
             browserKeyboardDown.set(id, bit);
           } else {
-            const hadDownOwner = browserKeyboardDown.delete(id);
-            if (!hadDownOwner && Module.eaglerControls)
+            let hadDownOwner = browserKeyboardDown.delete(id);
+            // Modifier keyup can arrive with a different location/code after
+            // focus changes. Release its logical owner instead of latching
+            // Focus for the remainder of a multiplayer run.
+            if (!hadDownOwner) for (const [owner, heldBit] of browserKeyboardDown) {
+              if (heldBit === bit) { browserKeyboardDown.delete(owner); hadDownOwner = true; break; }
+            }
+            if (!hadDownOwner && bit !== (1 << 2) && Module.eaglerControls)
               Module.eaglerControls.keyboardPulseBits = (Module.eaglerControls.keyboardPulseBits | 0) | bit;
           }
         }
@@ -665,7 +671,6 @@
       }, true);
       window.addEventListener("keyup", event => {
         if (!launched) return;
-        if (event.metaKey || event.altKey) return;
         if (applyBrowserKeyboardEvent(event, false)) event.preventDefault();
       }, true);
 
