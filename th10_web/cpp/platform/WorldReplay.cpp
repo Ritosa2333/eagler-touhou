@@ -4,11 +4,23 @@
 #ifdef TH_ENABLE_THPRAC
 #include "../game/PracticeConfig.hpp"
 #endif
+#include <algorithm>
+#include <cmath>
 #include <new>
 namespace th10::browser {
 namespace {
 struct Gameplay final:ReplayEnvironment {
-    World& w;explicit Gameplay(World& world):w(world){game=&w.state.game;input=&w.input.player_profiles[0].input;random=&w.engine.script_random;rate=&w.engine.speed;display_flags=&w.state.configuration.display_flags;recording_mode=reinterpret_cast<const u32*>(&w.new_game);controller_flags=w.actors.session?&w.actors.session->session_flags:nullptr;measured_fps=&w.measured_fps;player=&w.actors.player;}
+    World& w;float recording_fps=60;
+    explicit Gameplay(World& world):w(world){
+        game=&w.state.game;input=&w.input.player_profiles[0].input;random=&w.engine.script_random;rate=&w.engine.speed;
+        display_flags=&w.state.configuration.display_flags;recording_mode=reinterpret_cast<const u32*>(&w.new_game);
+        controller_flags=w.actors.session?&w.actors.session->session_flags:nullptr;
+        // Replay stores logical FPS (one game tick per 60 Hz slot). The host's
+        // draw statistic may still be zero after loading or exceed 60 during
+        // presentation; neither value is a valid recorded logical rate.
+        if(std::isfinite(w.measured_fps)&&w.measured_fps>0)recording_fps=std::min(w.measured_fps,60.f);
+        measured_fps=&recording_fps;player=&w.actors.player;
+    }
     void* allocate(u32 bytes) override{return w.replay_memory.allocate(bytes);}
     void release(void* bytes) override{if(!bytes)return;if(w.replay_memory.owns(bytes))w.replay_memory.release(bytes);else w.replay_files.memory.release(bytes);}
     void configure_options(Player&) override{w.configure_player();}

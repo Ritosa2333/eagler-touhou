@@ -33,7 +33,15 @@ ReplayWriter::ReplayWriter(FileSystem& f,ReplayCalendar& clock,GameEconomy& econ
     ReplaySaveEnvironment::characters=browser::characters;ReplaySaveEnvironment::difficulties=browser::difficulties;
 }
 ReplayWriter::~ReplayWriter(){close_and_unlock();}
-i32 ReplayWriter::save(Replay& replay,const char* file,const char* name,const std::vector<u8>& trailer){write_failed=false;motion_trailer=&trailer;const i32 result=save_replay(replay,file,name,*this);close_and_unlock();motion_trailer=nullptr;memory.clear();return write_failed?-1:result;}
+i32 ReplayWriter::save(Replay& replay,const char* file,const char* name,const std::vector<u8>& trailer){
+    // The original serializer adds the live buffer lengths to stage.frames.
+    // Results can save the same run into another slot, so start each Web save
+    // from the live buffers rather than accumulating the previous save again.
+    for(auto* stage:replay.stages)if(stage)stage->frames=0;
+    write_failed=false;motion_trailer=&trailer;
+    const i32 result=save_replay(replay,file,name,*this);
+    close_and_unlock();motion_trailer=nullptr;memory.clear();return write_failed?-1:result;
+}
 u8* ReplayWriter::allocate_bytes(u32 bytes){return memory.allocate(bytes);}
 void ReplayWriter::release_bytes(void* bytes){memory.release(bytes);}
 void ReplayWriter::open(const char* name){close_and_unlock();output=files.host.open(name,true);}
