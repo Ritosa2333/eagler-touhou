@@ -11,6 +11,7 @@ export interface MultiplayerLobbySeat {
   ready: boolean;
   offline: boolean;
   controlMode: ReturnType<typeof multiplayerControlMode>;
+  mobileDevice: boolean;
 }
 
 export interface MultiplayerLobbySpectator {
@@ -23,6 +24,8 @@ export interface NormalizedMultiplayerLobbySnapshot {
   disableCheatMovement: boolean;
   playerCount: 2 | 3;
   difficulty: number;
+  inputDelay: number;
+  predictionLimit: number;
   settingsVersion: number;
   phase: "lobby" | "starting" | "running";
   spectators: MultiplayerLobbySpectator[];
@@ -62,6 +65,10 @@ export function normalizeMultiplayerLobbySnapshot(value: unknown, {
     0,
     Math.min(Math.max(0, difficulties.length - 1), Number(source.difficulty) || 0),
   );
+  const rawDelay = Number(source.inputDelay);
+  const inputDelay = Number.isInteger(rawDelay) && rawDelay >= 0 && rawDelay <= 8 ? rawDelay : 0;
+  const rawLimit = Number(source.predictionLimit);
+  const predictionLimit = Number.isInteger(rawLimit) && rawLimit >= 1 && rawLimit <= 8 ? rawLimit : 8;
   const normalizedLoadoutCount = normalizedNonNegativeLimit(loadouts.length);
   const settingsVersion = Math.max(1, Math.trunc(Number(source.settingsVersion) || 1));
   const phase = source.phase === "starting" || source.phase === "running" ? source.phase : "lobby";
@@ -95,6 +102,7 @@ export function normalizeMultiplayerLobbySnapshot(value: unknown, {
       ready: !!seat.ready,
       offline: !!seat.offline,
       controlMode: multiplayerControlMode(seat.controlMode),
+      mobileDevice: seat.mobileDevice === true,
     };
   });
 
@@ -109,6 +117,8 @@ export function normalizeMultiplayerLobbySnapshot(value: unknown, {
     visibility: source.visibility === "private" ? "private" : "public",
     disableCheatMovement: source.disableCheatMovement === true,
     difficulty,
+    inputDelay,
+    predictionLimit,
     settingsVersion,
     phase,
     spectators,

@@ -34,6 +34,8 @@ assert.equal(th06Snapshot.localSeat, 0);
 assert.equal(th06Snapshot.localSpectator, false);
 assert.deepEqual(th06Snapshot.spectators, [{ clientId: "watcher_client_02", name: "观众甲" }]);
 assert.equal(th06Snapshot.spectatorCount, 1, "invalid negative count must not under-report the normalized list");
+assert.equal(th06Snapshot.inputDelay, 0);
+assert.equal(th06Snapshot.predictionLimit, 8);
 
 const th07 = PRODUCT_GAMES.th07.multiplayer;
 const th07Snapshot = normalizeMultiplayerLobbySnapshot({
@@ -59,6 +61,13 @@ assert.equal(th07Snapshot.seats[1]?.offline, true);
 assert.equal(th07Snapshot.localSeat, null);
 assert.equal(th07Snapshot.localSpectator, true);
 assert.equal(th07Snapshot.spectatorCount, 4);
+const timing = normalizeMultiplayerLobbySnapshot({
+  playerCount: 2, inputDelay: 4, predictionLimit: 2,
+  seats: [{ clientId: localClientId, loadout: 0, mobileDevice: true }, null],
+}, { localClientId, playerCounts: th06.playerCounts, difficulties: th06.difficulties, loadouts: th06.loadouts });
+assert.equal(timing?.inputDelay, 4);
+assert.equal(timing?.predictionLimit, 2);
+assert.equal(timing?.seats[0]?.mobileDevice, true);
 
 const inactiveSeat = normalizeMultiplayerLobbySnapshot({
   playerCount: 2,

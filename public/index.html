@@ -592,6 +592,16 @@
               <select class="option-select" id="mpRoomPlayerCount"><option value="2">2P</option><option value="3">3P</option></select>
               <select class="option-select" id="mpRoomDifficulty"><option value="0">Easy</option><option value="1" selected>Normal</option><option value="2">Hard</option><option value="3">Lunatic</option><option value="4">Extra</option><option value="5">Phantasm</option></select>
             </div>
+            <div id="mpInputTiming" class="mp-room-input-timing" hidden>
+              <label class="mp-room-setting-title" for="mpInputDelay" data-i18n="room.inputDelay">输入延迟</label>
+              <select class="option-select" id="mpInputDelay">
+                <option value="auto" data-i18n="room.inputDelayRecommended">使用建议值</option>
+                <option value="0">0</option><option value="1">1</option><option value="2">2</option>
+                <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+                <option value="6">6</option><option value="7">7</option><option value="8">8</option>
+              </select>
+              <p class="mp-room-settings-hint" id="mpInputTimingHint"></p>
+            </div>
             <p class="mp-room-settings-hint" id="mpRoomSettingsHint" data-i18n="multiplayer.settingsHint">只有当前 P1 可以修改房间设置。</p>
             <button id="mpTakeHostSeat" type="button" hidden data-i18n="room.takeHostSeat">成为房主</button>
           </section>

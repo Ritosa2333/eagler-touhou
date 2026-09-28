@@ -1,5 +1,6 @@
 import { prepareRuntimeLaunch } from "./runtime-launch.mjs";
 import { createRoomNetwork } from "./room-network.mjs";
+import { recommendTh08InputTiming } from "./th08-input-timing.mjs";
 import { initializeGameLibrary } from "./game-library.mjs";
 import { PACKAGE_DESCRIPTOR_SCHEMA } from "../../package/package-descriptor.mjs";
 import { componentFileIds } from "../../package/package-generation.mjs";
@@ -486,6 +487,8 @@ function mpApplyLobbyRoom(next: unknown) {
   mpUiState.room.connection = "connected";
   mpUiState.room.playerCount = normalized.playerCount;
   mpUiState.room.difficulty = normalized.difficulty;
+  mpUiState.room.inputDelay = normalized.inputDelay;
+  mpUiState.room.predictionLimit = normalized.predictionLimit;
   const movementPolicyChanged = !mpUiState.room.disableCheatMovement && normalized.disableCheatMovement;
   mpUiState.room.visibility = normalized.visibility;
   mpUiState.room.disableCheatMovement = normalized.disableCheatMovement;
@@ -594,6 +597,7 @@ function mpConnectLobby(reconnecting = false) {
         type: "take-seat", seat: mpUiState.seat, loadout: mpUiState.preferredLoadout,
         ready: mpUiState.ready, name: mpUiState.displayName,
         movementMode: state.options.touchMovementMode, touchEnabled: state.options.touchEnabled,
+        mobileDevice: mobileDevice || state.options.touchEnabled,
       });
       if (mpUiState.seat === 0 && !(room.disableCheatMovement && state.options.touchMovementMode === "touch-unlimited")) mpSendRoomSettings();
     } else if (mpUiState.spectatorRequested) {
@@ -1383,7 +1387,7 @@ const state: LauncherState = {
   product: DEFAULT_PRODUCT_ID, options: { ...defaultOptions }, language: "ja", lessMotion: false, runtimeVariant: "normal",
   netplay: {
     url: "",
-    player: 0, playerCount: 2, seed: 19005, difficulty: 1,
+    player: 0, playerCount: 2, seed: 19005, difficulty: 1, inputDelay: 0, predictionLimit: 8,
     iceServers: [{ urls: ["stun:stun.cloudflare.com:3478"] }],
     loadouts: [{ character: 0, shot: 0 }, { character: 1, shot: 0 }, { character: 2, shot: 0 }],
     spectator: false, spectatorId: "", spectatorCount: 0,
@@ -4361,6 +4365,10 @@ function validatedNetplayOptions() {
     playerCount: state.netplay.playerCount,
     seed: state.netplay.seed,
     difficulty: state.netplay.difficulty,
+    ...(state.product === "th08mp" ? {
+      inputDelay: state.netplay.inputDelay,
+      predictionLimit: state.netplay.predictionLimit,
+    } : {}),
     spectator: state.netplay.spectator === true,
     spectatorId: state.netplay.spectatorId,
     spectatorCount: state.netplay.spectatorCount,
@@ -4395,7 +4403,7 @@ function setOption<K extends keyof GameOptions>(name: K, value: GameOptions[K]) 
   }
   if (name === "touchFocusMode") touchControls.focusEnabled = false;
   saveGamePreferences();
-  if ((name === "touchMovementMode" || name === "touchEnabled") && (mpControlModesSupported || mpUiState.room?.disableCheatMovement) && mpUiState.room?.phase === "lobby" && mpUiState.seat != null) mpLobbySend({ type: "movement", movementMode: state.options.touchMovementMode, touchEnabled: state.options.touchEnabled });
+  if ((name === "touchMovementMode" || name === "touchEnabled") && (mpControlModesSupported || mpUiState.room?.disableCheatMovement) && mpUiState.room?.phase === "lobby" && mpUiState.seat != null) mpLobbySend({ type: "movement", movementMode: state.options.touchMovementMode, touchEnabled: state.options.touchEnabled, mobileDevice: mobileDevice || state.options.touchEnabled });
   resetRuntime();
   render();
 }
@@ -6075,7 +6083,7 @@ $("#mpShareSettingsToggle").addEventListener("click", () => {
   multiplayerPreferences.persistShareSingleplayerSettings(state.product, mpShareSingleplayerSettings);
   restoreGamePreferences(state.game, currentPreferenceId());
   if ((mpControlModesSupported || mpUiState.room?.disableCheatMovement) && mpUiState.room?.phase === "lobby" && mpUiState.seat != null) {
-    mpLobbySend({ type: "movement", movementMode: state.options.touchMovementMode, touchEnabled: state.options.touchEnabled });
+    mpLobbySend({ type: "movement", movementMode: state.options.touchMovementMode, touchEnabled: state.options.touchEnabled, mobileDevice: mobileDevice || state.options.touchEnabled });
     void mpEnsureMovementAllowed();
   }
   resetRuntime();
@@ -6263,14 +6271,19 @@ $("#mpReady").addEventListener("click", async () => {
   const ready = !mpUiState.ready;
   if (ready && !await mpEnsureMovementAllowed()) return;
   if (mpUiState.room !== room || mpUiState.seat == null || room?.phase !== "lobby") return;
-  if (!mpLobbySend({ type: "set-ready", ready, movementMode: state.options.touchMovementMode, touchEnabled: state.options.touchEnabled })) return;
+  if (!mpLobbySend({ type: "set-ready", ready, movementMode: state.options.touchMovementMode, touchEnabled: state.options.touchEnabled, mobileDevice: mobileDevice || state.options.touchEnabled })) return;
   mpUiState.ready = ready;
   renderMpRoom();
 });
 $("#mpCheckGame").addEventListener("click", () => { void mpCheckGame(); });
 $("#mpStartGame").addEventListener("click", async () => {
   if (!mpRoomOwnerLocal() || !mpUiState.ready || !mpLobby.connected) return;
-  mpLobbySend({ type: "start" });
+  if(state.product==="th08mp"){
+    const recommendation=mpTh08TimingRecommendation();
+    const chosen=Number(document.querySelector<HTMLSelectElement>("#mpInputDelay")?.value);
+    const inputDelay=Number.isInteger(chosen)&&chosen>=0&&chosen<=8?chosen:recommendation.inputDelay;
+    mpLobbySend({ type: "start", inputDelay, predictionLimit: recommendation.predictionLimit });
+  }else mpLobbySend({ type: "start" });
 });
 
 function pickFile(accept: string): Promise<File | null> {
@@ -7064,6 +7077,8 @@ function mpEnterRoom(code: string, created: boolean) {
   // Do not carry the previous room session's serial into a fresh join, or the
   // next `start` (normally serial=1) will be mistaken for an old event.
   mpLobby.startSerial = 0;
+  const timingChoice=document.querySelector<HTMLSelectElement>("#mpInputDelay");
+  if(timingChoice)timingChoice.value="auto";
   mpUiState.room = {
     code, playerCount: mpDefaultPlayerCount(), difficulty: 1, created: !!created,
     seats: null, synced: false, connection: "connecting",
@@ -7185,6 +7200,7 @@ async function mpTakeSeat(index: number) {
     type: "take-seat", seat: index, loadout: mpUiState.preferredLoadout,
     ready: mpUiState.ready, name: mpUiState.displayName,
     movementMode: state.options.touchMovementMode, touchEnabled: state.options.touchEnabled,
+    mobileDevice: mobileDevice || state.options.touchEnabled,
   });
   // The lobby snapshot commits old/new occupancy together, including rejection.
 }
@@ -7248,6 +7264,8 @@ function mpConfigureRuntimeSession() {
   state.netplay.spectatorCount = Math.max(0, Number(room.spectatorCount) || 0);
   state.netplay.seed = Number.parseInt(room.code, 10) & 0xffff;
   state.netplay.difficulty = Math.max(0, Math.min(mpDifficultyMax(), Number(room.difficulty) || 0));
+  state.netplay.inputDelay = Number(room.inputDelay) || 0;
+  state.netplay.predictionLimit = Number(room.predictionLimit) || 8;
   const loadouts = mpLoadouts();
   const bootstrapLoadouts = mpBootstrapLoadoutIndexes();
   state.netplay.loadouts = Array.from({ length: 3 }, (_, playerIndex) => {
@@ -7285,10 +7303,31 @@ function mpSetLoadout(delta: number) {
   renderMpRoom();
 }
 
+function mpTh08TimingRecommendation() {
+  const room=mpUiState.room;
+  const seats=room?.seats?.slice(0,room.playerCount) || [];
+  const phones=seats.reduce((count,seat,index)=>count+(seat &&
+    (seat.mobileDevice || (index===mpUiState.seat && (mobileDevice || state.options.touchEnabled)))?1:0),0);
+  let rtt: number|null=null,jitter: number|null=null;
+  for(const seat of seats){
+    if(!seat||seat.clientId===mpLobby.clientId||seat.offline)continue;
+    const metric=(["direct","turn","relay"] as const).map(lane=>roomNetwork.metric(seat.clientId,lane))
+      .find(value=>value.state==="connected"&&value.rtt!=null);
+    if(metric?.rtt!=null){rtt=Math.max(rtt??0,metric.rtt);jitter=Math.max(jitter??0,metric.jitter??0);}
+  }
+  return recommendTh08InputTiming(phones,rtt,jitter);
+}
+
 function renderRoomNetwork() {
   const container = document.getElementById("mpRoomNetworkRows");
   const room = mpUiState.room;
   if (!container || !room) return;
+  const timingHint=document.getElementById("mpInputTimingHint");
+  if(timingHint && state.product==="th08mp"){
+    const advice=mpTh08TimingRecommendation();
+    timingHint.textContent=t("room.inputTimingHint",{delay:advice.inputDelay,limit:advice.predictionLimit,
+      phones:advice.mobileSeats,network:advice.networkFrames});
+  }
   const peers = (room.seats || []).slice(0, room.playerCount).flatMap((seat, index) => seat && index !== mpUiState.seat ? [{ seat, index }] : []);
   const unavailable = !mpLobby.connected || !room.synced;
   const paused = room.phase !== "lobby" || (state.launched && !th09NetworkOverlayOpen());
@@ -7410,6 +7449,10 @@ function renderMpRoom() {
   $("#mpSeatStage").dataset.playerCount = String(room.playerCount);
   $("#mpRoomPlayerCount").disabled = !roomReady || !ownerLocal;
   $("#mpRoomDifficulty").disabled = !roomReady || !ownerLocal;
+  const inputTiming=document.getElementById("mpInputTiming");
+  if(inputTiming)inputTiming.hidden=state.product!=="th08mp";
+  const inputDelay=document.querySelector<HTMLSelectElement>("#mpInputDelay");
+  if(inputDelay)inputDelay.disabled=!roomReady||!ownerLocal||room.phase!=="lobby";
   $("#mpRoomSettingsHint").textContent = t(ownerLocal ? "multiplayer.ownerLocalHint" : !room.seats?.[0] ? "room.hostAvailable" : "multiplayer.ownerRemoteHint");
 
 

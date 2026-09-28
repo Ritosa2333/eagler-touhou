@@ -77,6 +77,13 @@ async function sendAndReceive(socket, message) {
   socket.send(JSON.stringify(message));
   return response;
 }
+async function sendAndMatch(socket,message,predicate) {
+  const first=nextJson(socket);
+  socket.send(JSON.stringify(message));
+  let response=await first;
+  while(!predicate(response))response=await nextJson(socket);
+  return response;
+}
 
 async function verifyProduct(port, game) {
   const multiplayer = PRODUCT_GAMES[game].multiplayer;
@@ -123,6 +130,28 @@ async function verifyGenericRoom(port) {
   }
 }
 
+async function verifyTh08Timing(port) {
+  const room=`th08mp-timing${Date.now().toString(36)}`;
+  const p1=await openLobby(port,room,"th08_timing_p1");
+  const p2=await openLobby(port,room,"th08_timing_p2");
+  try {
+    await sendAndMatch(p1,{type:"take-seat",seat:0,loadout:0,ready:false,movementMode:"touch",touchEnabled:true,mobileDevice:true},
+      response=>response.room?.seats?.[0]?.clientId==="th08_timing_p1");
+    const joined=await sendAndMatch(p2,{type:"take-seat",seat:1,loadout:1,ready:false,movementMode:"touch",touchEnabled:true,mobileDevice:true},
+      response=>response.room?.seats?.[1]?.clientId==="th08_timing_p2");
+    assert.equal(joined.room.seats[0].mobileDevice,true);
+    assert.equal(joined.room.seats[1].mobileDevice,true);
+    await sendAndMatch(p1,{type:"set-ready",ready:true,movementMode:"touch",touchEnabled:true,mobileDevice:true},
+      response=>response.room?.seats?.[0]?.ready===true);
+    await sendAndMatch(p2,{type:"set-ready",ready:true,movementMode:"touch",touchEnabled:true,mobileDevice:true},
+      response=>response.room?.seats?.[1]?.ready===true);
+    const started=await sendAndMatch(p1,{type:"start",inputDelay:4,predictionLimit:2},response=>response.type==="start");
+    assert.equal(started.type,"start");
+    assert.equal(started.room.inputDelay,4);
+    assert.equal(started.room.predictionLimit,2);
+  } finally { p1.close(1000);p2.close(1000); }
+}
+
 const port = await freePort();
 const relayEnv = {
   ...process.env,
@@ -142,6 +171,7 @@ try {
   await waitListening(relay);
   for (const game of multiplayerGames) await verifyProduct(port, game);
   await verifyGenericRoom(port);
+  await verifyTh08Timing(port);
 } finally {
   relay.kill();
 }

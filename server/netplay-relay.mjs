@@ -147,6 +147,8 @@ function getRoom(id) {
         difficulty: 1,
         visibility: 'public',
         disableCheatMovement: false,
+        inputDelay: 0,
+        predictionLimit: 8,
         settingsVersion: 1,
         phase: 'lobby',
         seats: [null, null, null],
@@ -400,6 +402,8 @@ function lobbySnapshot(room) {
     difficulty: room.lobby.difficulty,
     visibility: room.lobby.visibility,
     disableCheatMovement: room.lobby.disableCheatMovement,
+    inputDelay: room.lobby.inputDelay,
+    predictionLimit: room.lobby.predictionLimit,
     settingsVersion: room.lobby.settingsVersion,
     phase: room.lobby.phase,
     startSerial: room.lobby.startSerial,
@@ -410,6 +414,7 @@ function lobbySnapshot(room) {
       name: seat.name || '',
       loadout: seat.loadout,
       controlMode: publicControlMode(seat),
+      mobileDevice: seat.mobileDevice === true,
       ready: !!seat.ready && seat.readyVersion === room.lobby.settingsVersion,
       readyVersion: Number(seat.readyVersion) || 0,
       offline: !room.lobbyClients.has(seat.clientId),
@@ -562,6 +567,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         clientId, name: normalizeDisplayName(message.name), loadout: Number(message.loadout),
         movementMode: message.movementMode,
         touchEnabled: typeof message.touchEnabled === 'boolean' ? message.touchEnabled : undefined,
+        mobileDevice: message.mobileDevice === true,
         ready: preserveReady, readyVersion: preserveReady ? room.lobby.settingsVersion : 0,
       };
       broadcastLobby(room);
@@ -625,9 +631,11 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       return;
     }
     if (message.type === 'movement') {
-      if (occupant.movementMode !== message.movementMode || occupant.touchEnabled !== message.touchEnabled) {
+      if (occupant.movementMode !== message.movementMode || occupant.touchEnabled !== message.touchEnabled ||
+          occupant.mobileDevice !== (message.mobileDevice === true)) {
         occupant.movementMode = message.movementMode;
         occupant.touchEnabled = typeof message.touchEnabled === 'boolean' ? message.touchEnabled : undefined;
+        occupant.mobileDevice = message.mobileDevice === true;
         occupant.ready = false;
         occupant.readyVersion = 0;
         broadcastLobby(room);
@@ -641,6 +649,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       }
       occupant.movementMode = message.movementMode;
       occupant.touchEnabled = typeof message.touchEnabled === 'boolean' ? message.touchEnabled : undefined;
+      occupant.mobileDevice = message.mobileDevice === true;
       occupant.ready = !!message.ready;
       occupant.readyVersion = occupant.ready ? room.lobby.settingsVersion : 0;
       broadcastLobby(room);
@@ -688,6 +697,14 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         sendLobby(socket, { type: 'error', error: '仍有玩家未在线、未入座或未对当前设置准备' });
         return;
       }
+      const inputDelay = message.inputDelay === undefined ? 0 : Number(message.inputDelay);
+      const predictionLimit = message.predictionLimit === undefined ? 8 : Number(message.predictionLimit);
+      if (!Number.isInteger(inputDelay) || inputDelay < 0 || inputDelay > 8 ||
+          !Number.isInteger(predictionLimit) || predictionLimit < 1 || predictionLimit > 8) {
+        sendLobby(socket, { type: 'error', error: 'invalid input timing' }); return;
+      }
+      room.lobby.inputDelay = inputDelay;
+      room.lobby.predictionLimit = predictionLimit;
       room.lobby.phase = 'starting';
       room.lobby.startSerial++;
       const run = getRun(room, String(room.lobby.startSerial));
