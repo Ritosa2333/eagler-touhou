@@ -144,6 +144,10 @@ void contracts() {
     bool failed=false;
     for(unsigned now=0;now<1000;++now){a.now=b.now=now;failed=!left.Pump(now)||!right.Pump(now);if(failed)break;}
     CHECK(failed);CHECK(!left.Ready()&&!right.Ready());
+    CHECK(left.Begin(config(0),1000,2));CHECK(right.Begin(config(1),1000,3));a.pending.clear();b.pending.clear();
+    failed=false;
+    for(unsigned now=1000;now<2000;++now){a.now=b.now=now;failed=!left.Pump(now)||!right.Pump(now);if(failed)break;}
+    CHECK(failed);CHECK(!left.Ready()&&!right.Ready());
     CHECK(left.Begin(config(0),1000));CHECK(right.Begin(config(1),1000));a.pending.clear();b.pending.clear();
     for(unsigned now=1000;now<2000&&(!left.Ready()||!right.Ready());++now){a.now=b.now=now;CHECK(left.Pump(now));CHECK(right.Pump(now));}
     CHECK(left.Ready()&&right.Ready());CHECK(left.NeedsCapture());
@@ -151,6 +155,16 @@ void contracts() {
     CHECK(!left.NeedsCapture());CHECK(!left.Capture(input(0,0),2000));
     FrameInput invalid;invalid.analogMode=AnalogMode::DirectTouch;invalid.x=std::numeric_limits<float>::infinity();
     CHECK(!RollbackSession::ValidInput(invalid));invalid.x=4097;CHECK(!RollbackSession::ValidInput(invalid));
+    CHECK(left.Begin(config(0),3000,3));CHECK(right.Begin(config(1),3000,3));a.pending.clear();b.pending.clear();
+    for(unsigned now=3000;now<4000&&(!left.Ready()||!right.Ready());++now){a.now=b.now=now;CHECK(left.Pump(now));CHECK(right.Pump(now));}
+    CHECK(left.Ready()&&right.Ready());
+    for(unsigned capture=0;capture<4;++capture){
+        a.now=b.now=4000+capture;
+        CHECK(left.NeedsCapture());CHECK(left.Capture(input(0,capture),a.now));
+        auto delayed=left.Prepare();CHECK(delayed.canAdvance);
+        CHECK(delayed.inputs[0]==(capture<3?FrameInput{}:input(0,0)));
+        CHECK(left.Complete(delayed));
+    }
     std::puts("ABI gate, zero-frame local input, once-only capture, input bounds PASS");
 }
 int main(){contracts();for(unsigned mode=0;mode<5;++mode)simulation(mode);return 0;}

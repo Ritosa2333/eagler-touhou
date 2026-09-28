@@ -8,7 +8,7 @@ class RollbackSession : private Netplay::PeerTransport {
 public:
     static constexpr unsigned History = 8;
     explicit RollbackSession(Netplay::PeerTransport& transport): transport_(transport), channel_(*this) {}
-    bool Begin(const Netplay::SessionConfig&, std::uint64_t now);
+    bool Begin(const Netplay::SessionConfig&, std::uint64_t now, std::uint8_t inputDelay = 0);
     void Clear();
     bool Verify(std::uint32_t frame,std::uint32_t hash);
     bool Pump(std::uint64_t now, bool expectsInput = true);

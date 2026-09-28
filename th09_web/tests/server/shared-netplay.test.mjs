@@ -66,19 +66,20 @@ function harness() {
   return {core, restore};
 }
 
-async function connectPair(harness) {
+async function connectPair(harness, inputDelay = 0) {
   globalThis.fetch = async () => ({ok: true, json: async () => ({build: 'a'.repeat(24)})});
   globalThis.location = {href: 'https://example.test/runtime/th09/th09.html'};
   globalThis.document = {hidden: false};
   const leftCore = harness.core(), rightCore = harness.core();
   const left = new SharedNetplay(leftCore, {onStatus() {}, onClose() {}, onResult() {}});
   const right = new SharedNetplay(rightCore, {onStatus() {}, onClose() {}, onResult() {}});
-  const options = side => ({
+  const options = (side, inputDelay = 0) => ({
     netplayUrl: `wss://example.test/netplay?room=th09mp-1234&run=1&player=${side}`,
     netplayPlayer: side, netplayPlayerCount: 2, netplaySeed: 1234, netplayDifficulty: 2,
+    netplayInputDelay: inputDelay,
     netplayLoadouts: [{character: 3}, {character: 10}],
   });
-  await Promise.all([left.connect(options(0)), right.connect(options(1))]);
+  await Promise.all([left.connect(options(0, inputDelay)), right.connect(options(1, inputDelay))]);
   left.pump(); right.pump(); left.pump(); right.pump();
   assert.equal(left.active, true);
   assert.equal(right.active, true);
@@ -89,8 +90,8 @@ test('launcher and in-game entries share the TH09 room through the common peer t
   const box = harness();
   try {
     const {left, right, leftCore, rightCore} = await connectPair(box);
-    assert.deepEqual(leftCore.calls.begin, [[1234, 0, 2, 3, 10, 0xaaaaaaab, 0xaaaaaaaa, (0xaaaaaaaa ^ (3<<16) ^ (10<<20) ^ (2<<24) ^ 0x09010000) >>> 0]]);
-    assert.deepEqual(rightCore.calls.begin, [[1234, 1, 2, 3, 10, 0xaaaaaaab, 0xaaaaaaaa, (0xaaaaaaaa ^ (3<<16) ^ (10<<20) ^ (2<<24) ^ 0x09010000) >>> 0]]);
+    assert.deepEqual(leftCore.calls.begin, [[1234, 0, 2, 3, 10, 0xaaaaaaab, 0xaaaaaaaa, (0xaaaaaaaa ^ (3<<16) ^ (10<<20) ^ (2<<24) ^ 0x09010000) >>> 0, 0]]);
+    assert.deepEqual(rightCore.calls.begin, [[1234, 1, 2, 3, 10, 0xaaaaaaab, 0xaaaaaaaa, (0xaaaaaaaa ^ (3<<16) ^ (10<<20) ^ (2<<24) ^ 0x09010000) >>> 0, 0]]);
     left.input(6, 123, 1, .25, -.5);
     right.pump();
     assert.deepEqual(rightCore.calls.receive, [], "JS must not feed the old lockstep queue");
@@ -99,6 +100,18 @@ test('launcher and in-game entries share the TH09 room through the common peer t
   } finally {
     box.restore();
   }
+});
+
+test('launcher input delay reaches the native rollback session', async () => {
+  const box = harness();
+  try {
+    const {left, right, leftCore, rightCore} = await connectPair(box, 3);
+    const baseAbi = (0xaaaaaaaa ^ (3<<16) ^ (10<<20) ^ (2<<24) ^ 0x09010000) >>> 0;
+    assert.deepEqual(leftCore.calls.begin, [[1234, 0, 2, 3, 10, 0xaaaaaaab, 0xaaaaaaaa, baseAbi, 3]]);
+    assert.deepEqual(rightCore.calls.begin, [[1234, 1, 2, 3, 10, 0xaaaaaaab, 0xaaaaaaaa, baseAbi, 3]]);
+    assert.equal(globalThis.__eaglerNetplayInputDelayFrames, 3);
+    left.close(); right.close();
+  } finally { box.restore(); }
 });
 
 test('diagnostics report native rollback counters and result keeps pumping terminal ACKs', async () => {

@@ -308,17 +308,17 @@ TH09_EXPORT("th09_network_room_begin") u32 th09_network_room_begin(u32 seed,i32 
     probe->title->launch_network_match();
     return 1;
 }
-TH09_EXPORT("th09_rollback_enable") u32 th09_rollback_enable(u32 seed,u32 side,u32 idLow,u32 idHigh,u32 abi){
-    if(rollback_active||!probe||!network.active||side>1)return 0;
+TH09_EXPORT("th09_rollback_enable") u32 th09_rollback_enable(u32 seed,u32 side,u32 idLow,u32 idHigh,u32 abi,u32 inputDelay){
+    if(rollback_active||!probe||!network.active||side>1||inputDelay>8)return 0;
     for(auto& frame:rollback_frames){frame.number=Netplay::INVALID_FRAME;frame.captured=false;frame.sounds.clear();}
     Netplay::SessionConfig c;c.seed=seed;c.localPlayer=side;c.gameId=9;c.gameplayAbi=abi;c.sessionId=(std::uint64_t(idHigh)<<32)|idLow;
-    rollback_published=rollback_catchup=0;rollback_active=rollback.Begin(c,std::uint64_t(emscripten_get_now()));return rollback_active;
+    rollback_published=rollback_catchup=0;rollback_active=rollback.Begin(c,std::uint64_t(emscripten_get_now()),u8(inputDelay));return rollback_active;
 }
-TH09_EXPORT("th09_rollback_begin") u32 th09_rollback_begin(u32 seed,u32 side,u32 difficulty,u32 left,u32 right,u32 idLow,u32 idHigh,u32 abi){
-    if(rollback_active||!th09_network_room_begin(seed,i32(side),0xffff,difficulty,0,left,right))return 0;
+TH09_EXPORT("th09_rollback_begin") u32 th09_rollback_begin(u32 seed,u32 side,u32 difficulty,u32 left,u32 right,u32 idLow,u32 idHigh,u32 abi,u32 inputDelay){
+    if(rollback_active||inputDelay>8||!th09_network_room_begin(seed,i32(side),0xffff,difficulty,0,left,right))return 0;
     // Commit the resource-owning title transition before the prediction epoch.
     if(!probe->tick_title(0,0,0,false)||probe->in_title)return 0;
-    return th09_rollback_enable(seed,side,idLow,idHigh,abi);
+    return th09_rollback_enable(seed,side,idLow,idHigh,abi,inputDelay);
 }
 TH09_EXPORT("th09_rollback_pump") u32 th09_rollback_pump(){
     if(!rollback_active)return 0;

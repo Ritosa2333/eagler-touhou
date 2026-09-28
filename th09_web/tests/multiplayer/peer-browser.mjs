@@ -42,7 +42,7 @@ try {
     };
     for(let side=0;side<3;++side){const w=frames[side];const dc=reliable=>({readyState:'open',bufferedAmount:0,send:bytes=>{if(side<2)send(side,reliable,bytes);}});
       w.__eaglerPeerTransport={route:'rtc',localPlayer:side%2,playerCount:2,received:[],receivedHead:0,peers:new Map([[1-side%2,{inputOpen:true,controlOpen:true,inputDc:dc(false),controlDc:dc(true)}]])};
-      if(!w.core._th09_rollback_begin(12345,side%2,3,0,1,0x1234,0x5678,0x901))throw Error('begin '+error(w));
+      if(!w.core._th09_rollback_begin(12345,side%2,3,0,1,0x1234,0x5678,0x901,0))throw Error('begin '+error(w));
     }
     const gameplayKeys=(side,f)=>inputTrace==='endurance-tape'?(f===0?0:
       (f<132?256:0)|(f%126<90?1:0)|(f%180<45?4:0)|((Math.floor(f/22)+side)%4===0?64:0)|((Math.floor(f/22)+side)%4===2?128:0)):

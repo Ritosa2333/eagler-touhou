@@ -5,15 +5,17 @@
 #include <cstring>
 
 namespace th09::multiplayer {
-bool RollbackSession::Begin(const Netplay::SessionConfig& session, std::uint64_t now) {
+bool RollbackSession::Begin(const Netplay::SessionConfig& session, std::uint64_t now, std::uint8_t inputDelay) {
     Clear();
-    if (session.playerCount != 2 || session.localPlayer > 1 || session.gameId != 9)
+    if (session.playerCount != 2 || session.localPlayer > 1 || session.gameId != 9 || inputDelay > 8)
         return Fail("Invalid TH09 rollback session");
+    auto negotiated = session;
+    if (inputDelay) negotiated.gameplayAbi ^= 0x49444c00u ^ inputDelay;
     Netplay::CoreConfig config;
-    config.sessionId = session.sessionId;
-    config.localPlayer = session.localPlayer;
+    config.sessionId = negotiated.sessionId;
+    config.localPlayer = negotiated.localPlayer;
     config.playerCount = 2;
-    config.inputDelay = 0;
+    config.inputDelay = inputDelay;
     config.maxRollbackFrames = History;
     // TH09: shot/charge 1, bomb 2, focus 4, menu 8, directions 0xf0.
     // Keep held charge instead of inventing a release edge; Bomb and menu
@@ -23,7 +25,7 @@ bool RollbackSession::Begin(const Netplay::SessionConfig& session, std::uint64_t
     config.maxDirectionPredictionFrames = 3;
     Netplay::SessionChannelConfig policy;
     policy.repairIntervalMs = Netplay::InputRepairBudget::StalledMs;
-    if (!core_.Reset(config) || !gate_.Reset(session) || !channel_.BeginSession(session, now, policy))
+    if (!core_.Reset(config) || !gate_.Reset(negotiated) || !channel_.BeginSession(negotiated, now, policy))
         return Fail("TH09 rollback bootstrap failed");
     configured_ = true;
     return true;

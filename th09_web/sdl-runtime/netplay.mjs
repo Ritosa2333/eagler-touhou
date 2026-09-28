@@ -17,7 +17,7 @@ export class Netplay {
     const state={route:'relay',relay:socket,peers:new Map(),received:[],receivedHead:0,localPlayer:this.side,playerCount:2,failed:false,closed:false,error:'',fail(message){this.failed=true;this.error=message;}};
     globalThis.__eaglerPeerTransport=state;
     const words=this.build.slice(0,24).match(/.{8}/g).map(v=>Number.parseInt(v,16));
-    if(!this.core._th09_rollback_enable(m.seed,this.side,words[0]^m.seed,words[1],words[2]))throw Error('Rollback 初始化失败');
+    if(!this.core._th09_rollback_enable(m.seed,this.side,words[0]^m.seed,words[1],words[2],0))throw Error('Rollback 初始化失败');
     this.prepared=true;this.send({type:'ready'});
    }
    else if(m.type==='start'){
