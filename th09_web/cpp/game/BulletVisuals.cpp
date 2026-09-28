@@ -46,6 +46,7 @@ bool BulletVisuals::change_color(AnmVm& vm,i32 base,i32 color,float height){
 }
 bool BulletVisuals::prepare(Bullet& b,u32 index,i32 type,i32 color,u32 flags){
     if(index>=instances.size()||type<0||u32(type)>=appearances.size())return false;
+    if(checkpoint)checkpoint->BeforeBytes(&instances[index],sizeof(instances[index]));
     const auto& a=appearances[type];auto& v=instances[index];v[0]=a.animations[0];v[4]=a.animations[4];copy_metadata(b,a);
     const i32 sprite=a.animations[0].activeSpriteIndex+color;
     if(v[0].activeSpriteIndex!=sprite&&file.SetSprite(&v[0],sprite))return false;
@@ -58,11 +59,12 @@ bool BulletVisuals::prepare(Bullet& b,u32 index,i32 type,i32 color,u32 flags){
 }
 bool BulletVisuals::change_type(Bullet& b,u32 index,i32 type,i32 color){
     if(index>=instances.size()||type<0||u32(type)>=appearances.size())return false;
+    if(checkpoint)checkpoint->BeforeBytes(&instances[index],sizeof(instances[index]));
     const auto& a=appearances[type];instances[index]=a.animations;copy_metadata(b,a);
     if(file.SetSprite(&instances[index][0],a.animations[0].activeSpriteIndex+color))return false;refresh(b,index);return true;
 }
-bool BulletVisuals::set_sprite(Bullet& b,u32 index,i32 sprite){if(index>=instances.size()||file.SetSprite(&instances[index][0],sprite))return false;refresh(b,index);return true;}
+bool BulletVisuals::set_sprite(Bullet& b,u32 index,i32 sprite){if(index>=instances.size())return false;if(checkpoint)checkpoint->BeforeBytes(&instances[index],sizeof(instances[index]));if(file.SetSprite(&instances[index][0],sprite))return false;refresh(b,index);return true;}
 bool BulletVisuals::advance(Bullet& b,u32 index,BulletAnimation animation){
-    if(index>=instances.size())return true;const bool finished=executor.execute(instances[index][u32(animation)]);if(animation==BulletAnimation::body)refresh(b,index);return finished;
+    if(index>=instances.size())return true;if(checkpoint)checkpoint->BeforeBytes(&instances[index],sizeof(instances[index]));const bool finished=executor.execute(instances[index][u32(animation)]);if(animation==BulletAnimation::body)refresh(b,index);return finished;
 }
 }

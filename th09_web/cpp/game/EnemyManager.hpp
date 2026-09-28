@@ -1,4 +1,5 @@
 #pragma once
+#include "PoolCheckpoint.hpp"
 #include "EnemyTimeline.hpp"
 #include "EnemyFrame.hpp"
 #include <array>
@@ -6,6 +7,7 @@ namespace th09 {
 class EnemyManager {
     EclWorldState& world;EclPlayfieldState& field;EclPlayfieldState& opponent;
 public:
+    PoolCheckpoint* checkpoint=nullptr;
     static constexpr u32 capacity=128;
     EclProgram common_program,character_program;
     EclVm prototype;std::array<EclVm,capacity+1> enemies;

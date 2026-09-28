@@ -3,6 +3,7 @@
 #include "GameInput.hpp"
 #include "Rng.hpp"
 namespace th09 {
+namespace multiplayer { class WorldState; }
 struct ReplayPlayerSettings {
     u32 points=0;
     u16 seed=0;
@@ -37,6 +38,7 @@ struct InputCapture {
     void sample(GameInput (&inputs)[3],const bool (&auto_focus)[2],Rng& rng,i32& external_event) noexcept;
 };
 class ReplayRecording {
+    friend class multiplayer::WorldState;
 public:
     static constexpr u32 chunk_frames=3598;
     struct Chunk {std::array<std::vector<u16>,3> inputs;std::vector<u8> rates;};

@@ -6,6 +6,7 @@
 #include "Combo.hpp"
 #include "ChargeGauge.hpp"
 namespace th09 {
+namespace multiplayer { class WorldState; }
 struct PlayerActions:PlayerShotActions,ComboActions,CpuActions {
     virtual void begin_charge()=0;
     virtual void end_charge()=0;
@@ -36,6 +37,7 @@ struct PlayerFrameContext {
 // Owns player state and its named components. The platform sees only PlayerActions;
 // original addresses and machine memory are not part of this game interface.
 class Player:private PlayerLifeActions,private MotionEffects,private PlayerItemActions {
+    friend class multiplayer::WorldState;
     EclWorldState& world;PlayerActions& actions;PlayerFrameContext frame;
     Combo combo_system(){return Combo(world,actions,frame.timing,frame.geometry[motion.player],frame.geometry[1-motion.player].width,i32(motion.player));}
     void synchronize_shots();

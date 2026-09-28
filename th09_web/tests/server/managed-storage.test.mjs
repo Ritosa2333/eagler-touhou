@@ -71,8 +71,8 @@ test('packaged normal and multiplayer shells isolate saves and Replay across rel
     await cp(new URL('../../sdl-runtime/', import.meta.url), join(temporary, 'sdl-runtime'), {recursive: true});
     const compiled = join(temporary, 'artifacts/sdl-release'), fonts = join(temporary, 'assets/sdl-native');
     await mkdir(compiled, {recursive: true}); await mkdir(fonts, {recursive: true});
-    // Packaging validates the attested bytes; these are not executable game fixtures.
-    const wasm = Buffer.from('storage packaging fixture');
+    // Use the release ABI, whose required multiplayer exports are validated.
+    const wasm = await readFile(new URL('../../artifacts/sdl-release/th09.wasm', import.meta.url));
     await writeFile(join(compiled, 'th09.wasm'), wasm);
     await writeFile(join(compiled, 'th09.mjs'), 'export default function() {}');
     await writeFile(join(compiled, 'build.json'), JSON.stringify({kind: 'th09-native-web-release-candidate',

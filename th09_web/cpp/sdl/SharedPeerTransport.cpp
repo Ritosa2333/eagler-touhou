@@ -13,6 +13,7 @@ std::uint8_t packet_buffer[128]{};
 char error_buffer[256]{};
 }
 
+Netplay::PeerTransport& th09_shared_transport(){return transport;}
 extern "C" {
 #define TH09_PEER_EXPORT(name) __attribute__((export_name(name)))
 TH09_PEER_EXPORT("th09_peer_url_buffer") char* th09_peer_url_buffer() { return relay_url; }

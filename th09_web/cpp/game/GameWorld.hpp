@@ -59,5 +59,6 @@ public:
     void continue_game();
     void copy_inputs(GameInput (&inputs)[3])const;
     void draw();
+    MatchSceneServices& scene_services();
 };
 }

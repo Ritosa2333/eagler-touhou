@@ -5,10 +5,12 @@
 #include "Ending.hpp"
 #include "TouchMotionTrack.hpp"
 namespace th09 {
+namespace multiplayer { class WorldState; }
 enum class SessionPhase {inactive,match,game_over,match_complete,ending,finished};
 // Owns a complete run. Platform code renders the active world or ending and
 // persists the resulting native-compatible files; it does not select routes.
 class GameSession:public MotionSource {
+    friend class multiplayer::WorldState;
     EclWorldState& state;GameResources& resources;AnmExecutor& animations;
     WorldPresentation& output;EndingServices& ending_output;PlayerRecords& records;
     WorldConfiguration initial,current;ReplayMetadata replay_metadata;

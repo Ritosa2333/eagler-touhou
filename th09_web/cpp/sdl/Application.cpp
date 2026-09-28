@@ -10,6 +10,8 @@
 #include "../game/GameConfiguration.hpp"
 #include "../game/KeyboardInput.hpp"
 #include "../game/NetworkInput.hpp"
+#include "../multiplayer/WorldState.hpp"
+#include "../multiplayer/RollbackSession.hpp"
 #include <dirent.h>
 #include <ctime>
 #include <algorithm>
@@ -18,6 +20,7 @@
 #include "../../../portable/input/TouchController.hpp"
 #include <emscripten.h>
 #include <emscripten/html5.h>
+Netplay::PeerTransport& th09_shared_transport();
 #include "../../../portable/sdl/FrameCadence.hpp"
 EM_JS(void, th09_browser_frame, (int ok,double milliseconds), { Module["onGameFrame"]?.(ok,milliseconds); });
 EM_JS(void, th09_network_result, (), { Module["onNetworkResult"]?.(); });
@@ -48,6 +51,23 @@ namespace th09::sdl {
 namespace {
 i32 joy_button(i32);
 NetworkInput network;
+multiplayer::RollbackSession rollback(th09_shared_transport());
+bool rollback_active=false;
+u32 rollback_published=0,rollback_catchup=0;
+struct RollbackFrame {
+    u32 number=Netplay::INVALID_FRAME,hash=0;
+    std::unique_ptr<multiplayer::WorldState> state;
+    bool captured=false;
+    struct Sound {i32 kind,id;float value;};
+    std::vector<Sound> sounds;
+};
+std::array<RollbackFrame,multiplayer::RollbackSession::History+1> rollback_frames;
+RollbackFrame* recording_frame=nullptr;
+#if TH09_DEVELOPMENT_HARNESS
+u32 rollback_test_limit=Netplay::INVALID_FRAME;
+double probe_tick_cost[2]{}; // Update/UI and semantic Draw; diagnostic only.
+bool probe_full_sprite_geometry=false;
+#endif
 struct SpectatorFrame { u32 frame=0;u16 keys[2]{};NetworkInput::Motion motion[2]; };
 std::deque<SpectatorFrame> spectator_frames;
 bool spectator_mode=false;
@@ -62,6 +82,21 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     std::unique_ptr<GameSession> session;GameWorld* world=nullptr;WorldConfiguration configuration;InputFrame device;
     ReplayFile pending_replay;u32 replay_stage=0;bool replay_pending=false,demo_pending=false;u32 ending_image=0,ending_width=640,ending_height=480;
     bool paused=false,over=false,complete=false;u32 frames=0;std::string error;Vec2 shake[3]{};
+    bool checkpoint(multiplayer::WorldState& out){
+        presentation.renderer.flush();graphics.backend.flush();
+        if(!out.Save(*session))return false;
+        out.Fields(device,left_device,right_device,paused,over,complete,frames,shake,pending_action,requested_transition,mode,difficulty,game_flags,continues,capture_enabled);
+        out.Text(error);
+        // Records and wall clocks are committed output, outside rollback.
+        out.Fields(menus.pause,menus.game_over,menus.match_end,presentation.offsets,presentation.active_field,presentation.stage_state);
+        auto& a=presentation.ascii;out.Fields(a.glyph,a.digit,a.queue,a.popups,a.count,a.color,a.scale,a.field_view,a.spacing,a.popup_cursor);
+        auto& r=presentation.renderer;out.Fields(r.state,r.view,r.shake,r.tint,r.tint_enabled,r.quad,r.texture,r.blend_mode,r.depth_disabled,r.camera,r.last_world,r.texture_matrix,r.current_sprite,r.background_camera_data,r.camera_mode,r.world_vertices);
+        auto& b=presentation.stages;out.Fields(b.geometry,b.side,b.fog_supported,b.tint,b.tint_enabled,b.field_view,b.culling_camera);
+        out.Fields(graphics.backend.state);
+        return out.Good();
+    }
+    bool queue_sound(i32 kind,i32 id,float value=0){if(!recording_frame)return false;recording_frame->sounds.push_back({kind,id,value});return true;}
+    void pause_audio(bool on){if(!queue_sound(4,on))audio.pause_music(on);}
     bool initialize_platform(){if(!graphics.initialize()){error=graphics.error;return false;}if(!assets.open("/th09.dat")){error=assets.error;return false;}if(!fonts.initialize()){error=fonts.error;return false;}fonts.prewarm_game(assets);if(!audio.initialize(assets)){error=audio.error;return false;}SDL_CreateDirectory("/save/replay");std::vector<u8> bytes;if(read_file("/save/th09.cfg",bytes))saved_configuration.load(bytes.data(),u32(bytes.size()));saved_configuration.apply(settings);title_configuration();if(!write_file("/save/th09.cfg",saved_configuration.data().data(),204)){error="Unable to save configuration";return false;}if(read_file("/save/score.dat",bytes))records.load(bytes.data(),u32(bytes.size()));sync_records();records.application_clock=records.game_clock=u32(SDL_GetTicks());return true;}
     void update_clocks(){const u32 now=u32(SDL_GetTicks());if(clock_running)records.update_application_clock(now);else records.application_clock=now;if(clock_running&&!in_title&&!paused&&!over&&!complete&&session&&session->phase==SessionPhase::match)records.update_game_clock(now);else records.game_clock=now;}
     void clock_pause(bool on){update_clocks();clock_running=!on;}
@@ -83,16 +118,16 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
         if(!presentation.ascii.initialize()){error="ASCII initialization failed";return false;}paused=over=complete=false;menus.pause={};menus.game_over={};menus.match_end={};requested_transition=-1;return true;
     }
     bool render_text(AnmVm& a,const char* s,u32 color,u32 shadow)override{if(!fonts.text(a,s,color,shadow)){error=fonts.error;return false;}return true;}
-    void sound(i32 id,i32 pan)override{audio.effects.enqueue(id,pan);}
-    void positioned_sound(i32 id,float x)override{audio.effects.positioned(id,x);}
-    void music(i32 n)override{if(!audio.music(n))error=audio.error;else if(const auto* entry=music_track(n))if(!session||!session->is_replay)records.music_unlocked[entry->unlock]=1;}
-    void fade_music()override{audio.fade_music();}
-    void encountered(i32 c)override{if(!session||!session->is_replay)records.count_encounter(c);}
-    void defeated(i32 c)override{if(c>=0&&c<16&&(!session||!session->is_replay))records.versus_unlocked[c]=1;}
+    void sound(i32 id,i32 pan)override{if(!queue_sound(0,id,float(pan)))audio.effects.enqueue(id,pan);}
+    void positioned_sound(i32 id,float x)override{if(!queue_sound(1,id,x))audio.effects.positioned(id,x);}
+    void music(i32 n)override{if(queue_sound(2,n))return;if(!audio.music(n))error=audio.error;else if(const auto* entry=music_track(n))if(!session||!session->is_replay)records.music_unlocked[entry->unlock]=1;}
+    void fade_music()override{if(!queue_sound(3,0))audio.fade_music();}
+    void encountered(i32 c)override{if(!queue_sound(5,c)&&(!session||!session->is_replay))records.count_encounter(c);}
+    void defeated(i32 c)override{if(!queue_sound(6,c)&&c>=0&&c<16&&(!session||!session->is_replay))records.versus_unlocked[c]=1;}
     void overlay()override{if(paused)menus.draw_pause();if(over)menus.draw_game_over();if(complete)menus.draw_match_end();}
     void menu_sound(i32 n)override{sound(n,0);}
     void menu_action(InGameAction action)override{
-        if(action==InGameAction::resume){paused=false;world->paused=false;audio.pause_music(false);}
+        if(action==InGameAction::resume){paused=false;world->paused=false;pause_audio(false);}
         else {pending_action=i32(action);}
     }
     void menu_view()override{presentation.begin_field(2);}
@@ -138,7 +173,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     void sync_records(){settings.versus_unlocked=records.versus_unlocked;settings.story_unlocked=records.story_unlocked;settings.extra_unlocked=records.extra_unlocked;settings.music_unlocked=records.music_unlocked;}
     bool return_title(bool score){
         presentation.renderer.flush();const bool was_network=network.active;if(was_network)release_network();sync_records();title=std::make_unique<TitleMenus>(resources,*this,state.random,settings);if(!title->initialize()){error=title->error;return false;}
-        title->leaving=false;in_title=true;paused=over=complete=false;audio.pause_music(false);
+        title->leaving=false;in_title=true;paused=over=complete=false;pause_audio(false);
         if(session){settings.game_flags=session->world?session->world->battle->state.flags:0;if(session->is_replay)score=false;if(session->is_demo())settings.game_flags&=~10u;if(!session->recordable)settings.game_flags|=0x2000;title->score_candidate=session->result;title->result_mode=GameMode(session->result.difficulty==4?1:session->world?i32(session->world->rules.mode):0);settings.difficulty=session->result.difficulty;}
         title->state.screen=score?TitleScreen::score_name:TitleScreen::main;title->state.selection=0;device=left_device=right_device={};presentation.ascii.clear_text();title_save_records();if(was_network)th09_network_result();return true;
     }
@@ -156,21 +191,38 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     void ending_cover(u32 color)override{presentation.renderer.rectangle(0,0,640,480,color,color);}
     bool tick(u16 keys){return tick_inputs(keys,0,keys);}
     bool tick_inputs(u16 left,u16 right,u16 keys,bool render=true){
+#if TH09_DEVELOPMENT_HARNESS
+        const double cost_begin=emscripten_get_now();
+#endif
         if(in_title)return tick_title(left,right,keys,render);if(!session||!world||!error.empty())return false;update_clocks();device.update(keys);mode=world->rules.mode;difficulty=world->configuration.selection.difficulty;game_flags=world->battle->state.flags;continues=session->continues;
         PopupFrame popup;popup.paused=paused;popup.game_over=over;popup.game_flags=game_flags;for(i32 s=0;s<2;++s)popup.field_flags[s]=world->battle->fields[s].script.flags;presentation.ascii.update(popup);
-        if(paused)menus.update_pause(device);else if(over)menus.update_game_over(device);else if(complete)menus.update_match_end(device);else if(!session->is_demo()&&(device.pressed&8)&&session->phase==SessionPhase::match){paused=world->paused=true;sound(34,0);audio.pause_music(true);}
+        if(paused)menus.update_pause(device);else if(over)menus.update_game_over(device);else if(complete)menus.update_match_end(device);else if(!session->is_demo()&&(device.pressed&8)&&session->phase==SessionPhase::match){paused=world->paused=true;sound(34,0);pause_audio(true);}
         if(pending_action>=0){const auto action=InGameAction(pending_action);pending_action=-1;
-            if(action==InGameAction::retry||action==InGameAction::replay_retry||action==InGameAction::restart_extra){presentation.renderer.flush();if(!session->retry()){error=session->error;return false;}world=session->world.get();presentation.world=world;paused=over=complete=false;menus.pause={};menus.game_over={};menus.match_end={};audio.pause_music(false);}
-            else if(action==InGameAction::continue_match){audio.music(-1);if(!session->continue_game()){error="Unable to continue";return false;}paused=over=complete=false;audio.pause_music(false);}
+            if(action==InGameAction::retry||action==InGameAction::replay_retry||action==InGameAction::restart_extra){presentation.renderer.flush();if(!session->retry()){error=session->error;return false;}world=session->world.get();presentation.world=world;paused=over=complete=false;menus.pause={};menus.game_over={};menus.match_end={};pause_audio(false);}
+            else if(action==InGameAction::continue_match){audio.music(-1);if(!session->continue_game()){error="Unable to continue";return false;}paused=over=complete=false;pause_audio(false);}
             else {session->finish();return return_title(action==InGameAction::save_score);}
         }
         if(!paused&&!over&&!complete){presentation.renderer.flush();if(!session->update(left,right,keys)){error=session->error;return false;}world=session->world.get();presentation.world=world;}
         over=session->phase==SessionPhase::game_over;complete=session->phase==SessionPhase::match_complete;
         if(session->phase==SessionPhase::finished)return return_title(!session->is_replay);
         requested_transition=world->transition_pending?100+i32(world->transition):-1;
-        if(render)draw();audio.update();audio.pump();session->warm_resources();++frames;return error.empty();
+#if TH09_DEVELOPMENT_HARNESS
+        const double cost_draw=emscripten_get_now();probe_tick_cost[0]=cost_draw-cost_begin;
+#endif
+        if(rollback_active){
+            graphics.skipSubmission=!render;presentation.renderer.omit_sprite_geometry=!render;
+#if TH09_DEVELOPMENT_HARNESS
+            if(probe_full_sprite_geometry)presentation.renderer.omit_sprite_geometry=false;
+#endif
+            draw(render);presentation.renderer.omit_sprite_geometry=false;graphics.skipSubmission=false;
+        }
+        else if(render)draw();
+#if TH09_DEVELOPMENT_HARNESS
+        probe_tick_cost[1]=emscripten_get_now()-cost_draw;
+#endif
+        if(!recording_frame){audio.update();audio.pump();}session->warm_resources();++frames;return error.empty();
     }
-    void draw(){presentation.begin_frame();if(in_title){title->draw();presentation.ascii.draw_text();presentation.ascii.clear_text();}else if(session->phase==SessionPhase::ending)session->ending->draw();else world->draw();presentation.finish_frame();graphics.present();}
+    void draw(bool present=true){presentation.begin_frame();if(in_title){title->draw();presentation.ascii.draw_text();presentation.ascii.clear_text();}else if(session->phase==SessionPhase::ending)session->ending->draw();else world->draw();presentation.finish_frame();if(present)graphics.present();}
     i32 requested_transition=-1;
     bool import_file(u32 kind,u32 size){
         if(!in_title||size>import_bytes.size())return false;
@@ -252,9 +304,30 @@ TH09_EXPORT("th09_network_room_begin") u32 th09_network_room_begin(u32 seed,i32 
     probe->title->launch_network_match();
     return 1;
 }
+TH09_EXPORT("th09_rollback_enable") u32 th09_rollback_enable(u32 seed,u32 side,u32 idLow,u32 idHigh,u32 abi){
+    if(rollback_active||!probe||!network.active||side>1)return 0;
+    for(auto& frame:rollback_frames){frame.number=Netplay::INVALID_FRAME;frame.captured=false;frame.sounds.clear();}
+    Netplay::SessionConfig c;c.seed=seed;c.localPlayer=side;c.gameId=9;c.gameplayAbi=abi;c.sessionId=(std::uint64_t(idHigh)<<32)|idLow;
+    rollback_published=rollback_catchup=0;rollback_active=rollback.Begin(c,std::uint64_t(emscripten_get_now()));return rollback_active;
+}
+TH09_EXPORT("th09_rollback_begin") u32 th09_rollback_begin(u32 seed,u32 side,u32 difficulty,u32 left,u32 right,u32 idLow,u32 idHigh,u32 abi){
+    if(rollback_active||!th09_network_room_begin(seed,i32(side),0xffff,difficulty,0,left,right))return 0;
+    // Commit the resource-owning title transition before the prediction epoch.
+    if(!probe->tick_title(0,0,0,false)||probe->in_title)return 0;
+    return th09_rollback_enable(seed,side,idLow,idHigh,abi);
+}
+TH09_EXPORT("th09_rollback_pump") u32 th09_rollback_pump(){
+    if(!rollback_active)return 0;
+    if(!rollback.Pump(std::uint64_t(emscripten_get_now()),network.active)){probe->error=rollback.Error();return 0;}
+    return rollback.Ready()?2:1;
+}
+TH09_EXPORT("th09_rollback_info") const u32* th09_rollback_info(){
+    static u32 data[8];const auto confirmed=rollback.ConfirmedThrough();
+    data[0]=rollback.Frame();data[1]=confirmed==Netplay::INVALID_FRAME?rollback_published:std::max(rollback_published,confirmed+1);data[2]=rollback.Corrections();data[3]=rollback.Resimulated();data[4]=rollback.Captures();data[5]=rollback.Channel().RepairsSent();data[6]=rollback.Ready();data[7]=rollback_published;return data;
+}
 TH09_EXPORT("th09_spectator_begin") u32 th09_spectator_begin(u32 seed,u32 difficulty,u32 left,u32 right){
     if(!th09_network_room_begin(seed,0,0xffff,difficulty,0,left,right))return 0;
-    network.end();spectator_frames.clear();spectator_next=spectator_simulated=0;spectator_mode=true;return 1;
+    if(!probe->tick_title(0,0,0,false)||probe->in_title)return 0;network.end();spectator_frames.clear();spectator_next=spectator_simulated=0;spectator_mode=true;return 1;
 }
 TH09_EXPORT("th09_spectator_feed") u32 th09_spectator_feed(u32 frame,u32 left,u32 right,u32 leftMode,float leftX,float leftY,u32 rightMode,float rightX,float rightY){
     if(!spectator_mode||frame!=spectator_next||left>65535||right>65535||spectator_frames.size()>=8192)return 0;
@@ -271,7 +344,7 @@ TH09_EXPORT("th09_spectator_feed") u32 th09_spectator_feed(u32 frame,u32 left,u3
 TH09_EXPORT("th09_spectator_frame") u32 th09_spectator_frame(){return spectator_simulated;}
 TH09_EXPORT("th09_spectator_end") void th09_spectator_end(){spectator_mode=false;spectator_frames.clear();}
 TH09_EXPORT("th09_network_receive") u32 th09_network_receive(u32 frame,u32 keys,u32 mode,float x,float y){return keys<=65535&&mode<=NetworkInput::MotionTargetUnlimited&&network.submit(1-network.side,frame,u16(keys),u8(mode),x,y);}
-TH09_EXPORT("th09_network_end") void th09_network_end(){if(!network.active)return;if(probe)probe->release_network();else network.end();clear_inputs();if(probe){probe->requested_transition=-1;probe->settings.game_flags=0;if(probe->session&&!probe->in_title){probe->session->finish();probe->return_title(false);}else if(probe->title){probe->return_title(false);}probe->sync_records();}}
+TH09_EXPORT("th09_network_end") void th09_network_end(){rollback_active=false;rollback.Clear();rollback_published=rollback_catchup=0;if(!network.active)return;if(probe)probe->release_network();else network.end();clear_inputs();if(probe){probe->requested_transition=-1;probe->settings.game_flags=0;if(probe->session&&!probe->in_title){probe->session->finish();probe->return_title(false);}else if(probe->title){probe->return_title(false);}probe->sync_records();}}
 TH09_EXPORT("th09_network_hash") u32 th09_network_hash(){
     if(!probe)return 0;u32 hash=2166136261u;const auto word=[&](u32 value){for(u32 n=0;n<4;++n){hash^=u8(value>>(n*8));hash*=16777619u;}};const auto real=[&](float f){u32 value;std::memcpy(&value,&f,4);word(value);};
     word(probe->state.random.seed);word(probe->state.random.calls);word(probe->in_title);word(probe->paused);word(probe->over);word(probe->complete);
@@ -279,10 +352,72 @@ TH09_EXPORT("th09_network_hash") u32 th09_network_hash(){
     else if(probe->world){const auto& w=*probe->world;word(w.battle->state.flags);word(w.scene->phase);word(w.dialogue->id);word(w.rules.progress.round);for(u32 side=0;side<2;++side){const auto& p=*w.battle->fields[side].player;real(p.motion.position.x);real(p.motion.position.y);real(p.motion.health);real(p.control.charge);real(p.control.available);word(p.control.player_state);word(w.rules.scores[side].points);word(p.combo_state.best_hits);}}
     return hash;
 }
-TH09_EXPORT("th09_network_info") const u32* th09_network_info(){static u32 data[6]{};if(probe){data[0]=0;for(u32 n=0;n<16;++n)if(probe->records.versus_unlocked[n])data[0]|=1u<<n;data[1]=std::min(3u,u32(probe->settings.difficulty));data[2]=probe->settings.auto_focus[0];data[3]=network.frame();data[4]=network.active;data[5]=network.side;}return data;}
-TH09_EXPORT("th09_game_close") void th09_game_close(){running=false;++loop_epoch;close_controllers();clear_inputs();network.end();spectator_mode=false;spectator_frames.clear();probe.reset();}
+TH09_EXPORT("th09_network_info") const u32* th09_network_info(){static u32 data[6]{};if(probe){data[0]=0;for(u32 n=0;n<16;++n)if(probe->records.versus_unlocked[n])data[0]|=1u<<n;data[1]=std::min(3u,u32(probe->settings.difficulty));data[2]=probe->settings.auto_focus[0];data[3]=rollback_active?rollback.Frame():network.frame();data[4]=network.active;data[5]=network.side;}return data;}
+TH09_EXPORT("th09_game_close") void th09_game_close(){rollback_active=false;rollback.Clear();running=false;++loop_epoch;close_controllers();clear_inputs();network.end();spectator_mode=false;spectator_frames.clear();probe.reset();}
 TH09_EXPORT("th09_music_enabled") void th09_music_enabled(u32 enabled){if(probe){probe->host_music_enabled=enabled!=0;probe->title_configuration();}}
 TH09_EXPORT("th09_game_restart") u32 th09_game_restart(){if(!probe||!probe->in_title)return 0;clear_inputs();probe->requested_transition=-1;probe->settings.game_flags=0;return probe->return_title(false);}
+u32 rollback_tick(u32 render){
+    if(!th09_rollback_pump())return 0;
+    if(!rollback.Ready())return 2;
+    auto correction=rollback.RollbackFrame();
+    if(correction!=Netplay::INVALID_FRAME){
+        rollback_catchup=std::max(rollback_catchup,rollback.Frame());
+        probe->presentation.renderer.flush();probe->graphics.backend.flush();
+        for(u32 f=rollback.Frame();f-->correction;){auto& saved=rollback_frames[f%rollback_frames.size()];if(saved.number!=f||!saved.captured||!saved.state||!saved.state->Restore()){probe->error="Rollback world restore failed";return 0;}saved.sounds.clear();}
+        if(!rollback.Restored(correction)){probe->error=rollback.Error();return 0;}
+    }
+    // One callback starts at most eight recovery ticks. Its caller also has a
+    // wall-time budget; physical input is never sampled on these replay ticks.
+    const double start=emscripten_get_now();
+    for(unsigned count=0;count<9;++count){
+#if TH09_DEVELOPMENT_HARNESS
+        if(rollback.Frame()>=rollback_test_limit)break;
+#endif
+        if(rollback.NeedsCapture()){
+            u16 keys[3]{};sample_keys(keys);Netplay::FrameInput in(keys[2]);
+            if(probe->session){const auto& m=probe->session->motion_input[network.side];if(m.enabled){in.analogMode=m.target?Netplay::AnalogMode::DirectTouch:Netplay::AnalogMode::Joystick;in.x=m.x;in.y=m.y;in.unlimited=m.unlimited;in.touchUsed=true;}}
+            if(!rollback.Capture(in,std::uint64_t(emscripten_get_now()))){probe->error=rollback.Error();return 0;}
+        }
+        auto decision=rollback.Prepare();if(!decision.canAdvance)return 2;
+        const u32 f=rollback.Frame();const auto confirmed=rollback.ConfirmedThrough();
+        const bool reconciled=rollback.InputsReconciledBeforeNext();
+        const bool menu=probe->paused||probe->over||probe->complete||probe->in_title;
+        // Menus can replace the entire resource graph. Admit them only at an
+        // exact, reconciled frontier. A local pause edge itself is rewindable.
+        if(menu&&(decision.predictedMask||!reconciled))return 2;
+        auto& record=rollback_frames[f%rollback_frames.size()];record.number=f;record.sounds.clear();
+        const bool speculative=decision.predictedMask||!reconciled;
+        record.captured=speculative;
+        if(speculative){if(!record.state)record.state=std::make_unique<multiplayer::WorldState>();if(!probe->checkpoint(*record.state)){probe->error="Rollback world capture failed";return 0;}probe->graphics.checkpoint=record.state.get();}
+        // Retain arena capacity across exact and speculative frames.
+        recording_frame=&record;
+        if(probe->session&&!probe->in_title)for(unsigned side=0;side<2;++side){const auto& in=decision.inputs[side];probe->session->motion_input[side]={in.analogMode!=Netplay::AnalogMode::None,in.x,in.y,in.unlimited,in.analogMode==Netplay::AnalogMode::DirectTouch};}
+        // Recovery does not consume the wall-clock tick's forward step. Replay
+        // through the old frontier, then capture/simulate its new input once.
+        const bool final=f>=rollback_catchup;
+        const auto ok=probe->tick_inputs(decision.inputs[0].buttons,decision.inputs[1].buttons,decision.inputs[0].buttons|decision.inputs[1].buttons,render&&final);
+        recording_frame=nullptr;probe->graphics.checkpoint=nullptr;
+        if(record.captured&&!record.state->Seal()){probe->error="Rollback checkpoint seal failed";return 0;}
+        if(!ok||!rollback.Complete(decision)){if(ok)probe->error=rollback.Error();return 0;}
+        if(!network.active)rollback.FinishExactBoundary();
+        record.hash=th09_network_hash();
+        if(final||!network.active)break;
+        if(emscripten_get_now()-start>=8)break;
+    }
+    // Publish side effects and spectator input only from reconciled history.
+    const auto through=rollback.ConfirmedThrough();
+    while(through!=Netplay::INVALID_FRAME&&rollback_published<=through){
+        auto& record=rollback_frames[rollback_published%rollback_frames.size()];
+        if(record.number!=rollback_published){probe->error="Confirmed output history expired";return 0;}
+        for(const auto& s:record.sounds)switch(s.kind){case 0:probe->audio.effects.enqueue(s.id,i32(s.value));break;case 1:probe->audio.effects.positioned(s.id,s.value);break;case 2:probe->music(s.id);break;case 3:probe->audio.fade_music();break;case 4:probe->audio.pause_music(s.id!=0);break;case 5:probe->encountered(s.id);break;case 6:probe->defeated(s.id);break;}
+        record.sounds.clear();
+        if(network.side==0){std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS> in;if(!rollback.ConfirmedInputs(rollback_published,&in))return 0;const auto mode=[](const Netplay::FrameInput& i){return i.analogMode==Netplay::AnalogMode::None?0:i.analogMode==Netplay::AnalogMode::Joystick?1:i.unlimited?3:2;};th09_network_spectator_frame(rollback_published,in[0].buttons,in[1].buttons,mode(in[0]),in[0].x,in[0].y,mode(in[1]),in[1].x,in[1].y);}
+        if(network.active&&(rollback_published+1)%120==0&&!rollback.Verify(rollback_published+1,record.hash)){probe->error=rollback.Error();return 0;}
+        ++rollback_published;
+    }
+    probe->audio.update();probe->audio.pump();
+    return rollback.Frame()<=rollback_catchup?2:1;
+}
 TH09_EXPORT("th09_game_tick") u32 th09_game_tick(u32 render){if(!probe)return 0;u16 keys[3]{};
     if(spectator_mode){
         if(spectator_frames.empty())return 2;
@@ -291,11 +426,13 @@ TH09_EXPORT("th09_game_tick") u32 th09_game_tick(u32 render){if(!probe)return 0;
             if(packet.frame!=spectator_simulated)return 0;
             const bool was_title=probe->in_title;
             if(!was_title&&probe->session)for(i32 s=0;s<2;++s)probe->session->motion_input[s]={packet.motion[s].enabled,packet.motion[s].x,packet.motion[s].y,packet.motion[s].unlimited,packet.motion[s].target};
-            ok=probe->tick_inputs(packet.keys[0],packet.keys[1],u16(packet.keys[0]|packet.keys[1]),render!=0&&n+1==count);++spectator_simulated;
+            const bool prior=rollback_active;rollback_active=true;
+            ok=probe->tick_inputs(packet.keys[0],packet.keys[1],u16(packet.keys[0]|packet.keys[1]),render!=0&&n+1==count);rollback_active=prior;++spectator_simulated;
             if(!was_title&&probe->in_title){spectator_mode=false;spectator_frames.clear();break;}
         }
         return ok;
     }
+    if(rollback_active&&network.active)return rollback_tick(render);
     if(network.active){if(network.wants_input()){sample_keys(keys);const u32 frame=network.sending_frame();const auto m=probe->session&&!probe->in_title?probe->session->motion_input[network.side]:GameSession::MotionSample{};const u8 mode=!m.enabled?NetworkInput::MotionNone:m.target?(m.unlimited?NetworkInput::MotionTargetUnlimited:NetworkInput::MotionTarget):NetworkInput::MotionVelocity;if(!network.submit(network.side,frame,keys[2],mode,m.x,m.y))return 0;th09_network_send(frame,keys[2],i32(mode),m.x,m.y);}if(network.failed){probe->error="Network input order invalid";return 0;}NetworkInput::Motion motion[2];const u32 frame=network.frame();const bool publisher=network.side==0;if(!network.take(keys,motion))return 2;if(probe->session)for(i32 s=0;s<2;++s)probe->session->motion_input[s]={motion[s].enabled,motion[s].x,motion[s].y,motion[s].unlimited,motion[s].target};
         const u32 ok=probe->tick_inputs(keys[0],keys[1],keys[2],render!=0);
         if(ok&&publisher){const auto mode=[](const NetworkInput::Motion& m){return !m.enabled?0:m.target?(m.unlimited?3:2):1;};
@@ -309,7 +446,7 @@ TH09_EXPORT("th09_loop_start") void th09_loop_start(){
     if(!probe||running)return;running=true;suspended=false;previous_frame=-1;cadence.reset();probe->clock_pause(false);probe->audio.suspend(false);
     emscripten_request_animation_frame_loop([](double time,void* epoch)->EM_BOOL{
         if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
-        if(suspended||!probe){cadence.reset();return EM_TRUE;}const auto ticks=cadence.advance(delta);u32 ok=1;for(u32 n=0;n<ticks&&ok;++n){ok=th09_game_tick(n+1==ticks);if(ok==2){cadence.reset();break;}}
+        if(suspended||!probe){cadence.reset();return EM_TRUE;}const auto ticks=cadence.advance(rollback_active&&network.active?delta/rollback.IntervalScale():delta);u32 ok=1;for(u32 n=0;n<ticks&&ok;++n){ok=th09_game_tick(n+1==ticks);if(ok==2){cadence.reset();break;}if(rollback_active&&emscripten_get_now()-begin>=10){cadence.reset();break;}}
         probe->audio.pump();th09_browser_frame(ok,emscripten_get_now()-begin);if(!ok){running=false;probe->audio.suspend(true);}return running?EM_TRUE:EM_FALSE;
     },reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
 }
@@ -341,6 +478,71 @@ TH09_EXPORT("th09_probe_return_title") u32 th09_probe_return_title(u32 score){if
 TH09_EXPORT("th09_probe_open") u32 th09_probe_open(i32 a,i32 b,i32 mode,i32 difficulty){probe=std::make_unique<Application>();if(!probe->open(a,b,mode,difficulty)){failure=probe->error;return 0;}return 1;}
 #endif
 #if TH09_DEVELOPMENT_HARNESS
+TH09_EXPORT("th09_probe_frame_limit") void th09_probe_frame_limit(u32 frame){rollback_test_limit=frame;}
+TH09_EXPORT("th09_probe_tick_cost") const double* th09_probe_tick_cost(){return probe_tick_cost;}
+TH09_EXPORT("th09_probe_draw_mode") void th09_probe_draw_mode(u32 full){probe_full_sprite_geometry=full!=0;}
+std::unique_ptr<multiplayer::WorldState> test_checkpoint;
+TH09_EXPORT("th09_probe_checkpoint") u32 th09_probe_checkpoint(u32 dense){
+    if(!probe||!probe->session)return 0;if(!test_checkpoint)test_checkpoint=std::make_unique<multiplayer::WorldState>();test_checkpoint->sparse=!dense;
+    if(!probe->checkpoint(*test_checkpoint))return 0;probe->graphics.checkpoint=test_checkpoint.get();return test_checkpoint->Bytes();
+}
+TH09_EXPORT("th09_probe_restore") u32 th09_probe_restore(){
+    probe->graphics.checkpoint=nullptr;if(!test_checkpoint||!test_checkpoint->Restore())return 0;
+    return 1;
+}
+TH09_EXPORT("th09_probe_enemy_detail") const char* th09_probe_enemy_detail(u32 side,u32 index){
+    static std::string text;text.clear();const auto& e=probe->world->battle->fields[side].enemies->enemies[index];
+    const auto part=[&](const char* name,const auto& value){StateChecksum h;h.Add(value);text+=std::string(name)+"="+std::to_string(h.value)+"\n";};
+#define DETAIL(x) part(#x,e.x)
+    auto values=e.values;values.locals=nullptr;part("values",values);
+    DETAIL(values.shared_integer);DETAIL(values.shared_real);DETAIL(values.position);DETAIL(values.resolved_position);DETAIL(values.origin);DETAIL(values.target);DETAIL(values.last_delta);DETAIL(values.direction);DETAIL(values.angular_velocity);DETAIL(values.speed);DETAIL(values.acceleration);DETAIL(values.orbit_radius);DETAIL(values.orbit_angle);DETAIL(values.orbit_velocity);DETAIL(values.lifetime);DETAIL(values.life);DETAIL(values.last_damage);DETAIL(values.life_thresholds);DETAIL(values.item_reward);DETAIL(values.score_reward);DETAIL(values.drop_count);DETAIL(values.drop_item);DETAIL(values.flags);DETAIL(values.boss_id);
+    DETAIL(program);DETAIL(primary);DETAIL(generations);DETAIL(active_slot);DETAIL(scratch_depth);DETAIL(behavior_flags);DETAIL(difficulty_flags);DETAIL(pending_interrupt);DETAIL(interrupt_subroutines);DETAIL(position_offset);DETAIL(velocity);DETAIL(movement);DETAIL(emitter);DETAIL(lasers);DETAIL(animation);DETAIL(status);DETAIL(trail);DETAIL(finished);DETAIL(invalid);DETAIL(failed_opcode);
+#undef DETAIL
+    for(auto& c:e.asynchronous){part("async-present",bool(c));if(c)part("async",*c);}
+    return text.c_str();
+}
+// Adversarial owning-pool gate: cold-slot reuse, duplicate first writes,
+// capacity overflow, reserved slots and destructive clear, against a dense hash.
+TH09_EXPORT("th09_probe_pool_boundary") u32 th09_probe_pool_boundary(){
+    if(!probe||!probe->session||!probe->world)return 0;
+    auto& session=*probe->session;auto& battle=*probe->world->battle;
+    const auto hash=[&]{multiplayer::WorldState h;h.hashEnabled=true;return h.Save(session)?h.Fingerprint():0;};
+    const auto initial=hash();
+    for(bool dense:{false,true}){
+        multiplayer::WorldState cp;cp.sparse=!dense;if(!cp.Save(session))return 0;
+        for(auto* manager:{battle.fields[0].effects.get(),battle.fields[1].effects.get(),battle.cross_effects.get()}){
+            manager->clear();
+            for(u32 i=0;i<manager->capacity+2;++i){auto* a=manager->create(EffectKind::hit,{float(i),17,0});if(!a)return 0;a->reserved=i+19;}
+            for(u32 i=0;i<manager->reserved_slots;++i){auto* a=manager->slotted(EffectKind::hit,{4,5,0},i);if(!a)return 0;a->flags2=37;}
+            manager->clear();auto* a=manager->create(EffectKind::hit,{31,41,0});if(!a)return 0;a->angle=1.25f;
+        }
+        auto& queue=*battle.attack_queue;queue.clear();queue.limits[0]=256;
+        for(u32 i=0;i<queue.capacity+2;++i){auto* a=queue.create(0,0,{float(i),23,0});if(!a)return 0;a->color=i+17;}
+        queue.clear();
+        if(!cp.Restore()||hash()!=initial)return 0;
+    }
+    return 1;
+}
+TH09_EXPORT("th09_probe_recording_boundary") u32 th09_probe_recording_boundary(){
+    if(!probe||!probe->session||!probe->world)return 0;auto& session=*probe->session;
+    GameInput inputs[3];probe->world->copy_inputs(inputs);const bool cpu[2]={false,false};
+    while(session.recording.frame()<ReplayRecording::chunk_frames-2)session.recording.record(4,false,inputs,cpu,60);
+    multiplayer::WorldState before;if(!before.Save(session))return 0;
+    const auto append=[&]{for(u32 f=0;f<12;++f){for(u32 p=0;p<3;++p)inputs[p].held=u16((f+1)*(p+1));session.recording.record(4,false,inputs,cpu,60);session.motion.record(18,true,float(f),float(f+1));}};
+    const auto serialize=[&]{auto random=probe->state.random;return session.recording.finish(random,"BOUND","26/09/27",probe->world->configuration.selection.characters[0],probe->world->configuration.selection.characters[1]).data();};
+    append();const auto expected=serialize(),motion=session.motion.trailer(9);
+    if(!before.Restore())return 0;append();return expected==serialize()&&motion==session.motion.trailer(9);
+}
+std::string test_hash_parts;
+TH09_EXPORT("th09_probe_hash_parts") const char* th09_probe_hash_parts(){return test_hash_parts.c_str();}
+TH09_EXPORT("th09_probe_state_hash") u32 th09_probe_state_hash(){
+    multiplayer::WorldState state;state.hashEnabled=true;if(!probe->checkpoint(state))return 0;test_hash_parts.clear();for(const auto& p:state.hashParts)test_hash_parts+=p.first+"="+std::to_string(p.second)+"\n";return state.Fingerprint();
+}
+TH09_EXPORT("th09_probe_rollback_step") u32 th09_probe_rollback_step(u32 left,u32 right,u32 render){
+    const bool active=rollback_active;rollback_active=true;RollbackFrame output;recording_frame=&output;
+    const bool ok=probe->tick_inputs(u16(left),u16(right),u16(left|right),render!=0);
+    recording_frame=nullptr;rollback_active=active;return ok;
+}
 TH09_EXPORT("th09_probe_tick") u32 th09_probe_tick(u32 keys){if(!probe)return 0;return probe->tick(u16(keys));}
 #endif
 TH09_EXPORT("th09_session_status") const i32* th09_session_status(){static i32 values[8]{};if(probe&&probe->session){const auto& s=*probe->session;values[0]=i32(s.phase);values[1]=s.frames;values[2]=s.replay_frame();values[3]=s.replay_length();values[4]=s.continues;values[5]=s.world?s.world->configuration.selection.stage:-1;values[6]=s.is_replay;values[7]=s.recordable;}return values;}

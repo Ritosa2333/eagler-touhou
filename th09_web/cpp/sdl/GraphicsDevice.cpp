@@ -1,4 +1,5 @@
 #include "GraphicsDevice.hpp"
+#include "../multiplayer/WorldState.hpp"
 #include "../game/ImageResample.hpp"
 #include "../game/RuntimeOverride.hpp"
 #include <algorithm>
@@ -85,16 +86,17 @@ TextureAllocation GraphicsDevice::image(const u8* data,u32 size){
 }
 void GraphicsDevice::destroy(u32 id){if(id<3)return;backend.flush();backend.release(id);textures.erase(id);}
 TextureImage* GraphicsDevice::pixels(u32 id){auto it=textures.find(id);return it==textures.end()?nullptr:&it->second.image;}
+void GraphicsDevice::before_text(u32 id){auto* image=pixels(id);if(checkpoint&&image&&!image->pixels.empty()){checkpoint->Touch(image->pixels.data(),image->pixels.size());checkpoint->AfterRestore([this,id]{changed(id);});}}
 void GraphicsDevice::changed(u32 id){auto it=textures.find(id);if(it!=textures.end())++it->second.revision;}
 void GraphicsDevice::viewport(const Viewport& v){backend.viewport({v.x,v.y,v.width,v.height,v.near_depth,v.far_depth});}
 void GraphicsDevice::transform(MatrixKind kind,const Matrix4& value){backend.transform(kind,&value);}
-void GraphicsDevice::clear(bool color,bool depth,u32 rgba,float z){backend.clear((color?1u:0u)|(depth?2u:0u),rgba,z,0);}
+void GraphicsDevice::clear(bool color,bool depth,u32 rgba,float z){if(skipSubmission)return;backend.clear((color?1u:0u)|(depth?2u:0u),rgba,z,0);}
 void GraphicsDevice::state(const PipelineState& p,u32 texture,VertexLayout layout){backend.state.pipeline=p;backend.state.texture=texture;backend.state.layout=attributes(layout);}
 void GraphicsDevice::draw(const PipelineState& p,u32 texture,Topology primitive,VertexLayout layout,const void* data,u32 vertices){
     const u32 min=primitive==Topology::Points?1:primitive==Topology::Lines||primitive==Topology::LineStrip?2:3;if(vertices<min)return;
     const u32 count=primitive==Topology::Triangles?vertices/3:primitive==Topology::Lines?vertices/2:primitive==Topology::LineStrip?vertices-1:primitive==Topology::Strip||primitive==Topology::Fan?vertices-2:vertices;
-    state(p,texture,layout);backend.draw(primitive,count,data,stride(layout));
+    state(p,texture,layout);if(skipSubmission)return;backend.draw(primitive,count,data,stride(layout));
 }
-void GraphicsDevice::triangles(const PipelineState& p,u32 texture,const SpriteVertex* data,u32 vertices){if(vertices<3)return;state(p,texture,VertexLayout::ScreenColorUv);backend.draw_batch(vertices/3,data,sizeof(SpriteVertex));}
+void GraphicsDevice::triangles(const PipelineState& p,u32 texture,const SpriteVertex* data,u32 vertices){if(vertices<3)return;state(p,texture,VertexLayout::ScreenColorUv);if(skipSubmission)return;backend.draw_batch(vertices/3,data,sizeof(SpriteVertex));}
 void GraphicsDevice::present(){backend.present(screen);}
 }

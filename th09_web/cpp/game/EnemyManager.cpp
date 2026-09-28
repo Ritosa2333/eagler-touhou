@@ -23,6 +23,7 @@ EnemyManager::EnemyManager(EclWorldState& w,EclPlayfieldState& f,EclPlayfieldSta
     for(auto& list:draw_lists)list.reserve(capacity);
 }
 bool EnemyManager::run_script(EclVm& enemy){
+    if(checkpoint)checkpoint->BeforeEnemy(enemy);
     EclExecutor executor(timing,frame_step,difficulty_mask,bindings);if(!executor.step(enemy))return false;
     enemy.movement.update_velocity(enemy,timing,frame_step);
     if(player&&(enemy.values.flags&0x1c0)){
@@ -41,6 +42,7 @@ bool EnemyManager::run_script(EclVm& enemy){
 EclVm* EnemyManager::create(const EnemySpawn& request,const EclLocals* inherited){
     u32 index=0;while(index<capacity&&(enemies[index].behavior_flags&1))++index;
     auto& enemy=enemies[index];allocation_failed=index==capacity;if(allocation_failed)return &enemy;
+    if(checkpoint)checkpoint->BeforeEnemy(enemy);
     clone_prototype(enemy,prototype);enemy.status.index=i32(index);
     if(!inherited)enemy.behavior_flags=(enemy.behavior_flags&~0x8000u)|((u32(request.mirrored)&1)<<15);
     if(request.life>=0)enemy.values.life=request.life;

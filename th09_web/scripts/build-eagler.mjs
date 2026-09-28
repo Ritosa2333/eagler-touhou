@@ -36,6 +36,7 @@ if (variant === 'multiplayer') {
     'th09_peer_send_spectator', 'th09_peer_poll', 'th09_peer_close',
     'th09_network_info', 'th09_network_room_begin', 'th09_network_receive',
     'th09_network_hash', 'th09_network_end', 'th09_spectator_begin',
+    'th09_rollback_begin', 'th09_rollback_enable', 'th09_rollback_pump', 'th09_rollback_info',
     'th09_spectator_feed', 'th09_spectator_frame', 'th09_spectator_end',
   ];
   const missing = required.filter(name => !exports.has(name));

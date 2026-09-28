@@ -26,26 +26,44 @@ struct CharacterAttackServices:AttackServices {
     virtual void draw_additive_lines(const AttackColorVertex*,u32 count)=0;
     virtual AttackActor* spawn_attack(i32 kind,i32 side,const Vec3&,const Vec3* extra=nullptr,const AttackActor* parent=nullptr)=0;
 };
-struct TravelAttackState:AttackState {
+struct TravelAttackState:CopyableAttackState<TravelAttackState> {
+    u32 state_checksum()const{StateChecksum h;h.Add(phase,velocity,origin,destination,start_tangent,end_tangent,target,speed,heading,turn,emissions);return h.value;}
+
     i32 phase=0;Vec3 velocity,origin,destination,start_tangent,end_tangent,target;
     float speed=0,heading=0,turn=0;i32 emissions=0;
 };
-struct CirnoAttackState:TravelAttackState {Vec3 acceleration;};
-struct TewiAttackState:TravelAttackState {float horizontal_acceleration=0;};
-struct AyaAttackState:TravelAttackState {u32 variant=0;};
-struct SakuyaAttackState:AttackState {i32 phase=0;Vec3 velocity;std::array<Vec3,32> history;const AttackActor* parent=nullptr;};
-struct MedicineAttackState:TravelAttackState {
+struct CirnoAttackState:CopyableAttackState<CirnoAttackState,TravelAttackState> {
+    u32 state_checksum()const{StateChecksum h;h.Add(TravelAttackState::state_checksum());h.Add(acceleration);return h.value;}
+Vec3 acceleration;};
+struct TewiAttackState:CopyableAttackState<TewiAttackState,TravelAttackState> {
+    u32 state_checksum()const{StateChecksum h;h.Add(TravelAttackState::state_checksum());h.Add(horizontal_acceleration);return h.value;}
+float horizontal_acceleration=0;};
+struct AyaAttackState:CopyableAttackState<AyaAttackState,TravelAttackState> {
+    u32 state_checksum()const{StateChecksum h;h.Add(TravelAttackState::state_checksum());h.Add(variant);return h.value;}
+u32 variant=0;};
+struct SakuyaAttackState:CopyableAttackState<SakuyaAttackState> {
+    u32 state_checksum()const{StateChecksum h;h.Add(phase,velocity,history,parent);return h.value;}
+i32 phase=0;Vec3 velocity;std::array<Vec3,32> history;const AttackActor* parent=nullptr;};
+struct MedicineAttackState:CopyableAttackState<MedicineAttackState,TravelAttackState> {
+    u32 state_checksum()const{StateChecksum h;h.Add(TravelAttackState::state_checksum());h.Add(movement_heading,movement_speed,has_bounced,history,directions);return h.value;}
+
     float movement_heading=0,movement_speed=0;i32 has_bounced=0;
     std::array<Vec3,16> history;std::array<float,16> directions{};
 };
-struct MystiaAttackState:TravelAttackState {i32 alternate_sprite=0;float flight_angle=0,volley_angle=0,angular_velocity=0;};
-struct ReisenAttackState:TravelAttackState {
+struct MystiaAttackState:CopyableAttackState<MystiaAttackState,TravelAttackState> {
+    u32 state_checksum()const{StateChecksum h;h.Add(TravelAttackState::state_checksum());h.Add(alternate_sprite,flight_angle,volley_angle,angular_velocity);return h.value;}
+i32 alternate_sprite=0;float flight_angle=0,volley_angle=0,angular_velocity=0;};
+struct ReisenAttackState:CopyableAttackState<ReisenAttackState,TravelAttackState> {
+    u32 state_checksum()const{StateChecksum h;h.Add(TravelAttackState::state_checksum());h.Add(draw_flag,radius,fan,rings,jitter);return h.value;}
+
     i32 draw_flag=0;float radius=4;
     std::array<AttackColorVertex,33> fan{};
     std::array<std::array<AttackColorVertex,33>,4> rings{};
     std::array<std::array<float,33>,4> jitter{};
 };
-struct FieldAttackState:TravelAttackState {
+struct FieldAttackState:CopyableAttackState<FieldAttackState,TravelAttackState> {
+    u32 state_checksum()const{StateChecksum h;h.Add(TravelAttackState::state_checksum());h.Add(vertices,world,radii,radial_velocity,uv_velocity,draw_flag,uv_angle);return h.value;}
+
     std::array<AttackTextureVertex,33> vertices{};
     std::array<Vec3,33> world{};
     std::array<float,33> radii{},radial_velocity{};

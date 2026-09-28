@@ -1,12 +1,32 @@
 #pragma once
 #include "AttackQueueActions.hpp"
 #include "AnmLayout.hpp"
+#include "StateChecksum.hpp"
+#include "PoolCheckpoint.hpp"
 #include <array>
 #include <memory>
 #include <vector>
 namespace th09 {
 struct AttackActor;struct AttackServices;
-struct AttackState {virtual ~AttackState()=default;};
+struct AttackState {
+    virtual ~AttackState()=default;
+    virtual std::unique_ptr<AttackState> clone()const=0;
+    virtual u32 checksum()const=0;
+    virtual const void* type_key()const=0;
+    virtual void copy_into(std::unique_ptr<AttackState>&)const=0;
+};
+// Each concrete state supplies its own copy operation. Checkpoints preserve
+// the dynamic type without copying ownership words or requiring RTTI.
+template<class T,class Base=AttackState>struct CopyableAttackState:Base {
+    inline static const char key=0;
+    const void* type_key()const override{return &key;}
+    void copy_into(std::unique_ptr<AttackState>& out)const override{
+        if(out&&out->type_key()==type_key())static_cast<T&>(*out)=static_cast<const T&>(*this);
+        else out=clone();
+    }
+    u32 checksum()const override{return static_cast<const T&>(*this).state_checksum();}
+    std::unique_ptr<AttackState> clone()const override{return std::make_unique<T>(static_cast<const T&>(*this));}
+};
 // These point to authored C++ routines. Executable addresses exist only in the
 // development comparison harness, never in the game dispatch table.
 struct AttackBehavior {
@@ -34,6 +54,8 @@ class AttackQueue:public AttackQueueActions {
     void dispose(AttackActor&);
 public:
     static constexpr u32 capacity=256;
+    PoolCheckpoint* checkpoint=nullptr;
+    void before_write(AttackActor& a){if(checkpoint)checkpoint->BeforeAttack(*this,&a-actors.data());}
     std::array<AttackActor,capacity+1> actors;
     std::array<std::vector<AttackActor*>,3> draw_lists;
     i32 counts[2]{},limits[2]{};

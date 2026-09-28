@@ -1,14 +1,6 @@
-// TH09's ordered input protocol runs over eagler-common's BrowserPeerTransport.
-// The Launcher owns rooms, seats and loadouts; the common transport chooses
-// WebRTC or relay and keeps both entry points on the same gameplay route.
-const magic = [0x54, 0x39, 0x4e, 0x50, 1]; // T9NP/1
-const hello = 1, acknowledged = 2, input = 3, hash = 4;
+// TH09 uses the shared C++ rollback session and BrowserPeerTransport lanes.
 const spectatorMagic = [0x54, 0x39, 0x53, 0x50, 1, 3, 2, 0]; // T9SP/1, 2 players
 const spectatorFrameBytes = 46;
-const header = type => Uint8Array.from([...magic, type]);
-const valid = (bytes, type, length) => bytes.length === length &&
-  magic.every((value, index) => bytes[index] === value) && bytes[5] === type;
-
 export class SharedNetplay {
   constructor(core, {onStatus, onClose, onResult}) {
     this.core = core;
@@ -25,19 +17,10 @@ export class SharedNetplay {
     this.prepared = false;
     this.acknowledged = false;
     this.side = -1;
-    this.hashFrame = 0;
-    this.hashes = new Map();
-    this.remoteHashes = new Map();
   }
   info() {
     const at = this.core._th09_network_info() / 4;
     return Array.from(this.core.HEAPU32.subarray(at, at + 6));
-  }
-  send(bytes) {
-    if (!this.connected) return;
-    const pointer = this.core._th09_peer_packet_buffer();
-    this.core.HEAPU8.set(bytes, pointer);
-    if (!this.core._th09_peer_send(bytes.length)) this.close('TH09 联机发送失败');
   }
   async connect(options) {
     if (this.connected) throw Error('已连接联机房间');
@@ -68,7 +51,7 @@ export class SharedNetplay {
     this.spectator = spectator;
     this.spectatorFrame = 0;
     this.spectatorPending.length = 0;
-    this.hashes.clear(); this.remoteHashes.clear();
+    this.finished = false;
     globalThis.__eaglerNetplayLanActive = false;
     globalThis.__eaglerNetplayTransport = 'connecting';
     const encoded = new TextEncoder().encode(url.href);
@@ -88,7 +71,7 @@ export class SharedNetplay {
     this.pump();
   }
   pump() {
-    if (!this.connected || this.finished) return;
+    if (!this.connected) return;
     try {
       const state = this.core._th09_peer_state();
       if (state < 0) {
@@ -110,12 +93,29 @@ export class SharedNetplay {
           this.onStatus('已连接 TH09 观战帧流');
           this.core._th09_loop_pause(+document.hidden);
         } else {
-          this.onStatus('已连接对手，正在确认 TH09 版本…');
-          this.send(Uint8Array.from([...header(hello), ...new TextEncoder().encode(this.build)]));
+          const words = this.build.match(/.{8}/g).map(word => Number.parseInt(word, 16));
+          const run = Number(new URL(this.options.netplayUrl, location.href).searchParams.get('run')) >>> 0;
+          const [left, right] = this.options.netplayLoadouts.map(item => item.character);
+          const difficulty = Number(this.options.netplayDifficulty);
+          if (!this.core._th09_rollback_begin(this.options.netplaySeed >>> 0, this.side, difficulty,
+              left, right, (words[0] ^ run) >>> 0, words[1],
+              (words[2] ^ (left << 16) ^ (right << 20) ^ (difficulty << 24) ^ 0x09010000) >>> 0))
+            throw Error('TH09 rollback 对局初始化失败');
+          this.prepared = true;
+          this.onStatus('已连接对手，正在确认版本和对局参数…');
         }
       }
       if (!this.routeReady || !this.connected) return;
-      for (let count = 0; count < 128; ++count) {
+      if (!this.spectator) {
+        const ready = this.core._th09_rollback_pump();
+        if (!ready) throw Error('TH09 rollback 会话中断');
+        if (ready === 2 && !this.active && !this.finished) {
+          this.acknowledged = this.active = true;
+          globalThis.__eaglerNetplayLanActive = true;
+          this.onStatus('对手已连接 · rollback 对局开始');
+          this.core._th09_loop_pause(+document.hidden);
+        }
+      } else for (let count = 0; count < 128; ++count) {
         const length = this.core._th09_peer_poll();
         if (length < 0) throw Error('TH09 联机数据过大');
         if (!length) break;
@@ -146,52 +146,10 @@ export class SharedNetplay {
           ++this.spectatorFrame;
           return;
         }
-        if (valid(bytes, hello, 30)) {
-          const remoteBuild = new TextDecoder().decode(bytes.subarray(6));
-          if (remoteBuild !== this.build) throw Error('双方 TH09 Runtime 版本不同');
-          if (!this.prepared) {
-            // Lobby loadouts, not either player's save file, determine the
-            // shared simulation. Local unlocks/auto-focus may differ.
-            if (!this.core._th09_network_room_begin(
-              this.options.netplaySeed >>> 0, this.side, 0xffff, Number(this.options.netplayDifficulty), 0,
-              this.options.netplayLoadouts[0].character, this.options.netplayLoadouts[1].character,
-            )) throw Error('TH09 联机对局初始化失败');
-            this.prepared = true;
-          }
-          this.send(header(acknowledged));
-        } else if (valid(bytes, acknowledged, 6)) {
-          if (!this.prepared) throw Error('TH09 联机握手顺序错误');
-          this.acknowledged = this.active = true;
-          globalThis.__eaglerNetplayLanActive = true;
-          this.onStatus('对手已连接 · 对局开始');
-          this.core._th09_loop_pause(+document.hidden);
-        } else if (valid(bytes, input, 21)) {
-          if (!this.prepared) throw Error('对手在握手前发送输入');
-          const data = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-          if (!this.core._th09_network_receive(data.getUint32(6, true), data.getUint16(10, true),
-              bytes[12], data.getFloat32(13, true), data.getFloat32(17, true)))
-            throw Error('TH09 联机输入序号错误');
-        } else if (valid(bytes, hash, 14)) {
-          const data = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-          const frame = data.getUint32(6, true), remote = data.getUint32(10, true);
-          this.remoteHashes.set(frame, remote);
-          this.compareHash(frame);
-        } else throw Error('TH09 联机数据格式错误');
+        throw Error('TH09 gameplay input belongs to the C++ session');
     } catch (error) { this.close(String(error?.message || error)); }
   }
-  input(frame, keys, moving = 0, x = 0, y = 0) {
-    if (!this.active) return;
-    // `moving` is the motion mode: 0 none, 1 pre-scaled velocity, 2 absolute
-    // field target limited to the player's speed, 3 the same without the limit.
-    // Targets travel absolute so each peer converts them on the frame it
-    // simulates instead of aiming from a position the lockstep delay made stale.
-    if (!Number.isInteger(moving) || moving < 0 || moving > 3 ||
-        !Number.isFinite(x) || !Number.isFinite(y)) return this.close('TH09 联机输入无效');
-    const bytes = header(input), payload = new Uint8Array(21), data = new DataView(payload.buffer);
-    payload.set(bytes); data.setUint32(6, frame >>> 0, true); data.setUint16(10, keys & 65535, true);
-    payload[12] = moving; data.setFloat32(13, x, true); data.setFloat32(17, y, true);
-    this.send(payload);
-  }
+  input() {} // Captured once by C++; the legacy JS callback is intentionally idle.
   publish(frame, left, right, leftMode, leftX, leftY, rightMode, rightX, rightY) {
     if (this.spectator || !this.connected || this.side !== 0 ||
         Number(this.options.netplaySpectatorCount) < 1) return;
@@ -220,23 +178,11 @@ export class SharedNetplay {
     if (!this.active) return;
     const frame = this.spectator ? this.core._th09_spectator_frame() : this.info()[3];
     globalThis.__eaglerNetplayLanFrame = frame;
-    globalThis.__eaglerNetplayLanConfirmed = frame;
-    globalThis.__eaglerNetplayLanRollback = 0;
-    globalThis.__eaglerNetplayLanResimulated = 0;
-    if (!this.spectator && frame && frame % 120 === 0 && frame !== this.hashFrame) {
-      this.hashFrame = frame;
-      const value = this.core._th09_network_hash() >>> 0;
-      this.hashes.set(frame, value);
-      const payload = new Uint8Array(14), data = new DataView(payload.buffer);
-      payload.set(header(hash)); data.setUint32(6, frame, true); data.setUint32(10, value, true);
-      this.send(payload); this.compareHash(frame);
-      if (this.hashes.size > 8) this.hashes.delete(this.hashes.keys().next().value);
-    }
-  }
-  compareHash(frame) {
-    if (!this.hashes.has(frame) || !this.remoteHashes.has(frame)) return;
-    if (this.hashes.get(frame) !== this.remoteHashes.get(frame)) this.close('TH09 联机状态不同步');
-    else this.remoteHashes.delete(frame);
+    const at = this.core._th09_rollback_info() / 4;
+    const stats = this.core.HEAPU32.subarray(at, at + 8);
+    globalThis.__eaglerNetplayLanConfirmed = this.spectator ? frame : stats[1];
+    globalThis.__eaglerNetplayLanRollback = this.spectator ? 0 : stats[2];
+    globalThis.__eaglerNetplayLanResimulated = this.spectator ? 0 : stats[3];
   }
   result() {
     if (!this.connected || this.finished) return;
@@ -245,8 +191,7 @@ export class SharedNetplay {
     // closing it here could abort the other peer before its result callback.
     this.finished = true;
     this.active = false;
-    clearInterval(this.timer);
-    this.timer = null;
+    // Keep servicing the terminal input ACK while the other peer exits.
     globalThis.__eaglerNetplayLanActive = false;
     this.onResult();
   }
