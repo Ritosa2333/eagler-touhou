@@ -5,6 +5,13 @@ inspect actual progress and continue toward very smooth gameplay. The resumed
 work and frozen comparison identities are in `rollback-smoothness-work.md`.
 Do not mistake the historical results below for validation of unbuilt changes.
 
+The user requested another evidence-driven pass after `ef772e0`. A 7,200-frame
+formal-release run reproduced severe match-complete menu stalls missing from
+the shorter tests. The menu-boundary fix passed formal-release A/B/B/A, exact
+world/Replay and UI lifecycle checks. See `rollback-menu-smoothness.md` and
+`rollback-menu-evidence.json` for current evidence. Do not overwrite the older
+frozen build directories or treat their short-run results as this pass's proof.
+
 ## First orientation
 
 1. Workspace: `D:/workspace/eagler`. Read its `AGENTS.md` instructions and
@@ -15,7 +22,7 @@ Do not mistake the historical results below for validation of unbuilt changes.
    `D:/workspace/eagler/worktrees/th09-multiplayer`. Branch
    `experiment/th09-multiplayer`. Original implementation was `cb3a9b7`, then
    the first handoff `bf60dbc`; resumed smoothness work is newer. Read the actual
-   branch log/status and `rollback-smoothness-work.md` before assuming a HEAD.
+   branch log/status and `rollback-menu-smoothness.md` before assuming a HEAD.
 3. Canonical owner: `D:/workspace/eagler/th09-eagler`, branch `eagler`, HEAD
    `3b52630` when checked. It was clean and is **not** the optimization worktree.
    The experiment was created from this commit. Do not edit the upstream-tracking
@@ -35,7 +42,7 @@ All paths below are relative to the experiment worktree unless absolute.
   optimization request. Do not present desktop results as phone evidence.
 - The user resumed profiling and optimization after this original handoff.
   The first measured bottleneck was snapshot copying, not collision math.
-  See `rollback-smoothness-work.md` for current source/build/test status;
+  See `rollback-menu-smoothness.md` for current source/build/test status;
   the original-game simulation and three-frame prediction policy are unchanged.
 - `c`, `p`, `d` mean commit, push, deploy in the workspace instructions. The
   rollback work was committed locally; it was **not pushed or deployed** in its
@@ -72,13 +79,17 @@ one already-due tick pending across recovery/network waits, without accumulating
 stall debt, and preserves fractional phase when all due work finishes. The
 ordinary no-wait cadence and input sampling policy are unchanged. Confirmed history owns
 sound, music, Replay and spectator output. A gameplay hash is exchanged every
-120 confirmed frames. Menus that replace resources wait for reconciled input.
+120 confirmed frames. Menu animation/navigation is rewindable; only the step
+that can replace resources waits for exact reconciled input. Read-only menu
+preflight and a fail-closed check before destruction protect that boundary.
 
 The local packaged Runtime is `th09_web/build-eagler-multiplayer`. Current
-release (`th09_web/artifacts/sdl-smooth-release`) WASM SHA-256 is
-`d1dafe25e34d8deb5811ac3504a77750c40316952b004da9319ae3ef12c5eebc`.
-Current diagnostic (`th09_web/artifacts/sdl-smooth-retry`) WASM SHA-256 is
-`a7e5e500f942da06f8cd750a044b713ac0b22458b5e9e9439d09706ec2ee24b0`.
+release (`th09_web/artifacts/sdl-menu-release`) WASM SHA-256 is
+`63b2d839e75a8dfc076b8cd5d3c27cab56eb9bd4ce3f1792e1717b5b703fc950`.
+Current diagnostic (`th09_web/artifacts/sdl-menu-frontier`) WASM SHA-256 is
+`a3d9f7bd769ce7233ccf96b852e7abb3ae11f47f022b2cf83be91c0f5d46d987`.
+The prior `sdl-smooth-release` and `sdl-smooth-retry` directories remain frozen
+historical controls. The packaged build ID is `63b2d839e75a8dfc076b8cd5`.
 Default `artifacts/sdl3` and `artifacts/sdl-release` are retained older builds;
 use explicit `PC_BUILD` / `TH09_OUTPUT` rather than accidentally testing them.
 Generated build folders and raw test reports are ignored by Git; the evidence
@@ -110,6 +121,7 @@ its own experiment. Do **not** add percentages across reports.
 | Draw | Skip pure 2D sprite geometry on unpresented historical ticks while keeping stateful Draw traversal | Same-WASM, same-checkpoint paired replay CPU down 6.60–12.11% across four runs; phase-accounted correction down 3.75–6.74%. See `rollback-draw-evidence.md`. |
 | Owning pools | Sparse first-write Effect/Attack slots, fixed-slot deduplication, reuse same-type AttackState allocation, exact trivial-block copy | Hardware A/B/B/A: capture down 13.01%, restore down 22.78%, capture + restore + 8-tick resim down 11.11%. See `rollback-owning-evidence.md`. |
 | Resumed smoothness | Sparse whole Bullet POD runs, actual per-VM first writes, preserve completed callback phase and retry one pending tick | Exact-input dual-process RTC A/B/B/A, 77 +/- 10 ms each direction and P2 2x CPU throttle: P2 submitted-RAF gap p99 33.33 -> 16.67 ms, >25 ms gaps 135 -> 17, maximum 66.67 -> 33.33 ms. See `rollback-smoothness-work.md` and its portable evidence JSON. |
+| Long-run menu boundary | Keep menu animation/navigation in rollback; wait only before world resource replacement | Formal-release 7,200-frame A/B/B/A, 39 +/- 5 ms each direction, P2 2x slowdown: measured whole-interval logic 55.950 -> 59.958 Hz; 145-frame result menu 10.83 -> 2.45-2.47 seconds. All sixty confirmed points and wire tapes match. See `rollback-menu-evidence.json`. |
 
 The earlier owning-pool 200-block A/B/B/A fixture used Intel UHD / ANGLE D3D11, same
 inputs, full-state and pixel checks outside timers. Correction total was
@@ -178,10 +190,11 @@ For real local transports, set `$env:NATIVE_GPU='1'` before running
 fallback. `PC_BUILD` selects a frozen artifact directory; `RUN_LABEL` selects
 the report name. Run performance comparisons serially with no compilation or
 other heavy work in parallel. `node
-th09_web/tests/multiplayer/export-smoothness-evidence.mjs` checks the current
-retained reports, source hashes and packaged release; it passed for the resumed
-candidate. The older owning/Draw/PC stage-specific summarizers reference their
-**historical binaries** and are not current-build gates.
+th09_web/tests/multiplayer/export-menu-evidence.mjs` checks the current retained
+reports, source hashes and packaged release. The older `export-smoothness` and
+owning/Draw/PC stage-specific summarizers reference **historical binaries** and
+are not current-build gates. For the current 7,200-frame formal-release recipe,
+use `rollback-menu-smoothness.md`, not the old default artifact directories.
 
 Local retail assets, fonts/music fixtures and Node dependencies were prepared
 for the earlier tests. Verify they still exist if a new agent or host cannot
@@ -190,6 +203,13 @@ start the browser. Raw reports are in ignored
 `docs/multiplayer/rollback-*-evidence.json`.
 
 ## Where to look next
+
+The measured sustained result-menu slowdown is resolved. Actual remote-PC
+control feel and acoustic/device acceptance remain open; do not keep changing
+prediction/delay or guessing new compute hotspots merely because those human
+checks cannot be automated. Reproduce a remaining symptom before more changes.
+The formal release still showed isolated long submissions, which remain in the
+evidence; no zero-stall or public Internet/TURN guarantee has been established.
 
 Read `eagler-touhou/docs/playbooks/rollback.md` first. Then measure the
 **remaining must-replay** cost in a dense real TH09 battle: Bullet update and collision,

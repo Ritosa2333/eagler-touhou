@@ -197,7 +197,11 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
         if(in_title)return tick_title(left,right,keys,render);if(!session||!world||!error.empty())return false;update_clocks();device.update(keys);mode=world->rules.mode;difficulty=world->configuration.selection.difficulty;game_flags=world->battle->state.flags;continues=session->continues;
         PopupFrame popup;popup.paused=paused;popup.game_over=over;popup.game_flags=game_flags;for(i32 s=0;s<2;++s)popup.field_flags[s]=world->battle->fields[s].script.flags;presentation.ascii.update(popup);
         if(paused)menus.update_pause(device);else if(over)menus.update_game_over(device);else if(complete)menus.update_match_end(device);else if(!session->is_demo()&&(device.pressed&8)&&session->phase==SessionPhase::match){paused=world->paused=true;sound(34,0);pause_audio(true);}
-        if(pending_action>=0){const auto action=InGameAction(pending_action);pending_action=-1;
+        if(pending_action>=0){
+            // Fail before destroying resources if a future menu rule bypasses
+            // the driver's read-only lifetime barrier. Never rewind freed owners.
+            if(recording_frame&&recording_frame->captured){error="Speculative menu resource action";return false;}
+            const auto action=InGameAction(pending_action);pending_action=-1;
             if(action==InGameAction::retry||action==InGameAction::replay_retry||action==InGameAction::restart_extra){presentation.renderer.flush();if(!session->retry()){error=session->error;return false;}world=session->world.get();presentation.world=world;paused=over=complete=false;menus.pause={};menus.game_over={};menus.match_end={};pause_audio(false);}
             else if(action==InGameAction::continue_match){audio.music(-1);if(!session->continue_game()){error="Unable to continue";return false;}paused=over=complete=false;pause_audio(false);}
             else {session->finish();return return_title(action==InGameAction::save_score);}
@@ -381,10 +385,16 @@ u32 rollback_tick(u32 render){
         auto decision=rollback.Prepare();if(!decision.canAdvance)return 2;
         const u32 f=rollback.Frame();const auto confirmed=rollback.ConfirmedThrough();
         const bool reconciled=rollback.InputsReconciledBeforeNext();
-        const bool menu=probe->paused||probe->over||probe->complete||probe->in_title;
-        // Menus can replace the entire resource graph. Admit them only at an
-        // exact, reconciled frontier. A local pause edge itself is rewindable.
-        if(menu&&(decision.predictedMask||!reconciled))return 2;
+        // Menu animation and selection belong to the existing snapshot. Wait
+        // only at a step that can replace resources, not on every menu frame.
+        // Use the current world's flags/continues, before tick_inputs refreshes
+        // its cached InGameMenuServices fields.
+        const u32 flags=probe->world?probe->world->battle->state.flags:0;
+        const bool retire=probe->in_title||probe->pending_action>=0||
+            (probe->paused?probe->menus.pause_retires_world():
+             probe->over?probe->menus.game_over_retires_world(flags,probe->session->continues):
+             probe->complete&&probe->menus.match_end_retires_world(flags));
+        if(retire&&(decision.predictedMask||!reconciled))return 2;
         auto& record=rollback_frames[f%rollback_frames.size()];record.number=f;record.sounds.clear();
         const bool speculative=decision.predictedMask||!reconciled;
         record.captured=speculative;
@@ -492,6 +502,34 @@ TH09_EXPORT("th09_probe_open") u32 th09_probe_open(i32 a,i32 b,i32 mode,i32 diff
 #if TH09_DEVELOPMENT_HARNESS
 TH09_EXPORT("th09_probe_frame_limit") void th09_probe_frame_limit(u32 frame){rollback_test_limit=frame;}
 TH09_EXPORT("th09_probe_tick_cost") const double* th09_probe_tick_cost(){return probe_tick_cost;}
+// Exercise the actual menu implementation against its lifetime preflight.
+// Animation assets are real; actions are observed rather than executed here.
+TH09_EXPORT("th09_probe_menu_barrier") const u32* th09_probe_menu_barrier(){
+    static u32 data[4]{};std::fill_n(data,4,0u);
+    if(!probe||!probe->session||!probe->world)return data;
+    multiplayer::WorldState saved;saved.sparse=false;if(!probe->checkpoint(saved))return data;
+    struct Services final:InGameMenuServices {
+        i32 action=-1;
+        void menu_sound(i32)override{}
+        void menu_action(InGameAction a)override{action=i32(a);}
+        void menu_view()override{}
+        void menu_sprite(AnmVm&)override{}
+    } services;
+    InGameMenus menus(probe->resources,services);bool valid=true;
+    for(unsigned kind=0;kind<3;++kind)for(i32 state=0;state<=9;++state)
+    for(i32 age:{0,3,4,19,20,21})for(u32 flags:{0u,1u,8u,9u})
+    for(i32 continues:{0,3})for(u16 keys:{u16(0),u16(1),u16(8),u16(16),u16(32),u16(0x200),u16(0x1001),u16(0x208)}){
+        menus.pause={};menus.game_over={};menus.match_end={};services.action=-1;
+        services.game_flags=flags;services.continues=continues;
+        InputFrame input;input.pressed=keys;bool barrier=false;
+        if(kind==0){menus.pause.state=state;menus.pause.frames=age;barrier=menus.pause_retires_world();menus.update_pause(input);}
+        else if(kind==1){menus.game_over.state=state;menus.game_over.frames=age;barrier=menus.game_over_retires_world(flags,continues);menus.update_game_over(input);}
+        else {menus.match_end.state=state;menus.match_end.frames=age;barrier=menus.match_end_retires_world(flags);menus.update_match_end(input);}
+        const bool retires=services.action>=0&&services.action!=i32(InGameAction::resume);
+        valid=valid&&(!retires||barrier);++data[1];data[2]+=retires;data[3]+=!barrier;
+    }
+    data[0]=saved.Restore()&&valid;return data;
+}
 // Read-only density and byte accounting; not present in the release ABI.
 TH09_EXPORT("th09_probe_load") const u32* th09_probe_load(){
     static u32 data[20]{};std::fill_n(data,20,0u);if(!probe||!probe->world)return data;

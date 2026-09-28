@@ -1,0 +1,3580 @@
+{
+  "schema": "th09/menu-smoothness-evidence/1",
+  "baseCommit": "ef772e0",
+  "scope": "Local desktop PC, loopback RTC sender impairment, native GPU and P2 CPU throttling. Not public Internet/TURN, physical scanout, phone or acoustic/human acceptance. No push/deployment.",
+  "builds": {
+    "baseline": {
+      "wasm": "d1dafe25e34d8deb5811ac3504a77750c40316952b004da9319ae3ef12c5eebc"
+    },
+    "diagnostic": {
+      "wasm": "a3d9f7bd769ce7233ccf96b852e7abb3ae11f47f022b2cf83be91c0f5d46d987"
+    },
+    "release": {
+      "wasm": "63b2d839e75a8dfc076b8cd5d3c27cab56eb9bd4ce3f1792e1717b5b703fc950",
+      "developmentExports": false
+    }
+  },
+  "sources": {
+    "th09_web/cpp/game/AnmExecutor.cpp": "5bc296edc55e0a3b22a1ac3827660a6fb47a471a80b20feab22456b7c650af3a",
+    "th09_web/cpp/game/AnmRenderer.cpp": "54036ba2be1fcd1a59626ede6530d1b0471886fb962d132b784132bb42697d43",
+    "th09_web/cpp/game/AnmResource.cpp": "9291a5dcd737f9aec4d5bdbeb9e246c1eb479f070487069419cd977e8073bf36",
+    "th09_web/cpp/game/AnmWorldRenderer.cpp": "d9c0ae0df5cc3cdf34babc263d42e009d53662b1a3c4d8a46379e3762967bde7",
+    "th09_web/cpp/game/Archive.cpp": "263f6cac7efa21eec8df3b5f1586a7112d44c44f4c7bd0912f70ec36e571c961",
+    "th09_web/cpp/game/AsciiRenderer.cpp": "56ec4d5d9406f6ff2615007c37737752a5ac3257942eef7a20a3157bce06832e",
+    "th09_web/cpp/game/AttackAreas.cpp": "508ca5ad87a7575c42443d9472acfeb427e287f870f8a09d187b806fd73f11fd",
+    "th09_web/cpp/game/AttackController.cpp": "15f1a893b18cb77f0cbc92d3964aed57d796255dba13066f323c24a30b859617",
+    "th09_web/cpp/game/AttackQueue.cpp": "88bb78f451ab4bb147211597be9b775f68a73f1f6a801febfcbe18f5b5c96dbf",
+    "th09_web/cpp/game/Background.cpp": "f5e94be3c61eab3a26fb67fdde656fbbc6b05e1f1fb0631558bce54caadbd997",
+    "th09_web/cpp/game/BackgroundDraw.cpp": "17816edb9fb6bfe6ad1a4a6e81aa846e30ed6e4c72f388e5b95465ff636282b1",
+    "th09_web/cpp/game/BulletDraw.cpp": "1595e350a8b41bf0a4a6c7cc38c79c28f198d4c06d948b74d61a1dc91b9ed045",
+    "th09_web/cpp/game/BulletExtras.cpp": "568e4be01b4ce6ae1f218c0e6f5ad1d07dcfcb6cd8675781679617eed0859937",
+    "th09_web/cpp/game/BulletManager.cpp": "6f0dbcc852cadaeead51f876f328a1cd918471658857116ee1228b23a1b8a3e4",
+    "th09_web/cpp/game/BulletPattern.cpp": "c5887e654288e92da3dc28f2093fad79a77ede0f8b43625859bc3f06698cfe86",
+    "th09_web/cpp/game/BulletVisuals.cpp": "be594fe5b4218ff1f430833414226bb5b681fc68f7dbcf095846c15edec1d7d0",
+    "th09_web/cpp/game/Camera.cpp": "ff473eae8a5870074333a975cb6e6833823b095b06cc9b7546ddd4f16cf58729",
+    "th09_web/cpp/game/CharacterAttackMeter.cpp": "bd474dd1bcadccbbe5680846924843e6e2687adc4cc16ed4013d8d72d8d7a464",
+    "th09_web/cpp/game/CharacterAttacks.cpp": "1dd18b854ad3beb905825c032b0617206848e302f61856585b56ce2516569005",
+    "th09_web/cpp/game/CharacterCapture.cpp": "e1023ef4bfba4a5b7f64dca27f86ab522bcf0cf8cff5d45d78f0b4d6f5803f1b",
+    "th09_web/cpp/game/ChargeGauge.cpp": "0abb99810cec1bd74793301074722a04698c9ae95d729d8a0517f278202df5c2",
+    "th09_web/cpp/game/Combo.cpp": "401a1025e733e66f95feb553b32066f691d1730f6abe02e3da31e6549cd73672",
+    "th09_web/cpp/game/CpuPlayer.cpp": "d84ce1a216a00eb775aa03123893a2187ce880bf2e5d9cabb6642d823e553124",
+    "th09_web/cpp/game/Dialogue.cpp": "d0519be30179b65f7d5298ea35c090d1e68bceaa07ac20d5a19897ad18d852ae",
+    "th09_web/cpp/game/EclEmitter.cpp": "17b33189f11a68b53b6d734cef3a2601ca2caba97b44a185bba86d9cccb14a71",
+    "th09_web/cpp/game/EclGameOperations.cpp": "e051d96dd9a3472f3e28822a8d2b4aed1cb2447bc1c64b1a17cd1fea61dc8637",
+    "th09_web/cpp/game/EclLasers.cpp": "727ab7d20ff55731e1168819d4b99bfd73f63b765fb82729418fd880174d6b84",
+    "th09_web/cpp/game/EclProgram.cpp": "5b36ad2bcd1f2eede883cd6fee001629c7a05dfc7f08c2dea4a8d4cf6b0087e4",
+    "th09_web/cpp/game/EclSpecial.cpp": "ffee8371a2c0bafdc4f407b35f89b058a31ce229be951b12065bf6eb086dfabf",
+    "th09_web/cpp/game/EclVariables.cpp": "a57947d6470be1eefb46208771295eadf2f5fbe37e64284da00eb5852a54d04a",
+    "th09_web/cpp/game/EclVm.cpp": "ce0e2c98cc26281cad2bf57f0b665396b06d24221d8622f95d48284410e72b77",
+    "th09_web/cpp/game/EffectGeometry.cpp": "4311f3f2619e9533ae6c40aa79e4b647b1a7f473e9572a92091ff33a7505aea3",
+    "th09_web/cpp/game/EffectLogic.cpp": "359b325421265344bf6207763a565f9d22a7a6b2e26a5fe90ed2d56edf6921d4",
+    "th09_web/cpp/game/EffectManager.cpp": "f786a08555c096b56d27be06f990277dbb91f60804d65fef5575ba72d367cc7e",
+    "th09_web/cpp/game/Ending.cpp": "db537c2f120cba11fade03253ed8518456acf79da72380ea5bbf82a2e67efb02",
+    "th09_web/cpp/game/EnemyAnimation.cpp": "053e1fba05899f776c79b8b1dd34fec05e0295d857b563ea60bc78188b2d4403",
+    "th09_web/cpp/game/EnemyDeath.cpp": "226add1fbd5cba741ba558ad0196912dd3aaadb566594e768b223f656d18e5a7",
+    "th09_web/cpp/game/EnemyDraw.cpp": "6db80945fbd9e8ffe0b8ff8f0bdc8fe596357e7e210fd2f6327b1b4a89aa242a",
+    "th09_web/cpp/game/EnemyFrame.cpp": "bb611278c2f8dc1d54ba7fb35cbdf1d4d0129da37cf1c849d3ee69853419d858",
+    "th09_web/cpp/game/EnemyManager.cpp": "62752d58c5f82420e740f16262f9ce242511571a0c12f6d14adb3d210aad0a74",
+    "th09_web/cpp/game/EnemyMotion.cpp": "ed1c1feedef81feb371ce0305301b5eddf8e1624c3321120c421933fb899f892",
+    "th09_web/cpp/game/EnemyStatus.cpp": "874c2c007357cf618ae0ea3319593c5e33b69e94f01e6e43205f5ad83b04eab1",
+    "th09_web/cpp/game/EnemyTimeline.cpp": "1fc3f197a7d7175e6e5f3343cb4ecd61aa01f93c4af1bb0530788f53f667c4fe",
+    "th09_web/cpp/game/EnemyTrail.cpp": "4c37e9cbaddb358596ce0c18eb8502cbcf211f1d43b7165ca495aba30a3ab495",
+    "th09_web/cpp/game/FieldAttacks.cpp": "fc5494f12c18f2a628a45bbd013715e68e49e76939d9c42db6d196c116efbeb7",
+    "th09_web/cpp/game/GameBattle.cpp": "797b85825c80e3acf6927859553b293037af23b31a3cca2ea8b812601e175d41",
+    "th09_web/cpp/game/GameConfiguration.cpp": "0a82759fb2b2e2dbaba8cfd8eb98440a08c4deab66b77786c0a481bf7f944b52",
+    "th09_web/cpp/game/GameInput.cpp": "971a329f250b900cf86fb31c3ba818c7f7b279b237c5259fd1fa80ea47e8cafb",
+    "th09_web/cpp/game/GameMath.cpp": "0b2978f08904a83d6368dcc6a5b8ce611a75196ac6447e689b49294a57f3986c",
+    "th09_web/cpp/game/GamePresentation.cpp": "04794e2d40c7f258d5afef9b2669a401b7459b0006b462eb340a9e2b5c27af8b",
+    "th09_web/cpp/game/GameResources.cpp": "deebb736e576826f807bcdbb4660c9130aac43ace0bd94c04100707244297063",
+    "th09_web/cpp/game/GameSession.cpp": "a7c466d2f86ead36ecdc4ca337ec736b4b6a8416d4670d8b3a9f6cbe1b07fde6",
+    "th09_web/cpp/game/GameWorld.cpp": "10b8704ca9852330535afdf1dcf96327c1c33045b6ad30a3a1f345fc9796e1d4",
+    "th09_web/cpp/game/GraphicsMath.cpp": "60cdf7b52a4304bbe106bda9be9ae2ac004762ab743359eee115420c1f812e55",
+    "th09_web/cpp/game/HeadsUpDisplay.cpp": "6c814f69416faf66ceb492d5a0d0e3f6a27d4bfbfe2a0c8c0f7d10b5dd7c045a",
+    "th09_web/cpp/game/ImageResample.cpp": "f0627a430b112be4ad636035b63abf50d1e1c050b2e23e1b6dcab21ead0e2434",
+    "th09_web/cpp/game/InGameMenu.cpp": "1fe392eedae506cf4c2fb548b4075b9ff6678e5608eef33e2d9e5031be745ba7",
+    "th09_web/cpp/game/InputFrame.cpp": "cc145914655e8fa1ea74e39069efe5d12b68aa2574687d64e7e3b9169a1cafbf",
+    "th09_web/cpp/game/KeyboardInput.cpp": "233e6d51e36809b9221c4894f12cf2d117910cf72703c0f9bc787e579ed57791",
+    "th09_web/cpp/game/LaserManager.cpp": "56dea28d43bf15edc1ea823c159e42b8fbec80c2401fd2076e092a8e7cfbcf4e",
+    "th09_web/cpp/game/Localization.cpp": "27860633bb173c60457b084e0d56e0d921f6530972bc9a49a5fd78bba284972a",
+    "th09_web/cpp/game/LocalizationStub.cpp": "879045489b985ccb86c4c99c320651593311f0bbda81bb1098ece3c23c13c00c",
+    "th09_web/cpp/game/Lzss.cpp": "755029f9715a6e9433cbd0dcf2540d551ffce2b4112ec430dbb236bb35bac0cd",
+    "th09_web/cpp/game/MatchRules.cpp": "a1b6c2e57dedf3f2925b85091d725540e05cbb834f9451f132ae230224db5ccb",
+    "th09_web/cpp/game/MatchScene.cpp": "1a06cfdf54c249e094ba066f62a7c33951ee9380e05d9b821d68bae59842d58a",
+    "th09_web/cpp/game/MessageResource.cpp": "e1be5c413decb8d28e99a9270a9ddfe73918bcd2cea52819f1fbe0f9f9825860",
+    "th09_web/cpp/game/MystiaAttacks.cpp": "c8799d4aedf663467905b8a28f97b96903348c2354431c3954744f09c3ce92e3",
+    "th09_web/cpp/game/Player.cpp": "4032b1f7961adfdf499b86a5986db39aa0e7abdc89be329b2343eb65b66821c8",
+    "th09_web/cpp/game/PlayerCollision.cpp": "ee6204c34037b38760766441aee1270c0ccf344a5284584cdaa4976ef125270d",
+    "th09_web/cpp/game/PlayerHazards.cpp": "129027206bfa7cb22daf903aee6691d75fdf48ce1eee06cf666d611bdcf6202d",
+    "th09_web/cpp/game/PlayerItems.cpp": "36d3e451a58f20249860a96070871c85919ed659fd65a59b17813b54c11401a5",
+    "th09_web/cpp/game/PlayerLife.cpp": "d85c08d35f5d0551bf31bc6fc66aa7356cdb2af83fd9d8b7bec07d7efef4f8af",
+    "th09_web/cpp/game/PlayerMotion.cpp": "18ef13e7d092da6f850256e4b74beae598d37c522ca10d1718d31ebabe4d1b82",
+    "th09_web/cpp/game/PlayerRecords.cpp": "b179febf6b598086bb7083c2f05248685a498fc735d6f454c91a9f55647f23de",
+    "th09_web/cpp/game/PlayerShots.cpp": "1475efc3fe972f70f3aa1d65faa211d38cfd7aad72624f2e7876ad392e1897f6",
+    "th09_web/cpp/game/ReplayArchive.cpp": "8e8fb8808b3e413e8c074ac955c03d9c6b6c5ca30f599dc8d4cfc465d473ef10",
+    "th09_web/cpp/game/ReplayFile.cpp": "bbf8de94d75437bf0471d7b8fbe57fc422e152aa5b5aa5f7f95b3ee9edc93602",
+    "th09_web/cpp/game/ReplaySession.cpp": "b832dd0b2a8a3f9b7f5abf6bbbe8c911f2517133ecddb00fa5e3c3e4c3dbf1ab",
+    "th09_web/cpp/game/ResourceCrypt.cpp": "a2982b36e56122447b27ec27cfc73d096a8645d0b15e4db38cc2321132abf097",
+    "th09_web/cpp/game/Rng.cpp": "cfc17cce749c0cced180470c0078194e17c32bcfdd037eabce94eeb150ecccac",
+    "th09_web/cpp/game/RuntimeOverride.cpp": "35a190828597cddac91a568c4ac83e95a1abb0205f1a1af59bf10d064ada9da3",
+    "th09_web/cpp/game/ScoreFile.cpp": "e8d765bbdeb53c6837206232b0ee4575358766be0745cf2212b4428f1733917f",
+    "th09_web/cpp/game/ScreenEffects.cpp": "644f9dd111f8ea6bd505826db47144915b6ed67bbde658e52a7ffb89c8bdc576",
+    "th09_web/cpp/game/ShotControl.cpp": "a8118cb898f4c7cbd6a6e82b3a077a19ac688280d0c1bc518033f7d3ab9dcb8e",
+    "th09_web/cpp/game/ShotResource.cpp": "70f814238ce8ea7968858f06fb663e58c669e9251e1a35f7800332b99782d4e6",
+    "th09_web/cpp/game/SoundEffects.cpp": "caf7681ea78c8ec607272df48e953db561e5e61f6efad96efdb5e00ca3e7e50e",
+    "th09_web/cpp/game/StageModelRenderer.cpp": "a96b8b4b92a260b630e7ff320992502846106a44a50e31a542f2d7336fdb3a5c",
+    "th09_web/cpp/game/StageResource.cpp": "ef21f45266a7a7c8c83081ae1b0b37f9faca6a2aeb081db7290857fdfa759d87",
+    "th09_web/cpp/game/StageSelection.cpp": "02be2d12bdbd100989efdbf8f0aeed41f3c7206b3e3b65578ca70a1c72773eac",
+    "th09_web/cpp/game/TextureImage.cpp": "b4e2b3830ff5115c1b36d29ff033f63511293afcdd56aa45efdb4081e1cef18c",
+    "th09_web/cpp/game/Timer.cpp": "a4737a989c49e61964f5679af704ff6a9c14a322b13d3224fc058b9d3d37bd23",
+    "th09_web/cpp/game/TitleCharacters.cpp": "59419ec7f678b6fe80ecd51db992314750425fae36e74ab6d79949b65ecd0c79",
+    "th09_web/cpp/game/TitleKeys.cpp": "bb17901beb07e907a91be5c236e997d3fe3190aea16bb26ac3cadb037cbe8ca8",
+    "th09_web/cpp/game/TitleMenus.cpp": "4566e855835c43b6358d0052430602f644702fcb783ca92a49c1905c31b05ee0",
+    "th09_web/cpp/game/TitleMusic.cpp": "887e27cb15df5f1ac2082e9a03cfb08bfc2e4bbfbc231f918bcf48457fea93c2",
+    "th09_web/cpp/game/TitleOptions.cpp": "0f45084f910636b71d65428e6667979eb88bdeff6a7e9e5ec44a33492694e474",
+    "th09_web/cpp/game/TitleRankings.cpp": "4072f264daf32d2e0e79a4d61ee64c2b5cf8e2b6319d1557f407bd03eb76d818",
+    "th09_web/cpp/game/TitleReplays.cpp": "38bdd0f7dc2c942f10ecd39db3ccfaf1d37a0af58238a576ffe7e8529187ee9e",
+    "th09_web/cpp/sdl/Application.cpp": "308c6c5482138ab754c6ff5cc20746b17fb1d17fa6e7ae831ab51a372d52bd73",
+    "th09_web/cpp/sdl/Assets.cpp": "a5e9ff3ca79ac57313bb52be5dcee98b366b7f761c25826ef627319845f1c3eb",
+    "th09_web/cpp/sdl/AudioDevice.cpp": "2de1b97a1e34126c752160342ef6deb17f1ac5e7122b9ce6894aef06d275d424",
+    "th09_web/cpp/sdl/FontDevice.cpp": "beb1477bad7b8d3dfa95610e5ddd25ec40455472957d0018a85c0be11708172c",
+    "th09_web/cpp/sdl/GraphicsDevice.cpp": "372974372de5e3e5eec6ad9d650ed5c1f4af0fdd2d519b879249d84fef330480",
+    "th09_web/cpp/sdl/SharedPeerTransport.cpp": "e44acc6d8d64d506101aff920cba0dc964fa6c9c380bc89837886febd6ecee5a",
+    "th09_web/cpp/multiplayer/DynamicState.cpp": "ff407840ff35059f0f2babed108090131bbbeea1e473a731fd59ee101a1a2c0a",
+    "th09_web/cpp/multiplayer/RollbackSession.cpp": "eb5fb891b583c47e6afe36b770fe9e89a7ff1e287b55b11803e6095c0306274f",
+    "th09_web/cpp/multiplayer/WorldState.cpp": "a4a037fd42ce5ba7c149870a75c86277431fcfd8fedf1725b8c6e2306b60dcae",
+    "third_party/eagler-common/src/netplay/BrowserPeerTransport.cpp": "a69ef0b5567803c8384ead446ee1de7d1133bb86e1b1577140cdb6d8b0ff89f1",
+    "third_party/eagler-common/src/netplay/NetplayCore.cpp": "717944cfb577652346bd015441c1b2ea206940be2e33be3afc7ce4c7bc93c73c",
+    "third_party/eagler-common/src/netplay/NetplayProtocol.cpp": "1a5f3ba6ed1884b83c24c6d2d558922163dc878eb18879f72059dd7688e7bfeb",
+    "third_party/eagler-common/src/netplay/NetplaySession.cpp": "dae574ea794ce18ae5aa1be75350a9180d4507f032d18c8c82088227060352e5",
+    "third_party/eagler-common/src/netplay/SessionChannel.cpp": "bdeff71981b58f2bb7046af4bcf713f2bd8ffc6fe8f5c5a75731735e3c9d48ac",
+    "third_party/eagler-common/src/netplay/RollbackJournal.cpp": "119318f9b7b52d0ecbda37c3d2bc2b96e47d9dee4acc151e5bd92cb754b20b35",
+    "portable/input/KeyboardMap.inc": "e81f5adc0b4a33390fb4256611ac0880195b9df88ae73e018d113e1331ab0362",
+    "portable/input/MotionTrack.hpp": "ccc3df5c442b08bc59e1c4c0933215599fa98c33ecee7e38550287169ccf581e",
+    "portable/input/TouchController.hpp": "d70c7ce6890f7693f9d51cb601bee9d9cd30336bb15147c5570772e8f83c8028",
+    "portable/sdl/AssetPixelFormat.hpp": "c2a18909ca42e7a8b7723455414d4fdd7a4433827ec692d8574756a29b29ec2f",
+    "portable/sdl/FrameCadence.hpp": "d475dd64d34b68178c1da18b27e46f46476363946179aa156554df15f37702d6",
+    "portable/sdl/GraphicsState.hpp": "5f9c21e4f13385fe74bfc42d4a43ce9cd8af643cfdf589a99fb77912b83a9f64",
+    "portable/sdl/LegacyGraphics.hpp": "6f3358c223879094cb855b5fa2fb9c1d67fcfff1607830625ebf89d1c90aceee",
+    "portable/sdl/RenderCommands.hpp": "0e0e53d13c2b56b90b09e1ed83088dd43a7b658d72359b3c7c5ea2058c85f5c4",
+    "portable/sdl/Renderer.hpp": "c002c9b9fdfb43f33883c7b50cb222e0ab2291eb25c57bf284ba515fa0bf23c7",
+    "portable/sdl/ResampleShader.hpp": "cdde2c88abeeae0059325628661f2a95c37094d1cab456d6a5dd8cb900b3e7ac",
+    "portable/sdl/Shaders.hpp": "c2168b9412c46c6589f2c726d8ea7b9ea5def8c61c4eb8f8feff6b51cc11181e",
+    "portable/sdl/third_party/miniaudio.h": "2ff4797ef263c070ad9030884b515ef162efc2e00140db943f2daa95e8f08314",
+    "portable/sdl/third_party/stb_image.h": "bbbac7edf9add8586a4351ff69bfc53a85731793e4829c9a9d26a5f950a70a8c",
+    "portable/sdl/third_party/stb_vorbis.h": "c8daf8d9f0dad818a1cb6c9194eeb4503b63b8cbf8c744efc12942f3d679f686",
+    "th09_web/cpp/game/AnmExecutor.hpp": "8656841b567eb61b6b2b4ef709ff553c7b7948eb14cfe88938d4b480d4963e29",
+    "th09_web/cpp/game/AnmLayout.hpp": "582eab3c0216d651773f1a9e64a4c4147435db9711afcd62a9131db30500b598",
+    "th09_web/cpp/game/AnmRenderer.hpp": "96337aaccd4c49ed4aaec628b7929b710e30dcc1ad09053438b7c1829ceb9263",
+    "th09_web/cpp/game/AnmResource.hpp": "ddf474513d1e1cfc4ccfc051935757ce17089ba35dc367145057f35c9cfa1e98",
+    "th09_web/cpp/game/Archive.hpp": "d3c151b74242245f94f84425805199f4ac739b8ffe1660595187a5d4896c0f14",
+    "th09_web/cpp/game/Arithmetic.hpp": "9227679a4d4f5403557d648ec1129f267214d002d66f34f7da491382b02b7fb7",
+    "th09_web/cpp/game/AsciiRenderer.hpp": "017a94532fe6e3abc7f6d1bdfa9205867f88bb72ef6c3529ede1f4840cbdb30e",
+    "th09_web/cpp/game/AttackAreas.hpp": "0382e5107bfe50fa361d6e86f0bbd30824b3abf580c2d7c361dbd7fb7fdeedb1",
+    "th09_web/cpp/game/AttackController.hpp": "db84ad9ab1d284cfd8781a35d3fc1bb11731c82a3cfddcc85f013f85d355eee9",
+    "th09_web/cpp/game/AttackQueue.hpp": "49c4ed3c2e8cd2db2a0440e8fabe695b608f7812d6f14a73a89e29119ba95f29",
+    "th09_web/cpp/game/AttackQueueActions.hpp": "f0f0962038bfe2b9b9d82b1efd5023be5b3e26908abe10f4a0d751d9c9530835",
+    "th09_web/cpp/game/AttackTransfer.hpp": "a8f835f17924f52a446b0f74504d81d909170c17818e4d54edf6b15d37187cd0",
+    "th09_web/cpp/game/AttackTravel.hpp": "f19f0fe0a5436b3b637dcf2951fd3c499e90b2ce31d293a9996598ef92169f89",
+    "th09_web/cpp/game/Background.hpp": "05a1c56867d80f78234c69245bef390c29fc60bb6b2ffadf0f05da3dd6a80a53",
+    "th09_web/cpp/game/BackgroundDraw.hpp": "3cbae9f0ba4a7155e91b8d04b71bc2606ea3fa4289108060b531f62970cc1fb6",
+    "th09_web/cpp/game/Binary.hpp": "38c5508212d806fc13e0077dea78ac9651a86e270622a75d948990478de7b488",
+    "th09_web/cpp/game/Bullet.hpp": "7b74419a8aaaafdd9183b08974812d3fe4cb9ee563d9489199863ed27b6a445b",
+    "th09_web/cpp/game/BulletDraw.hpp": "7cb489cfaa9b6e2f6d363e1f6aac064d65797ae8d6689de176fa45ccec9a5282",
+    "th09_web/cpp/game/BulletEmission.hpp": "dc9f475596f334cd680dc4e043575ed44b7b29c3b10686e3d0faaa40c64ea7fd",
+    "th09_web/cpp/game/BulletExtras.hpp": "18396dd155a4f3387ebb0cf4bc04e064e420899b57858a0f5f8580d1b394d9b9",
+    "th09_web/cpp/game/BulletManager.hpp": "aadf28d13058677129fd52736b1f9d65b583da00b1a3a0df57083035441e724f",
+    "th09_web/cpp/game/BulletVisuals.hpp": "f404d12b1fe343f350ffb2c873f7c2ca3d9164770f2825b5196508fcca01db45",
+    "th09_web/cpp/game/Camera.hpp": "47c1ba0982f1ee1ffa407036f9836452f05a8b5d4cb644fe8caac4086393bcd5",
+    "th09_web/cpp/game/CharacterAttackMeter.hpp": "fb1910cd59cd11c185917e0b6731cf9c70008088d7c3a53e3988a01782d18373",
+    "th09_web/cpp/game/CharacterAttacks.hpp": "a167b70ebff8d770a700966d25b566bdb193b3755ed001571648292000d3d555",
+    "th09_web/cpp/game/CharacterCapture.hpp": "178f569e0c762ccbd96d51910cb561f9836a2f9013eab9a12666037f0993039a",
+    "th09_web/cpp/game/ChargeGauge.hpp": "38c064a800cb310664f9f55cf8cb88ae8957706b9941320e7f1538e2a1dc1bb0",
+    "th09_web/cpp/game/Combo.hpp": "7ed2734119cfcb4cb68eae6c318a1647e81b77d47eadd1f2e3aebc894856b7bc",
+    "th09_web/cpp/game/CpuPlayer.hpp": "92fbf69a91d486932fc3fc71e42207e47a9bd88c85a550bc27a42f6d482a187b",
+    "th09_web/cpp/game/Dialogue.hpp": "1b8d4acd675d55dd3c81c32829ea78f0c3ac96909a690c2dd09eedff21343e9b",
+    "th09_web/cpp/game/EclEmitter.hpp": "18ea65dcbc6f4d27fc3f0cecfb20ccdde415d1649d0116c18dea8f372c0366b2",
+    "th09_web/cpp/game/EclGameOperations.hpp": "da527f33c5bb5403c85cc1a2e38fdbc92f6bf871c4d0d8309b3122fdb598d677",
+    "th09_web/cpp/game/EclLasers.hpp": "156c291c39fc04ba338a006e3f9b7c40737cd2a95ea6ca72165d6408dffa59d8",
+    "th09_web/cpp/game/EclProgram.hpp": "2322c40e28d9bc48c70d32e02629551097a600747f0c706be4bb7dc51d48e3d1",
+    "th09_web/cpp/game/EclSpecial.hpp": "edfb8503ae2f3de7082f005bd2f6c78204f4980b2543470ee761510fad38e001",
+    "th09_web/cpp/game/EclVariables.hpp": "4533f029f5ff4cd31101f453c8fd01a78f7192b9a87826ebe61d820c7e9a39f6",
+    "th09_web/cpp/game/EclVm.hpp": "4f271ef6dd740ba4bd0729979f8fbe2526bf05f0699553afa27598df47117728",
+    "th09_web/cpp/game/EffectManager.hpp": "9e429e1515cff53dc6f2566e43beafbb32faa6eb992a301d1eb6f26a32dca4cf",
+    "th09_web/cpp/game/Ending.hpp": "5b663a41da76d3d89720ff2e8be7d9370061ebeb6395cdd55505e1a07a86a1a7",
+    "th09_web/cpp/game/EnemyAnimation.hpp": "b6de316727285f30a3eddcf41712abc23bf4a1a2f0a784ec0483786d71a62d72",
+    "th09_web/cpp/game/EnemyDeath.hpp": "f35f3ae13c38fa4510393332d83ecfdca747af5eb2c14e79d2c156db541f9be8",
+    "th09_web/cpp/game/EnemyDraw.hpp": "0979fc8ad6cddd4d60f2552e52dcfc72e67e6f390aa9574b14caeb5849ca5939",
+    "th09_web/cpp/game/EnemyFrame.hpp": "c0c9d494a463d4fb21134dbb5a3b5c218d27e222a038f4d82cce1c5c516910c5",
+    "th09_web/cpp/game/EnemyManager.hpp": "0ddc8ec0f9c3ae3ed5105ae104f0b067dbefc06d6efa0d601f351fcbaac2f2e6",
+    "th09_web/cpp/game/EnemyMotion.hpp": "c6afe98c9f6f06f1f163464a7b63ae10cd9106732b523d36488be9e3bace9e19",
+    "th09_web/cpp/game/EnemyStatus.hpp": "823950c1125eb8710293e0530fdb7c92f5563c4a9a114d67b71e9b3858ab41a1",
+    "th09_web/cpp/game/EnemyTimeline.hpp": "db74ef663275f4a5e18e17a128271bd999a00815a0f5eec7c466bd0ce834eac2",
+    "th09_web/cpp/game/EnemyTrail.hpp": "2bb81638e10167de7d3acfe28cefc512ed6f6d005af410f923ff6ae9161fb27d",
+    "th09_web/cpp/game/GameBattle.hpp": "f0c6c57d95febbc740f060b1208970a0821d17109abf3c271315772d1bbc2477",
+    "th09_web/cpp/game/GameBattleServices.hpp": "598419352cdb0b8923953906e16cf911243bc2ec80000713e943e41c554d1183",
+    "th09_web/cpp/game/GameConfiguration.hpp": "7d9d616fe7a3dad9c24e6cd96efbe1da115d37f5f5b83c3f107fad1197be2d00",
+    "th09_web/cpp/game/GameInput.hpp": "f37c010ecc509a8d74e61a76a09692b4fc606ca8f4d9ed52623c939c553ae45f",
+    "th09_web/cpp/game/GameMath.hpp": "552fb31026d5d759c644409b3f6e9b637cddbdee4debd15d4c7e96dbff3bdfd2",
+    "th09_web/cpp/game/GamePresentation.hpp": "7f400b997ad3feb5d466edfa076979f307b28257861db89ea4e5830471ea2dfe",
+    "th09_web/cpp/game/GameResources.hpp": "2f5962c182cdc3c08c364d3006cca13d42ff33eb881a88fd8fb650be109169e4",
+    "th09_web/cpp/game/GameSession.hpp": "298ce24e26242a2b3194d8562a606ebe3f1cc2895a81e2cd9a17623637170aba",
+    "th09_web/cpp/game/GameWorld.hpp": "2f411a7ffcdf7c711e73a85ffad4721246fd4e4e123918e494cf93d15fb6e388",
+    "th09_web/cpp/game/GraphicsMath.hpp": "33a0f61a30bf30ead3a5223d1923809f2b358eb08993380bfe93cf3b1fbec4e4",
+    "th09_web/cpp/game/HazardTrace.hpp": "0879179feab519316056ded4d071e3b8cf98bf92d47eede06fd0dbea8d262633",
+    "th09_web/cpp/game/HeadsUpDisplay.hpp": "8e6af73edc189e0ce5ed0dedc8e214b42cea294bc06d6426eca5393e0981a2eb",
+    "th09_web/cpp/game/ImageResample.hpp": "e1e7d9046c3700249521d97e64677cf41914cc803b6e07c5ceadc4599a062e4a",
+    "th09_web/cpp/game/InGameMenu.hpp": "444933496db13884688f51c0c502b2633470c9dc0068de1d59a9f54654011fee",
+    "th09_web/cpp/game/InputFrame.hpp": "f908385ebc34edeb192d04a0842e07bac6e5421841ff4b58349e50cb9a0cf5b2",
+    "th09_web/cpp/game/KeyboardInput.hpp": "571b07663249c1eb97ce66fbc9cbccac980741e356bd0074437f5a28db175a96",
+    "th09_web/cpp/game/LaserManager.hpp": "f900ac551f7b68ed258dbb9cc491553b5450a1021f5e7720721c72512ff3aae2",
+    "th09_web/cpp/game/Localization.hpp": "ca91a20c2562db44793fd9de02aec27edf649ea87271efa18d428edd200ecd08",
+    "th09_web/cpp/game/Lzss.hpp": "221db5996f7e772aa4421160ff2ed048f39cbf28b79ed49bf8126ff1f6629615",
+    "th09_web/cpp/game/MatchRules.hpp": "5dfa44a9459abdf731b0118c6421f1ee162e41abf2d8964e67ae1116ba8f5e18",
+    "th09_web/cpp/game/MatchScene.hpp": "feb596ddf52afd9f30851107cdaf5c310b56680a25bd9d15f972c28740563447",
+    "th09_web/cpp/game/MessageResource.hpp": "d518aba21613d85d69e8d0434fcca99d52cf6814616630de2c550f515bc428fe",
+    "th09_web/cpp/game/MusicCatalog.hpp": "da8d9b8d911bc5d27470cfd1fefc448cfb14066f34cc025d0451c3adf890f326",
+    "th09_web/cpp/game/NetworkInput.hpp": "b42b5821a7a60b777350e134a6daad440fa0c7ca35dc13794ccc2eec74d2405f",
+    "th09_web/cpp/game/Player.hpp": "29c0f4d5e975f1fd5cb4029dec644c6e721bd125ef26ab70faa66d9d0bf7612b",
+    "th09_web/cpp/game/PlayerCollision.hpp": "3ecdf251ea0845e8831954fc8705412f14adc221c9f6592114feecd46f46ef4d",
+    "th09_web/cpp/game/PlayerHazards.hpp": "c2153e2fb08dbeade640247af327643be8c195993d31f8a73aba443d3c1d2416",
+    "th09_web/cpp/game/PlayerItems.hpp": "8d5e8a58aad02dd6be07c192afdc7fdf99ccaf0e0dccc894a07dcfc26ecf512e",
+    "th09_web/cpp/game/PlayerLife.hpp": "c82cd8f3aa4ba82864a4885beadfd07c8b78ad087a45fe5ea8c8169085176136",
+    "th09_web/cpp/game/PlayerMotion.hpp": "70362c2f20adc7f40ff1c88e71de7d17d1699256ee8b5abd08ce80b2703ecaaf",
+    "th09_web/cpp/game/PlayerRecords.hpp": "f468890e9361620ae80f4bbad77bc2a5c42bb48a5f2d465f5a2470616143c2cf",
+    "th09_web/cpp/game/PlayerShots.hpp": "7edeb86560d9942b71cfa5c9b965eec8ce2c98f18269493dd940fb99e26454bc",
+    "th09_web/cpp/game/PoolCheckpoint.hpp": "bd5b6fb5cccfbc2cf055ad72789fbbf7e1f91046a2628df1264b557c73146c4f",
+    "th09_web/cpp/game/ReplayArchive.hpp": "0f1077b99e90370d36b4de1471539c6966cff273e66cdc573608dad2f6c114dc",
+    "th09_web/cpp/game/ReplayData.inc": "dc71381ce93e919ca3a11c5237e456c936485b28bb6181045879fe67ce733d33",
+    "th09_web/cpp/game/ReplayFile.hpp": "1c06cbc29d5aede327663eb36aefbe9e69db3d62739984143865b7309cb2db43",
+    "th09_web/cpp/game/ReplaySession.hpp": "7a1470af00ccf246911edaf35548989c4f53f7117298359ac843b41f55767b57",
+    "th09_web/cpp/game/ResourceCrypt.hpp": "d51fa07fe50f1b26cec2bd82b16e4056bfce8f8cab47525b35051fdcb73c8d5b",
+    "th09_web/cpp/game/ResourceData.inc": "05b2a1361426431cbb0c862f27486a48529bffdccf851fd90bbfecf6e4c7132c",
+    "th09_web/cpp/game/Rng.hpp": "ce1ed7b7107b24e812e2566d620e451ea57e70e55a92a6f3d1a2c23405dd3cbf",
+    "th09_web/cpp/game/RuntimeOverride.hpp": "7326e9e2ed3dcb5e079f10c60c8d6691684a009e7b8e03feffa989679dbfb9e2",
+    "th09_web/cpp/game/ScoreFile.hpp": "e8d11ed705a4e8425130e9bf47ecc99693359d6f92b486d23ed0c0336523ce67",
+    "th09_web/cpp/game/ScreenEffects.hpp": "4d8b3860bfa6ea9a37b1949e39015f9aa50c80995aa72763332f7cbb4e4523a9",
+    "th09_web/cpp/game/ShotControl.hpp": "cb580c65995d59f38cb3265ed624699880320b1c889dc802c47920815d92f87f",
+    "th09_web/cpp/game/ShotResource.hpp": "83b42df60ebb6f294ea61ab0a71124cdb5c5be1954c7d2550dc100d18a34d96b",
+    "th09_web/cpp/game/SoundEffects.hpp": "b02e997ea186141117ebbd49d6fbb4fb7e82d07555e63ea95e12977f2e36f162",
+    "th09_web/cpp/game/SpriteGeometry.hpp": "a657836f73bf82672877258731bde2ed023a1b30340a2cd51c8ebb6640c88011",
+    "th09_web/cpp/game/StageData.inc": "c294d8ae102d2d4f00d93cbf7567d1e6024d68aab4c2903f11ae6c56f85aeff9",
+    "th09_web/cpp/game/StageModelRenderer.hpp": "9c6dfff909c8d01e477a2513d6a2736bf353934306c1419d0b033e7f9cc2d37e",
+    "th09_web/cpp/game/StageRenderer.hpp": "12c819b9a34d4c1a7e2b1a8e29ec7fb28c05d601a1a81f6fb15b846751fa5b02",
+    "th09_web/cpp/game/StageResource.hpp": "af85c5c804fcb915369ba11a41d95cc4e6af43f9894be6b95fac3db3d6cbd7a4",
+    "th09_web/cpp/game/StageSelection.hpp": "9d9013d08b9c3276beffad0cfd312607ed3f8e827da059bfae606f7d28e92129",
+    "th09_web/cpp/game/StateChecksum.hpp": "5dd01159ca7b1041249290ec886c9e0a916b18f21ec5ac09b02584703f0b9d41",
+    "th09_web/cpp/game/TextureImage.hpp": "a3656f009f4c30fd5906bedce1be0d35cd1cfe0d94855a58ab9962b55a356ae4",
+    "th09_web/cpp/game/Timer.hpp": "81c1647970dfc2c290b2d5b05fe37473fe6baf1034a055ea6e701f819c4e6b61",
+    "th09_web/cpp/game/TitleData.inc": "be901d9203d497eb8c5cbe077de269b4bc09785facd2b6b60ebbc83e4498526f",
+    "th09_web/cpp/game/TitleMenus.hpp": "cfe924db015341353bff00a2888da63b6b4a4be5a38fa879935078e654360e0a",
+    "th09_web/cpp/game/TouchMotionTrack.hpp": "32609ff735453f8b082007dbd7f2d39a2b4d88124f307af8ba2313b743793597",
+    "th09_web/cpp/game/Types.hpp": "b33c9a661d4cec5faa48d1b25fa75a6be0ab9cbbae2102155cd598c11394898f",
+    "th09_web/cpp/game/ZunGraphics.hpp": "cc46e80160c2e25a62f7106fed95ff02fabf713a022d7e8d16e157ea923ff639",
+    "th09_web/cpp/multiplayer/DynamicState.hpp": "4f2fcb66a63921b05cd0dabc3b78d99f1bc6e3941d5388a3fcd3c3b4f879f37a",
+    "th09_web/cpp/multiplayer/FrameSchedule.hpp": "78474762ba95f8600780638430e7cee492267618c4bedcf4e1438e066c0fc2b9",
+    "th09_web/cpp/multiplayer/RollbackSession.hpp": "773d0f16a507db6f30e81f3d56ebf9938700f265f8e9eedbc69db7ee36699f44",
+    "th09_web/cpp/multiplayer/WorldState.hpp": "17e8e5ff1d5a271684c82390a39e8165365e34caa92b80829d855ce91acf29a8",
+    "th09_web/cpp/multiplayer/netplay/NetplayProtocolConfig.hpp": "92670ef7f02b138507139c2be4b87fbe0b4d4833578b161478d1e6bea813472b",
+    "th09_web/cpp/sdl/Assets.hpp": "9fab3792c9ee1ca302977b225f78052061df9c0c6d8a710cfb9d2cdbe3ca500e",
+    "th09_web/cpp/sdl/AudioDevice.hpp": "8edee244457af04cf7c6563c917d3e6f15b8955c00d7e5f4359e20037d3c9e17",
+    "th09_web/cpp/sdl/FontDevice.hpp": "5eb84bc33000344aee183ab91c1b0c9f34c206104c854225e159854d751a70f0",
+    "th09_web/cpp/sdl/GraphicsDevice.hpp": "d3876eecb8fdf4214e53e2654812205c6cc02b76715d1777118e15e6ccae1e1d",
+    "th09_web/cpp/sdl/netplay/NetplayTransportConfig.hpp": "40cf0d30da930cab3e6df12f8a92878e28199185ec6f87a094c9ccbc939e21ca",
+    "third_party/eagler-common/include/eagler/netplay/BrowserPeerTransport.hpp": "0ad15c21aeccecd9e650f1f26675e0a7c071075ae262c87b352d6acfd893f91f",
+    "third_party/eagler-common/include/eagler/netplay/ConfirmedInputWatchdog.hpp": "cfb8131aa1608660f6483f7b1c5a99bfdc984de0aa675f102df37bc5fda94c0d",
+    "third_party/eagler-common/include/eagler/netplay/DirectTouchEquivalence.hpp": "d9cd3a965f303aaa89a273885b6a28f184193db22b764d893d200dc1b7c768e8",
+    "third_party/eagler-common/include/eagler/netplay/DirectTouchState.hpp": "b6bb4afcd56366cf2ed572629b98aae83a970c7114a80c3ca9005627c5619107",
+    "third_party/eagler-common/include/eagler/netplay/FrameAdvantageWindow.hpp": "72af20efcf0d6317ee817a5538f4009cd7acf3977565b0087663a958bb6493d1",
+    "third_party/eagler-common/include/eagler/netplay/FrameBudget.hpp": "860d5d54555378474f99495301288dc16f31b675ebfa20690006ff5d13b3561b",
+    "third_party/eagler-common/include/eagler/netplay/FramePacingPolicy.hpp": "60efd7cfb63aff9df2e906beb2ba8088c650b53853a7e75453a8dff151df8f97",
+    "third_party/eagler-common/include/eagler/netplay/InputRepairBudget.hpp": "abd3a2f9b29e99d595aff48e47d95145d6861d267ac99ce51e82f5c6030bc1c3",
+    "third_party/eagler-common/include/eagler/netplay/InputReplay.hpp": "def1e7daa1a8229cd79fa5907fd12157f36dffd04fab4a47357ff9877cd04dec",
+    "third_party/eagler-common/include/eagler/netplay/NetplayCore.hpp": "7fc697d534b139cc41bd457180eb3c9a6ec6e69d06c17bfe6204880e825a0dea",
+    "third_party/eagler-common/include/eagler/netplay/NetplayInput.hpp": "adc13ba95ad652d542143288ee395745327957b3e48c4bfc574b0a5a54f16f4c",
+    "third_party/eagler-common/include/eagler/netplay/NetplayProtocol.hpp": "6ca232e241c9b0a0ca8a35abfe6031a3043401d0bbc6d044eeda7dd9d56d0f92",
+    "third_party/eagler-common/include/eagler/netplay/NetplaySession.hpp": "2c743dc981f6b1de21ad974c2e693fb3bb7b49c1830eb3869c81db50b087388b",
+    "third_party/eagler-common/include/eagler/netplay/PartitionedPoolJournal.hpp": "0f68d29edfc204015e6eeb83c0577a8d154566140cf6f2767602fa8cef8d14f1",
+    "third_party/eagler-common/include/eagler/netplay/PeerTransport.hpp": "56685f7d613612592bb022c5c81fd6e94016e0110a37641d2f6a15181158e602",
+    "third_party/eagler-common/include/eagler/netplay/RollbackJournal.hpp": "32bbe8f62225e312ef7292dfc186f09d3cf21cebed44c4ae0a5a79c66ab705e8",
+    "third_party/eagler-common/include/eagler/netplay/RollbackReplayBudget.hpp": "e01f5cf09d3186879e2b8b786dfb12630fbc739c4ad37d376693269904299c2f",
+    "third_party/eagler-common/include/eagler/netplay/SessionChannel.hpp": "d18c01243db91203871cb9e648fdd2160223eed8bc28bf6a90880364e8ac96cc",
+    "third_party/eagler-common/include/eagler/netplay/SessionPacing.hpp": "f02778ad8611438fdaeb6cfdb599fb2a30f66214ed603a83820eb45a022e3045",
+    "third_party/eagler-common/include/eagler/netplay/SnapshotPolicy.hpp": "67be1479683641357163464687556309f50605ed59f63c242682122ade04ebe1",
+    "third_party/eagler-common/include/eagler/netplay/SparsePoolCapture.hpp": "4ad3d0dc78cd82176193507ac8c443dc1a7b4eafc3c72a5f1b6729cc7bda85af",
+    "third_party/eagler-common/include/eagler/netplay/WebSocketTransport.hpp": "19299b50d7e448fcc3b55c818a803bdabe5454b2263df53e2bd50e26dba4000c",
+    "portable/sdl/Renderer.cpp": "525b8ac0ed47a2f75b9f0c95d8edb9b66e65792baa4c96dfd077b92b29b3fae7"
+  },
+  "harnesses": {
+    "smoothness-browser.mjs": "1d56ae9eab450e55b174f374efd96df9effa53247c324108b03bc0325eeb6b20",
+    "audio-output-probe.mjs": "6ab8e3eba7b7348bc204b7478dd895149bb5df0c568abe03ad927bc6b0d98a19",
+    "summarize-endurance.mjs": "560df90b599c3b9c2eb46060a9df0c6b0dbf59d93fbd39364c87aac8a08c7211",
+    "menu-barrier-browser.mjs": "4fddb60c52630c8c7c9be1934841d893c6dc96c282ea0d691179b9d6592c3d11",
+    "peer-browser.mjs": "9a6c5c327832fd69f3494206436aeb3b8dafd5c2f3cae39653eb7075321c0ec3",
+    "export-menu-evidence.mjs": "03ef7ca2c26fc64f71114f1e208744987b44838cc594b82dc09d10ce83acf6b0"
+  },
+  "performance": {
+    "sha256": "80e59b9b4dc461258403613712a7533e58de103054cbbbe88fdd26a13b25b490",
+    "passed": true,
+    "scope": "Whole run and contiguous scene segments retained. Phase 1=match, phase 3=match_complete. Same tape comparisons require cross-build confirmed checks at every 120 frames.",
+    "runs": [
+      {
+        "label": "menu-long-a1",
+        "sha256": "06327b4072fd79cec05b71f74249aaf67a3ae99f4171656d542c7d1a0fcf3bca",
+        "identity": {
+          "wasm": "d1dafe25e34d8deb5811ac3504a77750c40316952b004da9319ae3ef12c5eebc",
+          "harness": "1d56ae9eab450e55b174f374efd96df9effa53247c324108b03bc0325eeb6b20",
+          "loader": "616bde9c12ea653538d3b89a7daf354cb9f41b5f89c1ea89828052d9e4e2a1e3",
+          "relay": "83477c7f4084414f539e9b7330c9cd712388d27ab253d6de617f20a16b402a01",
+          "shell": "b359c102540192d696ef48b416a2c23e101cdb12296dc5bc869374f5118fc20b",
+          "audioProbe": "6ab8e3eba7b7348bc204b7478dd895149bb5df0c568abe03ad927bc6b0d98a19"
+        },
+        "parameters": {
+          "limit": 7200,
+          "delay": 39,
+          "jitter": 5,
+          "slow": 2,
+          "dropEvery": 0,
+          "release": true,
+          "profile": false,
+          "inputMode": "tape",
+          "audioOutput": true
+        },
+        "browsers": [
+          "149.0.7827.55",
+          "149.0.7827.55"
+        ],
+        "confirmedChecks": 60,
+        "endpoints": [
+          {
+            "side": 0,
+            "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+            "whole": {
+              "logicHz": 55.95918925587075,
+              "elapsedMs": 125430.69499999285,
+              "firstFrame": 180,
+              "lastFrame": 7199,
+              "callbacks": 7527,
+              "waitCallbacks": 505,
+              "corrections": 1031,
+              "resimulated": 3906,
+              "captures": 7019,
+              "callbackWorkMs": {
+                "count": 7527,
+                "total": 8275.555001556873,
+                "p50": 0.9000000357627869,
+                "p95": 2.7700000405311584,
+                "p99": 4.1700000166893005,
+                "max": 9.785000026226044,
+                "over25ms": 0,
+                "over50ms": 0
+              },
+              "presentationGapMs": {
+                "count": 7016,
+                "total": 125428.31500000016,
+                "p50": 16.665000000000873,
+                "p95": 16.67000000000553,
+                "p99": 66.66500000000815,
+                "max": 149.9950000000099,
+                "over25ms": 125,
+                "over50ms": 87
+              },
+              "callbackCompletionGapMs": {
+                "count": 7016,
+                "total": 125430.69499999285,
+                "p50": 16.669999957084656,
+                "p95": 19.219999969005585,
+                "p99": 68.56499999761581,
+                "max": 151.4200000166893,
+                "over25ms": 130,
+                "over50ms": 93
+              },
+              "rafGapMs": {
+                "count": 7526,
+                "total": 125428.31500000207,
+                "p50": 16.665000000000873,
+                "p95": 16.67000000000189,
+                "p99": 16.670000000012806,
+                "max": 16.670000000012806,
+                "over25ms": 0,
+                "over50ms": 0
+              },
+              "plannedDelayMs": {
+                "count": 12934,
+                "total": 503801.569530793,
+                "p50": 38.887535269372165,
+                "p95": 43.4623874197714,
+                "p99": 43.90136676467955,
+                "max": 43.9998973403126,
+                "over25ms": 12934,
+                "over50ms": 0
+              },
+              "deliveredDelayMs": {
+                "count": 12930,
+                "total": 607810.1550022364,
+                "p50": 48.68000000715256,
+                "p95": 57.7150000333786,
+                "p99": 64.41500002145767,
+                "max": 70.2950000166893,
+                "over25ms": 12930,
+                "over50ms": 5610
+              },
+              "scenes": [
+                1,
+                3
+              ]
+            },
+            "inputTapeSha256": "30a66311e181a514d0390ed6278137d466d678a758c99f10cb68d2a61b306571",
+            "confirmedTraceSha256": "4658e5e4f83e1afdc0cdc4cbe1d0c0313bbb093dda4a8dcfbb619bc39da817d4",
+            "segments": [
+              {
+                "phase": 1,
+                "firstFrame": 180,
+                "lastFrame": 4284,
+                "firstMs": 3017.150000035763,
+                "lastMs": 71431.32000005245,
+                "callbacks": 4106,
+                "elapsedMs": 68414.17000001669,
+                "netFrames": 4104
+              },
+              {
+                "phase": 3,
+                "firstFrame": 4285,
+                "lastFrame": 4430,
+                "firstMs": 71447.5150000453,
+                "lastMs": 82279.63000005484,
+                "callbacks": 651,
+                "elapsedMs": 10832.115000009537,
+                "netFrames": 145
+              },
+              {
+                "phase": 1,
+                "firstFrame": 4431,
+                "lastFrame": 7199,
+                "firstMs": 82301.655000031,
+                "lastMs": 128447.84500002861,
+                "callbacks": 2770,
+                "elapsedMs": 46146.189999997616,
+                "netFrames": 2768
+              }
+            ],
+            "phases": [
+              {
+                "phase": 1,
+                "elapsedMs": 114560.3600000143,
+                "netFrames": 6872,
+                "logicHz": 59.98584501654099,
+                "callbacks": 6876,
+                "waits": 0,
+                "workMs": {
+                  "count": 6876,
+                  "p50": 0.9599999785423279,
+                  "p95": 2.8700000047683716,
+                  "p99": 4.285000026226044,
+                  "max": 9.785000026226044,
+                  "over25ms": 0,
+                  "over50ms": 0
+                },
+                "submittedRafGapMs": {
+                  "count": 6869,
+                  "p50": 16.665000000000873,
+                  "p95": 16.67000000000189,
+                  "p99": 16.670000000012806,
+                  "max": 33.330000000001746,
+                  "over25ms": 5,
+                  "over50ms": 0
+                }
+              },
+              {
+                "phase": 3,
+                "elapsedMs": 10832.115000009537,
+                "netFrames": 145,
+                "logicHz": 13.386120808343739,
+                "callbacks": 651,
+                "waits": 505,
+                "workMs": {
+                  "count": 651,
+                  "p50": 0.05500000715255737,
+                  "p95": 0.4449999928474426,
+                  "p99": 0.7450000047683716,
+                  "max": 1.0049999952316284,
+                  "over25ms": 0,
+                  "over50ms": 0
+                },
+                "submittedRafGapMs": {
+                  "count": 145,
+                  "p50": 66.66500000000815,
+                  "p95": 133.33000000000175,
+                  "p99": 149.9950000000099,
+                  "max": 149.9950000000099,
+                  "over25ms": 119,
+                  "over50ms": 86
+                }
+              }
+            ],
+            "audio": {
+              "blocks": 1507,
+              "nonzeroBlocks": 1505,
+              "maxSilentRun": 2,
+              "sampledSilentBlocksAfterOneSecond": 0,
+              "callbackGapMs": {
+                "count": 1506,
+                "p50": 89.60499995946884,
+                "p95": 90.29000002145767,
+                "p99": 91.2049999833107,
+                "max": 93.14000004529953,
+                "over25ms": 1506,
+                "over50ms": 1506
+              },
+              "scheduledGapExcessMs": {
+                "count": 1506,
+                "p50": 2.6666666666605305,
+                "p95": 5.333333333337562,
+                "p99": 5.333333333344667,
+                "max": 8.000000000000382,
+                "over25ms": 0,
+                "over50ms": 0
+              },
+              "scope": "64 sampled PCM values per SDL callback; not acoustic/device underrun proof"
+            },
+            "memoryBytes": 193331200
+          },
+          {
+            "side": 1,
+            "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+            "whole": {
+              "logicHz": 55.96219414537064,
+              "elapsedMs": 125423.95999997854,
+              "firstFrame": 180,
+              "lastFrame": 7199,
+              "callbacks": 7527,
+              "waitCallbacks": 510,
+              "corrections": 886,
+              "resimulated": 3036,
+              "captures": 7019,
+              "callbackWorkMs": {
+                "count": 7527,
+                "total": 22348.369999289513,
+                "p50": 2.400000035762787,
+                "p95": 7.650000035762787,
+                "p99": 11.064999997615814,
+                "max": 23.459999978542328,
+                "over25ms": 0,
+                "over50ms": 0
+              },
+              "presentationGapMs": {
+                "count": 7015,
+                "total": 125428.31000000064,
+                "p50": 16.665000000000873,
+                "p95": 16.67000000000553,
+                "p99": 83.32499999999709,
+                "max": 149.9950000000099,
+                "over25ms": 129,
+                "over50ms": 86
+              },
+              "callbackCompletionGapMs": {
+                "count": 7015,
+                "total": 125423.95999997854,
+                "p50": 16.685000002384186,
+                "p95": 22.92500001192093,
+                "p99": 80.94999998807907,
+                "max": 151.92500001192093,
+                "over25ms": 208,
+                "over50ms": 96
+              },
+              "rafGapMs": {
+                "count": 7526,
+                "total": 125428.31000000238,
+                "p50": 16.665000000000873,
+                "p95": 16.67000000000189,
+                "p99": 16.670000000012806,
+                "max": 16.670000000012806,
+                "over25ms": 0,
+                "over50ms": 0
+              },
+              "plannedDelayMs": {
+                "count": 13062,
+                "total": 509584.66262943065,
+                "p50": 39.00203106785193,
+                "p95": 43.49400354642421,
+                "p99": 43.89165206439793,
+                "max": 43.999474154319614,
+                "over25ms": 13062,
+                "over50ms": 0
+              },
+              "deliveredDelayMs": {
+                "count": 13057,
+                "total": 616497.4549979568,
+                "p50": 48.3400000333786,
+                "p95": 58.064999997615814,
+                "p99": 63.019999980926514,
+                "max": 77.66500002145767,
+                "over25ms": 13057,
+                "over50ms": 5792
+              },
+              "scenes": [
+                1,
+                3
+              ]
+            },
+            "inputTapeSha256": "ff6b34f2c49629c028c19f3360277ede7ac935e22429b25cf07728384cc0fd9d",
+            "confirmedTraceSha256": "4658e5e4f83e1afdc0cdc4cbe1d0c0313bbb093dda4a8dcfbb619bc39da817d4",
+            "segments": [
+              {
+                "phase": 1,
+                "firstFrame": 180,
+                "lastFrame": 4284,
+                "firstMs": 3036.850000023842,
+                "lastMs": 71446.95499998331,
+                "callbacks": 4106,
+                "elapsedMs": 68410.10499995947,
+                "netFrames": 4104
+              },
+              {
+                "phase": 3,
+                "firstFrame": 4285,
+                "lastFrame": 4430,
+                "firstMs": 71465.00999999046,
+                "lastMs": 82294.92500001192,
+                "callbacks": 651,
+                "elapsedMs": 10829.915000021458,
+                "netFrames": 145
+              },
+              {
+                "phase": 1,
+                "firstFrame": 4431,
+                "lastFrame": 7199,
+                "firstMs": 82326.03500002623,
+                "lastMs": 128460.81000000238,
+                "callbacks": 2770,
+                "elapsedMs": 46134.77499997616,
+                "netFrames": 2768
+              }
+            ],
+            "phases": [
+              {
+                "phase": 1,
+                "elapsedMs": 114544.87999993563,
+                "netFrames": 6872,
+                "logicHz": 59.99395171572804,
+                "callbacks": 6876,
+                "waits": 5,
+                "workMs": {
+                  "count": 6876,
+                  "p50": 2.4699999690055847,
+                  "p95": 7.875,
+                  "p99": 11.285000026226044,
+                  "max": 23.459999978542328,
+                  "over25ms": 0,
+                  "over50ms": 0
+                },
+                "submittedRafGapMs": {
+                  "count": 6868,
+                  "p50": 16.665000000000873,
+                  "p95": 16.67000000000189,
+                  "p99": 16.670000000012806,
+                  "max": 33.3350000000064,
+                  "over25ms": 6,
+                  "over50ms": 0
+                }
+              },
+              {
+                "phase": 3,
+                "elapsedMs": 10829.915000021458,
+                "netFrames": 145,
+                "logicHz": 13.388840078589048,
+                "callbacks": 651,
+                "waits": 505,
+                "workMs": {
+                  "count": 651,
+                  "p50": 0.17500001192092896,
+                  "p95": 1.625,
+                  "p99": 2.435000002384186,
+                  "max": 4.259999990463257,
+                  "over25ms": 0,
+                  "over50ms": 0
+                },
+                "submittedRafGapMs": {
+                  "count": 145,
+                  "p50": 66.66500000000815,
+                  "p95": 133.33000000000175,
+                  "p99": 149.99499999999534,
+                  "max": 149.9950000000099,
+                  "over25ms": 122,
+                  "over50ms": 85
+                }
+              }
+            ],
+            "audio": {
+              "blocks": 1506,
+              "nonzeroBlocks": 1505,
+              "maxSilentRun": 1,
+              "sampledSilentBlocksAfterOneSecond": 0,
+              "callbackGapMs": {
+                "count": 1505,
+                "p50": 88.02499997615814,
+                "p95": 91.94999998807907,
+                "p99": 94.88999998569489,
+                "max": 97.75,
+                "over25ms": 1505,
+                "over50ms": 1505
+              },
+              "scheduledGapExcessMs": {
+                "count": 1505,
+                "p50": 2.6666666666605305,
+                "p95": 5.333333333337562,
+                "p99": 5.333333333344667,
+                "max": 10.666666666670308,
+                "over25ms": 0,
+                "over50ms": 0
+              },
+              "scope": "64 sampled PCM values per SDL callback; not acoustic/device underrun proof"
+            },
+            "memoryBytes": 193331200
+          }
+        ]
+      },
+      {
+        "label": "menu-long-b1",
+        "sha256": "b03c5ccbfa07cfb9d415f0534f9070415f1be43133da8f42751a7f487bdcdb68",
+        "identity": {
+          "wasm": "63b2d839e75a8dfc076b8cd5d3c27cab56eb9bd4ce3f1792e1717b5b703fc950",
+          "harness": "1d56ae9eab450e55b174f374efd96df9effa53247c324108b03bc0325eeb6b20",
+          "loader": "6962b81fc37ab122a5143ffdee1f5a4824b744d4e1e1e6f91af635d5211693b7",
+          "relay": "83477c7f4084414f539e9b7330c9cd712388d27ab253d6de617f20a16b402a01",
+          "shell": "b359c102540192d696ef48b416a2c23e101cdb12296dc5bc869374f5118fc20b",
+          "audioProbe": "6ab8e3eba7b7348bc204b7478dd895149bb5df0c568abe03ad927bc6b0d98a19"
+        },
+        "parameters": {
+          "limit": 7200,
+          "delay": 39,
+          "jitter": 5,
+          "slow": 2,
+          "dropEvery": 0,
+          "release": true,
+          "profile": false,
+          "inputMode": "tape",
+          "audioOutput": true
+        },
+        "browsers": [
+          "149.0.7827.55",
+          "149.0.7827.55"
+        ],
+        "confirmedChecks": 60,
+        "endpoints": [
+          {
+            "side": 0,
+            "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+            "whole": {
+              "logicHz": 59.951720885139146,
+              "elapsedMs": 117077.54000002146,
+              "firstFrame": 180,
+              "lastFrame": 7199,
+              "callbacks": 7022,
+              "waitCallbacks": 5,
+              "corrections": 1037,
+              "resimulated": 3910,
+              "captures": 7019,
+              "callbackWorkMs": {
+                "count": 7022,
+                "total": 7785.640001118183,
+                "p50": 0.8650000095367432,
+                "p95": 2.6600000262260437,
+                "p99": 4.049999952316284,
+                "max": 12.229999959468842,
+                "over25ms": 0,
+                "over50ms": 0
+              },
+              "presentationGapMs": {
+                "count": 7013,
+                "total": 117078.65000000066,
+                "p50": 16.665000000000873,
+                "p95": 16.67000000000189,
+                "p99": 16.670000000012806,
+                "max": 99.9950000000099,
+                "over25ms": 8,
+                "over50ms": 1
+              },
+              "callbackCompletionGapMs": {
+                "count": 7013,
+                "total": 117077.54000002146,
+                "p50": 16.644999980926514,
+                "p95": 19.009999990463257,
+                "p99": 21.180000007152557,
+                "max": 106.31000000238419,
+                "over25ms": 19,
+                "over50ms": 1
+              },
+              "rafGapMs": {
+                "count": 7021,
+                "total": 117078.65000000069,
+                "p50": 16.665000000000873,
+                "p95": 16.67000000000189,
+                "p99": 16.670000000012806,
+                "max": 33.33499999999913,
+                "over25ms": 4,
+                "over50ms": 0
+              },
+              "plannedDelayMs": {
+                "count": 12707,
+                "total": 494885.78336436255,
+                "p50": 38.874924747273326,
+                "p95": 43.46142060449347,
+                "p99": 43.90038266405463,
+                "max": 43.9998973403126,
+                "over25ms": 12707,
+                "over50ms": 0
+              },
+              "deliveredDelayMs": {
+                "count": 12703,
+                "total": 597436.4799962044,
+                "p50": 48.5900000333786,
+                "p95": 57.64999997615814,
+                "p99": 64.13999998569489,
+                "max": 74.56499999761581,
+                "over25ms": 12703,
+                "over50ms": 5500
+              },
+              "scenes": [
+                1,
+                3
+              ]
+            },
+            "inputTapeSha256": "30a66311e181a514d0390ed6278137d466d678a758c99f10cb68d2a61b306571",
+            "confirmedTraceSha256": "4658e5e4f83e1afdc0cdc4cbe1d0c0313bbb093dda4a8dcfbb619bc39da817d4",
+            "segments": [
+              {
+                "phase": 1,
+                "firstFrame": 180,
+                "lastFrame": 4284,
+                "firstMs": 3017.5450000166893,
+                "lastMs": 71430.780000031,
+                "callbacks": 4102,
+                "elapsedMs": 68413.2350000143,
+                "netFrames": 4104
+              },
+              {
+                "phase": 3,
+                "firstFrame": 4285,
+                "lastFrame": 4430,
+                "firstMs": 71446.8600000143,
+                "lastMs": 73946.19500005245,
+                "callbacks": 151,
+                "elapsedMs": 2499.335000038147,
+                "netFrames": 145
+              },
+              {
+                "phase": 1,
+                "firstFrame": 4431,
+                "lastFrame": 7199,
+                "firstMs": 73970.59000003338,
+                "lastMs": 120095.08500003815,
+                "callbacks": 2769,
+                "elapsedMs": 46124.49500000477,
+                "netFrames": 2768
+              }
+            ],
+            "phases": [
+              {
+                "phase": 1,
+                "elapsedMs": 114537.73000001907,
+                "netFrames": 6872,
+                "logicHz": 59.99769682879917,
+                "callbacks": 6871,
+                "waits": 0,
+                "workMs": {
+                  "count": 6871,
+                  "p50": 0.875,
+                  "p95": 2.6700000166893005,
+                  "p99": 4.064999997615814,
+                  "max": 12.229999959468842,
+                  "over25ms": 0,
+                  "over50ms": 0
+                },
+                "submittedRafGapMs": {
+                  "count": 6866,
+                  "p50": 16.665000000000873,
+                  "p95": 16.67000000000189,
+                  "p99": 16.670000000012806,
+                  "max": 33.3350000000064,
+                  "over25ms": 7,
+                  "over50ms": 0
+                }
+              },
+              {
+                "phase": 3,
+                "elapsedMs": 2499.335000038147,
+                "netFrames": 145,
+                "logicHz": 58.01543210405443,
+                "callbacks": 151,
+                "waits": 5,
+                "workMs": {
+                  "count": 151,
+                  "p50": 0.6600000262260437,
+                  "p95": 2.1800000071525574,
+                  "p99": 2.4950000047683716,
+                  "max": 2.560000002384186,
+                  "over25ms": 0,
+                  "over50ms": 0
+                },
+                "submittedRafGapMs": {
+                  "count": 145,
+                  "p50": 16.66500000000815,
+                  "p95": 16.669999999998254,
+                  "p99": 16.670000000012806,
+                  "max": 16.670000000012806,
+                  "over25ms": 0,
+                  "over50ms": 0
+                }
+              }
+            ],
+            "audio": {
+              "blocks": 1408,
+              "nonzeroBlocks": 1407,
+              "maxSilentRun": 1,
+              "sampledSilentBlocksAfterOneSecond": 0,
+              "callbackGapMs": {
+                "count": 1407,
+                "p50": 89.67500001192093,
+                "p95": 90.26499998569489,
+                "p99": 91.11500000953674,
+                "max": 92.53000003099442,
+                "over25ms": 1407,
+                "over50ms": 1407
+              },
+              "scheduledGapExcessMs": {
+                "count": 1407,
+                "p50": 2.6666666666605305,
+                "p95": 5.333333333337562,
+                "p99": 5.333333333344667,
+                "max": 8.000000000000382,
+                "over25ms": 0,
+                "over50ms": 0
+              },
+              "scope": "64 sampled PCM values per SDL callback; not acoustic/device underrun proof"
+            },
+            "memoryBytes": 193331200
+          },
+          {
+            "side": 1,
+            "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+            "whole": {
+              "logicHz": 59.95138804247096,
+              "elapsedMs": 117078.18999999762,
+              "firstFrame": 180,
+              "lastFrame": 7199,
+              "callbacks": 7021,
+              "waitCallbacks": 8,
+              "corrections": 924,
+              "resimulated": 3219,
+              "captures": 7019,
+              "callbackWorkMs": {
+                "count": 7021,
+                "total": 21304.23499751091,
+                "p50": 2.3799999952316284,
+                "p95": 7.480000019073486,
+                "p99": 10.839999973773956,
+                "max": 24.594999969005585,
+                "over25ms": 0,
+                "over50ms": 0
+              },
+              "presentationGapMs": {
+                "count": 7008,
+                "total": 117078.65000000116,
+                "p50": 16.665000000000873,
+                "p95": 16.67000000000189,
+                "p99": 16.670000000012806,
+                "max": 49.99499999999534,
+                "over25ms": 16,
+                "over50ms": 0
+              },
+              "callbackCompletionGapMs": {
+                "count": 7008,
+                "total": 117078.18999999762,
+                "p50": 16.67500001192093,
+                "p95": 22.060000002384186,
+                "p99": 25.2849999666214,
+                "max": 68.49000000953674,
+                "over25ms": 82,
+                "over50ms": 1
+              },
+              "rafGapMs": {
+                "count": 7020,
+                "total": 117078.65000000122,
+                "p50": 16.665000000000873,
+                "p95": 16.67000000000189,
+                "p99": 16.670000000012806,
+                "max": 33.33499999999913,
+                "over25ms": 5,
+                "over50ms": 0
+              },
+              "plannedDelayMs": {
+                "count": 12880,
+                "total": 502525.8234414272,
+                "p50": 39.006479292642325,
+                "p95": 43.49258242500946,
+                "p99": 43.89165206439793,
+                "max": 43.999474154319614,
+                "over25ms": 12880,
+                "over50ms": 0
+              },
+              "deliveredDelayMs": {
+                "count": 12876,
+                "total": 608056.3749962449,
+                "p50": 48.439999997615814,
+                "p95": 57.980000019073486,
+                "p99": 63.20999997854233,
+                "max": 78.22000002861023,
+                "over25ms": 12876,
+                "over50ms": 5745
+              },
+              "scenes": [
+                1,
+                3
+              ]
+            },
+            "inputTapeSha256": "ff6b34f2c49629c028c19f3360277ede7ac935e22429b25cf07728384cc0fd9d",
+            "confirmedTraceSha256": "4658e5e4f83e1afdc0cdc4cbe1d0c0313bbb093dda4a8dcfbb619bc39da817d4",
+            "segments": [
+              {
+                "phase": 1,
+                "firstFrame": 180,
+                "lastFrame": 4284,
+                "firstMs": 3016.4300000071526,
+                "lastMs": 71446.21499997377,
+                "callbacks": 4103,
+                "elapsedMs": 68429.78499996662,
+                "netFrames": 4104
+              },
+              {
+                "phase": 3,
+                "firstFrame": 4285,
+                "lastFrame": 4430,
+                "firstMs": 71463.93000000715,
+                "lastMs": 73913.625,
+                "callbacks": 148,
+                "elapsedMs": 2449.6949999928474,
+                "netFrames": 145
+              },
+              {
+                "phase": 1,
+                "firstFrame": 4431,
+                "lastFrame": 7199,
+                "firstMs": 73948.75,
+                "lastMs": 120094.62000000477,
+                "callbacks": 2770,
+                "elapsedMs": 46145.87000000477,
+                "netFrames": 2768
+              }
+            ],
+            "phases": [
+              {
+                "phase": 1,
+                "elapsedMs": 114575.65499997139,
+                "netFrames": 6872,
+                "logicHz": 59.97783735123937,
+                "callbacks": 6873,
+                "waits": 6,
+                "workMs": {
+                  "count": 6873,
+                  "p50": 2.399999976158142,
+                  "p95": 7.505000054836273,
+                  "p99": 10.899999976158142,
+                  "max": 24.594999969005585,
+                  "over25ms": 0,
+                  "over50ms": 0
+                },
+                "submittedRafGapMs": {
+                  "count": 6861,
+                  "p50": 16.665000000000873,
+                  "p95": 16.67000000000189,
+                  "p99": 16.670000000012806,
+                  "max": 33.33999999999651,
+                  "over25ms": 15,
+                  "over50ms": 0
+                }
+              },
+              {
+                "phase": 3,
+                "elapsedMs": 2449.6949999928474,
+                "netFrames": 145,
+                "logicHz": 59.19104215031805,
+                "callbacks": 148,
+                "waits": 2,
+                "workMs": {
+                  "count": 148,
+                  "p50": 1.6899999976158142,
+                  "p95": 3.775000035762787,
+                  "p99": 5.339999973773956,
+                  "max": 5.8450000286102295,
+                  "over25ms": 0,
+                  "over50ms": 0
+                },
+                "submittedRafGapMs": {
+                  "count": 145,
+                  "p50": 16.66500000000815,
+                  "p95": 16.669999999998254,
+                  "p99": 16.670000000012806,
+                  "max": 16.670000000012806,
+                  "over25ms": 0,
+                  "over50ms": 0
+                }
+              }
+            ],
+            "audio": {
+              "blocks": 1408,
+              "nonzeroBlocks": 1406,
+              "maxSilentRun": 2,
+              "sampledSilentBlocksAfterOneSecond": 0,
+              "callbackGapMs": {
+                "count": 1407,
+                "p50": 88.24000000953674,
+                "p95": 91.45000004768372,
+                "p99": 94.79000002145767,
+                "max": 99.49500000476837,
+                "over25ms": 1407,
+                "over50ms": 1407
+              },
+              "scheduledGapExcessMs": {
+                "count": 1407,
+                "p50": 2.6666666666605305,
+                "p95": 5.333333333337562,
+                "p99": 5.333333333344667,
+                "max": 5.333333333344667,
+                "over25ms": 0,
+                "over50ms": 0
+              },
+              "scope": "64 sampled PCM values per SDL callback; not acoustic/device underrun proof"
+            },
+            "memoryBytes": 193331200
+          }
+        ]
+      },
+      {
+        "label": "menu-long-b2",
+        "sha256": "5c833a06adad025e076c4bb96ef23c86cd4192a52086360ed15c5b4f705f8edd",
+        "identity": {
+          "wasm": "63b2d839e75a8dfc076b8cd5d3c27cab56eb9bd4ce3f1792e1717b5b703fc950",
+          "harness": "1d56ae9eab450e55b174f374efd96df9effa53247c324108b03bc0325eeb6b20",
+          "loader": "6962b81fc37ab122a5143ffdee1f5a4824b744d4e1e1e6f91af635d5211693b7",
+          "relay": "83477c7f4084414f539e9b7330c9cd712388d27ab253d6de617f20a16b402a01",
+          "shell": "b359c102540192d696ef48b416a2c23e101cdb12296dc5bc869374f5118fc20b",
+          "audioProbe": "6ab8e3eba7b7348bc204b7478dd895149bb5df0c568abe03ad927bc6b0d98a19"
+        },
+        "parameters": {
+          "limit": 7200,
+          "delay": 39,
+          "jitter": 5,
+          "slow": 2,
+          "dropEvery": 0,
+          "release": true,
+          "profile": false,
+          "inputMode": "tape",
+          "audioOutput": true
+        },
+        "browsers": [
+          "149.0.7827.55",
+          "149.0.7827.55"
+        ],
+        "confirmedChecks": 60,
+        "endpoints": [
+          {
+            "side": 0,
+            "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+            "whole": {
+              "logicHz": 59.95808913338314,
+              "elapsedMs": 117065.10500001907,
+              "firstFrame": 180,
+              "lastFrame": 7199,
+              "callbacks": 7016,
+              "waitCallbacks": 4,
+              "corrections": 1021,
+              "resimulated": 3865,
+              "captures": 7019,
+              "callbackWorkMs": {
+                "count": 7016,
+                "total": 7979.785000681877,
+                "p50": 0.8949999809265137,
+                "p95": 2.659999966621399,
+                "p99": 3.9800000190734863,
+                "max": 33.22000002861023,
+                "over25ms": 1,
+                "over50ms": 0
+              },
+              "presentationGapMs": {
+                "count": 7008,
+                "total": 117061.98500000058,
+                "p50": 16.665000000000873,
+                "p95": 16.67000000000189,
+                "p99": 16.670000000012806,
+                "max": 83.32499999999709,
+                "over25ms": 12,
+                "over50ms": 1
+              },
+              "callbackCompletionGapMs": {
+                "count": 7008,
+                "total": 117065.10500001907,
+                "p50": 16.655000030994415,
+                "p95": 19.02999997138977,
+                "p99": 21.509999990463257,
+                "max": 87.68000000715256,
+                "over25ms": 19,
+                "over50ms": 1
+              },
+              "rafGapMs": {
+                "count": 7015,
+                "total": 117061.98500000063,
+                "p50": 16.665000000000873,
+                "p95": 16.67000000000189,
+                "p99": 16.670000000012806,
+                "max": 49.99499999999898,
+                "over25ms": 8,
+                "over50ms": 0
+              },
+              "plannedDelayMs": {
+                "count": 12678,
+                "total": 493764.02491617994,
+                "p50": 38.879279823508114,
+                "p95": 43.46069284807891,
+                "p99": 43.90018788957968,
+                "max": 43.9998973403126,
+                "over25ms": 12678,
+                "over50ms": 0
+              },
+              "deliveredDelayMs": {
+                "count": 12673,
+                "total": 595843.9500008821,
+                "p50": 48.57499998807907,
+                "p95": 57.9549999833107,
+                "p99": 64.33500003814697,
+                "max": 76.37000000476837,
+                "over25ms": 12673,
+                "over50ms": 5504
+              },
+              "scenes": [
+                1,
+                3
+              ]
+            },
+            "inputTapeSha256": "30a66311e181a514d0390ed6278137d466d678a758c99f10cb68d2a61b306571",
+            "confirmedTraceSha256": "4658e5e4f83e1afdc0cdc4cbe1d0c0313bbb093dda4a8dcfbb619bc39da817d4",
+            "segments": [
+              {
+                "phase": 1,
+                "firstFrame": 180,
+                "lastFrame": 4284,
+                "firstMs": 3016.235000014305,
+                "lastMs": 71430.47000002861,
+                "callbacks": 4101,
+                "elapsedMs": 68414.2350000143,
+                "netFrames": 4104
+              },
+              {
+                "phase": 3,
+                "firstFrame": 4285,
+                "lastFrame": 4430,
+                "firstMs": 71446.72500002384,
+                "lastMs": 73930.17000001669,
+                "callbacks": 149,
+                "elapsedMs": 2483.4449999928474,
+                "netFrames": 145
+              },
+              {
+                "phase": 1,
+                "firstFrame": 4431,
+                "lastFrame": 7199,
+                "firstMs": 73951.79500001669,
+                "lastMs": 120081.34000003338,
+                "callbacks": 2766,
+                "elapsedMs": 46129.54500001669,
+                "netFrames": 2768
+              }
+            ],
+            "phases": [
+              {
+                "phase": 1,
+                "elapsedMs": 114543.780000031,
+                "netFrames": 6872,
+                "logicHz": 59.99452785649417,
+                "callbacks": 6867,
+                "waits": 0,
+                "workMs": {
+                  "count": 6867,
+                  "p50": 0.9049999713897705,
+                  "p95": 2.685000002384186,
+                  "p99": 4.030000030994415,
+                  "max": 33.22000002861023,
+                  "over25ms": 1,
+                  "over50ms": 0
+                },
+                "submittedRafGapMs": {
+                  "count": 6862,
+                  "p50": 16.665000000000873,
+                  "p95": 16.67000000000189,
+                  "p99": 16.670000000012806,
+                  "max": 49.99499999999898,
+                  "over25ms": 10,
+                  "over50ms": 0
+                }
+              },
+              {
+                "phase": 3,
+                "elapsedMs": 2483.4449999928474,
+                "netFrames": 145,
+                "logicHz": 58.386636305783945,
+                "callbacks": 149,
+                "waits": 4,
+                "workMs": {
+                  "count": 149,
+                  "p50": 0.6949999928474426,
+                  "p95": 2.074999988079071,
+                  "p99": 2.5899999737739563,
+                  "max": 2.7700000405311584,
+                  "over25ms": 0,
+                  "over50ms": 0
+                },
+                "submittedRafGapMs": {
+                  "count": 144,
+                  "p50": 16.66500000000815,
+                  "p95": 16.670000000012806,
+                  "p99": 16.670000000012806,
+                  "max": 33.33499999999185,
+                  "over25ms": 1,
+                  "over50ms": 0
+                }
+              }
+            ],
+            "audio": {
+              "blocks": 1408,
+              "nonzeroBlocks": 1406,
+              "maxSilentRun": 2,
+              "sampledSilentBlocksAfterOneSecond": 0,
+              "callbackGapMs": {
+                "count": 1407,
+                "p50": 89.56000000238419,
+                "p95": 90.25499999523163,
+                "p99": 91.12000000476837,
+                "max": 100.31000000238419,
+                "over25ms": 1407,
+                "over50ms": 1407
+              },
+              "scheduledGapExcessMs": {
+                "count": 1407,
+                "p50": 2.6666666666605305,
+                "p95": 5.333333333337562,
+                "p99": 5.333333333344667,
+                "max": 10.666666666670308,
+                "over25ms": 0,
+                "over50ms": 0
+              },
+              "scope": "64 sampled PCM values per SDL callback; not acoustic/device underrun proof"
+            },
+            "memoryBytes": 193331200
+          },
+          {
+            "side": 1,
+            "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+            "whole": {
+              "logicHz": 59.964274312233876,
+              "elapsedMs": 117053.030000031,
+              "firstFrame": 180,
+              "lastFrame": 7199,
+              "callbacks": 7015,
+              "waitCallbacks": 8,
+              "corrections": 921,
+              "resimulated": 3183,
+              "captures": 7019,
+              "callbackWorkMs": {
+                "count": 7015,
+                "total": 21990.53999900818,
+                "p50": 2.435000002384186,
+                "p95": 7.754999995231628,
+                "p99": 11.025000035762787,
+                "max": 34.30000001192093,
+                "over25ms": 1,
+                "over50ms": 0
+              },
+              "presentationGapMs": {
+                "count": 7005,
+                "total": 117045.32000000072,
+                "p50": 16.665000000000873,
+                "p95": 16.67000000000189,
+                "p99": 16.670000000012806,
+                "max": 66.6649999999936,
+                "over25ms": 15,
+                "over50ms": 1
+              },
+              "callbackCompletionGapMs": {
+                "count": 7005,
+                "total": 117053.030000031,
+                "p50": 16.685000002384186,
+                "p95": 22.22000002861023,
+                "p99": 25.865000009536743,
+                "max": 77.20500004291534,
+                "over25ms": 102,
+                "over50ms": 3
+              },
+              "rafGapMs": {
+                "count": 7014,
+                "total": 117045.32000000076,
+                "p50": 16.665000000000873,
+                "p95": 16.67000000000189,
+                "p99": 16.670000000012806,
+                "max": 49.99500000000262,
+                "over25ms": 8,
+                "over50ms": 0
+              },
+              "plannedDelayMs": {
+                "count": 12842,
+                "total": 501046.1826382247,
+                "p50": 39.00785494688898,
+                "p95": 43.49298181803897,
+                "p99": 43.89165206439793,
+                "max": 43.999474154319614,
+                "over25ms": 12842,
+                "over50ms": 0
+              },
+              "deliveredDelayMs": {
+                "count": 12838,
+                "total": 606495.060003221,
+                "p50": 48.56999999284744,
+                "p95": 58.00499999523163,
+                "p99": 62.344999969005585,
+                "max": 92.08499997854233,
+                "over25ms": 12838,
+                "over50ms": 5814
+              },
+              "scenes": [
+                1,
+                3
+              ]
+            },
+            "inputTapeSha256": "ff6b34f2c49629c028c19f3360277ede7ac935e22429b25cf07728384cc0fd9d",
+            "confirmedTraceSha256": "4658e5e4f83e1afdc0cdc4cbe1d0c0313bbb093dda4a8dcfbb619bc39da817d4",
+            "segments": [
+              {
+                "phase": 1,
+                "firstFrame": 180,
+                "lastFrame": 4284,
+                "firstMs": 3034.3799999952316,
+                "lastMs": 71445.73000001907,
+                "callbacks": 4101,
+                "elapsedMs": 68411.35000002384,
+                "netFrames": 4104
+              },
+              {
+                "phase": 3,
+                "firstFrame": 4285,
+                "lastFrame": 4430,
+                "firstMs": 71463.34000003338,
+                "lastMs": 73928.59000003338,
+                "callbacks": 148,
+                "elapsedMs": 2465.25,
+                "netFrames": 145
+              },
+              {
+                "phase": 1,
+                "firstFrame": 4431,
+                "lastFrame": 7199,
+                "firstMs": 73960.09000003338,
+                "lastMs": 120087.41000002623,
+                "callbacks": 2766,
+                "elapsedMs": 46127.31999999285,
+                "netFrames": 2768
+              }
+            ],
+            "phases": [
+              {
+                "phase": 1,
+                "elapsedMs": 114538.67000001669,
+                "netFrames": 6872,
+                "logicHz": 59.99720443758426,
+                "callbacks": 6867,
+                "waits": 5,
+                "workMs": {
+                  "count": 6867,
+                  "p50": 2.4450000524520874,
+                  "p95": 7.885000050067902,
+                  "p99": 11.055000007152557,
+                  "max": 34.30000001192093,
+                  "over25ms": 1,
+                  "over50ms": 0
+                },
+                "submittedRafGapMs": {
+                  "count": 6859,
+                  "p50": 16.665000000000873,
+                  "p95": 16.67000000000189,
+                  "p99": 16.670000000012806,
+                  "max": 49.99500000000262,
+                  "over25ms": 13,
+                  "over50ms": 0
+                }
+              },
+              {
+                "phase": 3,
+                "elapsedMs": 2465.25,
+                "netFrames": 145,
+                "logicHz": 58.81756414156779,
+                "callbacks": 148,
+                "waits": 3,
+                "workMs": {
+                  "count": 148,
+                  "p50": 1.625,
+                  "p95": 3.314999997615814,
+                  "p99": 5.439999997615814,
+                  "max": 5.899999976158142,
+                  "over25ms": 0,
+                  "over50ms": 0
+                },
+                "submittedRafGapMs": {
+                  "count": 144,
+                  "p50": 16.66500000000815,
+                  "p95": 16.670000000012806,
+                  "p99": 16.670000000012806,
+                  "max": 33.3350000000064,
+                  "over25ms": 1,
+                  "over50ms": 0
+                }
+              }
+            ],
+            "audio": {
+              "blocks": 1408,
+              "nonzeroBlocks": 1407,
+              "maxSilentRun": 1,
+              "sampledSilentBlocksAfterOneSecond": 0,
+              "callbackGapMs": {
+                "count": 1407,
+                "p50": 87.59999996423721,
+                "p95": 92.04000002145767,
+                "p99": 95.71000003814697,
+                "max": 111.31000000238419,
+                "over25ms": 1407,
+                "over50ms": 1407
+              },
+              "scheduledGapExcessMs": {
+                "count": 1407,
+                "p50": 2.6666666666605305,
+                "p95": 5.333333333337562,
+                "p99": 5.333333333344667,
+                "max": 24.000000000005723,
+                "over25ms": 0,
+                "over50ms": 0
+              },
+              "scope": "64 sampled PCM values per SDL callback; not acoustic/device underrun proof"
+            },
+            "memoryBytes": 193331200
+          }
+        ]
+      },
+      {
+        "label": "menu-long-a2",
+        "sha256": "3ac64d7a8caeae28d754a98ab5ed32549f93f4d536c31274065a37a27b0b7cec",
+        "identity": {
+          "wasm": "d1dafe25e34d8deb5811ac3504a77750c40316952b004da9319ae3ef12c5eebc",
+          "harness": "1d56ae9eab450e55b174f374efd96df9effa53247c324108b03bc0325eeb6b20",
+          "loader": "616bde9c12ea653538d3b89a7daf354cb9f41b5f89c1ea89828052d9e4e2a1e3",
+          "relay": "83477c7f4084414f539e9b7330c9cd712388d27ab253d6de617f20a16b402a01",
+          "shell": "b359c102540192d696ef48b416a2c23e101cdb12296dc5bc869374f5118fc20b",
+          "audioProbe": "6ab8e3eba7b7348bc204b7478dd895149bb5df0c568abe03ad927bc6b0d98a19"
+        },
+        "parameters": {
+          "limit": 7200,
+          "delay": 39,
+          "jitter": 5,
+          "slow": 2,
+          "dropEvery": 0,
+          "release": true,
+          "profile": false,
+          "inputMode": "tape",
+          "audioOutput": true
+        },
+        "browsers": [
+          "149.0.7827.55",
+          "149.0.7827.55"
+        ],
+        "confirmedChecks": 60,
+        "endpoints": [
+          {
+            "side": 0,
+            "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+            "whole": {
+              "logicHz": 55.93723903940164,
+              "elapsedMs": 125479.91500002146,
+              "firstFrame": 180,
+              "lastFrame": 7199,
+              "callbacks": 7525,
+              "waitCallbacks": 508,
+              "corrections": 1020,
+              "resimulated": 3814,
+              "captures": 7019,
+              "callbackWorkMs": {
+                "count": 7525,
+                "total": 8386.12000221014,
+                "p50": 0.9050000309944153,
+                "p95": 2.814999997615814,
+                "p99": 4.044999957084656,
+                "max": 9.175000011920929,
+                "over25ms": 0,
+                "over50ms": 0
+              },
+              "presentationGapMs": {
+                "count": 7014,
+                "total": 125478.31500000019,
+                "p50": 16.665000000000873,
+                "p95": 16.67000000000553,
+                "p99": 83.32499999999709,
+                "max": 150,
+                "over25ms": 141,
+                "over50ms": 99
+              },
+              "callbackCompletionGapMs": {
+                "count": 7014,
+                "total": 125479.91500002146,
+                "p50": 16.67500001192093,
+                "p95": 19.459999978542328,
+                "p99": 75.05000001192093,
+                "max": 151.4350000023842,
+                "over25ms": 148,
+                "over50ms": 108
+              },
+              "rafGapMs": {
+                "count": 7524,
+                "total": 125478.31500000194,
+                "p50": 16.665000000000873,
+                "p95": 16.67000000000189,
+                "p99": 16.670000000012806,
+                "max": 33.3350000000064,
+                "over25ms": 5,
+                "over50ms": 0
+              },
+              "plannedDelayMs": {
+                "count": 12889,
+                "total": 502036.13189077843,
+                "p50": 38.883189445827156,
+                "p95": 43.4623874197714,
+                "p99": 43.90136676467955,
+                "max": 43.9998973403126,
+                "over25ms": 12889,
+                "over50ms": 0
+              },
+              "deliveredDelayMs": {
+                "count": 12886,
+                "total": 607623.1699995995,
+                "p50": 48.564999997615814,
+                "p95": 58.44499999284744,
+                "p99": 65.3649999499321,
+                "max": 77.21000003814697,
+                "over25ms": 12886,
+                "over50ms": 5610
+              },
+              "scenes": [
+                1,
+                3
+              ]
+            },
+            "inputTapeSha256": "30a66311e181a514d0390ed6278137d466d678a758c99f10cb68d2a61b306571",
+            "confirmedTraceSha256": "4658e5e4f83e1afdc0cdc4cbe1d0c0313bbb093dda4a8dcfbb619bc39da817d4",
+            "segments": [
+              {
+                "phase": 1,
+                "firstFrame": 180,
+                "lastFrame": 4284,
+                "firstMs": 3017.100000023842,
+                "lastMs": 71430.25,
+                "callbacks": 4104,
+                "elapsedMs": 68413.14999997616,
+                "netFrames": 4104
+              },
+              {
+                "phase": 3,
+                "firstFrame": 4285,
+                "lastFrame": 4430,
+                "firstMs": 71446.31000000238,
+                "lastMs": 82346.48000001907,
+                "callbacks": 654,
+                "elapsedMs": 10900.17000001669,
+                "netFrames": 145
+              },
+              {
+                "phase": 1,
+                "firstFrame": 4431,
+                "lastFrame": 7199,
+                "firstMs": 82369.7650000453,
+                "lastMs": 128497.0150000453,
+                "callbacks": 2767,
+                "elapsedMs": 46127.25,
+                "netFrames": 2768
+              }
+            ],
+            "phases": [
+              {
+                "phase": 1,
+                "elapsedMs": 114540.39999997616,
+                "netFrames": 6872,
+                "logicHz": 59.99629824936381,
+                "callbacks": 6871,
+                "waits": 0,
+                "workMs": {
+                  "count": 6871,
+                  "p50": 0.9600000381469727,
+                  "p95": 2.9100000262260437,
+                  "p99": 4.115000009536743,
+                  "max": 9.175000011920929,
+                  "over25ms": 0,
+                  "over50ms": 0
+                },
+                "submittedRafGapMs": {
+                  "count": 6867,
+                  "p50": 16.665000000000873,
+                  "p95": 16.67000000000189,
+                  "p99": 16.670000000012806,
+                  "max": 33.3350000000064,
+                  "over25ms": 6,
+                  "over50ms": 0
+                }
+              },
+              {
+                "phase": 3,
+                "elapsedMs": 10900.17000001669,
+                "netFrames": 145,
+                "logicHz": 13.302544822675058,
+                "callbacks": 654,
+                "waits": 508,
+                "workMs": {
+                  "count": 654,
+                  "p50": 0.0700000524520874,
+                  "p95": 0.4699999690055847,
+                  "p99": 0.7850000262260437,
+                  "max": 0.9700000286102295,
+                  "over25ms": 0,
+                  "over50ms": 0
+                },
+                "submittedRafGapMs": {
+                  "count": 145,
+                  "p50": 66.66500000000815,
+                  "p95": 133.3249999999971,
+                  "p99": 149.99499999999534,
+                  "max": 150,
+                  "over25ms": 134,
+                  "over50ms": 98
+                }
+              }
+            ],
+            "audio": {
+              "blocks": 1506,
+              "nonzeroBlocks": 1504,
+              "maxSilentRun": 2,
+              "sampledSilentBlocksAfterOneSecond": 0,
+              "callbackGapMs": {
+                "count": 1505,
+                "p50": 89.71499997377396,
+                "p95": 90.19999998807907,
+                "p99": 91.24000000953674,
+                "max": 97.47999995946884,
+                "over25ms": 1505,
+                "over50ms": 1505
+              },
+              "scheduledGapExcessMs": {
+                "count": 1505,
+                "p50": 2.6666666666605305,
+                "p95": 5.333333333337562,
+                "p99": 5.333333333344667,
+                "max": 8.000000000000382,
+                "over25ms": 0,
+                "over50ms": 0
+              },
+              "scope": "64 sampled PCM values per SDL callback; not acoustic/device underrun proof"
+            },
+            "memoryBytes": 193331200
+          },
+          {
+            "side": 1,
+            "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+            "whole": {
+              "logicHz": 55.938201954603564,
+              "elapsedMs": 125477.75499999523,
+              "firstFrame": 180,
+              "lastFrame": 7199,
+              "callbacks": 7522,
+              "waitCallbacks": 510,
+              "corrections": 925,
+              "resimulated": 3252,
+              "captures": 7019,
+              "callbackWorkMs": {
+                "count": 7522,
+                "total": 22591.129996955395,
+                "p50": 2.4100000262260437,
+                "p95": 7.75,
+                "p99": 10.980000019073486,
+                "max": 29.125,
+                "over25ms": 1,
+                "over50ms": 0
+              },
+              "presentationGapMs": {
+                "count": 7009,
+                "total": 125478.3100000005,
+                "p50": 16.665000000000873,
+                "p95": 16.67000000000553,
+                "p99": 83.32499999999709,
+                "max": 149.99499999999534,
+                "over25ms": 147,
+                "over50ms": 91
+              },
+              "callbackCompletionGapMs": {
+                "count": 7009,
+                "total": 125477.75499999523,
+                "p50": 16.69999998807907,
+                "p95": 23.1350000500679,
+                "p99": 82.18999999761581,
+                "max": 150.3550000190735,
+                "over25ms": 222,
+                "over50ms": 105
+              },
+              "rafGapMs": {
+                "count": 7521,
+                "total": 125478.31000000228,
+                "p50": 16.665000000000873,
+                "p95": 16.67000000000189,
+                "p99": 16.670000000012806,
+                "max": 33.3350000000064,
+                "over25ms": 8,
+                "over50ms": 0
+              },
+              "plannedDelayMs": {
+                "count": 13026,
+                "total": 508175.0276975692,
+                "p50": 39.00203106785193,
+                "p95": 43.49259327026084,
+                "p99": 43.89165206439793,
+                "max": 43.999474154319614,
+                "over25ms": 13026,
+                "over50ms": 0
+              },
+              "deliveredDelayMs": {
+                "count": 13021,
+                "total": 615217.1949999332,
+                "p50": 48.3299999833107,
+                "p95": 58.25999999046326,
+                "p99": 62.92500001192093,
+                "max": 89.00499999523163,
+                "over25ms": 13021,
+                "over50ms": 5839
+              },
+              "scenes": [
+                1,
+                3
+              ]
+            },
+            "inputTapeSha256": "ff6b34f2c49629c028c19f3360277ede7ac935e22429b25cf07728384cc0fd9d",
+            "confirmedTraceSha256": "4658e5e4f83e1afdc0cdc4cbe1d0c0313bbb093dda4a8dcfbb619bc39da817d4",
+            "segments": [
+              {
+                "phase": 1,
+                "firstFrame": 180,
+                "lastFrame": 4284,
+                "firstMs": 3017.185000002384,
+                "lastMs": 71429.35000002384,
+                "callbacks": 4104,
+                "elapsedMs": 68412.16500002146,
+                "netFrames": 4104
+              },
+              {
+                "phase": 3,
+                "firstFrame": 4285,
+                "lastFrame": 4430,
+                "firstMs": 71447.5,
+                "lastMs": 82278.16500002146,
+                "callbacks": 650,
+                "elapsedMs": 10830.665000021458,
+                "netFrames": 145
+              },
+              {
+                "phase": 1,
+                "firstFrame": 4431,
+                "lastFrame": 7199,
+                "firstMs": 82314.10000002384,
+                "lastMs": 128494.93999999762,
+                "callbacks": 2768,
+                "elapsedMs": 46180.839999973774,
+                "netFrames": 2768
+              }
+            ],
+            "phases": [
+              {
+                "phase": 1,
+                "elapsedMs": 114593.00499999523,
+                "netFrames": 6872,
+                "logicHz": 59.96875638264557,
+                "callbacks": 6872,
+                "waits": 6,
+                "workMs": {
+                  "count": 6872,
+                  "p50": 2.475000023841858,
+                  "p95": 7.944999992847443,
+                  "p99": 11.054999947547913,
+                  "max": 29.125,
+                  "over25ms": 1,
+                  "over50ms": 0
+                },
+                "submittedRafGapMs": {
+                  "count": 6862,
+                  "p50": 16.665000000000873,
+                  "p95": 16.67000000000189,
+                  "p99": 16.670000000012806,
+                  "max": 50,
+                  "over25ms": 14,
+                  "over50ms": 0
+                }
+              },
+              {
+                "phase": 3,
+                "elapsedMs": 10830.665000021458,
+                "netFrames": 145,
+                "logicHz": 13.387912930527602,
+                "callbacks": 650,
+                "waits": 504,
+                "workMs": {
+                  "count": 650,
+                  "p50": 0.19499999284744263,
+                  "p95": 1.5800000429153442,
+                  "p99": 2.490000009536743,
+                  "max": 4.685000002384186,
+                  "over25ms": 0,
+                  "over50ms": 0
+                },
+                "submittedRafGapMs": {
+                  "count": 145,
+                  "p50": 83.32499999999709,
+                  "p95": 133.32500000001164,
+                  "p99": 149.99499999999534,
+                  "max": 149.99499999999534,
+                  "over25ms": 133,
+                  "over50ms": 91
+                }
+              }
+            ],
+            "audio": {
+              "blocks": 1506,
+              "nonzeroBlocks": 1504,
+              "maxSilentRun": 2,
+              "sampledSilentBlocksAfterOneSecond": 0,
+              "callbackGapMs": {
+                "count": 1505,
+                "p50": 88,
+                "p95": 91.63000005483627,
+                "p99": 96.0450000166893,
+                "max": 111.59999996423721,
+                "over25ms": 1505,
+                "over50ms": 1505
+              },
+              "scheduledGapExcessMs": {
+                "count": 1505,
+                "p50": 2.6666666666605305,
+                "p95": 5.333333333337562,
+                "p99": 5.333333333344667,
+                "max": 5.333333333358878,
+                "over25ms": 0,
+                "over50ms": 0
+              },
+              "scope": "64 sampled PCM values per SDL callback; not acoustic/device underrun proof"
+            },
+            "memoryBytes": 193331200
+          }
+        ]
+      }
+    ]
+  },
+  "action": {
+    "label": "menu-frontier-action-gate",
+    "sha256": "5cb8996d6e688785ae1bd194925d41633b0a2808386763855b2ecccac0d0cf94",
+    "passed": true,
+    "wasm": "a3d9f7bd769ce7233ccf96b852e7abb3ae11f47f022b2cf83be91c0f5d46d987",
+    "result": {
+      "passed": 1,
+      "cases": 11520,
+      "retiringActions": 5232,
+      "unguardedSteps": 6208,
+      "restored": true
+    },
+    "scope": "Actual TH09 menu transition action coverage and exact surrounding state restore, not netplay/lifecycle acceptance"
+  },
+  "peers": [
+    {
+      "label": "menu-pause-depth8",
+      "sha256": "c5f00eb2635dc2918d0ddb2cfd7f68a2e746d764bf7c86bba0d48af54fe06279",
+      "passed": true,
+      "wasm": "a3d9f7bd769ce7233ccf96b852e7abb3ae11f47f022b2cf83be91c0f5d46d987",
+      "harnessSha256": "9a6c5c327832fd69f3494206436aeb3b8dafd5c2f3cae39653eb7075321c0ec3",
+      "parameters": {
+        "fixedDelay": 8,
+        "forceCorrection": true,
+        "limit": 1800,
+        "hardware": true,
+        "pauseTrace": true,
+        "inputTrace": "charged-strafe-alternating-focus"
+      },
+      "scope": "Real TH09 per-frame history ring, packet/session and gameplay; injected iteration-delay transport; three sequential worlds in one Chromium process, not real RTC wall-clock pacing or public TURN",
+      "result": {
+        "frames": 1800,
+        "iterations": 1808,
+        "summary": [
+          [
+            1800,
+            1800,
+            1800,
+            14372,
+            1800,
+            2,
+            1,
+            1800
+          ],
+          [
+            1800,
+            1800,
+            1800,
+            14372,
+            1800,
+            2,
+            1,
+            1800
+          ]
+        ],
+        "hashes": [
+          2578630104,
+          2578630104,
+          2578630104
+        ],
+        "audited": [
+          [
+            2035,
+            8,
+            4,
+            -1,
+            0,
+            0,
+            -1023228787,
+            1136797650,
+            3,
+            0,
+            0,
+            1125081789,
+            18925,
+            60,
+            0,
+            35,
+            5,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            -1056239608,
+            1132715658,
+            5,
+            3,
+            0,
+            1131545503,
+            29427,
+            60,
+            0,
+            136,
+            133,
+            4,
+            0,
+            3,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            2035,
+            8,
+            4,
+            -1,
+            0,
+            0,
+            -1023228787,
+            1136797650,
+            3,
+            0,
+            0,
+            1125081789,
+            18925,
+            60,
+            0,
+            35,
+            5,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            -1056239608,
+            1132715658,
+            5,
+            3,
+            0,
+            1131545503,
+            29427,
+            60,
+            0,
+            136,
+            133,
+            4,
+            0,
+            3,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            2035,
+            8,
+            4,
+            -1,
+            0,
+            0,
+            -1023228787,
+            1136797650,
+            3,
+            0,
+            0,
+            1125081789,
+            18925,
+            60,
+            0,
+            35,
+            5,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            -1056239608,
+            1132715658,
+            5,
+            3,
+            0,
+            1131545503,
+            29427,
+            60,
+            0,
+            136,
+            133,
+            4,
+            0,
+            3,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "framebuffersEqual": true,
+        "replayBytes": 1835,
+        "ticks": [
+          1808,
+          1808
+        ],
+        "waits": [
+          8,
+          8
+        ],
+        "milliseconds": [
+          8469.379999220371,
+          8544.389998435974
+        ],
+        "costs": [
+          {
+            "calls": 1620,
+            "p50": 4.540000021457672,
+            "p95": 8.020000040531158,
+            "p99": 8.944999992847443,
+            "max": 12.129999995231628,
+            "correctionCalls": 1620,
+            "completeDeepCalls": 1620,
+            "maxResimulatedInCall": 8
+          },
+          {
+            "calls": 1620,
+            "p50": 4.544999957084656,
+            "p95": 8.049999952316284,
+            "p99": 9.490000009536743,
+            "max": 10.944999992847443,
+            "correctionCalls": 1620,
+            "completeDeepCalls": 1620,
+            "maxResimulatedInCall": 8
+          }
+        ],
+        "peakBullets": [
+          384,
+          384
+        ],
+        "phases": [
+          [
+            1
+          ],
+          [
+            1
+          ]
+        ],
+        "pauseCalls": [
+          192,
+          192
+        ],
+        "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "errors": []
+    },
+    {
+      "label": "menu-result-retry-depth8",
+      "sha256": "81d4bcbc85b1195004871917840de2be8d21cbe803137238073e00bbc0446232",
+      "passed": true,
+      "wasm": "a3d9f7bd769ce7233ccf96b852e7abb3ae11f47f022b2cf83be91c0f5d46d987",
+      "harnessSha256": "9a6c5c327832fd69f3494206436aeb3b8dafd5c2f3cae39653eb7075321c0ec3",
+      "parameters": {
+        "fixedDelay": 8,
+        "forceCorrection": false,
+        "limit": 7200,
+        "hardware": true,
+        "pauseTrace": false,
+        "inputTrace": "endurance-tape"
+      },
+      "scope": "Real TH09 per-frame history ring, packet/session and gameplay; injected iteration-delay transport; three sequential worlds in one Chromium process, not real RTC wall-clock pacing or public TURN",
+      "result": {
+        "frames": 7200,
+        "iterations": 7221,
+        "summary": [
+          [
+            7200,
+            7200,
+            1313,
+            10486,
+            7200,
+            2,
+            1,
+            7200
+          ],
+          [
+            7200,
+            7200,
+            1338,
+            10700,
+            7200,
+            2,
+            1,
+            7200
+          ]
+        ],
+        "hashes": [
+          3544785298,
+          3544785298,
+          3544785298
+        ],
+        "audited": [
+          [
+            38823,
+            42,
+            4,
+            -1,
+            0,
+            1,
+            1124597760,
+            1136656384,
+            10,
+            0,
+            1098907648,
+            1122649290,
+            26565,
+            60,
+            0,
+            26,
+            1,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            -1031140629,
+            1132521658,
+            6,
+            4,
+            1106090392,
+            1128950447,
+            32513,
+            60,
+            0,
+            43,
+            65,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            38823,
+            42,
+            4,
+            -1,
+            0,
+            1,
+            1124597760,
+            1136656384,
+            10,
+            0,
+            1098907648,
+            1122649290,
+            26565,
+            60,
+            0,
+            26,
+            1,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            -1031140629,
+            1132521658,
+            6,
+            4,
+            1106090392,
+            1128950447,
+            32513,
+            60,
+            0,
+            43,
+            65,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            38823,
+            42,
+            4,
+            -1,
+            0,
+            1,
+            1124597760,
+            1136656384,
+            10,
+            0,
+            1098907648,
+            1122649290,
+            26565,
+            60,
+            0,
+            26,
+            1,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            -1031140629,
+            1132521658,
+            6,
+            4,
+            1106090392,
+            1128950447,
+            32513,
+            60,
+            0,
+            43,
+            65,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "framebuffersEqual": true,
+        "replayBytes": 2704,
+        "ticks": [
+          7221,
+          7221
+        ],
+        "waits": [
+          19,
+          13
+        ],
+        "milliseconds": [
+          10758.080000340939,
+          10790.774997591972
+        ],
+        "costs": [
+          {
+            "calls": 7033,
+            "p50": 0.7849999666213989,
+            "p95": 5.685000002384186,
+            "p99": 7.680000007152557,
+            "max": 12.485000014305115,
+            "correctionCalls": 1174,
+            "completeDeepCalls": 1163,
+            "maxResimulatedInCall": 8
+          },
+          {
+            "calls": 7033,
+            "p50": 0.7449999451637268,
+            "p95": 5.884999990463257,
+            "p99": 7.910000026226044,
+            "max": 11.699999988079071,
+            "correctionCalls": 1200,
+            "completeDeepCalls": 1194,
+            "maxResimulatedInCall": 8
+          }
+        ],
+        "peakBullets": [
+          431,
+          431
+        ],
+        "phases": [
+          [
+            1,
+            3
+          ],
+          [
+            1,
+            3
+          ]
+        ],
+        "pauseCalls": [
+          0,
+          0
+        ],
+        "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+      },
+      "errors": []
+    }
+  ],
+  "worlds": [
+    {
+      "label": "menu-world-sparse",
+      "sha256": "8823655a954eb5733acc4462c7c74079fbda2cfe092def1240e9debbd821f765",
+      "passed": true,
+      "dense": false,
+      "characters": [
+        0,
+        1
+      ],
+      "wasm": "a3d9f7bd769ce7233ccf96b852e7abb3ae11f47f022b2cf83be91c0f5d46d987",
+      "scope": "Same live TH09 world restore/resimulation with state inventory and framebuffer comparison; desktop Chromium",
+      "result": {
+        "checkpoints": 270,
+        "frames": 1800,
+        "poolBoundary": 1,
+        "bulletBoundary": 1,
+        "recordingBoundary": 1,
+        "bytes": 1611976,
+        "captureMs": 114.1000007390976,
+        "restoreMs": 113.96000039577484,
+        "stepMs": 281.05000019073486,
+        "status": [
+          1800,
+          -1,
+          0,
+          -1,
+          9,
+          0,
+          2,
+          10,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "session": [
+          1,
+          1800,
+          0,
+          0,
+          0,
+          9,
+          0,
+          1
+        ]
+      },
+      "errors": []
+    },
+    {
+      "label": "menu-world-dense",
+      "sha256": "87037e19d001e9eec47384d3f36a12e530d4114c988fcaba9b549f957bf0e674",
+      "passed": true,
+      "dense": true,
+      "characters": [
+        0,
+        1
+      ],
+      "wasm": "a3d9f7bd769ce7233ccf96b852e7abb3ae11f47f022b2cf83be91c0f5d46d987",
+      "scope": "Same live TH09 world restore/resimulation with state inventory and framebuffer comparison; desktop Chromium",
+      "result": {
+        "checkpoints": 270,
+        "frames": 1800,
+        "poolBoundary": 1,
+        "bulletBoundary": 1,
+        "recordingBoundary": 1,
+        "bytes": 11274252,
+        "captureMs": 640.5600000023842,
+        "restoreMs": 646.3000000715256,
+        "stepMs": 271.8349996805191,
+        "status": [
+          1800,
+          -1,
+          0,
+          -1,
+          9,
+          0,
+          2,
+          10,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "session": [
+          1,
+          1800,
+          0,
+          0,
+          0,
+          9,
+          0,
+          1
+        ]
+      },
+      "errors": []
+    },
+    {
+      "label": "menu-world-round",
+      "sha256": "6a939767c5f702931eea38eb62d4fd264f5e0c11de71f6da435dc3cf9e3110b5",
+      "passed": true,
+      "dense": false,
+      "characters": [
+        0,
+        1
+      ],
+      "wasm": "a3d9f7bd769ce7233ccf96b852e7abb3ae11f47f022b2cf83be91c0f5d46d987",
+      "scope": "Same live TH09 world restore/resimulation with state inventory and framebuffer comparison; desktop Chromium",
+      "result": {
+        "checkpoints": 270,
+        "frames": 1800,
+        "poolBoundary": 1,
+        "bulletBoundary": 1,
+        "recordingBoundary": 1,
+        "bytes": 1432604,
+        "captureMs": 106.83499991893768,
+        "restoreMs": 77.43500059843063,
+        "stepMs": 277.19999969005585,
+        "status": [
+          1800,
+          -1,
+          0,
+          -1,
+          9,
+          0,
+          10,
+          10,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "session": [
+          1,
+          1800,
+          0,
+          0,
+          0,
+          9,
+          0,
+          1
+        ]
+      },
+      "errors": []
+    }
+  ],
+  "transports": [
+    {
+      "label": "menu-release-rtc",
+      "sha256": "e8cfd03b577bf02bd01eaa9a23583b602c0c9d30eb539b409fd367671edb64f4",
+      "passed": true,
+      "wasm": "63b2d839e75a8dfc076b8cd5d3c27cab56eb9bd4ce3f1792e1717b5b703fc950",
+      "browser": "149.0.7827.55",
+      "hardwareRequested": true,
+      "fullSpriteGeometry": false,
+      "scope": "Local real transport, C++ rollback, SharedNetplay, launcher relay, confirmed spectator; desktop Chromium; production WASM smoke, no forced frame limit",
+      "result": {
+        "summary": [
+          [
+            608,
+            602,
+            436,
+            1694,
+            608,
+            6,
+            1,
+            602
+          ],
+          [
+            608,
+            603,
+            435,
+            1849,
+            608,
+            6,
+            1,
+            603
+          ]
+        ],
+        "spectator": 601,
+        "hashes": [
+          1357358377,
+          1357358377,
+          1357358377
+        ],
+        "comparableFinalHashes": false,
+        "routes": [
+          "rtc",
+          "rtc",
+          "spectator"
+        ],
+        "audio": [
+          {
+            "state": "running",
+            "advancedSeconds": 10.490666666666666
+          },
+          {
+            "state": "running",
+            "advancedSeconds": 10.490666666666666
+          },
+          {
+            "state": "running",
+            "advancedSeconds": 10.490666666666666
+          }
+        ],
+        "elapsedMs": 12224.229999959469,
+        "measured": [
+          {
+            "callbackWorkMs": {
+              "count": 630,
+              "total": 1323.9399991631508,
+              "p50": 2.1299999952316284,
+              "p95": 3.840000033378601,
+              "p99": 4.800000011920929,
+              "max": 11.639999985694885,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 606,
+              "total": 10455.285000026226,
+              "p50": 16.6599999666214,
+              "p95": 19.5,
+              "p99": 21.790000021457672,
+              "max": 351.6399999856949,
+              "over50ms": 1
+            },
+            "wasmMemoryBytes": 161087488
+          },
+          {
+            "callbackWorkMs": {
+              "count": 630,
+              "total": 1196.5800004005432,
+              "p50": 1.9900000095367432,
+              "p95": 3.5799999833106995,
+              "p99": 4.375,
+              "max": 5.085000038146973,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 606,
+              "total": 10452.129999995232,
+              "p50": 16.569999992847443,
+              "p95": 21,
+              "p99": 23.10499995946884,
+              "max": 366.1100000143051,
+              "over50ms": 1
+            },
+            "wasmMemoryBytes": 161087488
+          },
+          {
+            "callbackWorkMs": {
+              "count": 630,
+              "total": 228.0949991941452,
+              "p50": 0.34999996423721313,
+              "p95": 0.7950000166893005,
+              "p99": 1.100000023841858,
+              "max": 2.3300000429153442,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 563,
+              "total": 10362.754999995232,
+              "p50": 16.685000002384186,
+              "p95": 30.755000054836273,
+              "p99": 50.38499999046326,
+              "max": 416.125,
+              "over50ms": 6
+            },
+            "wasmMemoryBytes": 134217728
+          }
+        ],
+        "renderers": [
+          "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+        ],
+        "notices": [
+          [
+            0,
+            "正在连接 TH09 联机对手…"
+          ],
+          [
+            1,
+            "正在连接 TH09 联机对手…"
+          ],
+          [
+            2,
+            "正在连接 TH09 联机对手…"
+          ],
+          [
+            2,
+            "已连接 TH09 观战帧流"
+          ],
+          [
+            1,
+            "已连接对手，正在确认版本和对局参数…"
+          ],
+          [
+            0,
+            "已连接对手，正在确认版本和对局参数…"
+          ],
+          [
+            1,
+            "对手已连接 · rollback 对局开始"
+          ],
+          [
+            0,
+            "对手已连接 · rollback 对局开始"
+          ]
+        ]
+      },
+      "errors": [],
+      "relayLog": "Eagler Touhou netplay relay listening ws://127.0.0.1:2929 delay=0 jitter=0 dropEvery=0 dropFirstInput=0 dropInputLatest=off\nLOBBY JOIN room=th09mp-0999 client=rollbackleft peers=1\nLOBBY JOIN room=th09mp-0999 client=rollbackright peers=2\nLOBBY JOIN room=th09mp-0999 client=rollbacktest peers=3\nJOIN room=th09mp-0999 run=1 player=0 peers=1\nSIGNAL JOIN room=th09mp-0999 run=1 player=0 peers=1\nJOIN room=th09mp-0999 run=1 player=1 peers=2\nSIGNAL JOIN room=th09mp-0999 run=1 player=1 peers=2\nSPECTATOR JOIN room=th09mp-0999 run=1 client=rollbacktest\nROUTE room=th09mp-0999 run=1 mode=rtc\nLEAVE room=th09mp-0999 run=1 player=0\nSIGNAL LEAVE room=th09mp-0999 run=1 player=0\nLEAVE room=th09mp-0999 run=1 player=1\nSIGNAL LEAVE room=th09mp-0999 run=1 player=1\nSPECTATOR LEAVE room=th09mp-0999 run=1 client=rollbacktest\nLOBBY LEAVE room=th09mp-0999 client=rollbackright\nLOBBY LEAVE room=th09mp-0999 client=rollbackleft\nLOBBY LEAVE room=th09mp-0999 client=rollbacktest\n"
+    },
+    {
+      "label": "menu-release-relay",
+      "sha256": "2cad1525fd4730f9c7acd8d5c8341509ba58f98f70d03482e8cb5bb1ab2eb664",
+      "passed": true,
+      "wasm": "63b2d839e75a8dfc076b8cd5d3c27cab56eb9bd4ce3f1792e1717b5b703fc950",
+      "browser": "149.0.7827.55",
+      "hardwareRequested": true,
+      "fullSpriteGeometry": false,
+      "scope": "Local real transport, C++ rollback, SharedNetplay, launcher relay, confirmed spectator; desktop Chromium; production WASM smoke, no forced frame limit",
+      "result": {
+        "summary": [
+          [
+            607,
+            603,
+            473,
+            1968,
+            607,
+            0,
+            1,
+            603
+          ],
+          [
+            607,
+            603,
+            469,
+            1894,
+            607,
+            0,
+            1,
+            603
+          ]
+        ],
+        "spectator": 601,
+        "hashes": [
+          1357358377,
+          1357358377,
+          1357358377
+        ],
+        "comparableFinalHashes": false,
+        "routes": [
+          "relay",
+          "relay",
+          "spectator"
+        ],
+        "audio": [
+          {
+            "state": "running",
+            "advancedSeconds": 10.490666666666666
+          },
+          {
+            "state": "running",
+            "advancedSeconds": 10.488
+          },
+          {
+            "state": "running",
+            "advancedSeconds": 10.490666666666666
+          }
+        ],
+        "elapsedMs": 10841.724999964237,
+        "measured": [
+          {
+            "callbackWorkMs": {
+              "count": 629,
+              "total": 1381.6150000691414,
+              "p50": 2.2699999809265137,
+              "p95": 3.8600000143051147,
+              "p99": 4.435000002384186,
+              "max": 12.710000038146973,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 605,
+              "total": 10440.760000050068,
+              "p50": 16.509999990463257,
+              "p95": 19.44999998807907,
+              "p99": 20.709999978542328,
+              "max": 367.05500000715256,
+              "over50ms": 1
+            },
+            "wasmMemoryBytes": 161087488
+          },
+          {
+            "callbackWorkMs": {
+              "count": 629,
+              "total": 1294.840000152588,
+              "p50": 2.189999997615814,
+              "p95": 3.6200000047683716,
+              "p99": 4.550000011920929,
+              "max": 5.355000019073486,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 605,
+              "total": 10440.254999995232,
+              "p50": 16.365000009536743,
+              "p95": 21.725000023841858,
+              "p99": 24.2150000333786,
+              "max": 368.3149999976158,
+              "over50ms": 1
+            },
+            "wasmMemoryBytes": 161087488
+          },
+          {
+            "callbackWorkMs": {
+              "count": 629,
+              "total": 252.01999980211258,
+              "p50": 0.3700000047683716,
+              "p95": 0.8450000286102295,
+              "p99": 1.1700000166893005,
+              "max": 5.685000002384186,
+              "over50ms": 0
+            },
+            "presentationGapMs": {
+              "count": 566,
+              "total": 10342.580000042915,
+              "p50": 16.655000030994415,
+              "p95": 23.759999990463257,
+              "p99": 47.16500002145767,
+              "max": 432.8400000333786,
+              "over50ms": 3
+            },
+            "wasmMemoryBytes": 134217728
+          }
+        ],
+        "renderers": [
+          "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+          "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A78B) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+        ],
+        "notices": [
+          [
+            0,
+            "正在连接 TH09 联机对手…"
+          ],
+          [
+            1,
+            "正在连接 TH09 联机对手…"
+          ],
+          [
+            2,
+            "正在连接 TH09 联机对手…"
+          ],
+          [
+            0,
+            "已连接对手，正在确认版本和对局参数…"
+          ],
+          [
+            1,
+            "已连接对手，正在确认版本和对局参数…"
+          ],
+          [
+            2,
+            "已连接 TH09 观战帧流"
+          ],
+          [
+            1,
+            "对手已连接 · rollback 对局开始"
+          ],
+          [
+            0,
+            "对手已连接 · rollback 对局开始"
+          ]
+        ]
+      },
+      "errors": [],
+      "relayLog": "Eagler Touhou netplay relay listening ws://127.0.0.1:8178 delay=0 jitter=0 dropEvery=0 dropFirstInput=0 dropInputLatest=off\nLOBBY JOIN room=th09mp-0999 client=rollbackleft peers=1\nLOBBY JOIN room=th09mp-0999 client=rollbackright peers=2\nLOBBY JOIN room=th09mp-0999 client=rollbacktest peers=3\nJOIN room=th09mp-0999 run=1 player=0 peers=1\nSIGNAL JOIN room=th09mp-0999 run=1 player=0 peers=1\nJOIN room=th09mp-0999 run=1 player=1 peers=2\nROUTE room=th09mp-0999 run=1 mode=relay\nSIGNAL LEAVE room=th09mp-0999 run=1 player=0\nSPECTATOR JOIN room=th09mp-0999 run=1 client=rollbacktest\nLEAVE room=th09mp-0999 run=1 player=0\nLEAVE room=th09mp-0999 run=1 player=1\nSPECTATOR LEAVE room=th09mp-0999 run=1 client=rollbacktest\nLOBBY LEAVE room=th09mp-0999 client=rollbackleft\nLOBBY LEAVE room=th09mp-0999 client=rollbacktest\nLOBBY LEAVE room=th09mp-0999 client=rollbackright\n"
+    }
+  ],
+  "components": [
+    {
+      "label": "frame-schedule",
+      "sha256": "5528c2f6d5a26c883361c3086883d18c976d37ac1c8100d19f87380d2370a70d"
+    },
+    {
+      "label": "session",
+      "sha256": "aa9c882fb82d1eb5c48a638e2a9932ab0ca462e4970b5b47b478f216494d98d4"
+    },
+    {
+      "label": "dynamic-state",
+      "sha256": "450ebd2efd183d6c6e71b8ede48a88866a3d39eafe749a8eb9c2c30a9356d944"
+    },
+    {
+      "label": "bullet-snapshot",
+      "sha256": "24f8dc7b76a6559bef87b84f215777c08cae46f154a75733edc385b5e2bbb50e"
+    }
+  ],
+  "ui": {
+    "sha256": "add72850f4720c4b068b865fde1d9654941e9cb6322bd768200f96d9d2887eb8",
+    "harnessSha256": "747f1220e4fcada6fa9510c7fdb91c71dce5a91caaa78b09d456f854a3346748",
+    "passed": true,
+    "wasm": "a3d9f7bd769ce7233ccf96b852e7abb3ae11f47f022b2cf83be91c0f5d46d987",
+    "physicalPhone": false,
+    "states": [
+      {
+        "name": "paused",
+        "peers": [
+          {
+            "status": {
+              "title": [
+                644,
+                0,
+                16,
+                1,
+                5,
+                10,
+                1,
+                -1
+              ],
+              "session": [
+                1,
+                381,
+                0,
+                0,
+                0,
+                9,
+                0,
+                1
+              ],
+              "touch": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "network": [
+              31,
+              1,
+              0,
+              431,
+              1,
+              0
+            ],
+            "rollback": [
+              431,
+              430,
+              6,
+              20,
+              431,
+              0,
+              1,
+              430
+            ],
+            "message": "已连接 · rollback · 左侧 1P"
+          },
+          {
+            "status": {
+              "title": [
+                479,
+                0,
+                16,
+                1,
+                5,
+                10,
+                1,
+                -1
+              ],
+              "session": [
+                1,
+                381,
+                0,
+                0,
+                0,
+                9,
+                0,
+                1
+              ],
+              "touch": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "network": [
+              31,
+              1,
+              0,
+              431,
+              1,
+              1
+            ],
+            "rollback": [
+              431,
+              430,
+              7,
+              10,
+              431,
+              0,
+              1,
+              430
+            ],
+            "message": "已连接 · rollback · 右侧 2P"
+          }
+        ]
+      },
+      {
+        "name": "synchronized",
+        "snapshots": [
+          {
+            "frame": 728,
+            "confirmed": 728,
+            "hash": 2162096979,
+            "state": {
+              "title": [
+                941,
+                0,
+                16,
+                1,
+                5,
+                10,
+                1,
+                -1
+              ],
+              "session": [
+                1,
+                649,
+                0,
+                0,
+                0,
+                9,
+                0,
+                1
+              ],
+              "touch": [
+                1,
+                1,
+                0,
+                0
+              ]
+            }
+          },
+          {
+            "frame": 728,
+            "confirmed": 728,
+            "hash": 2162096979,
+            "state": {
+              "title": [
+                776,
+                0,
+                16,
+                1,
+                5,
+                10,
+                1,
+                -1
+              ],
+              "session": [
+                1,
+                649,
+                0,
+                0,
+                0,
+                9,
+                0,
+                1
+              ],
+              "touch": [
+                1,
+                1,
+                0,
+                0
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "retry",
+        "peers": [
+          {
+            "status": {
+              "title": [
+                2144,
+                0,
+                16,
+                1,
+                5,
+                10,
+                1,
+                -1
+              ],
+              "session": [
+                1,
+                3,
+                0,
+                0,
+                0,
+                9,
+                0,
+                1
+              ],
+              "touch": [
+                2,
+                0,
+                0,
+                0
+              ]
+            },
+            "network": [
+              31,
+              1,
+              0,
+              1931,
+              1,
+              0
+            ],
+            "rollback": [
+              1931,
+              1931,
+              1154,
+              1360,
+              1931,
+              0,
+              1,
+              1931
+            ],
+            "message": "已连接 · rollback · 左侧 1P"
+          },
+          {
+            "status": {
+              "title": [
+                1980,
+                0,
+                16,
+                1,
+                5,
+                10,
+                1,
+                -1
+              ],
+              "session": [
+                1,
+                4,
+                0,
+                0,
+                0,
+                9,
+                0,
+                1
+              ],
+              "touch": [
+                2,
+                0,
+                0,
+                0
+              ]
+            },
+            "network": [
+              31,
+              1,
+              0,
+              1932,
+              1,
+              1
+            ],
+            "rollback": [
+              1932,
+              1930,
+              986,
+              1007,
+              1932,
+              0,
+              1,
+              1930
+            ],
+            "message": "已连接 · rollback · 右侧 2P"
+          }
+        ]
+      },
+      {
+        "name": "localReplayAfterMatch",
+        "peers": [
+          {
+            "status": {
+              "title": [
+                4316,
+                1,
+                1,
+                1,
+                0,
+                2,
+                0,
+                104
+              ],
+              "session": [
+                5,
+                2072,
+                0,
+                0,
+                0,
+                9,
+                0,
+                1
+              ],
+              "touch": [
+                0,
+                0,
+                0,
+                1
+              ]
+            },
+            "network": [
+              31,
+              1,
+              0,
+              0,
+              0,
+              0
+            ],
+            "rollback": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "message": "本局结束 · 存档和录像保存在本机"
+          },
+          {
+            "status": {
+              "title": [
+                4152,
+                1,
+                15,
+                2,
+                0,
+                35,
+                0,
+                104
+              ],
+              "session": [
+                5,
+                2072,
+                0,
+                0,
+                0,
+                9,
+                0,
+                1
+              ],
+              "touch": [
+                0,
+                0,
+                0,
+                1
+              ]
+            },
+            "network": [
+              31,
+              1,
+              0,
+              0,
+              0,
+              1
+            ],
+            "rollback": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "message": "本局结束 · 存档和录像保存在本机"
+          }
+        ]
+      },
+      {
+        "name": "reconnected",
+        "peers": [
+          {
+            "status": {
+              "title": [
+                4328,
+                1,
+                7,
+                0,
+                0,
+                0,
+                0,
+                -1
+              ],
+              "session": [
+                5,
+                2072,
+                0,
+                0,
+                0,
+                9,
+                0,
+                1
+              ],
+              "touch": [
+                0,
+                0,
+                0,
+                1
+              ]
+            },
+            "network": [
+              31,
+              1,
+              0,
+              0,
+              1,
+              0
+            ],
+            "rollback": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0
+            ],
+            "message": "已连接 · rollback · 左侧 1P"
+          },
+          {
+            "status": {
+              "title": [
+                4171,
+                1,
+                7,
+                0,
+                0,
+                0,
+                0,
+                -1
+              ],
+              "session": [
+                5,
+                2072,
+                0,
+                0,
+                0,
+                9,
+                0,
+                1
+              ],
+              "touch": [
+                0,
+                0,
+                0,
+                1
+              ]
+            },
+            "network": [
+              31,
+              1,
+              0,
+              0,
+              1,
+              1
+            ],
+            "rollback": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0
+            ],
+            "message": "已连接 · rollback · 右侧 2P"
+          }
+        ]
+      }
+    ],
+    "errors": []
+  },
+  "retainedInvalidRun": {
+    "label": "endurance-menu-candidate-1",
+    "sha256": "e614027eb0a9d98ebac5b713de28af58d4774325eb251e370455f49860127fdb",
+    "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 2852122966\n- 1939813052\n\n    at file:///D:/workspace/eagler/worktrees/th09-multiplayer/th09_web/tests/multiplayer/smoothness-browser.mjs:159:23",
+    "partialFrontiers": [
+      [
+        7205,
+        7201,
+        1140,
+        4453,
+        7205,
+        2,
+        1,
+        7201
+      ],
+      [
+        7205,
+        7205,
+        1014,
+        3381,
+        7205,
+        3,
+        1,
+        7201
+      ]
+    ],
+    "reason": "Invalid same-speculative-frame endpoint assertion. All 60 confirmed checks agree with peers and baseline. Replaced by fully-published endpoint plus complete confirmed-trace gates; this failed run is not counted in the passing A/B/B/A."
+  },
+  "runtime": {
+    "directory": "th09_web/build-eagler-multiplayer",
+    "version": {
+      "game": "th09",
+      "build": "63b2d839e75a8dfc076b8cd5"
+    },
+    "files": {
+      "th09.html": {
+        "bytes": 868,
+        "sha256": "c11bc8a55cc839d073fef78ec3a7264b7a68f5f98e4dc9730e6e5eba640434e9"
+      },
+      "shell.mjs": {
+        "bytes": 15376,
+        "sha256": "406d53841ce76aa7cfc5ce5ae7113a435cbf229648a11ac7b79bfd63453e49b6"
+      },
+      "managed.css": {
+        "bytes": 733,
+        "sha256": "de937f099fb554673b3d5602482e9d753097a3d8b78b267baa59d25080db95da"
+      },
+      "keyboard.mjs": {
+        "bytes": 1298,
+        "sha256": "440891dbc042e01389ea7240ddf4287746d7c33a327fcf0746dda9e52d2aa274"
+      },
+      "shared-netplay.mjs": {
+        "bytes": 10774,
+        "sha256": "b359c102540192d696ef48b416a2c23e101cdb12296dc5bc869374f5118fc20b"
+      },
+      "motion-replay.mjs": {
+        "bytes": 1866,
+        "sha256": "63bf01c6b5fed1e7a9e792837b0a7db27e69926ffe4362974eb7abaa62ec8938"
+      },
+      "th09.mjs": {
+        "bytes": 252087,
+        "sha256": "6962b81fc37ab122a5143ffdee1f5a4824b744d4e1e1e6f91af635d5211693b7"
+      },
+      "th09.wasm": {
+        "bytes": 2797241,
+        "sha256": "63b2d839e75a8dfc076b8cd5d3c27cab56eb9bd4ce3f1792e1717b5b703fc950"
+      },
+      "fonts/cp932.bin": {
+        "bytes": 131072,
+        "sha256": "30def450df87f3f0765907e7e9d6873f42b891b394ac7b143952b30a5d514919"
+      },
+      "fonts/blend.bin": {
+        "bytes": 131072,
+        "sha256": "cd7099994c1d25a9526fba4422c518b38fbb4e7ac9940288adc0c0ddef2106eb"
+      },
+      "manifest.json": {
+        "bytes": 144,
+        "sha256": "d9a9637a0b89e3c3ec0d44f9c925f9eb3690bab130d5d114f1dc3ddd615ff6c6"
+      },
+      "version.json": {
+        "bytes": 51,
+        "sha256": "741a39f8d1a9b3328841671fb71f61100f21b365fc17861c792e7cfa0b1d6a87"
+      }
+    }
+  }
+}

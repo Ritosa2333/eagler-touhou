@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
-import {mkdirSync,writeFileSync} from 'node:fs';
+import {mkdirSync,readFileSync,writeFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
+import {resolve,sep} from 'node:path';
 import {presentationServer} from '../../scripts/presentation-server.mjs';
 import {launchBrowser} from '../../../th10_web/scripts/native/browser-launch.mjs';
-const output=fileURLToPath(new URL('../../artifacts/sdl3/browser/netplay/',import.meta.url));mkdirSync(output,{recursive:true});
-const {server,url,netplay:relay}=await presentationServer(),browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required']}),contexts=await Promise.all([browser.newContext({viewport:{width:700,height:620}}),browser.newContext({viewport:{width:700,height:620}})]),pages=await Promise.all(contexts.map(c=>c.newPage())),errors=[],states=[];
+const artifactDirectory=resolve(process.env.PC_BUILD||fileURLToPath(new URL('../../artifacts/sdl3/',import.meta.url)));
+const output=resolve(artifactDirectory,'browser/netplay')+sep;mkdirSync(output,{recursive:true});
+const wasm=JSON.parse(readFileSync(resolve(artifactDirectory,'build.json'))).sha256;
+const {server,url,netplay:relay}=await presentationServer(0,{artifactDirectory}),browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required']}),contexts=await Promise.all([browser.newContext({viewport:{width:700,height:620}}),browser.newContext({viewport:{width:700,height:620}})]),pages=await Promise.all(contexts.map(c=>c.newPage())),errors=[],states=[];
 for(const p of pages){p.on('pageerror',e=>errors.push(e.stack));p.on('console',e=>{if(e.type()==='error')errors.push(e.text());});}
 const state=()=>Promise.all(pages.map(p=>p.evaluate(()=>({status:__th09Runtime.status(),network:__th09Runtime.netplay.info(),rollback:Array.from(__th09Runtime.core.HEAPU32.subarray(__th09Runtime.core._th09_rollback_info()/4,__th09Runtime.core._th09_rollback_info()/4+8)),message:document.querySelector('#network-status').textContent}))));
 const progress=setInterval(async()=>{console.log(JSON.stringify(await state().catch(()=>null)));},10000);
@@ -59,6 +62,6 @@ try{
  await pages[0].locator('#network-open').click();await pages[0].locator('#network-create').click();await pages[0].waitForFunction(()=>/房间 [0-9A-F]{12}/.test(document.querySelector('#network-status').textContent));const nextCode=(await pages[0].locator('#network-status').textContent()).match(/[0-9A-F]{12}/)[0];
  await pages[1].locator('#network-open').click();await pages[1].locator('#network-code').fill(nextCode);await pages[1].locator('#network-join').click();await wait(()=>__th09Runtime.netplay.active);states.push({name:'reconnected',peers:await state()});
  await pages[0].evaluate(()=>__th09Runtime.netplay.close());await wait(()=>!__th09Runtime.netplay.active);
- for(let n=0;n<2;++n)await pages[n].screenshot({path:output+'player-'+n+'.png'});assert.equal(relay.roomCount(),0);assert.equal(errors.length,0,errors.join('\n'));writeFileSync(output+'report.json',JSON.stringify({passed:true,physicalPhone:false,states,errors},null,2));console.log(JSON.stringify({passed:true,states}));
+ for(let n=0;n<2;++n)await pages[n].screenshot({path:output+'player-'+n+'.png'});assert.equal(relay.roomCount(),0);assert.equal(errors.length,0,errors.join('\n'));writeFileSync(output+'report.json',JSON.stringify({passed:true,wasm,physicalPhone:false,states,errors},null,2));console.log(JSON.stringify({passed:true,wasm,states}));
 }catch(e){writeFileSync(output+'failure.json',JSON.stringify({error:e.stack,errors,states,current:await state().catch(()=>null)},null,2));console.error(e);process.exitCode=1;}
 finally{clearInterval(progress);clearTimeout(deadline);await browser.close();relay.close();await new Promise(resolve=>server.close(resolve));}
