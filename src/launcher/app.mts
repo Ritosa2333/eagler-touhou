@@ -4670,18 +4670,26 @@ const hostedGameKeys = new Set([
 // empty or Unidentified. These are DOM virtual-key values, not Android's raw
 // KEYCODE_DPAD_* 19..22 values; Chromium converts the latter before Web events.
 const hostedGameLegacyKeyCodes = new Set([8, 9, 13, 16, 17, 27, 36, 37, 38, 39, 40, 68, 81, 82, 83, 88, 90, 112, 113, 114, 115, 116, 117, 118, 123]);
+const forwardedHostedKeys = new Set<string>();
 function forwardHostedKeyboard(event: KeyboardEvent) {
-  if (!state.launched || !player.classList.contains("open") || !frame.contentWindow) return;
-  if (event.metaKey || event.altKey) return;
-  // While the Launcher's own chrome holds focus the keys belong to it: room
-  // codes, decision buttons and dialogs must never drive the running game.
-  if (event.target instanceof Element && event.target.closest("input, select, textarea, button, dialog, [role='dialog']")) return;
+  if (!state.launched || !player.classList.contains("open") || !frame.contentWindow) {
+    forwardedHostedKeys.clear();
+    return;
+  }
+  const down = event.type === "keydown";
+  if (down && (event.metaKey || event.altKey)) return;
   const key = String(event.key || "").toLowerCase();
   const keyCode = Number.isInteger(event.keyCode) ? event.keyCode : 0;
   if (!hostedGameKeyCodes.has(event.code || "") && !hostedGameKeys.has(key) && !hostedGameLegacyKeyCodes.has(keyCode)) return;
+  const identity = keyCode ? `code:${keyCode}` : event.code ? `physical:${event.code}` : `key:${key}`;
+  const ownedByLauncher = event.target instanceof Element && !!event.target.closest("input, select, textarea, button, dialog, [role='dialog']");
+  // If a key went down over the game, always deliver its release. Focus can
+  // move to Launcher controls before keyup, leaving Shift latched in Runtime.
+  if (ownedByLauncher && (down || !forwardedHostedKeys.has(identity))) return;
+  if (down) forwardedHostedKeys.add(identity); else forwardedHostedKeys.delete(identity);
   const context = touchRuntimeMessageContext();
   deliverRuntimeInput(context, {
-    protocol, game: state.game, epoch: context.epoch, command: "keyboard", down: event.type === "keydown",
+    protocol, game: state.game, epoch: context.epoch, command: "keyboard", down,
     code: event.code || "", key: event.key || "", keyCode,
     location: Number.isInteger(event.location) ? event.location : 0
   });
@@ -4691,6 +4699,7 @@ window.addEventListener("keydown", forwardHostedKeyboard, true);
 window.addEventListener("keyup", forwardHostedKeyboard, true);
 function clearHostedKeyboard() {
   releaseHeldTouchFire();
+  forwardedHostedKeys.clear();
   if (!state.launched || !frame.contentWindow) return;
   const context = touchRuntimeMessageContext();
   deliverRuntimeInput(context,
