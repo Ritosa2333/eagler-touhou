@@ -7452,7 +7452,10 @@ function renderMpRoom() {
   const inputTiming=document.getElementById("mpInputTiming");
   if(inputTiming)inputTiming.hidden=state.product!=="th08mp";
   const inputDelay=document.querySelector<HTMLSelectElement>("#mpInputDelay");
-  if(inputDelay)inputDelay.disabled=!roomReady||!ownerLocal||room.phase!=="lobby";
+  if(inputDelay){
+    inputDelay.disabled=!roomReady||!ownerLocal||room.phase!=="lobby";
+    syncCustomSelect(inputDelay);
+  }
   $("#mpRoomSettingsHint").textContent = t(ownerLocal ? "multiplayer.ownerLocalHint" : !room.seats?.[0] ? "room.hostAvailable" : "multiplayer.ownerRemoteHint");
 
 
