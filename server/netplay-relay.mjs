@@ -698,13 +698,16 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         return;
       }
       const inputDelay = message.inputDelay === undefined ? 0 : Number(message.inputDelay);
-      const predictionLimit = message.predictionLimit === undefined ? 8 : Number(message.predictionLimit);
+      const th08Timing = roomId.startsWith('th08mp-');
+      const predictionLimit = th08Timing
+        ? (message.predictionLimit === undefined ? 8 : Number(message.predictionLimit))
+        : room.lobby.predictionLimit;
       if (!Number.isInteger(inputDelay) || inputDelay < 0 || inputDelay > 8 ||
-          !Number.isInteger(predictionLimit) || predictionLimit < 1 || predictionLimit > 8) {
+          (th08Timing && (!Number.isInteger(predictionLimit) || predictionLimit < 1 || predictionLimit > 8))) {
         sendLobby(socket, { type: 'error', error: 'invalid input timing' }); return;
       }
       room.lobby.inputDelay = inputDelay;
-      room.lobby.predictionLimit = predictionLimit;
+      if (th08Timing) room.lobby.predictionLimit = predictionLimit;
       room.lobby.phase = 'starting';
       room.lobby.startSerial++;
       const run = getRun(room, String(room.lobby.startSerial));

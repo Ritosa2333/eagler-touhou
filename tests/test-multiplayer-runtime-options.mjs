@@ -45,6 +45,10 @@ assert.deepEqual(buildMultiplayerRuntimeOptions(base, th06), {
 const th08Timing=buildMultiplayerRuntimeOptions({ ...base, inputDelay: 4, predictionLimit: 2 }, th06);
 assert.equal(th08Timing.netplayInputDelay, 4);
 assert.equal(th08Timing.netplayPredictionLimit, 2);
+const inputDelayOnly=buildMultiplayerRuntimeOptions({ ...base, inputDelay: 3 }, th06);
+assert.equal(inputDelayOnly.netplayInputDelay, 3);
+assert.equal("netplayPredictionLimit" in inputDelayOnly, false,
+  "TH09/TH10 input delay must not silently override each title's rollback limit");
 
 const spectator = buildMultiplayerRuntimeOptions({
   ...base,

@@ -1,6 +1,6 @@
 import { prepareRuntimeLaunch } from "./runtime-launch.mjs";
 import { createRoomNetwork } from "./room-network.mjs";
-import { recommendTh08InputTiming } from "./th08-input-timing.mjs";
+import { recommendMultiplayerInputTiming } from "./multiplayer-input-timing.mjs";
 import { initializeGameLibrary } from "./game-library.mjs";
 import { PACKAGE_DESCRIPTOR_SCHEMA } from "../../package/package-descriptor.mjs";
 import { componentFileIds } from "../../package/package-generation.mjs";
@@ -1845,6 +1845,7 @@ const runtimeGapDiag = $("#runtimeGapDiag");
 const runtimeAudioDiag = $("#runtimeAudioDiag");
 const runtimeRendererDiag = $("#runtimeRendererDiag");
 const runtimeNetplaySessionDiag = $("#runtimeNetplaySessionDiag");
+const runtimeNetplayInputDelayDiag = $("#runtimeNetplayInputDelayDiag");
 const runtimeNetplayRouteDiag = $("#runtimeNetplayRouteDiag");
 const runtimeNetplayFrameDiag = $("#runtimeNetplayFrameDiag");
 const runtimeNetplayRollbackDiag = $("#runtimeNetplayRollbackDiag");
@@ -1953,6 +1954,7 @@ interface RuntimeNetplaySnapshot {
   mode: string;
   active: boolean;
   spectator: boolean;
+  inputDelay: number | null;
   transport: string;
   path: string;
   frame: number | null;
@@ -2017,7 +2019,7 @@ function resetRuntimeDiagnostics() {
   setRuntimeDiagnostic(runtimeGapDiag, t("diagnostics.maxGap", { value: "--" }));
   setRuntimeDiagnostic(runtimeAudioDiag, t("diagnostics.audio", { value: "--" }));
   setRuntimeDiagnostic(runtimeRendererDiag, t("diagnostics.graphics", { value: "--" }));
-  for (const line of [runtimeNetplaySessionDiag, runtimeNetplayRouteDiag, runtimeNetplayFrameDiag, runtimeNetplayRollbackDiag, runtimeNetplayQualityDiag, runtimeNetplayIceDiag]) {
+  for (const line of [runtimeNetplaySessionDiag, runtimeNetplayInputDelayDiag, runtimeNetplayRouteDiag, runtimeNetplayFrameDiag, runtimeNetplayRollbackDiag, runtimeNetplayQualityDiag, runtimeNetplayIceDiag]) {
     line.hidden = true;
   }
   runtimeDiagnostics.classList.remove("warn", "bad");
@@ -2089,6 +2091,7 @@ function runtimeNetplaySnapshot(): RuntimeNetplaySnapshot | null {
     mode,
     active: value("__eaglerNetplayLanActive") === true,
     spectator: value("__eaglerNetplaySpectator") === true || state.netplay.spectator === true,
+    inputDelay: number("__eaglerNetplayInputDelayFrames"),
     transport: String(value("__eaglerNetplayTransport") || "connecting"),
     path: String(value("__eaglerNetplayPath") || "connecting"),
     frame: number("__eaglerNetplayLanFrame"),
@@ -2236,7 +2239,7 @@ function updateNetplayDiagnostics() {
   const net = runtimeNetplaySnapshot();
   updateNetplayConnectionWindow(net);
   updateNetplayPlayerStatus(net);
-  const lines = [runtimeNetplaySessionDiag, runtimeNetplayRouteDiag, runtimeNetplayFrameDiag, runtimeNetplayRollbackDiag, runtimeNetplayQualityDiag, runtimeNetplayIceDiag];
+  const lines = [runtimeNetplaySessionDiag, runtimeNetplayInputDelayDiag, runtimeNetplayRouteDiag, runtimeNetplayFrameDiag, runtimeNetplayRollbackDiag, runtimeNetplayQualityDiag, runtimeNetplayIceDiag];
   for (const line of lines) line.hidden = !net;
   if (!net) return;
 
@@ -2246,6 +2249,9 @@ function updateNetplayDiagnostics() {
   const role = net.spectator ? t("diagnostics.netplayRoleSpectator", { players: playerCount }) : `P${playerIndex + 1}/${playerCount}`;
   setRuntimeDiagnostic(runtimeNetplaySessionDiag, t("diagnostics.netplayRuntime", {
     room, role, runtime: `${state.runtimeVariant}/${net.mode || "--"}`,
+  }));
+  setRuntimeDiagnostic(runtimeNetplayInputDelayDiag, t("diagnostics.inputDelay", {
+    frames: Math.max(0, Math.trunc(net.inputDelay ?? (Number(state.netplay.inputDelay) || 0))),
   }));
 
   const transport = net.transport === "rtc" ? "RTC" : net.transport === "relay" ? "WS Relay" : net.transport === "spectator"
@@ -4381,8 +4387,10 @@ function validatedNetplayOptions() {
     playerCount: state.netplay.playerCount,
     seed: state.netplay.seed,
     difficulty: state.netplay.difficulty,
-    ...(state.product === "th08mp" ? {
+    ...(["th08mp", "th09mp", "th10mp"].includes(state.product) ? {
       inputDelay: state.netplay.inputDelay,
+    } : {}),
+    ...(state.product === "th08mp" ? {
       predictionLimit: state.netplay.predictionLimit,
     } : {}),
     spectator: state.netplay.spectator === true,
@@ -6294,11 +6302,11 @@ $("#mpReady").addEventListener("click", async () => {
 $("#mpCheckGame").addEventListener("click", () => { void mpCheckGame(); });
 $("#mpStartGame").addEventListener("click", async () => {
   if (!mpRoomOwnerLocal() || !mpUiState.ready || !mpLobby.connected) return;
-  if(state.product==="th08mp"){
-    const recommendation=mpTh08TimingRecommendation();
+  if(["th08mp","th09mp","th10mp"].includes(state.product)){
+    const recommendation=mpInputTimingRecommendation();
     const chosen=Number(document.querySelector<HTMLSelectElement>("#mpInputDelay")?.value);
     const inputDelay=Number.isInteger(chosen)&&chosen>=0&&chosen<=8?chosen:recommendation.inputDelay;
-    mpLobbySend({ type: "start", inputDelay, predictionLimit: 8 });
+    mpLobbySend(state.product==="th08mp"?{ type: "start", inputDelay, predictionLimit: 8 }:{ type: "start", inputDelay });
   }else mpLobbySend({ type: "start" });
 });
 
@@ -7319,7 +7327,7 @@ function mpSetLoadout(delta: number) {
   renderMpRoom();
 }
 
-function mpTh08TimingRecommendation() {
+function mpInputTimingRecommendation() {
   const room=mpUiState.room;
   const seats=room?.seats?.slice(0,room.playerCount) || [];
   const phones=seats.reduce((count,seat,index)=>count+(seat &&
@@ -7331,7 +7339,8 @@ function mpTh08TimingRecommendation() {
       .find(value=>value.state==="connected"&&value.rtt!=null);
     if(metric?.rtt!=null){rtt=Math.max(rtt??0,metric.rtt);jitter=Math.max(jitter??0,metric.jitter??0);}
   }
-  return recommendTh08InputTiming(phones,rtt,jitter);
+  const rollbackLimit=state.product==="th10mp"?12:8;
+  return recommendMultiplayerInputTiming(phones,rtt,jitter,rollbackLimit);
 }
 
 function renderRoomNetwork() {
@@ -7339,9 +7348,10 @@ function renderRoomNetwork() {
   const room = mpUiState.room;
   if (!container || !room) return;
   const timingHint=document.getElementById("mpInputTimingHint");
-  if(timingHint && state.product==="th08mp"){
-    const advice=mpTh08TimingRecommendation();
-    timingHint.textContent=t("room.inputTimingHint",{delay:advice.inputDelay,limit:8,target:advice.targetRollbackFrames,
+  if(timingHint && ["th08mp","th09mp","th10mp"].includes(state.product)){
+    const advice=mpInputTimingRecommendation();
+    const rollbackLimit=state.product==="th10mp"?12:8;
+    timingHint.textContent=t("room.inputTimingHint",{delay:advice.inputDelay,limit:rollbackLimit,target:advice.targetRollbackFrames,
       phones:advice.mobileSeats,network:advice.networkFrames});
   }
   const peers = (room.seats || []).slice(0, room.playerCount).flatMap((seat, index) => seat && index !== mpUiState.seat ? [{ seat, index }] : []);
@@ -7466,7 +7476,7 @@ function renderMpRoom() {
   $("#mpRoomPlayerCount").disabled = !roomReady || !ownerLocal;
   $("#mpRoomDifficulty").disabled = !roomReady || !ownerLocal;
   const inputTiming=document.getElementById("mpInputTiming");
-  if(inputTiming)inputTiming.hidden=state.product!=="th08mp";
+  if(inputTiming)inputTiming.hidden=!["th08mp","th09mp","th10mp"].includes(state.product);
   const inputDelay=document.querySelector<HTMLSelectElement>("#mpInputDelay");
   if(inputDelay){
     inputDelay.disabled=!roomReady||!ownerLocal||room.phase!=="lobby";

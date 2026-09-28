@@ -90,7 +90,9 @@ export function buildMultiplayerRuntimeOptions(
     netplayDifficulty: difficulty,
     ...(input.inputDelay !== undefined ? {
       netplayInputDelay: Number.isInteger(input.inputDelay) && input.inputDelay >= 0 && input.inputDelay <= 8 ? input.inputDelay : 0,
-      netplayPredictionLimit: Number.isInteger(input.predictionLimit) && input.predictionLimit! >= 1 && input.predictionLimit! <= 8 ? input.predictionLimit! : 8,
+    } : {}),
+    ...(input.predictionLimit !== undefined ? {
+      netplayPredictionLimit: Number.isInteger(input.predictionLimit) && input.predictionLimit >= 1 && input.predictionLimit <= 8 ? input.predictionLimit : 8,
     } : {}),
     netplaySpectator: spectator,
     netplaySpectatorId: spectator ? input.spectatorId : "",

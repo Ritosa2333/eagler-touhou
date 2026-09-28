@@ -152,6 +152,26 @@ async function verifyTh08Timing(port) {
   } finally { p1.close(1000);p2.close(1000); }
 }
 
+async function verifyFixedRollbackInputDelay(port, product) {
+  const room=`${product}-timing${Date.now().toString(36)}`;
+  const p1=await openLobby(port,room,`${product}_timing_p1`);
+  const p2=await openLobby(port,room,`${product}_timing_p2`);
+  try {
+    await sendAndMatch(p1,{type:"take-seat",seat:0,loadout:0,ready:false,movementMode:"normal",touchEnabled:false,mobileDevice:false},
+      response=>response.room?.seats?.[0]?.clientId===`${product}_timing_p1`);
+    await sendAndMatch(p2,{type:"take-seat",seat:1,loadout:1,ready:false,movementMode:"normal",touchEnabled:false,mobileDevice:false},
+      response=>response.room?.seats?.[1]?.clientId===`${product}_timing_p2`);
+    await sendAndMatch(p1,{type:"set-ready",ready:true,movementMode:"normal",touchEnabled:false,mobileDevice:false},
+      response=>response.room?.seats?.[0]?.ready===true);
+    await sendAndMatch(p2,{type:"set-ready",ready:true,movementMode:"normal",touchEnabled:false,mobileDevice:false},
+      response=>response.room?.seats?.[1]?.ready===true);
+    const started=await sendAndMatch(p1,{type:"start",inputDelay:3,predictionLimit:2},response=>response.type==="start");
+    assert.equal(started.room.inputDelay,3);
+    assert.equal(started.room.predictionLimit,8,
+      `${product} must not let lobby timing override its runtime rollback policy`);
+  } finally { p1.close(1000);p2.close(1000); }
+}
+
 const port = await freePort();
 const relayEnv = {
   ...process.env,
@@ -172,6 +192,8 @@ try {
   for (const game of multiplayerGames) await verifyProduct(port, game);
   await verifyGenericRoom(port);
   await verifyTh08Timing(port);
+  await verifyFixedRollbackInputDelay(port,"th09mp");
+  await verifyFixedRollbackInputDelay(port,"th10mp");
 } finally {
   relay.kill();
 }

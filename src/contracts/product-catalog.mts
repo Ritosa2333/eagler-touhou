@@ -249,8 +249,8 @@ export const PRODUCT_GAMES = Object.freeze({
       difficulties: TH09_MULTIPLAYER_DIFFICULTIES,
       loadouts: TH09_MULTIPLAYER_LOADOUTS,
       peerTransportGlobal: "__th09PeerTransport",
-      // TH09's two-player lockstep publishes confirmed inputs to admitted
-      // spectators through the same relay backlog used by TH06/07.
+      // TH09's two-player rollback session publishes confirmed inputs to
+      // admitted spectators without reviving the deprecated lockstep path.
       spectator: true,
       titleRoomEntry: true,
     }),
