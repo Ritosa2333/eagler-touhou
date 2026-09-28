@@ -20,6 +20,7 @@ public:
         for(auto& v:instances)for(auto& a:v)std::memset(&a,0,sizeof(a));
     }
     bool initialize();
+    void reset_instances();
     bool prepare(Bullet&,u32 index,i32 type,i32 color,u32 flags);
     bool change_type(Bullet&,u32 index,i32 type,i32 color);
     bool set_sprite(Bullet&,u32 index,i32 sprite);

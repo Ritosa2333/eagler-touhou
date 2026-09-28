@@ -13,6 +13,9 @@ const hardware=process.env.NATIVE_GPU==='1';
 const fullSpriteGeometry=process.env.FULL_SPRITE_GEOMETRY==='1';
 if(release&&fullSpriteGeometry)throw Error('Draw comparison control requires diagnostic WASM');
 const artifactDirectory=process.env.PC_BUILD?resolve(process.env.PC_BUILD):undefined;
+const label=process.env.RUN_LABEL||`transport-${fallback?'relay':'rtc'}${release?'-release':''}`;
+assert.match(label,/^[\w-]+$/);
+const build=JSON.parse(readFileSync(artifactDirectory?resolve(artifactDirectory,'build.json'):resolve(root,release?'artifacts/sdl-release/build.json':'artifacts/sdl3/build.json')));
 const port=await new Promise(r=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>r(p));});});
 const relayPath=process.env.EAGLER_RELAY_SOURCE||'D:/workspace/eagler/eagler-touhou/server/netplay-relay.mjs';
 const relay=spawn(process.execPath,[relayPath],{windowsHide:true,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe']});
@@ -21,7 +24,7 @@ await new Promise((accept,reject)=>{relay.stdout.on('data',b=>{relayLog+=b;if(re
 const {server,netplay,url}=await presentationServer(0,{release,artifactDirectory});
 const browser=await launchBrowser({args:[...(hardware?['--enable-gpu','--use-gl=angle','--use-angle=d3d11']:['--enable-unsafe-swiftshader']),'--autoplay-policy=no-user-gesture-required']});
 const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.stack));
-if(release)assert.equal(JSON.parse(readFileSync(resolve(root,'artifacts/sdl-release/build.json'))).exports.some(e=>e.name.startsWith('th09_probe_')),false);
+if(release)assert.equal(build.exports.some(e=>e.name.startsWith('th09_probe_')),false);
 
 try{
  await page.goto(url);
@@ -82,8 +85,7 @@ try{
  },{port,fallback,release,fullSpriteGeometry});
  assert.deepEqual(result.routes,[fallback?'relay':'rtc',fallback?'relay':'rtc','spectator']);assert.equal(errors.length,0,errors.join('\n'));
  if(hardware)for(const renderer of result.renderers)assert.doesNotMatch(renderer,/swiftshader|llvmpipe|microsoft basic render/i);
- const wasm=JSON.parse(readFileSync(artifactDirectory?resolve(artifactDirectory,'build.json'):resolve(root,release?'artifacts/sdl-release/build.json':'artifacts/sdl3/build.json'))).sha256;
- const label=process.env.RUN_LABEL||`transport-${fallback?'relay':'rtc'}${release?'-release':''}`;
+ const wasm=build.sha256;
  writeFileSync(resolve(root,`artifacts/multiplayer-tests/${label}-report.json`),JSON.stringify({passed:true,wasm,browser:browser.version(),hardwareRequested:hardware,fullSpriteGeometry,scope:'Local real transport, C++ rollback, SharedNetplay, launcher relay, confirmed spectator; desktop Chromium'+(release?'; production WASM smoke, no forced frame limit':''),result,errors,relayLog},null,2));console.log(JSON.stringify(result));
-}catch(error){writeFileSync(resolve(root,'artifacts/multiplayer-tests/transport-browser-failure.json'),JSON.stringify({error:error.stack,errors,relayLog},null,2));throw error;}
+}catch(error){writeFileSync(resolve(root,`artifacts/multiplayer-tests/${label}-failure.json`),JSON.stringify({error:error.stack,errors,relayLog},null,2));throw error;}
 finally{await browser.close();netplay.close();await new Promise(r=>server.close(r));relay.kill();}

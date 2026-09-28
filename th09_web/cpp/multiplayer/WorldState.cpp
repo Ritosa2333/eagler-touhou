@@ -32,6 +32,29 @@ void WorldState::BeforeAttack(AttackQueue& x,std::size_t index) {
     auto& s=attacks[attackCount++];s.first=&a;good=s.second.Save(a)&&good;
     if(hashEnabled)HashPart("dynamic attack",s.second.Fingerprint(a));
 }
+void WorldState::BeforeBullet(BulletManager& x,std::size_t index) {
+    if(index>=x.pool.size()){good=false;return;}
+    for(std::size_t i=0;i<bulletRangeCount;++i)if(bulletRanges[i].owner==&x){
+        good=bulletRanges[i].capture.TouchSlot(x.pool.data(),&x.pool[index],
+            [this](void* p,std::size_t n){return Touch(p,n);})&&good;
+        return;
+    }
+    good=false;
+}
+void WorldState::BeforeBulletVisual(BulletVisuals& x,std::size_t index) {
+    if(index>=x.instances.size()){good=false;return;}
+    for(std::size_t animation=0;animation<x.instances[index].size();++animation)BeforeBulletAnimation(x,index,animation);
+}
+void WorldState::BeforeBulletAnimation(BulletVisuals& x,std::size_t index,std::size_t animation) {
+    if(index>=x.instances.size()||animation>=x.instances[index].size()){good=false;return;}
+    for(std::size_t i=0;i<bulletRangeCount;++i)if(bulletRanges[i].visuals==&x){
+        auto& saved=bulletRanges[i].visualSaved;const auto at=index*x.instances[index].size()+animation;
+        if(at>=saved.size()){good=false;return;}if(saved[at])return;
+        auto& vm=x.instances[index][animation];if(Touch(&vm,sizeof(vm)))saved.set(at);
+        return;
+    }
+    good=false;
+}
 void WorldState::Effects(EffectManager& x) {
     NamedFields("x.side,x.count,x.frame,x.cursor,x.capacity,x.reserved_slots",x.side,x.count,x.frame,x.cursor,x.capacity,x.reserved_slots);
     if(effectRangeCount==effectRanges.size()||effectSlots+x.actors.size()>effectSaved.size()){good=false;return;}
@@ -77,6 +100,7 @@ void WorldState::Recording(ReplayArchive& x) {
 }
 bool WorldState::Save(GameSession& s) {
     Unbind();hashParts.clear();digest={};if(journal.IsFrameOpen())journal.EndFrame();journal.DiscardBefore(1);undo.clear();enemyCount=effectCount=attackCount=0;effectRangeCount=effectSlots=0;effectSaved.reset();attackSaved.reset();ownedBytes=0;good=journal.BeginFrame(0);
+    bulletRangeCount=0;
     // This adapter is specifically the stable live two-human versus world.
     if(!s.world||s.is_replay||s.world->rules.mode!=GameMode::versus)return good=false;
     NamedFields("s.state,s.animations.timing,s.animations.executed,s.animations.invalid,s.initial,s.current,s.inputs,s.scores,s.starting_replay_stage,s.demo,s.demo_input,s.demo_frames,s.warmed_stage,s.result,s.phase,s.continues,s.recordable,s.frames,s.timing,s.motion_input",s.state,s.animations.timing,s.animations.executed,s.animations.invalid,s.initial,s.current,s.inputs,s.scores,s.starting_replay_stage,s.demo,s.demo_input,s.demo_frames,s.warmed_stage,s.result,s.phase,s.continues,s.recordable,s.frames,s.timing,s.motion_input);Text(s.error);
@@ -90,16 +114,41 @@ bool WorldState::Save(GameSession& s) {
         NamedFields("f.script,f.enemy_player,f.focus_aura,f.capture_effect,f.shield,f.targeted_enemy,f.cpu_level,f.spells,f.bosses,f.counters",f.script,f.enemy_player,f.focus_aura,f.capture_effect,f.shield,f.targeted_enemy,f.cpu_level,f.spells,f.bosses,f.counters);
         PlayerState(*f.player);Enemy(*f.enemies);Effects(*f.effects);
         auto& bullets=*f.bullets;NamedFields("bullets.total,bullets.first_count,bullets.second_count,bullets.cancel_frames,bullets.frame,bullets.lifetime,bullets.draw_heads",bullets.total,bullets.first_count,bullets.second_count,bullets.cancel_frames,bullets.frame,bullets.lifetime,bullets.draw_heads);
-        // Fixed-size, contiguous POD pool: keep every slot byte, but pay for
-        // one journal lookup/copy per field instead of one per bullet. The
-        // diagnostic oracle retains its independent per-slot traversal.
+        // Keep complete POD bytes for live runs, plus dormant slots before
+        // spawn/reset. Shared slot identity prevents a later first write from
+        // overlapping a run already in the journal. The dense oracle still
+        // visits every slot independently, including all dormant bytes.
         static_assert(std::is_trivially_copyable_v<Bullet>);
         if(hashEnabled)for(auto& bullet:bullets.pool)NamedFields("bullet",bullet);
-        else Touch(bullets.pool.data(),bullets.pool.size()*sizeof(bullets.pool[0]));
+        else if(!sparse)Touch(bullets.pool.data(),bullets.pool.size()*sizeof(bullets.pool[0]));
+        else {
+            if(bulletRangeCount>=bulletRanges.size()||bullets.pool.size()!=BulletManager::update_count+1)return good=false;
+            auto& range=bulletRanges[bulletRangeCount++];range.owner=&bullets;range.visuals=f.bullet_visuals.get();range.visualSaved.reset();
+            good=range.capture.Capture(bullets.pool.data(),[](const Bullet& b){return b.state!=0;},
+                [this](void* p,std::size_t n){return Touch(p,n);})&&good;
+            // Hazards can retain a slot across a paused/frozen player update.
+            // A later hit writes state=5 even if that slot has since gone cold.
+            const auto& hazards=f.player->hazards;
+            if(hazards.count>hazards.entries.size())return good=false;
+            for(u32 i=0;i<hazards.count;++i)if(auto* p=hazards.entries[i].bullet){
+                const auto base=reinterpret_cast<std::uintptr_t>(bullets.pool.data());
+                const auto address=reinterpret_cast<std::uintptr_t>(p);
+                if(address<base||address-base>=bullets.pool.size()*sizeof(Bullet)||(address-base)%sizeof(Bullet))return good=false;
+                BeforeBullet(bullets,(address-base)/sizeof(Bullet));
+            }
+            Bind(bullets.checkpoint);
+        }
         NamedFields("f.bullet_visuals->appearances",f.bullet_visuals->appearances);
         auto& visuals=*f.bullet_visuals;
-        for(std::size_t i=0;i<visuals.instances.size();++i)if(!sparse||hashEnabled||bullets.pool[i].state)Fields(visuals.instances[i]);
-        if(sparse&&!hashEnabled)Bind(visuals.checkpoint);
+        if(!sparse||hashEnabled)for(auto& v:visuals.instances)Fields(v);
+        else {
+            if(visuals.instances.size()!=bullets.pool.size())return good=false;
+            // Body/fade/spawn animations have independent state. Save a whole
+            // VM on its actual first write (including Draw), not all five merely
+            // because the bullet is alive. Full-slot writes share that identity;
+            // the dense/hash oracle above still reads every VM independently.
+            Bind(visuals.checkpoint);
+        }
         NamedFields("f.lasers->pool",f.lasers->pool);
         auto& a=*f.attacks;NamedFields("a.side,a.name,a.time,a.notices,a.animations,a.parameters,a.active_variants",a.side,a.name,a.time,a.notices,a.animations,a.parameters,a.active_variants);
     }

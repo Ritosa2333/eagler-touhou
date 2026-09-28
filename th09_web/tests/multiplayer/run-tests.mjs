@@ -26,9 +26,13 @@ function compile(args){
   if(result.status!==0)throw Error(result.stdout+result.stderr);
 }
 const suites={
+  'frame-schedule':[],
   session:[resolve(root,'cpp/multiplayer/RollbackSession.cpp'),
     ...['NetplayCore','NetplayProtocol','NetplaySession','SessionChannel'].map(n=>resolve(common,'src/netplay',n+'.cpp'))],
   'dynamic-state':[resolve(root,'cpp/multiplayer/DynamicState.cpp')],
+  'bullet-snapshot':[
+    ...['BulletManager','BulletExtras','BulletPattern','Rng','Timer','GameMath'].map(n=>resolve(root,'cpp/game',n+'.cpp')),
+    resolve(common,'src/netplay/RollbackJournal.cpp')],
 };
 for(const [suite,implementation] of Object.entries(suites)){
   const wasm=resolve(out,suite+'.wasm');

@@ -8,7 +8,8 @@ const root=fileURLToPath(new URL('../../',import.meta.url));
 const dense=process.argv.includes('--dense'),roundReset=process.argv.includes('--round-reset'),label=process.env.RUN_LABEL||'world-browser';
 const characters=(process.env.CHARACTERS||'0,1').split(',').map(Number);
 const out=resolve(root,'artifacts/multiplayer-tests');mkdirSync(out,{recursive:true});
-const {server,netplay,url}=await presentationServer();const browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required']});
+const artifactDirectory=resolve(process.env.PC_BUILD||resolve(root,'artifacts/sdl3'));
+const {server,netplay,url}=await presentationServer(0,{artifactDirectory});const browser=await launchBrowser({args:['--enable-unsafe-swiftshader','--autoplay-policy=no-user-gesture-required']});
 const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.stack));
 try{
  await page.goto(url);await page.evaluate(chars=>openProbe(chars[0],chars[1],2,3),characters);
@@ -35,9 +36,10 @@ try{
      ++checkpoints;f+=6;
    }
    const poolBoundary=c._th09_probe_pool_boundary();if(!poolBoundary)throw Error("owning pool clear/reuse/overflow mismatch");
+   const bulletBoundary=c._th09_probe_bullet_boundary?.()??null;if(bulletBoundary===0)throw Error("bullet cold hazard/reset exact-byte mismatch");
    const recordingBoundary=c._th09_probe_recording_boundary();if(!recordingBoundary)throw Error("recording chunk/motion rewind mismatch");
-   return {checkpoints,frames:1800,poolBoundary,recordingBoundary,bytes,captureMs,restoreMs,stepMs,status:probeStatus(),session:sessionStatus()};
+   return {checkpoints,frames:1800,poolBoundary,bulletBoundary,recordingBoundary,bytes,captureMs,restoreMs,stepMs,status:probeStatus(),session:sessionStatus()};
  },{dense,roundReset});
- assert.equal(errors.length,0,errors.join('\n'));const build=JSON.parse(readFileSync(resolve(root,'artifacts/sdl3/build.json')));writeFileSync(resolve(out,label+'-report.json'),JSON.stringify({passed:true,dense,characters,wasm:build.sha256,scope:'Same live TH09 world restore/resimulation with state inventory and framebuffer comparison; desktop Chromium',result,errors},null,2));console.log(JSON.stringify(result));
-}catch(e){writeFileSync(resolve(out,'world-browser-failure.json'),JSON.stringify({error:e.stack,errors},null,2));throw e;}
+ assert.equal(errors.length,0,errors.join('\n'));const build=JSON.parse(readFileSync(resolve(artifactDirectory,'build.json')));writeFileSync(resolve(out,label+'-report.json'),JSON.stringify({passed:true,dense,characters,wasm:build.sha256,scope:'Same live TH09 world restore/resimulation with state inventory and framebuffer comparison; desktop Chromium',result,errors},null,2));console.log(JSON.stringify(result));
+}catch(e){writeFileSync(resolve(out,label+'-failure.json'),JSON.stringify({error:e.stack,errors},null,2));throw e;}
 finally{await browser.close();netplay.close();await new Promise(r=>server.close(r));}

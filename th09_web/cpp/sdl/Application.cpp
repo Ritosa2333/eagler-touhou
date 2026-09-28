@@ -12,6 +12,7 @@
 #include "../game/NetworkInput.hpp"
 #include "../multiplayer/WorldState.hpp"
 #include "../multiplayer/RollbackSession.hpp"
+#include "../multiplayer/FrameSchedule.hpp"
 #include <dirent.h>
 #include <ctime>
 #include <algorithm>
@@ -21,7 +22,6 @@
 #include <emscripten.h>
 #include <emscripten/html5.h>
 Netplay::PeerTransport& th09_shared_transport();
-#include "../../../portable/sdl/FrameCadence.hpp"
 EM_JS(void, th09_browser_frame, (int ok,double milliseconds), { Module["onGameFrame"]?.(ok,milliseconds); });
 EM_JS(void, th09_network_result, (), { Module["onNetworkResult"]?.(); });
 EM_JS(void, th09_network_request, (), { Module["onNetworkRequest"]?.(); });
@@ -234,7 +234,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     }
 };
 std::unique_ptr<Application> probe;std::string failure;
-bool running=false,suspended=false;u32 loop_epoch=0;double previous_frame=-1;touhou::sdl::FrameCadence cadence;
+bool running=false,suspended=false;u32 loop_epoch=0;double previous_frame=-1;multiplayer::FrameSchedule cadence;
 struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
 #include "../../../portable/input/KeyboardMap.inc"
 touhou::input::TouchController gestures;
@@ -446,7 +446,19 @@ TH09_EXPORT("th09_loop_start") void th09_loop_start(){
     if(!probe||running)return;running=true;suspended=false;previous_frame=-1;cadence.reset();probe->clock_pause(false);probe->audio.suspend(false);
     emscripten_request_animation_frame_loop([](double time,void* epoch)->EM_BOOL{
         if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
-        if(suspended||!probe){cadence.reset();return EM_TRUE;}const auto ticks=cadence.advance(rollback_active&&network.active?delta/rollback.IntervalScale():delta);u32 ok=1;for(u32 n=0;n<ticks&&ok;++n){ok=th09_game_tick(n+1==ticks);if(ok==2){cadence.reset();break;}if(rollback_active&&emscripten_get_now()-begin>=10){cadence.reset();break;}}
+        if(suspended||!probe){cadence.reset();return EM_TRUE;}
+        const bool active=rollback_active&&network.active;
+        const auto ticks=cadence.advance(active?delta/rollback.IntervalScale():delta,active);u32 ok=1;
+        for(u32 n=0;n<ticks&&ok;++n){
+            ok=th09_game_tick(n+1==ticks);if(ok==2){cadence.blocked(rollback_active&&network.active);break;}
+            cadence.complete();
+            if(rollback_active&&emscripten_get_now()-begin>=10){
+                // Drop overdue work only when due ticks were left unfinished.
+                // A costly but completed callback must keep its fractional
+                // clock remainder, otherwise recovery itself slows the game.
+                cadence.exhausted(n+1,ticks);break;
+            }
+        }
         probe->audio.pump();th09_browser_frame(ok,emscripten_get_now()-begin);if(!ok){running=false;probe->audio.suspend(true);}return running?EM_TRUE:EM_FALSE;
     },reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
 }
@@ -480,6 +492,20 @@ TH09_EXPORT("th09_probe_open") u32 th09_probe_open(i32 a,i32 b,i32 mode,i32 diff
 #if TH09_DEVELOPMENT_HARNESS
 TH09_EXPORT("th09_probe_frame_limit") void th09_probe_frame_limit(u32 frame){rollback_test_limit=frame;}
 TH09_EXPORT("th09_probe_tick_cost") const double* th09_probe_tick_cost(){return probe_tick_cost;}
+// Read-only density and byte accounting; not present in the release ABI.
+TH09_EXPORT("th09_probe_load") const u32* th09_probe_load(){
+    static u32 data[20]{};std::fill_n(data,20,0u);if(!probe||!probe->world)return data;
+    auto& b=*probe->world->battle;
+    for(unsigned side=0;side<2;++side){auto& f=b.fields[side];
+        for(const auto& bullet:f.bullets->pool)if(bullet.state&&bullet.state!=6)++data[side];
+        data[2+side]=f.enemies->alive;data[4+side]=f.effects->count;
+    }
+    auto& f=b.fields[0];data[6]=b.cross_effects->count;data[7]=b.attack_queue->counts[0]+b.attack_queue->counts[1];
+    data[8]=f.bullets->pool.size()*sizeof(Bullet);data[9]=sizeof(f.bullet_visuals->instances[0]);
+    data[10]=sizeof(f.player->shots.shots);data[11]=sizeof(f.player->shots.areas);data[12]=sizeof(f.player->items.items);data[13]=sizeof(f.lasers->pool);
+    data[14]=sizeof(probe->presentation.ascii.queue);data[15]=sizeof(probe->world->huds[0]->animations);data[16]=sizeof(Bullet);data[17]=f.bullets->pool.size();
+    return data;
+}
 TH09_EXPORT("th09_probe_draw_mode") void th09_probe_draw_mode(u32 full){probe_full_sprite_geometry=full!=0;}
 std::unique_ptr<multiplayer::WorldState> test_checkpoint;
 TH09_EXPORT("th09_probe_checkpoint") u32 th09_probe_checkpoint(u32 dense){
@@ -522,6 +548,54 @@ TH09_EXPORT("th09_probe_pool_boundary") u32 th09_probe_pool_boundary(){
         if(!cp.Restore()||hash()!=initial)return 0;
     }
     return 1;
+}
+TH09_EXPORT("th09_probe_bullet_boundary") u32 th09_probe_bullet_boundary(){
+    if(!probe||!probe->session||!probe->world)return 0;
+    auto& session=*probe->session;auto& battle=*probe->world->battle;
+    multiplayer::WorldState original;original.sparse=false;if(!original.Save(session))return 0;
+    for(auto& field:battle.fields){
+        field.bullets->reset_pool();
+        field.bullets->pool[0].state=1;
+        if(!field.bullet_visuals->prepare(field.bullets->pool[0],0,0,0,0))return 0;
+        // An inactive but still referenced hazard must not escape the snapshot.
+        field.bullets->pool[1].speed=3.25f;field.bullets->pool[1].extras[8].integer_a=71;
+        field.player->hazards.count=1;field.player->hazards.entries[0].bullet=&field.bullets->pool[1];
+    }
+    const auto hash=[&]{multiplayer::WorldState h;h.hashEnabled=true;return h.Save(session)?h.Fingerprint():0;};
+    const auto initial=hash();
+    std::array<std::vector<u8>,2> bytes,visualBytes;
+    for(unsigned side=0;side<2;++side){auto& pool=battle.fields[side].bullets->pool;bytes[side].resize(pool.size()*sizeof(Bullet));std::memcpy(bytes[side].data(),pool.data(),bytes[side].size());}
+    for(unsigned side=0;side<2;++side){auto& pool=battle.fields[side].bullet_visuals->instances;visualBytes[side].resize(pool.size()*sizeof(pool[0]));std::memcpy(visualBytes[side].data(),pool.data(),visualBytes[side].size());}
+    bool good=true;
+    for(bool dense:{false,true}){
+        multiplayer::WorldState cp;cp.sparse=!dense;if(!cp.Save(session))return 0;
+        for(auto& field:battle.fields)field.player->hazards.entries[0].bullet->state=5;
+        for(auto& field:battle.fields){
+            auto& visual=*field.bullet_visuals;auto& b=field.bullets->pool[0];
+            // A single-VM first write followed by a full-slot write must retain
+            // the original body, not the already advanced version or an overlap.
+            if(!visual.set_sprite(b,0,visual.appearances[1].base_sprite))return 0;
+            visual.advance(b,0,BulletAnimation::body);
+            if(!visual.change_type(b,0,1,0))return 0;
+            for(u32 animation=0;animation<5;++animation){
+                const u32 flags=animation>0&&animation<4?1u<<animation:0;
+                if(!visual.prepare(b,0,0,0,flags))return 0;
+                visual.advance(b,0,static_cast<BulletAnimation>(animation));
+            }
+        }
+        // Real round reset writes the whole pool, including sentinels and cold
+        // bytes. A second reset tests deduplication within the same record.
+        for(unsigned repeat=0;repeat<2;++repeat)for(unsigned side=0;side<2;++side){
+            battle.reset_field(side,5);
+            auto& pool=battle.fields[side].bullets->pool;
+            for(u32 i=0;i<pool.size();++i)pool[i].extras[4].integer_a=i32(19+i+repeat);
+        }
+        good=cp.Restore()&&good;
+        for(unsigned side=0;side<2;++side)good=!std::memcmp(bytes[side].data(),battle.fields[side].bullets->pool.data(),bytes[side].size())&&good;
+        for(unsigned side=0;side<2;++side)good=!std::memcmp(visualBytes[side].data(),battle.fields[side].bullet_visuals->instances.data(),visualBytes[side].size())&&good;
+        good=hash()==initial&&good;
+    }
+    return original.Restore()&&good;
 }
 TH09_EXPORT("th09_probe_recording_boundary") u32 th09_probe_recording_boundary(){
     if(!probe||!probe->session||!probe->world)return 0;auto& session=*probe->session;

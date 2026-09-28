@@ -10,7 +10,9 @@ Bullet* BulletManager::create(const BulletEmission& e,i32 index,i32 layer,float 
     u32 slot=begin;while(slot<end&&pool[slot].state!=0)++slot;
     // The original exhausted-pool scan returns its first active slot without
     // creating a bullet or consuming RNG. Both fixed pools preserve slot order.
-    if(slot==end)return &pool[begin];auto& b=pool[slot];
+    if(slot==end)return &pool[begin];
+    if(checkpoint)checkpoint->BeforeBullet(*this,slot);
+    auto& b=pool[slot];
     const auto pattern=bullet_pattern(e,index,layer,aim,random);
     b.state=1;b.spawn_active=1;b.near_attack=0;b.lifetime.reset();b.collision_disabled=0;b.movement_time.reset();b.homing=0;
     b.speed=pattern.speed;b.direction=float(add_angle(pattern.angle,0));b.owner_flags=u8(e.owner_flags);b.position=e.position;b.position.z=.1f;
@@ -28,6 +30,12 @@ bool BulletManager::emit(const BulletEmission& e,bool second_pool,const FrameTim
     const float aim=(dx==0&&dy==0)?1.5707963705062866f:float(std::atan2(double(dy),double(dx)));
     for(i32 layer=0;layer<e.layers;++layer)for(i32 index=0;index<e.count;++index)if(!create(e,index,layer,aim,second_pool,timing,random,player,actions))return false;
     if(e.flags&0x200)actions.play_positioned_sound(e.sound,e.position.x);return true;
+}
+void BulletManager::reset_pool(){
+    // Round reset writes dormant slots too. Active runs may already own their
+    // bytes, so the observer deduplicates by slot before recording first writes.
+    for(u32 i=0;i<pool.size();++i){if(checkpoint)checkpoint->BeforeBullet(*this,i);pool[i]=Bullet{};}
+    pool[first_capacity].state=pool[update_count].state=6;
 }
 void BulletManager::add_draw(Bullet& b,u32 index) noexcept {
     if(b.draw_group>=draw_heads.size())return;b.draw_next=draw_heads[b.draw_group];draw_heads[b.draw_group]=i32(index);

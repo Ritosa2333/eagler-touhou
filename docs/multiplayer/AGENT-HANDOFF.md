@@ -1,8 +1,9 @@
 # TH09 rollback handoff for a new agent
 
-Updated 2026-09-28. This document is a starting point, not an instruction to
-resume optimization. The user paused the next profiling/logic-optimization step
-to work on other matters. Wait for the user's next concrete task.
+Updated 2026-09-28. The user explicitly resumed optimization after `bf60dbc`:
+inspect actual progress and continue toward very smooth gameplay. The resumed
+work and frozen comparison identities are in `rollback-smoothness-work.md`.
+Do not mistake the historical results below for validation of unbuilt changes.
 
 ## First orientation
 
@@ -12,9 +13,9 @@ to work on other matters. Wait for the user's next concrete task.
    `D:/workspace/eagler/eagler-touhou/docs/playbooks/rollback.md`.
 2. TH09 implementation and this handoff:
    `D:/workspace/eagler/worktrees/th09-multiplayer`. Branch
-   `experiment/th09-multiplayer`, implementation commit `cb3a9b7`
-   (`Add TH09 rollback netplay and PC optimizations`). The worktree was clean
-   before this handoff document was added.
+   `experiment/th09-multiplayer`. Original implementation was `cb3a9b7`, then
+   the first handoff `bf60dbc`; resumed smoothness work is newer. Read the actual
+   branch log/status and `rollback-smoothness-work.md` before assuming a HEAD.
 3. Canonical owner: `D:/workspace/eagler/th09-eagler`, branch `eagler`, HEAD
    `3b52630` when checked. It was clean and is **not** the optimization worktree.
    The experiment was created from this commit. Do not edit the upstream-tracking
@@ -32,10 +33,10 @@ All paths below are relative to the experiment worktree unless absolute.
   behavior. No 404 fix was part of this work.
 - The user currently prioritizes PC optimization. There is no special phone
   optimization request. Do not present desktop results as phone evidence.
-- The user paused further profiling and original-game logic optimization.
-  The proposal was to measure dense battle collision, Bullet update, Enemy
-  script and remaining Draw cost, then optimize the measured bottleneck and
-  test continuous 4/8-frame rollback. That work has **not** started.
+- The user resumed profiling and optimization after this original handoff.
+  The first measured bottleneck was snapshot copying, not collision math.
+  See `rollback-smoothness-work.md` for current source/build/test status;
+  the original-game simulation and three-frame prediction policy are unchanged.
 - `c`, `p`, `d` mean commit, push, deploy in the workspace instructions. The
   rollback work was committed locally; it was **not pushed or deployed** in its
   current form. Confirm new scope before publishing.
@@ -66,15 +67,20 @@ replay ticks retain Draw logic that writes game state, suppress GPU submission
 and pure 2D sprite geometry, then present only the final state. Correction
 starts at most eight historical ticks per callback and checks an 8 ms recovery
 budget between ticks. The outer loop checks a 10 ms budget between ticks;
-neither budget preempts an expensive individual tick. Confirmed history owns
+neither budget preempts an expensive individual tick. The resumed driver keeps
+one already-due tick pending across recovery/network waits, without accumulating
+stall debt, and preserves fractional phase when all due work finishes. The
+ordinary no-wait cadence and input sampling policy are unchanged. Confirmed history owns
 sound, music, Replay and spectator output. A gameplay hash is exchanged every
 120 confirmed frames. Menus that replace resources wait for reconciled input.
 
 The local packaged Runtime is `th09_web/build-eagler-multiplayer`. Current
-release WASM SHA-256 is
-`64c19a08eb80a7165820325bffa6510ce8269948e00939592c5556f2dedfe490`.
-Diagnostic WASM SHA-256 is
-`fbc7d7c30b2ff490ab983a60cea1af86602be823fa8965e5640e59b5532ac7d6`.
+release (`th09_web/artifacts/sdl-smooth-release`) WASM SHA-256 is
+`d1dafe25e34d8deb5811ac3504a77750c40316952b004da9319ae3ef12c5eebc`.
+Current diagnostic (`th09_web/artifacts/sdl-smooth-retry`) WASM SHA-256 is
+`a7e5e500f942da06f8cd750a044b713ac0b22458b5e9e9439d09706ec2ee24b0`.
+Default `artifacts/sdl3` and `artifacts/sdl-release` are retained older builds;
+use explicit `PC_BUILD` / `TH09_OUTPUT` rather than accidentally testing them.
 Generated build folders and raw test reports are ignored by Git; the evidence
 JSON and Markdown under `docs/multiplayer` are committed.
 
@@ -103,8 +109,9 @@ its own experiment. Do **not** add percentages across reports.
 | PC storage | Retain owning snapshot buffers across ring reuse; copy the contiguous Bullet POD pool in one touch per field | Capture + restore + 8-tick resim over 200 blocks down 8.27%. See `rollback-pc-evidence.md`. |
 | Draw | Skip pure 2D sprite geometry on unpresented historical ticks while keeping stateful Draw traversal | Same-WASM, same-checkpoint paired replay CPU down 6.60–12.11% across four runs; phase-accounted correction down 3.75–6.74%. See `rollback-draw-evidence.md`. |
 | Owning pools | Sparse first-write Effect/Attack slots, fixed-slot deduplication, reuse same-type AttackState allocation, exact trivial-block copy | Hardware A/B/B/A: capture down 13.01%, restore down 22.78%, capture + restore + 8-tick resim down 11.11%. See `rollback-owning-evidence.md`. |
+| Resumed smoothness | Sparse whole Bullet POD runs, actual per-VM first writes, preserve completed callback phase and retry one pending tick | Exact-input dual-process RTC A/B/B/A, 77 +/- 10 ms each direction and P2 2x CPU throttle: P2 submitted-RAF gap p99 33.33 -> 16.67 ms, >25 ms gaps 135 -> 17, maximum 66.67 -> 33.33 ms. See `rollback-smoothness-work.md` and its portable evidence JSON. |
 
-The latest 200-block A/B/B/A fixture used Intel UHD / ANGLE D3D11, same
+The earlier owning-pool 200-block A/B/B/A fixture used Intel UHD / ANGLE D3D11, same
 inputs, full-state and pixel checks outside timers. Correction total was
 371.910 ms before and 330.573 ms after. Its no-snapshot 320-tick control was
 **7.86% slower** after the change; worst correction outliers also did not
@@ -114,7 +121,7 @@ Initial accounted checkpoint bytes fell from 2,741,824 to 2,452,192, but the
 counter excludes subsequent first writes, allocations and metadata; it is not
 total memory usage.
 
-The latest correctness checks included sparse/dense state restore before and
+The earlier owning-pool correctness checks included sparse/dense state restore before and
 after resimulation, exact final pixels, Effect/Attack clear/reuse/overflow,
 all nine polymorphic AttackState types, round reset, 900-frame independent
 two-peer plus exact-input reference, equal 1,312-byte Replay, RTC and WebSocket
@@ -123,10 +130,13 @@ hash `1357358377`. Deliberate network outages still caused visible
 presentation gaps. Release RTC passed periodic confirmed checks, but endpoints
 ended on different frames, so there was no same-frame final-hash assertion.
 
-The live Draw A/B/B/A RTC p95 result was **mixed**. Do not claim a proven
-end-to-end FPS/p95 gain from its controlled CPU result. Physical phone,
-public Internet/TURN, sustained dense-stage deep rollback, subjective dodging
-and audio underrun acceptance remain unproven.
+The older live Draw A/B/B/A RTC p95 result was **mixed**. Do not extrapolate
+its controlled CPU result. The resumed work separately verified improved
+submitted-RAF tails and sustained per-frame four/eight-frame corrections through
+1,800 frames with 383 peak active bullets and exact reference-world/Replay
+equivalence. That still is not arbitrary-stage/maximum-density, physical phone,
+public Internet/TURN, subjective dodging or acoustic acceptance. Deliberate
+outages still visibly stall. See the new evidence for scope and outliers.
 
 ## Keyboard prediction result
 
@@ -148,12 +158,16 @@ Set these in PowerShell from the experiment worktree:
 ```powershell
 $env:TH09_EMSDK='D:/workspace/eagler/th08-eagler/tools/emsdk'
 $env:WASI_SDK_BIN='D:/workspace/eagler/toolchains/wasi-sdk-34.0-x86_64-windows/bin'
+$env:TH09_OUTPUT='artifacts/sdl-your-next-unique-build'
 node th09_web/tests/multiplayer/run-tests.mjs
 node th09_web/scripts/build-sdl.mjs
+$env:PC_BUILD='th09_web/artifacts/sdl-your-next-unique-build'
 node th09_web/tests/multiplayer/world-browser.mjs
 node th09_web/tests/multiplayer/world-browser.mjs --dense
 node th09_web/tests/multiplayer/world-browser.mjs --round-reset
 node th09_web/tests/multiplayer/peer-browser.mjs
+$env:TH09_PROFILE='0'
+$env:TH09_OUTPUT='artifacts/sdl-your-next-release'
 node th09_web/scripts/build-sdl.mjs --release
 node th09_web/scripts/build-eagler.mjs --multiplayer
 ```
@@ -164,10 +178,10 @@ For real local transports, set `$env:NATIVE_GPU='1'` before running
 fallback. `PC_BUILD` selects a frozen artifact directory; `RUN_LABEL` selects
 the report name. Run performance comparisons serially with no compilation or
 other heavy work in parallel. `node
-th09_web/tests/multiplayer/summarize-owning-evidence.mjs` checks the latest
-committed reports and current build source hashes; it passed when this handoff
-was written. The older stage-specific summarizers reference their **historical
-binaries** and should not be run as current-build gates.
+th09_web/tests/multiplayer/export-smoothness-evidence.mjs` checks the current
+retained reports, source hashes and packaged release; it passed for the resumed
+candidate. The older owning/Draw/PC stage-specific summarizers reference their
+**historical binaries** and are not current-build gates.
 
 Local retail assets, fonts/music fixtures and Node dependencies were prepared
 for the earlier tests. Verify they still exist if a new agent or host cannot
@@ -175,17 +189,17 @@ start the browser. Raw reports are in ignored
 `th09_web/artifacts/multiplayer-tests/`; portable records are in
 `docs/multiplayer/rollback-*-evidence.json`.
 
-## Where to look next, if the user resumes optimization
+## Where to look next
 
 Read `eagler-touhou/docs/playbooks/rollback.md` first. Then measure the
-**must-replay** cost in a dense real TH09 battle: Bullet update and collision,
+**remaining must-replay** cost in a dense real TH09 battle: Bullet update and collision,
 Enemy ECL, target selection, stateful Draw, snapshot capture and restoration.
 `AttackAreas` already has an active-pointer list and Enemy targeting already
 shares the active-Enemy traversal; do not transplant another game's cache
 without finding an actual TH09 bottleneck. Preserve RNG, ordering, lifecycle
-and full-state/Replay equivalence. Test sustained repeated 4- and 8-frame
-corrections and presentation tails, not only one isolated restore every eight
-ticks. Compare dangerous visible corrections, hit/death changes, local response
+and full-state/Replay equivalence. Extend the existing sustained repeated
+four/eight-frame gates to stronger loads and check presentation tails, not only
+one isolated restore every eight ticks. Compare dangerous visible corrections, hit/death changes, local response
 and stall rate under identical network traces before changing input delay or
 prediction policy.
 

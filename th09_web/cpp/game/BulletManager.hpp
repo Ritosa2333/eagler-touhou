@@ -1,5 +1,6 @@
 #pragma once
 #include "BulletExtras.hpp"
+#include "PoolCheckpoint.hpp"
 #include <array>
 #include <vector>
 namespace th09 {
@@ -14,11 +15,13 @@ struct BulletFrameActions:BulletExtraActions {
 class BulletManager {
     void add_draw(Bullet&,u32 index) noexcept;
 public:
+    PoolCheckpoint* checkpoint=nullptr;
     static constexpr u32 first_capacity=175,second_begin=176,second_capacity=360,update_count=536;
     std::vector<Bullet> pool;
     i32 total=0,first_count=0,second_count=0,cancel_frames=0,frame=0;
     Timer lifetime{0,0,0};std::array<i32,6> draw_heads;
     BulletManager():pool(update_count+1){pool[first_capacity].state=6;pool[update_count].state=6;draw_heads.fill(-1);}
+    void reset_pool();
     bool update_bullets(const FrameTiming&,const Vec3& player,u32 field_flags,u32 game_flags,BulletFrameActions&);
     Bullet* create(const BulletEmission&,i32 index,i32 layer,float aim,bool second_pool,const FrameTiming&,Rng&,const Vec3& player,BulletFrameActions&);
     bool emit(const BulletEmission&,bool second_pool,const FrameTiming&,Rng&,const Vec3& player,BulletFrameActions&);

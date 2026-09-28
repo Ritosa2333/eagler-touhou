@@ -84,8 +84,8 @@ void GameBattle::clear_hazards(i32 side){auto& a=fields[side].player->shots.area
 void GameBattle::reset_player(i32 side,i32 health){fields[side].player->reset_round(health,world.difficulty,rules.progress.round);fields[side].focus_aura=fields[side].capture_effect=nullptr;sync_players();}
 void GameBattle::reset_field(i32 side,i32 health){
     auto& f=fields[side];f.script.flags&=~1u;reset_player(side,health);
-    for(auto& b:f.bullets->pool)b=Bullet{};f.bullets->pool[BulletManager::first_capacity].state=f.bullets->pool[BulletManager::update_count].state=6;f.bullets->cancel_frames=5;
-    for(auto& instance:f.bullet_visuals->instances){if(f.bullet_visuals->checkpoint)f.bullet_visuals->checkpoint->BeforeBytes(&instance,sizeof(instance));std::memset(instance.data(),0,sizeof(instance));}
+    f.bullets->reset_pool();f.bullets->cancel_frames=5;
+    f.bullet_visuals->reset_instances();
     std::memset(f.lasers->pool.data(),0,sizeof(f.lasers->pool));f.effects->clear();f.shield=nullptr;
     auto& m=*f.enemies;for(u32 n=0;n<EnemyManager::capacity;++n){auto& e=m.enemies[n];if(m.checkpoint)m.checkpoint->BeforeEnemy(e);for(auto& a:e.asynchronous)a.reset();e.active=&e.primary;e.active_slot=-1;e.behavior_flags&=~1u;}
     if(side==0)for(auto& pattern:patterns){pattern=u8(world.random.bounded32(m.common_program.timeline_count()));pattern|=u8(world.random.bounded32(2)<<7);}

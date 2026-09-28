@@ -2,6 +2,7 @@
 #include "DynamicState.hpp"
 #include "../game/GameSession.hpp"
 #include <eagler/netplay/RollbackJournal.hpp>
+#include <eagler/netplay/SparsePoolCapture.hpp>
 #include <functional>
 #include <bitset>
 #include <type_traits>
@@ -18,6 +19,9 @@ public:
     void BeforeEnemy(EclVm&) override;
     void BeforeEffect(EffectManager&,std::size_t) override;
     void BeforeAttack(AttackQueue&,std::size_t) override;
+    void BeforeBullet(BulletManager&,std::size_t) override;
+    void BeforeBulletVisual(BulletVisuals&,std::size_t) override;
+    void BeforeBulletAnimation(BulletVisuals&,std::size_t,std::size_t) override;
     void BeforeBytes(void* p,std::size_t n)override{Touch(p,n);}
     bool Save(GameSession&);
     u32 Fingerprint()const{return digest.value;}
@@ -55,6 +59,16 @@ private:
     std::size_t effectRangeCount=0,effectSlots=0;
     std::bitset<1400> effectSaved;
     std::bitset<257> attackSaved;
+    struct BulletRange {
+        BulletManager* owner=nullptr;
+        BulletVisuals* visuals=nullptr;
+        Netplay::SparsePoolCapture<BulletManager::update_count+1> capture;
+        // First-write ownership is per complete VM, never a heuristic subset
+        // of VM fields. Full-slot reset/type change uses the same bitmap.
+        std::bitset<(BulletManager::update_count+1)*5> visualSaved;
+    };
+    std::array<BulletRange,2> bulletRanges;
+    std::size_t bulletRangeCount=0;
     StateChecksum digest;
     Netplay::RollbackJournal journal;
     std::vector<std::function<void()>> undo;
