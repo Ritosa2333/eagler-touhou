@@ -104,7 +104,7 @@ const entries = [
   ["room.networkNote", "直连、TURN 与中继分别测试；实际游戏链路在开局时决定。", "Direct, TURN and relay are tested separately. The game selects its route at launch."],
   ["room.inputDelay", "08MP 输入延迟", "TH08MP input delay"],
   ["room.inputDelayRecommended", "使用建议值", "Use recommended value"],
-  ["room.inputTimingHint", "估算建议：输入延迟 {delay} 帧，最多预测 {limit} 帧（手机 {phones} 台，线路预算 {network} 帧；手机承载 2 帧为待实机验证的基准）。开局后固定。", "Estimated recommendation: {delay} input-delay frames, at most {limit} predicted frames ({phones} phones, {network}-frame network budget; the 2-frame mobile capacity still needs device validation). Fixed for the run."],
+  ["room.inputTimingHint", "估算建议：输入延迟 {delay} 帧（手机 {phones} 台，线路预算 {network} 帧，回滚目标 {target} 帧）；实际回滚上限保持 {limit} 帧。手机承载基准待实机验证。开局后固定。", "Estimated input delay: {delay} frames ({phones} phones, {network}-frame network budget, {target}-frame rollback target). The actual rollback limit remains {limit} frames. Mobile capacity still needs device validation. Fixed for the run."],
   ["room.probeUnsupported", "房间中继尚未支持玩家间测速，需要更新中继服务。", "The room relay does not support peer diagnostics yet. Update the relay service."],
   ["room.rtcUnavailable", "当前浏览器无法测试直连和 TURN；仍可测量中继延迟。", "This browser cannot test direct or TURN connections; relay latency can still be measured."],
   ["room.turnUnconfigured", "中继未配置 TURN；直连与中继延迟仍可测量。", "TURN is not configured on the relay; direct and relay latency can still be measured."],

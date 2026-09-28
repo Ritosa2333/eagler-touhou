@@ -6298,7 +6298,7 @@ $("#mpStartGame").addEventListener("click", async () => {
     const recommendation=mpTh08TimingRecommendation();
     const chosen=Number(document.querySelector<HTMLSelectElement>("#mpInputDelay")?.value);
     const inputDelay=Number.isInteger(chosen)&&chosen>=0&&chosen<=8?chosen:recommendation.inputDelay;
-    mpLobbySend({ type: "start", inputDelay, predictionLimit: recommendation.predictionLimit });
+    mpLobbySend({ type: "start", inputDelay, predictionLimit: 8 });
   }else mpLobbySend({ type: "start" });
 });
 
@@ -7341,7 +7341,7 @@ function renderRoomNetwork() {
   const timingHint=document.getElementById("mpInputTimingHint");
   if(timingHint && state.product==="th08mp"){
     const advice=mpTh08TimingRecommendation();
-    timingHint.textContent=t("room.inputTimingHint",{delay:advice.inputDelay,limit:advice.predictionLimit,
+    timingHint.textContent=t("room.inputTimingHint",{delay:advice.inputDelay,limit:8,target:advice.targetRollbackFrames,
       phones:advice.mobileSeats,network:advice.networkFrames});
   }
   const peers = (room.seats || []).slice(0, room.playerCount).flatMap((seat, index) => seat && index !== mpUiState.seat ? [{ seat, index }] : []);
