@@ -3903,7 +3903,9 @@ interface CustomSelectUi {
   signature: string;
 }
 const customSelects = new Map<HTMLSelectElement, CustomSelectUi>();
-function customSelectHost() {
+function customSelectHost(select?: HTMLSelectElement) {
+  const dialog = select?.closest<HTMLDialogElement>("dialog[open]");
+  if (dialog) return dialog;
   const fullscreenElement = document.fullscreenElement || launcherDocument.webkitFullscreenElement;
   return fullscreenElement === player ? player : document.body;
 }
@@ -3928,17 +3930,31 @@ function positionCustomSelectMenu(select: HTMLSelectElement) {
   const rect = ui.trigger.getBoundingClientRect();
   const gap = 7;
   const viewportGap = 10;
-  const width = Math.min(Math.max(rect.width, 192), Math.min(280, window.innerWidth - viewportGap * 2));
+  const host = ui.menu.parentElement;
+  const dialogHost = host instanceof HTMLDialogElement ? host : null;
+  const hostRect = dialogHost?.getBoundingClientRect();
+  const visibleLeft = hostRect ? Math.max(viewportGap, hostRect.left + viewportGap) : viewportGap;
+  const visibleRight = hostRect ? Math.min(window.innerWidth - viewportGap, hostRect.right - viewportGap) : window.innerWidth - viewportGap;
+  const visibleTop = hostRect ? Math.max(viewportGap, hostRect.top + viewportGap) : viewportGap;
+  const visibleBottom = hostRect ? Math.min(window.innerHeight - viewportGap, hostRect.bottom - viewportGap) : window.innerHeight - viewportGap;
+  const width = Math.min(Math.max(rect.width, 192), Math.min(280, Math.max(1, visibleRight - visibleLeft)));
+  const left = Math.max(visibleLeft, Math.min(rect.left, visibleRight - width));
+  const belowHeight = Math.max(0, visibleBottom - rect.bottom - gap);
+  const aboveHeight = Math.max(0, rect.top - gap - visibleTop);
+  const naturalHeight = ui.menu.scrollHeight;
+  const openBelow = belowHeight >= Math.min(naturalHeight, 120) || belowHeight >= aboveHeight;
+  const availableHeight = Math.max(1, openBelow ? belowHeight : aboveHeight);
+  const top = openBelow ? rect.bottom + gap : rect.top - gap - Math.min(naturalHeight, availableHeight);
+  ui.menu.style.position = dialogHost ? "absolute" : "fixed";
   ui.menu.style.minWidth = `${Math.round(rect.width)}px`;
   ui.menu.style.width = `${Math.round(width)}px`;
-  ui.menu.style.left = `${Math.round(Math.max(viewportGap, Math.min(rect.left, window.innerWidth - width - viewportGap)))}px`;
-  ui.menu.style.top = `${Math.round(rect.bottom + gap)}px`;
-  ui.menu.style.maxHeight = `${Math.max(120, Math.round(window.innerHeight - rect.bottom - gap - viewportGap))}px`;
-  const menuRect = ui.menu.getBoundingClientRect();
-  if (menuRect.bottom > window.innerHeight - viewportGap && rect.top > window.innerHeight - rect.bottom) {
-    const aboveHeight = Math.max(120, Math.round(rect.top - gap - viewportGap));
-    ui.menu.style.maxHeight = `${aboveHeight}px`;
-    ui.menu.style.top = `${Math.round(Math.max(viewportGap, rect.top - Math.min(menuRect.height, aboveHeight) - gap))}px`;
+  ui.menu.style.maxHeight = `${Math.round(availableHeight)}px`;
+  if (dialogHost && hostRect) {
+    ui.menu.style.left = `${Math.round(left - hostRect.left + dialogHost.scrollLeft - dialogHost.clientLeft)}px`;
+    ui.menu.style.top = `${Math.round(top - hostRect.top + dialogHost.scrollTop - dialogHost.clientTop)}px`;
+  } else {
+    ui.menu.style.left = `${Math.round(left)}px`;
+    ui.menu.style.top = `${Math.round(top)}px`;
   }
 }
 function syncCustomSelect(select: HTMLSelectElement) {
@@ -3985,7 +4001,7 @@ function openCustomSelect(select: HTMLSelectElement) {
   if (!ui || select.disabled) return;
   closeOtherCustomSelects(select);
   syncCustomSelect(select);
-  const host = customSelectHost();
+  const host = customSelectHost(select);
   if (ui.menu.parentNode !== host) host.append(ui.menu);
   ui.menu.hidden = false;
   ui.root.classList.add("open");
