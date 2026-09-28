@@ -281,8 +281,11 @@ function refresh() {
   socket.send(JSON.stringify({ type: "refresh", product: selectedProduct }));
   clearTimeout(listTimer);
   if (loadedProduct !== selectedProduct) listTimer = window.setTimeout(() => {
-    disconnect(); connection = "offline"; render();
-  }, 10000);
+    // A filtered directory snapshot is application data, not the connection
+    // heartbeat. A delayed/lost refresh reply must not tear down an otherwise
+    // healthy directory WebSocket and misreport the whole lobby as offline.
+    if (socket?.readyState === WebSocket.OPEN && loadedProduct !== selectedProduct) refresh();
+  }, 3000);
 }
 function disconnect() {
   clearTimeout(reconnectTimer); clearTimeout(handshakeTimer); clearTimeout(listTimer);
@@ -290,6 +293,11 @@ function disconnect() {
   const previous = socket;
   socket = null;
   if (previous && previous.readyState < WebSocket.CLOSING) previous.close(1000, "leave directory");
+}
+function scheduleReconnect() {
+  if (leaving || navigator.onLine === false) return;
+  clearTimeout(reconnectTimer);
+  reconnectTimer = window.setTimeout(connect, Math.min(20_000, 1500 * 2 ** Math.min(retryCount++, 4)));
 }
 function connect() {
   disconnect();
@@ -305,8 +313,11 @@ function connect() {
   let received = false;
   handshakeTimer = window.setTimeout(() => {
     if (socket !== next || received) return;
-    connection = "unsupported";
-    disconnect(); render();
+    // Silence is not proof that the relay lacks the directory protocol. Keep
+    // the explicit 1008 close as the unsupported signal; otherwise recover
+    // from a delayed/lost first snapshot without requiring a page refresh.
+    connection = "offline";
+    disconnect(); render(); scheduleReconnect();
   }, 10_000);
   next.addEventListener("message", event => {
     if (socket !== next) return;
@@ -340,11 +351,13 @@ function connect() {
     if (recovering) notice(t("lobby.releaseFailed"));
     clearTimeout(recoveryTimer); recovering = null;
     clearTimeout(handshakeTimer);
-    connection = !received && event.code === 1008 ? "unsupported" : "offline";
+    const unsupported = !received && event.code === 1008;
+    // A directory socket that already delivered valid data is known-good.
+    // Treat a later transport close as automatic recovery first; only a new
+    // connection that also misses its first snapshot is promoted to offline.
+    connection = unsupported ? "unsupported" : received ? "loading" : "offline";
     render();
-    if (!leaving && connection !== "unsupported" && navigator.onLine !== false) {
-      reconnectTimer = window.setTimeout(connect, Math.min(20_000, 1500 * 2 ** Math.min(retryCount++, 4)));
-    }
+    if (connection !== "unsupported") scheduleReconnect();
   });
   next.addEventListener("error", () => {});
 }
