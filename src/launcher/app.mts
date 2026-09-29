@@ -709,6 +709,67 @@ let mpLaunchInFlight = false;
 let mpGameCheckInFlight = false;
 let launcherOperationDepth = 0;
 let th09RoomHome: { parent: Node; next: Node | null } | null = null;
+type RoomPreparation = {
+  room: NonNullable<MultiplayerUiState["room"]>;
+  game: GameId;
+  controller: AbortController;
+  status: "preparing" | "ready" | "failed";
+  error: string;
+  task: Promise<void>;
+};
+let roomPreparation: RoomPreparation | null = null;
+
+function prepareRoomResources(room = mpUiState.room): Promise<void> {
+  if (!room) return Promise.resolve();
+  if (roomPreparation?.room === room && roomPreparation.game === state.game) return roomPreparation.task;
+  const gameId = state.game;
+  const controller = new AbortController();
+  const preparation: RoomPreparation = { room, game: gameId, controller, status: "preparing", error: "", task: Promise.resolve() };
+  roomPreparation = preparation;
+  renderMpRoom();
+  preparation.task = (async () => {
+    let installed = await readCurrentPackageGeneration(gameId);
+    if (!installed?.generation) {
+      if (!releaseCatalog) { try { await remoteReleasePromise; } catch {} }
+      if (!releaseCatalog?.games?.[gameId]) throw new Error(t("package.releaseNotReadyNoLocal", { game: gameId.toUpperCase() }));
+      const result = await installPublishedPackageLazy(gameId, {
+        catalog: releaseCatalog,
+        catalogUrl: releaseCatalogUrl,
+        addComponents: [],
+        fetchImpl: (input, init) => backgroundNetworkActivity.xhrFetch(input, init),
+        signal: controller.signal,
+      });
+      if (result.generation) installedPackageSnapshots.set(gameId, result.generation);
+      installed = await readCurrentPackageGeneration(gameId);
+      if (!installed?.generation) throw new Error(t("package.objectNotPersisted"));
+    }
+    if (controller.signal.aborted || mpUiState.room !== room) return;
+    installedPackageSnapshots.set(gameId, installed.generation);
+    if (!hostManifestAvailable) { try { await remoteReleasePromise; } catch {} }
+    if (controller.signal.aborted || mpUiState.room !== room) return;
+    const runtime = game(gameId).multiplayerRuntime;
+    if (typeof runtime === "string" && runtime && "runtimeManifest" in manifest.shared && manifest.shared.runtimeManifest) {
+      let worker: ServiceWorker | null = null;
+      try {
+        await appShellClient?.ready;
+        worker = (await navigator.serviceWorker?.getRegistration("./"))?.active || null;
+      } catch {}
+      // Without a worker, preparation uses no-store HTTP and would download
+      // the same Runtime again at launch, with no reusable cache benefit.
+      if (worker) await prepareRuntimeLaunch(runtime, { worker });
+    }
+    if (controller.signal.aborted || mpUiState.room !== room) return;
+    preparation.status = "ready";
+  })().catch(error => {
+    if (controller.signal.aborted || mpUiState.room !== room) return;
+    preparation.status = "failed";
+    preparation.error = errorMessage(error);
+    showToast(preparation.error, 4000);
+  }).finally(() => {
+    if (mpUiState.room === room) renderMpRoom();
+  });
+  return preparation.task;
+}
 
 function th09NetworkOverlayOpen() { return !$("#th09NetworkDialog").hidden; }
 
@@ -771,28 +832,89 @@ function th09LeaveNetworkRoom() {
   render();
 }
 
+let roomLaunchHome: { parent: Node; next: Node | null } | null = null;
+let roomLaunchStage: "runtime" | "path" = "runtime";
+function showRoomLaunchCover() {
+  if (roomLaunchHome || !mpUiState.room) return;
+  if (roomPanel.open) roomPanel.close();
+  setMpSettingsRoomDrawerOpen(false, true);
+  const roomView = $("#mpRoomView");
+  roomLaunchHome = { parent: roomView.parentNode!, next: roomView.nextSibling };
+  player.append(roomView);
+  player.classList.add("mp-room-launch-cover");
+  roomLaunchStage = "runtime";
+}
+function hideRoomLaunchCover() {
+  if (!roomLaunchHome) return;
+  const roomView = $("#mpRoomView");
+  const { parent, next } = roomLaunchHome;
+  if (next?.parentNode === parent) parent.insertBefore(roomView, next);
+  else parent.appendChild(roomView);
+  roomLaunchHome = null;
+  player.classList.remove("mp-room-launch-cover");
+}
+async function waitForGameplayPath(room: NonNullable<MultiplayerUiState["room"]>, timeoutMs = 120_000) {
+  // Room probes use separate channels. Only the launched Runtime can confirm
+  // the route actually selected for gameplay (RTC or relay).
+  const deadline = performance.now() + timeoutMs;
+  while (mpUiState.room === room && state.launched && performance.now() < deadline) {
+    const net = runtimeNetplaySnapshot();
+    if (net?.failed) throw new Error(net.error || t("room.unavailable"));
+    if (net?.peerState) {
+      const view = describeNetplayConnection({
+        spectator: net.spectator, failed: net.failed, error: net.error,
+        transport: net.transport, path: net.path, peerState: net.peerState,
+        playerCount: state.netplay.playerCount, localPlayer: state.netplay.player,
+        webSocketOpenState: WebSocket.OPEN,
+      });
+      if (view.hidden) return;
+    }
+    await new Promise(resolve => setTimeout(resolve, 250));
+  }
+  if (mpUiState.room !== room || !state.launched) throw new RuntimeSwitchedError();
+  throw new Error(t("room.gameplayPathTimeout"));
+}
+
 async function mpLaunchRoomGame() {
   if (mpLaunchInFlight || (state.launched && !th09NetworkOverlayOpen())) return;
   mpLaunchInFlight = true;
   try {
+    const room = mpUiState.room;
+    await prepareRoomResources(room);
+    if (!room || mpUiState.room !== room) return;
     if (mpUiState.seat != null && !await mpEnsureMovementAllowed()) return;
+    if (mpUiState.room !== room) return;
     const fromTh09Overlay = th09NetworkOverlayOpen();
     if (fromTh09Overlay && mpUiState.seat != null && !await confirmInputWarnings()) return;
+    if (mpUiState.room !== room) return;
     if (fromTh09Overlay) {
       await send("sync", {}, 10000);
       th09CloseNetworkOverlay(false);
       resetRuntime();
     }
+    if (mpUiState.room !== room) return;
     mpConfigureRuntimeSession();
     if (!fromTh09Overlay && mpUiState.seat != null && !await confirmInputWarnings()) return;
+    if (mpUiState.room !== room) return;
+    // WebKit may require a tap on the Runtime's own start surface. Do not
+    // cover that gesture gate with the room while waiting for its first frame.
+    const coverUntilReady = !fromTh09Overlay && !iosWebKitTouch;
+    if (coverUntilReady) showRoomLaunchCover();
     openPlayerView();
     try { await enterPlayerFullscreen({ focusGame: false }); }
     catch (error) { showToast(t("fullscreen.autoBlocked", { reason: errorMessage(error) })); }
-    await launchConfiguredRuntime();
+    await launchConfiguredRuntime({ awaitFirstFrame: coverUntilReady });
+    if (coverUntilReady) {
+      roomLaunchStage = "path";
+      renderMpRoom();
+      await waitForGameplayPath(room);
+    }
+    hideRoomLaunchCover();
     if (isPlayerFullscreen()) await lockEscapeForGame();
   } catch (error) {
-    if (error instanceof RuntimeSwitchedError) return;
+    if (error instanceof RuntimeSwitchedError) { hideRoomLaunchCover(); return; }
     if (!state.launched && isCancelledDownload(error)) {
+      hideRoomLaunchCover();
       if (player.classList.contains("open")) {
         if (!await closePlayerView()) return;
       } else resetRuntime();
@@ -800,6 +922,7 @@ async function mpLaunchRoomGame() {
       return;
     }
     if (!state.launched && isResourceLoadFailure(error)) {
+      hideRoomLaunchCover();
       const message = errorMessage(error);
       // Keep the Player/fullscreen host and multiplayer session intact.
       // syncTransientOverlayHost() moves the import surface into Player while
@@ -810,11 +933,16 @@ async function mpLaunchRoomGame() {
       showToast(message);
       return;
     }
+    if (roomLaunchHome && player.classList.contains("open")) {
+      await closePlayerView(false, { skipSync: true, returnToMpRoom: true });
+    } else hideRoomLaunchCover();
     const message = errorMessage(error);
     setPlayerStatus(message);
+    setStatus(message);
     showStartupError(error, mpUiState.seat == null ? t("runtime.multiplayerContext", { game: state.game.toUpperCase() }) : t("runtime.multiplayerPlayerContext", { game: state.game.toUpperCase(), player: mpUiState.seat + 1 }));
     showToast(message);
   } finally {
+    hideRoomLaunchCover();
     mpLaunchInFlight = false;
     maybeApplyDeferredAppShellUpdate();
   }
@@ -828,6 +956,8 @@ async function mpCheckGame() {
   mpLaunchInFlight = true;
   renderMpRoom();
   try {
+    await prepareRoomResources(room);
+    if (mpUiState.room !== room) return;
     // Exercise the exact multiplayer Runtime and selected resources without
     // attaching this preflight run to the room's gameplay transport.
     state.runtimeVariant = "multiplayer";
@@ -3792,7 +3922,7 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
       selectedProduct.runtimeFileLayout === "directory";
     const networkedLaunch = "netplayMode" in netplayOptions && netplayOptions.netplayMode === "lan";
     const firstFramePromise = options.awaitFirstFrame
-      ? waitForRuntimeFirstFrame(session, directoryRuntime ? 122_000 : firstFrameFallbackMs + 2000)
+      ? waitForRuntimeFirstFrame(session, networkedLaunch || directoryRuntime ? 122_000 : firstFrameFallbackMs + 2000)
       : null;
     // Session invalidation owns cancellation. Observe rejection immediately so
     // an earlier launch failure cannot leave a transient unhandled promise.
@@ -4812,6 +4942,7 @@ async function closePlayerView(fromHistory = false, { skipSync = false, returnTo
   // fullscreen state) intact until persistence has either succeeded or the
   // user explicitly chooses to leave without it.
   if (!skipSync && !await confirmRuntimeSyncBeforeClose()) return false;
+  hideRoomLaunchCover();
   if (th09NetworkOverlayOpen()) {
     mpResetRoomState();
     th09CloseNetworkOverlay(false);
@@ -4897,7 +5028,7 @@ window.addEventListener("popstate", async event => {
     return;
   }
   if (player.classList.contains("open") && mpUiState.room) {
-    if (!await closePlayerView(true, { returnToMpRoom: true })) history.forward();
+    if (!await closePlayerView(true, { skipSync: !!roomLaunchHome, returnToMpRoom: true })) history.forward();
     return;
   }
   if (mpUiState.room) {
@@ -7124,11 +7255,15 @@ function mpEnterRoom(code: string, created: boolean) {
   renderMpRoom();
   render();
   mpConnectLobby();
+  void prepareRoomResources();
   requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }));
   setTranslatedStatus(created ? "status.roomCreated" : "status.roomJoined", { code });
 }
 
 function mpResetRoomState() {
+  hideRoomLaunchCover();
+  roomPreparation?.controller.abort();
+  roomPreparation = null;
   mpDisconnectLobby();
   mpLobby.startSerial = 0;
   mpUiState.room = null;
@@ -7173,6 +7308,10 @@ let mpRoomReturnTimer: number | null = null;
 function mpLeaveRoom() {
   if (th09NetworkOverlayOpen()) { th09LeaveNetworkRoom(); return; }
   if (!mpUiState.room) return;
+  if (roomLaunchHome && player.classList.contains("open")) {
+    void closePlayerView(false, { skipSync: true, returnToMpRoom: true }).then(closed => { if (closed) mpLeaveRoom(); });
+    return;
+  }
   const reducedMotion = state.lessMotion || matchMedia("(prefers-reduced-motion: reduce)").matches;
   // Commit departure immediately; only the destination animates. Waiting for
   // the room to fade first stalls both the return button and system Back.
@@ -7448,7 +7587,13 @@ function renderMpRoom() {
   renderRoomNetwork();
   $("#mpRoomConnection").textContent = t(roomReady ? "room.online" : "multiplayer.reconnecting");
   $("#mpRoomConnection").classList.toggle("connected", roomReady);
-  $("#mpRoomPhase").textContent = t(room.phase === "running" ? "room.running" : room.phase === "starting" ? "room.starting" : "room.lobby");
+  const preparation = roomPreparation?.room === room ? roomPreparation : null;
+  $("#mpRoomPhase").textContent = t(player.classList.contains("mp-room-launch-cover") && roomLaunchStage === "path" ? "room.connectingGameplay"
+    : player.classList.contains("mp-room-launch-cover") || room.phase === "starting" ? "room.starting" : room.phase === "running" ? "room.running"
+    : preparation?.status === "preparing" ? "room.preparingResources"
+      : preparation?.status === "ready" ? "room.resourcesReady"
+        : preparation?.status === "failed" ? "room.resourcesUnavailable" : "room.lobby");
+  $("#mpRoomPhase").title = preparation?.status === "failed" ? preparation.error : "";
   $("#mpRoomMode").textContent = t("room.coop", { count: room.playerCount });
   $("#mpRoomDifficultyBadge").textContent = game().multiplayer?.difficulties?.[room.difficulty] || "Normal";
   const ownerLocal = mpRoomOwnerLocal();
@@ -8943,6 +9088,7 @@ for (const [name, open] of Object.entries(mpUiState.folds)) if (isMpFoldName(nam
 if (mpRestoreRoomFromLocation()) {
   renderMpRoom();
   mpConnectLobby();
+  void prepareRoomResources();
 }
 if (!mpUiState.room && !state.launched && !productEnabled(state.product)) state.hasSelection = false;
 render(); setTranslatedStatus("status.selectGame");

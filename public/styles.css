@@ -1360,6 +1360,9 @@ body.mp-room-active .game-library{display:grid;visibility:hidden;pointer-events:
 body.mp-room-active #mpRoomView.mp-room-view{position:fixed!important;inset:0!important;z-index:45!important;width:100%!important;max-width:1600px!important;height:100dvh!important;min-height:0!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain}
 /* Return immediately; animate only the destination surface. */
 body.mp-room-active #mpRoomView.mp-room-view{animation:mp-room-surface-in .18s cubic-bezier(.2,.7,.3,1) both}
+.player.mp-room-launch-cover{touch-action:auto}
+.player.mp-room-launch-cover:before{content:"";position:absolute;inset:0;z-index:44;background:linear-gradient(180deg,rgba(3,5,7,.78),rgba(3,4,5,.86)),url("assets/launcher-background.webp") center/cover no-repeat}
+.player.mp-room-launch-cover #mpRoomView.mp-room-view{animation:none!important}
 #mpRoomView .mp-session-dock{animation:none}
 body.mp-room-returning .game-library{animation:none}
 body.mp-room-returning .main.library-layout>.tools{animation:mp-room-options-in .18s ease-out both!important}
