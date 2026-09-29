@@ -68,17 +68,21 @@ def runtime_eval(page, expression: str):
 PROBE = """() => {
   const core = globalThis.__th20Runtime?.core;
   if (!core) return null;
-  const probe = new Float32Array(core.memory.buffer, core.sdl_touch_probe(), 17);
+  const probe = new Float32Array(core.memory.buffer, core.sdl_touch_probe(), 28);
   const player = new Float32Array(core.memory.buffer, core.sdl_player_state(), 4);
   return {probe: Array.from(probe), player: Array.from(player)};
 }"""
 
 # [context, dragging, analog_active, analog_x, analog_y, confirm_pulse, escape_pulse, pause_state,
 #  enabled, ready, motion, buttons_current, buttons_pressed, window_active,
-#  confirm_pulses, escape_pulses, sample_ticks]
+#  confirm_pulses, escape_pulses, sample_ticks, unlimited_used, movement_mode, unlimited_mode,
+#  pause_substate, pause_cursor, replay_mode, replay_frame, replay_stage, replay_cursor,
+#  dialogue, replay_selection]
 CONTEXT, DRAGGING, ANALOG, ANALOG_X, ANALOG_Y = 0, 1, 2, 3, 4
 PAUSE_STATE, ENABLED, READY, BUTTONS, WINDOW_ACTIVE = 7, 8, 9, 11, 13
 CONFIRM_PULSES, ESCAPE_PULSES, SAMPLE_TICKS = 14, 15, 16
+UNLIMITED_USED, MOVEMENT_MODE, UNLIMITED_MODE = 17, 18, 19
+PAUSE_SUBSTATE, PAUSE_CURSOR, DIALOGUE = 20, 21, 26
 
 
 def state(page) -> dict | None:
@@ -204,11 +208,10 @@ def start_game(touch: MobileTouch, page, timeout: float = 25.0) -> None:
     raise RuntimeError(f"TH20 never reached gameplay by tapping: {state(page)}")
 
 
-def drag_movement(touch: MobileTouch, page, angle: float = -30.0, length_px: float = 60.0,
-                  samples: int = 45) -> tuple[float, float, float, list[tuple]]:
-    """Drag towards `angle` (up-right for -30) and report the movement angles.
+def run_drag(touch: MobileTouch, page, angle: float = -30.0, length_px: float = 60.0,
+             samples: int = 45) -> list[tuple]:
+    """Drag towards `angle` (up-right for -30) and return the per-frame trail.
 
-    Returns (player path angle, analog vector angle, travelled distance, trail).
     The expected field-space direction is derived from the Runtime canvas rect,
     because the Launcher hands over fractions of its canvas and the shared
     controller maps those to the 640x480 playfield. The drag is sampled while the
@@ -229,16 +232,52 @@ def drag_movement(touch: MobileTouch, page, angle: float = -30.0, length_px: flo
     identifier = touch.next_id
     touch.dispatch("touchStart", [(identifier, *touch.point(start_x, start_y))])
     page.wait_for_timeout(80)
-    touch.dispatch("touchMove", [(identifier, *touch.point(start_x + dx, start_y + dy))])
+    # The pre-move position is the first trail entry: the unlimited drag covers
+    # its reach inside the first sampled frame, so the jump has to be visible.
+    before = state(page)
     trail = []
+    if before:
+        probe = before["probe"]
+        trail.append((0, before["player"][2], before["player"][3], 0.0, 0.0, probe[CONTEXT],
+                      probe[DRAGGING], probe[ENABLED], probe[UNLIMITED_USED], probe[MOVEMENT_MODE]))
+    touch.dispatch("touchMove", [(identifier, *touch.point(start_x + dx, start_y + dy))])
     for _ in range(samples):
         page.wait_for_timeout(16)
         snapshot = state(page)
         if snapshot:
             probe, player = snapshot["probe"], snapshot["player"]
             trail.append((probe[ANALOG], player[2], player[3], probe[ANALOG_X], probe[ANALOG_Y],
-                          probe[CONTEXT], probe[DRAGGING], probe[ENABLED]))
+                          probe[CONTEXT], probe[DRAGGING], probe[ENABLED], probe[UNLIMITED_USED],
+                          probe[MOVEMENT_MODE]))
     touch.dispatch("touchEnd", [])
+    return trail
+
+
+def drag_stats(trail: list[tuple]) -> dict:
+    """Per-frame movement statistics of one drag (see `run_drag`).
+
+    `first_ratio` is the share of the whole reach that the first sampled frame
+    covered: an unlimited drag reaches the finger at once, a rate-limited one
+    only advances by the player's own speed.
+    """
+    active = [sample for sample in trail if sample[0] == 1]
+    steps = [math.hypot(trail[i][1] - trail[i - 1][1], trail[i][2] - trail[i - 1][2])
+             for i in range(1, len(trail))]
+    start, end = trail[0], trail[-1]
+    total = math.hypot(end[1] - start[1], end[2] - start[2])
+    first = steps[0] if steps else 0.0
+    return {"active": len(active), "moving": len([s for s in active if math.hypot(s[3], s[4]) > 0]),
+            "max_step": max(steps) if steps else 0.0, "total": total, "first_step": first,
+            "first_ratio": first / total if total else 0.0,
+            "max_vector": max((math.hypot(sample[3], sample[4]) for sample in active), default=0.0),
+            "unlimited_used": trail[-1][8] if trail else None,
+            "mode": trail[-1][9] if trail else None}
+
+
+def drag_movement(touch: MobileTouch, page, angle: float = -30.0, length_px: float = 60.0,
+                  samples: int = 45) -> tuple[float, float, float, list[tuple]]:
+    """Drag and report (player path angle, analog vector angle, distance, trail)."""
+    trail = run_drag(touch, page, angle, length_px, samples)
     active = [sample for sample in trail if sample[0] == 1]
     assert active, f"the drag never activated the direct-touch path: {trail[:3]}"
     moving = [sample for sample in active if math.hypot(sample[3], sample[4]) > 20]
@@ -247,12 +286,99 @@ def drag_movement(touch: MobileTouch, page, angle: float = -30.0, length_px: flo
     path_dx, path_dy = last[1] - first[1], last[2] - first[2]
     vector_x = sum(sample[3] for sample in moving)
     vector_y = sum(sample[4] for sample in moving)
-    summary = {"canvas": (width, height), "active": len(active), "moving": len(moving),
-               "first": trail[0], "last": trail[-1], "moving_head": moving[:2]}
+    summary = {"active": len(active), "moving": len(moving), "first": trail[0], "last": trail[-1],
+               "moving_head": moving[:2]}
     assert len(active) >= 5, f"the direct-touch path was active for too few frames: {summary}"
     assert math.hypot(path_dx, path_dy) > 10, f"the drag moved the player too little: {summary}"
     return (math.degrees(math.atan2(path_dy, path_dx)), math.degrees(math.atan2(vector_y, vector_x)),
             math.hypot(path_dx, path_dy), trail)
+
+
+def set_movement_mode(page, mode: str, timeout: float = 10.0, expect_runtime: bool = True) -> None:
+    """Select a Launcher movement mode, optionally waiting for the Runtime.
+
+    Before a launch there is no Runtime to report the mode; the Launcher sends
+    it with the launch options.
+    """
+    index = ["touch", "touch-unlimited", "joystick", "joystick-free"].index(mode)
+    # "touch" and "touch-unlimited" carry a Launcher warning the player must
+    # accept before the mode is stored, and enabling touch raises one too, so the
+    # selection is retried while dialogs are dismissed.
+    for _ in range(6):
+        page.evaluate("""(value) => {
+          const select = document.querySelector('#touchMovementMode');
+          select.value = value;
+          select.dispatchEvent(new Event('change', {bubbles: true}));
+        }""", mode)
+        page.wait_for_timeout(300)
+        if page.locator("#decisionDialog[open]").count():
+            page.locator("#decisionConfirm").click()
+            page.wait_for_timeout(300)
+        if page.locator("#touchMovementMode").input_value() == mode:
+            break
+    assert page.locator("#touchMovementMode").input_value() == mode
+    if not expect_runtime:
+        return
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        snapshot = state(page)
+        if snapshot and snapshot["probe"][MOVEMENT_MODE] == index:
+            return
+        page.wait_for_timeout(150)
+    raise RuntimeError(f"the Launcher never applied the {mode} movement mode: {state(page)}")
+
+
+def open_runtime(page, context, url: str, movement_mode: str, touch_expected: bool = True) -> MobileTouch:
+    """Enable touch, launch the Runtime and start a run by tapping.
+
+    The Launcher owns the touch options and only applies a movement-mode change
+    at launch, so each mode is exercised through a fresh page.
+    """
+    page.goto(url, wait_until="load", timeout=60_000)
+    page.wait_for_function("window.__eaglerBoot?.done === true", timeout=90_000)
+    # Stored preferences survive a page load, so each pass starts from the
+    # documented default (touch disabled) and enables it through the UI.
+    page.evaluate("localStorage.clear()")
+    page.reload(wait_until="load")
+    page.wait_for_function("window.__eaglerBoot?.done === true", timeout=90_000)
+    page.wait_for_timeout(800)
+    page.evaluate("document.querySelector('#firstUseNoticeDialog')?.close()")
+    assert page.locator("#touchToggle").is_visible(), "the touch option is not offered"
+    page.locator("#touchToggle").click(force=True)
+    page.wait_for_timeout(200)
+    set_movement_mode(page, movement_mode, expect_runtime=False)
+    page.locator("#musicSelect").select_option("none", force=True)
+    deadline = time.time() + 90
+    while not page.locator("#player").evaluate("el => el.classList.contains('open')"):
+        if page.locator("#decisionDialog[open]").count():
+            try:
+                page.locator("#decisionConfirm").click(timeout=1200)
+            except PlaywrightTimeoutError:
+                pass
+        else:
+            try:
+                page.locator("#launch").click(timeout=1200)
+            except PlaywrightTimeoutError:
+                pass
+        page.wait_for_timeout(250)
+        if time.time() > deadline:
+            raise RuntimeError("the TH20 Runtime never opened")
+    page.wait_for_selector("#player.open", timeout=60_000)
+    page.wait_for_timeout(1000)
+    if page.locator("#touchHelp").is_visible():
+        page.locator("#touchHelpClose").click()
+    deadline = time.time() + 180
+    while time.time() < deadline and not state(page):
+        page.wait_for_timeout(500)
+    assert state(page), "TH20 Runtime never booted"
+    if touch_expected:
+        assert wait_enabled(page), f"the Launcher's touch option never reached the Runtime: {state(page)}"
+    touch = MobileTouch(page, context, page.locator("#gameFrame").bounding_box())
+    start_game(touch, page)
+    live = state(page)
+    assert live["probe"][READY] == 1, f"gameplay never reported a live player: {live}"
+    assert live["probe"][WINDOW_ACTIVE] == 1, f"the input window is not active: {live}"
+    return touch
 
 
 def main() -> None:
@@ -279,65 +405,14 @@ def main() -> None:
             page = context.new_page()
             errors: list[str] = []
             benign = re.compile(r"^(?:Failed to load resource|th20 wasm build|sdl_game_open|tick \d+ scene \d+|worker\[)")
-            missing_card_art = re.compile(r"/assets/th\d+-card\.webp$")
+            missing_card_art = re.compile(r"/assets/th\d+(?:-card\.webp|\.ico)$")
             page.on("pageerror", lambda error: errors.append(f"pageerror:{error}"))
             page.on("console", lambda message: errors.append(f"{message.type}:{message.text}")
                     if message.type == "error" and not benign.search(message.text) else None)
             page.on("response", lambda response: errors.append(f"http{response.status}:{response.url}")
                     if response.status >= 400 and not missing_card_art.search(response.url) else None)
             try:
-                page.goto(url, wait_until="load", timeout=60_000)
-                page.wait_for_function("window.__eaglerBoot?.done === true", timeout=90_000)
-                page.wait_for_timeout(800)
-                page.evaluate("document.querySelector('#firstUseNoticeDialog')?.close()")
-
-                # The Launcher owns the touch option; enabling it here is the
-                # real mobile path and avoids re-configuring a running Runtime.
-                assert page.locator("#touchToggle").is_visible(), "the touch option is not offered"
-                page.locator("#touchToggle").click(force=True)
-                page.wait_for_timeout(200)
-                # The movement select lives in the collapsed settings panel; a
-                # fresh profile already defaults to "touch", but pin it anyway.
-                page.evaluate("""() => {
-                  const select = document.querySelector('#touchMovementMode');
-                  select.value = 'touch';
-                  select.dispatchEvent(new Event('change', {bubbles: true}));
-                }""")
-                page.wait_for_timeout(200)
-                assert page.locator("#touchMovementMode").input_value() == "touch"
-                page.locator("#musicSelect").select_option("none", force=True)
-
-                deadline = time.time() + 90
-                while not page.locator("#player").evaluate("el => el.classList.contains('open')"):
-                    if page.locator("#decisionDialog[open]").count():
-                        try:
-                            page.locator("#decisionConfirm").click(timeout=1200)
-                        except PlaywrightTimeoutError:
-                            pass
-                    else:
-                        try:
-                            page.locator("#launch").click(timeout=1200)
-                        except PlaywrightTimeoutError:
-                            pass
-                    page.wait_for_timeout(250)
-                    if time.time() > deadline:
-                        raise RuntimeError("the TH20 Runtime never opened")
-                page.wait_for_selector("#player.open", timeout=60_000)
-                page.wait_for_timeout(1000)
-                if page.locator("#touchHelp").is_visible():
-                    page.locator("#touchHelpClose").click()
-
-                deadline = time.time() + 180
-                while time.time() < deadline and not state(page):
-                    page.wait_for_timeout(500)
-                assert state(page), "TH20 Runtime never booted"
-                assert wait_enabled(page), f"the Launcher's touch option never reached the Runtime: {state(page)}"
-                touch = MobileTouch(page, context, page.locator("#gameFrame").bounding_box())
-
-                start_game(touch, page)
-                live = state(page)
-                assert live["probe"][READY] == 1, f"gameplay never reported a live player: {live}"
-                assert live["probe"][WINDOW_ACTIVE] == 1, f"the input window is not active: {live}"
+                touch = open_runtime(page, context, url, "touch")
 
                 # Free-direction movement: -30 degrees is not an octant of the
                 # recovered eight-way input.
@@ -347,6 +422,7 @@ def main() -> None:
                     f"(trail={trail[:3]})")
                 assert abs(path_angle - (-30)) < 20, (
                     f"the player did not travel along the drag: {path_angle:.1f} (trail={trail[:3]})")
+                limited = drag_stats(trail)
 
                 # Keyboard keeps the recovered eight-way path.
                 before = state(page)["player"]
@@ -368,24 +444,110 @@ def main() -> None:
                 assert paused["probe"][CONTEXT] == 0, f"the pause menu must report the menu context: {paused}"
                 assert paused["probe"][ANALOG] == 0, "a paused game must not run the movement path"
 
-                touch.tap(VIEWPORT["width"] / 2, VIEWPORT["height"] / 2)
-                assert observed(page, CONFIRM_PULSES), "a tap in the pause menu produced no confirm pulse"
-                assert wait_paused(page, False), f"a tap did not confirm/resume: {state(page)}"
+                # A one-shot gesture pulse belongs to the state that produced it,
+                # so a menu animation that is not accepting input yet drops it.
+                # Retry the gesture the way a player would tap again.
+                def confirm_by_tap() -> bool:
+                    for _ in range(3):
+                        touch.tap(VIEWPORT["width"] / 2, VIEWPORT["height"] / 2)
+                        assert observed(page, CONFIRM_PULSES), "a tap in the pause menu produced no confirm pulse"
+                        if wait_paused(page, False, timeout=6.0):
+                            return True
+                        page.wait_for_timeout(500)
+                    return False
+
+                def cancel_by_two_fingers() -> bool:
+                    for _ in range(3):
+                        touch.next_id += 1
+                        first_id, second_id = touch.next_id, touch.next_id + 1
+                        touch.dispatch("touchStart", [
+                            (first_id, *touch.point(VIEWPORT["width"] / 2 - 30, VIEWPORT["height"] / 2)),
+                            (second_id, *touch.point(VIEWPORT["width"] / 2 + 30, VIEWPORT["height"] / 2))])
+                        page.wait_for_timeout(70)
+                        touch.dispatch("touchEnd", [])
+                        assert observed(page, ESCAPE_PULSES), (
+                            "a two-finger tap in the pause menu produced no cancel pulse")
+                        if wait_paused(page, False, timeout=6.0):
+                            return True
+                        page.wait_for_timeout(500)
+                    return False
+
+                assert confirm_by_tap(), f"a tap did not confirm/resume: {state(page)}"
 
                 page.locator("#touchEscape").click()
                 assert wait_paused(page, True), f"the pause menu did not reopen: {state(page)}"
-                touch.next_id += 1
-                first_id, second_id = touch.next_id, touch.next_id + 1
-                touch.dispatch("touchStart", [(first_id, *touch.point(VIEWPORT["width"] / 2 - 30, VIEWPORT["height"] / 2)),
-                                              (second_id, *touch.point(VIEWPORT["width"] / 2 + 30, VIEWPORT["height"] / 2))])
-                page.wait_for_timeout(70)
-                touch.dispatch("touchEnd", [])
-                assert observed(page, ESCAPE_PULSES), "a two-finger tap in the pause menu produced no cancel pulse"
-                assert wait_paused(page, False), f"a two-finger tap did not cancel: {state(page)}"
+                assert cancel_by_two_fingers(), f"a two-finger tap did not cancel: {state(page)}"
+
+                def menu_drag(dy_px: float) -> None:
+                    """Drag inside the pause menu; the menu owner turns it into arrows."""
+                    touch.next_id += 1
+                    identifier = touch.next_id
+                    x, y = VIEWPORT["width"] / 2, VIEWPORT["height"] / 2
+                    touch.dispatch("touchStart", [(identifier, *touch.point(x, y))])
+                    page.wait_for_timeout(80)
+                    touch.dispatch("touchMove", [(identifier, *touch.point(x, y + dy_px))])
+                    page.wait_for_timeout(450)
+                    touch.dispatch("touchEnd", [])
+                    page.wait_for_timeout(300)
+
+                # A displayed dialogue must not steal the pause menu's gesture:
+                # the phone's pause button opens the menu during a mid-stage
+                # dialogue, and dragging then has to move the menu cursor (the
+                # dialogue context has no menu owner at all).
+                deadline = time.time() + 300
+                while time.time() < deadline and state(page)["probe"][DIALOGUE] != 1:
+                    page.wait_for_timeout(500)
+                assert state(page)["probe"][DIALOGUE] == 1, (
+                    f"no mid-stage dialogue appeared to test the pause menu against: {state(page)}")
+                during_dialogue = None
+                for _ in range(10):
+                    page.locator("#touchEscape").click()
+                    during_dialogue = wait_paused(page, True, timeout=4.0)
+                    if during_dialogue:
+                        break
+                assert during_dialogue, f"the pause menu did not open during a dialogue: {state(page)}"
+                assert during_dialogue["probe"][DIALOGUE] == 1, "the dialogue ended before the menu opened"
+                assert during_dialogue["probe"][CONTEXT] == 0, (
+                    f"a dialogue pause menu must report the menu context: {during_dialogue}")
+                cursor_before = during_dialogue["probe"][PAUSE_CURSOR]
+                cursor_after = cursor_before
+                for offset in (70.0, -70.0, 70.0):
+                    menu_drag(offset)
+                    cursor_after = state(page)["probe"][PAUSE_CURSOR]
+                    if cursor_after != cursor_before:
+                        break
+                assert cursor_before >= 0 and cursor_after != cursor_before, (
+                    f"dragging in a dialogue pause menu did not move the cursor: "
+                    f"{cursor_before} -> {cursor_after} (probe={state(page)['probe']})")
+                assert confirm_by_tap(), f"the dialogue pause menu did not close: {state(page)}"
+                dialogue_cursor = (cursor_before, cursor_after)
+
+                # Second pass: the unlimited option ("touch-unlimited") must
+                # actually remove the speed cap, so the same drag covers the
+                # reach in far fewer frames. Merely enabling the option must not
+                # mark the run; a non-zero unlimited movement consumed by
+                # gameplay must (the Launcher protocol's cheat marker, which
+                # forces a 100% drop rate on the Result/high-score and the saved
+                # replay). A movement-mode change is applied at launch, so this
+                # pass opens a fresh Runtime.
+                touch = open_runtime(page, context, url, "touch-unlimited")
+                opted = state(page)
+                assert opted["probe"][UNLIMITED_MODE] == 1, f"the unlimited mode was not adopted: {opted}"
+                assert opted["probe"][UNLIMITED_USED] == 0, "enabling the option must not mark the run"
+                unlimited = drag_stats(run_drag(touch, page))
+                assert unlimited["total"] > 10, f"the unlimited drag moved nothing: {unlimited}"
+                assert unlimited["first_ratio"] > 0.7, (
+                    f"the unlimited drag is still rate-limited: unlimited={unlimited} limited={limited}")
+                assert limited["first_ratio"] < 0.4, (
+                    f"the rate-limited drag reached the finger at once: limited={limited}")
+                assert state(page)["probe"][UNLIMITED_USED] == 1, "an unlimited drag did not mark the run"
 
                 assert not errors, errors
                 print(f"TH20 touch: PASS path_angle={path_angle:.1f}deg vector_angle={vector_angle:.1f}deg "
-                      f"distance={distance:.1f} tap_confirm=ok two_finger_cancel=ok pause_button=ok keyboard=ok")
+                      f"distance={distance:.1f} limited_first={limited['first_ratio']:.2f} "
+                      f"unlimited_first={unlimited['first_ratio']:.2f} unlimited_marked=ok "
+                      f"dialogue_menu_cursor={dialogue_cursor[0]}->{dialogue_cursor[1]} "
+                      "tap_confirm=ok two_finger_cancel=ok pause_button=ok keyboard=ok")
             finally:
                 browser.close()
     finally:
