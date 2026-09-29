@@ -35,6 +35,12 @@
       "thprac": false,
       "runtimeVariants": ["normal"]
     },
+    "th11": {
+      "languages": ["ja"],
+      "music": ["midi"],
+      "thprac": false,
+      "runtimeVariants": ["normal"]
+    },
     "th20": {
       "languages": ["ja"],
       "music": ["midi"],

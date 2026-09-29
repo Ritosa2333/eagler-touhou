@@ -100,6 +100,13 @@
         }
       }
     },
+    "th11": {
+      "builder": "prebuilt",
+      "workspaceRepository": "th11",
+      "variants": {
+        "normal": { "features": { "thcrap": false, "thprac": false }, "cache": {} }
+      }
+    },
     "th20": {
       "builder": "prebuilt",
       "workspaceRepository": "th20",

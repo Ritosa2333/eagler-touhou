@@ -39,6 +39,8 @@ ARTWORK_BY_GAME = {
     # can be derived. Keep the format-adapter registry complete with an empty
     # output set rather than fabricating or referencing a missing image.
     "th20": (),
+    # TH11's th11.dat is neither PBG3/4 nor PBGZ and has no reader here either.
+    "th11": (),
 }
 # Launcher cards are presentation derivatives, not archival copies of the
 # original title artwork.  The UI darkens/crops them heavily and Lighthouse's
