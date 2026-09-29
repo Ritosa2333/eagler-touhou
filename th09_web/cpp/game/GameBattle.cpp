@@ -129,7 +129,10 @@ Bullet* GameBattle::Services::emit(i32 side,bool secondary,const BulletEmission&
     if(e.flags&0x200)g.output.positioned_sound(side,e.sound,e.position.x);return last;
 }
 void GameBattle::Services::Field::effect(const EclEffectRequest& r){
-    root.effects.sync();root.effects.coordinate_side=side;auto* e=field().effects->create(EffectKind(r.type),r.position,{},r.count,r.color);if(e&&r.explicit_velocity)e->velocity=r.velocity;
+    // The ECL 139/140 arguments are the effect's own arguments vector, not a
+    // velocity: laser warning lines (effects 11/12) derive their placement and
+    // rotation from it. Passing it anywhere else leaves them at the origin angle.
+    root.effects.sync();root.effects.coordinate_side=side;field().effects->create(EffectKind(r.type),r.position,r.explicit_velocity?r.velocity:Vec3{},r.count,r.color);
 }
 void GameBattle::Services::Field::begin_focus(const Vec3& p,u32,u32 character){field().focus_aura=root.effect(side,7,p,side);field().capture_effect=root.effect(side,character_resources(character)->focus_effect,p,side+2);}
 void GameBattle::Services::Field::end_focus(){if(field().focus_aura&&field().focus_aura->animation)field().focus_aura->animation->pendingInterrupt=1;field().focus_aura=nullptr;if(field().capture_effect)field().capture_effect->active=0;field().capture_effect=nullptr;}
