@@ -354,7 +354,7 @@ export const PRODUCT_GAMES = Object.freeze({
       musicMounts: Object.freeze({ ogg: "/music" }),
     }),
     replay: Object.freeze({ prefix: "th11" }),
-    features: Object.freeze({ thprac: false, languages: false, focusHitbox: false }),
+    features: Object.freeze({ thprac: false, languages: true, focusHitbox: false }),
   }),
   th20: Object.freeze({
     number: "20",

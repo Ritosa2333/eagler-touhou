@@ -17,18 +17,21 @@ const descriptorPath = resolve(site, `${game}.package.json`);
 const descriptor = JSON.parse(await readFile(descriptorPath, "utf8"));
 const hasLanguagePacks = Array.isArray(descriptor.components?.language?.entries) &&
   descriptor.components.language.entries.length > 0;
-if (hasLanguagePacks && !descriptor.base.files.some(fileId =>
-  descriptor.files[fileId]?.target === "/unifont.otf")) {
-  const source = "shared/unifont.otf";
+// Language-enabled packages also support the Japanese baseline. Launcher
+// requests its shared font even when a Runtime uses baked Japanese glyphs.
+const sharedFonts = hasLanguagePacks ? ["msgothic.ttc", "unifont.otf"] : [];
+for (const name of sharedFonts) {
+  if (descriptor.base.files.some(fileId => descriptor.files[fileId]?.target === `/${name}`)) continue;
+  const source = `shared/${name}`;
   const info = await stat(resolve(site, source)).catch(() => null);
   if (!info?.isFile() || !info.size) {
-    throw new Error(`${game}: language-enabled offline package requires ${source}`);
+    throw new Error(`${game}: offline package requires ${source}`);
   }
-  const fileId = "shared-unifont";
+  const fileId = name === "msgothic.ttc" ? "shared-msgothic" : "shared-unifont";
   if (Object.hasOwn(descriptor.files, fileId)) throw new Error(`${game}: package file ID is already in use: ${fileId}`);
   descriptor.files[fileId] = {
     source,
-    target: "/unifont.otf",
+    target: `/${name}`,
     revision: "pending",
   };
   descriptor.base.files.push(fileId);

@@ -578,6 +578,7 @@ const entries = [
   ["touch.adjustViewport", "＋ 调整游戏画面", "＋ Adjust game viewport"], ["touch.adjustDone", "调整完成", "Done"],
   ["touch.leftControls", "左手触控按键", "Left-side touch controls"], ["touch.focus", "低速", "Focus"],
   ["touch.holdFocus", "按住低速", "Hold to focus"], ["touch.tapToggle", "点按切换", "Tap to toggle"], ["touch.fire", "开火", "Fire"], ["touch.holdFireCharge", "按住开火／蓄力", "Hold to fire / charge"],
+  ["touch.gap", "隙间", "Gap"], ["touch.holdGap", "梦A：贴边按住", "Reimu A: hold at edge"],
   ["touch.joystickAria", "移动轮盘", "Movement joystick"], ["touch.escapeAria", "返回或暂停", "Back or pause"],
   ["touch.escapeTitle", "ESC：返回或暂停", "ESC: back or pause"],
   ["touch.restartTitle", "在暂停菜单按下后，会重开本局。", "Restarts the current run when pressed in the pause menu."],
