@@ -1,7 +1,15 @@
 #include "PlayerCollision.hpp"
 #include "GameMath.hpp"
+#include <cmath>
 namespace th08 {
 namespace {
+bool definitely_outside(const Vec3& p,const Vec3& size,const Vec3& lower,const Vec3& upper,float margin){
+    const float values[]{p.x,p.y,size.x,size.y,lower.x,lower.y,upper.x,upper.y};
+    for(float v:values)if(!std::isfinite(v)||std::fabs(v)>8192.f)return false;
+    if(size.x<0||size.y<0||lower.x>upper.x||lower.y>upper.y)return false;
+    const float x=size.x*.5f+margin+2.f,y=size.y*.5f+margin+2.f;
+    return p.x+x<lower.x||p.x-x>upper.x||p.y+y<lower.y||p.y-y>upper.y;
+}
 struct Box {Vec2 lower,upper;};
 Vec2 rotate(const Vec2& point,float angle){
     // 0043ee30 stores both trigonometric results before multiplying.
@@ -42,11 +50,13 @@ i32 PlayerCollision::barrier(const Vec2& p){
 }
 i32 PlayerCollision::bullet(const Vec3& p,const Vec3& size,bool cancellation){
     cancel_item=6;if(cancellation&&barrier(xy(p)))return 2;
+    if(definitely_outside(p,size,movement.bounds[0],movement.bounds[1],0))return 0;
     if(!overlap(xy(movement.bounds[0]),xy(movement.bounds[1]),box(xy(p),xy(size))))return 0;
     context.replay_flags|=2;if(life.state==0&&!actions.invincible()){actions.randomize_integrity();actions.die();}return 1;
 }
 i32 PlayerCollision::graze(const Vec3& p,const Vec3& size){
     cancel_item=6;if(barrier(xy(p)))return 2;
+    if(definitely_outside(p,size,movement.bounds[2],movement.bounds[3],20))return 0;
     const Box b=box(xy(p),xy(size),20);if(life.state==2||life.state==1)return 0;
     if(!overlap(xy(movement.bounds[2]),xy(movement.bounds[3]),b))return 0;
     actions.graze(p,false);return 1;
