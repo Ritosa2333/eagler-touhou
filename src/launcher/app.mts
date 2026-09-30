@@ -422,6 +422,15 @@ function mpLobbySend(message: UnknownRecord) {
   return true;
 }
 
+function runtimeResourceFileIds(descriptor: InstalledPackageGeneration["descriptor"]): string[] {
+  const ids: string[] = [];
+  for (const componentId of Object.keys(descriptor.components || {})) {
+    if (descriptor.components?.[componentId]?.type !== "resource") continue;
+    ids.push(...componentFileIds(descriptor, componentId));
+  }
+  return [...new Set(ids)];
+}
+
 async function installedPackageRuntimeResources() {
   const generation = activeInstalledPackageGeneration;
   if (!generation) return [];
@@ -433,17 +442,42 @@ async function installedPackageRuntimeResources() {
     }
   }
   const resources: Array<{ fileId: string; path: string; size: number }> = [];
-  for (const fileId of generation.descriptor.base?.files || []) {
+  const materialize = (fileId: string) => {
     if (runtimeOwned.has(fileId) || fileId === generation.descriptor.runtimeRequirement?.dataFile ||
-        !generation.files?.[fileId]?.objectId) continue;
+        !generation.files?.[fileId]?.objectId) return;
     const declaration = generation.descriptor.files[fileId];
-    if (!declaration) continue;
+    if (!declaration) return;
     // Old generations may still declare executable Runtime files. They are
     // migration input only and must never be materialized into the live FS.
-    if (/\.(?:html|m?js|wasm)$/i.test(declaration.source || "")) continue;
+    if (/\.(?:html|m?js|wasm)$/i.test(declaration.source || "")) return;
     resources.push({ fileId, path: declaration.target, size: Number(declaration.bytes) || 0 });
-  }
+  };
+  for (const fileId of generation.descriptor.base?.files || []) materialize(fileId);
+  // TH20's retail BGM (thbgm.dat -> /game/thbgm.dat) is a standalone resource
+  // component, not a base file, so it is delivered to the Runtime FS through
+  // the same managed channel as shared fonts once its object is installed.
+  for (const fileId of runtimeResourceFileIds(generation.descriptor)) materialize(fileId);
   return resources;
+}
+
+// Remote resource components are only advertised when the deployment actually
+// owns them (self-hosted). External deployments keep retail content manual and
+// rely on the installed Package Store, so no absent URL is requested.
+function selectedRuntimeResources(): Array<{ url: string; path: string; size: number }> {
+  if (manifest.shared?.resourceMode !== "hosted") return [];
+  const generation = activeInstalledPackageGeneration;
+  if (!generation || !releaseCatalog?.games?.[state.game]) return [];
+  const ids = runtimeResourceFileIds(generation.descriptor).filter(fileId => !generation.files?.[fileId]?.objectId);
+  if (!ids.length) return [];
+  const descriptorUrl = releaseCatalogEntryUrl(releaseCatalogUrl, releaseCatalog, state.game);
+  if (!descriptorUrl) throw new Error(t("music.packageUrlInvalid"));
+  return ids.map(fileId => {
+    const declaration = generation.descriptor.files[fileId];
+    if (!declaration || typeof declaration.source !== "string" || typeof declaration.target !== "string") {
+      throw new Error(t("music.packageResourceInvalid"));
+    }
+    return { url: new URL(declaration.source, descriptorUrl).href, path: declaration.target, size: Number(declaration.bytes) || 0 };
+  });
 }
 
 async function installManagedPackageResources(
@@ -3340,6 +3374,16 @@ function requiredSharedForGame(gameId: GameId = state.game): readonly string[] {
   return "requiredShared" in product ? product.requiredShared : [];
 }
 
+function cardArtworkAsset(gameId: GameId = state.game): string | null {
+  const product = PRODUCT_GAMES[gameId];
+  return "cardArtwork" in product ? `assets/${product.cardArtwork}` : null;
+}
+
+function cardArtworkCss(gameId: GameId = state.game): string {
+  const artwork = cardArtworkAsset(gameId);
+  return artwork ? `url("${artwork}")` : "none";
+}
+
 function runtimeUrl() {
   const entry = game();
   if (state.runtimeVariant === "multiplayer") {
@@ -3654,7 +3698,7 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
         ? {
             multiplayerLocalPlayerVisibility: state.options.multiplayerLocalPlayerVisibility,
             ...(state.replayViewer ? { replayViewer: true } : {}),
-            ...(options.omitNetplay && "preflightWithoutRoom" in PRODUCT_GAMES[state.game].multiplayer
+            ...(options.omitNetplay && "preflightWithoutRoom" in (game().multiplayer ?? {})
               ? { multiplayerPreflight: true } : {}),
             ...netplayOptions,
           }
@@ -3672,7 +3716,7 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
       music: localMusicResources && PRODUCT_GAMES[state.game].musicRuntime.localOggConfigureMode === "midi-sentinel"
         ? "midi" : musicTransportMode(state.music),
       resources: localMusicResources ? [] : musicResources,
-      runtimeResources: [],
+      runtimeResources: selectedRuntimeResources(),
       runtimePack: runtimePack ? { ...runtimePack, manifest: runtimePack.manifest, files: runtimePack.files } : null,
       sharedResources: shared,
       options: runtimeOptions,
@@ -4082,8 +4126,13 @@ function render() {
   $("#gameTitle").textContent = game().title;
   const identity = PRODUCT_GAMES[state.game];
   const cover = $("#optionsCover") as HTMLImageElement;
-  const coverSource = `assets/${identity.cardArtwork}`;
-  if (cover.getAttribute("src") !== coverSource) cover.src = coverSource;
+  const coverSource = cardArtworkAsset(state.game);
+  if (coverSource) {
+    cover.hidden = false;
+    if (cover.getAttribute("src") !== coverSource) cover.src = coverSource;
+  } else {
+    cover.hidden = true;
+  }
   $("#optionsNumber").textContent = identity.number;
   $("#optionsSubtitle").textContent = identity.subtitle;
   $("#mpTitleBadge").hidden = !multiplayerProduct;
@@ -4092,6 +4141,19 @@ function render() {
   $("#gameNoticeCallout").hidden = !noticeGame;
   if (noticeGame) {
     $("#gameNoticeRepo").href = support.sourceRepository;
+    // Per-game credit override (e.g. TH20): keep the shared default otherwise.
+    const credit = "credit" in support ? (support.credit as { name: string; url: string }) : null;
+    const creditAnchor = document.querySelector<HTMLAnchorElement>("#gameNoticeCredit");
+    const creditName = document.querySelector<HTMLElement>("#gameNoticeCreditName");
+    if (creditAnchor && creditName) {
+      creditAnchor.href = credit ? credit.url : "https://b23.tv/WOQhahY";
+      if (credit) {
+        creditName.textContent = credit.name;
+        creditName.removeAttribute("data-i18n");
+      } else {
+        creditName.setAttribute("data-i18n", "gameNotice.credit");
+      }
+    }
   }
   $("#mpShell").hidden = !multiplayerProduct;
   const netplayConfigurationReady = hostManifestAvailable && !!state.netplay.url;
@@ -6517,7 +6579,7 @@ async function openTouchLayoutEditor() {
   touchLayoutEditorEnteredFullscreen = false;
   touchLayoutWindowOrientation = null;
   resetTouchLayoutEditorPosition();
-  player.style.setProperty("--touch-preview-image", `url("assets/${PRODUCT_GAMES[state.game].cardArtwork}")`);
+  player.style.setProperty("--touch-preview-image", cardArtworkCss());
   document.body.classList.add("player-active");
   player.classList.add("open", "touch-preview", "touch-layout-edit");
   player.setAttribute("aria-hidden", "false");
@@ -8675,7 +8737,7 @@ $("#gameDataImportInput").addEventListener("change", async () => {
 const touchPreview = new URLSearchParams(location.search).get("preview");
 if (touchPreview === "touch" || touchPreview === "touch-hud") {
   state.options.touchEnabled = true;
-  player.style.setProperty("--touch-preview-image", `url("assets/${PRODUCT_GAMES[state.game].cardArtwork}")`);
+  player.style.setProperty("--touch-preview-image", cardArtworkCss());
   document.body.classList.add("player-active");
   player.classList.add("open", "touch-preview");
   player.setAttribute("aria-hidden", "false");
