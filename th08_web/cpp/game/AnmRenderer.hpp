@@ -73,6 +73,7 @@ public:
     u32 mix_color = 0x80808080;
     bool mix_enabled = false, depth_test_disabled = false;
     bool vertex_buffer_disabled=false, color_compositing_disabled=false;
+    bool visual_geometry_suppressed=false;
     bool fog_disabled=false,fog_enabled=false;
     u32 current_texture = 0;
     u8 current_blend = 3, current_shader = 0xff, disable_z_write = 0xff;

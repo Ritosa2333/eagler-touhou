@@ -12,7 +12,7 @@ void BulletSystem::emit(BulletEmission& parameters){
     if(!ready){failed=true;return;}synchronize();creation.emit(parameters,bullet_aim(parameters.position,globals.player),&player.status().context.replay_flags);failed|=creation.failure!=BulletCreation::Failure::None;
 }
 LaserState* BulletSystem::laser(BulletEmission& parameters){if(!ready){failed=true;return nullptr;}synchronize();auto* result=lasers.create(parameters);failed|=lasers.invalid;return result;}
-void BulletSystem::clear(i32 mode){failed|=!cancel_projectiles(state,mode,player.status().cancel_item,this);}
+void BulletSystem::clear(i32 mode){PlayerCollision::BarrierBatch barriers(&player.collision());failed|=!cancel_projectiles(state,mode,player.status().cancel_item,this);}
 i32 BulletSystem::collision(i32 kind,BulletState& bullet){
     // Barrier tests only modify the cancellation region/item. Republishing a
     // cached player state here erased invincibility granted during boss phases.
@@ -29,7 +29,9 @@ bool BulletSystem::update(){
     // BulletSystem callers retain their original self-contained sampling.
     if(!presentation_prepared)drawing.snapshot();presentation_prepared=false;
     if(globals.game_flags&1024)return true;
-    if(!inventory.update())return false;synchronize();if(!updater.update_bullets()||!lasers.update())return false;
+    if(!inventory.update())return false;synchronize();
+    PlayerCollision::BarrierBatch barriers(&player.collision());
+    if(!updater.update_bullets()||!lasers.update())return false;
     if(state.cancel_frames)state.cancel_frames=wrapping_sub(state.cancel_frames,1);state.timer.tick(player.timing);state.unknown_counter=wrapping_add(state.unknown_counter,1);return !failed;
 }
 bool BulletSystem::draw(const Vec2& origin){

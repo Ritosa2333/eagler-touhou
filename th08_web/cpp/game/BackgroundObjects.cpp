@@ -77,6 +77,16 @@ void BackgroundObjects::sprite(AnmVm& vm,const StageSpriteQuad& quad,const Stage
 void BackgroundObjects::beam(AnmVm& vm,const StageBeamQuad& quad,const StageInstance& instance,const Vec3& right,i32& fog_mode){
     const float width=quad.width!=0?quad.width:vm.loadedSprite->widthPx;const auto eye=add(state.camera.position,state.camera.eye_offset);
     const auto start=translated(quad.start,instance.position,state.position),end=translated(quad.end,instance.position,state.position),a=project(start),b=project(end);
+    if(renderer.visual_geometry_suppressed){
+        auto direction=sub(b,a);projection_input=direction;
+        const float distance=number((number(direction.x)*number(direction.x)+number(direction.y)*number(direction.y)).to_float()).square_root().to_float();
+        if(!(distance>=1e-5f))return;
+        const float inverse=Scalar::div(1,distance);
+        direction={Scalar::mul(inverse,direction.x),Scalar::mul(inverse,direction.y),Scalar::mul(inverse,direction.z)};
+        projection_input=direction;
+        if(a.z>=0&&a.z<=1&&b.z>=0&&b.z<=1&&fog_mode!=0){if(!renderer.fog_disabled)renderer.set_fog(false);fog_mode=0;}
+        return;
+    }
     const float aw=(length(sub(project(scaled_add(start,right,width)),a))/number(2)).to_float(),bw=(length(sub(project(scaled_add(end,right,width)),b))/number(2)).to_float();
     const auto color=[&](const Vec3& point){const float distance=length(sub(point,eye)).to_float();const u32 original=vm.color1.d3dColor;if(distance<=state.fog.near_plane)return original;const float amount=fog_amount(distance);return amount>=1?0x00ffffffu:fog_color(original,amount);};
     const u32 ac=color(start),bc=color(end);auto direction=sub(b,a);projection_input=direction;const float distance=number((number(direction.x)*number(direction.x)+number(direction.y)*number(direction.y)).to_float()).square_root().to_float();

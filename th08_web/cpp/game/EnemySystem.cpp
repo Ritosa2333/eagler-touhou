@@ -28,7 +28,7 @@ void EnemySystem::publish_player(){
 void EnemySystem::effect(i32 kind,const Vec3& p,i32 count,u32 color){publish_player();effects.spawn(kind,p,count,color);failed|=effects.invalid;}
 void EnemySystem::parameter_effect(i32 kind,const Vec3& p,const Vec3& parameters,i32 count,u32 color){publish_player();effects.spawn(kind,p,count,color,&parameters);failed|=effects.invalid;}
 EffectState* EnemySystem::attached_effect(i32 kind,const Vec3& p,i32 count,u32 color,bool overlay){publish_player();auto* effect=overlay?effects.overlay(kind,p,count,color):effects.spawn(kind,p,count,color);failed|=effects.invalid;return effect;}
-bool EnemySystem::clear_projectiles(i32 mode){publish_player();failed|=!th08::cancel_projectiles(projectiles,mode,player.status().cancel_item,this);return !failed;}
+bool EnemySystem::clear_projectiles(i32 mode){publish_player();PlayerCollision::BarrierBatch barriers(&player.collision());failed|=!th08::cancel_projectiles(projectiles,mode,player.status().cancel_item,this);return !failed;}
 void EnemySystem::clear_projectiles_near(const Vec3& p,float radius){th08::cancel_projectiles_near(projectiles,p,radius,*this);}
 void EnemySystem::item(const Vec3& p,i32 kind,i32 mode){publish_player();items.spawn(p,kind,mode);failed|=items.invalid();}
 AnmVm* EnemySystem::overlay(i32 kind,const Vec3& p,i32 count,u32 color){publish_player();auto* result=effects.overlay(kind,p,count,color);failed|=effects.invalid;return result;}
@@ -36,7 +36,7 @@ i32 EnemySystem::graze(const Vec3& p,const Vec3& size){publish_player();const i3
 i32 EnemySystem::hit(const Vec3& p,const Vec3& size){publish_player();const i32 result=player.collision().bullet(p,size,false);read_collision();return result;}
 i32 EnemySystem::damage(const Vec3& p,const Vec3& size,i32& count,i32& bomb){publish_player();const i32 result=player.damage(p,size,count,&bomb);read_collision();failed|=player.invalid();return result;}
 i32 EnemySystem::barrier(BulletState& b){publish_player();const i32 result=player.collision().barrier({b.position.x,b.position.y});read_collision();return result;}
-bool EnemySystem::cancel_projectiles(i32 maximum,bool reward,i32& score){publish_player();const bool result=cancel_projectiles_for_score(projectiles,maximum,reward,player.status().cancel_item,*this,score);failed|=!result;return result&&!failed;}
+bool EnemySystem::cancel_projectiles(i32 maximum,bool reward,i32& score){publish_player();PlayerCollision::BarrierBatch barriers(&player.collision());const bool result=cancel_projectiles_for_score(projectiles,maximum,reward,player.status().cancel_item,*this,score);failed|=!result;return result&&!failed;}
 EnemySpawnResult EnemySystem::spawn(const TimelineSpawn& request){read_player();population.initial_time_items=time_item_threshold;auto* enemy=population.spawn(request);publish_player();failed|=enemy->invalid;return {enemy,population.spawn_failed};}
 JobResult EnemySystem::update(){
     if(failed)return JobResult::Error;drawing.snapshot(state.layers);read_player();population.initial_time_items=time_item_threshold;

@@ -99,13 +99,14 @@ bool draw_enemy(EclVm& enemy,const Vec2& offset,EnemyDrawActions& actions){
 }
 void EnemyDrawing::snapshot(EclVm* const* layers){
     if(!presentation_marker.capture())return;
-    previous.clear();for(i32 layer=0;layer<4;++layer){u32 count=0;for(auto* enemy=layers[layer];enemy&&++count<=480;enemy=enemy->next_in_layer){auto& sample=previous.emplace(enemy,PresentationSample{enemy->resolved_position,enemy->direction.z,enemy->lifetime.current,enemy->main_context.subroutine,true}).first->second;for(u32 i=0;i<3;++i)sample.visual[i].capture(enemy->animation[i]);
-        const auto& trail=enemy->trail;sample.trail_flags=trail.flags;sample.trail_step=trail.step;
-        if(trail.flags&&trail.length>0&&trail.length<=96){sample.trail.resize(trail.length);for(i32 i=0;i<trail.length;++i)sample.trail[i]={trail.points[i].position,trail.points[i].angle};}
+    for(auto& entry:previous)entry.second.active=false;
+    for(i32 layer=0;layer<4;++layer){u32 count=0;for(auto* enemy=layers[layer];enemy&&++count<=480;enemy=enemy->next_in_layer){auto& sample=previous[enemy];sample.position=enemy->resolved_position;sample.direction=enemy->direction.z;sample.age=enemy->lifetime.current;sample.subroutine=enemy->main_context.subroutine;sample.active=true;for(u32 i=0;i<3;++i)sample.visual[i].capture(enemy->animation[i]);
+        const auto& trail=enemy->trail;sample.trail_flags=trail.flags;sample.trail_step=trail.step;sample.trail_length=0;
+        if(trail.flags&&trail.length>0&&trail.length<=96){sample.trail_length=u8(trail.length);for(i32 i=0;i<trail.length;++i)sample.trail[i]={trail.points[i].position,trail.points[i].angle};}
     }}
 }
 void EnemyDrawing::visual(EclVm& enemy,u32 index,AnmVm& draw){
-    if(index>=3||!presentation::active)return;const auto found=previous.find(&enemy);if(found==previous.end())return;
+    if(index>=3||!presentation::active)return;const auto found=previous.find(&enemy);if(found==previous.end()||!found->second.active)return;
     // An ECL subroutine transition does not replace an enemy's ANM VM.  Gate
     // visual continuity on the enemy lifetime plus VisualSample's own
     // file/script/visibility identity instead; otherwise an in-flight ANM
@@ -115,32 +116,32 @@ void EnemyDrawing::visual(EclVm& enemy,u32 index,AnmVm& draw){
     before.visual[index].apply_active_opacity(enemy.animation[index],draw,presentation::world_alpha);
 }
 void EnemyDrawing::trail(EclVm& enemy,EnemyTrail& draw){
-    if(!presentation::active||presentation::world_alpha>=1)return;const auto found=previous.find(&enemy);if(found==previous.end())return;
+    if(!presentation::active||presentation::world_alpha>=1)return;const auto found=previous.find(&enemy);if(found==previous.end()||!found->second.active)return;
     const auto& before=found->second;const auto& current=enemy.trail;
-    if(enemy.lifetime.current<before.age||enemy.main_context.subroutine!=before.subroutine||before.trail_flags!=current.flags||before.trail_step!=current.step||before.trail.size()!=u32(current.length))return;
-    for(size_t i=0;i<before.trail.size();++i){const auto& a=before.trail[i];const auto& b=current.points[i];if(a.position.x<-990||b.position.x<-990||!presentation::VisualSample::near(a.position,b.position))continue;
+    if(enemy.lifetime.current<before.age||enemy.main_context.subroutine!=before.subroutine||before.trail_flags!=current.flags||before.trail_step!=current.step||before.trail_length!=u32(current.length))return;
+    for(u32 i=0;i<before.trail_length;++i){const auto& a=before.trail[i];const auto& b=current.points[i];if(a.position.x<-990||b.position.x<-990||!presentation::VisualSample::near(a.position,b.position))continue;
         draw.points[i].position={presentation::lerp_world(a.position.x,b.position.x),presentation::lerp_world(a.position.y,b.position.y),presentation::lerp_world(a.position.z,b.position.z)};
         draw.points[i].angle=presentation::VisualSample::cyclic(a.angle,b.angle,presentation::world_alpha,6.2831854820251465f);
     }
 }
 bool EnemyDrawing::discrete_motion(EclVm& enemy){
     const auto found=previous.find(&enemy);
-    return found!=previous.end()&&enemy.lifetime.current>=found->second.age&&enemy.main_context.subroutine!=found->second.subroutine;
+    return found!=previous.end()&&found->second.active&&enemy.lifetime.current>=found->second.age&&enemy.main_context.subroutine!=found->second.subroutine;
 }
 Vec3 EnemyDrawing::position(EclVm& enemy){
-    if(!presentation::active)return enemy.resolved_position;const auto found=previous.find(&enemy);if(found==previous.end())return enemy.resolved_position;
+    if(!presentation::active)return enemy.resolved_position;const auto found=previous.find(&enemy);if(found==previous.end()||!found->second.active)return enemy.resolved_position;
     const auto& before=found->second;const float dx=enemy.resolved_position.x-before.position.x,dy=enemy.resolved_position.y-before.position.y;if(enemy.lifetime.current<before.age||enemy.main_context.subroutine!=before.subroutine||dx*dx+dy*dy>=16384.0f)return enemy.resolved_position;
     return {presentation::lerp_world(before.position.x,enemy.resolved_position.x),presentation::lerp_world(before.position.y,enemy.resolved_position.y),presentation::lerp_world(before.position.z,enemy.resolved_position.z)};
 }
 float EnemyDrawing::direction(EclVm& enemy){
     if(presentation::world_alpha>=1)return enemy.direction.z;
-    if(!presentation::active)return enemy.direction.z;const auto found=previous.find(&enemy);if(found==previous.end()||enemy.lifetime.current<found->second.age||enemy.main_context.subroutine!=found->second.subroutine)return enemy.direction.z;
+    if(!presentation::active)return enemy.direction.z;const auto found=previous.find(&enemy);if(found==previous.end()||!found->second.active||enemy.lifetime.current<found->second.age||enemy.main_context.subroutine!=found->second.subroutine)return enemy.direction.z;
     constexpr float pi=3.1415927410125732f,tau=6.2831854820251465f;float delta=enemy.direction.z-found->second.direction;if(delta>pi)delta-=tau;else if(delta<-pi)delta+=tau;return add_angle(found->second.direction+delta*presentation::world_alpha,0);
 }
 #if defined(TH_PRESENTATION_AUDIT)
 const float* EnemyDrawing::audit_presentation_sample(uintptr_t object,u32 index)const{
     static float out[28];std::fill(out,out+28,0.0f);if(index>=3)return out;
-    auto* enemy=reinterpret_cast<EclVm*>(object);const auto found=previous.find(enemy);if(found==previous.end())return out;
+    auto* enemy=reinterpret_cast<EclVm*>(object);const auto found=previous.find(enemy);if(found==previous.end()||!found->second.active)return out;
     const auto& sample=found->second;const auto& before=sample.visual[index];const auto& current=enemy->animation[index];
     out[0]=1;out[1]=float(sample.age);out[2]=float(enemy->lifetime.current);out[3]=float(sample.subroutine);out[4]=float(enemy->main_context.subroutine);out[5]=float(index);
     out[6]=float(before.continuous);out[7]=float(presentation::VisualSample::continuous_fields(current));out[8]=current.usePosOffset?1.0f:0.0f;

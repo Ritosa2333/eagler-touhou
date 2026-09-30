@@ -35,6 +35,7 @@ class BrowserRuntime:public ApplicationPlatform {
     bool capture(u32,const TextureRect&,const TextureRect&,bool triangle);
     struct PendingCapture {u32 target=0;TextureRect source{},destination{};bool triangle=false;} pending_capture;
     bool capture_failed=false;void finish_capture();
+    bool visual_suppressed=false;
 public:
     GameApplication app;
     touhou::input::MotionTrack motion;
@@ -54,6 +55,9 @@ public:
     const std::vector<u8>& file(const char*);const BrowserTexture* texture(u32);u32 backbuffer()const{return back;}
     i32 status(i32)const;
     bool audio_tick(u32 now);
+    void suppress_visual_draw(bool value){visual_suppressed=value;}
+    bool visual_draw_suppressed()const{return visual_suppressed;}
+    bool visual_capture_pending()const{return pending_capture.target!=0;}
     u8* keyboard_state(){return keys;}
     void controller_state(i32 x,i32 y,const u8* b,u32 n,bool available){pad={};pad.x=x;pad.y=y;pad.available=available;if(b)std::memcpy(pad.buttons,b,std::min<u32>(128,n));InputController::bindings(pad,app.title.context.controller_state);}
     std::vector<u8> read(const char*)override;std::vector<u8> read_prefix(const char*,u32)override;

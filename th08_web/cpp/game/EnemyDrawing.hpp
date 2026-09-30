@@ -1,6 +1,7 @@
 #pragma once
 #include "EclVm.hpp"
 #include "PresentationVisual.hpp"
+#include <array>
 #include <unordered_map>
 namespace th08 {
 struct EnemyDrawActions {
@@ -18,7 +19,7 @@ bool draw_enemy_layers(EclVm* const* layers,i32 first,i32 last,const Vec2& offse
 class EnemyDrawing:private EnemyDrawActions {
     AnmRenderer& renderer;
     struct TrailSample {Vec3 position{};float angle=0;};
-    struct PresentationSample {Vec3 position{};float direction=0;i32 age=0,subroutine=-1;bool active=false;presentation::VisualSample visual[3];std::vector<TrailSample> trail;u8 trail_flags=0;i16 trail_step=0;};
+    struct PresentationSample {Vec3 position{};float direction=0;i32 age=0,subroutine=-1;bool active=false;presentation::VisualSample visual[3];std::array<TrailSample,96> trail{};u8 trail_length=0,trail_flags=0;i16 trail_step=0;};
     std::unordered_map<EclVm*,PresentationSample> previous;
     presentation::SnapshotMarker presentation_marker;
     Vec3 position(EclVm&)override;
@@ -29,7 +30,7 @@ class EnemyDrawing:private EnemyDrawActions {
     void sprite(AnmVm& vm)override{renderer.draw_2d(vm);}
     void strip(AnmVm& vm,const SpriteVertex* vertices,i32 count)override{renderer.draw_vertices(vm,vertices,count);}
 public:
-    explicit EnemyDrawing(AnmRenderer& renderer):renderer(renderer){}
+    explicit EnemyDrawing(AnmRenderer& renderer):renderer(renderer){previous.reserve(512);}
     void snapshot(EclVm* const* layers);
 #if defined(TH_PRESENTATION_AUDIT)
     const float* audit_presentation_sample(uintptr_t object,u32 index)const;

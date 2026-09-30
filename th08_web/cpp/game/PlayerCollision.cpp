@@ -35,8 +35,15 @@ bool overlap(const Vec2& lower,const Vec2& upper,const Box& b){
 }
 Vec2 xy(const Vec3& p){return {p.x,p.y};}
 }
+PlayerCollision::BarrierBatch::BarrierBatch(PlayerCollision* value):owner(value){
+    if(!owner)return;previous=owner->barrier_batch;
+    for(u16 slot=0;slot<192;++slot)if(owner->regions.cancelling[slot].active)slots[count++]=slot;
+    owner->barrier_batch=this;
+}
+PlayerCollision::BarrierBatch::~BarrierBatch(){if(owner)owner->barrier_batch=previous;}
 i32 PlayerCollision::barrier(const Vec2& p){
-    for(auto& r:regions.cancelling){if(!r.active)continue;bool hit=false;
+    const u32 count=barrier_batch?barrier_batch->count:192;
+    for(u32 i=0;i<count;++i){auto& r=regions.cancelling[barrier_batch?barrier_batch->slots[i]:i];if(!r.active)continue;bool hit=false;
         if(r.radius!=0){
             const auto x=number(Scalar::sub(p.x,r.position.x)),y=number(Scalar::sub(p.y,r.position.y));
             hit=x*x+y*y<number(r.radius)*number(r.radius);

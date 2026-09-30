@@ -14,8 +14,22 @@ struct PlayerCollisionActions {
 // Original 00449ff0, 0044a230/360/470/5a0/6a0. cancel_item is the shared
 // result consumed by the bullet manager after a cancellation hit.
 class PlayerCollision {
+public:
+    class BarrierBatch {
+        friend class PlayerCollision;
+        PlayerCollision* owner;
+        const BarrierBatch* previous=nullptr;
+        u16 slots[192];u16 count=0;
+    public:
+        explicit BarrierBatch(PlayerCollision*);
+        ~BarrierBatch();
+        BarrierBatch(const BarrierBatch&)=delete;
+        BarrierBatch& operator=(const BarrierBatch&)=delete;
+    };
+private:
     PlayerMovementState& movement;PlayerLifeState& life;PlayerLifeContext& context;
     DamageRegions& regions;i32& cancel_item;PlayerCollisionActions& actions;
+    const BarrierBatch* barrier_batch=nullptr;
 public:
     PlayerCollision(PlayerMovementState& m,PlayerLifeState& l,PlayerLifeContext& c,DamageRegions& r,i32& item,PlayerCollisionActions& a)
         :movement(m),life(l),context(c),regions(r),cancel_item(item),actions(a){}

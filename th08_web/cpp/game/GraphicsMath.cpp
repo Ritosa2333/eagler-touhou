@@ -166,13 +166,14 @@ void GraphicsMath::transform_coordinate(Vec3& output, const Vec3& input, const M
     std::memcpy(&output,result,sizeof(output));
 }
 
-void GraphicsMath::project(Vec3& output, const Vec3& input, const Viewport* viewport,
-                           const Matrix4* projection, const Matrix4* view, const Matrix4* world) {
-    Matrix4 transform; transform.identity(); bool populated=false;
+void GraphicsMath::compose_projection(Matrix4& transform,const Matrix4* projection,const Matrix4* view,const Matrix4* world){
+    transform.identity(); bool populated=false;
     for (const auto* matrix:{world,view,projection}) if (matrix) {
         if (populated) multiply(transform,transform,*matrix);
         else { transform=*matrix; populated=true; }
     }
+}
+void GraphicsMath::project_composed(Vec3& output,const Vec3& input,const Viewport* viewport,const Matrix4& transform){
     transform_coordinate(output,input,transform);
     if (viewport) {
         const auto& v=*viewport;
@@ -180,5 +181,10 @@ void GraphicsMath::project(Vec3& output, const Vec3& input, const Viewport* view
         output.y=((number(1)-number(output.y))*Extended::from_int64(v.height)*number(.5f)+Extended::from_int64(v.y)).to_float();
         output.z=((number(v.max_z)-number(v.min_z))*number(output.z)+number(v.min_z)).to_float();
     }
+}
+void GraphicsMath::project(Vec3& output, const Vec3& input, const Viewport* viewport,
+                           const Matrix4* projection, const Matrix4* view, const Matrix4* world) {
+    Matrix4 transform;compose_projection(transform,projection,view,world);
+    project_composed(output,input,viewport,transform);
 }
 }

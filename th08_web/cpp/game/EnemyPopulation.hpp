@@ -17,7 +17,7 @@ class EnemyPopulation {
 public:
     bool spawn_failed=false;u16 replay_flags=0;i32 initial_time_items=0;
     i32 practice_familiar=0;
-    EnemyPopulation(EclExecutor& executor,EclProgram& program):executor(executor),program(program){}
+    EnemyPopulation(EclExecutor& executor,EclProgram& program):executor(executor),program(program){for(auto& enemy:enemies)enemy=std::make_unique<EclVm>();}
     void reset(i32 time_items=0)noexcept;
     EclVm* spawn(const TimelineSpawn& request);
     EclVm* spawn_inherited(const TimelineSpawn& request,const EclContext::Locals& locals){return spawn_impl(request,&locals);}

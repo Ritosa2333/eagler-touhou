@@ -40,6 +40,10 @@ struct AuditTimingSample {
 static_assert(sizeof(AuditTimingSample)==128);
 constexpr u32 audit_timing_capacity=512;
 AuditTimingSample audit_timing[audit_timing_capacity]{};u32 audit_timing_next=0,audit_timing_count=0;
+// total milliseconds, maximum milliseconds, call count for Update, semantic
+// Draw, presentation Draw, and audio work. Diagnostic builds only.
+double audit_phase_profile[12]{};
+void audit_phase(u32 slot,double started){const double ms=emscripten_get_now()-started;auto* p=audit_phase_profile+slot*3;p[0]+=ms;p[1]=std::max(p[1],ms);p[2]+=1;}
 void camera_values(float* out,const SceneCamera& c){
     for(const auto& v:{c.position,c.target_offset,c.up,c.eye_offset}){*out++=v.x;*out++=v.y;*out++=v.z;}*out=c.field_of_view;
 }
@@ -104,23 +108,52 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
     const bool tick_due=cadence.advance(delta)!=0;
     const bool high=display_cadence.high_refresh&&interpolation_ready();const bool interpolate=presentation_gate.advance(high,tick_due);bool presented=false;
     if(tick_due&&!result){
-        elapsed+=touhou::sdl::FrameCadence::interval;result=tick();
+        elapsed+=touhou::sdl::FrameCadence::interval;
+#if defined(TH_PRESENTATION_AUDIT)
+        const double update_started=emscripten_get_now();
+#endif
+        result=tick();
+#if defined(TH_PRESENTATION_AUDIT)
+        audit_phase(0,update_started);
+#endif
         if(!result&&runtime){
             // Preserve TH08's authoritative update+draw tick exactly. At high
             // presentation rates every fixed-tick draw is semantic but hidden;
             // the visible frame below is a second, side-effect-free presentation
             // pass. Missed original deadlines are skipped rather than caught up.
-            const bool hidden=high;if(hidden)sdl_defer(1);
+            const bool hidden=high;const bool lightweight=hidden&&runtime&&!runtime->visual_capture_pending();if(hidden)sdl_defer(1);
+            if(lightweight){runtime->suppress_visual_draw(true);runtime->app.renderer.visual_geometry_suppressed=true;}
+#if defined(TH_PRESENTATION_AUDIT)
+            const double semantic_started=emscripten_get_now();
+#endif
             if(!runtime->app.draw(1.0f,false,false))result=(runtime->status(2)||runtime->status(4))?2:1;
             else if(runtime->status(2)||runtime->status(4))result=2;
+#if defined(TH_PRESENTATION_AUDIT)
+            audit_phase(1,semantic_started);
+#endif
+            if(lightweight){runtime->app.renderer.visual_geometry_suppressed=false;runtime->suppress_visual_draw(false);}
             if(hidden)sdl_defer(0);else presented=true;
-            if(!result){++frames;if(!runtime->audio_tick(u32(elapsed*1000)))result=2;}
+            if(!result){++frames;
+#if defined(TH_PRESENTATION_AUDIT)
+                const double audio_started=emscripten_get_now();
+#endif
+                if(!runtime->audio_tick(u32(elapsed*1000)))result=2;
+#if defined(TH_PRESENTATION_AUDIT)
+                audit_phase(3,audio_started);
+#endif
+            }
         }
     }
     float presentation_alpha=1.0f;
     if(!result&&runtime&&high){
         const bool frozen=runtime->app.in_game()&&(runtime->app.game.paused||runtime->app.game.retrying||runtime->app.game.menus.context.pause_state||runtime->app.game.menus.context.show_retry);
+#if defined(TH_PRESENTATION_AUDIT)
+        const double presentation_started=emscripten_get_now();
+#endif
         presentation_alpha=interpolate?float(cadence.interpolation_alpha()):1.0f;presented=runtime->app.draw(presentation_alpha,interpolate,true,!frozen);
+#if defined(TH_PRESENTATION_AUDIT)
+        audit_phase(2,presentation_started);
+#endif
     }
     if(presented&&runtime)runtime->app.statistics.presentation_frame();
 #if defined(TH_PRESENTATION_AUDIT)
@@ -138,7 +171,7 @@ extern "C" {
 #define EX(name) __attribute__((export_name(name)))
 EX("sdl_game_open") BrowserRuntime* sdl_game_open(u32 milliseconds){if(runtime)return nullptr;prepared=frames=warm_mask=0;elapsed=double(milliseconds)/1000.;cadence.reset();display_cadence.reset();presentation_gate.reset();last=-1;touch.begin_session();
 #if defined(TH_PRESENTATION_AUDIT)
-    audit_timing_next=audit_timing_count=0;
+    audit_timing_next=audit_timing_count=0;std::fill(std::begin(audit_phase_profile),std::end(audit_phase_profile),0.0);
 #endif
     runtime=std::make_unique<BrowserRuntime>();if(!sdl_attach(runtime.get())||!sdl_load_assets(*runtime)){runtime.reset();sdl_detach();return nullptr;}
     SDL_InitSubSystem(SDL_INIT_GAMEPAD);for(auto& k:keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);int count=0;auto* ids=SDL_GetGamepads(&count);if(count)gamepad=SDL_OpenGamepad(ids[0]);SDL_free(ids);return runtime.get();}
@@ -186,6 +219,7 @@ EX("audit_timing_capacity") u32 audit_timing_capacity_value(){return audit_timin
 EX("audit_timing_count") u32 audit_timing_count_value(){return audit_timing_count;}
 EX("audit_timing_next") u32 audit_timing_next_value(){return audit_timing_next;}
 EX("audit_timing_stride") u32 audit_timing_stride(){return sizeof(AuditTimingSample);}
+EX("audit_phase_profile") const double* audit_phase_profile_value(){return audit_phase_profile;}
 // Selected authoritative-state fingerprints, independent of render captures.
 // They deliberately omit renderer caches/pointers/padding and wall-clock data.
 // This is a named evidence set, not a claim to serialize the entire game.

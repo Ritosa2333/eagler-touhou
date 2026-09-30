@@ -2,7 +2,7 @@
 #include "EnemyRetirement.hpp"
 #include "EclSpawn.hpp"
 namespace th08 {
-void EnemyPopulation::reset(i32 time_items)noexcept{for(auto& enemy:enemies)enemy.reset();spawn_failed=false;replay_flags=0;initial_time_items=time_items;practice_familiar=0;}
+void EnemyPopulation::reset(i32 time_items)noexcept{for(auto& enemy:enemies)if(enemy)*enemy=EclVm{};spawn_failed=false;replay_flags=0;initial_time_items=time_items;practice_familiar=0;}
 EclVm* EnemyPopulation::spawn(const TimelineSpawn& request){return spawn_impl(request,nullptr);}
 EclVm* EnemyPopulation::spawn_impl(const TimelineSpawn& request,const EclContext::Locals* inherited){
     replay_flags|=0x1000;u32 index=0;

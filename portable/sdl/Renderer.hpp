@@ -27,7 +27,7 @@ struct State {
 class Renderer : public StateCommands {
 public:
     using Resolve=Surface(*)(void*,u32);
-    Statistics stats{};State state{};bool defer=false;
+    Statistics stats{};State state{};bool defer=false,allowWorldInstancing=false;
     Renderer(int version,Resolve,void*);~Renderer();
     bool initialize();void flush();void discard();bool commit();
     PipelineState& pipeline() override { return state.pipeline; }
