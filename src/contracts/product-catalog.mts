@@ -357,6 +357,7 @@ export const PRODUCT_GAMES = Object.freeze({
     features: Object.freeze({ thprac: false, languages: true, focusHitbox: false }),
   }),
   th20: Object.freeze({
+    hidden: true,
     number: "20",
     title: "東方錦上京",
     subtitle: "Fossilized Wonders",
@@ -448,6 +449,7 @@ export function isGameId(value: string): value is GameId {
 export function productEnabledForBuild(productId: string, testBuild = false): boolean {
   if (!isProductId(productId)) return false;
   const game = PRODUCT_GAMES[gameIdForProduct(productId as ProductId)];
+  if ("hidden" in game && game.hidden) return false;
   return !("testOnly" in game && game.testOnly) || testBuild === true;
 }
 

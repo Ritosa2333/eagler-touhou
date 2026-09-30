@@ -139,7 +139,8 @@ function rowFor(room: Room): HTMLElement {
     const meta = PRODUCT_GAMES[gameIdForProduct(room.product)];
     const cover = node.querySelector<HTMLImageElement>(".lobby-cover img")!;
     cover.addEventListener("error", () => { cover.hidden = true; }, { once: true });
-    cover.src = `assets/${meta.cardArtwork}`;
+    if ("cardArtwork" in meta && meta.cardArtwork) cover.src = `assets/${meta.cardArtwork}`;
+    else cover.hidden = true;
     node.querySelector(".lobby-cover-number")!.textContent = meta.number;
     node.querySelector("h2")!.textContent = titleFor(room.product);
     node.querySelector(".lobby-room-subtitle")!.textContent = meta.subtitle;

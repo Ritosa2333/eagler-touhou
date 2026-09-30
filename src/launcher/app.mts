@@ -2800,7 +2800,10 @@ const maxReplayArchiveExpandedBytes = 128 * 1024 * 1024;
 let midiSynth: MidiSynth | null = null;
 let gameKeyWindow: RuntimeWindow | null = null;
 let fullscreenChordActive = false;
-const routedGameFromLocation = () => routedProductFromUrl(location.href, productIds);
+const routedGameFromLocation = () => {
+  const product = routedProductFromUrl(location.href, productIds);
+  return product && productEnabled(product) ? product : null;
+};
 function replaceLauncherHomeHistory() {
   applyHistoryOperations(history, [launcherHomeHistoryOperation({
     currentUrl: location.href,

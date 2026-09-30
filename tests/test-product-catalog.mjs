@@ -258,8 +258,9 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
 console.log("Product catalog policy: PASS");
 
 for (const id of PRODUCT_IDS) {
-  assert.equal(productEnabledForBuild(id), true);
-  assert.equal(productEnabledForBuild(id, false), true);
-  assert.equal(productEnabledForBuild(id, true), true);
+  const visible = id !== "th20";
+  assert.equal(productEnabledForBuild(id), visible);
+  assert.equal(productEnabledForBuild(id, false), visible);
+  assert.equal(productEnabledForBuild(id, true), visible, "TH20 stays hidden in test builds too");
 }
 assert.equal(productEnabledForBuild("th99", true), false);
