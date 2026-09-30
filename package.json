@@ -58,6 +58,7 @@
     "test:replay-determinism": "node tests/test-replay-determinism-contract.mjs",
     "test:runtime-release-host": "node tests/test-runtime-release-host-assembly.mjs",
     "test:package-store:browser": "python tests/test-package-update-atomicity-browser.py",
+    "test:package-large-object:browser": "npm run build:launcher && node tests/test-package-large-object-browser.mjs",
     "test:package-installer": "npm run test:package-store:browser",
     "test:webkit": "node tests/browser/test-playwright-webkit-gate.mjs",
     "test:pwa:browser": "python tests/browser/test-pwa-boot.py",

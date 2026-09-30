@@ -45,6 +45,33 @@ try {
         } else void request.continue();
       });
     }
+    if (packagePath && process.env.EAGLER_TEST_OFFLINE === "1") {
+      await page.evaluate(async () => {
+        const registration = await navigator.serviceWorker.ready;
+        const manifest = await fetch("runtime-manifest.json").then(response => response.json());
+        const group = manifest.groups.find(item => item.root === "runtime/th11/");
+        const paths = group ? group.current.files.map(file =>
+          `${group.root}${group.current.generation}/${file.path}`) : [];
+        if (!paths.length) throw Error("TH11 Runtime is absent from App Shell manifest");
+        const channel = new MessageChannel();
+        const prepared = new Promise((resolve, reject) => {
+          const timer = setTimeout(() => reject(Error("TH11 offline cache timed out")), 30000);
+          channel.port1.onmessage = event => {
+            clearTimeout(timer);
+            if (event.data?.ok) resolve(); else reject(Error(event.data?.error || "offline cache failed"));
+          };
+        });
+        (navigator.serviceWorker.controller || registration.active).postMessage(
+          { type: "CACHE_APP_SHELL_PATHS", paths }, [channel.port2]);
+        await prepared;
+      });
+      await page.reload({ waitUntil: "networkidle2", timeout: 30000 });
+      await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+      await page.setOfflineMode(true);
+      await page.reload({ waitUntil: "load", timeout: 30000 });
+      await page.waitForFunction(() => window.__eaglerBoot?.done === true);
+      await page.evaluate(() => document.querySelector("#firstUseNoticeDialog")?.close());
+    }
     await page.select("#languageSelect", language);
     await page.select("#musicSelect", "ogg-stream");
     await page.evaluate(() => document.querySelector("#launch").click());
@@ -90,7 +117,8 @@ try {
         sharedFonts: { japanese: exists("/msgothic.ttc"), unicode: exists("/unifont.otf") },
       };
     });
-    console.log(JSON.stringify({ language, imported: !!packagePath, ...result, errors, hostedResourceRequests }));
+    console.log(JSON.stringify({ language, imported: !!packagePath,
+      offlineReload: process.env.EAGLER_TEST_OFFLINE === "1", ...result, errors, hostedResourceRequests }));
     if (result.selected !== language || result.phase == null || result.frame <= 120 || result.error ||
         (language !== "ja" && Object.values(result.files).some(value => !value)) || errors.length ||
         hostedResourceRequests.length || (packagePath && Object.values(result.sharedFonts).some(value => !value))) {
@@ -134,12 +162,17 @@ try {
       });
       const music = await frame.evaluate(() => {
         const pointer=core.th11_error(),end=Module.HEAPU8.indexOf(0,pointer);
-        return { phase: core.th11_phase(), frame: core.th11_frame(),
+        const audioPointer = core.th11_audio_statistics();
+        const audio = Array.from(new Uint32Array(Module.HEAPU8.buffer, audioPointer, 9));
+        return { phase: core.th11_phase(), frame: core.th11_frame(), audio,
           error: document.querySelector("#error")?.textContent || "",
           coreError: new TextDecoder().decode(Module.HEAPU8.subarray(pointer,end<0?pointer+256:end)) };
       });
       console.log(JSON.stringify({ language, musicRoom: music }));
       if (music.error || music.coreError) throw Error(`TH11 music room: ${music.error || music.coreError}`);
+      if (!music.audio[0] || !music.audio[2] || music.audio[3] || music.audio[5] === 0xffffffff || !music.audio[7]) {
+        throw Error(`TH11 music room audio did not produce PCM: ${JSON.stringify(music.audio)}`);
+      }
       if (process.env.EAGLER_TEST_MUSIC_ROOM_SCREENSHOT) {
         await page.screenshot({ path: resolve(process.env.EAGLER_TEST_MUSIC_ROOM_SCREENSHOT) });
       }
