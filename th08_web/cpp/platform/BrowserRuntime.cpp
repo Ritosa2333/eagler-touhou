@@ -57,7 +57,9 @@ bool BrowserRuntime::write(const char* p,const u8* b,u32 size){
 bool BrowserRuntime::player_motion(const PlayerMovementState& state,float speed,const FrameTiming& timing,float& x,float& y){
     const auto& g=app.game;if((g.globals.game_flags&516)!=4)return false;
     if(motion.playing)return motion.playback(g.globals.stage,x,y);
-    const bool enabled=motion.active&&!g.dialogue.present()&&!g.paused&&!g.menus.context.pause_state&&!g.player_state.context.game_over;
+    // Keyboard movement continues during dialogue, even while shooting is
+    // blocked. Keep direct touch movement consistent with that behavior.
+    const bool enabled=motion.active&&!g.paused&&!g.menus.context.pause_state&&!g.player_state.context.game_over;
     if(enabled){
         const float sx=state.multiplier.x*timing.rate,sy=state.multiplier.y*timing.rate;
         x=sx?(motion.target_x-state.position.x)/sx:0;y=sy?(motion.target_y-state.position.y)/sy:0;
