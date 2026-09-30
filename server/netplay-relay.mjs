@@ -415,6 +415,7 @@ function lobbySnapshot(room) {
       loadout: seat.loadout,
       controlMode: publicControlMode(seat),
       mobileDevice: seat.mobileDevice === true,
+      resource: seat.resource || null,
       ready: !!seat.ready && seat.readyVersion === room.lobby.settingsVersion,
       readyVersion: Number(seat.readyVersion) || 0,
       offline: !room.lobbyClients.has(seat.clientId),
@@ -518,7 +519,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       if (lobbySeatOf(room, clientId) >= 0 || room.lobby.spectators.has(clientId)) roomDirectory.activity(room);
       return;
     }
-    if (['take-seat', 'stand-up', 'spectate', 'leave-spectator', 'set-name', 'set-loadout', 'set-ready', 'settings', 'start'].includes(message.type)) roomDirectory.activity(room);
+    if (['take-seat', 'stand-up', 'spectate', 'leave-spectator', 'set-name', 'set-loadout', 'set-ready', 'settings', 'start', 'remove-player', 'remove-spectator'].includes(message.type)) roomDirectory.activity(room);
 
     if (message?.type === 'room-probe') {
       if (room.lobby.phase !== 'lobby' || room.lobbyClients.get(clientId) !== socket || lobbySeatOf(room, clientId) < 0) return;
@@ -569,6 +570,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
         touchEnabled: typeof message.touchEnabled === 'boolean' ? message.touchEnabled : undefined,
         mobileDevice: message.mobileDevice === true,
         ready: preserveReady, readyVersion: preserveReady ? room.lobby.settingsVersion : 0,
+        resource: previousEntry?.resource || null,
       };
       broadcastLobby(room);
       return;
@@ -614,6 +616,41 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       return;
     }
     const occupant = room.lobby.seats[seat];
+
+    if (message.type === 'resource-progress') {
+      if (!['preparing', 'ready', 'failed', 'cancelled', 'importing'].includes(message.status) ||
+          !['package', 'runtime'].includes(message.stage)) return;
+      const rawPercent = message.percent === null ? null : Number(message.percent);
+      if (rawPercent !== null && (!Number.isFinite(rawPercent) || rawPercent < 0 || rawPercent > 100)) return;
+      const resource = {
+        status: message.status,
+        stage: message.stage,
+        percent: message.status === 'ready' ? 100 : rawPercent === null ? null : Math.round(rawPercent),
+      };
+      if (JSON.stringify(occupant.resource) !== JSON.stringify(resource)) {
+        occupant.resource = resource;
+        broadcastLobby(room);
+      }
+      return;
+    }
+
+    if (message.type === 'remove-player') {
+      const targetSeat = Number(message.seat);
+      const target = room.lobby.seats[targetSeat];
+      if (seat !== 0 || room.lobby.phase !== 'lobby' || !Number.isInteger(targetSeat) ||
+          targetSeat < 1 || targetSeat >= room.lobby.playerCount || !target ||
+          target.clientId !== message.clientId || !roomDirectory.evict(roomId, target.clientId)) {
+        sendLobby(socket, { type: 'error', error: '无法移除该玩家，请刷新房间状态后重试。' });
+      }
+      return;
+    }
+    if (message.type === 'remove-spectator') {
+      if (seat !== 0 || room.lobby.phase !== 'lobby' || typeof message.clientId !== 'string' ||
+          !room.lobby.spectators.has(message.clientId) || !roomDirectory.evict(roomId, message.clientId)) {
+        sendLobby(socket, { type: 'error', error: '无法移除该旁观者，请刷新房间状态后重试。' });
+      }
+      return;
+    }
 
     if (room.lobby.phase !== 'lobby' && ['set-loadout', 'set-ready', 'settings', 'movement'].includes(message.type)) {
       sendLobby(socket, { type: 'error', error: '本局已经开始' });

@@ -143,6 +143,14 @@ export function createRoomDirectory({ rooms, clearSeat, invalidateReady, broadca
     if (members.get(entry.memberId) === entry) members.delete(entry.memberId);
     changed();
   }
+  function evict(roomId, clientId) {
+    const entry = clients.get(clientId);
+    if (!entry || entry.roomId !== roomId) return false;
+    releaseTransports?.(roomId, clientId);
+    remove(entry);
+    entry.socket.close(4010, 'removed by host');
+    return true;
+  }
   const maintenance = setInterval(() => {
     for (const socket of tracked) {
       if (!online(socket)) continue;
@@ -169,5 +177,5 @@ export function createRoomDirectory({ rooms, clearSeat, invalidateReady, broadca
     changed();
   }, 30_000);
   maintenance.unref();
-  return { admit, connect, activity, changed, depart, track, close() { clearInterval(maintenance); clearTimeout(updateTimer); } };
+  return { admit, connect, activity, changed, depart, evict, track, close() { clearInterval(maintenance); clearTimeout(updateTimer); } };
 }

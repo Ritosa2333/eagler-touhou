@@ -488,6 +488,12 @@
         <section class="mp-room-summary">
           <h2 class="mp-room-title" id="mpRoomTitle"></h2>
           <div class="mp-room-tags"><span id="mpRoomMode"></span><span id="mpRoomDifficultyBadge"></span><span id="mpRoomPhase"></span></div>
+          <div class="mp-room-resource-progress" id="mpRoomResourceProgress" hidden>
+            <span id="mpRoomResourceLabel"></span><span id="mpRoomResourceAmount"></span>
+            <button id="mpRoomResourceCancel" type="button" data-i18n="room.cancelDownload" hidden>取消下载</button>
+            <button id="mpRoomResourceRetry" type="button" data-i18n="room.retryDownload" hidden>重试</button>
+            <div class="mp-room-resource-track" id="mpRoomResourceTrack" role="progressbar" aria-label="准备游戏资源" data-i18n-aria-label="room.preparingResources"><span id="mpRoomResourceFill"></span></div>
+          </div>
           <div id="mpRoomSettingsDrawer"><button class="mp-room-settings-toggle" id="mpRoomSettingsToggle" type="button" aria-expanded="false" aria-controls="mpRoomPanel"><img class="room-icon" src="assets/room-sliders-horizontal.svg" alt=""><span data-i18n="multiplayer.gameSettings">房间 / 难度设置</span></button></div>
         </section>
         <div class="mp-session-dock">

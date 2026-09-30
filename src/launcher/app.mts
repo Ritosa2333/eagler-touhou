@@ -507,6 +507,7 @@ function mpApplyLobbyRoom(next: unknown) {
   } else {
     if (normalized.localSpectator) mpUiState.spectatorRequested = true;
     mpUiState.ready = false;
+    reportedResourceKey = "";
   }
   renderMpRoom();
   if (movementPolicyChanged && normalized.localSeat != null) void mpEnsureMovementAllowed();
@@ -676,9 +677,9 @@ function mpConnectLobby(reconnecting = false) {
     roomNetwork.reset();
     mpLobby.socket = null;
     mpLobby.connected = false;
-    if ([4004, 4007, 4008, 4009].includes(event.code)) {
+    if ([4004, 4007, 4008, 4009, 4010].includes(event.code)) {
       mpLobbyStopped = true;
-      const explanation = t(event.code === 4004 ? "lobby.expired" : event.code === 4008 ? "lobby.replaced" : event.code === 4009 ? "lobby.conflict" : "lobby.gone");
+      const explanation = t(event.code === 4004 ? "lobby.expired" : event.code === 4008 ? "lobby.replaced" : event.code === 4009 ? "lobby.conflict" : event.code === 4010 ? "lobby.removed" : "lobby.gone");
       if (!state.launched) {
         mpResetRoomState();
         if (mpFromDirectory()) {
@@ -713,38 +714,53 @@ type RoomPreparation = {
   room: NonNullable<MultiplayerUiState["room"]>;
   game: GameId;
   controller: AbortController;
-  status: "preparing" | "ready" | "failed";
+  tracker: ReturnType<typeof createNetworkActivityTracker>;
+  stage: "package" | "runtime";
+  status: "preparing" | "ready" | "failed" | "cancelled" | "importing";
   error: string;
   task: Promise<void>;
 };
 let roomPreparation: RoomPreparation | null = null;
+let reportedResourceSocket: WebSocket | null = null;
+let reportedResourceKey = "";
 
 function prepareRoomResources(room = mpUiState.room): Promise<void> {
   if (!room) return Promise.resolve();
   if (roomPreparation?.room === room && roomPreparation.game === state.game) return roomPreparation.task;
   const gameId = state.game;
   const controller = new AbortController();
-  const preparation: RoomPreparation = { room, game: gameId, controller, status: "preparing", error: "", task: Promise.resolve() };
+  const preparation: RoomPreparation = { room, game: gameId, controller,
+    tracker: createNetworkActivityTracker({ onChange: scheduleRoomPreparationProgress }),
+    stage: "package", status: "preparing", error: "", task: Promise.resolve() };
   roomPreparation = preparation;
+  reportedResourceKey = "";
   renderMpRoom();
   preparation.task = (async () => {
     let installed = await readCurrentPackageGeneration(gameId);
     if (!installed?.generation) {
       if (!releaseCatalog) { try { await remoteReleasePromise; } catch {} }
       if (!releaseCatalog?.games?.[gameId]) throw new Error(t("package.releaseNotReadyNoLocal", { game: gameId.toUpperCase() }));
-      const result = await installPublishedPackageLazy(gameId, {
-        catalog: releaseCatalog,
-        catalogUrl: releaseCatalogUrl,
-        addComponents: [],
-        fetchImpl: (input, init) => backgroundNetworkActivity.xhrFetch(input, init),
-        signal: controller.signal,
-      });
+      let result;
+      try {
+        result = await installPublishedPackageLazy(gameId, {
+          catalog: releaseCatalog,
+          catalogUrl: releaseCatalogUrl,
+          addComponents: [],
+          fetchImpl: (input, init) => preparation.tracker.xhrFetch(input, init, packageNetworkMeta(gameId, input)),
+          signal: controller.signal,
+        });
+      } catch (error) {
+        if (isCancelledDownload(error)) throw error;
+        throw new GameDataAcquisitionError(errorMessage(error), { cause: error });
+      }
       if (result.generation) installedPackageSnapshots.set(gameId, result.generation);
       installed = await readCurrentPackageGeneration(gameId);
       if (!installed?.generation) throw new Error(t("package.objectNotPersisted"));
     }
     if (controller.signal.aborted || mpUiState.room !== room) return;
     installedPackageSnapshots.set(gameId, installed.generation);
+    preparation.stage = "runtime";
+    renderRoomPreparationProgress();
     if (!hostManifestAvailable) { try { await remoteReleasePromise; } catch {} }
     if (controller.signal.aborted || mpUiState.room !== room) return;
     const runtime = game(gameId).multiplayerRuntime;
@@ -760,11 +776,17 @@ function prepareRoomResources(room = mpUiState.room): Promise<void> {
     }
     if (controller.signal.aborted || mpUiState.room !== room) return;
     preparation.status = "ready";
+    renderRoomPreparationProgress();
   })().catch(error => {
     if (controller.signal.aborted || mpUiState.room !== room) return;
     preparation.status = "failed";
     preparation.error = errorMessage(error);
-    showToast(preparation.error, 4000);
+    renderRoomPreparationProgress();
+    if (isResourceLoadFailure(error)) {
+      beginManualGamePackageImport(preparation.error, captureGameDataContinuation("install-only"));
+    } else {
+      showToast(preparation.error, 4000);
+    }
   }).finally(() => {
     if (mpUiState.room === room) renderMpRoom();
   });
@@ -882,6 +904,7 @@ async function mpLaunchRoomGame() {
     const room = mpUiState.room;
     await prepareRoomResources(room);
     if (!room || mpUiState.room !== room) return;
+    if (roomPreparation?.room === room && ["cancelled", "importing"].includes(roomPreparation.status)) return;
     if (mpUiState.seat != null && !await mpEnsureMovementAllowed()) return;
     if (mpUiState.room !== room) return;
     const fromTh09Overlay = th09NetworkOverlayOpen();
@@ -958,6 +981,7 @@ async function mpCheckGame() {
   try {
     await prepareRoomResources(room);
     if (mpUiState.room !== room) return;
+    if (roomPreparation?.room === room && ["cancelled", "importing"].includes(roomPreparation.status)) return;
     // Exercise the exact multiplayer Runtime and selected resources without
     // attaching this preflight run to the room's gameplay transport.
     state.runtimeVariant = "multiplayer";
@@ -1166,6 +1190,110 @@ function scheduleNetworkActivityRender(snapshot: NetworkActivitySnapshot) {
 }
 const networkActivity = createNetworkActivityTracker({ onChange: scheduleNetworkActivityRender });
 const backgroundNetworkActivity = createNetworkActivityTracker();
+let roomProgressRenderQueued = false;
+function scheduleRoomPreparationProgress() {
+  if (roomProgressRenderQueued) return;
+  roomProgressRenderQueued = true;
+  requestAnimationFrame(() => {
+    roomProgressRenderQueued = false;
+    renderRoomPreparationProgress();
+  });
+}
+function renderRoomPreparationProgress() {
+  const panel = document.getElementById("mpRoomResourceProgress");
+  if (!panel) return;
+  const preparation = roomPreparation?.room === mpUiState.room ? roomPreparation : null;
+  panel.hidden = !mpUiState.room;
+  if (panel.hidden) return;
+  const status = preparation?.status || "preparing";
+  panel.dataset.status = status;
+  panel.title = status === "failed" ? preparation?.error || "" : "";
+  const track = $("#mpRoomResourceTrack");
+  const cancel = $("#mpRoomResourceCancel");
+  const retry = $("#mpRoomResourceRetry");
+  cancel.hidden = status !== "preparing" || preparation?.stage !== "package";
+  retry.hidden = status !== "failed" && status !== "cancelled";
+  track.hidden = false;
+  if (status !== "preparing") {
+    $("#mpRoomResourceLabel").textContent = t(status === "ready" ? "room.resourcesReady" :
+      status === "cancelled" ? "room.resourcesCancelled" :
+        status === "importing" ? "package.importingSimple" : "room.resourcesUnavailable");
+    $("#mpRoomResourceAmount").textContent = "";
+    track.classList.toggle("indeterminate", status === "importing");
+    $("#mpRoomResourceFill").style.width = status === "ready" ? "100%" : "0%";
+    if (status === "ready") track.setAttribute("aria-valuenow", "100");
+    else track.removeAttribute("aria-valuenow");
+  } else {
+    const snapshot = preparation?.tracker.snapshot();
+    const current = snapshot?.active.at(-1);
+    const total = current?.total || 0;
+    const loaded = current?.loaded || 0;
+    $("#mpRoomResourceLabel").textContent = preparation?.stage === "runtime"
+      ? t("room.preparingRuntime") : current?.title || t("room.preparingResources");
+    $("#mpRoomResourceAmount").textContent = total > 0
+      ? `${networkMiB(loaded)} / ${networkMiB(total)}` : loaded > 0 ? networkMiB(loaded) : "";
+    track.classList.toggle("indeterminate", total <= 0);
+    if (total > 0) {
+      const percent = Math.min(100, loaded / total * 100);
+      $("#mpRoomResourceFill").style.width = `${percent.toFixed(1)}%`;
+      track.setAttribute("aria-valuenow", String(Math.round(percent)));
+    } else {
+      $("#mpRoomResourceFill").style.removeProperty("width");
+      track.removeAttribute("aria-valuenow");
+    }
+  }
+  if (preparation && mpUiState.seat != null && mpLobby.connected && mpLobby.socket?.readyState === WebSocket.OPEN) {
+    const current = status === "preparing" && preparation.stage === "package"
+      ? preparation.tracker.snapshot().active.at(-1) : null;
+    const percent = status === "ready" ? 100 : status === "preparing" && current?.total
+      ? Math.min(100, Math.floor(current.loaded / current.total * 20) * 5) : null;
+    const resource = { status, stage: preparation.stage, percent };
+    const key = JSON.stringify(resource);
+    if (reportedResourceSocket !== mpLobby.socket || reportedResourceKey !== key) {
+      if (mpLobbySend({ type: "resource-progress", ...resource })) {
+        reportedResourceSocket = mpLobby.socket;
+        reportedResourceKey = key;
+      }
+    }
+  }
+  renderRoomSeatResourceProgress();
+}
+
+function renderRoomSeatResourceProgress() {
+  const room = mpUiState.room;
+  document.querySelectorAll<HTMLElement>("[data-mp-seat]").forEach(seat => {
+    const index = Number(seat.dataset.mpSeat);
+    const occupant = room?.seats?.[index];
+    let resource = seat.querySelector<HTMLElement>(".mp-seat-resource");
+    if (!resource) {
+      resource = document.createElement("div");
+      resource.className = "mp-seat-resource";
+      resource.innerHTML = '<span class="mp-seat-resource-label"></span><span class="mp-seat-resource-track"><span></span></span>';
+      seat.append(resource);
+    }
+    const local = index === mpUiState.seat && roomPreparation?.room === room ? roomPreparation : null;
+    const current = local?.tracker.snapshot().active.at(-1);
+    const progress = local ? {
+      status: local.status, stage: local.stage,
+      percent: local.status === "ready" ? 100 : local.status === "preparing" && current?.total
+        ? Math.round(current.loaded / current.total * 100) : null,
+    } : occupant?.resource;
+    resource.hidden = !occupant || !progress;
+    if (resource.hidden || !progress) return;
+    resource.dataset.status = progress.status;
+    const label = resource.querySelector<HTMLElement>(".mp-seat-resource-label")!;
+    label.textContent = progress.status === "ready" ? t("room.resourcesReady") :
+      progress.status === "failed" ? t("room.resourcesUnavailable") :
+        progress.status === "cancelled" ? t("room.resourcesCancelled") :
+          progress.status === "importing" ? t("package.importingSimple") :
+          progress.stage === "runtime" ? t("room.preparingRuntime") :
+            progress.percent == null ? t("room.preparingResources") : t("room.peerDownloading", { percent: progress.percent });
+    const bar = resource.querySelector<HTMLElement>(".mp-seat-resource-track")!;
+    bar.classList.toggle("indeterminate", progress.status === "importing" ||
+      progress.status === "preparing" && progress.percent == null);
+    bar.querySelector<HTMLElement>("span")!.style.width = `${progress.status === "ready" ? 100 : progress.percent ?? 0}%`;
+  });
+}
 
 function packageNetworkMeta(gameId: GameId, input: RequestInfo | URL) {
   let pathname = "";
@@ -6433,11 +6561,34 @@ $("#mpReady").addEventListener("click", async () => {
   if (mpUiState.seat == null || !mpLobby.connected) return;
   const room = mpUiState.room;
   const ready = !mpUiState.ready;
+  if (ready && roomPreparation?.room === room && ["cancelled", "importing"].includes(roomPreparation.status)) return;
   if (ready && !await mpEnsureMovementAllowed()) return;
   if (mpUiState.room !== room || mpUiState.seat == null || room?.phase !== "lobby") return;
   if (!mpLobbySend({ type: "set-ready", ready, movementMode: state.options.touchMovementMode, touchEnabled: state.options.touchEnabled, mobileDevice: mobileDevice || state.options.touchEnabled })) return;
   mpUiState.ready = ready;
   renderMpRoom();
+});
+$("#mpRoomResourceCancel").addEventListener("click", () => {
+  const preparation = roomPreparation;
+  if (!preparation || preparation.room !== mpUiState.room || preparation.status !== "preparing" ||
+      preparation.stage !== "package") return;
+  preparation.status = "cancelled";
+  preparation.controller.abort();
+  if (mpUiState.ready) {
+    mpLobbySend({ type: "set-ready", ready: false, movementMode: state.options.touchMovementMode,
+      touchEnabled: state.options.touchEnabled, mobileDevice: mobileDevice || state.options.touchEnabled });
+    mpUiState.ready = false;
+  }
+  renderMpRoom();
+  beginManualGamePackageImport(undefined, captureGameDataContinuation("install-only"));
+});
+$("#mpRoomResourceRetry").addEventListener("click", () => {
+  const preparation = roomPreparation;
+  if (!preparation || preparation.room !== mpUiState.room ||
+      (preparation.status !== "cancelled" && preparation.status !== "failed")) return;
+  if (gameDataAttempt?.manual && gameDataAttempt.continuation?.kind === "install-only") clearGameDataAttempt();
+  roomPreparation = null;
+  void prepareRoomResources(preparation.room);
 });
 $("#mpCheckGame").addEventListener("click", () => { void mpCheckGame(); });
 $("#mpStartGame").addEventListener("click", async () => {
@@ -7264,6 +7415,8 @@ function mpResetRoomState() {
   hideRoomLaunchCover();
   roomPreparation?.controller.abort();
   roomPreparation = null;
+  reportedResourceSocket = null;
+  reportedResourceKey = "";
   mpDisconnectLobby();
   mpLobby.startSerial = 0;
   mpUiState.room = null;
@@ -7591,9 +7744,11 @@ function renderMpRoom() {
   $("#mpRoomPhase").textContent = t(player.classList.contains("mp-room-launch-cover") && roomLaunchStage === "path" ? "room.connectingGameplay"
     : player.classList.contains("mp-room-launch-cover") || room.phase === "starting" ? "room.starting" : room.phase === "running" ? "room.running"
     : preparation?.status === "preparing" ? "room.preparingResources"
+      : preparation?.status === "importing" ? "package.importingSimple"
       : preparation?.status === "ready" ? "room.resourcesReady"
         : preparation?.status === "failed" ? "room.resourcesUnavailable" : "room.lobby");
   $("#mpRoomPhase").title = preparation?.status === "failed" ? preparation.error : "";
+  renderRoomPreparationProgress();
   $("#mpRoomMode").textContent = t("room.coop", { count: room.playerCount });
   $("#mpRoomDifficultyBadge").textContent = game().multiplayer?.difficulties?.[room.difficulty] || "Normal";
   const ownerLocal = mpRoomOwnerLocal();
@@ -7714,6 +7869,27 @@ function renderMpRoom() {
     }
     edit.hidden = mpUiState.seat !== index || !occupied;
     edit.setAttribute("aria-label", t("room.playerOptions"));
+    let remove = seat.querySelector<HTMLButtonElement>(".mp-seat-remove");
+    if (!remove && index > 0) {
+      remove = document.createElement("button"); remove.type = "button"; remove.className = "mp-seat-remove";
+      remove.textContent = "×";
+      remove.addEventListener("click", async () => {
+        const currentRoom = mpUiState.room;
+        const target = currentRoom?.seats?.[index];
+        if (!currentRoom || !target || !mpRoomOwnerLocal() || !mpLobby.connected || currentRoom.phase !== "lobby") return;
+        if (!await askConfirmation({ message: t("room.removePlayerConfirm", { seat: index + 1 }),
+          confirmText: t("room.removePlayer", { seat: index + 1 }), tone: "danger" })) return;
+        if (mpUiState.room !== currentRoom || !mpRoomOwnerLocal() || !mpLobby.connected ||
+            currentRoom.phase !== "lobby" || currentRoom.seats?.[index]?.clientId !== target.clientId) return;
+        mpLobbySend({ type: "remove-player", seat: index, clientId: target.clientId });
+      });
+      seat.append(remove);
+    }
+    if (remove) {
+      remove.hidden = !roomReady || !ownerLocal || room.phase !== "lobby" || !networkSeat || index === 0;
+      remove.setAttribute("aria-label", t("room.removePlayer", { seat: index + 1 }));
+      remove.title = t("room.removePlayer", { seat: index + 1 });
+    }
     if (me) me.hidden = mpUiState.seat !== index;
     if (button) {
       button.disabled = !roomReady || !active || occupied;
@@ -7721,6 +7897,7 @@ function renderMpRoom() {
     }
     mpAnimateSeatContents(seat, occupied ? networkSeat?.clientId || mpLobby.clientId : "");
   });
+  renderRoomSeatResourceProgress();
 
   const playerCard = $("#mpLocalPlayer");
   if (!room.synced || mpUiState.seat == null) {
@@ -7758,6 +7935,20 @@ function renderMpRoom() {
     const name = document.createElement("strong"); name.textContent = spectatorLabel;
     const status = document.createElement("small"); status.textContent = t("room.watching");
     copy.append(name, status); row.append(avatar, copy, marker);
+    if (ownerLocal && roomReady && room.phase === "lobby" && entry.clientId !== mpLobby.clientId) {
+      const remove = document.createElement("button");
+      remove.type = "button"; remove.className = "mp-spectator-remove"; remove.textContent = "×";
+      remove.setAttribute("aria-label", t("room.removeSpectator"));
+      remove.title = t("room.removeSpectator");
+      remove.addEventListener("click", async () => {
+        if (!await askConfirmation({ message: t("room.removeSpectatorConfirm"),
+          confirmText: t("room.removeSpectator"), tone: "danger" })) return;
+        if (mpUiState.room !== room || !mpRoomOwnerLocal() || !mpLobby.connected ||
+            room.phase !== "lobby" || !room.spectators?.some(current => current.clientId === entry.clientId)) return;
+        mpLobbySend({ type: "remove-spectator", clientId: entry.clientId });
+      });
+      row.append(remove);
+    }
     spectatorList.append(row);
   }
   if (!spectatorEntries.length) {
@@ -7794,7 +7985,8 @@ function renderMpRoom() {
   requiredDescendant($("#mpRoomView"), ".mp-room-footer", HTMLElement).hidden = !room.synced || mpUiState.seat == null;
   const ready = $("#mpReady");
   ready.hidden = mpUiState.seat == null;
-  ready.disabled = !roomReady || mpUiState.seat == null || room.phase !== "lobby" || mpGameCheckInFlight;
+  ready.disabled = !roomReady || mpUiState.seat == null || room.phase !== "lobby" || mpGameCheckInFlight ||
+    (roomPreparation?.room === room && ["cancelled", "importing"].includes(roomPreparation.status) && !mpUiState.ready);
   ready.classList.toggle("ready", mpUiState.ready && mpUiState.seat != null);
   ready.setAttribute("aria-pressed", String(mpUiState.ready && mpUiState.seat != null));
   ready.textContent = t(mpUiState.ready && mpUiState.seat != null ? "multiplayer.readyDone" : "multiplayer.ready");
@@ -9000,6 +9192,12 @@ $("#transferImport").addEventListener("click", () => {
   if (!gameDataAttempt?.unlocked || state.ready) return;
   $("#gameDataImportInput").click();
 });
+function roomPreparationForImport(continuation: GameDataContinuation | undefined): RoomPreparation | null {
+  const preparation = roomPreparation;
+  return continuation?.kind === "install-only" && preparation?.room === mpUiState.room &&
+    preparation.game === state.game && ["cancelled", "failed", "importing"].includes(preparation.status)
+    ? preparation : null;
+}
 $("#gameDataImportInput").addEventListener("change", async () => {
   const input = $("#gameDataImportInput");
   const file = input.files?.[0] || null;
@@ -9009,12 +9207,26 @@ $("#gameDataImportInput").addEventListener("change", async () => {
   button.disabled = true;
   setGameDataImportBusy(true, t("package.importing"));
   const attemptId = gameDataAttempt.id;
+  const roomImport = roomPreparationForImport(gameDataAttempt.continuation);
+  if (roomImport) {
+    setGameDataImportBusy(true, t("package.importingSimple"));
+    roomImport.status = "importing";
+    renderMpRoom();
+  }
   try {
     const imported = await installImportedGameData(file);
+    if (gameDataAttempt?.id !== attemptId) return;
     showToast(t("package.imported", { count: imported.files }));
     if (gameDataAttempt?.importFlow && !state.launched) {
       const continuation = gameDataAttempt.continuation;
+      const preparedRoom = roomPreparationForImport(continuation);
       clearGameDataAttempt();
+      if (preparedRoom) {
+        roomPreparation = null;
+        setStatus(t("package.continuing"));
+        void prepareRoomResources(preparedRoom.room);
+        return;
+      }
       if (continuationStillValid(continuation)) {
         setPlayerStatus(t("package.continuing"));
         resetRuntime();
@@ -9035,6 +9247,11 @@ $("#gameDataImportInput").addEventListener("change", async () => {
     resetRuntime();
     await launchConfiguredRuntime();
   } catch (error) {
+    if (gameDataAttempt?.id !== attemptId) return;
+    if (roomImport && roomPreparation === roomImport && roomImport.status === "importing") {
+      roomImport.status = "cancelled";
+      renderMpRoom();
+    }
     const message = errorMessage(error);
     setPlayerStatus(message);
     const storageFailure = /IndexedDB|存储|写入|配额|quota|浏览器已清理|持久化/i.test(message);
@@ -9046,8 +9263,10 @@ $("#gameDataImportInput").addEventListener("change", async () => {
     openGameDataImportWindow();
     showToast(message);
   } finally {
-    setGameDataImportBusy(false);
-    button.disabled = false;
+    if (!gameDataAttempt || gameDataAttempt.id === attemptId) {
+      setGameDataImportBusy(false);
+      button.disabled = false;
+    }
   }
 });
 

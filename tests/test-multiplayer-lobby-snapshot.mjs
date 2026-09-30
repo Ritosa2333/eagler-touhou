@@ -69,6 +69,20 @@ assert.equal(timing?.inputDelay, 4);
 assert.equal(timing?.predictionLimit, 2);
 assert.equal(timing?.seats[0]?.mobileDevice, true);
 
+function resourceSnapshot(resource) {
+  return normalizeMultiplayerLobbySnapshot({ playerCount: 2,
+    seats: [{ clientId: localClientId, loadout: 0, resource }, null] },
+  { localClientId, playerCounts: th06.playerCounts, difficulties: th06.difficulties, loadouts: th06.loadouts })?.seats[0]?.resource;
+}
+assert.deepEqual(resourceSnapshot({ status: "preparing", stage: "package", percent: 42.6 }),
+  { status: "preparing", stage: "package", percent: 43 });
+assert.deepEqual(resourceSnapshot({ status: "importing", stage: "package", percent: null }),
+  { status: "importing", stage: "package", percent: null });
+assert.equal(resourceSnapshot({ status: "unexpected", stage: "package", percent: 50 }), null);
+assert.equal(resourceSnapshot({ status: "ready", stage: "invalid", percent: 100 }), null);
+assert.equal(resourceSnapshot({ status: "preparing", stage: "runtime", percent: 101 })?.percent, null);
+assert.equal(resourceSnapshot(undefined), null, "legacy peers need no progress declaration");
+
 const inactiveSeat = normalizeMultiplayerLobbySnapshot({
   playerCount: 2,
   seats: [null, null, { clientId: localClientId, name: "P3", loadout: 0 }],

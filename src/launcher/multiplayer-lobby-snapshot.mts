@@ -12,6 +12,13 @@ export interface MultiplayerLobbySeat {
   offline: boolean;
   controlMode: ReturnType<typeof multiplayerControlMode>;
   mobileDevice: boolean;
+  resource: MultiplayerResourceProgress | null;
+}
+
+export interface MultiplayerResourceProgress {
+  status: "preparing" | "ready" | "failed" | "cancelled" | "importing";
+  stage: "package" | "runtime";
+  percent: number | null;
 }
 
 export interface MultiplayerLobbySpectator {
@@ -103,6 +110,7 @@ export function normalizeMultiplayerLobbySnapshot(value: unknown, {
       offline: !!seat.offline,
       controlMode: multiplayerControlMode(seat.controlMode),
       mobileDevice: seat.mobileDevice === true,
+      resource: normalizeResourceProgress(seat.resource),
     };
   });
 
@@ -126,5 +134,17 @@ export function normalizeMultiplayerLobbySnapshot(value: unknown, {
     seats,
     localSeat,
     localSpectator,
+  };
+}
+
+function normalizeResourceProgress(value: unknown): MultiplayerResourceProgress | null {
+  const source = record(value);
+  if (!source || !["preparing", "ready", "failed", "cancelled", "importing"].includes(String(source.status)) ||
+      (source.stage !== "package" && source.stage !== "runtime")) return null;
+  const percent = source.percent === null ? null : Number(source.percent);
+  return {
+    status: source.status as MultiplayerResourceProgress["status"],
+    stage: source.stage,
+    percent: percent !== null && Number.isFinite(percent) && percent >= 0 && percent <= 100 ? Math.round(percent) : null,
   };
 }
