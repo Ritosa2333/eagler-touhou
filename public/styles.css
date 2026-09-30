@@ -123,7 +123,6 @@ footer{padding-top:2px;display:flex;justify-content:space-between;gap:20px;font-
 .touch-sensitivity-preview{position:absolute;z-index:43;left:50%;top:50%;width:144px;height:144px;pointer-events:none;opacity:.98;transform:translate(-50%,-50%);filter:drop-shadow(1px 1px 0 rgba(0,0,0,.9))}.touch-sensitivity-preview[hidden]{display:none}.touch-sensitivity-preview::before,.touch-sensitivity-preview::after{content:"";position:absolute;left:50%;top:50%;background:#fff;box-shadow:0 0 3px rgba(255,255,255,1),0 0 8px rgba(255,93,103,.95),0 0 14px rgba(217,77,85,.72)}.touch-sensitivity-preview::before{width:100%;height:2px;transform:translate(-50%,-50%)}.touch-sensitivity-preview::after{width:2px;height:100%;transform:translate(-50%,-50%)}.touch-sensitivity-preview.active{opacity:1}.touch-sensitivity-preview.active::before,.touch-sensitivity-preview.active::after{box-shadow:0 0 4px rgba(255,255,255,1),0 0 10px rgba(255,93,103,1),0 0 18px rgba(217,77,85,.9)}
 @media(max-width:760px){.touch-sensitivity-preview{width:124px;height:124px}}
 .player #touchFocus{z-index:31}.player #touchFire{z-index:32}.player #touchBomb{z-index:33}.player #touchJoystick{z-index:34}.player #touchEscape{z-index:35}.player #touchThpracTab{z-index:36}.player #touchThpracMenu{z-index:37}
-.touch-gap{order:3}.touch-gap[hidden]{display:none!important}.player #touchGap{z-index:35}
 .touch-help-window h2{font-family:var(--ui-font);font-weight:700}
 
 /* Top bar and rounded surfaces; preserve the existing neutral palette. */

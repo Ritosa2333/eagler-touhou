@@ -87,24 +87,3 @@ Set `EAGLER_TEST_PACKAGE=<offline.zip>` to verify fresh-profile import and
 startup in Japanese, Simplified Chinese and English. That mode blocks hosted
 shared-font and language downloads and checks both shared fonts in the Runtime,
 so missing fonts cannot be masked by the local Hosted site.
-
-## TH11 touch gap assistance
-
-The optional Launcher `touch-controls` snapshot field `th11GapHeld` drives
-TH11's `sdl_touch_gap` input adapter. The draggable "Gap" control is shown for
-TH11 only; the adapter accepts it only during live Reimu A gameplay, not another
-shot, dialogue, pause, death or Replay. At either horizontal edge it samples
-push → release → push at the simulation tick and temporarily masks Shoot,
-Focus and ordinary direction input. It never sets the warp state or position:
-the unchanged `PlayerMotion::update_warp` owns all eligibility, timing, audio,
-option and coordinate rules. Holding the control cannot repeat a completed
-transfer. Releasing it restores the current Fire/Focus snapshot, not a saved
-stale copy. The surviving drag target rebases when the original warp crosses
-the screen. Cancellation, blur, visibility changes and switching movement mode
-retire the hold. The ordinary synthesized key stream reaches the same Replay
-input owner as keyboard input.
-
-The TH11 dialogue browser test also exercises left/right gap input through the
-platform sampler, held-fire/focus restoration, drag rebasing, other-shot
-isolation, cancellation and pause/resume. This is desktop Chromium evidence;
-real Android/iOS touch acceptance remains a manual check.

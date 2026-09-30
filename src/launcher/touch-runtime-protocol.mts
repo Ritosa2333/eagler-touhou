@@ -24,7 +24,6 @@ export interface TouchRuntimeContext {
 }
 
 export interface TouchControlsSnapshot {
-  th11GapHeld?: boolean;
   fireEnabled: boolean;
   focusEnabled: boolean;
   bombSerial: number;

@@ -1456,7 +1456,7 @@ function releaseRuntimePackageSession(): void {
 // preference so the user can retry after repairing the Package, but do not let
 // an unrelated render promote the already-running Runtime back to OGG.
 let launchMusicFallback: MusicMode | null = null;
-const touchControls = { fireEnabled: true, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 0, joystickY: 0, th11GapHeld: false };
+const touchControls = { fireEnabled: true, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 0, joystickY: 0 };
 const isOggMusicMode = (mode: MusicMode): mode is "ogg-stream" | "ogg-full" => mode === "ogg-stream" || mode === "ogg-full";
 const musicTransportMode = (mode: MusicMode) => isOggMusicMode(mode) ? "ogg" : mode === "midi" ? "midi" : mode === "none" ? "none" : null;
 const oggDecodeMode = (mode: MusicMode) => mode === "ogg-full" ? "full" : "stream";
@@ -1637,7 +1637,7 @@ const buttonElementSelectors = [
   "#touchLayoutReset", "#touchLayoutSave", "#touchLayoutExit", "#doubleTapBombToggle",
   "#restartButtonToggle", "#thpracTouchControlsToggle", "#touchSensitivityCustomToggle", "#touchViewportAdjust",
   "#touchViewportReset", "#touchViewportDone", "#touchFocus", "#touchFire",
-  "#touchBomb", "#touchGap", "#touchEscape", "#touchRestart", "#touchThpracTab",
+  "#touchBomb", "#touchEscape", "#touchRestart", "#touchThpracTab",
   "#touchThpracBackspace", "#touchHelpOpen", "#touchHelpClose", "#guideTabOrientation",
   "#guideTabGameControls", "#guideTabFocus", "#guideTabMenu", "#guideTabDialogue",
   "#guideTabThprac", "#orientationToggle", "#gameZoomToggle", "#fullscreenToggle",
@@ -2365,8 +2365,7 @@ function applyTouchLayout(layout: TouchLayout | null = currentTouchLayout()) {
   if (!hostRect.width || !hostRect.height || !safeRect.width || !safeRect.height) return;
   player.classList.add("touch-layout-custom");
   for (const name of touchLayoutControlNames) {
-    const item = profile.controls[name] ?? (name === "gap" && state.game === "th11"
-      ? { x: .92, y: .85, scale: 1, priority: touchLayoutControlMeta.gap.priority } : undefined);
+    const item = profile.controls[name];
     if (!item) continue;
     const element = touchLayoutElement(name);
     const position = effectiveTouchLayoutPosition(element, item);
@@ -4307,7 +4306,6 @@ function render() {
   player.classList.toggle("touch-enabled", touchSurfaceVisible);
   player.classList.toggle("touch-joystick-enabled", wheelMovement && touchSurfaceVisible);
   $("#touchJoystick").hidden = !(wheelMovement && touchSurfaceVisible);
-  $("#touchGap").hidden = state.game !== "th11" || !touchSurfaceVisible;
   $("#touchRestart").hidden = !state.options.restartButtonEnabled;
   syncDirectTouchSurfaceVisibility();
   renderTouchActionState();
@@ -4356,12 +4354,10 @@ function setOption<K extends keyof GameOptions>(name: K, value: GameOptions[K]) 
   if (name === "thpracEnabled" && !gameFeatureAvailable(state.game, "thprac")) return;
   if (state.options[name] === value) return;
   state.options[name] = value;
-  if (name === "touchMovementMode") releaseTouchGap();
   if ((name === "touchEnabled" || name === "thpracEnabled" || name === "thpracTouchControlsEnabled") && !thpracTouchControlsAvailable()) {
     thpracMenuOpen = false;
   }
   if (name === "touchEnabled" && !value) {
-    releaseTouchGap();
     touchControls.focusEnabled = false;
     touchControls.joystickX = 0;
     touchControls.joystickY = 0;
@@ -4423,7 +4419,6 @@ async function confirmInputWarnings() {
 }
 
 function resetRuntime() {
-  releaseTouchGap();
   releaseHeldTouchFire();
   activeLocalMusicInstall?.cancel();
   activeLocalMusicInstall = null;
@@ -4636,7 +4631,6 @@ function forwardHostedKeyboard(event: KeyboardEvent) {
 window.addEventListener("keydown", forwardHostedKeyboard, true);
 window.addEventListener("keyup", forwardHostedKeyboard, true);
 function clearHostedKeyboard() {
-  releaseTouchGap();
   releaseHeldTouchFire();
   if (!state.launched || !frame.contentWindow) return;
   const context = touchRuntimeMessageContext();
@@ -8273,46 +8267,6 @@ touchFocusButton.addEventListener("click", event => {
 
 // Some game Fire controls hold a Runtime key for actions such as charging.
 const touchFireButton = $("#touchFire");
-const touchGapButton = $("#touchGap");
-let touchGapPointer: number | null = null;
-function setTouchGap(held: boolean) {
-  touchControls.th11GapHeld = held;
-  touchGapButton.classList.toggle("is-on", held);
-  touchGapButton.setAttribute("aria-pressed", String(held));
-  pushTouchControlsLive();
-}
-function releaseTouchGap() { touchGapPointer = null; setTouchGap(false); }
-touchGapButton.addEventListener("blur", releaseTouchGap);
-touchGapButton.addEventListener("pointerdown", event => {
-  if (iosWebKitTouch || !state.launched || state.game !== "th11" || !state.options.touchEnabled || touchLayoutEditing || touchGapPointer !== null) return;
-  event.preventDefault(); event.stopPropagation(); touchGapPointer = event.pointerId;
-  try { touchGapButton.setPointerCapture(event.pointerId); } catch {}
-  setTouchGap(true);
-});
-for (const type of ["pointerup", "pointercancel", "lostpointercapture"] as const) {
-  touchGapButton.addEventListener(type, event => {
-    if (iosWebKitTouch || touchGapPointer !== event.pointerId) return;
-    event.preventDefault(); releaseTouchGap();
-  });
-}
-touchGapButton.addEventListener("touchstart", event => {
-  if (!iosWebKitTouch || !state.launched || state.game !== "th11" || !state.options.touchEnabled || touchLayoutEditing) return;
-  event.preventDefault(); event.stopPropagation(); setTouchGap(true);
-}, { passive: false });
-for (const type of ["touchend", "touchcancel"] as const) {
-  touchGapButton.addEventListener(type, event => {
-    if (!iosWebKitTouch) return;
-    event.preventDefault(); releaseTouchGap();
-  }, { passive: false });
-}
-touchGapButton.addEventListener("keydown", event => {
-  if (!state.launched || state.game !== "th11" || touchLayoutEditing || event.repeat || (event.key !== " " && event.key !== "Enter")) return;
-  event.preventDefault(); setTouchGap(true);
-});
-touchGapButton.addEventListener("keyup", event => {
-  if (event.key !== " " && event.key !== "Enter") return;
-  event.preventDefault(); releaseTouchGap();
-});
 let heldTouchFire = false;
 let heldTouchFirePointerId: number | null = null;
 let heldTouchFireKey: Readonly<{ code: string; key: string; keyCode: number }> | null = null;
@@ -8486,7 +8440,6 @@ function resetTouchJoystick(sync = true) {
   if (sync) queueTouchControlsSync();
 }
 function cancelTransientTouchInput() {
-  releaseTouchGap();
   cancelDirectTouches(false);
   resetTouchJoystick(false);
   touchControls.focusEnabled = false;

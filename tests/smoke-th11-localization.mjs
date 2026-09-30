@@ -18,7 +18,6 @@ try {
   for (const language of packagePath ? ["ja", "lang_zh-hans", "lang_en"] : ["lang_zh-hans", "lang_en"]) {
     const context = await browser.createBrowserContext();
     const page = await context.newPage();
-    if(process.env.EAGLER_TEST_GAP === "1")await page.setViewport({width:430,height:932,isMobile:true,hasTouch:true});
     const errors = [];
     page.on("pageerror", error => errors.push(error.message));
     await page.goto(new URL("?game=th11", site).href, { waitUntil: "networkidle2", timeout: 30000 });
@@ -48,12 +47,6 @@ try {
     }
     await page.select("#languageSelect", language);
     await page.select("#musicSelect", "ogg-stream");
-    if(process.env.EAGLER_TEST_GAP === "1") {
-      await page.evaluate(()=>{const toggle=document.querySelector("#touchToggle");if(toggle.getAttribute("aria-checked")!=="true")toggle.click();});
-      await page.waitForFunction(()=>document.querySelector("#decisionDialog").open||document.querySelector("#touchToggle").getAttribute("aria-checked")==="true");
-      if(await page.$eval("#decisionDialog",item=>item.open))await page.evaluate(()=>document.querySelector("#decisionConfirm").click());
-      await page.waitForFunction(()=>document.querySelector("#touchToggle").getAttribute("aria-checked")==="true");
-    }
     await page.evaluate(() => document.querySelector("#launch").click());
     if (packagePath) {
       await page.waitForFunction(() => document.querySelector("#decisionDialog")?.open ||
@@ -98,23 +91,6 @@ try {
       };
     });
     console.log(JSON.stringify({ language, imported: !!packagePath, ...result, errors, hostedResourceRequests }));
-    if(process.env.EAGLER_TEST_GAP === "1") {
-      await page.evaluate(()=>{if(!document.querySelector("#touchHelp").hidden)document.querySelector("#touchHelpClose").click();});
-      const gap = await page.evaluate(() => {
-        const button=document.querySelector("#touchGap"),runtime=[...document.querySelectorAll("iframe")].find(item=>item.contentWindow?.core?.th11_phase);
-        if(button.hidden||!runtime.contentWindow.core.sdl_touch_gap)throw Error("TH11 gap control/export unavailable: "+JSON.stringify({hidden:button.hidden,export:typeof runtime.contentWindow.core.sdl_touch_gap,touch:document.querySelector('#touchToggle').getAttribute('aria-checked'),dialogs:[...document.querySelectorAll('dialog[open]')].map(d=>({id:d.id,text:d.textContent.slice(0,200)}))}));
-        button.dispatchEvent(new PointerEvent("pointerdown",{bubbles:true,cancelable:true,pointerId:87,pointerType:"touch"}));
-        const pressed=button.getAttribute("aria-pressed");
-        button.dispatchEvent(new PointerEvent("pointerup",{bubbles:true,cancelable:true,pointerId:87,pointerType:"touch"}));
-        const released=button.getAttribute("aria-pressed");
-        button.dispatchEvent(new PointerEvent("pointerdown",{bubbles:true,cancelable:true,pointerId:88,pointerType:"touch"}));
-        window.dispatchEvent(new Event("blur"));
-        return {pressed,released,blurred:button.getAttribute("aria-pressed")};
-      });
-      if(gap.pressed!=="true"||gap.released!=="false"||gap.blurred!=="false")throw Error(JSON.stringify(gap));
-      console.log(JSON.stringify({language,gap}));
-      if(process.env.EAGLER_TEST_GAP_SCREENSHOT)await page.screenshot({path:resolve(process.env.EAGLER_TEST_GAP_SCREENSHOT.replace('{language}',language))});
-    }
     if (result.selected !== language || result.phase == null || result.frame <= 120 || result.error ||
         (language !== "ja" && Object.values(result.files).some(value => !value)) || errors.length ||
         hostedResourceRequests.length || (packagePath && Object.values(result.sharedFonts).some(value => !value))) {

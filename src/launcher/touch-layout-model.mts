@@ -10,7 +10,6 @@ export const touchLayoutControlMeta = Object.freeze({
   restart: Object.freeze({ id: "touchRestart", title: "R", priority: 5 }),
   thpracTab: Object.freeze({ id: "touchThpracTab", title: "Tab", priority: 6 }),
   thpracMenu: Object.freeze({ id: "touchThpracMenu", title: "作弊菜单", titleKey: "touch.cheatMenu", priority: 7 }),
-  gap: Object.freeze({ id: "touchGap", title: "隙间", titleKey: "touch.gap", priority: 8 }),
 });
 
 export const touchLayoutScaleMin = 0.6;
@@ -47,7 +46,6 @@ export interface TouchLayoutStorage {
 
 export const touchLayoutControlNames = Object.freeze(Object.keys(touchLayoutControlMeta) as TouchLayoutControlName[]);
 const optionalLegacyControls = new Set<TouchLayoutControlName>([
-  "gap",
   "joystick",
   "restart",
   "thpracTab",

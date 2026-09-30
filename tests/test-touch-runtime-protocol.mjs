@@ -67,8 +67,6 @@ assert.deepEqual(sent.pop(), {
 });
 
 const touch = { id: -3, x: 0.25, y: 0.75 };
-assert.equal(postTouchControls({ ...ready, game: "th11" }, { ...controls, th11GapHeld: true }, 150), true);
-assert.equal(sent.pop().message.th11GapHeld, true, "TH11 gap hold uses the existing live snapshot");
 assert.equal(postDirectTouch({ ...ready, launched: false }, "down", touch), false);
 assert.equal(postDirectTouch({ ...ready, ready: false }, "down", touch), false);
 assert.equal(postDirectTouch(ready, "down", null), false);

@@ -247,7 +247,6 @@ export interface RuntimeCommandPayloads {
   keyboard: { down: boolean; code: string };
   "keyboard-clear": Record<string, never>;
   "touch-controls": {
-    th11GapHeld?: boolean;
     fireEnabled: boolean;
     focusEnabled: boolean;
     bombSerial: number;
