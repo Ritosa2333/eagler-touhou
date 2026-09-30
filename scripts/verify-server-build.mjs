@@ -145,7 +145,11 @@ if (/<script\b[^>]+src=/i.test(migrationHtml) || /<link\b[^>]+stylesheet/i.test(
 async function verifyHtmlReferences(relativeHtmlPath) {
   const htmlPath = resolve(root, relativeHtmlPath);
   const html = await readFile(htmlPath, "utf8");
-  for (const tagMatch of html.matchAll(/<[^>]+>/g)) {
+  // Inline JavaScript may contain `<` and `>` operators; those are not HTML
+  // tags and must not turn an expression such as `image.src = source` into a
+  // phantom resource reference.
+  const markup = html.replace(/(<script\b[^>]*>)[\s\S]*?(<\/script\s*>)/gi, "$1$2");
+  for (const tagMatch of markup.matchAll(/<[^>]+>/g)) {
     for (const match of tagMatch[0].matchAll(/\b(?:src|href)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)) {
       const value = match[1] ?? match[2] ?? match[3];
       if (!value || /^(?:data:|https?:|mailto:|#)/i.test(value)) continue;

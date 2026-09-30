@@ -22,6 +22,11 @@ const publicAssets = new Set([
   "assets/notice-bilibili.svg",
   "assets/notice-touhou-cloud.png",
   "assets/notice-github.svg", "assets/notice-qq.svg",
+  // Phosphor room UI icons and their upstream MIT license.
+  "assets/room-caret-left.svg", "assets/room-caret-right.svg",
+  "assets/room-chart-bar.svg", "assets/room-copy.svg", "assets/room-gear-six.svg",
+  "assets/room-sliders-horizontal.svg", "assets/room-users.svg",
+  "assets/room-icons-LICENSE.txt",
   "assets/fonts/touhou98.woff2",
   "assets/fonts/unifont-site.woff2",
   "assets/fonts/OFL-Unifont.txt",

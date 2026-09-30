@@ -63,8 +63,8 @@ assert.equal(th08.obligations.optionalProductCapabilities["raw-data-import"], tr
 assert.equal(th08.product.music.midiOptional, true);
 assert.equal(th08.protocol.configureOptions.focusHitboxEnabled.activeForProduct, false);
 assert.equal(th08.protocol.configureOptions.thpracEnabled.activeForProduct, true);
-assert.equal(th08.protocol.configureOptions.netplayMode.activeForProduct, false);
-assert.equal(th08.obligations.optionalProfiles.multiplayer.active, false);
+assert.equal(th08.protocol.configureOptions.netplayMode.activeForProduct, true);
+assert.equal(th08.obligations.optionalProfiles.multiplayer.active, true);
 assert.equal(th08.obligations.optionalProfiles.thprac.active, true);
 assert.equal(th08.obligations.optionalProfiles.languages.active, true);
 assert.equal(th08.obligations.optionalProfiles.midi.active, true);
@@ -72,10 +72,11 @@ assert.ok(th08.obligations.optionalProfiles.midi.behaviors.includes("audible-mid
 
 const th10 = createAdapterContractReport("th10");
 assert.equal(th10.product.music.midiOptional, false);
-assert.equal(th10.product.multiplayerRuntime, null);
-assert.equal(th10.product.multiplayer, null);
+assert.equal(th10.product.multiplayerRuntime, PRODUCT_GAMES.th10.multiplayerRuntime);
+assert.deepEqual(th10.product.multiplayer, PRODUCT_GAMES.th10.multiplayer);
 assert.equal(th10.obligations.optionalProductCapabilities["raw-data-import"], false);
-assert.deepEqual(th10.obligations.activeProfileRequired, ["thprac-touch-bridge", "language-runtime-application"]);
+assert.deepEqual(th10.obligations.activeProfileRequired, ["multiplayer-local-player-visibility",
+  "multiplayer-spectator-input-isolation", "thprac-touch-bridge", "language-runtime-application"]);
 assert.equal(th10.protocol.configureOptions.focusHitboxEnabled.activeForProduct, false);
 assert.equal(th10.protocol.configureOptions.debugHarness.activeForProduct, false);
 assert.equal(th10.obligations.optionalProfiles.languages.active, true);

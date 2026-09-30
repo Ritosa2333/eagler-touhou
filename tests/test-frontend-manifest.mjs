@@ -36,7 +36,8 @@ assert.ok(FRONTEND_PACKAGE_FILES.includes("vendor/fflate.LICENSE"));
 assert.ok(APP_SHELL_FILES.includes("vendor/fflate.min.js"));
 assert.ok(!APP_SHELL_FILES.includes("vendor/fflate.LICENSE"));
 assert.ok(APP_SHELL_FILES.every(path => FRONTEND_PACKAGE_FILES.includes(path)));
-assert.deepEqual(BROWSER_MODULE_ENTRYPOINTS, ["app.js"]);
+assert.deepEqual(BROWSER_MODULE_ENTRYPOINTS, ["app.js", "assets/launcher/lobby.mjs"],
+  "both Launcher and standalone room directory must publish their browser entrypoints");
 assert.ok(BROWSER_MODULE_FILES.includes("app.js"));
 assert.ok(BROWSER_MODULE_FILES.includes("assets/launcher/app.mjs"));
 assert.ok(BROWSER_MODULE_FILES.length > 2,
