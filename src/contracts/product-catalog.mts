@@ -372,6 +372,7 @@ export const PRODUCT_GAMES = Object.freeze({
     support: Object.freeze({
       sourceRepository: "https://github.com/Goan114/touhou20",
       adaptationNotice: "early-test",
+      credit: Object.freeze({ name: "ぃ尐懒猫ゞ", url: "https://space.bilibili.com/15669619" }),
     }),
     runtimeFileLayout: "directory",
     requiredShared: Object.freeze(["/msgothic.ttc", "/unifont.otf"]),

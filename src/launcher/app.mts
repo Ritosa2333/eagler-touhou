@@ -4142,6 +4142,19 @@ function render() {
   $("#gameNoticeCallout").hidden = !noticeGame;
   if (noticeGame) {
     $("#gameNoticeRepo").href = support.sourceRepository;
+    // Per-game credit override (e.g. TH20): keep the shared default otherwise.
+    const credit = "credit" in support ? (support.credit as { name: string; url: string }) : null;
+    const creditAnchor = document.querySelector<HTMLAnchorElement>("#gameNoticeCredit");
+    const creditName = document.querySelector<HTMLElement>("#gameNoticeCreditName");
+    if (creditAnchor && creditName) {
+      creditAnchor.href = credit ? credit.url : "https://b23.tv/WOQhahY";
+      if (credit) {
+        creditName.textContent = credit.name;
+        creditName.removeAttribute("data-i18n");
+      } else {
+        creditName.setAttribute("data-i18n", "gameNotice.credit");
+      }
+    }
   }
   $("#mpShell").hidden = !multiplayerProduct;
   const netplayConfigurationReady = hostManifestAvailable && !!state.netplay.url;
