@@ -19,6 +19,9 @@
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #include "../../../portable/sdl/FrameCadence.hpp"
+// DOM keys have one owner in updated shells; preserve older-shell input.
+EM_JS(int, th09_browser_keyboard, (), {return typeof Module["resetBrowserKeyboard"]==='function';});
+EM_JS(void, th09_reset_browser_keyboard, (), {Module["resetBrowserKeyboard"]?.();});
 EM_JS(void, th09_browser_frame, (int ok,double milliseconds), { Module["onGameFrame"]?.(ok,milliseconds); });
 EM_JS(void, th09_network_result, (), { Module["onNetworkResult"]?.(); });
 EM_JS(void, th09_network_request, (), { Module["onNetworkRequest"]?.(); });
@@ -202,10 +205,10 @@ touhou::input::TouchState touch_state(){
     i32 side=network.active?network.side:w.configuration.controllers[0]?1:0;if(w.configuration.controllers[side])return s;auto& p=*w.battle->fields[side].player;s.context=1;s.instance=1+side+2*w.configuration.selection.stage+32*w.rules.progress.round;s.ready=(p.control.player_state==0||p.control.player_state==3)&&p.motion.health>0;
     s.x=p.motion.position.x;s.y=p.motion.position.y;s.fast=p.resource.movement.normal;s.slow=p.resource.movement.focused;const auto& limit=w.battle->state.limits;s.min_x=limit.origin.x;s.max_x=limit.origin.x+limit.extent.x;s.min_y=limit.origin.y;s.max_y=limit.origin.y+limit.extent.y;return s;
 }
-void clear_inputs(){for(auto& k:keyboard_map)k.hosted=false;gestures.reset();if(probe&&probe->session)probe->session->clear_motion();std::fill(std::begin(pulse_ticks),std::end(pulse_ticks),0);}
+void clear_inputs(){th09_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& k:keyboard_map)k.hosted=false;gestures.reset();if(probe&&probe->session)probe->session->clear_motion();std::fill(std::begin(pulse_ticks),std::end(pulse_ticks),0);}
 void sample_keys(u16 (&out)[3]){
     SDL_Event e;while(SDL_PollEvent(&e)){if(e.type==SDL_EVENT_GAMEPAD_ADDED)add_controller(e.gdevice.which);else if(e.type==SDL_EVENT_GAMEPAD_REMOVED)for(auto*& p:controllers)if(p&&SDL_GetGamepadID(p)==e.gdevice.which){SDL_CloseGamepad(p);p=nullptr;}}
-    bool keys[256]{};const auto* physical=SDL_GetKeyboardState(nullptr);for(const auto& k:keyboard_map)if(k.hosted||(k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){if(k.vk)keys[k.vk]=true;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=true;if(k.scan==28||k.scan==156)keys[13]=true;}
+    bool keys[256]{};const auto* physical=th09_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);for(const auto& k:keyboard_map)if(k.hosted||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){if(k.vk)keys[k.vk]=true;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=true;if(k.scan==28||k.scan==156)keys[13]=true;}
     const int keyboardDpad=th09_keyboard_gamepad_dpad();if(keyboardDpad&1)keys[38]=true;if(keyboardDpad&2)keys[40]=true;if(keyboardDpad&4)keys[37]=true;if(keyboardDpad&8)keys[39]=true;
     const auto state=touch_state();auto sample=gestures.sample(state,SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);
     // TH09 shoots ordinary bullets on repeated presses, while holding Z charges.
@@ -269,7 +272,7 @@ TH09_EXPORT("th09_spectator_feed") u32 th09_spectator_feed(u32 frame,u32 left,u3
     spectator_frames.push_back(packet);++spectator_next;return 1;
 }
 TH09_EXPORT("th09_spectator_frame") u32 th09_spectator_frame(){return spectator_simulated;}
-TH09_EXPORT("th09_spectator_end") void th09_spectator_end(){spectator_mode=false;spectator_frames.clear();}
+TH09_EXPORT("th09_spectator_end") void th09_spectator_end(){spectator_mode=false;spectator_frames.clear();clear_inputs();}
 TH09_EXPORT("th09_network_receive") u32 th09_network_receive(u32 frame,u32 keys,u32 mode,float x,float y){return keys<=65535&&mode<=NetworkInput::MotionTargetUnlimited&&network.submit(1-network.side,frame,u16(keys),u8(mode),x,y);}
 TH09_EXPORT("th09_network_end") void th09_network_end(){if(!network.active)return;if(probe)probe->release_network();else network.end();clear_inputs();if(probe){probe->requested_transition=-1;probe->settings.game_flags=0;if(probe->session&&!probe->in_title){probe->session->finish();probe->return_title(false);}else if(probe->title){probe->return_title(false);}probe->sync_records();}}
 TH09_EXPORT("th09_network_hash") u32 th09_network_hash(){
@@ -314,7 +317,7 @@ TH09_EXPORT("th09_loop_start") void th09_loop_start(){
     },reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
 }
 TH09_EXPORT("th09_game_draw") void th09_game_draw(){if(probe)probe->draw();}
-TH09_EXPORT("th09_key") void th09_key(u32 scan,u32 down){for(auto& k:keyboard_map)if(k.scan==scan)k.hosted=down!=0;}
+TH09_EXPORT("th09_key") void th09_key(u32 scan,u32 down){if(spectator_mode)return;for(auto& k:keyboard_map)if(k.scan==scan)k.hosted=down!=0;}
 TH09_EXPORT("th09_keys_clear") void th09_keys_clear(){clear_inputs();}
 TH09_EXPORT("th09_pulse") void th09_pulse(u32 mask){for(u32 n=0;n<16;++n)if(mask&(1u<<n))pulse_ticks[n]=2;}
 TH09_EXPORT("th09_touch") void th09_touch(u32 type,i32 id,float x,float y){gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);}
