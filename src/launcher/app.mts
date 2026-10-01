@@ -5887,6 +5887,8 @@ async function selectedMusicResources(): Promise<MusicResource[]> {
 }
 
 async function selectedSharedResources(language = state.language) {
+  const product = PRODUCT_GAMES[state.game];
+  if ("requiredShared" in product && product.requiredShared.length === 0) return [];
   const packageTargets = new Set<string>();
   const generation = activeInstalledPackageGeneration;
   if (generation) {
