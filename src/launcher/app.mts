@@ -129,6 +129,7 @@ import {
   deliverRuntimeInput,
 } from "./touch-runtime-protocol.mjs";
 import { createGameZoomController } from "./game-zoom.mjs";
+import { HostedKeyboard } from "./hosted-keyboard.mjs";
 import type { GameZoomPointerInput } from "./game-zoom.mjs";
 import {
   appendRttSample,
@@ -4801,7 +4802,7 @@ async function confirmInputWarnings() {
 }
 
 function resetRuntime() {
-  releaseHeldTouchFire();
+  clearHostedKeyboard();
   activeLocalMusicInstall?.cancel();
   activeLocalMusicInstall = null;
   cancelBlockingNetworkOperation();
@@ -4978,57 +4979,33 @@ document.addEventListener("fullscreenerror", () => {
   cancelTouchLayoutGestures();
 });
 
-const hostedGameKeyCodes = new Set([
-  "KeyZ", "KeyX", "ShiftLeft", "ShiftRight", "Escape",
-  "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
-  "Numpad8", "Numpad2", "Numpad4", "Numpad6", "Numpad7", "Numpad9", "Numpad1", "Numpad3",
-  "ControlLeft", "ControlRight", "KeyQ", "KeyS", "Home", "Enter", "NumpadEnter", "KeyD", "KeyR",
-  "Tab", "Backspace", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F12"
-]);
-const hostedGameKeys = new Set([
-  "z", "x", "shift", "escape", "esc", "arrowup", "arrowdown", "arrowleft", "arrowright",
-  "control", "q", "s", "home", "enter", "d", "r", "tab", "backspace", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f12"
-]);
-// Legacy DOM keyCode fallback for old/vendor WebViews where code/key can be
-// empty or Unidentified. These are DOM virtual-key values, not Android's raw
-// KEYCODE_DPAD_* 19..22 values; Chromium converts the latter before Web events.
-const hostedGameLegacyKeyCodes = new Set([8, 9, 13, 16, 17, 27, 36, 37, 38, 39, 40, 68, 81, 82, 83, 88, 90, 112, 113, 114, 115, 116, 117, 118, 123]);
-const forwardedHostedKeys = new Set<string>();
+const hostedKeyboard = new HostedKeyboard();
 function forwardHostedKeyboard(event: KeyboardEvent) {
   if (!state.launched || !player.classList.contains("open") || !frame.contentWindow) {
-    forwardedHostedKeys.clear();
+    hostedKeyboard.clear();
     return;
   }
-  const down = event.type === "keydown";
-  if (down && (event.metaKey || event.altKey)) return;
-  const key = String(event.key || "").toLowerCase();
-  const keyCode = Number.isInteger(event.keyCode) ? event.keyCode : 0;
-  if (!hostedGameKeyCodes.has(event.code || "") && !hostedGameKeys.has(key) && !hostedGameLegacyKeyCodes.has(keyCode)) return;
-  const identity = keyCode ? `code:${keyCode}` : event.code ? `physical:${event.code}` : `key:${key}`;
   const ownedByLauncher = event.target instanceof Element && !!event.target.closest("input, select, textarea, button, dialog, [role='dialog']");
-  // If a key went down over the game, always deliver its release. Focus can
-  // move to Launcher controls before keyup, leaving Shift latched in Runtime.
-  if (ownedByLauncher && (down || !forwardedHostedKeys.has(identity))) return;
-  if (down) forwardedHostedKeys.add(identity); else forwardedHostedKeys.delete(identity);
   const context = touchRuntimeMessageContext();
-  deliverRuntimeInput(context, {
-    protocol, game: state.game, epoch: context.epoch, command: "keyboard", down,
-    code: event.code || "", key: event.key || "", keyCode,
-    location: Number.isInteger(event.location) ? event.location : 0
+  const keys = hostedKeyboard.forward(event, context, ownedByLauncher);
+  for (const key of keys) deliverRuntimeInput(context, {
+    protocol, game: context.game, epoch: context.epoch, command: "keyboard",
+    down: event.type === "keydown", ...key,
   });
-  event.preventDefault();
+  if (keys.length) event.preventDefault();
 }
 window.addEventListener("keydown", forwardHostedKeyboard, true);
 window.addEventListener("keyup", forwardHostedKeyboard, true);
 function clearHostedKeyboard() {
   releaseHeldTouchFire();
-  forwardedHostedKeys.clear();
+  hostedKeyboard.clear();
   if (!state.launched || !frame.contentWindow) return;
   const context = touchRuntimeMessageContext();
   deliverRuntimeInput(context,
     { protocol, game: state.game, epoch: context.epoch, command: "keyboard-clear" });
 }
 window.addEventListener("blur", clearHostedKeyboard);
+window.addEventListener("pagehide", clearHostedKeyboard);
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") clearHostedKeyboard();
 });
@@ -8972,10 +8949,13 @@ function pulseThpracKey(name: string | undefined) {
   if (!isThpracKeyName(name)) return;
   const spec = thpracKeySpecs[name];
   if (!spec) return;
-  postRuntimeHostedKey(touchRuntimeMessageContext(), spec, true);
+  const context = touchRuntimeMessageContext();
+  postRuntimeHostedKey(context, spec, true);
   // OverlayKeyPressed samples at the fixed trainer tick. Hold the synthetic
   // key long enough to span several 60 Hz boundaries, then release it.
-  setTimeout(() => postRuntimeHostedKey(touchRuntimeMessageContext(), spec, false), 70);
+  setTimeout(() => {
+    if (currentRuntimeSession()?.id === context.epoch) postRuntimeHostedKey(context, spec, false);
+  }, 70);
   refocusGameIfNeeded();
 }
 
