@@ -20,12 +20,26 @@ const resultsDraw=read('th10_web/cpp/game/ResultsDraw.cpp');
 const guiDraw=read('th10_web/cpp/game/GuiDraw.cpp');
 const hud=read('th10_web/cpp/platform/Hud.cpp');
 
-// rAF may schedule extra presentation frames, but authoritative simulation is
-// at most one Application::step(true) per callback. Late callbacks skip expired
-// original deadlines instead of replaying multiple catch-up ticks.
-assert.match(host,/const bool tick_due=cadence\.advance\(delta\)!=0/);
-assert.match(host,/if\(tick_due\)\{sdl_native_input\(application\);result=application->step\(true\);\}/);
-assert.doesNotMatch(host,/for\(unsigned i=0;i<ticks/);
+// BEGIN CADENCE SOURCE CONTRACT
+// Ordinary gameplay keeps the retail single-tick late-callback policy. Live
+// MP has a separate bounded debt-preserving path; it must remain build-guarded.
+const cadenceRegion=host.slice(host.indexOf('double simulation_delta=delta;'),
+ host.indexOf('const bool high=presentation.high_refresh'));
+assert(cadenceRegion,'Cadence source region is missing');
+// This region has only non-nested MP guards. Reject nested directives rather
+// than accidentally inspecting an incorrectly simplified ordinary variant.
+const mpBlocks=[...cadenceRegion.matchAll(/#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY\n([\s\S]*?)#endif/g)];
+assert.equal(mpBlocks.length,3);
+for(const match of mpBlocks)assert.doesNotMatch(match[1],/^\s*#(?:if|else|elif|endif)/m);
+const ordinaryCadence=cadenceRegion.replace(/#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY\n[\s\S]*?#endif/g,'');
+assert.match(ordinaryCadence,/double simulation_delta=delta;/);
+assert.match(ordinaryCadence,/if\(\(tick_due=cadence\.advance\(simulation_delta\)!=0\)\)\{\s*sdl_native_input\(application\);result=application->step\(true\);/);
+assert.equal((ordinaryCadence.match(/application->step\(true\)/g)||[]).length,1);
+assert.doesNotMatch(ordinaryCadence,/for\s*\(|while\s*\(|Netplay::|SimulationIntervalScale|cadence\.debt/);
+assert.match(mpBlocks[1][1],/Netplay::FrameBudget::CanStartTick/);
+assert.match(mpBlocks[1][1],/if\(result\|\|runtime\.LastSimulatedFrame\(\)!=before\+1u\)break;\s*cadence\.debt=/);
+assert.match(mpBlocks[2][1],/multiplayer_spectator_catchup_budget/);
+// END CADENCE SOURCE CONTRACT
 assert.match(host,/sdl_defer\(1\)/);
 assert.match(host,/frame_alpha=interpolate\?float\(cadence\.interpolation_alpha\(\)\):1\.0f/);
 assert.match(host,/application->presentation_draw\(frame_alpha,interpolate,!frozen\)/);
