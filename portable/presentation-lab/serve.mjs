@@ -5,7 +5,7 @@ import {createPresentationLabServer,sha256 as sha,verifyRuntimeInventory} from '
 import {TH08_PRESENTATION_LAB_EXPORTS} from './native-abi.mjs';
 const lab=import.meta.dirname,root=resolve(lab,'../..'),workspace=resolve(root,'..');
 const common=resolve(root,'third_party/eagler-common/testkit/presentation-lab');
-const commonModules=['controller-core.mjs','contracts.mjs','report-core.mjs','server-core.mjs'];
+const commonModules=['controller-core.mjs','contracts.mjs','report-core.mjs','server-core.mjs','analyzer.mjs'];
 for(const name of commonModules)if(!existsSync(resolve(common,name)))throw Error('Initialize the pinned eagler-common submodule: missing '+name);
 const snapshot=process.env.TH08_LAB_SNAPSHOT||'';
 if(snapshot&&!/^[a-z0-9-]{1,40}$/.test(snapshot))throw Error('Invalid snapshot');
