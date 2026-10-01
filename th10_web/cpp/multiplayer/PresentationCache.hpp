@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <limits>
 #include <utility>
 
 namespace th10::multiplayer {
@@ -18,10 +19,18 @@ template <typename Key, typename Value, std::size_t Capacity,
 class PresentationCache final {
     static_assert(Capacity != 0, "presentation cache needs a positive capacity");
 
-    struct Entry {
+    // Keep payload capacity unchanged while leaving at least half of the
+    // lookup table empty. A dense scene may exhaust presentation samples;
+    // an uncached embedded VM must not scan every payload on each update.
+    static_assert(Capacity <= std::numeric_limits<std::size_t>::max() / 2,
+                  "presentation index capacity overflow");
+    static_assert(Capacity <= std::numeric_limits<std::uint32_t>::max(),
+                  "presentation payload index overflow");
+    static constexpr std::size_t IndexCapacity = Capacity * 2;
+    struct Entry { Key key{}; Value value{}; };
+    struct IndexEntry {
         std::uint32_t generation = 0;
-        Key key{};
-        Value value{};
+        std::uint32_t payload = 0;
     };
 
 public:
@@ -41,7 +50,7 @@ public:
         ++generation_;
         if (generation_ == 0) {
             generation_ = 1;
-            for (auto& entry : entries_) entry.generation = 0;
+            for (auto& entry : index_) entry.generation = 0;
         }
         size_ = 0;
         overflow_count_ = 0;
@@ -51,37 +60,47 @@ public:
     void reset() noexcept { clear(); }
 
     InsertResult try_emplace(const Key& key, const Value& value) noexcept {
+        return try_emplace_with(key, [&]() { return value; });
+    }
+
+    // Delay sample construction until insertion. Registry VMs already have
+    // their first sample, and exhausted caches do not need a discarded copy.
+    template <typename Factory>
+    InsertResult try_emplace_with(const Key& key, Factory&& factory) noexcept {
         const std::size_t start = bucket(key);
-        for (std::size_t probe = 0; probe < Capacity; ++probe) {
-            Entry& entry = entries_[(start + probe) % Capacity];
-            if (entry.generation != generation_) {
-                entry.generation = generation_;
+        for (std::size_t probe = 0; probe < IndexCapacity; ++probe) {
+            IndexEntry& slot = index_[(start + probe) % IndexCapacity];
+            if (slot.generation != generation_) {
+                if (size_ == Capacity) {
+                    ++overflow_count_;
+                    return {nullptr, false, true};
+                }
+                Entry& entry = entries_[size_];
                 entry.key = key;
-                entry.value = value;
-                ++size_;
+                entry.value = std::forward<Factory>(factory)();
+                slot.payload = static_cast<std::uint32_t>(size_++);
+                slot.generation = generation_;
                 return {&entry.value, true, false};
             }
+            Entry& entry = entries_[slot.payload];
             if (entry.key == key) return {&entry.value, false, false};
         }
+        // The half-empty index cannot fill before payload capacity is hit.
         ++overflow_count_;
         return {nullptr, false, true};
     }
 
     Value* find(const Key& key) noexcept {
-        const std::size_t start = bucket(key);
-        for (std::size_t probe = 0; probe < Capacity; ++probe) {
-            Entry& entry = entries_[(start + probe) % Capacity];
-            if (entry.generation != generation_) return nullptr;
-            if (entry.key == key) return &entry.value;
-        }
-        return nullptr;
+        const auto* result = static_cast<const PresentationCache&>(*this).find(key);
+        return const_cast<Value*>(result);
     }
 
     const Value* find(const Key& key) const noexcept {
         const std::size_t start = bucket(key);
-        for (std::size_t probe = 0; probe < Capacity; ++probe) {
-            const Entry& entry = entries_[(start + probe) % Capacity];
-            if (entry.generation != generation_) return nullptr;
+        for (std::size_t probe = 0; probe < IndexCapacity; ++probe) {
+            const IndexEntry& slot = index_[(start + probe) % IndexCapacity];
+            if (slot.generation != generation_) return nullptr;
+            const Entry& entry = entries_[slot.payload];
             if (entry.key == key) return &entry.value;
         }
         return nullptr;
@@ -94,10 +113,22 @@ public:
 
 private:
     std::size_t bucket(const Key& key) const noexcept {
-        return Hash{}(key) % Capacity;
+        // Pointer hashes can be the raw address. Fold high address bits and
+        // avalanche before indexing so aligned ANM/pool strides do not cluster.
+        const auto hashed = Hash{}(key);
+        auto mixed = static_cast<std::uint32_t>(hashed);
+        if constexpr (sizeof(hashed) > sizeof(mixed))
+            mixed ^= static_cast<std::uint32_t>(hashed >> 32);
+        mixed ^= mixed >> 16;
+        mixed *= 0x7feb352du;
+        mixed ^= mixed >> 15;
+        mixed *= 0x846ca68bu;
+        mixed ^= mixed >> 16;
+        return mixed % IndexCapacity;
     }
 
     std::array<Entry, Capacity> entries_{};
+    std::array<IndexEntry, IndexCapacity> index_{};
     std::uint32_t generation_ = 1;
     std::size_t size_ = 0;
     std::size_t overflow_count_ = 0;

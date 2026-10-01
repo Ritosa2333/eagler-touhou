@@ -74,6 +74,8 @@ for (const [name, sources, flags = []] of [
     ...['InputReplay','NetplayProtocol','NetplayCore','NetplaySession','SessionChannel','BrowserPeerTransport']
       .map(name=>resolve(common,'src/netplay',name+'.cpp')),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
+  ['presentation-cache', [resolve(root,'tests/presentation-cache-test.cpp')],
+    ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['rollback-pool', [
     resolve(root,'tests/rollback-pool-test.cpp'),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],

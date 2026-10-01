@@ -74,7 +74,12 @@ i32 AnimationEngine::update(AnmVm& vm){
     // Registry-owned VMs are captured in snapshot_presentation() before the
     // fixed tick. Embedded VMs (HUD, spell digits, markers, etc.) are not in
     // that registry, so remember their first pre-update state here instead.
-    presentation_previous.try_emplace(&vm,presentation_sample(vm));return vm.update(*this);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    presentation_previous.try_emplace_with(&vm,[&](){return presentation_sample(vm);});
+#else
+    presentation_previous.try_emplace(&vm,presentation_sample(vm));
+#endif
+    return vm.update(*this);
 }
 bool AnimationEngine::present(AnmVm& copy,const AnmVm& source) const{
     if(!high_refresh::render_only||!high_refresh::active)return false;
@@ -205,7 +210,7 @@ void AnimationEngine::snapshot_presentation(){
     presentation_previous.clear();
     for(auto* node: {manager.registry.world_head,manager.registry.ui_head})while(node){const auto* vm=node->value;node=node->next;if(vm){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-        presentation_previous.try_emplace(vm,presentation_sample(*vm));
+        presentation_previous.try_emplace_with(vm,[&](){return presentation_sample(*vm);});
 #else
         presentation_previous[vm]=presentation_sample(*vm);
 #endif
