@@ -1,3 +1,15 @@
+# Assertions are executable test contracts, including fixture setup. Release
+# builds must not compile them out and then mutate uninitialized test buffers.
+# Keep this option scoped to test targets; production consumers are unchanged.
+if(MSVC)
+    add_compile_options(/UNDEBUG)
+else()
+    add_compile_options(-UNDEBUG)
+endif()
+
+add_executable(eagler_common_assertions_enabled_test assertions-enabled-test.cpp)
+add_test(NAME eagler-common.assertions-enabled COMMAND eagler_common_assertions_enabled_test)
+
 add_executable(eagler_common_netplay_base_test
     netplay-base-test.cpp
 )
