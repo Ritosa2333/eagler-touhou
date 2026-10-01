@@ -172,6 +172,40 @@ async function verifyFixedRollbackInputDelay(port, product) {
   } finally { p1.close(1000);p2.close(1000); }
 }
 
+async function verifyRelayOnlyBarrier(port) {
+  const sockets = [];
+  const room = `fallback${Date.now().toString(36)}`;
+  function peer(player, players) {
+    const socket = new WebSocket(`ws://127.0.0.1:${port}/?room=${room}&run=1&player=${player}&players=${players}`);
+    sockets.push(socket);
+    return socket;
+  }
+  function route(socket) {
+    return new Promise((resolveRoute, reject) => {
+      const timer = setTimeout(() => reject(new Error('relay-only route timeout')), 5000);
+      socket.addEventListener('message', event => {
+        const message = JSON.parse(String(event.data));
+        if (message.type === 'route') { clearTimeout(timer); resolveRoute(message.mode); }
+      });
+      socket.addEventListener('error', () => { clearTimeout(timer); reject(new Error('relay-only socket failed')); }, { once: true });
+    });
+  }
+  try {
+    const first = peer(0, 2), firstRoute = route(first);
+    const second = peer(1, 2), secondRoute = route(second);
+    assert.deepEqual(await Promise.all([firstRoute, secondRoute]), ['relay', 'relay']);
+    const invalid = peer(2, 3);
+    const closed = await new Promise((resolveClose, reject) => {
+      const timer = setTimeout(() => reject(new Error('mixed player count was admitted')), 5000);
+      invalid.addEventListener('close', event => { clearTimeout(timer); resolveClose(event); }, { once: true });
+    });
+    assert.equal(closed.code, 1008);
+    assert.match(closed.reason, /player count mismatch/);
+    assert.equal(first.readyState, WebSocket.OPEN);
+    assert.equal(second.readyState, WebSocket.OPEN);
+  } finally { for (const socket of sockets) socket.close(); }
+}
+
 const port = await freePort();
 const relayEnv = {
   ...process.env,
@@ -191,6 +225,7 @@ try {
   await waitListening(relay);
   for (const game of multiplayerGames) await verifyProduct(port, game);
   await verifyGenericRoom(port);
+  await verifyRelayOnlyBarrier(port);
   await verifyTh08Timing(port);
   await verifyFixedRollbackInputDelay(port,"th09mp");
   await verifyFixedRollbackInputDelay(port,"th10mp");

@@ -910,6 +910,11 @@ server.on('connection', (socket, request) => {
     socket.close(4008, 'membership released');
     return;
   }
+  if (run.playerCount && run.playerCount !== playerCount) {
+    socket.close(1008, 'player count mismatch'); return;
+  }
+  // Relay fallback must establish its own stream size without signaling.
+  run.playerCount = playerCount;
   run.clients.set(player, socket);
   console.log(`JOIN room=${roomId} run=${runId} player=${player} peers=${run.clients.size}`);
   maybeResolveRoute(roomId, runId, room, run);
