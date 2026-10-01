@@ -23,7 +23,7 @@ for(const [name,expected] of Object.entries(build.sourceFiles)){
 }
 const entry=game==='th08'?'th08.html':'th10.html';
 const fontNames=game==='th08'?['blend.bin','cp932.bin']:['msgothic.ttc','simhei.ttf','blend.bin','codepages.bin'];
-const runtimeNames=['shell.mjs','eagler-host.mjs',...(game==='th08'?['practice.mjs','practice-config.mjs','practice-sections.mjs']:[])];
+const runtimeNames=['shell.mjs','eagler-host.mjs','directory-keyboard.mjs',...(game==='th08'?['practice.mjs','practice-config.mjs','practice-sections.mjs']:[])];
 const names=[entry,'manifest.json',...runtimeNames,'motion-replay.mjs',game+'-sdl.mjs',game+'-sdl.wasm','resources.json',...fontNames.map(n=>'fonts/'+n)];
 const allowed=new Set([...names,'runtime-files.json']);
 function walk(dir){return existsSync(dir)?readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(resolve(dir,e.name)):[resolve(dir,e.name)]):[];}

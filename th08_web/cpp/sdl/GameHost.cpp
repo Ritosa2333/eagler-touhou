@@ -11,6 +11,9 @@
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #include <memory>
+// New browser shells own all DOM keys; old shells keep the SDL fallback.
+EM_JS(int, th08_browser_keyboard, (), {return typeof Module['resetBrowserKeyboard']==='function';});
+EM_JS(void, th08_reset_browser_keyboard, (), {Module['resetBrowserKeyboard']?.();});
 EM_JS(int, th08_frame_ready, (), {return Module['runtimePrepare']?Module['runtimePrepare']():1;});
 EM_JS(void, th08_frame_finished, (int result,double ms), {if(Module['runtimeFinish'])Module['runtimeFinish'](result,ms);});
 EM_JS(int, th08_limit_presentation_to_60, (), {return Module['eaglerOptions']?.limitPresentationTo60?1:0;});
@@ -85,8 +88,8 @@ void poll(){if(!runtime)return;SDL_Event event;while(SDL_PollEvent(&event)){
     if(event.type==SDL_EVENT_GAMEPAD_ADDED&&!gamepad)gamepad=SDL_OpenGamepad(event.gdevice.which);
     if(event.type==SDL_EVENT_GAMEPAD_REMOVED&&gamepad&&SDL_GetGamepadID(gamepad)==event.gdevice.which){SDL_CloseGamepad(gamepad);gamepad=nullptr;}
     }
-    auto* keys=runtime->keyboard_state();std::memset(keys,0,256);const bool* physical=SDL_GetKeyboardState(nullptr);
-    for(const auto& k:keyboard_map)if(k.hosted||(k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){keys[k.vk]=128;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=128;}
+    auto* keys=runtime->keyboard_state();std::memset(keys,0,256);const bool* physical=th08_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);
+    for(const auto& k:keyboard_map)if(k.hosted||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){keys[k.vk]=128;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=128;}
     if(gamepad&&SDL_GamepadConnected(gamepad)){u8 buttons[128]{};for(size_t i=0;i<sizeof(gamepad_slots)/sizeof(*gamepad_slots);++i)buttons[i]=SDL_GetGamepadButton(gamepad,gamepad_slots[i])?128:0;
         int x=gamepad_axis(SDL_GAMEPAD_AXIS_LEFTX),y=gamepad_axis(SDL_GAMEPAD_AXIS_LEFTY);
         const int dx=int(SDL_GetGamepadButton(gamepad,SDL_GAMEPAD_BUTTON_DPAD_RIGHT))-int(SDL_GetGamepadButton(gamepad,SDL_GAMEPAD_BUTTON_DPAD_LEFT));
@@ -169,7 +172,8 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
 u32 sdl_game_time(){return u32(elapsed*1000);}
 extern "C" {
 #define EX(name) __attribute__((export_name(name)))
-EX("sdl_game_open") BrowserRuntime* sdl_game_open(u32 milliseconds){if(runtime)return nullptr;prepared=frames=warm_mask=0;elapsed=double(milliseconds)/1000.;cadence.reset();display_cadence.reset();presentation_gate.reset();last=-1;touch.begin_session();
+void sdl_keys_clear();
+EX("sdl_game_open") BrowserRuntime* sdl_game_open(u32 milliseconds){if(runtime)return nullptr;sdl_keys_clear();prepared=frames=warm_mask=0;elapsed=double(milliseconds)/1000.;cadence.reset();display_cadence.reset();presentation_gate.reset();last=-1;touch.begin_session();
 #if defined(TH_PRESENTATION_AUDIT)
     audit_timing_next=audit_timing_count=0;std::fill(std::begin(audit_phase_profile),std::end(audit_phase_profile),0.0);
 #endif
@@ -245,9 +249,9 @@ EX("sdl_loop_tick") i32 sdl_loop_tick(BrowserRuntime* r,double seconds,u32){
     if(runtime->status(2)||runtime->status(4))return 2;
     ++frames;return runtime->audio_tick(u32(elapsed*1000))?0:2;
 }
-EX("sdl_game_close") void sdl_game_close(){sdl_loop_stop();touch.reset();ThpracUi::shutdown();runtime.reset();if(gamepad)SDL_CloseGamepad(gamepad);gamepad=nullptr;sdl_audio_shutdown();sdl_fonts_shutdown();sdl_detach();}
+EX("sdl_game_close") void sdl_game_close(){sdl_loop_stop();sdl_keys_clear();touch.reset();ThpracUi::shutdown();runtime.reset();if(gamepad)SDL_CloseGamepad(gamepad);gamepad=nullptr;sdl_audio_shutdown();sdl_fonts_shutdown();sdl_detach();}
 EX("sdl_key") void sdl_key(const char* code,u32 down){for(auto& key:keyboard_map)if(!std::strcmp(key.code,code)){key.hosted=down!=0;break;}}
-EX("sdl_keys_clear") void sdl_keys_clear(){for(auto& key:keyboard_map)key.hosted=false;cancel_touch();touch.reset();}
+EX("sdl_keys_clear") void sdl_keys_clear(){th08_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& key:keyboard_map)key.hosted=false;if(runtime)std::memset(runtime->keyboard_state(),0,256);cancel_touch();touch.reset();}
 EX("sdl_touch") void sdl_touch(u32 type,i32 id,float x,float y){
     if(ThpracUi::captures_game_input())ThpracUi::mouse(type==0?1:type==1?0:2,x*640.f,y*480.f);
     pointer(type,id,x,y);
