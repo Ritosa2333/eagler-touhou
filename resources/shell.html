@@ -565,6 +565,8 @@
         };
         start(Module.eaglerOptions.thpracSession || null);
       };
+      // The shell owns recognized Web keys; Controller uses SDL keyboard only
+      // on desktop or with an older shell. Other input sources stay independent.
       const browserKeyboardDown = new Map();
       const thpracKeyboardDown = new Map();
       const thpracKeyboardBitForEvent = event => {
@@ -649,11 +651,46 @@
         }
         return 0;
       };
+      // BEGIN SHARED BROWSER KEYBOARD OWNERS
+      // Generated from eagler-common/browser/keyboard-owners.mjs.
+      // Generic browser ownership only. The adapter maps DOM events to logical bits.
+      function keyboardLocation(event) {
+        const code = event.code || "";
+        if (/^(Shift|Control)(Left|Right)$/.test(code)) return code.endsWith("Left") ? 1 : 2;
+        if (code.startsWith("Numpad")) return 3;
+        return Number.isInteger(event.location) ? event.location : 0;
+      }
+
+      function updateKeyboardOwners(owners, event, bit, down) {
+        if (!bit) return false;
+        const location = keyboardLocation(event);
+        const code = event.code && event.code !== "Unidentified" ? event.code : "";
+        const id = code ? `code:${code}` : `${bit}:${location}`;
+        const candidates = [...owners.entries()].filter(([, owner]) => owner.bit === bit);
+        const sameSide = candidates.filter(([, owner]) => owner.location === location);
+        if (down) {
+          const existing = owners.get(id) || (!code && sameSide.length === 1 ? sameSide[0][1]
+            : !code && !location && candidates.length === 1 ? candidates[0][1] : null);
+          // Lifecycle cancellation must not be undone by an old auto-repeat event.
+          if (event.repeat && !existing) return false;
+          if (!existing) owners.set(id, {bit, location, code});
+          return true;
+        }
+        let released = owners.has(id) ? [[id, owners.get(id)]] : sameSide;
+        if (!released.length) released = candidates.filter(([, owner]) => !owner.code && !owner.location);
+        // With no physical evidence, release all candidates rather than arbitrarily
+        // removing one and permanently stranding the other. Known sides stay distinct.
+        if (!released.length && !code && !location) released = candidates;
+        for (const [owner] of released) owners.delete(owner);
+        return released.length > 0;
+      }
+      // END SHARED BROWSER KEYBOARD OWNERS
+      let cancelledKeyboardBits = 0;
       const publishBrowserKeyboard = () => {
         let bits = 0;
-        for (const value of browserKeyboardDown.values()) bits |= value;
+        for (const owner of browserKeyboardDown.values()) bits |= owner.bit;
         let thpracBits = 0;
-        for (const value of thpracKeyboardDown.values()) thpracBits |= value;
+        for (const owner of thpracKeyboardDown.values()) thpracBits |= owner.bit;
         if (Module.eaglerControls) {
           Module.eaglerControls.keyboardBits = bits;
           Module.eaglerControls.thpracKeyboardBits = thpracBits;
@@ -663,31 +700,24 @@
         const bit = keyboardBitForEvent(event);
         const thpracBit = thpracKeyboardBitForEvent(event);
         if (!bit && !thpracBit) return false;
-        if (bit) {
-          const id = `${bit}:${event.location || 0}`;
-          if (down) {
-            browserKeyboardDown.set(id, bit);
-          } else {
-            let hadDownOwner = browserKeyboardDown.delete(id);
-            // Modifier keyup can arrive with a different location/code after
-            // focus changes. Release its logical owner instead of latching
-            // Focus for the remainder of a multiplayer run.
-            if (!hadDownOwner) for (const [owner, heldBit] of browserKeyboardDown) {
-              if (heldBit === bit) { browserKeyboardDown.delete(owner); hadDownOwner = true; break; }
-            }
-            if (!hadDownOwner && bit !== (1 << 2) && Module.eaglerControls)
-              Module.eaglerControls.keyboardPulseBits = (Module.eaglerControls.keyboardPulseBits | 0) | bit;
-          }
-        }
-        if (thpracBit) {
-          const thpracId = `${thpracBit}:${event.location || 0}`;
-          if (down) thpracKeyboardDown.set(thpracId, thpracBit);
-          else thpracKeyboardDown.delete(thpracId);
+        const hadOwner = updateKeyboardOwners(browserKeyboardDown, event, bit, down);
+        updateKeyboardOwners(thpracKeyboardDown, event, thpracBit, down);
+        if (down && hadOwner) cancelledKeyboardBits &= ~bit;
+        if (!down) {
+          // Vendor release-only taps remain supported, but never synthesize
+          // Focus, duplicate observed releases, or cancelled-lifecycle pulses.
+          if (!hadOwner && bit !== (1 << 2) && !(cancelledKeyboardBits & bit) && Module.eaglerControls)
+            Module.eaglerControls.keyboardPulseBits = (Module.eaglerControls.keyboardPulseBits | 0) | bit;
+          if (hadOwner) cancelledKeyboardBits |= bit;
         }
         publishBrowserKeyboard();
         return true;
       };
       const clearBrowserKeyboard = () => {
+        // Cancel only observed input. An empty startup reset must not disable
+        // keyboards that report every tap as a release-only event.
+        for (const owner of browserKeyboardDown.values()) cancelledKeyboardBits |= owner.bit;
+        if (Module.eaglerControls) cancelledKeyboardBits |= Module.eaglerControls.keyboardPulseBits | 0;
         browserKeyboardDown.clear();
         thpracKeyboardDown.clear();
         if (Module.eaglerControls) {
@@ -807,6 +837,8 @@
         locateFile: path => assetVersion ? `${path}?v=${encodeURIComponent(assetVersion)}` : path,
         touhouMusicMode: "",
       eaglerOptions: { thpracEnabled: false, limitPresentationTo60: false, touchEnabled: false, touchMovementMode: "touch", touchSensitivity: 100, touchFocusMode: "hold-button", unlimitedTouch: false, touchBombZoneEnabled: true, doubleTapBombEnabled: false, alwaysHitbox: false, enhanceLocalPlayerVisibility: false, focusHitboxEnabled: false, netplayRollbackProbe: new URLSearchParams(location.search).get("netplayProbe") === "1", thpracLocale: "en-US", oggDecodeMode: "stream", debugHarness: new URLSearchParams(location.search).get("debugHarness") || null, netplayUrl: new URLSearchParams(location.search).get("netplayUrl") || "", netplayPlayer: Number.parseInt(new URLSearchParams(location.search).get("netplayPlayer") || "-1", 10), netplayPlayerCount: Number.parseInt(new URLSearchParams(location.search).get("netplayPlayerCount") || "2", 10), netplayStage4BossChain: new URLSearchParams(location.search).get("netplayStage4BossChain") === "1", netplayPhysicalInput: new URLSearchParams(location.search).get("netplayPhysicalInput") === "1", netplayPauseCycle: new URLSearchParams(location.search).get("netplayPauseCycle") === "1", netplayStageTransition: new URLSearchParams(location.search).get("netplayStageTransition") === "1", netplayTestFrames: Number.parseInt(new URLSearchParams(location.search).get("netplayTestFrames") || "300", 10), thpracSession: null },
+        // C++ resets retire the browser owners as well as their output bits.
+        eaglerResetBrowserKeyboard: clearBrowserKeyboard,
         eaglerControls: { fireEnabled: true, focusEnabled: false, bombSerial: 0, escapeSerial: 0, joystickX: 0, joystickY: 0, keyboardBits: 0, keyboardPulseBits: 0, thpracKeyboardBits: 0 },
         preRun: [() => {
           addRunDependency("savesth07-sync");
