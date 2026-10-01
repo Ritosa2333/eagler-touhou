@@ -219,6 +219,11 @@ add_test(
 find_program(EAGLER_COMMON_NODE_EXECUTABLE NAMES node node.exe)
 if(EAGLER_COMMON_NODE_EXECUTABLE)
     add_test(
+        NAME eagler-common.browser-keyboard-owners
+        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/browser-keyboard-owners.test.mjs
+    )
+    add_test(
         NAME eagler-common.rtc-input-impairment
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/rtc-input-impairment-test.cjs
