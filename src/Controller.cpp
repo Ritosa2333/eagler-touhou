@@ -394,7 +394,7 @@ u16 Controller::GetInput(void)
 
     u16 buttons = 0;
 
-    if (keyboardState != NULL)
+    if (keyboardState != NULL && !EaglerOptions::BrowserKeyboardAvailable())
     {
         buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_UP, SDL_SCANCODE_UP);
         buttons |= KEYBOARD_KEY_PRESSED(TH_BUTTON_DOWN, SDL_SCANCODE_DOWN);

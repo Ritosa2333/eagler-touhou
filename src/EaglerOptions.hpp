@@ -186,6 +186,17 @@ inline i32 TouchEscapeSerial()
 #endif
 }
 
+// The shell is the single Web keyboard owner. SDL's native scancodes remain
+// the desktop/fallback owner; OR-ing both can resurrect a released modifier.
+inline bool BrowserKeyboardAvailable()
+{
+#ifdef __EMSCRIPTEN__
+    return EM_ASM_INT({ return typeof Module.eaglerResetBrowserKeyboard === 'function' ? 1 : 0; }) != 0;
+#else
+    return false;
+#endif
+}
+
 inline u16 BrowserKeyboardBits()
 {
 #ifdef __EMSCRIPTEN__
@@ -232,7 +243,8 @@ inline void ResetBrowserKeyboard()
 {
 #ifdef __EMSCRIPTEN__
     EM_ASM({
-        if (Module.eaglerControls) {
+        if (typeof Module.eaglerResetBrowserKeyboard === 'function') Module.eaglerResetBrowserKeyboard();
+        else if (Module.eaglerControls) {
             Module.eaglerControls.keyboardBits = 0;
             Module.eaglerControls.keyboardPulseBits = 0;
         }
