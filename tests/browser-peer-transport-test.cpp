@@ -12,6 +12,8 @@ int main()
     assert(!transport.IsOpen());
     assert(transport.Failed());
     assert(transport.BufferedAmount() == 0);
+    assert(transport.BufferedInputAmount() == 0);
+    assert(transport.BufferedControlAmount() == 0);
     assert(std::strcmp(transport.Mode(), "unsupported") == 0);
     assert(!transport.Poll(&packet));
     assert(!transport.Send(nullptr, 0));

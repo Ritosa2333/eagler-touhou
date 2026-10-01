@@ -667,14 +667,14 @@ EM_JS(int, eagler_peer_poll_copy, (unsigned char *out, int capacity), {
     return packet.byteLength;
 });
 
-EM_JS(double, eagler_peer_buffered_amount, (), {
+EM_JS(double, eagler_peer_buffered_amount, (int lane), {
     const state = globalThis.__eaglerPeerTransport;
     if (!state) return 0;
-    if (state.route === 'relay') return Number(state.relay?.bufferedAmount || 0);
+    if (state.route === 'relay') return lane === 0 ? Number(state.relay?.bufferedAmount || 0) : 0;
     let total = 0;
     for (const peer of state.peers.values()) {
-        total += Number(peer.inputDc?.bufferedAmount || 0);
-        total += Number(peer.controlDc?.bufferedAmount || 0);
+        if (lane !== 2) total += Number(peer.inputDc?.bufferedAmount || 0);
+        if (lane !== 1) total += Number(peer.controlDc?.bufferedAmount || 0);
     }
     return total;
 });
@@ -833,7 +833,27 @@ bool BrowserPeerTransport::Poll(std::vector<std::uint8_t> *packet)
 std::size_t BrowserPeerTransport::BufferedAmount() const
 {
 #ifdef __EMSCRIPTEN__
-    const double value = eagler_peer_buffered_amount();
+    const double value = eagler_peer_buffered_amount(0);
+    return value > 0 ? static_cast<std::size_t>(value) : 0;
+#else
+    return 0;
+#endif
+}
+
+std::size_t BrowserPeerTransport::BufferedInputAmount() const
+{
+#ifdef __EMSCRIPTEN__
+    const double value = eagler_peer_buffered_amount(1);
+    return value > 0 ? static_cast<std::size_t>(value) : 0;
+#else
+    return 0;
+#endif
+}
+
+std::size_t BrowserPeerTransport::BufferedControlAmount() const
+{
+#ifdef __EMSCRIPTEN__
+    const double value = eagler_peer_buffered_amount(2);
     return value > 0 ? static_cast<std::size_t>(value) : 0;
 #else
     return 0;

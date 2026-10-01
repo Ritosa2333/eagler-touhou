@@ -48,6 +48,9 @@ public:
     bool HasSpectators() const;
     bool Poll(std::vector<std::uint8_t> *packet) override;
     std::size_t BufferedAmount() const override;
+    // Read-only RTC lane diagnostics; relay bytes remain in BufferedAmount.
+    std::size_t BufferedInputAmount() const;
+    std::size_t BufferedControlAmount() const;
     const std::string &LastError() const;
     const char *Mode() const;
 

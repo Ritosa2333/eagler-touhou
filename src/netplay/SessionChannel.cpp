@@ -119,8 +119,14 @@ bool SessionChannel::SendSession(const SessionGate &gate)
 bool SessionChannel::SendInputs(const RollbackCore &core, std::uint64_t nowMs, bool force)
 {
     if (!active_ || !transport_.IsOpen() || latestCapture_ == INVALID_FRAME ||
-        (!force && nowMs < nextInput_) || transport_.BufferedAmount() > policy_.bufferedLimit)
+        (!force && nowMs < nextInput_))
         return true;
+    // Backpressure on the unreliable input lane must not also disable the
+    // reliable repair lane. Otherwise two open RTC peers can both time out
+    // with missing input while their control channels remain healthy. The
+    // transport applies the repair lane's own small queue bound; retain its
+    // interval below and keep ordinary sends blocked at the aggregate limit.
+    const bool inputBackpressured = transport_.BufferedAmount() > policy_.bufferedLimit;
     for (std::uint8_t peer = 0; peer < session_.playerCount; ++peer)
     {
         if (peer == session_.localPlayer) continue;
@@ -135,7 +141,7 @@ bool SessionChannel::SendInputs(const RollbackCore &core, std::uint64_t nowMs, b
                 std::max<std::int64_t>(-32768, std::min<std::int64_t>(32767, difference)));
         }
         if (!EncodeInputPacket(packet, &outgoing_)) return Fail(Failure::InvalidCapture);
-        if (transport_.SendTo(peer, outgoing_.data(), outgoing_.size())) ++sent_;
+        if (!inputBackpressured && transport_.SendTo(peer, outgoing_.data(), outgoing_.size())) ++sent_;
 
         // Keep normal input unordered. Only a stalled unacknowledged tail gets
         // a bounded reliable duplicate, so a final isolated dropped input can
@@ -188,9 +194,9 @@ bool SessionChannel::FlushRetirementFence(const RollbackCore &core,
         return Fail(Failure::InvalidRetirement);
     if (!ObserveClock(nowMs)) return false;
     if (transport_.Failed()) return Fail(Failure::Transport);
-    if (!transport_.IsOpen() || nowMs < nextRetirementFence_ ||
-        transport_.BufferedAmount() > policy_.bufferedLimit)
+    if (!transport_.IsOpen() || nowMs < nextRetirementFence_)
         return true;
+    const bool inputBackpressured = transport_.BufferedAmount() > policy_.bufferedLimit;
 
     for (std::uint8_t peer = 0; peer < session_.playerCount; ++peer)
     {
@@ -210,7 +216,7 @@ bool SessionChannel::FlushRetirementFence(const RollbackCore &core,
             ++sent_;
             ++repairs_;
         }
-        else if (transport_.SendTo(peer, outgoing_.data(), outgoing_.size()))
+        else if (!inputBackpressured && transport_.SendTo(peer, outgoing_.data(), outgoing_.size()))
             ++sent_;
     }
     nextRetirementFence_ = nowMs + policy_.inputResendMs;

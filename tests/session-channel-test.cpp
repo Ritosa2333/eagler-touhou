@@ -91,6 +91,7 @@ bool atLeast(std::uint32_t frame,std::uint32_t target){return frame!=INVALID_FRA
 
 void lossy_three_peer_stream(){
     Mesh mesh(3);bool droppedReady=false;unsigned fast=0;
+    constexpr std::uint32_t frames=1800; // exercise several input-history wraps
     mesh.drop=[&](std::uint8_t from,std::uint8_t to,bool reliable,const std::vector<std::uint8_t>& wire){
         SessionPacket session;
         if(!droppedReady&&from==0&&to==1&&DecodeSessionPacket(wire.data(),wire.size(),&session)&&session.phase==SessionPhase::Ready){droppedReady=true;return true;}
@@ -101,14 +102,14 @@ void lossy_three_peer_stream(){
         bool finished=true;
         for(auto& owner:mesh.peers){
             auto& peer=*owner;reconcile(peer);const auto frame=next(peer.core);
-            if(frame<120){finished=false;capture(peer,frame,mesh.now);const auto d=peer.core.PrepareFrame(frame);if(d.canAdvance)CHECK(peer.core.MarkSimulated(frame,d));}
-            if(!atLeast(peer.core.ConfirmedThroughAllRemotes(),119)||!atLeast(peer.core.AcknowledgedLocalThroughAllRemotes(),119))finished=false;
+            if(frame<frames){finished=false;capture(peer,frame,mesh.now);const auto d=peer.core.PrepareFrame(frame);if(d.canAdvance)CHECK(peer.core.MarkSimulated(frame,d));}
+            if(!atLeast(peer.core.ConfirmedThroughAllRemotes(),frames-1)||!atLeast(peer.core.AcknowledgedLocalThroughAllRemotes(),frames-1))finished=false;
         }
         mesh.pump(true,5);if(finished)break;
     }
     for(const auto& owner:mesh.peers){
-        auto& peer=*owner;reconcile(peer);CHECK(peer.core.LastSimulatedFrame()==119);CHECK(peer.captures==120);CHECK(peer.channel.CanRetire(peer.core,119));
-        for(std::uint8_t seat=0;seat<3;++seat)for(std::uint32_t frame=88;frame<120;++frame){
+        auto& peer=*owner;reconcile(peer);CHECK(peer.core.LastSimulatedFrame()==frames-1);CHECK(peer.captures==frames);CHECK(peer.channel.CanRetire(peer.core,frames-1));
+        for(std::uint8_t seat=0;seat<3;++seat)for(std::uint32_t frame=frames-32;frame<frames;++frame){
             FrameInput used;CHECK(peer.core.UsedInput(seat,frame,&used));CHECK(used==sample(seat,frame));
         }
     }
@@ -159,11 +160,12 @@ void reliable_tail_repairs_blackout(){
     }
 }
 
-void explicit_retirement_fence_recovers_before_repair_timer(){
+void explicit_retirement_fence_recovers_before_repair_timer(bool backpressured=false){
     Mesh mesh(2);mesh.barrier();
     mesh.drop=[](std::uint8_t,std::uint8_t,bool reliable,const std::vector<std::uint8_t>&){return !reliable;};
     for(auto& owner:mesh.peers){
         auto& peer=*owner;
+        if(backpressured)peer.link.buffered=SessionChannelConfig{}.bufferedLimit+1;
         CHECK(peer.core.ScheduleLocalInput(0,FrameInput{}));
         CHECK(peer.channel.LocalCaptured(peer.core,0,mesh.now));
         const auto d=peer.core.PrepareFrame(0);CHECK(d.canAdvance);CHECK(peer.core.MarkSimulated(0,d));
@@ -182,6 +184,71 @@ void explicit_retirement_fence_recovers_before_repair_timer(){
         CHECK(peer->core.AcknowledgedLocalThroughAllRemotes()==0);
         CHECK(peer->channel.CanRetire(peer->core,0));
         CHECK(peer->channel.RepairsSent()>=2);
+    }
+}
+
+void reliable_repairs_survive_fast_lane_backpressure(){
+    for(const auto interval:{std::uint64_t(250),Netplay::InputRepairBudget::StalledMs})for(const std::uint8_t count:{2,3}){
+        Mesh mesh(count);SessionChannelConfig policy;policy.repairIntervalMs=interval;
+        for(auto& peer:mesh.peers){peer->channel.Clear();CHECK(peer->channel.BeginSession(peer->gate.Config(),mesh.now,policy));}
+        mesh.barrier();unsigned fastSends=0;const auto start=mesh.now;
+        std::uint64_t lastRepair[MAX_PLAYERS][MAX_PLAYERS]{};
+        mesh.drop=[&](std::uint8_t from,std::uint8_t to,bool reliable,const std::vector<std::uint8_t>& wire){
+            InputPacket packet;
+            if(reliable&&DecodeInputPacket(wire.data(),wire.size(),&packet)){
+                if(lastRepair[from][to])CHECK(mesh.now-lastRepair[from][to]>=interval);
+                lastRepair[from][to]=mesh.now;
+            }
+            if(!reliable)++fastSends;return !reliable;
+        };
+        // The unreliable input lane can stay queued while the independent
+        // reliable control lane still works. Its own bounded SendRepairTo
+        // admission, not the aggregate fast-lane queue, governs repairs.
+        for(auto& peer:mesh.peers){
+            peer->link.buffered=SessionChannelConfig{}.bufferedLimit+1;
+            capture(*peer,0,mesh.now);
+        }
+        for(int step=0;step<100;++step)mesh.pump(true);
+        CHECK(fastSends==0);
+        for(auto& peer:mesh.peers){
+            CHECK(peer->channel.Error()==SessionChannel::Failure::None);
+            CHECK(peer->core.ConfirmedThroughAllRemotes()==0);
+            CHECK(peer->core.AcknowledgedLocalThroughAllRemotes()==0);
+            CHECK(peer->channel.RepairsSent()>0&&peer->channel.RepairsSent()<=(1+(mesh.now-start)/interval)*(count-1));
+            CHECK(peer->captures==1);
+            const auto d=peer->core.PrepareFrame(0);CHECK(d.canAdvance&&!d.predictedMask);
+            for(std::uint8_t seat=0;seat<count;++seat)CHECK(d.inputs[seat]==sample(seat,0));
+            CHECK(peer->core.MarkSimulated(0,d));CHECK(peer->channel.CanRetire(peer->core,0));
+            peer->link.buffered=0;
+        }
+        // Draining the input queue restores the ordinary input path without
+        // reconnecting, resampling frame zero, or changing its captured data.
+        mesh.drop=nullptr;
+        for(auto& peer:mesh.peers)capture(*peer,1,mesh.now);
+        for(int step=0;step<100;++step)mesh.pump(true);
+        for(auto& peer:mesh.peers){
+            CHECK(peer->core.ConfirmedThroughAllRemotes()==1);
+            CHECK(peer->core.AcknowledgedLocalThroughAllRemotes()==1);
+            CHECK(peer->captures==2);
+        }
+    }
+}
+
+void backpressured_total_outage_still_times_out(){
+    Mesh mesh(2);mesh.barrier();
+    mesh.drop=[](std::uint8_t,std::uint8_t,bool,const std::vector<std::uint8_t>&){return true;};
+    for(auto& peer:mesh.peers){
+        peer->link.buffered=SessionChannelConfig{}.bufferedLimit+1;
+        capture(*peer,0,mesh.now);
+        CHECK(peer->channel.Pump(peer->gate,peer->core,mesh.now,true));
+    }
+    mesh.now+=ConfirmedInputWatchdog::DefaultTimeoutMs;
+    for(auto& peer:mesh.peers){
+        CHECK(!peer->channel.Pump(peer->gate,peer->core,mesh.now,true));
+        CHECK(peer->channel.Error()==SessionChannel::Failure::ConfirmedTimeout);
+        CHECK(peer->core.ConfirmedThroughAllRemotes()==INVALID_FRAME);
+        CHECK(peer->core.LastSimulatedFrame()==INVALID_FRAME);
+        CHECK(peer->captures==1);
     }
 }
 
@@ -251,7 +318,10 @@ void short_repair_policy(){
 int main(){
     lossy_three_peer_stream();retired_final_ack_echo();reliable_tail_repairs_blackout();
     explicit_retirement_fence_recovers_before_repair_timer();timeouts_and_invalid_ack();
+    explicit_retirement_fence_recovers_before_repair_timer(true);
     pacing_validated_packets_and_reset();
     short_repair_policy();
+    reliable_repairs_survive_fast_lane_backpressure();
+    backpressured_total_outage_still_times_out();
     std::puts("eagler-common session channel: PASS");
 }
