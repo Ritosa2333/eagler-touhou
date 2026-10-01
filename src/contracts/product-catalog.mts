@@ -183,6 +183,7 @@ export const PRODUCT_GAMES = Object.freeze({
       "th08.html",
       "manifest.json",
       "shell.mjs",
+      "directory-keyboard.mjs",
       "eagler-host.mjs",
       "practice.mjs",
       "practice-config.mjs",
@@ -231,6 +232,7 @@ export const PRODUCT_GAMES = Object.freeze({
     requiredShared: Object.freeze(["/msgothic.ttc"]),
     runtimeAssets: Object.freeze([
       "th09.html", "manifest.json", "version.json", "shell.mjs", "managed.css", "keyboard.mjs",
+      "directory-keyboard.mjs",
       "shared-netplay.mjs", "motion-replay.mjs", "th09.mjs", "th09.wasm",
       "fonts/blend.bin", "fonts/cp932.bin",
     ]),
@@ -276,6 +278,7 @@ export const PRODUCT_GAMES = Object.freeze({
       "th10.html",
       "manifest.json",
       "shell.mjs",
+      "directory-keyboard.mjs",
       "eagler-host.mjs",
       "practice.mjs",
       "practice-config.mjs",
