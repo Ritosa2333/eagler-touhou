@@ -25,7 +25,8 @@ export function recommendMultiplayerInputTiming(
   const networkFrames = Math.max(1, Math.min(8, Math.ceil((rtt + 2 * jitter) * 60 / 1000)));
   const targetRollbackFrames = phones >= 2 ? Math.min(limit, robust) : Math.min(limit, robust * 2);
   return {
-    inputDelay: Math.max(0, Math.min(4, networkFrames - targetRollbackFrames)),
+    inputDelay: phones === 1 ? 1 : phones === 2 ? 2 :
+      Math.max(0, Math.min(4, networkFrames - targetRollbackFrames)),
     targetRollbackFrames,
     networkFrames,
     mobileSeats: phones,
