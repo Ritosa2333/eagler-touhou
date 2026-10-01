@@ -34,6 +34,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             route: null, failed: false, error: String(), closed: false,
             spectatorCount: Math.max(0, Number(Module.eaglerOptions?.netplaySpectatorCount) || 0),
             rtcReadySent: false, signalReconnectTimer: null, signalReconnectDelayMs: 500,
+            rtcHealthTimer: null,
             iceServers: Array.isArray(Module.eaglerOptions?.netplayIceServers)
                 ? Module.eaglerOptions.netplayIceServers : [],
             sendSignal(payload) {
@@ -62,6 +63,13 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                         try { this.relay?.close(1000, 'RTC route selected'); } catch {}
                     }
                     this.updateRtcPath().catch(() => {});
+                    // An SCTP association can remain "connected" after its TURN
+                    // path stops carrying data. Probe a backed-up input lane
+                    // before the confirmed-input watchdog has to end the game.
+                    this.rtcHealthTimer = setInterval(() => {
+                        for (const peerId of this.peers.keys())
+                            this.schedulePeerRecovery(peerId, false, true).catch(() => {});
+                    }, 1000);
                 } else {
                     for (const peer of this.peers.values()) {
                         try { peer.inputDc?.close(); } catch {}
@@ -94,6 +102,11 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 // traffic; if it selects RTC, the queued packet is already in
                 // order for DrainPackets().
                 dc.onmessage = event => {
+                    peer.lastReceivedAt = Date.now();
+                    if (peer.restartInFlight && peer.lastReceivedAt > peer.restartObservedAt) {
+                        this.clearPeerRecovery(peer);
+                        peer.restartAttempts = 0;
+                    }
                     if (!this.route || this.route === 'rtc') this.receiveBinary(event.data);
                 };
                 dc.onopen = () => {
@@ -134,9 +147,10 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     }
                     if (selected) {
                         const report = selected;
-                        const sent = Number(report.bytesSent);
                         const received = Number(report.bytesReceived);
-                        if (Number.isFinite(sent) && Number.isFinite(received)) traffic = sent + received;
+                        // Outbound bytes can keep increasing while the peer is
+                        // unreachable, so only inbound traffic proves progress.
+                        if (Number.isFinite(received)) traffic = received;
                     }
                 } catch {}
                 const confirmed = Number(globalThis.__eaglerNetplayLanConfirmed);
@@ -153,26 +167,35 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 peer.restartWatchdog = null;
                 peer.restartInFlight = false;
             },
-            async schedulePeerRecovery(peerId, immediate = false) {
+            async schedulePeerRecovery(peerId, immediate = false, silentStall = false) {
                 const peer = this.peers.get(peerId);
                 if (!peer || this.closed || this.route !== 'rtc' || peer.recoveryTimer || peer.restartInFlight) return;
                 const failed = peer.pc.connectionState === 'failed' || peer.pc.iceConnectionState === 'failed';
                 const disconnected = peer.pc.connectionState === 'disconnected' || peer.pc.iceConnectionState === 'disconnected';
-                if (!failed && !disconnected) return;
+                const stalled = silentStall && peer.lastInputSentAt &&
+                    Date.now() - peer.lastReceivedAt >= 3000 &&
+                    Number(peer.inputDc?.bufferedAmount || 0) + Number(peer.controlDc?.bufferedAmount || 0) >= 32768;
+                if (!failed && !disconnected && !stalled) return;
                 if (failed || immediate) {
                     this.requestPeerIceRestart(peerId);
                     return;
                 }
-                const before = await this.peerProgressSnapshot(peer);
+                const receivedAt = peer.lastReceivedAt;
+                const before = silentStall ? null : await this.peerProgressSnapshot(peer);
                 if (this.closed || this.route !== 'rtc' || this.peers.get(peerId) !== peer) return;
                 peer.recoveryTimer = setTimeout(async () => {
                     peer.recoveryTimer = null;
                     const stillDisconnected = peer.pc.connectionState === 'disconnected' || peer.pc.iceConnectionState === 'disconnected';
                     const nowFailed = peer.pc.connectionState === 'failed' || peer.pc.iceConnectionState === 'failed';
-                    if (!stillDisconnected && !nowFailed) return;
-                    const after = await this.peerProgressSnapshot(peer);
-                    if (!nowFailed && this.peerProgressed(before, after)) {
-                        this.schedulePeerRecovery(peerId).catch(() => {});
+                    const stillStalled = stalled && peer.lastInputSentAt &&
+                        Date.now() - peer.lastReceivedAt >= 3000 &&
+                        Number(peer.inputDc?.bufferedAmount || 0) + Number(peer.controlDc?.bufferedAmount || 0) >= 32768;
+                    if (!stillDisconnected && !nowFailed && !stillStalled) return;
+                    const after = silentStall ? null : await this.peerProgressSnapshot(peer);
+                    const progressed = silentStall ? peer.lastReceivedAt > receivedAt :
+                        this.peerProgressed(before, after);
+                    if (!nowFailed && progressed) {
+                        this.schedulePeerRecovery(peerId, false, silentStall).catch(() => {});
                         return;
                     }
                     this.requestPeerIceRestart(peerId);
@@ -188,11 +211,12 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     });
                 } else {
                     peer.restartInFlight = true;
+                    peer.restartObservedAt = peer.lastReceivedAt;
                     this.sendSignal({ type: 'ice-restart-request', to: peerId });
                     peer.restartWatchdog = setTimeout(() => {
                         peer.restartWatchdog = null;
                         peer.restartInFlight = false;
-                        this.schedulePeerRecovery(peerId, true).catch(() => {});
+                        this.schedulePeerRecovery(peerId, true, true).catch(() => {});
                     }, 7000);
                 }
             },
@@ -204,6 +228,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     return;
                 }
                 peer.restartInFlight = true;
+                peer.restartObservedAt = peer.lastReceivedAt;
                 peer.restartAttempts += 1;
                 this.openSignal();
                 if (typeof peer.pc.restartIce === 'function') peer.pc.restartIce();
@@ -214,8 +239,8 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     peer.restartWatchdog = null;
                     peer.restartInFlight = false;
                     const healthy = peer.pc.connectionState === 'connected' || peer.pc.iceConnectionState === 'connected' || peer.pc.iceConnectionState === 'completed';
-                    if (healthy) return;
-                    this.schedulePeerRecovery(peerId, true).catch(() => {});
+                    if (healthy && peer.lastReceivedAt > peer.restartObservedAt) return;
+                    this.schedulePeerRecovery(peerId, true, true).catch(() => {});
                 }, 7000);
             },
             handlePeerConnectionState(peerId) {
@@ -223,6 +248,9 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 if (!peer || this.closed) return;
                 const healthy = peer.pc.connectionState === 'connected' || peer.pc.iceConnectionState === 'connected' || peer.pc.iceConnectionState === 'completed';
                 if (healthy) {
+                    // ICE state alone cannot clear a recovery attempt: the
+                    // data channels must receive a packet on the new path.
+                    if (peer.restartInFlight && peer.lastReceivedAt <= peer.restartObservedAt) return;
                     this.clearPeerRecovery(peer);
                     peer.restartAttempts = 0;
                     this.pendingSignals = this.pendingSignals.filter(message => {
@@ -281,7 +309,8 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                     pc: new RTCPeerConnection({ iceServers: this.iceServers }),
                     inputDc: null, controlDc: null, inputOpen: false, controlOpen: false,
                     pendingCandidates: [], recoveryTimer: null, restartWatchdog: null,
-                    restartInFlight: false, restartAttempts: 0
+                    restartInFlight: false, restartAttempts: 0,
+                    lastReceivedAt: Date.now(), lastInputSentAt: 0, restartObservedAt: 0
                 };
                 this.peers.set(peerId, peer);
                 peer.pc.onicecandidate = event => {
@@ -380,6 +409,7 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
             close() {
                 this.closed = true;
                 if (this.signalReconnectTimer) clearTimeout(this.signalReconnectTimer);
+                if (this.rtcHealthTimer) clearInterval(this.rtcHealthTimer);
                 try { this.signal?.close(1000, 'transport close'); } catch {}
                 try { this.relay?.close(1000, 'transport close'); } catch {}
                 for (const peer of this.peers.values()) {
@@ -563,6 +593,7 @@ EM_JS(int, eagler_peer_send_to, (int peerId, const unsigned char *data, int size
             const dc = state.peers.get(peerId)?.inputDc;
             if (dc?.readyState !== 'open') return 0;
             dc.send(payload);
+            state.peers.get(peerId).lastInputSentAt = Date.now();
             return 1;
         }
     } catch (error) {
