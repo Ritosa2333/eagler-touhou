@@ -97,7 +97,9 @@ private:
     u32 generation=0,corrections=0,resimulated=0,predicted=0,max_bytes=0;
     const char* error="";
     char native_error[256]{};
+    char network_error[768]{};
     bool Fail(const char* text){failed=true;error=text;return false;}
+    bool FailNetwork(const char* operation);
     bool FailNativeUpdate(u32 frame,bool updated);
     bool Stable()const;
     bool Commit();

@@ -32,6 +32,8 @@ public:
     const char* Mode()const{return transport.Mode();}
     const Netplay::SessionChannel& Channel()const{return channel;}
     std::size_t Buffered()const{return transport.BufferedAmount();}
+    std::size_t BufferedInput()const{return transport.BufferedInputAmount();}
+    std::size_t BufferedControl()const{return transport.BufferedControlAmount();}
 private:
     NetplayRuntime& net;
     Netplay::BrowserPeerTransport transport;

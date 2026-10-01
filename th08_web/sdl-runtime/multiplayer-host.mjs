@@ -61,6 +61,7 @@ export async function configureMultiplayer(core,app,options,{crypto=globalThis.c
 export function networkError(core,app){
  if(!app||!core.multiplayer_network_error)return '';
  const pointer=core.multiplayer_network_error(app),bytes=new Uint8Array(core.memory.buffer);
+ if(!Number.isInteger(pointer)||pointer<=0||pointer>=bytes.length)return '';
  let end=pointer;while(end<bytes.length&&end-pointer<1024&&bytes[end])++end;
  return new TextDecoder().decode(bytes.subarray(pointer,end));
 }
@@ -70,16 +71,19 @@ export function updateNetworkDiagnostics(core,app,target=globalThis) {
  if(state[0]>=2)target.__eaglerNetplayInputDelayFrames=new Uint32Array(core.memory.buffer,n,14)[12];
  const p=core.multiplayer_driver_status(app),driver=Array.from(new Uint32Array(core.memory.buffer,p,16));
  const invalid=0xffffffff,frame=state[4]===invalid?-1:state[4];
- target.__eaglerNetplayLanActive=!!state[2];
+ target.__eaglerNetplayLanActive=!!state[2]&&!driver[2];
  target.__eaglerNetplayLanFrame=frame;
  target.__eaglerNetplayLanConfirmed=state[5]===invalid?undefined:state[5];
  target.__eaglerNetplayLanRollback=driver[3];target.__eaglerNetplayLanResimulated=driver[4];
  target.__eaglerNetplayGeneration=state[10];
  target.__eaglerNetplayTransport=driver[12]===1?'rtc':driver[12]===2?'relay':driver[12]===3?'spectator':'';
+ target.__eaglerNetplayPacketsSent=driver[13];target.__eaglerNetplayPacketsReceived=driver[14];
+ target.__eaglerNetplayChannelError=driver[15];
  if(core.multiplayer_spectator_status){
   const p=core.multiplayer_spectator_status(app),s=Array.from(new Uint32Array(core.memory.buffer,p,8));
   target.__eaglerNetplaySpectator=!!s[1];target.__eaglerNetplaySpectatorFinished=!!s[2];
   target.__eaglerNetplaySpectatorBacklog=s[3];
+  if(s[2])target.__eaglerNetplayLanActive=false;
  }
  if(driver[2]){target.__eaglerNetplayFailed=true;target.__eaglerNetplayError=networkError(core,app);}
 }

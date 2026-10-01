@@ -1,4 +1,5 @@
 #include "RollbackDriver.hpp"
+#include "NetworkFailure.hpp"
 #include "ResourceTrace.hpp"
 #include "../platform/BrowserRuntime.hpp"
 #include "../platform/PlatformDevices.hpp"
@@ -32,6 +33,14 @@ RollbackDriver::RollbackDriver(BrowserRuntime& r):runtime(r),network(r.app.sessi
 #endif
 }
 const char* RollbackDriver::Error()const{return failed?error:network.Error();}
+bool RollbackDriver::FailNetwork(const char* operation){
+    if(failed)return false;
+    const auto& net=runtime.app.session.netplay;const auto& channel=network.Channel();
+    FormatNetworkFailure(network_error,operation,{network.Error(),network.Mode(),net.Generation(),net.NextFrame(),
+        net.ConfirmedThrough(),net.RollbackFrame(),channel.LatestCapture(),u32(channel.Error()),
+        channel.PacketsSent(),channel.PacketsReceived(),network.Buffered(),network.BufferedInput(),network.BufferedControl()});
+    return Fail(network_error);
+}
 bool RollbackDriver::FailNativeUpdate(u32 frame,bool updated){
     const auto& a=runtime.app;
     u32 guests=0;
@@ -48,7 +57,7 @@ bool RollbackDriver::Connect(const char* relay){return !failed&&network.Connect(
 bool RollbackDriver::ConnectSpectator(const char* relay,const char* id){return !failed&&network.ConnectSpectator(relay,id);}
 bool RollbackDriver::Pump(){
     const auto& a=runtime.app;
-    return !failed&&(network.Pump(a.session.multiplayer_session.started&&!a.loading_game())||Fail("network channel failed"));
+    return !failed&&(network.Pump(a.session.multiplayer_session.started&&!a.loading_game())||FailNetwork("network channel failed"));
 }
 bool RollbackDriver::Reconcile(){
     if(failed||open||!Pump())return false;
@@ -115,9 +124,11 @@ bool RollbackDriver::Admit(){
     if(!generation_transition_pending&&a.supervisor.state.active==i32(th08::Scene::Game)&&
        (target==th08::Scene::Restart||target==th08::Scene::SpellRestart)){
         if(!network.CanRetire()){a.session.network_waiting=true;return true;}
-        if(!Commit()||!network.Retire())return Fail("generation retirement failed");
+        if(!Commit())return false;
+        if(!network.Retire())return FailNetwork("generation retirement failed");
         SessionSetup next;
-        if(!net.BeginNextRun(next,a.session.random.seed)||!network.BeginGeneration())return Fail("generation bootstrap failed");
+        if(!net.BeginNextRun(next,a.session.random.seed))return Fail("generation bootstrap failed");
+        if(!network.BeginGeneration())return FailNetwork("generation bootstrap failed");
         if(!runtime.replay_archive.NextGeneration(net.Generation()))return Fail("Replay generation failed");
         next.started=true;a.session.multiplayer_session=next;
         a.session.random={u16(next.seed),u16(next.seed),0};
@@ -320,7 +331,7 @@ bool RollbackDriver::Step(bool render){
     if(early_input&&net.CanCapture()){
         if(!CaptureLocalInput())return Fail("local capture failed");
         sent_frame=net.NextCaptureFrame()-1;
-        if(!network.Captured(sent_frame))return Fail("captured input send failed");
+        if(!network.Captured(sent_frame))return FailNetwork("captured input send failed");
     }
     if(!Correct()||!Commit()||!Admit())return false;
     if(session.network_waiting)return PresentCorrection();
@@ -340,7 +351,7 @@ bool RollbackDriver::Step(bool render){
     if(!net.ReadOnly()&&(sent_frame==Netplay::INVALID_FRAME||net.Generation()!=sent_generation)&&net.CanCapture()){
         if(!CaptureLocalInput())return Fail("local capture failed");
         sent_frame=net.NextCaptureFrame()-1;
-        if(!network.Captured(sent_frame))return Fail("captured input send failed");
+        if(!network.Captured(sent_frame))return FailNetwork("captured input send failed");
     }
     if(!net.HasLocalFrame(frame)){
         if(net.Playback()){

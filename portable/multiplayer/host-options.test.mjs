@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {webcrypto} from 'node:crypto';
-import {configureMultiplayer,validateMultiplayerOptions,updateNetworkDiagnostics} from '../../th08_web/sdl-runtime/multiplayer-host.mjs';
+import {configureMultiplayer,validateMultiplayerOptions,updateNetworkDiagnostics,networkError} from '../../th08_web/sdl-runtime/multiplayer-host.mjs';
 
 const base={netplayMode:'lan',netplayUrl:'wss://relay.test/peer?room=th08mp-demo&run=1&player=0',
  netplayPlayerCount:2,netplayPlayer:0,netplaySeed:1234,netplayDifficulty:1,
@@ -64,7 +64,39 @@ test('diagnostics never admit input and survive native memory growth',()=>{
  multiplayer_driver_status(){memory.grow(1);new Uint32Array(memory.buffer,256,16).set([1,1,0,3,12,7,30,8,90,2,999,1,1,30,30,0]);return 256;},
  multiplayer_canonical_state(){++hashes;memory.grow(1);new Uint32Array(memory.buffer,384,13).set([1,123]);return 384;}};
  updateNetworkDiagnostics(core,42,target);assert.equal(target.__eaglerNetplayLanFrame,59);assert.equal(target.__eaglerNetplayGeneration,2);
+ assert.equal(target.__eaglerNetplayLanActive,true);
  assert.equal(target.__eaglerNetplayInputDelayFrames,1,'diagnostics report applied native timing, not cached host options');
  assert.equal(target.__eaglerNetplayTransport,'rtc');assert.equal(target.__eaglerNetplayLanHashes,undefined);assert.equal(hashes,0);
  updateNetworkDiagnostics(core,42,target);assert.equal(hashes,0,'published diagnostics must never calculate a world hash');
+});
+test('a failed channel is not advertised as active and preserves the native cause',()=>{
+ const memory=new WebAssembly.Memory({initial:1}),target={};
+ const reason='network channel failed: RTC peer P2 control channel closed [mode=rtc channel=4 queuedBytes=137672]';
+ new Uint8Array(memory.buffer,512,reason.length+1).set(new TextEncoder().encode(reason+'\0'));
+ new Uint32Array(memory.buffer,128,12).set([1,1,1,60,59,46,0xffffffff,1,0,0,0,0]);
+ new Uint32Array(memory.buffer,256,16).set([1,1,1,3,12,7,30,8,90,2,999,1,1,120,98,4]);
+ const core={memory,multiplayer_netplay_status:()=>128,multiplayer_driver_status:()=>256,multiplayer_network_error:()=>512};
+ updateNetworkDiagnostics(core,42,target);
+ assert.equal(target.__eaglerNetplayFailed,true);
+ assert.equal(target.__eaglerNetplayLanActive,false);
+ assert.equal(target.__eaglerNetplayError,reason);
+ assert.equal(target.__eaglerNetplayChannelError,4);
+ assert.equal(target.__eaglerNetplayPacketsSent,120);
+ assert.equal(target.__eaglerNetplayPacketsReceived,98);
+ assert.equal(target.__eaglerNetplayLanFrame,59,'a failure must not advance native frames');
+});
+test('native null error pointers do not decode unrelated memory at address zero',()=>{
+ const memory=new WebAssembly.Memory({initial:1});
+ new Uint8Array(memory.buffer,0,8).set(new TextEncoder().encode('garbage\0'));
+ assert.equal(networkError({memory,multiplayer_network_error:()=>0},42),'');
+});
+test('read-only spectator completion no longer advertises an active session',()=>{
+ const memory=new WebAssembly.Memory({initial:1}),target={};
+ new Uint32Array(memory.buffer,128,12).set([1,1,1,60,59,46,0xffffffff,1,0,0,0,0]);
+ new Uint32Array(memory.buffer,256,16).set([1,1,0,0,0,0,0,0,0,0,0,0,3,0,0,0]);
+ new Uint32Array(memory.buffer,384,8).set([1,1,1,0,0,0,0,0]);
+ updateNetworkDiagnostics({memory,multiplayer_netplay_status:()=>128,multiplayer_driver_status:()=>256,multiplayer_spectator_status:()=>384},42,target);
+ assert.equal(target.__eaglerNetplayLanActive,false);
+ assert.equal(target.__eaglerNetplaySpectatorFinished,true);
+ assert.notEqual(target.__eaglerNetplayFailed,true,'normal observer completion is not failure');
 });

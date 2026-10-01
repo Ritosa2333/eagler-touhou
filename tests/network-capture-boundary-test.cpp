@@ -4,6 +4,7 @@
 using namespace th08::multiplayer;
 using namespace Netplay;
 double emscripten_get_now(){return 1000;}
+static std::vector<std::vector<std::uint8_t>> sent_inputs;
 // Transport-independent protocol test. Browser RTC/Relay acceptance is separate.
 namespace Netplay {
 BrowserPeerTransport::~BrowserPeerTransport()=default;
@@ -12,7 +13,7 @@ bool BrowserPeerTransport::ConnectSpectator(const char*,const char*,std::uint8_t
 void BrowserPeerTransport::Close(){}
 bool BrowserPeerTransport::IsOpen()const{return true;}
 bool BrowserPeerTransport::Failed()const{return false;}
-bool BrowserPeerTransport::SendTo(std::uint8_t,const std::uint8_t*,std::size_t){return true;}
+bool BrowserPeerTransport::SendTo(std::uint8_t,const std::uint8_t* bytes,std::size_t size){sent_inputs.emplace_back(bytes,bytes+size);return true;}
 bool BrowserPeerTransport::SendRepairTo(std::uint8_t,const std::uint8_t*,std::size_t){return true;}
 bool BrowserPeerTransport::SendControl(const std::uint8_t*,std::size_t){return true;}
 bool BrowserPeerTransport::SendSpectator(const std::uint8_t*,std::size_t){return true;}
@@ -71,7 +72,15 @@ static void delayed_capture(){
     assert(net.MarkReady()&&peer.MarkReady());
     assert(net.ApplySession(peer.SessionPacket(SessionPhase::Ready))==SessionPacketResult::Accepted);
     NetworkConnection connection(net);assert(connection.Connect("ws://fixture/"));
+    sent_inputs.clear();
     assert(net.CaptureLocal(0,FrameInput(64),0)&&connection.Captured(0));
-    assert(connection.Channel().LatestCapture()==4);
+    assert(connection.Channel().LatestCapture()==0); // physical sampling frame
+    assert(net.NextCaptureFrame()==1&&sent_inputs.size()==1);
+    InputPacket packet;
+    assert(DecodeInputPacket(sent_inputs[0].data(),sent_inputs[0].size(),&packet));
+    assert(packet.firstInputFrame==0&&packet.latestFrame==4&&packet.inputCount==5);
+    assert(packet.inputs[4]==FrameInput(64)); // exactly one F -> F+D conversion
+    assert(net.CaptureLocal(0,FrameInput(64),0)&&net.NextCaptureFrame()==1);
+    assert(!net.CaptureLocal(0,FrameInput(128),0)); // no changed physical resample
 }
 int main(){boundary(2);boundary(3);delayed_capture();std::puts("TH08 corrected boundary capture reuse and delayed send: PASS");}
