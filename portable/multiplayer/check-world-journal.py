@@ -8,9 +8,15 @@ parser.add_argument('--url',required=True)
 parser.add_argument('--output',type=Path,required=True)
 parser.add_argument('--loadouts',action='store_true')
 parser.add_argument('--optimization-oracle',action='store_true',help='Compare legacy Update against optimized replay at every checkpoint')
+parser.add_argument('--bomb-lazy',action='store_true',help='Use deferred Bomb snapshots in the fixture')
+parser.add_argument('--shot-sparse',action='store_true',help='Use sparse PlayerShot snapshots in the fixture')
+parser.add_argument('--record-sparse',action='store_true',help='Use sparse spell-record snapshots in the fixture')
 args=parser.parse_args()
 report={'passed':False,'scope':'TH08 stable-stage world rollback with native Update and semantic Draw; network correction/output fences not yet accepted','cases':[],'identities':[],'errors':[]}
 report['optimizationOracle']=args.optimization_oracle
+report['bombLazy']=args.bomb_lazy
+report['shotSparse']=args.shot_sparse
+report['recordSparse']=args.record_sparse
 probe_method='updateOptimizationProbe' if args.optimization_oracle else 'worldJournalProbe'
 with sync_playwright() as p:
     browser=p.chromium.launch(headless=True,args=['--enable-unsafe-swiftshader'])
@@ -25,6 +31,9 @@ with sync_playwright() as p:
                 page.goto(args.url);page.wait_for_function('window.multiplayerSmoke !== undefined',timeout=120000)
                 report['identities'].append(page.evaluate('multiplayerSmoke.identity()'))
                 page.evaluate('chars=>multiplayerSmoke.start(1234,chars)',layout)
+                if args.bomb_lazy:assert page.evaluate('multiplayerSmoke.bombLazy(true)')==1
+                if args.shot_sparse:assert page.evaluate('multiplayerSmoke.shotSparse(true)')==1
+                if args.record_sparse:assert page.evaluate('multiplayerSmoke.recordSparse(true)')==1
                 page.evaluate('multiplayerSmoke.ticks(120)')
                 for _ in range(3):
                     page.evaluate("multiplayerSmoke.key('KeyZ',true)");page.evaluate('multiplayerSmoke.ticks(2)')
@@ -32,6 +41,14 @@ with sync_playwright() as p:
                 page.evaluate('buttons=>multiplayerSmoke.commit(buttons)',[4 if mode==1 else 0]*count)
                 page.evaluate('multiplayerSmoke.ticks(60)')
                 state=page.evaluate('multiplayerSmoke.status()')
+                if layout==[0,1] and mode==0 and args.record_sparse:
+                    spell=page.evaluate('multiplayerSmoke.spellRecordProbe()')
+                    report['spellRecordProbe']=spell
+                    assert spell and spell[0]==spell[2]==spell[3]==1,spell
+                if layout==[0,1] and mode==0:
+                    title=page.evaluate('multiplayerSmoke.titleSpellsProbe()')
+                    report['titleSpellsProbe']=title
+                    assert title and title[0]==1,title
                 probe=page.evaluate(f'mode=>multiplayerSmoke.{probe_method}(mode)',mode)
                 case={'players':count,'loadouts':layout,'mode':['shooting','focused-bombs','native-death','unfocused-bombs'][mode],'nativeState':state,'probe':probe,'later':[]}
                 report['cases'].append(case)

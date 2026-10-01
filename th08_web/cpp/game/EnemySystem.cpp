@@ -20,8 +20,22 @@ void EnemySystem::publish_player(){
     if(globals.gui)std::memcpy(&p.context.hud_flags,&globals.gui->flags,4);
     p.context.pause=globals.paused;p.context.game_flags=globals.game_flags;p.context.time_spell=u8(globals.spell_flags&1);
     p.motion.form.transition=input.familiar.form_transition;p.motion.gauge.idle=input.familiar.gauge_idle;p.item_gauge_lock=input.familiar.item_gauge_lock;
-    const auto* target=static_cast<const EclVm*>(p.frame.target_reference);p.input.enemy_present=target!=nullptr;
-    if(target){p.input.enemy=target->resolved_position;p.enemy_origin=target->position;}
+    const auto publish_target=[](PlayerSimulationState& state){
+        const auto* target=static_cast<const EclVm*>(state.frame.target_reference);
+        state.input.enemy_present=target!=nullptr;
+        if(target){state.input.enemy=target->resolved_position;state.enemy_origin=target->position;}
+    };
+    publish_target(p);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Enemy damage selects a separate target for every pilot. Their option
+    // motion (including Yukari's Ran) reads the published input on the next
+    // player tick, so leaving this seat-zero-only prevents guest lock-on.
+    if(roster)for(u32 seat=1;seat<roster->count;++seat)if(roster->seats[seat].player){
+        auto& other=roster->seats[seat].player->status();
+        if(!roster->eligible(seat))other.frame.target_reference=nullptr;
+        publish_target(other);
+    }
+#endif
     p.context.gauge=numbers.gauge;p.context.power=Scalar::truncate(numbers.power);p.context.bombs=Scalar::truncate(numbers.bombs);p.context.lives=Scalar::truncate(numbers.lives);p.context.time_orbs=numbers.time_orbs;p.context.last_spell_requirement=numbers.last_spell_requirement;
     population.replay_flags|=p.context.replay_flags;p.context.replay_flags=population.replay_flags;
 }
@@ -67,6 +81,10 @@ i32 EnemySystem::hit(const Vec3& p,const Vec3& size,bool familiar){
         result=std::max(result,pilot.collision().bullet(p,size,false));
         failed|=pilot.invalid();
     }
+    // EnemySystem::update publishes its cached seat-zero life state after the
+    // enemy pass. Refresh that cache after contact, as the single-player path
+    // does, or a lethal contact only plays the hit animation for P1.
+    read_collision();
     return result;
 }
 #endif

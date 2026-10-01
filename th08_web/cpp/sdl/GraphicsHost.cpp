@@ -17,7 +17,14 @@ touhou::sdl::Surface resolve(void*,u32 h){if(h==0xffffffff)return {h,640,480,tou
 }
 template<class T=u32>T* ptr(u32 p){return reinterpret_cast<T*>(uintptr_t(p));}
 }
-bool sdl_attach(BrowserRuntime* r){runtime=r;known.clear();capture_checked=capture_exact=capture_testing=false;capture_mismatches=0;gpu=std::make_unique<touhou::sdl::Renderer>(8,resolve,nullptr);return gpu->initialize();}
+bool sdl_attach(BrowserRuntime* r){runtime=r;known.clear();capture_checked=capture_exact=capture_testing=false;capture_mismatches=0;gpu=std::make_unique<touhou::sdl::Renderer>(8,resolve,nullptr);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+ gpu->allowWorldInstancing=true;
+#endif
+ return gpu->initialize();}
+#ifdef TH_MULTIPLAYER_FIXTURES
+bool fixture_world_instancing(bool enabled){if(!gpu)return false;gpu->flush();gpu->allowWorldInstancing=enabled;return gpu->allowWorldInstancing;}
+#endif
 void sdl_detach(){gpu.reset();runtime=nullptr;known.clear();}
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 bool sdl_rebind(BrowserRuntime* next){
@@ -80,9 +87,19 @@ struct SDLGraphics final:ZunGraphics {
 #else
   g.state.layout=touhou::graphics::legacy::vertices(u32(format));const auto type=touhou::graphics::legacy::topology(u32(primitive));const u32 bytes=u32(format)==0x144?28:u32(format)==0x142?24:20;
 #endif
+  g.state.stride=bytes;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+  if(runtime->visual_draw_suppressed())return;
+#endif
   if(g.state.texture)g.prepare(g.state.texture);g.prepare(g.state.target);if(type==Topology::Triangles)g.draw_batch(count/3,vertices,bytes);else g.draw(type,count-2,vertices,bytes);
  }
- void clear(u32 flags,u32 color,float depth,u32 stencil)override{frame().clear(flags,color,depth,stencil);}
+ void clear(u32 flags,u32 color,float depth,u32 stencil)override{
+  auto& g=frame();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+  if(runtime->visual_draw_suppressed())return;
+#endif
+  g.clear(flags,color,depth,stencil);
+ }
  bool present(u32 surface)override{auto& g=frame();g.present(surface);for(auto it=known.begin();it!=known.end();){if(!runtime->texture(it->first)){g.release(it->first);it=known.erase(it);}else ++it;}return true;}
  void read(u32 surface)override{frame().read(surface);}void discard()override{frame().discard();}
  void copy(u32 source,const TextureRect& rect,u32 target,i32 x,i32 y)override{i32 point[]{x,y};frame().copy(source,&rect.left,target,point);}

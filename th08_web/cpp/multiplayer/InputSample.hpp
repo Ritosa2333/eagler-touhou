@@ -17,13 +17,19 @@ struct AnalogInput {
     std::uint8_t mode=0,unlimited=0,touchUsed=0,touchBomb=0;
 };
 static_assert(sizeof(AnalogInput)==12);
+// Unapplied physical drag belongs to the rewindable player, not the SDL
+// producer. Keep this representation padding-free for canonical hashing.
+struct TouchRemainder {float x=0,y=0;std::uint32_t active=0;};
+static_assert(sizeof(TouchRemainder)==12);
 inline bool ValidInputSample(const Netplay::FrameInput& in) noexcept {
     if(!Netplay::IsValidFrameInput(in)||(in.buttons&0x8000u)||
        (in.touchBomb&&!(in.buttons&2)))return false;
     switch(in.analogMode){
     case Netplay::AnalogMode::None:return in.x==0&&in.y==0&&!in.unlimited;
     case Netplay::AnalogMode::Joystick:return std::abs(in.x)<=1&&std::abs(in.y)<=1&&!in.unlimited;
-    case Netplay::AnalogMode::DirectTouch:return std::abs(in.x)<=8192&&std::abs(in.y)<=8192;
+    case Netplay::AnalogMode::DirectTouch:
+    case Netplay::AnalogMode::DirectTouchDelta:
+    case Netplay::AnalogMode::DirectTouchBegin:return std::abs(in.x)<=8192&&std::abs(in.y)<=8192;
     default:return false;
     }
 }

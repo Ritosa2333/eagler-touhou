@@ -117,7 +117,7 @@ export function packageEagler({
   const fontNames = game === 'th08' ? ['blend.bin', 'cp932.bin'] : ['msgothic.ttc', 'simhei.ttf', 'blend.bin', 'codepages.bin'];
   const thprac = build.features?.thprac === true;
   const runtimeNames = [
-    'shell.mjs', 'eagler-host.mjs', 'save-storage.mjs',
+    'shell.mjs', 'eagler-host.mjs', 'directory-keyboard.mjs', 'save-storage.mjs',
     ...(game === 'th08' ? ['practice.mjs', 'practice-config.mjs', 'practice-sections.mjs','multiplayer-host.mjs'] : []),
   ];
   const names = [

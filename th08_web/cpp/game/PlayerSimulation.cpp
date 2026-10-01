@@ -2,6 +2,7 @@
 #include "Presentation.hpp"
 #include "PresentationAudit.hpp"
 #include <algorithm>
+#include <cmath>
 namespace th08 {
 namespace {
 Vec3 presentation_lerp(const Vec3& previous,const Vec3& current){
@@ -25,6 +26,10 @@ void PlayerSimulation::synchronize_shots(){
 }
 bool PlayerSimulation::update(){
     if(!initialized)return false;failed=false;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(state.context.pause||state.input.gui_blocked||(state.context.game_flags&516)!=4||
+       (state.life.state!=0&&state.life.state!=3))state.touch_remainder={};
+#endif
     if(presentation_marker.capture()){
         presentation_previous_animation.capture(state.motion.animation);
         for(u32 i=0;i<4;++i)presentation_previous_option_animation[i].capture(state.motion.options[i].animation);
@@ -38,7 +43,11 @@ bool PlayerSimulation::update(){
 void PlayerSimulation::update_bomb(){failed|=!update_player_bomb(state.bomb,state.bomb_input,state.life,state.context,state.motion.movement,state.motion.animation,resources[0].settings(),timing,*this);}
 void PlayerSimulation::update(PlayerBombKind kind){patterns.frame.timing=timing;patterns.frame.homing_target=state.frame.homing_target;patterns.frame.shooting_timer=state.shots.shooting_timer;failed|=!patterns.update(kind);}
 bool PlayerSimulation::resolve_death(){return life.resolve_death(resources[0].settings());}
-void PlayerSimulation::respawn(){life.respawn(resources[0].settings());}
+void PlayerSimulation::respawn(){life.respawn(resources[0].settings());
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    state.touch_remainder={};
+#endif
+}
 void PlayerSimulation::update_invincibility(){life.update_invincibility(timing);}
 void PlayerSimulation::update_motion(){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -47,9 +56,16 @@ void PlayerSimulation::update_motion(){
     state.input.bomb=state.bomb.active;state.input.bomb_type=state.bomb.type;state.input.character=state.context.character;
     update_player_motion(state.motion,state.input,state.shots.shooting_timer,gauge,resources[0].settings(),resources[1].settings(),timing,services.motion);state.context.focused=state.motion.form.focused;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if(state.analog.unlimited&&(state.analog.x!=0||state.analog.y!=0)&&
-       (state.context.game_flags&516)==4&&!state.input.gui_blocked&&
-       (previous.x!=state.motion.movement.position.x||previous.y!=state.motion.movement.position.y))state.unlimited_movement_used=1;
+    const auto moved_x=Scalar::sub(state.motion.movement.position.x,previous.x);
+    const auto moved_y=Scalar::sub(state.motion.movement.position.y,previous.y);
+    if(state.touch_remainder.active){
+        state.touch_remainder.x=Scalar::sub(state.touch_remainder.x,moved_x);
+        state.touch_remainder.y=Scalar::sub(state.touch_remainder.y,moved_y);
+        if(std::abs(state.touch_remainder.x)<.0001f)state.touch_remainder.x=0;
+        if(std::abs(state.touch_remainder.y)<.0001f)state.touch_remainder.y=0;
+    }
+    if(state.analog.unlimited&&(state.context.game_flags&516)==4&&!state.input.gui_blocked&&
+       (moved_x!=0||moved_y!=0))state.unlimited_movement_used=1;
 #endif
     if(!state.input.enemy_present)state.frame.target_reference=nullptr;
 }
@@ -63,12 +79,17 @@ void PlayerSimulation::fire(i32 frame){
     synchronize_shots();const auto& resource=resources[state.motion.form.focused!=0];const i32 index=resource.select(state.context.power,state.context.character,state.bomb.active,state.bomb.type,state.bomb.timer.current>=60);
     const auto* stream=index<0?nullptr:resource.stream(index);if(!stream){failed=true;return;}shots.emit(*stream,frame);failed|=shots.failure!=PlayerShots::Failure::None;
 }
-void PlayerSimulation::die(){state.context.focused=state.motion.form.focused;state.context.gauge=gauge.value();life.die();gauge.set(state.context.gauge);synchronize_shots();}
+void PlayerSimulation::die(){state.context.focused=state.motion.form.focused;state.context.gauge=gauge.value();life.die();gauge.set(state.context.gauge);synchronize_shots();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    state.touch_remainder={};
+#endif
+}
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 void PlayerSimulation::enter_spirit(){
+    state.touch_remainder={};
     state.life.state=4;state.context.game_over=0;state.bomb.active=0;
     state.shots.shooting_timer.set(-1);
-    for(auto& shot:state.shots.shots){shot.state=0;shot.update=ShotUpdate::None;shot.draw=ShotDraw::None;shot.hit=ShotHit::None;}
+    for(auto& shot:state.shots.shots){if(shot.state||shot.update!=ShotUpdate::None||shot.draw!=ShotDraw::None||shot.hit!=ShotHit::None)services.shots.before_shot_write(shot);shot.state=0;shot.update=ShotUpdate::None;shot.draw=ShotDraw::None;shot.hit=ShotHit::None;}
     for(auto& laser:state.shots.lasers)laser.shot=nullptr;
     for(auto& region:state.shots.regions.damaging)region.reset();
     for(auto& region:state.shots.regions.cancelling)region.reset();

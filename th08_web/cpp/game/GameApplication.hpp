@@ -82,6 +82,9 @@ class GameApplication {
     } game_io{*this};
     struct TitleIo:TitlePlatform {
         GameApplication& a;explicit TitleIo(GameApplication& a):a(a){}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        bool before_spells_write()override;
+#endif
         std::vector<u8> read_asset(const char* p)override{return a.platform.read(p);}
         std::vector<u8> read_score()override{return a.platform.read("score.dat");}
         i32 load_surface(i32 i,const char* p)override{return a.platform.load_surface(i,p)?0:-1;}

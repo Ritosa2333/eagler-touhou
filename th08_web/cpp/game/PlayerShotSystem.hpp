@@ -6,6 +6,7 @@
 namespace th08 {
 struct PlayerShotRequest {i32 kind,value;Vec3 position;i32 mode;};
 class PlayerShotSystem:private PlayerShotActions,private ShotFiringActions {
+    void before_shot_write(PlayerShot&)override{}
     AnmLibrary& animations;Rng& rng;AnmExecutor executor;
     std::unique_ptr<PlayerShotsState> state=std::make_unique<PlayerShotsState>();
     PlayerShots shots{*state,rng};ShotResource resources[2];bool loaded[2]{},animation_loaded=false,failed=false;

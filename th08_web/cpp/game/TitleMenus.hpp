@@ -134,6 +134,9 @@ struct TitleContext {
 };
 struct TitleActions {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    virtual bool before_spells_write(){return true;}
+#endif
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     virtual bool request_multiplayer_replay(const char*,u32){return false;}
 #endif
     virtual ~TitleActions()=default;

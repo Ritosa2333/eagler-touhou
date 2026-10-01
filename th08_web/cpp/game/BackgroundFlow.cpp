@@ -6,6 +6,7 @@ constexpr const char* stages[]={"stage1.std","stage2.std","stage3.std","stage4a.
 constexpr const char* practice[]={"stage1_s.std","stage2_s.std","stage3_s.std","stage4a_s.std","stage4b_s.std","stage5_s.std","stage6_s.std","stage7_s.std","stage8_s.std"};
 }
 bool BackgroundFlow::setup(){
+    view.reset_instance_index();
     auto& s=script.state;const i32 stage=script.context.stage;
     s.time.set(0);s.instruction_index=0;s.position={};s.spell_state=0;s.fog_duration=0;
     if(stage<0||stage>=9||!context.text)return false;
@@ -16,7 +17,7 @@ bool BackgroundFlow::setup(){
     if(!script.load(bytes.data(),bytes.size(),*s.animation,*context.text))return false;
     script.reset_camera();return true;
 }
-void BackgroundFlow::release(){if(!context.keep_resources)resources.release(4);script.release(context.keep_resources);}
+void BackgroundFlow::release(){view.reset_instance_index();if(!context.keep_resources)resources.release(4);script.release(context.keep_resources);}
 bool BackgroundFlow::attach(Chain& owner,i32 stage){
     detach();chain=&owner;auto* data=context.keep_resources?script.program.header():nullptr;std::memset(&script.state,0,sizeof(script.state));script.state.stage_data=data;script.state.stage=stage;
     calculation.set_callback([](void* p){return static_cast<BackgroundFlow*>(p)->script.update();});calculation.argument=this;

@@ -37,6 +37,7 @@ i32 PlayerShots::damage(const Vec3& position,const Vec3& size,i32& time_items,i3
     for(auto& shot:state.shots){
         if(!shot.state||(shot.state!=1&&shot.kind!=3)||!overlap(bounds(shot.position,shot.size),target))continue;
         if((shot.kind==4||shot.kind==5)&&shot.timer.current%2)continue;
+        if(actions)actions->before_shot_write(shot);
         if(hit_callback(shot,position))continue;
         i32 damage=shot.damage;if(state.bomb){damage/=5;if(!damage)damage=1;}total=wrapping_add(total,damage);
         if(state.time_item_threshold<=0){failure=Failure::InvalidInterval;return total;}

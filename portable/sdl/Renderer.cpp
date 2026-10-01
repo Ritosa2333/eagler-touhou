@@ -176,16 +176,32 @@ bool Renderer::restore_color(u32 id,u32 token){
  destination.version=s.version;destination.rendered=true;return true;
 }
 void Renderer::discard_color(u32 token){if(token&&token<=colorImages.size())colorImages[token-1].used=false;}
+void Renderer::adopt_color_revision(u32 id,u32 revision){
+ auto it=surfaces.find(id);
+ if(it==surfaces.end()||!it->second.texture)return;
+ it->second.version=revision;it->second.rendered=true;
+}
 void Renderer::draw(Topology primitive,u32 count,const void* data,u32 stride,const void* index,IndexType indexFormat){
  stats.calls++;state.stride=stride;
  if(index||primitive<Topology::Triangles||primitive>Topology::Fan){flush();issue(state,primitive,count,data,vertex_count(primitive,count)*stride,index,indexFormat,nullptr,0);return;}
- const bool instance=version==10&&state.layout==attributes(VertexLayout::WorldUv)&&stride==20&&primitive==Topology::Strip&&count==2;
- if(instance){if(batching&&(!instancing||!equal(batchState,state,true)||quad.size()!=80||std::memcmp(quad.data(),data,80)))flush();if(!batching){batchState=state;quad.assign(static_cast<const u8*>(data),static_cast<const u8*>(data)+80);batching=instancing=true;}const auto old=worlds.size();worlds.resize(old+68);std::memcpy(worlds.data()+old,state.matrix[0].data(),64);std::memcpy(worlds.data()+old+64,&state.pipeline.textureFactor,4);if(worlds.size()>=1024*68)flush();return;}
+ const bool instance=(version==10||allowWorldInstancing)&&state.layout==attributes(VertexLayout::WorldUv)&&stride==20&&primitive==Topology::Strip&&count==2;
+ if(instance){if(batching&&(!instancing||!equal(batchState,state,true)||quad.size()!=80||std::memcmp(quad.data(),data,80)))flush();if(!batching){batchState=state;quad.assign(static_cast<const u8*>(data),static_cast<const u8*>(data)+80);batching=instancing=true;}const auto old=worlds.size();const u32 step=version==8?80:68;worlds.resize(old+step);std::memcpy(worlds.data()+old,state.matrix[0].data(),64);if(version==8){const auto rgba=color(state.pipeline.textureFactor);const float bgra[]{rgba[2],rgba[1],rgba[0],rgba[3]};std::memcpy(worlds.data()+old+64,bgra,16);}else std::memcpy(worlds.data()+old+64,&state.pipeline.textureFactor,4);if(worlds.size()>=1024*step)flush();return;}
  if(batching&&(instancing||!equal(batchState,state)))flush();if(!batching){batchState=state;batching=true;instancing=false;}
  const auto* src=static_cast<const u8*>(data);const size_t start=batchBytes.size(),size=count*3*stride;stats.copiedBytes+=size;batchBytes.resize(start+size);auto* dest=batchBytes.data()+start;
  if(primitive==Topology::Triangles)std::memcpy(dest,src,size);else if(count){std::memcpy(dest,src,3*stride);dest+=3*stride;for(u32 i=1;i<count;i++){u32 a=primitive==Topology::Fan?0:i&1?i+1:i,b=primitive==Topology::Fan?i+1:i&1?i:i+1,c=i+2;for(u32 v:{a,b,c}){std::memcpy(dest,src+v*stride,stride);dest+=stride;}}}batchCount+=count;if(batchBytes.size()>=1048576)flush();
 }
-void Renderer::flush(){if(!batching)return;batching=false;if(instancing)issue(batchState,Topology::Strip,2,quad.data(),quad.size(),nullptr,IndexType::UInt16,worlds.size()>68?worlds.data():nullptr,worlds.size()>68?worlds.size():0);else issue(batchState,Topology::Triangles,batchCount,batchBytes.data(),batchBytes.size(),nullptr,IndexType::UInt16,nullptr,0);batchBytes.clear();worlds.clear();batchCount=0;instancing=false;}
+void Renderer::flush(){if(!batching)return;batching=false;
+ if(instancing&&version==8){
+  // Preserve the original strip-to-triangle expansion for both single and
+  // multi-quad batches; only World/Factor move to per-instance attributes.
+  const u32 stride=batchState.stride;std::array<u8,120> triangles{};
+  for(u32 i=0;i<6;++i){constexpr u32 order[]{0,1,2,2,1,3};std::memcpy(triangles.data()+i*stride,quad.data()+order[i]*stride,stride);}
+ const bool multiple=worlds.size()>80;
+ issue(batchState,Topology::Triangles,2,triangles.data(),6*stride,nullptr,IndexType::UInt16,multiple?worlds.data():nullptr,multiple?worlds.size():0);
+ }
+ else if(instancing)issue(batchState,Topology::Strip,2,quad.data(),quad.size(),nullptr,IndexType::UInt16,worlds.size()>68?worlds.data():nullptr,worlds.size()>68?worlds.size():0);
+ else issue(batchState,Topology::Triangles,batchCount,batchBytes.data(),batchBytes.size(),nullptr,IndexType::UInt16,nullptr,0);
+ batchBytes.clear();worlds.clear();batchCount=0;instancing=false;}
 void Renderer::discard(){batching=instancing=false;batchBytes.clear();worlds.clear();batchCount=0;}
 void Renderer::issue(const State& d,Topology primitive,u32 count,const void* data,u32 size,const void* index,IndexType indexFormat,const void* instance,u32 instanceSize){
  stats.batches++;const auto& p=d.pipeline;auto& cached=drawState.pipeline;const bool all=!drawState.valid;
@@ -238,8 +254,9 @@ glEnableVertexAttribArray(0);glVertexAttribPointer(0,transformed?4:3,GL_FLOAT,fa
 #else
  {
 #endif
- for(int i=0;i<4;i++){glEnableVertexAttribArray(4+i);glVertexAttribPointer(4+i,4,GL_FLOAT,false,68,reinterpret_cast<void*>(b+i*16));glVertexAttribDivisor(4+i,1);}glEnableVertexAttribArray(8);glVertexAttribPointer(8,4,GL_UNSIGNED_BYTE,true,68,reinterpret_cast<void*>(b+64));glVertexAttribDivisor(8,1);}
- glDrawArraysInstanced(mode,0,n,instanceSize/68);}
+ const u32 step=version==8?80:68;
+ for(int i=0;i<4;i++){glEnableVertexAttribArray(4+i);glVertexAttribPointer(4+i,4,GL_FLOAT,false,step,reinterpret_cast<void*>(b+i*16));glVertexAttribDivisor(4+i,1);}glEnableVertexAttribArray(8);glVertexAttribPointer(8,4,version==8?GL_FLOAT:GL_UNSIGNED_BYTE,version!=8,step,reinterpret_cast<void*>(b+64));glVertexAttribDivisor(8,1);}
+ glDrawArraysInstanced(mode,0,n,instanceSize/(version==8?80:68));}
  else if(index){u32 b=upload(indices,GL_ELEMENT_ARRAY_BUFFER,index,n*(indexFormat==IndexType::UInt16?2:4),65536);glDrawElements(mode,n,indexFormat==IndexType::UInt16?GL_UNSIGNED_SHORT:GL_UNSIGNED_INT,reinterpret_cast<void*>(b));}
  else glDrawArrays(mode,0,n);g.rendered=true;
 }

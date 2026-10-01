@@ -4,27 +4,36 @@
 #include <cmath>
 
 namespace th08::multiplayer {
+namespace {
+Netplay::CoreConfig core_config(const SessionSetup& setup,std::uint8_t input_delay){
+    Netplay::CoreConfig core;
+    core.sessionId=setup.session_id;core.playerCount=std::uint8_t(setup.player_count);
+    core.localPlayer=std::uint8_t(setup.local_player);core.inputDelay=input_delay;
+    core.maxRollbackFrames=std::uint8_t(setup.prediction_limit);
+    core.predictableButtons=1|4|16|32|64|128;
+    core.directionButtons=16|32|64|128;core.maxDirectionPredictionFrames=2;
+    return core;
+}
+}
 bool NetplayRuntime::ValidInput(const Netplay::FrameInput& input) noexcept {
     return ValidInputSample(input);
 }
 bool NetplayRuntime::configure(const SessionSetup& setup) noexcept {
-    const std::uint32_t words[]{3,setup.player_count,setup.local_player,setup.difficulty,setup.seed,
+    const std::uint32_t words[]{setup.version,setup.player_count,setup.local_player,setup.difficulty,setup.seed,
         std::uint32_t(setup.session_id),std::uint32_t(setup.session_id>>32),
         setup.build[0],setup.build[1],setup.build[2],setup.build[3],
-        setup.characters[0],0,setup.characters[1],0,setup.characters[2],0};
+        setup.characters[0],0,setup.characters[1],0,setup.characters[2],0,
+        setup.input_delay,setup.prediction_limit};
     SessionSetup validated;
-    if(!setup.configured||!decode_session_setup(validated,words,17))return false;
+    if(!setup.configured||!decode_session_setup(validated,words,setup.version==4?19:17)||
+       validated.input_delay!=setup.input_delay||validated.prediction_limit!=setup.prediction_limit)return false;
     Netplay::SessionConfig session;
     session.sessionId=setup.session_id;session.seed=setup.seed;
-    session.gameplayAbi=gameplay_contract(setup);session.gameId=8;
+    session.gameplayAbi=gameplay_contract(validated);session.gameId=8;
     session.playerCount=std::uint8_t(setup.player_count);session.localPlayer=std::uint8_t(setup.local_player);
-    Netplay::CoreConfig core;
-    core.sessionId=session.sessionId;core.playerCount=session.playerCount;core.localPlayer=session.localPlayer;
-    core.inputDelay=0;core.maxRollbackFrames=MaxRollbackFrames;
-    core.predictableButtons=1|4|16|32|64|128;
-    core.directionButtons=16|32|64|128;core.maxDirectionPredictionFrames=2;
+    const auto core=core_config(validated,std::uint8_t(validated.input_delay));
     if(!gate_.Reset(session)||!core_.Reset(core))return false;
-    setup_=validated;next_=0;correction_end_=Netplay::INVALID_FRAME;
+    setup_=validated;next_=next_capture_=0;correction_end_=Netplay::INVALID_FRAME;
     configured_=true;retired_=world_ready_=false;return true;
 }
 bool NetplayRuntime::Reset(const SessionSetup& setup) noexcept {
@@ -35,19 +44,38 @@ bool NetplayRuntime::Reset(const SessionSetup& setup) noexcept {
 }
 void NetplayRuntime::Clear() noexcept {
     gate_.Clear();core_.Clear();setup_={};base_session_id_=0;
-    next_=generation_=0;correction_end_=Netplay::INVALID_FRAME;
+    next_=next_capture_=generation_=0;correction_end_=Netplay::INVALID_FRAME;
     configured_=retired_=world_ready_=spectator_=playback_=false;
 }
 bool NetplayRuntime::MarkReady(){
     if(!configured_||retired_||ReadOnly()||!gate_.CanSendReady())return false;
     gate_.MarkLocalReady();return gate_.LocalReady();
 }
-bool NetplayRuntime::CaptureLocal(std::uint32_t frame,const Netplay::FrameInput& input){
-    return !ReadOnly()&&CanStart()&&!Correcting()&&frame==next_&&ValidInput(input)&&core_.ScheduleLocalInput(frame,input);
+bool NetplayRuntime::CaptureLocal(std::uint32_t frame,const Netplay::FrameInput& input,std::uint8_t route){
+    if(ReadOnly()||!CanStart()||Correcting()||!ValidInput(input)||
+       core_.LocalFrameForCapture(frame)==Netplay::INVALID_FRAME)return false;
+    if(frame<next_capture_){
+        bool present=false;
+        const auto existing=core_.LocalInput(frame+setup_.input_delay,&present);
+        return present&&existing==input;
+    }
+    if(!CanCapture()||frame!=next_capture_)return false;
+    if(frame==0&&setup_.input_delay&&setup_.local_player==0&&route!=255){
+        if(route>2||!CaptureLeadInBootstrap(RouteBootstrap({},route)))return false;
+    }
+    // eagler-common applies the negotiated delay and owns neutral lead-in.
+    // The independent capture frontier is still a physical sampling frame.
+    if(!core_.ScheduleLocalInput(frame,input))return false;
+    ++next_capture_;return true;
+}
+bool NetplayRuntime::CaptureLeadInBootstrap(const Netplay::FrameInput& input){
+    return !ReadOnly()&&CanStart()&&!Correcting()&&next_==0&&setup_.local_player==0&&
+        setup_.input_delay>0&&ValidInput(input)&&core_.SetLocalLeadInInput(0,input);
 }
 bool NetplayRuntime::BeginSpectator(){
     if(!configured_||retired_||ReadOnly()||next_||generation_||setup_.local_player!=0||
        LastFrame()!=Netplay::INVALID_FRAME||core_.HasLocalCapture(0))return false;
+    if(!core_.Reset(core_config(setup_,0)))return false;
     spectator_=true;world_ready_=false;return true;
 }
 bool NetplayRuntime::FeedSpectator(const Netplay::SpectatorFramePacket& packet){
@@ -59,6 +87,7 @@ bool NetplayRuntime::FeedSpectator(const Netplay::SpectatorFramePacket& packet){
 bool NetplayRuntime::BeginPlayback(){
     if(!configured_||retired_||ReadOnly()||next_||generation_||
        LastFrame()!=Netplay::INVALID_FRAME||core_.HasLocalCapture(0))return false;
+    if(!core_.Reset(core_config(setup_,0)))return false;
     playback_=true;world_ready_=false;return true;
 }
 bool NetplayRuntime::FeedPlayback(std::uint32_t frame,const std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>& inputs){
@@ -96,7 +125,7 @@ Netplay::FrameDecision NetplayRuntime::Prepare(std::uint32_t frame)const {
     const auto first=confirmed==Netplay::INVALID_FRAME?0:confirmed+1;
     // A later exact packet does not make an earlier gap recoverable. Bound the
     // entire pending interval even if the current frame itself is available.
-    if(frame>=first&&(!world_ready_||frame-first>=MaxRollbackFrames))return {};
+    if(frame>=first&&(!world_ready_||frame-first>=setup_.prediction_limit))return {};
     return core_.PrepareFrame(frame);
 }
 bool NetplayRuntime::MarkSimulated(std::uint32_t frame,const Netplay::FrameDecision& decision){
@@ -131,8 +160,8 @@ bool NetplayRuntime::BeginCorrection(std::uint32_t first,std::uint32_t checkpoin
     if(!CanStart()||!world_ready_||Correcting()||!core_.HasRollbackRequest()||
        checkpointSpan<1||checkpointSpan>3||first>core_.RollbackFrame()||
        core_.RollbackFrame()-first>=checkpointSpan||first>=next_||
-       next_-core_.RollbackFrame()>MaxRollbackFrames||
-       next_-first>MaxRollbackFrames+checkpointSpan-1)return false;
+       next_-core_.RollbackFrame()>setup_.prediction_limit||
+       next_-first>setup_.prediction_limit+checkpointSpan-1)return false;
     const auto end=next_;
     if(!core_.RewindSimulationTo(first))return false;
     correction_end_=end;next_=first;return true;
@@ -182,6 +211,8 @@ NetplayRuntime::WireResult NetplayRuntime::ApplyWire(const std::uint8_t* bytes,s
 bool NetplayRuntime::BuildInputWire(std::uint8_t peer,std::uint32_t frame,std::uint32_t sequence,
                                     std::uint32_t ack,std::vector<std::uint8_t>& out)const {
     if(ReadOnly()||!CanStart()||peer>=setup_.player_count||peer==setup_.local_player||!core_.HasLocalCapture(frame))return false;
-    return Netplay::EncodeInputPacket(core_.BuildInputPacket(peer,frame,sequence,ack),&out);
+    const auto target=core_.LocalFrameForCapture(frame);
+    if(target==Netplay::INVALID_FRAME)return false;
+    return Netplay::EncodeInputPacket(core_.BuildInputPacket(peer,target,sequence,ack),&out);
 }
 }

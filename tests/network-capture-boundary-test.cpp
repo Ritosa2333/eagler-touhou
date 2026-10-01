@@ -61,4 +61,17 @@ static void boundary(unsigned count){
     assert(!connection.Captured(99)); // absent captures remain fatal
     assert(!connection.Captured(2)); // an old capture must not hide an existing error
 }
-int main(){boundary(2);boundary(3);std::puts("TH08 corrected boundary capture reuse (2P/3P): PASS");}
+static void delayed_capture(){
+    const std::uint32_t words[]{4,2,0,1,1234,0x1234,0x5678,1,2,3,4,0,0,1,0,0,0,4,2};
+    SessionSetup setup;assert(decode_session_setup(setup,words,19));
+    NetplayRuntime net;assert(net.Reset(setup));
+    NetplayRuntime peer;auto other=setup;other.local_player=1;assert(peer.Reset(other));
+    assert(net.ApplySession(peer.SessionPacket(SessionPhase::Hello))==SessionPacketResult::Accepted);
+    assert(peer.ApplySession(net.SessionPacket(SessionPhase::Hello))==SessionPacketResult::Accepted);
+    assert(net.MarkReady()&&peer.MarkReady());
+    assert(net.ApplySession(peer.SessionPacket(SessionPhase::Ready))==SessionPacketResult::Accepted);
+    NetworkConnection connection(net);assert(connection.Connect("ws://fixture/"));
+    assert(net.CaptureLocal(0,FrameInput(64),0)&&connection.Captured(0));
+    assert(connection.Channel().LatestCapture()==4);
+}
+int main(){boundary(2);boundary(3);delayed_capture();std::puts("TH08 corrected boundary capture reuse and delayed send: PASS");}

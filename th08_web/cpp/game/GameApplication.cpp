@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <cstdio>
 namespace th08 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+bool GameApplication::TitleIo::before_spells_write(){return !a.world_journal||a.world_journal->TouchTitleSpells();}
+#endif
 namespace {
 u32 flag_bits(const TitleGameFlags& flags){u32 value;std::memcpy(&value,&flags,4);return value;}
 void set_flags(TitleGameFlags& flags,u32 value){std::memcpy(&flags,&value,4);}

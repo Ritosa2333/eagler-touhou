@@ -21,6 +21,7 @@ void PlayerShots::draw_trail(PlayerShot& shot,const Vec2& offset){
 void PlayerShots::draw(bool impact,const Vec2& offset){
     failure=Failure::None;if(!actions){failure=Failure::MissingActions;return;}
     for(size_t i=0;i<128;++i){auto& source=state.shots[i];if(source.state!=(impact?2:1))continue;
+        if(!presentation::render_only)actions->before_shot_write(source);
         auto& drawn=authored_colors[i];
         if(!presentation::render_only)drawn={source.animation.color1,source.timer.current,source.state,source.kind,source.animation.scriptIndex,true};
         PlayerShot copy;PlayerShot* shot=&source;

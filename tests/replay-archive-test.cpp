@@ -1,13 +1,20 @@
 #include "../th08_web/cpp/multiplayer/ReplayArchive.hpp"
+#include "../th08_web/cpp/multiplayer/InputSample.hpp"
 #include <cassert>
 #include <cstdio>
 #include <cstring>
 using namespace th08::multiplayer;
 using Netplay::FrameInput;
-static ReplayDescription description(unsigned count,unsigned local){
-    ReplayDescription d;const std::uint32_t words[]{3,count,local,1,1234,71,0,
-        0x11223344u,0x55667788u,0x99aabbccu,0xddeeff00u,0,0,1,0,count==3?2u:0u,0};
-    assert(decode_session_setup(d.setup,words,17));std::memcpy(d.name,"Test",4);return d;
+static ReplayDescription description(unsigned count,unsigned local,bool delayed=false){
+    ReplayDescription d;const std::uint32_t words[]{delayed?4u:3u,count,local,1,1234,71,0,
+        0x11223344u,0x55667788u,0x99aabbccu,0xddeeff00u,0,0,1,0,count==3?2u:0u,0,2,2};
+    assert(decode_session_setup(d.setup,words,delayed?19:17));std::memcpy(d.name,"Test",4);return d;
+}
+static void timing_metadata_roundtrip(){
+    auto d=description(2,0,true);d.setup.input_delay=4;d.setup.prediction_limit=2;
+    ReplayArchive archive;assert(archive.Begin(d,{}));
+    const auto& metadata=archive.Info().config.description;
+    assert(metadata.size()==100&&metadata[62]==4&&metadata[63]==2);
 }
 static void barrier(NetplayRuntime* peers,unsigned count){
     for(unsigned i=0;i<count;++i)for(unsigned j=0;j<count;++j)if(i!=j)
@@ -23,15 +30,19 @@ static void repair(std::vector<std::uint8_t>& bytes){const auto h=checksum(bytes
 static bool save(void* count,const char*,const std::uint8_t* data,std::uint32_t size){
     ReplayArchive copy;assert(copy.Load(data,size));++*static_cast<unsigned*>(count);return true;
 }
-static void roundtrip(unsigned count,unsigned local){
-    auto d=description(count,local);ReplayArchive archive;const std::vector<std::uint8_t> boot{1,2,3};
+static void roundtrip(unsigned count,unsigned local,bool delayed=false){
+    auto d=description(count,local,delayed);ReplayArchive archive;const std::vector<std::uint8_t> boot{1,2,3};
     assert(archive.Begin(d,boot));NetplayRuntime peers[3];
-    for(unsigned i=0;i<count;++i)assert(peers[i].Reset(description(count,i).setup));barrier(peers,count);
+    for(unsigned i=0;i<count;++i)assert(peers[i].Reset(description(count,i,delayed).setup));barrier(peers,count);
     auto& net=peers[local];unsigned saves=0;
     for(unsigned frame=0;frame<6;++frame){
         assert(archive.BeginFrame(frame));
-        assert(net.CaptureLocal(frame,FrameInput(1)));
-        for(unsigned i=0;i<count;++i)if(i!=local)assert(net.SubmitRemote(i,frame,FrameInput(4))==Netplay::RemoteInputResult::Accepted);
+        assert(net.CaptureLocal(frame,FrameInput(1),delayed&&local==0&&frame==0?0:255));
+        for(unsigned i=0;i<count;++i)if(i!=local){
+            FrameInput remote=delayed&&frame<2?FrameInput{}:FrameInput(4);
+            if(delayed&&i==0&&frame==0)remote=RouteBootstrap(FrameInput{},0);
+            assert(net.SubmitRemote(i,frame,remote)==Netplay::RemoteInputResult::Accepted);
+        }
         assert(net.MarkSimulated(frame,net.Prepare(frame)));
         if(frame==2)assert(archive.RequestSave(frame,1,"Unit","09/25"));
         assert(archive.Stamp(frame,frame<3?0:1,frame*100));assert(archive.Commit(net,save,&saves));
@@ -40,6 +51,8 @@ static void roundtrip(unsigned count,unsigned local){
     std::vector<std::uint8_t> bytes;assert(archive.Encode(bytes));ReplayArchive loaded;
     assert(loaded.Load(bytes.data(),bytes.size()));assert(loaded.BootScore()==boot);
     assert(loaded.Description().setup.local_player==local&&loaded.StageFrame(1)==3);
+    if(delayed)assert(loaded.Description().setup.version==4&&loaded.Description().setup.input_delay==2&&
+        loaded.Description().setup.prediction_limit==2);
     NetplayRuntime player;assert(player.Reset(loaded.Description().setup)&&player.BeginPlayback());
     for(unsigned f=0;f<6;++f){const auto* inputs=loaded.PlaybackFrame(f);assert(inputs);
         assert(player.FeedPlayback(f,*inputs)&&!player.Prepare(f).predictedMask);
@@ -84,6 +97,7 @@ static void corrected_frames_replace_speculative_save_requests(){
     assert(played.AdvancePlayback(0,0));assert(played.PlaybackFrame(1)->at(1).buttons==64);
     assert(played.AdvancePlayback(1,0));assert(played.PlaybackFrame(2)->at(1).buttons==128);
 }
-int main(){for(unsigned count:{2u,3u})for(unsigned local=0;local<count;++local)roundtrip(count,local);
+int main(){timing_metadata_roundtrip();
+ for(unsigned count:{2u,3u})for(unsigned local=0;local<count;++local)roundtrip(count,local);
  corrected_frames_replace_speculative_save_requests();
  std::puts("TH08 confirmed all-seat Replay, boot files, readonly playback, bounds and atomic rejection: PASS");}

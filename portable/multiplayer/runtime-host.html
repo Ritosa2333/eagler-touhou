@@ -20,7 +20,7 @@ window.host={
  });},
  snapshot(){const r=iframe.contentWindow.__th08Runtime;if(!r?.app)return {app:0};const {core,app}=r;
   const words=(name,n)=>{const p=core[name](app),View=name==='multiplayer_status'?Int32Array:Uint32Array;return Array.from(new View(core.memory.buffer,p,n));};
-  return {app,net:words('multiplayer_netplay_status',12),driver:words('multiplayer_driver_status',16),state:words('multiplayer_status',44),canonical:words('multiplayer_canonical_state',13),
+  return {app,net:words('multiplayer_netplay_status',14),driver:words('multiplayer_driver_status',16),state:words('multiplayer_status',44),canonical:words('multiplayer_canonical_state',13),
    spectator:core.multiplayer_spectator_status?words('multiplayer_spectator_status',8):null,
    replay:core.multiplayer_replay_status?words('multiplayer_replay_status',12):null,
    active:core.status(app,1),screen:core.status(app,8),cursor:core.status(app,9)};},
@@ -47,7 +47,7 @@ window.host={
  tickTo(target){const r=iframe.contentWindow.__th08Runtime,{core,app}=r;
   if(!core.multiplayer_network_poll(app))throw Error('Network poll failed');
   const p=core.multiplayer_netplay_status(app),next=new Uint32Array(core.memory.buffer,p,12)[3];
-  if(next<=target){const code=core.sdl_loop_tick(app,1/60,16);if(code)throw Error('Native Runtime tick failed '+code);}
+  if(next<=target){const code=core.sdl_loop_tick(app,1/60,16);if(code){const p=core.multiplayer_network_error(app),heap=new Uint8Array(core.memory.buffer);let end=p;while(heap[end])++end;throw Error('Native Runtime tick failed '+code+' '+new TextDecoder().decode(heap.subarray(p,end)));}}
   else if(!core.multiplayer_reconcile(app))throw Error('Reconcile failed');return this.snapshot();},
  physicalTick(){const r=iframe.contentWindow.__th08Runtime;const code=r.core.sdl_loop_tick(r.app,1/60,16);if(code)throw Error('Native tick '+code);return this.snapshot();},
  async close(){

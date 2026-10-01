@@ -23,6 +23,7 @@ struct PlayerShotsState {
     u8 time_spell=0,human_bonus=0,effect_counter=0,reserved=0;
 };
 struct PlayerShotActions {
+    virtual void before_shot_write(PlayerShot&)=0;
     virtual ~PlayerShotActions()=default;
     virtual void animation(AnmVm&,i32 script)=0;
     virtual void sound(i32 index,float x)=0;

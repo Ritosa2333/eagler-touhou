@@ -13,6 +13,11 @@ export function validateMultiplayerOptions(value={}) {
  if(!Number.isInteger(value.netplaySeed)||value.netplaySeed<0||value.netplaySeed>65535||
     !Number.isInteger(value.netplayDifficulty)||value.netplayDifficulty<0||value.netplayDifficulty>4)
   throw Error('Invalid TH08 multiplayer seed/difficulty');
+ const inputDelay=value.netplayInputDelay===undefined?0:value.netplayInputDelay;
+ const predictionLimit=value.netplayPredictionLimit===undefined?8:value.netplayPredictionLimit;
+ if(!Number.isInteger(inputDelay)||inputDelay<0||inputDelay>8||
+    !Number.isInteger(predictionLimit)||predictionLimit<1||predictionLimit>8)
+  throw Error('Invalid TH08 multiplayer input timing');
  if(!Array.isArray(value.netplayLoadouts)||value.netplayLoadouts.length!==count)
   throw Error('Invalid TH08 multiplayer loadout count');
  const loadouts=value.netplayLoadouts.map(v=>{
@@ -20,7 +25,8 @@ export function validateMultiplayerOptions(value={}) {
    throw Error('Invalid TH08 multiplayer loadout');
   return {character:v.character,shot:0};
  });
- return {url,room,run,count,seat,spectator,spectatorId,seed:value.netplaySeed,difficulty:value.netplayDifficulty,loadouts};
+ return {url,room,run,count,seat,spectator,spectatorId,seed:value.netplaySeed,difficulty:value.netplayDifficulty,
+  inputDelay,predictionLimit,loadouts};
 }
 function string(core,text,fn){
  const bytes=new TextEncoder().encode(text+'\0'),pointer=core.allocate(bytes.length);
@@ -38,8 +44,9 @@ export async function configureMultiplayer(core,app,options,{crypto=globalThis.c
     !runtimeBuildWords.some(Boolean))throw Error('TH08 multiplayer Runtime build identity is missing');
  const identity=new TextEncoder().encode(`th08mp:${o.url.origin}${o.url.pathname}:${o.room}:${o.run}`);
  const digest=new DataView(await crypto.subtle.digest('SHA-256',identity));
- const words=[3,o.count,o.seat,o.difficulty,o.seed,digest.getUint32(0,true),digest.getUint32(4,true)||1,...runtimeBuildWords];
+ const words=[4,o.count,o.seat,o.difficulty,o.seed,digest.getUint32(0,true),digest.getUint32(4,true)||1,...runtimeBuildWords];
  for(let seat=0;seat<3;++seat)words.push(o.loadouts[seat]?.character||0,0);
+ words.push(o.inputDelay,o.predictionLimit);
  const pointer=core.allocate(words.length*4);if(!pointer)throw Error('Multiplayer setup allocation failed');
  try{
   new Uint32Array(core.memory.buffer,pointer,words.length).set(words);
@@ -48,6 +55,7 @@ export async function configureMultiplayer(core,app,options,{crypto=globalThis.c
  if(!string(core,o.url.href,p=>o.spectator?
     string(core,o.spectatorId,id=>core.multiplayer_spectator_connect(app,p,id)):
     core.multiplayer_connect(app,p)))throw Error('TH08 native transport rejected the room');
+ globalThis.__eaglerNetplayInputDelayFrames=o.spectator?0:o.inputDelay;
  return true;
 }
 export function networkError(core,app){
@@ -59,15 +67,13 @@ export function networkError(core,app){
 export function updateNetworkDiagnostics(core,app,target=globalThis) {
  if(!app||!core.multiplayer_netplay_status)return;
  const n=core.multiplayer_netplay_status(app),state=Array.from(new Uint32Array(core.memory.buffer,n,12));
+ if(state[0]>=2)target.__eaglerNetplayInputDelayFrames=new Uint32Array(core.memory.buffer,n,14)[12];
  const p=core.multiplayer_driver_status(app),driver=Array.from(new Uint32Array(core.memory.buffer,p,16));
  const invalid=0xffffffff,frame=state[4]===invalid?-1:state[4];
  target.__eaglerNetplayLanActive=!!state[2];
  target.__eaglerNetplayLanFrame=frame;
  target.__eaglerNetplayLanConfirmed=state[5]===invalid?undefined:state[5];
  target.__eaglerNetplayLanRollback=driver[3];target.__eaglerNetplayLanResimulated=driver[4];
- if(target.__eaglerNetplayGeneration!==state[10]){
-  target.__eaglerNetplayLanHashes=Object.create(null);target.__eaglerNetplayHashFrame=-1;
- }
  target.__eaglerNetplayGeneration=state[10];
  target.__eaglerNetplayTransport=driver[12]===1?'rtc':driver[12]===2?'relay':driver[12]===3?'spectator':'';
  if(core.multiplayer_spectator_status){
@@ -76,12 +82,4 @@ export function updateNetworkDiagnostics(core,app,target=globalThis) {
   target.__eaglerNetplaySpectatorBacklog=s[3];
  }
  if(driver[2]){target.__eaglerNetplayFailed=true;target.__eaglerNetplayError=networkError(core,app);}
- // Read-only debugging follows a bounded sample; no hash participates in
- // frame admission or masks a native desynchronization.
- if(frame>=0&&frame%60===59&&target.__eaglerNetplayHashFrame!==frame&&state[6]===invalid&&state[5]>=state[4]&&core.multiplayer_canonical_state){
-  const c=core.multiplayer_canonical_state(app),words=new Uint32Array(core.memory.buffer,c,13);
-  const hashes=target.__eaglerNetplayLanHashes||(target.__eaglerNetplayLanHashes=Object.create(null));
-  if(words[0]===1){target.__eaglerNetplayHashFrame=frame;hashes[String(frame)]=String(words[1]);
-   for(const key of Object.keys(hashes))if(Number(key)<frame-512)delete hashes[key];}
- }
 }

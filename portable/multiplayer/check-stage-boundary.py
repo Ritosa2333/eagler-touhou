@@ -4,7 +4,10 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 p=argparse.ArgumentParser();p.add_argument('--url',required=True);p.add_argument('--relay',required=True)
 p.add_argument('--players',type=int,choices=(2,3),default=2);p.add_argument('--output',type=Path,required=True)
-args=p.parse_args();report={'passed':False,'players':args.players}
+p.add_argument('--skip-resim-visual',action='store_true')
+p.add_argument('--skip-resim-geometry',action='store_true')
+p.add_argument('--back-metadata-only',action='store_true')
+args=p.parse_args();report={'passed':False,'players':args.players,'skipResimVisual':args.skip_resim_visual,'skipResimGeometry':args.skip_resim_geometry,'backMetadataOnly':args.back_metadata_only}
 with sync_playwright() as pw:
     browser=pw.chromium.launch(headless=True,args=['--enable-unsafe-swiftshader'])
     try:
@@ -13,12 +16,15 @@ with sync_playwright() as pw:
         page.on('console',lambda m:print(m.text,flush=True) if m.text.startswith('BOUNDARY ') else None)
         result=page.evaluate("""async o=>{
           const wait=ms=>new Promise(r=>setTimeout(r,ms)),worlds=[],realms=[];
-          const observe=()=>worlds.map(w=>({net:w.netStatus(),driver:w.driverStatus(),state:w.status(),native:w.nativeStatus(),canonical:w.canonical()}));
+          const observe=()=>worlds.map(w=>({net:w.netStatus(),driver:w.driverStatus(),state:w.status(),native:w.nativeStatus(),canonical:w.canonical(),rng:w.rngState(),boundaryVisualRedraws:w.boundaryVisualRedraws()}));
           for(let seat=0;seat<o.players;++seat){
             const frame=document.createElement('iframe');frame.src=o.url;document.body.append(frame);
             const end=performance.now()+90000;
             while(!frame.contentWindow?.multiplayerSmoke){if(performance.now()>end)throw Error('boot');await wait(10);}
             const w=frame.contentWindow.multiplayerSmoke;
+            if(o.skipResimVisual&&w.skipResimVisual(true)!==1)throw Error('skip resim visual setup');
+            if(o.skipResimGeometry&&w.skipResimGeometry(true)!==1)throw Error('skip resim geometry setup');
+            if(o.backMetadataOnly&&w.backMetadataOnly(true)!==1)throw Error('back metadata setup');
             await w.start(1234,Array.from({length:o.players},(_,i)=>i),seat,[12345,67890]);
             worlds.push(w);realms.push(frame.contentWindow);
           }
@@ -74,9 +80,11 @@ with sync_playwright() as pw:
           const after=observe();
           if(after.some(x=>x.driver[2]||x.driver[15]))throw Error('driver/channel failure');
           if(after.some(x=>JSON.stringify(x.canonical)!==JSON.stringify(after[0].canonical)))throw Error('canonical mismatch '+JSON.stringify(after));
+          if(after.some(x=>JSON.stringify(x.rng)!==JSON.stringify(after[0].rng)))throw Error('RNG mismatch '+JSON.stringify(after));
+          if(o.skipResimVisual&&after.every(x=>x.boundaryVisualRedraws===0))throw Error('Visual boundary redraw branch not exercised '+JSON.stringify(after));
           if(after.some(x=>x.state[6]!==1))throw Error('Did not reach stage two '+JSON.stringify(after));
           return {passed:true,heldPackets:held.length,before,shortened,after};
-        }""",{'url':args.url,'relay':args.relay,'players':args.players,'room':'stage-'+uuid.uuid4().hex[:12]})
+        }""",{'url':args.url,'relay':args.relay,'players':args.players,'skipResimVisual':args.skip_resim_visual,'skipResimGeometry':args.skip_resim_geometry,'backMetadataOnly':args.back_metadata_only,'room':'stage-'+uuid.uuid4().hex[:12]})
         report.update(result)
     except BaseException as error:report['error']=str(error);raise
     finally:

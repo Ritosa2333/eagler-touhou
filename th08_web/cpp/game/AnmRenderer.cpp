@@ -9,6 +9,10 @@
 #include <algorithm>
 
 namespace th08 {
+#ifdef TH_MULTIPLAYER_FIXTURES
+namespace {bool diagnostic_projection_reuse=true;}
+bool fixture_projection_reuse(bool enabled){diagnostic_projection_reuse=enabled;return enabled;}
+#endif
 AnmRenderer::AnmRenderer(SpriteBackend& output) : backend(output) {
     pending.reserve(6 * 4096);
     view_matrix.identity(); projection_matrix.identity(); last_world_matrix.identity();
@@ -64,6 +68,9 @@ void AnmRenderer::unrotated_vertices(AnmVm& vm, bool write_z) {
 
 i32 AnmRenderer::draw_no_rotation(AnmVm& vm, bool round) {
     if (!drawable(vm)) return -1;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(rollback_visual_geometry_suppressed)return vm.loadedSprite?0:-1;
+#endif
     unrotated_vertices(vm, true);
     return draw_inner(vm, round ? 1 : 0);
 }
@@ -87,6 +94,9 @@ void AnmRenderer::translate_rotation(SpriteVertex& vertex, float x, float y,
 i32 AnmRenderer::draw_2d(AnmVm& vm, bool no_round) {
     if (!no_round && vm.rotation.z == 0) return draw_no_rotation(vm);
     if (!drawable(vm)) return -1;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(rollback_visual_geometry_suppressed)return vm.loadedSprite?0:-1;
+#endif
     if (vm.rotation.z == 0) {
         // 0x463470 deliberately retains the preceding quad's Z in this branch.
         unrotated_vertices(vm, false);
@@ -135,12 +145,22 @@ Matrix4 AnmRenderer::world_matrix(AnmVm& vm) {
 
 void AnmRenderer::transform_world(AnmVm& vm) {
     const auto world=world_matrix(vm);
-    for (u32 i=0; i<4; ++i) GraphicsMath::project(quad[i].pos,world_vertices[i],&viewport,&projection_matrix,&view_matrix,&world);
+#ifdef TH_MULTIPLAYER_FIXTURES
+    if(!diagnostic_projection_reuse){
+        for(u32 i=0;i<4;++i)GraphicsMath::project(quad[i].pos,world_vertices[i],&viewport,&projection_matrix,&view_matrix,&world);
+        last_world_matrix=world;return;
+    }
+#endif
+    Matrix4 transform;GraphicsMath::compose_projection(transform,&projection_matrix,&view_matrix,&world);
+    for (u32 i=0; i<4; ++i) GraphicsMath::project_composed(quad[i].pos,world_vertices[i],&viewport,transform);
     last_world_matrix=world;
 }
 
 i32 AnmRenderer::draw_world(AnmVm& vm) {
     if (!drawable(vm)) return -1;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(rollback_visual_geometry_suppressed){last_world_matrix=world_matrix(vm);return vm.loadedSprite?0:-1;}
+#endif
     transform_world(vm);
     return draw_inner(vm,0);
 }
@@ -150,9 +170,18 @@ i32 AnmRenderer::transform_facing_camera(AnmVm& vm, ProjectionCallback callback,
     Matrix4 world; world.identity();
     world.m[3][0]=vm.pos.x; world.m[3][1]=vm.pos.y; world.m[3][2]=vm.pos.z;
     Vec3 projected,reference;
-    GraphicsMath::project(projected,{},&viewport,&projection_matrix,&view_matrix,&world);
+    Matrix4 transform;GraphicsMath::compose_projection(transform,&projection_matrix,&view_matrix,&world);
+#ifdef TH_MULTIPLAYER_FIXTURES
+    if(!diagnostic_projection_reuse)GraphicsMath::project(projected,{},&viewport,&projection_matrix,&view_matrix,&world);
+    else
+#endif
+    GraphicsMath::project_composed(projected,{},&viewport,transform);
     if (projected.z<0 || projected.z>1) return -1;
-    GraphicsMath::project(reference,scene_camera.right,&viewport,&projection_matrix,&view_matrix,&world);
+#ifdef TH_MULTIPLAYER_FIXTURES
+    if(!diagnostic_projection_reuse)GraphicsMath::project(reference,scene_camera.right,&viewport,&projection_matrix,&view_matrix,&world);
+    else
+#endif
+    GraphicsMath::project_composed(reference,scene_camera.right,&viewport,transform);
     const float dx=Scalar::sub(reference.x,projected.x);
     const float dy=Scalar::sub(reference.y,projected.y);
     const float dz=Scalar::sub(reference.z,projected.z);
@@ -338,6 +367,9 @@ i32 AnmRenderer::draw_3d(AnmVm& vm) {
     world.m[3][0]=Scalar::add(world.m[3][0],shake.x);
     world.m[3][1]=Scalar::add(world.m[3][1],shake.y);
     set_3d_state(vm);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(rollback_visual_geometry_suppressed)return 0;
+#endif
     backend.transform(Matrices::World,world);
     // Original checks U twice here. A V-only scroll with the same sprite
     // does not refresh the cached texture transform.

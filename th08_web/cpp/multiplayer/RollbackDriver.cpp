@@ -4,11 +4,14 @@
 #include "../platform/PlatformDevices.hpp"
 #include <algorithm>
 #include <cstdio>
-#ifdef TH_MULTIPLAYER_FIXTURES
 #include <emscripten/emscripten.h>
-#endif
 
 namespace th08::multiplayer {
+#ifdef TH_MULTIPLAYER_FIXTURES
+namespace {bool fixture_skip_resim_visual_enabled=false,fixture_skip_resim_geometry_enabled=false;}
+bool fixture_skip_resim_visual(bool enabled){fixture_skip_resim_visual_enabled=enabled;return enabled;}
+bool fixture_skip_resim_geometry(bool enabled){fixture_skip_resim_geometry_enabled=enabled;return enabled;}
+#endif
 namespace {
 u8 route_state(const GameplaySession& session,const SessionSetup& setup){
     if(session.multiplayer_route_state<=2)return session.multiplayer_route_state;
@@ -22,7 +25,12 @@ u8 route_state(const GameplaySession& session,const SessionSetup& setup){
     return cleared_b?2:cleared_a?1:0;
 }
 }
-RollbackDriver::RollbackDriver(BrowserRuntime& r):runtime(r),network(r.app.session.netplay){}
+RollbackDriver::RollbackDriver(BrowserRuntime& r):runtime(r),network(r.app.session.netplay){
+#ifdef TH_MULTIPLAYER_FIXTURES
+    skip_resim_visual=fixture_skip_resim_visual_enabled;
+    skip_resim_geometry=fixture_skip_resim_geometry_enabled;
+#endif
+}
 const char* RollbackDriver::Error()const{return failed?error:network.Error();}
 bool RollbackDriver::FailNativeUpdate(u32 frame,bool updated){
     const auto& a=runtime.app;
@@ -149,7 +157,20 @@ bool RollbackDriver::RunFrame(bool render){
     if(bound&&!checkpoint_open){world.DiscardBefore(frame+1);textures.DiscardBefore(frame+1);}
     const bool extend=checkpoint_open&&world.CanExtend(frame,checkpoint_span);
     checkpoint_previous_bytes=extend?world.BytesForFrame(frame-1)+textures.BytesForFrame(frame-1):0;
-    if(checkpoint_open&&(!world.BeginFrame(frame,extend)||!textures.BeginFrame(frame,extend)))return Fail("begin world frame failed");
+#ifdef TH_MULTIPLAYER_FIXTURES
+    checkpoint_previous_owner={};
+    if(extend){const auto prior=world.DiagnosticBytesForFrame(frame-1);for(u32 i=0;i<5;++i)checkpoint_previous_owner[i]=prior[i];checkpoint_previous_owner[5]=textures.BytesForFrame(frame-1);}
+#endif
+    if(checkpoint_open){
+        if(!world.BeginFrame(frame,extend))return Fail("begin world frame failed");
+#ifdef TH_MULTIPLAYER_FIXTURES
+        const auto texture_started=emscripten_get_now();
+#endif
+        if(!textures.BeginFrame(frame,extend))return Fail("begin world frame failed");
+#ifdef TH_MULTIPLAYER_FIXTURES
+        diagnostic_texture_begin_ms+=emscripten_get_now()-texture_started;
+#endif
+    }
 #ifdef TH_MULTIPLAYER_FIXTURES
     diagnostic_capture_ms+=emscripten_get_now()-capture_start;
     if(checkpoint_open&&!extend)++diagnostic_snapshots;else if(bound)++diagnostic_skipped;
@@ -202,6 +223,9 @@ bool RollbackDriver::FinishFrame(){
         max_bytes=std::max(max_bytes,u32(size));
 #ifdef TH_MULTIPLAYER_FIXTURES
         diagnostic_snapshot_bytes+=size-checkpoint_previous_bytes;
+        const auto owners=world.DiagnosticBytesForFrame(frame);
+        for(u32 i=0;i<5;++i)diagnostic_owner_bytes[i]+=owners[i]-checkpoint_previous_owner[i];
+        diagnostic_owner_bytes[5]+=textures.BytesForFrame(frame)-checkpoint_previous_owner[5];
 #endif
     }
     checkpoint_open=false;
@@ -226,12 +250,26 @@ bool RollbackDriver::Correct(){
 #if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
     diagnostic::Restored(runtime,first);
 #endif
+    bool last_visual_suppressed=false;
     while(net.NextFrame()<end&&world.CanAdvance()){
         const auto before=net.NextFrame();
-        if(!RunFrame(true)||net.NextFrame()==before){correcting=false;runtime.correction_present_suppressed=false;return Fail("resimulation stalled");}
+        runtime.correction_visual_suppressed=skip_resim_visual&&before+1<end;
+        runtime.app.renderer.rollback_visual_geometry_suppressed=skip_resim_geometry&&runtime.correction_visual_suppressed;
+        const bool ok=RunFrame(true);
+        last_visual_suppressed=runtime.correction_visual_suppressed;
+        runtime.correction_visual_suppressed=false;
+        runtime.app.renderer.rollback_visual_geometry_suppressed=false;
+        if(!ok||net.NextFrame()==before){correcting=false;runtime.correction_present_suppressed=false;return Fail("resimulation stalled");}
         ++resimulated;
     }
     const bool boundary=net.NextFrame()!=end;
+    if(boundary&&last_visual_suppressed&&runtime.app.active()&&
+       !runtime.app.draw(1.0f,true,true,false)){
+        correcting=false;runtime.correction_present_suppressed=false;return Fail("correction boundary redraw failed");
+    }
+#ifdef TH_MULTIPLAYER_FIXTURES
+    if(boundary&&last_visual_suppressed&&runtime.app.active())++diagnostic_boundary_visual_redraws;
+#endif
     if(!net.EndCorrection(boundary)){correcting=false;runtime.correction_present_suppressed=false;return Fail("correction frontier failed");}
     correcting=false;runtime.correction_present_suppressed=false;
     corrected_present_pending=true;
@@ -244,12 +282,17 @@ bool RollbackDriver::Correct(){
 }
 bool RollbackDriver::CaptureLocalInput(){
     auto& session=runtime.app.session;auto& net=session.netplay;
-    const auto frame=net.NextFrame();
-    if(net.HasLocal(frame))return true;
+    const auto frame=net.NextCaptureFrame();
+    if(!net.CanCapture()||net.HasCapture(frame))return false;
     const auto touch=u16(file_device().supplemental_input());
     const auto physical=runtime.input.controller(InputController::keyboard(runtime.keys,false)|touch,runtime.pad,session.display_config);
     auto sample=runtime.device_sample(physical);
-    if(frame==0&&net.Setup().local_player==0)sample=RouteBootstrap(sample,route_state(session,net.Setup()));
+    if(frame==0&&net.Setup().local_player==0){
+        const auto route=route_state(session,net.Setup());
+        if(net.Setup().input_delay){
+            if(!net.CaptureLeadInBootstrap(RouteBootstrap({},route)))return false;
+        }else sample=RouteBootstrap(sample,route);
+    }
     return net.CaptureLocal(frame,sample);
 }
 bool RollbackDriver::Step(bool render){
@@ -274,9 +317,9 @@ bool RollbackDriver::Step(bool render){
 #ifdef TH_MULTIPLAYER_FIXTURES
     early_input=early_input&&diagnostic_early_input;
 #endif
-    if(early_input){
+    if(early_input&&net.CanCapture()){
         if(!CaptureLocalInput())return Fail("local capture failed");
-        sent_frame=net.NextFrame();
+        sent_frame=net.NextCaptureFrame()-1;
         if(!network.Captured(sent_frame))return Fail("captured input send failed");
     }
     if(!Correct()||!Commit()||!Admit())return false;
@@ -294,20 +337,22 @@ bool RollbackDriver::Step(bool render){
         if(session.network_waiting)return true;
     }
     const auto frame=net.NextFrame();
-    if(!net.HasLocal(frame)){
+    if(!net.ReadOnly()&&(sent_frame==Netplay::INVALID_FRAME||net.Generation()!=sent_generation)&&net.CanCapture()){
+        if(!CaptureLocalInput())return Fail("local capture failed");
+        sent_frame=net.NextCaptureFrame()-1;
+        if(!network.Captured(sent_frame))return Fail("captured input send failed");
+    }
+    if(!net.HasLocalFrame(frame)){
         if(net.Playback()){
             const auto* inputs=runtime.replay_archive.PlaybackFrame(frame);
             if(!inputs||!net.FeedPlayback(frame,*inputs))return Fail("Replay input rejected");
         }else if(net.Spectator()){
             if(!network.SpectatorBacklog()){session.network_waiting=true;return true;}
             if(!network.ConsumeSpectator())return Fail("observer input consumption failed");
-        }else{
-        if(!CaptureLocalInput())return Fail("local capture failed");
-        }
+        }else{session.network_waiting=true;return PresentCorrection();}
     }
-    if(!net.ReadOnly()&&(frame!=sent_frame||net.Generation()!=sent_generation)&&!network.Captured(frame))return Fail("captured input send failed");
-    const bool success=RunFrame(render);
-    return success&&(!session.network_waiting||PresentCorrection());
+    if(!RunFrame(render))return false;
+    return !session.network_waiting||PresentCorrection();
 }
 void RollbackDriver::Shutdown(){
 #if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
@@ -315,6 +360,7 @@ void RollbackDriver::Shutdown(){
 #endif
     if(!initialized&&!bound&&!network.Enabled())return;
     runtime.correction_present_suppressed=false;
+    runtime.correction_visual_suppressed=false;
     // Shutdown may arrive while the displayed state is still predicted. Never
     // serialize it as a completed personal record.
     runtime.discard_network_shutdown_writes=true;

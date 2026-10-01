@@ -56,9 +56,14 @@ def summarize(peer):
     bullet=[a-b for a,b in zip(last['bullet'],first['bullet'])]
     bullet_update=[a-b for a,b in zip(last['bulletUpdate'],first['bulletUpdate'])]
     collision=[a-b for a,b in zip(last['collision'],first['collision'])]
+    owners=[a-b for a,b in zip(last['snapshotOwners'],first['snapshotOwners'])]
     imp=peer['impairment'];sent=imp['sent'];start_imp=first['impairment']
     measured_sent=sent-start_imp['sent']
+    ticks=[b['net'][3]-a['net'][3] for a,b in zip(rows,rows[1:])]
     result={'logicalFps':frames*1000/elapsed,'frames':frames,'elapsedMs':elapsed,'sceneSpans':scenes,
+      'maxLogicalTicksPerCallback':max(ticks),'multiTickCallbacks':sum(n>1 for n in ticks),
+      'audioServicesPerSecond':(last['audioServices']-first['audioServices'])*1000/elapsed if last.get('audioServices') is not None else None,
+      'audioClockSecondsPerSecond':(last['audioClock']-first['audioClock'])*1000/elapsed if 'audioClock' in last else None,
       'presentGapMs':distribution(gaps),'advanceGapMs':distribution(advances),
       'callbackMs':distribution([x['ms'] for x in rows]),'receiveAgeMs':distribution([x['receiveAge'] for x in rows]),
       'corrections':last['driver'][3]-first['driver'][3],'resimulated':last['driver'][4]-first['driver'][4],
@@ -68,6 +73,8 @@ def summarize(peer):
       'bulletUpdateSampleMs':bullet_update,
       'collisionChecks':collision,
       'snapshots':profile[2],'skipped':profile[3],'snapshotBytes':profile[8],
+      'snapshotOwnerBytes':owners[:6],'snapshotOwnerBeginMs':owners[6:],
+      'actualSnapshotModes':last['snapshotModes'],
       'correctionMs':last['costs'][2]-first['costs'][2],'maxCorrectionMs':last['costs'][3],
       'callbackMsPerLogicalTick':sum(x['ms'] for x in rows[1:])/frames,
       'updateMsPerExecutedTick':profile[6]/(frames+last['driver'][4]-first['driver'][4]),
@@ -101,7 +108,7 @@ def freeze(args):
       WORKSPACE/'th08-eagler/build-eagler/fonts/blend.bin':'fonts/blend.bin',
       WORKSPACE/'th08-eagler/build-eagler/fonts/cp932.bin':'fonts/cp932.bin'}
     launcher=WORKSPACE/'eagler-touhou'
-    for name in ['server/netplay-relay.mjs','server/room-probe-policy.mjs',
+    for name in ['server/netplay-relay.mjs','server/room-directory.mjs','server/room-probe-policy.mjs',
                  'server/spectator-frame.mjs','lib/contracts/product-catalog.mjs',
                  'lib/contracts/load-compiled-contract.mjs']:
         source[launcher/name]='relay/'+name
@@ -127,8 +134,8 @@ class QuietHandler(http.server.SimpleHTTPRequestHandler):
 
 def run(args,origin,relay,dest,mode):
     report={'passed':False,'mode':mode,'production':args.production,'cpuRate':args.cpu_rate,'players':args.players,
-      'denseBullets':args.bullets,'difficulty':args.difficulty,'limit60':args.cap60,'wallClockTouch':args.wall_clock_touch,'frames':args.frames,'oneWayMs':args.one_way_ms,'jitterMs':args.jitter_ms,
-      'scope':'separate Chromium processes; native rAF; RTC application-send impairment; CPU throttle is not a phone model',
+      'denseBullets':args.bullets,'difficulty':args.difficulty,'limit60':args.cap60,'wallClockTouch':args.wall_clock_touch,'idleInput':args.idle_input,'frames':args.frames,'oneWayMs':args.one_way_ms,'jitterMs':args.jitter_ms,
+      'slowSeats':args.slow_seats,'touchSeats':args.touch_seats,'checkpointSpan':args.checkpoint_span,'backgroundIndex':args.background_index,'bombLazy':args.bomb_lazy,'shotSparse':args.shot_sparse,'recordSparse':args.record_sparse,'titleSpellsLazy':args.title_spells_lazy,'worldInstancing':args.world_instancing,'textureCoalesce':args.texture_coalesce,'skipResimVisual':args.skip_resim_visual,'skipResimGeometry':args.skip_resim_geometry,'backMetadataOnly':args.back_metadata_only,'scope':'separate Chromium processes; native rAF; RTC application-send impairment; CPU throttle is not a phone model',
       'peers':[],'errors':[]}
     with sync_playwright() as pw:
         browsers=[];pages=[]
@@ -143,6 +150,8 @@ def run(args,origin,relay,dest,mode):
                     report['browser']={'version':browser.version,'gpu':gpu}
                 context=browser.new_context(viewport={'width':800,'height':600},service_workers='block')
                 options={'oneWayMs':args.one_way_ms,'jitterMs':args.jitter_ms,'inputLabel':'th08-input','controlLabel':'th08-control','seed':7135+seat}
+                if seat==args.spike_seat:
+                    options.update(spikeFrame=args.spike_frame,spikeMs=args.spike_ms,spikeDelayMs=args.spike_delay_ms)
                 context.add_init_script((dest/'rtc-input-impairment.cjs').read_text()+'\nglobalThis.__th08Impairment=installRtcInputImpairment('+json.dumps(options)+');')
                 page=context.new_page();pages.append(page)
                 page.on('pageerror',lambda e,seat=seat:report['errors'].append({'seat':seat,'error':str(e)}))
@@ -157,6 +166,8 @@ def run(args,origin,relay,dest,mode):
                 if time.monotonic()>deadline:raise TimeoutError('RTC barrier')
                 time.sleep(.05)
             if not all(page.evaluate('multiplayerSmoke.driverStatus()[12]===1') for page in pages):raise AssertionError('Not RTC')
+            for page in pages:
+                if page.evaluate('(span)=>th08Performance.checkpointSpan(span)',args.checkpoint_span)!=args.checkpoint_span:raise AssertionError('Checkpoint span rejected')
             def wait_phase():
                 deadline=time.monotonic()+args.timeout
                 while True:
@@ -170,8 +181,8 @@ def run(args,origin,relay,dest,mode):
             wait_phase()
             if len({json.dumps(p.evaluate('multiplayerSmoke.canonical()')) for p in pages})!=1:raise AssertionError('Warmup divergence')
             for seat,page in enumerate(pages):
-                page.evaluate('(o)=>th08Performance.configure(o.mode,o.bullets,o.cap60,o.wallTouch,o.earlyInput,o.liveBullets,o.targetFilter,o.broadphase,o.cache)',{'mode':MODES[mode],'bullets':args.bullets,'cap60':args.cap60,'wallTouch':args.wall_clock_touch,'earlyInput':mode!='frontier-late','liveBullets':mode!='frontier-legacy','targetFilter':mode not in ('frontier-target-legacy','frontier-both-legacy'),'broadphase':mode not in ('frontier-collision-legacy','frontier-both-legacy'),'cache':mode not in ('frontier-cache-legacy','frontier-both-legacy')})
-                if seat==args.players-1:
+                page.evaluate('(o)=>th08Performance.configure(o.mode,o.bullets,o.cap60,o.wallTouch,o.earlyInput,o.liveBullets,o.targetFilter,o.broadphase,o.cache,o.idleInput,o.backgroundIndex,o.bombLazy,o.shotSparse,o.recordSparse,o.worldInstancing,o.textureCoalesce,o.skipResimVisual,o.skipResimGeometry,o.titleSpellsLazy,o.backMetadataOnly)',{'mode':MODES[mode],'bullets':args.bullets,'cap60':args.cap60,'wallTouch':args.wall_clock_touch and seat in args.touch_seats,'earlyInput':mode!='frontier-late','liveBullets':mode!='frontier-legacy','targetFilter':mode not in ('frontier-target-legacy','frontier-both-legacy'),'broadphase':mode not in ('frontier-collision-legacy','frontier-both-legacy'),'cache':mode not in ('frontier-cache-legacy','frontier-both-legacy'),'idleInput':args.idle_input or (args.wall_clock_touch and seat not in args.touch_seats),'backgroundIndex':args.background_index,'bombLazy':args.bomb_lazy,'shotSparse':args.shot_sparse,'recordSparse':args.record_sparse,'worldInstancing':args.world_instancing,'textureCoalesce':args.texture_coalesce,'skipResimVisual':args.skip_resim_visual,'skipResimGeometry':args.skip_resim_geometry,'titleSpellsLazy':args.title_spells_lazy,'backMetadataOnly':args.back_metadata_only})
+                if seat in args.slow_seats:
                     context=page.context;session=context.new_cdp_session(page)
                     session.send('Emulation.setCPUThrottlingRate',{'rate':args.cpu_rate})
             # Arm against the same wall deadline, instead of starting P1 while
@@ -181,24 +192,57 @@ def run(args,origin,relay,dest,mode):
             # The old warmup done flag stays true until the armed start fires.
             time.sleep(.8);wait_phase()
             report['peers']=[page.evaluate('th08Performance.report()') for page in pages]
-            for peer in report['peers']:
+            for seat,peer in enumerate(report['peers']):
                 imp=peer['impairment']
                 if not imp['matched'] or not imp['sent'] or imp['errors'] or imp['overflow']:raise AssertionError('RTC impairment not applied cleanly')
                 if not peer['rows'] or peer['after']['net'][3]!=args.frames:raise AssertionError('Incomplete run')
                 if peer['limit60']!=args.cap60:raise AssertionError('Presentation limit not applied')
-                if peer['wallClockTouch']!=args.wall_clock_touch:raise AssertionError('Touch workload not applied')
+                if peer['wallClockTouch']!=(args.wall_clock_touch and seat in args.touch_seats):raise AssertionError('Touch workload not applied')
                 if peer['earlyInput']!=(mode!='frontier-late'):raise AssertionError('Input send order not applied')
                 if peer['liveBullets']!=(mode!='frontier-legacy'):raise AssertionError('Bullet backend not applied')
                 if peer['targetFilter']!=(mode not in ('frontier-target-legacy','frontier-both-legacy')):raise AssertionError('Target filter not applied')
                 if peer['broadphase']!=(mode not in ('frontier-collision-legacy','frontier-both-legacy')):raise AssertionError('Collision broadphase not applied')
                 if peer['barrierCache']!=(mode not in ('frontier-cache-legacy','frontier-both-legacy')):raise AssertionError('Barrier cache mode not applied')
                 if peer['identity']['fixtureBuild']==args.production or peer['profileAvailable']==args.production:raise AssertionError('Wrong production/fixture lane')
-                if args.wall_clock_touch and (peer['touch']['events']<30 or peer['touch']['pathPixels']<10 or peer['touch']['maxX']-peer['touch']['minX']<1):raise AssertionError('Native touch did not move the player')
+                if peer['wallClockTouch'] and (peer['touch']['events']<30 or peer['touch']['pathPixels']<10 or peer['touch']['maxX']-peer['touch']['minX']<1):raise AssertionError('Native touch did not move the player')
                 if peer['after']['driver'][2] or peer['after']['driver'][15]:raise AssertionError('Driver/channel failure')
                 if mode in ('exact','exact-snapshots') and peer['after']['driver'][3]:raise AssertionError('Exact control rolled back')
             if len({json.dumps(p['canonical']) for p in report['peers']})!=1:raise AssertionError('Canonical divergence')
             report['summary']=[summarize(p) for p in report['peers']]
-            if mode not in ('exact','exact-snapshots') and not all(p['corrections']>0 for p in report['summary']):raise AssertionError('No measured rollback')
+            if args.spike_ms:
+                source=report['peers'][args.spike_seat];imp=source['impairment']
+                if imp['spikeEndMs'] is None or not imp['spikeDelayed']:raise AssertionError('Spike not applied')
+                end=source['timeOrigin']+imp['spikeEndMs']
+                report['spike']={'seat':args.spike_seat,'frame':args.spike_frame,'durationMs':args.spike_ms,
+                  'extraDelayMs':args.spike_delay_ms,'endEpochMs':end,'delayed':imp['spikeDelayed'],
+                  'controlDelayed':imp['spikeControlDelayed']}
+                for peer,summary in zip(report['peers'],report['summary']):
+                    rows=peer['rows'];origin=peer['timeOrigin'];windows=[]
+                    pre_end=end-args.spike_ms
+                    pre=[r for r in rows if pre_end-1500<=origin+r['time']<pre_end]
+                    pre_fps=(pre[-1]['net'][3]-pre[0]['net'][3])*1000/(pre[-1]['time']-pre[0]['time']) if len(pre)>1 else None
+                    summary['preSpikeLogicalFps']=pre_fps
+                    # Fixed wall windows after network recovery, not frame windows
+                    # that hide stalls. Keep confirmed progress separate from receive.
+                    for index in range(10):
+                        selected=[r for r in rows if end+index*1000<=origin+r['time']<end+(index+1)*1000]
+                        if len(selected)<2:continue
+                        a,b=selected[0],selected[-1];dt=b['time']-a['time']
+                        windows.append({'second':index,'logicalFps':(b['net'][3]-a['net'][3])*1000/dt,
+                          'maxConfirmedAgeMs':max(r['confirmedAge'] for r in selected),
+                          'maxUnconfirmed':max(max(0,r['net'][3]-r['net'][5]-1) for r in selected),
+                          'callbackMs':distribution([r['ms'] for r in selected])})
+                    summary['recoveryWindows']=windows
+                    summary['sustainedRecoveryMs']=next((w['second']*1000 for i,w in enumerate(windows[:-1])
+                      if w['logicalFps']>=57 and windows[i+1]['logicalFps']>=57 and
+                         w['maxConfirmedAgeMs']<200 and windows[i+1]['maxConfirmedAgeMs']<200),None)
+                    summary['settledRecoveryMs']=next((w['second']*1000 for i,w in enumerate(windows[:-2])
+                      if all(v['logicalFps']>=57 and v['maxConfirmedAgeMs']<200 for v in windows[i:])),None)
+                    summary['recoveryToPreSpikeMs']=next((w['second']*1000 for i,w in enumerate(windows[:-1])
+                      if pre_fps and all(v['logicalFps']>=pre_fps*.95 and v['maxConfirmedAgeMs']<200 for v in windows[i:i+2])),None)
+            if mode not in ('exact','exact-snapshots'):
+                changing=set(args.touch_seats if args.wall_clock_touch else ([] if args.idle_input else range(args.players)))
+                if any(changing-{seat} and peer['corrections']==0 for seat,peer in enumerate(report['summary'])):raise AssertionError('No measured remote-input rollback')
             report['passed']=True
         except Exception as error:
             report['error']=str(error)
@@ -235,19 +279,49 @@ def main():
     p.add_argument('--output',type=Path,required=True);p.add_argument('--data',type=Path,required=True)
     p.add_argument('--frames',type=int,default=780);p.add_argument('--players',type=int,choices=(2,3),default=2)
     p.add_argument('--cpu-rate',type=float,default=4);p.add_argument('--bullets',type=int,default=1000)
+    p.add_argument('--checkpoint-span',type=int,choices=(1,2,3),default=1)
+    p.add_argument('--background-index',action='store_true')
+    p.add_argument('--no-world-instancing',dest='world_instancing',action='store_false',default=True)
+    p.add_argument('--no-texture-coalesce',dest='texture_coalesce',action='store_false',default=True)
+    p.add_argument('--skip-resim-visual',action='store_true')
+    p.add_argument('--skip-resim-geometry',action='store_true')
+    p.add_argument('--no-title-spells-lazy',dest='title_spells_lazy',action='store_false',default=True)
+    p.add_argument('--back-metadata-only',action='store_true')
+    p.add_argument('--slow-seats',default='',help='Comma-separated CPU throttled seats; default is the last seat')
     p.add_argument('--difficulty',type=int,choices=range(4),default=1)
     p.add_argument('--one-way-ms',type=float,default=38.5);p.add_argument('--jitter-ms',type=float,default=5)
+    p.add_argument('--spike-frame',type=int,default=450);p.add_argument('--spike-ms',type=float,default=0)
+    p.add_argument('--spike-delay-ms',type=float,default=800);p.add_argument('--spike-seat',type=int,default=1)
     p.add_argument('--modes',default='always,frontier');p.add_argument('--rounds',type=int,default=2)
     p.add_argument('--timeout',type=float,default=150);p.add_argument('--freeze-only',action='store_true')
+    p.add_argument('--reuse-freeze',type=Path,help='Rerun an existing immutable experiment without rebuilding the old source')
     p.add_argument('--browser-channel',choices=('default','chromium','chrome','msedge'),default='chromium')
     p.add_argument('--cap60',action='store_true')
     p.add_argument('--wall-clock-touch',action='store_true')
+    p.add_argument('--touch-seats',default='',help='Comma-separated wall-clock touch seats; default is all seats')
+    p.add_argument('--idle-input',action='store_true',help='Hold both players still after admission; excludes touch stimulus')
+    p.add_argument('--bomb-lazy',action='store_true',help='Fixture-only deferred Bomb snapshot diagnostic')
+    p.add_argument('--shot-sparse',action='store_true',help='Fixture-only sparse PlayerShot snapshot diagnostic')
+    p.add_argument('--record-sparse',action='store_true',help='Fixture-only sparse spell-record snapshot diagnostic')
     p.add_argument('--production',action='store_true',help='Formal WASM without native fixture/profiling exports; requires --bullets 0 --modes frontier')
     args=p.parse_args();args.output=args.output.resolve()
+    args.slow_seats=([args.players-1] if not args.slow_seats else [int(s) for s in args.slow_seats.split(',')])
+    args.touch_seats=(list(range(args.players)) if not args.touch_seats else [int(s) for s in args.touch_seats.split(',')])
     modes=args.modes.split(',')
+    if len(set(args.slow_seats))!=len(args.slow_seats) or any(s<0 or s>=args.players for s in args.slow_seats):raise ValueError('Invalid slow seats')
+    if len(set(args.touch_seats))!=len(args.touch_seats) or any(s<0 or s>=args.players for s in args.touch_seats):raise ValueError('Invalid touch seats')
     if args.frames<=300 or not all(m in MODES for m in modes) or args.cpu_rate<1:raise ValueError('Invalid settings')
+    if not 0<=args.spike_seat<args.players or (args.spike_ms and not 240<args.spike_frame<args.frames-180):raise ValueError('Invalid spike settings')
     if args.production and (args.bullets or modes!=['frontier']):raise ValueError('Production lane requires authored bullets and unchanged frontier policy')
-    dest,manifest=freeze(args)
+    if args.production and args.checkpoint_span!=1:raise ValueError('Production lane cannot alter checkpoint span')
+    if args.production and args.background_index:raise ValueError('Production lane cannot enable fixture index')
+    if args.reuse_freeze:
+        origin=args.reuse_freeze.resolve();dest=origin/'frozen'
+        manifest=json.loads((origin/'manifest.json').read_text());verify(dest,manifest)
+        args.output.mkdir(parents=True,exist_ok=False)
+        (args.output/'manifest.json').write_text(json.dumps(manifest,indent=2))
+        (args.output/'frozen-source.json').write_text(json.dumps({'directory':str(dest)},indent=2))
+    else:dest,manifest=freeze(args)
     if args.freeze_only:return 0
     server=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(QuietHandler,directory=str(dest)))
     threading.Thread(target=server.serve_forever,daemon=True).start()

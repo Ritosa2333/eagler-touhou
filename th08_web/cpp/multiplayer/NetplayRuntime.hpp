@@ -24,6 +24,14 @@ public:
     const Netplay::SessionConfig& Config()const{return gate_.Config();}
     const SessionSetup& Setup()const{return setup_;}
     std::uint32_t NextFrame()const{return next_;}
+    std::uint32_t NextCaptureFrame()const{return next_capture_;}
+    std::uint32_t InputDelay()const{return setup_.input_delay;}
+    // One physical sample per forward simulation tick, including delayed
+    // sessions. Sampling again while that tick waits queues stale controls
+    // ahead of the negotiated delay and turns a transient stall into latency.
+    bool CanCapture()const{return !ReadOnly()&&CanStart()&&!Correcting()&&next_capture_==next_;}
+    bool HasCapture(std::uint32_t frame)const{return core_.HasLocalCapture(frame);}
+    bool HasLocalFrame(std::uint32_t frame)const{return core_.InputPresent(std::uint8_t(setup_.local_player),frame);}
     std::uint32_t LastFrame()const{return core_.LastSimulatedFrame();}
     std::uint32_t Generation()const{return generation_;}
     bool Retired()const{return retired_;}
@@ -44,7 +52,8 @@ public:
     bool MarkReady();
     bool Ready()const{return !ReadOnly()&&gate_.LocalReady();}
 
-    bool CaptureLocal(std::uint32_t frame,const Netplay::FrameInput&);
+    bool CaptureLocal(std::uint32_t frame,const Netplay::FrameInput&,std::uint8_t route=255);
+    bool CaptureLeadInBootstrap(const Netplay::FrameInput&);
     bool HasLocal(std::uint32_t frame)const{return core_.HasLocalCapture(frame);}
     Netplay::RemoteInputResult SubmitRemote(std::uint8_t seat,std::uint32_t frame,const Netplay::FrameInput&);
     Netplay::FrameDecision Prepare(std::uint32_t frame)const;
@@ -77,7 +86,7 @@ private:
     Netplay::RollbackCore core_;
     SessionSetup setup_{};
     std::uint64_t base_session_id_=0;
-    std::uint32_t next_=0,generation_=0,correction_end_=Netplay::INVALID_FRAME;
+    std::uint32_t next_=0,next_capture_=0,generation_=0,correction_end_=Netplay::INVALID_FRAME;
     bool configured_=false,retired_=false,world_ready_=false,spectator_=false,playback_=false;
 };
 }

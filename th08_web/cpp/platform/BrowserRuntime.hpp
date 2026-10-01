@@ -22,6 +22,7 @@ class BrowserRuntime:public ApplicationPlatform {
     friend class multiplayer::TextureJournal;
     friend class multiplayer::RollbackDriver;
     bool correction_present_suppressed=false;
+    bool correction_visual_suppressed=false;
     bool discard_network_shutdown_writes=false;
     Netplay::FrameInput device_motion{};
     std::unique_ptr<multiplayer::RollbackDriver> multiplayer_driver;
@@ -104,9 +105,15 @@ public:
     bool connect_spectator(const char* relay,const char* id);
     bool pump_network();
     multiplayer::RollbackDriver* network_driver(){return multiplayer_driver.get();}
+    bool visual_draw_suppressed()const{return correction_visual_suppressed;}
     void set_device_motion(i32 mode,float x,float y,bool touch,bool bomb){
         device_motion={};device_motion.touchUsed=touch;device_motion.touchBomb=bomb;
         if(mode==1||mode==2){device_motion.analogMode=Netplay::AnalogMode::DirectTouch;device_motion.x=x;device_motion.y=y;device_motion.unlimited=mode==2;}
+    }
+    void set_device_touch_delta(i32 mode,float x,float y,bool begin,bool touch,bool bomb){
+        device_motion={};device_motion.touchUsed=touch;device_motion.touchBomb=bomb;
+        device_motion.analogMode=begin?Netplay::AnalogMode::DirectTouchBegin:Netplay::AnalogMode::DirectTouchDelta;
+        device_motion.x=x;device_motion.y=y;device_motion.unlimited=mode==2;
     }
     Netplay::FrameInput device_sample(u16 buttons)const{auto result=device_motion;result.buttons=buttons;result.touchBomb=result.touchBomb&&(buttons&2);return result;}
     bool bind_audio_events(multiplayer::AudioEvents*);
@@ -128,6 +135,7 @@ public:
     std::vector<u8> read(const char*)override;std::vector<u8> read_prefix(const char*,u32)override;
     bool write(const char*,const u8*,u32)override;std::vector<std::string> user_replays()override;
     void calendar(char[6],char[20])override;u32 milliseconds()override;u64 performance_counter()override;
+    u32 presentation_milliseconds()override;
     u16 poll_input()override;void begin_frame()override;bool present()override;void reset_device()override;void discard_graphics()override;
     bool load_surface(i32,const char*)override;void release_surface(i32)override;bool has_surface(i32)override;
     void draw_surface(i32,i32,i32)override;void capture_screen(i32)override;bool capture_pending()override{return captured;}

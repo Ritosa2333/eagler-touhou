@@ -1,7 +1,18 @@
 #include "GameplayScene.hpp"
+#include "InputController.hpp"
 #include "PracticeRuntime.hpp"
 #include "PracticeSections.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/WorldJournal.hpp"
+#endif
 namespace th08 {
+bool GameplayScene::before_score_tables_write(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    return !world_journal||world_journal->TouchAllRecords();
+#else
+    return true;
+#endif
+}
 GameplayScene::GameplayScene(GameplaySession& s,TextureStore& t,AnmLibrary& l,AnmRenderer& r,GameplayPlatform& p,Chain* shared_chain,AsciiManager* shared_ascii)
  :session(s),textures(t),library(l),renderer(r),platform(p),chain(shared_chain?*shared_chain:owned_chain),animations(s.random),owned_ascii(animations,r,p),ascii(shared_ascii?*shared_ascii:owned_ascii),
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -49,13 +60,16 @@ GameplayScene::GuestPilot::GuestPilot(GameplayScene& scene,u32 seat)
 bool GameplayScene::commit_inputs(const u16* buttons,u32 count){
     if(!buttons||count!=session.player_count||count<2||count>3)return false;
     for(u32 seat=0;seat<3;++seat)committed_buttons[seat]=seat<count?buttons[seat]:0;
-    for(u32 seat=0;seat<count;++seat)pilot(seat).status().analog={};
+    for(u32 seat=0;seat<count;++seat){pilot(seat).status().analog={};pilot(seat).status().touch_remainder={};}
     return true;
 }
 bool GameplayScene::commit_frame_inputs(const Netplay::FrameInput* inputs,u32 count){
     if(!inputs||count!=session.player_count||count<2||count>3)return false;
     for(u32 seat=0;seat<count;++seat)if(!multiplayer::ValidInputSample(inputs[seat]))return false;
-    for(u32 seat=0;seat<count;++seat){committed_buttons[seat]=inputs[seat].buttons;pilot(seat).status().analog=multiplayer::MovementSample(inputs[seat]);}
+    for(u32 seat=0;seat<count;++seat){
+        committed_buttons[seat]=inputs[seat].buttons;auto& state=pilot(seat).status();
+        state.analog=multiplayer::MovementSample(inputs[seat]);
+    }
     for(u32 seat=count;seat<3;++seat)committed_buttons[seat]=0;
 #ifdef TH_MULTIPLAYER_FIXTURES
     // Diagnostic-only lethal hit. InputButton::D is otherwise unused by the
@@ -282,7 +296,21 @@ JobResult GameplayScene::update_replay(){
     publish_input(playback.input);control.input.replay_fps=playback.input.timing_level;
     synchronize();return JobResult::Continue;
 }
-void GameplayScene::publish_input(const ReplayInputState& input){player_state.input.buttons=input.current;player_state.bomb_input.previous_buttons=input.previous;dialogue_context.input=input.current;dialogue_context.previous_input=input.previous;}
+void GameplayScene::publish_input(const ReplayInputState& input){
+    player_state.input.buttons=input.current;player_state.bomb_input.previous_buttons=input.previous;
+    dialogue_context.input=input.current;dialogue_context.previous_input=input.previous;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Dialogue is shared. The replay recorder updates input.current later in
+    // the frame, so use the committed network inputs for every seat here.
+    // Both peers must see the same skip/confirm decision during rollback.
+    dialogue_context.input=committed_buttons[0];
+    dialogue_context.previous_input=pilot(0).status().bomb_input.previous_buttons;
+    for(u32 seat=1;seat<session.player_count;++seat){
+        dialogue_context.input|=committed_buttons[seat]&(InputButton::Shoot|InputButton::Skip);
+        dialogue_context.previous_input|=pilot(seat).status().bomb_input.previous_buttons&(InputButton::Shoot|InputButton::Skip);
+    }
+#endif
+}
 JobResult GameplayScene::update_recording(){recording.input.flags=globals.game_flags;recording.input.slow_mode=session.config.slow_mode;recording.update();publish_input(recording.input);return JobResult::Continue;}
 JobResult GameplayScene::sample_replay_frame(){auto& state=recording_game?recording.frame_state:debug_frame;state.sample(session.random,control.state.restore_viewport);return JobResult::Continue;}
 JobResult GameplayScene::finish_replay_frame(){bool boss_present=false;for(auto* boss:globals.boss_slots)boss_present|=boss!=nullptr;return playback.after_update(globals.game_flags,control.state.replay_mode,dialogue.present(),display.dialogue.skippable,boss_present);}
@@ -378,7 +406,7 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     for(u32 seat=0;seat<session.player_count;++seat)pilot(seat).place_multiplayer_spawn(seat,session.player_count);
 #endif
     if(initialize_values){
-        startup.after_player(player.profile(false).initial_bombs);
+        if(!startup.after_player(player.profile(false).initial_bombs)){unload();return false;}
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         const bool fresh=wanted.initial||(wanted.flags&0x4001)||wanted.difficulty>=4;
         for(u32 seat=0;seat<session.player_count;++seat){
@@ -453,6 +481,12 @@ bool GameplayScene::prepare_frame(u16 buttons,float rate,bool force_unit){
     }
 #endif
     if(recording_game){recording.input.physical=buttons;publish_input(recording.input);}else if(playing_replay)publish_input(playback.input);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    else {
+        ReplayInputState shared_input{};shared_input.current=buttons;shared_input.previous=player_state.bomb_input.previous_buttons;
+        publish_input(shared_input);
+    }
+#endif
     // Practice cheats run after input publication so F6 can press the bomb key.
     update_practice(*this,session);
     synchronize();return !invalid();

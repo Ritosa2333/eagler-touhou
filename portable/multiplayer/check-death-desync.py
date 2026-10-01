@@ -40,7 +40,7 @@ parser.add_argument('--jitter', type=int, default=3)
 parser.add_argument('--presentations', type=int, choices=(0, 1, 2), default=1)
 parser.add_argument('--loadouts', default='0,1')
 parser.add_argument('--browser', choices=('chromium', 'firefox', 'webkit'), default='chromium')
-parser.add_argument('--movement', choices=('keyboard', 'direct-touch'), default='keyboard')
+parser.add_argument('--movement', choices=('keyboard', 'direct-touch', 'fresh-touch'), default='keyboard')
 parser.add_argument('--port', type=int, default=8152)
 parser.add_argument('--data', type=Path, default=ROOT/'artifacts/multiplayer-tests/runtime-data/games/th08/th08.data')
 parser.add_argument('--baseline', type=Path, help='Same-scenario zero-delay .frames.jsonl reference')
@@ -113,6 +113,7 @@ try:
           const result=window.__deathMeasurement={passed:false,inputs:[],packets:[],coverage:{},checkpoints:[],firstDivergence:null};
           const worlds=[],wait=ms=>new Promise(r=>setTimeout(r,ms));let queue=[],checked=179;
           const sample=(f,buttons)=>f===0?{buttons,mode:2,x:8188,y:-8192,flags:0}:
+            o.movement==='fresh-touch'&&f>=180?{buttons:buttons&~240,mode:f===180?4:3,x:0,y:buttons&16?-2.2:0,flags:2}:
             o.movement==='direct-touch'&&f>=180?{buttons:buttons&~240,mode:2,x:0,y:buttons&16?-2.2:0,flags:2}:
             {buttons,mode:0,x:0,y:0,flags:0};
           const capture=(w,f,buttons,seat)=>{const s=sample(f,buttons);

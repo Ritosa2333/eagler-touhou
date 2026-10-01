@@ -7,6 +7,7 @@
 namespace th08 {
 struct PlayerBombPatternContext {FrameTiming timing;Vec3 homing_target{-999,-999,0};PlayerOption* options=nullptr;Timer shooting_timer;AnmVm* main_animation=nullptr;};
 struct PlayerBombPatternActions:PlayerBombStartActions {
+    virtual void before_objects_write()=0;
     virtual void animation(AnmVm&,i32 script,bool effect_bank)=0;
     virtual bool step_animation(AnmVm&)=0;
     virtual EffectState* spawn_effect(i32 kind,const Vec3& position,i32 count,u32 color)=0;

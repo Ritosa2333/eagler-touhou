@@ -8,6 +8,7 @@
 #include "../multiplayer/Balance.hpp"
 #endif
 namespace th08 {
+namespace multiplayer {class WorldJournal;}
 struct PlayerScenePlatform {
     virtual ~PlayerScenePlatform()=default;
     virtual std::vector<u8> read(const char* path)=0;
@@ -18,6 +19,9 @@ struct PlayerSceneWorld {
     EffectSystem& effects;ItemSystem& items;EnemySystem& enemies;BulletSystem& bullets;
     SpellSystem& spells;SpellPresentation& announcement;GuiState& hud;GuiImplState& display;GuiController& gui;
     BackgroundScript& background;ScreenEffects& screen;AsciiManager& ascii;AsciiContext& ascii_context;EclGlobals& ecl;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    multiplayer::WorldJournal* world_journal=nullptr;
+#endif
 };
 // Production services for PlayerSimulation and ItemSystem. Bind the scene
 // after constructing its owners, before calling player initialization.
@@ -51,8 +55,9 @@ class PlayerScene:public PlayerSetupActions,public PlayerLifeActions,public Play
         void pose(i32 id)override{s.animation(id);}
         bool movement(const PlayerMovementState& state,float speed,const FrameTiming& timing,float& x,float& y)override{
 #if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
-            if(!s.world||(s.world->ecl.game_flags&516)!=4||s.state.input.gui_blocked)return false;
-            return multiplayer::ResolveAnalogMovement(s.state.analog,state,speed,timing,x,y);
+            if(!s.world||(s.world->ecl.game_flags&516)!=4||s.state.input.gui_blocked){s.state.touch_remainder={};return false;}
+            return multiplayer::ResolveAnalogMovement(s.state.analog,s.state.touch_remainder,state,
+                s.state.input.minimum,s.state.input.extent,speed,timing,x,y);
 #else
             return s.platform.player_motion(state,speed,timing,x,y);
 #endif
@@ -66,6 +71,7 @@ class PlayerScene:public PlayerSetupActions,public PlayerLifeActions,public Play
     } motion{*this};
     struct Patterns:PlayerBombPatternActions {
         PlayerScene& s;explicit Patterns(PlayerScene& s):s(s){}
+        void before_objects_write()override;
         void spell_overlay(i32 form,const char* name,i32 style)override;
         EffectState* fixed_effect(i32 id,const Vec3& p,i32 slot,u32 color)override{return s.fixed_effect(id,p,slot,color);}
         void home_items()override{
@@ -94,6 +100,7 @@ class PlayerScene:public PlayerSetupActions,public PlayerLifeActions,public Play
         void rectangle(float a,float b,float c,float d,u32 color)override{const u32 colors[]{color,color,color,color};s.renderer.draw_rectangle(a,b,c,d,colors);}
     } patterns{*this};
 public:
+    void before_shot_write(PlayerShot&)override;
 #if !defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
     PlayerScene(PlayerSimulationState& s,ShotResource (&r)[2],GameGlobals& n,GameValues& v,GameGauge& g,GameRank& rank,PracticeState& practice,AnmLibrary& l,AnmExecutor& a,AnmRenderer& renderer,PlayerScenePlatform& p)
      :state(s),shots(r),numbers(n),values(v),gauge(g),rank(rank),practice(practice),library(l),animations(a),renderer(renderer),platform(p){}

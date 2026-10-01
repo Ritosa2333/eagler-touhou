@@ -30,5 +30,20 @@ extern "C" __attribute__((export_name("verify"))) int verify(){
  const auto held=drag.sample(live,14,false,false);
  if(!drag.active()||!held.motion||held.x!=before_hit.x||held.y!=before_hit.y)return 9;
  drag.reset();if(drag.sample(live,15,false,false).keys[88])return 10;
+ // Delayed simulation must not turn one physical swipe into D copies of it.
+ TouchController delayed;delayed.unlimited=true;delayed.sample(live,0,false,false);
+ delayed.pointer(0,7,.5f,.5f,1,live,false);
+ float dx=0,dy=0;bool begin=false;
+ if(!delayed.sample(live,2,false,false).motion||
+    !delayed.take_player_delta(live,dx,dy,begin)||!begin||dx||dy)return 11;
+ delayed.pointer(1,7,.6f,.5f,3,live,false);
+ if(!delayed.sample(live,4,false,false).motion||
+    !delayed.take_player_delta(live,dx,dy,begin)||begin||dx<63||dx>65||dy)return 12;
+ for(int n=0;n<8;n++){
+    delayed.sample(live,5+n,false,false);
+    if(!delayed.take_player_delta(live,dx,dy,begin)||begin||dx||dy)return 13;
+ }
+ delayed.sample(hit,14,false,false);delayed.sample(live,15,false,false);
+ if(!delayed.take_player_delta(live,dx,dy,begin)||!begin||dx||dy)return 14;
  return 0;
 }

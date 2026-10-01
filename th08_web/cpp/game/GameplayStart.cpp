@@ -5,7 +5,8 @@ void GameplayStart::initialize_rank(){
     constexpr i32 ranks[5][3]{{10,8,16},{10,8,16},{8,8,12},{8,8,12},{16,15,16}};
     const auto& r=ranks[game.difficulty];session.rank.value=r[0];session.rank.minimum=r[1];session.rank.maximum=r[2];
 }
-void GameplayStart::initialize_score(){
+bool GameplayStart::initialize_score(){
+    if(!actions.before_score_tables_write())return false;
     auto& s=session;actions.save_score();std::memset(s.records,0,sizeof(s.records));
     for(u32 i=0;i<spell_count;i++){auto& r=s.records[i];r.header={fourcc('C','A','T','K'),sizeof(r),sizeof(r),3,0,0};r.number=u16(i);}
     const bool multiplayer=
@@ -29,7 +30,7 @@ void GameplayStart::initialize_score(){
         s.numbers.high_score=score.high_score(game.shot,game.difficulty,s.numbers.high_score_retries);score.spells(s.records);score.clears(s.clears);score.practice(s.practices);
     }
     if(game.game_flags&1){auto& p=s.practices[game.shot];s.numbers.high_score=u32(p.high_scores[game.stage][game.difficulty]);p.attempts[game.stage][game.difficulty]=wrapping_add(p.attempts[game.stage][game.difficulty],1);p.used=1;}
-    std::memcpy(s.previous_records,s.records,sizeof(s.records));s.history=HighScore{};s.history.character=u8(game.shot);s.history.difficulty=u8(game.difficulty);s.history.config=multiplayer?s.config:s.display_config;control.frames=0;
+    std::memcpy(s.previous_records,s.records,sizeof(s.records));s.history=HighScore{};s.history.character=u8(game.shot);s.history.difficulty=u8(game.difficulty);s.history.config=multiplayer?s.config:s.display_config;control.frames=0;return true;
 }
 bool GameplayStart::before_player(bool initial){
     if(game.stage>=9||game.difficulty>=5||game.shot<0||game.shot>=12||((game.game_flags&0x4000)&&(game.current_spell<0||game.current_spell>=222)))return false;
@@ -54,14 +55,14 @@ bool GameplayStart::before_player(bool initial){
     }else{n.display_score=n.score;n.score_increment=0;s.values.set_deaths_stage(0);s.values.set_bombs_stage(0);}
     return true;
 }
-void GameplayStart::after_player(float initial_bombs){
+bool GameplayStart::after_player(float initial_bombs){
     auto& s=session;auto& n=s.numbers;const auto flags=game.game_flags;
     if(fresh){
         if(!(flags&8)){s.values.set_lives(s.config.lives);s.values.set_bombs(Scalar::truncate(initial_bombs));}
         menu.arcade_origin={32,16};menu.arcade_size={384,448};s.values.set_power(0);s.stall_frames=0;
         n.display_score=n.score=0;n.score_increment=0;n.high_score=100000;n.retries=0;n.graze=0;n.points=0;
         if(game.difficulty>=4||(flags&0x4001))s.config.slow_mode=0;
-        constexpr i32 point_values[]{60000,100000,200000,300000,300000};n.point_value=point_values[game.difficulty];n.point_extends=0;point_item_extend_threshold(n,game.difficulty);initialize_score();initialize_rank();
+        constexpr i32 point_values[]{60000,100000,200000,300000,300000};n.point_value=point_values[game.difficulty];n.point_extends=0;point_item_extend_threshold(n,game.difficulty);if(!initialize_score())return false;initialize_rank();
         n.deaths=0;s.values.set_deaths_stage(0);n.bombs_used=0;s.values.set_bombs_stage(0);n.captured_spells=0;s.practice.tracker_last_spell_captures=0;s.practice.tracker_dissolve_count=0;
         if(!(flags&0x4008)){
             if(!s.config.slow_mode){auto increase=[](u32& value){if(value<999999)++value;};for(const u32 difficulty:{game.difficulty,6u}){auto& p=s.statistics.counts[difficulty];increase(p.total);increase(p.characters[game.shot]);if(menu.supervisor_state==10)increase(p.restarts);if(flags&1)increase(p.practices);}}
@@ -73,7 +74,7 @@ void GameplayStart::after_player(float initial_bombs){
     constexpr i32 quotas[]{2000,2500,2700,3000,6500,7200,7200,7200,7500,8500,8800,8800,9999,9999,9999,9999,7500,8500,8500,8500,9999,9999,9999,9999,0,0,0,0,0,0,0,0,0,0,0,0,10};
     n.last_spell_requirement=game.game_flags&0x4000?0:quotas[game.stage*4+game.difficulty];
     if(game.game_flags&1)s.values.set_power(game.game_flags&0x4000?(game.current_spell<2?30:game.current_spell<13?80:128):game.stage==0?0:game.stage==1?112:128);
-    if(game.game_flags&8)initialize_rank();
+    if(game.game_flags&8)initialize_rank();return true;
 }
 void GameplayStart::after_replay(){auto& s=session;if(game.game_flags&8){const u16 seed=s.random.seed;s.values.update_integrity();s.random.seed=seed;}s.replay_seed=s.random.seed;}
 void GameplayStart::after_resources(bool keep,const char (&songs)[3][128],i32& background_state){

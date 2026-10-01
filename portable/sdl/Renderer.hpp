@@ -27,7 +27,7 @@ struct State {
 class Renderer : public StateCommands {
 public:
     using Resolve=Surface(*)(void*,u32);
-    Statistics stats{};State state{};bool defer=false;
+    Statistics stats{};State state{};bool defer=false,allowWorldInstancing=false;
     Renderer(int version,Resolve,void*);~Renderer();
     bool initialize();void flush();void discard();bool commit();
     PipelineState& pipeline() override { return state.pipeline; }
@@ -40,6 +40,7 @@ public:
     void read(u32);void release(u32);void present(u32);void prepare(u32);
     // Reusable GPU before-images. CPU readers still synchronize via read().
     u32 save_color(u32);bool restore_color(u32,u32);void discard_color(u32);
+    void adopt_color_revision(u32,u32);
     void render_imgui(const ImDrawData*,u32 target);
     const char* error()const{return failure.c_str();}
     int version;Resolve resolve;void* owner;

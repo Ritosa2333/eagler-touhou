@@ -62,6 +62,7 @@ bool PlayerShots::update_callback(PlayerShot& shot,ShotUpdate kind){
 bool PlayerShots::update(){
     failure=Failure::None;snapshot_presentation();if(state.game_flags&0x400)return true;
     for(auto& shot:state.shots){if(!shot.state)continue;
+        if(actions)actions->before_shot_write(shot);
         if(update_callback(shot,shot.update)){if(failure!=Failure::None)return false;shot.state=0;continue;}
         shot.position.x=(number(timing.rate)*number(shot.velocity.x)+number(shot.position.x)).to_float();shot.position.y=(number(timing.rate)*number(shot.velocity.y)+number(shot.position.y)).to_float();
         if(shot.kind!=4&&shot.kind!=5){if(!shot.animation.loadedSprite){failure=Failure::MissingSprite;return false;}const auto& sprite=*shot.animation.loadedSprite;if(!bullet_in_view(shot.position,sprite.widthPx,sprite.heightPx))shot.state=0;}

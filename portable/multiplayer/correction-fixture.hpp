@@ -33,6 +33,10 @@ inline const u32* correction_probe(BrowserRuntime& runtime){
     constexpr u32 frames=NetplayRuntime::MaxRollbackFrames;
     static_assert(frames==WorldJournal::History);
     auto setup=session.multiplayer_session;setup.started=false;setup.session_id=0x800020260924ull;
+    // This probe starts from the local v1 fixture envelope, which has no
+    // Runtime identity. Give its synthetic peers the same diagnostic identity
+    // so the current v3 admission gate can validate them.
+    setup.build[0]=0x08002026u;
     const auto wire=[&](const auto& packet){std::vector<u8> data;
         if constexpr(std::is_same_v<std::decay_t<decltype(packet)>,Netplay::SessionPacket>){
             if(!Netplay::EncodeSessionPacket(packet,&data))return false;
@@ -58,9 +62,11 @@ inline const u32* correction_probe(BrowserRuntime& runtime){
             if(!wire(peers[seat]->SessionPacket(Netplay::SessionPhase::Ready)))return false;
         return net.CanStart()&&net.SetWorldReady(true);
     };
-    const auto input=[](u32 seat,u32 frame){return Netplay::FrameInput(u16(InputButton::Shoot|
+    const auto input=[](u32 seat,u32 frame){auto sample=Netplay::FrameInput(u16(InputButton::Shoot|
         ((seat+frame)%2?InputButton::Left:InputButton::Right)|
-        (frame<4?InputButton::Focus:0)|(frame==1?InputButton::Bomb:0)));};
+        (frame<4?InputButton::Focus:0)|(frame==1?InputButton::Bomb:0)));
+        sample.analogMode=frame==0||frame==5?Netplay::AnalogMode::DirectTouchBegin:Netplay::AnalogMode::DirectTouchDelta;
+        sample.x=frame==0?24.f:frame==5?-12.f:0;sample.touchUsed=true;return sample;};
     const auto deliver=[&](u32 seat,u32 frame){
         Netplay::InputPacket packet;packet.sessionId=setup.session_id;packet.senderPlayer=u8(seat);
         packet.playerCount=u8(setup.player_count);packet.sequence=1+frame;
@@ -74,8 +80,7 @@ inline const u32* correction_probe(BrowserRuntime& runtime){
         const auto decision=net.Prepare(frame);
         if(!decision.canAdvance||!journal.BeginFrame(frame)||!audio.BeginFrame(frame))return false;
         session.network_frame=decision;session.network_frame_open=true;
-        u16 buttons[3]{};for(u32 seat=0;seat<setup.player_count;++seat)buttons[seat]=decision.inputs[seat].buttons;
-        return runtime.app.game.commit_inputs(buttons,setup.player_count)&&runtime.app.update()&&
+        return runtime.app.game.commit_frame_inputs(decision.inputs.data(),setup.player_count)&&runtime.app.update()&&
             runtime.app.draw()&&runtime.finish_network_frame()&&!session.network_frame_open&&
             net.NextFrame()==frame+1&&journal.EndFrame()&&audio.EndFrame();
     };

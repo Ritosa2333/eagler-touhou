@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import test from 'node:test';
 
@@ -41,4 +42,11 @@ test('presentation diagnostics cannot be mixed into the multiplayer variant', ()
     { cwd: root, encoding: 'utf8', windowsHide: true });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /separate build variants/);
+});
+
+test('multiplayer shell routes hosted keyboard messages through the shared browser owner', () => {
+  const shell = readFileSync(resolve(root, 'th08_web/sdl-runtime/shell.mjs'), 'utf8');
+  assert.match(shell,
+    /case 'keyboard':if\(launched&&!document\.hidden&&!closing\)keyboard\.event\(message,!!message\.down,'hosted'\);return \{\};/);
+  assert.doesNotMatch(shell, /\bruntimeKeyboardCode\s*\(/);
 });

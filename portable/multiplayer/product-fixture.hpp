@@ -1,10 +1,36 @@
 // Product acceptance setup/observation only; never linked by a normal Runtime.
 #pragma once
 #include "../../th08_web/cpp/platform/BrowserRuntime.hpp"
+#include "../../th08_web/cpp/platform/PlatformDevices.hpp"
 #include <algorithm>
 #include <memory>
+#include <cstdio>
 
 namespace th08::multiplayer::fixture {
+inline bool product_presentation_clock(BrowserRuntime& r){
+    struct Clock:FrameClock {
+        u32 logic=0,wall=0;
+        u32 milliseconds()override{return logic;}
+        u64 performance_counter()override{return u64(logic)*1000;}
+        u32 presentation_milliseconds()override{return wall;}
+    } clock;
+    FrameStatistics stats(r.app.ascii,clock);
+    stats.state.replay_fps=60;stats.state.total=120;stats.state.rendered=120;
+    // A 240 Hz display keeps presenting during five seconds of input wait.
+    // Then gameplay resumes and rewinds while presentation stays at 240 Hz.
+    for(u32 frame=0;frame<=1680;++frame){
+        clock.wall=frame*1000/240;
+        clock.logic=frame<=1200?0:frame<=1440?(frame-1200)*1000/240:500;
+        stats.presentation_frame();
+        if(frame&&frame%120==0){
+            float fps=0;
+            if(std::sscanf(stats.state.fps_text,"%ffps",&fps)!=1||fps<238||fps>244)return false;
+        }
+    }
+    const auto wall=file_device().milliseconds();
+    return r.presentation_milliseconds()-wall<100&&stats.state.replay_fps==60&&
+        stats.state.total==120&&stats.state.rendered==120&&stats.state.frames==0;
+}
 inline const float* product_hud(BrowserRuntime& r){
     static float out[160]{};std::fill(out,out+160,0.f);
     if(!r.app.in_game()||!r.app.game.ready())return out;
@@ -49,5 +75,31 @@ inline bool product_gauge_draw_pure(BrowserRuntime& r){
         !std::memcmp(&before->human_icon,&after.human_icon,sizeof(AnmVm))&&
         !std::memcmp(&before->youkai_icon,&after.youkai_icon,sizeof(AnmVm))&&
         !std::memcmp(&random,&r.app.session.random,sizeof(random));
+}
+inline bool product_guest_target(BrowserRuntime& r){
+    if(!r.app.in_game()||!r.app.game.ready()||r.app.session.player_count<2||
+       r.app.session.netplay.Configured())return false;
+    auto& g=r.app.game;
+    auto& host=g.pilot(0).status();auto& guest=g.pilot(1).status();
+    const auto host_reference=host.frame.target_reference;
+    const auto guest_reference=guest.frame.target_reference;
+    const auto host_present=host.input.enemy_present;
+    const auto guest_present=guest.input.enemy_present;
+    const auto guest_enemy=guest.input.enemy;
+    const auto guest_origin=guest.enemy_origin;
+    EclVm enemy{};enemy.position={112,176,0};enemy.resolved_position={120,184,0};
+    host.frame.target_reference=nullptr;
+    guest.frame.target_reference=&enemy;
+    g.enemies.fixture_publish_player();
+    const bool published=!host.input.enemy_present&&guest.input.enemy_present&&
+        guest.input.enemy.x==120&&guest.input.enemy.y==184&&
+        guest.enemy_origin.x==112&&guest.enemy_origin.y==176;
+    guest.frame.target_reference=nullptr;
+    g.enemies.fixture_publish_player();
+    const bool cleared=!guest.input.enemy_present;
+    host.frame.target_reference=host_reference;guest.frame.target_reference=guest_reference;
+    host.input.enemy_present=host_present;guest.input.enemy_present=guest_present;
+    guest.input.enemy=guest_enemy;guest.enemy_origin=guest_origin;
+    return published&&cleared;
 }
 }

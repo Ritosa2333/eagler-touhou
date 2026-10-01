@@ -14,6 +14,7 @@ namespace th08 {
 struct PlayerSimulationState {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     multiplayer::AnalogInput analog;
+    multiplayer::TouchRemainder touch_remainder;
     u32 unlimited_movement_used=0;
 #endif
     PlayerMotionState motion;PlayerLifeState life;PlayerLifeContext context;PlayerBombState bomb;PlayerBombContext bomb_input;

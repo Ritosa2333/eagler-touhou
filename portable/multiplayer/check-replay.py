@@ -24,6 +24,7 @@ def sample(seat,gen,frame):
     if gen==0 and seat==0 and frame==230:buttons=8
     if gen==0 and seat==0 and frame==260:buttons=16384
     if 185<=frame<200:return [buttons,2,.5*(1 if seat%2 else -1),-.25,2]
+    if 200<=frame<215:return [buttons,4 if frame==200 else 3,24*(1 if seat%2 else -1) if frame==200 else 0,0,2]
     if frame==215:return [buttons|2,2,5,-1,6]
     return [buttons,0,0,0,0]
 

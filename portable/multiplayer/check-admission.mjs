@@ -7,6 +7,9 @@ const root=resolve(import.meta.dirname,'../..');
 const correction=process.argv.includes('--native-correction');
 const product=process.argv.includes('--product');
 const loadouts=process.argv.includes('--world-loadouts');
+const bombLazy=process.argv.includes('--bomb-lazy');
+const shotSparse=process.argv.includes('--shot-sparse');
+const recordSparse=process.argv.includes('--record-sparse');
 const worldJournal=process.argv.includes('--world-journal')||loadouts||correction;
 const enemyJournal=process.argv.includes('--enemy-journal')||worldJournal||product;
 const variant=enemyJournal?'multiplayer-fixtures':'multiplayer';
@@ -27,7 +30,7 @@ try{
  server.stdout.on('data',v=>process.stdout.write(v));server.stderr.on('data',v=>process.stderr.write(v));
  await new Promise((done,reject)=>{const timer=setTimeout(()=>reject(Error('Server startup timeout')),15000);server.once('error',reject);server.once('exit',code=>reject(Error('Server exited '+code)));server.on('message',v=>{if(v?.type==='ready'){clearTimeout(timer);done();}});});
  const output=resolve(out,'cases.json');
- report.process=await new Promise((done,reject)=>{const c=spawn(process.env.TH_PYTHON||'python',['-u',resolve(import.meta.dirname,caseScript),'--url','http://127.0.0.1:'+port+'/','--output',output,...(loadouts?['--loadouts']:[])],{cwd:root,stdio:['ignore','pipe','pipe'],windowsHide:true});
+ report.process=await new Promise((done,reject)=>{const c=spawn(process.env.TH_PYTHON||'python',['-u',resolve(import.meta.dirname,caseScript),'--url','http://127.0.0.1:'+port+'/','--output',output,...(loadouts?['--loadouts']:[]),...(bombLazy&&worldJournal?['--bomb-lazy']:[]),...(shotSparse&&worldJournal?['--shot-sparse']:[]),...(recordSparse&&worldJournal?['--record-sparse']:[])],{cwd:root,stdio:['ignore','pipe','pipe'],windowsHide:true});
  c.stdout.on('data',v=>process.stdout.write(v));c.stderr.on('data',v=>process.stderr.write(v));c.once('error',reject);c.once('exit',(code,signal)=>done({code,signal}));});
  const evidence=JSON.parse(readFileSync(output));
  const identities=product||worldJournal?evidence.identities:enemyJournal?[evidence.identity]:evidence.identities;

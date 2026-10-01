@@ -13,6 +13,8 @@ struct GraphicsMath {
     static void look_at(Matrix4& output, const Vec3& eye, const Vec3& target, const Vec3& up);
     static void perspective(Matrix4& output, float fov, float aspect, float near_plane, float far_plane);
     static void transform_coordinate(Vec3& output, const Vec3& input, const Matrix4& matrix);
+    static void compose_projection(Matrix4& output,const Matrix4* projection,const Matrix4* view,const Matrix4* world);
+    static void project_composed(Vec3& output,const Vec3& input,const Viewport* viewport,const Matrix4& transform);
     static void project(Vec3& output, const Vec3& input, const Viewport* viewport,
                         const Matrix4* projection, const Matrix4* view, const Matrix4* world);
 };

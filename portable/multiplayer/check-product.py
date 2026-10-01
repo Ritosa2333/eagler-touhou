@@ -38,6 +38,8 @@ with sync_playwright() as p:
                     call(page, 'multiplayerSmoke.key("KeyZ",false)')
                     call(page, 'multiplayerSmoke.ticks(120)')
                 assert call(page, 'multiplayerSmoke.status()')[3] == 1
+                assert call(page, 'multiplayerSmoke.productGuestTarget()'), 'P2 target was not published to Yukari option input'
+                assert call(page, 'multiplayerSmoke.productPresentationClock()'), 'Presentation FPS followed stalled/rewound logic time or changed Replay accounting'
                 report['identities'].append(call(page, 'multiplayerSmoke.identity()'))
                 hud = call(page, 'multiplayerSmoke.productHUD()')
                 case = {'players': count, 'front': [hud[48+i*7:55+i*7] for i in range(16)], 'gauges': []}

@@ -87,6 +87,7 @@ class GameplayScene:private BackgroundResources,private EnemyResources,private G
     bool capture(const TextureCaptureRequest& r)override{return platform.capture_texture(r);}
     void music(MenuMusic m,float seconds)override{if(practice_bgm_filter(m==MenuMusic::Pause||m==MenuMusic::PartialFadeOut?2:m==MenuMusic::Stop?1:3,0))return;platform.menu_music(m,seconds);}
     void save_score()override{platform.save_score();}
+    bool before_score_tables_write()override;
     std::vector<u8> read_score()override{return platform.read_score();}
     void preload_music(i32 slot,const char* path)override{platform.preload_music(slot,path);}
     u32 now()override{return platform.milliseconds();}
@@ -105,6 +106,9 @@ class GameplayScene:private BackgroundResources,private EnemyResources,private G
     AsciiManager owned_ascii;
 public:
     AsciiManager& ascii;AsciiContext ascii_context;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    multiplayer::WorldJournal* world_journal=nullptr;
+#endif
     EclGlobals globals;EclProgram program;
     GuiState hud;GuiImplState display;DialogueContext dialogue_context;GuiContext gui_context;
     BackgroundState background;BackgroundContext background_context;

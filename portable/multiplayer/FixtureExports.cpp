@@ -14,13 +14,74 @@
 #include "product-fixture.hpp"
 #include "../../th08_web/cpp/multiplayer/TextureJournal.hpp"
 #include "../../th08_web/cpp/multiplayer/RollbackDriver.hpp"
+
+extern "C" __attribute__((export_name("mp_fixture_network_capture")))
+th08::u32 mp_fixture_network_capture(th08::BrowserRuntime* r,th08::u32 frame){
+    if(!r||!r->network_driver()||r->app.session.netplay.ReadOnly())return 0;
+    // The diagnostic producer captures before Step. Announce those immutable
+    // bytes to the same production channel that owns resend and repair.
+    return const_cast<th08::multiplayer::NetworkConnection&>(r->network_driver()->Network()).Captured(frame);
+}
 #include "../../th08_web/cpp/game/Chain.hpp"
 #include "../../th08_web/cpp/game/PlayerCollision.hpp"
+#include "../../th08_web/cpp/game/BackgroundObjects.hpp"
+#include "../../th08_web/cpp/sdl/GraphicsHost.hpp"
 #ifndef TH_MULTIPLAYER_FIXTURES
 #error Fixture exports must stay out of production builds
 #endif
 using namespace th08;
 extern "C" {
+__attribute__((export_name("mp_fixture_skip_resim_visual")))
+u32 mp_fixture_skip_resim_visual(BrowserRuntime* r,u32 enabled){
+    if(enabled>1)return 2;
+    multiplayer::fixture_skip_resim_visual(enabled!=0);
+    auto* d=r?r->network_driver():nullptr;
+    return d&&!d->SetSkipResimVisual(enabled!=0)?2u:enabled;
+}
+__attribute__((export_name("mp_fixture_skip_resim_geometry")))
+u32 mp_fixture_skip_resim_geometry(BrowserRuntime* r,u32 enabled){
+    if(enabled>1)return 2;
+    multiplayer::fixture_skip_resim_geometry(enabled!=0);
+    auto* d=r?r->network_driver():nullptr;
+    return d&&!d->SetSkipResimGeometry(enabled!=0)?2u:enabled;
+}
+__attribute__((export_name("mp_fixture_boundary_visual_redraws")))
+u32 mp_fixture_boundary_visual_redraws(BrowserRuntime* r){
+    const auto* d=r?r->network_driver():nullptr;
+    return d?d->DiagnosticBoundaryVisualRedraws():0;
+}
+__attribute__((export_name("mp_fixture_rng_state")))
+const u32* mp_fixture_rng_state(BrowserRuntime* r){
+    static u32 out[4]{};std::fill(out,out+4,0);
+    if(!r||!r->app.in_game())return out;
+    const auto& rng=r->app.session.random;
+    out[0]=1;out[1]=rng.seed;out[2]=rng.backup;out[3]=rng.calls;return out;
+}
+__attribute__((export_name("mp_fixture_texture_restore_stats")))
+const u32* mp_fixture_texture_restore_stats(BrowserRuntime* r){
+    static u32 out[3]{};std::fill(out,out+3,0);
+    const auto* d=r?r->network_driver():nullptr;if(!d)return out;
+    out[0]=1;out[1]=d->DiagnosticBackRestores();out[2]=d->DiagnosticBackSkipped();return out;
+}
+__attribute__((export_name("mp_fixture_world_instancing")))
+u32 mp_fixture_world_instancing(u32 enabled){return fixture_world_instancing(enabled!=0)?1u:0u;}
+__attribute__((export_name("mp_fixture_projection_reuse")))
+u32 mp_fixture_projection_reuse(u32 enabled){return fixture_projection_reuse(enabled!=0)?1u:0u;}
+__attribute__((export_name("mp_fixture_texture_coalesce")))
+u32 mp_fixture_texture_coalesce(u32 enabled){return multiplayer::fixture_texture_coalesce(enabled!=0)?1u:0u;}
+__attribute__((export_name("mp_fixture_back_metadata_only")))
+u32 mp_fixture_back_metadata_only(BrowserRuntime* r,u32 enabled){
+    if(enabled>1)return 2;
+    multiplayer::fixture_back_metadata_only(enabled!=0);
+    auto* d=r?r->network_driver():nullptr;
+    return d&&!d->SetBackMetadataOnly(enabled!=0)?2u:enabled;
+}
+__attribute__((export_name("mp_fixture_back_metadata_state")))
+u32 mp_fixture_back_metadata_state(BrowserRuntime* r){
+    const auto* d=r?r->network_driver():nullptr;return d&&d->BackMetadataOnly();
+}
+__attribute__((export_name("mp_fixture_background_index")))
+u32 mp_fixture_background_index(u32 enabled){return fixture_background_instance_index(enabled!=0)?1u:0u;}
 __attribute__((export_name("mp_fixture_barrier_cache")))
 u32 mp_fixture_barrier_cache(u32 enabled){return fixture_barrier_cache(enabled!=0);}
 __attribute__((export_name("mp_fixture_update_optimizations")))
@@ -56,6 +117,104 @@ u32 mp_fixture_early_input(BrowserRuntime* r,u32 value){
     if(value<2)d->diagnostic_early_input=value!=0;
     return d->diagnostic_early_input;
 }
+__attribute__((export_name("mp_fixture_checkpoint_span")))
+u32 mp_fixture_checkpoint_span(BrowserRuntime* r,u32 span){
+    auto* d=r?r->network_driver():nullptr;if(!d)return 0;
+    if(span&& !d->SetCheckpointSpan(span))return 0;
+    return d->CheckpointSpan();
+}
+__attribute__((export_name("mp_fixture_bomb_lazy")))
+u32 mp_fixture_bomb_lazy(BrowserRuntime* r,u32 enabled){
+    if(enabled>1)return 2;
+    const bool result=multiplayer::fixture_bomb_lazy(enabled!=0);
+    auto* d=r?r->network_driver():nullptr;
+    if(d&&!d->SetBombLazy(enabled!=0))return 2;
+    return result?1u:0u;
+}
+__attribute__((export_name("mp_fixture_shot_sparse")))
+u32 mp_fixture_shot_sparse(BrowserRuntime* r,u32 enabled){
+    if(enabled>1)return 2;
+    const bool result=multiplayer::fixture_shot_sparse(enabled!=0);
+    auto* d=r?r->network_driver():nullptr;
+    if(d&&!d->SetShotSparse(enabled!=0))return 2;
+    return result?1u:0u;
+}
+__attribute__((export_name("mp_fixture_record_sparse")))
+u32 mp_fixture_record_sparse(BrowserRuntime* r,u32 enabled){
+    if(enabled>1)return 2;
+    const bool result=multiplayer::fixture_record_sparse(enabled!=0);
+    auto* d=r?r->network_driver():nullptr;
+    if(d&&!d->SetRecordSparse(enabled!=0))return 2;
+    return result?1u:0u;
+}
+__attribute__((export_name("mp_fixture_title_spells_lazy")))
+u32 mp_fixture_title_spells_lazy(BrowserRuntime* r,u32 enabled){
+    if(enabled>1)return 2;
+    const bool result=multiplayer::fixture_title_spells_lazy(enabled!=0);
+    auto* d=r?r->network_driver():nullptr;
+    if(d&&!d->SetTitleSpellsLazy(enabled!=0))return 2;
+    return result?1u:0u;
+}
+__attribute__((export_name("mp_fixture_snapshot_modes")))
+const u32* mp_fixture_snapshot_modes(BrowserRuntime* r){
+    static u32 out[4]{};const auto* d=r?r->network_driver():nullptr;
+    out[0]=d&&d->BombLazy();out[1]=d&&d->ShotSparse();out[2]=d&&d->RecordSparse();out[3]=d&&d->TitleSpellsLazy();return out;
+}
+__attribute__((export_name("mp_fixture_spell_record_probe")))
+const u32* mp_fixture_spell_record_probe(BrowserRuntime* r){
+    static u32 out[8]{};std::fill(out,out+8,0);
+    if(!r||!r->app.in_game()||r->app.session.netplay.Configured())return out;
+    multiplayer::WorldJournal journal;
+    if(!journal.SetRecordSparse(true)||!journal.Bind(*r)){out[1]=1;return out;}
+    const auto before=journal.AuditHash();const auto before_blocks=journal.BlockHashes();
+    auto& game=r->app.game;EclVm enemy{};enemy.timeout=600;enemy.flags=1;enemy.pool_index=0;enemy.position={192,96,0};
+    const auto original_record=r->app.session.records[0];const u32 shot=u32(game.globals.shot);
+    const auto initial_enemy=enemy;
+    u8 name[48]{},owner[48]{},comment1[64]{},comment2[64]{};
+    const char* label="Snapshot spell";for(u32 i=0;i<48;++i){name[i]=u8((i<std::strlen(label)?label[i]:0)^0xaa);owner[i]=u8((i<5?"Owner"[i]:0)^0xbb);}
+    for(u32 i=0;i<64;++i){comment1[i]=0xdd;comment2[i]=0xee;}
+    const auto execute=[&](){
+        if(!journal.BeginFrame(0)){out[1]=2;return false;}
+        if(!game.spells.begin(enemy,0,-1,1000,name,owner,comment1,comment2)){out[1]=3;return false;}
+        if(!journal.EndFrame()){out[1]=4;return false;}
+        out[4]=u32(journal.DiagnosticBytesForFrame(0)[0]);
+        if(!journal.BeginFrame(1)){out[1]=5;return false;}
+        if(!game.spells.end()){out[1]=6;return false;}
+        if(!journal.EndFrame()){out[1]=7;return false;}
+        out[5]=u32(journal.DiagnosticBytesForFrame(1)[0]);
+        return true;
+    };
+    if(!execute())return out;
+    const auto& updated_record=r->app.session.records[0];
+    if(shot>=13||updated_record.game.attempts[shot]<=original_record.game.attempts[shot]||
+       updated_record.game.captures[shot]<=original_record.game.captures[shot]){out[1]=12;return out;}
+    out[6]=updated_record.game.attempts[shot];out[7]=updated_record.game.captures[shot];
+    const auto after=journal.AuditHash();const auto after_blocks=journal.BlockHashes();
+    if(after==before){out[1]=8;return out;}
+    if(!journal.UndoTo(0)||journal.AuditHash()!=before||journal.BlockHashes()!=before_blocks){out[1]=9;return out;}
+    out[2]=1;enemy=initial_enemy;
+    if(!execute()||journal.AuditHash()!=after||journal.BlockHashes()!=after_blocks){out[1]=10;return out;}
+    out[3]=1;
+    if(!journal.UndoTo(0)||journal.AuditHash()!=before||journal.BlockHashes()!=before_blocks){out[1]=11;return out;}
+    out[0]=1;journal.Clear();return out;
+}
+__attribute__((export_name("mp_fixture_title_spells_probe")))
+const u32* mp_fixture_title_spells_probe(BrowserRuntime* r){
+    static u32 out[4]{};std::fill(out,out+4,0);
+    if(!r||!r->app.in_game()||r->app.session.netplay.Configured())return out;
+    multiplayer::WorldJournal journal;
+    if(!journal.SetTitleSpellsLazy(true)||!journal.Bind(*r)){out[1]=1;return out;}
+    const auto before=journal.AuditHash();const auto before_blocks=journal.BlockHashes();
+    auto& spells=r->app.title.context.spells;
+    std::array<u8,sizeof(spells)> original;std::memcpy(original.data(),spells,sizeof(spells));
+    if(!journal.BeginFrame(0)||!journal.TouchTitleSpells()){out[1]=2;return out;}
+    reinterpret_cast<u8*>(spells)[0]^=0x5a;
+    if(!journal.EndFrame()||journal.AuditHash()==before){out[1]=3;return out;}
+    out[2]=u32(journal.DiagnosticBytesForFrame(0)[0]);
+    if(!journal.UndoTo(0)||std::memcmp(spells,original.data(),sizeof(spells))||
+       journal.AuditHash()!=before||journal.BlockHashes()!=before_blocks){out[1]=4;return out;}
+    out[0]=1;journal.Clear();return out;
+}
 __attribute__((export_name("mp_fixture_performance_mode")))
 u32 mp_fixture_performance_mode(BrowserRuntime* r,u32 mode){
     auto* d=r?r->network_driver():nullptr;
@@ -70,6 +229,27 @@ const double* mp_fixture_performance_cost(BrowserRuntime* r){
     const auto* d=r?r->network_driver():nullptr;if(!d)return out;
     out[0]=d->diagnostic_exact_only;out[1]=d->diagnostic_always_snapshot;
     out[2]=d->diagnostic_correction_ms;out[3]=d->diagnostic_correction_max_ms;return out;
+}
+__attribute__((export_name("mp_fixture_snapshot_owners")))
+const double* mp_fixture_snapshot_owners(BrowserRuntime* r){
+    static double out[12]{};std::fill(out,out+12,0);
+    const auto* d=r?r->network_driver():nullptr;if(!d)return out;
+    const auto& capture=d->DiagnosticWorldCaptureMs();
+    for(u32 i=0;i<5;++i){out[i]=d->diagnostic_owner_bytes[i];out[i+6]=capture[i];}
+    out[5]=d->diagnostic_owner_bytes[5];out[11]=d->diagnostic_texture_begin_ms;
+    return out;
+}
+__attribute__((export_name("mp_fixture_snapshot_block_count")))
+u32 mp_fixture_snapshot_block_count(BrowserRuntime* r){
+    const auto* d=r?r->network_driver():nullptr;return d?u32(d->DiagnosticWorldBlockCount()):0;
+}
+__attribute__((export_name("mp_fixture_snapshot_block_bytes")))
+u32 mp_fixture_snapshot_block_bytes(BrowserRuntime* r,u32 index){
+    const auto* d=r?r->network_driver():nullptr;return d?u32(d->DiagnosticWorldBlockBytes(index)):0;
+}
+__attribute__((export_name("mp_fixture_snapshot_block_name")))
+const char* mp_fixture_snapshot_block_name(BrowserRuntime* r,u32 index){
+    const auto* d=r?r->network_driver():nullptr;return d?d->DiagnosticWorldBlockName(index):"";
 }
 __attribute__((export_name("mp_fixture_stage_clear_setup")))
 u32 mp_fixture_stage_clear_setup(BrowserRuntime* r){
@@ -162,6 +342,10 @@ __attribute__((export_name("mp_fixture_product_gauge")))
 u32 mp_fixture_product_gauge(BrowserRuntime* r,u32 viewer){return r&&multiplayer::fixture::product_gauge(*r,viewer);}
 __attribute__((export_name("mp_fixture_product_gauge_purity")))
 u32 mp_fixture_product_gauge_purity(BrowserRuntime* r){return r&&multiplayer::fixture::product_gauge_draw_pure(*r);}
+__attribute__((export_name("mp_fixture_product_guest_target")))
+u32 mp_fixture_product_guest_target(BrowserRuntime* r){return r&&multiplayer::fixture::product_guest_target(*r);}
+__attribute__((export_name("mp_fixture_product_presentation_clock")))
+u32 mp_fixture_product_presentation_clock(BrowserRuntime* r){return r&&multiplayer::fixture::product_presentation_clock(*r);}
 __attribute__((export_name("mp_fixture_texture_restore")))
 u32 mp_fixture_texture_restore(BrowserRuntime* r){
     if(!r||r->app.session.netplay.Configured())return 0;

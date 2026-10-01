@@ -41,7 +41,7 @@ bool SpellSystem::begin(EclVm& enemy,u32 number,i32 portrait,u32 bonus,const u8*
     effect->position=enemy.position;effect->segments=64;effect->angle=0;effect->radius=256;effect->width=15;effect->frequency=6;
     s.spell_flags=(s.spell_flags&~32u)|((s.game_flags>>7&1)<<5);redraw(s);s.spell_flags&=~64u;
     if(!(s.game_flags&8)){
-        auto& record=records[number];std::memcpy(record.name,s.spell_name,std::strlen(s.spell_name)+1);
+        auto& record=records[number];if(record_touch&&!record_touch(record_touch_context,record))return false;std::memcpy(record.name,s.spell_name,std::strlen(s.spell_name)+1);
         char decoded[48];decode(decoded,owner,48,0xbb);const auto* end=static_cast<const char*>(std::memchr(decoded,0,48));if(!end)return false;std::memcpy(record.owner,decoded,end-decoded+1);
         const bool practice=s.game_flags&0x4000;if(practice){std::memcpy(s.spell_comment1,comment1,64);std::memcpy(s.spell_comment2,comment2,64);}
         encounter_spell(record,u32(s.shot),practice,u8(s.difficulty));
@@ -68,7 +68,7 @@ bool SpellSystem::end(){
                 }
                 s.spell_flags|=512;
                 if(!(s.game_flags&8)){
-                    auto& record=records[s.spell_number];const bool practice=s.game_flags&0x4000;
+                    auto& record=records[s.spell_number];if(record_touch&&!record_touch(record_touch_context,record))return false;const bool practice=s.game_flags&0x4000;
                     if(practice){decode(record.comment1,reinterpret_cast<const u8*>(s.spell_comment1),64,0xdd);decode(record.comment2,reinterpret_cast<const u8*>(s.spell_comment2),64,0xee);}
                     capture_spell(record,u32(s.shot),practice,u8(s.difficulty),s.spell_bonus);++high_score.spell_counters[s.spell_number];
                 }

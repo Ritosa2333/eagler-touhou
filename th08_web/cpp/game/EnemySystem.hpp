@@ -39,6 +39,9 @@ class EnemySystem:public SpellSystemActions,private EnemySimulationActions,priva
 public:
     EnemySimulationState state;
     EnemyPopulation population;
+#ifdef TH_MULTIPLAYER_FIXTURES
+    void fixture_publish_player(){publish_player();}
+#endif
 private:
     EclGlobals& globals;GameGlobals& numbers;GameValues& values;PlayerSimulation& player;
     EffectSystem& effects;ItemSystem& items;BulletManagerState& projectiles;
