@@ -6617,6 +6617,13 @@ document.getElementById("mpNetworkToggle")!.addEventListener("click", event => {
   openRoomPanel("network", trigger);
   renderRoomNetwork();
 });
+$("#mpSeatStage").addEventListener("click", event => {
+  const trigger=(event.target as Element).closest<HTMLButtonElement>(".mp-seat-latency[data-network-peer]");
+  if(!trigger || trigger.disabled)return;
+  roomPanel.dataset.networkPeer=trigger.dataset.networkPeer;
+  openRoomPanel("network", trigger);
+  renderRoomNetwork();
+});
 $("#mpRoomNetworkRetry").addEventListener("click", () => { roomNetwork.retry(roomPanel.dataset.networkPeer); renderMpRoom(); });
 $("#mpDisplayName").addEventListener("change", () => mpSetDisplayName($("#mpDisplayName").value));
 $("#mpDisplayName").addEventListener("blur", () => mpSetDisplayName($("#mpDisplayName").value));
@@ -7710,17 +7717,40 @@ function renderRoomNetwork() {
   const container = document.getElementById("mpRoomNetworkRows");
   const room = mpUiState.room;
   if (!container || !room) return;
-  const timingHint=document.getElementById("mpInputTimingHint");
-  if(timingHint && ["th08mp","th09mp","th10mp"].includes(state.product)){
+  const inputTimingSupported=["th08mp","th09mp","th10mp"].includes(state.product);
+  if(inputTimingSupported){
     const advice=mpInputTimingRecommendation();
-    const rollbackLimit=state.product==="th10mp"?12:8;
-    timingHint.textContent=t("room.inputTimingHint",{delay:advice.inputDelay,limit:rollbackLimit,target:advice.targetRollbackFrames,
-      phones:advice.mobileSeats,network:advice.networkFrames});
+    const select=document.querySelector<HTMLSelectElement>("#mpInputDelay")!;
+    const automatic=select.querySelector<HTMLOptionElement>('option[value="auto"]')!;
+    const text=t("room.inputDelayAutomatic",{frames:advice.inputDelay,milliseconds:(advice.inputDelay*16.67).toFixed(2)});
+    if(automatic.textContent!==text){automatic.textContent=text;syncCustomSelect(select);}
   }
   const peers = (room.seats || []).slice(0, room.playerCount).flatMap((seat, index) => seat && index !== mpUiState.seat ? [{ seat, index }] : []);
   const unavailable = !mpLobby.connected || !room.synced;
   const paused = room.phase !== "lobby" || (state.launched && !th09NetworkOverlayOpen());
   const message = unavailable ? t("multiplayer.reconnecting") : paused ? t("room.pausedTest") : mpUiState.seat == null ? t("room.seatToTest") : !peers.length ? t("room.waitPeer") : "";
+  document.querySelectorAll<HTMLElement>("[data-mp-seat]").forEach(element=>{
+    const index=Number(element.dataset.mpSeat);
+    const seat=room.synced && index<room.playerCount ? room.seats?.[index] : null;
+    const label=element.querySelector<HTMLButtonElement>(".mp-seat-latency")!;
+    label.hidden=!seat;
+    const local=seat?.clientId===mpLobby.clientId;
+    label.disabled=local || !!message || !!seat?.offline;
+    delete label.dataset.networkPeer;
+    if(!seat)return;
+    if(local){label.textContent=t("room.localDevice");label.removeAttribute("aria-label");return;}
+    label.dataset.networkPeer=seat.clientId;
+    const values=(["direct","turn"] as const).map(lane=>{
+      const metric=roomNetwork.metric(seat.clientId,lane);
+      const measured=!unavailable && !seat.offline && metric.state==="connected" && metric.rtt!=null;
+      return `${t(`room.${lane}`)} ${measured?`${Math.max(1,Math.round(metric.rtt!))}ms`:"—"}`;
+    });
+    const text=values.join(" / ");
+    if(label.textContent!==values.join(""))label.replaceChildren(...values.map(value=>{
+      const lane=document.createElement("span");lane.textContent=value;return lane;
+    }));
+    label.setAttribute("aria-label",`${t("multiplayer.you")} → P${index+1} · ${text} · ${t("room.connections")}`);
+  });
   const capabilities = roomNetwork.capabilities();
   const networkNote = document.querySelector<HTMLElement>("#mpRoomPanel .mp-network-footnote");
   if (networkNote) networkNote.textContent = t(unavailable ? "room.networkNote" : !capabilities.supported
@@ -7733,7 +7763,7 @@ function renderRoomNetwork() {
   const peerTitle = ({ seat, index }: typeof peers[number]) => `${t("multiplayer.you")} → P${index + 1} · ${peerLoadout(seat)}`;
   if (summary) {
     const noTeammates = !unavailable && !paused && !peers.length;
-    document.getElementById("mpNetworkToggle")!.hidden = noTeammates;
+    document.getElementById("mpNetworkToggle")!.hidden = true;
     if (noTeammates) summary.replaceChildren();
     else if (message) summary.textContent = message;
     else {
@@ -7847,10 +7877,16 @@ function renderMpRoom() {
   $("#mpRoomPlayerCount").disabled = !roomReady || !ownerLocal;
   $("#mpRoomDifficulty").disabled = !roomReady || !ownerLocal;
   const inputTiming=document.getElementById("mpInputTiming");
-  if(inputTiming)inputTiming.hidden=!["th08mp","th09mp","th10mp"].includes(state.product);
+  const inputTimingSupported=["th08mp","th09mp","th10mp"].includes(state.product);
+  if(inputTiming)inputTiming.hidden=!inputTimingSupported;
   const inputDelay=document.querySelector<HTMLSelectElement>("#mpInputDelay");
   if(inputDelay){
     inputDelay.disabled=!roomReady||!ownerLocal||room.phase!=="lobby";
+    // The existing room contract publishes timing at start, not while the host
+    // previews a choice. Do not show teammates a guessed applied value.
+    if(room.phase && room.phase!=="lobby")inputDelay.value=String(room.inputDelay||0);
+    if(room.phase==="lobby" && !ownerLocal)inputDelay.dataset.triggerI18n="room.inputDelayHost";
+    else delete inputDelay.dataset.triggerI18n;
     syncCustomSelect(inputDelay);
   }
   $("#mpRoomSettingsHint").textContent = t(ownerLocal ? "multiplayer.ownerLocalHint" : !room.seats?.[0] ? "room.hostAvailable" : "multiplayer.ownerRemoteHint");
@@ -7892,7 +7928,7 @@ function renderMpRoom() {
     const occupied = room.synced === true && (!!networkSeat || mpUiState.seat === index);
     seat.hidden = !active;
     const seatIndex = seat.querySelector<HTMLElement>(".mp-seat-index");
-    if (seatIndex) seatIndex.textContent = `P${index + 1}`;
+    if (seatIndex) seatIndex.querySelector("span")!.textContent = `P${index + 1}`;
     seat.classList.toggle("occupied", occupied);
     seat.classList.toggle("owner", index === 0 && ownerLocal);
     seat.classList.toggle("reconnecting", !!networkSeat?.offline);
