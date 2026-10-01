@@ -617,7 +617,7 @@ function mpConnectLobby(reconnecting = false) {
   const socket = new WebSocket(lobbyRelay.url);
   mpDirectorySupported = false;
   mpControlModesSupported = false;
-  roomNetwork.reset();
+  roomNetwork.reset(reconnecting);
   mpLobby.socket = socket;
   mpLobby.roomCode = transportRoomId;
   room.connection = reconnecting ? "reconnecting" : "connecting";
@@ -708,7 +708,7 @@ function mpConnectLobby(reconnecting = false) {
   });
   socket.addEventListener("close", event => {
     if (mpLobby.socket !== socket) return;
-    roomNetwork.reset();
+    roomNetwork.reset(true);
     mpLobby.socket = null;
     mpLobby.connected = false;
     if ([4004, 4007, 4008, 4009, 4010].includes(event.code)) {
@@ -7698,15 +7698,10 @@ function mpInputTimingRecommendation() {
   const seats=room?.seats?.slice(0,room.playerCount) || [];
   const phones=seats.reduce((count,seat,index)=>count+(seat &&
     (seat.mobileDevice || (index===mpUiState.seat && (mobileDevice || state.options.touchEnabled)))?1:0),0);
-  let rtt: number|null=null,jitter: number|null=null;
-  for(const seat of seats){
-    if(!seat||seat.clientId===mpLobby.clientId||seat.offline)continue;
-    const metric=(["direct","turn","relay"] as const).map(lane=>roomNetwork.metric(seat.clientId,lane))
-      .find(value=>value.state==="connected"&&value.rtt!=null);
-    if(metric?.rtt!=null){rtt=Math.max(rtt??0,metric.rtt);jitter=Math.max(jitter??0,metric.jitter??0);}
-  }
+  const peerIds=seats.flatMap(seat=>seat && seat.clientId!==mpLobby.clientId && !seat.offline ? [seat.clientId] : []);
+  const rtt=roomNetwork.minimumRtt(peerIds);
   const rollbackLimit=state.product==="th10mp"?12:8;
-  return recommendMultiplayerInputTiming(phones,rtt,jitter,rollbackLimit);
+  return recommendMultiplayerInputTiming(phones,rtt,0,rollbackLimit);
 }
 
 function renderRoomNetwork() {
