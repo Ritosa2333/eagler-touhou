@@ -51,6 +51,10 @@ public:
     // again; the same captured frame may be sent any number of times.
     bool LocalCaptured(const RollbackCore &core, std::uint32_t captureFrame,
                        std::uint64_t nowMs);
+    // Explicitly retransmit terminal input and ACK state while gameplay is
+    // stopped, without sampling an additional logical input frame.
+    bool FlushRetirementFence(const RollbackCore &core, std::uint32_t terminalFrame,
+                              std::uint64_t nowMs);
 
     bool CanRetire(const RollbackCore &core, std::uint32_t terminalFrame) const;
     bool Retire(const RollbackCore &core, std::uint32_t terminalFrame,
@@ -86,6 +90,7 @@ private:
     bool forceControl_ = false, forceInputs_ = false;
     Failure failure_ = Failure::None;
     std::uint64_t lastClock_ = 0, beginTime_ = 0, nextControl_ = 0, nextInput_ = 0;
+    std::uint64_t nextRetirementFence_ = 0;
     std::uint32_t latestCapture_ = INVALID_FRAME;
     std::array<std::uint32_t, MAX_PLAYERS> sentSequence_{}, receivedSequence_{};
     std::array<std::uint32_t, MAX_PLAYERS> peerFrame_{}, repairFrontier_{};

@@ -35,7 +35,7 @@ void SessionChannel::Clear()
     session_ = {};
     active_ = observedClock_ = helloSent_ = forceControl_ = forceInputs_ = false;
     failure_ = Failure::None;
-    lastClock_ = beginTime_ = nextControl_ = nextInput_ = 0;
+    lastClock_ = beginTime_ = nextControl_ = nextInput_ = nextRetirementFence_ = 0;
     latestCapture_ = INVALID_FRAME;
     sentSequence_.fill(0);
     receivedSequence_.fill(0);
@@ -88,7 +88,7 @@ bool SessionChannel::BeginSession(const SessionConfig &session, std::uint64_t no
     helloSent_ = false;
     forceControl_ = true;
     forceInputs_ = false;
-    beginTime_ = nextControl_ = nextInput_ = nowMs;
+    beginTime_ = nextControl_ = nextInput_ = nextRetirementFence_ = nowMs;
     latestCapture_ = INVALID_FRAME;
     sentSequence_.fill(0);
     receivedSequence_.fill(0);
@@ -176,6 +176,45 @@ bool SessionChannel::LocalCaptured(const RollbackCore &core, std::uint32_t captu
     const bool fresh = latestCapture_ != captureFrame;
     latestCapture_ = captureFrame;
     return SendInputs(core, nowMs, fresh);
+}
+
+bool SessionChannel::FlushRetirementFence(const RollbackCore &core,
+                                          std::uint32_t terminalFrame,
+                                          std::uint64_t nowMs)
+{
+    if (failure_ != Failure::None) return false;
+    if (!active_ || terminalFrame == INVALID_FRAME || latestCapture_ == INVALID_FRAME ||
+        core.LastSimulatedFrame() != terminalFrame || core.HasRollbackRequest())
+        return Fail(Failure::InvalidRetirement);
+    if (!ObserveClock(nowMs)) return false;
+    if (transport_.Failed()) return Fail(Failure::Transport);
+    if (!transport_.IsOpen() || nowMs < nextRetirementFence_ ||
+        transport_.BufferedAmount() > policy_.bufferedLimit)
+        return true;
+
+    for (std::uint8_t peer = 0; peer < session_.playerCount; ++peer)
+    {
+        if (peer == session_.localPlayer) continue;
+        auto packet = core.BuildInputPacket(peer, core.LocalFrameForCapture(latestCapture_),
+                                           ++sentSequence_[peer], receivedSequence_[peer]);
+        packet.senderFrame = terminalFrame + 1;
+        if (peerFrame_[peer] != INVALID_FRAME)
+        {
+            const auto difference = std::int64_t(packet.senderFrame) - peerFrame_[peer];
+            packet.frameAdvantage = static_cast<std::int16_t>(
+                std::max<std::int64_t>(-32768, std::min<std::int64_t>(32767, difference)));
+        }
+        if (!EncodeInputPacket(packet, &outgoing_)) return Fail(Failure::InvalidCapture);
+        if (transport_.SendRepairTo(peer, outgoing_.data(), outgoing_.size()))
+        {
+            ++sent_;
+            ++repairs_;
+        }
+        else if (transport_.SendTo(peer, outgoing_.data(), outgoing_.size()))
+            ++sent_;
+    }
+    nextRetirementFence_ = nowMs + policy_.inputResendMs;
+    return true;
 }
 
 bool SessionChannel::Receive(SessionGate &gate, RollbackCore &core, std::uint64_t nowMs)

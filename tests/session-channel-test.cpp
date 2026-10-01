@@ -159,6 +159,32 @@ void reliable_tail_repairs_blackout(){
     }
 }
 
+void explicit_retirement_fence_recovers_before_repair_timer(){
+    Mesh mesh(2);mesh.barrier();
+    mesh.drop=[](std::uint8_t,std::uint8_t,bool reliable,const std::vector<std::uint8_t>&){return !reliable;};
+    for(auto& owner:mesh.peers){
+        auto& peer=*owner;
+        CHECK(peer.core.ScheduleLocalInput(0,FrameInput{}));
+        CHECK(peer.channel.LocalCaptured(peer.core,0,mesh.now));
+        const auto d=peer.core.PrepareFrame(0);CHECK(d.canAdvance);CHECK(peer.core.MarkSimulated(0,d));
+    }
+    CHECK(mesh.peers[0]->core.ConfirmedThroughAllRemotes()==INVALID_FRAME);
+    CHECK(mesh.peers[1]->core.ConfirmedThroughAllRemotes()==INVALID_FRAME);
+    for(auto& peer:mesh.peers)CHECK(peer->channel.FlushRetirementFence(peer->core,0,mesh.now));
+    mesh.pump(false,32);
+    for(const auto& peer:mesh.peers){
+        CHECK(peer->core.ConfirmedThroughAllRemotes()==0);
+        CHECK(peer->core.AcknowledgedLocalThroughAllRemotes()==INVALID_FRAME);
+    }
+    for(auto& peer:mesh.peers)CHECK(peer->channel.FlushRetirementFence(peer->core,0,mesh.now));
+    mesh.pump(false,1);
+    for(const auto& peer:mesh.peers){
+        CHECK(peer->core.AcknowledgedLocalThroughAllRemotes()==0);
+        CHECK(peer->channel.CanRetire(peer->core,0));
+        CHECK(peer->channel.RepairsSent()>=2);
+    }
+}
+
 void timeouts_and_invalid_ack(){
     {
         Mesh mesh(2);mesh.drop=[](std::uint8_t,std::uint8_t,bool,const std::vector<std::uint8_t>&){return true;};auto& p=*mesh.peers[0];
@@ -223,7 +249,8 @@ void short_repair_policy(){
 }
 }
 int main(){
-    lossy_three_peer_stream();retired_final_ack_echo();reliable_tail_repairs_blackout();timeouts_and_invalid_ack();
+    lossy_three_peer_stream();retired_final_ack_echo();reliable_tail_repairs_blackout();
+    explicit_retirement_fence_recovers_before_repair_timer();timeouts_and_invalid_ack();
     pacing_validated_packets_and_reset();
     short_repair_policy();
     std::puts("eagler-common session channel: PASS");
