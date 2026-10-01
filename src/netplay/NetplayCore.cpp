@@ -263,7 +263,8 @@ FrameInput RollbackCore::PredictInput(std::uint8_t player, std::uint32_t frame) 
             // describe displacement consumed exactly once on that logical
             // frame; repeating the last delta during packet jitter makes the
             // remote ship race away before rollback corrects it.
-            if (predicted.analogMode == AnalogMode::DirectTouch && distance > 1)
+            if (predicted.analogMode == AnalogMode::DirectTouch &&
+                !config_.directTouchIsAbsolute && distance > 1)
             {
                 predicted.x = 0.0f;
                 predicted.y = 0.0f;

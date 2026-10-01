@@ -65,6 +65,40 @@ void TestCoreBehavior()
     assert(core.MarkSimulated(0, frame0));
 }
 
+void TestAbsoluteTargetPrediction()
+{
+    for (bool absolute : {false, true})
+    {
+        RollbackCore core;
+        CoreConfig config{};
+        config.sessionId = 0x123456;
+        config.localPlayer = 0;
+        config.maxRollbackFrames = 12;
+        config.predictableButtons = 1;
+        config.directTouchIsAbsolute = absolute;
+        assert(core.Reset(config));
+        FrameInput target(3);
+        target.analogMode = AnalogMode::DirectTouch;
+        target.x = 8300; target.y = 36500;
+        target.unlimited = target.touchUsed = target.touchBomb = true;
+        assert(core.SubmitRemoteInput(1, 0, target) == RemoteInputResult::Accepted);
+        for (std::uint32_t frame = 0; frame <= 10; ++frame)
+        {
+            assert(core.ScheduleLocalInput(frame, FrameInput{}));
+            const auto decision = core.PrepareFrame(frame);
+            assert(decision.canAdvance);
+            const auto& predicted = decision.inputs[1];
+            assert(predicted.analogMode == AnalogMode::DirectTouch);
+            assert(predicted.x == ((absolute || frame <= 1) ? target.x : 0));
+            assert(predicted.y == ((absolute || frame <= 1) ? target.y : 0));
+            assert(frame == 0 || (!predicted.touchBomb && predicted.buttons == 1));
+            assert(core.MarkSimulated(frame, decision));
+        }
+        assert(core.SubmitRemoteInput(1, 5, FrameInput{}) == RemoteInputResult::RollbackRequired);
+        assert(core.RollbackFrame() == 5);
+    }
+}
+
 void TestEquivalentPredictionConfirmationDoesNotRollback()
 {
     RollbackCore core;
@@ -203,6 +237,7 @@ int main()
 {
     TestProtocolCapability();
     TestCoreBehavior();
+    TestAbsoluteTargetPrediction();
     TestEquivalentPredictionConfirmationDoesNotRollback();
     TestAggregateConfirmedRemoteFrontier();
     TestSessionGate();

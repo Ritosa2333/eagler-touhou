@@ -30,6 +30,10 @@ struct CoreConfig
     // last confirmed delta for a very short missing-input window is optional;
     // zero is the conservative once-only default.
     std::uint8_t maxDirectTouchDeltaPredictionFrames = 0;
+    // Opt-in for adapters that transmit absolute DirectTouch field targets.
+    // When predicting missing input, retain the last target instead of
+    // clearing the axes as if they represented once-only displacement.
+    bool directTouchIsAbsolute = false;
 };
 
 struct FrameDecision
