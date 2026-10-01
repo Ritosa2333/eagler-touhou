@@ -108,6 +108,23 @@ i32 Application::multiplayer_update(){
     auto& runtime=state.netplay_runtime;
     auto& rollback=world->rollback;
     if(multiplayer_frame_open){multiplayer_fail("Previous frame still open");return -1;}
+    const auto capture_local=[&](u32 frame){
+        if(runtime.HasLocalCapture(frame))return true;
+        Netplay::FrameInput local{};
+        const auto buttons=static_cast<u16>(InputDevices{input}.sample());
+        if(world->local_player>=world->player_count||!world->pilots[world->local_player].player||
+           !multiplayer::InputLanes::BuildLocalFrame(state.multiplayer_local_analog,buttons,local)){
+            multiplayer_fail("Capture local controls");return false;
+        }
+        if(!runtime.CaptureLocal(frame,local)){multiplayer_fail("Store local input");return false;}
+        return true;
+    };
+    // Send the once-latched local input BEFORE expensive reconciliation so
+    // the peer need not predict our CPU work as additional network latency.
+    // Replay, spectator and transition paths never sample physical controls.
+    if(!runtime.Playback()&&!runtime.Spectator()&&state.pending_screen==value.screen&&
+       !capture_local(runtime.NextFrame()))return -1;
+    if(!runtime.InitialInputsReady()){multiplayer_waiting=true;return 1;}
 
     if(runtime.HasRollbackRequest()){
         const auto rollbackFrame=runtime.RollbackFrame();
@@ -191,17 +208,7 @@ i32 Application::multiplayer_update(){
         const auto* inputs=state.multiplayer_replay.PlaybackFrame(frame,u32(state.game.stage));
         if(!inputs||!runtime.FeedPlayback(frame,inputs->data(),state.multiplayer_session.playerCount)){error=-6;return -1;}
     }else if(!runtime.HasLocalCapture(frame)){
-        Netplay::FrameInput local{};
-        const auto buttons=static_cast<u16>(InputDevices{input}.sample());
-        if(world->local_player>=world->player_count||!world->pilots[world->local_player].player||
-           !multiplayer::InputLanes::BuildLocalFrame(
-               state.multiplayer_local_analog,buttons,
-               world->pilots[world->local_player].player->fixed_position.x,
-               world->pilots[world->local_player].player->fixed_position.y,
-               engine.speed,local)){
-            multiplayer_fail("Capture local controls");return -1;
-        }
-        if(!runtime.CaptureLocal(frame,local)){multiplayer_fail("Store local input");return -1;}
+        if(!capture_local(frame))return -1;
     }
     const auto decision=runtime.Prepare(frame);
     if(!decision.canAdvance){multiplayer_waiting=true;return 1;}
@@ -237,8 +244,13 @@ bool Application::multiplayer_resimulate_draw(){
     animations.vertex_write=animations.batch_start=animations.vertex_buffer;
     graphics_state=255;
     ApplicationLoop::disable_fog(value,engine.fog_enabled,loop);
+    const auto& request=*reinterpret_cast<const AnmCapture*>(engine.manager.header);
+    // Captures are serviced by Present, not historical Draw. Keep full
+    // output nevertheless whenever an authored pixel capture is pending.
+    engine.suppress_rollback_sprite_output=request.reserved_000<0&&request.target_file<0;
     engine.draw_all();
     engine.flush();
+    engine.suppress_rollback_sprite_output=false;
     engine.device.texture(nullptr);
     engine.device.end_scene();
     return true;
@@ -250,9 +262,21 @@ bool Application::multiplayer_finalize_frame(){
     const auto decision=multiplayer_pending_decision;
     multiplayer_frame_open=false;
     multiplayer_pending_frame=Netplay::INVALID_FRAME;
-    if(!world||!world->end_rollback_frame()||
-       !state.netplay_runtime.MarkSimulated(frame,decision)){
-        multiplayer_fail("Finalize rollback frame");return false;
+    if(!world){multiplayer_fail("Finalize rollback frame: world missing");return false;}
+    const bool audio_open=world->audio_events.IsOpen();
+    const bool journal_open=world->rollback.IsCapturing();
+    const auto captured_bytes=world->rollback.CapturedBytes(frame);
+    const auto captured_blocks=world->rollback.CapturedBlocks(frame);
+    if(!world->end_rollback_frame()){
+        char reason[160]{};
+        std::snprintf(reason,sizeof(reason),
+            "Finalize rollback frame: audio open %u failed %u, journal open %u failed %u, bytes %zu blocks %zu",
+            u32(audio_open),u32(world->audio_events.Failed()),u32(journal_open),
+            u32(world->rollback.Failed()),captured_bytes,captured_blocks);
+        multiplayer_fail(reason);return false;
+    }
+    if(!state.netplay_runtime.MarkSimulated(frame,decision)){
+        multiplayer_fail("Finalize rollback frame: input history rejected frame");return false;
     }
     if(world->error||world->backgrounds.error){multiplayer_fail("World or background state");return false;}
     if(state.netplay_runtime.Playback()&&!state.multiplayer_replay.Played(frame)){error=-6;return false;}

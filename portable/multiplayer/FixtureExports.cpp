@@ -3,14 +3,128 @@
 // at a fully confirmed boundary, then the real game tick/input/rollback code
 // performs the behavior under test. No custom simulation or golden update.
 #include "../../th10_web/cpp/platform/Application.hpp"
+#include "../../th10_web/cpp/multiplayer/PlayerCollisionBroadphase.hpp"
 #include "../../th10_web/cpp/game/PlayerFrame.hpp"
 #include "../../th10_web/cpp/game/Dialogue.hpp"
+#include "../../th10_web/cpp/game/HighRefresh.hpp"
 
 #ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #error Multiplayer fixtures cannot enter an ordinary build
 #endif
 
 using namespace th10;
+// Observe real owner Draw, not a second implementation of positioning.
+extern "C" __attribute__((export_name("mp_fixture_presentation_draw")))
+u32 mp_fixture_presentation_draw(browser::Application* app,float alpha){
+    return app&&app->presentation_draw(alpha,true)?1:0;
+}
+extern "C" __attribute__((export_name("mp_fixture_player_draw_probe")))
+const float* mp_fixture_player_draw_probe(browser::Application* app,u32 seat,float alpha){
+    static float result[12]{};std::fill(result,result+12,0.f);
+    if(!app||!app->world||seat>=app->world->player_count||app->multiplayer_frame_open)return result;
+    auto& world=*app->world;auto& engine=app->engine;const auto& pilot=world.pilots[seat];
+    if(!pilot.player)return result;
+    engine.begin_frame();high_refresh::begin(alpha,true,true);
+    world.draw_player(pilot.player);
+    const auto count=engine.manager.vertex_write-engine.manager.vertex_buffer;
+    result[0]=1;result[1]=float(count);result[2]=pilot.player->position.x;result[3]=pilot.player->position.y;
+    result[4]=float(pilot.player->state);result[5]=pilot.presentation.position.x;result[6]=pilot.presentation.position.y;
+    if(count>=6){
+        const auto* vertices=engine.manager.vertex_buffer;
+        for(u32 i=0;i<6;++i){result[7]+=vertices[i].position.x/6.f;result[8]+=vertices[i].position.y/6.f;}
+    }
+    result[9]=pilot.player->animation.position.x;result[10]=pilot.player->animation.position.y;
+    result[11]=float(pilot.player->animation.script_index);
+    engine.flush();high_refresh::end();return result;
+}
+extern "C" __attribute__((export_name("mp_fixture_collision_oracle")))
+const u32* mp_fixture_collision_oracle(){
+    static u32 result[5]{};std::fill(result,result+5,0u);result[0]=1;
+    struct Probe final:PlayerCollisionEnvironment {u32 hits=0;void hit(Player&)override{++hits;}} probe;
+    probe.dialogue_active=false;Player player{};u32 random=0x31415926u;
+    const auto next=[&](){random^=random<<13;random^=random>>17;random^=random<<5;return random;};
+    const auto ordinary=[&](){return float(i32(next()%200001)-100000)/128.0f;};
+    const auto arbitrary=[&](){const u32 bits=next();float value;std::memcpy(&value,&bits,4);return value;};
+    const auto check=[&](Vec3 center,Vec2 size){
+        multiplayer::PlayerCollisionBroadphase filter(center.x,center.y,size.x,size.y);
+        const bool possible=filter.MayOverlap(player.collision_bounds.minimum.x,player.collision_bounds.minimum.y,
+                                             player.collision_bounds.maximum.x,player.collision_bounds.maximum.y);
+        const auto native=player.collide_rectangle(center,size,probe);++result[1];
+        if(!possible){++result[2];if(native){result[0]=0;result[4]=result[1];}}
+        if(native)++result[3];
+    };
+    // Exactly the original WASM/x87-compatible narrow phase is the oracle.
+    // Exceptional floats deliberately exercise the mandatory slow fallback.
+    for(u32 i=0;i<60000&&result[0];++i){
+        const float x=ordinary(),y=ordinary();
+        player.collision_bounds.minimum={x-2,y-2,0};player.collision_bounds.maximum={x+2,y+2,0};
+        player.state=i%5;player.invulnerability.current=i%7;probe.dialogue_active=i%11==0;
+        if(i<40000)check({ordinary(),ordinary(),0},{ordinary(),ordinary()});
+        else check({arbitrary(),arbitrary(),0},{arbitrary(),arbitrary()});
+    }
+    for(u32 edge=0;edge<2;++edge)for(i32 sign:{-1,1})for(i32 step=-8;step<=8;++step){
+        player.state=1;probe.dialogue_active=false;
+        player.collision_bounds.minimum={-2,-2,0};player.collision_bounds.maximum={2,2,0};
+        const float base=float(sign)*26.0f;float position=base;
+        for(i32 i=0;i<std::abs(step);++i)position=std::nextafter(position,step<0?-INFINITY:INFINITY);
+        check(edge?Vec3{0,position,0}:Vec3{position,0,0},{4,4});
+    }
+    return result;
+}
+// Isolated draw-contract oracle. It compares ALL bytes of copied native VMs
+// after ordinary draw versus historical draw, never a hand-written expected
+// hash. No original VM or game input is modified by the probe.
+extern "C" __attribute__((export_name("mp_fixture_draw_state_oracle")))
+const u32* mp_fixture_draw_state_oracle(browser::Application* app){
+    static u32 result[5]{};std::fill(result,result+5,0u);
+    if(!app||!app->world||app->multiplayer_frame_open)return result;
+    auto& engine=app->engine;AnmVm source{};bool found=false;
+    for(auto* node=engine.manager.registry.world_head;node;node=node->next){
+        if(node->value&&node->value->sprite&&node->value->animation_file&&
+           node->value->animation_file->file_index!=6){source=*node->value;found=true;break;}
+    }
+    if(!found)return result;
+    const bool enhanced=engine.enhance_local_player_visibility;
+    const auto old_script=engine.script_random,old_visual=engine.visual_random;
+    const auto* old_owner=engine.player_view_owner;
+    const auto old_alpha=engine.player_view_alpha;
+    AnmVertex strip[4]{};
+    for(u32 i=0;i<4;++i){strip[i].position={float(100+(i%2)*8),float(100+(i/2)*8),.5f};strip[i].reciprocal_w=1;strip[i].color=0xffffffff;}
+    source.geometry=strip;source.integer_variables[0]=2;
+    source.position={0,200,0};source.child_position={2,3,0};source.script_position={1,-2,0};
+    source.scale={.75f,1.25f};source.rotation={.13f,-.19f,.37f};
+    source.sprite_matrix.identity();source.transform_matrix.identity();source.uv_matrix.identity();
+    // Include visibility, zero alpha, dirty-transform and explicit-matrix
+    // gates, all ten render modes, plus local-view alpha-copy ownership.
+    engine.begin_frame();result[0]=1;
+    for(u32 visibility=0;visibility<2;++visibility){
+        engine.enhance_local_player_visibility=visibility!=0;
+        engine.player_view_owner=&engine;
+        engine.player_view_alpha=[](const void*,const AnmVm&)->u8{return 128;};
+        for(u32 mode=0;mode<10;++mode)for(u32 variant=0;variant<5;++variant){
+            auto full=source;
+            full.flags=(source.flags&~((15u<<22)|12u|3u|0x4000u))|(mode<<22)|3u;
+            if(variant==0)full.flags|=12u;
+            if(variant==1)full.flags=(full.flags&~3u)|1u;
+            if(variant==2)full.flags|=0x4000u|12u;
+            if(variant==3)full.flags|=4u;
+            full.color=variant==4?0:0xffffffff;full.secondary_color=0xffffffff;
+            auto historical=full;
+            engine.suppress_rollback_sprite_output=false;engine.draw(full);engine.flush();
+            engine.suppress_rollback_sprite_output=true;engine.draw(historical);engine.flush();
+            engine.suppress_rollback_sprite_output=false;
+            ++result[1];
+            if(std::memcmp(&full,&historical,sizeof(full))){
+                result[0]=0;result[2]=mode;result[3]=variant;result[4]=visibility;
+                break;
+            }
+        }
+    }
+    if(engine.script_random.seed!=old_script.seed||engine.script_random.calls!=old_script.calls||
+       engine.visual_random.seed!=old_visual.seed||engine.visual_random.calls!=old_visual.calls)result[0]=0;
+    engine.enhance_local_player_visibility=enhanced;engine.player_view_owner=old_owner;engine.player_view_alpha=old_alpha;
+    return result;
+}
 extern "C" browser::FileSystem* files_create();
 extern "C" void files_destroy(browser::FileSystem*);
 extern "C" int sdl_replay_seek_batch(browser::Application*);

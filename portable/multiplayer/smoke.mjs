@@ -1,4 +1,5 @@
 import createModule from '/th10-sdl.mjs';
+import {startPerformance} from '/performance-driver.mjs';
 import {allKeyboardInputs,reachedNativeStage} from '/replay-robot.mjs';
 let core,wasmIdentity;
 const assetIdentities={};
@@ -25,7 +26,7 @@ for(const path of ['/input/th10.dat','/fonts/msgothic.ttc','/fonts/blend.bin','/
 }
 function string(value,callback){const bytes=new TextEncoder().encode(value+'\0'),ptr=core.files_allocate(bytes.length);try{new Uint8Array(core.memory.buffer,ptr,bytes.length).set(bytes);return callback(ptr);}finally{core.files_free(ptr);}}
 string('#screen',core.sdl_canvas);core.sdl_music_enabled(0);
-let app=0,seatCount=0;
+let app=0,seatCount=0,performanceRun=null,performanceComparisonCapture=-1;
 const networkInput=core.files_allocate(20);
 function writeFrameInput(pointer,input=0){
  const value=typeof input==='number'?{buttons:input}:input||{};
@@ -78,6 +79,58 @@ function commitInputs(buttons=[]){
  }finally{core.files_free(ptr);}
 }
 window.multiplayerSmoke={
+ presentationDraw(alpha){if(!core.mp_fixture_presentation_draw)throw Error('Fixture build required');
+  return !!core.mp_fixture_presentation_draw(app,alpha);},
+ playerDrawProbe(seat,alpha){if(!core.mp_fixture_player_draw_probe)throw Error('Fixture build required');
+  return Array.from(new Float32Array(core.memory.buffer,core.mp_fixture_player_draw_probe(app,seat,alpha),12));},
+ performanceStart(options){
+  if(!app||performanceRun)throw Error('Performance needs a fresh active app');
+  performanceRun=startPerformance({core,Module,app,netStatus,transportStatus,capturePeerInput,
+   memoryStatus,canonical,status,audioStatus,errorDetail,networkError,lifecycle},options);return true;
+ },
+ performanceDone(){return !!performanceRun?.report.done;},
+ performanceResult(){return performanceRun?.report??null;},
+ performanceSettle(target){
+  if(!performanceRun?.report.done)throw Error('Settle only after native measurement');
+  if(!core.multiplayer_network_poll(app))throw Error(networkError());
+  const before=netStatus();
+  if(before[3]>target)throw Error('Comparison boundary overrun');
+  if(before[3]===target)return before;
+  if(before[2]===target){
+   if(performanceComparisonCapture!==target){
+    if(!capturePeerInput(target,0))throw Error('Final comparison capture rejected');
+    performanceComparisonCapture=target;
+   }
+   if(before[4]===-1||before[4]<target)return before;
+  }
+  // Native input capture owns any already-latched late frame. Do not replace
+  // it with test-generated input merely to drain the final rollback.
+  const result=core.sdl_loop_tick(app,1/60,16);
+  if(result||core.application_error(app))throw Error('Comparison tick failed '+result+' '+networkError());
+  return netStatus();
+ },
+ performanceFinal(){return {state:status(),canonical:canonical(),audio:audioStatus(),net:netStatus()};},
+ sceneOwners(){
+  if(!core.multiplayer_scene_owners)return null;
+  const pointer=core.multiplayer_scene_owners(app);
+  const count=new Uint32Array(core.memory.buffer,pointer,1)[0];
+  if(count>20)throw Error('Scene descriptor bound');
+  const words=Array.from(new Uint32Array(core.memory.buffer,pointer,1+count*2));
+  const names=['session','spell','gui','results','popups','hints','effects','stage','stage-vms','previous-stage','previous-stage-vms'];
+  return Array.from({length:count},(_,i)=>{
+   const pointer=words[1+i*2],bytes=words[2+i*2];
+   if(bytes>32*1024*1024||pointer+bytes>core.memory.buffer.byteLength)throw Error('Scene owner bound');
+   return {name:names[i],pointer,bytes:Array.from(new Uint8Array(core.memory.buffer,pointer,bytes))};
+  });
+ },
+ drawStateOracle(){
+  if(!core.mp_fixture_draw_state_oracle)throw Error('Draw oracle requires a fixture build');
+  return Array.from(new Uint32Array(core.memory.buffer,core.mp_fixture_draw_state_oracle(app),5));
+ },
+ collisionOracle(){
+  if(!core.mp_fixture_collision_oracle)throw Error('Collision oracle requires a fixture build');
+  return Array.from(new Uint32Array(core.memory.buffer,core.mp_fixture_collision_oracle(),5));
+ },
  async audioSeek(){
   if(app)throw Error('Audio seek probe must run before a game Application exists');
   core.sdl_music_enabled(1);
@@ -243,12 +296,14 @@ window.multiplayerSmoke={
   configure(words);
   return status();
  },
- startNet(loadouts,local=0,difficulty=1,seed=1234,sessionLow=0x55667788,sessionHigh=0x11223344){
+ startNet(loadouts,local=0,difficulty=1,seed=1234,sessionLow=0x55667788,sessionHigh=0x11223344,inputDelay=0){
   if(app)throw Error('Use a fresh page for a new run');
   app=core.sdl_game_open(0,seed);if(!app)throw Error('Native app creation failed');
   seatCount=loadouts.length;
-  const words=[2,loadouts.length,local,difficulty,seed,sessionLow>>>0,sessionHigh>>>0,...loadouts.flat()];
-  while(words.length<13)words.push(0);configure(words);return netStatus();
+  if(!Number.isInteger(inputDelay)||inputDelay<0||inputDelay>8)throw Error('Invalid input delay');
+  const words=[inputDelay?3:2,loadouts.length,local,difficulty,seed,sessionLow>>>0,sessionHigh>>>0,
+   ...(inputDelay?[inputDelay]:[]),...loadouts.flat()];
+  while(words.length<(inputDelay?14:13))words.push(0);configure(words);return netStatus();
  },
  sessionPacket(phase){const ptr=core.files_allocate(128);try{
   const size=core.multiplayer_session_build(app,phase,ptr,128);if(!size)throw Error('Session packet rejected');

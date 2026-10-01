@@ -1,4 +1,7 @@
 #include "../game/CallbackNames.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include <eagler/netplay/SnapshotPolicy.hpp>
+#endif
 #include "World.hpp"
 #include "AudioData.hpp"
 #include "../game/TextFormat.hpp"
@@ -62,7 +65,14 @@ World::~World(){shutdown();while(previews)release_replay(&previews->document.val
 void World::select_screen(i32 screen){state.pending_screen=state.engine_flags&0x1000?2:screen;}
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 bool World::begin_rollback_frame(u32 frame){
-    if(!rollback.BeginFrame(*this,frame))return false;
+    const auto& runtime=state.netplay_runtime;
+    const auto decision=runtime.Prepare(frame);
+    // Exact input at this frame alone is insufficient: an earlier unconfirmed
+    // prediction can still change its starting state. Rebuilt confirmed
+    // prefixes, Replay and spectator frames need audio, but no undo storage.
+    const bool capture=Netplay::NeedsRollbackSnapshot(frame,runtime.ConfirmedThroughAllRemotes(),
+        decision.predictedMask,rollback_resimulating,true);
+    if(!rollback.BeginFrame(*this,frame,capture))return false;
     if(!audio_events.BeginFrame(frame)){rollback.EndFrame();return false;}
     audio.manager.command_sink=&audio_events;return true;
 }

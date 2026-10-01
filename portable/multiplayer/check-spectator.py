@@ -58,9 +58,22 @@ def buttons(seat,frame):
 
 with sync_playwright() as p:
     browser=p.chromium.launch(headless=True,args=['--enable-unsafe-swiftshader'])
-    contexts=[];pages=[]
+    contexts=[];pages=[];started_at=time.monotonic();phase='setup'
     try:
         report['browser']=browser.version
+        # This exact-frame fixture pumps players synchronously from Python.
+        # Loading a third Runtime AFTER frame 89 otherwise freezes both live
+        # players for the entire asset/JIT load and trips their legitimate
+        # confirmed-input watchdog. Preload code/assets only, while no active
+        # game clock exists; the native spectator app and actual transport
+        # admission still start after frame 89. Do not weaken game timeouts.
+        spectator_context=browser.new_context(service_workers='block');contexts.append(spectator_context)
+        spectator=spectator_context.new_page()
+        spectator.on('pageerror',lambda error:report['errors'].append({'endpoint':'spectator','error':str(error)}))
+        before_load=time.monotonic()
+        spectator.goto(args.url);spectator.wait_for_function('window.multiplayerSmoke !== undefined',timeout=120000)
+        report['spectatorRuntimePreloaded']=True
+        report['spectatorRuntimeLoadMs']=(time.monotonic()-before_load)*1000
         setup=browser.new_context().new_page()
         room='audit-th10spec-'+uuid.uuid4().hex[:12]
         spectator_id='spectator_0003'
@@ -88,6 +101,7 @@ with sync_playwright() as p:
         assert all(call(page,'multiplayerSmoke.transportStatus()')[13]==expected_route for page in pages)
 
         target_before_join=89
+        phase='players-before-join'
         deadline=time.monotonic()+90
         while True:
             ready=True
@@ -100,10 +114,8 @@ with sync_playwright() as p:
             pages[0].wait_for_timeout(2)
         for page in pages:assert call(page,'multiplayerSmoke.pollNetwork()')
 
-        spectator_context=browser.new_context(service_workers='block');contexts.append(spectator_context)
-        spectator=spectator_context.new_page();pages.append(spectator)
-        spectator.on('pageerror',lambda error:report['errors'].append({'endpoint':'spectator','error':str(error)}))
-        spectator.goto(args.url);spectator.wait_for_function('window.multiplayerSmoke !== undefined',timeout=120000)
+        pages.append(spectator)
+        phase='spectator-connect'
         call(spectator,'v=>multiplayerSmoke.startNet(...v)',[loadouts,0,1,1234,session_low,session_high])
         assert call(spectator,'v=>multiplayerSmoke.spectatorConnect(...v)',[run_url,spectator_id])
         assert call(spectator,'multiplayerSmoke.canStart()')
@@ -111,6 +123,7 @@ with sync_playwright() as p:
         assert write_probe=={'capture':False,'remote':7,'packetBytes':0,'helloBytes':0,'markReady':False},write_probe
 
         target=179
+        phase='spectator-catchup'
         deadline=time.monotonic()+120
         while True:
             player_ready=True
@@ -150,7 +163,14 @@ with sync_playwright() as p:
         report.update({'passed':True,'readOnly':True})
         print(f"TH10 spectator {args.mode}: PASS frame={target} hash={portable[0][1]}",flush=True)
     except BaseException as error:
-        report['failure']=str(error);raise
+        report['failure']=str(error)
+        report['failurePhase']=phase;report['elapsedSeconds']=time.monotonic()-started_at
+        report['failurePeers']=[]
+        for page in pages:
+            try:
+                report['failurePeers'].append(call(page,"()=>({net:multiplayerSmoke.netStatus(),transport:multiplayerSmoke.transportStatus(),spectator:multiplayerSmoke.spectatorStatus(),error:multiplayerSmoke.networkError(),memory:multiplayerSmoke.memoryStatus()})"))
+            except Exception as diagnostic_error:report['failurePeers'].append({'diagnosticError':str(diagnostic_error)})
+        raise
     finally:
         for context in contexts:
             try:context.close()

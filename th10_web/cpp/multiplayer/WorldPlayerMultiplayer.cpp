@@ -1,4 +1,5 @@
 #include "../platform/World.hpp"
+#include "PlayerCollisionBroadphase.hpp"
 #include "Balance.hpp"
 #include "../game/CallbackNames.hpp"
 #include "../game/BombEnvironment.hpp"
@@ -235,9 +236,10 @@ struct Movement final:PlayerMovementEnvironment {
             player->update_anchored_option(option,manager->registry);
         else __builtin_trap();
     }
-    bool movement(const Player&,i32 speed,i32& x,i32& y) override{
+    bool movement(const Player& player,i32 speed,i32& x,i32& y) override{
         return multiplayer::InputLanes::ResolveMovement(
-            world.state.input_lanes.inputs[pilot.seat],speed,x,y);
+            world.state.input_lanes.inputs[pilot.seat],speed,
+            player.fixed_position.x,player.fixed_position.y,world.engine.speed,x,y);
     }
 };
 
@@ -467,12 +469,12 @@ bool nearer(const Player& a,const Player& b,const Vec3& point){
     return adx*adx+ady*ady<bdx*bdx+bdy*bdy;
 }
 
-template<class Collision>
-i32 collide_one_pilot(World& world,const Vec3& point,Collision&& collide){
+template<class Collision,class Candidate>
+i32 collide_one_pilot(World& world,const Vec3& point,Collision&& collide,Candidate&& candidate){
     u8 order[multiplayer::kMaxSeats]{};
     u8 count=0;
     for(u32 seat=0;seat<world.player_count;++seat)
-        if(world.pilots[seat].player&&world.pilots[seat].player->state!=3)
+        if(world.pilots[seat].player&&world.pilots[seat].player->state!=3&&candidate(*world.pilots[seat].player))
             order[count++]=static_cast<u8>(seat);
     for(u8 i=1;i<count;++i){
         const u8 candidate=order[i];u8 j=i;
@@ -826,15 +828,19 @@ i32 World::player_damage(const Vec3& point,const Vec2& size){
 }
 
 i32 World::collide_player(const Vec3& point,const Vec2& size){
+    const multiplayer::PlayerCollisionBroadphase broadphase(point.x,point.y,size.x,size.y);
     return collide_one_pilot(*this,point,[&](Player& player,Damage& environment){
         return player.collide_rectangle(point,size,environment);
+    },[&](const Player& player){
+        return broadphase.MayOverlap(player.collision_bounds.minimum.x,player.collision_bounds.minimum.y,
+                                     player.collision_bounds.maximum.x,player.collision_bounds.maximum.y);
     });
 }
 
 i32 World::collide_player_laser(const Vec3& point,float angle,float width,float length){
     return collide_one_pilot(*this,point,[&](Player& player,Damage& environment){
         return player.collide_laser(point,angle,width,length,environment);
-    });
+    },[](const Player&){return true;});
 }
 
 bool World::create_bomb(){

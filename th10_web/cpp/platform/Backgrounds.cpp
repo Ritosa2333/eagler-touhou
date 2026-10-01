@@ -33,7 +33,7 @@ void Backgrounds::destroy(Stage* stage){
     if(!stage)return;
     for(auto& entry:presentation)if(entry.owner==stage)entry={};
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if(auto* rollback=engine.rollback_state;rollback&&rollback->IsCapturing()){
+    if(auto* rollback=engine.rollback_state;rollback&&rollback->IsFrameOpen()){
         RetiredStage* record=nullptr;
         for(auto& candidate:retired)if(candidate.stage==stage){record=&candidate;break;}
         if(!record)for(auto& candidate:retired)if(!candidate.stage){record=&candidate;break;}

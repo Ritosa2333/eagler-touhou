@@ -591,6 +591,9 @@ const u32* multiplayer_canonical_hashes(browser::Application* app){
     const u32 lasers=hash_lasers_semantic(w.actors.lasers);
     u32 items=hash_items(w.actors.items);items=hash_bytes(w.regular_item_owners,sizeof(w.regular_item_owners),items);items=hash_bytes(w.faith_item_owners,sizeof(w.faith_item_owners),items);
     u32 scene=2166136261u;if(w.actors.session)scene=hash_value(*w.actors.session,scene);if(w.actors.spell)scene=hash_value(*w.actors.spell,scene);if(w.actors.gui)scene=hash_value(*w.actors.gui,scene);if(w.actors.results)scene=hash_value(*w.actors.results,scene);if(w.actors.popups)scene=hash_value(*w.actors.popups,scene);if(w.actors.hints)scene=hash_value(*w.actors.hints,scene);if(w.actors.effects)scene=hash_value(*w.actors.effects,scene);scene=hash_value(hash_stage(w.backgrounds.current),scene);scene=hash_value(hash_stage(w.backgrounds.previous),scene);
+    // Include transitive hint contents and allocator topology, not merely the
+    // list-head pointers. This strengthens the same-layout rollback oracle.
+    scene=hash_pool(w.rollback_hints,scene);
     u32 chain=hash_value(app->engine.chain_value);chain=hash_pool(app->engine.callback_environment.rollback_entries,chain);chain=hash_pool(app->effects.rollback_effects,chain);
     const auto anm=hash_anm_parts(app->engine);
     words[0]=2;words[2]=economy;words[3]=rng;words[4]=players;words[5]=enemies;words[6]=hash_bullets(w.actors.bullets);words[7]=lasers;words[8]=items;words[9]=hash_anm(anm);words[10]=scene;words[11]=chain;

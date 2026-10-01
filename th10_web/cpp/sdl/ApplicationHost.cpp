@@ -15,6 +15,7 @@ extern "C" void sdl_audio_pump();
 extern "C" void sdl_audio_pause(th10::u32);
 extern "C" void sdl_native_input(th10::browser::Application*);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include <eagler/netplay/FrameBudget.hpp>
 extern "C" void sdl_audio_replay_seek_output(th10::u32);
 extern "C" th10::u32 sdl_audio_replay_seek_tick();
 extern "C" int sdl_replay_seek_batch(th10::browser::Application*);
@@ -107,13 +108,36 @@ EM_BOOL frame(double timestamp,void* epoch){
     double simulation_delta=delta;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     const auto& runtime=application->state.netplay_runtime;
-    if(application->multiplayer_active()&&runtime.NetworkEnabled()&&!runtime.Spectator())
+    const bool live=application->multiplayer_active()&&runtime.NetworkEnabled()&&
+                    runtime.CanStart()&&!runtime.Spectator()&&runtime.InitialInputsReady();
+    if(live)
         simulation_delta/=runtime.Channel().SimulationIntervalScale();
 #endif
     // Clock calibration changes only when the next fixed tick is due. Every
     // admitted tick still executes the original 60 Hz simulation and Draw.
-    const bool tick_due=cadence.advance(simulation_delta)!=0;int result=0;sdl_defer(1);
-    if(tick_due){
+    bool tick_due=false;int result=0;sdl_defer(1);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(live){
+        // Unlike the retail single-player slow-machine policy, a network peer
+        // must not discard elapsed fixed ticks. Keep debt, admit bounded exact
+        // catch-up work, then yield to input delivery, audio and presentation.
+        // Readiness/suspension fences above still reset the clock explicitly.
+        cadence.debt+=std::max(0.,simulation_delta);
+        tick_due=cadence.debt+1.e-9>=touhou::sdl::FrameCadence::interval;
+        for(th10::u32 ticks=0;cadence.debt+1.e-9>=touhou::sdl::FrameCadence::interval&&
+            Netplay::FrameBudget::CanStartTick(ticks,std::uint64_t(std::max(0.,emscripten_get_now()-callback_begin)*1.e6));++ticks){
+            const auto before=runtime.LastSimulatedFrame();
+            sdl_native_input(application);result=application->step(true);
+            // A stalled prediction frontier or a destructive generation fence
+            // is not an admitted forward tick. Never charge away that debt.
+            if(result||runtime.LastSimulatedFrame()!=before+1u)break;
+            cadence.debt=std::max(0.,cadence.debt-touhou::sdl::FrameCadence::interval);
+            if(!application->multiplayer_active()||!application->world||application->world->loading||
+               application->state.pending_screen!=application->value.screen)break;
+        }
+    }else
+#endif
+    if((tick_due=cadence.advance(simulation_delta)!=0)){
         sdl_native_input(application);result=application->step(true);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         // A start-time spectator may receive the relay's bounded confirmed

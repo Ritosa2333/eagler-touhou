@@ -12,6 +12,9 @@
 #include <cmath>
 #include <vector>
 using namespace th10;using namespace th10::browser;
+// New browser shells own all DOM keys; old shells keep the SDL fallback.
+EM_JS(int, th10_browser_keyboard, (), {return typeof Module['resetBrowserKeyboard']==='function';});
+EM_JS(void, th10_reset_browser_keyboard, (), {Module['resetBrowserKeyboard']?.();});
 EM_JS(int, th10_keyboard_gamepad_dpad, (), {
     if (!navigator.getGamepads) return 0;
     let bits = 0;
@@ -81,8 +84,8 @@ __attribute__((export_name("sdl_native_input"))) void sdl_native_input(Applicati
         if(event.type==SDL_EVENT_FINGER_DOWN||event.type==SDL_EVENT_FINGER_MOTION||event.type==SDL_EVENT_FINGER_UP)touch(event.type==SDL_EVENT_FINGER_DOWN?0:event.type==SDL_EVENT_FINGER_MOTION?1:2,int(event.tfinger.fingerID),event.tfinger.x,event.tfinger.y);
     }
     auto& snapshot=app->input.snapshot;std::memset(&snapshot,0,sizeof(snapshot));snapshot.focused=1;
-    const bool* physical=SDL_GetKeyboardState(nullptr);
-    for(const auto& k:keyboard_map)if(k.hosted||(k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native]))key(snapshot,k.scan,k.vk);
+    const bool* physical=th10_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);
+    for(const auto& k:keyboard_map)if(k.hosted||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native]))key(snapshot,k.scan,k.vk);
     const int keyboardDpad=th10_keyboard_gamepad_dpad();if(keyboardDpad&1)key(snapshot,0xc8,38);if(keyboardDpad&2)key(snapshot,0xd0,40);if(keyboardDpad&4)key(snapshot,0xcb,37);if(keyboardDpad&8)key(snapshot,0xcd,39);
     poll_controllers(snapshot);
     const auto state=touch_state();sync_touch_context(state);const auto sample=gestures.sample(state,SDL_GetTicks(),snapshot.virtual_keys[16],snapshot.virtual_keys[37]||snapshot.virtual_keys[38]||snapshot.virtual_keys[39]||snapshot.virtual_keys[40]);
@@ -114,7 +117,9 @@ __attribute__((export_name("sdl_native_input"))) void sdl_native_input(Applicati
 #endif
 }
 #define EXPORT(name) __attribute__((export_name(name)))
+void sdl_keys_clear();
 EXPORT("sdl_game_open") Application* sdl_game_open(u32 chinese,u32 seed){
+    sdl_keys_clear();
     gestures.begin_session();
     for(auto& k:keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);
     close_controllers();SDL_InitSubSystem(SDL_INIT_GAMEPAD);int controller_count=0;auto* ids=SDL_GetGamepads(&controller_count);for(int i=0;i<controller_count;i++)add_controller(ids[i]);SDL_free(ids);
@@ -129,13 +134,13 @@ EXPORT("sdl_game_open") Application* sdl_game_open(u32 chinese,u32 seed){
 #endif
     return s.app;
 }
-EXPORT("sdl_game_close") void sdl_game_close(){cancel();
+EXPORT("sdl_game_close") void sdl_game_close(){sdl_keys_clear();
 #ifdef TH_ENABLE_THPRAC
     ThpracUi::shutdown();
 #endif
     close_controllers();session.reset();}
 EXPORT("sdl_key") void sdl_key(const char* code,u32 down){for(auto& k:keyboard_map)if(!std::strcmp(code,k.code)){k.hosted=down!=0;return;}}
-EXPORT("sdl_keys_clear") void sdl_keys_clear(){for(auto& k:keyboard_map)k.hosted=false;cancel();gestures.reset();}
+EXPORT("sdl_keys_clear") void sdl_keys_clear(){th10_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& k:keyboard_map)k.hosted=false;if(session&&session->app)std::memset(&session->app->input.snapshot,0,sizeof(session->app->input.snapshot));cancel();gestures.reset();}
 EXPORT("sdl_touch") void sdl_touch(u32 type,i32 id,float x,float y){
 #ifdef TH_ENABLE_THPRAC
     if(ThpracUi::captures_game_input())ThpracUi::mouse(type==0?1:type==1?0:2,x*640.f,y*480.f);

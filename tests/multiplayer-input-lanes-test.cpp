@@ -103,41 +103,57 @@ int main() {
     assert(resim.inputs[2].buttons == 0);
     assert(resim.seats[2].current == 0);
 
-    // Local direct touch is captured only after rollback reconciliation. The
-    // device owns an absolute target; the network frame owns a fresh
-    // pre-timescale displacement, so prediction cannot repeat a browser event.
+    // The logical frame keeps the target until it is actually simulated; a
+    // delayed input must not carry displacement from the capture-time player.
     LocalAnalogSample direct{};
     direct.kind = LocalAnalogSample::Kind::DirectTarget;
     direct.x = 14.0f;
-    direct.y = 16.0f;
+    direct.y = 40.0f;
     direct.touchUsed = true;
     direct.touchBomb = true;
     Netplay::FrameInput logical{};
-    assert(BuildLocalFrame(direct, kBomb, 1000, 2000, 2.0f, logical));
+    assert(BuildLocalFrame(direct, kBomb, logical));
     assert(logical.buttons == kBomb);
-    assert(logical.analogMode == Netplay::AnalogMode::DirectTouchDelta);
-    assert(logical.x == 200.0f && logical.y == -200.0f);
+    assert(logical.analogMode == Netplay::AnalogMode::DirectTouch);
+    assert(logical.x == 1400.0f && logical.y == 4000.0f);
     assert(logical.touchUsed && logical.touchBomb && !logical.unlimited);
     th10::i32 x = 0, y = 0;
-    assert(ResolveMovement(logical, 150, x, y));
+    assert(ResolveMovement(logical, 150, 1000, 4400, 2.0f, x, y));
     assert(x == 106 && y == -106);
     logical.unlimited = true;
-    assert(ResolveMovement(logical, 150, x, y));
+    assert(ResolveMovement(logical, 150, 1000, 4400, 2.0f, x, y));
     assert(x == 200 && y == -200);
+
+    // Eight queued samples of one stationary finger must settle at its target
+    // even though they were all captured before the first delayed movement.
+    logical.unlimited = false;
+    th10::i32 delayedX = 1000, delayedY = 4400;
+    for (int frame = 0; frame < 8; ++frame) {
+        assert(ResolveMovement(logical, 150, delayedX, delayedY, 2.0f, x, y));
+        delayedX += x * 2; delayedY += y * 2;
+        assert(delayedX <= 1400 && delayedY >= 4000);
+    }
+    assert(delayedX == 1400 && delayedY == 4000);
+    assert(ResolveMovement(logical, 150, delayedX, delayedY, 2.0f, x, y));
+    assert(x == 0 && y == 0);
+
+    direct.x = 1000.0f; direct.y = -1000.0f;
+    assert(BuildLocalFrame(direct, 0, logical));
+    assert(logical.x == 18400.0f && logical.y == 3200.0f);
 
     LocalAnalogSample joystick{};
     joystick.kind = LocalAnalogSample::Kind::Joystick;
     joystick.x = 1.0f;
     joystick.y = 1.0f;
-    assert(BuildLocalFrame(joystick, kFocus, 0, 0, 1.0f, logical));
+    assert(BuildLocalFrame(joystick, kFocus, logical));
     assert(logical.analogMode == Netplay::AnalogMode::Joystick);
-    assert(ResolveMovement(logical, 100, x, y));
+    assert(ResolveMovement(logical, 100, 0, 0, 1.0f, x, y));
     assert(x == 71 && y == 71);
 
     LocalAnalogSample neutral{};
-    assert(BuildLocalFrame(neutral, kShoot, 0, 0, 1.0f, logical));
+    assert(BuildLocalFrame(neutral, kShoot, logical));
     assert(logical.analogMode == Netplay::AnalogMode::None);
-    assert(!ResolveMovement(logical, 100, x, y));
+    assert(!ResolveMovement(logical, 100, 0, 0, 1.0f, x, y));
 
     // Invalid count and null payload are also transactional.
     const State before_count = state;

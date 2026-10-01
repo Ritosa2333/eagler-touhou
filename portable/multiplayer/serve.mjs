@@ -5,15 +5,16 @@ const root=resolve(import.meta.dirname,'../..');
 const workspace=resolve(process.env.EAGLER_WORKSPACE||root+'/../..');
 const profile=process.env.TH10_MP_PROFILE||'multiplayer';
 if(!['multiplayer','multiplayer-fixtures'].includes(profile))throw Error('Invalid MP test profile');
-const buildRoot=resolve(root,'th10_web/artifacts',profile);
+const buildRoot=resolve(process.env.TH10_MP_BUILD_ROOT||resolve(root,'th10_web/artifacts',profile));
+const fixtureRoot=resolve(process.env.TH10_MP_FIXTURE_ROOT||import.meta.dirname);
 const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json')));
 if(build.variant!=='multiplayer')throw Error('Build --multiplayer first');
 const wasm=resolve(buildRoot,'th10-sdl.wasm');
 if(sha256(readFileSync(wasm))!==build.sha256)throw Error('Stale multiplayer WASM');
 const files=new Map([
- ['/','smoke.html'],['/smoke.mjs','smoke.mjs'],['/replay-robot.mjs','replay-robot.mjs'],
+ ['/','smoke.html'],['/smoke.mjs','smoke.mjs'],['/performance-driver.mjs','performance-driver.mjs'],['/replay-robot.mjs','replay-robot.mjs'],
  ['/replay-audio-seek.mjs','replay-audio-seek.mjs'],
-].map(([url,name])=>[url,resolve(import.meta.dirname,name)]));
+].map(([url,name])=>[url,resolve(fixtureRoot,name)]));
 files.set('/th10-sdl.mjs',resolve(buildRoot,'th10-sdl.mjs'));
 files.set('/th10-sdl.wasm',wasm);
 files.set('/input/th10.dat',process.env.TH10_MP_DATA||resolve(workspace,'games/web-content/th10/th10.data'));

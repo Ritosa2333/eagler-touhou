@@ -79,10 +79,8 @@ bool Commit(State& state, const Netplay::FrameInput* inputs, u32 count) noexcept
 }
 
 bool BuildLocalFrame(const LocalAnalogSample& sample, u16 buttons,
-                     i32 fixedX, i32 fixedY, float rate,
                      Netplay::FrameInput& out) noexcept {
-    if (!std::isfinite(sample.x) || !std::isfinite(sample.y) ||
-        !std::isfinite(rate)) {
+    if (!std::isfinite(sample.x) || !std::isfinite(sample.y)) {
         return false;
     }
 
@@ -99,16 +97,12 @@ bool BuildLocalFrame(const LocalAnalogSample& sample, u16 buttons,
         next.y = std::clamp(sample.y, -1.0f, 1.0f);
         break;
     case LocalAnalogSample::Kind::DirectTarget:
-        next.analogMode = Netplay::AnalogMode::DirectTouchDelta;
+        next.analogMode = Netplay::AnalogMode::DirectTouch;
         next.unlimited = sample.unlimited;
-        if (rate != 0.0f) {
-            next.x = (sample.x * 100.0f - static_cast<float>(fixedX)) / rate;
-            next.y = (sample.y * 100.0f - static_cast<float>(fixedY)) / rate;
-        }
-        if (!std::isfinite(next.x) || !std::isfinite(next.y) ||
-            std::abs(next.x) > kVelocityLimit || std::abs(next.y) > kVelocityLimit) {
-            return false;
-        }
+        // The native player is bounded to this field. Clamp the transmitted
+        // target so an unreachable finger position cannot accumulate debt.
+        next.x = std::clamp(sample.x, -184.0f, 184.0f) * 100.0f;
+        next.y = std::clamp(sample.y, 32.0f, 432.0f) * 100.0f;
         break;
     }
     if (!Netplay::IsValidFrameInput(next)) return false;
@@ -117,8 +111,10 @@ bool BuildLocalFrame(const LocalAnalogSample& sample, u16 buttons,
 }
 
 bool ResolveMovement(const Netplay::FrameInput& input, i32 speed,
+                     i32 fixedX, i32 fixedY, float rate,
                      i32& x, i32& y) noexcept {
-    if (!valid_input(input) || input.analogMode == Netplay::AnalogMode::None) {
+    if (!valid_input(input) || !std::isfinite(rate) ||
+        input.analogMode == Netplay::AnalogMode::None) {
         return false;
     }
 
@@ -127,8 +123,14 @@ bool ResolveMovement(const Netplay::FrameInput& input, i32 speed,
         dx = std::clamp(dx, -1.0f, 1.0f) * static_cast<float>(speed);
         dy = std::clamp(dy, -1.0f, 1.0f) * static_cast<float>(speed);
         limit_vector(dx, dy, static_cast<float>(speed));
-    } else if (input.analogMode == Netplay::AnalogMode::DirectTouch ||
-               input.analogMode == Netplay::AnalogMode::DirectTouchDelta ||
+    } else if (input.analogMode == Netplay::AnalogMode::DirectTouch) {
+        dx = rate != 0.0f ? (input.x - static_cast<float>(fixedX)) / rate : 0.0f;
+        dy = rate != 0.0f ? (input.y - static_cast<float>(fixedY)) / rate : 0.0f;
+        if (!std::isfinite(dx) || !std::isfinite(dy)) return false;
+        if (!input.unlimited) limit_vector(dx, dy, static_cast<float>(speed));
+        dx = std::clamp(dx, -kVelocityLimit, kVelocityLimit);
+        dy = std::clamp(dy, -kVelocityLimit, kVelocityLimit);
+    } else if (input.analogMode == Netplay::AnalogMode::DirectTouchDelta ||
                input.analogMode == Netplay::AnalogMode::DirectTouchBegin) {
         if (!input.unlimited) limit_vector(dx, dy, static_cast<float>(speed));
         dx = std::clamp(dx, -kVelocityLimit, kVelocityLimit);

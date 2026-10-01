@@ -18,6 +18,27 @@ std::uint64_t network_clock(){
         std::chrono::steady_clock::now().time_since_epoch()).count());
 #endif
 }
+std::uint32_t live_gameplay_contract(const SessionSetup& setup){
+    const auto base=GameplayContract(setup);
+    return setup.input_delay ? (base ^ 0x49444c00u ^ setup.input_delay) : base;
+}
+Netplay::CoreConfig core_config(const SessionSetup& setup,std::uint64_t sessionId,std::uint8_t inputDelay){
+    Netplay::CoreConfig core{};
+    core.sessionId=sessionId;
+    core.playerCount=static_cast<std::uint8_t>(setup.playerCount);
+    core.localPlayer=static_cast<std::uint8_t>(setup.localPlayer);
+    core.inputDelay=inputDelay;
+    core.maxRollbackFrames=12;
+    // Match the proven TH06/TH07 production policy: rollback depth stays 12,
+    // while movement/focus/shoot may be predicted for at most three frames.
+    core.predictableButtons=InputLanes::kShoot|InputLanes::kFocus|InputLanes::kDirection;
+    core.directionButtons=InputLanes::kDirection;
+    core.maxDirectionPredictionFrames=3;
+    core.maxDirectTouchDeltaPredictionFrames=0;
+    // TH10 mode 2 carries an absolute hundredth-pixel target, not a delta.
+    core.directTouchIsAbsolute=true;
+    return core;
+}
 }
 
 bool NetplayRuntime::Connect(const char* relayUrl){
@@ -35,6 +56,9 @@ bool NetplayRuntime::ConnectSpectator(const char* relayUrl,const char* spectator
        core_.LastSimulatedFrame()!=Netplay::INVALID_FRAME||
        !relayUrl||!relayUrl[0]||!spectatorId||!spectatorId[0])return false;
     if(!transport_.ConnectSpectator(relayUrl,spectatorId,gate_.Config().playerCount))return false;
+    // Spectator packets are already authoritative logical frames. Keep the
+    // live-session ABI (including negotiated delay) but never delay them again.
+    if(!core_.Reset(core_config(setup_,base_session_id_,0))){transport_.Close();return false;}
     network_now_=network_clock();network_enabled_=true;spectator_=true;
     spectator_retired_=false;spectator_publish_frame_=spectator_receive_frame_=0;
     spectator_frames_.clear();spectator_error_.clear();return true;
@@ -82,15 +106,39 @@ void NetplayRuntime::PublishConfirmedSpectatorFrames(){
     }
 }
 
+bool NetplayRuntime::InitialInputsReady()const{
+    if(!network_enabled_||playback_||spectator_)return true;
+    if(core_.LastSimulatedFrame()!=Netplay::INVALID_FRAME)return true;
+    if(!core_.HasLocalCapture(0))return false;
+    // Neutral delay-prefix slots do not prove a peer finished loading. Require
+    // its actual first captured input, at the negotiated delay-frame offset.
+    for(std::uint8_t seat=0;seat<setup_.playerCount;++seat){
+        const auto confirmed=core_.ConfirmedThrough(seat);
+        if(confirmed==Netplay::INVALID_FRAME||confirmed<setup_.input_delay)return false;
+    }
+    return true;
+}
+
 bool NetplayRuntime::PumpNetwork(bool expectsInput){
     if(!network_enabled_)return true;
     network_now_=network_clock();
     if(spectator_)return DrainSpectatorFrames();
-    if(!channel_.Pump(gate_,core_,network_now_,expectsInput))return false;
+    // A loaded endpoint must not arm the gameplay watchdog or simulate frame
+    // zero while another endpoint is still creating its native world. Keep
+    // real transport/HELLO/input repair pumping throughout this bounded fence.
+    const bool initialReady=InitialInputsReady();
+    if(!channel_.Pump(gate_,core_,network_now_,expectsInput&&initialReady))return false;
+    if(!InitialInputsReady()&&core_.HasLocalCapture(0)){
+        if(!initial_wait_started_){initial_wait_started_=true;initial_wait_since_=network_now_;}
+        if(network_now_-initial_wait_since_>=45'000){
+            initial_wait_error_="Timed out waiting for peers to load frame zero";return false;
+        }
+    }else initial_wait_started_=false;
     PublishConfirmedSpectatorFrames();return true;
 }
 
 const char* NetplayRuntime::NetworkError()const{
+    if(!initial_wait_error_.empty())return initial_wait_error_.c_str();
     if(!spectator_error_.empty())return spectator_error_.c_str();
     if(spectator_&&transport_.Failed())return transport_.LastError().c_str();
     if(channel_.Error()==Netplay::SessionChannel::Failure::Transport)return transport_.LastError().c_str();
@@ -130,7 +178,7 @@ bool NetplayRuntime::Reset(const SessionSetup& setup, std::uint64_t sessionId) n
 bool NetplayRuntime::BeginPlayback(SessionSetup& setup) noexcept {
     // An offline input source owns every lane. It does not fabricate peers or
     // send HELLO/READY messages, and can never attach a live network transport.
-    auto next=setup;next.sessionId=0x5250591000000001ull;next.started=false;
+    auto next=setup;next.sessionId=0x5250591000000001ull;next.started=false;next.input_delay=0;
     if(!Reset(next,next.sessionId))return false;
     playback_=true;setup=next;return true;
 }
@@ -164,15 +212,16 @@ bool NetplayRuntime::FeedSpectator(u32 frame){
 
 bool NetplayRuntime::Configure(const SessionSetup& setup,std::uint64_t sessionId) noexcept {
     if(!setup.configured||!sessionId)return false;
-    const u32 words[]{2,setup.playerCount,setup.localPlayer,setup.difficulty,setup.seed,
-        u32(sessionId),u32(sessionId>>32),setup.loadouts[0].character,setup.loadouts[0].shot,
+    initial_wait_started_=false;initial_wait_since_=0;initial_wait_error_.clear();
+    const u32 words[]{3,setup.playerCount,setup.localPlayer,setup.difficulty,setup.seed,
+        u32(sessionId),u32(sessionId>>32),setup.input_delay,setup.loadouts[0].character,setup.loadouts[0].shot,
         setup.loadouts[1].character,setup.loadouts[1].shot,setup.loadouts[2].character,setup.loadouts[2].shot};
-    SessionSetup checked{};if(!DecodeSessionSetup(checked,words,13))return false;
+    SessionSetup checked{};if(!DecodeSessionSetup(checked,words,14))return false;
 
     Netplay::SessionConfig session{};
     session.sessionId = sessionId;
     session.seed = setup.seed;
-    session.gameplayAbi = GameplayContract(setup);
+    session.gameplayAbi = live_gameplay_contract(setup);
     session.gameId = 10;
     session.playerCount = static_cast<std::uint8_t>(setup.playerCount);
     session.localPlayer = static_cast<std::uint8_t>(setup.localPlayer);
@@ -181,19 +230,7 @@ bool NetplayRuntime::Configure(const SessionSetup& setup,std::uint64_t sessionId
         return false;
     }
 
-    Netplay::CoreConfig core{};
-    core.sessionId = sessionId;
-    core.playerCount = session.playerCount;
-    core.localPlayer = session.localPlayer;
-    core.inputDelay = 0;
-    core.maxRollbackFrames = 12;
-    // Match the proven TH07 production policy: movement/focus/shoot may be
-    // predicted, while Bomb and Pause remain exact edge actions.
-    core.predictableButtons = InputLanes::kShoot | InputLanes::kFocus |
-                              InputLanes::kDirection;
-    core.directionButtons = InputLanes::kDirection;
-    core.maxDirectionPredictionFrames = 3;
-    core.maxDirectTouchDeltaPredictionFrames = 0;
+    const auto core=core_config(setup,sessionId,static_cast<std::uint8_t>(setup.input_delay));
     if (!core_.Reset(core)) {
         Clear();
         return false;
@@ -204,6 +241,7 @@ bool NetplayRuntime::Configure(const SessionSetup& setup,std::uint64_t sessionId
 
 void NetplayRuntime::Clear() noexcept {
     transport_.Close();channel_.Clear();network_enabled_=false;network_now_=0;playback_=false;
+    initial_wait_started_=false;initial_wait_since_=0;initial_wait_error_.clear();
     spectator_=spectator_retired_=false;spectator_publish_frame_=spectator_receive_frame_=0;
     spectator_frames_.clear();spectator_error_.clear();
     gate_.Clear();
@@ -265,7 +303,9 @@ NetplayRuntime::WireResult NetplayRuntime::ApplyWire(const u8* bytes,std::size_t
 bool NetplayRuntime::BuildInputWire(u8 peer,u32 latest,u32 sequence,u32 ack,std::vector<u8>& out)const{
     if(playback_||spectator_||!CanStart()||peer>=setup_.playerCount||peer==setup_.localPlayer||
        latest==Netplay::INVALID_FRAME||!core_.HasLocalCapture(latest))return false;
-    auto packet=core_.BuildInputPacket(peer,latest,sequence,ack);
+    const auto target=core_.LocalFrameForCapture(latest);
+    if(target==Netplay::INVALID_FRAME)return false;
+    auto packet=core_.BuildInputPacket(peer,target,sequence,ack);
     packet.senderFrame=NextFrame();
     return Netplay::EncodeInputPacket(packet,&out);
 }

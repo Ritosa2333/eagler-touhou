@@ -149,7 +149,11 @@ with fixture(args.url, report, args.output) as test:
             for frame in range(60, 65):
                 submit(a, 1, frame, 8 if frame == 60 else 0);tick(a);tick(b)
             predicted = call(b, 'multiplayerSmoke.lifecycle()')
-            assert predicted[2] == 13 and predicted[1] == 7, predicted
+            # MP now uses native Game Over results, not the retired Continue /
+            # Retry screen 13. Prove the speculative results flow really ran
+            # before the late input cancels it; do not weaken the undo oracle.
+            assert predicted[1] == predicted[2] == 7 and predicted[3] & 0x10, predicted
+            assert call(b, 'multiplayerSmoke.fixtureStatus()')[2], 'wipe did not become pending'
             result['predictedWipe'] = evidence(b)
             for frame in range(60, 65):
                 submit(b, 1, frame, 8 if frame == 60 else 0)

@@ -31,6 +31,10 @@ struct World final:HudActions,CallbackReceiver {
     multiplayer::RollbackPool<sizeof(Enemy),512> rollback_enemies{};
     multiplayer::RollbackPool<sizeof(TimedLaser),256> rollback_lasers{};
     multiplayer::RollbackPool<sizeof(EclContext),1024> rollback_ecl{};
+    // Both loaded and auto-recorded hints are mutable linked owners. A death
+    // during prediction must not leave malloc nodes outside the checkpoint.
+    // 8192 covers the two 7*255 files plus retained copies and run recordings.
+    multiplayer::RollbackPool<sizeof(StageHint),8192> rollback_hints{};
     multiplayer::RollbackState rollback{};
     multiplayer::AudioEvents audio_events{};
     multiplayer::ReplayCheckpoint replay_checkpoint_pending{};

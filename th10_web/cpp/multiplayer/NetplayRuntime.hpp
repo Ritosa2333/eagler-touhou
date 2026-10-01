@@ -107,6 +107,9 @@ public:
     bool ConnectSpectator(const char* relayUrl,const char* spectatorId);
     bool PumpNetwork(bool expectsInput);
     bool NetworkEnabled() const { return network_enabled_; }
+    // The HELLO/READY gate agrees on the session, not on completion of each
+    // browser's title/resource loading. First input proves the world is ready.
+    bool InitialInputsReady() const;
     const Netplay::SessionChannel& Channel() const { return channel_; }
     const Netplay::BrowserPeerTransport& Transport() const { return transport_; }
     const char* NetworkError() const;
@@ -128,6 +131,9 @@ private:
     Netplay::SessionChannel channel_{transport_};
     std::uint64_t network_now_=0;
     bool network_enabled_=false;
+    bool initial_wait_started_=false;
+    std::uint64_t initial_wait_since_=0;
+    std::string initial_wait_error_{};
     bool playback_=false;
     bool spectator_=false,spectator_retired_=false;
     std::uint32_t spectator_publish_frame_=0,spectator_receive_frame_=0;

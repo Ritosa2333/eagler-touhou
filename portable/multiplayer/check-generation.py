@@ -1,4 +1,4 @@
-"""Native P1/P2 retry, fresh frame-zero gate and old-wire-packet rejection."""
+"""Native Game Over, explicit new room/run, frame-zero gate and stale wire rejection."""
 import argparse
 import json
 from rollback_testkit import barrier, call, fixture, hashes, net, state, submit, tick
@@ -7,7 +7,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--url', default='http://127.0.0.1:8140/')
 parser.add_argument('--output', default='artifacts/multiplayer-tests/generation.json')
 args = parser.parse_args()
-report = {'scope': 'TH10 native retry with two real roles and common wire packets; no browser transport'}
+report = {'scope': 'TH10 native Game Over then explicit new session, two real roles and common wire packets; no browser transport'}
 
 
 def generation(page):
@@ -38,18 +38,27 @@ with fixture(args.url, report, args.output) as test:
             submit(page, 1-seat, frame);tick(page)
         compare(pages, frame)
     for page in pages:
-        assert call(page, 'multiplayerSmoke.lifecycle()')[2] == 13
-        for _ in range(200):
-            tick(page)
-            if generation(page)[1] == 1:
-                break
+        lifecycle = call(page, 'multiplayerSmoke.lifecycle()')
+        assert lifecycle[2] != 13 and lifecycle[4] == 6, lifecycle
+        assert generation(page)[1] == 0, 'Game Over must not silently restart multiplayer'
+        assert call(page, 'multiplayerSmoke.close()'), 'Native shutdown must release the old graph'
+    # The product no longer has Continue/Retry. A new lobby start owns a fresh
+    # session id and native application, rather than a fabricated screen-13
+    # transition. Keep testing actual packet isolation and the frame-zero gate.
+    test.close_contexts()
+    pages = [test.open(local=seat, difficulty=4, session_id=(0x51455202,0x10203040)) for seat in range(2)]
+    for page in pages:
+        tick(page, 220)  # Allow native loading, but never a peer-ready handshake.
         current = generation(page)
-        assert current[1] == 1 and not current[8], current
+        assert current[1] == 0 and not current[8], current
         assert current[4:6] != original[4:6], (original, current)
         assert net(page)[2:4] == [0,-1], net(page)
-        before = {'state': state(page), 'hash': hashes(page), 'net': net(page)}
+        # Before the new lobby handshake the title/loading animations may
+        # legitimately continue. They are not gameplay tick zero. Assert the
+        # authoritative game state and input frontier, not a frozen menu VM.
+        before = {'state': state(page), 'net': net(page)}
         tick(page, 20)
-        after = {'state': state(page), 'hash': hashes(page), 'net': net(page)}
+        after = {'state': state(page), 'net': net(page)}
         assert before == after, ('fresh generation advanced without peer', before, after)
         if page == pages[1]:
             for packet in (old_hello, old_input):
@@ -59,7 +68,10 @@ with fixture(args.url, report, args.output) as test:
     assert generations[0][4:8] == generations[1][4:8], generations
     report['freshGate'] = generations
     barrier(pages)
-    for frame in range(30):
+    for page in pages:
+        test.advance(page, 0)
+    compare(pages, 0)
+    for frame in range(1,31):
         packets = []
         for seat, page in enumerate(pages):
             assert call(page, '(x)=>multiplayerSmoke.captureLocal(...x)', [frame, 0x80 if seat==0 else 0x40])

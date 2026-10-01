@@ -22,7 +22,7 @@ if(completionCase!=='stage'&&!['all','full'].includes(playbackPart))throw Error(
 if(!['roundtrip','lifecycle','all'].includes(replayCases))throw Error('Unknown Replay case selection');
 const normal=['check-rollback','check-rollback-3p','check-rollback-bomb',
               'check-rollback-stall','check-rollback-pause','check-peer-seats'];
-const fixtures=['check-native-fixtures','check-generation','check-dense','check-replay','check-replay-completion','check-replay-audio'];
+const fixtures=['check-native-fixtures','check-generation','check-dense','check-replay','check-replay-completion','check-replay-audio','check-touch','check-ghost-presentation','check-presentation-rollback'];
 const tests=selected??(profile==='multiplayer'?normal:fixtures);
 if(!tests.length||tests.some(name=>![...normal,...fixtures].includes(name)))throw Error('Unknown runtime test');
 const buildPath=resolve(root,'th10_web/artifacts',profile,'build.json');
@@ -65,6 +65,7 @@ try{
    const child=spawn(process.env.TH_PYTHON||'python',[
     resolve(import.meta.dirname,name+'.py'),'--url',url,'--output',output,
     ...(name==='check-replay'?['--cases',replayCases]:[]),
+    ...(name==='check-presentation-rollback'&&process.argv.includes('--absolute-touch')?['--absolute-touch']:[]),
     ...(name==='check-replay-completion'?['--case',completionCase,'--players',String(completionPlayers),
        '--target-stage',String(targetStage),...(recordOnly?['--record-only']:[]),
        ...(recordedRun?['--recorded-run',resolve(recordedRun)]:[]),'--playback-part',playbackPart]:[]),

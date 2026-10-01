@@ -8,6 +8,7 @@ int main(){
     assert(DecodeSessionSetup(first,words,11));
     assert(first.playerCount==3&&first.loadouts[1].shot==2);
     const auto contract=GameplayContract(first);
+    assert(contract!=LegacyGameplayContractV4(first));
     words[2]=2;assert(DecodeSessionSetup(second,words,11));
     assert(GameplayContract(second)==contract);
     words[10]=2;assert(DecodeSessionSetup(second,words,11));
@@ -26,6 +27,7 @@ int main(){
     std::uint32_t v2[]{2,2,1,3,1234,0x55667788u,0x11223344u,0,0,1,2,0,0};
     assert(DecodeSessionSetup(network,v2,13));
     assert(network.sessionId==0x1122334455667788ull&&network.playerCount==2&&network.localPlayer==1);
+    assert(network.input_delay==0);
     const auto networkContract=GameplayContract(network);
     network.sessionId=0;assert(GameplayContract(network)==networkContract);
     v2[5]=v2[6]=0;SessionSetup invalid{};assert(!DecodeSessionSetup(invalid,v2,13));
@@ -33,5 +35,8 @@ int main(){
     for(std::size_t count=0;count<11;++count)
         assert(!DecodeSessionSetup(invalid,reinterpret_cast<const std::uint32_t*>(1),count));
     assert(!DecodeSessionSetup(invalid,reinterpret_cast<const std::uint32_t*>(1),12));
-    assert(!DecodeSessionSetup(invalid,reinterpret_cast<const std::uint32_t*>(1),14));
+    std::uint32_t v3[]{3,2,1,3,1234,0x55667788u,0x11223344u,3,0,0,1,2,0,0};
+    SessionSetup timed{};assert(DecodeSessionSetup(timed,v3,14));assert(timed.input_delay==3);
+    v3[7]=9;assert(!DecodeSessionSetup(invalid,v3,14));
+    assert(!DecodeSessionSetup(invalid,reinterpret_cast<const std::uint32_t*>(1),15));
 }

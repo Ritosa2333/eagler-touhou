@@ -35,6 +35,10 @@ struct AnimationEngine final:AnmEnvironment,AnmAllocationEnvironment,AnmSystemEn
     // buffers are bounded here to 64 KiB rather than falling back to the heap.
     multiplayer::RollbackPool<65536,128> rollback_geometry{};
     multiplayer::RollbackState* rollback_state=nullptr;
+    // Historical authored Draw still runs (callbacks, VM state and RNG).
+    // Sprite submission retains projected-VM transform/dirty-bit updates but
+    // omits geometry, fog, batching and upload for its unpresented pixels.
+    bool suppress_rollback_sprite_output=false;
     bool enhance_local_player_visibility=false;
     const void* player_view_owner=nullptr;
     u8 (*player_view_alpha)(const void*,const AnmVm&)=nullptr;

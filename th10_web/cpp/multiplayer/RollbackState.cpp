@@ -36,7 +36,8 @@ bool touch_stage(Netplay::RollbackJournal& journal,Stage* stage){
     return true;
 }
 
-bool touch_animation_manager(Netplay::RollbackJournal& journal,browser::AnimationEngine& engine){
+bool touch_animation_manager(Netplay::RollbackJournal& journal,browser::AnimationEngine& engine,
+                             Netplay::SparsePoolCapture<4096>& capture){
     auto& manager=engine.manager;
     if(!journal.Touch(&manager.started_scripts,sizeof(manager.started_scripts))||
        !journal.Touch(&manager.processed_count,sizeof(manager.processed_count))||
@@ -45,43 +46,40 @@ bool touch_animation_manager(Netplay::RollbackJournal& journal,browser::Animatio
        !touch(journal,manager.registry)||
        !journal.Touch(manager.draw_layers,sizeof(manager.draw_layers))||
        !journal.Touch(&manager.last_id,sizeof(manager.last_id)))return false;
-    for(std::size_t i=0;i<4096;++i)
-        if(manager.occupied[i]&&!journal.Touch(&manager.pool[i],sizeof(AnmVm)))return false;
+    if(!capture.Capture(manager.pool,[&](const AnmVm& vm){return manager.occupied[&vm-manager.pool]!=0;},
+        [&](void* p,std::size_t size){return journal.Touch(p,size);}))return false;
     return touch_pool(journal,engine.rollback_animation_overflow)&&
            touch_pool(journal,engine.rollback_geometry)&&
            touch_pool(journal,engine.callback_environment.rollback_entries);
 }
 
-bool touch_bullets(Netplay::RollbackJournal& journal,EnemyBulletManager* manager){
+bool touch_bullets(Netplay::RollbackJournal& journal,EnemyBulletManager* manager,
+                   Netplay::SparsePoolCapture<2000>& capture){
     if(!manager)return true;
     if(!journal.Touch(manager,offsetof(EnemyBulletManager,pool))||
        !journal.Touch(&manager->animation_file,sizeof(manager->animation_file)))return false;
-    for(std::size_t i=0;i<2000;++i){
-        auto& bullet=manager->pool[i];
-        if(bullet.state){
-            if(!journal.Touch(&bullet,sizeof(bullet)))return false;
-        }
-    }
-    return true;
+    return capture.Capture(manager->pool,[](const EnemyBullet& bullet){return bullet.state!=0;},
+        [&](void* p,std::size_t size){return journal.Touch(p,size);});
 }
 
-bool touch_items(Netplay::RollbackJournal& journal,ItemManager* manager){
+bool touch_items(Netplay::RollbackJournal& journal,ItemManager* manager,
+                 Netplay::SparsePoolCapture<150>& regular,Netplay::SparsePoolCapture<2048>& faith){
     if(!manager)return true;
     if(!journal.Touch(manager,offsetof(ItemManager,regular))||
        !journal.Touch(&manager->active_count,sizeof(manager->active_count)+
                                              sizeof(manager->faith_cursor)+
                                              sizeof(manager->faith_count)))return false;
-    for(auto& item:manager->regular){
-        if(item.state){
-            if(!journal.Touch(&item,sizeof(item)))return false;
-        }
-    }
-    for(auto& item:manager->faith){
-        if(item.state){
-            if(!journal.Touch(&item,sizeof(item)))return false;
-        }
-    }
-    return true;
+    const auto live=[](const Item& item){return item.state!=0;};
+    const auto save=[&](void* p,std::size_t size){return journal.Touch(p,size);};
+    return regular.Capture(manager->regular,live,save)&&faith.Capture(manager->faith,live,save);
+}
+
+template<class T,std::size_t Capacity>
+bool pool_slot(T* pool,void* address,std::size_t bytes){
+    if(!pool||bytes!=sizeof(T))return false;
+    const auto begin=reinterpret_cast<std::uintptr_t>(pool);
+    const auto value=reinterpret_cast<std::uintptr_t>(address);
+    return value>=begin&&value-begin<sizeof(T)*Capacity&&(value-begin)%sizeof(T)==0;
 }
 
 } // namespace
@@ -89,26 +87,44 @@ bool touch_items(Netplay::RollbackJournal& journal,ItemManager* manager){
 bool RollbackState::Reset(){
     Clear();
     configured_=journal_.Reset(Netplay::RollbackJournalConfig{
-        14,20u*1024u*1024u,24000,false,true});
+        14,20u*1024u*1024u,24000,true,true});
     return configured_;
 }
 
 void RollbackState::Clear(){
     journal_.Clear();configured_=false;
-    last_bytes_=peak_bytes_=0;total_bytes_=0;snapshots_=0;
+    frame_open_=false;open_frame_=elided_frames_=0;
+    animation_pool_=nullptr;bullet_pool_=nullptr;regular_pool_=faith_pool_=nullptr;
+    last_bytes_=peak_bytes_=last_blocks_=0;total_bytes_=0;snapshots_=0;
 }
 
 bool RollbackState::Touch(void* address,std::size_t bytes){
     if(!configured_||!journal_.IsFrameOpen())return true;
+    const auto save=[&](void* p,std::size_t size){return journal_.Touch(p,size);};
+    if(pool_slot<AnmVm,4096>(animation_pool_,address,bytes))
+        return animation_capture_.TouchSlot(animation_pool_,static_cast<AnmVm*>(address),save);
+    if(pool_slot<EnemyBullet,2000>(bullet_pool_,address,bytes))
+        return bullet_capture_.TouchSlot(bullet_pool_,static_cast<EnemyBullet*>(address),save);
+    if(pool_slot<Item,150>(regular_pool_,address,bytes))
+        return regular_capture_.TouchSlot(regular_pool_,static_cast<Item*>(address),save);
+    if(pool_slot<Item,2048>(faith_pool_,address,bytes))
+        return faith_capture_.TouchSlot(faith_pool_,static_cast<Item*>(address),save);
     return address&&bytes&&journal_.Touch(address,bytes);
 }
 
-bool RollbackState::BeginFrame(browser::World& world,std::uint32_t frame){
+bool RollbackState::BeginFrame(browser::World& world,std::uint32_t frame,bool capture){
     if(!configured_&&!Reset())return false;
+    if(frame_open_||journal_.Failed())return false;
+    frame_open_=true;open_frame_=frame;
+    if(!capture)return true;
     if(!journal_.BeginFrame(frame))return false;
 
     auto& state=world.state;
     auto& engine=world.engine;
+    animation_pool_=engine.manager.pool;
+    bullet_pool_=world.actors.bullets?world.actors.bullets->pool:nullptr;
+    regular_pool_=world.actors.items?world.actors.items->regular:nullptr;
+    faith_pool_=world.actors.items?world.actors.items->faith:nullptr;
     if(!touch(journal_,state.team_economy)||
        !journal_.Touch(state.pilot_economies,sizeof(state.pilot_economies))||
        !touch(journal_,state.input_lanes)||
@@ -133,10 +149,11 @@ bool RollbackState::BeginFrame(browser::World& world,std::uint32_t frame){
        !journal_.Touch(world.regular_item_owners,sizeof(world.regular_item_owners))||
        !journal_.Touch(world.faith_item_owners,sizeof(world.faith_item_owners))||
        !touch(journal_,engine.chain_value)||
-       !touch_animation_manager(journal_,engine)||
+       !touch_animation_manager(journal_,engine,animation_capture_)||
        !touch_pool(journal_,world.rollback_enemies)||
        !touch_pool(journal_,world.rollback_lasers)||
        !touch_pool(journal_,world.rollback_ecl)||
+       !touch_pool(journal_,world.rollback_hints)||
        !touch_pool(journal_,world.effects.rollback_effects))return false;
 
     // These owners survive the title screen. Their loading/introduction ANM
@@ -170,8 +187,8 @@ bool RollbackState::BeginFrame(browser::World& world,std::uint32_t frame){
 
     if(world.actors.enemies&&!touch(journal_,*world.actors.enemies))return false;
     if(world.actors.lasers&&!touch(journal_,*world.actors.lasers))return false;
-    if(!touch_bullets(journal_,world.actors.bullets)||
-       !touch_items(journal_,world.actors.items))return false;
+    if(!touch_bullets(journal_,world.actors.bullets,bullet_capture_)||
+       !touch_items(journal_,world.actors.items,regular_capture_,faith_capture_))return false;
     if(world.actors.spell&&!touch(journal_,*world.actors.spell))return false;
     if(world.actors.gui){
         if(!touch(journal_,*world.actors.gui))return false;
@@ -187,15 +204,20 @@ bool RollbackState::BeginFrame(browser::World& world,std::uint32_t frame){
 }
 
 bool RollbackState::EndFrame(){
-    if(!configured_||!journal_.IsFrameOpen())return false;
+    if(!configured_||!frame_open_||journal_.Failed())return false;
+    frame_open_=false;
+    if(!journal_.IsFrameOpen()){
+        last_bytes_=last_blocks_=0;++elided_frames_;return true;
+    }
     const auto bytes=journal_.BytesForFrame(journal_.OpenFrame());
+    last_blocks_=journal_.BlocksForFrame(journal_.OpenFrame());
     if(!journal_.EndFrame())return false;
     last_bytes_=bytes;peak_bytes_=std::max(peak_bytes_,bytes);
     total_bytes_+=bytes;++snapshots_;return true;
 }
 
 bool RollbackState::RestoreTo(std::uint32_t frame,std::uint32_t* replayFrom){
-    return configured_&&journal_.UndoTo(frame,replayFrom);
+    return configured_&&!frame_open_&&journal_.UndoTo(frame,replayFrom);
 }
 
 } // namespace th10::multiplayer

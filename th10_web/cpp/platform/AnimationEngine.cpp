@@ -100,6 +100,22 @@ bool AnimationEngine::present(AnmVm& copy,const AnmVm& source) const{
     return true;
 }
 void AnimationEngine::draw(AnmVm& vm){
+    const auto submit=[&](AnmVm& target){
+        auto env=renderer();AnmRenderer native{manager,env};
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(suppress_rollback_sprite_output){
+            // Match AnmRenderer's visibility gate BEFORE the authored state
+            // change. Modes 5/7/8 cache their transform and clear dirty bits;
+            // the other modes only write renderer scratch/batches. Use the
+            // original transform routine, with exactly its arithmetic/order.
+            if((target.flags&3)!=3||!(target.color>>24))return;
+            const auto mode=(target.flags>>22)&15;
+            if(mode==5||mode==7||mode==8)AnmProjection{native,env}.update_transform(target);
+            return;
+        }
+#endif
+        native.draw(target);
+    };
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     // front.anm's stock Player/Power label VMs remain alive and updated for
     // native lifecycle/rollback identity. Their pixels are supplied by the
@@ -112,13 +128,13 @@ void AnimationEngine::draw(AnmVm& vm){
             auto copy=vm;present(copy,vm);
             copy.color=(copy.color&0x00ffffffu)|(((copy.color>>24)*alpha/255u)<<24);
             copy.secondary_color=(copy.secondary_color&0x00ffffffu)|(((copy.secondary_color>>24)*alpha/255u)<<24);
-            auto env=renderer();AnmRenderer{manager,env}.draw(copy);return;
+            submit(copy);return;
         }
     }
 #endif
-    auto env=renderer();if(!high_refresh::render_only||!high_refresh::active){AnmRenderer{manager,env}.draw(vm);return;}
+    if(!high_refresh::render_only||!high_refresh::active){submit(vm);return;}
     auto copy=vm;present(copy,vm);
-    AnmRenderer{manager,env}.draw(copy);
+    submit(copy);
 }
 void AnimationEngine::bind_sprite(AnmVm& vm,i32 index){vm.animation_file->bind_sprite(vm,index);}
 void AnimationEngine::change_draw_mode(AnmVm& vm){AnmDistortion::initialize(vm,*this);}
