@@ -13,6 +13,7 @@
     **Android 端不建议使用系统自带浏览器和各种国内浏览器。你也可以用，但可能会有一定的 BUG，如目前已知夸克浏览器会断触。**
 
 - **Windows**：Edge（系统自带） / [Chrome](https://google.cn/chrome) / [FireFox](https://www.firefox.com/)
+- 如果您在使用 Windows 7 及以下的版本，请使用[Supermium](https://www.supermium.net/) 作为上述浏览器的替代。
 - 苹果：随意
 
 若使用以上任一浏览器却仍然遇到了问题，再与我们反馈。
