@@ -1,5 +1,12 @@
 # TH09 rollback handoff for a new agent
 
+> **2026-10-02 experiment/adonis override:** This worktree is now
+> `D:/workspace/eagler/worktrees/adonis/th09`, branched from MP `5b9305c`.
+> Read [ADONIS-EXPERIMENT.md](ADONIS-EXPERIMENT.md) first for the new timing
+> modes, common pin, current builds, tests and limitations. The paths and pins
+> below describe the historical rollback worktree, not this branch. No public
+> push or deployment has been performed for the Adonis experiment.
+
 Updated 2026-09-28. The user explicitly resumed optimization after `bf60dbc`:
 inspect actual progress and continue toward very smooth gameplay. The resumed
 work and frozen comparison identities are in `rollback-smoothness-work.md`.

@@ -58,6 +58,8 @@ i32 joy_button(i32);
 NetworkInput network;
 multiplayer::RollbackSession rollback(th09_shared_transport());
 bool rollback_active=false;
+Netplay::AdonisMode adonis_mode=Netplay::AdonisMode::Rollback;
+u32 adonis_snapshots=0,adonis_waits=0;
 u32 rollback_published=0,rollback_catchup=0;
 struct RollbackFrame {
     u32 number=Netplay::INVALID_FRAME,hash=0;
@@ -313,14 +315,22 @@ TH09_EXPORT("th09_network_room_begin") u32 th09_network_room_begin(u32 seed,i32 
     probe->title->launch_network_match();
     return 1;
 }
+TH09_EXPORT("th09_adonis_configure") u32 th09_adonis_configure(u32 mode){
+    if(rollback_active||mode>2)return 0;adonis_mode=static_cast<Netplay::AdonisMode>(mode);return 1;
+}
+TH09_EXPORT("th09_adonis_info") const u32* th09_adonis_info(){
+    static u32 data[6];data[0]=static_cast<u32>(rollback.Mode());data[1]=rollback.InputDelay();
+    data[2]=adonis_snapshots;data[3]=rollback.Channel().AdonisStatistics().Adjustments();
+    data[4]=u32(rollback.Channel().AdonisStatistics().TotalDelayUs());data[5]=adonis_waits;return data;
+}
 TH09_EXPORT("th09_rollback_enable") u32 th09_rollback_enable(u32 seed,u32 side,u32 idLow,u32 idHigh,u32 abi,u32 inputDelay){
-    if(rollback_active||!probe||!network.active||side>1||inputDelay>8)return 0;
+    if(rollback_active||!probe||!network.active||side>1||inputDelay>9)return 0;
     for(auto& frame:rollback_frames){frame.number=Netplay::INVALID_FRAME;frame.captured=false;frame.sounds.clear();}
     Netplay::SessionConfig c;c.seed=seed;c.localPlayer=side;c.gameId=9;c.gameplayAbi=abi;c.sessionId=(std::uint64_t(idHigh)<<32)|idLow;
-    rollback_published=rollback_catchup=0;rollback_active=rollback.Begin(c,std::uint64_t(emscripten_get_now()),u8(inputDelay));return rollback_active;
+    rollback_published=rollback_catchup=adonis_snapshots=adonis_waits=0;rollback_active=rollback.Begin(c,std::uint64_t(emscripten_get_now()),u8(inputDelay),adonis_mode);return rollback_active;
 }
 TH09_EXPORT("th09_rollback_begin") u32 th09_rollback_begin(u32 seed,u32 side,u32 difficulty,u32 left,u32 right,u32 idLow,u32 idHigh,u32 abi,u32 inputDelay){
-    if(rollback_active||inputDelay>8||!th09_network_room_begin(seed,i32(side),0xffff,difficulty,0,left,right))return 0;
+    if(rollback_active||inputDelay>9||!th09_network_room_begin(seed,i32(side),0xffff,difficulty,0,left,right))return 0;
     // Commit the resource-owning title transition before the prediction epoch.
     if(!probe->tick_title(0,0,0,false)||probe->in_title)return 0;
     return th09_rollback_enable(seed,side,idLow,idHigh,abi,inputDelay);
@@ -387,7 +397,7 @@ u32 rollback_tick(u32 render){
             if(probe->session){const auto& m=probe->session->motion_input[network.side];if(m.enabled){in.analogMode=m.target?Netplay::AnalogMode::DirectTouch:Netplay::AnalogMode::Joystick;in.x=m.x;in.y=m.y;in.unlimited=m.unlimited;in.touchUsed=true;}}
             if(!rollback.Capture(in,std::uint64_t(emscripten_get_now()))){probe->error=rollback.Error();return 0;}
         }
-        auto decision=rollback.Prepare();if(!decision.canAdvance)return 2;
+        auto decision=rollback.Prepare();if(!decision.canAdvance){++adonis_waits;return 2;}
         const u32 f=rollback.Frame();const auto confirmed=rollback.ConfirmedThrough();
         const bool reconciled=rollback.InputsReconciledBeforeNext();
         // Menu animation and selection belong to the existing snapshot. Wait
@@ -402,6 +412,8 @@ u32 rollback_tick(u32 render){
         if(retire&&(decision.predictedMask||!reconciled))return 2;
         auto& record=rollback_frames[f%rollback_frames.size()];record.number=f;record.sounds.clear();
         const bool speculative=decision.predictedMask||!reconciled;
+        if(rollback.Mode()==Netplay::AdonisMode::Delay&&speculative){probe->error="Lockstep attempted speculative state";return 0;}
+        if(speculative)++adonis_snapshots;
         record.captured=speculative;
         if(speculative){if(!record.state)record.state=std::make_unique<multiplayer::WorldState>();if(!probe->checkpoint(*record.state)){probe->error="Rollback world capture failed";return 0;}probe->graphics.checkpoint=record.state.get();}
         // Retain arena capacity across exact and speculative frames.
@@ -463,7 +475,11 @@ TH09_EXPORT("th09_loop_start") void th09_loop_start(){
         if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
         if(suspended||!probe){cadence.reset();return EM_TRUE;}
         const bool active=rollback_active&&network.active;
-        const auto ticks=cadence.advance(active?delta/rollback.IntervalScale():delta,active);u32 ok=1;
+        // A pending due tick ignores new wall-time credit. Keep phase advice
+        // queued until the scheduler can actually apply it to a future tick;
+        // consuming it on a retry would silently discard the correction.
+        const auto elapsed=active&&!cadence.retry_pending()?rollback.PacedElapsedMs(delta*1000)/1000/rollback.IntervalScale():delta;
+        const auto ticks=cadence.advance(elapsed,active);u32 ok=1;
         for(u32 n=0;n<ticks&&ok;++n){
             ok=th09_game_tick(n+1==ticks);if(ok==2){cadence.blocked(rollback_active&&network.active);break;}
             cadence.complete();

@@ -5,18 +5,21 @@
 #include <cstring>
 
 namespace th09::multiplayer {
-bool RollbackSession::Begin(const Netplay::SessionConfig& session, std::uint64_t now, std::uint8_t inputDelay) {
+bool RollbackSession::Begin(const Netplay::SessionConfig& session, std::uint64_t now, std::uint8_t inputDelay, Netplay::AdonisMode mode) {
     Clear();
-    if (session.playerCount != 2 || session.localPlayer > 1 || session.gameId != 9 || inputDelay > 8)
+    if (session.playerCount != 2 || session.localPlayer > 1 || session.gameId != 9 || inputDelay > 9 || !Netplay::ValidAdonisMode(mode))
         return Fail("Invalid TH09 rollback session");
     auto negotiated = session;
     if (inputDelay) negotiated.gameplayAbi ^= 0x49444c00u ^ inputDelay;
+    negotiated.gameplayAbi = Netplay::AdonisGameplayAbi(negotiated.gameplayAbi, mode, inputDelay);
+    mode_ = mode; inputDelay_ = inputDelay;
     Netplay::CoreConfig config;
     config.sessionId = negotiated.sessionId;
     config.localPlayer = negotiated.localPlayer;
     config.playerCount = 2;
     config.inputDelay = inputDelay;
     config.maxRollbackFrames = History;
+    config.allowPrediction = mode != Netplay::AdonisMode::Delay;
     // TH09: shot/charge 1, bomb 2, focus 4, menu 8, directions 0xf0.
     // Keep held charge instead of inventing a release edge; Bomb and menu
     // actions require actual input. Every eventual release is reconciled.
@@ -25,6 +28,8 @@ bool RollbackSession::Begin(const Netplay::SessionConfig& session, std::uint64_t
     config.maxDirectionPredictionFrames = 3;
     Netplay::SessionChannelConfig policy;
     policy.repairIntervalMs = Netplay::InputRepairBudget::StalledMs;
+    policy.adonisPhase = mode != Netplay::AdonisMode::Rollback;
+    if (policy.adonisPhase) policy.inputResendMs = 16;
     if (!core_.Reset(config) || !gate_.Reset(negotiated) || !channel_.BeginSession(negotiated, now, policy))
         return Fail("TH09 rollback bootstrap failed");
     configured_ = true;
@@ -34,6 +39,14 @@ void RollbackSession::Clear() {
     channel_.Clear(); gate_.Clear(); core_.Clear();hashes_={};
     next_ = replayEnd_ = captures_ = corrections_ = resimulated_ = 0;
     configured_ = failed_ = invalidInput_ = false; error_ = "";
+    mode_ = Netplay::AdonisMode::Rollback; inputDelay_ = 0; phaseDebtMs_ = 0;
+}
+double RollbackSession::PacedElapsedMs(double elapsedMs) {
+    if (!std::isfinite(elapsedMs) || elapsedMs < 0) return 0;
+    phaseDebtMs_ += channel_.TakeAdonisDelayMs();
+    const auto used = std::min(elapsedMs, phaseDebtMs_);
+    phaseDebtMs_ -= used;
+    return elapsedMs - used;
 }
 bool RollbackSession::Pump(std::uint64_t now, bool expectsInput) {
     if (!configured_ || failed_) return false;
@@ -117,7 +130,7 @@ bool RollbackSession::Complete(const Netplay::FrameDecision& decision) {
     return true;
 }
 bool RollbackSession::Restored(std::uint32_t frame) {
-    if (!Ready() || frame != core_.RollbackFrame() || frame >= next_)
+    if (mode_ == Netplay::AdonisMode::Delay || !Ready() || frame != core_.RollbackFrame() || frame >= next_)
         return Fail("Invalid TH09 restore frame");
     replayEnd_ = std::max(next_, replayEnd_);
     if (!core_.RewindSimulationTo(frame)) return Fail("TH09 input history rewind failed");

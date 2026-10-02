@@ -11,7 +11,7 @@ function harness() {
   const spectators = new Set();
   const core = () => {
     const buffer = new ArrayBuffer(2048), bytes = new Uint8Array(buffer);
-    const calls = {begin: [], receive: [], pauses: [], spectatorBegin: [], spectatorFeed: [], pumps: 0};
+    const calls = {begin: [], modes: [], receive: [], pauses: [], spectatorBegin: [], spectatorFeed: [], pumps: 0};
     const self = {
       HEAPU8: bytes, HEAPU32: new Uint32Array(buffer), calls, incoming: [], side: -1,
       _th09_peer_url_buffer: () => 256,
@@ -44,6 +44,7 @@ function harness() {
       },
       _th09_peer_close: () => { peers.delete(self.side); spectators.delete(self); },
       _th09_network_info: () => 0,
+      _th09_adonis_configure: mode => { calls.modes.push(mode); return 1; },
       _th09_rollback_begin: (...args) => { calls.begin.push(args); return 1; },
       _th09_rollback_pump: () => { ++calls.pumps; return 2; },
       _th09_rollback_info: () => 32,
@@ -66,7 +67,7 @@ function harness() {
   return {core, restore};
 }
 
-async function connectPair(harness, inputDelay = 0) {
+async function connectPair(harness, inputDelay = 0, adonisMode = 0) {
   globalThis.fetch = async () => ({ok: true, json: async () => ({build: 'a'.repeat(24)})});
   globalThis.location = {href: 'https://example.test/runtime/th09/th09.html'};
   globalThis.document = {hidden: false};
@@ -77,6 +78,7 @@ async function connectPair(harness, inputDelay = 0) {
     netplayUrl: `wss://example.test/netplay?room=th09mp-1234&run=1&player=${side}`,
     netplayPlayer: side, netplayPlayerCount: 2, netplaySeed: 1234, netplayDifficulty: 2,
     netplayInputDelay: inputDelay,
+    netplayAdonisMode: adonisMode,
     netplayLoadouts: [{character: 3}, {character: 10}],
   });
   await Promise.all([left.connect(options(0, inputDelay)), right.connect(options(1, inputDelay))]);
@@ -112,6 +114,22 @@ test('launcher input delay reaches the native rollback session', async () => {
     assert.equal(globalThis.__eaglerNetplayInputDelayFrames, 3);
     left.close(); right.close();
   } finally { box.restore(); }
+});
+
+test('Adonis mode and all nine delay frames reach the native session without JS prediction', async () => {
+  for (const mode of [1, 2]) {
+    const box = harness();
+    try {
+      const {left,right,leftCore,rightCore} = await connectPair(box,9,mode);
+      assert.deepEqual(leftCore.calls.modes,[mode]);
+      assert.deepEqual(rightCore.calls.modes,[mode]);
+      assert.equal(leftCore.calls.begin[0].at(-1),9);
+      assert.equal(rightCore.calls.begin[0].at(-1),9);
+      assert.deepEqual(leftCore.calls.receive,[]);
+      assert.equal(globalThis.__eaglerNetplayAdonisMode,mode);
+      left.close();right.close();
+    } finally { box.restore(); }
+  }
 });
 
 test('diagnostics report native rollback counters and result keeps pumping terminal ACKs', async () => {

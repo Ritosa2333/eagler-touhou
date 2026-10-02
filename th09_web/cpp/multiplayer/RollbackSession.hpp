@@ -8,7 +8,8 @@ class RollbackSession : private Netplay::PeerTransport {
 public:
     static constexpr unsigned History = 8;
     explicit RollbackSession(Netplay::PeerTransport& transport): transport_(transport), channel_(*this) {}
-    bool Begin(const Netplay::SessionConfig&, std::uint64_t now, std::uint8_t inputDelay = 0);
+    bool Begin(const Netplay::SessionConfig&, std::uint64_t now, std::uint8_t inputDelay = 0,
+               Netplay::AdonisMode mode = Netplay::AdonisMode::Rollback);
     void Clear();
     bool Verify(std::uint32_t frame,std::uint32_t hash);
     bool Pump(std::uint64_t now, bool expectsInput = true);
@@ -31,6 +32,9 @@ public:
     bool CanRetire() const;
     bool Retire(std::uint64_t now);
     double IntervalScale() const { return channel_.IntervalScale(); }
+    double PacedElapsedMs(double elapsedMs);
+    Netplay::AdonisMode Mode() const { return mode_; }
+    unsigned InputDelay() const { return inputDelay_; }
     const Netplay::SessionChannel& Channel() const { return channel_; }
     std::uint32_t Captures() const { return captures_; }
     std::uint32_t Corrections() const { return corrections_; }
@@ -45,6 +49,9 @@ private:
     Netplay::SessionChannel channel_;
     std::uint32_t next_ = 0, replayEnd_ = 0, captures_ = 0, corrections_ = 0, resimulated_ = 0;
     bool configured_ = false, failed_ = false, invalidInput_ = false;
+    Netplay::AdonisMode mode_ = Netplay::AdonisMode::Rollback;
+    std::uint8_t inputDelay_ = 0;
+    double phaseDebtMs_ = 0;
     const char* error_ = "";
     bool Fail(const char* error) { failed_ = true; error_ = error; return false; }
     bool IsOpen() const override { return transport_.IsOpen(); }

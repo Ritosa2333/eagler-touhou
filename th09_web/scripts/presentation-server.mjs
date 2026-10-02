@@ -6,18 +6,22 @@ import {createReadStream,statSync,readdirSync,readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url)),workspace=resolve(root,'..');
+// Explicit read-only fixtures for isolated worktrees; never silently use a
+// different Runtime binary or copy private game content into source control.
+const fixtureWorkspace=process.env.TH09_FIXTURE_ROOT?resolve(process.env.TH09_FIXTURE_ROOT):workspace;
+const fixtureAssets=resolve(fixtureWorkspace,'th09_web/assets/sdl-native');
 export async function presentationServer(port=0,{release=false,artifactDirectory}={}){
  const compiled=artifactDirectory?resolve(artifactDirectory):resolve(root,release?'artifacts/sdl-release':'artifacts/sdl3');
  const files=new Map([
   ['/',resolve(root,'tests/browser/presentation.html')],
   ['/probe.mjs',resolve(compiled,release?'th09.mjs':'th09-presentation.mjs')],
   [release?'/th09.wasm':'/th09-presentation.wasm',resolve(compiled,release?'th09.wasm':'th09-presentation.wasm')],
-  ['/th09.dat',resolve(workspace,'[th09] 东方花映塚 (日文版)/th09.dat')],
+  ['/th09.dat',resolve(fixtureWorkspace,'[th09] 东方花映塚 (日文版)/th09.dat')],
  ]);
  for(const name of ['th09.html','style.css','shell.mjs','keyboard.mjs','netplay.mjs','shared-netplay.mjs','motion-replay.mjs'])files.set('/app/'+name,resolve(root,'sdl-runtime',name));
- for(const name of ['cp932.bin','blend.bin','msgothic.ttc'])files.set('/'+name,resolve(root,'assets/sdl-native',name));
- const music=readdirSync(resolve(root,'assets/sdl-native/music')).filter(n=>n.endsWith('.ogg')).sort();
- for(const name of music)files.set('/music/'+name,resolve(root,'assets/sdl-native/music',name));
+ for(const name of ['cp932.bin','blend.bin','msgothic.ttc'])files.set('/'+name,resolve(fixtureAssets,name));
+ const music=readdirSync(resolve(fixtureAssets,'music')).filter(n=>n.endsWith('.ogg')).sort();
+ for(const name of music)files.set('/music/'+name,resolve(fixtureAssets,'music',name));
  const resources=[...files].filter(([url])=>url==='/th09.dat'||url.startsWith('/music/')||['/cp932.bin','/blend.bin','/msgothic.ttc'].includes(url)).map(([url,path])=>({url,path:url.startsWith('/music/')||url==='/th09.dat'?url:'/fonts'+url,bytes:statSync(path).size,sha256:createHash('sha256').update(readFileSync(path)).digest('hex')}));
  const server=http.createServer((req,res)=>{
   const path=new URL(req.url,'http://127.0.0.1').pathname;

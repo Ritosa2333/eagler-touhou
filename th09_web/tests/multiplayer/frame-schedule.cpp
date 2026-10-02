@@ -15,13 +15,13 @@ int main(){
         }
     }
     FrameSchedule c;
-    CHECK(c.advance(step*1.75,true)==1);c.blocked(true);
+    CHECK(!c.retry_pending());CHECK(c.advance(step*1.75,true)==1);c.blocked(true);CHECK(c.retry_pending());
     // No time credit is needed: this is still the already due, once-captured
     // frame, not permission to simulate an extra fresh frame each callback.
     for(double delay:{0.,.001,step*.5,step*2,10.}){
         CHECK(c.advance(delay,true)==1);c.blocked(true);
     }
-    c.complete();CHECK(c.advance(step*.30,true)==1);c.complete();
+    c.complete();CHECK(!c.retry_pending());CHECK(c.advance(step*.30,true)==1);c.complete();
     CHECK(c.advance(0,true)==0);
 
     // A completed expensive callback keeps its fractional phase. An exhausted

@@ -17,11 +17,15 @@ export class Netplay {
     const state={route:'relay',relay:socket,peers:new Map(),received:[],receivedHead:0,localPlayer:this.side,playerCount:2,failed:false,closed:false,error:'',fail(message){this.failed=true;this.error=message;}};
     globalThis.__eaglerPeerTransport=state;
     const words=this.build.slice(0,24).match(/.{8}/g).map(v=>Number.parseInt(v,16));
-    if(!this.core._th09_rollback_enable(m.seed,this.side,words[0]^m.seed,words[1],words[2],0))throw Error('Rollback 初始化失败');
+    const q=new URLSearchParams(location.search),names={rollback:0,adonis:1,delay:1,hybrid:2},value=q.get('adonis')??0;
+    this.adonisMode=Object.hasOwn(names,value)?names[value]:Number(value);
+    this.inputDelay=Number(q.get('inputDelay')??(this.adonisMode===1?4:this.adonisMode===2?2:0));
+    if(!Number.isInteger(this.adonisMode)||this.adonisMode<0||this.adonisMode>2||!Number.isInteger(this.inputDelay)||this.inputDelay<0||this.inputDelay>9||!this.core._th09_adonis_configure(this.adonisMode))throw Error('联机时序参数无效');
+    if(!this.core._th09_rollback_enable(m.seed,this.side,words[0]^m.seed,words[1],words[2],this.inputDelay))throw Error('联机时序初始化失败');
     this.prepared=true;this.send({type:'ready'});
    }
    else if(m.type==='start'){
-    this.timer=setInterval(()=>{if(!this.prepared)return;const ready=this.core._th09_rollback_pump();if(!ready){this.onStatus('Rollback 会话中断');this.close(false);return;}if(ready===2&&!this.active&&!this.settled){this.active=true;this.onStatus('已连接 · rollback · '+(this.side?'右侧 2P':'左侧 1P'));this.core._th09_loop_pause(+document.hidden);}},16);
+    this.timer=setInterval(()=>{if(!this.prepared)return;const ready=this.core._th09_rollback_pump();if(!ready){this.onStatus('联机时序会话中断');this.close(false);return;}if(ready===2&&!this.active&&!this.settled){this.active=true;this.onStatus(`已连接 · ${['Rollback','Adonis 无回滚','Adonis + Rollback'][this.adonisMode]} · D=${this.inputDelay} · `+(this.side?'右侧 2P':'左侧 1P'));this.core._th09_loop_pause(+document.hidden);}},16);
    }
    else if(m.type==='error'){this.onStatus('联机结束：'+m.message);this.close(false);}
    else if(m.type==='ended')this.close(false);

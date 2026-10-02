@@ -28,7 +28,12 @@ export class SharedNetplay {
     const side = Number(options.netplayPlayer);
     const spectator = options.netplaySpectator === true;
     const spectatorId = String(options.netplaySpectatorId || '');
-    const inputDelay = options.netplayInputDelay === undefined ? 0 : Number(options.netplayInputDelay);
+    const query = new URLSearchParams(location.search);
+    const names = {rollback: 0, adonis: 1, delay: 1, hybrid: 2};
+    // The published global is telemetry, not configuration for a later match.
+    const requestedMode = options.netplayAdonisMode ?? query.get('adonis') ?? 0;
+    const adonisMode = Object.hasOwn(names, requestedMode) ? names[requestedMode] : Number(requestedMode);
+    const inputDelay = Number(options.netplayInputDelay ?? query.get('inputDelay') ?? (adonisMode === 1 ? 4 : adonisMode === 2 ? 2 : 0));
     if (!['ws:', 'wss:'].includes(url.protocol) || (!spectator && ![0, 1].includes(side)) ||
         Number(options.netplayPlayerCount) !== 2 || !/^th09mp-\d{4}$/.test(url.searchParams.get('room') || '') ||
         !/^\d+$/.test(url.searchParams.get('run') || '') ||
@@ -36,7 +41,8 @@ export class SharedNetplay {
           url.searchParams.get('spectator') !== spectatorId || url.searchParams.has('player') :
           Number(url.searchParams.get('player')) !== side || url.searchParams.has('spectator')) ||
         (url.searchParams.has('players') && url.searchParams.get('players') !== '2') ||
-        !Number.isInteger(inputDelay) || inputDelay < 0 || inputDelay > 8) throw Error('TH09 房间配置无效');
+        !Number.isInteger(inputDelay) || inputDelay < 0 || inputDelay > 9 ||
+        !Number.isInteger(adonisMode) || adonisMode < 0 || adonisMode > 2) throw Error('TH09 房间配置无效');
     const loadouts = options.netplayLoadouts;
     if (!Array.isArray(loadouts) || loadouts.length < 2 ||
         loadouts.slice(0, 2).some(item => !Number.isInteger(item?.character) || item.character < 0 || item.character >= 16))
@@ -55,6 +61,7 @@ export class SharedNetplay {
     this.spectatorPending.length = 0;
     this.finished = false;
     this.inputDelay = inputDelay;
+    this.adonisMode = adonisMode;
     delete globalThis.__eaglerNetplayInputDelayFrames;
     globalThis.__eaglerNetplayLanActive = false;
     globalThis.__eaglerNetplayTransport = 'connecting';
@@ -104,11 +111,13 @@ export class SharedNetplay {
           const difficulty = Number(this.options.netplayDifficulty);
           const inputDelay = this.inputDelay;
           const abi = (words[2] ^ (left << 16) ^ (right << 20) ^ (difficulty << 24) ^ 0x09010000) >>> 0;
+          if (!this.core._th09_adonis_configure(this.adonisMode)) throw Error('TH09 联机时序模式无效');
           if (!this.core._th09_rollback_begin(this.options.netplaySeed >>> 0, this.side, difficulty,
               left, right, (words[0] ^ run) >>> 0, words[1],
               abi, inputDelay))
             throw Error('TH09 rollback 对局初始化失败');
           globalThis.__eaglerNetplayInputDelayFrames = inputDelay;
+          globalThis.__eaglerNetplayAdonisMode = this.adonisMode;
           this.prepared = true;
           this.onStatus('已连接对手，正在确认版本和对局参数…');
         }
@@ -120,7 +129,7 @@ export class SharedNetplay {
         if (ready === 2 && !this.active && !this.finished) {
           this.acknowledged = this.active = true;
           globalThis.__eaglerNetplayLanActive = true;
-          this.onStatus('对手已连接 · rollback 对局开始');
+          this.onStatus(`对手已连接 · ${['Rollback', 'Adonis 无回滚', 'Adonis + Rollback'][this.adonisMode]} · D=${this.inputDelay}`);
           this.core._th09_loop_pause(+document.hidden);
         }
       } else for (let count = 0; count < 128; ++count) {

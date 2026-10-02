@@ -9,7 +9,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const compiled = resolve(root, process.env.TH09_OUTPUT || 'artifacts/sdl-release');
 const variant = process.argv.includes('--multiplayer') ? 'multiplayer' : 'normal';
 const output = resolve(root, variant === 'multiplayer' ? 'build-eagler-multiplayer' : 'build-eagler');
-const native = resolve(root, 'assets/sdl-native');
+const native = process.env.TH09_RUNTIME_ASSETS ? resolve(process.env.TH09_RUNTIME_ASSETS) : resolve(root, 'assets/sdl-native');
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const inputs = [
   ['th09.html', resolve(root, 'sdl-runtime/managed.html')],
@@ -37,6 +37,7 @@ if (variant === 'multiplayer') {
     'th09_network_info', 'th09_network_room_begin', 'th09_network_receive',
     'th09_network_hash', 'th09_network_end', 'th09_spectator_begin',
     'th09_rollback_begin', 'th09_rollback_enable', 'th09_rollback_pump', 'th09_rollback_info',
+    'th09_adonis_configure', 'th09_adonis_info',
     'th09_spectator_feed', 'th09_spectator_frame', 'th09_spectator_end',
   ];
   const missing = required.filter(name => !exports.has(name));

@@ -11,6 +11,7 @@ class FrameSchedule {
     bool retry=false;
 public:
     void reset(){cadence.reset();retry=false;}
+    bool retry_pending()const{return retry;}
     unsigned advance(double seconds,bool rollback=false){
         if(!rollback)retry=false;
         return retry?1:cadence.advance(seconds);

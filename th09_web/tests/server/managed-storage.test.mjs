@@ -7,6 +7,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import vm from 'node:vm';
 import {exportReplayName, importReplayName} from '../../sdl-runtime/motion-replay.mjs';
+import {createBrowserKeyboard} from '../../sdl-runtime/directory-keyboard.mjs';
 
 // Execute the generated shells, with persistence keyed by the actual IDBFS
 // mount point. This checks file ownership and reload ordering, not game logic.
@@ -49,7 +50,7 @@ async function openRuntime(directory, databases) {
   const element = {addEventListener() {}, focus() {}};
   const context = {
     console, URLSearchParams, Uint8Array, ArrayBuffer, TextDecoder, performance,
-    exportReplayName, importReplayName, scanCodes: {},
+    exportReplayName, importReplayName, createBrowserKeyboard, scanCodes: {},
     createModule: async () => core,
     location: {search: '?managedData=1&runtimeEpoch=1', origin: 'https://test.invalid'},
     window: {addEventListener() {}},
@@ -72,14 +73,14 @@ test('packaged normal and multiplayer shells isolate saves and Replay across rel
     const compiled = join(temporary, 'artifacts/sdl-release'), fonts = join(temporary, 'assets/sdl-native');
     await mkdir(compiled, {recursive: true}); await mkdir(fonts, {recursive: true});
     // Use the release ABI, whose required multiplayer exports are validated.
-    const wasm = await readFile(new URL('../../artifacts/sdl-release/th09.wasm', import.meta.url));
+    const wasm = await readFile(process.env.TH09_RELEASE_WASM || new URL('../../artifacts/sdl-release/th09.wasm', import.meta.url));
     await writeFile(join(compiled, 'th09.wasm'), wasm);
     await writeFile(join(compiled, 'th09.mjs'), 'export default function() {}');
     await writeFile(join(compiled, 'build.json'), JSON.stringify({kind: 'th09-native-web-release-candidate',
       sha256: createHash('sha256').update(wasm).digest('hex')}));
     for (const name of ['cp932.bin', 'blend.bin']) await writeFile(join(fonts, name), 'fixture');
     for (const args of [[], ['--multiplayer']]) {
-      const env = {...process.env}; delete env.TH09_OUTPUT;
+      const env = {...process.env}; delete env.TH09_OUTPUT; delete env.TH09_RUNTIME_ASSETS;
       const result = spawnSync(process.execPath, [join(temporary, 'scripts/build-eagler.mjs'), ...args],
         {encoding: 'utf8', windowsHide: true, env});
       assert.equal(result.status, 0, result.stderr);

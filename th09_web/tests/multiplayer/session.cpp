@@ -21,6 +21,10 @@ struct Link : PeerTransport {
     bool Failed() const override { return false; }
     std::size_t BufferedAmount() const override { return 0; }
     bool Send(const std::uint8_t* bytes, std::size_t size, bool reliable) {
+        AdonisPhaseSample phase;
+        if(DecodeAdonisPhaseSample(bytes,size,&phase)){
+            peer->pending.push_back({now+25,{bytes,bytes+size}});return true;
+        }
         PacketType type; CHECK(PeekPacketType(bytes,size,&type));
         std::uint64_t delay = 0;
         if (type == PacketType::Input) {
@@ -167,4 +171,6 @@ void contracts() {
     }
     std::puts("ABI gate, zero-frame local input, once-only capture, input bounds PASS");
 }
+#ifndef TH09_SESSION_FIXTURE_ONLY
 int main(){contracts();for(unsigned mode=0;mode<5;++mode)simulation(mode);return 0;}
+#endif
