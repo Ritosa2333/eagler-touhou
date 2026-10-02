@@ -24,7 +24,9 @@ const sha=bytes=>createHash('sha256').update(bytes).digest('hex'),headerHash=cre
 async function compile(file){const name=relative(workspace,file).replaceAll('\\','_').replaceAll('/','_'),object=resolve(objects,name+'.o'),key=sha(settings+sha(readFileSync(file)));if(existsSync(object)&&existsSync(object+'.key')&&readFileSync(object+'.key','utf8')===key)return object;await run([...common,'-c',file,'-o',object]);writeFileSync(object+'.key',key);return object;}
 // The shared unit warms SDL's cached ports before independent compilations.
 const shared=await compile(source.pop()),outputs=new Array(source.length);let cursor=0,done=0;
-await Promise.all(Array.from({length:4},async()=>{while(cursor<source.length){const index=cursor++;outputs[index]=await compile(source[index]);if(++done%25===0)console.log(done+'/'+source.length+' source files');}}));
+const buildJobs=Number(process.env.TH09_BUILD_JOBS||4);
+if(!Number.isInteger(buildJobs)||buildJobs<1||buildJobs>4)throw Error('TH09_BUILD_JOBS must be 1..4');
+await Promise.all(Array.from({length:buildJobs},async()=>{while(cursor<source.length){const index=cursor++;outputs[index]=await compile(source[index]);if(++done%25===0)console.log(done+'/'+source.length+' source files');}}));
 const loader=resolve(out,release?'th09.mjs':'th09-presentation.mjs');
 await run([...common,...(profiling?['--profiling-funcs']:[]),'--no-entry','-sDEFAULT_TO_CXX=1','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,worker','-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=1048576','-sINITIAL_MEMORY=134217728','-sMAXIMUM_MEMORY=1073741824','-sFILESYSTEM=1','-lidbfs.js','-sEXPORTED_RUNTIME_METHODS=FS,IDBFS,HEAPU8,HEAP32,HEAPU32','-sINVOKE_RUN=0','-sEXIT_RUNTIME=0','-sMIN_WEBGL_VERSION=2','-sMAX_WEBGL_VERSION=2','-sGL_SUPPORT_AUTOMATIC_ENABLE_EXTENSIONS=0',...outputs,shared,'-o',loader]);
 const wasm=readFileSync(loader.replace('.mjs','.wasm')),module=new WebAssembly.Module(wasm);

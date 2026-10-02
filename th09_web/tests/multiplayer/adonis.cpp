@@ -4,6 +4,7 @@
 #include "session.cpp"
 
 struct AdonisDriver {
+    using Trace=FrameInput(*)(unsigned,unsigned);
     RollbackSession session;
     State state;
     std::array<State,RollbackSession::History> checkpoints{};
@@ -12,11 +13,12 @@ struct AdonisDriver {
     unsigned published=0,waits=0,snapshots=0;
     unsigned side,delay;
     AdonisMode mode;
+    Trace trace;
     double due=0;
-    AdonisDriver(Link& link,unsigned player,unsigned d,AdonisMode m):session(link),side(player),delay(d),mode(m) {
+    AdonisDriver(Link& link,unsigned player,unsigned d,AdonisMode m,Trace source=input):session(link),side(player),delay(d),mode(m),trace(source) {
         CHECK(session.Begin(config(side),0,static_cast<std::uint8_t>(d),m));
     }
-    FrameInput expected(unsigned player,unsigned frame) const {return frame<delay?FrameInput{}:input(player,frame-delay);}
+    FrameInput expected(unsigned player,unsigned frame) const {return frame<delay?FrameInput{}:trace(player,frame-delay);}
     bool step() {
         auto d=session.Prepare();if(!d.canAdvance)return false;
         const auto f=session.Frame();CHECK(f<600);CHECK(d.inputs[side]==expected(side,f));
@@ -32,7 +34,7 @@ struct AdonisDriver {
         due+=1-session.PacedElapsedMs(1);
         if(now>=due && session.Frame()<600){
             auto f=session.Frame();
-            if(session.NeedsCapture()){CHECK(++captured[f]==1);CHECK(session.Capture(input(side,f),now));}
+            if(session.NeedsCapture()){CHECK(++captured[f]==1);CHECK(session.Capture(trace(side,f),now));}
         }
         if(session.RollbackFrame()!=INVALID_FRAME){
             CHECK(mode!=AdonisMode::Delay);
@@ -52,9 +54,9 @@ struct AdonisDriver {
     }
 };
 struct Counts {unsigned resim,waits,snapshots;};
-Counts runAdonis(AdonisMode mode,unsigned delay,unsigned impairment) {
+Counts runAdonis(AdonisMode mode,unsigned delay,unsigned impairment,AdonisDriver::Trace trace=input) {
     Link a,b;a.peer=&b;b.peer=&a;a.mode=b.mode=impairment;
-    AdonisDriver left(a,0,delay,mode),right(b,1,delay,mode);std::uint64_t now=0;
+    AdonisDriver left(a,0,delay,mode,trace),right(b,1,delay,mode,trace);std::uint64_t now=0;
     for(;now<150000;++now){a.now=b.now=now;left.tick(now);right.tick(now);
         if(left.published==600&&right.published==600&&left.session.CanRetire()&&right.session.CanRetire())break;}
     CHECK(now<150000);State reference;
@@ -82,7 +84,35 @@ void mismatch(AdonisMode aMode,unsigned aDelay,AdonisMode bMode,unsigned bDelay)
     for(unsigned now=0;now<1000&&!failed;++now){a.now=b.now=now;failed=!left.Pump(now)||!right.Pump(now);}
     CHECK(failed);CHECK(!left.Ready()&&!right.Ready());
 }
+FrameInput heldMotion(unsigned side,unsigned frame){
+    FrameInput value;value.buttons=1|(frame%121==0?2:0)|(frame%137==0?8:0);
+    const auto phase=(frame/40)%5;
+    if(phase<3){value.analogMode=AnalogMode::DirectTouch;value.x=float(20+side*15+phase*8);value.y=80;value.touchUsed=true;value.unlimited=phase==2;}
+    else if(phase==3){value.analogMode=AnalogMode::Joystick;value.x=.75f;value.y=-.5f;value.touchUsed=true;}
+    return value; // Last phase is a real release, which must be reconciled.
+}
+void hybridHeldPrediction(){
+    for(auto mode:{AdonisMode::Rollback,AdonisMode::Delay,AdonisMode::Hybrid})for(auto analog:{AnalogMode::DirectTouch,AnalogMode::Joystick}){
+        Link a,b;a.peer=&b;b.peer=&a;RollbackSession left(a),right(b);
+        CHECK(left.Begin(config(0),0,0,mode)&&right.Begin(config(1),0,0,mode));
+        for(unsigned now=0;now<1000&&(!left.Ready()||!right.Ready());++now){a.now=b.now=now;CHECK(left.Pump(now)&&right.Pump(now));}
+        CHECK(left.Ready()&&right.Ready());
+        FrameInput held(1|2|4|8);held.analogMode=analog;held.x=analog==AnalogMode::Joystick?.75f:125.f;held.y=analog==AnalogMode::Joystick?-.5f:210.f;held.touchUsed=true;
+        CHECK(left.Capture({},1000)&&right.Capture(held,1000));a.now=b.now=1000;CHECK(left.Pump(1000)&&right.Pump(1000));
+        CHECK(left.Complete(left.Prepare()));
+        for(unsigned frame=1;frame<4;++frame){
+            CHECK(left.Capture({},1000+frame));const auto predicted=left.Prepare();
+            if(mode==AdonisMode::Delay){CHECK(!predicted.canAdvance);break;}
+            CHECK(predicted.canAdvance&&(predicted.predictedMask&2));
+            CHECK(!(predicted.inputs[1].buttons&(2|8))&&!predicted.inputs[1].touchBomb);
+            if(mode==AdonisMode::Hybrid){CHECK(predicted.inputs[1].analogMode==analog&&predicted.inputs[1].x==held.x&&predicted.inputs[1].y==held.y);}
+            else CHECK(predicted.inputs[1].analogMode==AnalogMode::None);
+            CHECK(left.Complete(predicted));
+        }
+    }
+}
 int main(){
+    hybridHeldPrediction();
     mismatch(AdonisMode::Delay,3,AdonisMode::Hybrid,3);
     mismatch(AdonisMode::Delay,3,AdonisMode::Rollback,3);
     mismatch(AdonisMode::Hybrid,2,AdonisMode::Hybrid,3);
@@ -92,6 +122,9 @@ int main(){
         const auto baseline=runAdonis(AdonisMode::Rollback,0,network);
         const auto hybrid=runAdonis(AdonisMode::Hybrid,2,network);
         if(network==1)CHECK(hybrid.resim<baseline.resim);
+    }
+    for(unsigned network=1;network<5;++network){
+        for(unsigned delay:{0u,2u,9u})runAdonis(AdonisMode::Hybrid,delay,network,heldMotion);
     }
     puts("TH09 Adonis model correctness, once-only input, retirement, mode/delay mismatch and hybrid comparison PASS");
 }

@@ -26,6 +26,11 @@ bool RollbackSession::Begin(const Netplay::SessionConfig& session, std::uint64_t
     config.predictableButtons = 1 | 4 | 0xf0;
     config.directionButtons = 0xf0;
     config.maxDirectionPredictionFrames = 3;
+    // TH09's network pointer is a held absolute field target, not a fresh
+    // displacement. Hybrid can predict the last target (or joystick vector)
+    // without repeatedly erasing it. Late moves/releases still use full undo.
+    // Keep mode 0 unchanged as the experiment's frozen-policy control.
+    config.directTouchIsAbsolute = mode == Netplay::AdonisMode::Hybrid;
     Netplay::SessionChannelConfig policy;
     policy.repairIntervalMs = Netplay::InputRepairBudget::StalledMs;
     policy.adonisPhase = mode != Netplay::AdonisMode::Rollback;
@@ -107,7 +112,7 @@ Netplay::FrameDecision RollbackSession::Prepare() const {
     if (!decision.canAdvance) return decision;
     for (unsigned seat = 0; seat < 2; ++seat) {
         auto& input = decision.inputs[seat];
-        if (decision.predictedMask & (1u << seat)) {
+        if ((decision.predictedMask & (1u << seat)) && mode_ != Netplay::AdonisMode::Hybrid) {
             // Common DirectTouch prediction models displacement. TH09 ships a
             // field target: zeroing its axes would aim at the origin. Missing
             // pointer input therefore predicts no pointer override.

@@ -21,8 +21,11 @@ assert.match(label,/^[\w-]+$/);
 const build=JSON.parse(readFileSync(artifactDirectory?resolve(artifactDirectory,'build.json'):resolve(root,release?'artifacts/sdl-release/build.json':'artifacts/sdl3/build.json')));
 const port=await new Promise(r=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>r(p));});});
 const relayPath=process.env.EAGLER_RELAY_SOURCE||'D:/workspace/eagler/eagler-touhou/server/netplay-relay.mjs';
-const relay=spawn(process.execPath,[relayPath],{windowsHide:true,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe']});
+const relayTiming=process.env.TH09_RELAY_TIMING==='1';
+const relayArgs=relayTiming?['--import',new URL('./relay-timing-observer.mjs',import.meta.url).href,relayPath]:[relayPath];
+const relay=spawn(process.execPath,relayArgs,{windowsHide:true,env:{...process.env,TH09_OBSERVED_RELAY:relayPath,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe']});
 let relayLog='';relay.stderr.on('data',b=>relayLog+=b);
+const relaySamples=()=>relayLog.split('\n').slice(0,-1).filter(line=>line.startsWith('TH09_RELAY_TIMING ')).map(line=>JSON.parse(line.slice(18)));
 await new Promise((accept,reject)=>{relay.stdout.on('data',b=>{relayLog+=b;if(relayLog.includes('netplay relay listening'))accept();});relay.on('error',reject);relay.on('exit',code=>reject(Error('relay exited '+code+' '+relayLog)));});
 const {server,netplay,url}=await presentationServer(0,{release,artifactDirectory});
 const browser=await launchBrowser({args:[...(hardware?['--enable-gpu','--use-gl=angle','--use-angle=d3d11']:['--enable-unsafe-swiftshader']),'--autoplay-policy=no-user-gesture-required']});
@@ -38,6 +41,7 @@ try{
   const readStats=w=>{const at=w.core._th09_rollback_info()/4;return Array.from(w.core.HEAPU32.subarray(at,at+8));};
   const diagnostics=()=>({
    scope:'Bounded test-only wall-clock and transport counters; not CPU/GPU or input-to-photon timing',
+   wallStartedMs:performance.timeOrigin+diagnosticStarted,
    timeline:timeline.slice(),
    phaseEvents:phaseEvents.slice(),
    lanes:lanes.map(({channel,...entry})=>({...entry,readyState:channel.readyState,bufferedAmount:channel.bufferedAmount})),
@@ -136,13 +140,15 @@ try{
  assert.deepEqual(result.routes,[fallback?'relay':'rtc',fallback?'relay':'rtc','spectator']);assert.equal(errors.length,0,errors.join('\n'));
  if(hardware)for(const renderer of result.renderers)assert.doesNotMatch(renderer,/swiftshader|llvmpipe|microsoft basic render/i);
  const wasm=build.sha256;
+ const relayTimeline=relaySamples();
+ if(relayTiming)assert.ok(relayTimeline.some(s=>s.sockets.some(v=>v.received>0&&v.completed>0)),'Relay observation was not exercised');
  // Save negative timing evidence as well as success. The original 14-second
  // cadence gate still fails; its metrics must not disappear with the throw.
- writeFileSync(resolve(root,`artifacts/multiplayer-tests/${label}-report.json`),JSON.stringify({passed:result.sustainedCadencePassed,correctnessPassed:true,wasm,browser:browser.version(),hardwareRequested:hardware,fullSpriteGeometry,parameters:{adonisMode,inputDelay},scope:'Local real transport, C++ timing mode, SharedNetplay, launcher relay, confirmed spectator; desktop Chromium'+(release?'; production WASM smoke, no forced frame limit':''),result,errors,relayLog},null,2));console.log(JSON.stringify(result));
+ writeFileSync(resolve(root,`artifacts/multiplayer-tests/${label}-report.json`),JSON.stringify({passed:result.sustainedCadencePassed,correctnessPassed:true,wasm,browser:browser.version(),hardwareRequested:hardware,fullSpriteGeometry,parameters:{adonisMode,inputDelay,relayTiming},scope:'Local real transport, C++ timing mode, SharedNetplay, launcher relay, confirmed spectator; desktop Chromium'+(release?'; production WASM smoke, no forced frame limit':''),result,errors,relayTimeline,relayLog},null,2));console.log(JSON.stringify(result));
  assert.ok(result.sustainedCadencePassed,`Original 14s session+gameplay budget exceeded: total=${result.elapsedMs} setup=${result.setupMs} gameplay=${result.gameplayMs} ms`);
 }catch(error){
  let transportDiagnostics=null;
  try{transportDiagnostics=await page.evaluate(()=>globalThis.__th09TransportDiagnostics?.()??null);}catch{}
- writeFileSync(resolve(root,`artifacts/multiplayer-tests/${label}-failure.json`),JSON.stringify({error:error.stack,wasm:build.sha256,parameters:{adonisMode,inputDelay},errors,relayLog,transportDiagnostics},null,2));throw error;
+ writeFileSync(resolve(root,`artifacts/multiplayer-tests/${label}-failure.json`),JSON.stringify({error:error.stack,wasm:build.sha256,parameters:{adonisMode,inputDelay,relayTiming},errors,relayLog,transportDiagnostics},null,2));throw error;
 }
 finally{await browser.close();netplay.close();await new Promise(r=>server.close(r));relay.kill();}

@@ -1,5 +1,9 @@
 # TH09 Adonis experiment — implementation and evidence
 
+> Current user priority: refine TH09 before any more title adaptation. Read
+> [TH09-REFINEMENT.md](TH09-REFINEMENT.md) for the held-analog prediction change,
+> matched-input comparison, new relay diagnostics and frontend rollback switch.
+
 Date: 2026-10-02. Branch: `experiment/adonis`.
 Worktree: `D:/workspace/eagler/worktrees/adonis/th09`.
 Base: `5b9305c` from the TH09 multiplayer owner, **not** the ordinary `eagler`
