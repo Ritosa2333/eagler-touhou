@@ -1,16 +1,19 @@
 #include "NetworkConnection.hpp"
 #include <emscripten/emscripten.h>
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <eagler/netplay/InputRepairBudget.hpp>
 namespace th08::multiplayer {
 namespace {
-Netplay::SessionChannelConfig channel_policy(){
+Netplay::SessionChannelConfig channel_policy(Netplay::AdonisMode mode){
     Netplay::SessionChannelConfig policy;
     // Match TH06/07's bounded stalled-tail repair, including each new epoch.
     // Input is still sampled once; a repair only duplicates captured bytes.
     static_assert(Netplay::InputRepairBudget::StalledMs==Netplay::InputRepairBudget::RetryMs);
     policy.repairIntervalMs=Netplay::InputRepairBudget::StalledMs;
+    policy.adonisPhase=mode!=Netplay::AdonisMode::Rollback;
+    if(policy.adonisPhase)policy.inputResendMs=16;
     return policy;
 }
 }
@@ -18,8 +21,8 @@ std::uint64_t NetworkConnection::Now(){return std::uint64_t(emscripten_get_now()
 bool NetworkConnection::Connect(const char* relay){
     if(enabled||net.ReadOnly()||!relay||!*relay||!net.Configured()||net.LastFrame()!=Netplay::INVALID_FRAME)return false;
     if(!transport.Connect(relay,u8(net.Setup().local_player),u8(net.Setup().player_count)))return false;
-    if(!channel.BeginSession(net.Config(),Now(),channel_policy())){transport.Close();return false;}
-    enabled=true;invalid_input=false;return true;
+    if(!channel.BeginSession(net.Config(),Now(),channel_policy(net.Mode()))){transport.Close();return false;}
+    enabled=true;invalid_input=false;phase_debt_ms=0;return true;
 }
 bool NetworkConnection::ConnectSpectator(const char* relay,const char* id){
     if(enabled||net.ReadOnly()||!relay||!*relay||!id||!net.Configured()||net.LastFrame()!=Netplay::INVALID_FRAME)return false;
@@ -91,8 +94,15 @@ bool NetworkConnection::Captured(u32 frame){
 }
 bool NetworkConnection::CanRetire()const{return net.CanRetire()&&(!enabled||channel.CanRetire(net.core_,net.LastFrame()));}
 bool NetworkConnection::Retire(){return CanRetire()&&(!enabled||channel.Retire(net.core_,net.LastFrame(),Now()))&&net.Retire();}
-bool NetworkConnection::BeginGeneration(){return !enabled||channel.BeginSession(net.Config(),Now(),channel_policy());}
-void NetworkConnection::Close(){transport.Close();channel.Clear();enabled=false;invalid_input=false;spectator_frames.Clear();}
+bool NetworkConnection::BeginGeneration(){phase_debt_ms=0;return !enabled||channel.BeginSession(net.Config(),Now(),channel_policy(net.Mode()));}
+void NetworkConnection::Close(){transport.Close();channel.Clear();enabled=false;invalid_input=false;phase_debt_ms=0;spectator_frames.Clear();}
+double NetworkConnection::PacedElapsedSeconds(double elapsed){
+    if(!std::isfinite(elapsed)||elapsed<0)return 0;
+    if(!enabled||net.ReadOnly()||net.Mode()==Netplay::AdonisMode::Rollback)return elapsed;
+    phase_debt_ms+=channel.TakeAdonisDelayMs();
+    const auto used=std::min(elapsed*1000,phase_debt_ms);
+    phase_debt_ms-=used;return elapsed-used/1000;
+}
 const char* NetworkConnection::Error()const{
     if(*spectator_error)return spectator_error;
     if(invalid_input)return "Unsupported or out-of-window TH08 input";

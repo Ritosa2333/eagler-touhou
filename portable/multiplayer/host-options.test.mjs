@@ -90,6 +90,20 @@ test('native null error pointers do not decode unrelated memory at address zero'
  new Uint8Array(memory.buffer,0,8).set(new TextEncoder().encode('garbage\0'));
  assert.equal(networkError({memory,multiplayer_network_error:()=>0},42),'');
 });
+test('experimental mode and fixed D use v5 without changing the baseline envelope',async()=>{
+ for(const mode of [1,2])for(const delay of [0,1,9]){
+  const c=fake();await configureMultiplayer(c,42,{...base,netplayAdonisMode:mode,netplayInputDelay:delay},deps);
+  assert.equal(c.words[0],5);assert.equal(c.words.length,20);assert.deepEqual(c.words.slice(17),[delay,2,mode]);
+  assert.equal(globalThis.__eaglerNetplayAdonisMode,mode);
+ }
+ for(const mode of [-1,3,1.5,'1',null,NaN]){
+  const c=fake();await assert.rejects(configureMultiplayer(c,42,{...base,netplayAdonisMode:mode},deps));
+  assert.equal(c.words.length,0);
+ }
+ const c=fake();await configureMultiplayer(c,42,{...base,netplayAdonisMode:0},deps);
+ assert.equal(c.words[0],4);assert.equal(c.words.length,19);
+});
+
 test('read-only spectator completion no longer advertises an active session',()=>{
  const memory=new WebAssembly.Memory({initial:1}),target={};
  new Uint32Array(memory.buffer,128,12).set([1,1,1,60,59,46,0xffffffff,1,0,0,0,0]);

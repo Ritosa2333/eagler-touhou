@@ -14,8 +14,10 @@ export function validateMultiplayerOptions(value={}) {
     !Number.isInteger(value.netplayDifficulty)||value.netplayDifficulty<0||value.netplayDifficulty>4)
   throw Error('Invalid TH08 multiplayer seed/difficulty');
  const inputDelay=value.netplayInputDelay===undefined?0:value.netplayInputDelay;
+ const adonisMode=value.netplayAdonisMode===undefined?0:value.netplayAdonisMode;
  const predictionLimit=value.netplayPredictionLimit===undefined?8:value.netplayPredictionLimit;
- if(!Number.isInteger(inputDelay)||inputDelay<0||inputDelay>8||
+ if(!Number.isInteger(adonisMode)||adonisMode<0||adonisMode>2||
+    !Number.isInteger(inputDelay)||inputDelay<0||inputDelay>(adonisMode?9:8)||
     !Number.isInteger(predictionLimit)||predictionLimit<1||predictionLimit>8)
   throw Error('Invalid TH08 multiplayer input timing');
  if(!Array.isArray(value.netplayLoadouts)||value.netplayLoadouts.length!==count)
@@ -26,7 +28,7 @@ export function validateMultiplayerOptions(value={}) {
   return {character:v.character,shot:0};
  });
  return {url,room,run,count,seat,spectator,spectatorId,seed:value.netplaySeed,difficulty:value.netplayDifficulty,
-  inputDelay,predictionLimit,loadouts};
+  inputDelay,predictionLimit,adonisMode,loadouts};
 }
 function string(core,text,fn){
  const bytes=new TextEncoder().encode(text+'\0'),pointer=core.allocate(bytes.length);
@@ -44,9 +46,10 @@ export async function configureMultiplayer(core,app,options,{crypto=globalThis.c
     !runtimeBuildWords.some(Boolean))throw Error('TH08 multiplayer Runtime build identity is missing');
  const identity=new TextEncoder().encode(`th08mp:${o.url.origin}${o.url.pathname}:${o.room}:${o.run}`);
  const digest=new DataView(await crypto.subtle.digest('SHA-256',identity));
- const words=[4,o.count,o.seat,o.difficulty,o.seed,digest.getUint32(0,true),digest.getUint32(4,true)||1,...runtimeBuildWords];
+ const words=[o.adonisMode?5:4,o.count,o.seat,o.difficulty,o.seed,digest.getUint32(0,true),digest.getUint32(4,true)||1,...runtimeBuildWords];
  for(let seat=0;seat<3;++seat)words.push(o.loadouts[seat]?.character||0,0);
  words.push(o.inputDelay,o.predictionLimit);
+ if(o.adonisMode)words.push(o.adonisMode);
  const pointer=core.allocate(words.length*4);if(!pointer)throw Error('Multiplayer setup allocation failed');
  try{
   new Uint32Array(core.memory.buffer,pointer,words.length).set(words);
@@ -56,6 +59,7 @@ export async function configureMultiplayer(core,app,options,{crypto=globalThis.c
     string(core,o.spectatorId,id=>core.multiplayer_spectator_connect(app,p,id)):
     core.multiplayer_connect(app,p)))throw Error('TH08 native transport rejected the room');
  globalThis.__eaglerNetplayInputDelayFrames=o.spectator?0:o.inputDelay;
+ globalThis.__eaglerNetplayAdonisMode=o.adonisMode;
  return true;
 }
 export function networkError(core,app){
@@ -69,6 +73,7 @@ export function updateNetworkDiagnostics(core,app,target=globalThis) {
  if(!app||!core.multiplayer_netplay_status)return;
  const n=core.multiplayer_netplay_status(app),state=Array.from(new Uint32Array(core.memory.buffer,n,12));
  if(state[0]>=2)target.__eaglerNetplayInputDelayFrames=new Uint32Array(core.memory.buffer,n,14)[12];
+ if(state[0]>=3)target.__eaglerNetplayAdonisMode=new Uint32Array(core.memory.buffer,n,15)[14];
  const p=core.multiplayer_driver_status(app),driver=Array.from(new Uint32Array(core.memory.buffer,p,16));
  const invalid=0xffffffff,frame=state[4]===invalid?-1:state[4];
  target.__eaglerNetplayLanActive=!!state[2]&&!driver[2];

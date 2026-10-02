@@ -29,6 +29,7 @@ public:
     bool HasPending()const{return world.HasHistory()||audio.PendingFrames()||files.IsOpen();}
     const char* Error()const;
     const NetworkConnection& Network()const{return network;}
+    double PacedElapsedSeconds(double elapsed){return network.PacedElapsedSeconds(elapsed);}
     const AudioEvents& Audio()const{return audio;}
     const FileEvents& Files()const{return files;}
     const std::vector<u8>* PendingFile(const std::string& path)const{return files.Pending(path);}

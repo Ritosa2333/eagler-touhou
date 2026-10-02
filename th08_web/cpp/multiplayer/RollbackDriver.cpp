@@ -135,7 +135,7 @@ bool RollbackDriver::Admit(){
         audio.Reset();files.Reset();generation=net.Generation();generation_transition_pending=true;
         a.session.network_waiting=true;return true;
     }
-    if(!net.Playback()&&!bound&&Stable()){
+    if(net.AllowsRollback()&&!bound&&Stable()){
         if(!world.Bind(runtime)||!textures.Bind(runtime)||!net.SetWorldReady(true))return Fail("production owner bootstrap failed");
         bound=true;
     }
@@ -151,6 +151,7 @@ bool RollbackDriver::RunFrame(bool render){
     if(diagnostic_exact_only&&decision.predictedMask){session.network_waiting=true;return true;}
 #endif
     if(!decision.canAdvance){session.network_waiting=true;return true;}
+    if(!net.AllowsRollback()&&decision.predictedMask)return Fail("exact-input mode attempted prediction");
     if(frame==0){
         u8 route=0;if(!DecodeRouteBootstrap(decision.inputs[0],route))return Fail("missing route bootstrap");
         session.multiplayer_route_state=route;

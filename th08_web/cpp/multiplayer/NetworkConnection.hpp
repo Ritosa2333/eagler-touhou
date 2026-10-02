@@ -31,6 +31,8 @@ public:
     const char* Error()const;
     const char* Mode()const{return transport.Mode();}
     const Netplay::SessionChannel& Channel()const{return channel;}
+    // Wall-clock pacing only; consume only when no already-due tick is pending.
+    double PacedElapsedSeconds(double);
     std::size_t Buffered()const{return transport.BufferedAmount();}
     std::size_t BufferedInput()const{return transport.BufferedInputAmount();}
     std::size_t BufferedControl()const{return transport.BufferedControlAmount();}
@@ -43,6 +45,7 @@ private:
     bool spectator_finished=false,spectator_publish_failed=false;
     const char* spectator_error="";
     bool enabled=false,invalid_input=false;
+    double phase_debt_ms=0;
     static std::uint64_t Now();
     bool IsOpen()const override{return transport.IsOpen();}
     bool Failed()const override{return invalid_input||transport.Failed();}

@@ -2,6 +2,7 @@
 #include "SessionSetup.hpp"
 #include <eagler/netplay/NetplayCore.hpp>
 #include <eagler/netplay/NetplaySession.hpp>
+#include <eagler/netplay/AdonisTiming.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -26,6 +27,8 @@ public:
     std::uint32_t NextFrame()const{return next_;}
     std::uint32_t NextCaptureFrame()const{return next_capture_;}
     std::uint32_t InputDelay()const{return setup_.input_delay;}
+    Netplay::AdonisMode Mode()const{return Netplay::AdonisMode(setup_.adonis_mode);}
+    bool AllowsRollback()const{return !ReadOnly()&&Mode()!=Netplay::AdonisMode::Delay;}
     // One physical sample per forward simulation tick, including delayed
     // sessions. Sampling again while that tick waits queues stale controls
     // ahead of the negotiated delay and turns a transient stall into latency.

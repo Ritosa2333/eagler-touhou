@@ -120,12 +120,12 @@ EX("multiplayer_input_build") u32 browser_multiplayer_input_build(BrowserRuntime
     std::memcpy(out,bytes.data(),bytes.size());return u32(bytes.size());
 }
 EX("multiplayer_netplay_status") const u32* browser_multiplayer_netplay_status(BrowserRuntime* r){
-    static u32 out[14]{};std::fill(out,out+14,0);out[0]=2;if(!r)return out;
+    static u32 out[15]{};std::fill(out,out+15,0);out[0]=3;if(!r)return out;
     const auto& net=r->app.session.netplay;out[1]=net.Configured();out[2]=net.CanStart();
     out[3]=net.NextFrame();out[4]=net.LastFrame();out[5]=net.ConfirmedThrough();
     out[6]=net.RollbackFrame();out[7]=net.WorldReady();out[8]=r->app.session.network_frame_open;
     out[9]=r->app.session.network_waiting;out[10]=net.Generation();out[11]=net.Retired();
-    out[12]=net.ReadOnly()?0:net.InputDelay();out[13]=net.NextCaptureFrame();return out;
+    out[12]=net.ReadOnly()?0:net.InputDelay();out[13]=net.NextCaptureFrame();out[14]=u32(net.Mode());return out;
 }
 EX("multiplayer_status") const i32* browser_multiplayer_status(BrowserRuntime* r){
     static i32 words[44]{};std::fill(words,words+44,0);

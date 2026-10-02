@@ -168,7 +168,12 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
     if(catchup){
         // Same bounded backlog/start budget as TH06/07. Waiting for a packet
         // consumes no logical time; never accumulate seconds of catch-up work.
-        network_debt=std::min(network_debt+delta,network_interval*Netplay::FrameBudget::MaxCatchupTicks);
+        // An already-due tick (including a blocked retry) must not consume an
+        // advisory correction that cannot delay that tick. Keep it queued for
+        // the next forward deadline; sub-tick callbacks retain unspent debt.
+        const auto paced_delta=network_debt+1.e-9<network_interval&&runtime->network_driver()?
+            runtime->network_driver()->PacedElapsedSeconds(delta):delta;
+        network_debt=std::min(network_debt+paced_delta,network_interval*Netplay::FrameBudget::MaxCatchupTicks);
         due=network_debt+1.e-9>=network_interval;
     }else network_debt=0;
     // MIDI service follows wall cadence, never the number of catch-up ticks.

@@ -20,28 +20,31 @@ bool valid_config(const GameConfiguration& c){
 }
 std::vector<u8> metadata(const ReplayDescription& d){
     std::vector<u8> out;out.reserve(DescriptionBytes);
-    const bool timed=d.setup.version==4;
-    put(out,timed?3u:2u);put(out,d.setup.seed);put(out,d.setup.difficulty);
+    const bool adonis=d.setup.version==5,timed=d.setup.version==4||adonis;
+    put(out,adonis?4u:timed?3u:2u);put(out,d.setup.seed);put(out,d.setup.difficulty);
     for(auto character:d.setup.characters)put(out,character);
     for(auto build:d.setup.build)put(out,build);
     put(out,d.score);put(out,d.last_stage);
     out.insert(out.end(),d.name,d.name+8);out.insert(out.end(),d.date,d.date+6);
     out.push_back(timed?u8(d.setup.input_delay):0);out.push_back(timed?u8(d.setup.prediction_limit):0);
-    for(auto score:d.stage_scores)put(out,score);return out;
+    for(auto score:d.stage_scores)put(out,score);
+    if(adonis)put(out,d.setup.adonis_mode);
+    return out;
 }
 bool decode_description(const Netplay::InputReplayInfo& info,ReplayDescription& d){
     const auto& c=info.config;const auto& v=c.description;
-    if(c.gameId!=8||v.size()!=DescriptionBytes)return false;
+    if(c.gameId!=8||(v.size()!=DescriptionBytes&&v.size()!=DescriptionBytes+4))return false;
     const auto version=word(v.data());
-    if(version!=2&&version!=3)return false;
-    const auto input_delay=version==3?u32(v[62]):0u;
-    const auto prediction_limit=version==3?u32(v[63]):8u;
-    if((version==2&&(v[62]||v[63]))||input_delay>8||prediction_limit<1||prediction_limit>8)return false;
-    const u32 fields[]{version==3?4u:3u,c.playerCount,c.recordedPlayer,word(v.data()+8),word(v.data()+4),1,0,
+    if(version<2||version>4||v.size()!=(version==4?DescriptionBytes+4:DescriptionBytes))return false;
+    const auto input_delay=version>=3?u32(v[62]):0u;
+    const auto prediction_limit=version>=3?u32(v[63]):8u;
+    const auto mode=version==4?word(v.data()+DescriptionBytes):0u;
+    if((version==2&&(v[62]||v[63]))||input_delay>(version==4?9u:8u)||prediction_limit<1||prediction_limit>8)return false;
+    const u32 fields[]{version==4?5u:version==3?4u:3u,c.playerCount,c.recordedPlayer,word(v.data()+8),word(v.data()+4),1,0,
         word(v.data()+24),word(v.data()+28),word(v.data()+32),word(v.data()+36),
-        word(v.data()+12),0,word(v.data()+16),0,word(v.data()+20),0,input_delay,prediction_limit};
+        word(v.data()+12),0,word(v.data()+16),0,word(v.data()+20),0,input_delay,prediction_limit,mode};
     ReplayDescription next;
-    if(!decode_session_setup(next.setup,fields,version==3?19:17)||c.gameplayAbi!=gameplay_contract(next.setup))return false;
+    if(!decode_session_setup(next.setup,fields,version==4?20:version==3?19:17)||c.gameplayAbi!=gameplay_contract(next.setup))return false;
     next.score=word(v.data()+40);next.last_stage=word(v.data()+44);
     if(next.score>999999999||next.last_stage>8)return false;
     std::memcpy(next.name,v.data()+48,8);std::memcpy(next.date,v.data()+56,6);

@@ -4,8 +4,11 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 p=argparse.ArgumentParser();p.add_argument('--url',required=True);p.add_argument('--relay',required=True)
 p.add_argument('--output',type=Path,required=True);p.add_argument('--mode');p.add_argument('--players')
-p.add_argument('--input-delay',type=int,choices=range(9),default=0)
+p.add_argument('--input-delay',type=int,choices=range(10),default=0)
+p.add_argument('--adonis-mode',type=int,choices=range(3),default=0)
 args=p.parse_args();report={'passed':False,'errors':[],'scope':'Runtime host protocol, actual native touch and live relay admission; not public Launcher product declaration'}
+player_count=3 if args.players=='3' else 2
+report.update({'players':player_count,'adonisMode':args.adonis_mode,'inputDelay':args.input_delay})
 def save():args.output.write_text(json.dumps(report,indent=2),encoding='utf-8')
 def call(page,code,arg=None):return page.evaluate(code,arg)
 def request(page,command,**fields):return call(page,'v=>host.request(v.command,v.fields)',{'command':command,'fields':fields})
@@ -13,17 +16,23 @@ with sync_playwright() as pw:
  browser=pw.chromium.launch(headless=True,args=['--enable-unsafe-swiftshader'])
  contexts=[];pages=[]
  try:
-  for seat in range(2):
+  for seat in range(player_count):
    context=browser.new_context(service_workers='block',viewport={'width':640,'height':480});contexts.append(context)
    page=context.new_page();pages.append(page);page.on('pageerror',lambda e:report['errors'].append(str(e)))
+   page.on('requestfailed',lambda r:report['errors'].append('request failed '+r.url+' '+str(r.failure)))
+   page.on('response',lambda r:report['errors'].append('HTTP '+str(r.status)+' '+r.url) if r.status>=400 else None)
+   report['phase']='boot-seat-'+str(seat);save()
    page.goto(args.url+'host.html');call(page,'host.open()');page.wait_for_function('host.ready()',timeout=120000)
-  room='audit-'+uuid.uuid4().hex[:16]
-  admitted=call(pages[0],'v=>host.lobby(v.relay,v.room)',{'relay':args.relay,'room':room});report['admission']=admitted;save()
+  room='th08mp-'+f'{uuid.uuid4().int%10000:04d}'
+  timing={'adonisMode':args.adonis_mode,'inputDelay':args.input_delay,'predictionLimit':8}
+  admitted=call(pages[0],"v=>host.lobby(v.relay,v.room,v.count,'',v.timing)",{'relay':args.relay,'room':room,'count':player_count,'timing':timing})
+  assert all(admitted['room'][k]==v for k,v in timing.items()),admitted
+  report['admission']=admitted;report['phase']='admitted';save()
   for seat,page in enumerate(pages):
    options={'runtimeVariant':'multiplayer','netplayMode':'lan','netplayUrl':args.relay+'/?room='+room+'&run='+str(admitted['serial']),
-    'netplayPlayer':seat,'netplayPlayerCount':2,'netplayDifficulty':1,'netplaySeed':1234,
-    'netplayInputDelay':args.input_delay,'netplayPredictionLimit':8,
-    'netplayLoadouts':[{'character':0,'shot':0},{'character':1,'shot':0}], 'netplayIceServers':[],
+    'netplayPlayer':seat,'netplayPlayerCount':player_count,'netplayDifficulty':1,'netplaySeed':1234,
+    'netplayInputDelay':admitted['room']['inputDelay'],'netplayPredictionLimit':admitted['room']['predictionLimit'],'netplayAdonisMode':admitted['room']['adonisMode'],
+    'netplayLoadouts':[{'character':p,'shot':0} for p in range(player_count)], 'netplayIceServers':[],
     'touchEnabled':True,'touchMovementMode':'touch','touchSensitivity':100,'thpracEnabled':True}
    request(page,'configure',options=options,music='none');request(page,'launch')
   def advance(target):
@@ -31,11 +40,15 @@ with sync_playwright() as pw:
    while True:
     states=[call(page,'t=>host.tickTo(t)',target) for page in pages]
     if all(s['net'][4]==target and s['net'][5]>=target and s['net'][6]==0xffffffff for s in states):
-     assert states[0]['canonical']==states[1]['canonical'],states;return states
+     assert all(s['canonical']==states[0]['canonical'] for s in states),states
+     if args.adonis_mode==1:
+      assert all(s['driver'][3:6]==[0,0,0] and s['driver'][10]==0 and s['net'][7]==0 for s in states),states
+     return states
     assert time.monotonic()<deadline,states
     pages[0].wait_for_timeout(2)
   settled=advance(179)
   assert all(s['net'][12]==args.input_delay for s in settled),settled
+  assert all(s['net'][14]==args.adonis_mode for s in settled),settled
   # Keep the peer's simulation idle until prediction is exhausted. Repeated
   # native callbacks must not build an undeclared physical-input queue.
   for _ in range(30):stalled=call(pages[0],'host.physicalTick()')

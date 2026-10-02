@@ -10,6 +10,7 @@ Netplay::CoreConfig core_config(const SessionSetup& setup,std::uint8_t input_del
     core.sessionId=setup.session_id;core.playerCount=std::uint8_t(setup.player_count);
     core.localPlayer=std::uint8_t(setup.local_player);core.inputDelay=input_delay;
     core.maxRollbackFrames=std::uint8_t(setup.prediction_limit);
+    core.allowPrediction=setup.adonis_mode!=unsigned(Netplay::AdonisMode::Delay);
     core.predictableButtons=1|4|16|32|64|128;
     core.directionButtons=16|32|64|128;core.maxDirectionPredictionFrames=2;
     return core;
@@ -23,10 +24,11 @@ bool NetplayRuntime::configure(const SessionSetup& setup) noexcept {
         std::uint32_t(setup.session_id),std::uint32_t(setup.session_id>>32),
         setup.build[0],setup.build[1],setup.build[2],setup.build[3],
         setup.characters[0],0,setup.characters[1],0,setup.characters[2],0,
-        setup.input_delay,setup.prediction_limit};
+        setup.input_delay,setup.prediction_limit,setup.adonis_mode};
     SessionSetup validated;
-    if(!setup.configured||!decode_session_setup(validated,words,setup.version==4?19:17)||
-       validated.input_delay!=setup.input_delay||validated.prediction_limit!=setup.prediction_limit)return false;
+    if(!setup.configured||!decode_session_setup(validated,words,setup.version==5?20:setup.version==4?19:17)||
+       validated.input_delay!=setup.input_delay||validated.prediction_limit!=setup.prediction_limit||
+       validated.adonis_mode!=setup.adonis_mode)return false;
     Netplay::SessionConfig session;
     session.sessionId=setup.session_id;session.seed=setup.seed;
     session.gameplayAbi=gameplay_contract(validated);session.gameId=8;
@@ -149,14 +151,14 @@ bool NetplayRuntime::ConfirmedInputs(std::uint32_t frame,
     out=result;return true;
 }
 bool NetplayRuntime::SetWorldReady(bool ready){
-    if(ReadOnly()&&ready)return false;
+    if(!AllowsRollback()&&ready)return false;
     if(!configured_||Correcting()||core_.HasRollbackRequest())return false;
     if(!ready&&LastFrame()!=Netplay::INVALID_FRAME&&
        (ConfirmedThrough()==Netplay::INVALID_FRAME||ConfirmedThrough()<LastFrame()))return false;
     world_ready_=ready;return true;
 }
 bool NetplayRuntime::BeginCorrection(std::uint32_t first,std::uint32_t checkpointSpan){
-    if(ReadOnly())return false;
+    if(!AllowsRollback())return false;
     if(!CanStart()||!world_ready_||Correcting()||!core_.HasRollbackRequest()||
        checkpointSpan<1||checkpointSpan>3||first>core_.RollbackFrame()||
        core_.RollbackFrame()-first>=checkpointSpan||first>=next_||

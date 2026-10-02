@@ -17,8 +17,10 @@ if(!modes.length||modes.some(s=>!choices.includes(s)))throw Error('No/unknown ca
 const hostMode=modes.some(m=>m==='host'||m==='replay'||m.startsWith('spectator-'));
 const count=process.argv.find(s=>s.startsWith('--players='))?.slice(10)||'all';
 const inputDelay=Number(process.argv.find(s=>s.startsWith('--input-delay='))?.slice(14)||0);
-if(!Number.isInteger(inputDelay)||inputDelay<0||inputDelay>8)throw Error('Invalid input delay');
-if(inputDelay&&modes.some(mode=>mode!=='host'))throw Error('Input-delay acceptance currently requires --only=host');
+const adonisMode=Number(process.argv.find(s=>s.startsWith('--adonis-mode='))?.slice(14)||0);
+if(!Number.isInteger(adonisMode)||adonisMode<0||adonisMode>2)throw Error('Invalid Adonis mode');
+if(!Number.isInteger(inputDelay)||inputDelay<0||inputDelay>(adonisMode?9:8))throw Error('Invalid input delay');
+if((inputDelay||adonisMode)&&modes.some(mode=>mode!=='host'))throw Error('Input-delay/Adonis acceptance currently requires --only=host');
 const replayFrames=process.argv.find(s=>s.startsWith('--replay-frames='))?.slice(16);
 const freshTouch=process.argv.includes('--fresh-touch');
 const backgroundIndex=process.argv.includes('--background-index');
@@ -38,7 +40,7 @@ if(freshTouch&&hostMode)throw Error('--fresh-touch selects packet/RTC/relay test
 const browserBlocked=new Set([2049,3659,4045,5060,5061,6000,6566,6665,6666,6667,6668,6669,6697,10080]);
 const free=async()=>{for(let tries=0;tries<32;++tries){const p=await new Promise((ok,fail)=>{const s=createServer();s.once('error',fail);s.listen(0,'127.0.0.1',()=>{const port=s.address().port;s.close(e=>e?fail(e):ok(port));});});if(p>=1024&&!browserBlocked.has(p))return p;}throw Error('No browser-safe loopback port');};
 const out=resolve(root,'artifacts/multiplayer-tests/network-'+randomUUID());mkdirSync(out,{recursive:true});
-const report={passed:false,profile,analog,freshTouch,wasm:build.sha256,harness:{},cases:[]};
+const report={passed:false,profile,analog,freshTouch,adonisMode,inputDelay,wasm:build.sha256,harness:{},cases:[]};
 for(const file of ['check-network.mjs','check-network.py','smoke.mjs','serve.mjs'])report.harness[file]=hash(resolve(import.meta.dirname,file));
 if(hostMode)for(const file of ['check-runtime-host.py','runtime-host.html','host-resources.json'])report.harness[file]=hash(resolve(import.meta.dirname,file));
 if(modes.some(m=>m.startsWith('spectator-')))report.harness['check-spectator.py']=hash(resolve(import.meta.dirname,'check-spectator.py'));
@@ -66,7 +68,7 @@ try{
  for(const mode of modes){
   const output=resolve(out,mode+'.json');console.log('BEGIN TH08 '+mode+' players='+count);
   const code=await new Promise((done,reject)=>{
-   const c=spawn(process.env.TH_PYTHON||'python',['-u',resolve(import.meta.dirname,mode==='host'?'check-runtime-host.py':mode==='replay'?'check-replay.py':mode.startsWith('spectator-')?'check-spectator.py':'check-network.py'),'--url','http://127.0.0.1:'+port+'/','--relay','ws://127.0.0.1:'+relayPort,'--mode',mode,'--players',count,'--output',output,...(mode==='host'?['--input-delay',String(inputDelay)]:[]),...(analog?['--analog']:[]),...(freshTouch?['--fresh-touch']:[]),...(backgroundIndex&&['packets','rtc','relay'].includes(mode)?['--background-index']:[]),...(bombLazy&&['packets','rtc','relay'].includes(mode)?['--bomb-lazy']:[]),...(shotSparse&&['packets','rtc','relay'].includes(mode)?['--shot-sparse']:[]),...(recordSparse&&['packets','rtc','relay'].includes(mode)?['--record-sparse']:[]),...(titleSpellsLazy&&['packets','rtc','relay'].includes(mode)?['--title-spells-lazy']:[]),...(projectionReuse&&mode==='packets'?['--projection-reuse']:[]),...(textureCoalesce&&mode==='packets'?['--texture-coalesce']:[]),...(backMetadataOnly&&mode==='packets'?['--back-metadata-only']:[]),...(worldInstancing&&mode==='packets'?['--world-instancing']:[]),...(skipResimVisual&&mode==='packets'?['--skip-resim-visual']:[]),...(skipResimGeometry&&mode==='packets'?['--skip-resim-geometry']:[]),...(bombLifecycle&&mode==='packets'?['--bomb-lifecycle']:[]),...(mode==='replay'&&replayFrames?['--frames',replayFrames]:[])],{cwd:root,stdio:['ignore','pipe','pipe'],windowsHide:true});
+   const c=spawn(process.env.TH_PYTHON||'python',['-u',resolve(import.meta.dirname,mode==='host'?'check-runtime-host.py':mode==='replay'?'check-replay.py':mode.startsWith('spectator-')?'check-spectator.py':'check-network.py'),'--url','http://127.0.0.1:'+port+'/','--relay','ws://127.0.0.1:'+relayPort,'--mode',mode,'--players',count,'--output',output,...(mode==='host'?['--input-delay',String(inputDelay),'--adonis-mode',String(adonisMode)]:[]),...(analog?['--analog']:[]),...(freshTouch?['--fresh-touch']:[]),...(backgroundIndex&&['packets','rtc','relay'].includes(mode)?['--background-index']:[]),...(bombLazy&&['packets','rtc','relay'].includes(mode)?['--bomb-lazy']:[]),...(shotSparse&&['packets','rtc','relay'].includes(mode)?['--shot-sparse']:[]),...(recordSparse&&['packets','rtc','relay'].includes(mode)?['--record-sparse']:[]),...(titleSpellsLazy&&['packets','rtc','relay'].includes(mode)?['--title-spells-lazy']:[]),...(projectionReuse&&mode==='packets'?['--projection-reuse']:[]),...(textureCoalesce&&mode==='packets'?['--texture-coalesce']:[]),...(backMetadataOnly&&mode==='packets'?['--back-metadata-only']:[]),...(worldInstancing&&mode==='packets'?['--world-instancing']:[]),...(skipResimVisual&&mode==='packets'?['--skip-resim-visual']:[]),...(skipResimGeometry&&mode==='packets'?['--skip-resim-geometry']:[]),...(bombLifecycle&&mode==='packets'?['--bomb-lifecycle']:[]),...(mode==='replay'&&replayFrames?['--frames',replayFrames]:[])],{cwd:root,stdio:['ignore','pipe','pipe'],windowsHide:true});
    children.push(c);c.stdout.on('data',b=>process.stdout.write(b));c.stderr.on('data',b=>process.stderr.write(b));c.once('error',reject);c.once('exit',done);
   });
   report.cases.push({mode,code,report:output});

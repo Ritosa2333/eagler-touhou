@@ -277,10 +277,110 @@ static void spectator_is_exact_read_only_and_bounded(){
         assert(queue.Size()==SpectatorStream::Capacity&&queue.Failed());
     }
 }
+static SessionSetup adonis_setup(unsigned count,unsigned local,unsigned delay,unsigned mode){
+    const std::uint32_t words[]{5,count,local,1,1234,0x55667788u,0x10203040u,
+        0x11223344u,0x55667788u,0x99aabbccu,0xddeeff00u,0,0,7,0,count==3?11u:0u,0,delay,8,mode};
+    SessionSetup result;assert(th08::multiplayer::decode_session_setup(result,words,20));return result;
+}
+static FrameInput adonis_input(unsigned seat,unsigned frame){
+    FrameInput in(std::uint16_t(1|((frame+seat)%2?16:64)));
+    in.analogMode=Netplay::AnalogMode::DirectTouchDelta;
+    in.x=float(int((frame+seat)%7)-3)*.25f;in.y=float(int(frame%5)-2)*.5f;
+    in.touchUsed=true;in.touchBomb=frame%11==seat;if(in.touchBomb)in.buttons|=2;return in;
+}
+static void adonis_exact_input_and_generation(unsigned count,unsigned delay){
+    NetplayRuntime peers[3];
+    for(unsigned p=0;p<count;++p)assert(peers[p].Reset(adonis_setup(count,p,delay,1)));
+    barrier(peers,count);
+    std::vector<std::uint8_t> old_wire;
+    for(unsigned f=0;f<48;++f){
+        for(unsigned p=0;p<count;++p){
+            auto& r=peers[p];assert(!r.AllowsRollback()&&!r.WorldReady()&&!r.SetWorldReady(true));
+            assert(r.CanCapture()&&r.CaptureLocal(f,adonis_input(p,f)));
+            assert(!r.CanCapture()&&r.NextCaptureFrame()==f+1);
+            assert(r.CaptureLocal(f,adonis_input(p,f)));
+            assert(!r.CaptureLocal(f,FrameInput{})&&!r.CaptureLocal(f+1,FrameInput{}));
+        }
+        for(unsigned p=0;p<count;++p)for(unsigned other=0;other<count;++other)if(p!=other){
+            assert(peers[p].BuildInputWire(other,f,f+1,0,old_wire));
+            assert(apply_wire(peers[other],old_wire)==Wire::Accepted);
+        }
+        for(auto* r=peers;r!=peers+count;++r){
+            auto decision=r->Prepare(f);assert(decision.canAdvance&&!decision.predictedMask);
+            for(unsigned p=0;p<count;++p)assert(decision.inputs[p]==(f<delay?FrameInput{}:adonis_input(p,f-delay)));
+            auto forged=decision;forged.predictedMask=2;
+            assert(!r->MarkSimulated(f,forged)&&r->NextFrame()==f);
+            assert(r->MarkSimulated(f,decision)&&r->RollbackFrame()==Netplay::INVALID_FRAME&&!r->BeginCorrection(f));
+            std::array<FrameInput,Netplay::MAX_PLAYERS> exact;
+            assert(r->ConfirmedInputs(f,exact)&&exact==decision.inputs);
+        }
+    }
+    for(unsigned p=0;p<count;++p){
+        auto& r=peers[p];assert(r.CanRetire()&&r.Retire());SessionSetup next;
+        assert(r.BeginNextRun(next,4321)&&r.Generation()==1);
+        assert(next.version==5&&next.adonis_mode==1&&next.input_delay==delay);
+        assert(r.NextFrame()==0&&r.NextCaptureFrame()==0&&!r.WorldReady());
+        assert(apply_wire(r,old_wire)==Wire::IgnoredSession);
+    }
+}
+static void adonis_hybrid_correction(unsigned count){
+    NetplayRuntime peers[3];for(unsigned p=0;p<count;++p)assert(peers[p].Reset(adonis_setup(count,p,2,2)));
+    barrier(peers,count);auto& r=peers[0];assert(r.SetWorldReady(true));
+    std::array<std::uint64_t,7> states{};
+    const auto step=[](std::uint64_t prior,const Netplay::FrameDecision& d,unsigned n){
+        for(unsigned p=0;p<n;++p)prior=prior*131+std::uint64_t(d.inputs[p].buttons)*(p+1);
+        return prior;
+    };
+    for(unsigned f=0;f<6;++f){
+        assert(r.CaptureLocal(f,FrameInput(std::uint16_t(16+f))));
+        if(!f)for(unsigned p=1;p<count;++p)assert(r.SubmitRemote(p,0,FrameInput{})==RemoteInputResult::Accepted);
+        const auto d=r.Prepare(f);assert(d.canAdvance);
+        if(f)assert(d.predictedMask);
+        states[f+1]=step(states[f],d,count);assert(r.MarkSimulated(f,d));
+    }
+    for(unsigned f=1;f<6;++f)for(unsigned p=1;p<count;++p)
+        assert(r.SubmitRemote(p,f,FrameInput(std::uint16_t((f+p)*16)))==RemoteInputResult::RollbackRequired);
+    assert(r.RollbackFrame()==1&&r.BeginCorrection(1));
+    std::uint64_t reference=0;
+    for(unsigned f=0;f<6;++f){
+        Netplay::FrameDecision exact;exact.inputs[0]=FrameInput(f<2?0:std::uint16_t(16+f-2));
+        for(unsigned p=1;p<count;++p)exact.inputs[p]=FrameInput(f?std::uint16_t((f+p)*16):0);
+        reference=step(reference,exact,count);
+        if(f){const auto d=r.Prepare(f);assert(d.canAdvance&&!d.predictedMask&&d.inputs==exact.inputs);
+            assert(!r.CanCapture()&&r.NextCaptureFrame()==6);
+            states[f+1]=step(states[f],d,count);assert(r.MarkSimulated(f,d));}
+        assert(states[f+1]==reference);
+    }
+    assert(r.EndCorrection()&&r.NextFrame()==6&&r.NextCaptureFrame()==6);
+}
+static void adonis_mismatch_and_gap(){
+    NetplayRuntime a,b;const auto configured=adonis_setup(2,0,1,1);assert(a.Reset(configured));
+    for(auto other:{adonis_setup(2,1,1,2),adonis_setup(2,1,2,1),setup(2,1)}){
+        b.Clear();assert(b.Reset(other));
+        assert(a.ApplySession(b.SessionPacket(SessionPhase::Hello))==Netplay::SessionPacketResult::ContractMismatch);
+    }
+    auto invalid=configured;invalid.adonis_mode=3;assert(!a.Reset(invalid)&&a.Setup().adonis_mode==1);
+    invalid=configured;invalid.input_delay=10;assert(!a.Reset(invalid)&&a.InputDelay()==1);
+    std::uint32_t zero=0;assert(!th08::multiplayer::decode_session_setup(invalid,&zero,0));
+    NetplayRuntime peers[2];for(unsigned p=0;p<2;++p)assert(peers[p].Reset(adonis_setup(2,p,1,1)));
+    barrier(peers,2);auto& r=peers[0];assert(r.CaptureLocal(0,FrameInput(1)));
+    assert(r.SubmitRemote(1,1,FrameInput(16))==RemoteInputResult::Accepted);
+    assert(!r.Prepare(0).canAdvance);
+    assert(r.SubmitRemote(1,0,FrameInput{})==RemoteInputResult::Accepted);
+    const auto exact=r.Prepare(0);assert(exact.canAdvance&&!exact.predictedMask&&r.MarkSimulated(0,exact));
+    NetplayRuntime observer;assert(observer.Reset(adonis_setup(2,0,9,1))&&observer.BeginSpectator());
+    Netplay::SpectatorFramePacket packet;packet.sessionId=observer.Config().sessionId;
+    packet.gameplayAbi=observer.Config().gameplayAbi;packet.playerCount=2;packet.frame=0;
+    packet.inputs[0]=adonis_input(0,17);packet.inputs[1]=adonis_input(1,17);
+    assert(observer.FeedSpectator(packet));const auto d=observer.Prepare(0);
+    assert(d.canAdvance&&d.inputs==packet.inputs&&!d.predictedMask);
+}
 int main(){
     decode_atomicity();fixed_input_delay_is_applied_and_agreed();session_and_inputs(2);session_and_inputs(3);
     delayed_capture_and_wait();
     confirmation_gap_is_bounded();packet_transaction_and_negative_inputs();
     spectator_is_exact_read_only_and_bounded();
+    for(unsigned count:{2u,3u}){for(unsigned delay:{0u,1u,9u})adonis_exact_input_and_generation(count,delay);adonis_hybrid_correction(count);}
+    adonis_mismatch_and_gap();
     std::puts("TH08 frame-zero admission, corrected frontiers, atomic packets and generation fences: PASS");
 }

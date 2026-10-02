@@ -27,7 +27,7 @@ writeFileSync(hostManifest,JSON.stringify(createRuntimeManifest({game:'th08',bui
 files.set('/runtime/manifest.json',hostManifest);
 files.set('/runtime/resources.json',resolve(import.meta.dirname,'host-resources.json'));
 files.set('/runtime/th08-sdl.mjs',resolve(buildRoot,'th08-sdl.mjs'));files.set('/runtime/th08-sdl.wasm',wasm);
-for(const file of ['th08.html','shell.mjs','eagler-host.mjs','save-storage.mjs','multiplayer-host.mjs','practice.mjs','practice-config.mjs','practice-sections.mjs','midi-worklet.mjs'])
+for(const file of ['th08.html','shell.mjs','directory-keyboard.mjs','eagler-host.mjs','save-storage.mjs','multiplayer-host.mjs','practice.mjs','practice-config.mjs','practice-sections.mjs','midi-worklet.mjs'])
  files.set('/runtime/'+file,resolve(root,'th08_web/sdl-runtime',file));
 files.set('/runtime/motion-replay.mjs',resolve(root,'portable/browser/motion-replay.mjs'));
 files.set('/fonts/msgothic.ttc',process.env.TH08_MP_FONT||resolve(workspace,'th06-eagler/assets/msgothic.ttc'));
