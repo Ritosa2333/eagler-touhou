@@ -3,6 +3,9 @@
 #include "GameMath.hpp"
 #include <cmath>
 #include "../../../portable/numeric/SpriteNumber.hpp"
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(__wasm__)
+#include "AnmRotation.hpp"
+#endif
 namespace th10 {
 namespace {
 Extended sum(float a,float b,float c){return number(a)+number(b)+number(c);}
@@ -43,7 +46,11 @@ u32 AnmRenderer::axis_geometry(const AnmVm& vm,AnmVertex* q,bool pixel) noexcept
 // while its lower-right copy is stored to float before multiplication.
 u32 AnmRenderer::rotated_geometry(const AnmVm& vm,AnmVertex* q) noexcept {
     if(vm.rotation.z==0)return axis_geometry(vm,q,false);
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(__wasm__)
+    float rotation_cos,rotation_sin;anm_rotation_values(vm.rotation.z,rotation_cos,rotation_sin);
+#else
     const float rotation_cos=cosine(number(vm.rotation.z)).to_float(),rotation_sin=sine(number(vm.rotation.z)).to_float();
+#endif
 
     auto evaluate=[&](auto number)->u32{
         using N=decltype(number(0));

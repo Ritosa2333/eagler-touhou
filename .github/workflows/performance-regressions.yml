@@ -1,5 +1,8 @@
 name: Multiplayer performance regressions
 
+permissions:
+  contents: read
+
 on:
   push:
     paths:
@@ -8,9 +11,19 @@ on:
       - 'th10_web/cpp/multiplayer/RollbackState.*'
       - 'th10_web/cpp/multiplayer/PresentationCache.hpp'
       - 'th10_web/cpp/multiplayer/NetworkExports.cpp'
+      - 'th10_web/cpp/multiplayer/Anm*.hpp'
+      - 'th10_web/cpp/game/AnmRenderer.cpp'
+      - 'th10_web/cpp/game/Anm*.hpp'
       - 'th10_web/cpp/sdl/ApplicationHost.cpp'
       - 'portable/check-high-refresh-contract.mjs'
+      - 'portable/check-anm-*.mjs'
+      - 'portable/check-game-resources.mjs'
+      - 'portable/check-bullet-owner.mjs'
+      - 'portable/check-multiplayer-rules.mjs'
       - 'tests/high-refresh-contract.test.mjs'
+      - 'tests/anm-*.cpp'
+      - 'tests/game-resource*'
+      - 'tests/bullet-owner-check.cpp'
       - 'tests/rollback-pool*.cpp'
       - 'tests/presentation-cache-test.cpp'
       - 'third_party/eagler-common'
@@ -21,9 +34,19 @@ on:
       - 'th10_web/cpp/multiplayer/RollbackState.*'
       - 'th10_web/cpp/multiplayer/PresentationCache.hpp'
       - 'th10_web/cpp/multiplayer/NetworkExports.cpp'
+      - 'th10_web/cpp/multiplayer/Anm*.hpp'
+      - 'th10_web/cpp/game/AnmRenderer.cpp'
+      - 'th10_web/cpp/game/Anm*.hpp'
       - 'th10_web/cpp/sdl/ApplicationHost.cpp'
       - 'portable/check-high-refresh-contract.mjs'
+      - 'portable/check-anm-*.mjs'
+      - 'portable/check-game-resources.mjs'
+      - 'portable/check-bullet-owner.mjs'
+      - 'portable/check-multiplayer-rules.mjs'
       - 'tests/high-refresh-contract.test.mjs'
+      - 'tests/anm-*.cpp'
+      - 'tests/game-resource*'
+      - 'tests/bullet-owner-check.cpp'
       - 'tests/rollback-pool*.cpp'
       - 'tests/presentation-cache-test.cpp'
       - 'third_party/eagler-common'
@@ -43,6 +66,10 @@ jobs:
         run: |
           node portable/check-high-refresh-contract.mjs
           node --test tests/high-refresh-contract.test.mjs
+          node --check portable/check-anm-dense-engine.mjs
+          node --check portable/check-anm-trig-input.mjs
+          node --check portable/check-game-resources.mjs
+          node --check portable/check-bullet-owner.mjs
       - name: Optimized owner tests with assertions enabled
         shell: bash
         run: |
@@ -61,3 +88,42 @@ jobs:
           set -euo pipefail
           g++ -std=c++17 -O1 -g -UNDEBUG -Wall -Wextra -Werror -fsanitize=address,undefined -fno-omit-frame-pointer -DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1 -Ithird_party/eagler-common/include tests/rollback-pool-capture-test.cpp third_party/eagler-common/src/netplay/RollbackJournal.cpp -o artifacts/performance-regressions/rollback-pool-capture-sanitized
           artifacts/performance-regressions/rollback-pool-capture-sanitized
+
+  wasm-owner-regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/th10-wasi-sdk-34.0-x86_64-linux.deb
+          key: th10-wasi-sdk-34-09f37a478107bf30381e0d8922ac678ebe998de59e574f96830f08e520908d4a
+      - name: Verify and extract the official pinned WASI SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          package="$HOME/.cache/th10-wasi-sdk-34.0-x86_64-linux.deb"
+          mkdir -p "$HOME/.cache" "$RUNNER_TEMP/th10-wasi-sdk"
+          if [ ! -f "$package" ]; then
+            curl --fail --location --retry 2 --max-time 300 --output "$package" https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-34/wasi-sdk-34.0-x86_64-linux.deb
+          fi
+          echo "09f37a478107bf30381e0d8922ac678ebe998de59e574f96830f08e520908d4a  $package" | sha256sum --check
+          dpkg-deb --extract "$package" "$RUNNER_TEMP/th10-wasi-sdk"
+          echo "WASI_SDK_PATH=$RUNNER_TEMP/th10-wasi-sdk/opt/wasi-sdk" >> "$GITHUB_ENV"
+      - name: Actual wasm32 owner and arithmetic regressions
+        run: |
+          node portable/check-multiplayer-rules.mjs
+          node portable/check-anm-trig-input.mjs
+      - name: Compile title rollback and channel diagnostics against the pin
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/performance-regressions
+          flags=(--target=wasm32-wasip1 -O2 -std=c++17 -Wall -Wextra -Werror -fno-exceptions -fno-rtti -ffp-contract=off -fno-strict-aliasing -DTH_NATIVE_PLATFORM=1 -DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1 -Ithird_party/eagler-common/include -Ith10_web/cpp/multiplayer)
+          for source in RollbackState NetworkExports; do
+            "$WASI_SDK_PATH/bin/clang++" "${flags[@]}" -c "th10_web/cpp/multiplayer/${source}.cpp" -o "artifacts/performance-regressions/${source}.o"
+          done
