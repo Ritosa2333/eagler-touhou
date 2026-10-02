@@ -24,6 +24,7 @@ struct SessionChannelConfig
     std::size_t bufferedLimit = 256 * 1024;
     std::size_t receiveBudget = 256;
     bool adonisPhase = false;
+    unsigned adonisPredictionFrames = 0;
 };
 
 // Network-only protocol lifecycle. All clock, queue, sequence and liveness

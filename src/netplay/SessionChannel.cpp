@@ -78,6 +78,7 @@ bool SessionChannel::BeginSession(const SessionConfig &session, std::uint64_t no
         !config.connectTimeoutMs || !config.confirmedTimeoutMs ||
         !config.controlResendMs || !config.inputResendMs || !config.repairIntervalMs ||
         !config.bufferedLimit || !config.receiveBudget || config.receiveBudget > 4096 ||
+        config.adonisPredictionFrames>2 || (!config.adonisPhase && config.adonisPredictionFrames) ||
         (previousSession_ && (session.sessionId == previousSession_ ||
          session.playerCount != previousCount_ || session.localPlayer != previousLocal_)))
         return Fail(Failure::InvalidConfiguration);
@@ -85,7 +86,7 @@ bool SessionChannel::BeginSession(const SessionConfig &session, std::uint64_t no
     policy_ = config;
     pacing_.Reset();
     session_ = session;
-    if (policy_.adonisPhase && !adonis_.Reset(session.sessionId, session.localPlayer, session.playerCount))
+    if (policy_.adonisPhase && !adonis_.Reset(session.sessionId, session.localPlayer, session.playerCount,policy_.adonisPredictionFrames))
         return Fail(Failure::InvalidConfiguration);
     active_ = true;
     helloSent_ = false;

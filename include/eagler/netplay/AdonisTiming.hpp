@@ -78,10 +78,11 @@ inline bool DecodeAdonisPhaseSample(const std::uint8_t* b, std::size_t n, Adonis
 // as an early arrival. CPU/replay duration is not added to measured waiting.
 class AdonisPhase {
 public:
-    bool Reset(std::uint64_t id, std::uint8_t local, std::uint8_t count) {
+    bool Reset(std::uint64_t id, std::uint8_t local, std::uint8_t count, unsigned predictionFrames=0) {
         *this=AdonisPhase{};
-        if(!id || count<2 || count>MAX_PLAYERS || local>=count) return false;
-        id_=id;local_=local;count_=count;nextWindow_.fill(16);return true;
+        if(!id || count<2 || count>MAX_PLAYERS || local>=count || predictionFrames>2) return false;
+        id_=id;local_=local;count_=count;predictionAllowanceUs_=(predictionFrames*1000000u+59)/60;
+        nextWindow_.fill(16);return true;
     }
     void ObserveArrival(std::uint8_t peer,std::uint32_t frame,std::uint64_t nowUs) {
         if(!id_ || peer>=count_ || peer==local_ || frame==INVALID_FRAME) return;
@@ -133,6 +134,7 @@ public:
     double TakeDelayMs(){const auto n=pendingUs_;pendingUs_=0;return n/1000.0;}
     std::uint32_t Adjustments() const {return adjustments_;}
     std::uint64_t TotalDelayUs() const {return totalDelayUs_;}
+    unsigned PredictionAllowanceUs() const {return predictionAllowanceUs_;}
 private:
     static constexpr unsigned History=256,Windows=8;
     struct Stamp {std::uint32_t frame=INVALID_FRAME;std::uint64_t us=0;};
@@ -142,7 +144,13 @@ private:
         if(now<60 || local.frame>now || now-local.frame>32 ||
             (lastAdjustment_!=INVALID_FRAME && now-lastAdjustment_<60))return;
         std::uint32_t shift=0;
-        if(local.waitCount)shift=local.waitUs/local.waitCount;
+        if(local.waitCount) {
+            const auto wait=local.waitUs/local.waitCount;
+            // Preserve an explicitly negotiated 1..2f hybrid prediction lead.
+            // Otherwise positive-wait correction slowly adds back the latency
+            // that startup deliberately removed from D. Raw reports remain raw.
+            if(wait>predictionAllowanceUs_)shift=wait-predictionAllowanceUs_;
+        }
         else if(remote.sessionId==id_ && remote.frame==local.frame && !remote.waitCount &&
                 local.leadCount && remote.leadCount) {
             const auto here=local.leadUs/local.leadCount,there=remote.leadUs/remote.leadCount;
@@ -154,7 +162,7 @@ private:
     }
     std::uint64_t id_=0,totalDelayUs_=0;
     std::uint8_t local_=0,count_=0;
-    std::uint32_t lastDue_=INVALID_FRAME,lastAdjustment_=INVALID_FRAME,pendingUs_=0,adjustments_=0;
+    std::uint32_t lastDue_=INVALID_FRAME,lastAdjustment_=INVALID_FRAME,pendingUs_=0,adjustments_=0,predictionAllowanceUs_=0;
     std::array<Stamp,History> due_{};
     std::array<std::array<Stamp,History>,MAX_PLAYERS> arrivals_{};
     std::array<std::uint32_t,MAX_PLAYERS> nextWindow_{};
