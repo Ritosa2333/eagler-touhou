@@ -127,12 +127,14 @@ void AnimationEngine::draw(AnmVm& vm){
     // equal per-seat resource rows instead, using these same native sprites.
     if(vm.id&&vm.animation_file&&vm.animation_file->file_index==6&&
        (vm.script_index==8||vm.script_index==9))return;
-    if(enhance_local_player_visibility&&player_view_alpha&&player_view_owner){
+    if(player_view_alpha&&player_view_owner){
         const u8 alpha=player_view_alpha(player_view_owner,vm);
         if(alpha<255){
             auto copy=vm;present(copy,vm);
-            copy.color=(copy.color&0x00ffffffu)|(((copy.color>>24)*alpha/255u)<<24);
-            copy.secondary_color=(copy.secondary_color&0x00ffffffu)|(((copy.secondary_color>>24)*alpha/255u)<<24);
+            const u32 primary_alpha=std::min<u32>(copy.color>>24,alpha);
+            const u32 secondary_alpha=std::min<u32>(copy.secondary_color>>24,alpha);
+            copy.color=(copy.color&0x00ffffffu)|(primary_alpha<<24);
+            copy.secondary_color=(copy.secondary_color&0x00ffffffu)|(secondary_alpha<<24);
             submit(copy);return;
         }
     }

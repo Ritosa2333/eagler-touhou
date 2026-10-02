@@ -1,6 +1,7 @@
 #include "../platform/World.hpp"
 #include "PlayerCollisionBroadphase.hpp"
 #include "Balance.hpp"
+#include "PlayerPresentation.hpp"
 #include "../game/CallbackNames.hpp"
 #include "../game/BombEnvironment.hpp"
 #include "../game/GameObjectResources.hpp"
@@ -704,7 +705,7 @@ i32 World::update_player(Player* player){
 }
 
 u8 World::player_visual_alpha(const AnmVm& vm)const{
-    if(!vm.id||!engine.enhance_local_player_visibility||local_player>=player_count||
+    if(!vm.id||local_player>=player_count||
        state.netplay_runtime.Spectator()||state.netplay_runtime.Playback()||!pilots[local_player].player)return 255;
     const auto* root=&vm.child_node;
     for(u32 i=0;root->previous&&i<4096;++i)root=root->previous;
@@ -714,11 +715,10 @@ u8 World::player_visual_alpha(const AnmVm& vm)const{
         const auto* p=pilots[seat].player;if(!p||seat==local_player)continue;
         if(vm.animation_file!=p->animation_file)continue;
         const float dx=p->position.x-local.position.x,dy=p->position.y-local.position.y;
-        if(dx*dx+dy*dy>=84.f*84.f)continue;
-        if(id==p->focus_animation)return 104;
-        for(const auto& option:p->options)for(auto animation:option.animations)if(animation&&animation==id)return 104;
-        for(const auto& shot:p->shots)if(shot.state&&
-           ((shot.animation&&shot.animation==id)||(shot.secondary_animation&&shot.secondary_animation==id)))return 104;
+        const u8 alpha=multiplayer::player_proximity_alpha(dx,dy);
+        if(alpha==255)continue;
+        if(id==p->focus_animation)return alpha;
+        for(const auto& option:p->options)for(auto animation:option.animations)if(animation&&animation==id)return alpha;
     }
     return 255;
 }
@@ -755,15 +755,12 @@ i32 World::draw_player(Player* player){
             alpha=0x50u+(0xafu*capped)/multiplayer::kRescueTicks;
         }
     }
-    if(engine.enhance_local_player_visibility&&!state.netplay_runtime.Spectator()&&!state.netplay_runtime.Playback()&&
+    if(!state.netplay_runtime.Spectator()&&!state.netplay_runtime.Playback()&&
        pilot->seat!=local_player&&local_player<player_count&&pilots[local_player].player){
         const auto& local=pilots[local_player].player->position;
-        const float dx=draw->position.x-local.x,dy=draw->position.y-local.y;
-        const float distance=std::sqrt(dx*dx+dy*dy);
-        if(distance<100.0f){
-            const u32 overlap=distance<=50.0f?0x50u:u32(0x50u+0xafu*(distance-50.0f)/50.0f);
-            if(overlap<alpha)alpha=overlap;
-        }
+        const float dx=player->position.x-local.x,dy=player->position.y-local.y;
+        const u32 overlap=multiplayer::player_proximity_alpha(dx,dy);
+        if(overlap<alpha)alpha=overlap;
     }
     const u32 color=draw->animation.color,secondary=draw->animation.secondary_color;
     if(alpha<0xffu){
