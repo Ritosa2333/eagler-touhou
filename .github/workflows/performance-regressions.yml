@@ -15,6 +15,10 @@ on:
       - 'th10_web/cpp/game/AnmRenderer.cpp'
       - 'th10_web/cpp/game/AnmProjection.cpp'
       - 'th10_web/cpp/game/AnmInterpreter.cpp'
+      - 'th10_web/cpp/game/AnmRegistry.cpp'
+      - 'th10_web/cpp/game/PlayerShooting.*'
+      - 'th10_web/cpp/game/Player.hpp'
+      - 'th10_web/cpp/game/PlayerShotLookup.hpp'
       - 'th10_web/cpp/game/Anm*.hpp'
       - 'th10_web/cpp/game/GameInput.*'
       - 'th10_web/cpp/game/Presentation.*'
@@ -29,6 +33,7 @@ on:
       - 'th10_web/cpp/sdl/ApplicationHost.cpp'
       - 'portable/check-high-refresh-contract.mjs'
       - 'portable/check-anm-*.mjs'
+      - 'portable/check-player-shot-lookup.mjs'
       - 'portable/check-presentation-input.mjs'
       - 'portable/check-menu-input.mjs'
       - 'portable/check-game-resources.mjs'
@@ -36,6 +41,7 @@ on:
       - 'portable/check-multiplayer-rules.mjs'
       - 'tests/high-refresh-contract.test.mjs'
       - 'tests/anm-*.cpp'
+      - 'tests/player-shot-*.cpp'
       - 'tests/presentation-input-test.cpp'
       - 'tests/menu-input-test.cpp'
       - 'tests/game-resource*'
@@ -54,6 +60,10 @@ on:
       - 'th10_web/cpp/game/AnmRenderer.cpp'
       - 'th10_web/cpp/game/AnmProjection.cpp'
       - 'th10_web/cpp/game/AnmInterpreter.cpp'
+      - 'th10_web/cpp/game/AnmRegistry.cpp'
+      - 'th10_web/cpp/game/PlayerShooting.*'
+      - 'th10_web/cpp/game/Player.hpp'
+      - 'th10_web/cpp/game/PlayerShotLookup.hpp'
       - 'th10_web/cpp/game/Anm*.hpp'
       - 'th10_web/cpp/game/GameInput.*'
       - 'th10_web/cpp/game/Presentation.*'
@@ -68,6 +78,7 @@ on:
       - 'th10_web/cpp/sdl/ApplicationHost.cpp'
       - 'portable/check-high-refresh-contract.mjs'
       - 'portable/check-anm-*.mjs'
+      - 'portable/check-player-shot-lookup.mjs'
       - 'portable/check-presentation-input.mjs'
       - 'portable/check-menu-input.mjs'
       - 'portable/check-game-resources.mjs'
@@ -75,6 +86,7 @@ on:
       - 'portable/check-multiplayer-rules.mjs'
       - 'tests/high-refresh-contract.test.mjs'
       - 'tests/anm-*.cpp'
+      - 'tests/player-shot-*.cpp'
       - 'tests/presentation-input-test.cpp'
       - 'tests/menu-input-test.cpp'
       - 'tests/game-resource*'
@@ -102,6 +114,7 @@ jobs:
           node --check portable/check-anm-trig-input.mjs
           node --check portable/check-anm-billboard.mjs
           node --check portable/check-anm-uv-scroll.mjs
+          node --check portable/check-player-shot-lookup.mjs
           node --check portable/check-presentation-input.mjs
           node --check portable/check-menu-input.mjs
           node --check portable/check-game-resources.mjs
@@ -158,6 +171,8 @@ jobs:
           TH10_TEST_UBSAN=1 node portable/check-anm-billboard.mjs
           node portable/check-anm-uv-scroll.mjs
           TH10_TEST_UBSAN=1 node portable/check-anm-uv-scroll.mjs
+          node portable/check-player-shot-lookup.mjs
+          TH10_TEST_UBSAN=1 node portable/check-player-shot-lookup.mjs
       - name: Authored menu and screenshot input word regressions
         run: |
           node portable/check-presentation-input.mjs

@@ -1,4 +1,7 @@
 #include "PlayerShooting.hpp"
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(__wasm__)
+#include "PlayerShotLookup.hpp"
+#endif
 namespace th10 {
 namespace {
 void seek_timer(Timer& timer,u32& flags,i32 frame,const float* rate){
@@ -56,7 +59,15 @@ i32 Player::update_firing(PlayerShootingEnvironment& env){
 // 0x428280: lasers, bullets and their animation lifetime share this ordered pool.
 i32 Player::update_shots(PlayerShootingEnvironment& env){
     auto& registry=env.manager->registry;
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(__wasm__)
+    constexpr auto shot_count=sizeof(shots)/sizeof(*shots);
+    static_assert(shot_count<=PlayerShotLookup::max_shots,"Player shot scratch capacity");
+    PlayerShotLookup lookup;
+#endif
     for(auto& shot:shots)if(shot.state){
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(__wasm__)
+        lookup.prepare(&shot,shots+shot_count,registry);
+#endif
         if(shot.definition->type==3&&shot.state==1&&(fire_timer.current<0||shot.definition->option-1>=option_count)){
             registry.interrupt(shot.animation,1);registry.interrupt(shot.secondary_animation,1);shot.state=2;active_lasers[shot.definition->option]=0;
         }
@@ -66,14 +77,22 @@ i32 Player::update_shots(PlayerShootingEnvironment& env){
         if(shot.definition->type==3&&!shot.collided&&shot.state==1&&shot.first_collision==1){registry.interrupt(shot.animation,3);shot.first_collision=0;}
         shot.collided=0;if(shot.definition->on_update)env.update_shot(*this,shot);
         auto& motion=shot.motion;motion.update_velocity();motion.update();
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(__wasm__)
+        auto* sprite=lookup.find(shot.animation,registry);
+#else
         auto* sprite=registry.find(shot.animation);
+#endif
         if(!sprite){shot.state=0;registry.request_delete(shot.secondary_animation);shot.animation=shot.secondary_animation=0;continue;}
         if(shot.definition->type!=3&&shot.timer.current>=10&&outside_playfield(motion.position,
                 Scalar::mul(sprite->sprite->width,sprite->scale.x),Scalar::mul(sprite->sprite->height,sprite->scale.y))){
             registry.request_delete(shot.animation);shot.animation=0;shot.state=0;continue;
         }
         set_sprite_position(*sprite,motion.position);
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(__wasm__)
+        if(auto* secondary=lookup.find(shot.secondary_animation,registry))set_sprite_position(*secondary,motion.position);else shot.secondary_animation=0;
+#else
         if(auto* secondary=registry.find_and_clear(shot.secondary_animation))set_sprite_position(*secondary,motion.position);
+#endif
         if(sprite->flags&0x8000000){sprite->rotation.z=motion.angle;sprite->flags|=4;}
         shot.timer.tick();
     }
