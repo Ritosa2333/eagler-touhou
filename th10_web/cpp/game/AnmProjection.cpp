@@ -40,7 +40,18 @@ i32 AnmProjection::billboard_geometry(const AnmVm& vm){
     auto* q=renderer.environment.quad;for(u32 i=0;i<4;++i)q[i].position.z=center.z;
     const auto c=number(cosine(number(vm.rotation.z)).to_float()),s=number(sine(number(vm.rotation.z)).to_float()),x=number(center.x),y=number(center.y);
     Extended left,right,top,bottom;anchor((vm.flags>>18)&3,width,left,right);anchor((vm.flags>>20)&3,height,top,bottom);const auto r=number(right.to_float()),b=number(bottom.to_float());
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(__wasm__)
+    // These identical ordered products have no intervening callback, mode
+    // change or flag reset. Reuse preserves both their bits and sticky flags.
+    // Keep the distinct r/b float stores and c*bottom operand order below.
+    const auto left_cos=left*c,top_sin=top*s,left_sin=left*s,top_cos=top*c;
+    q[0].position.x=(left_cos-top_sin+x).to_float();q[0].position.y=(left_sin+top_cos+y).to_float();
+    q[1].position.x=(right*c-top_sin+x).to_float();q[1].position.y=(top_cos+right*s+y).to_float();
+    q[2].position.x=(left_cos-bottom*s+x).to_float();q[2].position.y=(left_sin+c*bottom+y).to_float();
+    q[3].position.x=(r*c-b*s+x).to_float();q[3].position.y=(r*s+b*c+y).to_float();return 0;
+#else
     q[0].position.x=(left*c-top*s+x).to_float();q[0].position.y=(left*s+top*c+y).to_float();q[1].position.x=(right*c-top*s+x).to_float();q[1].position.y=(top*c+right*s+y).to_float();q[2].position.x=(left*c-bottom*s+x).to_float();q[2].position.y=(left*s+c*bottom+y).to_float();q[3].position.x=(r*c-b*s+x).to_float();q[3].position.y=(r*s+b*c+y).to_float();return 0;
+#endif
 }
 // 0x443f80 / 0x443fb0. Billboard fog uses one distance, integer fog channels
 // and fading alpha. Projected polygon fog below uses four distances and keeps A.
