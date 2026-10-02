@@ -284,6 +284,8 @@ FrameDecision RollbackCore::PrepareFrame(std::uint32_t frame) const
     for (std::uint8_t player = 0; player < config_.playerCount; ++player)
     {
         const std::uint32_t confirmed = confirmedThrough_[player];
+        if (!config_.allowPrediction && (confirmed == INVALID_FRAME || confirmed < frame))
+            return decision;
         if (player != config_.localPlayer)
         {
             // Exact input at this frame does not prove that the preceding
@@ -316,6 +318,13 @@ bool RollbackCore::MarkSimulated(std::uint32_t frame, const FrameDecision &decis
 {
     if (!configured_ || !decision.canAdvance)
         return false;
+    if (!config_.allowPrediction)
+    {
+        const auto exact = PrepareFrame(frame);
+        const auto next = lastSimulatedFrame_ == INVALID_FRAME ? 0 : lastSimulatedFrame_ + 1;
+        if (frame != next || decision.predictedMask || !exact.canAdvance ||
+            decision.inputs != exact.inputs) return false;
+    }
     UsedSlot &slot = used_[frame % INPUT_HISTORY_SIZE];
     slot.frame = frame;
     slot.inputs = decision.inputs;
@@ -327,7 +336,7 @@ bool RollbackCore::MarkSimulated(std::uint32_t frame, const FrameDecision &decis
 
 bool RollbackCore::RewindSimulationTo(std::uint32_t firstFrame)
 {
-    if (!configured_ || firstFrame == INVALID_FRAME ||
+    if (!configured_ || !config_.allowPrediction || firstFrame == INVALID_FRAME ||
         lastSimulatedFrame_ == INVALID_FRAME || firstFrame > lastSimulatedFrame_ ||
         lastSimulatedFrame_ - firstFrame >= INPUT_HISTORY_SIZE ||
         (rollbackFrame_ != INVALID_FRAME && firstFrame > rollbackFrame_))

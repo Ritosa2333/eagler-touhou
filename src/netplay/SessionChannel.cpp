@@ -31,6 +31,7 @@ SessionChannel::SessionChannel(PeerTransport &transport) : transport_(transport)
 void SessionChannel::Clear()
 {
     pacing_.Reset();
+    adonis_ = AdonisPhase{};
     policy_ = {};
     session_ = {};
     active_ = observedClock_ = helloSent_ = forceControl_ = forceInputs_ = false;
@@ -84,6 +85,8 @@ bool SessionChannel::BeginSession(const SessionConfig &session, std::uint64_t no
     policy_ = config;
     pacing_.Reset();
     session_ = session;
+    if (policy_.adonisPhase && !adonis_.Reset(session.sessionId, session.localPlayer, session.playerCount))
+        return Fail(Failure::InvalidConfiguration);
     active_ = true;
     helloSent_ = false;
     forceControl_ = true;
@@ -181,6 +184,7 @@ bool SessionChannel::LocalCaptured(const RollbackCore &core, std::uint32_t captu
     if (!ObserveClock(nowMs)) return false;
     const bool fresh = latestCapture_ != captureFrame;
     latestCapture_ = captureFrame;
+    if (fresh && policy_.adonisPhase) adonis_.ObserveDue(captureFrame, nowMs * 1000);
     return SendInputs(core, nowMs, fresh);
 }
 
@@ -228,6 +232,14 @@ bool SessionChannel::Receive(SessionGate &gate, RollbackCore &core, std::uint64_
     for (std::size_t count = 0; count < policy_.receiveBudget && transport_.Poll(&incoming_); ++count)
     {
         ++received_;
+        AdonisPhaseSample phase;
+        if (DecodeAdonisPhaseSample(incoming_.data(), incoming_.size(), &phase))
+        {
+            if (!active_ || phase.sessionId != session_.sessionId || phase.targetPlayer != session_.localPlayer)
+            { ++ignored_; continue; }
+            if (!policy_.adonisPhase || !adonis_.ReceiveSample(phase)) return Fail(Failure::ContractMismatch);
+            continue;
+        }
         PacketType type{};
         if (incoming_.size() > MaxPacketBytes ||
             !PeekPacketType(incoming_.data(), incoming_.size(), &type))
@@ -283,6 +295,9 @@ bool SessionChannel::Receive(SessionGate &gate, RollbackCore &core, std::uint64_
             const auto before = core.ConfirmedThrough(packet.senderPlayer);
             RemoteInputResult result{};
             if (!core.ApplyInputPacket(packet, &result)) return Fail(Failure::InputConflict);
+            if (policy_.adonisPhase)
+                for (unsigned i=0;i<packet.inputCount;++i)
+                    adonis_.ObserveArrival(packet.senderPlayer, packet.firstInputFrame+i, nowMs*1000);
             if (before != core.ConfirmedThrough(packet.senderPlayer)) forceInputs_ = true;
             if (newer(packet.sequence, receivedSequence_[packet.senderPlayer]))
             {
@@ -292,7 +307,7 @@ bool SessionChannel::Receive(SessionGate &gate, RollbackCore &core, std::uint64_
                 // Only validated, newest packets can affect clock advice.
                 // SessionPacing additionally ignores repeated sender frames,
                 // so ACK-only retransmits cannot overweight a stalled peer.
-                pacing_.Observe(static_cast<std::uint32_t>(next), packet);
+                if (!policy_.adonisPhase) pacing_.Observe(static_cast<std::uint32_t>(next), packet);
             }
         }
         else return Fail(Failure::MalformedPacket);
@@ -366,6 +381,16 @@ bool SessionChannel::Pump(SessionGate &gate, RollbackCore &core, std::uint64_t n
         nextControl_ = nowMs + policy_.controlResendMs;
     }
     if (!SendInputs(core, nowMs, forceInputs_)) return false;
+    if (policy_.adonisPhase && gate.CanStart() && transport_.IsOpen())
+    {
+        AdonisPhaseSample sample;
+        // Advisory statistics may be dropped on backpressure. No gameplay
+        // input/ACK is retired and no retry samples a physical device again.
+        for (unsigned n=0;n<MAX_PLAYERS && adonis_.PollLocalSample(&sample);++n)
+            if (EncodeAdonisPhaseSample(sample, &outgoing_) &&
+                transport_.BufferedAmount() <= policy_.bufferedLimit &&
+                transport_.SendControl(outgoing_.data(),outgoing_.size())) ++sent_;
+    }
     for (std::uint8_t peer = 0; peer < session_.playerCount; ++peer)
     {
         if (peer == session_.localPlayer) continue;

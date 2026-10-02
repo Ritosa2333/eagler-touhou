@@ -34,6 +34,10 @@ struct CoreConfig
     // When predicting missing input, retain the last target instead of
     // clearing the axes as if they represented once-only displacement.
     bool directTouchIsAbsolute = false;
+    // Explicit lockstep policy, not a zero-valued prediction horizon. With
+    // prediction disabled every player's contiguous actual input is required;
+    // no speculative decision or rewind can be committed.
+    bool allowPrediction = true;
 };
 
 struct FrameDecision

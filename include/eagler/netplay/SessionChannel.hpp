@@ -5,6 +5,7 @@
 #include <eagler/netplay/NetplaySession.hpp>
 #include <eagler/netplay/PeerTransport.hpp>
 #include <eagler/netplay/SessionPacing.hpp>
+#include <eagler/netplay/AdonisTiming.hpp>
 
 #include <array>
 #include <cstddef>
@@ -22,6 +23,7 @@ struct SessionChannelConfig
     std::uint64_t repairIntervalMs = 250;
     std::size_t bufferedLimit = 256 * 1024;
     std::size_t receiveBudget = 256;
+    bool adonisPhase = false;
 };
 
 // Network-only protocol lifecycle. All clock, queue, sequence and liveness
@@ -71,7 +73,9 @@ public:
     std::uint32_t PeerFrame(std::uint8_t peer) const;
     // Optional wall-clock advice. The consumer owns whether to apply it;
     // this channel never changes logical input or simulation frames.
-    double IntervalScale() const { return pacing_.IntervalScale(); }
+    double IntervalScale() const { return policy_.adonisPhase ? 1.0 : pacing_.IntervalScale(); }
+    double TakeAdonisDelayMs() { return policy_.adonisPhase ? adonis_.TakeDelayMs() : 0; }
+    const AdonisPhase& AdonisStatistics() const { return adonis_; }
     double FrameLead() const { return pacing_.Lead(); }
     const char *ErrorText() const;
 
@@ -98,6 +102,7 @@ private:
     std::array<bool, MAX_PLAYERS> peerNeedsAck_{};
     std::array<ConfirmedInputWatchdog, MAX_PLAYERS> watchdog_{};
     SessionPacing pacing_;
+    AdonisPhase adonis_;
     std::vector<std::uint8_t> incoming_, outgoing_;
 
     // One retired epoch's terminal ACKs remain answerable until each peer
