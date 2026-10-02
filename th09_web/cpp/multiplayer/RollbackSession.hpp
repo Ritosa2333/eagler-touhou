@@ -1,5 +1,7 @@
 #pragma once
 #include <eagler/netplay/SessionChannel.hpp>
+#include <eagler/netplay/AdonisStartup.hpp>
+#include <deque>
 
 namespace th09::multiplayer {
 // Network state never belongs to a world checkpoint. Restoring gameplay must
@@ -10,6 +12,9 @@ public:
     explicit RollbackSession(Netplay::PeerTransport& transport): transport_(transport), channel_(*this) {}
     bool Begin(const Netplay::SessionConfig&, std::uint64_t now, std::uint8_t inputDelay = 0,
                Netplay::AdonisMode mode = Netplay::AdonisMode::Rollback);
+    bool BeginMeasured(const Netplay::SessionConfig&,std::uint64_t now,std::uint32_t requestedDelay,
+                       Netplay::AdonisMode mode,unsigned predictionReserve=2);
+    const Netplay::AdonisStartup& Startup() const {return startup_;}
     void Clear();
     bool Verify(std::uint32_t frame,std::uint32_t hash);
     bool Pump(std::uint64_t now, bool expectsInput = true);
@@ -41,6 +46,14 @@ public:
     std::uint32_t Resimulated() const { return resimulated_; }
     static bool ValidInput(const Netplay::FrameInput&);
 private:
+    bool Configure(const Netplay::SessionConfig&,std::uint64_t now,std::uint8_t delay,
+                   Netplay::AdonisMode mode,unsigned predictionReserve=0);
+    bool PumpStartup(std::uint64_t now);
+    Netplay::AdonisStartup startup_;
+    Netplay::SessionConfig startupSession_{};
+    std::uint64_t startupNowUs_=0;
+    bool measuring_=false,measured_=false;
+    std::deque<std::vector<std::uint8_t>> startupPending_;
     struct HashSlot {std::uint32_t frame=Netplay::INVALID_FRAME,local=0,remote=0;bool hasLocal=false,hasRemote=false;};
     std::array<HashSlot,64> hashes_{};
     Netplay::PeerTransport& transport_;

@@ -7,11 +7,24 @@
 namespace th09::multiplayer {
 bool RollbackSession::Begin(const Netplay::SessionConfig& session, std::uint64_t now, std::uint8_t inputDelay, Netplay::AdonisMode mode) {
     Clear();
+    return Configure(session,now,inputDelay,mode);
+}
+bool RollbackSession::BeginMeasured(const Netplay::SessionConfig& session,std::uint64_t now,
+                                  std::uint32_t requestedDelay,Netplay::AdonisMode mode,unsigned predictionReserve) {
+    Clear();
+    if(session.gameId!=9 || !startup_.Begin(session,now*1000,mode,requestedDelay,predictionReserve))
+        return Fail("Invalid TH09 measured startup");
+    startupSession_=session;startupNowUs_=now*1000;mode_=mode;measuring_=measured_=true;
+    return true;
+}
+bool RollbackSession::Configure(const Netplay::SessionConfig& session,std::uint64_t now,
+                               std::uint8_t inputDelay,Netplay::AdonisMode mode,unsigned predictionReserve) {
     if (session.playerCount != 2 || session.localPlayer > 1 || session.gameId != 9 || inputDelay > 9 || !Netplay::ValidAdonisMode(mode))
         return Fail("Invalid TH09 rollback session");
     auto negotiated = session;
     if (inputDelay) negotiated.gameplayAbi ^= 0x49444c00u ^ inputDelay;
     negotiated.gameplayAbi = Netplay::AdonisGameplayAbi(negotiated.gameplayAbi, mode, inputDelay);
+    if(measured_)negotiated.gameplayAbi^=0x4d530100u^(predictionReserve<<20);
     mode_ = mode; inputDelay_ = inputDelay;
     Netplay::CoreConfig config;
     config.sessionId = negotiated.sessionId;
@@ -34,6 +47,7 @@ bool RollbackSession::Begin(const Netplay::SessionConfig& session, std::uint64_t
     Netplay::SessionChannelConfig policy;
     policy.repairIntervalMs = Netplay::InputRepairBudget::StalledMs;
     policy.adonisPhase = mode != Netplay::AdonisMode::Rollback;
+    policy.adonisPredictionFrames=predictionReserve;
     if (policy.adonisPhase) policy.inputResendMs = 16;
     if (!core_.Reset(config) || !gate_.Reset(negotiated) || !channel_.BeginSession(negotiated, now, policy))
         return Fail("TH09 rollback bootstrap failed");
@@ -45,7 +59,39 @@ void RollbackSession::Clear() {
     next_ = replayEnd_ = captures_ = corrections_ = resimulated_ = 0;
     configured_ = failed_ = invalidInput_ = false; error_ = "";
     mode_ = Netplay::AdonisMode::Rollback; inputDelay_ = 0; phaseDebtMs_ = 0;
+    startup_=Netplay::AdonisStartup{};startupSession_={};startupNowUs_=0;
+    measuring_=measured_=false;startupPending_.clear();
 }
+bool RollbackSession::PumpStartup(std::uint64_t now) {
+    startupNowUs_=now*1000;
+    if(!startup_.Tick(transport_,startupNowUs_))return Fail(startup_.Error());
+    if(!measuring_)return true;
+    std::vector<std::uint8_t> bytes;
+    for(unsigned count=0;count<256&&transport_.Poll(&bytes);++count){
+        if(Netplay::AdonisStartup::IsPacket(bytes.data(),bytes.size())){
+            if(!startup_.Receive(transport_,bytes.data(),bytes.size(),startupNowUs_))return Fail(startup_.Error());
+        }else{
+            // A retried COMMIT may be overtaken in an impaired control model.
+            // Defer only valid native HELLO/READY traffic, bounded in size and
+            // count. It cannot open the native gate until we have committed D.
+            Netplay::SessionPacket packet;
+            if(!Netplay::DecodeSessionPacket(bytes.data(),bytes.size(),&packet))
+                return Fail("TH09 peer sent gameplay before measured startup");
+            if(packet.sessionId!=startupSession_.sessionId)continue;
+            if(startupPending_.size()>=16)return Fail("TH09 startup control backlog exceeded");
+            startupPending_.push_back(std::move(bytes));
+            if(startup_.Ready())break;
+        }
+    }
+    if(!startup_.Tick(transport_,startupNowUs_))return Fail(startup_.Error());
+    if(startup_.Ready()){
+        const auto choice=startup_.Selected();
+        if(!Configure(startupSession_,now,std::uint8_t(choice.delay),mode_,choice.prediction))return false;
+        measuring_=false;
+    }
+    return true;
+}
+
 double RollbackSession::PacedElapsedMs(double elapsedMs) {
     if (!std::isfinite(elapsedMs) || elapsedMs < 0) return 0;
     phaseDebtMs_ += channel_.TakeAdonisDelayMs();
@@ -54,6 +100,9 @@ double RollbackSession::PacedElapsedMs(double elapsedMs) {
     return elapsedMs - used;
 }
 bool RollbackSession::Pump(std::uint64_t now, bool expectsInput) {
+    if(failed_)return false;
+    if(measured_&&!PumpStartup(now))return false;
+    if(measuring_)return true;
     if (!configured_ || failed_) return false;
     if (!channel_.Pump(gate_, core_, now, expectsInput && gate_.CanStart())) return Fail(channel_.ErrorText());
     if (invalidInput_) return Fail("Invalid TH09 peer input");
@@ -69,7 +118,13 @@ bool RollbackSession::Verify(std::uint32_t frame,std::uint32_t hash) {
 }
 bool RollbackSession::Poll(std::vector<std::uint8_t>* bytes) {
     for(unsigned count=0;count<256;++count){
-        if(invalidInput_||failed_||!transport_.Poll(bytes))return false;
+        if(invalidInput_||failed_)return false;
+        if(!startupPending_.empty()){*bytes=std::move(startupPending_.front());startupPending_.pop_front();}
+        else if(!transport_.Poll(bytes))return false;
+        if(measured_&&Netplay::AdonisStartup::IsPacket(bytes->data(),bytes->size())){
+            if(!startup_.Receive(transport_,bytes->data(),bytes->size(),startupNowUs_)){Fail(startup_.Error());return false;}
+            continue;
+        }
         if(bytes->size()==20&&!std::memcmp(bytes->data(),"T9HC",4)){
             std::uint64_t id;std::uint32_t frame,hash;
             std::memcpy(&id,bytes->data()+4,8);std::memcpy(&frame,bytes->data()+12,4);std::memcpy(&hash,bytes->data()+16,4);

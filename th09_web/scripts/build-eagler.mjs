@@ -38,6 +38,7 @@ if (variant === 'multiplayer') {
     'th09_network_hash', 'th09_network_end', 'th09_spectator_begin',
     'th09_rollback_begin', 'th09_rollback_enable', 'th09_rollback_pump', 'th09_rollback_info',
     'th09_adonis_configure', 'th09_adonis_info',
+    'th09_measured_begin', 'th09_startup_info',
     'th09_spectator_feed', 'th09_spectator_frame', 'th09_spectator_end',
   ];
   const missing = required.filter(name => !exports.has(name));

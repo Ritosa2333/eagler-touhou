@@ -15,8 +15,8 @@ struct AdonisDriver {
     AdonisMode mode;
     Trace trace;
     double due=0;
-    AdonisDriver(Link& link,unsigned player,unsigned d,AdonisMode m,Trace source=input):session(link),side(player),delay(d),mode(m),trace(source) {
-        CHECK(session.Begin(config(side),0,static_cast<std::uint8_t>(d),m));
+    AdonisDriver(Link& link,unsigned player,unsigned d,AdonisMode m,Trace source=input,bool measured=false,unsigned reserve=2):session(link),side(player),delay(d),mode(m),trace(source) {
+        CHECK(measured?session.BeginMeasured(config(side),0,d,m,reserve):session.Begin(config(side),0,static_cast<std::uint8_t>(d),m));
     }
     FrameInput expected(unsigned player,unsigned frame) const {return frame<delay?FrameInput{}:trace(player,frame-delay);}
     bool step() {
@@ -28,7 +28,8 @@ struct AdonisDriver {
         state.step(d.inputs);hashes[f]=state.hash;CHECK(session.Complete(d));return true;
     }
     void tick(std::uint64_t now) {
-        CHECK(session.Pump(now,session.Frame()<600));if(!session.Ready())return;
+        CHECK(session.Pump(now,session.Frame()<600));if(!session.Ready()){CHECK(!session.Captures());return;}
+        delay=session.InputDelay();
         // Transfer phase delay to a forward-only deadline; no simulation tick
         // is dropped and no replay/capture clocks enter the world checkpoint.
         due+=1-session.PacedElapsedMs(1);
@@ -54,9 +55,10 @@ struct AdonisDriver {
     }
 };
 struct Counts {unsigned resim,waits,snapshots;};
-Counts runAdonis(AdonisMode mode,unsigned delay,unsigned impairment,AdonisDriver::Trace trace=input) {
+Counts runAdonis(AdonisMode mode,unsigned delay,unsigned impairment,AdonisDriver::Trace trace=input,bool measured=false,unsigned reserve=2,bool lostCommit=false) {
     Link a,b;a.peer=&b;b.peer=&a;a.mode=b.mode=impairment;
-    AdonisDriver left(a,0,delay,mode,trace),right(b,1,delay,mode,trace);std::uint64_t now=0;
+    if(lostCommit){a.dropCalibrationKind=7;b.dropCalibrationKind=8;}
+    AdonisDriver left(a,0,delay,mode,trace,measured,reserve),right(b,1,delay,mode,trace,measured,reserve);std::uint64_t now=0;
     for(;now<150000;++now){a.now=b.now=now;left.tick(now);right.tick(now);
         if(left.published==600&&right.published==600&&left.session.CanRetire()&&right.session.CanRetire())break;}
     CHECK(now<150000);State reference;
@@ -75,6 +77,17 @@ Counts runAdonis(AdonisMode mode,unsigned delay,unsigned impairment,AdonisDriver
     std::printf("AD model mode=%u D=%u network=%u frames=600 elapsed=%llu corrections=%u/%u resim=%u waits=%u snapshots=%u phase=%u/%u PASS\n",
         unsigned(mode),delay,impairment,(unsigned long long)now,left.session.Corrections(),right.session.Corrections(),c.resim,c.waits,c.snapshots,
         left.session.Channel().AdonisStatistics().Adjustments(),right.session.Channel().AdonisStatistics().Adjustments());
+    if(measured){
+        CHECK(left.session.Startup().Ready()&&right.session.Startup().Ready());
+        CHECK(left.delay==right.delay);
+        const auto choice=left.session.Startup().Selected();
+        CHECK(choice.delay==left.delay);
+        CHECK(delay==AdonisStartup::Automatic?choice.delay+choice.prediction==choice.fullDelay:choice.delay==delay);
+        CHECK(left.session.Channel().AdonisStatistics().PredictionAllowanceUs()==
+              (mode==AdonisMode::Hybrid?(reserve*1000000u+59)/60:0));
+        std::printf("  measured B=%u D=%u prediction=%u, input lane samples=%u/%u PASS\n",choice.fullDelay,choice.delay,choice.prediction,
+            left.session.Startup().Local().received,right.session.Startup().Local().received);
+    }
     CHECK(left.session.Retire(now));CHECK(right.session.Retire(now));return c;
 }
 void mismatch(AdonisMode aMode,unsigned aDelay,AdonisMode bMode,unsigned bDelay) {
@@ -112,6 +125,17 @@ void hybridHeldPrediction(){
     }
 }
 int main(){
+    for(auto m:{AdonisMode::Delay,AdonisMode::Hybrid})for(unsigned d:{AdonisStartup::Automatic,0u,1u,9u})runAdonis(m,d,1,input,true);
+    runAdonis(AdonisMode::Hybrid,AdonisStartup::Automatic,4,input,true,1);
+    runAdonis(AdonisMode::Hybrid,AdonisStartup::Automatic,1,input,true,2,true);
+    {
+        Link a,b;a.peer=&b;b.peer=&a;a.mode=b.mode=3;RollbackSession l(a),r(b);
+        CHECK(l.BeginMeasured(config(0),0,AdonisStartup::Automatic,AdonisMode::Hybrid));
+        CHECK(r.BeginMeasured(config(1),0,AdonisStartup::Automatic,AdonisMode::Hybrid));
+        bool failed=false;
+        for(unsigned t=0;t<11000&&!failed;++t){a.now=b.now=t;failed=!l.Pump(t)||!r.Pump(t);}
+        CHECK(failed&&!l.Captures()&&!r.Captures()&&!l.Ready()&&!r.Ready());
+    }
     hybridHeldPrediction();
     mismatch(AdonisMode::Delay,3,AdonisMode::Hybrid,3);
     mismatch(AdonisMode::Delay,3,AdonisMode::Rollback,3);

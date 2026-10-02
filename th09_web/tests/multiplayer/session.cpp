@@ -16,11 +16,18 @@ struct Link : PeerTransport {
     Link* peer = nullptr;
     std::deque<Packet> pending;
     std::uint64_t now = 0;
-    unsigned mode = 0, sent = 0, impaired = 0;
+    unsigned mode = 0, sent = 0, impaired = 0, dropCalibrationKind = 0;
     bool IsOpen() const override { return true; }
     bool Failed() const override { return false; }
     std::size_t BufferedAmount() const override { return 0; }
     bool Send(const std::uint8_t* bytes, std::size_t size, bool reliable) {
+        if(AdonisStartup::IsPacket(bytes,size)){
+            if(dropCalibrationKind&&bytes[4]==dropCalibrationKind){dropCalibrationKind=0;return true;}
+            const bool probe=bytes[4]==2||bytes[4]==3;
+            if(mode==3&&probe){++impaired;return true;}
+            const auto delay=probe&&mode?25+(bytes[28]*17)%37:0;
+            peer->pending.push_back({now+delay,{bytes,bytes+size}});return true;
+        }
         AdonisPhaseSample phase;
         if(DecodeAdonisPhaseSample(bytes,size,&phase)){
             peer->pending.push_back({now+25,{bytes,bytes+size}});return true;

@@ -340,6 +340,28 @@ TH09_EXPORT("th09_rollback_pump") u32 th09_rollback_pump(){
     if(!rollback.Pump(std::uint64_t(emscripten_get_now()),network.active)){probe->error=rollback.Error();return 0;}
     return rollback.Ready()?2:1;
 }
+TH09_EXPORT("th09_measured_begin") u32 th09_measured_begin(u32 seed,u32 side,u32 difficulty,u32 left,u32 right,
+                                                          u32 idLow,u32 idHigh,u32 abi,u32 requestedDelay,u32 reserve){
+    if(rollback_active || (requestedDelay!=Netplay::AdonisStartup::Automatic&&requestedDelay>9) ||
+       reserve<1||reserve>2 || adonis_mode==Netplay::AdonisMode::Rollback ||
+       !th09_network_room_begin(seed,i32(side),0xffff,difficulty,0,left,right))return 0;
+    // Finish resource construction BEFORE input-lane calibration. Gameplay
+    // remains at frame zero; probes are not synthetic gameplay inputs.
+    if(!probe->tick_title(0,0,0,false)||probe->in_title)return 0;
+    for(auto& frame:rollback_frames){frame.number=Netplay::INVALID_FRAME;frame.captured=false;frame.sounds.clear();}
+    Netplay::SessionConfig c;c.seed=seed;c.localPlayer=side;c.gameId=9;c.gameplayAbi=abi;c.sessionId=(std::uint64_t(idHigh)<<32)|idLow;
+    rollback_published=rollback_catchup=adonis_snapshots=adonis_waits=0;
+    rollback_active=rollback.BeginMeasured(c,std::uint64_t(emscripten_get_now()),requestedDelay,adonis_mode,reserve);
+    return rollback_active;
+}
+TH09_EXPORT("th09_startup_info") const u32* th09_startup_info(){
+    static u32 data[16];const auto& s=rollback.Startup();const auto c=s.Selected();
+    data[0]=1;data[1]=u32(s.State());data[2]=s.Request();data[3]=s.Probes();data[4]=s.Replies();
+    data[5]=s.Local().p95Us;data[6]=s.Peer().p95Us;data[7]=s.Local().lost;data[8]=s.Peer().lost;
+    data[9]=c.fullDelay;data[10]=c.delay;data[11]=c.prediction;
+    data[12]=rollback.Channel().AdonisStatistics().PredictionAllowanceUs();data[13]=u32(rollback.Mode());
+    data[14]=s.Local().received;data[15]=s.Peer().received;return data;
+}
 TH09_EXPORT("th09_rollback_info") const u32* th09_rollback_info(){
     static u32 data[8];const auto confirmed=rollback.ConfirmedThrough();
     data[0]=rollback.Frame();data[1]=confirmed==Netplay::INVALID_FRAME?rollback_published:std::max(rollback_published,confirmed+1);data[2]=rollback.Corrections();data[3]=rollback.Resimulated();data[4]=rollback.Captures();data[5]=rollback.Channel().RepairsSent();data[6]=rollback.Ready();data[7]=rollback_published;return data;

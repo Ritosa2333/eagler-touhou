@@ -1,5 +1,10 @@
 # TH09 Adonis experiment — implementation and evidence
 
+> Current automatic policy and reproduction: [MEASURED-ADONIS-STARTUP.md](MEASURED-ADONIS-STARTUP.md).
+> Both experimental modes now calibrate the actual input channel before frame
+> zero. The historical presets, common pin and frozen reports below remain an
+> earlier evidence record; do not use an old build with the new measured shell.
+
 > Current user priority: refine TH09 before any more title adaptation. Read
 > [TH09-REFINEMENT.md](TH09-REFINEMENT.md) for the held-analog prediction change,
 > matched-input comparison, new relay diagnostics and frontend rollback switch.

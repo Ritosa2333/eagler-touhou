@@ -1,5 +1,9 @@
 # TH09-first Adonis refinement
 
+Current continuation: [actual-channel startup and prediction reserve](MEASURED-ADONIS-STARTUP.md).
+The historical fixed-preset evidence below remains unchanged; it is not the
+new automatic calibration policy.
+
 Date: 2026-10-02. Worktree `D:/workspace/eagler/worktrees/adonis/th09`, branch
 `experiment/adonis`. Starting commit `e55afe0`; common stays at `5669eff`.
 The user narrowed work to TH09 before further title adaptation. Do not resume
