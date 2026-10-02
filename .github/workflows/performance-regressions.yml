@@ -14,14 +14,28 @@ on:
       - 'th10_web/cpp/multiplayer/Anm*.hpp'
       - 'th10_web/cpp/game/AnmRenderer.cpp'
       - 'th10_web/cpp/game/Anm*.hpp'
+      - 'th10_web/cpp/game/GameInput.*'
+      - 'th10_web/cpp/game/Presentation.*'
+      - 'th10_web/cpp/game/TitleMain.*'
+      - 'th10_web/cpp/game/MusicRoom.*'
+      - 'th10_web/cpp/game/Results.*'
+      - 'th10_web/cpp/game/Ending.*'
+      - 'th10_web/cpp/platform/ApplicationPresentation.cpp'
+      - 'th10_web/cpp/platform/Title.cpp'
+      - 'th10_web/cpp/platform/WorldResults.cpp'
+      - 'th10_web/cpp/platform/Credits.cpp'
       - 'th10_web/cpp/sdl/ApplicationHost.cpp'
       - 'portable/check-high-refresh-contract.mjs'
       - 'portable/check-anm-*.mjs'
+      - 'portable/check-presentation-input.mjs'
+      - 'portable/check-menu-input.mjs'
       - 'portable/check-game-resources.mjs'
       - 'portable/check-bullet-owner.mjs'
       - 'portable/check-multiplayer-rules.mjs'
       - 'tests/high-refresh-contract.test.mjs'
       - 'tests/anm-*.cpp'
+      - 'tests/presentation-input-test.cpp'
+      - 'tests/menu-input-test.cpp'
       - 'tests/game-resource*'
       - 'tests/bullet-owner-check.cpp'
       - 'tests/rollback-pool*.cpp'
@@ -37,14 +51,28 @@ on:
       - 'th10_web/cpp/multiplayer/Anm*.hpp'
       - 'th10_web/cpp/game/AnmRenderer.cpp'
       - 'th10_web/cpp/game/Anm*.hpp'
+      - 'th10_web/cpp/game/GameInput.*'
+      - 'th10_web/cpp/game/Presentation.*'
+      - 'th10_web/cpp/game/TitleMain.*'
+      - 'th10_web/cpp/game/MusicRoom.*'
+      - 'th10_web/cpp/game/Results.*'
+      - 'th10_web/cpp/game/Ending.*'
+      - 'th10_web/cpp/platform/ApplicationPresentation.cpp'
+      - 'th10_web/cpp/platform/Title.cpp'
+      - 'th10_web/cpp/platform/WorldResults.cpp'
+      - 'th10_web/cpp/platform/Credits.cpp'
       - 'th10_web/cpp/sdl/ApplicationHost.cpp'
       - 'portable/check-high-refresh-contract.mjs'
       - 'portable/check-anm-*.mjs'
+      - 'portable/check-presentation-input.mjs'
+      - 'portable/check-menu-input.mjs'
       - 'portable/check-game-resources.mjs'
       - 'portable/check-bullet-owner.mjs'
       - 'portable/check-multiplayer-rules.mjs'
       - 'tests/high-refresh-contract.test.mjs'
       - 'tests/anm-*.cpp'
+      - 'tests/presentation-input-test.cpp'
+      - 'tests/menu-input-test.cpp'
       - 'tests/game-resource*'
       - 'tests/bullet-owner-check.cpp'
       - 'tests/rollback-pool*.cpp'
@@ -68,6 +96,8 @@ jobs:
           node --test tests/high-refresh-contract.test.mjs
           node --check portable/check-anm-dense-engine.mjs
           node --check portable/check-anm-trig-input.mjs
+          node --check portable/check-presentation-input.mjs
+          node --check portable/check-menu-input.mjs
           node --check portable/check-game-resources.mjs
           node --check portable/check-bullet-owner.mjs
       - name: Optimized owner tests with assertions enabled
@@ -118,6 +148,12 @@ jobs:
         run: |
           node portable/check-multiplayer-rules.mjs
           node portable/check-anm-trig-input.mjs
+      - name: Authored menu and screenshot input word regressions
+        run: |
+          node portable/check-presentation-input.mjs
+          node portable/check-menu-input.mjs
+          TH10_TEST_UBSAN=1 node portable/check-presentation-input.mjs
+          TH10_TEST_UBSAN=1 node portable/check-menu-input.mjs
       - name: Compile title rollback and channel diagnostics against the pin
         shell: bash
         run: |

@@ -12,7 +12,7 @@ struct ResultsServices final:ResultsEnvironment {
 #endif
     World& w;explicit ResultsServices(World& world):w(world){
         game=&w.state.game;gui=&w.actors.gui;scores=&w.scores.data;replay=&w.state.replay;stages=menu_data(w.state.chinese).stages;current_stage=&w.state.current_stage;
-        engine_flags=&w.state.engine_flags;display_flags=&w.state.configuration.display_flags;pending_screen=&w.state.pending_screen;pressed=reinterpret_cast<const u32*>(&w.input.player_profiles[0].input.raw_pressed);repeated=&w.input.player_profiles[0].input.raw_repeat;rate=&w.engine.speed;background_file=&w.common.value->capture;alphabet=menu_data(w.state.chinese).alphabet;active_time=&w.state.active_time;total_time=&w.state.total_time;cheat_movement_used=&w.motion.cheat_movement_used;bind_session();
+        engine_flags=&w.state.engine_flags;display_flags=&w.state.configuration.display_flags;pending_screen=&w.state.pending_screen;pressed=&w.input.player_profiles[0].input.raw_pressed;repeated=&w.input.player_profiles[0].input.raw_repeat;rate=&w.engine.speed;background_file=&w.common.value->capture;alphabet=menu_data(w.state.chinese).alphabet;active_time=&w.state.active_time;total_time=&w.state.total_time;cheat_movement_used=&w.motion.cheat_movement_used;bind_session();
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         // Display cost is machine-local, not a score/ranking input. The native
         // assisted-movement 100% marker remains driven by agreed input flags.

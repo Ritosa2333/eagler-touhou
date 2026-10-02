@@ -12,7 +12,7 @@ namespace th10::browser {
 template<class Base> MenuMain<Base>::MenuMain(Title& title):owner(title){
     owner.bind_animation(*this);this->game=&owner.state.game;
     this->extra_unlocked=reinterpret_cast<u8*>(owner.scores.data)+0x1d888;
-    this->pressed=reinterpret_cast<u32*>(&owner.input.player_profiles[0].input.raw_pressed);
+    this->pressed=&owner.input.player_profiles[0].input.raw_pressed;
     this->repeated=&owner.input.player_profiles[0].input.raw_repeat;
 }
 template<class Base> u32 MenuMain<Base>::create(AnmFile& file,i32 script){return owner.create(file,script);}
