@@ -978,10 +978,10 @@ body.mp-room-active .main{display:block!important;min-height:0!important;width:1
   .motion-toggle[aria-pressed="false"]:hover:not(:active):before,.motion-toggle[aria-pressed="false"]:focus:not(:focus-visible):before{background:transparent;transform:scale(.96)}
 }
 /* The character is the public display name; avoid a duplicate loadout line. */
-#mpRoomView .mp-seat-stage .mp-seat.occupied{grid-template-rows:minmax(20px,auto) 28px 0 34px!important}
+#mpRoomView .mp-seat-stage .mp-seat.occupied{grid-template-rows:minmax(20px,auto) 28px 14px 34px!important}
 #mpRoomView .mp-seat.occupied .mp-seat-face{grid-row:1/5!important}
 #mpRoomView .mp-seat.occupied .mp-seat-state{box-sizing:border-box!important;width:7.6em!important;max-width:100%!important;height:26px!important;justify-content:center!important;flex-shrink:0!important;margin-top:8px!important;padding:0 6px!important}
-@media(max-width:1100px){#mpRoomView .mp-seat-stage[data-player-count="3"] .mp-seat.occupied{grid-template-rows:52px 48px 24px 0 34px!important}}
+@media(max-width:1100px){#mpRoomView .mp-seat-stage[data-player-count="3"] .mp-seat.occupied{grid-template-rows:52px 48px 24px 14px 34px!important}}
 #mpRoomView .mp-seat-index{display:flex!important;flex-wrap:wrap;align-items:center;gap:3px 6px;min-width:0;line-height:1.5!important}
 #mpRoomView .mp-seat:not([data-mp-seat="0"]) .mp-seat-index{padding-right:24px!important}
 #mpRoomView .mp-seat-index .mp-seat-latency{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;min-height:0!important;max-width:100%;padding:0;border:0;background:transparent;color:var(--room-muted);font:500 10px/1.5 var(--ui-font);text-align:left;font-variant-numeric:tabular-nums}
@@ -1004,15 +1004,15 @@ body.mp-room-active .main{display:block!important;min-height:0!important;width:1
 #mpRoomView .mp-seat.occupied .mp-seat-state{display:inline-flex!important;align-items:center;gap:5px!important;font-weight:700!important;border:1px solid #ffb4a94d!important;background:#683c36!important;color:#ffd7ce!important}
 #mpRoomView .mp-seat.occupied .mp-seat-state:before{content:"";width:5px;height:5px;flex:none;border-radius:50%;background:currentColor}
 #mpRoomView .mp-seat.is-ready .mp-seat-state{border-color:#b5dfaa44!important;background:#354331!important;color:#b5dfaa!important}
-#mpRoomView .mp-seat-stage .mp-seat:not(.occupied){grid-template-columns:minmax(0,1fr)!important;grid-template-rows:1fr!important;height:100%!important;justify-items:center!important}
+#mpRoomView .mp-seat-stage .mp-seat:not(.occupied){grid-template-columns:minmax(0,1fr)!important;grid-template-rows:1fr!important;height:auto!important;align-self:stretch;justify-items:center!important}
 #mpRoomView .mp-seat-stage .mp-seat:not(.occupied)>.mp-seat-index,#mpRoomView .mp-seat-stage .mp-seat:not(.occupied)>.mp-seat-name,#mpRoomView .mp-seat-stage .mp-seat:not(.occupied)>.mp-seat-state,#mpRoomView .mp-seat-stage .mp-seat:not(.occupied)>.mp-seat-loadout{display:none!important}
-#mpRoomView .mp-seat-stage .mp-seat:not(.occupied) .mp-seat-face{grid-column:1!important;grid-row:1!important;width:100%!important;max-width:148px!important;height:56px!important;margin:0!important;border:0!important;border-radius:18px!important;background:transparent!important;overflow:visible!important}
+#mpRoomView .mp-seat-stage .mp-seat:not(.occupied) .mp-seat-face{grid-column:1!important;grid-row:1!important;align-self:center;width:100%!important;max-width:148px!important;height:56px!important;margin:0!important;border:0!important;border-radius:18px!important;background:transparent!important;overflow:visible!important}
 #mpRoomView .mp-seat-stage .mp-seat:not(.occupied) .mp-seat-drop button{display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;border:1px dashed var(--room-line)!important;border-radius:18px!important;background:transparent!important;color:var(--room-muted)!important;font-size:12px!important;white-space:nowrap!important;transition:background .2s,color .2s,border-color .2s,transform .15s}
 #mpRoomView .mp-seat-stage .mp-seat:not(.occupied) .mp-seat-drop button:before{content:"+"!important;display:block!important;width:auto!important;height:auto!important;margin:0!important;background:none!important;color:inherit!important;font:300 22px/1 system-ui!important}
 #mpRoomView .mp-seat-stage .mp-seat:not(.occupied) .mp-seat-drop button:hover{background:#f1dedc09!important;border-color:var(--room-muted)!important;color:var(--room-text)!important}
 #mpRoomView .mp-seat-stage .mp-seat:not(.occupied) .mp-seat-drop button:active{transform:scale(.96)}
 #mpRoomView .mp-seat.occupied .mp-seat-face{position:relative!important;overflow:visible!important}
-#mpRoomView .mp-seat-control{position:absolute;top:calc(100% + 3px);left:50%;transform:translateX(-50%);font:500 10px/12px var(--ui-font);color:var(--room-muted);white-space:nowrap;pointer-events:none}
+#mpRoomView .mp-seat-control{position:static;grid-column:2!important;grid-row:3!important;min-width:0;max-width:100%;font:500 10px/12px var(--ui-font);color:var(--room-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
 #mpRoomView .mp-seat-control[data-mode="cheat"]{color:#dfb78e}
 #mpRoomView .mp-seat-remove{position:absolute;right:0;top:0;z-index:2;display:grid;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--room-muted);font:22px/1 system-ui;cursor:pointer;transition:background .18s,color .18s,transform .18s}
 #mpRoomView .mp-seat-remove[hidden]{display:none}
@@ -1037,7 +1037,7 @@ body.mp-room-active .main{display:block!important;min-height:0!important;width:1
  #mpRoomView .mp-room-resource-progress{font-size:11px}
  #mpRoomView #mpRoomSettingsDrawer{margin-top:0!important}
 }
-#mpRoomView .mp-seat-stage{min-height:168px!important}
+#mpRoomView .mp-seat-stage{min-height:156px!important}
 #mpRoomView .mp-seat-resource{grid-column:1/-1!important;grid-row:5!important;display:grid;gap:4px;align-self:end;min-width:0;margin-top:7px;color:var(--room-muted);font:500 9px/1.2 var(--ui-font)}
 #mpRoomView .mp-seat-resource[hidden]{display:none}
 #mpRoomView .mp-seat-resource[data-status="ready"]{color:#b5dfaa}
@@ -1049,7 +1049,7 @@ body.mp-room-active .main{display:block!important;min-height:0!important;width:1
 #mpRoomView .mp-seat-stage[data-player-count="3"] .mp-seat-resource{grid-row:6!important}
 @media(prefers-reduced-motion:reduce){#mpRoomView .mp-room-resource-track.indeterminate #mpRoomResourceFill{animation:none;width:100%;opacity:.55}}
 .less-motion #mpRoomView .mp-room-resource-track.indeterminate #mpRoomResourceFill{animation:none;width:100%;opacity:.55}
-@media(max-width:1100px){#mpRoomView .mp-seat-stage[data-player-count="3"] .mp-seat.occupied .mp-seat-face{translate:0 -7px}#mpRoomView .mp-seat-stage[data-player-count="3"] .mp-seat-control{top:calc(100% + 1px);font-size:9px;line-height:10px}}
+@media(max-width:1100px){#mpRoomView .mp-seat-stage[data-player-count="3"] .mp-seat-control{grid-column:1!important;grid-row:4!important;font-size:9px;line-height:10px}}
 #mpRoomView .mp-room-settings-hint{margin:20px 0 0;color:var(--room-muted);font-size:12px;line-height:1.7}
 #mpRoomView #mpTakeHostSeat{width:100%;margin-top:16px;padding:12px 18px;border:0;border-radius:14px;background:var(--room-accent);color:#561e18;font-size:14px;font-weight:600}
 /* Persistent game category dock; reserve space so it never covers the tools. */

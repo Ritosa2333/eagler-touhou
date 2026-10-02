@@ -7926,10 +7926,9 @@ function renderMpRoom() {
       glyph.textContent = multiplayerDisplayInitial(networkSeat?.name ?? (mpUiState.seat === index ? mpUiState.displayName : ""), "?");
       seat.title = occupied ? mpLoadoutLabel(seatLoadout) : "";
     }
-    const face = seat.querySelector<HTMLElement>(".mp-seat-face")!;
-    let controlLabel = face.querySelector<HTMLElement>(".mp-seat-control");
+    let controlLabel = seat.querySelector<HTMLElement>(".mp-seat-control");
     if (!controlLabel) {
-      controlLabel = document.createElement("span"); controlLabel.className = "mp-seat-control"; face.append(controlLabel);
+      controlLabel = document.createElement("span"); controlLabel.className = "mp-seat-control"; seat.append(controlLabel);
     }
     const controlMode = mpUiState.seat === index
       ? !state.options.touchEnabled || touchMovementUsesJoystick(state.options.touchMovementMode) ? "normal" : state.options.touchMovementMode === "touch-unlimited" ? "cheat" : "touch"
