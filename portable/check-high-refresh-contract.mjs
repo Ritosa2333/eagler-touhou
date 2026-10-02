@@ -35,11 +35,20 @@ const ordinaryCadence=cadenceRegion.replace(/#ifdef TH_ENABLE_MULTIPLAYER_GAMEPL
 assert.match(ordinaryCadence,/double simulation_delta=delta;/);
 assert.match(ordinaryCadence,/if\(\(tick_due=cadence\.advance\(simulation_delta\)!=0\)\)\{\s*sdl_native_input\(application\);result=application->step\(true\);/);
 assert.equal((ordinaryCadence.match(/application->step\(true\)/g)||[]).length,1);
-assert.doesNotMatch(ordinaryCadence,/for\s*\(|while\s*\(|Netplay::|SimulationIntervalScale|cadence\.debt/);
+assert.doesNotMatch(ordinaryCadence,/for\s*\(|while\s*\(|Netplay::|IntervalScale|cadence\.debt/);
+assert.match(mpBlocks[0][1],/if\(live\)\s*simulation_delta\/=runtime\.Channel\(\)\.IntervalScale\(\);/);
 assert.match(mpBlocks[1][1],/Netplay::FrameBudget::CanStartTick/);
 assert.match(mpBlocks[1][1],/if\(result\|\|runtime\.LastSimulatedFrame\(\)!=before\+1u\)break;\s*cadence\.debt=/);
 assert.match(mpBlocks[2][1],/multiplayer_spectator_catchup_budget/);
 // END CADENCE SOURCE CONTRACT
+// Keep the host call paired with the API of the actually pinned dependency.
+const channelHeader=read('third_party/eagler-common/include/eagler/netplay/SessionChannel.hpp');
+const networkExports=read('th10_web/cpp/multiplayer/NetworkExports.cpp');
+for(const method of ['IntervalScale','FrameLead']){
+ assert(channelHeader.includes(`double ${method}() const`),'Missing pinned channel API: '+method);
+ assert(networkExports.includes(`.Channel().${method}()`),'Pacing diagnostics must use pinned channel API: '+method);
+}
+assert.doesNotMatch(networkExports,/\.(?:SimulationIntervalScale|EstimatedLead)\(/);
 assert.match(host,/sdl_defer\(1\)/);
 assert.match(host,/frame_alpha=interpolate\?float\(cadence\.interpolation_alpha\(\)\):1\.0f/);
 assert.match(host,/application->presentation_draw\(frame_alpha,interpolate,!frozen\)/);

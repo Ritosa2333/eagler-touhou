@@ -37,8 +37,8 @@ const char* multiplayer_error_detail(browser::Application* app){
 extern "C" __attribute__((export_name("multiplayer_pacing_status")))
 const double* multiplayer_pacing_status(browser::Application* app){
     static double values[2]{1,0};
-    values[0]=app?app->state.netplay_runtime.Channel().SimulationIntervalScale():1;
-    values[1]=app?app->state.netplay_runtime.Channel().EstimatedLead():0;
+    values[0]=app?app->state.netplay_runtime.Channel().IntervalScale():1;
+    values[1]=app?app->state.netplay_runtime.Channel().FrameLead():0;
     return values;
 }
 extern "C" __attribute__((export_name("multiplayer_transport_status")))

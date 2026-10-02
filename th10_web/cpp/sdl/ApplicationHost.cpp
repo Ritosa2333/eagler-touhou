@@ -111,7 +111,7 @@ EM_BOOL frame(double timestamp,void* epoch){
     const bool live=application->multiplayer_active()&&runtime.NetworkEnabled()&&
                     runtime.CanStart()&&!runtime.Spectator()&&runtime.InitialInputsReady();
     if(live)
-        simulation_delta/=runtime.Channel().SimulationIntervalScale();
+        simulation_delta/=runtime.Channel().IntervalScale();
 #endif
     // Clock calibration changes only when the next fixed tick is due. Every
     // admitted tick still executes the original 60 Hz simulation and Draw.

@@ -9,6 +9,11 @@ const contract=script.split('// BEGIN CADENCE SOURCE CONTRACT')[1].split('// END
 const check=new Function('assert','host',contract);
 
 test('current source keeps ordinary single-tick and multiplayer debt paths separate',()=>check(assert,host));
+test('a stale shared-channel pacing API cannot pass the source contract',()=>{
+ const changed=host.replace('runtime.Channel().IntervalScale()',
+  'runtime.Channel().SimulationIntervalScale()');
+ assert.notEqual(changed,host);assert.throws(()=>check(assert,changed));
+});
 test('an ordinary catch-up loop cannot pass the source contract',()=>{
  const changed=host.replace('if((tick_due=cadence.advance(simulation_delta)!=0)){',
   'for(unsigned extra=0;extra<2;++extra) if((tick_due=cadence.advance(simulation_delta)!=0)){');
