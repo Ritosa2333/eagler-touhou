@@ -114,6 +114,7 @@ jobs:
           node --check portable/check-anm-trig-input.mjs
           node --check portable/check-anm-billboard.mjs
           node --check portable/check-anm-uv-scroll.mjs
+          node --check portable/check-anm-submit.mjs
           node --check portable/check-player-shot-lookup.mjs
           node --check portable/check-presentation-input.mjs
           node --check portable/check-menu-input.mjs
@@ -171,6 +172,8 @@ jobs:
           TH10_TEST_UBSAN=1 node portable/check-anm-billboard.mjs
           node portable/check-anm-uv-scroll.mjs
           TH10_TEST_UBSAN=1 node portable/check-anm-uv-scroll.mjs
+          node portable/check-anm-submit.mjs
+          TH10_TEST_UBSAN=1 node portable/check-anm-submit.mjs
           node portable/check-player-shot-lookup.mjs
           TH10_TEST_UBSAN=1 node portable/check-player-shot-lookup.mjs
       - name: Authored menu and screenshot input word regressions

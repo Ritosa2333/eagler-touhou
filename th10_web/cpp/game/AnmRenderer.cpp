@@ -1,5 +1,8 @@
 #include "AnmRenderer.hpp"
 #include "PresentationAudit.hpp"
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(__wasm__)
+#include "AnmSubmit.hpp"
+#endif
 #include "GameMath.hpp"
 #include <cmath>
 #include "../../../portable/numeric/SpriteNumber.hpp"
@@ -9,7 +12,9 @@
 namespace th10 {
 namespace {
 Extended sum(float a,float b,float c){return number(a)+number(b)+number(c);}
+#if !defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) || !defined(__wasm__)
 Extended unsigned_number(u32 bits){auto result=Extended::from_int(static_cast<i32>(bits));if(bits&0x80000000)result=result+number(4294967296.0f);return result;}
+#endif
 void depth(AnmVertex* quad,Extended value){const auto z=value.to_float();for(u32 i=0;i<4;++i)quad[i].position.z=z;}
 }
 // 0x443080 / 0x443290. Keep their different store points and coordinate order.
@@ -97,15 +102,27 @@ void AnmRenderer::apply_material(const AnmVm& vm){
 i32 AnmRenderer::append(const AnmVertex* q) noexcept {constexpr u32 indices[]={0,1,2,1,2,3};for(auto index:indices){*manager.vertex_write=q[index];++manager.vertex_write;}++manager.batch_quads;return 0;}
 // 0x442670. Offset, pixel alignment, UVs, bounds, material state, tint, batching.
 i32 AnmRenderer::submit(const AnmVm& vm,u32 flags,bool flip_u){
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(__wasm__)
+    auto* q=environment.quad;for(u32 i=0;i<4;++i){q[i].position.x=anm_submission_add(q[i].position.x,manager.draw_offset.x);q[i].position.y=anm_submission_add(q[i].position.y,manager.draw_offset.y);}
+#else
     auto* q=environment.quad;for(u32 i=0;i<4;++i){q[i].position.x=Scalar::add(q[i].position.x,manager.draw_offset.x);q[i].position.y=Scalar::add(q[i].position.y,manager.draw_offset.y);}
+#endif
     // Keep fractional motion for every screen-space sprite. The half-pixel
     // raster convention remains; integer-aligned stationary sprites are unchanged.
     if(flags&1){const auto aligned=[](float x){return (number(x)-number(0.5f)).to_float();};q[0].position.x=q[2].position.x=aligned(q[0].position.x);q[1].position.x=q[3].position.x=aligned(q[1].position.x);q[0].position.y=q[1].position.y=aligned(q[0].position.y);q[2].position.y=q[3].position.y=aligned(q[2].position.y);}
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(__wasm__)
+    q[0].uv.x=q[2].uv.x=anm_submission_add(flip_u?vm.sprite->u1:vm.sprite->u0,vm.uv_offset.x);q[1].uv.x=q[3].uv.x=anm_submission_add(flip_u?vm.sprite->u0:vm.sprite->u1,vm.uv_offset.x);q[0].uv.y=q[1].uv.y=anm_submission_add(vm.sprite->v0,vm.uv_offset.y);q[2].uv.y=q[3].uv.y=anm_submission_add(vm.sprite->v1,vm.uv_offset.y);
+#else
     q[0].uv.x=q[2].uv.x=Scalar::add(flip_u?vm.sprite->u1:vm.sprite->u0,vm.uv_offset.x);q[1].uv.x=q[3].uv.x=Scalar::add(flip_u?vm.sprite->u0:vm.sprite->u1,vm.uv_offset.x);q[0].uv.y=q[1].uv.y=Scalar::add(vm.sprite->v0,vm.uv_offset.y);q[2].uv.y=q[3].uv.y=Scalar::add(vm.sprite->v1,vm.uv_offset.y);
+#endif
     float max_x=q[0].position.x>q[1].position.x?q[0].position.x:q[1].position.x,max_y=q[0].position.y>q[1].position.y?q[0].position.y:q[1].position.y;
     float min_x=q[0].position.x<q[1].position.x?q[0].position.x:q[1].position.x,min_y=q[0].position.y<q[1].position.y?q[0].position.y:q[1].position.y;
     for(u32 i=2;i<4;++i){if(max_x<q[i].position.x)max_x=q[i].position.x;if(max_y<q[i].position.y)max_y=q[i].position.y;if(q[i].position.x<min_x)min_x=q[i].position.x;if(q[i].position.y<min_y)min_y=q[i].position.y;}
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(__wasm__)
+    const auto& viewport=*environment.viewport;if(anm_submission_outside(max_x,max_y,min_x,min_y,viewport))return 0;
+#else
     const auto& viewport=*environment.viewport;if(number(max_x)<unsigned_number(viewport.x)||number(max_y)<unsigned_number(viewport.y)||unsigned_number(viewport.x+viewport.width)<number(min_x)||unsigned_number(viewport.y+viewport.height)<number(min_y))return 0;
+#endif
     if(manager.current_texture!=vm.sprite->texture){manager.current_texture=vm.sprite->texture;flush();environment.set_texture(manager.current_texture);}
     if(manager.cached_draw_state[2]!=1){flush();manager.cached_draw_state[2]=1;}
     if(!(flags&2)){u32 color=vm.flags&0x8000?vm.secondary_color:vm.color;if(manager.tint_enabled){u32 result=0;for(u32 shift=0;shift<32;shift+=8)result|=modulate_channel(color>>shift,manager.tint>>shift)<<shift;color=result;}for(u32 i=0;i<4;++i)q[i].color=color;}
