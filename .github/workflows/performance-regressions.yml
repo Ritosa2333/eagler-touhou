@@ -14,6 +14,7 @@ on:
       - 'th10_web/cpp/multiplayer/Anm*.hpp'
       - 'th10_web/cpp/game/AnmRenderer.cpp'
       - 'th10_web/cpp/game/AnmProjection.cpp'
+      - 'th10_web/cpp/game/AnmInterpreter.cpp'
       - 'th10_web/cpp/game/Anm*.hpp'
       - 'th10_web/cpp/game/GameInput.*'
       - 'th10_web/cpp/game/Presentation.*'
@@ -52,6 +53,7 @@ on:
       - 'th10_web/cpp/multiplayer/Anm*.hpp'
       - 'th10_web/cpp/game/AnmRenderer.cpp'
       - 'th10_web/cpp/game/AnmProjection.cpp'
+      - 'th10_web/cpp/game/AnmInterpreter.cpp'
       - 'th10_web/cpp/game/Anm*.hpp'
       - 'th10_web/cpp/game/GameInput.*'
       - 'th10_web/cpp/game/Presentation.*'
@@ -99,6 +101,7 @@ jobs:
           node --check portable/check-anm-dense-engine.mjs
           node --check portable/check-anm-trig-input.mjs
           node --check portable/check-anm-billboard.mjs
+          node --check portable/check-anm-uv-scroll.mjs
           node --check portable/check-presentation-input.mjs
           node --check portable/check-menu-input.mjs
           node --check portable/check-game-resources.mjs
@@ -153,6 +156,8 @@ jobs:
           node portable/check-anm-trig-input.mjs
           node portable/check-anm-billboard.mjs
           TH10_TEST_UBSAN=1 node portable/check-anm-billboard.mjs
+          node portable/check-anm-uv-scroll.mjs
+          TH10_TEST_UBSAN=1 node portable/check-anm-uv-scroll.mjs
       - name: Authored menu and screenshot input word regressions
         run: |
           node portable/check-presentation-input.mjs
