@@ -160,12 +160,118 @@ node th09_web/tests/multiplayer/peer-browser.mjs
 
 ## Remaining work / ownership
 
-TH06/07/08/10 have separate `experiment/adonis` worktrees but no title Adonis
-integration yet. They must not be marked complete because common supports the
-policy. Their gameplay, 3P, touch, snapshot owners, Replay/spectator ABI and
-restart fences require separate integration and real-world verification.
+### Continuation evidence, 2026-10-02
 
-For TH09: investigate the non-reproduced relay long-stall result; obtain real remote phone and
+The continuation starts from TH09 `9050e3d`, common `5669eff`, and Launcher
+`45f339d`. It adds bounded test-only transport diagnostics and a sequential,
+symmetric-order comparison runner; it does not change TH09 gameplay or the
+existing WASM in these measurements.
+
+`th09_web/tests/multiplayer/adonis-series.mjs --relay` ran baseline, hybrid,
+pure delay, pure delay, hybrid, baseline, sequentially with the same local
+fault-injection policy and the diagnostic WASM
+`b6c5cfd2f11cdbd6be821bf28338b64879fa75daa976089c606d51f56e808905`.
+Every run reached 600 confirmed player frames and 600 spectator frames, with
+all three final hashes equal (`1357358377`). This is local desktop Chromium
+evidence, not remote phones, input-to-photon latency or isolated phase benefit.
+
+| Order | Policy | D | Total elapsed ms | Both players' resimulated ticks | Original total 14 s gate |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Baseline rollback | 0 | 11041.620 | 3690 | PASS |
+| 2 | Hybrid | 2 | 25490.495 | 2123 | **FAIL** |
+| 3 | Pure delay | 5 | 11153.630 | 0 | PASS |
+| 4 | Pure delay | 5 | 11066.195 | 0 | PASS |
+| 5 | Hybrid | 2 | 10811.525 | 2571 | PASS |
+| 6 | Baseline rollback | 0 | 10999.685 | 3714 | PASS |
+
+Both pure-delay runs also recorded zero snapshots for both players. Callback
+P95 was 1.240/1.005 ms and 1.080/0.820 ms for the two pure runs, compared with
+4.115/4.355 ms and 3.870/3.655 ms for baseline. Hybrid was 3.090/3.815 ms and
+4.120/3.925 ms: lower resimulation is repeatable in this small series, but a
+uniform callback-time improvement is not established. D changes applied-input
+timing, so this comparison cannot attribute benefits to phase correction alone.
+
+New diagnostics locate the order-2 excess primarily **before gameplay**:
+players remained at frame zero in the connecting/preparation phase for roughly
+15 seconds. Measured gameplay presentation spans were 10.313/10.279 seconds,
+maximum player presentation gaps 349.960/268.040 ms and maximum callback work
+8.775/11.600 ms. The exact connection/preparation cause remains unproven. This
+does **not** explain the earlier pure-delay relay failure with a 12.8-second
+in-game presentation gap; that original negative evidence remains open.
+
+Full reports and logs are retained under
+`th09_web/artifacts/multiplayer-tests/adonis-resume-relay-20261002-a-*`.
+The `*-summary.json` correctly records `complete: true, passed: false`.
+The standalone pure D=5 relay run `adonis-resume-relay-telemetry-1` also passed.
+
+The transport harness now retains a bounded 600-sample frame/confirmation,
+callback-gap, route, send/receive, pending-timer and buffered-byte timeline even
+on failure. A subsequent instrumentation-only change explicitly splits
+`setupMs` and `gameplayMs` and records timestamped status transitions. It keeps
+the original combined 14-second gate; a slow setup is not silently reclassified
+as a passing session. Do not run the timing comparisons alongside heavy builds.
+
+Reproduce with the existing environment below/above, plus:
+
+```powershell
+$env:ADONIS_SERIES_LABEL='NEW-UNIQUE-LABEL'
+node th09_web/tests/multiplayer/adonis-series.mjs --relay
+```
+
+The runner refuses existing result labels, saves every failure, uses fresh
+browser instances, and checks that all reports refer to one WASM build.
+
+### Second sequential series and remaining stalls
+
+`adonis-resume-relay-20261002-b-summary.json` is complete and all six runs pass
+the unchanged combined 14-second gate. It uses the same diagnostic WASM as
+series a and the new explicit setup/gameplay split:
+
+| Order | Policy | D | Setup ms | Gameplay ms | Resimulated ticks, both players | Largest player presentation gap ms |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | Baseline | 0 | 407.080 | 10489.250 | 3808 | 401.660 |
+| 2 | Hybrid | 2 | 348.070 | 10495.610 | 1990 | 351.600 |
+| 3 | Pure delay | 5 | 301.785 | 10568.755 | 0 | 417.925 |
+| 4 | Pure delay | 5 | 323.965 | 13291.550 | 0 | **1886.965** |
+| 5 | Hybrid | 2 | 328.595 | 10467.055 | 1942 | 349.655 |
+| 6 | Baseline | 0 | 324.230 | 10477.165 | 3734 | 400.795 |
+
+Each run reached 600 confirmed frames and equal final state hashes for both
+players and its spectator. Do not claim identical hashes across all runs:
+order 5 ended at `2181465441`, the others at `1357358377`. Physical input timing
+and D can change the executed trace. Both pure runs still have zero snapshots
+and zero resimulation. Baseline resimulation averages 3771 ticks versus 1966
+for hybrid in this series (about 47.9% less); this is an observation of these
+local diagnostic runs, not a phase-only causal result or a phone FPS claim.
+
+**Passing the total-duration gate does not mean stutter-free.** In order 4,
+around diagnostic time 8.77..10.39 seconds, players remain at frames 114/113.
+Both relay receive counters remain at 251/249 while sends continue; receive
+age grows from 163 to 1780 ms. Callbacks continue with sampled ages around
+0..16 ms and timer lateness remains about 31 ms or less. The later receive
+burst permits gameplay to resume. Total phase delay is only 21.468/24 ms.
+This narrows this particular long pause to a delivery gap observed at the
+browser, rather than seconds of phase debt or expensive rollback (pure mode
+has none). It does not establish whether the cause is relay scheduling,
+browser/network delivery, or another host condition. An earlier approximately
+0.8-second callback pause in the same run is a separate observed event.
+
+Retain this negative frame-tail evidence even though the report's original
+aggregate gate passes. Instrument relay receive/forward times and event-loop
+lag next; do not reduce gameplay, relax correctness gates, or declare the old
+12.8-second outlier fixed based on this shorter pause.
+
+### Remaining title integration
+
+TH08 now has both modes, component/Replay gates, a real multiplayer WASM build,
+and 2P/3P browser game gates. Read its own `docs/multiplayer/ADONIS-EXPERIMENT.md`
+for the exact evidence and remaining phone/WAN/lifecycle scope. Launcher/relay
+exposure is deliberately limited to matching TH08/TH09 experimental Runtimes.
+TH06/07 have partial, unvalidated edits; TH10 has its separate tree and common
+dependency but no title implementation. Their per-title experiment documents
+state the remaining work. Do not enable them merely because common supports it.
+
+For TH09: investigate the retained relay delivery/presentation stalls; obtain real remote phone and
 WAN measurements; measure phase-only versus delay-only versus combined policies
 with repeated comparable traces; optionally connect startup RTT-tail samples
 to an explicitly bounded recommendation. Do not add live D changes without a

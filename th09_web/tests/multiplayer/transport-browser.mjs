@@ -32,7 +32,37 @@ if(release)assert.equal(build.exports.some(e=>e.name.startsWith('th09_probe_')),
 try{
  await page.goto(url);
  const result=await page.evaluate(async ({port,fallback,release,fullSpriteGeometry,adonisMode,inputDelay})=>{
-  const frames=[],notices=[],closed=[],lobbies=[];
+  const frames=[],notices=[],closed=[],lobbies=[],timeline=[],lanes=[],phaseEvents=[];
+  const diagnosticStarted=performance.now();
+  let lastDiagnostic=diagnosticStarted;
+  const readStats=w=>{const at=w.core._th09_rollback_info()/4;return Array.from(w.core.HEAPU32.subarray(at,at+8));};
+  const diagnostics=()=>({
+   scope:'Bounded test-only wall-clock and transport counters; not CPU/GPU or input-to-photon timing',
+   timeline:timeline.slice(),
+   phaseEvents:phaseEvents.slice(),
+   lanes:lanes.map(({channel,...entry})=>({...entry,readyState:channel.readyState,bufferedAmount:channel.bufferedAmount})),
+  });
+  // Keep evidence available even when the in-page correctness gate throws.
+  globalThis.__th09TransportDiagnostics=diagnostics;
+  const sampleDiagnostic=()=>{
+   const now=performance.now();if(now-lastDiagnostic<100)return;
+   const gapMs=now-lastDiagnostic;lastDiagnostic=now;
+   if(timeline.length===600)timeline.shift();
+   timeline.push({atMs:now-diagnosticStarted,pollGapMs:gapMs,
+    peers:frames.map((w,i)=>({
+     frame:i===2?w.core._th09_spectator_frame():readStats(w)[0],
+     confirmed:i===2?w.core._th09_spectator_frame():readStats(w)[1],
+     sinceCallbackMs:w.measure?.callbackAt?now-w.measure.callbackAt:null,
+     route:w.__eaglerNetplayTransport,
+    })),
+    lanes:lanes.map(({channel,peer,lane,sent,received,pending,lastSendAt,lastReceiveAt,maxTimerLatenessMs})=>({
+     peer,lane,sent,received,pending,maxTimerLatenessMs,
+     sendAgeMs:lastSendAt===null?null:now-lastSendAt,
+     receiveAgeMs:lastReceiveAt===null?null:now-lastReceiveAt,
+     bufferedAmount:channel.bufferedAmount,readyState:channel.readyState,
+    })),
+   });
+  };
   const wait=async condition=>{const began=performance.now();while(!condition()){if(performance.now()-began>10000)throw Error('lobby timeout');await new Promise(r=>setTimeout(r,10));}};
   for(const id of ['rollbackleft','rollbackright','rollbacktest']){const ws=new WebSocket(`ws://127.0.0.1:${port}/?room=th09mp-0999&lobby=${id}`);ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.type==='error')throw Error(m.error);ws.latest=m;};lobbies.push(ws);await wait(()=>ws.readyState===WebSocket.OPEN&&ws.latest);}
   const send=(i,m)=>lobbies[i].send(JSON.stringify(m));
@@ -49,24 +79,33 @@ try{
   for(let i=0;i<3;++i){const w=frames[i],{SharedNetplay}=await w.eval("import('/app/shared-netplay.mjs')");
    const spectator=i===2,options={netplayUrl:`ws://127.0.0.1:${port}/?room=th09mp-0999&run=1&players=2&${spectator?'spectator=rollbacktest':'player='+i}`,netplayPlayer:i%2,netplayPlayerCount:2,netplaySeed:12345,netplayDifficulty:3,netplayLoadouts:[{character:0},{character:1}],netplaySpectator:spectator,netplaySpectatorId:spectator?'rollbacktest':'',netplaySpectatorCount:1,netplayIceServers:[]};
    options.netplayAdonisMode=adonisMode;options.netplayInputDelay=inputDelay;
-   w.core.eaglerOptions=options;w.play=new SharedNetplay(w.core,{onStatus:s=>notices.push([i,s]),onClose:s=>closed.push([i,s]),onResult:()=>{}});
+   w.core.eaglerOptions=options;w.play=new SharedNetplay(w.core,{onStatus:s=>{
+    notices.push([i,s]);if(phaseEvents.length<64)phaseEvents.push({peer:i,atMs:performance.now()-diagnosticStarted,status:s});
+   },onClose:s=>closed.push([i,s]),onResult:()=>{}});
    w.measure={work:[],gaps:[],last:0,presented:0,audioStart:0};
-   w.core.onNetworkSpectatorFrame=(...args)=>w.play.publish(...args);w.core.onNetworkResult=()=>w.play.result();w.core.onGameFrame=(ok,ms)=>{w.play.frame();if(!w.measure.enabled)return;const m=w.measure,at=w.core._th09_game_metrics()/4,n=w.core.HEAPU32[at+9];m.work.push(ms);if(n!==m.presented){const now=performance.now();if(m.last)m.gaps.push(now-m.last);m.last=now;m.presented=n;}};
+   w.core.onNetworkSpectatorFrame=(...args)=>w.play.publish(...args);w.core.onNetworkResult=()=>w.play.result();w.core.onGameFrame=(ok,ms)=>{w.play.frame();w.measure.callbackAt=performance.now();if(!w.measure.enabled)return;const m=w.measure,at=w.core._th09_game_metrics()/4,n=w.core.HEAPU32[at+9];m.work.push(ms);if(n!==m.presented){const now=performance.now();if(m.last)m.gaps.push(now-m.last);m.last=now;m.presented=n;}};
    w.core._th09_probe_frame_limit?.(limit);w.core._th09_loop_start();w.core._th09_loop_pause(1);await w.play.connect(options);
   }
-  const stats=w=>{const at=w.core._th09_rollback_info()/4;return Array.from(w.core.HEAPU32.subarray(at,at+8));};
-  const started=performance.now();let wrapped=false;
+  const stats=readStats;
+  const started=performance.now();lastDiagnostic=started;let wrapped=false,gameplayStarted=null;
   while(performance.now()-started<45000){
+   sampleDiagnostic();
    if(closed.length)throw Error(JSON.stringify({closed,notices}));
    if(!wrapped&&frames.slice(0,2).every(w=>w.play.active)){
-    wrapped=true;
+    wrapped=true;gameplayStarted=performance.now();
+    phaseEvents.push({atMs:gameplayStarted-diagnosticStarted,status:'Both players active; fault injection and work measurements begin'});
     for(const w of frames){w.measure.enabled=true;w.measure.audioStart=w.core.SDL3?.audioContext?.currentTime||0;}
     for(const w of frames.slice(0,2)){w.core._th09_key(29,1);w.core._th09_key(44,1);const began=performance.now();
      const channels=fallback?[['relay',w.__eaglerPeerTransport.relay]]:[...w.__eaglerPeerTransport.peers.values()].flatMap(peer=>[['input',peer.inputDc],['control',peer.controlDc]]);
      for(const [lane,channel] of channels){
       const send=channel.send.bind(channel);let count=0;
-      channel.send=bytes=>{if(typeof bytes==='string'){send(bytes);return;}const copy=new Uint8Array(bytes),offset=copy[0]===0xe7?2:0;if(copy[offset]!==69||copy[offset+5]!==1){send(bytes);return;}const n=++count;if(lane==='input'&&n%9===0)return;
-       const age=performance.now()-began,delay=25+n%37+(age>=2500&&age<2900?800:0);setTimeout(()=>{if(channel.readyState==='open'||channel.readyState===WebSocket.OPEN)send(copy);},delay);};
+      const counters={channel,peer:frames.indexOf(w),lane,attempted:0,sent:0,received:0,dropped:0,pending:0,
+       lastSendAt:null,lastReceiveAt:null,maxTimerLatenessMs:0};lanes.push(counters);
+      channel.addEventListener('message',()=>{++counters.received;counters.lastReceiveAt=performance.now();});
+      const sendObserved=bytes=>{send(bytes);++counters.sent;counters.lastSendAt=performance.now();};
+      channel.send=bytes=>{++counters.attempted;if(typeof bytes==='string'){sendObserved(bytes);return;}const copy=new Uint8Array(bytes),offset=copy[0]===0xe7?2:0;if(copy[offset]!==69||copy[offset+5]!==1){sendObserved(bytes);return;}const n=++count;if(lane==='input'&&n%9===0){++counters.dropped;return;}
+       const age=performance.now()-began,delay=25+n%37+(age>=2500&&age<2900?800:0),due=performance.now()+delay;++counters.pending;
+       setTimeout(()=>{--counters.pending;counters.maxTimerLatenessMs=Math.max(counters.maxTimerLatenessMs,performance.now()-due);if(channel.readyState==='open'||channel.readyState===WebSocket.OPEN)sendObserved(copy);},delay);};
      }
     }
    }
@@ -82,6 +121,8 @@ try{
   const hashes=frames.map(w=>w.core._th09_network_hash()>>>0);if((!release||comparableFinalHashes)&&new Set(hashes).size!==1)throw Error('spectator divergence '+JSON.stringify(hashes));
   const routes=frames.map(w=>w.__eaglerNetplayTransport),audio=frames.map(w=>({state:w.core.SDL3?.audioContext?.state,advancedSeconds:(w.core.SDL3?.audioContext?.currentTime||0)-w.measure.audioStart}));
   const elapsedMs=performance.now()-started;
+  const setupMs=gameplayStarted===null?elapsedMs:gameplayStarted-started;
+  const gameplayMs=gameplayStarted===null?null:performance.now()-gameplayStarted;
   // The 600-tick workload should take about ten seconds plus the injected
   // outage. A recovery pass must not spend an extra wall-clock tick per rewind.
   const sustainedCadencePassed=elapsedMs<=14000;
@@ -89,7 +130,8 @@ try{
   const measured=frames.map(w=>({callbackWorkMs:distribution(w.measure.work),presentationGapMs:distribution(w.measure.gaps),wasmMemoryBytes:w.core.HEAPU8.length}));
   if(audio.some(a=>a.state!=='running'||a.advancedSeconds<1))throw Error('audio clock did not progress');
   const renderers=frames.map(w=>{const canvas=w.document.querySelector('canvas'),gl=canvas.getContext('webgl2')||canvas.getContext('webgl'),ext=gl.getExtension('WEBGL_debug_renderer_info');return ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER);});
-  for(const w of frames)w.play.close();for(const ws of lobbies)ws.close();return {summary,adonis,spectator,hashes,comparableFinalHashes,routes,audio,elapsedMs,sustainedCadencePassed,measured,renderers,notices};
+  sampleDiagnostic();const transportDiagnostics=diagnostics();
+  for(const w of frames)w.play.close();for(const ws of lobbies)ws.close();return {summary,adonis,spectator,hashes,comparableFinalHashes,routes,audio,elapsedMs,setupMs,gameplayMs,sustainedCadencePassed,gameplayCadencePassed:gameplayMs!==null&&gameplayMs<=14000,measured,renderers,notices,transportDiagnostics};
  },{port,fallback,release,fullSpriteGeometry,adonisMode,inputDelay});
  assert.deepEqual(result.routes,[fallback?'relay':'rtc',fallback?'relay':'rtc','spectator']);assert.equal(errors.length,0,errors.join('\n'));
  if(hardware)for(const renderer of result.renderers)assert.doesNotMatch(renderer,/swiftshader|llvmpipe|microsoft basic render/i);
@@ -97,6 +139,10 @@ try{
  // Save negative timing evidence as well as success. The original 14-second
  // cadence gate still fails; its metrics must not disappear with the throw.
  writeFileSync(resolve(root,`artifacts/multiplayer-tests/${label}-report.json`),JSON.stringify({passed:result.sustainedCadencePassed,correctnessPassed:true,wasm,browser:browser.version(),hardwareRequested:hardware,fullSpriteGeometry,parameters:{adonisMode,inputDelay},scope:'Local real transport, C++ timing mode, SharedNetplay, launcher relay, confirmed spectator; desktop Chromium'+(release?'; production WASM smoke, no forced frame limit':''),result,errors,relayLog},null,2));console.log(JSON.stringify(result));
- assert.ok(result.sustainedCadencePassed,'Simulation slowed by recovery: '+result.elapsedMs+' ms');
-}catch(error){writeFileSync(resolve(root,`artifacts/multiplayer-tests/${label}-failure.json`),JSON.stringify({error:error.stack,errors,relayLog},null,2));throw error;}
+ assert.ok(result.sustainedCadencePassed,`Original 14s session+gameplay budget exceeded: total=${result.elapsedMs} setup=${result.setupMs} gameplay=${result.gameplayMs} ms`);
+}catch(error){
+ let transportDiagnostics=null;
+ try{transportDiagnostics=await page.evaluate(()=>globalThis.__th09TransportDiagnostics?.()??null);}catch{}
+ writeFileSync(resolve(root,`artifacts/multiplayer-tests/${label}-failure.json`),JSON.stringify({error:error.stack,wasm:build.sha256,parameters:{adonisMode,inputDelay},errors,relayLog,transportDiagnostics},null,2));throw error;
+}
 finally{await browser.close();netplay.close();await new Promise(r=>server.close(r));relay.kill();}
