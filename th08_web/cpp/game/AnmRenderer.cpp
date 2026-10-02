@@ -37,10 +37,6 @@ u32 AnmRenderer::vm_color(const AnmVm& vm) const noexcept {
         }
         color=result;
     }
-#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if(multiplayer_player_alpha!=255)
-        color=(color&0x00ffffffu)|(((color>>24)*multiplayer_player_alpha/255u)<<24);
-#endif
     return color;
 }
 

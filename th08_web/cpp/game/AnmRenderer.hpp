@@ -75,9 +75,6 @@ public:
     Vec2 shake;
     u32 mix_color = 0x80808080;
     bool mix_enabled = false, depth_test_disabled = false;
-#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    u8 multiplayer_player_alpha=255; // scoped viewer tint, outside native state
-#endif
     bool vertex_buffer_disabled=false, color_compositing_disabled=false;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     bool rollback_visual_geometry_suppressed=false;

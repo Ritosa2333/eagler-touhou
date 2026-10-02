@@ -1,6 +1,9 @@
 #include "PlayerSimulation.hpp"
 #include "Presentation.hpp"
 #include "PresentationAudit.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/PlayerPresentation.hpp"
+#endif
 #include <algorithm>
 #include <cmath>
 namespace th08 {
@@ -137,7 +140,7 @@ void PlayerSimulation::graze(const Vec3& position,bool laser){
     graze_player(context,values,gauge,rank,position,laser,*this);state.context.hud_flags=context.hud_flags;state.context.replay_flags=context.replay_flags;state.context.gauge=gauge.value();
 }
 i32 PlayerSimulation::damage(const Vec3& position,const Vec3& size,i32& time_items,i32* bomb_hit){synchronize_shots();const i32 result=shots.damage(position,size,time_items,bomb_hit);failed|=shots.failure!=PlayerShots::Failure::None;return result;}
-bool PlayerSimulation::draw(const Vec2& offset,bool impacts){
+bool PlayerSimulation::draw(const Vec2& offset,bool impacts,u8 proximity_alpha){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if(state.life.state==4){
         if(!impacts){
@@ -145,7 +148,8 @@ bool PlayerSimulation::draw(const Vec2& offset,bool impacts){
             Vec3 p=state.motion.movement.position;
             if(presentation::active&&presentation_valid&&presentation_near(presentation_previous_position,p))p=presentation_lerp(presentation_previous_position,p);
             vm.pos={Scalar::add(offset.x,p.x),Scalar::add(offset.y,p.y),.1f};
-            vm.color1.a=u8(std::min<u32>(vm.color1.a,80));
+            vm.color1.a=multiplayer::clamp_player_alpha(u8(std::min<u32>(vm.color1.a,80)),proximity_alpha);
+            vm.color2.a=multiplayer::clamp_player_alpha(vm.color2.a,proximity_alpha);
             services.motion.draw_player(vm);
         }
         return !failed;
@@ -180,8 +184,8 @@ bool PlayerSimulation::draw(const Vec2& offset,bool impacts){
                     animation.color1.a=u8(std::clamp(presentation::lerp_world(float(presentation_previous_color.a),float(current.color1.a)),0.0f,255.0f));
                 }
             }
-            draw_player_motion(draw,offset,state.context.game_over,services.motion);
-        }else draw_player_motion(state.motion,offset,state.context.game_over,services.motion);
+            draw_player_motion(draw,offset,state.context.game_over,services.motion,proximity_alpha);
+        }else draw_player_motion(state.motion,offset,state.context.game_over,services.motion,proximity_alpha);
     }
     if(presentation::render_only){failed=failed_before;shots.failure=shot_failure_before;}
     return !failed;

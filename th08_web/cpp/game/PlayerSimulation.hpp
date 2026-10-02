@@ -102,7 +102,7 @@ public:
     void place_multiplayer_spawn(u32 seat,u32 count);
 #endif
     i32 damage(const Vec3& position,const Vec3& size,i32& time_items,i32* bomb_hit);
-    bool draw(const Vec2& screen_offset,bool impacts=false);
+    bool draw(const Vec2& screen_offset,bool impacts=false,u8 proximity_alpha=255);
     bool invalid()const noexcept{return failed;}
 #if defined(TH_PRESENTATION_AUDIT)
     const float* audit_bomb_presentation(uintptr_t object,u32 part)const{return patterns.audit_presentation_sample(object,part);}

@@ -1,4 +1,7 @@
 #include "GameplayScene.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/PlayerPresentation.hpp"
+#endif
 #include "InputController.hpp"
 #include "PracticeRuntime.hpp"
 #include "PracticeSections.hpp"
@@ -244,18 +247,18 @@ JobResult GameplayScene::update_player(){
 }
 JobResult GameplayScene::draw_players(bool impacts){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    const bool enhance=enhance_local_player_visibility&&!session.netplay.ReadOnly()&&
-        session.local_player<session.player_count&&roster.eligible(session.local_player);
+    const bool live_view=!session.netplay.ReadOnly()&&session.local_player<session.player_count&&
+        roster.eligible(session.local_player);
+    const bool enhance=enhance_local_player_visibility&&live_view;
     for(u32 seat=0;seat<session.player_count;++seat){
-        const auto old_alpha=renderer.multiplayer_player_alpha;
-        if(enhance&&seat!=session.local_player){
+        u8 proximity_alpha=255;
+        if(live_view&&seat!=session.local_player&&roster.eligible(seat)){
             const auto& a=pilot(seat).status().motion.movement.position;
             const auto& b=pilot(session.local_player).status().motion.movement.position;
             const float dx=a.x-b.x,dy=a.y-b.y;
-            if(dx*dx+dy*dy<84.f*84.f)renderer.multiplayer_player_alpha=104;
+            proximity_alpha=multiplayer::player_proximity_alpha(dx,dy);
         }
-        const bool drawn=pilot(seat).draw(ascii_context.arcade_origin,impacts);
-        renderer.multiplayer_player_alpha=old_alpha;
+        const bool drawn=pilot(seat).draw(ascii_context.arcade_origin,impacts,proximity_alpha);
         if(!drawn)return JobResult::Error;
     }
     if(!impacts){
