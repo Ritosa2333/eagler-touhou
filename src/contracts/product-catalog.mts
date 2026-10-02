@@ -313,6 +313,7 @@ export const PRODUCT_GAMES = Object.freeze({
     number: "11",
     title: "東方地霊殿",
     subtitle: "Subterranean Animism",
+    cardArtwork: "th11-card.webp",
     storage: Object.freeze({
       saveRoot: "/savesth11",
       scoreFile: "scoreth11.dat",
