@@ -16,12 +16,9 @@ bool touch(Netplay::RollbackJournal& journal,T& value){
 
 template<std::size_t BlockSize,std::size_t Capacity>
 bool touch_pool(Netplay::RollbackJournal& journal,
-                RollbackPool<BlockSize,Capacity>& pool){
-    if(!journal.Touch(pool.occupied,sizeof(pool.occupied))||
-       !journal.Touch(&pool.cursor,sizeof(pool.cursor)))return false;
-    for(std::size_t i=0;i<Capacity;++i)
-        if(pool.active(i)&&!journal.Touch(pool.at(i),BlockSize))return false;
-    return true;
+                RollbackPool<BlockSize,Capacity>& pool,
+                RollbackPoolCapture<Capacity>& capture){
+    return capture.Capture(pool,[&](void* p,std::size_t size){return journal.Touch(p,size);});
 }
 
 bool touch_stage(Netplay::RollbackJournal& journal,Stage* stage){
@@ -48,9 +45,7 @@ bool touch_animation_manager(Netplay::RollbackJournal& journal,browser::Animatio
        !journal.Touch(&manager.last_id,sizeof(manager.last_id)))return false;
     if(!capture.Capture(manager.pool,[&](const AnmVm& vm){return manager.occupied[&vm-manager.pool]!=0;},
         [&](void* p,std::size_t size){return journal.Touch(p,size);}))return false;
-    return touch_pool(journal,engine.rollback_animation_overflow)&&
-           touch_pool(journal,engine.rollback_geometry)&&
-           touch_pool(journal,engine.callback_environment.rollback_entries);
+    return true;
 }
 
 bool touch_bullets(Netplay::RollbackJournal& journal,EnemyBulletManager* manager,
@@ -95,7 +90,14 @@ void RollbackState::Clear(){
     journal_.Clear();configured_=false;
     frame_open_=false;open_frame_=elided_frames_=0;
     animation_pool_=nullptr;bullet_pool_=nullptr;regular_pool_=faith_pool_=nullptr;
+    ClearPoolCaptures();
     last_bytes_=peak_bytes_=last_blocks_=0;total_bytes_=0;snapshots_=0;
+}
+
+void RollbackState::ClearPoolCaptures(){
+    overflow_capture_.Clear();geometry_capture_.Clear();callback_capture_.Clear();
+    enemy_capture_.Clear();laser_capture_.Clear();ecl_capture_.Clear();
+    hint_capture_.Clear();effect_capture_.Clear();dialogue_capture_.Clear();
 }
 
 bool RollbackState::Touch(void* address,std::size_t bytes){
@@ -109,6 +111,15 @@ bool RollbackState::Touch(void* address,std::size_t bytes){
         return regular_capture_.TouchSlot(regular_pool_,static_cast<Item*>(address),save);
     if(pool_slot<Item,2048>(faith_pool_,address,bytes))
         return faith_capture_.TouchSlot(faith_pool_,static_cast<Item*>(address),save);
+    if(overflow_capture_.OwnsSlot(address,bytes))return overflow_capture_.TouchSlot(address,bytes,save);
+    if(geometry_capture_.OwnsSlot(address,bytes))return geometry_capture_.TouchSlot(address,bytes,save);
+    if(callback_capture_.OwnsSlot(address,bytes))return callback_capture_.TouchSlot(address,bytes,save);
+    if(enemy_capture_.OwnsSlot(address,bytes))return enemy_capture_.TouchSlot(address,bytes,save);
+    if(laser_capture_.OwnsSlot(address,bytes))return laser_capture_.TouchSlot(address,bytes,save);
+    if(ecl_capture_.OwnsSlot(address,bytes))return ecl_capture_.TouchSlot(address,bytes,save);
+    if(hint_capture_.OwnsSlot(address,bytes))return hint_capture_.TouchSlot(address,bytes,save);
+    if(effect_capture_.OwnsSlot(address,bytes))return effect_capture_.TouchSlot(address,bytes,save);
+    if(dialogue_capture_.OwnsSlot(address,bytes))return dialogue_capture_.TouchSlot(address,bytes,save);
     return address&&bytes&&journal_.Touch(address,bytes);
 }
 
@@ -118,6 +129,7 @@ bool RollbackState::BeginFrame(browser::World& world,std::uint32_t frame,bool ca
     frame_open_=true;open_frame_=frame;
     if(!capture)return true;
     if(!journal_.BeginFrame(frame))return false;
+    ClearPoolCaptures();
 
     auto& state=world.state;
     auto& engine=world.engine;
@@ -150,11 +162,14 @@ bool RollbackState::BeginFrame(browser::World& world,std::uint32_t frame,bool ca
        !journal_.Touch(world.faith_item_owners,sizeof(world.faith_item_owners))||
        !touch(journal_,engine.chain_value)||
        !touch_animation_manager(journal_,engine,animation_capture_)||
-       !touch_pool(journal_,world.rollback_enemies)||
-       !touch_pool(journal_,world.rollback_lasers)||
-       !touch_pool(journal_,world.rollback_ecl)||
-       !touch_pool(journal_,world.rollback_hints)||
-       !touch_pool(journal_,world.effects.rollback_effects))return false;
+       !touch_pool(journal_,engine.rollback_animation_overflow,overflow_capture_)||
+       !touch_pool(journal_,engine.rollback_geometry,geometry_capture_)||
+       !touch_pool(journal_,engine.callback_environment.rollback_entries,callback_capture_)||
+       !touch_pool(journal_,world.rollback_enemies,enemy_capture_)||
+       !touch_pool(journal_,world.rollback_lasers,laser_capture_)||
+       !touch_pool(journal_,world.rollback_ecl,ecl_capture_)||
+       !touch_pool(journal_,world.rollback_hints,hint_capture_)||
+       !touch_pool(journal_,world.effects.rollback_effects,effect_capture_))return false;
 
     // These owners survive the title screen. Their loading/introduction ANM
     // handles and fixed-tick counters are read by GameSession and authored
@@ -162,7 +177,7 @@ bool RollbackState::BeginFrame(browser::World& world,std::uint32_t frame,bool ca
     if(state.application.startup&&!touch(journal_,*state.application.startup))return false;
     if(world.common.value&&!touch(journal_,*world.common.value))return false;
     if(world.hud&&!touch(journal_,world.hud->last_multiplayer_hud_frame))return false;
-    if(world.hud&&!touch_pool(journal_,world.hud->rollback_dialogues))return false;
+    if(world.hud&&!touch_pool(journal_,world.hud->rollback_dialogues,dialogue_capture_))return false;
     // Records changed by native score/spell/statistics code are deterministic
     // values. Codec buffers and file handles are NOT part of the snapshot.
     if(world.scores.data&&(!touch(journal_,world.scores.data->characters)||
@@ -192,7 +207,11 @@ bool RollbackState::BeginFrame(browser::World& world,std::uint32_t frame,bool ca
     if(world.actors.spell&&!touch(journal_,*world.actors.spell))return false;
     if(world.actors.gui){
         if(!touch(journal_,*world.actors.gui))return false;
-        if(world.actors.gui->dialogue&&!touch(journal_,*world.actors.gui->dialogue))return false;
+        // The HUD pool may already cover this dialogue inside a multi-slot
+        // run. Use the slot coverage path; retain a journal fallback for an
+        // independently owned dialogue.
+        if(world.actors.gui->dialogue&&
+           !Touch(world.actors.gui->dialogue,sizeof(*world.actors.gui->dialogue)))return false;
     }
     if(world.actors.results&&!touch(journal_,*world.actors.results))return false;
     if(world.actors.popups&&!touch(journal_,*world.actors.popups))return false;

@@ -5,6 +5,7 @@
 
 #include <eagler/netplay/RollbackJournal.hpp>
 #include <eagler/netplay/SparsePoolCapture.hpp>
+#include "RollbackPoolCapture.hpp"
 #include <cstddef>
 #include <cstdint>
 
@@ -42,6 +43,7 @@ public:
     std::uint64_t RestoreSkippedBytes()const{return journal_.RestoreSkippedBytes();}
 
 private:
+    void ClearPoolCaptures();
     Netplay::RollbackJournal journal_{};
     bool configured_=false;
     bool frame_open_=false;
@@ -52,6 +54,15 @@ private:
     Netplay::SparsePoolCapture<2000> bullet_capture_{};
     Netplay::SparsePoolCapture<150> regular_capture_{};
     Netplay::SparsePoolCapture<2048> faith_capture_{};
+    RollbackPoolCapture<2048> overflow_capture_{};
+    RollbackPoolCapture<128> geometry_capture_{};
+    RollbackPoolCapture<4096> callback_capture_{};
+    RollbackPoolCapture<512> enemy_capture_{};
+    RollbackPoolCapture<256> laser_capture_{};
+    RollbackPoolCapture<1024> ecl_capture_{};
+    RollbackPoolCapture<8192> hint_capture_{};
+    RollbackPoolCapture<128> effect_capture_{};
+    RollbackPoolCapture<16> dialogue_capture_{};
     AnmVm* animation_pool_=nullptr;
     EnemyBullet* bullet_pool_=nullptr;
     Item* regular_pool_=nullptr;

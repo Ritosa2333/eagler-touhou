@@ -79,6 +79,10 @@ for (const [name, sources, flags = []] of [
   ['rollback-pool', [
     resolve(root,'tests/rollback-pool-test.cpp'),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
+  ['rollback-pool-capture', [
+    resolve(root,'tests/rollback-pool-capture-test.cpp'),
+    resolve(common,'src/netplay/RollbackJournal.cpp'),
+  ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['audio-events', [
     resolve(root,'tests/multiplayer-audio-events-test.cpp'),
     resolve(root,'th10_web/cpp/multiplayer/AudioEvents.cpp'),

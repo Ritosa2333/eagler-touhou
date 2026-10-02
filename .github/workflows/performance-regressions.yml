@@ -1,0 +1,63 @@
+name: Multiplayer performance regressions
+
+on:
+  push:
+    paths:
+      - '.github/workflows/performance-regressions.yml'
+      - 'th10_web/cpp/multiplayer/RollbackPool*.hpp'
+      - 'th10_web/cpp/multiplayer/RollbackState.*'
+      - 'th10_web/cpp/multiplayer/PresentationCache.hpp'
+      - 'th10_web/cpp/multiplayer/NetworkExports.cpp'
+      - 'th10_web/cpp/sdl/ApplicationHost.cpp'
+      - 'portable/check-high-refresh-contract.mjs'
+      - 'tests/high-refresh-contract.test.mjs'
+      - 'tests/rollback-pool*.cpp'
+      - 'tests/presentation-cache-test.cpp'
+      - 'third_party/eagler-common'
+  pull_request:
+    paths:
+      - '.github/workflows/performance-regressions.yml'
+      - 'th10_web/cpp/multiplayer/RollbackPool*.hpp'
+      - 'th10_web/cpp/multiplayer/RollbackState.*'
+      - 'th10_web/cpp/multiplayer/PresentationCache.hpp'
+      - 'th10_web/cpp/multiplayer/NetworkExports.cpp'
+      - 'th10_web/cpp/sdl/ApplicationHost.cpp'
+      - 'portable/check-high-refresh-contract.mjs'
+      - 'tests/high-refresh-contract.test.mjs'
+      - 'tests/rollback-pool*.cpp'
+      - 'tests/presentation-cache-test.cpp'
+      - 'third_party/eagler-common'
+  workflow_dispatch:
+
+jobs:
+  native-regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Display cadence and pinned channel API contract
+        run: |
+          node portable/check-high-refresh-contract.mjs
+          node --test tests/high-refresh-contract.test.mjs
+      - name: Optimized owner tests with assertions enabled
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/performance-regressions
+          flags=(-std=c++17 -O2 -UNDEBUG -Wall -Wextra -Werror -DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1 -Ithird_party/eagler-common/include)
+          for test in rollback-pool presentation-cache; do
+            g++ "${flags[@]}" "tests/${test}-test.cpp" -o "artifacts/performance-regressions/${test}"
+            "artifacts/performance-regressions/${test}"
+          done
+          g++ "${flags[@]}" tests/rollback-pool-capture-test.cpp third_party/eagler-common/src/netplay/RollbackJournal.cpp -o artifacts/performance-regressions/rollback-pool-capture
+          artifacts/performance-regressions/rollback-pool-capture
+      - name: Pool capture address and undefined-behavior checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          g++ -std=c++17 -O1 -g -UNDEBUG -Wall -Wextra -Werror -fsanitize=address,undefined -fno-omit-frame-pointer -DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1 -Ithird_party/eagler-common/include tests/rollback-pool-capture-test.cpp third_party/eagler-common/src/netplay/RollbackJournal.cpp -o artifacts/performance-regressions/rollback-pool-capture-sanitized
+          artifacts/performance-regressions/rollback-pool-capture-sanitized
