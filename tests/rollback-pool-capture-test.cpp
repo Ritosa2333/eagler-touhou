@@ -1,12 +1,14 @@
 #include "../th10_web/cpp/multiplayer/RollbackPoolCapture.hpp"
 #include <eagler/netplay/RollbackJournal.hpp>
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <type_traits>
 #include <vector>
 
 // No title ABI, retail resources, WASI, or 32-bit headers are required. Keep
@@ -82,7 +84,7 @@ void dense_reuse_and_padding(){
     const auto save=[&](void* address,std::size_t bytes){return journal.Touch(address,bytes);};
     CHECK(journal.BeginFrame(0));
     CHECK(capture.Capture(pool,save));
-    CHECK(journal.BlocksForFrame(0)==3);
+    CHECK(journal.BlocksForFrame(0)==2);
     CHECK(journal.BytesForFrame(0)==sizeof(pool.occupied)+sizeof(pool.cursor)+sizeof(pool.blocks));
     for(std::size_t i=0;i<Capacity;++i){
         CHECK(capture.OwnsSlot(pool.at(i),Payload));
@@ -96,7 +98,7 @@ void dense_reuse_and_padding(){
         CHECK(capture.TouchSlot(pool.at(i),i%2?Payload:Stride,save));
         fill(pool,i,static_cast<unsigned char>(i+121));
     }
-    CHECK(journal.BlocksForFrame(0)==3);
+    CHECK(journal.BlocksForFrame(0)==2);
     CHECK(journal.EndFrame());
     CHECK(journal.UndoTo(0));
     CHECK(same(pool,before));
@@ -111,18 +113,18 @@ void sparse_dormant_and_clear(){
     const auto save=[&](void* address,std::size_t bytes){return journal.Touch(address,bytes);};
     CHECK(journal.BeginFrame(0));
     CHECK(capture.Capture(pool,save));
-    CHECK(journal.BlocksForFrame(0)==5); // metadata plus three live runs
+    CHECK(journal.BlocksForFrame(0)==4); // metadata plus three live runs
     CHECK(journal.BytesForFrame(0)==sizeof(pool.occupied)+sizeof(pool.cursor)+5*Stride);
     pool.cursor=0;
     void* dormant=pool.allocate(Payload,false);
     CHECK(dormant==pool.at(0));
     // Match StageHint's nonzeroing allocation followed by a prewrite touch.
     CHECK(capture.TouchSlot(dormant,Stride,save));
-    CHECK(journal.BlocksForFrame(0)==6);
+    CHECK(journal.BlocksForFrame(0)==5);
     CHECK(journal.BytesForFrame(0)==sizeof(pool.occupied)+sizeof(pool.cursor)+6*Stride);
     fill(pool,0,0xa7);
     CHECK(capture.TouchSlot(dormant,Payload,save));
-    CHECK(journal.BlocksForFrame(0)==6);
+    CHECK(journal.BlocksForFrame(0)==5);
     CHECK(pool.release(dormant));pool.cursor=0;
     CHECK(pool.allocate(Payload,true)==dormant);
     CHECK(capture.TouchSlot(dormant,Payload,save));
@@ -184,7 +186,7 @@ void dialogue_duplicate_subrange(){
     CHECK(capture.Capture(pool,save));
     CHECK(capture.TouchSlot(pool.at(2),144,save));
     CHECK(capture.TouchSlot(pool.at(3),144,save));
-    CHECK(journal.BlocksForFrame(0)==3);
+    CHECK(journal.BlocksForFrame(0)==2);
     CHECK(!journal.Touch(pool.at(2),144));CHECK(journal.Failed());
 }
 
@@ -192,8 +194,8 @@ void failed_capture_and_retry(){
     Pool pool{};seed(pool);pool.occupied[3]=pool.occupied[4]=1;
     Capture capture;
     unsigned calls=0;
-    CHECK(!capture.Capture(pool,[&](void*,std::size_t){return ++calls<3;}));
-    CHECK(calls==3); // metadata saved, live-run capture rejected
+    CHECK(!capture.Capture(pool,[&](void*,std::size_t){return ++calls<2;}));
+    CHECK(calls==2); // metadata saved, live-run capture rejected
     calls=0;
     const auto reject=[&](void*,std::size_t){++calls;return false;};
     CHECK(!capture.TouchSlot(pool.at(3),Payload,reject));
@@ -305,9 +307,41 @@ void elided_frame_then_capture(){
     const Pool after_elided=pair.batched;
     pair.begin(2);pair.mutate();pair.end(2);pair.undo(2,after_elided);
 }
+
+template<std::size_t N>
+void metadata_alignment(){
+    using MetadataPool=th10::multiplayer::RollbackPool<37,N>;
+    MetadataPool pool{};
+    // Nonzero padding detects accidental widening on odd capacities.
+    static_assert(std::is_trivially_copyable_v<MetadataPool>);
+    auto* representation=reinterpret_cast<unsigned char*>(&pool);
+    std::fill(representation,representation+sizeof(pool),static_cast<unsigned char>(0xa5));
+    std::memset(pool.occupied,0,sizeof(pool.occupied));pool.cursor=0;
+    std::array<unsigned char,sizeof(pool)> before{};
+    std::memcpy(before.data(),&pool,sizeof(pool));
+    th10::multiplayer::RollbackPoolCapture<N> capture;
+    Netplay::RollbackJournal journal;
+    CHECK(journal.Reset({2,sizeof(pool),N+8,true,true}));CHECK(journal.BeginFrame(0));
+    const auto save=[&](void* p,std::size_t bytes){return journal.Touch(p,bytes);};
+    CHECK(capture.Capture(pool,save));
+    constexpr bool adjacent=offsetof(MetadataPool,cursor)==offsetof(MetadataPool,occupied)+sizeof(pool.occupied);
+    CHECK(journal.BlocksForFrame(0)==(adjacent?1:2));
+    CHECK(journal.BytesForFrame(0)==sizeof(pool.occupied)+sizeof(pool.cursor));
+    pool.occupied[0]=1;pool.cursor=17;
+    CHECK(journal.EndFrame());CHECK(journal.UndoTo(0));
+    CHECK(std::memcmp(&pool,before.data(),sizeof(pool))==0);
+    Netplay::RollbackJournal limited;
+    CHECK(limited.Reset({1,sizeof(pool.occupied)+sizeof(pool.cursor)-1,N+8}));
+    CHECK(limited.BeginFrame(0));
+    CHECK(!capture.Capture(pool,[&](void* p,std::size_t bytes){return limited.Touch(p,bytes);}));
+    CHECK(limited.Failed());
+}
 } // namespace
 
 int main(){
+    metadata_alignment<1>();metadata_alignment<2>();metadata_alignment<3>();
+    metadata_alignment<4>();metadata_alignment<5>();metadata_alignment<7>();
+    metadata_alignment<8>();metadata_alignment<16>();metadata_alignment<37>();metadata_alignment<64>();
     dense_reuse_and_padding();sparse_dormant_and_clear();invalid_ownership();
     dialogue_duplicate_subrange();failed_capture_and_retry();changing_runs_history_and_continuation(false);
     changing_runs_history_and_continuation(true);elided_frame_then_capture();

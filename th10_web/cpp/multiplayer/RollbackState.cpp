@@ -36,13 +36,13 @@ bool touch_stage(Netplay::RollbackJournal& journal,Stage* stage){
 bool touch_animation_manager(Netplay::RollbackJournal& journal,browser::AnimationEngine& engine,
                              Netplay::SparsePoolCapture<4096>& capture){
     auto& manager=engine.manager;
+    static_assert(offsetof(AnmManager,cursor)==offsetof(AnmManager,occupied)+sizeof(manager.occupied));
+    static_assert(offsetof(AnmManager,draw_layers)==offsetof(AnmManager,registry)+sizeof(manager.registry));
+    static_assert(offsetof(AnmManager,last_id)==offsetof(AnmManager,draw_layers)+sizeof(manager.draw_layers));
     if(!journal.Touch(&manager.started_scripts,sizeof(manager.started_scripts))||
        !journal.Touch(&manager.processed_count,sizeof(manager.processed_count))||
-       !journal.Touch(manager.occupied,sizeof(manager.occupied))||
-       !journal.Touch(&manager.cursor,sizeof(manager.cursor))||
-       !touch(journal,manager.registry)||
-       !journal.Touch(manager.draw_layers,sizeof(manager.draw_layers))||
-       !journal.Touch(&manager.last_id,sizeof(manager.last_id)))return false;
+       !journal.Touch(manager.occupied,sizeof(manager.occupied)+sizeof(manager.cursor))||
+       !journal.Touch(&manager.registry,sizeof(manager.registry)+sizeof(manager.draw_layers)+sizeof(manager.last_id)))return false;
     if(!capture.Capture(manager.pool,[&](const AnmVm& vm){return manager.occupied[&vm-manager.pool]!=0;},
         [&](void* p,std::size_t size){return journal.Touch(p,size);}))return false;
     return true;

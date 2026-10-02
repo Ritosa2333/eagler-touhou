@@ -23,8 +23,15 @@ public:
         base_=reinterpret_cast<std::uint8_t*>(pool.blocks);
         stride_=sizeof(Storage);payload_=BlockSize;
         captured_.fill(false);
-        if(!touch(pool.occupied,sizeof(pool.occupied))||
-           !touch(&pool.cursor,sizeof(pool.cursor)))return false;
+        using Pool=RollbackPool<BlockSize,Capacity>;
+        // Save exactly the original metadata bytes. Capacities with padding
+        // before cursor keep two records rather than snapshotting padding.
+        if constexpr(offsetof(Pool,cursor)==offsetof(Pool,occupied)+sizeof(pool.occupied)){
+            if(!touch(pool.occupied,sizeof(pool.occupied)+sizeof(pool.cursor)))return false;
+        }else{
+            if(!touch(pool.occupied,sizeof(pool.occupied))||
+               !touch(&pool.cursor,sizeof(pool.cursor)))return false;
+        }
         for(std::size_t index=0;index<Capacity;){
             if(!pool.active(index)){++index;continue;}
             const auto first=index++;
