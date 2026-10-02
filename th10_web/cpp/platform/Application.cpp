@@ -268,10 +268,12 @@ bool Application::multiplayer_finalize_frame(){
     const auto captured_bytes=world->rollback.CapturedBytes(frame);
     const auto captured_blocks=world->rollback.CapturedBlocks(frame);
     if(!world->end_rollback_frame()){
-        char reason[160]{};
+        char reason[192]{};
         std::snprintf(reason,sizeof(reason),
-            "Finalize rollback frame: audio open %u failed %u, journal open %u failed %u, bytes %zu blocks %zu",
-            u32(audio_open),u32(world->audio_events.Failed()),u32(journal_open),
+            "Finalize rollback frame: audio open %u failed %u (%u:%s, %u cmds/%zu B), journal open %u failed %u, bytes %zu blocks %zu",
+            u32(audio_open),u32(world->audio_events.Failed()),world->audio_events.FailureCode(),
+            world->audio_events.FailureReason(),world->audio_events.CapturedCommands(frame),
+            world->audio_events.CapturedBytes(frame),u32(journal_open),
             u32(world->rollback.Failed()),captured_bytes,captured_blocks);
         multiplayer_fail(reason);return false;
     }

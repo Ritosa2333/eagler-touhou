@@ -11,6 +11,9 @@ on:
       - 'th10_web/cpp/multiplayer/RollbackState.*'
       - 'th10_web/cpp/multiplayer/PresentationCache.hpp'
       - 'th10_web/cpp/multiplayer/NetworkExports.cpp'
+      - 'th10_web/cpp/multiplayer/AudioEvents.*'
+      - 'th10_web/cpp/game/AudioManager.*'
+      - 'th10_web/cpp/platform/Application.cpp'
       - 'th10_web/cpp/multiplayer/Anm*.hpp'
       - 'th10_web/cpp/game/AnmRenderer.cpp'
       - 'th10_web/cpp/game/AnmProjection.cpp'
@@ -44,6 +47,7 @@ on:
       - 'tests/player-shot-*.cpp'
       - 'tests/presentation-input-test.cpp'
       - 'tests/menu-input-test.cpp'
+      - 'tests/*audio*.cpp'
       - 'tests/game-resource*'
       - 'tests/bullet-owner-check.cpp'
       - 'tests/rollback-pool*.cpp'
@@ -56,6 +60,9 @@ on:
       - 'th10_web/cpp/multiplayer/RollbackState.*'
       - 'th10_web/cpp/multiplayer/PresentationCache.hpp'
       - 'th10_web/cpp/multiplayer/NetworkExports.cpp'
+      - 'th10_web/cpp/multiplayer/AudioEvents.*'
+      - 'th10_web/cpp/game/AudioManager.*'
+      - 'th10_web/cpp/platform/Application.cpp'
       - 'th10_web/cpp/multiplayer/Anm*.hpp'
       - 'th10_web/cpp/game/AnmRenderer.cpp'
       - 'th10_web/cpp/game/AnmProjection.cpp'
@@ -89,6 +96,7 @@ on:
       - 'tests/player-shot-*.cpp'
       - 'tests/presentation-input-test.cpp'
       - 'tests/menu-input-test.cpp'
+      - 'tests/*audio*.cpp'
       - 'tests/game-resource*'
       - 'tests/bullet-owner-check.cpp'
       - 'tests/rollback-pool*.cpp'
@@ -167,6 +175,7 @@ jobs:
       - name: Actual wasm32 owner and arithmetic regressions
         run: |
           node portable/check-multiplayer-rules.mjs
+          TH10_TEST_UBSAN=1 node portable/check-multiplayer-rules.mjs --audio-only
           node portable/check-anm-trig-input.mjs
           node portable/check-anm-billboard.mjs
           TH10_TEST_UBSAN=1 node portable/check-anm-billboard.mjs

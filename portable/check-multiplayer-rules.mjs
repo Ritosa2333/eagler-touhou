@@ -6,19 +6,25 @@ import { WASI } from 'node:wasi';
 // A rule-owner test, independent of SDL, retail resources and room transport.
 // Use the same WASI compilation lane as check-frame-cadence.mjs.
 const root = resolve(import.meta.dirname, '..');
+const audioOnly = process.argv.includes('--audio-only');
+const sanitized = process.env.TH10_TEST_UBSAN === '1';
+if (sanitized && !audioOnly) throw new Error('This sanitizer lane is limited to --audio-only.');
+const sanitizerFlags = sanitized ? ['-fsanitize=undefined', '-fsanitize-trap=undefined'] : [];
+const audioSuites = new Set(['audio-events', 'audio-native-equivalence', 'dense-item-audio']);
 const sdk = process.env.WASI_SDK_PATH ?? [
   resolve(root, '../toolchains/wasi-sdk-34.0-x86_64-windows'),
   resolve(root, '../../toolchains/wasi-sdk-34.0-x86_64-windows'),
 ].find(path => existsSync(resolve(path, 'bin/clang++.exe')));
 if (!sdk) throw new Error('Set WASI_SDK_PATH to the installed WASI SDK directory.');
 const compiler = resolve(sdk, 'bin', process.platform === 'win32' ? 'clang++.exe' : 'clang++');
-const out = resolve(root, 'artifacts/multiplayer-tests');
+const out = resolve(root, 'artifacts/multiplayer-tests' + (sanitized ? '-audio-ubsan' : ''));
 mkdirSync(out, { recursive: true });
 const common = resolve(root, 'third_party/eagler-common');
 const softfloat = resolve(out, 'softfloat.o');
+if (sanitized) console.log('Audio-only UBSan: C++ and unmodified SoftFloat instrumented; not a whole-game sanitizer pass.');
 execFileSync(compiler, [
   '--target=wasm32-wasip1', '-O2', '-x', 'c', '-std=c11',
-  '-DSOFTFLOAT_FAST_INT64', '-DINLINE_LEVEL=5', '-c',
+  '-DSOFTFLOAT_FAST_INT64', '-DINLINE_LEVEL=5', ...sanitizerFlags, '-c',
   resolve(root, 'th10_web/cpp/rebuild/third_party/softfloat.c'), '-o', softfloat,
 ], { cwd: root, windowsHide: true, stdio: 'inherit' });
 const economySources = [
@@ -89,6 +95,18 @@ for (const [name, sources, flags = []] of [
     resolve(root,'th10_web/cpp/game/AudioManager.cpp'),
     resolve(root,'th10_web/cpp/game/Arithmetic.cpp'),softfloat,
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
+  ['audio-native-equivalence', [
+    resolve(root,'tests/multiplayer-audio-native-equivalence-test.cpp'),
+    resolve(root,'th10_web/cpp/multiplayer/AudioEvents.cpp'),
+    resolve(root,'th10_web/cpp/game/AudioManager.cpp'),
+    resolve(root,'th10_web/cpp/game/Arithmetic.cpp'),softfloat,
+  ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
+  ['dense-item-audio', [
+    ...['tests/multiplayer-dense-item-audio-test.cpp','th10_web/cpp/multiplayer/AudioEvents.cpp',
+      'th10_web/cpp/game/AudioManager.cpp','th10_web/cpp/game/ItemFrame.cpp',
+      'th10_web/cpp/game/GameEconomy.cpp','th10_web/cpp/game/Timer.cpp',
+      'th10_web/cpp/game/GameMath.cpp','th10_web/cpp/game/Arithmetic.cpp'].map(path=>resolve(root,path)),softfloat,
+  ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['common-simulation-frontier', [
     resolve(common,'tests/simulation-frontier-test.cpp'),
     resolve(common,'src/netplay/NetplayCore.cpp'),
@@ -140,11 +158,12 @@ for (const [name, sources, flags = []] of [
       'th10_web/cpp/game/GameMath.cpp','th10_web/cpp/game/Arithmetic.cpp'].map(path=>resolve(root,path)),softfloat,
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
 ]) {
+  if (audioOnly && !audioSuites.has(name)) continue;
   const wasm = resolve(out, name + '.wasm');
   execFileSync(compiler, [
     '--target=wasm32-wasip1', '-O2', '-std=c++17', '-Wall', '-Wextra', '-Werror',
     '-fno-exceptions', '-fno-rtti',
-    ...flags,
+    ...sanitizerFlags, ...flags,
     '-Wl,-z,stack-size=1048576',
     '-I' + resolve(common, 'include'),
     '-I' + resolve(common, 'tests/fixtures/include'),

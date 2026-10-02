@@ -18,6 +18,10 @@ struct Observed final:AudioCommandSink {
 };
 SoundDefinition definitions[128]{};
 bool tick(void* context){++*static_cast<unsigned*>(context);return true;}
+bool failed_tick(void*){return false;}
+void failure(const AudioEvents& events,const char* reason){
+    assert(events.Failed()&&events.FailureCode()!=0&&std::strcmp(events.FailureReason(),reason)==0);
+}
 }
 int main(){
     AudioEvents events;AudioManager manager{};Observed observer;unsigned ticks=0;
@@ -60,10 +64,24 @@ int main(){
     assert(!events.BeginFrame(u32(AudioEvents::capacity)));
     assert(events.DiscardFrom(0));assert(events.BeginFrame(0));
     for(u32 i=0;i<=AudioEvents::events_per_frame;++i)manager.stop_effect(1);
-    assert(events.Failed()&&!events.EndFrame());
+    assert(events.Failed()&&!events.EndFrame());failure(events,"event byte limit");
+    assert(events.CapturedCommands(0)==AudioEvents::events_per_frame);
+    assert(events.CapturedBytes(0)==AudioEvents::bytes_per_frame);
+    const auto first_failure=events.FailureCode();manager.stop_effect(128);
+    assert(events.FailureCode()==first_failure);
     manager.command_sink=&observer;
     assert(!events.CommitThrough(0,0,manager,tick,&ticks));
     events.Reset();manager.command_sink=&events;assert(events.BeginFrame(0));
     char long_name[257]{};for(u32 i=0;i<256;++i)long_name[i]='a';
-    manager.queue_music(2,0,long_name);assert(events.Failed());
+    manager.queue_music(2,0,long_name);failure(events,"music filename");
+    events.Reset();assert(!events.Failed()&&events.FailureCode()==0);
+    manager.queue_effect(1,0,definitions);failure(events,"capture closed");
+    events.Reset();assert(events.BeginFrame(0));manager.queue_effect(-1,0,definitions);failure(events,"effect id");
+    events.Reset();assert(events.BeginFrame(0));manager.queue_effect(1,0,nullptr);failure(events,"sound definitions");
+    events.Reset();assert(events.BeginFrame(0));manager.stop_effect(128);failure(events,"stop id");
+    events.Reset();assert(events.BeginFrame(0));manager.queue_music(2,0,nullptr);failure(events,"music filename");
+    events.Reset();manager.command_sink=&observer;
+    assert(!events.CommitThrough(0,0,manager,tick,&ticks));failure(events,"commit frame");
+    events.Reset();assert(events.BeginFrame(0));assert(events.EndFrame());
+    assert(!events.CommitThrough(0,0,manager,failed_tick,nullptr));failure(events,"finish frame");
 }
