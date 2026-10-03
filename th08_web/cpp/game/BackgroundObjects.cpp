@@ -5,6 +5,9 @@
 #include <cmath>
 namespace th08 {
 namespace {
+#ifdef TH_MULTIPLAYER_FIXTURES
+bool diagnostic_background_instance_index=false;
+#endif
 Vec3 add(const Vec3& a,const Vec3& b){return {Scalar::add(a.x,b.x),Scalar::add(a.y,b.y),Scalar::add(a.z,b.z)};}
 Vec3 sub(const Vec3& a,const Vec3& b){return {Scalar::sub(a.x,b.x),Scalar::sub(a.y,b.y),Scalar::sub(a.z,b.z)};}
 Extended dot(const Vec3& a,const Vec3& b){return number(a.x)*number(b.x)+number(a.y)*number(b.y)+number(a.z)*number(b.z);}
@@ -12,6 +15,9 @@ Extended length(const Vec3& v){return number(dot(v,v).to_float()).square_root();
 Vec3 translated(const Vec3& local,const Vec3& instance,const Vec3& offset){return {(number(local.x)+number(instance.x)-number(offset.x)).to_float(),(number(local.y)+number(instance.y)-number(offset.y)).to_float(),(number(local.z)+number(instance.z)-number(offset.z)).to_float()};}
 Vec3 scaled_add(const Vec3& origin,const Vec3& direction,float distance){return {(number(direction.x)*number(distance)+number(origin.x)).to_float(),(number(direction.y)*number(distance)+number(origin.y)).to_float(),(number(direction.z)*number(distance)+number(origin.z)).to_float()};}
 }
+#ifdef TH_MULTIPLAYER_FIXTURES
+bool fixture_background_instance_index(bool enabled){diagnostic_background_instance_index=enabled;return diagnostic_background_instance_index;}
+#endif
 Vec3 BackgroundObjects::project(const Vec3& position)const{
     Matrix4 world;world.identity();world.m[3][0]=position.x;world.m[3][1]=position.y;world.m[3][2]=position.z;Vec3 result;
     GraphicsMath::project(result,projection_input,&renderer.viewport,&renderer.projection_matrix,&renderer.view_matrix,&world);return result;
@@ -33,13 +39,13 @@ void BackgroundObjects::draw(i32 layer){
     if(!state.stage_data||!state.instances)return;projection_input={};renderer.background_camera(state.camera);i32 fog_mode=255;
     Vec3 right{renderer.view_matrix.m[0][0],renderer.view_matrix.m[0][1],renderer.view_matrix.m[0][2]};GraphicsMath::normalize(right,right);
     const auto eye=add(state.camera.position,state.camera.eye_offset);
-    for(auto* instance=state.instances;instance->object>=0;++instance){
-        auto& object=*state.objects[instance->object];if(i8(object.layer)!=layer)continue;
+    const auto draw_instance=[&](const StageInstance* instance){
+        auto& object=*state.objects[instance->object];if(i8(object.layer)!=layer)return;
         const auto center_component=[](float origin,float instance,float offset,float size){return (number(origin)+number(instance)-number(offset)+number(size)/number(2)).to_float();};
         const Vec3 center{center_component(object.position.x,instance->position.x,state.position.x,object.dimensions.x),center_component(object.position.y,instance->position.y,state.position.y,object.dimensions.y),center_component(object.position.z,instance->position.z,state.position.z,object.dimensions.z)};
-        const auto relative=sub(center,eye);if(number(state.distance_limit)<dot(relative,relative))continue;
+        const auto relative=sub(center,eye);if(number(state.distance_limit)<dot(relative,relative))return;
         const float distance=dot(relative,state.camera.unused24).to_float(),limit=(length(object.dimensions)/number(2)+number(960)).to_float();
-        if(!(distance<=limit&&distance>=80))continue;if(!presentation::render_only)object.flags|=2;
+        if(!(distance<=limit&&distance>=80))return;if(!presentation::render_only)object.flags|=2;
         for(auto* q=StageProgram::first(object);q->type>=0;q=StageProgram::next(*q)){auto& source=state.quad_vms[q->vm];if(!source.loadedSprite)continue;
             TH08_AUDIT_SCOPE(Background,instance,source.currentTimeInScript.current,uint32_t(reinterpret_cast<uintptr_t>(q)));
             AnmVm copy;AnmVm* vm=&source;if(presentation::render_only&&q->vm>=0&&q->vm<i32(presentation_vms.size())){const auto& raw=presentation_vms[q->vm];copy=raw;if(q->vm<i32(previous_visuals.size())){
@@ -56,7 +62,23 @@ void BackgroundObjects::draw(i32 layer){
             if(q->type==0)sprite(*vm,*static_cast<StageSpriteQuad*>(q),*instance,right,fog_mode);
             else if(q->type==1)beam(*vm,*static_cast<StageBeamQuad*>(q),*instance,right,fog_mode);
         }
+    };
+#ifdef TH_MULTIPLAYER_FIXTURES
+    if(diagnostic_background_instance_index&&layer>=0&&layer<i32(layer_instances.size())){
+        if(indexed_stage!=state.stage_data||indexed_instances!=state.instances){
+            reset_index();indexed_stage=state.stage_data;indexed_instances=state.instances;
+            for(auto* instance=state.instances;instance->object>=0;++instance){
+                const auto object=instance->object;
+                if(object<0||object>=state.object_count)continue;
+                const auto target=i8(state.objects[object]->layer);
+                if(target>=0&&target<i32(layer_instances.size()))layer_instances[target].push_back(instance);
+            }
+        }
+        for(const auto* instance:layer_instances[layer])draw_instance(instance);
+        return;
     }
+#endif
+    for(auto* instance=state.instances;instance->object>=0;++instance)draw_instance(instance);
 }
 void BackgroundObjects::sprite(AnmVm& vm,const StageSpriteQuad& quad,const StageInstance& instance,const Vec3& right,i32& fog_mode){
     const auto coordinate=[](float animated,float origin,float instance,float offset){return (number(animated)+number(origin)+number(instance)-number(offset)).to_float();};
@@ -77,7 +99,11 @@ void BackgroundObjects::sprite(AnmVm& vm,const StageSpriteQuad& quad,const Stage
 void BackgroundObjects::beam(AnmVm& vm,const StageBeamQuad& quad,const StageInstance& instance,const Vec3& right,i32& fog_mode){
     const float width=quad.width!=0?quad.width:vm.loadedSprite->widthPx;const auto eye=add(state.camera.position,state.camera.eye_offset);
     const auto start=translated(quad.start,instance.position,state.position),end=translated(quad.end,instance.position,state.position),a=project(start),b=project(end);
-    if(renderer.visual_geometry_suppressed){
+    if(renderer.visual_geometry_suppressed
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+       ||renderer.rollback_visual_geometry_suppressed
+#endif
+    ){
         auto direction=sub(b,a);projection_input=direction;
         const float distance=number((number(direction.x)*number(direction.x)+number(direction.y)*number(direction.y)).to_float()).square_root().to_float();
         if(!(distance>=1e-5f))return;

@@ -3,6 +3,9 @@
 #include "AnmRenderer.hpp"
 #include "Presentation.hpp"
 #include "PresentationVisual.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "GameGauge.hpp"
+#endif
 
 namespace th08 {
 struct AsciiString {
@@ -66,6 +69,9 @@ struct AsciiOverlay {
 };
 
 class AsciiManager {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
 public:
     AsciiState state;
     AsciiManager(AnmExecutor& executor,AnmRenderer& renderer,AsciiOverlay& overlay)
@@ -83,10 +89,22 @@ public:
     void draw_strings(const AsciiContext& context);
     void draw_overlays(const AsciiContext& context);
     void draw_percentage(const Vec3& position,i32 percentage,u32 color);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Viewer-local presentation only. Never replace the shared AsciiContext
+    // consumed by native gameplay or put local display state in the journal.
+    void bind_multiplayer_gauge(const i16& value,const GaugeThresholds& limits){
+        display_gauge=&value;display_limits=&limits;presentation_state.valid=false;
+    }
+    i32 displayed_gauge(const AsciiContext& context)const{return display_gauge?*display_gauge:context.gauge;}
+#endif
 #if defined(TH_PRESENTATION_AUDIT)
     const float* audit_presentation_sample(uintptr_t object)const;
 #endif
 private:
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    const i16* display_gauge=nullptr;
+    const GaugeThresholds* display_limits=nullptr;
+#endif
     struct PopupPresentation {Vec3 position{};i32 timer=-2;u8 in_use=0,characters=0;};
     struct PresentationState {
         Vec3 boss_markers[4]{},player{};

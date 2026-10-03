@@ -11,6 +11,10 @@
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #include <memory>
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include <eagler/netplay/FrameBudget.hpp>
+#include "../multiplayer/RollbackDriver.hpp"
+#endif
 // New browser shells own all DOM keys; old shells keep the SDL fallback.
 EM_JS(int, th08_browser_keyboard, (), {return typeof Module['resetBrowserKeyboard']==='function';});
 EM_JS(void, th08_reset_browser_keyboard, (), {Module['resetBrowserKeyboard']?.();});
@@ -55,6 +59,14 @@ std::unique_ptr<BrowserRuntime> runtime;touhou::input::TouchController touch;
 struct Key{const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Scancode native=SDL_SCANCODE_UNKNOWN;};
 #include "../../../portable/input/KeyboardMap.inc"
 SDL_Gamepad* gamepad=nullptr;u32 prepared=0;bool running=false,suspended=false;double elapsed=0,last=-1,frame_begin=0;u32 frames=0,loop_epoch=0,warm_mask=0;touhou::sdl::FrameCadence cadence;touhou::sdl::PresentationCadence display_cadence;touhou::sdl::PresentationGate presentation_gate;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+double network_debt=0;
+#endif
+void reset_cadence(){cadence.reset();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    network_debt=0;
+#endif
+}
 constexpr SDL_GamepadButton gamepad_slots[]={
     SDL_GAMEPAD_BUTTON_SOUTH,SDL_GAMEPAD_BUTTON_EAST,SDL_GAMEPAD_BUTTON_WEST,SDL_GAMEPAD_BUTTON_NORTH,
     SDL_GAMEPAD_BUTTON_LEFT_SHOULDER,SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER,SDL_GAMEPAD_BUTTON_BACK,
@@ -63,12 +75,27 @@ constexpr SDL_GamepadButton gamepad_slots[]={
 int gamepad_axis(SDL_GamepadAxis axis){const int value=SDL_GetGamepadAxis(gamepad,axis);return value<0?value*1000/32768:value*1000/32767;}
 constexpr const char* warmAnimations[]={"etama.anm","enemy.anm","front.anm","times.anm","stg1bg.anm","stg1enm.anm","eff01.anm","stg1txt.anm","stg2bg.anm","stg2enm.anm","eff02.anm","stg2txt.anm","player00.anm","player01.anm","player02.anm","player03.anm","staff01.anm"};
 constexpr u32 warmCount=sizeof(warmAnimations)/sizeof(*warmAnimations);
-touhou::input::TouchState touch_state(){touhou::input::TouchState s;if(!runtime)return s;const auto& a=runtime->app;const auto& g=a.game;const auto& p=g.player_state;
+touhou::input::TouchState touch_state(){touhou::input::TouchState s;if(!runtime)return s;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    auto& a=runtime->app;auto& g=a.game;
+    if(a.session.netplay.ReadOnly()){s.context=3;return s;}
+    if(a.in_game()&&(g.globals.game_flags&8)){s.context=3;return s;}
+    if(!a.in_game()||a.loading_game()||!g.ready()||g.paused||g.menus.context.pause_state||(g.globals.game_flags&0x60))return s;
+    const auto seat=a.session.local_player;if(seat>=a.session.player_count)return s;
+    auto& player=g.pilot(seat);const auto& p=player.status();if(p.context.game_over)return s;
+    s.context=g.dialogue.present()?2:1;s.ready=p.life.state==0||p.life.state==3;
+    s.instance=i32(g.globals.stage+1+a.session.netplay.Generation()*16);
+    s.x=p.motion.movement.position.x;s.y=p.motion.movement.position.y;
+    s.fast=player.profile(false).normal_speed*player.timing.rate;s.slow=player.profile(true).focus_speed*player.timing.rate;
+    s.min_x=p.input.minimum.x;s.min_y=p.input.minimum.y;s.max_x=s.min_x+p.input.extent.x;s.max_y=s.min_y+p.input.extent.y;return s;
+#else
+    const auto& a=runtime->app;const auto& g=a.game;const auto& p=g.player_state;
     if(a.in_game()&&(g.globals.game_flags&8)){s.context=3;return s;}
     if(!a.in_game()||a.loading_game()||!g.ready()||g.paused||g.menus.context.pause_state||p.context.game_over||(g.globals.game_flags&0x60))return s;
     s.context=g.dialogue.present()?2:1;s.ready=p.life.state!=1&&p.life.state!=2;s.instance=g.globals.stage+1;
     s.x=p.motion.movement.position.x;s.y=p.motion.movement.position.y;s.fast=g.shots[0].settings().normal_speed*g.player.timing.rate;s.slow=g.shots[1].settings().focus_speed*g.player.timing.rate;
     s.min_x=p.input.minimum.x;s.min_y=p.input.minimum.y;s.max_x=s.min_x+p.input.extent.x;s.max_y=s.min_y+p.input.extent.y;return s;
+#endif
 }
 int touch_stage(){return runtime&&runtime->app.in_game()?runtime->app.game.globals.stage:-1;}
 void sync_touch_context(const touhou::input::TouchState& state){const int previous=touch.current_context();if(runtime&&previous!=state.context&&(previous==1||previous==2))runtime->motion.touch_cancel(touch_stage());}
@@ -98,33 +125,106 @@ void poll(){if(!runtime)return;SDL_Event event;while(SDL_PollEvent(&event)){
     }else runtime->controller_state(0,0,nullptr,0,false);
     const int keyboardDpad=th08_keyboard_gamepad_dpad();
     if(keyboardDpad&1)keys[38]=128;if(keyboardDpad&2)keys[40]=128;if(keyboardDpad&4)keys[37]=128;if(keyboardDpad&8)keys[39]=128;
-    const auto state=touch_state();sync_touch_context(state);const auto input=touch.sample(state,SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);for(int i=0;i<256;i++)if(input.keys[i])keys[i]=128;
+    const auto state=touch_state();sync_touch_context(state);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    const auto& net=runtime->app.session.netplay;
+    const bool sample=!net.Configured()||(net.CanCapture()&&!net.HasCapture(net.NextCaptureFrame()));
+    if(net.Playback()&&(keys[27]&128))runtime->exit_replay();
+    if(sample){
+#endif
+    const auto input=touch.sample(state,SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);for(int i=0;i<256;i++)if(input.keys[i])keys[i]=128;
     runtime->motion.target(input.motion,input.x,input.y);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    float fresh_x=0,fresh_y=0;bool touch_begin=false;
+    if(input.motion&&touch.take_player_delta(state,fresh_x,fresh_y,touch_begin))
+        runtime->set_device_touch_delta(input.motion,fresh_x,fresh_y,touch_begin,
+            touch.enabled&&state.context==1,input.keys[88]);
+    else runtime->set_device_motion(input.motion,input.motion?input.x-state.x:0,input.motion?input.y-state.y:0,
+        touch.enabled&&state.context==1,input.keys[88]);
+    }
+#endif
     ThpracUi::update_input(*runtime);
     if(ThpracUi::captures_game_input())for(const int vk:{16,27,37,38,39,40,88,90})keys[vk]=0;
 }
 int tick(){poll();return !runtime||!runtime->step(false)?runtime&&(runtime->status(2)||runtime->status(4))?2:1:0;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#ifdef TH_MULTIPLAYER_FIXTURES
+u32 audio_service_calls=0;
+#endif
+bool service_frame_audio(){
+#ifdef TH_MULTIPLAYER_FIXTURES
+    ++audio_service_calls;
+#endif
+    return runtime&&runtime->audio_tick(u32(elapsed*1000));
+}
+#endif
 EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double delta=last<0?0:std::max(0.,(now-last)/1000.);last=now;frame_begin=emscripten_get_now();
-    if(suspended||!th08_frame_ready()){sdl_audio_pause(true);cadence.reset();display_cadence.reset();presentation_gate.reset();return EM_TRUE;}sdl_audio_pause(false);int result=0;
+    if(suspended||!th08_frame_ready()){sdl_audio_pause(true);reset_cadence();display_cadence.reset();presentation_gate.reset();return EM_TRUE;}sdl_audio_pause(false);int result=0;
     const bool limit60=th08_limit_presentation_to_60()!=0;
     const bool ready=interpolation_ready()&&!limit60,fast=touhou::sdl::PresentationCadence::fast_sample(delta);if(ready)display_cadence.advance(delta);else display_cadence.reset();
     const bool tick_due=cadence.advance(delta)!=0;
     const bool high=display_cadence.high_refresh&&interpolation_ready();const bool interpolate=presentation_gate.advance(high,tick_due);bool presented=false;
-    if(tick_due&&!result){
-        elapsed+=touhou::sdl::FrameCadence::interval;
+    bool due=tick_due;unsigned completed=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    const bool catchup=runtime&&runtime->app.session.netplay.Configured()&&
+        (!runtime->app.session.netplay.ReadOnly()||(runtime->app.session.netplay.Spectator()&&
+          runtime->app.session.netplay.CanStart()&&runtime->network_driver()&&runtime->network_driver()->Network().SpectatorBacklog()>4));
+    constexpr double interval=touhou::sdl::FrameCadence::interval;
+    const double network_interval=interval*(catchup&&runtime->network_driver()?runtime->network_driver()->Network().Channel().IntervalScale():1.);
+    if(catchup){
+        // Same bounded backlog/start budget as TH06/07. Waiting for a packet
+        // consumes no logical time; never accumulate seconds of catch-up work.
+        // An already-due tick (including a blocked retry) must not consume an
+        // advisory correction that cannot delay that tick. Keep it queued for
+        // the next forward deadline; sub-tick callbacks retain unspent debt.
+        const auto paced_delta=network_debt+1.e-9<network_interval&&runtime->network_driver()?
+            runtime->network_driver()->PacedElapsedSeconds(delta):delta;
+        network_debt=std::min(network_debt+paced_delta,network_interval*Netplay::FrameBudget::MaxCatchupTicks);
+        due=network_debt+1.e-9>=network_interval;
+    }else network_debt=0;
+    // MIDI service follows wall cadence, never the number of catch-up ticks.
+    if(tick_due)elapsed+=interval;
+#endif
+    while(due&&!result){
 #if defined(TH_PRESENTATION_AUDIT)
         const double update_started=emscripten_get_now();
 #endif
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(catchup&&!Netplay::FrameBudget::CanStartTick(completed,u64(std::max(0.,emscripten_get_now()-frame_begin)*1000000.)))break;
+        // Recheck the host between logical ticks, including its test input
+        // producer. Physical input still belongs to poll/CaptureLocal once.
+        if(completed&&!th08_frame_ready())break;
         result=tick();
 #if defined(TH_PRESENTATION_AUDIT)
         audit_phase(0,update_started);
 #endif
-        if(!result&&runtime){
+        const bool advanced=runtime&&runtime->logical_frame_advanced();
+#else
+        elapsed+=touhou::sdl::FrameCadence::interval;result=tick();
+#if defined(TH_PRESENTATION_AUDIT)
+        audit_phase(0,update_started);
+#endif
+#endif
+        if(!result&&runtime
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+           &&advanced
+#endif
+        ){
             // Preserve TH08's authoritative update+draw tick exactly. At high
             // presentation rates every fixed-tick draw is semantic but hidden;
             // the visible frame below is a second, side-effect-free presentation
-            // pass. Missed original deadlines are skipped rather than caught up.
-            const bool hidden=high;const bool lightweight=hidden&&runtime&&!runtime->visual_capture_pending();if(hidden)sdl_defer(1);
+            // pass. Live MP catches up authoritative update+draw pairs, then
+            // presents once. Ordinary and Replay retain original cadence.
+            const bool hidden=high
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                ||catchup
+#endif
+                ;if(hidden)sdl_defer(1);
+            const bool lightweight=high&&hidden&&runtime&&!runtime->visual_capture_pending()
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                &&!catchup
+#endif
+                ;
             if(lightweight){runtime->suppress_visual_draw(true);runtime->app.renderer.visual_geometry_suppressed=true;}
 #if defined(TH_PRESENTATION_AUDIT)
             const double semantic_started=emscripten_get_now();
@@ -136,7 +236,13 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
 #endif
             if(lightweight){runtime->app.renderer.visual_geometry_suppressed=false;runtime->suppress_visual_draw(false);}
             if(hidden)sdl_defer(0);else presented=true;
-            if(!result){++frames;
+            if(!result){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                if(!runtime->finish_network_frame())result=2;
+#endif
+                ++frames;
+                ++completed;
+#ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #if defined(TH_PRESENTATION_AUDIT)
                 const double audio_started=emscripten_get_now();
 #endif
@@ -144,16 +250,35 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
 #if defined(TH_PRESENTATION_AUDIT)
                 audit_phase(3,audio_started);
 #endif
+#endif
             }
         }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(catchup){
+            if(!advanced)break;
+            network_debt=std::max(0.,network_debt-network_interval);
+            due=network_debt+1.e-9>=network_interval;
+        }else
+#endif
+        due=false;
     }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Real-time sequencing is independent of admission and correction count.
+    // The confirmed command outbox still owns which track/notes are started.
+    if(tick_due&&!result&&!service_frame_audio())result=2;
+    if(catchup&&completed&&!high&&!result)presented=sdl_commit()!=0;
+#endif
     float presentation_alpha=1.0f;
     if(!result&&runtime&&high){
         const bool frozen=runtime->app.in_game()&&(runtime->app.game.paused||runtime->app.game.retrying||runtime->app.game.menus.context.pause_state||runtime->app.game.menus.context.show_retry);
 #if defined(TH_PRESENTATION_AUDIT)
         const double presentation_started=emscripten_get_now();
 #endif
-        presentation_alpha=interpolate?float(cadence.interpolation_alpha()):1.0f;presented=runtime->app.draw(presentation_alpha,interpolate,true,!frozen);
+        presentation_alpha=interpolate?float(cadence.interpolation_alpha()):1.0f;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(catchup&&interpolate)presentation_alpha=float(std::clamp(network_debt/network_interval,0.,1.));
+#endif
+        presented=runtime->app.draw(presentation_alpha,interpolate,true,!frozen);
 #if defined(TH_PRESENTATION_AUDIT)
         audit_phase(2,presentation_started);
 #endif
@@ -173,7 +298,17 @@ u32 sdl_game_time(){return u32(elapsed*1000);}
 extern "C" {
 #define EX(name) __attribute__((export_name(name)))
 void sdl_keys_clear();
-EX("sdl_game_open") BrowserRuntime* sdl_game_open(u32 milliseconds){if(runtime)return nullptr;sdl_keys_clear();prepared=frames=warm_mask=0;elapsed=double(milliseconds)/1000.;cadence.reset();display_cadence.reset();presentation_gate.reset();last=-1;touch.begin_session();
+#ifdef TH_MULTIPLAYER_FIXTURES
+EX("mp_fixture_pacing") const double* mp_fixture_pacing(){
+    static double out[3]{};out[0]=1;out[1]=0;out[2]=network_debt;
+    if(runtime&&runtime->network_driver()){
+        const auto& channel=runtime->network_driver()->Network().Channel();
+        out[0]=channel.IntervalScale();out[1]=channel.FrameLead();
+    }
+    return out;
+}
+#endif
+EX("sdl_game_open") BrowserRuntime* sdl_game_open(u32 milliseconds){if(runtime)return nullptr;sdl_keys_clear();prepared=frames=warm_mask=0;elapsed=double(milliseconds)/1000.;reset_cadence();display_cadence.reset();presentation_gate.reset();last=-1;touch.begin_session();
 #if defined(TH_PRESENTATION_AUDIT)
     audit_timing_next=audit_timing_count=0;std::fill(std::begin(audit_phase_profile),std::end(audit_phase_profile),0.0);
 #endif
@@ -190,9 +325,9 @@ EX("sdl_prepare_next") i32 sdl_prepare_next(){if(!runtime)return -1;if(prepared>
     ++prepared;return ok?i32(prepared):-1;}
 EX("sdl_warm_assets") u32 sdl_warm_assets(){return warm_mask;}
 EX("sdl_game_initialize") bool sdl_game_initialize(){if(!runtime||prepared!=sdl_prepare_total()||!runtime->initialize()||!ThpracUi::initialize())return false;sdl_validate_capture();return true;}
-EX("sdl_loop_start") void sdl_loop_start(){if(running||!runtime)return;running=true;last=-1;cadence.reset();display_cadence.reset();presentation_gate.reset();emscripten_request_animation_frame_loop(frame,reinterpret_cast<void*>(uintptr_t(++loop_epoch)));}
+EX("sdl_loop_start") void sdl_loop_start(){if(running||!runtime)return;running=true;last=-1;reset_cadence();display_cadence.reset();presentation_gate.reset();emscripten_request_animation_frame_loop(frame,reinterpret_cast<void*>(uintptr_t(++loop_epoch)));}
 EX("sdl_loop_stop") void sdl_loop_stop(){running=false;++loop_epoch;sdl_audio_pause(true);}
-EX("sdl_loop_pause") void sdl_loop_pause(u32 pause){suspended=pause!=0;last=-1;cadence.reset();display_cadence.reset();presentation_gate.reset();sdl_audio_pause(suspended);}
+EX("sdl_loop_pause") void sdl_loop_pause(u32 pause){suspended=pause!=0;last=-1;reset_cadence();display_cadence.reset();presentation_gate.reset();sdl_audio_pause(suspended);}
 EX("sdl_loop_time") double sdl_loop_time(){return elapsed;}
 #if defined(TH_PRESENTATION_AUDIT)
 // Diagnostic freeze is NOT the in-game pause. It retains the last endpoint pair
@@ -245,11 +380,38 @@ EX("audit_state") const u32* audit_state(){
 #endif
 EX("sdl_loop_tick") i32 sdl_loop_tick(BrowserRuntime* r,double seconds,u32){
     if(running||r!=runtime.get())return -1;elapsed+=seconds;int result=tick();if(result||!runtime)return result;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!runtime->logical_frame_advanced())return service_frame_audio()?0:2;
+#endif
     if(!runtime->app.draw(1.0f,false,false))return (runtime->status(2)||runtime->status(4))?2:1;
     if(runtime->status(2)||runtime->status(4))return 2;
-    ++frames;return runtime->audio_tick(u32(elapsed*1000))?0:2;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!runtime->finish_network_frame())return 2;
+#endif
+    ++frames;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    return service_frame_audio()?0:2;
+#else
+    return runtime->audio_tick(u32(elapsed*1000))?0:2;
+#endif
 }
+#ifdef TH_MULTIPLAYER_FIXTURES
+EX("mp_fixture_audio_service_calls") u32 mp_fixture_audio_service_calls(){return audio_service_calls;}
+#endif
 EX("sdl_game_close") void sdl_game_close(){sdl_loop_stop();sdl_keys_clear();touch.reset();ThpracUi::shutdown();runtime.reset();if(gamepad)SDL_CloseGamepad(gamepad);gamepad=nullptr;sdl_audio_shutdown();sdl_fonts_shutdown();sdl_detach();}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+EX("multiplayer_replay_reopen") BrowserRuntime* multiplayer_replay_reopen(u32 milliseconds){
+    if(!runtime||!runtime->ReplayViewer())return nullptr;
+    sdl_loop_stop();sdl_keys_clear();touch.reset();ThpracUi::shutdown();runtime.reset();
+    sdl_audio_shutdown();sdl_fonts_shutdown();
+    prepared=frames=warm_mask=0;elapsed=double(milliseconds)/1000.;
+    cadence.reset();display_cadence.reset();presentation_gate.reset();last=-1;touch.begin_session();
+    for(auto& key:keyboard_map)key.hosted=false;
+    runtime=std::make_unique<BrowserRuntime>();
+    if(!sdl_rebind(runtime.get())||!sdl_load_assets(*runtime)){runtime.reset();return nullptr;}
+    return runtime.get();
+}
+#endif
 EX("sdl_key") void sdl_key(const char* code,u32 down){for(auto& key:keyboard_map)if(!std::strcmp(key.code,code)){key.hosted=down!=0;break;}}
 EX("sdl_keys_clear") void sdl_keys_clear(){th08_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& key:keyboard_map)key.hosted=false;if(runtime)std::memset(runtime->keyboard_state(),0,256);cancel_touch();touch.reset();}
 EX("sdl_touch") void sdl_touch(u32 type,i32 id,float x,float y){

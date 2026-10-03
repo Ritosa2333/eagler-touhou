@@ -79,7 +79,7 @@ void GuiController::update_stage(){
     if(display.spell_bonus.display){if(display.spell_bonus.timer.current>=280)display.spell_bonus.display=0;display.spell_bonus.timer.tick(executor.timing);}
     if(display.clear_frames==1){
         i32 score=display.clear_stage;for(const auto term:{product(display.clear_graze,50),product(display.clear_points,5000),product(display.clear_time,100)})score=wrapping_add(score,term);
-        if(scene.stage>=6&&!(scene.flags&1)){score=wrapping_add(score,product(Scalar::truncate(globals.lives),2500000));score=wrapping_add(score,product(Scalar::truncate(globals.bombs),500000));}
+        if(scene.stage>=6&&!(scene.flags&1)){score=wrapping_add(score,team_life_bonus());score=wrapping_add(score,team_bomb_bonus());}
         if(scene.stage==7)score=wrapping_add(score,product(12-globals.clock_time,2000000));
         switch(context.difficulty){case 0:score/=2;break;case 2:score=product(score,12)/10;break;case 3:score=product(score,15)/10;break;case 4:score=product(score,2);break;}
         switch(config.lives){case 3:score=product(score,5)/10;break;case 4:score=product(score,2)/10;break;case 5:score/=10;break;case 6:score/=20;break;}
@@ -104,7 +104,7 @@ void GuiController::draw_clear(){
     ascii.add_format(pos,software(),"over-80%% = %3d.%.2d%%",product(context.human_frames,100)/total,(product(context.human_frames,10000)/total)%100);pos.y+=16;
     ascii.add_format(pos,software(),"over 80%% = %3d.%.2d%%",product(context.youkai_frames,100)/total,(product(context.youkai_frames,10000)/total)%100);
     if(scene.stage>=6&&!(scene.flags&1)&&!context.practice_replay){
-        pos.y+=16;a.color=0xffffff80;ascii.add_format(pos,software(),"Player =%8d0",product(Scalar::truncate(globals.lives),2500000));pos.y+=16;ascii.add_format(pos,software(),"Bomb   = %7d0",product(Scalar::truncate(globals.bombs),500000));
+        pos.y+=16;a.color=0xffffff80;ascii.add_format(pos,software(),"Player =%8d0",team_life_bonus());pos.y+=16;ascii.add_format(pos,software(),"Bomb   = %7d0",team_bomb_bonus());
         if(scene.stage==7){pos.y+=16;ascii.add_format(pos,software(),"Last Time = %2d:%.2d",(display.clear_clock/60)%12,display.clear_clock%60);pos.y+=16;ascii.add_format(pos,software(),"Night Bonus");pos.y+=16;ascii.add_format(pos,software(),"        %8d0",product(12-globals.clock_time,2000000));}
     }
     pos.y+=32;constexpr const char* ranks[]={"Easy Rank    *0.5","Normal Rank  *1.0","Hard Rank    *1.2","Lunatic Rank *1.5","Extra Rank   *2.0","Phantasm Rank*2.0"};

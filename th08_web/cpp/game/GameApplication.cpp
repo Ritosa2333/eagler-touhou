@@ -1,13 +1,25 @@
 #include "GameApplication.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/WorldJournal.hpp"
+#endif
 #include "Presentation.hpp"
 #include "PresentationAudit.hpp"
 #include <algorithm>
 #include <cstdio>
 namespace th08 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+bool GameApplication::TitleIo::before_spells_write(){return !a.world_journal||a.world_journal->TouchTitleSpells();}
+#endif
 namespace {
 u32 flag_bits(const TitleGameFlags& flags){u32 value;std::memcpy(&value,&flags,4);return value;}
 void set_flags(TitleGameFlags& flags,u32 value){std::memcpy(&flags,&value,4);}
-std::string replay_path(i32 slot){char path[64];std::snprintf(path,sizeof(path),"replay/th8_%02d.rpy",slot);return path;}
+std::string replay_path(i32 slot){char path[64];
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    std::snprintf(path,sizeof(path),"replay/th8_%02d.rpyx",slot);
+#else
+    std::snprintf(path,sizeof(path),"replay/th8_%02d.rpy",slot);
+#endif
+    return path;}
 }
 GameApplication::GameApplication(ApplicationPlatform& p,SpriteBackend& backend)
  :platform(p),library(textures),renderer(backend),animations(session.random),ascii(animations,renderer,p),screen(chain,renderer,session.random),loading(library,animations,renderer,ascii,loading_io),statistics(ascii,p),supervisor(renderer,supervisor_io),
@@ -57,7 +69,15 @@ bool GameApplication::enter_game(){
     const auto target=Scene(supervisor.state.target);const bool from_title=supervisor.state.previous==i32(Scene::Title);
     const bool initial=target!=Scene::Reinitialize&&target!=Scene::SpellRestart&&target!=Scene::NextStage;
     auto& g=game.globals;
-    if(from_title){const auto& c=title.context;g.stage=c.currentStage;g.difficulty=c.difficulty;g.shot=c.character;g.current_spell=c.currentSpellCardNumber;g.game_flags=flag_bits(c.flags);supervisor.state.stage=g.stage;supervisor.state.difficulty=g.difficulty;supervisor.state.practice=g.game_flags&1;}
+    if(from_title){const auto& c=title.context;g.stage=c.currentStage;g.difficulty=c.difficulty;g.shot=c.character;g.current_spell=c.currentSpellCardNumber;g.game_flags=flag_bits(c.flags);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(session.multiplayer_session.configured){const auto& setup=session.multiplayer_session;
+            // Extra uses its own stage, exactly as the native Extra title route does.
+            g.stage=setup.difficulty==4?8:0;g.difficulty=setup.difficulty;g.shot=i32(setup.characters[0]);g.current_spell=-1;g.game_flags=0;
+            session.random={u16(setup.seed),u16(setup.seed),0};
+        }
+#endif
+        supervisor.state.stage=g.stage;supervisor.state.difficulty=g.difficulty;supervisor.state.practice=g.game_flags&1;}
     else if(target==Scene::Restart)g.stage=supervisor.state.stage;
     const auto request=GameplayLoad{i32(g.stage),i32(g.difficulty),g.shot,g.current_spell,g.game_flags,initial,supervisor.state.keep_resources,initial,i32(target)};
     if(from_title){
@@ -73,7 +93,11 @@ bool GameApplication::enter_game(){
     }
     title.detach();show_loading(from_title?Vec3{500,440,0}:Vec3{280,430,0},true);if(from_title)start_effect();
     GameplayLoad prepared=request;if((prepared.flags&0x60)>=0x40)prepared.flags=(prepared.flags&~0x60u)|0x20;
-    if(!game.load(prepared,true))return false;game_attached=true;game.menus.context.supervisor_state=2;game.control.state.load_state=1;game.control.state.replay_mode=title.context.replayMode;game.control.state.demo_index=title.context.currentDemoReplay;
+    if(!game.load(prepared,true))return false;game_attached=true;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(session.multiplayer_session.configured)session.multiplayer_session.started=true;
+#endif
+    game.menus.context.supervisor_state=2;game.control.state.load_state=1;game.control.state.replay_mode=title.context.replayMode;game.control.state.demo_index=title.context.currentDemoReplay;
     // The platform implements the original capture request. Enable the ANM
     // pause/retry background after load() resets the menu context each stage.
     game.menus.context.lockable_backbuffer=true;
@@ -130,17 +154,41 @@ void GameApplication::finish_loading(){
 JobResult GameApplication::update_supervisor(){
     publish_scene();const auto result=supervisor.update();if(result!=JobResult::Continue)return result;
     synchronize();if(title.modal())return JobResult::Break;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // The lobby already selected every loadout. Use the native title->game
+    // transition once its resources and the all-seat HELLO/READY gate are ready.
+    if(session.netplay.Configured()&&(session.netplay.CanStart()||session.netplay.PreparingWorld())&&
+       !session.multiplayer_session.started&&supervisor.state.active==i32(Scene::Title)&&
+       title.ready_for_session())title.context.supervisor_state=i32(Scene::Game);
+#endif
     if(game_attached){finish_loading();if(!game.prepare_frame(supervisor.input.current,timing.rate,timing.force_step))return JobResult::Error;}
     return invalid()?JobResult::Error:JobResult::Continue;
 }
 bool GameApplication::update(){
-    if(!running||invalid())return false;
+    if(!running||invalid()){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        last_update_result=-2;
+#endif
+        return false;
+    }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(world_journal&&!world_journal->CanAdvance()){last_update_result=-3;failed=true;return false;}
+#endif
     presentation::CalculationScope presentation_tick;
     // ECL callbacks 18/28/29 write the game's persistent global time scale.
     // The browser's next presentation does not reset it to a unit timestep.
     if(game_attached)timing=game.player.timing;animations.timing=timing;
-    if(title.modal()){title.modal_step();return !invalid();}
+    if(title.modal()){
+        title.modal_step();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        last_update_result=invalid()?-4:1;
+#endif
+        return !invalid();
+    }
     platform.begin_frame();const i32 value=chain.run();publish_scene();synchronize();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    last_update_result=value;
+#endif
     if(value<=0){failed|=value<0;running=false;}failed|=invalid();return running&&!failed;
 }
 bool GameApplication::draw(float presentation_alpha,bool presentation_active,bool presentation_only,bool world_interpolate){
@@ -159,6 +207,12 @@ bool GameApplication::save_score(){auto context=game_attached?result_context():l
 // ResultScreen indexes rows 0..14; replay filenames and the public save API use 1..15.
 std::vector<u8> GameApplication::ResultIo::read_replay(i32 slot){const auto path=replay_path(slot+1);return a.platform.read(path.c_str());}
 void GameApplication::save_replay(i32 slot,const char* name){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(session.multiplayer_session.configured){
+        if(!session.netplay.ReadOnly())failed|=!platform.save_multiplayer_replay(slot,name);
+        return;
+    }
+#endif
     if(slot<1||slot>15||!name||!game.recording.ready())return;ReplayExportContext context;std::memcpy(context.player_name,name,std::min<std::size_t>(8,std::strlen(name)));platform.calendar(context.date,context.timestamp);
     context.rendered_frames=last_game.rendered_frames;context.total_frames=last_game.total_frames;context.human_frames=last_game.human_frames;context.active_frames=last_game.active_frames;context.cheat_movement_used=last_game.cheat_movement_used;
     const auto bytes=export_replay(game.recording,session,game.globals,context);const auto path=replay_path(slot);failed|=bytes.empty()||!platform.write(path.c_str(),bytes.data(),bytes.size());
@@ -167,6 +221,9 @@ void GameApplication::export_records(){char date[6]{},stamp[20]{};platform.calen
 bool GameApplication::MusicIo::load(MusicRoom& room){if(!a.platform.load_surface(0,"result/music.jpg"))return false;auto* animation=a.load_animation(23,"music00.anm");if(!animation)return false;const auto bytes=a.platform.read("sprt/musiccmt.txt");return room.initialize(*animation,bytes.data(),bytes.size(),a.session.statistics.music_unlocked);}
 void GameApplication::MusicIo::release(){a.renderer.flush();a.library.release(23);a.platform.release_surface(0);}
 void GameApplication::shutdown(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(world_journal)world_journal->Clear();
+#endif
     if(stopping)return;stopping=true;
     if(initialized){if(game_attached){supervisor.state.target=-1;leave_game();save_score();}title.detach();results.detach();music.detach();ending.detach();platform.write("th08.cfg",reinterpret_cast<const u8*>(&session.display_config),sizeof(session.display_config));}
     finish_effect();screen.clear();chain.release();renderer.flush();platform.discard_graphics();for(i32 i=0;i<256;i++)library.release(i);platform.release_surface(8);platform.stop_audio();if(session.display_config.music==2)platform.midi_reset();game.recording.reset();initialized=running=false;

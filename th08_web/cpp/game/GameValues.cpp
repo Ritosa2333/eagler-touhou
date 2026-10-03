@@ -1,7 +1,20 @@
 #include "GameValues.hpp"
+#include "../multiplayer/ResourceTrace.hpp"
 namespace th08 {
 i32 GameValues::random_integer(){return i32(random.bounded32(100000)+6543);}
 float GameValues::random_float(){return (random.range(100000)+number(6543)).to_float();}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+// The multiplayer economy has explicit shared/pilot owners, not the original
+// byte layout checked by TH08's anti-tamper bookkeeping. Do not hash a view or
+// consume gameplay RNG for this single-player-only checksum protocol.
+i32 GameValues::checksum_bytes(const u8*,i32){return 0;}
+i32 GameValues::checksum(){return 0;}
+void GameValues::store_checksum(bool){}
+void GameValues::initialize_integrity(){}
+void GameValues::randomize_integrity(){}
+void GameValues::update_integrity(){}
+bool GameValues::tampered()const{return false;}
+#else
 i32 GameValues::checksum_bytes(const u8* data,i32 size){
     u32 sum=0;for(i32 i=0;i<size;++i){sum+=data[i];globals.integrity_value+=u32(globals.rng8[2]);}return signed_bits(sum);
 }
@@ -28,6 +41,7 @@ bool GameValues::tampered()const{
     return globals.integrity_value!=u32(globals.rng1[2])+u32(globals.rng8[2])*628u ||
         wrapping_add(globals.integrity_checksum,globals.rng7[3])!=Scalar::truncate(expected_checksum);
 }
+#endif
 void GameValues::set_lives(i32 value){globals.lives=Extended::from_int(value).to_float();update_integrity();}
 void GameValues::set_bombs(i32 value){globals.bombs=Extended::from_int(value).to_float();store_checksum();}
 void GameValues::set_power(i32 value){globals.power=Extended::from_int(value).to_float();update_integrity();}
@@ -39,6 +53,9 @@ bool GameValues::add_power(i32 value){if(tampered())return false;globals.power=(
 bool GameValues::add_deaths(i32 value){if(tampered())return false;globals.deaths=(Extended::from_int(value)+number(globals.deaths)).to_float();globals.deaths_stage=(Extended::from_int(value)+number(globals.deaths_stage)).to_float();high_score.deaths=wrapping_add(high_score.deaths,1);update_integrity();return true;}
 bool GameValues::count_bombs(i32 value){if(tampered())return false;globals.bombs_used=(Extended::from_int(value)+number(globals.bombs_used)).to_float();globals.bombs_used_stage=(Extended::from_int(value)+number(globals.bombs_used_stage)).to_float();update_integrity();return true;}
 void GameValues::add_time_orbs(i32 value){
+#if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
+    multiplayer::diagnostic::Scope trace("time.shared_add",-1,value);
+#endif
     if(value<0&&globals.time_orbs<wrapping_sub(0,value)){globals.time_orbs=0;return;}
     globals.time_orbs=wrapping_add(globals.time_orbs,value);globals.total_time_orbs=wrapping_add(globals.total_time_orbs,value);high_score.time_orbs=wrapping_add(high_score.time_orbs,value);update_integrity();
     if(value>0){const i32 half=wrapping_add(value,globals.total_time_orbs&1)/2;globals.point_value=wrapping_add(globals.point_value,signed_bits(u32(half)*10));}

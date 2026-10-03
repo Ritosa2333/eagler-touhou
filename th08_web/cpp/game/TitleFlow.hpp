@@ -11,6 +11,9 @@ struct TitleFlowState {
     bool background_running=false,close_requested=false,capture_pending=false;
 };
 struct TitleFlowActions {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    virtual bool before_spells_write(){return true;}
+#endif
     virtual ~TitleFlowActions()=default;
     virtual std::vector<u8> read_score()=0;
     virtual AnmLoaded* preload_animation(i32 index,const char* path)=0;

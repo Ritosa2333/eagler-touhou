@@ -25,6 +25,9 @@ struct EnemySimulationActions:EnemyAppearanceActions,EnemyFamiliarActions,EnemyC
 // Owns the original EnemyManager::OnUpdate order around recovered ECL,
 // enemy and player-collision components. Rendering consumes its layer lists.
 class EnemySimulation:private EnemyPhaseActions,private EnemySpawnActions,private EnemyDeathActions,private TimelineActions {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
     EnemySimulationState& state;EnemySimulationInput& input;EnemyPopulation& population;
     EclProgram& program;EclExecutor& executor;const FrameTiming& timing;EclGlobals& globals;
     GameGlobals& numbers;GameValues& values;GameRank& rank;PlayerFrameState& player;EnemySimulationActions& actions;

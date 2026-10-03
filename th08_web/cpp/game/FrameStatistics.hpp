@@ -5,6 +5,9 @@ struct FrameClock {
     virtual ~FrameClock()=default;
     virtual u32 milliseconds()=0;
     virtual u64 performance_counter()=0;
+    // Presentation is measured against elapsed real time, independently of
+    // the rewindable clock used by multiplayer gameplay and Replay.
+    virtual u32 presentation_milliseconds(){return milliseconds();}
 };
 struct FrameStatisticsState {
     u32 timer_started=0,milliseconds_origin=0,frames=0,performance_samples=0;

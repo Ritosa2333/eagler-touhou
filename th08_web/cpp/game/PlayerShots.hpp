@@ -23,6 +23,7 @@ struct PlayerShotsState {
     u8 time_spell=0,human_bonus=0,effect_counter=0,reserved=0;
 };
 struct PlayerShotActions {
+    virtual void before_shot_write(PlayerShot&)=0;
     virtual ~PlayerShotActions()=default;
     virtual void animation(AnmVm&,i32 script)=0;
     virtual void sound(i32 index,float x)=0;
@@ -33,10 +34,16 @@ struct PlayerShotActions {
     virtual void draw(AnmVm&,bool impact)=0;
 };
 class PlayerShots {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
 public:
     PlayerShots(PlayerShotsState& state,Rng& rng):state(state),rng(rng){}
     PlayerShotActions* actions=nullptr;
     FrameTiming timing;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    u32 player_count=2;
+#endif
     enum class Failure:u32 {None,InvalidOption,InvalidLaserSlot,MissingActions,InvalidInterval,MissingSprite,MissingDefinition};
     Failure failure=Failure::None;
     bool initialize(PlayerShot& shot,const ShotDefinition& definition);

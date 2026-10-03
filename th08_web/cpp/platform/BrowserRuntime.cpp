@@ -5,6 +5,9 @@
 #endif
 #include "PlatformDevices.hpp"
 #include "GameAudioManager.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/RollbackDriver.hpp"
+#endif
 #include "../game/Presentation.hpp"
 #include <algorithm>
 #include <cstdio>
@@ -20,7 +23,12 @@ u32 ptr(const void* p){return reinterpret_cast<uintptr_t>(p);}
 PixelSurface surface(TextureRecord& r){auto& i=r.image;return {i.format,i.width,i.height,i.width*TexturePixels::describe(i.format).bytes,i.pixels.data()};}
 }
 BrowserRuntime::BrowserRuntime():app(*this,graphics){audio=std::make_unique<GameAudioManager>(*this);text=std::make_unique<AnmText>(app.textures,fonts);app.textures.prepare_callback=[](void*,u32 handle){graphics_device().prepare_texture(handle);};}
-BrowserRuntime::~BrowserRuntime(){app.shutdown();flush();if(pending_capture.target)app.textures.release(pending_capture.target);audio->shutdown();for(auto& s:surfaces)app.textures.release(s.second);app.textures.release(back);}
+BrowserRuntime::~BrowserRuntime(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(multiplayer_driver)multiplayer_driver->Shutdown();
+#endif
+    app.shutdown();flush();if(pending_capture.target)app.textures.release(pending_capture.target);audio->shutdown();for(auto& s:surfaces)app.textures.release(s.second);app.textures.release(back);
+}
 std::string BrowserRuntime::path(const char* p){return ResourceManager::path(p);}
 bool BrowserRuntime::put(const char* p,const u8* b,u32 n){return resources_.put(p,b,n);}
 bool BrowserRuntime::put_archive(const u8* b,u32 n){return !prepared&&resources_.put_archive(b,n);}
@@ -33,10 +41,41 @@ bool BrowserRuntime::put_image(const char* name,u32 w,u32 h,const u8* b,u32 size
     image_use[key]=++cache_clock;
 #endif
     images[path(name)]=std::move(image);return true;}
-std::vector<u8> BrowserRuntime::read(const char* p){return resources_.read(p);}
-std::vector<u8> BrowserRuntime::read_prefix(const char* p,u32 size){return resources_.read_prefix(p,size);}
-const std::vector<u8>& BrowserRuntime::file(const char* p){return resources_.file(p);}
+std::vector<u8> BrowserRuntime::read(const char* p){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(replay_viewer){const auto found=replay_shadow_files.find(path(p));if(found!=replay_shadow_files.end())return found->second;}
+    if(multiplayer_driver)if(const auto* pending=multiplayer_driver->PendingFile(path(p)))return *pending;
+#endif
+    return resources_.read(p);
+}
+std::vector<u8> BrowserRuntime::read_prefix(const char* p,u32 size){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(replay_viewer){auto bytes=read(p);if(bytes.size()>size)bytes.resize(size);return bytes;}
+    if(multiplayer_driver)if(const auto* pending=multiplayer_driver->PendingFile(path(p)))return {pending->begin(),pending->begin()+std::min<std::size_t>(size,pending->size())};
+#endif
+    return resources_.read_prefix(p,size);
+}
+const std::vector<u8>& BrowserRuntime::file(const char* p){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(replay_viewer){const auto found=replay_shadow_files.find(path(p));if(found!=replay_shadow_files.end())return found->second;}
+    if(multiplayer_driver)if(const auto* pending=multiplayer_driver->PendingFile(path(p)))return *pending;
+#endif
+    return resources_.file(p);
+}
 bool BrowserRuntime::write(const char* p,const u8* b,u32 size){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(replay_viewer){
+        // Keep native read-after-write semantics inside this ephemeral viewer,
+        // without changing its owner's actual config/records or Replay files.
+        const auto name=path(p);
+        if(name=="score.dat"||name=="th08.cfg"){
+            if((!b&&size)||size>multiplayer::ReplayArchive::MaxBootScore)return false;
+            replay_shadow_files[name]=size?std::vector<u8>(b,b+size):std::vector<u8>{};
+        }
+        return true;
+    }
+    if(discard_network_shutdown_writes||app.session.netplay.Spectator())return true;
+#endif
     const auto name=path(p);std::vector<u8> extended;
     // Upstream th08_save_replay appends the thprac 'USER'/'PRAC' block right
     // after the vanilla file; the touch movement trailer stays last so .rpyx
@@ -52,6 +91,9 @@ bool BrowserRuntime::write(const char* p,const u8* b,u32 size){
         const auto tail=motion.trailer(8);if(tail.empty())return false;
         if(extended.empty())extended.assign(b,b+size);extended.insert(extended.end(),tail.begin(),tail.end());b=extended.data();size=extended.size();
     }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(multiplayer_driver&&multiplayer_driver->Initialized())return multiplayer_driver->Write(name,b,size);
+#endif
     if(!put(p,b,size))return false;return file_device().save(p,b,size);
 }
 bool BrowserRuntime::player_motion(const PlayerMovementState& state,float speed,const FrameTiming& timing,float& x,float& y){
@@ -74,9 +116,32 @@ i32 BrowserRuntime::replay_touch_points(ReplayTouchPoint* points,i32 capacity){
 }
 std::vector<std::string> BrowserRuntime::user_replays(){return resources_.user_replays();}
 void BrowserRuntime::calendar(char date[6],char stamp[20]){file_device().calendar(date,stamp);}
-u32 BrowserRuntime::milliseconds(){return file_device().milliseconds();}
+u32 BrowserRuntime::milliseconds(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Game-side elapsed time/FPS is part of native Replay and score accounting.
+    // It follows admitted logic, not wall time spent waiting for another peer.
+    // SDL presentation cadence and physical audio retain their own real clock.
+    if(app.session.multiplayer_session.configured)return u32(u64(multiplayer_logic_frame)*1000/60);
+#endif
+    return file_device().milliseconds();
+}
 u64 BrowserRuntime::performance_counter(){return u64(milliseconds())*1000;}
-u16 BrowserRuntime::poll_input(){const auto touch=u16(file_device().supplemental_input());return input.controller(InputController::keyboard(keys,false)|touch,pad,app.session.display_config);}
+u32 BrowserRuntime::presentation_milliseconds(){return file_device().milliseconds();}
+u16 BrowserRuntime::poll_input(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(app.session.netplay.Configured()){
+        // Menu authority is P1; any player's Menu press may pause the shared
+        // game. All physical producers were sampled at the frame admission
+        // boundary, never during an update or a later correction.
+        if(!app.session.network_frame_open)return 0;
+        u16 buttons=app.session.network_frame.inputs[0].buttons;
+        for(u32 seat=1;seat<app.session.player_count;++seat)
+            buttons|=app.session.network_frame.inputs[seat].buttons&InputButton::Menu;
+        return buttons;
+    }
+#endif
+    const auto touch=u16(file_device().supplemental_input());return input.controller(InputController::keyboard(keys,false)|touch,pad,app.session.display_config);
+}
 void BrowserRuntime::Graphics::bind_texture(u32 h){graphics_device().texture(h);}
 #ifdef TH_NATIVE_PLATFORM
 PipelineState& BrowserRuntime::Graphics::pipeline(){return graphics_device().pipeline();}
@@ -111,6 +176,9 @@ const BrowserTexture* BrowserRuntime::texture(u32 h){const auto* r=app.textures.
 void BrowserRuntime::begin_frame(){}
 bool BrowserRuntime::present(){
     flush();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(correction_present_suppressed){captured=false;finish_capture();return !capture_failed;}
+#endif
 #ifdef TH_NATIVE_PLATFORM
     if(auto* renderer=touhou::sdl::current())ThpracUi::render(*this,*renderer);
 #endif
@@ -152,6 +220,9 @@ bool BrowserRuntime::capture(u32 target,const TextureRect& src,const TextureRect
 }
 void BrowserRuntime::finish_capture(){
     if(!pending_capture.target)return;const auto request=pending_capture;pending_capture={};
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!app.textures.before_write(request.target)){capture_failed=true;return;}
+#endif
     auto* a=app.textures.get(back);auto* b=app.textures.get(request.target);
     if(!a||!b)capture_failed=true;
     else if(graphics_device().resample(back,request.source,request.target,request.destination,request.triangle)){app.textures.changed(request.target);}
@@ -165,13 +236,78 @@ void BrowserRuntime::begin(bool disable_fog){if(disable_fog)app.renderer.set_fog
 void BrowserRuntime::rectangle(const OverlayRect& r,u32 c){const u32 colors[4]{c,c,c,c};app.renderer.draw_rectangle(r.left,r.top,r.right,r.bottom,colors);}
 bool BrowserRuntime::initialize(){
     if(prepared||!fonts.encoding.loaded())return false;arithmetic_mode(Precision::Single,Rounding::NearestEven);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!replay_viewer){replay_boot_score=read("score.dat");
+        // The native decoder treats an oversized/malformed save as an empty
+        // record set. Preserve that meaning, not an unbounded opaque payload.
+        ScoreFile score;if(!score.decode(replay_boot_score.data(),u32(replay_boot_score.size())))replay_boot_score.clear();}
+#endif
     if(!audio->prepare_formats())return false;
     TexturePixels pixels;if(!pixels.create(640,480,22))return false;back=app.textures.insert(std::move(pixels),0,true);
     reset_device();if(!audio->prepare_samples())return false;
-    prepared=true;if(!app.initialize(1000000))return false;reset_device();return true;
+    prepared=true;if(!app.initialize(1000000))return false;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    replay_boot_configuration=app.session.display_config;
+#endif
+    reset_device();return true;
 }
-bool BrowserRuntime::step(bool render){return prepared&&app.update()&&(!render||app.draw())&&!capture_failed;}
-i32 BrowserRuntime::status(i32 field)const{switch(field){case 0:return app.supervisor.state.active;case 1:return app.active();case 2:return app.invalid()||capture_failed;case 3:return app.game.globals.stage;case 4:return app.game.faults()|(u32(capture_failed)<<9);case 5:return app.textures.live_count();case 6:return app.game.enemies.state.frames;case 7:return app.loading_game();case 8:return app.title.menus.state.currentScreen;case 9:return app.title.menus.state.cursor;case 10:return app.title.modal();default:return -1;}}
+bool BrowserRuntime::step(bool render){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(replay_viewer&&!replay_request.empty())return true;
+    if(replay_viewer&&!app.session.netplay.Configured()&&!replay_menu_opened&&app.title.ready_for_session()){
+        app.title.menus.ChangeCurrentScreen(TitleCurrentScreen_Replay);replay_menu_opened=true;
+    }
+    auto& session=app.session;auto& net=session.netplay;
+    if(net.Configured()){
+        if(!multiplayer_driver)multiplayer_driver=std::make_unique<multiplayer::RollbackDriver>(*this);
+        return multiplayer_driver->Step(render);
+    }
+#endif
+    const bool result=prepared&&app.update()&&(!render||app.draw())&&!capture_failed;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(result&&render&&app.session.multiplayer_session.configured)++multiplayer_logic_frame;
+#endif
+    return result;
+}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+bool BrowserRuntime::finish_network_frame(){
+    auto& session=app.session;auto& net=session.netplay;
+    if(multiplayer_driver&&net.Configured())return multiplayer_driver->FinishFrame();
+    if(!net.Configured()){
+        if(session.multiplayer_session.configured)++multiplayer_logic_frame;
+        return true;
+    }
+    if(!session.network_frame_open)return false;
+    if(!net.MarkSimulated(net.NextFrame(),session.network_frame))return false;
+    session.network_frame_open=false;++multiplayer_logic_frame;return !capture_failed;
+}
+bool BrowserRuntime::connect_network(const char* relay){
+    if(!app.session.netplay.Configured()||app.session.netplay.LastFrame()!=Netplay::INVALID_FRAME)return false;
+    if(!multiplayer_driver)multiplayer_driver=std::make_unique<multiplayer::RollbackDriver>(*this);
+    return multiplayer_driver->Connect(relay);
+}
+bool BrowserRuntime::connect_spectator(const char* relay,const char* id){
+    if(!app.session.netplay.Configured()||app.session.netplay.LastFrame()!=Netplay::INVALID_FRAME||
+       app.session.multiplayer_session.started)return false;
+    if(!multiplayer_driver)multiplayer_driver=std::make_unique<multiplayer::RollbackDriver>(*this);
+    return multiplayer_driver->ConnectSpectator(relay,id);
+}
+bool BrowserRuntime::pump_network(){return !multiplayer_driver||multiplayer_driver->Pump();}
+bool BrowserRuntime::bind_audio_events(multiplayer::AudioEvents* events){return audio&&audio->bind_audio_events(events);}
+bool BrowserRuntime::commit_audio_events(multiplayer::AudioEvents& events,u32 confirmed,u32 simulated){
+    const auto& net=app.session.netplay;
+    if(!net.CanStart()||net.Correcting()||net.RollbackFrame()!=Netplay::INVALID_FRAME)return false;
+    if(confirmed!=Netplay::INVALID_FRAME&&(net.ConfirmedThrough()==Netplay::INVALID_FRAME||confirmed>net.ConfirmedThrough()))return false;
+    if(simulated!=Netplay::INVALID_FRAME&&(net.LastFrame()==Netplay::INVALID_FRAME||simulated>net.LastFrame()))return false;
+    return audio&&audio->commit_audio_events(events,confirmed,simulated);
+}
+#endif
+i32 BrowserRuntime::status(i32 field)const{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if((field==2||field==4)&&multiplayer_driver&&multiplayer_driver->Failed())return field==2?1:1024;
+#endif
+    switch(field){case 0:return app.supervisor.state.active;case 1:return app.active();case 2:return app.invalid()||capture_failed;case 3:return app.game.globals.stage;case 4:return app.game.faults()|(u32(capture_failed)<<9);case 5:return app.textures.live_count();case 6:return app.game.enemies.state.frames;case 7:return app.loading_game();case 8:return app.title.menus.state.currentScreen;case 9:return app.title.menus.state.cursor;case 10:return app.title.modal();default:return -1;}
+}
 void BrowserRuntime::sound(i32 i,i32 m,float x,bool p){audio->sound(i,m,x,p);}
 bool BrowserRuntime::play_music(i32 i,i32 s){return audio->play_music(i,s);}
 void BrowserRuntime::load_music(i32 i,const char* p){audio->load_music(i,p);}
@@ -185,5 +321,51 @@ void BrowserRuntime::process_sounds(){audio->process_sounds();}
 void BrowserRuntime::update_audio_fades(){audio->update_audio_fades();}
 void BrowserRuntime::apply_volume(const GameConfiguration& c){audio->apply_volume(c);}
 bool BrowserRuntime::audio_tick(u32 now){return audio->audio_tick(now);}
+#ifdef TH_MULTIPLAYER_FIXTURES
+bool BrowserRuntime::diagnostic_audio_clock_independent(){
+    if(!audio||!app.session.multiplayer_session.configured)return false;
+    const auto saved=multiplayer_logic_frame;
+    multiplayer_logic_frame+=36000; // Move only the logical clock by ten minutes.
+    const auto logical=milliseconds(),before=file_device().milliseconds();
+    const auto measured=audio->diagnostic_milliseconds(),after=file_device().milliseconds();
+    multiplayer_logic_frame=saved;
+    return u32(measured-before)<=u32(after-before)&&measured!=logical;
+}
+bool BrowserRuntime::diagnostic_audio_routing(){
+    if(!audio||!app.in_game()||app.session.netplay.Configured())return false;
+    multiplayer::AudioEvents events;events.Reset();if(!bind_audio_events(&events))return false;
+    struct Restore {BrowserRuntime& runtime;GameConfiguration config;PlayRecord statistics;
+        ~Restore(){runtime.bind_audio_events(nullptr);runtime.app.session.display_config=config;runtime.app.session.statistics=statistics;}
+    } restore{*this,app.session.display_config,app.session.statistics};
+    const auto device_before=audio->diagnostic_device_fingerprint();
+    auto& config=app.session.display_config;auto& records=app.session.statistics;
+    records.music_unlocked[3]=records.music_unlocked[5]=0;
+    if(!events.BeginFrame(0))return false;
+    config.music=1;config.options&=~8192u;
+    sound(5,0,192,true);load_music(1,"stage2.mid");play_music(1,3);fade_music(1.25f);
+    menu_music(MenuMusic::Pause,0);menu_music(MenuMusic::Resume,0);menu_music(MenuMusic::FadeIn,2);
+    process_sounds();update_audio_fades();
+    if(!records.music_unlocked[3]||!events.EndFrame()||!events.BeginFrame(1))return false;
+    config.music=2;load_music(2,"stage3.mid");play_music(2,5);fade_music(1);
+    midi_reset();stop_audio();process_sounds();update_audio_fades();apply_volume(config);
+    if(!records.music_unlocked[5]||!events.EndFrame()||events.Failed()||
+       audio->diagnostic_device_fingerprint()!=device_before)return false;
+    struct Trace:multiplayer::AudioEventOutput {std::vector<multiplayer::AudioEvent> events;
+        bool apply_audio_event(const multiplayer::AudioEvent& value)override{events.push_back(value);return true;}
+    } trace;
+    if(!events.CommitThrough(1,1,trace))return false;
+    using Kind=multiplayer::AudioEventKind;
+    const Kind expected[]{Kind::Sound,Kind::WaveCommand,Kind::WaveCommand,Kind::WaveCommand,Kind::WaveCommand,
+        Kind::WaveCommand,Kind::Fade,Kind::Process,Kind::TickFades,Kind::MidiLoad,Kind::MidiStop,Kind::MidiPlay,
+        Kind::MidiStart,Kind::MidiFade,Kind::MidiReset,Kind::MidiStop,Kind::Process,Kind::TickFades,Kind::Volumes};
+    if(trace.events.size()!=std::size(expected))return false;
+    for(std::size_t i=0;i<std::size(expected);++i)if(trace.events[i].kind!=expected[i])return false;
+    return trace.events[1].first==1&&trace.events[1].second==1&&!std::strcmp(trace.events[1].text,"stage2.wav")&&
+        trace.events[2].first==2&&trace.events[2].second==1&&trace.events[3].first==5&&trace.events[3].second==1&&
+        trace.events[4].first==6&&trace.events[5].first==7&&trace.events[6].first==2&&trace.events[6].value==2&&
+        trace.events[9].first==2&&!std::strcmp(trace.events[9].text,"stage3.mid")&&trace.events[11].first==2&&
+        trace.events[13].first==1000;
+}
+#endif
 void BrowserRuntime::replay_error(){file_device().replay_error();}
 }

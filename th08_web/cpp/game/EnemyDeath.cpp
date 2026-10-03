@@ -2,13 +2,21 @@
 #include "EnemyRetirement.hpp"
 #include "GuiState.hpp"
 namespace th08 {
-bool EnemyDeath::run(EclVm& enemy,i32 slot,bool focused,i32 bomb_hit){
+bool EnemyDeath::run(EclVm& enemy,i32 slot,bool focused,i32 bomb_hit
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    ,GameGauge* owner_gauge,bool owner_bomb
+#endif
+){
     auto& globals=executor.game_state();enemy.flags2|=8;
     enemy.remaining_seconds=wrapping_sub(enemy.timeout,enemy.lifetime.current)/60;
     enemy.timeout=-1;for(auto& value:enemy.life_thresholds)value=-1;cancel_enemy_async(enemy);
     if(enemy.parent)enemy.parent->summoned_familiars=wrapping_sub(enemy.parent->summoned_familiars,1);
     if(!familiars.clear(enemy,true))return false;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    (owner_gauge?*owner_gauge:gauge).add(focused?200:-200,owner_bomb,false);
+#else
     gauge.add(focused?200:-200,input.bomb,false);
+#endif
     const auto hide_boss=[&](){globals.gui_blocks_spawn=false;if(globals.gui)globals.gui->boss_present=false;};
     const auto stop_overlay=[&](){if(enemy.familiar_effect){enemy.familiar_effect->pendingInterrupt=3;enemy.familiar_effect=nullptr;}};
     const u32 mode=(enemy.flags>>20)&7;

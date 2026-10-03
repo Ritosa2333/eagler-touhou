@@ -14,6 +14,10 @@ namespace th08 {
 // Files, calendar, input and device operations are host boundaries. Scene
 // selection, record handling, loading gates and ordered game jobs remain here.
 struct ApplicationPlatform:PlayerScenePlatform,TextWriter,AsciiOverlay,FrameClock {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    virtual bool request_multiplayer_replay(const char*,u32){return false;}
+    virtual bool save_multiplayer_replay(i32,const char*){return false;}
+#endif
     virtual void begin_motion(i32,bool,bool,bool){}
     virtual bool load_motion(const u8*,u32){return true;}
     virtual i32 replay_touch_points(ReplayTouchPoint*,i32){return 0;}
@@ -49,6 +53,10 @@ struct ApplicationPlatform:PlayerScenePlatform,TextWriter,AsciiOverlay,FrameCloc
     virtual void replay_error()=0;
 };
 class GameApplication {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+    multiplayer::WorldJournal* world_journal=nullptr;
+#endif
     ApplicationPlatform& platform;
     struct GameIo:GameplayPlatform {
         GameApplication& a;explicit GameIo(GameApplication& a):a(a){}
@@ -74,6 +82,9 @@ class GameApplication {
     } game_io{*this};
     struct TitleIo:TitlePlatform {
         GameApplication& a;explicit TitleIo(GameApplication& a):a(a){}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        bool before_spells_write()override;
+#endif
         std::vector<u8> read_asset(const char* p)override{return a.platform.read(p);}
         std::vector<u8> read_score()override{return a.platform.read("score.dat");}
         i32 load_surface(i32 i,const char* p)override{return a.platform.load_surface(i,p)?0:-1;}
@@ -85,6 +96,9 @@ class GameApplication {
         void apply_volume()override{a.platform.apply_volume(a.session.display_config);}
         std::vector<u8> read_replay(const char* p)override{return a.platform.read(p);}
         std::vector<std::string> list_user_replays()override{return a.platform.user_replays();}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        bool request_multiplayer_replay(const char* p,u32 stage)override{return a.platform.request_multiplayer_replay(p,stage);}
+#endif
         void replay_error()override{a.platform.replay_error();}
         void background()override{a.platform.draw_surface(0);}
         void load_image(const char* p)override{a.failed|=!a.platform.load_surface(0,p);}
@@ -173,6 +187,10 @@ class GameApplication {
     void start_effect();void finish_effect();void show_loading(const Vec3&,bool);void fade_loading();
     ResultContext result_context()const;void save_replay(i32,const char*);void export_records();
 public:
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Failure-only diagnostic; never contributes to the simulated world.
+    i32 last_update_result=1;
+#endif
     GameplaySession session;TextureStore textures;AnmLibrary library;AnmRenderer renderer;Chain chain;AnmExecutor animations;
     AsciiManager ascii;AsciiContext ascii_context;ScreenEffects screen;LoadingScreen loading;FrameStatistics statistics;
     SupervisorFrame supervisor;TitleScene title;GameplayScene game;ResultScene results;MusicRoom music;Ending ending;
@@ -183,7 +201,11 @@ public:
     void shutdown();bool save_score();
     bool finalize_replay(i32 slot,const char* name){if(!game.recording.ready()||(game.globals.game_flags&8)||slot<1||slot>15||!name)return false;last_game=result_context();save_replay(slot,name);return !invalid();}
     bool active()const{return running;}
-    bool invalid()const{return failed||animations.invalid||title.invalid()||results.invalid()||(game_attached&&game.invalid());}
+    bool invalid()const{return failed||animations.invalid||title.invalid()||results.invalid()||(game_attached&&game.invalid())
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        ||screen.invalid()
+#endif
+        ;}
     bool in_game()const{return game_attached;}
     bool loading_game()const{return loading_gate;}
     void close(){supervisor.state.close_requested=true;}

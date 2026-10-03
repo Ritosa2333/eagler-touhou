@@ -1,4 +1,7 @@
 #include "AnmResource.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include <algorithm>
+#endif
 namespace th08 {
 namespace {
 u32 word(const u8* p){return u32(p[0])|(u32(p[1])<<8)|(u32(p[2])<<16)|(u32(p[3])<<24);}
@@ -6,6 +9,9 @@ float value(const u8* p){float v;std::memcpy(&v,p,4);return v;}
 }
 bool AnmResource::load(i32 index,const u8* bytes,u32 size){
     loaded={};raw.clear();sources.clear();sprite_sources.clear();sprites.clear();script_pointers.clear();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    script_ranges.clear();
+#endif
     if(index<0||index>=256||size<64||size>64*1024*1024)return false;
     raw.assign(bytes,bytes+size);
     auto fail=[&](){loaded={};sources.clear();sprite_sources.clear();sprites.clear();script_pointers.clear();raw.clear();return false;};
@@ -29,9 +35,24 @@ bool AnmResource::load(i32 index,const u8* bytes,u32 size){
             u32 cursor=offset;bool terminated=false;
             while(cursor<=span-8){const auto* instruction=reinterpret_cast<const AnmRawInstr*>(entry+cursor);if(instruction->opcode==-1){terminated=true;break;}if(instruction->instructionSize<8||instruction->instructionSize>span-cursor)return fail();cursor+=instruction->instructionSize;}
             if(!terminated)return fail();script_pointers.push_back(reinterpret_cast<AnmRawInstr*>(raw.data()+base+offset));
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            // Literal destinations in ANM bytecode are writable. Record exact
+            // validated instruction spans, without including THTX image bytes.
+            script_ranges.push_back({base+offset,base+cursor+8});
+#endif
         }
         sources.push_back(std::move(source));if(!next)break;base+=next;
     }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    std::sort(script_ranges.begin(),script_ranges.end(),[](const auto& a,const auto& b){return a.first<b.first;});
+    std::size_t merged=0;
+    for(const auto range:script_ranges){
+        if(merged&&range.first<=script_ranges[merged-1].last)
+            script_ranges[merged-1].last=std::max(script_ranges[merged-1].last,range.last);
+        else script_ranges[merged++]=range;
+    }
+    script_ranges.resize(merged);
+#endif
     sprites.resize(sprite_sources.size());loaded.anmIdx=index;loaded.rawData=raw.data();loaded.totalEntries=sources.size();loaded.spriteCount=sprites.size();loaded.scriptCount=script_pointers.size();loaded.sprites=sprites.data();loaded.scripts=script_pointers.data();
     for(u32 i=0;i<sources.size();++i)configure_texture(i,0,sources[i].width,sources[i].height);
     return true;
@@ -50,6 +71,9 @@ bool AnmResource::configure_texture(u32 index,u32 handle,u32 width,u32 height){
 }
 void AnmResource::clone_from(const AnmResource& source,i32 index){
     loaded=source.loaded;raw=source.raw;sources=source.sources;sprite_sources=source.sprite_sources;sprites=source.sprites;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    script_ranges=source.script_ranges;
+#endif
     script_pointers.resize(source.script_pointers.size());
     for(u32 i=0;i<script_pointers.size();++i)script_pointers[i]=reinterpret_cast<AnmRawInstr*>(raw.data()+(reinterpret_cast<const u8*>(source.script_pointers[i])-source.raw.data()));
     loaded.anmIdx=index;loaded.rawData=raw.data();loaded.sprites=sprites.data();loaded.scripts=script_pointers.data();loaded.textures=nullptr;loaded.numberEntriesToBeLoaded=0;

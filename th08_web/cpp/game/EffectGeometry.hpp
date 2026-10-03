@@ -17,6 +17,9 @@ public:
     Vec2 arcade{32,16};bool invalid=false;
     explicit EffectGeometry(AnmRenderer& r):renderer(r){}
     static i32 initialize(EffectState&,EffectDraw callback,bool alternative=false);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    static i32 initialize_borrowed(EffectState&,SpriteVertex*,EffectDraw callback,bool alternative=false);
+#endif
     static void release(EffectState&);
     i32 prepare(EffectState&);
     i32 draw(EffectState&);

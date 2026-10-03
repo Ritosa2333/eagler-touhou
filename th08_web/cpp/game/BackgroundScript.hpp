@@ -12,6 +12,9 @@ struct BackgroundActions {
     virtual bool integrity_failed()=0;
 };
 class BackgroundScript {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
 public:
     BackgroundScript(BackgroundState& state,BackgroundContext& context,AnmExecutor& executor,BackgroundActions& actions)
         :state(state),context(context),anm(executor),actions(actions){}

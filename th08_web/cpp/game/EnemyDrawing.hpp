@@ -17,6 +17,9 @@ struct EnemyDrawActions {
 // Original layer traversal and trail tessellation (0042e140).
 bool draw_enemy_layers(EclVm* const* layers,i32 first,i32 last,const Vec2& offset,EnemyDrawActions&);
 class EnemyDrawing:private EnemyDrawActions {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
     AnmRenderer& renderer;
     struct TrailSample {Vec3 position{};float angle=0;};
     struct PresentationSample {Vec3 position{};float direction=0;i32 age=0,subroutine=-1;bool active=false;presentation::VisualSample visual[3];std::array<TrailSample,96> trail{};u8 trail_length=0,trail_flags=0;i16 trail_step=0;};

@@ -59,7 +59,15 @@ JobResult EnemySimulation::update(){
     state.active_count=0;
     for(u32 index=0;index<480;++index){
         auto* enemy=population.at(index);if(!enemy)continue;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(!(enemy->flags&1)){
+            for(u32 seat=0;seat<actions.participant_count();++seat){EnemyDamageParticipant pilot;if(actions.participant(seat,pilot)&&pilot.frame&&pilot.frame->target_reference==enemy)pilot.frame->target_reference=nullptr;}
+            continue;
+        }
+        u32 damage_owner=0;
+#else
         if(!(enemy->flags&1)){if(player.target_reference==enemy)player.target_reference=nullptr;continue;}
+#endif
         bool hit=false,die=false;
         if(enemy->flags&0x400){enemy->refresh_position();enemy->resolved_position.z=0;die=true;}
         else{
@@ -87,14 +95,26 @@ JobResult EnemySimulation::update(){
                     if(!contact_enemy_and_trail(*enemy,input.familiar.character,actions)){failed=true;return JobResult::Error;}
                     // ECL may begin/end a spell during this enemy's update.
                     // Damage reduction must observe the current spell flags.
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                    hit=damage_enemy_multiplayer(*enemy,u8(globals.spell_flags&1),u8((globals.spell_flags&128)!=0),values,bomb_hit,damage_owner,actions);
+#else
                     const EnemyDamageContext damage{globals.player,input.familiar.character,input.familiar.bomb,u8(globals.spell_flags&1),u8((globals.spell_flags&128)!=0)};
                     hit=damage_enemy(*enemy,damage,player,values,bomb_hit,actions);
+#endif
                 }
                 if((enemy->flags2&8)&&enemy->life>0)enemy->flags2&=~8u;
                 die=enemy->life<=0&&!(enemy->flags2&0x48);
             }
         }
-        if(die){sync_familiars();if(!death.run(*enemy,index,input.focused,bomb_hit)){failed=true;return JobResult::Error;}}
+        if(die){sync_familiars();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            EnemyDamageParticipant owner;
+            const bool has_owner=actions.participant(damage_owner,owner);
+            if(!death.run(*enemy,index,has_owner?owner.focused:input.focused,bomb_hit,has_owner?owner.gauge:nullptr,has_owner&&owner.bomb)){failed=true;return JobResult::Error;}
+#else
+            if(!death.run(*enemy,index,input.focused,bomb_hit)){failed=true;return JobResult::Error;}
+#endif
+        }
         if(failed||!finish_enemy(*enemy,hit)){failed=true;return JobResult::Error;}
     }
     if(state.timer.current%200==0&&values.tampered())return JobResult::Exit;

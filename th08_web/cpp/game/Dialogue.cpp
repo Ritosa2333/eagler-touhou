@@ -105,11 +105,11 @@ i32 Dialogue::update(){
             if(state.selected>1)return invalid();state.lines[state.selected].color1.d3dColor=-1;state.lines[1-state.selected].color1.d3dColor=i32(0xe0606060u);
             if(!pressed(1)||state.paused_frames<60){if(state.paused_frames>=arg<i32>(args)){state.reset_lines=true;state.minimum_wait=30;break;}state.paused_frames=wrapping_add(state.paused_frames,1);goto animate;}actions.sound(10);break;
         case MessageOpcode::ReadSelected:context.flags=(context.flags&~0x1800u)|(u32(state.selected&3)<<11);if(!read(state.selected+1))return -1;continue;
-        case MessageOpcode::Wait:
+        case MessageOpcode::Wait:{
             if(!state.skippable||!(context.input&256)){
                 if(!pressed(1)||state.paused_frames<state.minimum_wait){if(state.paused_frames>=arg<i32>(args)){state.reset_lines=true;state.minimum_wait=30;break;}state.paused_frames=wrapping_add(state.paused_frames,1);goto animate;}
                 state.reset_lines=true;state.minimum_wait=8;
-            }break;
+            }break;}
         case MessageOpcode::PortraitInterrupt:{const i32 index=arg<i16>(args);if(index<0||index>=4)return invalid();state.portraits[index].pendingInterrupt=args[2];break;}
         case MessageOpcode::ResumeEcl:++state.ignore_wait;break;
         case MessageOpcode::Music:{const i32 index=arg<i32>(args);if(index<0)actions.stop_audio();else{

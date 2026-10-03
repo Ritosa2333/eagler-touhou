@@ -1,5 +1,8 @@
 #include "LaserRuntime.hpp"
 #include "GameMath.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/JournalTouch.hpp"
+#endif
 namespace th08 {
 LaserState* LaserRuntime::create(const BulletEmission& e){
     auto* laser=state.lasers;invalid=false;
@@ -7,6 +10,9 @@ LaserState* LaserRuntime::create(const BulletEmission& e){
     for(;laser!=state.lasers+256;++laser)if(!laser->in_use){
         auto* file=state.animation;const i32 script=wrapping_add(e.sprite,10);
         if(!file||u32(script)>=file->scriptCount||u32(e.color)>=16){invalid=true;return nullptr;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(!multiplayer::before_write(rollback_journal,*laser)){invalid=true;return nullptr;}
+#endif
         static constexpr i32 palette[]{0,1,1,1,1,2,2,2,2,3,3,3,4,4,4,0};
         animation.timing=timing;animation.invalid=false;auto& main=laser->animation[0];main.anmFile=file;main.scriptIndex=i16(script);animation.start(*file,main,file->scripts[script]);
         if(animation.invalid||file->SetSprite(&main,wrapping_add(main.activeSpriteIndex,e.color))!=0){invalid=true;return nullptr;}

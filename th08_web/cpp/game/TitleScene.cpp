@@ -13,6 +13,9 @@ bool TitleScene::setup(){
     pending_load=false;publish_records();failed|=menus.state.state==TitleScreenState_Close;return !invalid();
 }
 bool TitleScene::attach(Chain& owner){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!platform.before_spells_write())return false;
+#endif
     if(chain)return false;menus.release();menus.state.reset();flow.state={};animations.invalid=failed=false;pending_load=false;
     context.textAnm=library.get(0);if(!context.textAnm)return false;
     std::memcpy(context.spells,session.records,sizeof(session.records));std::memcpy(context.clears,session.clears,sizeof(session.clears));std::memcpy(context.practice_scores,session.practices,sizeof(session.practices));context.last_words=session.last_words;context.play=session.statistics;

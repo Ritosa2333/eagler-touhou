@@ -4,6 +4,9 @@
 #include <cstdio>
 namespace th08 {
 bool AnmText::inner(u32 texture,i32 x,i32 y,i32 width,i32 height,i32 font_width,i32 font_height,u32 color,u32 outline,const u8* text,u32 size,float scale_x,float scale_y){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!textures.before_write(texture))return false;
+#endif
     auto* record=textures.get(texture);if(!record)return false;auto& image=record->image;
     if(font_width<=0)font_width=15;if(font_height<=0)font_height=15;
     PixelSurface surface{image.format,image.width,image.height,image.width*TexturePixels::describe(image.format).bytes,image.pixels.data()};

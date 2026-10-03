@@ -4,19 +4,40 @@
 #include "../game/MusicCommands.hpp"
 #include "../game/SoundEffects.hpp"
 #include "../game/MidiPlayer.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/AudioEvents.hpp"
+#endif
 namespace th08 {
 class BrowserRuntime;
 // Owns game music selection, effect voices, fades and MIDI sequencing.
 // The SoundDevice owns only platform playback resources.
-class GameAudioManager:public AudioSink,public MusicControlActions,public MusicActions,public MidiDeviceSink {
+class GameAudioManager:public AudioSink,public MusicControlActions,public MusicActions,public MidiDeviceSink
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    ,public multiplayer::AudioEventOutput
+#endif
+{
     BrowserRuntime& host;
     BgmFormats formats;const BgmFormat* current_format=nullptr;SoundEffects effects{*this};AudioFades fades{*this};
     MusicCommands commands{*this};std::unique_ptr<MusicControl> control;bool music_loop=false;
     MidiPlayer midi{*this};u32 midi_clock=0;bool midi_failed=false;
     void audio_context();bool open_music(const BgmFormat*);
     std::vector<u8> read(const char*);u32 milliseconds();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    multiplayer::AudioEvents* event_sink=nullptr;
+    bool draining_events=false;
+    bool capture(multiplayer::AudioEventKind,i32 first=0,i32 second=0,float value=0,const char* path="",bool flag=false);
+#endif
 public:
     explicit GameAudioManager(BrowserRuntime&);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    bool bind_audio_events(multiplayer::AudioEvents*);
+    bool commit_audio_events(multiplayer::AudioEvents&,u32 confirmed,u32 simulated);
+    bool apply_audio_event(const multiplayer::AudioEvent&)override;
+#endif
+#ifdef TH_MULTIPLAYER_FIXTURES
+    u32 diagnostic_milliseconds(){return milliseconds();}
+    u32 diagnostic_device_fingerprint()const;
+#endif
     bool prepare_formats();bool prepare_samples();void shutdown();
     void sound(i32,i32,float,bool);bool play_music(i32,i32);void load_music(i32,const char*);void play_audio(const char*,i32);
     void stop_audio();void fade_music(float);void menu_music(MenuMusic,float);void midi_reset();void start_bgm();

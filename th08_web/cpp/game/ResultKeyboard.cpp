@@ -1,5 +1,8 @@
 #include "ResultScreen.hpp"
 #include "ReplayText.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/ReplayArchive.hpp"
+#endif
 namespace th08 {
 namespace {
 constexpr char alphabet[]="ABCDEFGHIJKLMNOP" "QRSTUVWXYZ.,:;_@" "abcdefghijklmnop" "qrstuvwxyz+-/*=%" "0123456789#!?'\"$" "(){}[]<>&\\|~^ --";
@@ -39,7 +42,13 @@ i32 ResultScreen::HandleResultKeyboard(){
     if(scrolling(Menu|Bomb)){const i32 index=s.cursor>=8?7:s.cursor;if(s.cursor>0){--s.cursor;s.hscr.name[index]=s.hscr.name[s.cursor]=' ';}actions.sound(11,0);}
     if(context.input.pressed(Menu)){actions.sound(11,0);return finish();}sync_score();return 0;
 }
-void ResultScreen::choose_replay(){actions.sound(10,0);actions.process_sounds();state.currentState=RESULT_SCREEN_STATE_CHOOSING_REPLAY_FILE;interrupt_all(12);state.frameTimer=0;for(i32 i=0;i<15;i++){const auto data=actions.read_replay(i);ReplayFile file;if(file.decode(data.data(),data.size()))std::memcpy(&state.replays[i],file.decoded().data(),sizeof(ReplayMetadata));}}
+void ResultScreen::choose_replay(){actions.sound(10,0);actions.process_sounds();state.currentState=RESULT_SCREEN_STATE_CHOOSING_REPLAY_FILE;interrupt_all(12);state.frameTimer=0;for(i32 i=0;i<15;i++){const auto data=actions.read_replay(i);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    multiplayer::ReplayArchive::Preview(data.data(),data.size(),state.replays[i]);
+#else
+    ReplayFile file;if(file.decode(data.data(),data.size()))std::memcpy(&state.replays[i],file.decoded().data(),sizeof(ReplayMetadata));
+#endif
+}}
 void ResultScreen::exit_replay(){state.frameTimer=0;actions.sound(11,0);state.currentState=RESULT_SCREEN_STATE_EXITING;interrupt_all(2);}
 i32 ResultScreen::HandleReplaySaveKeyboard(){
     auto& s=state;auto color_choices=[&](){auto& a=s.spriteVms[50].color1.d3dColor;auto& b=s.spriteVms[51].color1.d3dColor;a=(a&0xff000000)|(s.cursor?0x606060:0xff6060);b=(b&0xff000000)|(s.cursor?0xff6060:0x606060);};
@@ -57,7 +66,13 @@ i32 ResultScreen::HandleReplaySaveKeyboard(){
     case RESULT_SCREEN_STATE_CANT_SAVE_REPLAY:
         if(s.frameTimer<20)return 0;if(context.input.pressed(Shoot|Enter)||context.input.pressed(Menu|Bomb))exit_replay();break;
     case RESULT_SCREEN_STATE_CHOOSING_REPLAY_FILE:
-        if(s.frameTimer==0)for(i32 i=0;i<15;i++){const auto data=actions.read_replay(i);ReplayFile file;if(file.decode(data.data(),data.size()))std::memcpy(&s.replays[i],file.decoded().data(),sizeof(ReplayMetadata));}
+        if(s.frameTimer==0)for(i32 i=0;i<15;i++){const auto data=actions.read_replay(i);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            multiplayer::ReplayArchive::Preview(data.data(),data.size(),s.replays[i]);
+#else
+            ReplayFile file;if(file.decode(data.data(),data.size()))std::memcpy(&s.replays[i],file.decoded().data(),sizeof(ReplayMetadata));
+#endif
+        }
         if(s.frameTimer<20)return 0;move_cursor(15);s.selectedReplay=s.cursor;
         if(context.input.pressed(Shoot|Enter)){
             actions.sound(10,0);s.selectedReplay=s.cursor;s.frameTimer=0;actions.format_date(s.currentReplay.date);s.currentReplay.spell_score=session.numbers.score;

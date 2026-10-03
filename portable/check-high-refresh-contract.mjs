@@ -37,18 +37,20 @@ assert.match(labServer,/third_party\/eagler-common\/testkit\/presentation-lab/);
 assert.match(labServer,/commonCommit:execFileSync\('git',\['rev-parse','HEAD'\]/);
 assert.match(commonController,/class PresentationLabControllerCore/);
 assert.doesNotMatch(shell,/presentation-mark|gameGeneration.*presentation-lab/);
-assert.match(buildScript,/profile=presentationLab\?'presentation-lab':'sdl3'/);
+assert.match(buildScript,/presentationLab\?'presentation-lab':'sdl3'/);
 assert.match(buildScript,/diagnostic:presentationLab/);
 assert.match(packageScript,/build\.diagnostic.*presentationLab/);
 assert.match(packageScript,/Production build contains diagnostic export/);
 assert.match(labStart,/package-eagler\.mjs --presentation-lab/);
 assert.match(labServer,/artifacts\/presentation-lab\/runtime/);
 
-// Fixed game clock: one rAF callback may execute zero or one fixed tick. Late
-// callbacks skip expired 60 Hz deadlines instead of replaying catch-up ticks.
+// Ordinary/Replay skip expired deadlines. Live MP alone retains bounded debt
+// and uses the shared TH06/07 catch-up start budget.
 assert.match(host,/int tick\(\).*runtime->step\(false\)/s);
 assert.match(host,/const bool tick_due=cadence\.advance\(delta\)!=0/);
-assert.match(host,/if\(tick_due&&!result\)/);
+assert.match(host,/while\(due&&!result\)/);
+assert.match(host,/Configured\(\)&&!runtime->app.session.netplay.ReadOnly\(\)/);
+assert.match(host,/Netplay::FrameBudget::CanStartTick/);
 assert.doesNotMatch(host,/for\(unsigned i=0;i<ticks/);
 assert.match(host,/elapsed\+=touhou::sdl::FrameCadence::interval;result=tick\(\)/);
 assert.match(host,/th08_limit_presentation_to_60/);

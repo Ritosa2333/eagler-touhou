@@ -33,6 +33,13 @@ int main(){
     touch.reset(); sample=touch.sample(state,107,false,false); assert(sample.keys[90]); no_motion(sample); ++checks;
     touch.begin_session(); touch.set_mode(1); touch.pointer(0,2,.5f,.5f,200,state,false);
     assert(!touch.set_mode(1)&&touch.active()); assert(touch.set_mode(2)&&!touch.active()); ++checks;
+    TouchState dialogue=state;dialogue.context=2;
+    TouchController hold;
+    hold.pointer(0,3,.5f,.5f,1000,dialogue,false);
+    sample=hold.sample(dialogue,1499,false,false);assert(!sample.keys[17]&&!sample.keys[90]);
+    sample=hold.sample(dialogue,1500,false,false);assert(sample.keys[17]&&!sample.keys[90]);
+    hold.pointer(2,3,.5f,.5f,1501,dialogue,false);
+    sample=hold.sample(dialogue,1502,false,false);assert(!sample.keys[17]&&!sample.keys[90]);++checks;
     MotionTrack v1;v1.begin(0,true,false,true);v1.record(0,true,1,2);const auto old=v1.trailer(8);assert(!old.empty()&&MotionTrack::word(old.data()+old.size()-12)==1);
     MotionTrack loaded_v1;assert(loaded_v1.load(old.data(),old.size(),8));loaded_v1.begin(0,false,true,false);float mx=0,my=0;MotionTrack::TouchPoint points[4]{};assert(loaded_v1.playback(0,mx,my)&&loaded_v1.replay_points(points,4)==0);++checks;
     MotionTrack v2;v2.begin(0,true,false,true);v2.touch_event(0,0,11,.25f,.5f);v2.record(0,true,1,2);v2.touch_event(0,1,11,.3f,.55f);v2.record(0,true,3,4);v2.touch_event(0,2,11,.35f,.6f);v2.record(0,true,5,6);v2.touch_event(0,1,99,.9f,.9f);v2.record(0,true,7,8);v2.touch_event(0,0,22,.7f,.2f);v2.record(0,true,9,10);v2.touch_cancel(0);v2.record(0,true,11,12);

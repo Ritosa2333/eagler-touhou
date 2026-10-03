@@ -3,6 +3,9 @@
 #include "BulletState.hpp"
 #include <array>
 namespace th08 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace multiplayer {class PoolsJournal;}
+#endif
 struct BulletDrawingActions {
     virtual ~BulletDrawingActions()=default;
     virtual void tint(u32 color)=0;
@@ -14,6 +17,9 @@ struct BulletDrawingActions {
 // Original 00432b50 / 00432f20, including the six linked drawing layers,
 // laser origins and the deathbomb tint shared with the item/effect passes.
 class BulletDrawing {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::PoolsJournal;
+#endif
     presentation::SnapshotMarker presentation_marker;
     u32 last_submitted_opacity_factor=128,previous_submitted_opacity_factor=128;
     BulletManagerState& state;BulletDrawingActions& actions;

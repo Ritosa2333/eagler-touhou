@@ -25,6 +25,8 @@ class SpellSystem:public EclSpellActions {
     EffectSystem& effects;BackgroundState& background;AnmExecutor& anm;SpellPresentation& presentation;PlayerBombState& bomb;PracticeState& practice;SpellSystemActions& actions;
     bool reward(bool point_value=false);
 public:
+    void* record_touch_context=nullptr;
+    bool (*record_touch)(void*,SpellRecord&)=nullptr;
     SpellSystem(EclGlobals&,GameGlobals&,GameValues&,HighScore&,SpellRecord*,EffectSystem&,BackgroundState&,AnmExecutor&,SpellPresentation&,PlayerBombState&,PracticeState&,SpellSystemActions&);
     ~SpellSystem(){if(globals.spell_actions==this)globals.spell_actions=nullptr;}
     bool begin(EclVm&,const EclInstruction&)override;

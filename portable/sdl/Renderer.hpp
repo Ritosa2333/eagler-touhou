@@ -38,6 +38,9 @@ public:
     void copy(u32 source,const i32* rect,u32 target,const i32* point);
     bool resample(u32,const i32*,u32,const i32*,const float*,u32,u32);
     void read(u32);void release(u32);void present(u32);void prepare(u32);
+    // Reusable GPU before-images. CPU readers still synchronize via read().
+    u32 save_color(u32);bool restore_color(u32,u32);void discard_color(u32);
+    void adopt_color_revision(u32,u32);
     void render_imgui(const ImDrawData*,u32 target);
     const char* error()const{return failure.c_str();}
     int version;Resolve resolve;void* owner;
@@ -49,6 +52,8 @@ private:
     struct Stream {GLuint id=0;u32 size=0,used=0,frame=~0u;};
     SDL_Window* window=nullptr;SDL_GLContext context=nullptr;
     std::map<u32,GPU> surfaces;std::map<u32,Depth> depths;std::map<std::array<u32,10>,Program> programs;
+    struct ColorImage {GLuint texture=0,framebuffer=0;u32 width=0,height=0;bool used=false;};
+    std::vector<ColorImage> colorImages;
     GLuint vertex=0,currentProgram=0,boundTexture=~0u,readFramebuffer=~0u,drawFramebuffer=~0u;
     std::map<std::array<u32,6>,GLuint> layouts;GLuint currentLayout=0;
     GLuint resampleProgram=0,resampleVao=0,weightTexture=0;

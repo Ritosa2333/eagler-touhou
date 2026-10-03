@@ -15,6 +15,8 @@ struct PlayerCollisionActions {
 // result consumed by the bullet manager after a cancellation hit.
 class PlayerCollision {
 public:
+    // Derived, synchronous BulletSystem scan only. Never survives a tick or
+    // rollback; all shapes and hit counters remain in the native region pool.
     class BarrierBatch {
         friend class PlayerCollision;
         PlayerCollision* owner;
@@ -39,4 +41,12 @@ public:
     bool item(const Vec3& position,const Vec3& size)const;
     i32 laser(const Vec2& center,const Vec2& size,const Vec3& origin,float angle,bool graze);
 };
+#ifdef TH_MULTIPLAYER_FIXTURES
+bool fixture_collision_broadphase(bool enabled) noexcept;
+const double* fixture_collision_broadphase_counts() noexcept;
+bool fixture_collision_broadphase_probe() noexcept;
+bool fixture_barrier_cache(bool enabled) noexcept;
+void fixture_barrier_cache_audit(bool enabled) noexcept;
+u32 fixture_barrier_cache_mismatches() noexcept;
+#endif
 }

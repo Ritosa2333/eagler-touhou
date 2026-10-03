@@ -1,6 +1,14 @@
 #include "Chain.hpp"
 #include <vector>
+#ifdef TH_MULTIPLAYER_FIXTURES
+#include <emscripten.h>
+#include <array>
+#endif
 namespace th08 {
+#ifdef TH_MULTIPLAYER_FIXTURES
+namespace {std::array<double,64> chain_profile{};}
+const double* fixture_chain_profile() noexcept {return chain_profile.data();}
+#endif
 ChainElement::~ChainElement(){if(deleted)deleted(argument);previous=nullptr;next=nullptr;callback=nullptr;added=nullptr;deleted=nullptr;}
 ChainElement* Chain::create(JobCallback callback){auto* element=new ChainElement();element->set_callback(callback);element->flags|=1;return element;}
 i32 Chain::add(ChainElement* element,i32 priority,bool draw){
@@ -31,7 +39,15 @@ i32 Chain::run(bool draw){
     auto* root=draw?&drawing:&calculation;auto* current=root;i32 count=0;
     while(current){
         if(current->callback){
+#ifdef TH_MULTIPLAYER_FIXTURES
+            const i32 priority=current->priority;
+            const double started=emscripten_get_now();
+#endif
             const JobResult result=current->callback(current->argument);
+#ifdef TH_MULTIPLAYER_FIXTURES
+            if(priority>=0&&priority<32)
+                chain_profile[(draw?32:0)+priority]+=emscripten_get_now()-started;
+#endif
             switch(result){
             case JobResult::Remove:{auto* removed=current;current=current->next;cut(removed);++count;continue;}
             case JobResult::Again:continue;

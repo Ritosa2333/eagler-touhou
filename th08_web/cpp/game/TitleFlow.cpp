@@ -16,6 +16,9 @@ const char* TitleFlow::complete_information(){
     if(information_count){information_count=0;finish_begin();}return nullptr;
 }
 void TitleFlow::finish_begin(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!actions.before_spells_write()){state.close_requested=true;return;}
+#endif
     auto& context=menus.context;auto& title=menus.state;const auto data=actions.read_score();ScoreFile score;score.decode(data.data(),data.size());
     score.clears(context.clears);score.practice(context.practice_scores);score.spells(context.spells);score.copy_chapter(fourcc('F','L','S','P'),1,&context.last_words,sizeof(LastWords),true);
     context.flags.isExtraUnlocked=context.IsExtraUnlocked();context.flags.isSpellPracticeUnlocked=context.IsSpellPracticeUnlocked();context.flags.isExtraUnlockedWithAllTeams=context.IsExtraUnlockedWithAllTeams();menus.UnlockLastWordSpellCards();

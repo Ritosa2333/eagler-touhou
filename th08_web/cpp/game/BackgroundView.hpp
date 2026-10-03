@@ -11,9 +11,13 @@ struct BackgroundDrawActions {
     virtual void effects()=0;
 };
 class BackgroundView {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
 public:
     BackgroundView(BackgroundState& state,BackgroundScript& script,AnmRenderer& renderer,BackgroundDrawActions& actions):state(state),script(script),renderer(renderer),objects(state,renderer),actions(actions){}
     JobResult high();JobResult low();
+    void reset_instance_index(){objects.reset_index();}
     void snapshot_spell_presentation();
     AnmVm presentation_spell_vm(u32 index)const;
     void* callback_context=nullptr;

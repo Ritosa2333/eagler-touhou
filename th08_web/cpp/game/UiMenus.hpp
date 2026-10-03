@@ -33,6 +33,9 @@ struct MenuActions {
     virtual void update_game_time()=0;
 };
 class UiMenus {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
 public:
     MenuContext context;
     UiMenus(AsciiState& ascii,AnmExecutor& executor,AnmRenderer& renderer,GameGlobals& globals,GameValues& values,

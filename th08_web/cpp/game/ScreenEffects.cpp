@@ -4,7 +4,14 @@
 namespace th08 {
 namespace {Extended integer(i32 value){return Extended::from_int(value);}}
 ScreenEffects::~ScreenEffects(){clear();}
-void ScreenEffects::clear(){while(!active.empty())remove(&active.back()->state);}
+void ScreenEffects::clear(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    for(auto& instance:instances)if(instance.occupied)remove(&instance.state);
+    allocation_failed=false;presentation_previous.clear();
+#else
+    while(!active.empty())remove(&active.back()->state);
+#endif
+}
 void ScreenEffects::shake(float amplitude){
     for(float* offset:{&renderer.shake.x,&renderer.shake.y}){
         switch(random.bounded32(3)){case 0:*offset=0;break;case 1:*offset=amplitude;break;case 2:*offset=-amplitude;break;}
@@ -64,10 +71,30 @@ JobResult ScreenEffects::draw(ScreenEffectState& s){
 }
 ScreenEffectState* ScreenEffects::create(ScreenEffectType type,i32 duration,i32 a,i32 b,i32 c,i32 priority){
     if(u32(type)>7)return nullptr;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Addresses outlive speculative removal/reuse. No destructor or allocator
+    // is involved in restoring this pool and its ordered native callbacks.
+    Instance* instance=nullptr;
+    for(auto& candidate:instances)if(!candidate.occupied){instance=&candidate;break;}
+    if(!instance){allocation_failed=true;return nullptr;}
+    instance->occupied=true;instance->owner=this;instance->state=ScreenEffectState{};
+    auto& s=instance->state;s.type=type;s.duration=duration;s.a=a;s.b=b;s.c=c;
+    const auto initialize=[&](ChainElement& element,JobCallback callback){
+        element.priority=0;element.flags=0;element.set_callback(callback);
+        element.previous=element.next=nullptr;element.reference=&element;element.argument=instance;
+    };
+    auto* calc=&instance->calculation;initialize(*calc,calculate_callback);
+    calc->added=added_callback;calc->deleted=deleted_callback;
+    ChainElement* draw=nullptr;
+    if(type!=ScreenEffectType::Shake&&type!=ScreenEffectType::EnvelopeShake){draw=&instance->drawing;initialize(*draw,draw_callback);}
+    s.calculation=calc;s.drawing=draw;
+    chain.add(calc,3);if(draw)chain.add(draw,priority,true);return &s;
+#else
     auto* instance=new Instance();instance->owner=this;auto& s=instance->state;s.type=type;s.duration=duration;s.a=a;s.b=b;s.c=c;
     auto* calc=Chain::create(calculate_callback);calc->argument=instance;calc->added=added_callback;calc->deleted=deleted_callback;
     ChainElement* draw=nullptr;if(type!=ScreenEffectType::Shake&&type!=ScreenEffectType::EnvelopeShake){draw=Chain::create(draw_callback);draw->argument=instance;}
     active.push_back(instance);chain.add(calc,3);if(draw)chain.add(draw,priority,true);s.calculation=calc;s.drawing=draw;return &s;
+#endif
 }
 void ScreenEffects::remove(ScreenEffectState* state){if(state)chain.cut(state->calculation);}
 JobResult ScreenEffects::calculate_callback(void* p){auto& i=*static_cast<Instance*>(p);return i.owner->calculate(i.state);}
@@ -77,6 +104,31 @@ i32 ScreenEffects::deleted_callback(void* p){
     auto* i=static_cast<Instance*>(p);auto& owner=*i->owner;i->state.calculation->deleted=nullptr;
     owner.presentation_previous.erase(&i->state);
     owner.chain.cut(i->state.drawing);i->state.drawing=nullptr;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    i->occupied=false;return 0;
+#else
     owner.active.erase(std::remove(owner.active.begin(),owner.active.end(),i),owner.active.end());delete i;return 0;
+#endif
 }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+bool ScreenEffects::capture_rollback(Netplay::RollbackJournal& journal){
+    if(!journal.IsFrameOpen()||allocation_failed)return false;
+    if(!journal.Touch(&context,sizeof(context))||!journal.Touch(&allocation_failed,sizeof(allocation_failed)))return false;
+    for(auto& entry:instances){
+        if(!journal.Touch(&entry.state,sizeof(entry.state))||
+           !journal.Touch(&entry.calculation,sizeof(entry.calculation))||
+           !journal.Touch(&entry.drawing,sizeof(entry.drawing))||
+           !journal.Touch(&entry.occupied,sizeof(entry.occupied)))return false;
+    }
+    for(auto* root:{&chain.calculation,&chain.drawing}){
+        u32 visited=0;
+        for(auto* node=root;node;node=node->next){
+            // Heap-owned MusicRoom jobs belong to an out-of-game scene. Do
+            // not accept them as rewindable gameplay callbacks by accident.
+            if(++visited>4096||(node->flags&1)||!journal.Touch(node,sizeof(*node)))return false;
+        }
+    }
+    return true;
+}
+#endif
 }

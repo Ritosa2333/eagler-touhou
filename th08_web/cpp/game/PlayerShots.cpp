@@ -21,7 +21,7 @@ bool PlayerShots::create(PlayerShot& shot,i32 frame,const ShotDefinition& d){
         if(state.bomb||(state.game_flags&0x2000))return false;
         if(d.phase<0||d.phase>=3){failure=Failure::InvalidLaserSlot;return false;}
         auto& slot=state.lasers[d.phase];
-        if(slot.shot){if(state.laser_definitions[d.phase]!=&d){slot.shot->animation.SetInterrupt(1);slot.shot=nullptr;}return false;}
+        if(slot.shot){if(state.laser_definitions[d.phase]!=&d){if(actions)actions->before_shot_write(*slot.shot);slot.shot->animation.SetInterrupt(1);slot.shot=nullptr;}return false;}
         slot.timer.set(999);slot.shot=&shot;shot.laser_slot=d.phase;shot.option=d.option;shot.velocity.z=d.offset.x;shot.reserved448=d.offset.y;shot.interval=d.interval;
         if(!initialize(shot,d))return false;
         for(auto& history:shot.history)history.x=-999;shot.position.x=-999;state.laser_definitions[d.phase]=&d;return true;
@@ -49,7 +49,7 @@ u32 PlayerShots::emit(const ShotStream& stream,i32 frame){
     failure=Failure::None;u32 index=0,count=0;if(stream.shots.empty())return 0;
     for(auto& shot:state.shots){if(shot.state)continue;
         while(index<stream.shots.size()){
-            const auto& d=stream.shots[index++];const bool made=create(shot,frame,d);if(failure!=Failure::None)return count;
+            const auto& d=stream.shots[index++];if(actions)actions->before_shot_write(shot);const bool made=create(shot,frame,d);if(failure!=Failure::None)return count;
             if(made){shot.animation.flags|=0x2000;shot.state=1;shot.definition=&d;shot.update=d.update;shot.draw=d.draw;shot.hit=d.hit;++count;}
             if(index==stream.shots.size())return count;if(made)break;
         }

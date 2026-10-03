@@ -5,10 +5,18 @@
 #include "PlayerBombPatterns.hpp"
 #include "PlayerCollision.hpp"
 #include "PlayerGraze.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/AnalogMovement.hpp"
+#endif
 namespace th08 {
 // One owner for the state shared by all recovered player phases. In particular,
 // shots, spells and the effect system use the same damage/cancellation pools.
 struct PlayerSimulationState {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    multiplayer::AnalogInput analog;
+    multiplayer::TouchRemainder touch_remainder;
+    u32 unlimited_movement_used=0;
+#endif
     PlayerMotionState motion;PlayerLifeState life;PlayerLifeContext context;PlayerBombState bomb;PlayerBombContext bomb_input;
     PlayerShotsState shots;PlayerBombObjects bomb_objects;PlayerFrameState frame;PlayerMotionInput input;Vec3 enemy_origin;i32 cancel_item=6;Timer item_gauge_lock;
     // GameManager 0164d2c8, advanced before the player callback. Player's
@@ -33,6 +41,9 @@ struct PlayerSimulationServices {
     PlayerBombPatternActions& patterns;PlayerShotActions& shots;PlayerSimulationWorld& world;
 };
 class PlayerSimulation:private PlayerFrameActions,private PlayerBombActions,private ShotFiringActions,private PlayerCollisionActions,private PlayerGrazeActions {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
     PlayerSimulationState& state;ShotResource (&resources)[2];GameGauge& gauge;GaugeThresholds& thresholds;PlayerSimulationServices services;
     GameGlobals& values;GameRank& rank;
     PlayerLife life;PlayerShots shots;PlayerBombPatterns patterns;PlayerCollision collisions;bool failed=false,initialized=false;
@@ -83,8 +94,15 @@ public:
     PlayerCollision& collision()noexcept{return collisions;}
     PlayerSimulationState& status()noexcept{return state;}
     const ShotProfile& profile(bool focused)const noexcept{return resources[focused].settings();}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    void set_player_count(u32 count){shots.player_count=count;}
+    void enter_spirit();
+    bool update_spirit(i8& drift_x,i8& drift_y);
+    void revive_spirit();
+    void place_multiplayer_spawn(u32 seat,u32 count);
+#endif
     i32 damage(const Vec3& position,const Vec3& size,i32& time_items,i32* bomb_hit);
-    bool draw(const Vec2& screen_offset,bool impacts=false);
+    bool draw(const Vec2& screen_offset,bool impacts=false,u8 proximity_alpha=255);
     bool invalid()const noexcept{return failed;}
 #if defined(TH_PRESENTATION_AUDIT)
     const float* audit_bomb_presentation(uintptr_t object,u32 part)const{return patterns.audit_presentation_sample(object,part);}

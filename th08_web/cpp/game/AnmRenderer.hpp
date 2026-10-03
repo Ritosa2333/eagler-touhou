@@ -5,6 +5,9 @@
 #include "../../../portable/sdl/RenderCommands.hpp"
 
 namespace th08 {
+#ifdef TH_MULTIPLAYER_FIXTURES
+bool fixture_projection_reuse(bool enabled);
+#endif
 using namespace touhou::graphics;
 using touhou::graphics::DepthFunc;
 using touhou::graphics::ColorOp;
@@ -74,6 +77,9 @@ public:
     bool mix_enabled = false, depth_test_disabled = false;
     bool vertex_buffer_disabled=false, color_compositing_disabled=false;
     bool visual_geometry_suppressed=false;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    bool rollback_visual_geometry_suppressed=false;
+#endif
     bool fog_disabled=false,fog_enabled=false;
     u32 current_texture = 0;
     u8 current_blend = 3, current_shader = 0xff, disable_z_write = 0xff;

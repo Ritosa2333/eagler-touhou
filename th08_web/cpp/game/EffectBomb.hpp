@@ -12,5 +12,8 @@ public:
     static i32 ripple(EffectState&,u32 variant);
     static i32 quartic(EffectState&);
     i32 burst(EffectState&,bool rotating);
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    i32 burst(EffectState&,bool rotating,DamageRegions& owner_damage);
+#endif
 };
 }

@@ -7,7 +7,13 @@
 #include "PlayerSimulation.hpp"
 #include "ItemSystem.hpp"
 #include "EffectSystem.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/PlayerRoster.hpp"
+#endif
 namespace th08 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace multiplayer {class PoolsJournal;}
+#endif
 struct BulletSystemAudio {
     virtual ~BulletSystemAudio()=default;
     virtual void sound(i32 index,float position,bool panned)=0;
@@ -16,9 +22,17 @@ struct BulletSystemAudio {
 // item -> laser -> layered bullet -> effect drawing order. The enemy emitter,
 // native callbacks and player collisions all reference this same pool.
 class BulletSystem:public BulletEmissionActions,public LaserEmissionActions,private BulletCreationActions,private BulletUpdateActions,private LaserActions,private BulletCancelActions,private BulletDrawingActions {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::PoolsJournal;
+#endif
     BulletManagerState& state;EclGlobals& globals;PlayerSimulation& player;ItemSystem& inventory;EffectSystem& effect_system;AnmRenderer& renderer;BulletSystemAudio& audio;
     BulletCreation creation;BulletUpdate updater;LaserRuntime lasers;BulletDrawing drawing;
     Vec2 arcade{32,16};bool failed=false,ready=false,presentation_prepared=false;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    PlayerRoster* roster=nullptr;
+    Vec3 target(const Vec3& origin)override{return roster?roster->target(origin):globals.player;}
+    void publish_collision(PlayerSimulation&);
+#endif
     void synchronize();void publish_collision();
     void sound(i32 index,float position,bool panned)override{audio.sound(index,position,panned);}
     void reemit(BulletEmission& emission)override{emit(emission);}
@@ -36,12 +50,21 @@ public:
     BulletSystem(BulletManagerState&,EclGlobals&,Rng&,PlayerSimulation&,ItemSystem&,EffectSystem&,AnmRenderer&,BulletSystemAudio&);
     ~BulletSystem(){if(globals.bullet_actions==this)globals.bullet_actions=nullptr;if(globals.laser_actions==this)globals.laser_actions=nullptr;}
     bool initialize(AnmLoaded&,Rng&);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    void bind_roster(PlayerRoster& value){roster=&value;}
+    bool before_bullet_overwrite(BulletState& bullet)override{
+        if(!creation.capture_overwrite(bullet)){failed=true;return false;}return true;
+    }
+#endif
     void emit(BulletEmission&)override;
     LaserState* laser(BulletEmission&)override;
     void clear(i32 mode)override;
     bool update();
-    void snapshot_presentation(){if(ready){drawing.snapshot();presentation_prepared=true;}}
+    void snapshot_presentation();
     bool draw(const Vec2& origin={32,16});
     bool invalid()const{return failed;}
 };
+#ifdef TH_MULTIPLAYER_FIXTURES
+const double* fixture_bullet_profile() noexcept;
+#endif
 }

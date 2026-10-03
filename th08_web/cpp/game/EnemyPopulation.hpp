@@ -3,10 +3,17 @@
 #include <array>
 #include <memory>
 namespace th08 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace multiplayer {class EnemyJournal;}
+#endif
 struct EnemyScoreActions;
 // Original allocation order: 480 live enemy slots and a separate overflow
 // result. Each enemy owns its ECL locals, timers and call stack.
 class EnemyPopulation {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::EnemyJournal;
+    multiplayer::EnemyJournal* journal=nullptr;
+#endif
     std::array<std::unique_ptr<EclVm>,481> enemies;
     EclExecutor& executor;EclProgram& program;
     void kill_non_bosses();

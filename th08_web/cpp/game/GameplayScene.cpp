@@ -1,13 +1,38 @@
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/CooperativeResources.hpp"
+#endif
 #include "GameplayScene.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/PlayerPresentation.hpp"
+#endif
+#include "InputController.hpp"
 #include "PracticeRuntime.hpp"
 #include "PracticeSections.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/WorldJournal.hpp"
+#endif
 namespace th08 {
+bool GameplayScene::before_score_tables_write(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    return !world_journal||world_journal->TouchAllRecords();
+#else
+    return true;
+#endif
+}
 GameplayScene::GameplayScene(GameplaySession& s,TextureStore& t,AnmLibrary& l,AnmRenderer& r,GameplayPlatform& p,Chain* shared_chain,AsciiManager* shared_ascii)
  :session(s),textures(t),library(l),renderer(r),platform(p),chain(shared_chain?*shared_chain:owned_chain),animations(s.random),owned_ascii(animations,r,p),ascii(shared_ascii?*shared_ascii:owned_ascii),
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+  player_services(player_state,shots,s.pilot_views[0],s.pilot_values[0],s.gauge,s.rank,s.practice,l,animations,r,p,0,64),
+#else
   player_services(player_state,shots,s.numbers,s.values,s.gauge,s.rank,s.practice,l,animations,r,p),
+#endif
   player(player_state,shots,s.numbers,s.gauge,s.thresholds,s.rank,s.random,player_services.services()),
   screen(chain,r,s.random),effect_system(effect_pool,environment,animations,r,s.random,screen,player_state.shots.regions,s.values,player_state.context.replay_flags),
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+  items(player,s.pilot_views[0],s.pilot_values[0],s.gauge,s.rank,s.history,s.random,l,animations,r,player_services),
+#else
   items(player,s.numbers,s.values,s.gauge,s.rank,s.history,s.random,l,animations,r,player_services),
+#endif
   executor(s.random,player.timing,globals),
   enemies(program,executor,player.timing,s.random,s.numbers,s.values,s.rank,s.gauge,player,effect_system,items,projectile_pool,ascii,ascii_context,r,*this),
   bullets(projectile_pool,globals,s.random,player,items,effect_system,r,*this),
@@ -21,7 +46,66 @@ GameplayScene::GameplayScene(GameplaySession& s,TextureStore& t,AnmLibrary& l,An
   enemy_flow(enemies,globals,program,s.random,ascii,*this),effect_flow(effect_system,background,*this),gui_flow(gui,dialogue,*this),spell_flow(globals,spells,presentation,spell_drawing,animations,*this),
   menus(ascii.state,animations,r,s.numbers,s.values,s.config,s.statistics,*this),control(globals,menus.context,s.numbers,s.values,s.config,s.history,s.clears,s.statistics,s.random,r,control_actions){
     projectile_pool.reset();hud.implementation=&display;globals.gui=&hud;globals.live_values=this;enemies.bind_native(native_scene);player_services.bind(player_world);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    for(u32 seat=1;seat<3;++seat)guest_pilots[seat-1]=std::make_unique<GuestPilot>(*this,seat);
+    roster.bind(0,player,s.pilot_views[0],s.pilot_values[0],s.gauge);
+    for(u32 seat=1;seat<3;++seat){
+        roster.bind(seat,pilot(seat),s.pilot_views[seat],s.pilot_values[seat],s.guest_gauges[seat-1]);
+        items.bind_player(seat,pilot(seat),s.pilot_views[seat],s.pilot_values[seat],s.guest_gauges[seat-1],pilot_services(seat));
+    }
+    bullets.bind_roster(roster);
+    enemies.bind_roster(roster);
+#endif
 }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+GameplayScene::GuestPilot::GuestPilot(GameplayScene& scene,u32 seat)
+ :services(state,shots,scene.session.pilot_views[seat],scene.session.pilot_values[seat],scene.session.guest_gauges[seat-1],scene.session.rank,scene.session.practice,scene.library,scene.animations,scene.renderer,scene.platform,i32(seat),64+i32(seat)),
+  simulation(state,shots,scene.session.numbers,scene.session.guest_gauges[seat-1],scene.session.guest_thresholds[seat-1],scene.session.rank,scene.session.random,services.services()){
+    services.bind(scene.player_world);
+}
+bool GameplayScene::commit_inputs(const u16* buttons,u32 count){
+    if(!buttons||count!=session.player_count||count<2||count>3)return false;
+    for(u32 seat=0;seat<3;++seat)committed_buttons[seat]=seat<count?buttons[seat]:0;
+    for(u32 seat=0;seat<count;++seat){pilot(seat).status().analog={};pilot(seat).status().touch_remainder={};}
+    return true;
+}
+bool GameplayScene::commit_frame_inputs(const Netplay::FrameInput* inputs,u32 count){
+    if(!inputs||count!=session.player_count||count<2||count>3)return false;
+    for(u32 seat=0;seat<count;++seat)if(!multiplayer::ValidInputSample(inputs[seat]))return false;
+    for(u32 seat=0;seat<count;++seat){
+        committed_buttons[seat]=inputs[seat].buttons;auto& state=pilot(seat).status();
+        state.analog=multiplayer::MovementSample(inputs[seat]);
+    }
+    for(u32 seat=count;seat<3;++seat)committed_buttons[seat]=0;
+#ifdef TH_MULTIPLAYER_FIXTURES
+    // Diagnostic-only lethal hit. InputButton::D is otherwise unused by the
+    // recovered gameplay path. Because commit_frame_inputs runs after
+    // WorldJournal/Audio BeginFrame, this exercises the same rollback/output
+    // ownership as a real bullet collision while allowing one endpoint to
+    // predict "no hit" until the delayed authoritative frame arrives.
+    constexpr u16 fixture_death_button=8192;
+    for(u32 seat=0;seat<count;++seat)if(committed_buttons[seat]&fixture_death_button){
+        committed_buttons[seat]&=~fixture_death_button;
+        auto& simulation=pilot(seat);auto& state=simulation.status();
+        if(state.life.state==0){
+            auto* created=projectile_pool.next_slot;if(!created)return false;
+            for(i32 checked=0;checked<1536&&created->state;++checked)
+                if((++created)->state==6)created=projectile_pool.bullets;
+            if(created->state)return false;
+            BulletEmission shot;shot.sprite=0;shot.color=0;shot.position=state.motion.movement.position;
+            shot.angle=0;shot.speed=0;shot.ending_speed=0;shot.count=1;shot.layers=1;shot.pattern=0;
+            bullets.emit(shot);if(bullets.invalid()||!created->state)return false;
+            // The normal BulletSystem update later in this same game frame
+            // performs the lethal collision. Keep the projectile stationary
+            // and old enough to execute graze/hit checks immediately.
+            created->state=1;created->position=state.motion.movement.position;
+            created->velocity={};created->active_time.set(20);
+        }
+    }
+#endif
+    return true;
+}
+#endif
 GameplayScene::~GameplayScene(){unload();}
 bool GameplayScene::ControlActions::replay_stage(i32 stage){return scene.replay_stage_mask&(1u<<stage);}
 void GameplayScene::ControlActions::update_enemy_name(){auto& g=scene.globals;
@@ -94,12 +178,29 @@ void GameplayScene::publish_dialogue(){
 }
 void GameplayScene::message(i32 entry){synchronize();failed|=!dialogue.read(entry);publish_dialogue();}
 void GameplayScene::synchronize(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    for(u32 seat=0;seat<session.player_count;++seat)if(roster.seats[seat].player&&roster.seats[seat].player->status().unlimited_movement_used)
+        session.multiplayer_cheat_movement_used=true;
+#endif
     auto& p=player_state;auto& n=session.numbers;const auto& limits=session.thresholds;
     auto& m=menus.context;m.flags=globals.game_flags;m.show_retry=globals.stage_completion;m.stage=globals.stage;m.character=globals.shot;m.spell=globals.current_spell;m.difficulty=globals.difficulty;m.spell_captured=bool(globals.spell_flags&512);m.times=hud.times;
-    paused=m.pause_state!=0;retrying=m.show_retry!=0;p.context.game_over=m.show_retry;
+    paused=m.pause_state!=0;retrying=m.show_retry!=0;
+#ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    p.context.game_over=m.show_retry;
+#endif
     animations.timing=player.timing;player_services.sync_values();p.stage_play_frames=signed_bits(control.state.play_frames);
     p.context.game_flags=globals.game_flags;p.context.pause=globals.paused;p.context.time_spell=u8(globals.spell_flags&1);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // ECL has one compatibility target; each pilot retains its own life owner.
+    globals.player_state=p.life.state;globals.player_state_timer=p.life.timer;globals.player=p.motion.movement.position;
+    for(u32 seat=1;seat<session.player_count;++seat){
+        auto& other=pilot(seat);auto& state=other.status();other.timing=player.timing;
+        pilot_services(seat).sync_values();state.stage_play_frames=p.stage_play_frames;
+        state.context.game_flags=globals.game_flags;state.context.pause=globals.paused;state.context.time_spell=u8(globals.spell_flags&1);
+    }
+#else
     p.life.state=globals.player_state;p.life.timer=globals.player_state_timer;
+#endif
     background_context={i32(globals.stage),bool(globals.game_flags&1024),bool(globals.game_flags&0x4000),p.motion.form.youkai!=0};
     if(globals.stage_interrupt){background.pending_interrupt=globals.stage_interrupt;globals.stage_interrupt=0;}
     dialogue_context.flags=globals.game_flags;dialogue_context.stage=i32(globals.stage);dialogue_context.character=globals.shot;dialogue_context.player_state=p.life.state;dialogue_context.background_state=background.dialogue_state;
@@ -115,12 +216,79 @@ void GameplayScene::synchronize(){
     effect_system.paused=bool(globals.game_flags&1024);
     screen.context.timing=player.timing;screen.context.frozen=bool(globals.game_flags&1024);screen.context.paused=paused;screen.context.retry=retrying;
     ascii_context.player=p.motion.movement.position;ascii_context.gauge=n.gauge;ascii_context.point_value=n.point_value;ascii_context.human_limit=limits.minimum;ascii_context.youkai_limit=limits.maximum;ascii_context.human_effects=limits.human_bonus;ascii_context.youkai_effects=limits.youkai_bonus;ascii_context.human_tint=limits.human;ascii_context.youkai_tint=limits.youkai;ascii_context.paused=paused;ascii_context.retry=retrying;ascii_context.freeze_popups=bool(globals.game_flags&1024);ascii_context.effects=effect_pool.base_animation;ascii_context.demo=bool(globals.game_flags&2);ascii_context.arcade_origin=m.arcade_origin;ascii_context.arcade_size=m.arcade_size;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Shared gameplay context remains seat-zero and deterministic. The
+    // bottom gauge's viewer-local selection is bound separately in AsciiManager.
+    ascii_context.gauge=session.pilot_resources[0].gauge;
+#endif
     presentation.context.game_flags=globals.game_flags;presentation.context.current_spell=globals.current_spell;
 }
 JobResult GameplayScene::boundary(i32 phase){if(phase==11)session.stall_frames=enemies.state.frames;if(phase==15)publish_dialogue();synchronize();return invalid()?JobResult::Error:JobResult::Continue;}
-JobResult GameplayScene::update_player(){player_state.input.always_hitbox=always_hitbox;if(!player_services.prepare()||!player.update())return JobResult::Error;player_services.finish();synchronize();return invalid()?JobResult::Error:JobResult::Continue;}
+JobResult GameplayScene::update_player(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    for(u32 seat=0;seat<session.player_count;++seat){
+        auto& simulation=pilot(seat);auto& services=pilot_services(seat);
+        // Multiplayer's hitbox display is an invariant, not a viewer-local
+        // simulation option. A local Launcher preference used to enter
+        // PlayerMotionState and fixed EffectPool state here, so endpoints with
+        // different display settings could start from different canonical
+        // worlds before any network input differed.
+        simulation.status().input.always_hitbox=1;
+        if(!services.prepare())return JobResult::Error;
+        const bool updated=cooperation.seats[seat].spirit
+            ?simulation.update_spirit(cooperation.seats[seat].drift_x,cooperation.seats[seat].drift_y)
+            :simulation.update();
+        if(!updated)return JobResult::Error;
+        services.finish();
+        if(!cooperation.seats[seat].spirit&&simulation.status().context.game_over)enter_spirit(seat);
+    }
+    update_cooperation();
+#else
+    player_state.input.always_hitbox=always_hitbox;if(!player_services.prepare()||!player.update())return JobResult::Error;player_services.finish();
+#endif
+    synchronize();return invalid()?JobResult::Error:JobResult::Continue;
+}
+JobResult GameplayScene::draw_players(bool impacts){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    const bool live_view=!session.netplay.ReadOnly()&&session.local_player<session.player_count&&
+        roster.eligible(session.local_player);
+    const bool enhance=enhance_local_player_visibility&&live_view;
+    for(u32 seat=0;seat<session.player_count;++seat){
+        u8 proximity_alpha=255;
+        if(live_view&&seat!=session.local_player&&roster.eligible(seat)){
+            const auto& a=pilot(seat).status().motion.movement.position;
+            const auto& b=pilot(session.local_player).status().motion.movement.position;
+            const float dx=a.x-b.x,dy=a.y-b.y;
+            proximity_alpha=multiplayer::player_proximity_alpha(dx,dy);
+        }
+        const bool drawn=pilot(seat).draw(ascii_context.arcade_origin,impacts,proximity_alpha);
+        if(!drawn)return JobResult::Error;
+    }
+    if(!impacts){
+        auto& text=ascii.state;const auto color=text.color;
+        const Vec2 scale{text.scale_x,text.scale_y};const auto gui=text.gui,selected=text.selected;
+        text.gui=text.selected=0;text.scale_x=text.scale_y=.8f;
+        for(u32 seat=0;seat<session.player_count;++seat){
+            const auto& p=pilot(seat).status().motion.movement.position;
+            const auto& c=cooperation.seats[seat];
+            if(c.power_taps>=3){text.color=0xffe2edbd;ascii.add_format({p.x+32.f,p.y-6.f,0},false,"P %u/5",u32(c.power_taps));}
+            else if(c.progress&&c.target>=0){text.color=0xffd5efc8;ascii.add_format({p.x+30.f,p.y-8.f,0},false,"%u%%",u32(c.progress)*100/multiplayer::rescue_ticks);}
+            if(enhance&&seat==session.local_player){text.color=0xfff3eee4;ascii.add_format({p.x+48.f,p.y+10.f,0},false,"P%u",seat+1);}
+        }
+        text.color=color;text.scale_x=scale.x;text.scale_y=scale.y;text.gui=gui;text.selected=selected;
+    }
+    return JobResult::Continue;
+#else
+    return player.draw(ascii_context.arcade_origin,impacts)?JobResult::Continue:JobResult::Error;
+#endif
+}
 JobResult GameplayScene::update_ascii(){
-    ascii.tick_popups(ascii_context,player.timing);if(menus.context.pause_state)menus.update_pause();if(menus.context.show_retry)menus.update_retry();
+    ascii.tick_popups(ascii_context,player.timing);if(menus.context.pause_state)menus.update_pause();
+    const bool had_retry=menus.context.show_retry!=0;
+    if(had_retry)menus.update_retry();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(had_retry&&!menus.context.show_retry&&menus.context.supervisor_state==2)reset_team_after_continue();
+#endif
     globals.game_flags=menus.context.flags;globals.stage_completion=menus.context.show_retry;synchronize();ascii.tick_vms(ascii_context.demo);return animations.invalid?JobResult::Error:JobResult::Continue;
 }
 JobResult GameplayScene::update_control(){control.input.active_bullets=projectile_pool.active_count;control.input.fog=u32(background.fog.color.d3dColor);control.input.dialogue=dialogue.present();const auto result=control.update();synchronize();return invalid()?JobResult::Error:result;}
@@ -134,7 +302,21 @@ JobResult GameplayScene::update_replay(){
     publish_input(playback.input);control.input.replay_fps=playback.input.timing_level;
     synchronize();return JobResult::Continue;
 }
-void GameplayScene::publish_input(const ReplayInputState& input){player_state.input.buttons=input.current;player_state.bomb_input.previous_buttons=input.previous;dialogue_context.input=input.current;dialogue_context.previous_input=input.previous;}
+void GameplayScene::publish_input(const ReplayInputState& input){
+    player_state.input.buttons=input.current;player_state.bomb_input.previous_buttons=input.previous;
+    dialogue_context.input=input.current;dialogue_context.previous_input=input.previous;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Dialogue is shared. The replay recorder updates input.current later in
+    // the frame, so use the committed network inputs for every seat here.
+    // Both peers must see the same skip/confirm decision during rollback.
+    dialogue_context.input=committed_buttons[0];
+    dialogue_context.previous_input=pilot(0).status().bomb_input.previous_buttons;
+    for(u32 seat=1;seat<session.player_count;++seat){
+        dialogue_context.input|=committed_buttons[seat]&(InputButton::Shoot|InputButton::Skip);
+        dialogue_context.previous_input|=pilot(seat).status().bomb_input.previous_buttons&(InputButton::Shoot|InputButton::Skip);
+    }
+#endif
+}
 JobResult GameplayScene::update_recording(){recording.input.flags=globals.game_flags;recording.input.slow_mode=session.config.slow_mode;recording.update();publish_input(recording.input);return JobResult::Continue;}
 JobResult GameplayScene::sample_replay_frame(){auto& state=recording_game?recording.frame_state:debug_frame;state.sample(session.random,control.state.restore_viewport);return JobResult::Continue;}
 JobResult GameplayScene::finish_replay_frame(){bool boss_present=false;for(auto* boss:globals.boss_slots)boss_present|=boss!=nullptr;return playback.after_update(globals.game_flags,control.state.replay_mode,dialogue.present(),display.dialogue.skippable,boss_present);}
@@ -151,8 +333,8 @@ JobResult GameplayScene::draw_ascii(){
 void GameplayScene::bind_jobs(){
     auto bind=[&](ChainElement& job,i32 priority,bool draw,JobCallback callback){job.set_callback(callback);job.argument=this;chain.add(&job,priority,draw);};
     bind(player_calc,9,false,[](void* p){return static_cast<GameplayScene*>(p)->update_player();});
-    bind(player_high,9,true,[](void* p){auto& s=*static_cast<GameplayScene*>(p);return s.player.draw(s.ascii_context.arcade_origin)?JobResult::Continue:JobResult::Error;});
-    bind(player_low,10,true,[](void* p){auto& s=*static_cast<GameplayScene*>(p);return s.player.draw(s.ascii_context.arcade_origin,true)?JobResult::Continue:JobResult::Error;});
+    bind(player_high,9,true,[](void* p){return static_cast<GameplayScene*>(p)->draw_players(false);});
+    bind(player_low,10,true,[](void* p){return static_cast<GameplayScene*>(p)->draw_players(true);});
     bind(ascii_calc,1,false,[](void* p){return static_cast<GameplayScene*>(p)->update_ascii();});
     bind(control_calc,2,false,[](void* p){return static_cast<GameplayScene*>(p)->update_control();});
     bind(control_draw,5,true,[](void* p){return static_cast<GameplayScene*>(p)->control.draw();});
@@ -166,12 +348,38 @@ void GameplayScene::bind_jobs(){
     constexpr i32 phases[]{8,11,12,13,14,15};for(u32 i=0;i<6;i++){auto& b=boundaries[i];b.scene=this;b.phase=phases[i];b.job.set_callback([](void* p){auto& b=*static_cast<Boundary*>(p);return b.scene->boundary(b.phase);});b.job.argument=&b;chain.add(&b.job,b.phase);}
 }
 bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(wanted.initial)session.multiplayer_cheat_movement_used=false;
+    if(session.player_count<2||session.player_count>3||session.local_player>=session.player_count)return false;
+    for(u32 seat=1;seat<session.player_count;++seat)if(session.player_characters[seat]>=12)return false;
+    session.player_characters[0]=u8(wanted.character);
+    if(wanted.initial)multiplayer::reset(cooperation,u8(session.player_count));
+    roster.count=session.player_count;
+    for(u32 seat=0;seat<3;++seat){
+        roster.seats[seat].available=seat<session.player_count;
+        items.set_player_available(seat,seat<session.player_count);
+    }
+    gui.bind_multiplayer_resources(session.pilot_resources,session.player_count,session.local_player,roster,cooperation);
+    ascii.bind_multiplayer_gauge(session.pilot_resources[session.local_player].gauge,
+        session.local_player?session.guest_thresholds[session.local_player-1]:session.thresholds);
+    for(u32 seat=0;seat<session.player_count;++seat){pilot(seat).set_player_count(session.player_count);pilot_services(seat).set_player_count(session.player_count);}
+#endif
     if(loaded||wanted.stage<0||wanted.stage>=9||wanted.character<0||wanted.character>=12||wanted.difficulty<0||wanted.difficulty>4||((wanted.flags&0x4000)&&(wanted.spell<0||wanted.spell>=222)))return false;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    for(u32 seat=0;seat<session.player_count;++seat)
+        multiplayer::begin_next_stage_life(session.pilot_resources[seat],cooperation.seats[seat].spirit);
+    multiplayer::begin_stage(cooperation);
+#endif
     const bool retain_counters=!wanted.initial&&!(wanted.flags&0x4001)&&wanted.difficulty<4;
     const i32 previous_frames=enemies.state.frames,previous_human=enemies.state.unfocused_frames,previous_active=enemies.state.active_frames;
     failed=false;animations.invalid=false;player_services.reset();request=wanted;previous_input=0;player.timing={1,false};animations.timing=player.timing;
     playing_replay=initialize_values&&(wanted.flags&8);
     recording_game=initialize_values&&!playing_replay;if(recording_game&&wanted.initial)recording.reset();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Multiplayer input history is owned by the MP replay/session adapter.
+    playing_replay=false;recording_game=false;
+    for(u32 seat=0;seat<3;++seat)committed_buttons[seat]=previous_buttons[seat]=0;
+#endif
     platform.begin_motion(wanted.stage,wanted.initial,playing_replay,recording_game);
     if(playing_replay&&(!playback.has_stage(wanted.stage)||playback.metadata().shot_type!=wanted.character||playback.metadata().difficulty!=wanted.difficulty))return false;
     menus.context=MenuContext{};menus.context.supervisor_state=wanted.supervisor_state;menus.context.system_time=now();
@@ -196,15 +404,43 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     std::memcpy(dialogue_context.clears,session.clears,sizeof(session.clears));
     const bool section_warp=session.practice.active&&session.practice.run.section!=0;
     if(!player_services.prepare()||!player.initialize({u8(wanted.character),wanted.initial,bool(wanted.flags&0x4000),u8(section_warp),{384,448}})){unload();return false;}player_services.finish();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    for(u32 seat=1;seat<session.player_count;++seat){
+        auto& simulation=pilot(seat);auto& state=simulation.status();auto& services=pilot_services(seat);
+        state.reset();services.reset();state.context.game_flags=wanted.flags;state.input.minimum={8,16};state.input.extent={368,416};simulation.timing=player.timing;
+        if(!services.prepare()||!simulation.initialize({session.player_characters[seat],wanted.initial,bool(wanted.flags&0x4000),u8(section_warp),{384,448}})){unload();return false;}
+        services.finish();
+    }
+    for(u32 seat=0;seat<session.player_count;++seat)pilot(seat).place_multiplayer_spawn(seat,session.player_count);
+#endif
     if(initialize_values){
-        startup.after_player(player.profile(false).initial_bombs);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(!startup.after_player(float(multiplayer::base_life_bombs))){unload();return false;}
+#else
+        if(!startup.after_player(player.profile(false).initial_bombs)){unload();return false;}
+#endif
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        const bool fresh=wanted.initial||(wanted.flags&0x4001)||wanted.difficulty>=4;
+        for(u32 seat=0;seat<session.player_count;++seat){
+            auto& bank=session.pilot_resources[seat];
+            if(fresh){bank.reset();multiplayer::begin_base_life(bank,session.numbers.lives,session.numbers.power);}
+            bank.deaths_stage=bank.bombs_used_stage=0;bank.gauge_copy=bank.gauge;
+            pilot_services(seat).sync_values();
+        }
+#endif
         if(playing_replay){if(!playback.begin(wanted.stage,session,globals,player_state.context.miss_control)){unload();return false;}playback.input.current=playback.input.previous=0;replay_stage_mask=playback.stage_mask();if(wanted.initial&&playback.metadata().header.unknown6)sample_replay_frame();}
         startup.after_replay();std::memcpy(dialogue_context.clears,session.clears,sizeof(session.clears));
     }
     background_context={wanted.stage,false,bool(wanted.flags&0x4000),false};background_flow.context={wanted.keep_resources,dialogue_context.text};
     bullet_flow.context={wanted.initial,wanted.release_resources};enemy_flow.context={wanted.initial,wanted.keep_resources,wanted.release_resources};effect_flow.context={wanted.stage,wanted.spell,bool(wanted.flags&0x4000),wanted.keep_resources};gui_flow.context={wanted.initial,wanted.keep_resources,wanted.release_resources,u8(section_warp),wanted.spell};spell_flow.context={wanted.initial,wanted.keep_resources,wanted.release_resources};
     dialogue_context.flags=globals.game_flags;dialogue_context.stage=wanted.stage;dialogue_context.character=wanted.character;gui_context.difficulty=wanted.difficulty;items.difficulty=wanted.difficulty;
-    if(!background_flow.attach(chain,wanted.stage)||!bullet_flow.attach(chain)||!enemy_flow.attach(chain)||!effect_flow.attach(chain)||!gui_flow.attach(chain)||!spell_flow.attach(chain)){unload();return false;}
+    if(!background_flow.attach(chain,wanted.stage)||!bullet_flow.attach(chain)||!enemy_flow.attach(chain)||!effect_flow.attach(chain)||!gui_flow.attach(chain)){unload();return false;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Bomb announcements and enemy spellcards share the native spell owner.
+    // Its portraits, banners and calculation/draw jobs must exist before the
+    // first gameplay tick. Keep the ordinary baseline outside this MP change.
+    if(!spell_flow.attach(chain)){unload();return false;}
+#endif
     // These three counters belong to GameManager across stages. EnemyManager
     // increments them, but replacing that owner must not reset a whole run.
     if(retain_counters){enemies.state.frames=previous_frames;enemies.state.unfocused_frames=previous_human;enemies.state.active_frames=previous_active;}
@@ -212,7 +448,11 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     if(auto* header=background_script.program.header())std::memcpy(dialogue_context.song_paths,header->song_paths,sizeof(dialogue_context.song_paths));
     if(initialize_values){startup.after_resources(wanted.keep_resources,dialogue_context.song_paths,background.dialogue_state);time_stopped=false;ascii.state.blindness_color=0;screen_counter=2;control.state.load_state=0;}
     synchronize();ascii_context.effects=effect_pool.base_animation;ascii.reset();ascii.initialize_vms(ascii_context);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    menus.context.shot_bombs=multiplayer::base_life_bombs;
+#else
     menus.context.shot_bombs=number(player.profile(false).initial_bombs).truncate_int();
+#endif
     if(!initialize_values){control.state.stage_mask=u16(1u<<wanted.stage);control.state.start_music=wanted.keep_resources&&(wanted.flags&0x4000)&&!spell_music(wanted.spell).pause_in_practice?2:1;}
     globals.frame_count_value=&enemies.state.frames;session.stall_frames=enemies.state.frames;
     if(initialize_values){
@@ -232,7 +472,15 @@ void GameplayScene::unload(bool keep,bool release_all){
     for(auto* job:{&player_calc,&player_high,&player_low,&ascii_calc,&ascii_high,&ascii_low,&control_calc,&control_draw,&replay_calc,&replay_after,&record_calc,&replay_bookkeeping})chain.cut(job);
     for(auto& boundary:boundaries)chain.cut(&boundary.job);
     for(i32 slot=4;slot<20;slot++){const bool stage_resource=slot==4||slot==8||slot==9||slot==13||slot==18||slot==19;if((owned_resources&(1u<<slot))&&(stage_resource?!keep:release_all))release(slot);}
-    if(release_all){release(5);shots[0]=ShotResource{};shots[1]=ShotResource{};}
+    if(release_all){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        for(i32 slot=64;slot<70;++slot)library.release(slot);
+        for(auto& guest:guest_pilots)if(guest){guest->shots[0]=ShotResource{};guest->shots[1]=ShotResource{};}
+#else
+        release(5);
+#endif
+        shots[0]=ShotResource{};shots[1]=ShotResource{};
+    }
 }
 bool GameplayScene::prepare_frame(u16 buttons,float rate,bool force_unit){
     if(!ready())return false;
@@ -242,7 +490,19 @@ bool GameplayScene::prepare_frame(u16 buttons,float rate,bool force_unit){
     effect_system.snapshot_presentation();spell_drawing.snapshot_presentation();background_view.snapshot_spell_presentation();ascii.snapshot_presentation(ascii_context);
     bullets.snapshot_presentation();
     player.timing={rate,force_unit};player_state.input.buttons=buttons;player_state.bomb_input.previous_buttons=previous_input;dialogue_context.previous_input=previous_input;dialogue_context.input=buttons;menus.context.keys=buttons;menus.context.previous_keys=previous_input;previous_input=buttons;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    for(u32 seat=0;seat<session.player_count;++seat){
+        auto& simulation=pilot(seat);auto& state=simulation.status();simulation.timing=player.timing;
+        state.input.buttons=committed_buttons[seat];state.bomb_input.previous_buttons=previous_buttons[seat];previous_buttons[seat]=committed_buttons[seat];
+    }
+#endif
     if(recording_game){recording.input.physical=buttons;publish_input(recording.input);}else if(playing_replay)publish_input(playback.input);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    else {
+        ReplayInputState shared_input{};shared_input.current=buttons;shared_input.previous=player_state.bomb_input.previous_buttons;
+        publish_input(shared_input);
+    }
+#endif
     // Practice cheats run after input publication so F6 can press the bomb key.
     update_practice(*this,session);
     synchronize();return !invalid();

@@ -152,6 +152,9 @@ void mouse(int type,float x,float y){mouse_x=x;mouse_y=y;if(type==1)mouse_down=t
 void update_input(BrowserRuntime& runtime){if(!initialized)return;++input_generation;auto* keys=runtime.keyboard_state();const u32 bits=bridge_keys();for(int i=0;i<256;i++){const bool down=keys[i]!=0||bridge_key_down(i,bits);key_pressed[i]=down&&!key_down[i];key_down[i]=down;}auto& state=runtime.app.session.practice;if(!state.enabled){menu_open=tracker_open=advanced_open=false;publish_menu(false);return;}if(pressed(VK_BACK)&&!ImGui::IsAnyItemActive())menu_open=!menu_open;if(pressed(VK_TAB)&&!ImGui::IsAnyItemActive()&&runtime.app.in_game())tracker_open=!tracker_open;if(pressed(VK_F12))advanced_open=!advanced_open;if(menu_open&&runtime.app.in_game()&&!state.replay){for(int i=0;i<6;i++)if(pressed(VK_F1+i))toggle_cheat(runtime,i);if(pressed(VK_F7))state.everlasting_bgm=!state.everlasting_bgm;}if(pressed(VK_ESCAPE)&&advanced_open)advanced_open=false;publish_menu(menu_open);}
 bool captures_game_input(){return advanced_open||practice_was_open;}
 void render(BrowserRuntime& runtime,touhou::sdl::Renderer& renderer){if(!initialized)return;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+ if(runtime.app.session.netplay.Configured())return;
+#endif
  if(rendered_generation==input_generation){if(frame_drawn)renderer.render_imgui(ImGui::GetDrawData(),runtime.backbuffer());return;}
  rendered_generation=input_generation;auto& io=ImGui::GetIO();io.DeltaTime=1.f/60.f;io.DisplaySize={640,480};io.MousePos={mouse_x,mouse_y};io.MouseDown[0]=mouse_down;io.KeyCtrl=key_down[VK_CONTROL];io.KeyShift=key_down[VK_SHIFT];io.KeyAlt=key_down[VK_MENU];io.ConfigDragClickToInputText=desktop_pointer;for(int i=0;i<256;i++)io.KeysDown[i]=key_down[i];
  // Desktop thprac numeric fields should be directly editable: ImGui's drag

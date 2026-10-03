@@ -4,10 +4,36 @@
 #include <map>
 #include "ResourceManager.hpp"
 #include "../../../portable/input/MotionTrack.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/ReplayArchive.hpp"
+#endif
 namespace th08 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace multiplayer {class AudioEvents;}
+#endif
 struct BrowserTexture {u32 handle,width,height,format,pitch,data,size,revision;};
 class GameAudioManager;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace multiplayer {class TextureJournal;class RollbackDriver;}
+#endif
 class BrowserRuntime:public ApplicationPlatform {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+    friend class multiplayer::TextureJournal;
+    friend class multiplayer::RollbackDriver;
+    bool correction_present_suppressed=false;
+    bool correction_visual_suppressed=false;
+    bool discard_network_shutdown_writes=false;
+    Netplay::FrameInput device_motion{};
+    std::unique_ptr<multiplayer::RollbackDriver> multiplayer_driver;
+    u32 multiplayer_logic_frame=0;
+    GameConfiguration replay_boot_configuration{};
+    std::vector<u8> replay_boot_score;
+    std::map<std::string,std::vector<u8>> replay_shadow_files;
+    bool replay_viewer=false,replay_menu_opened=false,replay_finished=false;
+    std::string replay_request;
+    u32 replay_requested_stage=0,replay_seek_target=0;
+#endif
     struct Graphics:SpriteBackend {
         BrowserRuntime& r;explicit Graphics(BrowserRuntime& r):r(r){}
 #ifdef TH_NATIVE_PLATFORM
@@ -43,8 +69,57 @@ public:
     void begin_motion(i32 stage,bool initial,bool replay,bool record)override{motion.begin(stage,initial,replay,record);}
     bool load_motion(const u8* data,u32 size)override{return motion.load(data,size,8);}
     i32 replay_touch_points(ReplayTouchPoint*,i32)override;
-    bool cheat_movement_used()const override{return motion.cheat_movement_used;}
+    bool cheat_movement_used()const override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(app.session.multiplayer_session.configured){
+            if(app.session.multiplayer_cheat_movement_used)return true;
+            for(const auto& seat:app.game.roster.seats)if(seat.player&&seat.player->status().unlimited_movement_used)return true;
+            return false;
+        }
+#endif
+        return motion.cheat_movement_used;
+    }
     BrowserRuntime();~BrowserRuntime();
+#ifdef TH_MULTIPLAYER_FIXTURES
+    bool diagnostic_audio_clock_independent();
+    bool diagnostic_audio_routing();
+#endif
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    multiplayer::ReplayArchive replay_archive;
+    bool prepare_replay(const u8*,u32,u32 stage);
+    bool begin_replay_recording();
+    bool set_replay_viewer();
+    bool ReplayViewer()const{return replay_viewer;}
+    bool ReplayFinished()const{return replay_finished;}
+    bool ReplaySeeking()const{return replay_archive.Playing()&&replay_archive.Cursor()<replay_seek_target;}
+    u32 ReplaySeekTarget()const{return replay_seek_target;}
+    const char* ReplayRequest()const{return replay_request.c_str();}
+    u32 ReplayRequestedStage()const{return replay_requested_stage;}
+    void exit_replay(){if(app.session.netplay.Playback())replay_finished=true;}
+    bool request_multiplayer_replay(const char*,u32)override;
+    bool save_multiplayer_replay(i32,const char*)override;
+    bool save_confirmed_multiplayer_replay(i32,const char*);
+    bool export_multiplayer_replay(std::vector<u8>& out){return replay_archive.Encode(out);}
+    bool logical_frame_advanced()const{return !app.session.netplay.Configured()||app.session.network_frame_open;}
+    bool finish_network_frame();
+    bool connect_network(const char* relay);
+    bool connect_spectator(const char* relay,const char* id);
+    bool pump_network();
+    multiplayer::RollbackDriver* network_driver(){return multiplayer_driver.get();}
+    void set_device_motion(i32 mode,float x,float y,bool touch,bool bomb){
+        device_motion={};device_motion.touchUsed=touch;device_motion.touchBomb=bomb;
+        if(mode==1||mode==2){device_motion.analogMode=Netplay::AnalogMode::DirectTouch;device_motion.x=x;device_motion.y=y;device_motion.unlimited=mode==2;}
+    }
+    void set_device_touch_delta(i32 mode,float x,float y,bool begin,bool touch,bool bomb){
+        device_motion={};device_motion.touchUsed=touch;device_motion.touchBomb=bomb;
+        device_motion.analogMode=begin?Netplay::AnalogMode::DirectTouchBegin:Netplay::AnalogMode::DirectTouchDelta;
+        device_motion.x=x;device_motion.y=y;device_motion.unlimited=mode==2;
+    }
+    Netplay::FrameInput device_sample(u16 buttons)const{auto result=device_motion;result.buttons=buttons;result.touchBomb=result.touchBomb&&(buttons&2);return result;}
+    bool bind_audio_events(multiplayer::AudioEvents*);
+    bool commit_audio_events(multiplayer::AudioEvents&,u32 confirmed,u32 simulated);
+    void begin_multiplayer_clock(){multiplayer_logic_frame=0;app.statistics.state={};}
+#endif
     static std::string path(const char*);
     bool put(const char*,const u8*,u32);bool put_archive(const u8*,u32);bool put_font(i32,const u8*,u32);
     bool mount_archive(std::unique_ptr<ArchiveSource> source){return !prepared&&resources_.mount_archive(std::move(source));}
@@ -56,13 +131,18 @@ public:
     i32 status(i32)const;
     bool audio_tick(u32 now);
     void suppress_visual_draw(bool value){visual_suppressed=value;}
-    bool visual_draw_suppressed()const{return visual_suppressed;}
+    bool visual_draw_suppressed()const{return visual_suppressed
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        ||correction_visual_suppressed
+#endif
+        ;}
     bool visual_capture_pending()const{return pending_capture.target!=0;}
     u8* keyboard_state(){return keys;}
     void controller_state(i32 x,i32 y,const u8* b,u32 n,bool available){pad={};pad.x=x;pad.y=y;pad.available=available;if(b)std::memcpy(pad.buttons,b,std::min<u32>(128,n));InputController::bindings(pad,app.title.context.controller_state);}
     std::vector<u8> read(const char*)override;std::vector<u8> read_prefix(const char*,u32)override;
     bool write(const char*,const u8*,u32)override;std::vector<std::string> user_replays()override;
     void calendar(char[6],char[20])override;u32 milliseconds()override;u64 performance_counter()override;
+    u32 presentation_milliseconds()override;
     u16 poll_input()override;void begin_frame()override;bool present()override;void reset_device()override;void discard_graphics()override;
     bool load_surface(i32,const char*)override;void release_surface(i32)override;bool has_surface(i32)override;
     void draw_surface(i32,i32,i32)override;void capture_screen(i32)override;bool capture_pending()override{return captured;}

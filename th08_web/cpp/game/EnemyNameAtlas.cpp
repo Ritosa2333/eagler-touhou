@@ -22,6 +22,9 @@ bool EnemyNameAtlas::copy(AnmLoaded& front,i32 index){
     auto output=surface(dest->image);auto input=surface(const_cast<TexturePixels&>(source->image));renderer.flush();
     // D3DX_DEFAULT is triangle filtering; equal-sized name rectangles take its
     // exact copy path. No alpha blending is performed on the name atlas.
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!textures.before_write(entries[0].texture))return false;
+#endif
     if(TextureResample::triangle(output,to,input,from,true,true,false))return false;textures.changed(entries[0].texture);return true;
 }
 }

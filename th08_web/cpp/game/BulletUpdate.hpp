@@ -1,13 +1,26 @@
 #pragma once
 #include "BulletMotion.hpp"
 namespace th08 {
+#ifdef TH_MULTIPLAYER_FIXTURES
+const double* fixture_bullet_update_profile() noexcept;
+bool fixture_bullet_target_filter(bool enabled) noexcept;
+#endif
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+namespace multiplayer {class PoolsJournal;}
+#endif
 struct BulletUpdateActions {
     virtual ~BulletUpdateActions()=default;
     // 0: spawn/barrier 00449ff0, 1: graze 0044a470, 2: hit 0044a230.
     virtual i32 collision(i32 kind,BulletState& bullet)=0;
     virtual void item(const Vec3& position,i32 type)=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    virtual Vec3 target(const Vec3& origin)=0;
+#endif
 };
 class BulletUpdate {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::PoolsJournal;
+#endif
 public:
     BulletUpdate(BulletManagerState& state,BulletCreation& creation,Rng& rng):state(state),creation(creation),animation(rng){}
     FrameTiming timing;Vec3 player;bool paused=false;

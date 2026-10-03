@@ -23,6 +23,9 @@ class TitleScene:private TitleFlowActions {
     GameplaySession& session;AnmLibrary& library;AnmRenderer& renderer;TitlePlatform& platform;ScreenEffects& screen;AnmExecutor animations;
     Chain* chain=nullptr;ChainElement calculation,drawing;bool pending_load=false,failed=false;
     std::vector<u8> read_score()override{return platform.read_score();}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    bool before_spells_write()override{return platform.before_spells_write();}
+#endif
     AnmLoaded* preload_animation(i32 index,const char* path)override;
     bool preload_background(const char* path)override{return platform.load_surface(0,path)==0;}
     void loading(bool capture)override;
@@ -39,6 +42,9 @@ public:
     bool service();bool modal_step();
     bool modal()const{return information.active;}
     bool active()const{return chain!=nullptr;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    bool ready_for_session()const{return active()&&!pending_load&&!modal()&&!invalid();}
+#endif
     bool invalid()const{return failed||animations.invalid;}
     void input(const InputFrame& input,const FrameTiming& timing){context.input=input;animations.timing=timing;}
 };

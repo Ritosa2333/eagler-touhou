@@ -7,7 +7,12 @@ struct GaugeThresholds {
 };
 class GameGauge {
 public:
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    GameGauge(GameGlobals& values,GaugeThresholds& thresholds):values{values.gauge,values.gauge_copy},thresholds(thresholds){}
+    GameGauge(i16& gauge,i16& previous,GaugeThresholds& thresholds):values{gauge,previous},thresholds(thresholds){}
+#else
     GameGauge(GameGlobals& values,GaugeThresholds& thresholds):values(values),thresholds(thresholds){}
+#endif
     i16 value()const noexcept{return values.gauge;}
     bool human_bonus()const noexcept{return value()<=thresholds.human_bonus;}
     bool human()const noexcept{return value()<=thresholds.human;}
@@ -16,7 +21,12 @@ public:
     void set(i16 value)noexcept{values.gauge=value;}
     void add(i16 amount,bool bomb,bool force)noexcept;
 private:
-    GameGlobals& values;GaugeThresholds& thresholds;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    struct GaugeValues {i16& gauge; i16& gauge_copy;} values;
+#else
+    GameGlobals& values;
+#endif
+    GaugeThresholds& thresholds;
 };
 // Original rank changes retain the fractional counter at a clamped limit.
 struct GameRank {

@@ -16,6 +16,10 @@ class EnemyDeath {
 public:
     EnemyDeath(EclExecutor& e,EnemyFamiliars& f,EnemyFamiliarContext& i,EnemyDropSequence& d,Rng& r,GameGauge& g,GameValues& v,EnemyFamiliarActions& p,EnemyDeathActions& a,u16& replay_flags)
       :executor(e),familiars(f),input(i),drops(d),random(r),gauge(g),values(v),visuals(p),actions(a),replay(replay_flags){}
-    bool run(EclVm&,i32 slot,bool focused,i32 bomb_hit);
+    bool run(EclVm&,i32 slot,bool focused,i32 bomb_hit
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        ,GameGauge* owner_gauge=nullptr,bool owner_bomb=false
+#endif
+    );
 };
 }

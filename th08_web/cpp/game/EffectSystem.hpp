@@ -6,15 +6,29 @@
 #include "AnmExecutor.hpp"
 #include "GameValues.hpp"
 #include "PresentationVisual.hpp"
+#include "EffectPoolLayout.hpp"
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+#include "../multiplayer/PlayerEffectSlots.hpp"
+#endif
 #include <array>
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include <memory>
+namespace Netplay {class RollbackJournal;}
+namespace th08::multiplayer {class PoolsJournal;}
+#endif
 namespace th08 {
 struct EffectPoolState {
     i32 cursor;u32 reserved4;i32 active_count;u32 reserved0c[4];
-    EffectState objects[654],sentinels[5];EffectState* tails[5];i32 frames;AnmLoaded* base_animation;AnmLoaded* stage_animation;
+    EffectState objects[effect_pool_layout::object_count],sentinels[5];EffectState* tails[5];i32 frames;AnmLoaded* base_animation;AnmLoaded* stage_animation;
     EffectPoolState(){std::memset(this,0,sizeof(*this));}
 };
+#if !defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
 static_assert(sizeof(EffectPoolState)==0x8b05c&&offsetof(EffectPoolState,objects)==0x1c);
 static_assert(offsetof(EffectPoolState,sentinels)==0x89f5c&&offsetof(EffectPoolState,frames)==0x8b050);
+#else
+static_assert(sizeof(EffectPoolState)==0x9015c&&offsetof(EffectPoolState,objects)==0x1c);
+static_assert(offsetof(EffectPoolState,sentinels)==0x8f05c&&offsetof(EffectPoolState,frames)==0x90150);
+#endif
 struct EffectDefinition {i32 script;EffectUpdate update,initialize;};
 class EffectSystem {
     AnmExecutor& anm;AnmRenderer& renderer;GameValues& values;u16& replay_flags;
@@ -22,16 +36,29 @@ class EffectSystem {
         Vec3 position{},center{};float radius=0,angle=0,width=0,height=0,angle_y=0,frequency=0;
         i32 age=0,segments=0;u8 kind=0;bool active=false;presentation::VisualSample visual;Vec3 projected_offset{};
     };
-    std::array<PresentationSample,654> presentation_previous{};
+    std::array<PresentationSample,effect_pool_layout::object_count> presentation_previous{};
     presentation::SnapshotMarker presentation_marker;
     Vec3 presentation_position(const EffectState&)const;
     void presentation_geometry(const EffectState& source,EffectState& draw)const;
     void presentation_visual(const EffectState& source,EffectState& draw)const;
     void begin(EffectState&,i32 kind,u32 color,bool depth);
     void initialize(EffectState&,i32 kind);
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    friend class multiplayer::PoolsJournal;
+    std::array<std::unique_ptr<SpriteVertex[]>,effect_pool_layout::object_count> geometry_storage;
+    Netplay::RollbackJournal* rollback_journal=nullptr;
+    bool capture_slot(EffectState&);
+    void release_geometry(EffectState&);
+    EffectState* fixed_at(i32 relative_slot,i32 local_slot,i32 kind,Vec3 position,u32 color,const Vec3* parameters);
+    i32 effect_seat(const EffectState&)const;
+    bool player_owner(const EffectState&,const Vec3*&,DamageRegions*&)const;
+#endif
     void draw_list(u32 index,float depth,bool offset_before_depth);
     static void projected(AnmVm&,Vec3&,void*);
 public:
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    i32 initialize_geometry(EffectState&,EffectDraw callback,bool alternative=false);
+#endif
     EffectPoolState& state;EffectEnvironment& environment;Vec2 arcade{32,16};bool paused=false,invalid=false;u8 quality=2;
     EffectTransforms transforms;EffectSpace space;EffectGeometry geometry;EffectBomb bomb;
     EffectSystem(EffectPoolState&,EffectEnvironment&,AnmExecutor&,AnmRenderer&,Rng&,ScreenEffects&,DamageRegions&,GameValues&,u16& replay_flags);
@@ -49,12 +76,27 @@ public:
     EffectState presentation_copy(const EffectState&)const;
     EffectState* spawn(i32 kind,Vec3 position,i32 count,u32 color,const Vec3* parameters=nullptr);
     EffectState* fixed(i32 kind,Vec3 position,i32 slot,u32 color,const Vec3* parameters=nullptr);
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    EffectState* fixed_player(i32 seat,i32 local_slot,i32 kind,Vec3 position,u32 color,const Vec3* parameters=nullptr);
+    EffectState* replace_fixed(EffectState& current,i32 kind,Vec3 position,u32 color,const Vec3* parameters=nullptr);
+    // Bind before allocating P1/P2 fixed effects; referenced position and
+    // damage storage must keep stable addresses for the session lifetime.
+    bool bind_player(i32 seat,const Vec3& position,DamageRegions& damage);
+    i32 follow_player(EffectState&);
+    i32 burst(EffectState&,bool rotating);
+#endif
     EffectState* overlay(i32 kind,Vec3 position,i32 count,u32 color);
-    EffectState* group(i32 slot){return slot>=0&&slot<13?&state.objects[640+slot]:nullptr;}
+    EffectState* group(i32 slot){return slot>=0&&slot<effect_pool_layout::shared_fixed_count?&state.objects[effect_pool_layout::fixed_pool_begin+slot]:nullptr;}
     void shift_glows(const Vec3& offset);
     JobResult update();JobResult draw();JobResult draw_alternative();JobResult draw_background();
 #if defined(TH_PRESENTATION_AUDIT)
     const float* audit_presentation_sample(uintptr_t object)const;
+#endif
+private:
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    struct PlayerOwner {const Vec3* position=nullptr;DamageRegions* damage=nullptr;bool bound=false;};
+    DamageRegions& host_damage;
+    std::array<PlayerOwner,player_effect_slots::seat_count> player_owners{};
 #endif
 };
 }

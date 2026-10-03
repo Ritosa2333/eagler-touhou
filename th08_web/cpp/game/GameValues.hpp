@@ -52,7 +52,7 @@ public:
     void add_clock(i8 amount){globals.clock_time=i8(u8(globals.clock_time)+u8(amount));}
 private:
     GameGlobals& globals;
-    GameConfiguration &game_config,&display_config;
+    [[maybe_unused]] GameConfiguration &game_config,&display_config;
     HighScore& high_score;
     Rng& random;
     i32 random_integer();

@@ -11,6 +11,10 @@
 #include "GameplayStart.hpp"
 #include "ReplayPlayback.hpp"
 #include "ReplayRecording.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/PlayerRoster.hpp"
+#include "../multiplayer/CooperativeLifecycle.hpp"
+#endif
 namespace th08 {
 struct ReplayTouchPoint {float x=0,y=0;};
 struct GameplayPlatform:PlayerScenePlatform,TextWriter,AsciiOverlay {
@@ -34,6 +38,9 @@ struct GameplayPlatform:PlayerScenePlatform,TextWriter,AsciiOverlay {
 // GameRuntime prototype. The supplied platform implements resource/device I/O.
 class GameplayScene:private BackgroundResources,private EnemyResources,private GuiResources,private SpellResources,private EffectResources,
                     private EnemySystemActions,private BulletSystemAudio,private SpellPresentationActions,private BackgroundActions,private BackgroundDrawActions,private DialogueActions,private EclLiveValues,private MenuActions,private GameplayStartActions {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    friend class multiplayer::WorldJournal;
+#endif
     GameplaySession& session;TextureStore& textures;AnmLibrary& library;AnmRenderer& renderer;GameplayPlatform& platform;
     Chain owned_chain;Chain& chain;AnmExecutor animations;
     ChainElement player_calc,player_high,player_low,ascii_calc,ascii_high,ascii_low,control_calc,control_draw,replay_calc,replay_after,record_calc,replay_bookkeeping;
@@ -80,6 +87,7 @@ class GameplayScene:private BackgroundResources,private EnemyResources,private G
     bool capture(const TextureCaptureRequest& r)override{return platform.capture_texture(r);}
     void music(MenuMusic m,float seconds)override{if(practice_bgm_filter(m==MenuMusic::Pause||m==MenuMusic::PartialFadeOut?2:m==MenuMusic::Stop?1:3,0))return;platform.menu_music(m,seconds);}
     void save_score()override{platform.save_score();}
+    bool before_score_tables_write()override;
     std::vector<u8> read_score()override{return platform.read_score();}
     void preload_music(i32 slot,const char* path)override{platform.preload_music(slot,path);}
     u32 now()override{return platform.milliseconds();}
@@ -89,6 +97,7 @@ class GameplayScene:private BackgroundResources,private EnemyResources,private G
     // music command. command: 0=play 1=stop/fade 2=pause 3=resume.
     bool practice_bgm_filter(i32 command,i32 song);
     JobResult update_player();JobResult update_ascii();JobResult update_control();JobResult draw_ascii();
+    JobResult draw_players(bool impacts);
     JobResult update_replay();JobResult finish_replay_frame();
     JobResult update_recording();JobResult sample_replay_frame();void publish_input(const ReplayInputState&);
     void bind_jobs();
@@ -97,11 +106,32 @@ class GameplayScene:private BackgroundResources,private EnemyResources,private G
     AsciiManager owned_ascii;
 public:
     AsciiManager& ascii;AsciiContext ascii_context;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    multiplayer::WorldJournal* world_journal=nullptr;
+#endif
     EclGlobals globals;EclProgram program;
     GuiState hud;GuiImplState display;DialogueContext dialogue_context;GuiContext gui_context;
     BackgroundState background;BackgroundContext background_context;
     PlayerSimulationState player_state;ShotResource shots[2];
     PlayerScene player_services;PlayerSimulation player;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Stable owners: callbacks, effects and world queries retain these addresses.
+    struct GuestPilot {
+        PlayerSimulationState state;ShotResource shots[2];
+        PlayerScene services;PlayerSimulation simulation;
+        GuestPilot(GameplayScene&,u32 seat);
+    };
+    std::unique_ptr<GuestPilot> guest_pilots[2];
+    PlayerRoster roster;
+    bool enhance_local_player_visibility=false; // non-authoritative viewer option
+    multiplayer::CooperativeState cooperation;
+    u16 committed_buttons[3]{},previous_buttons[3]{};
+    void enter_spirit(u32 seat);
+    void update_cooperation();
+    void reset_team_after_continue();
+    PlayerSimulation& pilot(u32 seat){return seat?guest_pilots[seat-1]->simulation:player;}
+    PlayerScene& pilot_services(u32 seat){return seat?guest_pilots[seat-1]->services:player_services;}
+#endif
     ScreenEffects screen;EffectPoolState effect_pool;EffectEnvironment environment{};
     EffectSystem effect_system;ItemSystem items;EclExecutor executor;BulletManagerState projectile_pool;
     EnemySystem enemies;BulletSystem bullets;
@@ -123,11 +153,22 @@ public:
     // true when the stop must be skipped to keep the locked song playing.
     bool practice_bgm_stop(){return practice_bgm_filter(1,0);}
     bool update(u16 buttons,float rate=1,bool force_unit=false);bool draw();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Exactly one committed input lane per active seat per logical tick.
+    bool commit_inputs(const u16* buttons,u32 count);
+    bool commit_frame_inputs(const Netplay::FrameInput*,u32);
+#endif
     // Application-owned chains run the same jobs alongside the supervisor,
     // loading display and FPS counter, preserving their original priorities.
     bool prepare_frame(u16 buttons,float rate=1,bool force_unit=false);
     bool ready()const{return loaded&&!invalid();}
     u32 faults()const{return u32(failed)|(u32(animations.invalid)<<1)|(u32(player_services.invalid())<<2)|(u32(player.invalid())<<3)|(u32(enemies.invalid())<<4)|(u32(effect_system.invalid)<<5)|(u32(items.invalid())<<6)|(u32(bullets.invalid())<<7)|(u32(background_script.invalid)<<8);}
-    bool invalid()const{return failed||animations.invalid||player_services.invalid()||player.invalid()||enemies.invalid()||effect_system.invalid||items.invalid()||bullets.invalid()||background_script.invalid;}
+    bool invalid()const{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(screen.invalid())return true;
+        for(const auto& guest:guest_pilots)if(guest&&(guest->services.invalid()||guest->simulation.invalid()))return true;
+#endif
+        return failed||animations.invalid||player_services.invalid()||player.invalid()||enemies.invalid()||effect_system.invalid||items.invalid()||bullets.invalid()||background_script.invalid;
+    }
 };
 }

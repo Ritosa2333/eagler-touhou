@@ -41,7 +41,7 @@ void FrameStatistics::calculate(bool draw){
     sample_statistics(state,context,clock,draw,presentation_started);if(draw)draw_text();
 }
 void FrameStatistics::presentation_frame(){
-    const u32 now=clock.milliseconds();
+    const u32 now=clock.presentation_milliseconds();
     if(!presentation_started){presentation_started=true;presentation_origin=now;presentation_frames=0;}
     if(now<presentation_origin){presentation_origin=now;presentation_frames=0;}
     ++presentation_frames;

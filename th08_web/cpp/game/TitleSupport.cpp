@@ -47,7 +47,12 @@ void TitleMenus::SetInterruptArray(AnmVm* vms,i32 count,i16 value){for(i32 i=0;i
 void TitleMenus::DrawTextCentered(AnmVm* vm,u32 color,u32 outline,const char* message){text.draw(*vm,TextAlignment::Center,color,outline,message);}
 void TitleMenus::DrawTextLeft(AnmVm* vm,u32 color,u32 outline,const char* message){text.draw(*vm,TextAlignment::Left,color,outline,message);}
 void TitleMenus::InitializeAndSetSprite(AnmLoaded* file,AnmVm* vm,i32 index){vm->Initialize();vm->anmFile=file;file->SetSprite(vm,index);}
-void TitleMenus::UnlockLastWordSpellCards(){SpellProgress(context.spells,context.clears,context.last_words).unlock_last_words();}
+void TitleMenus::UnlockLastWordSpellCards(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!actions.before_spells_write())return;
+#endif
+    SpellProgress(context.spells,context.clears,context.last_words).unlock_last_words();
+}
 void TitleMenus::execute_animations(){for(i32 i=0;i<state.vmCount;++i)executor.execute(state.vms[i]);if(state.currentHelpTextVm)executor.execute(*state.currentHelpTextVm);}
 void TitleMenus::ChangeCurrentScreen(TitleCurrentScreen screen){state.previousScreen=state.currentScreen;state.currentScreen=screen;state.stateTimer=state.stateTimer2=state.currentScreenState=state.idleFrames=0;}
 i32 TitleMenus::SetKeyNumberSprite(AnmVm* vms,i16 key){
