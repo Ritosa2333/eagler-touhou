@@ -567,6 +567,12 @@ const i32* mp_fixture_status(BrowserRuntime* runtime){
     return out;
 }
 
+__attribute__((export_name("mp_fixture_native_bombs")))
+i32 mp_fixture_native_bombs(BrowserRuntime* runtime,u32 seat){
+    if(!runtime||!runtime->app.in_game()||seat>=runtime->app.session.player_count)return -1;
+    return Scalar::truncate(runtime->app.game.pilot(seat).profile(false).initial_bombs);
+}
+
 // Controlled item initial conditions and real native homing operations. These
 // are intentionally absent from ordinary and production multiplayer binaries.
 __attribute__((export_name("mp_fixture_items")))
@@ -587,6 +593,18 @@ u32 mp_fixture_items(BrowserRuntime* runtime,u32 kind,u32 seat){
         return !items.invalid();
     case 5:items.reset();return 1;
     case 6:{const auto* value=items.spawn({180,340,0},2,1);return value&&value->active?1:0;}
+    case 7:case 8:case 9:{
+        items.reset();
+        if(kind==9)items.spawn({180,100,0},3,2);
+        else items.spawn_enemy_drop({180,100,0},kind==7?3:5,0);
+        u32 count=0;const ItemState* first=nullptr;
+        for(const auto& item:items.status().items)if(item.active){
+            if(first&&item.position.x==first->position.x)return 0;
+            if(kind!=9&&runtime->app.session.player_count==3&&item.velocity.y>=0)return 0;
+            first=&item;++count;
+        }
+        return count;
+    }
     default:return 0;
     }
 }

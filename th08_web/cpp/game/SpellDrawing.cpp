@@ -48,10 +48,18 @@ bool SpellDrawing::draw(){
     const auto vm=[&](u32 i)->AnmVm&{return presentation::render_only?presented[i]:v[i];};
     const auto no_rotation=[&](u32 i){TH08_AUDIT_SCOPE(Spell,&v[i],v[i].currentTimeInScript.current,i);r.draw_no_rotation(vm(i));};
     const auto draw_2d=[&](u32 i){TH08_AUDIT_SCOPE(Spell,&v[i],v[i].currentTimeInScript.current,i);r.draw_2d(vm(i));};
-    if(vm(0).visible){no_rotation(0);no_rotation(2);draw_2d(4);}
+    if(vm(0).visible){
+#ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        no_rotation(0);
+#endif
+        no_rotation(2);draw_2d(4);
+    }
     if(vm(1).visible){
         const Vec3 saved=vm(1).pos;vm(1).pos={add(vm(1).pos.x,vm(1).pos2.x),add(vm(1).pos.y,vm(1).pos2.y),add(vm(1).pos.z,vm(1).pos2.z)};
-        no_rotation(1);vm(1).pos=saved;no_rotation(3);draw_2d(5);
+#ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        no_rotation(1);
+#endif
+        vm(1).pos=saved;no_rotation(3);draw_2d(5);
     }
     if(vm(6).visible){vm(10).pos=vm(6).pos;vm(10).pos.x=add(vm(10).pos.x,-32);no_rotation(10);draw_2d(6);}
     if(!vm(7).visible)return true;

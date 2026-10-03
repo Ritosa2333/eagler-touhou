@@ -65,9 +65,9 @@ void GameplayScene::update_cooperation(){
         if(event.kind==multiplayer::CooperativeEventKind::Revive){
             const u32 target=u32(event.target);
             auto& recipient=pilot(target);
-            session.pilot_values[target].set_bombs(0);
+            session.pilot_values[target].set_bombs(multiplayer::base_life_bombs(recipient.profile(false).initial_bombs));
             session.pilot_values[target].set_power(64);
-            if(Scalar::truncate(session.pilot_resources[target].lives)<8)session.pilot_values[target].add_lives(1);
+            session.pilot_values[target].set_lives(0);
             recipient.revive_spirit();
             roster.seats[target].available=true;items.set_player_available(target,true);
             pilot_services(target).sync_values();
@@ -78,8 +78,8 @@ void GameplayScene::update_cooperation(){
 void GameplayScene::reset_team_after_continue(){
     multiplayer::reset(cooperation,u8(session.player_count));
     for(u32 seat=0;seat<session.player_count;++seat){
-        multiplayer::begin_base_life(session.pilot_resources[seat],float(session.config.lives),0);
         auto& simulation=pilot(seat);
+        multiplayer::begin_base_life(session.pilot_resources[seat],float(session.config.lives),0,simulation.profile(false).initial_bombs);
         if(simulation.status().life.state==4)simulation.revive_spirit();
         simulation.place_multiplayer_spawn(seat,session.player_count);
         roster.seats[seat].available=true;items.set_player_available(seat,true);

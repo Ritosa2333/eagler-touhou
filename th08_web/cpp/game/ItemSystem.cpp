@@ -84,6 +84,13 @@ ItemState* ItemSystem::spawn(const Vec3& position,i32 type,i32 mode){
     // The multiplier belongs to the configured roster, not those bindings or
     // the temporarily operable seats after a death.
     const u32 copies=(type==0||type==2)?participant_count:1;
+    return spawn_batch(position,type,mode,copies);
+}
+ItemState* ItemSystem::spawn_enemy_drop(const Vec3& position,i32 type,i32 mode){
+    if((type==3||type==5)&&participant_count>=3)return spawn_batch(position,type,mode,2);
+    return spawn(position,type,mode);
+}
+ItemState* ItemSystem::spawn_batch(const Vec3& position,i32 type,i32 mode,u32 copies){
     ItemState* first=nullptr;
     for(u32 copy=0;copy<copies;++copy){
         Vec3 origin=position;

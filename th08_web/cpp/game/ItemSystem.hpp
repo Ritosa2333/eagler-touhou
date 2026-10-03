@@ -107,6 +107,8 @@ public:
     ItemState* spawn(const Vec3&,i32 type,i32 mode);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     ItemState* spawn_single(const Vec3&,i32 type,i32 mode);
+    ItemState* spawn_enemy_drop(const Vec3&,i32 type,i32 mode);
+    ItemState* spawn_batch(const Vec3&,i32 type,i32 mode,u32 copies);
 #endif
     bool update();
     bool draw(const Vec2& offset);

@@ -44,7 +44,13 @@ void EnemySystem::parameter_effect(i32 kind,const Vec3& p,const Vec3& parameters
 EffectState* EnemySystem::attached_effect(i32 kind,const Vec3& p,i32 count,u32 color,bool overlay){publish_player();auto* effect=overlay?effects.overlay(kind,p,count,color):effects.spawn(kind,p,count,color);failed|=effects.invalid;return effect;}
 bool EnemySystem::clear_projectiles(i32 mode){publish_player();PlayerCollision::BarrierBatch barriers(&player.collision());failed|=!th08::cancel_projectiles(projectiles,mode,player.status().cancel_item,this);return !failed;}
 void EnemySystem::clear_projectiles_near(const Vec3& p,float radius){th08::cancel_projectiles_near(projectiles,p,radius,*this);}
-void EnemySystem::item(const Vec3& p,i32 kind,i32 mode){publish_player();items.spawn(p,kind,mode);failed|=items.invalid();}
+void EnemySystem::item(const Vec3& p,i32 kind,i32 mode){publish_player();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    items.spawn_enemy_drop(p,kind,mode);
+#else
+    items.spawn(p,kind,mode);
+#endif
+    failed|=items.invalid();}
 AnmVm* EnemySystem::overlay(i32 kind,const Vec3& p,i32 count,u32 color){publish_player();auto* result=effects.overlay(kind,p,count,color);failed|=effects.invalid;return result;}
 i32 EnemySystem::graze(const Vec3& p,const Vec3& size){
     publish_player();

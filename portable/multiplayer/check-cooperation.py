@@ -95,6 +95,7 @@ def rescue(browser):
     page = boot(browser)
     before_death = status(page)
     donor_bombs = call(page, 'multiplayerSmoke.status()')[11]
+    recipient_bombs = call(page, 'multiplayerSmoke.status()')[23]
     assert call(page, 'multiplayerSmoke.fixtureDie(1)') == 1
     call(page, 'multiplayerSmoke.ticks(40)')
     initial = status(page)
@@ -108,15 +109,16 @@ def rescue(browser):
     assert pending[6] == 89 and pending[10] == 1, pending
     call(page, 'multiplayerSmoke.ticks(1)')
     revived = status(page)
-    assert revived[10] == 0 and revived[14] == 3 and revived[13] == 1, revived
+    assert revived[10] == 0 and revived[14] == 3 and revived[13] == 0, revived
     assert revived[8] == initial[8] - 1, (initial, revived)
     resources = call(page, 'multiplayerSmoke.status()')
-    assert resources[11] == donor_bombs and resources[23] == 0 and resources[22] == 64, resources
+    assert resources[11] == donor_bombs and resources[23] == recipient_bombs and resources[22] == 64, resources
     call(page, 'multiplayerSmoke.ticks(30)')
     assert status(page)[8] == revived[8], 'holding focus repeated life transfer'
+    assert call(page, 'multiplayerSmoke.fixtureOrdinaryDeathSetup(1)')
     assert call(page, 'multiplayerSmoke.fixtureGrazedBulletHit(1)')
     call(page, 'multiplayerSmoke.ticks(40)')
-    assert call(page, 'multiplayerSmoke.status()')[23] == 2, 'ordinary respawn must restore base Bombs'
+    assert call(page, 'multiplayerSmoke.status()')[23] == recipient_bombs, 'ordinary respawn must restore loadout Bombs'
     page.close()
     return {'case': 'native-final-death-and-rescue', 'passed': True,
             'spirit': initial, 'at_89': pending, 'revived': revived}
@@ -152,6 +154,7 @@ def wipe_ends_run(browser):
 def three_player_rescue(browser):
     page = boot(browser, [0, 1, 2])
     before_death = status(page)
+    initial_resources = call(page, 'multiplayerSmoke.status()')
     assert call(page, 'multiplayerSmoke.fixtureDie(2)') == 1
     call(page, 'multiplayerSmoke.ticks(40)')
     spirit = status(page)
@@ -167,10 +170,10 @@ def three_player_rescue(browser):
     assert call(page, 'multiplayerSmoke.commit([4,0,0])')
     call(page, 'multiplayerSmoke.ticks(90)')
     revived = status(page)
-    assert revived[15] == 0 and revived[19] == 3 and revived[18] == 1, revived
+    assert revived[15] == 0 and revived[19] == 3 and revived[18] == 0, revived
     assert revived[8] == spirit[8] - 1 and revived[13] == spirit[13], (spirit, revived)
     resources = call(page, 'multiplayerSmoke.status()')
-    assert resources[11] == 2 and resources[35] == 0 and resources[34] == 64, resources
+    assert resources[11] == initial_resources[11] and resources[35] == initial_resources[35] and resources[34] == 64, resources
     page.close()
     return {'case': 'three-player-spirit-priority', 'passed': True,
             'spirit': spirit, 'revived': revived}
@@ -271,7 +274,8 @@ def separated_power_drops(browser):
     for count in (2,3):
         page=boot(browser,list(range(count)))
         value=call(page,'multiplayerSmoke.status()')
-        assert [value[11+12*seat] for seat in range(count)]==[2]*count,value
+        native=[call(page,f'multiplayerSmoke.fixtureNativeBombs({seat})') for seat in range(count)]
+        assert [value[11+12*seat] for seat in range(count)]==[max(1,b-1) for b in native],(native,value)
         for mode in (0,2):
             for kind,reward in ((0,1),(2,8),(4,128)):
                 result=call(page,'v=>multiplayerSmoke.fixturePowerDrops(...v)',[kind,mode])
@@ -291,11 +295,28 @@ def separated_power_drops(browser):
         page.close()
     return {'case':'roster-sized-upward-power-drops-and-single-item-rewards','passed':True,'results':results}
 
+
+def stage_resources_and_loadout_bombs(browser):
+    results=[]
+    for seats in ([0,1],[0,1,2],[3,4,5],[6,7,8],[9,10,11]):
+        page=boot(browser,seats)
+        value=call(page,'multiplayerSmoke.status()')
+        native=[call(page,f'multiplayerSmoke.fixtureNativeBombs({seat})') for seat in range(len(seats))]
+        reduced=[value[11+12*seat] for seat in range(len(seats))]
+        assert reduced==[max(1,b-1) for b in native],(seats,native,reduced)
+        copies=2 if len(seats)==3 else 1
+        for kind in (7,8):
+            assert call(page,f'multiplayerSmoke.fixtureItems({kind})')==copies,(seats,kind)
+        assert call(page,'multiplayerSmoke.fixtureItems(9)')==1,'death Bomb drop was multiplied'
+        results.append({'loadouts':seats,'nativeBombs':native,'initialBombs':reduced,'stageCopies':copies})
+        page.close()
+    return {'case':'stage-resources-and-all-loadout-bombs','passed':True,'results':results}
+
 with sync_playwright() as playwright:
     browser = playwright.chromium.launch(headless=True, args=['--enable-unsafe-swiftshader'])
     try:
         report['browser']=browser.version
-        cases=(separated_power_drops,grazed_bullet_still_hits,death_clear_uses_barrier_owner,point_of_collection_owner,no_global_power_conversion,rescue,three_player_rescue,three_player_power_gift,wipe_ends_run,targeted_item_lifetime,full_item_pool,released_gift_and_reuse)
+        cases=(stage_resources_and_loadout_bombs,separated_power_drops,grazed_bullet_still_hits,death_clear_uses_barrier_owner,point_of_collection_owner,no_global_power_conversion,rescue,three_player_rescue,three_player_power_gift,wipe_ends_run,targeted_item_lifetime,full_item_pool,released_gift_and_reuse)
         selected=[case for case in cases if args.case=='all' or case.__name__==args.case]
         assert selected,'unknown native cooperation case'
         for case in selected:

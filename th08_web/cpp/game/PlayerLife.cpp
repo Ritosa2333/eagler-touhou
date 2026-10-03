@@ -66,9 +66,8 @@ bool PlayerLife::resolve_death(const ShotProfile& profile){
                 if(!(context.cheats&2))actions.add_lives(-1);
                 context.hud_flags=(context.hud_flags&~3u)|2;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-                // Ordinary misses must not refill a character's starting bomb
-                // stock. A teammate's donated revival has its own resources.
-                actions.set_bombs(multiplayer::base_life_bombs);
+                // Every cooperative life uses this loadout's native stock minus one.
+                actions.set_bombs(multiplayer::base_life_bombs(profile.initial_bombs));
 #else
                 actions.set_bombs(Scalar::truncate(profile.initial_bombs));
 #endif

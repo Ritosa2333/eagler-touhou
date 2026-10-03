@@ -167,6 +167,7 @@ window.multiplayerSmoke={
   fixturePlace(seat,x,y,dx=1,dy=1){if(!core.mp_fixture_place)throw Error('Not a fixture build');return core.mp_fixture_place(app,seat,x,y,dx,dy);},
   fixturePower(seat,power){if(!core.mp_fixture_power)throw Error('Not a fixture build');return core.mp_fixture_power(app,seat,power);},
   fixtureItems(kind,seat=0){if(!core.mp_fixture_items)throw Error('Not a fixture build');return core.mp_fixture_items(app,kind,seat);},
+  fixtureNativeBombs(seat){return core.mp_fixture_native_bombs(app,seat);},
   fixtureItemStatus(){if(!core.mp_fixture_item_status)throw Error('Not a fixture build');return Array.from(new Uint32Array(core.memory.buffer,core.mp_fixture_item_status(app),9));},
   fixturePowerDrops(kind,mode){const pointer=core.mp_fixture_power_drops(app,kind,mode);return Array.from(new Int32Array(core.memory.buffer,pointer,24));},
   fixturePocSetup(seat){if(!core.mp_fixture_poc_setup)throw Error('Not a fixture build');return !!core.mp_fixture_poc_setup(app,seat);},
