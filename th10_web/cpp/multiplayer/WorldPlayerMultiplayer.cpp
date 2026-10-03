@@ -356,22 +356,6 @@ struct Frame final:PlayerFrameEnvironment {
         clear_player_offense(player,world.engine.manager.registry);
         initialize_spirit_drift(world,player);
 
-        i32 recipient=-1;std::int64_t best=0;
-        for(u32 seat=0;seat<world.player_count;++seat){
-            if(seat==pilot.seat)continue;
-            auto& candidate=world.pilots[seat];
-            if(!candidate.player||candidate.player->state==3||candidate.game.lives<0)continue;
-            const std::int64_t dx=std::int64_t(candidate.player->fixed_position.x)-player.fixed_position.x;
-            const std::int64_t dy=std::int64_t(candidate.player->fixed_position.y)-player.fixed_position.y;
-            const std::int64_t distance=dx*dx+dy*dy;
-            if(recipient<0||distance<best){recipient=i32(seat);best=distance;}
-        }
-        if(recipient>=0){
-            auto& target=world.pilots[u32(recipient)];
-            if(target.game.lives<multiplayer::kMaxLives)++target.game.lives;
-            if(target.seat==0&&world.actors.gui)world.actors.gui->update_lives(target.game.lives);
-            world.sound(0x2c);
-        }
     }
 };
 

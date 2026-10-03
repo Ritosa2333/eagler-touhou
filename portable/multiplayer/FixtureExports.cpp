@@ -284,7 +284,7 @@ u32 mp_fixture_prepare(browser::Application* app,u32 kind){
     if(world.player_count!=2||!world.pilots[0].player||!world.pilots[1].player)return 0;
     if(kind==6&&(world.state.game.stage<1||world.state.game.stage>=6||!world.hud))return 0;
     // Retired confirmed history must not restore across a fixture setup.
-    world.rollback.Clear();
+    if(world.rollback)world.rollback->Clear();
     if(kind==7){
         // Real native projectile initialization and updates, not cosmetic dots.
         // Slow grid keeps the workload on screen during the measured window.
