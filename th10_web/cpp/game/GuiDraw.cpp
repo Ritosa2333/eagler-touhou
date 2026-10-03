@@ -12,8 +12,12 @@ float presentation_timer(const Timer& timer){
 // the shadow's stored right edge is rounded before subtracting one pixel.
 i32 Gui::draw(GuiDrawEnvironment& env){
     for(u32 i=0;i<10;++i){env.draw_animation(high_score_digits[i]);env.draw_animation(score_digits[i]);}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    env.draw_multiplayer_resources(*this);
+#else
     for(auto& vm:life_icons)env.draw_animation(vm);
     for(auto& vm:power_digits)env.draw_animation(vm);
+#endif
     for(auto& vm:faith_digits)env.draw_animation(vm);
     if(env.game->faith_timer.current){
         const float faith=presentation_timer(env.game->faith_timer);

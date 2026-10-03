@@ -6,7 +6,7 @@ struct CaptureRequests {AnmCapture texture;CaptureRectangle screen_source,screen
 static_assert(sizeof(CaptureRequests)==0x4c);
 struct PresentationEnvironment {
     ApplicationState* application;AnmManager** animations;
-    const u32* pressed_keys;i32* reset_frames;void* presentation_parameters;
+    const u16* pressed_keys;i32* reset_frames;void* presentation_parameters;
     virtual i32 present(void* device)=0;
     virtual void reset_device(void* device,void* parameters)=0;
     virtual void release_surface(void* surface)=0;

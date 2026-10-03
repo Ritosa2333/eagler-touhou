@@ -4,11 +4,18 @@
 #include "../game/HighRefresh.hpp"
 #include "AudioData.hpp"
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 namespace th10::browser {
 HudMessages::HudMessages(Hud& h):owner(h){gui=h.actors.gui;game=&h.state.game;registry=&h.engine.manager.registry;keys=reinterpret_cast<const u32*>(&h.input.player_profiles[0].input.current);pressed=&h.input.player_profiles[0].input.pressed;rate=&h.engine.speed;decoded_text=text;}
 AnmFile& HudMessages::file(DialogueAnimationFile kind){switch(kind){case DialogueAnimationFile::Player:return *owner.actors.player->animation_file;case DialogueAnimationFile::Boss:return *owner.actors.enemies->animation_files[2];case DialogueAnimationFile::Interface:return *gui->animations;case DialogueAnimationFile::Text:return *owner.common.value->text_animations;case DialogueAnimationFile::MusicCaption:return *gui->stage_animations;}__builtin_trap();}
-Dialogue* HudMessages::allocate(){return static_cast<Dialogue*>(std::malloc(sizeof(Dialogue)));}
+Dialogue* HudMessages::allocate(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    return static_cast<Dialogue*>(owner.rollback_dialogues.allocate(sizeof(Dialogue),true));
+#else
+    return static_cast<Dialogue*>(std::malloc(sizeof(Dialogue)));
+#endif
+}
 u32 HudMessages::create_animation(DialogueAnimationFile kind,i32 script){return owner.animation(file(kind),script);}
 void HudMessages::bind_sprite(AnmVm& vm,DialogueAnimationFile kind,i32 sprite,bool explicit_file){(explicit_file?file(kind):*vm.animation_file).bind_sprite(vm,sprite);}
 void HudMessages::draw_text(AnmVm* vm,u32 color,const char* pattern){char output[128];if(format_text(output,sizeof(output),pattern,nullptr,0)<0)__builtin_trap();AnmText::draw(*vm,color,output,TextAlignment::Left,owner.fonts);}
@@ -17,12 +24,15 @@ void HudMessages::play_sound(i32 id){owner.sound(id);}
 void HudMessages::start_music(){owner.music().play(1,static_cast<u32>(reinterpret_cast<uintptr_t>(owner.state.current_stage->music)));}
 void HudMessages::fade_music(float seconds){owner.music().fade(seconds);}
 void HudMessages::complete_stage(){HudProgress env(owner);th10::complete_stage(env);}
-HudFrame::HudFrame(Hud& h):owner(h){GuiFrameEnvironment::game=GuiDrawEnvironment::game=&h.state.game;player=&h.actors.player;GuiFrameEnvironment::enemies=GuiDrawEnvironment::enemies=&h.actors.enemies;spell_flags=&h.actors.spell->spell_flags;engine_flags=&h.state.engine_flags;pending_screen=&h.state.pending_screen;registry=&h.engine.manager.registry;}
+HudFrame::HudFrame(Hud& h):owner(h){GuiFrameEnvironment::game=GuiDrawEnvironment::game=&h.state.game;player=&h.actors.player;GuiFrameEnvironment::enemies=GuiDrawEnvironment::enemies=&h.actors.enemies;spell_flags=&h.actors.spell->spell_flags;engine_flags=&h.state.engine_flags;pending_screen=&h.state.pending_screen;registry=&h.engine.manager.registry;
+    // Native GUI/ANM belongs to the shared fixed-tick world. Seat zero is its
+    // source on every endpoint; the custom MP draw handles local highlighting.
+}
 void HudFrame::update_animation(AnmVm& vm){owner.engine.update(vm);}
 void HudFrame::bind_digit(AnmFile& f,AnmVm& vm,i32 digit){f.bind_sprite(vm,digit);}
 u32 HudFrame::create_animation(AnmFile& file,i32 script){return owner.animation(file,script);}
 i32 HudFrame::update_dialogue(Dialogue& dialogue){HudMessages env(owner);return dialogue.tick(env);}
-void HudFrame::release_dialogue(Dialogue* dialogue){std::free(dialogue);}
+void HudFrame::release_dialogue(Dialogue* dialogue){owner.delete_object(dialogue);}
 void HudFrame::play_sound(i32 id){owner.sound(id);}
 void HudFrame::draw_animation(AnmVm& vm){owner.engine.draw(vm);}
 void HudFrame::rectangle(const ScreenRect& rect,u32 color){const u32 colors[]={color,color,color,color};auto renderer=owner.engine.renderer();auto* manager=&owner.engine.manager;draw_screen_rectangle(rect,colors,&manager,renderer);}
@@ -30,14 +40,76 @@ float HudFrame::presentation_boss_health(float current){
     if(!high_refresh::active||!owner.boss_presentation_valid||!owner.actors.enemies||owner.actors.enemies->bosses[0]!=owner.previous_boss||std::abs(current-owner.previous_boss_health)>.1f)return current;
     return high_refresh::lerp_world(owner.previous_boss_health,current);
 }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+void HudFrame::draw_multiplayer_resources(Gui& gui){
+    auto* text=owner.common.value;
+    if(!text)return;
+    const u32 count=owner.actions.multiplayer_count()>3?3:owner.actions.multiplayer_count();
+    const u32 local=owner.actions.multiplayer_local_seat();
+    const bool write_text=owner.last_multiplayer_hud_frame!=u32(text->frames);
+    if(write_text)owner.last_multiplayer_hud_frame=u32(text->frames);
+    const u32 saved_color=text->color;
+    const Vec2 saved_scale=text->scale;
+    const i32 saved_camera=text->camera,saved_shadow=text->shadow;
+    if(write_text){text->scale={1.25f,1.25f};text->camera=0;text->shadow=1;}
+    static constexpr const char* loadouts[]{"Reimu A","Reimu B","Reimu C","Marisa A","Marisa B","Marisa C"};
+    // front.anm already contains separate Player/Power labels (sprites 6/7),
+    // native star (18) and number/dot sprites. Reuse those resources directly;
+    // never erase the original background or advance a new animation in Draw.
+    const auto sprite=[&](i32 index,float x,float y,float scale,u32 tint=0xffffffffu){
+        if(!gui.animations||index<0||index>=gui.animations->sprite_count)return;
+        auto vm=gui.power_digits[0];
+        gui.animations->bind_sprite(vm,index);
+        vm.id=0;vm.script_position=vm.child_position=vm.rotation={};
+        vm.position={x,y,.47f};vm.scale={scale,scale};
+        vm.flags=(vm.flags&~((3u<<18)|(3u<<20)|(15u<<22)|0x8030u))|3u|(1u<<18)|(1u<<20);
+        vm.color=(gui.power_digits[0].color&0xff000000u)|(tint&0x00ffffffu);
+        vm.secondary_color=vm.color;
+        draw_animation(vm);
+    };
+    for(u32 seat=0;seat<count;++seat){
+        const auto& economy=owner.actions.multiplayer_economy(seat);
+        const i32 power=economy.power<0?0:economy.power>100?100:economy.power;
+        const i32 lives=economy.lives<0?0:economy.lives;
+        const i32 loadout=economy.character*3+economy.shot_type;
+        const char* name=loadout>=0&&loadout<6?loadouts[loadout]:"Unknown";
+        const float y=94.0f+60.0f*float(seat);
+        const u32 accent=seat==local?0xffffe3a6:0xffe8d5aa;
+        if(write_text){
+            char label[64];
+            text->scale={1.25f,1.25f};
+            std::snprintf(label,sizeof(label),"P%u",seat+1);
+            text->color=accent;text->queue(label,{444.0f,y,.47f},false);
+            text->scale={1.1f,1.1f};
+            text->queue(name,{484.0f,y,.47f},false);
+        }
+        sprite(6,436.0f,y+16.0f,.8f);
+        sprite(7,436.0f,y+34.0f,.8f);
+        // Keep the side HUD resource-only. Rescue, Spirit, Power-transfer and
+        // wipe state are shown in the playfield/native lifecycle, matching TH07MP.
+        for(i32 icon=0;icon<lives&&icon<9;++icon)
+            sprite(18,514.0f+13.0f*float(icon),y+16.0f,.8f);
+        const i32 digits[]{power/20+8,gui.power_digits[1].sprite_index,(power%20)*5/10+8,(power%20)*5%10+8};
+        const float x[]{514.0f,526.0f,532.0f,545.0f};
+        for(u32 i=0;i<4;++i)sprite(digits[i],x[i],y+34.0f,.8f);
+    }
+    if(write_text){text->color=saved_color;text->scale=saved_scale;text->camera=saved_camera;text->shadow=saved_shadow;}
+}
+#endif
 HudScore::HudScore(Hud& h):owner(h){static constexpr i32 normal[]={2000000,4000000,8000000,15000000,1000000000},extra[]={3000000,10000000,1000000000};game=&h.state.game;normal_extends=normal;extra_extends=extra;}
 void HudScore::bind_digit(AnmFile& f,AnmVm& vm,i32 digit){f.bind_sprite(vm,digit);}
 void HudScore::update_animation(AnmVm& vm){owner.engine.update(vm);}
-void HudScore::add_life(){HudEconomy env(owner);
+void HudScore::add_life(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    owner.actions.award_team_life();
+#else
+    HudEconomy env(owner);
 #ifdef TH_ENABLE_THPRAC
     env.practice=&owner.state.practice;
 #endif
-    game->add_lives(1,env);}
+    game->add_lives(1,env);
+#endif
+}
 HudNotification::HudNotification(Hud& h):owner(h){registry=&h.engine.manager.registry;}
 u32 HudNotification::create(AnmFile& file,i32 script){return owner.animation(file,script);}
 void HudNotification::bind_sprite(AnmVm& vm,i32 sprite){vm.animation_file->bind_sprite(vm,sprite);}
@@ -45,6 +117,9 @@ void HudEconomy::show_notification(i32 script){auto& id=owner.actors.gui->power_
 void HudEconomy::play_global_sound(i32 id){owner.sound(id);}
 void HudEconomy::update_lives(i32 lives){owner.actors.gui->update_lives(lives);}
 HudProgress::HudProgress(Hud& h):owner(h){game=&h.state.game;gui=&h.actors.gui;statistics={reinterpret_cast<u8*>(h.records.data)};replay_mode=&h.state.replay->mode;stages=menu_data(h.state.chinese).stages;current_stage=&h.state.current_stage;all_clear_bonus=h.state.practice.all_clear_bonus;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+void HudProgress::award_resource_bonus(){owner.actions.award_team_clear_bonus();}
+#endif
 void HudProgress::stage_clear_notification(){owner.notify(6,0);}
 void HudProgress::select_screen(i32 screen){owner.state.pending_screen=owner.state.engine_flags&0x1000?2:screen;}
 void HudProgress::show_results(){owner.actions.show_clear_results();}
@@ -77,8 +152,15 @@ AudioGame Hud::music(){AudioGame game{audio.manager,&records.data,&state.configu
 Gui* Hud::allocate(){return static_cast<Gui*>(std::malloc(sizeof(Gui)));}
 AnmFile* Hud::load_animations(i32 slot,const char* name){return engine.manager.load(slot,name,engine.resources);}
 void Hud::release_animations(AnmFile& file){file.release(engine.resources);}
-void Hud::delete_object(void* object){std::free(object);}
-void Hud::free_bytes(void* bytes){std::free(bytes);}
+void Hud::delete_object(void* object){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(object&&rollback_dialogues.owns(object)){
+        if(!rollback_dialogues.release(object))__builtin_trap();return;
+    }
+#endif
+    std::free(object);
+}
+void Hud::free_bytes(void* bytes){engine.release_memory(bytes);}
 u8* Hud::read_file(const char* name){return ResourceFiles{records.files}.load(name,nullptr,false);}
 void Hud::report_error(){error=-1;}
 u32 Hud::create_animation(AnmFile& file,i32 script){return animation(file,script);}

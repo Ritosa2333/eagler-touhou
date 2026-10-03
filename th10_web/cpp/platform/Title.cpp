@@ -2,13 +2,17 @@
 #include "Title.hpp"
 #include "AudioData.hpp"
 #include "../game/TextFormat.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/ReplayFiles.hpp"
+#include <algorithm>
+#endif
 #include <cstdlib>
 #include <new>
 namespace th10::browser {
 template<class Base> MenuMain<Base>::MenuMain(Title& title):owner(title){
     owner.bind_animation(*this);this->game=&owner.state.game;
     this->extra_unlocked=reinterpret_cast<u8*>(owner.scores.data)+0x1d888;
-    this->pressed=reinterpret_cast<u32*>(&owner.input.player_profiles[0].input.raw_pressed);
+    this->pressed=&owner.input.player_profiles[0].input.raw_pressed;
     this->repeated=&owner.input.player_profiles[0].input.raw_repeat;
 }
 template<class Base> u32 MenuMain<Base>::create(AnmFile& file,i32 script){return owner.create(file,script);}
@@ -78,7 +82,16 @@ void MenuClear::play_music(bool result){owner.music_control().prepare(0,result?"
 void MenuClear::timestamp(i32& result){result=owner.calendar.timestamp();}
 Replay* MenuClear::preview(const char* name){return owner.preview(name);}
 void MenuClear::delete_replay(Replay* replay){owner.delete_replay(replay);}
-void MenuClear::save_replay(const char* file,const char* player){if(!owner.state.replay)__builtin_trap();const auto& motion=owner.state.motion;const auto tail=motion.playing?std::vector<u8>{}:motion.trailer(10);if((motion.used()&&!motion.playing&&tail.empty())||owner.writer.save(*owner.state.replay,file,player,tail))__builtin_trap();}
+void MenuClear::save_replay(const char* file,const char* player){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!multiplayer::SaveReplayFile(owner.scores.files,owner.calendar,owner.state,file,player,
+       owner.state.game.score,owner.state.game.score_units,
+       owner.state.replay&&owner.state.replay->info?std::clamp(owner.state.replay->info->last_stage,1,8):
+       std::clamp(owner.state.game.stage,1,8)))owner.error=-6;
+#else
+    if(!owner.state.replay)__builtin_trap();const auto& motion=owner.state.motion;const auto tail=motion.playing?std::vector<u8>{}:motion.trailer(10);if((motion.used()&&!motion.playing&&tail.empty())||owner.writer.save(*owner.state.replay,file,player,tail))__builtin_trap();
+#endif
+}
 MenuLoop::MenuLoop(Title& o):owner(o){
     o.bind_animation(*this);game=&o.state.game;return_screen=&o.state.return_screen;inactive_frames=&o.state.inactive_frames;demo_index=&o.state.demo_index;pending_screen=&o.state.pending_screen;
     held=reinterpret_cast<u32*>(&o.input.player_profiles[0].input.raw);engine_flags=&o.state.engine_flags;files=o.engine.manager.files;loading_animation=&o.common.value->loading_animation;stages=o.data.stages;current_stage=&o.state.current_stage;demo_files=o.data.demo_files;replay_filename=o.state.replay_filename;

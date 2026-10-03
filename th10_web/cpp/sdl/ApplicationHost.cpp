@@ -14,6 +14,12 @@
 extern "C" void sdl_audio_pump();
 extern "C" void sdl_audio_pause(th10::u32);
 extern "C" void sdl_native_input(th10::browser::Application*);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include <eagler/netplay/FrameBudget.hpp>
+extern "C" void sdl_audio_replay_seek_output(th10::u32);
+extern "C" th10::u32 sdl_audio_replay_seek_tick();
+extern "C" int sdl_replay_seek_batch(th10::browser::Application*);
+#endif
 EM_JS(int, browser_prepare_frame, (), { return Module['runtimePrepare'] ? Module['runtimePrepare']() : 0; });
 EM_JS(int, th10_limit_presentation_to_60, (), { return Module['eaglerOptions']?.limitPresentationTo60 ? 1 : 0; });
 EM_JS(void, browser_finish_frame, (int result,double milliseconds), { Module['runtimeFinish'](result,milliseconds); });
@@ -54,11 +60,32 @@ bool interpolation_ready(){if(!application||application->stopped||!application->
 EM_BOOL frame(double timestamp,void* epoch){
     if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;
     const double now=timestamp/1000.,delta=last<0?0:std::max(0.,now-last);last=now;callback_begin=emscripten_get_now();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Keep handshake, input/ACK repair and retirement alive while loading,
+    // suspended or waiting for input. Network timing is real wall time, not
+    // sdl_loop_time(), whose simulation clock legitimately stops here.
+    if(!application->multiplayer_pump_network()){
+        browser_finish_frame(2,emscripten_get_now()-callback_begin);return running?EM_TRUE:EM_FALSE;
+    }
+#endif
     // Browser responsibilities end at resource readiness and input snapshots.
     // The C++ ApplicationLoop owns deadlines, logic, draw and the original
     // 60Hz cadence, independent of display callback frequency.
     const int ready=browser_prepare_frame();if(!running)return EM_FALSE;
     if(ready<=0||suspended){sdl_audio_pause(1);cadence.reset();presentation.reset();presentation_primed=false;return EM_TRUE;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // This callback has passed its own readiness/suspension fence. Release
+    // only that pause; an active Replay seek retains its separate mute owner.
+    sdl_audio_pause(0);
+    if(application->multiplayer_replay_seeking()){
+        const int result=sdl_replay_seek_batch(application);
+        // Seek is a requested offline Replay operation, not catch-up debt.
+        // Resume the existing live/SP cadence with no accumulated backlog.
+        cadence.reset();presentation.reset();presentation_primed=false;last=-1;
+        browser_finish_frame(result,emscripten_get_now()-callback_begin);
+        return running?EM_TRUE:EM_FALSE;
+    }
+#endif
     sdl_audio_pause(0);elapsed+=delta;audio_remainder+=delta*1000;
     const auto milliseconds=th10::u32(std::floor(audio_remainder));audio_remainder-=milliseconds;
     application->audio.advance(milliseconds);
@@ -78,8 +105,53 @@ EM_BOOL frame(double timestamp,void* epoch){
     // no extra interpolated draws. Keep logic/input and audio cadence intact.
     const bool limit60=th10_limit_presentation_to_60()!=0;
     const bool presentation_ready=interpolation_ready()&&!limit60,fast=touhou::sdl::PresentationCadence::fast_sample(delta);if(presentation_ready)presentation.advance(delta);else presentation.reset();if(!presentation.high_refresh||!fast)presentation_primed=false;
-    const bool tick_due=cadence.advance(delta)!=0;int result=0;sdl_defer(1);
-    if(tick_due){sdl_native_input(application);result=application->step(true);}
+    double simulation_delta=delta;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    auto& runtime=application->state.netplay_runtime;
+    const bool live=application->multiplayer_active()&&runtime.NetworkEnabled()&&
+                    runtime.CanStart()&&!runtime.Spectator()&&runtime.InitialInputsReady();
+    if(live)
+        simulation_delta/=runtime.Channel().IntervalScale();
+    if(live&&cadence.debt+1.e-9<touhou::sdl::FrameCadence::interval)
+        simulation_delta=runtime.PacedElapsedSeconds(simulation_delta);
+#endif
+    // Clock calibration changes only when the next fixed tick is due. Every
+    // admitted tick still executes the original 60 Hz simulation and Draw.
+    bool tick_due=false;int result=0;sdl_defer(1);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(live){
+        // Unlike the retail single-player slow-machine policy, a network peer
+        // must not discard elapsed fixed ticks. Keep debt, admit bounded exact
+        // catch-up work, then yield to input delivery, audio and presentation.
+        // Readiness/suspension fences above still reset the clock explicitly.
+        cadence.debt+=std::max(0.,simulation_delta);
+        tick_due=cadence.debt+1.e-9>=touhou::sdl::FrameCadence::interval;
+        for(th10::u32 ticks=0;cadence.debt+1.e-9>=touhou::sdl::FrameCadence::interval&&
+            Netplay::FrameBudget::CanStartTick(ticks,std::uint64_t(std::max(0.,emscripten_get_now()-callback_begin)*1.e6));++ticks){
+            const auto before=runtime.LastSimulatedFrame();
+            sdl_native_input(application);result=application->step(true);
+            // A stalled prediction frontier or a destructive generation fence
+            // is not an admitted forward tick. Never charge away that debt.
+            if(result||runtime.LastSimulatedFrame()!=before+1u)break;
+            cadence.debt=std::max(0.,cadence.debt-touhou::sdl::FrameCadence::interval);
+            if(!application->multiplayer_active()||!application->world||application->world->loading||
+               application->state.pending_screen!=application->value.screen)break;
+        }
+    }else
+#endif
+    if((tick_due=cadence.advance(simulation_delta)!=0)){
+        sdl_native_input(application);result=application->step(true);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        // A start-time spectator may receive the relay's bounded confirmed
+        // history after joining. Consume a few exact logical frames per
+        // display callback until caught up; live players never enter here.
+        for(th10::u32 i=1;!result&&application->multiplayer_spectator_catchup_budget()>1&&
+            Netplay::FrameBudget::CanStartTick(i,std::uint64_t(std::max(0.,emscripten_get_now()-callback_begin)*1.e6));++i){
+            const auto before=runtime.LastSimulatedFrame();result=application->step(true);
+            if(runtime.LastSimulatedFrame()!=before+1u)break;
+        }
+#endif
+    }
     const bool high=presentation.high_refresh&&interpolation_ready();if(high&&fast&&!presentation_primed&&tick_due)presentation_primed=true;const bool interpolate=high&&fast&&presentation_primed;float frame_alpha=1.0f;
     sdl_defer(0);bool presented=false;
     if(!result&&high){const bool frozen=application->world&&application->world->actors.session&&(application->world->actors.session->session_flags&0x74);frame_alpha=interpolate?float(cadence.interpolation_alpha()):1.0f;presented=application->presentation_draw(frame_alpha,interpolate,!frozen);}else presented=sdl_commit()!=0;
@@ -92,6 +164,28 @@ EM_BOOL frame(double timestamp,void* epoch){
 }
 }
 extern "C" {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+int sdl_replay_seek_batch(th10::browser::Application* app){
+    if(!app||app->stopped||!app->multiplayer_replay_seeking())return -1;
+    sdl_audio_replay_seek_output(1);sdl_defer(1);
+    int result=0;
+    // Bounded UI work for the new stage-selection feature. Each iteration
+    // still executes one original Update + authored Draw; no input, time,
+    // stage, state or RNG is skipped. Live multiplayer/SP never enter here.
+    for(unsigned i=0;i<4&&app->multiplayer_replay_seeking();++i){
+        elapsed+=1.0/60.0;audio_remainder+=1000.0/60.0;
+        const auto milliseconds=th10::u32(std::floor(audio_remainder));audio_remainder-=milliseconds;
+        app->audio.advance(milliseconds);sdl_native_input(app);result=app->step(true);
+        if(result||!sdl_audio_replay_seek_tick()){if(!result){app->error=-7;result=2;}break;}
+    }
+    sdl_defer(0);
+    if(result||!app->multiplayer_replay_seeking()){
+        sdl_audio_replay_seek_output(0);
+        if(!result){if(sdl_commit())app->presentation_frame();sdl_audio_pump();}
+    }
+    return result;
+}
+#endif
 __attribute__((export_name("sdl_loop_time"))) double sdl_loop_time(){return elapsed+(running&&!suspended?std::max(0.,emscripten_get_now()-callback_begin)/1000.:0.);}
 // A deterministic, stopped-loop entry point for replay/regression runners.
 // It shares native input, audio progression and the same Application tick.
@@ -104,7 +198,11 @@ __attribute__((export_name("sdl_loop_start"))) void sdl_loop_start(th10::browser
     emscripten_request_animation_frame_loop(frame,reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
 }
 __attribute__((export_name("sdl_loop_stop"))) void sdl_loop_stop(){
-    if(!running&&!application)return;running=false;++loop_epoch;sdl_audio_pause(1);browser_loop_stopped();application=nullptr;
+    if(!running&&!application)return;running=false;++loop_epoch;sdl_audio_pause(1);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    sdl_audio_replay_seek_output(0);
+#endif
+    browser_loop_stopped();application=nullptr;
 }
 #ifdef TH_PRESENTATION_AUDIT
 // Diagnostic freeze is intentionally distinct from runtime shutdown. Preserve

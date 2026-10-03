@@ -7,11 +7,30 @@ struct Hints final:StageHintsEnvironment,HintRecordingEnvironment {
     World& w;u32 output=0xffffffff;
     explicit Hints(World& world):w(world){current=&w.actors.hints;StageHintsEnvironment::game=HintRecordingEnvironment::game=&w.state.game;player=&w.actors.player;registry=&w.engine.manager.registry;text_animations=&w.common.value->text_animations;chain=&w.chain;callbacks=&w.engine.callback_environment;update_callback=callback_id::HintsUpdate;draw_callback=callback_id::HintsDraw;enabled=&w.state.configuration.music_mode;rate=&w.engine.speed;const auto& data=hint_data(w.state.chinese);section_names=data.sections;alignment_names=data.alignments;default_file=data.default_file;extra_file=data.extra_file;std::memcpy(save_comments,data.comments,sizeof(save_comments));save_separator=data.separator;}
     ~Hints(){end_file();}
-    void* allocate(u32 bytes) override{return std::malloc(bytes);}
-    void release_object(void* p) override{std::free(p);}
+    void* allocate(u32 bytes) override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(bytes==sizeof(StageHint)){
+            auto* result=w.rollback_hints.allocate(bytes);
+            if(!result){w.fail();return nullptr;}
+            // Before initialization/reuse, save even an inactive slot. This
+            // also prevents stale linked-list bytes escaping strict rewind.
+            if(w.engine.rollback_state&&!w.engine.rollback_state->Touch(result,sizeof(w.rollback_hints.blocks[0]))){w.fail();return nullptr;}
+            return result;
+        }
+#endif
+        return std::malloc(bytes);
+    }
+    void release_object(void* p) override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(w.rollback_hints.owns(p)){
+            if(!w.rollback_hints.release(p))__builtin_trap();return;
+        }
+#endif
+        std::free(p);
+    }
     void* allocate_bytes(u32 bytes) override{return std::malloc(bytes);}
     void free_bytes(void* p) override{std::free(p);}
-    StageHint* allocate_hint() override{return static_cast<StageHint*>(std::malloc(sizeof(StageHint)));}
+    StageHint* allocate_hint() override{return static_cast<StageHint*>(allocate(sizeof(StageHint)));}
     u8* read_file(const char* name,u32& bytes) override{return ResourceFiles{w.scores.files}.load(name,&bytes,true);}
     u32 create_animation(AnmFile& file,i32 script,const Vec3& p) override{return w.engine.manager.create_at(file,script,p,true,AnimationPlacement::WorldBack,w.engine,w.engine);}
     void draw_text(AnmVm& vm,i32 align,u32 color,const char* text) override{const TextAlignment alignments[]={TextAlignment::Center,TextAlignment::Left,TextAlignment::Right};w.text(vm,color,text,alignments[align]);}

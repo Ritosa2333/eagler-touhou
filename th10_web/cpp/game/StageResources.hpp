@@ -26,7 +26,9 @@ struct StageResources {
     Stage& stage;StageResourceEnvironment& environment;
     i32 load(const char* name);
     i32 start(const char* name,i32 priority_offset);
-    void release();
+    // A confirmed retirement may preserve the release decision from its
+    // logical deletion frame. Null retains the original late flag read.
+    void release(const bool* animation_policy=nullptr);
     static Stage* create(const char* name,i32 priority_offset,StageResourceEnvironment& environment);
 };
 }

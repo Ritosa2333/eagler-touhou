@@ -6,7 +6,7 @@ struct MusicRoomEnvironment : TitleAnimationEnvironment {
     AnmFile** comment_file;
     u8* unlocked;
     const u32* display_flags;
-    const u32* pressed;
+    const u16* pressed;
     const u16* repeated;
     const char* locked_title;
     const char* const* locked_comments;

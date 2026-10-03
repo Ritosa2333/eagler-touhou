@@ -4,6 +4,9 @@
 #include <sys/stat.h>
 #include <algorithm>
 #include <cstring>
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include <cstdio>
+#endif
 #include <map>
 #include <set>
 #include <string>
@@ -16,7 +19,16 @@ using th10::u32;using th10::i32;using th10::u8;
 extern "C" SDL_IOStream* th10_music_stream();
 EM_JS(void, browser_save_changed, (), { Module['runtimeFileChanged']?.(); });
 namespace {
-std::string save_root="/savesth10/jp";u32 next=1;
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(TH_ENABLE_NETPLAY)
+constexpr bool multiplayer_storage_build=true;
+bool multiplayer_storage_runtime=true;
+std::string save_root="/savesth10-multiplayer/jp";
+#else
+constexpr bool multiplayer_storage_build=false;
+bool multiplayer_storage_runtime=false;
+std::string save_root="/savesth10/jp";
+#endif
+u32 next=1;
 std::map<u32,SDL_IOStream*> handles;
 std::set<u32> writers;
 std::string normalize(const char* value){
@@ -34,6 +46,12 @@ bool match(const char* pat,const char* s){
 }
 }
 extern "C" {
+__attribute__((export_name("sdl_files_variant"))) u32 sdl_files_variant(u32 multiplayer){
+    if(multiplayer>1||(multiplayer!=0)!=multiplayer_storage_build)return 0;
+    multiplayer_storage_runtime=multiplayer!=0;
+    save_root=multiplayer_storage_runtime?"/savesth10-multiplayer/jp":"/savesth10/jp";
+    return 1;
+}
 __attribute__((export_name("sdl_file_open"))) u32 browser_open(const char* raw,u32 write){const auto name=normalize(raw);if(name.empty())return ~0u;SDL_IOStream* f=nullptr;
     if(write){const auto path=save_root+"/"+name;parents(path);f=SDL_IOFromFile(path.c_str(),"wb");}
     else if(name=="thbgm.dat")f=th10_music_stream();
@@ -45,6 +63,21 @@ u32 browser_size(u32 id){auto it=handles.find(id);return it==handles.end()?~0u:u
 __attribute__((export_name("sdl_file_seek"))) u32 browser_seek(u32 id,i32 offset,u32 origin){auto it=handles.find(id);return it==handles.end()||origin>2?~0u:u32(SDL_SeekIO(it->second,offset,static_cast<SDL_IOWhence>(origin)));}
 __attribute__((export_name("sdl_file_read"))) u32 browser_read(u32 id,u8* out,u32 size){auto it=handles.find(id);return it==handles.end()?0:SDL_ReadIO(it->second,out,size);}
 u32 browser_write(u32 id,const u8* in,u32 size){auto it=handles.find(id);return it==handles.end()?0:SDL_WriteIO(it->second,in,size);}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+u32 browser_replace(const char* raw,const u8* bytes,u32 size){
+    const auto name=normalize(raw);
+    if(!bytes||!size||size>16u*1024u*1024u||name.compare(0,7,"replay/")!=0||
+       name.find('/',7)!=std::string::npos)return 0;
+    const auto target=save_root+"/"+name,temporary=target+".pending";parents(target);
+    auto* stream=SDL_IOFromFile(temporary.c_str(),"wb");if(!stream)return 0;
+    const bool written=SDL_WriteIO(stream,bytes,size)==size;
+    const bool closed=SDL_CloseIO(stream);
+    if(!written||!closed||std::rename(temporary.c_str(),target.c_str())!=0){
+        std::remove(temporary.c_str());return 0;
+    }
+    browser_save_changed();return 1;
+}
+#endif
 u32 browser_list(const char* directory,const char* pattern,u32 index,char* out,u32 capacity){
     const auto dir=normalize(directory);std::vector<std::string> names;
     for(const auto& root:{std::string("/game"),save_root})if(auto* d=opendir((root+"/"+dir).c_str())){
@@ -55,7 +88,10 @@ u32 browser_list(const char* directory,const char* pattern,u32 index,char* out,u
     std::sort(names.begin(),names.end());names.erase(std::unique(names.begin(),names.end()),names.end());
     if(index>=names.size()||names[index].size()+1>capacity)return 0;std::memcpy(out,names[index].c_str(),names[index].size()+1);return 1;
 }
-__attribute__((export_name("sdl_files_root"))) void sdl_files_root(u32 chinese){save_root=chinese?"/savesth10/chs":"/savesth10/jp";parents(save_root+"/replay/");}
+__attribute__((export_name("sdl_files_root"))) void sdl_files_root(u32 chinese){
+    const auto base=multiplayer_storage_runtime?"/savesth10-multiplayer":"/savesth10";
+    save_root=std::string(base)+(chinese?"/chs":"/jp");parents(save_root+"/replay/");
+}
 __attribute__((export_name("sdl_file_handles"))) u32 sdl_file_handles(){return handles.size();}
 }
 namespace th10 {

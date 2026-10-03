@@ -22,6 +22,11 @@ i32 EnemyBulletManager::spawn(const BulletEmitter& e,i32 index,i32 layer,float a
     auto* bullet=cursor;i32 searched=0;
     while(searched<2000&&bullet->state){++bullet;if(bullet->state==5)bullet=pool;++searched;}
     if(searched>=2000)return 1;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Dormant slots retain native flags/timers/VM bytes. Capture the whole slot
+    // before its first spawn write; active slots are already checkpointed.
+    if(env.preserve_bullets&&!env.preserve_bullet(*bullet))return 1;
+#endif
     float speed=e.layers<=1?e.speed_start:(number(e.speed_start)-(number(e.speed_start)-number(e.speed_end))*Extended::from_int(layer)/Extended::from_int(e.layers)).to_float();
     float angle=0;
     const auto count=Extended::from_int(e.count),tau=number(6.283185482025146484375f),pi=number(3.1415927410125732421875f);

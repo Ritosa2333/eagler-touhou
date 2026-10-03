@@ -8,7 +8,17 @@ ScreenEffects::ScreenEffects(AnimationEngine& e,const u32& quit,const u32* contr
     const CallbackToken updates[]={callback_id::ScreenFadeUpdate,callback_id::ScreenShakeUpdate,callback_id::ScreenFlashUpdate,callback_id::ScreenFadeUpdate,callback_id::ScreenCircleUpdate,callback_id::ScreenFlashUpdate,callback_id::ScreenArcadeUpdate,callback_id::ScreenArcadeUpdate,callback_id::ScreenViewShakeUpdate},draws[]={callback_id::ScreenFadeDraw,0,callback_id::ScreenFlashDraw,callback_id::ScreenFlashDraw,callback_id::ScreenCircleDraw,callback_id::ScreenFadeDraw,callback_id::ScreenArcadeFadeDraw,callback_id::ScreenArcadeFlashDraw,0};
     std::memcpy(update_callbacks,updates,sizeof(updates));std::memcpy(draw_callbacks,draws,sizeof(draws));delete_callback=callback_id::ScreenEffectDelete;engine.register_receiver(*this);
 }
-ScreenEffects::~ScreenEffects(){while(memory.first){auto* effect=static_cast<ScreenEffect*>(memory.first->bytes);effect->release(*this);destroy(effect);}engine.unregister_receiver(*this);}
+ScreenEffects::~ScreenEffects(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    for(std::size_t i=0;i<128;++i)if(rollback_effects.active(i)){
+        auto* effect=static_cast<ScreenEffect*>(rollback_effects.at(i));
+        effect->release(*this);rollback_effects.release(effect);
+    }
+#else
+    while(memory.first){auto* effect=static_cast<ScreenEffect*>(memory.first->bytes);effect->release(*this);destroy(effect);}
+#endif
+    engine.unregister_receiver(*this);
+}
 #ifndef TH_NATIVE_PLATFORM
 bool ScreenEffects::invoke(CallbackToken token,void* object,i32& result){
     auto* effect=static_cast<ScreenEffect*>(object);
@@ -17,8 +27,20 @@ bool ScreenEffects::invoke(CallbackToken token,void* object,i32& result){
     return false;
 }
 #endif
-ScreenEffect* ScreenEffects::allocate(){return reinterpret_cast<ScreenEffect*>(memory.allocate(sizeof(ScreenEffect)));}
-void ScreenEffects::destroy(ScreenEffect* effect){previous_alpha.erase(effect);memory.release(effect);}
+ScreenEffect* ScreenEffects::allocate(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    return static_cast<ScreenEffect*>(rollback_effects.allocate(sizeof(ScreenEffect),true));
+#else
+    return reinterpret_cast<ScreenEffect*>(memory.allocate(sizeof(ScreenEffect)));
+#endif
+}
+void ScreenEffects::destroy(ScreenEffect* effect){previous_alpha.erase(effect);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(effect&&!rollback_effects.release(effect))__builtin_trap();
+#else
+    memory.release(effect);
+#endif
+}
 i32 ScreenEffects::update_effect(ScreenEffect& effect){previous_alpha[&effect]=effect.alpha;return effect.update(*this);}
 i32 ScreenEffects::presentation_alpha(const ScreenEffect& effect){
     if(!high_refresh::render_only||!high_refresh::active)return effect.alpha;

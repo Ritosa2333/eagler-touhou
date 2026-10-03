@@ -2,16 +2,20 @@
 // Game construction, input, timing, rendering, text and sound belong to C++.
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
 import createModule from './th10-sdl.mjs';
-import {createPractice} from './practice.mjs';
+import {createOptionalPractice} from './practice-loader.mjs';
 import {bindOutsideTouches} from './eagler-host.mjs';
-import {exportReplayName,importReplayName} from './motion-replay.mjs';
+import {createReplayFilePolicy} from './replay-file-policy.mjs';
 import {normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,ensureSharedFontAlias,installResources as installHostResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError} from './eagler-host.mjs';
+import {initializeSaveStorage,migrateLegacySaves} from './save-storage.mjs';
 const protocol='eagler-touhou/1',game='th10',query=new URLSearchParams(location.search),canvas=document.querySelector('canvas');
+const runtimeVariant=query.get('runtimeVariant')??'normal',multiplayerRuntime=runtimeVariant==='multiplayer';
+const createAdonisCalibration=multiplayerRuntime?(await import('./adonis-calibration.mjs')).createAdonisCalibration:null;
 const epoch=Number(query.get('runtimeEpoch'));
 const validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
 let Module,core,app=0,launched=false,first=false,closing=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true;
 let practice;
+let calibration=null,runtimeBuild='',runtimeBuildWords=[];
 const keyboard=createBrowserKeyboard({
  send(code,down){if(!core)return;if(options.thpracEnabled&&practice?.key(code,down))return;cstring(code,p=>core.sdl_key(p,+down));},
  onClear(){practice?.clear();}
@@ -19,33 +23,75 @@ const keyboard=createBrowserKeyboard({
 function clearKeyboard(){keyboard.clear();core?.sdl_keys_clear();}
 let frames=0,lastHealth=0,lastFrame=0,maxGap=0,lastPresented=0,saveTimer=null;
 const cancelTouches=bindOutsideTouches(document,canvas,()=>core,()=>launched&&options.touchEnabled);
-const error=reason=>{const message=reason?.stack||String(reason);document.querySelector('#error').textContent=message;emit('error',{message,error:message});console.error(reason);};
+const error=reason=>{const message=reason?.stack||String(reason);if(multiplayerRuntime){window.__eaglerNetplayFailed=true;window.__eaglerNetplayError=message;}document.querySelector('#error').textContent=message;emit('error',{message,error:message});console.error(reason);};
 const u32=(ptr,count)=>new Uint32Array(core.memory.buffer,ptr,count);
 const cstring=(text,fn)=>{const bytes=new TextEncoder().encode(text+'\0'),p=core.graphics_allocate(bytes.length);try{new Uint8Array(core.memory.buffer,p,bytes.length).set(bytes);return fn(p);}finally{core.graphics_free(p);}};
-const root=()=>'/savesth10/'+language;
+const readCString=ptr=>{if(!ptr)return '';const heap=new Uint8Array(core.memory.buffer);let end=ptr;while(end<heap.length&&heap[end])++end;return new TextDecoder().decode(heap.subarray(ptr,end));};
+function updateNetplayDiagnostics(){
+ if(!multiplayerRuntime||!app||!core.multiplayer_netplay_status)return;
+ const state=Array.from(new Int32Array(core.memory.buffer,core.multiplayer_netplay_status(app),11));
+ const transport=Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_transport_status(app),15));
+ const frame=state[3];
+ window.__eaglerNetplayLanActive=state[9]===1;
+ window.__eaglerNetplayLanFrame=frame;
+ window.__eaglerNetplayLanConfirmed=state[4]>=0?state[4]:undefined;
+ window.__eaglerNetplayTransport=transport[13]===1?'rtc':transport[13]===2?'relay':transport[13]===3?'spectator':'';
+ const lifecycle=new Int32Array(core.memory.buffer,core.multiplayer_lifecycle_status(app),12);
+ window.__eaglerNetplayLanRollback=lifecycle[8];
+ window.__eaglerNetplayLanResimulated=lifecycle[9];
+}
+async function configureNetplay(){
+ if(!multiplayerRuntime||options.netplayMode!=='lan')return;
+ const url=new URL(options.netplayUrl),room=url.searchParams.get('room'),run=url.searchParams.get('run');
+ const count=options.netplayPlayerCount,seat=options.netplaySpectator?0:options.netplayPlayer;
+ const loadouts=options.netplayLoadouts;
+ const inputDelay=options.netplayInputDelay===undefined?0:Number(options.netplayInputDelay);
+ const mode=options.netplayAdonisMode??0,automatic=options.netplayInputDelayAuto??false,reserve=options.netplayPredictionReserve??2;
+ if(!Number.isInteger(mode)||mode<0||mode>2||typeof automatic!=='boolean'||(automatic&&(!mode||inputDelay))||
+    !Number.isInteger(reserve)||reserve<1||reserve>2)throw Error('Invalid TH10 measured timing policy');
+ if(!['ws:','wss:'].includes(url.protocol)||!room||!run||![2,3].includes(count)||
+    !Number.isInteger(seat)||seat<0||seat>=count||
+    !Number.isInteger(options.netplaySeed)||options.netplaySeed<0||options.netplaySeed>65535||
+    !Number.isInteger(options.netplayDifficulty)||options.netplayDifficulty<0||options.netplayDifficulty>4||
+    !Number.isInteger(inputDelay)||inputDelay<0||inputDelay>(mode?9:8)||
+    !Array.isArray(loadouts)||loadouts.length!==count)throw Error('Invalid TH10 multiplayer options');
+ const identity=new TextEncoder().encode(`th10mp:${url.origin}${url.pathname}:${room}:${run}`);
+ const digest=new DataView(await crypto.subtle.digest('SHA-256',identity));
+ const low=digest.getUint32(0,true),high=digest.getUint32(4,true)||1;
+ const words=[mode?4:3,count,seat,options.netplayDifficulty,options.netplaySeed,low,high,inputDelay];
+ for(let i=0;i<3;i++){
+  const value=loadouts[i]||{character:0,shot:0};
+  if(!Number.isInteger(value.character)||value.character<0||value.character>1||
+     !Number.isInteger(value.shot)||value.shot<0||value.shot>2)throw Error('Invalid TH10 multiplayer loadout');
+  words.push(value.character,value.shot);
+ }
+ if(mode){if(runtimeBuildWords.length!==4)throw Error('Missing TH10 immutable Runtime identity');words.push(mode,+automatic,reserve,...runtimeBuildWords);}
+ const pointer=core.files_allocate(words.length*4);
+ try{
+  new Uint32Array(core.memory.buffer,pointer,words.length).set(words);
+  if(!core.multiplayer_configure(app,pointer,words.length))throw Error('TH10 multiplayer session rejected');
+ }finally{core.files_free(pointer);}
+ const connected=options.netplaySpectator
+  ?cstring(options.netplayUrl,relay=>cstring(options.netplaySpectatorId,id=>core.multiplayer_spectator_connect(app,relay,id)))
+  :cstring(options.netplayUrl,relay=>core.multiplayer_connect(app,relay));
+ if(!connected)throw Error('TH10 multiplayer transport rejected');
+ window.__eaglerNetplayInputDelayFrames=options.netplaySpectator?0:inputDelay;
+ window.__eaglerNetplayFailed=false;window.__eaglerNetplayError='';
+ updateNetplayDiagnostics();
+ if(mode&&!options.netplaySpectator)calibration?.start();
+}
+const replayFiles=createReplayFilePolicy({game:10,multiplayer:multiplayerRuntime,validateMultiplayer(bytes){
+ if(typeof core.multiplayer_replay_validate!=='function')throw Error('Multiplayer Replay capability is missing');
+ const p=core.files_allocate(bytes.length);if(!p)throw Error('Replay allocation failed');
+ try{new Uint8Array(core.memory.buffer,p,bytes.length).set(bytes);return core.multiplayer_replay_validate(p,bytes.length)===1;}
+ finally{core.files_free(p);}
+}});
+let storage;
+const root=()=>storage.root(language);
 let storageSync=Promise.resolve();
 const sync=populate=>{const current=storageSync.then(()=>new Promise((resolve,reject)=>Module.FS.syncfs(populate,e=>e?reject(e):resolve())));storageSync=current.catch(()=>{});return current;};
-function relativeSave(path){
- if(typeof path!=='string'||path.length>200)throw Error('Invalid save path');
- path=path.replaceAll('\\','/').toLowerCase();
- if(path.startsWith('/savesth10/'))path=path.slice('/savesth10/'.length).replace(/^(?:jp|chs)\//,'');
- else path=path.replace(/^\//,'');
- if(!/^(?:scoreth10c?\.dat|th10\.cfg|replay\/th10_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/.test(path))throw Error('Invalid save path: '+path);
- return path;
-}
-function fileExists(path){return Module.FS.analyzePath(path).exists;}
 async function migrateSaves(){
- if(fileExists('/savesth10/.migration-v3'))return;
- const databases=typeof indexedDB.databases==='function'?await indexedDB.databases():null;
- for(const lang of ['jp','chs']){
-  const name='th10-1.00a-'+lang;if(databases&&!databases.some(db=>db.name===name))continue;
-  const db=await new Promise((resolve,reject)=>{const request=indexedDB.open(name);request.onerror=()=>reject(request.error);request.onsuccess=()=>resolve(request.result);});
-  try{if(!db.objectStoreNames.contains('files'))continue;
-   const entries=await new Promise((resolve,reject)=>{const tx=db.transaction('files','readonly'),rows=[];tx.objectStore('files').openCursor().onsuccess=e=>{const c=e.target.result;if(c){rows.push([c.key,c.value]);c.continue();}};tx.oncomplete=()=>resolve(rows);tx.onerror=()=>reject(tx.error);});
-   for(const [name,value] of entries){let path;try{path=relativeSave(name);}catch{continue;}const bytes=value instanceof Blob?new Uint8Array(await value.arrayBuffer()):new Uint8Array(value);path=importReplayName(path,bytes,10);const target='/savesth10/'+lang+'/'+path;if(!fileExists(target)){Module.FS.mkdirTree(target.slice(0,target.lastIndexOf('/')));Module.FS.writeFile(target,bytes);}}
-  }finally{db.close();}
- }
- Module.FS.writeFile('/savesth10/.migration-v3',new Uint8Array([1]));await sync(false);
+ await migrateLegacySaves(storage,{indexedDB,filesystem:Module.FS,sync,importReplayName:(path,bytes)=>replayFiles.imported(path,bytes)});
 }
 async function mountData(){await mountManagedData(Module,{game,parentWindow:parent,query,emit});}
 async function installResources(resources=[]){return installHostResources(Module,resources,{game,emit});}
@@ -86,20 +132,42 @@ async function installRuntimePack(pack){
   Module.FS.writeFile(file.path,file.bytes,{canOwn:true});runtimePackFiles.push(file.path);
  }
 }
-function applyOptions(){applyTouchOptions(core,options);if(app)core.application_touch_display?.(app,options.alwaysHitbox?1:0);practice?.configure(options);}
+function applyOptions(){applyTouchOptions(core,options);if(app){core.application_touch_display?.(app,options.alwaysHitbox?1:0);if(multiplayerRuntime)core.multiplayer_local_player_visibility?.(app,options.multiplayerLocalPlayerVisibility&&!options.netplaySpectator&&!options.replayViewer?1:0);}practice?.configure(options);}
 function status(){return Array.from(new Int32Array(core.memory.buffer,core.sdl_game_status(),10));}
+// The native Replay owner decides whether it is still reconstructing the
+// selected stage. This overlay reports that state; it never skips input or
+// substitutes a Launcher-owned stage/Replay cursor.
+let replaySeekOverlay=null;
+function updateReplaySeek(){
+ if(!multiplayerRuntime||!core?.multiplayer_replay_status)return;
+ const s=app?u32(core.multiplayer_replay_status(app),13):null;
+ const seeking=s?.[0]===1&&s[8]===1&&s[11]===1;
+ if(!replaySeekOverlay&&!seeking)return;
+ if(!replaySeekOverlay){
+  replaySeekOverlay=document.createElement('output');replaySeekOverlay.id='replay-seek';
+  replaySeekOverlay.setAttribute('role','progressbar');replaySeekOverlay.setAttribute('aria-valuemin','0');replaySeekOverlay.setAttribute('aria-valuemax','100');
+  replaySeekOverlay.style.cssText='position:fixed;inset:0;z-index:20;place-content:center;text-align:center;background:rgba(0,0,0,.82);color:white;font:16px sans-serif;pointer-events:none;white-space:pre-line';
+  document.body.appendChild(replaySeekOverlay);
+ }
+ replaySeekOverlay.hidden=!seeking;replaySeekOverlay.style.display=seeking?'grid':'none';
+ if(seeking){const percent=Math.min(100,Math.floor(s[4]*100/(s[7]+1)));
+  replaySeekOverlay.setAttribute('aria-valuenow',String(percent));
+  replaySeekOverlay.textContent=language==='chs'?`正在定位至第 ${s[12]} 关 · ${percent}%\nEsc 退出录像`:`Seeking to Stage ${s[12]} · ${percent}%\nEsc to exit Replay`;
+ }
+}
 function save(){if(app)core.application_save(app);return sync(false);}
 async function resumeForegroundAudio(forcePause=false){
  if(!core||!launched||document.hidden)return false;
  if(forcePause)core.sdl_loop_pause(1);
  return resumeRuntimeAudio(Module,core,()=>!!core&&launched&&!document.hidden);
 }
-async function stop(){if(closing)return;closing=true;clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();await sync(false);app=0;launched=false;emit('exit',{code:0,status:'success'});}finally{closing=false;}}
-function launch(){
+async function stop(){if(closing)return;closing=true;calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();await sync(false);app=0;launched=false;updateReplaySeek();emit('exit',{code:0,status:'success'});}finally{closing=false;}}
+async function launch(){
  if(launched)return;clearKeyboard();
  ensureSharedFontAlias(Module,language);
  const mode=Module.touhouMusicMode||'none';music=mode!=='none'&&mode!=='midi';core.sdl_ogg_decode_mode?.(options.oggDecodeMode==='full');
- core.sdl_music_enabled?.(music);app=core.sdl_game_open(false,Date.now()&65535);if(!app)throw Error('C++ game initialization failed');
+ core.sdl_music_enabled?.(music);app=core.sdl_game_open(false,options.netplayMode==='lan'?options.netplaySeed:Date.now()&65535);if(!app)throw Error('C++ game initialization failed');
+ try{await configureNetplay();}catch(reason){calibration?.stop();core.sdl_game_close();app=0;throw reason;}
  applyOptions();launched=true;first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
  canvas.focus({preventScroll:true});core.sdl_loop_pause(1);if(!document.hidden)void resumeForegroundAudio();core.sdl_loop_start(app);
  emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:'eagler-touhou/1',version:'3.5.1-sdl3'});
@@ -114,12 +182,16 @@ async function command(message){
  case 'touch-cancel':cancelTouches();return {};
  case 'direct-touch':directTouch(core,canvas,message,{width:innerWidth,height:innerHeight});return {};
  case 'touch-controls':touchControls(core,options,message);return {};
- case 'launch':launch();return {};
+ case 'launch':await launch();return {};
  case 'sync':await save();return {};
- case 'list':{const files=[];for(const dir of ['', '/replay'])for(const name of Module.FS.readdir(root()+dir)){const path=(dir+'/'+name).replace(/^\//,'');try{relativeSave(path);}catch{continue;}const full=root()+'/'+path,s=Module.FS.stat(full);if(Module.FS.isFile(s.mode)){const bytes=Module.FS.readFile(full);files.push({path:exportReplayName(path,bytes,10),size:s.size});}}return {files};}
- case 'read':{let path=relativeSave(message.path);if(path.endsWith('.rpyx'))path=path.slice(0,-1);return {bytes:Array.from(Module.FS.readFile(root()+'/'+path))};}
- case 'write':{if(!Array.isArray(message.bytes)||message.bytes.length>16*1024*1024||message.bytes.some(b=>!Number.isInteger(b)||b<0||b>255))throw Error('Invalid save bytes');const bytes=new Uint8Array(message.bytes),path=importReplayName(relativeSave(message.path),bytes,10);Module.FS.writeFile(root()+'/'+path,bytes);await sync(false);return {};}
- case 'remove':{let path=relativeSave(message.path);if(path.endsWith('.rpyx'))path=path.slice(0,-1);Module.FS.unlink(root()+'/'+path);await sync(false);return {};}
+ case 'list':{const files=[];for(const dir of ['', '/replay'])for(const name of Module.FS.readdir(root()+dir)){const path=(dir+'/'+name).replace(/^\//,'');try{storage.relativeSave(path);}catch{continue;}const full=root()+'/'+path,s=Module.FS.stat(full);if(Module.FS.isFile(s.mode)){const bytes=Module.FS.readFile(full);files.push({path:replayFiles.exported(path,bytes),size:s.size});}}return {files};}
+ case 'read':{const path=replayFiles.physical(storage.relativeSave(message.path));return {bytes:Array.from(Module.FS.readFile(root()+'/'+path))};}
+ case 'write':{if(!Array.isArray(message.bytes)||message.bytes.length>16*1024*1024||message.bytes.some(b=>!Number.isInteger(b)||b<0||b>255))throw Error('Invalid save bytes');const bytes=new Uint8Array(message.bytes),path=replayFiles.imported(storage.relativeSave(message.path),bytes);
+  if(multiplayerRuntime&&/\.rpy$/.test(path)){const target=root()+'/'+path,temporary=target+'.pending';
+   try{Module.FS.writeFile(temporary,bytes);Module.FS.rename(temporary,target);}catch(error){try{Module.FS.unlink(temporary);}catch{}throw error;}
+  }else Module.FS.writeFile(root()+'/'+path,bytes);
+  await sync(false);return {};}
+ case 'remove':{const path=replayFiles.physical(storage.relativeSave(message.path));Module.FS.unlink(root()+'/'+path);await sync(false);return {};}
  default:throw Error('Unsupported runtime command: '+message.command);
  }
 }
@@ -147,18 +219,29 @@ for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
  if(handled&&options.thpracEnabled&&/^(Backspace|Tab|F[1-7]|F12)$/.test(event.code))event.preventDefault();
 },{capture:true});
 const initialized=(async()=>{
+ if(multiplayerRuntime){
+  const manifest=await fetch('./manifest.json').then(r=>{if(!r.ok)throw Error('Missing TH10 Runtime manifest');return r.json();});
+  runtimeBuild=manifest.buildIdentity||manifest.execution?.sha256||'';
+  if(!/^[a-f0-9]{64}$/i.test(runtimeBuild))throw Error('Invalid TH10 Runtime build identity');
+  runtimeBuildWords=Array.from({length:4},(_,i)=>parseInt(runtimeBuild.slice(i*8,i*8+8),16)>>>0);
+ }
  let audioContext;try{audioContext=parent.__touhouAudioContext||parent.__th10AudioContext;}catch{}
  Module=await createModule({canvas,noInitialRun:true,resetBrowserKeyboard:()=>keyboard.clear(),...(audioContext?{SDL3:{audioContext}}:{}),print:console.log,printErr:console.error,
   instantiateWasm(imports,ready){return WebAssembly.instantiateStreaming(fetch('./th10-sdl.wasm'),imports).then(({instance,module})=>{core=instance.exports;ready(instance,module);return core;});}
  });
- window.Module=Module;window.FS=Module.FS;observeMusicWrites(Module,core,game);Module.FS.mkdirTree('/savesth10');Module.FS.mount(Module.IDBFS,{},'/savesth10');await sync(true);
- practice=createPractice({core,getApp:()=>app,canvas,clearKeys:clearKeyboard,setMusic:value=>core.sdl_music_enabled(value),setPaused:value=>core.sdl_loop_pause(value||document.hidden?1:0)});
- for(const lang of ['jp','chs'])Module.FS.mkdirTree('/savesth10/'+lang+'/replay');await migrateSaves();await mountData();cstring('#screen',core.sdl_canvas);
+ storage=await initializeSaveStorage({game,runtimeVariant,setCompiledVariant:value=>core.sdl_files_variant(value),filesystem:Module.FS,idbfs:Module.IDBFS,sync,
+  beforeMount(){window.Module=Module;window.FS=Module.FS;observeMusicWrites(Module,core,game);}});
+ practice=await createOptionalPractice({core,getApp:()=>app,canvas,clearKeys:clearKeyboard,setMusic:value=>core.sdl_music_enabled(value),setPaused:value=>core.sdl_loop_pause(value||document.hidden?1:0)});
+ for(const lang of ['jp','chs'])Module.FS.mkdirTree(storage.namespace+'/'+lang+'/replay');await migrateSaves();await mountData();cstring('#screen',core.sdl_canvas);
  Module.runtimePrepare=()=>!document.hidden;
+ calibration=createAdonisCalibration?.({core,getApp:()=>app,getOptions:()=>options,emit,game,
+  build:runtimeBuild,onError:error,pause:()=>core.sdl_loop_pause(1)});
  Module.runtimeFinish=(result,duration)=>{
-  practice.tick();
+  updateReplaySeek();
+  practice?.tick();
+  updateNetplayDiagnostics();
   const now=performance.now(),p=u32(core.sdl_stats(),6)[5];if(p!==lastPresented){frames++;if(lastFrame)maxGap=Math.max(maxGap,now-lastFrame);lastFrame=now;lastPresented=p;if(!first){first=true;emit('first-frame');}}
-  if(result||core.application_error(app)){if(core.application_error(app)){error('Game error '+core.application_error(app));core.sdl_loop_pause(1);}else queueMicrotask(()=>void stop().catch(error));}
+  if(result||core.application_error(app)){const code=core.application_error(app);if(code){let message='Game error '+code;if(multiplayerRuntime&&(code===-4||code===-5)){const describe=core.multiplayer_error_detail||(code===-5?core.multiplayer_network_error:null);const detail=describe?readCString(describe(app)):'';if(detail)message+=': '+detail;}error(message);core.sdl_loop_pause(1);}else queueMicrotask(()=>void stop().catch(error));}
   if(now-lastHealth>=1000){emit('frame-health',{fps:frames*1000/(now-lastHealth),maxGapMs:maxGap,frameMs:duration});const a=u32(core.sdl_audio_stats(),12);emit('audio-health',{queuedMs:a[5]*1000/44100,minQueuedMs:a[7]*1000/44100,backend:'script',underruns:0,robust:true});frames=0;maxGap=0;lastHealth=now;}
  };
  Module.runtimeFileChanged=()=>{if(saveTimer!==null)return;saveTimer=setTimeout(()=>{saveTimer=null;queue=queue.then(()=>sync(false)).catch(error);},0);};

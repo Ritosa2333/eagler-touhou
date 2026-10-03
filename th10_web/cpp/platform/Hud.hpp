@@ -14,6 +14,13 @@ namespace th10::browser {
 struct HudActions {
     virtual void clear_for_dialogue()=0;
     virtual void show_clear_results()=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    virtual void award_team_life()=0;
+    virtual void award_team_clear_bonus()=0;
+    virtual u32 multiplayer_count()const=0;
+    virtual u32 multiplayer_local_seat()const=0;
+    virtual const GameEconomy& multiplayer_economy(u32 seat)const=0;
+#endif
 };
 struct Hud;
 struct HudMessages final:DialogueEnvironment {
@@ -37,6 +44,9 @@ struct HudFrame final:GuiFrameEnvironment,GuiDrawEnvironment {
     void play_sound(i32) override;void draw_animation(AnmVm&) override;
     void rectangle(const ScreenRect&,u32) override;
     float presentation_boss_health(float current) override;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    void draw_multiplayer_resources(Gui& gui) override;
+#endif
 };
 struct HudScore final:GuiScoreEnvironment {
     Hud& owner;explicit HudScore(Hud&);
@@ -54,12 +64,19 @@ struct HudProgress final:GameProgressionEnvironment {
     Hud& owner;explicit HudProgress(Hud&);
     void stage_clear_notification() override;void select_screen(i32) override;
     void show_results() override;void fade_ending() override;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    void award_resource_bonus() override;
+#endif
 };
 struct Hud final:GuiResourceEnvironment,CallbackReceiver {
     GameState& state;GameActors& actors;AnimationEngine& engine;Common& common;Fonts& fonts;
     Input& input;Audio& audio;Scores& records;ScreenEffects& screen_effects;HudActions& actions;
     UpdateChain* update_chain;u8* message_cache=nullptr;char resource_name[260]{};u32 difficulty_visible=0;i32 error=0;
     float previous_boss_health=0;Enemy* previous_boss=nullptr;bool boss_presentation_valid=false;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    u32 last_multiplayer_hud_frame=~u32(0);
+    multiplayer::RollbackPool<sizeof(Dialogue),16> rollback_dialogues{};
+#endif
     Hud(GameState&,GameActors&,AnimationEngine&,Common&,Fonts&,Input&,Audio&,Scores&,ScreenEffects&,HudActions&);
     ~Hud();
     bool initialize();void activate();void shutdown();void bind_callbacks(Callbacks&) override;

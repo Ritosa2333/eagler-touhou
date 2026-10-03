@@ -95,7 +95,11 @@ i32 Player::update(PlayerFrameEnvironment& env){
     set_bounds(slow_pickup_bounds,position,number(slow_pickup_size.x),number(slow_pickup_size.y),number(slow_pickup_size.z));
     set_bounds(fast_pickup_bounds,position,number(fast_pickup_size.x),number(fast_pickup_size.y),number(fast_pickup_size.z));
     state_timer.tick();focus_timer.tick();
-    if(!*env.dialogue&&env.enemy_count&&*env.enemy_count){if(state_timer.current%60==0)economy.add_rank(1);update_firing(*env.shooting);}
+    if(!*env.dialogue&&env.enemy_count&&*env.enemy_count){
+#ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(state_timer.current%60==0)economy.add_rank(1);
+#endif
+        update_firing(*env.shooting);}
     else{set_timer(fire_timer,fire_timer_flags,-1,env.default_rate);target=nullptr;target_seen=0;}
     update_shots(*env.shooting);return 1;
 }

@@ -3,7 +3,7 @@ namespace th10 {
 // 0x4470c0. Keep the allocated slot on read/validation failure, as the original
 // resource owner later releases it. Texture bytes are separate allocations.
 AnmFile* AnmManager::open(i32 slot,const char* filename,AnmResourceEnvironment& env){
-    if(slot<0||slot>=33){env.report(AnmResourceError::InvalidSlot);return nullptr;}
+    if(slot<0||slot>=file_slot_count){env.report(AnmResourceError::InvalidSlot);return nullptr;}
     auto* data=env.read_file(filename,false,nullptr);auto* file=env.allocate_file();__builtin_memset(file,0,sizeof(*file));files[slot]=file;if(!data)return nullptr;
     file->file_index=slot;file->loaded=data;__builtin_memcpy(file->name,filename,std::strlen(filename)+1);
     const auto* chunk=reinterpret_cast<const AnmChunk*>(data);i32 sprites=chunk->sprite_count,scripts=chunk->script_count;u32 textures=1;
@@ -15,7 +15,7 @@ AnmFile* AnmManager::open(i32 slot,const char* filename,AnmResourceEnvironment& 
 // 0x447280. The platform pumps its loader at this blocking resource barrier.
 // An already-open slot returns immediately even if its upload is in progress.
 AnmFile* AnmManager::load(i32 slot,const char* name,AnmResourceEnvironment& env){
-    if(slot<0||slot>=33){env.report(AnmResourceError::InvalidSlot);return nullptr;}if(files[slot])return files[slot];
+    if(slot<0||slot>=file_slot_count){env.report(AnmResourceError::InvalidSlot);return nullptr;}if(files[slot])return files[slot];
 #ifdef TH_NATIVE_PLATFORM
     if(auto* ready=env.prepared_file(slot,name)){files[slot]=ready;return ready;}
 #endif
@@ -52,12 +52,12 @@ void AnmFile::release(AnmResourceEnvironment& env){
     if(textures){env.release_bytes(textures);textures=nullptr;}if(sprites){env.release_bytes(sprites);sprites=nullptr;}if(scripts){env.release_bytes(scripts);scripts=nullptr;}if(extra_data){env.release_bytes(extra_data);extra_data=nullptr;}if(loaded){env.release_bytes(loaded);loaded=nullptr;}
 }
 // 0x4477d0 / 0x447790.
-void AnmManager::unload(i32 slot,AnmResourceEnvironment& env){if(slot<0||slot>=33||!files[slot])return;files[slot]->release(env);env.release_file(files[slot]);files[slot]=nullptr;}
+void AnmManager::unload(i32 slot,AnmResourceEnvironment& env){if(slot<0||slot>=file_slot_count||!files[slot])return;files[slot]->release(env);env.release_file(files[slot]);files[slot]=nullptr;}
 bool AnmManager::resources_ready() const noexcept {for(auto* file:files)if(file&&(file->discard_request||file->unavailable))return false;return true;}
 // 0x447700. A stale deletion marker does not dereference the released slot;
 // the executable does so on that invalid path, which would fault on Windows.
 i32 AnmManager::process_loading(AnmResourceEnvironment& env){
-    for(i32 slot=0;slot<33;++slot)if(auto* file=files[slot]){if(file->discard_request)unload(slot,env);else if(file->unavailable)return file->complete_next(env)?0:-1;}return 0;
+    for(i32 slot=0;slot<file_slot_count;++slot)if(auto* file=files[slot]){if(file->discard_request)unload(slot,env);else if(file->unavailable)return file->complete_next(env)?0:-1;}return 0;
 }
 // 0x447940. Preserve input aliasing and each float storage rounding boundary.
 void AnmFile::set_sprite(i32 index,const AnmSprite& source) noexcept {

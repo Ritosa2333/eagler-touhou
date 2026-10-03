@@ -8,12 +8,78 @@
 #include "../game/EclProgram.hpp"
 #include "../../../portable/input/MotionTrack.hpp"
 #include <map>
+#include <memory>
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/InputLanes.hpp"
+#include "../multiplayer/PresentationCache.hpp"
+#include "../multiplayer/Pilot.hpp"
+#include "../multiplayer/CooperativeRules.hpp"
+#include "../multiplayer/ItemOwnership.hpp"
+#include "../multiplayer/RollbackPool.hpp"
+#include "../multiplayer/RollbackState.hpp"
+#include "../multiplayer/AudioEvents.hpp"
+#endif
 namespace th10::browser {
 // The gameplay owner persists across sessions, including transitions that keep
 // the player/replay/projectile pools or hand a completed replay to the menus.
 struct World final:HudActions,CallbackReceiver {
     GameState& state;AnimationEngine& engine;Common& common;Fonts& fonts;Input& input;Audio& audio;Scores& scores;ScreenEffects& effects;
     GameActors actors;Backgrounds backgrounds;UpdateChain* chain;Hud* hud=nullptr;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    multiplayer::Pilot pilots[3]{{state.pilot_games[0],0},{state.pilot_games[1],1},{state.pilot_games[2],2}};
+    multiplayer::State cooperation{};
+    multiplayer::ItemOwnership regular_item_owners[150]{},faith_item_owners[2048]{};
+    multiplayer::RollbackPool<sizeof(Enemy),512> rollback_enemies{};
+    multiplayer::RollbackPool<sizeof(TimedLaser),256> rollback_lasers{};
+    multiplayer::RollbackPool<sizeof(EclContext),1024> rollback_ecl{};
+    // Both loaded and auto-recorded hints are mutable linked owners. A death
+    // during prediction must not leave malloc nodes outside the checkpoint.
+    // 8192 covers the two 7*255 files plus retained copies and run recordings.
+    multiplayer::RollbackPool<sizeof(StageHint),8192> rollback_hints{};
+    // Exact-input, spectator and Replay worlds never create undo storage.
+    std::unique_ptr<multiplayer::RollbackState> rollback;
+    multiplayer::AudioEvents audio_events{};
+    multiplayer::ReplayCheckpoint replay_checkpoint_pending{};
+    multiplayer::ReplayCheckpoint replay_checkpoint_commit_pending{};
+    multiplayer::InputLanes::State replay_checkpoint_precommit_lanes{};
+    u32 replay_checkpoint_precommit_frame=Netplay::INVALID_FRAME;
+    u32 replay_checkpoint_commit_frame=Netplay::INVALID_FRAME;
+    bool replay_checkpoint_pending_valid=false;
+    bool replay_checkpoint_commit_valid=false;
+    bool replay_checkpoint_precommit_valid=false;
+    bool replay_checkpoint_precommit_cheat_used=false;
+    bool begin_netplay_frame(u32 frame);
+    bool end_netplay_frame();
+    bool commit_audio();
+    void begin_replay_checkpoint();
+    void capture_replay_checkpoint_precommit(u32 archiveFrame);
+    void clear_replay_checkpoint_precommit();
+    bool restore_replay_checkpoint_bootstrap();
+    bool finalize_replay_checkpoint();
+    bool rollback_resimulating=false;
+    u32 player_count=2,local_player=0;
+    // Separate reserved ANM slots, after the native title's 0..32 slots.
+    static constexpr i32 pilot_animation_slot(i32 character){return 33+character;}
+    multiplayer::Pilot* pilot_for(Player*);
+    multiplayer::Pilot* pilot_for(Bomb*);
+    void configure_player(multiplayer::Pilot&);
+    i32 update_player(Player*);i32 draw_player(Player*);i32 update_bomb(Bomb*);
+    u8 player_visual_alpha(const AnmVm&)const;
+    i32 start_bomb(multiplayer::Pilot&);i32 bomb_damage(multiplayer::Pilot&,const Vec3&);
+    void update_cooperation();
+    bool spawn_life_transfer(u32 donor,u32 recipient);
+    bool spawn_power_transfer(u32 donor,u32 recipient);
+    bool spawn_rescue_power(u32 donor,u32 recipient);
+    bool spawn_directed_power(u32 donor,u32 recipient,i32 amount);
+    u32 boss_participant_count()const;
+    const Vec3& target_player(const Vec3& origin) const;
+    void publish_player_targets(EnemyState&);
+    void award_team_life() override;
+    void award_team_clear_bonus() override;
+    u32 multiplayer_count()const override{return player_count;}
+    u32 multiplayer_local_seat()const override{return local_player;}
+    const GameEconomy& multiplayer_economy(u32 seat)const override{return pilots[seat].game;}
+#endif
     PlayerProfile* cached_profile=nullptr;ReplayDocument replay_files;MemoryPool replay_memory;
     ReplayWriter replay_writer;ReplayCalendar& calendar;
     touhou::input::MotionTrack& motion=state.motion;
@@ -25,7 +91,12 @@ struct World final:HudActions,CallbackReceiver {
     struct BulletPresentation {Vec3 position{};float angle=0;i32 id=0;u16 state=0;bool active=false;} bullet_presentation[2000]{};
     struct ItemPresentation {Vec3 position{};i32 age=0,state=0,kind=0;bool active=false;} item_regular_presentation[150]{},item_faith_presentation[2048]{};
     struct LaserPresentation {Vec3 position{};float angle=0,length=0,width=0;u32 id=0;i32 state=0;u32 kind=0;};
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // LaserManager::create caps the authoritative live list at 256 entries.
+    multiplayer::PresentationCache<const EnemyLaser*,LaserPresentation,256> laser_presentation;
+#else
     std::map<const EnemyLaser*,LaserPresentation> laser_presentation;
+#endif
     struct PopupPresentation {Vec3 position{};float elapsed=0;i32 timer=-2;u8 active=0,length=0;};
     PopupPresentation popup_presentation[723]{};
     GameSessionResources::Progress loading_progress;
@@ -67,6 +138,9 @@ struct World final:HudActions,CallbackReceiver {
     bool create_replay(i32,const char*);void destroy_replay(Replay*);void prepare_replay();void activate_replay();
     i32 update_replay();i32 replay_frame_action();i32 draw_replay();void finish_replay(i32);
     Replay* preview(const char*);void release_replay(Replay*);void save_replay(const char*,const char*);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    bool commit_replay();
+#endif
     bool create_results();void destroy_results(Results*);void show_results(bool);i32 update_results();i32 draw_results();
     bool create_popups();void destroy_popups(ScorePopups*);i32 update_popups();i32 draw_popups();void popup(const Vec3&,i32,u32);
     bool create_hints();void destroy_hints(StageHints*);i32 update_hints();void record_hint(const char*,const Vec3&,bool caution);

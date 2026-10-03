@@ -1,5 +1,8 @@
 #include "AnmEnvironment.hpp"
 #include "GameMath.hpp"
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(__wasm__)
+#include "AnmUvScroll.hpp"
+#endif
 namespace th10 {
 namespace {
 void seek(Timer& timer,u32& flags,i32 frame,const float* rate){
@@ -47,7 +50,12 @@ bool interrupt(AnmVm& vm,const float* rate){
     return true;
 }
 void animate(AnmVm& vm,AnmEnvironment& env){
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(__wasm__)
+    const float rate_value=*env.rate;
+    const auto rate=number(rate_value);
+#else
     const auto rate=number(*env.rate);
+#endif
     float* rotations[]={&vm.rotation.x,&vm.rotation.y,&vm.rotation.z};
     const float velocities[]={vm.angular_velocity.x,vm.angular_velocity.y,vm.angular_velocity.z};
     for(unsigned axis=0;axis<3;++axis)if(velocities[axis]!=0){
@@ -55,7 +63,13 @@ void animate(AnmVm& vm,AnmEnvironment& env){
     }
     if(vm.scale_velocity.y!=0){vm.scale.y=(rate*number(vm.scale_velocity.y)+number(vm.scale.y)).to_float();vm.flags|=8;}
     if(vm.scale_velocity.x!=0){vm.scale.x=(rate*number(vm.scale_velocity.x)+number(vm.scale.x)).to_float();vm.flags|=12;}
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(__wasm__)
+    const bool stationary_uv_mode=anm_stationary_uv_mode(rate_value);
+#endif
     auto scroll=[&](float value,float velocity){
+#if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY) && defined(__wasm__)
+        if(anm_stationary_uv(value,velocity,stationary_uv_mode))return value;
+#endif
         auto next=rate*number(velocity)+number(value);
         if(number(1.0f)<next||number(1.0f)==next)next=next-number(1.0f);
         else if(next<number(0.0f))next=next+number(1.0f);

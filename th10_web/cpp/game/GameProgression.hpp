@@ -26,6 +26,9 @@ struct GameProgressionEnvironment {
     virtual void select_screen(i32 screen)=0;
     virtual void show_results()=0;
     virtual void fade_ending()=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    virtual void award_resource_bonus()=0;
+#endif
 };
 void advance_stage(GameEconomy& game,const StageConfiguration* stages,const StageConfiguration** current) noexcept;
 void complete_stage(GameProgressionEnvironment& environment);

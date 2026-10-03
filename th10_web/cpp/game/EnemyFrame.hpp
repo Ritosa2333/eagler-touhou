@@ -31,6 +31,10 @@ struct EnemyFrameEnvironment : EnemyEnvironment {
 #endif
     virtual i32 player_damage(const Vec3& position,const Vec2& hitbox)=0;
     virtual void player_collision(const Vec3& position,const Vec2& hitbox)=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    u32 player_count=1;
+    virtual void publish_player_targets(EnemyState& enemy)=0;
+#endif
     virtual i32 destroy(EnemyState& enemy)=0;
     virtual void play_sound(i32 sound,float horizontal_position)=0;
 };

@@ -15,6 +15,9 @@ FILE_IMPORT("seek") u32 browser_seek(u32,i32,u32);
 FILE_IMPORT("read") u32 browser_read(u32,u8*,u32);
 FILE_IMPORT("write") u32 browser_write(u32,const u8*,u32);
 FILE_IMPORT("list") u32 browser_list(const char*,const char*,u32,char*,u32);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+FILE_IMPORT("replace") u32 browser_replace(const char*,const u8*,u32);
+#endif
 namespace {
 struct Host final : browser::FileHost {
     u32 open(const char* name,bool write) override {return browser_open(name,write);}
@@ -24,6 +27,9 @@ struct Host final : browser::FileHost {
     u32 read(u32 handle,u8* bytes,u32 length) override {return browser_read(handle,bytes,length);}
     u32 write(u32 handle,const u8* bytes,u32 length) override {return browser_write(handle,bytes,length);}
     u32 list(const char* directory,const char* pattern,u32 index,char* name,u32 capacity) override {return browser_list(directory,pattern,index,name,capacity);}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    bool replace(const char* name,const u8* bytes,u32 length)override{return browser_replace(name,bytes,length)!=0;}
+#endif
 } host;
 }
 #define FILE_EXPORT(name) extern "C" __attribute__((export_name(name)))

@@ -1,6 +1,9 @@
 #include "../game/CallbackNames.hpp"
 #include "Backgrounds.hpp"
 #include "../game/HighRefresh.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/RollbackState.hpp"
+#endif
 #include <cstdlib>
 #include <vector>
 namespace th10::browser {
@@ -19,9 +22,49 @@ Backgrounds::Backgrounds(GameState& s,AnimationEngine& e,ScreenEffects& fx,FileS
     background=&current;overlay=&previous;stage_number=&s.game.stage;game_flags=reinterpret_cast<const u8*>(&s.game.flags);world=&e.world;rate=&e.speed;filename=source_name;animation_slots=e.manager.files;
     chain=&e.chain_value;callbacks=&e.callback_environment;update_callback=callback_id::StageUpdate;background_callback=callback_id::StageBackground;foreground_callback=callback_id::StageForeground;e.register_receiver(*this);
 }
-Backgrounds::~Backgrounds(){destroy(current);destroy(previous);engine.unregister_receiver(*this);}
+Backgrounds::~Backgrounds(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    collect_retired(~u32(0));
+#endif
+    destroy(current);destroy(previous);engine.unregister_receiver(*this);
+}
 Stage* Backgrounds::create(const char* name,i32 offset){if(offset?previous:current)__builtin_trap();return StageResources::create(name,offset,*this);}
-void Backgrounds::destroy(Stage* stage){if(stage){for(auto& entry:presentation)if(entry.owner==stage)entry={};StageResources{*stage,*this}.release();std::free(stage);}}
+void Backgrounds::destroy(Stage* stage){
+    if(!stage)return;
+    for(auto& entry:presentation)if(entry.owner==stage)entry={};
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(engine.netplay_frame!=~u32(0)){
+        RetiredStage* record=nullptr;
+        for(auto& candidate:retired)if(candidate.stage==stage){record=&candidate;break;}
+        if(!record)for(auto& candidate:retired)if(!candidate.stage){record=&candidate;break;}
+        if(!record){error=-1;return;}
+        *record={stage,engine.netplay_frame,!(state.game.flags&1),stage->animation_file};
+        // Match logical deletion now, including callback allocator state, but
+        // keep the resource graph alive until no restore can reference it.
+        engine.chain_value.remove_locked(stage->update_entry,engine.callback_environment);
+        engine.chain_value.remove_locked(stage->draw_entry,engine.callback_environment);
+        engine.chain_value.remove_locked(stage->foreground_entry,engine.callback_environment);
+        stage->update_entry=stage->draw_entry=stage->foreground_entry=nullptr;
+        if(current==stage)current=nullptr;if(previous==stage)previous=nullptr;
+        return;
+    }
+#endif
+    StageResources{*stage,*this}.release();std::free(stage);
+}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+bool Backgrounds::collect_retired(u32 before_frame){
+    for(auto& record:retired){
+        if(!record.stage)continue;
+        if(record.stage==current||record.stage==previous){record={};continue;}
+        if(record.frame>=before_frame)continue;
+        const auto slot=(u32(record.stage->stage_number)&1)+4;
+        if(record.animations&&engine.manager.files[slot]!=record.file){error=-1;return false;}
+        StageResources{*record.stage,*this}.release(&record.animations);
+        std::free(record.stage);record={};
+    }
+    return error==0;
+}
+#endif
 void Backgrounds::snapshot(Stage& stage){
     PresentationStage* slot=nullptr;for(auto& entry:presentation)if(entry.owner==&stage){slot=&entry;break;}
     if(!slot)for(auto& entry:presentation)if(!entry.owner){slot=&entry;break;}if(!slot)slot=&presentation[0];
@@ -49,7 +92,7 @@ bool Backgrounds::invoke(CallbackToken token,void* object,i32& result){auto& sta
 #endif
 Stage* Backgrounds::allocate_stage(){return static_cast<Stage*>(std::malloc(sizeof(Stage)));}
 void* Backgrounds::allocate_bytes(u32 size){return std::malloc(size);}
-void Backgrounds::release_memory(void* bytes){std::free(bytes);}
+void Backgrounds::release_memory(void* bytes){engine.release_memory(bytes);}
 u8* Backgrounds::read_file(const char* name,u32* size){return ResourceFiles{files}.load(name,size,false);}
 AnmFile* Backgrounds::load_animations(i32 slot,const char* name){return engine.manager.load(slot,name,engine.resources);}
 void Backgrounds::release_animations(AnmFile& file){file.release(engine.resources);}

@@ -147,5 +147,10 @@ void Audio::release(){
     for(auto& task:tasks)task={};if(manager.notification_event)host.event(2,manager.notification_event);manager.notification_event=0;
 }
 i32 Audio::update(){return AudioControl{manager,controls}.update();}
-void Audio::advance_fades(){auto* current=static_cast<SoundBuffer*>(manager.music);SoundBuffer::advance_fades(&current,buffers);}
+void Audio::advance_fades(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(manager.command_sink)return;
+#endif
+    auto* current=static_cast<SoundBuffer*>(manager.music);SoundBuffer::advance_fades(&current,buffers);
+}
 }

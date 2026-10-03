@@ -47,6 +47,11 @@ struct Host {
     std::vector<th10::browser::Audio*> owners;
     u32 next=1,next_event=1;uint64_t millis=1000;ma_engine engine{};
     SDL_AudioStream* stream=nullptr;bool ready=false,paused=false,refilling=true;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Browser suspension and Replay output suppression are independent
+    // owners. Releasing a seek must never release a visibility/manual pause.
+    bool caller_paused=false,replay_seeking=false;
+#endif
     // TH07's web queue policy: bounded 1024-frame work slices, hysteresis.
     static constexpr int chunk=1024,low=4096,high=6144;
     u32 pumps=0,empty_checks=0,mixed_frames=0,min_queued=~0u,error=0;
@@ -62,10 +67,21 @@ struct Host {
         SDL_AudioSpec spec{SDL_AUDIO_F32,2,44100};
         if(SDL_InitSubSystem(SDL_INIT_AUDIO))stream=SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,&spec,nullptr,nullptr);
         if(!stream){ma_engine_uninit(&engine);error=2;return false;}
-        ready=true;paused=false;SDL_ResumeAudioStreamDevice(stream);return true;
+        ready=true;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        paused=caller_paused||replay_seeking;
+        if(paused)SDL_PauseAudioStreamDevice(stream);else SDL_ResumeAudioStreamDevice(stream);
+#else
+        paused=false;SDL_ResumeAudioStreamDevice(stream);
+#endif
+        return true;
     }
     Buffer* get(u32 id){auto it=objects.find(id);return it==objects.end()?nullptr:it->second.get();}
-    void destroy(){objects.clear();events.clear();if(stream)SDL_DestroyAudioStream(stream);stream=nullptr;if(ready)ma_engine_uninit(&engine);ready=false;}
+    void destroy(){objects.clear();events.clear();if(stream)SDL_DestroyAudioStream(stream);stream=nullptr;if(ready)ma_engine_uninit(&engine);ready=false;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        caller_paused=replay_seeking=paused=false;
+#endif
+    }
     u32 position(Buffer& b){
         if(!b.playing)return b.cursor;
         const auto align=std::max(1u,read16(b.format.data()+12));
@@ -194,7 +210,31 @@ void audio_host_attach(th10::browser::Audio* owner,bool attach){
 }
 #define EXPORT(name) __attribute__((export_name(name)))
 EXPORT("sdl_audio_pump") void sdl_audio_pump(){host.pump();}
-EXPORT("sdl_audio_pause") void sdl_audio_pause(u32 paused){if(host.paused==(paused!=0))return;host.paused=paused!=0;if(!host.stream)return;if(paused)SDL_PauseAudioStreamDevice(host.stream);else SDL_ResumeAudioStreamDevice(host.stream);}
+EXPORT("sdl_audio_pause") void sdl_audio_pause(u32 paused){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    host.caller_paused=paused!=0;paused=host.caller_paused||host.replay_seeking;
+#endif
+    if(host.paused==(paused!=0))return;host.paused=paused!=0;if(!host.stream)return;if(paused)SDL_PauseAudioStreamDevice(host.stream);else SDL_ResumeAudioStreamDevice(host.stream);
+}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+// Replay seeking advances the existing mixer/refill owners without sending
+// the skipped interval to the device. This is not a new BGM player or a live
+// frame-pacing policy. Ordinary builds do not contain these helpers.
+void sdl_audio_replay_seek_output(u32 seeking){
+    if(host.replay_seeking==(seeking!=0))return;
+    host.replay_seeking=seeking!=0;
+    sdl_audio_pause(host.caller_paused);
+    if(host.stream)SDL_ClearAudioStream(host.stream);
+    host.primed=false;host.refilling=true;
+}
+u32 sdl_audio_replay_seek_tick(){
+    if(!host.ready)return 1;
+    // 44100 Hz / 60 native ticks. render() services the original stream
+    // notifications and maintains the selected track, loop and position.
+    float discarded[735*2]{};
+    return host.render(discarded,735)==735?1:0;
+}
+#endif
 EXPORT("sdl_audio_shutdown") void sdl_audio_shutdown(){host.destroy();}
 EXPORT("sdl_audio_stats") u32 sdl_audio_stats(){static u32 values[12];values[0]=host.ready;values[1]=host.objects.size();values[2]=host.events.size();values[3]=host.pumps;values[4]=host.mixed_frames;values[5]=host.stream?std::max(0,SDL_GetAudioStreamQueued(host.stream))/8:0;values[6]=host.empty_checks;values[7]=host.min_queued;values[8]=host.error;values[9]=host.paused;std::memcpy(values+10,&host.rms,4);values[11]=u32(host.millis);return address(values);}
 // Deterministic PCM/ownership probes exercise the same mixer used by SDL.

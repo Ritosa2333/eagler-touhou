@@ -90,7 +90,27 @@ __attribute__((export_name("sdl_native_input"))) void sdl_native_input(Applicati
     poll_controllers(snapshot);
     const auto state=touch_state();sync_touch_context(state);const auto sample=gestures.sample(state,SDL_GetTicks(),snapshot.virtual_keys[16],snapshot.virtual_keys[37]||snapshot.virtual_keys[38]||snapshot.virtual_keys[39]||snapshot.virtual_keys[40]);
     for(const auto& k:keyboard_map)if(sample.keys[k.vk]||(k.vk>=160&&k.vk<=165&&sample.keys[16+(k.vk-160)/2]))key(snapshot,k.scan,k.vk);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    auto& analog=app->state.multiplayer_local_analog;analog={};
+    const bool multiplayer_mode=app->state.multiplayer_session.configured&&app->state.netplay_runtime.Configured();
+    if(multiplayer_mode){
+        if(!app->state.netplay_runtime.Playback()&&!app->state.netplay_runtime.Spectator()){
+            analog.touchBomb=sample.keys[88];
+            analog.touchUsed=sample.motion!=0||sample.keys[88]||sample.keys[90]||sample.keys[16];
+            if(sample.motion){
+                if(gestures.mode==3){
+                    analog.kind=multiplayer::InputLanes::LocalAnalogSample::Kind::Joystick;
+                    analog.x=gestures.stick_x;analog.y=gestures.stick_y;
+                }else{
+                    analog.kind=multiplayer::InputLanes::LocalAnalogSample::Kind::DirectTarget;
+                    analog.x=sample.x;analog.y=sample.y;analog.unlimited=sample.motion==2;
+                }
+            }
+        }
+    }else if(app->world)app->world->motion.target(sample.motion,sample.x,sample.y);
+#else
     if(app->world)app->world->motion.target(sample.motion,sample.x,sample.y);
+#endif
 #ifdef TH_ENABLE_THPRAC
     ThpracUi::update_input(*app);
     if(ThpracUi::captures_game_input())for(const int vk:{16,27,37,38,39,40,88,90})snapshot.virtual_keys[vk]=0;

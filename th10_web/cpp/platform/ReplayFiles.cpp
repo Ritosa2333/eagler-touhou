@@ -1,9 +1,18 @@
 #include "ReplayFiles.hpp"
 #include "../game/TextFormat.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/ReplayFiles.hpp"
+#endif
 namespace th10::browser {
 ReplayDocument::ReplayDocument(FileSystem& f,u32 mode_flags):files(f),flags(mode_flags){game_flags=&flags;dictionary=history;}
 ReplayDocument::~ReplayDocument(){close();}
-i32 ReplayDocument::load(const char* name){close();memory.clear();value.initialize();const i32 result=load_replay(value,name,*this);if(result){memory.clear();value.initialize();}return result;}
+i32 ReplayDocument::load(const char* name){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    return multiplayer::LoadReplayPreview(*this,name);
+#else
+    close();memory.clear();value.initialize();const i32 result=load_replay(value,name,*this);if(result){memory.clear();value.initialize();}return result;
+#endif
+}
 u8* ReplayDocument::allocate_bytes(u32 bytes){return memory.allocate(bytes);}
 void ReplayDocument::release_bytes(void* bytes){memory.release(bytes);}
 bool ReplayDocument::exists(const char* path){const u32 id=files.host.open(path,false);if(id==0xffffffff)return false;files.host.close(id);return true;}

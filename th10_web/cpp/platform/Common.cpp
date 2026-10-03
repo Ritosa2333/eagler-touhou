@@ -23,7 +23,7 @@ bool Common::invoke(CallbackToken token,void* object,i32& result){
 #endif
 CommonResources* Common::allocate(){return static_cast<CommonResources*>(std::malloc(sizeof(CommonResources)));}
 void Common::delete_object(void* p){std::free(p);}
-void Common::free_geometry(void* p){std::free(p);}
+void Common::free_geometry(void* p){engine.release_memory(p);}
 AnmFile* Common::load_animations(i32 slot,const char* name){return engine.manager.load(slot,name,engine.resources);}
 void Common::release_animations(AnmFile& file){file.release(engine.resources);}
 void Common::bind_sprite(AnmFile& file,AnmVm& vm,i32 sprite){file.bind_sprite(vm,sprite);}

@@ -54,6 +54,17 @@ struct SessionFrame final:GameSessionEnvironment {
     void hide_screen(i32 frames) override{ScreenEffect::create(ScreenEffectKind::HideScreen,frames,0,0,0,43,w.effects);}
     void stop_loader() override{w.loading=false;}
     void clear_bullets() override{w.clear_bullets();}
+    void clear_items() override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(w.engine.rollback_state){
+            for(auto& item:w.actors.items->regular)
+                if(!w.engine.rollback_state->Touch(&item,sizeof(item))){w.fail();return;}
+            for(auto& item:w.actors.items->faith)
+                if(!w.engine.rollback_state->Touch(&item,sizeof(item))){w.fail();return;}
+        }
+#endif
+        GameSessionEnvironment::clear_items();
+    }
     void activate_player() override{w.activate_player();}
     void clear_enemies() override{w.clear_enemies(true);}
     void clear_lasers() override{w.clear_lasers();}
@@ -86,7 +97,21 @@ bool World::start(i32 mode){if(actors.session)__builtin_trap();
     state.practice.replay=mode!=0;
 #endif
     SessionResources env(*this);auto* session=GameSessionResources::create(mode,env);if(!session)return false;effects.controller_flags=&session->session_flags;if(hud)hud->controller_stage=&session->replay_mode;return true;}
-void World::advance_loading_step(){if(!loading)return;SessionResources env(*this);GameSessionResources{*actors.session,env}.load_step(loading_progress);
+void World::advance_loading_step(){if(!loading)return;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    const bool initializing_pilots=new_game&&loading_progress.phase==0;
+#endif
+    SessionResources env(*this);GameSessionResources{*actors.session,env}.load_step(loading_progress);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(initializing_pilots&&loading_progress.phase==1){
+        // Native startup computes initial resources once. Apply that result to
+        // every pilot only at a new-run boundary; stage transitions retain them.
+        for(u32 seat=1;seat<player_count;++seat){
+            pilots[seat].game.lives=state.game.lives;
+            pilots[seat].game.power=state.game.power;
+        }
+    }
+#endif
 #ifdef TH_ENABLE_THPRAC
     // One-shot advanced-practice setup. The original th10_patch_main hook runs
     // after the session finishes allocating its objects, so apply the run
@@ -95,7 +120,24 @@ void World::advance_loading_step(){if(!loading)return;SessionResources env(*this
 #endif
 }
 void World::advance_loading(){while(loading)advance_loading_step();}
-void World::stop_session(){if(!actors.session)return;loading=false;auto* session=actors.session;SessionResources env(*this);GameSessionResources{*session,env}.shutdown();std::free(session);effects.controller_flags=nullptr;}
+void World::stop_session(){if(!actors.session)return;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // A page may close with speculative work still present. Only a fully
+    // reconciled native boundary contributes to persistent local records.
+    const auto& runtime=state.netplay_runtime;
+    const auto last=runtime.LastSimulatedFrame(),confirmed=runtime.ConfirmedThroughAllRemotes();
+    if(scores.multiplayer_active()&&!scores.replay_read_only()&&
+       !runtime.HasRollbackRequest()&&!engine.rollback_state&&
+       (!state.multiplayer_session.sessionId||
+        (last!=Netplay::INVALID_FRAME&&confirmed!=Netplay::INVALID_FRAME&&confirmed>=last)))
+        if(!scores.checkpoint_multiplayer(calendar.timestamp()))fail();
+    if(audio.manager.command_sink==&audio_events)audio.manager.command_sink=nullptr;
+    engine.rollback_state=nullptr;engine.netplay_frame=Netplay::INVALID_FRAME;
+    if(rollback)rollback->Clear();
+    if(!backgrounds.collect_retired(Netplay::INVALID_FRAME))fail();
+#endif
+    loading=false;auto* session=actors.session;SessionResources env(*this);GameSessionResources{*session,env}.shutdown();std::free(session);effects.controller_flags=nullptr;
+}
 void World::shutdown(){
     const auto previous_screen=state.pending_screen;state.pending_screen=3;stop_session();state.game.flags&=~0xb;
     SessionResources env(*this);for(u32 i=0;i<static_cast<u32>(SessionObject::Count);i++){const auto kind=static_cast<SessionObject>(i);if(auto* value=env.object(kind))destroy_object(kind,value);}state.pending_screen=previous_screen;

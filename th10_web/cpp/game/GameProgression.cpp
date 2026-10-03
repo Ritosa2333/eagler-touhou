@@ -19,8 +19,12 @@ void complete_stage(GameProgressionEnvironment& env){
     if(game.stage==6||game.stage==7){
         (*env.gui)->display_flags|=0x20;
         game.add_score(product(game.item_value,1000));
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        env.award_resource_bonus();
+#else
         if(game.stage==7){game.add_score(product(game.lives,40000000));game.add_score(product(game.power,400000));}
         else if(static_cast<u32>(game.difficulty)<=4){constexpr i32 lives[]={20000000,25000000,35000000,40000000,40000000},power[]={100000,100000,200000,300000,400000};game.add_score(product(game.lives,lives[game.difficulty]));game.add_score(product(game.power,power[game.difficulty]));}
+#endif
         // EHOOK th10_all_clear_bonus_2/3 (0x416d6c/0x416e49): once the bonus
         // has been added, an all-clear run still shows the result screen
         // instead of continuing into the ending/score-entry flow.

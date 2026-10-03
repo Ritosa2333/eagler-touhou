@@ -1,0 +1,202 @@
+name: Multiplayer performance regressions
+
+permissions:
+  contents: read
+
+on:
+  push:
+    paths:
+      - '.github/workflows/performance-regressions.yml'
+      - 'th10_web/cpp/multiplayer/RollbackPool*.hpp'
+      - 'th10_web/cpp/multiplayer/RollbackState.*'
+      - 'th10_web/cpp/multiplayer/PresentationCache.hpp'
+      - 'th10_web/cpp/multiplayer/NetworkExports.cpp'
+      - 'th10_web/cpp/multiplayer/AudioEvents.*'
+      - 'th10_web/cpp/game/AudioManager.*'
+      - 'th10_web/cpp/platform/Application.cpp'
+      - 'th10_web/cpp/multiplayer/Anm*.hpp'
+      - 'th10_web/cpp/game/AnmRenderer.cpp'
+      - 'th10_web/cpp/game/AnmProjection.cpp'
+      - 'th10_web/cpp/game/AnmInterpreter.cpp'
+      - 'th10_web/cpp/game/AnmRegistry.cpp'
+      - 'th10_web/cpp/game/PlayerShooting.*'
+      - 'th10_web/cpp/game/Player.hpp'
+      - 'th10_web/cpp/game/PlayerShotLookup.hpp'
+      - 'th10_web/cpp/game/Anm*.hpp'
+      - 'th10_web/cpp/game/GameInput.*'
+      - 'th10_web/cpp/game/Presentation.*'
+      - 'th10_web/cpp/game/TitleMain.*'
+      - 'th10_web/cpp/game/MusicRoom.*'
+      - 'th10_web/cpp/game/Results.*'
+      - 'th10_web/cpp/game/Ending.*'
+      - 'th10_web/cpp/platform/ApplicationPresentation.cpp'
+      - 'th10_web/cpp/platform/Title.cpp'
+      - 'th10_web/cpp/platform/WorldResults.cpp'
+      - 'th10_web/cpp/platform/Credits.cpp'
+      - 'th10_web/cpp/sdl/ApplicationHost.cpp'
+      - 'portable/check-high-refresh-contract.mjs'
+      - 'portable/check-anm-*.mjs'
+      - 'portable/check-player-shot-lookup.mjs'
+      - 'portable/check-presentation-input.mjs'
+      - 'portable/check-menu-input.mjs'
+      - 'portable/check-game-resources.mjs'
+      - 'portable/check-bullet-owner.mjs'
+      - 'portable/check-multiplayer-rules.mjs'
+      - 'tests/high-refresh-contract.test.mjs'
+      - 'tests/anm-*.cpp'
+      - 'tests/player-shot-*.cpp'
+      - 'tests/presentation-input-test.cpp'
+      - 'tests/menu-input-test.cpp'
+      - 'tests/*audio*.cpp'
+      - 'tests/game-resource*'
+      - 'tests/bullet-owner-check.cpp'
+      - 'tests/rollback-pool*.cpp'
+      - 'tests/presentation-cache-test.cpp'
+      - 'third_party/eagler-common'
+  pull_request:
+    paths:
+      - '.github/workflows/performance-regressions.yml'
+      - 'th10_web/cpp/multiplayer/RollbackPool*.hpp'
+      - 'th10_web/cpp/multiplayer/RollbackState.*'
+      - 'th10_web/cpp/multiplayer/PresentationCache.hpp'
+      - 'th10_web/cpp/multiplayer/NetworkExports.cpp'
+      - 'th10_web/cpp/multiplayer/AudioEvents.*'
+      - 'th10_web/cpp/game/AudioManager.*'
+      - 'th10_web/cpp/platform/Application.cpp'
+      - 'th10_web/cpp/multiplayer/Anm*.hpp'
+      - 'th10_web/cpp/game/AnmRenderer.cpp'
+      - 'th10_web/cpp/game/AnmProjection.cpp'
+      - 'th10_web/cpp/game/AnmInterpreter.cpp'
+      - 'th10_web/cpp/game/AnmRegistry.cpp'
+      - 'th10_web/cpp/game/PlayerShooting.*'
+      - 'th10_web/cpp/game/Player.hpp'
+      - 'th10_web/cpp/game/PlayerShotLookup.hpp'
+      - 'th10_web/cpp/game/Anm*.hpp'
+      - 'th10_web/cpp/game/GameInput.*'
+      - 'th10_web/cpp/game/Presentation.*'
+      - 'th10_web/cpp/game/TitleMain.*'
+      - 'th10_web/cpp/game/MusicRoom.*'
+      - 'th10_web/cpp/game/Results.*'
+      - 'th10_web/cpp/game/Ending.*'
+      - 'th10_web/cpp/platform/ApplicationPresentation.cpp'
+      - 'th10_web/cpp/platform/Title.cpp'
+      - 'th10_web/cpp/platform/WorldResults.cpp'
+      - 'th10_web/cpp/platform/Credits.cpp'
+      - 'th10_web/cpp/sdl/ApplicationHost.cpp'
+      - 'portable/check-high-refresh-contract.mjs'
+      - 'portable/check-anm-*.mjs'
+      - 'portable/check-player-shot-lookup.mjs'
+      - 'portable/check-presentation-input.mjs'
+      - 'portable/check-menu-input.mjs'
+      - 'portable/check-game-resources.mjs'
+      - 'portable/check-bullet-owner.mjs'
+      - 'portable/check-multiplayer-rules.mjs'
+      - 'tests/high-refresh-contract.test.mjs'
+      - 'tests/anm-*.cpp'
+      - 'tests/player-shot-*.cpp'
+      - 'tests/presentation-input-test.cpp'
+      - 'tests/menu-input-test.cpp'
+      - 'tests/*audio*.cpp'
+      - 'tests/game-resource*'
+      - 'tests/bullet-owner-check.cpp'
+      - 'tests/rollback-pool*.cpp'
+      - 'tests/presentation-cache-test.cpp'
+      - 'third_party/eagler-common'
+  workflow_dispatch:
+
+jobs:
+  native-regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Display cadence and pinned channel API contract
+        run: |
+          node portable/check-high-refresh-contract.mjs
+          node --test tests/high-refresh-contract.test.mjs
+          node --check portable/check-anm-dense-engine.mjs
+          node --check portable/check-anm-trig-input.mjs
+          node --check portable/check-anm-billboard.mjs
+          node --check portable/check-anm-uv-scroll.mjs
+          node --check portable/check-anm-submit.mjs
+          node --check portable/check-player-shot-lookup.mjs
+          node --check portable/check-presentation-input.mjs
+          node --check portable/check-menu-input.mjs
+          node --check portable/check-game-resources.mjs
+          node --check portable/check-bullet-owner.mjs
+      - name: Optimized owner tests with assertions enabled
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/performance-regressions
+          flags=(-std=c++17 -O2 -UNDEBUG -Wall -Wextra -Werror -DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1 -Ithird_party/eagler-common/include)
+          for test in rollback-pool presentation-cache; do
+            g++ "${flags[@]}" "tests/${test}-test.cpp" -o "artifacts/performance-regressions/${test}"
+            "artifacts/performance-regressions/${test}"
+          done
+          g++ "${flags[@]}" tests/rollback-pool-capture-test.cpp third_party/eagler-common/src/netplay/RollbackJournal.cpp -o artifacts/performance-regressions/rollback-pool-capture
+          artifacts/performance-regressions/rollback-pool-capture
+      - name: Pool capture address and undefined-behavior checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          g++ -std=c++17 -O1 -g -UNDEBUG -Wall -Wextra -Werror -fsanitize=address,undefined -fno-omit-frame-pointer -DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1 -Ithird_party/eagler-common/include tests/rollback-pool-capture-test.cpp third_party/eagler-common/src/netplay/RollbackJournal.cpp -o artifacts/performance-regressions/rollback-pool-capture-sanitized
+          artifacts/performance-regressions/rollback-pool-capture-sanitized
+
+  wasm-owner-regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/th10-wasi-sdk-34.0-x86_64-linux.deb
+          key: th10-wasi-sdk-34-09f37a478107bf30381e0d8922ac678ebe998de59e574f96830f08e520908d4a
+      - name: Verify and extract the official pinned WASI SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          package="$HOME/.cache/th10-wasi-sdk-34.0-x86_64-linux.deb"
+          mkdir -p "$HOME/.cache" "$RUNNER_TEMP/th10-wasi-sdk"
+          if [ ! -f "$package" ]; then
+            curl --fail --location --retry 2 --max-time 300 --output "$package" https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-34/wasi-sdk-34.0-x86_64-linux.deb
+          fi
+          echo "09f37a478107bf30381e0d8922ac678ebe998de59e574f96830f08e520908d4a  $package" | sha256sum --check
+          dpkg-deb --extract "$package" "$RUNNER_TEMP/th10-wasi-sdk"
+          echo "WASI_SDK_PATH=$RUNNER_TEMP/th10-wasi-sdk/opt/wasi-sdk" >> "$GITHUB_ENV"
+      - name: Actual wasm32 owner and arithmetic regressions
+        run: |
+          node portable/check-multiplayer-rules.mjs
+          TH10_TEST_UBSAN=1 node portable/check-multiplayer-rules.mjs --audio-only
+          node portable/check-anm-trig-input.mjs
+          node portable/check-anm-billboard.mjs
+          TH10_TEST_UBSAN=1 node portable/check-anm-billboard.mjs
+          node portable/check-anm-uv-scroll.mjs
+          TH10_TEST_UBSAN=1 node portable/check-anm-uv-scroll.mjs
+          node portable/check-anm-submit.mjs
+          TH10_TEST_UBSAN=1 node portable/check-anm-submit.mjs
+          node portable/check-player-shot-lookup.mjs
+          TH10_TEST_UBSAN=1 node portable/check-player-shot-lookup.mjs
+      - name: Authored menu and screenshot input word regressions
+        run: |
+          node portable/check-presentation-input.mjs
+          node portable/check-menu-input.mjs
+          TH10_TEST_UBSAN=1 node portable/check-presentation-input.mjs
+          TH10_TEST_UBSAN=1 node portable/check-menu-input.mjs
+      - name: Compile title rollback and channel diagnostics against the pin
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/performance-regressions
+          flags=(--target=wasm32-wasip1 -O2 -std=c++17 -Wall -Wextra -Werror -fno-exceptions -fno-rtti -ffp-contract=off -fno-strict-aliasing -DTH_NATIVE_PLATFORM=1 -DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1 -Ithird_party/eagler-common/include -Ith10_web/cpp/multiplayer)
+          for source in RollbackState NetworkExports; do
+            "$WASI_SDK_PATH/bin/clang++" "${flags[@]}" -c "th10_web/cpp/multiplayer/${source}.cpp" -o "artifacts/performance-regressions/${source}.o"
+          done

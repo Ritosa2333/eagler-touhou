@@ -35,6 +35,9 @@ struct ItemRegion {
     bool contains(const Vec3& point) const noexcept;
 };
 struct ItemFrameEnvironment : ItemEnvironment,EconomyEnvironment {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    bool collector_available=true;
+#endif
     GameEconomy* economy;
     const Vec3* player_position;
     const i32* player_state;

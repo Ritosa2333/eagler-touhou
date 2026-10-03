@@ -2,6 +2,9 @@
 #include "FileSystem.hpp"
 #include "../game/ScoreData.hpp"
 #include "MemoryPool.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/SessionRecords.hpp"
+#endif
 namespace th10::browser {
 // The same score records and codec as the original game, owned by the
 // browser application rather than by addresses in an executable image.
@@ -17,6 +20,16 @@ struct Scores final : ScoreFileEnvironment {
     ~Scores();
     void reload();
     i32 save();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    bool begin_replay();
+    void end_replay();
+    bool begin_multiplayer();
+    bool checkpoint_multiplayer(i32 timestamp);
+    void end_multiplayer();
+    bool replay_read_only()const{return session_records.ReadOnly();}
+    bool multiplayer_active()const{return session_records.Active();}
+    multiplayer::SessionRecords session_records;
+#endif
     void release_scratch();
     ScoreData* allocate_score() override;
     void delete_score(ScoreData* score) override;

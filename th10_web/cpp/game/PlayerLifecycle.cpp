@@ -1,4 +1,7 @@
 #include "PlayerLifecycle.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/Balance.hpp"
+#endif
 #ifdef TH_ENABLE_THPRAC
 #include "PracticeRuntime.hpp"
 #endif
@@ -50,6 +53,11 @@ void Player::die(PlayerLifecycleEnvironment& env){
     state=2;reset(state_timer,state_timer_flags,0,env.default_rate);reset(invulnerability,invulnerability_flags,180,env.default_rate);
     animation_file->initialize_script(animation,0,*env.animations,env.manager->started_scripts);
     for(auto& option:options){option.active=0;env.manager->registry.interrupt(option.animations[0],1);env.manager->registry.interrupt(option.animations[1],1);}
-    option_count=0;if(env.replay_mode!=1)env.show_caution(position);env.cancel_spell_capture();economy.add_rank(-1024);
+    option_count=0;if(env.replay_mode!=1)env.show_caution(position);env.cancel_spell_capture();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    economy.add_rank(multiplayer::rank_penalty(-1024,env.player_count));
+#else
+    economy.add_rank(-1024);
+#endif
 }
 }

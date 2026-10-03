@@ -29,9 +29,13 @@ const data=process.env.TH10_LAB_DATA||resolve(config.artifactRoot,'input/th10.da
 if(existsSync(data))files.set('/input/th10.dat',data);
 
 const identity={schema:'presentation-lab/build/1',game:'th10',commit:execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),wasm:build.sha256,loader:build.loaderSha256,
+  runtimeInventory:sha256(readFileSync(resolve(config.runtimeRoot,'runtime-files.json'))),
   commonCommit:execFileSync('git',['rev-parse','HEAD'],{cwd:resolve(root,'third_party/eagler-common'),encoding:'utf8'}).trim(),instrumented:true,dataAvailable:files.has('/input/th10.dat'),
   evidence:'diagnostic runtime, not production deployment',sampling:'original Draw endpoints + frozen alpha sweep'};
 const port=Number(process.env.PORT||8134);
 const {server,start}=createPresentationLabServer({port,files,identity:()=>identity,incident:{directory:resolve(config.artifactRoot,'incidents'),validate(report){if(report?.schema!=='presentation-lab/report/1'||!Number.isInteger(report.tick)||!Array.isArray(report.objects)||report.objects.length>8192)throw Error('Invalid incident report');return String(report.tick);}}});
-server.on('listening',()=>console.log(JSON.stringify({url:`http://127.0.0.1:${port}/`,wasm:identity.wasm,data:identity.dataAvailable,scope:'loopback reads / bounded same-origin incident write'})));
+server.on('listening',()=>{
+  console.log(JSON.stringify({url:`http://127.0.0.1:${port}/`,wasm:identity.wasm,data:identity.dataAvailable,scope:'loopback reads / bounded same-origin incident write'}));
+  process.send?.({type:'ready',port:server.address().port});
+});
 start();

@@ -1,6 +1,9 @@
 #include "../game/CallbackNames.hpp"
 #include "../game/HighRefresh.hpp"
 #include "AnimationEngine.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/RollbackState.hpp"
+#endif
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -39,7 +42,7 @@ AnimationEngine::AnimationEngine(FileSystem& f,GraphicsDevice& d,Rng& script,Rng
 }
 AnimationEngine::~AnimationEngine(){
     chain_value.clear_list(chain_value.update,callback_environment);chain_value.clear_list(chain_value.draw,callback_environment);manager.release(*this);
-    for(i32 slot=0;slot<33;++slot)manager.unload(slot,resources);
+    for(i32 slot=0;slot<AnmManager::file_slot_count;++slot)manager.unload(slot,resources);
     if(manager.model_vertex_buffer)device.release_resource(manager.model_vertex_buffer);
 }
 GraphicsRenderer AnimationEngine::renderer(){return GraphicsRenderer(device,manager,*active,world,vertices);}
@@ -71,11 +74,20 @@ i32 AnimationEngine::update(AnmVm& vm){
     // Registry-owned VMs are captured in snapshot_presentation() before the
     // fixed tick. Embedded VMs (HUD, spell digits, markers, etc.) are not in
     // that registry, so remember their first pre-update state here instead.
-    presentation_previous.try_emplace(&vm,presentation_sample(vm));return vm.update(*this);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    presentation_previous.try_emplace_with(&vm,[&](){return presentation_sample(vm);});
+#else
+    presentation_previous.try_emplace(&vm,presentation_sample(vm));
+#endif
+    return vm.update(*this);
 }
 bool AnimationEngine::present(AnmVm& copy,const AnmVm& source) const{
     if(!high_refresh::render_only||!high_refresh::active)return false;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    const auto* sample=presentation_previous.find(&source);if(!sample)return false;const auto& before=*sample;
+#else
     const auto found=presentation_previous.find(&source);if(found==presentation_previous.end())return false;const auto& before=found->second;
+#endif
     // Visibility changes, timer rewinds and script/file changes are lifecycle
     // boundaries. Snap instead of blending from a stale incarnation.
     if(before.id!=source.id||before.script_index!=source.script_index||before.file!=source.animation_file||before.visible!=(source.flags&3u)||source.script_timer.current<before.script_time)return false;
@@ -93,21 +105,98 @@ bool AnimationEngine::present(AnmVm& copy,const AnmVm& source) const{
     return true;
 }
 void AnimationEngine::draw(AnmVm& vm){
-    auto env=renderer();if(!high_refresh::render_only||!high_refresh::active){AnmRenderer{manager,env}.draw(vm);return;}
+    const auto submit=[&](AnmVm& target){
+        auto env=renderer();AnmRenderer native{manager,env};
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(suppress_rollback_sprite_output){
+            // Match AnmRenderer's visibility gate BEFORE the authored state
+            // change. Modes 5/7/8 cache their transform and clear dirty bits;
+            // the other modes only write renderer scratch/batches. Use the
+            // original transform routine, with exactly its arithmetic/order.
+            if((target.flags&3)!=3||!(target.color>>24))return;
+            const auto mode=(target.flags>>22)&15;
+            if(mode==5||mode==7||mode==8)AnmProjection{native,env}.update_transform(target);
+            return;
+        }
+#endif
+        native.draw(target);
+    };
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // front.anm's stock Player/Power label VMs remain alive and updated for
+    // native lifecycle/rollback identity. Their pixels are supplied by the
+    // equal per-seat resource rows instead, using these same native sprites.
+    if(vm.id&&vm.animation_file&&vm.animation_file->file_index==6&&
+       (vm.script_index==8||vm.script_index==9))return;
+    if(player_view_alpha&&player_view_owner){
+        const u8 alpha=player_view_alpha(player_view_owner,vm);
+        if(alpha<255){
+            auto copy=vm;present(copy,vm);
+            const u32 primary_alpha=std::min<u32>(copy.color>>24,alpha);
+            const u32 secondary_alpha=std::min<u32>(copy.secondary_color>>24,alpha);
+            copy.color=(copy.color&0x00ffffffu)|(primary_alpha<<24);
+            copy.secondary_color=(copy.secondary_color&0x00ffffffu)|(secondary_alpha<<24);
+            submit(copy);return;
+        }
+    }
+#endif
+    if(!high_refresh::render_only||!high_refresh::active){submit(vm);return;}
     auto copy=vm;present(copy,vm);
-    AnmRenderer{manager,env}.draw(copy);
+    submit(copy);
 }
 void AnimationEngine::bind_sprite(AnmVm& vm,i32 index){vm.animation_file->bind_sprite(vm,index);}
 void AnimationEngine::change_draw_mode(AnmVm& vm){AnmDistortion::initialize(vm,*this);}
-void* AnimationEngine::allocate_geometry(u32 bytes){return std::malloc(bytes);}
+void* AnimationEngine::allocate_geometry(u32 bytes){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    return rollback_geometry.allocate(bytes,true);
+#else
+    return std::malloc(bytes);
+#endif
+}
 AnmVm* AnimationEngine::spawn_child(AnmVm& parent,i32 script,u32 mode){
     const auto placement=mode==88?AnimationPlacement::WorldBack:mode==90?AnimationPlacement::UiBack:mode==91?AnimationPlacement::WorldFront:AnimationPlacement::UiFront;
     u32 id=manager.create(*parent.animation_file,script,parent.owner_tag,placement,*this,*this);return manager.registry.find_and_clear(id);
 }
-AnmVm* AnimationEngine::allocate_animation(){return static_cast<AnmVm*>(std::malloc(sizeof(AnmVm)));}
-void AnimationEngine::release_memory(void* p){std::free(p);}
-void* AnimationEngine::allocate(u32 bytes){return std::malloc(bytes);}
-void AnimationEngine::release(void* p){std::free(p);}
+AnmVm* AnimationEngine::allocate_animation(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    return static_cast<AnmVm*>(rollback_animation_overflow.allocate(sizeof(AnmVm),true));
+#else
+    return static_cast<AnmVm*>(std::malloc(sizeof(AnmVm)));
+#endif
+}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+void AnimationEngine::preserve_animation_slot(AnmVm& vm){
+    if(rollback_state)(void)rollback_state->Touch(&vm,sizeof(vm));
+}
+#endif
+void AnimationEngine::release_memory(void* p){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(p&&rollback_animation_overflow.owns(p)){
+        if(!rollback_animation_overflow.release(p))__builtin_trap();
+        return;
+    }
+    if(p&&rollback_geometry.owns(p)){
+        if(!rollback_geometry.release(p))__builtin_trap();
+        return;
+    }
+#endif
+    std::free(p);
+}
+void* AnimationEngine::allocate(u32 bytes){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    return rollback_geometry.allocate(bytes,true);
+#else
+    return std::malloc(bytes);
+#endif
+}
+void AnimationEngine::release(void* p){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(p&&rollback_geometry.owns(p)){
+        if(!rollback_geometry.release(p))__builtin_trap();
+        return;
+    }
+#endif
+    std::free(p);
+}
 void AnimationEngine::clear_pixel_shader(){device.clear_shader();}
 void AnimationEngine::create_model_buffer(void*& buffer){device.create_vertices(80,Layouts::World,buffer);}
 void* AnimationEngine::lock_model_buffer(void* buffer){return device.map_vertices(buffer);}
@@ -121,6 +210,12 @@ i32 AnimationEngine::draw_layer(u32 layer){auto env=renderer();GraphicsCamera ca
 void AnimationEngine::configure_camera(bool flat){auto env=renderer();GraphicsCamera camera(env);if(flat)active->configure_flat(camera);else active->configure_world(camera);camera.set_viewport(active->viewport);}
 void AnimationEngine::snapshot_presentation(){
     presentation_previous.clear();
-    for(auto* node: {manager.registry.world_head,manager.registry.ui_head})while(node){const auto* vm=node->value;node=node->next;if(vm)presentation_previous[vm]=presentation_sample(*vm);}
+    for(auto* node: {manager.registry.world_head,manager.registry.ui_head})while(node){const auto* vm=node->value;node=node->next;if(vm){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        presentation_previous.try_emplace_with(vm,[&](){return presentation_sample(*vm);});
+#else
+        presentation_previous[vm]=presentation_sample(*vm);
+#endif
+    }}
 }
 }

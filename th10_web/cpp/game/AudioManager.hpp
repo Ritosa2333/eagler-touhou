@@ -4,6 +4,15 @@ namespace th10 {
 struct SoundDefinition {i32 source;std::int16_t volume,lifetime;};
 struct MusicCommand {i32 kind,argument,step;char filename[256];};
 static_assert(sizeof(SoundDefinition)==8&&sizeof(MusicCommand)==0x10c);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+// Title-owned logical audio commands. Native queue/track/fade semantics stay
+// below this seam; rollback can defer output without replacing the backend.
+struct AudioCommandSink {
+    virtual void capture_effect(i32 effect,i32 pan,const SoundDefinition*) noexcept=0;
+    virtual void capture_stop(i32 effect) noexcept=0;
+    virtual void capture_music(i32 kind,i32 argument,const char* filename)=0;
+};
+#endif
 struct AudioManager {
     void* device;u32 reserved_004;
     void* source_buffers[128];void* effect_buffers[128];i32 effect_lifetimes[128];
@@ -17,6 +26,9 @@ struct AudioManager {
     u32 play_argument,archive_offset,device_worker,source_worker,device_worker_id;
     i32 load_stop;u32 startup_window,loading_done;
     u8* pending_waves[37];i32 music_volume,effects_volume,effects_gain;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    AudioCommandSink* command_sink=nullptr;
+#endif
     void queue_effect(i32 effect,i32 pan,const SoundDefinition* definitions) noexcept;
     void queue_effect_position(i32 effect,float position,const SoundDefinition* definitions) noexcept;
     void stop_effect(i32 effect) noexcept;
@@ -24,5 +36,10 @@ struct AudioManager {
 };
 static_assert(offsetof(AudioManager,pending_effects)==0x620&&offsetof(AudioManager,pan_values)==0x680);
 static_assert(offsetof(AudioManager,formats)==0x1f84&&offsetof(AudioManager,commands)==0x1f88);
-static_assert(offsetof(AudioManager,music)==0x5208&&sizeof(AudioManager)==0x52d0);
+static_assert(offsetof(AudioManager,music)==0x5208);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+static_assert(sizeof(AudioManager)==0x52d4);
+#else
+static_assert(sizeof(AudioManager)==0x52d0);
+#endif
 }

@@ -1,4 +1,7 @@
 #include "../game/CallbackNames.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include <eagler/netplay/SnapshotPolicy.hpp>
+#endif
 #include "World.hpp"
 #include "AudioData.hpp"
 #include "../game/TextFormat.hpp"
@@ -9,17 +12,31 @@
 #include <cstdlib>
 namespace th10::browser {
 World::World(GameState& s,AnimationEngine& e,Common& c,Fonts& f,Input& i,Audio& a,Scores& records,ScreenEffects& fx):state(s),engine(e),common(c),fonts(f),input(i),audio(a),scores(records),effects(fx),backgrounds(s,e,fx,records.files),chain(&e.chain_value),replay_files(records.files,s.game.flags),replay_writer(records.files,default_calendar(),s.game,s.active_time,s.total_time,s.motion.cheat_movement_used,s.chinese),calendar(default_calendar()){engine.register_receiver(*this);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    engine.rollback_state=nullptr;
+    engine.player_view_owner=this;
+    engine.player_view_alpha=[](const void* owner,const AnmVm& vm){return static_cast<const World*>(owner)->player_visual_alpha(vm);};
+#endif
     engine.callback_environment.bind(callback_id::SessionUpdate,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.update_session();});
     engine.callback_environment.bind(callback_id::SessionDraw,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.actors.session->draw(w.engine.manager);});
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    engine.callback_environment.bind(callback_id::PlayerUpdate,this,[](void* p,void* player,i32){return static_cast<World*>(p)->update_player(static_cast<Player*>(player));});
+    engine.callback_environment.bind(callback_id::PlayerDraw,this,[](void* p,void* player,i32){return static_cast<World*>(p)->draw_player(static_cast<Player*>(player));});
+#else
     engine.callback_environment.bind(callback_id::PlayerUpdate,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.update_player();});
     engine.callback_environment.bind(callback_id::PlayerDraw,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.draw_player();});
+#endif
     engine.callback_environment.bind(callback_id::BulletsUpdate,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.update_bullets();});
     engine.callback_environment.bind(callback_id::BulletsDraw,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.draw_bullets();});
     engine.callback_environment.bind(callback_id::LasersUpdate,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.update_lasers();});
     engine.callback_environment.bind(callback_id::LasersDraw,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.draw_lasers();});
     engine.callback_environment.bind(callback_id::ItemsUpdate,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.actors.session&&(w.actors.session->session_flags&0x405)?1:w.update_items();});
     engine.callback_environment.bind(callback_id::ItemsDraw,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.actors.session&&(w.actors.session->session_flags&4)?1:w.draw_items();});
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    engine.callback_environment.bind(callback_id::BombUpdate,this,[](void* p,void* bomb,i32){return static_cast<World*>(p)->update_bomb(static_cast<Bomb*>(bomb));});
+#else
     engine.callback_environment.bind(callback_id::BombUpdate,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.update_bomb();});
+#endif
     engine.callback_environment.bind(callback_id::EnemiesUpdate,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.update_enemies();});
     engine.callback_environment.bind(callback_id::SpellUpdate,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.update_spell();});
     engine.callback_environment.bind(callback_id::SpellBackground,this,[](void* p,void*,i32){auto& w=*static_cast<World*>(p);return w.draw_spell(false);});
@@ -39,8 +56,56 @@ World::World(GameState& s,AnimationEngine& e,Common& c,Fonts& f,Input& i,Audio& 
     engine.callback_environment.bind(callback_id::EnemiesDraw,this,[](void*,void*,i32){return 1;});
     engine.callback_environment.bind(callback_id::HintsDraw,this,[](void*,void*,i32){return 1;});
 }
-World::~World(){shutdown();while(previews)release_replay(&previews->document.value);release_results_services();if(hud){hud->~Hud();std::free(hud);}std::free(cached_profile);engine.callback_environment.unbind(this);engine.unregister_receiver(*this);}
+World::~World(){shutdown();while(previews)release_replay(&previews->document.value);release_results_services();if(hud){hud->~Hud();std::free(hud);}std::free(cached_profile);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(engine.rollback_state==rollback.get())engine.rollback_state=nullptr;
+    if(engine.player_view_owner==this){engine.player_view_owner=nullptr;engine.player_view_alpha=nullptr;engine.netplay_frame=~u32(0);}
+#endif
+    engine.callback_environment.unbind(this);engine.unregister_receiver(*this);}
 void World::select_screen(i32 screen){state.pending_screen=state.engine_flags&0x1000?2:screen;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+bool World::begin_netplay_frame(u32 frame){
+    const auto& runtime=state.netplay_runtime;
+    // Exact input at this frame alone is insufficient: an earlier unconfirmed
+    // prediction can still change its starting state. Rebuilt confirmed
+    // prefixes, Replay and spectator frames need audio, but no undo storage.
+    engine.rollback_state=nullptr;
+    if(runtime.AllowsRollback()){
+        if(!rollback)rollback.reset(new(std::nothrow) multiplayer::RollbackState);
+        if(!rollback)return false;
+        const auto decision=runtime.Prepare(frame);
+        const bool capture=Netplay::NeedsRollbackSnapshot(frame,runtime.ConfirmedThroughAllRemotes(),
+            decision.predictedMask,rollback_resimulating,true);
+        if(!rollback->BeginFrame(*this,frame,capture))return false;
+        if(capture)engine.rollback_state=rollback.get();
+    }else if(rollback){
+        // Mode changes belong to a new committed run, never an active frame.
+        rollback.reset();
+    }
+    if(!audio_events.BeginFrame(frame)){
+        engine.rollback_state=nullptr;
+        if(rollback&&rollback->IsFrameOpen())rollback->EndFrame();
+        return false;
+    }
+    engine.netplay_frame=frame;
+    audio.manager.command_sink=&audio_events;return true;
+}
+bool World::end_netplay_frame(){
+    if(audio.manager.command_sink==&audio_events)audio.manager.command_sink=nullptr;
+    engine.rollback_state=nullptr;engine.netplay_frame=~u32(0);
+    const bool commands=audio_events.EndFrame();
+    const bool state=!rollback||rollback->EndFrame();
+    return commands&&state;
+}
+bool World::commit_audio(){
+    const auto& runtime=state.netplay_runtime;
+    return audio_events.CommitThrough(runtime.ConfirmedThroughAllRemotes(),
+        runtime.LastSimulatedFrame(),audio.manager,[](void* context){
+            auto& audio=*static_cast<Audio*>(context);audio.advance_fades();
+            return audio.update()>=0;
+        },&audio);
+}
+#endif
 void World::sound(i32 id){audio.manager.queue_effect(id,0,sound_definitions);}
 void World::sound(i32 id,float x){audio.manager.queue_effect_position(id,x,sound_definitions);}
 AudioGame World::music(){AudioGame game{audio.manager,&scores.data,&state.configuration.display_flags,&engine.speed};

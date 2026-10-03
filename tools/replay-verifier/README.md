@@ -49,6 +49,22 @@ node tools/replay-verifier/run-daily-gate.mjs `
 Both gates validate every compressed asset against `golden/manifest.json`
 before comparison. Candidate output cannot update expected data.
 
+The Demo collector boots and freezes within one browser evaluation. Do not
+return the full Lab controller to Python before freezing: serializing the
+Runtime graph can let the live loop consume the beginning of a Demo. A capture
+which starts mid-Replay fails; never crop, pad or restart the title's Demo index
+to make its rotation match.
+
+`capture-current-demos.py` writes `suite.json` with `complete: false` from the
+navigation phase onward and checkpoints each batch. Boot errors, HTTP failures,
+completed Demos and the current partial Demo remain diagnostic evidence after
+failure or interruption. A partial capture is never admitted by the golden
+comparator. Collector bookkeeping regression tests are:
+
+```powershell
+python tools/replay-verifier/test_capture_current_demos.py -v
+```
+
 ## Advanced oracle maintenance
 
 This adapter is external diagnostics only. It preserves the title-owned Demo

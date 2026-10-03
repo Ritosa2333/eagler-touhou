@@ -1,5 +1,8 @@
 #include "Scores.hpp"
 #include <cstdlib>
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include <new>
+#endif
 namespace th10::browser {
 namespace {
 // Spell-card difficulty table, original JP/CHS data at 0x4743c0.
@@ -18,8 +21,32 @@ Scores::Scores(FileSystem& f,Rng& rng,bool chinese):files(f){
     ScoreData::create(*this);
 }
 Scores::~Scores(){close_and_unlock();ScoreData::destroy(*this);release_scratch();}
-void Scores::reload(){ScoreData::destroy(*this);release_scratch();ScoreData::create(*this);}
-i32 Scores::save(){const i32 result=data?data->save(*this):-1;release_scratch();return result;}
+void Scores::reload(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(multiplayer_active())return;
+#endif
+    ScoreData::destroy(*this);release_scratch();ScoreData::create(*this);
+}
+i32 Scores::save(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(replay_read_only())return 0;
+    if(multiplayer_active()){
+        const i32 result=session_records.Persistent()->save(*this);release_scratch();return result;
+    }
+#endif
+    const i32 result=data?data->save(*this):-1;release_scratch();return result;
+}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+bool Scores::begin_replay(){
+    return data&&session_records.Begin(*data,spell_difficulties,true);
+}
+void Scores::end_replay(){
+    if(data)session_records.Finish(*data);
+}
+bool Scores::begin_multiplayer(){return data&&session_records.Begin(*data,spell_difficulties,false);}
+bool Scores::checkpoint_multiplayer(i32 timestamp){return data&&session_records.Checkpoint(*data,timestamp);}
+void Scores::end_multiplayer(){if(data)session_records.Finish(*data);}
+#endif
 void Scores::release_scratch(){
     // The original save routine leaves temporary compression buffers behind
     // if opening the destination fails. They are not persistent score data.

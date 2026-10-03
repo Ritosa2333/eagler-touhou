@@ -55,7 +55,8 @@ struct EndingEnvironment : BackgroundThreadEnvironment {
     const char* const* ending_files;
     char *filename,*decoded_text;
     u32* loading_animation;
-    const u32 *engine_flags,*held,*pressed;
+    const u32 *engine_flags,*held;
+    const u16* pressed;
     i32 *pending_screen,*menu_state;
     float* rate;
     virtual void* allocate(u32 bytes)=0;

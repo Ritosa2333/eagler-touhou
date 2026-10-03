@@ -82,9 +82,37 @@ struct Application final:CallbackReceiver {
     double presentation_origin=0;u32 presentation_frames=0;float presentation_fps=0;
     i32 reset_frames=0,loading_pause=0,disable_vsync=0,error=0,notice_code=-1,screenshot_error=0;
     bool stopped=false,writer_pending=false,initialized=false;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // A multiplayer logical frame remains journal-open through its authored
+    // 60 Hz Draw.  The display-only high-refresh draw happens after this is
+    // finalized and therefore cannot enter deterministic rollback state.
+    Netplay::FrameDecision multiplayer_pending_decision{};
+    u32 multiplayer_pending_frame=Netplay::INVALID_FRAME;
+    u8 multiplayer_frame_skip=0;
+    bool multiplayer_frame_open=false;
+    bool multiplayer_waiting=false;
+    bool multiplayer_generation_pending=false;
+    bool multiplayer_replay_scope=false,multiplayer_replay_escape=false;
+    u32 multiplayer_replay_seek_target=0,multiplayer_replay_seek_stage=0;
+    ApplicationConfig multiplayer_replay_saved_config{};
+    u32 multiplayer_rollbacks=0,multiplayer_resimulated_frames=0;
+    char multiplayer_failure_detail[256]{};
+#endif
     AppScreens screens;AppFrames frames;AppLoop loop;AppStatistics rates;AppPresentation presentation;AppScreenshot screenshots;AppConfiguration config;
     Application(FileSystem&,Input&,GameState&,AnimationEngine&,Fonts&,Audio&,ScreenEffects&);
     ~Application();bool initialize();i32 step(bool scheduled_tick=false);bool presentation_draw(float alpha,bool interpolate,bool world_interpolate=true);void presentation_frame();void save();void shutdown();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    i32 multiplayer_update();
+    void multiplayer_fail(const char* reason);
+    bool multiplayer_active()const;
+    bool multiplayer_pump_network();
+    u32 multiplayer_spectator_catchup_budget()const;
+    bool multiplayer_resimulate_draw();
+    bool multiplayer_finalize_frame();
+    bool multiplayer_begin_replay(const char* filename,u32 selected_stage);
+    bool multiplayer_replay_seeking()const;
+    void multiplayer_finish_replay();
+#endif
     void advance_loading();void sync_views();bool ensure_world();void configure_camera(Camera&,bool);
     Extended time();void bind_callbacks(Callbacks&) override;i32 draw_statistics();
 #ifndef TH_NATIVE_PLATFORM
