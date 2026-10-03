@@ -240,8 +240,7 @@ bool BeginNextStage(State& state) noexcept {
 
 TickResult AdvanceOneTick(State& state, const FrameInput& input,
                           LifeItemAllocator allocator,
-                          PowerItemAllocator powerAllocator,
-                          PowerItemAllocator rescueAllocator) noexcept {
+                          PowerItemAllocator powerAllocator) noexcept {
     TickResult result{};
     if (state.seatCount < kMinSeats || state.seatCount > kMaxSeats) {
         return result;
@@ -333,17 +332,10 @@ TickResult AdvanceOneTick(State& state, const FrameInput& input,
 
         SeatState& receiver = state.seats[static_cast<std::uint8_t>(target)];
         if (receiver.lifeState == LifeState::Spirit) {
-            if (rescueAllocator.allocate &&
-                !rescueAllocator.allocate(rescueAllocator.context, giver, static_cast<std::uint8_t>(target))) {
-                reset_rescue(source);
-                continue;
-            }
-            source.power = static_cast<std::int16_t>(source.power - source.power / 2);
             --source.lives;
             receiver.lifeState = LifeState::Alive;
-            // One donated life restores -1 to a playable zero and adds to
-            // any shared extends banked while this player was a Spirit.
-            if (receiver.lives < kMaxLives) ++receiver.lives;
+            receiver.lives = 0;
+            receiver.power = kMaxPower / 2;
             source.waitingForFocusRelease = true;
             reset_rescue(source);
             reset_rescue(receiver);

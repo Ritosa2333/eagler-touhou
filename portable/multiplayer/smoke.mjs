@@ -285,6 +285,7 @@ window.multiplayerSmoke={
  identity(){return {game:'th10',variant:'multiplayer',fixtureBuild:!!core.mp_fixture_prepare,wasmSha256:wasmIdentity,
   sourceDigest:buildIdentity.sourceDigest,profile:buildIdentity.profile,assets:assetIdentities};},
  fixture(kind){if(!core.mp_fixture_prepare)throw Error('Fixture export absent from production Runtime');return !!core.mp_fixture_prepare(app,kind);},
+ fixtureDropRules(kind,x=0){return Array.from(new Int32Array(core.memory.buffer,core.mp_fixture_drop_rules(app,kind,x),8));},
  historyProfile(profile){if(app||!core.mp_fixture_score_history)throw Error('History setup requires a fresh diagnostic page');return !!core.mp_fixture_score_history(profile);},
  fixtureStatus(){if(!core.mp_fixture_status)throw Error('Fixture export absent');return Array.from(new Int32Array(core.memory.buffer,core.mp_fixture_status(app),19));},
  rulesProbe(){if(!core.mp_fixture_rules_probe)throw Error('Fixture export absent');return Array.from(new Int32Array(core.memory.buffer,core.mp_fixture_rules_probe(app),8));},

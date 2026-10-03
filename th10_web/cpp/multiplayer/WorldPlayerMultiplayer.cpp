@@ -345,8 +345,7 @@ struct Frame final:PlayerFrameEnvironment {
     }
     void drop_power(const Vec3& point,i32 kind,float angle) override{
         // Final-death contents stay native; ordinary P drops follow the roster multiplier.
-        const u32 copies=pilot.game.lives<0?1:world.player_count;
-        for(u32 copy=0;copy<copies;++copy)world.spawn_item(point,kind,0xffffff,angle,3);
+        world.spawn_item(point,kind,0xffffff,angle,3);
     }
     void game_over(bool) override{
         // Native life/power penalties have already run. Keep the native pilot
@@ -482,6 +481,7 @@ void revive_player(World& world,multiplayer::Pilot& pilot,i32 lives){
     if(!pilot.player)return;
     Player& player=*pilot.player;
     pilot.game.lives=lives;
+    pilot.game.power=multiplayer::kMaxPower/2;
     player.death_position=player.position;
     // A cooperation rescue is not TH10's native respawn.  Keep the Spirit's
     // current world position and resume play there; state 0 would run the
@@ -498,6 +498,7 @@ void revive_player(World& world,multiplayer::Pilot& pilot,i32 lives){
     player.target=nullptr;player.target_seen=0;
     clear_player_offense(player,world.engine.manager.registry);
     world.configure_player(pilot);
+    if(pilot.seat==0&&world.hud)world.hud->update_power(pilot.game.power/20,(pilot.game.power%20)*100/20);
 }
 
 bool refresh_cooperation_from_native(World& world,
@@ -917,10 +918,7 @@ void World::update_cooperation(){
         controls.shootPressed=(state.input_lanes.seats[seat].pressed&multiplayer::InputLanes::kShoot)!=0;
     }
     const auto result=multiplayer::AdvanceOneTick(
-        cooperation,input_frame,{this,allocate_life_item},{this,allocate_power_item},
-        {this,[](void* raw,std::uint8_t giver,std::uint8_t target) noexcept {
-            return static_cast<World*>(raw)->spawn_rescue_power(giver,target);
-        }});
+        cooperation,input_frame,{this,allocate_life_item},{this,allocate_power_item});
     for(u32 i=0;i<result.eventCount;++i){
         const auto& event=result.events[i];
         if(event.kind==multiplayer::EventKind::SpiritRevived){

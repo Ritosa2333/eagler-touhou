@@ -13,6 +13,25 @@
 #endif
 
 using namespace th10;
+extern "C" __attribute__((export_name("mp_fixture_drop_rules")))
+const i32* mp_fixture_drop_rules(browser::Application* app,u32 kind,i32 x){
+    static i32 out[8]{};std::fill(out,out+8,0);
+    if(!app||!app->world||!app->world->actors.items||app->multiplayer_frame_open)return out;
+    auto& world=*app->world;
+    for(u32 seat=0;seat<world.player_count;++seat)world.pilots[seat].game.power=0;
+    for(auto& item:world.actors.items->regular)item.state=0;
+    if(kind==100){if(!world.spawn_life_transfer(0,1))return out;}
+    else if(kind==101){if(!world.spawn_directed_power(0,1,20))return out;}
+    else world.spawn_item({float(x),100,0},i32(kind),0xffffffff,-1.5707963705062866f,2.2f);
+    const Item* first=nullptr;
+    for(const auto& item:world.actors.items->regular)if(item.state){
+        ++out[1];if(first&&first->position.x==item.position.x)out[2]=1;
+        if(out[1]<=2)out[2+out[1]]=Scalar::truncate(item.position.x*100);
+        if(item.velocity.y>=0)out[5]=1;
+        first=&item;
+    }
+    out[0]=1;return out;
+}
 // Observe real owner Draw, not a second implementation of positioning.
 extern "C" __attribute__((export_name("mp_fixture_presentation_draw")))
 u32 mp_fixture_presentation_draw(browser::Application* app,float alpha){

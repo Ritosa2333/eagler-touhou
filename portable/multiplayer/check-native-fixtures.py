@@ -92,7 +92,7 @@ with fixture(args.url, report, args.output) as test:
             for frame in range(245, 265):
                 advance_pair(a, b, frame, 0, 4)
             assert state(b)[10] == 2 and state(b)[22] >= 0, state(b)
-            assert state(b)[11] == state(b)[23] == 40, state(b)
+            assert state(b)[11] == 80 and state(b)[23] == 50 and state(b)[22] == 0, state(b)
             probe = call(b, 'multiplayerSmoke.rulesProbe()')
             assert probe[0] == 2 and probe[4] >= 1200, probe
             result['completedRescue'] = evidence(b)

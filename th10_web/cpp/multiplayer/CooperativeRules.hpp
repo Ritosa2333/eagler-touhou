@@ -136,7 +136,6 @@ bool BeginNextStage(State& state) noexcept;
 // failed allocator leaves the giver's life untouched and permits a later retry.
 TickResult AdvanceOneTick(State& state, const FrameInput& input,
                           LifeItemAllocator allocator = {},
-                          PowerItemAllocator powerAllocator = {},
-                          PowerItemAllocator rescueAllocator = {}) noexcept;
+                          PowerItemAllocator powerAllocator = {}) noexcept;
 
 } // namespace th10::multiplayer

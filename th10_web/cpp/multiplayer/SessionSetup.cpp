@@ -41,9 +41,9 @@ std::uint32_t gameplay_contract(const SessionSetup& setup,std::uint32_t version)
 }
 }
 std::uint32_t GameplayContract(const SessionSetup& setup) noexcept {
-    // Scaled P drops, rescue Power gifts, no terminal life awards and dynamic boss scaling.
+    // Roster-scaled drops and fixed rescue resources without charging donor Power.
     // Existing live, spectator and Replay gates must reject the old semantics.
-    return gameplay_contract(setup,0x10000008u);
+    return gameplay_contract(setup,0x10000009u);
 }
 std::uint32_t LegacyGameplayContractV4(const SessionSetup& setup) noexcept {
     return gameplay_contract(setup,0x10000004u);

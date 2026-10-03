@@ -69,7 +69,7 @@ struct World final:HudActions,CallbackReceiver {
     void update_cooperation();
     bool spawn_life_transfer(u32 donor,u32 recipient);
     bool spawn_power_transfer(u32 donor,u32 recipient);
-    bool spawn_rescue_power(u32 donor,u32 recipient);
+    i32 spawn_single_item(const Vec3&,i32,u32,float,float);
     bool spawn_directed_power(u32 donor,u32 recipient,i32 amount);
     u32 boss_participant_count()const;
     const Vec3& target_player(const Vec3& origin) const;

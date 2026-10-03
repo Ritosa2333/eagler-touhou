@@ -47,7 +47,7 @@ int main(){
         setup.seed=1234;setup.difficulty=2;setup.sessionId=42;
         setup.loadouts[0]={0,0};setup.loadouts[1]={1,2};
         if(seats==3)setup.loadouts[2]={0,1};
-        for(const auto oldVersion:{0x10000004u,0x10000005u,0x10000006u}){
+        for(const auto oldVersion:{0x10000004u,0x10000005u,0x10000006u,0x10000007u,0x10000008u}){
             NetplayRuntime host,peer;assert(host.Reset(setup,42));
             auto remote=setup;remote.localPlayer=1;assert(peer.Reset(remote,42));
             auto hello=peer.Hello();hello.gameplayAbi=historical_contract(setup,oldVersion);

@@ -36,6 +36,8 @@ void SpellCard::start(i32 id,i32 name_id,const char* title,i32 frames,SpellEnvir
     }
     env.initialize_animation(backgrounds[0],SpellAnimationFile::Boss,first,true);
     if(second>=0)env.initialize_animation(backgrounds[1],SpellAnimationFile::Boss,second,true);
+#ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     env.create_animation(SpellAnimationFile::Boss,overlay);
+#endif
 }
 }

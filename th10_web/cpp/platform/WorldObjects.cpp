@@ -98,7 +98,23 @@ i32 World::update_items(){for(u32 i=0;i<150;++i){const auto& v=actors.items->reg
 #endif
 }
 i32 World::draw_items(){Items env(*this);return actors.items->draw(env);}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+i32 World::spawn_item(const Vec3& p,i32 kind,u32 color,float angle,float speed){
+    const bool resource=kind==1||kind==4||kind==10||kind==11||kind==7;
+    const u32 copies=resource&&player_count>=3?2:1;
+    const float center=copies>1?std::clamp(p.x,-183.f,183.f):p.x;
+    i32 result=0;
+    for(u32 copy=0;copy<copies;++copy){
+        Vec3 origin=p;origin.x=Scalar::add(center,18.f*(float(copy)-float(copies-1)*.5f));
+        const float fan=copies>1?angle+.35f*(float(copy)-.5f):angle;
+        result=spawn_single_item(origin,kind,color,fan,speed);
+    }
+    return result;
+}
+i32 World::spawn_single_item(const Vec3& p,i32 kind,u32 color,float angle,float speed){Items env(*this);
+#else
 i32 World::spawn_item(const Vec3& p,i32 kind,u32 color,float angle,float speed){Items env(*this);
+#endif
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     std::int16_t minimum_power=100;bool any_alive=false;
     for(u32 seat=0;seat<player_count;++seat)if(cooperation.seats[seat].lifeState==multiplayer::LifeState::Alive){any_alive=true;if(pilots[seat].game.power<minimum_power)minimum_power=pilots[seat].game.power;}
@@ -135,15 +151,11 @@ bool World::spawn_life_transfer(u32 donor,u32 recipient){
     if(donor>=player_count||recipient>=player_count||donor==recipient||!actors.items||!pilots[donor].player||!pilots[recipient].player)return false;
     u32 index=0;while(index<150&&actors.items->regular[index].state)++index;
     if(index==150)return false;
-    spawn_item(pilots[donor].player->position,7,0xffffffff,-1.5707963705062866f,2.2f);
+    spawn_single_item(pilots[donor].player->position,7,0xffffffff,-1.5707963705062866f,2.2f);
     auto& item=actors.items->regular[index];if(!item.state||item.kind!=7)return false;
     item.state=3;item.attraction_speed=pilots[recipient].player->profile->item_attraction_speed;
     regular_item_owners[index]={std::int8_t(recipient),std::int8_t(recipient)};
     return true;
-}
-bool World::spawn_rescue_power(u32 donor,u32 recipient){
-    if(donor>=player_count||recipient>=player_count||donor==recipient||!actors.items||!pilots[donor].player)return false;
-    return spawn_directed_power(donor,recipient,pilots[donor].game.power/2);
 }
 bool World::spawn_directed_power(u32 donor,u32 recipient,i32 amount){
     if(donor>=player_count||recipient>=player_count||donor==recipient||!actors.items||!pilots[donor].player||!pilots[recipient].player||amount<0||amount>100)return false;
@@ -155,7 +167,7 @@ bool World::spawn_directed_power(u32 donor,u32 recipient,i32 amount){
     for(i32 copy=0;copy<count;++copy)
         if(engine.rollback_state&&!engine.rollback_state->Touch(&actors.items->regular[slots[copy]],sizeof(Item))){fail();return false;}
     Items env(*this);std::int16_t transfer_power=0;env.power=&transfer_power;
-    // Native small/big P units express half Power exactly; odd remainder stays with the giver.
+    // Targeted gifts keep their exact value and bypass stage-drop multiplication.
     for(i32 copy=0;copy<count;++copy){
         const u32 index=slots[copy];
         const i32 kind=copy<amount/20?4:1;

@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <initializer_list>
 #include <type_traits>
 
 using namespace th10::multiplayer;
@@ -74,7 +75,7 @@ void radius_is_inclusive_at_twenty_pixels() {
     assert(state.seats[0].lives == 1);
     assert(state.seats[1].lives == 0);
     assert(state.seats[1].lifeState == LifeState::Alive);
-    assert(state.seats[1].power == 40);
+    assert(state.seats[1].power == kMaxPower / 2);
     assert(state.seats[0].waitingForFocusRelease);
 }
 
@@ -417,29 +418,24 @@ void invalid_rosters_and_loadouts_are_rejected() {
 
 } // namespace
 
-void rescue_power_is_paid_only_after_all_items_are_reserved() {
+void rescue_uses_fixed_resources_without_charging_donor_power() {
+    for (std::uint8_t count : {std::uint8_t(2), std::uint8_t(3)})
+    for (int banked : {-1, 0, 2, 9})
     for (int power = 0; power <= 100; ++power) {
-        State state = make_state(2);
+        State state = make_state(count);
         state.seats[0].power = power;
-        spirit(state, 1, 2); // Includes shared extends banked by the ghost.
+        spirit(state, 1, banked);
         FrameInput input = input_at();
         input.seats[1].canInitiateLifeTransfer = false;
+        input.seats[2].canInitiateLifeTransfer = false;
         ItemProbe probe{false, 0, {}, {}};
         TickResult result{};
         for (int tick = 0; tick < kRescueTicks; ++tick)
-            result = AdvanceOneTick(state, input, {}, {}, {&probe, allocate_item});
-        assert(result.eventCount == 0 && probe.callCount == 1);
-        assert(state.seats[0].power == power && state.seats[0].lives == 2);
-        assert(state.seats[1].lifeState == LifeState::Spirit && state.seats[1].lives == 2);
-        probe.succeeds = true;
-        for (int tick = 0; tick < kRescueTicks; ++tick)
-            result = AdvanceOneTick(state, input, {}, {}, {&probe, allocate_item});
-        assert(result.eventCount == 1 && probe.callCount == 2);
+            result = AdvanceOneTick(state, input, {&probe, allocate_item});
+        assert(result.eventCount == 1 && probe.callCount == 0);
         assert(result.events[0].kind == EventKind::SpiritRevived);
-        assert(state.seats[0].lives == 1 && state.seats[0].power == power - power / 2);
-        assert(state.seats[1].lives == 3 && state.seats[1].power == 40);
-        // Recipient Power changes when directed native P items arrive.
-        assert(probe.givers[1] == 0 && probe.targets[1] == 1);
+        assert(state.seats[0].lives == 1 && state.seats[0].power == power);
+        assert(state.seats[1].lives == 0 && state.seats[1].power == kMaxPower / 2);
     }
 }
 
@@ -451,7 +447,7 @@ int main() {
     repeated_inputs_advance_logical_ticks_and_focus_release_gates_next_use();
     shoot_breaks_continuous_rescue_progress();
     five_rapid_shoot_presses_transfer_one_native_big_power_item();
-    rescue_power_is_paid_only_after_all_items_are_reserved();
+    rescue_uses_fixed_resources_without_charging_donor_power();
     power_taps_expire_and_never_count_a_held_shot_twice();
     power_transfer_rejects_full_or_spirit_recipients_and_failed_allocation();
     three_seat_life_items_commit_synchronously_and_independently();
