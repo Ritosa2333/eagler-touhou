@@ -1,22 +1,21 @@
 #include "../game/GameplayScene.hpp"
 #include "../game/InputController.hpp"
+#include "CooperativeResources.hpp"
 
 namespace th08 {
 void GameplayScene::enter_spirit(u32 seat){
     if(seat>=session.player_count||cooperation.seats[seat].spirit)return;
     auto& simulation=pilot(seat);
-    const auto position=simulation.status().motion.movement.position;
     const i8 dx=session.random.next16()&1?1:-1,dy=session.random.next16()&1?1:-1;
     if(!multiplayer::enter_spirit(cooperation,u8(seat),dx,dy))return;
     simulation.enter_spirit();
     roster.seats[seat].available=false;items.set_player_available(seat,false);
+    // Spirit stock is not playable. Donated rescue and the free next-stage
+    // return initialize their one base Bomb in their respective paths.
     session.pilot_values[seat].set_bombs(Scalar::truncate(simulation.profile(false).initial_bombs));
     pilot_services(seat).sync_values();
-    // PlayerLife::resolve_death has already emitted TH08's five native Full
-    // Power items for a final death.  Multiplayer adds only the cooperation
-    // reward here: the surviving pilot nearest to the new Spirit receives one
-    // life immediately.  Do not turn this into a targeted life item; the
-    // player-facing rule intentionally makes the life available at once.
+    const auto position=simulation.status().motion.movement.position;
+    // Retain the nearest surviving teammate's terminal-death life award.
     i32 recipient=-1;float best_distance=0;
     for(u32 candidate=0;candidate<session.player_count;++candidate){
         if(candidate==seat||!roster.eligible(candidate))continue;
@@ -84,20 +83,23 @@ void GameplayScene::update_cooperation(){
         if(event.kind==multiplayer::CooperativeEventKind::Revive){
             const u32 target=u32(event.target);
             auto& recipient=pilot(target);
+            session.pilot_values[giver].set_bombs(0);
+            donor.context.hud_flags=(donor.context.hud_flags&~12u)|8;
+            pilot_services(giver).sync_values();
+            session.pilot_values[target].set_bombs(1);
+            session.pilot_values[target].set_power(64);
+            if(Scalar::truncate(session.pilot_resources[target].lives)<8)session.pilot_values[target].add_lives(1);
             recipient.revive_spirit();
             roster.seats[target].available=true;items.set_player_available(target,true);
             pilot_services(target).sync_values();
-            recipient.status().context.hud_flags=(recipient.status().context.hud_flags&~3u)|2;
+            recipient.status().context.hud_flags=(recipient.status().context.hud_flags&~0x3fu)|0x2au;
         }
     }
 }
 void GameplayScene::reset_team_after_continue(){
     multiplayer::reset(cooperation,u8(session.player_count));
     for(u32 seat=0;seat<session.player_count;++seat){
-        auto& values=session.pilot_values[seat];
-        values.set_lives(session.config.lives);
-        values.set_power(0);
-        values.set_bombs(Scalar::truncate(pilot(seat).profile(false).initial_bombs));
+        multiplayer::begin_base_life(session.pilot_resources[seat],float(session.config.lives),0);
         auto& simulation=pilot(seat);
         if(simulation.status().life.state==4)simulation.revive_spirit();
         simulation.place_multiplayer_spawn(seat,session.player_count);

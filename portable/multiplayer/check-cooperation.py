@@ -105,8 +105,10 @@ def rescue(browser):
     assert pending[6] == 89 and pending[10] == 1, pending
     call(page, 'multiplayerSmoke.ticks(1)')
     revived = status(page)
-    assert revived[10] == 0 and revived[14] == 3 and revived[13] == 0, revived
+    assert revived[10] == 0 and revived[14] == 3 and revived[13] == 1, revived
     assert revived[8] == initial[8] - 1, (initial, revived)
+    resources = call(page, 'multiplayerSmoke.status()')
+    assert resources[11] == 0 and resources[23] == 1 and resources[22] == 64, resources
     call(page, 'multiplayerSmoke.ticks(30)')
     assert status(page)[8] == revived[8], 'holding focus repeated life transfer'
     page.close()
@@ -163,8 +165,10 @@ def three_player_rescue(browser):
     assert call(page, 'multiplayerSmoke.commit([4,0,0])')
     call(page, 'multiplayerSmoke.ticks(90)')
     revived = status(page)
-    assert revived[15] == 0 and revived[19] == 3 and revived[18] == 0, revived
+    assert revived[15] == 0 and revived[19] == 3 and revived[18] == 1, revived
     assert revived[8] == spirit[8] - 1 and revived[13] == spirit[13], (spirit, revived)
+    resources = call(page, 'multiplayerSmoke.status()')
+    assert resources[11] == 0 and resources[35] == 1 and resources[34] == 64, resources
     page.close()
     return {'case': 'three-player-spirit-priority', 'passed': True,
             'spirit': spirit, 'revived': revived}
@@ -177,7 +181,7 @@ def three_player_power_gift(browser):
         assert call(page, f'multiplayerSmoke.fixturePower({seat},{power})') == 1
     initial = call(page, 'multiplayerSmoke.status()')
     assert [initial[10], initial[22], initial[34]] == [20, 50, 0], initial
-    for _ in range(8):
+    for _ in range(5):
         assert call(page, 'multiplayerSmoke.commit([1,0,0])')
         call(page, 'multiplayerSmoke.ticks(1)')
         assert call(page, 'multiplayerSmoke.commit([0,0,0])')

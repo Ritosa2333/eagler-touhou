@@ -1,3 +1,6 @@
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/CooperativeResources.hpp"
+#endif
 #include "GameplayScene.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/PlayerPresentation.hpp"
@@ -268,7 +271,7 @@ JobResult GameplayScene::draw_players(bool impacts){
         for(u32 seat=0;seat<session.player_count;++seat){
             const auto& p=pilot(seat).status().motion.movement.position;
             const auto& c=cooperation.seats[seat];
-            if(c.power_taps>=4){text.color=0xffe2edbd;ascii.add_format({p.x+32.f,p.y-6.f,0},false,"P %u/8",u32(c.power_taps));}
+            if(c.power_taps>=3){text.color=0xffe2edbd;ascii.add_format({p.x+32.f,p.y-6.f,0},false,"P %u/5",u32(c.power_taps));}
             else if(c.progress&&c.target>=0){text.color=0xffd5efc8;ascii.add_format({p.x+30.f,p.y-8.f,0},false,"%u%%",u32(c.progress)*100/multiplayer::rescue_ticks);}
             if(enhance&&seat==session.local_player){text.color=0xfff3eee4;ascii.add_format({p.x+48.f,p.y+10.f,0},false,"P%u",seat+1);}
         }
@@ -363,6 +366,8 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
 #endif
     if(loaded||wanted.stage<0||wanted.stage>=9||wanted.character<0||wanted.character>=12||wanted.difficulty<0||wanted.difficulty>4||((wanted.flags&0x4000)&&(wanted.spell<0||wanted.spell>=222)))return false;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    for(u32 seat=0;seat<session.player_count;++seat)
+        multiplayer::begin_next_stage_life(session.pilot_resources[seat],cooperation.seats[seat].spirit);
     multiplayer::begin_stage(cooperation);
 #endif
     const bool retain_counters=!wanted.initial&&!(wanted.flags&0x4001)&&wanted.difficulty<4;
@@ -409,12 +414,16 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     for(u32 seat=0;seat<session.player_count;++seat)pilot(seat).place_multiplayer_spawn(seat,session.player_count);
 #endif
     if(initialize_values){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(!startup.after_player(float(multiplayer::base_life_bombs))){unload();return false;}
+#else
         if(!startup.after_player(player.profile(false).initial_bombs)){unload();return false;}
+#endif
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         const bool fresh=wanted.initial||(wanted.flags&0x4001)||wanted.difficulty>=4;
         for(u32 seat=0;seat<session.player_count;++seat){
             auto& bank=session.pilot_resources[seat];
-            if(fresh){bank.reset();bank.lives=session.numbers.lives;bank.power=session.numbers.power;bank.bombs=pilot(seat).profile(false).initial_bombs;}
+            if(fresh){bank.reset();multiplayer::begin_base_life(bank,session.numbers.lives,session.numbers.power);}
             bank.deaths_stage=bank.bombs_used_stage=0;bank.gauge_copy=bank.gauge;
             pilot_services(seat).sync_values();
         }
@@ -439,7 +448,11 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     if(auto* header=background_script.program.header())std::memcpy(dialogue_context.song_paths,header->song_paths,sizeof(dialogue_context.song_paths));
     if(initialize_values){startup.after_resources(wanted.keep_resources,dialogue_context.song_paths,background.dialogue_state);time_stopped=false;ascii.state.blindness_color=0;screen_counter=2;control.state.load_state=0;}
     synchronize();ascii_context.effects=effect_pool.base_animation;ascii.reset();ascii.initialize_vms(ascii_context);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    menus.context.shot_bombs=multiplayer::base_life_bombs;
+#else
     menus.context.shot_bombs=number(player.profile(false).initial_bombs).truncate_int();
+#endif
     if(!initialize_values){control.state.stage_mask=u16(1u<<wanted.stage);control.state.start_music=wanted.keep_resources&&(wanted.flags&0x4000)&&!spell_music(wanted.spell).pause_in_practice?2:1;}
     globals.frame_count_value=&enemies.state.frames;session.stall_frames=enemies.state.frames;
     if(initialize_values){

@@ -1,6 +1,7 @@
 #include "../th08_web/cpp/multiplayer/NetplayRuntime.hpp"
 #include "../th08_web/cpp/multiplayer/SpectatorStream.hpp"
 #include "../th08_web/cpp/multiplayer/InputSample.hpp"
+#include "support/previous-rule-contract.hpp"
 #include <cassert>
 #include <cstdio>
 #include <limits>
@@ -84,6 +85,20 @@ static void fixed_input_delay_is_applied_and_agreed(){
         }
     }
     assert(!peers[0].CaptureLeadInBootstrap(bootstrap));
+}
+static void previous_general_rules_are_rejected(){
+    for(unsigned count:{2u,3u})for(unsigned version:{3u,4u})for(bool rules20261002:{false,true}){
+        auto local=setup(count,0),remote=setup(count,1);local.version=remote.version=version;
+        NetplayRuntime live,peer;assert(live.Reset(local)&&peer.Reset(remote));
+        auto hello=peer.SessionPacket(SessionPhase::Hello);hello.gameplayAbi=previous_rule_contract(remote,rules20261002);
+        assert(hello.gameplayAbi!=live.Config().gameplayAbi);
+        assert(live.ApplySession(hello)==Netplay::SessionPacketResult::ContractMismatch&&!live.CanStart());
+        NetplayRuntime observer;assert(observer.Reset(local)&&observer.BeginSpectator());
+        Netplay::SpectatorFramePacket packet;packet.sessionId=observer.Config().sessionId;
+        packet.playerCount=std::uint8_t(count);packet.frame=0;packet.gameplayAbi=hello.gameplayAbi;
+        assert(!observer.FeedSpectator(packet)&&!observer.HasLocal(0));
+        th08::multiplayer::SpectatorStream queue;assert(!queue.Append(packet,observer.Config()));
+    }
 }
 static void session_and_inputs(unsigned count){
     NetplayRuntime peers[3];for(unsigned seat=0;seat<count;++seat)assert(peers[seat].Reset(setup(count,seat)));
@@ -376,12 +391,18 @@ static void adonis_mismatch_and_gap(){
     assert(d.canAdvance&&d.inputs==packet.inputs&&!d.predictedMask);
 }
 int main(){
+    previous_general_rules_are_rejected();
     for(unsigned count:{2u,3u})for(unsigned mode:{1u,2u}){
         auto measured=setup(count,0);measured.version=6;measured.adonis_mode=mode;measured.input_delay_auto=true;
         NetplayRuntime n;assert(n.Reset(measured)&&n.PreparingWorld()&&!n.CanCapture());
         assert(n.ApplyMeasuredTiming(1,mode==2?2:0)&&n.Setup().prediction_limit==8);
         auto incompatible=n.Setup();incompatible.measured_prediction=0;
         if(mode==2)assert(th08::multiplayer::gameplay_contract(incompatible)!=n.Config().gameplayAbi);
+        auto remote=n.Setup();remote.local_player=1;
+        NetplayRuntime peer;assert(peer.Reset(remote));
+        auto hello=peer.SessionPacket(SessionPhase::Hello);
+        hello.gameplayAbi=previous_adonis_contract(remote);
+        assert(n.ApplySession(hello)==Netplay::SessionPacketResult::ContractMismatch&&!n.CanStart());
     }
     decode_atomicity();fixed_input_delay_is_applied_and_agreed();session_and_inputs(2);session_and_inputs(3);
     delayed_capture_and_wait();

@@ -118,7 +118,7 @@ bool PlayerSimulation::update_spirit(i8& drift_x,i8& drift_y){
     return !failed;
 }
 void PlayerSimulation::revive_spirit(){
-    state.life.state=3;state.life.timer.set(120);state.life.clear_frames=60;
+    state.life.state=3;state.life.timer.set(240);state.life.clear_frames=0;
     state.life.predead_count=profile(false).deathbomb_limit;
     state.context.game_over=0;state.motion.form.focused=2;
     state.motion.animation.scale={1,1};state.motion.animation.blendMode=0;

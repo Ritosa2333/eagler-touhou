@@ -11,7 +11,7 @@ inline i32 boss_damage(i32 damage,u32 count){
     return Scalar::truncate(Scalar::mul(Extended::from_int(damage).to_float(),factor));
 }
 inline i32 bomb_damage(i32 damage,u32 count){
-    return count>=3?Scalar::truncate(Scalar::mul(Extended::from_int(damage).to_float(),2.f/3.f)):damage;
+    (void)count;return damage;
 }
 inline i32 rank_penalty(i32 amount,u32 count){return count>1?amount/i32(count):amount;}
 }

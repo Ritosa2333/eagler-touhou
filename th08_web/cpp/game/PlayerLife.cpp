@@ -1,5 +1,8 @@
 #include "PlayerLife.hpp"
 #include "../multiplayer/ResourceTrace.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "../multiplayer/CooperativeResources.hpp"
+#endif
 namespace th08 {
 void PlayerLife::die(){
 #if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
@@ -59,7 +62,18 @@ bool PlayerLife::resolve_death(const ShotProfile& profile){
         if(state.timer.current>=30){
             state.state=1;movement.position={Scalar::div(context.extent.x,2),Scalar::sub(context.extent.y,64),.2f};state.timer.set(0);animation.scale={3,3};
             actions.animation(((context.character<4&&!context.focused)||!(context.character&1))?0:5);
-            if(context.lives>0){if(!(context.cheats&2))actions.add_lives(-1);context.hud_flags=(context.hud_flags&~3u)|2;actions.set_bombs(Scalar::truncate(profile.initial_bombs));context.hud_flags=(context.hud_flags&~12u)|8;return true;}
+            if(context.lives>0){
+                if(!(context.cheats&2))actions.add_lives(-1);
+                context.hud_flags=(context.hud_flags&~3u)|2;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                // Ordinary misses must not refill a character's starting bomb
+                // stock. A teammate's donated revival has its own resources.
+                actions.set_bombs(multiplayer::base_life_bombs);
+#else
+                actions.set_bombs(Scalar::truncate(profile.initial_bombs));
+#endif
+                context.hud_flags=(context.hud_flags&~12u)|8;return true;
+            }
             context.game_over=1;
         }
     }

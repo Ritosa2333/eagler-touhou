@@ -103,6 +103,9 @@ public:
     ItemSystem(PlayerSimulation&,GameGlobals&,GameValues&,GameGauge&,GameRank&,HighScore&,Rng&,AnmLibrary&,AnmExecutor&,AnmRenderer&,ItemSystemActions&);
 #endif
     ItemState* spawn(const Vec3&,i32 type,i32 mode);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    ItemState* spawn_single(const Vec3&,i32 type,i32 mode);
+#endif
     bool update();
     bool draw(const Vec2& offset);
     void collect_all();

@@ -39,10 +39,11 @@ bool damage_enemy(EclVm& enemy,const EnemyDamageContext& input,PlayerFrameState&
 bool damage_enemy_multiplayer(EclVm& enemy,u8 time_spell,u8 spell_bomb_damage,GameValues& values,i32& bomb_hit,u32& owner,EnemyDamageActions& actions){
     enemy.last_damage=0;bomb_hit=0;owner=0;
     if(!(enemy.flags&0x40))return false;
-    i32 ordinary=0,bomb=0,max_source=-1;
+    i32 ordinary=0,bomb=0,max_source=-1;u32 viable=0;
     for(u32 seat=0;seat<actions.participant_count();++seat){
         EnemyDamageParticipant pilot;
         if(!actions.participant(seat,pilot)||!pilot.frame)continue;
+        ++viable;
         i32 local_bomb=0,damage=0;
         if(!(time_spell&&enemy.parent&&pilot.bomb))
             damage=actions.participant_damage(seat,enemy.resolved_position,enemy.hitbox,enemy.time_items,local_bomb);
@@ -79,7 +80,7 @@ bool damage_enemy_multiplayer(EclVm& enemy,u8 time_spell,u8 spell_bomb_damage,Ga
         }
         i32 effective=wrapping_add(ordinary,bomb);
         if(enemy.damage_protection.current>0)effective=enemy.flags&2?effective/9:0;
-        if(enemy.flags&2)effective=multiplayer::boss_damage(effective,actions.participant_count());
+        if(enemy.flags&2)effective=multiplayer::boss_damage(effective,viable);
         enemy.life=wrapping_sub(enemy.life,effective);enemy.last_damage=effective;
         if(ordinary>0&&effective>0){
             const i32 parent_share=bomb?i32(i64(effective)*ordinary/(ordinary+bomb)):effective;
