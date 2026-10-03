@@ -13,6 +13,7 @@ const hardware=process.env.NATIVE_GPU==='1';
 const adonisMode=Number(process.env.ADONIS_MODE||0),inputDelay=Number(process.env.INPUT_DELAY_FRAMES||0);
 const automatic=process.env.INPUT_DELAY_AUTO==='1',predictionReserve=Number(process.env.PREDICTION_RESERVE||2);
 const startupImpairment=process.env.STARTUP_IMPAIRMENT!=='0';
+const gameplayImpairment=process.env.GAMEPLAY_IMPAIRMENT!=='0';
 const spectatorFault=process.env.SPECTATOR_FAULT||'';
 assert.ok(['','backpressure','disconnect'].includes(spectatorFault));
 assert.ok(!(fallback&&spectatorFault==='disconnect'),'relay is required for gameplay in fallback mode');
@@ -43,7 +44,7 @@ if(release)assert.equal(build.exports.some(e=>e.name.startsWith('th09_probe_')),
 
 try{
  await page.goto(url);
- const result=await page.evaluate(async ({port,fallback,release,fullSpriteGeometry,adonisMode,inputDelay,automatic,predictionReserve,startupImpairment,spectatorFault})=>{
+ const result=await page.evaluate(async ({port,fallback,release,fullSpriteGeometry,adonisMode,inputDelay,automatic,predictionReserve,startupImpairment,gameplayImpairment,spectatorFault})=>{
   const frames=[],notices=[],closed=[],lobbies=[],timeline=[],lanes=[],phaseEvents=[];
   const diagnosticStarted=performance.now();
   let lastDiagnostic=diagnosticStarted;
@@ -136,7 +137,7 @@ try{
     for(const w of frames){w.measure.enabled=true;w.measure.audioStart=w.core.SDL3?.audioContext?.currentTime||0;}
     for(const w of frames.slice(0,2)){w.core._th09_key(29,1);w.core._th09_key(44,1);const began=performance.now();
      const channels=fallback?[['relay',w.__eaglerPeerTransport.relay]]:[...w.__eaglerPeerTransport.peers.values()].flatMap(peer=>[['input',peer.inputDc],['control',peer.controlDc]]);
-     for(const [lane,channel] of channels){
+     for(const [lane,channel] of gameplayImpairment?channels:[]){
       const send=channel.send.bind(channel);let count=0;
       const counters={channel,peer:frames.indexOf(w),lane,attempted:0,sent:0,received:0,dropped:0,pending:0,
        lastSendAt:null,lastReceiveAt:null,maxTimerLatenessMs:0};lanes.push(counters);
@@ -211,7 +212,7 @@ try{
   sampleDiagnostic();const transportDiagnostics=diagnostics();
   const calibratedBudgetPassed=gameplayMs!==null&&gameplayMs<=14000&&setupMs<=15000;
   for(const w of frames)w.play.close();for(const ws of lobbies)ws.close();return {summary,adonis,startup,startupWire,timings,resolvedDelay,spectator,spectatorBudget,spectatorFault,faultInjected,viewerStopped,hashes,replayBytes,comparableFinalHashes,routes,audio,elapsedMs,setupMs,gameplayMs,sustainedCadencePassed,calibratedBudgetPassed,gameplayCadencePassed:gameplayMs!==null&&gameplayMs<=14000,measured,renderers,notices,transportDiagnostics};
- },{port,fallback,release,fullSpriteGeometry,adonisMode,inputDelay,automatic,predictionReserve,startupImpairment,spectatorFault});
+ },{port,fallback,release,fullSpriteGeometry,adonisMode,inputDelay,automatic,predictionReserve,startupImpairment,gameplayImpairment,spectatorFault});
  assert.deepEqual(result.routes,[fallback?'relay':'rtc',fallback?'relay':'rtc','spectator']);assert.equal(errors.length,0,errors.join('\n'));
  if(hardware)for(const renderer of result.renderers)assert.doesNotMatch(renderer,/swiftshader|llvmpipe|microsoft basic render/i);
  const wasm=build.sha256;
@@ -226,12 +227,12 @@ try{
  // <=14s gameplay budget. Neither aggregate gate means stutter-free.
  const timingPassed=adonisMode?result.calibratedBudgetPassed:result.sustainedCadencePassed;
  const passed=timingPassed&&relayObservationPassed;
- writeFileSync(resolve(root,`artifacts/multiplayer-tests/${label}-report.json`),JSON.stringify({passed,correctnessPassed:true,timingPassed,relayObservationPassed,wasm,browser:browser.version(),hardwareRequested:hardware,fullSpriteGeometry,parameters:{adonisMode,inputDelay,automatic,predictionReserve,startupImpairment,relayTiming},scope:'Local actual input-channel calibration, C++ timing mode, SharedNetplay, launcher relay result and confirmed spectator; desktop Chromium'+(release?'; production WASM smoke, no forced frame limit':''),result,errors,relayTimeline,relayLog},null,2));console.log(JSON.stringify(result));
+ writeFileSync(resolve(root,`artifacts/multiplayer-tests/${label}-report.json`),JSON.stringify({passed,correctnessPassed:true,timingPassed,relayObservationPassed,wasm,browser:browser.version(),hardwareRequested:hardware,fullSpriteGeometry,parameters:{adonisMode,inputDelay,automatic,predictionReserve,startupImpairment,gameplayImpairment,relayTiming},scope:'Local actual input-channel calibration, C++ timing mode, SharedNetplay, launcher relay result and confirmed spectator; desktop Chromium'+(release?'; production WASM smoke, no forced frame limit':''),result,errors,relayTimeline,relayLog},null,2));console.log(JSON.stringify(result));
  assert.ok(relayObservationPassed,'Relay observation was not exercised');
  assert.ok(timingPassed,`Timing budget exceeded: total=${result.elapsedMs} setup=${result.setupMs} gameplay=${result.gameplayMs} ms`);
 }catch(error){
  let transportDiagnostics=null;
  try{transportDiagnostics=await page.evaluate(()=>globalThis.__th09TransportDiagnostics?.()??null);}catch{}
- writeFileSync(resolve(root,`artifacts/multiplayer-tests/${label}-failure.json`),JSON.stringify({error:error.stack,wasm:build.sha256,parameters:{adonisMode,inputDelay,automatic,predictionReserve,startupImpairment,relayTiming},errors,resourceErrors,relayLog,transportDiagnostics},null,2));throw error;
+ writeFileSync(resolve(root,`artifacts/multiplayer-tests/${label}-failure.json`),JSON.stringify({error:error.stack,wasm:build.sha256,parameters:{adonisMode,inputDelay,automatic,predictionReserve,startupImpairment,gameplayImpairment,relayTiming},errors,resourceErrors,relayLog,transportDiagnostics},null,2));throw error;
 }
 finally{await browser.close();netplay.close();await new Promise(r=>server.close(r));relay.kill();}
