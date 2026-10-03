@@ -336,7 +336,7 @@ void ResetMultiplayerPlayerResources(u8 playerId)
     resources->livesRemaining = g_GameManager.defaultCfg
         ? g_GameManager.defaultCfg->lifeCount : 0;
     resources->bombsRemaining = MultiplayerGameplay::IsMultiplayer()
-        ? 1 : (player->shooterData ? (i32)player->shooterData->initialBombs : 0);
+        ? 2 : (player->shooterData ? (i32)player->shooterData->initialBombs : 0);
     resources->currentPower = 0;
 }
 

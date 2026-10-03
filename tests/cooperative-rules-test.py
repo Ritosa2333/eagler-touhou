@@ -183,7 +183,7 @@ void tap(Player*p,int n){for(int i=0;i<n;++i){p->pressed=true;UpdatePowerTransfe
 void test(){
  reset();g_Supervisor.curState=3;g_Players[1].playerState=PLAYER_STATE_SPIRIT;
  PrepareMultiplayerStageRevival(&g_Players[0]);PrepareMultiplayerStageRevival(&g_Players[1]);
- assert(bombs[0]==4&&bombs[1]==1);g_Supervisor.curState=0;
+ assert(bombs[0]==4&&bombs[1]==2);g_Supervisor.curState=0;
  reset();assert(g_ItemManager.CanSpawnItems(0));assert(g_ItemManager.CanSpawnItems(6));
  for(auto&i:g_ItemManager.items)i.isInUse=true;
  assert(!g_ItemManager.CanSpawnItems(1));
@@ -202,7 +202,7 @@ void test(){
   reset(count);g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=0;power[1]=0;bombs[1]=0;
   hold(&g_Players[0],89);assert(lives[0]==2);assert(g_Players[1].playerState==PLAYER_STATE_SPIRIT);
   hold(&g_Players[0],1);assert(lives[0]==1);assert(lives[1]==1);
-  assert(bombs[0]==0&&bombs[1]==1&&power[1]==64);
+  assert(bombs[0]==0&&bombs[1]==2&&power[1]==64);
   assert(g_Players[1].bulletGracePeriod==0&&g_BulletManager.calls==0);
   assert(g_Players[1].playerState==PLAYER_STATE_INVULNERABLE);
   assert(g_Players[1].invulnerabilityTimer==240);
@@ -224,7 +224,7 @@ void test(){
   if(!stock)assert(std::count(g_ItemManager.emitted.begin(),g_ItemManager.emitted.end(),ITEM_FULL_POWER)==5);
   p->invulnerabilityTimer=30;DeathTick(p);
   assert(lives[0]==(stock?stock-1:0));assert(lives[1]==(stock?2:3)&&lives[2]==2);
-  assert(bombs[0]==(stock?1:TERMINAL_BOMBS));
+  assert(bombs[0]==(stock?2:TERMINAL_BOMBS));
  }
  reset();ZunVec3 position;
  for(int item: {ITEM_LIFE,ITEM_BOMB,ITEM_POWER_SMALL,ITEM_POWER_BIG})g_ItemManager.SpawnEnemyDrop(&position,item,0);
@@ -258,12 +258,12 @@ int main(){test();std::puts("production cooperative transfer/death/drop rule fix
 startup = r"""
  reset();g_GameManager.isInReplay=0;bombs[0]=4;
  START_RESET
- assert(g_MultiplayerPlayerResources[0].bombsRemaining==1);
- assert(g_MultiplayerPlayerResources[1].bombsRemaining==1);
+ assert(g_MultiplayerPlayerResources[0].bombsRemaining==2);
+ assert(g_MultiplayerPlayerResources[1].bombsRemaining==2);
  START_EXTRA
 """.replace('START_RESET', 'ResetMultiplayerPlayerResources();' if SIX else
             'ResetMultiplayerPlayerResources(1);ResetMultiplayerPlayerResources(2);').replace(
- 'START_EXTRA', 'assert(bombs[0]==1);g_GameManager.isInReplay=1;bombs[0]=5;ResetMultiplayerPlayerResources();assert(bombs[0]==5);' if SIX else
+ 'START_EXTRA', 'assert(bombs[0]==2);g_GameManager.isInReplay=1;bombs[0]=5;ResetMultiplayerPlayerResources();assert(bombs[0]==5);' if SIX else
  'assert(g_MultiplayerPlayerResources[0].livesRemaining==2);assert(g_MultiplayerPlayerResources[0].currentPower==0);')
 main = main.replace('void test(){', 'void test(){'+startup).replace('TERMINAL_BOMBS', '4' if SIX else '3')
 with tempfile.TemporaryDirectory(prefix='coop-rules-') as temp:

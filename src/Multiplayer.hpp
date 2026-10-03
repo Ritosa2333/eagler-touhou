@@ -8,9 +8,9 @@
 // locally without pulling a socket implementation into Player/GameManager.
 constexpr int TH07_MULTI_MAX_PLAYERS = 3;
 constexpr int TH07_MULTI_MAX_GUESTS = TH07_MULTI_MAX_PLAYERS - 1;
-// Gameplay ABI 7 adds scaled Power drops, rescue costs/resources and dynamic boss scaling.
+// Gameplay ABI 8 uses two Bombs for each new cooperative life and donated revival.
 // Old multiplayer Replays must be rejected rather than replayed with new rules.
-constexpr unsigned int TH07_MULTI_GAMEPLAY_ABI = 7;
-// Netplay ABI 8 retains fixed-tick item presentation and adds gameplay ABI 7.
+constexpr unsigned int TH07_MULTI_GAMEPLAY_ABI = 8;
+// Netplay ABI 9 binds the two-Bomb gameplay rules to live sessions.
 // Ordinary single-player builds and Replay formats are unchanged.
-constexpr unsigned int TH07_MULTI_NETPLAY_ABI = 8;
+constexpr unsigned int TH07_MULTI_NETPLAY_ABI = 9;

@@ -519,7 +519,7 @@ void PrepareMultiplayerStageRevival(Player *player)
     if (MultiplayerGameplay::IsMultiplayer() &&
         g_Supervisor.curState == 3 &&
         player->playerState == PLAYER_STATE_SPIRIT)
-        SetPlayerBombs(player->initParam, 1);
+        SetPlayerBombs(player->initParam, 2);
 }
 
 void UpdateLifeTransfer(Player *giver)
@@ -581,7 +581,7 @@ void UpdateLifeTransfer(Player *giver)
         receiver->respawnTimer = receiver->shooterData->initialRespawnTimer;
         receiver->bulletGracePeriod = 0;
         SetPlayerBombs(giver->initParam, 0);
-        SetPlayerBombs(receiver->initParam, 1);
+        SetPlayerBombs(receiver->initParam, 2);
         SetPlayerPower(receiver->initParam, 64);
         if (GetPlayerLives(receiver->initParam) < 8)
             AddPlayerLives(receiver->initParam, 1);
@@ -1020,7 +1020,7 @@ i32 UpdateMultiplayerDeath(Player *player)
     if (!PracticeRuntime::OverlayInfiniteLives())
         AddPlayerLives(player->initParam, -1);
     g_Gui.lifeDisplayUpdateFrames = 2;
-    SetPlayerBombs(player->initParam, 1);
+    SetPlayerBombs(player->initParam, 2);
     g_Gui.bombDisplayUpdateFrames = 2;
     return 1;
 }
