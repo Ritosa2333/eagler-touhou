@@ -581,7 +581,7 @@ u32 mp_fixture_items(BrowserRuntime* runtime,u32 kind,u32 seat){
     case 4:
         items.reset();
         for(u32 n=0;n<ItemPoolState::capacity-5;++n){
-            const auto* value=items.spawn({100,30,0},0,0);
+            const auto* value=items.spawn_single({100,30,0},0,0);
             if(!value||!value->active)return 0;
         }
         return !items.invalid();
@@ -600,6 +600,61 @@ const u32* mp_fixture_item_status(BrowserRuntime* runtime){
     for(u32 n=0;n<6;++n)out[5]+=pool.items[n].active?1u:0u;
     for(u32 seat=0;seat<3;++seat)out[6+seat]=runtime->app.game.items.assigned_gifts(seat);
     return out;
+}
+// Control initial conditions, then measure real native spawning and pickup.
+// No reward model or replacement item-update loop is used by this fixture.
+__attribute__((export_name("mp_fixture_power_drops")))
+const i32* mp_fixture_power_drops(BrowserRuntime* runtime,u32 kind,u32 mode){
+    static i32 out[24]{};std::fill(out,out+24,0);
+    if(!runtime||!runtime->app.in_game()||!runtime->app.game.ready()||
+       (kind!=0&&kind!=2&&kind!=4)||(mode!=0&&mode!=2))return out;
+    auto& app=runtime->app;auto& game=app.game;auto& items=game.items;
+    items.reset();
+    for(u32 seat=0;seat<app.session.player_count;++seat){
+        app.session.pilot_values[seat].set_power(0);game.pilot_services(seat).sync_values();
+        auto& state=game.pilot(seat).status();state.life.state=0;
+        state.motion.form.focused=0;state.motion.movement.position={340.f,410.f,0};
+        auto& pilot=game.pilot(seat);
+        move_player(state.motion.movement,pilot.profile(false),pilot.profile(true),false,
+                    state.context.character,0,state.input.minimum,state.input.extent,pilot.timing,nullptr,false);
+    }
+    const auto rng_calls=app.session.random.calls;
+    items.spawn({192,340,0},i32(kind),i32(mode));
+    std::array<ItemState*,3> drops{};u32 count=0;
+    auto& pool=const_cast<ItemPoolState&>(items.status());
+    for(u32 slot=0;slot<ItemPoolState::capacity;++slot)if(pool.items[slot].active){
+        if(count>=drops.size())return out;
+        auto& item=pool.items[slot];drops[count]=&item;
+        out[3+count]=Scalar::truncate(item.position.x*100);
+        out[18+count]=Scalar::truncate(item.velocity.y*100);
+        out[21+count]=item.state;
+        if(item.type!=i32(kind))return out;
+        ++count;
+    }
+    out[1]=i32(count);out[2]=i32(app.session.random.calls-rng_calls);
+    for(u32 tick=0;tick<10;++tick)if(!items.update())return out;
+    for(u32 index=0;index<count;++index){
+        out[12+index]=Scalar::truncate(drops[index]->position.x*100);
+        out[15+index]=Scalar::truncate(drops[index]->position.y*100);
+    }
+    for(u32 selected=0;selected<count;++selected){
+        for(u32 index=selected;index<count;++index){
+            auto& item=*drops[index];item.state=0;item.velocity={};
+            item.position={40.f+18.f*float(index),64.f,0};
+        }
+        drops[selected]->position={192,340,0};
+        game.pilot(0).status().motion.movement.position={192,340,0};
+        auto& pilot=game.pilot(0);auto& state=pilot.status();
+        move_player(state.motion.movement,pilot.profile(false),pilot.profile(true),false,
+                    state.context.character,0,state.input.minimum,state.input.extent,pilot.timing,nullptr,false);
+        const i32 before=Scalar::truncate(app.session.pilot_resources[0].power);
+        if(!items.update()||drops[selected]->active)return out;
+        out[6+selected]=Scalar::truncate(app.session.pilot_resources[0].power)-before;
+    }
+    out[9]=Scalar::truncate(app.session.pilot_resources[0].power);
+    out[10]=Scalar::truncate(app.session.pilot_resources[1].power);
+    out[11]=Scalar::truncate(app.session.pilot_resources[2].power);
+    out[0]=1;return out;
 }
 __attribute__((export_name("mp_fixture_poc_setup")))
 u32 mp_fixture_poc_setup(BrowserRuntime* runtime,u32 collector){

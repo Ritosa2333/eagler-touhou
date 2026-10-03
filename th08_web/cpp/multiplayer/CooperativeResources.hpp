@@ -5,7 +5,7 @@
 #include "PlayerResources.hpp"
 
 namespace th08::multiplayer {
-constexpr i32 base_life_bombs=1;
+constexpr i32 base_life_bombs=2;
 // Shared by a fresh session and the native team reset. Callers retain control
 // of run/stage statistics; beginning a life only establishes its resources.
 inline void begin_base_life(PilotResources& bank,float lives,float power) noexcept {

@@ -86,7 +86,7 @@ void GameplayScene::update_cooperation(){
             session.pilot_values[giver].set_bombs(0);
             donor.context.hud_flags=(donor.context.hud_flags&~12u)|8;
             pilot_services(giver).sync_values();
-            session.pilot_values[target].set_bombs(1);
+            session.pilot_values[target].set_bombs(multiplayer::base_life_bombs);
             session.pilot_values[target].set_power(64);
             if(Scalar::truncate(session.pilot_resources[target].lives)<8)session.pilot_values[target].add_lives(1);
             recipient.revive_spirit();

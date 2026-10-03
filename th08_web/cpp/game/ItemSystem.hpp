@@ -32,6 +32,7 @@ class ItemSystem:private ItemPoolActions,private ItemUpdateActions,private ItemR
     AnmLibrary& animations;AnmExecutor& executor;AnmRenderer& renderer;ItemSystemActions& actions;GameRank& rank;HighScore& high_score;
     std::unique_ptr<ItemPoolState> state=std::make_unique<ItemPoolState>();ItemPool pool;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    u32 participant_count=1;
     struct Owner {
         PlayerSimulation* player=nullptr;ResourceView* resources=nullptr;ValueStore* values=nullptr;GameGauge* gauge=nullptr;ItemSystemActions* actions=nullptr;
         ItemUpdateContext input;ItemRewardContext reward_input;std::optional<ItemRewards> rewards;bool available=false;
@@ -88,6 +89,7 @@ public:
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     ItemSystem(PlayerSimulation&,PlayerResourceView&,PlayerValues&,GameGauge&,GameRank&,HighScore&,Rng&,AnmLibrary&,AnmExecutor&,AnmRenderer&,ItemSystemActions&);
     void bind_player(u32 seat,PlayerSimulation&,PlayerResourceView&,PlayerValues&,GameGauge&,ItemSystemActions&);
+    void set_player_count(u32 count){participant_count=count;}
     void set_player_available(u32 seat,bool available);
     void award_team_extend();
     void convert_power_items(ItemState& collected);

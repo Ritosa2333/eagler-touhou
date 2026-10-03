@@ -18,6 +18,14 @@ ItemState* ItemPool::spawn(const Vec3& position,i32 type,i32 mode,i32 power,i8 p
 #endif
         item->active=1;item->position=position;item->velocity={0,-2.2f,0};item->type=i8(type);item->state=i8(mode);item->timer.set(0);
         if(mode==2){item->target={(rng.range(288)+number(48)).to_float(),(rng.range(192)-number(64)).to_float(),0};item->velocity=position;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        else if(mode==6){
+            // Small seeded deviations produce an upward fan without allowing
+            // adjacent copies to cross during its twelve-tick spreading phase.
+            item->velocity.x=rng.signed_range(.5f).to_float();
+            item->velocity.y=(number(-2.2f)-rng.range(.6f)).to_float();
+        }
+#endif
         else if(mode==3||mode==5){item->velocity.y=(number(-2)-rng.range(.2f)).to_float();item->velocity.x=rng.signed_range(.6f).to_float();
             if(player_state==2){item->state=0;item->velocity={0,-.9f,0};}}
         actions.animation(item->animation,wrapping_add(type,61));item->animation.color1.d3dColor=-1;item->animation.zWriteDisabled=true;item->max_value=0;item->onscreen=1;

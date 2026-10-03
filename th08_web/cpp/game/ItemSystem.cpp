@@ -80,10 +80,19 @@ void ItemSystem::set_player_available(u32 seat,bool available){
 }
 void ItemSystem::synchronize(Owner& owner){auto& c=owner.player->status().context;auto& r=*owner.resources;c.power=Scalar::truncate(r.power);c.lives=Scalar::truncate(r.lives);c.bombs=Scalar::truncate(r.bombs);c.time_orbs=r.time_orbs;c.last_spell_requirement=r.last_spell_requirement;c.gauge=r.gauge;owner.input.power=c.power;}
 ItemState* ItemSystem::spawn(const Vec3& position,i32 type,i32 mode){
-    u32 count=0;for(const auto& owner:owners)if(owner.player)++count;
-    const u32 copies=(type==0||type==2)?count:1;
+    // Storage is bound for all three slots, including an unused third seat.
+    // The multiplier belongs to the configured roster, not those bindings or
+    // the temporarily operable seats after a death.
+    const u32 copies=(type==0||type==2)?participant_count:1;
     ItemState* first=nullptr;
-    for(u32 copy=0;copy<copies;++copy){auto* item=spawn_single(position,type,mode);if(!copy)first=item;}
+    for(u32 copy=0;copy<copies;++copy){
+        Vec3 origin=position;
+        // Start copies apart. Ordinary drops then fan upward; death drops keep
+        // their authored random scatter and every native reward stays intact.
+        origin.x=Scalar::add(origin.x,18.f*(float(copy)-float(copies-1)*.5f));
+        const i32 motion=copies>1&&mode==0?6:mode;
+        auto* item=spawn_single(origin,type,motion);if(!copy)first=item;
+    }
     return first;
 }
 ItemState* ItemSystem::spawn_single(const Vec3& position,i32 type,i32 mode){

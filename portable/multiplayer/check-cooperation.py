@@ -67,13 +67,13 @@ def point_of_collection_owner(browser):
         call(page,'multiplayerSmoke.ticks(150)')
         value=call(page,'multiplayerSmoke.status()')
         power=[value[10],value[22]]
-        assert power[collector]==8 and power[1-collector]==0,(collector,power,value)
+        assert power[collector]==16 and power[1-collector]==0,(collector,power,value)
         results.append(power);page.close()
     page=boot(browser,[1,1])
     assert call(page,'multiplayerSmoke.fixturePocSetup(2)') is True
     call(page,'multiplayerSmoke.ticks(150)')
     value=call(page,'multiplayerSmoke.status()');power=[value[10],value[22]]
-    assert power==[8,0],(power,value)
+    assert power==[16,0],(power,value)
     results.append(power);page.close()
     return {'case':'point-of-collection-claimant','passed':True,'power':results}
 
@@ -108,7 +108,7 @@ def rescue(browser):
     assert revived[10] == 0 and revived[14] == 3 and revived[13] == 1, revived
     assert revived[8] == initial[8] - 1, (initial, revived)
     resources = call(page, 'multiplayerSmoke.status()')
-    assert resources[11] == 0 and resources[23] == 1 and resources[22] == 64, resources
+    assert resources[11] == 0 and resources[23] == 2 and resources[22] == 64, resources
     call(page, 'multiplayerSmoke.ticks(30)')
     assert status(page)[8] == revived[8], 'holding focus repeated life transfer'
     page.close()
@@ -168,7 +168,7 @@ def three_player_rescue(browser):
     assert revived[15] == 0 and revived[19] == 3 and revived[18] == 1, revived
     assert revived[8] == spirit[8] - 1 and revived[13] == spirit[13], (spirit, revived)
     resources = call(page, 'multiplayerSmoke.status()')
-    assert resources[11] == 0 and resources[35] == 1 and resources[34] == 64, resources
+    assert resources[11] == 0 and resources[35] == 2 and resources[34] == 64, resources
     page.close()
     return {'case': 'three-player-spirit-priority', 'passed': True,
             'spirit': spirit, 'revived': revived}
@@ -258,17 +258,42 @@ def released_gift_and_reuse(browser):
     assert call(page,'multiplayerSmoke.fixtureItems(6)')
     call(page,'multiplayerSmoke.ticks(15)')
     reused=call(page,'multiplayerSmoke.status()')
-    assert reused[22]==8 and reused[34]==0,('ordinary reuse retained gift owner',reused)
+    assert reused[22]==24 and reused[34]==0,('ordinary reuse retained gift owner',reused)
     page.close()
     return {'case':'gift-released-on-spirit-and-cleared-on-reuse','passed':True,
             'assigned':assigned,'released_items':items,
             'released_power':[released[10],released[22],released[34]],'reused_power':[reused[10],reused[22],reused[34]]}
 
+def separated_power_drops(browser):
+    results=[]
+    for count in (2,3):
+        page=boot(browser,list(range(count)))
+        value=call(page,'multiplayerSmoke.status()')
+        assert [value[11+12*seat] for seat in range(count)]==[2]*count,value
+        for mode in (0,2):
+            for kind,reward in ((0,1),(2,8),(4,128)):
+                result=call(page,'v=>multiplayerSmoke.fixturePowerDrops(...v)',[kind,mode])
+                copies=count if kind!=4 else 1
+                assert result[0]==1 and result[1]==copies,(count,kind,mode,result)
+                positions=sorted(result[3:3+copies])
+                assert all(b-a>=1800 for a,b in zip(positions,positions[1:])),result
+                assert result[6:6+copies]==[reward]*copies,result
+                assert result[9:12]==[copies*reward,0,0],result
+                if mode==0 and kind!=4:
+                    assert result[21:21+copies]==[6]*copies,result
+                    assert all(v<0 for v in result[18:18+copies]),result
+                    assert all(v<34000 for v in result[15:15+copies]),result
+                    spread=sorted(result[12:12+copies])
+                    assert all(b-a>=800 for a,b in zip(spread,spread[1:])),result
+                results.append({'players':count,'kind':kind,'nativeMode':mode,'detail':result})
+        page.close()
+    return {'case':'roster-sized-upward-power-drops-and-single-item-rewards','passed':True,'results':results}
+
 with sync_playwright() as playwright:
     browser = playwright.chromium.launch(headless=True, args=['--enable-unsafe-swiftshader'])
     try:
         report['browser']=browser.version
-        cases=(grazed_bullet_still_hits,death_clear_uses_barrier_owner,point_of_collection_owner,no_global_power_conversion,rescue,three_player_rescue,three_player_power_gift,wipe_ends_run,targeted_item_lifetime,full_item_pool,released_gift_and_reuse)
+        cases=(separated_power_drops,grazed_bullet_still_hits,death_clear_uses_barrier_owner,point_of_collection_owner,no_global_power_conversion,rescue,three_player_rescue,three_player_power_gift,wipe_ends_run,targeted_item_lifetime,full_item_pool,released_gift_and_reuse)
         selected=[case for case in cases if args.case=='all' or case.__name__==args.case]
         assert selected,'unknown native cooperation case'
         for case in selected:

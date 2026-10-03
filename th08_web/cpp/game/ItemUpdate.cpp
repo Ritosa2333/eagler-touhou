@@ -54,6 +54,10 @@ void ItemUpdate::update(){
             if(p->velocity.y>0){p->state=1;if(context.player_state==2){p->state=0;p->velocity={0,-.7f,0};}}
             else{common_motion=false;can_collect=false;}
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        }else if(p->state==6){
+            move(*p,timing.rate);common_motion=false;
+            p->velocity.y=Scalar::add(p->velocity.y,Scalar::mul(.03f,timing.rate));
+            if(p->timer.current>=12){p->state=0;p->velocity.x=0;}
         }else if(selected&&(p->state==1||point_of_collection)){
 #else
         }else if(selected&&(p->state==1||(context.player.y<human.item_collect_line&&(context.power>=128||context.focused||context.character==1||context.character==6)))){

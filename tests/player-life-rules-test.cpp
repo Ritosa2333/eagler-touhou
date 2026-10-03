@@ -49,7 +49,7 @@ static void ordinary_death(i32 initial_bombs,i32 old_bombs,i32 power,u8 characte
     state.timer.set(30);
     assert(life.resolve_death(profile));assert(context.lives==1&&state.state==1);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    assert(context.bombs==1);
+    assert(context.bombs==2);
 #else
     assert(context.bombs==initial_bombs);
 #endif
@@ -81,14 +81,14 @@ static void initial_and_reset_resources(){
         for(int seat=0;seat<count;++seat){
             auto& bank=banks[seat];bank.bombs=8;bank.lives=8;bank.power=128;bank.deaths=3;
             multiplayer::begin_base_life(bank,float(lives),float(power));
-            assert(bank.bombs==1&&bank.lives==lives&&bank.power==power&&bank.deaths==3);
+            assert(bank.bombs==2&&bank.lives==lives&&bank.power==power&&bank.deaths==3);
             multiplayer::begin_base_life(bank,float(lives),0);
-            assert(bank.bombs==1&&bank.lives==lives&&bank.power==0&&bank.deaths==3);
+            assert(bank.bombs==2&&bank.lives==lives&&bank.power==0&&bank.deaths==3);
             bank.bombs=5;bank.power=float(power);
             multiplayer::begin_next_stage_life(bank,false);
             assert(bank.bombs==5&&bank.lives==lives&&bank.power==power);
             multiplayer::begin_next_stage_life(bank,true);
-            assert(bank.bombs==1&&bank.lives==lives&&bank.power==power);
+            assert(bank.bombs==2&&bank.lives==lives&&bank.power==power);
         }
         // A viewer does not allocate or reset a fourth participant resource.
         if(count==2)assert(banks[2].bombs==0&&banks[2].lives==0&&banks[2].power==0);

@@ -355,6 +355,7 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
     session.player_characters[0]=u8(wanted.character);
     if(wanted.initial)multiplayer::reset(cooperation,u8(session.player_count));
     roster.count=session.player_count;
+    items.set_player_count(session.player_count);
     for(u32 seat=0;seat<3;++seat){
         roster.seats[seat].available=seat<session.player_count;
         items.set_player_available(seat,seat<session.player_count);

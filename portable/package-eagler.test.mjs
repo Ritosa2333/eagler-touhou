@@ -55,6 +55,7 @@ function makeFixture() {
   write('th08_web/sdl-runtime/shell.mjs', 'export const shell = true;');
   write('th08_web/sdl-runtime/eagler-host.mjs', 'export const host = true;');
   write('th08_web/sdl-runtime/directory-keyboard.mjs', 'export const keyboard = true;');
+  write('third_party/eagler-common/browser/adonis-calibration.mjs', 'export const calibration = true;');
   write('th08_web/sdl-runtime/multiplayer-host.mjs', 'export const multiplayer = true;');
   write('th08_web/sdl-runtime/save-storage.mjs', 'export const storage = true;');
   write('th08_web/sdl-runtime/practice.mjs', 'export const practice = true;');

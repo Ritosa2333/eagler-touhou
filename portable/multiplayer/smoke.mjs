@@ -66,7 +66,15 @@ window.multiplayerSmoke={
   key(code,down){string(code,p=>core.sdl_key(p,down?1:0));},
   commit(buttons){
     const ptr=core.allocate(buttons.length*2);
-    try{new Uint16Array(core.memory.buffer,ptr,buttons.length).set(buttons);return core.multiplayer_commit_inputs(app,ptr,buttons.length)!==0;}
+    try{
+      new Uint16Array(core.memory.buffer,ptr,buttons.length).set(buttons);
+      if(!core.multiplayer_commit_inputs(app,ptr,buttons.length))return false;
+      // Offline fixtures still give the local seat its physical input path.
+      // Committed peer inputs do not override the local keyboard sample.
+      for(const [mask,code] of [[1,'KeyZ'],[2,'KeyX'],[4,'ShiftLeft'],[16,'ArrowUp'],[32,'ArrowDown'],[64,'ArrowLeft'],[128,'ArrowRight']])
+        this.key(code,(buttons[0]&mask)!==0);
+      return true;
+    }
     finally{core.deallocate(ptr);}
   },
   nativeStatus,
@@ -160,6 +168,7 @@ window.multiplayerSmoke={
   fixturePower(seat,power){if(!core.mp_fixture_power)throw Error('Not a fixture build');return core.mp_fixture_power(app,seat,power);},
   fixtureItems(kind,seat=0){if(!core.mp_fixture_items)throw Error('Not a fixture build');return core.mp_fixture_items(app,kind,seat);},
   fixtureItemStatus(){if(!core.mp_fixture_item_status)throw Error('Not a fixture build');return Array.from(new Uint32Array(core.memory.buffer,core.mp_fixture_item_status(app),9));},
+  fixturePowerDrops(kind,mode){const pointer=core.mp_fixture_power_drops(app,kind,mode);return Array.from(new Int32Array(core.memory.buffer,pointer,24));},
   fixturePocSetup(seat){if(!core.mp_fixture_poc_setup)throw Error('Not a fixture build');return !!core.mp_fixture_poc_setup(app,seat);},
   fixturePocCrossingSetup(seat){if(!core.mp_fixture_poc_crossing_setup)throw Error('Not a fixture build');return !!core.mp_fixture_poc_crossing_setup(app,seat);},
   fixturePowerTypeGuard(){if(!core.mp_fixture_power_type_guard)throw Error('Not a fixture build');return !!core.mp_fixture_power_type_guard(app);},
