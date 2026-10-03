@@ -12,8 +12,8 @@ constexpr std::uint8_t kRescueTicks = 90;
 constexpr std::uint16_t kWipeRetryTicks = 180;
 constexpr std::int32_t kRescueRadiusHundredths = 2000;
 constexpr std::int16_t kPowerTransferAmount = 20;
-constexpr std::int16_t kMaxPowerTransferRecipient = kMaxPower - kPowerTransferAmount;
-constexpr std::uint8_t kPowerTapCount = 8;
+constexpr std::int16_t kMaxPowerTransferRecipient = kMaxPower - 1;
+constexpr std::uint8_t kPowerTapCount = 5;
 constexpr std::uint8_t kPowerTapWindow = 24;
 
 enum class LifeState : std::uint8_t {
@@ -136,6 +136,7 @@ bool BeginNextStage(State& state) noexcept;
 // failed allocator leaves the giver's life untouched and permits a later retry.
 TickResult AdvanceOneTick(State& state, const FrameInput& input,
                           LifeItemAllocator allocator = {},
-                          PowerItemAllocator powerAllocator = {}) noexcept;
+                          PowerItemAllocator powerAllocator = {},
+                          PowerItemAllocator rescueAllocator = {}) noexcept;
 
 } // namespace th10::multiplayer

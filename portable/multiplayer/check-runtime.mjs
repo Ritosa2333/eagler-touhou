@@ -7,6 +7,7 @@ import {createServer} from 'node:net';
 const root=resolve(import.meta.dirname,'../..');
 const profile=process.argv.includes('--fixtures')?'multiplayer-fixtures':'multiplayer';
 const selected=process.argv.find(value=>value.startsWith('--only='))?.slice(7).split(',');
+const nativeCase=process.argv.find(value=>value.startsWith('--native-case='))?.slice(14)??'all';
 const replayCases=process.argv.find(value=>value.startsWith('--replay-cases='))?.slice(15)??'all';
 const completionCase=process.argv.find(value=>value.startsWith('--completion='))?.slice(13)??'stage';
 const completionPlayers=Number(process.argv.find(value=>value.startsWith('--completion-players='))?.slice(21)??2);
@@ -64,6 +65,7 @@ try{
   const result=await new Promise((done,reject)=>{
    const child=spawn(process.env.TH_PYTHON||'python',[
     resolve(import.meta.dirname,name+'.py'),'--url',url,'--output',output,
+    ...(name==='check-native-fixtures'?['--case',nativeCase]:[]),
     ...(name==='check-replay'?['--cases',replayCases]:[]),
     ...(name==='check-presentation-rollback'&&process.argv.includes('--absolute-touch')?['--absolute-touch']:[]),
     ...(name==='check-replay-completion'?['--case',completionCase,'--players',String(completionPlayers),

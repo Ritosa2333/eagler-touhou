@@ -250,7 +250,8 @@ const float* mp_fixture_replay_controls(browser::Application* app){
 }
 namespace {
 void timer(Timer& value,u32& flags,i32 ticks,float& rate){
-    value.rate=&rate;flags|=1;value.initialize(ticks);
+    value.rate=&rate;flags|=1;value.previous=wrapping_add(ticks,-1);
+    value.current=ticks;value.fractional=Extended::from_int(ticks).to_float();
 }
 void pose(browser::World& world,u32 seat,i32 x,i32 y,i32 state,i32 lives,i32 power){
     auto& pilot=world.pilots[seat];auto& player=*pilot.player;
@@ -400,5 +401,20 @@ const i32* mp_fixture_status(browser::Application* app){
     words[16]=world.backgrounds.previous?world.backgrounds.previous->fade_timer.current:-1;
     for(const auto& entry:world.backgrounds.retired)words[17]+=entry.stage?1:0;
     words[18]=world.state.multiplayer_cheat_movement_used?1:0;
+    return words;
+}
+
+extern "C" __attribute__((export_name("mp_fixture_rules_probe")))
+const i32* mp_fixture_rules_probe(browser::Application* app){
+    static i32 words[8]{};std::fill(words,words+8,0);
+    if(!app||!app->world)return words;
+    auto& world=*app->world;words[0]=world.boss_participant_count();
+    for(u32 seat=0;seat<world.player_count;++seat)
+        words[1+seat]=world.pilots[seat].player->invulnerability.current;
+    words[4]=world.actors.bullets?world.actors.bullets->active_count:0;
+    if(world.actors.items)for(const auto& item:world.actors.items->regular)if(item.state){
+        if(item.kind==1){++words[5];++words[7];}
+        if(item.kind==4){++words[6];words[7]+=20;}
+    }
     return words;
 }

@@ -64,6 +64,13 @@ for (const [name, sources, flags = []] of [
     resolve(common,'src/netplay/SessionChannel.cpp'),
     resolve(common,'src/netplay/BrowserPeerTransport.cpp'),
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
+  ['multiplayer-rules-compatibility', [
+    resolve(root,'tests/multiplayer-rules-compatibility-test.cpp'),
+    resolve(root,'th10_web/cpp/multiplayer/NetplayRuntime.cpp'),
+    resolve(root,'th10_web/cpp/multiplayer/SessionSetup.cpp'),
+    ...['NetplayProtocol','NetplayCore','NetplaySession','SessionChannel']
+      .map(name=>resolve(common,'src/netplay',name+'.cpp')),
+  ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['netplay-generation', [
     resolve(root,'tests/netplay-generation-test.cpp'),
     resolve(root,'th10_web/cpp/multiplayer/NetplayRuntime.cpp'),
@@ -148,6 +155,12 @@ for (const [name, sources, flags = []] of [
     resolve(common, 'src/netplay/NetplayProtocol.cpp'),
     resolve(common, 'src/netplay/RollbackJournal.cpp'),
   ]],
+  ...[false,true].map(multiplayer=>['enemy-native-drops-'+(multiplayer?'multiplayer':'normal'),[
+    ...['tests/enemy-native-drops-test.cpp','th10_web/cpp/game/EnemyDrops.cpp',
+      'th10_web/cpp/game/GameEconomy.cpp','th10_web/cpp/game/Timer.cpp',
+      'th10_web/cpp/game/Rng.cpp','th10_web/cpp/game/GameMath.cpp',
+      'th10_web/cpp/game/Arithmetic.cpp'].map(path=>resolve(root,path)),softfloat,
+  ],multiplayer?['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']:[]]),
   ['economy-normal', [...economySources, softfloat]],
   ['economy-multiplayer', [...economySources, softfloat], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['item-ownership', [

@@ -95,7 +95,7 @@ std::int8_t select_receiver(const State& state, const FrameInput& input,
         if (best < 0 || (isSpirit && !bestIsSpirit) ||
             (isSpirit == bestIsSpirit && target.lives < state.seats[best].lives) ||
             (isSpirit == bestIsSpirit && target.lives == state.seats[best].lives &&
-             candidate < static_cast<std::uint8_t>(best))) {
+             candidate > static_cast<std::uint8_t>(best))) {
             best = static_cast<std::int8_t>(candidate);
             bestIsSpirit = isSpirit;
         }
@@ -240,7 +240,8 @@ bool BeginNextStage(State& state) noexcept {
 
 TickResult AdvanceOneTick(State& state, const FrameInput& input,
                           LifeItemAllocator allocator,
-                          PowerItemAllocator powerAllocator) noexcept {
+                          PowerItemAllocator powerAllocator,
+                          PowerItemAllocator rescueAllocator) noexcept {
     TickResult result{};
     if (state.seatCount < kMinSeats || state.seatCount > kMaxSeats) {
         return result;
@@ -332,14 +333,17 @@ TickResult AdvanceOneTick(State& state, const FrameInput& input,
 
         SeatState& receiver = state.seats[static_cast<std::uint8_t>(target)];
         if (receiver.lifeState == LifeState::Spirit) {
+            if (rescueAllocator.allocate &&
+                !rescueAllocator.allocate(rescueAllocator.context, giver, static_cast<std::uint8_t>(target))) {
+                reset_rescue(source);
+                continue;
+            }
+            source.power = static_cast<std::int16_t>(source.power - source.power / 2);
             --source.lives;
             receiver.lifeState = LifeState::Alive;
-            // TH10 ends native play at lives < 0. A rescued Spirit must be
-            // committed at zero so its Alive policy state has a native life
-            // value that can take part in the next death transition.
-            if (receiver.lives < 0) {
-                receiver.lives = 0;
-            }
+            // One donated life restores -1 to a playable zero and adds to
+            // any shared extends banked while this player was a Spirit.
+            if (receiver.lives < kMaxLives) ++receiver.lives;
             source.waitingForFocusRelease = true;
             reset_rescue(source);
             reset_rescue(receiver);
