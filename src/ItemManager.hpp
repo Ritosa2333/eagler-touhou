@@ -67,12 +67,11 @@ struct ItemManager
     void RemoveAllItems();
     Item *SpawnItem(ZunVec3 *heading, i32 itemType, i32 state);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    bool CanSpawnItems(i32 count) const;
     // States 3..5 are the upstream visible transfer path for P2/P1/P3.
     // They rise for 20 frames without collision, then home to that slot.
 #endif
-    // Only enemy/ECL resource drops use this path.  In multiplayer, LIFE and
-    // BOMB drops are duplicated once per active player without changing
-    // player transfers, graze rewards, or other SpawnItem callers.
+    // Enemy/ECL drops preserve the original single-player spawn quantity.
     Item *SpawnEnemyDrop(ZunVec3 *heading, i32 itemType, i32 state);
 
     Item items[MAX_ITEMS + 1];

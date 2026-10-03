@@ -567,7 +567,11 @@ ZunResult GameManager::AddedCallback(GameManager *arg)
         {
             g_GameManager.SetLivesRemaining(arg->defaultCfg->lifeCount);
             g_GameManager.RegenerateGameIntegrityCsum();
-            g_GameManager.SetBombsRemainingAndComputeCsum(g_Player.shooterData->initialBombs);
+            g_GameManager.SetBombsRemainingAndComputeCsum(
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                MultiplayerGameplay::IsMultiplayer() ? 1 :
+#endif
+                g_Player.shooterData->initialBombs);
         }
         arg->ResetRegionsPos();
         arg->globals->currentPower = 0.0f;

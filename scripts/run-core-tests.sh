@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+python3 tests/cooperative-rules-test.py
+
 CXX="${CXX:-c++}"
 OUT="$(mktemp -d "${TMPDIR:-/tmp}/th07-eagler-core-tests.XXXXXX")"
 trap 'rm -rf "$OUT"' EXIT

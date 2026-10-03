@@ -40,9 +40,6 @@ constexpr i8 LIFE_TRANSFER_P3 = 8;
 constexpr i8 AUTO_COLLECT_P1 = 4;
 constexpr i8 AUTO_COLLECT_P2 = 5;
 constexpr i8 AUTO_COLLECT_P3 = 9;
-#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-constexpr f32 MULTIPLAYER_RESOURCE_DROP_OFFSET = 16.0f;
-#endif
 
 bool ItemPlayerActive(const Player *player)
 {
@@ -271,23 +268,7 @@ i32 RoundRobinPowerTarget(i32 itemIndex)
     return 0;
 }
 
-#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-void GetSeparatedResourceDropPosition(const ZunVec3 *origin, i32 ordinal, i32 count,
-                                      ZunVec3 *position)
-{
-    f32 centerX = origin->x;
-    const f32 halfSpan = MULTIPLAYER_RESOURCE_DROP_OFFSET * (count - 1);
-    const f32 maximumCenterX = g_GameManager.arcadeRegionSize.x - halfSpan;
 
-    *position = *origin;
-    if (centerX < halfSpan)
-        centerX = halfSpan;
-    if (centerX > maximumCenterX)
-        centerX = maximumCenterX;
-    position->x = centerX - halfSpan +
-                  ordinal * MULTIPLAYER_RESOURCE_DROP_OFFSET * 2.0f;
-}
-#endif
 } // namespace
 
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -430,33 +411,24 @@ Item *ItemManager::SpawnItem(ZunVec3 *heading, i32 itemType, i32 state)
 
 Item *ItemManager::SpawnEnemyDrop(ZunVec3 *heading, i32 itemType, i32 state)
 {
-#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if (MultiplayerGameplay::IsMultiplayer() &&
-        (itemType == ITEM_LIFE || itemType == ITEM_BOMB))
-    {
-        const i32 activeCount = GetActivePlayerCount();
-        if (activeCount > 1)
-        {
-            Item *first = &this->items[1100];
-            i32 ordinal = 0;
-            for (u8 playerId = 0; playerId < TH07_MULTI_MAX_PLAYERS; ++playerId)
-            {
-                if (!IsPlayerSlotActive(playerId))
-                    continue;
-
-                ZunVec3 position;
-                GetSeparatedResourceDropPosition(heading, ordinal, activeCount, &position);
-                Item *spawned = SpawnItem(&position, itemType, state);
-                if (ordinal == 0)
-                    first = spawned;
-                ++ordinal;
-            }
-            return first;
-        }
-    }
-#endif
+    // Preserve the original one-drop quantity in cooperative play, too.
     return SpawnItem(heading, itemType, state);
 }
+
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+bool ItemManager::CanSpawnItems(i32 count) const
+{
+    if (count <= 0)
+        return true;
+    i32 freeSlots = 0;
+    for (i32 index = 0; index < MAX_ITEMS; ++index)
+    {
+        if (!this->items[index].isInUse && ++freeSlots >= count)
+            return true;
+    }
+    return false;
+}
+#endif
 
 void ItemManager::OnUpdate()
 {

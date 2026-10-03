@@ -1,3 +1,4 @@
+#include "Multiplayer.hpp"
 #include <eagler/netplay/NetplayCore.hpp>
 #include <eagler/netplay/NetplaySession.hpp>
 
@@ -105,6 +106,43 @@ static SessionConfig MakeSessionConfig(std::uint8_t localPlayer)
     config.playerCount = 2;
     config.localPlayer = localPlayer;
     return config;
+}
+
+static void TestCooperativeRulesAbiGate()
+{
+    for (std::uint8_t count : {2, 3})
+    {
+        SessionConfig config = MakeSessionConfig(0);
+        config.playerCount = count;
+        config.gameplayAbi = TH07_MULTI_NETPLAY_ABI;
+        SessionGate current;
+        assert(current.Reset(config));
+        for (std::uint8_t peerId = 1; peerId < count; ++peerId)
+        {
+            SessionConfig peerConfig = config;
+            peerConfig.localPlayer = peerId;
+            --peerConfig.gameplayAbi;
+            SessionGate oldPeer;
+            assert(oldPeer.Reset(peerConfig));
+            std::vector<std::uint8_t> wire;
+            SessionPacket decoded;
+            assert(EncodeSessionPacket(oldPeer.BuildPacket(SessionPhase::Hello), &wire));
+            assert(DecodeSessionPacket(wire.data(), wire.size(), &decoded));
+            assert(current.Apply(decoded) == SessionPacketResult::ContractMismatch);
+            assert(!current.PeerHello(peerId) && !current.CanStart());
+
+            peerConfig.gameplayAbi = TH07_MULTI_NETPLAY_ABI;
+            SessionGate newPeer;
+            assert(newPeer.Reset(peerConfig));
+            assert(EncodeSessionPacket(newPeer.BuildPacket(SessionPhase::Hello), &wire));
+            assert(DecodeSessionPacket(wire.data(), wire.size(), &decoded));
+            assert(current.Apply(decoded) == SessionPacketResult::Accepted);
+            assert(current.Apply(decoded) == SessionPacketResult::Duplicate);
+            assert(current.Apply(newPeer.BuildPacket(SessionPhase::Ready)) == SessionPacketResult::Accepted);
+        }
+        current.MarkLocalReady();
+        assert(current.CanStart());
+    }
 }
 
 static void TestSessionGate()
@@ -489,6 +527,7 @@ int main()
 {
     TestProtocolRoundTrip();
     TestSessionGate();
+    TestCooperativeRulesAbiGate();
     TestPredictionAndRollback();
     TestAnalogPredictionAndRollback();
     TestPredictionFiltersEdgeInputs();

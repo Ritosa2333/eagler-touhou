@@ -6,6 +6,7 @@
 #include "Gui.hpp"
 #include "Player.hpp"
 #include "SoundPlayer.hpp"
+#include "multiplayer/GameplaySession.hpp"
 
 // P1 remains in TH07's original integrity-checked globals. P2/P3 are kept in
 // sidecar pools so multiplayer can have independent resources without
@@ -337,8 +338,8 @@ void ResetMultiplayerPlayerResources(u8 playerId)
     player = &g_Players[playerId];
     resources->livesRemaining = g_GameManager.defaultCfg
         ? g_GameManager.defaultCfg->lifeCount : 0;
-    resources->bombsRemaining = player->shooterData
-        ? (i32)player->shooterData->initialBombs : 0;
+    resources->bombsRemaining = MultiplayerGameplay::IsMultiplayer()
+        ? 1 : (player->shooterData ? (i32)player->shooterData->initialBombs : 0);
     resources->currentPower = 0;
 }
 

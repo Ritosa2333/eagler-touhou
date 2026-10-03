@@ -433,7 +433,8 @@ void UpdatePowerTransfer(Player *giver)
     g_powerGiveTaps[id] = 0;
     g_powerGiveWindow[id] = 0;
     Player *receiver = SelectPowerTransferReceiver(giver);
-    if (!receiver || GetPlayerPower(id) < POWER_GIVE_AMOUNT)
+    if (!receiver || GetPlayerPower(id) < POWER_GIVE_AMOUNT ||
+        !g_ItemManager.CanSpawnItems(6))
         return;
 
     AddPlayerPower(id, -POWER_GIVE_AMOUNT);
@@ -486,29 +487,14 @@ Player *SelectLifeTransferReceiver(const Player *giver)
     return best;
 }
 
-i32 SelectNearestLivingRecipient(const Player *source)
+void PrepareMultiplayerStageRevival(Player *player)
 {
-    if (!source)
-        return -1;
-    i32 bestId = -1;
-    f32 bestDistanceSq = 0.0f;
-    for (u8 playerId = 0; playerId < TH07_MULTI_MAX_PLAYERS; ++playerId)
-    {
-        if (playerId == source->initParam || !IsPlayerSlotActive(playerId) ||
-            !IsPlayerActiveForLifeTransfer(&g_Players[playerId]))
-            continue;
-        const Player *candidate = &g_Players[playerId];
-        const f32 dx = source->pos.x - candidate->pos.x;
-        const f32 dy = source->pos.y - candidate->pos.y;
-        const f32 distanceSq = dx * dx + dy * dy;
-        if (bestId < 0 || distanceSq < bestDistanceSq ||
-            (distanceSq == bestDistanceSq && playerId < static_cast<u8>(bestId)))
-        {
-            bestId = playerId;
-            bestDistanceSq = distanceSq;
-        }
-    }
-    return bestId;
+    // Registration revives a former ghost for the next stage without a donor.
+    // Normalize only that new life; surviving ships keep their earned bombs.
+    if (MultiplayerGameplay::IsMultiplayer() &&
+        g_Supervisor.curState == 3 &&
+        player->playerState == PLAYER_STATE_SPIRIT)
+        SetPlayerBombs(player->initParam, 1);
 }
 
 void UpdateLifeTransfer(Player *giver)
@@ -967,14 +953,6 @@ i32 UpdateMultiplayerDeath(Player *player)
                                        : -PLAYER_SPIRIT_DRIFT_SPEED;
         SetPlayerBombs(player->initParam, 3);
         g_Gui.bombDisplayUpdateFrames = 2;
-        const i32 recipientId = SelectNearestLivingRecipient(player);
-        if (recipientId >= 0)
-        {
-            if (GetPlayerLives((u8)recipientId) < 8)
-                AddPlayerLives((u8)recipientId, 1);
-            g_Gui.lifeDisplayUpdateFrames = 2;
-            g_SoundPlayer.PlaySoundByIdx(SOUND_EXTEND, 0);
-        }
         player->playerSprite.color.color = 0x50ffffff;
 
         // Individual players remain as Spirits so a surviving teammate can
@@ -1003,7 +981,7 @@ i32 UpdateMultiplayerDeath(Player *player)
     if (!PracticeRuntime::OverlayInfiniteLives())
         AddPlayerLives(player->initParam, -1);
     g_Gui.lifeDisplayUpdateFrames = 2;
-    SetPlayerBombs(player->initParam, (i32)player->shooterData->initialBombs);
+    SetPlayerBombs(player->initParam, 1);
     g_Gui.bombDisplayUpdateFrames = 2;
     return 1;
 }
@@ -4432,6 +4410,7 @@ ZunResult Player::DeletedCallback(Player *arg)
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 static ZunResult RegisterOnePlayer(Player *mgr, u8 playerId)
 {
+    PrepareMultiplayerStageRevival(mgr);
     memset(mgr, 0, sizeof(Player));
     mgr->invulnerabilityTimer = 0;
     mgr->initParam = playerId;

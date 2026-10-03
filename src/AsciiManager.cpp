@@ -21,6 +21,9 @@
 #include "SoundPlayer.hpp"
 #include "Supervisor.hpp"
 #include "ZunResult.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "multiplayer/GameplaySession.hpp"
+#endif
 
 ChainElem g_AsciiManagerOnDrawMenusChain;
 
@@ -1266,7 +1269,11 @@ i32 RetryMenu::OnUpdate()
             g_GameManager.globals->score = g_GameManager.globals->guiScore;
             g_GameManager.SetLivesRemaining(g_GameManager.defaultCfg->lifeCount);
             g_GameManager.RegenerateGameIntegrityCsum();
-            g_GameManager.SetBombsRemainingAndComputeCsum(g_Player.shooterData->initialBombs);
+            g_GameManager.SetBombsRemainingAndComputeCsum(
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                MultiplayerGameplay::IsMultiplayer() ? 1 :
+#endif
+                g_Player.shooterData->initialBombs);
             g_GameManager.globals->grazeInStage = 0;
             g_GameManager.globals->pointItemsCollectedThisStage = 0;
             g_GameManager.globals->pointItemsCollectedForExtend = 0;
