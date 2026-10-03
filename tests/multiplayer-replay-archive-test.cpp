@@ -49,9 +49,9 @@ static void check_terminal_stage(){
     std::vector<std::uint8_t> bytes;assert(tape.Encode(bytes,&description));
     ReplayArchive restored;assert(restored.Load(bytes.data(),bytes.size()));
     // Valid wire archives bearing older rule identities must be rejected by
-    // the title before gameplay, rather than silently replayed under v6 rules.
+    // the title before gameplay, rather than silently replayed under v7 rules.
     InputReplay original;assert(original.Decode(bytes.data(),bytes.size()));
-    for(const auto version:{0x10000004u,0x10000005u}){
+    for(const auto version:{0x10000004u,0x10000005u,0x10000006u}){
         auto config=original.Info().config;
         config.gameplayAbi=historical_contract(setup,version);
         InputReplay legacy;assert(legacy.Begin(config));

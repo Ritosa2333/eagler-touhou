@@ -2,7 +2,7 @@
 #include "../th10_web/cpp/multiplayer/SessionSetup.hpp"
 
 // Historical wire-contract fixture, independent of the current production
-// version. It reconstructs v4/v5 identities without enabling legacy gameplay.
+// version. It reconstructs historical identities without enabling legacy gameplay.
 inline std::uint32_t historical_contract(
     const th10::multiplayer::SessionSetup& setup,std::uint32_t version){
     std::uint32_t hash=2166136261u;

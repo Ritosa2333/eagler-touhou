@@ -132,25 +132,45 @@ i32 World::convert_power(){
 }
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 bool World::spawn_life_transfer(u32 donor,u32 recipient){
-    if(donor>=player_count||recipient>=player_count||donor==recipient||!actors.items||!pilots[donor].player)return false;
+    if(donor>=player_count||recipient>=player_count||donor==recipient||!actors.items||!pilots[donor].player||!pilots[recipient].player)return false;
     u32 index=0;while(index<150&&actors.items->regular[index].state)++index;
     if(index==150)return false;
     spawn_item(pilots[donor].player->position,7,0xffffffff,-1.5707963705062866f,2.2f);
     auto& item=actors.items->regular[index];if(!item.state||item.kind!=7)return false;
+    item.state=3;item.attraction_speed=pilots[recipient].player->profile->item_attraction_speed;
     regular_item_owners[index]={std::int8_t(recipient),std::int8_t(recipient)};
     return true;
 }
-bool World::spawn_power_transfer(u32 donor,u32 recipient){
+bool World::spawn_rescue_power(u32 donor,u32 recipient){
     if(donor>=player_count||recipient>=player_count||donor==recipient||!actors.items||!pilots[donor].player)return false;
-    u32 index=0;while(index<150&&actors.items->regular[index].state)++index;
-    if(index==150)return false;
+    return spawn_directed_power(donor,recipient,pilots[donor].game.power/2);
+}
+bool World::spawn_directed_power(u32 donor,u32 recipient,i32 amount){
+    if(donor>=player_count||recipient>=player_count||donor==recipient||!actors.items||!pilots[donor].player||!pilots[recipient].player||amount<0||amount>100)return false;
+    const i32 count=amount/20+amount%20;
+    u32 slots[150]{},free=0;
+    for(u32 i=0;i<150&&free<u32(count);++i)if(!actors.items->regular[i].state)slots[free++]=i;
+    if(free!=u32(count))return false;
+    // Reserve the entire batch before creating any item or charging the giver.
+    for(i32 copy=0;copy<count;++copy)
+        if(!rollback.Touch(&actors.items->regular[slots[copy]],sizeof(Item))){fail();return false;}
+    Items env(*this);std::int16_t transfer_power=0;env.power=&transfer_power;
+    // Native small/big P units express half Power exactly; odd remainder stays with the giver.
+    for(i32 copy=0;copy<count;++copy){
+        const u32 index=slots[copy];
+        const i32 kind=copy<amount/20?4:1;
+        actors.items->spawn(pilots[donor].player->position,kind,0xffffffff,-1.5707963705062866f,2.2f,env);
+        auto& item=actors.items->regular[index];if(!item.state||item.kind!=kind){fail();return false;}
+        item.state=3;item.attraction_speed=pilots[recipient].player->profile->item_attraction_speed;
+        regular_item_owners[index]={std::int8_t(recipient),std::int8_t(recipient)};
+    }
+    return true;
+}
+bool World::spawn_power_transfer(u32 donor,u32 recipient){
     // TH10's native big-P adds exactly twenty units on the title's 0..100
     // Power scale. Target it through the same deterministic ownership path as
     // transferred life items rather than writing the recipient's Power here.
-    spawn_item(pilots[donor].player->position,4,0xffffffff,-1.5707963705062866f,2.2f);
-    auto& item=actors.items->regular[index];if(!item.state||item.kind!=4)return false;
-    regular_item_owners[index]={std::int8_t(recipient),std::int8_t(recipient)};
-    return true;
+    return spawn_directed_power(donor,recipient,20);
 }
 #endif
 #ifndef TH_ENABLE_MULTIPLAYER_GAMEPLAY

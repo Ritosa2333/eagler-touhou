@@ -67,6 +67,7 @@ with fixture(args.url, report, args.output) as test:
             result['corrected'] = evidence(b)
         elif name == 'rescue':
             a, b = prepare(test, 2, local=1)
+            assert call(a, 'multiplayerSmoke.rulesProbe()')[0] == 1
             for frame in range(60, 149):
                 advance_pair(a, b, frame, 0, 4)
             assert call(b, 'multiplayerSmoke.fixtureStatus()')[4] == 89
@@ -79,10 +80,21 @@ with fixture(args.url, report, args.output) as test:
             assert net(b)[5] == 149, net(b)
             advance_pair(a, b, 154, 0)
             assert state(b)[10] == 3 and state(b)[22] == -1 and state(b)[24] == 3, state(b)
+            assert state(b)[11] == 80 and state(b)[23] == 0, state(b)
             result['cancelledRescue'] = evidence(b)
-            for frame in range(155, 245):
+            for frame in range(155, 244):
+                advance_pair(a, b, frame, 0, 4)
+            for page in (a, b):
+                assert call(page, 'multiplayerSmoke.fixture(7)')
+            advance_pair(a, b, 244, 0, 4)
+            revived = call(b, 'multiplayerSmoke.rulesProbe()')
+            assert revived[2] >= 279 and revived[4] >= 1200, revived
+            for frame in range(245, 265):
                 advance_pair(a, b, frame, 0, 4)
             assert state(b)[10] == 2 and state(b)[22] >= 0, state(b)
+            assert state(b)[11] == state(b)[23] == 40, state(b)
+            probe = call(b, 'multiplayerSmoke.rulesProbe()')
+            assert probe[0] == 2 and probe[4] >= 1200, probe
             result['completedRescue'] = evidence(b)
         elif name == 'pickup':
             a, b = prepare(test, 3)
@@ -101,9 +113,9 @@ with fixture(args.url, report, args.output) as test:
             initial = state(a)
             assert initial[11] == 0 and initial[23] == 40, initial
             frame = 60
-            for tap in range(8):
+            for tap in range(5):
                 advance_pair(a, b, frame, 1, 1); frame += 1
-                if tap != 7:
+                if tap != 4:
                     advance_pair(a, b, frame, 1, 0); frame += 1
             after_gesture = state(a)
             assert after_gesture[23] == 20, ('donor did not spend 20 Power', after_gesture)

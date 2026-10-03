@@ -344,7 +344,9 @@ struct Frame final:PlayerFrameEnvironment {
             world.hud->update_power(level,fraction);
     }
     void drop_power(const Vec3& point,i32 kind,float angle) override{
-        world.spawn_item(point,kind,0xffffff,angle,3);
+        // Final-death contents stay native; ordinary P drops follow the roster multiplier.
+        const u32 copies=pilot.game.lives<0?1:world.player_count;
+        for(u32 copy=0;copy<copies;++copy)world.spawn_item(point,kind,0xffffff,angle,3);
     }
     void game_over(bool) override{
         // Native life/power penalties have already run. Keep the native pilot
@@ -354,9 +356,22 @@ struct Frame final:PlayerFrameEnvironment {
         clear_player_offense(player,world.engine.manager.registry);
         initialize_spirit_drift(world,player);
 
-        // Final death must not mint a replacement donor life. Native power
-        // drops already ran in Player::update; leave those quantities alone.
-        // A future rescue consumes an existing donor life exactly once.
+        i32 recipient=-1;std::int64_t best=0;
+        for(u32 seat=0;seat<world.player_count;++seat){
+            if(seat==pilot.seat)continue;
+            auto& candidate=world.pilots[seat];
+            if(!candidate.player||candidate.player->state==3||candidate.game.lives<0)continue;
+            const std::int64_t dx=std::int64_t(candidate.player->fixed_position.x)-player.fixed_position.x;
+            const std::int64_t dy=std::int64_t(candidate.player->fixed_position.y)-player.fixed_position.y;
+            const std::int64_t distance=dx*dx+dy*dy;
+            if(recipient<0||distance<best){recipient=i32(seat);best=distance;}
+        }
+        if(recipient>=0){
+            auto& target=world.pilots[u32(recipient)];
+            if(target.game.lives<multiplayer::kMaxLives)++target.game.lives;
+            if(target.seat==0&&world.actors.gui)world.actors.gui->update_lives(target.game.lives);
+            world.sound(0x2c);
+        }
     }
 };
 
@@ -491,7 +506,9 @@ void revive_player(World& world,multiplayer::Pilot& pilot,i32 lives){
     player.input_velocity={0,0};
     player.velocity={0,0};
     for(auto& position:player.position_history)position=player.fixed_position;
-    set_timer(player.state_timer,player.state_timer_flags,0,&world.engine.speed);
+    // Active play's first 30 ticks clear bullets in the native respawn path.
+    // Rescue starts after that window and supplies only invulnerability.
+    set_timer(player.state_timer,player.state_timer_flags,30,&world.engine.speed);
     set_timer(player.focus_timer,player.focus_timer_flags,0,&world.engine.speed);
     set_timer(player.invulnerability,player.invulnerability_flags,280,&world.engine.speed);
     player.target=nullptr;player.target_seen=0;
@@ -776,11 +793,11 @@ i32 World::draw_player(Player* player){
         text.scale={1,1};text.color=0xffd5efc8;text.camera=0;text.shadow=1;
         text.queue(label,{draw->position.x+194.0f,draw->position.y-10.0f,.47f},false);
         text.scale=scale;text.color=color;text.camera=camera;text.shadow=shadow;
-    }else if(!high_refresh::render_only&&common.value&&multiplayer::PowerTapProgress(rescue)>=4){
+    }else if(!high_refresh::render_only&&common.value&&multiplayer::PowerTapProgress(rescue)>=3){
         auto& text=*common.value;
         const auto scale=text.scale;const auto color=text.color;
         const auto camera=text.camera,shadow=text.shadow;
-        char label[16];std::snprintf(label,sizeof(label),"P %u/8",u32(multiplayer::PowerTapProgress(rescue)));
+        char label[16];std::snprintf(label,sizeof(label),"P %u/5",u32(multiplayer::PowerTapProgress(rescue)));
         text.scale={1,1};text.color=0xffe2edbd;text.camera=0;text.shadow=1;
         text.queue(label,{draw->position.x+222.0f,draw->position.y-10.0f,.47f},false);
         text.scale=scale;text.color=color;text.camera=camera;text.shadow=shadow;
@@ -873,6 +890,12 @@ i32 World::update_bomb(Bomb* bomb){
 
 i32 World::update_bomb(){return update_bomb(actors.bomb);}
 
+u32 World::boss_participant_count()const{
+    u32 count=0;for(u32 seat=0;seat<player_count;++seat)
+        if(pilots[seat].player&&pilots[seat].player->state!=3&&
+           cooperation.seats[seat].lifeState!=multiplayer::LifeState::Eliminated)++count;
+    return count;
+}
 i32 World::bomb_damage(multiplayer::Pilot& pilot,const Vec3& target){
     if(!pilot.bomb)return 0;
     const bool boss_active=actors.enemies&&actors.enemies->bosses[0];
@@ -910,12 +933,18 @@ void World::update_cooperation(){
         controls.shootPressed=(state.input_lanes.seats[seat].pressed&multiplayer::InputLanes::kShoot)!=0;
     }
     const auto result=multiplayer::AdvanceOneTick(
-        cooperation,input_frame,{this,allocate_life_item},{this,allocate_power_item});
+        cooperation,input_frame,{this,allocate_life_item},{this,allocate_power_item},
+        {this,[](void* raw,std::uint8_t giver,std::uint8_t target) noexcept {
+            return static_cast<World*>(raw)->spawn_rescue_power(giver,target);
+        }});
     for(u32 i=0;i<result.eventCount;++i){
         const auto& event=result.events[i];
         if(event.kind==multiplayer::EventKind::SpiritRevived){
             auto& donor=pilots[event.seat];
             donor.game.lives=event.giverLivesAfter;
+            donor.game.power=cooperation.seats[event.seat].power;
+            configure_player(donor);
+            if(donor.seat==0&&hud)hud->update_power(donor.game.power/20,(donor.game.power%20)*100/20);
             if(event.targetSeat<0||static_cast<u32>(event.targetSeat)>=player_count){
                 fail();return;
             }

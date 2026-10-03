@@ -109,7 +109,7 @@ void shoot_breaks_continuous_rescue_progress() {
     assert(state.seats[0].rescueTarget == -1);
 }
 
-void eight_rapid_shoot_presses_transfer_one_native_big_power_item() {
+void five_rapid_shoot_presses_transfer_one_native_big_power_item() {
     State state = make_state(2);
     assert(ReportNativeSeatOutcome(state, 0, LifeState::Alive, 2, 40));
     assert(ReportNativeSeatOutcome(state, 1, LifeState::Alive, 2, 0));
@@ -253,14 +253,20 @@ void each_seat_sees_prior_life_debits_when_selecting_a_recipient() {
     for (int tick = 0; tick < kRescueTicks; ++tick) {
         result = AdvanceOneTick(state, input, {&probe, allocate_item});
     }
-    assert(result.eventCount == 3);
-    assert(probe.callCount == 3);
-    assert(probe.givers[0] == 0 && probe.targets[0] == 1);
-    assert(probe.givers[1] == 1 && probe.targets[1] == 0);
-    assert(probe.givers[2] == 2 && probe.targets[2] == 0);
+    assert(result.eventCount == 1);
+    assert(probe.callCount == 1);
+    assert(probe.givers[0] == 0 && probe.targets[0] == 2);
     assert(state.seats[0].lives == 1);
-    assert(state.seats[1].lives == 1);
-    assert(state.seats[2].lives == 1);
+    assert(state.seats[1].lives == 2 && state.seats[2].lives == 2);
+    // A prior donor's debit changes the following seats' selected recipient.
+    // Changing recipients restarts their continuous 90-tick hold.
+    assert(state.seats[1].rescueTarget == 0 && state.seats[1].rescueTicks == 1);
+    assert(state.seats[2].rescueTarget == 0 && state.seats[2].rescueTicks == 1);
+    for (int tick = 0; tick < kRescueTicks - 1; ++tick)
+        result = AdvanceOneTick(state, input, {&probe, allocate_item});
+    assert(result.eventCount == 1 && probe.callCount == 2);
+    assert(probe.givers[1] == 1 && probe.targets[1] == 0);
+    assert(state.seats[2].rescueTarget == 1 && state.seats[2].rescueTicks == 1);
 }
 
 void sequential_givers_keep_th07_rescue_frame_semantics() {
@@ -411,6 +417,32 @@ void invalid_rosters_and_loadouts_are_rejected() {
 
 } // namespace
 
+void rescue_power_is_paid_only_after_all_items_are_reserved() {
+    for (int power = 0; power <= 100; ++power) {
+        State state = make_state(2);
+        state.seats[0].power = power;
+        spirit(state, 1, 2); // Includes shared extends banked by the ghost.
+        FrameInput input = input_at();
+        input.seats[1].canInitiateLifeTransfer = false;
+        ItemProbe probe{false, 0, {}, {}};
+        TickResult result{};
+        for (int tick = 0; tick < kRescueTicks; ++tick)
+            result = AdvanceOneTick(state, input, {}, {}, {&probe, allocate_item});
+        assert(result.eventCount == 0 && probe.callCount == 1);
+        assert(state.seats[0].power == power && state.seats[0].lives == 2);
+        assert(state.seats[1].lifeState == LifeState::Spirit && state.seats[1].lives == 2);
+        probe.succeeds = true;
+        for (int tick = 0; tick < kRescueTicks; ++tick)
+            result = AdvanceOneTick(state, input, {}, {}, {&probe, allocate_item});
+        assert(result.eventCount == 1 && probe.callCount == 2);
+        assert(result.events[0].kind == EventKind::SpiritRevived);
+        assert(state.seats[0].lives == 1 && state.seats[0].power == power - power / 2);
+        assert(state.seats[1].lives == 3 && state.seats[1].power == 40);
+        // Recipient Power changes when directed native P items arrive.
+        assert(probe.givers[1] == 0 && probe.targets[1] == 1);
+    }
+}
+
 int main() {
     static_assert(std::is_trivially_copyable<State>::value,
                   "state must be safe to copy into a rollback journal");
@@ -418,7 +450,8 @@ int main() {
     radius_is_inclusive_at_twenty_pixels();
     repeated_inputs_advance_logical_ticks_and_focus_release_gates_next_use();
     shoot_breaks_continuous_rescue_progress();
-    eight_rapid_shoot_presses_transfer_one_native_big_power_item();
+    five_rapid_shoot_presses_transfer_one_native_big_power_item();
+    rescue_power_is_paid_only_after_all_items_are_reserved();
     power_taps_expire_and_never_count_a_held_shot_twice();
     power_transfer_rejects_full_or_spirit_recipients_and_failed_allocation();
     three_seat_life_items_commit_synchronously_and_independently();

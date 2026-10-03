@@ -28,7 +28,7 @@ struct Frame final:EnemyFrameEnvironment,EnemyDropEnvironment {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         for(u32 seat=0;seat<w.player_count;++seat)if(w.pilots[seat].bomb&&w.pilots[seat].bomb->active)any_bomb=1;
         alternate_active=&any_bomb;
-        player_count=w.player_count;
+        player_count=w.boss_participant_count();
 #endif
     }
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -39,7 +39,14 @@ struct Frame final:EnemyFrameEnvironment,EnemyDropEnvironment {
     void player_collision(const Vec3& p,const Vec2& size) override{w.collide_player(p,size);}
     i32 destroy(EnemyState& enemy) override{return enemy.destroy(*this);}
     void play_sound(i32 id,float x) override{w.sound(id,x);}
-    void spawn_item(const Vec3& p,i32 kind,i32 color,float angle,float speed) override{w.spawn_item(p,kind,color,angle,speed);}
+    void spawn_item(const Vec3& p,i32 kind,i32 color,float angle,float speed) override{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        const u32 copies=(kind==1||kind==4||kind==10||kind==11)?w.player_count:1;
+        for(u32 copy=0;copy<copies;++copy)w.spawn_item(p,kind,color,angle,speed);
+#else
+        w.spawn_item(p,kind,color,angle,speed);
+#endif
+    }
     void spawn_death_animation(i32 file,i32 script,const Vec3& p) override{w.effect(*w.actors.enemies->animation_files[file],script,p);}
 #ifdef TH_ENABLE_THPRAC
     // F4 time lock (0x40e5b0): hold the enemy lifetime counter.

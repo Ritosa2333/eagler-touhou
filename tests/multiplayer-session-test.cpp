@@ -11,7 +11,8 @@ int main(){
     const auto contract=GameplayContract(first);
     assert(contract!=LegacyGameplayContractV4(first));
     assert(contract!=historical_contract(first,0x10000005u));
-    assert(contract==historical_contract(first,0x10000006u));
+    assert(contract==historical_contract(first,0x10000007u));
+    assert(contract!=historical_contract(first,0x10000006u));
     words[2]=2;assert(DecodeSessionSetup(second,words,11));
     assert(GameplayContract(second)==contract);
     words[10]=2;assert(DecodeSessionSetup(second,words,11));

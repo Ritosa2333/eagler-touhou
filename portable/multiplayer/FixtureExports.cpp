@@ -403,3 +403,18 @@ const i32* mp_fixture_status(browser::Application* app){
     words[18]=world.state.multiplayer_cheat_movement_used?1:0;
     return words;
 }
+
+extern "C" __attribute__((export_name("mp_fixture_rules_probe")))
+const i32* mp_fixture_rules_probe(browser::Application* app){
+    static i32 words[8]{};std::fill(words,words+8,0);
+    if(!app||!app->world)return words;
+    auto& world=*app->world;words[0]=world.boss_participant_count();
+    for(u32 seat=0;seat<world.player_count;++seat)
+        words[1+seat]=world.pilots[seat].player->invulnerability.current;
+    words[4]=world.actors.bullets?world.actors.bullets->active_count:0;
+    if(world.actors.items)for(const auto& item:world.actors.items->regular)if(item.state){
+        if(item.kind==1){++words[5];++words[7];}
+        if(item.kind==4){++words[6];words[7]+=20;}
+    }
+    return words;
+}
