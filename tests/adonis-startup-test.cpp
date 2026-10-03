@@ -104,7 +104,8 @@ static void mismatches(){
 static void failure_and_reuse(){
     Link a,b;a.other=&b;b.other=&a;AdonisStartup l;assert(l.Begin(config(0),0,AdonisMode::Delay,AdonisStartup::Automatic));
     assert(l.Tick(a,0));const auto stale=b.incoming.front().bytes;
-    assert(!l.Tick(a,10'000'000)&&l.Failed());
+    assert(l.Tick(a,10'000'000));
+    assert(!l.Tick(a,AdonisStartup::PeerWaitUs)&&l.Failed());
     auto c=config(1);c.sessionId++;
     assert(l.Begin(c,0,AdonisMode::Hybrid,AdonisStartup::Automatic));
     assert(l.Receive(b,stale.data(),stale.size(),1'000)&&!l.Ready());
@@ -218,8 +219,30 @@ static void connection_owner(){
     assert(decoded.delay==1&&decoded.prediction==2&&decoded.rttP95Us==70'000);
     bytes[6]=9;assert(!AdonisSpectatorTiming::Decode(bytes.data(),bytes.size(),decoded));
 }
+static void connection_waits_for_loading_peer(){
+    // RTC can be healthy while a slower endpoint is still creating its world.
+    // The local resource-ready time must not consume the measurement deadline.
+    for(unsigned slowSeat:{0u,1u,2u}){
+        Link a,b;a.other=&b;b.other=&a;
+        AdonisConnection host(a),peer(b);
+        host.Prepare(config(0),AdonisMode::Delay,true,0,2);
+        peer.Prepare(config(1),AdonisMode::Delay,true,0,2);
+        for(std::uint64_t now=0;now<18'000'000;now+=1000){
+            a.now=b.now=now;
+            a.closed=b.closed=slowSeat==2&&now<12'000'000;
+            assert(host.Pump(now,slowSeat!=0||now>=12'000'000));
+            assert(peer.Pump(now,slowSeat!=1||now>=12'000'000));
+            if(now<13'000'000){assert(a.probeTimes.empty()&&b.probeTimes.empty());}
+            if(host.NeedsApply())host.Applied();
+            if(peer.NeedsApply())peer.Applied();
+        }
+        assert(!host.Waiting()&&!peer.Waiting());
+        assert(host.Startup().Replies()==120&&peer.Startup().Replies()==120);
+    }
+}
 int main(){
     connection_owner();
+    connection_waits_for_loading_peer();
     // Original conversion boundaries; in particular the user's 32 ms link
     // must no longer receive an additional mandatory queued frame.
     for(const auto [rtt,frames]:{std::pair{1u,1u},{32'000u,1u},{33'333u,1u},{33'334u,2u},{90'000u,3u},{100'002u,4u},{140'000u,5u}}){
@@ -248,6 +271,6 @@ int main(){
     assert(!s.Begin(config(0),0,AdonisMode::Hybrid,10));
     assert(!s.Begin(config(0),0,AdonisMode::Hybrid,0,3));
     assert(s.Begin(config(0),1,AdonisMode::Delay,0));assert(!s.Tick(a,0));
-    assert(s.Begin(config(0),0,AdonisMode::Delay,0));assert(!s.Tick(a,10'000'000));
+    assert(s.Begin(config(0),0,AdonisMode::Delay,0));assert(!s.Tick(a,AdonisStartup::PeerWaitUs));
     std::puts("Actual input lane, two-sided immutable choice, lost control repair, manual D, reserve and failure gates PASS");
 }

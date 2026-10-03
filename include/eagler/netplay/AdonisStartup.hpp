@@ -21,6 +21,7 @@ public:
     static constexpr unsigned Warmup = 10, Samples = 120, Attempts = Warmup + Samples;
     static constexpr unsigned ProbeCount = Attempts - 1, IntervalUs = 16'000, TailUs = 200'000;
     static constexpr unsigned StabilizeUs = 1'000'000;
+    static constexpr std::uint64_t PeerWaitUs = 45'000'000, MeasurementTimeoutUs = 10'000'000;
     static constexpr std::uint32_t Automatic = INVALID_FRAME;
     enum class Stage : std::uint32_t { Idle, WaitingPeer, Measuring, Negotiating, Committed, Failed };
     struct Report {
@@ -52,7 +53,9 @@ public:
         if (!ObserveClock(nowUs)) return false;
         if (stage_==Stage::Idle) return Fail("Adonis startup was not begun");
         if (transport.Failed()) return Fail("Adonis startup transport failed");
-        if (stage_!=Stage::Committed && nowUs-begin_>=10'000'000)
+        if (stage_==Stage::WaitingPeer && nowUs-begin_>=PeerWaitUs)
+            return Fail("Adonis timed out waiting for all player input channels and loaded worlds");
+        if (stage_!=Stage::WaitingPeer && stage_!=Stage::Committed && nowUs-measurementBegin_>=MeasurementTimeoutUs)
             return Fail("Adonis startup timed out; no guessed delay was applied");
         if (!transport.IsOpen()) { if(!probes_)stabilityStarted_=false; return true; }
         if (stage_==Stage::Committed) {
@@ -63,7 +66,7 @@ public:
         }
         if (nowUs>=nextHello_) { Send(transport, Hello); nextHello_=nowUs+200'000; }
         if ((peerHelloMask_|LocalBit())==AllMask() && stage_==Stage::WaitingPeer) {
-            stage_=Stage::Measuring;
+            stage_=Stage::Measuring;measurementBegin_=nowUs;
         }
         if(stage_==Stage::Measuring && !probes_ && !stabilityStarted_) {
             nextProbe_=nowUs+StabilizeUs;stabilityStarted_=true;
@@ -246,7 +249,7 @@ private:
     Stage stage_=Stage::Idle;
     unsigned reserve_=0,probes_=0;
     std::uint32_t requested_=Automatic;
-    std::uint64_t begin_=0,clock_=0,nextHello_=0,nextControl_=0,nextProbe_=0,lastProbe_=0,committedAt_=0;
+    std::uint64_t begin_=0,measurementBegin_=0,clock_=0,nextHello_=0,nextControl_=0,nextProbe_=0,lastProbe_=0,committedAt_=0;
     bool haveLocal_=false,accepted_=false,stabilityStarted_=false;
     unsigned peerHelloMask_=0,summaryMask_=0,acceptedMask_=0,commitAckMask_=0,worstPeer_=0;
     std::array<std::array<std::uint64_t,Attempts>,MAX_PLAYERS> sentAt_{},rtt_{};

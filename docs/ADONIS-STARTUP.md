@@ -11,6 +11,13 @@ settling interval. The interval contributes no RTT samples and gameplay remains
 blocked at frame zero. This user-requested settling interval is separate from
 the original Adonis2 probe schedule.
 
+Waiting for peers to finish loading and for the transport/HELLO fence has a
+separate 45-second deadline. The 10-second measurement/negotiation deadline
+starts only when all peers pass that fence, before the one-second settling
+interval. A fast endpoint cannot spend the measurement deadline waiting for a
+slower endpoint to open its game connection. Neither deadline supplies fallback
+samples or a guessed delay.
+
 129 numbered probes (1..129) are scheduled with 16 ms relative waits on
 `PeerTransport::SendTo`, with echoes on that same input lane. Slot zero is
 unused; slots 0..9 are excluded, leaving 120 measurement slots (10..129).
