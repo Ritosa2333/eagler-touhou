@@ -487,31 +487,6 @@ Player *SelectLifeTransferReceiver(const Player *giver)
     return best;
 }
 
-i32 SelectNearestLivingRecipient(const Player *source)
-{
-    if (!source)
-        return -1;
-    i32 bestId = -1;
-    f32 bestDistanceSq = 0.0f;
-    for (u8 playerId = 0; playerId < TH07_MULTI_MAX_PLAYERS; ++playerId)
-    {
-        if (playerId == source->initParam || !IsPlayerSlotActive(playerId) ||
-            !IsPlayerActiveForLifeTransfer(&g_Players[playerId]))
-            continue;
-        const Player *candidate = &g_Players[playerId];
-        const f32 dx = source->pos.x - candidate->pos.x;
-        const f32 dy = source->pos.y - candidate->pos.y;
-        const f32 distanceSq = dx * dx + dy * dy;
-        if (bestId < 0 || distanceSq < bestDistanceSq ||
-            (distanceSq == bestDistanceSq && playerId < static_cast<u8>(bestId)))
-        {
-            bestId = playerId;
-            bestDistanceSq = distanceSq;
-        }
-    }
-    return bestId;
-}
-
 void PrepareMultiplayerStageRevival(Player *player)
 {
     // Registration revives a former ghost for the next stage without a donor.
@@ -580,8 +555,7 @@ void UpdateLifeTransfer(Player *giver)
         receiver->invulnerabilityTimer = 240;
         receiver->respawnTimer = receiver->shooterData->initialRespawnTimer;
         receiver->bulletGracePeriod = 0;
-        SetPlayerBombs(giver->initParam, 0);
-        SetPlayerBombs(receiver->initParam, 2);
+        SetPlayerBombs(receiver->initParam, 0);
         SetPlayerPower(receiver->initParam, 64);
         if (GetPlayerLives(receiver->initParam) < 8)
             AddPlayerLives(receiver->initParam, 1);
@@ -984,14 +958,6 @@ i32 UpdateMultiplayerDeath(Player *player)
                                        : -PLAYER_SPIRIT_DRIFT_SPEED;
         SetPlayerBombs(player->initParam, 3);
         g_Gui.bombDisplayUpdateFrames = 2;
-        const i32 recipientId = SelectNearestLivingRecipient(player);
-        if (recipientId >= 0)
-        {
-            if (GetPlayerLives((u8)recipientId) < 8)
-                AddPlayerLives((u8)recipientId, 1);
-            g_Gui.lifeDisplayUpdateFrames = 2;
-            g_SoundPlayer.PlaySoundByIdx(SOUND_EXTEND, 0);
-        }
         player->playerSprite.color.color = 0x50ffffff;
 
         // Individual players remain as Spirits so a surviving teammate can

@@ -8,9 +8,10 @@
 // locally without pulling a socket implementation into Player/GameManager.
 constexpr int TH07_MULTI_MAX_PLAYERS = 3;
 constexpr int TH07_MULTI_MAX_GUESTS = TH07_MULTI_MAX_PLAYERS - 1;
-// Gameplay ABI 8 uses two Bombs for each new cooperative life and donated revival.
+// Gameplay ABI 9 removes terminal life awards and revives with zero Bombs
+// without consuming the donor's Bomb stock.
 // Old multiplayer Replays must be rejected rather than replayed with new rules.
-constexpr unsigned int TH07_MULTI_GAMEPLAY_ABI = 8;
-// Netplay ABI 9 binds the two-Bomb gameplay rules to live sessions.
+constexpr unsigned int TH07_MULTI_GAMEPLAY_ABI = 9;
+// Netplay ABI 10 binds these cooperation rules to live sessions.
 // Ordinary single-player builds and Replay formats are unchanged.
-constexpr unsigned int TH07_MULTI_NETPLAY_ABI = 9;
+constexpr unsigned int TH07_MULTI_NETPLAY_ABI = 10;
