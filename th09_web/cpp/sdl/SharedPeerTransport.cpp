@@ -49,6 +49,8 @@ TH09_PEER_EXPORT("th09_peer_send_spectator") int th09_peer_send_spectator(int le
     if (length < 1 || length > static_cast<int>(sizeof(packet_buffer))) return 0;
     return transport.SendSpectator(packet_buffer, static_cast<std::size_t>(length));
 }
+TH09_PEER_EXPORT("th09_peer_spectator_state") int th09_peer_spectator_state() { return transport.SpectatorState(); }
+TH09_PEER_EXPORT("th09_peer_stop_spectators") void th09_peer_stop_spectators() { transport.StopSpectators(); }
 TH09_PEER_EXPORT("th09_peer_poll") int th09_peer_poll() {
     std::vector<std::uint8_t> packet;
     if (!transport.Poll(&packet)) return 0;

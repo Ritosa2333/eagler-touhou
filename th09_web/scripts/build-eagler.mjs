@@ -34,6 +34,7 @@ if (variant === 'multiplayer') {
     'th09_peer_error', 'th09_peer_connect', 'th09_peer_connect_spectator',
     'th09_peer_state', 'th09_peer_send', 'th09_peer_has_spectators',
     'th09_peer_send_spectator', 'th09_peer_poll', 'th09_peer_close',
+    'th09_peer_spectator_state', 'th09_peer_stop_spectators', 'th09_spectator_info',
     'th09_network_info', 'th09_network_room_begin', 'th09_network_receive',
     'th09_network_hash', 'th09_network_end', 'th09_spectator_begin',
     'th09_rollback_begin', 'th09_rollback_enable', 'th09_rollback_pump', 'th09_rollback_info',

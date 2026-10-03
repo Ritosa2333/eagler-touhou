@@ -84,7 +84,7 @@ Counts runAdonis(AdonisMode mode,unsigned delay,unsigned impairment,AdonisDriver
         CHECK(choice.delay==left.delay);
         CHECK(delay==AdonisStartup::Automatic?choice.delay+choice.prediction==choice.fullDelay:choice.delay==delay);
         CHECK(left.session.Channel().AdonisStatistics().PredictionAllowanceUs()==
-              (mode==AdonisMode::Hybrid?(reserve*1000000u+59)/60:0));
+              (choice.prediction*1000000u+59)/60);
         std::printf("  measured B=%u D=%u prediction=%u, input lane samples=%u/%u PASS\n",choice.fullDelay,choice.delay,choice.prediction,
             left.session.Startup().Local().received,right.session.Startup().Local().received);
     }
@@ -125,6 +125,7 @@ void hybridHeldPrediction(){
     }
 }
 int main(){
+    runAdonis(AdonisMode::Hybrid,AdonisStartup::Automatic,0,input,true);
     for(auto m:{AdonisMode::Delay,AdonisMode::Hybrid})for(unsigned d:{AdonisStartup::Automatic,0u,1u,9u})runAdonis(m,d,1,input,true);
     runAdonis(AdonisMode::Hybrid,AdonisStartup::Automatic,4,input,true,1);
     runAdonis(AdonisMode::Hybrid,AdonisStartup::Automatic,1,input,true,2,true);

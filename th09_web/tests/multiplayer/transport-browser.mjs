@@ -13,6 +13,9 @@ const hardware=process.env.NATIVE_GPU==='1';
 const adonisMode=Number(process.env.ADONIS_MODE||0),inputDelay=Number(process.env.INPUT_DELAY_FRAMES||0);
 const automatic=process.env.INPUT_DELAY_AUTO==='1',predictionReserve=Number(process.env.PREDICTION_RESERVE||2);
 const startupImpairment=process.env.STARTUP_IMPAIRMENT!=='0';
+const spectatorFault=process.env.SPECTATOR_FAULT||'';
+assert.ok(['','backpressure','disconnect'].includes(spectatorFault));
+assert.ok(!(fallback&&spectatorFault==='disconnect'),'relay is required for gameplay in fallback mode');
 assert.ok(!automatic||adonisMode>0);assert.ok([1,2].includes(predictionReserve));
 assert.ok(Number.isInteger(adonisMode)&&adonisMode>=0&&adonisMode<=2);
 assert.ok(Number.isInteger(inputDelay)&&inputDelay>=0&&inputDelay<=9);
@@ -40,7 +43,7 @@ if(release)assert.equal(build.exports.some(e=>e.name.startsWith('th09_probe_')),
 
 try{
  await page.goto(url);
- const result=await page.evaluate(async ({port,fallback,release,fullSpriteGeometry,adonisMode,inputDelay,automatic,predictionReserve,startupImpairment})=>{
+ const result=await page.evaluate(async ({port,fallback,release,fullSpriteGeometry,adonisMode,inputDelay,automatic,predictionReserve,startupImpairment,spectatorFault})=>{
   const frames=[],notices=[],closed=[],lobbies=[],timeline=[],lanes=[],phaseEvents=[];
   const diagnosticStarted=performance.now();
   let lastDiagnostic=diagnosticStarted;
@@ -64,6 +67,12 @@ try{
      confirmed:i===2?w.core._th09_spectator_frame():readStats(w)[1],
      sinceCallbackMs:w.measure?.callbackAt?now-w.measure.callbackAt:null,
      route:w.__eaglerNetplayTransport,
+     spectatorSent:w.play?.spectatorSentFrame??0,
+     spectatorQueued:w.play?w.play.spectatorPending.length-w.play.spectatorHead:0,
+     spectatorStopped:!!w.play?.spectatorOutputStopped,
+     spectatorReceived:w.play?.spectatorFrame??0,
+     transportQueued:w.__eaglerPeerTransport? w.__eaglerPeerTransport.received.length-w.__eaglerPeerTransport.receivedHead:0,
+     relayBuffered:w.__eaglerPeerTransport?.relay?.bufferedAmount??null,
     })),
     lanes:lanes.map(({channel,peer,lane,sent,received,pending,lastSendAt,lastReceiveAt,maxTimerLatenessMs})=>({
      peer,lane,sent,received,pending,maxTimerLatenessMs,
@@ -111,16 +120,16 @@ try{
    options.netplayInputDelayAuto=automatic;options.netplayPredictionReserve=predictionReserve;
    w.core.eaglerOptions=options;w.play=new SharedNetplay(w.core,{onStatus:s=>{
     notices.push([i,s]);if(phaseEvents.length<64)phaseEvents.push({peer:i,atMs:performance.now()-diagnosticStarted,status:s});
-   },onTiming:t=>{if(i===0&&t.phase==='ready')send(0,{type:'timing-result',serial:1,timing:t});},onClose:s=>closed.push([i,s]),onResult:()=>{}});
+   },onTiming:t=>{if(i===0&&t.phase==='ready')send(0,{type:'timing-result',serial:1,timing:t});},onClose:s=>{w.core._th09_loop_pause(1);closed.push([i,s]);},onResult:()=>{}});
    w.measure={work:[],gaps:[],last:0,presented:0,audioStart:0};
    w.core.onNetworkSpectatorFrame=(...args)=>w.play.publish(...args);w.core.onNetworkResult=()=>w.play.result();w.core.onGameFrame=(ok,ms)=>{w.play.frame();w.measure.callbackAt=performance.now();if(!w.measure.enabled)return;const m=w.measure,at=w.core._th09_game_metrics()/4,n=w.core.HEAPU32[at+9];m.work.push(ms);if(n!==m.presented){const now=performance.now();if(m.last)m.gaps.push(now-m.last);m.last=now;m.presented=n;}};
    w.core._th09_probe_frame_limit?.(limit);w.core._th09_loop_start();w.core._th09_loop_pause(1);await w.play.connect(options);
   }
   const stats=readStats;
-  const started=performance.now();lastDiagnostic=started;let wrapped=false,gameplayStarted=null;
+  const started=performance.now();lastDiagnostic=started;let wrapped=false,gameplayStarted=null,faultInjected=false;
   while(performance.now()-started<45000){
    sampleDiagnostic();
-   if(closed.length)throw Error(JSON.stringify({closed,notices}));
+   if(closed.some(([i])=>spectatorFault!=='disconnect'||i!==2))throw Error(JSON.stringify({closed,notices}));
    if(!wrapped&&frames.slice(0,2).every(w=>w.play.active)){
     wrapped=true;gameplayStarted=performance.now();
     phaseEvents.push({atMs:gameplayStarted-diagnosticStarted,status:'Both players active; fault injection and work measurements begin'});
@@ -139,30 +148,52 @@ try{
      }
     }
    }
-   if(frames.slice(0,2).every(w=>stats(w)[1]>=limit)&&frames[2].core._th09_spectator_frame()>=limit)break;
+   if(wrapped&&spectatorFault&&!faultInjected&&performance.now()-gameplayStarted>=1500){
+    faultInjected=true;const host=frames[0],relay=host.__eaglerPeerTransport.relay;
+    if(spectatorFault==='disconnect')relay.close(1000,'test-only optional spectator upload loss');
+    else {
+     const get=Object.getOwnPropertyDescriptor(host.WebSocket.prototype,'bufferedAmount').get;
+     const until=performance.now()+1200;
+     Object.defineProperty(relay,'bufferedAmount',{configurable:true,get(){
+      const actual=get.call(this);return performance.now()<until?Math.max(65536,actual):actual;
+     }});
+    }
+   }
+   if(frames.slice(0,2).every(w=>stats(w)[1]>=limit)&&
+      (spectatorFault==='disconnect'?closed.some(([i])=>i===2):frames[2].core._th09_spectator_frame()>=limit))break;
    await new Promise(r=>setTimeout(r,25));
   }
   for(const w of frames)w.core._th09_loop_pause(1);
   const summary=frames.slice(0,2).map(stats),spectator=frames[2].core._th09_spectator_frame();
-  if(!summary.every(s=>(release?s[0]>=limit&&s[1]>=limit:s[0]===limit&&s[1]===limit&&s[4]===limit)&&(adonisMode===1?s[2]===0&&s[3]===0:s[2]>0))|| (release?spectator<limit:spectator!==limit))throw Error('incomplete '+JSON.stringify({summary,spectator,notices,closed}));
+  const viewerStopped=spectatorFault==='disconnect';
+  if(!summary.every(s=>(release?s[0]>=limit&&s[1]>=limit:s[0]===limit&&s[1]===limit&&s[4]===limit)&&(adonisMode===1?s[2]===0&&s[3]===0:s[2]>0))||
+     (!viewerStopped&&(release?spectator<limit:spectator!==limit)))throw Error('incomplete '+JSON.stringify({summary,spectator,notices,closed}));
+  if(spectatorFault&&!faultInjected)throw Error('spectator fault was not exercised');
+  if(viewerStopped&&(!frames[0].play.spectatorOutputStopped||!closed.some(([i,s])=>i===2&&s.includes('spectator stream stopped'))))
+    throw Error('spectator failure did not explicitly stop only the viewer');
+  if(spectatorFault==='backpressure'&&!timeline.some(t=>t.peers[0].spectatorQueued>=16))throw Error('backpressure did not retain ordered input');
+  const viewerAt=frames[2].core._th09_spectator_info()/4;
+  const spectatorBudget=Array.from(frames[2].core.HEAPU32.subarray(viewerAt,viewerAt+8));
+  if(spectatorBudget[0]!==1||spectatorBudget[5]>6)throw Error('spectator exceeded callback tick budget');
   const adonis=frames.slice(0,2).map(w=>{const at=w.core._th09_adonis_info()/4;return Array.from(w.core.HEAPU32.subarray(at,at+6));});
   const startup=frames.slice(0,2).map(w=>{if(!w.core._th09_startup_info)return [];const at=w.core._th09_startup_info()/4;return Array.from(w.core.HEAPU32.subarray(at,at+16));});
   const timings=frames.map(w=>w.play.timing),startupWire=frames.slice(0,2).map(w=>w.startupWire);
   const resolvedDelay=adonisMode?startup[0][10]:inputDelay;
   if(adonis.some(v=>v[0]!==adonisMode||v[1]!==resolvedDelay||(adonisMode===1&&v[2]!==0)))throw Error('wrong timing mode '+JSON.stringify(adonis));
   if(adonisMode){
-   if(startup.some(s=>s[1]!==4||s[3]!==130||s[14]<96||s[15]<96||s[10]!==resolvedDelay||s[11]!==(adonisMode===2?predictionReserve:0)))throw Error('incomplete native calibration '+JSON.stringify(startup));
+   if(startup.some(s=>s[0]!==2||s[1]!==4||s[3]!==129||s[14]<96||s[15]<96||s[10]!==resolvedDelay||s[11]!==(adonisMode===2?Math.min(Math.max(0,s[9]-(automatic?1:0)),predictionReserve):0)))throw Error('incomplete native calibration '+JSON.stringify(startup));
    if(startupWire.some(w=>w.attempted<200||w.sent<190||!w.lanes.includes(fallback?'relay':'rtc')))throw Error('actual input-channel calibration not exercised');
-   if(timings.some(t=>!t||t.inputDelay!==resolvedDelay||t.automatic!==automatic||t.fullDelay!==Math.ceil(t.rttP95Us*60/2_000_000)+1||
+   if(timings.some(t=>!t||t.inputDelay!==resolvedDelay||t.automatic!==automatic||t.fullDelay!==Math.max(1,Math.ceil(Math.floor(t.rttP95Us/2)*60/1_000_000))||
       (automatic?t.inputDelay!==Math.max(0,t.fullDelay-t.predictionReserve):t.inputDelay!==inputDelay)))throw Error('chosen D does not match policy '+JSON.stringify(timings));
    await wait(()=>lobbies[2].latest.room?.timing?.inputDelay===resolvedDelay);
    if(frames[2].__eaglerNetplayInputDelayFrames!==0)throw Error('spectator double delay');
   }
   const comparableFinalHashes=summary[0][0]===summary[1][0]&&summary[0][0]===spectator;
-  const hashes=frames.map(w=>w.core._th09_network_hash()>>>0);if((!release||comparableFinalHashes)&&new Set(hashes).size!==1)throw Error('spectator divergence '+JSON.stringify(hashes));
+  const comparedWorlds=viewerStopped?frames.slice(0,2):frames;
+  const hashes=comparedWorlds.map(w=>w.core._th09_network_hash()>>>0);if((!release||comparableFinalHashes)&&new Set(hashes).size!==1)throw Error('spectator divergence '+JSON.stringify(hashes));
   let replayBytes=null;
   if(!release){
-   const replays=frames.map(w=>{if(!w.core._th09_probe_save_replay())throw Error('Replay export failed after measured startup');return w.core.FS.readFile('/save/replay/th9_25.rpy');});
+   const replays=comparedWorlds.map(w=>{if(!w.core._th09_probe_save_replay())throw Error('Replay export failed after measured startup');return w.core.FS.readFile('/save/replay/th9_25.rpy');});
    if(replays.slice(1).some(b=>b.length!==replays[0].length||b.some((v,i)=>v!==replays[0][i])))throw Error('Measured startup Replay differs between players and confirmed spectator');
    replayBytes=replays[0].length;
   }
@@ -175,12 +206,12 @@ try{
   const sustainedCadencePassed=elapsedMs<=14000;
   const distribution=values=>{const a=values.slice().sort((x,y)=>x-y);return {count:a.length,total:a.reduce((sum,v)=>sum+v,0),p50:a[Math.floor(a.length*.5)],p95:a[Math.floor(a.length*.95)],p99:a[Math.floor(a.length*.99)],max:a.at(-1),over50ms:a.filter(v=>v>50).length};};
   const measured=frames.map(w=>({callbackWorkMs:distribution(w.measure.work),presentationGapMs:distribution(w.measure.gaps),wasmMemoryBytes:w.core.HEAPU8.length}));
-  if(audio.some(a=>a.state!=='running'||a.advancedSeconds<1))throw Error('audio clock did not progress');
+  if(audio.slice(0,viewerStopped?2:3).some(a=>a.state!=='running'||a.advancedSeconds<1))throw Error('audio clock did not progress');
   const renderers=frames.map(w=>{const canvas=w.document.querySelector('canvas'),gl=canvas.getContext('webgl2')||canvas.getContext('webgl'),ext=gl.getExtension('WEBGL_debug_renderer_info');return ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER);});
   sampleDiagnostic();const transportDiagnostics=diagnostics();
   const calibratedBudgetPassed=gameplayMs!==null&&gameplayMs<=14000&&setupMs<=15000;
-  for(const w of frames)w.play.close();for(const ws of lobbies)ws.close();return {summary,adonis,startup,startupWire,timings,resolvedDelay,spectator,hashes,replayBytes,comparableFinalHashes,routes,audio,elapsedMs,setupMs,gameplayMs,sustainedCadencePassed,calibratedBudgetPassed,gameplayCadencePassed:gameplayMs!==null&&gameplayMs<=14000,measured,renderers,notices,transportDiagnostics};
- },{port,fallback,release,fullSpriteGeometry,adonisMode,inputDelay,automatic,predictionReserve,startupImpairment});
+  for(const w of frames)w.play.close();for(const ws of lobbies)ws.close();return {summary,adonis,startup,startupWire,timings,resolvedDelay,spectator,spectatorBudget,spectatorFault,faultInjected,viewerStopped,hashes,replayBytes,comparableFinalHashes,routes,audio,elapsedMs,setupMs,gameplayMs,sustainedCadencePassed,calibratedBudgetPassed,gameplayCadencePassed:gameplayMs!==null&&gameplayMs<=14000,measured,renderers,notices,transportDiagnostics};
+ },{port,fallback,release,fullSpriteGeometry,adonisMode,inputDelay,automatic,predictionReserve,startupImpairment,spectatorFault});
  assert.deepEqual(result.routes,[fallback?'relay':'rtc',fallback?'relay':'rtc','spectator']);assert.equal(errors.length,0,errors.join('\n'));
  if(hardware)for(const renderer of result.renderers)assert.doesNotMatch(renderer,/swiftshader|llvmpipe|microsoft basic render/i);
  const wasm=build.sha256;

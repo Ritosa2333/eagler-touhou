@@ -6,7 +6,7 @@ import {createHash} from 'node:crypto';
 import {WASI} from 'node:wasi';
 
 const root=fileURLToPath(new URL('../../',import.meta.url));
-const common=resolve(root,'../third_party/eagler-common');
+const common=resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'../third_party/eagler-common'));
 const sdk=process.env.WASI_SDK_BIN;
 if(!sdk)throw Error('Set WASI_SDK_BIN to the workspace WASI SDK bin directory');
 const compiler=resolve(sdk,process.platform==='win32'?'clang++.exe':'clang++');
@@ -27,6 +27,7 @@ function compile(args){
 }
 const suites={
   'frame-schedule':[],
+  'spectator-schedule':[],
   session:[resolve(root,'cpp/multiplayer/RollbackSession.cpp'),
     ...['NetplayCore','NetplayProtocol','NetplaySession','SessionChannel'].map(n=>resolve(common,'src/netplay',n+'.cpp'))],
   adonis:[resolve(root,'cpp/multiplayer/RollbackSession.cpp'),

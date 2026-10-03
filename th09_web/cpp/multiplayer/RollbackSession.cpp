@@ -62,8 +62,8 @@ void RollbackSession::Clear() {
     startup_=Netplay::AdonisStartup{};startupSession_={};startupNowUs_=0;
     measuring_=measured_=false;startupPending_.clear();
 }
-bool RollbackSession::PumpStartup(std::uint64_t now) {
-    startupNowUs_=now*1000;
+bool RollbackSession::PumpStartup(std::uint64_t now,std::uint64_t measurementNowUs) {
+    startupNowUs_=measurementNowUs?measurementNowUs:now*1000;
     if(!startup_.Tick(transport_,startupNowUs_))return Fail(startup_.Error());
     if(!measuring_)return true;
     std::vector<std::uint8_t> bytes;
@@ -99,9 +99,9 @@ double RollbackSession::PacedElapsedMs(double elapsedMs) {
     phaseDebtMs_ -= used;
     return elapsedMs - used;
 }
-bool RollbackSession::Pump(std::uint64_t now, bool expectsInput) {
+bool RollbackSession::Pump(std::uint64_t now, bool expectsInput,std::uint64_t measurementNowUs) {
     if(failed_)return false;
-    if(measured_&&!PumpStartup(now))return false;
+    if(measured_&&!PumpStartup(now,measurementNowUs))return false;
     if(measuring_)return true;
     if (!configured_ || failed_) return false;
     if (!channel_.Pump(gate_, core_, now, expectsInput && gate_.CanStart())) return Fail(channel_.ErrorText());

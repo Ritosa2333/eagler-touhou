@@ -13,6 +13,7 @@
 #include "../multiplayer/WorldState.hpp"
 #include "../multiplayer/RollbackSession.hpp"
 #include "../multiplayer/FrameSchedule.hpp"
+#include "../multiplayer/SpectatorSchedule.hpp"
 #include <dirent.h>
 #include <ctime>
 #include <algorithm>
@@ -79,6 +80,7 @@ struct SpectatorFrame { u32 frame=0;u16 keys[2]{};NetworkInput::Motion motion[2]
 std::deque<SpectatorFrame> spectator_frames;
 bool spectator_mode=false;
 u32 spectator_next=0,spectator_simulated=0;
+u32 spectator_last_ticks=0,spectator_max_ticks=0,spectator_yields=0,spectator_max_work_us=0;
 struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServices {
     Assets assets;GraphicsDevice graphics;FontDevice fonts{graphics};AudioDevice audio;
     EclWorldState state;AnmExecutor executor{state.random};GameResources resources{assets,graphics,executor};
@@ -337,7 +339,8 @@ TH09_EXPORT("th09_rollback_begin") u32 th09_rollback_begin(u32 seed,u32 side,u32
 }
 TH09_EXPORT("th09_rollback_pump") u32 th09_rollback_pump(){
     if(!rollback_active)return 0;
-    if(!rollback.Pump(std::uint64_t(emscripten_get_now()),network.active)){probe->error=rollback.Error();return 0;}
+    const double now=emscripten_get_now();
+    if(!rollback.Pump(std::uint64_t(now),network.active,std::uint64_t(now*1000))){probe->error=rollback.Error();return 0;}
     return rollback.Ready()?2:1;
 }
 TH09_EXPORT("th09_measured_begin") u32 th09_measured_begin(u32 seed,u32 side,u32 difficulty,u32 left,u32 right,
@@ -355,12 +358,16 @@ TH09_EXPORT("th09_measured_begin") u32 th09_measured_begin(u32 seed,u32 side,u32
     return rollback_active;
 }
 TH09_EXPORT("th09_startup_info") const u32* th09_startup_info(){
-    static u32 data[16];const auto& s=rollback.Startup();const auto c=s.Selected();
-    data[0]=1;data[1]=u32(s.State());data[2]=s.Request();data[3]=s.Probes();data[4]=s.Replies();
+    static u32 data[25];const auto& s=rollback.Startup();const auto c=s.Selected();
+    data[0]=2;data[1]=u32(s.State());data[2]=s.Request();data[3]=s.Probes();data[4]=s.Replies();
     data[5]=s.Local().p95Us;data[6]=s.Peer().p95Us;data[7]=s.Local().lost;data[8]=s.Peer().lost;
     data[9]=c.fullDelay;data[10]=c.delay;data[11]=c.prediction;
     data[12]=rollback.Channel().AdonisStatistics().PredictionAllowanceUs();data[13]=u32(rollback.Mode());
-    data[14]=s.Local().received;data[15]=s.Peer().received;return data;
+    data[14]=s.Local().received;data[15]=s.Peer().received;
+    data[16]=s.Local().minUs;data[17]=s.Local().maxUs;data[18]=s.Local().meanUs;
+    data[19]=s.Peer().minUs;data[20]=s.Peer().maxUs;data[21]=s.Peer().meanUs;
+    data[22]=Netplay::AdonisStartup::ProbeCount;data[23]=Netplay::AdonisStartup::Samples;
+    data[24]=s.NextWakeUs();return data;
 }
 TH09_EXPORT("th09_rollback_info") const u32* th09_rollback_info(){
     static u32 data[8];const auto confirmed=rollback.ConfirmedThrough();
@@ -368,6 +375,7 @@ TH09_EXPORT("th09_rollback_info") const u32* th09_rollback_info(){
 }
 TH09_EXPORT("th09_spectator_begin") u32 th09_spectator_begin(u32 seed,u32 difficulty,u32 left,u32 right){
     if(!th09_network_room_begin(seed,0,0xffff,difficulty,0,left,right))return 0;
+    spectator_last_ticks=spectator_max_ticks=spectator_yields=spectator_max_work_us=0;
     if(!probe->tick_title(0,0,0,false)||probe->in_title)return 0;network.end();spectator_frames.clear();spectator_next=spectator_simulated=0;spectator_mode=true;return 1;
 }
 TH09_EXPORT("th09_spectator_feed") u32 th09_spectator_feed(u32 frame,u32 left,u32 right,u32 leftMode,float leftX,float leftY,u32 rightMode,float rightX,float rightY){
@@ -383,6 +391,10 @@ TH09_EXPORT("th09_spectator_feed") u32 th09_spectator_feed(u32 frame,u32 left,u3
     spectator_frames.push_back(packet);++spectator_next;return 1;
 }
 TH09_EXPORT("th09_spectator_frame") u32 th09_spectator_frame(){return spectator_simulated;}
+TH09_EXPORT("th09_spectator_info") const u32* th09_spectator_info(){
+    static u32 data[8];data[0]=1;data[1]=spectator_next;data[2]=spectator_simulated;data[3]=u32(spectator_frames.size());
+    data[4]=spectator_last_ticks;data[5]=spectator_max_ticks;data[6]=spectator_yields;data[7]=spectator_max_work_us;return data;
+}
 TH09_EXPORT("th09_spectator_end") void th09_spectator_end(){spectator_mode=false;spectator_frames.clear();clear_inputs();}
 TH09_EXPORT("th09_network_receive") u32 th09_network_receive(u32 frame,u32 keys,u32 mode,float x,float y){return keys<=65535&&mode<=NetworkInput::MotionTargetUnlimited&&network.submit(1-network.side,frame,u16(keys),u8(mode),x,y);}
 TH09_EXPORT("th09_network_end") void th09_network_end(){rollback_active=false;rollback.Clear();rollback_published=rollback_catchup=0;if(!network.active)return;if(probe)probe->release_network();else network.end();clear_inputs();if(probe){probe->requested_transition=-1;probe->settings.game_flags=0;if(probe->session&&!probe->in_title){probe->session->finish();probe->return_title(false);}else if(probe->title){probe->return_title(false);}probe->sync_records();}}
@@ -467,20 +479,28 @@ u32 rollback_tick(u32 render){
     probe->audio.update();probe->audio.pump();
     return rollback.Frame()<=rollback_catchup?2:1;
 }
-TH09_EXPORT("th09_game_tick") u32 th09_game_tick(u32 render){if(!probe)return 0;u16 keys[3]{};
-    if(spectator_mode){
+u32 spectator_tick(u32 render,u32 dueTicks=1){
+        spectator_last_ticks=0;
         if(spectator_frames.empty())return 2;
-        const u32 count=u32(spectator_frames.size()>8?4:spectator_frames.size()>4?2:1);u32 ok=1;
-        for(u32 n=0;n<count&&ok&&!spectator_frames.empty();++n){const auto packet=spectator_frames.front();spectator_frames.pop_front();
+        const auto count=multiplayer::SpectatorSchedule::Plan(spectator_frames.size(),dueTicks);
+        const double began=emscripten_get_now();u32 ok=1;
+        for(u32 n=0;n<count&&ok&&!spectator_frames.empty();++n){
+            if(!multiplayer::SpectatorSchedule::CanStart(n,emscripten_get_now()-began)){++spectator_yields;break;}
+            const auto packet=spectator_frames.front();spectator_frames.pop_front();
             if(packet.frame!=spectator_simulated)return 0;
             const bool was_title=probe->in_title;
             if(!was_title&&probe->session)for(i32 s=0;s<2;++s)probe->session->motion_input[s]={packet.motion[s].enabled,packet.motion[s].x,packet.motion[s].y,packet.motion[s].unlimited,packet.motion[s].target};
             const bool prior=rollback_active;rollback_active=true;
-            ok=probe->tick_inputs(packet.keys[0],packet.keys[1],u16(packet.keys[0]|packet.keys[1]),render!=0&&n+1==count);rollback_active=prior;++spectator_simulated;
+            ok=probe->tick_inputs(packet.keys[0],packet.keys[1],u16(packet.keys[0]|packet.keys[1]),render!=0&&multiplayer::SpectatorSchedule::Render(n,count));
+            rollback_active=prior;++spectator_simulated;++spectator_last_ticks;
             if(!was_title&&probe->in_title){spectator_mode=false;spectator_frames.clear();break;}
         }
+        spectator_max_ticks=std::max(spectator_max_ticks,spectator_last_ticks);
+        spectator_max_work_us=std::max(spectator_max_work_us,u32((emscripten_get_now()-began)*1000));
         return ok;
-    }
+}
+TH09_EXPORT("th09_game_tick") u32 th09_game_tick(u32 render){if(!probe)return 0;u16 keys[3]{};
+    if(spectator_mode)return spectator_tick(render);
     if(rollback_active&&network.active)return rollback_tick(render);
     if(network.active){if(network.wants_input()){sample_keys(keys);const u32 frame=network.sending_frame();const auto m=probe->session&&!probe->in_title?probe->session->motion_input[network.side]:GameSession::MotionSample{};const u8 mode=!m.enabled?NetworkInput::MotionNone:m.target?(m.unlimited?NetworkInput::MotionTargetUnlimited:NetworkInput::MotionTarget):NetworkInput::MotionVelocity;if(!network.submit(network.side,frame,keys[2],mode,m.x,m.y))return 0;th09_network_send(frame,keys[2],i32(mode),m.x,m.y);}if(network.failed){probe->error="Network input order invalid";return 0;}NetworkInput::Motion motion[2];const u32 frame=network.frame();const bool publisher=network.side==0;if(!network.take(keys,motion))return 2;if(probe->session)for(i32 s=0;s<2;++s)probe->session->motion_input[s]={motion[s].enabled,motion[s].x,motion[s].y,motion[s].unlimited,motion[s].target};
         const u32 ok=probe->tick_inputs(keys[0],keys[1],keys[2],render!=0);
@@ -502,7 +522,12 @@ TH09_EXPORT("th09_loop_start") void th09_loop_start(){
         // consuming it on a retry would silently discard the correction.
         const auto elapsed=active&&!cadence.retry_pending()?rollback.PacedElapsedMs(delta*1000)/1000/rollback.IntervalScale():delta;
         const auto ticks=cadence.advance(elapsed,active);u32 ok=1;
-        for(u32 n=0;n<ticks&&ok;++n){
+        if(spectator_mode&&ticks){
+            // Flatten the old four outer ticks x four inner steps. One shared
+            // 6-step/8ms start budget owns this callback; pending inputs remain.
+            ok=spectator_tick(1,ticks);
+            if(ok==2)cadence.blocked(false);else cadence.complete();
+        }else for(u32 n=0;n<ticks&&ok;++n){
             ok=th09_game_tick(n+1==ticks);if(ok==2){cadence.blocked(rollback_active&&network.active);break;}
             cadence.complete();
             if(rollback_active&&emscripten_get_now()-begin>=10){

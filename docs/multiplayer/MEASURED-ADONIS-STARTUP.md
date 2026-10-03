@@ -14,8 +14,9 @@ bounded running-phase correction. It is a clean implementation in this
 project's protocol, not execution or redistribution of the supplied old DLLs.
 
 Let B be the measured full-buffer estimate, P the permitted prediction reserve.
-Pure delay uses `D=B, P=0`. Hybrid auto uses `D=max(0,B-P)`, with P=2 by default
-and P=1 supported by the session contract. This removes queued input frames;
+Pure delay uses `D=B, P=0`. Hybrid auto targets D=1, removing at most two frames:
+`P=min(B-1,maximumReserve)`, where maximumReserve=2 by default and 1 is supported
+by the session contract. B=1/2/3/4 therefore gives D=1/1/1/2. This removes queued input frames;
 it does NOT add a new one/two-frame queue. Existing exact input always wins,
 prediction is not compulsory, and the original eight-frame rollback/history
 window is not reduced to P. Unexpected jitter can still exceed the planned
@@ -26,22 +27,27 @@ These are queue settings, not measured input-to-photon latencies.
 
 ## Measurement and transaction
 
-The shared `AdonisStartup` owner sends 130 probes (10 warm-up, 120 measured)
-around 60 Hz, at most one new probe per pump. Probe and echo both use
+After all required input channels and peer HELLOs are ready, the shared
+`AdonisStartup` owner waits one second before sending a probe. A channel closure
+before probing restarts this interval. The wait produces no RTT samples; it is
+the requested connection-settling step, separate from the Adonis2 schedule.
+
+The owner then sends 129 probes (numbered 1..129, measuring slots 10..129)
+with 16 ms relative intervals and a 16+200 ms final reply wait, at most one new probe per pump. Probe and echo both use
 `PeerTransport::SendTo`, on the same input DataChannel or selected WebSocket
 fallback used by gameplay. There is no second probe connection and no use of
 the Launcher's historical minimum RTT or phone-count presets for TH09 auto.
 
 Each peer freezes its P95-style RTT statistic and success/loss counts. The
-initial conservative policy is:
+current policy (updated 2026-10-03 to follow the supplied Adonis2 timing) is:
 
 ```
-B = ceil(max(peer RTT-tail estimates) * 60 / 2,000,000) + 1  // RTT in microseconds
-P = mode == hybrid ? min(B, requested reserve of 1 or 2) : 0
+B = max(1, ceil(floor(max(peer RTT-tail estimates) / 2) * 60 / 1,000,000))  // RTT in microseconds
+P = mode == hybrid ? min(B - (auto ? 1 : 0), requested reserve of 1 or 2) : 0
 D = auto ? B - P : manually requested D
 ```
 
-The extra one frame is an explicit Runtime consumption-boundary safety margin,
+The former extra one-frame Runtime margin has been removed; it was
 not a measured CPU time. RTT/2 is still a symmetric-path approximation, not an
 exact measurement of one-way delivery. Probing observes actual delivery plus
 Runtime pump wakeup but does not reproduce a dense boss's CPU/GPU workload.
@@ -54,7 +60,7 @@ startup timeout fails explicitly. Auto D>9 also fails with retry/manual guidance
 instead of silently clipping an insufficient budget. No guessed fallback starts
 the game. D stays fixed for the run; live D resizing is not implemented.
 
-The `ADS/1` 64-byte protocol binds session/generation, seed, gameplay/build ABI,
+The `ADS/2` 64-byte protocol binds session/generation, seed, gameplay/build ABI,
 mode, requested D/auto and prediction reserve. Both immutable summaries feed the
 same deterministic choice. P1 proposes, P2 accepts, P1 commits, P2 acknowledges.
 Retries/duplicates are idempotent. Native gameplay HELLO then binds the chosen
@@ -105,6 +111,37 @@ changed live results are rejected. The native peers already agreed before play.
 TH08's earlier experiment and other titles' policies are not enabled or changed.
 
 ## Verified evidence
+
+### 2026-10-03 automatic hybrid target refinement
+
+Automatic hybrid now keeps at least one queued input frame and saves at most
+two. The existing rollback history remains intact; manual D stays authoritative.
+Common CTest passes 30/30, including a 32 ms two-sided hybrid startup that agrees
+on B=1/D=1/P=0 after dropped control/retry. TH09 WASI passes a complete 600-frame
+low-latency measured hybrid session with the same choice, exact reference state,
+once-only capture, and zero phase prediction allowance. Launcher and real Relay
+gates cover B=1/2/3/4/5, reject the former automatic D=0 result, and preserve
+host authority and immutable timing publication.
+
+Release `sdl-adonis-one-frame-release-20261003` has SHA-256
+`74a449fc40a4cc0fdb3f8b32290c321af7b5b06301b008a6f80d5baa218d5e0b`.
+Both RTC and Relay browser runs pass with a confirmed spectator under injected
+startup/gameplay impairment (B=5/D=3/P=2). Reports are
+`one-frame-release-hybrid-rtc-02-report.json` and
+`one-frame-release-hybrid-relay-report.json`, setup 3389.660/3082.685 ms and
+gameplay 11455.090/12653.380 ms. These Release runs have no forced frame limit.
+
+Public test acceptance is recorded under
+`D:/workspace/eagler/dist/test-adonis-one-frame-20261003/`:
+`public-hybrid-low-report.json` agrees on B=1/D=1/P=0 across both players and
+the spectator. `public-hybrid-b2-report.json` adds 20 ms only to each startup
+RTC probe/echo send, then uses the normal gameplay channel; both players agree
+on B=2/D=1/P=1 at P95=61.900 ms. Players/spectator finish at 1115/1118/1110
+frames with 106 equal common-frame hashes. This is a controlled startup
+measurement case, not a 61.9 ms WAN performance claim. Main remains unchanged.
+The separate `public-hybrid-low-progress-report.json` repeats low-latency
+acceptance with an explicit final progress gate: B=1/D=1/P=0, P95=2.300 ms,
+players/spectator at 1137/1140/1133 frames and 142 equal common-frame hashes.
 
 Common native CTest: 30/30 PASS, including startup, phase, core and channel.
 Title WASI component suite: PASS (`measured-component-02.log`), including ten

@@ -16,6 +16,10 @@ export class SharedNetplay {
     this.spectator = false;
     this.spectatorFrame = 0;
     this.spectatorPending = [];
+    this.spectatorHead = 0;
+    this.spectatorOutputStopped = false;
+    this.spectatorSentFrame = 0;
+    this.spectatorReceiveAt = 0;
     this.prepared = false;
     this.acknowledged = false;
     this.side = -1;
@@ -26,6 +30,9 @@ export class SharedNetplay {
   }
   async connect(options) {
     if (this.connected) throw Error('已连接联机房间');
+    if (typeof this.core._th09_peer_spectator_state !== 'function' ||
+        typeof this.core._th09_peer_stop_spectators !== 'function')
+      throw Error('TH09 Runtime 缺少观战故障隔离，请更新实验 Runtime');
     const url = new URL(options.netplayUrl, location.href);
     const side = Number(options.netplayPlayer);
     const spectator = options.netplaySpectator === true;
@@ -66,6 +73,10 @@ export class SharedNetplay {
     this.spectator = spectator;
     this.spectatorFrame = 0;
     this.spectatorPending.length = 0;
+    this.spectatorHead = 0;
+    this.spectatorOutputStopped = false;
+    this.spectatorSentFrame = 0;
+    this.spectatorReceiveAt = 0;
     this.finished = false;
     this.inputDelay = inputDelay;
     this.adonisMode = adonisMode;
@@ -75,7 +86,6 @@ export class SharedNetplay {
     this.calibrationRoute = null;
     this.prepared = this.acknowledged = false;
     delete globalThis.__eaglerNetplayTiming;
-    if(adonisMode)delete globalThis.__eaglerNetplayInputDelayFrames;
     delete globalThis.__eaglerNetplayInputDelayFrames;
     globalThis.__eaglerNetplayLanActive = false;
     globalThis.__eaglerNetplayTransport = 'connecting';
@@ -91,8 +101,13 @@ export class SharedNetplay {
     if (!(spectator ? this.core._th09_peer_connect_spectator() : this.core._th09_peer_connect(side)))
       throw Error('TH09 联机传输初始化失败');
     this.connected = true;
+    this.startupNoticeAt = 0;
+    this.startupTransport = globalThis.__eaglerPeerTransport;
+    // Like Adonis2's receive thread, process calibration echoes on arrival.
+    // The regular timer still schedules probes; gameplay keeps its own pump.
+    if (!spectator && adonisMode && this.startupTransport)
+      this.startupTransport.onReceive = () => { if (this.prepared && !this.active && this.connected) this.pump(); };
     this.onStatus('正在连接 TH09 联机对手…');
-    this.timer = setInterval(() => this.pump(), 16);
     this.pump();
   }
   pump() {
@@ -116,6 +131,7 @@ export class SharedNetplay {
           globalThis.__eaglerNetplayInputDelayFrames = 0;
           this.prepared = true;
           this.active = this.adonisMode === 0;
+          this.spectatorReceiveAt = performance.now();
           globalThis.__eaglerNetplaySpectator = true;
           globalThis.__eaglerNetplayLanActive = this.active;
           this.onStatus(this.active ? '已连接 TH09 观战帧流' : '等待玩家完成实际游戏链路测量…');
@@ -151,17 +167,30 @@ export class SharedNetplay {
           const p=this.core._th09_error(), bytes=this.core.HEAPU8, end=bytes.indexOf(0,p);
           throw Error(new TextDecoder().decode(bytes.subarray(p,end<0?p+256:end)) || 'TH09 rollback 会话中断');
         }
+        if (this.adonisMode && !this.active && ready !== 2 && performance.now() >= this.startupNoticeAt) {
+          this.startupNoticeAt = performance.now() + 100;
+          const at=this.core._th09_startup_info()/4, s=Array.from(this.core.HEAPU32.subarray(at,at+24));
+          if(s[0]!==2)throw Error('TH09 Runtime 测量版本不匹配，请更新 Runtime');
+          this.onTiming({phase:s[1]<2?'waiting':s[1]===2?(s[3]?'measuring':'stabilizing'):'negotiating',
+            probes:s[3],replies:s[4],totalProbes:s[22],windowSamples:s[23],automatic:this.automatic,
+            adonisMode:this.adonisMode,route:this.calibrationRoute,players:this.startupPlayers(s)});
+        }
         if (ready === 2 && !this.active && !this.finished) {
           if (this.adonisMode) {
-            const at=this.core._th09_startup_info()/4, s=Array.from(this.core.HEAPU32.subarray(at,at+16));
-            if(s[0]!==1 || s[1]!==4 || s[10]>9 || s[13]!==this.adonisMode)throw Error('TH09 实测协商尚未完成');
+            const at=this.core._th09_startup_info()/4, s=Array.from(this.core.HEAPU32.subarray(at,at+24));
+            if(s[0]!==2 || s[1]!==4 || s[10]>9 || s[13]!==this.adonisMode)throw Error('TH09 实测协商尚未完成');
             this.inputDelay=s[10];
             this.acceptTiming({phase:'ready',automatic:this.automatic,adonisMode:this.adonisMode,
               inputDelay:s[10],fullDelay:s[9],predictionReserve:s[11],rttP95Us:Math.max(s[5],s[6]),
-              samples:Math.min(s[14],s[15]),lost:s[7]+s[8],route:this.calibrationRoute});
+              samples:Math.min(s[14],s[15]),lost:s[7]+s[8],route:this.calibrationRoute,
+              calibration:{localPlayer:this.side,completedAt:new Date().toISOString(),
+                build:Array.from(this.buildBytes,b=>b.toString(16).padStart(2,'0')).join(''),
+                method:'adonis2-129-probes-16ms-tail200ms',stabilizeMs:1000,intervalMs:16,tailWaitMs:200,
+                probes:129,windowStart:10,windowEnd:129,players:this.startupPlayers(s)}});
             if(this.side===0 && Number(this.options.netplaySpectatorCount)>0)this.spectatorPending.push(this.timingPacket());
           }
           this.acknowledged = this.active = true;
+          if(this.startupTransport)this.startupTransport.onReceive=null;
           globalThis.__eaglerNetplayLanActive = true;
           this.onStatus(`对手已连接 · ${['Rollback', 'Adonis 无回滚', 'Adonis + Rollback'][this.adonisMode]} · D=${this.inputDelay}`);
           this.core._th09_loop_pause(+document.hidden);
@@ -174,8 +203,30 @@ export class SharedNetplay {
         this.receive(this.core.HEAPU8.slice(pointer, pointer + length));
         if (!this.connected) return;
       }
+      // No silent frozen viewer if the host/upload disappears without a close
+      // reaching this socket. This affects the viewer only, never the players.
+      if (this.spectator && this.prepared && performance.now() - this.spectatorReceiveAt >= 15000)
+        throw Error('TH09 观战确认帧流中断，玩家对局不受影响');
       if (!this.spectator) this.flushSpectators();
     } catch (error) { this.close(String(error?.message || error)); }
+    finally {
+      clearTimeout(this.timer);
+      if (this.connected) {
+        let delay=16;
+        if(this.adonisMode && this.prepared && !this.active && !this.spectator) {
+          const at=this.core._th09_startup_info()/4;
+          // Native owner supplies its remaining deadline. An early browser
+          // timer retries the remainder instead of losing another 16 ms.
+          delay=Math.max(1,Math.ceil(this.core.HEAPU32[at+24]/1000));
+        }
+        this.timer=setTimeout(()=>this.pump(),delay);
+      }
+    }
+  }
+  startupPlayers(s) {
+    return [{player:this.side,p95Us:s[5],samples:s[14],lost:s[7],minUs:s[16],maxUs:s[17],meanUs:s[18]},
+      {player:1-this.side,p95Us:s[6],samples:s[15],lost:s[8],minUs:s[19],maxUs:s[20],meanUs:s[21]}]
+      .sort((a,b)=>a.player-b.player);
   }
   receive(bytes) {
     try {
@@ -184,7 +235,7 @@ export class SharedNetplay {
             const v=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
             const d=bytes[6],reserve=bytes[7],full=v.getUint32(8,true),automatic=v.getUint32(32,true);
             if(bytes[4]!==1 || bytes[5]!==this.adonisMode || !this.adonisMode || d>9 || reserve>2 ||
-               (this.adonisMode===1&&reserve!==0) || (this.adonisMode===2&&reserve!==this.predictionReserve) ||
+               (this.adonisMode===1&&reserve!==0) || (this.adonisMode===2&&reserve!==Math.min(Math.max(0,full-(this.automatic?1:0)),this.predictionReserve)) ||
                full<1 || full>31 || v.getUint32(24,true)>1e6 || v.getUint32(28,true)>48 ||
                automatic>1 || !!automatic!==this.automatic || v.getUint32(36,true)<96 || v.getUint32(36,true)>120 ||
                this.buildBytes.some((b,i)=>b!==bytes[12+i]) ||
@@ -193,6 +244,7 @@ export class SharedNetplay {
               predictionReserve:reserve,rttP95Us:v.getUint32(24,true),samples:v.getUint32(36,true),lost:v.getUint32(28,true),route:'spectator'};
             if(this.timing && JSON.stringify(this.timing)!==JSON.stringify(timing))throw Error('TH09 观战时序在局中改变');
             this.inputDelay=d;this.acceptTiming(timing);this.active=true;
+            this.spectatorReceiveAt=performance.now();
             globalThis.__eaglerNetplayInputDelayFrames=0;globalThis.__eaglerNetplayLanActive=true;
             this.onStatus(`已连接 TH09 观战帧流 · 玩家 D=${d}`);this.core._th09_loop_pause(+document.hidden);return;
           }
@@ -212,6 +264,7 @@ export class SharedNetplay {
               leftMode, leftX, leftY, rightMode, rightX, rightY))
             throw Error('TH09 观战输入无效或过于滞后');
           ++this.spectatorFrame;
+          this.spectatorReceiveAt=performance.now();
           return;
         }
         throw Error('TH09 gameplay input belongs to the C++ session');
@@ -232,7 +285,7 @@ export class SharedNetplay {
     v.setUint32(32,+t.automatic,true);v.setUint32(36,t.samples,true);return b;
   }
   publish(frame, left, right, leftMode, leftX, leftY, rightMode, rightX, rightY) {
-    if (this.spectator || !this.connected || this.side !== 0 ||
+    if (this.spectator || !this.connected || this.spectatorOutputStopped || this.side !== 0 ||
         Number(this.options.netplaySpectatorCount) < 1) return;
     const bytes = new Uint8Array(spectatorFrameBytes), data = new DataView(bytes.buffer);
     bytes.set(spectatorMagic); data.setUint32(8, frame >>> 0, true);
@@ -242,17 +295,40 @@ export class SharedNetplay {
       data.setFloat32(at + 3, x, true); data.setFloat32(at + 7, y, true);
     };
     side(24, left, leftMode, leftX, leftY); side(35, right, rightMode, rightX, rightY);
-    if (this.spectatorPending.length >= 8192) return this.close('TH09 观战帧积压过多');
+    if (this.spectatorPending.length - this.spectatorHead >= 8192)
+      return this.stopSpectators('TH09 观战积压超限，已停止观战；玩家对局继续');
     this.spectatorPending.push(bytes);
-    this.flushSpectators();
+    // Publishing may run many times in a single reconciliation callback.
+    // Drain only from the transport pump, never once per published frame.
+  }
+  stopSpectators(reason) {
+    if (this.spectatorOutputStopped || this.spectator || this.side !== 0) return;
+    this.spectatorOutputStopped = true;
+    this.spectatorPending.length = 0;
+    this.spectatorHead = 0;
+    this.core._th09_peer_stop_spectators();
+    this.onStatus(reason);
   }
   flushSpectators() {
-    while (this.connected && this.spectatorPending.length) {
-      const bytes = this.spectatorPending[0];
+    if (!this.connected || this.spectator || this.spectatorOutputStopped || this.side !== 0 ||
+        Number(this.options.netplaySpectatorCount) < 1) return;
+    if (this.core._th09_peer_spectator_state() < 0)
+      return this.stopSpectators('TH09 观战上传连接中断，已停止观战；玩家对局继续');
+    const began = performance.now();
+    for (let sent = 0; this.spectatorHead < this.spectatorPending.length && sent < 32; ++sent) {
+      if (sent && performance.now() - began >= 2) break;
+      const bytes = this.spectatorPending[this.spectatorHead];
       const at = this.core._th09_peer_packet_buffer();
       this.core.HEAPU8.set(bytes, at);
       if (!this.core._th09_peer_send_spectator(bytes.length)) break;
-      this.spectatorPending.shift();
+      if (bytes.length === spectatorFrameBytes)
+        this.spectatorSentFrame = new DataView(bytes.buffer, bytes.byteOffset).getUint32(8, true) + 1;
+      this.spectatorPending[this.spectatorHead++] = null;
+    }
+    if (this.spectatorHead === this.spectatorPending.length) {
+      this.spectatorPending.length = 0; this.spectatorHead = 0;
+    } else if (this.spectatorHead >= 4096) {
+      this.spectatorPending = this.spectatorPending.slice(this.spectatorHead); this.spectatorHead = 0;
     }
   }
   frame() {
@@ -279,13 +355,17 @@ export class SharedNetplay {
   close(reason = '') {
     if (!this.connected) return;
     this.connected = false;
-    clearInterval(this.timer);
+    clearTimeout(this.timer);
+    if(this.startupTransport)this.startupTransport.onReceive=null;
+    this.onTiming({phase:'closed'});
     this.timer = null;
     this.routeReady = false;
     this.active = false;
     globalThis.__eaglerNetplayLanActive = false;
     globalThis.__eaglerNetplaySpectator = false;
     this.core._th09_peer_close();
+    this.spectatorPending.length = 0;
+    this.spectatorHead = 0;
     if (this.prepared) {
       if (this.spectator) this.core._th09_spectator_end();
       else this.core._th09_network_end();
