@@ -13,7 +13,7 @@
 namespace th10::browser {
 World::World(GameState& s,AnimationEngine& e,Common& c,Fonts& f,Input& i,Audio& a,Scores& records,ScreenEffects& fx):state(s),engine(e),common(c),fonts(f),input(i),audio(a),scores(records),effects(fx),backgrounds(s,e,fx,records.files),chain(&e.chain_value),replay_files(records.files,s.game.flags),replay_writer(records.files,default_calendar(),s.game,s.active_time,s.total_time,s.motion.cheat_movement_used,s.chinese),calendar(default_calendar()){engine.register_receiver(*this);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    engine.rollback_state=&rollback;
+    engine.rollback_state=nullptr;
     engine.player_view_owner=this;
     engine.player_view_alpha=[](const void* owner,const AnmVm& vm){return static_cast<const World*>(owner)->player_visual_alpha(vm);};
 #endif
@@ -58,27 +58,43 @@ World::World(GameState& s,AnimationEngine& e,Common& c,Fonts& f,Input& i,Audio& 
 }
 World::~World(){shutdown();while(previews)release_replay(&previews->document.value);release_results_services();if(hud){hud->~Hud();std::free(hud);}std::free(cached_profile);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if(engine.rollback_state==&rollback)engine.rollback_state=nullptr;
-    if(engine.player_view_owner==this){engine.player_view_owner=nullptr;engine.player_view_alpha=nullptr;}
+    if(engine.rollback_state==rollback.get())engine.rollback_state=nullptr;
+    if(engine.player_view_owner==this){engine.player_view_owner=nullptr;engine.player_view_alpha=nullptr;engine.netplay_frame=~u32(0);}
 #endif
     engine.callback_environment.unbind(this);engine.unregister_receiver(*this);}
 void World::select_screen(i32 screen){state.pending_screen=state.engine_flags&0x1000?2:screen;}
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-bool World::begin_rollback_frame(u32 frame){
+bool World::begin_netplay_frame(u32 frame){
     const auto& runtime=state.netplay_runtime;
-    const auto decision=runtime.Prepare(frame);
     // Exact input at this frame alone is insufficient: an earlier unconfirmed
     // prediction can still change its starting state. Rebuilt confirmed
     // prefixes, Replay and spectator frames need audio, but no undo storage.
-    const bool capture=Netplay::NeedsRollbackSnapshot(frame,runtime.ConfirmedThroughAllRemotes(),
-        decision.predictedMask,rollback_resimulating,true);
-    if(!rollback.BeginFrame(*this,frame,capture))return false;
-    if(!audio_events.BeginFrame(frame)){rollback.EndFrame();return false;}
+    engine.rollback_state=nullptr;
+    if(runtime.AllowsRollback()){
+        if(!rollback)rollback.reset(new(std::nothrow) multiplayer::RollbackState);
+        if(!rollback)return false;
+        const auto decision=runtime.Prepare(frame);
+        const bool capture=Netplay::NeedsRollbackSnapshot(frame,runtime.ConfirmedThroughAllRemotes(),
+            decision.predictedMask,rollback_resimulating,true);
+        if(!rollback->BeginFrame(*this,frame,capture))return false;
+        if(capture)engine.rollback_state=rollback.get();
+    }else if(rollback){
+        // Mode changes belong to a new committed run, never an active frame.
+        rollback.reset();
+    }
+    if(!audio_events.BeginFrame(frame)){
+        engine.rollback_state=nullptr;
+        if(rollback&&rollback->IsFrameOpen())rollback->EndFrame();
+        return false;
+    }
+    engine.netplay_frame=frame;
     audio.manager.command_sink=&audio_events;return true;
 }
-bool World::end_rollback_frame(){
+bool World::end_netplay_frame(){
     if(audio.manager.command_sink==&audio_events)audio.manager.command_sink=nullptr;
-    const bool commands=audio_events.EndFrame();const bool state=rollback.EndFrame();
+    engine.rollback_state=nullptr;engine.netplay_frame=~u32(0);
+    const bool commands=audio_events.EndFrame();
+    const bool state=!rollback||rollback->EndFrame();
     return commands&&state;
 }
 bool World::commit_audio(){

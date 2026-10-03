@@ -11,6 +11,9 @@ struct SessionSetup {
     std::uint64_t sessionId=0;
     std::uint32_t playerCount=0,localPlayer=0,difficulty=0,seed=0;
     std::uint32_t input_delay=0;
+    std::uint32_t version=3,adonis_mode=0,prediction_reserve=2,measured_prediction=0;
+    std::uint32_t build[4]{};
+    bool input_delay_auto=false;
     Loadout loadouts[3]{};
     bool configured=false,started=false;
 };

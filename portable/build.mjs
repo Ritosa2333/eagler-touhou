@@ -11,11 +11,11 @@ if(fixtures&&(!multiplayer||game!=='th10'))throw Error('TH10 fixture builds requ
 if(presentationLab&&multiplayer)throw Error('Presentation Lab and multiplayer are separate build variants.');
 const profile=fixtures?'multiplayer-fixtures':multiplayer?'multiplayer':presentationLab?'presentation-lab':'sdl3',out=resolve(root,'artifacts',profile);
 if(!printPlan)mkdirSync(out,{recursive:true});
-const netplayRoot=resolve(workspace,'third_party/eagler-common');
+const netplayRoot=resolve(process.env.EAGLER_COMMON_ROOT??resolve(workspace,'third_party/eagler-common'));
 const sdk=process.env.EMSDK??(existsSync(resolve(workspace,'tools/emsdk'))?resolve(workspace,'tools/emsdk'):resolve(workspace,'../toolchains/emsdk'));
 const emcc=[resolve(sdk,'install/emscripten/emcc.py'),resolve(sdk,'upstream/emscripten/emcc.py')].find(existsSync);
 if(!emcc&&!printPlan)throw Error('Install the pinned Emscripten SDK first (tools/download-emscripten.py).');
-const env={...process.env,EM_CONFIG:process.env.EM_CONFIG??resolve(sdk,'.emscripten'),EMSDK:sdk,EMCC_CORES:'4'};
+const env={...process.env,EM_CONFIG:process.env.EM_CONFIG??resolve(sdk,'.emscripten'),EMSDK:sdk,EMCC_CORES:process.env.EMCC_CORES??'4'};
 const python=process.env.TH_PYTHON??'python';
 const run=(args)=>new Promise((done,reject)=>{
  let command=args;
@@ -77,7 +77,8 @@ console.log('Build '+game+' C++ / SDL3 / Emscripten');
 const rendererObject=await compile(renderer,'shared_renderer');
 const soft=resolve(root,game==='th10'?'cpp/rebuild/third_party/softfloat.c':'cpp/third_party/softfloat.c'),softObject=await compile(soft,'softfloat',true);
 const outputs=new Array(sources.length);let next=0,done=0;
-await Promise.all(Array.from({length:4},async()=>{while(next<sources.length){const i=next++;outputs[i]=await compile(resolve(root,sources[i]),sources[i].replaceAll('/','_'));if(++done%40===0)console.log(done+'/'+sources.length+' translation units');}}));
+const buildJobs=Math.max(1,Math.min(16,Number.parseInt(process.env.TH_BUILD_JOBS||'4',10)||4));
+await Promise.all(Array.from({length:buildJobs},async()=>{while(next<sources.length){const i=next++;outputs[i]=await compile(resolve(root,sources[i]),sources[i].replaceAll('/','_'));if(++done%40===0)console.log(done+'/'+sources.length+' translation units');}}));
 const output=resolve(out,game+'-sdl.mjs');
 const hostImports=[];
 const library=resolve(out,'browser-services.js');writeFileSync(library,'addToLibrary({\n'+hostImports.map(i=>`${JSON.stringify(i.name)}: function() { return Module['services'][${JSON.stringify(i.module)}][${JSON.stringify(i.name)}].apply(null, arguments); }`).join(',\n')+'\n});\n');

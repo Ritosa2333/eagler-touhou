@@ -268,7 +268,46 @@ static void check_extra_checkpoint_extend_limit(){
     const auto malformed=rewrite_description(bytes,std::move(description));
     ReplayArchive rejected;assert(!rejected.Load(malformed.data(),malformed.size()));
 }
+static void check_measured_policy(){
+    for(unsigned players:{2u,3u})for(unsigned mode:{1u,2u}){
+        const std::uint32_t words[]{4,players,0,1,1234,77,0,0,0,0,1,1,
+            0,players==3?2u:0u,mode,1,2,1,2,3,4};
+        SessionSetup setup;assert(DecodeSessionSetup(setup,words,21));
+        setup.input_delay=1;setup.measured_prediction=mode==2?2:0;
+        th10::ApplicationConfig options{};th10::u16 keys[9]{};options.initialize(keys);
+        ReplayArchive tape;assert(tape.Begin(setup,options));
+        std::array<NetplayRuntime,3> peers;
+        for(unsigned seat=0;seat<players;++seat){auto peer=setup;peer.localPlayer=seat;assert(peers[seat].Reset(peer,77));}
+        for(unsigned seat=0;seat<players;++seat){
+            for(unsigned other=0;other<players;++other){
+                if(other!=seat)peers[seat].ApplySession(peers[other].Hello());
+            }
+            peers[seat].MarkLocalReady();
+        }
+        auto& runtime=peers[0];
+        for(unsigned seat=1;seat<players;++seat)runtime.ApplySession(peers[seat].Ready());
+        assert(runtime.CanStart());
+        for(unsigned seat=1;seat<players;++seat)assert(runtime.SubmitRemote(seat,0,FrameInput{})==RemoteInputResult::Accepted);
+        for(unsigned frame=0;frame<4;++frame){
+            assert(runtime.CaptureLocal(frame,FrameInput(4)));
+            for(unsigned seat=1;seat<players;++seat)assert(runtime.SubmitRemote(seat,frame+1,FrameInput(1u<<seat))==RemoteInputResult::Accepted);
+            assert(tape.Stamp(frame,1));assert(runtime.MarkSimulated(frame,runtime.Prepare(frame)));assert(tape.Commit(runtime));
+        }
+        std::vector<std::uint8_t> bytes;assert(tape.Encode(bytes));ReplayArchive playback;
+        assert(playback.Load(bytes.data(),bytes.size()));auto restored=playback.Description().setup;
+        assert(restored.version==4&&restored.adonis_mode==mode&&restored.input_delay==1&&restored.input_delay_auto);
+        assert(restored.measured_prediction==setup.measured_prediction&&!std::memcmp(restored.build,setup.build,sizeof(setup.build)));
+        NetplayRuntime viewer;assert(viewer.BeginPlayback(restored)&&viewer.Setup().input_delay==0&&!viewer.AllowsRollback());
+        for(unsigned frame=0;frame<4;++frame){const auto* row=playback.PlaybackFrame(frame,1);assert(row);
+            assert(viewer.FeedPlayback(frame,row->data(),players));auto decision=viewer.Prepare(frame);
+            assert(decision.canAdvance&&!decision.predictedMask&&viewer.MarkSimulated(frame,decision));assert(playback.Played(frame));}
+        auto description=playback.Info().config.description;description[144]=3;
+        auto malformed=rewrite_description(bytes,std::move(description));ReplayArchive rejected;
+        assert(!rejected.Load(malformed.data(),malformed.size()));
+    }
+}
 int main(){
+    check_measured_policy();
     SessionSetup setup;const std::uint32_t words[]{1,2,1,4,1234,0,0,1,1,0,0};
     assert(DecodeSessionSetup(setup,words,11));
     th10::ApplicationConfig options{};th10::u16 keys[9]{};options.initialize(keys);

@@ -30,7 +30,8 @@ bool Application::multiplayer_begin_replay(const char* filename,u32 selected_sta
     engine.script_random.calls=engine.visual_random.calls=0;
     setup.started=true;state.multiplayer_session=setup;state.input_lanes={};input.player_profiles[0].input={};
     state.multiplayer_cheat_movement_used=false;
-    world->audio_events.Reset();world->rollback.Clear();
+    world->audio_events.Reset();world->rollback.reset();
+    engine.rollback_state=nullptr;engine.netplay_frame=Netplay::INVALID_FRAME;
     multiplayer_frame_open=multiplayer_generation_pending=multiplayer_waiting=false;
     multiplayer_pending_frame=Netplay::INVALID_FRAME;multiplayer_replay_escape=false;
     return true;

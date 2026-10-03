@@ -2,19 +2,26 @@
 namespace th10::multiplayer {
 bool DecodeSessionSetup(SessionSetup& current,const std::uint32_t* words,
                         std::size_t size) noexcept {
-    if(current.started||!words||(size!=11&&size!=13&&size!=14))return false;
-    if(!((words[0]==1&&size==11)||(words[0]==2&&size==13)||(words[0]==3&&size==14))||
+    if(current.started||!words||(size!=11&&size!=13&&size!=14&&size!=21))return false;
+    if(!((words[0]==1&&size==11)||(words[0]==2&&size==13)||(words[0]==3&&size==14)||(words[0]==4&&size==21))||
        words[1]<2||words[1]>3||
        words[2]>=words[1]||words[3]>4||words[4]>65535)return false;
     SessionSetup next{};
+    next.version=words[0];
     next.playerCount=words[1];next.localPlayer=words[2];
     next.difficulty=words[3];next.seed=words[4];
-    const std::size_t loadoutBase=words[0]==3?8:words[0]==2?7:5;
+    const std::size_t loadoutBase=words[0]>=3?8:words[0]==2?7:5;
     if(words[0]>=2){
         next.sessionId=std::uint64_t(words[5])|(std::uint64_t(words[6])<<32);
         if(!next.sessionId)return false;
     }
-    if(words[0]==3){next.input_delay=words[7];if(next.input_delay>8)return false;}
+    if(words[0]>=3){next.input_delay=words[7];if(next.input_delay>(words[0]==4?9u:8u))return false;}
+    if(words[0]==4){
+        if(words[14]<1||words[14]>2||words[15]>1||words[16]<1||words[16]>2||(words[15]&&next.input_delay))return false;
+        next.adonis_mode=words[14];next.input_delay_auto=words[15];next.prediction_reserve=words[16];
+        for(unsigned i=0;i<4;++i)next.build[i]=words[17+i];
+        if(!(next.build[0]|next.build[1]|next.build[2]|next.build[3]))return false;
+    }
     for(std::uint32_t seat=0;seat<3;++seat){
         const auto character=words[loadoutBase+seat*2],shot=words[loadoutBase+seat*2+1];
         if(character>1||shot>2||(seat>=next.playerCount&&(character||shot)))return false;

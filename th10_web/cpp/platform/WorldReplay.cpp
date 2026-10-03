@@ -17,7 +17,7 @@ struct Gameplay final:ReplayEnvironment {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         // Output storage is not a rewindable allocation graph. Bootstrap it
         // before frame zero; future MP record output commits outside journals.
-        if(w.rollback.IsCapturing()){w.fail();return nullptr;}
+        if(w.engine.rollback_state){w.fail();return nullptr;}
 #endif
         return w.replay_memory.allocate(bytes);
     }
@@ -170,7 +170,7 @@ void World::save_replay(const char* file,const char* name){
     char path[256];std::memcpy(path,"replay/",7);std::strcpy(path+7,file);
     const i32 stage=state.replay&&state.replay->info?
         std::clamp(state.replay->info->last_stage,1,8):std::clamp(state.game.stage,1,8);
-    if(rollback.IsCapturing()){
+    if(engine.rollback_state){
         if(!archive.RequestSave(path,name,state.netplay_runtime.NextFrame(),
                                 state.game.score,state.game.score_units,stage))fail();
     }else if(!commit_replay()||!multiplayer::SaveReplayFile(scores.files,calendar,state,

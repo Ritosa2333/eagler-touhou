@@ -6,6 +6,21 @@
 using namespace th10::multiplayer;
 
 int main() {
+    for(unsigned mode:{1u,2u}){
+        const std::uint32_t words[]{4,2,0,1,1234,77,0,0,0,0,1,1,0,0,mode,1,2,1,2,3,4};
+        SessionSetup setup;assert(DecodeSessionSetup(setup,words,21));setup.input_delay=1;setup.measured_prediction=mode==2?2:0;
+        NetplayRuntime a,b;assert(a.Reset(setup,77)&&a.PreparingWorld()&&a.AllowsRollback()==(mode==2));
+        auto peer=setup;peer.localPlayer=1;assert(b.Reset(peer,77));a.ApplySession(b.Hello());b.ApplySession(a.Hello());
+        a.MarkLocalReady();b.MarkLocalReady();a.ApplySession(b.Ready());b.ApplySession(a.Ready());assert(a.CanStart());
+        assert(a.CaptureLocal(0,Netplay::FrameInput{}));assert(a.CaptureLocal(1,Netplay::FrameInput{}));
+        assert(a.SubmitRemote(1,0,Netplay::FrameInput{})==Netplay::RemoteInputResult::Accepted);
+        auto first=a.Prepare(0);assert(first.canAdvance&&!first.predictedMask&&a.MarkSimulated(0,first));
+        const auto next=a.Prepare(1);assert(mode==2?next.canAdvance&&next.predictedMask:!next.canAdvance);
+        assert(a.SubmitRemote(1,1,Netplay::FrameInput{})==Netplay::RemoteInputResult::Accepted);
+        auto exact=a.Prepare(1);assert(exact.canAdvance&&!exact.predictedMask);
+        auto changed=peer;changed.build[0]^=1;NetplayRuntime mismatch;assert(mismatch.Reset(changed,77));
+        assert(a.ApplySession(mismatch.Hello())==Netplay::SessionPacketResult::ContractMismatch);
+    }
     SessionSetup setup{};
     setup.playerCount = 2;
     setup.localPlayer = 0;

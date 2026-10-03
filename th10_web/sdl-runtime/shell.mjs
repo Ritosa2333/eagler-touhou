@@ -9,11 +9,13 @@ import {normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,res
 import {initializeSaveStorage,migrateLegacySaves} from './save-storage.mjs';
 const protocol='eagler-touhou/1',game='th10',query=new URLSearchParams(location.search),canvas=document.querySelector('canvas');
 const runtimeVariant=query.get('runtimeVariant')??'normal',multiplayerRuntime=runtimeVariant==='multiplayer';
+const createAdonisCalibration=multiplayerRuntime?(await import('./adonis-calibration.mjs')).createAdonisCalibration:null;
 const epoch=Number(query.get('runtimeEpoch'));
 const validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
 let Module,core,app=0,launched=false,first=false,closing=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true;
 let practice;
+let calibration=null,runtimeBuild='',runtimeBuildWords=[];
 const keyboard=createBrowserKeyboard({
  send(code,down){if(!core)return;if(options.thpracEnabled&&practice?.key(code,down))return;cstring(code,p=>core.sdl_key(p,+down));},
  onClear(){practice?.clear();}
@@ -44,22 +46,26 @@ async function configureNetplay(){
  const count=options.netplayPlayerCount,seat=options.netplaySpectator?0:options.netplayPlayer;
  const loadouts=options.netplayLoadouts;
  const inputDelay=options.netplayInputDelay===undefined?0:Number(options.netplayInputDelay);
+ const mode=options.netplayAdonisMode??0,automatic=options.netplayInputDelayAuto??false,reserve=options.netplayPredictionReserve??2;
+ if(!Number.isInteger(mode)||mode<0||mode>2||typeof automatic!=='boolean'||(automatic&&(!mode||inputDelay))||
+    !Number.isInteger(reserve)||reserve<1||reserve>2)throw Error('Invalid TH10 measured timing policy');
  if(!['ws:','wss:'].includes(url.protocol)||!room||!run||![2,3].includes(count)||
     !Number.isInteger(seat)||seat<0||seat>=count||
     !Number.isInteger(options.netplaySeed)||options.netplaySeed<0||options.netplaySeed>65535||
     !Number.isInteger(options.netplayDifficulty)||options.netplayDifficulty<0||options.netplayDifficulty>4||
-    !Number.isInteger(inputDelay)||inputDelay<0||inputDelay>8||
+    !Number.isInteger(inputDelay)||inputDelay<0||inputDelay>(mode?9:8)||
     !Array.isArray(loadouts)||loadouts.length!==count)throw Error('Invalid TH10 multiplayer options');
  const identity=new TextEncoder().encode(`th10mp:${url.origin}${url.pathname}:${room}:${run}`);
  const digest=new DataView(await crypto.subtle.digest('SHA-256',identity));
  const low=digest.getUint32(0,true),high=digest.getUint32(4,true)||1;
- const words=[3,count,seat,options.netplayDifficulty,options.netplaySeed,low,high,inputDelay];
+ const words=[mode?4:3,count,seat,options.netplayDifficulty,options.netplaySeed,low,high,inputDelay];
  for(let i=0;i<3;i++){
   const value=loadouts[i]||{character:0,shot:0};
   if(!Number.isInteger(value.character)||value.character<0||value.character>1||
      !Number.isInteger(value.shot)||value.shot<0||value.shot>2)throw Error('Invalid TH10 multiplayer loadout');
   words.push(value.character,value.shot);
  }
+ if(mode){if(runtimeBuildWords.length!==4)throw Error('Missing TH10 immutable Runtime identity');words.push(mode,+automatic,reserve,...runtimeBuildWords);}
  const pointer=core.files_allocate(words.length*4);
  try{
   new Uint32Array(core.memory.buffer,pointer,words.length).set(words);
@@ -72,6 +78,7 @@ async function configureNetplay(){
  window.__eaglerNetplayInputDelayFrames=options.netplaySpectator?0:inputDelay;
  window.__eaglerNetplayFailed=false;window.__eaglerNetplayError='';
  updateNetplayDiagnostics();
+ if(mode&&!options.netplaySpectator)calibration?.start();
 }
 const replayFiles=createReplayFilePolicy({game:10,multiplayer:multiplayerRuntime,validateMultiplayer(bytes){
  if(typeof core.multiplayer_replay_validate!=='function')throw Error('Multiplayer Replay capability is missing');
@@ -154,13 +161,13 @@ async function resumeForegroundAudio(forcePause=false){
  if(forcePause)core.sdl_loop_pause(1);
  return resumeRuntimeAudio(Module,core,()=>!!core&&launched&&!document.hidden);
 }
-async function stop(){if(closing)return;closing=true;clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();await sync(false);app=0;launched=false;updateReplaySeek();emit('exit',{code:0,status:'success'});}finally{closing=false;}}
+async function stop(){if(closing)return;closing=true;calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();await sync(false);app=0;launched=false;updateReplaySeek();emit('exit',{code:0,status:'success'});}finally{closing=false;}}
 async function launch(){
  if(launched)return;clearKeyboard();
  ensureSharedFontAlias(Module,language);
  const mode=Module.touhouMusicMode||'none';music=mode!=='none'&&mode!=='midi';core.sdl_ogg_decode_mode?.(options.oggDecodeMode==='full');
  core.sdl_music_enabled?.(music);app=core.sdl_game_open(false,options.netplayMode==='lan'?options.netplaySeed:Date.now()&65535);if(!app)throw Error('C++ game initialization failed');
- try{await configureNetplay();}catch(reason){core.sdl_game_close();app=0;throw reason;}
+ try{await configureNetplay();}catch(reason){calibration?.stop();core.sdl_game_close();app=0;throw reason;}
  applyOptions();launched=true;first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
  canvas.focus({preventScroll:true});core.sdl_loop_pause(1);if(!document.hidden)void resumeForegroundAudio();core.sdl_loop_start(app);
  emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:'eagler-touhou/1',version:'3.5.1-sdl3'});
@@ -212,6 +219,12 @@ for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
  if(handled&&options.thpracEnabled&&/^(Backspace|Tab|F[1-7]|F12)$/.test(event.code))event.preventDefault();
 },{capture:true});
 const initialized=(async()=>{
+ if(multiplayerRuntime){
+  const manifest=await fetch('./manifest.json').then(r=>{if(!r.ok)throw Error('Missing TH10 Runtime manifest');return r.json();});
+  runtimeBuild=manifest.buildIdentity||manifest.execution?.sha256||'';
+  if(!/^[a-f0-9]{64}$/i.test(runtimeBuild))throw Error('Invalid TH10 Runtime build identity');
+  runtimeBuildWords=Array.from({length:4},(_,i)=>parseInt(runtimeBuild.slice(i*8,i*8+8),16)>>>0);
+ }
  let audioContext;try{audioContext=parent.__touhouAudioContext||parent.__th10AudioContext;}catch{}
  Module=await createModule({canvas,noInitialRun:true,resetBrowserKeyboard:()=>keyboard.clear(),...(audioContext?{SDL3:{audioContext}}:{}),print:console.log,printErr:console.error,
   instantiateWasm(imports,ready){return WebAssembly.instantiateStreaming(fetch('./th10-sdl.wasm'),imports).then(({instance,module})=>{core=instance.exports;ready(instance,module);return core;});}
@@ -221,6 +234,8 @@ const initialized=(async()=>{
  practice=await createOptionalPractice({core,getApp:()=>app,canvas,clearKeys:clearKeyboard,setMusic:value=>core.sdl_music_enabled(value),setPaused:value=>core.sdl_loop_pause(value||document.hidden?1:0)});
  for(const lang of ['jp','chs'])Module.FS.mkdirTree(storage.namespace+'/'+lang+'/replay');await migrateSaves();await mountData();cstring('#screen',core.sdl_canvas);
  Module.runtimePrepare=()=>!document.hidden;
+ calibration=createAdonisCalibration?.({core,getApp:()=>app,getOptions:()=>options,emit,game,
+  build:runtimeBuild,onError:error,pause:()=>core.sdl_loop_pause(1)});
  Module.runtimeFinish=(result,duration)=>{
   updateReplaySeek();
   practice?.tick();

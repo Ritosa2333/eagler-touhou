@@ -106,12 +106,12 @@ i32 World::spawn_item(const Vec3& p,i32 kind,u32 color,float angle,float speed){
     env.power=&minimum_power;
     if(kind==8){const auto index=actors.items->faith_cursor;if(!actors.items->faith[index].state){
         auto& item=actors.items->faith[index];
-        if(!rollback.Touch(&item,sizeof(item))){fail();return 0;}
+        if(engine.rollback_state&&!engine.rollback_state->Touch(&item,sizeof(item))){fail();return 0;}
         faith_item_owners[index]={};
     }}
     else for(u32 i=0;i<150;++i)if(!actors.items->regular[i].state){
         auto& item=actors.items->regular[i];
-        if(!rollback.Touch(&item,sizeof(item))){fail();return 0;}
+        if(engine.rollback_state&&!engine.rollback_state->Touch(&item,sizeof(item))){fail();return 0;}
         regular_item_owners[i]={};break;
     }
 #endif

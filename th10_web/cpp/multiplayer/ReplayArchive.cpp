@@ -6,7 +6,7 @@
 namespace th10::multiplayer {
 namespace {
 constexpr std::size_t BaseDescriptionBytes=120,DescriptionHeaderBytes=128;
-constexpr u32 DescriptionVersion=4;
+constexpr u32 DescriptionVersion=5;
 constexpr std::size_t LegacyCheckpointBytes=
     8+16+Netplay::MAX_PLAYERS*sizeof(GameInput)+34+
     Netplay::MAX_PLAYERS*2+4+Netplay::MAX_PLAYERS*sizeof(ReplayStage);
@@ -108,6 +108,11 @@ std::vector<u8> encode(const ReplayDescription& info,const ReplayCheckpoint* che
     static_assert(sizeof(ApplicationConfig)==52);
     out.insert(out.end(),bytes,bytes+sizeof(ApplicationConfig));
     if(version>=2){put(out,included);put(out,u32(recordBytes));}
+    if(version>=5){
+        put(out,info.setup.adonis_mode);put(out,info.setup.input_delay);put(out,info.setup.input_delay_auto);
+        put(out,info.setup.prediction_reserve);put(out,info.setup.measured_prediction);put(out,info.setup.version);
+        for(auto build:info.setup.build)put(out,build);
+    }
     for(u32 i=0;i<checkpointCount;++i){
         const auto& cp=checkpoints[i];if(frameCount!=Netplay::INVALID_FRAME&&cp.firstFrame>=frameCount)continue;
         put(out,cp.label);put(out,cp.firstFrame);put_rng(out,cp.scriptRandom);put_rng(out,cp.visualRandom);
@@ -157,13 +162,21 @@ bool decode(const Netplay::InputReplayInfo& tape,ReplayDescription& out,
     }
     std::array<ReplayCheckpoint,7> checkpoints{};u8 checkpointCount=0;
     if(version>=2){
-        if(bytes.size()<DescriptionHeaderBytes)return false;
+        const std::size_t header=DescriptionHeaderBytes+(version>=5?40:0);
+        if(bytes.size()<header)return false;
+        if(version>=5){
+            auto& s=next.setup;s.adonis_mode=word(p+128);s.input_delay=word(p+132);s.input_delay_auto=word(p+136)!=0;
+            s.prediction_reserve=word(p+140);s.measured_prediction=word(p+144);s.version=word(p+148);
+            for(unsigned i=0;i<4;++i)s.build[i]=word(p+152+i*4);
+            if(s.adonis_mode>2||s.input_delay>9||word(p+136)>1||s.prediction_reserve<1||s.prediction_reserve>2||s.measured_prediction>2||
+               (s.adonis_mode==1&&s.measured_prediction)||(s.version>=4&&(!s.adonis_mode||!(s.build[0]|s.build[1]|s.build[2]|s.build[3]))))return false;
+        }
         const u32 count=word(p+120),recordBytes=word(p+124);
         const std::size_t expectedRecordBytes=version>=4?CheckpointBytes:
                                               version>=3?ActivationCheckpointBytes:LegacyCheckpointBytes;
         if(count>checkpoints.size()||recordBytes!=expectedRecordBytes||
-           bytes.size()!=DescriptionHeaderBytes+std::size_t(count)*expectedRecordBytes)return false;
-        const u8* at=p+DescriptionHeaderBytes;
+           bytes.size()!=header+std::size_t(count)*expectedRecordBytes)return false;
+        const u8* at=p+header;
         for(u32 i=0;i<count;++i){
             ReplayCheckpoint cp{};cp.label=word(at);cp.firstFrame=word(at+4);at+=8;
             cp.scriptRandom=get_rng(at);cp.visualRandom=get_rng(at);
@@ -186,7 +199,7 @@ bool decode(const Netplay::InputReplayInfo& tape,ReplayDescription& out,
             }
             if(!checkpoint_valid(tape,next,cp))return false;
             for(u32 prior=0;prior<i;++prior)if((checkpoints[prior].label&255u)==(cp.label&255u))return false;
-            checkpoints[i]=cp;++checkpointCount;at=p+DescriptionHeaderBytes+std::size_t(i+1)*expectedRecordBytes;
+            checkpoints[i]=cp;++checkpointCount;at=p+header+std::size_t(i+1)*expectedRecordBytes;
         }
     }
     if(checkpointOut)*checkpointOut=checkpoints;if(checkpointCountOut)*checkpointCountOut=checkpointCount;
@@ -201,12 +214,14 @@ bool ReplayArchive::Begin(const SessionSetup& setup,const ApplicationConfig& con
         setup.loadouts[1].shot,setup.loadouts[2].character,setup.loadouts[2].shot};
     ReplayDescription description;
     if(!DecodeSessionSetup(description.setup,words,11)||!configuration.valid(sizeof(configuration)))return false;
+    description.setup=setup;description.setup.started=false;
     description.configuration=configuration;description.lastStage=setup.difficulty==4?7:1;
     Netplay::InputReplayConfig config;config.gameId=10;config.gameplayAbi=GameplayContract(setup);
     config.playerCount=u8(setup.playerCount);config.recordedPlayer=u8(setup.localPlayer);
-    config.description=encode(description,nullptr,0,Netplay::INVALID_FRAME,DescriptionVersion);
+    const auto format=setup.version>=4?5u:4u;
+    config.description=encode(description,nullptr,0,Netplay::INVALID_FRAME,format);
     if(!tape_.Begin(config))return false;
-    description_=description;stamps_={};checkpoints_={};save={};base_=next_=generation_=cursor_=0;saved_=Netplay::INVALID_FRAME;checkpoint_count_=0;selected_checkpoint_=0xff;format_version_=DescriptionVersion;return true;
+    description_=description;stamps_={};checkpoints_={};save={};base_=next_=generation_=cursor_=0;saved_=Netplay::INVALID_FRAME;checkpoint_count_=0;selected_checkpoint_=0xff;format_version_=format;return true;
 }
 bool ReplayArchive::Inspect(const u8* bytes,std::size_t size,Netplay::InputReplayInfo& info,ReplayDescription& description){
     Netplay::InputReplayInfo candidate;ReplayDescription metadata;

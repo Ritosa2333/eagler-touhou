@@ -14,7 +14,7 @@ struct Hints final:StageHintsEnvironment,HintRecordingEnvironment {
             if(!result){w.fail();return nullptr;}
             // Before initialization/reuse, save even an inactive slot. This
             // also prevents stale linked-list bytes escaping strict rewind.
-            if(!w.rollback.Touch(result,sizeof(w.rollback_hints.blocks[0]))){w.fail();return nullptr;}
+            if(w.engine.rollback_state&&!w.engine.rollback_state->Touch(result,sizeof(w.rollback_hints.blocks[0]))){w.fail();return nullptr;}
             return result;
         }
 #endif

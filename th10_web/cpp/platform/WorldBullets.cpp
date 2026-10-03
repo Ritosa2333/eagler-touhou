@@ -27,13 +27,14 @@ struct Resources final:ProjectileSystemsEnvironment {
 struct Bullets final:BulletBehaviorEnvironment {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     bool preserve_bullet(EnemyBullet& bullet) override{
-        if(w.rollback.Touch(&bullet,sizeof(bullet)))return true;
+        if(!w.engine.rollback_state||w.engine.rollback_state->Touch(&bullet,sizeof(bullet)))return true;
         w.fail();return false;
     }
 #endif
     World& w;explicit Bullets(World& world,const Vec3* origin=nullptr):w(world){
         default_rate=&w.engine.speed;manager=&w.engine.manager;effect_file=w.actors.bullets->animation_file;animations=&w.engine;allocation=&w.engine;controller_flags=w.actors.session?&w.actors.session->session_flags:nullptr;player_position=&w.actors.player->position;rng=&w.engine.script_random;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        preserve_bullets=w.engine.rollback_state!=nullptr;
         player_position=&w.target_player(origin?*origin:Vec3{});
 #else
         (void)origin;
@@ -81,8 +82,8 @@ bool World::create_bullets(){Resources env(*this);return EnemyBulletManager::cre
 void World::destroy_bullets(EnemyBulletManager* p){Resources env(*this);p->shutdown(env);std::free(p);}
 void World::clear_bullets(){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if(rollback.IsCapturing())for(auto& bullet:actors.bullets->pool)
-        if(!rollback.Touch(&bullet,sizeof(bullet))){fail();return;}
+    if(engine.rollback_state)for(auto& bullet:actors.bullets->pool)
+        if(!engine.rollback_state->Touch(&bullet,sizeof(bullet))){fail();return;}
 #endif
     Resources env(*this);actors.bullets->clear(env);
 }

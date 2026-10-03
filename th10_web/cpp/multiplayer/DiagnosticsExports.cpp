@@ -25,22 +25,24 @@ const u32* multiplayer_scene_owners(browser::Application* app){
 }
 extern "C" __attribute__((export_name("multiplayer_rollback_storage")))
 const double* multiplayer_rollback_storage(browser::Application* app){
-    static double values[9]{};std::fill(values,values+9,0.0);
+    static double values[10]{};std::fill(values,values+10,0.0);
     if(!app||!app->world)return values;
-    const auto& rollback=app->world->rollback;
-    values[0]=1;values[1]=double(rollback.LastBlocks());values[2]=double(rollback.ArenaGrowths());
-    values[3]=double(rollback.RestoreCopiedBytes());values[4]=double(rollback.RestoreSkippedBytes());
-    values[5]=double(rollback.ElidedFrames());values[6]=double(rollback.SnapshotFrames());
-    values[7]=double(rollback.SnapshotBytes());values[8]=rollback.IsFrameOpen()?1:0;
+    values[0]=1;
+    const auto* rollback=app->world->rollback.get();if(!rollback)return values;
+    values[1]=double(rollback->LastBlocks());values[2]=double(rollback->ArenaGrowths());
+    values[3]=double(rollback->RestoreCopiedBytes());values[4]=double(rollback->RestoreSkippedBytes());
+    values[5]=double(rollback->ElidedFrames());values[6]=double(rollback->SnapshotFrames());
+    values[7]=double(rollback->SnapshotBytes());values[8]=rollback->IsFrameOpen()?1:0;
+    values[9]=1; // Undo owner allocated (diagnostic-only appended field).
     return values;
 }
 extern "C" __attribute__((export_name("multiplayer_memory_status")))
 const u32* multiplayer_memory_status(browser::Application* app){
     static u32 words[12]{};std::fill(words,words+12,0);if(!app||!app->world)return words;
     const auto& world=*app->world;const auto& rollback=world.rollback;
-    words[0]=1;words[1]=u32(rollback.LastBytes());words[2]=u32(rollback.PeakBytes());
-    words[3]=u32(rollback.LiveFrames());words[4]=rollback.SnapshotFrames();
-    words[5]=u32(rollback.SnapshotBytes());words[6]=u32(rollback.SnapshotBytes()>>32);
+    words[0]=1;if(rollback){words[1]=u32(rollback->LastBytes());words[2]=u32(rollback->PeakBytes());
+    words[3]=u32(rollback->LiveFrames());words[4]=rollback->SnapshotFrames();
+    words[5]=u32(rollback->SnapshotBytes());words[6]=u32(rollback->SnapshotBytes()>>32);}
     words[7]=world.replay_memory.count;
     if(world.actors.bullets)for(u32 i=0;i<2000;++i)words[8]+=world.actors.bullets->pool[i].state?1u:0u;
     words[9]=world.actors.lasers?u32(world.actors.lasers->count):0;

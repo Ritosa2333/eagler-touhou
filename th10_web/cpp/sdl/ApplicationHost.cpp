@@ -107,11 +107,13 @@ EM_BOOL frame(double timestamp,void* epoch){
     const bool presentation_ready=interpolation_ready()&&!limit60,fast=touhou::sdl::PresentationCadence::fast_sample(delta);if(presentation_ready)presentation.advance(delta);else presentation.reset();if(!presentation.high_refresh||!fast)presentation_primed=false;
     double simulation_delta=delta;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    const auto& runtime=application->state.netplay_runtime;
+    auto& runtime=application->state.netplay_runtime;
     const bool live=application->multiplayer_active()&&runtime.NetworkEnabled()&&
                     runtime.CanStart()&&!runtime.Spectator()&&runtime.InitialInputsReady();
     if(live)
         simulation_delta/=runtime.Channel().IntervalScale();
+    if(live&&cadence.debt+1.e-9<touhou::sdl::FrameCadence::interval)
+        simulation_delta=runtime.PacedElapsedSeconds(simulation_delta);
 #endif
     // Clock calibration changes only when the next fixed tick is due. Every
     // admitted tick still executes the original 60 Hz simulation and Draw.
@@ -143,8 +145,11 @@ EM_BOOL frame(double timestamp,void* epoch){
         // A start-time spectator may receive the relay's bounded confirmed
         // history after joining. Consume a few exact logical frames per
         // display callback until caught up; live players never enter here.
-        for(th10::u32 i=1;!result&&i<application->multiplayer_spectator_catchup_budget();++i)
-            result=application->step(true);
+        for(th10::u32 i=1;!result&&application->multiplayer_spectator_catchup_budget()>1&&
+            Netplay::FrameBudget::CanStartTick(i,std::uint64_t(std::max(0.,emscripten_get_now()-callback_begin)*1.e6));++i){
+            const auto before=runtime.LastSimulatedFrame();result=application->step(true);
+            if(runtime.LastSimulatedFrame()!=before+1u)break;
+        }
 #endif
     }
     const bool high=presentation.high_refresh&&interpolation_ready();if(high&&fast&&!presentation_primed&&tick_due)presentation_primed=true;const bool interpolate=high&&fast&&presentation_primed;float frame_alpha=1.0f;

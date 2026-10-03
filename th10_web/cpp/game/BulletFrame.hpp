@@ -8,6 +8,7 @@ struct UpdateChainEntry;
 enum class BulletFeature : u32 {SpawnAcceleration,VectorAcceleration,AngularAcceleration,Turn,TurnToAngle,TurnAimed,Reflect,Homing,HorizontalWrap,VerticalWrap};
 struct BulletFrameEnvironment : BulletEffectEnvironment {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    bool preserve_bullets=true;
     virtual bool preserve_bullet(EnemyBullet&){return true;}
 #endif
     const u32* controller_flags;

@@ -9,6 +9,8 @@
 #include <eagler/netplay/NetplaySession.hpp>
 #include <eagler/netplay/BrowserPeerTransport.hpp>
 #include <eagler/netplay/SessionChannel.hpp>
+#include <eagler/netplay/AdonisConnection.hpp>
+#include <eagler/netplay/AdonisSpectatorTiming.hpp>
 
 #include <cstdint>
 #include <deque>
@@ -53,7 +55,7 @@ public:
     bool CanSendReady() const { return !spectator_&&gate_.CanSendReady(); }
     bool LocalReady() const { return configured_&&!spectator_&&gate_.LocalReady(); }
     void MarkLocalReady() { if(!spectator_)gate_.MarkLocalReady(); }
-    bool CanStart() const { return configured_ && (playback_ || spectator_ || gate_.CanStart()); }
+    bool CanStart() const { return configured_ && (spectator_?spectator_timing_ready_:playback_ || gate_.CanStart()); }
 
     bool CaptureLocal(std::uint32_t frame, const Netplay::FrameInput& input) {
         if(playback_||spectator_||!CanStart()||!Netplay::IsValidFrameInput(input)||
@@ -107,6 +109,12 @@ public:
     bool ConnectSpectator(const char* relayUrl,const char* spectatorId);
     bool PumpNetwork(bool expectsInput);
     bool NetworkEnabled() const { return network_enabled_; }
+    bool PreparingWorld()const{return configured_&&setup_.version>=4&&!playback_&&!spectator_;}
+    bool AllowsRollback()const{return !playback_&&!spectator_&&setup_.adonis_mode!=unsigned(Netplay::AdonisMode::Delay);}
+    Netplay::AdonisMode Mode()const{return Netplay::AdonisMode(setup_.adonis_mode);}
+    const SessionSetup& Setup()const{return setup_;}
+    const std::uint32_t* CalibrationStatus(){return calibration_.Status();}
+    double PacedElapsedSeconds(double elapsed);
     // The HELLO/READY gate agrees on the session, not on completion of each
     // browser's title/resource loading. First input proves the world is ready.
     bool InitialInputsReady() const;
@@ -128,7 +136,9 @@ private:
     bool retired_=false;
     bool configured_ = false;
     Netplay::BrowserPeerTransport transport_{};
-    Netplay::SessionChannel channel_{transport_};
+    Netplay::AdonisConnection calibration_{transport_};
+    Netplay::SessionChannel channel_{calibration_};
+    double phase_debt_ms_=0;
     std::uint64_t network_now_=0;
     bool network_enabled_=false;
     bool initial_wait_started_=false;
@@ -136,6 +146,8 @@ private:
     std::string initial_wait_error_{};
     bool playback_=false;
     bool spectator_=false,spectator_retired_=false;
+    bool spectator_timing_ready_=true,spectator_timing_sent_=false,spectator_publish_failed_=false;
+    std::uint64_t spectator_deadline_=0;
     std::uint32_t spectator_publish_frame_=0,spectator_receive_frame_=0;
     std::deque<Netplay::SpectatorFramePacket> spectator_frames_{};
     std::string spectator_error_{};

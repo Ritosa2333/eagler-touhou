@@ -56,11 +56,11 @@ struct SessionFrame final:GameSessionEnvironment {
     void clear_bullets() override{w.clear_bullets();}
     void clear_items() override{
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-        if(w.rollback.IsCapturing()){
+        if(w.engine.rollback_state){
             for(auto& item:w.actors.items->regular)
-                if(!w.rollback.Touch(&item,sizeof(item))){w.fail();return;}
+                if(!w.engine.rollback_state->Touch(&item,sizeof(item))){w.fail();return;}
             for(auto& item:w.actors.items->faith)
-                if(!w.rollback.Touch(&item,sizeof(item))){w.fail();return;}
+                if(!w.engine.rollback_state->Touch(&item,sizeof(item))){w.fail();return;}
         }
 #endif
         GameSessionEnvironment::clear_items();
@@ -127,12 +127,13 @@ void World::stop_session(){if(!actors.session)return;
     const auto& runtime=state.netplay_runtime;
     const auto last=runtime.LastSimulatedFrame(),confirmed=runtime.ConfirmedThroughAllRemotes();
     if(scores.multiplayer_active()&&!scores.replay_read_only()&&
-       !runtime.HasRollbackRequest()&&!rollback.IsCapturing()&&
+       !runtime.HasRollbackRequest()&&!engine.rollback_state&&
        (!state.multiplayer_session.sessionId||
         (last!=Netplay::INVALID_FRAME&&confirmed!=Netplay::INVALID_FRAME&&confirmed>=last)))
         if(!scores.checkpoint_multiplayer(calendar.timestamp()))fail();
     if(audio.manager.command_sink==&audio_events)audio.manager.command_sink=nullptr;
-    rollback.Clear();
+    engine.rollback_state=nullptr;engine.netplay_frame=Netplay::INVALID_FRAME;
+    if(rollback)rollback->Clear();
     if(!backgrounds.collect_retired(Netplay::INVALID_FRAME))fail();
 #endif
     loading=false;auto* session=actors.session;SessionResources env(*this);GameSessionResources{*session,env}.shutdown();std::free(session);effects.controller_flags=nullptr;

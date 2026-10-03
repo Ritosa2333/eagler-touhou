@@ -33,12 +33,12 @@ void Backgrounds::destroy(Stage* stage){
     if(!stage)return;
     for(auto& entry:presentation)if(entry.owner==stage)entry={};
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if(auto* rollback=engine.rollback_state;rollback&&rollback->IsFrameOpen()){
+    if(engine.netplay_frame!=~u32(0)){
         RetiredStage* record=nullptr;
         for(auto& candidate:retired)if(candidate.stage==stage){record=&candidate;break;}
         if(!record)for(auto& candidate:retired)if(!candidate.stage){record=&candidate;break;}
         if(!record){error=-1;return;}
-        *record={stage,rollback->OpenFrame(),!(state.game.flags&1),stage->animation_file};
+        *record={stage,engine.netplay_frame,!(state.game.flags&1),stage->animation_file};
         // Match logical deletion now, including callback allocator state, but
         // keep the resource graph alive until no restore can reference it.
         engine.chain_value.remove_locked(stage->update_entry,engine.callback_environment);

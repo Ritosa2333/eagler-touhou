@@ -8,6 +8,7 @@
 #include "../game/EclProgram.hpp"
 #include "../../../portable/input/MotionTrack.hpp"
 #include <map>
+#include <memory>
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/InputLanes.hpp"
 #include "../multiplayer/PresentationCache.hpp"
@@ -35,7 +36,8 @@ struct World final:HudActions,CallbackReceiver {
     // during prediction must not leave malloc nodes outside the checkpoint.
     // 8192 covers the two 7*255 files plus retained copies and run recordings.
     multiplayer::RollbackPool<sizeof(StageHint),8192> rollback_hints{};
-    multiplayer::RollbackState rollback{};
+    // Exact-input, spectator and Replay worlds never create undo storage.
+    std::unique_ptr<multiplayer::RollbackState> rollback;
     multiplayer::AudioEvents audio_events{};
     multiplayer::ReplayCheckpoint replay_checkpoint_pending{};
     multiplayer::ReplayCheckpoint replay_checkpoint_commit_pending{};
@@ -46,8 +48,8 @@ struct World final:HudActions,CallbackReceiver {
     bool replay_checkpoint_commit_valid=false;
     bool replay_checkpoint_precommit_valid=false;
     bool replay_checkpoint_precommit_cheat_used=false;
-    bool begin_rollback_frame(u32 frame);
-    bool end_rollback_frame();
+    bool begin_netplay_frame(u32 frame);
+    bool end_netplay_frame();
     bool commit_audio();
     void begin_replay_checkpoint();
     void capture_replay_checkpoint_precommit(u32 archiveFrame);

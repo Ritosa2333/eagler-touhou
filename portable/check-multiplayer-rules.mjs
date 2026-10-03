@@ -19,7 +19,7 @@ if (!sdk) throw new Error('Set WASI_SDK_PATH to the installed WASI SDK directory
 const compiler = resolve(sdk, 'bin', process.platform === 'win32' ? 'clang++.exe' : 'clang++');
 const out = resolve(root, 'artifacts/multiplayer-tests' + (sanitized ? '-audio-ubsan' : ''));
 mkdirSync(out, { recursive: true });
-const common = resolve(root, 'third_party/eagler-common');
+const common = resolve(process.env.EAGLER_COMMON_ROOT ?? resolve(root, 'third_party/eagler-common'));
 const softfloat = resolve(out, 'softfloat.o');
 if (sanitized) console.log('Audio-only UBSan: C++ and unmodified SoftFloat instrumented; not a whole-game sanitizer pass.');
 execFileSync(compiler, [

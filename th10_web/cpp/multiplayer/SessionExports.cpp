@@ -558,6 +558,9 @@ const i32* multiplayer_lifecycle_status(browser::Application* app){
     words[11]=app->input.player_profiles[0].input.raw_repeat;
     return words;
 }
+extern "C" __attribute__((export_name("multiplayer_calibration_status")))
+const u32* multiplayer_calibration_status(browser::Application* app){static u32 empty[32]{};
+    return app?app->state.netplay_runtime.CalibrationStatus():empty;}
 extern "C" __attribute__((export_name("multiplayer_netplay_status")))
 const i32* multiplayer_netplay_status(browser::Application* app){
     static i32 words[11]{};std::fill(words,words+11,0);if(!app)return words;
@@ -566,7 +569,7 @@ const i32* multiplayer_netplay_status(browser::Application* app){
     words[2]=i32(runtime.NextFrame());words[3]=i32(runtime.LastSimulatedFrame());
     words[4]=i32(runtime.ConfirmedThroughAllRemotes());
     words[5]=runtime.HasRollbackRequest()?i32(runtime.RollbackFrame()):-1;
-    words[6]=app->world?i32(app->world->rollback.CapturedBytes(
+    words[6]=app->world&&app->world->rollback?i32(app->world->rollback->CapturedBytes(
         runtime.LastSimulatedFrame()==Netplay::INVALID_FRAME?0:runtime.LastSimulatedFrame())):0;
     const auto sessionId=app->state.multiplayer_session.sessionId;
     words[7]=i32(u32(sessionId));words[8]=i32(u32(sessionId>>32));
