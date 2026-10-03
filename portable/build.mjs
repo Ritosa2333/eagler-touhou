@@ -18,7 +18,15 @@ const emcc=[resolve(sdk,'install/emscripten/emcc.py'),resolve(sdk,'upstream/emsc
 if(!emcc&&!printPlan)throw Error('Install the pinned Emscripten SDK first (tools/download-emscripten.py).');
 const env={...process.env,EM_CONFIG:process.env.EM_CONFIG??resolve(sdk,'.emscripten'),EMSDK:sdk,EMCC_CORES:process.env.EMCC_CORES??'4'};
 const python=process.env.TH_PYTHON??'python';
-const run=(args)=>new Promise((done,reject)=>{const p=spawn(python,[emcc,...args],{cwd:root,env,windowsHide:true,stdio:['ignore','pipe','pipe']});let log='';p.stdout.on('data',x=>{log+=x;process.stdout.write(x);});p.stderr.on('data',x=>{log+=x;process.stderr.write(x);});p.on('error',reject);p.on('exit',code=>code?reject(Error('emcc failed '+code+'\n'+log)):done());});
+const run=(args)=>new Promise((done,reject)=>{
+ if(process.platform==='win32'&&args.join(' ').length>24000){
+  const response=resolve(out,'compiler-args.rsp.utf-8');
+  // Emscripten expands UTF-8 response files before parsing its normal flags.
+  writeFileSync(response,args.map(arg=>'"'+arg.replaceAll('\\','\\\\').replaceAll('"','\\"')+'"').join('\n')+'\n');
+  args=['@'+response];
+ }
+ const p=spawn(python,[emcc,...args],{cwd:root,env,windowsHide:true,stdio:['ignore','pipe','pipe']});let log='';p.stdout.on('data',x=>{log+=x;process.stdout.write(x);});p.stderr.on('data',x=>{log+=x;process.stderr.write(x);});p.on('error',reject);p.on('exit',code=>code?reject(Error('emcc failed '+code+'\n'+log)):done());
+});
 const imgui=resolve(root,'cpp/third_party/imgui');
 const common=['-O2','-g0','-fno-strict-aliasing','-ffp-contract=off','-DTH_SDL3=1','-DTH_NATIVE_PLATFORM=1','-DIMGUI_DISABLE_WIN32_FUNCTIONS','--use-port=sdl3','--use-port=sdl3_ttf','-I'+resolve(workspace,'portable/sdl'),'-I'+imgui];
 if(resourceTrace)common.push('-DTH_MULTIPLAYER_RESOURCE_TRACE=1');
