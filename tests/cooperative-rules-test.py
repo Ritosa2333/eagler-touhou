@@ -89,12 +89,12 @@ void SetPlayerBombs(u8 p,int v){bombs[p]=v;} void SetPlayerPower(u8 p,int v){pow
 void AddPlayerPower(u8 p,int v){power[p]+=v;}
 #define WAS_PRESSED_PLAYER(p,b) ((p)->pressed)
 #define IS_PRESSED_PLAYER(p,b) ((p)->shoot)
-struct Item {bool isInUse=false; int type=0,state=0;};
+struct Item {bool isInUse=false; int type=0,state=0; ZunVec3 position;};
 struct ItemManager {Item items[ITEM_CAPACITY+1]; std::vector<int> emitted;
  bool CanSpawnItems(int count)const;
  SPAWN_ITEM_DECL
- Item* SpawnSingleItem(const ZunVec3*,int type,int state){
-  for(int i=0;i<ITEM_CAPACITY;++i)if(!items[i].isInUse){items[i]={true,type,state};emitted.push_back(type);return items+i;}
+ Item* SpawnSingleItem(const ZunVec3* position,int type,int state){
+  for(int i=0;i<ITEM_CAPACITY;++i)if(!items[i].isInUse){items[i]={true,type,state,*position};emitted.push_back(type);return items+i;}
   return items+ITEM_CAPACITY; }
  SPAWN_DROP_DECL
  void ActivateAllItems(){} } g_ItemManager;
@@ -155,7 +155,8 @@ signatures = (['bool IsTerminalPlayerState(', 'bool IsLivingTransferPlayer(', 'b
  ['bool IsPlayerActiveForProximity(', 'bool IsPlayerActiveForLifeTransfer(',
  'Player *SelectPowerTransferReceiver(', 'bool IsPowerTransferArmed(', 'void UpdatePowerTransfer(',
  'Player *SelectLifeTransferReceiver(', 'void UpdateLifeTransfer('])
-functions = ''.join(function(PLAYER,s) for s in signatures)
+functions = '' if SIX else function((ROOT / 'src/MultiplayerResources.cpp').read_text(), 'i32 GetPlayerInitialBombs(')
+functions += ''.join(function(PLAYER,s) for s in signatures)
 functions += function((ROOT / 'src/MultiplayerResources.cpp').read_text(), 'void ResetMultiplayerPlayerResources(')
 functions += function(PLAYER, 'i32 GetBossParticipantCount(')
 functions += function(PLAYER, 'void PrepareMultiplayerStageRevival(')
@@ -173,16 +174,23 @@ else:
 
 main = r'''
 void reset(int count=3){
- g_ItemManager=ItemManager{};g_BulletManager=BulletManager{};g_Rng.n=0;g_teamWipeRetryFrames=0;
+ shooter.initialBombs=4;g_ItemManager=ItemManager{};g_BulletManager=BulletManager{};g_Rng.n=0;g_teamWipeRetryFrames=0;
  for(int i=0;i<3;++i){g_Players[i]=Player{};g_Players[i].initParam=i;g_PlayerActive[i]=i<count;
  absent[i]=departed[i]=false;lives[i]=2;bombs[i]=4;power[i]=100;g_powerGiveTaps[i]=g_powerGiveWindow[i]=0;}
 }
 void hold(Player*p,int n){p->isFocus=1;for(int i=0;i<n;++i)UpdateLifeTransfer(p);}
 void tap(Player*p,int n){for(int i=0;i<n;++i){p->pressed=true;UpdatePowerTransfer(p);p->pressed=false;UpdatePowerTransfer(p);}}
 void test(){
+ for(int count: {2,3}){
+  reset(count);ZunVec3 origin;g_ItemManager.SpawnItem(&origin,ITEM_POWER_SMALL,0);
+  for(int copy=1;copy<count;++copy)assert(g_ItemManager.items[copy].position.x!=g_ItemManager.items[copy-1].position.x);
+  reset(count);g_ItemManager.SpawnItem(&origin,ITEM_LIFE,GetItemTransferStateForPlayer(1));
+  assert(g_ItemManager.emitted.size()==1); // Gifts are never multiplied.
+ }
+
  reset();g_Supervisor.curState=3;g_Players[1].playerState=PLAYER_STATE_SPIRIT;
  PrepareMultiplayerStageRevival(&g_Players[0]);PrepareMultiplayerStageRevival(&g_Players[1]);
- assert(bombs[0]==4&&bombs[1]==2);g_Supervisor.curState=0;
+ assert(bombs[0]==4&&bombs[1]==INITIAL_BOMBS);g_Supervisor.curState=0;
  reset();assert(g_ItemManager.CanSpawnItems(0));assert(g_ItemManager.CanSpawnItems(6));
  for(auto&i:g_ItemManager.items)i.isInUse=true;
  assert(!g_ItemManager.CanSpawnItems(1));
@@ -200,8 +208,8 @@ void test(){
  for(int count: {2,3}){
   reset(count);g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=0;power[1]=0;bombs[1]=0;
   hold(&g_Players[0],89);assert(lives[0]==2);assert(g_Players[1].playerState==PLAYER_STATE_SPIRIT);
-  hold(&g_Players[0],1);assert(lives[0]==1);assert(lives[1]==1);
-  assert(bombs[0]==4&&bombs[1]==0&&power[1]==64);
+  hold(&g_Players[0],1);assert(lives[0]==1);assert(lives[1]==0);
+  assert(bombs[0]==4&&bombs[1]==INITIAL_BOMBS&&power[1]==64);
   assert(g_Players[1].bulletGracePeriod==0&&g_BulletManager.calls==0);
   assert(g_Players[1].playerState==PLAYER_STATE_INVULNERABLE);
   assert(g_Players[1].invulnerabilityTimer==240);
@@ -210,9 +218,9 @@ void test(){
   hold(&g_Players[0],90);assert(lives[0]==0); // Explicit release and repress permits a new paid gift.
  }
  reset();g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=3;
- hold(&g_Players[0],90);assert(lives[1]==4); // One donated life is added to banked shared extends.
+ hold(&g_Players[0],90);assert(lives[1]==0); // Rescue discards banked shared extends.
  reset(2);g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=8;
- hold(&g_Players[0],90);assert(lives[1]==8&&g_Players[1].playerState==PLAYER_STATE_INVULNERABLE);
+ hold(&g_Players[0],90);assert(lives[1]==0&&g_Players[1].playerState==PLAYER_STATE_INVULNERABLE);
  reset();lives[0]=0;g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=0;
  hold(&g_Players[0],180);assert(g_Players[1].playerState==PLAYER_STATE_SPIRIT);
  for(int stock: {0,1,3}){
@@ -223,18 +231,18 @@ void test(){
   if(!stock)assert(std::count(g_ItemManager.emitted.begin(),g_ItemManager.emitted.end(),ITEM_FULL_POWER)==5);
   p->invulnerabilityTimer=30;DeathTick(p);
   assert(lives[0]==(stock?stock-1:0));assert(lives[1]==2&&lives[2]==2);
-  assert(bombs[0]==(stock?2:TERMINAL_BOMBS));
+  assert(bombs[0]==(stock?INITIAL_BOMBS:TERMINAL_BOMBS));
  }
  reset();ZunVec3 position;
  for(int item: {ITEM_LIFE,ITEM_BOMB,ITEM_POWER_SMALL,ITEM_POWER_BIG})g_ItemManager.SpawnEnemyDrop(&position,item,0);
- assert(g_ItemManager.emitted.size()==8); // LIFE/BOMB single, two ordinary P kinds tripled.
+ assert(g_ItemManager.emitted.size()==10); // 3P doubles stage LIFE/BOMB, triples ordinary P.
  for(int count: {2,3}){
   reset(count);ZunVec3 origin;for(int kind: {ITEM_POWER_SMALL,ITEM_POWER_BIG,ITEM_FULL_POWER,ITEM_LIFE,ITEM_BOMB})g_ItemManager.SpawnEnemyDrop(&origin,kind,0);
-  assert(g_ItemManager.emitted.size()==unsigned(2*count+3));
+  assert(g_ItemManager.emitted.size()==unsigned(2*count+(count==3?5:3)));
   g_Players[1].playerState=PLAYER_STATE_SPIRIT;
   assert(GetBossParticipantCount()==count-1); // Ghost does not lower the fixed drop multiplier.
   g_ItemManager.SpawnEnemyDrop(&origin,ITEM_POWER_SMALL,0);
-  assert(g_ItemManager.emitted.size()==unsigned(3*count+3));
+  assert(g_ItemManager.emitted.size()==unsigned(3*count+(count==3?5:3)));
  }
  reset();assert(SelectLifeTransferReceiver(&g_Players[0])==&g_Players[2]);
  assert(SelectPowerTransferReceiver(&g_Players[0])==&g_Players[1]);
@@ -244,10 +252,10 @@ void test(){
  departed[2]=false;g_Players[1].playerState=PLAYER_STATE_ALIVE;assert(GetBossParticipantCount()==3);
  for(int count: {2,3})for(int donorBombs: {0,1,4}){
   reset(count);bombs[0]=donorBombs;g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=0;bombs[1]=3;
-  hold(&g_Players[0],90);assert(bombs[0]==donorBombs&&bombs[1]==0);
+  hold(&g_Players[0],90);assert(bombs[0]==donorBombs&&bombs[1]==INITIAL_BOMBS);AddPlayerLives(1,1);
   Player*p=&g_Players[1];p->playerState=PLAYER_STATE_DEAD;p->respawnTimer=1;DeathTick(p);
   p->invulnerabilityTimer=30;DeathTick(p);
-  assert(bombs[1]==2&&lives[1]==0&&bombs[0]==donorBombs&&lives[0]==1);
+  assert(bombs[1]==INITIAL_BOMBS&&lives[1]==0&&bombs[0]==donorBombs&&lives[0]==1);
  }
  // Exact deterministic re-execution of production rescue from a copied pre-frame fixture.
  reset();g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=0;
@@ -264,14 +272,16 @@ int main(){test();std::puts("production cooperative transfer/death/drop rule fix
 startup = r"""
  reset();g_GameManager.isInReplay=0;bombs[0]=4;
  START_RESET
- assert(g_MultiplayerPlayerResources[0].bombsRemaining==2);
- assert(g_MultiplayerPlayerResources[1].bombsRemaining==2);
+ assert(g_MultiplayerPlayerResources[0].bombsRemaining==INITIAL_BOMBS);
+ assert(g_MultiplayerPlayerResources[1].bombsRemaining==INITIAL_BOMBS);
  START_EXTRA
 """.replace('START_RESET', 'ResetMultiplayerPlayerResources();' if SIX else
             'ResetMultiplayerPlayerResources(1);ResetMultiplayerPlayerResources(2);').replace(
  'START_EXTRA', 'assert(bombs[0]==2);g_GameManager.isInReplay=1;bombs[0]=5;ResetMultiplayerPlayerResources();assert(bombs[0]==5);' if SIX else
  'assert(g_MultiplayerPlayerResources[0].livesRemaining==2);assert(g_MultiplayerPlayerResources[0].currentPower==0);')
+main = main.replace('INITIAL_BOMBS', '2' if SIX else '3')
 main = main.replace('void test(){', 'void test(){'+startup).replace('TERMINAL_BOMBS', '4' if SIX else '3')
+main = main.replace('INITIAL_BOMBS', '2' if SIX else '3')
 with tempfile.TemporaryDirectory(prefix='coop-rules-') as temp:
     source=Path(temp)/'rules.cpp'
     source.write_text(stub+constants+functions+main)

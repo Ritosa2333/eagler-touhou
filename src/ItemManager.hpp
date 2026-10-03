@@ -40,7 +40,7 @@ struct ItemManager
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     void SpawnSingleItem(const ZunVec3 *position, ItemType type, i32 state);
 #endif
-    // Enemy/ECL drops preserve the original single-player spawn quantity.
+    // Stage resource drops use roster scaling only in multiplayer.
     void SpawnEnemyDrop(const ZunVec3 *position, ItemType type, i32 state);
     void SyncRenderState();
     void OnUpdate();

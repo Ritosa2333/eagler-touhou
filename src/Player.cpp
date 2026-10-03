@@ -160,14 +160,14 @@ u8 GetPlayerOverlapAlpha(const Player *player)
     const u8 localPlayerId = MultiplayerGameplay::GetLocalPlayerSlot();
     if (localPlayerId >= TH06_MULTI_MAX_PLAYERS ||
         !IsPlayerGameplayActive(localPlayerId))
-        return 255;
+        return 128;
 
     const Player &localPlayer = g_Players[localPlayerId];
     const f32 dx = player->positionCenter.x - localPlayer.positionCenter.x;
     const f32 dy = player->positionCenter.y - localPlayer.positionCenter.y;
     f32 distance = sqrtf(dx * dx + dy * dy);
     if (distance >= REMOTE_PLAYER_FADE_START_DISTANCE)
-        return 255;
+        return 128;
     if (distance < REMOTE_PLAYER_FADE_FULL_DISTANCE)
         distance = REMOTE_PLAYER_FADE_FULL_DISTANCE;
 
@@ -177,7 +177,7 @@ u8 GetPlayerOverlapAlpha(const Player *player)
     return static_cast<u8>(std::clamp<i32>(
         static_cast<i32>(fadeProgress * (255 - REMOTE_PLAYER_FADE_MIN_ALPHA)) +
             REMOTE_PLAYER_FADE_MIN_ALPHA,
-        0, 255));
+        0, 128));
 }
 
 void ClampVmAlpha(AnmVm *vm, u8 alpha)
@@ -645,10 +645,9 @@ void UpdateLifeTransfer(Player *giver)
     if (receiver->playerState == PLAYER_STATE_REVIVABLE)
     {
         AddPlayerLives(giver->initParam, -1);
-        SetPlayerBombs(receiver->initParam, 0);
+        SetPlayerBombs(receiver->initParam, 2);
         SetPlayerPower(receiver->initParam, 64);
-        if (GetPlayerLives(receiver->initParam) < 8)
-            AddPlayerLives(receiver->initParam, 1);
+        SetPlayerLives(receiver->initParam, 0);
         RevivePlayerFromTeammate(receiver);
         g_Gui.flags.flag1 = 2;
         g_Gui.flags.flag0 = 2;

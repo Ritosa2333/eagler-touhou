@@ -1959,11 +1959,19 @@ void Gui::DrawStageElements() const
     {
         g_AnmManager->Draw2(&this->impl->songNameSprite);
     }
-    if (this->impl->playerSpellcardPortrait.flags.isVisible)
+    if (this->impl->playerSpellcardPortrait.flags.isVisible
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        && !MultiplayerGameplay::IsMultiplayer()
+#endif
+    )
     {
         g_AnmManager->DrawInterpNoRotation(&this->impl->playerSpellcardPortrait);
     }
-    if (this->impl->enemySpellcardPortrait.flags.isVisible)
+    if (this->impl->enemySpellcardPortrait.flags.isVisible
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        && !MultiplayerGameplay::IsMultiplayer()
+#endif
+    )
     {
         g_AnmManager->DrawInterpNoRotation(&this->impl->enemySpellcardPortrait);
     }
