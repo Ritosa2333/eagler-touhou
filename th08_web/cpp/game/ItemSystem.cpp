@@ -80,6 +80,13 @@ void ItemSystem::set_player_available(u32 seat,bool available){
 }
 void ItemSystem::synchronize(Owner& owner){auto& c=owner.player->status().context;auto& r=*owner.resources;c.power=Scalar::truncate(r.power);c.lives=Scalar::truncate(r.lives);c.bombs=Scalar::truncate(r.bombs);c.time_orbs=r.time_orbs;c.last_spell_requirement=r.last_spell_requirement;c.gauge=r.gauge;owner.input.power=c.power;}
 ItemState* ItemSystem::spawn(const Vec3& position,i32 type,i32 mode){
+    u32 count=0;for(const auto& owner:owners)if(owner.player)++count;
+    const u32 copies=(type==0||type==2)?count:1;
+    ItemState* first=nullptr;
+    for(u32 copy=0;copy<copies;++copy){auto* item=spawn_single(position,type,mode);if(!copy)first=item;}
+    return first;
+}
+ItemState* ItemSystem::spawn_single(const Vec3& position,i32 type,i32 mode){
     executor.timing=player.timing;
     const u32 nearest=nearest_owner(position);
     const i8 life=nearest<3?owners[nearest].player->status().life.state:player.status().life.state;
@@ -98,7 +105,7 @@ ItemState* ItemSystem::spawn(const Vec3& position,i32 type,i32 mode){
 }
 bool ItemSystem::spawn_for_player(const Vec3& position,i32 type,i32 mode,u32 seat){
     if(seat>=3||!owners[seat].available)return false;
-    auto* item=spawn(position,type,mode);
+    auto* item=spawn_single(position,type,mode);
     if(!item)return false;
     const u32 index=item_index(*item);
     if(index>=ItemPoolState::capacity)return false;
@@ -115,7 +122,7 @@ bool ItemSystem::spawn_power_gift(const Vec3& position,u32 seat){
         Vec3 spawn_position=position;
         spawn_position.x=Scalar::add(spawn_position.x,float((i%3-1)*10));
         spawn_position.y=Scalar::add(spawn_position.y,float((i/3-1)*8));
-        auto* item=spawn(spawn_position,i<2?2:0,1);
+        auto* item=spawn_single(spawn_position,i<2?2:0,1);
         if(!item||item_index(*item)>=ItemPoolState::capacity){
             for(u32 j=0;j<count;++j){removed(*created[j]);pool.remove(*created[j]);}
             return false;

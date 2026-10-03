@@ -271,7 +271,7 @@ JobResult GameplayScene::draw_players(bool impacts){
         for(u32 seat=0;seat<session.player_count;++seat){
             const auto& p=pilot(seat).status().motion.movement.position;
             const auto& c=cooperation.seats[seat];
-            if(c.power_taps>=4){text.color=0xffe2edbd;ascii.add_format({p.x+32.f,p.y-6.f,0},false,"P %u/8",u32(c.power_taps));}
+            if(c.power_taps>=3){text.color=0xffe2edbd;ascii.add_format({p.x+32.f,p.y-6.f,0},false,"P %u/5",u32(c.power_taps));}
             else if(c.progress&&c.target>=0){text.color=0xffd5efc8;ascii.add_format({p.x+30.f,p.y-8.f,0},false,"%u%%",u32(c.progress)*100/multiplayer::rescue_ticks);}
             if(enhance&&seat==session.local_player){text.color=0xfff3eee4;ascii.add_format({p.x+48.f,p.y+10.f,0},false,"P%u",seat+1);}
         }

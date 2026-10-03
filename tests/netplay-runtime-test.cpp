@@ -87,10 +87,10 @@ static void fixed_input_delay_is_applied_and_agreed(){
     assert(!peers[0].CaptureLeadInBootstrap(bootstrap));
 }
 static void previous_general_rules_are_rejected(){
-    for(unsigned count:{2u,3u})for(unsigned version:{3u,4u}){
+    for(unsigned count:{2u,3u})for(unsigned version:{3u,4u})for(bool rules20261002:{false,true}){
         auto local=setup(count,0),remote=setup(count,1);local.version=remote.version=version;
         NetplayRuntime live,peer;assert(live.Reset(local)&&peer.Reset(remote));
-        auto hello=peer.SessionPacket(SessionPhase::Hello);hello.gameplayAbi=previous_rule_contract(remote);
+        auto hello=peer.SessionPacket(SessionPhase::Hello);hello.gameplayAbi=previous_rule_contract(remote,rules20261002);
         assert(hello.gameplayAbi!=live.Config().gameplayAbi);
         assert(live.ApplySession(hello)==Netplay::SessionPacketResult::ContractMismatch&&!live.CanStart());
         NetplayRuntime observer;assert(observer.Reset(local)&&observer.BeginSpectator());

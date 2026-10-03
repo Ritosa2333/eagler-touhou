@@ -29,22 +29,24 @@ static std::uint32_t checksum(const std::vector<std::uint8_t>& bytes){
 }
 static void repair(std::vector<std::uint8_t>& bytes){const auto h=checksum(bytes);for(unsigned i=0;i<4;++i)bytes[20+i]=std::uint8_t(h>>(8*i));}
 static void previous_general_rules_are_rejected(const ReplayArchive& current,const std::vector<std::uint8_t>& valid){
-    const auto& d=current.Description();const auto count=d.setup.player_count;
-    auto bytes=valid;
-    auto old_config=current.Info().config;old_config.gameplayAbi=previous_rule_contract(d.setup);
-    assert(old_config.gameplayAbi!=current.Info().config.gameplayAbi);
-    Netplay::InputReplay legacy;assert(legacy.Begin(old_config));
-    Netplay::InputReplay::Frame inputs{};assert(legacy.Append(0,1,inputs.data(),count));
-    std::vector<std::uint8_t> tape;assert(legacy.Encode(&tape));
-    bytes.resize(ReplayArchive::HeaderBytes+sizeof(th08::GameConfiguration)+current.BootScore().size());
-    bytes.insert(bytes.end(),tape.begin(),tape.end());
-    for(unsigned i=0;i<4;++i)bytes[8+i]=std::uint8_t(tape.size()>>(8*i));repair(bytes);
-    // Common wire validity and both checksums are intact. Rejection is by the
-    // title's rule ABI, before it mutates an already recording destination.
-    Netplay::InputReplayInfo common;assert(Netplay::InputReplay::Inspect(tape.data(),tape.size(),&common));
-    ReplayArchive destination;assert(destination.Begin(d,{}));
-    assert(!destination.Load(bytes.data(),bytes.size())&&destination.Recording());
-    th08::ReplayMetadata preview{};assert(!ReplayArchive::Preview(bytes.data(),bytes.size(),preview));
+    for(bool rules20261002:{false,true}){
+        const auto& d=current.Description();const auto count=d.setup.player_count;
+        auto bytes=valid;
+        auto old_config=current.Info().config;old_config.gameplayAbi=previous_rule_contract(d.setup,rules20261002);
+        assert(old_config.gameplayAbi!=current.Info().config.gameplayAbi);
+        Netplay::InputReplay legacy;assert(legacy.Begin(old_config));
+        Netplay::InputReplay::Frame inputs{};assert(legacy.Append(0,1,inputs.data(),count));
+        std::vector<std::uint8_t> tape;assert(legacy.Encode(&tape));
+        bytes.resize(ReplayArchive::HeaderBytes+sizeof(th08::GameConfiguration)+current.BootScore().size());
+        bytes.insert(bytes.end(),tape.begin(),tape.end());
+        for(unsigned i=0;i<4;++i)bytes[8+i]=std::uint8_t(tape.size()>>(8*i));repair(bytes);
+        // Common wire validity and both checksums are intact. Rejection is by the
+        // title's rule ABI, before it mutates an already recording destination.
+        Netplay::InputReplayInfo common;assert(Netplay::InputReplay::Inspect(tape.data(),tape.size(),&common));
+        ReplayArchive destination;assert(destination.Begin(d,{}));
+        assert(!destination.Load(bytes.data(),bytes.size())&&destination.Recording());
+        th08::ReplayMetadata preview{};assert(!ReplayArchive::Preview(bytes.data(),bytes.size(),preview));
+    }
 }
 static bool save(void* count,const char*,const std::uint8_t* data,std::uint32_t size){
     ReplayArchive copy;assert(copy.Load(data,size));++*static_cast<unsigned*>(count);return true;

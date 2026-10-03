@@ -31,10 +31,10 @@ bool decode_session_setup(SessionSetup& current,const std::uint32_t* words,std::
 std::uint32_t gameplay_contract(const SessionSetup& setup) noexcept {
     std::uint32_t hash=2166136261u;
     const auto word=[&](std::uint32_t value){for(int i=0;i<4;++i){hash^=(value>>(i*8))&255u;hash*=16777619u;}};
-    // Revisions 8/9 bind the general cooperation rules (ordinary Bomb1 and
-    // no elimination life reward); the timed envelope retains a distinct ABI.
+    // Revisions 10/11 bind scaled P drops, rescue resources/costs, terminal life
+    // awards and dynamic boss scaling; the timed envelope retains a distinct ABI.
     // Old MP input recordings must not silently run under changed rules.
-    word(setup.version==4?0x08000009u:0x08000008u);
+    word(setup.version==4?0x0800000bu:0x0800000au);
     word(setup.player_count);word(setup.difficulty);word(setup.seed);
     for(const auto build:setup.build)word(build);
     for(const auto character:setup.characters)word(character);

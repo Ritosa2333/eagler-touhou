@@ -20,7 +20,7 @@ std::int8_t recipient(const CooperativeState& state,const CooperativeFrameInput&
         if(!spirit&&(!input.seats[seat].available||!input.seats[seat].can_receive||input.seats[seat].lives>=8))continue;
         if(best<0||(spirit&&!best_spirit)||
            (spirit==best_spirit&&input.seats[seat].lives<input.seats[best].lives)||
-           (spirit==best_spirit&&input.seats[seat].lives==input.seats[best].lives&&seat<std::uint8_t(best))){
+           (spirit==best_spirit&&input.seats[seat].lives==input.seats[best].lives&&seat>std::uint8_t(best))){
             best=std::int8_t(seat);best_spirit=spirit;
         }
     }
@@ -80,7 +80,7 @@ CooperativeTick advance(CooperativeState& state,const CooperativeFrameInput& inp
                 if(source.power_window&&!--source.power_window)source.power_taps=0;
                 if(controls.shoot_pressed){
                     ++source.power_taps;source.power_window=24;
-                    if(source.power_taps>=8){
+                    if(source.power_taps>=5){
                         clear_power(source);
                         if(allocate_power&&allocate_power(context,giver,std::uint8_t(power_target)))
                             emit(result,CooperativeEventKind::PowerItems,giver,power_target);
