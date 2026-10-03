@@ -40,8 +40,8 @@ bool decode_session_setup(SessionSetup& current,const std::uint32_t* words,std::
 std::uint32_t gameplay_contract(const SessionSetup& setup) noexcept {
     std::uint32_t hash=2166136261u;
     const auto word=[&](std::uint32_t value){for(int i=0;i<4;++i){hash^=(value>>(i*8))&255u;hash*=16777619u;}};
-    // Two-Bomb lives and roster-sized, separated Power drops change the world.
-    word(0x08000010u);
+    // Zero-Bomb rescue without donor Bomb loss, and no terminal life awards.
+    word(0x08000011u);
     // Fresh combined revisions bind the cooperation rules and each timing
     // envelope. Neither previous topic's recordings may run under this world.
     word(setup.version>=6?0x0800000fu:setup.version==5?0x0800000eu:setup.version==4?0x0800000du:0x0800000cu);

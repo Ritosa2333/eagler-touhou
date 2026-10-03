@@ -93,10 +93,13 @@ def press(page, key):
 
 def rescue(browser):
     page = boot(browser)
+    before_death = status(page)
+    donor_bombs = call(page, 'multiplayerSmoke.status()')[11]
     assert call(page, 'multiplayerSmoke.fixtureDie(1)') == 1
     call(page, 'multiplayerSmoke.ticks(40)')
     initial = status(page)
     assert initial[10] == 1 and initial[14] == 4 and initial[13] == 0, initial
+    assert initial[8] == before_death[8], (before_death, initial)
     assert call(page, 'multiplayerSmoke.fixturePlace(0,180,384)') == 1
     assert call(page, 'multiplayerSmoke.fixturePlace(1,171,393,1,-1)') == 1
     assert call(page, 'multiplayerSmoke.commit([4,0])')
@@ -108,9 +111,12 @@ def rescue(browser):
     assert revived[10] == 0 and revived[14] == 3 and revived[13] == 1, revived
     assert revived[8] == initial[8] - 1, (initial, revived)
     resources = call(page, 'multiplayerSmoke.status()')
-    assert resources[11] == 0 and resources[23] == 2 and resources[22] == 64, resources
+    assert resources[11] == donor_bombs and resources[23] == 0 and resources[22] == 64, resources
     call(page, 'multiplayerSmoke.ticks(30)')
     assert status(page)[8] == revived[8], 'holding focus repeated life transfer'
+    assert call(page, 'multiplayerSmoke.fixtureGrazedBulletHit(1)')
+    call(page, 'multiplayerSmoke.ticks(40)')
+    assert call(page, 'multiplayerSmoke.status()')[23] == 2, 'ordinary respawn must restore base Bombs'
     page.close()
     return {'case': 'native-final-death-and-rescue', 'passed': True,
             'spirit': initial, 'at_89': pending, 'revived': revived}
@@ -121,8 +127,7 @@ def wipe_ends_run(browser):
     positions = call(page, 'multiplayerSmoke.status()')
     assert positions[13] != positions[25], 'pilots spawned on top of each other'
     assert call(page, 'multiplayerSmoke.fixtureDie(0)') == 1
-    # Let P1 actually reach Spirit first. Its final-death rule awards the
-    # nearest survivor one life; only then force P2 to a real final death.
+    # Let P1 actually reach Spirit before forcing P2's final death.
     call(page, 'multiplayerSmoke.ticks(40)')
     first = status(page)
     assert first[5] == 1 and first[10] == 0, first
@@ -151,12 +156,9 @@ def three_player_rescue(browser):
     call(page, 'multiplayerSmoke.ticks(40)')
     spirit = status(page)
     assert spirit[15] == 1 and spirit[19] == 4, spirit
-    # Initial 3P spawn is left/centre/right, so P2 is nearest to P3.  Final
-    # death must award that nearest survivor one immediately usable life; the
-    # old implementation incorrectly targeted the lowest-life survivor with a
-    # life item instead.
+    # P3's terminal death must not change either survivor's life stock.
     assert spirit[8] == before_death[8], (before_death, spirit)
-    assert spirit[13] == before_death[13] + 1, (before_death, spirit)
+    assert spirit[13] == before_death[13], (before_death, spirit)
     assert call(page, 'multiplayerSmoke.fixturePlace(0,180,384)') == 1
     # Both alternatives really compete within the twenty-pixel radius. The
     # spirit must beat a closer living recipient, not just an out-of-range one.
@@ -168,7 +170,7 @@ def three_player_rescue(browser):
     assert revived[15] == 0 and revived[19] == 3 and revived[18] == 1, revived
     assert revived[8] == spirit[8] - 1 and revived[13] == spirit[13], (spirit, revived)
     resources = call(page, 'multiplayerSmoke.status()')
-    assert resources[11] == 0 and resources[35] == 2 and resources[34] == 64, resources
+    assert resources[11] == 2 and resources[35] == 0 and resources[34] == 64, resources
     page.close()
     return {'case': 'three-player-spirit-priority', 'passed': True,
             'spirit': spirit, 'revived': revived}
