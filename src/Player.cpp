@@ -405,31 +405,6 @@ Player *SelectLifeTransferReceiver(const Player *giver)
     return best;
 }
 
-i32 SelectNearestLivingRecipient(const Player *source)
-{
-    if (!source)
-        return -1;
-    i32 bestId = -1;
-    f32 bestDistanceSq = 0.0f;
-    for (u8 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
-    {
-        if (playerId == source->initParam || !IsPlayerGameplayActive(playerId) ||
-            !IsLivingTransferPlayer(&g_Players[playerId]))
-            continue;
-        const Player *candidate = &g_Players[playerId];
-        const f32 dx = source->positionCenter.x - candidate->positionCenter.x;
-        const f32 dy = source->positionCenter.y - candidate->positionCenter.y;
-        const f32 distanceSq = dx * dx + dy * dy;
-        if (bestId < 0 || distanceSq < bestDistanceSq ||
-            (distanceSq == bestDistanceSq && playerId < static_cast<u8>(bestId)))
-        {
-            bestId = playerId;
-            bestDistanceSq = distanceSq;
-        }
-    }
-    return bestId;
-}
-
 bool IsPlayerActivelyBeingRevived(const Player *receiver)
 {
     if (!receiver || receiver->playerState != PLAYER_STATE_REVIVABLE)
@@ -670,8 +645,7 @@ void UpdateLifeTransfer(Player *giver)
     if (receiver->playerState == PLAYER_STATE_REVIVABLE)
     {
         AddPlayerLives(giver->initParam, -1);
-        SetPlayerBombs(giver->initParam, 0);
-        SetPlayerBombs(receiver->initParam, 2);
+        SetPlayerBombs(receiver->initParam, 0);
         SetPlayerPower(receiver->initParam, 64);
         if (GetPlayerLives(receiver->initParam) < 8)
             AddPlayerLives(receiver->initParam, 1);
@@ -1410,14 +1384,6 @@ ChainCallbackResult Player::OnUpdate(Player *p)
                                                        : -REVIVABLE_DRIFT_SPEED;
                         p->isFocus = 0;
                         ResetTransferInputState(p);
-                        const i32 recipientId = SelectNearestLivingRecipient(p);
-                        if (recipientId >= 0)
-                        {
-                            if (GetPlayerLives(static_cast<u8>(recipientId)) < 8)
-                                AddPlayerLives(static_cast<u8>(recipientId), 1);
-                            g_Gui.flags.flag0 = 2;
-                            g_SoundPlayer.PlaySoundByIdx(SOUND_1UP);
-                        }
                     }
                     else
 #endif

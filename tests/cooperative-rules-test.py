@@ -157,7 +157,6 @@ signatures = (['bool IsTerminalPlayerState(', 'bool IsLivingTransferPlayer(', 'b
  'Player *SelectLifeTransferReceiver(', 'void UpdateLifeTransfer('])
 functions = ''.join(function(PLAYER,s) for s in signatures)
 functions += function((ROOT / 'src/MultiplayerResources.cpp').read_text(), 'void ResetMultiplayerPlayerResources(')
-functions += function(PLAYER, 'i32 SelectNearestLivingRecipient(')
 functions += function(PLAYER, 'i32 GetBossParticipantCount(')
 functions += function(PLAYER, 'void PrepareMultiplayerStageRevival(')
 functions += function(ITEMS, 'bool ItemManager::CanSpawnItems(')
@@ -202,7 +201,7 @@ void test(){
   reset(count);g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=0;power[1]=0;bombs[1]=0;
   hold(&g_Players[0],89);assert(lives[0]==2);assert(g_Players[1].playerState==PLAYER_STATE_SPIRIT);
   hold(&g_Players[0],1);assert(lives[0]==1);assert(lives[1]==1);
-  assert(bombs[0]==0&&bombs[1]==2&&power[1]==64);
+  assert(bombs[0]==4&&bombs[1]==0&&power[1]==64);
   assert(g_Players[1].bulletGracePeriod==0&&g_BulletManager.calls==0);
   assert(g_Players[1].playerState==PLAYER_STATE_INVULNERABLE);
   assert(g_Players[1].invulnerabilityTimer==240);
@@ -223,7 +222,7 @@ void test(){
   assert(power[0]==(stock?64:0));
   if(!stock)assert(std::count(g_ItemManager.emitted.begin(),g_ItemManager.emitted.end(),ITEM_FULL_POWER)==5);
   p->invulnerabilityTimer=30;DeathTick(p);
-  assert(lives[0]==(stock?stock-1:0));assert(lives[1]==(stock?2:3)&&lives[2]==2);
+  assert(lives[0]==(stock?stock-1:0));assert(lives[1]==2&&lives[2]==2);
   assert(bombs[0]==(stock?2:TERMINAL_BOMBS));
  }
  reset();ZunVec3 position;
@@ -243,6 +242,13 @@ void test(){
  g_Players[1].playerState=PLAYER_STATE_SPIRIT;assert(GetBossParticipantCount()==2);
  absent[2]=true;assert(GetBossParticipantCount()==1);absent[2]=false;departed[2]=true;assert(GetBossParticipantCount()==1);
  departed[2]=false;g_Players[1].playerState=PLAYER_STATE_ALIVE;assert(GetBossParticipantCount()==3);
+ for(int count: {2,3})for(int donorBombs: {0,1,4}){
+  reset(count);bombs[0]=donorBombs;g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=0;bombs[1]=3;
+  hold(&g_Players[0],90);assert(bombs[0]==donorBombs&&bombs[1]==0);
+  Player*p=&g_Players[1];p->playerState=PLAYER_STATE_DEAD;p->respawnTimer=1;DeathTick(p);
+  p->invulnerabilityTimer=30;DeathTick(p);
+  assert(bombs[1]==2&&lives[1]==0&&bombs[0]==donorBombs&&lives[0]==1);
+ }
  // Exact deterministic re-execution of production rescue from a copied pre-frame fixture.
  reset();g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=0;
  hold(&g_Players[0],89);auto before0=g_Players[0],before1=g_Players[1];
