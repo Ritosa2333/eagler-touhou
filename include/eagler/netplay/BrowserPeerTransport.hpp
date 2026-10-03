@@ -46,6 +46,11 @@ public:
     // isolated from gameplay transport health.
     bool SendSpectator(const std::uint8_t *data, std::size_t size);
     bool HasSpectators() const;
+    // Optional output only: -1 unavailable/stopped, 0 connecting, 1 open.
+    // SendSpectator separately enforces actual socket backpressure.
+    int SpectatorState() const;
+    // Terminal for this run; notify viewers without closing player transports.
+    void StopSpectators();
     bool Poll(std::vector<std::uint8_t> *packet) override;
     std::size_t BufferedAmount() const override;
     // Read-only RTC lane diagnostics; relay bytes remain in BufferedAmount.

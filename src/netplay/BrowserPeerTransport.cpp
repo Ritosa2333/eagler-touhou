@@ -81,10 +81,15 @@ EM_JS(int, eagler_peer_connect, (const char *relayUrlPtr, const char *tagPtr, in
                 }
             },
             receiveBinary(data) {
-                if (data instanceof ArrayBuffer) this.received.push(new Uint8Array(data));
-                else if (ArrayBuffer.isView(data)) this.received.push(new Uint8Array(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)));
+                const enqueue = packet => {
+                    if (this.closed) return;
+                    this.received.push(packet);
+                    this.onReceive?.();
+                };
+                if (data instanceof ArrayBuffer) enqueue(new Uint8Array(data));
+                else if (ArrayBuffer.isView(data)) enqueue(new Uint8Array(data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)));
                 else if (data instanceof Blob) data.arrayBuffer().then(buffer => {
-                    if (!this.closed) this.received.push(new Uint8Array(buffer));
+                    enqueue(new Uint8Array(buffer));
                 }).catch(() => {});
             },
             setupChannel(peerId, dc, kind) {
@@ -623,8 +628,13 @@ EM_JS(int, eagler_peer_send_repair_to, (int peerId, const unsigned char *data, i
 
 EM_JS(int, eagler_peer_send_spectator, (const unsigned char *data, int size), {
     const state = globalThis.__eaglerPeerTransport;
-    if (!state || state.closed || size <= 0 ||
+    if (!state || state.closed || state.spectatorStopped || size <= 0 ||
         state.relay?.readyState !== WebSocket.OPEN) return 0;
+    // Do not move an unbounded local backlog into the browser's socket queue.
+    // A single large title packet is allowed only on an empty queue; subsequent
+    // packets wait until it drains. TH09's 40/46-byte packets stay below 64 KiB.
+    const queued = Number(state.relay.bufferedAmount || 0);
+    if (queued > 0 && queued + size + 1 > 65536) return 0;
     try {
         const payload = HEAPU8.slice(data, data + size);
         const envelope = new Uint8Array(payload.byteLength + 1);
@@ -637,6 +647,30 @@ EM_JS(int, eagler_peer_send_spectator, (const unsigned char *data, int size), {
 
 EM_JS(int, eagler_peer_has_spectators, (), {
     return (globalThis.__eaglerPeerTransport?.spectatorCount || 0) > 0 ? 1 : 0;
+});
+
+EM_JS(int, eagler_peer_spectator_state, (), {
+    const state = globalThis.__eaglerPeerTransport;
+    if (!state || state.closed || state.spectatorStopped || !state.relay ||
+        state.relay.readyState >= WebSocket.CLOSING) return -1;
+    return state.relay.readyState === WebSocket.OPEN ? 1 : 0;
+});
+
+EM_JS(void, eagler_peer_stop_spectators, (), {
+    const state = globalThis.__eaglerPeerTransport;
+    if (!state || state.closed || state.spectatorStopped || state.localPlayer !== 0) return;
+    state.spectatorStopped = true;
+    state.spectatorCount = 0;
+    // Never close a socket here: relay may carry player input too. The small
+    // terminal marker is sent ONCE even under backpressure. RTC signaling can
+    // notify the server without waiting behind a blocked spectator upload.
+    try {
+        if (state.route === 'rtc') state.sendSignal?.({type: 'spectator-stop'});
+    } catch {}
+    try {
+        if (state.relay?.readyState === WebSocket.OPEN)
+            state.relay.send(new Uint8Array([0xe8, 0x53, 0x54, 0x4f, 0x50, 1]));
+    } catch {}
 });
 
 EM_JS(int, eagler_peer_poll_size, (), {
@@ -812,6 +846,22 @@ bool BrowserPeerTransport::HasSpectators() const
     return eagler_peer_has_spectators() != 0;
 #else
     return false;
+#endif
+}
+
+int BrowserPeerTransport::SpectatorState() const
+{
+#ifdef __EMSCRIPTEN__
+    return eagler_peer_spectator_state();
+#else
+    return -1;
+#endif
+}
+
+void BrowserPeerTransport::StopSpectators()
+{
+#ifdef __EMSCRIPTEN__
+    eagler_peer_stop_spectators();
 #endif
 }
 

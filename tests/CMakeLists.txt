@@ -234,7 +234,7 @@ add_test(
 )
 
 find_program(EAGLER_COMMON_NODE_EXECUTABLE NAMES node node.exe)
-add_executable(eagler_common_adonis_startup_test adonis-startup-test.cpp)
+add_executable(eagler_common_adonis_startup_test adonis-startup-test.cpp ../src/netplay/NetplayProtocol.cpp)
 target_include_directories(eagler_common_adonis_startup_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/include")
 target_link_libraries(eagler_common_adonis_startup_test PRIVATE eagler::netplay_headers)
 add_test(NAME eagler-common.adonis-startup COMMAND eagler_common_adonis_startup_test)
