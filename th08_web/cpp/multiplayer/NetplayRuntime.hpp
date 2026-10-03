@@ -19,9 +19,11 @@ public:
     enum class WireResult {Accepted,IgnoredSession,Malformed,Rejected};
 
     bool Reset(const SessionSetup&) noexcept;
+    bool ApplyMeasuredTiming(unsigned delay,unsigned prediction);
+    bool PreparingWorld()const{return configured_&&setup_.version>=6;}
     void Clear() noexcept;
     bool Configured()const{return configured_;}
-    bool CanStart()const{return configured_&&!retired_&&(spectator_||playback_||gate_.CanStart());}
+    bool CanStart()const{return configured_&&!retired_&&(spectator_?spectator_timing_ready_:playback_||gate_.CanStart());}
     const Netplay::SessionConfig& Config()const{return gate_.Config();}
     const SessionSetup& Setup()const{return setup_;}
     std::uint32_t NextFrame()const{return next_;}
@@ -83,6 +85,7 @@ public:
 
 private:
     bool configure(const SessionSetup&) noexcept;
+    bool apply_spectator_timing(unsigned delay,unsigned prediction,std::uint32_t abi);
     bool receive_frame(std::uint32_t frame)const;
     bool FeedAuthoritative(std::uint32_t frame,const std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>&);
     Netplay::SessionGate gate_;
@@ -91,5 +94,6 @@ private:
     std::uint64_t base_session_id_=0;
     std::uint32_t next_=0,next_capture_=0,generation_=0,correction_end_=Netplay::INVALID_FRAME;
     bool configured_=false,retired_=false,world_ready_=false,spectator_=false,playback_=false;
+    bool spectator_timing_ready_=true;
 };
 }

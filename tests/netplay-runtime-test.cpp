@@ -376,6 +376,13 @@ static void adonis_mismatch_and_gap(){
     assert(d.canAdvance&&d.inputs==packet.inputs&&!d.predictedMask);
 }
 int main(){
+    for(unsigned count:{2u,3u})for(unsigned mode:{1u,2u}){
+        auto measured=setup(count,0);measured.version=6;measured.adonis_mode=mode;measured.input_delay_auto=true;
+        NetplayRuntime n;assert(n.Reset(measured)&&n.PreparingWorld()&&!n.CanCapture());
+        assert(n.ApplyMeasuredTiming(1,mode==2?2:0)&&n.Setup().prediction_limit==8);
+        auto incompatible=n.Setup();incompatible.measured_prediction=0;
+        if(mode==2)assert(th08::multiplayer::gameplay_contract(incompatible)!=n.Config().gameplayAbi);
+    }
     decode_atomicity();fixed_input_delay_is_applied_and_agreed();session_and_inputs(2);session_and_inputs(3);
     delayed_capture_and_wait();
     confirmation_gap_is_bounded();packet_transaction_and_negative_inputs();

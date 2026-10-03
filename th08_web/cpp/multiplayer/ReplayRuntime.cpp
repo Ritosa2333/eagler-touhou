@@ -16,8 +16,15 @@ bool BrowserRuntime::prepare_replay(const u8* bytes,u32 size,u32 stage){
     auto setup=candidate.Description().setup;
     const u32 words[]{setup.version,setup.player_count,setup.local_player,setup.difficulty,setup.seed,
         u32(setup.session_id),u32(setup.session_id>>32),setup.build[0],setup.build[1],setup.build[2],setup.build[3],
-        setup.characters[0],0,setup.characters[1],0,setup.characters[2],0,setup.input_delay,setup.prediction_limit,setup.adonis_mode};
-    if(!browser_multiplayer_configure(this,words,setup.version==5?20:setup.version==4?19:17)||!app.session.netplay.BeginPlayback())return false;
+        setup.characters[0],0,setup.characters[1],0,setup.characters[2],0,
+        setup.input_delay_auto?0:setup.input_delay,setup.prediction_limit,setup.adonis_mode,
+        u32(setup.input_delay_auto),setup.prediction_reserve};
+    if(!browser_multiplayer_configure(this,words,setup.version>=6?22:setup.version==5?20:setup.version==4?19:17))return false;
+    if(setup.version>=6){
+        if(!app.session.netplay.Reset(setup))return false;
+        app.session.multiplayer_session=setup;
+    }
+    if(!app.session.netplay.BeginPlayback())return false;
     replay_archive=std::move(candidate);replay_viewer=true;replay_finished=false;replay_seek_target=target;
     replay_shadow_files["score.dat"]=replay_archive.BootScore();
     const auto& config=replay_archive.Description().configuration;

@@ -4,6 +4,8 @@
 #include "../game/Types.hpp"
 #include <eagler/netplay/BrowserPeerTransport.hpp>
 #include <eagler/netplay/SessionChannel.hpp>
+#include <eagler/netplay/AdonisConnection.hpp>
+#include <eagler/netplay/AdonisSpectatorTiming.hpp>
 
 namespace th08::multiplayer {
 // The shared channel owns handshake, ACK/retransmit and health. The only
@@ -31,6 +33,8 @@ public:
     const char* Error()const;
     const char* Mode()const{return transport.Mode();}
     const Netplay::SessionChannel& Channel()const{return channel;}
+    const u32* CalibrationStatus(){return calibration.Status();}
+    bool Calibrating()const{return calibration.Waiting();}
     // Wall-clock pacing only; consume only when no already-due tick is pending.
     double PacedElapsedSeconds(double);
     std::size_t Buffered()const{return transport.BufferedAmount();}
@@ -39,10 +43,13 @@ public:
 private:
     NetplayRuntime& net;
     Netplay::BrowserPeerTransport transport;
+    Netplay::AdonisConnection calibration{transport};
     Netplay::SessionChannel channel;
     SpectatorStream spectator_frames;
     u32 spectator_publish=0;
     bool spectator_finished=false,spectator_publish_failed=false;
+    bool spectator_timing_sent=false;
+    std::uint64_t spectator_deadline=0;
     const char* spectator_error="";
     bool enabled=false,invalid_input=false;
     double phase_debt_ms=0;

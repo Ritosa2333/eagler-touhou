@@ -10,6 +10,9 @@ struct SessionSetup {
     std::uint32_t player_count=0,local_player=0,difficulty=0,seed=0;
     std::uint32_t input_delay=0,prediction_limit=8;
     std::uint32_t adonis_mode=0;
+    bool input_delay_auto=false;
+    std::uint32_t prediction_reserve=2;
+    std::uint32_t measured_prediction=0;
     std::uint64_t session_id=0;
     std::uint32_t build[4]{};
     std::uint32_t characters[3]{};

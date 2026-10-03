@@ -30,6 +30,7 @@ files.set('/runtime/th08-sdl.mjs',resolve(buildRoot,'th08-sdl.mjs'));files.set('
 for(const file of ['th08.html','shell.mjs','directory-keyboard.mjs','eagler-host.mjs','save-storage.mjs','multiplayer-host.mjs','practice.mjs','practice-config.mjs','practice-sections.mjs','midi-worklet.mjs'])
  files.set('/runtime/'+file,resolve(root,'th08_web/sdl-runtime',file));
 files.set('/runtime/motion-replay.mjs',resolve(root,'portable/browser/motion-replay.mjs'));
+files.set('/runtime/adonis-calibration.mjs',resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'third_party/eagler-common'),'browser/adonis-calibration.mjs'));
 files.set('/fonts/msgothic.ttc',process.env.TH08_MP_FONT||resolve(workspace,'th06-eagler/assets/msgothic.ttc'));
 for(const name of ['blend.bin','cp932.bin'])files.set('/fonts/'+name,resolve(workspace,'th08-eagler/build-eagler/fonts',name));
 for(const path of files.values())if(!existsSync(path))throw Error('Missing smoke resource: '+path);

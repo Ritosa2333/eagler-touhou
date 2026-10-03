@@ -1,5 +1,32 @@
 # TH08 Adonis experiment
 
+## 2026-10-03 measured startup adaptation
+
+The sections dated 2026-10-02 below are historical fixed-delay evidence.
+Current mode 1/2 uses shared actual-channel calibration after native world
+construction, before admitted logical frame zero. Setup v6 has 22 words;
+Replay metadata v5 records mode, chosen D/P, automatic/manual and reserve.
+Older setup and archive formats remain readable. No extra frame is added.
+Automatic hybrid keeps D>=1 and saves at most two frames; manual D=0..9
+remains explicit. The full eight-frame native rollback window is retained.
+
+P1 route/score bootstrap is saved before world preparation. A neutral route
+loads the graph; authoritative frame-zero input installs the real route before
+gameplay. Replay and spectators use the same loaded-world starting boundary.
+State-dependent input is not sampled ahead of pending correction in v6.
+Pure mode bypasses native journal/texture snapshots. Spectator timing is E8TM;
+upload failure/backpressure isolates spectators, send batches use 32/2ms,
+and the SDL observer callback uses the shared 6-step/8ms start budget.
+
+Current common source is the sibling topic tree, selected explicitly with
+`EAGLER_COMMON_ROOT=D:/workspace/eagler/worktrees/adonis/eagler-common`.
+The existing gitlink is not a claim that uncommitted common work is pinned.
+Current builds/tests/evidence: `../../../eagler-touhou/docs/ADONIS-08-10-20261003.md`
+and `../../../eagler-touhou/docs/playbooks/adonis-adaptation.md`. No publication
+is implied by these local implementation/acceptance records.
+
+## Historical fixed-delay pass
+
 Date: 2026-10-02. Branch `experiment/adonis`, MP base `c23c67d`.
 Worktree: `D:/workspace/eagler/worktrees/adonis/th08`.
 Common dependency: `5669eff91e88a4391e144652836bcb0804b1482b`.

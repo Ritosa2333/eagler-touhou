@@ -162,7 +162,9 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
     const bool high=display_cadence.high_refresh&&interpolation_ready();const bool interpolate=presentation_gate.advance(high,tick_due);bool presented=false;
     bool due=tick_due;unsigned completed=0;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    const bool catchup=runtime&&runtime->app.session.netplay.Configured()&&!runtime->app.session.netplay.ReadOnly();
+    const bool catchup=runtime&&runtime->app.session.netplay.Configured()&&
+        (!runtime->app.session.netplay.ReadOnly()||(runtime->app.session.netplay.Spectator()&&
+          runtime->app.session.netplay.CanStart()&&runtime->network_driver()&&runtime->network_driver()->Network().SpectatorBacklog()>4));
     constexpr double interval=touhou::sdl::FrameCadence::interval;
     const double network_interval=interval*(catchup&&runtime->network_driver()?runtime->network_driver()->Network().Channel().IntervalScale():1.);
     if(catchup){

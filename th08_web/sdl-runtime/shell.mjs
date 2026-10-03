@@ -10,11 +10,12 @@ import {initializeSaveStorage,migrateLegacySaves} from './save-storage.mjs';
 import {validateMultiplayerOptions,configureMultiplayer,updateNetworkDiagnostics,networkError} from './multiplayer-host.mjs';
 const protocol='eagler-touhou/1',game='th08',query=new URLSearchParams(location.search),canvas=document.querySelector('canvas');
 const runtimeVariant=query.get('runtimeVariant')??'normal',multiplayerRuntime=runtimeVariant==='multiplayer';
+const createAdonisCalibration=multiplayerRuntime?(await import('./adonis-calibration.mjs')).createAdonisCalibration:null;
 const epoch=Number(query.get('runtimeEpoch'));
 const validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
 let Module,core,app=0,launched=false,first=false,closing=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true;
-let runtimeBuildWords=null;
+let runtimeBuildWords=null,calibration=null;
 let runtimeBuildIdentity='',runtimeWasmIdentity='';
 let traceRequested=false,traceStarted=false,traceHostButton=null;
 const traceGlobalFields=['time','totalTime','timeRequirement','pointValue','clock','score','points','graze','rngSeed','rngBackup','rngCalls','stage','gameFlags','spellFlags','pendingTime',
@@ -148,7 +149,7 @@ async function resumeForegroundAudio(forcePause=false){
  if(forcePause)core.sdl_loop_pause(1);
  return resumeRuntimeAudio(Module,core,()=>!!core&&launched&&!document.hidden);
 }
-async function stop(){if(closing)return;closing=true;clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();window.dispatchEvent(new CustomEvent('touhou-midi-close'));await sync(false);app=0;launched=false;emit('exit',{code:0,status:'success'});}finally{removeResourceTraceHostButton();closing=false;}}
+async function stop(){if(closing)return;closing=true;calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();window.dispatchEvent(new CustomEvent('touhou-midi-close'));await sync(false);app=0;launched=false;emit('exit',{code:0,status:'success'});}finally{removeResourceTraceHostButton();closing=false;}}
 async function launch(){
  if(launched)return;clearKeyboard();
  ensureSharedFontAlias(Module);
@@ -178,8 +179,8 @@ async function launch(){
  if(multiplayer?.spectator)await configureMultiplayer(core,app,options,{runtimeBuildWords});
  if(!core.sdl_game_initialize())throw Error('永夜抄初始化失败');document.querySelector('#loading').textContent='';
  if(multiplayer&&!multiplayer.spectator)await configureMultiplayer(core,app,options,{runtimeBuildWords});
- }catch(reason){core.sdl_game_close();app=0;throw reason;}
- if(multiplayer){window.__eaglerNetplayFailed=false;window.__eaglerNetplayError='';updateNetworkDiagnostics(core,app);}
+ }catch(reason){calibration?.stop();core.sdl_game_close();app=0;throw reason;}
+ if(multiplayer){window.__eaglerNetplayFailed=false;window.__eaglerNetplayError='';updateNetworkDiagnostics(core,app);if(multiplayer.adonisMode&&!multiplayer.spectator)calibration?.start();}
  applyOptions();launched=true;first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
  canvas.focus({preventScroll:true});core.sdl_loop_pause(1);if(!document.hidden)await resumeForegroundAudio();if(query.get('manual')!=='1')core.sdl_loop_start();
  emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:'eagler-touhou/1',version:'3.4.1-sdl3'});
@@ -275,6 +276,8 @@ const initialized=(async()=>{
  practice=createPractice({core,getApp:()=>app,canvas,clearKeys:clearKeyboard,setMusic:value=>core.sdl_music_enabled(value),setPaused:value=>core.sdl_loop_pause(value||document.hidden?1:0)});
  Module.FS.mkdirTree(storage.namespace+'/replay');await migrateSaves();await mountData();cstring('#screen',core.sdl_canvas);
  Module.runtimePrepare=()=>!document.hidden;
+ calibration=createAdonisCalibration?.({core,getApp:()=>app,getOptions:()=>options,emit,game,
+  build:runtimeBuildIdentity,onError:error,pause:()=>core.sdl_loop_pause(1)});
  Module.runtimeFinish=(result,duration)=>{
   if(replayReopening)return;
   if(traceRequested&&!traceStarted&&app)traceStart();
@@ -286,7 +289,7 @@ const initialized=(async()=>{
     queue=queue.then(()=>reopenReplay(path,state[10])).catch(error);return;}
   }
   practice.tick();
-  if(multiplayerRuntime)updateNetworkDiagnostics(core,app);
+  if(multiplayerRuntime){updateNetworkDiagnostics(core,app);calibration?.pump();}
   if(multiplayerRuntime&&window.__eaglerNetplaySpectatorFinished&&!closing){
    // Admission belongs to the observed run. Close this Runtime, not the
    // parent-owned room; a new generation requires a new lobby admission.

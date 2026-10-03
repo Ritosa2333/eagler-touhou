@@ -16,6 +16,9 @@ export function validateMultiplayerOptions(value={}) {
  const inputDelay=value.netplayInputDelay===undefined?0:value.netplayInputDelay;
  const adonisMode=value.netplayAdonisMode===undefined?0:value.netplayAdonisMode;
  const predictionLimit=value.netplayPredictionLimit===undefined?8:value.netplayPredictionLimit;
+ const automatic=value.netplayInputDelayAuto??false,reserve=value.netplayPredictionReserve??2;
+ if(typeof automatic!=='boolean'||(automatic&&(!adonisMode||inputDelay))||!Number.isInteger(reserve)||reserve<1||reserve>2)
+  throw Error('Invalid TH08 measured timing policy');
  if(!Number.isInteger(adonisMode)||adonisMode<0||adonisMode>2||
     !Number.isInteger(inputDelay)||inputDelay<0||inputDelay>(adonisMode?9:8)||
     !Number.isInteger(predictionLimit)||predictionLimit<1||predictionLimit>8)
@@ -28,7 +31,7 @@ export function validateMultiplayerOptions(value={}) {
   return {character:v.character,shot:0};
  });
  return {url,room,run,count,seat,spectator,spectatorId,seed:value.netplaySeed,difficulty:value.netplayDifficulty,
-  inputDelay,predictionLimit,adonisMode,loadouts};
+  inputDelay,predictionLimit,adonisMode,automatic,reserve,loadouts};
 }
 function string(core,text,fn){
  const bytes=new TextEncoder().encode(text+'\0'),pointer=core.allocate(bytes.length);
@@ -46,10 +49,10 @@ export async function configureMultiplayer(core,app,options,{crypto=globalThis.c
     !runtimeBuildWords.some(Boolean))throw Error('TH08 multiplayer Runtime build identity is missing');
  const identity=new TextEncoder().encode(`th08mp:${o.url.origin}${o.url.pathname}:${o.room}:${o.run}`);
  const digest=new DataView(await crypto.subtle.digest('SHA-256',identity));
- const words=[o.adonisMode?5:4,o.count,o.seat,o.difficulty,o.seed,digest.getUint32(0,true),digest.getUint32(4,true)||1,...runtimeBuildWords];
+ const words=[o.adonisMode?6:4,o.count,o.seat,o.difficulty,o.seed,digest.getUint32(0,true),digest.getUint32(4,true)||1,...runtimeBuildWords];
  for(let seat=0;seat<3;++seat)words.push(o.loadouts[seat]?.character||0,0);
  words.push(o.inputDelay,o.predictionLimit);
- if(o.adonisMode)words.push(o.adonisMode);
+ if(o.adonisMode)words.push(o.adonisMode,+o.automatic,o.reserve);
  const pointer=core.allocate(words.length*4);if(!pointer)throw Error('Multiplayer setup allocation failed');
  try{
   new Uint32Array(core.memory.buffer,pointer,words.length).set(words);

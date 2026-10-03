@@ -7,7 +7,7 @@ const sdk=process.env.WASI_SDK_PATH??resolve(root,'../../toolchains/wasi-sdk-34.
 const compiler=resolve(sdk,'bin',process.platform==='win32'?'clang++.exe':'clang++');
 if(!existsSync(compiler))throw Error('WASI SDK not found: '+compiler);
 const out=resolve(root,'artifacts/multiplayer-tests');mkdirSync(out,{recursive:true});
-const common=resolve(root,'third_party/eagler-common'),title=resolve(root,'th08_web/cpp/multiplayer');
+const common=resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'third_party/eagler-common')),title=resolve(root,'th08_web/cpp/multiplayer');
 const wasm=resolve(out,'netplay-runtime.wasm');
 const sources=[...['SessionSetup','NetplayRuntime'].map(name=>resolve(title,name+'.cpp')),
   ...['NetplayProtocol','NetplayCore','NetplaySession'].map(name=>resolve(common,'src/netplay',name+'.cpp')),

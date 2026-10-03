@@ -157,7 +157,7 @@ JobResult GameApplication::update_supervisor(){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     // The lobby already selected every loadout. Use the native title->game
     // transition once its resources and the all-seat HELLO/READY gate are ready.
-    if(session.netplay.Configured()&&session.netplay.CanStart()&&
+    if(session.netplay.Configured()&&(session.netplay.CanStart()||session.netplay.PreparingWorld())&&
        !session.multiplayer_session.started&&supervisor.state.active==i32(Scene::Title)&&
        title.ready_for_session())title.context.supervisor_state=i32(Scene::Game);
 #endif

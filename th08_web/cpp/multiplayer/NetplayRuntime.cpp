@@ -24,11 +24,13 @@ bool NetplayRuntime::configure(const SessionSetup& setup) noexcept {
         std::uint32_t(setup.session_id),std::uint32_t(setup.session_id>>32),
         setup.build[0],setup.build[1],setup.build[2],setup.build[3],
         setup.characters[0],0,setup.characters[1],0,setup.characters[2],0,
-        setup.input_delay,setup.prediction_limit,setup.adonis_mode};
+        setup.version>=6&&setup.input_delay_auto?0:setup.input_delay,setup.prediction_limit,setup.adonis_mode,
+        setup.input_delay_auto,setup.prediction_reserve};
     SessionSetup validated;
-    if(!setup.configured||!decode_session_setup(validated,words,setup.version==5?20:setup.version==4?19:17)||
-       validated.input_delay!=setup.input_delay||validated.prediction_limit!=setup.prediction_limit||
+    if(!setup.configured||!decode_session_setup(validated,words,setup.version>=6?22:setup.version==5?20:setup.version==4?19:17)||
+       (validated.input_delay!=setup.input_delay&&!(setup.version>=6&&setup.input_delay_auto))||validated.prediction_limit!=setup.prediction_limit||
        validated.adonis_mode!=setup.adonis_mode)return false;
+    validated.input_delay=setup.input_delay;validated.measured_prediction=setup.measured_prediction;
     Netplay::SessionConfig session;
     session.sessionId=setup.session_id;session.seed=setup.seed;
     session.gameplayAbi=gameplay_contract(validated);session.gameId=8;
@@ -37,6 +39,10 @@ bool NetplayRuntime::configure(const SessionSetup& setup) noexcept {
     if(!gate_.Reset(session)||!core_.Reset(core))return false;
     setup_=validated;next_=next_capture_=0;correction_end_=Netplay::INVALID_FRAME;
     configured_=true;retired_=world_ready_=false;return true;
+}
+bool NetplayRuntime::ApplyMeasuredTiming(unsigned delay,unsigned prediction){
+    if(!PreparingWorld()||ReadOnly()||LastFrame()!=Netplay::INVALID_FRAME||next_capture_||delay>9||prediction>2)return false;
+    auto setup=setup_;setup.input_delay=delay;setup.measured_prediction=prediction;return configure(setup);
 }
 bool NetplayRuntime::Reset(const SessionSetup& setup) noexcept {
     // Validation precedes any mutation of an existing live session.
@@ -78,7 +84,13 @@ bool NetplayRuntime::BeginSpectator(){
     if(!configured_||retired_||ReadOnly()||next_||generation_||setup_.local_player!=0||
        LastFrame()!=Netplay::INVALID_FRAME||core_.HasLocalCapture(0))return false;
     if(!core_.Reset(core_config(setup_,0)))return false;
-    spectator_=true;world_ready_=false;return true;
+    spectator_=true;world_ready_=false;spectator_timing_ready_=setup_.version<6;return true;
+}
+bool NetplayRuntime::apply_spectator_timing(unsigned delay,unsigned prediction,std::uint32_t abi){
+    if(!spectator_||spectator_timing_ready_||LastFrame()!=Netplay::INVALID_FRAME||delay>9||prediction>2)return false;
+    auto setup=setup_;setup.input_delay=delay;setup.measured_prediction=prediction;
+    if(gameplay_contract(setup)!=abi||!configure(setup)||!core_.Reset(core_config(setup,0)))return false;
+    spectator_timing_ready_=true;return true;
 }
 bool NetplayRuntime::FeedSpectator(const Netplay::SpectatorFramePacket& packet){
     if(!spectator_||!CanStart()||packet.sessionId!=Config().sessionId||
