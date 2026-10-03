@@ -8,6 +8,11 @@ GameManager g_GameManager;
 Supervisor g_Supervisor;
 GameManager::GameManager() = default;
 i32 GetActivePlayerCount() { return 1; }
+namespace MultiplayerGameplay
+{
+bool multiplayerTest = false;
+bool IsMultiplayer() { return multiplayerTest; }
+}
 
 int main()
 {
@@ -64,6 +69,17 @@ int main()
         assert(GetPlayerEnemiesDefeated(playerId) == 0);
         assert(GetPlayerDamageDealt(playerId) == 0);
     }
+
+    MultiplayerGameplay::multiplayerTest = true;
+    g_GameManager.isInReplay = 0;
+    SetPlayerBombs(0, 4);
+    ResetMultiplayerPlayerResources();
+    for (u8 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+        assert(GetPlayerBombs(playerId) == 1);
+    g_GameManager.isInReplay = 1;
+    SetPlayerBombs(0, 5);
+    ResetMultiplayerPlayerResources();
+    assert(GetPlayerBombs(0) == 5);
 
     std::puts("TH06 multiplayer resources: PASS");
 }

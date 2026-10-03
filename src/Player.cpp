@@ -405,31 +405,6 @@ Player *SelectLifeTransferReceiver(const Player *giver)
     return best;
 }
 
-i32 SelectNearestLivingRecipient(const Player *source)
-{
-    if (!source)
-        return -1;
-    i32 bestId = -1;
-    f32 bestDistanceSq = 0.0f;
-    for (u8 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
-    {
-        if (playerId == source->initParam || !IsPlayerGameplayActive(playerId) ||
-            !IsLivingTransferPlayer(&g_Players[playerId]))
-            continue;
-        const Player *candidate = &g_Players[playerId];
-        const f32 dx = source->positionCenter.x - candidate->positionCenter.x;
-        const f32 dy = source->positionCenter.y - candidate->positionCenter.y;
-        const f32 distanceSq = dx * dx + dy * dy;
-        if (bestId < 0 || distanceSq < bestDistanceSq ||
-            (distanceSq == bestDistanceSq && playerId < static_cast<u8>(bestId)))
-        {
-            bestId = playerId;
-            bestDistanceSq = distanceSq;
-        }
-    }
-    return bestId;
-}
-
 bool IsPlayerActivelyBeingRevived(const Player *receiver)
 {
     if (!receiver || receiver->playerState != PLAYER_STATE_REVIVABLE)
@@ -609,6 +584,16 @@ void UpdatePowerTransfer(Player *giver)
     }
     g_Gui.flags.flag2 = 2;
     g_SoundPlayer.PlaySoundByIdx(SOUND_POWERUP);
+}
+
+void PrepareMultiplayerStageRevival(Player *player)
+{
+    // Registration revives a former ghost for the next stage without a donor.
+    // Normalize only that new life; surviving ships keep their earned bombs.
+    if (MultiplayerGameplay::IsMultiplayer() &&
+        g_Supervisor.curState == SUPERVISOR_STATE_GAMEMANAGER_REINIT &&
+        player->playerState == PLAYER_STATE_REVIVABLE)
+        SetPlayerBombs(player->initParam, 1);
 }
 
 void UpdateLifeTransfer(Player *giver)
@@ -944,6 +929,7 @@ ZunResult Player::RegisterChain(u8 unk)
     if (unk == 0 && g_Supervisor.curState != SUPERVISOR_STATE_GAMEMANAGER_REINIT)
         g_teamWipeRetryFrames = 0;
     Player *p = &g_Players[unk];
+    PrepareMultiplayerStageRevival(p);
 #else
     Player *p = &g_Player;
 #endif
@@ -1381,14 +1367,6 @@ ChainCallbackResult Player::OnUpdate(Player *p)
                                                        : -REVIVABLE_DRIFT_SPEED;
                         p->isFocus = 0;
                         ResetTransferInputState(p);
-                        const i32 recipientId = SelectNearestLivingRecipient(p);
-                        if (recipientId >= 0)
-                        {
-                            if (GetPlayerLives(static_cast<u8>(recipientId)) < 8)
-                                AddPlayerLives(static_cast<u8>(recipientId), 1);
-                            g_Gui.flags.flag0 = 2;
-                            g_SoundPlayer.PlaySoundByIdx(SOUND_1UP);
-                        }
                     }
                     else
 #endif
@@ -1413,7 +1391,7 @@ ChainCallbackResult Player::OnUpdate(Player *p)
                     {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                         if (multiplayer)
-                            SetPlayerBombs(p->initParam, g_Supervisor.defaultConfig.bombCount);
+                            SetPlayerBombs(p->initParam, 1);
                         else
 #endif
                             g_GameManager.bombsRemaining = g_Supervisor.defaultConfig.bombCount;
@@ -1422,7 +1400,7 @@ ChainCallbackResult Player::OnUpdate(Player *p)
                     {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                         if (multiplayer)
-                            SetPlayerBombs(p->initParam, 3);
+                            SetPlayerBombs(p->initParam, 1);
                         else
 #endif
                             g_GameManager.bombsRemaining = 3;

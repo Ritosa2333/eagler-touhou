@@ -2,6 +2,7 @@
 
 #include "Player.hpp"
 #include "Supervisor.hpp"
+#include "multiplayer/GameplaySession.hpp"
 
 #include <cstring>
 
@@ -139,10 +140,11 @@ i32 GetMultiplayerRankPenalty(i32 amount)
 
 void ResetMultiplayerPlayerResources()
 {
-    // At a fresh gameplay registration every guest receives the same vanilla
-    // starting resources as P1. Stage/practice setup may already have changed
-    // P1 power, so copy the authoritative current P1 values rather than
-    // reconstructing mode-specific rules here.
+    // Fresh cooperative lives start with one bomb. Recorded stage snapshots
+    // remain authoritative during playback, and stage reinit never calls here.
+    if (MultiplayerGameplay::IsMultiplayer() && !g_GameManager.isInReplay)
+        SetPlayerBombs(0, 1);
+    // Preserve the existing starting lives and stage/practice power from P1.
     for (MultiplayerPlayerResources &resources : g_MultiplayerPlayerResources)
     {
         resources.livesRemaining = g_GameManager.livesRemaining;

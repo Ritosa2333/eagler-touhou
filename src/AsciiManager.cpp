@@ -1287,7 +1287,11 @@ i32 StageMenu::OnUpdateRetryMenu()
             g_GameManager.nextScoreIncrement = 0;
             g_GameManager.score = g_GameManager.guiScore;
             g_GameManager.livesRemaining = g_Supervisor.defaultConfig.lifeCount;
-            g_GameManager.bombsRemaining = g_Supervisor.defaultConfig.bombCount;
+            g_GameManager.bombsRemaining =
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                MultiplayerGameplay::IsMultiplayer() ? 1 :
+#endif
+                g_Supervisor.defaultConfig.bombCount;
             g_GameManager.grazeInStage = 0;
             g_GameManager.currentPower = 0;
             g_GameManager.pointItemsCollectedInStage = 0;

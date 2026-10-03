@@ -31,24 +31,6 @@ constexpr i8 ITEM_STATE_TRANSFER_P1 = 6;
 constexpr i8 ITEM_STATE_TRANSFER_P3 = 8;
 constexpr i32 ITEM_TRANSFER_RISE_FRAMES = 20;
 constexpr f32 ITEM_TRANSFER_RISE_DISTANCE = 60.0f;
-constexpr f32 MULTIPLAYER_RESOURCE_DROP_OFFSET = 16.0f;
-
-void GetSeparatedResourceDropPosition(const ZunVec3 *origin, i32 ordinal, i32 count,
-                                      ZunVec3 *position)
-{
-    f32 centerX = origin->x;
-    const f32 halfSpan = MULTIPLAYER_RESOURCE_DROP_OFFSET * (count - 1);
-    const f32 maximumCenterX = g_GameManager.arcadeRegionSize.x - halfSpan;
-
-    *position = *origin;
-    if (centerX < halfSpan)
-        centerX = halfSpan;
-    if (centerX > maximumCenterX)
-        centerX = maximumCenterX;
-    position->x = centerX - halfSpan +
-                  ordinal * MULTIPLAYER_RESOURCE_DROP_OFFSET * 2.0f;
-}
-
 bool IsMultiplayerTransferState(i32 state)
 {
     return MultiplayerGameplay::IsMultiplayer() &&
@@ -129,29 +111,7 @@ void ItemManager::SpawnItem(const ZunVec3 *position, ItemType itemType, i32 stat
 
 void ItemManager::SpawnEnemyDrop(const ZunVec3 *position, ItemType itemType, i32 state)
 {
-#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    if (MultiplayerGameplay::IsMultiplayer() &&
-        (itemType == ITEM_LIFE || itemType == ITEM_BOMB))
-    {
-        const i32 activeCount = GetActivePlayerCount();
-        if (activeCount > 1)
-        {
-            i32 ordinal = 0;
-            for (u8 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
-            {
-                if (!IsPlayerActive(playerId))
-                    continue;
-
-                ZunVec3 separatedPosition;
-                GetSeparatedResourceDropPosition(position, ordinal, activeCount,
-                                                 &separatedPosition);
-                SpawnItem(&separatedPosition, itemType, state);
-                ++ordinal;
-            }
-            return;
-        }
-    }
-#endif
+    // Preserve the original one-drop quantity in cooperative play, too.
     SpawnItem(position, itemType, state);
 }
 
