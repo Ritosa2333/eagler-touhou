@@ -308,7 +308,25 @@ Item::Item()
 {
 }
 
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 Item *ItemManager::SpawnItem(ZunVec3 *heading, i32 itemType, i32 state)
+{
+    const bool transfer = state >= 3 && state <= 5;
+    const i32 copies = MultiplayerGameplay::IsMultiplayer() &&
+        (itemType == ITEM_POWER_SMALL || itemType == ITEM_POWER_BIG) && !transfer
+        ? MultiplayerGameplay::GetPlayerCount() : 1;
+    Item *first = &items[1100];
+    for (i32 copy = 0; copy < copies; ++copy)
+    {
+        Item *spawned = SpawnSingleItem(heading, itemType, state);
+        if (!copy) first = spawned;
+    }
+    return first;
+}
+Item *ItemManager::SpawnSingleItem(ZunVec3 *heading, i32 itemType, i32 state)
+#else
+Item *ItemManager::SpawnItem(ZunVec3 *heading, i32 itemType, i32 state)
+#endif
 {
     Item *item;
     i32 i;

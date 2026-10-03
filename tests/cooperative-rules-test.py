@@ -48,7 +48,7 @@ constexpr int PLAYER_STATE_ALIVE=0, PLAYER_STATE_INVULNERABLE=1, PLAYER_STATE_DE
 constexpr int ORB_UNFOCUSED=0, OPTION_UNFOCUSED=0, ORB_HIDDEN=1, OPTION_HIDDEN=1,
  BORDER_ACTIVE=1, CHAR_SAKUYA=2, TH_BUTTON_SHOOT=1, TH_BUTTON_BOMB=2,
  ITEM_POWER_BIG=2, ITEM_POWER_SMALL=1, ITEM_LIFE=3, ITEM_FULL_POWER=4, ITEM_BOMB=5,
- SOUND_POWERUP=0, SOUND_ITEM_GET=0, SOUND_DIR_CHANGING=0,
+ SOUND_1UP=0, SOUND_EXTEND=0, SOUND_POWERUP=0, SOUND_ITEM_GET=0, SOUND_DIR_CHANGING=0,
  AnmVmBlendMode_InvSrcAlpha=0, AnmVmBlendMode_One=1, ANM_SCRIPT_PLAYER_IDLE=0;
 constexpr unsigned COLOR_WHITE=0xffffffff;
 #define COLOR_SET_ALPHA(c,a) ((u32(a)<<24)|0xffffff)
@@ -69,17 +69,19 @@ struct Player {u8 initParam=0; int playerState=0,orbState=0,optionState=0,
  Timer invulnerabilityTimer; ZunVec3 pos,prevPos,positionCenter; Sprite playerSprite;
  struct {int isInUse=0;}bombInfo; Shooter*shooterData=&shooter; bool shoot=false,pressed=false;
  void BreakBorder(){hasBorder=0;} };
-Player g_Players[3]; bool g_PlayerActive[3]; bool absent[3];
+Player g_Players[3]; bool g_PlayerActive[3]; bool absent[3],departed[3];
 int lives[3],bombs[3],power[3],g_powerGiveTaps[3],g_powerGiveWindow[3],g_teamWipeRetryFrames;
 bool multiplayer=true;
 namespace MultiplayerGameplay {bool IsMultiplayer(){return multiplayer;}
  bool IsPlayerTemporarilyAbsent(u8 p){return absent[p];}
+ bool IsPlayerPermanentlyDeparted(u8 p){return departed[p];}
  int GetPlayerCount(){return int(g_PlayerActive[0])+int(g_PlayerActive[1])+int(g_PlayerActive[2]);}
  int GetPlayerCharacter(u8){return 0;} }
 bool IsPlayerActive(u8 p){return p<3&&g_PlayerActive[p];}
 bool IsPlayerSlotActive(u8 p){return IsPlayerActive(p);}
 bool IsPlayerGameplayActive(u8 p){return IsPlayerActive(p)&&!absent[p];}
 int GetActivePlayerCount(){return MultiplayerGameplay::GetPlayerCount();}
+ bool IsMultiplayerTransferState(int state){return state>=6&&state<=8;}
 int GetPlayerLives(u8 p){return lives[p];} int GetPlayerBombs(u8 p){return bombs[p];}
 int GetPlayerPower(u8 p){return power[p];}
 void SetPlayerLives(u8 p,int v){lives[p]=v;} void AddPlayerLives(u8 p,int v){lives[p]+=v;}
@@ -90,7 +92,8 @@ void AddPlayerPower(u8 p,int v){power[p]+=v;}
 struct Item {bool isInUse=false; int type=0,state=0;};
 struct ItemManager {Item items[ITEM_CAPACITY+1]; std::vector<int> emitted;
  bool CanSpawnItems(int count)const;
- Item* SpawnItem(const ZunVec3*,int type,int state){
+ SPAWN_ITEM_DECL
+ Item* SpawnSingleItem(const ZunVec3*,int type,int state){
   for(int i=0;i<ITEM_CAPACITY;++i)if(!items[i].isInUse){items[i]={true,type,state};emitted.push_back(type);return items+i;}
   return items+ITEM_CAPACITY; }
  SPAWN_DROP_DECL
@@ -130,6 +133,7 @@ struct BulletManager {int calls=0;ZunVec3 center;float radius=0;
 '''.replace('ITEM_CAPACITY', '512' if SIX else '1100').replace(
     'SPAWN_DROP_DECL', 'void SpawnEnemyDrop(const ZunVec3*,ItemType,int);' if SIX else
     'Item *SpawnEnemyDrop(ZunVec3*,i32,i32);')
+stub = stub.replace('SPAWN_ITEM_DECL', 'void SpawnItem(const ZunVec3*,int,int);' if SIX else 'Item* SpawnItem(ZunVec3*,int,int);')
 # ItemType is an integer in the fixture; production enum conversion is separately compiled.
 stub = stub.replace('using i32=int;', 'using ItemType=int; using i32=int;')
 constant_names = ['LIFE_GIVE_HOLD_FRAMES','LIFE_GIVE_WAIT_RELEASE_TOKEN','RESOURCE_TRANSFER_DISTANCE_SQ',
@@ -153,8 +157,11 @@ signatures = (['bool IsTerminalPlayerState(', 'bool IsLivingTransferPlayer(', 'b
  'Player *SelectLifeTransferReceiver(', 'void UpdateLifeTransfer('])
 functions = ''.join(function(PLAYER,s) for s in signatures)
 functions += function((ROOT / 'src/MultiplayerResources.cpp').read_text(), 'void ResetMultiplayerPlayerResources(')
+functions += function(PLAYER, 'i32 SelectNearestLivingRecipient(')
+functions += function(PLAYER, 'i32 GetBossParticipantCount(')
 functions += function(PLAYER, 'void PrepareMultiplayerStageRevival(')
 functions += function(ITEMS, 'bool ItemManager::CanSpawnItems(')
+functions += function(ITEMS, 'void ItemManager::SpawnItem(' if SIX else 'Item *ItemManager::SpawnItem(')
 functions += function(ITEMS, 'void ItemManager::SpawnEnemyDrop(' if SIX else 'Item *ItemManager::SpawnEnemyDrop(')
 if SIX:
     a = PLAYER.index('    if (p->playerState == PLAYER_STATE_DEAD)')
@@ -169,7 +176,7 @@ main = r'''
 void reset(int count=3){
  g_ItemManager=ItemManager{};g_BulletManager=BulletManager{};g_Rng.n=0;g_teamWipeRetryFrames=0;
  for(int i=0;i<3;++i){g_Players[i]=Player{};g_Players[i].initParam=i;g_PlayerActive[i]=i<count;
- absent[i]=false;lives[i]=2;bombs[i]=4;power[i]=100;g_powerGiveTaps[i]=g_powerGiveWindow[i]=0;}
+ absent[i]=departed[i]=false;lives[i]=2;bombs[i]=4;power[i]=100;g_powerGiveTaps[i]=g_powerGiveWindow[i]=0;}
 }
 void hold(Player*p,int n){p->isFocus=1;for(int i=0;i<n;++i)UpdateLifeTransfer(p);}
 void tap(Player*p,int n){for(int i=0;i<n;++i){p->pressed=true;UpdatePowerTransfer(p);p->pressed=false;UpdatePowerTransfer(p);}}
@@ -181,48 +188,67 @@ void test(){
  for(auto&i:g_ItemManager.items)i.isInUse=true;
  assert(!g_ItemManager.CanSpawnItems(1));
  for(int i=0;i<5;++i)g_ItemManager.items[i].isInUse=false;
- assert(!g_ItemManager.CanSpawnItems(6));tap(&g_Players[0],8);assert(power[0]==100);
+ assert(!g_ItemManager.CanSpawnItems(6));tap(&g_Players[0],5);assert(power[0]==100);
  g_ItemManager.items[5].isInUse=false;assert(g_ItemManager.CanSpawnItems(6));
- tap(&g_Players[0],8);assert(power[0]==80);assert(g_ItemManager.emitted.size()==6);
+ tap(&g_Players[0],5);assert(power[0]==80);assert(g_ItemManager.emitted.size()==6);
  assert(std::count(g_ItemManager.emitted.begin(),g_ItemManager.emitted.end(),ITEM_POWER_BIG)==2);
- tap(&g_Players[0],8);assert(power[0]==80); // Full pool never debits a second time.
- reset();power[1]=power[2]=128;tap(&g_Players[0],8);assert(power[0]==100);
- reset();power[0]=19;tap(&g_Players[0],8);assert(power[0]==19);
+ tap(&g_Players[0],5);assert(power[0]==80); // Full pool never debits a second time.
+ reset();power[1]=power[2]=128;tap(&g_Players[0],5);assert(power[0]==100);
+ reset();power[0]=19;tap(&g_Players[0],5);assert(power[0]==19);
  reset();lives[1]=lives[2]=8;hold(&g_Players[0],180);assert(lives[0]==2);
  reset(2);g_Players[2].playerState=PLAYER_STATE_SPIRIT;lives[2]=0;
  assert(SelectLifeTransferReceiver(&g_Players[0])==&g_Players[1]); // Inactive spectator never selected.
  for(int count: {2,3}){
   reset(count);g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=0;power[1]=0;bombs[1]=0;
   hold(&g_Players[0],89);assert(lives[0]==2);assert(g_Players[1].playerState==PLAYER_STATE_SPIRIT);
-  hold(&g_Players[0],1);assert(lives[0]==1);assert(lives[1]==0);
+  hold(&g_Players[0],1);assert(lives[0]==1);assert(lives[1]==1);
+  assert(bombs[0]==0&&bombs[1]==1&&power[1]==64);
+  assert(g_Players[1].bulletGracePeriod==0&&g_BulletManager.calls==0);
   assert(g_Players[1].playerState==PLAYER_STATE_INVULNERABLE);
-  assert(g_Players[1].invulnerabilityTimer==120);
+  assert(g_Players[1].invulnerabilityTimer==240);
   hold(&g_Players[0],180);assert(lives[0]==1); // Same hold/retransmitted level is one donation.
   g_Players[0].isFocus=0;UpdateLifeTransfer(&g_Players[0]);
   hold(&g_Players[0],90);assert(lives[0]==0); // Explicit release and repress permits a new paid gift.
  }
  reset();g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=3;
- hold(&g_Players[0],90);assert(lives[1]==3); // Shared extends earned while ghost remain intact.
+ hold(&g_Players[0],90);assert(lives[1]==4); // One donated life is added to banked shared extends.
+ reset(2);g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=8;
+ hold(&g_Players[0],90);assert(lives[1]==8&&g_Players[1].playerState==PLAYER_STATE_INVULNERABLE);
  reset();lives[0]=0;g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=0;
  hold(&g_Players[0],180);assert(g_Players[1].playerState==PLAYER_STATE_SPIRIT);
  for(int stock: {0,1,3}){
   reset();Player*p=&g_Players[0];lives[0]=stock;power[0]=80;p->playerState=PLAYER_STATE_DEAD;
   p->respawnTimer=1;DeathTick(p);
-  assert(g_ItemManager.emitted.size()==(stock?6u:5u));
+  assert(g_ItemManager.emitted.size()==(stock?18u:5u));
   assert(power[0]==(stock?64:0));
   if(!stock)assert(std::count(g_ItemManager.emitted.begin(),g_ItemManager.emitted.end(),ITEM_FULL_POWER)==5);
   p->invulnerabilityTimer=30;DeathTick(p);
-  assert(lives[0]==(stock?stock-1:0));assert(lives[1]==2&&lives[2]==2);
+  assert(lives[0]==(stock?stock-1:0));assert(lives[1]==(stock?2:3)&&lives[2]==2);
   assert(bombs[0]==(stock?1:TERMINAL_BOMBS));
  }
  reset();ZunVec3 position;
  for(int item: {ITEM_LIFE,ITEM_BOMB,ITEM_POWER_SMALL,ITEM_POWER_BIG})g_ItemManager.SpawnEnemyDrop(&position,item,0);
- assert(g_ItemManager.emitted.size()==4); // No 2P/3P duplication.
+ assert(g_ItemManager.emitted.size()==8); // LIFE/BOMB single, two ordinary P kinds tripled.
+ for(int count: {2,3}){
+  reset(count);ZunVec3 origin;for(int kind: {ITEM_POWER_SMALL,ITEM_POWER_BIG,ITEM_FULL_POWER,ITEM_LIFE,ITEM_BOMB})g_ItemManager.SpawnEnemyDrop(&origin,kind,0);
+  assert(g_ItemManager.emitted.size()==unsigned(2*count+3));
+  g_Players[1].playerState=PLAYER_STATE_SPIRIT;
+  assert(GetBossParticipantCount()==count-1); // Ghost does not lower the fixed drop multiplier.
+  g_ItemManager.SpawnEnemyDrop(&origin,ITEM_POWER_SMALL,0);
+  assert(g_ItemManager.emitted.size()==unsigned(3*count+3));
+ }
+ reset();assert(SelectLifeTransferReceiver(&g_Players[0])==&g_Players[2]);
+ assert(SelectPowerTransferReceiver(&g_Players[0])==&g_Players[1]);
+ assert(GetBossParticipantCount()==3);g_Players[1].playerState=PLAYER_STATE_DEAD;assert(GetBossParticipantCount()==3);
+ g_Players[1].playerState=PLAYER_STATE_SPIRIT;assert(GetBossParticipantCount()==2);
+ absent[2]=true;assert(GetBossParticipantCount()==1);absent[2]=false;departed[2]=true;assert(GetBossParticipantCount()==1);
+ departed[2]=false;g_Players[1].playerState=PLAYER_STATE_ALIVE;assert(GetBossParticipantCount()==3);
  // Exact deterministic re-execution of production rescue from a copied pre-frame fixture.
  reset();g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=0;
- hold(&g_Players[0],89);auto before0=g_Players[0],before1=g_Players[1];int beforeLives=lives[0];
+ hold(&g_Players[0],89);auto before0=g_Players[0],before1=g_Players[1];
+ int beforeLives[3],beforeBombs[3],beforePower[3];std::copy(lives,lives+3,beforeLives);std::copy(bombs,bombs+3,beforeBombs);std::copy(power,power+3,beforePower);
  hold(&g_Players[0],1);auto expected0=g_Players[0],expected1=g_Players[1];int expectedLives=lives[0];
- g_Players[0]=before0;g_Players[1]=before1;lives[0]=beforeLives;
+ g_Players[0]=before0;g_Players[1]=before1;std::copy(beforeLives,beforeLives+3,lives);std::copy(beforeBombs,beforeBombs+3,bombs);std::copy(beforePower,beforePower+3,power);
  hold(&g_Players[0],1);assert(lives[0]==expectedLives);
  assert(std::memcmp(&expected0,&g_Players[0],sizeof(Player))==0);
  assert(std::memcmp(&expected1,&g_Players[1],sizeof(Player))==0);

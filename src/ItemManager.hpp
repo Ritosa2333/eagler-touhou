@@ -67,6 +67,9 @@ struct ItemManager
     void RemoveAllItems();
     Item *SpawnItem(ZunVec3 *heading, i32 itemType, i32 state);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    Item *SpawnSingleItem(ZunVec3 *heading, i32 itemType, i32 state);
+#endif
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     bool CanSpawnItems(i32 count) const;
     // States 3..5 are the upstream visible transfer path for P2/P1/P3.
     // They rise for 20 frames without collision, then home to that slot.

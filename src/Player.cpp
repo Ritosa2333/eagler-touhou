@@ -477,7 +477,7 @@ Player *SelectLifeTransferReceiver(const Player *giver)
         if (!best || (isSpirit && !bestIsSpirit) ||
             (isSpirit == bestIsSpirit && lives < bestLives) ||
             (isSpirit == bestIsSpirit && lives == bestLives &&
-             playerId < best->initParam))
+             playerId > best->initParam))
         {
             best = candidate;
             bestIsSpirit = isSpirit;
@@ -485,6 +485,31 @@ Player *SelectLifeTransferReceiver(const Player *giver)
         }
     }
     return best;
+}
+
+i32 SelectNearestLivingRecipient(const Player *source)
+{
+    if (!source)
+        return -1;
+    i32 bestId = -1;
+    f32 bestDistanceSq = 0.0f;
+    for (u8 playerId = 0; playerId < TH07_MULTI_MAX_PLAYERS; ++playerId)
+    {
+        if (playerId == source->initParam || !IsPlayerSlotActive(playerId) ||
+            !IsPlayerActiveForLifeTransfer(&g_Players[playerId]))
+            continue;
+        const Player *candidate = &g_Players[playerId];
+        const f32 dx = source->pos.x - candidate->pos.x;
+        const f32 dy = source->pos.y - candidate->pos.y;
+        const f32 distanceSq = dx * dx + dy * dy;
+        if (bestId < 0 || distanceSq < bestDistanceSq ||
+            (distanceSq == bestDistanceSq && playerId < static_cast<u8>(bestId)))
+        {
+            bestId = playerId;
+            bestDistanceSq = distanceSq;
+        }
+    }
+    return bestId;
 }
 
 void PrepareMultiplayerStageRevival(Player *player)
@@ -552,9 +577,15 @@ void UpdateLifeTransfer(Player *giver)
         AddPlayerLives(giver->initParam, -1);
         receiver->playerState = PLAYER_STATE_INVULNERABLE;
         receiver->optionState = OPTION_UNFOCUSED;
-        receiver->invulnerabilityTimer = 120;
+        receiver->invulnerabilityTimer = 240;
         receiver->respawnTimer = receiver->shooterData->initialRespawnTimer;
-        receiver->bulletGracePeriod = 60;
+        receiver->bulletGracePeriod = 0;
+        SetPlayerBombs(giver->initParam, 0);
+        SetPlayerBombs(receiver->initParam, 1);
+        SetPlayerPower(receiver->initParam, 64);
+        if (GetPlayerLives(receiver->initParam) < 8)
+            AddPlayerLives(receiver->initParam, 1);
+        g_Gui.bombDisplayUpdateFrames = g_Gui.powerDisplayUpdateFrames = 2;
         receiver->playerSprite.color.color = 0xffffffff;
         g_Gui.lifeDisplayUpdateFrames = 2;
         giver->lifeGiveTimer = 0;
@@ -953,6 +984,14 @@ i32 UpdateMultiplayerDeath(Player *player)
                                        : -PLAYER_SPIRIT_DRIFT_SPEED;
         SetPlayerBombs(player->initParam, 3);
         g_Gui.bombDisplayUpdateFrames = 2;
+        const i32 recipientId = SelectNearestLivingRecipient(player);
+        if (recipientId >= 0)
+        {
+            if (GetPlayerLives((u8)recipientId) < 8)
+                AddPlayerLives((u8)recipientId, 1);
+            g_Gui.lifeDisplayUpdateFrames = 2;
+            g_SoundPlayer.PlaySoundByIdx(SOUND_EXTEND, 0);
+        }
         player->playerSprite.color.color = 0x50ffffff;
 
         // Individual players remain as Spirits so a surviving teammate can
@@ -1072,6 +1111,19 @@ u8 GetActivePlayerMask()
             mask |= static_cast<u8>(1u << playerId);
     }
     return mask;
+}
+
+i32 GetBossParticipantCount()
+{
+    i32 count = 0;
+    for (u8 playerId = 0; playerId < TH07_MULTI_MAX_PLAYERS; ++playerId)
+        if (IsPlayerSlotActive(playerId) &&
+            !MultiplayerGameplay::IsPlayerTemporarilyAbsent(playerId) &&
+            !MultiplayerGameplay::IsPlayerPermanentlyDeparted(playerId) &&
+            g_Players[playerId].playerState != PLAYER_STATE_SPIRIT &&
+            g_Players[playerId].playerState != PLAYER_STATE_ELIMINATED)
+            ++count;
+    return count;
 }
 
 i32 GetActivePlayerCount()

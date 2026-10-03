@@ -70,7 +70,7 @@ i32 GetSharedBorderThreshold()
 
 f32 GetMultiplayerBossDamageMultiplier()
 {
-    i32 activeCount = GetActivePlayerCount();
+    i32 activeCount = GetBossParticipantCount();
     if (activeCount >= 3)
     {
         return 2.0f / 3.0f;
@@ -84,10 +84,7 @@ f32 GetMultiplayerBossDamageMultiplier()
 
 f32 GetMultiplayerBombDamageMultiplier()
 {
-    // Three simultaneous bomb invulnerability windows are much stronger than
-    // the two-player case.  Scale only bomb hitbox damage; normal shots keep
-    // their full value and the existing boss multiplier remains separate.
-    return GetActivePlayerCount() >= 3 ? 2.0f / 3.0f : 1.0f;
+    return 1.0f;
 }
 
 i32 GetMultiplayerRankPenalty(i32 amount)

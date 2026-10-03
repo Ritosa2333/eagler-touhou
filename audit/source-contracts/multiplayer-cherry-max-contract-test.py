@@ -16,6 +16,6 @@ assert call > init, "3P scale must be applied after initial CherryMax setup"
 window = game[max(0, call - 500):call]
 assert "!g_GameManager.replay" in window, "Replay playback must restore recorded Cherry state instead of rescaling"
 assert "MultiplayerGameplay::GetPlayerCount() >= 3" in window, "3P scale must be gated by player count"
-assert "constexpr std::uint32_t GAMEPLAY_ABI = TH07_MULTI_GAMEPLAY_ABI;" in driver, "CherryMax gameplay change must bump live ABI"
-assert "config.gameplayAbi = TH07_MULTI_GAMEPLAY_ABI;" in replay, "new multiplayer Replays must record ABI 3"
-print("TH07 multiplayer CherryMax contract: PASS fresh-run-only=1 abi=4")
+assert "constexpr std::uint32_t GAMEPLAY_ABI = TH07_MULTI_NETPLAY_ABI;" in driver, "live sessions use the netplay contract owner"
+assert "config.gameplayAbi = TH07_MULTI_GAMEPLAY_ABI;" in replay, "new multiplayer Replays must record the current gameplay ABI"
+print("TH07 multiplayer CherryMax contract: PASS fresh-run-only=1")

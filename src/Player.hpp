@@ -394,16 +394,17 @@ Player *GetPlayerById(u8 playerId);
 const Player *GetPlayerByIdConst(u8 playerId);
 bool IsPlayerSlotActive(u8 playerId);
 
-constexpr i32 POWER_GIVE_TAPS_REQUIRED = 8;
+constexpr i32 POWER_GIVE_TAPS_REQUIRED = 5;
 constexpr i32 POWER_GIVE_TAP_WINDOW = 24;
 constexpr i32 POWER_GIVE_AMOUNT = 20;
-constexpr i32 POWER_GIVE_PROMPT_AFTER = 4;
+constexpr i32 POWER_GIVE_PROMPT_AFTER = 3;
 extern i32 g_powerGiveTaps[TH07_MULTI_MAX_PLAYERS];
 extern i32 g_powerGiveWindow[TH07_MULTI_MAX_PLAYERS];
 extern i32 g_teamWipeRetryFrames;
 
 u8 GetActivePlayerMask();
 i32 GetActivePlayerCount();
+i32 GetBossParticipantCount();
 void UpdateTeamWipeRetryCountdown();
 bool IsAnyActivePlayerBombing();
 bool VerifyThreePlayerLifeTransferSelectionRules();
