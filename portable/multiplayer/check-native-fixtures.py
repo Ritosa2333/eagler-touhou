@@ -141,7 +141,7 @@ with fixture(args.url, report, args.output) as test:
             dead = state(a)
             assert dead[22] == -1 and dead[23] == 0 and dead[24] == 3, (
                 'sub-1.00 deathbomb incorrectly rescued pilot', dead)
-            assert dead[10] == 3, ('final death did not grant nearest survivor one life', dead)
+            assert dead[10] == 2, ('final death minted a survivor life', dead)
             result['normalBombRejected'] = alive
             result['deathbombRejected'] = evidence(b)
         elif name == 'wipe-cancel':

@@ -250,7 +250,8 @@ const float* mp_fixture_replay_controls(browser::Application* app){
 }
 namespace {
 void timer(Timer& value,u32& flags,i32 ticks,float& rate){
-    value.rate=&rate;flags|=1;value.initialize(ticks);
+    value.rate=&rate;flags|=1;value.previous=wrapping_add(ticks,-1);
+    value.current=ticks;value.fractional=Extended::from_int(ticks).to_float();
 }
 void pose(browser::World& world,u32 seat,i32 x,i32 y,i32 state,i32 lives,i32 power){
     auto& pilot=world.pilots[seat];auto& player=*pilot.player;

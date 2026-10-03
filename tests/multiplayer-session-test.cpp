@@ -1,4 +1,5 @@
 #include "../th10_web/cpp/multiplayer/SessionSetup.hpp"
+#include "multiplayer-contract-fixture.hpp"
 #include <cassert>
 #include <cstring>
 using namespace th10::multiplayer;
@@ -9,6 +10,8 @@ int main(){
     assert(first.playerCount==3&&first.loadouts[1].shot==2);
     const auto contract=GameplayContract(first);
     assert(contract!=LegacyGameplayContractV4(first));
+    assert(contract!=historical_contract(first,0x10000005u));
+    assert(contract==historical_contract(first,0x10000006u));
     words[2]=2;assert(DecodeSessionSetup(second,words,11));
     assert(GameplayContract(second)==contract);
     words[10]=2;assert(DecodeSessionSetup(second,words,11));

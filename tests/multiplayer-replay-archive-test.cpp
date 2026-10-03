@@ -1,4 +1,5 @@
 #include "../th10_web/cpp/multiplayer/ReplayArchive.hpp"
+#include "multiplayer-contract-fixture.hpp"
 #include <cassert>
 #include <cstring>
 #include <cstdio>
@@ -47,6 +48,22 @@ static void check_terminal_stage(){
     assert(tape.RequestSave("replay/th10_01.rpy","CLEAR",2,500,0,8));
     std::vector<std::uint8_t> bytes;assert(tape.Encode(bytes,&description));
     ReplayArchive restored;assert(restored.Load(bytes.data(),bytes.size()));
+    // Valid wire archives bearing older rule identities must be rejected by
+    // the title before gameplay, rather than silently replayed under v6 rules.
+    InputReplay original;assert(original.Decode(bytes.data(),bytes.size()));
+    for(const auto version:{0x10000004u,0x10000005u}){
+        auto config=original.Info().config;
+        config.gameplayAbi=historical_contract(setup,version);
+        InputReplay legacy;assert(legacy.Begin(config));
+        for(unsigned frame=0;frame<3;++frame)
+            assert(legacy.Append(frame,frame?8:7,original.FrameAt(frame)->data(),2));
+        std::vector<std::uint8_t> old;assert(legacy.Encode(&old));
+        InputReplayInfo inspected;ReplayDescription metadata;
+        assert(InputReplay::Inspect(old.data(),old.size(),&inspected));
+        assert(!ReplayArchive::Inspect(old.data(),old.size(),inspected,metadata));
+        assert(!restored.Load(old.data(),old.size()));
+        assert(restored.Description().lastStage==8&&restored.Frames()==3);
+    }
     assert(restored.Description().lastStage==8);
     assert(restored.SeekFrame(7)==0&&restored.SeekFrame(8)==INVALID_FRAME);
     assert(restored.PlaybackFrame(0,7)&&restored.Played(0));

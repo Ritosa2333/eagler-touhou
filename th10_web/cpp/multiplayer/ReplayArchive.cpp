@@ -137,8 +137,7 @@ bool decode(const Netplay::InputReplayInfo& tape,ReplayDescription& out,
     const u32 words[]{1,config.playerCount,config.recordedPlayer,word(p+8),word(p+4),
         word(p+16),word(p+20),word(p+24),word(p+28),word(p+32),word(p+36)};
     if(!DecodeSessionSetup(next.setup,words,11)||
-       (config.gameplayAbi!=GameplayContract(next.setup)&&
-        config.gameplayAbi!=LegacyGameplayContractV4(next.setup))||
+       config.gameplayAbi!=GameplayContract(next.setup)||
        word(p+12)!=(next.setup.difficulty==4?7u:1u))return false;
     if(!std::memchr(p+40,0,12))return false;
     std::memcpy(next.name,p+40,12);std::memcpy(&next.timestamp,p+52,4);
