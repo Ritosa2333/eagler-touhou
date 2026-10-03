@@ -321,10 +321,10 @@ i32 NormalizePlayerAnmScript(const Player *player, i32 script)
 constexpr i32 LIFE_GIVE_HOLD_FRAMES = 90;
 constexpr i32 LIFE_GIVE_WAIT_RELEASE_TOKEN = -1;
 constexpr f32 RESOURCE_TRANSFER_DISTANCE_SQ = 20.0f * 20.0f;
-constexpr i32 POWER_GIVE_TAPS_REQUIRED = 8;
+constexpr i32 POWER_GIVE_TAPS_REQUIRED = 5;
 constexpr i32 POWER_GIVE_TAP_WINDOW = 24;
 constexpr i32 POWER_GIVE_AMOUNT = 20;
-constexpr i32 POWER_GIVE_PROMPT_AFTER = 4;
+constexpr i32 POWER_GIVE_PROMPT_AFTER = 3;
 constexpr f32 REVIVABLE_DRIFT_SPEED = 0.2f;
 
 bool IsTerminalPlayerState(const Player *player)
@@ -395,7 +395,7 @@ Player *SelectLifeTransferReceiver(const Player *giver)
         if (!best || (revivable && !bestRevivable) ||
             (revivable == bestRevivable && lives < bestLives) ||
             (revivable == bestRevivable && lives == bestLives &&
-             playerId < best->initParam))
+             playerId > best->initParam))
         {
             best = candidate;
             bestRevivable = revivable;
@@ -403,6 +403,31 @@ Player *SelectLifeTransferReceiver(const Player *giver)
         }
     }
     return best;
+}
+
+i32 SelectNearestLivingRecipient(const Player *source)
+{
+    if (!source)
+        return -1;
+    i32 bestId = -1;
+    f32 bestDistanceSq = 0.0f;
+    for (u8 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+    {
+        if (playerId == source->initParam || !IsPlayerGameplayActive(playerId) ||
+            !IsLivingTransferPlayer(&g_Players[playerId]))
+            continue;
+        const Player *candidate = &g_Players[playerId];
+        const f32 dx = source->positionCenter.x - candidate->positionCenter.x;
+        const f32 dy = source->positionCenter.y - candidate->positionCenter.y;
+        const f32 distanceSq = dx * dx + dy * dy;
+        if (bestId < 0 || distanceSq < bestDistanceSq ||
+            (distanceSq == bestDistanceSq && playerId < static_cast<u8>(bestId)))
+        {
+            bestId = playerId;
+            bestDistanceSq = distanceSq;
+        }
+    }
+    return bestId;
 }
 
 bool IsPlayerActivelyBeingRevived(const Player *receiver)
@@ -525,10 +550,10 @@ void RevivePlayerFromTeammate(Player *receiver)
         return;
     receiver->playerState = PLAYER_STATE_INVULNERABLE;
     receiver->orbState = ORB_UNFOCUSED;
-    receiver->invulnerabilityTimer.SetCurrent(120);
+    receiver->invulnerabilityTimer.SetCurrent(240);
     receiver->respawnTimer = 6;
     receiver->bombInfo.isInUse = 0;
-    receiver->bulletGracePeriod = 60;
+    receiver->bulletGracePeriod = 0;
     receiver->previousHorizontalSpeed = 0.0f;
     receiver->previousVerticalSpeed = 0.0f;
     receiver->playerSprite.scaleX = 1.0f;
@@ -645,7 +670,13 @@ void UpdateLifeTransfer(Player *giver)
     if (receiver->playerState == PLAYER_STATE_REVIVABLE)
     {
         AddPlayerLives(giver->initParam, -1);
+        SetPlayerBombs(giver->initParam, 0);
+        SetPlayerBombs(receiver->initParam, 1);
+        SetPlayerPower(receiver->initParam, 64);
+        if (GetPlayerLives(receiver->initParam) < 8)
+            AddPlayerLives(receiver->initParam, 1);
         RevivePlayerFromTeammate(receiver);
+        g_Gui.flags.flag1 = 2;
         g_Gui.flags.flag0 = 2;
         giver->lifeGiveTimer = 0;
         giver->lifeGiveTargetToken = LIFE_GIVE_WAIT_RELEASE_TOKEN;
@@ -807,6 +838,18 @@ bool IsPlayerGameplayActive(u8 playerId)
 {
     return IsPlayerActive(playerId) &&
            !MultiplayerGameplay::IsPlayerTemporarilyAbsent(playerId);
+}
+
+i32 GetBossParticipantCount()
+{
+    i32 count = 0;
+    for (u8 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
+        if (IsPlayerActive(playerId) &&
+            !MultiplayerGameplay::IsPlayerTemporarilyAbsent(playerId) &&
+            !MultiplayerGameplay::IsPlayerPermanentlyDeparted(playerId) &&
+            !IsTerminalPlayerState(&g_Players[playerId]))
+            ++count;
+    return count;
 }
 
 i32 GetActivePlayerCount()
@@ -1367,6 +1410,14 @@ ChainCallbackResult Player::OnUpdate(Player *p)
                                                        : -REVIVABLE_DRIFT_SPEED;
                         p->isFocus = 0;
                         ResetTransferInputState(p);
+                        const i32 recipientId = SelectNearestLivingRecipient(p);
+                        if (recipientId >= 0)
+                        {
+                            if (GetPlayerLives(static_cast<u8>(recipientId)) < 8)
+                                AddPlayerLives(static_cast<u8>(recipientId), 1);
+                            g_Gui.flags.flag0 = 2;
+                            g_SoundPlayer.PlaySoundByIdx(SOUND_1UP);
+                        }
                     }
                     else
 #endif

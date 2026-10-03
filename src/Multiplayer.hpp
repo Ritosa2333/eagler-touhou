@@ -11,5 +11,5 @@ constexpr int TH06_MULTI_MAX_GUESTS = TH06_MULTI_MAX_PLAYERS - 1;
 // Bump only when multiplayer gameplay semantics/state ownership changes in a
 // way that can affect deterministic netplay or Replay evolution. Netplay and
 // EAGX Replay must share this owner so their compatibility labels cannot drift.
-constexpr unsigned int TH06_MULTI_GAMEPLAY_ABI = 10;
-// ABI 10 changes cooperative death, resource drops and teammate rescue rules.
+constexpr unsigned int TH06_MULTI_GAMEPLAY_ABI = 11;
+// ABI 11 adds scaled Power drops, rescue costs/resources and dynamic boss scaling.

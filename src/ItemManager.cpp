@@ -43,7 +43,19 @@ ItemManager::ItemManager() {
 
 };
 
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 void ItemManager::SpawnItem(const ZunVec3 *position, ItemType itemType, i32 state)
+{
+    const i32 copies = MultiplayerGameplay::IsMultiplayer() &&
+        (itemType == ITEM_POWER_SMALL || itemType == ITEM_POWER_BIG) &&
+        !IsMultiplayerTransferState(state) ? MultiplayerGameplay::GetPlayerCount() : 1;
+    for (i32 copy = 0; copy < copies; ++copy)
+        SpawnSingleItem(position, itemType, state);
+}
+void ItemManager::SpawnSingleItem(const ZunVec3 *position, ItemType itemType, i32 state)
+#else
+void ItemManager::SpawnItem(const ZunVec3 *position, ItemType itemType, i32 state)
+#endif
 {
     Item *item;
     i32 idx;

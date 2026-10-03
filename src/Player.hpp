@@ -296,6 +296,7 @@ const Player *GetPlayerByIdConst(u8 playerId);
 bool IsPlayerActive(u8 playerId);
 bool IsPlayerGameplayActive(u8 playerId);
 i32 GetActivePlayerCount();
+i32 GetBossParticipantCount();
 bool IsPlayerTerminal(u8 playerId);
 Player *GetClosestActivePlayer(const ZunVec3 *position);
 i32 GetPlayerAnmScript(const Player *player, i32 script);

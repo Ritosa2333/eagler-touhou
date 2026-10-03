@@ -37,6 +37,9 @@ struct ItemManager
 {
     ItemManager();
     void SpawnItem(const ZunVec3 *position, ItemType type, i32 state);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    void SpawnSingleItem(const ZunVec3 *position, ItemType type, i32 state);
+#endif
     // Enemy/ECL drops preserve the original single-player spawn quantity.
     void SpawnEnemyDrop(const ZunVec3 *position, ItemType type, i32 state);
     void SyncRenderState();

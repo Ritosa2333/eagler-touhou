@@ -124,7 +124,7 @@ void ResetPlayerContributionStats()
 
 f32 GetMultiplayerBossDamageMultiplier()
 {
-    const i32 activeCount = GetActivePlayerCount();
+    const i32 activeCount = GetBossParticipantCount();
     if (activeCount >= 3)
         return 2.0f / 3.0f;
     if (activeCount == 2)
