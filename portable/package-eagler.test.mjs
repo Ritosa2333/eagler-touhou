@@ -34,6 +34,7 @@ function makeFixture({thprac = false} = {}) {
   write('th10_web/sdl-runtime/th10.html', '<!doctype html><head></head><body></body>');
   write('th10_web/sdl-runtime/shell.mjs', 'export const shell = true;');
   write('th10_web/sdl-runtime/eagler-host.mjs', 'export const host = true;');
+  write('th10_web/sdl-runtime/directory-keyboard.mjs', 'export const keyboard = true;');
   write('th10_web/sdl-runtime/save-storage.mjs', 'export const storage = true;');
   write('th10_web/sdl-runtime/practice-loader.mjs', readFileSync(new URL('../th10_web/sdl-runtime/practice-loader.mjs', import.meta.url)));
   for (const name of ['practice.mjs', 'practice-config.mjs', 'practice-sections.mjs'])
