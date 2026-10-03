@@ -45,10 +45,10 @@ i32 AnmRenderer::finish(AnmVm& vm,bool round,bool mirror,bool keep_color){
     if(maxx<float(view.x)||maxy<float(view.y)||minx>float(view.x+view.width)||miny>float(view.y+view.height))return 0;
     if(!keep_color){const u32 rgba=color(vm);for(auto& v:quad)v.color=rgba;}prepare(vm);append(quad.data());return 0;
 }
-i32 AnmRenderer::draw_no_rotation(AnmVm& vm,bool round,bool mirror){if(!drawable(vm))return -1;unrotated(vm,true);return finish(vm,round,mirror);}
-i32 AnmRenderer::draw_2d(AnmVm& vm,bool no_round){if(!vm.rotation.z&&!no_round)return draw_no_rotation(vm);if(!drawable(vm))return -1;if(vm.rotation.z)rotated(vm);else unrotated(vm,false);return finish(vm,false);}
-i32 AnmRenderer::draw_quad(AnmVm& vm,const SpriteVertex* p){if(!drawable(vm))return -1;prepare(vm);append(p);return 0;}
-i32 AnmRenderer::draw_strip(AnmVm& vm,const SpriteVertex* p,u32 n){if(!drawable(vm)||n<3)return -1;prepare(vm);flush();backend.draw(state,texture,Topology::Strip,VertexLayout::ScreenColorUv,p,n);return 0;}
+i32 AnmRenderer::draw_no_rotation(AnmVm& vm,bool round,bool mirror){if(!drawable(vm))return -1;if(omit_sprite_geometry)return 0;unrotated(vm,true);return finish(vm,round,mirror);}
+i32 AnmRenderer::draw_2d(AnmVm& vm,bool no_round){if(!vm.rotation.z&&!no_round)return draw_no_rotation(vm);if(!drawable(vm))return -1;if(omit_sprite_geometry)return 0;if(vm.rotation.z)rotated(vm);else unrotated(vm,false);return finish(vm,false);}
+i32 AnmRenderer::draw_quad(AnmVm& vm,const SpriteVertex* p){if(!drawable(vm))return -1;if(omit_sprite_geometry)return 0;prepare(vm);append(p);return 0;}
+i32 AnmRenderer::draw_strip(AnmVm& vm,const SpriteVertex* p,u32 n){if(!drawable(vm)||n<3)return -1;if(omit_sprite_geometry)return 0;prepare(vm);flush();backend.draw(state,texture,Topology::Strip,VertexLayout::ScreenColorUv,p,n);return 0;}
 void AnmRenderer::draw_colors(AnmVm& vm,Topology type,const ColorVertex* p,u32 n){if(n<3)return;prepare(vm);flush();auto flat=state;flat.depthWrite=false;flat.color.operation=flat.alpha.operation=ColorOperation::First;flat.color.first=flat.alpha.first={ArgumentSource::Diffuse};backend.draw(flat,0,type,VertexLayout::ScreenColor,p,n);}
 void AnmRenderer::draw_lines(const ColorVertex* p,u32 n){if(n<2)return;flush();auto flat=state;flat.depthWrite=false;flat.destinationBlend=BlendFactor::One;flat.color.operation=flat.alpha.operation=ColorOperation::First;flat.color.first=flat.alpha.first={ArgumentSource::Diffuse};backend.draw(flat,0,Topology::LineStrip,VertexLayout::ScreenColor,p,n);}
 void AnmRenderer::rectangle(float left,float top,float right,float bottom,u32 top_color,u32 bottom_color){

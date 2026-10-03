@@ -76,6 +76,7 @@ bool FontDevice::text(AnmVm& vm,const char* text,u32 color,u32 outline){
     for(const auto& offset:{Vec2{float(shift),0},Vec2{-float(shift),0},Vec2{0,-float(shift)},Vec2{0,float(shift)},Vec2{0,0}}){const bool main=offset.x==0&&offset.y==0;if(!impl->draw(scratch,center+i32(offset.x),2+i32(offset.y),height*2,main?color:0,text)){error="Japanese glyph rendering failed";return false;}}
     for(i32 n=0;n<area;++n){u8* p=scratch.pixels.data()+n*2;u16 v=(u16(p[0])|(u16(p[1])<<8))^0x8000;if(!(v&0x8000))v=0;else if(outline==0xffffffff){i32 r=(v>>10)&31,g=(v>>5)&31,b=v&31;const auto shade=[&](i32 c){return c-(c*n/area)/4;};if(r>=b)r=shade(r);else b=shade(b);g=shade(g);v=u16(0x8000|(r<<10)|(g<<5)|b);}p[0]=u8(v);p[1]=u8(v>>8);}
     const i32 source_width=std::min(1024,width*2+(large?2:0)),source_height=height*2+(large?2:0);
+    graphics.before_text(s.texture);
     if(!ImageResample::triangle(*target,{0,y,width,y+destination_height},scratch,{0,0,source_width,source_height})){error="Japanese text texture bounds";return false;}
     graphics.changed(s.texture);vm.visible=true;return true;
 }

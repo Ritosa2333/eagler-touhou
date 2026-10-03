@@ -91,6 +91,7 @@ struct GameWorld::Services:BattlePresentation,HudPresentation,MatchRuleActions,S
     void shake(i32 side,float x,float y)override{g.output.shake(side,x,y);}
     void rectangle(float l,float t,float r,float b,u32 color,bool full)override{g.output.rectangle(l,t,r,b,color,full);}
 };
+MatchSceneServices& GameWorld::scene_services(){return services->scene;}
 GameWorld::GameWorld(EclWorldState& w,GameResources& r,AnmExecutor& a,WorldPresentation& p):services(std::make_unique<Services>(*this)),world(w),resources(r),animations(a),output(p),rules(w,*services),screen_effects(w.random,*services){}
 GameWorld::~GameWorld()=default;
 bool GameWorld::fail(const char* message){if(error.empty())error=message;return false;}

@@ -1,0 +1,3 @@
+[submodule "third_party/eagler-common"]
+	path = third_party/eagler-common
+	url = https://github.com/YomotsuHisami/eagler-common.git

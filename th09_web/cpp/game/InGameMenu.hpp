@@ -30,6 +30,17 @@ public:
     void update_pause(const InputFrame&);
     bool update_game_over(const InputFrame&);
     bool update_match_end(const InputFrame&);
+    // Read-only lifetime barriers. Ordinary navigation/animation only changes
+    // rewindable menu state; these steps may replace the owning game world.
+    // Pause hotkeys can cancel a due transition, so its predicate is deliberately
+    // conservative. Keep the action-coverage test alongside any menu changes.
+    bool pause_retires_world()const{return (pause.state==8||pause.state==9)&&pause.frames>=20;}
+    bool game_over_retires_world(u32 flags,i32 continues)const{
+        return (flags&8)||continues>2||((game_over.state==3||game_over.state==4)&&game_over.frames>19);
+    }
+    bool match_end_retires_world(u32 flags)const{
+        return (flags&8)||(match_end.state>=4&&match_end.state<=6&&match_end.frames>19);
+    }
     void draw_pause(){draw(pause,7);}
     void draw_game_over();
     void draw_match_end(){draw(match_end,3);}

@@ -4,18 +4,19 @@ AttackQueue::AttackQueue(const std::array<AttackBehavior,27>& b,AttackServices& 
 AttackActor* AttackQueue::create(i32 kind,i32 side,const Vec3& position,const Vec3* extra,const AttackActor* parent){
     if(side<0||side>1||kind<0||u32(kind)>=behaviors.size()||!behaviors[kind].initialize||!behaviors[kind].update){invalid=true;return nullptr;}
     i32 count=0;for(u32 n=0;n<capacity;++n)if(actors[n].active&&actors[n].source_side==side)++count;
-    if(limits[side]<=count)return &actors[capacity];
+    if(limits[side]<=count){before_write(actors[capacity]);return &actors[capacity];}
     actions.play_sound(45,side?500:-500);
     for(u32 n=0;n<capacity;++n){
         auto& actor=actors[n];if(actor.active)continue;
-        actor=AttackActor{};actor.active=1;actor.position=position;actor.source_side=side;actor.destination_side=1-side;
+        before_write(actor);actor=AttackActor{};actor.active=1;actor.position=position;actor.source_side=side;actor.destination_side=1-side;
         actor.behavior=&behaviors[kind];actor.extra_position=extra;actor.parent=parent;actor.time.reset();
         if(!actor.behavior->initialize||actor.behavior->initialize(actor,actions))actor.active=0;
         actor.extra_position=nullptr;actor.parent=nullptr;return &actor;
     }
-    return &actors[capacity];
+    before_write(actors[capacity]);return &actors[capacity];
 }
 void AttackQueue::dispose(AttackActor& a){
+    before_write(a);
     if(a.behavior&&a.behavior->dispose)a.behavior->dispose(a,actions);
     a.animations.clear();a.state.reset();
 }

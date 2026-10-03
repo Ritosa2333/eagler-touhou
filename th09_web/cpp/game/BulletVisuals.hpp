@@ -1,4 +1,5 @@
 #pragma once
+#include "PoolCheckpoint.hpp"
 #include "BulletManager.hpp"
 #include "AnmExecutor.hpp"
 namespace th09 {
@@ -12,12 +13,14 @@ class BulletVisuals {
     void refresh(Bullet&,u32 index);
     void copy_metadata(Bullet&,const BulletAppearance&);
 public:
+    PoolCheckpoint* checkpoint=nullptr;
     std::array<BulletAppearance,23> appearances;
     std::vector<std::array<AnmVm,5>> instances;
     BulletVisuals(AnmLoaded& f,AnmExecutor& e):file(f),executor(e),instances(BulletManager::update_count+1){
         for(auto& v:instances)for(auto& a:v)std::memset(&a,0,sizeof(a));
     }
     bool initialize();
+    void reset_instances();
     bool prepare(Bullet&,u32 index,i32 type,i32 color,u32 flags);
     bool change_type(Bullet&,u32 index,i32 type,i32 color);
     bool set_sprite(Bullet&,u32 index,i32 sprite);

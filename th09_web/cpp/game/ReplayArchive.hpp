@@ -2,6 +2,7 @@
 #include "ReplaySession.hpp"
 #include <string>
 namespace th09 {
+namespace multiplayer { class WorldState; }
 struct ReplayMetadata {
     std::array<u8,204> configuration{};
     u32 version_time_a=0,version_time_b=0;
@@ -10,6 +11,7 @@ struct ReplayMetadata {
 // A whole run, with separate streams for each story stage or the versus match.
 // Only the native .rpy serialization boundary uses original binary offsets.
 class ReplayArchive {
+    friend class multiplayer::WorldState;
     struct Stage {
         bool present=false;std::array<std::array<u8,32>,3> headers{};
         ReplayRecording recording;

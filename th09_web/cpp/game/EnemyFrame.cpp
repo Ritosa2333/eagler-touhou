@@ -20,6 +20,7 @@ struct TimelineActions:EnemyTimelineActions {
 };
 }
 void EnemyManager::remove(EclVm& e){
+    if(checkpoint)checkpoint->BeforeEnemy(e);
     if(!(e.behavior_flags&0xe0000))e.behavior_flags&=~1u;
     if((e.behavior_flags&2)&&e.values.boss_id<4){bosses[e.values.boss_id]=nullptr;e.behavior_flags&=~2u;}
     if(e.status.attached_effect_count&&frame_actions)frame_actions->release_attached_effects(e);

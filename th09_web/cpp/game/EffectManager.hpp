@@ -47,12 +47,14 @@ class EffectManager {
     EffectServices& services;
     bool initialize(EffectActor&,EffectKind,const Vec3&,const Vec3&,u32 color);
 public:
+    PoolCheckpoint* checkpoint=nullptr;
+    void before_write(EffectActor& a){if(checkpoint)checkpoint->BeforeEffect(*this,&a-actors.data());}
     i32 side=0,count=0,frame=0;u32 cursor=0,capacity=0,reserved_slots=0;
     std::vector<EffectActor> actors;std::array<std::vector<EffectActor*>,3> draw_lists;
     EffectManager(EffectServices&,i32 side,u32 capacity,u32 reserved_slots);
     EffectActor* create(EffectKind,const Vec3&,const Vec3& extra={},i32 number=1,u32 color=0xffffffff);
     EffectActor* slotted(EffectKind,const Vec3&,u32 slot,u32 color=0xffffffff);
-    EffectActor* get_slot(u32 slot){return slot<reserved_slots?&actors[capacity+slot]:nullptr;}
+    EffectActor* get_slot(u32 slot){if(slot>=reserved_slots)return nullptr;auto& a=actors[capacity+slot];before_write(a);return &a;}
     void update(u32 game_flags,u32 first_field_flags);
     void draw(i32 layer);
     void clear();

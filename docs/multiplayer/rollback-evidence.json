@@ -1,0 +1,1742 @@
+{
+  "date": "2026-09-27",
+  "base": "3b52630",
+  "common": "ac82fa2",
+  "developmentWasm": "fe0554c85be7d37f7a09fb9dac2f3cc7ff82e8b63f813126476b06b0e59da386",
+  "releaseWasm": "868ab04843a65a3e3bbfa9ec7c0db9fe11ee36f9c22e6bf0e2a2f47d7d6aaffd",
+  "releaseBytes": 2791427,
+  "comparison": {
+    "countedWorkMs": [
+      958.1749994158745,
+      393.6799988746643,
+      958.5950002670288
+    ],
+    "countedWorkReductionPercent": 58.92256254638878,
+    "denseCaptureRestoreMs": [
+      771.0849993228912,
+      772.0849997997284
+    ],
+    "sparseCaptureRestoreMs": 204.63999938964844,
+    "reductionPercent": 73.47797073478645,
+    "denseInitialCounterBytes": 11274252,
+    "sparseInitialCounterBytes": 2741824,
+    "bytesReductionPercent": 75.68065712918249,
+    "scope": "270 checkpoint/restore operations and 1620 forward ticks per run; byte counter is journal and accounted owners at snapshot start, excluding attack clones and vector/function metadata; fixed 1800-frame workload; desktop Chromium SwiftShader; excludes verification hash/image encoding and second execution"
+  },
+  "sourceIdentity": {
+    "th09_web/cpp/game/AnmExecutor.cpp": "5bc296edc55e0a3b22a1ac3827660a6fb47a471a80b20feab22456b7c650af3a",
+    "th09_web/cpp/game/AnmRenderer.cpp": "979119e60124b9052c1822def51edf6fd8a356a6aa723d3983ac69b75e3aa626",
+    "th09_web/cpp/game/AnmResource.cpp": "9291a5dcd737f9aec4d5bdbeb9e246c1eb479f070487069419cd977e8073bf36",
+    "th09_web/cpp/game/AnmWorldRenderer.cpp": "d9c0ae0df5cc3cdf34babc263d42e009d53662b1a3c4d8a46379e3762967bde7",
+    "th09_web/cpp/game/Archive.cpp": "263f6cac7efa21eec8df3b5f1586a7112d44c44f4c7bd0912f70ec36e571c961",
+    "th09_web/cpp/game/AsciiRenderer.cpp": "56ec4d5d9406f6ff2615007c37737752a5ac3257942eef7a20a3157bce06832e",
+    "th09_web/cpp/game/AttackAreas.cpp": "508ca5ad87a7575c42443d9472acfeb427e287f870f8a09d187b806fd73f11fd",
+    "th09_web/cpp/game/AttackController.cpp": "15f1a893b18cb77f0cbc92d3964aed57d796255dba13066f323c24a30b859617",
+    "th09_web/cpp/game/AttackQueue.cpp": "be4615eaf51e217821d91d5d4fe5864228f1a027e8354b40761337d9305d91a1",
+    "th09_web/cpp/game/Background.cpp": "f5e94be3c61eab3a26fb67fdde656fbbc6b05e1f1fb0631558bce54caadbd997",
+    "th09_web/cpp/game/BackgroundDraw.cpp": "17816edb9fb6bfe6ad1a4a6e81aa846e30ed6e4c72f388e5b95465ff636282b1",
+    "th09_web/cpp/game/BulletDraw.cpp": "20320d528194f3ac9901fb27e0c533dafe1e22662c33a0184cf67b4784fc96b8",
+    "th09_web/cpp/game/BulletExtras.cpp": "568e4be01b4ce6ae1f218c0e6f5ad1d07dcfcb6cd8675781679617eed0859937",
+    "th09_web/cpp/game/BulletManager.cpp": "434063995699af8411f0d66c75e2d2eebe4d04d3e86959658513f0ce81fa15eb",
+    "th09_web/cpp/game/BulletPattern.cpp": "c5887e654288e92da3dc28f2093fad79a77ede0f8b43625859bc3f06698cfe86",
+    "th09_web/cpp/game/BulletVisuals.cpp": "6aba5ff31b3075d9a80402db1701b1693ec6979b45854ce71fef8f8b3354fcdd",
+    "th09_web/cpp/game/Camera.cpp": "ff473eae8a5870074333a975cb6e6833823b095b06cc9b7546ddd4f16cf58729",
+    "th09_web/cpp/game/CharacterAttackMeter.cpp": "bd474dd1bcadccbbe5680846924843e6e2687adc4cc16ed4013d8d72d8d7a464",
+    "th09_web/cpp/game/CharacterAttacks.cpp": "1dd18b854ad3beb905825c032b0617206848e302f61856585b56ce2516569005",
+    "th09_web/cpp/game/CharacterCapture.cpp": "e1023ef4bfba4a5b7f64dca27f86ab522bcf0cf8cff5d45d78f0b4d6f5803f1b",
+    "th09_web/cpp/game/ChargeGauge.cpp": "0abb99810cec1bd74793301074722a04698c9ae95d729d8a0517f278202df5c2",
+    "th09_web/cpp/game/Combo.cpp": "401a1025e733e66f95feb553b32066f691d1730f6abe02e3da31e6549cd73672",
+    "th09_web/cpp/game/CpuPlayer.cpp": "d84ce1a216a00eb775aa03123893a2187ce880bf2e5d9cabb6642d823e553124",
+    "th09_web/cpp/game/Dialogue.cpp": "d0519be30179b65f7d5298ea35c090d1e68bceaa07ac20d5a19897ad18d852ae",
+    "th09_web/cpp/game/EclEmitter.cpp": "17b33189f11a68b53b6d734cef3a2601ca2caba97b44a185bba86d9cccb14a71",
+    "th09_web/cpp/game/EclGameOperations.cpp": "e051d96dd9a3472f3e28822a8d2b4aed1cb2447bc1c64b1a17cd1fea61dc8637",
+    "th09_web/cpp/game/EclLasers.cpp": "727ab7d20ff55731e1168819d4b99bfd73f63b765fb82729418fd880174d6b84",
+    "th09_web/cpp/game/EclProgram.cpp": "5b36ad2bcd1f2eede883cd6fee001629c7a05dfc7f08c2dea4a8d4cf6b0087e4",
+    "th09_web/cpp/game/EclSpecial.cpp": "ffee8371a2c0bafdc4f407b35f89b058a31ce229be951b12065bf6eb086dfabf",
+    "th09_web/cpp/game/EclVariables.cpp": "a57947d6470be1eefb46208771295eadf2f5fbe37e64284da00eb5852a54d04a",
+    "th09_web/cpp/game/EclVm.cpp": "ce0e2c98cc26281cad2bf57f0b665396b06d24221d8622f95d48284410e72b77",
+    "th09_web/cpp/game/EffectGeometry.cpp": "4311f3f2619e9533ae6c40aa79e4b647b1a7f473e9572a92091ff33a7505aea3",
+    "th09_web/cpp/game/EffectLogic.cpp": "359b325421265344bf6207763a565f9d22a7a6b2e26a5fe90ed2d56edf6921d4",
+    "th09_web/cpp/game/EffectManager.cpp": "d531260ce11e69834d1a0ef2a40ba01d10d16bf03d19bd165fd8d97ed1a7c475",
+    "th09_web/cpp/game/Ending.cpp": "db537c2f120cba11fade03253ed8518456acf79da72380ea5bbf82a2e67efb02",
+    "th09_web/cpp/game/EnemyAnimation.cpp": "053e1fba05899f776c79b8b1dd34fec05e0295d857b563ea60bc78188b2d4403",
+    "th09_web/cpp/game/EnemyDeath.cpp": "226add1fbd5cba741ba558ad0196912dd3aaadb566594e768b223f656d18e5a7",
+    "th09_web/cpp/game/EnemyDraw.cpp": "6db80945fbd9e8ffe0b8ff8f0bdc8fe596357e7e210fd2f6327b1b4a89aa242a",
+    "th09_web/cpp/game/EnemyFrame.cpp": "bb611278c2f8dc1d54ba7fb35cbdf1d4d0129da37cf1c849d3ee69853419d858",
+    "th09_web/cpp/game/EnemyManager.cpp": "62752d58c5f82420e740f16262f9ce242511571a0c12f6d14adb3d210aad0a74",
+    "th09_web/cpp/game/EnemyMotion.cpp": "ed1c1feedef81feb371ce0305301b5eddf8e1624c3321120c421933fb899f892",
+    "th09_web/cpp/game/EnemyStatus.cpp": "874c2c007357cf618ae0ea3319593c5e33b69e94f01e6e43205f5ad83b04eab1",
+    "th09_web/cpp/game/EnemyTimeline.cpp": "1fc3f197a7d7175e6e5f3343cb4ecd61aa01f93c4af1bb0530788f53f667c4fe",
+    "th09_web/cpp/game/EnemyTrail.cpp": "4c37e9cbaddb358596ce0c18eb8502cbcf211f1d43b7165ca495aba30a3ab495",
+    "th09_web/cpp/game/FieldAttacks.cpp": "fc5494f12c18f2a628a45bbd013715e68e49e76939d9c42db6d196c116efbeb7",
+    "th09_web/cpp/game/GameBattle.cpp": "6b1fdca6057008ae0f5cf8bbea1323fcf7e8f33ac1119259490466f0b43012a6",
+    "th09_web/cpp/game/GameConfiguration.cpp": "0a82759fb2b2e2dbaba8cfd8eb98440a08c4deab66b77786c0a481bf7f944b52",
+    "th09_web/cpp/game/GameInput.cpp": "971a329f250b900cf86fb31c3ba818c7f7b279b237c5259fd1fa80ea47e8cafb",
+    "th09_web/cpp/game/GameMath.cpp": "0b2978f08904a83d6368dcc6a5b8ce611a75196ac6447e689b49294a57f3986c",
+    "th09_web/cpp/game/GamePresentation.cpp": "04794e2d40c7f258d5afef9b2669a401b7459b0006b462eb340a9e2b5c27af8b",
+    "th09_web/cpp/game/GameResources.cpp": "deebb736e576826f807bcdbb4660c9130aac43ace0bd94c04100707244297063",
+    "th09_web/cpp/game/GameSession.cpp": "a7c466d2f86ead36ecdc4ca337ec736b4b6a8416d4670d8b3a9f6cbe1b07fde6",
+    "th09_web/cpp/game/GameWorld.cpp": "10b8704ca9852330535afdf1dcf96327c1c33045b6ad30a3a1f345fc9796e1d4",
+    "th09_web/cpp/game/GraphicsMath.cpp": "60cdf7b52a4304bbe106bda9be9ae2ac004762ab743359eee115420c1f812e55",
+    "th09_web/cpp/game/HeadsUpDisplay.cpp": "6c814f69416faf66ceb492d5a0d0e3f6a27d4bfbfe2a0c8c0f7d10b5dd7c045a",
+    "th09_web/cpp/game/ImageResample.cpp": "f0627a430b112be4ad636035b63abf50d1e1c050b2e23e1b6dcab21ead0e2434",
+    "th09_web/cpp/game/InGameMenu.cpp": "1fe392eedae506cf4c2fb548b4075b9ff6678e5608eef33e2d9e5031be745ba7",
+    "th09_web/cpp/game/InputFrame.cpp": "cc145914655e8fa1ea74e39069efe5d12b68aa2574687d64e7e3b9169a1cafbf",
+    "th09_web/cpp/game/KeyboardInput.cpp": "233e6d51e36809b9221c4894f12cf2d117910cf72703c0f9bc787e579ed57791",
+    "th09_web/cpp/game/LaserManager.cpp": "56dea28d43bf15edc1ea823c159e42b8fbec80c2401fd2076e092a8e7cfbcf4e",
+    "th09_web/cpp/game/Localization.cpp": "27860633bb173c60457b084e0d56e0d921f6530972bc9a49a5fd78bba284972a",
+    "th09_web/cpp/game/LocalizationStub.cpp": "879045489b985ccb86c4c99c320651593311f0bbda81bb1098ece3c23c13c00c",
+    "th09_web/cpp/game/Lzss.cpp": "755029f9715a6e9433cbd0dcf2540d551ffce2b4112ec430dbb236bb35bac0cd",
+    "th09_web/cpp/game/MatchRules.cpp": "a1b6c2e57dedf3f2925b85091d725540e05cbb834f9451f132ae230224db5ccb",
+    "th09_web/cpp/game/MatchScene.cpp": "1a06cfdf54c249e094ba066f62a7c33951ee9380e05d9b821d68bae59842d58a",
+    "th09_web/cpp/game/MessageResource.cpp": "e1be5c413decb8d28e99a9270a9ddfe73918bcd2cea52819f1fbe0f9f9825860",
+    "th09_web/cpp/game/MystiaAttacks.cpp": "c8799d4aedf663467905b8a28f97b96903348c2354431c3954744f09c3ce92e3",
+    "th09_web/cpp/game/Player.cpp": "4032b1f7961adfdf499b86a5986db39aa0e7abdc89be329b2343eb65b66821c8",
+    "th09_web/cpp/game/PlayerCollision.cpp": "ee6204c34037b38760766441aee1270c0ccf344a5284584cdaa4976ef125270d",
+    "th09_web/cpp/game/PlayerHazards.cpp": "129027206bfa7cb22daf903aee6691d75fdf48ce1eee06cf666d611bdcf6202d",
+    "th09_web/cpp/game/PlayerItems.cpp": "36d3e451a58f20249860a96070871c85919ed659fd65a59b17813b54c11401a5",
+    "th09_web/cpp/game/PlayerLife.cpp": "d85c08d35f5d0551bf31bc6fc66aa7356cdb2af83fd9d8b7bec07d7efef4f8af",
+    "th09_web/cpp/game/PlayerMotion.cpp": "18ef13e7d092da6f850256e4b74beae598d37c522ca10d1718d31ebabe4d1b82",
+    "th09_web/cpp/game/PlayerRecords.cpp": "b179febf6b598086bb7083c2f05248685a498fc735d6f454c91a9f55647f23de",
+    "th09_web/cpp/game/PlayerShots.cpp": "1475efc3fe972f70f3aa1d65faa211d38cfd7aad72624f2e7876ad392e1897f6",
+    "th09_web/cpp/game/ReplayArchive.cpp": "8e8fb8808b3e413e8c074ac955c03d9c6b6c5ca30f599dc8d4cfc465d473ef10",
+    "th09_web/cpp/game/ReplayFile.cpp": "bbf8de94d75437bf0471d7b8fbe57fc422e152aa5b5aa5f7f95b3ee9edc93602",
+    "th09_web/cpp/game/ReplaySession.cpp": "b832dd0b2a8a3f9b7f5abf6bbbe8c911f2517133ecddb00fa5e3c3e4c3dbf1ab",
+    "th09_web/cpp/game/ResourceCrypt.cpp": "a2982b36e56122447b27ec27cfc73d096a8645d0b15e4db38cc2321132abf097",
+    "th09_web/cpp/game/Rng.cpp": "cfc17cce749c0cced180470c0078194e17c32bcfdd037eabce94eeb150ecccac",
+    "th09_web/cpp/game/RuntimeOverride.cpp": "35a190828597cddac91a568c4ac83e95a1abb0205f1a1af59bf10d064ada9da3",
+    "th09_web/cpp/game/ScoreFile.cpp": "e8d765bbdeb53c6837206232b0ee4575358766be0745cf2212b4428f1733917f",
+    "th09_web/cpp/game/ScreenEffects.cpp": "644f9dd111f8ea6bd505826db47144915b6ed67bbde658e52a7ffb89c8bdc576",
+    "th09_web/cpp/game/ShotControl.cpp": "a8118cb898f4c7cbd6a6e82b3a077a19ac688280d0c1bc518033f7d3ab9dcb8e",
+    "th09_web/cpp/game/ShotResource.cpp": "70f814238ce8ea7968858f06fb663e58c669e9251e1a35f7800332b99782d4e6",
+    "th09_web/cpp/game/SoundEffects.cpp": "caf7681ea78c8ec607272df48e953db561e5e61f6efad96efdb5e00ca3e7e50e",
+    "th09_web/cpp/game/StageModelRenderer.cpp": "a96b8b4b92a260b630e7ff320992502846106a44a50e31a542f2d7336fdb3a5c",
+    "th09_web/cpp/game/StageResource.cpp": "ef21f45266a7a7c8c83081ae1b0b37f9faca6a2aeb081db7290857fdfa759d87",
+    "th09_web/cpp/game/StageSelection.cpp": "02be2d12bdbd100989efdbf8f0aeed41f3c7206b3e3b65578ca70a1c72773eac",
+    "th09_web/cpp/game/TextureImage.cpp": "b4e2b3830ff5115c1b36d29ff033f63511293afcdd56aa45efdb4081e1cef18c",
+    "th09_web/cpp/game/Timer.cpp": "a4737a989c49e61964f5679af704ff6a9c14a322b13d3224fc058b9d3d37bd23",
+    "th09_web/cpp/game/TitleCharacters.cpp": "59419ec7f678b6fe80ecd51db992314750425fae36e74ab6d79949b65ecd0c79",
+    "th09_web/cpp/game/TitleKeys.cpp": "bb17901beb07e907a91be5c236e997d3fe3190aea16bb26ac3cadb037cbe8ca8",
+    "th09_web/cpp/game/TitleMenus.cpp": "4566e855835c43b6358d0052430602f644702fcb783ca92a49c1905c31b05ee0",
+    "th09_web/cpp/game/TitleMusic.cpp": "887e27cb15df5f1ac2082e9a03cfb08bfc2e4bbfbc231f918bcf48457fea93c2",
+    "th09_web/cpp/game/TitleOptions.cpp": "0f45084f910636b71d65428e6667979eb88bdeff6a7e9e5ec44a33492694e474",
+    "th09_web/cpp/game/TitleRankings.cpp": "4072f264daf32d2e0e79a4d61ee64c2b5cf8e2b6319d1557f407bd03eb76d818",
+    "th09_web/cpp/game/TitleReplays.cpp": "38bdd0f7dc2c942f10ecd39db3ccfaf1d37a0af58238a576ffe7e8529187ee9e",
+    "th09_web/cpp/sdl/Application.cpp": "893c74fe2f1b5c3838d47519f7aa06aa74dc929157fcebdf4f3ffcd6270f4fc5",
+    "th09_web/cpp/sdl/Assets.cpp": "a5e9ff3ca79ac57313bb52be5dcee98b366b7f761c25826ef627319845f1c3eb",
+    "th09_web/cpp/sdl/AudioDevice.cpp": "2de1b97a1e34126c752160342ef6deb17f1ac5e7122b9ce6894aef06d275d424",
+    "th09_web/cpp/sdl/FontDevice.cpp": "beb1477bad7b8d3dfa95610e5ddd25ec40455472957d0018a85c0be11708172c",
+    "th09_web/cpp/sdl/GraphicsDevice.cpp": "372974372de5e3e5eec6ad9d650ed5c1f4af0fdd2d519b879249d84fef330480",
+    "th09_web/cpp/sdl/SharedPeerTransport.cpp": "e44acc6d8d64d506101aff920cba0dc964fa6c9c380bc89837886febd6ecee5a",
+    "th09_web/cpp/multiplayer/DynamicState.cpp": "2ab40a87048b0c5c609231a8786f7459d8b690bcc7cc33264b16ba81f2316aec",
+    "th09_web/cpp/multiplayer/RollbackSession.cpp": "eb5fb891b583c47e6afe36b770fe9e89a7ff1e287b55b11803e6095c0306274f",
+    "th09_web/cpp/multiplayer/WorldState.cpp": "e6a8bdce662ab63c71585787708a0d3e9e9fd064bd06e4477310f2fe21bfe238",
+    "third_party/eagler-common/src/netplay/BrowserPeerTransport.cpp": "a69ef0b5567803c8384ead446ee1de7d1133bb86e1b1577140cdb6d8b0ff89f1",
+    "third_party/eagler-common/src/netplay/NetplayCore.cpp": "717944cfb577652346bd015441c1b2ea206940be2e33be3afc7ce4c7bc93c73c",
+    "third_party/eagler-common/src/netplay/NetplayProtocol.cpp": "1a5f3ba6ed1884b83c24c6d2d558922163dc878eb18879f72059dd7688e7bfeb",
+    "third_party/eagler-common/src/netplay/NetplaySession.cpp": "dae574ea794ce18ae5aa1be75350a9180d4507f032d18c8c82088227060352e5",
+    "third_party/eagler-common/src/netplay/SessionChannel.cpp": "bdeff71981b58f2bb7046af4bcf713f2bd8ffc6fe8f5c5a75731735e3c9d48ac",
+    "third_party/eagler-common/src/netplay/RollbackJournal.cpp": "119318f9b7b52d0ecbda37c3d2bc2b96e47d9dee4acc151e5bd92cb754b20b35",
+    "portable/input/KeyboardMap.inc": "e81f5adc0b4a33390fb4256611ac0880195b9df88ae73e018d113e1331ab0362",
+    "portable/input/MotionTrack.hpp": "ccc3df5c442b08bc59e1c4c0933215599fa98c33ecee7e38550287169ccf581e",
+    "portable/input/TouchController.hpp": "d70c7ce6890f7693f9d51cb601bee9d9cd30336bb15147c5570772e8f83c8028",
+    "portable/sdl/AssetPixelFormat.hpp": "c2a18909ca42e7a8b7723455414d4fdd7a4433827ec692d8574756a29b29ec2f",
+    "portable/sdl/FrameCadence.hpp": "d475dd64d34b68178c1da18b27e46f46476363946179aa156554df15f37702d6",
+    "portable/sdl/GraphicsState.hpp": "5f9c21e4f13385fe74bfc42d4a43ce9cd8af643cfdf589a99fb77912b83a9f64",
+    "portable/sdl/LegacyGraphics.hpp": "6f3358c223879094cb855b5fa2fb9c1d67fcfff1607830625ebf89d1c90aceee",
+    "portable/sdl/RenderCommands.hpp": "0e0e53d13c2b56b90b09e1ed83088dd43a7b658d72359b3c7c5ea2058c85f5c4",
+    "portable/sdl/Renderer.hpp": "c002c9b9fdfb43f33883c7b50cb222e0ab2291eb25c57bf284ba515fa0bf23c7",
+    "portable/sdl/ResampleShader.hpp": "cdde2c88abeeae0059325628661f2a95c37094d1cab456d6a5dd8cb900b3e7ac",
+    "portable/sdl/Shaders.hpp": "c2168b9412c46c6589f2c726d8ea7b9ea5def8c61c4eb8f8feff6b51cc11181e",
+    "portable/sdl/third_party/miniaudio.h": "2ff4797ef263c070ad9030884b515ef162efc2e00140db943f2daa95e8f08314",
+    "portable/sdl/third_party/stb_image.h": "bbbac7edf9add8586a4351ff69bfc53a85731793e4829c9a9d26a5f950a70a8c",
+    "portable/sdl/third_party/stb_vorbis.h": "c8daf8d9f0dad818a1cb6c9194eeb4503b63b8cbf8c744efc12942f3d679f686",
+    "th09_web/cpp/game/AnmExecutor.hpp": "8656841b567eb61b6b2b4ef709ff553c7b7948eb14cfe88938d4b480d4963e29",
+    "th09_web/cpp/game/AnmLayout.hpp": "582eab3c0216d651773f1a9e64a4c4147435db9711afcd62a9131db30500b598",
+    "th09_web/cpp/game/AnmRenderer.hpp": "ee3c55e77b90dacffcb9bcfa11d862ff16e6707d4fecc0624e4ed6e4890f51bf",
+    "th09_web/cpp/game/AnmResource.hpp": "ddf474513d1e1cfc4ccfc051935757ce17089ba35dc367145057f35c9cfa1e98",
+    "th09_web/cpp/game/Archive.hpp": "d3c151b74242245f94f84425805199f4ac739b8ffe1660595187a5d4896c0f14",
+    "th09_web/cpp/game/Arithmetic.hpp": "9227679a4d4f5403557d648ec1129f267214d002d66f34f7da491382b02b7fb7",
+    "th09_web/cpp/game/AsciiRenderer.hpp": "017a94532fe6e3abc7f6d1bdfa9205867f88bb72ef6c3529ede1f4840cbdb30e",
+    "th09_web/cpp/game/AttackAreas.hpp": "0382e5107bfe50fa361d6e86f0bbd30824b3abf580c2d7c361dbd7fb7fdeedb1",
+    "th09_web/cpp/game/AttackController.hpp": "db84ad9ab1d284cfd8781a35d3fc1bb11731c82a3cfddcc85f013f85d355eee9",
+    "th09_web/cpp/game/AttackQueue.hpp": "e9fdaebb7bf3f501e0b3006be3469b9e8b8c93feaa2998e6f2b278569545e829",
+    "th09_web/cpp/game/AttackQueueActions.hpp": "f0f0962038bfe2b9b9d82b1efd5023be5b3e26908abe10f4a0d751d9c9530835",
+    "th09_web/cpp/game/AttackTransfer.hpp": "a8f835f17924f52a446b0f74504d81d909170c17818e4d54edf6b15d37187cd0",
+    "th09_web/cpp/game/AttackTravel.hpp": "f19f0fe0a5436b3b637dcf2951fd3c499e90b2ce31d293a9996598ef92169f89",
+    "th09_web/cpp/game/Background.hpp": "05a1c56867d80f78234c69245bef390c29fc60bb6b2ffadf0f05da3dd6a80a53",
+    "th09_web/cpp/game/BackgroundDraw.hpp": "3cbae9f0ba4a7155e91b8d04b71bc2606ea3fa4289108060b531f62970cc1fb6",
+    "th09_web/cpp/game/Binary.hpp": "38c5508212d806fc13e0077dea78ac9651a86e270622a75d948990478de7b488",
+    "th09_web/cpp/game/Bullet.hpp": "7b74419a8aaaafdd9183b08974812d3fe4cb9ee563d9489199863ed27b6a445b",
+    "th09_web/cpp/game/BulletDraw.hpp": "7cb489cfaa9b6e2f6d363e1f6aac064d65797ae8d6689de176fa45ccec9a5282",
+    "th09_web/cpp/game/BulletEmission.hpp": "dc9f475596f334cd680dc4e043575ed44b7b29c3b10686e3d0faaa40c64ea7fd",
+    "th09_web/cpp/game/BulletExtras.hpp": "18396dd155a4f3387ebb0cf4bc04e064e420899b57858a0f5f8580d1b394d9b9",
+    "th09_web/cpp/game/BulletManager.hpp": "7652bd412a211d9f2575c5e2e4d1dd1d7e8a3123915fb78b8ead142270d44f77",
+    "th09_web/cpp/game/BulletVisuals.hpp": "be661e6ee61bd3268b98a890840cd15b240c8e583d480ebf07270ab68f73fd58",
+    "th09_web/cpp/game/Camera.hpp": "47c1ba0982f1ee1ffa407036f9836452f05a8b5d4cb644fe8caac4086393bcd5",
+    "th09_web/cpp/game/CharacterAttackMeter.hpp": "fb1910cd59cd11c185917e0b6731cf9c70008088d7c3a53e3988a01782d18373",
+    "th09_web/cpp/game/CharacterAttacks.hpp": "a167b70ebff8d770a700966d25b566bdb193b3755ed001571648292000d3d555",
+    "th09_web/cpp/game/CharacterCapture.hpp": "178f569e0c762ccbd96d51910cb561f9836a2f9013eab9a12666037f0993039a",
+    "th09_web/cpp/game/ChargeGauge.hpp": "38c064a800cb310664f9f55cf8cb88ae8957706b9941320e7f1538e2a1dc1bb0",
+    "th09_web/cpp/game/Combo.hpp": "7ed2734119cfcb4cb68eae6c318a1647e81b77d47eadd1f2e3aebc894856b7bc",
+    "th09_web/cpp/game/CpuPlayer.hpp": "92fbf69a91d486932fc3fc71e42207e47a9bd88c85a550bc27a42f6d482a187b",
+    "th09_web/cpp/game/Dialogue.hpp": "1b8d4acd675d55dd3c81c32829ea78f0c3ac96909a690c2dd09eedff21343e9b",
+    "th09_web/cpp/game/EclEmitter.hpp": "18ea65dcbc6f4d27fc3f0cecfb20ccdde415d1649d0116c18dea8f372c0366b2",
+    "th09_web/cpp/game/EclGameOperations.hpp": "da527f33c5bb5403c85cc1a2e38fdbc92f6bf871c4d0d8309b3122fdb598d677",
+    "th09_web/cpp/game/EclLasers.hpp": "156c291c39fc04ba338a006e3f9b7c40737cd2a95ea6ca72165d6408dffa59d8",
+    "th09_web/cpp/game/EclProgram.hpp": "2322c40e28d9bc48c70d32e02629551097a600747f0c706be4bb7dc51d48e3d1",
+    "th09_web/cpp/game/EclSpecial.hpp": "edfb8503ae2f3de7082f005bd2f6c78204f4980b2543470ee761510fad38e001",
+    "th09_web/cpp/game/EclVariables.hpp": "4533f029f5ff4cd31101f453c8fd01a78f7192b9a87826ebe61d820c7e9a39f6",
+    "th09_web/cpp/game/EclVm.hpp": "4f271ef6dd740ba4bd0729979f8fbe2526bf05f0699553afa27598df47117728",
+    "th09_web/cpp/game/EffectManager.hpp": "699db6e3c4d1a2527975c7074747015d7d9ed9333731f4e647f53c944af0e167",
+    "th09_web/cpp/game/Ending.hpp": "5b663a41da76d3d89720ff2e8be7d9370061ebeb6395cdd55505e1a07a86a1a7",
+    "th09_web/cpp/game/EnemyAnimation.hpp": "b6de316727285f30a3eddcf41712abc23bf4a1a2f0a784ec0483786d71a62d72",
+    "th09_web/cpp/game/EnemyDeath.hpp": "f35f3ae13c38fa4510393332d83ecfdca747af5eb2c14e79d2c156db541f9be8",
+    "th09_web/cpp/game/EnemyDraw.hpp": "0979fc8ad6cddd4d60f2552e52dcfc72e67e6f390aa9574b14caeb5849ca5939",
+    "th09_web/cpp/game/EnemyFrame.hpp": "c0c9d494a463d4fb21134dbb5a3b5c218d27e222a038f4d82cce1c5c516910c5",
+    "th09_web/cpp/game/EnemyManager.hpp": "0ddc8ec0f9c3ae3ed5105ae104f0b067dbefc06d6efa0d601f351fcbaac2f2e6",
+    "th09_web/cpp/game/EnemyMotion.hpp": "c6afe98c9f6f06f1f163464a7b63ae10cd9106732b523d36488be9e3bace9e19",
+    "th09_web/cpp/game/EnemyStatus.hpp": "823950c1125eb8710293e0530fdb7c92f5563c4a9a114d67b71e9b3858ab41a1",
+    "th09_web/cpp/game/EnemyTimeline.hpp": "db74ef663275f4a5e18e17a128271bd999a00815a0f5eec7c466bd0ce834eac2",
+    "th09_web/cpp/game/EnemyTrail.hpp": "2bb81638e10167de7d3acfe28cefc512ed6f6d005af410f923ff6ae9161fb27d",
+    "th09_web/cpp/game/GameBattle.hpp": "f0c6c57d95febbc740f060b1208970a0821d17109abf3c271315772d1bbc2477",
+    "th09_web/cpp/game/GameBattleServices.hpp": "598419352cdb0b8923953906e16cf911243bc2ec80000713e943e41c554d1183",
+    "th09_web/cpp/game/GameConfiguration.hpp": "7d9d616fe7a3dad9c24e6cd96efbe1da115d37f5f5b83c3f107fad1197be2d00",
+    "th09_web/cpp/game/GameInput.hpp": "f37c010ecc509a8d74e61a76a09692b4fc606ca8f4d9ed52623c939c553ae45f",
+    "th09_web/cpp/game/GameMath.hpp": "552fb31026d5d759c644409b3f6e9b637cddbdee4debd15d4c7e96dbff3bdfd2",
+    "th09_web/cpp/game/GamePresentation.hpp": "7f400b997ad3feb5d466edfa076979f307b28257861db89ea4e5830471ea2dfe",
+    "th09_web/cpp/game/GameResources.hpp": "2f5962c182cdc3c08c364d3006cca13d42ff33eb881a88fd8fb650be109169e4",
+    "th09_web/cpp/game/GameSession.hpp": "298ce24e26242a2b3194d8562a606ebe3f1cc2895a81e2cd9a17623637170aba",
+    "th09_web/cpp/game/GameWorld.hpp": "2f411a7ffcdf7c711e73a85ffad4721246fd4e4e123918e494cf93d15fb6e388",
+    "th09_web/cpp/game/GraphicsMath.hpp": "33a0f61a30bf30ead3a5223d1923809f2b358eb08993380bfe93cf3b1fbec4e4",
+    "th09_web/cpp/game/HazardTrace.hpp": "0879179feab519316056ded4d071e3b8cf98bf92d47eede06fd0dbea8d262633",
+    "th09_web/cpp/game/HeadsUpDisplay.hpp": "8e6af73edc189e0ce5ed0dedc8e214b42cea294bc06d6426eca5393e0981a2eb",
+    "th09_web/cpp/game/ImageResample.hpp": "e1e7d9046c3700249521d97e64677cf41914cc803b6e07c5ceadc4599a062e4a",
+    "th09_web/cpp/game/InGameMenu.hpp": "fd21d8fe8e1dce64a48ea4d3d0a73c7eb91c5135cfee96a48e7a113845fa420e",
+    "th09_web/cpp/game/InputFrame.hpp": "f908385ebc34edeb192d04a0842e07bac6e5421841ff4b58349e50cb9a0cf5b2",
+    "th09_web/cpp/game/KeyboardInput.hpp": "571b07663249c1eb97ce66fbc9cbccac980741e356bd0074437f5a28db175a96",
+    "th09_web/cpp/game/LaserManager.hpp": "f900ac551f7b68ed258dbb9cc491553b5450a1021f5e7720721c72512ff3aae2",
+    "th09_web/cpp/game/Localization.hpp": "ca91a20c2562db44793fd9de02aec27edf649ea87271efa18d428edd200ecd08",
+    "th09_web/cpp/game/Lzss.hpp": "221db5996f7e772aa4421160ff2ed048f39cbf28b79ed49bf8126ff1f6629615",
+    "th09_web/cpp/game/MatchRules.hpp": "5dfa44a9459abdf731b0118c6421f1ee162e41abf2d8964e67ae1116ba8f5e18",
+    "th09_web/cpp/game/MatchScene.hpp": "feb596ddf52afd9f30851107cdaf5c310b56680a25bd9d15f972c28740563447",
+    "th09_web/cpp/game/MessageResource.hpp": "d518aba21613d85d69e8d0434fcca99d52cf6814616630de2c550f515bc428fe",
+    "th09_web/cpp/game/MusicCatalog.hpp": "da8d9b8d911bc5d27470cfd1fefc448cfb14066f34cc025d0451c3adf890f326",
+    "th09_web/cpp/game/NetworkInput.hpp": "b42b5821a7a60b777350e134a6daad440fa0c7ca35dc13794ccc2eec74d2405f",
+    "th09_web/cpp/game/Player.hpp": "29c0f4d5e975f1fd5cb4029dec644c6e721bd125ef26ab70faa66d9d0bf7612b",
+    "th09_web/cpp/game/PlayerCollision.hpp": "3ecdf251ea0845e8831954fc8705412f14adc221c9f6592114feecd46f46ef4d",
+    "th09_web/cpp/game/PlayerHazards.hpp": "c2153e2fb08dbeade640247af327643be8c195993d31f8a73aba443d3c1d2416",
+    "th09_web/cpp/game/PlayerItems.hpp": "8d5e8a58aad02dd6be07c192afdc7fdf99ccaf0e0dccc894a07dcfc26ecf512e",
+    "th09_web/cpp/game/PlayerLife.hpp": "c82cd8f3aa4ba82864a4885beadfd07c8b78ad087a45fe5ea8c8169085176136",
+    "th09_web/cpp/game/PlayerMotion.hpp": "70362c2f20adc7f40ff1c88e71de7d17d1699256ee8b5abd08ce80b2703ecaaf",
+    "th09_web/cpp/game/PlayerRecords.hpp": "f468890e9361620ae80f4bbad77bc2a5c42bb48a5f2d465f5a2470616143c2cf",
+    "th09_web/cpp/game/PlayerShots.hpp": "7edeb86560d9942b71cfa5c9b965eec8ce2c98f18269493dd940fb99e26454bc",
+    "th09_web/cpp/game/PoolCheckpoint.hpp": "65b395fcc1356df729cb3493dc3ca8e9355151c89102831479a8e98b94856fda",
+    "th09_web/cpp/game/ReplayArchive.hpp": "0f1077b99e90370d36b4de1471539c6966cff273e66cdc573608dad2f6c114dc",
+    "th09_web/cpp/game/ReplayData.inc": "dc71381ce93e919ca3a11c5237e456c936485b28bb6181045879fe67ce733d33",
+    "th09_web/cpp/game/ReplayFile.hpp": "1c06cbc29d5aede327663eb36aefbe9e69db3d62739984143865b7309cb2db43",
+    "th09_web/cpp/game/ReplaySession.hpp": "7a1470af00ccf246911edaf35548989c4f53f7117298359ac843b41f55767b57",
+    "th09_web/cpp/game/ResourceCrypt.hpp": "d51fa07fe50f1b26cec2bd82b16e4056bfce8f8cab47525b35051fdcb73c8d5b",
+    "th09_web/cpp/game/ResourceData.inc": "05b2a1361426431cbb0c862f27486a48529bffdccf851fd90bbfecf6e4c7132c",
+    "th09_web/cpp/game/Rng.hpp": "ce1ed7b7107b24e812e2566d620e451ea57e70e55a92a6f3d1a2c23405dd3cbf",
+    "th09_web/cpp/game/RuntimeOverride.hpp": "7326e9e2ed3dcb5e079f10c60c8d6691684a009e7b8e03feffa989679dbfb9e2",
+    "th09_web/cpp/game/ScoreFile.hpp": "e8d11ed705a4e8425130e9bf47ecc99693359d6f92b486d23ed0c0336523ce67",
+    "th09_web/cpp/game/ScreenEffects.hpp": "4d8b3860bfa6ea9a37b1949e39015f9aa50c80995aa72763332f7cbb4e4523a9",
+    "th09_web/cpp/game/ShotControl.hpp": "cb580c65995d59f38cb3265ed624699880320b1c889dc802c47920815d92f87f",
+    "th09_web/cpp/game/ShotResource.hpp": "83b42df60ebb6f294ea61ab0a71124cdb5c5be1954c7d2550dc100d18a34d96b",
+    "th09_web/cpp/game/SoundEffects.hpp": "b02e997ea186141117ebbd49d6fbb4fb7e82d07555e63ea95e12977f2e36f162",
+    "th09_web/cpp/game/SpriteGeometry.hpp": "a657836f73bf82672877258731bde2ed023a1b30340a2cd51c8ebb6640c88011",
+    "th09_web/cpp/game/StageData.inc": "c294d8ae102d2d4f00d93cbf7567d1e6024d68aab4c2903f11ae6c56f85aeff9",
+    "th09_web/cpp/game/StageModelRenderer.hpp": "9c6dfff909c8d01e477a2513d6a2736bf353934306c1419d0b033e7f9cc2d37e",
+    "th09_web/cpp/game/StageRenderer.hpp": "12c819b9a34d4c1a7e2b1a8e29ec7fb28c05d601a1a81f6fb15b846751fa5b02",
+    "th09_web/cpp/game/StageResource.hpp": "af85c5c804fcb915369ba11a41d95cc4e6af43f9894be6b95fac3db3d6cbd7a4",
+    "th09_web/cpp/game/StageSelection.hpp": "9d9013d08b9c3276beffad0cfd312607ed3f8e827da059bfae606f7d28e92129",
+    "th09_web/cpp/game/StateChecksum.hpp": "5dd01159ca7b1041249290ec886c9e0a916b18f21ec5ac09b02584703f0b9d41",
+    "th09_web/cpp/game/TextureImage.hpp": "a3656f009f4c30fd5906bedce1be0d35cd1cfe0d94855a58ab9962b55a356ae4",
+    "th09_web/cpp/game/Timer.hpp": "81c1647970dfc2c290b2d5b05fe37473fe6baf1034a055ea6e701f819c4e6b61",
+    "th09_web/cpp/game/TitleData.inc": "be901d9203d497eb8c5cbe077de269b4bc09785facd2b6b60ebbc83e4498526f",
+    "th09_web/cpp/game/TitleMenus.hpp": "cfe924db015341353bff00a2888da63b6b4a4be5a38fa879935078e654360e0a",
+    "th09_web/cpp/game/TouchMotionTrack.hpp": "32609ff735453f8b082007dbd7f2d39a2b4d88124f307af8ba2313b743793597",
+    "th09_web/cpp/game/Types.hpp": "b33c9a661d4cec5faa48d1b25fa75a6be0ab9cbbae2102155cd598c11394898f",
+    "th09_web/cpp/game/ZunGraphics.hpp": "cc46e80160c2e25a62f7106fed95ff02fabf713a022d7e8d16e157ea923ff639",
+    "th09_web/cpp/multiplayer/DynamicState.hpp": "4f2fcb66a63921b05cd0dabc3b78d99f1bc6e3941d5388a3fcd3c3b4f879f37a",
+    "th09_web/cpp/multiplayer/RollbackSession.hpp": "773d0f16a507db6f30e81f3d56ebf9938700f265f8e9eedbc69db7ee36699f44",
+    "th09_web/cpp/multiplayer/WorldState.hpp": "1b6869afe0725a2518b03805e0cfa34e6f86c5d71031f4d749b0508098593dd3",
+    "th09_web/cpp/multiplayer/netplay/NetplayProtocolConfig.hpp": "92670ef7f02b138507139c2be4b87fbe0b4d4833578b161478d1e6bea813472b",
+    "th09_web/cpp/sdl/Assets.hpp": "9fab3792c9ee1ca302977b225f78052061df9c0c6d8a710cfb9d2cdbe3ca500e",
+    "th09_web/cpp/sdl/AudioDevice.hpp": "8edee244457af04cf7c6563c917d3e6f15b8955c00d7e5f4359e20037d3c9e17",
+    "th09_web/cpp/sdl/FontDevice.hpp": "5eb84bc33000344aee183ab91c1b0c9f34c206104c854225e159854d751a70f0",
+    "th09_web/cpp/sdl/GraphicsDevice.hpp": "d3876eecb8fdf4214e53e2654812205c6cc02b76715d1777118e15e6ccae1e1d",
+    "th09_web/cpp/sdl/netplay/NetplayTransportConfig.hpp": "40cf0d30da930cab3e6df12f8a92878e28199185ec6f87a094c9ccbc939e21ca",
+    "third_party/eagler-common/include/eagler/netplay/BrowserPeerTransport.hpp": "0ad15c21aeccecd9e650f1f26675e0a7c071075ae262c87b352d6acfd893f91f",
+    "third_party/eagler-common/include/eagler/netplay/ConfirmedInputWatchdog.hpp": "cfb8131aa1608660f6483f7b1c5a99bfdc984de0aa675f102df37bc5fda94c0d",
+    "third_party/eagler-common/include/eagler/netplay/DirectTouchEquivalence.hpp": "d9cd3a965f303aaa89a273885b6a28f184193db22b764d893d200dc1b7c768e8",
+    "third_party/eagler-common/include/eagler/netplay/DirectTouchState.hpp": "b6bb4afcd56366cf2ed572629b98aae83a970c7114a80c3ca9005627c5619107",
+    "third_party/eagler-common/include/eagler/netplay/FrameAdvantageWindow.hpp": "72af20efcf0d6317ee817a5538f4009cd7acf3977565b0087663a958bb6493d1",
+    "third_party/eagler-common/include/eagler/netplay/FrameBudget.hpp": "860d5d54555378474f99495301288dc16f31b675ebfa20690006ff5d13b3561b",
+    "third_party/eagler-common/include/eagler/netplay/FramePacingPolicy.hpp": "60efd7cfb63aff9df2e906beb2ba8088c650b53853a7e75453a8dff151df8f97",
+    "third_party/eagler-common/include/eagler/netplay/InputRepairBudget.hpp": "abd3a2f9b29e99d595aff48e47d95145d6861d267ac99ce51e82f5c6030bc1c3",
+    "third_party/eagler-common/include/eagler/netplay/InputReplay.hpp": "def1e7daa1a8229cd79fa5907fd12157f36dffd04fab4a47357ff9877cd04dec",
+    "third_party/eagler-common/include/eagler/netplay/NetplayCore.hpp": "7fc697d534b139cc41bd457180eb3c9a6ec6e69d06c17bfe6204880e825a0dea",
+    "third_party/eagler-common/include/eagler/netplay/NetplayInput.hpp": "adc13ba95ad652d542143288ee395745327957b3e48c4bfc574b0a5a54f16f4c",
+    "third_party/eagler-common/include/eagler/netplay/NetplayProtocol.hpp": "6ca232e241c9b0a0ca8a35abfe6031a3043401d0bbc6d044eeda7dd9d56d0f92",
+    "third_party/eagler-common/include/eagler/netplay/NetplaySession.hpp": "2c743dc981f6b1de21ad974c2e693fb3bb7b49c1830eb3869c81db50b087388b",
+    "third_party/eagler-common/include/eagler/netplay/PartitionedPoolJournal.hpp": "0f68d29edfc204015e6eeb83c0577a8d154566140cf6f2767602fa8cef8d14f1",
+    "third_party/eagler-common/include/eagler/netplay/PeerTransport.hpp": "56685f7d613612592bb022c5c81fd6e94016e0110a37641d2f6a15181158e602",
+    "third_party/eagler-common/include/eagler/netplay/RollbackJournal.hpp": "32bbe8f62225e312ef7292dfc186f09d3cf21cebed44c4ae0a5a79c66ab705e8",
+    "third_party/eagler-common/include/eagler/netplay/RollbackReplayBudget.hpp": "e01f5cf09d3186879e2b8b786dfb12630fbc739c4ad37d376693269904299c2f",
+    "third_party/eagler-common/include/eagler/netplay/SessionChannel.hpp": "d18c01243db91203871cb9e648fdd2160223eed8bc28bf6a90880364e8ac96cc",
+    "third_party/eagler-common/include/eagler/netplay/SessionPacing.hpp": "f02778ad8611438fdaeb6cfdb599fb2a30f66214ed603a83820eb45a022e3045",
+    "third_party/eagler-common/include/eagler/netplay/SnapshotPolicy.hpp": "67be1479683641357163464687556309f50605ed59f63c242682122ade04ebe1",
+    "third_party/eagler-common/include/eagler/netplay/SparsePoolCapture.hpp": "4ad3d0dc78cd82176193507ac8c443dc1a7b4eafc3c72a5f1b6729cc7bda85af",
+    "third_party/eagler-common/include/eagler/netplay/WebSocketTransport.hpp": "19299b50d7e448fcc3b55c818a803bdabe5454b2263df53e2bd50e26dba4000c",
+    "portable/sdl/Renderer.cpp": "525b8ac0ed47a2f75b9f0c95d8edb9b66e65792baa4c96dfd077b92b29b3fae7",
+    "th09_web/tests/multiplayer/world-browser.mjs": "1c7e8a98541baf729c23b616a0c08655d770ba2f46028b4e5ea5f1eeba248705",
+    "th09_web/tests/multiplayer/peer-browser.mjs": "d872abfe0e44c587af7986086b8dbe26e249248264209f7af6eb52a9743f965e",
+    "th09_web/tests/multiplayer/transport-browser.mjs": "10ae1156da9e05d22db46f149d40d18276ea4138426901a85f3a8940a2eedb28",
+    "th09_web/tests/multiplayer/run-tests.mjs": "0c47418af785f9337638906e4de0e2530a543160dab47a2213d2926c0b09b89c",
+    "th09_web/tests/browser/netplay-check.mjs": "ef0a6f0d03b1c3cf87ec9f93070dc9e43908554f5630a9ada24c7afa2562e3c9",
+    "th09_web/sdl-runtime/shared-netplay.mjs": "b359c102540192d696ef48b416a2c23e101cdb12296dc5bc869374f5118fc20b",
+    "th09_web/sdl-runtime/netplay.mjs": "f0414274311ea0bb984e9fcc2668a01d9aa79f6e8e779b2fb635ad5ab61fb414"
+  },
+  "reports": {
+    "session": {
+      "path": "artifacts/multiplayer-tests/session-report.json",
+      "sha256": "2c8efdfebf0952d88c395ca04c91cb50bf402087f0d24b9d9219493dce45df02",
+      "passed": true,
+      "wasm": "a2a80f8764daffe92a205a7b92413a6a1774e46a73b7a336d42a183da8995623",
+      "scope": "TH09 rollback component gate; not whole-game, browser, phone or performance acceptance"
+    },
+    "dynamic-state": {
+      "path": "artifacts/multiplayer-tests/dynamic-state-report.json",
+      "sha256": "ea84b8c854fc53ee0cd77301c045a9547f0a3cfcc62f567e47679a3e0e2fc56e",
+      "passed": true,
+      "wasm": "65edd7f393d22c5468e0e227627524b0cb0ffcedca02d55fc30254e9a1ffcac2",
+      "scope": "TH09 rollback component gate; not whole-game, browser, phone or performance acceptance"
+    },
+    "dense-a-final": {
+      "path": "artifacts/multiplayer-tests/dense-a-final-report.json",
+      "sha256": "2250e8f3d2f132afe8cf707cacc6077321a6f9219943087664fc6325296543bf",
+      "passed": true,
+      "wasm": "fe0554c85be7d37f7a09fb9dac2f3cc7ff82e8b63f813126476b06b0e59da386",
+      "scope": "Same live TH09 world restore/resimulation with state inventory and framebuffer comparison; desktop Chromium",
+      "result": {
+        "checkpoints": 270,
+        "frames": 1800,
+        "recordingBoundary": 1,
+        "bytes": 11274252,
+        "captureMs": 420.6149997115135,
+        "restoreMs": 350.4699996113777,
+        "stepMs": 187.09000009298325,
+        "status": [
+          1800,
+          -1,
+          0,
+          -1,
+          9,
+          0,
+          2,
+          10,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "session": [
+          1,
+          1800,
+          0,
+          0,
+          0,
+          9,
+          0,
+          1
+        ]
+      },
+      "dense": true,
+      "characters": [
+        0,
+        1
+      ],
+      "errors": []
+    },
+    "sparse-b-final": {
+      "path": "artifacts/multiplayer-tests/sparse-b-final-report.json",
+      "sha256": "bb6289ea8ef1bc443bf377a435fd74547c3db8f3607e224ea6c0cc807abcfdc7",
+      "passed": true,
+      "wasm": "fe0554c85be7d37f7a09fb9dac2f3cc7ff82e8b63f813126476b06b0e59da386",
+      "scope": "Same live TH09 world restore/resimulation with state inventory and framebuffer comparison; desktop Chromium",
+      "result": {
+        "checkpoints": 270,
+        "frames": 1800,
+        "recordingBoundary": 1,
+        "bytes": 2741824,
+        "captureMs": 117.01500022411346,
+        "restoreMs": 87.62499916553497,
+        "stepMs": 189.03999948501587,
+        "status": [
+          1800,
+          -1,
+          0,
+          -1,
+          9,
+          0,
+          2,
+          10,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "session": [
+          1,
+          1800,
+          0,
+          0,
+          0,
+          9,
+          0,
+          1
+        ]
+      },
+      "dense": false,
+      "characters": [
+        0,
+        1
+      ],
+      "errors": []
+    },
+    "dense-a2-final": {
+      "path": "artifacts/multiplayer-tests/dense-a2-final-report.json",
+      "sha256": "56312cfac8edb250d21188a26d8df175c2f7d74478c0696bc77d13eac7a9e3fe",
+      "passed": true,
+      "wasm": "fe0554c85be7d37f7a09fb9dac2f3cc7ff82e8b63f813126476b06b0e59da386",
+      "scope": "Same live TH09 world restore/resimulation with state inventory and framebuffer comparison; desktop Chromium",
+      "result": {
+        "checkpoints": 270,
+        "frames": 1800,
+        "recordingBoundary": 1,
+        "bytes": 11274252,
+        "captureMs": 422.50999987125397,
+        "restoreMs": 349.5749999284744,
+        "stepMs": 186.51000046730042,
+        "status": [
+          1800,
+          -1,
+          0,
+          -1,
+          9,
+          0,
+          2,
+          10,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "session": [
+          1,
+          1800,
+          0,
+          0,
+          0,
+          9,
+          0,
+          1
+        ]
+      },
+      "dense": true,
+      "characters": [
+        0,
+        1
+      ],
+      "errors": []
+    },
+    "world-2-4": {
+      "path": "artifacts/multiplayer-tests/world-2-4-report.json",
+      "sha256": "78a73b03cb0a09265d751a387b056836adf6f639c3bea5dfb0e9fea05d158d29",
+      "passed": true,
+      "wasm": "fe0554c85be7d37f7a09fb9dac2f3cc7ff82e8b63f813126476b06b0e59da386",
+      "scope": "Same live TH09 world restore/resimulation with state inventory and framebuffer comparison; desktop Chromium",
+      "result": {
+        "checkpoints": 270,
+        "frames": 1800,
+        "recordingBoundary": 1,
+        "bytes": 2633868,
+        "captureMs": 109.86500018835068,
+        "restoreMs": 98.99000006914139,
+        "stepMs": 134.7350002527237,
+        "status": [
+          1800,
+          -1,
+          0,
+          -1,
+          9,
+          0,
+          10,
+          10,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "session": [
+          1,
+          1800,
+          0,
+          0,
+          0,
+          9,
+          0,
+          1
+        ]
+      },
+      "dense": false,
+      "characters": [
+        2,
+        4
+      ],
+      "errors": []
+    },
+    "world-6-9": {
+      "path": "artifacts/multiplayer-tests/world-6-9-report.json",
+      "sha256": "1fb7885bbd711bf74d73bac564899dd054f5c740567e050abc2119c9e0c31d4b",
+      "passed": true,
+      "wasm": "fe0554c85be7d37f7a09fb9dac2f3cc7ff82e8b63f813126476b06b0e59da386",
+      "scope": "Same live TH09 world restore/resimulation with state inventory and framebuffer comparison; desktop Chromium",
+      "result": {
+        "checkpoints": 270,
+        "frames": 1800,
+        "recordingBoundary": 1,
+        "bytes": 2709704,
+        "captureMs": 109.65000027418137,
+        "restoreMs": 87.01999992132187,
+        "stepMs": 132.85999983549118,
+        "status": [
+          1800,
+          -1,
+          0,
+          -1,
+          9,
+          0,
+          10,
+          10,
+          6,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "session": [
+          1,
+          1800,
+          0,
+          0,
+          0,
+          9,
+          0,
+          1
+        ]
+      },
+      "dense": false,
+      "characters": [
+        6,
+        9
+      ],
+      "errors": []
+    },
+    "world-10-12": {
+      "path": "artifacts/multiplayer-tests/world-10-12-report.json",
+      "sha256": "5eaf1c06b71bdebe3a880e2cdb7c82eab6f0ef994f2d402f347dab8264396b7d",
+      "passed": true,
+      "wasm": "fe0554c85be7d37f7a09fb9dac2f3cc7ff82e8b63f813126476b06b0e59da386",
+      "scope": "Same live TH09 world restore/resimulation with state inventory and framebuffer comparison; desktop Chromium",
+      "result": {
+        "checkpoints": 270,
+        "frames": 1800,
+        "recordingBoundary": 1,
+        "bytes": 2615168,
+        "captureMs": 111.75499927997589,
+        "restoreMs": 91.51500010490417,
+        "stepMs": 138.36500084400177,
+        "status": [
+          1800,
+          -1,
+          0,
+          -1,
+          9,
+          3,
+          7,
+          10,
+          10,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "session": [
+          1,
+          1800,
+          0,
+          0,
+          0,
+          9,
+          0,
+          1
+        ]
+      },
+      "dense": false,
+      "characters": [
+        10,
+        12
+      ],
+      "errors": []
+    },
+    "peer-browser": {
+      "path": "artifacts/multiplayer-tests/peer-browser-report.json",
+      "sha256": "bc2d1dc62664d50d59b1f9e347715297014a6c34c3fab8418c8c8d580e0f6dc6",
+      "passed": true,
+      "wasm": "fe0554c85be7d37f7a09fb9dac2f3cc7ff82e8b63f813126476b06b0e59da386",
+      "scope": "Real TH09 browser worlds and shared packet/session implementation; deterministic injected RTC lane faults, not public TURN",
+      "result": {
+        "frames": 900,
+        "iterations": 949,
+        "summary": [
+          [
+            900,
+            900,
+            199,
+            556,
+            900,
+            1,
+            1,
+            900
+          ],
+          [
+            900,
+            900,
+            288,
+            1018,
+            900,
+            1,
+            1,
+            900
+          ]
+        ],
+        "hashes": [
+          1762405403,
+          1762405403,
+          1762405403
+        ],
+        "audited": [
+          [
+            8295,
+            0,
+            4,
+            -1,
+            0,
+            0,
+            1108065928,
+            1135389887,
+            8,
+            3,
+            0,
+            0,
+            5999,
+            60,
+            0,
+            17,
+            128,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1108344832,
+            1136656384,
+            10,
+            0,
+            0,
+            1126259727,
+            5055,
+            60,
+            0,
+            10,
+            64,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            8295,
+            0,
+            4,
+            -1,
+            0,
+            0,
+            1108065928,
+            1135389887,
+            8,
+            3,
+            0,
+            0,
+            5999,
+            60,
+            0,
+            17,
+            128,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1108344832,
+            1136656384,
+            10,
+            0,
+            0,
+            1126259727,
+            5055,
+            60,
+            0,
+            10,
+            64,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            8295,
+            0,
+            4,
+            -1,
+            0,
+            0,
+            1108065928,
+            1135389887,
+            8,
+            3,
+            0,
+            0,
+            5999,
+            60,
+            0,
+            17,
+            128,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1108344832,
+            1136656384,
+            10,
+            0,
+            0,
+            1126259727,
+            5055,
+            60,
+            0,
+            10,
+            64,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "framebuffersEqual": true,
+        "replayBytes": 1312,
+        "ticks": [
+          949,
+          949
+        ],
+        "waits": [
+          46,
+          47
+        ],
+        "milliseconds": [
+          616.7600002884865,
+          787.3349985480309
+        ]
+      },
+      "errors": []
+    },
+    "transport-rtc": {
+      "path": "artifacts/multiplayer-tests/transport-rtc-report.json",
+      "sha256": "868a53e0203f587fcfa43d9ec0f9b476f2986d3db929f49f281d3b50bc35ebca",
+      "passed": true,
+      "wasm": "fe0554c85be7d37f7a09fb9dac2f3cc7ff82e8b63f813126476b06b0e59da386",
+      "scope": "Local real transport, C++ rollback, SharedNetplay, launcher relay, confirmed spectator; desktop Chromium",
+      "result": {
+        "summary": [
+          [
+            600,
+            600,
+            330,
+            1893,
+            600,
+            8,
+            1,
+            600
+          ],
+          [
+            600,
+            600,
+            333,
+            1992,
+            600,
+            10,
+            1,
+            600
+          ]
+        ],
+        "spectator": 600,
+        "hashes": [
+          1357358377,
+          1357358377,
+          1357358377
+        ],
+        "comparableFinalHashes": true,
+        "routes": [
+          "rtc",
+          "rtc",
+          "spectator"
+        ],
+        "audio": [
+          {
+            "state": "running",
+            "advancedSeconds": 11.08
+          },
+          {
+            "state": "running",
+            "advancedSeconds": 11.08
+          },
+          {
+            "state": "running",
+            "advancedSeconds": 11.08
+          }
+        ],
+        "elapsedMs": 11384.485000014305,
+        "measured": [
+          {
+            "callbackWorkMs": {
+              "count": 543,
+              "p50": 3.165000021457672,
+              "p95": 5.899999976158142,
+              "max": 9.314999997615814
+            },
+            "presentationGapMs": {
+              "count": 477,
+              "p50": 20.44999998807907,
+              "p95": 33.310000002384186,
+              "max": 395.4150000214577
+            },
+            "wasmMemoryBytes": 161087488
+          },
+          {
+            "callbackWorkMs": {
+              "count": 543,
+              "p50": 3.074999988079071,
+              "p95": 5.925000011920929,
+              "max": 9.165000021457672
+            },
+            "presentationGapMs": {
+              "count": 468,
+              "p50": 21.064999997615814,
+              "p95": 37.235000014305115,
+              "max": 386.04499995708466
+            },
+            "wasmMemoryBytes": 161087488
+          },
+          {
+            "callbackWorkMs": {
+              "count": 543,
+              "p50": 0.25999999046325684,
+              "p95": 0.7099999785423279,
+              "max": 3.759999990463257
+            },
+            "presentationGapMs": {
+              "count": 415,
+              "p50": 21.950000047683716,
+              "p95": 53.939999997615814,
+              "max": 350.64999997615814
+            },
+            "wasmMemoryBytes": 134217728
+          }
+        ],
+        "notices": [
+          [
+            0,
+            "正在连接 TH09 联机对手…"
+          ],
+          [
+            1,
+            "正在连接 TH09 联机对手…"
+          ],
+          [
+            2,
+            "正在连接 TH09 联机对手…"
+          ],
+          [
+            2,
+            "已连接 TH09 观战帧流"
+          ],
+          [
+            0,
+            "已连接对手，正在确认版本和对局参数…"
+          ],
+          [
+            1,
+            "已连接对手，正在确认版本和对局参数…"
+          ],
+          [
+            0,
+            "对手已连接 · rollback 对局开始"
+          ],
+          [
+            1,
+            "对手已连接 · rollback 对局开始"
+          ]
+        ]
+      },
+      "errors": []
+    },
+    "transport-relay": {
+      "path": "artifacts/multiplayer-tests/transport-relay-report.json",
+      "sha256": "4efb5b62e908ef0ab9509474b2d7f08b3e038b95e4efc52329e279ffe03c2f53",
+      "passed": true,
+      "wasm": "fe0554c85be7d37f7a09fb9dac2f3cc7ff82e8b63f813126476b06b0e59da386",
+      "scope": "Local real transport, C++ rollback, SharedNetplay, launcher relay, confirmed spectator; desktop Chromium",
+      "result": {
+        "summary": [
+          [
+            600,
+            600,
+            355,
+            2282,
+            600,
+            0,
+            1,
+            600
+          ],
+          [
+            600,
+            600,
+            362,
+            2303,
+            600,
+            0,
+            1,
+            600
+          ]
+        ],
+        "spectator": 600,
+        "hashes": [
+          1357358377,
+          1357358377,
+          1357358377
+        ],
+        "comparableFinalHashes": true,
+        "routes": [
+          "relay",
+          "relay",
+          "spectator"
+        ],
+        "audio": [
+          {
+            "state": "running",
+            "advancedSeconds": 11.338666666666667
+          },
+          {
+            "state": "running",
+            "advancedSeconds": 11.338666666666667
+          },
+          {
+            "state": "running",
+            "advancedSeconds": 11.341333333333335
+          }
+        ],
+        "elapsedMs": 11606.07999998331,
+        "measured": [
+          {
+            "callbackWorkMs": {
+              "count": 580,
+              "p50": 3.5699999928474426,
+              "p95": 5.564999997615814,
+              "max": 8.375
+            },
+            "presentationGapMs": {
+              "count": 493,
+              "p50": 19.960000038146973,
+              "p95": 41.57499998807907,
+              "max": 401.64000004529953
+            },
+            "wasmMemoryBytes": 161087488
+          },
+          {
+            "callbackWorkMs": {
+              "count": 580,
+              "p50": 3.349999964237213,
+              "p95": 5.125,
+              "max": 9.120000004768372
+            },
+            "presentationGapMs": {
+              "count": 495,
+              "p50": 20.185000002384186,
+              "p95": 38.935000002384186,
+              "max": 381.25999999046326
+            },
+            "wasmMemoryBytes": 161087488
+          },
+          {
+            "callbackWorkMs": {
+              "count": 580,
+              "p50": 0.23500001430511475,
+              "p95": 0.5550000071525574,
+              "max": 2.6449999809265137
+            },
+            "presentationGapMs": {
+              "count": 444,
+              "p50": 21.405000030994415,
+              "p95": 50.65000003576279,
+              "max": 386.8799999952316
+            },
+            "wasmMemoryBytes": 134217728
+          }
+        ],
+        "notices": [
+          [
+            0,
+            "正在连接 TH09 联机对手…"
+          ],
+          [
+            1,
+            "正在连接 TH09 联机对手…"
+          ],
+          [
+            2,
+            "正在连接 TH09 联机对手…"
+          ],
+          [
+            1,
+            "已连接对手，正在确认版本和对局参数…"
+          ],
+          [
+            0,
+            "已连接对手，正在确认版本和对局参数…"
+          ],
+          [
+            2,
+            "已连接 TH09 观战帧流"
+          ],
+          [
+            0,
+            "对手已连接 · rollback 对局开始"
+          ],
+          [
+            1,
+            "对手已连接 · rollback 对局开始"
+          ]
+        ]
+      },
+      "errors": []
+    },
+    "transport-rtc-release": {
+      "path": "artifacts/multiplayer-tests/transport-rtc-release-report.json",
+      "sha256": "e0a14171a92fecbdb8bf405596e6066477257c9ccdcefc30608093a5ad611558",
+      "passed": true,
+      "wasm": "868ab04843a65a3e3bbfa9ec7c0db9fe11ee36f9c22e6bf0e2a2f47d7d6aaffd",
+      "scope": "Local real transport, C++ rollback, SharedNetplay, launcher relay, confirmed spectator; desktop Chromium; production WASM smoke, no forced frame limit",
+      "result": {
+        "summary": [
+          [
+            611,
+            603,
+            350,
+            2032,
+            611,
+            11,
+            1,
+            603
+          ],
+          [
+            610,
+            604,
+            350,
+            1989,
+            610,
+            10,
+            1,
+            604
+          ]
+        ],
+        "spectator": 600,
+        "hashes": [
+          1357358377,
+          1357358377,
+          1357358377
+        ],
+        "comparableFinalHashes": false,
+        "routes": [
+          "rtc",
+          "rtc",
+          "spectator"
+        ],
+        "audio": [
+          {
+            "state": "running",
+            "advancedSeconds": 10.938666666666666
+          },
+          {
+            "state": "running",
+            "advancedSeconds": 10.938666666666666
+          },
+          {
+            "state": "running",
+            "advancedSeconds": 10.941333333333333
+          }
+        ],
+        "elapsedMs": 11252.275000035763,
+        "measured": [
+          {
+            "callbackWorkMs": {
+              "count": 561,
+              "p50": 3.3200000524520874,
+              "p95": 5.180000007152557,
+              "max": 11.155000030994415
+            },
+            "presentationGapMs": {
+              "count": 512,
+              "p50": 20.089999973773956,
+              "p95": 26.115000009536743,
+              "max": 363.3149999976158
+            },
+            "wasmMemoryBytes": 161087488
+          },
+          {
+            "callbackWorkMs": {
+              "count": 561,
+              "p50": 2.965000033378601,
+              "p95": 4.7950000166893005,
+              "max": 7.949999988079071
+            },
+            "presentationGapMs": {
+              "count": 514,
+              "p50": 20.05000001192093,
+              "p95": 31.355000019073486,
+              "max": 330.8799999952316
+            },
+            "wasmMemoryBytes": 161087488
+          },
+          {
+            "callbackWorkMs": {
+              "count": 561,
+              "p50": 0.23499995470046997,
+              "p95": 0.5649999976158142,
+              "max": 2.8700000047683716
+            },
+            "presentationGapMs": {
+              "count": 435,
+              "p50": 20.94999998807907,
+              "p95": 49.855000019073486,
+              "max": 335.46499997377396
+            },
+            "wasmMemoryBytes": 134217728
+          }
+        ],
+        "notices": [
+          [
+            0,
+            "正在连接 TH09 联机对手…"
+          ],
+          [
+            1,
+            "正在连接 TH09 联机对手…"
+          ],
+          [
+            2,
+            "正在连接 TH09 联机对手…"
+          ],
+          [
+            2,
+            "已连接 TH09 观战帧流"
+          ],
+          [
+            1,
+            "已连接对手，正在确认版本和对局参数…"
+          ],
+          [
+            0,
+            "已连接对手，正在确认版本和对局参数…"
+          ],
+          [
+            1,
+            "对手已连接 · rollback 对局开始"
+          ],
+          [
+            0,
+            "对手已连接 · rollback 对局开始"
+          ]
+        ]
+      },
+      "errors": []
+    }
+  },
+  "lifecycle": {
+    "path": "artifacts/sdl3/browser/netplay/report.json",
+    "sha256": "a71819d4563061482e86bbd9c9027f82026945943bd334f5e97fe7f3fa250c0d",
+    "passed": true,
+    "physicalPhone": false,
+    "states": [
+      {
+        "name": "paused",
+        "peers": [
+          {
+            "status": {
+              "title": [
+                820,
+                0,
+                16,
+                1,
+                5,
+                9,
+                1,
+                -1
+              ],
+              "session": [
+                1,
+                382,
+                0,
+                0,
+                0,
+                9,
+                0,
+                1
+              ],
+              "touch": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "network": [
+              31,
+              1,
+              0,
+              428,
+              1,
+              0
+            ],
+            "rollback": [
+              428,
+              428,
+              1,
+              2,
+              428,
+              0,
+              1,
+              428
+            ],
+            "message": "已连接 · rollback · 左侧 1P"
+          },
+          {
+            "status": {
+              "title": [
+                476,
+                0,
+                16,
+                1,
+                5,
+                9,
+                1,
+                -1
+              ],
+              "session": [
+                1,
+                382,
+                0,
+                0,
+                0,
+                9,
+                0,
+                1
+              ],
+              "touch": [
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "network": [
+              31,
+              1,
+              0,
+              427,
+              1,
+              1
+            ],
+            "rollback": [
+              427,
+              427,
+              5,
+              13,
+              428,
+              0,
+              1,
+              427
+            ],
+            "message": "已连接 · rollback · 右侧 2P"
+          }
+        ]
+      },
+      {
+        "name": "synchronized",
+        "snapshots": [
+          {
+            "frame": 728,
+            "confirmed": 728,
+            "hash": 2988690281,
+            "state": {
+              "title": [
+                1120,
+                0,
+                16,
+                1,
+                5,
+                9,
+                1,
+                -1
+              ],
+              "session": [
+                1,
+                653,
+                0,
+                0,
+                0,
+                9,
+                0,
+                1
+              ],
+              "touch": [
+                1,
+                1,
+                0,
+                0
+              ]
+            }
+          },
+          {
+            "frame": 728,
+            "confirmed": 728,
+            "hash": 2988690281,
+            "state": {
+              "title": [
+                777,
+                0,
+                16,
+                1,
+                5,
+                9,
+                1,
+                -1
+              ],
+              "session": [
+                1,
+                653,
+                0,
+                0,
+                0,
+                9,
+                0,
+                1
+              ],
+              "touch": [
+                1,
+                1,
+                0,
+                0
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "retry",
+        "peers": [
+          {
+            "status": {
+              "title": [
+                2314,
+                0,
+                16,
+                1,
+                5,
+                9,
+                1,
+                -1
+              ],
+              "session": [
+                1,
+                1,
+                0,
+                0,
+                0,
+                9,
+                0,
+                1
+              ],
+              "touch": [
+                2,
+                0,
+                0,
+                0
+              ]
+            },
+            "network": [
+              31,
+              1,
+              0,
+              1922,
+              1,
+              0
+            ],
+            "rollback": [
+              1922,
+              1922,
+              866,
+              1089,
+              1922,
+              0,
+              1,
+              1922
+            ],
+            "message": "已连接 · rollback · 左侧 1P"
+          },
+          {
+            "status": {
+              "title": [
+                1972,
+                0,
+                16,
+                1,
+                5,
+                9,
+                1,
+                -1
+              ],
+              "session": [
+                1,
+                2,
+                0,
+                0,
+                0,
+                9,
+                0,
+                1
+              ],
+              "touch": [
+                2,
+                0,
+                0,
+                0
+              ]
+            },
+            "network": [
+              31,
+              1,
+              0,
+              1923,
+              1,
+              1
+            ],
+            "rollback": [
+              1923,
+              1922,
+              680,
+              688,
+              1923,
+              0,
+              1,
+              1922
+            ],
+            "message": "已连接 · rollback · 右侧 2P"
+          }
+        ]
+      },
+      {
+        "name": "localReplayAfterMatch",
+        "peers": [
+          {
+            "status": {
+              "title": [
+                4485,
+                1,
+                1,
+                1,
+                0,
+                4,
+                0,
+                104
+              ],
+              "session": [
+                5,
+                2071,
+                0,
+                0,
+                0,
+                9,
+                0,
+                1
+              ],
+              "touch": [
+                0,
+                0,
+                0,
+                1
+              ]
+            },
+            "network": [
+              31,
+              1,
+              0,
+              0,
+              0,
+              0
+            ],
+            "rollback": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "message": "本局结束 · 存档和录像保存在本机"
+          },
+          {
+            "status": {
+              "title": [
+                4142,
+                1,
+                15,
+                2,
+                0,
+                40,
+                0,
+                104
+              ],
+              "session": [
+                5,
+                2071,
+                0,
+                0,
+                0,
+                9,
+                0,
+                1
+              ],
+              "touch": [
+                0,
+                0,
+                0,
+                1
+              ]
+            },
+            "network": [
+              31,
+              1,
+              0,
+              0,
+              0,
+              1
+            ],
+            "rollback": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "message": "本局结束 · 存档和录像保存在本机"
+          }
+        ]
+      },
+      {
+        "name": "reconnected",
+        "peers": [
+          {
+            "status": {
+              "title": [
+                4496,
+                1,
+                7,
+                0,
+                0,
+                0,
+                0,
+                -1
+              ],
+              "session": [
+                5,
+                2071,
+                0,
+                0,
+                0,
+                9,
+                0,
+                1
+              ],
+              "touch": [
+                0,
+                0,
+                0,
+                1
+              ]
+            },
+            "network": [
+              31,
+              1,
+              0,
+              0,
+              1,
+              0
+            ],
+            "rollback": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0
+            ],
+            "message": "已连接 · rollback · 左侧 1P"
+          },
+          {
+            "status": {
+              "title": [
+                4159,
+                1,
+                7,
+                0,
+                0,
+                0,
+                0,
+                -1
+              ],
+              "session": [
+                5,
+                2071,
+                0,
+                0,
+                0,
+                9,
+                0,
+                1
+              ],
+              "touch": [
+                0,
+                0,
+                0,
+                1
+              ]
+            },
+            "network": [
+              31,
+              1,
+              0,
+              0,
+              1,
+              1
+            ],
+            "rollback": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              0
+            ],
+            "message": "已连接 · rollback · 右侧 2P"
+          }
+        ]
+      }
+    ],
+    "errors": []
+  },
+  "limits": [
+    "Desktop Chromium SwiftShader, not physical-phone acceptance",
+    "RTC and relay are local; injected faults do not establish public TURN behavior",
+    "Audio clock progress is not an underrun/listening-quality test",
+    "Dense versus sparse compares checkpoint implementation, not FPS against old lockstep",
+    "No deployment"
+  ]
+}

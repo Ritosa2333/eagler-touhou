@@ -4,6 +4,7 @@
 #include "../game/TextureImage.hpp"
 #include "../../../portable/sdl/Renderer.hpp"
 #include <map>
+namespace th09::multiplayer {class WorldState;}
 namespace th09::sdl {
 class GraphicsDevice final:public ZunGraphics,public ResourceTextures {
     struct Texture {TextureImage image;u32 revision=0;};
@@ -14,6 +15,9 @@ public:
     // TH09 uses the same alpha rounding profile as TH08; the API is SDL/GLES.
     touhou::sdl::Renderer backend{8,resolve,this};std::string error;
     static constexpr u32 screen=1,depth=2;
+    bool skipSubmission=false;
+    multiplayer::WorldState* checkpoint=nullptr;
+    void before_text(u32);
     bool initialize();
     TextureAllocation create(const AnmTextureSource&,const u8*,u32)override;
     TextureAllocation image(const u8*,u32);

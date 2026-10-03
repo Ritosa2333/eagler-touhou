@@ -4,16 +4,16 @@ namespace {constexpr i32 scripts[]={28,33,34,35,36,32,86,63,87,85,88,89,90,91,92
 EffectManager::EffectManager(EffectServices& s,i32 field,u32 n,u32 fixed):services(s),side(field),capacity(n),reserved_slots(fixed),actors(n+fixed+1){}
 bool EffectManager::initialize(EffectActor& a,EffectKind kind,const Vec3& p,const Vec3& extra,u32 color){
     if(u32(kind)>=std::size(scripts))return false;
-    a=EffectActor{};a.side=side;a.kind=kind;a.active=1;a.position=p;a.arguments=extra;a.animation=std::make_unique<AnmVm>();
+    before_write(a);a=EffectActor{};a.side=side;a.kind=kind;a.active=1;a.position=p;a.arguments=extra;a.animation=std::make_unique<AnmVm>();
     services.start_animation(*a.animation,side,false,scripts[u32(kind)]);a.animation->flags|=0x2000;a.animation->color1.d3dColor=i32(color);a.animation->pos2={};
     if(!initialize_effect(a,services))a.active=0;return true;
 }
 EffectActor* EffectManager::create(EffectKind kind,const Vec3& p,const Vec3& extra,i32 number,u32 color){
     for(u32 scanned=0;scanned<capacity;++scanned){auto& a=actors[cursor];cursor=(cursor+1)%capacity;if(a.active)continue;if(!initialize(a,kind,p,extra,color))return nullptr;if(--number==0)return &a;}
-    return &actors[capacity+reserved_slots];
+    before_write(actors[capacity+reserved_slots]);return &actors[capacity+reserved_slots];
 }
 EffectActor* EffectManager::slotted(EffectKind kind,const Vec3& p,u32 slot,u32 color){if(slot>=reserved_slots)return nullptr;auto& a=actors[capacity+slot];if(!initialize(a,kind,p,{},color))return nullptr;a.slot=i32(slot);return &a;}
-void EffectManager::clear(){for(auto& a:actors)a=EffectActor{};for(auto& l:draw_lists)l.clear();}
+void EffectManager::clear(){for(auto& a:actors){before_write(a);a=EffectActor{};}for(auto& l:draw_lists)l.clear();}
 void EffectManager::update(u32 flags,u32 first_field_flags){
     if((flags&0x1800)||(first_field_flags&1))return;services.coordinate_side=side;for(auto& l:draw_lists)l.clear();count=0;
     for(u32 i=0;i<capacity+reserved_slots;++i){auto& a=actors[i];if(!a.active){a.animation.reset();a.burst.reset();a.colors.clear();a.texture.clear();continue;}++count;

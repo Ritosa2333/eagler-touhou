@@ -17,7 +17,14 @@ export function attachNetplay(server,{build,origins=[]}={}){
   const peer={socket,room:null,side:0,received:6,ready:false,last:Date.now(),window:Date.now(),messages:0,hashes:new Map(),lastHash:-1};
   socket.on('error',()=>{});socket.on('close',()=>end(peer.room));socket.peerState=peer;socket.on('pong',()=>peer.last=Date.now());
   socket.on('message',(bytes,binary)=>{try{
-   const now=Date.now();if(now-peer.window>=1000){peer.window=now;peer.messages=0;}if(binary||++peer.messages>360)throw Error('Message rate');peer.last=now;
+   const now=Date.now();if(now-peer.window>=1000){peer.window=now;peer.messages=0;}if(++peer.messages>360)throw Error('Message rate');peer.last=now;
+   if(binary){
+    if(!peer.room?.started||bytes.length<20||bytes.length>1024)throw Error('Rollback packet');
+    let payload=bytes;if(bytes[0]===0xe7){if(bytes[1]!==1-peer.side)throw Error('Rollback target');payload=bytes.subarray(2);}
+    if(!(payload.subarray(0,4).equals(Buffer.from('E9NP'))||payload.subarray(0,4).equals(Buffer.from('T9HC'))||
+      (payload.length===28&&payload.subarray(0,4).equals(Buffer.from([65,68,80,1])))))throw Error('Rollback protocol');
+    const other=peer.room.peers[1-peer.side];if(other.socket.bufferedAmount>65536)throw Error('Slow connection');other.socket.send(payload);return;
+   }
    const m=JSON.parse(bytes.toString());if(!m||typeof m!=='object'||Array.isArray(m))throw Error('Message');
    if(!peer.room){
     if(!['create','join'].includes(m.type)||m.build!==build||!Number.isInteger(m.unlocked)||m.unlocked<31||m.unlocked>65535||(m.unlocked&31)!==31||!Number.isInteger(m.difficulty)||m.difficulty<0||m.difficulty>3||![0,1].includes(m.focus))throw Error('Version or settings');

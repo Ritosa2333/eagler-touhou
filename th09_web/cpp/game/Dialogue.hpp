@@ -4,6 +4,7 @@
 #include "CharacterAttacks.hpp"
 #include "MatchRules.hpp"
 namespace th09 {
+namespace multiplayer { class WorldState; }
 enum class DialogueResource {ascii,left_portrait,right_portrait,additional_portraits};
 enum class DialogueTransition {next_stage,game_over,match_complete};
 struct DialogueCharacter {i32 attack_script=0,face_script=0,face_sprite=0;};
@@ -26,6 +27,7 @@ struct DialogueServices {
     virtual void draw_panel(const AttackColorVertex*,u32 count)=0;
 };
 class Dialogue {
+    friend class multiplayer::WorldState;
     DialogueServices& services;MessageResource* resources[2]{};MessageResource* current=nullptr;
     void setup();
     bool show_portrait(i32 index);

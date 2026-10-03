@@ -5,12 +5,13 @@ import {SharedNetplay} from '../../sdl-runtime/shared-netplay.mjs';
 // The two entries (Launcher card and the in-game title dialog) share one room
 // and one gameplay transport; these tests cover the transport contract itself.
 function harness() {
-  const previous = {fetch: globalThis.fetch, location: globalThis.location, document: globalThis.document};
+  const previous = {fetch: globalThis.fetch, location: globalThis.location, document: globalThis.document, setInterval: globalThis.setInterval};
+  const timers=[];globalThis.setInterval=(...args)=>{const timer=previous.setInterval(...args);timers.push(timer);return timer;};
   const peers = new Map();
   const spectators = new Set();
   const core = () => {
     const buffer = new ArrayBuffer(2048), bytes = new Uint8Array(buffer);
-    const calls = {begin: [], receive: [], pauses: [], spectatorBegin: [], spectatorFeed: []};
+    const calls = {begin: [], modes: [], receive: [], pauses: [], spectatorBegin: [], spectatorFeed: [], pumps: 0};
     const self = {
       HEAPU8: bytes, HEAPU32: new Uint32Array(buffer), calls, incoming: [], side: -1,
       _th09_peer_url_buffer: () => 256,
@@ -43,7 +44,10 @@ function harness() {
       },
       _th09_peer_close: () => { peers.delete(self.side); spectators.delete(self); },
       _th09_network_info: () => 0,
-      _th09_network_room_begin: (...args) => { calls.begin.push(args); return 1; },
+      _th09_adonis_configure: mode => { calls.modes.push(mode); return 1; },
+      _th09_rollback_begin: (...args) => { calls.begin.push(args); return 1; },
+      _th09_rollback_pump: () => { ++calls.pumps; return 2; },
+      _th09_rollback_info: () => 32,
       _th09_network_receive: (...args) => { calls.receive.push(args); return 1; },
       _th09_network_hash: () => 123,
       _th09_network_end: () => {},
@@ -59,23 +63,25 @@ function harness() {
     };
     return self;
   };
-  const restore = () => Object.assign(globalThis, previous);
+  const restore = () => {for(const timer of timers)clearInterval(timer);Object.assign(globalThis, previous);};
   return {core, restore};
 }
 
-async function connectPair(harness) {
+async function connectPair(harness, inputDelay = 0, adonisMode = 0) {
   globalThis.fetch = async () => ({ok: true, json: async () => ({build: 'a'.repeat(24)})});
   globalThis.location = {href: 'https://example.test/runtime/th09/th09.html'};
   globalThis.document = {hidden: false};
   const leftCore = harness.core(), rightCore = harness.core();
   const left = new SharedNetplay(leftCore, {onStatus() {}, onClose() {}, onResult() {}});
   const right = new SharedNetplay(rightCore, {onStatus() {}, onClose() {}, onResult() {}});
-  const options = side => ({
+  const options = (side, inputDelay = 0) => ({
     netplayUrl: `wss://example.test/netplay?room=th09mp-1234&run=1&player=${side}`,
     netplayPlayer: side, netplayPlayerCount: 2, netplaySeed: 1234, netplayDifficulty: 2,
+    netplayInputDelay: inputDelay,
+    netplayAdonisMode: adonisMode,
     netplayLoadouts: [{character: 3}, {character: 10}],
   });
-  await Promise.all([left.connect(options(0)), right.connect(options(1))]);
+  await Promise.all([left.connect(options(0, inputDelay)), right.connect(options(1, inputDelay))]);
   left.pump(); right.pump(); left.pump(); right.pump();
   assert.equal(left.active, true);
   assert.equal(right.active, true);
@@ -86,36 +92,60 @@ test('launcher and in-game entries share the TH09 room through the common peer t
   const box = harness();
   try {
     const {left, right, leftCore, rightCore} = await connectPair(box);
-    assert.deepEqual(leftCore.calls.begin, [[1234, 0, 65535, 2, 0, 3, 10]]);
-    assert.deepEqual(rightCore.calls.begin, [[1234, 1, 65535, 2, 0, 3, 10]]);
+    assert.deepEqual(leftCore.calls.begin, [[1234, 0, 2, 3, 10, 0xaaaaaaab, 0xaaaaaaaa, (0xaaaaaaaa ^ (3<<16) ^ (10<<20) ^ (2<<24) ^ 0x09010000) >>> 0, 0]]);
+    assert.deepEqual(rightCore.calls.begin, [[1234, 1, 2, 3, 10, 0xaaaaaaab, 0xaaaaaaaa, (0xaaaaaaaa ^ (3<<16) ^ (10<<20) ^ (2<<24) ^ 0x09010000) >>> 0, 0]]);
     left.input(6, 123, 1, .25, -.5);
     right.pump();
-    assert.deepEqual(rightCore.calls.receive, [[6, 123, 1, .25, -.5]]);
+    assert.deepEqual(rightCore.calls.receive, [], "JS must not feed the old lockstep queue");
+    assert.ok(leftCore.calls.pumps > 0 && rightCore.calls.pumps > 0);
     left.close(); right.close();
   } finally {
     box.restore();
   }
 });
 
-test('networked gestures ship an absolute target and reject an unknown motion mode', async () => {
+test('launcher input delay reaches the native rollback session', async () => {
   const box = harness();
   try {
-    const {left, right, rightCore} = await connectPair(box);
-    // Mode 2 is the absolute field target a dragged player walks toward; it is
-    // far outside the velocity range on purpose.
-    left.input(6, 0, 2, 348.5, 421.25);
-    right.pump();
-    assert.deepEqual(rightCore.calls.receive, [[6, 0, 2, 348.5, 421.25]]);
-    left.input(7, 0, 3, 12.5, 8.75);
-    right.pump();
-    assert.deepEqual(rightCore.calls.receive.at(-1), [7, 0, 3, 12.5, 8.75]);
-    // An unknown mode must fail closed instead of reaching the game as motion.
-    left.input(8, 0, 4, 0, 0);
-    assert.equal(left.connected, false);
+    const {left, right, leftCore, rightCore} = await connectPair(box, 3);
+    const baseAbi = (0xaaaaaaaa ^ (3<<16) ^ (10<<20) ^ (2<<24) ^ 0x09010000) >>> 0;
+    assert.deepEqual(leftCore.calls.begin, [[1234, 0, 2, 3, 10, 0xaaaaaaab, 0xaaaaaaaa, baseAbi, 3]]);
+    assert.deepEqual(rightCore.calls.begin, [[1234, 1, 2, 3, 10, 0xaaaaaaab, 0xaaaaaaaa, baseAbi, 3]]);
+    assert.equal(globalThis.__eaglerNetplayInputDelayFrames, 3);
     left.close(); right.close();
-  } finally {
-    box.restore();
+  } finally { box.restore(); }
+});
+
+test('Adonis mode and all nine delay frames reach the native session without JS prediction', async () => {
+  for (const mode of [1, 2]) {
+    const box = harness();
+    try {
+      const {left,right,leftCore,rightCore} = await connectPair(box,9,mode);
+      assert.deepEqual(leftCore.calls.modes,[mode]);
+      assert.deepEqual(rightCore.calls.modes,[mode]);
+      assert.equal(leftCore.calls.begin[0].at(-1),9);
+      assert.equal(rightCore.calls.begin[0].at(-1),9);
+      assert.deepEqual(leftCore.calls.receive,[]);
+      assert.equal(globalThis.__eaglerNetplayAdonisMode,mode);
+      left.close();right.close();
+    } finally { box.restore(); }
   }
+});
+
+test('diagnostics report native rollback counters and result keeps pumping terminal ACKs', async () => {
+  const box = harness();
+  try {
+    const {left, right, leftCore} = await connectPair(box);
+    leftCore.HEAPU32.set([100,98,7,19,100,3,1,98],8);
+    leftCore.HEAPU32[3]=100;left.frame();
+    assert.equal(globalThis.__eaglerNetplayLanRollback,7);
+    assert.equal(globalThis.__eaglerNetplayLanResimulated,19);
+    assert.equal(globalThis.__eaglerNetplayLanConfirmed,98);
+    const before=leftCore.calls.pumps;left.result();left.pump();
+    assert.equal(leftCore.calls.pumps,before+1);
+    assert.equal(left.active,false);
+    left.close();right.close();
+  } finally {box.restore();}
 });
 
 test('each peer keeps its transport open until its own native replay-save menu closes', async () => {
@@ -167,6 +197,8 @@ test('an admitted spectator receives both players\' ordered keys and motion with
     assert.equal(viewer.connected, true);
     assert.equal(viewer.spectatorFrame, 1);
     assert.equal(viewerCore.calls.receive.length, 0);
+    left.publish(1, 0, 0, 4, 0, 0, 0, 0, 0);viewer.pump();
+    assert.equal(viewer.connected,false,"Unknown spectator motion mode must fail closed");
     viewer.close(); left.close(); right.close();
   } finally { box.restore(); }
 });
