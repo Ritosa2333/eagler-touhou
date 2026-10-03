@@ -1,5 +1,6 @@
 #include "../th08_web/cpp/multiplayer/ReplayArchive.hpp"
 #include "../th08_web/cpp/multiplayer/InputSample.hpp"
+#include "support/previous-rule-contract.hpp"
 #include <cassert>
 #include <cstdio>
 #include <cstring>
@@ -27,6 +28,24 @@ static std::uint32_t checksum(const std::vector<std::uint8_t>& bytes){
     std::uint32_t h=2166136261u;for(std::size_t i=0;i<bytes.size();++i)if(i<20||i>=24){h^=bytes[i];h*=16777619u;}return h;
 }
 static void repair(std::vector<std::uint8_t>& bytes){const auto h=checksum(bytes);for(unsigned i=0;i<4;++i)bytes[20+i]=std::uint8_t(h>>(8*i));}
+static void previous_general_rules_are_rejected(const ReplayArchive& current,const std::vector<std::uint8_t>& valid){
+    const auto& d=current.Description();const auto count=d.setup.player_count;
+    auto bytes=valid;
+    auto old_config=current.Info().config;old_config.gameplayAbi=previous_rule_contract(d.setup);
+    assert(old_config.gameplayAbi!=current.Info().config.gameplayAbi);
+    Netplay::InputReplay legacy;assert(legacy.Begin(old_config));
+    Netplay::InputReplay::Frame inputs{};assert(legacy.Append(0,1,inputs.data(),count));
+    std::vector<std::uint8_t> tape;assert(legacy.Encode(&tape));
+    bytes.resize(ReplayArchive::HeaderBytes+sizeof(th08::GameConfiguration)+current.BootScore().size());
+    bytes.insert(bytes.end(),tape.begin(),tape.end());
+    for(unsigned i=0;i<4;++i)bytes[8+i]=std::uint8_t(tape.size()>>(8*i));repair(bytes);
+    // Common wire validity and both checksums are intact. Rejection is by the
+    // title's rule ABI, before it mutates an already recording destination.
+    Netplay::InputReplayInfo common;assert(Netplay::InputReplay::Inspect(tape.data(),tape.size(),&common));
+    ReplayArchive destination;assert(destination.Begin(d,{}));
+    assert(!destination.Load(bytes.data(),bytes.size())&&destination.Recording());
+    th08::ReplayMetadata preview{};assert(!ReplayArchive::Preview(bytes.data(),bytes.size(),preview));
+}
 static bool save(void* count,const char*,const std::uint8_t* data,std::uint32_t size){
     ReplayArchive copy;assert(copy.Load(data,size));++*static_cast<unsigned*>(count);return true;
 }
@@ -48,7 +67,8 @@ static void roundtrip(unsigned count,unsigned local,bool delayed=false){
         assert(archive.Stamp(frame,frame<3?0:1,frame*100));assert(archive.Commit(net,save,&saves));
     }
     assert(saves==1&&archive.Cursor()==6&&archive.StageFrame(1)==3);
-    std::vector<std::uint8_t> bytes;assert(archive.Encode(bytes));ReplayArchive loaded;
+    std::vector<std::uint8_t> bytes;assert(archive.Encode(bytes));
+    previous_general_rules_are_rejected(archive,bytes);ReplayArchive loaded;
     assert(loaded.Load(bytes.data(),bytes.size()));assert(loaded.BootScore()==boot);
     assert(loaded.Description().setup.local_player==local&&loaded.StageFrame(1)==3);
     if(delayed)assert(loaded.Description().setup.version==4&&loaded.Description().setup.input_delay==2&&
@@ -98,6 +118,8 @@ static void corrected_frames_replace_speculative_save_requests(){
     assert(played.AdvancePlayback(1,0));assert(played.PlaybackFrame(2)->at(1).buttons==128);
 }
 int main(){timing_metadata_roundtrip();
- for(unsigned count:{2u,3u})for(unsigned local=0;local<count;++local)roundtrip(count,local);
+ for(unsigned count:{2u,3u})for(bool delayed:{false,true}){
+   for(unsigned local=0;local<count;++local)roundtrip(count,local,delayed);
+ }
  corrected_frames_replace_speculative_save_requests();
  std::puts("TH08 confirmed all-seat Replay, boot files, readonly playback, bounds and atomic rejection: PASS");}

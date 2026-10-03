@@ -106,6 +106,47 @@ bool power_gift_retry(){
     return check(state.seats[0].power_taps==0&&state.seats[0].power_window==0,
                  "expired power gesture cannot cross the 24-tick window");
 }
+bool simultaneous_rescue_is_single_transfer(){
+    CooperativeState state;reset(state,3);auto input=adjacent();
+    enter_spirit(state,2,1,-1);input.seats[2].available=false;
+    input.seats[0].lives=input.seats[1].lives=2;
+    input.seats[0].focus=input.seats[1].focus=true;
+    for(int tick=0;tick<89;++tick)if(advance(state,input).count)return false;
+    const auto result=advance(state,input);
+    return check(result.count==1&&result.events[0].kind==CooperativeEventKind::Revive&&
+                 result.events[0].giver==0&&result.events[0].target==2,
+                 "same-tick donors debit only the stable lower-seat giver");
+}
+bool donor_reserve_and_recipient_cap(){
+    CooperativeState state;reset(state,2);auto input=adjacent();
+    input.seats[0].focus=true;input.seats[0].lives=0;input.seats[1].lives=0;
+    bool accepted=true;
+    for(int tick=0;tick<100;++tick)if(advance(state,input,allocate,nullptr,&accepted).count)
+        return check(false,"last playable life cannot be donated");
+    reset(state,2);input.seats[0].lives=8;input.seats[1].lives=8;
+    for(int tick=0;tick<100;++tick)if(advance(state,input,allocate,nullptr,&accepted).count)
+        return check(false,"capped recipient cannot request life gift");
+    return true;
+}
+bool rescue_range_and_replay(){
+    CooperativeState state;reset(state,2);auto input=adjacent();
+    enter_spirit(state,1,1,-1);input.seats[1].available=false;
+    input.seats[0].lives=2;input.seats[0].focus=true;
+    input.seats[1].x=input.seats[0].x+2001;
+    for(int tick=0;tick<100;++tick)if(advance(state,input).count)
+        return check(false,"outside 20px rescue range transferred a life");
+    input.seats[1].x=input.seats[0].x+2000;
+    for(int tick=0;tick<89;++tick)if(advance(state,input).count)return false;
+    const CooperativeState snapshot=state;
+    const auto first=advance(state,input);const CooperativeState result=state;
+    state=snapshot;const auto replay=advance(state,input);
+    return check(first.count==1&&replay.count==1&&first.events[0].kind==replay.events[0].kind&&
+                 first.events[0].giver==replay.events[0].giver&&first.events[0].target==replay.events[0].target&&
+                 state.seats[0].waiting_for_focus_release==result.seats[0].waiting_for_focus_release&&
+                 state.seats[0].progress==result.seats[0].progress&&
+                 !state.seats[1].spirit&&!result.seats[1].spirit,
+                 "rescue threshold replay reproduces one event and policy state");
+}
 bool wipe(){
     CooperativeState state;reset(state,2);auto input=adjacent();
     enter_spirit(state,0,1,1);enter_spirit(state,1,-1,1);
@@ -118,4 +159,4 @@ bool wipe(){
     return check(state.wipe_progress==0&&!state.retry_pending,"revival clears wipe countdown");
 }
 }
-int main(){return rescue_priority()&&item_allocation()&&power_gift()&&lower_seat_breaks_equal_resource_ties()&&power_gift_retry()&&stage_interactions()&&wipe()?0:1;}
+int main(){return rescue_priority()&&item_allocation()&&power_gift()&&lower_seat_breaks_equal_resource_ties()&&power_gift_retry()&&stage_interactions()&&simultaneous_rescue_is_single_transfer()&&donor_reserve_and_recipient_cap()&&rescue_range_and_replay()&&wipe()?0:1;}
