@@ -618,7 +618,7 @@ void PrepareMultiplayerStageRevival(Player *player)
     if (MultiplayerGameplay::IsMultiplayer() &&
         g_Supervisor.curState == SUPERVISOR_STATE_GAMEMANAGER_REINIT &&
         player->playerState == PLAYER_STATE_REVIVABLE)
-        SetPlayerBombs(player->initParam, 1);
+        SetPlayerBombs(player->initParam, 2);
 }
 
 void UpdateLifeTransfer(Player *giver)
@@ -671,7 +671,7 @@ void UpdateLifeTransfer(Player *giver)
     {
         AddPlayerLives(giver->initParam, -1);
         SetPlayerBombs(giver->initParam, 0);
-        SetPlayerBombs(receiver->initParam, 1);
+        SetPlayerBombs(receiver->initParam, 2);
         SetPlayerPower(receiver->initParam, 64);
         if (GetPlayerLives(receiver->initParam) < 8)
             AddPlayerLives(receiver->initParam, 1);
@@ -1442,7 +1442,7 @@ ChainCallbackResult Player::OnUpdate(Player *p)
                     {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                         if (multiplayer)
-                            SetPlayerBombs(p->initParam, 1);
+                            SetPlayerBombs(p->initParam, 2);
                         else
 #endif
                             g_GameManager.bombsRemaining = g_Supervisor.defaultConfig.bombCount;
@@ -1451,7 +1451,7 @@ ChainCallbackResult Player::OnUpdate(Player *p)
                     {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                         if (multiplayer)
-                            SetPlayerBombs(p->initParam, 1);
+                            SetPlayerBombs(p->initParam, 2);
                         else
 #endif
                             g_GameManager.bombsRemaining = 3;

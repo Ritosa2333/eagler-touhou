@@ -140,10 +140,10 @@ i32 GetMultiplayerRankPenalty(i32 amount)
 
 void ResetMultiplayerPlayerResources()
 {
-    // Fresh cooperative lives start with one bomb. Recorded stage snapshots
+    // Fresh cooperative lives start with two bombs. Recorded stage snapshots
     // remain authoritative during playback, and stage reinit never calls here.
     if (MultiplayerGameplay::IsMultiplayer() && !g_GameManager.isInReplay)
-        SetPlayerBombs(0, 1);
+        SetPlayerBombs(0, 2);
     // Preserve the existing starting lives and stage/practice power from P1.
     for (MultiplayerPlayerResources &resources : g_MultiplayerPlayerResources)
     {
