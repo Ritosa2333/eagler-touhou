@@ -569,7 +569,7 @@ ZunResult GameManager::AddedCallback(GameManager *arg)
             g_GameManager.RegenerateGameIntegrityCsum();
             g_GameManager.SetBombsRemainingAndComputeCsum(
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-                MultiplayerGameplay::IsMultiplayer() ? 2 :
+                MultiplayerGameplay::IsMultiplayer() ? GetPlayerInitialBombs(0) :
 #endif
                 g_Player.shooterData->initialBombs);
         }

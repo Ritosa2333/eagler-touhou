@@ -74,7 +74,7 @@ struct ItemManager
     // States 3..5 are the upstream visible transfer path for P2/P1/P3.
     // They rise for 20 frames without collision, then home to that slot.
 #endif
-    // Enemy/ECL drops preserve the original single-player spawn quantity.
+    // Stage resource drops use roster scaling only in multiplayer.
     Item *SpawnEnemyDrop(ZunVec3 *heading, i32 itemType, i32 state);
 
     Item items[MAX_ITEMS + 1];

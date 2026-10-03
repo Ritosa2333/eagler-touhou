@@ -76,6 +76,7 @@ u32 GetPlayerEnemiesDefeated(u8 playerId);
 u32 GetPlayerDamageDealt(u8 playerId);
 void SetPlayerLives(u8 playerId, i32 amount);
 void SetPlayerBombs(u8 playerId, i32 amount);
+i32 GetPlayerInitialBombs(u8 playerId);
 void SetPlayerPower(u8 playerId, i32 amount);
 void SetPlayerCherryPlus(u8 playerId, i32 amount);
 void AddPlayerLives(u8 playerId, i32 amount);

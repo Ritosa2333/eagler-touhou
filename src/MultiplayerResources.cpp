@@ -336,8 +336,15 @@ void ResetMultiplayerPlayerResources(u8 playerId)
     resources->livesRemaining = g_GameManager.defaultCfg
         ? g_GameManager.defaultCfg->lifeCount : 0;
     resources->bombsRemaining = MultiplayerGameplay::IsMultiplayer()
-        ? 2 : (player->shooterData ? (i32)player->shooterData->initialBombs : 0);
+        ? GetPlayerInitialBombs(playerId) : (player->shooterData ? (i32)player->shooterData->initialBombs : 0);
     resources->currentPower = 0;
+}
+
+i32 GetPlayerInitialBombs(u8 playerId)
+{
+    const Player &player = g_Players[playerId];
+    const i32 nativeBombs = player.shooterData ? (i32)player.shooterData->initialBombs : 3;
+    return nativeBombs > 1 ? nativeBombs - 1 : 1;
 }
 
 void ResetPlayer2Resources()

@@ -494,7 +494,7 @@ void PrepareMultiplayerStageRevival(Player *player)
     if (MultiplayerGameplay::IsMultiplayer() &&
         g_Supervisor.curState == 3 &&
         player->playerState == PLAYER_STATE_SPIRIT)
-        SetPlayerBombs(player->initParam, 2);
+        SetPlayerBombs(player->initParam, GetPlayerInitialBombs(player->initParam));
 }
 
 void UpdateLifeTransfer(Player *giver)
@@ -555,10 +555,9 @@ void UpdateLifeTransfer(Player *giver)
         receiver->invulnerabilityTimer = 240;
         receiver->respawnTimer = receiver->shooterData->initialRespawnTimer;
         receiver->bulletGracePeriod = 0;
-        SetPlayerBombs(receiver->initParam, 0);
+        SetPlayerBombs(receiver->initParam, GetPlayerInitialBombs(receiver->initParam));
         SetPlayerPower(receiver->initParam, 64);
-        if (GetPlayerLives(receiver->initParam) < 8)
-            AddPlayerLives(receiver->initParam, 1);
+        SetPlayerLives(receiver->initParam, 0);
         g_Gui.bombDisplayUpdateFrames = g_Gui.powerDisplayUpdateFrames = 2;
         receiver->playerSprite.color.color = 0xffffffff;
         g_Gui.lifeDisplayUpdateFrames = 2;
@@ -696,17 +695,17 @@ u8 CalculatePlayerOverlapAlpha(const Player *player)
     const u8 localPlayerId = MultiplayerGameplay::GetLocalPlayerSlot();
     if (localPlayerId >= TH07_MULTI_MAX_PLAYERS ||
         !IsPlayerSlotActive(localPlayerId))
-        return 255;
+        return 128;
 
     Player *localPlayer = &g_Players[localPlayerId];
     if (!IsPlayerActiveForProximity(localPlayer))
-        return 255;
+        return 128;
 
     const f32 dx = player->pos.x - localPlayer->pos.x;
     const f32 dy = player->pos.y - localPlayer->pos.y;
     f32 distance = sqrtf(dx * dx + dy * dy);
     if (distance >= REMOTE_PLAYER_FADE_START_DISTANCE)
-        return 255;
+        return 128;
     if (distance < REMOTE_PLAYER_FADE_FULL_DISTANCE)
         distance = REMOTE_PLAYER_FADE_FULL_DISTANCE;
 
@@ -716,7 +715,7 @@ u8 CalculatePlayerOverlapAlpha(const Player *player)
     return (u8)std::clamp<i32>(
         (i32)(fadeProgress * (255 - REMOTE_PLAYER_FADE_MIN_ALPHA)) +
             REMOTE_PLAYER_FADE_MIN_ALPHA,
-        0, 255);
+        0, 128);
 }
 
 void ClampVmAlpha(AnmVm *vm, u8 alpha)
@@ -986,7 +985,7 @@ i32 UpdateMultiplayerDeath(Player *player)
     if (!PracticeRuntime::OverlayInfiniteLives())
         AddPlayerLives(player->initParam, -1);
     g_Gui.lifeDisplayUpdateFrames = 2;
-    SetPlayerBombs(player->initParam, 2);
+    SetPlayerBombs(player->initParam, GetPlayerInitialBombs(player->initParam));
     g_Gui.bombDisplayUpdateFrames = 2;
     return 1;
 }

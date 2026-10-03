@@ -318,7 +318,9 @@ Item *ItemManager::SpawnItem(ZunVec3 *heading, i32 itemType, i32 state)
     Item *first = &items[1100];
     for (i32 copy = 0; copy < copies; ++copy)
     {
-        Item *spawned = SpawnSingleItem(heading, itemType, state);
+        ZunVec3 origin = *heading;
+        origin.x += 18.0f * (copy - (copies - 1) * 0.5f);
+        Item *spawned = SpawnSingleItem(&origin, itemType, copies > 1 && state == 0 ? 9 : state);
         if (!copy) first = spawned;
     }
     return first;
@@ -384,6 +386,13 @@ Item *ItemManager::SpawnItem(ZunVec3 *heading, i32 itemType, i32 state)
         item->itemType = (u8)itemType;
         item->state = (u8)state;
         item->timer = 0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if (state == 9)
+        {
+            item->velocity.x = g_Rng.GetRandomFloatInRange(1.0f) - 0.5f;
+            item->velocity.y = -2.2f - g_Rng.GetRandomFloatInRange(0.6f);
+        }
+#endif
         if (state == 2)
         {
             item->targetPos.x = g_Rng.GetRandomFloatInRange(288.0f) + 48.0f;
@@ -429,7 +438,21 @@ Item *ItemManager::SpawnItem(ZunVec3 *heading, i32 itemType, i32 state)
 
 Item *ItemManager::SpawnEnemyDrop(ZunVec3 *heading, i32 itemType, i32 state)
 {
-    // Preserve the original one-drop quantity in cooperative play, too.
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (MultiplayerGameplay::IsMultiplayer() && MultiplayerGameplay::GetPlayerCount() >= 3 &&
+        (itemType == ITEM_LIFE || itemType == ITEM_BOMB))
+    {
+        Item *first = &items[1100];
+        for (i32 copy = 0; copy < 2; ++copy)
+        {
+            ZunVec3 origin = *heading;
+            origin.x += (copy - 0.5f) * 18.0f;
+            Item *spawned = SpawnSingleItem(&origin, itemType, state == 0 ? 9 : state);
+            if (!copy) first = spawned;
+        }
+        return first;
+    }
+#endif
     return SpawnItem(heading, itemType, state);
 }
 
@@ -568,12 +591,19 @@ void ItemManager::OnUpdate()
             }
             else
             {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                if (!(item->state == 9 && item->timer < 12))
+                {
+#endif
                 item->velocity.x = 0.0f;
                 item->velocity.z = 0.0f;
                 if (item->velocity.y < -2.2f)
                 {
                     item->velocity.y = -2.2f;
                 }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                }
+#endif
             }
         }
         item->pos += item->velocity * g_Supervisor.effectiveFramerateMultiplier;

@@ -2189,7 +2189,11 @@ void Gui::DrawStageElements()
     {
         g_AnmManager->DrawInterp(&this->impl->stageTextVm[i]);
     }
-    if (this->impl->enemySpellcardPortrait.visible)
+    if (this->impl->enemySpellcardPortrait.visible
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        && !MultiplayerGameplay::IsMultiplayer()
+#endif
+    )
     {
         oldPos = this->impl->enemySpellcardPortrait.pos;
         ZunVec3 drawPos = this->impl->enemySpellcardPortrait.prevPos.Lerp(
