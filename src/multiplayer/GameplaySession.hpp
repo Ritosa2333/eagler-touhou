@@ -21,6 +21,7 @@ struct SessionState
     u8 playerCount = 1;
     u8 localPlayer = 0;
     bool showStagePlayerNames = false;
+    bool challengeMode = false;
     // Host-authored deterministic gameplay option. The browser room
     // descriptor must provide the same value to every peer before frame zero.
     // It is not a compatibility/hash field and defaults to upstream's OFF.
@@ -38,6 +39,7 @@ bool Configure(const SessionState &state);
 const SessionState &GetState();
 
 bool IsMultiplayer();
+bool IsChallengeMode();
 u8 GetPlayerCount();
 u8 GetLocalPlayerSlot();
 bool IsPlayerActive(u8 playerId);

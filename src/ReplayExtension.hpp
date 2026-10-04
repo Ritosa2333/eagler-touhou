@@ -23,6 +23,7 @@ struct MultiplayerReplayConfig
     u8 localPlayer = 0;
     bool stage4BossChain = false;
     bool showContributionStats = true;
+    bool challengeMode = false;
     bool showStagePlayerNames = true;
     u8 characters[3] = {};
     u8 shots[3] = {};
@@ -34,6 +35,7 @@ struct MultiplayerPlayerResourceSnapshot
     i32 lives = 0;
     i32 bombs = 0;
     i32 power = 0;
+    u32 challengeDeaths = 0;
 };
 
 struct MultiplayerContributionSnapshot

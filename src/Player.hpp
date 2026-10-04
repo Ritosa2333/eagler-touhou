@@ -360,6 +360,7 @@ struct Player
     // does not grow Player or disturb the surrounding Eagler additions.
     i32 lifeGiveTimer;
     i32 lifeGiveTargetToken;
+    ZunTimer teamBombProtectionTimer;
 #else
     i32 unused_16a18;
     i32 unused_16a1c;

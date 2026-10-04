@@ -417,6 +417,7 @@ ZunResult ReplayManager::AddedCallback(ReplayManager *arg)
         config.difficulty = static_cast<u8>(g_GameManager.difficulty);
         config.localPlayer = MultiplayerGameplay::GetLocalPlayerSlot();
         config.stage4BossChain = MultiplayerGameplay::IsStage4BossChainEnabled();
+        config.challengeMode = MultiplayerGameplay::IsChallengeMode();
         config.showContributionStats = MultiplayerGameplay::ShouldShowContributionStats();
         config.showStagePlayerNames = MultiplayerGameplay::ShouldShowStagePlayerNames();
         config.gameplayAbi = TH07_MULTI_GAMEPLAY_ABI;
@@ -430,6 +431,7 @@ ZunResult ReplayManager::AddedCallback(ReplayManager *arg)
         for (u8 playerId = 0; playerId < config.playerCount; ++playerId)
         {
             resources[playerId].lives = GetPlayerLives(playerId);
+            resources[playerId].challengeDeaths = g_MultiplayerContributionStats[playerId].challengeDeaths;
             resources[playerId].bombs = GetPlayerBombs(playerId);
             resources[playerId].power = GetPlayerPower(playerId);
         }
@@ -710,6 +712,8 @@ ZunResult ReplayManager::AddedCallbackDemo(ReplayManager *arg)
                     i, playerId, &resources))
                 continue;
             SetPlayerLives(playerId, resources.lives);
+                if (MultiplayerGameplay::IsChallengeMode())
+                    g_MultiplayerContributionStats[playerId].challengeDeaths = resources.challengeDeaths;
             SetPlayerBombs(playerId, resources.bombs);
             SetPlayerPower(playerId, resources.power);
 

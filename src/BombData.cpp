@@ -1,4 +1,7 @@
 #include "BombData.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "multiplayer/GameplaySession.hpp"
+#endif
 
 #include "AnmIdx.hpp"
 #include "AnmManager.hpp"
@@ -14,6 +17,35 @@
 #include "Supervisor.hpp"
 #include "ZunMath.hpp"
 #include "utils.hpp"
+
+static void GrantBombInvulnerability(Player* player, i32 frames)
+{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (!MultiplayerGameplay::IsMultiplayer() || player->playerState != PLAYER_STATE_INVULNERABLE ||
+        player->invulnerabilityTimer.GetCurrent() < frames)
+#endif
+    player->invulnerabilityTimer = frames;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (!MultiplayerGameplay::IsMultiplayer()) return;
+    for (u8 seat = 0; seat < MultiplayerGameplay::GetPlayerCount(); ++seat)
+    {
+        Player* teammate = GetPlayerById(seat);
+        if (!teammate || !MultiplayerGameplay::IsPlayerActive(seat) ||
+            teammate->playerState == PLAYER_STATE_SPIRIT ||
+            teammate->playerState == PLAYER_STATE_ELIMINATED) continue;
+        if (teammate->teamBombProtectionTimer.GetCurrent() < frames)
+            teammate->teamBombProtectionTimer = frames;
+        if (teammate == player) continue;
+        if (teammate->playerState != PLAYER_STATE_ALIVE &&
+            teammate->playerState != PLAYER_STATE_INVULNERABLE) continue;
+        const i32 remaining = teammate->playerState == PLAYER_STATE_INVULNERABLE ?
+            teammate->invulnerabilityTimer.GetCurrent() : 0;
+        teammate->playerState = PLAYER_STATE_INVULNERABLE;
+        if (remaining < frames)
+            teammate->invulnerabilityTimer = frames;
+    }
+#endif
+}
 
 namespace
 {
@@ -152,7 +184,7 @@ void BombData::BombReimuACalc(Player *player)
     {
         g_Gui.ShowBombNamePortrait(ResolveBombAnmScript(player, 1185), Localization::StringById("th07 Bomb Reimu A unfocused", "霊符「夢想封印　散」"));
         bombInfo->bombDuration = 140;
-        player->invulnerabilityTimer = 200;
+        GrantBombInvulnerability(player, 200);
         SpawnBombInvulnEffect(player);
         for (i = 0; i < 32; i++)
         {
@@ -327,7 +359,7 @@ void BombData::BombReimuACalcFocus(Player *player)
     {
         g_Gui.ShowBombNamePortrait(ResolveBombAnmScript(player, 1185), Localization::StringById("th07 Bomb Reimu A focused", "霊符「夢想封印　集」"));
         bombInfo->bombDuration = 300;
-        player->invulnerabilityTimer = 360;
+        GrantBombInvulnerability(player, 360);
         SpawnBombInvulnEffect(player);
         for (i = 0; i < 8; i++)
         {
@@ -511,7 +543,7 @@ void BombData::BombReimuBCalc(Player *player)
         g_ItemManager.RemoveAllItems();
         g_Gui.ShowBombNamePortrait(ResolveBombAnmScript(player, 1185), Localization::StringById("th06 Bomb Reimu B", "夢符「封魔陣」"));
         player->bombInfo.bombDuration = 140;
-        player->invulnerabilityTimer = 200;
+        GrantBombInvulnerability(player, 200);
         SpawnBombInvulnEffect(player);
         for (i = 0; i < 4; i++)
         {
@@ -617,7 +649,7 @@ void BombData::BombReimuBCalcFocus(Player *player)
         g_ItemManager.RemoveAllItems();
         g_Gui.ShowBombNamePortrait(ResolveBombAnmScript(player, 1185), Localization::StringById("th07 Bomb Reimu B focused", "夢符「二重結界」"));
         player->bombInfo.bombDuration = 190;
-        player->invulnerabilityTimer = 250;
+        GrantBombInvulnerability(player, 250);
         SpawnBombInvulnEffect(player);
         vm = player->bombInfo.subInfo[0].vms;
         for (i = 0; i < 3; i++, vm++)
@@ -689,7 +721,7 @@ void BombData::BombMarisaACalc(Player *player)
         g_ItemManager.RemoveAllItems();
         g_Gui.ShowBombNamePortrait(ResolveBombAnmScript(player, 1187), Localization::StringById("th06 Bomb Marisa A", "魔符「スターダストレヴァリエ」"));
         player->bombInfo.bombDuration = 200;
-        player->invulnerabilityTimer = 250;
+        GrantBombInvulnerability(player, 250);
         SpawnBombInvulnEffect(player);
         for (i = 0; i < 8; i++, vm++)
         {
@@ -797,7 +829,7 @@ void BombData::BombMarisaACalcFocus(Player *player)
         g_ItemManager.RemoveAllItems();
         g_Gui.ShowBombNamePortrait(ResolveBombAnmScript(player, 1186), Localization::StringById("th07 Bomb Marisa A focused", "魔符「ミルキーウェイ」"));
         player->bombInfo.bombDuration = 260;
-        player->invulnerabilityTimer = 310;
+        GrantBombInvulnerability(player, 310);
         SpawnBombInvulnEffect(player);
         for (i = 0; i < 24; i++)
         {
@@ -943,7 +975,7 @@ void BombData::BombMarisaBCalc(Player *player)
         player->bombStartPos = player->pos;
         g_Gui.ShowBombNamePortrait(ResolveBombAnmScript(player, 1185), Localization::StringById("th07 Bomb Marisa B unfocused", "恋符「ノンディレクショナルレーザー」"));
         player->bombInfo.bombDuration = 300;
-        player->invulnerabilityTimer = 300;
+        GrantBombInvulnerability(player, 300);
         SpawnBombInvulnEffect(player);
         subInfo = player->bombInfo.subInfo;
         for (i = 0; i < 3; i++, subInfo++)
@@ -1060,7 +1092,7 @@ void BombData::BombMarisaBCalcFocus(Player *player)
         g_ItemManager.RemoveAllItems();
         g_Gui.ShowBombNamePortrait(ResolveBombAnmScript(player, 1186), Localization::StringById("th06 Bomb Marisa B", "恋符「マスタースパーク」"));
         player->bombInfo.bombDuration = 340;
-        player->invulnerabilityTimer = 390;
+        GrantBombInvulnerability(player, 390);
         SpawnBombInvulnEffect(player);
         vm = player->bombInfo.subInfo[0].vms;
         for (i = 0; i < 4; i++, vm++)
@@ -1153,7 +1185,7 @@ void BombData::BombSakuyaACalc(Player *player)
         g_ItemManager.RemoveAllItems();
         g_Gui.ShowBombNamePortrait(ResolveBombAnmScript(player, 1185), Localization::StringById("th07 Bomb Sakuya A unfocused", "幻符「インディスクリミネイト」"));
         player->bombInfo.bombDuration = 160;
-        player->invulnerabilityTimer = 210;
+        GrantBombInvulnerability(player, 210);
         SpawnBombInvulnEffect(player);
         player->bombStartPos = player->pos;
         subInfo = player->bombInfo.subInfo;
@@ -1283,7 +1315,7 @@ void BombData::BombSakuyaACalcFocus(Player *player)
         g_ItemManager.RemoveAllItems();
         g_Gui.ShowBombNamePortrait(ResolveBombAnmScript(player, 1185), Localization::StringById("th07 Bomb Sakuya A focused", "幻符「殺人ドール」"));
         player->bombInfo.bombDuration = 250;
-        player->invulnerabilityTimer = 290;
+        GrantBombInvulnerability(player, 290);
         SpawnBombInvulnEffect(player);
         subInfo = player->bombInfo.subInfo;
         for (i = 0; i < 96; i++, subInfo++)
@@ -1442,7 +1474,7 @@ void BombData::BombSakuyaBCalc(Player *player)
         g_ItemManager.RemoveAllItems();
         g_Gui.ShowBombNamePortrait(ResolveBombAnmScript(player, 1187), Localization::StringById("th07 Bomb Sakuya B unfocused", "時符「パーフェクトスクウェア」"));
         player->bombInfo.bombDuration = 160;
-        player->invulnerabilityTimer = 260;
+        GrantBombInvulnerability(player, 260);
         SpawnBombInvulnEffect(player);
         subInfo = player->bombInfo.subInfo;
         for (i = 0; i < 4; i++, subInfo++)
@@ -1563,7 +1595,7 @@ void BombData::BombSakuyaBCalcFocus(Player *player)
         g_ItemManager.RemoveAllItems();
         g_Gui.ShowBombNamePortrait(ResolveBombAnmScript(player, 1187), Localization::StringById("th07 Bomb Sakuya B focused", "時符「プライベートスクウェア」"));
         player->bombInfo.bombDuration = 300;
-        player->invulnerabilityTimer = 420;
+        GrantBombInvulnerability(player, 420);
         SpawnBombInvulnEffect(player);
         player->isBombing = 0;
         subInfo = player->bombInfo.subInfo;

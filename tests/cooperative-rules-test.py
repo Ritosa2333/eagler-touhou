@@ -55,7 +55,8 @@ constexpr unsigned COLOR_WHITE=0xffffffff;
 struct ZunVec3 { float x=0,y=0,z=0; };
 struct Timer { int n=0; Timer& operator=(int v){n=v;return *this;} operator int()const{return n;}
  void SetCurrent(int v){n=v;} float AsFramesFloat()const{return n;} int AsFrames()const{return n;}
- float AsFloat()const{return n;} int GetCurrent()const{return n;} };
+ float AsFloat()const{return n;} int GetCurrent()const{return n;} void Decrement(int v){n-=v;}
+ void operator--(int){--n;} };
 struct Color { unsigned color=0; Color&operator=(unsigned c){color=c;return *this;} };
 struct Sprite { float scaleX=1,scaleY=1; ZunVec3 scale; Color color; int blendMode=0;
  struct {int blendMode=0;}flags; };
@@ -66,26 +67,30 @@ struct Player {u8 initParam=0; int playerState=0,orbState=0,optionState=0,
  powerGiveTaps=0,powerGiveWindow=0,hasBorder=0;
  float previousHorizontalSpeed=0,previousVerticalSpeed=0,
  verticalMovementSpeedMultiplierDuringBomb=1,horizontalMovementSpeedMultiplierDuringBomb=1;
- Timer invulnerabilityTimer; ZunVec3 pos,prevPos,positionCenter; Sprite playerSprite;
+ Timer invulnerabilityTimer,teamBombProtectionTimer; ZunVec3 pos,prevPos,positionCenter; Sprite playerSprite;
  struct {int isInUse=0;}bombInfo; Shooter*shooterData=&shooter; bool shoot=false,pressed=false;
  void BreakBorder(){hasBorder=0;} };
 Player g_Players[3]; bool g_PlayerActive[3]; bool absent[3],departed[3];
 int lives[3],bombs[3],power[3],g_powerGiveTaps[3],g_powerGiveWindow[3],g_teamWipeRetryFrames;
-bool multiplayer=true;
+bool multiplayer=true,challenge=false;
+struct Contribution {u32 challengeDeaths=0;}g_MultiplayerContributionStats[3];
 namespace MultiplayerGameplay {bool IsMultiplayer(){return multiplayer;}
+ bool IsChallengeMode(){return multiplayer&&challenge;}
+ bool IsPlayerActive(u8 p){return p<3&&g_PlayerActive[p]&&!absent[p]&&!departed[p];}
  bool IsPlayerTemporarilyAbsent(u8 p){return absent[p];}
  bool IsPlayerPermanentlyDeparted(u8 p){return departed[p];}
  int GetPlayerCount(){return int(g_PlayerActive[0])+int(g_PlayerActive[1])+int(g_PlayerActive[2]);}
  int GetPlayerCharacter(u8){return 0;} }
 bool IsPlayerActive(u8 p){return p<3&&g_PlayerActive[p];}
+Player* GetPlayerById(u8 p){return p<3?&g_Players[p]:nullptr;}
 bool IsPlayerSlotActive(u8 p){return IsPlayerActive(p);}
 bool IsPlayerGameplayActive(u8 p){return IsPlayerActive(p)&&!absent[p];}
 int GetActivePlayerCount(){return MultiplayerGameplay::GetPlayerCount();}
  bool IsMultiplayerTransferState(int state){return state>=6&&state<=8;}
-int GetPlayerLives(u8 p){return lives[p];} int GetPlayerBombs(u8 p){return bombs[p];}
+int GetPlayerLives(u8 p){return lives[p];} int GetPlayerBombs(u8 p){return challenge?0:bombs[p];}
 int GetPlayerPower(u8 p){return power[p];}
 void SetPlayerLives(u8 p,int v){lives[p]=v;} void AddPlayerLives(u8 p,int v){lives[p]+=v;}
-void SetPlayerBombs(u8 p,int v){bombs[p]=v;} void SetPlayerPower(u8 p,int v){power[p]=v;}
+void SetPlayerBombs(u8 p,int v){bombs[p]=challenge?0:v;} void SetPlayerPower(u8 p,int v){power[p]=v;}
 void AddPlayerPower(u8 p,int v){power[p]+=v;}
 #define WAS_PRESSED_PLAYER(p,b) ((p)->pressed)
 #define IS_PRESSED_PLAYER(p,b) ((p)->shoot)
@@ -159,6 +164,8 @@ functions = '' if SIX else function((ROOT / 'src/MultiplayerResources.cpp').read
 functions += ''.join(function(PLAYER,s) for s in signatures)
 functions += function((ROOT / 'src/MultiplayerResources.cpp').read_text(), 'void ResetMultiplayerPlayerResources(')
 functions += function(PLAYER, 'i32 GetBossParticipantCount(')
+functions += function((ROOT / 'src/BombData.cpp').read_text(), 'static void GrantBombInvulnerability(')
+functions += function(PLAYER, 'void UpdateTeamBombProtection(')
 functions += function(PLAYER, 'void PrepareMultiplayerStageRevival(')
 functions += function(ITEMS, 'bool ItemManager::CanSpawnItems(')
 functions += function(ITEMS, 'void ItemManager::SpawnItem(' if SIX else 'Item *ItemManager::SpawnItem(')
@@ -167,13 +174,14 @@ if SIX:
     a = PLAYER.index('    if (p->playerState == PLAYER_STATE_DEAD)')
     b = PLAYER.index('    if (p->bulletGracePeriod != 0)',a)
     functions += '''void DeathTick(Player*p) { bool multiplayer=::multiplayer;
-      int livesRemaining=GetPlayerLives(p->initParam); float scaleFactor1,scaleFactor2;\n'''+PLAYER[a:b]+'}\n'
+      int livesRemaining=GetPlayerLives(p->initParam); bool canRespawn=livesRemaining>0||challenge; float scaleFactor1,scaleFactor2;\n'''+PLAYER[a:b]+'}\n'
 else:
     functions += function(PLAYER,'i32 UpdateMultiplayerDeath(')
     functions += 'void DeathTick(Player*p){UpdateMultiplayerDeath(p);}\n'
 
 main = r'''
 void reset(int count=3){
+ challenge=false;for(auto&stats:g_MultiplayerContributionStats)stats={};
  shooter.initialBombs=4;g_ItemManager=ItemManager{};g_BulletManager=BulletManager{};g_Rng.n=0;g_teamWipeRetryFrames=0;
  for(int i=0;i<3;++i){g_Players[i]=Player{};g_Players[i].initParam=i;g_PlayerActive[i]=i<count;
  absent[i]=departed[i]=false;lives[i]=2;bombs[i]=4;power[i]=100;g_powerGiveTaps[i]=g_powerGiveWindow[i]=0;}
@@ -252,7 +260,7 @@ void test(){
   g_ItemManager.SpawnEnemyDrop(&origin,ITEM_POWER_SMALL,0);
   assert(g_ItemManager.emitted.size()==unsigned(3*count+(count==3?5:3)));
  }
- reset();assert(SelectLifeTransferReceiver(&g_Players[0])==&g_Players[2]);
+ reset();assert(SelectLifeTransferReceiver(&g_Players[0])==&g_Players[1]);
  assert(SelectPowerTransferReceiver(&g_Players[0])==&g_Players[1]);
  assert(GetBossParticipantCount()==3);g_Players[1].playerState=PLAYER_STATE_DEAD;assert(GetBossParticipantCount()==3);
  g_Players[1].playerState=PLAYER_STATE_SPIRIT;assert(GetBossParticipantCount()==2);
@@ -264,6 +272,44 @@ void test(){
   Player*p=&g_Players[1];p->playerState=PLAYER_STATE_DEAD;p->respawnTimer=1;DeathTick(p);
   p->invulnerabilityTimer=30;DeathTick(p);
   assert(bombs[1]==INITIAL_BOMBS&&lives[1]==0&&bombs[0]==donorBombs&&lives[0]==1);
+ }
+
+
+ // Authored Bomb invulnerability reaches every operating teammate and keeps
+ // longer existing protection when another player starts a shorter Bomb.
+ reset();g_Players[0].playerState=PLAYER_STATE_INVULNERABLE;g_Players[0].invulnerabilityTimer=500;
+ g_Players[2].playerState=PLAYER_STATE_SPIRIT;
+ GrantBombInvulnerability(&g_Players[0],200);
+ assert(g_Players[0].invulnerabilityTimer==500&&g_Players[1].invulnerabilityTimer==200);
+ assert(g_Players[1].playerState==PLAYER_STATE_INVULNERABLE&&g_Players[2].playerState==PLAYER_STATE_SPIRIT);
+ GrantBombInvulnerability(&g_Players[1],360);
+ assert(g_Players[0].invulnerabilityTimer==500&&g_Players[1].invulnerabilityTimer==360);
+ // A Bomb does not skip or lengthen the teammate's respawn animation.
+ // Its own timer carries the remaining authored protection into active play.
+ reset();g_Players[1].playerState=PLAYER_STATE_SPAWNING;g_Players[1].invulnerabilityTimer=0;
+ GrantBombInvulnerability(&g_Players[0],420);
+ assert(g_Players[1].playerState==PLAYER_STATE_SPAWNING&&g_Players[1].invulnerabilityTimer==0);
+ for(int n=0;n<30;++n)UpdateTeamBombProtection(&g_Players[1]);
+ assert(g_Players[1].teamBombProtectionTimer==390);
+ g_Players[1].playerState=PLAYER_STATE_INVULNERABLE;g_Players[1].invulnerabilityTimer=240;
+ UpdateTeamBombProtection(&g_Players[1]);assert(g_Players[1].invulnerabilityTimer==389);
+ for(int n=0;n<389;++n){g_Players[1].playerState=PLAYER_STATE_ALIVE;g_Players[1].invulnerabilityTimer=0;
+  UpdateTeamBombProtection(&g_Players[1]);}
+ assert(g_Players[1].teamBombProtectionTimer==0&&g_Players[1].playerState==PLAYER_STATE_ALIVE);
+ // Challenge misses always use ordinary death drops, even with zero spare lives.
+ for(int stock: {0,1,3}){
+  reset();challenge=true;lives[0]=stock;Player*p=&g_Players[0];
+  for(int n=0;n<20;++n){
+   g_ItemManager=ItemManager{};power[0]=80;p->playerState=PLAYER_STATE_DEAD;p->respawnTimer=1;
+   DeathTick(p);p->invulnerabilityTimer=30;DeathTick(p);
+   assert(g_ItemManager.emitted.size()==18&&power[0]==64);
+   assert(std::count(g_ItemManager.emitted.begin(),g_ItemManager.emitted.end(),ITEM_FULL_POWER)==0);
+   assert(lives[0]==stock&&bombs[0]==0&&p->playerState==PLAYER_STATE_SPAWNING);
+   assert(g_MultiplayerContributionStats[0].challengeDeaths==unsigned(n+1));
+  }
+  p->playerState=PLAYER_STATE_ALIVE;p->pos=p->positionCenter={};
+  hold(p,90);assert(lives[0]==(stock?stock-1:0));
+  assert(g_MultiplayerContributionStats[0].challengeDeaths==20);
  }
  // Exact deterministic re-execution of production rescue from a copied pre-frame fixture.
  reset();g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=0;

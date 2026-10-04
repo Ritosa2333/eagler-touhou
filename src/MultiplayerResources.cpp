@@ -155,6 +155,7 @@ i32 GetPlayerLives(u8 playerId)
 
 i32 GetPlayerBombs(u8 playerId)
 {
+    if (MultiplayerGameplay::IsChallengeMode()) return 0;
     MultiplayerPlayerResources *resources = GetSidecarResources(playerId);
     return resources ? resources->bombsRemaining
                      : (i32)g_GameManager.globals->bombsRemaining;
@@ -248,6 +249,7 @@ void SetPlayerLives(u8 playerId, i32 amount)
 
 void SetPlayerBombs(u8 playerId, i32 amount)
 {
+    if (MultiplayerGameplay::IsChallengeMode()) amount = 0;
     MultiplayerPlayerResources *resources = GetSidecarResources(playerId);
     if (!resources)
     {
@@ -342,6 +344,7 @@ void ResetMultiplayerPlayerResources(u8 playerId)
 
 i32 GetPlayerInitialBombs(u8 playerId)
 {
+    if (MultiplayerGameplay::IsChallengeMode()) return 0;
     const Player &player = g_Players[playerId];
     const i32 nativeBombs = player.shooterData ? (i32)player.shooterData->initialBombs : 3;
     return nativeBombs > 1 ? nativeBombs - 1 : 1;

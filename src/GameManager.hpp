@@ -58,6 +58,7 @@ struct MultiplayerContributionStats
 {
     u32 enemiesDefeated;
     u32 damageDealt;
+    u32 challengeDeaths = 0;
 };
 
 extern MultiplayerPlayerResources

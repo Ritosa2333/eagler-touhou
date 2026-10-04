@@ -469,6 +469,9 @@ void HashPlayer(Hasher &hash, const Player &player)
     }
     HashTimer(hash, player.fireBulletTimer);
     HashTimer(hash, player.invulnerabilityTimer);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    HashTimer(hash, player.teamBombProtectionTimer);
+#endif
     HashTimer(hash, player.borderTimer);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     hash.Scalar(player.lifeGiveTimer);
@@ -740,6 +743,7 @@ Sample Capture()
     {
         multiplayer.Scalar(stats.enemiesDefeated);
         multiplayer.Scalar(stats.damageDealt);
+        multiplayer.Scalar(stats.challengeDeaths);
     }
     for (i32 value : g_cherryMaxGrazeGrowth)
         multiplayer.Scalar(value);

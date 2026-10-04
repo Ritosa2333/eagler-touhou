@@ -68,6 +68,8 @@ bool IsMultiplayer()
     return g_State.playerCount > 1;
 }
 
+bool IsChallengeMode() { return IsMultiplayer() && g_State.challengeMode; }
+
 u8 GetPlayerCount()
 {
     return g_State.playerCount;

@@ -58,7 +58,7 @@ constexpr std::uint32_t GAME_ID_TH07 = 7;
 // Gameplay ABI also guards the supported input semantics. ABI 5 accepts
 // once-only touch deltas and keeps their remainder in rewindable state.
 // Refuse older live peers before they could misinterpret those new modes.
-constexpr std::uint32_t GAMEPLAY_ABI = TH07_MULTI_NETPLAY_ABI;
+static std::uint32_t GameplayAbi() { return TH07_MULTI_NETPLAY_ABI | (MultiplayerGameplay::IsChallengeMode() ? 0x10000u : 0u); }
 constexpr std::uint32_t DEFAULT_TEST_FRAMES = 300;
 
 WebSocketTransport g_Transport;
@@ -570,7 +570,7 @@ void PublishConfirmedSpectatorFrames()
         SpectatorFramePacket packet;
         packet.sessionId = CurrentSessionId();
         packet.frame = g_NextSpectatorPublishFrame;
-        packet.gameplayAbi = GAMEPLAY_ABI;
+        packet.gameplayAbi = GameplayAbi();
         packet.playerCount = g_PlayerCount;
         packet.inputs = decision.inputs;
         std::vector<std::uint8_t> wire;
@@ -594,7 +594,7 @@ bool DrainSpectatorFrames()
     {
         SpectatorFramePacket packet;
         if (!DecodeSpectatorFramePacket(wire.data(), wire.size(), &packet) ||
-            packet.sessionId != CurrentSessionId() || packet.gameplayAbi != GAMEPLAY_ABI ||
+            packet.sessionId != CurrentSessionId() || packet.gameplayAbi != GameplayAbi() ||
             packet.playerCount != g_PlayerCount ||
             packet.frame != g_NextSpectatorReceiveFrame)
             return false;
@@ -1342,7 +1342,7 @@ bool Initialize()
     SessionConfig sessionConfig;
     sessionConfig.sessionId = CurrentSessionId();
     sessionConfig.seed = static_cast<std::uint32_t>(g_Rng.seed);
-    sessionConfig.gameplayAbi = GAMEPLAY_ABI;
+    sessionConfig.gameplayAbi = GameplayAbi();
     sessionConfig.gameId = GAME_ID_TH07;
     sessionConfig.playerCount = g_PlayerCount;
     sessionConfig.localPlayer = g_LocalPlayer;

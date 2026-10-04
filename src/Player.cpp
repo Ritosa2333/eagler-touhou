@@ -477,7 +477,7 @@ Player *SelectLifeTransferReceiver(const Player *giver)
         if (!best || (isSpirit && !bestIsSpirit) ||
             (isSpirit == bestIsSpirit && lives < bestLives) ||
             (isSpirit == bestIsSpirit && lives == bestLives &&
-             playerId > best->initParam))
+             playerId < best->initParam))
         {
             best = candidate;
             bestIsSpirit = isSpirit;
@@ -495,6 +495,20 @@ void PrepareMultiplayerStageRevival(Player *player)
         g_Supervisor.curState == 3 &&
         player->playerState == PLAYER_STATE_SPIRIT)
         SetPlayerBombs(player->initParam, GetPlayerInitialBombs(player->initParam));
+}
+
+void UpdateTeamBombProtection(Player *player)
+{
+    if (!MultiplayerGameplay::IsMultiplayer() || player->teamBombProtectionTimer.GetCurrent() <= 0) return;
+    player->teamBombProtectionTimer--;
+    const i32 remaining = player->teamBombProtectionTimer.GetCurrent();
+    if (remaining > 0 && (player->playerState == PLAYER_STATE_ALIVE ||
+                          player->playerState == PLAYER_STATE_INVULNERABLE) &&
+        (player->playerState == PLAYER_STATE_ALIVE || player->invulnerabilityTimer.GetCurrent() < remaining))
+    {
+        player->playerState = PLAYER_STATE_INVULNERABLE;
+        player->invulnerabilityTimer = remaining;
+    }
 }
 
 void UpdateLifeTransfer(Player *giver)
@@ -867,8 +881,10 @@ i32 UpdateMultiplayerDeath(Player *player)
             g_EnemyManager.spellcardInfo.captureScore = 0;
             g_EnemyManager.spellcardInfo.isCapturing = 0;
             g_GameManager.CheckGameIntegrityOnDeath(1);
+            if (MultiplayerGameplay::IsChallengeMode())
+                ++g_MultiplayerContributionStats[player->initParam].challengeDeaths;
 
-            if (GetPlayerLives(player->initParam) > 0)
+            if (GetPlayerLives(player->initParam) > 0 || MultiplayerGameplay::IsChallengeMode())
             {
                 if (!PracticeRuntime::OverlayInfinitePower())
                 {
@@ -941,7 +957,7 @@ i32 UpdateMultiplayerDeath(Player *player)
     g_AnmManager->SetAnmIdxAndExecuteScript(
         &player->playerSprite, GetPlayerAnmScript(player, 1024));
 
-    if (GetPlayerLives(player->initParam) <= 0)
+    if (GetPlayerLives(player->initParam) <= 0 && !MultiplayerGameplay::IsChallengeMode())
     {
         player->playerState = PLAYER_STATE_SPIRIT;
         player->optionState = OPTION_HIDDEN;
@@ -982,7 +998,7 @@ i32 UpdateMultiplayerDeath(Player *player)
         return 0;
     }
 
-    if (!PracticeRuntime::OverlayInfiniteLives())
+    if (!PracticeRuntime::OverlayInfiniteLives() && !MultiplayerGameplay::IsChallengeMode())
         AddPlayerLives(player->initParam, -1);
     g_Gui.lifeDisplayUpdateFrames = 2;
     SetPlayerBombs(player->initParam, GetPlayerInitialBombs(player->initParam));
@@ -1929,11 +1945,18 @@ void Player::DrawBullets()
         bullet->vm.pos.x = g_GameManager.arcadeRegionTopLeftPos.x + drawPos.x;
         bullet->vm.pos.y = g_GameManager.arcadeRegionTopLeftPos.y + drawPos.y;
         bullet->vm.pos.z = 0.4f;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        const ZunColor shotColor = bullet->vm.color, shotPreviousColor = bullet->vm.prevColor;
+        ClampVmAlpha(&bullet->vm, GetPlayerOverlapAlpha(this));
+#endif
         g_AnmManager->Draw(&bullet->vm);
         if (bullet->drawCallback)
         {
             bullet->drawCallback(this, bullet);
         }
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        bullet->vm.color = shotColor; bullet->vm.prevColor = shotPreviousColor;
+#endif
     }
 }
 
@@ -1961,7 +1984,14 @@ void Player::DrawBulletExplosions()
         bullet->vm.pos.x = g_GameManager.arcadeRegionTopLeftPos.x + drawPos.x;
         bullet->vm.pos.y = g_GameManager.arcadeRegionTopLeftPos.y + drawPos.y;
         bullet->vm.pos.z = 0.4f;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        const ZunColor shotColor = bullet->vm.color, shotPreviousColor = bullet->vm.prevColor;
+        ClampVmAlpha(&bullet->vm, GetPlayerOverlapAlpha(this));
+#endif
         g_AnmManager->Draw(&bullet->vm);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        bullet->vm.color = shotColor; bullet->vm.prevColor = shotPreviousColor;
+#endif
     }
 }
 
@@ -2460,6 +2490,9 @@ void Player::ScoreGraze(ZunVec3 *param_1)
 
 void Player::Die()
 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (MultiplayerGameplay::IsMultiplayer() && this->teamBombProtectionTimer.GetCurrent() > 0) return;
+#endif
     g_GameManager.RegenerateGameIntegrityCsum();
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     g_EffectManager.SpawnSpecialEffect(12, &this->pos,
@@ -4000,6 +4033,7 @@ u32 Player::OnUpdate(Player *arg)
 WHY:
     arg->UpdateState();
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    UpdateTeamBombProtection(arg);
     if (MultiplayerGameplay::IsMultiplayer())
     {
         UpdateLifeTransfer(arg);

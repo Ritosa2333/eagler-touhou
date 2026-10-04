@@ -527,6 +527,9 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 #endif
             gameplaySession.playerCount = (u8)requestedPlayerCount;
             gameplaySession.showStagePlayerNames = true;
+#ifdef __EMSCRIPTEN__
+    gameplaySession.challengeMode = EM_ASM_INT({ return Module.eaglerOptions?.netplayChallengeMode === true ? 1 : 0; }) != 0;
+#endif
             gameplaySession.stage4BossChain = EaglerOptions::NetplayStage4BossChain();
             for (i32 playerId = 0; playerId < requestedPlayerCount; ++playerId)
             {

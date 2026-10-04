@@ -1846,6 +1846,12 @@ void Gui::DrawGameScene()
                 continue;
             resourceCount = GetPlayerLives((u8)playerId);
             blockY = multiplayerHudBaseY + 48.0f * playerId;
+            if (MultiplayerGameplay::IsChallengeMode())
+            {
+                ZunVec3 countPos(532.0f + multiplayerHudOffsetX, blockY, 0.46f);
+            AsciiManager::AddFormatText(&g_AsciiManager, &countPos, "%u", g_MultiplayerContributionStats[playerId].challengeDeaths);
+                continue;
+            }
             for (i = 0, x = 532.0f + multiplayerHudOffsetX;
                  i < resourceCount; ++i, x += resourceIconStep)
             {
