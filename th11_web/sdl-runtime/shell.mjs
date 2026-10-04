@@ -1,9 +1,9 @@
 // Platform shell for the upstream eagler-touhou/1 Launcher contract.
 // Game construction, input, timing, rendering, text and sound belong to C++.
 // Mirrors th10/th20 shell.mjs and imports the shared eagler-host transport.
-import {createBrowserKeyboard} from './directory-keyboard.mjs';
 import createModule from './th11-sdl.mjs';
 import {scanCodes} from './keyboard.mjs';
+import {createBrowserKeyboard} from './directory-keyboard.mjs';
 import {validateMotionReplay} from './motion-replay.mjs';
 import {bindOutsideTouches,normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,installResources as installHostResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError} from './eagler-host.mjs';
 const runtimeBuild=/*TH11_BUILD_INFO*/{version:'development-incomplete',completeGame:false};
@@ -13,11 +13,6 @@ const validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
 const $=s=>document.querySelector(s);
 let Module,core,app=0,launched=false,first=false,stopping=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true,musicMode='none';
-const keyboard=createBrowserKeyboard({
- accept:code=>!!scanCodes[code],
- send:(code,down)=>core?.th11_key(scanCodes[code],+down),
-});
-function clearKeyboard(){keyboard.clear();core?.th11_keys_clear();}
 let frames=0,lastHealth=0,lastFrame=0,maxGap=0,lastPresented=0,saveTimer=null,storageSync=Promise.resolve();
 const cancelTouches=bindOutsideTouches(document,canvas,()=>core,()=>launched&&options.touchEnabled);
 const error=reason=>{const message=reason?.stack||String(reason);const node=$('#error');if(node)node.textContent=message;emit('error',{message,error:message});console.error(reason);};
@@ -60,7 +55,16 @@ async function installRuntimePack(pack){
   Module.FS.writeFile(file.path,file.bytes,{canOwn:true});runtimePackFiles.push(file.path);
  }
 }
-function apply(){applyTouchOptions(core,options);core.th11_music_enabled(+music);}
+function apply(){Module.eaglerOptions=options;applyTouchOptions(core,options);core.th11_music_enabled(+music);}
+let thpracKeyboardBits=0;
+function thpracKey(code,down){const bit=code==='Backspace'?1:code==='Tab'?1<<8:code==='F12'?1<<9:/^F[1-7]$/.test(code)?1<<Number(code.slice(1)):0;if(!bit||!options.thpracEnabled)return false;if(down)thpracKeyboardBits|=bit;else thpracKeyboardBits&=~bit;(Module.eaglerControls??={}).thpracKeyboardBits=thpracKeyboardBits;return true;}
+function clearPracticeKeys(){thpracKeyboardBits=0;if(Module)(Module.eaglerControls??={}).thpracKeyboardBits=0;}
+const keyboard=createBrowserKeyboard({
+ accept:code=>!!scanCodes[code],
+ send(code,down){if(!core)return;if(thpracKey(code,down))return;core.th11_key(scanCodes[code],+down);},
+ onClear:clearPracticeKeys
+});
+function clearKeyboard(){keyboard.clear();core?.th11_keys_clear();}
 async function resumeForegroundAudio(forcePause=false){
  if(!Module||!core||!launched||document.hidden)return false;
  if(forcePause)core.sdl_loop_pause(1);
@@ -73,7 +77,7 @@ function closeAudio(){
  if(borrowed)s.audioContext=undefined;
  try{core.th11_audio_close();}finally{if(borrowed)s.audioContext=context;}
 }
-async function stop(){if(stopping)return;stopping=true;clearKeyboard();try{core.th11_loop_stop();await save();closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
+async function stop(){if(stopping)return;stopping=true;try{clearKeyboard();core.th11_loop_stop();await save();closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(/^\/savesth11\//,'').replace(/^\//,'');if(!/^(?:scoreth11\.dat|th11\.cfg|replay\/th11_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/.test(name))throw Error('存档路径无效');return name;}
 function launch(){
  if(launched)return;clearKeyboard();
@@ -89,6 +93,7 @@ async function command(m){switch(m.command){
  case 'resources':await installResources(m.resources);return {};
  case 'keyboard':if(launched&&!document.hidden&&!stopping)keyboard.event(m,!!m.down,'hosted');return {};
  case 'keyboard-clear':clearKeyboard();return {};
+ case 'thprac-mouse':{if(!options.thpracEnabled||!core.sdl_thprac_mouse)return {};const r=canvas.getBoundingClientRect(),scale=Math.min(r.width/640,r.height/480);core.sdl_thprac_mouse(m.type==='down'?1:m.type==='up'?2:0,(Number(m.x)-r.left-(r.width-640*scale)/2)/scale,(Number(m.y)-r.top-(r.height-480*scale)/2)/scale);return {};}
  case 'touch-cancel':cancelTouches();return {};
  case 'direct-touch':directTouch(core,canvas,m,{width:innerWidth,height:innerHeight});return {};
  case 'touch-controls':touchControls(core,options,m);return {};
@@ -117,14 +122,15 @@ window.addEventListener('message',event=>{
  queue=queue.then(async()=>{if(await initialized===false)return;await dispatchCommand(m);}).catch(error);
 });
 document.addEventListener('visibilitychange',()=>{if(!core||!launched)return;clearKeyboard();cancelTouches();if(document.hidden){suspendRuntimeAudio(Module,core);queue=queue.then(save).catch(error);}else void resumeForegroundAudio(true);});
-window.addEventListener('blur',()=>{if(core){clearKeyboard();cancelTouches();}});
+window.addEventListener('blur',()=>{clearKeyboard();if(core)cancelTouches();});
+window.addEventListener('eagler-thprac-menu',event=>emit('thprac-menu',{open:!!event.detail?.open}));
 window.addEventListener('pagehide',()=>{clearKeyboard();cancelTouches();if(core&&launched){suspendRuntimeAudio(Module,core);void save().catch(console.error);}});
 window.addEventListener('pageshow',()=>{if(core&&launched&&!document.hidden)void resumeForegroundAudio(true);});
 canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();clearKeyboard();core?.sdl_loop_pause(1);error('图形环境已失效，请退出后重新开始。');});
 for(const name of ['pointerdown','keydown'])window.addEventListener(name,()=>{if(Module?.SDL3?.audioContext?.state!=='running')void resumeForegroundAudio(true);},{capture:true});
 for(const name of ['keydown','keyup'])window.addEventListener(name,event=>{
  if(!core||!launched||stopping||document.hidden)return;
- keyboard.event(event,name==='keydown');
+ if(keyboard.event(event,name==='keydown'))event.preventDefault();
 },{capture:true});
 // A mobile browser may terminate a hidden page before pagehide's IDB callback.
 // Persist during play as well, with writes serialized by the sync chain.

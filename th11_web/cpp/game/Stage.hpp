@@ -45,6 +45,7 @@ struct StageScriptWorld {
     virtual bool stage_animation(AnmVm&,i32)=0;
     virtual bool stage_deformation(i32)=0;
     virtual void stage_color(u32)=0;
+    virtual void stage_camera_position_interpolated(){}
 };
 bool stage_script(StageState&,const StageResource&,const float*,StageScriptWorld&);
 bool stage_interrupt(StageState&,const StageResource&,i32,const float*);
@@ -60,6 +61,8 @@ public:
     u32& background_color;
     u16 file_id;
     SceneCamera* active_camera=nullptr;
+    const u32* practice_game_frame=nullptr;
+    bool practice_replay_has_stage5=false;
     std::string error;
     Stage(AnmManager& m,AnmResource& a,AnmResource& t,u32& color,u16 id):manager(m),animations(a),text(t),background_color(color),file_id(id){}
     ~Stage();
@@ -78,6 +81,7 @@ public:
     bool stage_animation(AnmVm&,i32)override;
     bool stage_deformation(i32)override;
     void stage_color(u32 color)override{background_color=color;}
+    void stage_camera_position_interpolated()override;
 private:
     bool update_deformation();
 };

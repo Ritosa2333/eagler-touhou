@@ -17,6 +17,7 @@ struct EnemyCallbackControl;
 bool enemy_movement_command(EnemyState&,EclContext&,EnemyGlobals&)noexcept;
 struct EnemyHealthSegment {float fraction; i32 type;};
 struct EnemyCommandEnvironment {
+    bool practice_time_lock=false;
     EnemyState* bosses[8]{};u32 manager_flags=0;
     EnemyHealthSegment health_segments[4]{};i32 remaining_phases=0;
     void (*animation_visibility)(u32 id,bool visible,void* user)=nullptr;

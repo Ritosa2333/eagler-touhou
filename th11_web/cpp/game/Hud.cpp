@@ -34,7 +34,7 @@ bool Hud::start_stage(AnmResource& logo,const HudInput& input,bool demo,bool ini
     }
     display_lives(economy.lives,economy.life_fragments);
     if(demo){if(!create(front,70,5))return false;}
-    else if(!create(logo,0,27)||!create(logo,1,27))return false;
+    else if(!practice_skip_logo&&(!create(logo,0,27)||!create(logo,1,27)))return false;
     if(!bind(indicator,text,0,2))return false;
     if(input.stage==1&&!control_mode&&!continues&&!create(front,44,5))return false;
     if(initial){difficulty_intro=create(front,57+economy.difficulty,5);if(!difficulty_intro)return false;interrupt(difficulty_intro,3);}

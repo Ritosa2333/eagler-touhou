@@ -18,8 +18,11 @@ bool StageCompletion::complete(){
     effects.recall_player_options();
     if(mode.control_mode==0&&economy.difficulty!=4)
         records.stages[mode.selection][economy.difficulty*6+mode.stage]={1,1};
-    if(mode.practice){request(StageExit::Results);return true;}
-    if(mode.control_mode!=0&&mode.replay_practice){request(StageExit::ReplayEnd);return true;}
+    // THPrac 41eb9a -> 41ebcc bypasses both early Practice exits.
+    if(!mode.all_clear_bonus){
+        if(mode.practice){request(StageExit::Results);return true;}
+        if(mode.control_mode!=0&&mode.replay_practice){request(StageExit::ReplayEnd);return true;}
+    }
     if(mode.stage!=6&&mode.stage!=7){
         request(mode.force_title?StageExit::Title:StageExit::NextStage);
         state.next_stage=mode.stage+1;
@@ -39,6 +42,10 @@ bool StageCompletion::complete(){
         }
         economy.add_score(bonus);
         state.displayed_bonus=wrapping_add(state.displayed_bonus,bonus);
+        // 41eca6/41ed4a re-check Practice after the all-clear award, before
+        // entering the ending or incrementing full-game clear records.
+        if(mode.all_clear_bonus&&mode.practice){request(StageExit::Results);return true;}
+        if(mode.all_clear_bonus&&mode.control_mode!=0&&mode.replay_practice){request(StageExit::ReplayEnd);return true;}
         if(mode.replay_mode==1){request(StageExit::ReplayEnd);return true;}
         state.hud_flags|=0x10;
         state.ending_frames=0;
@@ -48,6 +55,8 @@ bool StageCompletion::complete(){
         // or an original signed 32-bit bonus overflows.
         economy.add_score(multiply(economy.lives,40000000));
         economy.add_score(multiply(economy.power,400000));
+        if(mode.all_clear_bonus&&mode.practice){request(StageExit::Results);return true;}
+        if(mode.all_clear_bonus&&mode.control_mode!=0&&mode.replay_practice){request(StageExit::ReplayEnd);return true;}
         if(mode.replay_mode==1){request(StageExit::ReplayEnd);return true;}
         request(StageExit::Results);
         count_clear();

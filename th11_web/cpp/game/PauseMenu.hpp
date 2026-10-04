@@ -25,6 +25,7 @@ public:
     float slowdown=0;
     u64 timestamp=0;
     bool practice=false,scan_requested=false,save_requested=false,recording_metadata_requested=false;
+    bool practice_save_disabled=false;
     std::vector<i32> sounds;
     PauseAction action=PauseAction::None;
     std::string error;

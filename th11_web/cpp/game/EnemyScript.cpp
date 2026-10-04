@@ -1,9 +1,18 @@
 #include "EnemyScript.hpp"
 #include "EnemyAnimations.hpp"
 #include "EnemyManager.hpp"
+#include "SpellController.hpp"
 #include <cstdlib>
 namespace th11 {
-i32 EnemyScriptServices::update(float elapsed){if(error.instruction)return -2;return globals.enemy.script_owner->script.update_threads(elapsed,*this);}
+i32 EnemyScriptServices::update(float elapsed){if(error.instruction)return -2;
+#ifdef TH_ENABLE_THPRAC
+    const int stage=commands.spells?commands.spells->stage:0;
+    if(commands.practice_time_lock&&stage>=4&&stage<=6&&globals.enemy.flags==20512&&commands.bosses[0]){
+        elapsed=0;constexpr float waits[]{-900,-1800,-1000};
+        for(auto* node=&globals.enemy.script_owner->script.threads;node;node=node->next)if(node->value->time==waits[stage-4]||(stage==4&&node->value->time==-600))node->value->time=-100;
+    }
+#endif
+    return globals.enemy.script_owner->script.update_threads(elapsed,*this);}
 i32 EnemyScriptServices::command(EclContext& context){
     auto& enemy=globals.enemy;
     if(enemy_movement_command(enemy,context,globals)||enemy_emitter_command(enemy,context,globals))return 0;

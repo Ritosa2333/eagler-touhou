@@ -71,10 +71,11 @@ public:
     TitleSelection menu_selection;
     bool interactive=false;
     GameSessionState state;
+    PracticeState practice;
     std::string error;
 
     bool begin(GameResources& source, u32 stage=1, i32 character=0,
-               i32 subtype=0, i32 difficulty=1, bool demo=false, bool replay=false,bool practice=false);
+               i32 subtype=0, i32 difficulty=1, bool demo=false, bool replay=false,bool practice=false,const PracticeConfig* parameters=nullptr);
     bool open_title(GameResources&,bool first=false,TitleScreen screen=TitleScreen::Main);
     bool begin_replay(GameResources&,const u8*,u32,u32 stage=0,bool demo=false);
     bool save_replay(const char* name,std::vector<u8>& output,bool terminal=true,float slowdown=0);

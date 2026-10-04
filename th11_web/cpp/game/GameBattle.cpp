@@ -53,6 +53,9 @@ bool GameBattle::initialize(i32 character,i32 subtype,i32 difficulty) {
     animations.camera_delta=compositor.world_camera.animation_delta;
     stage=std::make_unique<Stage>(animations,resources.stage->background,resources.core.text,compositor.clear_color,u16((resources.stage_number&1)+3));
     stage->active_camera=&compositor.world_camera;
+#ifdef TH_ENABLE_THPRAC
+    stage->practice_game_frame=&frame;stage->practice_replay_has_stage5=practice&&practice->enabled&&replaying&&practice_replay_has_stage5;
+#endif
     if(!stage->initialize(resources.stage->scene,resources.stage_number,compositor.world_camera)){last_error=-1008;error=stage->error;return false;}
     enemy_commands.stage=stage.get();
     spells.selection=character*3+subtype;spells.stage=resources.stage_number;spells.replay=replaying;
@@ -62,6 +65,10 @@ bool GameBattle::initialize(i32 character,i32 subtype,i32 difficulty) {
     bomb.reset();
     player=std::make_unique<PlayerFrame>(resources.core.shots[character*3+subtype],resources.core.players[character],resources.core.bullet,animations,economy,*this,7,6);
     player->input=player_input;
+#ifdef TH_ENABLE_THPRAC
+    player->practice=practice;
+    if(practice&&practice->active&&!replaying)player->motion.state.weapon_mode=practice->run.marisa_b_formation;
+#endif
     if(!player->initialize()){last_error=-601;error="player initialization";return false;}
     // On the first stage, 420390 calls 42fec0 before the first player tick.
     // Lifecycle 0 is the respawn entrance, not a new game's starting state.
@@ -72,6 +79,9 @@ bool GameBattle::initialize(i32 character,i32 subtype,i32 difficulty) {
     synchronize_player();
     if(!spawn_root()){last_error=-1001;error="stage main: ECL opcode "+std::to_string(enemies.script_error.opcode);return false;}
     countdown_seconds=-1;
+#ifdef TH_ENABLE_THPRAC
+    if(practice&&practice->active){const int section=practice->run.section;hud.practice_skip_logo=section&&(section<10000||section>=20000||section%100!=1);}
+#endif
     if(!hud.start_stage(resources.stage->logo,hud_input(),demo,true,completion.mode.control_mode,hud.score.continues)){error="HUD initialization";return false;}
     initialized=true;return true;
 }
@@ -108,6 +118,9 @@ bool GameBattle::next_stage(GameResources& source,u32 number){
     outgoing_stage=std::move(stage);
     stage=std::make_unique<Stage>(animations,resources.stage->background,resources.core.text,compositor.clear_color,u16((number&1)+3));
     stage->active_camera=&compositor.world_camera;
+#ifdef TH_ENABLE_THPRAC
+    stage->practice_game_frame=&frame;stage->practice_replay_has_stage5=practice&&practice->enabled&&replaying&&practice_replay_has_stage5;
+#endif
     if(!stage->initialize(resources.stage->scene,number,compositor.world_camera,false)){error=stage->error;return false;}
     enemy_commands.stage=stage.get();enemy_animations.resources[2]={&resources.stage->enemies,9};
     create_dialogue();spells.stage=number;
@@ -196,6 +209,11 @@ bool GameBattle::update(const std::function<bool()>& sample_input) {
     if(!animations.update(true)){last_error=-1005;return false;}
     if(!stage_control()){last_error=-1009;return false;}
     const bool control_running=!transitioning||transition_started;
+#ifdef TH_ENABLE_THPRAC
+    practice_time_lock=practice&&practice->enabled&&!replaying&&(practice->cheats&8);
+    enemy_commands.practice_time_lock=spells.practice_time_lock=practice_time_lock;
+    completion.mode.all_clear_bonus=practice&&practice->enabled&&practice->all_clear_bonus;
+#endif
     // 420752: the stage-six introduction holds the music cursor for 300 ticks.
     if(control_running&&!demo&&resources.stage_number==6&&frame==300)events.push_back({BattleEventKind::MusicResume});
     if(control_running)hud.score.update(economy.score_units);
@@ -295,7 +313,11 @@ bool GameBattle::project_spawn(Vec3 position,Vec3& projected){
 }
 bool GameBattle::start_bomb(){
     if(!bomb||!bomb->supported())return unavailable("unreconstructed Bomb activation");
-    return bomb->start()!=-2;
+    const bool result=bomb->start()!=-2;
+#ifdef TH_ENABLE_THPRAC
+    if(result&&practice)++practice->tracker_bombs;
+#endif
+    return result;
 }
 bool GameBattle::callback_spawn(const EnemyState& e,Vec3 p){EnemySpawn spawn;spawn.position=p;spawn.health=spawn.score=10;spawn.drop=-2;std::memcpy(spawn.integers,e.integers,48);return enemies.spawn("MBossCard2_at2",spawn)!=nullptr;}
 bool GameBattle::callback_move_player(Vec3 p){
@@ -366,7 +388,11 @@ bool GameBattle::popup(Vec3 p,i32 value,u32 color) {popups.add(p,value,color,&an
 bool GameBattle::notify(i32 value) {events.push_back({BattleEventKind::Notification,value});return hud.notice(value);}
 bool GameBattle::display_lives(i32 lives,i32 fragments) {hud.display_lives(lives,fragments);events.push_back({BattleEventKind::Lives,lives,fragments});return true;}
 bool GameBattle::power_changed() { return player&&player->motion.rebuild_options(resources.core.shots[enemy_environment.character*3+enemy_environment.subtype].header,economy,enemy_environment.character*3+enemy_environment.subtype); }
-bool GameBattle::record_death() {events.push_back({BattleEventKind::Death});return true;}
+bool GameBattle::record_death() {
+#ifdef TH_ENABLE_THPRAC
+    if(practice)++practice->tracker_misses;
+#endif
+    events.push_back({BattleEventKind::Death});return true;}
 bool GameBattle::enemy_death() {
     // 0x431307 increments manager +0x10 and resets +0x18. This is a player
     // death counter visible to ECL, not the erase-all-enemies operation.
@@ -389,7 +415,7 @@ bool GameBattle::spell_begin_visuals(i32 id,i32 timeout,const char* name){
     cancellation={spell_flags,spell_id};
     auto create=[&](AnmResource& resource,i32 script,u16 file,u32* result=nullptr){auto* vm=animations.create(resource,script,file,22,false,false);if(result)*result=vm?vm->id:0;return vm;};
     if(!create(resources.core.ascii,1,2,&spell_titles[0])||!create(resources.core.text,74,0,&spell_titles[1])||!create(resources.core.ascii,2,2,&spell_titles[2]))return false;
-    dialogue_text_requests.push_back({spell_titles[1],0xffffff,0,0,0,Localization::SpellName(u32(id),name?name:""),true});
+    dialogue_text_requests.push_back({spell_titles[1],0xffffff,0,0,0,Localization::SpellName(u32(id),name?name:"",spells.translation_rank),true});
     events.push_back({BattleEventKind::SpellTitle,i32(spell_titles[1]),id});
     if(!sound(14,0,false))return false;
     auto* circle=create(resources.core.bullet,139,6,&spell_circle);if(!circle)return false;

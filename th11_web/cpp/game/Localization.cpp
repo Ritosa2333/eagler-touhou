@@ -1,4 +1,5 @@
 #include "Localization.hpp"
+#include <algorithm>
 #include <cstring>
 #include <unordered_map>
 #include <vector>
@@ -93,14 +94,15 @@ public:
         }
         const auto found=entries.find(id?id:"");return found==entries.end()?fallback:found->second.c_str();
     }
-    const char* format(const char* id,const char* fallback){
+    const char* format(const char* id,const char* fallback,bool layout=false){
         if(!id||!fallback)return fallback;
         const char* source=lookup(id,fallback);
         if(source==fallback)return fallback;
-        const auto cached=formats.find(id);if(cached!=formats.end())return cached->second.c_str();
+        const auto cached=formats.find(id);if(!layout&&cached!=formats.end())return cached->second.c_str();
         std::string normalized,original_signature,translated_signature;
         if(!strip_width_hints(source,normalized)||!signature(fallback,original_signature)||
            !signature(normalized,translated_signature)||original_signature!=translated_signature)return fallback;
+        if(layout)return source;
         return formats.emplace(id,std::move(normalized)).first->second.c_str();
     }
 };
@@ -108,11 +110,19 @@ Table spells,themes,comments;
 Strings strings;
 #endif
 }
-const char* SpellName(u32 id,const char* fallback){
+const char* SpellName(u32 id,const char* fallback,u32 rank){
 #if defined(TH_NATIVE_PLATFORM) && defined(TH_ENABLE_THCRAP)
-    return spells.lookup("spells.etl",id,0,fallback);
+    // thcrap_tsa/spells.cpp: BP_spell_id + BP_spell_name count down from
+    // spell_id_real to spell_id (Result uses real - spell_rank).
+    const u32 first=id-std::min(id,rank);
+    for(u32 candidate=id;;--candidate){
+        const char* value=spells.lookup("spells.etl",candidate,0,fallback);
+        if(value!=fallback)return value;
+        if(candidate==first)break;
+    }
+    return fallback;
 #else
-    (void)id;return fallback;
+    (void)id;(void)rank;return fallback;
 #endif
 }
 const char* MusicTitle(u32 track,const char* fallback){
@@ -139,6 +149,13 @@ const char* StringById(const char* id,const char* fallback){
 const char* FormatStringById(const char* id,const char* fallback){
 #if defined(TH_NATIVE_PLATFORM) && defined(TH_ENABLE_THCRAP)
     return strings.format(id,fallback);
+#else
+    (void)id;return fallback;
+#endif
+}
+const char* LayoutFormatStringById(const char* id,const char* fallback){
+#if defined(TH_NATIVE_PLATFORM) && defined(TH_ENABLE_THCRAP)
+    return strings.format(id,fallback,true);
 #else
     (void)id;return fallback;
 #endif

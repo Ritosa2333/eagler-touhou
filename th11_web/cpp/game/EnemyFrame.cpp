@@ -73,6 +73,9 @@ i32 enemy_frame(EnemyScriptServices& script,EnemyFrameWorld& world){
     if(e.deformation&&!world.deform(e))return -2;
     if(e.damage_immunity.current>0)e.damage_immunity.advance(-1);
     if(e.collision_immunity.current>0)e.collision_immunity.advance(-1);
+#ifdef TH_ENABLE_THPRAC
+    if(!world.practice_time_lock)
+#endif
     e.lifetime.tick();return 0;
 }
 }

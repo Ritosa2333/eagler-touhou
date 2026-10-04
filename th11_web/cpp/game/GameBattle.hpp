@@ -46,6 +46,8 @@ class GameBattle final : public EnemyFrameWorld, public BulletWorld,
                          public PlayerFrameWorld, public ItemRewardEffects, public SpellEffects,
                          public DialogueEffects, public DialogueControl, public DeformationControl, public BombWorld, public EnemyCallbackWorld, public StageCompletionEffects, public HudEffects {
 public:
+    PracticeState* practice=nullptr;
+    bool practice_replay_has_stage5=false;
     GameSessionResources& resources;
     AnmManager& animations;
     GameEconomy& economy;

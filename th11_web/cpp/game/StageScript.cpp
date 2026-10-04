@@ -23,7 +23,7 @@ bool stage_script(StageState& s,const StageResource& file,const float* rate,Stag
         case 0:stopped=true;break;
         case 1:s.script_timer.set(command.argument<i32>(1),rate);s.instruction_offset=command.argument<u32>(0);continue;
         case 2:{const auto previous=s.camera.position;s.camera.position=vector(command,0);s.camera.animation_delta={float(double(s.camera.position.x)-previous.x),float(double(s.camera.position.y)-previous.y),float(double(s.camera.position.z)-previous.z)};break;}
-        case 3:interpolate(s.position_interpolation,s.camera.position,command,rate,false);break;
+        case 3:interpolate(s.position_interpolation,s.camera.position,command,rate,false);world.stage_camera_position_interpolated();break;
         case 4:s.camera.direction=vector(command,0);break;
         case 5:interpolate(s.direction_interpolation,s.camera.direction,command,rate,false);break;
         case 6:s.camera.up=vector(command,0);break;

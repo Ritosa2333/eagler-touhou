@@ -60,9 +60,17 @@ bool PlayerMotion::rebuild_options(const ShtHeader& sht,const GameEconomy& econo
     s.option_count=count;for(auto& o:options)o.snap=1;return true;
 }
 bool PlayerMotion::update_warp(const PlayerMotionInput& in){
-    auto& s=state;if(!s.warp)return true;
+    auto& s=state;
+    // C is an explicit touch-accessible shortcut for the original second tap
+    // at a horizontal boundary. Native enemy/Bomb checks and warp progression
+    // below still own the action. Persistent mobile Shot/Focus must not block
+    // this dedicated shortcut; ordinary double-tap input remains unchanged.
+    const bool function_warp=(in.pressed&4)&&s.warp<99&&in.enemy_manager&&in.enemies&&!in.bomb&&
+        (s.x<=-0x5c00||s.x>=0x5c00);
+    if(function_warp){const bool left=s.x<=-0x5c00;s.warp=left?2:4;s.warp_timer=0;s.direction=left?3:4;}
+    if(!s.warp)return true;
     auto reset=[&]{s.warp=0;s.warp_timer=0;};
-    if(s.warp<99&&((in.held&9)||in.bomb||(in.enemy_manager&&!in.enemies)))reset();
+    if(s.warp<99&&((!function_warp&&(in.held&9))||in.bomb||(in.enemy_manager&&!in.enemies)))reset();
     else switch(s.warp){
     case 1:if(!s.direction){s.warp=2;s.warp_timer=0;}else if(s.direction!=3)s.warp=0;break;
     case 3:if(!s.direction){s.warp=4;s.warp_timer=0;}else if(s.direction!=4)s.warp=0;break;
@@ -125,7 +133,7 @@ bool PlayerMotion::update(const PlayerMotionInput& in){
     s.position.x=float(double(s.x)/128);s.position.y=float(double(s.y)/128);
     if(animations.find(focus_animation))place(focus_animation,s.position);else focus_animation=0;
     if(combination==4&&!in.bomb){
-        if(in.pressed&0x400){s.weapon_mode=wrapping_add(s.weapon_mode,1)%5;for(i32 i=0;i<s.option_count;++i){if(i>=8){last_error=7;return false;}auto& o=options[i];erase(o.animation);o.animation=0;auto* a=animations.create(player_resource,s.weapon_mode+34,player_file,11);if(!a){last_error=2;return false;}o.animation=a->id;}}
+        if(in.pressed&(0x400|4)){s.weapon_mode=wrapping_add(s.weapon_mode,1)%5;for(i32 i=0;i<s.option_count;++i){if(i>=8){last_error=7;return false;}auto& o=options[i];erase(o.animation);o.animation=0;auto* a=animations.create(player_resource,s.weapon_mode+34,player_file,11);if(!a){last_error=2;return false;}o.animation=a->id;}}
         if(s.weapon_mode<0||s.weapon_mode>=5){last_error=8;return false;}for(auto& o:options){o.normal_x=o.focus_x=o.modes[s.weapon_mode][0];o.normal_y=o.focus_y=o.modes[s.weapon_mode][1];}
     }
     if(s.flags&8)s.recall_timer=wrapping_add(s.recall_timer,1);

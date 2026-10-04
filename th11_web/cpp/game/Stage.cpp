@@ -3,6 +3,16 @@
 #include "Movement.hpp"
 #include <cmath>
 namespace th11 {
+void Stage::stage_camera_position_interpolated(){
+#ifdef TH_ENABLE_THPRAC
+    // THPrac 404663, immediately after STD opcode 3. The portable battle
+    // increments frame at the end of its tick; native priority-10 control
+    // increments before priority-12 STD, hence native current = frame + 1.
+    if(!practice_replay_has_stage5||state.stage_number!=6||state.script_timer.current||!practice_game_frame)return;
+    const i32 offset=wrapping_add(i32(*practice_game_frame),-1);
+    if(offset){state.script_timer.current=offset;state.script_timer.fractional=float(offset);state.position_interpolation.timer.current=offset;state.position_interpolation.timer.fractional=float(offset);}
+#endif
+}
 Stage::~Stage(){for(auto& vm:object_animations)manager.release_geometry(vm);for(auto& vm:state.script_animations)manager.release_geometry(vm);for(auto& vm:state.effect_animations)manager.release_geometry(vm);}
 bool Stage::initialize(const StageResource& file,i32 number,const SceneCamera& camera,bool start){
     if(!object_animations.empty()||file.instructions.empty())return false;

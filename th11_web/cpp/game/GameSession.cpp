@@ -36,12 +36,20 @@ bool GameSession::begin_replay(GameResources& source,const u8* data,u32 size,u32
     if(!playback.open(data,size))return fail(playback.error().c_str());
     if(!stage)for(u32 n=1;n<=7;++n)if(playback.stage(n)){stage=n;break;}
     if(!playback.stage(stage))return fail("stage absent from replay");
-    return begin(source,stage,playback.character(),playback.subtype(),playback.difficulty(),demo,true,playback.decoded()[10]!=0);
+    PracticeConfig candidate;const bool custom=practice.enabled&&practice_replay_read(data,size,candidate)&&candidate.mode==1&&candidate.stage==i32(stage)-1;
+    return begin(source,stage,playback.character(),playback.subtype(),playback.difficulty(),demo,true,playback.decoded()[10]!=0,custom?&candidate:nullptr);
 }
 bool GameSession::begin(GameResources& source, u32 stage, i32 character,
-                        i32 subtype, i32 difficulty, bool demo,bool replay,bool practice) {
+                        i32 subtype, i32 difficulty, bool demo,bool replay,bool practice,const PracticeConfig* parameters) {
+    PracticeConfig requested;if(parameters)requested=*parameters;
     if(title){menu_selection=title->selection;config=title->config;scores.read_records(spell_records,clear_records);}
     reset_state();
+#ifdef TH_ENABLE_THPRAC
+    this->practice.clear_run();
+    this->practice.replay=replay;
+    this->practice.assisted=this->practice.enabled&&!replay&&this->practice.cheats!=0;
+    if(parameters&&this->practice.enabled){if(!requested.valid()||requested.stage!=i32(stage)-1)return fail("invalid TH11 practice run parameters");this->practice.run=requested;this->practice.active=requested.mode==1;this->practice.replay=replay;}
+#endif
     completed_run=false;
     this->source=&source;
     if(character<0||character>1||subtype<0||subtype>2||difficulty<0||difficulty>4)
@@ -71,6 +79,16 @@ bool GameSession::start_stage(GameResources& source, u32 stage) {
     if(stage<1||stage>7) return fail("TH11 stage outside 1..7");
     battle.reset();
     if(!clear_animations(animations)) return fail("ANM stage transition failed");
+#ifdef TH_ENABLE_THPRAC
+    if(practice.enabled&&practice.active){
+        auto next=std::make_unique<StageResources>();
+        if(!source.load_practice_stage(stage,*next,practice.run))return fail(source.error().c_str());
+        if(resources.effects&&!resources.effects->prepare(*next)){resources.effects->release(*next);return fail("practice graphics preparation failed");}
+        resources.retire_previous();resources.previous_stage=std::move(resources.stage);resources.stage=std::move(next);resources.stage_number=stage;
+        const auto& p=practice.run;
+        if(!state.replay){economy.lives=p.life;economy.life_fragments=p.life_fragment;economy.power=p.power;economy.graze=p.graze;economy.point_value=p.value*100;economy.score_units=i32(p.score/10);}
+    }else
+#endif
     if(!resources.load_stage(source,stage)) return fail(resources.error.c_str());
     resources.retire_previous();
     if(!compositor.stage_start())return fail("screen compositor stage reset failed");
@@ -93,6 +111,11 @@ bool GameSession::start_stage(GameResources& source, u32 stage) {
     }
     battle=std::make_unique<GameBattle>(resources,animations,economy,spell_records,compositor,clear_records);
     battle->replaying=state.replay;battle->demo=state.demo;battle->replay_entry=entry;
+#ifdef TH_ENABLE_THPRAC
+    battle->practice=practice.enabled?&practice:nullptr;
+    battle->practice_replay_has_stage5=state.replay&&playback.stage(5);
+    battle->enemy_commands.stage_section=resources.stage->practice_stage_section;
+#endif
     battle->completion.mode.control_mode=state.replay||state.demo;
     battle->completion.mode.replay_mode=state.replay?1:0;
     battle->completion.mode.practice=state.practice&&!state.replay;battle->completion.mode.replay_practice=state.practice&&state.replay;
@@ -128,13 +151,20 @@ bool GameSession::record_stage_entry(bool initial){
     recording_active=true;return true;
 }
 bool GameSession::save_replay(const char* name,std::vector<u8>& output,bool terminal,float slowdown){
+#ifdef TH_ENABLE_THPRAC
+    if(practice.enabled&&practice.assisted)return false;
+#endif
     if(!battle){if(!completed_run)return false;return recording.save(name,completed_score,8,completed_continues,slowdown,output);}
     if(state.replay||!recording.selected)return false;
     recording.spell_times(battle->spell_timing.records);
     // Saving must not append multiple end markers or mutate an active run.
     auto snapshot=recording;if(terminal&&!snapshot.finish_stage(true))return false;
     const i32 reached=pause_menu&&pause_menu->completed&&!state.practice?8:i32(state.stage);
-    return snapshot.save(name,economy.score_units,reached,battle->hud.score.continues,slowdown,output);
+    if(!snapshot.save(name,economy.score_units,reached,battle->hud.score.continues,slowdown,output))return false;
+#ifdef TH_ENABLE_THPRAC
+    if(practice.enabled&&practice.active){const auto block=practice_replay_block(practice.run);if(block.empty())return false;output.insert(output.end(),block.begin(),block.end());}
+#endif
+    return true;
 }
 
 bool GameSession::update(const GameSessionInput& input) {
@@ -161,6 +191,9 @@ bool GameSession::update(const GameSessionInput& input) {
     }
     if(state.phase==GameSessionPhase::paused||state.phase==GameSessionPhase::game_over){
         if(!pause_menu)return fail("pause menu lifetime missing");
+#ifdef TH_ENABLE_THPRAC
+        pause_menu->practice_save_disabled=practice.enabled&&practice.assisted;
+#endif
         menu_input.update((input.held&~256u)|((input.held&256)?0x80000:0)|(input.pause?256:0));
         if(!pause_menu->update(menu_input.pressed,menu_input.long_repeat))return fail(pause_menu->error.c_str());
         if(!animations.update(true))return fail("pause ANM update failed");
@@ -174,6 +207,14 @@ bool GameSession::update(const GameSessionInput& input) {
     }
     if(state.phase==GameSessionPhase::title) {
         if(!title||!source)return fail("title lifetime missing");
+#ifdef TH_ENABLE_THPRAC
+        if(practice.enabled&&title->screen==TitleScreen::Practice){
+            if(!practice.menu){practice.clear_run();practice.menu=true;practice.configured.stage=std::clamp(title->selection.last_practice,0,5);practice.configured.section=0;practice.configured.phase=0;practice.configured.power=title->selection.character==1&&title->selection.partner==0?96:80;}
+            if(practice.accepted){const auto p=practice.configured;const auto choice=title->selection;return begin(*source,p.stage+1,choice.character,choice.partner,p.stage==6?4:choice.difficulty,false,false,true,&p);}
+            if(!animations.update(true)||!animations.update(false))return fail("practice title ANM update failed");
+            ++state.frame;return true;
+        }
+#endif
         const u32 raw=(input.held&~256u)|((input.held&256)?0x80000:0)|(input.pause?256:0);
         if(title->screen==TitleScreen::Main){++title_idle;if(raw)title_idle=0;
             if(title_idle>=1800){const auto path=std::string("demo")+char('3'-(demo_index++&3))+".rpy";std::vector<u8> bytes;
@@ -286,10 +327,11 @@ bool GameSession::open_results(){
 
 bool GameSession::restart_run(bool continuation){
     const auto previous=state;const u32 first=initial_stage;
+    const auto practice_parameters=practice.run;
     const i32 count=continuation&&previous.stage!=first?std::min(battle->hud.score.continues+1,9):0;
     scores.write_records(spell_records,clear_records);next_continues=count;
-    if(previous.replay){if(!begin(*source,first,previous.character,previous.subtype,previous.difficulty,previous.demo,true,previous.practice))return false;}
-    else if(!begin(*source,continuation?previous.stage:first,previous.character,previous.subtype,previous.difficulty,false,false,previous.practice))return false;
+    if(previous.replay){if(!begin(*source,first,previous.character,previous.subtype,previous.difficulty,previous.demo,true,previous.practice,practice.active?&practice_parameters:nullptr))return false;}
+    else if(!begin(*source,continuation?previous.stage:first,previous.character,previous.subtype,previous.difficulty,false,false,previous.practice,practice.active?&practice_parameters:nullptr))return false;
     initial_stage=first;return true;
 }
 
@@ -314,6 +356,9 @@ bool GameSession::return_to_title() {
 bool GameSession::open_title(GameResources& data,bool first,TitleScreen screen){
     if(!title)scores.write_records(spell_records,clear_records);
     reset_state();source=&data;interactive=true;
+#ifdef TH_ENABLE_THPRAC
+    practice.clear_run();
+#endif
     if(!resources.load_core(data))return fail(resources.error.c_str());
     if(!compositor.initialize(resources.core.text))return fail("title compositor initialization failed");
     compositor.reset_cameras(false);

@@ -8,6 +8,8 @@
 #include <vector>
 #include <string>
 
+struct ImDrawData;
+
 // Semantic GLES renderer shared by the two games. Matrices and vertices stay
 // in C++; only resource decoding knows the original file format codes.
 namespace touhou::sdl {
@@ -36,6 +38,7 @@ public:
     void copy(u32 source,const i32* rect,u32 target,const i32* point);
     bool resample(u32,const i32*,u32,const i32*,const float*,u32,u32);
     void read(u32);void release(u32);void present(u32);void prepare(u32);
+    void render_imgui(const ImDrawData*,u32 target);
     const char* error()const{return failure.c_str();}
     int version;Resolve resolve;void* owner;
 private:
@@ -49,6 +52,8 @@ private:
     GLuint vertex=0,currentProgram=0,boundTexture=~0u,readFramebuffer=~0u,drawFramebuffer=~0u;
     std::map<std::array<u32,6>,GLuint> layouts;GLuint currentLayout=0;
     GLuint resampleProgram=0,resampleVao=0,weightTexture=0;
+    GLuint imguiProgram=0,imguiVao=0,imguiVbo=0,imguiEbo=0,imguiFontTexture=0;
+    GLint imguiProjMtx=-1,imguiTexture=-1;
     Program generic{};bool warming=true,buildingGeneric=false;Program* program=nullptr;
     Stream vertices{},indices{},instances{};State batchState{};
     std::vector<u8> batchBytes,quad,worlds,pixels;bool batching=false,instancing=false;

@@ -18,6 +18,9 @@ public:
     std::string animation_name,error;
     u32 animation_count=0;
     bool open(const u8*,u32);
+    bool open_practice(const std::vector<u8>& original,const std::vector<u8>& patched);
     const StageInstruction* instruction(u32 offset)const noexcept;
+private:
+    bool decode(const u8*,u32,const StageResource* retained);
 };
 }

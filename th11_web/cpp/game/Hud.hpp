@@ -40,6 +40,7 @@ public:
     u32 frame_animation=0,boss_name=0,stars[10]{},difficulty_intro=0,difficulty_label=0;
     u32 bonus_digits[8]{},spell_notice=0,item_notice=0,spell_time_animation=0;
     bool show_spell_time=false;
+    bool practice_skip_logo=false;
     bool notice(i32 type,i32 value=0);
     void prepare_stage();
     bool start_stage(AnmResource& logo,const HudInput&,bool demo=false,bool initial=true,i32 control_mode=0,i32 continues=0);

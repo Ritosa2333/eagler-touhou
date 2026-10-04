@@ -1,6 +1,16 @@
 #include "GraphicsDevice.hpp"
 #include "AudioDevice.hpp"
 #include "FontDevice.hpp"
+#ifdef TH_ENABLE_THPRAC
+#include "ThpracUi.hpp"
+#include "../game/PracticeSections.hpp"
+#if TH11_DEVELOPMENT_HARNESS
+#include "../game/Localization.hpp"
+#include "imgui.h"
+#include "imgui_internal.h"
+#endif
+#endif
+#include "../game/PracticeBgm.hpp"
 #include "../game/MusicCatalog.hpp"
 #include "../game/GameSession.hpp"
 #include "../game/FrameStatistics.hpp"
@@ -27,6 +37,9 @@ namespace {
 struct Application:StageResourceEffects {
     GraphicsDevice graphics;
     AudioDevice audio;
+#ifdef TH_ENABLE_THPRAC
+    PracticeBgm practice_bgm;
+#endif
     FontDevice fonts{graphics};
     GameResources resources;
     GameSession session;
@@ -70,14 +83,35 @@ struct Application:StageResourceEffects {
         if(!write_file(path,data))return false;
         std::snprintf(path,sizeof(path),"/save/replay/th11_%.2u.%s",slot,touch?"rpy":"rpyx");std::remove(path);return true;
     }
-    bool stage_music_held()const{return session.state.stage==6&&session.battle&&session.battle->frame<300&&!session.state.demo;}
+    bool filter_practice_music(PracticeBgmEvent event,int id=0){
+#ifdef TH_ENABLE_THPRAC
+        const auto& p=session.practice;
+        return p.enabled&&practice_bgm.filter(event,id,p.everlasting_bgm&&!session.state.replay&&p.active&&p.run.section,session.state.practice);
+#else
+        return false;
+#endif
+    }
+    bool practice_music_skip_intro()const{
+#ifdef TH_ENABLE_THPRAC
+        return session.practice.enabled&&session.practice.active&&session.practice.run.section;
+#else
+        return false;
+#endif
+    }
+    bool stage_music_held()const{return session.state.stage==6&&session.battle&&session.battle->frame<300&&!session.state.demo&&!practice_music_skip_intro();}
     bool play_stage_music(u32 stage){
         if(session.state.demo)return true;
-        if(!audio.music(stage_music(stage))){error=audio.error;return false;}
-        audio.pause_music(stage==6);return true;
+        bool boss=false;
+#ifdef TH_ENABLE_THPRAC
+        const auto& p=session.practice.run;
+        boss=session.practice.enabled&&session.practice.active&&p.section>0&&p.section<10000&&!p.dlg&&practice_sections[p.section].bgm;
+#endif
+        if(!filter_practice_music(PracticeBgmEvent::Other)&&!audio.music(stage_music(stage,boss))){error=audio.error;return false;}
+        audio.pause_music(stage==6&&!practice_music_skip_intro());return true;
     }
-    bool pause(){if(!session.pause())return false;if(!stage_music_held())audio.pause_music(true);return true;}
-    bool resume(){if(!session.resume())return false;if(!stage_music_held())audio.pause_music(false);return true;}
+    void pause_music(bool paused){if(!filter_practice_music(paused?PracticeBgmEvent::Pause:PracticeBgmEvent::Resume))audio.pause_music(paused);}
+    bool pause(){if(!session.pause())return false;if(!stage_music_held())pause_music(true);return true;}
+    bool resume(){if(!session.resume())return false;if(!stage_music_held())pause_music(false);return true;}
     bool audio_events(){
         if(session.ending){auto& ending=*session.ending;for(const auto sound:ending.sounds)audio.effects.enqueue(sound);
             if(ending.music_request>=0){audio.pause_music(false);if(!audio.music(ending.music_request)){error=audio.error;return false;}}
@@ -100,8 +134,8 @@ struct Application:StageResourceEffects {
             case BattleEventKind::StopSound:audio.effects.stop(event.value);break;
             case BattleEventKind::StageMusic:if(!play_stage_music(event.value))return false;break;
             case BattleEventKind::BossMusic:
-                if(!audio.music(stage_music(event.value,true))){error=audio.error;return false;}break;
-            case BattleEventKind::MusicResume:audio.pause_music(false);break;
+                if(!filter_practice_music(PracticeBgmEvent::Play,stage_music(event.value,true))&&!audio.music(stage_music(event.value,true))){error=audio.error;return false;}break;
+            case BattleEventKind::MusicResume:pause_music(false);break;
             case BattleEventKind::MusicFade:audio.fade_music(i32(event.position.x*60.f));break;
             default:break;
             }
@@ -147,6 +181,10 @@ struct Application:StageResourceEffects {
         if(!read_archive()){if(error.empty())error=resources.error();return false;}
         if(!audio.initialize(resources)){error=audio.error;return false;}
         if(!fonts.initialize()){error=fonts.error;return false;}
+#ifdef TH_ENABLE_THPRAC
+        session.practice.enabled=EM_ASM_INT({return Module.eaglerOptions?.thpracEnabled?1:0;})!=0;
+        if(!browser::ThpracUi::initialize()){error="Unable to initialize TH11 thprac font/UI";return false;}
+#endif
         mkdir("/save",0777);mkdir("/save/replay",0777);
         if(SDL_GetPathInfo("/save/scoreth11.dat",nullptr)){std::vector<u8> saved;if(!read_file("/save/scoreth11.dat",saved,4*1024*1024)||!session.load_scores(saved.data(),u32(saved.size()))){error="Invalid scoreth11.dat: "+session.scores.error;return false;}}
         if(SDL_GetPathInfo("/save/th11.cfg",nullptr)){std::vector<u8> saved;if(!read_file("/save/th11.cfg",saved,60)||!session.config.open(saved.data(),u32(saved.size()))){error="Invalid th11.cfg";return false;}saved_config_state=saved;}
@@ -183,14 +221,15 @@ struct Application:StageResourceEffects {
         const GameSessionInput input{held,0,0,pause_key,bool(held&0x100),bool(held&0x2),frame_statistics.fps};
         if(!session.update(input)){error=session.error;return false;}
         const auto after=session.state.phase;
+        if(before!=GameSessionPhase::title&&after==GameSessionPhase::title)filter_practice_music(PracticeBgmEvent::Stop);
         if(before!=GameSessionPhase::stage&&after==GameSessionPhase::stage&&session.state.frame==0)frame_statistics.reset_run();
         if(session.pause_menu)session.pause_menu->slowdown=frame_statistics.slowdown();
         if(session.title&&session.title->screen==TitleScreen::Results)session.title->result_slowdown=frame_statistics.slowdown();
         if(before!=GameSessionPhase::stage&&after==GameSessionPhase::stage){
-            if(before==GameSessionPhase::paused&&session.state.frame!=0){if(!stage_music_held())audio.pause_music(false);}
+            if(before==GameSessionPhase::paused&&session.state.frame!=0){if(!stage_music_held())pause_music(false);}
             else{audio.effects.reset();if(!play_stage_music(session.state.stage))return false;}
         }
-        if(before!=GameSessionPhase::paused&&after==GameSessionPhase::paused&&!stage_music_held())audio.pause_music(true);
+        if(before!=GameSessionPhase::paused&&after==GameSessionPhase::paused&&!stage_music_held())pause_music(true);
         if(before!=GameSessionPhase::game_over&&after==GameSessionPhase::game_over){session.pause_menu->timestamp=u64(std::time(nullptr));audio.pause_music(false);if(!audio.music(17)){error=audio.error;return false;}}
         if(before==GameSessionPhase::ending&&session.title)session.title->result_timestamp=u64(std::time(nullptr));
         if(session.title&&session.title->replay_scan_requested)scan_replays();
@@ -218,12 +257,16 @@ struct Application:StageResourceEffects {
         frame_statistics.sample(double(SDL_GetTicks())*.001,after==GameSessionPhase::stage&&session.battle&&session.battle->stage_active&&!session.state.replay);
         frame_text.clear();const auto label=frame_statistics.label();frame_text.add(label.text.c_str(),label.position,label.style);
         if(!session.draw(renderer,&frame_text)){error=session.error;return false;}
+#ifdef TH_ENABLE_THPRAC
+        renderer.flush();browser::ThpracUi::render(session,graphics.backend);
+#endif
         graphics.present();
         return true;
     }
     bool return_to_title(){
         if(!save_scores())return false;
         if(!session.return_to_title()){error=session.error;return false;}
+        filter_practice_music(PracticeBgmEvent::Stop);
         audio.effects.reset();return true;
     }
     void scan_replays(){
@@ -272,18 +315,38 @@ touhou::input::TouchState touch_state(){
     s.x=p.position.x;s.y=p.position.y;s.fast=float(p.normal_speed)/128;s.slow=float(p.focus_speed)/128;
     s.min_x=-184;s.max_x=184;s.min_y=32;s.max_y=432;return s;
 }
-void clear_inputs(){th11_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& k:keyboard_map)k.hosted=false;previous_scans.fill(0);gestures.reset();if(app.session.battle)app.session.battle->player_input.movement.touch_mode=0;}
+void clear_inputs(){
+#ifdef TH_ENABLE_THPRAC
+    browser::ThpracUi::cancel_pointer();
+#endif
+    th11_reset_browser_keyboard();SDL_ResetKeyboard();for(auto& k:keyboard_map)k.hosted=false;previous_scans.fill(0);gestures.reset();if(app.session.battle)app.session.battle->player_input.movement.touch_mode=0;
+}
 void touch_event(unsigned type,int id,float x,float y){
-    if(std::isfinite(x)&&std::isfinite(y))gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);
+    if(type>2||!std::isfinite(x)||!std::isfinite(y))return;
+#ifdef TH_ENABLE_THPRAC
+    // Same normalized direct-touch -> native ImGui bridge as TH08/TH10.
+    // Both the launcher carrier and canvas-origin SDL fingers enter here.
+    if(browser::ThpracUi::captures_game_input()){
+        const bool consumed=browser::ThpracUi::captures_pointer(x*640.f,y*480.f);
+        browser::ThpracUi::mouse(type==0?1:type==1?0:2,x*640.f,y*480.f);
+        if(consumed){gestures.cancel_transient();return;}
+    }
+#endif
+    gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);
 }
 void cancel_touch(){
-    gestures.cancel_transient();
-    if(app.session.battle)app.session.battle->player_input.movement.touch_mode=0;
+#ifdef TH_ENABLE_THPRAC
+    browser::ThpracUi::cancel_pointer();
+#endif
+    gestures.cancel_transient();if(app.session.battle)app.session.battle->player_input.movement.touch_mode=0;
 }
 bool sample_and_tick(){
     SDL_Event event;while(SDL_PollEvent(&event)){
-        // SDL owns gestures that start on the canvas; the browser bridge only
-        // forwards gestures originating outside it, avoiding double delivery.
+#ifdef TH_ENABLE_THPRAC
+        browser::ThpracUi::process_event(event);
+#endif
+        // Canvas gestures belong to SDL; the host bridge handles only gestures
+        // originating outside it. Match TH08/TH10's native finger-event path.
         if(event.type==SDL_EVENT_FINGER_CANCELED){cancel_touch();continue;}
         if(event.type==SDL_EVENT_FINGER_DOWN||event.type==SDL_EVENT_FINGER_MOTION||event.type==SDL_EVENT_FINGER_UP)
             touch_event(event.type==SDL_EVENT_FINGER_DOWN?0:event.type==SDL_EVENT_FINGER_MOTION?1:2,
@@ -298,10 +361,16 @@ bool sample_and_tick(){
     previous_scans=scans;
     const auto sample=gestures.sample(touch_state(),SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);
     for(u32 n=0;n<256;++n)keys[n]=keys[n]||sample.keys[n];
+#ifdef TH_ENABLE_THPRAC
+    browser::ThpracUi::update_input(app.session,keys);
+    const bool captured=browser::ThpracUi::captures_game_input();
+#else
+    const bool captured=false;
+#endif
     if(auto* b=app.session.battle.get()){b->player_input.movement.touch_mode=sample.motion;b->player_input.movement.touch_x=sample.x;b->player_input.movement.touch_y=sample.y;}
     const u32 raw=sample_controller()|keyboard_keys(keys);
     const u32 held=(raw&~0x80100u)|((raw&0x80000)?256:0);
-    return app.tick(held,(raw&256)!=0);
+    return app.tick(captured?0:held,!captured&&(raw&256)!=0);
 }
 }
 }
@@ -317,6 +386,31 @@ EMSCRIPTEN_KEEPALIVE int th11_save_scores(){return th11::sdl::app.save_scores();
 EMSCRIPTEN_KEEPALIVE int th11_save_replay(unsigned slot,const char* name){return th11::sdl::app.save_replay(slot,name);}
 EMSCRIPTEN_KEEPALIVE int th11_initialize(){if(!th11::sdl::app.initialize())return 0;for(auto& k:th11::sdl::keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);th11::sdl::initialize_controller();return 1;}
 #if TH11_DEVELOPMENT_HARNESS
+#ifdef TH_ENABLE_THPRAC
+EMSCRIPTEN_KEEPALIVE int th11_probe_practice_menu(int character,int subtype,int difficulty){auto& a=th11::sdl::app;auto& s=a.session;if(!s.open_title(a.resources,false,th11::TitleScreen::Practice))return 0;s.title->selection.character=character;s.title->selection.partner=subtype;s.title->selection.difficulty=difficulty;return a.tick(0);}
+EMSCRIPTEN_KEEPALIVE const double* th11_probe_practice_state(){static double words[20];const auto& s=th11::sdl::app.session;s.practice.run.encode(words);words[14]=s.practice.menu;words[15]=s.practice.active;words[16]=s.economy.power;words[17]=s.practice.cheats;words[18]=s.practice.tracker_bombs;words[19]=s.practice.tracker_misses;return words;}
+EMSCRIPTEN_KEEPALIVE const int* th11_probe_title_state(){static int words[4];const auto* t=th11::sdl::app.session.title.get();words[0]=t?int(t->screen):-1;words[1]=t?t->substate:-1;words[2]=t?t->cursor.selected:-1;words[3]=t?t->timer.current:-1;return words;}
+EMSCRIPTEN_KEEPALIVE int th11_probe_paused(){return th11::sdl::app.session.state.phase==th11::GameSessionPhase::paused;}
+EMSCRIPTEN_KEEPALIVE int th11_probe_function_pose(int side){auto* b=th11::sdl::app.session.battle.get();if(!b||!b->player)return 0;auto& p=b->player->motion.state;p.x=side<0?-0x5c00:side>0?0x5c00:0;p.position.x=float(p.x)/128;p.warp=p.warp_timer=0;return 1;}
+EMSCRIPTEN_KEEPALIVE const int* th11_probe_function_state(){static int out[5];const auto* b=th11::sdl::app.session.battle.get();if(!b||!b->player)return out;const auto& p=b->player->motion.state;out[0]=p.x;out[1]=p.warp;out[2]=p.weapon_mode;out[3]=b->player_input.movement.enemies;out[4]=b->player_input.movement.bomb;return out;}
+EMSCRIPTEN_KEEPALIVE unsigned th11_probe_gameplay_held(){const auto* b=th11::sdl::app.session.battle.get();return b?b->player_input.movement.held:0;}
+EMSCRIPTEN_KEEPALIVE const char* th11_probe_spell_name(unsigned id,unsigned rank){return th11::Localization::SpellName(id,"original",rank);}
+EMSCRIPTEN_KEEPALIVE const double* th11_probe_practice_pending(){static double words[th11::PracticeConfig::word_count];th11::sdl::app.session.practice.configured.encode(words);return words;}
+EMSCRIPTEN_KEEPALIVE int th11_probe_practice_popup(){return th11::browser::ThpracUi::captures_pointer(-100,-100);}
+EMSCRIPTEN_KEEPALIVE int th11_probe_records(){
+ auto& a=th11::sdl::app;auto& s=a.session;if(!s.open_title(a.resources,false,th11::TitleScreen::Records))return 0;
+ for(int id:{162,164,171}){auto* aggregate=s.scores.characters[6].data()+0x664+id*0x90;auto* own=s.scores.characters[0].data()+0x664+id*0x90;
+  std::snprintf(reinterpret_cast<char*>(aggregate),64,"Original spell %d",id+1);
+  const int seen=id+1,captured=id-160;std::memcpy(aggregate+0x84,&seen,4);std::memcpy(own+0x80,&captured,4);std::memcpy(own+0x84,&seen,4);
+ }return a.tick(0);
+}
+EMSCRIPTEN_KEEPALIVE unsigned th11_probe_practice_windows(){unsigned mask=0;const char* names[]{"Mod Menu###th11-thprac-overlay","Tracker###th11-thprac-tracker","Advanced Options###th11-thprac-advanced"};for(unsigned i=0;i<3;++i){auto* w=ImGui::FindWindowByName(names[i]);if(w&&w->Active&&!w->Hidden)mask|=1u<<i;}return mask;}
+static std::vector<th11::u8> th11_probe_replay;
+EMSCRIPTEN_KEEPALIVE int th11_probe_practice_save(){return th11::sdl::app.session.save_replay("THPRAC",th11_probe_replay,true);}
+EMSCRIPTEN_KEEPALIVE unsigned th11_probe_practice_replay_size(){return unsigned(th11_probe_replay.size());}
+EMSCRIPTEN_KEEPALIVE const th11::u8* th11_probe_practice_replay_data(){return th11_probe_replay.data();}
+EMSCRIPTEN_KEEPALIVE int th11_probe_practice_play(){auto& a=th11::sdl::app;return a.session.begin_replay(a.resources,th11_probe_replay.data(),unsigned(th11_probe_replay.size()))&&a.tick(0);}
+#endif
 EMSCRIPTEN_KEEPALIVE int th11_tick(unsigned held){return !th11::sdl::running&&th11::sdl::app.tick(held)?1:0;}
 EMSCRIPTEN_KEEPALIVE int th11_probe_platform_tick(){return !th11::sdl::running&&th11::sdl::sample_and_tick()?1:0;}
 EMSCRIPTEN_KEEPALIVE float th11_probe_player_x(){return th11::sdl::touch_state().x;}
@@ -346,6 +440,10 @@ EMSCRIPTEN_KEEPALIVE int th11_pause(){return th11::sdl::app.pause()?1:0;}
 EMSCRIPTEN_KEEPALIVE int th11_resume(){return th11::sdl::app.resume()?1:0;}
 EMSCRIPTEN_KEEPALIVE void th11_key(unsigned scan,unsigned down){for(auto& k:th11::sdl::keyboard_map)if(k.scan==scan)k.hosted=down!=0;}
 EMSCRIPTEN_KEEPALIVE void th11_keys_clear(){th11::sdl::clear_inputs();}
+#ifdef TH_ENABLE_THPRAC
+__attribute__((export_name("sdl_thprac_mouse"))) void sdl_thprac_mouse(int type,float x,float y){th11::browser::ThpracUi::mouse(type,x,y);}
+EMSCRIPTEN_KEEPALIVE int th11_practice_configure(const double* words,unsigned count){th11::PracticeConfig p;if(!p.decode(words,count))return 0;auto& s=th11::sdl::app.session;s.practice.configured=p;s.practice.warp=p.section>=10000?1:p.section?(th11::practice_sections[p.section].spell?5:4):0;if(p.section>0&&p.section<10000&&th11::practice_sections[p.section].appearance>7)s.practice.spell_category=th11::practice_sections[p.section].appearance-7;return 1;}
+#endif
 EMSCRIPTEN_KEEPALIVE void th11_music_enabled(unsigned on){using namespace th11::sdl;app.audio.music_enabled=on!=0;app.audio.refresh_volume();}
 EMSCRIPTEN_KEEPALIVE const unsigned* th11_audio_statistics(){return th11::sdl::app.audio.statistics();}
 EMSCRIPTEN_KEEPALIVE void th11_loop_pause(unsigned on){using namespace th11::sdl;suspended=on!=0;app.audio.suspend(suspended);previous_frame=-1;cadence.reset();clear_inputs();app.reset_frame_window();}

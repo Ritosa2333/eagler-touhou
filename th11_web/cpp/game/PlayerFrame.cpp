@@ -1,6 +1,7 @@
 #include "PlayerFrame.hpp"
 #include "AnmRenderer.hpp"
 #include "Replay.hpp"
+#include "PracticeConfig.hpp"
 #include <algorithm>
 #include <cmath>
 namespace th11 {
@@ -27,6 +28,13 @@ bool PlayerFrame::initialize(){
     s.option_count=0;s.option_lerp=30;return true;
 }
 bool PlayerFrame::rebuild_options(){return motion.rebuild_options(resource.header,economy,input.movement.character*3+input.movement.subtype);}
+bool PlayerFrame::practice_power_locked()const{
+#ifdef TH_ENABLE_THPRAC
+    return practice&&practice->enabled&&!input.replay&&(practice->cheats&4);
+#else
+    return false;
+#endif
+}
 bool PlayerFrame::restore_replay_position(const ReplayStageState& entry){
     entry.restore_position(motion.state);for(auto& option:motion.options)option.snap=1;
     // 436da0 recreates the non-default Marisa/B formation, twice. The second
@@ -56,13 +64,20 @@ bool PlayerFrame::draw(AnmRenderer& renderer){
 bool PlayerFrame::cancel_all(bool spawning){return world.cancel_bullets(nullptr,0,spawning)&&world.cancel_lasers(nullptr,0,!spawning,spawning);}
 void PlayerFrame::fail_spell(){if(!(spell.flags&1))return;if(spell.elapsed>=60){spell.bonus=0;spell.flags&=~0x22u;}else if(input.special_active&&input.movement.character*3+input.movement.subtype!=5)spell.flags|=0x20;}
 bool PlayerFrame::hit(){
+#ifdef TH_ENABLE_THPRAC
+    if(practice&&practice->enabled&&!input.replay&&(practice->cheats&1))return true;
+#endif
     state.life_state=4;const Vec3 p=screen(motion.state.position);
     for(i32 i=0;i<33;++i){auto* a=animations.create(bullet_resource,i?77:76,bullet_file,0);if(!a){last_error=1;return false;}a->position=p;}
     state.state_timer.set(0,&animations.rate);if(input.hit_sound&&!world.player_sound(4)){last_error=2;return false;}
     state.invincibility.set(6,&animations.rate);if(!motion.reset_body())return false;fail_spell();return true;
 }
 bool PlayerFrame::die(){
-    economy.point_value=std::max(wrapping_add(economy.point_value,-10000000),state.minimum_point_value);economy.lives=wrapping_add(economy.lives,-1);economy.communication=0;
+    economy.point_value=std::max(wrapping_add(economy.point_value,-10000000),state.minimum_point_value);
+#ifdef TH_ENABLE_THPRAC
+    if(!(practice&&practice->enabled&&!input.replay&&(practice->cheats&2)))
+#endif
+    economy.lives=wrapping_add(economy.lives,-1);economy.communication=0;
     if(economy.lives>=0&&!world.display_lives(economy.lives,i16(economy.life_fragments)))return false;
     state.life_state=2;state.state_timer.set(0,&animations.rate);state.invincibility.set(180,&animations.rate);
     if(!motion.reset_body())return false;motion.clear_options();
@@ -71,7 +86,7 @@ bool PlayerFrame::die(){
 }
 bool PlayerFrame::active_frame(){
     if(!input.movement.bomb&&input.special_available&&!input.special_active&&economy.power_step&&economy.power/economy.power_step&&(input.movement.held&2)){
-        if(!world.start_bomb())return false;input.special_active=true;economy.power=wrapping_sub(economy.power,economy.power_step);if(!rebuild_options())return false;
+        if(!world.start_bomb())return false;input.special_active=true;if(!practice_power_locked())economy.power=wrapping_sub(economy.power,economy.power_step);if(!rebuild_options())return false;
     }
     if(state.state_timer.current<30&&!cancel_all(true))return false;
     motion.state.transition_timer=state.transition_timer.current;return motion.update(input.movement);
@@ -79,7 +94,7 @@ bool PlayerFrame::active_frame(){
 bool PlayerFrame::death_frame(){
     economy.communication=0;
     if(state.state_timer.current==3){
-        const i32 power=economy.power,step=economy.power_step;economy.power=std::max(wrapping_sub(power,economy.max_power),0);
+        const i32 power=economy.power,step=economy.power_step;if(!practice_power_locked())economy.power=std::max(wrapping_sub(power,economy.max_power),0);
         const Vec3 p=motion.state.position;const float y=float(double(p.y)-224),dy=float(double(y)-p.y),dx=-p.x;
         const float angle=dx==0&&dy==0?1.5707963705062866f:float(std::atan2(double(dy),double(dx)));
         i32 types[7]={1,1,1,1,1,1,1};
@@ -112,9 +127,12 @@ bool PlayerFrame::update(){
     case 3:if(state.state_timer.current==15&&!cancel_all(false))return false;break;
     case 4:
         economy.communication=0;
+#ifdef TH_ENABLE_THPRAC
+        if(practice&&practice->enabled&&!input.replay&&(practice->cheats&16))input.movement.held|=2;
+#endif
         if(state.state_timer.current>7){if(!die()||!world.enemy_death()||!death_frame())return false;}
         else if(input.special_available&&!input.special_active&&economy.power_step&&economy.power/economy.power_step&&(input.movement.held&2)){
-            state.state_timer.set(60,&animations.rate);if(!world.start_bomb())return false;input.special_active=true;economy.power=wrapping_sub(economy.power,economy.power_step);if(!rebuild_options())return false;state.life_state=1;
+            state.state_timer.set(60,&animations.rate);if(!world.start_bomb())return false;input.special_active=true;if(!practice_power_locked())economy.power=wrapping_sub(economy.power,economy.power_step);if(!rebuild_options())return false;state.life_state=1;
         }break;
     default:break;
     }

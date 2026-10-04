@@ -14,7 +14,11 @@ if(!fonts)throw Error('Set EAGLER_FONT_ROOT to the private SDL-native font resou
 const hash=b=>createHash('sha256').update(b).digest('hex');
 const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json'),'utf8'));
 if(build.game!==game)throw Error('Build report is not TH11');
-for(const name of build.exports||[])if(name.name.startsWith('presentation_lab_')||name.name.startsWith('audit_'))throw Error('Production build contains diagnostic export '+name.name);
+if(build.features?.thprac===true){
+ const exported=new Set((build.exports||[]).map(entry=>entry.name));
+ for(const name of ['th11_practice_configure','sdl_thprac_mouse'])if(!exported.has(name))throw Error('THPrac build is missing '+name);
+}
+for(const name of build.exports||[])if(name.name.startsWith('presentation_lab_')||name.name.startsWith('audit_')||name.name.startsWith('th11_probe_'))throw Error('Production build contains diagnostic export '+name.name);
 for(const [name,expected] of Object.entries(build.sourceFiles)){
  if(hash(readFileSync(resolve(root,name)))!==expected)throw Error('Rebuild modified source: '+name);
 }
@@ -32,7 +36,10 @@ const copy=(from,name)=>write(name,readFileSync(from));
 const shellRoot=resolve(root,'th11_web/sdl-runtime');
 const html=readFileSync(resolve(shellRoot,'managed.html'),'utf8').replace('<head>','<head><meta name="eagler-data-provider" content="retail-memory">');
 write(entry,html);
-for(const name of runtimeNames)copy(resolve(shellRoot,name),name);
+for(const name of runtimeNames){
+ if(name==='shell.mjs')write(name,readFileSync(resolve(shellRoot,name),'utf8').replace(/\/\*TH11_BUILD_INFO\*\/\{[^;]*\}/,'/*TH11_BUILD_INFO*/'+JSON.stringify({version:build.version,completeGame:true})));
+ else copy(resolve(shellRoot,name),name);
+}
 copy(resolve(root,'portable/browser/motion-replay.mjs'),'motion-replay.mjs');
 for(const ext of ['mjs','wasm']){
  const bytes=readFileSync(resolve(buildRoot,game+'-sdl.'+ext));

@@ -54,7 +54,8 @@ i32 enemy_state_command(EnemyState& e,EclContext& c,EnemyGlobals& g,EnemyCommand
         char name[65]{};u8 key=0x77,step=7;const auto* encoded=reinterpret_cast<const u8*>(c.instruction)+32;
         for(i32 j=0;j<count;++j){name[j]=char(encoded[j]^key);key=u8(key+step);step=u8(step+0x10);}
         if(!std::memchr(name,0,count))return -2;
-        i32 id=i(0);if(op>=0x165)id=wrapping_add(id,wrapping_sub(world.difficulty,op-0x165));
+        i32 id=i(0);const i32 base_id=id;if(op>=0x165)id=wrapping_add(id,wrapping_sub(world.difficulty,op-0x165));
+        w.spells->translation_rank=id>=base_id?u32(id-base_id):0;
         (void)i(2);const i32 timeout=i(1);
         if(!w.spells->begin(id,timeout,name,w.bosses[0]->current.position,w.spells->bomb_active))return -2;
         e.health_flags|=1;e.scaled_health=signed_bits(u32(e.health)*7);e.lifetime.set(0,rate);break;

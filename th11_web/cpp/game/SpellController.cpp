@@ -30,6 +30,9 @@ bool SpellController::update(float player_y,Vec3 boss,bool bomb){
         const i32 value=wrapping_sub(world.spell_bonus,numerator/denominator);world.spell_bonus=wrapping_sub(value,value%10);
     }
     if(!effects.spell_update_visuals())return false;
+#ifdef TH_ENABLE_THPRAC
+    if(!practice_time_lock)
+#endif
     timer.tick();world.spell_elapsed=timer.current;
     if(timer.current>=120){
         if(!(world.spell_flags&4)&&player_y<96){effects.spell_title_interrupt(3);world.spell_flags|=4;}

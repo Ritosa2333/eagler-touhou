@@ -2,7 +2,7 @@
 namespace th11 {
 u32 keyboard_keys(const bool* keys)noexcept{
     // 4576b0's virtual-key path, including numpad diagonals and menu shortcuts.
-    constexpr u32 bindings[][2]={{13,0x80000},{16,8},{17,512},{27,256},{36,0x40000},{37,64},{38,16},{39,128},{40,32},{68,0x100000},{80,0x40000},{81,0x10000},{82,0x200000},{83,0x20000},{88,2},{90,1},{97,96},{98,32},{99,160},{100,64},{102,128},{103,80},{104,16},{105,144},{121,0x800000}};
+    constexpr u32 bindings[][2]={{13,0x80000},{16,8},{17,512},{27,256},{36,0x40000},{37,64},{38,16},{39,128},{40,32},{67,4},{68,0x100000},{80,0x40000},{81,0x10000},{82,0x200000},{83,0x20000},{88,2},{90,1},{97,96},{98,32},{99,160},{100,64},{102,128},{103,80},{104,16},{105,144},{121,0x800000}};
     u32 result=0;for(const auto& binding:bindings)if(keys[binding[0]])result|=binding[1];return result;
 }
 u32 controller_keys(u32 held,const u8* buttons,u32 count,i32 x,i32 y,const u8* config)noexcept{

@@ -15,24 +15,28 @@ void TitleMenu::record_spells(){
         if(skip){--skip;continue;}
         const auto* aggregate=scores.characters[6].data()+0x664+id*0x90;
         const auto* own=scores.characters[cursor.selected].data()+0x664+id*0x90;
-        char line[512];u32 color=0x808080;
+        char line[512];u32 color=0x808080;bool aligned=false;
         if(integer(aggregate+0x84)){
             size_t n=0;while(n<64&&aggregate[n])++n;
             std::string name(reinterpret_cast<const char*>(aggregate),n);
-            const char* translated=Localization::SpellName(u32(id),name.c_str());
+            const char* translated=Localization::SpellName(u32(id),name.c_str(),u32(secondary.selected));
             const bool localized=translated!=name.c_str();
             if(localized)name=translated;
             else if(name.size()<42)name.resize(42,' ');
             const char* fallback="No.%3d %s %4d/%4d";
-            const char* format=localized?Localization::FormatStringById("th10 Result Known Spell",fallback):fallback;
+            const char* format=localized?Localization::LayoutFormatStringById("th10 Result Known Spell",fallback):fallback;
+            aligned=format!=fallback;
             std::snprintf(line,sizeof(line),format,id+1,name.c_str(),integer(own+0x80),integer(own+0x84));
             color=integer(own+0x80)?0xffff80:0xefefef;
         }else {std::string fallback="No.%3d ";for(i32 i=0;i<21;++i)fallback+="\x81\x48";
             fallback+=" %4d/%4d";
-            const char* format=Localization::FormatStringById("th10 Result Unknown Spell",fallback.c_str());
+            const char* format=Localization::LayoutFormatStringById("th10 Result Unknown Spell",fallback.c_str());
+            aligned=format!=fallback.c_str();
             std::snprintf(line,sizeof(line),format,id+1,integer(own+0x80),integer(own+0x84));}
         if(!exists(194+record_rows))handles[194+record_rows]=0;
-        text_requests.push_back({handles[194+record_rows],color,0,0,0,line,false,true});++record_rows;
+        // The translated thcrap format owns its columns, including the final
+        // right-aligned counters. Do not re-center each variable-width row.
+        text_requests.push_back({handles[194+record_rows],color,0,0,0,line,false,!aligned});++record_rows;
     }
     for(i32 i=record_rows;i<10;++i){if(!exists(194+i))handles[194+i]=0;text_requests.push_back({handles[194+i],0xffffffff,0,0,0," ",false,true});}
 }

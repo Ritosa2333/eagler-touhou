@@ -32,7 +32,7 @@ bool PauseMenu::update(u32 pressed,u32 repeat){
         }break;
     case 3:
         move(pressed|repeat,7);
-        if(pressed&0x80001){sounds.push_back(10);
+        if(pressed&0x80001){if(practice_save_disabled&&cursor.selected==2){sounds.push_back(37);break;}sounds.push_back(10);
             switch(cursor.selected){case 0:family(background_animation,1);family(menu_animation,1);transition(4);break;
             case 1:choose(78);transition(replay?4:5);break;
             case 2:choose(79);transition(7);break;

@@ -22,6 +22,7 @@ public:
     virtual ~EclResourceProvider()=default;
     virtual bool read(const std::string& name,std::vector<u8>& data)=0;
     virtual bool animation(u32 slot,const std::string& name)=0;
+    virtual bool read_ecl(const std::string& name,EclResource& file){std::vector<u8> data;return read(name,data)&&file.open(data.data(),u32(data.size()));}
 };
 class EclProgram {
 public:
@@ -32,6 +33,7 @@ public:
     // First-file order and subsequent insertion before equal names match
     // 0x45d900. Lookup deliberately uses the original binary-search midpoint.
     i32 attach(const u8*,u32,EclResourceProvider* provider=nullptr);
+    i32 attach_decoded(std::unique_ptr<EclResource>,EclResourceProvider* provider=nullptr);
     bool load(const std::string&,EclResourceProvider&);
     const EclInstruction* find(const char*)const noexcept;
     const EclSubroutine& subroutine(u32 index)const noexcept{return definitions[index].file->subroutines[definitions[index].index];}

@@ -14,6 +14,7 @@ struct ClearRecords {
 struct StageCompletionMode {
     i32 stage=1,selection=0,control_mode=0,replay_mode=0;
     bool practice=false,replay_practice=false,force_title=false;
+    bool all_clear_bonus=false;
 };
 struct StageCompletionState {
     u32 hud_flags=0;

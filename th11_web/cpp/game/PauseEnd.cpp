@@ -41,6 +41,7 @@ void PauseMenu::end_menu(u32 pressed,u32 repeat){
         const bool compact=state==22;const i32 save=compact?1:2,back=compact?0:1;
         move(pressed|repeat,7);
         if(pressed&0x80001){
+            if(practice_save_disabled&&cursor.selected==save){sounds.push_back(37);break;}
             choose(cursor.selected+94);sounds.push_back(10);transition(compact?26:19);
             if(cursor.selected==save){transition(compact?23:16);visible(false);cursor.push();cursor.count=25;cursor.wrap=1;cursor.select(0);scan_requested=true;}
             else if(cursor.selected==back||cursor.selected==(compact?2:3))sounds.push_back(10);

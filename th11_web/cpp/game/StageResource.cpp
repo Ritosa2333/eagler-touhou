@@ -6,6 +6,15 @@ const StageInstruction* StageResource::instruction(u32 offset)const noexcept {
     return it!=instructions.end()&&it->offset==offset?&*it:nullptr;
 }
 bool StageResource::open(const u8* data,u32 size){
+    return decode(data,size,nullptr);
+}
+bool StageResource::open_practice(const std::vector<u8>& original,const std::vector<u8>& patched){
+    StageResource verified;if(original.size()!=patched.size()||!verified.open(original.data(),u32(original.size())))return false;
+    u32 script;std::memcpy(&script,original.data()+8,4);
+    if(std::memcmp(original.data(),patched.data(),script))return false;
+    return decode(patched.data(),u32(patched.size()),&verified);
+}
+bool StageResource::decode(const u8* data,u32 size,const StageResource* retained){
     *this={};auto fail=[&](const char* message){error=message;objects.clear();instances.clear();instructions.clear();return false;};
     if(!data||size<0x90)return fail("truncated STD header");
     auto s16=[&](u32 p){i16 x;std::memcpy(&x,data+p,2);return x;};auto u32at=[&](u32 p){u32 x;std::memcpy(&x,data+p,4);return x;};
@@ -29,7 +38,21 @@ bool StageResource::open(const u8* data,u32 size){
     if(!ended)return fail("missing STD instance terminator");
     constexpr u32 argument_counts[]={0,2,3,5,3,5,3,1,3,5,11,11,1,1,2,0,1,1};
     for(u32 p=script_offset;p+8<=size;){StageInstruction command;command.time=signed_bits(u32at(p));command.opcode=s16(p+4);command.length=s16(p+6);command.offset=p-script_offset;
-        if(command.time==-1&&command.opcode==-1&&command.length==-1){instructions.push_back(std::move(command));break;}
+        if(command.time==-1&&command.opcode==-1&&command.length==-1){
+            instructions.push_back(std::move(command));
+            // THPrac ST6 installs a sentinel in front of the retained native
+            // script. The 0x8000-frame jump still targets its original tail.
+            // Retain only byte-identical, already-verified instructions.
+            if(retained)for(const auto& tail:retained->instructions)if(tail.offset>=p-script_offset+20){
+                const u32 absolute=script_offset+tail.offset;
+                if(tail.length>0){
+                    if(signed_bits(u32at(absolute))!=tail.time||s16(absolute+4)!=tail.opcode||s16(absolute+6)!=tail.length||(!tail.arguments.empty()&&std::memcmp(data+absolute+8,tail.arguments.data(),tail.arguments.size()*4)))return fail("modified retained STD tail");
+                    instructions.push_back(tail);
+                }
+                else instructions.push_back(tail);
+            }
+            break;
+        }
         if(command.length<8||u32(command.length)>size-p||(command.length&3))return fail("invalid STD instruction length");
         const u32 count=(u32(command.length)-8)/4;if(command.opcode>=0&&command.opcode<18&&count<argument_counts[command.opcode])return fail("truncated STD instruction arguments");
         command.arguments.resize(count);if(count)std::memcpy(command.arguments.data(),data+p+8,count*4);instructions.push_back(std::move(command));p+=u32(instructions.back().length);
