@@ -7,6 +7,8 @@ type UiMessageEntry = readonly [key: string, zhCN: string, english: string];
 // one locale. Keys describe meaning rather than copying the Chinese source.
 const entries = [
   ["lobby.title", "联机大厅", "Multiplayer lobby"],
+  ["lobby.surveyNotice", "多人联机功能意见调查与bug反馈匿名问卷", "Anonymous multiplayer feedback and bug report survey"],
+  ["lobby.surveyAction", "参加问卷", "Take the survey"],
   ["lobby.gameOptions", "游戏选项", "Game options"],
   ["lobby.loadingOptions", "正在打开选项…", "Opening options…"],
   ["room.visibility", "房间可见性", "Room visibility"],
