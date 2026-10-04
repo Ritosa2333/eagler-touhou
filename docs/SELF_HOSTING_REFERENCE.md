@@ -187,6 +187,60 @@ its `ws://` / `wss://` URL in `eagler-touhou.config.json`. A reverse proxy such
 as `/eagler-netplay/` is only one possible topology; it is not required by the
 static site format.
 
+### Relay abuse limits
+
+The reference relay enforces source-IP limits before room allocation. Random
+`member`/`lobby` IDs, forged Origin headers, and switching to signaling or binary
+relay sockets do not reset these limits. The defaults are:
+
+| Environment variable | Default | Purpose |
+| --- | --- | --- |
+| `EAGLER_NETPLAY_MAX_ROOMS_PER_IP` | 2 | Simultaneously retained rooms created by one IP |
+| `EAGLER_NETPLAY_CONNECTIONS_PER_MINUTE` | 60 | WebSocket upgrades admitted by the guard per IP per rolling minute |
+| `EAGLER_NETPLAY_MAX_CONNECTIONS_PER_IP` | 32 | Concurrent WebSockets per IP, across all roles |
+| `EAGLER_NETPLAY_MAX_ROOMS` | 512 | Total retained rooms |
+| `EAGLER_NETPLAY_MAX_CONNECTIONS` | 2048 | Total concurrent WebSockets |
+| `EAGLER_NETPLAY_MAX_TRACKED_ADDRESSES` | 10000 | Bound on address accounting memory |
+
+Values must be positive integers. There is no room creation count or time-window
+limit. Deleting a room immediately releases its concurrent-room quota, allowing
+another room to be created. Disconnected rooms still within the existing
+reconnection grace period retain their quota until deleted; reconnecting to the
+same room does not consume another slot. Joining an existing room does not
+consume a new-room quota. Shared networks/NAT share an IP quota; operators
+can adjust these values to their expected usage.
+
+The rolling window counts upgrades admitted by the guard, including upgrades
+that subsequently fail. Requests rejected because a connection or rate quota
+is already full do not extend the window. Closing a socket releases its
+concurrent-connection slot; it does not remove its rolling-window entry.
+An upgrade rejected by the guard receives HTTP 429. Room-allocation rejection
+closes the WebSocket with code 4008; the lobby also receives a `rate-limited`
+error. Idle address records are swept every minute once their connection,
+room and rolling-window counts are all empty. At the address-record cap, new
+addresses are rejected until records can be reclaimed.
+
+The implementation owner is `server/relay-abuse-guard.mjs`; integration with
+every socket role and room deletion belongs to `server/netplay-relay.mjs`.
+`tests/test-relay-abuse-guard.mjs` runs in the default repository gate and
+verifies proxy trust, rolling windows, quota release and cross-role enforcement.
+
+For a reverse proxy, configure `EAGLER_NETPLAY_TRUSTED_PROXIES` as a comma-separated
+list of the proxy's **exact peer IP addresses**, for example `127.0.0.1,::1` for a
+local proxy. Set/overwrite `X-Real-IP` with the actual client address at that
+trusted proxy (for Nginx: `proxy_set_header X-Real-IP $remote_addr;`). A trusted
+proxy connection without a valid single-IP header is rejected. Headers from
+other peers are ignored; `X-Forwarded-For` is not used. Bind the relay to the
+proxy-facing interface and restrict direct external access to its port.
+
+Restart the relay service after deploying the server changes and environment
+configuration. Publishing the static launcher alone does not apply this patch.
+Limits are local to one relay process and reset on restart. Multiple replicas
+need shared accounting or equivalent limits at a common edge. These quotas
+bound anonymous automation; they do not authenticate humans or prevent an
+attacker with multiple source IPs from filling public seats. Private rooms are
+hidden from the directory, not password-protected.
+
 ## TURN / STUN
 
 TURN is server-managed and optional. WebRTC direct/STUN is attempted according

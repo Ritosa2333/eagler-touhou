@@ -5,7 +5,9 @@ import {fileURLToPath} from 'node:url';
 
 const port=await new Promise(resolve=>{const s=net.createServer();s.listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>resolve(p));});});
 const child=spawn(process.execPath,[fileURLToPath(new URL('../server/netplay-relay.mjs',import.meta.url))],{
-  windowsHide:true,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_STUN_URLS:''},stdio:['ignore','pipe','pipe']});
+  // Three retained rooms isolate the three transport cases; quota behavior has
+  // its own abuse-guard integration gate.
+  windowsHide:true,env:{...process.env,EAGLER_NETPLAY_RELAY_HOST:'127.0.0.1',EAGLER_NETPLAY_RELAY_PORT:String(port),EAGLER_NETPLAY_STUN_URLS:'',EAGLER_NETPLAY_MAX_ROOMS_PER_IP:'3'},stdio:['ignore','pipe','pipe']});
 let log='';child.stdout.on('data',b=>log+=b);child.stderr.on('data',b=>log+=b);
 const wait=async(test,label)=>{const start=Date.now();while(!test()){
   if(Date.now()-start>5000)throw Error(label+' timeout\n'+log);
