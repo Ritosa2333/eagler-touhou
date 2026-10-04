@@ -131,6 +131,7 @@ public:
     JobResult update();
     bool draw(i32 first=0,i32 last=4);
     bool draw_high(){return draw(0,2);}
+    void bind_familiar_view(void* owner,i32 (*form)(void*)){drawing.viewer=owner;drawing.viewer_form=form;}
     bool draw_low(){failed|=!drawing.low(state.layers,globals.game_flags,ascii_context.arcade_origin);return !failed;}
 #if defined(TH_PRESENTATION_AUDIT)
     const float* audit_presentation_sample(uintptr_t object,u32 index)const{return drawing.audit_presentation_sample(object,index);}

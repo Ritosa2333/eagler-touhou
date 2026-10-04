@@ -3,8 +3,8 @@
 namespace th08::multiplayer {
 bool decode_session_setup(SessionSetup& current,const std::uint32_t* words,std::size_t size) noexcept {
     if(current.started||!words||!size)return false;
-    const bool measured=words[0]==6,adonis=words[0]==5||measured,timed_network=words[0]==4||adonis,network=words[0]==3||timed_network;
-    const std::size_t expected=measured?22u:adonis?20u:(timed_network?19u:(network?17u:11u));
+    const bool rules=words[0]==7,measured=words[0]==6||rules,adonis=words[0]==5||measured,timed_network=words[0]==4||adonis,network=words[0]==3||timed_network;
+    const std::size_t expected=rules?23u:measured?22u:adonis?20u:(timed_network?19u:(network?17u:11u));
     if((!network&&words[0]!=1)||size!=expected||words[1]<2||words[1]>3||
        words[2]>=words[1]||words[3]>4||words[4]>65535)return false;
     SessionSetup next{};
@@ -28,20 +28,21 @@ bool decode_session_setup(SessionSetup& current,const std::uint32_t* words,std::
         next.input_delay=words[17];next.prediction_limit=words[18];
     }
     if(adonis){
-        if(words[19]<1||words[19]>2)return false;
+        if((!rules&&words[19]<1)||words[19]>2)return false;
         next.adonis_mode=words[19];
     }
     if(measured){
-        if(words[20]>1||words[21]<1||words[21]>2||(words[20]&&next.input_delay))return false;
+        if(words[20]>1||words[21]<1||words[21]>2||(words[20]&&(next.input_delay||!next.adonis_mode)))return false;
         next.input_delay_auto=words[20];next.prediction_reserve=words[21];
     }
+    if(rules){if(words[22]>1)return false;next.challenge_mode=words[22]!=0;}
     next.configured=true;current=next;return true;
 }
 std::uint32_t gameplay_contract(const SessionSetup& setup) noexcept {
     std::uint32_t hash=2166136261u;
     const auto word=[&](std::uint32_t value){for(int i=0;i<4;++i){hash^=(value>>(i*8))&255u;hash*=16777619u;}};
     // Loadout-based life Bombs, fixed rescue resources, and stage resource scaling.
-    word(0x08000012u);
+    word(0x08000013u);word(setup.challenge_mode);
     // Fresh combined revisions bind the cooperation rules and each timing
     // envelope. Neither previous topic's recordings may run under this world.
     word(setup.version>=6?0x0800000fu:setup.version==5?0x0800000eu:setup.version==4?0x0800000du:0x0800000cu);

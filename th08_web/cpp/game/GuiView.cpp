@@ -58,9 +58,9 @@ void GuiController::draw_multiplayer_hud(){
         // A native icon plus an unabridged count fits all legal resources in
         // both 2P and 3P. Cooperative/transient states are presented beside
         // the player in the playfield, as in TH07MP, not inside this resource HUD.
-        positioned(display.front[10],480.f,y+17.f,.46f);
+        if(!bank.challenge_mode)positioned(display.front[10],480.f,y+17.f,.46f);
         positioned(display.front[11],583.f,y+17.f,.46f);
-        ascii.add_format({499,y+17,0},false,"%d",lives);
+        ascii.add_format({499,y+17,0},false,"%u",bank.challenge_mode?u32(bank.deaths):u32(lives));
         ascii.add_format({602,y+17,0},false,"%d",bombs);
         ascii.add_format({488,y+35,0},false,power>=128?"MAX":"%d",power);
     }

@@ -13,6 +13,7 @@ namespace th08 {
 // is alive. Rollback restores it in place with restore().
 struct PilotResources {
     float lives=0,bombs=0,power=0;
+    bool challenge_mode=false;
     i16 gauge=0,gauge_copy=0;
     float deaths=0,deaths_stage=0,bombs_used=0,bombs_used_stage=0;
 

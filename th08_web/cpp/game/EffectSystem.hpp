@@ -57,6 +57,8 @@ class EffectSystem {
     static void projected(AnmVm&,Vec3&,void*);
 public:
 #if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+    void* player_view=nullptr;
+    u8 (*player_view_alpha)(void*,i32)=nullptr;
     i32 initialize_geometry(EffectState&,EffectDraw callback,bool alternative=false);
 #endif
     EffectPoolState& state;EffectEnvironment& environment;Vec2 arcade{32,16};bool paused=false,invalid=false;u8 quality=2;

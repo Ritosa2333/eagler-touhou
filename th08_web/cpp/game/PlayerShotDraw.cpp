@@ -18,7 +18,7 @@ void PlayerShots::draw_trail(PlayerShot& shot,const Vec2& offset){
     }
     shot.animation.color1.a=alpha;
 }
-void PlayerShots::draw(bool impact,const Vec2& offset){
+void PlayerShots::draw(bool impact,const Vec2& offset,u8 proximity_alpha){
     failure=Failure::None;if(!actions){failure=Failure::MissingActions;return;}
     for(size_t i=0;i<128;++i){auto& source=state.shots[i];if(source.state!=(impact?2:1))continue;
         if(!presentation::render_only)actions->before_shot_write(source);
@@ -34,7 +34,11 @@ void PlayerShots::draw(bool impact,const Vec2& offset){
         if(shot->animation.type){shot->animation.rotation.z=shot->angle;shot->animation.updateRotation=true;}
         shot->animation.pos={Scalar::add(offset.x,shot->position.x),Scalar::add(offset.y,shot->position.y),impact?.2f:.4f};
         if(shot->gauge_bonus){shot->animation.color1.r=255;shot->animation.color1.g=shot->animation.color1.b=64;}
+        const auto color1=shot->animation.color1,color2=shot->animation.color2;
+        shot->animation.color1.a=std::min(shot->animation.color1.a,proximity_alpha);
+        shot->animation.color2.a=std::min(shot->animation.color2.a,proximity_alpha);
         actions->draw(shot->animation,impact);if(!impact&&shot->draw==ShotDraw::Laser)draw_trail(*shot,offset);
+        shot->animation.color1=color1;shot->animation.color2=color2;
     }
 }
 }

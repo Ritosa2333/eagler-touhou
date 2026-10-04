@@ -18,8 +18,8 @@ bool BrowserRuntime::prepare_replay(const u8* bytes,u32 size,u32 stage){
         u32(setup.session_id),u32(setup.session_id>>32),setup.build[0],setup.build[1],setup.build[2],setup.build[3],
         setup.characters[0],0,setup.characters[1],0,setup.characters[2],0,
         setup.input_delay_auto?0:setup.input_delay,setup.prediction_limit,setup.adonis_mode,
-        u32(setup.input_delay_auto),setup.prediction_reserve};
-    if(!browser_multiplayer_configure(this,words,setup.version>=6?22:setup.version==5?20:setup.version==4?19:17))return false;
+        u32(setup.input_delay_auto),setup.prediction_reserve,u32(setup.challenge_mode)};
+    if(!browser_multiplayer_configure(this,words,setup.version>=7?23:setup.version>=6?22:setup.version==5?20:setup.version==4?19:17))return false;
     if(setup.version>=6){
         if(!app.session.netplay.Reset(setup))return false;
         app.session.multiplayer_session=setup;

@@ -71,7 +71,15 @@ bool draw_enemy(EclVm& enemy,const Vec2& offset,EnemyDrawActions& actions){
     TH08_AUDIT_SCOPE_FLAGS(Enemy,&enemy,enemy.lifetime.current,0,actions.discrete_motion(enemy)?audit::DiscreteMotion:0);
     RenderOnlyEnemyRestore restore(enemy);
     AnmVm copies[3];AnmVm* vms=enemy.animation;if(presentation::render_only){for(u32 i=0;i<3;++i){copies[i]=enemy.animation[i];actions.visual(enemy,i,copies[i]);}vms=copies;}
-    auto& main=vms[0];const Vec3 draw_position=actions.position(enemy);const float draw_direction=actions.direction(enemy);
+    struct FamiliarRestore {AnmVm& vm;ZunColor color;bool tint;
+        ~FamiliarRestore(){vm.color2=color;vm.flag17=tint;}};
+    auto& main=vms[0];FamiliarRestore familiar_restore{main,main.color2,bool(main.flag17)};
+    const i32 form=actions.familiar_form();
+    if(enemy.parent&&form>=0){
+        main.flag17=form!=0;
+        if(form)main.color2.d3dColor=signed_bits((u32(main.color1.a/2)<<24)|0x2020c0);
+    }
+    const Vec3 draw_position=actions.position(enemy);const float draw_direction=actions.direction(enemy);
     const auto satellite=[&](u32 index){TH08_AUDIT_SCOPE(Enemy,&enemy,enemy.lifetime.current,index);auto& vm=vms[index];if(vm.scriptIndex<0)return;if(vm.type)rotate(vm,index==1?draw_direction:-draw_direction);place(vm,draw_position,(enemy.flags2&0x100)?main.pos2:vm.pos2,offset,.3f);actions.sprite(vm);};
     satellite(1);if(enemy.flags&0x2000000)rotate(main,draw_direction);
     place(main,draw_position,main.pos2,offset,.25f);

@@ -15,6 +15,7 @@ struct PlayerBombStartActions {
     virtual void spell_overlay(i32 sprite,const char* name,i32 variant)=0;
     virtual EffectState* fixed_effect(i32 kind,const Vec3& position,i32 slot,u32 color)=0;
     virtual void home_items()=0;
+    virtual void team_invincibility(i32) {}
 };
 void player_invincibility_effect(PlayerLifeState&,const Vec3&,PlayerBombStartActions&);
 void begin_player_bomb(PlayerBombObjects&,PlayerBombState&,PlayerLifeState&,const Vec3&,i32 sprite,const char* name,i32 duration,i32 invincibility,i32 variant,PlayerBombStartActions&);

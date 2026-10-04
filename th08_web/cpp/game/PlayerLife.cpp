@@ -5,6 +5,9 @@
 #endif
 namespace th08 {
 void PlayerLife::die(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(state.team_bomb_protection.current>0)return;
+#endif
 #if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
     multiplayer::diagnostic::Scope trace("death.hit",multiplayer::diagnostic::Seat(&context));
 #endif
@@ -46,7 +49,11 @@ bool PlayerLife::resolve_death(const ShotProfile& profile){
             context.game_flags&=~0x400u;actions.reset_screen_color();animation.flag17=0;context.replay_flags|=4;context.miss_control=0;state.deathbomb=0;
             actions.fail_spell();actions.add_deaths(1);context.hud_flags=(context.hud_flags&~0xc00u)|0x800;
             actions.add_time_orbs(context.time_orbs>5000?-500:wrapping_sub(0,context.time_orbs)/10);
-            if(context.lives>0){
+            if(context.lives>0
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                ||context.challenge_mode
+#endif
+            ){
                 if(!(context.cheats&8)){if(context.power<=16)actions.set_power(0);else actions.add_power(-16);}
                 actions.item(2,movement.position,2);for(u32 i=0;i<5;++i)actions.item(0,movement.position,2);
                 if(context.bombs>0&&(context.character==2||context.character==8||context.character==9))actions.item(3,movement.position,2);
@@ -62,12 +69,20 @@ bool PlayerLife::resolve_death(const ShotProfile& profile){
         if(state.timer.current>=30){
             state.state=1;movement.position={Scalar::div(context.extent.x,2),Scalar::sub(context.extent.y,64),.2f};state.timer.set(0);animation.scale={3,3};
             actions.animation(((context.character<4&&!context.focused)||!(context.character&1))?0:5);
-            if(context.lives>0){
-                if(!(context.cheats&2))actions.add_lives(-1);
+            if(context.lives>0
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                ||context.challenge_mode
+#endif
+            ){
+                if(!(context.cheats&2)
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                   &&!context.challenge_mode
+#endif
+                )actions.add_lives(-1);
                 context.hud_flags=(context.hud_flags&~3u)|2;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                 // Every cooperative life uses this loadout's native stock minus one.
-                actions.set_bombs(multiplayer::base_life_bombs(profile.initial_bombs));
+                actions.set_bombs(context.challenge_mode?0:multiplayer::base_life_bombs(profile.initial_bombs));
 #else
                 actions.set_bombs(Scalar::truncate(profile.initial_bombs));
 #endif
@@ -91,5 +106,14 @@ void PlayerLife::update_invincibility(const FrameTiming& timing){
         if(state.timer.current<1){if(state.invincible_effect){state.invincible_effect->active=0;state.invincible_effect=nullptr;}state.state=0;state.timer.set(0);animation.color1.d3dColor=-1;}
         else animation.color1.d3dColor=state.timer.current%8<2?0xfff02020:0xffffffff;
     }else state.timer.tick(timing);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(state.team_bomb_protection.current>0){
+        state.team_bomb_protection.decrement(1,timing);
+        if(state.team_bomb_protection.current>0&&(state.state==0||state.state==3)&&
+           (state.state==0||state.timer.current<state.team_bomb_protection.current)){
+            state.state=3;state.timer=state.team_bomb_protection;
+        }
+    }
+#endif
 }
 }

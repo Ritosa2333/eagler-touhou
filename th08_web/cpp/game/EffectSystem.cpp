@@ -276,14 +276,20 @@ JobResult EffectSystem::update(){
     state.frames=wrapping_add(state.frames,1);return state.frames%300==100&&values.tampered()?JobResult::Exit:JobResult::Continue;
 }
 void EffectSystem::draw_list(u32 index,float depth,bool offset_before_depth){
-    for(auto* e=state.sentinels[index].next;e;e=e->next){TH08_AUDIT_SCOPE(Effect,e,e->age.current,u32(e->kind));if(e->draw){
-            if(presentation::render_only){
+    for(auto* e=state.sentinels[index].next;e;e=e->next){TH08_AUDIT_SCOPE(Effect,e,e->age.current,u32(e->kind));
+        u8 alpha=255;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        const i32 seat=effect_seat(*e);if(seat>=0&&player_view_alpha)alpha=player_view_alpha(player_view,seat);
+#endif
+        const auto fade=[alpha](EffectState& vm){vm.color1.a=std::min(vm.color1.a,alpha);vm.color2.a=std::min(vm.color2.a,alpha);};
+        if(e->draw){
+            if(presentation::render_only||alpha<255){
                 EffectState copy=*e;std::array<SpriteVertex,258> vertices{};if(e->vertices){std::memcpy(vertices.data(),e->vertices,sizeof(vertices));copy.vertices=vertices.data();}
-                copy.position=presentation_position(*e);presentation_visual(*e,copy);if(presentation::active)presentation_geometry(*e,copy);copy.geometry_dirty=1;const bool invalid_before=geometry.invalid;e->draw(copy,*this);geometry.invalid=invalid_before;
+                copy.position=presentation_position(*e);presentation_visual(*e,copy);fade(copy);if(presentation::active)presentation_geometry(*e,copy);copy.geometry_dirty=1;const bool invalid_before=geometry.invalid;e->draw(copy,*this);geometry.invalid=invalid_before;
             }else e->draw(*e,*this);
             continue;
         }EffectState copy;EffectState* draw=e;
-        if(presentation::render_only){copy=*e;copy.position=presentation_position(*e);presentation_visual(*e,copy);draw=&copy;}
+        if(presentation::render_only||alpha<255){copy=*e;copy.position=presentation_position(*e);presentation_visual(*e,copy);fade(copy);draw=&copy;}
         draw->pos=draw->position;draw->pos.x=Scalar::add(arcade.x,draw->pos.x);draw->pos.y=Scalar::add(arcade.y,draw->pos.y);
         if(offset_before_depth){add(draw->pos,draw->pos2);draw->pos.z=depth;}else{draw->pos.z=depth;add(draw->pos,draw->pos2);}renderer.draw_2d(*draw);
     }

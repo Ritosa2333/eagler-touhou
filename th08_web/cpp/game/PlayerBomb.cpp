@@ -10,6 +10,9 @@ PlayerBombKind player_bomb_kind(u8 character,i32 type)noexcept{
     return character<4?teams[character][type]:teams[(character-4)/2][(type&2)|(character&1)];
 }
 bool update_player_bomb(PlayerBombState& s,PlayerBombContext& input,PlayerLifeState& life,PlayerLifeContext& context,PlayerMovementState& movement,AnmVm& animation,const ShotProfile& profile,const FrameTiming& timing,PlayerBombActions& actions){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(context.challenge_mode){context.bombs=0;s.active=0;s.triggered=0;life.auto_bomb=0;return true;}
+#endif
     const bool automatic=life.auto_bomb&&life.predead_count==1;
     if(!automatic){
         if(s.cooldown)s.cooldown=wrapping_sub(s.cooldown,1);

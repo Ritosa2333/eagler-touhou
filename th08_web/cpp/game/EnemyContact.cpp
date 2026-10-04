@@ -10,6 +10,7 @@ void enemy_contact(EclVm& enemy,u8 character,const Vec3& position,const Vec3& si
     if((character==0||character==4)&&enemy.parent)return;
 #else
     (void)character;
+    if(enemy.parent)return;
 #endif
     const Vec3 hit_size=divide(size,1.5f);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY

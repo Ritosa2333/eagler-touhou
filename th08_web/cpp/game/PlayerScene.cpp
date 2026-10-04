@@ -15,7 +15,28 @@ void PlayerScene::Patterns::before_objects_write(){
     if(s.world&&s.world->world_journal)s.failed|=!s.world->world_journal->TouchBomb(s.state.bomb_objects);
 #endif
 }
-void PlayerScene::sync_values(){auto& c=state.context;c.bombs=Scalar::truncate(numbers.bombs);c.lives=Scalar::truncate(numbers.lives);c.power=Scalar::truncate(numbers.power);c.time_orbs=numbers.time_orbs;c.last_spell_requirement=numbers.last_spell_requirement;c.gauge=numbers.gauge;}
+void PlayerScene::sync_values(){auto& c=state.context;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    c.challenge_mode=numbers.pilot.challenge_mode;
+    if(c.challenge_mode)numbers.bombs=0;
+#endif
+c.bombs=Scalar::truncate(numbers.bombs);c.lives=Scalar::truncate(numbers.lives);c.power=Scalar::truncate(numbers.power);c.time_orbs=numbers.time_orbs;c.last_spell_requirement=numbers.last_spell_requirement;c.gauge=numbers.gauge;}
+void PlayerScene::Patterns::team_invincibility(i32 frames){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(!s.world||!s.world->roster)return;
+    auto& roster=*s.world->roster;
+    for(u32 seat=0;seat<roster.count;++seat){
+        if(!roster.eligible(seat)||i32(seat)==s.seat)continue;
+        auto& life=roster.seats[seat].player->status().life;
+        if(life.team_bomb_protection.current<frames)life.team_bomb_protection.set(frames);
+        if(life.state!=0&&life.state!=3)continue;
+        const i32 remaining=life.state==3?life.timer.current:0;
+        life.state=3;if(remaining<frames)life.timer.set(frames);
+    }
+#else
+    (void)frames;
+#endif
+}
 void PlayerScene::Patterns::spell_overlay(i32 form,const char* name,i32 style){
     auto& p=s.world->announcement;p.context.game_flags=s.state.context.game_flags;p.context.current_spell=s.world->ecl.current_spell;s.failed|=!p.player(form,name,style);
 }

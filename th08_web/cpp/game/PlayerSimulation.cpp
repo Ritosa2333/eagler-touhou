@@ -91,13 +91,14 @@ void PlayerSimulation::die(){state.context.focused=state.motion.form.focused;sta
 void PlayerSimulation::enter_spirit(){
     state.touch_remainder={};
     state.life.state=4;state.context.game_over=0;state.bomb.active=0;
+    state.life.team_bomb_protection.set(0);
+    if(state.motion.gauge.effect){state.motion.gauge.effect->active=0;state.motion.gauge.effect=nullptr;}
+    if(state.motion.form.focus_effect){static_cast<EffectState*>(state.motion.form.focus_effect)->active=0;state.motion.form.focus_effect=nullptr;}
     state.shots.shooting_timer.set(-1);
     for(auto& shot:state.shots.shots){if(shot.state||shot.update!=ShotUpdate::None||shot.draw!=ShotDraw::None||shot.hit!=ShotHit::None)services.shots.before_shot_write(shot);shot.state=0;shot.update=ShotUpdate::None;shot.draw=ShotDraw::None;shot.hit=ShotHit::None;}
     for(auto& laser:state.shots.lasers)laser.shot=nullptr;
     for(auto& region:state.shots.regions.damaging)region.reset();
     for(auto& region:state.shots.regions.cancelling)region.reset();
-    if(state.motion.form.focus_effect){state.motion.form.focus_effect->SetInterrupt(1);state.motion.form.focus_effect=nullptr;}
-    if(state.motion.gauge.effect){state.motion.gauge.effect->SetInterrupt(1);state.motion.gauge.effect=nullptr;}
     presentation_valid=false;
 }
 bool PlayerSimulation::update_spirit(i8& drift_x,i8& drift_y){
@@ -157,7 +158,7 @@ bool PlayerSimulation::draw(const Vec2& offset,bool impacts,u8 proximity_alpha){
 #endif
     TH08_AUDIT_SCOPE(Player,&state.motion,state.motion.animation.currentTimeInScript.current,impacts?1:0);
     const bool failed_before=failed;const auto shot_failure_before=shots.failure;
-    if(!presentation::render_only)synchronize_shots();shots.draw(impacts,offset);if(!presentation::render_only)failed|=shots.failure!=PlayerShots::Failure::None;
+    if(!presentation::render_only)synchronize_shots();shots.draw(impacts,offset,proximity_alpha);if(!presentation::render_only)failed|=shots.failure!=PlayerShots::Failure::None;
     if(!impacts){
         if(state.bomb.active){
             const Vec3 saved=state.motion.movement.position;

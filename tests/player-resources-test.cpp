@@ -52,6 +52,11 @@ int main(){
     assert(pilot0.power==16&&pilot1.power==64&&pilot2.power==120);
     assert(pilot0.gauge==0&&pilot1.gauge==0&&pilot2.gauge==0);
     assert(shared.lives==0&&shared.bombs==0&&shared.power==0&&shared.gauge==0);
+    pilot1.challenge_mode=true;
+    values1.add_bombs(2);assert(pilot1.bombs==0);
+    values1.set_bombs(3);assert(pilot1.bombs==0);
+    assert(pilot0.bombs==1&&pilot2.bombs==6);
+    pilot1.challenge_mode=false;values1.set_bombs(5);
 
     pilot0.deaths=1;
     pilot1.deaths=4;

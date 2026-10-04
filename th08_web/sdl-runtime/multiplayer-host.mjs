@@ -49,10 +49,12 @@ export async function configureMultiplayer(core,app,options,{crypto=globalThis.c
     !runtimeBuildWords.some(Boolean))throw Error('TH08 multiplayer Runtime build identity is missing');
  const identity=new TextEncoder().encode(`th08mp:${o.url.origin}${o.url.pathname}:${o.room}:${o.run}`);
  const digest=new DataView(await crypto.subtle.digest('SHA-256',identity));
- const words=[o.adonisMode?6:4,o.count,o.seat,o.difficulty,o.seed,digest.getUint32(0,true),digest.getUint32(4,true)||1,...runtimeBuildWords];
+ const challenge=options.netplayChallengeMode===true;
+ const words=[challenge?7:o.adonisMode?6:4,o.count,o.seat,o.difficulty,o.seed,digest.getUint32(0,true),digest.getUint32(4,true)||1,...runtimeBuildWords];
  for(let seat=0;seat<3;++seat)words.push(o.loadouts[seat]?.character||0,0);
  words.push(o.inputDelay,o.predictionLimit);
- if(o.adonisMode)words.push(o.adonisMode,+o.automatic,o.reserve);
+ if(o.adonisMode||challenge)words.push(o.adonisMode,+o.automatic,o.reserve);
+ if(challenge)words.push(1);
  const pointer=core.allocate(words.length*4);if(!pointer)throw Error('Multiplayer setup allocation failed');
  try{
   new Uint32Array(core.memory.buffer,pointer,words.length).set(words);

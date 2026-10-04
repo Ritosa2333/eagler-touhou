@@ -11,6 +11,7 @@ struct SessionSetup {
     std::uint32_t input_delay=0,prediction_limit=8;
     std::uint32_t adonis_mode=0;
     bool input_delay_auto=false;
+    bool challenge_mode=false;
     std::uint32_t prediction_reserve=2;
     std::uint32_t measured_prediction=0;
     std::uint64_t session_id=0;

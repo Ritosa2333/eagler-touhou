@@ -20,7 +20,7 @@ public:
 
     bool Reset(const SessionSetup&) noexcept;
     bool ApplyMeasuredTiming(unsigned delay,unsigned prediction);
-    bool PreparingWorld()const{return configured_&&setup_.version>=6;}
+    bool PreparingWorld()const{return configured_&&setup_.version>=6&&setup_.adonis_mode!=0;}
     void Clear() noexcept;
     bool Configured()const{return configured_;}
     bool CanStart()const{return configured_&&!retired_&&(spectator_?spectator_timing_ready_:playback_||gate_.CanStart());}

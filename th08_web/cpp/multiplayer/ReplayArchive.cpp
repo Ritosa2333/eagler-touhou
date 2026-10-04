@@ -21,7 +21,7 @@ bool valid_config(const GameConfiguration& c){
 std::vector<u8> metadata(const ReplayDescription& d){
     std::vector<u8> out;out.reserve(DescriptionBytes);
     const bool adonis=d.setup.version>=5,timed=d.setup.version==4||adonis;
-    put(out,d.setup.version>=6?5u:adonis?4u:timed?3u:2u);put(out,d.setup.seed);put(out,d.setup.difficulty);
+    put(out,d.setup.version>=7?6u:d.setup.version>=6?5u:adonis?4u:timed?3u:2u);put(out,d.setup.seed);put(out,d.setup.difficulty);
     for(auto character:d.setup.characters)put(out,character);
     for(auto build:d.setup.build)put(out,build);
     put(out,d.score);put(out,d.last_stage);
@@ -30,23 +30,24 @@ std::vector<u8> metadata(const ReplayDescription& d){
     for(auto score:d.stage_scores)put(out,score);
     if(adonis)put(out,d.setup.adonis_mode);
     if(d.setup.version>=6){put(out,d.setup.input_delay_auto);put(out,d.setup.prediction_reserve);put(out,d.setup.measured_prediction);}
+    if(d.setup.version>=7)put(out,d.setup.challenge_mode);
     return out;
 }
 bool decode_description(const Netplay::InputReplayInfo& info,ReplayDescription& d){
     const auto& c=info.config;const auto& v=c.description;
-    if(c.gameId!=8||(v.size()!=DescriptionBytes&&v.size()!=DescriptionBytes+4&&v.size()!=DescriptionBytes+16))return false;
+    if(c.gameId!=8||(v.size()!=DescriptionBytes&&v.size()!=DescriptionBytes+4&&v.size()!=DescriptionBytes+16&&v.size()!=DescriptionBytes+20))return false;
     const auto version=word(v.data());
-    if(version<2||version>5||v.size()!=(version==5?DescriptionBytes+16:version==4?DescriptionBytes+4:DescriptionBytes))return false;
+    if(version<2||version>6||v.size()!=(version==6?DescriptionBytes+20:version==5?DescriptionBytes+16:version==4?DescriptionBytes+4:DescriptionBytes))return false;
     const auto input_delay=version>=3?u32(v[62]):0u;
     const auto prediction_limit=version>=3?u32(v[63]):8u;
     const auto mode=version>=4?word(v.data()+DescriptionBytes):0u;
-    const auto automatic=version==5?word(v.data()+104):0u,reserve=version==5?word(v.data()+108):2u,prediction=version==5?word(v.data()+112):0u;
+    const auto automatic=version>=5?word(v.data()+104):0u,reserve=version>=5?word(v.data()+108):2u,prediction=version>=5?word(v.data()+112):0u;
     if(automatic>1||prediction>2||(mode==1&&prediction)||(version==2&&(v[62]||v[63]))||input_delay>(version>=4?9u:8u)||prediction_limit<1||prediction_limit>8)return false;
-    const u32 fields[]{version==5?6u:version==4?5u:version==3?4u:3u,c.playerCount,c.recordedPlayer,word(v.data()+8),word(v.data()+4),1,0,
+    const u32 fields[]{version==6?7u:version==5?6u:version==4?5u:version==3?4u:3u,c.playerCount,c.recordedPlayer,word(v.data()+8),word(v.data()+4),1,0,
         word(v.data()+24),word(v.data()+28),word(v.data()+32),word(v.data()+36),
-        word(v.data()+12),0,word(v.data()+16),0,word(v.data()+20),0,automatic?0u:input_delay,prediction_limit,mode,automatic,reserve};
+        word(v.data()+12),0,word(v.data()+16),0,word(v.data()+20),0,automatic?0u:input_delay,prediction_limit,mode,automatic,reserve,version==6?word(v.data()+116):0u};
     ReplayDescription next;
-    if(!decode_session_setup(next.setup,fields,version==5?22:version==4?20:version==3?19:17))return false;
+    if(!decode_session_setup(next.setup,fields,version==6?23:version==5?22:version==4?20:version==3?19:17))return false;
     next.setup.input_delay=input_delay;next.setup.measured_prediction=prediction;
     if(c.gameplayAbi!=gameplay_contract(next.setup))return false;
     next.score=word(v.data()+40);next.last_stage=word(v.data()+44);

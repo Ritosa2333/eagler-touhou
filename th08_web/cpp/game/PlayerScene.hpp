@@ -21,6 +21,7 @@ struct PlayerSceneWorld {
     BackgroundScript& background;ScreenEffects& screen;AsciiManager& ascii;AsciiContext& ascii_context;EclGlobals& ecl;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     multiplayer::WorldJournal* world_journal=nullptr;
+    PlayerRoster* roster=nullptr;
 #endif
 };
 // Production services for PlayerSimulation and ItemSystem. Bind the scene
@@ -72,6 +73,7 @@ class PlayerScene:public PlayerSetupActions,public PlayerLifeActions,public Play
     struct Patterns:PlayerBombPatternActions {
         PlayerScene& s;explicit Patterns(PlayerScene& s):s(s){}
         void before_objects_write()override;
+        void team_invincibility(i32 frames)override;
         void spell_overlay(i32 form,const char* name,i32 style)override;
         EffectState* fixed_effect(i32 id,const Vec3& p,i32 slot,u32 color)override{return s.fixed_effect(id,p,slot,color);}
         void home_items()override{

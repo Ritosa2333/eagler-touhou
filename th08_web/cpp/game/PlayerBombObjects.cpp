@@ -8,7 +8,15 @@ void player_invincibility_effect(PlayerLifeState& life,const Vec3& position,Play
     e->color1.r=255;e->color1.g=64;e->color1.b=64;
 }
 void begin_player_bomb(PlayerBombObjects& objects,PlayerBombState& bomb,PlayerLifeState& life,const Vec3& position,i32 sprite,const char* name,i32 duration,i32 invincibility,i32 variant,PlayerBombStartActions& actions){
-    actions.spell_overlay(sprite,name,variant);bomb.duration=duration;life.timer.set(invincibility);life.state=3;player_invincibility_effect(life,position,actions);
+    actions.spell_overlay(sprite,name,variant);bomb.duration=duration;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(life.team_bomb_protection.current<invincibility)life.team_bomb_protection.set(invincibility);
+    const i32 remaining=life.state==3?life.timer.current:0;
+    life.timer.set(remaining>invincibility?remaining:invincibility);
+#else
+    life.timer.set(invincibility);
+#endif
+    life.state=3;player_invincibility_effect(life,position,actions);actions.team_invincibility(invincibility);
     for(auto& object:objects.objects)object.state=0;actions.home_items();objects.origin=position;
 }
 u32 player_bomb_color(u32 color,const Timer& timer,i32 duration)noexcept{

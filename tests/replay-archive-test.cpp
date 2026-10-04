@@ -6,10 +6,10 @@
 #include <cstring>
 using namespace th08::multiplayer;
 using Netplay::FrameInput;
-static ReplayDescription description(unsigned count,unsigned local,bool delayed=false,unsigned adonis=0,bool measured=false){
-    ReplayDescription d;const std::uint32_t words[]{measured?6u:adonis?5u:delayed?4u:3u,count,local,1,1234,71,0,
-        0x11223344u,0x55667788u,0x99aabbccu,0xddeeff00u,0,0,1,0,count==3?2u:0u,0,measured?0u:2u,measured?8u:2u,adonis,1,2};
-    assert(decode_session_setup(d.setup,words,measured?22:adonis?20:delayed?19:17));
+static ReplayDescription description(unsigned count,unsigned local,bool delayed=false,unsigned adonis=0,bool measured=false,bool challenge=false){
+    ReplayDescription d;const std::uint32_t words[]{challenge?7u:measured?6u:adonis?5u:delayed?4u:3u,count,local,1,1234,71,0,
+        0x11223344u,0x55667788u,0x99aabbccu,0xddeeff00u,0,0,1,0,count==3?2u:0u,0,measured?0u:2u,measured?8u:2u,adonis,adonis?1u:0u,2,challenge?1u:0u};
+    assert(decode_session_setup(d.setup,words,challenge?23:measured?22:adonis?20:delayed?19:17));
     if(measured){d.setup.input_delay=2;d.setup.measured_prediction=adonis==2?2:0;}
     std::memcpy(d.name,"Test",4);return d;
 }
@@ -53,10 +53,11 @@ static void previous_general_rules_are_rejected(const ReplayArchive& current,con
 static bool save(void* count,const char*,const std::uint8_t* data,std::uint32_t size){
     ReplayArchive copy;assert(copy.Load(data,size));++*static_cast<unsigned*>(count);return true;
 }
-static void roundtrip(unsigned count,unsigned local,bool delayed=false,unsigned adonis=0,bool measured=false){
-    auto d=description(count,local,delayed,adonis,measured);ReplayArchive archive;const std::vector<std::uint8_t> boot{1,2,3};
+static void roundtrip(unsigned count,unsigned local,bool delayed=false,unsigned adonis=0,bool measured=false,bool challenge=false){
+    auto d=description(count,local,delayed,adonis,measured,challenge);ReplayArchive archive;const std::vector<std::uint8_t> boot{1,2,3};
     assert(archive.Begin(d,boot));NetplayRuntime peers[3];
-    for(unsigned i=0;i<count;++i)assert(peers[i].Reset(description(count,i,delayed,adonis,measured).setup));barrier(peers,count);
+    for(unsigned i=0;i<count;++i)assert(peers[i].Reset(description(count,i,delayed,adonis,measured,challenge).setup));barrier(peers,count);
+    assert(peers[local].PreparingWorld()==(measured&&adonis!=0));
     auto& net=peers[local];unsigned saves=0;
     for(unsigned frame=0;frame<6;++frame){
         assert(archive.BeginFrame(frame));
@@ -75,9 +76,10 @@ static void roundtrip(unsigned count,unsigned local,bool delayed=false,unsigned 
     previous_general_rules_are_rejected(archive,bytes);ReplayArchive loaded;
     assert(loaded.Load(bytes.data(),bytes.size()));assert(loaded.BootScore()==boot);
     assert(loaded.Description().setup.local_player==local&&loaded.StageFrame(1)==3);
-    if(delayed)assert(loaded.Description().setup.version==(measured?6u:adonis?5u:4u)&&loaded.Description().setup.input_delay==2&&
+    assert(loaded.Description().setup.challenge_mode==challenge);
+    if(delayed)assert(loaded.Description().setup.version==(challenge?7u:measured?6u:adonis?5u:4u)&&loaded.Description().setup.input_delay==2&&
         loaded.Description().setup.prediction_limit==(measured?8u:2u));
-    if(measured)assert(loaded.Description().setup.input_delay_auto&&loaded.Description().setup.measured_prediction==(adonis==2?2u:0u));
+    if(measured)assert(loaded.Description().setup.input_delay_auto==(adonis!=0)&&loaded.Description().setup.measured_prediction==(adonis==2?2u:0u));
     assert(loaded.Description().setup.adonis_mode==adonis);
     NetplayRuntime player;assert(player.Reset(loaded.Description().setup)&&player.BeginPlayback());
     for(unsigned f=0;f<6;++f){const auto* inputs=loaded.PlaybackFrame(f);assert(inputs);
@@ -128,6 +130,7 @@ int main(){timing_metadata_roundtrip();
   roundtrip(count,local);roundtrip(count,local,true);
   for(unsigned mode:{1u,2u})roundtrip(count,local,true,mode);
   for(unsigned mode:{1u,2u})roundtrip(count,local,true,mode,true);
+  for(unsigned mode:{0u,1u,2u})roundtrip(count,local,true,mode,true,true);
  }
  corrected_frames_replace_speculative_save_requests();
  std::puts("TH08 confirmed all-seat Replay, boot files, readonly playback, bounds and atomic rejection: PASS");}

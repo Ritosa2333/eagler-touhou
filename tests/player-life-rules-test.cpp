@@ -9,7 +9,7 @@ using namespace th08;
 
 struct LifeActions final:PlayerLifeActions {
     PlayerLifeContext& context;
-    i32 drops[11]{},rectangle_clears=0;
+    i32 drops[11]{},rectangle_clears=0,deaths=0;
     explicit LifeActions(PlayerLifeContext& context):context(context){}
     void update_integrity()override{}
     void dissolve()override{}
@@ -22,7 +22,7 @@ struct LifeActions final:PlayerLifeActions {
     }
     void reset_screen_color()override{}
     void fail_spell()override{}
-    void add_deaths(i32)override{}
+    void add_deaths(i32 amount)override{deaths+=amount;}
     void add_time_orbs(i32 value)override{context.time_orbs+=value;}
     void set_power(i32 value)override{context.power=value;}
     void add_power(i32 value)override{context.power+=value;}
@@ -95,10 +95,40 @@ static void initial_and_reset_resources(){
         if(count==2)assert(banks[2].bombs==0&&banks[2].lives==0&&banks[2].power==0);
     }
 }
+static void challenge_deaths(){
+    PlayerLifeState state{};PlayerLifeContext context{};PlayerMovementState movement{};AnmVm animation{};
+    context.challenge_mode=true;context.lives=0;context.power=128;context.bombs=0;context.character=2;
+    LifeActions actions(context);PlayerLife life(state,context,movement,animation,actions);
+    ShotProfile profile{};profile.initial_bombs=3;profile.deathbomb_limit=6;
+    for(i32 death=1;death<=20;++death){
+        state.state=2;state.predead_count=1;
+        assert(!life.resolve_death(profile));
+        assert(actions.drops[2]==death&&actions.drops[0]==5*death&&actions.drops[4]==0);
+        assert(actions.deaths==death);
+        state.timer.set(30);assert(life.resolve_death(profile));
+        assert(context.lives==0&&context.bombs==0&&context.game_over==0&&state.state==1);
+        state.timer.set(30);life.respawn(profile);assert(state.state==3);
+    }
+}
+static void shared_bomb_during_respawn(){
+    PlayerLifeState state{};PlayerLifeContext context{};PlayerMovementState movement{};AnmVm animation{};
+    LifeActions actions(context);PlayerLife life(state,context,movement,animation,actions);ShotProfile profile{};
+    state.state=1;state.team_bomb_protection.set(450);
+    for(int i=0;i<30;++i)life.update_invincibility({});
+    assert(state.state==1&&state.timer.current==30&&state.team_bomb_protection.current==420);
+    life.respawn(profile);life.update_invincibility({});
+    assert(state.state==3&&state.timer.current==419);
+    life.die();assert(state.state==3&&state.team_bomb_protection.current==419);
+    for(int i=0;i<419;++i)life.update_invincibility({});
+    assert(state.state==0&&state.team_bomb_protection.current==0);
+    life.die();assert(state.state==2);
+}
 #endif
 int main(){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     initial_and_reset_resources();
+    challenge_deaths();
+    shared_bomb_during_respawn();
 #endif
     for(i32 initial:{2,3,4})for(i32 bombs:{0,1,8})for(i32 power:{0,16,17,128})
         for(u8 character:{u8(0),u8(2),u8(8),u8(9)})ordinary_death(initial,bombs,power,character);

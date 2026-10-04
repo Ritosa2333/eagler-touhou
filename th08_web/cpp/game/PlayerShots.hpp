@@ -53,7 +53,7 @@ public:
     bool update();
     bool hit_callback(PlayerShot& shot,const Vec3& position);
     i32 damage(const Vec3& position,const Vec3& size,i32& time_items,i32* bomb_hit);
-    void draw(bool impact,const Vec2& screen_offset);
+    void draw(bool impact,const Vec2& screen_offset,u8 proximity_alpha=255);
     void draw_trail(PlayerShot& shot,const Vec2& screen_offset);
 private:
     PlayerShotsState& state;Rng& rng;

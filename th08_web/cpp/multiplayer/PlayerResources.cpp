@@ -17,7 +17,7 @@ PlayerResourceView::PlayerResourceView(GameGlobals& shared, PilotResources& pilo
      bombs_used(pilot.bombs_used),bombs_used_stage(pilot.bombs_used_stage),power(pilot.power){}
 
 void PlayerValues::set_lives(i32 value){resources.lives=Extended::from_int(value).to_float();}
-void PlayerValues::set_bombs(i32 value){resources.bombs=Extended::from_int(value).to_float();}
+void PlayerValues::set_bombs(i32 value){resources.bombs=resources.pilot.challenge_mode?0:Extended::from_int(value).to_float();}
 void PlayerValues::set_power(i32 value){
 #if defined(TH_MULTIPLAYER_FIXTURES) || defined(TH_MULTIPLAYER_RESOURCE_TRACE)
     multiplayer::diagnostic::Scope trace("power.set",multiplayer::diagnostic::Seat(&resources.pilot),value);
@@ -35,6 +35,7 @@ bool PlayerValues::add_lives(i32 value){
     return true;
 }
 bool PlayerValues::add_bombs(i32 value){
+    if(resources.pilot.challenge_mode){resources.bombs=0;return true;}
     resources.bombs=(number(resources.bombs)+Extended::from_int(value)).to_float();
     return true;
 }

@@ -48,6 +48,7 @@ GameplayScene::GameplayScene(GameplaySession& s,TextureStore& t,AnmLibrary& l,An
     projectile_pool.reset();hud.implementation=&display;globals.gui=&hud;globals.live_values=this;enemies.bind_native(native_scene);player_services.bind(player_world);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     for(u32 seat=1;seat<3;++seat)guest_pilots[seat-1]=std::make_unique<GuestPilot>(*this,seat);
+    player_world.roster=&roster;
     roster.bind(0,player,s.pilot_views[0],s.pilot_values[0],s.gauge);
     for(u32 seat=1;seat<3;++seat){
         roster.bind(seat,pilot(seat),s.pilot_views[seat],s.pilot_values[seat],s.guest_gauges[seat-1]);
@@ -55,6 +56,19 @@ GameplayScene::GameplayScene(GameplaySession& s,TextureStore& t,AnmLibrary& l,An
     }
     bullets.bind_roster(roster);
     enemies.bind_roster(roster);
+    effect_system.player_view=this;
+    effect_system.player_view_alpha=[](void* owner,i32 seat)->u8{
+        auto& scene=*static_cast<GameplayScene*>(owner);const auto local=scene.session.local_player;
+        if(scene.session.netplay.ReadOnly()||seat==i32(local)||!scene.roster.eligible(local)||!scene.roster.eligible(seat))return 255;
+        const auto& a=scene.pilot(seat).status().motion.movement.position;
+        const auto& b=scene.pilot(local).status().motion.movement.position;
+        return multiplayer::player_proximity_alpha(a.x-b.x,a.y-b.y);
+    };
+    enemies.bind_familiar_view(this,[](void* owner)->i32{
+        auto& scene=*static_cast<GameplayScene*>(owner);const auto local=scene.session.local_player;
+        if(scene.session.netplay.ReadOnly()||local>=scene.session.player_count)return -1;
+        return local?scene.session.guest_gauges[local-1].youkai():scene.session.gauge.youkai();
+    });
 #endif
 }
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -240,6 +254,7 @@ JobResult GameplayScene::update_player(){
         // different display settings could start from different canonical
         // worlds before any network input differed.
         simulation.status().input.always_hitbox=1;
+        session.pilot_resources[seat].challenge_mode=session.multiplayer_session.challenge_mode;
         if(!services.prepare())return JobResult::Error;
         const bool updated=cooperation.seats[seat].spirit
             ?simulation.update_spirit(cooperation.seats[seat].drift_x,cooperation.seats[seat].drift_y)
@@ -434,6 +449,8 @@ bool GameplayScene::load(const GameplayLoad& wanted,bool initialize_values){
         for(u32 seat=0;seat<session.player_count;++seat){
             auto& bank=session.pilot_resources[seat];
             if(fresh){bank.reset();multiplayer::begin_base_life(bank,session.numbers.lives,session.numbers.power,pilot(seat).profile(false).initial_bombs);}
+            bank.challenge_mode=session.multiplayer_session.challenge_mode;
+            if(bank.challenge_mode)bank.bombs=0;
             bank.deaths_stage=bank.bombs_used_stage=0;bank.gauge_copy=bank.gauge;
             pilot_services(seat).sync_values();
         }
