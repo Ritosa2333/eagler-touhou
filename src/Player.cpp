@@ -395,7 +395,7 @@ Player *SelectLifeTransferReceiver(const Player *giver)
         if (!best || (revivable && !bestRevivable) ||
             (revivable == bestRevivable && lives < bestLives) ||
             (revivable == bestRevivable && lives == bestLives &&
-             playerId > best->initParam))
+             playerId < best->initParam))
         {
             best = candidate;
             bestRevivable = revivable;
@@ -594,6 +594,20 @@ void PrepareMultiplayerStageRevival(Player *player)
         g_Supervisor.curState == SUPERVISOR_STATE_GAMEMANAGER_REINIT &&
         player->playerState == PLAYER_STATE_REVIVABLE)
         SetPlayerBombs(player->initParam, 2);
+}
+
+void UpdateTeamBombProtection(Player *player)
+{
+    if (!MultiplayerGameplay::IsMultiplayer() || player->teamBombProtectionTimer.AsFrames() <= 0) return;
+    player->teamBombProtectionTimer.Decrement(1);
+    const i32 remaining = player->teamBombProtectionTimer.AsFrames();
+    if (remaining > 0 && (player->playerState == PLAYER_STATE_ALIVE ||
+                          player->playerState == PLAYER_STATE_INVULNERABLE) &&
+        (player->playerState == PLAYER_STATE_ALIVE || player->invulnerabilityTimer.AsFrames() < remaining))
+    {
+        player->playerState = PLAYER_STATE_INVULNERABLE;
+        player->invulnerabilityTimer.SetCurrent(remaining);
+    }
 }
 
 void UpdateLifeTransfer(Player *giver)
@@ -1159,11 +1173,13 @@ ChainCallbackResult Player::OnUpdate(Player *p)
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     const bool multiplayer = MultiplayerGameplay::IsMultiplayer();
     const i32 livesRemaining = multiplayer ? GetPlayerLives(p->initParam) : g_GameManager.livesRemaining;
+    const bool canRespawn = livesRemaining > 0 || MultiplayerGameplay::IsChallengeMode();
     const i32 bombsRemaining = multiplayer ? GetPlayerBombs(p->initParam) : g_GameManager.bombsRemaining;
     const i32 minRequiredDeathbombTimer =
         (PlayerUsedTouch(p) && !PlayerUsedTouchToBomb(p)) ? Touch::DEATHBOMB_TOLERANCE : 0;
 #else
     const i32 livesRemaining = g_GameManager.livesRemaining;
+    const bool canRespawn = livesRemaining > 0;
     const i32 bombsRemaining = g_GameManager.bombsRemaining;
     const i32 minRequiredDeathbombTimer =
         (Touch::WasUsedThisRun() && !Touch::UsedTouchToBomb()) ? Touch::DEATHBOMB_TOLERANCE : 0;
@@ -1257,7 +1273,7 @@ ChainCallbackResult Player::OnUpdate(Player *p)
             if (p->respawnTimer == 0)
             {
                 g_GameManager.powerItemCountForScore = 0;
-                if (livesRemaining > 0)
+                if (canRespawn)
                 {
                     g_ItemManager.SpawnItem(&p->positionCenter, ITEM_POWER_BIG, 2);
                     g_ItemManager.SpawnItem(&p->positionCenter, ITEM_POWER_SMALL, 2);
@@ -1359,7 +1375,7 @@ ChainCallbackResult Player::OnUpdate(Player *p)
                     ANM_SCRIPT_PLAYER_IDLE
 #endif
                 );
-                if (livesRemaining <= 0)
+                if (!canRespawn)
                 {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                     if (multiplayer)
@@ -1393,11 +1409,18 @@ ChainCallbackResult Player::OnUpdate(Player *p)
                     // th06_track_miss is immediately before the stock
                     // decrement, after the deathbomb window has expired.
                     PracticeRuntime::RecordTrackerMiss();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+                    if (MultiplayerGameplay::IsChallengeMode())
+                        ++g_MultiplayerContributionStats[p->initParam].challengeDeaths;
+#endif
                     if (!PracticeRuntime::OverlayInfiniteLives())
                     {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
                         if (multiplayer)
-                            SetPlayerLives(p->initParam, livesRemaining - 1);
+                        {
+                            if (!MultiplayerGameplay::IsChallengeMode())
+                                SetPlayerLives(p->initParam, livesRemaining - 1);
+                        }
                         else
 #endif
                             g_GameManager.livesRemaining--;
@@ -1481,6 +1504,7 @@ ChainCallbackResult Player::OnUpdate(Player *p)
         p->invulnerabilityTimer.Tick();
     }
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    UpdateTeamBombProtection(p);
     if (multiplayer && p->playerState == PLAYER_STATE_REVIVABLE)
         UpdateRevivableState(p);
 #endif
@@ -2486,7 +2510,14 @@ void Player::DrawBullets(Player *p)
         }
         const ZunVec3 savedPos = bullets->sprite.pos;
         bullets->sprite.pos = bullets->prevPosition.Lerp(bullets->position, g_RenderAlpha);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        const ZunColor shotColor = bullets->sprite.color, shotPreviousColor = bullets->sprite.prevColor;
+        ClampVmAlpha(&bullets->sprite, GetPlayerOverlapAlpha(p));
+#endif
         g_AnmManager->Draw2(&bullets->sprite);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        bullets->sprite.color = shotColor; bullets->sprite.prevColor = shotPreviousColor;
+#endif
         bullets->sprite.pos = savedPos;
         bullets->sprite.rotation.z = savedRotationZ;
         bullets->sprite.prevRotation.z = savedPrevRotationZ;
@@ -2516,7 +2547,14 @@ void Player::DrawBulletExplosions(Player *p)
         const ZunVec3 savedPos = bullets->sprite.pos;
         bullets->sprite.pos = bullets->prevPosition.Lerp(bullets->position, g_RenderAlpha);
         bullets->sprite.pos.z = 0.4f;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        const ZunColor shotColor = bullets->sprite.color, shotPreviousColor = bullets->sprite.prevColor;
+        ClampVmAlpha(&bullets->sprite, GetPlayerOverlapAlpha(p));
+#endif
         g_AnmManager->Draw2(&bullets->sprite);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        bullets->sprite.color = shotColor; bullets->sprite.prevColor = shotPreviousColor;
+#endif
         bullets->sprite.pos = savedPos;
         bullets->sprite.rotation.z = savedRotationZ;
         bullets->sprite.prevRotation.z = savedPrevRotationZ;
@@ -2978,6 +3016,9 @@ void Player::ScoreGraze(const ZunVec3 *center) const
 
 void Player::Die()
 {
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (MultiplayerGameplay::IsMultiplayer() && this->teamBombProtectionTimer.AsFrames() > 0) return;
+#endif
     int curLaserTimerIdx;
 
     g_EnemyManager.spellcardInfo.isCapturing = 0;

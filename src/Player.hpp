@@ -273,6 +273,7 @@ struct Player
     i32 lifeGiveTargetToken;
     i32 powerGiveTaps;
     i32 powerGiveWindow;
+    ZunTimer teamBombProtectionTimer;
 #endif
     ChainElem *chainCalc;
     ChainElem *chainDraw1;

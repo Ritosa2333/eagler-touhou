@@ -21,6 +21,7 @@ struct SessionState
     u8 playerCount = 1;
     u8 localPlayer = 0;
     bool showStagePlayerNames = false;
+    bool challengeMode = false;
     bool showContributionStats = true;
     std::array<PlayerSlot, TH06_MULTI_MAX_PLAYERS> players{};
 };
@@ -32,6 +33,7 @@ bool Configure(const SessionState &state);
 const SessionState &GetState();
 
 bool IsMultiplayer();
+bool IsChallengeMode();
 u8 GetPlayerCount();
 u8 GetLocalPlayerSlot();
 bool IsPlayerActive(u8 playerId);

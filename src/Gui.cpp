@@ -1663,6 +1663,12 @@ void Gui::DrawGameScene()
                 continue;
             const f32 blockY = multiplayerHudBaseY + multiplayerHudRowStep * playerId;
             vm = &this->impl->vms[16];
+            if (MultiplayerGameplay::IsChallengeMode())
+            {
+                ZunVec3 countPos(532.0f + multiplayerHudOffsetX, blockY, 0.49f);
+                g_AsciiManager.AddFormatText(&countPos, "%u", g_MultiplayerContributionStats[playerId].challengeDeaths);
+                continue;
+            }
             for (idx = 0, xPos = 532.0f + multiplayerHudOffsetX;
                  idx < GetPlayerLives(static_cast<u8>(playerId)); ++idx, xPos += resourceIconStep)
             {

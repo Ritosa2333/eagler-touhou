@@ -12,6 +12,8 @@ namespace MultiplayerGameplay
 {
 bool multiplayerTest = false;
 bool IsMultiplayer() { return multiplayerTest; }
+bool challengeTest = false;
+bool IsChallengeMode() { return multiplayerTest && challengeTest; }
 }
 
 int main()
@@ -34,6 +36,11 @@ int main()
     assert(GetPlayerLives(1) == 1);
     assert(GetPlayerBombs(2) == 0);
     assert(GetPlayerPower(1) == 96);
+    MultiplayerGameplay::multiplayerTest = MultiplayerGameplay::challengeTest = true;
+    SetPlayerBombs(0, 3); SetPlayerBombs(1, 2);
+    assert(GetPlayerBombs(0) == 0 && GetPlayerBombs(1) == 0);
+    assert(GetPlayerLives(0) == 2 && GetPlayerLives(1) == 1);
+    MultiplayerGameplay::multiplayerTest = MultiplayerGameplay::challengeTest = false;
 
     SetPlayerLives(0, 4);
     SetPlayerBombs(0, 5);
@@ -75,7 +82,7 @@ int main()
     SetPlayerBombs(0, 4);
     ResetMultiplayerPlayerResources();
     for (u8 playerId = 0; playerId < TH06_MULTI_MAX_PLAYERS; ++playerId)
-        assert(GetPlayerBombs(playerId) == 1);
+        assert(GetPlayerBombs(playerId) == 2);
     g_GameManager.isInReplay = 1;
     SetPlayerBombs(0, 5);
     ResetMultiplayerPlayerResources();

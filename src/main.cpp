@@ -165,6 +165,9 @@ static ChainCallbackResult StartNetplayGame(MainMenu *menu)
     gameplaySession.playerCount = static_cast<u8>(requestedPlayerCount);
     gameplaySession.localPlayer = static_cast<u8>(localSlot);
     gameplaySession.showStagePlayerNames = true;
+#ifdef __EMSCRIPTEN__
+    gameplaySession.challengeMode = EM_ASM_INT({ return Module.eaglerOptions?.netplayChallengeMode === true ? 1 : 0; }) != 0;
+#endif
     for (i32 playerId = 0; playerId < requestedPlayerCount; ++playerId)
     {
         i32 character = playerId == 0 ? CHARA_REIMU : CHARA_MARISA;

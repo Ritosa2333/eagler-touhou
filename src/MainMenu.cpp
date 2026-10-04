@@ -1644,6 +1644,7 @@ i32 MainMenu::ReplayHandling()
                 session.localPlayer = replayConfig.localPlayer;
                 session.showStagePlayerNames = true;
                 session.showContributionStats = replayConfig.showContributionStats;
+                session.challengeMode = replayConfig.challengeMode;
                 for (u8 playerId = 0; playerId < replayConfig.playerCount; ++playerId)
                 {
                     session.players[playerId].active = true;

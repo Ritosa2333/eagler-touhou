@@ -33,6 +33,7 @@ i32 GetPlayerLives(u8 playerId)
 
 i32 GetPlayerBombs(u8 playerId)
 {
+    if (MultiplayerGameplay::IsChallengeMode()) return 0;
     MultiplayerPlayerResources *resources = GetSidecarResources(playerId);
     return resources ? resources->bombsRemaining : g_GameManager.bombsRemaining;
 }
@@ -68,6 +69,7 @@ void SetPlayerLives(u8 playerId, i32 amount)
 
 void SetPlayerBombs(u8 playerId, i32 amount)
 {
+    if (MultiplayerGameplay::IsChallengeMode()) amount = 0;
     MultiplayerPlayerResources *resources = GetSidecarResources(playerId);
     if (resources)
         resources->bombsRemaining = amount;

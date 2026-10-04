@@ -1,4 +1,7 @@
 #include "BombData.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "multiplayer/GameplaySession.hpp"
+#endif
 
 #include <cmath>
 
@@ -9,6 +12,35 @@
 #include "ScreenEffect.hpp"
 #include "i18n.hpp"
 #include "utils.hpp"
+
+static void GrantBombInvulnerability(Player* player, i32 frames)
+{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (!MultiplayerGameplay::IsMultiplayer() || player->playerState != PLAYER_STATE_INVULNERABLE ||
+        player->invulnerabilityTimer.AsFrames() < frames)
+#endif
+    player->invulnerabilityTimer.SetCurrent(frames);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if (!MultiplayerGameplay::IsMultiplayer()) return;
+    for (u8 seat = 0; seat < MultiplayerGameplay::GetPlayerCount(); ++seat)
+    {
+        Player* teammate = GetPlayerById(seat);
+        if (!teammate || !IsPlayerGameplayActive(seat) ||
+            teammate->playerState == PLAYER_STATE_REVIVABLE ||
+            teammate->playerState == PLAYER_STATE_ELIMINATED) continue;
+        if (teammate->teamBombProtectionTimer.AsFrames() < frames)
+            teammate->teamBombProtectionTimer.SetCurrent(frames);
+        if (teammate == player) continue;
+        if (teammate->playerState != PLAYER_STATE_ALIVE &&
+            teammate->playerState != PLAYER_STATE_INVULNERABLE) continue;
+        const i32 remaining = teammate->playerState == PLAYER_STATE_INVULNERABLE ?
+            teammate->invulnerabilityTimer.AsFrames() : 0;
+        teammate->playerState = PLAYER_STATE_INVULNERABLE;
+        if (remaining < frames)
+            teammate->invulnerabilityTimer.SetCurrent(frames);
+    }
+#endif
+}
 
 extern const BombData g_BombData[4] = {
     /* ReimuA  */ {BombData::BombReimuACalc, BombData::BombReimuADraw},
@@ -54,7 +86,7 @@ void BombData::BombReimuACalc(Player *player)
             Localization::StringById("th06 Bomb Reimu A", TH_REIMU_A_BOMB_NAME),
             GetBombPlayerId(player));
         player->bombInfo.duration = 300;
-        player->invulnerabilityTimer.SetCurrent(360);
+        GrantBombInvulnerability(player, 360);
 
         for (i = 0; i < 8; i = i + 1)
         {
@@ -317,7 +349,7 @@ void BombData::BombReimuBCalc(Player *player)
             Localization::StringById("th06 Bomb Reimu B", TH_REIMU_B_BOMB_NAME),
             GetBombPlayerId(player));
         player->bombInfo.duration = 140;
-        player->invulnerabilityTimer.SetCurrent(200);
+        GrantBombInvulnerability(player, 200);
         bombSprite = player->bombInfo.sprites[0];
 
         for (i = 0; i < 4; i++, bombSprite++)
@@ -434,7 +466,7 @@ void BombData::BombMarisaACalc(Player *player)
             Localization::StringById("th06 Bomb Marisa A", TH_MARISA_A_BOMB_NAME),
             GetBombPlayerId(player));
         player->bombInfo.duration = 250;
-        player->invulnerabilityTimer.SetCurrent(300);
+        GrantBombInvulnerability(player, 300);
 
         starSprite = player->bombInfo.sprites[0];
         for (i = 0; i < ARRAY_SIZE_SIGNED(player->bombInfo.sprites); i++, starSprite++)
@@ -575,7 +607,7 @@ void BombData::BombMarisaBCalc(Player *player)
             Localization::StringById("th06 Bomb Marisa B", TH_MARISA_B_BOMB_NAME),
             GetBombPlayerId(player));
         player->bombInfo.duration = 300;
-        player->invulnerabilityTimer.SetCurrent(360);
+        GrantBombInvulnerability(player, 360);
         bombSprite = player->bombInfo.sprites[0];
         for (i = 0; i < 4; i++, bombSprite++)
         {

@@ -122,6 +122,7 @@ void HashGameManager(Hasher &hash)
     {
         hash.Scalar(stats.enemiesDefeated);
         hash.Scalar(stats.damageDealt);
+        hash.Scalar(stats.challengeDeaths);
     }
     hash.Scalar(g_teamWipeRetryFrames);
 #endif
@@ -371,6 +372,9 @@ void HashPlayer(Hasher &hash, const Player &player)
             HashPlayerBullet(hash, i, player.bullets[i]);
     HashTimer(hash, player.fireBulletTimer);
     HashTimer(hash, player.invulnerabilityTimer);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    HashTimer(hash, player.teamBombProtectionTimer);
+#endif
     hash.Scalar(player.bombInfo.isInUse);
     hash.Scalar(player.bombInfo.duration);
     HashTimer(hash, player.bombInfo.timer);

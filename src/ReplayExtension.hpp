@@ -14,6 +14,7 @@ struct MultiplayerReplayConfig
     u8 difficulty = 1;
     u8 localPlayer = 0;
     bool showContributionStats = true;
+    bool challengeMode = false;
     u8 characters[3] = {};
     u8 shots[3] = {};
     u32 gameplayAbi = 0;
@@ -24,6 +25,7 @@ struct MultiplayerPlayerResourceSnapshot
     i32 lives = 0;
     i32 bombs = 0;
     i32 power = 0;
+    u32 challengeDeaths = 0;
 };
 
 struct MultiplayerContributionSnapshot

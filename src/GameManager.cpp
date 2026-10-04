@@ -506,6 +506,8 @@ ZunResult GameManager::AddedCallback(GameManager *mgr)
                         mgr->currentStage - 1, playerId, &resources))
                     continue;
                 SetPlayerLives(playerId, resources.lives);
+                if (MultiplayerGameplay::IsChallengeMode())
+                    g_MultiplayerContributionStats[playerId].challengeDeaths = resources.challengeDeaths;
                 SetPlayerBombs(playerId, resources.bombs);
                 SetPlayerPower(playerId, resources.power);
                 ReplayExtension::MultiplayerContributionSnapshot contributions;

@@ -541,6 +541,7 @@ ZunResult ReplayManager::AddedCallback(ReplayManager *mgr)
         config.playerCount = MultiplayerGameplay::GetPlayerCount();
         config.difficulty = static_cast<u8>(g_GameManager.difficulty);
         config.localPlayer = MultiplayerGameplay::GetLocalPlayerSlot();
+        config.challengeMode = MultiplayerGameplay::IsChallengeMode();
         config.showContributionStats = MultiplayerGameplay::ShouldShowContributionStats();
         config.gameplayAbi = TH06_MULTI_GAMEPLAY_ABI;
         for (u8 playerId = 0; playerId < config.playerCount; ++playerId)
@@ -553,6 +554,7 @@ ZunResult ReplayManager::AddedCallback(ReplayManager *mgr)
         for (u8 playerId = 0; playerId < config.playerCount; ++playerId)
         {
             resources[playerId].lives = GetPlayerLives(playerId);
+            resources[playerId].challengeDeaths = g_MultiplayerContributionStats[playerId].challengeDeaths;
             resources[playerId].bombs = GetPlayerBombs(playerId);
             resources[playerId].power = GetPlayerPower(playerId);
         }

@@ -117,8 +117,9 @@ constexpr std::size_t MP_LOCAL_PLAYER_OFFSET = 120;
 constexpr std::size_t MP_SESSION_FLAGS_OFFSET = 124;
 constexpr std::size_t MP_COUNTS_OFFSET = 128;
 constexpr u32 MP_SESSION_HIDE_CONTRIBUTION_STATS = 1u;
-constexpr u32 MP_SESSION_FLAGS_MASK = MP_SESSION_HIDE_CONTRIBUTION_STATS;
-constexpr std::size_t MP_STAGE_RESOURCE_BYTES_PER_STAGE = 4 + 3 * 3 * 4;
+constexpr u32 MP_SESSION_CHALLENGE = 2u;
+constexpr u32 MP_SESSION_FLAGS_MASK = MP_SESSION_CHALLENGE | MP_SESSION_HIDE_CONTRIBUTION_STATS;
+constexpr std::size_t MP_STAGE_RESOURCE_BYTES_PER_STAGE = 4 + 3 * 4 * 4;
 constexpr std::size_t MP_STAGE_RESOURCE_BYTES = 7 * MP_STAGE_RESOURCE_BYTES_PER_STAGE;
 constexpr std::size_t MP_STAGE_CONTRIBUTION_BYTES_PER_STAGE = 4 + 3 * 2 * 4;
 constexpr std::size_t MP_STAGE_CONTRIBUTION_BYTES =
@@ -260,9 +261,9 @@ bool FindTrailer(const u8 *bytes, std::size_t size, std::size_t &payloadOffset, 
                 return false;
             for (u32 player = 0; player < 3; ++player)
             {
-                for (u32 field = 0; field < 3; ++field)
+                for (u32 field = 0; field < 4; ++field)
                 {
-                    if (ReadLe32(resourceBytes) >
+                    if (field < 3 && ReadLe32(resourceBytes) >
                         static_cast<u32>(std::numeric_limits<i32>::max()))
                         return false;
                     resourceBytes += 4;
@@ -665,7 +666,8 @@ bool AppendRecording(const char *path)
                   g_RecordMultiplayerConfig.localPlayer);
         WriteLe32(bytes.data() + payloadOffset + MP_SESSION_FLAGS_OFFSET,
                   g_RecordMultiplayerConfig.showContributionStats
-                      ? 0u : MP_SESSION_HIDE_CONTRIBUTION_STATS);
+                      ? (g_RecordMultiplayerConfig.challengeMode ? MP_SESSION_CHALLENGE : 0u)
+                      : MP_SESSION_HIDE_CONTRIBUTION_STATS | (g_RecordMultiplayerConfig.challengeMode ? MP_SESSION_CHALLENGE : 0u));
         for (u32 player = 0; player < 3; ++player)
         {
             const u32 loadout = static_cast<u32>(g_RecordMultiplayerConfig.characters[player]) |
@@ -745,6 +747,8 @@ bool AppendRecording(const char *path)
                 WriteLe32(bytes.data() + cursor, static_cast<u32>(resources.bombs));
                 cursor += 4;
                 WriteLe32(bytes.data() + cursor, static_cast<u32>(resources.power));
+                cursor += 4;
+                WriteLe32(bytes.data() + cursor, resources.challengeDeaths);
                 cursor += 4;
             }
         }
@@ -827,6 +831,7 @@ bool LoadPlayback(const u8 *bytes, std::size_t size)
             static_cast<u8>(ReadLe32(bytes + payloadOffset + MP_LOCAL_PLAYER_OFFSET));
         const u32 sessionFlags =
             ReadLe32(bytes + payloadOffset + MP_SESSION_FLAGS_OFFSET);
+        g_PlaybackMultiplayerConfig.challengeMode = (sessionFlags & MP_SESSION_CHALLENGE) != 0;
         g_PlaybackMultiplayerConfig.showContributionStats =
             (sessionFlags & MP_SESSION_HIDE_CONTRIBUTION_STATS) == 0;
         for (u32 player = 0; player < 3; ++player)
@@ -901,6 +906,8 @@ bool LoadPlayback(const u8 *bytes, std::size_t size)
                 resources.bombs = static_cast<i32>(ReadLe32(bytes + cursor));
                 cursor += 4;
                 resources.power = static_cast<i32>(ReadLe32(bytes + cursor));
+                cursor += 4;
+                resources.challengeDeaths = ReadLe32(bytes + cursor);
                 cursor += 4;
             }
         }
@@ -1281,6 +1288,7 @@ bool DebugRoundTrip(const char *path)
     mpConfig.difficulty = 3;
     mpConfig.localPlayer = 2;
     mpConfig.showContributionStats = false;
+    mpConfig.challengeMode = true;
     mpConfig.gameplayAbi = TH06_MULTI_GAMEPLAY_ABI;
     mpConfig.characters[0] = 0;
     mpConfig.shots[0] = 1;
@@ -1290,9 +1298,9 @@ bool DebugRoundTrip(const char *path)
     mpConfig.shots[2] = 1;
     BeginMultiplayerRecording(mpConfig);
     const MultiplayerPlayerResourceSnapshot stage0Resources[3] = {
-        {2, 3, 64}, {1, 2, 96}, {0, 1, 128}};
+        {2, 3, 64, 0}, {1, 2, 96, 11}, {0, 1, 128, 7}};
     const MultiplayerPlayerResourceSnapshot stage3Resources[3] = {
-        {4, 1, 128}, {2, 0, 32}, {3, 2, 80}};
+        {4, 1, 128, 3}, {2, 0, 32, 29}, {3, 2, 80, 27}};
     CaptureMultiplayerStageResources(0, stage0Resources, 3);
     CaptureMultiplayerStageResources(3, stage3Resources, 3);
     const MultiplayerContributionSnapshot stage0Contributions[3] = {
@@ -1369,15 +1377,16 @@ bool DebugRoundTrip(const char *path)
     const bool multiplayerRoundTrip = multiplayerRead && multiplayerSuffix && multiplayerConfigRead &&
         loadedConfig.playerCount == 3 && loadedConfig.difficulty == 3 &&
         loadedConfig.localPlayer == 2 && !loadedConfig.showContributionStats &&
+        loadedConfig.challengeMode &&
         loadedConfig.gameplayAbi == TH06_MULTI_GAMEPLAY_ABI &&
         loadedConfig.characters[0] == 0 && loadedConfig.shots[0] == 1 &&
         loadedConfig.characters[1] == 1 && loadedConfig.shots[1] == 0 &&
         loadedConfig.characters[2] == 0 && loadedConfig.shots[2] == 1 &&
         multiplayerResourcesRead &&
         loadedStage0Player1.lives == 1 && loadedStage0Player1.bombs == 2 &&
-        loadedStage0Player1.power == 96 &&
+        loadedStage0Player1.power == 96 && loadedStage0Player1.challengeDeaths == 11 &&
         loadedStage3Player2.lives == 3 && loadedStage3Player2.bombs == 2 &&
-        loadedStage3Player2.power == 80 &&
+        loadedStage3Player2.power == 80 && loadedStage3Player2.challengeDeaths == 27 &&
         multiplayerContributionsRead &&
         loadedStage0Contribution1.enemiesDefeated == 7 &&
         loadedStage0Contribution1.damageDealt == 900 &&
