@@ -58,14 +58,16 @@ async function configureNetplay(){
  const identity=new TextEncoder().encode(`th10mp:${url.origin}${url.pathname}:${room}:${run}`);
  const digest=new DataView(await crypto.subtle.digest('SHA-256',identity));
  const low=digest.getUint32(0,true),high=digest.getUint32(4,true)||1;
- const words=[mode?4:3,count,seat,options.netplayDifficulty,options.netplaySeed,low,high,inputDelay];
+ const challenge=options.netplayChallengeMode===true;
+ const words=[challenge?5:mode?4:3,count,seat,options.netplayDifficulty,options.netplaySeed,low,high,inputDelay];
  for(let i=0;i<3;i++){
   const value=loadouts[i]||{character:0,shot:0};
   if(!Number.isInteger(value.character)||value.character<0||value.character>1||
      !Number.isInteger(value.shot)||value.shot<0||value.shot>2)throw Error('Invalid TH10 multiplayer loadout');
   words.push(value.character,value.shot);
  }
- if(mode){if(runtimeBuildWords.length!==4)throw Error('Missing TH10 immutable Runtime identity');words.push(mode,+automatic,reserve,...runtimeBuildWords);}
+ if(mode||challenge){if(runtimeBuildWords.length!==4)throw Error('Missing TH10 immutable Runtime identity');words.push(mode,+automatic,reserve,...runtimeBuildWords);}
+ if(challenge)words.push(1);
  const pointer=core.files_allocate(words.length*4);
  try{
   new Uint32Array(core.memory.buffer,pointer,words.length).set(words);

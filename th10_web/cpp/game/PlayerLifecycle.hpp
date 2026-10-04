@@ -17,6 +17,7 @@ struct PlayerLifecycleEnvironment {
     i32 replay_mode;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     u32 player_count=1;
+    bool challenge_mode=false;
 #endif
 #ifdef TH_ENABLE_THPRAC
     PracticeState* practice=nullptr;

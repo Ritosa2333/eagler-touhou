@@ -39,6 +39,13 @@ void Player::die(PlayerLifecycleEnvironment& env){
     const i32 loss=(difference>>1)+(difference<0?1:0);
     const i32 scaled=static_cast<i32>(static_cast<u32>(loss)*10u);
     economy.item_value=wrapping_add(economy.item_value,scaled/10);if(economy.item_value<5000)economy.item_value=5000;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(env.challenge_mode){
+        if(economy.pilot.challenge_deaths!=0xffffffffu)++economy.pilot.challenge_deaths;
+        // The multiplayer HUD draws this counter; native life icons stay bounded.
+    }else
+#endif
+    {
 #ifdef TH_ENABLE_THPRAC
     // thprac_th10.cpp:2269 (0x426A1C) counts the miss at its own instruction,
     // independent of the F2 life patch at 0x426A15, so a death is recorded even
@@ -50,6 +57,7 @@ void Player::die(PlayerLifecycleEnvironment& env){
 #else
     economy.lives=wrapping_add(economy.lives,-1);if(economy.lives>=0)env.update_lives(economy.lives);
 #endif
+    }
     state=2;reset(state_timer,state_timer_flags,0,env.default_rate);reset(invulnerability,invulnerability_flags,180,env.default_rate);
     animation_file->initialize_script(animation,0,*env.animations,env.manager->started_scripts);
     for(auto& option:options){option.active=0;env.manager->registry.interrupt(option.animations[0],1);env.manager->registry.interrupt(option.animations[1],1);}

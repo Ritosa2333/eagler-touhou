@@ -109,7 +109,7 @@ public:
     bool ConnectSpectator(const char* relayUrl,const char* spectatorId);
     bool PumpNetwork(bool expectsInput);
     bool NetworkEnabled() const { return network_enabled_; }
-    bool PreparingWorld()const{return configured_&&setup_.version>=4&&!playback_&&!spectator_;}
+    bool PreparingWorld()const{return configured_&&setup_.version>=4&&setup_.adonis_mode!=0&&!playback_&&!spectator_;}
     bool AllowsRollback()const{return !playback_&&!spectator_&&setup_.adonis_mode!=unsigned(Netplay::AdonisMode::Delay);}
     Netplay::AdonisMode Mode()const{return Netplay::AdonisMode(setup_.adonis_mode);}
     const SessionSetup& Setup()const{return setup_;}

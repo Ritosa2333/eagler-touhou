@@ -79,6 +79,7 @@ struct World final:HudActions,CallbackReceiver {
     u32 multiplayer_count()const override{return player_count;}
     u32 multiplayer_local_seat()const override{return local_player;}
     const GameEconomy& multiplayer_economy(u32 seat)const override{return pilots[seat].game;}
+    u32 multiplayer_deaths(u32 seat)const override{return pilots[seat].game.pilot.challenge_deaths;}
 #endif
     PlayerProfile* cached_profile=nullptr;ReplayDocument replay_files;MemoryPool replay_memory;
     ReplayWriter replay_writer;ReplayCalendar& calendar;

@@ -104,6 +104,7 @@ void World::advance_loading_step(){if(!loading)return;
     SessionResources env(*this);GameSessionResources{*actors.session,env}.load_step(loading_progress);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if(initializing_pilots&&loading_progress.phase==1){
+        for(u32 seat=0;seat<player_count;++seat)pilots[seat].game.pilot.challenge_deaths=0;
         // Native startup computes initial resources once. Apply that result to
         // every pilot only at a new-run boundary; stage transitions retain them.
         for(u32 seat=1;seat<player_count;++seat){

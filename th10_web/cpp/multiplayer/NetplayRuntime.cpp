@@ -80,7 +80,7 @@ bool NetplayRuntime::ConnectSpectator(const char* relayUrl,const char* spectator
     if(!core_.Reset(core_config(setup_,base_session_id_,0))){transport_.Close();return false;}
     network_now_=network_clock();network_enabled_=true;spectator_=true;
     spectator_retired_=false;spectator_publish_frame_=spectator_receive_frame_=0;
-    spectator_timing_ready_=setup_.version<4;spectator_deadline_=network_now_+45'000;
+    spectator_timing_ready_=setup_.version<4||setup_.adonis_mode==0;spectator_deadline_=network_now_+45'000;
     spectator_frames_.clear();spectator_error_.clear();return true;
 }
 
@@ -265,12 +265,12 @@ bool NetplayRuntime::FeedSpectator(u32 frame){
 bool NetplayRuntime::Configure(const SessionSetup& setup,std::uint64_t sessionId) noexcept {
     if(!setup.configured||!sessionId)return false;
     initial_wait_started_=false;initial_wait_since_=0;initial_wait_error_.clear();
-    const u32 words[]{setup.version>=4?4u:3u,setup.playerCount,setup.localPlayer,setup.difficulty,setup.seed,
+    const u32 words[]{setup.version>=5?5u:setup.version>=4?4u:3u,setup.playerCount,setup.localPlayer,setup.difficulty,setup.seed,
         u32(sessionId),u32(sessionId>>32),setup.input_delay_auto?0u:setup.input_delay,setup.loadouts[0].character,setup.loadouts[0].shot,
         setup.loadouts[1].character,setup.loadouts[1].shot,setup.loadouts[2].character,setup.loadouts[2].shot,
-        setup.adonis_mode,setup.input_delay_auto,setup.prediction_reserve,setup.build[0],setup.build[1],setup.build[2],setup.build[3]};
-    SessionSetup checked{};if(!DecodeSessionSetup(checked,words,setup.version>=4?21:14))return false;
-    if(setup.input_delay>9||setup.measured_prediction>2)return false;
+        setup.adonis_mode,setup.input_delay_auto,setup.prediction_reserve,setup.build[0],setup.build[1],setup.build[2],setup.build[3],setup.challenge_mode};
+    SessionSetup checked{};if(!DecodeSessionSetup(checked,words,setup.version>=5?22:setup.version>=4?21:14))return false;
+    if(setup.input_delay>9||setup.measured_prediction>2||checked.challenge_mode!=setup.challenge_mode)return false;
 
     Netplay::SessionConfig session{};
     session.sessionId = sessionId;
@@ -324,7 +324,7 @@ bool NetplayRuntime::BeginNextRun(SessionSetup& setup,u32 seed) noexcept {
     auto next=setup_;next.sessionId=id;next.seed=seed;next.started=true;
     if(!Configure(next,id))return false;
     if(network_enabled_){channel_.Clear();phase_debt_ms_=0;
-        if(next.version>=4)calibration_.Prepare(gate_.Config(),Netplay::AdonisMode(next.adonis_mode),next.input_delay_auto,next.input_delay,next.prediction_reserve);
+        if(next.version>=4&&next.adonis_mode)calibration_.Prepare(gate_.Config(),Netplay::AdonisMode(next.adonis_mode),next.input_delay_auto,next.input_delay,next.prediction_reserve);
         else if(!channel_.BeginSession(gate_.Config(),network_now_))return false;
     }
     setup_=next;setup=next;generation_=generation;retired_=false;

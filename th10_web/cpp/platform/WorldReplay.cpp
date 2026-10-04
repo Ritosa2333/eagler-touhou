@@ -229,6 +229,7 @@ void World::begin_replay_checkpoint(){
         snap.capture_game(pilots[seat].game);
         snap.extend_index=pilots[seat].game.extend_index;
         cp.reservedPower[seat]=pilots[seat].game.reserved_power;
+        cp.challengeDeaths[seat]=pilots[seat].game.pilot.challenge_deaths;
     }
     replay_checkpoint_pending_valid=true;
 }
@@ -258,6 +259,7 @@ bool World::restore_replay_checkpoint_bootstrap(){
     for(u32 seat=0;seat<player_count;++seat){
         checkpoint->pilots[seat].restore_game(pilots[seat].game,engine.script_random,&engine.speed);
         pilots[seat].game.reserved_power=checkpoint->reservedPower[seat];
+        pilots[seat].game.pilot.challenge_deaths=checkpoint->challengeDeaths[seat];
     }
     engine.script_random=checkpoint->scriptRandom;
     engine.visual_random=checkpoint->visualRandom;
@@ -295,6 +297,7 @@ bool World::finalize_replay_checkpoint(){
         if(!player)return false;
         snap.capture_game(pilot.game);snap.extend_index=pilot.game.extend_index;
         cp.reservedPower[seat]=pilot.game.reserved_power;
+        cp.challengeDeaths[seat]=pilot.game.pilot.challenge_deaths;
         snap.position=player->fixed_position;
         std::memcpy(snap.history,player->position_history,sizeof(snap.history));
         for(int i=0;i<4;++i){

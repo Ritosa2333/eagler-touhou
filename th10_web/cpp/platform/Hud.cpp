@@ -87,7 +87,9 @@ void HudFrame::draw_multiplayer_resources(Gui& gui){
         sprite(7,436.0f,y+34.0f,.8f);
         // Keep the side HUD resource-only. Rescue, Spirit, Power-transfer and
         // wipe state are shown in the playfield/native lifecycle, matching TH07MP.
-        for(i32 icon=0;icon<lives&&icon<9;++icon)
+        if(owner.state.multiplayer_session.challenge_mode){
+            if(write_text){char value[16];std::snprintf(value,sizeof(value),"%u",owner.actions.multiplayer_deaths(seat));text->color=0xffffffff;text->scale={1.25f,1.25f};text->queue(value,{514.0f,y+16.0f,.47f},false);}
+        }else for(i32 icon=0;icon<lives&&icon<9;++icon)
             sprite(18,514.0f+13.0f*float(icon),y+16.0f,.8f);
         const i32 digits[]{power/20+8,gui.power_digits[1].sprite_index,(power%20)*5/10+8,(power%20)*5%10+8};
         const float x[]{514.0f,526.0f,532.0f,545.0f};

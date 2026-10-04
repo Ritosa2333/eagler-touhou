@@ -11,7 +11,9 @@ int main(){
     const auto contract=GameplayContract(first);
     assert(contract!=LegacyGameplayContractV4(first));
     assert(contract!=historical_contract(first,0x10000005u));
-    assert(contract==historical_contract(first,0x10000009u));
+    assert(contract!=historical_contract(first,0x10000009u));
+    auto challenge=first;challenge.challenge_mode=true;
+    assert(GameplayContract(challenge)!=contract);
     assert(contract!=historical_contract(first,0x10000008u));
     assert(contract!=historical_contract(first,0x10000007u));
     assert(contract!=historical_contract(first,0x10000006u));
@@ -45,4 +47,12 @@ int main(){
     SessionSetup timed{};assert(DecodeSessionSetup(timed,v3,14));assert(timed.input_delay==3);
     v3[7]=9;assert(!DecodeSessionSetup(invalid,v3,14));
     assert(!DecodeSessionSetup(invalid,reinterpret_cast<const std::uint32_t*>(1),15));
+    for (unsigned mode=0;mode<=2;++mode) {
+        std::uint32_t v5[]{5,2,0,1,1234,71,0,0,0,0,1,1,0,0,mode,0,2,1,2,3,4,1};
+        SessionSetup rules{};assert(DecodeSessionSetup(rules,v5,22));
+        assert(rules.challenge_mode&&rules.adonis_mode==mode);
+        v5[21]=2;assert(!DecodeSessionSetup(invalid,v5,22));
+        v5[21]=1;v5[15]=1;
+        assert(DecodeSessionSetup(invalid,v5,22)==(mode!=0));
+    }
 }

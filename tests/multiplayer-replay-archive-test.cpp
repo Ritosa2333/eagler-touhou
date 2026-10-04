@@ -254,6 +254,25 @@ static void check_stage_checkpoint_codec(){
     ReplayArchive legacyReloaded;assert(legacyReloaded.Load(legacyRoundtrip.data(),legacyRoundtrip.size()));
     assert(legacyReloaded.Checkpoint(1)&&!legacyReloaded.Checkpoint(1)->activationRandomValid);
 }
+static void check_challenge_checkpoint_codec(){
+    SessionSetup setup;const std::uint32_t words[]{5,2,1,0,222,501,0,0,0,0,1,1,0,0,0,0,2,1,2,3,4,1};
+    assert(DecodeSessionSetup(setup,words,22));
+    th10::ApplicationConfig options{};th10::u16 keys[9]{};options.initialize(keys);
+    ReplayArchive tape;assert(tape.Begin(setup,options));
+    NetplayRuntime runtime,peer;assert(runtime.Reset(setup,501));
+    auto other=setup;other.localPlayer=0;assert(peer.Reset(other,501));handshake(runtime,peer);
+    assert(!runtime.PreparingWorld());
+    assert(runtime.CaptureLocal(0,FrameInput(4)));
+    assert(runtime.SubmitRemote(0,0,FrameInput(1))==RemoteInputResult::Accepted);
+    assert(tape.Stamp(0,1));assert(runtime.MarkSimulated(0,runtime.Prepare(0)));assert(tape.Commit(runtime));
+    auto cp=checkpoint(1,0,2,222);cp.challengeDeaths[0]=11;cp.challengeDeaths[1]=27;
+    assert(tape.CaptureCheckpoint(cp));
+    std::vector<std::uint8_t> bytes;assert(tape.Encode(bytes));
+    ReplayArchive restored;assert(restored.Load(bytes.data(),bytes.size()));
+    assert(restored.Description().setup.challenge_mode&&restored.Description().setup.adonis_mode==0);
+    const auto* loaded=restored.Checkpoint(1);assert(loaded&&loaded->challengeDeaths[0]==11&&loaded->challengeDeaths[1]==27);
+    assert(loaded->pilots[0].lives==cp.pilots[0].lives&&loaded->pilots[1].power==cp.pilots[1].power);
+}
 static void check_extra_checkpoint_extend_limit(){
     SessionSetup setup;const std::uint32_t words[]{1,2,1,4,654,0,0,1,1,0,0};
     assert(DecodeSessionSetup(setup,words,11));
@@ -388,6 +407,7 @@ int main(){
     check_terminal_stage();
     check_seek_after_generation();
     check_stage_checkpoint_codec();
+    check_challenge_checkpoint_codec();
     check_extra_checkpoint_extend_limit();
     std::puts("TH10 Replay archive, corrected input and generation continuity: PASS");
 }

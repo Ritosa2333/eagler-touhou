@@ -14,6 +14,7 @@ struct SessionSetup {
     std::uint32_t version=3,adonis_mode=0,prediction_reserve=2,measured_prediction=0;
     std::uint32_t build[4]{};
     bool input_delay_auto=false;
+    bool challenge_mode=false;
     Loadout loadouts[3]{};
     bool configured=false,started=false;
 };

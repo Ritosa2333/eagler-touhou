@@ -184,6 +184,7 @@ struct Lifecycle final:PlayerLifecycleEnvironment {
     Lifecycle(World& value,multiplayer::Pilot& seat):world(value),pilot(seat){
         economy=&pilot.game;
         player_count=world.player_count;
+        challenge_mode=world.state.multiplayer_session.challenge_mode;
         manager=&world.engine.manager;
         effect_file=world.actors.bullets->animation_file;
         animations=&world.engine;
@@ -225,6 +226,7 @@ struct Movement final:PlayerMovementEnvironment {
         default_rate=&world.engine.speed;
         always_hitbox=&world.always_hitbox;
         input_keys=&pilot.input_keys;
+        if(world.state.multiplayer_session.challenge_mode)pilot.input_keys&=~2u;
         enemy_count=is_spirit?&spirit_enemy_count:
             (world.actors.enemies?&world.actors.enemies->count:nullptr);
     }
@@ -304,9 +306,10 @@ struct Frame final:PlayerFrameEnvironment {
     Movement movement_env;
     Shooting shooting_env;
     bool spirit;
+    i32 previous_invulnerability;
     explicit Frame(World& value,multiplayer::Pilot& seat,bool is_spirit)
         :world(value),pilot(seat),player(*seat.player),lifecycle_env(value,seat),
-         movement_env(value,seat,is_spirit),shooting_env(value,seat),spirit(is_spirit){
+         movement_env(value,seat,is_spirit),shooting_env(value,seat),spirit(is_spirit),previous_invulnerability(player.invulnerability.current){
         economy=&pilot.game;
         default_rate=&world.engine.speed;
         input_keys=&pilot.input_keys;
@@ -337,7 +340,18 @@ struct Frame final:PlayerFrameEnvironment {
     void cancel_laser_circle(const Vec3& point,float radius) override{
         world.cancel_laser_circle(point,radius,0);
     }
-    void start_bomb() override{world.start_bomb(pilot);}
+    void start_bomb() override{
+        if(world.start_bomb(pilot)<0)return;
+        const i32 frames=player.invulnerability.current;
+        if(previous_invulnerability>frames)
+            set_timer(player.invulnerability,player.invulnerability_flags,previous_invulnerability,&world.engine.speed);
+        for(u32 seat=0;seat<world.player_count;++seat){
+            auto* teammate=world.pilots[seat].player;
+            if(!teammate||teammate==&player||teammate->state==3)continue;
+            if(teammate->invulnerability.current<frames)
+                set_timer(teammate->invulnerability,teammate->invulnerability_flags,frames,&world.engine.speed);
+        }
+    }
     void update_options(Player&) override{world.configure_player(pilot);}
     void update_power(i32 level,i32 fraction) override{
         if(pilot.seat==0&&world.hud)
@@ -698,11 +712,12 @@ u8 World::player_visual_alpha(const AnmVm& vm)const{
     const auto& local=*pilots[local_player].player;
     for(u32 seat=0;seat<player_count;++seat){
         const auto* p=pilots[seat].player;if(!p||seat==local_player)continue;
-        if(vm.animation_file!=p->animation_file)continue;
         const float dx=p->position.x-local.position.x,dy=p->position.y-local.position.y;
         const u8 alpha=multiplayer::player_proximity_alpha(dx,dy);
         if(alpha==255)continue;
         if(id==p->focus_animation)return alpha;
+        for(const auto& shot:p->shots)if(shot.state&&
+            (id==shot.animation||id==shot.secondary_animation))return alpha;
         for(const auto& option:p->options)for(auto animation:option.animations)if(animation&&animation==id)return alpha;
     }
     return 255;
@@ -859,7 +874,7 @@ void World::destroy_bomb(Bomb*){
 }
 
 i32 World::start_bomb(multiplayer::Pilot& pilot){
-    if(!pilot.player||pilot.player->state==3||!pilot.bomb)return -1;
+    if(state.multiplayer_session.challenge_mode||!pilot.player||pilot.player->state==3||!pilot.bomb)return -1;
     BombServices environment(*this,pilot);return pilot.bomb->start(environment);
 }
 

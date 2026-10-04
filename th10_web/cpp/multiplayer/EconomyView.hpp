@@ -28,6 +28,7 @@ struct PilotEconomy {
     std::int16_t power=0;
     u16 reserved_power=0;
     i32 character=0,shot_type=0,lives=0;
+    u32 challenge_deaths=0;
 };
 
 // Native economy methods retain their typed field access. A pilot view binds

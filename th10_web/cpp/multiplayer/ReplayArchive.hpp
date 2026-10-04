@@ -45,6 +45,7 @@ struct ReplayCheckpoint {
     ReplayCheckpointCooperation cooperation{};
     ReplayStage pilots[Netplay::MAX_PLAYERS]{};
     u16 reservedPower[Netplay::MAX_PLAYERS]{};
+    u32 challengeDeaths[Netplay::MAX_PLAYERS]{};
     bool cheatMovementUsed=false;
 };
 
