@@ -11,6 +11,10 @@ html:has(.lobby-page){scrollbar-gutter:stable;background:#111210}
 .lobby-back{display:inline-flex;align-items:center;gap:10px;min-height:44px;margin-bottom:16px;color:var(--lobby-paper);font-size:14px;text-decoration:none}
 .lobby-back img{filter:brightness(0) invert(.94)}
 .lobby-intro{display:flex;align-items:center;justify-content:space-between;gap:28px;margin-bottom:24px;min-height:0}
+.lobby-survey-notice{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 24px;padding:18px 20px;border:1px solid #fce5ec30;border-radius:18px;background:#292a26;color:var(--lobby-paper)}
+.lobby-survey-notice strong{flex:1;min-width:0;line-height:1.65;overflow-wrap:anywhere}
+.lobby-survey-notice .lobby-button{flex:none}
+@media(max-width:480px){.lobby-survey-notice{gap:12px;padding:14px}.lobby-survey-notice .lobby-button{padding-inline:14px}}
 .lobby-intro h1{font-size:clamp(36px,5vw,62px);line-height:1.2;letter-spacing:.02em;margin:0;font-weight:900}
 .lobby-actions{display:flex;gap:14px}
 .lobby-page .lobby-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:11px 24px;border:0;border-radius:16px;background:#30312c;color:var(--lobby-paper);box-shadow:none;cursor:pointer;text-decoration:none;transition:background .18s,transform .18s,opacity .18s;font-weight:700;white-space:nowrap}
