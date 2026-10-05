@@ -97,8 +97,7 @@ u32 Ending::OnUpdate(Ending *arg)
             g_AnmManager->ExecuteScript(&arg->sprites[i]);
         }
 
-        if (arg->hasSeenEnding &&
-            (IS_PRESSED_RAW(TH_BUTTON_SKIP)
+        if ((IS_PRESSED_RAW(TH_BUTTON_SKIP)
 #ifdef TH_DEV_TOOLS
              || g_DebugEndingFastForward
 #endif
@@ -230,17 +229,14 @@ ZunResult Ending::ParseEndFile()
     if (this->timer3 > 0)
     {
         this->timer3--;
-        if (this->minWaitResetFrames != 0)
+        if (WAS_PRESSED_RAW(TH_BUTTON_SELECTMENU) || IS_PRESSED_RAW(TH_BUTTON_SKIP))
+        {
+            this->timer3 = 0;
+            this->minWaitResetFrames = 0;
+        }
+        else if (this->minWaitResetFrames != 0)
         {
             this->minWaitResetFrames--;
-        }
-        else
-        {
-            if (WAS_PRESSED_RAW(TH_BUTTON_SELECTMENU) ||
-                (this->hasSeenEnding && IS_PRESSED_RAW(TH_BUTTON_SKIP)))
-            {
-                this->timer3 = 0;
-            }
         }
         if (this->timer3 <= 0)
         {
@@ -258,17 +254,14 @@ ZunResult Ending::ParseEndFile()
     if (this->timer2 > 0)
     {
         this->timer2--;
-        if (this->minWaitFrames != 0)
+        if (WAS_PRESSED_RAW(TH_BUTTON_SELECTMENU) || IS_PRESSED_RAW(TH_BUTTON_SKIP))
+        {
+            this->timer2 = 0;
+            this->minWaitFrames = 0;
+        }
+        else if (this->minWaitFrames != 0)
         {
             this->minWaitFrames--;
-        }
-        else
-        {
-            if (WAS_PRESSED_RAW(TH_BUTTON_SELECTMENU) ||
-                (this->hasSeenEnding && IS_PRESSED_RAW(TH_BUTTON_SKIP)))
-            {
-                this->timer2 = 0;
-            }
         }
         goto stop;
     }
@@ -354,6 +347,11 @@ ZunResult Ending::ParseEndFile()
                 this->endFileDataPtr++;
                 this->timer3 = ReadEndFileParameter();
                 this->minWaitResetFrames = ReadEndFileParameter();
+                if (WAS_PRESSED_RAW(TH_BUTTON_SELECTMENU) || IS_PRESSED_RAW(TH_BUTTON_SKIP))
+                {
+                    this->timer3 = 1;
+                    this->minWaitResetFrames = 0;
+                }
                 while (*this->endFileDataPtr != '\n' && *this->endFileDataPtr != '\r')
                 {
                     this->endFileDataPtr++;
@@ -367,6 +365,11 @@ ZunResult Ending::ParseEndFile()
                 this->endFileDataPtr++;
                 this->timer2 = ReadEndFileParameter();
                 this->minWaitFrames = ReadEndFileParameter();
+                if (WAS_PRESSED_RAW(TH_BUTTON_SELECTMENU) || IS_PRESSED_RAW(TH_BUTTON_SKIP))
+                {
+                    this->timer2 = 0;
+                    this->minWaitFrames = 0;
+                }
                 while (*this->endFileDataPtr != '\n' && *this->endFileDataPtr != '\r')
                 {
                     this->endFileDataPtr++;

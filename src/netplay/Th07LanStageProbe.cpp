@@ -1694,12 +1694,23 @@ bool PumpBufferedLockstepInput()
         (g_ReconcileActive || g_Core.HasRollbackRequest());
     const std::uint32_t startupLead = g_InitialFrameLagRemaining != 0
         ? g_InitialFrameLag + 1u : 1u;
-    const std::uint32_t captureLead = reconciliationNeedsInputLead
+    const std::uint32_t captureLead = (reconciliationNeedsInputLead || SharedUiNeedsConfirmedInputs())
         ? kMaxIncrementalCaptureLead : startupLead;
     const std::uint32_t maxCaptureFrame =
         g_SimFrame < INVALID_FRAME - captureLead ? g_SimFrame + captureLead : g_SimFrame;
     if (g_NextInputCaptureNs == 0)
         g_NextInputCaptureNs = now;
+    // A rollback may enter shared UI after this callback already captured the
+    // current gameplay slot. Preserve that exact sample rather than recapture.
+    while (g_InputCaptureFrame <= maxCaptureFrame && g_Core.HasLocalCapture(g_InputCaptureFrame))
+        ++g_InputCaptureFrame;
+    // A bounded future tail can outgrow packet redundancy during a stall.
+    // Keep the unadvanced frontier recoverable even without reliable repair.
+    if (g_InputCaptureFrame > g_SimFrame &&
+        g_InputCaptureFrame - g_SimFrame > MAX_REDUNDANT_INPUTS &&
+        (g_DriverTicks % 3u) == 0u && g_Core.HasLocalCapture(g_SimFrame) &&
+        !SendScheduledLocalFrame(g_Core.LocalFrameForCapture(g_SimFrame)))
+        return false;
 
     if (UsePhysicalInput() && now >= g_NextInputCaptureNs &&
         g_InputCaptureFrame <= maxCaptureFrame)
@@ -2704,7 +2715,20 @@ int RunCalcChain()
     // Frame numbers and the neutral lead-in are unchanged. A retry or a replay
     // never samples hardware twice for this logical capture slot.
     bool freshInputSent = false;
-    const bool independentInputClock = g_IncrementalReconcile || g_InitialFrameLag != 0;
+    // Confirmed menus need a wall-clock input pipeline: sending only the next
+    // simulated frame would make each menu tick wait an entire round trip.
+    // Once gameplay resumes, catch-up consumes the already captured tail; no
+    // extra scheduling delay is added to normal gameplay.
+    const bool sharedUi = SharedUiNeedsConfirmedInputs();
+    if (sharedUi && !g_IncrementalReconcile && g_InitialFrameLag == 0 &&
+        g_InputCaptureFrame <= g_SimFrame)
+    {
+        g_InputCaptureFrame = g_SimFrame;
+        g_NextInputCaptureNs = 0;
+        g_HaveLastPhysicalCapture = false;
+    }
+    const bool independentInputClock = g_IncrementalReconcile || g_InitialFrameLag != 0 ||
+        sharedUi || g_InputCaptureFrame > g_SimFrame;
     if (!g_NoRollbackEndpoint && independentInputClock &&
         (!ProbeMode() || g_SimFrame < g_TestFrames) && TransportIsOpen())
     {
@@ -2884,8 +2908,8 @@ int RunCalcChain()
         // Pause/retry UI is rewindable (GameManager + AsciiManager + relevant
         // Supervisor state are in the snapshot), but predicting menu input is
         // needlessly risky: a late Escape can change which UI frame consumes
-        // subsequent keys.  Keep exchanging frames, but wait one round trip
-        // for every remote player's real input while shared UI is active.
+        // subsequent keys. Keep the input pipeline running at 60 Hz, while
+        // executing shared UI only from every player's confirmed input.
         if (SharedUiNeedsConfirmedInputs() &&
             g_Core.ConfirmedThroughAllRemotes() < g_SimFrame)
             return CHAIN_CALLBACK_RESULT_CONTINUE;
