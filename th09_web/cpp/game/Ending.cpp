@@ -44,10 +44,10 @@ void Ending::fade(){
 }
 bool Ending::step(const InputFrame& input){
     auto& s=state;fade();const bool advance=(input.pressed&0x1001)||(skip_enabled&&(input.held&0x100));
-    if(s.page_wait.current>0){s.page_wait.decrement(1,timing);if(!s.page_lock){if(advance)s.page_wait.reset();}else --s.page_lock;
+    if(s.page_wait.current>0){s.page_wait.decrement(1,timing);if(advance){s.page_wait.reset();s.page_lock=0;}else if(s.page_lock)--s.page_lock;
         if(s.page_wait.current<=0){for(i32 n=0;n<15;++n)animations[n].pendingInterrupt=2;s.line=0;}else goto finish;
     }
-    if(s.line_wait.current>0){s.line_wait.decrement(1,timing);if(!s.line_lock){if(advance)s.line_wait.reset();}else --s.line_lock;goto finish;}
+    if(s.line_wait.current>0){s.line_wait.decrement(1,timing);if(advance){s.line_wait.reset();s.line_lock=0;}else if(s.line_lock)--s.line_lock;goto finish;}
     {
         std::string text;
         for(u32 operations=0;operations<4096;++operations){
@@ -76,10 +76,10 @@ bool Ending::step(const InputFrame& input){
             case 'b':{const auto name=string_argument();if(!output.ending_picture(name.c_str())){error="Ending picture: "+name;return false;}break;}
             case 'c':++cursor;if(!number(a))return false;s.text_color=u32(a);break;
             case 'm':if(cursor+1>=script.size())return false;output.ending_music(-1);output.ending_music(i8(script[cursor+1]));output.ending_music(i8(script[cursor+1]));break;
-            case 'r':++cursor;if(!number(a)||!number(b))return false;s.page_wait.reset(a);s.page_lock=b;s.line_wait.reset();s.line_lock=0;if(!skip_line())return false;goto finish;
+            case 'r':++cursor;if(!number(a)||!number(b))return false;s.page_wait.reset(advance?1:a);s.page_lock=advance?0:b;s.line_wait.reset();s.line_lock=0;if(!skip_line())return false;goto finish;
             case 's':++cursor;if(!number(a)||!number(b))return false;s.line_delay=a;s.fast_delay=b;break;
             case 'v':++cursor;if(!number(a))return false;s.y=float(a);break;
-            case 'w':++cursor;if(!number(a)||!number(b))return false;s.line_wait.reset(a);s.line_lock=b;if(!skip_line())return false;goto finish;
+            case 'w':++cursor;if(!number(a)||!number(b))return false;s.line_wait.reset(advance?0:a);s.line_lock=advance?0:b;if(!skip_line())return false;goto finish;
             case 'z':finished=true;return false;
             default:break;
             }
