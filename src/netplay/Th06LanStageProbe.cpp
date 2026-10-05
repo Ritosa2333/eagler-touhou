@@ -80,6 +80,10 @@ std::uint8_t g_LocalPlayer = 0;
 std::uint8_t g_PlayerCount = 2;
 std::uint32_t g_SimFrame = 0;
 std::uint32_t g_DriverTicks = 0;
+std::uint32_t g_UiCaptureFrame = 0;
+std::uint64_t g_NextUiCaptureNs = 0;
+FrameInput g_LastUiCapture;
+bool g_HaveLastUiCapture = false;
 std::uint32_t g_TestFrames = DEFAULT_TEST_FRAMES;
 std::uint32_t g_Sequence = 1;
 std::uint32_t g_LastReceivedSequence = 0;
@@ -270,6 +274,9 @@ void RetireGameplaySession()
     g_Active = false;
     g_Done = false;
     g_SimFrame = 0;
+    g_UiCaptureFrame = 0;
+    g_NextUiCaptureNs = 0;
+    g_HaveLastUiCapture = false;
     g_DriverTicks = 0;
     g_Sequence = 1;
     g_LastReceivedSequence = 0;
@@ -1604,6 +1611,68 @@ bool SendSessionControl(bool forceReady = false)
 
 bool SendScheduledLocalFrame(std::uint32_t frame);
 
+// BEGIN CONFIRMED UI INPUT PUMP
+bool PumpConfirmedUiInput()
+{
+    constexpr std::uint64_t interval = 1000000000ull / 60ull;
+    constexpr std::uint32_t maxLead = 64;
+    const bool sharedUi = SharedUiNeedsConfirmedInputs();
+    if (!sharedUi)
+    {
+        g_NextUiCaptureNs = 0;
+        g_HaveLastUiCapture = false;
+        return g_UiCaptureFrame <= g_SimFrame || (g_DriverTicks % 3u) != 0u ||
+            SendScheduledLocalFrame(g_Core.LocalFrameForCapture(g_UiCaptureFrame - 1u));
+    }
+    const std::uint64_t now = SDL_GetTicksNS();
+    if (g_NextUiCaptureNs == 0)
+    {
+        g_UiCaptureFrame = std::max(g_UiCaptureFrame, g_SimFrame);
+        g_NextUiCaptureNs = now;
+    }
+    const std::uint32_t last = g_SimFrame < INVALID_FRAME - maxLead
+        ? g_SimFrame + maxLead : g_SimFrame;
+    const unsigned due = now >= g_NextUiCaptureNs ? BoundedCaptureBatch(
+        (now - g_NextUiCaptureNs) / interval + 1u, g_UiCaptureFrame, last,
+        ProbeMode() ? g_TestFrames - g_Core.LocalFrameForCapture(0) : INVALID_FRAME, 8) : 0;
+    for (unsigned i = 0; i < due; ++i)
+    {
+        if (!g_Core.HasLocalCapture(g_UiCaptureFrame))
+        {
+            FrameInput input;
+            if (!UsePhysicalInput() || i + 1u == due || !g_HaveLastUiCapture)
+            {
+                input = CaptureLocalInput(g_UiCaptureFrame);
+                g_LastUiCapture = input;
+                g_HaveLastUiCapture = true;
+            }
+            else
+            {
+                // Missed physical slots may continue held buttons, but never
+                // repeat a menu/Bomb edge or a consumed touch displacement.
+                input = g_LastUiCapture;
+                input.buttons &= TH_BUTTON_DIRECTION | TH_BUTTON_FOCUS |
+                    TH_BUTTON_SHOOT | TH_BUTTON_SKIP;
+                input.touchBomb = false;
+                if (input.analogMode == AnalogMode::DirectTouchBegin ||
+                    input.analogMode == AnalogMode::DirectTouchDelta)
+                {
+                    input.analogMode = AnalogMode::DirectTouchDelta;
+                    input.x = input.y = 0;
+                }
+            }
+            if (!g_Core.ScheduleLocalInput(g_UiCaptureFrame, input) ||
+                !SendScheduledLocalFrame(g_Core.LocalFrameForCapture(g_UiCaptureFrame)))
+                return false;
+        }
+        ++g_UiCaptureFrame;
+        g_NextUiCaptureNs += interval;
+    }
+    return g_UiCaptureFrame == 0 || (g_DriverTicks % 3u) != 0u ||
+        SendScheduledLocalFrame(g_Core.LocalFrameForCapture(g_UiCaptureFrame - 1u));
+}
+// END CONFIRMED UI INPUT PUMP
+
 bool SendLocalFrame(std::uint32_t captureFrame)
 {
     const FrameInput input = CaptureLocalInput(captureFrame);
@@ -2411,6 +2480,11 @@ int RunCalcChain()
     if (((!ProbeMode() && !UseReplayPlaybackCycle()) || g_SimFrame < g_TestFrames) &&
         TransportIsOpen())
     {
+        if (!PumpConfirmedUiInput())
+        {
+            Fail("confirmed UI input pump");
+            return -1;
+        }
         const bool localPresent = g_Core.HasLocalCapture(g_SimFrame);
         if (!localPresent && !SendLocalFrame(g_SimFrame))
         {
@@ -2451,8 +2525,8 @@ int RunCalcChain()
         // Pause/retry UI is rewindable (GameManager + AsciiManager + relevant
         // Supervisor state are in the snapshot), but predicting menu input is
         // needlessly risky: a late Escape can change which UI frame consumes
-        // subsequent keys.  Keep exchanging frames, but wait one round trip
-        // for every remote player's real input while shared UI is active.
+        // subsequent keys. The wall-clock pump keeps future inputs arriving
+        // at 60 Hz; shared UI still executes only confirmed input frames.
         if (SharedUiNeedsConfirmedInputs() &&
             g_Core.ConfirmedThroughAllRemotes() < g_SimFrame)
             return CHAIN_CALLBACK_RESULT_CONTINUE;

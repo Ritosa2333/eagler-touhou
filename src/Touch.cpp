@@ -15,6 +15,7 @@
 #include "Gui.hpp"
 #include "PracticeRuntime.hpp"
 #include "ReplayExtension.hpp"
+#include "Supervisor.hpp"
 #ifdef TH_ENABLE_THPRAC
 #include "ThpracImGui.hpp"
 #endif
@@ -121,10 +122,15 @@ void ResetReplayRecordFingerIds()
     g_NextReplayFingerId = 1;
 }
 
+bool IsEndingTouchOwner()
+{
+    return g_Supervisor.curState == SUPERVISOR_STATE_ENDING;
+}
+
 bool IsDialogueTouchOwner()
 {
-    return g_Gui.HasCurrentMsgIdx() &&
-           (g_Gui.IsDialogueSkippable() || g_Gui.IsWaitingForPlayerAdvance());
+    return IsEndingTouchOwner() || (g_Gui.HasCurrentMsgIdx() &&
+           (g_Gui.IsDialogueSkippable() || g_Gui.IsWaitingForPlayerAdvance()));
 }
 
 i32 ReplayRecordFingerId(SDL_FingerID id, bool create)
@@ -229,7 +235,7 @@ void MarkNonReplayableTouchUse()
 
 bool IsGameplayTouchMode()
 {
-    return g_GameManager.isInMenu && !g_GameManager.isInGameMenu &&
+    return !IsEndingTouchOwner() && g_GameManager.isInMenu && !g_GameManager.isInGameMenu &&
            !g_GameManager.isInRetryMenu && !g_GameManager.isInReplay &&
            !g_GameManager.demoMode;
 }
@@ -600,6 +606,17 @@ void Touch::FingerDown(const SDL_TouchFingerEvent &f)
     f32 px, py;
     FingerToWindowPx(f, &px, &py);
 
+    if (IsEndingTouchOwner())
+    {
+        if (!g_DialogueHoldFinger.active)
+        {
+            AssignFinger(&g_DialogueHoldFinger, f.fingerID, px, py);
+            g_DialogueTapStartX = px;
+            g_DialogueTapStartY = py;
+        }
+        return;
+    }
+
     if (!IsGameplayTouchMode())
     {
         ResetDoubleTapBomb();
@@ -814,7 +831,7 @@ u16 Touch::GetButtonBits()
 
     if (g_DialogueTapPending)
     {
-        if (g_Gui.HasCurrentMsgIdx())
+        if (IsEndingTouchOwner() || g_Gui.HasCurrentMsgIdx())
         {
             buttons |= TH_BUTTON_SHOOT;
         }
@@ -877,7 +894,7 @@ u16 Touch::GetButtonBits()
         }
         ReleaseFinger(&g_DialogueHoldFinger);
     }
-    else if (g_DialogueHoldFinger.active && g_Gui.IsDialogueSkippable())
+    else if (g_DialogueHoldFinger.active && (IsEndingTouchOwner() || g_Gui.IsDialogueSkippable()))
     {
         u64 held = SDL_GetTicks() - g_DialogueHoldFinger.start;
 

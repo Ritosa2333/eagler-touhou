@@ -192,16 +192,14 @@ ZunResult Ending::ParseEndFile()
     if (this->timer3 > 0)
     {
         this->timer3.Decrement(1);
-        if (this->minWaitResetFrames != 0)
+        if (WAS_PRESSED(TH_BUTTON_SELECTMENU) || IS_PRESSED(TH_BUTTON_SKIP))
+        {
+            this->timer3.InitializeForPopup();
+            this->minWaitResetFrames = 0;
+        }
+        else if (this->minWaitResetFrames != 0)
         {
             this->minWaitResetFrames--;
-        }
-        else
-        {
-            if (WAS_PRESSED(TH_BUTTON_SELECTMENU) || this->hasSeenEnding && IS_PRESSED(TH_BUTTON_SKIP))
-            {
-                this->timer3.InitializeForPopup();
-            }
         }
         if (this->timer3 <= 0)
         {
@@ -218,16 +216,14 @@ ZunResult Ending::ParseEndFile()
     {
         this->timer2.Decrement(1);
 
-        if (this->minWaitFrames != 0)
+        if (WAS_PRESSED(TH_BUTTON_SELECTMENU) || IS_PRESSED(TH_BUTTON_SKIP))
+        {
+            this->timer2.InitializeForPopup();
+            this->minWaitFrames = 0;
+        }
+        else if (this->minWaitFrames != 0)
         {
             this->minWaitFrames--;
-        }
-        else
-        {
-            if (WAS_PRESSED(TH_BUTTON_SELECTMENU) || this->hasSeenEnding && IS_PRESSED(TH_BUTTON_SKIP))
-            {
-                this->timer2.InitializeForPopup();
-            }
         }
         goto endParsing;
     }
@@ -338,6 +334,11 @@ ZunResult Ending::ParseEndFile()
                 this->endFileDataPtr++;
                 this->timer3.SetCurrent(this->ReadEndFileParameter());   // maxFrames
                 this->minWaitResetFrames = this->ReadEndFileParameter(); // minframes
+                if (WAS_PRESSED(TH_BUTTON_SELECTMENU) || IS_PRESSED(TH_BUTTON_SKIP))
+                {
+                    this->timer3.SetCurrent(1);
+                    this->minWaitResetFrames = 0;
+                }
                 while (this->endFileDataPtr[0] != '\n' && this->endFileDataPtr[0] != '\r')
                 {
                     this->endFileDataPtr++;
@@ -353,6 +354,11 @@ ZunResult Ending::ParseEndFile()
                 this->endFileDataPtr++;
                 this->timer2.SetCurrent(this->ReadEndFileParameter()); // maxFrames
                 this->minWaitFrames = this->ReadEndFileParameter();    // minFrames
+                if (WAS_PRESSED(TH_BUTTON_SELECTMENU) || IS_PRESSED(TH_BUTTON_SKIP))
+                {
+                    this->timer2.SetCurrent(0);
+                    this->minWaitFrames = 0;
+                }
                 while (this->endFileDataPtr[0] != '\n' && this->endFileDataPtr[0] != '\r')
                 {
                     this->endFileDataPtr++;
@@ -608,8 +614,7 @@ ChainCallbackResult Ending::OnUpdate(Ending *ending)
                 g_AnmManager->ExecuteScript(&ending->sprites[idx]);
             }
         }
-        if (ending->hasSeenEnding &&
-            (IS_PRESSED(TH_BUTTON_SKIP)
+        if ((IS_PRESSED(TH_BUTTON_SKIP)
 #ifdef TH_DEV_TOOLS
              || g_DebugEndingFastForward
 #endif
