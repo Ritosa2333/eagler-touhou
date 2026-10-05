@@ -571,7 +571,6 @@ void UpdateLifeTransfer(Player *giver)
         receiver->bulletGracePeriod = 0;
         SetPlayerBombs(receiver->initParam, GetPlayerInitialBombs(receiver->initParam));
         SetPlayerPower(receiver->initParam, 64);
-        SetPlayerLives(receiver->initParam, 0);
         g_Gui.bombDisplayUpdateFrames = g_Gui.powerDisplayUpdateFrames = 2;
         receiver->playerSprite.color.color = 0xffffffff;
         g_Gui.lifeDisplayUpdateFrames = 2;
