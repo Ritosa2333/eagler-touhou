@@ -9,7 +9,7 @@ function fixture(count=2){
  const calibration=createAdonisCalibration({core,getApp:()=>app,getOptions:()=>({netplayAdonisMode:2}),
   emit:(event,fields)=>events.push({event,...fields}),game:'th08',build:'build',target,
   onError:e=>errors.push(e.message),pause:()=>++pauses});
- return {s,target,events,errors,calibration,polls:()=>polls,pauses:()=>pauses,close:()=>{app=0;calibration.stop();}};
+ return {s,target,events,errors,calibration,core,polls:()=>polls,pauses:()=>pauses,close:()=>{app=0;calibration.stop();}};
 }
 for(const count of [2,3]){
  const f=fixture(count);try{
@@ -23,8 +23,24 @@ for(const count of [2,3]){
   assert.equal(f.target.__eaglerNetplayInputDelayFrames,1);
   assert.equal(ready[0].netplayTiming.rttP95Us,60000+(count-1)*1000);
   assert.equal(ready[0].netplayTiming.route,'rtc');
+  assert.equal(f.target.__eaglerPeerTransport.onReceive,null,'Committed measurement releases its receive hook');
+  const completedPolls=f.polls();
+  f.core.multiplayer_network_poll=()=>{throw Error('Gameplay wire must not be polled by the measurement timer');};
+  f.target.__eaglerPeerTransport.error='RTC peer P2 input channel closed';
+  f.calibration.pump();
+  assert.equal(f.polls(),completedPolls);assert.equal(f.errors.length,0);assert.equal(f.pauses(),0);
+  f.core.multiplayer_network_poll=()=>{f.core.restarted=true;return 1;};
   f.calibration.stop();assert.equal(f.target.__eaglerPeerTransport.onReceive,null);
-  f.s[11]++;f.s[1]=3;f.calibration.start();assert.ok(f.polls()>4,'Restart restores polling');
+  f.s[11]++;f.s[1]=3;f.calibration.start();assert.ok(f.core.restarted,'Restart restores polling');
+ }finally{f.close();}
+}
+{
+ const f=fixture();try{
+  f.target.__eaglerPeerTransport.error='RTC peer P3 control channel closed';
+  f.core.multiplayer_network_poll=()=>0;
+  f.calibration.start();
+  assert.deepEqual(f.errors,['RTC peer P3 control channel closed']);
+  assert.equal(f.pauses(),1);
  }finally{f.close();}
 }
 for(const kind of ['hidden','route','native']){

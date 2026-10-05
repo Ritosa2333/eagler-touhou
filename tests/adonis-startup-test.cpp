@@ -218,6 +218,18 @@ static void connection_owner(){
     assert(bytes.size()==40&&AdonisSpectatorTiming::Decode(bytes.data(),bytes.size(),decoded));
     assert(decoded.delay==1&&decoded.prediction==2&&decoded.rttP95Us==70'000);
     bytes[6]=9;assert(!AdonisSpectatorTiming::Decode(bytes.data(),bytes.size(),decoded));
+    const auto choice=host.Startup().Selected();
+    a.closed=true;
+    assert(host.Pump(7'001'000,true)&&!host.Failed());
+    assert(host.Startup().Ready()&&!host.Waiting());
+    a.closed=false;
+    assert(host.Pump(7'002'000,true)&&host.Startup().Ready());
+    assert(host.Startup().Selected().delay==choice.delay);
+    // A terminal wire failure remains fatal to gameplay, not to calibration.
+    a.dead=true;
+    assert(host.Pump(7'003'000,true)&&host.Failed());
+    assert(host.Startup().Ready()&&!host.Startup().Failed());
+    assert(host.Status()[1]==5&&host.Startup().Selected().delay==choice.delay);
 }
 static void connection_waits_for_loading_peer(){
     // RTC can be healthy while a slower endpoint is still creating its world.
