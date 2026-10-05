@@ -95,7 +95,7 @@ std::int8_t select_receiver(const State& state, const FrameInput& input,
         if (best < 0 || (isSpirit && !bestIsSpirit) ||
             (isSpirit == bestIsSpirit && target.lives < state.seats[best].lives) ||
             (isSpirit == bestIsSpirit && target.lives == state.seats[best].lives &&
-             candidate > static_cast<std::uint8_t>(best))) {
+             candidate < static_cast<std::uint8_t>(best))) {
             best = static_cast<std::int8_t>(candidate);
             bestIsSpirit = isSpirit;
         }

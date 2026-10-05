@@ -254,20 +254,32 @@ void each_seat_sees_prior_life_debits_when_selecting_a_recipient() {
     for (int tick = 0; tick < kRescueTicks; ++tick) {
         result = AdvanceOneTick(state, input, {&probe, allocate_item});
     }
-    assert(result.eventCount == 1);
-    assert(probe.callCount == 1);
-    assert(probe.givers[0] == 0 && probe.targets[0] == 2);
-    assert(state.seats[0].lives == 1);
-    assert(state.seats[1].lives == 2 && state.seats[2].lives == 2);
-    // A prior donor's debit changes the following seats' selected recipient.
-    // Changing recipients restarts their continuous 90-tick hold.
-    assert(state.seats[1].rescueTarget == 0 && state.seats[1].rescueTicks == 1);
-    assert(state.seats[2].rescueTarget == 0 && state.seats[2].rescueTicks == 1);
-    for (int tick = 0; tick < kRescueTicks - 1; ++tick)
-        result = AdvanceOneTick(state, input, {&probe, allocate_item});
-    assert(result.eventCount == 1 && probe.callCount == 2);
+    assert(result.eventCount == 3);
+    assert(probe.callCount == 3);
+    assert(probe.givers[0] == 0 && probe.targets[0] == 1);
     assert(probe.givers[1] == 1 && probe.targets[1] == 0);
-    assert(state.seats[2].rescueTarget == 1 && state.seats[2].rescueTicks == 1);
+    assert(probe.givers[2] == 2 && probe.targets[2] == 0);
+    assert(state.seats[0].lives == 1 && state.seats[1].lives == 1 &&
+           state.seats[2].lives == 1);
+    // Later donors see the earlier debit; equal reserves choose the lower seat.
+    for (int tick = 0; tick < kRescueTicks; ++tick)
+        assert(AdvanceOneTick(state, input, {&probe, allocate_item}).eventCount == 0);
+    assert(probe.callCount == 3);
+}
+
+void equal_spirit_reserves_choose_the_lower_seat() {
+    State state = make_state(3);
+    spirit(state, 0);
+    spirit(state, 1);
+    FrameInput input = input_at(0, 500, 1000);
+    TickResult result{};
+    for (int tick = 0; tick < kRescueTicks; ++tick)
+        result = AdvanceOneTick(state, input);
+    assert(result.eventCount == 1);
+    assert(result.events[0].kind == EventKind::SpiritRevived);
+    assert(result.events[0].seat == 2 && result.events[0].targetSeat == 0);
+    assert(state.seats[0].lifeState == LifeState::Alive);
+    assert(state.seats[1].lifeState == LifeState::Spirit);
 }
 
 void sequential_givers_keep_th07_rescue_frame_semantics() {
@@ -453,6 +465,7 @@ int main() {
     three_seat_life_items_commit_synchronously_and_independently();
     failed_item_allocation_costs_no_life_and_retries_after_full_progress();
     each_seat_sees_prior_life_debits_when_selecting_a_recipient();
+    equal_spirit_reserves_choose_the_lower_seat();
     sequential_givers_keep_th07_rescue_frame_semantics();
     life_awards_require_explicit_status_and_clamp_to_th10_cap();
     team_extend_can_bank_a_spirit_life_without_reviving_it();
