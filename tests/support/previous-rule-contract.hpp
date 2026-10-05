@@ -25,3 +25,16 @@ inline std::uint32_t previous_adonis_contract(const th08::multiplayer::SessionSe
     if(setup.version>=6){word(setup.input_delay_auto);word(setup.prediction_reserve);word(setup.measured_prediction);}
     return Netplay::AdonisGameplayAbi(hash,Netplay::AdonisMode(setup.adonis_mode),setup.input_delay);
 }
+// Previous challenge-enabled build, before preserving rescued banked lives.
+inline std::uint32_t previous_life_contract(const th08::multiplayer::SessionSetup& setup){
+    std::uint32_t hash=2166136261u;
+    const auto word=[&](std::uint32_t value){for(int i=0;i<4;++i){hash^=(value>>(8*i))&255u;hash*=16777619u;}};
+    word(0x08000014u);word(setup.challenge_mode);
+    word(setup.version>=6?0x0800000fu:setup.version==5?0x0800000eu:setup.version==4?0x0800000du:0x0800000cu);
+    word(setup.player_count);word(setup.difficulty);word(setup.seed);
+    for(auto value:setup.build)word(value);
+    for(auto value:setup.characters)word(value);
+    if(setup.input_delay||setup.prediction_limit!=8){word(0x54494d31u);word(setup.input_delay);word(setup.prediction_limit);}
+    if(setup.version>=6){word(setup.input_delay_auto);word(setup.prediction_reserve);word(setup.measured_prediction);}
+    return Netplay::AdonisGameplayAbi(hash,Netplay::AdonisMode(setup.adonis_mode),setup.input_delay);
+}

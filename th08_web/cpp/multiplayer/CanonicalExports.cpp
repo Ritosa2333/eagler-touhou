@@ -1,4 +1,5 @@
 #include "../platform/BrowserRuntime.hpp"
+#include "CanonicalContext.hpp"
 #include <cstddef>
 #include <memory>
 
@@ -66,6 +67,7 @@ struct StateHash {
         h.add(p);
     }
     void context(EclContext& c){
+        NormalizeContextPadding(c);
         const auto instruction=[&](const EclInstruction* p){return token<EclInstruction>(offset(p,g.program.data(),g.program.size()));};
         c.instruction=instruction(c.instruction);c.branch_instruction=instruction(c.branch_instruction);
         c.native_instruction=instruction(c.native_instruction);

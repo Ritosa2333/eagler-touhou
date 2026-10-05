@@ -67,7 +67,6 @@ void GameplayScene::update_cooperation(){
             auto& recipient=pilot(target);
             session.pilot_values[target].set_bombs(multiplayer::base_life_bombs(recipient.profile(false).initial_bombs));
             session.pilot_values[target].set_power(64);
-            session.pilot_values[target].set_lives(0);
             recipient.revive_spirit();
             roster.seats[target].available=true;items.set_player_available(target,true);
             pilot_services(target).sync_values();

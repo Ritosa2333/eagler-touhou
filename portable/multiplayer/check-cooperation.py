@@ -124,6 +124,39 @@ def rescue(browser):
             'spirit': initial, 'at_89': pending, 'revived': revived}
 
 
+def spirit_extends_and_banked_rescue(browser):
+    results=[]
+    for count in (2,3):
+        page=boot(browser,list(range(count)))
+        seat=count-1
+        assert call(page,f'multiplayerSmoke.fixtureDie({seat})')==1
+        call(page,'multiplayerSmoke.ticks(40)')
+        before=status(page)
+        lane=5+seat*5
+        assert before[lane]==1 and before[lane+4]==4,before
+        for _ in range(2):assert call(page,'multiplayerSmoke.fixtureTeamExtend()')==1
+        awarded=status(page)
+        for player in range(count):
+            at=5+player*5
+            assert awarded[at+3]==min(8,before[at+3]+2),(before,awarded)
+        assert awarded[lane]==1 and awarded[lane+4]==4,awarded
+        for _ in range(10):assert call(page,'multiplayerSmoke.fixtureTeamExtend()')==1
+        capped=status(page)
+        assert all(capped[5+player*5+3]==8 for player in range(count)),capped
+        assert capped[lane]==1 and capped[lane+4]==4,capped
+        assert call(page,'multiplayerSmoke.fixturePlace(0,180,384)')==1
+        assert call(page,f'multiplayerSmoke.fixturePlace({seat},171,393,1,-1)')==1
+        if count==3:assert call(page,'multiplayerSmoke.fixturePlace(1,340,384)')==1
+        assert call(page,'multiplayerSmoke.commit([4'+',0'*(count-1)+'])')
+        call(page,'multiplayerSmoke.ticks(90)')
+        revived=status(page)
+        assert revived[lane]==0 and revived[lane+3]==8 and revived[lane+4]==3,revived
+        assert revived[8]==7,revived
+        results.append({'players':count,'before':before,'awarded':awarded,'capped':capped,'revived':revived})
+        page.close()
+    return {'case':'spirit-extends-and-banked-rescue','passed':True,'results':results}
+
+
 def wipe_ends_run(browser):
     page = boot(browser)
     positions = call(page, 'multiplayerSmoke.status()')
@@ -316,7 +349,7 @@ with sync_playwright() as playwright:
     browser = playwright.chromium.launch(headless=True, args=['--enable-unsafe-swiftshader'])
     try:
         report['browser']=browser.version
-        cases=(stage_resources_and_loadout_bombs,separated_power_drops,grazed_bullet_still_hits,death_clear_uses_barrier_owner,point_of_collection_owner,no_global_power_conversion,rescue,three_player_rescue,three_player_power_gift,wipe_ends_run,targeted_item_lifetime,full_item_pool,released_gift_and_reuse)
+        cases=(stage_resources_and_loadout_bombs,separated_power_drops,grazed_bullet_still_hits,death_clear_uses_barrier_owner,point_of_collection_owner,no_global_power_conversion,rescue,spirit_extends_and_banked_rescue,three_player_rescue,three_player_power_gift,wipe_ends_run,targeted_item_lifetime,full_item_pool,released_gift_and_reuse)
         selected=[case for case in cases if args.case=='all' or case.__name__==args.case]
         assert selected,'unknown native cooperation case'
         for case in selected:

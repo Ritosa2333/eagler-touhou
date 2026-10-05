@@ -19,3 +19,10 @@ const wasi=new WASI({version:'preview1',args:[],env:{},returnOnExit:true});
 const {instance}=await WebAssembly.instantiate(readFileSync(wasm),{wasi_snapshot_preview1:wasi.wasiImport});
 const code=wasi.start(instance);if(code!==0)throw Error('Netplay contract tests failed: '+code);
 console.log('netplay-runtime: PASS');
+const contextWasm=resolve(out,'canonical-context.wasm');
+execFileSync(compiler,['--target=wasm32-wasip1','-O2','-std=c++17','-fno-exceptions','-fno-rtti',
+  '-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-Wno-invalid-offsetof',
+  resolve(root,'tests/canonical-context-test.cpp'),'-o',contextWasm],{windowsHide:true,stdio:'inherit'});
+const contextWasi=new WASI({version:'preview1',args:[],env:{},returnOnExit:true});
+const contextInstance=await WebAssembly.instantiate(readFileSync(contextWasm),{wasi_snapshot_preview1:contextWasi.wasiImport});
+if(contextWasi.start(contextInstance.instance)!==0)throw Error('Canonical context tests failed');

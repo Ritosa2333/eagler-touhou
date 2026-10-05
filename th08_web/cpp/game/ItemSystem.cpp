@@ -205,7 +205,7 @@ void ItemSystem::removed(ItemState& item){
 void ItemSystem::award_team_extend(){
     bool awarded=false;
     for(auto& owner:owners){
-        if(!owner.available||!owner.resources||!owner.values||!owner.player)continue;
+        if(!owner.resources||!owner.values||!owner.player)continue;
         auto& resources=*owner.resources;
         if(Scalar::truncate(resources.lives)<8){
             failed|=!owner.values->add_lives(1);
