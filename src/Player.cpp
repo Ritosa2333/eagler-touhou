@@ -661,7 +661,6 @@ void UpdateLifeTransfer(Player *giver)
         AddPlayerLives(giver->initParam, -1);
         SetPlayerBombs(receiver->initParam, 2);
         SetPlayerPower(receiver->initParam, 64);
-        SetPlayerLives(receiver->initParam, 0);
         RevivePlayerFromTeammate(receiver);
         g_Gui.flags.flag1 = 2;
         g_Gui.flags.flag0 = 2;

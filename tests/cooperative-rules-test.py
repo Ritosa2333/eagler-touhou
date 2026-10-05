@@ -226,9 +226,9 @@ void test(){
   hold(&g_Players[0],90);assert(lives[0]==0); // Explicit release and repress permits a new paid gift.
  }
  reset();g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=3;
- hold(&g_Players[0],90);assert(lives[1]==0); // Rescue discards banked shared extends.
+ hold(&g_Players[0],90);assert(lives[1]==3); // Rescue preserves banked shared extends.
  reset(2);g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=8;
- hold(&g_Players[0],90);assert(lives[1]==0&&g_Players[1].playerState==PLAYER_STATE_INVULNERABLE);
+ hold(&g_Players[0],90);assert(lives[1]==8&&g_Players[1].playerState==PLAYER_STATE_INVULNERABLE);
  reset();lives[0]=0;g_Players[1].playerState=PLAYER_STATE_SPIRIT;lives[1]=0;
  hold(&g_Players[0],180);assert(g_Players[1].playerState==PLAYER_STATE_SPIRIT);
  for(int stock: {0,1,3}){
