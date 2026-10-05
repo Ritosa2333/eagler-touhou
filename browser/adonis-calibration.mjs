@@ -5,6 +5,7 @@ export function createAdonisCalibration({core,getApp,getOptions,emit,game,build,
   const app=getApp();if(!app||typeof core.multiplayer_calibration_status!=='function')return null;
   return Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_calibration_status(app),32));
  };
+ const stop=()=>{stopped=true;clearTimeout(timer);const transport=target.__eaglerPeerTransport;if(transport?.onReceive===pump)transport.onReceive=null;};
  const pump=()=>{
   if(stopped||busy||!getApp()||!getOptions().netplayAdonisMode||getOptions().netplaySpectator)return;
   busy=true;clearTimeout(timer);
@@ -17,8 +18,12 @@ export function createAdonisCalibration({core,getApp,getOptions,emit,game,build,
     const actual=transport?.route;
     if(actual&&actual!=='connecting'){if(route&&route!==actual)throw Error('测量期间游戏链路改变，请回房间重新开始');route=actual;}
    }
-   if(!core.multiplayer_network_poll(getApp()))throw Error('实际游戏输入通道测量或网络连接失败');
-   s=state();if(!s)return;
+   // Gameplay's normal pump owns the wire after the committed handoff.
+   // This frontend timer only measures and publishes the frozen result.
+   if(s[1]!==5){
+    if(!core.multiplayer_network_poll(getApp()))throw Error(transport?.error||'实际游戏输入通道测量或网络连接失败');
+    s=state();if(!s)return;
+   }
    if(s[1]===6)throw Error('实际游戏输入通道测量失败，请回房间重新开始');
    const players=Array.from({length:s[4]},(_,player)=>{
     const at=12+player*6;return {player,p95Us:s[at],samples:s[at+1],lost:s[at+2],minUs:s[at+3],maxUs:s[at+4],meanUs:s[at+5]};
@@ -34,6 +39,7 @@ export function createAdonisCalibration({core,getApp,getOptions,emit,game,build,
     if(o.netplaySpectator)timing.route='spectator';
     target.__eaglerNetplayTiming=timing;target.__eaglerNetplayInputDelayFrames=s[8];
     target.__eaglerNetplayAdonisMode=s[6];emit('runtime-info',{netplayTiming:timing});
+    stop();
    }else if(s[1]<5&&now-lastNotice>=100){
     lastNotice=now;emit('runtime-info',{netplayTiming:{phase:s[1]<=2?'waiting':s[1]===3?(s[2]?'measuring':'stabilizing'):'negotiating',
      automatic:!!s[7],adonisMode:s[6],probes:s[2],replies:s[3],route,players}});
@@ -42,5 +48,5 @@ export function createAdonisCalibration({core,getApp,getOptions,emit,game,build,
   finally{busy=false;if(!stopped){const s=state();timer=setTimeout(pump,Math.max(1,Math.ceil((s?.[31]||16000)/1000)));}}
  };
  return {start(){stopped=false;key=-1;reported=false;route='';const transport=target.__eaglerPeerTransport;if(transport)transport.onReceive=pump;pump();},
-  stop(){stopped=true;clearTimeout(timer);const transport=target.__eaglerPeerTransport;if(transport?.onReceive===pump)transport.onReceive=null;},pump};
+  stop,pump};
 }

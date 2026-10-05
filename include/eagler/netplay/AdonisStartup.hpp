@@ -52,7 +52,9 @@ public:
     bool Tick(PeerTransport& transport, std::uint64_t nowUs) {
         if (!ObserveClock(nowUs)) return false;
         if (stage_==Stage::Idle) return Fail("Adonis startup was not begun");
-        if (transport.Failed()) return Fail("Adonis startup transport failed");
+        // Once timing is committed, gameplay owns transport failure/recovery.
+        // A dropped link must not poison the frozen calibration report.
+        if (stage_!=Stage::Committed && transport.Failed()) return Fail("Adonis startup transport failed");
         if (stage_==Stage::WaitingPeer && nowUs-begin_>=PeerWaitUs)
             return Fail("Adonis timed out waiting for all player input channels and loaded worlds");
         if (stage_!=Stage::WaitingPeer && stage_!=Stage::Committed && nowUs-measurementBegin_>=MeasurementTimeoutUs)
