@@ -79,6 +79,7 @@ touhou::input::TouchState touch_state(){touhou::input::TouchState s;if(!runtime)
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     auto& a=runtime->app;auto& g=a.game;
     if(a.session.netplay.ReadOnly()){s.context=3;return s;}
+    if(a.supervisor.state.active==i32(th08::Scene::Ending)){s.context=2;return s;}
     if(a.in_game()&&(g.globals.game_flags&8)){s.context=3;return s;}
     if(!a.in_game()||a.loading_game()||!g.ready()||g.paused||g.menus.context.pause_state||(g.globals.game_flags&0x60))return s;
     const auto seat=a.session.local_player;if(seat>=a.session.player_count)return s;
@@ -90,6 +91,7 @@ touhou::input::TouchState touch_state(){touhou::input::TouchState s;if(!runtime)
     s.min_x=p.input.minimum.x;s.min_y=p.input.minimum.y;s.max_x=s.min_x+p.input.extent.x;s.max_y=s.min_y+p.input.extent.y;return s;
 #else
     const auto& a=runtime->app;const auto& g=a.game;const auto& p=g.player_state;
+    if(a.supervisor.state.active==i32(th08::Scene::Ending)){s.context=2;return s;}
     if(a.in_game()&&(g.globals.game_flags&8)){s.context=3;return s;}
     if(!a.in_game()||a.loading_game()||!g.ready()||g.paused||g.menus.context.pause_state||p.context.game_over||(g.globals.game_flags&0x60))return s;
     s.context=g.dialogue.present()?2:1;s.ready=p.life.state!=1&&p.life.state!=2;s.instance=g.globals.stage+1;

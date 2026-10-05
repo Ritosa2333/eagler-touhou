@@ -2,10 +2,12 @@
 #include "TitleMenus.hpp"
 namespace th08 {
 bool TitleContext::IsExtraUnlockedForCharacter(i32 character)const{
+    if(default_all_content_unlocked)return character>=0&&character<12;
     if(character>3)return true;if(character<0)return false;
     for(u32 i=0;i<4;++i)if(clears[character].without_retries[i]&0x4000)return true;return false;
 }
 bool TitleContext::IsSpellPracticeUnlockedForCharacter(i32 character)const{
+    if(default_all_content_unlocked)return character>=0&&character<12;
     if(character>3)return true;if(character<0)return false;
     for(u32 i=0;i<4;++i)if(clears[character].with_retries[i]&0x8000)return true;return false;
 }

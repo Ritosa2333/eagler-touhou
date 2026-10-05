@@ -26,10 +26,10 @@ bool Ending::setup(GameplaySession& session,i32 character,i32 difficulty,i32 sta
     constexpr i32 teams[]{0,1,2,3,0,0,1,1,2,2,3,3};char filename[]{'e','n','d','0',char('0'+teams[character]),flags&16?(stage==7?'c':'b'):'a','.','e','n','d',0};return load(filename);
 }
 bool Ending::parse(){
-    auto& s=state;const bool pressed=(input&4097)&&(input&4097)!=(previous&4097),skip=s.seen&&(input&256);
+    auto& s=state;const bool pressed=(input&~previous&4097)!=0,skip=(input&256)!=0;
     auto finish=[&](){s.elapsed.tick(animations.timing);s.background.y=Scalar::sub(s.background.y,s.scroll);if(s.background.y<=0){s.background.y=0;s.scroll=0;}return !failed;};
-    if(s.reset_wait.current>0){s.reset_wait.decrement(1,animations.timing);if(s.minimum_reset)s.minimum_reset=wrapping_sub(s.minimum_reset,1);else if(pressed||skip)s.reset_wait.set(0);if(s.reset_wait.current<=0){for(i32 i=0;i<15;i++)s.vms[i].pendingInterrupt=2;s.lines=0;}else return finish();}
-    if(s.wait.current>0){s.wait.decrement(1,animations.timing);if(s.minimum_wait)s.minimum_wait=wrapping_sub(s.minimum_wait,1);else if(pressed||skip)s.wait.set(0);return finish();}
+    if(s.reset_wait.current>0){s.reset_wait.decrement(1,animations.timing);if(pressed||skip){s.reset_wait.set(0);s.minimum_reset=0;}else if(s.minimum_reset)s.minimum_reset=wrapping_sub(s.minimum_reset,1);if(s.reset_wait.current<=0){for(i32 i=0;i<15;i++)s.vms[i].pendingInterrupt=2;s.lines=0;}else return finish();}
+    if(s.wait.current>0){s.wait.decrement(1,animations.timing);if(pressed||skip){s.wait.set(0);s.minimum_wait=0;}else if(s.minimum_wait)s.minimum_wait=wrapping_sub(s.minimum_wait,1);return finish();}
     char buffer[160]{};u32 size=0;
     // Original data is finite. Bound malformed chains of @F commands to avoid
     // an imported script monopolizing the application thread.
@@ -48,8 +48,8 @@ bool Ending::parse(){
             case 'M':++s.cursor;actions.fade_music(Extended::from_int(parameter()).to_float());break;
             case 's':++s.cursor;s.line_delay=parameter();s.fast_delay=parameter();break;
             case 'c':++s.cursor;s.text_color=u32(parameter());break;
-            case 'r':++s.cursor;s.reset_wait.set(parameter());s.minimum_reset=parameter();s.wait.set(0);s.minimum_wait=0;if(!newline())return false;return finish();
-            case 'w':++s.cursor;s.wait.set(parameter());s.minimum_wait=parameter();if(!newline())return false;return finish();
+            case 'r':++s.cursor;s.reset_wait.set(parameter());s.minimum_reset=parameter();s.wait.set(0);s.minimum_wait=0;if(pressed||skip){s.reset_wait.set(1);s.minimum_reset=0;}if(!newline())return false;return finish();
+            case 'w':++s.cursor;s.wait.set(parameter());s.minimum_wait=parameter();if(pressed||skip){s.wait.set(0);s.minimum_wait=0;}if(!newline())return false;return finish();
             case '0':case '1':case '2':case '3':++s.cursor;s.fade_mode=command-'0'+1;s.fade_timer=0;s.fade_duration=parameter();break;
             case 'z':return false;
             }
@@ -75,7 +75,7 @@ bool Ending::parse(){
     }
     failed=true;return false;
 }
-JobResult Ending::update(u16 keys,u16 previous_keys){input=keys;previous=previous_keys;for(i32 i=0;i<9;i++){if(!parse())return JobResult::Remove;for(i32 vm=0;vm<15;vm++)animations.execute(state.vms[vm]);if(!state.seen||!(input&256))break;}return invalid()?JobResult::Error:JobResult::Continue;}
+JobResult Ending::update(u16 keys,u16 previous_keys){input=keys;previous=previous_keys;for(i32 i=0;i<9;i++){if(!parse())return JobResult::Remove;for(i32 vm=0;vm<15;vm++)animations.execute(state.vms[vm]);if(!(input&256))break;}return invalid()?JobResult::Error:JobResult::Continue;}
 void Ending::fade(){auto& s=state;switch(s.fade_mode){
     case 1:case 3:if(s.fade_timer>=s.fade_duration){s.fade_mode=0;s.fade_color=0;}else{const i32 alpha=255-signed_bits(u32(s.fade_timer)*255u)/s.fade_duration;s.fade_color=(s.fade_mode==3?0xffffffu:0u)|(u32(alpha)<<24);s.fade_timer=wrapping_add(s.fade_timer,1);}break;
     case 2:case 4:if(s.fade_timer>=s.fade_duration)s.fade_color=s.fade_mode==2?0xff000000:0xffffffff;else{const i32 alpha=signed_bits(u32(s.fade_timer)*255u)/s.fade_duration;s.fade_color=(s.fade_mode==4?0xffffffu:0u)|(u32(alpha)<<24);s.fade_timer=wrapping_add(s.fade_timer,1);}break;

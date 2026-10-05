@@ -1705,6 +1705,7 @@ i32 TitleMenus::OnUpdatePracticeStageSelect()
     case TitleCurrentScreenState_Ready:
         clearInfo = context.clears[context.character]
                         .with_retries[config.difficulty];
+        if (default_all_content_unlocked) clearInfo = 0xff;
 
         /* Make Stage 1 selectable in practice */
         if (clearInfo == 0)
@@ -2056,7 +2057,7 @@ i32 TitleMenus::OnUpdateSpellCardSelect()
                 state.spellCardNameVms[0].fontWidth = 15;
                 state.spellCardNameVms[i].fontHeight = 15;
 
-                if (context.spells[spellCardNumber].game.attempts[SHOT_ALL] == 0 &&
+                if (!default_all_content_unlocked && context.spells[spellCardNumber].game.attempts[SHOT_ALL] == 0 &&
                     context.spells[spellCardNumber].practice.attempts[SHOT_ALL] == 0)
                 {
                     if (spell_difficulty(spellCardNumber) <= EXTRA ||
@@ -2074,7 +2075,7 @@ i32 TitleMenus::OnUpdateSpellCardSelect()
                 else
                 {
                     DrawTextLeft(&state.spellCardNameVms[i], COLOR_TEXT_WHITE, 0,
-                                               Localization::SpellName(u32(spellCardNumber), context.spells[spellCardNumber].name));
+                                               Localization::SpellName(u32(spellCardNumber), context.spells[spellCardNumber].name[0] ? context.spells[spellCardNumber].name : TH_TITLE_SPELLCARD_AVAILABLE));
                 }
 
                 state.spellCardNameVms[i].color1.a = 255;
@@ -2201,10 +2202,10 @@ i32 TitleMenus::OnUpdateSpellCardSelect()
                                                                        TITLE_SPELL_CARD_SPELLCARDS_PER_PAGE];
 
                 /* Why does ZUN use this helper method here, and in the initialization , use direct access? */
-                if (context.HasSpellCardBeenEncountered(spellCardNumber2, SHOT_ALL))
+                if (context.IsSpellCardAvailable(spellCardNumber2))
                 {
                     DrawTextLeft(&state.spellCardNameVms[i2], COLOR_TEXT_WHITE, 0,
-                                               Localization::SpellName(u32(spellCardNumber2), context.spells[spellCardNumber2].name));
+                                               Localization::SpellName(u32(spellCardNumber2), context.spells[spellCardNumber2].name[0] ? context.spells[spellCardNumber2].name : TH_TITLE_SPELLCARD_AVAILABLE));
                 }
                 else
                 {
@@ -2255,10 +2256,7 @@ i32 TitleMenus::OnUpdateSpellCardSelect()
         if (WAS_PRESSED(TH_BUTTON_SHOOT | TH_BUTTON_ENTER))
         {
             spellCardNumber3 = spells_by_stage[context.currentStage][state.cursor];
-            if (context.spells[spellCardNumber3].game.attempts[SHOT_ALL] != 0 ||
-                context.spells[spellCardNumber3].practice.attempts[SHOT_ALL] != 0 ||
-                (spellCardNumber3 >= SPELLCARD_LAST_WORD_START &&
-                 context.IsLastWordSpellCardAttempted(spellCardNumber3)))
+            if (context.IsSpellCardAvailable(spellCardNumber3))
             {
                 actions.sound(SOUND_SELECT, 0);
 
