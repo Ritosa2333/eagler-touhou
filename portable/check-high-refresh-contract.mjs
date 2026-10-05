@@ -44,12 +44,12 @@ assert.match(packageScript,/Production build contains diagnostic export/);
 assert.match(labStart,/package-eagler\.mjs --presentation-lab/);
 assert.match(labServer,/artifacts\/presentation-lab\/runtime/);
 
-// Ordinary/Replay skip expired deadlines. Live MP alone retains bounded debt
-// and uses the shared TH06/07 catch-up start budget.
+// Ordinary/Replay skip expired deadlines. Live MP and spectators with a
+// confirmed backlog use the shared TH06/07 bounded catch-up start budget.
 assert.match(host,/int tick\(\).*runtime->step\(false\)/s);
 assert.match(host,/const bool tick_due=cadence\.advance\(delta\)!=0/);
 assert.match(host,/while\(due&&!result\)/);
-assert.match(host,/Configured\(\)&&!runtime->app.session.netplay.ReadOnly\(\)/);
+assert.match(host,/Configured\(\)&&\s*\(!runtime->app.session.netplay.ReadOnly\(\)\|\|\(runtime->app.session.netplay.Spectator\(\)&&\s*runtime->app.session.netplay.CanStart\(\)&&runtime->network_driver\(\)&&runtime->network_driver\(\)->Network\(\).SpectatorBacklog\(\)>4\)\)/);
 assert.match(host,/Netplay::FrameBudget::CanStartTick/);
 assert.doesNotMatch(host,/for\(unsigned i=0;i<ticks/);
 assert.match(host,/elapsed\+=touhou::sdl::FrameCadence::interval;result=tick\(\)/);
