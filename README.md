@@ -1,3 +1,5 @@
+This repo is uploaded on behalf of [@SteinsGateON](https://space.bilibili.com/34714121).
+
 # TH08 portable
 
 This repository contains the source-only TH08 3.4.0 C++/SDL3 portable and Web implementation.
@@ -75,4 +77,6 @@ checked or written inside this repository.
 
 This repository does not include original Touhou executable, data, music, replay, or save files. A runnable package must be assembled locally from files you are legally allowed to use.
 
-Licensing is component-specific. Keep the notices and licenses beside each bundled component; no blanket license is asserted for the original game or its assets.
+## License
+
+This project is licensed under the MIT License.
