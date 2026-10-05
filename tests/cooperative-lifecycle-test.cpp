@@ -61,7 +61,7 @@ bool seat_order_breaks_equal_resource_ties(){
     input.seats[2].focus=true;
     for(int tick=0;tick<89;++tick)advance(state,input);
     const auto life=advance(state,input);
-    if(!check(life.count==1&&life.events[0].target==1,"equal Spirit lives choose higher seat"))return false;
+    if(!check(life.count==1&&life.events[0].target==0,"equal Spirit lives choose lower seat"))return false;
 
     reset(state,3);input=adjacent();
     input.seats[2].power=20;input.seats[0].power=input.seats[1].power=0;

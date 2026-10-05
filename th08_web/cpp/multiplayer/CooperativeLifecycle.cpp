@@ -20,7 +20,7 @@ std::int8_t recipient(const CooperativeState& state,const CooperativeFrameInput&
         if(!spirit&&(!input.seats[seat].available||!input.seats[seat].can_receive||input.seats[seat].lives>=8))continue;
         if(best<0||(spirit&&!best_spirit)||
            (spirit==best_spirit&&input.seats[seat].lives<input.seats[best].lives)||
-           (spirit==best_spirit&&input.seats[seat].lives==input.seats[best].lives&&seat>std::uint8_t(best))){
+           (spirit==best_spirit&&input.seats[seat].lives==input.seats[best].lives&&seat<std::uint8_t(best))){
             best=std::int8_t(seat);best_spirit=spirit;
         }
     }
