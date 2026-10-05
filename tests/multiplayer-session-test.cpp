@@ -12,6 +12,7 @@ int main(){
     assert(contract!=LegacyGameplayContractV4(first));
     assert(contract!=historical_contract(first,0x10000005u));
     assert(contract!=historical_contract(first,0x10000009u));
+    assert(contract!=historical_contract(first,0x1000000bu));
     auto challenge=first;challenge.challenge_mode=true;
     assert(GameplayContract(challenge)!=contract);
     assert(contract!=historical_contract(first,0x10000008u));

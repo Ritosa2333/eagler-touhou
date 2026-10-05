@@ -7,6 +7,7 @@ import {bindOutsideTouches} from './eagler-host.mjs';
 import {createReplayFilePolicy} from './replay-file-policy.mjs';
 import {normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,ensureSharedFontAlias,installResources as installHostResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError} from './eagler-host.mjs';
 import {initializeSaveStorage,migrateLegacySaves} from './save-storage.mjs';
+import {createSaveSync} from './save-sync.mjs';
 const protocol='eagler-touhou/1',game='th10',query=new URLSearchParams(location.search),canvas=document.querySelector('canvas');
 const runtimeVariant=query.get('runtimeVariant')??'normal',multiplayerRuntime=runtimeVariant==='multiplayer';
 const createAdonisCalibration=multiplayerRuntime?(await import('./adonis-calibration.mjs')).createAdonisCalibration:null;
@@ -90,8 +91,7 @@ const replayFiles=createReplayFilePolicy({game:10,multiplayer:multiplayerRuntime
 }});
 let storage;
 const root=()=>storage.root(language);
-let storageSync=Promise.resolve();
-const sync=populate=>{const current=storageSync.then(()=>new Promise((resolve,reject)=>Module.FS.syncfs(populate,e=>e?reject(e):resolve())));storageSync=current.catch(()=>{});return current;};
+const sync=createSaveSync(()=>Module);
 async function migrateSaves(){
  await migrateLegacySaves(storage,{indexedDB,filesystem:Module.FS,sync,importReplayName:(path,bytes)=>replayFiles.imported(path,bytes)});
 }

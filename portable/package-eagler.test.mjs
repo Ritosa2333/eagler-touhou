@@ -41,6 +41,8 @@ function makeFixture({thprac = false} = {}) {
     write('th10_web/sdl-runtime/' + name, readFileSync(new URL('../th10_web/sdl-runtime/' + name, import.meta.url)));
   write('portable/browser/motion-replay.mjs', 'export const replay = true;');
   write('portable/browser/replay-file-policy.mjs', 'export const replayPolicy = true;');
+  write('third_party/eagler-common/browser/save-sync.mjs', readFileSync(new URL('../third_party/eagler-common/browser/save-sync.mjs', import.meta.url)));
+  write('third_party/eagler-common/browser/adonis-calibration.mjs', readFileSync(new URL('../third_party/eagler-common/browser/adonis-calibration.mjs', import.meta.url)));
   write(join('private-fonts', 'blend.bin'), Buffer.from([1, 2, 3]));
   write(join('private-fonts', 'codepages.bin'), Buffer.from([4, 5]));
 

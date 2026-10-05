@@ -774,14 +774,11 @@ i32 World::draw_player(Player* player){
     const i32 result=draw->draw(environment);
     draw->animation.color=color;
     draw->animation.secondary_color=secondary;
-    if(!high_refresh::render_only&&engine.enhance_local_player_visibility&&!state.netplay_runtime.Spectator()&&
-       !state.netplay_runtime.Playback()&&pilot->seat==local_player&&common.value){
-        auto& text=*common.value;const auto saved_color=text.color;const auto scale=text.scale;
-        const auto camera=text.camera,shadow=text.shadow;
-        char label[8];std::snprintf(label,sizeof(label),"P%u",pilot->seat+1);
-        text.color=0xfff3eee4;text.scale={1,1};text.camera=0;text.shadow=1;
-        text.queue(label,{draw->position.x+239.f,draw->position.y+10.f,.47f},false);
-        text.color=saved_color;text.scale=scale;text.camera=camera;text.shadow=shadow;
+    if(engine.enhance_local_player_visibility&&!engine.suppress_rollback_sprite_output&&
+       !state.netplay_runtime.Spectator()&&!state.netplay_runtime.Playback()&&pilot->seat==local_player){
+        const float x=draw->position.x+224.f,y=draw->position.y+16.f;
+        effects.rectangle({32.f,y-.5f,416.f,y+.5f},0xffffffff);
+        effects.rectangle({x-.5f,16.f,x+.5f,464.f},0xffffffff);
     }
     const auto& rescue=cooperation.seats[pilot->seat];
     if(!high_refresh::render_only&&common.value&&rescue.rescueTarget>=0&&rescue.rescueTicks){

@@ -22,24 +22,31 @@ const hud=read('th10_web/cpp/platform/Hud.cpp');
 
 // BEGIN CADENCE SOURCE CONTRACT
 // Ordinary gameplay keeps the retail single-tick late-callback policy. Live
-// MP has a separate bounded debt-preserving path; it must remain build-guarded.
+// MP retains only a blocked frame; only spectators may catch up in a callback.
 const cadenceRegion=host.slice(host.indexOf('double simulation_delta=delta;'),
  host.indexOf('const bool high=presentation.high_refresh'));
 assert(cadenceRegion,'Cadence source region is missing');
-// This region has only non-nested MP guards. Reject nested directives rather
-// than accidentally inspecting an incorrectly simplified ordinary variant.
-const mpBlocks=[...cadenceRegion.matchAll(/#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY\n([\s\S]*?)#endif/g)];
-assert.equal(mpBlocks.length,3);
-for(const match of mpBlocks)assert.doesNotMatch(match[1],/^\s*#(?:if|else|elif|endif)/m);
-const ordinaryCadence=cadenceRegion.replace(/#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY\n[\s\S]*?#endif/g,'');
-assert.match(ordinaryCadence,/double simulation_delta=delta;/);
-assert.match(ordinaryCadence,/if\(\(tick_due=cadence\.advance\(simulation_delta\)!=0\)\)\{\s*sdl_native_input\(application\);result=application->step\(true\);/);
+const mpPattern=/#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY\n([\s\S]*?)#endif/g;
+const mpBlocks=[...cadenceRegion.matchAll(mpPattern)];
+assert.equal(mpBlocks.length,4);
+for(const match of mpBlocks)assert.doesNotMatch(match[1],/^\s*#(?:if|elif|endif)/m);
+const ordinaryCadence=cadenceRegion.replace(mpPattern,(_,body)=>{
+ const alternatives=body.split(/^#else\n/m);
+ assert(alternatives.length<=2);
+ return alternatives[1]||'';
+});
+assert.match(ordinaryCadence,/tick_due=cadence\.advance\(simulation_delta\)!=0;/);
+assert.match(ordinaryCadence,/if\(tick_due\)\{\s*sdl_native_input\(application\);result=application->step\(true\);/);
 assert.equal((ordinaryCadence.match(/application->step\(true\)/g)||[]).length,1);
 assert.doesNotMatch(ordinaryCadence,/for\s*\(|while\s*\(|Netplay::|IntervalScale|cadence\.debt/);
-assert.match(mpBlocks[0][1],/if\(live\)\s*simulation_delta\/=runtime\.Channel\(\)\.IntervalScale\(\);/);
-assert.match(mpBlocks[1][1],/Netplay::FrameBudget::CanStartTick/);
-assert.match(mpBlocks[1][1],/if\(result\|\|runtime\.LastSimulatedFrame\(\)!=before\+1u\)break;\s*cadence\.debt=/);
-assert.match(mpBlocks[2][1],/multiplayer_spectator_catchup_budget/);
+assert.match(mpBlocks[0][1],/if\(live&&!cadence\.retry_pending\(\)\)\s*simulation_delta\/=runtime\.Channel\(\)\.IntervalScale\(\);/);
+assert.match(mpBlocks[1][1],/cadence\.advance\(simulation_delta,live\)/);
+assert.match(mpBlocks[2][1],/const auto before=runtime\.LastSimulatedFrame\(\);/);
+assert.match(mpBlocks[3][1],/if\(live&&!result&&runtime\.LastSimulatedFrame\(\)!=before\+1u\)cadence\.blocked\(true\);\s*else cadence\.complete\(\);/);
+assert.match(mpBlocks[3][1],/multiplayer_spectator_catchup_budget\(\)>1/);
+assert.match(mpBlocks[3][1],/Netplay::FrameBudget::CanStartTick/);
+assert.match(mpBlocks[3][1],/if\(runtime\.LastSimulatedFrame\(\)!=before\+1u\)break;/);
+assert.doesNotMatch(mpBlocks[3][1],/cadence\.debt\s*=/);
 // END CADENCE SOURCE CONTRACT
 // Keep the host call paired with the API of the actually pinned dependency.
 const channelHeader=read('third_party/eagler-common/include/eagler/netplay/SessionChannel.hpp');
