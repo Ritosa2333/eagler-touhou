@@ -31,7 +31,7 @@ Ending* Ending::create(EndingEnvironment& env){auto* ending=static_cast<Ending*>
 // ending has its own page waits, resource worker and credit sequence.
 i32 EndingScript::update(EndingEnvironment& env){
     if(flags&4)return 0;
-    if(!((*env.current)->newly_unlocked&1)&&!(flags&2)&&(*env.held&0x100)&&(flags&1))set_time(script_time,script_time_flags,instruction->time,env.rate);
+    if((*env.pressed&0x1001)||(!(flags&2)&&(*env.held&0x100)&&(flags&1)))set_time(script_time,script_time_flags,instruction->time,env.rate);
     while(script_time.current>=instruction->time){
         switch(instruction->opcode){
         case 0:return -1;
@@ -43,7 +43,7 @@ i32 EndingScript::update(EndingEnvironment& env){
         case 5:case 6:{
             const bool new_page=instruction->opcode==6;if(wait.current<1)set_time(wait,wait_flags,instruction->argument<i32>(),env.rate);wait.advance(-1);
             if(!new_page&&instruction->argument<i32>()<0)set_time(wait,wait_flags,999,env.rate);
-            if(!(*env.pressed&0x1001)&&wait.current>0){if(((*env.current)->newly_unlocked&1)||!(*env.held&0x100)||wait.current%6)return 0;}else env.sound(0);
+            if(!(*env.pressed&0x1001)&&wait.current>0){if(!(*env.held&0x100)||(instruction->argument<i32>()>=0&&wait.current%6))return 0;}else env.sound(0);
             set_time(wait,wait_flags,0,env.rate);if(new_page){next_line=0;*env.menu_state=0;}break;
         }
         case 7:env.show_loading();env.unload_animations(instruction->argument<i32>()+29);pending_animation_name=reinterpret_cast<const char*>(instruction->payload()+4);flags|=4;loader.start(env.loader_callback,this,false,env);instruction=instruction->next();return 0;
@@ -68,7 +68,7 @@ i32 EndingScript::update(EndingEnvironment& env){
 // 0x40bd20 / 0x40b9f0. Credits fast-forward restarts the update chain eleven
 // times between normal frame returns. A resource wait still advances elapsed.
 i32 EndingScript::tick(EndingEnvironment& env){if(update(env))return 1;elapsed.tick();return 0;}
-i32 Ending::update(EndingEnvironment& env){if(script->tick(env)){*env.pending_screen=(*env.engine_flags&0x1000)?2:15;return 1;}frames=wrapping_add(frames,1);if(!(script->flags&4)&&!(newly_unlocked&2)&&(script->flags&2)&&(*env.held&0x100)&&frames%12)return 6;return 1;}
+i32 Ending::update(EndingEnvironment& env){if(script->tick(env)){*env.pending_screen=(*env.engine_flags&0x1000)?2:15;return 1;}frames=wrapping_add(frames,1);if(!(script->flags&4)&&(script->flags&2)&&(*env.held&0x100)&&frames%12)return 6;return 1;}
 // 0x40c3c0. Preserve both reads of the current instruction's slot around the
 // blocking upload: the instruction has advanced before the worker executes.
 i32 EndingScript::load_animations(EndingEnvironment& env){env.filename[0]=0;std::memcpy(env.filename,pending_animation_name,std::strlen(pending_animation_name)+1);auto* file=env.load_animations(instruction->argument<i32>()+29,env.filename);files[instruction->argument<i32>()]=file;flags&=~4u;env.registry->interrupt(*env.loading_animation,1);*env.loading_animation=0;return 0;}
