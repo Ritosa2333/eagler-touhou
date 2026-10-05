@@ -67,8 +67,8 @@ function nextJson(socket, predicate = () => true, context = "lobby response") {
   });
 }
 
-async function openLobby(port, room, clientId) {
-  const socket = new WebSocket(`ws://127.0.0.1:${port}/?room=${room}&lobby=${clientId}`);
+async function openLobby(port, room, clientId, policy = '') {
+  const socket = new WebSocket(`ws://127.0.0.1:${port}/?room=${room}&lobby=${clientId}${policy ? '&'+policy : ''}`);
   const first = nextJson(socket);
   await new Promise((resolveOpen, reject) => {
     socket.addEventListener("open", resolveOpen, { once: true });
@@ -76,6 +76,7 @@ async function openLobby(port, room, clientId) {
   });
   const initial = await first;
   assert.equal(initial.type, "state");
+  assert.equal(initial.room.prankMode, false, 'prank mode stays disabled at room creation');
   return socket;
 }
 
@@ -134,6 +135,32 @@ async function verifyGenericRoom(port) {
   } finally {
     socket.close(1000);
   }
+}
+
+async function verifyModes(port, product) {
+  const room = `${product}-modes${Date.now().toString(36)}`;
+  const host = await openLobby(port, room, 'modes_host', 'intent=create&prankMode=1'), guest = await openLobby(port, room, 'modes_guest');
+  try {
+    await sendAndMatch(host, {type:'take-seat',seat:0,loadout:0}, r => r.room?.seats[0]);
+    await sendAndMatch(guest, {type:'take-seat',seat:1,loadout:1}, r => r.room?.seats[1]);
+    await sendAndMatch(host, {type:'set-ready',ready:true}, r => r.room?.seats[0]?.ready);
+    await sendAndMatch(guest, {type:'set-ready',ready:true}, r => r.room?.seats[1]?.ready);
+    await sendAndMatch(guest, {type:'settings',challengeMode:true,prankMode:true}, r => r.type==='error');
+    const changed = await sendAndMatch(host, {type:'settings',playerCount:2,difficulty:1,challengeMode:true,prankMode:true}, r =>
+      r.room?.challengeMode === (product !== 'th09mp'));
+    assert.equal(changed.room.prankMode, false, 'settings cannot enable the withdrawn prank mode');
+    if (product !== 'th09mp') {
+      assert.equal(changed.room.seats.every(seat => !seat?.ready), true);
+      await sendAndMatch(host, {type:'set-ready',ready:true}, r => r.room?.seats[0]?.ready);
+      await sendAndMatch(guest, {type:'set-ready',ready:true}, r => r.room?.seats[1]?.ready);
+    }
+    const started = await sendAndMatch(host, {type:'start'}, r => r.type==='start');
+    assert.equal(started.room.challengeMode, product !== 'th09mp');
+    await sendAndMatch(host, {type:'settings',challengeMode:false,prankMode:false}, r => r.type==='error');
+    const locked = await sendAndMatch(host, {type:'start'}, r => r.type==='state');
+    assert.equal(locked.room.challengeMode, started.room.challengeMode);
+    assert.equal(locked.room.prankMode, started.room.prankMode);
+  } finally { host.close(1000); guest.close(1000); }
 }
 
 async function verifyTh08Timing(port) {
@@ -289,6 +316,7 @@ const relay = spawn(process.execPath, [relayPath], {
 try {
   await waitListening(relay);
   for (const game of multiplayerGames) await verifyProduct(port, game);
+  for (const game of multiplayerGames) await verifyModes(port, `${game}mp`);
   await verifyGenericRoom(port);
   await verifyRelayOnlyBarrier(port);
   await verifyTh08Timing(port);

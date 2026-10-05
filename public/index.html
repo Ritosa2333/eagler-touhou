@@ -16,14 +16,14 @@
     // The Chrome/Chromium token identifies the actual Chromium engine in Edge,
     // Opera and many Android shells. Do not mistake iOS CriOS for Chromium.
     var chrome = /(?:Chrome|Chromium)\/(\d+)/i.exec(ua);
-    var supportedChromium = chrome && Number(chrome[1]) >= 126;
+    var supportedChromium = chrome && Number(chrome[1]) >= 108;
     // New Chromium on older Windows (e.g. Supermium) is allowed. IE is never allowed.
     if (oldWindows && !supportedChromium) reasons.push("windows");
     if (ie) reasons.push("ie");
-    if (chrome && Number(chrome[1]) < 126) reasons.push("chrome");
+    if (chrome && Number(chrome[1]) < 108) reasons.push("chrome");
     // Equivalent to the WebGL2 context check used at get.webgl.org/webgl2/.
     // Do not require optional GPU extensions or over-restrict software drivers.
-    if (!ie && (!oldWindows || supportedChromium) && !(chrome && Number(chrome[1]) < 126)) {
+    if (!ie && (!oldWindows || supportedChromium) && !(chrome && Number(chrome[1]) < 108)) {
       try {
         var canvas = document.createElement("canvas");
         var gl = canvas.getContext && canvas.getContext("webgl2");
@@ -639,8 +639,16 @@
             <div class="mp-room-setting-title" data-i18n="room.visibility">房间可见性</div>
             <div class="mp-room-choice-group"><button type="button" data-room-visibility="public" data-i18n="room.public">公共</button><button type="button" data-room-visibility="private" data-i18n="room.private">私密</button></div>
             <p class="mp-room-settings-hint" data-i18n="room.privateHint">私密房间不在大厅展示，仍可凭房间号加入。</p>
-            <div class="mp-room-setting-title" data-i18n="room.cheatMovement">作弊移动</div>
-            <div class="mp-room-choice-group"><button type="button" data-room-cheat="1" data-i18n="room.cheatDisabled">禁用</button><button type="button" data-room-cheat="0" data-i18n="room.cheatAllowed">不禁用</button></div>
+            <div class="mp-room-rule-setting">
+              <button class="mp-room-rule-tag" type="button" data-room-rule="cheat" aria-pressed="false" aria-describedby="mpRoomCheatHint"><span data-i18n="lobby.noCheat">禁用作弊移动</span><span class="mp-room-rule-state" data-room-rule-state>关闭</span></button>
+              <p class="mp-room-rule-hint" id="mpRoomCheatHint" data-i18n="room.cheatHint">开启后，禁用无限速触控移动；玩家需使用普通移动或摇杆。</p>
+            </div>
+            <div id="mpRoomRuleModes">
+              <div class="mp-room-rule-setting">
+                <button class="mp-room-rule-tag" type="button" data-room-rule="challenge" aria-pressed="false" aria-describedby="mpRoomChallengeHint"><span data-i18n="room.challengeMode">挑战模式</span><span class="mp-room-rule-state" data-room-rule-state>关闭</span></button>
+                <p class="mp-room-rule-hint" id="mpRoomChallengeHint" data-i18n="room.challengeHint">无法使用 Bomb，只记录死亡次数。死亡后正常掉落资源并重生。</p>
+              </div>
+            </div>
             <div class="mp-room-setting-title" data-i18n="multiplayer.players">游戏人数</div>
             <div class="mp-room-choice-group" data-mp-room-choice="playerCount">
               <button type="button" data-mp-player-count="2">2P</button>
