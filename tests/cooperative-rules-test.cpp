@@ -447,7 +447,7 @@ void rescue_uses_fixed_resources_without_charging_donor_power() {
         assert(result.eventCount == 1 && probe.callCount == 0);
         assert(result.events[0].kind == EventKind::SpiritRevived);
         assert(state.seats[0].lives == 1 && state.seats[0].power == power);
-        assert(state.seats[1].lives == 0 && state.seats[1].power == kMaxPower / 2);
+        assert(state.seats[1].lives == (banked < 0 ? 0 : banked) && state.seats[1].power == kMaxPower / 2);
     }
 }
 

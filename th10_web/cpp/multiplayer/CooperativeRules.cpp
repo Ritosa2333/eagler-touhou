@@ -334,7 +334,7 @@ TickResult AdvanceOneTick(State& state, const FrameInput& input,
         if (receiver.lifeState == LifeState::Spirit) {
             --source.lives;
             receiver.lifeState = LifeState::Alive;
-            receiver.lives = 0;
+            if (receiver.lives < 0) receiver.lives = 0;
             receiver.power = kMaxPower / 2;
             source.waitingForFocusRelease = true;
             reset_rescue(source);

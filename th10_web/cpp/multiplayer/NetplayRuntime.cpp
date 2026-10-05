@@ -189,6 +189,9 @@ bool NetplayRuntime::PumpNetwork(bool expectsInput){
 }
 
 const char* NetplayRuntime::NetworkError()const{
+    // Calibration wraps the same wire; report its actual terminal RTC reason
+    // before the generic calibration/channel failure can hide it.
+    if(transport_.Failed())return transport_.LastError().c_str();
     if(calibration_.Failed())return calibration_.Error();
     if(!initial_wait_error_.empty())return initial_wait_error_.c_str();
     if(!spectator_error_.empty())return spectator_error_.c_str();

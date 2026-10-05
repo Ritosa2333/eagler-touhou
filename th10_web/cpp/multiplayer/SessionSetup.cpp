@@ -42,9 +42,9 @@ std::uint32_t gameplay_contract(const SessionSetup& setup,std::uint32_t version)
 }
 }
 std::uint32_t GameplayContract(const SessionSetup& setup) noexcept {
-    // Roster-scaled drops and fixed rescue resources without charging donor Power.
+    // Preserve the receiver's banked lives on rescue, alongside challenge rules.
     // Existing live, spectator and Replay gates must reject the old semantics.
-    return gameplay_contract(setup,0x1000000bu);
+    return gameplay_contract(setup,0x1000000cu);
 }
 std::uint32_t LegacyGameplayContractV4(const SessionSetup& setup) noexcept {
     return gameplay_contract(setup,0x10000004u);

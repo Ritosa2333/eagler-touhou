@@ -9,7 +9,7 @@ inline std::uint32_t historical_contract(
     const auto word=[&](std::uint32_t value){
         for(unsigned i=0;i<4;++i){hash^=(value>>(8*i))&255u;hash*=16777619u;}
     };
-    word(version);word(setup.playerCount);word(setup.difficulty);word(setup.seed);
+    word(version);if(version>=0x1000000au)word(setup.challenge_mode);word(setup.playerCount);word(setup.difficulty);word(setup.seed);
     for(const auto& loadout:setup.loadouts){word(loadout.character);word(loadout.shot);}
     return hash;
 }

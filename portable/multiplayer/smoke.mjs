@@ -307,6 +307,45 @@ window.multiplayerSmoke={
    ...(inputDelay?[inputDelay]:[]),...loadouts.flat()];
   while(words.length<(inputDelay?14:13))words.push(0);configure(words);return netStatus();
  },
+ startAdonis(loadouts,local=0){
+  if(app)throw Error('Use a fresh page for a new run');
+  app=core.sdl_game_open(0,1234);if(!app)throw Error('Native app creation failed');
+  seatCount=loadouts.length;
+  const words=[4,seatCount,local,1,1234,0x51524146,0x11223344,1,...loadouts.flat()];
+  while(words.length<14)words.push(0);
+  words.push(1,0,2,1,2,3,4);configure(words);return netStatus();
+ },
+ async playerRaf(through=90,cpuStallAt=20,wireStallAt=40){
+  const samples=[],previousPrepare=Module.runtimePrepare,previousFinish=Module.runtimeFinish;
+  let cpuStalled=false,wireStalled=false,previous=netStatus()[3];
+  return await new Promise((resolve,reject)=>{
+   const finish=error=>{clearTimeout(timeout);core.sdl_loop_stop();
+    Module.runtimePrepare=previousPrepare;Module.runtimeFinish=previousFinish;
+    if(error)reject(error);else resolve({samples,cpuStalled,wireStalled,net:netStatus()});};
+   const timeout=setTimeout(()=>finish(Error('Player RAF timed out '+networkError())),45000);
+   Module.runtimePrepare=()=>{
+    const frame=netStatus()[3];
+    if(!cpuStalled&&frame!==0xffffffff&&frame>=cpuStallAt){
+     cpuStalled=true;const end=performance.now()+350;while(performance.now()<end){}
+    }
+    if(!wireStalled&&frame!==0xffffffff&&frame>=wireStallAt){
+     wireStalled=true;window.__cadenceWireHoldUntil=performance.now()+350;
+    }
+    return 1;
+   };
+   Module.runtimeFinish=result=>{
+    try{
+     if(result||core.application_error(app))throw Error('Player RAF failed '+networkError());
+     const frame=netStatus()[3];
+     const advanced=frame===0xffffffff?0:previous===0xffffffff?frame+1:frame-previous;
+     samples.push({timestamp:performance.now(),frame,advanced});previous=frame;
+     if(frame!==0xffffffff&&frame>=through){finish();return;}
+     if(samples.length>3000)throw Error('Player callback bound exceeded');
+    }catch(error){finish(error);}
+   };
+   core.sdl_loop_start(app);
+  });
+ },
  sessionPacket(phase){const ptr=core.files_allocate(128);try{
   const size=core.multiplayer_session_build(app,phase,ptr,128);if(!size)throw Error('Session packet rejected');
   return Array.from(new Uint8Array(core.memory.buffer,ptr,size));
