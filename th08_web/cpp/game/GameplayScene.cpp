@@ -295,9 +295,17 @@ JobResult GameplayScene::draw_players(bool impacts){
             const auto& c=cooperation.seats[seat];
             if(c.power_taps>=3){text.color=0xffe2edbd;ascii.add_format({p.x+32.f,p.y-6.f,0},false,"P %u/5",u32(c.power_taps));}
             else if(c.progress&&c.target>=0){text.color=0xffd5efc8;ascii.add_format({p.x+30.f,p.y-8.f,0},false,"%u%%",u32(c.progress)*100/multiplayer::rescue_ticks);}
-            if(enhance&&seat==session.local_player){text.color=0xfff3eee4;ascii.add_format({p.x+48.f,p.y+10.f,0},false,"P%u",seat+1);}
         }
         text.color=color;text.scale_x=scale.x;text.scale_y=scale.y;text.gui=gui;text.selected=selected;
+        if(enhance&&!paused&&!retrying&&!menus.context.pause_state&&!menus.context.show_retry&&
+           !renderer.visual_geometry_suppressed&&!renderer.rollback_visual_geometry_suppressed){
+            const auto p=pilot(session.local_player).presentation_position();
+            const auto& origin=ascii_context.arcade_origin;const auto& size=ascii_context.arcade_size;
+            const float x=origin.x+p.x+renderer.shake.x,y=origin.y+p.y+renderer.shake.y;
+            const u32 white[4]={0xffffffff,0xffffffff,0xffffffff,0xffffffff};
+            renderer.draw_rectangle(origin.x,y-.5f,origin.x+size.x,y+.5f,white);
+            renderer.draw_rectangle(x-.5f,origin.y,x+.5f,origin.y+size.y,white);
+        }
     }
     return JobResult::Continue;
 #else
