@@ -61,6 +61,9 @@ struct Key{const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Sc
 SDL_Gamepad* gamepad=nullptr;u32 prepared=0;bool running=false,suspended=false;double elapsed=0,last=-1,frame_begin=0;u32 frames=0,loop_epoch=0,warm_mask=0;touhou::sdl::FrameCadence cadence;touhou::sdl::PresentationCadence display_cadence;touhou::sdl::PresentationGate presentation_gate;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 double network_debt=0;
+#ifdef TH_MULTIPLAYER_FIXTURES
+bool fixture_full_hidden_draw=false;
+#endif
 #endif
 void reset_cadence(){cadence.reset();
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -224,7 +227,13 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
                 ;if(hidden)sdl_defer(1);
             const bool lightweight=high&&hidden&&runtime&&!runtime->visual_capture_pending()
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-                &&!catchup
+                // Exact-input play has no texture history to retain. Reuse
+                // the ordinary hidden semantic pass, then draw the display
+                // sample once below. Prediction keeps its existing full pass.
+                &&(!catchup||runtime->app.session.netplay.Mode()==Netplay::AdonisMode::Delay)
+#ifdef TH_MULTIPLAYER_FIXTURES
+                &&!fixture_full_hidden_draw
+#endif
 #endif
                 ;
             if(lightweight){runtime->suppress_visual_draw(true);runtime->app.renderer.visual_geometry_suppressed=true;}
@@ -301,6 +310,7 @@ extern "C" {
 #define EX(name) __attribute__((export_name(name)))
 void sdl_keys_clear();
 #ifdef TH_MULTIPLAYER_FIXTURES
+EX("mp_fixture_full_hidden_draw") void mp_fixture_full_hidden_draw(u32 enabled){fixture_full_hidden_draw=enabled!=0;}
 EX("mp_fixture_pacing") const double* mp_fixture_pacing(){
     static double out[3]{};out[0]=1;out[1]=0;out[2]=network_debt;
     if(runtime&&runtime->network_driver()){

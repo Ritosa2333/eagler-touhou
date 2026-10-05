@@ -403,6 +403,8 @@ int main(){
         auto hello=peer.SessionPacket(SessionPhase::Hello);
         hello.gameplayAbi=previous_adonis_contract(remote);
         assert(n.ApplySession(hello)==Netplay::SessionPacketResult::ContractMismatch&&!n.CanStart());
+        hello.gameplayAbi=previous_life_contract(remote);
+        assert(n.ApplySession(hello)==Netplay::SessionPacketResult::ContractMismatch&&!n.CanStart());
     }
     decode_atomicity();fixed_input_delay_is_applied_and_agreed();session_and_inputs(2);session_and_inputs(3);
     delayed_capture_and_wait();

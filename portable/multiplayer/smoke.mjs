@@ -161,6 +161,7 @@ window.multiplayerSmoke={
   }finally{core.deallocate(p);}},
   status(){return Array.from(new Int32Array(core.memory.buffer,core.multiplayer_status(app),44));},
   fixtureDie(seat){if(!core.mp_fixture_die)throw Error('Not a fixture build');return core.mp_fixture_die(app,seat);},
+  fixtureTeamExtend(){if(!core.mp_fixture_team_extend)throw Error('Not a fixture build');return core.mp_fixture_team_extend(app);},
   fixtureOrdinaryDeathSetup(seat){if(!core.mp_fixture_ordinary_death_setup)throw Error('Not a fixture build');return !!core.mp_fixture_ordinary_death_setup(app,seat);},
   fixtureGrazedBulletHit(seat){if(!core.mp_fixture_grazed_bullet_hit)throw Error('Not a fixture build');return !!core.mp_fixture_grazed_bullet_hit(app,seat);},
   fixtureCancelRewardOwner(){if(!core.mp_fixture_cancel_reward_owner)throw Error('Not a fixture build');return !!core.mp_fixture_cancel_reward_owner(app);},

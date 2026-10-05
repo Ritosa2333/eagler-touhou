@@ -549,6 +549,12 @@ u32 mp_fixture_power(BrowserRuntime* runtime,u32 seat,i32 power){
     game.pilot_services(seat).sync_values();
     return 1;
 }
+__attribute__((export_name("mp_fixture_team_extend")))
+u32 mp_fixture_team_extend(BrowserRuntime* runtime){
+    if(!runtime||!runtime->app.in_game()||!runtime->app.game.ready())return 0;
+    runtime->app.game.items.award_team_extend();
+    return runtime->app.game.items.invalid()?0u:1u;
+}
 __attribute__((export_name("mp_fixture_status")))
 const i32* mp_fixture_status(BrowserRuntime* runtime){
     static i32 out[20]{};std::fill(out,out+20,0);

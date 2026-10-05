@@ -141,6 +141,13 @@ void PlayerSimulation::graze(const Vec3& position,bool laser){
     graze_player(context,values,gauge,rank,position,laser,*this);state.context.hud_flags=context.hud_flags;state.context.replay_flags=context.replay_flags;state.context.gauge=gauge.value();
 }
 i32 PlayerSimulation::damage(const Vec3& position,const Vec3& size,i32& time_items,i32* bomb_hit){synchronize_shots();const i32 result=shots.damage(position,size,time_items,bomb_hit);failed|=shots.failure!=PlayerShots::Failure::None;return result;}
+Vec3 PlayerSimulation::presentation_position()const{
+    const auto& p=state.motion.movement.position;
+    if(presentation::render_only&&presentation::active&&presentation_valid&&
+       presentation_previous_life_state==state.life.state&&presentation_near(presentation_previous_position,p))
+        return presentation_lerp(presentation_previous_position,p);
+    return p;
+}
 bool PlayerSimulation::draw(const Vec2& offset,bool impacts,u8 proximity_alpha){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if(state.life.state==4){
@@ -173,7 +180,7 @@ bool PlayerSimulation::draw(const Vec2& offset,bool impacts,u8 proximity_alpha){
                 presentation_previous_animation.apply(state.motion.animation,draw.animation,presentation::world_alpha);
                 for(u32 i=0;i<4;++i)if(presentation_previous_option_state[i]==state.motion.options[i].state)
                     presentation_previous_option_animation[i].apply(state.motion.options[i].animation,draw.options[i].animation,presentation::world_alpha);
-                if(presentation_previous_life_state==state.life.state&&presentation_near(presentation_previous_position,state.motion.movement.position))draw.movement.position=presentation_lerp(presentation_previous_position,state.motion.movement.position);
+                draw.movement.position=presentation_position();
                 for(u32 i=0;i<4;++i)if(presentation_previous_option_state[i]==state.motion.options[i].state&&presentation_near(presentation_previous_options[i],state.motion.options[i].position))draw.options[i].position=presentation_lerp(presentation_previous_options[i],state.motion.options[i].position);
                 // TH08's death/respawn owner directly animates the player's
                 // scale and alpha rather than using a generic ANM interpolator.
