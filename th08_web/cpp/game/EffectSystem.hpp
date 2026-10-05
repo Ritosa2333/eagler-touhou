@@ -9,6 +9,7 @@
 #include "EffectPoolLayout.hpp"
 #if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
 #include "../multiplayer/PlayerEffectSlots.hpp"
+#include "FamiliarEffectView.hpp"
 #endif
 #include <array>
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -52,6 +53,7 @@ class EffectSystem {
     EffectState* fixed_at(i32 relative_slot,i32 local_slot,i32 kind,Vec3 position,u32 color,const Vec3* parameters);
     i32 effect_seat(const EffectState&)const;
     bool player_owner(const EffectState&,const Vec3*&,DamageRegions*&)const;
+    FamiliarEffectView familiar_effect_view;
 #endif
     void draw_list(u32 index,float depth,bool offset_before_depth);
     static void projected(AnmVm&,Vec3&,void*);
@@ -59,6 +61,7 @@ public:
 #if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
     void* player_view=nullptr;
     u8 (*player_view_alpha)(void*,i32)=nullptr;
+    i32 (*familiar_view_form)(void*)=nullptr;
     i32 initialize_geometry(EffectState&,EffectDraw callback,bool alternative=false);
 #endif
     EffectPoolState& state;EffectEnvironment& environment;Vec2 arcade{32,16};bool paused=false,invalid=false;u8 quality=2;

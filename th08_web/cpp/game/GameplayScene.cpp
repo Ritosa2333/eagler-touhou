@@ -64,11 +64,12 @@ GameplayScene::GameplayScene(GameplaySession& s,TextureStore& t,AnmLibrary& l,An
         const auto& b=scene.pilot(local).status().motion.movement.position;
         return multiplayer::player_proximity_alpha(a.x-b.x,a.y-b.y);
     };
-    enemies.bind_familiar_view(this,[](void* owner)->i32{
+    effect_system.familiar_view_form=[](void* owner)->i32{
         auto& scene=*static_cast<GameplayScene*>(owner);const auto local=scene.session.local_player;
         if(scene.session.netplay.ReadOnly()||local>=scene.session.player_count)return -1;
         return scene.pilot(local).status().motion.form.youkai;
-    });
+    };
+    enemies.bind_familiar_view(this,effect_system.familiar_view_form);
 #endif
 }
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY

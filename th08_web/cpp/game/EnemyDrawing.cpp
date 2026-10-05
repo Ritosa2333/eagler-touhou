@@ -75,7 +75,7 @@ bool draw_enemy(EclVm& enemy,const Vec2& offset,EnemyDrawActions& actions){
         ~FamiliarRestore(){vm.color2=color;vm.flag17=tint;}};
     auto& main=vms[0];FamiliarRestore familiar_restore{main,main.color2,bool(main.flag17)};
     const i32 form=actions.familiar_form();
-    if(enemy.parent&&form>=0){
+    if(enemy.parent&&form>=0&&bool(form)!=bool(enemy.flags&0x800)){
         main.flag17=form!=0;
         if(form)main.color2.d3dColor=signed_bits((u32(main.color1.a/2)<<24)|0x2020c0);
     }
@@ -162,7 +162,16 @@ const float* EnemyDrawing::audit_presentation_sample(uintptr_t object,u32 index)
 #endif
 bool draw_enemy_layers(EclVm* const* layers,i32 first,i32 last,const Vec2& offset,EnemyDrawActions& actions){
     if(first<0||last>4)return false;
-    for(i32 layer=first;layer<last;++layer){u32 count=0;for(auto* enemy=layers[layer];enemy;enemy=enemy->next_in_layer){if(++count>480||!draw_enemy(*enemy,offset,actions))return false;}}
+    const i32 form=actions.familiar_form();
+    for(i32 layer=form<0?first:0;layer<(form<0?last:4);++layer){u32 count=0;
+        for(auto* enemy=layers[layer];enemy;enemy=enemy->next_in_layer){
+            if(++count>480)return false;
+            // Reassign only the draw pass. Shared ECL layers and form flags
+            // still follow P1, including which bullets the familiar emits.
+            const i32 view_layer=enemy->parent&&(enemy->flags&0x100)&&form>=0?form?0:2:layer;
+            if(view_layer>=first&&view_layer<last&&!draw_enemy(*enemy,offset,actions))return false;
+        }
+    }
     return true;
 }
 }

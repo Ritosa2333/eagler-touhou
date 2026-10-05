@@ -72,6 +72,7 @@ const EffectDefinition& EffectSystem::definition(u32 kind){static const EffectDe
 void EffectSystem::release(){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     if(rollback_journal&&(rollback_journal->IsFrameOpen()||rollback_journal->FrameCount())){invalid=true;return;}
+    familiar_effect_view.reset();
     for(i32 i=effect_pool_layout::active_pool_begin;i<effect_pool_layout::active_object_count;++i)state.objects[i].vertices=nullptr;
     for(auto& vertices:geometry_storage)vertices.reset();
 #else
@@ -217,6 +218,9 @@ void EffectSystem::shift_glows(const Vec3& offset){for(i32 i=effect_pool_layout:
 }}
 void EffectSystem::snapshot_presentation(){if(!presentation_marker.capture())return;for(i32 i=0;i<effect_pool_layout::object_count;++i){const auto& e=state.objects[i];auto& before=presentation_previous[size_t(i)];before.active=e.active!=0;if(before.active){before.position=e.position;before.center=e.center;before.radius=e.radius;before.angle=e.angle;before.width=e.width;before.height=e.height;before.angle_y=e.angle_y;before.frequency=e.frequency;before.segments=e.segments;before.age=e.age.current;before.kind=e.kind;before.visual.capture(e);before.projected_offset=e.posFinal;}}}
 void EffectSystem::presentation_visual(const EffectState& source,EffectState& draw)const{
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(familiar_effect_view.apply(source,draw))return;
+#endif
     const size_t index=size_t(&source-state.objects);if(index>=effect_pool_layout::object_count)return;const auto& before=presentation_previous[index];
     if(!before.active||before.kind!=source.kind||source.age.current<before.age)return;
     using V=presentation::VisualSample;u32 owner_fields=0;
@@ -260,6 +264,9 @@ void EffectSystem::presentation_geometry(const EffectState& source,EffectState& 
     draw.angle=angle(before.angle,source.angle);draw.angle_y=angle(before.angle_y,source.angle_y);
 }
 JobResult EffectSystem::update(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    const i32 familiar_form=familiar_view_form?familiar_view_form(player_view):-1;
+#endif
     state.active_count=0;for(u32 i=0;i<5;++i){state.tails[i]=&state.sentinels[i];state.sentinels[i].next=nullptr;}
     for(i32 i=effect_pool_layout::active_pool_begin;i<effect_pool_layout::active_object_count;++i){auto& e=state.objects[i];if(!e.active){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -268,7 +275,11 @@ JobResult EffectSystem::update(){
         EffectGeometry::release(e);
 #endif
         continue;}++state.active_count;
-        if(!paused||e.ignore_pause){if((e.update&&e.update(e,*this)!=1)||anm.execute(e)){e.active=0;continue;}e.age.tick(anm.timing);}
+        if(!paused||e.ignore_pause){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+            if(familiar_view_form)familiar_effect_view.update(e,familiar_form,anm.timing);
+#endif
+            if((e.update&&e.update(e,*this)!=1)||anm.execute(e)){e.active=0;continue;}e.age.tick(anm.timing);}
         e.next=nullptr;if(e.kind==64)continue;
         const u32 list=(i8(e.layer)==1||i8(e.layer)>2)?1:e.layer==0?(e.alternative?3:e.blendMode==1?4:0):2;
         state.tails[list]->next=&e;state.tails[list]=&e;
@@ -278,18 +289,20 @@ JobResult EffectSystem::update(){
 void EffectSystem::draw_list(u32 index,float depth,bool offset_before_depth){
     for(auto* e=state.sentinels[index].next;e;e=e->next){TH08_AUDIT_SCOPE(Effect,e,e->age.current,u32(e->kind));
         u8 alpha=255;
+        bool local_familiar=false;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         const i32 seat=effect_seat(*e);if(seat>=0&&player_view_alpha)alpha=player_view_alpha(player_view,seat);
+        local_familiar=familiar_effect_view.contains(*e);
 #endif
         const auto fade=[alpha](EffectState& vm){vm.color1.a=std::min(vm.color1.a,alpha);vm.color2.a=std::min(vm.color2.a,alpha);};
         if(e->draw){
-            if(presentation::render_only||alpha<255){
+            if(presentation::render_only||alpha<255||local_familiar){
                 EffectState copy=*e;std::array<SpriteVertex,258> vertices{};if(e->vertices){std::memcpy(vertices.data(),e->vertices,sizeof(vertices));copy.vertices=vertices.data();}
                 copy.position=presentation_position(*e);presentation_visual(*e,copy);fade(copy);if(presentation::active)presentation_geometry(*e,copy);copy.geometry_dirty=1;const bool invalid_before=geometry.invalid;e->draw(copy,*this);geometry.invalid=invalid_before;
             }else e->draw(*e,*this);
             continue;
         }EffectState copy;EffectState* draw=e;
-        if(presentation::render_only||alpha<255){copy=*e;copy.position=presentation_position(*e);presentation_visual(*e,copy);fade(copy);draw=&copy;}
+        if(presentation::render_only||alpha<255||local_familiar){copy=*e;copy.position=presentation_position(*e);presentation_visual(*e,copy);fade(copy);draw=&copy;}
         draw->pos=draw->position;draw->pos.x=Scalar::add(arcade.x,draw->pos.x);draw->pos.y=Scalar::add(arcade.y,draw->pos.y);
         if(offset_before_depth){add(draw->pos,draw->pos2);draw->pos.z=depth;}else{draw->pos.z=depth;add(draw->pos,draw->pos2);}renderer.draw_2d(*draw);
     }
