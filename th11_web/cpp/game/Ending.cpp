@@ -39,7 +39,7 @@ bool Ending::update(u32 held,u32 pressed){
     text_requests.clear();sounds.clear();music_request=music_fade=-1;if(!active)return true;
     if(!instruction||instruction+4>end)return fail("ending instruction out of range");
     flags&=~4u;
-    if(!(seen&1)&&!(flags&2)&&(held&512)&&(flags&1))time.set(read<u16>(instruction),&animations.rate);
+    if((pressed&0x80001)||(!(flags&2)&&(held&512)&&(flags&1)))time.set(read<u16>(instruction),&animations.rate);
     u32 budget=0;bool blocked=false;
     while(instruction+4<=end&&read<u16>(instruction)<=time.current){
         if(++budget>10000)return fail("ending instruction budget exceeded");
@@ -59,7 +59,7 @@ bool Ending::update(u32 held,u32 pressed){
         case 5:case 6:
             if(wait.current<1)wait.set(read<i32>(p+4),&animations.rate);wait.advance(-1);
             if(op==5&&read<i32>(p+4)<0)wait.set(999,&animations.rate);
-            if(!(pressed&0x80001)&&wait.current>0){if((seen&1)||!(held&512)||wait.current%6){blocked=true;break;}}
+            if(!(pressed&0x80001)&&wait.current>0){if(!(held&512)||(read<i32>(p+4)>=0&&wait.current%6)){blocked=true;break;}}
             else sounds.push_back(0);
             wait.set(0,&animations.rate);if(op==6)line=0;break;
         case 7:{
@@ -89,13 +89,13 @@ bool Ending::update(u32 held,u32 pressed){
 }
 bool Ending::tick(u32 held,u32 pressed){
     // Callback 40f120 returns 6 to restart the chain before its later ANM and
-    // fade callbacks. Seen staff rolls advance to the next multiple of 12.
+    // fade callbacks. Staff rolls advance to the next multiple of 12.
     std::vector<DialogueText> text;std::vector<i32> audio;i32 music=-1,fade=-1;
     do{
         if(!update(held,pressed))return false;
         text.insert(text.end(),text_requests.begin(),text_requests.end());audio.insert(audio.end(),sounds.begin(),sounds.end());
         if(music_request>=0)music=music_request;if(music_fade>=0)fade=music_fade;
-    }while(active&&!(flags&4)&&!(seen&2)&&(flags&2)&&(held&512)&&frames%12);
+    }while(active&&!(flags&4)&&(flags&2)&&(held&512)&&frames%12);
     text_requests=std::move(text);sounds=std::move(audio);music_request=music;music_fade=fade;
     fades.update();return true;
 }

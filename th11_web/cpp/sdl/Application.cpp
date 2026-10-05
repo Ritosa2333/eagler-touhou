@@ -307,6 +307,7 @@ u32 sample_controller(){
 }
 touhou::input::TouchState touch_state(){
     touhou::input::TouchState s;auto& session=app.session;
+    if(session.state.phase==GameSessionPhase::ending){s.context=2;return s;}
     if(session.state.phase!=GameSessionPhase::stage||!session.battle||!session.battle->player)return s;
     if(session.state.replay){s.context=3;return s;}
     if(session.battle->dialogue&&session.battle->dialogue->active){s.context=2;return s;}
