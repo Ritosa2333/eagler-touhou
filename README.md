@@ -1,3 +1,5 @@
+This repo is uploaded on behalf of [@SteinsGateON](https://space.bilibili.com/34714121).
+
 # TH09 portable
 
 This repository contains the source-only TH09 1.50a C++/SDL3 portable and Web implementation.
@@ -24,4 +26,6 @@ Build outputs are written below `th09_web/artifacts/` and are intentionally not 
 
 This repository does not track the original Touhou executable, data, music, replay, save files, extracted retail assets, or bundled development toolchains. A runnable package must be assembled locally from files you are legally allowed to use.
 
-Licensing is component-specific. Keep the notices and licenses beside each bundled component; no blanket license is asserted for the original game or its assets.
+## License
+
+This project is licensed under the MIT License.
