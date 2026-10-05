@@ -67,7 +67,7 @@ GameplayScene::GameplayScene(GameplaySession& s,TextureStore& t,AnmLibrary& l,An
     enemies.bind_familiar_view(this,[](void* owner)->i32{
         auto& scene=*static_cast<GameplayScene*>(owner);const auto local=scene.session.local_player;
         if(scene.session.netplay.ReadOnly()||local>=scene.session.player_count)return -1;
-        return local?scene.session.guest_gauges[local-1].youkai():scene.session.gauge.youkai();
+        return scene.pilot(local).status().motion.form.youkai;
     });
 #endif
 }
@@ -537,4 +537,3 @@ bool GameplayScene::prepare_frame(u16 buttons,float rate,bool force_unit){
 bool GameplayScene::update(u16 buttons,float rate,bool force_unit){presentation::CalculationScope presentation_tick;if(!prepare_frame(buttons,rate,force_unit))return false;failed|=chain.run()<0;return !invalid();}
 bool GameplayScene::draw(){if(!ready())return false;failed|=chain.run(true)<0;renderer.flush();return !invalid();}
 }
-

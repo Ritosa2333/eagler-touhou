@@ -1,5 +1,6 @@
 #include "EnemyDamage.hpp"
 #include "GameConfiguration.hpp"
+#include "GameGauge.hpp"
 #include <cassert>
 
 using namespace th08;
@@ -7,15 +8,23 @@ using namespace th08;
 struct Pilots final:EnemyDamageActions {
     PlayerFrameState frames[3]{};
     i32 hits[3]{},bombs[3]{};
+    u8 forms[3]{};
+    i32 damage_calls[3]{};
+    i16 gauge_values[3]{},previous_gauge_values[3]{};
+    GaugeThresholds thresholds[3]{};
+    GameGauge gauges[3]{{gauge_values[0],previous_gauge_values[0],thresholds[0]},
+                       {gauge_values[1],previous_gauge_values[1],thresholds[1]},
+                       {gauge_values[2],previous_gauge_values[2],thresholds[2]}};
     u32 count=2;
     bool available[3]{true,true,true};
     i32 damage(const Vec3&,const Vec3&,i32&,i32&) override {return 0;}
     u32 participant_count()const override{return count;}
     bool participant(u32 seat,EnemyDamageParticipant& out) override {
-        out={{float(80+seat*12),300,0},&frames[seat],nullptr,0,u8(bombs[seat]!=0),0};
+        out={{float(80+seat*12),300,0},&frames[seat],&gauges[seat],0,u8(bombs[seat]!=0),0,forms[seat]};
         return seat<count&&available[seat];
     }
     i32 participant_damage(u32 seat,const Vec3&,const Vec3&,i32&,i32& bomb_hit) override {
+        ++damage_calls[seat];
         bomb_hit=bombs[seat];
         return hits[seat];
     }
@@ -72,4 +81,27 @@ int main(){
     assert(damage_enemy_multiplayer(boss,1,0,values,bomb_hit,owner,pilots));
     assert(boss.life==99&&boss.last_damage==1);
     assert(shared.score==10&&bomb_hit==1&&owner==1);
+
+    // Current form alone controls familiar damage for both seats. In
+    // particular P1 must not hit in youkai form with a still-human gauge,
+    // and P2 must hit in human form with a still-youkai gauge.
+    pilots.bombs[0]=pilots.bombs[1]=0;
+    pilots.hits[0]=40;pilots.hits[1]=20;
+    EclVm parent{};
+    for(u8 host=0;host<2;++host)for(u8 guest=0;guest<2;++guest)
+    for(i16 host_gauge:{i16(-10000),i16(10000)})for(i16 guest_gauge:{i16(-10000),i16(10000)}){
+        pilots.forms[0]=host;pilots.forms[1]=guest;
+        pilots.gauges[0].set(host_gauge);pilots.gauges[1].set(guest_gauge);
+        pilots.damage_calls[0]=pilots.damage_calls[1]=0;
+        EclVm familiar{};familiar.parent=&parent;familiar.flags=0x149u|(u32(host)<<11);familiar.life=100;
+        const i32 expected=(host?0:40)+(guest?0:20);
+        assert(damage_enemy_multiplayer(familiar,0,0,values,bomb_hit,owner,pilots)==(expected!=0));
+        assert(familiar.life==100-expected&&familiar.last_damage==expected);
+        assert(pilots.damage_calls[0]==!host&&pilots.damage_calls[1]==!guest);
+        if(expected)assert(owner==(host?1u:0u));
+    }
+    // Ordinary enemies still receive damage from both forms.
+    boss.life=100;
+    assert(damage_enemy_multiplayer(boss,0,0,values,bomb_hit,owner,pilots));
+    assert(boss.life==55);
 }

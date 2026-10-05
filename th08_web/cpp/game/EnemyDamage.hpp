@@ -4,7 +4,7 @@
 namespace th08 {
 struct EnemyDamageContext {Vec3 player;u8 character=0,bomb=0,time_spell=0,spell_bomb_damage=0;};
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-struct EnemyDamageParticipant {Vec3 position;PlayerFrameState* frame=nullptr;GameGauge* gauge=nullptr;u8 character=0,bomb=0,focused=0;};
+struct EnemyDamageParticipant {Vec3 position;PlayerFrameState* frame=nullptr;GameGauge* gauge=nullptr;u8 character=0,bomb=0,focused=0,youkai=0;};
 #endif
 struct EnemyDamageActions {
     virtual ~EnemyDamageActions()=default;

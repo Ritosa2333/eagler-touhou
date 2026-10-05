@@ -66,7 +66,7 @@ i32 EnemySystem::hit(const Vec3& p,const Vec3& size){publish_player();const i32 
 bool EnemySystem::participant(u32 seat,EnemyDamageParticipant& out){
     if(!roster||!roster->eligible(seat))return false;
     auto& state=roster->seats[seat].player->status();
-    out={state.motion.movement.position,&state.frame,roster->seats[seat].gauge,state.context.character,u8(state.bomb.active!=0),state.motion.form.focused};
+    out={state.motion.movement.position,&state.frame,roster->seats[seat].gauge,state.context.character,u8(state.bomb.active!=0),state.motion.form.focused,state.motion.form.youkai};
     return true;
 }
 i32 EnemySystem::participant_damage(u32 seat,const Vec3& p,const Vec3& size,i32& count,i32& bomb){

@@ -1,7 +1,6 @@
 #include "EnemyDamage.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../multiplayer/Balance.hpp"
-#include "GameGauge.hpp"
 #endif
 #include <cmath>
 namespace th08 {
@@ -45,7 +44,9 @@ bool damage_enemy_multiplayer(EclVm& enemy,u8 time_spell,u8 spell_bomb_damage,Ga
         EnemyDamageParticipant pilot;
         if(!actions.participant(seat,pilot)||!pilot.frame)continue;
         ++viable;
-        if(enemy.parent && pilot.gauge && pilot.gauge->youkai())continue;
+        // The gauge can lag behind a form switch. Familiar vulnerability is
+        // owned by each pilot's current form, not their gauge or the host form.
+        if(enemy.parent && pilot.youkai)continue;
         i32 local_bomb=0,damage=0;
         if(!(time_spell&&enemy.parent&&pilot.bomb))
             damage=actions.participant_damage(seat,enemy.resolved_position,enemy.hitbox,enemy.time_items,local_bomb);
