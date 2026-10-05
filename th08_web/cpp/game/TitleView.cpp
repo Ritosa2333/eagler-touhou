@@ -43,7 +43,7 @@ i32 TitleView::replays(){
 i32 TitleView::practice(){
     reset_text();Vec3 position=state.vms[141].pos;position.y=move(position.y,-96);add(position,"Stage    HI-Score");position.y=move(position.y,16);
     if(context.character<0||context.character>=12||config.difficulty>=5)return 1;
-    u16 clear=context.clears[context.character].with_retries[config.difficulty];if(!clear)clear=1;if(clear&128)clear|=24;
+    u16 clear=default_all_content_unlocked?0xff:context.clears[context.character].with_retries[config.difficulty];if(!clear)clear=1;if(clear&128)clear|=24;
     const auto& scores=context.practice_scores[context.character];
     for(i32 i=0;i<8;++i){ascii.state.selected=i==state.cursor;ascii.state.color=ascii.state.selected?0xffffffff:(clear&(1<<i))?0xffa0a0a0:0xff404040;
         add(position,"%s %9d0 (%3d)",stages[i],scores.high_scores[i][config.difficulty],scores.attempts[i][config.difficulty]);position.y=move(position.y,16);}

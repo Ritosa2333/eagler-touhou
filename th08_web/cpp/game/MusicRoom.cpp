@@ -1,6 +1,7 @@
 // Music Room state machine and screen layout recovered from TH08 1.00d.
 // Reference naming/algorithms: GensokyoClub/th08 (MIT, see licenses).
 #include "MusicRoom.hpp"
+#include "ContentAccess.hpp"
 #include "MusicText.hpp"
 #include "Localization.hpp"
 #include <cstdio>
@@ -49,7 +50,7 @@ bool MusicRoom::initialize(AnmLoaded& music,const u8* comments,u32 size,const i8
     state.music=&music;state.selected=0;start(state.main,music,0);state.frames=0;
     if(!catalog.load(comments,size)||!catalog.count||catalog.count>24)return false;
     state.tracks=catalog.tracks;state.count=catalog.count;
-    for(i32 i=0;i<state.count;++i)state.unlocked[i]=unlocked?unlocked[i]:0;
+    for(i32 i=0;i<state.count;++i)state.unlocked[i]=default_all_content_unlocked?1:unlocked?unlocked[i]:0;
     for(i32 i=0;i<state.count;++i){auto& vm=state.names[i];start(vm,music,1+i);
         const char* title=state.unlocked[i]?title_for(state.tracks[i],i+1)
             :Localization::StringById("th08_????????",reinterpret_cast<const char*>(music_locked_title));

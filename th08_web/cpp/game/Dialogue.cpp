@@ -1,5 +1,6 @@
 // Naming and recovered algorithms informed by GensokyoClub/th08 (MIT).
 #include "Dialogue.hpp"
+#include "ContentAccess.hpp"
 #include "Presentation.hpp"
 #include <utility>
 namespace th08 {
@@ -34,7 +35,8 @@ bool Dialogue::read(i32 index){
     }else if(index==10){
         if(context.stage==5){
             index=1;
-            if(!globals.retries){
+            if(default_all_content_unlocked&&!(context.flags&8))index=3;
+            else if(!globals.retries){
                 if(context.flags&8){if(context.replay_clear==2)index=3;else if(context.replay_clear==1)index=2;}
                 else if(context.character>=0&&context.character<12){const auto& record=context.clears[context.character];bool cleared_a=false,cleared_b=context.character>3;
                     for(i32 d=0;d<4;++d){cleared_a|=bool(record.with_retries[d]&64);cleared_b|=bool(record.without_retries[d]&128);}index=cleared_b?3:cleared_a?2:1;}

@@ -1,5 +1,6 @@
 // Source-level TH08 title menu recovery. GensokyoClub/th08 reference: MIT.
 #pragma once
+#include "ContentAccess.hpp"
 #include "PresentationVisual.hpp"
 #include "AnmText.hpp"
 #include "AnmExecutor.hpp"
@@ -129,6 +130,7 @@ struct TitleContext {
     bool IsExtraUnlocked()const;
     bool IsSpellPracticeUnlocked()const;
     bool IsExtraUnlockedWithAllTeams()const;
+    bool IsSpellCardAvailable(i32 number)const{return number>=0&&number<222&&(default_all_content_unlocked||HasSpellCardBeenEncountered(number,12)||IsLastWordSpellCardAttempted(number));}
     bool HasSpellCardBeenEncountered(i32 number,i32 shot)const{return number>=0&&number<222&&shot>=0&&shot<=12&&(spells[number].game.attempts[shot]||spells[number].practice.attempts[shot]);}
     bool IsLastWordSpellCardAttempted(i32 number)const{return number<205?HasSpellCardBeenEncountered(number,12):number<222&&last_words.unlocked[number-205]==number;}
 };

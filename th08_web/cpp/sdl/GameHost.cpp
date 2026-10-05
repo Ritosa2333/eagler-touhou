@@ -64,6 +64,7 @@ int gamepad_axis(SDL_GamepadAxis axis){const int value=SDL_GetGamepadAxis(gamepa
 constexpr const char* warmAnimations[]={"etama.anm","enemy.anm","front.anm","times.anm","stg1bg.anm","stg1enm.anm","eff01.anm","stg1txt.anm","stg2bg.anm","stg2enm.anm","eff02.anm","stg2txt.anm","player00.anm","player01.anm","player02.anm","player03.anm","staff01.anm"};
 constexpr u32 warmCount=sizeof(warmAnimations)/sizeof(*warmAnimations);
 touhou::input::TouchState touch_state(){touhou::input::TouchState s;if(!runtime)return s;const auto& a=runtime->app;const auto& g=a.game;const auto& p=g.player_state;
+    if(a.supervisor.state.active==i32(th08::Scene::Ending)){s.context=2;return s;}
     if(a.in_game()&&(g.globals.game_flags&8)){s.context=3;return s;}
     if(!a.in_game()||a.loading_game()||!g.ready()||g.paused||g.menus.context.pause_state||p.context.game_over||(g.globals.game_flags&0x60))return s;
     s.context=g.dialogue.present()?2:1;s.ready=p.life.state!=1&&p.life.state!=2;s.instance=g.globals.stage+1;
