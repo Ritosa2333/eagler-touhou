@@ -8,7 +8,8 @@ TH12 1.00b 的 C++／WebAssembly 网页实现，以及用于核对原版行为�
 
 ## 内容
 
-- `src/`：游戏逻辑、ANM、弹幕、自机、道具、UFO、符卡、对话、背景及网页绘制。
+- `src/game/`：独立编译的 C++20 游戏模块；`src/wasm/`：网页版接口。
+- `src/` 的其余文件：兼容头文件、输入及网页绘制。
 - `site/`：网页版入口、页面和样式；运行资源需在本地从自有原版准备。
 - `scripts/`、`tools/replay-verifier/`：构建、资源准备、原版行为分析与严格对照工具。
 - `tests/`：逻辑测试、测试程序和局部行为夹具，不包含原版游戏安装文件。
@@ -33,6 +34,17 @@ npm run test:portable
 ```
 
 完整测试需要本地资源及自行生成的录像清单／Oracle 数据；它们不随仓库发布。
+
+原生 C++ 核心与不依赖原版资源的验证：
+
+```sh
+cmake -S . -B artifacts/native -DCMAKE_BUILD_TYPE=Release
+cmake --build artifacts/native
+ctest --test-dir artifacts/native --output-on-failure
+```
+
+模块职责和验证范围见 [C++ 结构说明](docs/CPP-RESTORATION.md)。
+`decompiled/*.c` 是分析材料，不参与构建；文件内容和扩展名保留以反映其实际性质。
 
 ## 还原边界
 

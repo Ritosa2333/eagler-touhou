@@ -1,15 +1,5 @@
-#include "../../src/player.hpp"
-#include "../../src/player_weapons.hpp"
-#include <deque>
-#include <memory>
+#include "../../src/game/GameState.hpp"
 namespace th12 {
-using u32=uint32_t;constexpr float pi=3.1415927410125732f,tau=6.2831854820251465f;
-struct Enemy {u32 id=1;float x=0,y=120,hitWidth=24,hitHeight=24;bool active=true,hidden=false,invincible=false;};
-struct Projectile {float x,y,angle,speed,radius;int type,color,age=0,damage=0,animation=0;bool friendly=false,active=true,grazed=false;int option=0,update=0;float hitWidth=0,hitHeight=0;u32 targetId=0;int extraCallback=0;u32 entityId=0;pw::State weapon{};int hitAnimation=0,hitCallback=0,spawnCallback=0;};
-struct Random {uint16_t seed=0;u32 calls=0;u32 next32(){uint16_t a=uint16_t((seed^0x9630)-0x6553),b=uint16_t((a<<2)|(a>>14)),c=uint16_t((b^0x9630)-0x6553);seed=uint16_t((c<<2)|(c>>14));calls+=2;return u32(a)<<16|c;}} random;
-std::deque<std::unique_ptr<Enemy>> enemies;std::deque<Projectile> bullets;
-PlayerMotion playerMotion;ShotSchedule shotSchedule;int deathWindow=0,dialogue=0,character=2,shot=0,eventBits=0,px=0,py=51200,invuln=0;u32 nextProjectileId=1;std::array<u32,1024> unsupported{};
-#include "../../src/player_gameplay.hpp"
 float snapshot[16];
 pw::Leaf fixtureLeaf;
 pw::ReimuABeam fixtureBeam;

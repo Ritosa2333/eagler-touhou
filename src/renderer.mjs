@@ -26,8 +26,19 @@ export function readCoreAnimationPoses(core,stage=1){
     const a={name:animationBankName(I(16),stage),sprite:I(17),layer:I(18),mode:I(19),anchorX:I(20),anchorY:I(21),blend:I(22),geometryCount:I(23),
       x:0,y:0,z:F(2),rx:F(3),ry:F(4),rotation:F(5),sx:F(6),sy:F(7),u:F(8),v:F(9),uvScaleX:F(10),uvScaleY:F(11),geometryRadius:F(12),geometryWidth:F(13),
       r:color[0],g:color[1],b:color[2],alpha:color[3],r2:secondary[0],g2:secondary[1],b2:secondary[2],alpha2:secondary[3],point:!!(flags2&2),visible:!!(flags&1),rotate:I(19)===1||I(19)===3};
-    poses.push({a,x:F(0),y:F(1),angle:0,scale:1,alpha:F(28),id:U(26),owner:U(27),logical:true,order:i});
+    const owner=U(27),category=owner>>>28;if(category===2||category===3)a.visible=(flags&3)===3;
+    poses.push({a,x:F(0),y:F(1),angle:0,scale:1,alpha:F(28),id:U(26),owner,logical:true,order:i});
   }return poses;
+}
+export function readCoreLaserSegments(core,stage=1){
+  if(!core._th12_laser_draw)return [];
+  const count=core._th12_laser_draw(),ptr=core._th12_laser_draw_ptr(),stride=core._th12_laser_draw_stride();
+  if(!Number.isInteger(count)||count<0||count>65536||stride!==64||ptr<0||ptr+count*stride>core.HEAPU8.byteLength)throw Error('激光绘制记录无效');
+  const view=new DataView(core.HEAPU8.buffer),segments=[];
+  for(let i=0;i<count;i++){
+    const at=ptr+i*stride,F=n=>view.getFloat32(at+n*4,true),I=n=>view.getInt32(at+n*4,true),U=n=>view.getUint32(at+n*4,true),color=U(8);
+    segments.push({laser:true,x:F(0),y:F(1),angle:F(2),length:F(3),width:F(4),alpha:F(5)*((color>>>24)/255),u:F(6),v:F(7),tint:[((color>>>16)&255)/255,((color>>>8)&255)/255,(color&255)/255],textureLength:F(13),headOffset:F(14),owner:U(15),a:{name:animationBankName(I(9),stage),sprite:I(10),layer:I(11),blend:I(12)}});
+  }return segments;
 }
 export function fragmentInterrupt(index,whole,fragments=0){return index<whole?2:index===whole?7+Math.max(0,Math.min(5,fragments|0)):3;}
 export function groupedNumber(n){return String(Math.max(0,Math.round(n))).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
@@ -107,6 +118,11 @@ export class Renderer {
     const vertices=beamSegmentVertices(x,y,angle,length,width,argbRgba(start),argbRgba(end)),uv=[[sprite.x/texture.w,0],[(sprite.x+sprite.w)/texture.w,0],[(sprite.x+sprite.w)/texture.w,1/32],[sprite.x/texture.w,1/32]];
     for(const i of [0,1,2,0,2,3])this.batch.push(vertices[i].x,vertices[i].y,...uv[i],...vertices[i].color,1,0);
   }
+  laserSegment(p){
+    const s=this.atlases[p.a.name]?.sprites[p.a.sprite];if(!s||p.alpha<=0)return;
+    const x=p.x+Math.cos(p.angle)*p.length/2,y=p.y+Math.sin(p.angle)*p.length/2;
+    this.region(p.a.name,s.entry,s.x,s.y,s.w,s.h,x,y,p.width,p.length,p.angle+Math.PI/2,p.alpha,p.tint,p.a.blend,{u:p.u,v:p.v});
+  }
   state(a,x,y,angle=0,scale=1,alpha=1){
     if(!a.visible)return;
     if(a.mode===14){if(a.alpha<=0)return;const color=[a.r,a.g,a.b,a.alpha*alpha],corners=quadCorners(x+a.x,y+a.y,a.geometryRadius*a.sx*scale,a.geometryWidth*a.sy*scale,a.rotation+angle);this.solidTriangles(corners.map(([x,y])=>({x,y,color})),[0,1,2,0,2,3],a.blend);return;}
@@ -139,7 +155,7 @@ export class Renderer {
     const logicalPoses=readCoreAnimationPoses(core,stage),logicalOwners=new Set(logicalPoses.map(p=>p.owner)),message=readCoreMessage(core);
     const count=core._th12_draw(),ptr=core._th12_draw_ptr(),stride=(core._th12_draw_stride?.()||36)/4;if(stride<9||stride>64||!Number.isInteger(stride))throw Error('绘制记录长度无效');
     const f=new Float32Array(core.HEAPU8.buffer,ptr,count*stride),v=new Int32Array(core.HEAPU8.buffer,ptr,count*stride);
-    const player='pl0'+h[17],poses=[...logicalPoses.filter(p=>!(p.a.name==='text'&&p.a.sprite>=0&&p.a.sprite<4)),...messageTextPoses(message,logicalPoses,this.atlases)];
+    const player='pl0'+h[17],poses=[...logicalPoses.filter(p=>!(p.a.name==='text'&&p.a.sprite>=0&&p.a.sprite<4)),...messageTextPoses(message,logicalPoses,this.atlases),...readCoreLaserSegments(core,stage)];
     const add=(name,id,age,x,y,angle,scale,variant,options)=>{const {alpha,...sampling}=options;for(const a of this.animations.sampleAll(name,id,age,variant,sampling))poses.push({a,x,y,angle,scale,alpha,order:poses.length});};
     for(let i=0;i<count;i++){
       const k=i*stride,x=f[k],y=f[k+1],angle=f[k+2],scale=f[k+3],animation=v[k+5],kind=v[k+6],color=v[k+7],age=v[k+8],entityId=stride>=12?v[k+9]>>>0:0,interrupt=stride>=12?v[k+10]:0,alpha=stride>=12?f[k+11]:1;
@@ -162,14 +178,19 @@ export class Renderer {
     // Native ANM manager draws layers, so bullets/items/player child slots
     // cannot simply follow the core's entity array insertion order.
     poses.sort((a,b)=>a.a.layer-b.a.layer||a.order-b.order);
-    for(const p of poses){if(p.dialogue)this.dialogueLine(p);else if(p.beamTrail)this.beamTrail(p.x,p.y,p.angle,p.scale,p.width,p.start,p.end);else if(p.trail)this.trail(p.x,p.y,p.angle,p.scale,p.start,p.end,p.alpha);else if(p.beam){const s=this.atlases[p.a.name].sprites[p.a.sprite];if(s)this.region(p.a.name,s.entry,s.x,s.y,s.w,s.h,p.x,p.y-448*p.scale/2,448*p.scale,14*p.a.sy,-Math.PI/2,p.a.alpha*p.alpha,[p.a.r,p.a.g,p.a.b],p.a.blend);}else this.state(p.a,p.x,p.y,p.angle,p.scale,p.alpha);}
+    let playfieldClip=true;
+    for(const p of poses){
+      const clipped=!(p.logical&&p.a.name==='front'&&p.a.layer>=17);
+      if(clipped!==playfieldClip){this.flush();if(clipped)g.enable(g.SCISSOR_TEST);else g.disable(g.SCISSOR_TEST);playfieldClip=clipped;}
+      if(p.laser)this.laserSegment(p);else if(p.dialogue)this.dialogueLine(p);else if(p.beamTrail)this.beamTrail(p.x,p.y,p.angle,p.scale,p.width,p.start,p.end);else if(p.trail)this.trail(p.x,p.y,p.angle,p.scale,p.start,p.end,p.alpha);else if(p.beam){const s=this.atlases[p.a.name].sprites[p.a.sprite];if(s)this.region(p.a.name,s.entry,s.x,s.y,s.w,s.h,p.x,p.y-448*p.scale/2,448*p.scale,14*p.a.sy,-Math.PI/2,p.a.alpha*p.alpha,[p.a.r,p.a.g,p.a.b],p.a.blend);}else this.state(p.a,p.x,p.y,p.angle,p.scale,p.alpha);
+    }
     this.flush();g.disable(g.SCISSOR_TEST);
     this.animation('front',0,frame,0,0);
     this.hudText(groupedNumber(h[3]),620,72,1,true);this.hudText(groupedNumber(h[40]??h[3]),620,48,1,true);
     for(let i=0;i<8;i++){this.animation('front',13+i,frame,0,0,0,1,null,{interrupt:fragmentInterrupt(i,h[5],h[21])});this.animation('front',21+i,frame,0,0,0,1,null,{interrupt:fragmentInterrupt(i,h[6],h[22])});}
     this.hudText(Math.floor(h[4]/100)+'.',540,152);this.hudText(String(Math.round(h[4])%100).padStart(2,'0'),560,159,.6);this.hudText('/4.',574,152);this.hudText('00',606,159,.6);
     if(h.length>20)this.hudText(groupedNumber(Math.floor(h[20]/100/10)*10),620,176,1,true);this.hudText(groupedNumber(h[7]),620,200,1,true);
-    if(h.length>25)for(let i=0;i<3;i++){const color=h[23+i]|0;this.animation('front',80,frame,0,0,0,1,null,{interrupts:[7+i,color?9+color:13,color?2:3]});}
+    if(h.length>25&&!logicalPoses.some(p=>p.a.name==='front'&&(p.owner>>>16)===0xfffe))for(let i=0;i<3;i++){const color=h[23+i]|0;this.animation('front',80,frame,0,0,0,1,null,{interrupts:[7+i,color?9+color:13,color?2:3]});}
     this.animation('front',69+h[19],frame,0,0);
     this.flush();this.animations.endFrame();return [...h];
   }

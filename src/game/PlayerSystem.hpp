@@ -1,0 +1,22 @@
+#pragma once
+#include "GameTypes.hpp"
+
+namespace th12 {
+void explodeReimuBOrb(pw::ReimuBOrb& orb);
+bool startPlayerBomb();
+void tickPlayerBomb();
+int playerBombDamage(const Enemy& e);
+bool tickPlayerBombEffect(int profile, u32 id);
+void buildPlayerBombTrails();
+void tickPlayerBombEffects();
+int friendlyImpactDuration(int script);
+void initializeFriendlyProjectile(Projectile& b, const ShotSpec& s);
+void tickPlayerDamageSources();
+int playerSourceDamage(const Enemy& e);
+float playerAngle(float a);
+Enemy* playerTarget(float x, float y, float radius, u32 existing = 0);
+void updateFriendlyProjectile(Projectile& b);
+bool playerProjectileHits(const Projectile& b, const Enemy& e);
+void sanaeBExplosion(const Projectile& parent);
+int friendlyProjectileDamage(Projectile& b, const Enemy& e);
+} // namespace th12

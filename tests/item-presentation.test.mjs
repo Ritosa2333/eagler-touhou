@@ -1,0 +1,26 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';import{spawnSync}from'node:child_process';import{pathToFileURL}from'node:url';
+const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root),output=path.join(root,'artifacts/item-presentation-test-runtime');fs.mkdirSync(output,{recursive:true});
+const python=path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe'),compiler=path.join(workspace,'tools/emsdk/upstream/emscripten/emcc.py');
+const build=spawnSync(python,[compiler,'tests/fixtures/item-presentation.cpp','src/game/AnmLogic.cpp','src/game/AnmScene.cpp','src/game/Items.cpp','src/game/Ufo.cpp','src/game/ItemPresentation.cpp','-std=c++20','-O2','-o',path.join(output,'core.mjs'),'-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=node','-sALLOW_MEMORY_GROWTH=1','-sEXPORTED_FUNCTIONS=["_malloc","_free","_load_bank","_reset","_spawn_item","_sync","_tick_items","_tick_primary","_hint_create","_hint_collect","_rebind_item","_stock_color","_summon","_fill","_pose","_clear_ufo","_snapshot"]','-sEXPORTED_RUNTIME_METHODS=["HEAPU8"]'],{cwd:root,encoding:'utf8',env:{...process.env,EM_CACHE:path.join(root,'artifacts/emscripten-cache'),EMSDK_PYTHON:python,PATH:path.dirname(python)+path.delimiter+process.env.PATH}});assert.equal(build.status,0,build.stderr||build.stdout);
+const create=(await import(pathToFileURL(path.join(output,'core.mjs')).href)).default;
+async function fixture(){const c=await create();for(const [bank,name]of [[0,'bullet'],[7,'front'],[11,'ascii']]){const raw=fs.readFileSync(path.join(root,'local/retail',name+'.anm')),p=c._malloc(raw.length);c.HEAPU8.set(raw,p);assert.equal(c._load_bank(bank,p,raw.length),1);c._free(p);}c._reset();return c;}
+function state(c){const start=c._snapshot();let end=start;while(c.HEAPU8[end])end++;return JSON.parse(new TextDecoder().decode(c.HEAPU8.subarray(start,end)));}
+const body=(c,id)=>state(c).find(n=>n.owner===0x20000000+id),arrow=(c,id)=>state(c).find(n=>n.owner===0x30000000+id),hint=(c,id)=>state(c).find(n=>n.owner===0x40000000+id);
+
+test('Item22 advances ordinary VMs exactly once and preserves offscreen arrow byte alpha',async()=>{
+  const c=await fixture(),id=c._spawn_item(1,0,-24);c._sync(0);assert.equal(body(c,id).ticks,1);assert.equal(arrow(c,id).ticks,1);assert.equal(body(c,id).flags&2,0);assert.equal(arrow(c,id).flags&2,2);assert.equal(arrow(c,id).alpha,129);c._tick_items(1000,1000);assert.equal(body(c,id).ticks,2);c._sync(1);assert.equal(body(c,id).ticks,2);
+  const newborn=c._spawn_item(2,0,100);c._sync(2);assert.equal(body(c,newborn).ticks,1);
+});
+test('delayed point binds only on release and tokens have no secondary VM',async()=>{
+  const c=await fixture(),point=c._spawn_item(9,0,100);c._sync(0);assert.equal(body(c,point),undefined);c._tick_items(1000,1000);assert.equal(body(c,point).script,174);assert.equal(body(c,point).ticks,1);assert.equal(arrow(c,point),undefined);c._sync(1);assert.equal(body(c,point).ticks,1);
+  const token=c._spawn_item(13,10,200);c._sync(2);assert.equal(arrow(c,token),undefined);const id=body(c,token).id;c._rebind_item(token,14);assert.equal(body(c,token).id,id);assert.equal(body(c,token).script,179);
+});
+test('aggregate body uses primary27 and survives collection with queued exit',async()=>{
+  const c=await fixture(),id=c._spawn_item(16,0,100);c._sync(0);assert.equal(body(c,id).membership,1);assert.equal(body(c,id).ticks,1);assert.deepEqual(body(c,id).engine,[0,0]);c._tick_items(1000,1000);c._sync(1);assert.equal(body(c,id).ticks,1);assert.deepEqual(body(c,id).engine,[224,116]);c._tick_primary();assert.equal(body(c,id).ticks,2);c._tick_items(0,100);c._sync(2);assert.ok(body(c,id));assert.equal(body(c,id).pending,1);
+});
+test('collected hint retains its existing position and four-tick original outro',async()=>{
+  const c=await fixture(),id=c._spawn_item(13,30,200);c._hint_create(id,7);assert.deepEqual(hint(c,id).engine,[0,0]);c._hint_collect(id);c._sync(0);assert.ok(hint(c,id));assert.equal(hint(c,id).pending,1);assert.equal(body(c,id),undefined);for(let i=0;i<5;i++)c._tick_primary();assert.equal(hint(c,id),undefined);
+});
+test('UFO visual events bind original stock, notice, ring, panel and moving health bar',async()=>{
+  const c=await fixture();c._stock_color(0);c._stock_color(0);c._stock_color(0);const stock=state(c).filter(n=>n.script===80);assert.deepEqual(stock.map(n=>n.sprite),[60,60,60]);assert.ok(state(c).some(n=>n.script===81));c._summon();assert.ok(state(c).some(n=>n.bank===7&&n.script===82&&n.pending===7));assert.ok(state(c).some(n=>n.bank===7&&n.script===134));assert.ok(state(c).some(n=>n.bank===0&&n.script===207));c._fill();for(const script of [204,205,206])assert.equal(state(c).find(n=>n.bank===0&&n.script===script).pending,2);c._pose(60,40,128,1234,1900);const health=state(c).find(n=>n.bank===7&&n.script===136);assert.deepEqual(health.engine,[40,128]);assert.ok(Math.abs(health.scale[0]-1234/1900)<1e-6);const span=state(c).find(n=>n.bank===0&&n.script===206);assert.ok(Math.abs(span.rotationX-6.283185482)<1e-6);c._clear_ufo();assert.equal(state(c).some(n=>n.bank===0&&n.script===207),false);assert.equal(state(c).find(n=>n.bank===7&&n.script===134).pending,1);
+});

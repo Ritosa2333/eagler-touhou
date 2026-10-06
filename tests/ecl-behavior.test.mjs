@@ -22,6 +22,28 @@ const hold=()=>instruction(83,[word(100000)]);
 const spawn=(op,name,x,y,refs=0)=>instruction(op,[str(name),float(x),float(y),word(100),word(0),word(0)],0,refs,6);
 const bind=animation=>instruction(259,[word(0),word(animation)]);
 const near=(actual,expected,label)=>assert.ok(Math.abs(actual-expected)<.000002,`${label}: ${actual} != ${expected}`);
+const snapshot=c=>{const p=c._th12_state(),size=c._th12_state_size();return JSON.parse(new TextDecoder().decode(c.HEAPU8.subarray(p,p+size)));};
+
+test('malformed ECL does not publish routines or replace previously loaded resources',async()=>{
+  const c=await createCore(),valid=program({main:[spawn(257,'Child',20,100),hold()],Child:[hold()]});
+  const p=c._malloc(valid.length);c.HEAPU8.set(valid,p);assert.equal(c._th12_load_ecl(p,valid.length),1);
+  const invalid=Buffer.from(valid);invalid.writeUInt32LE(valid.length-4,40);c.HEAPU8.set(invalid,p);assert.equal(c._th12_load_ecl(p,invalid.length),0);c._free(p);
+  c._th12_start(0,0,1,1234);assert.deepEqual(sprites(c,0).map(s=>[s.x,s.y]),[[20,100]]);
+});
+
+test('native HP0 without an effective hurt query remains alive and does not award a drop',async()=>{
+  const c=await ready({main:[spawn(257,'ZeroLife',20,100),hold()],ZeroLife:[instruction(411,[word(0)]),instruction(410,[word(1)]),hold()]});
+  c._th12_tick(0,0);assert.equal(snapshot(c).enemies.find(e=>!e.hidden).life,0);assert.equal(sprites(c,3).length,0);
+});
+
+test('real ECL commands configure all three C++ laser classes and retain timed lookup IDs',async()=>{
+  const config=[instruction(500,[word(0)]),instruction(503,[word(0),float(5),float(7)]),instruction(525,[word(0),float(60),float(80)]),instruction(504,[word(0),float(.25),float(0)]),instruction(505,[word(0),float(2),float(0)]),instruction(524,[word(0),float(24)]),instruction(600,[word(0),float(10),float(100),float(200),float(12)]),instruction(601,[word(0),word(8),word(10),word(20),word(12),word(1)])];
+  const c=await ready({main:[...config,instruction(602,[word(0)]),instruction(603,[word(0),word(123)]),instruction(611,[word(0)]),hold()]});
+  const nodes=snapshot(c).lasers.nodes;assert.deepEqual(nodes.map(n=>n.kind),[0,1,2]);assert.equal(nodes[1].lookupId,123);assert.equal(nodes[2].curve.length,8);
+  for(const n of nodes){near(n.position[0],Math.fround(65+Math.cos(.25)*24),'ECL laser x');near(n.position[1],Math.fround(87+Math.sin(.25)*24),'ECL laser y');}
+  for(let i=0;i<3;i++)c._th12_tick(0,0);assert.equal(snapshot(c).lasers.nodes.find(n=>n.kind===1).phase,3);
+  c._th12_select_stage(2);assert.equal(snapshot(c).lasers.nodes.length,0);
+});
 
 test('spawn uses logical reference bits after a variable-length name and adds the parent position',async()=>{
   const c=await ready({main:[instruction(300,[float(100),float(200)]),instruction(44,[float(75)]),spawn(256,'EnemyWithLongName',-1,30,2),hold()],EnemyWithLongName:[hold()]});
@@ -46,6 +68,15 @@ test('health interrupts preserve their slots and timeout scripts do not replace 
   for(let i=0;i<4;i++)c._th12_tick(0,0);assert.equal(sprites(c,0)[0].animation,31);
   const d=await ready({main:[spawn(257,'TestBoss',0,100),hold()],TestBoss:[instruction(414,[word(0),word(50),word(3),str('Health')],0,0,4),instruction(421,[word(0),str('Timeout')],0,0,2),hold()],Health:[bind(31),hold()],Timeout:[bind(33),hold()]});
   for(let i=0;i<3;i++)d._th12_tick(0,0);assert.equal(sprites(d,0)[0].animation,33);
+});
+
+test('native timeout checks skip zero duration and stop at the first enabled timed slot',async()=>{
+  const make=(first,second)=>ready({main:[spawn(257,'TestBoss',0,100),hold()],TestBoss:[instruction(414,[word(0),word(50),word(first),str('First')],0,0,4),instruction(414,[word(1),word(40),word(second),str('Second')],0,0,4),hold()],First:[bind(31),hold()],Second:[bind(32),hold()]});
+  const zero=await make(0,0);for(let i=0;i<4;i++)zero._th12_tick(0,0);assert.equal(sprites(zero,0)[0].animation,0);
+  const ordered=await make(10,2);for(let i=0;i<4;i++)ordered._th12_tick(0,0);assert.equal(sprites(ordered,0)[0].animation,0);
+  for(let i=0;i<6;i++)ordered._th12_tick(0,0);assert.equal(sprites(ordered,0)[0].animation,31);
+  // Phase entry resets its clock; the following enabled slot now owns timeout2.
+  for(let i=0;i<2;i++)ordered._th12_tick(0,0);assert.equal(sprites(ordered,0)[0].animation,32);
 });
 test('TH12 emitter modes reproduce original launch selection evidence',async()=>{
   // Explicit original inspection: 0x40a34d..0x40a617, seed 1234, count 4,
@@ -72,7 +103,7 @@ test('animation clock resets on binding and selected bank does not change the bo
 });
 
 test('items keep tracking after the player leaves the point-of-collection line',async()=>{
-  const c=await ready({main:[spawn(257,'Dropper',-180,100),hold()],Dropper:[instruction(410,[word(1)]),instruction(411,[word(0)]),hold()]});
+  const c=await ready({main:[spawn(257,'Dropper',-180,100),hold()],Dropper:[instruction(410,[word(1)]),instruction(409),hold()]});
   c._th12_set_initial(0,100*128,100,2,2,0);c._th12_tick(0,0);
   const above=sprites(c,3)[0];assert.ok(above);assert.ok(above.x>-180);
   // Move far below the line and outside the proximity attraction rectangle.

@@ -1,6 +1,6 @@
 *.cpp text eol=lf
-*.c text eol=lf
 *.hpp text eol=lf
+*.c text eol=lf
 *.asm text eol=lf
 *.mjs text eol=lf
 *.py text eol=lf
@@ -9,3 +9,4 @@
 *.css text eol=lf
 *.json text eol=lf
 tools/replay-verifier/golden/*.json -text
+decompiled/** linguist-generated=true linguist-detectable=false

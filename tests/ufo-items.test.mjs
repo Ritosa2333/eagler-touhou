@@ -3,13 +3,16 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
+import {readFile} from 'node:fs/promises';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root);
-let createHarness;
+let createHarness,nativeLifecycle;
 before(async()=>{
   const python=path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe'),emcc=path.join(workspace,'tools/emsdk/upstream/emscripten/emcc.py'),out=path.join(root,'artifacts/ufo-harness.mjs');
-  const names=['reset','spawn','set_player','item_tick','ufo_tick','token','absorb','fixture_ufo','finish','fixture_item','fixture_state','fixture_ufo_age','fixture_fragments','death_drops','collect_aggregate','item','state','nth_id'];
-  const result=spawnSync(python,[emcc,'tests/native/ufo_harness.cpp','-std=c++20','-O2','-o',out,'-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=node','-sEXPORTED_FUNCTIONS='+JSON.stringify(names.map(n=>'_'+n)),'-sEXPORTED_RUNTIME_METHODS='+JSON.stringify(['HEAPF32'])],{cwd:root,encoding:'utf8',env:{...process.env,EM_CACHE:path.join(root,'artifacts/emscripten-cache'),EMSDK_PYTHON:python}});
+const names=['reset','spawn','set_player','item_tick','ufo_tick','token','absorb','fixture_ufo','finish','fixture_item','fixture_state','fixture_ufo_age','fixture_fragments','death_drops','collect_aggregate','item','state','nth_id','ufo_tick_dialogue','apply_enemy_death','removed','direct_reset','enemy_alive','death_requested','effects','reward_frames','fixture_inventory','hud_rotation','hud_event_count','hud_event','visual_event_count','visual_event','clear_events','item_event_count','item_event_kind','fixture_private','animation_count','animation_visit'];
+  const result=spawnSync(python,[emcc,'tests/native/ufo_harness.cpp','src/game/Items.cpp','src/game/Ufo.cpp','-std=c++20','-O2','-o',out,'-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=node','-sEXPORTED_FUNCTIONS='+JSON.stringify(names.map(n=>'_'+n)),'-sEXPORTED_RUNTIME_METHODS='+JSON.stringify(['HEAPF32'])],{cwd:root,encoding:'utf8',env:{...process.env,EM_CACHE:path.join(root,'artifacts/emscripten-cache'),EMSDK_PYTHON:python}});
   assert.equal(result.status,0,result.stdout+result.stderr);createHarness=(await import(pathToFileURL(out))).default;
+  nativeLifecycle=JSON.parse(await readFile(path.join(root,'tests/fixtures/ufo-lifecycle-native.json'),'utf8'));
+  assert.equal(nativeLifecycle.originalExeSha256,'99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417');
 });
 const state=h=>Array.from(new Float32Array(h.HEAPF32.buffer,h._state(),24));
 const item=(h,id)=>Array.from(new Float32Array(h.HEAPF32.buffer,h._item(id),21));
@@ -98,4 +101,77 @@ test('native death power loss retains its one-level floor and emits seven determ
     const first=item(h,h._nth_id(0)),last=item(h,h._nth_id(6));assert.equal(first[1],1);near(Math.hypot(first[5],first[6]),3);assert.ok(first[5]<0&&last[5]>0);assert.ok(first[6]<0&&last[6]<0);
     for(let i=0;i<7;i++){const drop=item(h,h._nth_id(i));near(Math.atan2(drop[6],drop[5]),angles[i],.000001);}
   }
+});
+
+test('restored C++ token hints match all18 independent original completion cases and keep their owner',async()=>{
+  for(const fixture of nativeLifecycle.hintCases){
+    const h=await ready();h._fixture_inventory(...fixture.colors,0,2);const id=h._spawn(fixture.type,0,200);
+    h._item_tick();const first=Array.from(new Float32Array(h.HEAPF32.buffer,h._item(id),24));
+    assert.equal(first[21],Number(fixture.hintInterrupt!==0));assert.equal(first[22],fixture.hintInterrupt);
+    near(first[3],fixture.positionAfterTick[0]);near(first[4],fixture.positionAfterTick[1]);
+    h._item_tick();const second=Array.from(new Float32Array(h.HEAPF32.buffer,h._item(id),24));assert.equal(second[23],first[23]);
+    assert.equal(h._item_event_count(),0,'a persistent hint must not reallocate or rebind every tick');
+    h._fixture_inventory(1,1,1,3);h._item_tick();const removed=Array.from(new Float32Array(h.HEAPF32.buffer,h._item(id),24));assert.equal(removed[21],0);
+    assert.equal(h._item_event_count(),fixture.hintInterrupt?1:0);
+    if(fixture.hintInterrupt)assert.equal(h._item_event_kind(0),8,'full inventory explicitly removes the211 owner');
+  }
+});
+
+test('token pickup queues the native211 exit after collecting and supports slot reuse',async()=>{
+  const h=await ready();h._fixture_inventory(1,1,0,2);h._set_player(0,0,200,0,0);const id=h._spawn(10,0,200);
+  h._item_tick();assert.equal(item(h,id)[0],0);assert.equal(state(h)[4],3);
+  assert.deepEqual(Array.from({length:h._item_event_count()},(_,i)=>h._item_event_kind(i)),[7,1,9],'create hint, collect token, then queue hintIRQ1; no immediate deletion');
+  const replacement=h._spawn(11,0,300);assert.ok(replacement>id);assert.equal(Array.from(new Float32Array(h.HEAPF32.buffer,h._item(replacement),24))[21],0);
+});
+
+test('restored inventory separates logical colors from original physical HUD rotation and overlays',async()=>{
+  const h=await ready();
+  for(let i=0;i<nativeLifecycle.appendColors.length;i++){
+    h._token(nativeLifecycle.appendColors[i]-1);const observed=state(h),expected=nativeLifecycle.appendStates[i];
+    assert.deepEqual(observed.slice(1,4),expected.slots);assert.equal(observed[4],expected.count);assert.equal(h._hud_rotation(),expected.rotation);
+  }
+  const events=Array.from({length:h._hud_event_count()},(_,i)=>Array.from(new Float32Array(h.HEAPF32.buffer,h._hud_event(i),10)));
+  assert.deepEqual(events.filter(e=>e[1]===0).slice(0,4).map(e=>[e[4],e[7]]),[[1,11],[1,17],[2,10],[3,10]]);
+  const overlays=events.filter(e=>e[1]===1);assert.equal(overlays.length,10);
+  for(let i=0;i<overlays.length;i+=2){assert.equal(overlays[i][5],81);assert.equal(overlays[i][6],21);assert.equal(overlays[i][8],overlays[i+1][8]);assert.equal(overlays[i][9],1);}
+  assert.ok(events.some((e,i)=>e[7]===9&&events[i+1]?.[7]===7&&events[i+2]?.[7]===8),'mismatch retains the9/7/8 animation sequence');
+});
+
+test('restored UFO escape action respects original equality420, later persistence and boss signal',async()=>{
+  for(const [age,expected] of Object.entries(nativeLifecycle.escapeSignals)){
+    const h=await ready();h._fixture_ufo(1,0,0,0,100,1);h._fixture_ufo_age(Number(age));h._fixture_private(123);h._ufo_tick(0);assert.equal(state(h)[22],expected);
+  }
+  const h=await ready();h._fixture_ufo(1,0,0,0,100,1);h._fixture_ufo_age(100);h._ufo_tick(1);assert.equal(state(h)[22],999);
+});
+
+test('dialogue asks for native Enemy death and awards only when its deferred callback executes',async()=>{
+  const h=await ready();for(let i=0;i<3;i++)h._token(0);h._ufo_tick(0);h._clear_events();
+  h._ufo_tick_dialogue(0,1);assert.equal(h._enemy_alive(),1);assert.equal(h._death_requested(),2);assert.equal(state(h)[0],0);assert.equal(state(h)[4],3);
+  h._ufo_tick_dialogue(0,1);assert.equal(state(h)[0],0,'UFO19 never bypasses an Enemy creation/update guard');
+  h._apply_enemy_death();assert.equal(h._enemy_alive(),0);assert.equal(h._effects(),1);
+  const rewards=Array.from({length:state(h)[0]},(_,i)=>item(h,h._nth_id(i))[1]);assert.deepEqual(rewards,nativeLifecycle.dialogueRewardTypes);
+  h._ufo_tick(0);assert.equal(state(h)[4],0);assert.equal(state(h)[7],0);assert.equal(h._effects(),1);
+});
+
+test('natural removal and native direct reset do not call the defeated reward path',async()=>{
+  const exit=await ready();exit._fixture_ufo(1,.75,3,5,100,1);exit._removed(1);assert.equal(state(exit)[4],3,'Enemy18 removal leaves cleanup toUFO19');exit._ufo_tick(0);
+  assert.equal(state(exit)[4],0);assert.equal(state(exit)[0],nativeLifecycle.naturalEscapeRewardTypes.length);assert.equal(exit._effects(),0);
+  const reset=await ready();reset._fixture_ufo(1,.75,3,5,100,1);reset._fixture_ufo_age(31);const before=state(reset);reset._direct_reset();const after=state(reset);
+  assert.equal(reset._enemy_alive(),1);assert.equal(after[7],0);assert.equal(after[4],0);assert.deepEqual(after.slice(8,13),before.slice(8,13));assert.equal(reset._effects(),0);
+  const visual=Array.from(new Float32Array(reset.HEAPF32.buffer,reset._visual_event(reset._visual_event_count()-1),16));assert.equal(visual[1],6);assert.equal(visual[11],0);assert.equal(visual[15],54);
+});
+
+test('UFO death spawns the native ECL effect once and retains120 display ticks on cleanup',async()=>{
+  const h=await ready();h._fixture_ufo(1,.75,3,5,100,1);h._finish();assert.equal(h._effects(),1);assert.equal(h._reward_frames(),120);assert.equal(state(h)[14],0);
+  h._ufo_tick(0);assert.equal(h._reward_frames(),120,'native44a387 cleanup returns before the display decrement');
+  h._ufo_tick(0);assert.equal(h._reward_frames(),119);h._finish();assert.equal(h._effects(),1);assert.equal(state(h)[0],3);
+});
+
+test('embedded Item22 animation runs only at the native surviving tail before its timer advances',async()=>{
+  const h=await ready(),power=h._spawn(1,100,300),picked=h._spawn(10,0,400),delayed=h._spawn(9,0,400),expired=h._spawn(10,192,200);
+  h._fixture_item(expired,1200,0,40,0);h._item_tick();assert.equal(h._animation_count(),1);
+  const visit=Array.from(new Float32Array(h.HEAPF32.buffer,h._animation_visit(0),2));assert.deepEqual(visit,[power,0]);assert.equal(item(h,power)[7],1);
+  assert.equal(item(h,picked)[0],0);assert.equal(item(h,expired)[0],0);assert.equal(item(h,delayed)[2],2);assert.equal(item(h,delayed)[7],0);
+  assert.ok(Array.from({length:h._item_event_count()},(_,i)=>h._item_event_kind(i)).includes(6),'type9 activation binds its body once without a tail tick');
+  h._item_tick();assert.equal(h._animation_count(),1);assert.equal(item(h,delayed)[0],0);
 });

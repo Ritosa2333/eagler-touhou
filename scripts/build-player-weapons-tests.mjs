@@ -1,5 +1,6 @@
 import {emscripten} from './toolchain.mjs';
 import fs from 'node:fs';import path from 'node:path';import {spawnSync} from 'node:child_process';
+import {runtimeSources} from './runtime-sources.mjs';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root);
 const {python,compiler}=emscripten(root),cache=path.join(root,'artifacts/emscripten-cache');
 fs.mkdirSync(path.join(root,'artifacts/player-weapons-tests'),{recursive:true});
@@ -9,5 +10,5 @@ names.push('test_reimu_b_begin','test_reimu_b_tick','test_reimu_b_state');
 names.push('test_sanae_a_damage','test_sanae_a_begin','test_bomb_tick','test_reimu_b_explosion');
 names.push('test_effect_restart');
 names.push('test_leaf_order_begin','test_leaf_order_tick','test_leaf_order_state');
-const r=spawnSync(python,[compiler,'tests/fixtures/player-weapons.cpp','-std=c++20','-O2','-o','artifacts/player-weapons-tests/core.mjs','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=node','-sEXPORTED_FUNCTIONS='+JSON.stringify(names.map(x=>'_'+x)),'-sEXPORTED_RUNTIME_METHODS='+JSON.stringify(['HEAPU8','HEAPF32'])],{cwd:root,stdio:'inherit',env:{...process.env,EM_CACHE:cache,EMSDK_PYTHON:python,PATH:path.dirname(python)+path.delimiter+process.env.PATH}});
+const r=spawnSync(python,[compiler,'tests/fixtures/player-weapons.cpp',...runtimeSources(root),'-std=c++20','-O2','-o','artifacts/player-weapons-tests/core.mjs','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=node','-sEXPORTED_FUNCTIONS='+JSON.stringify(names.map(x=>'_'+x)),'-sEXPORTED_RUNTIME_METHODS='+JSON.stringify(['HEAPU8','HEAPF32'])],{cwd:root,stdio:'inherit',env:{...process.env,EM_CACHE:cache,EMSDK_PYTHON:python,PATH:path.dirname(python)+path.delimiter+process.env.PATH}});
 if(r.status!==0)process.exit(r.status||1);
