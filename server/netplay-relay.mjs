@@ -529,9 +529,9 @@ function validLoadout(room, value) {
 }
 
 function normalizeDisplayName(value) {
-  // \u200b-\u200f and \u202a-\u202e are zero-width/bidi controls that can make
-  // a display name render as someone else's; strip them alongside C0/DEL.
-  return [...String(value || '').replace(/[\u0000-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff]/g, '').trim()].slice(0, 12).join('');
+  // Strip all Unicode Bidi_Control characters and the existing invisible
+  // controls before trimming/counting, so avatar initials stay visible too.
+  return [...String(value || '').replace(/[\u0000-\u001f\u007f\u061c\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff]/g, '').trim()].slice(0, 12).join('');
 }
 
 function invalidateLobbyReady(room) {
