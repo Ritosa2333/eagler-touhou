@@ -22,6 +22,9 @@ bool BrowserPeerTransport::ConnectSpectator(const char*,const char*,std::uint8_t
 void BrowserPeerTransport::Close(){queues.erase(this);if(receiver==this)receiver=nullptr;}
 bool BrowserPeerTransport::IsOpen()const{return queues.count(this)!=0;}
 bool BrowserPeerTransport::Failed()const{return false;}
+bool BrowserPeerTransport::Recovering()const{return false;}
+bool BrowserPeerTransport::Disconnected()const{return false;}
+bool BrowserPeerTransport::CalibrationSuspended()const{return false;}
 bool BrowserPeerTransport::Send(const std::uint8_t*,std::size_t){return false;}
 bool BrowserPeerTransport::SendTo(std::uint8_t,const std::uint8_t*,std::size_t){return false;}
 bool BrowserPeerTransport::SendRepairTo(std::uint8_t,const std::uint8_t*,std::size_t){return false;}
