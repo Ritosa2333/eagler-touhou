@@ -79,8 +79,10 @@ function closeAudio(){
 }
 async function stop(){if(stopping)return;stopping=true;try{clearKeyboard();core.th11_loop_stop();await save();closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(/^\/savesth11\//,'').replace(/^\//,'');if(!/^(?:scoreth11\.dat|th11\.cfg|replay\/th11_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/.test(name))throw Error('存档路径无效');return name;}
-function launch(){
+async function launch(){
  if(launched)return;clearKeyboard();
+ if(!core.th11_prepare_loading())throw Error(coreError());
+ await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);
  if(!core.th11_initialize())throw Error(coreError());
  if(core.th11_phase()===4&&!core.th11_return_title())throw Error(coreError());
  launched=true;apply();first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
@@ -97,7 +99,7 @@ async function command(m){switch(m.command){
  case 'touch-cancel':cancelTouches();return {};
  case 'direct-touch':directTouch(core,canvas,m,{width:innerWidth,height:innerHeight});return {};
  case 'touch-controls':touchControls(core,options,m);return {};
- case 'launch':launch();return {};
+ case 'launch':await launch();return {};
  case 'sync':await save();return {};
  case 'list':{const files=[];for(const dir of ['','/replay'])for(const name of Module.FS.readdir('/savesth11'+dir)){const n=(dir+'/'+name).replace(/^\//,'');try{path(n);}catch{continue;}const s=Module.FS.stat('/savesth11/'+n);if(Module.FS.isFile(s.mode)){files.push({path:n,size:s.size});}}return {files};}
  case 'read':return {bytes:Array.from(Module.FS.readFile('/savesth11/'+path(m.path)))};
