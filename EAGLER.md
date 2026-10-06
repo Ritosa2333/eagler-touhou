@@ -68,12 +68,20 @@ implementation and validation history. See
 [implementation and evidence](th15_web/docs/EAGLER-HIGH-REFRESH-IMPLEMENTATION.md).
 Full Presentation Lab admission and physical-phone acceptance remain incomplete.
 
+## Replay verification
+
+The title adapts the common verifier with all three stored Demo replays and
+Marisa Legacy Lunatic and Extra clears. Original-derived golden traces cover
+225,582 ticks of the declared gameplay fields in the WASI diagnostic core.
+See the [commands and scope](tools/replay-verifier/README.md) and
+[acceptance record](tools/replay-verifier/RESULTS.md). Browser presentation and
+full Presentation Lab coverage remain separate acceptance gates.
+
 ## Scope and verification
 
 This is a basic test adapter, not a claim that all mandatory adapter obligations
 are complete. Multiplayer, THPrac and downloadable languages are not advertised. Standardized physical-gamepad semantics, always-hitbox, complete touch
-conformance, and the shared quick/daily golden Replay verifier remain follow-up
-work. The original logic stays at 60 Hz. No new gameplay oracle was generated.
+conformance remain follow-up work. The original logic stays at 60 Hz.
 
 The shared repository owns `test:th15-launch:browser` and
 `test:test-build-cards:browser`. The former requires a running local host (default

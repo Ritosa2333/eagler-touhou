@@ -5,7 +5,7 @@ import {resolve,relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 const root=fileURLToPath(new URL('../../',import.meta.url));
-const compiler=resolve(root,'../th10_web/tools/wasi-sdk-34.0-x86_64-windows/bin/clang++.exe');
+const compiler=process.env.WASI_SDK_ROOT?resolve(process.env.WASI_SDK_ROOT,'bin/clang++.exe'):resolve(root,'../th10_web/tools/wasi-sdk-34.0-x86_64-windows/bin/clang++.exe');
 const out=resolve(root,'artifacts/cpp');mkdirSync(out,{recursive:true});
 const sources=readdirSync(resolve(root,'cpp/game')).filter(n=>n.endsWith('.cpp')).sort().map(n=>'cpp/game/'+n);
 sources.push('tests/cpp/core-exports.cpp');
