@@ -20,3 +20,5 @@ assert.deepEqual(await select({},'ja'),['/msgothic.ttc'],'Legacy Runtime selecti
 assert.deepEqual(await select({requiredShared:[]}),[]);
 assert.deepEqual(await select({requiredShared:['/unifont.otf']},'ja',true,['/unifont.otf']),[],'Installed font must not download twice');
 console.log('Shared font selection: Japanese baked fonts, practice, localization, legacy and installed-font cases PASS');
+
+export { select };
