@@ -191,7 +191,11 @@ export function createThcrapClient({
         providesFonts:Object.keys(item.patch.fonts || {}).length > 0,
         fontFiles:Object.keys(item.patch.fonts || {}),isGlobalOptions};
       const previous = assetMap.get(mountPath);
-      if (!previous || asset.isGlobalOptions || (!previous.isGlobalOptions && (asset.providesFonts || !previous.providesFonts))) {
+      // Font-provider preference only selects the global font options. Game
+      // artwork and tables follow patch-stack order: the language leaf must
+      // override script_latin even when that dependency also provides fonts.
+      const fontOptions = isRootGameOptions || isGlobalOptions;
+      if (!previous || !fontOptions || asset.isGlobalOptions || (!previous.isGlobalOptions && (asset.providesFonts || !previous.providesFonts))) {
         assetMap.set(mountPath, asset);
       }
       }
