@@ -19,6 +19,7 @@ void SessionGate::Clear()
     config_ = {};
     configured_ = false;
     localReady_ = false;
+    transportAvailable_ = true;
     peerHello_.fill(false);
     peerReady_.fill(false);
 }

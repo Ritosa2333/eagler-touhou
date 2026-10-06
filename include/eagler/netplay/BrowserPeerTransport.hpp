@@ -29,6 +29,9 @@ public:
     void Close();
     bool IsOpen() const override;
     bool Failed() const override;
+    bool Recovering() const override;
+    bool Disconnected() const override;
+    bool CalibrationSuspended() const override;
     // Per-frame input/ACK traffic: unordered and non-retransmitting on RTC.
     bool Send(const std::uint8_t *data, std::size_t size);
     // Peer-relative input packets carry that peer's ACK and frame-advantage

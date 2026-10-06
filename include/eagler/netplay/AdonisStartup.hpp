@@ -11,9 +11,8 @@ namespace Netplay {
 // Probe/echo use SendTo (the input lane); negotiation uses reliable control.
 // No gameplay input, world snapshot, sleep, new socket or cross-machine clock
 // subtraction. The caller keeps resources ready and gameplay paused throughout.
-// ADS/2 preserves the deployed two-player wire. ADS/3 extends the same owner
-// to a three-player input mesh: every required link is sampled, each participant
-// publishes its worst-link summary, and the host waits for every acceptance.
+// ADS/4 binds every packet to a host-owned measurement attempt. Late echoes,
+// summaries and commits from a discarded attempt can never open frame zero.
 class AdonisStartup {
 public:
     // Original Adonis2 sends 1..129; slot 0 is unused. Trim slots 0..9,
@@ -22,8 +21,11 @@ public:
     static constexpr unsigned ProbeCount = Attempts - 1, IntervalUs = 16'000, TailUs = 200'000;
     static constexpr unsigned StabilizeUs = 1'000'000;
     static constexpr std::uint64_t PeerWaitUs = 45'000'000, MeasurementTimeoutUs = 10'000'000;
+    static constexpr unsigned MaxRetries = 3;
+    static constexpr std::uint64_t StartupTimeoutUs = 90'000'000;
     static constexpr std::uint32_t Automatic = INVALID_FRAME;
-    enum class Stage : std::uint32_t { Idle, WaitingPeer, Measuring, Negotiating, Committed, Failed };
+    enum class Stage : std::uint32_t { Idle, WaitingPeer, Measuring, Negotiating, Committed, Failed, Retrying, Unavailable };
+    enum class RetryReason : std::uint32_t { None, Samples, Interrupted, Hidden, Connection, Timeout, PeerMissing, Exhausted, Budget };
     struct Report {
         std::uint32_t p95Us = 0, received = 0, lost = 0, minUs = 0, maxUs = 0, meanUs = 0;
         bool operator==(const Report& r) const { return p95Us==r.p95Us && received==r.received && lost==r.lost && minUs==r.minUs && maxUs==r.maxUs && meanUs==r.meanUs; }
@@ -39,7 +41,7 @@ public:
             return Fail("Invalid Adonis startup configuration");
         session_=session; mode_=mode; requested_=requestedDelay;
         reserve_=mode==AdonisMode::Hybrid ? predictionReserve : 0;
-        begin_=clock_=nowUs; stage_=Stage::WaitingPeer;
+        begin_=attemptBegin_=clock_=nowUs; stage_=Stage::WaitingPeer;
         for(auto& lane:sentAt_)lane.fill(Unsent);
         for(auto& lane:rtt_)lane.fill(Unsent);
         return true;
@@ -54,19 +56,41 @@ public:
         if (stage_==Stage::Idle) return Fail("Adonis startup was not begun");
         // Once timing is committed, gameplay owns transport failure/recovery.
         // A dropped link must not poison the frozen calibration report.
-        if (stage_!=Stage::Committed && transport.Failed()) return Fail("Adonis startup transport failed");
-        if (stage_==Stage::WaitingPeer && nowUs-begin_>=PeerWaitUs)
-            return Fail("Adonis timed out waiting for all player input channels and loaded worlds");
-        if (stage_!=Stage::WaitingPeer && stage_!=Stage::Committed && nowUs-measurementBegin_>=MeasurementTimeoutUs)
-            return Fail("Adonis startup timed out; no guessed delay was applied");
+        if (stage_!=Stage::Committed && (transport.Failed() || transport.Disconnected()))
+            Unavailable(RetryReason::Connection);
+        if (stage_!=Stage::Committed && stage_!=Stage::Unavailable && nowUs-begin_>=StartupTimeoutUs)
+            Unavailable(RetryReason::Timeout);
+        if (stage_==Stage::WaitingPeer && nowUs-attemptBegin_>=PeerWaitUs)
+            Unavailable(RetryReason::PeerMissing);
+        if ((stage_==Stage::Measuring || stage_==Stage::Negotiating) && nowUs-measurementBegin_>=MeasurementTimeoutUs)
+            Retry(RetryReason::Timeout);
+        if (stage_==Stage::Measuring && probes_ && (transport.CalibrationSuspended() || !transport.IsOpen() || transport.Recovering()))
+            Retry(transport.CalibrationSuspended()?RetryReason::Hidden:RetryReason::Connection);
+        if (stage_==Stage::Retrying && !session_.localPlayer) {
+            if(attempt_>=MaxRetries)Unavailable(RetryReason::Exhausted);
+            else ResetAttempt(attempt_+1,nowUs,reason_);
+        }
         if (!transport.IsOpen()) { if(!probes_)stabilityStarted_=false; return true; }
+        if(stage_==Stage::Unavailable){
+            if(nowUs>=nextControl_){Send(transport,Stop);nextControl_=nowUs+200'000;}
+            return true;
+        }
+        if(stage_==Stage::Retrying){
+            if(nowUs>=nextControl_){Send(transport,RetryRequest);nextControl_=nowUs+200'000;}
+            return true;
+        }
         if (stage_==Stage::Committed) {
             if (!session_.localPlayer && (commitAckMask_|LocalBit())!=AllMask() && nowUs-committedAt_<5'000'000 && nowUs>=nextControl_) {
                 Send(transport, Commit); nextControl_=nowUs+200'000;
             }
             return true;
         }
-        if (nowUs>=nextHello_) { Send(transport, Hello); nextHello_=nowUs+200'000; }
+        if (nowUs>=nextHello_) {
+            if(!session_.localPlayer && attempt_ && stage_==Stage::WaitingPeer)Send(transport,Restart);
+            if(!transport.CalibrationSuspended())Send(transport, Hello);
+            nextHello_=nowUs+200'000;
+        }
+        if(transport.CalibrationSuspended() || transport.Recovering())return true;
         if ((peerHelloMask_|LocalBit())==AllMask() && stage_==Stage::WaitingPeer) {
             stage_=Stage::Measuring;measurementBegin_=nowUs;
         }
@@ -88,7 +112,7 @@ public:
                 for(unsigned i=Warmup;i<Attempts;++i)if(rtt_[peer][i]!=Unsent)valid[n++]=rtt_[peer][i];
                 // Every link must be usable; a healthy host link cannot hide
                 // a failed P2/P3 input lane. Manual D needs this proof too.
-                if(n<96)return Fail("Too few input-lane samples; retry calibration");
+                if(n<96){Retry(RetryReason::Samples);return true;}
                 std::sort(valid.begin(),valid.begin()+n);
                 const unsigned at=(n-1)*95/100;
                 const auto tail=n%2==0&&at+1<n?(valid[at]+valid[at+1])/2:valid[at];
@@ -104,7 +128,7 @@ public:
             Send(transport, Summary);
             if(summaryMask_==AllMask()) {
                 choice_=ChooseAll();
-                if(choice_.delay>9) return Fail("Measured input budget exceeds 9 frames; retry or choose D manually");
+                if(choice_.delay>9){Unavailable(RetryReason::Budget);return true;}
                 if(!session_.localPlayer) {
                     if((acceptedMask_|LocalBit())==AllMask()) {
                         if(Send(transport,Commit)) {stage_=Stage::Committed;committedAt_=nowUs;}
@@ -117,7 +141,7 @@ public:
     }
     bool Receive(PeerTransport& transport, const std::uint8_t* p, std::size_t n, std::uint64_t nowUs) {
         if(!ObserveClock(nowUs))return false;
-        if(!IsPacket(p,n) || n!=Bytes || p[3]!=(session_.playerCount==2?2:3) || p[4]<Hello || p[4]>CommitAck)
+        if(!IsPacket(p,n) || n!=Bytes || p[3]!=4 || p[4]<Hello || p[4]>Stop)
             return Fail("Malformed Adonis startup packet");
         const auto get=[&](unsigned at,unsigned count=4){std::uint64_t v=0;for(unsigned i=0;i<count;++i)v|=std::uint64_t(p[at+i])<<(i*8);return v;};
         if(get(8,8)!=session_.sessionId)return true; // retired generation
@@ -126,17 +150,36 @@ public:
            get(16)!=session_.gameplayAbi || get(20)!=session_.seed || get(24)!=requested_)
             return Fail("Adonis startup mode, request, seed or build differs");
         const unsigned kind=p[4],sequence=unsigned(get(28));
-        if(session_.playerCount==3 && (p[56]!=3 || p[57]!=(kind==Probe||kind==Echo?session_.localPlayer:255)))
+        if(p[56]!=session_.playerCount || p[57]!=(kind==Probe||kind==Echo?session_.localPlayer:255))
             return Fail("Adonis startup player count or target differs");
         for(unsigned i=kind==Summary?56:44;i<Bytes;++i){
-            if(session_.playerCount==3&&(i==56||i==57))continue;
+            if(i==56||i==57||i>=60)continue;
             if(p[i])return Fail("Adonis startup reserved bytes are nonzero");
         }
         if((kind!=Probe && kind!=Echo && sequence) ||
            (kind<=Echo && (get(32)||get(36)||get(40))))return Fail("Invalid Adonis startup fields");
+        const unsigned attempt=unsigned(get(60));
+        if(attempt>MaxRetries)return Fail("Invalid Adonis measurement attempt");
+        if(kind>=RetryRequest){
+            if(get(32)>unsigned(RetryReason::Budget)||get(36)||get(40))return Fail("Invalid Adonis retry reason");
+            if(kind==Restart && peer!=0)return Fail("Invalid Adonis restart authority");
+            if(kind==Stop){
+                if(attempt<attempt_ || stage_==Stage::Committed)return true;
+                Unavailable(RetryReason(get(32)));return true;
+            }
+            if(kind==Restart && attempt>attempt_ && stage_!=Stage::Committed && stage_!=Stage::Unavailable){
+                ResetAttempt(attempt,nowUs,RetryReason(get(32)));return true;
+            }
+            if(kind==RetryRequest && attempt==attempt_ && !session_.localPlayer)Retry(RetryReason(get(32)));
+            return true;
+        }
+        // Other mesh participants can hear a new HELLO before the host's
+        // reliable Restart. Its next HELLO repairs that harmless ordering.
+        if(attempt!=attempt_ || stage_==Stage::Unavailable || stage_==Stage::Retrying)return true;
         if(kind==Hello){peerHelloMask_|=1u<<peer;return true;}
         if(kind==Probe || kind==Echo) {
             if(!sequence || sequence>=Attempts)return Fail("Invalid Adonis probe sequence");
+            if(transport.CalibrationSuspended()){Retry(RetryReason::Hidden);return true;}
             if(kind==Probe) {Send(transport,Echo,sequence,peer);return true;}
             if(!haveLocal_ && sequence>=Warmup && sentAt_[peer][sequence]!=Unsent && rtt_[peer][sequence]==Unsent) {
                 const auto elapsed=nowUs-sentAt_[peer][sequence];
@@ -215,20 +258,41 @@ public:
     unsigned WorstPeer() const {return worstPeer_;}
     const Choice& Selected() const {return choice_;}
     std::uint32_t Request() const {return requested_;}
+    unsigned Attempt() const {return attempt_+1;}
+    RetryReason Reason() const {return reason_;}
 private:
-    enum Kind : std::uint8_t {Hello=1,Probe,Echo,Summary,Proposal,Accept,Commit,CommitAck};
+    enum Kind : std::uint8_t {Hello=1,Probe,Echo,Summary,Proposal,Accept,Commit,CommitAck,RetryRequest,Restart,Stop};
     static constexpr std::size_t Bytes=64;
     static constexpr auto Unsent=std::numeric_limits<std::uint64_t>::max();
     bool Fail(const char* text){stage_=Stage::Failed;error_=text;return false;}
     bool ObserveClock(std::uint64_t now) {
         if(Failed())return false;
         if(now<clock_)return Fail("Adonis startup clock reversed");
-        if(stage_==Stage::Measuring && now-clock_>500'000)
-            return Fail("Adonis measurement interrupted; retry with both pages active");
+        if(stage_==Stage::Measuring && now-clock_>500'000){
+            if(probes_)Retry(RetryReason::Interrupted);
+            else stabilityStarted_=false;
+        }
         clock_=now;return true;
     }
     unsigned LocalBit()const{return 1u<<session_.localPlayer;}
     unsigned AllMask()const{return (1u<<session_.playerCount)-1;}
+    void Retry(RetryReason reason){
+        if(stage_==Stage::Committed || stage_==Stage::Unavailable || stage_==Stage::Retrying)return;
+        reason_=reason;stage_=Stage::Retrying;nextControl_=0;
+    }
+    void Unavailable(RetryReason reason){
+        if(stage_==Stage::Unavailable)return;
+        reason_=reason;stage_=Stage::Unavailable;nextControl_=0;
+    }
+    void ResetAttempt(unsigned attempt,std::uint64_t now,RetryReason reason){
+        attempt_=attempt;reason_=reason;attemptBegin_=now;stage_=Stage::WaitingPeer;
+        probes_=peerHelloMask_=summaryMask_=acceptedMask_=commitAckMask_=worstPeer_=0;
+        haveLocal_=accepted_=stabilityStarted_=false;
+        nextHello_=nextControl_=nextProbe_=lastProbe_=measurementBegin_=committedAt_=0;
+        local_={};reports_={};links_={};choice_={};
+        for(auto& lane:sentAt_)lane.fill(Unsent);
+        for(auto& lane:rtt_)lane.fill(Unsent);
+    }
     Choice ChooseAll()const{
         Report worst=local_;for(unsigned peer=0;peer<session_.playerCount;++peer)
             if(reports_[peer].p95Us>worst.p95Us)worst=reports_[peer];
@@ -237,11 +301,12 @@ private:
     bool Send(PeerTransport& transport,Kind kind,unsigned sequence=0,unsigned peer=MAX_PLAYERS) {
         std::array<std::uint8_t,Bytes> bytes{};
         auto put=[&](unsigned at,std::uint64_t n,unsigned count=4){for(unsigned i=0;i<count;++i)bytes[at+i]=std::uint8_t(n>>(i*8));};
-        bytes[0]='A';bytes[1]='D';bytes[2]='S';bytes[3]=session_.playerCount==2?2:3;bytes[4]=kind;
+        bytes[0]='A';bytes[1]='D';bytes[2]='S';bytes[3]=4;bytes[4]=kind;
         bytes[5]=session_.localPlayer;bytes[6]=std::uint8_t(mode_);bytes[7]=std::uint8_t(reserve_);
         put(8,session_.sessionId,8);put(16,session_.gameplayAbi);put(20,session_.seed);put(24,requested_);put(28,sequence);
-        if(session_.playerCount==3){bytes[56]=3;bytes[57]=kind==Probe||kind==Echo?std::uint8_t(peer):255;}
+        bytes[56]=session_.playerCount;bytes[57]=kind==Probe||kind==Echo?std::uint8_t(peer):255;put(60,attempt_);
         if(kind==Summary){put(32,local_.p95Us);put(36,local_.received);put(40,local_.lost);put(44,local_.minUs);put(48,local_.maxUs);put(52,local_.meanUs);}
+        else if(kind>=RetryRequest)put(32,unsigned(reason_));
         else if(kind>=Proposal){put(32,choice_.delay);put(36,choice_.fullDelay);put(40,choice_.prediction);}
         return kind==Probe || kind==Echo ? transport.SendTo(peer<session_.playerCount?peer:1-session_.localPlayer,bytes.data(),bytes.size()) :
             transport.SendControl(bytes.data(),bytes.size());
@@ -249,9 +314,10 @@ private:
     SessionConfig session_{};
     AdonisMode mode_=AdonisMode::Rollback;
     Stage stage_=Stage::Idle;
-    unsigned reserve_=0,probes_=0;
+    unsigned reserve_=0,probes_=0,attempt_=0;
+    RetryReason reason_=RetryReason::None;
     std::uint32_t requested_=Automatic;
-    std::uint64_t begin_=0,measurementBegin_=0,clock_=0,nextHello_=0,nextControl_=0,nextProbe_=0,lastProbe_=0,committedAt_=0;
+    std::uint64_t begin_=0,attemptBegin_=0,measurementBegin_=0,clock_=0,nextHello_=0,nextControl_=0,nextProbe_=0,lastProbe_=0,committedAt_=0;
     bool haveLocal_=false,accepted_=false,stabilityStarted_=false;
     unsigned peerHelloMask_=0,summaryMask_=0,acceptedMask_=0,commitAckMask_=0,worstPeer_=0;
     std::array<std::array<std::uint64_t,Attempts>,MAX_PLAYERS> sentAt_{},rtt_{};

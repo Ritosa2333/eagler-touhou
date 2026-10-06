@@ -4,6 +4,9 @@
 #include <cassert>
 #include <cstdio>
 #include <deque>
+#ifdef _MSC_VER
+#include <crtdbg.h>
+#endif
 
 using namespace Netplay;
 struct Link : PeerTransport {
@@ -14,8 +17,12 @@ struct Link : PeerTransport {
     unsigned fast=0,control=0,dropEvery=0;
     std::vector<std::uint64_t> probeTimes;
     bool dead=false,closed=false,blocked=false,dropAccept=false,dropCommit=false,dropAck=false;
+    bool disconnected=false,suspended=false,recovering=false;
     bool IsOpen()const override{return !dead&&!closed;}
     bool Failed()const override{return dead;}
+    bool Disconnected()const override{return disconnected;}
+    bool CalibrationSuspended()const override{return suspended;}
+    bool Recovering()const override{return recovering;}
     std::size_t BufferedAmount()const override{return 0;}
     bool Send(const std::uint8_t* bytes,std::size_t size,bool reliable){
         if(dead||blocked)return false;
@@ -105,7 +112,7 @@ static void failure_and_reuse(){
     Link a,b;a.other=&b;b.other=&a;AdonisStartup l;assert(l.Begin(config(0),0,AdonisMode::Delay,AdonisStartup::Automatic));
     assert(l.Tick(a,0));const auto stale=b.incoming.front().bytes;
     assert(l.Tick(a,10'000'000));
-    assert(!l.Tick(a,AdonisStartup::PeerWaitUs)&&l.Failed());
+    assert(l.Tick(a,AdonisStartup::PeerWaitUs)&&l.State()==AdonisStartup::Stage::Unavailable&&!l.Failed());
     auto c=config(1);c.sessionId++;
     assert(l.Begin(c,0,AdonisMode::Hybrid,AdonisStartup::Automatic));
     assert(l.Receive(b,stale.data(),stale.size(),1'000)&&!l.Ready());
@@ -113,7 +120,7 @@ static void failure_and_reuse(){
     assert(!l.Receive(b,bad.data(),bad.size()-1,2'000));
     assert(l.Begin(c,0,AdonisMode::Hybrid,AdonisStartup::Automatic));
     assert(l.Receive(b,bad.data(),bad.size(),1'000));assert(l.Tick(b,1'000));
-    assert(!l.Tick(b,601'000)&&l.Failed());
+    assert(l.Tick(b,601'000)&&l.State()==AdonisStartup::Stage::Measuring&&!l.Failed());
     assert(l.Begin(c,0,AdonisMode::Hybrid,AdonisStartup::Automatic));
     assert(!l.Ready()&&l.Probes()==0&&l.Local().received==0);
 }
@@ -127,15 +134,15 @@ static void allowance(){
 }
 struct MeshLink:PeerTransport{
     struct Pending{std::uint64_t at;std::vector<std::uint8_t> bytes;};
-    unsigned seat=0,probes[3]{};
+    unsigned seat=0,count=3,probes[3]{};
     std::uint64_t now=0,acceptAfter=0;
     MeshLink* peers[3]{};
     std::deque<Pending> incoming;
-    bool dropSlowInput=false,dropCommit=false,dropAck=false;
+    bool dropSlowInput=false,dropCommit=false,dropAck=false,dropRestart=false,dropRetry=false;
     bool IsOpen()const override{return true;}
     bool Failed()const override{return false;}
     bool Forward(unsigned peer,const std::uint8_t* p,std::size_t n,bool control){
-        assert(peer<3&&peer!=seat&&n==64&&p[3]==3&&p[5]==seat&&p[56]==3);
+        assert(peer<count&&peer!=seat&&n==64&&p[3]==4&&p[5]==seat&&p[56]==count);
         if(!control){
             assert(p[57]==peer);
             if(p[4]==2)++probes[peer];
@@ -145,6 +152,8 @@ struct MeshLink:PeerTransport{
             if(p[4]==6&&peer==0&&now<acceptAfter)return true;
             if(p[4]==7&&peer==2&&dropCommit){dropCommit=false;return true;}
             if(p[4]==8&&peer==0&&dropAck){dropAck=false;return true;}
+            if(p[4]==10&&dropRestart){dropRestart=false;return true;}
+            if(p[4]==9&&dropRetry){dropRetry=false;return true;}
         }
         const auto delay=seat&&peer?(seat==1?50'000u:70'000u):1'000u;
         peers[peer]->incoming.push_back({now+delay,{p,p+n}});
@@ -154,7 +163,7 @@ struct MeshLink:PeerTransport{
     bool SendTo(std::uint8_t peer,const std::uint8_t* p,std::size_t n)override{return Forward(peer,p,n,false);}
     bool SendRepairTo(std::uint8_t,const std::uint8_t*,std::size_t)override{return false;}
     bool SendControl(const std::uint8_t* p,std::size_t n)override{
-        for(unsigned peer=0;peer<3;++peer)if(peer!=seat)Forward(peer,p,n,true);
+        for(unsigned peer=0;peer<count;++peer)if(peer!=seat)Forward(peer,p,n,true);
         return true;
     }
     bool Poll(std::vector<std::uint8_t>* out)override{
@@ -174,7 +183,7 @@ static void mesh(AdonisMode mode,std::uint32_t request,bool missingLink=false){
     links[0].dropCommit=true;links[2].dropAck=true;
     links[2].acceptAfter=4'000'000; // Host must wait for the third acceptance.
     bool failed=false;
-    for(std::uint64_t now=0;now<6'000'000&&!failed;now+=1'000){
+    for(std::uint64_t now=0;now<(missingLink?20'000'000u:6'000'000u)&&!failed;now+=1'000){
         for(auto& link:links)link.now=now;
         for(unsigned seat=0;seat<3;++seat){
             std::vector<std::uint8_t> bytes;
@@ -183,7 +192,7 @@ static void mesh(AdonisMode mode,std::uint32_t request,bool missingLink=false){
         }
         if(now<links[2].acceptAfter)assert(!startup[0].Ready());
     }
-    if(missingLink){assert(failed&&!startup[0].Ready());return;}
+    if(missingLink){assert(!failed&&!startup[0].Ready());for(auto& s:startup)assert(s.State()==AdonisStartup::Stage::Unavailable);return;}
     assert(!failed);
     const auto choice=startup[0].Selected();assert(choice.fullDelay==4);
     assert(choice.delay==(request==AdonisStartup::Automatic?(mode==AdonisMode::Hybrid?2u:4u):request));
@@ -252,9 +261,51 @@ static void connection_waits_for_loading_peer(){
         assert(host.Startup().Replies()==120&&peer.Startup().Replies()==120);
     }
 }
+static void interrupted_mesh(unsigned count,unsigned slowSeat,AdonisMode mode,std::uint32_t delay){
+    std::array<MeshLink,3> links{};std::array<AdonisStartup,3> startup{};
+    std::vector<std::uint8_t> stale;
+    for(unsigned seat=0;seat<count;++seat){
+        links[seat].seat=seat;links[seat].count=count;
+        for(unsigned peer=0;peer<count;++peer)links[seat].peers[peer]=&links[peer];
+        auto c=config(seat);c.playerCount=count;assert(startup[seat].Begin(c,0,mode,delay));
+    }
+    links[0].dropRestart=true;links[slowSeat].dropRetry=true;
+    for(std::uint64_t now=0;now<12'000'000;now+=1000){
+        for(auto& link:links)link.now=now;
+        for(unsigned seat=0;seat<count;++seat){
+            if(seat==slowSeat&&now>=1'700'000&&now<2'400'000)continue;
+            std::vector<std::uint8_t> bytes;
+            while(links[seat].Poll(&bytes)){
+                if(stale.empty()&&bytes[4]==3)stale=bytes;
+                assert(startup[seat].Receive(links[seat],bytes.data(),bytes.size(),now));
+            }
+            if(now>=2'500'000&&!stale.empty()&&seat==(stale[5]^1u) && count==2){
+                // Old echoes may arrive indefinitely after a retry.
+                assert(startup[seat].Receive(links[seat],stale.data(),stale.size(),now));
+            }
+            assert(startup[seat].Tick(links[seat],now));
+            if(startup[seat].Ready())assert(startup[seat].Attempt()>=2&&startup[seat].Replies()>=96);
+        }
+    }
+    const auto choice=startup[0].Selected();
+    for(unsigned seat=0;seat<count;++seat){
+        assert(startup[seat].Ready()&&!startup[seat].Failed());
+        assert(startup[seat].Attempt()==startup[0].Attempt());
+        assert(startup[seat].Selected().delay==choice.delay&&startup[seat].Selected().prediction==choice.prediction);
+        if(delay!=AdonisStartup::Automatic)assert(choice.delay==delay);
+    }
+}
 int main(){
+#ifdef _MSC_VER
+    _CrtSetReportMode(_CRT_ASSERT,_CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_ASSERT,_CRTDBG_FILE_STDERR);
+    _set_abort_behavior(0,_WRITE_ABORT_MSG|_CALL_REPORTFAULT);
+#endif
     connection_owner();
     connection_waits_for_loading_peer();
+    for(unsigned count:{2u,3u})for(unsigned seat=0;seat<count;++seat)
+        for(auto mode:{AdonisMode::Delay,AdonisMode::Hybrid})for(auto delay:{AdonisStartup::Automatic,0u,9u})
+            interrupted_mesh(count,seat,mode,delay);
     // Original conversion boundaries; in particular the user's 32 ms link
     // must no longer receive an additional mandatory queued frame.
     for(const auto [rtt,frames]:{std::pair{1u,1u},{32'000u,1u},{33'333u,1u},{33'334u,2u},{90'000u,3u},{100'002u,4u},{140'000u,5u}}){
@@ -283,6 +334,6 @@ int main(){
     assert(!s.Begin(config(0),0,AdonisMode::Hybrid,10));
     assert(!s.Begin(config(0),0,AdonisMode::Hybrid,0,3));
     assert(s.Begin(config(0),1,AdonisMode::Delay,0));assert(!s.Tick(a,0));
-    assert(s.Begin(config(0),0,AdonisMode::Delay,0));assert(!s.Tick(a,AdonisStartup::PeerWaitUs));
+    assert(s.Begin(config(0),0,AdonisMode::Delay,0));assert(s.Tick(a,AdonisStartup::PeerWaitUs)&&s.State()==AdonisStartup::Stage::Unavailable);
     std::puts("Actual input lane, two-sided immutable choice, lost control repair, manual D, reserve and failure gates PASS");
 }

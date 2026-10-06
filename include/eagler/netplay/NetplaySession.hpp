@@ -40,7 +40,8 @@ public:
     bool AllPeersHello() const;
     bool AllPeersReady() const;
     bool CanSendReady() const { return AllPeersHello(); }
-    bool CanStart() const { return localReady_ && AllPeersReady(); }
+    bool CanStart() const { return transportAvailable_ && localReady_ && AllPeersReady(); }
+    void SetTransportAvailable(bool available) { transportAvailable_ = available; }
     void MarkLocalReady() { if (CanSendReady()) localReady_ = true; }
     bool LocalReady() const { return localReady_; }
     const SessionConfig &Config() const { return config_; }
@@ -51,6 +52,7 @@ private:
     SessionConfig config_{};
     bool configured_ = false;
     bool localReady_ = false;
+    bool transportAvailable_ = true;
     std::array<bool, MAX_PLAYERS> peerHello_{};
     std::array<bool, MAX_PLAYERS> peerReady_{};
 };

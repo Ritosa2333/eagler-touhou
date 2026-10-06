@@ -15,6 +15,10 @@ public:
     virtual ~PeerTransport() = default;
     virtual bool IsOpen() const = 0;
     virtual bool Failed() const = 0;
+    // Recoverable connection state is separate from a malformed/fatal wire.
+    virtual bool Recovering() const { return false; }
+    virtual bool Disconnected() const { return false; }
+    virtual bool CalibrationSuspended() const { return false; }
     virtual bool SendTo(std::uint8_t peer, const std::uint8_t *data, std::size_t size) = 0;
     virtual bool SendRepairTo(std::uint8_t peer, const std::uint8_t *data, std::size_t size) = 0;
     virtual bool SendControl(const std::uint8_t *data, std::size_t size) = 0;

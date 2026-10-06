@@ -29,6 +29,7 @@ for(const count of [2,3]){
   f.target.__eaglerPeerTransport.error='RTC peer P2 input channel closed';
   f.calibration.pump();
   assert.equal(f.polls(),completedPolls);assert.equal(f.errors.length,0);assert.equal(f.pauses(),0);
+  f.target.__eaglerPeerTransport.onDisconnect();assert.equal(f.pauses(),1,'A disconnected game pauses without a fatal shell error');
   f.core.multiplayer_network_poll=()=>{f.core.restarted=true;return 1;};
   f.calibration.stop();assert.equal(f.target.__eaglerPeerTransport.onReceive,null);
   f.s[11]++;f.s[1]=3;f.calibration.start();assert.ok(f.core.restarted,'Restart restores polling');
@@ -43,14 +44,32 @@ for(const count of [2,3]){
   assert.equal(f.pauses(),1);
  }finally{f.close();}
 }
-for(const kind of ['hidden','route','native']){
+for(const kind of ['hidden','route']){
  const f=fixture();try{
   f.s[1]=3;f.calibration.start();
   if(kind==='hidden')f.target.document.hidden=true;
   if(kind==='route')f.target.__eaglerPeerTransport.route='relay';
-  if(kind==='native')f.s[1]=6;
   f.calibration.pump();const polls=f.polls();f.calibration.pump();
-  assert.equal(f.errors.length,1);assert.equal(f.pauses(),1);assert.equal(f.polls(),polls);
+  assert.equal(f.errors.length,0);assert.equal(f.pauses(),0);assert.ok(f.polls()>polls);
+  if(kind==='hidden'){
+   assert.equal(f.target.__eaglerNetplayCalibrationSuspended,true);
+   assert.equal(f.events.at(-1).netplayTiming.phase,'suspended');
+   f.target.document.hidden=false;f.calibration.pump();assert.equal(f.target.__eaglerNetplayCalibrationSuspended,false);
+  }
  }finally{f.close();}
+}
+{
+ const f=fixture();try{
+  f.s[1]=7;f.s[30]=2|(1<<8);f.calibration.start();
+  assert.equal(f.events.at(-1).netplayTiming.phase,'retrying');
+  assert.equal(f.events.at(-1).netplayTiming.attempt,2);
+  f.s[1]=8;f.s[30]=4|(7<<8);f.calibration.pump();
+  assert.equal(f.events.at(-1).netplayTiming.phase,'unavailable');
+  const polls=f.polls();f.calibration.pump();assert.equal(f.polls(),polls);
+  assert.equal(f.errors.length,0);assert.equal(f.target.__eaglerPeerTransport.onReceive,null);
+ }finally{f.close();}
+}
+{
+ const f=fixture();try{f.s[1]=6;f.calibration.start();assert.equal(f.errors.length,1);assert.equal(f.pauses(),1);}finally{f.close();}
 }
 console.log('Adonis shell progress, immutable result, three seats, interruption and cleanup: PASS');

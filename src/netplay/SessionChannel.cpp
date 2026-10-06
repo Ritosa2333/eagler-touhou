@@ -363,12 +363,17 @@ bool SessionChannel::Pump(SessionGate &gate, RollbackCore &core, std::uint64_t n
     if (failure_ != Failure::None) return false;
     if (!ObserveClock(nowMs)) return false;
     if (transport_.Failed()) return Fail(Failure::Transport);
+    gate.SetTransportAvailable(!transport_.Disconnected()&&!transport_.Recovering());
+    if (transport_.Disconnected()) {
+        for(auto& watchdog:watchdog_)watchdog.Disarm();
+        return true;
+    }
     if (active_ && (gate.Config().sessionId != session_.sessionId ||
         gate.Config().localPlayer != session_.localPlayer || gate.Config().playerCount != session_.playerCount))
         return Fail(Failure::InvalidConfiguration);
     if (!Receive(gate, core, nowMs) || !SendRetired(nowMs)) return false;
     if (!active_) return true;
-    if (!gate.CanStart() && nowMs - beginTime_ >= policy_.connectTimeoutMs)
+    if (!transport_.Recovering() && !gate.CanStart() && nowMs - beginTime_ >= policy_.connectTimeoutMs)
         return Fail(Failure::HandshakeTimeout);
     if (gate.CanSendReady() && !gate.LocalReady())
     {
@@ -395,7 +400,7 @@ bool SessionChannel::Pump(SessionGate &gate, RollbackCore &core, std::uint64_t n
     for (std::uint8_t peer = 0; peer < session_.playerCount; ++peer)
     {
         if (peer == session_.localPlayer) continue;
-        if (!expectsInput || !gate.CanStart() || latestCapture_ == INVALID_FRAME)
+        if (transport_.Recovering() || !expectsInput || !gate.CanStart() || latestCapture_ == INVALID_FRAME)
             watchdog_[peer].Disarm();
         else if (watchdog_[peer].Observe(core.ConfirmedThrough(peer), nowMs, policy_.confirmedTimeoutMs))
             return Fail(Failure::ConfirmedTimeout);

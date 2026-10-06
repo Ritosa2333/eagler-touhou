@@ -95,6 +95,36 @@ assert.equal(peer.restartInFlight, true, 'connected ICE alone cannot finish reco
 peer.inputDc.onmessage({ data: new Uint8Array([1]).buffer });
 assert.equal(peer.restartInFlight, false);
 assert.equal(peer.restartAttempts, 0, 'inbound data finishes recovery');
+peer.lastReceivedAt=Date.now()-6000;peer.inputDc.bufferedAmount=40000;
+await state.schedulePeerRecovery(1,false,true);assert.equal(state.isRecovering(),true);
+peer.inputDc.onmessage({data:new Uint8Array([2]).buffer});
+assert.equal(state.isRecovering(),false,'Fresh data during the grace wait resumes gameplay immediately');
 
 state.close();
+timers.length=0;
+assert.equal(connect(0,100,0,2),1);
+const relayState=globalThis.__eaglerPeerTransport;
+relayState.setRoute('relay');
+const firstSocket=relayState.relay;
+firstSocket.readyState=3;firstSocket.onclose({code:1006});
+assert.equal(relayState.failed,false);assert.equal(relayState.disconnected,true);
+assert.equal(relayState.isRecovering(),false);assert.equal(timers.length,0,'Retired relay streams must not pretend to reconnect');
+relayState.close();
+
+for(const kind of ['input','control']){
+ timers.length=0;connect(0,100,0,2);const s=globalThis.__eaglerPeerTransport;
+ const p={pc:{connectionState:'connected',iceConnectionState:'connected',close(){},async getStats(){return new Map();}},inputOpen:true,controlOpen:true};
+ const dc={readyState:'open',close(){}};s.peers.set(1,p);s.setupChannel(1,dc,kind);s.setRoute('rtc');
+ dc.onclose();assert.equal(s.failed,false);assert.equal(s.disconnected,true);assert.equal(s.isRecovering(),false);
+ s.close();
+}
+
+timers.length=0;connect(0,100,1,2);const clientState=globalThis.__eaglerPeerTransport;
+clientState.peers.set(0,{pc:{connectionState:'connected',iceConnectionState:'connected',close(){}},inputDc:{bufferedAmount:0},controlDc:{bufferedAmount:0},lastReceivedAt:Date.now()-10_000,lastInputSentAt:Date.now(),restartAttempts:0});
+clientState.setRoute('rtc');globalThis.__eaglerNetplayLanActive=true;
+clientState.requestPeerIceRestart(0);
+assert.equal(clientState.peers.get(0).restartAttempts,1);
+timers.at(-1).fn();assert.equal(clientState.peers.get(0).restartAttempts,2);
+timers.at(-1).fn();assert.equal(clientState.disconnected,true,'A client also has a bounded ICE recovery wait');
+assert.equal(clientState.failed,false);clientState.close();delete globalThis.__eaglerNetplayLanActive;
 console.log('browser peer silent recovery: PASS');

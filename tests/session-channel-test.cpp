@@ -14,11 +14,13 @@ namespace {
 struct Mesh;
 struct Link final : PeerTransport {
     Mesh& mesh; std::uint8_t seat;
-    bool open=true,broken=false; std::size_t buffered=0;
+    bool open=true,broken=false,recovering=false,disconnected=false; std::size_t buffered=0;
     std::deque<std::vector<std::uint8_t>> inbox;
     Link(Mesh& owner,std::uint8_t player):mesh(owner),seat(player){}
     bool IsOpen()const override{return open;}
     bool Failed()const override{return broken;}
+    bool Recovering()const override{return recovering;}
+    bool Disconnected()const override{return disconnected;}
     bool SendTo(std::uint8_t peer,const std::uint8_t* bytes,std::size_t size)override;
     bool SendRepairTo(std::uint8_t peer,const std::uint8_t* bytes,std::size_t size)override;
     bool SendControl(const std::uint8_t* bytes,std::size_t size)override;
@@ -315,7 +317,19 @@ void short_repair_policy(){
         static_cast<unsigned long long>(previous),static_cast<unsigned long long>(current));
 }
 }
+static void connection_recovery_keeps_captured_input(){
+    Mesh mesh(2);for(unsigned i=0;i<50;++i)mesh.pump();
+    for(auto& peer:mesh.peers){CHECK(peer->gate.CanStart());capture(*peer,0,mesh.now);}
+    for(auto& peer:mesh.peers){peer->link.open=false;peer->link.recovering=true;}
+    for(unsigned i=0;i<2000;++i)mesh.pump(true);
+    for(auto& peer:mesh.peers){CHECK(!peer->gate.CanStart());CHECK(peer->channel.Error()==SessionChannel::Failure::None);CHECK(peer->core.HasLocalCapture(0));peer->link.open=true;peer->link.recovering=false;}
+    for(unsigned i=0;i<50;++i)mesh.pump(true);
+    for(auto& peer:mesh.peers){CHECK(peer->gate.CanStart());CHECK(peer->core.ConfirmedThroughAllRemotes()==0);CHECK(peer->captures==1);peer->link.open=false;peer->link.disconnected=true;}
+    for(unsigned i=0;i<2000;++i)mesh.pump(true);
+    for(auto& peer:mesh.peers){CHECK(!peer->gate.CanStart());CHECK(peer->channel.Error()==SessionChannel::Failure::None);}
+}
 int main(){
+    connection_recovery_keeps_captured_input();
     lossy_three_peer_stream();retired_final_ack_echo();reliable_tail_repairs_blackout();
     explicit_retirement_fence_recovers_before_repair_timer();timeouts_and_invalid_ack();
     explicit_retirement_fence_recovers_before_repair_timer(true);
