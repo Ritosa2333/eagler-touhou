@@ -24,6 +24,8 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-th20-ogg-production-baseline.mjs",
   "tests/test-node-environment.mjs",
   "tests/test-language-pack-cache.mjs",
+  "tests/test-hosted-base-language-cache.mjs",
+  "tests/test-shared-font-selection.mjs",
   "tests/test-host-config.mjs",
   "tests/test-self-host-bundle.mjs",
   "tests/test-workspace-layout.mjs",
@@ -55,6 +57,7 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-edge-drawer-gesture.mjs",
   "tests/test-game-zoom.mjs",
   "tests/test-game-preferences.mjs",
+  "tests/test-external-midi.mjs",
   "tests/test-language-catalog.mjs",
   "tests/test-offline-language-index.mjs",
   "tests/test-language-pack-validation.mjs",
@@ -66,6 +69,9 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-multiplayer-relay-url.mjs",
   "tests/test-netplay-relay-product-policy.mjs",
   "tests/test-relay-abuse-guard.mjs",
+  "tests/test-relay-membership-security.mjs",
+  "tests/test-relay-flow-control.mjs",
+  "tests/test-relay-payload-security.mjs",
   "tests/test-netplay-measured-timing.mjs",
   "tests/test-spectator-stop-relay.mjs",
   "tests/test-room-network.mjs",
@@ -94,6 +100,7 @@ export const REPOSITORY_NODE_TESTS = Object.freeze([
   "tests/test-network-activity.mjs",
   "tests/test-network-diagnostics.mjs",
   "tests/test-netplay-service-config.mjs",
+  "tests/test-netplay-run-lifecycle.mjs",
   "tests/test-th09-spectator-frame.mjs",
   "tests/test-static-content-policy.mjs",
   "tests/test-package-descriptor.mjs",
@@ -122,6 +129,7 @@ export const REPOSITORY_PYTHON_TESTS = Object.freeze([
 export const WORKSPACE_PRECHECKS = Object.freeze([]);
 
 export const WORKSPACE_NODE_TESTS = Object.freeze([
+  "tests/test-shared-font-selection-workspace.mjs",
   "tests/test-development-host-manifest-workspace.mjs",
   "tests/test-runtime-protocol-contract.mjs",
   "tests/test-gamepad-contract.mjs",

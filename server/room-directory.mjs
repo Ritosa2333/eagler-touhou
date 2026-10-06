@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { validRelayControlMessage } from './relay-flow-control.mjs';
 
 export function publicControlMode(seat) {
   if (seat.touchEnabled === false) return 'normal';
@@ -87,6 +88,12 @@ export function createRoomDirectory({ rooms, clearSeat, invalidateReady, broadca
     maybeDelete(entry.roomId, room);
   }
   function admit(socket, roomId, clientId, memberId) {
+    const owner = clients.get(clientId);
+    // clientId is public in room snapshots. Only its private member may resume.
+    if (owner && owner.memberId !== memberId) {
+      socket.close(1008, 'lobby identity belongs to another member');
+      return false;
+    }
     const previous = members.get(memberId) || clients.get(clientId);
     if (previous && (previous.roomId !== roomId || previous.clientId !== clientId)) {
       const oldRoom = rooms.get(previous.roomId);
@@ -115,6 +122,7 @@ export function createRoomDirectory({ rooms, clearSeat, invalidateReady, broadca
       if (!viewer || binary || data.length > 256) { socket.close(1008, 'invalid directory request'); return; }
       let message;
       try { message = JSON.parse(String(data)); } catch { return; }
+      if (!validRelayControlMessage(message)) { socket.close(1008, 'invalid directory request'); return; }
       if (message?.type === 'release-membership') {
         const entry = members.get(memberId);
         // Compare the observed session, not just the room code: a delayed click
@@ -178,5 +186,10 @@ export function createRoomDirectory({ rooms, clearSeat, invalidateReady, broadca
     changed();
   }, 30_000);
   maintenance.unref();
-  return { admit, connect, activity, changed, depart, evict, track, close() { clearInterval(maintenance); clearTimeout(updateTimer); } };
+  const memberIdFor = (roomId, clientId) => {
+    const entry = clients.get(clientId);
+    return entry?.roomId === roomId ? entry.memberId : undefined;
+  };
+  return { admit, connect, activity, changed, depart, evict, track, memberIdFor,
+    close() { clearInterval(maintenance); clearTimeout(updateTimer); } };
 }

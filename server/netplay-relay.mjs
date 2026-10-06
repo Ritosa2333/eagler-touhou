@@ -4,6 +4,9 @@ import { WebSocket, WebSocketServer } from 'ws';
 import { roomProbeEnvelope } from './room-probe-policy.mjs';
 import { createRoomDirectory, publicControlMode } from './room-directory.mjs';
 import { createRelayAbuseGuard, relayAbuseConfig, relayClientAddress } from './relay-abuse-guard.mjs';
+import { RELAY_LIMITS, createRelayMessageGate, acceptRelayMessage, createBoundedRelaySender,
+  normalizeRelaySignal, clearSpectatorHistory, stopSpectatorStream, hasPendingSpectators,
+  appendSpectatorHistory, validRelayControlMessage } from './relay-flow-control.mjs';
 
 import { multiplayerConfigForProduct } from '../lib/contracts/product-catalog.mjs';
 import { isSpectatorFrameForRoom } from './spectator-frame.mjs';
@@ -86,10 +89,8 @@ if ((turnUsername && !turnCredential) || (!turnUsername && turnCredential)) {
 const rooms = new Map();
 const abuseConfig = relayAbuseConfig();
 const abuseGuard = createRelayAbuseGuard(abuseConfig);
-const forwardCounters = new Map();
-const firstInputDropped = new Set();
-const inputLatestDropped = new Set();
 const targetedEnvelopeMarker = 0xe7;
+const sendBounded = createBoundedRelaySender();
 
 function iceServersFor(roomId, runId, player) {
   const servers = [];
@@ -115,7 +116,7 @@ function handleDiagnosticConnection(socket) {
   const runId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   let pingCount = 0;
   const idleTimer = setTimeout(() => socket.close(1000, 'diagnostic timeout'), 12000);
-  socket.send(JSON.stringify({
+  sendBounded(socket, JSON.stringify({
     type: 'diagnostic-ready',
     protocol: 1,
     iceServers: iceServersFor('network-check', runId, 0),
@@ -129,7 +130,7 @@ function handleDiagnosticConnection(socket) {
       socket.close(1008, 'invalid diagnostic message');
       return;
     }
-    socket.send(JSON.stringify({ type: 'diagnostic-pong', nonce: message.nonce }));
+    sendBounded(socket, JSON.stringify({ type: 'diagnostic-pong', nonce: message.nonce }));
   });
   socket.on('close', () => clearTimeout(idleTimer));
   socket.on('error', () => {});
@@ -187,14 +188,19 @@ function getRun(room, runId) {
       rtcFailed: false,
       playerCount: 0,
       route: null,
+      ended: false,
       routeTimer: null,
       admittedSpectators: new Set(),
       claimedSpectators: new Set(),
       spectatorClients: new Map(),
       spectatorHistory: [],
+      spectatorHistoryBytes: 0,
       spectatorGraceTimer: null,
       spectatorAdmissionOpen: false,
       spectatorStopped: false,
+      forwardCounters: new Map(),
+      firstInputDropped: new Set(),
+      inputLatestDropped: new Set(),
     };
     room.runs.set(runId, run);
   }
@@ -212,7 +218,7 @@ function maybeDeleteRun(room, runId, run) {
 function startSpectatorGrace(roomId, room, runId, run) {
   if (run.spectatorGraceTimer) clearTimeout(run.spectatorGraceTimer);
   run.spectatorAdmissionOpen = true;
-  run.spectatorHistory.length = 0;
+  clearSpectatorHistory(run);
   run.spectatorGraceTimer = setTimeout(() => {
     run.spectatorGraceTimer = null;
     if (room.runs.get(runId) !== run) return;
@@ -223,7 +229,7 @@ function startSpectatorGrace(roomId, room, runId, run) {
       run.admittedSpectators.delete(spectatorId);
       expired++;
     }
-    run.spectatorHistory.length = 0;
+    clearSpectatorHistory(run);
     console.log(`SPECTATOR WINDOW CLOSE room=${roomId} run=${runId} expired=${expired}`);
     maybeDeleteRun(room, runId, run);
     maybeDeleteRoom(roomId, room);
@@ -232,26 +238,11 @@ function startSpectatorGrace(roomId, room, runId, run) {
 
 function sendSpectatorPayload(socket, payload, roomId, runId, spectatorId) {
   if (socket.readyState !== WebSocket.OPEN) return false;
-  if (Number(socket.bufferedAmount || 0) > spectatorMaxBufferedBytes) {
+  if (!sendBounded(socket, payload, { binary: true, maxBufferedBytes: spectatorMaxBufferedBytes })) {
     console.log(`SPECTATOR SLOW room=${roomId} run=${runId} client=${spectatorId} buffered=${socket.bufferedAmount}`);
-    socket.close(1008, 'spectator fell too far behind');
     return false;
   }
-  socket.send(payload, { binary: true });
   return true;
-}
-
-function stopSpectatorStream(run) {
-  if (run.spectatorStopped) return;
-  run.spectatorStopped = true;
-  run.spectatorAdmissionOpen = false;
-  if (run.spectatorGraceTimer) clearTimeout(run.spectatorGraceTimer);
-  run.spectatorGraceTimer = null;
-  run.spectatorHistory.length = 0;
-  run.admittedSpectators.clear();
-  // Never touch run.clients / signalClients: a viewer is not a player seat.
-  for (const socket of run.spectatorClients.values())
-    socket.close(1011, 'spectator stream stopped; players continue');
 }
 
 function maybeDeleteRoom(roomId, room) {
@@ -265,35 +256,41 @@ function maybeDeleteRoom(roomId, room) {
 function removeClient(roomId, runId, player, socket) {
   const room = rooms.get(roomId);
   if (!room) return;
-  const run = getRun(room, runId);
-  if (run.clients.get(player) === socket)
+  const run = room.runs.get(runId);
+  if (!run) return;
+  if (run.clients.get(player) === socket) {
     run.clients.delete(player);
+    if (run.route === 'relay' && !run.ended) {
+      // Retire this non-resumable gameplay stream while the Launcher keeps
+      // ownership of the lobby. RTC closes unused relay sockets normally.
+      run.ended = true;
+      if (run.routeTimer) clearTimeout(run.routeTimer);
+      if (run.spectatorGraceTimer) clearTimeout(run.spectatorGraceTimer);
+      run.routeTimer = run.spectatorGraceTimer = null;
+  clearSpectatorHistory(run);
+      for (const peer of [...run.clients.values(), ...run.signalClients.values(), ...run.spectatorClients.values()]) {
+        if (peer.readyState === WebSocket.OPEN) peer.close(1001, `player ${player + 1} left the run`);
+      }
+    }
+  }
   maybeDeleteRun(room, runId, run);
   maybeDeleteRoom(roomId, room);
 }
 
 function sendSignal(socket, payload) {
-  if (socket.readyState === WebSocket.OPEN)
-    socket.send(JSON.stringify(payload));
+  sendBounded(socket, JSON.stringify(payload));
 }
 
 function broadcastSignal(run, payload) {
   const message = JSON.stringify(payload);
   for (const socket of run.signalClients.values())
-    if (socket.readyState === WebSocket.OPEN) socket.send(message);
+    sendBounded(socket, message);
 }
 
 function broadcastRoute(run, payload) {
   const message = JSON.stringify(payload);
   const send = (player, socket) => {
-    if (socket.readyState !== WebSocket.OPEN) return;
-    if (routeSkewMs > 0 && player === routeSkewPlayer) {
-      setTimeout(() => {
-        if (socket.readyState === WebSocket.OPEN) socket.send(message);
-      }, routeSkewMs);
-    } else {
-      socket.send(message);
-    }
+    sendBounded(socket, message, { delayMs: player === routeSkewPlayer ? routeSkewMs : 0 });
   };
   for (const [player, socket] of run.signalClients) send(player, socket);
   for (const [player, socket] of run.clients) send(player, socket);
@@ -351,6 +348,7 @@ function handleSignalConnection(socket, roomId, runId, player, playerCount) {
   const room = getRoom(roomId, socket);
   if (!room) return;
   const run = getRun(room, runId);
+  if (run.ended) { socket.close(1008, 'run already ended'); return; }
   if (run.releasedPlayers?.has(player)) {
     socket.close(4008, 'membership released');
     return;
@@ -375,11 +373,17 @@ function handleSignalConnection(socket, roomId, runId, player, playerCount) {
   console.log(`SIGNAL JOIN room=${roomId} run=${runId} player=${player} peers=${run.signalClients.size}`);
   maybeResolveRoute(roomId, runId, room, run);
 
+  const acceptSignal = createRelayMessageGate({ maxBytes: RELAY_LIMITS.controlBytes,
+    messagesPerSecond: 120, bytesPerSecond: 256 * 1024 });
   socket.on('message', (data, isBinary) => {
+    if (!acceptRelayMessage(socket, data, acceptSignal)) return;
     if (isBinary) { socket.close(1003, 'signaling expects text'); return; }
     let message;
     try { message = JSON.parse(String(data)); }
     catch { sendSignal(socket, { type: 'error', error: 'invalid signaling message' }); return; }
+    if (!validRelayControlMessage(message)) {
+      socket.close(1008, 'invalid signaling message'); return;
+    }
     if (message.type === 'spectator-stop') {
       if (player === 0 && run.signalClients.get(player) === socket) stopSpectatorStream(run);
       return;
@@ -389,10 +393,11 @@ function handleSignalConnection(socket, roomId, runId, player, playerCount) {
       if (!Number.isInteger(to) || to < 0 || to >= playerCount || to === player) return;
       const target = run.signalClients.get(to);
       if (!target) return;
+      const signal = normalizeRelaySignal(message);
+      if (!signal) { socket.close(1008, 'invalid signaling payload'); return; }
       sendSignal(target, {
         type: 'signal', from: player,
-        description: message.description || null,
-        candidate: message.candidate || null,
+        ...signal,
       });
       return;
     }
@@ -466,14 +471,13 @@ function lobbySnapshot(room) {
 }
 
 function sendLobby(socket, payload) {
-  if (socket.readyState === WebSocket.OPEN)
-    socket.send(JSON.stringify(payload));
+  sendBounded(socket, JSON.stringify(payload));
 }
 
 function broadcastLobby(room, payload = null) {
   const message = JSON.stringify(payload || { type: 'state', room: lobbySnapshot(room) });
   for (const socket of room.lobbyClients.values())
-    if (socket.readyState === WebSocket.OPEN) socket.send(message);
+    sendBounded(socket, message);
   roomDirectory.changed();
 }
 
@@ -551,9 +555,12 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
   sendLobby(socket, { type: 'state', room: lobbySnapshot(room), roomDirectory: { version: 1, controlModes: true }, roomProbe: { iceServers: iceServersFor(roomId, 'lobby-probe', 0) } });
   if (pendingDisconnect) broadcastLobby(room);
   let probeBudget = 0, probeWindow = Date.now();
+  const acceptLobby = createRelayMessageGate({ maxBytes: RELAY_LIMITS.controlBytes,
+    messagesPerSecond: 60, bytesPerSecond: 256 * 1024 });
 
   socket.on('message', (data, isBinary) => {
     if (room.lobbyClients.get(clientId) !== socket) return;
+    if (!acceptRelayMessage(socket, data, acceptLobby)) return;
     if (isBinary) {
       socket.close(1003, 'lobby expects text frames');
       return;
@@ -561,7 +568,7 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
     let message;
     try { message = JSON.parse(String(data)); }
     catch { sendLobby(socket, { type: 'error', error: 'invalid lobby message' }); return; }
-    if (!message || typeof message !== 'object') return;
+    if (!validRelayControlMessage(message)) { socket.close(1008, 'invalid lobby message'); return; }
     if (message.type === 'activity') {
       if (lobbySeatOf(room, clientId) >= 0 || room.lobby.spectators.has(clientId)) roomDirectory.activity(room);
       return;
@@ -842,7 +849,10 @@ function handleLobbyConnection(socket, roomId, clientId, memberId, intent, initi
       run.playerCount = room.lobby.playerCount;
       run.admittedSpectators = new Set(
         [...room.lobby.spectators.keys()].filter(id => room.lobbyClients.has(id) && !seatedClients.has(id)));
-      run.spectatorHistory.length = 0;
+      // Bind this run to the admitted members, not reusable public client IDs.
+      run.memberIds = new Map([...seatedClients, ...run.admittedSpectators]
+        .map(id => [id, roomDirectory.memberIdFor(roomId, id)]));
+      clearSpectatorHistory(run);
       startSpectatorGrace(roomId, room, String(room.lobby.startSerial), run);
       const snapshot = lobbySnapshot(room);
       snapshot.spectatorCount = run.admittedSpectators.size;
@@ -905,6 +915,7 @@ function handleSpectatorConnection(socket, roomId, runId, spectatorId, playerCou
   for (const payload of run.spectatorHistory) {
     if (!sendSpectatorPayload(socket, payload, roomId, runId, spectatorId)) break;
   }
+  if (!hasPendingSpectators(run)) clearSpectatorHistory(run);
   console.log(`SPECTATOR JOIN room=${roomId} run=${runId} client=${spectatorId}`);
   socket.on('message', () => socket.close(1008, 'spectators are receive-only'));
   socket.on('close', () => {
@@ -934,7 +945,7 @@ function releaseMemberTransports(roomId, clientId) {
   }
 }
 
-const server = new WebSocketServer({ host, port, perMessageDeflate: false,
+const server = new WebSocketServer({ host, port, perMessageDeflate: false, maxPayload: RELAY_LIMITS.messageBytes,
   verifyClient(info, done) {
     const allowed = abuseGuard.allowHandshake(relayClientAddress(info.req, abuseConfig.trustedProxies));
     done(allowed, allowed ? undefined : 429, allowed ? undefined : 'Too Many Requests');
@@ -965,12 +976,25 @@ server.on('connection', (socket, request) => {
   const runId = url.searchParams.get('run') || '0';
   const lobbyClient = url.searchParams.get('lobby') || '';
   if (/^[A-Za-z0-9_-]{1,64}$/.test(roomId) && /^[A-Za-z0-9_-]{8,64}$/.test(lobbyClient)) {
-    handleLobbyConnection(socket, roomId, lobbyClient,
-      /^[A-Za-z0-9_-]{8,64}$/.test(memberId) ? memberId : lobbyClient, url.searchParams.get('intent'),
+    if (!/^[A-Za-z0-9_-]{8,64}$/.test(memberId) || memberId === lobbyClient) {
+      socket.close(1008, 'private member identity required');
+      return;
+    }
+    handleLobbyConnection(socket, roomId, lobbyClient, memberId, url.searchParams.get('intent'),
       { visibility: url.searchParams.get('visibility'), disableCheatMovement: url.searchParams.get('disableCheatMovement') === '1',
         challengeMode:url.searchParams.get('challengeMode')==='1',prankMode:url.searchParams.get('prankMode')==='1',
         playerCount: Number(url.searchParams.get('players')), difficulty: url.searchParams.has('difficulty') ? Number(url.searchParams.get('difficulty')) : undefined });
     return;
+  }
+  const existingRoom = rooms.get(roomId);
+  const existingRun = existingRoom?.runs.get(runId);
+  if (existingRun?.memberIds || existingRoom?.lobbyClients.size || existingRoom?.lobby.seats.some(Boolean)) {
+    const clientId = url.searchParams.get('spectator') || existingRun?.lobbyClientIds?.[Number(url.searchParams.get('player'))];
+    if (!memberId || !clientId || existingRun?.memberIds?.get(clientId) !== memberId ||
+        roomDirectory.memberIdFor(roomId, clientId) !== memberId) {
+      socket.close(1008, 'run membership required');
+      return;
+    }
   }
   const spectator = url.searchParams.get('spectator') || '';
   const multiplayer = multiplayerPolicyForRoomId(roomId);
@@ -1002,6 +1026,7 @@ server.on('connection', (socket, request) => {
   const room = getRoom(roomId, socket);
   if (!room) return;
   const run = getRun(room, runId);
+  if (run.ended) { socket.close(1008, 'run already ended'); return; }
   if (run.clients.has(player)) {
     socket.close(1008, 'player slot already occupied');
     return;
@@ -1019,12 +1044,15 @@ server.on('connection', (socket, request) => {
   console.log(`JOIN room=${roomId} run=${runId} player=${player} peers=${run.clients.size}`);
   maybeResolveRoute(roomId, runId, room, run);
 
+  const acceptGameplay = createRelayMessageGate({ maxBytes: RELAY_LIMITS.gameplayBytes,
+    messagesPerSecond: 600, bytesPerSecond: 512 * 1024 });
   socket.on('message', (data, isBinary) => {
+    if (!acceptRelayMessage(socket, data, acceptGameplay)) return;
     if (!isBinary) {
       socket.close(1003, 'binary frames only');
       return;
     }
-    const incoming = Buffer.from(data);
+    const incoming = data;
     if (incoming.length >= 2 && incoming[0] === 0xe8) {
       if (player === 0 && run.clients.get(player) === socket &&
           incoming.equals(Buffer.from([0xe8, 0x53, 0x54, 0x4f, 0x50, 1]))) {
@@ -1032,10 +1060,9 @@ server.on('connection', (socket, request) => {
       }
       if (run.spectatorStopped) return;
       if (player !== 0 || (!run.spectatorAdmissionOpen && run.spectatorClients.size === 0)) return;
-      const payload = Buffer.from(incoming.subarray(1));
+      const payload = incoming.subarray(1);
       if (!isSpectatorFrameForRoom(roomId, payload, run.playerCount)) return;
-      if (run.spectatorAdmissionOpen)
-        run.spectatorHistory.push(payload);
+      if (run.spectatorAdmissionOpen && hasPendingSpectators(run) && !appendSpectatorHistory(run, payload)) return;
       for (const [spectatorId, target] of run.spectatorClients)
         sendSpectatorPayload(target, payload, roomId, runId, spectatorId);
       return;
@@ -1055,13 +1082,13 @@ server.on('connection', (socket, request) => {
       if (peer === player || target.readyState !== WebSocket.OPEN) continue;
       if (requestedPeer != null && peer !== requestedPeer) continue;
       const key = `${roomId}:${runId}:${player}->${peer}`;
-      const sequence = (forwardCounters.get(key) || 0) + 1;
-      forwardCounters.set(key, sequence);
+      const sequence = (run.forwardCounters.get(key) || 0) + 1;
+      run.forwardCounters.set(key, sequence);
       const looksLikeNetplayInput = forwardedPayload.length >= 6 &&
         forwardedPayload[0] === 0x45 && forwardedPayload[2] === 0x4e &&
         forwardedPayload[3] === 0x50 && forwardedPayload[5] === 1;
-      if (dropFirstInputPerEdge && looksLikeNetplayInput && !firstInputDropped.has(key)) {
-        firstInputDropped.add(key);
+      if (dropFirstInputPerEdge && looksLikeNetplayInput && !run.firstInputDropped.has(key)) {
+        run.firstInputDropped.add(key);
         continue;
       }
       if (looksLikeNetplayInput && dropInputLatestFrom >= 0 && dropInputLatestTo >= dropInputLatestFrom &&
@@ -1069,8 +1096,8 @@ server.on('connection', (socket, request) => {
         const latestFrame = forwardedPayload.readUInt32LE(24);
         if (latestFrame >= dropInputLatestFrom && latestFrame <= dropInputLatestTo) {
           const frameDropKey = `${key}:${latestFrame}`;
-          if (!inputLatestDropped.has(frameDropKey)) {
-            inputLatestDropped.add(frameDropKey);
+          if (!run.inputLatestDropped.has(frameDropKey)) {
+            run.inputLatestDropped.add(frameDropKey);
             continue;
           }
         }
@@ -1079,15 +1106,7 @@ server.on('connection', (socket, request) => {
         continue;
       const spread = jitterMs > 0 ? ((sequence * 17) % (jitterMs * 2 + 1)) - jitterMs : 0;
       const wait = Math.max(0, delayMs + spread);
-      const payload = Buffer.from(forwardedPayload);
-      if (wait === 0) {
-        target.send(payload, { binary: true });
-      } else {
-        setTimeout(() => {
-          if (target.readyState === WebSocket.OPEN)
-            target.send(payload, { binary: true });
-        }, wait);
-      }
+      sendBounded(target, forwardedPayload, { binary: true, delayMs: wait });
     }
   });
 

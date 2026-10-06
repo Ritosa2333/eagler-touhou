@@ -82,8 +82,8 @@
       "builder": "prebuilt",
       "workspaceRepository": "th09",
       "variants": {
-        "normal": { "features": { "thcrap": false, "thprac": false }, "cache": {} },
-        "multiplayer": { "features": { "thcrap": false, "thprac": false }, "cache": {} }
+        "normal": { "features": { "thcrap": true, "thprac": false }, "cache": {} },
+        "multiplayer": { "features": { "thcrap": true, "thprac": false }, "cache": {} }
       }
     },
     "th08": {
@@ -105,6 +105,13 @@
       "workspaceRepository": "th11",
       "variants": {
         "normal": { "features": { "thcrap": true, "thprac": true }, "cache": {} }
+      }
+    },
+    "th15": {
+      "builder": "prebuilt",
+      "workspaceRepository": "th15",
+      "variants": {
+        "normal": { "features": { "thcrap": false, "thprac": false }, "cache": {} }
       }
     },
     "th20": {

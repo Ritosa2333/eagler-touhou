@@ -78,6 +78,9 @@ const CHARGE_TOUCH_FIRE = Object.freeze({
 } as const);
 
 export const PRODUCT_GAMES = Object.freeze({
+  // support.highRefreshRate describes currently implemented presentation for
+  // Launcher UI. False keeps unfinished adapters honest; it does not waive
+  // the required presentation-cadence acceptance gate.
   th06: Object.freeze({
     cardArtwork: "th06-card.webp",
     number: "06",
@@ -92,7 +95,7 @@ export const PRODUCT_GAMES = Object.freeze({
     musicCapabilities: Object.freeze({ midi: true }),
     musicRuntime: Object.freeze({ localOggConfigureMode: "midi-sentinel" }),
     touchFire: TOGGLE_TOUCH_FIRE,
-    support: Object.freeze({
+    support: Object.freeze({ highRefreshRate: true,
       sourceRepository: "https://github.com/YomotsuHisami/th06",
     }),
     dataProvider: "emscripten-preload",
@@ -137,7 +140,7 @@ export const PRODUCT_GAMES = Object.freeze({
     musicCapabilities: Object.freeze({ midi: true }),
     musicRuntime: Object.freeze({ localOggConfigureMode: "midi-sentinel" }),
     touchFire: TOGGLE_TOUCH_FIRE,
-    support: Object.freeze({
+    support: Object.freeze({ highRefreshRate: true,
       sourceRepository: "https://github.com/YomotsuHisami/th07",
     }),
     dataProvider: "emscripten-preload",
@@ -175,7 +178,7 @@ export const PRODUCT_GAMES = Object.freeze({
     musicCapabilities: Object.freeze({ midi: true }),
     musicRuntime: Object.freeze({ localOggConfigureMode: "midi-sentinel" }),
     touchFire: TOGGLE_TOUCH_FIRE,
-    support: Object.freeze({
+    support: Object.freeze({ highRefreshRate: true,
       sourceRepository: "https://github.com/YomotsuHisami/th08",
       adaptationNotice: "early-test",
     }),
@@ -231,9 +234,9 @@ export const PRODUCT_GAMES = Object.freeze({
     musicCapabilities: Object.freeze({ midi: false }),
     musicRuntime: Object.freeze({ localOggConfigureMode: "runtime-selection" }),
     touchFire: CHARGE_TOUCH_FIRE,
-    support: Object.freeze({ sourceRepository: "https://github.com/YomotsuHisami/th09", adaptationNotice: "early-test" }),
+    support: Object.freeze({ highRefreshRate: false, sourceRepository: "https://github.com/YomotsuHisami/th09", adaptationNotice: "early-test" }),
     runtimeFileLayout: "directory",
-    requiredShared: Object.freeze(["/msgothic.ttc"]),
+    requiredShared: Object.freeze(["/msgothic.ttc", "/unifont.otf"]),
     runtimeAssets: Object.freeze([
       "th09.html", "manifest.json", "version.json", "shell.mjs", "managed.css", "keyboard.mjs",
       "directory-keyboard.mjs",
@@ -274,7 +277,7 @@ export const PRODUCT_GAMES = Object.freeze({
     musicCapabilities: Object.freeze({ midi: false }),
     musicRuntime: Object.freeze({ localOggConfigureMode: "midi-sentinel" }),
     touchFire: TOGGLE_TOUCH_FIRE,
-    support: Object.freeze({
+    support: Object.freeze({ highRefreshRate: true,
       sourceRepository: "https://github.com/YomotsuHisami/th10",
       adaptationNotice: "early-test",
     }),
@@ -331,7 +334,7 @@ export const PRODUCT_GAMES = Object.freeze({
     musicCapabilities: Object.freeze({ midi: false }),
     musicRuntime: Object.freeze({ localOggConfigureMode: "runtime-selection" }),
     touchFire: TOGGLE_TOUCH_FIRE,
-    support: Object.freeze({
+    support: Object.freeze({ highRefreshRate: false,
       sourceRepository: "https://github.com/YomotsuHisami/th11",
       adaptationNotice: "early-test",
     }),
@@ -368,8 +371,62 @@ export const PRODUCT_GAMES = Object.freeze({
     replay: Object.freeze({ prefix: "th11" }),
     features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
   }),
+  th15: Object.freeze({
+    number: "15",
+    title: "東方紺珠伝",
+    subtitle: "Legacy of Lunatic Kingdom",
+    cardArtwork: "th15-card.webp",
+    testOnly: true,
+    storage: Object.freeze({
+      saveRoot: "/savesth15",
+      scoreFile: "scoreth15.dat",
+      configFiles: Object.freeze(["th15.cfg"]),
+    }),
+    runtime: "./runtime/th15/th15.html",
+    musicCapabilities: Object.freeze({ midi: false }),
+    musicRuntime: Object.freeze({ localOggConfigureMode: "runtime-selection" }),
+    touchFire: TOGGLE_TOUCH_FIRE,
+    support: Object.freeze({ highRefreshRate: false,
+      sourceRepository: "https://github.com/YomotsuHisami/th15",
+      adaptationNotice: "early-test",
+    }),
+    runtimeFileLayout: "directory",
+    // Original normal-face glyph coverage stays in the immutable Runtime.
+    requiredShared: Object.freeze([]),
+    runtimeAssets: Object.freeze([
+      "th15.html",
+      "manifest.json",
+      "shell.mjs",
+      "managed.css",
+      "keyboard.mjs",
+      "directory-keyboard.mjs",
+      "th15.mjs",
+      "th15.wasm",
+      "resources.json",
+      "fonts/font0.bin",
+      "fonts/font1.bin",
+      "fonts/font2.bin",
+      "fonts/font3.bin",
+      "fonts/font4.bin",
+      "fonts/font5.bin",
+      "fonts/font6.bin",
+      "fonts/font7.bin",
+      "fonts/cp932.bin",
+      "fonts/blend4444.bin",
+    ]),
+    dataProvider: "retail-memory",
+    package: Object.freeze({
+      dataFileId: "game-data",
+      dataTarget: "/th15.dat",
+      rawDataImport: Object.freeze({ fileNames: Object.freeze(["th15.dat"]) }),
+      musicSourceDirectories: Object.freeze({ ogg: "music" }),
+      musicMounts: Object.freeze({ ogg: "/music" }),
+    }),
+    replay: Object.freeze({ prefix: "th15" }),
+    features: Object.freeze({ thprac: false, languages: false, focusHitbox: false }),
+  }),
   th20: Object.freeze({
-    hidden: true,
+    testOnly: true,
     number: "20",
     title: "東方錦上京",
     subtitle: "Fossilized Wonders",
@@ -382,7 +439,7 @@ export const PRODUCT_GAMES = Object.freeze({
     musicCapabilities: Object.freeze({ midi: false }),
     musicRuntime: Object.freeze({ localOggConfigureMode: "runtime-selection" }),
     touchFire: TOGGLE_TOUCH_FIRE,
-    support: Object.freeze({
+    support: Object.freeze({ highRefreshRate: false,
       sourceRepository: "https://github.com/Goan114/touhou20",
       adaptationNotice: "early-test",
       credit: Object.freeze({ name: "ぃ尐懒猫ゞ", url: "https://space.bilibili.com/15669619" }),

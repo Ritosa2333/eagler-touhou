@@ -128,6 +128,13 @@ import {
   touchMovementUsesJoystick,
 } from "./game-preferences.mjs";
 import {
+  ExternalMidiDevice,
+  externalMidiOffered,
+  navigatorMidiAccessRequest,
+  webMidiAvailable,
+} from "./external-midi.mjs";
+import type { ExternalMidiOutputInfo } from "./external-midi.mjs";
+import {
   postDirectTouch as postRuntimeDirectTouch,
   postHostedKey as postRuntimeHostedKey,
   postTouchCancel as postRuntimeTouchCancel,
@@ -1626,15 +1633,37 @@ function handleRuntimeThpracMenu(event: Event) {
   touchThpracFunctionKeys.hidden = !thpracMenuOpen;
 }
 
+// The external device only replaces the built-in synth once access is granted,
+// System Exclusive access is available and at least one output is connected;
+// otherwise a permission failure would leave the game silent. The MIDI music
+// selection is part of the condition: OGG/no-music playback must never leak to
+// a hardware output.
+function externalMidiActive(): boolean {
+  return externalMidiOptionVisible() && externalMidiEnabled &&
+    externalMidi.granted && externalMidi.sysexEnabled && externalMidi.outputCount() > 0;
+}
+
+let externalMidiWasActive = false;
+
 function handleRuntimeMidi(event: Event) {
   const bytes = record(record(event)?.detail)?.bytes;
-  if ((state.music === "midi" || isOggMusicMode(state.music)) && midiSynth && Array.isArray(bytes)) {
-    midiSynth.send(bytes.filter((value): value is number => typeof value === "number"));
+  if ((state.music === "midi" || isOggMusicMode(state.music)) && Array.isArray(bytes)) {
+    const message = bytes.filter((value): value is number => typeof value === "number");
+    // One audible owner: an active external device takes the stream, so the
+    // browser synth does not double every note.
+    const active = externalMidiActive();
+    // A device that appears mid-song takes over the stream; release whatever
+    // the synth is still holding, because its note-offs now go elsewhere.
+    if (active && !externalMidiWasActive) midiSynth?.reset();
+    externalMidiWasActive = active;
+    if (active) externalMidi.send(message);
+    else midiSynth?.send(message);
   }
 }
 
 function handleRuntimeMidiClose() {
   midiSynth?.reset();
+  externalMidi.panic();
 }
 
 function bindRuntimeCustomEventWindow(win: RuntimeWindow | null) {
@@ -1686,6 +1715,10 @@ if (typeof window.AudioContext !== "function" && typeof launcherWindow.webkitAud
   try { window.AudioContext = launcherWindow.webkitAudioContext; } catch {}
 }
 const webAudioAvailable = typeof window.AudioContext === "function";
+// Web MIDI is a `[SecureContext]` API: detection by presence also covers the
+// HTTPS requirement. An unsupported browser shows the external-MIDI switch as
+// disabled with an explicit reason instead of hiding the option.
+const webMidiSupported = webMidiAvailable(launcherNavigator);
 
 const state: LauncherState = {
   game: gameIdForProduct(DEFAULT_PRODUCT_ID), hasSelection: false, music: "ogg-stream", ready: false, launched: false, replayViewer: false,
@@ -1848,7 +1881,7 @@ try {
   if (saved === "1" || saved === "0") runtimeDiagnosticsPreference = saved === "1";
 } catch {}
 function productEnabled(product: string) {
-  if (!productEnabledForBuild(product, manifest.shared.testBuild === true)) return false;
+  if (!productEnabledForBuild(product, manifest.shared.testBuild === true || new URLSearchParams(location.search).has("test"))) return false;
   if (!hostManifestAvailable) return true;
   const gameId = gameIdForProduct(product);
   if (!isGameId(gameId) || !Object.hasOwn(manifest.games, gameId)) return false;
@@ -1894,6 +1927,14 @@ document.addEventListener("visibilitychange", () => {
 });
 const gameFeatureAvailable = (gameId: GameId, featureId: ProductFeatureId) =>
   productFeatureAvailable(gameId, featureId, manifest.games[gameId]?.features);
+// MIDI music is a product capability, not a Host Manifest feature: only the
+// 紅魔郷/妖々夢/永夜抄 titles own a MIDI path, so only they offer external MIDI.
+const externalMidiCapableGame = (gameId: GameId = state.game): boolean =>
+  PRODUCT_GAMES[gameId].musicCapabilities.midi === true;
+// The switch exists only while the music selection is MIDI; leaving that mode
+// retires it (see syncExternalMidiOptions).
+const externalMidiOptionVisible = (): boolean => externalMidiOffered(externalMidiCapableGame(), state.music);
+const externalMidiOptionApplicable = (): boolean => externalMidiOptionVisible() && webMidiSupported;
 const gameStorage = () => PRODUCT_GAMES[state.game].storage;
 const languageCatalog = (gameId: GameId) => {
   const gameManifest = game(gameId);
@@ -1926,6 +1967,7 @@ function restoreGamePreferences(gameId: GameId, preferenceId: ProductId = gameId
       uiLocale: getUiLocale(),
       thpracAvailable: gameFeatureAvailable(gameId, "thprac"),
       webAudioAvailable,
+      externalMidiAvailable: externalMidiCapableGame(gameId) && webMidiSupported,
     },
   });
   state.options = applySharedTouchPreferences(
@@ -1959,7 +2001,7 @@ const inputElementSelectors = [
 const selectElementSelectors = [
   "#uiLanguageSelect", "#mpLanguageSelect", "#mpMusicSelect", "#musicSelect",
   "#languageSelect", "#mpRoomPlayerCount", "#mpRoomDifficulty", "#touchMovementMode",
-  "#touchFocusMode",
+  "#touchFocusMode", "#externalMidiDeviceSelect", "#mpExternalMidiDeviceSelect",
 ] as const;
 const dialogElementSelectors = [
   "#decisionDialog", "#firstUseNoticeDialog", "#mpGuideDialog", "#appleRefreshDialog", "#donationDialog", "#replayDialog",
@@ -1975,6 +2017,7 @@ const buttonElementSelectors = [
   "#mpGuideOpen", "#mpRoomGuideOpen", "#mpNetworkCheck",
   "#frameLimitToggle", "#focusHitboxToggle", "#thpracToggle", "#mobileOptionsToggle",
   "#touchToggle", "#touchLayoutEdit", "#alwaysHitboxToggle", "#magnifierToggle",
+  "#externalMidiToggle", "#mpExternalMidiToggle",
   "#launch", "#gamePackageImport", "#mpGamePackageImport", "#mpLeaveRoom", "#mpSpectatorJoin",
   "#mpLoadoutPrev", "#mpLoadoutNext", "#mpStandUp", "#mpLoadoutPrevSeat",
   "#mpLoadoutNextSeat", "#mpCopyRoomCode", "#mpReady", "#mpCheckGame", "#mpStartGame",
@@ -2812,6 +2855,17 @@ const maxGamePackageImportBytes = 256 * 1024 * 1024;
 const maxStoredFileBytes = 64 * 1024 * 1024;
 const maxReplayArchiveExpandedBytes = 128 * 1024 * 1024;
 let midiSynth: MidiSynth | null = null;
+// External Web MIDI output. The on/off switch is intentionally session-only:
+// it is never written to storage, so the player opts in on every visit.
+// `externalMidiDeviceId` is the one persisted part (which output to use).
+let externalMidiEnabled = false;
+// Access is requested from the settings switch (the required user gesture) and
+// kept for the page lifetime so re-enabling never prompts twice. Device hotplug
+// refreshes the status and picker.
+const externalMidi = new ExternalMidiDevice({
+  requestAccess: navigatorMidiAccessRequest(launcherNavigator),
+  onChange: () => { if (externalMidiEnabled) refreshExternalMidiUi(); },
+});
 let gameKeyWindow: RuntimeWindow | null = null;
 let fullscreenChordActive = false;
 const routedGameFromLocation = () => {
@@ -3709,6 +3763,10 @@ interface LauncherGameView {
   languages?: unknown;
 }
 
+function highRefreshAvailable(gameId: GameId = state.game) {
+  return PRODUCT_GAMES[gameId].support.highRefreshRate;
+}
+
 function game(gameId: GameId = state.game): LauncherGameView {
   const hosted = manifest.games[gameId];
   if (!hosted) throw new Error(t("runtime.hostManifestMissingGame", { game: gameId }));
@@ -4039,7 +4097,7 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
     const netplayOptions = state.runtimeVariant === "multiplayer" && !state.replayViewer && !options.omitNetplay
       ? validatedNetplayOptions() : {};
     const runtimeOptions: RuntimeConfigureOptions = {
-      limitPresentationTo60: state.options.frameLimit60Enabled,
+      limitPresentationTo60: !highRefreshAvailable() || state.options.frameLimit60Enabled,
       touchEnabled: state.options.touchEnabled,
       touchMovementMode: state.options.touchMovementMode,
       touchSensitivity: state.options.touchSensitivity,
@@ -4223,6 +4281,159 @@ function syncMusicSelectAvailability(select: HTMLSelectElement, availability = r
       : true;
   }
   select.title = availability.audio ? "" : t("settings.webAudioUnavailable");
+}
+
+const externalMidiOptionRows = [
+  { option: "#externalMidiOption", toggle: "#externalMidiToggle", hint: "#externalMidiHint", device: "#externalMidiDeviceOption", select: "#externalMidiDeviceSelect" },
+  { option: "#mpExternalMidiOption", toggle: "#mpExternalMidiToggle", hint: "#mpExternalMidiHint", device: "#mpExternalMidiDeviceOption", select: "#mpExternalMidiDeviceSelect" },
+] as const;
+
+// Identity of the granted output list is cached per control: render() runs
+// often, and rebuilding <option> nodes would also rebuild the shared
+// custom-select menu every pass. Each panel owns its own element.
+function externalMidiStatusText(): string {
+  if (!webMidiSupported) return t("settings.externalMidiUnsupported");
+  if (!externalMidiEnabled) return t("settings.externalMidiHint");
+  if (!externalMidi.granted) return t("settings.externalMidiPending");
+  if (!externalMidi.sysexEnabled) return t("settings.externalMidiSysexDenied");
+  const outputs = externalMidi.outputInfo();
+  if (!outputs.length) return t("settings.externalMidiNoDevice");
+  return t("settings.externalMidiConnected", { count: outputs.length });
+}
+
+function externalMidiDeviceOption(name: string, value: string, disabled: boolean): HTMLOptionElement {
+  const option = document.createElement("option");
+  option.value = value;
+  option.textContent = name;
+  option.disabled = disabled;
+  return option;
+}
+
+function populateExternalMidiDeviceSelect(select: HTMLSelectElement, outputs: readonly ExternalMidiOutputInfo[], effectiveId: string) {
+  const placeholder = t("settings.externalMidiNoDeviceOption");
+  const signature = outputs.length
+    ? outputs.map(output => `${output.id}\u0000${output.name}`).join("\u0001")
+    // Fold the localized placeholder in so a UI-language change rebuilds it.
+    : `\u0000${placeholder}`;
+  if (signature !== select.dataset.midiSignature) {
+    select.dataset.midiSignature = signature;
+    select.replaceChildren(...(outputs.length
+      ? outputs.map(output => externalMidiDeviceOption(output.name, output.id, false))
+      : [externalMidiDeviceOption(placeholder, "", true)]));
+  }
+  // The preferred port may be gone; selectedId()/effectiveOutputId() fall back
+  // to the first granted output, and the control shows what will really play.
+  select.value = effectiveId;
+  select.disabled = outputs.length === 0;
+}
+
+// The switch is disabled, never hidden, when the browsing context lacks Web
+// MIDI: an unsupported device must not be able to turn the option on, and the
+// reason must be readable rather than implied by a missing control. The whole
+// row exists only while the music selection is MIDI, and turning the switch on
+// reveals the output-device selector underneath it.
+function syncExternalMidiOptions() {
+  const visible = externalMidiOptionVisible();
+  if (!visible && externalMidiEnabled) {
+    // Leaving MIDI mode (or a non-MIDI title) retires the session switch, and a
+    // hardware synth that was mid-song must be released rather than left ringing.
+    externalMidiEnabled = false;
+    externalMidi.panic();
+  }
+  const enabled = visible && externalMidiEnabled;
+  externalMidi.setSelectedId(state.options.externalMidiDeviceId);
+  const statusText = externalMidiStatusText();
+  const granted = externalMidi.granted;
+  const outputs = enabled && granted ? externalMidi.outputInfo() : [];
+  const effectiveId = outputs.length ? externalMidi.effectiveOutputId() : "";
+  for (const row of externalMidiOptionRows) {
+    $(row.option).hidden = !visible;
+    const toggle = $(row.toggle);
+    toggle.setAttribute("aria-checked", String(enabled));
+    toggle.classList.toggle("on", enabled);
+    toggle.disabled = !externalMidiOptionApplicable();
+    toggle.title = visible && !webMidiSupported ? t("settings.externalMidiUnsupported") : "";
+    $(row.hint).textContent = statusText;
+    populateExternalMidiDeviceSelect($(row.select), outputs, effectiveId);
+    $(row.device).hidden = !(enabled && granted);
+  }
+}
+
+// Device hotplug must not force a full Launcher render (which would also
+// re-resolve music availability during a running game); refresh only the MIDI
+// controls, including their custom-select wrappers.
+function refreshExternalMidiUi() {
+  syncExternalMidiOptions();
+  syncAllCustomSelects();
+}
+
+function externalMidiErrorMessage(error: unknown): string {
+  const name = record(error)?.name;
+  if (name === "NotAllowedError" || name === "SecurityError") return t("settings.externalMidiDenied");
+  if (name === "NotSupportedError") return t("settings.externalMidiUnsupported");
+  return t("settings.externalMidiFailed", { reason: errorMessage(error) });
+}
+
+// Runs from the settings switch click, which is the user gesture Web MIDI
+// requires for its permission prompt. The session switch only flips after the
+// access request resolves, so a denied prompt can never look enabled. Nothing
+// here is persisted: the player opts in again on the next visit.
+async function setExternalMidiEnabled(enabled: boolean) {
+  if (!externalMidiOptionApplicable() || externalMidiEnabled === enabled) return;
+  if (!enabled) {
+    externalMidiEnabled = false;
+    resetRuntime();
+    render();
+    return;
+  }
+  if (!externalMidi.granted) {
+    try {
+      await externalMidi.ensureAccess();
+    } catch (error) {
+      showToast(externalMidiErrorMessage(error));
+      render();
+      return;
+    }
+    // Some implementations resolve the request without exclusive access; the
+    // Runtime's System Exclusive traffic would then be rejected per message.
+    if (!externalMidi.sysexEnabled) {
+      externalMidi.release();
+      showToast(t("settings.externalMidiSysexDenied"));
+      render();
+      return;
+    }
+    // Defer opening until launch, after the player picks the output.
+  }
+  externalMidiEnabled = true;
+  resetRuntime();
+  render();
+}
+
+// The two panels (single-player and multiplayer) share one preference, and the
+// custom-select controller re-dispatches change from its menu, so a native
+// `change` listener covers both interaction paths.
+function bindExternalMidiDeviceSelect(select: HTMLSelectElement) {
+  select.addEventListener("change", () => {
+    if (!externalMidiOptionApplicable() || !externalMidiEnabled) return;
+    setOption("externalMidiDeviceId", select.value);
+  });
+}
+
+async function prepareExternalMidi() {
+  if (!externalMidiOptionApplicable() || !externalMidiEnabled) return;
+  try {
+    await externalMidi.ensureAccess();
+    if (!externalMidi.sysexEnabled) {
+      showToast(t("settings.externalMidiSysexDenied"));
+      return;
+    }
+    const outputs = await externalMidi.openOutputs();
+    if (!outputs) showToast(t("settings.externalMidiNoDevice"));
+  } catch (error) {
+    // Fall back to the built-in synth for this launch while keeping the
+    // preference; the player can re-grant or pick a device and try again.
+    showToast(externalMidiErrorMessage(error));
+  }
 }
 
 const { installCustomSelect, syncCustomSelect, syncAllCustomSelects, closeOtherCustomSelects } = createCustomSelectController({
@@ -4419,8 +4630,17 @@ function render() {
   $("#mpShareSettingsToggle").setAttribute("aria-checked", String(mpShareSingleplayerSettings));
   $("#mpShareSettingsToggle").classList.toggle("on", mpShareSingleplayerSettings);
   syncMusicSelectAvailability($("#mpMusicSelect"), musicAvailability);
-  $("#mpFrameLimitToggle").setAttribute("aria-checked", String(state.options.frameLimit60Enabled));
-  $("#mpFrameLimitToggle").classList.toggle("on", state.options.frameLimit60Enabled);
+  const supportsHighRefresh = highRefreshAvailable();
+  for (const id of ["frameLimitToggle", "mpFrameLimitToggle"]) {
+    const toggle = $("#" + id) as HTMLButtonElement;
+    const option = toggle.closest<HTMLElement>(".option-frame-limit");
+    if (option) option.hidden = !supportsHighRefresh;
+    toggle.disabled = !supportsHighRefresh;
+  }
+  syncExternalMidiOptions();
+  // Keep the persisted 60 Hz limit flag; the high-refresh switch is its inverse.
+  $("#mpFrameLimitToggle").setAttribute("aria-checked", String(supportsHighRefresh && !state.options.frameLimit60Enabled));
+  $("#mpFrameLimitToggle").classList.toggle("on", supportsHighRefresh && !state.options.frameLimit60Enabled);
   $("#mpFocusHitboxOption").hidden = !gameFeatureAvailable(state.game, "focusHitbox");
   $("#mpFocusHitboxToggle").setAttribute("aria-checked", String(state.options.focusHitboxEnabled));
   $("#mpFocusHitboxToggle").classList.toggle("on", state.options.focusHitboxEnabled);
@@ -4446,7 +4666,7 @@ function render() {
   $("#mobileOptions").classList.toggle("open", state.mobileOpen);
   $("#mobileOptionsToggle").setAttribute("aria-expanded", String(state.mobileOpen));
   $("#mobileOptionsBody").inert = !state.mobileOpen;
-  const switches = { thpracToggle: state.options.thpracEnabled, thpracTouchControlsToggle: state.options.thpracTouchControlsEnabled, restartButtonToggle: state.options.restartButtonEnabled, magnifierToggle: state.options.magnifierEnabled, frameLimitToggle: state.options.frameLimit60Enabled, focusHitboxToggle: state.options.focusHitboxEnabled, touchToggle: state.options.touchEnabled, doubleTapBombToggle: state.options.doubleTapBombEnabled, alwaysHitboxToggle: state.options.alwaysHitbox };
+  const switches = { thpracToggle: state.options.thpracEnabled, thpracTouchControlsToggle: state.options.thpracTouchControlsEnabled, restartButtonToggle: state.options.restartButtonEnabled, magnifierToggle: state.options.magnifierEnabled, frameLimitToggle: supportsHighRefresh && !state.options.frameLimit60Enabled, focusHitboxToggle: state.options.focusHitboxEnabled, touchToggle: state.options.touchEnabled, doubleTapBombToggle: state.options.doubleTapBombEnabled, alwaysHitboxToggle: state.options.alwaysHitbox };
   for (const [id, enabled] of Object.entries(switches)) {
     $("#" + id).setAttribute("aria-checked", String(enabled));
     $("#" + id).classList.toggle("on", enabled);
@@ -4455,11 +4675,9 @@ function render() {
   thpracToggle.disabled = !thpracAvailable || multiplayerProduct || state.runtimeVariant === "multiplayer";
   thpracToggle.title = multiplayerProduct || state.runtimeVariant === "multiplayer" ? t("settings.thpracUnavailableMultiplayer") : "";
   const frameLimitToggle = $("#frameLimitToggle");
-  frameLimitToggle.disabled = false;
+  frameLimitToggle.disabled = !supportsHighRefresh;
   frameLimitToggle.title = "";
-  const frameLimitHint = $("#frameLimitHint");
   $("#frameLimitHintText").textContent = t("settings.frameLimitHint");
-  frameLimitHint.classList.add("option-warning");
   const touchMovementMode = $("#touchMovementMode");
   touchMovementMode.value = state.options.touchMovementMode;
   touchMovementMode.disabled = false;
@@ -4666,6 +4884,9 @@ function resetRuntime() {
   gameZoom.reset();
   updatePlayerOrientationUi();
   midiSynth?.reset();
+  // A hardware synth keeps ringing after the game is gone unless it is told to
+  // stop; mirror the synth reset to the external device.
+  externalMidi.panic();
   frame.removeAttribute("src");
 }
 
@@ -4677,6 +4898,7 @@ async function prepareMidi() {
   if (!midiSynth) midiSynth = new launcherWindow.WebAudioTinySynth({ quality: 1, useReverb: 1, voices: 64 });
   const context = midiSynth.getAudioContext();
   if (context.state === "suspended") void context.resume().catch(() => {});
+  await prepareExternalMidi();
 }
 
 function suspendHostedMidi() {
@@ -4698,6 +4920,8 @@ window.addEventListener("focus", resumeHostedMidi);
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) suspendHostedMidi(); else resumeHostedMidi();
 });
+// Releasing the page must not leave held notes on a hardware synth.
+window.addEventListener("pagehide", () => externalMidi.panic());
 
 frame.addEventListener("load", () => {
   if (!frame.contentWindow) return;
@@ -5726,7 +5950,9 @@ async function selectedSharedResources(language = state.language) {
     }
     wanted.push({ target, network });
   };
-  if (language === "ja" && !packageTargets.has("/msgothic.ttc")) {
+  if (language === "ja" &&
+      (!("requiredShared" in product) || product.requiredShared.some(target => target === "/msgothic.ttc")) &&
+      !packageTargets.has("/msgothic.ttc")) {
     addHosted("/msgothic.ttc", vanillaFont);
   }
   if ((language !== "ja" || state.options.thpracEnabled) && !packageTargets.has("/unifont.otf")) {
@@ -6249,6 +6475,7 @@ $("#mpMusicSelect").addEventListener("change", event => {
   state.music = value; state.musicPreference = state.music; state.musicPreferenceExplicit = true; saveGamePreferences(); render();
 });
 $("#mpFrameLimitToggle").addEventListener("click", () => {
+  if (!highRefreshAvailable()) return;
   state.options.frameLimit60Enabled = !state.options.frameLimit60Enabled; saveGamePreferences(); render();
 });
 $("#mpFocusHitboxToggle").addEventListener("click", () => setOption("focusHitboxEnabled", !state.options.focusHitboxEnabled));
@@ -6273,6 +6500,8 @@ $("#mpTouchToggle").addEventListener("click", () => setOption("touchEnabled", !s
 $("#mpAlwaysHitboxToggle").addEventListener("click", () => setOption("alwaysHitbox", !state.options.alwaysHitbox));
 $("#mpLocalPlayerVisibilityToggle").addEventListener("click", () => setOption("multiplayerLocalPlayerVisibility", !state.options.multiplayerLocalPlayerVisibility));
 $("#mpMagnifierToggle").addEventListener("click", () => setOption("magnifierEnabled", !state.options.magnifierEnabled));
+$("#mpExternalMidiToggle").addEventListener("click", () => { void setExternalMidiEnabled(!externalMidiEnabled); });
+bindExternalMidiDeviceSelect($("#mpExternalMidiDeviceSelect"));
 $("#mpTouchLayoutEdit").addEventListener("click", () => {
   void openTouchLayoutEditor().catch(error => { const reason = errorMessage(error); showToast(reason); setStatus(t("status.errorReason", { reason })); });
 });
@@ -7472,6 +7701,7 @@ function mpConfigureRuntimeSession() {
       roomCode: room.code,
       runId: Number(mpLobby.startSerial),
       role,
+      memberId: multiplayerMemberId(),
     });
   } catch { throw new Error(t("multiplayer.relayUrlInvalid")); }
 
@@ -8334,7 +8564,9 @@ $("#touchLayoutExit").addEventListener("click", () => {
 });
 $("#thpracToggle").addEventListener("click", () => setOption("thpracEnabled", !state.options.thpracEnabled));
 $("#magnifierToggle").addEventListener("click", () => setOption("magnifierEnabled", !state.options.magnifierEnabled));
-$("#frameLimitToggle").addEventListener("click", () => setOption("frameLimit60Enabled", !state.options.frameLimit60Enabled));
+$("#frameLimitToggle").addEventListener("click", () => {
+  if (highRefreshAvailable()) setOption("frameLimit60Enabled", !state.options.frameLimit60Enabled);
+});
 const mastheadMenu = $("#mastheadMenu");
 const mastheadMenuToggle = $("#mastheadMenuToggle");
 const mastheadMenuPanel = $("#mastheadMenuPanel");
@@ -8491,6 +8723,8 @@ createEdgeDrawerGesture({
   enabled: siteNotice.isEnabled,
 });
 $("#focusHitboxToggle").addEventListener("click", () => setOption("focusHitboxEnabled", !state.options.focusHitboxEnabled));
+$("#externalMidiToggle").addEventListener("click", () => { void setExternalMidiEnabled(!externalMidiEnabled); });
+bindExternalMidiDeviceSelect($("#externalMidiDeviceSelect"));
 $("#touchToggle").addEventListener("click", async () => {
   const enabling = !state.options.touchEnabled;
   if (enabling && !await confirmTouchModeBeforeEnable(state.options.touchMovementMode)) return;

@@ -26,11 +26,10 @@ In a secure context, the Launcher **can run offline**. If the player goes offlin
 
 ![The Eagler Touhou Launcher and game management interface](docs/assets/readme/launcher.webp)
 
-- Run TH06, TH07, TH08, TH09, and TH10 in the browser. The Launcher provides interfaces for importing and exporting saves, Replays, and other files.
+- Run TH06, TH07, TH08, TH09, TH10, and TH11 in the browser. The Launcher provides interfaces for importing and exporting saves, Replays, and other files.
 - Saves and Replays are fully interoperable with the original games.
 - Aims for a polished experience. It fixes numerous issues inherited from the original portable branches, including jittery bullets, uneven bullet movement, flickering, music stutters when switching tracks in single-threaded mode, and poor performance on phones.
-- Highly optimized: it can sustain 90 Hz on at least a Snapdragon 660.
-- Supports refresh rates above 60 Hz. \[Thanks to [reallyportable](https://github.com/some100/th07/tree/reallyportable)\]
+- Supports refresh rates above 60 Hz, except for TH09 and TH11. \[Thanks to [reallyportable](https://github.com/some100/th07/tree/reallyportable)\]
 
 ### Touch Controls
 
@@ -51,7 +50,7 @@ In a secure context, the Launcher **can run offline**. If the player goes offlin
 
 #### thprac
 
-- Supports every feature provided by [thprac](https://github.com/touhouworldcup/thprac).
+- Provides [thprac](https://github.com/touhouworldcup/thprac) integration for TH06, TH07, TH08, TH10, and TH11. TH09 does not provide thprac.
 - Touch devices can use mouse emulation, with virtual buttons for opening the Tab Tracker and cheat menu. (F12 WIP)
 
 #### thcrap Languages
@@ -63,7 +62,8 @@ In a secure context, the Launcher **can run offline**. If the player goes offlin
 
 ![A multiplayer lobby with player and spectator seats](docs/assets/readme/multiplayer-lobby.webp)
 
-- Provides TH06MP and TH07MP, both based on the [TH07MP rules](https://github.com/sbrik1111/th07_multi_player).
+- Provides TH06MP, TH07MP, TH08MP, TH09MP, and TH10MP. TH06MP and TH07MP are based on the [TH07MP rules](https://github.com/sbrik1111/th07_multi_player).
+- TH06MP, TH07MP, TH08MP, and TH10MP support 2–3 players; TH09MP supports 2 players. TH11 multiplayer is not yet available.
 - The lobby supports room creation, joining by room code, character and difficulty selection—including Extra and Phantasm—ready checks before the game starts, and spectators.
 - Restart a run by pressing R while paused or by using the restart control.
 - Multiplayer Replays can be saved.
