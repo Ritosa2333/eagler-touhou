@@ -144,6 +144,10 @@ struct Supervisor
     ZunResult CheckIntegrity(const char *version, i32 exeSize, i32 exeChecksum);
     static i32 CheckVSync();
     static void DrawFpsCounter(i32 param_1);
+#ifdef __EMSCRIPTEN__
+    static ZunResult FinishWebStartup(Supervisor *s);
+    static i32 DrawStartupLogo();
+#endif
     i32 FadeOutMusic(f32 musicFadeFrames);
     static void StopMidiTimer(MidiTimer *timer);
     i32 DisableFog();

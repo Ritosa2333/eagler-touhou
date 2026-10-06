@@ -170,6 +170,25 @@ void GameWindow::Present()
 RenderResult GameWindow::Render()
 {
 #ifdef __EMSCRIPTEN__
+    static bool s_FirstWebFrameReported = false;
+    if (this->isAppActive)
+    {
+        const i32 startup = Supervisor::DrawStartupLogo();
+        if (startup < 0) return RENDER_RESULT_EXIT_ERROR;
+        if (startup)
+        {
+            g_LastPerfCounter = 0;
+            this->accumulator = 0;
+            if (!s_FirstWebFrameReported)
+            {
+                s_FirstWebFrameReported = true;
+                EM_ASM({ globalThis.EaglerTouhouFirstFrame?.(); });
+            }
+            return RENDER_RESULT_KEEP_RUNNING;
+        }
+    }
+#endif
+#ifdef __EMSCRIPTEN__
     static std::uint32_t s_DebugWebRenderCallbacks = 0;
     ++s_DebugWebRenderCallbacks;
     if ((s_DebugWebRenderCallbacks & 15u) == 0u)
@@ -488,7 +507,6 @@ RenderResult GameWindow::Render()
 #ifdef __EMSCRIPTEN__
     // One-shot observability only: distinguish "runtime loaded" from "the
     // game actually presented a frame" without altering either cadence.
-    static bool s_FirstWebFrameReported = false;
     if (!s_FirstWebFrameReported)
     {
         s_FirstWebFrameReported = true;

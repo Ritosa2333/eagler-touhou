@@ -58,6 +58,25 @@ u16 g_IsEighthFrameOfHeldInput;
 u16 g_NumOfFramesInputsWereHeld;
 Supervisor g_Supervisor;
 #ifdef __EMSCRIPTEN__
+static i32 g_WebStartupPhase = 0;
+i32 Supervisor::DrawStartupLogo()
+{
+    if (!g_WebStartupPhase) return 0;
+    if (g_WebStartupPhase == 2)
+    {
+        const ZunResult result = FinishWebStartup(&g_Supervisor);
+        g_AnmManager->ReleaseSurface(0);
+        g_WebStartupPhase = 0;
+        return result == ZUN_SUCCESS ? 0 : -1;
+    }
+    g_Supervisor.gfxDevice->BeginFrame();
+    g_AnmManager->CopySurfaceToBackBuffer(0, 0, 0, 0, 0);
+    g_Supervisor.gfxDevice->EndFrame();
+    g_Supervisor.gfxDevice->SwapBuffers();
+    g_WebStartupPhase = 2;
+    return 1;
+}
+
 static bool IsWebOggMode()
 {
     return EM_ASM_INT({ return Module.touhouMusicMode === 'ogg'; }) != 0;
@@ -651,6 +670,21 @@ ZunResult Supervisor::AddedCallback(Supervisor *arg)
     g_AnmManager->LoadSurface(0, "data/title/th07logo.jpg");
     netplayAudit("title logo loaded");
     g_Supervisor.isInEnding = 1;
+#ifdef __EMSCRIPTEN__
+    g_WebStartupPhase = 1;
+    return ZUN_SUCCESS;
+}
+ZunResult Supervisor::FinishWebStartup(Supervisor *arg)
+{
+    ScoreDat *scoreDat;
+    i32 i;
+    auto netplayAudit = [](const char *message) {
+#ifdef TH_ENABLE_NETPLAY
+        if (EM_ASM_INT({ return /netplay-(?:lan-)?stage1/.test(Module.eaglerOptions?.debugHarness || ''); }))
+            std::printf("th07 netplay audit: supervisor %s\n", message);
+#endif
+    };
+#else
     if (!g_Supervisor.vsyncDisabled)
     {
         CheckVSync();
@@ -668,6 +702,7 @@ ZunResult Supervisor::AddedCallback(Supervisor *arg)
         }
     }
     g_AnmManager->ReleaseSurface(0);
+#endif
 #ifdef __EMSCRIPTEN__
     // Runtime menu/result transitions run on the browser main thread. Decode
     // and upload their immutable backgrounds during startup, before
