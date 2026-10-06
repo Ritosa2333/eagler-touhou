@@ -92,6 +92,7 @@ const replayFiles=createReplayFilePolicy({game:10,multiplayer:multiplayerRuntime
 let storage;
 const root=()=>storage.root(language);
 const sync=createSaveSync(()=>Module);
+const fileExists=path=>Module.FS.analyzePath(path).exists;
 async function migrateSaves(){
  await migrateLegacySaves(storage,{indexedDB,filesystem:Module.FS,sync,importReplayName:(path,bytes)=>replayFiles.imported(path,bytes)});
 }
@@ -134,7 +135,16 @@ async function installRuntimePack(pack){
   Module.FS.writeFile(file.path,file.bytes,{canOwn:true});runtimePackFiles.push(file.path);
  }
 }
-function applyOptions(){applyTouchOptions(core,options);if(app){core.application_touch_display?.(app,options.alwaysHitbox?1:0);if(multiplayerRuntime)core.multiplayer_local_player_visibility?.(app,options.multiplayerLocalPlayerVisibility&&!options.netplaySpectator&&!options.replayViewer?1:0);}practice?.configure(options);}
+function applyOptions(){
+ applyTouchOptions(core,options);
+ if(app){
+  core.application_touch_display?.(app,options.alwaysHitbox?1:0);
+  const hints=['hint_user.txt','hint_auto.txt'].some(name=>fileExists(root()+'/hint/'+name));
+  core.application_original_options?.(app,options.faithBarEnabled?1:0,hints?1:0);
+  if(multiplayerRuntime)core.multiplayer_local_player_visibility?.(app,options.multiplayerLocalPlayerVisibility&&!options.netplaySpectator&&!options.replayViewer?1:0);
+ }
+ practice?.configure(options);
+}
 function status(){return Array.from(new Int32Array(core.memory.buffer,core.sdl_game_status(),10));}
 // The native Replay owner decides whether it is still reconstructing the
 // selected stage. This overlay reports that state; it never skips input or
@@ -166,7 +176,11 @@ async function resumeForegroundAudio(forcePause=false){
 async function stop(){if(closing)return;closing=true;calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();await sync(false);app=0;launched=false;updateReplaySeek();emit('exit',{code:0,status:'success'});}finally{closing=false;}}
 async function launch(){
  if(launched)return;clearKeyboard();
+ // The localized Runtime still constructs the Japanese core. Keep its font
+ // alias alongside the selected localization font and user-file root.
+ ensureSharedFontAlias(Module,'jp');
  ensureSharedFontAlias(Module,language);
+ Module.eaglerSaveLanguage=language;
  const mode=Module.touhouMusicMode||'none';music=mode!=='none'&&mode!=='midi';core.sdl_ogg_decode_mode?.(options.oggDecodeMode==='full');
  core.sdl_music_enabled?.(music);app=core.sdl_game_open(false,options.netplayMode==='lan'?options.netplaySeed:Date.now()&65535);if(!app)throw Error('C++ game initialization failed');
  try{await configureNetplay();}catch(reason){calibration?.stop();core.sdl_game_close();app=0;throw reason;}
@@ -186,9 +200,10 @@ async function command(message){
  case 'touch-controls':touchControls(core,options,message);return {};
  case 'launch':await launch();return {};
  case 'sync':await save();return {};
- case 'list':{const files=[];for(const dir of ['', '/replay'])for(const name of Module.FS.readdir(root()+dir)){const path=(dir+'/'+name).replace(/^\//,'');try{storage.relativeSave(path);}catch{continue;}const full=root()+'/'+path,s=Module.FS.stat(full);if(Module.FS.isFile(s.mode)){const bytes=Module.FS.readFile(full);files.push({path:replayFiles.exported(path,bytes),size:s.size});}}return {files};}
+ case 'list':{const files=[];for(const dir of ['', '/replay','/hint']){if(!fileExists(root()+dir))continue;for(const name of Module.FS.readdir(root()+dir)){const path=(dir+'/'+name).replace(/^\//,'');try{storage.relativeSave(path);}catch{continue;}const full=root()+'/'+path,s=Module.FS.stat(full);if(Module.FS.isFile(s.mode)){const bytes=Module.FS.readFile(full);files.push({path:replayFiles.exported(path,bytes),size:s.size});}}}return {files};}
  case 'read':{const path=replayFiles.physical(storage.relativeSave(message.path));return {bytes:Array.from(Module.FS.readFile(root()+'/'+path))};}
  case 'write':{if(!Array.isArray(message.bytes)||message.bytes.length>16*1024*1024||message.bytes.some(b=>!Number.isInteger(b)||b<0||b>255))throw Error('Invalid save bytes');const bytes=new Uint8Array(message.bytes),path=replayFiles.imported(storage.relativeSave(message.path),bytes);
+  const target=root()+'/'+path;Module.FS.mkdirTree(target.slice(0,target.lastIndexOf('/')));
   if(multiplayerRuntime&&/\.rpy$/.test(path)){const target=root()+'/'+path,temporary=target+'.pending';
    try{Module.FS.writeFile(temporary,bytes);Module.FS.rename(temporary,target);}catch(error){try{Module.FS.unlink(temporary);}catch{}throw error;}
   }else Module.FS.writeFile(root()+'/'+path,bytes);

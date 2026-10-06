@@ -23,6 +23,15 @@ APP_EXPORT("application_startup") StartupScreen* application_startup(browser::Ap
 APP_EXPORT("application_stop") void application_stop(browser::Application* app){app->state.pending_screen=3;}
 APP_EXPORT("application_touch_target") void application_touch_target(browser::Application* app,i32 mode,float x,float y){if(app&&app->world)app->world->motion.target(mode,x,y);}
 APP_EXPORT("application_touch_display") void application_touch_display(browser::Application* app,i32 hitbox){if(app&&app->world)app->world->always_hitbox=hitbox!=0;}
+APP_EXPORT("application_original_options") void application_original_options(browser::Application* app,i32 faith_bar,i32 hints){
+    if(!app)return;
+    // custom.exe's overhead gauge is bit 7 of the original display flags.
+    // Stage creation copies this configuration into the player's draw owner.
+    app->state.configuration.display_flags=(app->state.configuration.display_flags&~0x80u)|(faith_bar?0x80u:0u);
+    app->value.display_flags=(app->value.display_flags&~0x80u)|(faith_bar?0x80u:0u);
+    // Original Hint mode 1 reads the supplied files without recording new hints.
+    app->state.configuration.music_mode=hints?1:0;
+}
 APP_EXPORT("application_touch_state") void application_touch_state(browser::Application* app,u32* output){
     std::memset(output,0,32);auto* w=app->world;auto* p=w?w->actors.player:nullptr;auto* session=w?w->actors.session:nullptr;auto* gui=w?w->actors.gui:nullptr;
     if(app->ending_view){output[0]=2;return;}

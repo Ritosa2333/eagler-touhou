@@ -74,6 +74,15 @@ assert.throws(()=>normal.profile.relativeSave('/savesth10-multiplayer/jp/scoreth
 assert.throws(()=>multiplayer.profile.relativeSave('/savesth10/chs/replay/th10_01.rpy'),/different runtime variant/);
 assert.throws(()=>normal.profile.relativeSave('../scoreth10.dat'),/Invalid save path/);
 assert.throws(()=>multiplayer.profile.root('fr'),/Invalid save language/);
+for(const profile of [normal.profile,multiplayer.profile]){
+ for(const language of ['jp','chs'])for(const name of ['hint_user.txt','hint_auto.txt']){
+  const path='hint/'+name;
+  assert.equal(profile.relativeSave(profile.root(language)+'/'+path),path);
+ }
+ for(const path of ['hint/../th10.cfg','hint/other.txt'])assert.throws(()=>profile.relativeSave(path),/Invalid save path/);
+}
+assert.throws(()=>normal.profile.relativeSave('/savesth10-multiplayer/jp/hint/hint_user.txt'),/different runtime variant/);
+assert.throws(()=>multiplayer.profile.relativeSave('/savesth10/chs/hint/hint_user.txt'),/different runtime variant/);
 
 function makeDatabase(rows){
  return {

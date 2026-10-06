@@ -3,7 +3,7 @@ const LANGUAGES=Object.freeze(['jp','chs']);
 function savePathPattern(game){
  return game==='th08'
   ? /^(?:score\.dat|th08\.cfg|replay\/th8_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/
-  : /^(?:scoreth10c?\.dat|th10\.cfg|replay\/th10_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/;
+  : /^(?:scoreth10c?\.dat|th10\.cfg|hint\/hint_(?:user|auto)\.txt|replay\/th10_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/;
 }
 
 export async function initializeSaveStorage({game,runtimeVariant='normal',setCompiledVariant,filesystem,idbfs,sync,beforeMount}){

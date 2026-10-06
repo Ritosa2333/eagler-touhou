@@ -14,6 +14,9 @@
 using namespace th10;using namespace th10::browser;
 // New browser shells own all DOM keys; old shells keep the SDL fallback.
 EM_JS(int, th10_browser_keyboard, (), {return typeof Module['resetBrowserKeyboard']==='function';});
+// Localization still uses the Japanese game resources, while the shell keeps
+// the original JP/CHS user-file stores separate.
+EM_JS(int, th10_save_language_chinese, (), {return Module['eaglerSaveLanguage']==='chs';});
 EM_JS(void, th10_reset_browser_keyboard, (), {Module['resetBrowserKeyboard']?.();});
 EM_JS(int, th10_keyboard_gamepad_dpad, (), {
     if (!navigator.getGamepads) return 0;
@@ -123,7 +126,7 @@ EXPORT("sdl_game_open") Application* sdl_game_open(u32 chinese,u32 seed){
     gestures.begin_session();
     for(auto& k:keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);
     close_controllers();SDL_InitSubSystem(SDL_INIT_GAMEPAD);int controller_count=0;auto* ids=SDL_GetGamepads(&controller_count);for(int i=0;i<controller_count;i++)add_controller(ids[i]);SDL_free(ids);
-    session=std::make_unique<Session>();auto& s=*session;sdl_files_root(chinese);u32 rng[]{seed,0};std::memcpy(&s.random,rng,8);std::memcpy(&s.visual,rng,8);
+    session=std::make_unique<Session>();auto& s=*session;sdl_files_root(chinese||th10_save_language_chinese());u32 rng[]{seed,0};std::memcpy(&s.random,rng,8);std::memcpy(&s.visual,rng,8);
     s.files=files_create();if(!s.files||!files_attach(s.files,chinese?"th10c.dat":"th10.dat"))return nullptr;
     const u32 parameters[]{640,480,22,1,0,0,1,0,1,1,80,0,0,0};s.input=input_create();s.state=game_state_create(s.input,chinese);s.device=graphics_create(reinterpret_cast<const GraphicsPresentation*>(parameters),0x40);if(!s.device)return nullptr;
     s.animation=animation_engine_create(s.files,s.device,&s.random,&s.visual,&s.rate);s.fonts=fonts_create(s.device,&s.random,chinese);s.audio=audio_create(s.files);s.effects=effects_create(s.animation,&s.quitting,nullptr);
