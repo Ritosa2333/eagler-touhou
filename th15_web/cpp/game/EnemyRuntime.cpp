@@ -28,10 +28,10 @@ int EnemyRuntime::update(float rate,const Vec3& background_delta){
     for(u32 index=0;index<14;index++){
         auto& handle=state.animation_handles[index];auto* vm=animations?animations->find(handle):nullptr;
         if(!vm){if(!(state.flags&0x4000000))handle=0;else if(handle&&!animations){error="Persistent enemy animation host unavailable";return -2;}continue;}
-        if(state.flags&0x4000000){vm->visual.translation=state.motion.position;continue;}
+        if(state.flags&0x4000000){vm->presentation_motion=true;vm->visual.translation=state.motion.position;continue;}
         const auto& offset=state.animation_offsets[index];Vec3 position{float(offset.x+state.motion.position.x),float(offset.y+state.motion.position.y),float(state.motion.position.z+offset.z)};
         const i32 parent=state.animation_parents[index];if(parent>=0){if(parent>=16){error="Enemy animation parent outside range";return -2;}auto& parent_handle=state.animation_handles[parent];auto* parent_vm=animations->find(parent_handle);if(parent_vm){const auto& anchor=parent_vm->variables.position;position={float(anchor.x+position.x),float(anchor.y+position.y),float(anchor.z+position.z)};}else parent_handle=0;}
-        vm->visual.translation=position;
+        vm->presentation_motion=true;vm->visual.translation=position;
         if(vm->visual.render_flags&128){vm->variables.rotation.z=float(std::atan2(double(state.motion.velocity.y),double(state.motion.velocity.x)));vm->visual.flags|=4;state.rotation_angle=vm->variables.rotation.z;}
     }
     rate=world.current_rate(rate);if(state.collision_timer.current>0)state.collision_timer.decrement(&rate);

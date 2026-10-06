@@ -1,6 +1,7 @@
 #include "ApplicationState.hpp"
 #include "../game/GameKeyboard.hpp"
 #include "../../../portable/sdl/FrameCadence.hpp"
+#include "../../../portable/sdl/PresentationCadence.hpp"
 #include "../../../portable/input/TouchController.hpp"
 #include <SDL3/SDL.h>
 #include <emscripten.h>
@@ -24,8 +25,10 @@ struct Key {const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_S
 #include "../../../portable/input/KeyboardMap.inc"
 touhou::input::TouchController gestures;
 touhou::sdl::FrameCadence cadence;
+touhou::sdl::PresentationCadence presentation;bool limit_presentation_60=false;
 GameInput controls;
 SDL_Joystick* controller=nullptr;
+bool loading_held=false;
 bool running=false,suspended=false,lost_focus=false,music_enabled=true;u32 render_scale=1;
 u32 loop_epoch=0;
 double previous_frame=-1,window_start=0;
@@ -48,7 +51,7 @@ void clear_inputs(){th15_browser_keyboard_reset();for(auto& key:keyboard_map)key
 void initialize_controller(){if(controller){SDL_CloseJoystick(controller);controller=nullptr;}SDL_InitSubSystem(SDL_INIT_JOYSTICK);int count=0;auto* ids=SDL_GetJoysticks(&count);for(int i=0;i<count;i++)add_controller(ids[i]);SDL_free(ids);}
 touhou::input::TouchState touch_state(){
  touhou::input::TouchState value;if(!app||!app->scene()||!app->session)return value;
- if(app->pause&&app->pause->state.screen!=PauseScreen::Inactive)return value;
+ if(app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive)return value;
  if(app->progress.replay){value.context=3;return value;}
  auto& stage=*app->scene();if(stage.messages.active()){value.context=2;return value;}
  auto& player=*stage.battle.player;auto& motion=player.motion;
@@ -89,6 +92,7 @@ bool sample_and_tick(){
 extern "C" {
 EMSCRIPTEN_KEEPALIVE int th15_prepare_loading(){using namespace th15::sdl;if(running)return 0;if(app)app->scheduler.remove(fps_drawing);app=std::make_unique<ApplicationState>();app->graphics.render_scale=render_scale;app->audio_device.music_enabled=music_enabled;return app->prepare_loading();}
 EMSCRIPTEN_KEEPALIVE int th15_initialize(){using namespace th15::sdl;if(running)return 1;clear_inputs();if(controller){SDL_CloseJoystick(controller);controller=nullptr;}if(!app||!app->platform_prepared||app->initialized){if(app)app->scheduler.remove(fps_drawing);app=std::make_unique<ApplicationState>();app->graphics.render_scale=render_scale;app->audio_device.music_enabled=music_enabled;}if(!app->initialize(true)){last_error=app->failure;app.reset();return 0;}fps_drawing.owner=nullptr;fps_drawing.enabled=true;fps_drawing.run=draw_frame_rate;if(app->scheduler.add(fps_drawing,th15::FramePass::Draw,72)<0){app->fail("Frame-rate draw callback registration failed");return 0;}reset_presentation_clock();for(auto& key:keyboard_map)key.native=SDL_GetScancodeFromName(key.sdl);initialize_controller();window_start=0;window_ticks=0;measured_fps=60;return 1;}
+EMSCRIPTEN_KEEPALIVE void th15_limit_presentation(unsigned enabled){using namespace th15::sdl;if(limit_presentation_60==(enabled!=0))return;limit_presentation_60=enabled!=0;presentation.reset();if(app){app->graphics.presentation.enabled=!limit_presentation_60;app->graphics.presentation.reset();}}
 EMSCRIPTEN_KEEPALIVE void th15_render_scale(unsigned scale){if(!th15::sdl::running)th15::sdl::render_scale=scale>=2?2:1;}
 EMSCRIPTEN_KEEPALIVE const char* th15_error(){using namespace th15::sdl;return app?app->failure.c_str():last_error.c_str();}
 EMSCRIPTEN_KEEPALIVE unsigned th15_phase(){using namespace th15::sdl;return !app?4:app->exiting?4:app->title?0:app->ending?3:app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive?2:1;}
@@ -101,21 +105,31 @@ EMSCRIPTEN_KEEPALIVE void th15_keys_clear(){th15::sdl::clear_inputs();}
 EMSCRIPTEN_KEEPALIVE void th15_music_enabled(unsigned enabled){using namespace th15::sdl;music_enabled=enabled!=0;if(app){app->audio_device.music_enabled=music_enabled;app->audio_device.refresh_volume();}}
 EMSCRIPTEN_KEEPALIVE const unsigned* th15_audio_statistics(){using namespace th15::sdl;return app?app->audio_device.statistics():nullptr;}
 EMSCRIPTEN_KEEPALIVE void th15_audio_close(){using namespace th15::sdl;if(app)app->audio_device.close();}
-EMSCRIPTEN_KEEPALIVE void th15_loop_stop(){using namespace th15::sdl;running=false;++loop_epoch;previous_frame=-1;cadence.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();if(app)app->audio_device.suspend(true);}
-EMSCRIPTEN_KEEPALIVE void th15_loop_pause(unsigned enabled){using namespace th15::sdl;suspended=enabled!=0;previous_frame=-1;cadence.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();if(app)app->audio_device.suspend(suspended);}
+EMSCRIPTEN_KEEPALIVE void th15_loop_stop(){using namespace th15::sdl;running=false;++loop_epoch;previous_frame=-1;cadence.reset();presentation.reset();if(app)app->graphics.presentation.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();if(app)app->audio_device.suspend(true);}
+EMSCRIPTEN_KEEPALIVE void th15_loop_pause(unsigned enabled){using namespace th15::sdl;suspended=enabled!=0;previous_frame=-1;cadence.reset();presentation.reset();if(app)app->graphics.presentation.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();if(app)app->audio_device.suspend(suspended);}
 EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
- using namespace th15::sdl;if(running||!app||!app->initialized)return;running=true;suspended=false;previous_frame=-1;cadence.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();app->audio_device.suspend(false);
+ using namespace th15::sdl;if(running||!app||!app->initialized)return;running=true;suspended=false;previous_frame=-1;cadence.reset();presentation.reset();if(app)app->graphics.presentation.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();app->audio_device.suspend(false);
  emscripten_request_animation_frame_loop([](double time,void* epoch)->EM_BOOL{
   if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
-  if(suspended){cadence.reset();return EM_TRUE;}if(presentation_start<0)presentation_start=time;const auto ticks=cadence.advance(delta);bool ok=true;app->graphics.backend.defer=true;
+  if(suspended){cadence.reset();presentation.reset();app->graphics.presentation.reset();return EM_TRUE;}
+  // Loading time is wall-clock presentation time, never input/Replay ticks.
+  if(app->loading_waiting()){
+   if(!loading_held)clear_inputs();loading_held=true;cadence.reset();presentation.reset();app->graphics.presentation.reset();
+   if(app->pending_load){const auto deadline=app->loading_until;if(!app->complete_loading()||!app->draw_loading(false)){running=false;th15_browser_frame(0,emscripten_get_now()-begin,0);return EM_FALSE;}app->loading_until=deadline;}
+   app->audio_device.pump();return EM_TRUE;
+  }
+  if(loading_held){loading_held=false;clear_inputs();cadence.reset();window_start=0;window_ticks=0;measured_fps=60;reset_presentation_clock();return EM_TRUE;}
+  if(presentation_start<0)presentation_start=time;if(!limit_presentation_60)presentation.advance(delta);else presentation.reset();app->graphics.presentation.enabled=presentation.high_refresh&&!limit_presentation_60;const auto ticks=cadence.advance(delta);bool ok=true;app->graphics.backend.defer=true;
   unsigned completed=0;
   for(unsigned i=0;i<ticks&&ok;i++){ok=sample_and_tick();++completed;if(app->exiting||app->pending_load)break;
    // Keep every executed update/draw, but do not turn one expensive tick into
    // four consecutive full renders. Retain the short debt for the next RAF.
    if(i+1<ticks&&emscripten_get_now()-begin>=1000./60.){cadence.debt=std::min(.1,cadence.debt+(ticks-i-1)*touhou::sdl::FrameCadence::interval);break;}
-  }app->graphics.backend.commit();app->graphics.backend.defer=false;app->audio_device.pump();
-  if(ok&&completed)++presentation_frames;const double elapsed=time-presentation_start;if(elapsed>=1000){presentation_fps=float(presentation_frames*1000./elapsed);presentation_start=time;presentation_frames=0;}
-  if(completed)th15_browser_frame(ok?1:0,emscripten_get_now()-begin,completed);if(!ok)running=false;return running?EM_TRUE:EM_FALSE;
+  }
+  if(ok&&presentation.high_refresh&&!limit_presentation_60&&!app->pending_load&&!app->exiting){const bool frozen=app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive;const float alpha=float(std::clamp(cadence.debt/touhou::sdl::FrameCadence::interval,0.,1.));app->graphics.presentation.present(app->graphics.backend,alpha,frozen);}
+  const bool presented=app->graphics.backend.commit();app->graphics.backend.defer=false;app->audio_device.pump();
+  if(ok&&presented)++presentation_frames;const double elapsed=time-presentation_start;if(elapsed>=1000){presentation_fps=float(presentation_frames*1000./elapsed);presentation_start=time;presentation_frames=0;}
+  if(completed||presented)th15_browser_frame(ok?1:0,emscripten_get_now()-begin,completed);if(!ok)running=false;return running?EM_TRUE:EM_FALSE;
  },reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
 }
 EMSCRIPTEN_KEEPALIVE void th15_touch(unsigned type,int id,float x,float y){using namespace th15::sdl;if(std::isfinite(x)&&std::isfinite(y))gestures.pointer(type,id,x,y,SDL_GetTicks(),touch_state(),false);}
@@ -125,6 +139,17 @@ EMSCRIPTEN_KEEPALIVE void th15_touch_controls(unsigned enabled,unsigned fire,uns
 EMSCRIPTEN_KEEPALIVE void th15_touch_stick(float x,float y){using namespace th15::sdl;gestures.stick_x=std::isfinite(x)?std::clamp(x/32767.f,-1.f,1.f):0;gestures.stick_y=std::isfinite(y)?std::clamp(y/32767.f,-1.f,1.f):0;}
 #if TH15_DEVELOPMENT_HARNESS
 EMSCRIPTEN_KEEPALIVE const touhou::sdl::Statistics* th15_probe_graphics_statistics(){using namespace th15::sdl;return app?&app->graphics.backend.stats:nullptr;}
+EMSCRIPTEN_KEEPALIVE int th15_probe_complete_stage(){using namespace th15::sdl;return app&&app->complete_stage();}
+EMSCRIPTEN_KEEPALIVE void th15_probe_protection(unsigned frames){using namespace th15::sdl;if(app&&app->scene())app->scene()->battle.player->life.invulnerability.set(int(frames));}
+EMSCRIPTEN_KEEPALIVE const unsigned* th15_probe_checkpoint_digest(){using namespace th15::sdl;static std::array<unsigned,9> values{};values.fill(0);if(app&&app->scene()){th15::CheckpointFile file;if(app->scene()->checkpoint.prepare_file(file,0,0)){for(unsigned i=0;i<9;i++){unsigned hash=2166136261u;for(auto byte:file.sections[i])hash=(hash^byte)*16777619u;values[i]=hash;}}}return values.data();}
+EMSCRIPTEN_KEEPALIVE const unsigned char* th15_probe_pixels(){using namespace th15::sdl;if(!app)return nullptr;app->graphics.backend.read(GraphicsDevice::screen);return app->graphics.pixels(GraphicsDevice::screen)->pixels.data();}
+EMSCRIPTEN_KEEPALIVE void th15_probe_presentation_offset(float x,float y){using namespace th15::sdl;if(app&&!running)app->views.view(th15::DrawCamera::Playfield).offset={x,y};}
+EMSCRIPTEN_KEEPALIVE void th15_probe_presentation_fault(unsigned enabled){using namespace th15::sdl;if(app)app->graphics.presentation.negative_control=enabled!=0;}
+EMSCRIPTEN_KEEPALIVE const float* th15_probe_presentation_reference(){using namespace th15::sdl;static std::array<float,5> value{};if(app&&app->scene())value=app->graphics.presentation.reference(uintptr_t(&app->scene()->battle.player->visuals.root));return value.data();}
+EMSCRIPTEN_KEEPALIVE int th15_probe_presentation_draw(float alpha){using namespace th15::sdl;if(running||!app)return 0;return app->graphics.presentation.present(app->graphics.backend,alpha,app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive);}
+EMSCRIPTEN_KEEPALIVE void th15_probe_presentation_enable(unsigned enabled){using namespace th15::sdl;if(app){app->graphics.presentation.enabled=enabled!=0;app->graphics.presentation.reset();}}
+EMSCRIPTEN_KEEPALIVE const float* th15_probe_presentation_sample(){using namespace th15::sdl;static std::array<float,3> value{};if(app)value={app->graphics.presentation.last_alpha,app->graphics.presentation.last_x,float(app->graphics.presentation.sampled)};return value.data();}
+EMSCRIPTEN_KEEPALIVE unsigned th15_probe_loading_remaining(){using namespace th15::sdl;const auto now=SDL_GetTicks();return app&&app->loading_until>now?unsigned(app->loading_until-now):0;}
 EMSCRIPTEN_KEEPALIVE int th15_probe_tick(){return !th15::sdl::running&&th15::sdl::sample_and_tick();}
 // Diagnostic replay batches retain every update/draw and defer only window presentation.
 EMSCRIPTEN_KEEPALIVE int th15_probe_ticks(unsigned count){using namespace th15::sdl;if(running||!app||count>120)return 0;app->graphics.backend.defer=true;bool ok=true;for(unsigned i=0;i<count&&ok;i++)ok=sample_and_tick();app->graphics.backend.commit();app->graphics.backend.defer=false;return ok;}

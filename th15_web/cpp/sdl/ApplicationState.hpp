@@ -17,7 +17,9 @@ namespace th15::sdl {
 struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGameplayServices,SessionGameplayServices,SessionEntryServices,RunConstructionServices,RunCompletionServices,RunStageExitServices,RunPausePlatform,StageDrawServices,AssetSource {
  GraphicsDevice graphics;FontDevice fonts{graphics};AudioDevice audio_device;FileStore files;
  Rng visual;AnmEnvironment environment;AnmManager animations{visual,environment};AnmRenderer renderer{graphics};ScreenViews views{renderer,environment};AsciiText captions{animations,environment};FrameScheduler scheduler;
- Rng loading_random;AnmEnvironment loading_environment;AnmManager loading_animations{loading_random,loading_environment};bool platform_prepared=false;u32 loading_signature=0,loading_prayer=0;unsigned pending_load=0;
+ Rng loading_random;AnmEnvironment loading_environment;AnmManager loading_animations{loading_random,loading_environment};bool platform_prepared=false;u32 loading_signature=0,loading_prayer=0;unsigned pending_load=0;u64 loading_until=0;
+ static constexpr u64 loading_minimum_ms=1000;
+ bool loading_waiting()const;bool complete_loading();
  GameConfig config;SessionState progress;PlayerLifeSession selection_player;ItemScoreState selection_score;RecordStore records;TitleSelectionSettings selection;TitleAudioSettings volumes;TitleControllerSettings controller;MusicComments comments;TitleKeyboard keyboard_state;
  std::unordered_map<std::string,i32> shared;std::unique_ptr<AnmSceneEffects> scene_effects;std::unique_ptr<SceneDisplay> display;std::array<FrameCallback,2> animation_updates;
  std::unique_ptr<TitleScene> title;std::unique_ptr<EndingScene> ending;std::unique_ptr<RunGameplay> run;std::unique_ptr<SessionReplay> replay;std::unique_ptr<RunSession> session;std::unique_ptr<RunInitialization> initialization;std::unique_ptr<RunStageFlow> flow;std::unique_ptr<RunPause> pause;

@@ -1,7 +1,7 @@
 #include "LaserVisual.hpp"
 #include <cmath>
 namespace th15 {
-bool LaserVisual::tick(AnmVm& vm){if(vm.tick(random,animations.rate)<0){error=vm.error;return false;}return true;}
+bool LaserVisual::tick(AnmVm& vm){vm.presentation_motion=true;if(vm.tick(random,animations.rate)<0){error=vm.error;return false;}return true;}
 bool LaserVisual::body_initialize(){const auto* descriptor=bullet_appearance(type);auto* resource=animations.resource(resource_id);if(!descriptor||!resource||color<0||color>=16){error="Laser animation specification unavailable";return false;}
     if(!body.bind(*resource,u32(descriptor->script))){error="Laser body script unavailable";return false;}const auto* source=animations.script_template(resource_id,u32(descriptor->script));body.environment=source?source->environment:nullptr;body.object_host=&animations;body.sprite_source=this;
     if(!tick(body))return false;if((body.visual.render_flags&0xc000)==0x8000)body.visual.render_flags=(body.visual.render_flags&~0x8000u)|0x4000;

@@ -20,6 +20,7 @@ bool GraphicsDevice::preload(AnmResource& file,bool low_color){
     resources.emplace(&file,std::move(handles));return true;
 }
 void GraphicsDevice::unload(const AnmResource& file){
+    presentation.reset();
     auto it=resources.find(&file);if(it==resources.end())return;backend.flush();for(u32 id:it->second){backend.release(id);textures.erase(id);}resources.erase(it);
 }
 u32 GraphicsDevice::texture(const AnmResource& file,u32 index){
@@ -34,16 +35,17 @@ bool GraphicsDevice::select_target(const AnmResource* file,u32 index){
     backend.viewport({0,0,image.width,image.height,0,1});return true;
 }
 bool GraphicsDevice::clear_target(u32 color,const GraphicsViewport* rect){
-    if(rect){const i32 box[]={i32(rect->x),i32(rect->y),i32(rect->x+rect->width),i32(rect->y+rect->height)};backend.clear(3,color,1,0,box,1);}
-    else backend.clear(3,color,1,0);
+    if(rect){const i32 box[]={i32(rect->x),i32(rect->y),i32(rect->x+rect->width),i32(rect->y+rect->height)};presentation.clear(backend.state,3,color,box);backend.clear(3,color,1,0,box,1);}
+    else {presentation.clear(backend.state,3,color,nullptr);backend.clear(3,color,1,0);}
     return true;
 }
 bool GraphicsDevice::clear_depth(const GraphicsViewport* rect){
-    if(rect){const i32 box[]={i32(rect->x),i32(rect->y),i32(rect->x+rect->width),i32(rect->y+rect->height)};backend.clear(2,0,1,0,box,1);}
-    else backend.clear(2,0,1,0);
+    if(rect){const i32 box[]={i32(rect->x),i32(rect->y),i32(rect->x+rect->width),i32(rect->y+rect->height)};presentation.clear(backend.state,2,0,box);backend.clear(2,0,1,0,box,1);}
+    else {presentation.clear(backend.state,2,0,nullptr);backend.clear(2,0,1,0);}
     return true;
 }
 bool GraphicsDevice::copy_surface(u32 source,const i32* region,u32 target,const i32* point){
+    presentation.reset();
     if(!textures.count(source)||!textures.count(target)||source==target){error="Invalid GPU surface copy";return false;}
     // CPU font atlases already contain authored glyph pixels. Promote only
     // GPU capture destinations, avoiding fourfold atlas storage on mobile.
@@ -51,6 +53,7 @@ bool GraphicsDevice::copy_surface(u32 source,const i32* region,u32 target,const 
     backend.copy(source,region,target,point);changed(target);return true;
 }
 bool GraphicsDevice::resample_surface(u32 source,const i32* region,u32 target,const i32* destination){
+    presentation.reset();
     if(!textures.count(source)||!textures.count(target)||source==target){error="Invalid GPU surface resize";return false;}
     auto& capture=textures.at(target);if(capture.renderScale!=render_scale){backend.release(target);capture.renderScale=render_scale;}
     if(!backend.resample(source,region,target,destination,nullptr,0,0)){error="GPU surface resize failed";return false;}

@@ -49,7 +49,7 @@ bool ApplicationState::retire_message(){return scene()&&scene()->messages.releas
 bool ApplicationState::retire_scene_effect(){return animations.retire(restart_effect_handle)||fail(animations.error);}
 bool ApplicationState::reset_gui(){return scene()&&scene()->hud.reset_for_retry()||fail(scene()?scene()->hud.error:"GUI reset has no scene");}
 bool ApplicationState::stop_sounds(){audio_device.effects.suspend();return true;}
-bool ApplicationState::begin_restart_effect(){if(!assets())return fail("Chapter restart effect has no stage resource");animations.retire(restart_effect_handle);restart_effect_handle=animations.create_overlay(assets()->effect,0);auto* vm=animations.registry.find(restart_effect_handle);if(!vm||(!vm->geometry.overlay&&(!animations.effect||!animations.effect(*vm,0))))return fail(animations.error.empty()?"Chapter restart effect unavailable":animations.error);return animations.interrupt(restart_effect_handle,9)||fail(animations.error);}
+bool ApplicationState::begin_restart_effect(){graphics.presentation.reset();if(!assets())return fail("Chapter restart effect has no stage resource");animations.retire(restart_effect_handle);restart_effect_handle=animations.create_overlay(assets()->effect,0);auto* vm=animations.registry.find(restart_effect_handle);if(!vm||(!vm->geometry.overlay&&(!animations.effect||!animations.effect(*vm,0))))return fail(animations.error.empty()?"Chapter restart effect unavailable":animations.error);return animations.interrupt(restart_effect_handle,9)||fail(animations.error);}
 bool ApplicationState::begin_restart_overlay(){return restart_overlay(250);}
 bool ApplicationState::checkpoint_file(bool restoring){
  if(!scene())return fail("Pointdevice checkpoint has no scene");auto& saved=scene()->checkpoint;
@@ -75,6 +75,7 @@ bool ApplicationState::load_scene(bool&){return fail("Scene loading bypassed the
 bool ApplicationState::activate_scene(){return fail("Scene activation bypassed the RunSession entrance controller");}
 bool ApplicationState::release_background(){display->release_previous();return true;}
 bool ApplicationState::load_checkpoint_file(bool& restored){
+ graphics.presentation.reset();
  restored=false;if(!scene())return fail("Pointdevice checkpoint loading has no scene");bool present=false;if(!files.checkpoint(progress.character,progress.difficulty,checkpoint_bytes,present))return fail(files.error);if(!present)return true;
  auto& saved=scene()->checkpoint;if(!saved.read_file(checkpoint_bytes.data(),checkpoint_bytes.size(),0)||!saved.restore())return fail(saved.error);restored=true;return true;
 }

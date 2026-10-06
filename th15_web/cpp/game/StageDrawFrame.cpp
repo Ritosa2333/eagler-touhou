@@ -7,7 +7,7 @@ StageDrawFrame::StageDrawFrame(FrameScheduler& f,StageScene& s,AnmManager& a,Anm
 StageDrawFrame::~StageDrawFrame(){for(auto& c:callbacks)scheduler.remove(c);}
 bool StageDrawFrame::fail(const std::string& value){if(error.empty())error=value;return false;}
 void StageDrawFrame::prepare_camera(){
- renderer.flush();auto camera=scene.script.state.camera;camera.direction=scene.camera_direction();auto& v=views.view(DrawCamera::Playfield);v.viewport=viewport;v.camera=stage_camera(camera,viewport);renderer.set_viewport(v.viewport);renderer.set_camera(v.camera);renderer.offset=v.offset;
+ renderer.flush();auto camera=scene.script.state.camera;camera.direction=scene.camera_direction();auto& v=views.view(DrawCamera::Playfield);v.viewport=viewport;v.camera=stage_camera(camera,viewport);renderer.set_viewport(v.viewport);renderer.set_camera(v.camera);graphics.presentation_camera(true);renderer.offset=v.offset;
 }
 void StageDrawFrame::fog_parameters(){const auto& fog=scene.script.state.camera.fog;graphics.set_fog_color(fog.color);graphics.set_fog_range(fog.near_distance,fog.far_distance);}
 bool StageDrawFrame::layers(i32 first,i32 last){for(i32 layer=first;layer<=last;layer++)if(!scene.draw(renderer,graphics,layer,viewport,playfield_origin))return fail(scene.error);renderer.flush();return true;}

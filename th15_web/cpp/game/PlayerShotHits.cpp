@@ -9,7 +9,7 @@ bool PlayerShots::hit_rewards(const Vec3& position){
     while(reward_counters[2]>=100){if(!spawn(1,-1.5707964f,2.2f))return false;reward_counters[2]=wrapping_add(reward_counters[2],-100);}return true;
 }
 i32 PlayerShots::ordinary_hit(PlayerShot& shot){
-    auto* vm=animations.registry.find(shot.animation);if(!vm){shot.animation=0;error="Hit shot animation unavailable";return -1;}shot.motion.position.z=.1f;vm->pending_interrupt=1;shot.state=2;shot.motion.speed=float(shot.motion.speed*.125f);vm->visual.translation=shot.motion.position;auto* source=damage.find(shot.damage_source);if(!source){error="Hit shot damage source unavailable";return -1;}source->flags&=~1u;shot.damage_source=0;return shot.damage;
+    auto* vm=animations.registry.find(shot.animation);if(!vm){shot.animation=0;error="Hit shot animation unavailable";return -1;}shot.motion.position.z=.1f;vm->pending_interrupt=1;shot.state=2;shot.motion.speed=float(shot.motion.speed*.125f);vm->presentation_motion=true;vm->visual.translation=shot.motion.position;auto* source=damage.find(shot.damage_source);if(!source){error="Hit shot damage source unavailable";return -1;}source->flags&=~1u;shot.damage_source=0;return shot.damage;
 }
 i32 PlayerShots::contact(PlayerShot& shot,const ShotSpec& spec,const DamageQuery& q){
     const u32 kind=spec.collision_kind;if(kind==0)return ordinary_hit(shot);

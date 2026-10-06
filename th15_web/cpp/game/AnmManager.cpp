@@ -21,7 +21,7 @@ i32 AnmManager::resource_id(const AnmResource* value)const noexcept{for(const au
 AnmVm* AnmManager::script_template(i32 id,u32 script)const noexcept{auto it=banks.find(id);return it==banks.end()||script>=it->second->templates.size()?nullptr:&it->second->templates[script];}
 bool AnmManager::bind_template(AnmVm& vm,i32 id,i32 script){
     auto* source=script>=0?script_template(id,u32(script)):nullptr;if(!source){error="Animation template unavailable";return false;}
-    const Vec3 translation=vm.visual.translation;vm=*source;vm.visual.translation=translation;vm.rotation_parent=vm.creation_parent=nullptr;vm.slowdown=0;vm.pending_interrupt=0;vm.reset_runtime_timers();return true;
+    const Vec3 translation=vm.visual.translation;vm=*source;vm.presentation_generation=++AnmVm::presentation_counter;vm.presentation_motion=false;vm.visual.translation=translation;vm.rotation_parent=vm.creation_parent=nullptr;vm.slowdown=0;vm.pending_interrupt=0;vm.reset_runtime_timers();return true;
 }
 AnmVm* AnmManager::instantiate(AnmResource& resource,i32 script){
     for(const auto& bank:banks)if(&bank.second->data==&resource){auto* vm=registry.allocate();if(bind_template(*vm,bank.first,script))return vm;registry.discard(*vm);return nullptr;}

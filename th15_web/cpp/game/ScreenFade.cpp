@@ -17,7 +17,7 @@ i32 ScreenFade::update(){
 }
 bool ScreenFade::draw(){
  if(!active)return true;renderer.flush();if(full_screen)graphics.set_viewport({0,0,environment.screen_width,environment.screen_height,0,1});auto& s=graphics.pipeline();s.color.operation=s.alpha.operation=ColorOperation::First;s.color.first=s.alpha.first={ArgumentSource::Diffuse};s.color.second=s.alpha.second={ArgumentSource::Diffuse};s.textureTransform=false;s.destinationBlend=BlendFactor::InverseSourceAlpha;
- const u32 color=(u32(state.alpha)<<24)|state.color;const float w=float(environment.screen_width),h=float(environment.screen_height);struct Vertex{Vec3 position;float reciprocal_w;u32 color;};const Vertex vertices[]={{{0,0,0},1,color},{{w,0,0},1,color},{{0,h,0},1,color},{{w,h,0},1,color}};graphics.set_layout(VertexLayout::ScreenColor);graphics.primitives(Topology::Strip,2,vertices,sizeof(Vertex));
+ const u32 color=(u32(state.alpha)<<24)|state.color;const float w=float(environment.screen_width),h=float(environment.screen_height);struct Vertex{Vec3 position;float reciprocal_w;u32 color;};const Vertex vertices[]={{{0,0,0},1,color},{{w,0,0},1,color},{{0,h,0},1,color},{{w,h,0},1,color}};presentation_vm.visual.flags=3;presentation_vm.interpolators.alpha.duration=state.duration;presentation_vm.age=state.age;graphics.presentation_range(presentation_vm,0,4);graphics.set_layout(VertexLayout::ScreenColor);graphics.primitives(Topology::Strip,2,vertices,sizeof(Vertex));
  s.color.operation=s.alpha.operation=ColorOperation::Multiply;s.color.first=s.alpha.first={ArgumentSource::Texture};s.color.second=s.alpha.second={ArgumentSource::Diffuse};renderer.invalidate();return true;
 }
 }

@@ -8,7 +8,7 @@ struct PopupEntry {
 static_assert(sizeof(PopupEntry)==72);
 struct PopupDrawServices {virtual ~PopupDrawServices()=default;virtual bool draw_glyph(AnmVm&)=0;virtual bool draw_text(const Vec3&,u32 color,const std::string&)=0;};
 class PopupManager {
-    AnmManager& animations;AnmVm glyph;u32 next_number=0,saved_next=0;std::array<PopupEntry,18> saved{};
+    AnmManager& animations;AnmVm glyph;std::array<u64,18> presentation_generations{};u32 next_number=0,saved_next=0;std::array<PopupEntry,18> saved{};
 public:
     std::array<PopupEntry,18> entries{};std::string error;
     explicit PopupManager(AnmManager& manager):animations(manager){}

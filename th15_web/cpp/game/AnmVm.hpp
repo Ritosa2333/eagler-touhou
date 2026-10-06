@@ -27,6 +27,8 @@ class AnmVm {
     friend class AnmFile;
     std::vector<u8>* script=nullptr;u32 saved_offset=0;Timer saved_timer{};
 public:
+    inline static u64 presentation_counter=0;
+    u64 presentation_generation=++presentation_counter;bool presentation_motion=false;u32 presentation_part=0;
     AnmVariables variables;AnmVisualState visual;AnmInterpolators interpolators;Timer timer,age;i32 instruction_offset=-1;bool visible=false;std::string error;
     i32 pending_interrupt=0;
     AnmGeometry geometry;

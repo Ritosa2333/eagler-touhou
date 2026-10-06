@@ -36,7 +36,7 @@ bool PlayerShots::update_one(PlayerShot& shot){
     if(!vm){shot.state=0;shot.animation=0;if(source)source->flags&=~1u;return true;}bool inside=spec->type==2||shot.age.current<10;
     if(!inside){Vec3 p[4];if(!anm_quad_positions(*vm,p)){error="Player shot geometry unavailable";return false;}for(const auto& point:p)if(context.screen_origin.x<point.x&&point.x<float(context.screen_origin.x+384)&&context.screen_origin.y<point.y&&point.y<float(context.screen_origin.y+448))inside=true;}
     if(!inside){if(!animations.retire(shot.animation)){error=animations.error;return false;}shot.state=0;if(source)source->flags&=~1u;return true;}
-    if(source&&(shot.flags&1)){source->motion.position=shot.motion.position;source->angle=shot.motion.angle;source->size=shot.hitbox;source->damage=shot.damage;}vm->visual.translation=shot.motion.position;if(vm->visual.render_flags&0x80){vm->visual.flags|=4;vm->variables.rotation.z=shot.motion.angle;}shot.age.tick(&rate);return true;
+    if(source&&(shot.flags&1)){source->motion.position=shot.motion.position;source->angle=shot.motion.angle;source->size=shot.hitbox;source->damage=shot.damage;}vm->presentation_motion=true;vm->visual.translation=shot.motion.position;if(vm->visual.render_flags&0x80){vm->visual.flags|=4;vm->variables.rotation.z=shot.motion.angle;}shot.age.tick(&rate);return true;
 }
 bool PlayerShots::update(){for(auto& shot:shots)if(shot.state!=0&&!update_one(shot))return false;return true;}
 }

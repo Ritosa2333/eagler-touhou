@@ -3,11 +3,12 @@
 #include <memory>
 #include <emscripten.h>
 using namespace th15;
-namespace {std::unique_ptr<sdl::ApplicationState> app;std::string last_error,music_name;}
+namespace {bool presentation_test=false;std::unique_ptr<sdl::ApplicationState> app;std::string last_error,music_name;}
 extern "C" {
-i32 application_initialize(i32 device){if(!app)app=std::make_unique<sdl::ApplicationState>();if(!app->initialize(device!=0)){last_error=app->failure;app.reset();return 0;}return 1;}
+EMSCRIPTEN_KEEPALIVE void application_test_presentation_enable(unsigned enabled){presentation_test=enabled!=0;if(app)app->graphics.presentation.enabled=presentation_test;}
+i32 application_initialize(i32 device){if(!app)app=std::make_unique<sdl::ApplicationState>();app->graphics.presentation.enabled=presentation_test;if(!app->initialize(device!=0)){last_error=app->failure;app.reset();return 0;}return 1;}
 void application_render_scale(u32 scale){if(!app)app=std::make_unique<sdl::ApplicationState>();app->graphics.render_scale=scale>=2?2:1;}
-i32 application_step(u32 held,u32 pressed,u32 repeated,float fps,i32 focus){return app&&app->step(held,pressed,repeated,fps,focus!=0);}
+i32 application_step(u32 held,u32 pressed,u32 repeated,float fps,i32 focus){if(!app||!app->step(held,pressed,repeated,fps,focus!=0))return 0;if(presentation_test&&app->frames%8==0&&app->graphics.presentation.ready){const bool frozen=app->pause&&app->pause->state.screen!=PauseScreen::Inactive;if(!app->graphics.presentation.present(app->graphics.backend,.5f,frozen)||!app->graphics.presentation.present(app->graphics.backend,1,frozen))return 0;}return 1;}
 const char* application_error(){return app?app->failure.c_str():last_error.c_str();}
 const i32* application_state(){return app?app->projection():nullptr;}
 const i32* application_manual_state(){static std::array<i32,5> state;state={-1,-1,-1,-1,-1};if(app&&app->pause_manual){const auto& m=*app->pause_manual;state={m.mode,m.phase,m.age.current,m.menu.cursor,truncate_int(m.offset_x)};}return state.data();}

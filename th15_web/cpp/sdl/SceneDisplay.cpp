@@ -26,8 +26,8 @@ void SceneDisplay::release_previous()noexcept{scheduler.remove(previous_update);
 void SceneDisplay::detach(){renderer.flush();release_previous();game.reset();screenshots.discard();if(targets)targets->deactivate();graphics.select_target(nullptr,0);}
 bool SceneDisplay::capture(u32& handle,bool results){if(!targets||!compositor->active)return fail("Screenshot outside an active playfield");return screenshots.capture(handle,results)||fail(screenshots.error);}
 bool SceneDisplay::draw(){
- if(!error.empty()||!compositor)return false;if(game)game->prepare_frame();if(!graphics.select_target(nullptr,0))return fail(graphics.error);
+ if(!error.empty()||!compositor)return false;graphics.presentation.begin();if(game)game->prepare_frame();if(!graphics.select_target(nullptr,0))return fail(graphics.error);
  if(scheduler.draw()<0){if(game&&!game->error.empty())return fail(game->error);if(game&&!game->background.error.empty())return fail(game->background.error);if(!animation_drawing->error.empty())return fail(animation_drawing->error);if(!captions.error.empty())return fail(captions.error);return fail(compositor->error);}
- renderer.flush();if(!screenshots.finish_frame())return fail(screenshots.error);graphics.present();return graphics.error.empty()||fail(graphics.error);
+ renderer.flush();graphics.presentation.finish();if(!screenshots.finish_frame())return fail(screenshots.error);graphics.present();return graphics.error.empty()||fail(graphics.error);
 }
 }

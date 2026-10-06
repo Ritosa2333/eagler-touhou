@@ -15,10 +15,10 @@ public:
         if(auto* vm=animations.registry.find(focus_handle)){vm->visual.secondary_scale={scale,scale};vm->visual.flags|=8;}else focus_handle=0;return true;
     }
     bool pose(i32 script)override{return animations.bind_template(root,player_resource,script)&&animations.tick_instance(root)>=0;}
-    void focus_position(const Vec3& position)override{if(auto* vm=animations.registry.find(focus_handle))vm->visual.translation=position;else focus_handle=0;}
-    void option_position(u32 i,const Vec3& position)override{for(auto handle:option_handles[i])if(auto* vm=animations.registry.find(handle))vm->visual.translation=position;}
+    void focus_position(const Vec3& position)override{if(auto* vm=animations.registry.find(focus_handle)){vm->presentation_motion=true;vm->visual.translation=position;}else focus_handle=0;}
+    void option_position(u32 i,const Vec3& position)override{for(auto handle:option_handles[i])if(auto* vm=animations.registry.find(handle)){vm->presentation_motion=true;vm->visual.translation=position;}}
     bool option_remove(u32 i)override{for(auto handle:option_handles[i])if(!animations.interrupt(handle,1))return false;return true;}
-    bool barrier_position(const Vec3& position)override{if(!animations.registry.find(barrier_handle)){barrier_handle=animations.create(effect_resource,27,14,0);if(!barrier_handle)return false;}if(auto* vm=animations.registry.find(barrier_handle))vm->visual.translation=position;return true;}
+    bool barrier_position(const Vec3& position)override{if(!animations.registry.find(barrier_handle)){barrier_handle=animations.create(effect_resource,27,14,0);if(!barrier_handle)return false;}if(auto* vm=animations.registry.find(barrier_handle)){vm->presentation_motion=true;vm->visual.translation=position;}return true;}
     bool barrier_remove()override{const bool result=animations.interrupt(barrier_handle,1);barrier_handle=0;return result;}
 };
 }

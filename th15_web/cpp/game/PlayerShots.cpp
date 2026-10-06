@@ -21,7 +21,7 @@ bool PlayerShots::initialize(PlayerShot& shot,u32 id,const Vec3& position){
     case 5:shot.motion.angle=normalize_angle(float(shot.motion.angle+float(float(random.signed_unit()*.017453292f)*15.f)));break;
     }
     if(s->sound>=0&&sound&&!sound(s->sound,shot.motion.position.x,SoundAction::play)){error="Player shot audio request failed";return false;}
-    vm->visual.translation=shot.motion.position;return true;
+    vm->presentation_motion=true;vm->visual.translation=shot.motion.position;return true;
 }
 i32 PlayerShots::spawn(u32 id,const Vec3& position){
     const auto* spec=specification(id);if(!spec){error="Player shot specification unavailable";return -1;}if(spec->option<0||spec->option>8){error="Invalid player shot option";return -1;}if(spec->type==2&&context.laser_power[u32(spec->option)]!=0)return 0;
