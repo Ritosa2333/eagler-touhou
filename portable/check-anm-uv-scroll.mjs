@@ -1,3 +1,4 @@
+import {parseMakeDependencies} from './make-dependencies.mjs';
 import {execFileSync} from 'node:child_process';
 import {existsSync,mkdirSync,readFileSync,writeFileSync,rmSync} from 'node:fs';
 import {resolve,relative,dirname,isAbsolute} from 'node:path';
@@ -34,13 +35,12 @@ if(!capture||(animate.match(/\*env\.rate/g)??[]).length!==1||!animate.includes(`
     throw Error('ANM UV guard must use the original single entry-point rate sample, never a late environment reread.');
 const sanitizer={enabled:sanitized,softfloatIncluded:false,scope:sanitized?'C++ test/production code only; third-party SoftFloat excluded':'none'};
 console.log(JSON.stringify({suite:'anm-uv-scroll',sanitizer,rateSamplingSourceCheck:true}));
-const dependencies=new Set([resolve(root,'portable/check-anm-uv-scroll.mjs'),interpreterPath]);
+const dependencies=new Set([resolve(root,'portable/check-anm-uv-scroll.mjs'),resolve(root,'portable/make-dependencies.mjs'),interpreterPath]);
 function compile(source,name,compileFlags=flags){
     const object=resolve(out,name+'.o'),depfile=object+'.d';
     execFileSync(compiler,[...compileFlags,'-MMD','-MF',depfile,'-MT','source','-c',resolve(root,source),'-o',object],{cwd:root,stdio:'inherit'});
-    const make=readFileSync(depfile,'utf8').replace(/\\\r?\n/g,'').replace(/^source:\s*/,'');
-    for(const token of make.match(/(?:\\.|[^\s])+/g)??[]){
-        const path=resolve(root,token.replace(/\\(.)/g,'$1')),name=relative(root,path);
+    for(const token of parseMakeDependencies(readFileSync(depfile,'utf8'))){
+        const path=resolve(root,token),name=relative(root,path);
         if(name.startsWith('..')||isAbsolute(name))throw Error(`Project dependency outside checkout: ${path}`);
         dependencies.add(path);
     }

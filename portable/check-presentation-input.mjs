@@ -1,3 +1,4 @@
+import {parseMakeDependencies} from './make-dependencies.mjs';
 import {execFileSync} from 'node:child_process';
 import {existsSync,mkdirSync,readFileSync,writeFileSync,rmSync} from 'node:fs';
 import {resolve,relative,dirname,isAbsolute} from 'node:path';
@@ -24,13 +25,12 @@ const linkFlags=['--target=wasm32-wasip1','-Wl,-z,stack-size=1048576'];
 const binding=resolve(root,'th10_web/cpp/platform/ApplicationPresentation.cpp');
 if(!readFileSync(binding,'utf8').replace(/\s+/g,'').includes('pressed_keys=&a.input.player_profiles[0].input.raw_pressed;'))
     throw Error('AppPresentation must bind the real 16-bit raw_pressed word directly.');
-const dependencies=new Set([resolve(root,'portable/check-presentation-input.mjs'),binding]);
+const dependencies=new Set([resolve(root,'portable/check-presentation-input.mjs'),resolve(root,'portable/make-dependencies.mjs'),binding]);
 function compile(source,name,compileFlags){
     const object=resolve(out,name+'.o'),depfile=object+'.d';
     execFileSync(compiler,[...compileFlags,'-MMD','-MF',depfile,'-MT','source','-c',resolve(root,source),'-o',object],{cwd:root,stdio:'inherit'});
-    const make=readFileSync(depfile,'utf8').replace(/\\\r?\n/g,'').replace(/^source:\s*/,'');
-    for(const token of make.match(/(?:\\.|[^\s])+/g)??[]){
-        const path=resolve(root,token.replace(/\\(.)/g,'$1')),name=relative(root,path);
+    for(const token of parseMakeDependencies(readFileSync(depfile,'utf8'))){
+        const path=resolve(root,token),name=relative(root,path);
         if(name.startsWith('..')||isAbsolute(name))throw Error(`Project dependency outside checkout: ${path}`);
         dependencies.add(path);
     }

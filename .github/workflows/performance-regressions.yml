@@ -42,6 +42,8 @@ on:
       - 'portable/check-game-resources.mjs'
       - 'portable/check-bullet-owner.mjs'
       - 'portable/check-multiplayer-rules.mjs'
+      - 'portable/make-dependencies.mjs'
+      - 'tests/make-dependencies.test.mjs'
       - 'tests/high-refresh-contract.test.mjs'
       - 'tests/anm-*.cpp'
       - 'tests/player-shot-*.cpp'
@@ -51,6 +53,7 @@ on:
       - 'tests/game-resource*'
       - 'tests/bullet-owner-check.cpp'
       - 'tests/rollback-pool*.cpp'
+      - 'tests/multiplayer-rules-compatibility-test.cpp'
       - 'tests/presentation-cache-test.cpp'
       - 'third_party/eagler-common'
   pull_request:
@@ -91,6 +94,8 @@ on:
       - 'portable/check-game-resources.mjs'
       - 'portable/check-bullet-owner.mjs'
       - 'portable/check-multiplayer-rules.mjs'
+      - 'portable/make-dependencies.mjs'
+      - 'tests/make-dependencies.test.mjs'
       - 'tests/high-refresh-contract.test.mjs'
       - 'tests/anm-*.cpp'
       - 'tests/player-shot-*.cpp'
@@ -100,6 +105,7 @@ on:
       - 'tests/game-resource*'
       - 'tests/bullet-owner-check.cpp'
       - 'tests/rollback-pool*.cpp'
+      - 'tests/multiplayer-rules-compatibility-test.cpp'
       - 'tests/presentation-cache-test.cpp'
       - 'third_party/eagler-common'
   workflow_dispatch:
@@ -117,7 +123,7 @@ jobs:
       - name: Display cadence and pinned channel API contract
         run: |
           node portable/check-high-refresh-contract.mjs
-          node --test tests/high-refresh-contract.test.mjs
+          node --test tests/high-refresh-contract.test.mjs tests/make-dependencies.test.mjs
           node --check portable/check-anm-dense-engine.mjs
           node --check portable/check-anm-trig-input.mjs
           node --check portable/check-anm-billboard.mjs
@@ -161,6 +167,7 @@ jobs:
           path: ~/.cache/th10-wasi-sdk-34.0-x86_64-linux.deb
           key: th10-wasi-sdk-34-09f37a478107bf30381e0d8922ac678ebe998de59e574f96830f08e520908d4a
       - name: Verify and extract the official pinned WASI SDK
+        id: wasi_sdk
         shell: bash
         run: |
           set -euo pipefail
@@ -172,10 +179,16 @@ jobs:
           echo "09f37a478107bf30381e0d8922ac678ebe998de59e574f96830f08e520908d4a  $package" | sha256sum --check
           dpkg-deb --extract "$package" "$RUNNER_TEMP/th10-wasi-sdk"
           echo "WASI_SDK_PATH=$RUNNER_TEMP/th10-wasi-sdk/opt/wasi-sdk" >> "$GITHUB_ENV"
-      - name: Actual wasm32 owner and arithmetic regressions
+      - name: Actual wasm32 multiplayer owner regressions
         run: |
           node portable/check-multiplayer-rules.mjs
+      - name: Actual wasm32 audio undefined-behavior regressions
+        if: ${{ !cancelled() && steps.wasi_sdk.outcome == 'success' }}
+        run: |
           TH10_TEST_UBSAN=1 node portable/check-multiplayer-rules.mjs --audio-only
+      - name: Actual wasm32 ANM and shot arithmetic regressions
+        if: ${{ !cancelled() && steps.wasi_sdk.outcome == 'success' }}
+        run: |
           node portable/check-anm-trig-input.mjs
           node portable/check-anm-billboard.mjs
           TH10_TEST_UBSAN=1 node portable/check-anm-billboard.mjs
@@ -186,12 +199,14 @@ jobs:
           node portable/check-player-shot-lookup.mjs
           TH10_TEST_UBSAN=1 node portable/check-player-shot-lookup.mjs
       - name: Authored menu and screenshot input word regressions
+        if: ${{ !cancelled() && steps.wasi_sdk.outcome == 'success' }}
         run: |
           node portable/check-presentation-input.mjs
           node portable/check-menu-input.mjs
           TH10_TEST_UBSAN=1 node portable/check-presentation-input.mjs
           TH10_TEST_UBSAN=1 node portable/check-menu-input.mjs
       - name: Compile title rollback and channel diagnostics against the pin
+        if: ${{ !cancelled() && steps.wasi_sdk.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail

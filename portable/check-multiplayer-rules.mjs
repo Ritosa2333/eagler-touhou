@@ -174,6 +174,7 @@ for (const [name, sources, flags = []] of [
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
 ]) {
   if (audioOnly && !audioSuites.has(name)) continue;
+  console.log(`${name}: compile wasm32`);
   const wasm = resolve(out, name + '.wasm');
   execFileSync(compiler, [
     '--target=wasm32-wasip1', '-O2', '-std=c++17', '-Wall', '-Wextra', '-Werror',
@@ -186,6 +187,7 @@ for (const [name, sources, flags = []] of [
     ...sources,
     '-o', wasm,
   ], { cwd: root, windowsHide: true, stdio: 'inherit' });
+  console.log(`${name}: run wasm32`);
   const wasi = new WASI({ version: 'preview1', args: [], env: {}, returnOnExit: true });
   const { instance } = await WebAssembly.instantiate(readFileSync(wasm), {
     wasi_snapshot_preview1: wasi.wasiImport,
