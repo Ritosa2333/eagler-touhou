@@ -40,7 +40,7 @@ export function bindOutsideTouches(doc,canvas,getCore,isEnabled) {
 export function normalizeOptions(value={}) {
  const modes=['touch','touch-unlimited','joystick','joystick-free'];
  const sensitivity=Number(value.touchSensitivity??100);
- return {...value,touchEnabled:!!value.touchEnabled,
+ return {...value,touchEnabled:!!value.touchEnabled,faithBarEnabled:value.faithBarEnabled===true,
   touchMovementMode:modes.includes(value.touchMovementMode)?value.touchMovementMode:'touch',
   touchSensitivity:Number.isFinite(sensitivity)?Math.max(100,Math.min(300,sensitivity)):100};
 }

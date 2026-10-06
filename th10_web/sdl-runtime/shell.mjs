@@ -30,7 +30,7 @@ function relativeSave(path){
  path=path.replaceAll('\\','/').toLowerCase();
  if(path.startsWith('/savesth10/'))path=path.slice('/savesth10/'.length).replace(/^(?:jp|chs)\//,'');
  else path=path.replace(/^\//,'');
- if(!/^(?:scoreth10c?\.dat|th10\.cfg|replay\/th10_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/.test(path))throw Error('Invalid save path: '+path);
+ if(!/^(?:scoreth10c?\.dat|th10\.cfg|hint\/hint_(?:user|auto)\.txt|replay\/th10_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/.test(path))throw Error('Invalid save path: '+path);
  return path;
 }
 function fileExists(path){return Module.FS.analyzePath(path).exists;}
@@ -86,7 +86,15 @@ async function installRuntimePack(pack){
   Module.FS.writeFile(file.path,file.bytes,{canOwn:true});runtimePackFiles.push(file.path);
  }
 }
-function applyOptions(){applyTouchOptions(core,options);if(app)core.application_touch_display?.(app,options.alwaysHitbox?1:0);practice?.configure(options);}
+function applyOptions(){
+ applyTouchOptions(core,options);
+ if(app){
+  core.application_touch_display?.(app,options.alwaysHitbox?1:0);
+  const hints=['hint_user.txt','hint_auto.txt'].some(name=>fileExists(root()+'/hint/'+name));
+  core.application_original_options?.(app,options.faithBarEnabled?1:0,hints?1:0);
+ }
+ practice?.configure(options);
+}
 function status(){return Array.from(new Int32Array(core.memory.buffer,core.sdl_game_status(),10));}
 function save(){if(app)core.application_save(app);return sync(false);}
 async function resumeForegroundAudio(forcePause=false){
@@ -97,7 +105,11 @@ async function resumeForegroundAudio(forcePause=false){
 async function stop(){if(closing)return;closing=true;clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();await sync(false);app=0;launched=false;emit('exit',{code:0,status:'success'});}finally{closing=false;}}
 function launch(){
  if(launched)return;clearKeyboard();
+ // The localized Runtime still constructs the Japanese core. Keep its font
+ // alias alongside the selected localization font and user-file root.
+ ensureSharedFontAlias(Module,'jp');
  ensureSharedFontAlias(Module,language);
+ Module.eaglerSaveLanguage=language;
  const mode=Module.touhouMusicMode||'none';music=mode!=='none'&&mode!=='midi';core.sdl_ogg_decode_mode?.(options.oggDecodeMode==='full');
  core.sdl_music_enabled?.(music);app=core.sdl_game_open(false,Date.now()&65535);if(!app)throw Error('C++ game initialization failed');
  applyOptions();launched=true;first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
@@ -116,9 +128,9 @@ async function command(message){
  case 'touch-controls':touchControls(core,options,message);return {};
  case 'launch':launch();return {};
  case 'sync':await save();return {};
- case 'list':{const files=[];for(const dir of ['', '/replay'])for(const name of Module.FS.readdir(root()+dir)){const path=(dir+'/'+name).replace(/^\//,'');try{relativeSave(path);}catch{continue;}const full=root()+'/'+path,s=Module.FS.stat(full);if(Module.FS.isFile(s.mode)){const bytes=Module.FS.readFile(full);files.push({path:exportReplayName(path,bytes,10),size:s.size});}}return {files};}
+ case 'list':{const files=[];for(const dir of ['', '/replay','/hint']){if(!fileExists(root()+dir))continue;for(const name of Module.FS.readdir(root()+dir)){const path=(dir+'/'+name).replace(/^\//,'');try{relativeSave(path);}catch{continue;}const full=root()+'/'+path,s=Module.FS.stat(full);if(Module.FS.isFile(s.mode)){const bytes=Module.FS.readFile(full);files.push({path:exportReplayName(path,bytes,10),size:s.size});}}}return {files};}
  case 'read':{let path=relativeSave(message.path);if(path.endsWith('.rpyx'))path=path.slice(0,-1);return {bytes:Array.from(Module.FS.readFile(root()+'/'+path))};}
- case 'write':{if(!Array.isArray(message.bytes)||message.bytes.length>16*1024*1024||message.bytes.some(b=>!Number.isInteger(b)||b<0||b>255))throw Error('Invalid save bytes');const bytes=new Uint8Array(message.bytes),path=importReplayName(relativeSave(message.path),bytes,10);Module.FS.writeFile(root()+'/'+path,bytes);await sync(false);return {};}
+ case 'write':{if(!Array.isArray(message.bytes)||message.bytes.length>16*1024*1024||message.bytes.some(b=>!Number.isInteger(b)||b<0||b>255))throw Error('Invalid save bytes');const bytes=new Uint8Array(message.bytes),path=importReplayName(relativeSave(message.path),bytes,10);const target=root()+'/'+path;Module.FS.mkdirTree(target.slice(0,target.lastIndexOf('/')));Module.FS.writeFile(target,bytes);await sync(false);return {};}
  case 'remove':{let path=relativeSave(message.path);if(path.endsWith('.rpyx'))path=path.slice(0,-1);Module.FS.unlink(root()+'/'+path);await sync(false);return {};}
  default:throw Error('Unsupported runtime command: '+message.command);
  }
