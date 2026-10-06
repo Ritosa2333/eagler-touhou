@@ -17,6 +17,16 @@ worktree separate from upstream tracking and the canonical Eagler integration
 worktree. Promotion follows
 [Adaptation Worktree Isolation](adaptation-worktrees.md).
 
+- TH08 and TH10 keep ordinary `eagler` and Multiplayer implementation histories
+  permanently separate. `experiment/th08-multiplayer` and
+  `experiment/th10-multiplayer` are persistent MP source branches, not temporary
+  branches to merge into `eagler` and delete. Their Runtime owners remain the
+  canonical `th08-eagler` / `th10-eagler` repositories. Select the branch for the
+  requested product before changing or building source. Carry shared fixes
+  across with individually reviewed commits where applicable, preserving each
+  target's ancestor and gameplay contract. Never merge the complete MP
+  implementation into the ordinary branch or replace an ordinary Runtime with
+  an MP build. MP topic integration targets the corresponding MP branch.
 - TH06MP and TH07MP provide the reusable architecture and test evidence for the
   products that currently declare Multiplayer. TH09MP declares the same
   room/loadout surface, but reuses TH09's ordered two-player lockstep input
