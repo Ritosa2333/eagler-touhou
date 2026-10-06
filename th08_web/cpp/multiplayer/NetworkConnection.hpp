@@ -55,6 +55,9 @@ private:
     double phase_debt_ms=0;
     static std::uint64_t Now();
     bool IsOpen()const override{return transport.IsOpen();}
+    bool Recovering()const override{return transport.Recovering();}
+    bool Disconnected()const override{return transport.Disconnected();}
+    bool CalibrationSuspended()const override{return transport.CalibrationSuspended();}
     bool Failed()const override{return invalid_input||transport.Failed();}
     bool SendTo(u8 p,const u8* b,std::size_t n)override{return transport.SendTo(p,b,n);}
     bool SendRepairTo(u8 p,const u8* b,std::size_t n)override{return transport.SendRepairTo(p,b,n);}
