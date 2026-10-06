@@ -9,14 +9,14 @@ i32 TitleResources::start(){auto& env=environment;
     env.report_error();return -1;
 }
 // 0x42c9f0. Resource loading can finish before the startup screen's 300 frames.
-// The platform wait yields to that screen until it finishes or shutdown begins.
+// The platform decides when its startup presentation is complete.
 i32 TitleResources::load(TitleResourceEnvironment& env){
     TitleLoadingTask task;while(!task.advance(env))env.sleep(16);return 0;
 }
 bool TitleLoadingTask::advance(TitleResourceEnvironment& env){
     if(done)return true;
     if(!started){started=true;if(TitleResources{**env.current,env}.start()){*env.pending_screen=((*env.engine_flags&0x1000)?0:1)|2;done=true;return true;}waiting_for_startup=*env.startup!=nullptr;}
-    if(waiting_for_startup){if((*env.startup)->elapsed<300&&!(*env.engine_flags&0x80))return false;auto*& file=env.slots[1];if(file){env.release_animations(*file);env.delete_object(file);file=nullptr;}}
+    if(waiting_for_startup){if(!env.startup_presentation_complete(**env.startup)&&!(*env.engine_flags&0x80))return false;auto*& file=env.slots[1];if(file){env.release_animations(*file);env.delete_object(file);file=nullptr;}}
     (*env.current)->update_entry->flags|=2;done=true;return true;
 }
 // 0x42cd50. The loader is a resource worker, separate from the frame callback.

@@ -112,6 +112,9 @@ struct MenuResources final : TitleResourceEnvironment {
     void delete_replay(Replay*) override;
     void free_file(void*) override;
     void report_error() override;
+    // The first draw creates the opening VM. The next presents it before the
+    // resource loader retires its bank. No five-second intro wait on the Web.
+    bool startup_presentation_complete(const StartupScreen& screen)const override{return screen.elapsed>=2;}
     u32 begin_thread(CallbackToken,void*,u32,u32&) override;
     u32 wait_thread(u32,u32) override;
     void close_thread(u32) override;
