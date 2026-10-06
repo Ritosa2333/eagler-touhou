@@ -13,11 +13,14 @@ import {
   normalizeRoomCode,
   playerRouteHistoryOperation,
   returnToRoomHistoryOperation,
+  resolveRoomInvite,
+  roomCodeFromUrl,
   roomRouteHistoryOperation,
   roomRouteUrl,
   routedProductFromUrl,
   touchLayoutEditorHistoryOperation,
 } from "../.cache/build/browser/assets/launcher/route-state.mjs";
+import { ROOM_INVITE_KEY, decodeRoomInvite, encodeRoomInvite } from "../.cache/build/browser/assets/launcher/room-invite.mjs";
 
 const products = new Set(PRODUCT_IDS);
 
@@ -26,6 +29,19 @@ assert.equal(normalizeRoomCode(null), "");
 assert.equal(routedProductFromUrl("https://launcher.invalid/?game=th06mp", products), "th06mp");
 assert.equal(routedProductFromUrl("https://launcher.invalid/?game=th10", products), "th10");
 assert.equal(routedProductFromUrl("https://launcher.invalid/?game=unknown", products), null);
+
+// Opaque room-invite token round-trips product + room + transient create settings.
+const inviteToken = encodeRoomInvite({ g: "th06mp", r: "4079", f: true, a: "create", p: 3, d: 2, v: "private", c: true });
+assert.deepEqual(decodeRoomInvite(inviteToken), { g: "th06mp", r: "4079", f: true, a: "create", p: 3, d: 2, v: "private", c: true });
+assert.equal(decodeRoomInvite("not-a-valid-token!!"), null);
+assert.equal(decodeRoomInvite(""), null);
+assert.equal(routedProductFromUrl(`https://launcher.invalid/?${ROOM_INVITE_KEY}=${inviteToken}`, products), "th06mp");
+assert.equal(roomCodeFromUrl(`https://launcher.invalid/?${ROOM_INVITE_KEY}=${inviteToken}`), "4079");
+assert.equal(resolveRoomInvite(`https://launcher.invalid/?${ROOM_INVITE_KEY}=${inviteToken}`)?.g, "th06mp");
+
+// Legacy plain parameters still resolve for old shared links.
+const legacyInvite = resolveRoomInvite("https://launcher.invalid/?game=th06mp&mpRoom=4079&fromLobby=1&lobbyAction=create&lobbyPlayers=3&lobbyDifficulty=2&lobbyVisibility=private&lobbyDisableCheatMovement=1");
+assert.deepEqual(legacyInvite, { g: "th06mp", r: "4079", f: true, a: "create", p: 3, d: 2, v: "private", c: true });
 
 const homeUrl = launcherHomeUrl("https://launcher.invalid/?game=th07mp&mpRoom=1234&keep=1");
 assert.equal(homeUrl.searchParams.get("game"), null);
@@ -132,8 +148,10 @@ assert.equal(touchLayoutEditor.state.game, "th07");
 assert.equal(touchLayoutEditor.state.keep, 1);
 
 const roomUrl = roomRouteUrl("https://launcher.invalid/?keep=1", "th06mp", "4321");
-assert.equal(roomUrl.searchParams.get("game"), "th06mp");
-assert.equal(roomUrl.searchParams.get(MP_ROOM_URL_KEY), "4321");
+assert.equal(roomUrl.searchParams.get("game"), null);
+assert.equal(roomUrl.searchParams.get(MP_ROOM_URL_KEY), null);
+assert.equal(decodeRoomInvite(roomUrl.searchParams.get(ROOM_INVITE_KEY))?.r, "4321");
+assert.equal(roomUrl.searchParams.get("keep"), "1");
 
 const pushRoom = roomRouteHistoryOperation({
   currentUrl: "https://launcher.invalid/?keep=1",
@@ -143,8 +161,9 @@ const pushRoom = roomRouteHistoryOperation({
   push: true,
 });
 assert.equal(pushRoom.kind, "push");
-assert.equal(new URL(pushRoom.url).searchParams.get("game"), "th06mp");
-assert.equal(new URL(pushRoom.url).searchParams.get(MP_ROOM_URL_KEY), "4321");
+assert.equal(new URL(pushRoom.url).searchParams.get("game"), null);
+assert.equal(new URL(pushRoom.url).searchParams.get(MP_ROOM_URL_KEY), null);
+assert.equal(decodeRoomInvite(new URL(pushRoom.url).searchParams.get(ROOM_INVITE_KEY))?.r, "4321");
 assert.equal(pushRoom.state[MP_ROOM_HISTORY_KEY], "4321");
 
 const clearRoom = roomRouteHistoryOperation({
@@ -155,6 +174,7 @@ const clearRoom = roomRouteHistoryOperation({
 });
 assert.equal(clearRoom.kind, "replace");
 assert.equal(new URL(clearRoom.url).searchParams.get(MP_ROOM_URL_KEY), null);
+assert.equal(new URL(clearRoom.url).searchParams.get(ROOM_INVITE_KEY), null);
 assert.equal(new URL(clearRoom.url).searchParams.get("game"), "th06mp",
   "clearing a room marker alone does not silently rewrite the selected product route");
 assert.equal(clearRoom.state[MP_ROOM_HISTORY_KEY], false);
@@ -166,7 +186,7 @@ const returnToRoom = returnToRoomHistoryOperation({
   roomCode: "4321",
 });
 assert.equal(returnToRoom.kind, "replace");
-assert.equal(new URL(returnToRoom.url).searchParams.get(MP_ROOM_URL_KEY), "4321");
+assert.equal(decodeRoomInvite(new URL(returnToRoom.url).searchParams.get(ROOM_INVITE_KEY))?.r, "4321");
 assert.equal(returnToRoom.state[PLAYER_HISTORY_KEY], false);
 assert.equal(returnToRoom.state[MP_ROOM_HISTORY_KEY], "4321");
 assert.equal(returnToRoom.state.game, "th06mp");
