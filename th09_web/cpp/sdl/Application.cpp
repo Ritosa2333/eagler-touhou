@@ -369,8 +369,8 @@ TH09_EXPORT("th09_measured_begin") u32 th09_measured_begin(u32 seed,u32 side,u32
     return rollback_active;
 }
 TH09_EXPORT("th09_startup_info") const u32* th09_startup_info(){
-    static u32 data[25];const auto& s=rollback.Startup();const auto c=s.Selected();
-    data[0]=2;data[1]=u32(s.State());data[2]=s.Request();data[3]=s.Probes();data[4]=s.Replies();
+    static u32 data[27];const auto& s=rollback.Startup();const auto c=s.Selected();
+    data[0]=3;data[1]=u32(s.State());data[2]=s.Request();data[3]=s.Probes();data[4]=s.Replies();
     data[5]=s.Local().p95Us;data[6]=s.Peer().p95Us;data[7]=s.Local().lost;data[8]=s.Peer().lost;
     data[9]=c.fullDelay;data[10]=c.delay;data[11]=c.prediction;
     data[12]=rollback.Channel().AdonisStatistics().PredictionAllowanceUs();data[13]=u32(rollback.Mode());
@@ -378,7 +378,7 @@ TH09_EXPORT("th09_startup_info") const u32* th09_startup_info(){
     data[16]=s.Local().minUs;data[17]=s.Local().maxUs;data[18]=s.Local().meanUs;
     data[19]=s.Peer().minUs;data[20]=s.Peer().maxUs;data[21]=s.Peer().meanUs;
     data[22]=Netplay::AdonisStartup::ProbeCount;data[23]=Netplay::AdonisStartup::Samples;
-    data[24]=s.NextWakeUs();return data;
+    data[24]=s.NextWakeUs();data[25]=s.Attempt();data[26]=u32(s.Reason());return data;
 }
 TH09_EXPORT("th09_rollback_info") const u32* th09_rollback_info(){
     static u32 data[8];const auto confirmed=rollback.ConfirmedThrough();

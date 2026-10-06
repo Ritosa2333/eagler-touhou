@@ -36,7 +36,7 @@ TH09_PEER_EXPORT("th09_peer_connect_spectator") int th09_peer_connect_spectator(
     return transport.ConnectSpectator(relay_url, spectator_id, 2);
 }
 TH09_PEER_EXPORT("th09_peer_state") int th09_peer_state() {
-    return transport.Failed() ? -1 : transport.IsOpen() ? 1 : 0;
+    return transport.Failed() ? -1 : transport.Disconnected() ? 3 : transport.Recovering() ? 2 : transport.IsOpen() ? 1 : 0;
 }
 TH09_PEER_EXPORT("th09_peer_send") int th09_peer_send(int length) {
     if (length < 1 || length > static_cast<int>(sizeof(packet_buffer))) return 0;

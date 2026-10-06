@@ -124,7 +124,30 @@ void hybridHeldPrediction(){
         }
     }
 }
+void recoveryStates(){
+    for(auto mode:{AdonisMode::Delay,AdonisMode::Hybrid})for(auto request:{AdonisStartup::Automatic,0u,9u})for(unsigned pauseSeat=0;pauseSeat<2;++pauseSeat){
+        Link a,b;a.peer=&b;b.peer=&a;RollbackSession l(a),r(b);
+        CHECK(l.BeginMeasured(config(0),0,request,mode)&&r.BeginMeasured(config(1),0,request,mode));
+        for(unsigned now=0;now<9000;++now){
+            a.now=b.now=now;
+            if(!(pauseSeat==0&&now>=1600&&now<2300))CHECK(l.Pump(now));
+            if(!(pauseSeat==1&&now>=1600&&now<2300))CHECK(r.Pump(now));
+            CHECK(!l.Captures()&&!r.Captures()&&l.Frame()==0&&r.Frame()==0);
+        }
+        CHECK(l.Ready()&&r.Ready()&&l.Startup().Attempt()>=2&&r.Startup().Attempt()==l.Startup().Attempt());
+        CHECK(l.InputDelay()==r.InputDelay());
+        a.recovering=b.recovering=true;
+        for(unsigned now=9000;now<29000;++now){a.now=b.now=now;CHECK(l.Pump(now)&&r.Pump(now));CHECK(!l.Ready()&&!r.Ready());}
+        a.recovering=b.recovering=false;
+        for(unsigned now=29000;now<29500;++now){a.now=b.now=now;CHECK(l.Pump(now)&&r.Pump(now));}
+        CHECK(l.Ready()&&r.Ready());
+        a.disconnected=b.disconnected=true;
+        for(unsigned now=29500;now<49500;++now){a.now=b.now=now;CHECK(l.Pump(now)&&r.Pump(now));}
+        CHECK(!l.Ready()&&!r.Ready()&&!l.Failed()&&!r.Failed()&&!l.Captures()&&!r.Captures());
+    }
+}
 int main(){
+    recoveryStates();
     runAdonis(AdonisMode::Hybrid,AdonisStartup::Automatic,0,input,true);
     for(auto m:{AdonisMode::Delay,AdonisMode::Hybrid})for(unsigned d:{AdonisStartup::Automatic,0u,1u,9u})runAdonis(m,d,1,input,true);
     runAdonis(AdonisMode::Hybrid,AdonisStartup::Automatic,4,input,true,1);
@@ -134,8 +157,9 @@ int main(){
         CHECK(l.BeginMeasured(config(0),0,AdonisStartup::Automatic,AdonisMode::Hybrid));
         CHECK(r.BeginMeasured(config(1),0,AdonisStartup::Automatic,AdonisMode::Hybrid));
         bool failed=false;
-        for(unsigned t=0;t<11000&&!failed;++t){a.now=b.now=t;failed=!l.Pump(t)||!r.Pump(t);}
-        CHECK(failed&&!l.Captures()&&!r.Captures()&&!l.Ready()&&!r.Ready());
+        for(unsigned t=0;t<20000&&!failed;++t){a.now=b.now=t;failed=!l.Pump(t)||!r.Pump(t);}
+        CHECK(!failed&&!l.Captures()&&!r.Captures()&&!l.Ready()&&!r.Ready());
+        CHECK(l.Startup().State()==AdonisStartup::Stage::Unavailable&&r.Startup().State()==AdonisStartup::Stage::Unavailable);
     }
     hybridHeldPrediction();
     mismatch(AdonisMode::Delay,3,AdonisMode::Hybrid,3);

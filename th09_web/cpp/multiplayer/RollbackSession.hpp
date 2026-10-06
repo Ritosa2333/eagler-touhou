@@ -68,6 +68,9 @@ private:
     const char* error_ = "";
     bool Fail(const char* error) { failed_ = true; error_ = error; return false; }
     bool IsOpen() const override { return transport_.IsOpen(); }
+    bool Recovering() const override { return transport_.Recovering(); }
+    bool Disconnected() const override { return transport_.Disconnected(); }
+    bool CalibrationSuspended() const override { return transport_.CalibrationSuspended(); }
     bool SendTo(std::uint8_t p, const std::uint8_t* b, std::size_t n) override { return transport_.SendTo(p,b,n); }
     bool SendRepairTo(std::uint8_t p, const std::uint8_t* b, std::size_t n) override { return transport_.SendRepairTo(p,b,n); }
     bool SendControl(const std::uint8_t* b, std::size_t n) override { return transport_.SendControl(b,n); }

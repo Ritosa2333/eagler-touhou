@@ -64,8 +64,7 @@ void RollbackSession::Clear() {
 }
 bool RollbackSession::PumpStartup(std::uint64_t now,std::uint64_t measurementNowUs) {
     startupNowUs_=measurementNowUs?measurementNowUs:now*1000;
-    if(!startup_.Tick(transport_,startupNowUs_))return Fail(startup_.Error());
-    if(!measuring_)return true;
+    if(!measuring_)return startup_.Tick(transport_,startupNowUs_)||Fail(startup_.Error());
     std::vector<std::uint8_t> bytes;
     for(unsigned count=0;count<256&&transport_.Poll(&bytes);++count){
         if(Netplay::AdonisStartup::IsPacket(bytes.data(),bytes.size())){

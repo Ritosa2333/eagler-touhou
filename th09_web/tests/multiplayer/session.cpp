@@ -17,8 +17,12 @@ struct Link : PeerTransport {
     std::deque<Packet> pending;
     std::uint64_t now = 0;
     unsigned mode = 0, sent = 0, impaired = 0, dropCalibrationKind = 0;
-    bool IsOpen() const override { return true; }
+    bool recovering=false,disconnected=false,suspended=false;
+    bool IsOpen() const override { return !disconnected; }
     bool Failed() const override { return false; }
+    bool Recovering()const override{return recovering;}
+    bool Disconnected()const override{return disconnected;}
+    bool CalibrationSuspended()const override{return suspended;}
     std::size_t BufferedAmount() const override { return 0; }
     bool Send(const std::uint8_t* bytes, std::size_t size, bool reliable) {
         if(AdonisStartup::IsPacket(bytes,size)){

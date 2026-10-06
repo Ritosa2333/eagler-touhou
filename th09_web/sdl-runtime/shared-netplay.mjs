@@ -13,6 +13,9 @@ export class SharedNetplay {
     this.timer = null;
     this.active = false;
     this.finished = false;
+    this.recovering = false;
+    this.disconnected = false;
+    this.pumping = false;
     this.spectator = false;
     this.spectatorFrame = 0;
     this.spectatorPending = [];
@@ -78,6 +81,8 @@ export class SharedNetplay {
     this.spectatorSentFrame = 0;
     this.spectatorReceiveAt = 0;
     this.finished = false;
+    this.recovering = this.disconnected = false;
+    globalThis.__eaglerNetplayCalibrationSuspended = false;
     this.inputDelay = inputDelay;
     this.adonisMode = adonisMode;
     this.automatic = automatic;
@@ -103,6 +108,7 @@ export class SharedNetplay {
     this.connected = true;
     this.startupNoticeAt = 0;
     this.startupTransport = globalThis.__eaglerPeerTransport;
+    if(this.startupTransport)this.startupTransport.onDisconnect=()=>this.connectionEnded();
     // Like Adonis2's receive thread, process calibration echoes on arrival.
     // The regular timer still schedules probes; gameplay keeps its own pump.
     if (!spectator && adonisMode && this.startupTransport)
@@ -111,14 +117,21 @@ export class SharedNetplay {
     this.pump();
   }
   pump() {
-    if (!this.connected) return;
+    if (!this.connected || this.disconnected || this.pumping) return;
+    this.pumping=true;
     try {
       const state = this.core._th09_peer_state();
+      if(state===3){this.connectionEnded();return;}
       if (state < 0) {
         const pointer = this.core._th09_peer_error();
         const error = this.core.HEAPU8.subarray(pointer, pointer + 256);
         const end = error.indexOf(0);
         throw Error(new TextDecoder().decode(error.subarray(0, end < 0 ? error.length : end)) || 'TH09 联机传输中断');
+      }
+      if(state===2&&!this.recovering){
+        this.recovering=true;if(!this.finished)this.core._th09_loop_pause(1);this.onStatus('连接波动，正在尝试恢复…');
+      }else if(state===1&&this.recovering){
+        this.recovering=false;if(this.active||this.finished)this.core._th09_loop_pause(+document.hidden);
       }
       if (state === 1 && !this.routeReady) {
         this.routeReady = true;
@@ -159,9 +172,11 @@ export class SharedNetplay {
       }
       if (!this.routeReady || !this.connected) return;
       if (!this.spectator) {
-        if (this.adonisMode && !this.active && !this.finished &&
-            (document.hidden || this.calibrationRoute !== globalThis.__eaglerNetplayTransport))
-          throw Error('标定期间页面隐藏或游戏链路改变，请双方回房间重新开始');
+        globalThis.__eaglerNetplayCalibrationSuspended=!!document.hidden;
+        if(this.adonisMode&&!this.active&&!this.finished&&this.calibrationRoute!==globalThis.__eaglerNetplayTransport){
+          globalThis.__eaglerNetplayCalibrationSuspended=true;
+          this.calibrationRoute=globalThis.__eaglerNetplayTransport;
+        }
         const ready = this.core._th09_rollback_pump();
         if (!ready) {
           const p=this.core._th09_error(), bytes=this.core.HEAPU8, end=bytes.indexOf(0,p);
@@ -169,16 +184,19 @@ export class SharedNetplay {
         }
         if (this.adonisMode && !this.active && ready !== 2 && performance.now() >= this.startupNoticeAt) {
           this.startupNoticeAt = performance.now() + 100;
-          const at=this.core._th09_startup_info()/4, s=Array.from(this.core.HEAPU32.subarray(at,at+24));
-          if(s[0]!==2)throw Error('TH09 Runtime 测量版本不匹配，请更新 Runtime');
-          this.onTiming({phase:s[1]<2?'waiting':s[1]===2?(s[3]?'measuring':'stabilizing'):'negotiating',
+          const s=this.startupInfo();
+          const phase=s[1]===7?'unavailable':document.hidden?'suspended':
+            s[1]===6||(s[25]>1&&s[1]<=2&&!s[3])?'retrying':
+            s[1]<2?'waiting':s[1]===2?(s[3]?'measuring':'stabilizing'):'negotiating';
+          this.onTiming({phase,attempt:s[25],maxAttempts:4,reason:s[26],
             probes:s[3],replies:s[4],totalProbes:s[22],windowSamples:s[23],automatic:this.automatic,
             adonisMode:this.adonisMode,route:this.calibrationRoute,players:this.startupPlayers(s)});
+          if(s[1]===7){this.disconnected=true;this.core._th09_loop_pause(1);return;}
         }
         if (ready === 2 && !this.active && !this.finished) {
           if (this.adonisMode) {
-            const at=this.core._th09_startup_info()/4, s=Array.from(this.core.HEAPU32.subarray(at,at+24));
-            if(s[0]!==2 || s[1]!==4 || s[10]>9 || s[13]!==this.adonisMode)throw Error('TH09 实测协商尚未完成');
+            const s=this.startupInfo();
+            if(s[1]!==4 || s[10]>9 || s[13]!==this.adonisMode)throw Error('TH09 实测协商尚未完成');
             this.inputDelay=s[10];
             this.acceptTiming({phase:'ready',automatic:this.automatic,adonisMode:this.adonisMode,
               inputDelay:s[10],fullDelay:s[9],predictionReserve:s[11],rttP95Us:Math.max(s[5],s[6]),
@@ -186,10 +204,11 @@ export class SharedNetplay {
               calibration:{localPlayer:this.side,completedAt:new Date().toISOString(),
                 build:Array.from(this.buildBytes,b=>b.toString(16).padStart(2,'0')).join(''),
                 method:'adonis2-129-probes-16ms-tail200ms',stabilizeMs:1000,intervalMs:16,tailWaitMs:200,
-                probes:129,windowStart:10,windowEnd:129,players:this.startupPlayers(s)}});
+                probes:129,windowStart:10,windowEnd:129,attempts:s[25],players:this.startupPlayers(s)}});
             if(this.side===0 && Number(this.options.netplaySpectatorCount)>0)this.spectatorPending.push(this.timingPacket());
           }
           this.acknowledged = this.active = true;
+          globalThis.__eaglerNetplayCalibrationSuspended=false;
           if(this.startupTransport)this.startupTransport.onReceive=null;
           globalThis.__eaglerNetplayLanActive = true;
           this.onStatus(`对手已连接 · ${['Rollback', 'Adonis 无回滚', 'Adonis + Rollback'][this.adonisMode]} · D=${this.inputDelay}`);
@@ -210,8 +229,9 @@ export class SharedNetplay {
       if (!this.spectator) this.flushSpectators();
     } catch (error) { this.close(String(error?.message || error)); }
     finally {
+      this.pumping=false;
       clearTimeout(this.timer);
-      if (this.connected) {
+      if (this.connected && !this.disconnected) {
         let delay=16;
         if(this.adonisMode && this.prepared && !this.active && !this.spectator) {
           const at=this.core._th09_startup_info()/4;
@@ -222,6 +242,22 @@ export class SharedNetplay {
         this.timer=setTimeout(()=>this.pump(),delay);
       }
     }
+  }
+  startupInfo() {
+    const at=this.core._th09_startup_info()/4;
+    const s=Array.from(this.core.HEAPU32.subarray(at,at+27));
+    if(s[0]!==3)throw Error('TH09 Runtime 缺少测量恢复接口，请更新 Runtime');
+    return s;
+  }
+  connectionEnded() {
+    if(!this.connected||this.disconnected)return;
+    this.disconnected=true;this.recovering=false;
+    clearTimeout(this.timer);this.timer=null;
+    globalThis.__eaglerNetplayCalibrationSuspended=false;
+    globalThis.__eaglerNetplayLanActive=false;
+    if(!this.finished)this.core._th09_loop_pause(1);
+    if(!this.active)this.onTiming({phase:'unavailable',reason:4,attempt:1,maxAttempts:4});
+    this.onStatus('联机连接已断开，请返回房间重新开始。');
   }
   startupPlayers(s) {
     return [{player:this.side,p95Us:s[5],samples:s[14],lost:s[7],minUs:s[16],maxUs:s[17],meanUs:s[18]},
@@ -357,6 +393,8 @@ export class SharedNetplay {
     this.connected = false;
     clearTimeout(this.timer);
     if(this.startupTransport)this.startupTransport.onReceive=null;
+    if(this.startupTransport)this.startupTransport.onDisconnect=null;
+    globalThis.__eaglerNetplayCalibrationSuspended=false;
     this.onTiming({phase:'closed'});
     this.timer = null;
     this.routeReady = false;

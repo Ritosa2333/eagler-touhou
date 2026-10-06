@@ -109,7 +109,7 @@ for(const [event,down] of [['keydown',1],['keyup',0]])window.addEventListener(ev
  if(!core||!acceptsKeyboard())return;
  keyboard.event(e,down);
 },{capture:true});
-document.addEventListener('visibilitychange',()=>{if(launched){clearKeyboard();core._th09_touch_cancel();core._th09_loop_pause(+(document.hidden||networkOverlayPending||(options.netplayMode==='lan'&&!netplay?.active&&!netplay?.finished)));if(document.hidden)void save().catch(fatal);}});
+document.addEventListener('visibilitychange',()=>{if(launched){clearKeyboard();core._th09_touch_cancel();core._th09_loop_pause(+(document.hidden||networkOverlayPending||(options.netplayMode==='lan'&&(netplay?.recovering||netplay?.disconnected||(!netplay?.active&&!netplay?.finished)))));if(document.hidden)void save().catch(fatal);}});
 window.addEventListener('blur',()=>{clearKeyboard();core?._th09_touch_cancel();});
 // Android sends touches directly to the child; iOS uses the host protocol.
 for(const [name,type] of [['pointerdown',0],['pointermove',1],['pointerup',2],['pointercancel',2]])document.body.addEventListener(name,e=>{

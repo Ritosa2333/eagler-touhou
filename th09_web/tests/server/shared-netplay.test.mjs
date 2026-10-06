@@ -5,13 +5,13 @@ import {SharedNetplay} from '../../sdl-runtime/shared-netplay.mjs';
 // The two entries (Launcher card and the in-game title dialog) share one room
 // and one gameplay transport; these tests cover the transport contract itself.
 function harness() {
-  const previous = {fetch: globalThis.fetch, location: globalThis.location, document: globalThis.document, setInterval: globalThis.setInterval};
+  const previous = {fetch: globalThis.fetch, location: globalThis.location, document: globalThis.document, __eaglerPeerTransport:globalThis.__eaglerPeerTransport, __eaglerNetplayCalibrationSuspended:globalThis.__eaglerNetplayCalibrationSuspended, setInterval: globalThis.setInterval};
   const timers=[];globalThis.setInterval=(...args)=>{const timer=previous.setInterval(...args);timers.push(timer);return timer;};
   const peers = new Map();
   const spectators = new Set();
   const core = () => {
     const buffer = new ArrayBuffer(2048), bytes = new Uint8Array(buffer);
-    const calls = {begin: [], modes: [], receive: [], pauses: [], spectatorBegin: [], spectatorFeed: [], pumps: 0};
+    const calls = {begin: [], modes: [], receive: [], pauses: [], timing:[], spectatorBegin: [], spectatorFeed: [], pumps: 0,ends:0};
     const self = {
       HEAPU8: bytes, HEAPU32: new Uint32Array(buffer), calls, incoming: [], side: -1,
       _th09_peer_url_buffer: () => 256,
@@ -25,7 +25,7 @@ function harness() {
         peers.set(side, self);
         return 1;
       },
-      _th09_peer_state: () => peers.size === 2 ? 1 : 0,
+      _th09_peer_state: () => self.peerState ?? (peers.size === 2 ? 1 : 0),
       _th09_peer_connect_spectator: () => { spectators.add(self); return 1; },
       _th09_peer_send: length => {
         peers.get(1 - self.side)?.incoming.push(bytes.slice(1280, 1280 + length));
@@ -38,6 +38,8 @@ function harness() {
         return packet.length;
       },
       _th09_peer_has_spectators: () => spectators.size > 0 ? 1 : 0,
+      _th09_peer_spectator_state:()=>1,
+      _th09_peer_stop_spectators:()=>{},
       _th09_peer_send_spectator: length => {
         for (const viewer of spectators) viewer.incoming.push(bytes.slice(1280, 1280 + length));
         return 1;
@@ -45,12 +47,16 @@ function harness() {
       _th09_peer_close: () => { peers.delete(self.side); spectators.delete(self); },
       _th09_network_info: () => 0,
       _th09_adonis_configure: mode => { calls.modes.push(mode); return 1; },
-      _th09_rollback_begin: (...args) => { calls.begin.push(args); return 1; },
-      _th09_rollback_pump: () => { ++calls.pumps; return 2; },
+      _th09_rollback_begin: (...args) => { calls.begin.push(args.slice(0,9)); return 1; },
+      _th09_measured_begin:(...args)=>{
+        calls.begin.push(args);self.HEAPU32.set([3,4,args[8],129,120,5000,6000,0,0,1,args[8],0,0,calls.modes.at(-1),120,120,1000,8000,4000,1000,9000,5000,129,120,16000,1,0],192);return 1;
+      },
+      _th09_startup_info:()=>768,
+      _th09_rollback_pump: () => { ++calls.pumps; return self.pumpState ?? 2; },
       _th09_rollback_info: () => 32,
       _th09_network_receive: (...args) => { calls.receive.push(args); return 1; },
       _th09_network_hash: () => 123,
-      _th09_network_end: () => {},
+      _th09_network_end: () => ++calls.ends,
       _th09_spectator_begin: (...args) => { calls.spectatorBegin.push(args); return 1; },
       // Match Application.cpp's exported ABI: both key words precede motion.
       _th09_spectator_feed: (frame, left, right, leftMode, leftX, leftY, rightMode, rightX, rightY) => {
@@ -67,13 +73,14 @@ function harness() {
   return {core, restore};
 }
 
-async function connectPair(harness, inputDelay = 0, adonisMode = 0) {
+async function connectPair(harness, inputDelay = 0, adonisMode = 0, pending = false) {
   globalThis.fetch = async () => ({ok: true, json: async () => ({build: 'a'.repeat(24)})});
   globalThis.location = {href: 'https://example.test/runtime/th09/th09.html'};
   globalThis.document = {hidden: false};
   const leftCore = harness.core(), rightCore = harness.core();
-  const left = new SharedNetplay(leftCore, {onStatus() {}, onClose() {}, onResult() {}});
-  const right = new SharedNetplay(rightCore, {onStatus() {}, onClose() {}, onResult() {}});
+  if(pending)leftCore.pumpState=rightCore.pumpState=1;
+  const left = new SharedNetplay(leftCore, {onStatus() {}, onClose() {}, onResult() {},onTiming:v=>leftCore.calls.timing.push(v)});
+  const right = new SharedNetplay(rightCore, {onStatus() {}, onClose() {}, onResult() {},onTiming:v=>rightCore.calls.timing.push(v)});
   const options = (side, inputDelay = 0) => ({
     netplayUrl: `wss://example.test/netplay?room=th09mp-1234&run=1&player=${side}`,
     netplayPlayer: side, netplayPlayerCount: 2, netplaySeed: 1234, netplayDifficulty: 2,
@@ -83,8 +90,8 @@ async function connectPair(harness, inputDelay = 0, adonisMode = 0) {
   });
   await Promise.all([left.connect(options(0, inputDelay)), right.connect(options(1, inputDelay))]);
   left.pump(); right.pump(); left.pump(); right.pump();
-  assert.equal(left.active, true);
-  assert.equal(right.active, true);
+  assert.equal(left.active, !pending);
+  assert.equal(right.active, !pending);
   return {left, right, leftCore, rightCore};
 }
 
@@ -123,8 +130,8 @@ test('Adonis mode and all nine delay frames reach the native session without JS 
       const {left,right,leftCore,rightCore} = await connectPair(box,9,mode);
       assert.deepEqual(leftCore.calls.modes,[mode]);
       assert.deepEqual(rightCore.calls.modes,[mode]);
-      assert.equal(leftCore.calls.begin[0].at(-1),9);
-      assert.equal(rightCore.calls.begin[0].at(-1),9);
+      assert.equal(leftCore.calls.begin[0].at(-2),9);
+      assert.equal(rightCore.calls.begin[0].at(-2),9);
       assert.deepEqual(leftCore.calls.receive,[]);
       assert.equal(globalThis.__eaglerNetplayAdonisMode,mode);
       left.close();right.close();
@@ -191,14 +198,53 @@ test('an admitted spectator receives both players\' ordered keys and motion with
     assert.deepEqual(viewerCore.calls.spectatorBegin, [[1234, 2, 3, 10]]);
     left.options.netplaySpectatorCount = 1;
     left.publish(0, 0x101, 0x204, 2, 350.5, 410.25, 3, 200.75, 150.5);
+    left.pump();
     viewer.pump();
     assert.deepEqual(viewerCore.calls.spectatorFeed, [[0, 0x101, 0x204,
       2, 350.5, 410.25, 3, 200.75, 150.5]]);
     assert.equal(viewer.connected, true);
     assert.equal(viewer.spectatorFrame, 1);
     assert.equal(viewerCore.calls.receive.length, 0);
-    left.publish(1, 0, 0, 4, 0, 0, 0, 0, 0);viewer.pump();
+    left.publish(1, 0, 0, 4, 0, 0, 0, 0, 0);left.pump();viewer.pump();
     assert.equal(viewer.connected,false,"Unknown spectator motion mode must fail closed");
     viewer.close(); left.close(); right.close();
   } finally { box.restore(); }
+});
+
+test('hidden measurement retries in place and exhaustion preserves room return',async()=>{
+ const box=harness();let pair;
+ try{
+  pair=await connectPair(box,0,1,true);const {left,leftCore}=pair;
+  leftCore.HEAPU32[193]=2;left.startupNoticeAt=0;globalThis.document.hidden=true;left.pump();
+  assert.equal(left.connected,true);assert.equal(globalThis.__eaglerNetplayCalibrationSuspended,true);
+  assert.equal(leftCore.calls.timing.at(-1).phase,'suspended');
+  globalThis.document.hidden=false;leftCore.HEAPU32[193]=6;leftCore.HEAPU32[217]=2;left.startupNoticeAt=0;left.pump();
+  assert.equal(leftCore.calls.timing.at(-1).phase,'retrying');assert.equal(leftCore.calls.begin.length,1);
+  leftCore.HEAPU32[193]=7;leftCore.HEAPU32[217]=4;leftCore.HEAPU32[218]=7;left.startupNoticeAt=0;left.pump();
+  assert.equal(leftCore.calls.timing.at(-1).phase,'unavailable');assert.equal(left.connected,true);assert.equal(left.disconnected,true);
+  assert.equal(leftCore.calls.ends,0);const count=leftCore.calls.pumps;left.pump();assert.equal(leftCore.calls.pumps,count);
+ }finally{pair?.left.close();pair?.right.close();box.restore();}
+});
+test('path recovery resumes the same session and ended connections pause without closing the world',async()=>{
+ const box=harness();let pair;
+ try{
+  pair=await connectPair(box);const {left,leftCore}=pair;
+  leftCore.peerState=2;leftCore.pumpState=1;left.pump();
+  assert.equal(left.recovering,true);assert.equal(leftCore.calls.pauses.at(-1),1);assert.equal(left.connected,true);
+  const pausedCount=leftCore.calls.pauses.length;left.pump();assert.equal(leftCore.calls.pauses.length,pausedCount);
+  leftCore.peerState=1;leftCore.pumpState=2;left.pump();assert.equal(leftCore.calls.pauses.at(-1),0);assert.equal(left.recovering,false);
+  assert.equal(leftCore.calls.begin.length,1);
+  leftCore.peerState=3;left.pump();assert.equal(left.disconnected,true);assert.equal(leftCore.calls.pauses.at(-1),1);
+  assert.equal(leftCore.calls.ends,0);assert.equal(left.connected,true);
+ }finally{pair?.left.close();pair?.right.close();box.restore();}
+});
+
+test('ended connections keep the native replay-save menu usable',async()=>{
+ const box=harness();let pair;
+ try{
+  pair=await connectPair(box);const {left,leftCore}=pair;left.result();
+  const pauses=leftCore.calls.pauses.length;leftCore.peerState=3;left.pump();
+  assert.equal(left.finished,true);assert.equal(left.disconnected,true);assert.equal(left.connected,true);
+  assert.equal(leftCore.calls.pauses.length,pauses);assert.equal(leftCore.calls.ends,0);
+ }finally{pair?.left.close();pair?.right.close();box.restore();}
 });
