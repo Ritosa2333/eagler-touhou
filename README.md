@@ -52,8 +52,9 @@
 | 东方永夜抄 1.00d | [th08/eagler](https://github.com/YomotsuHisami/th08/tree/eagler)<br>[th08/experiment/th08-multiplayer](https://github.com/YomotsuHisami/th08/tree/experiment/th08-multiplayer) | [th08/main](https://github.com/YomotsuHisami/th08/tree/main) | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 东方花映塚 1.50a | [th09/eagler](https://github.com/YomotsuHisami/th09/tree/eagler)<br>[th09/experiment/th09-multiplayer](https://github.com/YomotsuHisami/th09/tree/experiment/th09-multiplayer) | [th09/main](https://github.com/YomotsuHisami/th09/tree/main) | ✅ | ❌ | ✅ | ❌ | ✅ |
 | 东方风神录 1.00a | [th10/eagler](https://github.com/YomotsuHisami/th10/tree/eagler)<br>[th10/experiment/th10-multiplayer](https://github.com/YomotsuHisami/th10/tree/experiment/th10-multiplayer) | [th10/portable](https://github.com/YomotsuHisami/th10/tree/portable) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 东方地灵殿 1.00a（适配并测试中） | [th11/eagler](https://github.com/YomotsuHisami/th11/tree/eagler) | [th11/main](https://github.com/YomotsuHisami/th11/tree/main) | — | — | — | — | — |
-| 东方锦上京 1.00c（适配并测试中） | [Goan114/th20/eagler](https://github.com/Goan114/th20/tree/eagler) | [Oracatt/Touhou20/main](https://github.com/Oracatt/Touhou20/tree/main) | — | — | — | — | — |
+| 东方地灵殿 1.00a | [th11/eagler](https://github.com/YomotsuHisami/th11/tree/eagler) | [th11/main](https://github.com/YomotsuHisami/th11/tree/main) | ✅ | ❌ | ✅ | ✅ | ❌ |
+| 东方绀珠传 1.00b（适配并测试中） | [th15/eagler](https://github.com/YomotsuHisami/th15/tree/eagler) | [th15/main](https://github.com/YomotsuHisami/th15/tree/main) | — | ❌ | — | — | — |
+| 东方锦上京 1.00c（适配并测试中） | [Goan114/th20/eagler](https://github.com/Goan114/th20/tree/eagler) | [Oracatt/Touhou20/main](https://github.com/Oracatt/Touhou20/tree/main) | — | ❌ | — | — | — |
 | 共享 Runtime 基础设施 | [eagler-common/main](https://github.com/YomotsuHisami/eagler-common/tree/main) | — | — | — | — | — | — |
 | 启动器与联机平台 | [eagler-touhou/main](https://github.com/YomotsuHisami/eagler-touhou/tree/main) | — | — | — | — | — | — |
 
@@ -68,7 +69,7 @@
 - 在浏览器中运行游戏，支持键盘、手柄和触控操作。
 - 支持原版存档和 Replay 的导入导出。原版格式可以记录的输入保持和原版互通；原版格式无法记录的适配输入使用扩展数据。
 - 力求完美体验。解决了原 portable 分支中出现的 弹幕抖动、弹幕运动不流畅、闪烁、单线程切换音乐卡顿、手机卡顿 等大量问题。
-- 支持高刷新率（>60Hz），TH09 除外。\[感谢 [reallyportable](https://github.com/some100/th07/tree/reallyportable)\]
+- TH06、TH07、TH08、TH10 支持高刷新率（>60Hz）。\[感谢 [reallyportable](https://github.com/some100/th07/tree/reallyportable)\]
 
 不同作品的适配情况有所不同，见上面的表格。
 
@@ -92,7 +93,7 @@
 
 #### thprac
 
-- 为 TH06、TH07、TH08 和 TH10 适配 [thprac](https://github.com/touhouworldcup/thprac)。
+- 为 TH06、TH07、TH08、TH10 和 TH11 适配 [thprac](https://github.com/touhouworldcup/thprac)。
 - 支持在触控设备上操作练习菜单，并提供打开 Tab Tracker 和作弊菜单的模拟按键。
 - TH09 不提供 thprac。
 
