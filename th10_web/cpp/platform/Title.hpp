@@ -1,5 +1,6 @@
 #pragma once
 #include "GameState.hpp"
+#include <chrono>
 #include "Common.hpp"
 #include "Fonts.hpp"
 #include "Audio.hpp"
@@ -114,7 +115,13 @@ struct MenuResources final : TitleResourceEnvironment {
     void report_error() override;
     // The first draw creates the opening VM. The next presents it before the
     // resource loader retires its bank. No five-second intro wait on the Web.
-    bool startup_presentation_complete(const StartupScreen& screen)const override{return screen.elapsed>=2;}
+    mutable std::chrono::steady_clock::time_point startup_image_at{};
+    bool startup_presentation_complete(const StartupScreen& screen)const override{
+        if(screen.elapsed<2)return false;
+        const auto now=std::chrono::steady_clock::now();
+        if(startup_image_at==std::chrono::steady_clock::time_point{})startup_image_at=now;
+        return now-startup_image_at>=std::chrono::seconds(2);
+    }
     u32 begin_thread(CallbackToken,void*,u32,u32&) override;
     u32 wait_thread(u32,u32) override;
     void close_thread(u32) override;
