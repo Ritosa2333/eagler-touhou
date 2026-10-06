@@ -31,7 +31,9 @@ export interface MultiplayerIdentityStorage {
 }
 
 export function normalizeMultiplayerDisplayName(value: unknown): string {
-  return [...String(value || "").replace(/[\u0000-\u001f\u007f]/g, "").trim()].slice(0, 12).join("");
+  // \u200b-\u200f and \u202a-\u202e are zero-width/bidi controls that can make
+  // a display name render as someone else's; strip them alongside C0/DEL.
+  return [...String(value || "").replace(/[\u0000-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff]/g, "").trim()].slice(0, 12).join("");
 }
 
 export function multiplayerDisplayInitial(name: unknown, fallback = "观"): string {
