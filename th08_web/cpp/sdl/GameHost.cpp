@@ -327,6 +327,8 @@ EX("sdl_game_open") BrowserRuntime* sdl_game_open(u32 milliseconds){if(runtime)r
     runtime=std::make_unique<BrowserRuntime>();if(!sdl_attach(runtime.get())||!sdl_load_assets(*runtime)){runtime.reset();sdl_detach();return nullptr;}
     SDL_InitSubSystem(SDL_INIT_GAMEPAD);for(auto& k:keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);int count=0;auto* ids=SDL_GetGamepads(&count);if(count)gamepad=SDL_OpenGamepad(ids[0]);SDL_free(ids);return runtime.get();}
 EX("sdl_prepare_total") u32 sdl_prepare_total(){return runtime?runtime->resources().size()+runtime->native_font_steps()+warmCount:0;}
+EX("sdl_prepare_loading") bool sdl_prepare_loading(){return runtime&&runtime->prepare_loading();}
+EX("sdl_draw_loading") bool sdl_draw_loading(u32 advance){return runtime&&runtime->draw_loading(advance!=0);}
 EX("sdl_prepare_next") i32 sdl_prepare_next(){if(!runtime)return -1;if(prepared>=sdl_prepare_total())return 0;const auto assets=runtime->resources().size();
     bool ok=true;const auto fonts=runtime->native_font_steps();
     if(prepared<assets)ok=sdl_prepare_asset(*runtime,prepared);

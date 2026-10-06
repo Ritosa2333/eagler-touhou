@@ -234,6 +234,15 @@ bool BrowserRuntime::capture_texture(const TextureCaptureRequest& r){const auto*
 bool BrowserRuntime::draw(AnmVm& v,TextAlignment a,u32 c,u32 o,const char* s){if(v.loadedSprite)readback(v.loadedSprite->texture);return text->draw(v,a,c,o,s);}
 void BrowserRuntime::begin(bool disable_fog){if(disable_fog)app.renderer.set_fog(false);}
 void BrowserRuntime::rectangle(const OverlayRect& r,u32 c){const u32 colors[4]{c,c,c,c};app.renderer.draw_rectangle(r.left,r.top,r.right,r.bottom,colors);}
+bool BrowserRuntime::prepare_loading(){
+    if(!back){TexturePixels pixels;if(!pixels.create(640,480,22))return false;back=app.textures.insert(std::move(pixels),0,true);reset_device();}
+    if(!has_surface(8)&&!load_surface(8,"title/th08logo.jpg"))return false;
+    if(!app.library.get(2)){const auto bytes=read("nowloading.anm");if(!app.library.load(2,bytes.data(),bytes.size()))return false;}
+    return app.loading.show({500,440,0},false);
+}
+bool BrowserRuntime::draw_loading(bool advance){
+    if(!back)return false;if(advance)app.loading.update();draw_surface(8,0,0);app.loading.draw();flush();return graphics_device().present(back);
+}
 bool BrowserRuntime::initialize(){
     if(prepared||!fonts.encoding.loaded())return false;arithmetic_mode(Precision::Single,Rounding::NearestEven);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
@@ -243,7 +252,7 @@ bool BrowserRuntime::initialize(){
         ScoreFile score;if(!score.decode(replay_boot_score.data(),u32(replay_boot_score.size())))replay_boot_score.clear();}
 #endif
     if(!audio->prepare_formats())return false;
-    TexturePixels pixels;if(!pixels.create(640,480,22))return false;back=app.textures.insert(std::move(pixels),0,true);
+    if(!back){TexturePixels pixels;if(!pixels.create(640,480,22))return false;back=app.textures.insert(std::move(pixels),0,true);}
     reset_device();if(!audio->prepare_samples())return false;
     prepared=true;if(!app.initialize(1000000))return false;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY

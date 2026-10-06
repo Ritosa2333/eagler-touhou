@@ -172,7 +172,11 @@ async function launch(){
  if(!multiplayerRuntime&&options.netplayMode==='lan')throw Error('Network session requires the multiplayer Runtime');
  core.sdl_music_enabled?.(music);app=core.sdl_game_open(multiplayer?multiplayer.seed:Date.now()>>>0);if(!app)throw Error('C++ game initialization failed');
  try{
- const total=core.sdl_prepare_total();for(let i=0;i<total;i++){if(core.sdl_prepare_next()<0)throw Error('资源预载失败 '+i);if(i%12===11){document.querySelector('#loading').textContent='正在准备游戏资源 '+(i+1)+' / '+total;await new Promise(resolve=>setTimeout(resolve,0));}}
+ if(!core.sdl_prepare_loading()||!core.sdl_draw_loading(0))throw Error('开头加载画面初始化失败');
+ // Two RAF boundaries let the original frame reach the compositor before
+ // resource work resumes. There is no minimum splash duration.
+ await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);let loadingPaint=performance.now();
+ const total=core.sdl_prepare_total();for(let i=0;i<total;i++){if(core.sdl_prepare_next()<0)throw Error('资源预载失败 '+i);if(i%12===11){const now=performance.now();if(now-loadingPaint>=1000/60){if(!core.sdl_draw_loading(1))throw Error('开头加载画面绘制失败');loadingPaint=now;await new Promise(requestAnimationFrame);}else await new Promise(resolve=>setTimeout(resolve,0));}}
  if(replayViewer&&!core.multiplayer_replay_viewer(app))throw Error('TH08 native Replay viewer rejected');
  // Spectator protection precedes native initialize(), which itself writes the
  // config/score namespace. Waiting until the first gameplay frame is too late.

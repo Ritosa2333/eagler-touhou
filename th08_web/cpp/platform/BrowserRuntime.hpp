@@ -124,6 +124,7 @@ public:
     bool put(const char*,const u8*,u32);bool put_archive(const u8*,u32);bool put_font(i32,const u8*,u32);
     bool mount_archive(std::unique_ptr<ArchiveSource> source){return !prepared&&resources_.mount_archive(std::move(source));}
     bool put_image(const char*,u32,u32,const u8*,u32);bool initialize();bool step(bool render=true);
+    bool prepare_loading();bool draw_loading(bool advance);
     const std::vector<ArchiveEntry>& resources()const{return resources_.contents();}
     bool native_fonts();
     u32 native_font_steps();bool native_font_step(u32);

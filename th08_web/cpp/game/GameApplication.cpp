@@ -36,8 +36,8 @@ bool GameApplication::initialize(u32 frequency){
     score.copy_chapter(fourcc('P','L','S','T'),2,&session.statistics,sizeof(session.statistics),false);score.clears(session.clears);score.practice(session.practices);score.spells(session.records);score.copy_chapter(fourcc('F','L','S','P'),1,&session.last_words,sizeof(session.last_words),true);
     std::memcpy(title.context.clears,session.clears,sizeof(session.clears));title.context.flags.isExtraUnlocked=title.context.IsExtraUnlocked();title.context.flags.isSpellPracticeUnlocked=title.context.IsSpellPracticeUnlocked();title.context.flags.isExtraUnlockedWithAllTeams=title.context.IsExtraUnlockedWithAllTeams();
     version=platform.read("th08_0100d.ver");if(version.empty())return false;
-    if(!platform.load_surface(8,"title/th08logo.jpg"))return false;
-    if(!load_animation(2,"nowloading.anm"))return false;
+    if(!platform.has_surface(8)&&!platform.load_surface(8,"title/th08logo.jpg"))return false;
+    if(!library.get(2)&&!load_animation(2,"nowloading.anm"))return false;
     show_loading({500,440,0},false);session.total_clock=platform.milliseconds();session.random.seed=u16(session.total_clock);
     if(!load_animation(0,"text.anm")||!load_animation(1,"ascii.anm")||!load_animation(3,"capture.anm"))return false;
     ascii.state.ascii=library.get(1);ascii.state.capture=library.get(3);ascii.initialize_vms(ascii_context);
