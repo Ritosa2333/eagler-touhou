@@ -94,6 +94,25 @@ static void SaveThpracSnapshot()
 
 RenderResult GameWindow::Render()
 {
+#ifdef __EMSCRIPTEN__
+    static bool s_FirstWebFrameReported = false;
+    if (this->isAppActive)
+    {
+        const i32 startup = Supervisor::DrawStartupLogo();
+        if (startup < 0) return RENDER_RESULT_EXIT_ERROR;
+        if (startup)
+        {
+            this->lastPerformanceCounter = 0;
+            this->accumulator = 0;
+            if (!s_FirstWebFrameReported)
+            {
+                s_FirstWebFrameReported = true;
+                EM_ASM({ globalThis.EaglerTouhouFirstFrame?.(); });
+            }
+            return RENDER_RESULT_KEEP_RUNNING;
+        }
+    }
+#endif
     // Refresh-rate / frameskip only controlled how often the original game drew.
     // Its simulation still advanced at 60 Hz.
     constexpr f64 baseTargetDt = 1.0 / 60.0;
@@ -397,7 +416,6 @@ RenderResult GameWindow::Render()
     // made it through the game loop and buffer swap. This deliberately sits
     // after Present() and does not participate in simulation/presentation
     // timing, input, RNG, collision, or Replay determinism.
-    static bool s_FirstWebFrameReported = false;
     if (!s_FirstWebFrameReported)
     {
         s_FirstWebFrameReported = true;

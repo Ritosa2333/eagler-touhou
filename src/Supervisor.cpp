@@ -38,6 +38,25 @@
 
 Supervisor g_Supervisor;
 #ifdef __EMSCRIPTEN__
+static i32 g_WebStartupPhase = 0;
+i32 Supervisor::DrawStartupLogo()
+{
+    if (!g_WebStartupPhase) return 0;
+    if (g_WebStartupPhase == 2)
+    {
+        const ZunResult result = FinishWebStartup(&g_Supervisor);
+        g_AnmManager->ReleaseSurface(0);
+        g_WebStartupPhase = 0;
+        return result == ZUN_SUCCESS ? 0 : -1;
+    }
+    g_GfxBackend->BeginFrame();
+    g_AnmManager->CopySurfaceToBackBuffer(0, 0, 0, 0, 0);
+    g_GfxBackend->EndFrame();
+    g_GfxBackend->SwapBuffers();
+    g_WebStartupPhase = 2;
+    return 1;
+}
+
 static char g_WebMidiPaths[32][256] = {};
 
 static bool IsWebOggMode()
@@ -446,13 +465,18 @@ ZunResult Supervisor::AddedCallback(Supervisor *s)
         SDL_Delay(16);
     }
 #else
-    g_GfxBackend->BeginFrame();
-    g_AnmManager->CopySurfaceToBackBuffer(0, 0, 0, 0, 0);
-    g_GfxBackend->EndFrame();
-    g_GfxBackend->SwapBuffers();
+    // Yield a real logo frame before preparing the remaining resources.
+    // Completion resumes Title immediately, without a timed splash delay.
+    g_WebStartupPhase = 1;
+    return ZUN_SUCCESS;
+}
+ZunResult Supervisor::FinishWebStartup(Supervisor *s)
+{
 #endif
 
+#ifndef __EMSCRIPTEN__
     g_AnmManager->ReleaseSurface(0);
+#endif
 #ifdef __EMSCRIPTEN__
     // Avoid browser-main-thread JPEG decode stalls during menu/result scene
     // changes. These immutable backgrounds are decoded once at startup and
