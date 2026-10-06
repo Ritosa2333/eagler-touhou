@@ -19,6 +19,9 @@ struct TitleResourceEnvironment : BackgroundThreadEnvironment {
     virtual void delete_replay(Replay* replay)=0;
     virtual void free_file(void* file)=0;
     virtual void report_error()=0;
+    // Native retains its authored intro. Browser adapters may finish as soon
+    // as startup has actually presented and the title resources are ready.
+    virtual bool startup_presentation_complete(const StartupScreen& screen)const{return screen.elapsed>=300;}
 };
 struct TitleResources {
     TitleMenu& title;
