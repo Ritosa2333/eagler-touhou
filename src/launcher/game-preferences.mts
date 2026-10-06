@@ -9,6 +9,7 @@ export interface GameOptions {
   thpracTouchControlsEnabled: boolean;
   magnifierEnabled: boolean;
   focusHitboxEnabled: boolean;
+  faithBarEnabled: boolean;
   frameLimit60Enabled: boolean;
   touchEnabled: boolean;
   touchMovementMode: TouchMovementMode;
@@ -30,6 +31,7 @@ export const DEFAULT_GAME_OPTIONS: Readonly<GameOptions> = Object.freeze({
   thpracTouchControlsEnabled: false,
   magnifierEnabled: false,
   focusHitboxEnabled: false,
+  faithBarEnabled: false,
   frameLimit60Enabled: true,
   touchEnabled: false,
   touchMovementMode: "touch",
@@ -234,6 +236,7 @@ export function normalizeStoredGamePreferences(
     thpracTouchControlsEnabled: booleanOption(rawOptions, "thpracTouchControlsEnabled", DEFAULT_GAME_OPTIONS.thpracTouchControlsEnabled),
     magnifierEnabled: booleanOption(rawOptions, "magnifierEnabled", DEFAULT_GAME_OPTIONS.magnifierEnabled),
     focusHitboxEnabled: booleanOption(rawOptions, "focusHitboxEnabled", DEFAULT_GAME_OPTIONS.focusHitboxEnabled),
+    faithBarEnabled: booleanOption(rawOptions, "faithBarEnabled", DEFAULT_GAME_OPTIONS.faithBarEnabled),
     frameLimit60Enabled: booleanOption(rawOptions, "frameLimit60Enabled", DEFAULT_GAME_OPTIONS.frameLimit60Enabled),
     touchEnabled: booleanOption(rawOptions, "touchEnabled", DEFAULT_GAME_OPTIONS.touchEnabled),
     touchMovementMode: migratedMovement,

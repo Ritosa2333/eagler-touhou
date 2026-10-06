@@ -419,6 +419,14 @@ function handleSignalConnection(socket, roomId, runId, player, playerCount) {
       if (target) sendSignal(target, { type: 'ice-restart-request', from: player });
       return;
     }
+    if (message.type === 'peer-disconnected' && run.route === 'rtc' && run.signalClients.get(player) === socket) {
+      run.disconnectedPlayers ??= new Set();
+      if (!run.disconnectedPlayers.has(player)) {
+        run.disconnectedPlayers.add(player);
+        broadcastSignal(run, { type: 'peer-disconnected', from: player });
+      }
+      return;
+    }
     if (message.type === 'rtc-failed') {
       run.rtcFailed = true;
       maybeResolveRoute(roomId, runId, room, run);

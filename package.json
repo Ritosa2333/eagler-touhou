@@ -70,6 +70,7 @@
     "test:localized-entries:browser": "node tests/test-localized-entry-browser.mjs",
     "test:language-fallback:browser": "python tests/test-language-fallback-browser.py",
     "test:touch-settings:browser": "python tests/test-touch-settings-browser.py",
+    "test:th10-original-options:browser": "npm run build:launcher && node tests/test-th10-original-options-browser.mjs",
     "test:multiplayer-guide:browser": "python tests/browser/test-multiplayer-guide.py",
     "test:content-security:browser": "npm run build:launcher && node tests/browser/test-content-fragments.mjs",
     "test:multiplayer-quick-chat:browser": "npm run build:launcher && node tests/test-multiplayer-quick-chat-browser.mjs",
