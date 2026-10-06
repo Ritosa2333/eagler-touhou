@@ -1,5 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';import {resolve} from 'node:path';import {gzipSync,gunzipSync} from 'node:zlib';
 import {core,oracle,memory,root,report,sha,target} from './helpers.mjs';import {worldOracle} from './world-oracle.mjs';
+const captureTools=process.env.TH11_VERIFIER_CAPTURE?await import('../../../tools/replay-verifier/observation.mjs'):null;
 
 // Opt-in: original x86 world emulation takes much longer than component tests.
 // No game callbacks, damage, enemies or collision are skipped on either side.
@@ -12,7 +13,8 @@ test('TH11 whole-world original demos retain native economy, movement and RNG', 
   const c=await core(),m=await oracle(),external=process.env.TH11_WORLD_FILE,raw=readFileSync(external?resolve(external):resolve(root,`reference/assets/demo${demo}.rpy`)),p=c.allocate(raw.length),r=c.replay_create();memory(c,p,raw.length).set(raw);assert.equal(c.replay_open(r,p,raw.length),1);
   const b=Buffer.from(memory(c,c.replay_data(r),c.replay_size(r))),selected=Number(process.env.TH11_WORLD_STAGE||b.readUInt16LE(112)),record=c.replay_stage(r,selected),offset=new DataView(c.memory.buffer).getUint32(record+4,true),options={stage:selected,character:b.readUInt32LE(92),subtype:b.readUInt32LE(96),difficulty:b.readUInt32LE(100),demo};
   // Stop before the terminal marker; replay shutdown is a separate menu gate.
-  const frames=Math.min(campaign?110000:b.readUInt32LE(offset+4)-1,Number(process.env.TH11_WORLD_LIMIT||Infinity));let checks=0,activeTicks=0,firstInactiveFrame=null,finalState;
+  const frames=Math.min(campaign?110000:b.readUInt32LE(offset+4)-(captureTools?0:1),Number(process.env.TH11_WORLD_LIMIT||Infinity));let checks=0,activeTicks=0,firstInactiveFrame=null,finalState;
+  const capture=captureTools?.captures(process.env.TH11_VERIFIER_CAPTURE,process.env.TH11_VERIFIER_CASE||`demo${demo}`,captureTools.identity(root,raw),{replaySha256:sha(raw),coreSha256:sha(readFileSync(resolve(root,'artifacts/cpp/game-core-test.wasm'))),stageDrawClocks:drawClocks});
   try{
    // Optional acceleration for the fixed original replay corpus: omit only
    // Unicorn's per-instruction budget hook, retaining every gameplay call and
@@ -56,8 +58,13 @@ test('TH11 whole-world original demos retain native economy, movement and RNG', 
     if(diagnose){const cp=c.game_session_transition_data(session,4),np=m.u32(0x4a8eb4);for(const [name,bytes]of[['cpp',memory(c,cp+3308,32*116)],['native',m.bytes(np+0x7c9c,32*116)]])writeFileSync(resolve(root,`artifacts/cpp/areas-before-${name}.bin`),bytes);}
     if(diagnose){const cs=c.game_session_stage_data(session,0),ns=m.u32(0x4a8d60),d=new DataView(c.memory.buffer);console.log('stage before',frame,[0x2ff0,0x3010,0x3028,0x38,0x40].map(off=>[off.toString(16),d.getUint32(cs+off,true),m.u32(ns+off)]),'screen',m.u32(0x4c342c));}
     currentFrame=frame;w.tick();assert.equal(c.game_session_update(session,0,0,0,0,0,0),1,`demo${demo} frame${frame} C++ update`);
+    // An all-FFFF termination record is lifecycle evidence, not gameplay input.
+    // Retail reaches its shutdown callback within the chain; C++ stops before
+    // the remaining callbacks. Neither half-transaction is a completed tick.
+    if(capture&&m.u32(0x4c93c0)===0xffff){assert.equal(c.game_session_value(session,0),4,'Replay marker must terminate candidate');finalState={phase:4,stage:c.game_session_value(session,2),score:m.i32(0x4a56e4),lives:m.i32(0x4a5718),terminalMarker:true};firstInactiveFrame=frame;break;}
     if(campaign&&m.u32(0x4c37d8)===12)assert.equal(w.next_stage(),0,'native stage construction');
     if(render){w.draw_transition();assert.equal(c.game_session_render(session,render),1,'C++ frame draw');}
+    if(capture){capture.original.tick(captureTools.nativeRow(m,frame));capture.candidate.tick(captureTools.candidateRow(c,session,frame));}
     dumpShots('after');
     if(diagnose)console.log('spell flags after',new DataView(c.memory.buffer).getUint32(c.battle_spell_data(session,4),true),m.u32(m.u32(0x4a8d6c)+0x8e0));
     if(diagnose){const cs=c.game_session_stage_data(session,0),ns=m.u32(0x4a8d60),d=new DataView(c.memory.buffer);console.log('stage after',frame,[0x2ff0,0x3010,0x3028,0x38,0x40].map(off=>[off.toString(16),d.getUint32(cs+off,true),m.u32(ns+off)]));}
@@ -89,6 +96,7 @@ test('TH11 whole-world original demos retain native economy, movement and RNG', 
      const dir=resolve(process.env.TH11_WORLD_CHECKPOINT);mkdirSync(dir,{recursive:true});assert.equal(m.reg('FPTAG'),65535,'checkpoint requires empty x87 stack');writeFileSync(resolve(dir,'native.gz'),gzipSync(m.view(0x10000,0x07ff0000),{level:1}));writeFileSync(resolve(dir,'cpp.gz'),gzipSync(new Uint8Array(c.memory.buffer),{level:1}));writeFileSync(resolve(dir,'state.json'),JSON.stringify({identity,nextFrame:frame+1,checks,activeTicks,firstInactiveFrame,pointers:{data,source,session,render,p,r},heap:w.heap_state(),registers:Object.fromEntries(registers.map(name=>[name,m.reg(name)]))}));console.log('saved native comparison',frame+1);
     }
    }
+   if(capture){const complete=finalState.phase===4&&(!campaign||finalState.stage===(selected===7?7:6));for(const stream of Object.values(capture))stream.finish({complete,reason:complete?'replay-complete':'capture-incomplete',evidence:{checks,selection:options,finalState,replaySha256:sha(raw)}});assert.ok(complete,'verifier requires terminal lifecycle and full route');}
    const name=campaign?(selected===7?'world-replay-external-extra':'world-replay-external-campaign'):external?`world-replay-external-stage${selected}`:`world-replay-demo${demo}`;
    report(name+(nativeResumeOnly?'-tail':campaign&&finalState.phase===1?'-partial':''),{passed:true,countInstructions,stageDrawClocks:drawClocks,completed:!nativeResumeOnly&&finalState.phase!==1,startFrame,nativeResumeOnly,nativeCheckpoint,replaySha256:sha(raw),checks,frames,activeTicks,firstInactiveFrame,finalState,selection:options,scope:'Native scheduler and C++ battle run original inputs. Each tick checks 12 economy fields, complete player movement, script RNG, active projectile count and selected enemy/item fields. Active ticks are distinguished from frozen post-game states. Host resource, GPU and audio boundaries are replaced. Stage draw timing executes original background/foreground clock instructions; campaign mode additionally runs native cross-stage teardown/construction. Full rendered pixels and shutdown are separate checks. Native-only checkpoint warmup checks only the reported tail, not the earlier C++ warmup.'});
    if(render)c.comp_delete(render);

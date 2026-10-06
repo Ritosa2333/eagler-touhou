@@ -19,6 +19,10 @@ th08_web/
 th09_web/
 th10_web/
 tools/
+!tools/
+tools/*
+!tools/replay-verifier/
+!tools/replay-verifier/**
 verification/
 deploy/
 FILE-SHA256.json
