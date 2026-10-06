@@ -83,6 +83,8 @@ u32 spectator_next=0,spectator_simulated=0;
 u32 spectator_last_ticks=0,spectator_max_ticks=0,spectator_yields=0,spectator_max_work_us=0;
 struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServices {
     Assets assets;GraphicsDevice graphics;FontDevice fonts{graphics};AudioDevice audio;
+    bool platform_prepared=false;Rng loading_random;AnmExecutor loading_executor{loading_random};
+    std::unique_ptr<GameResources> loading_resources;std::array<AnmVm,3> loading_vms{};
     EclWorldState state;AnmExecutor executor{state.random};GameResources resources{assets,graphics,executor};
     GamePresentation presentation{graphics,resources,*this};InGameMenus menus{resources,*this};
     std::array<u8,2> local_focus{};i32 local_versus=1;
@@ -106,7 +108,15 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     }
     bool queue_sound(i32 kind,i32 id,float value=0){if(!recording_frame)return false;recording_frame->sounds.push_back({kind,id,value});return true;}
     void pause_audio(bool on){if(!queue_sound(4,on))audio.pause_music(on);}
-    bool initialize_platform(){if(!graphics.initialize()){error=graphics.error;return false;}if(!assets.open("/th09.dat")){error=assets.error;return false;}if(!fonts.initialize()){error=fonts.error;return false;}fonts.prewarm_game(assets);if(!audio.initialize(assets)){error=audio.error;return false;}SDL_CreateDirectory("/save/replay");std::vector<u8> bytes;if(read_file("/save/th09.cfg",bytes))saved_configuration.load(bytes.data(),u32(bytes.size()));saved_configuration.apply(settings);title_configuration();if(!write_file("/save/th09.cfg",saved_configuration.data().data(),204)){error="Unable to save configuration";return false;}if(read_file("/save/score.dat",bytes))records.load(bytes.data(),u32(bytes.size()));sync_records();records.application_clock=records.game_clock=u32(SDL_GetTicks());return true;}
+    bool prepare_platform(){if(platform_prepared)return true;if(!graphics.initialize()){error=graphics.error;return false;}if(!assets.open("/th09.dat")){error=assets.error;return false;}platform_prepared=true;return true;}
+    bool prepare_loading(){
+        if(!prepare_platform()||!title_background("th09logo.jpg"))return false;
+        loading_resources=std::make_unique<GameResources>(assets,graphics,loading_executor);
+        if(!loading_resources->load(AnimationFile::menu,"nowloading.anm")){error=loading_resources->error;return false;}
+        for(i32 i=0;i<3;++i){if(!loading_resources->start(AnimationFile::menu,loading_vms[i],i)){error="Startup loading animation failed";return false;}loading_vms[i].pos={500,440,0};}
+        presentation.begin_frame();title_begin_draw();for(auto& vm:loading_vms)presentation.renderer.draw_2d(vm);presentation.finish_frame();graphics.present();return true;
+    }
+    bool initialize_platform(){if(!prepare_platform())return false;if(!fonts.initialize()){error=fonts.error;return false;}fonts.prewarm_game(assets);if(!audio.initialize(assets)){error=audio.error;return false;}SDL_CreateDirectory("/save/replay");std::vector<u8> bytes;if(read_file("/save/th09.cfg",bytes))saved_configuration.load(bytes.data(),u32(bytes.size()));saved_configuration.apply(settings);title_configuration();if(!write_file("/save/th09.cfg",saved_configuration.data().data(),204)){error="Unable to save configuration";return false;}if(read_file("/save/score.dat",bytes))records.load(bytes.data(),u32(bytes.size()));sync_records();records.application_clock=records.game_clock=u32(SDL_GetTicks());loading_vms={};loading_resources.reset();return true;}
     void update_clocks(){const u32 now=u32(SDL_GetTicks());if(clock_running)records.update_application_clock(now);else records.application_clock=now;if(clock_running&&!in_title&&!paused&&!over&&!complete&&session&&session->phase==SessionPhase::match)records.update_game_clock(now);else records.game_clock=now;}
     void clock_pause(bool on){update_clocks();clock_running=!on;}
     bool open_title(){if(!initialize_platform())return false;state.random={0x7531,0,0};title=std::make_unique<TitleMenus>(resources,*this,state.random,settings);if(!title->initialize()||!resources.load(AnimationFile::ascii,"ascii.anm")||!presentation.ascii.initialize()){error="Title initialization "+title->error+resources.error;return false;}in_title=true;return true;}
@@ -302,8 +312,9 @@ extern "C" {
 #define TH09_EXPORT(n) __attribute__((export_name(n)))
 TH09_EXPORT("th09_game_open") u32 th09_game_open(u32 seed){
     network.end();spectator_mode=false;spectator_frames.clear();spectator_next=spectator_simulated=0;clear_inputs();close_controllers();SDL_InitSubSystem(SDL_INIT_GAMEPAD);i32 count=0;auto* ids=SDL_GetGamepads(&count);for(i32 n=0;n<count;++n)add_controller(ids[n]);SDL_free(ids);for(auto& k:keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);
-    probe=std::make_unique<Application>();if(!probe->open_title()){failure=probe->error;return 0;}probe->state.random={u16(seed),0,0};return 1;
+    if(!probe||!probe->platform_prepared||probe->in_title)probe=std::make_unique<Application>();if(!probe->open_title()){failure=probe->error;return 0;}probe->state.random={u16(seed),0,0};return 1;
 }
+TH09_EXPORT("th09_prepare_loading") u32 th09_prepare_loading(){if(running)return 0;probe=std::make_unique<Application>();if(!probe->prepare_loading()){failure=probe->error;return 0;}return 1;}
 TH09_EXPORT("th09_game_metrics") const u32* th09_game_metrics(){static u32 data[10]{};if(probe){auto& s=probe->graphics.backend.stats;data[0]=s.batches;data[1]=s.uploadBytes;data[2]=s.readBytes;data[3]=s.vertexUploadBytes;data[4]=s.programCompiles;data[5]=s.bufferReplacements;data[6]=s.bufferSubUpdates;data[7]=s.frames;data[8]=s.resamples;data[9]=s.presentations;}return data;}
 TH09_EXPORT("th09_network_begin") u32 th09_network_begin(u32 seed,i32 side,u32 unlocked,u32 difficulty,u32 focus){
     if(!probe||!probe->in_title||side<0||side>1||difficulty>3||network.active)return 0;probe->local_focus=probe->settings.auto_focus;probe->local_versus=probe->settings.versus==4?1:probe->settings.versus;clear_inputs();probe->state.random={u16(seed),0,0};probe->settings.versus=4;probe->settings.difficulty=u8(difficulty);probe->settings.game_flags=0;probe->settings.characters[0]=0;probe->settings.characters[1]=1;
