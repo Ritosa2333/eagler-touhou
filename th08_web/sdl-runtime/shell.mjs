@@ -112,7 +112,11 @@ async function launch(){
  }
  const mode=Module.touhouMusicMode||'none';music=mode!=='none';core.sdl_ogg_decode_mode?.(options.oggDecodeMode==='full');core.sdl_music_source?.(mode==='midi'?2:1);
  core.sdl_music_enabled?.(music);app=core.sdl_game_open(Date.now()>>>0);if(!app)throw Error('C++ game initialization failed');
- const total=core.sdl_prepare_total();for(let i=0;i<total;i++){if(core.sdl_prepare_next()<0)throw Error('资源预载失败 '+i);if(i%12===11){document.querySelector('#loading').textContent='正在准备游戏资源 '+(i+1)+' / '+total;await new Promise(resolve=>setTimeout(resolve,0));}}
+ if(!core.sdl_prepare_loading()||!core.sdl_draw_loading(0))throw Error('开头加载画面初始化失败');
+ // Two RAF boundaries let the original frame reach the compositor before
+ // resource work resumes. There is no minimum splash duration.
+ await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);let loadingPaint=performance.now();
+ const total=core.sdl_prepare_total();for(let i=0;i<total;i++){if(core.sdl_prepare_next()<0)throw Error('资源预载失败 '+i);if(i%12===11){const now=performance.now();if(now-loadingPaint>=1000/60){if(!core.sdl_draw_loading(1))throw Error('开头加载画面绘制失败');loadingPaint=now;await new Promise(requestAnimationFrame);}else await new Promise(resolve=>setTimeout(resolve,0));}}
  if(!core.sdl_game_initialize())throw Error('永夜抄初始化失败');document.querySelector('#loading').textContent='';
  applyOptions();launched=true;first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
  canvas.focus({preventScroll:true});core.sdl_loop_pause(1);if(!document.hidden)await resumeForegroundAudio();if(query.get('manual')!=='1')core.sdl_loop_start();
