@@ -295,6 +295,23 @@ const closedResponse = nextJson(closedSocket);
 closedSocket.dispatchEvent(new Event("close"));
 await assert.rejects(closedResponse, /socket closed/);
 
+async function verifyRtcDisconnectSignal(port) {
+  const sockets=[];
+  try {
+    const room=`th10mp-disconnect${Date.now().toString(36)}`;
+    for(let player=0;player<3;player++) {
+      const socket=new WebSocket(`ws://127.0.0.1:${port}/?room=${room}&run=1&player=${player}&players=3&signal=1`);
+      sockets.push(socket);await nextJson(socket,message=>message.type==='peers');
+    }
+    const routes=sockets.map(socket=>nextJson(socket,message=>message.type==='route'));
+    for(const socket of sockets)socket.send(JSON.stringify({type:'rtc-ready'}));
+    assert.deepEqual((await Promise.all(routes)).map(message=>message.mode),['rtc','rtc','rtc']);
+    const notifications=sockets.slice(1).map(socket=>nextJson(socket,message=>message.type==='peer-disconnected'));
+    sockets[0].send(JSON.stringify({type:'peer-disconnected',from:2}));
+    assert.deepEqual((await Promise.all(notifications)).map(message=>message.from),[0,0],'The server derives the ended participant from its admitted socket');
+  } finally {for(const socket of sockets)socket.close(1000);}
+}
+
 const port = await freePort();
 const relayEnv = {
   ...process.env,
@@ -319,6 +336,7 @@ try {
   for (const game of multiplayerGames) await verifyModes(port, `${game}mp`);
   await verifyGenericRoom(port);
   await verifyRelayOnlyBarrier(port);
+  await verifyRtcDisconnectSignal(port);
   await verifyTh08Timing(port);
   await verifyFixedRollbackInputDelay(port,"th08mp",1);
   await verifyFixedRollbackInputDelay(port,"th08mp",2);

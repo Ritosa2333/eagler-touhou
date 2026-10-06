@@ -66,7 +66,7 @@ const reconnecting = describeNetplayConnection({
 assert.equal(reconnecting.hidden, false);
 assert.equal(reconnecting.reconnecting, true);
 assert.equal(reconnecting.title, "正在重新连接…");
-assert.equal(reconnecting.summary, "");
+assert.equal(reconnecting.summary, "正在尝试恢复连接，游戏进度会保留。");
 assert.equal(reconnecting.peerRows[0].status, "连接中");
 assert.equal(reconnecting.peerRows[0].detail, "");
 
@@ -84,5 +84,11 @@ assert.equal(spectatorFailed.hidden, false);
 assert.equal(spectatorFailed.reconnecting, true);
 assert.equal(spectatorFailed.title, "旁观连接已断开");
 assert.equal(spectatorFailed.summary, "closed");
+
+const ended = describeNetplayConnection({peerState:{peers:rtcPeers,disconnected:true},transport:"rtc",playerCount:2,localPlayer:0,connectedOnce:true});
+assert.equal(ended.hidden,false);assert.equal(ended.ended,true);assert.equal(ended.reconnecting,false);
+assert.equal(ended.title,"联机连接已断开");assert.equal(ended.peerRows[0].status,"已断开");
+const recoveringRelay=describeNetplayConnection({peerState:{relay:{readyState:1},isRecovering:()=>true},transport:"relay",connectedOnce:true});
+assert.equal(recoveringRelay.hidden,false);assert.equal(recoveringRelay.reconnecting,true);
 
 console.log(JSON.stringify({ runtimeDiagnosticsModel: "PASS", visibility: "test-build-default-or-user-toggle", lineLimit: 96, browserDetection: 3, renderer: "compact", rtcPair: "selected", rttWindow: 20, connectionWindow: "modeled" }));

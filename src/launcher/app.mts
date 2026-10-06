@@ -2298,6 +2298,8 @@ interface RuntimePeerCollection extends Iterable<[number, RuntimePeer]> {
 }
 
 interface RuntimePeerTransport {
+  disconnected?: boolean;
+  isRecovering?(): boolean;
   peers: RuntimePeerCollection;
   relay?: { readyState?: unknown } | null;
   rtcReadySent?: boolean;
@@ -2477,6 +2479,12 @@ function runtimeNetplaySnapshot(): RuntimeNetplaySnapshot | null {
     peerState,
   };
 }
+let returningFromNetplayConnection = false;
+function returnFromNetplayConnection() {
+  if (returningFromNetplayConnection) return;
+  returningFromNetplayConnection = true;
+  void closePlayerView(false, { returnToMpRoom: true }).finally(() => { returningFromNetplayConnection = false; });
+}
 function updateNetplayConnectionWindow(net: RuntimeNetplaySnapshot | null) {
   const windowElement = $("#netplayConnectionWindow");
   if (!windowElement) return;
@@ -2489,6 +2497,7 @@ function updateNetplayConnectionWindow(net: RuntimeNetplaySnapshot | null) {
     netplayConnectionUiState.connectedOnce = false;
   }
   const view = describeNetplayConnection({
+    english: document.documentElement.dataset.uiLocale === "en",
     spectator: net.spectator,
     failed: net.failed,
     error: net.error,
@@ -2501,10 +2510,10 @@ function updateNetplayConnectionWindow(net: RuntimeNetplaySnapshot | null) {
     webSocketOpenState: WebSocket.OPEN,
   });
   netplayConnectionUiState.connectedOnce = view.connectedOnce;
-  if (!net.failed && !net.spectator && renderCalibrationConnection(windowElement)) return;
+  if (!net.failed && !net.spectator && !net.peerState.disconnected && !net.peerState.isRecovering?.() && renderCalibrationConnection(windowElement, returnFromNetplayConnection)) return;
   windowElement.hidden = view.hidden;
   windowElement.classList.toggle("reconnecting", view.reconnecting);
-  if (view.hidden) return;
+  if (view.hidden) { windowElement.querySelector('#netplayConnectionReturn')?.remove(); return; }
   $("#netplayConnectionTitle").textContent = view.title;
   $("#netplayConnectionSummary").textContent = view.summary;
   $("#netplayConnectionSummary").hidden = !view.summary;
@@ -2520,6 +2529,12 @@ function updateNetplayConnectionWindow(net: RuntimeNetplaySnapshot | null) {
     item.append(label, detail);
     return item;
   }));
+  if (!net.spectator && (view.ended || view.reconnecting)) {
+    let button=windowElement.querySelector<HTMLButtonElement>('#netplayConnectionReturn');
+    if(!button){button=document.createElement('button');button.id='netplayConnectionReturn';button.type='button';windowElement.append(button);}
+    button.textContent=document.documentElement.dataset.uiLocale==='en'?'Return to room':'返回房间';
+    button.onclick=returnFromNetplayConnection;
+  }
 }
 async function sampleRuntimeNetplayQuality() {
   const net = runtimeNetplaySnapshot();

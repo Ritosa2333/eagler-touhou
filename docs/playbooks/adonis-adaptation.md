@@ -29,6 +29,29 @@ min/mean/max and sample/loss counts. Reject interrupted/hidden measurement,
 changed routes, reversed clocks, excessive pump gaps and inadequate samples.
 Do not silently substitute guessed timing.
 
+A pump gap over 500 ms, hidden measurement, interrupted input channel or an
+inadequate sample window discards the entire attempt. ADS/4 packets bind the
+measurement attempt to the existing session/build/seat contract. Only P1 advances
+that attempt, and all players repeat settling and sampling together. Ignore old
+echoes, summaries and commits. Permit the initial attempt plus three retries,
+with a 90-second overall bound and a 45-second peer-ready wait. Exhaustion or
+missing peers leaves frame zero blocked in an explicit unavailable state with
+room return, without converting the recoverable startup failure into Game error.
+RTC path recovery keeps existing captured input and watchdog recovery ownership.
+Closed SCTP channels and retired Relay streams report a paused, disconnected run;
+they must not pretend that the same stream can resume. RTC disconnect notification
+is broadcast from the admitted signaling participant to the other run members.
+
+Every title-specific `PeerTransport` wrapper must forward `Recovering`,
+`Disconnected` and `CalibrationSuspended`; their default false implementations
+cannot carry browser recovery into the native session gate. Drain received
+startup packets before the final measurement tick. TH09's separate bridge uses
+startup status schema 3 with 27 words (attempt/reason at 25/26); the shared
+TH08/TH10 bridge retains its 32-word status. Expected disconnects pause the live
+world and preserve room return. Keep a finished TH09 Replay-save menu usable.
+Update pinned shared-library dependencies and matching browser/native packages
+together. Connection-lifecycle acceptance does not replace canonical-world checks.
+
 Bind negotiation to participants, seats, generation, seed, build/ABI, mode and
 requested policy. Test proposal/accept/commit/ack recovery and stale controls.
 Preserve bounded early native packets when calibration hands over the transport.

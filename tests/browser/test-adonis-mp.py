@@ -1,5 +1,5 @@
 """Production shells + real BrowserPeerTransport; no remote input injection."""
-import argparse,json,time,uuid
+import argparse,json,time,uuid,sys
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 p=argparse.ArgumentParser();p.add_argument('--url',default='http://127.0.0.1:18380');p.add_argument('--game',choices=['th08','th10'],required=True)
@@ -9,22 +9,44 @@ p.add_argument('--spectator',action='store_true');p.add_argument('--replay',acti
 p.add_argument('--last-frame',type=int,default=179)
 p.add_argument('--difficulty',type=int,default=1)
 p.add_argument('--join-lag-ms',type=int,default=0)
+p.add_argument('--startup-pause-ms',type=int,default=0)
+p.add_argument('--startup-pause-seat',type=int,default=0)
+p.add_argument('--startup-hidden-ms',type=int,default=0)
+p.add_argument('--drop-startup-echoes',type=int,default=0)
+p.add_argument('--drop-startup-echoes-all',action='store_true')
+p.add_argument('--expect-startup-unavailable',action='store_true')
+p.add_argument('--disconnect-check',action='store_true')
+p.add_argument('--relay-url',default='')
 a=p.parse_args();report={'passed':False,'game':a.game,'players':a.players,'difficulty':a.difficulty,'adonisMode':a.mode,'route':a.route,'manualDelay':a.delay,'inputLagMs':a.input_lag_ms,'joinLagMs':a.join_lag_ms,'errors':[],'checkpoints':[]}
 with sync_playwright() as pw:
- browser=pw.chromium.launch(headless=True,args=['--enable-unsafe-swiftshader']);pages=[]
+ browser=pw.chromium.launch(headless=True,args=['--enable-unsafe-swiftshader','--disable-features=WebRtcHideLocalIpsWithMdns']);pages=[];sessions=[]
  try:
   room=a.game+'mp-adonis-'+uuid.uuid4().hex[:12]
-  relay=a.url.replace('http://','ws://').replace(':18380',':18381')+'/?room='+room+'&run=1'
+  relay=(a.relay_url or a.url.replace('http://','ws://').replace(':18380',':18381')).rstrip('/')+'/?room='+room+'&run=1'
   for seat in range(a.players+int(a.spectator)):
    if seat==1 and a.join_lag_ms:
     pages[0].evaluate('()=>{const r=host.runtime();r.core.sdl_loop_start(r.app);r.core.sdl_loop_pause(0)}')
     pages[0].wait_for_timeout(a.join_lag_ms);pages[0].evaluate('host.stopLoop()')
    context=browser.new_context(service_workers='block')
+   if a.startup_pause_ms or a.startup_hidden_ms or a.drop_startup_echoes:
+    assert a.route=='rtc' and seat<a.players
+    context.add_init_script("""const send=RTCDataChannel.prototype.send;RTCDataChannel.prototype.send=function(data){
+     const b=data instanceof ArrayBuffer?new Uint8Array(data):data;
+     if(b?.length===64&&b[0]===65&&b[1]===68&&b[2]===83&&b[4]===3){
+      const v=new DataView(b.buffer,b.byteOffset,b.byteLength),sequence=v.getUint32(28,true),attempt=v.getUint32(60,true);
+      globalThis.auditStartupEcho=sequence;
+      if(attempt===0&&sequence>=47&&globalThis.auditStartupHiddenMs&&!globalThis.auditHiddenApplied){
+       globalThis.auditHiddenApplied=true;globalThis.auditHidden=true;Object.defineProperty(document,'hidden',{configurable:true,get:()=>globalThis.auditHidden});
+       setTimeout(()=>{globalThis.auditHidden=false},auditStartupHiddenMs);
+      }
+      if((attempt===0||globalThis.auditDropAll)&&sequence>=10&&sequence<10+(globalThis.auditDropStartupEchoes||0))return;
+     }return send.call(this,data)}""")
+    if seat==a.startup_pause_seat:context.add_init_script('globalThis.auditDropStartupEchoes='+str(a.drop_startup_echoes)+';globalThis.auditStartupHiddenMs='+str(a.startup_hidden_ms)+';globalThis.auditDropAll='+str(a.drop_startup_echoes_all).lower())
    if a.route=='relay':context.add_init_script("Object.defineProperty(globalThis,'RTCPeerConnection',{value:undefined,configurable:true})")
    if a.input_lag_ms:
     assert a.route=='relay'
     context.add_init_script("const originalSend=WebSocket.prototype.send;WebSocket.prototype.send=function(data){if(typeof data==='string')return originalSend.call(this,data);const socket=this,payload=data.slice?.(0)||data;setTimeout(()=>{if(socket.readyState===WebSocket.OPEN)originalSend.call(socket,payload)},globalThis.auditGameplayLag??"+str(a.input_lag_ms)+")}")
-   page=context.new_page();pages.append(page);page.on('pageerror',lambda e,seat=seat:report['errors'].append({'seat':seat,'error':str(e)}))
+   page=context.new_page();pages.append(page);sessions.append(context.new_cdp_session(page));page.on('pageerror',lambda e,seat=seat:report['errors'].append({'seat':seat,'error':str(e)}))
    page.goto(a.url+'/host/'+a.game);page.evaluate('host.open()');page.wait_for_function('host.ready()',timeout=120000)
    if a.spectator:
     lobby_id='audit_seat_'+str(seat)+'_'+uuid.uuid4().hex[:8]
@@ -48,24 +70,39 @@ with sync_playwright() as pw:
     'netplayInputDelayAuto':a.delay is None,'netplayPredictionReserve':2,'netplayPredictionLimit':8,'netplaySpectatorCount':int(a.spectator),'netplaySpectator':seat==a.players}
    if seat==a.players:options['netplaySpectatorId']=lobby_id
    page.evaluate('o=>host.configure(o)',options)
-  deadline=time.monotonic()+90;observed=[]
+  deadline=time.monotonic()+90;observed=[];paused=False;resumed=False;pause_at=0;previous=[None]*len(pages)
   while True:
+   if paused and not resumed and time.monotonic()-pause_at>=a.startup_pause_ms/1000:
+    sessions[a.startup_pause_seat].send('Emulation.setScriptExecutionDisabled',{'value':False});resumed=True
    snapshots=[]
    for seat,page in enumerate(pages):
+    if paused and not resumed and seat==a.startup_pause_seat:
+     snapshots.append(previous[seat]);continue
     s=page.evaluate('host.snapshot()');snapshots.append(s)
     assert not s['error'] and not s['events'],s
     if not s['ready']:
      if seat<a.players and s['calibration'][1]<5:assert s['last']==4294967295,('frame zero advanced before calibration',s)
      page.evaluate('host.tick(-1)') if 2<=s['calibration'][1]<5 else page.evaluate('host.tick(0)')
+   previous=snapshots
+   if a.startup_pause_ms and not paused and pages[a.startup_pause_seat].frames[1].evaluate('(globalThis.auditStartupEcho||0)>=47'):
+    sessions[a.startup_pause_seat].send('Emulation.setScriptExecutionDisabled',{'value':True});paused=True;pause_at=time.monotonic()
    observed.append([s['calibration'][1:4] for s in snapshots])
    if all(s['ready'] for s in snapshots[:a.players]):break
+   if a.expect_startup_unavailable and all(s['calibration'][1]==8 for s in snapshots[:a.players]):break
    assert time.monotonic()<deadline,('startup timeout',snapshots,report['errors'])
    pages[0].wait_for_timeout(5)
   report['startup']=snapshots;report['progress']=observed
+  if a.expect_startup_unavailable:
+   assert all(s['calibration'][1]==8 and s['last']==4294967295 and not s['error'] and not s['events'] for s in snapshots[:a.players]),snapshots
+   assert all((s['calibration'][30]&255)==4 for s in snapshots[:a.players]),snapshots
+   report['passed']=True;print('Bounded startup retries end without a game error or frame-zero advance',flush=True);sys.exit(0)
+  report['startupPauseMs']=a.startup_pause_ms;report['droppedStartupEchoes']=a.drop_startup_echoes
   for s in snapshots[:a.players]:
    assert s['calibration'][1]==5 and s['calibration'][2]==129 and s['calibration'][3]>=96,s
    assert s['timing'] and s['timing']['route']==a.route,s
   choices=[s['calibration'][8:11] for s in snapshots[:a.players]];assert all(c==choices[0] for c in choices),choices
+  if a.startup_pause_ms or a.startup_hidden_ms or a.drop_startup_echoes:
+   assert all((s['calibration'][30]&255)>=2 for s in snapshots[:a.players]),('Failed measurement was not retried',snapshots)
   if a.delay is not None:assert choices[0][0]==a.delay,choices
   if a.input_lag_ms and a.mode==2 and a.delay is None:assert choices[0][2]>0,choices
   for target in [f for f in [59,119,179] if f<=a.last_frame]:
@@ -102,7 +139,7 @@ with sync_playwright() as pw:
    # TH10's composite excludes seat identity; TH08 exports named hashes.
    # Staggered real-rAF loading advances presentation/loading clocks differently.
    # The portable world categories are the established same-frame game oracle.
-   comparison=hashes if a.game=='th08' else [s['portable'][2:10] for s in snapshots] if a.spectator or a.join_lag_ms else [h[1] for h in hashes]
+   comparison=hashes if a.game=='th08' else [s['portable'][2:10] for s in snapshots] if a.spectator or a.join_lag_ms or a.startup_pause_ms or a.startup_hidden_ms or a.drop_startup_echoes else [h[1] for h in hashes]
    assert all(h==comparison[0] for h in comparison),('same-frame state mismatch',target,snapshots)
    report['checkpoints'].append({'frame':target,'snapshots':snapshots});print(a.game,a.players,a.mode,a.route,'confirmed',target,flush=True)
   for s in snapshots:
@@ -143,7 +180,22 @@ with sync_playwright() as pw:
    world=lambda h:h if a.game=='th08' else h[2:10]
    assert world(reference)==world(actual),('Replay world mismatch',reference,actual,state)
    report['replay']=state
-  assert not report['errors'],report['errors'];report['passed']=True
+  assert not report['errors'],report['errors']
+  if a.disconnect_check:
+   pages[0].frames[1].evaluate("route=>{const t=__eaglerPeerTransport;if(route==='rtc')[...t.peers.values()][0].inputDc.close();else t.relay.close()}",a.route)
+   pages[0].wait_for_timeout(150)
+   settled=[page.evaluate('host.tick(10000)') for page in pages]
+   stopped_frames=[s['last'] for s in settled]
+   disconnected_at=time.monotonic();ended=[]
+   while time.monotonic()-disconnected_at<17:
+    ended=[page.evaluate('host.tick(10000)') for page in pages]
+    assert all(not s['error'] and not s['events'] and not s['shellError'] for s in ended),ended
+    assert [s['last'] for s in ended]==stopped_frames,('The disconnected game kept advancing',ended,stopped_frames)
+    pages[0].wait_for_timeout(100)
+   states=[page.frames[1].evaluate('({disconnected:__eaglerPeerTransport.disconnected,failed:__eaglerPeerTransport.failed})') for page in pages]
+   assert all(s['disconnected'] and not s['failed'] for s in states),states
+   report['disconnect']={'states':states,'snapshots':ended}
+  report['passed']=True
  except Exception as e:
   report['failure']=str(e);report['last']=[page.evaluate('host.snapshot()') for page in pages];raise
  finally:

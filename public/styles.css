@@ -677,9 +677,9 @@ html,body{background:#0d0d0c}
 .netplay-calibration-table td{padding:12px 0;color:var(--muted);font-size:14px;white-space:nowrap}
 .netplay-calibration-table td:nth-child(2){color:var(--paper);font-size:20px;font-weight:700}
 .netplay-calibration-table tbody tr+tr{border-top:1px solid var(--line)}
-#netplayCalibrationDismiss{display:block;margin:14px 0 0 auto;min-width:80px;min-height:36px;padding:6px 16px;border:0;border-radius:999px;background:var(--red);color:var(--paper);font:700 14px/1.4 var(--ui-font);cursor:pointer;pointer-events:auto}
-#netplayCalibrationDismiss:hover{background:var(--red-bright)}
-#netplayCalibrationDismiss:focus-visible{outline:2px solid var(--paper);outline-offset:3px}
+#netplayCalibrationDismiss,#netplayConnectionReturn{display:block;margin:14px 0 0 auto;min-width:80px;min-height:44px;padding:8px 16px;border:0;border-radius:999px;background:var(--red);color:var(--paper);font:700 14px/1.4 var(--ui-font);cursor:pointer;pointer-events:auto}
+#netplayCalibrationDismiss:hover,#netplayConnectionReturn:hover{background:var(--red-bright)}
+#netplayCalibrationDismiss:focus-visible,#netplayConnectionReturn:focus-visible{outline:2px solid var(--paper);outline-offset:3px}
 #netplayCalibrationProgress{display:block;width:100%;height:6px;accent-color:var(--red-bright)}
 @media(max-width:480px){.netplay-connection-window{padding:18px 16px 16px}.netplay-connection-window header strong{font-size:18px}.netplay-calibration-table td:nth-child(2){font-size:18px}.netplay-calibration-table td{font-size:13px}.netplay-calibration-table thead th{font-size:12px}}
 
