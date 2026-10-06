@@ -44,25 +44,36 @@ bool ApplicationState::prepare_platform(){
 }
 bool ApplicationState::prepare_loading(){
  if(!prepare_platform())return false;std::vector<u8> bytes;
- // sig.anm uses twice the logical 640x480 resolution of the game viewport.
- loading_environment.resolution_scale=.5f;
- if(!read("sig.anm",bytes)||!loading_animations.load(1,bytes.data(),bytes.size())||!graphics.preload(*loading_animations.resource(1)))return fail("Startup signature load failed: "+loading_animations.error+graphics.error);
- if(!loading_animations.create(1,0))return fail("Startup signature animation failed: "+loading_animations.error);
- if(!loading_animations.update(false)||!loading_animations.update(true))return fail("Startup signature update failed: "+loading_animations.error);
+ loading_environment.resolution_scale=1;loading_environment.raster_scale=float(graphics.render_scale);
+ for(const auto& bank:std::array<std::pair<const char*,i32>,2>{{{"sig.anm",1},{"ascii.anm",2}}}){
+  if(!loading_animations.resource(bank.second)&&(!read(bank.first,bytes)||!loading_animations.load(bank.second,bytes.data(),bytes.size())||!graphics.preload(*loading_animations.resource(bank.second))))return fail("Loading artwork: "+loading_animations.error+graphics.error);
+ }
+ return draw_loading(true);
+}
+bool ApplicationState::draw_loading(bool signature){
+ if(!loading_animations.retire(loading_signature)||!loading_animations.retire(loading_prayer))return fail(loading_animations.error);
+ if(signature){loading_signature=loading_animations.create(1,0);if(!loading_signature)return fail(loading_animations.error);}
+ loading_prayer=loading_animations.create(2,17,-1,0,{960,784,0});if(!loading_prayer)return fail(loading_animations.error);
+ // Publish visible artwork before blocking preparation. Its isolated RNG and
+ // clock do not advance game logic or impose a minimum splash duration.
+ for(unsigned frame=0;frame<11;++frame)if(!loading_animations.update(false)||!loading_animations.update(true))return fail(loading_animations.error);
+ renderer.invalidate();graphics.backend.pipeline()=touhou::graphics::PipelineState{};graphics.configure_game(1);
  if(!graphics.select_target(nullptr,0)||!graphics.clear_target(0xff000000,nullptr))return fail(graphics.error);
- ScreenViews loading_views{renderer,loading_environment};loading_views.camera(DrawCamera::Fullscreen,false);
- for(u32 layer=0;layer<42;++layer)if(!renderer.draw_layer(loading_animations.registry.layer(layer)))return fail("Startup signature draw failed: "+renderer.error);
+ ScreenViews loading_views{renderer,loading_environment};if(!loading_views.camera(DrawCamera::Fullscreen,false))return fail("Loading camera unavailable");
+ for(u32 layer=0;layer<42;++layer)if(!renderer.draw_layer(loading_animations.registry.layer(layer)))return fail(renderer.error);
  renderer.flush();graphics.present();return true;
 }
 bool ApplicationState::initialize(bool device){
- if(initialized)return fail("Application already initialized");if(!prepare_platform())return false;
+ if(initialized)return fail("Application already initialized");if(!prepare_platform())return false;if(!loading_animations.resource(2)&&!prepare_loading())return false;
  if(!fonts.initialize()||!audio_device.initialize(*this,device))return fail(fonts.error.empty()?audio_device.error:fonts.error);
  // Restart overlays draw their patterned fifth panel when the screen has alpha.
  // Derive this from the actual SDL surface, as the original format check does.
+ environment.raster_scale=float(graphics.render_scale);
  environment.render_target_has_alpha=graphics.pixels(GraphicsDevice::screen)->format==touhou::graphics::PixelFormat::Bgra8;
  environment.screen_offsets={320,16,320,16};
  environment.playfield_origin={128,16};
  if(!files.initialize(records,config,visual))return fail(files.error);
+ records.checkpoint_remove=[this](i32 character,i32 difficulty){if(checkpoint_encoder&&checkpoint_header.character()==character&&checkpoint_header.difficulty()==difficulty){checkpoint_encoder.reset();checkpoint_payload.clear();}return files.remove_checkpoint(character,difficulty);};
  volumes.music_volume=config.music_volume();volumes.sound_volume=config.sound_volume();volumes.controller_option=config.bytes[0x24];std::memcpy(controller.values.data(),config.bytes.data()+4,20);
  volume(volumes.music_volume,volumes.sound_volume,0);
  animations.resource_release=[this](const AnmResource& resource){graphics.unload(resource);};
@@ -77,14 +88,10 @@ bool ApplicationState::initialize(bool device){
  display=std::make_unique<SceneDisplay>(scheduler,animations,environment,graphics,renderer,views,captions,0,2);if(!display->initialize())return fail(display->error);
  for(u32 index=0;index<animation_updates.size();index++){auto& callback=animation_updates[index];callback.owner=this;callback.enabled=true;callback.run=index==0?[](void* p)->i32{return static_cast<ApplicationState*>(p)->animations.update(true)?1:5;}:[](void* p)->i32{return static_cast<ApplicationState*>(p)->animations.update(false)?1:5;};if(scheduler.add(callback,FramePass::Update,index==0?9:34)<0)return fail("Application animation callback registration failed");}
  camera.direction={0,0,1};camera.up={0,1,0};camera.fov=0.785398185f;
- loading_animations.retire_resource(1);
- loading_animations.update(false);loading_animations.update(true);
- if(auto* signature=loading_animations.resource(1))graphics.unload(*signature);
- loading_animations.unload(1);
  initialized=true;return begin_title(0);
 }
 ApplicationState::~ApplicationState(){title.reset();ending.reset();release_run();for(auto& c:animation_updates)scheduler.remove(c);fades.clear();display.reset();scene_effects.reset();animations.resource_release=nullptr;}
-bool ApplicationState::save_settings(){config.bytes[0x22]=u8(volumes.music_volume);config.bytes[0x23]=u8(volumes.sound_volume);config.bytes[0x24]=volumes.controller_option;std::memcpy(config.bytes.data()+4,controller.values.data(),20);return files.save(records,config)||fail(files.error);}
+bool ApplicationState::save_settings(){if(!finish_checkpoint())return false;config.bytes[0x22]=u8(volumes.music_volume);config.bytes[0x23]=u8(volumes.sound_volume);config.bytes[0x24]=volumes.controller_option;std::memcpy(config.bytes.data()+4,controller.values.data(),20);return files.save(records,config)||fail(files.error);}
 void ApplicationState::release_run(){
  const bool had_run=run!=nullptr;close_options();motion.clear();if(display)display->detach();pause.reset();flow.reset();initialization.reset();session.reset();
  if(run&&scene()){selection_player=scene()->battle.session;selection_score=scene()->battle.score;}
@@ -142,10 +149,14 @@ bool ApplicationState::apply_destination(){
 }
 bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool lost_focus){
  if(!initialized||exiting||!failure.empty())return false;
+ if(pending_load){const unsigned task=pending_load;pending_load=0;
+  if(task==1){if(!apply_destination())return false;}
+  else if(task==2){if(!display->retain_background(*scene(),*this))return fail(display->error);pause.reset();current_destination=12;if(!flow->advance()||!preload_run()||!bind_run_display())return fail(flow->error);}
+ }
  PROFILE_BEGIN;
  manual_pressed=pressed;manual_repeated=repeated;
- if(pending_page>=0){pending_page=-1;if(title){if(!title->manual_page_ready())return fail(title->error);}else if(pause_manual){if(!pause_manual->page_loaded())return fail(pause_manual->error);}}
- if(pending_bank>=0&&ending){const auto bank=pending_bank;pending_bank=-1;auto bytes=std::move(pending_animation);if(!ending->animation_ready(bank,bytes.data(),bytes.size()))return fail(ending->error);}
+ if(pending_page>=0){char name[32];std::snprintf(name,sizeof name,"help_%.2d.png",pending_page+1);if(!read(name,pending_png))return false;pending_page=-1;if(title){if(!title->manual_page_ready())return fail(title->error);}else if(pause_manual){if(!pause_manual->page_loaded())return fail(pause_manual->error);}}
+ if(pending_bank>=0&&ending){const auto bank=pending_bank;pending_bank=-1;if(!read(pending_animation_name,pending_animation))return false;pending_animation_name.clear();auto bytes=std::move(pending_animation);if(!ending->animation_ready(bank,bytes.data(),bytes.size()))return fail(ending->error);}
  if(title){title->controls({held,pressed,repeated,0},controller_buttons,numbered_chapter);if(scheduler.update()<0)return fail(title->error.empty()?title->frame.error.empty()?animations.error:title->frame.error:title->error);}
  else if(ending){ending->controls({held,pressed,frames,1},0);if(scheduler.update()<0)return fail(ending->error.empty()?ending->script.error:ending->error);}
  else if(session&&scene()){
@@ -169,8 +180,11 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
   }
  }
  audio_device.pump();frames++;
- if(flow&&flow->pending()){if(!display->retain_background(*scene(),*this))return fail(display->error);pause.reset();current_destination=12;if(!flow->advance()||!preload_run()||!bind_run_display())return fail(flow->error);}
+ if(!pump_checkpoint())return false;
+ if(flow&&flow->pending()&&(!(scene()->hud.flags&0x100)||scene()->hud.intro_age.current>=120)){if(!draw_loading(false))return false;pending_load=2;return true;}
  fades.erase(std::remove_if(fades.begin(),fades.end(),[](const auto& value){return !value->active;}),fades.end());motion.erase(std::remove_if(motion.begin(),motion.end(),[](const auto& value){return !value->active;}),motion.end());animations.collect_resources();
+ if(pending_bank>=0||pending_page>=0){if(!draw_loading(false))return false;pending_load=3;return true;}
+ if(pending_destination==13||pending_destination==10||pending_destination==11||pending_destination==15){if(!draw_loading(false))return false;pending_load=1;return true;}
  const bool result=apply_destination()&&(graphics.error.empty()||fail(graphics.error));
  PROFILE_AT(3);
 #if TH15_DEVELOPMENT_HARNESS

@@ -26,31 +26,36 @@ bool Lzss::decode(const u8* input,u32 size,u8* output,u32 capacity,u32& written)
     }
 }
 std::vector<u8> Lzss::encode(const u8* input,u32 size) {
+    begin_encode(input,size);while(!step_encode(UINT32_MAX)){}return std::move(output);
+}
+void Lzss::encode_bit(bool value){if(value)byte|=mask;mask>>=1;if(!mask){output.push_back(byte);byte=0;mask=0x80;}}
+void Lzss::encode_bits(u32 value,u32 count){while(count--)encode_bit(value&(1u<<count));}
+void Lzss::begin_encode(const u8* input,u32 size){
     std::memset(dictionary,0,sizeof(dictionary));std::memset(tree,0,sizeof(tree));
-    std::vector<u8> output;output.reserve(size+size/8+4);
-    u8 byte=0,mask=0x80;
-    auto bit=[&](bool value){if(value)byte|=mask;mask>>=1;if(!mask){output.push_back(byte);byte=0;mask=0x80;}};
-    auto bits=[&](u32 value,u32 count){while(count--)bit(value&(1u<<count));};
-    u32 cursor=0,head=1;
-    i32 available=std::min<u32>(18,size),length=0,position=0;
+    output.clear();output.reserve(size+size/8+4);encoding=input;encoding_size=size;
+    byte=0;mask=0x80;cursor=0;head=1;available=std::min<u32>(18,size);length=position=0;encoding_done=false;
     for(i32 i=0;i<available;++i)dictionary[head+i]=input[cursor++];
     tree[8192].right=head;tree[head].parent=8192;
+}
+bool Lzss::step_encode(u32 budget){
+    if(encoding_done)return true;u32 consumed_total=0;
     while(available>0){
         length=std::min(length,available);
         i32 consumed;
-        if(length<3){consumed=1;bit(true);bits(dictionary[head],8);}
-        else {consumed=length;bit(false);bits(position,13);bits(length-3,4);}
+        if(length<3){consumed=1;encode_bit(true);encode_bits(dictionary[head],8);}
+        else {consumed=length;encode_bit(false);encode_bits(position,13);encode_bits(length-3,4);}
         for(i32 i=0;i<consumed;++i){
             erase((head+18)&8191);
-            if(cursor<size)dictionary[(head+18)&8191]=input[cursor++];else --available;
+            if(cursor<encoding_size)dictionary[(head+18)&8191]=encoding[cursor++];else --available;
             head=(head+1)&8191;
             if(available)length=add(head,position);
         }
+        consumed_total+=consumed;if(available>0&&consumed_total>=budget)return false;
     }
-    bit(false);bits(0,13);
+    encode_bit(false);encode_bits(0,13);encoding_done=true;encoding=nullptr;
     // Encoder returns complete output bytes only. Decoder zero-fills
     // beyond this size, so the trailing partial all-zero terminator is omitted.
-    return output;
+    return true;
 }
 i32 Lzss::add(i32 node,i32& position) noexcept {
     if(!node)return 0;

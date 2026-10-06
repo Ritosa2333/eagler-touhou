@@ -11,6 +11,8 @@ struct AnmEnvironment {
     Vec3 camera_origin{},screen_translation{},reference_position{};
     AnmResource* fallback_sprite_resource=nullptr;
     float resolution_scale=1;std::array<i32,4> screen_offsets{};
+    // Physical pixel grid; logical game coordinates and Replay stay unchanged.
+    float raster_scale=1;
     Vec3 background_delta{};bool paused=false;
     u32 screen_width=640,screen_height=480;
     // Overlay masking follows the screen alpha format, not a menu mode.

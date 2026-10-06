@@ -18,7 +18,14 @@ public:
     u8 dictionary[8192]{};
     bool decode(const u8* input,u32 size,u8* output,u32 capacity,u32& written) noexcept;
     std::vector<u8> encode(const u8* input,u32 size);
+    void begin_encode(const u8* input,u32 size);
+    bool step_encode(u32 budget);
+    const std::vector<u8>& encoded()const noexcept{return output;}
 private:
+    const u8* encoding=nullptr;u32 encoding_size=0,cursor=0,head=1;
+    i32 available=0,length=0,position=0;u8 byte=0,mask=0x80;
+    bool encoding_done=true;std::vector<u8> output;
+    void encode_bit(bool);void encode_bits(u32,u32);
     struct Node {i32 parent=0,left=0,right=0;} tree[8193];
     i32 add(i32 node,i32& position) noexcept;
     void erase(i32 node) noexcept;

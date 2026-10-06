@@ -45,10 +45,14 @@ bool GraphicsDevice::clear_depth(const GraphicsViewport* rect){
 }
 bool GraphicsDevice::copy_surface(u32 source,const i32* region,u32 target,const i32* point){
     if(!textures.count(source)||!textures.count(target)||source==target){error="Invalid GPU surface copy";return false;}
+    // CPU font atlases already contain authored glyph pixels. Promote only
+    // GPU capture destinations, avoiding fourfold atlas storage on mobile.
+    auto& capture=textures.at(target);if(capture.renderScale!=render_scale){backend.release(target);capture.renderScale=render_scale;}
     backend.copy(source,region,target,point);changed(target);return true;
 }
 bool GraphicsDevice::resample_surface(u32 source,const i32* region,u32 target,const i32* destination){
     if(!textures.count(source)||!textures.count(target)||source==target){error="Invalid GPU surface resize";return false;}
+    auto& capture=textures.at(target);if(capture.renderScale!=render_scale){backend.release(target);capture.renderScale=render_scale;}
     if(!backend.resample(source,region,target,destination,nullptr,0,0)){error="GPU surface resize failed";return false;}
     changed(target);return true;
 }

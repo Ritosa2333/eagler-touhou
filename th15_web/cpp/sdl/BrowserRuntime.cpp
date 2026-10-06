@@ -109,7 +109,7 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
   if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
   if(suspended){cadence.reset();return EM_TRUE;}if(presentation_start<0)presentation_start=time;const auto ticks=cadence.advance(delta);bool ok=true;app->graphics.backend.defer=true;
   unsigned completed=0;
-  for(unsigned i=0;i<ticks&&ok;i++){ok=sample_and_tick();++completed;if(app->exiting)break;
+  for(unsigned i=0;i<ticks&&ok;i++){ok=sample_and_tick();++completed;if(app->exiting||app->pending_load)break;
    // Keep every executed update/draw, but do not turn one expensive tick into
    // four consecutive full renders. Retain the short debt for the next RAF.
    if(i+1<ticks&&emscripten_get_now()-begin>=1000./60.){cadence.debt=std::min(.1,cadence.debt+(ticks-i-1)*touhou::sdl::FrameCadence::interval);break;}

@@ -53,12 +53,19 @@ int AnmRenderer::shape(AnmVm& vm){
     for(i32 i=0;i<=count;i++){const auto point=[&](float radius){return Vec3{float(float(std::cos(double(angle))*double(radius))+center.x),float(float(std::sin(double(angle))*double(radius))+center.y),0};};if(mode==19){shapes.push_back({point(float(width-float(height*.5f))),1,v.color});shapes.push_back({point(float(float(height*.5f)+width)),1,v.color});}else shapes.push_back({point(width),1,mode==17?v.secondary_color:v.color});angle=normalize_angle(float(angle+step));}
     if(mode==17){state.cull=Cull::None;graphics.primitives(Topology::Fan,count,shapes.data(),sizeof(ColorVertex));}else if(mode==18)graphics.primitives(Topology::LineStrip,count,shapes.data(),sizeof(ColorVertex));else graphics.primitives(Topology::Strip,count*2,shapes.data(),sizeof(ColorVertex));return 0;
 }
+int AnmRenderer::draw_glyph(AnmVm& vm){
+    // Preserve original atlas glyphs. At integer high-resolution scale, sample
+    // their texels directly rather than blurring them a second time.
+    const u32 flags=vm.visual.render_flags;
+    if(vm.environment&&vm.environment->raster_scale>1&&vm.visual.scale.x==1&&vm.visual.scale.y==1)vm.visual.render_flags|=0x800;
+    const int result=quad(vm,true);vm.visual.render_flags=flags;return result;
+}
 int AnmRenderer::quad(AnmVm& vm,bool pixel){
     Vec3 p[4];const u32 flags=vm.visual.flags;if(vm.visual.draw_mode()==3)vm.visual.flags=(flags&~0x3e000000u)|0x2000000;const bool success=anm_quad_positions(vm,p);vm.visual.flags=flags;if(!success){error="Animation quad geometry unavailable: flags="+std::to_string(vm.visual.flags)+" render="+std::to_string(vm.visual.render_flags)+" script="+std::to_string(vm.source_script)+" mode="+std::to_string(vm.visual.draw_mode());return -2;}
     return pack_quad(vm,p,pixel);
 }
 int AnmRenderer::pack_quad(AnmVm& vm,Vec3 (&p)[4],bool pixel,const u32* supplied){
-    for(auto& point:p){point.x=float(point.x+offset.x);point.y=float(point.y+offset.y);}if(pixel){p[0].x=float(float(std::nearbyint(p[0].x))-.5f);p[1].x=float(float(std::nearbyint(p[1].x))-.5f);p[0].y=float(float(std::nearbyint(p[0].y))-.5f);p[2].y=float(float(std::nearbyint(p[2].y))-.5f);p[1].y=p[0].y;p[2].x=p[0].x;p[3].x=p[1].x;p[3].y=p[2].y;}
+    for(auto& point:p){point.x=float(point.x+offset.x);point.y=float(point.y+offset.y);}if(pixel){const float scale=vm.environment?vm.environment->raster_scale:1;const auto snap=[scale](float value){return float(std::nearbyint(value*scale)/scale-.5f);};p[0].x=snap(p[0].x);p[1].x=snap(p[1].x);p[0].y=snap(p[0].y);p[2].y=snap(p[2].y);p[1].y=p[0].y;p[2].x=p[0].x;p[3].x=p[1].x;p[3].y=p[2].y;}
     std::copy(std::begin(p),std::end(p),vm.visual.quad.begin());float left=p[0].x,right=left,top=p[0].y,bottom=top;for(u32 i=1;i<4;i++){left=std::min(left,p[i].x);right=std::max(right,p[i].x);top=std::min(top,p[i].y);bottom=std::max(bottom,p[i].y);}
     if(right<float(viewport.x)||bottom<float(viewport.y)||left>float(viewport.x+viewport.width)||top>float(viewport.y+viewport.height))return 0;
     auto& v=vm.visual;const u32 color_mode=v.flags>>17&3;u32 colors[4];if(supplied)std::copy(supplied,supplied+4,colors);else if(color_mode<2){u32 color=color_mode?v.secondary_color:v.color;if((v.render_flags&0x2000000)&&vm.creation_parent)color=multiply_color(color,vm.creation_parent->visual.inherited_color);v.inherited_color=color;for(auto& c:colors)c=tint_color(color);}else{const u32 a=tint_color(v.color),b=tint_color(v.secondary_color);colors[0]=a;colors[3]=b;colors[1]=color_mode==2?b:a;colors[2]=color_mode==2?a:b;}

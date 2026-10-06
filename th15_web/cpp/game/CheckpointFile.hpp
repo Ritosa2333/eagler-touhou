@@ -24,6 +24,7 @@ public:
     std::string error;
     bool open(const u8*,u32);
     bool encode(std::vector<u8>&);
+    bool payload(std::vector<u8>&);
     // Native retries rewrite exactly 0x58 bytes; compression lengths and
     // all captured module bytes remain unchanged.
     static bool update_header(std::vector<u8>&,const CheckpointHeader&)noexcept;

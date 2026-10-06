@@ -1,6 +1,7 @@
 // Development-only probes for scene lifecycle, drawing and controlled death regression.
 #include "../../cpp/sdl/ApplicationState.hpp"
 #include <memory>
+#include <emscripten.h>
 using namespace th15;
 namespace {std::unique_ptr<sdl::ApplicationState> app;std::string last_error,music_name;}
 extern "C" {
@@ -38,3 +39,9 @@ extern "C" const u8* application_test_alpha_pixels(){
  for(u32 i=0;i<3;i++){const float x=10+40*i,u=(float(i)+.5f)/3;const AnmGeometryVertex vertices[]={{{x,10,0},1,0xffffffff,{u,.5f}},{{x+32,10,0},1,0xffffffff,{u,.5f}},{{x,42,0},1,0xffffffff,{u,.5f}},{{x+32,42,0},1,0xffffffff,{u,.5f}}};if(app->renderer.draw_screen_strip(vm,vertices,4)==-2)return nullptr;}
  app->renderer.flush();g.backend.read(sdl::GraphicsDevice::screen);g.unload(file);g.backend.state=saved;app->renderer.invalidate();return g.pixels(sdl::GraphicsDevice::screen)->pixels.data();
 }
+
+// Keep asset and lifecycle regression tests independent of private music inputs.
+extern "C" EMSCRIPTEN_KEEPALIVE void application_test_music_enabled(int enabled){if(!app)app=std::make_unique<sdl::ApplicationState>();app->audio_device.music_enabled=enabled!=0;}
+extern "C" EMSCRIPTEN_KEEPALIVE const float* application_test_lifecycle(){static std::array<float,6> value{};value.fill(-1);if(app){value[4]=float(app->pending_load);value[5]=app->checkpoint_encoder?1:0;if(app->scene()){const auto& s=*app->scene();value[0]=s.battle.player->motion.position.x;value[1]=s.battle.player->motion.position.y;value[2]=float(s.hud.flags);value[3]=float(s.hud.intro_age.current);}}return value.data();}
+
+extern "C" EMSCRIPTEN_KEEPALIVE int application_test_capture(){return app&&app->scene()&&app->scene()->capture(app->progress.chapter);}

@@ -121,10 +121,10 @@ Renderer::GPU& Renderer::surface(u32 h){
  // Merge every known CPU edit since the last upload. Unknown edits retain
  // the full-image path so overlapping writes cannot be lost.
  const auto& r=g.dirty;
- if(g.version!=~0u&&g.version==g.dirtyBase&&g.version!=s.version&&s.renderScale==1&&s.format==PixelFormat::Argb4444&&r[0]<r[2]&&r[1]<r[3]&&r[2]<=s.width&&r[3]<=s.height){
-  const u32 w=r[2]-r[0],h=r[3]-r[1];pixels.resize(w*h*2);
-  for(u32 y=0;y<h;y++)for(u32 x=0;x<w;x++){uint16_t n;std::memcpy(&n,s.data+(y+r[1])*s.pitch+(x+r[0])*2,2);n=(n<<4)|(n>>12);std::memcpy(pixels.data()+(y*w+x)*2,&n,2);}
-  bind_texture(g.texture);glPixelStorei(GL_UNPACK_ALIGNMENT,1);glTexSubImage2D(GL_TEXTURE_2D,0,r[0],r[1],w,h,GL_RGBA,GL_UNSIGNED_SHORT_4_4_4_4,pixels.data());stats.uploadBytes+=w*h*2;g.version=s.version;g.rendered=false;
+ if(g.version!=~0u&&g.version==g.dirtyBase&&g.version!=s.version&&s.format==PixelFormat::Argb4444&&r[0]<r[2]&&r[1]<r[3]&&r[2]<=s.width&&r[3]<=s.height){
+  const u32 scale=s.renderScale,w=(r[2]-r[0])*scale,h=(r[3]-r[1])*scale;pixels.resize(w*h*2);
+  for(u32 y=0;y<h;y++)for(u32 x=0;x<w;x++){uint16_t n;std::memcpy(&n,s.data+(y/scale+r[1])*s.pitch+(x/scale+r[0])*2,2);n=(n<<4)|(n>>12);std::memcpy(pixels.data()+(y*w+x)*2,&n,2);}
+  bind_texture(g.texture);glPixelStorei(GL_UNPACK_ALIGNMENT,1);glTexSubImage2D(GL_TEXTURE_2D,0,r[0]*scale,r[1]*scale,w,h,GL_RGBA,GL_UNSIGNED_SHORT_4_4_4_4,pixels.data());stats.uploadBytes+=w*h*2;g.version=s.version;g.rendered=false;
  }else if(g.version!=s.version){
   stats.uploadBytes+=s.size;bind_texture(g.texture);glPixelStorei(GL_UNPACK_ALIGNMENT,1);GLenum format=GL_RGBA,type=GL_UNSIGNED_BYTE,internal=GL_RGBA8;
   bool rgb=s.format==PixelFormat::Bgr8||s.format==PixelFormat::Bgrx8||s.format==PixelFormat::Rgb565;u32 channels=rgb?3:4;pixels.resize(s.width*s.height*(s.format==PixelFormat::Argb4444?2:channels));

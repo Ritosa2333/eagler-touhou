@@ -5,6 +5,7 @@
 #include "AudioDevice.hpp"
 #include "FileStore.hpp"
 #include "../game/Archive.hpp"
+#include "../game/Lzss.hpp"
 #include "../game/TitleScene.hpp"
 #include "../game/EndingScene.hpp"
 #include "../game/RunStageFlow.hpp"
@@ -16,19 +17,21 @@ namespace th15::sdl {
 struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGameplayServices,SessionGameplayServices,SessionEntryServices,RunConstructionServices,RunCompletionServices,RunStageExitServices,RunPausePlatform,StageDrawServices,AssetSource {
  GraphicsDevice graphics;FontDevice fonts{graphics};AudioDevice audio_device;FileStore files;
  Rng visual;AnmEnvironment environment;AnmManager animations{visual,environment};AnmRenderer renderer{graphics};ScreenViews views{renderer,environment};AsciiText captions{animations,environment};FrameScheduler scheduler;
- Rng loading_random;AnmEnvironment loading_environment;AnmManager loading_animations{loading_random,loading_environment};bool platform_prepared=false;
+ Rng loading_random;AnmEnvironment loading_environment;AnmManager loading_animations{loading_random,loading_environment};bool platform_prepared=false;u32 loading_signature=0,loading_prayer=0;unsigned pending_load=0;
  GameConfig config;SessionState progress;PlayerLifeSession selection_player;ItemScoreState selection_score;RecordStore records;TitleSelectionSettings selection;TitleAudioSettings volumes;TitleControllerSettings controller;MusicComments comments;TitleKeyboard keyboard_state;
  std::unordered_map<std::string,i32> shared;std::unique_ptr<AnmSceneEffects> scene_effects;std::unique_ptr<SceneDisplay> display;std::array<FrameCallback,2> animation_updates;
  std::unique_ptr<TitleScene> title;std::unique_ptr<EndingScene> ending;std::unique_ptr<RunGameplay> run;std::unique_ptr<SessionReplay> replay;std::unique_ptr<RunSession> session;std::unique_ptr<RunInitialization> initialization;std::unique_ptr<RunStageFlow> flow;std::unique_ptr<RunPause> pause;
- std::vector<std::unique_ptr<ScreenFade>> fades;std::vector<std::unique_ptr<ScreenMotionFrame>> motion;std::unique_ptr<Manual> pause_manual;FrameCallback manual_update;u32 manual_pressed=0,manual_repeated=0;StageCamera camera;std::array<u8,0xa4> live_description{};std::vector<u8> selected_replay,pending_png,pending_animation;std::unordered_map<std::string,std::vector<u8>> resource_cache;
+ std::vector<std::unique_ptr<ScreenFade>> fades;std::vector<std::unique_ptr<ScreenMotionFrame>> motion;std::unique_ptr<Manual> pause_manual;FrameCallback manual_update;u32 manual_pressed=0,manual_repeated=0;StageCamera camera;std::array<u8,0xa4> live_description{};std::vector<u8> selected_replay,pending_png,pending_animation;std::string pending_animation_name;std::unordered_map<std::string,std::vector<u8>> resource_cache;
  i32 pending_destination=-1,selected_stage=1,pending_page=-1,pending_bank=-1,frame_skip=0,current_destination=13;u32 transition_overlay=0,restart_handle=0,restart_effect_handle=0,frames=0;bool initialized=false,exiting=false,completed_recording=false;std::array<i32,16> projected{};std::string failure;
  std::vector<u8> checkpoint_bytes;
+ std::unique_ptr<Lzss> checkpoint_encoder;std::vector<u8> checkpoint_payload;CheckpointHeader checkpoint_header;
+ bool pump_checkpoint(u32 budget=131072);bool finish_checkpoint();
  Archive archive;std::vector<u8> archive_bytes;std::unordered_map<std::string,u32> archive_names;
  PlayerTouch touch;u32 controller_buttons=0;i32 numbered_chapter=0;
  // These original title counters live across destruction of the title owner.
  i32 title_demo_idle=0,title_demo_index=0,title_saved_difficulty=0,title_saved_replay_selection=0;
  void remember_title()noexcept{if(title){title_demo_idle=title->frame.demo_idle;title_demo_index=title->frame.demo_index;title_saved_difficulty=title->frame.saved_difficulty;title_saved_replay_selection=title->saved_replay_selection;}}
- bool fail(const std::string&);bool prepare_platform();bool prepare_loading();bool initialize(bool);~ApplicationState();bool step(u32,u32,u32,float,bool);bool apply_destination();bool begin_title(i32);bool begin_run();bool begin_ending();void release_run();bool bind_run_display();bool preload_run();bool save_settings();
+ bool fail(const std::string&);bool prepare_platform();bool prepare_loading();bool draw_loading(bool signature);bool initialize(bool);~ApplicationState();bool step(u32,u32,u32,float,bool);bool apply_destination();bool begin_title(i32);bool begin_run();bool begin_ending();void release_run();bool bind_run_display();bool preload_run();bool save_settings();
  StageGameplay* scene()const noexcept{return run?run->scene():nullptr;}const StageAssets* assets()const noexcept{return run?run->scene_assets():nullptr;}const i32* projection();
  bool read(const std::string&,std::vector<u8>&)override;
  bool screen_fade(i32 duration,i32 update_priority,i32 draw_priority,bool covering,bool full_screen);

@@ -32,7 +32,7 @@ bool ApplicationState::start_replay(const ReplayStartRequest& value){
  selected_stage=value.stage;progress.stage=value.stage;progress.character=value.character;progress.subcharacter=value.subcharacter;progress.difficulty=value.difficulty;progress.spell_id=value.spell;progress.replay=true;progress.new_run=true;selection_player.mode_flags&=~0x300u;pending_destination=13;return true;
 }
 bool ApplicationState::clear_page(){auto* bank=animations.resource(19);return bank&&graphics.clear_image(graphics.texture(*bank,1))||fail(graphics.error);}
-bool ApplicationState::request_page(i32 page){char name[32];std::snprintf(name,sizeof name,"help_%.2d.png",page+1);if(!read(name,pending_png))return false;pending_page=page;return true;}
+bool ApplicationState::request_page(i32 page){pending_page=page;return true;}
 bool ApplicationState::upload_page(i32){auto* bank=animations.resource(19);return bank&&graphics.upload_png(graphics.texture(*bank,1),pending_png.data(),pending_png.size())||fail(graphics.error);}
 bool ApplicationState::read_slot(i32 slot,std::shared_ptr<Replay>& value){return files.replay_slot(slot,value)||fail(files.error);}
 bool ApplicationState::prepare_live_replay(bool cleared){

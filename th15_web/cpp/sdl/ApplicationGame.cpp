@@ -1,6 +1,7 @@
 #include "ApplicationState.hpp"
 #include <cstdio>
 #include <ctime>
+#include <SDL3/SDL.h>
 namespace th15::sdl {
 bool ApplicationState::audio(i32 id,float pan,PlayerShots::SoundAction action,bool){if(action==PlayerShots::SoundAction::pan){if(id<0||id>=77)return fail("Sound pan voice outside range");audio_device.sound_pan(u32(id),truncate_int(float(float(pan*1000.f)/192.f)));return true;}if(action==PlayerShots::SoundAction::stop)return audio_device.effects.stop(id)||fail(audio_device.effects.error);return audio_device.effects.positioned(id,pan)||fail(audio_device.effects.error);}
 bool ApplicationState::life_hud(i32 stock,i32 pieces){return scene()&&scene()->hud.life(stock,pieces)||fail(scene()?scene()->hud.error:"Life HUD has no scene");}
@@ -52,10 +53,21 @@ bool ApplicationState::begin_restart_effect(){if(!assets())return fail("Chapter 
 bool ApplicationState::begin_restart_overlay(){return restart_overlay(250);}
 bool ApplicationState::checkpoint_file(bool restoring){
  if(!scene())return fail("Pointdevice checkpoint has no scene");auto& saved=scene()->checkpoint;
- if(restoring){const auto header=saved.file_header(i64(std::time(nullptr)),0);if(checkpoint_bytes.empty()||!CheckpointFile::update_header(checkpoint_bytes,header))return fail("Retry metadata has no captured checkpoint file");}
- else if(!saved.write_file(checkpoint_bytes,i64(std::time(nullptr)),0))return fail(saved.error);
+ if(restoring){const auto header=saved.file_header(i64(std::time(nullptr)),0);if(checkpoint_encoder){checkpoint_header=header;return true;}if(checkpoint_bytes.empty()||!CheckpointFile::update_header(checkpoint_bytes,header))return fail("Retry metadata has no captured checkpoint file");}
+ else {CheckpointFile file;if(!saved.prepare_file(file,i64(std::time(nullptr)),0)||!file.payload(checkpoint_payload))return fail(saved.error.empty()?file.error:saved.error);checkpoint_header=file.header;checkpoint_encoder=std::make_unique<Lzss>();checkpoint_encoder->begin_encode(checkpoint_payload.data(),u32(checkpoint_payload.size()));return true;}
  return files.save_checkpoint(progress.character,progress.difficulty,checkpoint_bytes)||fail(files.error);
 }
+bool ApplicationState::pump_checkpoint(u32 budget){
+ if(!checkpoint_encoder)return true;
+ const auto start=SDL_GetTicksNS();bool done=false;
+ do{const u32 chunk=std::min(budget,4096u);done=checkpoint_encoder->step_encode(chunk);budget-=chunk;}
+ while(!done&&budget&&(budget>131072||SDL_GetTicksNS()-start<1000000));
+ if(!done)return true;
+ const auto& packed=checkpoint_encoder->encoded();const u32 sizes[]={u32(packed.size()),u32(checkpoint_payload.size())};std::memcpy(checkpoint_header.bytes.data()+0x58,sizes,8);
+ checkpoint_bytes.assign(checkpoint_header.bytes.begin(),checkpoint_header.bytes.end());checkpoint_bytes.insert(checkpoint_bytes.end(),packed.begin(),packed.end());
+ checkpoint_encoder.reset();checkpoint_payload.clear();return files.save_checkpoint(checkpoint_header.character(),checkpoint_header.difficulty(),checkpoint_bytes)||fail(files.error);
+}
+bool ApplicationState::finish_checkpoint(){while(checkpoint_encoder)if(!pump_checkpoint(UINT32_MAX))return false;return true;}
 bool ApplicationState::ending_fade(){return screen_fade(200,20,81,true,true);}
 bool ApplicationState::finish_replay(){if(progress.replay)return pause&&pause->open(PauseEntrance::RetryPause)||fail(pause?pause->error:"Replay completion menu unavailable");return prepare_live_replay(true);}
 bool ApplicationState::destination(SessionDestination value){pending_destination=i32(value);return true;}
@@ -95,7 +107,7 @@ bool ApplicationState::prepare_ending(StageGameplay& game){const auto index=endi
 bool ApplicationState::finish_practice(){return pause&&pause->open(PauseEntrance::Results)||fail(pause?pause->error:"Practice result menu unavailable");}
 bool ApplicationState::queue_next_stage(){return fail("Next-stage request bypassed the run completion owner");}
 bool ApplicationState::prepare_next_stage(i32 stage){return stage_definition(stage)!=nullptr||fail("Next stage unavailable");}
-bool ApplicationState::stop_checkpoint_worker(){return true;}
+bool ApplicationState::stop_checkpoint_worker(){return finish_checkpoint();}
 bool ApplicationState::save_records(){return save_settings();}
 bool ApplicationState::clear_session_links(){return true;}
 bool ApplicationState::reset_transition(){if(display->screen())display->screen()->replacement={};return true;}

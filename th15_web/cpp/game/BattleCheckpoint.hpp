@@ -47,6 +47,7 @@ public:
     bool capture(i32 chapter);bool restore();bool ready()const noexcept{return chapter.ready();}
     CheckpointHeader file_header(i64 timestamp,u32 display_flags)const noexcept;
     bool write_file(std::vector<u8>&,i64 timestamp,u32 display_flags);
+    bool prepare_file(CheckpointFile&,i64 timestamp,u32 display_flags);
     bool read_file(const u8*,u32,u32 display_flags);
     const ChapterCheckpoint& state()const noexcept{return chapter;}
     u32 animation_count()const noexcept{return animation_pool.count();}

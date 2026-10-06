@@ -10,12 +10,15 @@ CheckpointHeader BattleCheckpoint::file_header(i64 timestamp,u32 flags)const noe
  const auto& s=chapter.state();std::array<i32,10> retries{};for(u32 i=0;i<9;i++)retries[i]=s.stage_deaths[i];retries[9]=s.chapter_deaths;return CheckpointHeader::create(timestamp,s.character,s.difficulty,s.stage,s.chapter,retries,flags);
 }
 bool BattleCheckpoint::write_file(std::vector<u8>& out,i64 stamp,u32 flags){
- error.clear();out.clear();CheckpointFile file;file.header=file_header(stamp,flags);auto& parts=file.sections;
+ out.clear();CheckpointFile file;return prepare_file(file,stamp,flags)&&check(file.encode(out),file.error);
+}
+bool BattleCheckpoint::prepare_file(CheckpointFile& file,i64 stamp,u32 flags){
+ error.clear();file.header=file_header(stamp,flags);auto& parts=file.sections;
  if(!check(chapter.write_file(parts[0]),chapter.error)||!check(player.write_file(parts[1],animations),player.error)||!check(background.write_file(parts[2]),background.error)||!check(enemies.write_file(parts[3]),enemies.error)||!check(bullets.write_file(parts[4]),bullets.error)||!check(items.write_file(parts[5],animations),items.error)||!check(effects.write_file(parts[6],animations),effects.error))return false;
  popups.write_checkpoint_file(parts[7]);if(!bomb||!check(bomb->write_file(parts[8]),bomb->error))return false;if(!animations.resource_names.empty()){
   std::vector<std::pair<i32,std::string>> names(animations.resource_names.begin(),animations.resource_names.end());std::sort(names.begin(),names.end());const u32 at=parts[8].size();append_word(parts[8],names.size());for(const auto& name:names){append_word(parts[8],u32(name.first));append_word(parts[8],name.second.size()+1);parts[8].insert(parts[8].end(),name.second.begin(),name.second.end());parts[8].push_back(0);}append_word(parts[8],u32(parts[8].size()-at));append_word(parts[8],bank_magic);
  }
- return check(file.encode(out),file.error);
+ return true;
 }
 bool BattleCheckpoint::read_file(const u8* data,u32 size,u32 flags){
  error.clear();CheckpointFile file;if(!check(file.open(data,size),file.error))return false;if(!file.header.compatible(progress.character,progress.difficulty,flags)||file.header.stage()!=progress.stage){error="Pointdevice checkpoint differs from active run selection";return false;}
