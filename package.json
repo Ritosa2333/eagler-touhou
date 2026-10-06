@@ -83,6 +83,7 @@
     "test:th07mp-ui:browser": "python tests/test-th07mp-ui.py",
     "test:th07mp-webrtc:browser": "python tests/test-th07mp-webrtc.py",
     "test:th20-import-launch:browser": "npm run build:launcher && python tests/test-th20-import-launch-browser.py",
+    "test:th15-launch:browser": "npm run build:launcher && node tests/test-th15-launcher-browser.mjs",
     "test:th20-touch:browser": "npm run build:launcher && python tests/test-th20-touch-browser.py",
     "test:th09-mixed-entry:browser": "npm run build:launcher && python tests/test-th09-mixed-entry-launcher-browser.py",
     "test:adonis-launcher:browser": "python tests/browser/test-adonis-launcher.py",

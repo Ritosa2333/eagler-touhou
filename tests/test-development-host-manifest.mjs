@@ -63,9 +63,9 @@ for (const [game, entry] of Object.entries(manifest.games)) {
 // Prepared content outside the Launcher tree must still produce HTTP URLs,
 // rather than Windows drive schemes or Unix filesystem-root URLs.
 const project = fileURLToPath(new URL("..", import.meta.url));
-for (const game of ["th06", "th07", "th09", "th10", "th11", "th20"]) {
+for (const game of ["th06", "th07", "th09", "th10", "th11", "th15", "th20"]) {
   const contentRoot = join(root, game);
-  const musicDirectory = ["th09", "th11"].includes(game) ? "music" : "bgm-ogg";
+  const musicDirectory = ["th09", "th11", "th15"].includes(game) ? "music" : "bgm-ogg";
   await mkdir(join(contentRoot, musicDirectory), { recursive: true });
   await writeFile(join(contentRoot, `${game}.data`), fixtureData);
   if (preloadGames.includes(game)) {

@@ -1881,7 +1881,7 @@ try {
   if (saved === "1" || saved === "0") runtimeDiagnosticsPreference = saved === "1";
 } catch {}
 function productEnabled(product: string) {
-  if (!productEnabledForBuild(product, manifest.shared.testBuild === true)) return false;
+  if (!productEnabledForBuild(product, manifest.shared.testBuild === true || new URLSearchParams(location.search).has("test"))) return false;
   if (!hostManifestAvailable) return true;
   const gameId = gameIdForProduct(product);
   if (!isGameId(gameId) || !Object.hasOwn(manifest.games, gameId)) return false;
@@ -5951,7 +5951,7 @@ async function selectedSharedResources(language = state.language) {
     wanted.push({ target, network });
   };
   if (language === "ja" &&
-      (!("requiredShared" in product) || product.requiredShared.includes("/msgothic.ttc")) &&
+      (!("requiredShared" in product) || product.requiredShared.some(target => target === "/msgothic.ttc")) &&
       !packageTargets.has("/msgothic.ttc")) {
     addHosted("/msgothic.ttc", vanillaFont);
   }

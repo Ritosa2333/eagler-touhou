@@ -13,7 +13,11 @@ npm run release -- --input=D:\ReleaseInputs\release.json --output=D:\Releases\ca
 ```
 
 The input uses `eagler-touhou/release-input/1`. A formal Release covers every
-non-test product in canonical order and explicitly provides:
+registered product in canonical order and explicitly provides:
+
+Test-only cards appear in normal product order on hosts declaring
+`shared.testBuild: true`. Other hosts show them only with a `test` query
+parameter. Their Runtime and Package assets belong to the same publication.
 
 - one verified, resource-free Runtime Release covering every registered game,
   including Runtime artifacts retained for validation-only products;

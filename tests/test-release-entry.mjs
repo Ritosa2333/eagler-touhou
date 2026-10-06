@@ -24,6 +24,7 @@ const validInput = {
       th09: "original/th09",
       th10: "original/th10",
       th11: "original/th11",
+      th15: "original/th15",
       th20: "original/th20",
     },
     LanguagePackDirectories: {
@@ -64,6 +65,7 @@ const legacyInput = {
     Th10Directory: "original/th10",
     Th11Directory: "original/th11",
     Th20Directory: "original/th20",
+    GameDirectories: { th15: "original/th15" },
     Th06LanguagePacks: "languages/th06",
     Th07LanguagePacks: "languages/th07",
     Music: ["midi"],
@@ -80,7 +82,7 @@ assert.throws(() => normalizeFormalReleaseInput({ ...validInput, prepare: { ...v
 }), /requires prepare\.RuntimeRelease/);
 assert.throws(() => normalizeFormalReleaseInput({ ...validInput, games: ["th07"] }, {
   ...normalizationOptions,
-}), /must contain every non-test product/);
+}), /must contain every registered product/);
 assert.throws(() => normalizeFormalReleaseInput({ ...validInput, prepare: { ...validInput.prepare, Th08Build: "build" } }, {
   ...normalizationOptions,
 }), /belongs to maintainer Runtime compilation/);

@@ -107,6 +107,13 @@
         "normal": { "features": { "thcrap": true, "thprac": true }, "cache": {} }
       }
     },
+    "th15": {
+      "builder": "prebuilt",
+      "workspaceRepository": "th15",
+      "variants": {
+        "normal": { "features": { "thcrap": false, "thprac": false }, "cache": {} }
+      }
+    },
     "th20": {
       "builder": "prebuilt",
       "workspaceRepository": "th20",

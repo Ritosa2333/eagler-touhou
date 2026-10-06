@@ -39,6 +39,9 @@ for (const marker of alternative.markerFiles) await put(join(layout.games.th10, 
 // prepared content markers satisfy the self-host workspace declaration.
 const th11Alternative = PRODUCT_CONTENT.th11.original.preparedAlternative;
 for (const marker of th11Alternative.markerFiles) await put(join(layout.games.th11, th11Alternative.directory, marker));
+await assert.rejects(() => inspectHostWorkspace(root), /TH15 OGG source thbgm\.dat not found/);
+const th15Alternative = PRODUCT_CONTENT.th15.original.preparedAlternative;
+for (const marker of th15Alternative.markerFiles) await put(join(layout.games.th15, th15Alternative.directory, marker));
 // TH20 streams retail thbgm.dat directly; the self-host workspace still requires
 // the declared BGM source input.
 for (const name of PRODUCT_CONTENT.th20.original.oggSourceFiles) await put(join(layout.games.th20, name));
