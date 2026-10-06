@@ -85,6 +85,7 @@ export interface RuntimeConfigureOptions {
   alwaysHitbox?: boolean;
   multiplayerLocalPlayerVisibility?: boolean;
   focusHitboxEnabled?: boolean;
+  faithBarEnabled?: boolean;
   replayViewer?: boolean;
   multiplayerPreflight?: boolean;
   thpracLocale?: string;
@@ -128,6 +129,7 @@ export const RUNTIME_CONFIGURE_OPTION_BEHAVIOR = Object.freeze({
   alwaysHitbox: Object.freeze({ requirement: "required", capability: "always-hitbox" }),
   multiplayerLocalPlayerVisibility: Object.freeze({ requirement: "profile-required", capability: "multiplayer-local-player-visibility", when: "multiplayer" }),
   focusHitboxEnabled: Object.freeze({ requirement: "optional", capability: "focus-hitbox", when: "product declares focus-hitbox" }),
+  faithBarEnabled: Object.freeze({ requirement: "optional", capability: "faith-bar", when: "product declares display.faithBar" }),
   replayViewer: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer Replay viewer is launched" }),
   multiplayerPreflight: Object.freeze({ requirement: "profile-required", capability: "multiplayer", when: "multiplayer room checks its Runtime before joining gameplay" }),
   thpracLocale: Object.freeze({ requirement: "profile-required", capability: "thprac", when: "thprac" }),

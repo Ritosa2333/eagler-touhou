@@ -459,6 +459,10 @@
                   <div class="itemtop"><span data-i18n="settings.replay">录像</span></div>
                   <div class="mini"><button type="button" data-action="export-replay" ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4M12 3v11m-4-4 4 4 4-4"/></svg><span data-i18n="settings.download">下载</span></button><button type="button" data-action="manage-replay"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4M12 14V3m-4 4 4-4 4 4"/></svg><span data-i18n="settings.manage">管理</span></button></div>
                 </section>
+                <section class="item file-tool-item mp-setting-item" id="mpHintFileTool" hidden>
+                  <div class="itemtop"><span data-i18n="settings.hint">Hint</span></div>
+                  <div class="mini"><button type="button" data-action="import-hint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4M12 14V3m-4 4 4-4 4 4"/></svg><span data-i18n="settings.import">上传</span></button><button type="button" data-action="delete-hint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 14h12l1-14M10 10v6m4-6v6"/></svg><span data-i18n="action.delete">删除</span></button></div>
+                </section>
               </div>
               </details>
               <details class="options-group" id="mpDisplayOptions" open>
@@ -473,6 +477,9 @@
               </section>
               <section class="item option-focus-hitbox mp-setting-item" id="mpFocusHitboxOption">
                 <div class="itemtop"><span data-i18n="settings.focusHitbox">低速时显示判定点</span><button class="option-switch" id="mpFocusHitboxToggle" type="button" role="switch" aria-checked="false"><i></i></button></div>
+              </section>
+              <section class="item option-focus-hitbox mp-setting-item" id="mpFaithBarOption" hidden>
+                <div class="itemtop"><span data-i18n="settings.faithBar">头顶信仰槽</span><button class="option-switch" id="mpFaithBarToggle" type="button" role="switch" aria-checked="false"><i></i></button></div>
               </section>
                 </div>
               </details>
@@ -549,6 +556,10 @@
             <div class="itemtop"><span data-i18n="settings.replay">录像</span></div>
             <div class="mini"><button type="button" data-action="export-replay" ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4M12 3v11m-4-4 4 4 4-4"/></svg><span data-i18n="settings.download">下载</span></button><button type="button" data-action="manage-replay"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4M12 14V3m-4 4 4-4 4 4"/></svg><span data-i18n="settings.manage">管理</span></button></div>
           </section>
+        <section class="item file-tool-item" id="hintFileTool" hidden>
+          <div class="itemtop"><span data-i18n="settings.hint">Hint</span></div>
+          <div class="mini"><button type="button" data-action="import-hint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4M12 14V3m-4 4 4-4 4 4"/></svg><span data-i18n="settings.import">上传</span></button><button type="button" data-action="delete-hint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 14h12l1-14M10 10v6m4-6v6"/></svg><span data-i18n="action.delete">删除</span></button></div>
+        </section>
         </div>
         </details>
         <details class="options-group" id="displayOptions" open>
@@ -563,6 +574,9 @@
         </section>
         <section class="item option-focus-hitbox" id="focusHitboxOption">
           <div class="itemtop"><span data-i18n="settings.focusHitbox">低速时显示判定点</span><button class="option-switch" id="focusHitboxToggle" type="button" role="switch" aria-checked="false"><i></i></button></div>
+        </section>
+        <section class="item option-focus-hitbox" id="faithBarOption" hidden>
+          <div class="itemtop"><span data-i18n="settings.faithBar">头顶信仰槽</span><button class="option-switch" id="faithBarToggle" type="button" role="switch" aria-checked="false"><i></i></button></div>
         </section>
           </div>
         </details>

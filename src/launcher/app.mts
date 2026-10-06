@@ -1953,6 +1953,14 @@ const externalMidiCapableGame = (gameId: GameId = state.game): boolean =>
 const externalMidiOptionVisible = (): boolean => externalMidiOffered(externalMidiCapableGame(), state.music);
 const externalMidiOptionApplicable = (): boolean => externalMidiOptionVisible() && webMidiSupported;
 const gameStorage = () => PRODUCT_GAMES[state.game].storage;
+const hintPaths = (): readonly string[] => {
+  const storage = gameStorage();
+  return "hintFiles" in storage ? storage.hintFiles : [];
+};
+const faithBarAvailable = () => {
+  const product = PRODUCT_GAMES[state.game];
+  return "display" in product && product.display.faithBar;
+};
 const languageCatalog = (gameId: GameId) => {
   const gameManifest = game(gameId);
   return buildLanguageCatalog({
@@ -2028,11 +2036,11 @@ const outputElementSelectors = ["#touchSensitivityValue"] as const;
 const buttonElementSelectors = [
   "#siteNoticeOptOut", "#siteNoticeClose", "#lessMotionToggle", "#mastheadMenuToggle",
   "#siteNoticeToggle", "#runtimeDiagnosticsToggle", "#firstUseNoticeOpen", "#mpShareSettingsToggle", "#mpFrameLimitAppleNote",
-  "#mpFrameLimitToggle", "#mpFocusHitboxToggle", "#mpLocalPlayerVisibilityToggle", "#mpMobileOptionsToggle",
+  "#mpFrameLimitToggle", "#mpFocusHitboxToggle", "#mpFaithBarToggle", "#mpLocalPlayerVisibilityToggle", "#mpMobileOptionsToggle",
   "#mpTouchToggle", "#mpTouchLayoutEdit", "#mpAlwaysHitboxToggle", "#mpMagnifierToggle",
   "#mpReplayViewer", "#mpCreateRoom", "#mpJoinRoom", "#th09NetworkClose", "#th09NetworkCreate", "#th09NetworkJoin", "#frameLimitAppleNote",
   "#mpGuideOpen", "#mpRoomGuideOpen", "#mpNetworkCheck",
-  "#frameLimitToggle", "#focusHitboxToggle", "#thpracToggle", "#mobileOptionsToggle",
+  "#frameLimitToggle", "#focusHitboxToggle", "#faithBarToggle", "#thpracToggle", "#mobileOptionsToggle",
   "#touchToggle", "#touchLayoutEdit", "#alwaysHitboxToggle", "#magnifierToggle",
   "#externalMidiToggle", "#mpExternalMidiToggle",
   "#launch", "#gamePackageImport", "#mpGamePackageImport", "#mpLeaveRoom", "#mpSpectatorJoin",
@@ -4131,6 +4139,7 @@ async function launchConfiguredRuntimeImpl(options: LaunchConfiguredRuntimeOptio
       ...(gameFeatureAvailable(state.game, "focusHitbox")
         ? { focusHitboxEnabled: state.options.focusHitboxEnabled }
         : {}),
+      ...(faithBarAvailable() ? { faithBarEnabled: state.options.faithBarEnabled } : {}),
       ...(state.runtimeVariant === "multiplayer"
         ? {
             multiplayerLocalPlayerVisibility: state.options.multiplayerLocalPlayerVisibility,
@@ -4661,6 +4670,13 @@ function render() {
   $("#mpFocusHitboxOption").hidden = !gameFeatureAvailable(state.game, "focusHitbox");
   $("#mpFocusHitboxToggle").setAttribute("aria-checked", String(state.options.focusHitboxEnabled));
   $("#mpFocusHitboxToggle").classList.toggle("on", state.options.focusHitboxEnabled);
+  for (const prefix of ["", "mp"]) {
+    const faithId = prefix ? "mpFaithBar" : "faithBar";
+    $("#" + faithId + "Option").hidden = !faithBarAvailable();
+    $("#" + faithId + "Toggle").setAttribute("aria-checked", String(state.options.faithBarEnabled));
+    $("#" + faithId + "Toggle").classList.toggle("on", state.options.faithBarEnabled);
+    $(prefix ? "#mpHintFileTool" : "#hintFileTool").hidden = !hintPaths().length;
+  }
   $("#mpTouchToggle").setAttribute("aria-checked", String(state.options.touchEnabled));
   $("#mpTouchToggle").classList.toggle("on", state.options.touchEnabled);
   $("#mpAlwaysHitboxToggle").setAttribute("aria-checked", String(state.options.alwaysHitbox));
@@ -6155,7 +6171,7 @@ const replayPrefix = () => {
 const formatBytes = (bytes: number) => bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KiB` : `${(bytes / 1024 / 1024).toFixed(2)} MiB`;
 
 interface ReplayStorageFile { path: string; size: number }
-type ImportFileKind = "save" | "replay";
+type ImportFileKind = "save" | "replay" | "hint";
 
 type ReplayMutationQueue = ReturnType<ReplayFeatureModule["createReplayMutationQueue"]>;
 let replayMutationQueue: ReplayMutationQueue | null = null;
@@ -6188,7 +6204,7 @@ async function listReplayStorageFiles() {
   return runtimeResponseFiles(listing);
 }
 
-async function exportFiles(kind: ImportFileKind) {
+async function exportFiles(kind: Exclude<ImportFileKind, "hint">) {
   const replay = kind === "replay" ? await loadReplayFeature() : null;
   const label = t(kind === "save" ? "file.kind.save" : "file.kind.replay");
   const wasReady = state.ready;
@@ -6238,7 +6254,7 @@ async function importFileExclusive(kind: ImportFileKind, file: File) {
   const replay = kind === "replay" ? await loadReplayFeature() : null;
   if (!file.size) throw new Error(t("file.emptyImport"));
   if (file.size > maxImportBytes) throw new Error(t("file.importTooLarge"));
-  if (kind === "save" && state.launched) {
+  if ((kind === "save" || kind === "hint") && state.launched) {
     // Match the established preload-Runtime lifecycle: never tear down a
     // running IDBFS owner while it may still have autoPersist work in flight.
     // A late write from that dead iframe can otherwise race the newly imported
@@ -6250,6 +6266,9 @@ async function importFileExclusive(kind: ImportFileKind, file: File) {
   const lowerName = file.name.toLowerCase();
   if (kind === "save" && lowerName.endsWith(".dat")) {
     files = [{ path: gameStorage().scoreFile, bytes: new Uint8Array(await file.arrayBuffer()) }];
+  } else if (kind === "hint" && lowerName.endsWith(".txt") && hintPaths().length) {
+    if (file.size > 16 * 1024 * 1024) throw new Error(t("file.hintTooLarge"));
+    files = [{ path: hintPaths()[0]!, bytes: new Uint8Array(await file.arrayBuffer()) }];
   } else if (kind === "replay" && /\.rpyx?$/.test(lowerName)) {
     const listing = await send("list");
     const existing = runtimeResponseFiles(listing).map(item => item.path);
@@ -6286,18 +6305,18 @@ async function importFileExclusive(kind: ImportFileKind, file: File) {
     }
     files = plan.entries.map(entry => ({ path: entry.targetPath, bytes: archive[entry.sourcePath] }));
   } else {
-    throw new Error(t(kind === "save" ? "file.chooseSave" : "file.chooseReplay"));
+    throw new Error(t(kind === "save" ? "file.chooseSave" : kind === "hint" ? "file.chooseHint" : "file.chooseReplay"));
   }
   if (!files.length) throw new Error(t("file.importNoFiles"));
   const uniquePaths = new Set(files.map(item => item.path.toLowerCase()));
   if (uniquePaths.size !== files.length) throw new Error(t("file.importDuplicatePaths"));
   if (files.some(item => item.bytes.length > maxStoredFileBytes)) throw new Error(t("file.importStoredTooLarge"));
   for (const item of files) await send("write", { path: item.path, bytes: Array.from(item.bytes) });
-  if (kind === "save") {
+  if (kind === "save" || kind === "hint") {
     const expected = files[0].bytes;
     resetRuntime();
     await ensureRuntime(false);
-    const persisted = new Uint8Array(runtimeResponseBytes(await send("read", { path: gameStorage().scoreFile })));
+    const persisted = new Uint8Array(runtimeResponseBytes(await send("read", { path: files[0].path })));
     if (persisted.length !== expected.length || persisted.some((byte, index) => byte !== expected[index])) {
       throw new Error(t("file.saveVerifyFailed"));
     }
@@ -6317,6 +6336,27 @@ async function importFile(kind: ImportFileKind, file: File) {
   if (kind !== "replay") return importFileExclusive(kind, file);
   const mutations = await getReplayMutationQueue();
   return mutations.run(() => importFileExclusive(kind, file));
+}
+
+async function deleteHint() {
+  const paths = hintPaths();
+  if (!paths.length) return;
+  // Flush and retire a running writer before changing its persisted Hint files.
+  if (state.ready) await send("sync", {}, 10000);
+  resetRuntime();
+  try {
+    await ensureRuntime(false);
+    const stored = runtimeResponseFiles(await send("list")).map(file => file.path);
+    for (const path of paths) if (stored.includes(path)) await send("remove", { path });
+    resetRuntime();
+    await ensureRuntime(false);
+    const remaining = runtimeResponseFiles(await send("list")).map(file => file.path);
+    if (paths.some(path => remaining.includes(path))) throw new Error(t("file.hintDeleteVerifyFailed"));
+    showToast(t("file.hintDeleted"));
+    setStatus(t("file.hintDeleted"));
+  } finally {
+    resetRuntime();
+  }
 }
 
 async function refreshReplayManager({ animateRows = false } = {}) {
@@ -6762,6 +6802,7 @@ async function runAction(action: string) {
   await withLauncherActivity(async () => {
     try {
       if (action === "manage-replay") await manageReplays();
+      else if (action === "delete-hint") await deleteHint();
       else if (action === "export-save" || action === "export-replay") await exportFiles(action === "export-save" ? "save" : "replay");
       else {
         const kind = action.slice(7);
@@ -6770,9 +6811,9 @@ async function runAction(action: string) {
           confirmText: t("file.continueImport"),
           tone: "danger"
         })) return;
-        const accept = kind === "replay" ? (await loadReplayFeature()).replayImportAccept : ".dat";
+        const accept = kind === "replay" ? (await loadReplayFeature()).replayImportAccept : kind === "hint" ? ".txt" : ".dat";
         const file = await pickFile(accept);
-        if (file && (kind === "save" || kind === "replay")) await importFile(kind, file);
+        if (file && (kind === "save" || kind === "replay" || kind === "hint")) await importFile(kind, file);
       }
     } catch (error) {
       const message = errorMessage(error);
@@ -8740,6 +8781,11 @@ createEdgeDrawerGesture({
   enabled: siteNotice.isEnabled,
 });
 $("#focusHitboxToggle").addEventListener("click", () => setOption("focusHitboxEnabled", !state.options.focusHitboxEnabled));
+for (const id of ["#faithBarToggle", "#mpFaithBarToggle"]) {
+  $(id).addEventListener("click", () => {
+    if (faithBarAvailable()) setOption("faithBarEnabled", !state.options.faithBarEnabled);
+  });
+}
 $("#externalMidiToggle").addEventListener("click", () => { void setExternalMidiEnabled(!externalMidiEnabled); });
 bindExternalMidiDeviceSelect($("#externalMidiDeviceSelect"));
 $("#touchToggle").addEventListener("click", async () => {

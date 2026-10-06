@@ -67,6 +67,13 @@ assert.equal(PRODUCT_GAMES.th09.replay.prefix, "th9");
 assert.deepEqual(PRODUCT_GAMES.th09.package.rawDataImport.fileNames, ["th09.dat"]);
 assert.equal(PRODUCT_GAMES.th09.features.thprac, false);
 assert.equal(PRODUCT_GAMES.th10.replay.prefix, "th10");
+assert.equal(PRODUCT_GAMES.th10.display.faithBar, true);
+assert.deepEqual(PRODUCT_GAMES.th10.storage.hintFiles, ["hint/hint_user.txt", "hint/hint_auto.txt"]);
+for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
+  if (game === "th10") continue;
+  assert.equal(product.display?.faithBar, undefined);
+  assert.equal(product.storage.hintFiles, undefined);
+}
 assert.deepEqual(PRODUCT_GAMES.th08.package.rawDataImport.fileNames, ["th08.dat"]);
 assert.equal(PRODUCT_GAMES.th08.musicCapabilities.midi, true);
 assert.equal(PRODUCT_GAMES.th10.musicCapabilities.midi, false);
