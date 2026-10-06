@@ -1,0 +1,8 @@
+// Partial passive-world fixture, never a whole-game Replay claim.
+import fs from 'node:fs';import path from 'node:path';import {parseReplay} from '../../src/replay.mjs';import {initializeCandidate,restoreStage,state} from '../../tools/replay-verifier/capture-candidate.mjs';
+const root=path.resolve(import.meta.dirname,'../..'),replay=parseReplay(fs.readFileSync(path.join(root,'site/replays/demo2.rpy'))),stage=replay.stages[0],core=await initializeCandidate(1);
+const active=process.argv.includes('--active');restoreStage(core,replay,stage);core._th12_oracle_fixture(active?0:7);
+const inputs=[],ticks=[],initial=state(core);
+for(let frame=0;frame<600;frame++){const input=replay.input(1,frame);core._th12_tick(input.held,input.pressed);const snapshot=state(core);inputs.push({frame,xFixed:snapshot.player.xFixed,yFixed:snapshot.player.yFixed,power:snapshot.economy.resources[0],rank:snapshot.economy.resources[10],...input});ticks.push(snapshot);}
+const folder=path.join(root,'artifacts/reverse');fs.mkdirSync(folder,{recursive:true});fs.writeFileSync(path.join(folder,active?'world-input-demo2.json':'enemy-input-demo2.json'),JSON.stringify({scope:active?'600 active-world inputs; partial provider, no whole-game acceptance':'passive enemy-world fixture; damage, miss and Bomb disabled on both sides',wholeGameOracle:false,replay:'demo2.rpy',character:replay.character,shot:replay.shot,difficulty:replay.difficulty,stage:1,seed:stage.seed,initial:stage.initial,inputs},null,2)+'\n');fs.writeFileSync(path.join(folder,active?'world-candidate-active-demo2.json':'enemy-candidate-passive-demo2.json'),JSON.stringify({wholeGameOracle:false,initial,ticks})+'\n');
+console.log('Prepared 600 partial-world inputs and candidate snapshots.');

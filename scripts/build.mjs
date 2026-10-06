@@ -1,0 +1,17 @@
+import {emscripten} from './toolchain.mjs';
+import fs from 'node:fs';import path from 'node:path';import {spawnSync} from 'node:child_process';
+const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root);
+const {python,compiler}=emscripten(root);
+if(!fs.existsSync(compiler))throw Error('Emscripten 4.0.22 is required; see docs/BUILD.md.');
+fs.mkdirSync(path.join(root,'site/runtime'),{recursive:true});
+const exports=['_malloc','_free','_th12_load_ecl','_th12_load_msg','_th12_select_stage','_th12_load_sht','_th12_start','_th12_oracle_fixture','_th12_set_initial','_th12_set_replay_economy','_th12_state','_th12_state_size','_th12_tick','_th12_draw','_th12_draw_ptr','_th12_draw_stride','_th12_draw_version','_th12_hud','_th12_hud_size','_th12_unsupported','_th12_rng16','_th12_rng32'];
+const cache=path.join(root,'artifacts/emscripten-cache');fs.mkdirSync(cache,{recursive:true});
+exports.push('_th12_message','_th12_message_size','_th12_spell','_th12_spell_size');
+exports.push('_th12_load_anm','_th12_load_std','_th12_background','_th12_background_size');
+exports.push('_th12_anm_draw','_th12_anm_draw_ptr','_th12_anm_draw_stride');
+exports.push('_th12_background_frame','_th12_background_visible');
+const result=spawnSync(python,[compiler,'src/core.cpp','-std=c++20','-O2','-o','site/runtime/core.mjs','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,node','-sALLOW_MEMORY_GROWTH=1','-sINITIAL_MEMORY=33554432','-sEXPORTED_FUNCTIONS='+JSON.stringify(exports),'-sEXPORTED_RUNTIME_METHODS='+JSON.stringify(['HEAPU8','HEAPU16','HEAPU32','HEAPF32']),'-sASSERTIONS=1'],{cwd:root,stdio:'inherit',env:{...process.env,EM_CACHE:cache,EMSDK_PYTHON:python,PATH:path.dirname(python)+path.delimiter+process.env.PATH}});
+if(result.status!==0)process.exit(result.status||1);
+const {createHash}=await import('node:crypto'),sources=['src/core.cpp',...fs.readdirSync(path.join(root,'src')).filter(name=>name.endsWith('.hpp')).sort().map(name=>'src/'+name)];
+const sourceFiles=Object.fromEntries(sources.map(name=>[name,createHash('sha256').update(fs.readFileSync(path.join(root,name))).digest('hex')]));
+fs.writeFileSync(path.join(root,'site/runtime/build.json'),JSON.stringify({version:'0.2.0-dev',compiler:'emscripten-4.0.22',sourceSha256:sourceFiles['src/core.cpp'],sourceFiles},null,2)+'\n');

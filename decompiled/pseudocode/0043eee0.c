@@ -1,0 +1,58 @@
+// AUTOMATIC PSEUDOCODE: NOT ORIGINAL SOURCE OR VERIFIED BEHAVIOR
+// TH12 1.00b 0x43eee0; EXE 99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417; angr 10.0.1.post1
+// Inferred types/register conventions/x87 expressions require assembly review.
+
+typedef struct st_43eee0_0 {
+    char padding_0[28];
+    unsigned int field_1c;
+    unsigned int field_20;
+    unsigned int field_24;
+    char padding_28[652];
+    unsigned int field_2b4;
+    unsigned int field_2b8;
+    unsigned int field_2bc;
+    char padding_2c0[4];
+    unsigned int field_2c4;
+} st_43eee0_0;
+
+extern char g_4b2ed0;
+
+int sub_43eee0(void)
+{
+    st_43eee0_0 *idx;  // eax
+    unsigned int v2;  // ecx
+    unsigned int v3;  // edx
+    unsigned int v4;  // ecx
+
+    v2 = idx->field_1c;
+    /* unsupported instruction */
+    /* unsupported instruction */
+    idx->field_1c = v3;
+    idx->field_20 = v2;
+    idx->field_24 = 0;
+    v4 = idx->field_2c4;
+    if (!((char)idx->field_2c4 & 1))
+    {
+        if (/* unsupported instruction */)
+            idx->field_2bc = /* unsupported instruction */;
+        else
+            idx->field_2bc = nan;
+        idx->field_2b8 = 0;
+        idx->field_2b4 = 0xfff0bdc1;
+        *((char **)&idx->padding_2c0[0]) = &g_4b2ed0;
+        idx->field_2c4 = v4 | 1;
+    }
+    if (/* unsupported instruction */)
+    {
+        idx->field_2bc = /* unsupported instruction */;
+        /* unsupported instruction */
+    }
+    else
+    {
+        idx->field_2bc = nan;
+        /* unsupported instruction */
+    }
+    idx->field_2b8 = 0;
+    idx->field_2b4 = 0xffffffff;
+    return;
+}

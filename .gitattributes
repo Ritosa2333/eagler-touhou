@@ -1,0 +1,11 @@
+*.cpp text eol=lf
+*.c text eol=lf
+*.hpp text eol=lf
+*.asm text eol=lf
+*.mjs text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.json text eol=lf
+tools/replay-verifier/golden/*.json -text

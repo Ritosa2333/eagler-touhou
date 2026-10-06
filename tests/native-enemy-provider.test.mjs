@@ -1,0 +1,25 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import {spawnSync} from 'node:child_process';
+import {writeFile,readFile} from 'node:fs/promises';
+const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root);
+test('original Enemy/ECL/ANM/bullet provider preserves native scheduling in a passive world',async()=>{
+  const input=path.join(root,'artifacts/reverse/native-enemy-test-input.json'),output=path.join(root,'artifacts/reverse/native-enemy-test-output.json');
+  const fixture={character:1,shot:0,difficulty:3,stage:1,seed:60128,initial:{power:100,rank:0,pointValue:2000000,x:0,y:51200},inputs:Array.from({length:180},(_,frame)=>({frame,xFixed:0,yFixed:51200,power:100,rank:0,held:0}))};
+  await writeFile(input,JSON.stringify(fixture));
+  const run=spawnSync(path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe'),['scripts/reverse/native-enemy-provider.py','--frames','180','--input',input,'--native-bullets','--output',output],{cwd:root,encoding:'utf8'});
+  assert.equal(run.status,0,run.stdout+run.stderr);const native=JSON.parse(await readFile(output,'utf8'));
+  assert.equal(native.originalExeSha256,'99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417');
+  assert.equal(native.wholeGameOracle,false);assert.equal(native.nativeAnmExecuted,true);assert.equal(native.nativeBulletUpdateExecuted,true);
+  for(const address of ['0x455630','0x454d10','0x454df0','0x454ee0','0x461920','0x4621c0'])assert.ok(!(address in native.intercepts),`${address} must execute original logic`);
+  const actor=(frame,routine)=>native.frames[frame+1].enemies.find(e=>e.birth.routine===routine);
+  const red60=actor(60,'RGirl00'),red61=actor(61,'RGirl00');assert.deepEqual(red60.position,red61.position);assert.equal(red60.contextTime,1);assert.equal(red61.contextTime,1);
+  const blue80=actor(80,'BGirl00'),blue81=actor(81,'BGirl00');assert.equal(blue80.contextTime,1);assert.equal(blue81.contextTime,2);
+  assert.equal(blue80.absolute[0],-36.810001373291016);assert.equal(blue80.position[0],-36.81999969482422);
+  const born=native.events.find(e=>e.kind==='bulletCreated'),after=native.frames[born.frame+1].bullets.find(b=>b.id===born.id);
+  assert.equal(after.state,2);assert.equal(after.age,1);
+  for(let axis=0;axis<2;axis++)assert.ok(Math.abs(after.position[axis]-(born.position[axis]+born.velocity[axis]*.5))<.00002);
+  assert.equal(native.events.filter(e=>e.kind==='bulletCreated').length,10);
+  assert.equal(native.frames.at(-1).rngCalls,24);assert.ok(native.frames.some(f=>f.animations.some(a=>a.priority===27)));
+});
