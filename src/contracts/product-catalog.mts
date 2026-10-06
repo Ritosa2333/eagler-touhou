@@ -92,7 +92,7 @@ export const PRODUCT_GAMES = Object.freeze({
     musicCapabilities: Object.freeze({ midi: true }),
     musicRuntime: Object.freeze({ localOggConfigureMode: "midi-sentinel" }),
     touchFire: TOGGLE_TOUCH_FIRE,
-    support: Object.freeze({
+    support: Object.freeze({ highRefreshRate: true,
       sourceRepository: "https://github.com/YomotsuHisami/th06",
     }),
     dataProvider: "emscripten-preload",
@@ -137,7 +137,7 @@ export const PRODUCT_GAMES = Object.freeze({
     musicCapabilities: Object.freeze({ midi: true }),
     musicRuntime: Object.freeze({ localOggConfigureMode: "midi-sentinel" }),
     touchFire: TOGGLE_TOUCH_FIRE,
-    support: Object.freeze({
+    support: Object.freeze({ highRefreshRate: true,
       sourceRepository: "https://github.com/YomotsuHisami/th07",
     }),
     dataProvider: "emscripten-preload",
@@ -175,7 +175,7 @@ export const PRODUCT_GAMES = Object.freeze({
     musicCapabilities: Object.freeze({ midi: true }),
     musicRuntime: Object.freeze({ localOggConfigureMode: "midi-sentinel" }),
     touchFire: TOGGLE_TOUCH_FIRE,
-    support: Object.freeze({
+    support: Object.freeze({ highRefreshRate: true,
       sourceRepository: "https://github.com/YomotsuHisami/th08",
       adaptationNotice: "early-test",
     }),
@@ -231,7 +231,7 @@ export const PRODUCT_GAMES = Object.freeze({
     musicCapabilities: Object.freeze({ midi: false }),
     musicRuntime: Object.freeze({ localOggConfigureMode: "runtime-selection" }),
     touchFire: CHARGE_TOUCH_FIRE,
-    support: Object.freeze({ sourceRepository: "https://github.com/YomotsuHisami/th09", adaptationNotice: "early-test" }),
+    support: Object.freeze({ highRefreshRate: false, sourceRepository: "https://github.com/YomotsuHisami/th09", adaptationNotice: "early-test" }),
     runtimeFileLayout: "directory",
     requiredShared: Object.freeze(["/msgothic.ttc"]),
     runtimeAssets: Object.freeze([
@@ -274,7 +274,7 @@ export const PRODUCT_GAMES = Object.freeze({
     musicCapabilities: Object.freeze({ midi: false }),
     musicRuntime: Object.freeze({ localOggConfigureMode: "midi-sentinel" }),
     touchFire: TOGGLE_TOUCH_FIRE,
-    support: Object.freeze({
+    support: Object.freeze({ highRefreshRate: true,
       sourceRepository: "https://github.com/YomotsuHisami/th10",
       adaptationNotice: "early-test",
     }),
@@ -331,7 +331,7 @@ export const PRODUCT_GAMES = Object.freeze({
     musicCapabilities: Object.freeze({ midi: false }),
     musicRuntime: Object.freeze({ localOggConfigureMode: "runtime-selection" }),
     touchFire: TOGGLE_TOUCH_FIRE,
-    support: Object.freeze({
+    support: Object.freeze({ highRefreshRate: false,
       sourceRepository: "https://github.com/YomotsuHisami/th11",
       adaptationNotice: "early-test",
     }),
@@ -382,7 +382,7 @@ export const PRODUCT_GAMES = Object.freeze({
     musicCapabilities: Object.freeze({ midi: false }),
     musicRuntime: Object.freeze({ localOggConfigureMode: "runtime-selection" }),
     touchFire: TOGGLE_TOUCH_FIRE,
-    support: Object.freeze({
+    support: Object.freeze({ highRefreshRate: false,
       sourceRepository: "https://github.com/Goan114/touhou20",
       adaptationNotice: "early-test",
       credit: Object.freeze({ name: "ぃ尐懒猫ゞ", url: "https://space.bilibili.com/15669619" }),

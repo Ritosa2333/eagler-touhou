@@ -3764,7 +3764,7 @@ interface LauncherGameView {
 }
 
 function highRefreshAvailable(gameId: GameId = state.game) {
-  return ["th06", "th07", "th08", "th10"].includes(gameId);
+  return PRODUCT_GAMES[gameId].support.highRefreshRate;
 }
 
 function game(gameId: GameId = state.game): LauncherGameView {

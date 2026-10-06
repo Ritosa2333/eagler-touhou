@@ -266,3 +266,5 @@ for (const id of PRODUCT_IDS) {
   assert.equal(productEnabledForBuild(id, true), visible, "TH20 stays hidden in test builds too");
 }
 assert.equal(productEnabledForBuild("th99", true), false);
+
+assert.deepEqual(Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([id, product]) => [id, product.support.highRefreshRate])), {th06: true, th07: true, th08: true, th09: false, th10: true, th11: false, th20: false}, "high-refresh UI must follow the catalog capability");
