@@ -1963,8 +1963,8 @@ html[data-theme="light"] .touch-joystick-knob{background:#c9c2b4;box-shadow:0 4p
 .player.touch-enabled:not(.touch-layout-custom) .touch-hud :is(#touchBomb,#touchFunction){top:calc(50% + 36px)}
 .player.touch-enabled:not(.touch-layout-custom) .touch-hud #touchFunction{left:calc(max(56px,env(safe-area-inset-left)) + 104px)}
 @media(orientation:portrait){
- .player .touch-utility-row{flex-direction:column}
- .player .touch-layout-reserved-zone{width:52px;height:208px;flex-direction:column}
+ .player .touch-utility-row{flex-direction:row-reverse}
+ .player .touch-layout-reserved-zone{width:208px;height:52px;flex-direction:row-reverse}
  .touch-layout-reserved-zone .reserved-tool{height:44px}
  .player.touch-enabled:not(.touch-layout-custom) .touch-hud :is(#touchFocus,#touchFire,#touchBomb,#touchFunction){left:max(8px,env(safe-area-inset-left));top:auto}
  .player.touch-enabled:not(.touch-layout-custom) .touch-hud #touchBomb{bottom:max(16px,env(safe-area-inset-bottom))}
