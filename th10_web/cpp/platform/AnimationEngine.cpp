@@ -93,16 +93,21 @@ bool AnimationEngine::present(AnmVm& copy,const AnmVm& source) const{
     return true;
 }
 #ifdef TH_SDL3
-extern "C" void sdl_startup_branding_draw(unsigned alpha);
+extern "C" void sdl_startup_branding_draw(unsigned tint);
 #endif
 void AnimationEngine::draw(AnmVm& vm){
-    auto env=renderer();if(!high_refresh::render_only||!high_refresh::active){AnmRenderer{manager,env}.draw(vm);
+    auto env=renderer();
+    // Credits belong to the signature on every presentation, including the
+    // interpolated draws between ticks. Use the same displayed fade color.
+    const auto draw=[&](AnmVm& displayed){
+        AnmRenderer{manager,env}.draw(displayed);
 #ifdef TH_SDL3
-        if(manager.files[1]&&vm.animation_file==manager.files[1]&&vm.script_index==0&&(vm.flags&3)==3){flush();sdl_startup_branding_draw(vm.color);}
+        if(manager.files[1]&&displayed.animation_file==manager.files[1]&&displayed.script_index==0&&(displayed.flags&3)==3){flush();sdl_startup_branding_draw(displayed.color);}
 #endif
-        return;}
+    };
+    if(!high_refresh::render_only||!high_refresh::active){draw(vm);return;}
     auto copy=vm;present(copy,vm);
-    AnmRenderer{manager,env}.draw(copy);
+    draw(copy);
 }
 void AnimationEngine::bind_sprite(AnmVm& vm,i32 index){vm.animation_file->bind_sprite(vm,index);}
 void AnimationEngine::change_draw_mode(AnmVm& vm){AnmDistortion::initialize(vm,*this);}
