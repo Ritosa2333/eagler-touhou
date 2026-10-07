@@ -1,6 +1,10 @@
 // Ordered WebGL2 sprite batches. Presentation is a reader of core draw state.
 import {AnimationSampler} from './animation.mjs';
 import {StageBackground} from './stage-background.mjs';
+import {readCoreSpell,spellTextDescriptors} from './spell-presentation.mjs';
+import {readCoreUfo,ufoTextPoses,ufoTextRenderPriority} from './ufo-presentation.mjs';
+import {asciiGlyphs} from './ascii-presentation.mjs';
+import {readCoreDrawSchedule,orderPresentation} from './draw-scheduler.mjs';
 export function readCoreHud(core){const size=core._th12_hud_size?.()??20;if(!Number.isInteger(size)||size<20||size>256)throw Error('状态记录长度无效');return new Float32Array(core.HEAPU8.buffer,core._th12_hud(),size);}
 export function readCoreBossHud(core){
   if(!core._th12_boss_hud||!core._th12_boss_hud_size)return null;
@@ -75,7 +79,7 @@ export function readCoreMeshes(core,stage=1){
     if(offset+length>vertexCount||![4,5].includes(primitive)||pass>2)throw Error('网格顶点范围无效');
     const vertices=[];
     for(let j=0;j<length;j++){const a=vertexPtr+(offset+j)*vertexStride,F=n=>view.getFloat32(a+n*4,true),color=view.getUint32(a+16,true);vertices.push({x:F(0),y:F(1),z:F(2),rhw:F(3),color,u:F(5),v:F(6)});}
-    meshes.push({mesh:true,vertices,primitive,renderPass:pass,drawPriority:I(7),owner:U(8),id:U(9),order:U(9),filter:U(12),addressFlags:U(13),a:{name:animationBankName(I(0),stage),sprite:I(1),entry:I(2),layer:I(3),blend:I(4)}});
+    meshes.push({mesh:true,vertices,primitive,renderPass:pass,drawPriority:I(7),owner:U(8),id:U(9),order:i,filter:U(12),addressFlags:U(13),a:{name:animationBankName(I(0),stage),sprite:I(1),entry:I(2),layer:I(3),blend:I(4)}});
   }return meshes;
 }
 export function fragmentInterrupt(index,whole,fragments=0){return index<whole?2:index===whole?7+Math.max(0,Math.min(5,fragments|0)):3;}
@@ -86,9 +90,12 @@ export function hudGlyphs(text,x,y,scale=1,right=false){text=String(text);const 
 // Native mode15 circle helper 0x45d430 writes a triangle fan: primary color
 // at its center, secondary color at count+1 circumference vertices.
 export function circleVertices(x,y,radius,angle,segments,centerColor,edgeColor){const f=Math.fround,pi=3.1415927410125732,tau=6.2831854820251465,step=f(6.283185307179586/segments),vertices=[{x,y,color:centerColor}];angle=f(angle);for(let i=0;i<=segments;i++){vertices.push({x:f(x+f(Math.cos(angle)*radius)),y:f(y+f(Math.sin(angle)*radius)),color:edgeColor});angle=f(angle+step);while(angle>pi)angle=f(angle-tau);while(angle<-pi)angle=f(angle+tau);}return vertices;}
+// 459e50 uses x87 nearest-even before the D3D half-pixel adjustment. WebGL
+// has no D3D half-pixel offset, but must retain that rounding at exact halves.
+export function nativePixel(n){const floor=Math.floor(n),fraction=n-floor;return fraction===.5?floor+(Math.abs(floor%2)===1?1:0):Math.round(n);}
 export function quadCorners(x,y,w,h,angle=0,anchorX=0,anchorY=0,pixel=false){
   const left=anchorX===1?0:anchorX===2?-w:-w/2,top=anchorY===1?0:anchorY===2?-h:-h/2,c=Math.cos(angle),s=Math.sin(angle);
-  return [[left,top],[left+w,top],[left+w,top+h],[left,top+h]].map(([a,b])=>{const px=x+a*c-b*s,py=y+a*s+b*c;return [pixel?Math.round(px):px,pixel?Math.round(py):py];});
+  return [[left,top],[left+w,top],[left+w,top+h],[left,top+h]].map(([a,b])=>{const px=x+a*c-b*s,py=y+a*s+b*c;return [pixel?nativePixel(px):px,pixel?nativePixel(py):py];});
 }
 export class Renderer {
   constructor(canvas,atlases){
@@ -179,19 +186,25 @@ export class Renderer {
   animation(name,id,age,x,y,angle=0,scale=1,variant=null,options={}){const {alpha=1,...sampling}=options;for(const a of this.animations.sampleAll(name,id,age,variant,sampling))this.state(a,x,y,angle,scale,alpha);}
   text(text,x,y,scale=1,tint=[1,1,1]){for(const c of String(text)){const s=this.atlases.ascii.sprites[c.charCodeAt(0)-32];if(s)this.region('ascii',s.entry,s.x,s.y,s.w,s.h,x+s.w*scale/2,y+s.h*scale/2,s.w*scale,s.h*scale,0,1,tint);x+=14*scale;}}
   hudText(text,x,y,scale=1,right=false){for(const p of hudGlyphs(text,x,y,scale,right)){const s=this.atlases.ascii.sprites[p.id];if(s)this.region('ascii',s.entry,s.x,s.y,s.w,s.h,p.x,p.y,s.w*scale,s.h*scale,0,1,[1,1,1],0,{anchorX:1,anchorY:1,point:true});}}
-  dialogueTexture(text,record,metrics){
+  nativeText(descriptor){for(const p of asciiGlyphs(descriptor)){const s=this.atlases.ascii.sprites[p.id];if(!s)continue;const color=argbRgba(p.colorARGB);this.region('ascii',s.entry,s.x,s.y,s.w,s.h,p.x,p.y,s.w*p.scaleX,s.h*p.scaleY,0,color[3],color.slice(0,3),0,{anchorX:p.anchorX,anchorY:p.anchorY,point:p.point,pixel:true});}}
+  hudCounters(h){
+    this.hudText(groupedNumber(h[3]),620,72,1,true);this.hudText(groupedNumber(h[40]??h[3]),620,48,1,true);
+    this.hudText(Math.floor(h[4]/100)+'.',540,152);this.hudText(String(Math.round(h[4])%100).padStart(2,'0'),560,159,.6);this.hudText('/4.',574,152);this.hudText('00',606,159,.6);
+    if(h.length>20)this.hudText(groupedNumber(Math.floor(h[20]/100/10)*10),620,176,1,true);this.hudText(groupedNumber(h[7]),620,200,1,true);
+  }
+  dialogueTexture(text,record,metrics,raster=null){
     // Original 44e56f..44e5c6 selects 32px GDI MS Gothic (400) / MS Mincho
     // (600), then text rendering reduces by two. Browser rasterization remains
     // a presentation fallback until the original GDI texture oracle is sampled.
-    const key=JSON.stringify([text,record,metrics]);if(this.dialogueTextures.has(key))return this.dialogueTextures.get(key);
+    const key=JSON.stringify([text,record,metrics,raster]);if(this.dialogueTextures.has(key))return this.dialogueTextures.get(key);
     const {style=0,color=0xd8d8d8,offset=0,spacing=0}=record,canvas=new OffscreenCanvas(metrics.sourceWidth,metrics.sourceHeight),ctx=canvas.getContext('2d'),serif=style===1;ctx.font=`${style===2?700:serif?600:400} ${style===2?15:32}px "${serif?'ＭＳ 明朝':'ＭＳ ゴシック'}", ${serif?'serif':'monospace'}`;ctx.textBaseline='top';
     const foreground='#'+[color&255,(color>>>8)&255,(color>>>16)&255].map(v=>v.toString(16).padStart(2,'0')).join(''),draw=(text,x)=>{ctx.fillStyle='#000';for(const [dx,dy]of [[2,4],[-2,4],[2,0],[-2,0]])ctx.fillText(text,x+dx,dy);ctx.fillStyle=foreground;ctx.fillText(text,x,2);};
     if(spacing){const bytes=Uint8Array.from(record.textHex.match(/../g)??[],v=>parseInt(v,16));for(let i=0;i<bytes.length;i+=2)draw(new TextDecoder('shift-jis').decode(bytes.slice(i,i+2)),2*offset+i*spacing);}
-    else draw(text,2*offset+2);
+    else draw(text,raster?.sourceX??2*offset+2);
     const g=this.gl,texture=g.createTexture();this.flush();g.bindTexture(g.TEXTURE_2D,texture);g.texImage2D(g.TEXTURE_2D,0,g.RGBA,g.RGBA,g.UNSIGNED_BYTE,canvas);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);
     const result={texture,w:canvas.width,h:canvas.height};this.dialogueTextures.set(key,result);if(this.dialogueTextures.size>16){const oldest=this.dialogueTextures.keys().next().value,old=this.dialogueTextures.get(oldest);this.dialogueTextures.delete(oldest);g.deleteTexture(old.texture);}return result;
   }
-  dialogueLine(p){if(!p.text||p.a.alpha<=0)return;const texture=this.dialogueTexture(p.text,p.record,p.metrics);this.material(p.a.blend??0);this.texture(texture,!!p.a.point);this.primitive(this.gl.TRIANGLES);const points=quadCorners(p.x,p.y,p.metrics.width*p.a.sx,p.metrics.height*p.a.sy,p.a.rotation??0,p.a.anchorX,p.a.anchorY),uv=[[0,0],[1,0],[1,1],[0,1]];for(const i of [0,1,2,0,2,3])this.batch.push(...points[i],...uv[i],p.a.r??1,p.a.g??1,p.a.b??1,p.a.alpha*p.alpha,1,0);}
+  dialogueLine(p){if(!p.text||p.a.alpha<=0)return;const texture=this.dialogueTexture(p.text,p.record,p.metrics,p.raster);this.material(p.a.blend??0);this.texture(texture,!!p.a.point);this.primitive(this.gl.TRIANGLES);const points=quadCorners(p.x,p.y,p.metrics.width*p.a.sx,p.metrics.height*p.a.sy,p.a.rotation??0,p.a.anchorX,p.a.anchorY),uv=[[0,0],[1,0],[1,1],[0,1]];for(const i of [0,1,2,0,2,3])this.batch.push(...points[i],...uv[i],p.a.r??1,p.a.g??1,p.a.b??1,p.a.alpha*p.alpha,1,0);}
   render(core){
     this.begin();const h=readCoreHud(core),frame=h[0];if(frame<this.lastFrame)this.animations=new AnimationSampler(this.atlases);this.lastFrame=frame;this.animations.beginFrame();
     const stage=Math.max(1,Math.min(7,h[39]||1)),stageSuffix=String(stage).padStart(2,'0');if(this.stageBackgrounds.has(stage))this.background=this.stageBackgrounds.get(stage);else if(!this.stageJobs.has(stage))this.prepareStage(stage).catch(error=>this.stageError=error);
@@ -199,15 +212,17 @@ export class Renderer {
     const logicalBackground=readCoreBackground(core),background=this.background.geometry(logicalBackground?.frame??core._th12_background_frame?.()??frame,logicalBackground);g.uniform3fv(this.fogColor,background.camera.fog.slice(0,3));g.clearColor(...background.camera.fog.slice(0,3),1);g.clear(g.COLOR_BUFFER_BIT);
     this.primitive(g.TRIANGLES);if(background.authoritative||(core._th12_background_visible?.()??true))for(const triangle of background.triangles){const texture=this.textures.get(triangle.bank+':'+triangle.entry);if(!texture)continue;this.material(triangle.blend);this.texture(texture,triangle.point);for(const p of triangle.vertices)this.batch.push(p.x,p.y,p.u/texture.w,p.v/texture.h,p.r,p.g,p.b,p.alpha,p.depth,p.fog);}
     this.flush();
-    const logicalPoses=readCoreAnimationPoses(core,stage),meshes=readCoreMeshes(core,stage),logicalOwners=new Set([...logicalPoses,...meshes].map(p=>p.owner)),message=readCoreMessage(core);
+    const logicalPoses=readCoreAnimationPoses(core,stage),schedule=readCoreDrawSchedule(core),meshes=readCoreMeshes(core,stage),logicalOwners=new Set([...logicalPoses,...meshes].map(p=>p.owner)),message=readCoreMessage(core),spell=readCoreSpell(core);
     const count=core._th12_draw(),ptr=core._th12_draw_ptr(),stride=(core._th12_draw_stride?.()||36)/4;if(stride<9||stride>64||!Number.isInteger(stride))throw Error('绘制记录长度无效');
     const f=new Float32Array(core.HEAPU8.buffer,ptr,count*stride),v=new Int32Array(core.HEAPU8.buffer,ptr,count*stride);
-    const player='pl0'+h[17],poses=[...logicalPoses.filter(p=>!(p.a.name==='text'&&p.a.sprite>=0&&p.a.sprite<4)).map(p=>({...p,order:p.id})),...messageTextPoses(message,logicalPoses,this.atlases),...meshes,...(core._th12_mesh_draw?[]:readCoreLaserSegments(core,stage))];
-    const add=(name,id,age,x,y,angle,scale,variant,options)=>{const {alpha,...sampling}=options;for(const a of this.animations.sampleAll(name,id,age,variant,sampling))poses.push({a,x,y,angle,scale,alpha,order:poses.length});};
+    const player='pl0'+h[17],poses=[...logicalPoses.filter(p=>!(p.a.name==='text'&&(p.a.sprite>=0&&p.a.sprite<4||p.a.sprite===7))),...messageTextPoses(message,logicalPoses,this.atlases),...meshes,...(core._th12_mesh_draw?[]:readCoreLaserSegments(core,stage))];
+    for(const text of spellTextDescriptors(spell,logicalPoses))poses.push(text.kind==='spell-title'?{...text.pose,dialogue:true,text:text.text,record:text.record,metrics:text.metrics,raster:text.raster}:{nativeText:text,drawPriority:45,clipped:false,order:poses.length});
+    for(const text of ufoTextPoses(readCoreUfo(core))){const priority=ufoTextRenderPriority(text);poses.push({nativeText:text,drawPriority:priority,clip:priority===22?2:0,order:poses.length});}
+    const add=(name,id,age,x,y,angle,scale,variant,options)=>{const {alpha,drawPriority,clipped,...sampling}=options;for(const a of this.animations.sampleAll(name,id,age,variant,sampling))poses.push({a,x,y,angle,scale,alpha,drawPriority,clipped,order:poses.length});};
     for(let i=0;i<count;i++){
       const k=i*stride,x=f[k],y=f[k+1],angle=f[k+2],scale=f[k+3],animation=v[k+5],kind=v[k+6],color=v[k+7],age=v[k+8],entityId=stride>=12?v[k+9]>>>0:0,interrupt=stride>=12?v[k+10]:0,alpha=stride>=12?f[k+11]:1;
       if(stride>=12&&logicalOwners.has(entityId))continue;
-      const options={entityId,seed:entityId?entityId&65535:0x1234,alpha,...(interrupt?{interrupt}: {})};
+      const options={entityId,seed:entityId?entityId&65535:0x1234,alpha,...(interrupt?{interrupt}: {}),...(kind===1?{drawPriority:31,clipped:true}:kind===3?{drawPriority:27,clipped:true}:kind===4?{drawPriority:24,clipped:true}:{})};
       if(kind===12)poses.push({a:{layer:12},x,y,angle,scale,width:alpha,start:color>>>0,end:animation>>>0,beamTrail:true,order:poses.length});
       else if(kind===13)poses.push({a:{layer:12},x,y,angle,scale,alpha:1,start:color>>>0,end:animation>>>0,trail:true,order:poses.length});
       else if(kind===4||kind===5||kind===2||kind===7)add(player,animation,age,x,y,angle,scale,null,options);
@@ -222,27 +237,19 @@ export class Renderer {
       // while the message layer has not yet been registered as a core VM.
       if(windowEvent&&!logicalPoses.some(p=>p.a.name==='front'&&p.a.layer===19))add('front',52,Math.max(0,frame-windowEvent[1]),0,0,0,1,null,{alpha:1,entityId:'message-window'});
     }
-    // Native ANM manager draws layers, so bullets/items/player child slots
-    // cannot simply follow the core's entity array insertion order.
-    poses.sort((a,b)=>(a.renderPass??0)-(b.renderPass??0)||((a.renderPass??0)>0?a.order-b.order:a.a.layer-b.a.layer||a.order-b.order));
-    let playfieldClip=true;
-    for(const p of poses){
-      const clipped=!(p.logical&&p.a.name==='front'&&p.a.layer>=17);
-      if(clipped!==playfieldClip){this.flush();if(clipped)g.enable(g.SCISSOR_TEST);else g.disable(g.SCISSOR_TEST);playfieldClip=clipped;}
-      if(p.mesh)this.mesh(p);else if(p.laser)this.laserSegment(p);else if(p.dialogue)this.dialogueLine(p);else if(p.beamTrail)this.beamTrail(p.x,p.y,p.angle,p.scale,p.width,p.start,p.end);else if(p.trail)this.trail(p.x,p.y,p.angle,p.scale,p.start,p.end,p.alpha);else if(p.beam){const s=this.atlases[p.a.name].sprites[p.a.sprite];if(s)this.region(p.a.name,s.entry,s.x,s.y,s.w,s.h,p.x,p.y-448*p.scale/2,448*p.scale,14*p.a.sy,-Math.PI/2,p.a.alpha*p.alpha,[p.a.r,p.a.g,p.a.b],p.a.blend);}else this.state(p.a,p.x,p.y,p.angle,p.scale,p.alpha);
+    // The frame itself belongs at layer21/23. Painting it after every VM
+    // hides the UFO panel and FontManager's right-side counters.
+    add('front',0,frame,0,0,0,1,null,{alpha:1,clipped:false});
+    for(const rectangle of bossHealthRectangles(readCoreBossHud(core)))poses.push({rectangle,drawPriority:44,clip:2,order:poses.length});
+    poses.push({hudCounters:true,drawPriority:69,clipped:false,order:poses.length});
+    for(let i=0;i<8;i++){add('front',13+i,frame,0,0,0,1,null,{alpha:1,drawPriority:59,clipped:false,interrupt:fragmentInterrupt(i,h[5],h[21])});add('front',21+i,frame,0,0,0,1,null,{alpha:1,drawPriority:59,clipped:false,interrupt:fragmentInterrupt(i,h[6],h[22])});}
+    if(h.length>25&&!logicalPoses.some(p=>p.a.name==='front'&&(p.owner>>>16)===0xfffe))for(let i=0;i<3;i++){const color=h[23+i]|0;add('front',80,frame,0,0,0,1,null,{alpha:1,drawPriority:44,clipped:true,interrupts:[7+i,color?9+color:13,color?2:3]});}
+    add('front',69+h[19],frame,0,0,0,1,null,{alpha:1,clipped:false});
+    let currentClip=1;
+    for(const p of orderPresentation(poses,schedule)){
+      if(p.clip!==currentClip){this.flush();if(p.clip){g.enable(g.SCISSOR_TEST);if(p.clip===2)g.scissor(13,0,422,480);else g.scissor(32,16,384,448);}else g.disable(g.SCISSOR_TEST);currentClip=p.clip;}
+      if(p.nativeText)this.nativeText(p.nativeText);else if(p.hudCounters)this.hudCounters(h);else if(p.rectangle){const {bounds:[left,top,right,bottom],argb}=p.rectangle,color=argbRgba(argb);this.solidTriangles([[left,top],[right,top],[right,bottom],[left,bottom]].map(([x,y])=>({x,y,color})),[0,1,2,0,2,3],0);}else if(p.mesh)this.mesh(p);else if(p.laser)this.laserSegment(p);else if(p.dialogue)this.dialogueLine(p);else if(p.beamTrail)this.beamTrail(p.x,p.y,p.angle,p.scale,p.width,p.start,p.end);else if(p.trail)this.trail(p.x,p.y,p.angle,p.scale,p.start,p.end,p.alpha);else if(p.beam){const s=this.atlases[p.a.name].sprites[p.a.sprite];if(s)this.region(p.a.name,s.entry,s.x,s.y,s.w,s.h,p.x,p.y-448*p.scale/2,448*p.scale,14*p.a.sy,-Math.PI/2,p.a.alpha*p.alpha,[p.a.r,p.a.g,p.a.b],p.a.blend);}else this.state(p.a,p.x,p.y,p.angle,p.scale,p.alpha);
     }
-    this.flush();g.disable(g.SCISSOR_TEST);
-    this.animation('front',0,frame,0,0);
-    for(const {bounds:[left,top,right,bottom],argb}of bossHealthRectangles(readCoreBossHud(core))){
-      const color=argbRgba(argb),vertices=[[left,top],[right,top],[right,bottom],[left,bottom]].map(([x,y])=>({x,y,color}));
-      this.solidTriangles(vertices,[0,1,2,0,2,3],0);
-    }
-    this.hudText(groupedNumber(h[3]),620,72,1,true);this.hudText(groupedNumber(h[40]??h[3]),620,48,1,true);
-    for(let i=0;i<8;i++){this.animation('front',13+i,frame,0,0,0,1,null,{interrupt:fragmentInterrupt(i,h[5],h[21])});this.animation('front',21+i,frame,0,0,0,1,null,{interrupt:fragmentInterrupt(i,h[6],h[22])});}
-    this.hudText(Math.floor(h[4]/100)+'.',540,152);this.hudText(String(Math.round(h[4])%100).padStart(2,'0'),560,159,.6);this.hudText('/4.',574,152);this.hudText('00',606,159,.6);
-    if(h.length>20)this.hudText(groupedNumber(Math.floor(h[20]/100/10)*10),620,176,1,true);this.hudText(groupedNumber(h[7]),620,200,1,true);
-    if(h.length>25&&!logicalPoses.some(p=>p.a.name==='front'&&(p.owner>>>16)===0xfffe))for(let i=0;i<3;i++){const color=h[23+i]|0;this.animation('front',80,frame,0,0,0,1,null,{interrupts:[7+i,color?9+color:13,color?2:3]});}
-    this.animation('front',69+h[19],frame,0,0);
-    this.flush();this.animations.endFrame();return [...h];
+    this.flush();g.disable(g.SCISSOR_TEST);this.animations.endFrame();return [...h];
   }
 }

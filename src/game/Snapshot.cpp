@@ -9,6 +9,32 @@ std::string snapshotBuffer;
 std::string messageSnapshotBuffer;
 std::string spellSnapshotBuffer;
 std::string backgroundSnapshotBuffer;
+std::string ufoSnapshotBuffer;
+const std::string& captureUfo() {
+  const auto& u = ufoManager;
+  std::ostringstream out;
+  out << std::setprecision(9) << "{\"enemyId\":" << u.enemyId << ",\"age\":" << u.age
+      << ",\"duration\":" << u.duration << ",\"fill\":" << u.fill << ",\"bucketA\":" << u.bucketA
+      << ",\"bucketB\":" << u.bucketB << ",\"enemy\":";
+  const Enemy* live = nullptr;
+  for (const auto& e : enemies)
+    if (e->active && e->id == u.enemyId) {
+      live = e.get();
+      break;
+    }
+  if (live)
+    out << "{\"id\":" << live->id << ",\"x\":" << live->x << ",\"y\":" << live->y
+        << ",\"z\":" << live->z << ",\"health\":" << live->life
+        << ",\"maxHealth\":" << live->maxLife << '}';
+  else
+    out << "null";
+  out << ",\"displayFrames\":" << u.rewardDisplayFrames
+      << ",\"multiplier\":" << u.rewardDisplayMultiplier << ",\"score\":" << u.rewardDisplayScore
+      << ",\"rewardX\":" << u.rewardDisplayPosition.x
+      << ",\"rewardY\":" << u.rewardDisplayPosition.y << ",\"rewardZ\":0}";
+  ufoSnapshotBuffer = out.str();
+  return ufoSnapshotBuffer;
+}
 void snapshotHex(std::ostream& out, const std::string& value) {
   static constexpr char digits[] = "0123456789abcdef";
   out << '"';
@@ -692,13 +718,15 @@ const std::string& captureState() {
       << ufoManager.enemyId << ',' << ufoManager.kind << ',' << ufoManager.age << ','
       << ufoManager.duration << ',' << ufoManager.elapsed << ',' << ufoManager.fill << ','
       << ufoManager.bucketA << ',' << ufoManager.bucketB << ',' << ufoManager.position.x << ','
-      << ufoManager.position.y << ',' << ufoManager.rewardIssued << "],\"itemPool\":["
-      << itemManager.nextId << ',' << itemManager.tokenSideCounter << ','
-      << itemManager.smallPointCursor << ',' << itemManager.smallPointSpawns
-      << "]},\"stage\":{\"number\":" << stageNumber << ",\"difficulty\":" << difficulty
-      << ",\"dialogue\":" << dialogue << ",\"spell\":" << spell << ",\"ended\":" << ended
-      << ",\"eventBits\":" << eventBits << ",\"nextIds\":[" << nextEnemyId << ','
-      << nextProjectileId << "],\"globals\":[";
+      << ufoManager.position.y << ',' << ufoManager.rewardIssued << "],\"ufoDisplay\":["
+      << ufoManager.rewardDisplayFrames << ',' << ufoManager.rewardDisplayMultiplier << ','
+      << ufoManager.rewardDisplayScore << ',' << ufoManager.rewardDisplayPosition.x << ','
+      << ufoManager.rewardDisplayPosition.y << "],\"itemPool\":[" << itemManager.nextId << ','
+      << itemManager.tokenSideCounter << ',' << itemManager.smallPointCursor << ','
+      << itemManager.smallPointSpawns << "]},\"stage\":{\"number\":" << stageNumber
+      << ",\"difficulty\":" << difficulty << ",\"dialogue\":" << dialogue << ",\"spell\":" << spell
+      << ",\"ended\":" << ended << ",\"eventBits\":" << eventBits << ",\"nextIds\":[" << nextEnemyId
+      << ',' << nextProjectileId << "],\"globals\":[";
   comma = false;
   std::vector<int> keys;
   for (const auto& entry : globals)

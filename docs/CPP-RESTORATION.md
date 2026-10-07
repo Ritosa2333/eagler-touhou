@@ -53,6 +53,20 @@ bookkeeping; its 348-hit fixture retains rounding remainders and phase floors.
 HUD41e439/41f33d samples verify fill, names, remaining spell stars and262 solid
 rectangle arguments. These samples do not execute original audio output or GPU.
 
+Spell titles now replace the virtual `text` sprite7 with a dynamic CP932 title.
+Bonus/History and UFO counts, percentage, timer, defeat multiplier and score use
+original ASCII glyphs, formatting, alpha and callback priorities. Independent
+samples cover12 spell text cases,252 animation poses,46 UFO text cases and630
+ASCII glyph submissions. Browser GDI font rasterization remains unverified.
+
+The128-byte pose ABI is accompanied by16-byte read-only scheduling records.
+Embedded Bullet31/Item27/Player24/HUD44 callbacks bypass ANM layer ordering;
+registered primary/secondary chains retain their native ordering. Laser29 and
+Font45/69 draws interleave with those chains. UFO immediate text uses22/60.
+The renderer selects full, playfield or stage camera clipping explicitly, and
+places the frame at native layer21/23 rather than painting over every object.
+Compact spell/UFO getters and schedule capture do not advance clocks or RNG.
+
 Original menus, campaign transitions, save/recording integration, remaining
 sprite-boundary bullet gates and special background effects still need work.
 Full-stage visual/Replay acceptance remains open. Browser font rasterization

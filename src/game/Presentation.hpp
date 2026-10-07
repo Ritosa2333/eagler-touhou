@@ -19,11 +19,20 @@ struct AnimationPose {
   u32 reserved[3]{};
 };
 static_assert(sizeof(AnimationPose) == 128);
+// Kept separate from the 128-byte pose ABI: native managers can draw an
+// embedded VM at a scheduler priority unrelated to its ANM layer.
+struct AnimationDrawSchedule {
+  u32 id = 0;
+  int priority = 0;
+  u32 order = 0, clip = 2; // 0full640x480,1playfield384x448,2stage422x480.
+};
+static_assert(sizeof(AnimationDrawSchedule) == 16);
 struct AnimationTransform {
   float x = 0, y = 0, z = 0, sx = 1, sy = 1, rotation = 0;
 };
 extern std::vector<Sprite> drawState;
 extern std::vector<AnimationPose> animationDrawState;
+extern std::vector<AnimationDrawSchedule> animationScheduleState;
 extern std::array<float, 41> hud;
 AnimationTransform resolveAnimationTransform(const anm_logic::Node& node, int depth = 0);
 void captureAnimationDraw();

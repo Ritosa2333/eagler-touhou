@@ -122,6 +122,12 @@ const char* th12_spell() {
 int th12_spell_size() {
   return th12::spellSnapshotBuffer.size();
 }
+const char* th12_ufo() {
+  return th12::captureUfo().c_str();
+}
+int th12_ufo_size() {
+  return int(th12::ufoSnapshotBuffer.size());
+}
 const char* th12_boss_hud() {
   return th12::captureBossHud().c_str();
 }
@@ -222,6 +228,15 @@ const void* th12_anm_draw_ptr() {
 }
 int th12_anm_draw_stride() {
   return sizeof(th12::AnimationPose);
+}
+int th12_anm_schedule_count() {
+  return int(th12::animationScheduleState.size());
+}
+const void* th12_anm_schedule_ptr() {
+  return th12::animationScheduleState.data();
+}
+int th12_anm_schedule_stride() {
+  return sizeof(th12::AnimationDrawSchedule);
 }
 int th12_background_frame() {
   return th12::backgroundFrame;

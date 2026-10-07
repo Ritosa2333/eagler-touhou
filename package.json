@@ -8,7 +8,7 @@
     "build": "node scripts/build.mjs",
     "corpus": "node scripts/build-corpus.mjs",
     "test": "node --test tests/*.test.mjs",
-    "test:portable": "node --test tests/comparator.test.mjs tests/preview-input.test.mjs tests/shell.test.mjs tests/ecl-behavior.test.mjs tests/music.test.mjs",
+    "test:portable": "node --test tests/comparator.test.mjs tests/preview-input.test.mjs tests/shell.test.mjs tests/ecl-behavior.test.mjs tests/music.test.mjs tests/spell-presentation.test.mjs tests/ufo-presentation.test.mjs tests/ascii-presentation.test.mjs tests/draw-scheduler.test.mjs tests/renderer-layering.test.mjs tests/native-render-schedule.test.mjs",
     "verify:subsystems": "node tools/replay-verifier/check-subsystems.mjs",
     "verify:quick": "node tools/replay-verifier/check-gameplay.mjs quick",
     "verify:daily": "node tools/replay-verifier/check-gameplay.mjs daily"
