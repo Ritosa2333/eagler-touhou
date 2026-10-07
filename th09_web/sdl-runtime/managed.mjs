@@ -1,5 +1,6 @@
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
 import createModule from './th09.mjs';
+import {installStartupBranding} from './startup-branding.mjs';
 import {scanCodes} from './keyboard.mjs';
 import {SharedNetplay} from './shared-netplay.mjs';
 import {exportReplayName,importReplayName} from './motion-replay.mjs';
@@ -71,6 +72,8 @@ case 'direct-touch':{const b=canvas.getBoundingClientRect();core._th09_touch(({d
 case 'touch-controls':{const t=m.controls||m,sensitivity=Number(t.touchSensitivity);if(sensitivity>=100&&sensitivity<=300&&sensitivity!==options.touchSensitivity){options.touchSensitivity=sensitivity;apply();}core._th09_touch_controls(+!!options.touchEnabled,+!!t.fireEnabled,+!!t.focusEnabled,t.bombSerial>>>0,t.escapeSerial>>>0);core._th09_touch_stick(Number(t.joystickX)||0,Number(t.joystickY)||0);return {};}
 case 'launch':if(!launched){
  clearKeyboard();if(!core.FS.analyzePath('/fonts/msgothic.ttc').exists&&core.FS.analyzePath('/msgothic.ttc').exists)core.FS.symlink('/msgothic.ttc','/fonts/msgothic.ttc');
+ const build=await(await fetch('./version.json')).json();
+ await installStartupBranding(core,{game,builtAt:build.builtAt});
  if(!core._th09_prepare_loading())throw Error(err());
  const startupImageAt=performance.now();performance.mark('eagler-startup-image');await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);
  if(!core._th09_game_open(Date.now()&65535))throw Error(err());await new Promise(resolve=>setTimeout(resolve,Math.max(0,2000-(performance.now()-startupImageAt))));performance.mark('eagler-startup-menu-ready');launched=true;apply();first=false;

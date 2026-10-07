@@ -15,7 +15,7 @@ const inputs = [
   ['th09.html', resolve(root, 'sdl-runtime/managed.html')],
   ['shell.mjs', resolve(root, 'sdl-runtime/managed.mjs')],
   ['managed.css', resolve(root, 'sdl-runtime/managed.css')],
-  ...['keyboard.mjs', 'directory-keyboard.mjs', 'shared-netplay.mjs', 'motion-replay.mjs'].map(name => [name, resolve(root, 'sdl-runtime', name)]),
+  ...['keyboard.mjs', 'directory-keyboard.mjs', 'shared-netplay.mjs', 'motion-replay.mjs', 'startup-branding.mjs', 'startup-wordmark.svg'].map(name => [name, resolve(root, 'sdl-runtime', name)]),
   ['th09.mjs', resolve(compiled, 'th09.mjs')],
   ['th09.wasm', resolve(compiled, 'th09.wasm')],
   ['fonts/cp932.bin', resolve(native, 'cp932.bin')],
@@ -24,6 +24,7 @@ const inputs = [
 for (const [, source] of inputs) if (!existsSync(source)) throw Error(`Missing TH09 Runtime input: ${source}`);
 const build = JSON.parse(readFileSync(resolve(compiled, 'build.json'), 'utf8'));
 const wasm = readFileSync(resolve(compiled, 'th09.wasm'));
+if (!Number.isFinite(Date.parse(build.builtAt))) throw Error('Rebuild TH09 to record its build timestamp');
 if (build.kind !== 'th09-native-web-release-candidate' || build.sha256 !== sha256(wasm)) {
   throw Error('TH09 release WASM does not match its build attestation');
 }
@@ -60,7 +61,7 @@ writeFileSync(resolve(output, 'manifest.json'), JSON.stringify({
 }, null, 2) + '\n');
 // version.json is generation-local: shared-netplay.mjs compares both peers'
 // WASM builds before starting the deterministic match.
-writeFileSync(resolve(output, 'version.json'), JSON.stringify({ game: 'th09', build: build.sha256.slice(0, 24) }) + '\n');
+writeFileSync(resolve(output, 'version.json'), JSON.stringify({ game: 'th09', build: build.sha256.slice(0, 24), builtAt: build.builtAt }) + '\n');
 const files = Object.fromEntries([...inputs.map(([name]) => name), 'manifest.json', 'version.json'].map(name => {
   const bytes = readFileSync(resolve(output, name));
   return [name, { bytes: bytes.length, sha256: sha256(bytes) }];

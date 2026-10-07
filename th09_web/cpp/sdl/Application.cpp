@@ -85,6 +85,7 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     Assets assets;GraphicsDevice graphics;FontDevice fonts{graphics};AudioDevice audio;
     bool platform_prepared=false;Rng loading_random;AnmExecutor loading_executor{loading_random};
     std::unique_ptr<GameResources> loading_resources;std::array<AnmVm,3> loading_vms{};
+    u32 startup_background=0,startup_branding=0;
     EclWorldState state;AnmExecutor executor{state.random};GameResources resources{assets,graphics,executor};
     GamePresentation presentation{graphics,resources,*this};InGameMenus menus{resources,*this};
     std::array<u8,2> local_focus{};i32 local_versus=1;
@@ -111,6 +112,15 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     bool prepare_platform(){if(platform_prepared)return true;if(!graphics.initialize()){error=graphics.error;return false;}if(!assets.open("/th09.dat")){error=assets.error;return false;}platform_prepared=true;return true;}
     bool prepare_loading(){
         if(!prepare_platform()||!title_background("th09logo.jpg"))return false;
+        startup_background=background_image;
+        // Optional in standalone development harnesses. Managed builds install
+        // a separate transparent texture, never a replacement retail image.
+        std::vector<u8> branding;
+        if(read_file("/eagler-startup.png",branding)){
+            const auto texture=graphics.image(branding.data(),u32(branding.size()));
+            if(!texture.handle){error=graphics.error;return false;}
+            startup_branding=texture.handle;
+        }
         loading_resources=std::make_unique<GameResources>(assets,graphics,loading_executor);
         if(!loading_resources->load(AnimationFile::menu,"nowloading.anm")){error=loading_resources->error;return false;}
         for(i32 i=0;i<3;++i){if(!loading_resources->start(AnimationFile::menu,loading_vms[i],i)){error="Startup loading animation failed";return false;}loading_vms[i].pos={500,440,0};}
@@ -170,6 +180,13 @@ struct Application final:GameMedia,InGameMenuServices,TitleServices,EndingServic
     void title_begin_draw()override{
         presentation.begin_field(2);presentation.renderer.flush();if(!background_image)return;PipelineState pipeline;pipeline.depthTest=false;pipeline.depthWrite=false;pipeline.fog=false;pipeline.blend=false;pipeline.color.operation=pipeline.alpha.operation=ColorOperation::First;pipeline.color.first=pipeline.alpha.first={ArgumentSource::Texture};
         const SpriteVertex corners[4]={{{-.5f,-.5f,0},1,0xffffffff,{0,0}},{{639.5f,-.5f,0},1,0xffffffff,{1,0}},{{-.5f,479.5f,0},1,0xffffffff,{0,1}},{{639.5f,479.5f,0},1,0xffffffff,{1,1}}};graphics.draw(pipeline,background_image,Topology::Strip,VertexLayout::ScreenColorUv,corners,4);
+        if(startup_branding&&background_image==startup_background){
+            // Same projection and draw order as the startup background. All
+            // subsequent authored animations/covers also cover the branding.
+            pipeline.blend=true;pipeline.sourceBlend=BlendFactor::SourceAlpha;
+            pipeline.destinationBlend=BlendFactor::InverseSourceAlpha;
+            graphics.draw(pipeline,startup_branding,Topology::Strip,VertexLayout::ScreenColorUv,corners,4);
+        }
     }
     void title_configuration()override{audio.music_volume=settings.music_volume;audio.music_enabled=host_music_enabled&&settings.music_mode!=0;audio.effects.enabled=settings.effects!=0;audio.effects.master_volume=settings.sound_volume;audio.refresh_volume();}
     bool write_file(const char* path,const u8* bytes,u32 size){auto* file=SDL_IOFromFile(path,"wb");const bool ok=file&&SDL_WriteIO(file,bytes,size)==size;if(file)SDL_CloseIO(file);if(ok)++storage_revision;return ok;}
