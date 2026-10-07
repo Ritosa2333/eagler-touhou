@@ -15,7 +15,7 @@ const inputs = [
   ['th09.html', resolve(root, 'sdl-runtime/managed.html')],
   ['shell.mjs', resolve(root, 'sdl-runtime/managed.mjs')],
   ['managed.css', resolve(root, 'sdl-runtime/managed.css')],
-  ...['keyboard.mjs', 'directory-keyboard.mjs', 'shared-netplay.mjs', 'motion-replay.mjs', 'startup-branding.mjs', 'startup-wordmark.svg'].map(name => [name, resolve(root, 'sdl-runtime', name)]),
+  ...['keyboard.mjs', 'directory-keyboard.mjs', 'shared-netplay.mjs', 'motion-replay.mjs', 'startup-branding.mjs'].map(name => [name, resolve(root, 'sdl-runtime', name)]),
   ['th09.mjs', resolve(compiled, 'th09.mjs')],
   ['th09.wasm', resolve(compiled, 'th09.wasm')],
   ['fonts/cp932.bin', resolve(native, 'cp932.bin')],
