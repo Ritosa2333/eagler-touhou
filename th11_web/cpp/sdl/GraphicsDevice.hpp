@@ -9,7 +9,7 @@ class GraphicsDevice final:public ZunGraphics {
     struct Texture {TextureImage image;u32 revision=0;};
     std::map<u32,Texture> textures;
     std::map<const AnmResource*,std::vector<u32>> resources;
-    u32 next_handle=3;
+    u32 next_handle=3,startup_credit=0;
     static touhou::sdl::Surface resolve(void*,u32);
 public:
     // Profile 10 selects shared float-alpha/D16 precision and world-quad
@@ -18,6 +18,8 @@ public:
     static constexpr u32 screen=1,depth=2;
     std::string error;
     bool initialize();
+    void draw_startup_branding(u32 tint);
+    void release_startup_branding();
     bool preload(AnmResource&,bool low_color=false);
     void unload(const AnmResource&);
     u32 texture(const AnmResource&,u32)override;

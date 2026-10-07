@@ -13,6 +13,7 @@ const fonts=process.env.EAGLER_FONT_ROOT;
 if(!fonts)throw Error('Set EAGLER_FONT_ROOT to the private SDL-native font resource directory');
 const hash=b=>createHash('sha256').update(b).digest('hex');
 const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json'),'utf8'));
+if(!Number.isFinite(Date.parse(build.builtAt)))throw Error('Rebuild Runtime with build timestamp');
 if(build.game!==game)throw Error('Build report is not TH11');
 if(build.features?.thprac===true){
  const exported=new Set((build.exports||[]).map(entry=>entry.name));
@@ -26,7 +27,7 @@ const entry='th11.html';
 // TH11 rasterizes original GDI glyph coverage; the baked tables ship as runtime
 // resources under /fonts. The shared host installs them alongside the archive.
 const fontNames=['font0.bin','font1.bin','font2.bin','font3.bin','cp932.bin','blend4444.bin'];
-const runtimeNames=['shell.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs','eagler-host.mjs'];
+const runtimeNames=['startup-branding.mjs','shell.mjs','managed.css','keyboard.mjs','directory-keyboard.mjs','eagler-host.mjs'];
 const names=[entry,'manifest.json',...runtimeNames,'motion-replay.mjs',game+'-sdl.mjs',game+'-sdl.wasm','resources.json',...fontNames.map(n=>'fonts/'+n)];
 const allowed=new Set([...names,'runtime-files.json']);
 function walk(dir){return existsSync(dir)?readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(resolve(dir,e.name)):[resolve(dir,e.name)]):[];}
@@ -49,7 +50,7 @@ for(const ext of ['mjs','wasm']){
 const resources=fontNames.map(name=>{const bytes=readFileSync(resolve(fonts,name));write('fonts/'+name,bytes);return {path:'/fonts/'+name,url:'./fonts/'+name,bytes:bytes.length};});
 write('resources.json',JSON.stringify({schema:'eagler-sdl-resources/1',game,resources},null,2)+'\n');
 const features={thprac:build.features?.thprac===true,languages:build.features?.languages===true,focusHitbox:build.features?.focusHitbox===true};
-write('manifest.json',JSON.stringify({game,protocol:'eagler-touhou/1',adapter:'sdl3-eagler',profile:'production',version:build.version,features,music:['ogg-stream','ogg-full','none'],touchReplay:false,execution:{kind:build.kind,sha256:build.sha256,loaderSha256:build.loaderSha256,architecture:build.architecture}},null,2)+'\n');
+write('manifest.json',JSON.stringify({game,protocol:'eagler-touhou/1',adapter:'sdl3-eagler',profile:'production',builtAt:build.builtAt,version:build.version,features,music:['ogg-stream','ogg-full','none'],touchReplay:false,execution:{kind:build.kind,sha256:build.sha256,loaderSha256:build.loaderSha256,architecture:build.architecture}},null,2)+'\n');
 const files=Object.fromEntries(names.map(name=>{const bytes=readFileSync(resolve(out,name));return [name,{bytes:bytes.length,sha256:hash(bytes)}];}));
 write('runtime-files.json',JSON.stringify({schema:'eagler-touhou/runtime-directory/1',game,files},null,2)+'\n');
 console.log(JSON.stringify({game,out,files:names.length,wasm:build.sha256},null,2));

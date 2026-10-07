@@ -1,6 +1,7 @@
 // Frozen-source SDL3/Emscripten build for the TH11 portable runtime.
 // Mirrors th10/th20 portable/build.mjs: compile cpp/game + cpp/sdl + the shared
 // Renderer, link a raw-exported ESM loader, and write an attested build.json.
+const builtAt=new Date().toISOString();
 import {spawn} from 'node:child_process';
 import {readFileSync,writeFileSync,readdirSync,mkdirSync,existsSync} from 'node:fs';
 import {resolve,relative} from 'node:path';
@@ -38,6 +39,6 @@ const sourceFiles=[...source.map(p=>resolve(workspace,relative(workspace,p))),..
 const inventory=Object.fromEntries(sourceFiles.map(p=>[relative(workspace,p).replaceAll('\\','/'),sha(readFileSync(p))]));
 const sdkMetadata=resolve(sdk,'touhou-sdk.json');
 const toolchain=existsSync(sdkMetadata)?JSON.parse(readFileSync(sdkMetadata)):{emsdkRoot:relative(workspace,sdk).replaceAll('\\','/'),layout:'external'};
-const report={game:'th11',kind:'cpp-sdl3',profile:'sdl3',diagnostic:false,version:'1.0.0-sdl3',features:{thprac,languages:true,focusHitbox:false},architecture:{loop:'cpp-fixed-60hz-bounded-catchup',audio:'cpp-miniaudio-vorbis-sdl3-stream',renderer:'cpp-gles-semantic-batched',graphicsInterface:'semantic-state-texture-matrix',vertexUpload:'web-bufferData-direct-game-batches-cached-vao',files:'sdl-io-idbfs',fonts:'cpp-original-baked-glyphs-argb4444',input:'cpp-sdl',launcher:'eagler-touhou/1'},sdlVersion:'3.4.2',sources:source.map(p=>relative(workspace,p).replaceAll('\\','/')),sourceFiles:inventory,sharedSources:['Renderer.cpp','Renderer.hpp','Shaders.hpp','GraphicsState.hpp','AssetPixelFormat.hpp','RenderCommands.hpp','LegacyGraphics.hpp','MotionTrack.hpp','TouchController.hpp'],bytes:wasm.length,sha256:sha(wasm),loaderSha256:sha(readFileSync(loader)),imports:WebAssembly.Module.imports(module),exports:WebAssembly.Module.exports(module),toolchain};
+const report={builtAt,game:'th11',kind:'cpp-sdl3',profile:'sdl3',diagnostic:false,version:'1.0.0-sdl3',features:{thprac,languages:true,focusHitbox:false},architecture:{loop:'cpp-fixed-60hz-bounded-catchup',audio:'cpp-miniaudio-vorbis-sdl3-stream',renderer:'cpp-gles-semantic-batched',graphicsInterface:'semantic-state-texture-matrix',vertexUpload:'web-bufferData-direct-game-batches-cached-vao',files:'sdl-io-idbfs',fonts:'cpp-original-baked-glyphs-argb4444',input:'cpp-sdl',launcher:'eagler-touhou/1'},sdlVersion:'3.4.2',sources:source.map(p=>relative(workspace,p).replaceAll('\\','/')),sourceFiles:inventory,sharedSources:['Renderer.cpp','Renderer.hpp','Shaders.hpp','GraphicsState.hpp','AssetPixelFormat.hpp','RenderCommands.hpp','LegacyGraphics.hpp','MotionTrack.hpp','TouchController.hpp'],bytes:wasm.length,sha256:sha(wasm),loaderSha256:sha(readFileSync(loader)),imports:WebAssembly.Module.imports(module),exports:WebAssembly.Module.exports(module),toolchain};
 writeFileSync(resolve(out,'build.json'),JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify({game:'th11',bytes:wasm.length,sha256:report.sha256,output:loader},null,2));

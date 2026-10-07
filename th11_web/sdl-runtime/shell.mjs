@@ -1,6 +1,7 @@
 // Platform shell for the upstream eagler-touhou/1 Launcher contract.
 // Game construction, input, timing, rendering, text and sound belong to C++.
 // Mirrors th10/th20 shell.mjs and imports the shared eagler-host transport.
+import {installStartupBranding,finishStartupAnimation} from './startup-branding.mjs';
 import createModule from './th11-sdl.mjs';
 import {scanCodes} from './keyboard.mjs';
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
@@ -81,9 +82,10 @@ async function stop(){if(stopping)return;stopping=true;try{clearKeyboard();core.
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(/^\/savesth11\//,'').replace(/^\//,'');if(!/^(?:scoreth11\.dat|th11\.cfg|replay\/th11_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/.test(name))throw Error('存档路径无效');return name;}
 async function launch(){
  if(launched)return;clearKeyboard();
+ await installStartupBranding(Module,{game,builtAt:(await(await fetch('./manifest.json')).json()).builtAt});
  if(!core.th11_prepare_loading())throw Error(coreError());
- await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);
- if(!core.th11_initialize())throw Error(coreError());
+ const startupImageAt=performance.now();performance.mark('eagler-startup-image');await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);
+ if(!core.th11_initialize())throw Error(coreError());await finishStartupAnimation(startupImageAt,frames=>core.th11_draw_loading(frames));performance.mark('eagler-startup-menu-ready');
  if(core.th11_phase()===4&&!core.th11_return_title())throw Error(coreError());
  launched=true;apply();first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
  const loading=$('#loading');if(loading)loading.textContent='';

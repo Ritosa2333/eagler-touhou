@@ -51,6 +51,7 @@ struct Application:StageResourceEffects {
     bool initialized=false,platform_prepared=false;
     AnmResource loading_signature;
     AnmManager loading_animations;
+    AnmVm* loading_credit=nullptr;
     std::string error;
 
     Application():renderer(graphics) {session.resources.effects=this;}
@@ -183,23 +184,33 @@ struct Application:StageResourceEffects {
         if(!read_archive()){if(error.empty())error=resources.error();return false;}
         platform_prepared=true;return true;
     }
-    void release_loading(){renderer.invalidate();loading_animations.clear();graphics.unload(loading_signature);}
+    void release_loading(){renderer.invalidate();loading_animations.clear();loading_credit=nullptr;graphics.unload(loading_signature);graphics.release_startup_branding();}
     bool prepare_loading(){
         release_loading();
         if(!prepare_platform()||!resources.open_anm("sig.anm",loading_signature)||!graphics.preload(loading_signature)){
             if(error.empty())error=graphics.error.empty()?resources.error():graphics.error;return false;
         }
-        if(!loading_animations.create(loading_signature,0,1,0)){error="Startup signature animation failed";return false;}
-        // Creation owns the VM; the first update publishes its draw layers.
-        if(!loading_animations.update(false)||!loading_animations.update(true)){error="Startup signature update failed";return false;}
+        loading_credit=loading_animations.create(loading_signature,0,1,0);
+        if(!loading_credit){error="Startup signature animation failed";return false;}
+        return draw_loading(1);
+    }
+    bool draw_loading(u32 frames){
+        if(!loading_credit)return false;
+        for(u32 i=0;i<std::min(frames,120u);++i)if(!loading_animations.update(false)||!loading_animations.update(true)){error="Startup signature update failed";return false;}
         session.compositor.reset_cameras(false);renderer.viewport={0,0,640,480,0,1};
         renderer.invalidate();if(!renderer.select_target(nullptr,0)||!renderer.clear_target(0xff000000))return false;
         renderer.set_camera(session.compositor.full_camera,true);
-        for(u32 layer=0;layer<31;++layer)if(renderer.draw_layer(loading_animations.layer_first(layer))==-2){error="Startup signature draw failed";return false;}
+        for(u32 layer=0;layer<31;++layer){
+            if(renderer.draw_layer(loading_animations.layer_first(layer))==-2){error="Startup signature draw failed";return false;}
+        }
+        // This isolated manager contains only sig.anm and its background children.
+        // Finish those children before drawing the credit, including the build
+        // timestamp outside the central signature panel. Keep the same fade tint.
+        renderer.flush();graphics.draw_startup_branding(loading_credit->color);
         renderer.flush();graphics.present();return true;
     }
     bool initialize() {
-        if(initialized){release_loading();if(!audio.initialize(resources)){error=audio.error;return false;}return true;}
+        if(initialized){if(!audio.initialize(resources)){error=audio.error;return false;}return true;}
         if(!prepare_platform())return false;
         if(!audio.initialize(resources)){error=audio.error;return false;}
         if(!fonts.initialize()){error=fonts.error;return false;}
@@ -219,7 +230,6 @@ struct Application:StageResourceEffects {
         renderer.viewport={0,0,640,480,0,1};
         // GameBattle's STD owner creates backdrop VMs and publishes its camera.
         frame_statistics.window_start=double(SDL_GetTicks())*.001;
-        release_loading();
         initialized=true;return audio_events()&&text_events();
     }
 
@@ -409,6 +419,7 @@ EMSCRIPTEN_KEEPALIVE int th11_validate_file(unsigned kind,const unsigned char* d
 EMSCRIPTEN_KEEPALIVE int th11_save_scores(){return th11::sdl::app.save_scores();}
 EMSCRIPTEN_KEEPALIVE int th11_save_replay(unsigned slot,const char* name){return th11::sdl::app.save_replay(slot,name);}
 EMSCRIPTEN_KEEPALIVE int th11_initialize(){if(!th11::sdl::app.initialize())return 0;for(auto& k:th11::sdl::keyboard_map)k.native=SDL_GetScancodeFromName(k.sdl);th11::sdl::initialize_controller();return 1;}
+EMSCRIPTEN_KEEPALIVE int th11_draw_loading(unsigned frames){return th11::sdl::app.draw_loading(frames);}
 EMSCRIPTEN_KEEPALIVE int th11_prepare_loading(){return th11::sdl::app.prepare_loading();}
 #if TH11_DEVELOPMENT_HARNESS
 #ifdef TH_ENABLE_THPRAC
@@ -475,7 +486,7 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_pause(unsigned on){using namespace th11::sdl
 EMSCRIPTEN_KEEPALIVE void th11_loop_stop(){using namespace th11::sdl;running=false;++loop_epoch;previous_frame=-1;cadence.reset();clear_inputs();app.audio.suspend(true);app.reset_frame_window();}
 EMSCRIPTEN_KEEPALIVE void th11_audio_close(){th11::sdl::app.audio.close();}
 EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
-    using namespace th11::sdl;if(running||!app.initialized)return;
+    using namespace th11::sdl;if(running||!app.initialized)return;app.release_loading();
     running=true;suspended=false;previous_frame=-1;cadence.reset();clear_inputs();app.audio.suspend(false);app.reset_frame_window();
     emscripten_request_animation_frame_loop([](double time,void* epoch)->EM_BOOL{
         if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;

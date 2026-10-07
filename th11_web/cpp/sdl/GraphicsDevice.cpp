@@ -1,4 +1,5 @@
 #include "GraphicsDevice.hpp"
+#include "../../../portable/sdl/StartupBranding.hpp"
 #if defined(TH_ENABLE_THCRAP)
 #include <SDL3/SDL.h>
 #define STB_IMAGE_IMPLEMENTATION
@@ -74,6 +75,15 @@ bool patched_texture(const AnmResource& file,const AnmTexture& source,u32 index,
 touhou::sdl::Surface GraphicsDevice::resolve(void* owner,u32 id){
     auto& device=*static_cast<GraphicsDevice*>(owner);auto it=device.textures.find(id);if(it==device.textures.end())return {};
     auto& t=it->second;auto& image=t.image;return {id,image.width,image.height,image.format,image.pitch,image.pixels.data(),u32(image.pixels.size()),t.revision};
+}
+void GraphicsDevice::draw_startup_branding(u32 tint){
+    if(!startup_credit){auto pixels=touhou::sdl::startup_branding::load();if(pixels.empty())return;
+        startup_credit=next_handle++;auto& image=textures[startup_credit].image;
+        image.width=1280;image.height=960;image.pitch=1280*4;image.format=touhou::graphics::PixelFormat::Bgra8;image.pixels=std::move(pixels);}
+    touhou::sdl::startup_branding::draw(backend,startup_credit,screen,tint);
+}
+void GraphicsDevice::release_startup_branding(){
+    if(startup_credit){backend.release(startup_credit);textures.erase(startup_credit);startup_credit=0;}
 }
 bool GraphicsDevice::initialize(){
     using namespace touhou::graphics;
