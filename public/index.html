@@ -316,6 +316,7 @@
   </script>
 </head>
 <body>
+  <div class="library-background" aria-hidden="true"></div>
   <div id="eaglerPreload" role="status" aria-label="正在加载 EAGLER TOUHOU" data-i18n-aria-label="preload.aria">
     <div class="eagler-preload-card">
       <i class="eagler-preload-spinner" aria-hidden="true"></i>
@@ -981,7 +982,7 @@
     <div class="touch-help" id="touchHelp" role="dialog" aria-modal="true" aria-labelledby="touchHelpTitle" hidden>
       <div class="touch-help-window">
         <header class="touch-help-bar">
-          <div class="touch-help-heading"><strong id="touchHelpTitle" data-i18n="help.title">帮助</strong></div>
+          <div class="touch-help-heading"><strong id="touchHelpTitle" data-i18n="help.title">帮助</strong><small data-i18n="help.subtitle">点开教程，查看操作演示</small></div>
           <button id="touchHelpClose" type="button" aria-label="关闭帮助" title="关闭" data-i18n-aria-label="help.close" data-i18n-title="action.close">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg>
           </button>
@@ -989,12 +990,12 @@
         <main class="touch-guide">
           <section class="guide-panels">
             <article class="guide-scene guide-panel orientation-guide help-mobile-only" id="orientationGuideSource" data-guide-panel="orientation">
-              <button class="guide-tab-card" id="guideTabOrientation" type="button" aria-expanded="false" aria-controls="guideOrientation" data-guide-tab="orientation"><span><strong id="guideOrientationTitle" data-i18n="help.manualLandscape">手动横屏</strong><small id="guideOrientationSummary" data-i18n="help.orientationSummary">屏幕没有自动旋转时</small></span><i class="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"/></svg></i></button>
+              <button class="guide-tab-card" id="guideTabOrientation" type="button" aria-expanded="false" aria-controls="guideOrientation" data-guide-tab="orientation"><span><strong id="guideOrientationTitle" data-i18n="help.manualLandscape">横屏教程</strong><small id="guideOrientationSummary" data-i18n="help.orientationSummary">旋转手机，让画面更舒展</small></span><i class="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"/></svg></i></button>
               <div class="guide-demo-body" id="guideOrientation" hidden>
                 <div id="guideOrientationAndroid">
                   <div class="orientation-guide-copy">
                     <ol class="orientation-steps">
-                      <li data-i18n="help.turnPhone">把手机横过来。是的，物理上先把手机横过来。</li>
+                      <li data-i18n="help.turnPhone">先把手机横过来。</li>
                       <li data-i18n="help.systemRotate">点击右下角出现的系统旋转按钮。</li>
                     </ol>
                   </div>
@@ -1028,23 +1029,8 @@
                 </div>
               </div>
             </article>
-            <article class="guide-scene guide-panel focus-demo help-mobile-only" data-guide-panel="focus" data-focus-mode="hold-button">
-              <button class="guide-tab-card" id="guideTabFocus" type="button" aria-expanded="false" aria-controls="guideFocus" data-guide-tab="focus"><span><strong data-i18n="help.inGame">游戏中</strong><small id="guideFocusSummary" data-i18n="help.focusSummary">移动与低速操作</small></span><i class="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"/></svg></i></button>
-              <div class="guide-demo-body" id="guideFocus" hidden>
-                <div class="focus-stage">
-                  <span class="shot-stream" aria-hidden="true"></span>
-                  <i class="demo-player"></i><i class="demo-hitbox"></i>
-                  <i class="demo-finger finger-move"></i>
-                  <div class="focus-mode-control" id="guideFocusControl" aria-hidden="true"><strong data-i18n="touch.focus">低速</strong><small id="guideFocusControlHint" data-i18n="help.hold">按住</small></div>
-                  <i class="demo-finger finger-focus"></i>
-                  <span class="move-trace"></span>
-                  <b class="focus-label" id="guideFocusLabel">按住「低速」</b>
-                </div>
-                <button class="guide-replay" type="button" data-i18n="action.replay">重播</button>
-              </div>
-            </article>
             <article class="guide-scene guide-panel menu-demo help-mobile-only" data-guide-panel="menu">
-              <button class="guide-tab-card" id="guideTabMenu" type="button" aria-expanded="false" aria-controls="guideMenu" data-guide-tab="menu"><span><strong data-i18n="help.menu">菜单中</strong><small data-i18n="help.menuSummary">滑动选择，单击确认，两指点按返回</small></span><i class="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"/></svg></i></button>
+              <button class="guide-tab-card" id="guideTabMenu" type="button" aria-expanded="false" aria-controls="guideMenu" data-guide-tab="menu"><span><strong data-i18n="help.menu">菜单手势教程</strong><small data-i18n="help.menuSummary">滑动选择，单击确认，两指点按返回</small></span><i class="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"/></svg></i></button>
               <div class="guide-demo-body" id="guideMenu" hidden>
                 <div class="menu-stage">
                   <div class="menu-question">CONTINUE?</div>
@@ -1059,8 +1045,23 @@
                 <button class="guide-replay" type="button" data-i18n="action.replay">重播</button>
               </div>
             </article>
+            <article class="guide-scene guide-panel focus-demo help-mobile-only" data-guide-panel="focus" data-focus-mode="hold-button">
+              <button class="guide-tab-card" id="guideTabFocus" type="button" aria-expanded="false" aria-controls="guideFocus" data-guide-tab="focus"><span><strong data-i18n="help.inGame">移动教程</strong><small id="guideFocusSummary" data-i18n="help.focusSummary">移动与低速操作</small></span><i class="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"/></svg></i></button>
+              <div class="guide-demo-body" id="guideFocus" hidden>
+                <div class="focus-stage">
+                  <span class="shot-stream" aria-hidden="true"></span>
+                  <i class="demo-player"></i><i class="demo-hitbox"></i>
+                  <i class="demo-finger finger-move"></i>
+                  <div class="focus-mode-control" id="guideFocusControl" aria-hidden="true"><strong data-i18n="touch.focus">低速</strong><small id="guideFocusControlHint" data-i18n="help.hold">按住</small></div>
+                  <i class="demo-finger finger-focus"></i>
+                  <span class="move-trace"></span>
+                  <b class="focus-label" id="guideFocusLabel">按住「低速」</b>
+                </div>
+                <button class="guide-replay" type="button" data-i18n="action.replay">重播</button>
+              </div>
+            </article>
             <article class="guide-scene guide-panel dialogue-demo help-mobile-only" data-guide-panel="dialogue">
-              <button class="guide-tab-card" id="guideTabDialogue" type="button" aria-expanded="false" aria-controls="guideDialogue" data-guide-tab="dialogue"><span><strong data-i18n="help.dialogue">对话中</strong><small data-i18n="help.dialogueSummary">长按可以快速跳过对话</small></span><i class="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"/></svg></i></button>
+              <button class="guide-tab-card" id="guideTabDialogue" type="button" aria-expanded="false" aria-controls="guideDialogue" data-guide-tab="dialogue"><span><strong data-i18n="help.dialogue">对话手势教程</strong><small data-i18n="help.dialogueSummary">长按可以快速跳过对话</small></span><i class="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"/></svg></i></button>
               <div class="guide-demo-body" id="guideDialogue" hidden>
                 <div class="dialogue-stage">
                   <div class="dialogue-portrait">?</div>

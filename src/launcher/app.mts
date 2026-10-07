@@ -1717,8 +1717,29 @@ function installRuntimeDomBridges() {
   rebindRuntimeDomBridges();
 }
 
+let orientationLockUnsupported = false;
+let orientationLockChecked = false;
+let orientationLockPending = false;
+function canOfferOrientationLock() {
+  return mobileDevice && typeof screen.orientation?.lock === "function" && !orientationLockUnsupported;
+}
+async function probeOrientationLock() {
+  if (!canOfferOrientationLock() || orientationLockChecked || orientationLockPending || !isPlayerFullscreen()) return;
+  orientationLockPending = true;
+  try {
+    await screen.orientation.lock(screen.orientation.type);
+    screen.orientation.unlock();
+    orientationLockChecked = true;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "NotSupportedError") orientationLockUnsupported = true;
+  } finally {
+    orientationLockPending = false;
+    updatePlayerOrientationUi();
+    updateTouchLayoutOrientationActionUi();
+  }
+}
 function updatePlayerOrientationUi() {
-  const available = (mobileDevice || navigator.maxTouchPoints > 0) && state.launched && !touchLayoutEditing;
+  const available = canOfferOrientationLock() && state.launched && !touchLayoutEditing;
   orientationToggle.hidden = !available;
   if (!available) return;
   const targetLandscape = touchLayoutOrientation() !== "landscape";
@@ -2829,7 +2850,7 @@ function captureDefaultTouchLayoutProfile() {
       controls[name] = {
         x: Math.max(0, Math.min(1, (rect.left + rect.width / 2 - safe.left) / safe.width)),
         y: Math.max(0, Math.min(1, (rect.top + rect.height / 2 - safe.top) / safe.height)),
-        scale: 1,
+        scale: name === "bomb" ? 1.5 : 1,
         priority: touchLayoutControlMeta[name].priority
       };
     }
@@ -4539,7 +4560,19 @@ function updateMpQuickChat() {
     localSeat:mpUiState.seat,seats:room?.seats??[],
     connected:mpLobby.connected,language:state.language,lessMotion:state.lessMotion});
 }
-function render() {
+function syncLibraryToolsVisibility(multiplayerRoomOpen: boolean) {
+  const tools = $(".tools");
+  const open = state.hasSelection && !multiplayerRoomOpen && !state.launched;
+  $("#main").classList.toggle("has-selection", state.hasSelection && !$("#main").classList.contains("library-layout"));
+  tools.classList.toggle("is-open", open);
+  document.body.classList.toggle("library-tools-open", open);
+  $(".game-library").inert = open;
+  tools.setAttribute("role", open ? "dialog" : "complementary");
+  tools.setAttribute("aria-labelledby", "gameTitle");
+  tools.setAttribute("aria-modal", String(open));
+  tools.setAttribute("aria-hidden", String(!open));
+}
+function render({ updateLibrary = true } = {}) {
   updateMpQuickChat();
   if (!productEnabled(state.product)) state.hasSelection = false;
   chooseDefaultMusic();
@@ -4554,7 +4587,7 @@ function render() {
   const lessMotionToggle = $("#lessMotionToggle");
   lessMotionToggle.setAttribute("aria-pressed", String(state.lessMotion));
   lessMotionToggle.title = t(state.lessMotion ? "nav.motionFullTitle" : "nav.motionLessTitle");
-  $("#main").classList.toggle("has-selection", state.hasSelection);
+  $("#main").classList.toggle("has-selection", state.hasSelection && !$("#main").classList.contains("library-layout"));
   const tools = $(".tools");
   tools.classList.toggle("mobile-open", state.mobileOpen);
   tools.classList.toggle("mp-mode", multiplayerProduct);
@@ -4564,7 +4597,7 @@ function render() {
   // accessibility exposure. Avoiding another browser-managed interaction state
   // also makes the Edge hit-test recovery path deterministic after Player exit.
   tools.removeAttribute("inert");
-  document.querySelectorAll<HTMLElement>(".game").forEach(card => {
+  if (updateLibrary) document.querySelectorAll<HTMLElement>(".game").forEach(card => {
     const candidate = card.dataset.product || card.dataset.game || "";
     if (!isProductId(candidate)) return;
     const product = candidate;
@@ -4635,13 +4668,7 @@ function render() {
     }
   }
   const multiplayerRoomOpen = multiplayerProduct && !!mpUiState.room;
-  const libraryToolsOpen = state.hasSelection && !multiplayerRoomOpen && !state.launched;
-  document.body.classList.toggle("library-tools-open", libraryToolsOpen);
-  $(".game-library").inert = libraryToolsOpen;
-  tools.setAttribute("role", libraryToolsOpen ? "dialog" : "complementary");
-  tools.setAttribute("aria-labelledby", "gameTitle");
-  tools.setAttribute("aria-modal", String(libraryToolsOpen));
-  tools.setAttribute("aria-hidden", String(!libraryToolsOpen));
+  syncLibraryToolsVisibility(multiplayerRoomOpen);
   if (multiplayerRoomOpen && $("#main").classList.contains("card-layout-motion")) cancelCardLayoutMotion();
   $("#main").classList.toggle("mp-room-open", multiplayerRoomOpen);
   document.body.classList.toggle("mp-room-active", multiplayerRoomOpen);
@@ -5084,6 +5111,7 @@ function handleFullscreenChange() {
   fullscreenButton.setAttribute("aria-label", t(isFullscreen ? "player.exitFullscreen" : "player.enterFullscreen"));
   fullscreenButton.dataset.fullscreen = String(isFullscreen);
   fullscreenButton.title = t(isFullscreen ? "player.exitFullscreenTitle" : "player.enterFullscreenTitle");
+  if (isFullscreen) void probeOrientationLock();
   if (isFullscreen) {
     if (state.launched) {
       lockEscapeForGame();
@@ -7035,10 +7063,13 @@ function endTouchLayoutEditorDrag(event?: PointerEvent) {
 function updateTouchLayoutOrientationActionUi() {
   const switchButton = $("#touchLayoutOrientationHelpOpen");
   if (!switchButton) return;
+  switchButton.hidden = !canOfferOrientationLock();
   switchButton.textContent = t(touchLayoutOrientation() === "landscape" ? "player.switchPortrait" : "player.switchLandscape");
 }
 
 async function switchTouchLayoutOrientation() {
+  if (!canOfferOrientationLock() || orientationLockPending) return;
+  orientationLockPending = true;
   const target = touchLayoutOrientation() === "landscape" ? "portrait" : "landscape";
   const targetTitle = t(target === "landscape" ? "touch.landscape" : "touch.portrait");
   try {
@@ -7046,6 +7077,7 @@ async function switchTouchLayoutOrientation() {
     if (typeof screen.orientation?.lock !== "function") throw new Error(t("touch.orientationUnsupported"));
     if (!isPlayerFullscreen()) await enterPlayerFullscreen({ focusGame: false });
     await screen.orientation.lock(target);
+    orientationLockChecked = true;
     showToast(t("touch.orientationRequested", { orientation: targetTitle }));
     await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     applyTouchLayout();
@@ -7056,7 +7088,14 @@ async function switchTouchLayoutOrientation() {
     }
     updatePlayerOrientationUi();
   } catch (error) {
+    if (error instanceof DOMException && error.name === "NotSupportedError") {
+      orientationLockUnsupported = true;
+      updatePlayerOrientationUi();
+      updateTouchLayoutOrientationActionUi();
+    }
     showToast(t("touch.orientationFailed"));
+  } finally {
+    orientationLockPending = false;
   }
 }
 
@@ -8468,9 +8507,44 @@ function animateMobileHomeCards() {
 }
 matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", cancelMobileHomeCards);
 
-initializeGameLibrary({ openOnFirstClick: product => isMultiplayerProductId(product) });
 const mobileLibraryMotion = matchMedia("(max-width: 780px), (hover: none), (pointer: coarse)");
+// Only the options layer follows the visible viewport. Background/library
+// geometry stays independent of browser chrome, keyboard and panel visibility.
+let optionsViewportFrame = 0;
+function updateOptionsViewport() {
+  optionsViewportFrame = 0;
+  const viewport = window.visualViewport;
+  if (viewport && viewport.scale !== 1) return; // Preserve browser pinch zoom.
+  const width = viewport?.width || document.documentElement.clientWidth;
+  const height = viewport?.height || window.innerHeight;
+  const tools = $(".tools");
+  tools.style.setProperty("--options-view-width", `${width}px`);
+  tools.style.setProperty("--options-view-height", `${height}px`);
+  tools.style.setProperty("--options-view-top", `${viewport?.offsetTop || 0}px`);
+  tools.style.setProperty("--options-view-left", `${viewport?.offsetLeft || 0}px`);
+  tools.classList.toggle("options-compact", height < 520);
+}
+function scheduleOptionsViewport() {
+  if (!optionsViewportFrame) optionsViewportFrame = requestAnimationFrame(updateOptionsViewport);
+}
+window.addEventListener("resize", scheduleOptionsViewport, { passive: true });
+window.visualViewport?.addEventListener("resize", scheduleOptionsViewport, { passive: true });
+window.visualViewport?.addEventListener("scroll", scheduleOptionsViewport, { passive: true });
+updateOptionsViewport();
 let libraryToolsCloseTimer = 0;
+function selectLibraryProduct(product: ProductId) {
+  if (state.product === product) return false;
+  state.game = gameIdForProduct(product);
+  state.product = product;
+  state.runtimeVariant = isMultiplayerProduct(product) ? "multiplayer" : "normal";
+  restoreMpProductPreferences(product);
+  restoreGamePreferences(state.game, currentPreferenceId());
+  resetRuntime();
+  return true;
+}
+initializeGameLibrary({
+  openOnFirstClick: product => isMultiplayerProductId(product),
+});
 function closeLibraryTools(fromHistory = false) {
   if (lobbyOptionsEmbed && !state.launched) {
     parent.postMessage({ type: "eagler-lobby-options-close", product: state.product, requestId: lobbyOptionsRequest }, location.origin);
@@ -8491,6 +8565,7 @@ function closeLibraryTools(fromHistory = false) {
       state.hasSelection = false;
       $("#main").classList.remove("has-selection");
       document.body.classList.remove("library-tools-open");
+      $(".tools").classList.remove("is-open");
       $(".game-library").inert = false;
       const tools = $(".tools");
       tools.setAttribute("role", "complementary");
@@ -8510,13 +8585,26 @@ function closeLibraryTools(fromHistory = false) {
   }
   // Let the panel exit before changing the library's selected state.
   document.body.classList.add("library-tools-closing");
-  libraryToolsCloseTimer = window.setTimeout(finish, 360);
+  libraryToolsCloseTimer = window.setTimeout(finish, 240);
 }
 $("#libraryBack").addEventListener("click", () => closeLibraryTools());
 $("#libraryBackdrop").addEventListener("click", () => closeLibraryTools());
+$("#libraryBackdrop").addEventListener("wheel", event => { event.preventDefault(); }, { passive: false });
+$(".tools").addEventListener("wheel", event => {
+  if (document.body.classList.contains("library-tools-open") && event.target instanceof Element &&
+    !event.target.closest(".options-scroll")) event.preventDefault();
+}, { passive: false });
 $(".tools").addEventListener("keydown", event => {
   if (!document.body.classList.contains("library-tools-open") || event.defaultPrevented) return;
-  if (event.key === "Escape") {
+  if (["PageUp", "PageDown", "Home", "End", "ArrowUp", "ArrowDown"].includes(event.key) &&
+    event.target instanceof Element && !event.target.closest(".options-scroll,input,select,textarea")) {
+    event.preventDefault();
+    const scroll = $(".options-scroll");
+    if (event.key === "Home") scroll.scrollTop = 0;
+    else if (event.key === "End") scroll.scrollTop = scroll.scrollHeight;
+    else scroll.scrollTop += (event.key === "PageUp" || event.key === "ArrowUp" ? -1 : 1) *
+      (event.key.startsWith("Page") ? scroll.clientHeight : 40);
+  } else if (event.key === "Escape") {
     event.preventDefault();
     closeLibraryTools();
   } else if (event.key === "Tab") {
@@ -8543,19 +8631,9 @@ document.querySelectorAll<HTMLElement>(".game").forEach(card => {
       location.assign(lobby.href);
       return;
     }
-    const prepareTools = main.classList.contains("library-layout") && mobileLibraryMotion.matches && !state.hasSelection && !state.lessMotion &&
-      !matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prepareTools) document.body.classList.add("library-tools-preparing");
     const changed = state.product !== product;
     const previousLayout = changed || !state.hasSelection ? captureCardLayout() : null;
-    if (changed) {
-      state.game = gameId;
-      state.product = product;
-      state.runtimeVariant = isMultiplayerProduct(product) ? "multiplayer" : "normal";
-      restoreMpProductPreferences(product);
-      restoreGamePreferences(state.game, currentPreferenceId());
-      resetRuntime();
-    }
+    selectLibraryProduct(product);
     state.hasSelection = true;
     const routeOperation = playerRouteHistoryOperation({
       currentUrl: location.href,
@@ -8564,10 +8642,15 @@ document.querySelectorAll<HTMLElement>(".game").forEach(card => {
       product,
     });
     if (routeOperation) applyHistoryOperations(history, [routeOperation]);
-    render();
-    if (prepareTools) requestAnimationFrame(() => requestAnimationFrame(() => {
-      document.body.classList.remove("library-tools-preparing");
-    }));
+    if (changed || !main.classList.contains("library-layout")) {
+      render();
+    } else {
+      // Closing keeps this shared panel intact. Reopening the same product
+      // only restores visibility/focus, without rebuilding selects or labels.
+      syncLibraryToolsVisibility(false);
+      card.classList.add("selected");
+      card.setAttribute("aria-current", "page");
+    }
     animateCardLayout(previousLayout);
     $("#libraryBack").focus({ preventScroll: true });
     setTranslatedStatus(changed ? "status.switchedProduct" : "status.selectedProduct", { product: productTitle(product) });

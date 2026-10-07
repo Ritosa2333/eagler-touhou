@@ -49,29 +49,38 @@ function applyCoverAccent(card: HTMLElement) {
 
 /** One scroll owner per shelf; ordinary touch scrolling stays browser-native. */
 function createRailMotion(rail: HTMLElement, reduced: () => boolean) {
-  let frame = 0;
-  const cancel = () => {
-    cancelAnimationFrame(frame); frame = 0;
+  let moving = false, settleTimer = 0;
+  const finish = () => {
+    clearTimeout(settleTimer); settleTimer = 0; moving = false;
     rail.classList.remove("is-navigating");
   };
+  const cancel = () => {
+    const wasMoving = moving;
+    finish();
+    if (wasMoving) rail.scrollTo({ left: rail.scrollLeft, behavior: "instant" });
+  };
+  // Native scrolling can run without a per-frame Launcher JS callback. The
+  // quiet period also works on Chrome/WebView 108, without scrollend support.
+  rail.addEventListener("scroll", () => {
+    if (!moving) return;
+    clearTimeout(settleTimer);
+    settleTimer = window.setTimeout(finish, 120);
+  }, { passive: true });
   const move = (destination: number) => {
     cancel();
     const target = Math.max(0, Math.min(rail.scrollWidth - rail.clientWidth, destination));
-    const start = rail.scrollLeft, distance = target - start;
-    if (reduced() || Math.abs(distance) < 1) { rail.scrollLeft = target; return; }
+    if (reduced() || Math.abs(target - rail.scrollLeft) < 1) {
+      rail.scrollTo({ left: target, behavior: "instant" });
+      return;
+    }
+    moving = true;
     rail.classList.add("is-navigating");
-    const began = performance.now(), duration = Math.min(560, 300 + Math.abs(distance) * .18);
-    const tick = (now: number) => {
-      const progress = reduced() ? 1 : Math.min(1, (now - began) / duration);
-      rail.scrollLeft = start + distance * (1 - Math.pow(1 - progress, 4));
-      if (progress < 1) frame = requestAnimationFrame(tick);
-      else { frame = 0; rail.classList.remove("is-navigating"); }
-    };
-    frame = requestAnimationFrame(tick);
+    rail.scrollTo({ left: target, behavior: "smooth" });
+    settleTimer = window.setTimeout(finish, 180);
   };
   const settle = (destination: number) => {
     cancel();
-    rail.scrollLeft = Math.max(0, Math.min(rail.scrollWidth - rail.clientWidth, destination));
+    rail.scrollTo({ left: Math.max(0, Math.min(rail.scrollWidth - rail.clientWidth, destination)), behavior: "instant" });
   };
   return { move, settle, cancel };
 }
@@ -79,6 +88,8 @@ function createRailMotion(rail: HTMLElement, reduced: () => boolean) {
 export function initializeGameLibrary(options: {
   initialProduct?: string;
   onSelectionChange?: (product: string) => void;
+  /** Directory selection may stay aligned on resize; Launcher browsing must not snap. */
+  alignSelectionOnResize?: boolean;
   openOnFirstClick?: (product: string) => boolean;
 } = {}) {
   const selectors: Array<(product: string) => void> = [];
@@ -132,7 +143,9 @@ export function initializeGameLibrary(options: {
     const openTools = (id?: string, settle = false) => {
       const card = cardFor(id);
       if (!card) return;
-      retire(); select(id, false, settle); card.click();
+      retire();
+      if (activeId !== id) select(id, false, settle);
+      card.click();
     };
     const candidate = (id: string) => {
       if (!pointer || pointer.choice === id) return;
@@ -232,7 +245,7 @@ export function initializeGameLibrary(options: {
     }, { passive: false });
     new ResizeObserver(() => {
       update();
-      if (options.onSelectionChange) select(activeId, false, true);
+      if (options.alignSelectionOnResize && !rail.closest("[inert]")) select(activeId, false, true);
     }).observe(rail);
     new MutationObserver(update).observe(rail, { subtree: true, attributes: true, attributeFilter: ["hidden"] });
     rail.addEventListener("keydown", event => {

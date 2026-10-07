@@ -426,7 +426,7 @@ function renderFilters() {
     return button;
   });
   el("filters").replaceChildren(...filters);
-  library = initializeGameLibrary({ initialProduct: selectedProduct, onSelectionChange: product => selectProduct(product) });
+  library = initializeGameLibrary({ initialProduct: selectedProduct, alignSelectionOnResize: true, onSelectionChange: product => selectProduct(product) });
 }
 function selectProduct(product: string, fromHistory = false) {
   if (selectedProduct === product || !isMultiplayerProductId(product) || !products.includes(product)) return;
