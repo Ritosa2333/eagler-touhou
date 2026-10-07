@@ -55,7 +55,7 @@ policy. Maintainers may still isolate another risky topic voluntarily.
 ## Promotion into the Eagler worktree
 
 TH08/TH10 Multiplayer is a permanent branch separation exception. Their ordinary
-`eagler` and `experiment/th08-multiplayer` / `experiment/th10-multiplayer`
+`eagler` and `eagler-mp`
 implementations remain separate. Promote an MP topic into its existing MP branch,
 using that branch's own base and ancestor. Do not merge the full MP implementation
 into ordinary `eagler`, and do not delete the persistent MP branches after shared
