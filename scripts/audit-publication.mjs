@@ -15,8 +15,16 @@ if (args.some(value => value !== "--workspace" && !value.startsWith("--directory
 const project = directoryArgument ? resolve(directoryArgument.slice("--directory=".length))
   : resolve(fileURLToPath(new URL("..", import.meta.url)));
 const forbiddenExtensions = new Set([".dat", ".data", ".wav", ".ogg", ".mid", ".midi", ".rpy", ".ttc"]);
+// Authored quick-chat voice clips are the only wav the repository publishes.
+// They are reviewed, small, and ship with the Launcher; every other wav stays
+// forbidden so retail music/data cannot be committed by accident.
+const quickChatVoiceClipAssets = new Set([
+  "1", "request-life", "request-power", "share-resources", "follow-me", "spread-out",
+  "stop-fire", "bomb-me", "bomb-you", "leaving", "last-game", "last", "thanks", "xxzj",
+].map(id => `assets/quick-chat/${id}.wav`));
 const publicAssets = new Set([
   "assets/launcher-background.webp",
+  ...quickChatVoiceClipAssets,
   "assets/donation.webp",
   "assets/touch-rotate-landscape.webp",
   "assets/notice-bilibili.svg",
@@ -79,7 +87,7 @@ async function inspect(path) {
   const publicRel = rel.startsWith("public/") ? rel.slice("public/".length) : rel;
   if (isHostGeneratedOriginalAsset(publicRel)) failures.push(`eagler-touhou/${rel} (original-game-derived host asset must not be source-published)`);
   else if (publicRel.startsWith("assets/") && !publicAssets.has(publicRel)) failures.push(`eagler-touhou/${rel} (unreviewed public asset)`);
-  if (forbiddenExtensions.has(extname(rel).toLowerCase())) failures.push(`eagler-touhou/${rel}`);
+  if (forbiddenExtensions.has(extname(rel).toLowerCase()) && !quickChatVoiceClipAssets.has(publicRel)) failures.push(`eagler-touhou/${rel}`);
   if ((await stat(path)).size > 50 * 1024 * 1024) failures.push(`eagler-touhou/${rel} (>50 MiB)`);
 }
 async function walk(directory) {

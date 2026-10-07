@@ -52,18 +52,8 @@
   </script>
   <!-- site-metadata:start --><!-- site-metadata:end -->
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="color-scheme" content="dark" id="colorSchemeMeta">
-  <meta name="theme-color" content="#10100f" id="themeColorMeta">
-  <script>
-  (function () {
-    // Apply a saved light theme before first paint to avoid a dark flash.
-    try {
-      if (localStorage.getItem("eagler-theme") === "light") {
-        document.documentElement.setAttribute("data-theme", "light");
-      }
-    } catch (e) {}
-  }());
-  </script>
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#10100f">
   <title data-i18n="site.documentTitle">东方Project 原作 STG ~ EAGLER TOUHOU</title>
   <meta name="description" content="一个将东方原作近乎分毫不差地移植到网页，并带着联机 Mod、汉化、高刷新率适配、触控适配、thprac 的东方原作 STG 游戏平台。" data-i18n-content="site.description">
   <meta property="og:type" content="website">
@@ -336,10 +326,6 @@
     <header class="masthead">
       <div class="brand" aria-label="EAGLER TOUHOU"><span class="brand-eagler"><span class="brand-title">EAGLER</span><time class="brand-version" id="brandUpdateAge" data-i18n="brand.neverUpdated">尚未更新过</time></span><span class="brand-separator" aria-hidden="true"><span class="brand-yinyang">☯</span></span><span class="brand-title">TOUHOU</span></div>
       <nav class="masthead-links" aria-label="站点信息" data-i18n-aria-label="nav.siteInfo">
-        <button class="masthead-link theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="切换到白天模式" title="白天 / 夜间">
-          <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM11 2h2v3h-2V2zm0 17h2v3h-2v-3zM2 11h3v2H2v-2zm17 0h3v2h-3v-2zM4.2 4.2l2.1 2.1-1.4 1.4-2.1-2.1 1.4-1.4zm14.9 14.9 2.1 2.1-1.4 1.4-2.1-2.1 1.4-1.4zM4.2 19.8l2.1-2.1 1.4 1.4-2.1 2.1-1.4-1.4zm14.9-14.9 2.1-2.1 1.4 1.4-2.1 2.1-1.4-1.4z"/></svg>
-          <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
-        </button>
         <a class="masthead-link" id="originMigrationOpen" href="migrate.html" hidden><span class="masthead-label"><span data-i18n="nav.oldSitePart1">存档</span><wbr><span data-i18n="nav.migrationPart2">恢复</span></span></a>
         <button class="masthead-link" id="donationOpenTop" type="button"><span class="masthead-label" data-i18n="nav.donate">捐赠</span></button>
         <a class="masthead-link" href="faq.html"><span class="masthead-label"><span data-i18n="nav.faqFirst">常见</span><wbr><span data-i18n="nav.faqSecond">问题</span></span></a>
@@ -359,37 +345,6 @@
         </div>
       </nav>
     </header>
-    <script>
-    (function () {
-      var root = document.documentElement;
-      var meta = document.getElementById("themeColorMeta");
-      var scheme = document.getElementById("colorSchemeMeta");
-      var btn = document.getElementById("themeToggle");
-      if (!btn) return;
-      function isLight() { return root.getAttribute("data-theme") === "light"; }
-      function apply(light) {
-        if (light) {
-          root.setAttribute("data-theme", "light");
-          if (meta) meta.setAttribute("content", "#e9e4db");
-          if (scheme) scheme.setAttribute("content", "light");
-          btn.setAttribute("aria-pressed", "true");
-          btn.setAttribute("aria-label", "切换到夜间模式");
-        } else {
-          root.removeAttribute("data-theme");
-          if (meta) meta.setAttribute("content", "#10100f");
-          if (scheme) scheme.setAttribute("content", "dark");
-          btn.setAttribute("aria-pressed", "false");
-          btn.setAttribute("aria-label", "切换到白天模式");
-        }
-      }
-      apply(isLight());
-      btn.addEventListener("click", function () {
-        var next = !isLight();
-        try { localStorage.setItem("eagler-theme", next ? "light" : "dark"); } catch (e) {}
-        apply(next);
-      });
-    }());
-    </script>
     <main class="main library-layout" id="main">
       <h1 class="visually-hidden">东方Project 原作 STG ~ EAGLER TOUHOU</h1>
       <!-- product-cards:generated-from-product-catalog -->
@@ -1102,7 +1057,6 @@
         </main>
       </div>
     </div>
-
 
 
     <nav class="touch-utility-row" aria-label="画面工具" data-i18n-aria-label="touch.tools"><button class="fullscreen-toggle" id="fullscreenToggle" type="button" aria-label="进入全屏" data-i18n-aria-label="player.enterFullscreen" title="进入全屏（Alt+Enter）" data-i18n-title="player.enterFullscreenTitle"><span class="fullscreen-enter-icon"><svg class="touch-utility-icon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M200-200h80q17 0 28.5 11.5T320-160q0 17-11.5 28.5T280-120H160q-17 0-28.5-11.5T120-160v-120q0-17 11.5-28.5T160-320q17 0 28.5 11.5T200-280v80Zm560 0v-80q0-17 11.5-28.5T800-320q17 0 28.5 11.5T840-280v120q0 17-11.5 28.5T800-120H680q-17 0-28.5-11.5T640-160q0-17 11.5-28.5T680-200h80ZM200-760v80q0 17-11.5 28.5T160-640q-17 0-28.5-11.5T120-680v-120q0-17 11.5-28.5T160-840h120q17 0 28.5 11.5T320-800q0 17-11.5 28.5T280-760h-80Zm560 0h-80q-17 0-28.5-11.5T640-800q0-17 11.5-28.5T680-840h120q17 0 28.5 11.5T840-800v120q0 17-11.5 28.5T800-640q-17 0-28.5-11.5T760-680v-80Z"/></svg></span><span class="fullscreen-exit-icon"><svg class="touch-utility-icon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M240-240h-80q-17 0-28.5-11.5T120-280q0-17 11.5-28.5T160-320h120q17 0 28.5 11.5T320-280v120q0 17-11.5 28.5T280-120q-17 0-28.5-11.5T240-160v-80Zm480 0v80q0 17-11.5 28.5T680-120q-17 0-28.5-11.5T640-160v-120q0-17 11.5-28.5T680-320h120q17 0 28.5 11.5T840-280q0 17-11.5 28.5T800-240h-80ZM240-720v-80q0-17 11.5-28.5T280-840q17 0 28.5 11.5T320-800v120q0 17-11.5 28.5T280-640H160q-17 0-28.5-11.5T120-680q0-17 11.5-28.5T160-720h80Zm480 0h80q17 0 28.5 11.5T840-680q0 17-11.5 28.5T800-640H680q-17 0-28.5-11.5T640-680v-120q0-17 11.5-28.5T680-840q17 0 28.5 11.5T720-800v80Z"/></svg></span></button><button class="touch-help-open" id="touchHelpOpen" type="button" aria-label="打开帮助" title="帮助" data-i18n-aria-label="help.open" data-i18n-title="help.title"><svg class="touch-utility-icon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M478-240q21 0 35.5-14.5T528-290q0-21-14.5-35.5T478-340q-21 0-35.5 14.5T428-290q0 21 14.5 35.5T478-240Zm2 160q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Zm4-172q25 0 43.5 16t18.5 40q0 22-13.5 39T502-525q-23 20-40.5 44T444-427q0 14 10.5 23.5T479-394q15 0 25.5-10t13.5-25q4-21 18-37.5t30-31.5q23-22 39.5-48t16.5-58q0-51-41.5-83.5T484-720q-38 0-72.5 16T359-655q-7 12-4.5 25.5T368-609q14 8 29 5t25-17q11-15 27.5-23t34.5-8Z"/></svg></button><button class="orientation-toggle" id="orientationToggle" type="button" aria-label="切换到横屏" data-i18n-aria-label="player.switchLandscape" title="切换屏幕方向" data-i18n-title="player.switchOrientationTitle" hidden><strong id="orientationTarget" data-i18n="touch.landscape">横屏</strong><small data-i18n="player.rotate">旋转</small><svg class="touch-utility-icon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M496-182 182-496q-23-23-23-54t23-54l174-174q23-23 54-23t54 23l314 314q23 23 23 54t-23 54L604-182q-23 23-54 23t-54-23Zm54-58 170-170-310-310-170 170 310 310Zm-70-240Zm79-393 77 77q11 11 11 28t-11 28q-11 11-28 11t-28-11L410-910q-12-12-6.5-28t22.5-19q14-2 27-2.5t27-.5q99 0 186.5 37.5t153 103q65.5 65.5 103 153T960-480q0 17-11.5 28.5T920-440q-17 0-28.5-11.5T880-480q0-71-24-136t-66.5-117Q747-785 688-821.5T559-873ZM401-87l-77-77q-11-11-11-28t11-28q11-11 28-11t28 11L550-50q12 12 6.5 28.5T534-3q-14 2-27 2.5T480 0q-99 0-186.5-37.5t-153-103Q75-206 37.5-293.5T0-480q0-17 11.5-28.5T40-520q17 0 28.5 11.5T80-480q0 71 24 136t66.5 117Q213-175 272-138.5T401-87Z"/></svg></button><button class="game-zoom-toggle" id="gameZoomToggle" type="button" aria-label="恢复游戏画面原位置和大小" data-i18n-aria-label="player.restoreViewportAria" title="恢复原位置和大小" data-i18n-title="player.restoreViewportTitle" hidden><strong data-i18n="action.reset">复位</strong><small id="gameZoomScale">100%</small></button></nav>

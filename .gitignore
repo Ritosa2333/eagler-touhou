@@ -15,6 +15,10 @@ screenshots/
 *.DATA
 *.wav
 *.WAV
+# Authored quick-chat voice clips are the one wav the repository publishes; every
+# other wav stays ignored so retail music/data cannot be committed by accident.
+!public/assets/quick-chat/
+!public/assets/quick-chat/*.wav
 *.ogg
 *.OGG
 *.mid
