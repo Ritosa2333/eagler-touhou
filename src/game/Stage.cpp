@@ -9,7 +9,10 @@ uint64_t stageEmbeddedKey(int slot) {
   return 0xd00000000ull + u32(slot);
 }
 struct StageWorld : stage_logic::World {
-  void unsupported(int opcode, const char*) override { ++th12::unsupported[982]; }
+  void unsupported(int opcode, const char*) override {
+    ++th12::unsupported[982];
+    recordRuntimeFault(2, uint32_t(opcode));
+  }
   void tickObjects() override {
     for (const auto& q : stageProgram.primitives)
       animationScene.tickEmbedded(stagePrimitiveKey(q.slot));

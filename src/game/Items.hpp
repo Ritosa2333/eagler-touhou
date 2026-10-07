@@ -71,7 +71,9 @@ struct PlayerView {
   bool focus = false;
   float pickupHalfWidth = 30, pickupHalfHeight = 30, nearHalfWidth = 30, nearHalfHeight = 30,
         attractionSpeed = 5;
-  static PlayerView native(int character, Vec2 position, bool focus = false, int state = 0);
+  enum class PlayerPhase { Initialized, Updated };
+  static PlayerView native(int character, Vec2 position, bool focus = false, int state = 0,
+                           PlayerPhase phase = PlayerPhase::Updated);
 };
 struct UfoView {
   bool active = false;

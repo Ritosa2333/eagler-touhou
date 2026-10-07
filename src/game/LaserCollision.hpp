@@ -9,6 +9,9 @@ struct PlayerCollision {
   int state = 1, invulnerability = 0;
   uint32_t flags = 0;
   bool dialogue = false;
+  // Native 437980 reads SHT+4, independently of Player+9e4/+9e8 used by
+  // the line query. Appended to preserve existing aggregate initializers.
+  float circleHitRadius = 2;
 };
 struct LineCollisionResult {
   Collision code = Collision::None;
@@ -22,4 +25,9 @@ struct LineCollisionResult {
 // hit extents. The renderer's visible width and a fixed24 graze radius differ.
 LineCollisionResult collidePlayerLine(const Vec3& origin, float angle, float transverseSize,
                                       float longitudinalSize, const PlayerCollision& player);
+// Native 437980. Its invulnerable inner hit returns1 without438370; its
+// outer graze precedes all Player state/dialogue gates. clearLaser is false:
+// this primitive does not decide whether the calling object is removed.
+LineCollisionResult collidePlayerCircle(const Vec3& center, float radius,
+                                        const PlayerCollision& player);
 } // namespace th12::laser

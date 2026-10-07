@@ -11,7 +11,8 @@ Vec2 polar(float angle, float speed) {
   return {float(std::cos(double(angle)) * speed), float(std::sin(double(angle)) * speed)};
 }
 
-PlayerView PlayerView::native(int character, Vec2 position, bool focus, int state) {
+PlayerView PlayerView::native(int character, Vec2 position, bool focus, int state,
+                              PlayerPhase phase) {
   constexpr float normal[3] = {30, 35, 30}, focused[3] = {50, 59, 50}, speed[3] = {5, 7, 6};
   PlayerView p;
   p.character = std::clamp(character, 0, 2);
@@ -19,6 +20,12 @@ PlayerView PlayerView::native(int character, Vec2 position, bool focus, int stat
   p.focus = focus;
   p.state = state;
   p.pickupHalfWidth = p.pickupHalfHeight = normal[p.character];
+  // 435ae0 initially publishes +/-30/35/30. Fresh Player16 updates use
+  // 4371ef..4372cd to halve +9f0/+9f4 once more for Item22's cached rectangle.
+  if (phase == PlayerPhase::Updated) {
+    p.pickupHalfWidth *= .5f;
+    p.pickupHalfHeight *= .5f;
+  }
   p.nearHalfWidth = p.nearHalfHeight = (focus ? focused : normal)[p.character];
   p.attractionSpeed = speed[p.character];
   return p;
@@ -322,7 +329,7 @@ void Manager::tick(const FrameView& frame, const EventSink& sink) {
         emit(EventKind::HintCollected, old, 1);
       continue;
     }
-    if (e.state != State::CollectedAbove && e.state != State::CollectedNear &&
+    if (p.state != 2 && e.state != State::CollectedAbove && e.state != State::CollectedNear &&
         e.state != State::Token && e.state != State::Absorbing && e.state != State::Aggregate &&
         dx < p.nearHalfWidth && dy < p.nearHalfHeight) {
       e.state = State::CollectedNear;

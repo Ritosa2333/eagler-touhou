@@ -40,10 +40,11 @@ public:
              Membership membership = Membership::Primary, float x = 0, float y = 0,
              std::function<int(int)> remap = {}, bool head = false,
              const std::array<float, 3>* scriptPosition = nullptr, float viewportX = 224,
-             float viewportY = 16, int layer = 0, bool withoutReset = false);
+             float viewportY = 16, int layer = 0, bool withoutReset = false, float engineZ = 0);
   void interrupt(uint64_t key, int code, bool immediate = false);
   void interruptNode(uint32_t id, int code, bool immediate = false);
   void position(uint64_t key, float x, float y);
+  void drawEnabled(uint64_t key, bool enabled);
   void tickEmbedded(uint64_t key);
   void custom(uint64_t key, std::function<bool()> update);
   void customInterrupt(uint64_t key, std::function<void(int)> callback);
@@ -52,6 +53,9 @@ public:
   void tickSecondary();
   void remove(uint64_t key);
   void removeOwner(uint32_t owner);
+  // Relabel existing Enemy roots/children after its synchronous constructor.
+  // No bind/tick runs, and node identity/intrusive ordering stays unchanged.
+  bool reassignEnemyOwner(uint32_t previousOwner, uint32_t nextOwner);
   void collect();
 };
 } // namespace th12::anm_logic

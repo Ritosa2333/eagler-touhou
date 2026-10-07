@@ -24,6 +24,13 @@ std::array<uint64_t, 8> messageAnimationKeys{};
 std::vector<MessageEvent> messageEvents;
 std::array<u32, 1024> unsupported{};
 std::unordered_map<u32, u32> animationUnsupported;
+std::unordered_map<uint64_t, u32> referenceFaults;
+std::unordered_map<uint64_t, u32> runtimeFaults;
+void recordRuntimeFault(uint32_t system, uint32_t code) {
+  const auto key = (uint64_t(system) << 32) | code;
+  if (runtimeFaults.size() < 256 || runtimeFaults.contains(key))
+    ++runtimeFaults[key];
+}
 
 Program program;
 std::unordered_map<int, Value> globals;
@@ -39,6 +46,7 @@ int invuln = 120, deathWindow = 0, bombTimer = 0, previousHeld = 0, fireFrame = 
     dialogue = 0, spell = 0, ended = 0;
 int playerState = 1, playerStateTicks = 0;
 u32 playerFlags = 0;
+uint64_t playerFocusAnimation = 0;
 int oracleFixtureFlags = 0; // Explicit partial-world diagnostics only; normal runtime stays zero.
 u32 nextEnemyId = 1, nextProjectileId = 1, nextItemId = 1;
 

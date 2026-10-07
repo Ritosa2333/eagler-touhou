@@ -1,11 +1,50 @@
 #include "../game/GameSession.hpp"
 #include "Api.hpp"
 // Stable WebAssembly C ABI. The game implementation is C++.
+#include "../game/EnemyCallbacks.hpp"
 #include "../game/GameState.hpp"
 #include "../game/LaserDraw.hpp"
 #include "../game/LaserWorld.hpp"
+#include "../game/PresentationGeometry.hpp"
 
 extern "C" {
+int th12_sound_events() {
+  return th12::sound_system::capture();
+}
+const void* th12_sound_events_ptr() {
+  return th12::sound_system::drawState.data();
+}
+int th12_sound_events_stride() {
+  return sizeof(th12::sound_system::Event);
+}
+int th12_mesh_draw() {
+  th12::captureCustomGeometry();
+  return th12::meshDrawState.size();
+}
+const void* th12_mesh_draw_ptr() {
+  return th12::meshDrawState.data();
+}
+int th12_mesh_draw_stride() {
+  return sizeof(th12::MeshRecord);
+}
+const void* th12_mesh_vertices_ptr() {
+  return th12::meshVertexState.data();
+}
+int th12_mesh_vertices_count() {
+  return th12::meshVertexState.size();
+}
+int th12_mesh_vertex_stride() {
+  return sizeof(th12::custom_geometry::Vertex);
+}
+int th12_score_popups() {
+  return th12::scorePopups.size();
+}
+const void* th12_score_popups_ptr() {
+  return th12::scorePopups.data();
+}
+int th12_score_popups_stride() {
+  return sizeof(th12::special_enemy::ScorePopup);
+}
 int th12_laser_draw() {
   th12::captureLaserDraw();
   return th12::laserDrawState.size();
@@ -35,6 +74,9 @@ int th12_load_anm(int bank, const uint8_t* p, int n) {
     return 0;
   std::string error;
   return th12::animationScene.registry.loadBank(bank, p, size_t(n), error);
+}
+void th12_unload_anm(int bank) {
+  th12::animationScene.registry.unloadBank(bank);
 }
 void th12_oracle_fixture(int flags) {
   th12::oracleFixtureFlags = flags & 7;

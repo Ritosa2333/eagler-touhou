@@ -16,6 +16,9 @@ or the WebAssembly runtime. It is not the original author's C++ source.
 | `Laser.cpp`, `LaserCollision.cpp`, `LaserWorld.cpp` | Moving, timed and curved laser classes, native collision query and game bridge |
 | `Stage.cpp`, `SpellController.cpp`, `Dialogue.cpp` | Background, spell and message update bridges |
 | `Application.cpp` | Native callback priority order |
+| `CustomGeometry.cpp`, `PresentationGeometry.cpp`, `TextGlyphs.cpp` | UFO fill strips, three laser meshes, numeric popups and read-only mesh ABI |
+| `BulletPool.cpp`, `HostilePool.cpp` | Original2000-slot reservation, reuse and physical traversal |
+| `SoundQueue.cpp` | Original indexed sound grouping, integer pan averaging and read-only audio events |
 | `Presentation.cpp`, `LaserDraw.cpp`, `Snapshot.cpp`, `LaserSnapshot.cpp` | Read-only draw records and semantic Oracle inspection |
 | `src/wasm/Exports.cpp` | Stable browser-facing C linkage; implementations and types remain C++ |
 
@@ -39,6 +42,12 @@ by the browser candidate.
 This is a reconstructed portable runtime, not recovery of the author's class
 names, project files or all original source. Unsupported ECL special callbacks
 and unverified laser extension combinations are reported instead of receiving
-invented behavior. Original menus, save integration, audio consumption, exact
-laser mesh/UV rendering and complete-stage visual/Replay acceptance still need
-further work. Passing subsystem samples does not establish whole-game parity.
+invented behavior. The preview loads all six stages and Extra, including their
+STD, ANM, SHT and MSG inputs. Native samples cover UFO/laser vertices, special
+enemy callbacks, Hermite movement, hostile pool allocation and sound queues.
+
+Original menus, campaign transitions, save/recording integration, remaining
+sprite-boundary bullet gates and special background effects still need work.
+Full-stage visual/Replay acceptance remains open. Browser font rasterization
+and Web Audio output are not original GPU/GDI/audio-thread Oracles. Passing
+subsystem samples does not establish whole-game parity.

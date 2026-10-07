@@ -3,6 +3,7 @@
 #include "PlayerSystem.hpp"
 #include "Presentation.hpp"
 #include "Snapshot.hpp"
+#include "SoundQueue.hpp"
 
 namespace th12 {
 
@@ -32,6 +33,9 @@ struct MessageEvent {
 extern std::vector<MessageEvent> messageEvents;
 extern std::array<u32, 1024> unsupported;
 extern std::unordered_map<u32, u32> animationUnsupported;
+extern std::unordered_map<uint64_t, u32> referenceFaults;
+extern std::unordered_map<uint64_t, u32> runtimeFaults;
+void recordRuntimeFault(uint32_t system, uint32_t code);
 extern std::unordered_map<int, Value> globals;
 extern int frame, character, shot, difficulty, stageNumber, px, py, graze;
 extern int backgroundFrame;
@@ -44,6 +48,7 @@ extern int invuln, deathWindow, bombTimer, previousHeld, fireFrame, eventBits, d
     ended;
 extern int playerState, playerStateTicks, oracleFixtureFlags;
 extern u32 playerFlags;
+extern uint64_t playerFocusAnimation;
 extern u32 nextEnemyId, nextProjectileId, nextItemId;
 extern std::function<void(Projectile&)> friendlyBirthHook, friendlyHitHook;
 extern std::function<void(Projectile&, int, bool)> friendlyInterruptHook;
@@ -55,6 +60,8 @@ uint64_t enemyAnimationKey(u32 id, int slot);
 void configureAnimations();
 void bindEnemyAnimation(Enemy&, int slot, int script);
 void detachedAnimation(int bank, int script, const Enemy&, bool head);
+void enemyDeathVisual(const Enemy&);
+void requestEnemyClear();
 uint64_t bindScreenAnimation(int bank, int script, int layer = 23);
 void startMessageAnimations();
 void messageCommand(const message_system::Command&);
@@ -77,9 +84,13 @@ void runContext(Enemy&, Context&);
 void resetPhase(Enemy&, const std::string&);
 void dropItems(Enemy&);
 void drop(Enemy&);
-void emit(Enemy&, Shooter&);
+void emit(Enemy&, Shooter&, bool audible = true);
+void emitHostileEmission(const eb::Emission&, bool audible = true);
 Enemy* spawn(const std::string&, float x, float y, int life, int points, int drop,
-             bool mirror = false, const Enemy* parent = nullptr);
+             bool mirror = false, const Enemy* parent = nullptr, u32 bornFlags = 0, float z = 0);
+// Native camera0.position at4ceaec/4ceaf0, distinct from Stage camera4ced1c.
+// Reset/default is0. Indirect camera0 projection changes are not recovered yet.
+inline std::array<float, 2> backgroundEnemyOrigin{};
 ufo_system::EnemyHooks ufoHooks();
 void applyUfoPlan(const ufo_system::RewardPlan&);
 void tickUfo();

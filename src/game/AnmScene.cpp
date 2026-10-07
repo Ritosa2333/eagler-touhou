@@ -98,6 +98,30 @@ Node* Scene::find(uint64_t key) {
   return at == roots_.end() || !at->second->alive ? nullptr : at->second.get();
 }
 
+bool Scene::reassignEnemyOwner(uint32_t previousOwner, uint32_t nextOwner) {
+  if (previousOwner == nextOwner)
+    return true;
+  std::vector<std::pair<uint64_t, std::shared_ptr<Node>>> moving;
+  for (const auto& [key, node] : roots_)
+    if ((key >> 8) == previousOwner && (key & 255) < 16 && node->owner == previousOwner) {
+      const uint64_t nextKey = (uint64_t(nextOwner) << 8) | (key & 255);
+      if (auto found = roots_.find(nextKey);
+          found != roots_.end() && found->second != node && found->second->alive)
+        return false;
+      moving.emplace_back(key, node);
+    }
+  for (const auto& [oldKey, node] : moving) {
+    const uint64_t nextKey = (uint64_t(nextOwner) << 8) | (oldKey & 255);
+    roots_.erase(oldKey);
+    roots_[nextKey] = node;
+    node->key = nextKey;
+  }
+  for (auto& [id, node] : nodes_)
+    if (node->owner == previousOwner)
+      node->owner = nextOwner;
+  return true;
+}
+
 const std::unordered_map<uint32_t, std::shared_ptr<Node>>& Scene::nodes() const {
   return nodes_;
 }
@@ -133,7 +157,7 @@ std::vector<const Node*> Scene::children(uint32_t id) const {
 Node* Scene::bind(uint64_t key, uint32_t owner, int bank, int script, Membership membership,
                   float x, float y, std::function<int(int)> remap, bool head,
                   const std::array<float, 3>* scriptPosition, float viewportX, float viewportY,
-                  int layer, bool withoutReset) {
+                  int layer, bool withoutReset, float engineZ) {
   if (!registry.bank(bank))
     return nullptr;
   if (auto old = roots_.find(key); old != roots_.end())
@@ -148,6 +172,7 @@ Node* Scene::bind(uint64_t key, uint32_t owner, int bank, int script, Membership
   node->viewportY = viewportY;
   node->vm.control().engineX = x;
   node->vm.control().engineY = y;
+  node->vm.control().engineZ = engineZ;
   node->vm.control().layer = layer;
   nodes_[node->id] = node;
   roots_[key] = node;
@@ -215,6 +240,23 @@ void Scene::position(uint64_t key, float x, float y) {
     state.engineX = x;
     state.engineY = y;
   }
+}
+void Scene::drawEnabled(uint64_t key, bool enabled) {
+  auto* root = find(key);
+  if (!root)
+    return;
+  const auto set = [enabled](Node& node) {
+    if (enabled)
+      node.vm.control().flags |= 2u;
+    else
+      node.vm.control().flags &= ~2u;
+  };
+  set(*root);
+  // 461d40/461d80 follow the intrusive child chain only when+18 is null.
+  if (root->childPrevious)
+    return;
+  for (const auto* child : children(root->id))
+    set(*nodes_.at(child->id));
 }
 
 void Scene::tickEmbedded(uint64_t key) {

@@ -10,6 +10,7 @@ int load_bank(int bank,const uint8_t* p,int n){std::string error;return scene.re
 void reset(){scene.reset();seed=0x1234;displaySeed=0xbeef;calls=displayCalls=unsupported=0;scene.runtime.gameRandom32=[](){return next(seed,calls);};scene.runtime.displayRandom32=[](){return next(displaySeed,displayCalls);};scene.runtime.unsupported=[](int,int,int,const char*){unsupported++;};}
 int bind(int key,int script){return scene.bind(key,1,0,script)!=nullptr;}
 int bind_at(int key,int script,float x,float y){return scene.bind(key,1,0,script,Membership::Primary,x,y)!=nullptr;}
+int bind_bank_xyz(int key,int bank,int script,float x,float y,float z,int layer){return scene.bind(key,1,bank,script,Membership::Primary,x,y,{},false,nullptr,0,0,layer,false,z)!=nullptr;}
 void scene_interrupt(int script,int code,int immediate){for(const auto& [id,node]:scene.nodes())if(node->alive&&node->vm.state().script==script){scene.interruptNode(id,code,immediate);return;}}
 void scene_rotate(int script,float x,float y,float z){for(const auto& [id,node]:scene.nodes())if(node->alive&&node->vm.state().script==script){auto& state=node->vm.control();state.rx=x;state.ry=y;state.rotation=z;return;}}
 void primary(){scene.tickPrimary();scene.collect();}

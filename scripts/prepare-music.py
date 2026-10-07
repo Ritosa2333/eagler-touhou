@@ -1,5 +1,5 @@
 """Convert local original PCM music to OGG, preserving declared loop points."""
-import pathlib,sys,struct,json,subprocess
+import pathlib,sys,struct,json,subprocess,re
 TITLE=pathlib.Path(__file__).resolve().parents[1];WORKSPACE=TITLE.parent
 sys.path.insert(0,str(WORKSPACE/'tools/python'))
 import imageio_ffmpeg
@@ -8,7 +8,8 @@ index=[]
 with (WORKSPACE/'th12/thbgm.dat').open('rb') as source:
     for p in range(0,len(fmt)-51,52):
         name=fmt[p:p+16].split(b'\0')[0].decode('ascii');
-        if name not in ['th12_01.wav','th12_02.wav','th12_04.wav']:continue
+        if not name:continue
+        if not re.fullmatch(r'th[0-9]{2}_[0-9]{2}\.wav',name):raise ValueError('invalid original track name')
         offset,nominal,loop_start,length=struct.unpack_from('<IIII',fmt,p+16)
         encoding,channels,rate,avg,alignment,bits=struct.unpack_from('<HHIIHH',fmt,p+32)
         if encoding!=1 or bits!=16 or channels!=2 or rate!=44100 or loop_start>=length:raise ValueError('unsupported original music layout')

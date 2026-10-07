@@ -1,4 +1,5 @@
 // TH12 1.00b portable C++ runtime. See NOTICE.md for rights.
+#include "EnemyCallbacks.hpp"
 #include "GameState.hpp"
 
 namespace th12 {
@@ -42,18 +43,17 @@ void finishEnemyUpdate(Enemy& e) {
       ufoManager.notifyEnemyRemoved(e.id, ufo_system::RemovalReason::ScriptDelete);
     return;
   }
+  // 413c76 calls the continuous callback after ECL, before the hurt query.
+  if (e.customUpdate && runEnemyCallback(e, e.customUpdate)) {
+    e.active = false;
+    if (e.isUfo)
+      ufoManager.notifyEnemyRemoved(e.id, ufo_system::RemovalReason::NaturalExit);
+    return;
+  }
   // 413d8b calls 439ed0 before the HP immunity filters. Impact callbacks,
   // source accumulation and the stored-score hit award still run in immunity.
   if (!(oracleFixtureFlags & 1) && !e.hidden && !(e.flags & 0x21u)) {
-    int damage = playerSourceDamage(e) + playerBombDamage(e);
-    for (size_t j = 0; j < bullets.size(); ++j) {
-      auto& b = bullets[j];
-      if (b.active && b.friendly)
-        damage += friendlyProjectileDamage(b, e);
-    }
-    damage = std::min(80, damage);
-    if (damage > 0)
-      ++score; // Native 43a405..43a452, before HP/Spell reductions.
+    int damage = customEnemyDamage(e);
     if (playerState == 0 || playerState == 2)
       damage /= 5;
     if (spellState.active() && spellState.cardId >= 93 && spellState.cardId <= 99 &&
@@ -71,13 +71,19 @@ void finishEnemyUpdate(Enemy& e) {
       }
       // The first interrupt/death check belongs to the effective hurt path.
       // HP0 alone does not kill an enemy on a frame with no hurt query.
-      if (!resolveEnemyInterrupt(e) && e.life <= 0 && !(e.flags & 0x80u)) {
+      resolveEnemyInterrupt(e);
+      if (!e.active)
+        return;
+      // 413f19 checks HP after the synchronous health interrupt too. A zero
+      // threshold death routine does not postpone removal by a fresh tick.
+      if (e.life <= 0 && !(e.flags & 0x80u)) {
         drop(e);
         e.active = false;
         return;
       }
       if (!e.active)
         return;
+      e.flags |= 0x100000u;
     }
   }
   if (e.lifeFlags & 2u) {
@@ -89,13 +95,8 @@ void finishEnemyUpdate(Enemy& e) {
   if (!e.active)
     return;
   if (!(oracleFixtureFlags & 2) && e.active && !(e.flags & (2 | 32 | 0x2000000)) &&
-      !e.bodyImmunityTicks && !dialogue && playerState != 2 && playerState != 3 &&
-      playerState != 4) {
-    const float dx = float(double(e.x) - px / 128.f), dy = float(double(e.y) - py / 128.f),
-                radius = e.bodyWidth * .5f, hit = eb::playerHitboxes[character];
-    if (float(double(dx) * dx + double(dy) * dy) <
-        float(double(radius) * radius + double(hit) * hit))
-      playerMissCollision();
+      !e.bodyImmunityTicks) {
+    customEnemyCollision(e);
   }
   // 414a29..414a65: timers and age advance after interrupts and body collision.
   if (e.immunityTicks > 0)
@@ -132,16 +133,20 @@ bool enemyOutside(Enemy& e) {
   return false;
 }
 Enemy* spawn(const std::string& sub, float x, float y, int life, int points, int drop, bool mirror,
-             const Enemy* parent) {
+             const Enemy* parent, u32 bornFlags, float z) {
   const auto* pc = program.find(sub);
   if (!pc || enemies.size() > 1024) {
     unsupported[999]++;
     return nullptr;
   }
   auto p = std::make_unique<Enemy>();
-  p->id = nextEnemyId++;
+  // Binding needs a unique owner while native+27b4 is not assigned yet.
+  // This counter never consumes the gameplay ID sequence.
+  static u32 temporaryEnemyOwner = 0x7fffffffu;
+  p->id = temporaryEnemyOwner--;
   p->x = x;
   p->y = y;
+  p->z = z;
   p->ax = enemy_motion::quantize(x);
   p->ay = enemy_motion::quantize(y);
   combinePosition(*p);
@@ -149,20 +154,57 @@ Enemy* spawn(const std::string& sub, float x, float y, int life, int points, int
   p->score = points;
   p->drop = drop;
   p->mirror = mirror;
+  // 412a8e..412ab5 assigns these before the synchronous full birth update.
+  // In particular background bodies must not collide during their constructor.
+  p->flags |= bornFlags;
+  if (life >= 1000)
+    p->flags |= 0x20000000u;
   if (parent)
     p->variables = parent->variables;
   p->boss = sub.find("Boss") != std::string::npos && sub.find("At") == std::string::npos;
-  p->hidden = sub == "main" || sub.find("Logo") != std::string::npos ||
-              sub.find("Shadow") != std::string::npos || sub.find("Maple") != std::string::npos ||
-              sub.find("EtBreak") != std::string::npos;
+  p->controller = sub == "main" || sub.find("Logo") != std::string::npos ||
+                  sub.find("Shadow") != std::string::npos ||
+                  sub.find("Maple") != std::string::npos ||
+                  sub.find("EtBreak") != std::string::npos;
+  p->hidden = p->controller;
   p->contexts.emplace_back(pc);
   Enemy* result = p.get();
   enemyOutside(*result);
   runContext(*result, result->contexts.front());
+  for (int slot = 0; slot < 16; ++slot)
+    if (result->animationBound[slot])
+      if (auto* node = animationScene.find(enemyAnimationKey(result->id, slot)))
+        node->vm.control().engineZ = result->z;
   // 412990 executes a complete birth update, then sets 20000. The next
   // 413840 call only clears that guard. Birth motion has zero initial speed.
   finishEnemyUpdate(*result);
   result->flags |= 0x20000u;
+  // 412acb assigns the ID after full birth/ECL recursion, before registration.
+  // Keep every already-bound VM and child, including its current RNG/state.
+  const u32 nativeId = nextEnemyId++;
+  if (animationScene.reassignEnemyOwner(result->id, nativeId))
+    result->id = nativeId;
+  else
+    ++unsupported[997]; // preserve the safe owner if an unexpected key collides.
+  result->deathSound = 3 + int(nativeId & 1u);
+  result->deathAnimation = 84;
+  // Native412c60 copies BulletManager's resource into EnemyManager slot0.
+  result->deathAnimationBank = 0;
+  if (result->bank == 1)
+    switch (result->baseAnimation) {
+    case 5:
+    case 55:
+      result->deathAnimation = 81;
+      break;
+    case 10:
+    case 56:
+      result->deathAnimation = 87;
+      break;
+    case 15:
+    case 57:
+      result->deathAnimation = 90;
+      break;
+    }
   // Registration follows the synchronous constructor. Births made by its ECL
   // are already in the manager's chain when this node is appended.
   enemies.push_back(std::move(p));
@@ -201,6 +243,8 @@ void dropItems(Enemy& e) {
 void drop(Enemy& e) {
   if (e.hidden)
     return;
+  enemyDeathVisual(e);
+  dropItems(e); // Native414af0 creates the visual, drops, then calls Enemy+103c.
   if (e.isUfo) {
     applyUfoPlan(ufoManager.finish(e.id, resources, e.deathReason));
     ufoManager.notifyEnemyRemoved(e.id, e.deathReason == ufo_system::DeathReason::Dialogue
@@ -208,7 +252,27 @@ void drop(Enemy& e) {
                                             : ufo_system::RemovalReason::Defeated);
   }
   eventBits |= 2;
-  dropItems(e);
+}
+void enemyDeathVisual(const Enemy& e) {
+  sound_system::queue.play(e.deathSound, e.x);
+  if (e.deathAnimation < 0)
+    return;
+  const auto key = 0x100000000ull + nextDetachedAnimation++;
+  animationScene.bind(key, 0, e.deathAnimationBank, e.deathAnimation,
+                      anm_logic::Membership::Primary, e.x, e.y, {}, false, nullptr, 224, 16, 4,
+                      false, e.z);
+  // Native454d10 clears the factory's flags2 before the first script tick.
+}
+void requestEnemyClear() {
+  // Native414c60 spawns only the clear visual, then marks deferred removal.
+  // Protected/hidden bodies survive unless flag100 overrides that protection.
+  for (auto& pointer : enemies) {
+    auto& e = *pointer;
+    if (!e.active || ((e.flags & 0x6004a0u) && !(e.flags & 0x100u)))
+      continue;
+    enemyDeathVisual(e);
+    e.flags |= 0x1000000u;
+  }
 }
 void tickEnemies() {
   for (size_t i = 0; i < enemies.size();) {
@@ -219,6 +283,12 @@ void tickEnemies() {
     i = i + 1 < enemies.size() ? i + 1 : size_t(-1);
     if (!e.active)
       continue;
+    if (e.flags & 0x1000000u) {
+      e.active = false;
+      if (e.isUfo)
+        ufoManager.notifyEnemyRemoved(e.id, ufo_system::RemovalReason::ScriptDelete);
+      continue;
+    }
     if (e.flags & 0x20000u) {
       e.flags &= ~0x20000u;
       continue;
@@ -250,9 +320,16 @@ void tickEnemies() {
       }
     }
     if (e.positionTicks) {
-      float t = easing(float(++e.positionTime) / e.positionTicks, e.positionMode);
-      e.ax = e.fromX + (e.toX - e.fromX) * t;
-      e.ay = e.fromY + (e.toY - e.fromY) * t;
+      ++e.positionTime;
+      if (e.positionMode == 8) {
+        const auto value = e.positionHermite.tick(3, 1);
+        e.ax = value[0];
+        e.ay = value[1];
+      } else {
+        float t = easing(float(e.positionTime) / e.positionTicks, e.positionMode);
+        e.ax = e.fromX + (e.toX - e.fromX) * t;
+        e.ay = e.fromY + (e.toY - e.fromY) * t;
+      }
       if (e.positionTime >= e.positionTicks)
         e.positionTicks = 0;
     } else if (e.absoluteCircle.enabled) {
@@ -265,10 +342,17 @@ void tickEnemies() {
       e.ay += float(std::sin(double(e.angle)) * e.speed);
     }
     if (e.relativePositionTicks) {
-      float t =
-          easing(float(++e.relativePositionTime) / e.relativePositionTicks, e.relativePositionMode);
-      e.rx = e.relativeFromX + (e.relativeToX - e.relativeFromX) * t;
-      e.ry = e.relativeFromY + (e.relativeToY - e.relativeFromY) * t;
+      ++e.relativePositionTime;
+      if (e.relativePositionMode == 8) {
+        const auto value = e.relativePositionHermite.tick(3, 1);
+        e.rx = value[0];
+        e.ry = value[1];
+      } else {
+        float t =
+            easing(float(e.relativePositionTime) / e.relativePositionTicks, e.relativePositionMode);
+        e.rx = e.relativeFromX + (e.relativeToX - e.relativeFromX) * t;
+        e.ry = e.relativeFromY + (e.relativeToY - e.relativeFromY) * t;
+      }
       if (e.relativePositionTime >= e.relativePositionTicks)
         e.relativePositionTicks = 0;
     } else if (e.relativeCircle.enabled) {

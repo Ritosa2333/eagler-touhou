@@ -134,12 +134,13 @@ struct CircularMotion {
 };
 struct Enemy {
   u32 id = 0;
+  float z = 0; // Native combined position+10b0; ECL270/271 supplies Z.
   float x = 0, y = 0, ax = 0, ay = 0, angle = 0, speed = 0, rx = 0, ry = 0, relativeAngle = 0,
         relativeSpeed = 0, hit = 12;
   int life = 30, score = 1000, drop = 1, age = 0, bank = 1, boundBank = 1, animation = 0,
       baseAnimation = 0, animationAge = 0;
-  bool active = true, boss = false, hidden = false, invincible = false, mirror = false,
-       timedOut = false;
+  bool active = true, boss = false, hidden = false, controller = false, invincible = false,
+       mirror = false, timedOut = false;
   u32 flags = 0;
   int immunityTicks = 2, bodyImmunityTicks = 0;
   // Native +265c life-control word is distinct from +26f8 behavior flags.
@@ -156,8 +157,11 @@ struct Enemy {
         relativeToA = 0, relativeFromS = 0, relativeToS = 0;
   int relativePositionTicks = 0, relativePositionTime = 0, relativePositionMode = 0,
       relativePolarTicks = 0, relativePolarTime = 0, relativePolarMode = 0;
+  stage_logic::Interpolation positionHermite{}, relativePositionHermite{};
   float clampX = 0, clampY = 0, clampWidth = 0, clampHeight = 0;
   int phaseAge = 0;
+  int deathSound = -1, deathAnimation = -1, deathAnimationBank = 0;
+  int customUpdate = 0, customDamage = 0, customCollision = 0;
   CircularMotion absoluteCircle{}, relativeCircle{};
   int maxLife = 30;
   float hitWidth = 24, hitHeight = 24, bodyWidth = 24, bodyHeight = 24, renderWidth = 0,
@@ -181,6 +185,7 @@ struct Projectile {
   eb::State enemy{};
   pw::State weapon{};
   int hitAnimation = 0, hitCallback = 0, spawnCallback = 0;
+  int physicalSlot = -1; // Hostile BulletManager's stable0..1999 slot.
 };
 
 } // namespace th12

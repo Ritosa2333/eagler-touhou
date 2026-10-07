@@ -4,11 +4,13 @@ import {parseReplay} from '/src/replay.mjs';
 import {openStore} from '/src/storage.mjs';
 import {installShell} from '/src/shell.mjs';
 import {PreviewInput,supportedReplay} from '/src/preview-input.mjs';
+import {StageLoader,stageMusic} from '/src/stage-loader.mjs';
+import {readCoreSoundEvents} from '/src/sound-events.mjs';
 
 const $=id=>document.getElementById(id),canvas=$('screen'),inputState=new PreviewInput();
-let core,renderer,store,post=()=>{},ready=false,running=false,paused=false,busy=false,loadingReplay=false,last=0,accumulator=0,generation=0,previous=0,activeReplay=null,replayFrame=0;
+let core,renderer,store,stageLoader,currentStage=1,post=()=>{},ready=false,running=false,paused=false,busy=false,loadingReplay=false,last=0,accumulator=0,generation=0,previous=0,activeReplay=null,replayFrame=0;
 let corpus=[],custom=new Map(),renderedFrames=0,healthAt=0,maxGap=0,lastHud=[],log=[],drag=null,hostDrag=null,firstPresented=false,focusLostDuringStart=false,padPauseHeld=false;
-const audio={context:null,buffers:new Map(),source:null,enabled:true,index:null,request:0};
+const audio={context:null,buffers:new Map(),source:null,enabled:true,index:null,sounds:null,effects:new Map(),request:0};
 const tickMs=1000/60;
 
 function message(text){$('status').textContent=text;}
@@ -18,13 +20,15 @@ function updateButtons(){
   $('play-replay').disabled=!ready||busy||loadingReplay||!supportedReplay(corpus.find(f=>f.id===$('replay').value));
   $('import').disabled=!store||busy||loadingReplay;
   $('pause').disabled=!running;
+  for(const id of ['character','shot','difficulty','stage','replay','replay-stage'])$(id).disabled=busy||loadingReplay;
 }
 function stopMusic(){audio.request++;if(audio.source){try{audio.source.stop();}catch{}audio.source=null;}}
+function stopEffects(){for(const source of audio.effects.values()){try{source.stop();}catch{}}audio.effects.clear();}
 function audioPause(value){if(!audio.context)return;const task=value?audio.context.suspend():audio.context.resume();task.catch(e=>console.warn('音频暂停/恢复失败：'+e.message));}
 function clear(){inputState.clear();drag=hostDrag=null;previous=0;}
 function cancelTouch(){inputState.cancelTouch();drag=hostDrag=null;}
 function fail(e){
-  generation++;ready=running=paused=busy=loadingReplay=false;clear();stopMusic();audioPause(true);updateButtons();
+  generation++;ready=running=paused=busy=loadingReplay=false;clear();stopMusic();stopEffects();audioPause(true);updateButtons();
   canvas.dataset.sessionState='error';
   message('运行失败：'+e.message);overlay('运行中断',e.message);console.error(e);post({event:'error',message:e.message});
 }
@@ -34,7 +38,8 @@ async function initializeAudio(){
   const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)throw Error('当前浏览器没有可用音频');
   audio.context??=new Audio();audio.context.resume().catch(e=>console.warn('音频尚未获准播放：'+e.message));
   if(!audio.index){const response=await fetch('/assets/music-index.json');audio.index=response.ok?await response.json():[];}
-  await Promise.all(['se_tan00.wav','se_enep00.wav','se_graze.wav','se_pldead00.wav','se_item00.wav','se_power0.wav'].map(async name=>{
+  if(!audio.sounds)audio.sounds=await fetch('/assets/sound-index.json').then(r=>{if(!r.ok)throw Error('音效索引加载失败');return r.json();});
+  await Promise.all([...new Set(audio.sounds.map(s=>s.file))].map(async name=>{
     if(audio.buffers.has(name))return;try{const b=await bytes('/assets/'+name);audio.buffers.set(name,await audio.context.decodeAudioData(b.buffer));}catch(e){console.warn(e.message);}
   }));
 }
@@ -42,10 +47,19 @@ function sound(name,volume=.16){
   if(!audio.enabled||paused||!audio.context)return;const buffer=audio.buffers.get(name);if(!buffer)return;
   const source=audio.context.createBufferSource(),gain=audio.context.createGain();source.buffer=buffer;gain.gain.value=volume;source.connect(gain);gain.connect(audio.context.destination);source.start();
 }
+function nativeSound(event){
+  const old=audio.effects.get(event.id);if(old){try{old.stop();}catch{}audio.effects.delete(event.id);}
+  if(event.stop||!audio.enabled||paused||!audio.context)return;
+  const record=audio.sounds?.find(s=>s.id===event.id),buffer=audio.buffers.get(record?.file);if(!buffer)return;
+  const source=audio.context.createBufferSource(),gain=audio.context.createGain(),pan=audio.context.createStereoPanner();
+  source.buffer=buffer;source.loop=!!record.loop;gain.gain.value=Math.pow(10,record.volume/2000);pan.pan.value=Math.max(-1,Math.min(1,event.pan/10000));
+  source.connect(gain);gain.connect(pan);pan.connect(audio.context.destination);audio.effects.set(event.id,source);
+  source.onended=()=>{if(audio.effects.get(event.id)===source)audio.effects.delete(event.id);};source.start();
+}
 async function music(token=generation){
   if(token!==generation||!audio.enabled)return;
   stopMusic();const request=audio.request;if(!audio.enabled||!audio.index?.length)return;
-  const track=audio.index.find(t=>t.id==='th12_02')||audio.index[0];
+  const track=audio.index.find(t=>t.id===stageMusic[currentStage]);if(!track)throw Error('本关音乐尚未准备好');
   if(!audio.buffers.has(track.id)){const b=await bytes('/assets/music/'+track.file);audio.buffers.set(track.id,await audio.context.decodeAudioData(b.buffer));}
   if(token!==generation||request!==audio.request||!audio.enabled)return;
   const source=audio.context.createBufferSource(),gain=audio.context.createGain();source.buffer=audio.buffers.get(track.id);source.loop=true;source.loopStart=track.loopStart;source.loopEnd=track.loopEnd;source.connect(gain);gain.connect(audio.context.destination);gain.gain.value=.35;source.start();audio.source=source;
@@ -57,16 +71,18 @@ function pause(value=!paused){
   if(!value&&audio.enabled&&!audio.source){const token=generation;initializeAudio().then(()=>music(token)).catch(e=>message('音频未就绪：'+e.message));}
 }
 function finish(reason){
-  if(!running)return;running=paused=false;clear();accumulator=0;stopMusic();audioPause(true);updateButtons();$('pause').textContent='暂停';$('fps').textContent='已结束';
+  if(!running)return;running=paused=false;clear();accumulator=0;stopMusic();stopEffects();audioPause(true);updateButtons();$('pause').textContent='暂停';$('fps').textContent='已结束';
   const replayEnded=reason==='replay-input-ended',gameOver=reason==='game-over';
-  overlay(replayEnded?'第一面录像输入结束':gameOver?'Game Over':'第一面预览结束','可重新开始或选择另一份录像');
-  message(replayEnded?'第一面录像输入已结束；行为对照仍待验收':gameOver?'本次试玩结束':'第一面预览已结束；后续关卡尚未接入');
+  overlay(replayEnded?'录像输入结束':gameOver?'Game Over':'本关结束','可重新开始或选择另一关');
+  message(replayEnded?'本关录像输入已结束':gameOver?'本次试玩结束':'本关试玩已结束');
   const token=generation;Promise.resolve(store?.sync()).then(()=>{if(token===generation)post({event:'exit',code:0,status:reason});}).catch(e=>post({event:'error',message:'存档同步失败：'+e.message}));
 }
 function hud(){return [...new Float32Array(core.HEAPU8.buffer,core._th12_hud(),core._th12_hud_size())];}
 function afterTick(){
   lastHud=hud();const e=lastHud[14]|0;
-  if(e&1)sound('se_tan00.wav',.04);if(e&2)sound('se_enep00.wav');if(e&16)sound('se_graze.wav',.07);if(e&32)sound('se_pldead00.wav',.3);if(e&64)sound('se_item00.wav',.1);
+  const events=readCoreSoundEvents(core);
+  if(events)events.forEach(nativeSound);
+  else {if(e&1)sound('se_tan00.wav',.04);if(e&2)sound('se_enep00.wav');if(e&16)sound('se_graze.wav',.07);if(e&32)sound('se_pldead00.wav',.3);if(e&64)sound('se_item00.wav',.1);}
   if(lastHud[0]%60===0)log.push({frame:lastHud[0],player:{x:lastHud[1],y:lastHud[2]},rng:{seed:lastHud[8],calls:lastHud[9]},enemies:lastHud[10],bullets:lastHud[11],score:lastHud[3]});
   if(lastHud[13])finish(lastHud[13]===2?'game-over':'stage-ended');
 }
@@ -88,7 +104,7 @@ function loop(now,token){
       while(running&&accumulator>=tickMs&&budget++<8){
         let input;
         if(activeReplay){
-          input=activeReplay.input(1,replayFrame);
+          input=activeReplay.input(currentStage,replayFrame);
           if(!input||input.held===65535){finish('replay-input-ended');break;}
           replayFrame++;
         }else input=inputState.sample(previous,pad);
@@ -106,11 +122,14 @@ function loop(now,token){
 }
 async function start(replay=null){
   if(!ready)throw Error('资源尚未就绪');if(busy)throw Error('正在准备开局');
-  if(replay&&!supportedReplay(replay))throw Error('初版仅支持普通难度的第一面，Extra 尚未接入');
+  if(replay&&!supportedReplay(replay,Number($('replay-stage').value)))throw Error('录像中没有选择的关卡');
   busy=true;updateButtons();message('正在准备音乐与开局…');
   try{
-    running=paused=false;updateButtons();canvas.dataset.sessionState='starting';generation++;const token=generation;clear();inputState.clear({resetSerials:true});activeReplay=replay;replayFrame=0;firstPresented=false;focusLostDuringStart=document.hidden;padPauseHeld=false;log=[];stopMusic();
-    const c=replay?.character??Number($('character').value),s=replay?.shot??Number($('shot').value),d=replay?.difficulty??Number($('difficulty').value),stage=replay?.stages.find(s=>s.number===1);
+    running=paused=false;updateButtons();canvas.dataset.sessionState='starting';generation++;const token=generation;clear();inputState.clear({resetSerials:true});activeReplay=replay;replayFrame=0;firstPresented=false;focusLostDuringStart=document.hidden;padPauseHeld=false;log=[];stopMusic();stopEffects();
+    currentStage=Number($(replay?'replay-stage':'stage').value);
+    const c=replay?.character??Number($('character').value),s=replay?.shot??Number($('shot').value),d=replay?.difficulty??(currentStage===7?4:Number($('difficulty').value)),stage=replay?.stages.find(s=>s.number===currentStage);
+    await renderer.prepareStage(currentStage);
+    if(!await stageLoader.load(currentStage,()=>token===generation))return;
     core._th12_start(c,s,d,stage?.seed??Math.floor(Math.random()*65536));
     if(stage){const i=stage.initial;core._th12_set_initial(i.x,i.y,i.power,i.lives,i.bombs,i.score);core._th12_set_replay_economy(i.pointValue,i.lifeFragments,i.bombFragments,...i.ufoColors,i.rank);}
     audio.enabled=$('music').checked;
@@ -118,19 +137,21 @@ async function start(replay=null){
     if(token!==generation)return;
     running=true;paused=false;$('pause').textContent='暂停';$('overlay').hidden=true;
     const now=performance.now();last=healthAt=now;renderedFrames=maxGap=0;accumulator=tickMs;
-    message(replay?'原版录像输入预览 · 第一面':'第一面 · 春之凑');canvas.focus({preventScroll:true});
+    message((replay?'原版录像 · ':'')+(currentStage===7?'Extra':'第 '+currentStage+' 面'));canvas.focus({preventScroll:true});
     if(document.hidden||focusLostDuringStart)pause(true);
-    post({event:'runtime-info',architecture:'C++/Wasm development core',renderer:'WebGL2',version:'0.1.1'});requestAnimationFrame(t=>loop(t,token));
+    post({event:'runtime-info',architecture:'C++/Wasm development core',renderer:'WebGL2',version:'0.3.0-cpp'});requestAnimationFrame(t=>loop(t,token));
   }finally{busy=false;updateButtons();}
 }
-function diagnostic(){const counts=new Uint32Array(core.HEAPU8.buffer,core._th12_unsupported(),1024);return {schema:'th12-development-report/1',version:'0.1.1',scope:'stage-1-prototype',wholeGameDeterminism:false,replay:activeReplay?{name:activeReplay.name,character:activeReplay.character,shot:activeReplay.shot,difficulty:activeReplay.difficulty}:null,replayInputFrame:replayFrame,session:{running,paused},logicalFrame:lastHud[0],state:lastHud,unimplemented:Object.fromEntries([...counts].map((n,i)=>[i,n]).filter(([,n])=>n)),samples:log};}
-function replayChanged(){const f=corpus.find(f=>f.id===$('replay').value);$('replay-info').textContent=f?`记录者 ${f.name} · ${f.stages.map(s=>s.number===7?'Extra':s.number+'面').join('、')}${supportedReplay(f)?'':' · 本版尚不支持播放'}`:'';updateButtons();}
+function diagnostic(){const counts=new Uint32Array(core.HEAPU8.buffer,core._th12_unsupported(),1024);return {schema:'th12-development-report/1',version:'0.3.0-cpp',scope:'all-stage-preview',stage:currentStage,wholeGameDeterminism:false,replay:activeReplay?{name:activeReplay.name,character:activeReplay.character,shot:activeReplay.shot,difficulty:activeReplay.difficulty}:null,replayInputFrame:replayFrame,session:{running,paused},logicalFrame:lastHud[0],state:lastHud,unimplemented:Object.fromEntries([...counts].map((n,i)=>[i,n]).filter(([,n])=>n)),samples:log};}
+function replayChanged(){const f=corpus.find(f=>f.id===$('replay').value),select=$('replay-stage'),prior=Number(select.value);select.replaceChildren();for(const stage of f?.stages??[]){if(!supportedReplay(f,stage.number))continue;const option=document.createElement('option');option.value=stage.number;option.textContent=stage.number===7?'Extra':'第 '+stage.number+' 面';select.append(option);}if(f?.stages.some(s=>s.number===prior))select.value=prior;$('replay-info').textContent=f?`记录者 ${f.name} · ${f.stages.map(s=>s.number===7?'Extra':s.number+'面').join('、')}`:'';updateButtons();}
 function refreshReplays(preferred=$('replay').value){
   const select=$('replay');select.innerHTML='';
   for(const f of corpus){const option=document.createElement('option');option.value=f.id;const supported=supportedReplay(f);option.disabled=!supported;option.textContent=`${f.id} · ${['灵梦','魔理沙','早苗'][f.character]}${f.shot?'B':'A'} · ${['E','N','H','L','EX'][f.difficulty]}${supported?'':' · 尚未支持关卡'}`;select.append(option);}
   select.value=corpus.some(f=>f.id===preferred)?preferred:corpus.find(f=>f.id==='demo2.rpy'&&supportedReplay(f))?.id||corpus.find(supportedReplay)?.id||'';replayChanged();
 }
 $('replay').onchange=replayChanged;
+$('stage').onchange=()=>{if($('stage').value==='7')$('difficulty').value='4';else if($('difficulty').value==='4')$('difficulty').value='1';};
+$('difficulty').onchange=()=>{if($('difficulty').value==='4')$('stage').value='7';else if($('stage').value==='7')$('stage').value='1';};
 $('start').onclick=()=>start().catch(fail);
 $('play-replay').onclick=async()=>{
   if(busy||loadingReplay)return;const id=$('replay').value;if(!supportedReplay(corpus.find(f=>f.id===id)))return;
@@ -141,7 +162,7 @@ $('play-replay').onclick=async()=>{
 $('pause').onclick=()=>pause();
 $('fullscreen').onclick=()=>{const task=document.fullscreenElement?document.exitFullscreen():$('screen').parentElement.requestFullscreen?.();Promise.resolve(task).catch(e=>message(e.message));};
 $('music').onchange=()=>{
-  audio.enabled=$('music').checked;if(!audio.enabled)stopMusic();else if(running&&!paused){const token=generation;initializeAudio().then(()=>music(token)).catch(e=>message('音频未就绪：'+e.message));}
+  audio.enabled=$('music').checked;if(!audio.enabled){stopMusic();stopEffects();}else if(running&&!paused){const token=generation;initializeAudio().then(()=>music(token)).catch(e=>message('音频未就绪：'+e.message));}
 };
 function key(code,down,source='local'){
   if(code==='Escape'){const keys=source==='host'?inputState.hostKeys:inputState.localKeys;if(down&&!keys.has(code))pause();down?keys.add(code):keys.delete(code);return;}
@@ -175,13 +196,10 @@ function download(value,name){const a=document.createElement('a'),u=URL.createOb
 $('report').onclick=()=>{if(core)download(diagnostic(),'th12-development-report.json');};
 async function initialize(){
   store=await openStore();const atlases=await fetch('/assets/atlases.json').then(r=>r.json());renderer=new Renderer(canvas,atlases);await renderer.prepare();core=await createCore();
-  for(const file of ['stage01.ecl','default.ecl']){const b=await bytes('/assets/'+file),p=core._malloc(b.length);try{core.HEAPU8.set(b,p);if(!core._th12_load_ecl(p,b.length))throw Error('关卡脚本格式无效 '+file);}finally{core._free(p);}}
-  for(let i=0;i<6;i++){const file=`pl0${Math.floor(i/2)}${i%2?'b':'a'}.sht`,b=await bytes('/assets/'+file),p=core._malloc(b.length);try{core.HEAPU8.set(b,p);if(!core._th12_load_sht(i,p,b.length))throw Error('自机数据格式无效 '+file);}finally{core._free(p);}}
-  for(let i=0;i<6;i++){const file=`st01_0${i>>1}${i%2?'b':'a'}.msg`,b=await bytes('/assets/'+file),p=core._malloc(b.length);try{core.HEAPU8.set(b,p);if(!core._th12_load_msg(i,p,b.length))throw Error('对话数据格式无效 '+file);}finally{core._free(p);}}
-  for(const [bank,file]of [[0,'bullet'],[1,'enemy'],[2,'stgenm01'],[4,'pl00'],[5,'pl01'],[6,'pl02'],[7,'front'],[8,'text'],[11,'ascii'],[9,'st01logo'],[10,'stage01']]){const b=await bytes('/assets/'+file+'.anm'),p=core._malloc(b.length);try{core.HEAPU8.set(b,p);if(!core._th12_load_anm(bank,p,b.length))throw Error('动画数据格式无效 '+file);}finally{core._free(p);}}
+  stageLoader=new StageLoader(core,atlases,file=>bytes('/assets/'+file));await stageLoader.load(1);
   core._th12_start(2,1,1,0);present();canvas.dataset.sessionState='ready';corpus=(await fetch('/replays/index.json').then(r=>r.json())).fixtures;
   for(const path of await store.list()){if(!path.endsWith('.rpy'))continue;try{const b=await store.read(path),r=parseReplay(b),id=path.split('/').at(-1);custom.set(id,b);corpus.push({...r,data:undefined,id});}catch(e){console.warn(e.message);}}
-  ready=true;refreshReplays();message('资源已就绪 · 初版支持第一面');
+  ready=true;refreshReplays();message('资源已就绪 · 可选择关卡');
   post=installShell({store,running:()=>running||busy,music:on=>{$('music').checked=on;audio.enabled=on;if(!on)stopMusic();},start:()=>start(),
     key:(code,down)=>key(code,down,'host'),keyboardClear:()=>inputState.clearKeyboard(),touchCancel:cancelTouch,
     touch:m=>{const escape=inputState.touch(m,running&&!paused&&!activeReplay);if(escape)pause();},

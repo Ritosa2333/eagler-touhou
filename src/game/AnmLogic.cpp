@@ -42,7 +42,13 @@ bool Registry::loadBank(int id, const uint8_t* bytes, size_t length, std::string
       const size_t off = u32(base + 64 + j * 4);
       if (off > extent || extent - off < 20)
         return fail("ANM sprite");
-      result->sprites.push_back({asFloat(u32(base + off + 12)), asFloat(u32(base + off + 16))});
+      const float width = asFloat(u32(base + off + 12)), height = asFloat(u32(base + off + 16)),
+                  x = asFloat(u32(base + off + 4)), y = asFloat(u32(base + off + 8)),
+                  textureWidth = float(std::max(1, int(u16(base + 10)))),
+                  textureHeight = float(std::max(1, int(u16(base + 12))));
+      result->sprites.push_back({width, height, x / textureWidth, y / textureHeight,
+                                 (x + width) / textureWidth, (y + height) / textureHeight,
+                                 int(entries)});
     }
     for (size_t j = 0; j < nc; j++) {
       const size_t table = base + 64 + ns * 4 + j * 8, off = u32(table + 4), start = base + off;
@@ -118,6 +124,11 @@ void VM::selectSprite(int sprite, Runtime& runtime) {
   // stays in its original bank; replacing state.bank would break children.
   state_.spriteBank = sprite < 0 ? runtime.whiteSpriteBank : state_.bank;
   state_.sprite = sprite < 0 ? runtime.whiteSprite : sprite;
+  if (auto bank = registry_->bank(state_.spriteBank);
+      bank && state_.sprite >= 0 && state_.sprite < int(bank->sprites.size())) {
+    state_.spriteWidth = bank->sprites[state_.sprite].width;
+    state_.spriteHeight = bank->sprites[state_.sprite].height;
+  }
   state_.visible = true;
   state_.flags |= 1;
 }

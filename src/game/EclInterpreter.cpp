@@ -1,9 +1,18 @@
 // TH12 1.00b portable C++ runtime. See NOTICE.md for rights.
 #include "EclInterpreter.hpp"
+#include "EnemyCallbacks.hpp"
 #include "GameState.hpp"
+#include "HostilePool.hpp"
 #include "LaserWorld.hpp"
 
 namespace th12 {
+void referenceFault(const Context& c, int operand, bool floating, i32 value) {
+  const uint64_t key = (uint64_t(rd<u16>(c.pc + 4)) << 48) | (uint64_t(uint8_t(operand)) << 40) |
+                       (uint64_t(floating) << 32) | u32(value);
+  if (referenceFaults.size() < 256 || referenceFaults.contains(key))
+    ++referenceFaults[key];
+  ++unsupported[1000];
+}
 float global(Enemy& e, int id, bool floating) {
   if (id >= -9985 && id <= -9982)
     return float(i32(e.variables[id + 9985]));
@@ -117,7 +126,7 @@ i32 argInt(Context& c, Enemy& e, int index, int referenceIndex) {
   if (raw < 0)
     return globalInt(e, raw);
   if (raw >= 1024) {
-    unsupported[1000]++;
+    referenceFault(c, index, false, raw);
     return 0;
   }
   return i32(c.locals[raw / 4]);
@@ -140,7 +149,7 @@ float arg(Context& c, Enemy& e, int index, bool isFloat, int referenceIndex) {
     return isFloat ? v : float(i32(v));
   }
   if (id >= 1024) {
-    unsupported[1000]++;
+    referenceFault(c, index, true, id);
     return 0;
   }
   return isFloat ? asfloat(c.locals[id / 4]) : float(i32(c.locals[id / 4]));
@@ -200,7 +209,8 @@ std::array<u32, 256> callArguments(Context& c, Enemy& e, int skipped) {
 void command(Enemy& e, Context& c, int op) {
   auto I = [&](int i) { return argInt(c, e, i); };
   auto F = [&](int i) { return arg(c, e, i, true); };
-  const int sid = (op >= 500 && op < 536) || (op >= 600 && op <= 603) || op == 611
+  const int sid = (op >= 500 && op <= 528 && op != 512 && op != 513 && op != 520) ||
+                          (op >= 600 && op <= 603) || op == 611
                       ? std::clamp(I(0), 0, 15)
                       : 0;
   auto& s = e.shooters[sid];
@@ -250,6 +260,21 @@ void command(Enemy& e, Context& c, int op) {
       e.animationAge = 0;
     }
     bindEnemyAnimation(e, slot, script);
+    break;
+  }
+  case 270:
+  case 271: {
+    // 4157b4/4157c3: world/background birth, camera0 offset, not enemyXY.
+    if (op == 271 && primaryBoss())
+      break;
+    const std::string name = stringArg(c);
+    const int at = (rd<u32>(c.pc + 16) + 4) / 4;
+    const float x = float(double(arg(c, e, at, true, 1)) + backgroundEnemyOrigin[0]),
+                y = float(double(arg(c, e, at + 1, true, 2)) + backgroundEnemyOrigin[1]),
+                z = arg(c, e, at + 2, true, 3);
+    const int life = argInt(c, e, at + 3, 4), points = argInt(c, e, at + 4, 5),
+              drop = argInt(c, e, at + 5, 6);
+    spawn(name, x, y, life, points, drop, false, &e, 0x2000000u, z);
     break;
   }
   case 274: {
@@ -302,20 +327,40 @@ void command(Enemy& e, Context& c, int op) {
     (rel ? e.relativeToY : e.toY) = y <= -999999 ? (rel ? e.ry : e.ay) : y;
     break;
   }
+  case 325:
+  case 326: {
+    const bool rel = op == 326;
+    const int duration = I(0);
+    const float from[3] = {rel ? e.rx : e.ax, rel ? e.ry : e.ay, 0};
+    const float tangentA[3] = {F(1), F(2), 0}, targetX = F(3), targetY = F(4);
+    const float target[3] = {targetX <= -999999 ? from[0] : targetX,
+                             targetY <= -999999 ? from[1] : targetY, 0};
+    const float tangentB[3] = {F(5), F(6), 0};
+    (rel ? e.relativeCircle : e.absoluteCircle).enabled = false;
+    (rel ? e.relativePositionTicks : e.positionTicks) = std::max(0, duration);
+    (rel ? e.relativePositionTime : e.positionTime) = 0;
+    (rel ? e.relativePositionMode : e.positionMode) = 8;
+    (rel ? e.relativePositionHermite : e.positionHermite)
+        .begin(from, target, 3, duration, 8, tangentA, tangentB);
+    break;
+  }
   case 304:
-  case 306: {
+  case 306:
+  case 328: {
     float angle = F(0);
     const float speed = F(1);
     const bool rel = op == 306;
     (rel ? e.relativeCircle : e.absoluteCircle).enabled = false;
     if (angle > -999999)
-      (rel ? e.relativeAngle : e.angle) = normalize(e.mirror ? mirrorAngle(angle) : angle);
+      (rel ? e.relativeAngle : e.angle) =
+          normalize(e.mirror && op != 328 ? mirrorAngle(angle) : angle);
     if (speed > -999999)
       (rel ? e.relativeSpeed : e.speed) = speed;
     break;
   }
   case 305:
-  case 307: {
+  case 307:
+  case 329: {
     float angle = F(2);
     const float speed = F(3);
     const int duration = I(0), mode = I(1);
@@ -331,7 +376,7 @@ void command(Enemy& e, Context& c, int op) {
     float& toS = rel ? e.relativeToS : e.toS;
     fromA = rel ? e.relativeAngle : e.angle;
     fromS = rel ? e.relativeSpeed : e.speed;
-    toA = angle <= -999999 ? fromA : e.mirror ? mirrorAngle(angle) : angle;
+    toA = angle <= -999999 ? fromA : e.mirror && op != 329 ? mirrorAngle(angle) : angle;
     toS = speed <= -999999 ? fromS : speed;
     if (std::fabs(fromA - toA) >= pi) {
       if (toA <= fromA)
@@ -438,11 +483,18 @@ void command(Enemy& e, Context& c, int op) {
     break;
   case 402:
     e.flags |= u32(I(0));
-    e.hidden = e.hidden || bool(e.flags & 32);
+    e.hidden = e.controller || bool(e.flags & 32);
+    if (e.flags & 32u)
+      for (int slot = 0; slot < 16; ++slot)
+        animationScene.drawEnabled(enemyAnimationKey(e.id, slot), false);
     e.invincible = bool(e.flags & 17) || e.immunityTicks > 0;
     break;
   case 403:
     e.flags &= ~u32(I(0));
+    e.hidden = e.controller || bool(e.flags & 32);
+    if (!(e.flags & 32u))
+      for (int slot = 0; slot < 16; ++slot)
+        animationScene.drawEnabled(enemyAnimationKey(e.id, slot), true);
     e.invincible = bool(e.flags & 17) || e.immunityTicks > 0;
     break;
   case 401:
@@ -501,13 +553,21 @@ void command(Enemy& e, Context& c, int op) {
     e.invincible = bool(e.flags & 17) || e.immunityTicks > 0;
     break;
   case 416:
+    sound_system::queue.play(I(0), e.x);
+    break;
   case 417:
+    ++unsupported[417]; // Native4529a0 screen effect is not a sound alias.
     break;
   case 418: {
     if (messageVM.start(messageFiles[character * 2 + shot], I(0))) {
       dialogue = I(0) + 1;
       messageEvents.clear();
       startMessageAnimations();
+      for (auto* b : hostileSlots)
+        if (b && b->active)
+          eb::cancel(b->enemy, bulletWorld);
+      laserManager.clearAll(laserWorld, false, false);
+      requestEnemyClear();
     } else
       unsupported[418]++;
     break;
@@ -562,6 +622,9 @@ void command(Enemy& e, Context& c, int op) {
     break;
   case 424:
   case 425:
+    if (op == 425)
+      requestEnemyClear();
+    break;
   case 426:
   case 427:
     break;
@@ -595,6 +658,19 @@ void command(Enemy& e, Context& c, int op) {
   case 440:
   case 445:
   case 449:
+    break;
+  case 455: {
+    const auto id = I(1);
+    const bool found =
+        id != 0 && std::any_of(enemies.begin(), enemies.end(), [id](const auto& enemy) {
+          return enemy->active && enemy->id == u32(id);
+        });
+    storeInt(c, e, rd<i32>(c.pc + 16), found ? 1 : 0);
+    break;
+  }
+  case 454:
+    // Native421740 uses HUD+6ce4, loaded from StageInfo+30 by41d3b0.
+    bindScreenAnimation(9, 0, 23);
     break;
   case 500:
     s = Shooter();
@@ -633,9 +709,16 @@ void command(Enemy& e, Context& c, int op) {
     s.extensions.transformSound = I(2);
     break;
   case 529:
+    e.customUpdate = I(0);
+    break;
   case 530:
+    e.customDamage = I(0);
+    break;
   case 531:
-    unsupported[op]++;
+    e.customCollision = I(0);
+    break;
+  case 534:
+    runEnemyCallback(e, I(0));
     break;
   case 509:
     if (!eb::set(s.extensions, I(1), I(2) != 0, u32(I(3)), I(4), I(5), F(6), F(7)))

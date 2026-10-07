@@ -3,6 +3,7 @@
 
 namespace th12 {
 void explodeReimuBOrb(pw::ReimuBOrb& orb);
+void awardPlayerGraze(float x, float y, float z = 0);
 bool startPlayerBomb();
 void tickPlayerBomb();
 int playerBombDamage(const Enemy& e);

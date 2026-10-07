@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import createCore from '../site/runtime/core.mjs';
+import fs from 'node:fs';
 
 const word=value=>{const b=Buffer.alloc(4);b.writeInt32LE(value);return b;};
 const float=value=>{const b=Buffer.alloc(4);b.writeFloatLE(value);return b;};
@@ -23,6 +24,17 @@ const spawn=(op,name,x,y,refs=0)=>instruction(op,[str(name),float(x),float(y),wo
 const bind=animation=>instruction(259,[word(0),word(animation)]);
 const near=(actual,expected,label)=>assert.ok(Math.abs(actual-expected)<.000002,`${label}: ${actual} != ${expected}`);
 const snapshot=c=>{const p=c._th12_state(),size=c._th12_state_size();return JSON.parse(new TextDecoder().decode(c.HEAPU8.subarray(p,p+size)));};
+
+test('native325/326 Hermite movement follows all103 original frames including sentinel targets and zero duration',async()=>{
+  const original=JSON.parse(fs.readFileSync(new URL('fixtures/hermite-motion-original.json',import.meta.url)));
+  for(const row of original.rows){const c=await ready({main:[spawn(257,'Curve',0,0),hold()],Curve:[instruction(300,row.absolute.map(float)),instruction(302,row.relative.map(float)),instruction(row.op,[word(row.duration),...row.args.map(float)]),hold()]});
+    for(const frame of row.frames){c._th12_tick(0,0);const enemy=snapshot(c).enemies.find(e=>!e.hidden);assert.ok(enemy);enemy.position.forEach((value,i)=>assert.ok(Math.abs(value-frame.position[i])<.000003,`op${row.op} duration${row.duration} frame${frame.tick} axis${i}: ${value} != ${frame.position[i]}`));}
+  }
+});
+test('radius cancel instructions read their referenced float once without treating it as a shooter index',async()=>{
+  const c=await ready({main:[instruction(44,[float(4)]),instruction(45,[float(0)]),instruction(512,[float(0)],0,1),instruction(513,[float(0)],0,1),hold()]});
+  assert.equal(new Uint32Array(c.HEAPU8.buffer,c._th12_unsupported(),1024)[1000],0);assert.deepEqual(snapshot(c).referenceFaults,[]);
+});
 
 test('malformed ECL does not publish routines or replace previously loaded resources',async()=>{
   const c=await createCore(),valid=program({main:[spawn(257,'Child',20,100),hold()],Child:[hold()]});
@@ -112,7 +124,7 @@ test('items keep tracking after the player leaves the point-of-collection line',
 });
 
 test('ordinary native pickup rectangles collect immediately and focused near attraction starts after movement',async()=>{
-  for(const [character,x,collected] of [[0,29,true],[0,31,false],[1,34,true],[1,36,false],[2,29,true],[2,31,false]]){
+  for(const [character,x,collected] of [[0,14,true],[0,16,false],[1,17,true],[1,18,false],[2,14,true],[2,16,false]]){
     const c=await ready({main:[instruction(300,[float(0),float(200)]),instruction(410,[word(1)]),instruction(409),hold()]},character);
     c._th12_set_initial(x*128,200*128,100,2,2,0);c._th12_tick(0,0);
     assert.equal(sprites(c,3).length===0,collected);assert.equal(new Float32Array(c.HEAPU8.buffer,c._th12_hud(),20)[4],collected?101:100);

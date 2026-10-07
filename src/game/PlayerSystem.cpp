@@ -1,13 +1,36 @@
 // TH12 1.00b portable C++ runtime. See NOTICE.md for rights.
 #include "GameState.hpp"
+#include "PlayerBounds.hpp"
 
 namespace th12 {
+void awardPlayerGraze(float x, float y, float z) {
+  sound_system::queue.play(44, x);
+  // 4391c0 awards PIV even when the graze counter has reached its cap.
+  if (graze < 99999999)
+    ++graze;
+  resources.addPointValue(100);
+  const auto key = 0x100000000ull + nextDetachedAnimation++;
+  animationScene.bind(key, 0, 0, 144, anm_logic::Membership::Primary, x, y, {}, false, nullptr, 224,
+                      16, 23, false, z);
+  eventBits |= 16;
+}
 void playerMissCollision() {
   if (invuln || playerState != 1)
     return;
+  sound_system::queue.play(2, 0, false);
   // 438370 loses capture eligibility on collision, before the deathbomb window.
   spellState.onMiss(playerBomb.active);
   playerState = 4;
+  // 43839e..438498 creates79 then32 copies of80. Original ANM80's
+  // first tick owns its four random samples; presentation never creates them.
+  const auto effect = [](int script) {
+    const auto key = 0x100000000ull + nextDetachedAnimation++;
+    animationScene.bind(key, 0, 0, script, anm_logic::Membership::Primary, px / 128.f + 224,
+                        py / 128.f + 16, {}, false, nullptr, 0, 0, 0);
+  };
+  effect(79);
+  for (int i = 0; i < 32; ++i)
+    effect(80);
   playerStateTicks = 0;
   deathWindow = 8;
   invuln = 6;
@@ -476,11 +499,20 @@ void updateFriendlyProjectile(Projectile& b) {
   if (!b.friendly)
     return;
   const bool hitPrevious = b.weapon.hit;
+  // Native43a6b0 restores the source anchor even during fade and State4.
+  // Read the retained option coordinates before checking active option count.
+  if (b.update == 2 && b.option >= 1 && b.option <= 4) {
+    const auto& option = playerMotion.options[b.option - 1];
+    b.x = option.x / 128.f;
+    b.y = option.y / 128.f;
+  }
   b.weapon.previousAge = b.age;
   b.weapon.hit = false;
   ++b.weapon.visualAge;
   if (b.weapon.phase == pw::Phase::Impact) {
-    if (b.weapon.visualAge >= b.weapon.impactDuration) {
+    const bool sceneOwnsLifetime = bool(animationScene.registry.bank(4 + character));
+    if (sceneOwnsLifetime ? !animationScene.find(0x800000000ull + b.entityId)
+                          : b.weapon.visualAge >= b.weapon.impactDuration) {
       b.weapon.phase = pw::Phase::Inactive;
       b.active = false;
     }
@@ -503,8 +535,7 @@ void updateFriendlyProjectile(Projectile& b) {
     return;
   }
   if (b.update == 2) {
-    if (b.option < 1 || b.option > playerMotion.count || shotSchedule.frame < 0 || deathWindow ||
-        dialogue) {
+    if (b.option < 1 || b.option > playerMotion.count || shotSchedule.frame < 0 || dialogue) {
       b.weapon.phase = pw::Phase::Impact;
       b.weapon.interrupt = 1;
       b.weapon.visualAge = 0;
@@ -571,8 +602,8 @@ void updateFriendlyProjectile(Projectile& b) {
 }
 bool playerProjectileHits(const Projectile& b, const Enemy& e) {
   return b.weapon.phase == pw::Phase::Alive &&
-         pw::rectangle(b.x, b.y, b.hitWidth, b.hitHeight, e.x, e.y, e.hitWidth, e.hitHeight,
-                       b.type == 2);
+         player_bounds::hitRectangle(b.x, b.y, b.hitWidth, b.hitHeight, e.x, e.y, e.hitWidth,
+                                     e.hitHeight, b.type == 2);
 }
 void sanaeBExplosion(const Projectile& parent) {
   // 43a950 consumes one native game RNG32 and resolves six 60-degree directions.
@@ -689,6 +720,31 @@ void configurePlayerAnimations() {
   };
 }
 constexpr uint64_t playerBodyKey = 0xa00000000ull;
+void updatePlayerFocusAnimation(bool focused) {
+  // Native4364f0 only updates the handle while movement is active. The
+  // independent primary VMs keep running through a miss/respawn.
+  if (playerState != 1)
+    return;
+  auto* node = animationScene.find(playerFocusAnimation);
+  if (focused && !dialogue && frame >= 4) {
+    if (!node) {
+      const auto key = 0xb00000000ull + nextDetachedAnimation++;
+      // Native436606 creates bullet77 at zero before writing the moved
+      // player position. It creates child76; both scripts select layer16.
+      node = animationScene.bind(key, 0xffff0020u, 0, 77, anm_logic::Membership::Primary, 0, 0, {},
+                                 false, nullptr, 0, 0, 12);
+      playerFocusAnimation = node ? key : 0;
+    }
+    if (node)
+      animationScene.position(playerFocusAnimation, px / 128.f + 224, py / 128.f + 16);
+  } else {
+    // Native436684 queues interrupt1 on the linked VMs and releases the
+    // player handle. A fresh press can overlap their eight-tick retirement.
+    if (node)
+      animationScene.interrupt(playerFocusAnimation, 1);
+    playerFocusAnimation = 0;
+  }
+}
 void initializePlayerAnimation() {
   animationScene.bind(playerBodyKey, 0xffff0000u, 4 + character, 0, anm_logic::Membership::Embedded,
                       0, 0, {}, false, nullptr, 0, 0);
@@ -797,6 +853,7 @@ void fire() {
         b.hitHeight = 0;
       b.entityId = nextProjectileId++;
       initializeFriendlyProjectile(b, spec);
+      sound_system::queue.play(spec.sound, x);
       bullets.push_back(b);
     }
 }
@@ -804,8 +861,7 @@ void fire() {
 void tickPlayer(int held, int pressed) {
   const auto& s = loadouts[character * 2 + shot];
   const bool focus = held & 8;
-  if (invuln > 0)
-    --invuln;
+  const bool beganInDeathWindow = playerState == 4;
   const int speed = int((focus ? s.focus : s.speed) * playerBomb.speedMultiplier * 128),
             diagonal = int((focus ? s.focusDiag : s.diag) * playerBomb.speedMultiplier * 128);
   int dir = 0;
@@ -858,12 +914,13 @@ void tickPlayer(int held, int pressed) {
       break;
     }
   }
-  playerMotion.body(px - beforeX);
+  if (playerState != 4)
+    playerMotion.body(px - beforeX);
   px = std::clamp(px, -0x5c00, 0x5c00);
   if (playerState == 1)
     py = std::clamp(py, 0x1000, 0xd800);
-  playerMotion.updateOptions(s, power, px, py, focus);
-  tickPlayerAnimation();
+  if (playerState == 1 || playerState == 0)
+    playerMotion.updateOptions(s, power, px, py, focus);
   bulletWorld.playerX = px / 128.f;
   bulletWorld.playerY = py / 128.f;
   if (!(oracleFixtureFlags & 4) && (pressed & 2) && bombs > 0 &&
@@ -885,6 +942,9 @@ void tickPlayer(int held, int pressed) {
       playerStateTicks = 0;
       deathWindow = 0;
       invuln = 180;
+      playerMotion.count = 0;
+      playerMotion.bodyAnimation = 0;
+      initializePlayerAnimation(); // Native4381e0 resets the embedded body VM.
     }
   }
   if (playerState == 2) {
@@ -892,6 +952,7 @@ void tickPlayer(int held, int pressed) {
       const auto plan = item_system::deathPowerDrops(resources, {px / 128.f, py / 128.f});
       for (const auto& request : plan.spawns)
         itemManager.spawn(request);
+      playerMotion.updateOptions(s, power, px, py, focus, true);
     }
     if (playerStateTicks >= 30) {
       if (lives < 0)
@@ -921,11 +982,20 @@ void tickPlayer(int held, int pressed) {
     }
   }
   ++playerStateTicks;
+  if (invuln > 0)
+    --invuln; // Native common tail follows state-transition writes.
+  updatePlayerFocusAnimation(focus);
+  tickPlayerAnimation();
+  // 4374dd..437533 uses the current Player state timer, after it advances.
+  if (!dialogue && playerStateTicks % 60 == 0)
+    resources.addRank(1);
   previousHeld = held;
-  fireFrame = shotSchedule.begin(held & 1, (playerState == 1 || playerState == 0) && !dialogue);
-  if (fireFrame >= 0)
-    fire();
-  shotSchedule.finish(held & 1);
+  if (playerState == 1 && !beganInDeathWindow) {
+    fireFrame = shotSchedule.begin(held & 1, !dialogue);
+    if (fireFrame >= 0)
+      fire();
+    shotSchedule.finish(held & 1);
+  }
   tickPlayerDamageSources();
   for (size_t i = 0; i < bullets.size(); i++) {
     auto& b = bullets[i];
@@ -934,15 +1004,34 @@ void tickPlayer(int held, int pressed) {
     updateFriendlyProjectile(b);
     if (!b.active)
       continue;
-    ++b.age;
     if (b.type != 2) {
       b.x = float(double(b.x) + float(std::cos(double(b.angle)) * b.speed));
       b.y = float(double(b.y) + float(std::sin(double(b.angle)) * b.speed));
     }
     b.x = enemy_motion::quantize(b.x);
     b.y = enemy_motion::quantize(b.y);
-    if (b.x < -280 || b.x > 280 || b.y < -100 || b.y > 520)
+    if (auto* node = animationScene.find(0x800000000ull + b.entityId)) {
+      const auto& pose = node->vm.state();
+      const auto bank = animationScene.registry.bank(pose.spriteBank);
+      if (bank && pose.sprite >= 0 && pose.sprite < int(bank->sprites.size()) &&
+          (pose.mode == 0 || pose.mode == 1)) {
+        const auto& sprite = bank->sprites[pose.sprite];
+        const auto transform = resolveAnimationTransform(*node);
+        player_bounds::Quad quad{transform.x + node->viewportX,
+                                 transform.y + node->viewportY,
+                                 transform.z,
+                                 float(double(sprite.width) * transform.sx),
+                                 float(double(sprite.height) * transform.sy),
+                                 transform.rotation,
+                                 pose.mode,
+                                 pose.anchorX,
+                                 pose.anchorY};
+        if (!player_bounds::survives(b.type, b.age, b.x, b.y, player_bounds::vertices(quad)))
+          b.active = false;
+      }
+    } else if (b.x < -280 || b.x > 280 || b.y < -100 || b.y > 520)
       b.active = false;
+    ++b.age;
   }
   for (const auto& b : bullets)
     if (b.friendly) {

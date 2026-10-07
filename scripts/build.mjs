@@ -9,9 +9,13 @@ const exports=['_malloc','_free','_th12_load_ecl','_th12_load_msg','_th12_select
 const cache=path.join(root,'artifacts/emscripten-cache');fs.mkdirSync(cache,{recursive:true});
 exports.push('_th12_message','_th12_message_size','_th12_spell','_th12_spell_size');
 exports.push('_th12_load_anm','_th12_load_std','_th12_background','_th12_background_size');
+exports.push('_th12_unload_anm');
+exports.push('_th12_sound_events','_th12_sound_events_ptr','_th12_sound_events_stride');
 exports.push('_th12_anm_draw','_th12_anm_draw_ptr','_th12_anm_draw_stride');
 exports.push('_th12_background_frame','_th12_background_visible');
 exports.push('_th12_laser_draw','_th12_laser_draw_ptr','_th12_laser_draw_stride');
+exports.push('_th12_mesh_draw','_th12_mesh_draw_ptr','_th12_mesh_draw_stride','_th12_mesh_vertices_ptr','_th12_mesh_vertices_count','_th12_mesh_vertex_stride');
+exports.push('_th12_score_popups','_th12_score_popups_ptr','_th12_score_popups_stride');
 const result=spawnSync(python,[compiler,...runtimeSources(root),'-std=c++20','-O2','-o','site/runtime/core.mjs','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,node','-sALLOW_MEMORY_GROWTH=1','-sINITIAL_MEMORY=33554432','-sEXPORTED_FUNCTIONS='+JSON.stringify(exports),'-sEXPORTED_RUNTIME_METHODS='+JSON.stringify(['HEAPU8','HEAPU16','HEAPU32','HEAPF32']),'-sASSERTIONS=1'],{cwd:root,stdio:'inherit',env:{...process.env,EM_CACHE:cache,EMSDK_PYTHON:python,PATH:path.dirname(python)+path.delimiter+process.env.PATH}});
 if(result.status!==0)process.exit(result.status||1);
 const {createHash}=await import('node:crypto'),sources=runtimeSourceFiles(root);

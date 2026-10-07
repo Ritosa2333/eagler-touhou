@@ -218,6 +218,7 @@ void Laser::bind(World& world) {
   world.bindAnimation(*this, Role::Main, main);
   world.interruptAnimation(*this, Role::Main, 2);
   world.tickAnimation(*this, Role::Main);
+  world.finishAnimationBirth(*this, Role::Main);
   AnimationBinding cap{};
   cap.script = s.parameters.color + 53;
   cap.color = s.parameters.color;
@@ -225,6 +226,7 @@ void Laser::bind(World& world) {
   world.bindAnimation(*this, Role::Cap, cap);
   world.interruptAnimation(*this, Role::Cap, 2);
   world.tickAnimation(*this, Role::Cap);
+  world.finishAnimationBirth(*this, Role::Cap);
 }
 void Laser::retire(World& world) {
   world.retireAnimation(*this, Role::Main);
@@ -312,10 +314,52 @@ bool Laser::extensions(Manager&, World& world) {
         s.protection = r.c;
         continue;
       } // native +44c, not +43c.
+      if ((r.kind == 4 || r.kind == 8) && s.kind != Kind::Timed) {
+        auto& motion = r.kind == 4 ? s.scalarAcceleration : s.polarAcceleration;
+        motion.timer.reset(0);
+        motion.duration = r.c;
+        motion.linear = r.a;
+        motion.angular = r.b;
+        if (r.kind == 4) {
+          const auto player = world.playerPosition();
+          const float angle = r.b <= -990  ? s.angle
+                              : r.b >= 990 ? float(std::atan2(double(player.y) - s.position.y,
+                                                              double(player.x) - s.position.x))
+                                           : r.b;
+          motion.vector = direction(angle, r.a);
+        }
+        s.activeExtensions |= r.kind;
+        if (s.cursor > 1 && s.parameters.program.transformSound >= 0)
+          world.sound(s.parameters.program.transformSound, 0);
+        continue;
+      }
       // Every unproved extension is observable; no guessed neighboring-title rule.
       world.unsupported(r.kind);
     }
     const bool wasActive = s.activeExtensions != 0;
+    for (const uint32_t kind : {4u, 8u})
+      if (s.activeExtensions & kind) {
+        // MovingLaser's native polar8 virtual method427e30 is a no-op.
+        if (kind == 8 && s.kind != Kind::Curve)
+          continue;
+        auto& motion = kind == 4 ? s.scalarAcceleration : s.polarAcceleration;
+        if (motion.timer.current >= motion.duration) {
+          s.activeExtensions &= ~kind;
+          repeat = true;
+          continue;
+        }
+        const float rate = world.gameRate();
+        s.speed = float(double(motion.linear) * rate + s.speed);
+        if (kind == 4) {
+          s.velocity = add(s.velocity, mul(motion.vector, rate));
+          if (std::abs(s.velocity.x) >= 0.0001 || std::abs(s.velocity.y) >= 0.0001)
+            s.angle = float(std::atan2(double(s.velocity.y), double(s.velocity.x)));
+        } else {
+          s.angle = angleNormalize(fadd(s.angle, fmul(motion.angular, rate)));
+          s.velocity = direction(s.angle, s.speed);
+        }
+        motion.timer.advance(rate);
+      }
     if (s.activeExtensions & 0x1000) {
       if (s.wait.current <= 0) {
         s.activeExtensions &= ~0x1000u;
@@ -493,8 +537,9 @@ int Laser::clearAll(Manager&, World& world, bool convert, bool force) {
   if (force && s.protection)
     return 0;
   int count = 0;
-  // Original clear effects are sampled along the laser every16, starting8.
-  for (float d = 8; double(d) + 8 <= s.length; d = fadd(d, 16)) {
+  // 42a8a4/42aa2d and42be43/42c07e use strict length>16 and d+8<length.
+  // At exact multiples the final cell is omitted (also omits its ANM RNG).
+  for (float d = 8; double(d) + 8 < s.length; d = fadd(d, 16)) {
     cancelPoint(world, s, add(s.position, direction(s.angle, d)), convert, false);
     ++count;
     if (count >= 256)

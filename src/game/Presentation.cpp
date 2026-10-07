@@ -33,7 +33,7 @@ void captureAnimationDraw() {
   animationDrawState.clear();
   std::vector<u32> ids;
   for (const auto& [id, node] : animationScene.nodes())
-    if (node->alive && !node->customGeometry)
+    if (node->alive && !node->customGeometry && node->vm.state().mode != 13)
       ids.push_back(id);
   std::sort(ids.begin(), ids.end());
   for (u32 id : ids) {
@@ -69,6 +69,10 @@ void captureAnimationDraw() {
                                   id,
                                   node.owner,
                                   1});
+    auto& output = animationDrawState.back();
+    output.reserved[0] = asbits(s.spriteWidth);
+    output.reserved[1] = asbits(s.spriteHeight);
+    output.reserved[2] = 1;
   }
 }
 

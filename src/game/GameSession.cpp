@@ -1,5 +1,7 @@
 #include "GameSession.hpp"
+#include "EnemyCallbacks.hpp"
 #include "GameState.hpp"
+#include "HostilePool.hpp"
 #include "ItemPresentation.hpp"
 #include "LaserWorld.hpp"
 namespace th12 {
@@ -9,15 +11,19 @@ void selectStage(int number) {
   ended = 0;
   enemies.clear();
   bullets.clear();
+  resetHostilePool();
   program = Program{};
   messageVM.reset();
   messageFiles = {};
   messageEvents.clear();
+  scorePopups.clear();
   stageNumber = std::clamp(number, 1, 7);
   stageProgram = {};
   stageState = {};
+  backgroundEnemyOrigin = {};
 }
 void startGame(int c, int s, int d, int seed) {
+  sound_system::queue.reset();
   character = std::clamp(c, 0, 2);
   shot = std::clamp(s, 0, 1);
   difficulty = std::clamp(d, 0, 4);
@@ -32,12 +38,14 @@ void startGame(int c, int s, int d, int seed) {
   playerState = 1;
   playerStateTicks = 0;
   playerFlags = 0;
+  playerFocusAnimation = 0;
   previousHeld = fireFrame = 0;
   dialogue = spell = ended = 0;
   oracleFixtureFlags = 0;
   messageVM.reset();
   messageEvents.clear();
   spellState.reset();
+  scorePopups.clear();
   spellAnimationKeys = {};
   messageAnimationKeys = {};
   laserManager.reset(&laserWorld);
@@ -53,10 +61,14 @@ void startGame(int c, int s, int d, int seed) {
   nextDetachedAnimation = 1;
   random = {u16(seed), 0};
   unsupported = {};
+  referenceFaults.clear();
+  runtimeFaults.clear();
   globals.clear();
+  backgroundEnemyOrigin = {};
   enemies.clear();
   bullets.clear();
   itemManager.reset();
+  resetHostilePool();
   ufoManager.reset();
   playerDamageSources.reset();
   playerBomb.reset();

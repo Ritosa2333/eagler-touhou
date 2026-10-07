@@ -1,8 +1,8 @@
-// Input transport for the local stage-one preview. Gameplay consumes one sample per tick.
+// Input transport for stage previews. Gameplay consumes one sample per tick.
 export const KEY_BITS = Object.freeze({ArrowUp:16,ArrowDown:32,ArrowLeft:64,ArrowRight:128,KeyZ:1,KeyX:2,ShiftLeft:8,ShiftRight:8});
 
-export function supportedReplay(replay) {
-  return !!replay && Number.isInteger(replay.difficulty) && replay.difficulty >= 0 && replay.difficulty <= 3 && replay.stages?.some(stage=>stage.number===1);
+export function supportedReplay(replay,number) {
+  return !!replay && Number.isInteger(replay.difficulty) && replay.difficulty >= 0 && replay.difficulty <= 4 && replay.stages?.some(stage=>Number.isInteger(stage.number)&&(number===undefined||stage.number===number)&&(replay.difficulty===4?stage.number===7:stage.number>=1&&stage.number<=6));
 }
 
 export function validateTouchSnapshot(value) {

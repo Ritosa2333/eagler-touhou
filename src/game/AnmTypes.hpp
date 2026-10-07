@@ -73,6 +73,10 @@ struct Script {
 };
 struct SpriteInfo {
   float width = 0, height = 0;
+  // 460610 normalizes the original rectangle against the texture dimensions.
+  // Retain these for CPU custom geometry; draw must not reopen/tick the VM.
+  float u0 = 0, v0 = 0, u1 = 1, v1 = 1;
+  int textureEntry = 0;
 };
 struct Bank {
   std::vector<Script> scripts;
@@ -91,6 +95,7 @@ struct State {
   int geometryCount = 0;
   uint32_t primary = 0xffffffffu, secondary = 0, flags = 6, flags2 = 0;
   int sprite = -1, spriteBank = -1, layer = 0, mode = 0, anchorX = 0, anchorY = 0, blend = 0;
+  float spriteWidth = -1, spriteHeight = -1; // Native +58/+5c; -1 is legacy unset.
   int bank = -1, script = -1, clock = 0, ticks = 0;
   bool visible = false, held = false, ended = true, deleteRequested = false, displayDomain = false;
 };

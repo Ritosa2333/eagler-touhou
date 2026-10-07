@@ -21,11 +21,8 @@ public:
   }
   laser::Collision lineCollision(const laser::Vec3& p, float angle, float halfWidth,
                                  float length) override;
-  void graze(const laser::Vec3&) override {
-    if (playerState != 2) {
-      ++th12::graze;
-      eventBits |= 16;
-    }
+  void graze(const laser::Vec3& position) override {
+    awardPlayerGraze(position.x, position.y, position.z);
   }
   void bindAnimation(laser::Laser& object, laser::Role role,
                      const laser::AnimationBinding& b) override {
@@ -42,7 +39,20 @@ public:
     if (auto* node = animationScene.bind(key, 0xb0000000u + object.state.serialId, 0, b.script,
                                          anm_logic::Membership::Embedded, 0, 0, remap, false,
                                          nullptr, 224, 16))
-      node->customGeometry = role == laser::Role::Main;
+      node->customGeometry = true;
+  }
+  void finishAnimationBirth(laser::Laser& object, laser::Role role) override {
+    if (object.state.kind == laser::Kind::Curve)
+      return;
+    if (auto* node = animationScene.find(laserAnimationKey(object.state.serialId, role))) {
+      auto& state = node->vm.control();
+      state.blend = 1;
+      state.mode = 1;
+      if (role == laser::Role::Main) {
+        state.anchorX = 0;
+        state.anchorY = 2;
+      }
+    }
   }
   void interruptAnimation(laser::Laser& object, laser::Role role, int code) override {
     animationScene.interrupt(laserAnimationKey(object.state.serialId, role), code);
@@ -57,7 +67,18 @@ public:
     animationScene.position(laserAnimationKey(object.state.serialId, role), p.x, p.y);
     if (auto* node = animationScene.find(laserAnimationKey(object.state.serialId, role))) {
       node->vm.control().engineZ = p.z;
-      node->vm.control().rotation = g.angle + pi / 2;
+      if (role == laser::Role::Main)
+        node->vm.control().rotation = g.angle + pi / 2;
+      if (role == laser::Role::Main && object.state.kind != laser::Kind::Curve) {
+        auto& state = node->vm.control();
+        const auto bank = animationScene.registry.bank(state.spriteBank);
+        if (bank && state.sprite >= 0 && state.sprite < int(bank->sprites.size())) {
+          const auto& sprite = bank->sprites[state.sprite];
+          state.sx = g.width / sprite.width;
+          state.sy = g.length / sprite.height;
+          state.flags |= 8u;
+        }
+      }
     }
   }
   bool tickAnimation(laser::Laser& object, laser::Role role) override {
@@ -69,11 +90,13 @@ public:
   void retireAnimation(laser::Laser& object, laser::Role role) override {
     animationScene.remove(laserAnimationKey(object.state.serialId, role));
   }
-  void sound(int id, float) override {
+  void sound(int id, float x) override {
+    sound_system::queue.play(id, x);
     if (id >= 0)
       eventBits |= 1;
   }
-  void emitBullet(const eb::Emission& emission) override { bulletWorld.emit(emission); }
+  // Recovered callback3/5 owns the emitter's single sound call after allocation.
+  void emitBullet(const eb::Emission& emission) override { emitHostileEmission(emission, false); }
   uint32_t next32() override { return random.next32(); }
   float unit() override { return random.unit(); }
   void spawnCancelEffect(const laser::Vec3& p, int script, float angle, float) override {
@@ -88,7 +111,10 @@ public:
   void pointItem(const laser::Vec3& p, int type, float angle, float speed) override {
     itemManager.spawn(type, {p.x, p.y}, angle, speed);
   }
-  void unsupported(uint32_t) override { ++th12::unsupported[985]; }
+  void unsupported(uint32_t code) override {
+    ++th12::unsupported[985];
+    recordRuntimeFault(1, code);
+  }
 };
 GameLaserWorld gameLaserWorld;
 laser::World& laserWorld = gameLaserWorld;
@@ -98,7 +124,7 @@ laser::Collision GameLaserWorld::lineCollision(const laser::Vec3& p, float angle
     return laser::Collision::None;
   laser::PlayerCollision player;
   player.position = playerPosition();
-  player.hitWidth = player.hitHeight = eb::playerHitboxes[character];
+  player.hitWidth = player.hitHeight = eb::playerHitboxes[character] * .5f;
   player.state = playerState;
   player.invulnerability = invuln;
   player.dialogue = dialogue > 0;

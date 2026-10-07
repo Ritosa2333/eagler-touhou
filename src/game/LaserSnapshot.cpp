@@ -24,11 +24,21 @@ void snapshotLasers(std::ostream& out) {
         << s.wait.previous << ',' << s.wait.current << ',' << s.wait.value
         << "],\"cancellable\":" << s.cancellable << ",\"retirePending\":" << int(s.retirePending)
         << ",\"protection\":" << s.protection << ",\"extensionCursor\":" << s.cursor
-        << ",\"activeExtensions\":" << s.activeExtensions << ",\"parameters\":[" << p.initialLength
-        << ',' << p.maxLength << ',' << p.travelDistance << ',' << p.width << ',' << p.initialOffset
-        << ',' << p.angularVelocity << ',' << p.delay << ',' << p.grow << ',' << p.hold << ','
-        << p.shrink << ',' << p.nodeCount << ',' << p.type << ',' << p.color << ',' << p.flags
-        << "],\"curve\":[";
+        << ",\"activeExtensions\":" << s.activeExtensions << ",\"accelerations\":[";
+    bool accelerationComma = false;
+    for (const auto* motion : {&s.scalarAcceleration, &s.polarAcceleration}) {
+      if (accelerationComma)
+        out << ',';
+      accelerationComma = true;
+      out << '[' << motion->timer.previous << ',' << motion->timer.current << ','
+          << motion->timer.value << ',' << motion->duration << ',' << motion->linear << ','
+          << motion->angular << ',' << motion->vector.x << ',' << motion->vector.y << ','
+          << motion->vector.z << ']';
+    }
+    out << "],\"parameters\":[" << p.initialLength << ',' << p.maxLength << ',' << p.travelDistance
+        << ',' << p.width << ',' << p.initialOffset << ',' << p.angularVelocity << ',' << p.delay
+        << ',' << p.grow << ',' << p.hold << ',' << p.shrink << ',' << p.nodeCount << ',' << p.type
+        << ',' << p.color << ',' << p.flags << "],\"curve\":[";
     bool inner = false;
     for (const auto& n : s.nodes) {
       if (inner)

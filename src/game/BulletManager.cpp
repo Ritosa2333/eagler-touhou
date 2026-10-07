@@ -1,27 +1,33 @@
 // TH12 1.00b portable C++ runtime. See NOTICE.md for rights.
 #include "GameState.hpp"
+#include "HostilePool.hpp"
 
 namespace th12 {
+void emitHostileEmission(const eb::Emission& event, bool audible) {
+  Enemy origin;
+  origin.x = event.x;
+  origin.y = event.y;
+  Shooter s;
+  s.angle = event.angle;
+  s.spacing = event.spacing;
+  s.speed = event.speed;
+  s.slow = event.slow;
+  s.type = event.type;
+  s.color = event.color;
+  s.count = event.count;
+  s.layers = event.layers;
+  s.mode = event.mode;
+  s.extensions = event.program;
+  th12::emit(origin, s, audible);
+}
 struct BulletWorld : eb::World {
-  void emit(const eb::Emission& event) override {
-    Enemy origin;
-    origin.x = event.x;
-    origin.y = event.y;
-    Shooter s;
-    s.angle = event.angle;
-    s.spacing = event.spacing;
-    s.speed = event.speed;
-    s.slow = event.slow;
-    s.type = event.type;
-    s.color = event.color;
-    s.count = event.count;
-    s.layers = event.layers;
-    s.mode = event.mode;
-    s.extensions = event.program;
-    th12::emit(origin, s);
+  void emit(const eb::Emission& event) override { emitHostileEmission(event); }
+  void unsupported(uint32_t code) override {
+    ++th12::unsupported[509];
+    recordRuntimeFault(0, code);
   }
-  void unsupported(uint32_t) override { ++th12::unsupported[509]; }
-  void sound(int sound, float) override {
+  void sound(int sound, float x) override {
+    sound_system::queue.play(sound, x);
     if (sound >= 0)
       eventBits |= 1;
   }
@@ -67,6 +73,7 @@ struct BulletWorld : eb::World {
       return false;
     case eb::AnimationEvent::Retire:
       animationScene.remove(root);
+      releaseHostileBullet(state.id);
       return false;
     case eb::AnimationEvent::CancelEffect: {
       const u32 serial = nextDetachedAnimation++;
@@ -97,7 +104,7 @@ struct BulletWorld : eb::World {
   }
 } bulletBridge;
 eb::World& bulletWorld = bulletBridge;
-void emit(Enemy& e, Shooter& s) {
+void emit(Enemy& e, Shooter& s, bool audible) {
   const int count = std::clamp(s.count, 0, 120), layers = std::clamp(s.layers, 0, 20);
   const float originX = float(double(s.fixedOrigin ? s.originX : e.x) + s.x),
               originY = float(double(s.fixedOrigin ? s.originY : e.y) + s.y),
@@ -109,7 +116,8 @@ void emit(Enemy& e, Shooter& s) {
   };
   for (int layer = 0; layer < layers; layer++)
     for (int j = 0; j < count; j++) {
-      if (bullets.size() > 16000)
+      const int physicalSlot = hostilePool.reserve();
+      if (physicalSlot < 0)
         return;
       float a = 0,
             speed = layers > 1
@@ -162,22 +170,30 @@ void emit(Enemy& e, Shooter& s) {
                   y = float(double(originY) + std::sin(double(a)) * s.radius);
       Projectile projectile{x, y, normalize(a), speed, s.type == 11 ? 4.f : 3.f, s.type, s.color};
       projectile.entityId = nextProjectileId++;
-      eb::initialize(projectile.enemy, projectile.entityId, s.extensions, s.type, s.color, x, y,
-                     normalize(a), speed, bulletWorld);
-      projectile.x = projectile.enemy.x;
-      projectile.y = projectile.enemy.y;
+      projectile.physicalSlot = physicalSlot;
       bullets.push_back(projectile);
+      auto& born = bullets.back();
+      attachHostileSlot(born); // Parent occupies its slot before child births.
+      eb::initialize(born.enemy, born.entityId, s.extensions, s.type, s.color, x, y, normalize(a),
+                     speed, bulletWorld);
+      born.x = born.enemy.x;
+      born.y = born.enemy.y;
+      born.active = born.enemy.phase != eb::Phase::Inactive;
+      hostilePool.commit(physicalSlot); // After synchronous ANM/child births.
     }
   eventBits |= 1;
+  if (audible && (s.extensions.flags & 0x80u))
+    sound_system::queue.play(s.fireSound, originX);
 }
 
 void tickBullets() {
   bulletWorld.playerX = px / 128.f;
   bulletWorld.playerY = py / 128.f;
-  for (size_t i = 0; i < bullets.size(); i++) {
-    auto& b = bullets[i];
-    if (!b.active || b.friendly)
+  for (size_t slot = 0; slot < hostileSlots.size(); ++slot) {
+    auto* pointer = hostileSlots[slot];
+    if (!pointer || !pointer->active)
       continue;
+    auto& b = *pointer;
     eb::tick(b.enemy, bulletWorld, true);
     b.x = b.enemy.x;
     b.y = b.enemy.y;
@@ -185,15 +201,17 @@ void tickBullets() {
     b.speed = b.enemy.speed;
     b.age = b.enemy.age;
     b.active = b.enemy.phase != eb::Phase::Inactive;
-    if (!(oracleFixtureFlags & 2) && playerState != 2 && b.active) {
+    if (!(oracleFixtureFlags & 2) && b.active) {
       const auto collision =
           eb::collide(b.enemy, px / 128.f, py / 128.f, eb::playerHitboxes[character]);
       if (collision == eb::Collision::Graze && !b.enemy.grazed) {
-        ++graze;
+        awardPlayerGraze(px / 128.f, py / 128.f);
         b.enemy.grazed = true;
-        eventBits |= 16;
       }
-      if (collision == eb::Collision::Hit) {
+      // Native437810's graze branch precedes every state/dialogue gate.
+      // Its inner hit returns0 in these states; invulnerability still returns1.
+      if (collision == eb::Collision::Hit && !dialogue && playerState != 2 && playerState != 3 &&
+          playerState != 4 && !(playerFlags & 2u)) {
         eb::cancel(b.enemy, bulletWorld);
         playerMissCollision();
       }

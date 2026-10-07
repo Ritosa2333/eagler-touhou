@@ -17,8 +17,16 @@ void bindEnemyAnimation(Enemy& e, int slot, int script) {
   e.animationSlots[slot] = script;
   e.animationBanks[slot] = e.bank;
   e.animationBound[slot] = true;
+  if (script < 0) {
+    animationScene.remove(enemyAnimationKey(e.id, slot));
+    e.animationBound[slot] = false;
+    return;
+  }
   animationScene.bind(enemyAnimationKey(e.id, slot), e.id, e.bank, script,
-                      anm_logic::Membership::Primary, e.x, e.y);
+                      anm_logic::Membership::Primary, e.x, e.y, {}, false, nullptr, 224, 16, 0,
+                      false, e.z);
+  if (e.flags & 32u)
+    animationScene.drawEnabled(enemyAnimationKey(e.id, slot), false);
 }
 void detachedAnimation(int bank, int script, const Enemy& e, bool head) {
   animationScene.bind(0x100000000ull + nextDetachedAnimation++, 0, bank, script,
@@ -79,9 +87,13 @@ void messagePortraitSprites(uint64_t key, const int* childScripts, const int* sp
           auto& pose = animationScene.nodes().at(child->id)->vm.control();
           const auto bank = animationScene.registry.bank(pose.bank);
           const int sprite = spriteBases[i] + expression;
-          if (bank && sprite >= 0 && sprite < int(bank->sprites.size()))
+          if (bank && sprite >= 0 && sprite < int(bank->sprites.size())) {
             pose.sprite = sprite;
-          else
+            pose.spriteBank = pose.bank;
+            pose.spriteWidth = bank->sprites[sprite].width;
+            pose.spriteHeight = bank->sprites[sprite].height;
+            pose.flags |= 8u;
+          } else
             ++unsupported[983];
           break;
         }

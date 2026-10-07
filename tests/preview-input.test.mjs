@@ -31,8 +31,11 @@ test('a gamepad Bomb held across pause cannot manufacture a fresh Bomb on resume
 });
 test('Extra cannot be previewed as the ordinary first stage',()=>{
   assert.equal(supportedReplay({difficulty:4,stages:[{number:1}]}),false);
+  assert.equal(supportedReplay({difficulty:4,stages:[{number:7}]}),true);
+  assert.equal(supportedReplay({difficulty:4,stages:[{number:7}]},1),false);
   assert.equal(supportedReplay({difficulty:3,stages:[{number:1}]}),true);
-  assert.equal(supportedReplay({difficulty:1,stages:[{number:2}]}),false);
+  assert.equal(supportedReplay({difficulty:1,stages:[{number:2}]}),true);
+  assert.equal(supportedReplay({difficulty:1,stages:[{number:2}]},1),false);
 });
 test('malformed host touch input is rejected before changing state',()=>{
   for(const value of [{bombSerial:NaN},{escapeSerial:-1},{joystickX:Infinity},{joystickY:2},{fireEnabled:1},{touchSensitivity:500}])assert.throws(()=>validateTouchSnapshot(snapshot(value)));

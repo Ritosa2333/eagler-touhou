@@ -33,6 +33,7 @@ workspace/
 python scripts/prepare-assets.py
 python scripts/prepare-presentation.py
 python scripts/prepare-music.py
+python scripts/reverse/sample-sound-queue.py
 node scripts/build-corpus.mjs
 ```
 

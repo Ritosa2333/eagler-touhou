@@ -5,6 +5,15 @@ export function readCoreHud(core){const size=core._th12_hud_size?.()??20;if(!Num
 export function animationBankName(bank,stage=1){const suffix=String(stage).padStart(2,'0');return ['bullet','enemy','stgenm'+suffix,'stgenm'+suffix+'m','pl00','pl01','pl02','front','text','st'+suffix+'logo','stage'+suffix,'ascii'][bank]??null;}
 export function decodeMessageHex(hex){if(typeof hex!=='string'||hex.length%2||!/^[0-9a-f]*$/i.test(hex))throw Error('对话字符数据无效');return new TextDecoder('shift-jis').decode(Uint8Array.from(hex.match(/../g)??[],v=>parseInt(v,16)));}
 export function readCoreMessage(core){if(!core._th12_message||!core._th12_message_size)return null;const ptr=core._th12_message(),size=core._th12_message_size();if(!Number.isInteger(size)||size<0||size>1024*1024||ptr<0||ptr+size>core.HEAPU8.byteLength)throw Error('对话状态记录无效');if(!size)return null;return JSON.parse(new TextDecoder().decode(core.HEAPU8.subarray(ptr,ptr+size)).replace(/\0+$/,''));}
+export function readCoreBackground(core){
+  if(!core._th12_background||!core._th12_background_size)return null;
+  const ptr=core._th12_background(),size=core._th12_background_size();
+  if(!Number.isInteger(ptr)||!Number.isInteger(size)||ptr<0||size<=0||size>4*1024*1024||ptr+size>core.HEAPU8.byteLength)throw Error('背景状态记录无效');
+  const state=JSON.parse(new TextDecoder().decode(core.HEAPU8.subarray(ptr,ptr+size)).replace(/\0+$/,''));
+  if(!state||![false,true,0,1].includes(state.loaded))throw Error('背景状态记录无效');
+  if(state.loaded){const c=state.camera;if(!c||!['position','direction','up'].every(k=>Array.isArray(c[k])&&c[k].length===3&&c[k].every(Number.isFinite))||!Number.isFinite(c.fov)||!Array.isArray(c.fog)||c.fog.length!==5||!c.fog.every(Number.isFinite)||!Array.isArray(state.poses)||state.poses.length>65536||!state.poses.every(p=>Array.isArray(p)&&p.length>=21&&p.slice(0,21).every(Number.isFinite)))throw Error('背景相机或姿态记录无效');}
+  return state;
+}
 const argbRgba=(argb,alpha=1)=>[((argb>>>16)&255)/255,((argb>>>8)&255)/255,(argb&255)/255,((argb>>>24)&255)/255*alpha];
 export function beamSegmentVertices(x,y,angle,length,width,start,end){const dx=Math.cos(angle)*length/2,dy=Math.sin(angle)*length/2,nx=-Math.sin(angle)*width/2,ny=Math.cos(angle)*width/2;return [{x:x-dx-nx,y:y-dy-ny,color:start},{x:x-dx+nx,y:y-dy+ny,color:start},{x:x+dx+nx,y:y+dy+ny,color:end},{x:x+dx-nx,y:y+dy-ny,color:end}];}
 export function dialogueMetrics(width=354,height=17){return {width,height,sourceWidth:Math.min(1024,2*width+22),sourceHeight:36};}
@@ -26,7 +35,8 @@ export function readCoreAnimationPoses(core,stage=1){
     const a={name:animationBankName(I(16),stage),sprite:I(17),layer:I(18),mode:I(19),anchorX:I(20),anchorY:I(21),blend:I(22),geometryCount:I(23),
       x:0,y:0,z:F(2),rx:F(3),ry:F(4),rotation:F(5),sx:F(6),sy:F(7),u:F(8),v:F(9),uvScaleX:F(10),uvScaleY:F(11),geometryRadius:F(12),geometryWidth:F(13),
       r:color[0],g:color[1],b:color[2],alpha:color[3],r2:secondary[0],g2:secondary[1],b2:secondary[2],alpha2:secondary[3],point:!!(flags2&2),visible:!!(flags&1),rotate:I(19)===1||I(19)===3};
-    const owner=U(27),category=owner>>>28;if(category===2||category===3)a.visible=(flags&3)===3;
+    if(U(31)===1){a.nativeWidth=F(29);a.nativeHeight=F(30);}
+    const owner=U(27);a.visible=(flags&3)===3;
     poses.push({a,x:F(0),y:F(1),angle:0,scale:1,alpha:F(28),id:U(26),owner,logical:true,order:i});
   }return poses;
 }
@@ -39,6 +49,19 @@ export function readCoreLaserSegments(core,stage=1){
     const at=ptr+i*stride,F=n=>view.getFloat32(at+n*4,true),I=n=>view.getInt32(at+n*4,true),U=n=>view.getUint32(at+n*4,true),color=U(8);
     segments.push({laser:true,x:F(0),y:F(1),angle:F(2),length:F(3),width:F(4),alpha:F(5)*((color>>>24)/255),u:F(6),v:F(7),tint:[((color>>>16)&255)/255,((color>>>8)&255)/255,(color&255)/255],textureLength:F(13),headOffset:F(14),owner:U(15),a:{name:animationBankName(I(9),stage),sprite:I(10),layer:I(11),blend:I(12)}});
   }return segments;
+}
+export function readCoreMeshes(core,stage=1){
+  if(!core._th12_mesh_draw)return [];
+  const count=core._th12_mesh_draw(),ptr=core._th12_mesh_draw_ptr(),stride=core._th12_mesh_draw_stride(),vertexPtr=core._th12_mesh_vertices_ptr(),vertexCount=core._th12_mesh_vertices_count(),vertexStride=core._th12_mesh_vertex_stride(),limit=core.HEAPU8.byteLength;
+  if(!Number.isInteger(count)||count<0||count>65536||stride!==56||vertexStride!==28||!Number.isInteger(vertexCount)||vertexCount<0||vertexCount>4000000||ptr<0||ptr+count*stride>limit||vertexPtr<0||vertexPtr+vertexCount*vertexStride>limit)throw Error('网格绘制记录无效');
+  const view=new DataView(core.HEAPU8.buffer),meshes=[];
+  for(let i=0;i<count;i++){
+    const at=ptr+i*stride,I=n=>view.getInt32(at+n*4,true),U=n=>view.getUint32(at+n*4,true),offset=U(10),length=U(11),primitive=U(5),pass=U(6);
+    if(offset+length>vertexCount||![4,5].includes(primitive)||pass>2)throw Error('网格顶点范围无效');
+    const vertices=[];
+    for(let j=0;j<length;j++){const a=vertexPtr+(offset+j)*vertexStride,F=n=>view.getFloat32(a+n*4,true),color=view.getUint32(a+16,true);vertices.push({x:F(0),y:F(1),z:F(2),rhw:F(3),color,u:F(5),v:F(6)});}
+    meshes.push({mesh:true,vertices,primitive,renderPass:pass,drawPriority:I(7),owner:U(8),id:U(9),order:U(9),filter:U(12),addressFlags:U(13),a:{name:animationBankName(I(0),stage),sprite:I(1),entry:I(2),layer:I(3),blend:I(4)}});
+  }return meshes;
 }
 export function fragmentInterrupt(index,whole,fragments=0){return index<whole?2:index===whole?7+Math.max(0,Math.min(5,fragments|0)):3;}
 export function groupedNumber(n){return String(Math.max(0,Math.round(n))).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
@@ -90,8 +113,9 @@ export class Renderer {
       const response=await fetch('/assets/'+e.image);if(!response.ok)throw Error('贴图加载失败 '+e.image);
       const bitmap=await createImageBitmap(await response.blob(),{premultiplyAlpha:'none',colorSpaceConversion:'none'}),texture=gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D,texture);gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,false);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,bitmap);
-      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);const wrap=name.startsWith('stage')||name.startsWith('pl0')?gl.REPEAT:gl.CLAMP_TO_EDGE;gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,wrap);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,wrap);
-      this.textures.set(name+':'+index,{texture,w:bitmap.width,h:bitmap.height});bitmap.close();
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);const wrap=gl.REPEAT; // Native4514c5/4514db defaults both texture axes to WRAP1.
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,wrap);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,wrap);
+      this.textures.set(name+':'+index,{texture,w:bitmap.width,h:bitmap.height,defaultWrap:wrap});bitmap.close();
     }));
   }
   begin(){const g=this.gl;g.viewport(0,0,640,480);g.clearColor(.035,.035,.055,1);g.clear(g.COLOR_BUFFER_BIT);g.bindVertexArray(this.vao);g.bindBuffer(g.ARRAY_BUFFER,this.buffer);this.drawCount=0;this.uploadCount=0;this.current=null;this.batch=[];this.batchMode=g.TRIANGLES;this.blend=-1;this.material(0);}
@@ -102,10 +126,18 @@ export class Renderer {
     const texture=this.textures.get(name+':'+entry);if(!texture)return;
     this.material(blend);this.texture(texture,!!options.point);this.primitive(this.gl.TRIANGLES);
     const corners=quadCorners(x,y,w,h,angle,options.anchorX||0,options.anchorY||0,!!options.pixel),du=options.u||0,dv=options.v||0;
-    const uv=[[sx/texture.w+du,sy/texture.h+dv],[(sx+sw)/texture.w+du,sy/texture.h+dv],[(sx+sw)/texture.w+du,(sy+sh)/texture.h+dv],[sx/texture.w+du,(sy+sh)/texture.h+dv]];
+    const endX=sx+sw*(options.uvScaleX??1),endY=sy+sh*(options.uvScaleY??1);
+    const uv=[[sx/texture.w+du,sy/texture.h+dv],[endX/texture.w+du,sy/texture.h+dv],[endX/texture.w+du,endY/texture.h+dv],[sx/texture.w+du,endY/texture.h+dv]];
     for(const i of [0,1,2,0,2,3])this.batch.push(...corners[i],...uv[i],...tint,alpha,1,0);
   }
-  texture(texture,point=false){if(this.current!==texture||this.point!==point){this.flush();this.current=texture;this.point=point;const g=this.gl;g.bindTexture(g.TEXTURE_2D,texture.texture);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,point?g.NEAREST:g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,point?g.NEAREST:g.LINEAR);}}
+  texture(texture,point=false,addressFlags=null){const g=this.gl,wrapU=addressFlags===null?(texture.defaultWrap??g.CLAMP_TO_EDGE):addressFlags&1?g.REPEAT:g.CLAMP_TO_EDGE,wrapV=addressFlags===null?(texture.defaultWrap??g.CLAMP_TO_EDGE):addressFlags&2?g.REPEAT:g.CLAMP_TO_EDGE;if(this.current!==texture||this.point!==point||this.wrapU!==wrapU||this.wrapV!==wrapV){this.flush();this.current=texture;this.point=point;this.wrapU=wrapU;this.wrapV=wrapV;g.bindTexture(g.TEXTURE_2D,texture.texture);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,point?g.NEAREST:g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,point?g.NEAREST:g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,wrapU);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,wrapV);}}
+  mesh(p){
+    const texture=this.textures.get(p.a.name+':'+p.a.entry);if(!texture)return;
+    this.material(p.a.blend);this.texture(texture,p.filter===1,p.addressFlags);this.primitive(this.gl.TRIANGLES);
+    const emit=v=>this.batch.push(v.x,v.y,v.u,v.v,...argbRgba(v.color),v.rhw?1/v.rhw:1,0);
+    if(p.primitive===4)for(const v of p.vertices)emit(v);
+    else for(let i=2;i<p.vertices.length;i++)for(const index of i&1?[i-1,i-2,i]:[i-2,i-1,i])emit(p.vertices[index]);
+  }
   sprite(name,id,x,y,angle=0,scale=1,alpha=1){const s=this.atlases[name]?.sprites[id];if(s)this.region(name,s.entry,s.x,s.y,s.w,s.h,x,y,s.w*scale,s.h*scale,angle,alpha);}
   solidTriangles(vertices,indices,blend){this.material(blend);this.texture(this.solid,true);this.primitive(this.gl.TRIANGLES);for(const i of indices){const p=vertices[i];this.batch.push(p.x,p.y,.5,.5,...p.color,1,0);}}
   trail(x,y,angle,length,start,end,alpha){const dx=Math.cos(angle)*length/2,dy=Math.sin(angle)*length/2;this.material(1);this.texture(this.solid,true);this.primitive(this.gl.LINES);this.batch.push(x-dx,y-dy,.5,.5,...argbRgba(start,alpha),1,0,x+dx,y+dy,.5,.5,...argbRgba(end,alpha),1,0);}
@@ -127,7 +159,7 @@ export class Renderer {
     if(!a.visible)return;
     if(a.mode===14){if(a.alpha<=0)return;const color=[a.r,a.g,a.b,a.alpha*alpha],corners=quadCorners(x+a.x,y+a.y,a.geometryRadius*a.sx*scale,a.geometryWidth*a.sy*scale,a.rotation+angle);this.solidTriangles(corners.map(([x,y])=>({x,y,color})),[0,1,2,0,2,3],a.blend);return;}
     if(a.mode===15||a.mode===16){const count=a.geometryCount;if(count<3||count>512)return;const center=[a.r,a.g,a.b,a.alpha*alpha],edge=a.mode===15?[a.r2,a.g2,a.b2,a.alpha2*alpha]:center;if(center[3]<=0&&edge[3]<=0)return;const vertices=circleVertices(x+a.x,y+a.y,a.geometryRadius*a.sx*scale,a.rotation+angle,count,center,edge),indices=[];for(let i=1;i<=count;i++)indices.push(0,i,i+1);this.solidTriangles(vertices,indices,a.blend);return;}
-    const s=this.atlases[a.name]?.sprites[a.sprite];if(!s||a.alpha<=0)return;this.region(a.name,s.entry,s.x,s.y,s.w,s.h,x+a.x,y+a.y,s.w*scale*a.sx,s.h*scale*a.sy,a.rotate?a.rotation+angle:0,a.alpha*alpha,[a.r,a.g,a.b],a.blend,{anchorX:a.anchorX,anchorY:a.anchorY,u:a.u,v:a.v,pixel:a.mode===0||a.mode===1&&a.rotation+angle===0,point:a.point});
+    const s=this.atlases[a.name]?.sprites[a.sprite];if(!s||a.alpha<=0)return;this.region(a.name,s.entry,s.x,s.y,s.w,s.h,x+a.x,y+a.y,(a.nativeWidth!==undefined&&a.nativeWidth!==-1?a.nativeWidth:s.w)*scale*a.sx,(a.nativeHeight!==undefined&&a.nativeHeight!==-1?a.nativeHeight:s.h)*scale*a.sy,a.rotate?a.rotation+angle:0,a.alpha*alpha,[a.r,a.g,a.b],a.blend,{anchorX:a.anchorX,anchorY:a.anchorY,u:a.u,v:a.v,uvScaleX:a.uvScaleX,uvScaleY:a.uvScaleY,pixel:a.mode===0||a.mode===1&&a.rotation+angle===0,point:a.point});
   }
   animation(name,id,age,x,y,angle=0,scale=1,variant=null,options={}){const {alpha=1,...sampling}=options;for(const a of this.animations.sampleAll(name,id,age,variant,sampling))this.state(a,x,y,angle,scale,alpha);}
   text(text,x,y,scale=1,tint=[1,1,1]){for(const c of String(text)){const s=this.atlases.ascii.sprites[c.charCodeAt(0)-32];if(s)this.region('ascii',s.entry,s.x,s.y,s.w,s.h,x+s.w*scale/2,y+s.h*scale/2,s.w*scale,s.h*scale,0,1,tint);x+=14*scale;}}
@@ -149,13 +181,13 @@ export class Renderer {
     this.begin();const h=readCoreHud(core),frame=h[0];if(frame<this.lastFrame)this.animations=new AnimationSampler(this.atlases);this.lastFrame=frame;this.animations.beginFrame();
     const stage=Math.max(1,Math.min(7,h[39]||1)),stageSuffix=String(stage).padStart(2,'0');if(this.stageBackgrounds.has(stage))this.background=this.stageBackgrounds.get(stage);else if(!this.stageJobs.has(stage))this.prepareStage(stage).catch(error=>this.stageError=error);
     const g=this.gl;g.enable(g.SCISSOR_TEST);g.scissor(32,16,384,448);
-    const background=this.background.geometry(core._th12_background_frame?.()??frame);g.uniform3fv(this.fogColor,background.camera.fog.slice(0,3));g.clearColor(...background.camera.fog.slice(0,3),1);g.clear(g.COLOR_BUFFER_BIT);
-    if(core._th12_background_visible?.()??true)for(const triangle of background.triangles){const texture=this.textures.get(triangle.bank+':'+triangle.entry);if(!texture)continue;this.material(triangle.blend);this.texture(texture,triangle.point);for(const p of triangle.vertices)this.batch.push(p.x,p.y,p.u/texture.w,p.v/texture.h,p.r,p.g,p.b,p.alpha,p.depth,p.fog);}
+    const logicalBackground=readCoreBackground(core),background=this.background.geometry(logicalBackground?.frame??core._th12_background_frame?.()??frame,logicalBackground);g.uniform3fv(this.fogColor,background.camera.fog.slice(0,3));g.clearColor(...background.camera.fog.slice(0,3),1);g.clear(g.COLOR_BUFFER_BIT);
+    this.primitive(g.TRIANGLES);if(background.authoritative||(core._th12_background_visible?.()??true))for(const triangle of background.triangles){const texture=this.textures.get(triangle.bank+':'+triangle.entry);if(!texture)continue;this.material(triangle.blend);this.texture(texture,triangle.point);for(const p of triangle.vertices)this.batch.push(p.x,p.y,p.u/texture.w,p.v/texture.h,p.r,p.g,p.b,p.alpha,p.depth,p.fog);}
     this.flush();
-    const logicalPoses=readCoreAnimationPoses(core,stage),logicalOwners=new Set(logicalPoses.map(p=>p.owner)),message=readCoreMessage(core);
+    const logicalPoses=readCoreAnimationPoses(core,stage),meshes=readCoreMeshes(core,stage),logicalOwners=new Set([...logicalPoses,...meshes].map(p=>p.owner)),message=readCoreMessage(core);
     const count=core._th12_draw(),ptr=core._th12_draw_ptr(),stride=(core._th12_draw_stride?.()||36)/4;if(stride<9||stride>64||!Number.isInteger(stride))throw Error('绘制记录长度无效');
     const f=new Float32Array(core.HEAPU8.buffer,ptr,count*stride),v=new Int32Array(core.HEAPU8.buffer,ptr,count*stride);
-    const player='pl0'+h[17],poses=[...logicalPoses.filter(p=>!(p.a.name==='text'&&p.a.sprite>=0&&p.a.sprite<4)),...messageTextPoses(message,logicalPoses,this.atlases),...readCoreLaserSegments(core,stage)];
+    const player='pl0'+h[17],poses=[...logicalPoses.filter(p=>!(p.a.name==='text'&&p.a.sprite>=0&&p.a.sprite<4)).map(p=>({...p,order:p.id})),...messageTextPoses(message,logicalPoses,this.atlases),...meshes,...(core._th12_mesh_draw?[]:readCoreLaserSegments(core,stage))];
     const add=(name,id,age,x,y,angle,scale,variant,options)=>{const {alpha,...sampling}=options;for(const a of this.animations.sampleAll(name,id,age,variant,sampling))poses.push({a,x,y,angle,scale,alpha,order:poses.length});};
     for(let i=0;i<count;i++){
       const k=i*stride,x=f[k],y=f[k+1],angle=f[k+2],scale=f[k+3],animation=v[k+5],kind=v[k+6],color=v[k+7],age=v[k+8],entityId=stride>=12?v[k+9]>>>0:0,interrupt=stride>=12?v[k+10]:0,alpha=stride>=12?f[k+11]:1;
@@ -177,12 +209,12 @@ export class Renderer {
     }
     // Native ANM manager draws layers, so bullets/items/player child slots
     // cannot simply follow the core's entity array insertion order.
-    poses.sort((a,b)=>a.a.layer-b.a.layer||a.order-b.order);
+    poses.sort((a,b)=>(a.renderPass??0)-(b.renderPass??0)||((a.renderPass??0)>0?a.order-b.order:a.a.layer-b.a.layer||a.order-b.order));
     let playfieldClip=true;
     for(const p of poses){
       const clipped=!(p.logical&&p.a.name==='front'&&p.a.layer>=17);
       if(clipped!==playfieldClip){this.flush();if(clipped)g.enable(g.SCISSOR_TEST);else g.disable(g.SCISSOR_TEST);playfieldClip=clipped;}
-      if(p.laser)this.laserSegment(p);else if(p.dialogue)this.dialogueLine(p);else if(p.beamTrail)this.beamTrail(p.x,p.y,p.angle,p.scale,p.width,p.start,p.end);else if(p.trail)this.trail(p.x,p.y,p.angle,p.scale,p.start,p.end,p.alpha);else if(p.beam){const s=this.atlases[p.a.name].sprites[p.a.sprite];if(s)this.region(p.a.name,s.entry,s.x,s.y,s.w,s.h,p.x,p.y-448*p.scale/2,448*p.scale,14*p.a.sy,-Math.PI/2,p.a.alpha*p.alpha,[p.a.r,p.a.g,p.a.b],p.a.blend);}else this.state(p.a,p.x,p.y,p.angle,p.scale,p.alpha);
+      if(p.mesh)this.mesh(p);else if(p.laser)this.laserSegment(p);else if(p.dialogue)this.dialogueLine(p);else if(p.beamTrail)this.beamTrail(p.x,p.y,p.angle,p.scale,p.width,p.start,p.end);else if(p.trail)this.trail(p.x,p.y,p.angle,p.scale,p.start,p.end,p.alpha);else if(p.beam){const s=this.atlases[p.a.name].sprites[p.a.sprite];if(s)this.region(p.a.name,s.entry,s.x,s.y,s.w,s.h,p.x,p.y-448*p.scale/2,448*p.scale,14*p.a.sy,-Math.PI/2,p.a.alpha*p.alpha,[p.a.r,p.a.g,p.a.b],p.a.blend);}else this.state(p.a,p.x,p.y,p.angle,p.scale,p.alpha);
     }
     this.flush();g.disable(g.SCISSOR_TEST);
     this.animation('front',0,frame,0,0);

@@ -10,7 +10,7 @@ high_index=data(0x419890,356);high=struct.unpack('<143I',data(0x419654,143*4))
 entries={op:low[low_index[op]] for op in range(90)}
 entries.update({op:high[high_index[op-256]] for op in range(256,612)})
 cs=capstone.Cs(capstone.CS_ARCH_X86,capstone.CS_MODE_32)
-selected=list(range(40,90))+list(range(256,314))+list(range(400,450))+list(range(500,612))
+selected=list(range(40,90))+list(range(256,330))+list(range(400,456))+list(range(500,612))
 out=TITLE/'artifacts/reverse/ecl';out.mkdir(parents=True,exist_ok=True)
 for op in selected:
     start=entries[op];end=min([a for a in entries.values() if a>start]+[start+500]);end=min(end,start+1200)

@@ -27,9 +27,11 @@ void ufoFrame(bool boss,bool dialogue){
     }
 }
 extern "C" {
-void reset(int difficulty,int power){itemManager.reset();ufoManager.reset();resources=item_system::ResourceState::initial(difficulty);resources.power=power;player=item_system::PlayerView::native(0,{0,400});enemy={};enemySequence=1;privateInteger=lastHealth=spawnedKind=pendingDeathFlag=effectsIssued=0;}
+// This isolated manager fixture has no Player16 update, like the native
+// zero-frame bootstrap. Use that constructor's published rectangle explicitly.
+void reset(int difficulty,int power){itemManager.reset();ufoManager.reset();resources=item_system::ResourceState::initial(difficulty);resources.power=power;player=item_system::PlayerView::native(0,{0,400},false,0,item_system::PlayerView::PlayerPhase::Initialized);enemy={};enemySequence=1;privateInteger=lastHealth=spawnedKind=pendingDeathFlag=effectsIssued=0;}
 int spawn(int type,float x,float y){auto* item=itemManager.spawn(type,{x,y});return item?int(item->id):0;}
-void set_player(int character,float x,float y,int focus,int state){player=item_system::PlayerView::native(character,{x,y},focus,state);}
+void set_player(int character,float x,float y,int focus,int state){player=item_system::PlayerView::native(character,{x,y},focus,state,item_system::PlayerView::PlayerPhase::Initialized);}
 void item_tick(){animationVisits.clear();item_system::FrameView f;f.player=player;f.ufo=ufoManager.view(hooks());f.inventoryColors=&ufoManager.inventory.colors;f.inventoryCount=&ufoManager.inventory.count;
     f.animate=[](const item_system::Entity& e){animationVisits.push_back({e.id,uint32_t(e.age)});};
     itemManager.tick(f,[](const item_system::Event& event){using item_system::EventKind;switch(event.kind){

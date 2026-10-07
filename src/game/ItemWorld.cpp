@@ -65,18 +65,23 @@ void tickItems(bool focus) {
     using K = item_system::EventKind;
     switch (event.kind) {
     case K::CollectOrdinary:
+      sound_system::queue.play(38, event.entity.position.x); // Common426da4 pickup tail.
       item_system::collectOrdinary(resources, event.entity, itemFrame.player);
       eventBits |= 64;
       break;
     case K::CollectAggregate:
+      sound_system::queue.play(39, event.entity.position.x);
+      sound_system::queue.play(38, event.entity.position.x);
       item_system::collectAggregate(resources, event.entity);
       eventBits |= 64;
       break;
     case K::CollectToken:
+      sound_system::queue.play(38, event.entity.position.x);
       applyUfoPlan(ufoManager.collectToken({event.value, event.entity.position}, resources));
       eventBits |= 64;
       break;
     case K::Absorbed:
+      sound_system::queue.play(38, event.entity.position.x); // Native42696d.
       applyUfoPlan(ufoManager.absorb(event.entity.type, stageNumber));
       break;
     case K::RankDelta:

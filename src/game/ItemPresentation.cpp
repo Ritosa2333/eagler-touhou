@@ -146,6 +146,12 @@ void ItemPresentation::inventoryEvent(anm_logic::Scene& scene,
 }
 
 void ItemPresentation::visualEvent(anm_logic::Scene& scene, const ufo_system::VisualEvent& event) {
+  using Visual = ufo_system::VisualEventKind;
+  if (event.kind == Visual::Summoned || event.kind == Visual::FillCompleted ||
+      event.kind == Visual::DeathBurst)
+    sound_system::queue.play(event.sound, event.position.x);
+  else if (event.kind == Visual::Removed || event.kind == Visual::DirectReset)
+    sound_system::queue.stop(event.sound);
   using K = ufo_system::VisualEventKind;
   switch (event.kind) {
   case K::Summoned: {

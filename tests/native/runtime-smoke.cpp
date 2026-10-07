@@ -56,12 +56,15 @@ int main() {
     th12_draw();
     th12_anm_draw();
     th12_laser_draw();
+    th12_mesh_draw();
+    th12_score_popups();
     th12_hud();
   }
   if (!check(before == th12_state(), "Native draw queries advanced game state"))
     return 1;
   if (!check(th12_hud()[0] == 30 && th12_hud_size() == 41 && th12_anm_draw_stride() == 128 &&
-                 th12_laser_draw_stride() == 64,
+                 th12_laser_draw_stride() == 64 && th12_mesh_draw_stride() == 56 &&
+                 th12_mesh_vertex_stride() == 28,
              "Native ABI dimensions differ"))
     return 1;
 

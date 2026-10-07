@@ -65,6 +65,12 @@ struct AnimationGeometry {
   Vec3 position{};
   float angle = 0, width = 0, length = 0, headOffset = 0;
 };
+struct Acceleration {
+  Timer timer{};
+  int duration = 0;
+  float linear = 0, angular = 0;
+  Vec3 vector{};
+};
 struct State {
   uint32_t serialId = 0;
   int lookupId = 0;
@@ -79,6 +85,7 @@ struct State {
   uint32_t activeExtensions = 0;
   int cursor = 0;
   Parameters parameters{};
+  Acceleration scalarAcceleration{}, polarAcceleration{};
   std::vector<Node> nodes{};
 };
 class Laser;
@@ -96,6 +103,7 @@ public:
   virtual void interruptAnimation(Laser&, Role, int) {}
   virtual void updateAnimationGeometry(Laser&, Role, const AnimationGeometry&) {}
   virtual bool tickAnimation(Laser&, Role) { return false; }
+  virtual void finishAnimationBirth(Laser&, Role) {}
   virtual void retireAnimation(Laser&, Role) {}
   virtual void sound(int, float) {}
   virtual void emitBullet(const eb::Emission&) {}

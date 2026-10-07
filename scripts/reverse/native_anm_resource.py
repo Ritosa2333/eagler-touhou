@@ -20,10 +20,13 @@ def install_resource(vm,raw,base,bank_id=0):
         for i in range(ns):
             at=entry+u32(entry+64+i*4);sid,x,y,sw,sh=struct.unpack_from('<Iffff',raw,at)
             record=bytearray(72)
+            # Source rectangle retained for direct native460610 normalization.
+            struct.pack_into('<ffff',record,0x0c,x,y,x+sw,y+sh)
             # Original 454b80 reads these precise fields, including non-zero
             # denominator dimensions when constructing the transform matrices.
             struct.pack_into('<fffffffffff',record,0x1c,float(h or 1),float(w or 1),
-                x/(w or 1),(x+sw)/(w or 1),y/(h or 1),(y+sh)/(h or 1),sh,sw,1.,1.,0.)
+                # 460610 writes +24/+28/+2c/+30 = u1/v1/u2/v2.
+                x/(w or 1),y/(h or 1),(x+sw)/(w or 1),(y+sh)/(h or 1),sh,sw,1.,1.,0.)
             sprites.append(bytes(record))
         for i in range(nc):
             sid,off=struct.unpack_from('<iI',raw,entry+64+ns*4+i*8)

@@ -8,6 +8,7 @@ class Registry {
 public:
   std::shared_ptr<Bank> bank(int id) const;
   bool loadBank(int id, const uint8_t* bytes, size_t length, std::string& error);
+  void unloadBank(int id) { banks_.erase(id); }
 };
 class VM {
   enum Field {

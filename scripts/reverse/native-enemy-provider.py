@@ -74,9 +74,11 @@ if not args.without_anm:
  for index,name in enumerate(anm_names):
   raw=(TITLE/'local/retail'/name).read_bytes();resource=install_resource(v,raw,resource_base,index);resource_base=(resource['end']+4095)&~4095
   resource_by_name[name]=resource['resource']
-  if index==0:put(MANAGER+0x40,'II',resource['resource'],resource['resource'])
+  if index==0:put(MANAGER+0x44,'I',resource['resource'])
   if index==1:put(MANAGER+0x48,'I',resource['resource'])
-  if index==2:put(BULLETS+0x4debdc,'I',resource['resource']);put(0x2092000+0x10,'I',resource['resource'])
+  # Native412c60 assigns slot0 from BulletManager+4debdc;412dd0 loads
+  # ECL ANIM banks starting at slot1. They are distinct resource namespaces.
+  if index==2:put(MANAGER+0x40,'I',resource['resource']);put(BULLETS+0x4debdc,'I',resource['resource']);put(0x2092000+0x10,'I',resource['resource'])
   if name=='ascii.anm':put(0x4b43b8,'I',0x20b0000);put(0x20b0000+0x18fb4,'I',resource['resource'])
   files.append({'file':name,'sha256':hashlib.sha256(raw).hexdigest()})
 lookup=PROGRAM+0x100;put(PROGRAM+8,'I',len(routines));put(PROGRAM+0x8c,'I',lookup)

@@ -149,7 +149,8 @@ void snapshotBackground(std::ostream& out, bool full = false) {
           << a.y + a.engineY + a.offsetY << ',' << a.z + a.engineZ + a.offsetZ << ',' << a.rx << ','
           << a.ry << ',' << a.rotation << ',' << a.sx << ',' << a.sy << ',' << a.u << ',' << a.v
           << ',' << a.uvScaleX << ',' << a.uvScaleY << ',' << a.primary << ',' << a.secondary << ','
-          << a.flags << ',' << a.flags2 << ',' << a.mode << ',' << a.blend << ',' << a.layer << ']';
+          << a.flags << ',' << a.flags2 << ',' << a.mode << ',' << a.blend << ',' << a.layer << ','
+          << a.spriteWidth << ',' << a.spriteHeight << ']';
     }
   out << ']';
   if (full) {
@@ -455,14 +456,40 @@ void snapshotAnimations(std::ostream& out) {
 const std::string& captureState() {
   std::ostringstream out;
   out << std::setprecision(9);
-  out << "{\"fixtureFlags\":" << oracleFixtureFlags << ",\"frame\":" << frame
+  out << "{\"referenceFaults\":[";
+  std::vector<uint64_t> faultKeys;
+  for (const auto& [key, count] : referenceFaults)
+    faultKeys.push_back(key);
+  std::sort(faultKeys.begin(), faultKeys.end());
+  bool faultComma = false;
+  for (const auto key : faultKeys) {
+    if (faultComma)
+      out << ',';
+    faultComma = true;
+    out << '[' << (key >> 48) << ',' << ((key >> 40) & 255) << ',' << ((key >> 32) & 1) << ','
+        << i32(u32(key)) << ',' << referenceFaults.at(key) << ']';
+  }
+  out << "],\"runtimeFaults\":[";
+  faultKeys.clear();
+  for (const auto& [key, count] : runtimeFaults)
+    faultKeys.push_back(key);
+  std::sort(faultKeys.begin(), faultKeys.end());
+  faultComma = false;
+  for (const auto key : faultKeys) {
+    if (faultComma)
+      out << ',';
+    faultComma = true;
+    out << '[' << (key >> 32) << ',' << u32(key) << ',' << runtimeFaults.at(key) << ']';
+  }
+  out << "],\"fixtureFlags\":" << oracleFixtureFlags << ",\"frame\":" << frame
       << ",\"input\":{\"held\":" << previousHeld << "},\"player\":{\"xFixed\":" << px
       << ",\"yFixed\":" << py << ",\"state\":" << playerState
       << ",\"stateAge\":" << playerStateTicks << ",\"invulnerability\":" << invuln
       << ",\"deathWindow\":" << deathWindow << ",\"graze\":" << graze
-      << ",\"fireFrame\":" << shotSchedule.frame << ",\"character\":" << character
-      << ",\"shot\":" << shot << ",\"body\":[" << playerMotion.bodyAnimation << ','
-      << playerMotion.bodyAge << ',' << playerMotion.previousDx << "],\"options\":[";
+      << ",\"focusAnimation\":" << playerFocusAnimation << ",\"fireFrame\":" << shotSchedule.frame
+      << ",\"character\":" << character << ",\"shot\":" << shot << ",\"body\":["
+      << playerMotion.bodyAnimation << ',' << playerMotion.bodyAge << ',' << playerMotion.previousDx
+      << "],\"options\":[";
   for (int i = 0; i < playerMotion.count; i++) {
     if (i)
       out << ',';
@@ -628,7 +655,7 @@ const std::string& captureState() {
       snapshotMotion(out, s.wait);
       out << ',';
       snapshotMotion(out, s.protect);
-      out << ']';
+      out << "],\"gate\":[" << s.gate.remaining << ',' << s.gate.value << ']';
     }
     out << '}';
   }

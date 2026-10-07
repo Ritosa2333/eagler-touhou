@@ -1,6 +1,8 @@
 // TH12 1.00b hostile bullets. Retail 40aa60 dispatch, 4099e0 lifecycle,
 // 40b6f0/40bef0 motion, 437810/437980 collision. No translated x86 executes here.
 #pragma once
+#include "game/BulletGate.hpp"
+#include "game/BulletTargetMotion.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -39,6 +41,8 @@ struct State {
   int spawnDuration=0,cancelAge=0,collisionDelay=0,offscreenGrace=10,cancelEffect=4;
   uint32_t active=0;int cursor=0;Program program{};
   Motion fast{},acceleration{},polar{},turn{},bounce{},wait{},protect{};
+  int32_t tag=0;TargetMotion target{};
+  BulletGate gate{};
 };
 struct Emission {
   float x=0,y=0,angle=0,spacing=0,speed=0,slow=0;
@@ -91,7 +95,7 @@ inline void start(State& s,World& w){
     case 0x10:case 0x20:case 0x40:{s.active|=kind;s.turn={};s.turn.b=resolvedAngle(s,w,t.a);s.turn.a=t.b<=-999?s.speed:t.b;s.turn.duration=t.c;s.turn.limit=t.d;break;}
     case 0x100:s.active|=kind;s.bounce={};s.bounce.a=t.a;s.bounce.limit=t.c;s.bounce.count=t.d;break;
     case 0x200:s.collisionDelay=t.c;break;
-    case 0x400:s.active|=kind;s.protect={};s.protect.timer=t.c;s.protect.count=t.d;if(t.d)w.unsupported(kind);break;
+    case 0x400:s.active|=kind;s.protect={};s.protect.timer=t.c;s.protect.count=t.d;s.gate.begin(t.c);if(t.d)w.unsupported(kind);break;
     case 0x800:case 0x1000000:appearance(s,t.c,t.d);s.interrupt=2;s.visualAge=0;w.appearance(s,false);w.stateAnimation(s,AnimationEvent::Interrupt,2);break;
     case 0x1000:s.active|=kind;s.wait={};s.wait.timer=t.c;break;
     case 0x2000:cancel(s,w);break;
@@ -109,6 +113,8 @@ inline void start(State& s,World& w){
       if(t.a>=990)s.angle=normalize(float(double(aim(s,w))+float(double(t.a)-999)));else if(t.a>=-990)s.angle=t.a;
       if(t.b>=-990)s.speed=t.b;velocity(s,s.speed);break;
     case 0x10000000:s.rotateToMotion=t.c!=0;break;
+    case 0x200000:s.tag=t.c;break;
+    case 0x2000000:beginTargetMotion(s.target,s,t,w);break;
     default:w.unsupported(kind);break;
     }
     if(s.cursor&&s.program.transformSound>=0&&(kind==4||kind==8))w.sound(s.program.transformSound,s.x);
@@ -160,7 +166,8 @@ inline void tick(State& s,World& w,bool deferAnimation=false){
     if((m.count&4)&&s.x<-192){if(!detectOnly){s.x=float(-384-double(s.x));s.angle=normalize(float(-double(s.angle)-pi));}reflected=true;}
     if(m.a>-990)s.speed=m.a;velocity(s,s.speed);if(reflected){++m.duration;w.sound(s.program.transformSound,s.x);}if(m.duration>=m.limit){s.active&=~0x100u;++completed;}
   }}
-  if(s.active&0x400){--s.protect.timer;if(s.protect.timer<=0){s.active&=~0x400u;++completed;}}
+  if((s.active&0x2000000)&&tickTargetMotion(s.target,s)){s.active&=~0x2000000u;++completed;}
+  if(s.active&0x400){const bool done=s.gate.tick();s.protect.timer=s.gate.remaining;if(done){s.active&=~0x400u;++completed;}}
   if(s.active&0x1000){if(s.wait.timer<=0){s.active&=~0x1000u;++completed;}else --s.wait.timer;}
   if(hadActive&&s.collisionDelay>0)--s.collisionDelay;
   if(!completed)break;
