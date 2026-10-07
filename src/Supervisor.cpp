@@ -39,20 +39,58 @@
 Supervisor g_Supervisor;
 #ifdef __EMSCRIPTEN__
 static i32 g_WebStartupPhase = 0;
+static u64 g_WebStartupImageShownAt = 0;
+static void DrawStartupBranding()
+{
+    size_t bytes=0;
+    void* pixels=SDL_LoadFile("/eagler-startup.rgba",&bytes);
+    if(!pixels)return;
+    if(bytes!=1280*960*4){SDL_free(pixels);return;}
+    auto* gfx=g_GfxBackend;
+    const auto texture=gfx->CreateTexture();gfx->BindTexture(texture);
+    gfx->SetTextureImage(1280,960,PIXEL_RGBA,PIXEL_UNSIGNED_BYTE,pixels);SDL_free(pixels);
+    VertexTex1DiffuseXyz vertices[4]{};
+    vertices[0].position={0,0,0};vertices[1].position={640,0,0};
+    vertices[2].position={0,480,0};vertices[3].position={640,480,0};
+    vertices[0].textureUV={0,0};vertices[1].textureUV={1,0};
+    vertices[2].textureUV={0,1};vertices[3].textureUV={1,1};
+    g_AnmManager->SetProjectionMode(PROJECTION_MODE_ORTHOGRAPHIC);
+    gfx->ToggleVertexAttribute(VERTEX_ATTR_DIFFUSE,false);
+    gfx->ToggleVertexAttribute(VERTEX_ATTR_TEX_COORD,true);
+    gfx->SetAttributePointer(VERTEX_ARRAY_POSITION,sizeof(vertices[0]),&vertices[0].position);
+    gfx->SetAttributePointer(VERTEX_ARRAY_TEX_COORD,sizeof(vertices[0]),&vertices[0].textureUV);
+    gfx->Disable(CAPS_FOG);gfx->Disable(CAPS_DEPTH_TEST);gfx->Disable(CAPS_ALPHA_TEST);
+    gfx->Enable(CAPS_BLEND);gfx->SetBlendMode(BLEND_ALPHA);gfx->SetDepthMask(false);
+    gfx->SetColorOp(COMPONENT_RGB,COLOR_OP_REPLACE);gfx->SetColorOp(COMPONENT_ALPHA,COLOR_OP_REPLACE);
+    gfx->Draw(PRIM_TRIANGLE_STRIP,0,4);gfx->DeleteTexture(texture);
+    g_AnmManager->SetCurrentTexture(0);g_AnmManager->SetCurrentBlendMode(0xff);
+}
 i32 Supervisor::DrawStartupLogo()
 {
     if (!g_WebStartupPhase) return 0;
     if (g_WebStartupPhase == 2)
     {
+        // Prepare the menu while the startup picture is already visible.
         const ZunResult result = FinishWebStartup(&g_Supervisor);
+        if (result != ZUN_SUCCESS) { g_WebStartupPhase = 0; return -1; }
+        g_WebStartupPhase = 3;
+    }
+    if (g_WebStartupPhase == 3)
+    {
+        if (SDL_GetTicks() - g_WebStartupImageShownAt < 2000) return 1;
         g_AnmManager->ReleaseSurface(0);
         g_WebStartupPhase = 0;
-        return result == ZUN_SUCCESS ? 0 : -1;
+        EM_ASM({ performance.mark('eagler-startup-menu-ready'); });
+        return 0;
     }
     g_GfxBackend->BeginFrame();
     g_AnmManager->CopySurfaceToBackBuffer(0, 0, 0, 0, 0);
+    DrawStartupBranding();
     g_GfxBackend->EndFrame();
     g_GfxBackend->SwapBuffers();
+    g_WebStartupImageShownAt = SDL_GetTicks();
+    g_Supervisor.startupTimeBeforeMenuMusic = g_WebStartupImageShownAt;
+    EM_ASM({ performance.mark('eagler-startup-image'); });
     g_WebStartupPhase = 2;
     return 1;
 }

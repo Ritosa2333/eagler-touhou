@@ -1141,8 +1141,13 @@ ZunResult MainMenu::BeginStartup()
     if (g_Supervisor.startupTimeBeforeMenuMusic > 0)
     {
         time = SDL_GetTicks();
+#ifdef __EMSCRIPTEN__
+        constexpr i32 startupImageMinimumMs = 2000;
+#else
+        constexpr i32 startupImageMinimumMs = 3000;
+#endif
         while ((time - g_Supervisor.startupTimeBeforeMenuMusic >= 0) &&
-               (3000 > time - g_Supervisor.startupTimeBeforeMenuMusic))
+               (startupImageMinimumMs > time - g_Supervisor.startupTimeBeforeMenuMusic))
         {
             time = SDL_GetTicks();
         }
