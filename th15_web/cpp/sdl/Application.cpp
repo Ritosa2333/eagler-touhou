@@ -59,14 +59,21 @@ bool ApplicationState::draw_loading(bool signature){
  // Publish visible artwork before blocking preparation. Its isolated RNG and
  // clock do not advance game logic. The browser holds major loading screens
  // for at least one second without blocking or accumulating simulation debt.
- for(unsigned frame=0;frame<11;++frame)if(!loading_animations.update(false)||!loading_animations.update(true))return fail(loading_animations.error);
+ if(!render_loading(signature,signature?1:11))return false;
+ const bool major=signature||pending_destination==13||pending_destination==10||pending_destination==11||pending_destination==15||(flow&&flow->pending());
+ loading_until=major?SDL_GetTicks()+loading_minimum_ms:0;return true;
+}
+bool ApplicationState::render_loading(bool signature,unsigned frames){
+ for(unsigned frame=0;frame<std::min(frames,120u);++frame)if(!loading_animations.update(false)||!loading_animations.update(true))return fail(loading_animations.error);
  renderer.invalidate();graphics.backend.pipeline()=touhou::graphics::PipelineState{};graphics.configure_game(1);
  if(!graphics.select_target(nullptr,0)||!graphics.clear_target(0xff000000,nullptr))return fail(graphics.error);
  ScreenViews loading_views{renderer,loading_environment};if(!loading_views.camera(DrawCamera::Fullscreen,false))return fail("Loading camera unavailable");
- for(u32 layer=0;layer<42;++layer)if(!renderer.draw_layer(loading_animations.registry.layer(layer)))return fail(renderer.error);
- renderer.flush();graphics.present();
- const bool major=signature||pending_destination==13||pending_destination==10||pending_destination==11||pending_destination==15||(flow&&flow->pending());
- loading_until=major?SDL_GetTicks()+loading_minimum_ms:0;return true;
+ const auto* credit=signature?loading_animations.registry.find(loading_signature):nullptr;
+ for(u32 layer=0;layer<42;++layer){
+  if(!renderer.draw_layer(loading_animations.registry.layer(layer)))return fail(renderer.error);
+  if(credit&&layer==u32(credit->visual.layer)){renderer.flush();graphics.draw_startup_branding(credit->visual.color);}
+ }
+ renderer.flush();graphics.present();return true;
 }
 bool ApplicationState::initialize(bool device){
  if(initialized)return fail("Application already initialized");if(!prepare_platform())return false;if(!loading_animations.resource(2)&&!prepare_loading())return false;

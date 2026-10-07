@@ -33,7 +33,7 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  // These original title counters live across destruction of the title owner.
  i32 title_demo_idle=0,title_demo_index=0,title_saved_difficulty=0,title_saved_replay_selection=0;
  void remember_title()noexcept{if(title){title_demo_idle=title->frame.demo_idle;title_demo_index=title->frame.demo_index;title_saved_difficulty=title->frame.saved_difficulty;title_saved_replay_selection=title->saved_replay_selection;}}
- bool fail(const std::string&);bool prepare_platform();bool prepare_loading();bool draw_loading(bool signature);bool initialize(bool);~ApplicationState();bool step(u32,u32,u32,float,bool);bool apply_destination();bool begin_title(i32);bool begin_run();bool begin_ending();void release_run();bool bind_run_display();bool preload_run();bool save_settings();
+ bool fail(const std::string&);bool prepare_platform();bool prepare_loading();bool draw_loading(bool signature);bool render_loading(bool signature,unsigned frames);bool initialize(bool);~ApplicationState();bool step(u32,u32,u32,float,bool);bool apply_destination();bool begin_title(i32);bool begin_run();bool begin_ending();void release_run();bool bind_run_display();bool preload_run();bool save_settings();
  StageGameplay* scene()const noexcept{return run?run->scene():nullptr;}const StageAssets* assets()const noexcept{return run?run->scene_assets():nullptr;}const i32* projection();
  bool read(const std::string&,std::vector<u8>&)override;
  bool screen_fade(i32 duration,i32 update_priority,i32 draw_priority,bool covering,bool full_screen);
