@@ -9,6 +9,7 @@
 #include "../spell.hpp"
 #include "../stage_award.hpp"
 #include "../stage_logic.hpp"
+#include "EnemyLife.hpp"
 #include "Items.hpp"
 #include "Laser.hpp"
 #include "Ufo.hpp"
@@ -145,6 +146,7 @@ struct Enemy {
   int immunityTicks = 2, bodyImmunityTicks = 0;
   // Native +265c life-control word is distinct from +26f8 behavior flags.
   u32 lifeFlags = 0;
+  int lifeRaw = 210, phaseLife = 30, lifeThreshold = 0, bossSlot = -1;
   ufo_system::DeathReason deathReason = ufo_system::DeathReason::Defeated;
   std::array<u32, 12> variables{};
   std::array<EnemyInterrupt, 8> interrupts{};

@@ -15,6 +15,7 @@ or the WebAssembly runtime. It is not the original author's C++ source.
 | `AnmLogic.cpp`, `AnmScene.cpp`, `ScreenAnimations.cpp` | Resource registry, ANM execution, intrusive child links and scene scheduling |
 | `Laser.cpp`, `LaserCollision.cpp`, `LaserWorld.cpp` | Moving, timed and curved laser classes, native collision query and game bridge |
 | `Stage.cpp`, `SpellController.cpp`, `Dialogue.cpp` | Background, spell and message update bridges |
+| `BossHud.cpp`, `EnemyLife.hpp` | Original Boss HUD fill/thresholds/stars and cumulative sevenfold spell life |
 | `Application.cpp` | Native callback priority order |
 | `CustomGeometry.cpp`, `PresentationGeometry.cpp`, `TextGlyphs.cpp` | UFO fill strips, three laser meshes, numeric popups and read-only mesh ABI |
 | `BulletPool.cpp`, `HostilePool.cpp` | Original2000-slot reservation, reuse and physical traversal |
@@ -45,6 +46,12 @@ and unverified laser extension combinations are reported instead of receiving
 invented behavior. The preview loads all six stages and Extra, including their
 STD, ANM, SHT and MSG inputs. Native samples cover UFO/laser vertices, special
 enemy callbacks, Hermite movement, hostile pool allocation and sound queues.
+
+StageInfo road/Boss music slots are selected by native MSG19 and retained in
+logical state, independently of muting. Boss health uses original412050 life
+bookkeeping; its 348-hit fixture retains rounding remainders and phase floors.
+HUD41e439/41f33d samples verify fill, names, remaining spell stars and262 solid
+rectangle arguments. These samples do not execute original audio output or GPU.
 
 Original menus, campaign transitions, save/recording integration, remaining
 sprite-boundary bullet gates and special background effects still need work.

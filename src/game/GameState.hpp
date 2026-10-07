@@ -1,4 +1,5 @@
 #pragma once
+#include "BossHud.hpp"
 #include "GameTypes.hpp"
 #include "PlayerSystem.hpp"
 #include "Presentation.hpp"

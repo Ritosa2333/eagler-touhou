@@ -9,6 +9,9 @@ void selectStage(int number) {
   laserManager.reset(&laserWorld);
   resetItemPresentation();
   ended = 0;
+  bossHud = {};
+  bossMusic = false;
+  musicSerial = 0;
   enemies.clear();
   bullets.clear();
   resetHostilePool();
@@ -41,6 +44,9 @@ void startGame(int c, int s, int d, int seed) {
   playerFocusAnimation = 0;
   previousHeld = fireFrame = 0;
   dialogue = spell = ended = 0;
+  bossHud = {};
+  bossMusic = false;
+  musicSerial = 0;
   oracleFixtureFlags = 0;
   messageVM.reset();
   messageEvents.clear();

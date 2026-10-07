@@ -481,9 +481,11 @@ const std::string& captureState() {
     faultComma = true;
     out << '[' << (key >> 32) << ',' << u32(key) << ',' << runtimeFaults.at(key) << ']';
   }
-  out << "],\"fixtureFlags\":" << oracleFixtureFlags << ",\"frame\":" << frame
-      << ",\"input\":{\"held\":" << previousHeld << "},\"player\":{\"xFixed\":" << px
-      << ",\"yFixed\":" << py << ",\"state\":" << playerState
+  out << "],\"bossHud\":" << captureBossHud()
+      << ",\"music\":{\"track\":" << stageNumber * 2 - (bossMusic ? 0 : 1)
+      << ",\"serial\":" << musicSerial << "},\"fixtureFlags\":" << oracleFixtureFlags
+      << ",\"frame\":" << frame << ",\"input\":{\"held\":" << previousHeld
+      << "},\"player\":{\"xFixed\":" << px << ",\"yFixed\":" << py << ",\"state\":" << playerState
       << ",\"stateAge\":" << playerStateTicks << ",\"invulnerability\":" << invuln
       << ",\"deathWindow\":" << deathWindow << ",\"graze\":" << graze
       << ",\"focusAnimation\":" << playerFocusAnimation << ",\"fireFrame\":" << shotSchedule.frame
@@ -568,7 +570,9 @@ const std::string& captureState() {
         << ',' << e.ry << ',' << e.relativeAngle << ',' << e.relativeSpeed
         << "],\"life\":" << e.life << ",\"maxLife\":" << e.maxLife << ",\"age\":" << e.age
         << ",\"phaseAge\":" << e.phaseAge << ",\"flags\":" << e.flags
-        << ",\"lifeFlags\":" << e.lifeFlags << ",\"active\":" << e.active << ",\"boss\":" << e.boss
+        << ",\"lifeFlags\":" << e.lifeFlags << ",\"lifeRaw\":" << e.lifeRaw
+        << ",\"phaseLife\":" << e.phaseLife << ",\"lifeThreshold\":" << e.lifeThreshold
+        << ",\"bossSlot\":" << e.bossSlot << ",\"active\":" << e.active << ",\"boss\":" << e.boss
         << ",\"hidden\":" << e.hidden << ",\"invincible\":" << e.invincible
         << ",\"bodyImmunity\":" << e.bodyImmunityTicks << ",\"renderExtents\":[" << e.renderWidth
         << ',' << e.renderHeight << "],\"immunity\":" << e.immunityTicks

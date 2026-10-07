@@ -5,10 +5,14 @@
 namespace th12 {
 void finishEnemyUpdate(Enemy& e);
 bool resolveEnemyInterrupt(Enemy& e) {
+  e.phaseLife = e.life;
+  e.lifeThreshold = 0;
   EnemyInterrupt* transition = nullptr;
   bool timeout = false;
   for (auto& interrupt : e.interrupts)
     if (interrupt.health >= 0) {
+      e.phaseLife = e.life - interrupt.health;
+      e.lifeThreshold = interrupt.health;
       if (e.life <= interrupt.health)
         transition = &interrupt;
       break;
@@ -54,6 +58,8 @@ void finishEnemyUpdate(Enemy& e) {
   // source accumulation and the stored-score hit award still run in immunity.
   if (!(oracleFixtureFlags & 1) && !e.hidden && !(e.flags & 0x21u)) {
     int damage = customEnemyDamage(e);
+    if (dialogue)
+      damage = 0; // Native413db9 still runs the query and impact callbacks first.
     if (playerState == 0 || playerState == 2)
       damage /= 5;
     if (spellState.active() && spellState.cardId >= 93 && spellState.cardId <= 99 &&
@@ -66,7 +72,7 @@ void finishEnemyUpdate(Enemy& e) {
       damage /= 30;
     if (!spellShield && damage > 0) {
       if (!(e.flags & 0x10u) && !e.immunityTicks) {
-        e.life -= damage;
+        enemy_life::hurt(e.life, e.lifeRaw, e.lifeThreshold, e.lifeFlags, damage);
         eventBits |= 8;
       }
       // The first interrupt/death check belongs to the effective hurt path.
@@ -151,6 +157,8 @@ Enemy* spawn(const std::string& sub, float x, float y, int life, int points, int
   p->ay = enemy_motion::quantize(y);
   combinePosition(*p);
   p->life = p->maxLife = life;
+  p->lifeRaw = enemy_life::expanded(life);
+  p->phaseLife = life;
   p->score = points;
   p->drop = drop;
   p->mirror = mirror;

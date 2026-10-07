@@ -1,5 +1,6 @@
 // Stage assets are fully read before the active core is changed.
-export const stageMusic=Object.freeze([null,'th12_02','th12_05','th12_08','th12_10','th12_14','th12_17','th12_19']); // Original4aebf0+stage*64, field14.
+export const stageMusic=Object.freeze([null,'th12_00','th12_04','th12_07','th12_09','th12_13','th12_16','th12_18']); // StageInfo+10, slot0.
+export const bossMusic=Object.freeze([null,'th12_02','th12_05','th12_08','th12_10','th12_14','th12_17','th12_19']); // StageInfo+14, MSG19 slot1.
 export function stageResources(number,atlases={}){
   if(!Number.isInteger(number)||number<1||number>7)throw Error('关卡编号无效');
   const suffix=String(number).padStart(2,'0'),resources=[];

@@ -28,6 +28,7 @@ void tick(int held, int pressed) {
   bullets.erase(std::remove_if(bullets.begin(), bullets.end(), [](auto& b) { return !b.active; }),
                 bullets.end());
   refreshHostilePointers();
+  tickBossHud();
   tickMessage(held, pressed);
   syncItemPresentation();
   for (const auto& e : enemies)

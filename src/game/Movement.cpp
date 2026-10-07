@@ -34,7 +34,7 @@ void circularPosition(Enemy& e, bool relative) {
 }
 Enemy* primaryBoss() {
   for (auto& p : enemies)
-    if (p->active && p->boss)
+    if (p->active && p->boss && p->bossSlot == 0)
       return p.get();
   return nullptr;
 }

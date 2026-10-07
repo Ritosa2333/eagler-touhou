@@ -529,10 +529,31 @@ void command(Enemy& e, Context& c, int op) {
     break;
   case 411:
     e.life = e.maxLife = I(0);
+    e.lifeRaw = enemy_life::expanded(e.life);
+    if (e.boss) {
+      clearBossMarkers();
+      e.flags |= 0x20000000u;
+    }
     break;
-  case 412:
-    e.boss = I(0) >= 0;
+  case 412: {
+    const int slot = I(0);
+    if (slot >= 0 && slot < 8) {
+      for (auto& other : enemies)
+        if (other.get() != &e && other->bossSlot == slot) {
+          other->boss = false;
+          other->bossSlot = -1;
+          other->flags &= ~0x400000u;
+        }
+      e.boss = true;
+      e.bossSlot = slot;
+      e.flags |= 0x400000u;
+    } else {
+      e.boss = false;
+      e.bossSlot = -1;
+      e.flags &= ~0x400000u;
+    }
     break;
+  }
   case 413:
     e.phaseAge = e.age = 0;
     break;
@@ -563,6 +584,7 @@ void command(Enemy& e, Context& c, int op) {
       dialogue = I(0) + 1;
       messageEvents.clear();
       startMessageAnimations();
+      bossHud.checkpoint = I(0) + 1; // Native41fc68.
       for (auto* b : hostileSlots)
         if (b && b->active)
           eb::cancel(b->enemy, bulletWorld);
@@ -612,6 +634,8 @@ void command(Enemy& e, Context& c, int op) {
     else
       startSpellAnimations();
     spell = spellState.active();
+    e.lifeFlags |= 1u; // Native418947..41895d, independent of capture eligibility.
+    e.lifeRaw = enemy_life::expanded(e.life);
     break;
   }
   case 423:
@@ -619,15 +643,27 @@ void command(Enemy& e, Context& c, int op) {
     backgroundVisible = true;
     stageState.flags |= 1u;
     spell = spellState.active();
+    e.lifeFlags &= ~1u;
     break;
   case 424:
+    bossHud.checkpoint = I(0); // Native41c550 writes global4b0cb8.
+    break;
   case 425:
     if (op == 425)
       requestEnemyClear();
     break;
   case 426:
-  case 427:
     break;
+  case 427: {
+    const float life = F(1);
+    const uint32_t color = uint32_t(I(2));
+    const int index = I(0);
+    if (index >= 0 && index < 4 && e.maxLife > 0) {
+      bossHud.markers[index] = float(double(life) / e.maxLife);
+      bossHud.colors[index] = color;
+    }
+    break;
+  }
   case 435: {
     int id = rd<i32>(c.pc + 16);
     storeInt(c, e, id, argInt(c, e, std::min(difficulty, 3) + 1));
@@ -656,6 +692,8 @@ void command(Enemy& e, Context& c, int op) {
     spellAnimationKeys[3] = 0;
     break;
   case 440:
+    bossHud.remaining = std::clamp(I(0), 0, 10);
+    break;
   case 445:
   case 449:
     break;

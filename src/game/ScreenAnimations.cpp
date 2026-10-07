@@ -104,6 +104,9 @@ void messageCommand(const message_system::Command& command) {
     animationScene.interrupt(messageAnimationKeys[slot], code);
   };
   switch (command.op) {
+  case 0:
+    bossHud.checkpoint = 0; // Native420d4c..420d5b.
+    break;
   case 1: {
     static constexpr int scripts[] = {31, 30, 28};
     messageAnimationKeys[0] = bindScreenAnimation(4 + character, scripts[character]);
@@ -172,6 +175,8 @@ void messageCommand(const message_system::Command& command) {
       interrupt(slot, 3);
     break;
   case 19:
+    bossMusic = true;
+    ++musicSerial; // Native42089d queues stage-specific slot1, even when muted.
     bindScreenAnimation(9, 2);
     break;
   case 20: {
@@ -199,7 +204,7 @@ void messageCommand(const message_system::Command& command) {
 }
 void startSpellAnimations() {
   spellAnimationKeys = {};
-  const auto bindings = spell_system::startBindings(stageNumber, frame);
+  const auto bindings = spell_system::startBindings(stageNumber, bossHud.checkpoint);
   for (size_t i = 0; i < bindings.size() && i < spellAnimationKeys.size(); i++)
     spellAnimationKeys[i] = bindScreenAnimation(spellAnimationBank(bindings[i].bank),
                                                 bindings[i].script, bindings[i].layer);

@@ -4,13 +4,14 @@ import {parseReplay} from '/src/replay.mjs';
 import {openStore} from '/src/storage.mjs';
 import {installShell} from '/src/shell.mjs';
 import {PreviewInput,supportedReplay} from '/src/preview-input.mjs';
-import {StageLoader,stageMusic} from '/src/stage-loader.mjs';
+import {StageLoader,stageMusic,bossMusic} from '/src/stage-loader.mjs';
+import {MusicPlayer} from '/src/music.mjs';
 import {readCoreSoundEvents} from '/src/sound-events.mjs';
 
 const $=id=>document.getElementById(id),canvas=$('screen'),inputState=new PreviewInput();
 let core,renderer,store,stageLoader,currentStage=1,post=()=>{},ready=false,running=false,paused=false,busy=false,loadingReplay=false,last=0,accumulator=0,generation=0,previous=0,activeReplay=null,replayFrame=0;
 let corpus=[],custom=new Map(),renderedFrames=0,healthAt=0,maxGap=0,lastHud=[],log=[],drag=null,hostDrag=null,firstPresented=false,focusLostDuringStart=false,padPauseHeld=false;
-const audio={context:null,buffers:new Map(),source:null,enabled:true,index:null,sounds:null,effects:new Map(),request:0};
+const audio={context:null,buffers:new Map(),player:null,musicSerial:-1,enabled:true,index:null,sounds:null,effects:new Map()};
 const tickMs=1000/60;
 
 function message(text){$('status').textContent=text;}
@@ -22,7 +23,7 @@ function updateButtons(){
   $('pause').disabled=!running;
   for(const id of ['character','shot','difficulty','stage','replay','replay-stage'])$(id).disabled=busy||loadingReplay;
 }
-function stopMusic(){audio.request++;if(audio.source){try{audio.source.stop();}catch{}audio.source=null;}}
+function stopMusic(){audio.player?.stop();}
 function stopEffects(){for(const source of audio.effects.values()){try{source.stop();}catch{}}audio.effects.clear();}
 function audioPause(value){if(!audio.context)return;const task=value?audio.context.suspend():audio.context.resume();task.catch(e=>console.warn('音频暂停/恢复失败：'+e.message));}
 function clear(){inputState.clear();drag=hostDrag=null;previous=0;}
@@ -38,6 +39,11 @@ async function initializeAudio(){
   const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)throw Error('当前浏览器没有可用音频');
   audio.context??=new Audio();audio.context.resume().catch(e=>console.warn('音频尚未获准播放：'+e.message));
   if(!audio.index){const response=await fetch('/assets/music-index.json');audio.index=response.ok?await response.json():[];}
+  audio.player??=new MusicPlayer({context:audio.context,readBytes:file=>bytes('/assets/music/'+file)});
+  // Native4221d1/4221e1 load both slots before the stage starts.
+  const tracks=[stageMusic[currentStage],bossMusic[currentStage]].map(id=>audio.index.find(t=>t.id===id));
+  if(tracks.some(t=>!t))throw Error('本关的道中或 Boss 音乐尚未准备好');
+  await audio.player.preload(tracks);
   if(!audio.sounds)audio.sounds=await fetch('/assets/sound-index.json').then(r=>{if(!r.ok)throw Error('音效索引加载失败');return r.json();});
   await Promise.all([...new Set(audio.sounds.map(s=>s.file))].map(async name=>{
     if(audio.buffers.has(name))return;try{const b=await bytes('/assets/'+name);audio.buffers.set(name,await audio.context.decodeAudioData(b.buffer));}catch(e){console.warn(e.message);}
@@ -58,17 +64,17 @@ function nativeSound(event){
 }
 async function music(token=generation){
   if(token!==generation||!audio.enabled)return;
-  stopMusic();const request=audio.request;if(!audio.enabled||!audio.index?.length)return;
-  const track=audio.index.find(t=>t.id===stageMusic[currentStage]);if(!track)throw Error('本关音乐尚未准备好');
-  if(!audio.buffers.has(track.id)){const b=await bytes('/assets/music/'+track.file);audio.buffers.set(track.id,await audio.context.decodeAudioData(b.buffer));}
-  if(token!==generation||request!==audio.request||!audio.enabled)return;
-  const source=audio.context.createBufferSource(),gain=audio.context.createGain();source.buffer=audio.buffers.get(track.id);source.loop=true;source.loopStart=track.loopStart;source.loopEnd=track.loopEnd;source.connect(gain);gain.connect(audio.context.destination);gain.gain.value=.35;source.start();audio.source=source;
+  if(!audio.index?.length||!audio.player)return;
+  const track=core._th12_music_track?audio.index[core._th12_music_track()]:audio.index.find(t=>t.id===stageMusic[currentStage]);
+  if(!track)throw Error('当前音乐曲目无效');
+  audio.musicSerial=core._th12_music_serial?.()??0;
+  return audio.player.play(track,()=>token===generation&&audio.enabled&&(running||busy));
 }
 function pause(value=!paused){
   if(!running||paused===value)return;paused=value;clear();last=performance.now();accumulator=0;
   if(value)overlay('已暂停','按 Esc 或点击继续');else $('overlay').hidden=true;
   $('pause').textContent=value?'继续':'暂停';audioPause(value);
-  if(!value&&audio.enabled&&!audio.source){const token=generation;initializeAudio().then(()=>music(token)).catch(e=>message('音频未就绪：'+e.message));}
+  if(!value&&audio.enabled&&!audio.player?.source){const token=generation;initializeAudio().then(()=>music(token)).catch(e=>message('音频未就绪：'+e.message));}
 }
 function finish(reason){
   if(!running)return;running=paused=false;clear();accumulator=0;stopMusic();stopEffects();audioPause(true);updateButtons();$('pause').textContent='暂停';$('fps').textContent='已结束';
@@ -80,6 +86,10 @@ function finish(reason){
 function hud(){return [...new Float32Array(core.HEAPU8.buffer,core._th12_hud(),core._th12_hud_size())];}
 function afterTick(){
   lastHud=hud();const e=lastHud[14]|0;
+  const musicSerial=core._th12_music_serial?.()??0;
+  if(audio.enabled&&musicSerial!==audio.musicSerial){
+    const token=generation;music(token).catch(error=>{if(token===generation)message('音乐切换失败：'+error.message);});
+  }
   const events=readCoreSoundEvents(core);
   if(events)events.forEach(nativeSound);
   else {if(e&1)sound('se_tan00.wav',.04);if(e&2)sound('se_enep00.wav');if(e&16)sound('se_graze.wav',.07);if(e&32)sound('se_pldead00.wav',.3);if(e&64)sound('se_item00.wav',.1);}

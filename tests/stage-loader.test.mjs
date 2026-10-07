@@ -1,6 +1,10 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
-import{StageLoader,stageResources,stageMusic}from'../src/stage-loader.mjs';
+import{StageLoader,stageResources,stageMusic,bossMusic}from'../src/stage-loader.mjs';
 const native=JSON.parse(fs.readFileSync(new URL('fixtures/stage-resource-native.json',import.meta.url)));
+test('every stage has separate original road and Boss tracks with native music-room indices',()=>{
+  const music=JSON.parse(fs.readFileSync(new URL('../site/assets/music-index.json',import.meta.url)));
+  for(const r of native.rows){assert.equal('bgm/'+bossMusic[r.number]+'.wav',r.bossMusic);assert.equal(music[r.stageMusicIndex].id,stageMusic[r.number]);assert.equal(music[r.bossMusicIndex].id,bossMusic[r.number]);assert.notEqual(r.stageMusic,r.bossMusic);}
+});
 test('all7 stage loaders use original StageInfo paths/music and Extra boss include',()=>{for(const row of native.rows){const r=stageResources(row.number),files=r.map(x=>x.file);for(const file of [row.std,row.enemyAnm,row.ecl,row.logoAnm,...row.messages])assert.ok(files.includes(file),file);assert.equal('bgm/'+stageMusic[row.number]+'.wav',row.stageMusic);assert.equal(files.includes('stage07boss.ecl'),row.number===7);assert.equal(r.filter(x=>x.method==='_th12_load_sht').length,6);}assert.throws(()=>stageResources(0),/关卡/);assert.throws(()=>stageResources(8),/关卡/);assert.ok(stageResources(5,{stgenm05m:{}}).some(r=>r.index===3&&r.file==='stgenm05m.anm'));});
 function core(){const calls=[],c={calls,HEAPU8:new Uint8Array(512),_malloc:()=>64,_free:()=>{},_th12_select_stage:n=>calls.push(['stage',n]),_th12_unload_anm:n=>calls.push(['unload',n])};for(const m of ['_th12_load_ecl','_th12_load_std','_th12_load_sht','_th12_load_msg','_th12_load_anm'])c[m]=(...a)=>{calls.push([m,...a]);return 1;};return c;}
 test('failed fetching leaves the active game untouched and a retry can use the same loader',async()=>{const c=core();let bad=true;const l=new StageLoader(c,{},async f=>{if(f==='stage02.std'&&bad)throw Error('missing');return new Uint8Array([1]);});await assert.rejects(l.load(2),/missing/);assert.deepEqual(c.calls,[]);bad=false;assert.equal(await l.load(2),true);assert.deepEqual(c.calls[0],['stage',2]);});

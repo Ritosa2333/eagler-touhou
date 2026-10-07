@@ -122,6 +122,18 @@ const char* th12_spell() {
 int th12_spell_size() {
   return th12::spellSnapshotBuffer.size();
 }
+const char* th12_boss_hud() {
+  return th12::captureBossHud().c_str();
+}
+int th12_boss_hud_size() {
+  return int(th12::bossHudSnapshotBuffer.size());
+}
+int th12_music_track() {
+  return th12::stageNumber * 2 - (th12::bossMusic ? 0 : 1);
+}
+uint32_t th12_music_serial() {
+  return th12::musicSerial;
+}
 const char* th12_background() {
   return th12::captureBackground().c_str();
 }

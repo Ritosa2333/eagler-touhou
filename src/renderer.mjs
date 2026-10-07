@@ -2,6 +2,21 @@
 import {AnimationSampler} from './animation.mjs';
 import {StageBackground} from './stage-background.mjs';
 export function readCoreHud(core){const size=core._th12_hud_size?.()??20;if(!Number.isInteger(size)||size<20||size>256)throw Error('状态记录长度无效');return new Float32Array(core.HEAPU8.buffer,core._th12_hud(),size);}
+export function readCoreBossHud(core){
+  if(!core._th12_boss_hud||!core._th12_boss_hud_size)return null;
+  const ptr=core._th12_boss_hud(),size=core._th12_boss_hud_size();
+  if(!Number.isInteger(ptr)||!Number.isInteger(size)||ptr<0||size<2||size>4096||ptr+size>core.HEAPU8.byteLength)throw Error('Boss 血条记录无效');
+  const s=JSON.parse(new TextDecoder().decode(core.HEAPU8.subarray(ptr,ptr+size)));
+  if(!Number.isFinite(s.fill)||!Number.isFinite(s.target)||!Array.isArray(s.markers)||s.markers.length!==4||!s.markers.every(m=>Array.isArray(m)&&m.length===2&&m.every(Number.isFinite)))throw Error('Boss 血条状态无效');
+  return s;
+}
+export function bossHealthRectangles(s){
+  if(!s||s.fill<=0)return [];
+  // Native41f350..41f439 uses solid rectangles, not an ANM texture.
+  const right=Math.fround(330*s.fill+41),rectangles=[{bounds:[41,23,right,25],argb:0xff000000},{bounds:[40,22,Math.fround(right-1),24],argb:0xffffffff}];
+  for(const [fraction,argb]of s.markers)if(fraction!==0)rectangles.push({bounds:[40,22,Math.fround(330*Math.min(fraction,s.fill)+40),24],argb});
+  return rectangles;
+}
 export function animationBankName(bank,stage=1){const suffix=String(stage).padStart(2,'0');return ['bullet','enemy','stgenm'+suffix,'stgenm'+suffix+'m','pl00','pl01','pl02','front','text','st'+suffix+'logo','stage'+suffix,'ascii'][bank]??null;}
 export function decodeMessageHex(hex){if(typeof hex!=='string'||hex.length%2||!/^[0-9a-f]*$/i.test(hex))throw Error('对话字符数据无效');return new TextDecoder('shift-jis').decode(Uint8Array.from(hex.match(/../g)??[],v=>parseInt(v,16)));}
 export function readCoreMessage(core){if(!core._th12_message||!core._th12_message_size)return null;const ptr=core._th12_message(),size=core._th12_message_size();if(!Number.isInteger(size)||size<0||size>1024*1024||ptr<0||ptr+size>core.HEAPU8.byteLength)throw Error('对话状态记录无效');if(!size)return null;return JSON.parse(new TextDecoder().decode(core.HEAPU8.subarray(ptr,ptr+size)).replace(/\0+$/,''));}
@@ -218,6 +233,10 @@ export class Renderer {
     }
     this.flush();g.disable(g.SCISSOR_TEST);
     this.animation('front',0,frame,0,0);
+    for(const {bounds:[left,top,right,bottom],argb}of bossHealthRectangles(readCoreBossHud(core))){
+      const color=argbRgba(argb),vertices=[[left,top],[right,top],[right,bottom],[left,bottom]].map(([x,y])=>({x,y,color}));
+      this.solidTriangles(vertices,[0,1,2,0,2,3],0);
+    }
     this.hudText(groupedNumber(h[3]),620,72,1,true);this.hudText(groupedNumber(h[40]??h[3]),620,48,1,true);
     for(let i=0;i<8;i++){this.animation('front',13+i,frame,0,0,0,1,null,{interrupt:fragmentInterrupt(i,h[5],h[21])});this.animation('front',21+i,frame,0,0,0,1,null,{interrupt:fragmentInterrupt(i,h[6],h[22])});}
     this.hudText(Math.floor(h[4]/100)+'.',540,152);this.hudText(String(Math.round(h[4])%100).padStart(2,'0'),560,159,.6);this.hudText('/4.',574,152);this.hudText('00',606,159,.6);
