@@ -142,7 +142,9 @@ JobResult BackgroundScript::update(){
     finish_frame();if(current->opcode!=3)s.time.tick(anm.timing);update_objects();
     if(s.spell_state>0){if(s.spell_frames==60)s.spell_state=wrapping_add(s.spell_state,1);s.spell_frames=wrapping_add(s.spell_frames,1);for(i32 i=0;i<s.spell_vm_count&&i<32;++i)anm.execute(s.spell_vms[i]);}
     for(u32 i=0;i<3;++i)if(s.layers[i].activeSpriteIndex>0){anm.execute(s.layers[i]);if(i==2)s.clear_color=u32(s.layers[i].color1.d3dColor);}
-    if(s.frames%3==0&&(s.frames>699||context.practice)&&s.spell_state<2)for(u32 i=0;i<12;++i)actions.sparkle(s.effect_positions[i]);
+    // Draw publishes the number of valid projected sparkle positions. Unused
+    // entries are zeroed and must not emit effects at the playfield origin.
+    if(s.frames%3==0&&(s.frames>699||context.practice)&&s.spell_state<2)for(i32 i=0;i<12&&i<s.effect_flags;++i)actions.sparkle(s.effect_positions[i]);
     s.effect_visible=1;if(s.spell_state>1)s.effect_flags=0;s.frames=wrapping_add(s.frames,1);
     return s.frames%500==250&&actions.integrity_failed()?JobResult::Exit:JobResult::Continue;
 }
