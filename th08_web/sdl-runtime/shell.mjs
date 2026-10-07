@@ -102,6 +102,9 @@ async function resumeForegroundAudio(forcePause=false){
 async function stop(){if(closing)return;closing=true;clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();window.dispatchEvent(new CustomEvent('touhou-midi-close'));await sync(false);app=0;launched=false;emit('exit',{code:0,status:'success'});}finally{closing=false;}}
 async function launch(){
  if(launched)return;clearKeyboard();
+ const {installStartupBranding}=await import('./startup-branding.mjs');
+ const build=await(await fetch('./manifest.json')).json();
+ await installStartupBranding(Module,{game:'th08',builtAt:build.builtAt});
  ensureSharedFontAlias(Module);
  // Localized text falls back to Unifont for glyphs MS Gothic does not carry
  // (sdl/FontHost.cpp). Alias it into the canonical /fonts layout when a

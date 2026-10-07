@@ -23,7 +23,7 @@ for(const [name,expected] of Object.entries(build.sourceFiles)){
 }
 const entry=game==='th08'?'th08.html':'th10.html';
 const fontNames=game==='th08'?['blend.bin','cp932.bin']:['msgothic.ttc','simhei.ttf','blend.bin','codepages.bin'];
-const runtimeNames=['shell.mjs','eagler-host.mjs','directory-keyboard.mjs',...(game==='th08'?['practice.mjs','practice-config.mjs','practice-sections.mjs']:[])];
+const runtimeNames=['shell.mjs','eagler-host.mjs','directory-keyboard.mjs',...(game==='th08'?['practice.mjs','practice-config.mjs','practice-sections.mjs','startup-branding.mjs']:[])];
 const names=[entry,'manifest.json',...runtimeNames,'motion-replay.mjs',game+'-sdl.mjs',game+'-sdl.wasm','resources.json',...fontNames.map(n=>'fonts/'+n)];
 const allowed=new Set([...names,'runtime-files.json']);
 function walk(dir){return existsSync(dir)?readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(resolve(dir,e.name)):[resolve(dir,e.name)]):[];}
@@ -44,7 +44,8 @@ for(const ext of ['mjs','wasm']){
 const resources=fontNames.map(name=>{const bytes=readFileSync(resolve(fonts,name));write('fonts/'+name,bytes);return {path:'/fonts/'+name,url:'./fonts/'+name,bytes:bytes.length};});
 write('resources.json',JSON.stringify({schema:'eagler-sdl-resources/1',game,resources},null,2)+'\n');
 const features={thprac:build.features?.thprac===true,languages:build.features?.languages===true,focusHitbox:build.features?.focusHitbox===true};
-write('manifest.json',JSON.stringify({game,protocol:'eagler-touhou/1',adapter:'sdl3-eagler',profile:presentationLab?'presentation-lab':'production',version:build.version,features,music:['ogg-stream','ogg-full','none',...(game==='th08'?['midi']:[])],touchReplay:false,execution:{kind:build.kind,sha256:build.sha256,loaderSha256:build.loaderSha256,architecture:build.architecture}},null,2)+'\n');
+if(!Number.isFinite(Date.parse(build.builtAt)))throw Error('Rebuild to record the Runtime build timestamp');
+write('manifest.json',JSON.stringify({game,builtAt:build.builtAt,protocol:'eagler-touhou/1',adapter:'sdl3-eagler',profile:presentationLab?'presentation-lab':'production',version:build.version,features,music:['ogg-stream','ogg-full','none',...(game==='th08'?['midi']:[])],touchReplay:false,execution:{kind:build.kind,sha256:build.sha256,loaderSha256:build.loaderSha256,architecture:build.architecture}},null,2)+'\n');
 const files=Object.fromEntries(names.map(name=>{const bytes=readFileSync(resolve(out,name));return [name,{bytes:bytes.length,sha256:hash(bytes)}];}));
 write('runtime-files.json',JSON.stringify({schema:'eagler-touhou/runtime-directory/1',game,files},null,2)+'\n');
 console.log(JSON.stringify({game,out,files:names.length,wasm:build.sha256},null,2));

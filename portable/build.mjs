@@ -4,6 +4,7 @@ import {resolve,dirname,relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 const workspace=resolve(fileURLToPath(new URL('../',import.meta.url))),game=process.argv.includes('--th08')?'th08':'th10',root=resolve(workspace,game+'_web'),presentationLab=process.argv.includes('--presentation-lab'),profile=presentationLab?'presentation-lab':'sdl3',out=resolve(root,'artifacts',profile);mkdirSync(out,{recursive:true});
+const builtAt=new Date().toISOString();
 const sdk=process.env.EMSDK??(existsSync(resolve(workspace,'tools/emsdk'))?resolve(workspace,'tools/emsdk'):resolve(workspace,'../toolchains/emsdk'));
 const emcc=[resolve(sdk,'install/emscripten/emcc.py'),resolve(sdk,'upstream/emscripten/emcc.py')].find(existsSync);
 if(!emcc)throw Error('Install the pinned Emscripten SDK first (tools/download-emscripten.py).');
@@ -50,4 +51,5 @@ for(const [path,expected] of capturedInputs)if(sha(readFileSync(path))!==expecte
 const sdkMetadata=resolve(sdk,'touhou-sdk.json');
 const toolchain=existsSync(sdkMetadata)?JSON.parse(readFileSync(sdkMetadata)):{emsdkRoot:relative(workspace,sdk).replaceAll('\\','/'),layout:'external'};
 const report={game,kind:'cpp-sdl3',profile,diagnostic:presentationLab,version:game==='th10'?'3.5.1-sdl3':'3.4.1-sdl3',features:{thprac:game==='th08',languages:thcrap,focusHitbox:false},...{architecture:{loop:'cpp-original-cadence-skip-expired-single-tick',audio:'miniaudio-sdl3',renderer:'cpp-gles-semantic-batched',graphicsInterface:'semantic-state-texture-matrix',vertexUpload:'web-bufferData-direct-game-batches-cached-vao',files:'sdl-io-idbfs',fonts:'sdl3-ttf',input:'cpp-sdl',launcher:'eagler-touhou/1'}},sdlVersion:'3.4.2',sources,sourceFiles:inventory,sharedSources:['Renderer.cpp','Renderer.hpp','Shaders.hpp','GraphicsState.hpp','AssetPixelFormat.hpp','RenderCommands.hpp','LegacyGraphics.hpp','ExactFloat.hpp','MotionTrack.hpp'],bytes:wasm.length,sha256:sha(wasm),loaderSha256:sha(readFileSync(output)),imports:WebAssembly.Module.imports(module),exports:WebAssembly.Module.exports(module),toolchain};
+report.builtAt=builtAt;
 writeFileSync(resolve(out,'build.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({game,bytes:wasm.length,sha256:report.sha256,output},null,2));

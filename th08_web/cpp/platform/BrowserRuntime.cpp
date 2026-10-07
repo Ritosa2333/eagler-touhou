@@ -166,11 +166,30 @@ void BrowserRuntime::rectangle(const OverlayRect& r,u32 c){const u32 colors[4]{c
 bool BrowserRuntime::prepare_loading(){
     if(!back){TexturePixels pixels;if(!pixels.create(640,480,22))return false;back=app.textures.insert(std::move(pixels),0,true);reset_device();}
     if(!has_surface(8)&&!load_surface(8,"title/th08logo.jpg"))return false;
+#ifdef TH_NATIVE_PLATFORM
+    if(!has_surface(9)){
+        size_t count=0;void* pixels=SDL_LoadFile("/eagler-startup.rgba",&count);
+        if(pixels){const bool valid=count==1280*960*4&&put_image("eagler-startup",1280,960,static_cast<u8*>(pixels),u32(count));SDL_free(pixels);if(!valid||!load_surface(9,"eagler-startup"))return false;}
+    }
+#endif
     if(!app.library.get(2)){const auto bytes=read("nowloading.anm");if(!app.library.load(2,bytes.data(),bytes.size()))return false;}
     return app.loading.show({500,440,0},false);
 }
 bool BrowserRuntime::draw_loading(bool advance){
-    if(!back)return false;if(advance)app.loading.update();draw_surface(8,0,0);app.loading.draw();flush();return graphics_device().present(back);
+    if(!back)return false;if(advance)app.loading.update();draw_surface(8,0,0);
+#ifdef TH_NATIVE_PLATFORM
+    if(has_surface(9)){
+        auto& device=graphics_device();flush();const auto saved=device.pipeline();
+        auto& pipeline=device.pipeline();pipeline={};pipeline.depthWrite=false;pipeline.blend=true;
+        pipeline.sourceBlend=BlendFactor::SourceAlpha;pipeline.destinationBlend=BlendFactor::InverseSourceAlpha;
+        pipeline.color.operation=pipeline.alpha.operation=ColorOperation::First;
+        pipeline.color.first=pipeline.alpha.first={ArgumentSource::Texture};
+        const SpriteVertex vertices[4]={{{0,0,0},1,0xffffffff,{0,0}},{{640,0,0},1,0xffffffff,{1,0}},{{0,480,0},1,0xffffffff,{0,1}},{{640,480,0},1,0xffffffff,{1,1}}};
+        device.texture(surfaces[9]);device.draw(Primitive::Strip,VertexFormat::Screen,vertices,4);device.flush();device.pipeline()=saved;
+        app.renderer.begin_background();app.renderer.screen_camera();
+    }
+#endif
+    app.loading.draw();flush();return graphics_device().present(back);
 }
 bool BrowserRuntime::initialize(){
     if(prepared||!fonts.encoding.loaded())return false;arithmetic_mode(Precision::Single,Rounding::NearestEven);
