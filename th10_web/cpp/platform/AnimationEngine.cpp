@@ -92,8 +92,15 @@ bool AnimationEngine::present(AnmVm& copy,const AnmVm& source) const{
     if(before.sprite_index==source.sprite_index){if(continuous&64)copy.uv_offset.x=presentation_uv(before.uv_offset.x,source.uv_offset.x);if(continuous&128)copy.uv_offset.y=presentation_uv(before.uv_offset.y,source.uv_offset.y);}
     return true;
 }
+#ifdef TH_SDL3
+extern "C" void sdl_startup_branding_draw(unsigned alpha);
+#endif
 void AnimationEngine::draw(AnmVm& vm){
-    auto env=renderer();if(!high_refresh::render_only||!high_refresh::active){AnmRenderer{manager,env}.draw(vm);return;}
+    auto env=renderer();if(!high_refresh::render_only||!high_refresh::active){AnmRenderer{manager,env}.draw(vm);
+#ifdef TH_SDL3
+        if(manager.files[1]&&vm.animation_file==manager.files[1]&&vm.script_index==0&&(vm.flags&3)==3){flush();sdl_startup_branding_draw(vm.color);}
+#endif
+        return;}
     auto copy=vm;present(copy,vm);
     AnmRenderer{manager,env}.draw(copy);
 }

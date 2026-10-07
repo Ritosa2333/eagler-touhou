@@ -1,6 +1,7 @@
 // Platform shell for the upstream eagler-touhou/1 Launcher contract.
 // Game construction, input, timing, rendering, text and sound belong to C++.
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
+import {installStartupBranding} from './startup-branding.mjs';
 import createModule from './th10-sdl.mjs';
 import {createPractice} from './practice.mjs';
 import {bindOutsideTouches} from './eagler-host.mjs';
@@ -103,8 +104,9 @@ async function resumeForegroundAudio(forcePause=false){
  return resumeRuntimeAudio(Module,core,()=>!!core&&launched&&!document.hidden);
 }
 async function stop(){if(closing)return;closing=true;clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();await sync(false);app=0;launched=false;emit('exit',{code:0,status:'success'});}finally{closing=false;}}
-function launch(){
+async function launch(){
  if(launched)return;clearKeyboard();
+ await installStartupBranding(Module,{game,builtAt:(await(await fetch('./manifest.json')).json()).builtAt});
  // The localized Runtime still constructs the Japanese core. Keep its font
  // alias alongside the selected localization font and user-file root.
  ensureSharedFontAlias(Module,'jp');
@@ -126,7 +128,7 @@ async function command(message){
  case 'touch-cancel':cancelTouches();return {};
  case 'direct-touch':directTouch(core,canvas,message,{width:innerWidth,height:innerHeight});return {};
  case 'touch-controls':touchControls(core,options,message);return {};
- case 'launch':launch();return {};
+ case 'launch':await launch();return {};
  case 'sync':await save();return {};
  case 'list':{const files=[];for(const dir of ['', '/replay','/hint']){if(!fileExists(root()+dir))continue;for(const name of Module.FS.readdir(root()+dir)){const path=(dir+'/'+name).replace(/^\//,'');try{relativeSave(path);}catch{continue;}const full=root()+'/'+path,s=Module.FS.stat(full);if(Module.FS.isFile(s.mode)){const bytes=Module.FS.readFile(full);files.push({path:exportReplayName(path,bytes,10),size:s.size});}}}return {files};}
  case 'read':{let path=relativeSave(message.path);if(path.endsWith('.rpyx'))path=path.slice(0,-1);return {bytes:Array.from(Module.FS.readFile(root()+'/'+path))};}
