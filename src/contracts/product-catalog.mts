@@ -379,7 +379,6 @@ export const PRODUCT_GAMES = Object.freeze({
     title: "東方紺珠伝",
     subtitle: "Legacy of Lunatic Kingdom",
     cardArtwork: "th15-card.webp",
-    testOnly: true,
     storage: Object.freeze({
       saveRoot: "/savesth15",
       scoreFile: "scoreth15.dat",
