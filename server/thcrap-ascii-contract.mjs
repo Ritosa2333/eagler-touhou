@@ -216,7 +216,9 @@ export const THCRAP_ASCII_CONTRACT = Object.freeze({
   // base_tsa/th11/stringlocs.v1.00a.js defines only font names, Music Room
   // spoilers and replay/save strings. The upstream zh-hans stringdefs has no
   // th11-specific ASCII aliases; PNG/ANM resources own the visible labels.
-  th11: Object.freeze([])
+  th11: Object.freeze([]),
+  // TH15 renders translated glyphs through its native FontDevice, not ASCII hooks.
+  th15: Object.freeze([])
 });
 
 export function validateAsciiContract(game) {

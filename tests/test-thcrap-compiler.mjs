@@ -264,6 +264,12 @@ const th08Unpatched = patchThmsgDump(th08Source, { "0": {} }, 8).toString("utf8"
 assert.match(th08Unpatched, /\t16;originalA/);
 assert.throws(() => patchThmsgDump(th08Source, th08Diff, 12), /unsupported message version/);
 const th11Source = Buffer.from("entry 0 (100)\n@60\n\t17;original\n\t25;0\n\t11;0\n", "utf8");
+const th15Source = Buffer.from("entry 0 (100)\n@0\n\t17;first\n\t25;0\n\t32;1\n\t17;second\n\t11;0\n", "utf8");
+const th15Patched = patchThmsgDump(th15Source, {"0": {"0_0": {lines: ["第一框"]}, "0_1": {lines: ["第二框"]}}}, 15).toString("utf8");
+assert.match(th15Patched, /17;第一框\n\t32;1\n\t17;第二框/);
+assert.doesNotMatch(th15Patched, /\t25;/);
+const th15Ending = patchThmsgDump(Buffer.from("entry 0 (100)\n@0\n\t3;original\n\t5;0\n"), {"0": {"0_0": {lines: ["绀珠传结局"]}}}, 15, {ending: true}).toString("utf8");
+assert.match(th15Ending, /3;绀珠传结局\n\t5;0/);
 const th11Patched = patchThmsgDump(th11Source, { "0": { "60_0": { lines: ["地灵殿"] } } }, 11).toString("utf8");
 assert.match(th11Patched, /\t17;地灵殿\n\t11;0/);
 assert.doesNotMatch(th11Patched, /\t25;/);

@@ -45,3 +45,6 @@ const th11Pack = createStaticThcrapPack({
 });
 assert.deepEqual(Buffer.from(unzipSync(th11Pack.archive)["thcrap/th11/st01_00a.msg"]), bytes);
 console.log(JSON.stringify({ schema: pack.manifest.schema, files: pack.manifest.files.length, games: ["th06", "th07", "th08", "th09", "th11"], runtimeIndependent: true }));
+const th15Pack = createStaticThcrapPack({pack: {game: "th15", language: "lang_zh-hans", assets: []}, resources: [{targetPath: "/thcrap/th15/st01a.msg", bytes}]});
+assert.deepEqual(Buffer.from(unzipSync(th15Pack.archive)["thcrap/th15/st01a.msg"]), bytes);
+assert.equal(th15Pack.manifest.runtimeVersion, "independent");

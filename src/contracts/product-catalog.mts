@@ -388,7 +388,7 @@ export const PRODUCT_GAMES = Object.freeze({
     musicCapabilities: Object.freeze({ midi: false }),
     musicRuntime: Object.freeze({ localOggConfigureMode: "runtime-selection" }),
     touchFire: TOGGLE_TOUCH_FIRE,
-    support: Object.freeze({ highRefreshRate: false,
+    support: Object.freeze({ highRefreshRate: true,
       sourceRepository: "https://github.com/YomotsuHisami/th15",
       adaptationNotice: "early-test",
     }),
@@ -425,7 +425,7 @@ export const PRODUCT_GAMES = Object.freeze({
       musicMounts: Object.freeze({ ogg: "/music" }),
     }),
     replay: Object.freeze({ prefix: "th15" }),
-    features: Object.freeze({ thprac: false, languages: false, focusHitbox: false }),
+    features: Object.freeze({ thprac: false, languages: true, focusHitbox: false }),
   }),
   th20: Object.freeze({
     testOnly: true,
