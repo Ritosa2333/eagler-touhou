@@ -24,6 +24,15 @@ bool ApplicationState::read(const std::string& name,std::vector<u8>& bytes){
  const auto at=name.find_last_of("/\\");const auto base=name.substr(at==std::string::npos?0:at+1);
  if(base.empty()||base=="."||base=="..")return fail("Invalid game asset name");
  const auto found=resource_cache.find(base);if(found!=resource_cache.end()){bytes=found->second;return true;}
+#if defined(TH_ENABLE_THCRAP)
+ // Same per-title prepared-resource override as TH10/11. Never fetch patches here.
+ const bool message=base.size()>4&&base.substr(base.size()-4)==".msg";
+ const bool help=base.rfind("help_",0)==0&&base.size()>4&&base.substr(base.size()-4)==".png";
+ // This Runtime reconstructs JP 1.00b. Never mount the 1.00a text bank on it.
+ const bool text_bank=base=="text.anm";
+ if(message||help||text_bank){size_t size=0;auto* patched=static_cast<u8*>(SDL_LoadFile(("/thcrap/th15/"+(text_bank?std::string("text.v1.00b.anm"):base)).c_str(),&size));
+  if(patched){if(size>16u*1024u*1024u){SDL_free(patched);return fail("THCRAP resource outside allowed size");}bytes.assign(patched,patched+size);SDL_free(patched);resource_cache.emplace(base,bytes);return true;}}
+#endif
  if(!archive_bytes.empty()){const auto entry=archive_names.find(base);if(entry==archive_names.end()||!archive.read(entry->second,bytes))return fail("Missing or invalid archive entry: "+base);if(bytes.size()<=1024*1024&&base.size()>=4&&base.substr(base.size()-4)!=".wav"&&base.substr(base.size()-4)!=".anm")resource_cache.emplace(base,bytes);return true;}
  size_t size=0;auto* data=static_cast<u8*>(SDL_LoadFile(("/assets/"+base).c_str(),&size));if(!data)return fail("Missing game asset: "+base);
  bytes.assign(data,data+size);SDL_free(data);if(bytes.size()<=1024*1024&&base.size()>=4&&base.substr(base.size()-4)!=".wav"&&base.substr(base.size()-4)!=".anm")resource_cache.emplace(base,bytes);return true;
@@ -50,30 +59,47 @@ bool ApplicationState::prepare_loading(){
  }
  return draw_loading(true);
 }
-bool ApplicationState::loading_waiting()const{return loading_until&&SDL_GetTicks()<loading_until;}
+bool ApplicationState::loading_waiting()const{return loading_startup||pending_load!=0;}
 bool ApplicationState::draw_loading(bool signature){
  graphics.presentation.reset();
  if(!loading_animations.retire(loading_signature)||!loading_animations.retire(loading_prayer))return fail(loading_animations.error);
  if(signature){loading_signature=loading_animations.create(1,0);if(!loading_signature)return fail(loading_animations.error);}
  loading_prayer=loading_animations.create(2,17,-1,0,{960,784,0});if(!loading_prayer)return fail(loading_animations.error);
- // Publish visible artwork before blocking preparation. Its isolated RNG and
- // clock do not advance game logic. The browser holds major loading screens
- // for at least one second without blocking or accumulating simulation debt.
- if(!render_loading(signature,signature?1:11))return false;
- const bool major=signature||pending_destination==13||pending_destination==10||pending_destination==11||pending_destination==15||(flow&&flow->pending());
- loading_until=major?SDL_GetTicks()+loading_minimum_ms:0;return true;
+ loading_startup=signature;loading_frames=0;loading_debt=0;
+ return render_loading();
 }
-bool ApplicationState::render_loading(bool signature,unsigned frames){
- for(unsigned frame=0;frame<std::min(frames,120u);++frame)if(!loading_animations.update(false)||!loading_animations.update(true))return fail(loading_animations.error);
+bool ApplicationState::render_loading(){
  renderer.invalidate();graphics.backend.pipeline()=touhou::graphics::PipelineState{};graphics.configure_game(1);
  if(!graphics.select_target(nullptr,0)||!graphics.clear_target(0xff000000,nullptr))return fail(graphics.error);
  ScreenViews loading_views{renderer,loading_environment};if(!loading_views.camera(DrawCamera::Fullscreen,false))return fail("Loading camera unavailable");
- const auto* credit=signature?loading_animations.registry.find(loading_signature):nullptr;
+ const auto* credit=loading_animations.registry.find(loading_signature);
  for(u32 layer=0;layer<42;++layer){
   if(!renderer.draw_layer(loading_animations.registry.layer(layer)))return fail(renderer.error);
   if(credit&&layer==u32(credit->visual.layer)){renderer.flush();graphics.draw_startup_branding(credit->visual.color);}
  }
- renderer.flush();graphics.present();return true;
+ renderer.flush();graphics.present();
+ return true;
+}
+bool ApplicationState::render_loading(bool signature,unsigned frames){
+ (void)signature;
+ for(unsigned frame=0;frame<std::min(frames,120u);++frame){
+  if(!loading_animations.update(false)||!loading_animations.update(true))return fail(loading_animations.error);
+  ++loading_frames;
+ }
+ return render_loading();
+}
+bool ApplicationState::advance_loading(double delta){
+ // Native title worker 46052a waits for owner +644 == 180. Advance only
+ // the isolated loading ANM clock at 60Hz, never gameplay or replay clocks.
+ loading_debt+=std::clamp(delta,0.,.1);
+ while(loading_debt+1e-9>=1./60.&&loading_frames<180){
+  loading_debt=std::max(0.,loading_debt-1./60.);
+  if(!loading_animations.update(false)||!loading_animations.update(true))return fail(loading_animations.error);
+  ++loading_frames;
+ }
+ if(!render_loading())return false;
+ if(loading_frames>=180){loading_startup=false;loading_debt=0;}
+ return true;
 }
 bool ApplicationState::initialize(bool device){
  if(initialized)return fail("Application already initialized");if(!prepare_platform())return false;if(!loading_animations.resource(2)&&!prepare_loading())return false;
@@ -198,7 +224,10 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
  }
  audio_device.pump();frames++;
  if(!pump_checkpoint())return false;
- if(flow&&flow->pending()&&(!(scene()->hud.flags&0x100)||scene()->hud.intro_age.current>=120)){if(!draw_loading(false))return false;pending_load=2;return true;}
+ // Inter-stage flow retains the departing STD for the native transition.
+ // Keep the completed composite visible while preparing the next scene;
+ // the startup-only loading panel would clear it to a black frame here.
+ if(flow&&flow->pending()&&(!(scene()->hud.flags&0x100)||scene()->hud.intro_age.current>=120)){graphics.presentation.reset();pending_load=2;return true;}
  fades.erase(std::remove_if(fades.begin(),fades.end(),[](const auto& value){return !value->active;}),fades.end());motion.erase(std::remove_if(motion.begin(),motion.end(),[](const auto& value){return !value->active;}),motion.end());animations.collect_resources();
  if(pending_bank>=0||pending_page>=0){if(!draw_loading(false))return false;pending_load=3;return true;}
  if(pending_destination==13||pending_destination==10||pending_destination==11||pending_destination==15){if(!draw_loading(false))return false;pending_load=1;return true;}

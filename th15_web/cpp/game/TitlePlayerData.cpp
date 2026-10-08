@@ -1,4 +1,6 @@
 #include "TitlePlayerData.hpp"
+#include "Localization.hpp"
+#include <algorithm>
 #include "LegacyTextFormat.hpp"
 #include <cstdio>
 namespace th15 {
@@ -21,7 +23,23 @@ bool TitlePlayerData::paint(){
   std::string label;u32 color;
   if(!aggregate.attempts[0]){for(i32 n=0;n<21;n++){label+=char(0x81);label+=char(0x48);}color=0x808080;}
   else {u32 length=0;while(length<aggregate.name.size()&&aggregate.name[length])length++;if(length>=aggregate.name.size())return check(false,"Player Data spell name unterminated");label.assign(aggregate.name.data(),length);if(length<42){for(u32 n=0;n<(41-length)/2+1;n++)label+=full_space();}color=personal.captures[0]?0xffff80:0xefefef;}
-  char tail[64];std::snprintf(tail,sizeof tail," %4d/%4d",personal.captures[0],personal.attempts[0]);if(!bitmap(displayed_spells,"No."+digits+" "+label+tail,color))return false;displayed_spells++;index++;
+  char tail[64];std::snprintf(tail,sizeof tail," %4d/%4d",personal.captures[0],personal.attempts[0]);
+  // Do not store translated names in score/replay data; translate for display.
+  const std::string fallback(aggregate.name.data(),std::find(aggregate.name.begin(),aggregate.name.end(),char(0))-aggregate.name.begin());
+  const char* translated=Localization::SpellName(u32(index),fallback.c_str(),u32(spell_ranks[index]));
+  const bool known=aggregate.attempts[0]!=0;
+  const char* plain=known?"No.%s%s%s %s %4d/%4d":"No.%s%s%s ? %4d/%4d";
+  const char* format=Localization::LayoutFormatStringById(known?"th15 Result Known Spell":"th15 Result Unknown Spell",plain);
+  if(format!=plain&&(!known||translated!=fallback.c_str())){
+   // Use thcrap's own Result templates and full-width digit IDs, not a
+   // separately invented column layout. Original score names remain intact.
+   constexpr const char* unicode_digits[]={"０","１","２","３","４","５","６","７","８","９"};
+   auto digit=[&](i32 n){const auto key="th15 Full-width "+std::to_string(n);return Localization::StringById(key.c_str(),unicode_digits[n]);};
+   const char* hundreds=number>=100?digit(number/100):"　",*tens=number>=10?digit((number/10)%10):"　",*ones=digit(number%10);
+   char localized[4096];const int length=known?std::snprintf(localized,sizeof localized,format,hundreds,tens,ones,translated,personal.captures[0],personal.attempts[0]):std::snprintf(localized,sizeof localized,format,hundreds,tens,ones,personal.captures[0],personal.attempts[0]);
+   if(!check(length>=0&&length<i32(sizeof localized),"Localized Player Data row too long")||!bitmap(displayed_spells,localized,color))return false;
+  }else if(!bitmap(displayed_spells,"No."+digits+" "+label+tail,color))return false;
+  displayed_spells++;index++;
  }
  for(i32 row=displayed_spells;row<10;row++)if(!bitmap(row," ",0xffffffff))return false;return true;
 }

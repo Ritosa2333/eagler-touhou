@@ -1,4 +1,5 @@
 #include "SpellCard.hpp"
+#include "Localization.hpp"
 namespace th15 {
 bool SpellCard::check(bool ok,const char* message){if(!ok&&error.empty())error=message;return ok;}
 bool SpellCard::banners(i32 label){for(u32 i=1;i<=3;i++)if(!check(host.interrupt(handles[i],label),"Spell banner interrupt failed"))return false;return true;}
@@ -10,7 +11,7 @@ bool SpellCard::begin(const SpellStartRequest& request,const SpellStartContext& 
     status.flags&=~0x20u;if(c.bomb_state==1&&c.character!=3)status.flags|=0x20u;status.flags&=~0x40u;active_frames=1;
     const i32 resources[]={c.visuals.ascii,c.visuals.name,c.visuals.ascii};const i32 scripts[]={0,2,1};
     for(u32 i=0;i<3;i++){handles[i+1]=host.create_visual(resources[i],scripts[i]);if(!check(handles[i+1]!=0,"Spell banner creation failed"))return false;}
-    if(!check(host.text(handles[2],name),"Spell title text failed")||!check(host.sound(33),"Spell start sound failed"))return false;
+    if(!check(host.text(handles[2],Localization::SpellName(u32(identifier),name.c_str(),u32(c.difficulty))),"Spell title text failed")||!check(host.sound(33),"Spell start sound failed"))return false;
     handles[4]=host.create_visual(c.visuals.effect,13);if(!check(handles[4]!=0,"Spell Boss ring creation failed")||!check(host.boss_position(anchor),"Spell Boss position unavailable")||!check(host.position(handles[4],anchor),"Spell Boss ring positioning failed"))return false;
     for(i32 script:{11,12})if(!check(host.child_integer(handles[4],script,2,request.duration),"Spell Boss ring timer unavailable"))return false;
     duration=request.duration;status.bonus=wrapping_mul(wrapping_add(c.stage,c.difficulty),1000000);maximum_bonus=status.bonus>=1000000000?999999999:status.bonus;

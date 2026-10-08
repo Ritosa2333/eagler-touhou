@@ -1,6 +1,16 @@
 #include "GraphicsDevice.hpp"
 #include "../../../portable/sdl/StartupBranding.hpp"
+#if defined(TH_ENABLE_THCRAP)
+#include <SDL3/SDL.h>
+#define STBI_ONLY_PNG
+#define STBI_NO_STDIO
+#define STBI_MAX_DIMENSIONS 4096
+#include "../../../portable/sdl/third_party/stb_image.h"
+#include <algorithm>
+#include <cmath>
+#endif
 namespace th15::sdl {
+#include "GraphicsLocalization.inc"
 touhou::sdl::Surface GraphicsDevice::resolve(void* owner,u32 id){
     auto& device=*static_cast<GraphicsDevice*>(owner);auto it=device.textures.find(id);if(it==device.textures.end())return {};
     auto& t=it->second;auto& image=t.image;return {id,image.width,image.height,image.format,image.pitch,image.pixels.data(),u32(image.pixels.size()),t.revision,t.renderScale};
@@ -23,8 +33,13 @@ bool GraphicsDevice::initialize(){
 bool GraphicsDevice::preload(AnmResource& file,bool low_color){
     if(resources.find(&file)!=resources.end())return true;
     std::vector<u32> handles;handles.reserve(file.textures.size());
-    for(const auto& source:file.textures){Texture texture;texture.renderScale=source.kind==AnmTexture::Kind::RenderTarget?render_scale:1;
-        if(!texture.image.load(source,low_color)){error="Unable to prepare ANM texture: "+source.name;for(const auto id:handles){backend.release(id);textures.erase(id);}return false;}
+    for(u32 index=0;index<file.textures.size();index++){const auto& source=file.textures[index];Texture texture;texture.renderScale=source.kind==AnmTexture::Kind::RenderTarget?render_scale:1;
+#if defined(TH_ENABLE_THCRAP)
+        AnmTexture override_texture;const auto& selected=patched_texture(file,source,index,override_texture)?override_texture:source;
+#else
+        const auto& selected=source;
+#endif
+        if(!texture.image.load(selected,low_color)){error="Unable to prepare ANM texture: "+source.name;for(const auto id:handles){backend.release(id);textures.erase(id);}return false;}
         const auto id=next_handle++;textures.emplace(id,std::move(texture));handles.push_back(id);backend.prepare(id);
     }
     resources.emplace(&file,std::move(handles));return true;

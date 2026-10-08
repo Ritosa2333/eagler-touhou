@@ -7,6 +7,7 @@ struct DialogueSceneServices {
  virtual ~DialogueSceneServices()=default;
  virtual bool initialize_text(AnmVm&,i32 width,i32 height)=0;
  virtual bool paint_text(AnmVm&,const DialogueText&)=0;
+ virtual i32 dialogue_text_extent(const std::string&,i32){return -1;}
  virtual bool dialogue_music(bool boss)=0;
  virtual bool fade_dialogue_music(float)=0;
  virtual bool dialogue_stage_complete()=0;
@@ -28,6 +29,7 @@ public:
  bool retire(u32&)override;
  bool text_initialize(u32)override;
  bool text(const DialogueText&)override;
+ i32 text_extent(const std::string& value,i32 font)override{return scene.dialogue_text_extent(value,font);}
  bool position(u32,const Vec3&)override;
  bool depth(u32,float)override;
  bool balloon_width(u32,i32 style,float)override;

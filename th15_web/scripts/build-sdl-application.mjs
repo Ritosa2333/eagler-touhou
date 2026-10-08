@@ -15,7 +15,7 @@ const target=JSON.parse(readFileSync(resolve(root,'target.json'),'utf8'));
 const out=resolve(root,process.env.TH15_OUTPUT||(release?'artifacts/sdl-release':'artifacts/sdl-application'));
 const objects=resolve(out,'objects');mkdirSync(objects,{recursive:true});
 const env={...process.env,EM_CONFIG:resolve(sdk,'.emscripten'),EMSDK:sdk,EMCC_CORES:'4'};
-const common=['-O2','-g0','-std=c++17','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti','-DTH_NATIVE_PLATFORM=1',`-DTH15_DEVELOPMENT_HARNESS=${release?0:1}`,'--use-port=sdl3'];
+const common=['-O2','-g0','-std=c++17','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti','-DTH_NATIVE_PLATFORM=1','-DTH_ENABLE_THCRAP=1',`-DTH15_DEVELOPMENT_HARNESS=${release?0:1}`,'--use-port=sdl3','--use-port=sdl3_ttf'];
 // The full object list can exceed Windows' 32K process command limit after extraction.
 // Emscripten expands UTF-8 response files before parsing the same compiler flags.
 const run=args=>{

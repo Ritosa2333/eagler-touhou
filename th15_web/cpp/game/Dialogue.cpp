@@ -1,4 +1,5 @@
 #include "Dialogue.hpp"
+#include "ThcrapRuby.hpp"
 #include <algorithm>
 #include <cstdlib>
 namespace th15 {
@@ -15,9 +16,34 @@ bool Dialogue::initialize(){
 bool Dialogue::draw_line(const MessageInstruction& c){
     const std::string text=c.text();const u32 handle=state.handles[6+state.line];const u32 ruby=state.handles[8+state.line];
     const auto font=state.flags&2?1:0;const u32 color=state.colors[std::clamp(state.speaker,0,2)];
+    if(state.bubble_position_pending){
+      // thcrap adjusts the preceding OP_BUBBLE_POS when closing this entire
+      // box. At Runtime we can inspect its lines before painting instead.
+      i32 widest=0;bool measured=false;
+      for(size_t i=state.cursor;i<script.instructions.size();i++){
+        const auto& line=script.instructions[i];if(line.opcode==0||line.opcode==7||line.opcode==8||line.opcode==9||line.opcode==11||line.opcode==32)break;
+        if(line.opcode!=17)continue;const auto bytes=line.text();if(!bytes.empty()&&bytes[0]=='|')continue;
+        const auto width=host.text_extent(bytes,font);if(width>=0){widest=std::max(widest,width/2);measured=true;}
+      }
+      if(measured)state.position.x=thcrap_bubble_x(state.position.x/2.f,widest,state.bubble_right)*2.f;
+      state.bubble_position_pending=false;
+    }
     if(!state.line&&!state.box_visible){state.width=0;for(u32 i=0;i<4;i++){DialogueText clear{state.handles[6+i],"  ",font,i<2?0:1,color};if(!check(host.text(clear),"Dialogue text clear failed"))return false;}state.box_visible=1;for(u32 i=6;i<10;i++)if(!check(host.interrupt(state.handles[i],3),"Dialogue box interrupt failed"))return false;}
-    if(!text.empty()&&text[0]=='|'){char* end=nullptr;const auto a=std::strtol(text.c_str()+1,&end,10);if(!end||*end!=',')return check(false,"Invalid MSG ruby width");const auto b=std::strtol(end+1,&end,10);if(!end||*end!=',')return check(false,"Invalid MSG ruby offset");DialogueText request{ruby,std::string(end+1),2,i32(b),0,state.position,true,{i32(a),i32(b)},0xa0a0a0,i32(a)};return check(host.text(request)&&host.interrupt(ruby,2,state.line==0),"Dialogue ruby text failed");}
-    const u32 raw=(u32(text.size())*8u&~15u)-28u;state.width=std::max(float(double(raw)*2.),state.width);const i32 style=state.speaker+i32((state.flags>>2&15)*2)+(state.line?8:0);
+    if(!text.empty()&&text[0]=='|'){
+      ThcrapRuby parsed;
+      if(parse_thcrap_ruby(text,parsed)){
+        const auto begin=host.text_extent(parsed.begin,font),base=host.text_extent(parsed.base,font),annotation=host.text_extent(parsed.annotation,2);
+        if(!check(begin>=0&&base>=0&&annotation>=0,"THCRAP ruby font measurement unavailable"))return false;
+        DialogueText request{ruby,parsed.annotation,2,0,0,state.position,true,{},0xa0a0a0,thcrap_ruby_offset(begin,base,annotation)};request.offset_pixels=true;
+        return check(host.text(request)&&host.interrupt(ruby,2,state.line==0),"Dialogue ruby text failed");
+      }
+      char* end=nullptr;const auto a=std::strtol(text.c_str()+1,&end,10);if(!end||*end!=',')return check(false,"Invalid MSG ruby width");const auto b=std::strtol(end+1,&end,10);if(!end||*end!=',')return check(false,"Invalid MSG ruby offset");DialogueText request{ruby,std::string(end+1),2,i32(b),0,state.position,true,{i32(a),i32(b)},0xa0a0a0,i32(a)};return check(host.text(request)&&host.interrupt(ruby,2,state.line==0),"Dialogue ruby text failed");
+    }
+    const i32 measured=host.text_extent(text,font);
+    // Preserve the native balloon's 28 logical-pixel subtraction. UTF-8 byte
+    // counts are not glyph widths; clamp short translated lines before it.
+    const u32 raw=(u32(text.size())*8u&~15u)-28u;
+    state.width=std::max(measured>=0?float(std::max(0,measured-56)):float(double(raw)*2.),state.width);const i32 style=state.speaker+i32((state.flags>>2&15)*2)+(state.line?8:0);
     if(!remove_balloon())return false;if(!check(host.create_balloon(resources.balloons,style+221,state.position,state.width,style,state.handles[11]),"Dialogue balloon creation failed"))return false;state.balloon_style=style;
     DialogueText request{handle,text,font,0,color,state.position,true};if(!check(host.text(request),"Dialogue text painting failed"))return false;
     if(state.speaker>=1){for(u32 i=6;i<10;i++)if(!check(host.position(state.handles[i],state.position),"Dialogue text position failed"))return false;}
@@ -34,9 +60,9 @@ bool Dialogue::execute(const MessageInstruction& c){
     case 4:if(!interrupt(0,1))return false;state.handles[0]=0;return true;
     case 5:if(!valid(a)||!interrupt(1+u32(a),1))return false;state.handles[1+u32(a)]=0;return interrupt(10,1);
     case 6:for(u32 i=6;i<10;i++)if(!interrupt(i,1))return false;return remove_balloon();
-    case 7:for(u32 i=1;i<5;i++)if(!interrupt(i,3,true))return false;return interrupt(0,2,true)&&interrupt(5,2)&&select_speaker(0);
-    case 8:if(!valid(a)||!interrupt(0,3,true)||!interrupt(1+u32(a),2,true)||!interrupt(5,3))return false;return select_speaker(1);
-    case 9:if(!interrupt(0,3,true))return false;for(u32 i=1;i<5;i++)if(!interrupt(i,3,true))return false;if(!interrupt(5,3))return false;state.speaker=0;for(u32 i=6;i<10;i++)if(!check(host.position(state.handles[i],state.anchors[0]),"Dialogue anchor restore failed"))return false;return reset_depth();
+    case 7:state.bubble_right=false;for(u32 i=1;i<5;i++)if(!interrupt(i,3,true))return false;return interrupt(0,2,true)&&interrupt(5,2)&&select_speaker(0);
+    case 8:state.bubble_right=true;if(!valid(a)||!interrupt(0,3,true)||!interrupt(1+u32(a),2,true)||!interrupt(5,3))return false;return select_speaker(1);
+    case 9:state.bubble_right=false;if(!interrupt(0,3,true))return false;for(u32 i=1;i<5;i++)if(!interrupt(i,3,true))return false;if(!interrupt(5,3))return false;state.speaker=0;for(u32 i=6;i<10;i++)if(!check(host.position(state.handles[i],state.anchors[0]),"Dialogue anchor restore failed"))return false;return reset_depth();
     case 10:state.flags=(state.flags&~1u)|(u32(c.payload.empty()?0:c.payload[0])&1);return true;
     case 12:state.complete=1;return true;
     case 13:return interrupt(0,wrapping_add(a,17),true);
@@ -53,10 +79,10 @@ bool Dialogue::execute(const MessageInstruction& c){
     case 25:for(u32 i=6;i<10;i++)if(!check(host.depth(state.handles[i],float(a)),"Dialogue depth failed"))return false;return true;
     case 26:state.flags|=2;return true;
     case 27:return check(host.fade_music(c.argument<float>(0)),"Dialogue explicit music fade failed");
-    case 28:state.position.x=float(c.argument<float>(0)*2.f);state.position.y=float(c.argument<float>(1)*2.f);return true;
+    case 28:state.position.x=float(c.argument<float>(0)*2.f);state.position.y=float(c.argument<float>(1)*2.f);state.bubble_position_pending=true;return true;
     case 29:state.flags=(state.flags&~0x3cu)|((u32(a)<<2)&0x3c);return true;
     case 31:if(!portrait(2,resources.enemies[1]))return false;state.portrait_state=0;return true;
-    case 32:if(!check(a>=0&&a<3,"Invalid dialogue speaker")||!interrupt(5,3))return false;return select_speaker(a);
+    case 32:state.bubble_right=(a&1)!=0;if(!check(a>=0&&a<3,"Invalid dialogue speaker")||!interrupt(5,3))return false;return select_speaker(a);
     default:return true; // Original 3, 30 and values above 32 simply advance.
     }
 }

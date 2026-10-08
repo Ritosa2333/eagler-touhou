@@ -32,8 +32,23 @@ async function resource(r){
  core.FS.mkdirTree(r.path.slice(0,r.path.lastIndexOf('/')));core.FS.writeFile(r.path,bytes,{canOwn:true});
  emit('transfer',{mode:r.path.startsWith('/music/')?'ogg':'runtime',loaded:bytes.length,total:bytes.length,path:r.path});
 }
+let runtimePackFiles=[];
+async function installRuntimePack(pack){
+ if(launched)throw Error('Runtime resources cannot be changed after launch');
+ if(typeof pack?.url!=='string'||typeof pack.language!=='string'||!Number.isInteger(pack.bytes)||pack.bytes<=0||!pack.manifest||!Array.isArray(pack.files)||new URL(pack.url,location.href).origin!==location.origin)throw Error('Invalid TH15 language pack');
+ const manifest=pack.manifest;
+ if(manifest.schema!=='eagler-touhou/thcrap-static-pack/1'||manifest.game!==game||manifest.language!==pack.language||typeof manifest.runtimeVersion!=='string'||!Array.isArray(manifest.files)||manifest.files.length>256)throw Error('Invalid TH15 language manifest');
+ const safe=path=>typeof path==='string'&&path.startsWith('/thcrap/th15/')&&path.length<=240&&!path.includes('\\')&&path.split('/').slice(1).every(p=>p&&p!=='.'&&p!=='..');
+ const expected=new Map();for(const file of manifest.files){if(!safe(file.path)||!Number.isInteger(file.bytes)||file.bytes<0||file.bytes>64*1024*1024||expected.has(file.path))throw Error('Invalid TH15 language file');expected.set(file.path,file);}
+ if(pack.files.length!==expected.size)throw Error('TH15 language file count mismatch');
+ const seen=new Set();for(const file of pack.files){if(!safe(file?.path)||seen.has(file.path)||!(file.bytes instanceof Uint8Array)||file.bytes.length!==expected.get(file.path)?.bytes)throw Error('TH15 language file mismatch');seen.add(file.path);}
+ for(const path of runtimePackFiles){try{core.FS.unlink(path);}catch{}}runtimePackFiles=[];
+ for(const file of pack.files){core.FS.mkdirTree(file.path.slice(0,file.path.lastIndexOf('/')));core.FS.writeFile(file.path,file.bytes,{canOwn:true});runtimePackFiles.push(file.path);}
+ // Runtime-owned locale marker comes from the validated manifest, not text guessing.
+ const localePath='/thcrap/th15/runtime-language.txt';core.FS.writeFile(localePath,pack.language);runtimePackFiles.push(localePath);
+}
 async function command(m){switch(m.command){
-case 'configure':if(launched)throw Error('不能配置正在运行的游戏');if(!['ogg','none'].includes(m.music))throw Error('不支持的音乐模式');options=m.options||{};music=m.music==='ogg';for(const r of [...(m.runtimeResources||[]),...(m.resources||[])])await resource(r);apply();return {};
+case 'configure':if(launched)throw Error('不能配置正在运行的游戏');if(!['ogg','none'].includes(m.music))throw Error('不支持的音乐模式');options=m.options||{};music=m.music==='ogg';for(const r of [...(m.runtimeResources||[]),...(m.resources||[])])await resource(r);if(m.runtimePack)await installRuntimePack(m.runtimePack);apply();return {};
 case 'resources':for(const r of m.resources||[])await resource(r);return {};
 case 'keyboard':if(launched&&!document.hidden&&!stopping)keyboard.event(m,!!m.down,'hosted');return {};
 case 'keyboard-clear':clearKeyboard();return {};

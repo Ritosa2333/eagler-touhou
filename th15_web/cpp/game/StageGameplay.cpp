@@ -10,6 +10,7 @@ struct StageGameplay::Services final:DialogueSceneServices,CheckpointSceneServic
  bool update_deformation(StageScriptState& state,float)override{return g.background_deformation->update(state,g.battle.spell.flags&1)&&g.background_deformation->prepare_draw();}
  bool initialize_text(AnmVm& vm,i32 width,i32 height)override{return g.platform.initialize_text(vm,width,height);}
  bool paint_text(AnmVm& vm,const DialogueText& text)override{return g.platform.paint_text(vm,text);}
+ i32 dialogue_text_extent(const std::string& text,i32 font)override{return g.platform.dialogue_text_extent(text,font);}
  bool dialogue_music(bool boss)override{g.bindings.message_state(g.battle.session,g.battle.spell);return g.messages.request(boss?-1:-3);}
  bool fade_dialogue_music(float duration)override{return g.platform.fade_dialogue_music(duration);}
  // MSG completion calls the clear controller directly. The separate ECL -2

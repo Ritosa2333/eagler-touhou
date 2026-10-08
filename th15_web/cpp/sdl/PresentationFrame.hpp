@@ -23,6 +23,9 @@ public:
  Vec2 offset{};
  uintptr_t observed=0;bool negative_control=false;
  std::array<float,5> reference(uintptr_t);
+#if TH15_DEVELOPMENT_HARNESS
+ std::array<float,6> background_diagnostics()const;
+#endif
  u32 sampled=0;float last_alpha=1,last_x=0;
  void begin();
  void finish(){current.resize(written);recording=false;ready=enabled&&written>0;}
@@ -30,7 +33,7 @@ public:
  void range(const AnmVm&,u32 first,u32 count,u32 instance=0);
  void draw(const touhou::sdl::State&,touhou::graphics::Topology,u32,const void*,u32,bool);
  void clear(const touhou::sdl::State&,u32 flags,u32 color,const i32* rect);
- bool present(touhou::sdl::Renderer&,float alpha,bool frozen);
+ bool present(touhou::sdl::Renderer&,float alpha,bool frozen,bool background_interpolation=true);
 private:
  std::vector<Command> current,previous;u32 written=0;
  std::vector<std::pair<Key,std::pair<u32,u32>>> endpoints;

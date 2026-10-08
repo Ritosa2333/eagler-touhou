@@ -1,4 +1,6 @@
 #include "PresentationFrame.hpp"
+#include "PresentationUv.hpp"
+#include "PresentationCamera.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -44,17 +46,23 @@ void PresentationFrame::draw(const touhou::sdl::State& state,touhou::graphics::T
 void PresentationFrame::clear(const touhou::sdl::State& state,u32 flags,u32 value,const i32* rect){
  if(!recording)return;auto& c=next();c.state=state;c.clear=true;c.flags=flags;c.color=value;if(rect)c.rect.assign(rect,rect+4);
 }
-bool PresentationFrame::present(touhou::sdl::Renderer& renderer,float alpha,bool frozen){
+bool PresentationFrame::present(touhou::sdl::Renderer& renderer,float alpha,bool frozen,bool background_interpolation){
  if(!ready||!std::isfinite(alpha)||alpha<0||alpha>1)return false;
  if(negative_control)alpha=1;
  using namespace touhou::graphics;
  const auto saved=renderer.state;renderer.flush();sampled=0;last_alpha=alpha;
  for(const auto& c:current){renderer.state=c.state;
   if(c.clear){renderer.clear(c.flags,c.color,1,0,c.rect.empty()?nullptr:c.rect.data(),c.rect.empty()?0:1);continue;}
+  // Local Extra isolation: submit the complete authored STD background packet
+  // without mixing camera, geometry, UV or color. Gameplay still interpolates.
+  if(c.camera&&!background_interpolation){if(c.direct)renderer.draw_batch(c.count,c.bytes.data(),c.stride);else renderer.draw(c.topology,c.count,c.bytes.data(),c.stride);continue;}
   const void* data=c.bytes.data();bool copied=false;
   for(const auto& s:c.samples){if(std::get<0>(s.key)==observed&&s.first*c.stride+4<=c.bytes.size())std::memcpy(&last_x,c.bytes.data()+s.first*c.stride,4);auto found=std::lower_bound(endpoints.begin(),endpoints.end(),s.key,[](const auto& a,const Key& key){return a.first<key;});if(found==endpoints.end()||found->first!=s.key)continue;const auto& old=previous[found->second.first];const auto& before=old.samples[found->second.second];const float weight=frozen&&(s.world||c.camera)?1:alpha;
    if(weight==1||s.script!=before.script||s.resource!=before.resource||s.age<before.age||(s.flags&0x3fe00003u)!=(before.flags&0x3fe00003u)||s.count!=before.count||c.stride!=old.stride||c.state.target!=old.state.target||c.state.texture!=old.state.texture||c.state.layout!=old.state.layout)continue;
    if(!same(s.size,before.size))continue;
+   // Extra STD loops reset camera and world coordinates together. Retain the
+   // complete current draw at that boundary; do not interpolate either half.
+   if(c.camera&&old.camera&&!presentation_camera_continuous(old.state.matrix,c.state.matrix))continue;
    const u32 fields=s.fields|before.fields;if(!fields&&!c.camera)continue;
    const float dx=s.position.x-before.position.x,dy=s.position.y-before.position.y,dz=s.position.z-before.position.z;
    if(dx*dx+dy*dy+dz*dz>16384)continue;
@@ -64,11 +72,11 @@ bool PresentationFrame::present(touhou::sdl::Renderer& renderer,float alpha,bool
    for(u32 i=0;i<s.count;i++){u8* out=scratch.data()+(s.first+i)*c.stride;const u8* in=old.bytes.data()+(before.first+i)*old.stride;
     if(geometry)for(u32 j=0;j<3;j++){float a,b;std::memcpy(&a,in+j*4,4);std::memcpy(&b,out+j*4,4);const float previousOffset=j==0?before.offset.x:j==1?before.offset.y:0,currentOffset=j==0?s.offset.x:j==1?s.offset.y:0;b=mix(a-previousOffset,b-currentOffset,weight)+currentOffset;std::memcpy(out+j*4,&b,4);if(!i&&!j&&std::get<0>(s.key)==observed)last_x=b;}
     if(c.state.layout.diffuse!=VertexAttributes::absent){const u32 at=c.state.layout.diffuse;u32 a,b;std::memcpy(&a,in+at,4);std::memcpy(&b,out+at,4);b=color(a,b,weight,((fields&8)?7:0)|((fields&16)?8:0));std::memcpy(out+at,&b,4);}
-    if((fields&96)&&s.sprite==before.sprite&&c.state.layout.uv!=VertexAttributes::absent)for(u32 j=0;j<2;j++){const u32 at=c.state.layout.uv+j*4;float a,b;std::memcpy(&a,in+at,4);std::memcpy(&b,out+at,4);float delta=b-a;if(fields&32){if(delta>.5f)delta-=1;else if(delta<-.5f)delta+=1;}b=a+delta*weight;std::memcpy(out+at,&b,4);}
+    if((fields&96)&&s.sprite==before.sprite&&c.state.layout.uv!=VertexAttributes::absent)for(u32 j=0;j<2;j++){const u32 at=c.state.layout.uv+j*4;float a,b;std::memcpy(&a,in+at,4);std::memcpy(&b,out+at,4);const auto address=j?c.state.pipeline.addressV:c.state.pipeline.addressU;const auto previousAddress=j?old.state.pipeline.addressV:old.state.pipeline.addressU;if(address==previousAddress)b=presentation_uv(a,b,weight,address,fields&32);std::memcpy(out+at,&b,4);}
    }
-   if(!c.state.layout.screen&&c.samples.size()==1){renderer.state.pipeline.textureFactor=color(old.state.pipeline.textureFactor,c.state.pipeline.textureFactor,weight,((fields&8)?7:0)|((fields&16)?8:0));if((fields&96)&&s.sprite==before.sprite)for(u32 j=0;j<16;j++){float a=old.state.matrix[3][j],delta=c.state.matrix[3][j]-a;if((fields&32)&&(j==12||j==13)){if(delta>.5f)delta-=1;else if(delta<-.5f)delta+=1;}renderer.state.matrix[3][j]=a+delta*weight;}}
+   if(!c.state.layout.screen&&c.samples.size()==1){renderer.state.pipeline.textureFactor=color(old.state.pipeline.textureFactor,c.state.pipeline.textureFactor,weight,((fields&8)?7:0)|((fields&16)?8:0));if((fields&96)&&s.sprite==before.sprite)renderer.state.matrix[3]=presentation_texture_matrix(old.state.matrix[3],c.state.matrix[3],weight,c.state.pipeline.addressU,c.state.pipeline.addressV,fields&32,c.state.pipeline.addressU==old.state.pipeline.addressU,c.state.pipeline.addressV==old.state.pipeline.addressV);}
    if(!c.state.layout.screen&&c.samples.size()==1&&geometry){for(u32 j=0;j<16;j++)renderer.state.matrix[0][j]=mix(old.state.matrix[0][j],c.state.matrix[0][j],weight);}
-   if(c.camera&&old.camera&&c.samples.size()==1&&(!frozen||!s.world)){for(u32 k=1;k<3;k++)for(u32 j=0;j<16;j++)if(std::abs(c.state.matrix[k][j]-old.state.matrix[k][j])<128)renderer.state.matrix[k][j]=mix(old.state.matrix[k][j],c.state.matrix[k][j],weight);}
+   if(c.camera&&old.camera&&c.samples.size()==1&&(!frozen||!s.world)){for(u32 k=1;k<3;k++)for(u32 j=0;j<16;j++)renderer.state.matrix[k][j]=mix(old.state.matrix[k][j],c.state.matrix[k][j],weight);}
    ++sampled;
   }
   if(c.direct)renderer.draw_batch(c.count,data,c.stride);else renderer.draw(c.topology,c.count,data,c.stride);
@@ -83,6 +91,32 @@ std::array<float,5> PresentationFrame::reference(uintptr_t identity){
  for(const auto& c:current)for(const auto& s:c.samples)if(std::get<0>(s.key)==identity&&s.first*c.stride+4<=c.bytes.size()){
   std::memcpy(&result[1],c.bytes.data()+s.first*c.stride,4);result[2]=last_x;result[3]=float(std::get<1>(s.key));
   for(const auto& old:previous)for(const auto& before:old.samples)if(before.key==s.key&&before.first*old.stride+4<=old.bytes.size()){std::memcpy(&result[0],old.bytes.data()+before.first*old.stride,4);result[4]=1;return result;}
+}return result;
+}
+#if TH15_DEVELOPMENT_HARNESS
+std::array<float,6> PresentationFrame::background_diagnostics()const{
+ std::array<float,6> result{};
+ for(const auto& c:current)if(c.camera&&!c.clear){
+  ++result[0];if(c.samples.size()>1)++result[1];
+  for(const auto& s:c.samples){
+   const auto found=std::lower_bound(endpoints.begin(),endpoints.end(),s.key,[](const auto& a,const Key& key){return a.first<key;});
+   if(found==endpoints.end()||found->first!=s.key)continue;
+   const auto& old=previous[found->second.first];if(!old.camera)continue;++result[2];
+   for(u32 k=1;k<3;k++)for(u32 j=0;j<16;j++){
+    const float delta=std::abs(c.state.matrix[k][j]-old.state.matrix[k][j]);
+    result[3]=std::max(result[3],delta);if(delta>=128)++result[4];
+   }
+   const auto& before=old.samples[found->second.second];
+   if((s.fields|before.fields)&32)for(u32 j=8;j<=9;j++){
+    const auto address=j==8?c.state.pipeline.addressU:c.state.pipeline.addressV;
+    if(address==touhou::graphics::Address::Repeat&&std::abs(c.state.matrix[3][j]-old.state.matrix[3][j])>.5f){
+     ++result[5];
+     const auto half=presentation_texture_matrix(old.state.matrix[3],c.state.matrix[3],.5f,c.state.pipeline.addressU,c.state.pipeline.addressV,true);
+     if(std::abs(half[j]-old.state.matrix[3][j])>.25001f)result[5]=-100000;
+    }
+   }
+  }
  }return result;
 }
+#endif
 }

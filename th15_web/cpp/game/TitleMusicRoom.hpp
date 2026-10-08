@@ -20,7 +20,7 @@ struct TitleMusicServices {
 };
 class TitleMusicRoom {
  TitleState& state;AnmManager& animations;TitleAnimations visuals;const MusicComments& catalog;TitleMusicServices& services;i32 text_bank,title_bank;
- bool check(bool);bool paint_comment();bool create_entries();bool position_entries();bool cancel();bool interrupt(u32,i32);bool text(u32,const std::string&,u32 color);
+ bool check(bool);bool paint_comment();bool create_entries();bool position_entries();bool cancel();bool interrupt(u32,i32);bool text(u32,const std::string&,u32 color,bool detail=false);
 public:
  i32 scroll=0,comment_line=0,comment_track=0;bool warning=false;std::array<bool,20> unlocked{};bool alternate_audio=false;std::string error;
  TitleMusicRoom(TitleState& s,AnmManager& a,const MusicComments& c,TitleMusicServices& services,i32 title=16,i32 ascii=5,i32 text=2):state(s),animations(a),visuals(s,a,title,ascii),catalog(c),services(services),text_bank(text),title_bank(title){}

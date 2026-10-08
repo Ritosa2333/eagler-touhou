@@ -83,6 +83,10 @@ This is a basic test adapter, not a claim that all mandatory adapter obligations
 are complete. Multiplayer, THPrac and downloadable languages are not advertised. Standardized physical-gamepad semantics, always-hitbox, complete touch
 conformance remain follow-up work. The original logic stays at 60 Hz.
 
+A common Replay verifier candidate consistency check is available in
+[Replay verification](th15_web/docs/EAGLER-REPLAY-VERIFICATION.md). Its limited
+state coverage and completion-menu checks do not replace original golden traces.
+
 The shared repository owns `test:th15-launch:browser` and
 `test:test-build-cards:browser`. The former requires a running local host (default
 port 18115), real private content and `EAGLER_CHROME_PATH` if Chromium is not

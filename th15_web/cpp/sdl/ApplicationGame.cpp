@@ -27,7 +27,9 @@ bool ApplicationState::enemy_additional_damage(EnemyState&,i32,i32& value){value
 bool ApplicationState::enemy_contact(EnemyState&,AnmVm*,i32& value,bool& handled){value=0;handled=false;return true;}
 bool ApplicationState::enemy_distortion(EnemyState&,float){return fail("Enemy distortion bypassed its stage-owned grid");}
 bool ApplicationState::enemy_death_callback(EnemyRuntime&){return true;}
-bool ApplicationState::spell_title(AnmVm& vm,const std::string& value){DialogueText request{0,value,0,0,0xffffffff};request.right_aligned=true;return text(vm,request);}
+// Spell titles use slot 8 (localized 26px; measured Japanese font remains 28px).
+// Dialogue, Music Room and Player Data keep their own authored font slots.
+bool ApplicationState::spell_title(AnmVm& vm,const std::string& value){DialogueText request{0,value,8,0,0xffffffff};request.right_aligned=true;return text(vm,request);}
 bool ApplicationState::spell_sound(i32 id){return sound(id);}
 bool ApplicationState::queue_music_control(i32 code,i32 value){return audio_device.queue_music(code,value,code==5?"FadeOut":"dummy")||fail(audio_device.error);}
 bool ApplicationState::unlock_music(i32 index){return records.unlock_music(index)||fail(records.error);}
