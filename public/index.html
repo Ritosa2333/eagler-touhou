@@ -52,8 +52,18 @@
   </script>
   <!-- site-metadata:start --><!-- site-metadata:end -->
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="color-scheme" content="dark">
-  <meta name="theme-color" content="#10100f">
+  <meta name="color-scheme" content="dark" id="colorSchemeMeta">
+  <meta name="theme-color" content="#10100f" id="themeColorMeta">
+  <script>
+  (function () {
+    // Apply a saved light theme before first paint to avoid a dark flash.
+    try {
+      if (localStorage.getItem("eagler-theme") === "light") {
+        document.documentElement.setAttribute("data-theme", "light");
+      }
+    } catch (e) {}
+  }());
+  </script>
   <title data-i18n="site.documentTitle">东方Project 原作 STG ~ EAGLER TOUHOU</title>
   <meta name="description" content="一个将东方原作近乎分毫不差地移植到网页，并带着联机 Mod、汉化、高刷新率适配、触控适配、thprac 的东方原作 STG 游戏平台。" data-i18n-content="site.description">
   <meta property="og:type" content="website">
@@ -306,6 +316,7 @@
   </script>
 </head>
 <body>
+  <div class="library-background" aria-hidden="true"></div>
   <div id="eaglerPreload" role="status" aria-label="正在加载 EAGLER TOUHOU" data-i18n-aria-label="preload.aria">
     <div class="eagler-preload-card">
       <i class="eagler-preload-spinner" aria-hidden="true"></i>
@@ -326,6 +337,10 @@
     <header class="masthead">
       <div class="brand" aria-label="EAGLER TOUHOU"><span class="brand-eagler"><span class="brand-title">EAGLER</span><time class="brand-version" id="brandUpdateAge" data-i18n="brand.neverUpdated">尚未更新过</time></span><span class="brand-separator" aria-hidden="true"><span class="brand-yinyang">☯</span></span><span class="brand-title">TOUHOU</span></div>
       <nav class="masthead-links" aria-label="站点信息" data-i18n-aria-label="nav.siteInfo">
+        <button class="masthead-link theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="切换到白天模式" title="白天 / 夜间">
+          <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zM11 2h2v3h-2V2zm0 17h2v3h-2v-3zM2 11h3v2H2v-2zm17 0h3v2h-3v-2zM4.2 4.2l2.1 2.1-1.4 1.4-2.1-2.1 1.4-1.4zm14.9 14.9 2.1 2.1-1.4 1.4-2.1-2.1 1.4-1.4zM4.2 19.8l2.1-2.1 1.4 1.4-2.1 2.1-1.4-1.4zm14.9-14.9 2.1-2.1 1.4 1.4-2.1 2.1-1.4-1.4z"/></svg>
+          <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+        </button>
         <a class="masthead-link" id="originMigrationOpen" href="migrate.html" hidden><span class="masthead-label"><span data-i18n="nav.oldSitePart1">存档</span><wbr><span data-i18n="nav.migrationPart2">恢复</span></span></a>
         <button class="masthead-link" id="donationOpenTop" type="button"><span class="masthead-label" data-i18n="nav.donate">捐赠</span></button>
         <a class="masthead-link" href="faq.html"><span class="masthead-label"><span data-i18n="nav.faqFirst">常见</span><wbr><span data-i18n="nav.faqSecond">问题</span></span></a>
@@ -345,6 +360,37 @@
         </div>
       </nav>
     </header>
+    <script>
+    (function () {
+      var root = document.documentElement;
+      var meta = document.getElementById("themeColorMeta");
+      var scheme = document.getElementById("colorSchemeMeta");
+      var btn = document.getElementById("themeToggle");
+      if (!btn) return;
+      function isLight() { return root.getAttribute("data-theme") === "light"; }
+      function apply(light) {
+        if (light) {
+          root.setAttribute("data-theme", "light");
+          if (meta) meta.setAttribute("content", "#e9e4db");
+          if (scheme) scheme.setAttribute("content", "light");
+          btn.setAttribute("aria-pressed", "true");
+          btn.setAttribute("aria-label", "切换到夜间模式");
+        } else {
+          root.removeAttribute("data-theme");
+          if (meta) meta.setAttribute("content", "#10100f");
+          if (scheme) scheme.setAttribute("content", "dark");
+          btn.setAttribute("aria-pressed", "false");
+          btn.setAttribute("aria-label", "切换到白天模式");
+        }
+      }
+      apply(isLight());
+      btn.addEventListener("click", function () {
+        var next = !isLight();
+        try { localStorage.setItem("eagler-theme", next ? "light" : "dark"); } catch (e) {}
+        apply(next);
+      });
+    }());
+    </script>
     <main class="main library-layout" id="main">
       <h1 class="visually-hidden">东方Project 原作 STG ~ EAGLER TOUHOU</h1>
       <!-- product-cards:generated-from-product-catalog -->
@@ -414,6 +460,10 @@
                   <div class="itemtop"><span data-i18n="settings.replay">录像</span></div>
                   <div class="mini"><button type="button" data-action="export-replay" ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4M12 3v11m-4-4 4 4 4-4"/></svg><span data-i18n="settings.download">下载</span></button><button type="button" data-action="manage-replay"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4M12 14V3m-4 4 4-4 4 4"/></svg><span data-i18n="settings.manage">管理</span></button></div>
                 </section>
+                <section class="item file-tool-item mp-setting-item" id="mpHintFileTool" hidden>
+                  <div class="itemtop"><span data-i18n="settings.hint">Hint</span></div>
+                  <div class="mini"><button type="button" data-action="import-hint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4M12 14V3m-4 4 4-4 4 4"/></svg><span data-i18n="settings.import">上传</span></button><button type="button" data-action="delete-hint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 14h12l1-14M10 10v6m4-6v6"/></svg><span data-i18n="action.delete">删除</span></button></div>
+                </section>
               </div>
               </details>
               <details class="options-group" id="mpDisplayOptions" open>
@@ -428,6 +478,9 @@
               </section>
               <section class="item option-focus-hitbox mp-setting-item" id="mpFocusHitboxOption">
                 <div class="itemtop"><span data-i18n="settings.focusHitbox">低速时显示判定点</span><button class="option-switch" id="mpFocusHitboxToggle" type="button" role="switch" aria-checked="false"><i></i></button></div>
+              </section>
+              <section class="item option-focus-hitbox mp-setting-item" id="mpFaithBarOption" hidden>
+                <div class="itemtop"><span data-i18n="settings.faithBar">头顶信仰槽</span><button class="option-switch" id="mpFaithBarToggle" type="button" role="switch" aria-checked="false"><i></i></button></div>
               </section>
                 </div>
               </details>
@@ -504,6 +557,10 @@
             <div class="itemtop"><span data-i18n="settings.replay">录像</span></div>
             <div class="mini"><button type="button" data-action="export-replay" ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4M12 3v11m-4-4 4 4 4-4"/></svg><span data-i18n="settings.download">下载</span></button><button type="button" data-action="manage-replay"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4M12 14V3m-4 4 4-4 4 4"/></svg><span data-i18n="settings.manage">管理</span></button></div>
           </section>
+        <section class="item file-tool-item" id="hintFileTool" hidden>
+          <div class="itemtop"><span data-i18n="settings.hint">Hint</span></div>
+          <div class="mini"><button type="button" data-action="import-hint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4M12 14V3m-4 4 4-4 4 4"/></svg><span data-i18n="settings.import">上传</span></button><button type="button" data-action="delete-hint"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 14h12l1-14M10 10v6m4-6v6"/></svg><span data-i18n="action.delete">删除</span></button></div>
+        </section>
         </div>
         </details>
         <details class="options-group" id="displayOptions" open>
@@ -518,6 +575,9 @@
         </section>
         <section class="item option-focus-hitbox" id="focusHitboxOption">
           <div class="itemtop"><span data-i18n="settings.focusHitbox">低速时显示判定点</span><button class="option-switch" id="focusHitboxToggle" type="button" role="switch" aria-checked="false"><i></i></button></div>
+        </section>
+        <section class="item option-focus-hitbox" id="faithBarOption" hidden>
+          <div class="itemtop"><span data-i18n="settings.faithBar">头顶信仰槽</span><button class="option-switch" id="faithBarToggle" type="button" role="switch" aria-checked="false"><i></i></button></div>
         </section>
           </div>
         </details>
@@ -852,7 +912,7 @@
     </section>
     <div class="touch-layout-safe-zone" id="touchLayoutSafeZone" aria-hidden="true"></div>
     <div class="touch-sensitivity-preview" id="touchSensitivityPreview" aria-hidden="true" hidden></div>
-    <div class="touch-layout-reserved-zone" id="touchLayoutReservedZone" aria-hidden="true"><span data-i18n="touch.reserved">帮助 / 全屏</span></div>
+    <div class="touch-layout-reserved-zone" id="touchLayoutReservedZone" aria-hidden="true"><span class="reserved-tool"><svg class="touch-utility-icon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M200-200h80q17 0 28.5 11.5T320-160q0 17-11.5 28.5T280-120H160q-17 0-28.5-11.5T120-160v-120q0-17 11.5-28.5T160-320q17 0 28.5 11.5T200-280v80Zm560 0v-80q0-17 11.5-28.5T800-320q17 0 28.5 11.5T840-280v120q0 17-11.5 28.5T800-120H680q-17 0-28.5-11.5T640-160q0-17 11.5-28.5T680-200h80ZM200-760v80q0 17-11.5 28.5T160-640q-17 0-28.5-11.5T120-680v-120q0-17 11.5-28.5T160-840h120q17 0 28.5 11.5T320-800q0 17-11.5 28.5T280-760h-80Zm560 0h-80q-17 0-28.5-11.5T640-800q0-17 11.5-28.5T680-840h120q17 0 28.5 11.5T840-800v120q0 17-11.5 28.5T800-640q-17 0-28.5-11.5T760-680v-80Z"/></svg></span><span class="reserved-tool"><svg class="touch-utility-icon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M478-240q21 0 35.5-14.5T528-290q0-21-14.5-35.5T478-340q-21 0-35.5 14.5T428-290q0 21 14.5 35.5T478-240Zm2 160q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Zm4-172q25 0 43.5 16t18.5 40q0 22-13.5 39T502-525q-23 20-40.5 44T444-427q0 14 10.5 23.5T479-394q15 0 25.5-10t13.5-25q4-21 18-37.5t30-31.5q23-22 39.5-48t16.5-58q0-51-41.5-83.5T484-720q-38 0-72.5 16T359-655q-7 12-4.5 25.5T368-609q14 8 29 5t25-17q11-15 27.5-23t34.5-8Z"/></svg></span><span class="reserved-tool"><svg class="touch-utility-icon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M496-182 182-496q-23-23-23-54t23-54l174-174q23-23 54-23t54 23l314 314q23 23 23 54t-23 54L604-182q-23 23-54 23t-54-23Zm54-58 170-170-310-310-170 170 310 310Zm-70-240Zm79-393 77 77q11 11 11 28t-11 28q-11 11-28 11t-28-11L410-910q-12-12-6.5-28t22.5-19q14-2 27-2.5t27-.5q99 0 186.5 37.5t153 103q65.5 65.5 103 153T960-480q0 17-11.5 28.5T920-440q-17 0-28.5-11.5T880-480q0-71-24-136t-66.5-117Q747-785 688-821.5T559-873ZM401-87l-77-77q-11-11-11-28t11-28q11-11 28-11t28 11L550-50q12 12 6.5 28.5T534-3q-14 2-27 2.5T480 0q-99 0-186.5-37.5t-153-103Q75-206 37.5-293.5T0-480q0-17 11.5-28.5T40-520q17 0 28.5 11.5T80-480q0 71 24 136t66.5 117Q213-175 272-138.5T401-87Z"/></svg></span><span class="reserved-tool" data-i18n="action.reset">复位</span></div>
     <section class="touch-layout-editor" id="touchLayoutEditor" role="region" aria-labelledby="touchWorkbenchTitle" hidden>
       <header class="touch-workbench-header">
         <div class="touch-layout-editor-copy" id="touchLayoutEditorDragHandle" title="拖动此处移动窗口" data-i18n-title="touch.dragWindow">
@@ -878,6 +938,7 @@
         <div class="touch-layout-setting-row"><span><span>R</span><small data-i18n="touch.restartHint">在暂停菜单按下后，会重开本局。</small></span><button class="option-switch" id="restartButtonToggle" type="button" role="switch" aria-checked="false" aria-label="R"><i></i></button></div>
         <div class="touch-layout-setting-row"><span><span data-i18n="touch.thpracButtons">thprac 按键</span><small data-i18n="touch.thpracButtonsHint">显示作弊菜单、Tab 和功能键。</small></span><button class="option-switch" id="thpracTouchControlsToggle" type="button" role="switch" aria-checked="false"><i></i></button></div>
         <div class="touch-layout-setting-row touch-layout-viewport-row"><span><span data-i18n="touch.viewportPosition">游戏画面位置</span><small data-i18n="touch.viewportHint">仅可水平调整，横屏和竖屏分别保存。</small></span><div class="touch-layout-viewport-actions"><button id="touchViewportAdjust" type="button" data-i18n="touch.adjustViewport">＋ 调整游戏画面</button><button id="touchViewportReset" type="button" data-i18n="action.reset">复位</button></div></div>
+<div class="touch-layout-setting-row touch-opacity-row"><div class="touch-opacity-heading"><label for="touchControlOpacity" data-i18n="touch.opacity">按键透明度</label><output id="touchControlOpacityValue" for="touchControlOpacity">100%</output></div><input id="touchControlOpacity" type="range" min="20" max="100" step="5" value="100" aria-describedby="touchControlOpacityHint"><small id="touchControlOpacityHint" data-i18n="touch.opacityHint">数值越低，按键越透明。所有触控按键一起调整。</small></div>
       </div>
     </section>
         </div>
@@ -891,9 +952,9 @@
     <button class="touch-viewport-done" id="touchViewportDone" type="button" hidden data-i18n="touch.adjustDone">调整完成</button>
     <div class="touch-direct-surface" id="touchDirectSurface" aria-hidden="true" hidden></div>
     <nav class="touch-hud" id="touchHud" aria-label="左手触控按键" data-i18n-aria-label="touch.leftControls">
-      <button class="touch-focus" id="touchFocus" data-touch-layout-control="focus" type="button" aria-pressed="false" hidden><strong data-i18n="touch.focus">低速</strong><small data-i18n="touch.holdFocus">按住低速</small><span class="touch-layout-resize-handle" aria-hidden="true">↘</span></button>
-      <button class="touch-fire is-on" id="touchFire" data-touch-layout-control="fire" type="button" aria-pressed="true"><strong data-i18n="touch.fire">开火</strong><small data-i18n="touch.tapToggle">点按切换</small><span class="touch-layout-resize-handle" aria-hidden="true">↘</span></button>
-      <button class="touch-function touch-fire" id="touchFunction" data-touch-layout-control="function" type="button" aria-label="特殊功能" data-i18n-aria-label="touch.specialFunction" hidden><strong data-i18n="touch.specialFunction">特殊功能</strong><small data-i18n="touch.functionKeyHint">功能按键</small><span class="touch-layout-resize-handle" aria-hidden="true">↘</span></button>
+      <button class="touch-focus" id="touchFocus" data-touch-layout-control="focus" type="button" aria-pressed="false" hidden><strong><span class="touch-action-name" data-i18n="touch.focus">低速</span><span class="touch-action-mode"></span></strong><small data-i18n="touch.holdFocus">按住低速</small><span class="touch-layout-resize-handle" aria-hidden="true">↘</span></button>
+      <button class="touch-fire is-on" id="touchFire" data-touch-layout-control="fire" type="button" aria-pressed="true"><strong><span class="touch-action-name" data-i18n="touch.fire">开火</span><span class="touch-action-mode"></span></strong><small data-i18n="touch.tapToggle">点按切换</small><span class="touch-layout-resize-handle" aria-hidden="true">↘</span></button>
+      <button class="touch-function touch-fire" id="touchFunction" data-touch-layout-control="function" type="button" aria-label="特殊功能" data-i18n-aria-label="touch.specialFunction" hidden><span class="touch-icon" aria-hidden="true">C</span><strong data-i18n="touch.specialFunction">特殊功能</strong><small data-i18n="touch.functionKeyHint">功能按键</small><span class="touch-layout-resize-handle" aria-hidden="true">↘</span></button>
       <button class="touch-bomb" id="touchBomb" data-touch-layout-control="bomb" type="button"><span class="touch-icon">B</span><strong>BOMB</strong><span class="touch-layout-resize-handle" aria-hidden="true">↘</span></button>
     </nav>
     <div class="touch-joystick" id="touchJoystick" data-touch-layout-control="joystick" aria-label="移动轮盘" data-i18n-aria-label="touch.joystickAria" role="application" hidden>
@@ -917,11 +978,11 @@
       </div>
       <span class="touch-layout-resize-handle" aria-hidden="true">↘</span>
     </div>
-    <button class="touch-help-open" id="touchHelpOpen" type="button" aria-label="打开帮助" title="帮助" data-i18n="help.title" data-i18n-aria-label="help.open" data-i18n-title="help.title">帮助</button>
+
     <div class="touch-help" id="touchHelp" role="dialog" aria-modal="true" aria-labelledby="touchHelpTitle" hidden>
       <div class="touch-help-window">
         <header class="touch-help-bar">
-          <div class="touch-help-heading"><strong id="touchHelpTitle" data-i18n="help.title">帮助</strong></div>
+          <div class="touch-help-heading"><strong id="touchHelpTitle" data-i18n="help.title">帮助</strong><small data-i18n="help.subtitle">点开教程，查看操作演示</small></div>
           <button id="touchHelpClose" type="button" aria-label="关闭帮助" title="关闭" data-i18n-aria-label="help.close" data-i18n-title="action.close">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg>
           </button>
@@ -929,16 +990,16 @@
         <main class="touch-guide">
           <section class="guide-panels">
             <article class="guide-scene guide-panel orientation-guide help-mobile-only" id="orientationGuideSource" data-guide-panel="orientation">
-              <button class="guide-tab-card" id="guideTabOrientation" type="button" aria-expanded="false" aria-controls="guideOrientation" data-guide-tab="orientation"><span><strong id="guideOrientationTitle" data-i18n="help.manualLandscape">手动横屏</strong><small id="guideOrientationSummary" data-i18n="help.orientationSummary">屏幕没有自动旋转时</small></span><i class="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"/></svg></i></button>
+              <button class="guide-tab-card" id="guideTabOrientation" type="button" aria-expanded="false" aria-controls="guideOrientation" data-guide-tab="orientation"><span><strong id="guideOrientationTitle" data-i18n="help.manualLandscape">横屏教程</strong><small id="guideOrientationSummary" data-i18n="help.orientationSummary">旋转手机，让画面更舒展</small></span><i class="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"/></svg></i></button>
               <div class="guide-demo-body" id="guideOrientation" hidden>
                 <div id="guideOrientationAndroid">
                   <div class="orientation-guide-copy">
                     <ol class="orientation-steps">
-                      <li data-i18n="help.turnPhone">把手机横过来。是的，物理上先把手机横过来。</li>
+                      <li data-i18n="help.turnPhone">先把手机横过来。</li>
                       <li data-i18n="help.systemRotate">点击右下角出现的系统旋转按钮。</li>
                     </ol>
                   </div>
-                  <img src="assets/touch-rotate-landscape.webp" width="1550" height="1121" loading="lazy" decoding="async" alt="手机横过来后点击右下角系统旋转按钮的操作示意图" data-i18n-alt="help.rotateImageAlt">
+                  <figure class="android-rotation-example"><div class="rotation-phone" role="img" data-i18n-aria-label="help.rotateImageAlt" aria-label="横放手机后的系统旋转按钮"><span class="rotation-screen-copy" data-i18n="help.rotatePhone">把手机横过来</span><span class="rotation-system-button"><svg class="touch-utility-icon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M496-182 182-496q-23-23-23-54t23-54l174-174q23-23 54-23t54 23l314 314q23 23 23 54t-23 54L604-182q-23 23-54 23t-54-23Zm54-58 170-170-310-310-170 170 310 310Zm-70-240Zm79-393 77 77q11 11 11 28t-11 28q-11 11-28 11t-28-11L410-910q-12-12-6.5-28t22.5-19q14-2 27-2.5t27-.5q99 0 186.5 37.5t153 103q65.5 65.5 103 153T960-480q0 17-11.5 28.5T920-440q-17 0-28.5-11.5T880-480q0-71-24-136t-66.5-117Q747-785 688-821.5T559-873ZM401-87l-77-77q-11-11-11-28t11-28q11-11 28-11t28 11L550-50q12 12 6.5 28.5T534-3q-14 2-27 2.5T480 0q-99 0-186.5-37.5t-153-103Q75-206 37.5-293.5T0-480q0-17 11.5-28.5T40-520q17 0 28.5 11.5T80-480q0 71 24 136t66.5 117Q213-175 272-138.5T401-87Z"/></svg></span><span class="rotation-gesture-bar"></span></div><figcaption><svg class="touch-utility-icon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M496-182 182-496q-23-23-23-54t23-54l174-174q23-23 54-23t54 23l314 314q23 23 23 54t-23 54L604-182q-23 23-54 23t-54-23Zm54-58 170-170-310-310-170 170 310 310Zm-70-240Zm79-393 77 77q11 11 11 28t-11 28q-11 11-28 11t-28-11L410-910q-12-12-6.5-28t22.5-19q14-2 27-2.5t27-.5q99 0 186.5 37.5t153 103q65.5 65.5 103 153T960-480q0 17-11.5 28.5T920-440q-17 0-28.5-11.5T880-480q0-71-24-136t-66.5-117Q747-785 688-821.5T559-873ZM401-87l-77-77q-11-11-11-28t11-28q11-11 28-11t28 11L550-50q12 12 6.5 28.5T534-3q-14 2-27 2.5T480 0q-99 0-186.5-37.5t-153-103Q75-206 37.5-293.5T0-480q0-17 11.5-28.5T40-520q17 0 28.5 11.5T80-480q0 71 24 136t66.5 117Q213-175 272-138.5T401-87Z"/></svg><span><span data-i18n="help.rotateCorner">轻点屏幕边角的旋转按钮</span><small data-i18n="help.rotateVaries">不同手机的位置和图标可能略有不同</small></span></figcaption></figure><p class="rotation-auto-tip"><strong data-i18n="help.autoRotate">也可以使用自动旋转</strong><span data-i18n="help.autoRotateStep">下拉系统快捷设置，开启「自动旋转」，再转动手机即可。</span></p>
                 </div>
                 <div id="guideOrientationIos" hidden>
                   <div class="orientation-guide-copy">
@@ -968,23 +1029,8 @@
                 </div>
               </div>
             </article>
-            <article class="guide-scene guide-panel focus-demo help-mobile-only" data-guide-panel="focus" data-focus-mode="hold-button">
-              <button class="guide-tab-card" id="guideTabFocus" type="button" aria-expanded="false" aria-controls="guideFocus" data-guide-tab="focus"><span><strong data-i18n="help.inGame">游戏中</strong><small id="guideFocusSummary" data-i18n="help.focusSummary">移动与低速操作</small></span><i class="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"/></svg></i></button>
-              <div class="guide-demo-body" id="guideFocus" hidden>
-                <div class="focus-stage">
-                  <span class="shot-stream" aria-hidden="true"></span>
-                  <i class="demo-player"></i><i class="demo-hitbox"></i>
-                  <i class="demo-finger finger-move"></i>
-                  <div class="focus-mode-control" id="guideFocusControl" aria-hidden="true"><strong data-i18n="touch.focus">低速</strong><small id="guideFocusControlHint" data-i18n="help.hold">按住</small></div>
-                  <i class="demo-finger finger-focus"></i>
-                  <span class="move-trace"></span>
-                  <b class="focus-label" id="guideFocusLabel">按住「低速」</b>
-                </div>
-                <button class="guide-replay" type="button" data-i18n="action.replay">重播</button>
-              </div>
-            </article>
             <article class="guide-scene guide-panel menu-demo help-mobile-only" data-guide-panel="menu">
-              <button class="guide-tab-card" id="guideTabMenu" type="button" aria-expanded="false" aria-controls="guideMenu" data-guide-tab="menu"><span><strong data-i18n="help.menu">菜单中</strong><small data-i18n="help.menuSummary">滑动选择，单击确认，两指点按返回</small></span><i class="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"/></svg></i></button>
+              <button class="guide-tab-card" id="guideTabMenu" type="button" aria-expanded="false" aria-controls="guideMenu" data-guide-tab="menu"><span><strong data-i18n="help.menu">菜单手势教程</strong><small data-i18n="help.menuSummary">滑动选择，单击确认，两指点按返回</small></span><i class="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"/></svg></i></button>
               <div class="guide-demo-body" id="guideMenu" hidden>
                 <div class="menu-stage">
                   <div class="menu-question">CONTINUE?</div>
@@ -999,8 +1045,23 @@
                 <button class="guide-replay" type="button" data-i18n="action.replay">重播</button>
               </div>
             </article>
+            <article class="guide-scene guide-panel focus-demo help-mobile-only" data-guide-panel="focus" data-focus-mode="hold-button">
+              <button class="guide-tab-card" id="guideTabFocus" type="button" aria-expanded="false" aria-controls="guideFocus" data-guide-tab="focus"><span><strong data-i18n="help.inGame">移动教程</strong><small id="guideFocusSummary" data-i18n="help.focusSummary">移动与低速操作</small></span><i class="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"/></svg></i></button>
+              <div class="guide-demo-body" id="guideFocus" hidden>
+                <div class="focus-stage">
+                  <span class="shot-stream" aria-hidden="true"></span>
+                  <i class="demo-player"></i><i class="demo-hitbox"></i>
+                  <i class="demo-finger finger-move"></i>
+                  <div class="focus-mode-control" id="guideFocusControl" aria-hidden="true"><strong data-i18n="touch.focus">低速</strong><small id="guideFocusControlHint" data-i18n="help.hold">按住</small></div>
+                  <i class="demo-finger finger-focus"></i>
+                  <span class="move-trace"></span>
+                  <b class="focus-label" id="guideFocusLabel">按住「低速」</b>
+                </div>
+                <button class="guide-replay" type="button" data-i18n="action.replay">重播</button>
+              </div>
+            </article>
             <article class="guide-scene guide-panel dialogue-demo help-mobile-only" data-guide-panel="dialogue">
-              <button class="guide-tab-card" id="guideTabDialogue" type="button" aria-expanded="false" aria-controls="guideDialogue" data-guide-tab="dialogue"><span><strong data-i18n="help.dialogue">对话中</strong><small data-i18n="help.dialogueSummary">长按可以快速跳过对话</small></span><i class="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"/></svg></i></button>
+              <button class="guide-tab-card" id="guideTabDialogue" type="button" aria-expanded="false" aria-controls="guideDialogue" data-guide-tab="dialogue"><span><strong data-i18n="help.dialogue">对话手势教程</strong><small data-i18n="help.dialogueSummary">长按可以快速跳过对话</small></span><i class="guide-tab-arrow mizuki-select-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="m7 10 5 5 5-5"/></svg></i></button>
               <div class="guide-demo-body" id="guideDialogue" hidden>
                 <div class="dialogue-stage">
                   <div class="dialogue-portrait">?</div>
@@ -1042,9 +1103,10 @@
         </main>
       </div>
     </div>
-    <button class="orientation-toggle" id="orientationToggle" type="button" aria-label="切换到横屏" data-i18n-aria-label="player.switchLandscape" title="切换屏幕方向" data-i18n-title="player.switchOrientationTitle" hidden><strong id="orientationTarget" data-i18n="touch.landscape">横屏</strong><small data-i18n="player.rotate">旋转</small></button>
-    <button class="game-zoom-toggle" id="gameZoomToggle" type="button" aria-label="恢复游戏画面原位置和大小" data-i18n-aria-label="player.restoreViewportAria" title="恢复原位置和大小" data-i18n-title="player.restoreViewportTitle" hidden><strong data-i18n="action.reset">复位</strong><small id="gameZoomScale">100%</small></button>
-    <button class="fullscreen-toggle" id="fullscreenToggle" type="button" aria-label="进入全屏" data-i18n-aria-label="player.enterFullscreen" title="进入全屏（Alt+Enter）" data-i18n-title="player.enterFullscreenTitle">⛶</button>
+
+
+
+    <nav class="touch-utility-row" aria-label="画面工具" data-i18n-aria-label="touch.tools"><button class="fullscreen-toggle" id="fullscreenToggle" type="button" aria-label="进入全屏" data-i18n-aria-label="player.enterFullscreen" title="进入全屏（Alt+Enter）" data-i18n-title="player.enterFullscreenTitle"><span class="fullscreen-enter-icon"><svg class="touch-utility-icon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M200-200h80q17 0 28.5 11.5T320-160q0 17-11.5 28.5T280-120H160q-17 0-28.5-11.5T120-160v-120q0-17 11.5-28.5T160-320q17 0 28.5 11.5T200-280v80Zm560 0v-80q0-17 11.5-28.5T800-320q17 0 28.5 11.5T840-280v120q0 17-11.5 28.5T800-120H680q-17 0-28.5-11.5T640-160q0-17 11.5-28.5T680-200h80ZM200-760v80q0 17-11.5 28.5T160-640q-17 0-28.5-11.5T120-680v-120q0-17 11.5-28.5T160-840h120q17 0 28.5 11.5T320-800q0 17-11.5 28.5T280-760h-80Zm560 0h-80q-17 0-28.5-11.5T640-800q0-17 11.5-28.5T680-840h120q17 0 28.5 11.5T840-800v120q0 17-11.5 28.5T800-640q-17 0-28.5-11.5T760-680v-80Z"/></svg></span><span class="fullscreen-exit-icon"><svg class="touch-utility-icon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M240-240h-80q-17 0-28.5-11.5T120-280q0-17 11.5-28.5T160-320h120q17 0 28.5 11.5T320-280v120q0 17-11.5 28.5T280-120q-17 0-28.5-11.5T240-160v-80Zm480 0v80q0 17-11.5 28.5T680-120q-17 0-28.5-11.5T640-160v-120q0-17 11.5-28.5T680-320h120q17 0 28.5 11.5T840-280q0 17-11.5 28.5T800-240h-80ZM240-720v-80q0-17 11.5-28.5T280-840q17 0 28.5 11.5T320-800v120q0 17-11.5 28.5T280-640H160q-17 0-28.5-11.5T120-680q0-17 11.5-28.5T160-720h80Zm480 0h80q17 0 28.5 11.5T840-680q0 17-11.5 28.5T800-640H680q-17 0-28.5-11.5T640-680v-120q0-17 11.5-28.5T680-840q17 0 28.5 11.5T720-800v80Z"/></svg></span></button><button class="touch-help-open" id="touchHelpOpen" type="button" aria-label="打开帮助" title="帮助" data-i18n-aria-label="help.open" data-i18n-title="help.title"><svg class="touch-utility-icon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M478-240q21 0 35.5-14.5T528-290q0-21-14.5-35.5T478-340q-21 0-35.5 14.5T428-290q0 21 14.5 35.5T478-240Zm2 160q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Zm4-172q25 0 43.5 16t18.5 40q0 22-13.5 39T502-525q-23 20-40.5 44T444-427q0 14 10.5 23.5T479-394q15 0 25.5-10t13.5-25q4-21 18-37.5t30-31.5q23-22 39.5-48t16.5-58q0-51-41.5-83.5T484-720q-38 0-72.5 16T359-655q-7 12-4.5 25.5T368-609q14 8 29 5t25-17q11-15 27.5-23t34.5-8Z"/></svg></button><button class="orientation-toggle" id="orientationToggle" type="button" aria-label="切换到横屏" data-i18n-aria-label="player.switchLandscape" title="切换屏幕方向" data-i18n-title="player.switchOrientationTitle" hidden><strong id="orientationTarget" data-i18n="touch.landscape">横屏</strong><small data-i18n="player.rotate">旋转</small><svg class="touch-utility-icon" viewBox="0 -960 960 960" aria-hidden="true" focusable="false"><path d="M496-182 182-496q-23-23-23-54t23-54l174-174q23-23 54-23t54 23l314 314q23 23 23 54t-23 54L604-182q-23 23-54 23t-54-23Zm54-58 170-170-310-310-170 170 310 310Zm-70-240Zm79-393 77 77q11 11 11 28t-11 28q-11 11-28 11t-28-11L410-910q-12-12-6.5-28t22.5-19q14-2 27-2.5t27-.5q99 0 186.5 37.5t153 103q65.5 65.5 103 153T960-480q0 17-11.5 28.5T920-440q-17 0-28.5-11.5T880-480q0-71-24-136t-66.5-117Q747-785 688-821.5T559-873ZM401-87l-77-77q-11-11-11-28t11-28q11-11 28-11t28 11L550-50q12 12 6.5 28.5T534-3q-14 2-27 2.5T480 0q-99 0-186.5-37.5t-153-103Q75-206 37.5-293.5T0-480q0-17 11.5-28.5T40-520q17 0 28.5 11.5T80-480q0 71 24 136t66.5 117Q213-175 272-138.5T401-87Z"/></svg></button><button class="game-zoom-toggle" id="gameZoomToggle" type="button" aria-label="恢复游戏画面原位置和大小" data-i18n-aria-label="player.restoreViewportAria" title="恢复原位置和大小" data-i18n-title="player.restoreViewportTitle" hidden><strong data-i18n="action.reset">复位</strong><small id="gameZoomScale">100%</small></button></nav>
     <aside class="netplay-player-status" id="netplayPlayerStatus" aria-label="联机连接" data-i18n-aria-label="multiplayer.connection" hidden></aside>
     <aside class="runtime-diagnostics" id="runtimeDiagnostics" aria-label="运行诊断" data-i18n-aria-label="diagnostics.aria" hidden>
       <span id="runtimeBrowserDiag">浏览器 --</span>

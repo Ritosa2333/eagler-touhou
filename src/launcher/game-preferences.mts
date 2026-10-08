@@ -9,10 +9,12 @@ export interface GameOptions {
   thpracTouchControlsEnabled: boolean;
   magnifierEnabled: boolean;
   focusHitboxEnabled: boolean;
+  faithBarEnabled: boolean;
   frameLimit60Enabled: boolean;
   touchEnabled: boolean;
   touchMovementMode: TouchMovementMode;
   touchSensitivity: number;
+  touchControlOpacity: number;
   touchFocusMode: TouchFocusMode;
   doubleTapBombEnabled: boolean;
   restartButtonEnabled: boolean;
@@ -30,10 +32,12 @@ export const DEFAULT_GAME_OPTIONS: Readonly<GameOptions> = Object.freeze({
   thpracTouchControlsEnabled: false,
   magnifierEnabled: false,
   focusHitboxEnabled: false,
+  faithBarEnabled: false,
   frameLimit60Enabled: true,
   touchEnabled: false,
   touchMovementMode: "touch",
   touchSensitivity: 150,
+  touchControlOpacity: 100,
   touchFocusMode: "hold-button",
   doubleTapBombEnabled: false,
   restartButtonEnabled: false,
@@ -71,6 +75,7 @@ export const sharedTouchPreferenceStorageKey = "eagler-touhou-touch-options-v1";
 export const SHARED_TOUCH_OPTION_NAMES = Object.freeze([
   "touchMovementMode",
   "touchSensitivity",
+  "touchControlOpacity",
   "touchFocusMode",
   "doubleTapBombEnabled",
   "restartButtonEnabled",
@@ -234,10 +239,13 @@ export function normalizeStoredGamePreferences(
     thpracTouchControlsEnabled: booleanOption(rawOptions, "thpracTouchControlsEnabled", DEFAULT_GAME_OPTIONS.thpracTouchControlsEnabled),
     magnifierEnabled: booleanOption(rawOptions, "magnifierEnabled", DEFAULT_GAME_OPTIONS.magnifierEnabled),
     focusHitboxEnabled: booleanOption(rawOptions, "focusHitboxEnabled", DEFAULT_GAME_OPTIONS.focusHitboxEnabled),
+    faithBarEnabled: booleanOption(rawOptions, "faithBarEnabled", DEFAULT_GAME_OPTIONS.faithBarEnabled),
     frameLimit60Enabled: booleanOption(rawOptions, "frameLimit60Enabled", DEFAULT_GAME_OPTIONS.frameLimit60Enabled),
     touchEnabled: booleanOption(rawOptions, "touchEnabled", DEFAULT_GAME_OPTIONS.touchEnabled),
     touchMovementMode: migratedMovement,
     touchSensitivity,
+    touchControlOpacity: typeof rawOptions?.touchControlOpacity === "number" && Number.isFinite(rawOptions.touchControlOpacity)
+      ? Math.min(100, Math.max(20, Math.round(rawOptions.touchControlOpacity / 5) * 5)) : 100,
     touchFocusMode: focusMode,
     doubleTapBombEnabled: booleanOption(rawOptions, "doubleTapBombEnabled", DEFAULT_GAME_OPTIONS.doubleTapBombEnabled),
     restartButtonEnabled: booleanOption(rawOptions, "restartButtonEnabled", DEFAULT_GAME_OPTIONS.restartButtonEnabled),

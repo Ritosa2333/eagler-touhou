@@ -49,9 +49,9 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 东方红魔乡 1.02h | [th06/eagler](https://github.com/YomotsuHisami/th06/tree/eagler) | [GensokyoClub/th06/portable](https://github.com/GensokyoClub/th06/tree/portable) | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 东方妖妖梦 1.00b | [th07/eagler](https://github.com/YomotsuHisami/th07/tree/eagler) | [some100/th07/reallyportable](https://github.com/some100/th07/tree/reallyportable)<br>[sbrik1111/th07_multi_player/main](https://github.com/sbrik1111/th07_multi_player/tree/main) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 东方永夜抄 1.00d | [th08/eagler](https://github.com/YomotsuHisami/th08/tree/eagler)<br>[th08/experiment/th08-multiplayer](https://github.com/YomotsuHisami/th08/tree/experiment/th08-multiplayer) | [th08/main](https://github.com/YomotsuHisami/th08/tree/main) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 东方花映塚 1.50a | [th09/eagler](https://github.com/YomotsuHisami/th09/tree/eagler)<br>[th09/experiment/th09-multiplayer](https://github.com/YomotsuHisami/th09/tree/experiment/th09-multiplayer) | [th09/main](https://github.com/YomotsuHisami/th09/tree/main) | ✅ | ❌ | ✅ | ❌ | ✅ |
-| 东方风神录 1.00a | [th10/eagler](https://github.com/YomotsuHisami/th10/tree/eagler)<br>[th10/experiment/th10-multiplayer](https://github.com/YomotsuHisami/th10/tree/experiment/th10-multiplayer) | [th10/portable](https://github.com/YomotsuHisami/th10/tree/portable) | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 东方永夜抄 1.00d | [th08/eagler](https://github.com/YomotsuHisami/th08/tree/eagler)<br>[th08/eagler-mp](https://github.com/YomotsuHisami/th08/tree/eagler-mp) | [th08/main](https://github.com/YomotsuHisami/th08/tree/main) | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 东方花映塚 1.50a | [th09/eagler](https://github.com/YomotsuHisami/th09/tree/eagler) | [th09/main](https://github.com/YomotsuHisami/th09/tree/main) | ✅ | ❌ | ✅ | ❌ | ✅ |
+| 东方风神录 1.00a | [th10/eagler](https://github.com/YomotsuHisami/th10/tree/eagler)<br>[th10/eagler-mp](https://github.com/YomotsuHisami/th10/tree/eagler-mp) | [th10/portable](https://github.com/YomotsuHisami/th10/tree/portable) | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 东方地灵殿 1.00a | [th11/eagler](https://github.com/YomotsuHisami/th11/tree/eagler) | [th11/main](https://github.com/YomotsuHisami/th11/tree/main) | ✅ | ❌ | ✅ | ✅ | ❌ |
 | 东方绀珠传 1.00b（适配并测试中） | [th15/eagler](https://github.com/YomotsuHisami/th15/tree/eagler) | [th15/main](https://github.com/YomotsuHisami/th15/tree/main) | — | ❌ | — | — | — |
 | 东方锦上京 1.00c（适配并测试中） | [Goan114/th20/eagler](https://github.com/Goan114/th20/tree/eagler) | [Oracatt/Touhou20/main](https://github.com/Oracatt/Touhou20/tree/main) | — | ❌ | — | — | — |

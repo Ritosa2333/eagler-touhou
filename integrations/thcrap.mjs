@@ -156,6 +156,8 @@ export function createThcrapClient({
       const isFont = Object.hasOwn(item.patch.fonts || {}, rawPath);
       const isGlobalOptions = rawPath === "global.js" && Object.keys(item.patch.fonts || {}).length > 0;
       if (!isGameAsset && !isSharedThemes && !isStringDefs && !isRootGameOptions && !isFont && !isGlobalOptions) continue;
+      // The TH15 adapter targets Japanese 1.00b and must not mount 1.00a's bank.
+      if (gameId === "th15" && rawPath === "th15/text.v1.00a.anm") continue;
       // A language patch can contain thcrap-only executable tables such as
       // stringlocs/binhacks. They cannot be interpreted by the native port and
       // must not make an otherwise complete runtime pack look half-supported.
@@ -191,7 +193,8 @@ export function createThcrapClient({
         providesFonts:Object.keys(item.patch.fonts || {}).length > 0,
         fontFiles:Object.keys(item.patch.fonts || {}),isGlobalOptions};
       const previous = assetMap.get(mountPath);
-      if (!previous || asset.isGlobalOptions || (!previous.isGlobalOptions && (asset.providesFonts || !previous.providesFonts))) {
+      const th15LanguageLeaf = gameId === "th15" && item === ordered.at(-1);
+      if (!previous || asset.isGlobalOptions || (!previous.isGlobalOptions && (th15LanguageLeaf || asset.providesFonts || !previous.providesFonts))) {
         assetMap.set(mountPath, asset);
       }
       }

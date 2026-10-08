@@ -19,6 +19,20 @@ assert.equal(normalizeMultiplayerDisplayName("  A\u0000B\nC  "), "ABC");
 assert.equal(normalizeMultiplayerDisplayName("一二三四五六七八九十十一十二十三"), "一二三四五六七八九十十一");
 assert.equal(multiplayerDisplayInitial("  琪露诺  "), "琪");
 assert.equal(multiplayerDisplayInitial("", "P"), "P");
+// Every Unicode Bidi_Control is removed, including the Arabic letter mark
+// and isolate controls that previously became invisible avatar initials.
+const bidiControls = [0x061c, 0x200e, 0x200f, 0x202a, 0x202b, 0x202c,
+  0x202d, 0x202e, 0x2066, 0x2067, 0x2068, 0x2069].map(point => String.fromCodePoint(point));
+for (const control of bidiControls) {
+  const name = `${control}Alice${control}`;
+  assert.equal(normalizeMultiplayerDisplayName(name), "Alice");
+  assert.equal(multiplayerDisplayInitial(name), "A");
+}
+const invisibleControls = "\u200b\u200c\u200d\u2060\u2061\u2062\u2063\u2064\ufeff";
+assert.equal(normalizeMultiplayerDisplayName(`${invisibleControls}Alice${invisibleControls}`), "Alice");
+assert.equal(multiplayerDisplayInitial(bidiControls.join("") + invisibleControls), "观");
+assert.equal(normalizeMultiplayerDisplayName("🦊琪露诺"), "🦊琪露诺");
+assert.equal(normalizeMultiplayerDisplayName("\u2067".repeat(12) + "🦊".repeat(13)), "🦊".repeat(12));
 assert.ok(validMultiplayerClientId("client_01"));
 assert.ok(!validMultiplayerClientId("short"));
 

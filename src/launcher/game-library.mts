@@ -1,3 +1,12 @@
+/** Overflow deliberately ends halfway through the following full-size target. */
+export function libraryIndexWidth(count: number, available: number, target = 44, gap = 2, padding = 4) {
+  const limit = Math.max(target, Math.min(320, available - 16));
+  const full = count * target + Math.max(0, count - 1) * gap + padding * 2;
+  if (full <= limit) return full;
+  const whole = Math.max(1, Math.floor((limit - padding - target / 2) / (target + gap)));
+  return Math.min(limit, padding + whole * (target + gap) + target / 2);
+}
+
 // Sample each decoded cover once, sharing the result between solo and MP cards.
 // A light, restrained accent keeps a clear tonal outline on the dark surface.
 const coverAccents = new Map<string, string>();
@@ -49,29 +58,38 @@ function applyCoverAccent(card: HTMLElement) {
 
 /** One scroll owner per shelf; ordinary touch scrolling stays browser-native. */
 function createRailMotion(rail: HTMLElement, reduced: () => boolean) {
-  let frame = 0;
-  const cancel = () => {
-    cancelAnimationFrame(frame); frame = 0;
+  let moving = false, settleTimer = 0;
+  const finish = () => {
+    clearTimeout(settleTimer); settleTimer = 0; moving = false;
     rail.classList.remove("is-navigating");
   };
+  const cancel = () => {
+    const wasMoving = moving;
+    finish();
+    if (wasMoving) rail.scrollTo({ left: rail.scrollLeft, behavior: "instant" });
+  };
+  // Native scrolling can run without a per-frame Launcher JS callback. The
+  // quiet period also works on Chrome/WebView 108, without scrollend support.
+  rail.addEventListener("scroll", () => {
+    if (!moving) return;
+    clearTimeout(settleTimer);
+    settleTimer = window.setTimeout(finish, 120);
+  }, { passive: true });
   const move = (destination: number) => {
     cancel();
     const target = Math.max(0, Math.min(rail.scrollWidth - rail.clientWidth, destination));
-    const start = rail.scrollLeft, distance = target - start;
-    if (reduced() || Math.abs(distance) < 1) { rail.scrollLeft = target; return; }
+    if (reduced() || Math.abs(target - rail.scrollLeft) < 1) {
+      rail.scrollTo({ left: target, behavior: "instant" });
+      return;
+    }
+    moving = true;
     rail.classList.add("is-navigating");
-    const began = performance.now(), duration = Math.min(560, 300 + Math.abs(distance) * .18);
-    const tick = (now: number) => {
-      const progress = reduced() ? 1 : Math.min(1, (now - began) / duration);
-      rail.scrollLeft = start + distance * (1 - Math.pow(1 - progress, 4));
-      if (progress < 1) frame = requestAnimationFrame(tick);
-      else { frame = 0; rail.classList.remove("is-navigating"); }
-    };
-    frame = requestAnimationFrame(tick);
+    rail.scrollTo({ left: target, behavior: "smooth" });
+    settleTimer = window.setTimeout(finish, 180);
   };
   const settle = (destination: number) => {
     cancel();
-    rail.scrollLeft = Math.max(0, Math.min(rail.scrollWidth - rail.clientWidth, destination));
+    rail.scrollTo({ left: Math.max(0, Math.min(rail.scrollWidth - rail.clientWidth, destination)), behavior: "instant" });
   };
   return { move, settle, cancel };
 }
@@ -79,6 +97,8 @@ function createRailMotion(rail: HTMLElement, reduced: () => boolean) {
 export function initializeGameLibrary(options: {
   initialProduct?: string;
   onSelectionChange?: (product: string) => void;
+  /** Directory selection may stay aligned on resize; Launcher browsing must not snap. */
+  alignSelectionOnResize?: boolean;
   openOnFirstClick?: (product: string) => boolean;
 } = {}) {
   const selectors: Array<(product: string) => void> = [];
@@ -90,6 +110,7 @@ export function initializeGameLibrary(options: {
     const cards = [...rail.querySelectorAll<HTMLAnchorElement>(".game")];
     cards.forEach(applyCoverAccent);
     const root = shelf.querySelector<HTMLElement>(".shelf-minimap")!;
+    const dock = root.querySelector<HTMLElement>(".minimap-dock")!;
     const toggles = [...root.querySelectorAll<HTMLButtonElement>(".minimap-toggle")];
     const motion = createRailMotion(rail, reduced);
     const productOf = (card: HTMLElement) => card.dataset.product || card.dataset.game;
@@ -98,6 +119,46 @@ export function initializeGameLibrary(options: {
     let visibleCards: HTMLAnchorElement[] = [];
     let cardLefts: number[] = [];
     let pointer: { id: number; x: number; y: number; held: boolean; choice: string | null; touch: boolean; owner: HTMLButtonElement } | null = null;
+    let scrubFrame = 0, scrubTime = 0, scrubX = 0, scrubY = 0;
+    let indexStep = 46, indexSettleTimer = 0;
+    const fitIndex = () => {
+      const available = toggles.filter(button => !button.hidden);
+      const target = available[0]?.offsetWidth || 44;
+      const style = getComputedStyle(dock);
+      const gap = parseFloat(style.columnGap) || 0, padding = parseFloat(style.paddingLeft) || 0;
+      indexStep = target + gap;
+      root.style.width = `${libraryIndexWidth(available.length, shelf.clientWidth, target, gap, padding)}px`;
+    };
+    const snapIndex = () => {
+      if (pointer?.held || !dock.getClientRects().length) return;
+      const maximum = Math.max(0, dock.scrollWidth - dock.clientWidth);
+      const left = Math.max(0, Math.min(maximum, Math.round(dock.scrollLeft / indexStep) * indexStep));
+      if (Math.abs(left - dock.scrollLeft) > .5) dock.scrollTo({left, behavior: "instant"});
+    };
+    const updateIndexEdges = () => {
+      dock.classList.toggle("is-overflowing", dock.scrollWidth > dock.clientWidth + 1);
+      dock.classList.toggle("can-scroll-left", dock.scrollLeft > 1);
+      dock.classList.toggle("can-scroll-right", dock.scrollLeft + dock.clientWidth < dock.scrollWidth - 1);
+    };
+    const revealIndex = (instant = false) => {
+      if (pointer?.held) return; // Do not move the numbers under a held finger.
+      const button = toggles.find(button => !button.hidden && button.dataset.minimapPreview === activeId);
+      if (!button) return;
+      const bounds = dock.getBoundingClientRect(), target = button.getBoundingClientRect();
+      const delta = target.left < bounds.left + 18 ? target.left - bounds.left - 18
+        : target.right > bounds.right - 18 ? target.right - bounds.right + 18 : 0;
+      if (delta) {
+        const destination = dock.scrollLeft + delta;
+        const left = delta > 0 ? Math.ceil(destination / indexStep) * indexStep : Math.floor(destination / indexStep) * indexStep;
+        dock.scrollTo({left, behavior: instant || reduced() ? "instant" : "smooth"});
+      }
+    };
+    dock.addEventListener("scroll", () => {
+      updateIndexEdges();
+      clearTimeout(indexSettleTimer);
+      if (!pointer?.held) indexSettleTimer = window.setTimeout(snapIndex, 120);
+    }, {passive: true});
+    new ResizeObserver(() => {fitIndex(); updateIndexEdges(); revealIndex(true); snapIndex();}).observe(dock);
     const highlight = (id: string) => {
       if (activeId === id) return;
       activeId = id;
@@ -112,6 +173,8 @@ export function initializeGameLibrary(options: {
     const cancelHold = () => {
       const previousPointer = pointer;
       clearTimeout(holdTimer); holdTimer = 0; pointer = null;
+      clearTimeout(indexSettleTimer); indexSettleTimer = 0;
+      cancelAnimationFrame(scrubFrame); scrubFrame = 0; scrubTime = 0;
       if (previousPointer?.owner.hasPointerCapture(previousPointer.id)) previousPointer.owner.releasePointerCapture(previousPointer.id);
       root.classList.remove("is-holding");
       root.classList.remove("is-scrubbing");
@@ -121,6 +184,7 @@ export function initializeGameLibrary(options: {
       const card = cardFor(id);
       if (!card) return;
       highlight(id!);
+      revealIndex(settle);
       // Match the rail gutter in one motion. Free scrolling has no CSS snap
       // correction, so small wheel deltas and touch momentum stay continuous.
       const index = visibleCards.indexOf(card);
@@ -132,7 +196,9 @@ export function initializeGameLibrary(options: {
     const openTools = (id?: string, settle = false) => {
       const card = cardFor(id);
       if (!card) return;
-      retire(); select(id, false, settle); card.click();
+      retire();
+      if (activeId !== id) select(id, false, settle);
+      card.click();
     };
     const candidate = (id: string) => {
       if (!pointer || pointer.choice === id) return;
@@ -144,35 +210,71 @@ export function initializeGameLibrary(options: {
       if (!pointer || pointer.held || document.hidden || !pointer.owner.getClientRects().length) return;
       clearTimeout(holdTimer); holdTimer = 0;
       pointer.held = true;
+      // Stop a previous reveal animation before the finger owns the index.
+      dock.scrollTo({left: dock.scrollLeft, behavior: "instant"});
       if (!pointer.owner.hasPointerCapture(pointer.id)) pointer.owner.setPointerCapture(pointer.id);
       root.classList.remove("is-holding"); root.classList.add("is-scrubbing");
       const id = pointer.owner.dataset.minimapPreview!;
       candidate(id);
+      moveScrub(pointer.x, pointer.y);
     };
     const scrub = (x: number, y: number) => {
-      const dockBounds = root.getBoundingClientRect();
+      const dockBounds = dock.getBoundingClientRect();
       if (y < dockBounds.top - 64 || y > dockBounds.bottom + 64) return;
       // A scrub is a continuous horizontal track, not isolated button hit tests.
       // Include the gaps and tolerate vertical finger drift; pointer capture may
       // keep event.target on the starting button throughout a touch gesture.
-      const choices = toggles.filter(button => !button.hidden);
+      const choices = toggles.filter(button => {
+        const rect = button.getBoundingClientRect();
+        return !button.hidden && rect.right > dockBounds.left && rect.left < dockBounds.right;
+      });
       if (!choices.length) return;
+      const visibleX = Math.max(dockBounds.left, Math.min(dockBounds.right, x));
       const distance = (button: HTMLElement) => {
         const rect = button.getBoundingClientRect();
-        return Math.abs(x - rect.left - rect.width / 2);
+        return Math.abs(visibleX - rect.left - rect.width / 2);
       };
       const nearest = choices.reduce((best, button) => distance(button) < distance(best) ? button : best);
       candidate(nearest.dataset.minimapPreview!);
+    };
+    const edgeSpeed = () => {
+      if (!pointer?.held) return 0;
+      const bounds = dock.getBoundingClientRect();
+      if (scrubY < bounds.top - 64 || scrubY > bounds.bottom + 64) return 0;
+      const edge = Math.min(32, bounds.width / 4);
+      if (scrubX < bounds.left + edge && dock.scrollLeft > 0)
+        return -240 * Math.min(1, (bounds.left + edge - scrubX) / edge);
+      if (scrubX > bounds.right - edge && dock.scrollLeft < dock.scrollWidth - dock.clientWidth - 1)
+        return 240 * Math.min(1, (scrubX - bounds.right + edge) / edge);
+      return 0;
+    };
+    const scrollScrub = (now: number) => {
+      scrubFrame = 0;
+      const speed = edgeSpeed();
+      if (!speed) {scrubTime = 0; return;}
+      const elapsed = scrubTime ? Math.min(32, now - scrubTime) : 16;
+      scrubTime = now;
+      dock.scrollTo({left: dock.scrollLeft + speed * elapsed / 1000, behavior: "instant"});
+      scrub(scrubX, scrubY);
+      scrubFrame = requestAnimationFrame(scrollScrub);
+    };
+    const moveScrub = (x: number, y: number) => {
+      scrubX = x; scrubY = y;
+      scrub(x, y);
+      if (!scrubFrame && edgeSpeed()) scrubFrame = requestAnimationFrame(scrollScrub);
     };
     const update = () => {
       visibleCards = cards.filter(card => !card.hidden);
       shelf.hidden = visibleCards.length === 0;
       for (const button of toggles) button.hidden = !cardFor(button.dataset.minimapPreview);
       root.hidden = visibleCards.length < 2;
+      fitIndex();
       if (shelf.hidden || !rail.getClientRects().length) { retire(); motion.cancel(); return; }
       const railLeft = rail.getBoundingClientRect().left;
       cardLefts = visibleCards.map(card => rail.scrollLeft + card.getBoundingClientRect().left - railLeft);
       if (!cardFor(activeId)) highlight(cardFor(options.initialProduct) ? options.initialProduct! : productOf(visibleCards[0])!);
+      updateIndexEdges();
+      revealIndex(true);
     };
     const manualScroll = () => { motion.cancel(); retire(); };
     let dragTimer = 0, suppressRailClickUntil = 0;
@@ -232,7 +334,7 @@ export function initializeGameLibrary(options: {
     }, { passive: false });
     new ResizeObserver(() => {
       update();
-      if (options.onSelectionChange) select(activeId, false, true);
+      if (options.alignSelectionOnResize && !rail.closest("[inert]")) select(activeId, false, true);
     }).observe(rail);
     new MutationObserver(update).observe(rail, { subtree: true, attributes: true, attributeFilter: ["hidden"] });
     rail.addEventListener("keydown", event => {
@@ -283,7 +385,8 @@ export function initializeGameLibrary(options: {
         }
         if (!pointer?.held) return;
       }
-      scrub(event.clientX, event.clientY);
+      event.preventDefault();
+      moveScrub(event.clientX, event.clientY);
     });
     document.addEventListener("pointerup", event => {
       if (pointer?.id !== event.pointerId) return;

@@ -14,6 +14,7 @@ import { createFirstUseNoticeController } from "./first-use-notice.mjs";
 import { hostOriginMigrationAvailable } from "../contracts/host-manifest.mjs";
 import { createMultiplayerGuideController } from "./multiplayer-guide.mjs";
 import { createNetworkDiagnosticsController } from "./network-diagnostics.mjs";
+import { encodeRoomInvite, ROOM_INVITE_KEY } from "./room-invite.mjs";
 
 type Seat = { initial: string; ready: boolean; online: boolean; controlMode: ReturnType<typeof multiplayerControlMode> } | null;
 type Room = { product: MultiplayerProductId; code: string; capacity: 2 | 3; players: number; ready: number;
@@ -424,8 +425,11 @@ function renderFilters() {
     button.title = titleFor(product);
     return button;
   });
-  el("filters").replaceChildren(...filters);
-  library = initializeGameLibrary({ initialProduct: selectedProduct, onSelectionChange: product => selectProduct(product) });
+  const dock = document.createElement("div");
+  dock.className = "minimap-dock";
+  dock.append(...filters);
+  el("filters").replaceChildren(dock);
+  library = initializeGameLibrary({ initialProduct: selectedProduct, alignSelectionOnResize: true, onSelectionChange: product => selectProduct(product) });
 }
 function selectProduct(product: string, fromHistory = false) {
   if (selectedProduct === product || !isMultiplayerProductId(product) || !products.includes(product)) return;
@@ -738,17 +742,18 @@ function enterRoom(product: MultiplayerProductId, code: string, created: boolean
   if (created) sessions.save(product, { room: { code, playerCount: playerCount || policy.playerCounts[0], difficulty, created: true, visibility, disableCheatMovement }, seat: 0, ready: false, spectatorRequested: false, roomSettingsOpen: false });
   else sessions.clear(product);
   const url = new URL(launcherUrl);
-  url.searchParams.set("game", product);
-  url.searchParams.set("mpRoom", code);
-  url.searchParams.set("room", code);
-  url.searchParams.set("fromLobby", "1");
-  url.searchParams.set("lobbyAction", created ? "create" : "join");
-  if (created) {
-    url.searchParams.set("lobbyPlayers", String(playerCount || policy.playerCounts[0]));
-    url.searchParams.set("lobbyDifficulty", String(difficulty));
-    url.searchParams.set("lobbyVisibility", visibility);
-    url.searchParams.set("lobbyDisableCheatMovement", disableCheatMovement ? "1" : "0");
-  }
+  url.searchParams.set(ROOM_INVITE_KEY, encodeRoomInvite({
+    g: product,
+    r: code,
+    f: true,
+    a: created ? "create" : "join",
+    ...(created ? {
+      p: playerCount || policy.playerCounts[0],
+      d: difficulty,
+      v: visibility,
+      c: disableCheatMovement,
+    } : {}),
+  }));
   leaving = true;
   render();
   disconnect();
