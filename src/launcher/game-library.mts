@@ -101,6 +101,7 @@ export function initializeGameLibrary(options: {
     const cards = [...rail.querySelectorAll<HTMLAnchorElement>(".game")];
     cards.forEach(applyCoverAccent);
     const root = shelf.querySelector<HTMLElement>(".shelf-minimap")!;
+    const dock = root.querySelector<HTMLElement>(".minimap-dock")!;
     const toggles = [...root.querySelectorAll<HTMLButtonElement>(".minimap-toggle")];
     const motion = createRailMotion(rail, reduced);
     const productOf = (card: HTMLElement) => card.dataset.product || card.dataset.game;
@@ -109,6 +110,23 @@ export function initializeGameLibrary(options: {
     let visibleCards: HTMLAnchorElement[] = [];
     let cardLefts: number[] = [];
     let pointer: { id: number; x: number; y: number; held: boolean; choice: string | null; touch: boolean; owner: HTMLButtonElement } | null = null;
+    let scrubFrame = 0, scrubTime = 0, scrubX = 0, scrubY = 0;
+    const updateIndexEdges = () => {
+      dock.classList.toggle("is-overflowing", dock.scrollWidth > dock.clientWidth + 1);
+      dock.classList.toggle("can-scroll-left", dock.scrollLeft > 1);
+      dock.classList.toggle("can-scroll-right", dock.scrollLeft + dock.clientWidth < dock.scrollWidth - 1);
+    };
+    const revealIndex = (instant = false) => {
+      if (pointer?.held) return; // Do not move the numbers under a held finger.
+      const button = toggles.find(button => !button.hidden && button.dataset.minimapPreview === activeId);
+      if (!button) return;
+      const bounds = dock.getBoundingClientRect(), target = button.getBoundingClientRect();
+      const delta = target.left < bounds.left + 18 ? target.left - bounds.left - 18
+        : target.right > bounds.right - 18 ? target.right - bounds.right + 18 : 0;
+      if (delta) dock.scrollTo({left: dock.scrollLeft + delta, behavior: instant || reduced() ? "instant" : "smooth"});
+    };
+    dock.addEventListener("scroll", updateIndexEdges, {passive: true});
+    new ResizeObserver(() => {updateIndexEdges(); revealIndex(true);}).observe(dock);
     const highlight = (id: string) => {
       if (activeId === id) return;
       activeId = id;
@@ -123,6 +141,7 @@ export function initializeGameLibrary(options: {
     const cancelHold = () => {
       const previousPointer = pointer;
       clearTimeout(holdTimer); holdTimer = 0; pointer = null;
+      cancelAnimationFrame(scrubFrame); scrubFrame = 0; scrubTime = 0;
       if (previousPointer?.owner.hasPointerCapture(previousPointer.id)) previousPointer.owner.releasePointerCapture(previousPointer.id);
       root.classList.remove("is-holding");
       root.classList.remove("is-scrubbing");
@@ -132,6 +151,7 @@ export function initializeGameLibrary(options: {
       const card = cardFor(id);
       if (!card) return;
       highlight(id!);
+      revealIndex(settle);
       // Match the rail gutter in one motion. Free scrolling has no CSS snap
       // correction, so small wheel deltas and touch momentum stay continuous.
       const index = visibleCards.indexOf(card);
@@ -157,25 +177,58 @@ export function initializeGameLibrary(options: {
       if (!pointer || pointer.held || document.hidden || !pointer.owner.getClientRects().length) return;
       clearTimeout(holdTimer); holdTimer = 0;
       pointer.held = true;
+      // Stop a previous reveal animation before the finger owns the index.
+      dock.scrollTo({left: dock.scrollLeft, behavior: "instant"});
       if (!pointer.owner.hasPointerCapture(pointer.id)) pointer.owner.setPointerCapture(pointer.id);
       root.classList.remove("is-holding"); root.classList.add("is-scrubbing");
       const id = pointer.owner.dataset.minimapPreview!;
       candidate(id);
+      moveScrub(pointer.x, pointer.y);
     };
     const scrub = (x: number, y: number) => {
-      const dockBounds = root.getBoundingClientRect();
+      const dockBounds = dock.getBoundingClientRect();
       if (y < dockBounds.top - 64 || y > dockBounds.bottom + 64) return;
       // A scrub is a continuous horizontal track, not isolated button hit tests.
       // Include the gaps and tolerate vertical finger drift; pointer capture may
       // keep event.target on the starting button throughout a touch gesture.
-      const choices = toggles.filter(button => !button.hidden);
+      const choices = toggles.filter(button => {
+        const rect = button.getBoundingClientRect();
+        return !button.hidden && rect.right > dockBounds.left && rect.left < dockBounds.right;
+      });
       if (!choices.length) return;
+      const visibleX = Math.max(dockBounds.left, Math.min(dockBounds.right, x));
       const distance = (button: HTMLElement) => {
         const rect = button.getBoundingClientRect();
-        return Math.abs(x - rect.left - rect.width / 2);
+        return Math.abs(visibleX - rect.left - rect.width / 2);
       };
       const nearest = choices.reduce((best, button) => distance(button) < distance(best) ? button : best);
       candidate(nearest.dataset.minimapPreview!);
+    };
+    const edgeSpeed = () => {
+      if (!pointer?.held) return 0;
+      const bounds = dock.getBoundingClientRect();
+      if (scrubY < bounds.top - 64 || scrubY > bounds.bottom + 64) return 0;
+      const edge = Math.min(32, bounds.width / 4);
+      if (scrubX < bounds.left + edge && dock.scrollLeft > 0)
+        return -240 * Math.min(1, (bounds.left + edge - scrubX) / edge);
+      if (scrubX > bounds.right - edge && dock.scrollLeft < dock.scrollWidth - dock.clientWidth - 1)
+        return 240 * Math.min(1, (scrubX - bounds.right + edge) / edge);
+      return 0;
+    };
+    const scrollScrub = (now: number) => {
+      scrubFrame = 0;
+      const speed = edgeSpeed();
+      if (!speed) {scrubTime = 0; return;}
+      const elapsed = scrubTime ? Math.min(32, now - scrubTime) : 16;
+      scrubTime = now;
+      dock.scrollTo({left: dock.scrollLeft + speed * elapsed / 1000, behavior: "instant"});
+      scrub(scrubX, scrubY);
+      scrubFrame = requestAnimationFrame(scrollScrub);
+    };
+    const moveScrub = (x: number, y: number) => {
+      scrubX = x; scrubY = y;
+      scrub(x, y);
+      if (!scrubFrame && edgeSpeed()) scrubFrame = requestAnimationFrame(scrollScrub);
     };
     const update = () => {
       visibleCards = cards.filter(card => !card.hidden);
@@ -186,6 +239,8 @@ export function initializeGameLibrary(options: {
       const railLeft = rail.getBoundingClientRect().left;
       cardLefts = visibleCards.map(card => rail.scrollLeft + card.getBoundingClientRect().left - railLeft);
       if (!cardFor(activeId)) highlight(cardFor(options.initialProduct) ? options.initialProduct! : productOf(visibleCards[0])!);
+      updateIndexEdges();
+      revealIndex(true);
     };
     const manualScroll = () => { motion.cancel(); retire(); };
     let dragTimer = 0, suppressRailClickUntil = 0;
@@ -296,7 +351,8 @@ export function initializeGameLibrary(options: {
         }
         if (!pointer?.held) return;
       }
-      scrub(event.clientX, event.clientY);
+      event.preventDefault();
+      moveScrub(event.clientX, event.clientY);
     });
     document.addEventListener("pointerup", event => {
       if (pointer?.id !== event.pointerId) return;
