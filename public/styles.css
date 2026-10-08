@@ -1157,13 +1157,13 @@ body:has(.library-layout) .site-footer{background:none}
 .game-rail.is-dragging,.game-rail.is-dragging *{cursor:grabbing!important}
 @media(hover:hover) and (pointer:fine){.main.library-layout .game-rail .game{cursor:grab}}
 /* A quiet number index; the named directory appears only on deliberate hold. */
-.shelf-minimap{position:relative;z-index:5;display:flex;flex-direction:column;align-items:stretch;width:max-content;max-width:100%;margin:0 auto;min-height:44px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.shelf-minimap{position:relative;z-index:5;display:flex;flex-direction:column;align-items:stretch;width:max-content;max-width:min(320px,calc(100% - 16px));margin:0 auto;min-height:44px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .shelf-minimap[hidden],.minimap-toggle[hidden]{display:none}
 .shelf-minimap>.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
-.minimap-dock{display:flex;gap:8px;max-width:100%;padding:4px;background:none;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain;--fade-left:0px;--fade-right:0px;-webkit-mask-image:linear-gradient(to right,transparent,#000 var(--fade-left),#000 calc(100% - var(--fade-right)),transparent);mask-image:linear-gradient(to right,transparent,#000 var(--fade-left),#000 calc(100% - var(--fade-right)),transparent)}
+.minimap-dock{display:flex;gap:2px;max-width:100%;padding:4px;background:none;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain;--fade-left:0px;--fade-right:0px;-webkit-mask-image:linear-gradient(to right,transparent,#000 var(--fade-left),#000 calc(100% - var(--fade-right)),transparent);mask-image:linear-gradient(to right,transparent,#000 var(--fade-left),#000 calc(100% - var(--fade-right)),transparent)}
 .minimap-dock::-webkit-scrollbar{display:none}
-.minimap-dock.can-scroll-left{--fade-left:18px}
-.minimap-dock.can-scroll-right{--fade-right:18px}
+.minimap-dock.can-scroll-left{--fade-left:4px}
+.minimap-dock.can-scroll-right{--fade-right:4px}
 .minimap-toggle{position:relative;display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;padding:0;border:0;border-radius:14px;background:transparent;color:#8e8982;cursor:pointer;touch-action:pan-y pinch-zoom;-webkit-tap-highlight-color:transparent;transition:color .15s ease,background-color .15s ease,transform 75ms ease-out}
 .minimap-index{display:block;font:600 16px/1 var(--art-font);letter-spacing:.04em}
 .minimap-toggle.is-current{background:#f1e4e6;color:#b33142}

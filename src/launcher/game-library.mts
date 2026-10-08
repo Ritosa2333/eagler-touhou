@@ -1,3 +1,12 @@
+/** Overflow deliberately ends halfway through the following full-size target. */
+export function libraryIndexWidth(count: number, available: number, target = 44, gap = 2, padding = 4) {
+  const limit = Math.max(target, Math.min(320, available - 16));
+  const full = count * target + Math.max(0, count - 1) * gap + padding * 2;
+  if (full <= limit) return full;
+  const whole = Math.max(1, Math.floor((limit - padding - target / 2) / (target + gap)));
+  return Math.min(limit, padding + whole * (target + gap) + target / 2);
+}
+
 // Sample each decoded cover once, sharing the result between solo and MP cards.
 // A light, restrained accent keeps a clear tonal outline on the dark surface.
 const coverAccents = new Map<string, string>();
@@ -111,6 +120,21 @@ export function initializeGameLibrary(options: {
     let cardLefts: number[] = [];
     let pointer: { id: number; x: number; y: number; held: boolean; choice: string | null; touch: boolean; owner: HTMLButtonElement } | null = null;
     let scrubFrame = 0, scrubTime = 0, scrubX = 0, scrubY = 0;
+    let indexStep = 46, indexSettleTimer = 0;
+    const fitIndex = () => {
+      const available = toggles.filter(button => !button.hidden);
+      const target = available[0]?.offsetWidth || 44;
+      const style = getComputedStyle(dock);
+      const gap = parseFloat(style.columnGap) || 0, padding = parseFloat(style.paddingLeft) || 0;
+      indexStep = target + gap;
+      root.style.width = `${libraryIndexWidth(available.length, shelf.clientWidth, target, gap, padding)}px`;
+    };
+    const snapIndex = () => {
+      if (pointer?.held || !dock.getClientRects().length) return;
+      const maximum = Math.max(0, dock.scrollWidth - dock.clientWidth);
+      const left = Math.max(0, Math.min(maximum, Math.round(dock.scrollLeft / indexStep) * indexStep));
+      if (Math.abs(left - dock.scrollLeft) > .5) dock.scrollTo({left, behavior: "instant"});
+    };
     const updateIndexEdges = () => {
       dock.classList.toggle("is-overflowing", dock.scrollWidth > dock.clientWidth + 1);
       dock.classList.toggle("can-scroll-left", dock.scrollLeft > 1);
@@ -123,10 +147,18 @@ export function initializeGameLibrary(options: {
       const bounds = dock.getBoundingClientRect(), target = button.getBoundingClientRect();
       const delta = target.left < bounds.left + 18 ? target.left - bounds.left - 18
         : target.right > bounds.right - 18 ? target.right - bounds.right + 18 : 0;
-      if (delta) dock.scrollTo({left: dock.scrollLeft + delta, behavior: instant || reduced() ? "instant" : "smooth"});
+      if (delta) {
+        const destination = dock.scrollLeft + delta;
+        const left = delta > 0 ? Math.ceil(destination / indexStep) * indexStep : Math.floor(destination / indexStep) * indexStep;
+        dock.scrollTo({left, behavior: instant || reduced() ? "instant" : "smooth"});
+      }
     };
-    dock.addEventListener("scroll", updateIndexEdges, {passive: true});
-    new ResizeObserver(() => {updateIndexEdges(); revealIndex(true);}).observe(dock);
+    dock.addEventListener("scroll", () => {
+      updateIndexEdges();
+      clearTimeout(indexSettleTimer);
+      if (!pointer?.held) indexSettleTimer = window.setTimeout(snapIndex, 120);
+    }, {passive: true});
+    new ResizeObserver(() => {fitIndex(); updateIndexEdges(); revealIndex(true); snapIndex();}).observe(dock);
     const highlight = (id: string) => {
       if (activeId === id) return;
       activeId = id;
@@ -141,6 +173,7 @@ export function initializeGameLibrary(options: {
     const cancelHold = () => {
       const previousPointer = pointer;
       clearTimeout(holdTimer); holdTimer = 0; pointer = null;
+      clearTimeout(indexSettleTimer); indexSettleTimer = 0;
       cancelAnimationFrame(scrubFrame); scrubFrame = 0; scrubTime = 0;
       if (previousPointer?.owner.hasPointerCapture(previousPointer.id)) previousPointer.owner.releasePointerCapture(previousPointer.id);
       root.classList.remove("is-holding");
@@ -235,6 +268,7 @@ export function initializeGameLibrary(options: {
       shelf.hidden = visibleCards.length === 0;
       for (const button of toggles) button.hidden = !cardFor(button.dataset.minimapPreview);
       root.hidden = visibleCards.length < 2;
+      fitIndex();
       if (shelf.hidden || !rail.getClientRects().length) { retire(); motion.cancel(); return; }
       const railLeft = rail.getBoundingClientRect().left;
       cardLefts = visibleCards.map(card => rail.scrollLeft + card.getBoundingClientRect().left - railLeft);

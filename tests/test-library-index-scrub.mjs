@@ -4,7 +4,16 @@ import {test} from 'node:test';
 import {build} from 'esbuild';
 
 const compiled = await build({entryPoints: [new URL('../src/launcher/game-library.mts', import.meta.url).pathname.replace(/^\/(\w:)/, '$1')], bundle: true, format: 'esm', write: false});
-const {initializeGameLibrary} = await import(`data:text/javascript;base64,${Buffer.from(compiled.outputFiles[0].text).toString('base64')}`);
+const {initializeGameLibrary, libraryIndexWidth} = await import(`data:text/javascript;base64,${Buffer.from(compiled.outputFiles[0].text).toString('base64')}`);
+
+test('overflow leaves half of the next target, while short indexes fit completely', () => {
+  for (const available of [274, 304, 360, 1200]) {
+    const width = libraryIndexWidth(8, available);
+    assert.ok(width < Math.min(available, 320));
+    assert.equal((width - 4) % 46, 22, 'the right edge cuts the next 44px target in half');
+  }
+  assert.equal(libraryIndexWidth(5, 360), 236);
+});
 
 function fixture() {
   let now = 0, serial = 0, opens = 0;
@@ -13,7 +22,7 @@ function fixture() {
   class Element {
     constructor() {
       this.handlers = new Map(); this.attributes = new Map(); this.dataset = {}; this.hidden = false;
-      this.scrollLeft = 0; this.clientWidth = 260; this.scrollWidth = 416;
+      this.scrollLeft = 0; this.clientWidth = 260; this.scrollWidth = 374;
       const classes = new Set();
       this.classList = {contains: name => classes.has(name), add: (...names) => names.forEach(name => classes.add(name)), remove: (...names) => names.forEach(name => classes.delete(name)),
         toggle: (name, force) => {if (force ?? !classes.has(name)) classes.add(name); else classes.delete(name);}};
@@ -35,9 +44,10 @@ function fixture() {
     click() {opens++;}
   }
   const shelf = new Element(), rail = new Element(), root = new Element(), dock = new Element();
+  root.style = {set width(value) {dock.clientWidth = root.clientWidth = parseFloat(value);}};
   const ids = ['th06', 'th07', 'th08', 'th09', 'th10', 'th11', 'th15', 'th20'];
   const cards = ids.map((id, index) => {const item = new Element(); item.dataset.product = id; item.getBoundingClientRect = () => rect(20 + index * 250 - rail.scrollLeft, 240); return item;});
-  const buttons = ids.map((id, index) => {const item = new Element(); item.dataset.minimapPreview = id; item.getBoundingClientRect = () => rect(24 + index * 52 - dock.scrollLeft, 44); return item;});
+  const buttons = ids.map((id, index) => {const item = new Element(); item.dataset.minimapPreview = id; item.getBoundingClientRect = () => rect(24 + index * 46 - dock.scrollLeft, 44); return item;});
   rail.scrollWidth = 2000;
   shelf.querySelector = selector => selector === '.game-rail' ? rail : root;
   rail.querySelectorAll = selector => selector === '.game' ? cards : [];
@@ -47,6 +57,7 @@ function fixture() {
   const window = new Element();
   const set = (callback, delay) => {const id = ++serial; timers.set(id, {at: now + delay, callback}); return id;};
   Object.assign(globalThis, {document, window, Node: Element, matchMedia: () => ({matches: false}),
+    getComputedStyle: () => ({columnGap: '2px', paddingLeft: '4px'}),
     ResizeObserver: class {observe() {}}, MutationObserver: class {observe() {}},
     requestAnimationFrame: callback => {const id = ++serial; frames.set(id, callback); return id;}, cancelAnimationFrame: id => frames.delete(id),
     setTimeout: set, clearTimeout: id => timers.delete(id), performance: {now: () => now}});
@@ -74,7 +85,7 @@ test('long hold selects continuously, reaches offscreen titles at either edge, a
   const f = fixture(); f.down(); f.advance(352);
   assert.equal(f.root.classList.contains('is-scrubbing'), true);
   f.move(276); f.advance(1400);
-  assert.equal(f.selected, 'th20'); assert.equal(f.dock.scrollLeft, 156);
+  assert.equal(f.selected, 'th20'); assert.equal(f.dock.scrollLeft, f.dock.scrollWidth - f.dock.clientWidth);
   f.move(21); f.advance(1400);
   assert.equal(f.selected, 'th06'); assert.equal(f.dock.scrollLeft, 0);
   f.move(276); f.advance(160); f.up(276);
@@ -86,7 +97,7 @@ test('long hold selects continuously, reaches offscreen titles at either edge, a
 });
 
 test('horizontal intent scrubs immediately; cancellation stops edge motion', () => {
-  const f = fixture(); f.down(); f.move(210);
+  const f = fixture(); f.down(); f.move(180);
   assert.equal(f.selected, 'th09'); assert.equal(f.root.classList.contains('is-scrubbing'), true);
   f.move(276); f.advance(160); f.cancel();
   const stopped = f.dock.scrollLeft; f.advance(800);
@@ -97,4 +108,13 @@ test('vertical page intent before the hold does not select or acquire a scrub', 
   const f = fixture(); f.down(); f.move(46, {clientY: 90}); f.advance(600);
   assert.equal(f.selected, 'th06'); assert.equal(f.root.classList.contains('is-scrubbing'), false);
   assert.equal(f.dock.scrollLeft, 0); assert.equal(f.frames.size, 0);
+});
+
+test('a stopped index aligns its overflow hint instead of ending inside a gap', () => {
+  const f = fixture();
+  f.dock.scrollTo({left: 60}); f.advance(300);
+  assert.equal(f.dock.scrollLeft, 46);
+  assert.equal((f.dock.clientWidth - 4 + f.dock.scrollLeft) % 46, 22);
+  assert.equal(f.selected, 'th06', 'aligning the hint does not select a game');
+  assert.equal(f.opens, 0);
 });
