@@ -9,6 +9,7 @@ const exports=['_malloc','_free','_th12_load_ecl','_th12_load_msg','_th12_select
 const cache=path.join(root,'artifacts/emscripten-cache');fs.mkdirSync(cache,{recursive:true});
 exports.push('_th12_message','_th12_message_size','_th12_spell','_th12_spell_size');
 exports.push('_th12_ufo','_th12_ufo_size');
+exports.push('_th12_start_replay');
 exports.push('_th12_boss_hud','_th12_boss_hud_size','_th12_music_track','_th12_music_serial');
 exports.push('_th12_load_anm','_th12_load_std','_th12_background','_th12_background_size');
 exports.push('_th12_unload_anm');

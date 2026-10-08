@@ -23,8 +23,10 @@ void bindEnemyAnimation(Enemy& e, int slot, int script) {
     return;
   }
   animationScene.bind(enemyAnimationKey(e.id, slot), e.id, e.bank, script,
-                      anm_logic::Membership::Primary, e.x, e.y, {}, false, nullptr, 224, 16, 0,
-                      false, e.z);
+                      // 415b70 seeds offset+7 before script op68;41c723
+                      // registers at the Primary head, not the tail.
+                      anm_logic::Membership::Primary, e.x, e.y, {}, true, nullptr, 224, 16,
+                      std::max(0, int(u32(e.animationLayerOffset) + 7u)), false, e.z);
   if (e.flags & 32u)
     animationScene.drawEnabled(enemyAnimationKey(e.id, slot), false);
 }

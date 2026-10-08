@@ -84,6 +84,8 @@ struct State {
   int protection = 0;
   uint32_t activeExtensions = 0;
   int cursor = 0;
+  float mirrorSpeed = 0;
+  int mirrorRemaining = 0, mirrorFlags = 0;
   Parameters parameters{};
   Acceleration scalarAcceleration{}, polarAcceleration{};
   std::vector<Node> nodes{};
@@ -104,6 +106,7 @@ public:
   virtual void updateAnimationGeometry(Laser&, Role, const AnimationGeometry&) {}
   virtual bool tickAnimation(Laser&, Role) { return false; }
   virtual void finishAnimationBirth(Laser&, Role) {}
+  virtual void blendControl(Laser&, int) {}
   virtual void retireAnimation(Laser&, Role) {}
   virtual void sound(int, float) {}
   virtual void emitBullet(const eb::Emission&) {}
@@ -125,7 +128,7 @@ public:
   virtual int query(const Vec3&, float radius) const;
   virtual int clearAll(Manager&, World&, bool convert, bool force);
   virtual int clearRectangle(Manager&, World&, const Vec3&, const Vec3&, bool convert, bool force);
-  virtual int clearCircle(Manager&, World&, const Vec3&, float, bool convert, bool force);
+  virtual int clearCircle(Manager&, World&, const Vec3&, float, uint32_t cancelFlags, bool force);
   void bind(World&);
   void retire(World&);
 
@@ -150,7 +153,7 @@ public:
   bool update(Manager&, World&) override;
   int clearAll(Manager&, World&, bool, bool) override;
   int clearRectangle(Manager&, World&, const Vec3&, const Vec3&, bool, bool) override;
-  int clearCircle(Manager&, World&, const Vec3&, float, bool, bool) override;
+  int clearCircle(Manager&, World&, const Vec3&, float, uint32_t, bool) override;
 };
 class Manager {
 public:
@@ -161,8 +164,9 @@ public:
   std::vector<Laser*> ordered();
   std::vector<const Laser*> ordered() const;
   int clearAll(World&, bool convert = false, bool force = false);
+  void clearPhaseEnd(World&); // ECL445: reset protection/grace, include retiring nodes.
   int clearRectangle(World&, const Vec3&, const Vec3&, bool convert = false, bool force = false);
-  int clearCircle(World&, const Vec3&, float, bool convert = false, bool force = false);
+  int clearCircle(World&, const Vec3&, float, uint32_t cancelFlags = 0, bool force = false);
   int query(const Vec3&, float) const;
   int clearId(World&, int lookupId);
   void reset(World* world = nullptr);

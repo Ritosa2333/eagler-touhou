@@ -58,6 +58,8 @@ int generate_geometry(int kind, const float* f, const uint32_t* w, const float* 
     mesh = custom_geometry::flatQuad(s, region, origin, s.rotation, s.sx, s.sy);
   else if (kind == 2)
     mesh = custom_geometry::curveLaser(l, s, region);
+  else if (kind == 4)
+    mesh = custom_geometry::spellRing(s, region, origin);
   else
     mesh = custom_geometry::straightLaser(l, s, region);
   return int(mesh.vertices.size());

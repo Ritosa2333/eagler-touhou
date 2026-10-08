@@ -57,6 +57,14 @@ public:
   void interruptAnimation(laser::Laser& object, laser::Role role, int code) override {
     animationScene.interrupt(laserAnimationKey(object.state.serialId, role), code);
   }
+  void blendControl(laser::Laser& object, int blend) override {
+    if (auto* node =
+            animationScene.find(laserAnimationKey(object.state.serialId, laser::Role::Main))) {
+      auto& pose = node->vm.control();
+      pose.flags = (pose.flags & ~0xe0u) | (u32(blend & 1) << 5);
+      pose.blend = blend & 1;
+    }
+  }
   void updateAnimationGeometry(laser::Laser& object, laser::Role role,
                                const laser::AnimationGeometry& g) override {
     auto p = g.position;
@@ -99,14 +107,12 @@ public:
   void emitBullet(const eb::Emission& emission) override { emitHostileEmission(emission, false); }
   uint32_t next32() override { return random.next32(); }
   float unit() override { return random.unit(); }
-  void spawnCancelEffect(const laser::Vec3& p, int script, float angle, float) override {
-    Enemy origin;
-    origin.x = p.x;
-    origin.y = p.y;
-    const auto serial = nextDetachedAnimation;
-    detachedAnimation(0, script, origin, false);
-    if (auto* node = animationScene.find(0x100000000ull + serial))
-      node->vm.control().rotation = angle;
+  void spawnCancelEffect(const laser::Vec3& p, int script, float, float) override {
+    // 42ba22/42a907: ordinary Primary-tail factory, initial layer23. The
+    //  cancellation burst retains the ANM script's rotation, not the beam angle.
+    const auto serial = nextDetachedAnimation++;
+    animationScene.bind(0x100000000ull + serial, 0, 0, script, anm_logic::Membership::Primary, p.x,
+                        p.y, {}, false, nullptr, 224, 16, 23, false, p.z);
   }
   void pointItem(const laser::Vec3& p, int type, float angle, float speed) override {
     itemManager.spawn(type, {p.x, p.y}, angle, speed);
@@ -154,12 +160,5 @@ int spawnLaser(Enemy& e, Shooter& shooter, laser::Kind kind, int lookupId) {
 }
 void tickLasers() {
   laserManager.tick(laserWorld);
-}
-void clearBombLasers() {
-  for (const auto& a : playerBomb.rectangles)
-    if (a.enabled)
-      laserManager.clearRectangle(laserWorld, {a.x, a.y, 0}, {a.width, a.height, 0}, !spell, true);
-  for (const auto& a : playerBomb.circles)
-    laserManager.clearCircle(laserWorld, {a.x, a.y, 0}, a.radius, !spell, true);
 }
 } // namespace th12

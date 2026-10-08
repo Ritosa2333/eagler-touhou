@@ -41,7 +41,7 @@ export class StageBackground {
   sample(frame){frame=Math.max(0,Math.min(100000,frame|0));while(this.frames.length<=frame)this.tick();return this.frames[frame];}
   geometry(frame,logicalState=null){
     const authoritative=!!logicalState?.loaded,flags=logicalState?.flags??1,poses=authoritative?new Map(logicalState.poses.map(row=>[row[0],row])):null;
-    const camera=authoritative?logicalBackgroundCamera(logicalState.camera):this.sample(frame),z=unit(camera.viewDirection??camera.direction),x=unit(cross(camera.up,z)),y=cross(z,x),viewport=this.data.viewport??[13,0,422,480],viewportCenter=[viewport[0]+viewport[2]/2,viewport[1]+viewport[3]/2],focal=viewport[3]/2/Math.tan(camera.fov/2),triangles=[];
+    const camera=authoritative?logicalBackgroundCamera(logicalState.camera):this.sample(frame),z=unit(camera.viewDirection??camera.direction),x=unit(cross(camera.up,z)),y=cross(z,x),viewport=this.data.viewport??[13,0,422,480],screenShake=camera.screenShake??[0,0],viewportCenter=[viewport[0]+viewport[2]/2+screenShake[0],viewport[1]+viewport[3]/2+screenShake[1]],focal=viewport[3]/2/Math.tan(camera.fov/2),triangles=[];
     if(authoritative&&(flags&8))return {camera,triangles,authoritative,frame:logicalState.frame};
     for(const instance of this.data.instances){const object=this.data.objects[instance.object];
       // 40396e/403d45 gates both STD object-layer groups0..7 and8..11.

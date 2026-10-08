@@ -4,6 +4,26 @@
 
 namespace th12 {
 void finishEnemyUpdate(Enemy& e);
+void synchronizeEnemyAnimations(Enemy& e) {
+  // 414220..4142b4 runs after ECL and callbacks. Per-slot offsets live on
+  // Enemy; parent-slot linking adds only that VM's script XYZ, not its engine.
+  for (int slot = 0; slot < 16; ++slot)
+    if (e.animationBound[slot])
+      if (auto* node = animationScene.find(enemyAnimationKey(e.id, slot))) {
+        const auto& offset = e.animationOffsets[slot];
+        std::array<float, 3> script{};
+        const int parent = e.animationParents[slot];
+        if (parent >= 0 && parent < 16)
+          if (const auto* source = animationScene.find(enemyAnimationKey(e.id, parent))) {
+            const auto& pose = source->vm.state();
+            script = {pose.x, pose.y, pose.z};
+          }
+        auto& pose = node->vm.control();
+        pose.engineX = float(double(e.x) + offset[0] + script[0]);
+        pose.engineY = float(double(e.y) + offset[1] + script[1]);
+        pose.engineZ = float(double(e.z) + offset[2] + script[2]);
+      }
+}
 bool resolveEnemyInterrupt(Enemy& e) {
   e.phaseLife = e.life;
   e.lifeThreshold = 0;
@@ -104,6 +124,7 @@ void finishEnemyUpdate(Enemy& e) {
       !e.bodyImmunityTicks) {
     customEnemyCollision(e);
   }
+  synchronizeEnemyAnimations(e);
   // 414a29..414a65: timers and age advance after interrupts and body collision.
   if (e.immunityTicks > 0)
     --e.immunityTicks;
@@ -179,10 +200,6 @@ Enemy* spawn(const std::string& sub, float x, float y, int life, int points, int
   Enemy* result = p.get();
   enemyOutside(*result);
   runContext(*result, result->contexts.front());
-  for (int slot = 0; slot < 16; ++slot)
-    if (result->animationBound[slot])
-      if (auto* node = animationScene.find(enemyAnimationKey(result->id, slot)))
-        node->vm.control().engineZ = result->z;
   // 412990 executes a complete birth update, then sets 20000. The next
   // 413840 call only clears that guard. Birth motion has zero initial speed.
   finishEnemyUpdate(*result);
@@ -254,6 +271,9 @@ void drop(Enemy& e) {
   enemyDeathVisual(e);
   dropItems(e); // Native414af0 creates the visual, drops, then calls Enemy+103c.
   if (e.isUfo) {
+    // 44af22 reads Enemy+1074 after this Enemy18 movement/hurt query. The
+    // UFO19 cached pose is still the preceding frame at this callback.
+    ufoManager.position = {e.x, e.y};
     applyUfoPlan(ufoManager.finish(e.id, resources, e.deathReason));
     ufoManager.notifyEnemyRemoved(e.id, e.deathReason == ufo_system::DeathReason::Dialogue
                                             ? ufo_system::RemovalReason::Dialogue
@@ -327,6 +347,7 @@ void tickEnemies() {
           m.ticks = 0;
       }
     }
+    bool absoluteQuantized = false, relativeQuantized = false;
     if (e.positionTicks) {
       ++e.positionTime;
       if (e.positionMode == 8) {
@@ -345,6 +366,7 @@ void tickEnemies() {
       e.absoluteCircle.radius =
           float(double(e.absoluteCircle.radius) + e.absoluteCircle.radialSpeed);
       circularPosition(e, false);
+      absoluteQuantized = true;
     } else {
       e.ax += float(std::cos(double(e.angle)) * e.speed);
       e.ay += float(std::sin(double(e.angle)) * e.speed);
@@ -368,24 +390,23 @@ void tickEnemies() {
       e.relativeCircle.radius =
           float(double(e.relativeCircle.radius) + e.relativeCircle.radialSpeed);
       circularPosition(e, true);
+      relativeQuantized = true;
     } else {
       e.rx += float(std::cos(double(e.relativeAngle)) * e.relativeSpeed);
       e.ry += float(std::sin(double(e.relativeAngle)) * e.relativeSpeed);
     }
-    e.ax = enemy_motion::quantize(e.ax);
-    e.ay = enemy_motion::quantize(e.ay);
-    e.rx = enemy_motion::quantize(e.rx);
-    e.ry = enemy_motion::quantize(e.ry);
-    combinePosition(e);
-    if (e.flags & 0x10000u) {
-      e.x = std::clamp(e.x, e.clampX - e.clampWidth * .5f, e.clampX + e.clampWidth * .5f);
-      e.y = std::clamp(e.y, e.clampY - e.clampHeight * .5f, e.clampY + e.clampHeight * .5f);
-      e.ax = float(double(e.x) - e.rx);
-      e.ay = float(double(e.y) - e.ry);
+    // Native464db0 calls465320 once per movement component. Circle geometry
+    // already did that floor in circularPosition; hundredth-pixel flooring is
+    // not idempotent at float boundaries (e.g. -4.53f floors again to -4.54f).
+    if (!absoluteQuantized) {
+      e.ax = enemy_motion::quantize(e.ax);
+      e.ay = enemy_motion::quantize(e.ay);
     }
-    for (int slot = 0; slot < 16; slot++)
-      if (e.animationBound[slot])
-        animationScene.position(enemyAnimationKey(e.id, slot), e.x, e.y);
+    if (!relativeQuantized) {
+      e.rx = enemy_motion::quantize(e.rx);
+      e.ry = enemy_motion::quantize(e.ry);
+    }
+    combinePosition(e);
     if (enemyOutside(e)) {
       e.active = false;
       if (e.isUfo)

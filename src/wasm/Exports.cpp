@@ -97,6 +97,12 @@ int th12_load_sht(int index, const uint8_t* p, int n) {
 void th12_start(int c, int s, int d, int seed) {
   th12::startGame(c, s, d, seed);
 }
+int th12_start_replay(int c, int s, int d, int seed, const int32_t* initial, int count) {
+  if (!initial || count != 17)
+    return 0;
+  th12::startGame(c, s, d, seed, initial);
+  return 1;
+}
 void th12_set_initial(int x, int y, int p, int life, int bomb, int points) {
   th12::setInitial(x, y, p, life, bomb, points);
 }

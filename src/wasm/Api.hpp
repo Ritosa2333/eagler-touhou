@@ -11,6 +11,8 @@ void th12_unload_anm(int);
 int th12_load_sht(int, const uint8_t*, int);
 void th12_select_stage(int);
 void th12_start(int character, int shot, int difficulty, int seed);
+int th12_start_replay(int character, int shot, int difficulty, int seed, const int32_t* initial,
+                      int count);
 void th12_oracle_fixture(int flags);
 void th12_set_initial(int x, int y, int power, int lives, int bombs, int score);
 void th12_set_replay_economy(int piv, int lifeFragments, int bombFragments, int red, int blue,

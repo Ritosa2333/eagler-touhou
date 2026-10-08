@@ -30,6 +30,7 @@ export function readCoreBackground(core){
   if(!Number.isInteger(ptr)||!Number.isInteger(size)||ptr<0||size<=0||size>4*1024*1024||ptr+size>core.HEAPU8.byteLength)throw Error('背景状态记录无效');
   const state=JSON.parse(new TextDecoder().decode(core.HEAPU8.subarray(ptr,ptr+size)).replace(/\0+$/,''));
   if(!state||![false,true,0,1].includes(state.loaded))throw Error('背景状态记录无效');
+  if(state.camera?.screenShake!==undefined&&(!Array.isArray(state.camera.screenShake)||state.camera.screenShake.length!==2||!state.camera.screenShake.every(Number.isFinite)))throw Error('背景画面震动记录无效');
   if(state.loaded){const c=state.camera;if(!c||!['position','direction','up'].every(k=>Array.isArray(c[k])&&c[k].length===3&&c[k].every(Number.isFinite))||!Number.isFinite(c.fov)||!Array.isArray(c.fog)||c.fog.length!==5||!c.fog.every(Number.isFinite)||!Array.isArray(state.poses)||state.poses.length>65536||!state.poses.every(p=>Array.isArray(p)&&p.length>=21&&p.slice(0,21).every(Number.isFinite)))throw Error('背景相机或姿态记录无效');}
   return state;
 }
@@ -56,6 +57,9 @@ export function readCoreAnimationPoses(core,stage=1){
       r:color[0],g:color[1],b:color[2],alpha:color[3],r2:secondary[0],g2:secondary[1],b2:secondary[2],alpha2:secondary[3],point:!!(flags2&2),visible:!!(flags&1),rotate:I(19)===1||I(19)===3};
     if(U(31)===1){a.nativeWidth=F(29);a.nativeHeight=F(30);}
     const owner=U(27);a.visible=(flags&3)===3;
+    // Original45c93e/45c95b tests primary alpha even when flag10000 selects
+    // secondary color. A secondary alpha cannot revive a faded mode0/1 quad.
+    if((a.mode===0||a.mode===1)&&primary[3]===0)a.visible=false;
     poses.push({a,x:F(0),y:F(1),angle:0,scale:1,alpha:F(28),id:U(26),owner,logical:true,order:i});
   }return poses;
 }
@@ -76,11 +80,28 @@ export function readCoreMeshes(core,stage=1){
   const view=new DataView(core.HEAPU8.buffer),meshes=[];
   for(let i=0;i<count;i++){
     const at=ptr+i*stride,I=n=>view.getInt32(at+n*4,true),U=n=>view.getUint32(at+n*4,true),offset=U(10),length=U(11),primitive=U(5),pass=U(6);
-    if(offset+length>vertexCount||![4,5].includes(primitive)||pass>2)throw Error('网格顶点范围无效');
+    if(offset+length>vertexCount||![3,4,5].includes(primitive)||pass>2)throw Error('网格顶点范围无效');
     const vertices=[];
     for(let j=0;j<length;j++){const a=vertexPtr+(offset+j)*vertexStride,F=n=>view.getFloat32(a+n*4,true),color=view.getUint32(a+16,true);vertices.push({x:F(0),y:F(1),z:F(2),rhw:F(3),color,u:F(5),v:F(6)});}
-    meshes.push({mesh:true,vertices,primitive,renderPass:pass,drawPriority:I(7),owner:U(8),id:U(9),order:i,filter:U(12),addressFlags:U(13),a:{name:animationBankName(I(0),stage),sprite:I(1),entry:I(2),layer:I(3),blend:I(4)}});
+    meshes.push({mesh:true,vertices,primitive,untextured:I(0)===-1&&I(1)===-1,renderPass:pass,drawPriority:I(7),owner:U(8),id:U(9),order:i,filter:U(12),addressFlags:U(13),a:{name:animationBankName(I(0),stage),sprite:I(1),entry:I(2),layer:I(3),blend:I(4)}});
   }return meshes;
+}
+// Stage draw2/5 installs camera2's screen offset; draw42 clears it before
+// layer20 and the HUD. These are drawing coordinates, never game positions.
+export function shakePresentation(pose,offset=[0,0]){
+  offset=offset.map(Math.fround); // Snapshot JSON transports float32 globals.
+  if(pose.drawPriority>=42||(!offset[0]&&!offset[1]))return pose;
+  const shift=(x,y)=>[Math.fround(x+offset[0]),Math.fround(y+offset[1])];
+  // 459e50 shifts flat textured quads. 45c3a0/45d5d0 submits already formed
+  // XYZRHW strips/lines without camera translation; solid14..20 do likewise.
+  if(pose.mesh)return pose.primitive===4&&!pose.untextured?{...pose,vertices:pose.vertices.map(v=>{const [x,y]=shift(v.x,v.y);return {...v,x,y};})}:pose;
+  if(pose.a?.mode>=14)return pose;
+  // Ordinary quads construct their native corners before camera translation.
+  // Pre-shifting a center would change mode0's floor/nearest-even boundaries.
+  if(pose.nativeText)return {...pose,screenShake:offset};
+  if(pose.a&&(pose.a.mode===0||pose.a.mode===1))return {...pose,screenShake:offset};
+  if(Number.isFinite(pose.x)&&Number.isFinite(pose.y)){const [x,y]=shift(pose.x,pose.y);return {...pose,x,y};}
+  return pose;
 }
 export function fragmentInterrupt(index,whole,fragments=0){return index<whole?2:index===whole?7+Math.max(0,Math.min(5,fragments|0)):3;}
 export function groupedNumber(n){return String(Math.max(0,Math.round(n))).replace(/\B(?=(\d{3})+(?!\d))/g,',');}
@@ -97,6 +118,23 @@ export function quadCorners(x,y,w,h,angle=0,anchorX=0,anchorY=0,pixel=false){
   const left=anchorX===1?0:anchorX===2?-w:-w/2,top=anchorY===1?0:anchorY===2?-h:-h/2,c=Math.cos(angle),s=Math.sin(angle);
   return [[left,top],[left+w,top],[left+w,top+h],[left,top+h]].map(([a,b])=>{const px=x+a*c-b*s,py=y+a*s+b*c;return [pixel?nativePixel(px):px,pixel?nativePixel(py):py];});
 }
+// Original mode0:45a570 floors centered left/top, then459e50 adds screen
+// offset and rounds nearest-even. Mode1:45af10 rotates first and never rounds,
+// including zero rotation. WebGL omits D3D's final half-pixel subtraction.
+export function nativeQuadCorners(x,y,w,h,angle=0,anchorX=0,anchorY=0,mode=0,offset=[0,0]){
+  const f=Math.fround;[x,y,w,h,angle]=[x,y,w,h,angle].map(f);offset=offset.map(f);
+  if(mode===0){
+    const left=anchorX===1?x:anchorX===2?f(x-w):Math.floor(f(x-w/2)),
+      top=anchorY===1?y:anchorY===2?f(y-h):Math.floor(f(y-h/2)),
+      right=anchorX===2?x:f(left+w),bottom=anchorY===2?y:f(top+h);
+    return [[left,top],[right,top],[right,bottom],[left,bottom]].map(([a,b])=>
+      [nativePixel(f(a+offset[0])),nativePixel(f(b+offset[1]))]);
+  }
+  const left=anchorX===1?0:anchorX===2?-w:f(-w/2),
+    top=anchorY===1?0:anchorY===2?-h:f(-h/2),c=f(Math.cos(angle)),s=f(Math.sin(angle));
+  return [[left,top],[f(left+w),top],[f(left+w),f(top+h)],[left,f(top+h)]].map(([a,b])=>
+    [f(f(x+a*c-b*s)+offset[0]),f(f(y+a*s+b*c)+offset[1])]);
+}
 export class Renderer {
   constructor(canvas,atlases){
     this.canvas=canvas;this.atlases=atlases;this.textures=new Map();this.dialogueTextures=new Map();this.batch=[];this.current=null;this.blend=0;this.animations=new AnimationSampler(atlases);this.stageBackgrounds=new Map();this.stageJobs=new Map();this.requestedStage=1;
@@ -107,7 +145,8 @@ export class Renderer {
       void main(){gl_Position=vec4((position.x/320.0-1.0)*depthFog.x,(1.0-position.y/240.0)*depthFog.x,0,depthFog.x);texcoord=uv;tint=color;fog=depthFog.y;}`));
     gl.attachShader(p,compile(gl.FRAGMENT_SHADER,`#version 300 es
       precision mediump float;uniform sampler2D atlas;uniform vec3 fogColor;in vec2 texcoord;in vec4 tint;in float fog;out vec4 pixel;
-      void main(){pixel=texture(atlas,texcoord)*tint;pixel.rgb=mix(pixel.rgb,fogColor,clamp(fog,0.0,1.0));if(pixel.a<0.01)discard;}`));
+      // Native4512c8 sets ALPHAREF=1/255 and ALPHAFUNC=GREATEREQUAL.
+      void main(){pixel=texture(atlas,texcoord)*tint;pixel.rgb=mix(pixel.rgb,fogColor,clamp(fog,0.0,1.0));if(pixel.a<1.0/255.0)discard;}`));
     gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(p));gl.useProgram(p);
     this.buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,this.buffer);this.vao=gl.createVertexArray();gl.bindVertexArray(this.vao);
     for(const [slot,count,offset]of [[0,2,0],[1,2,8],[2,4,16],[3,2,32]]){gl.enableVertexAttribArray(slot);gl.vertexAttribPointer(slot,count,gl.FLOAT,false,40,offset);}
@@ -147,16 +186,22 @@ export class Renderer {
   region(name,entry,sx,sy,sw,sh,x,y,w,h,angle=0,alpha=1,tint=[1,1,1],blend=0,options={}){
     const texture=this.textures.get(name+':'+entry);if(!texture)return;
     this.material(blend);this.texture(texture,!!options.point);this.primitive(this.gl.TRIANGLES);
-    const corners=quadCorners(x,y,w,h,angle,options.anchorX||0,options.anchorY||0,!!options.pixel),du=options.u||0,dv=options.v||0;
+    const corners=options.nativeMode===0||options.nativeMode===1
+      ?nativeQuadCorners(x,y,w,h,angle,options.anchorX||0,options.anchorY||0,options.nativeMode,options.screenShake)
+      :quadCorners(x,y,w,h,angle,options.anchorX||0,options.anchorY||0,!!options.pixel),du=options.u||0,dv=options.v||0;
     const endX=sx+sw*(options.uvScaleX??1),endY=sy+sh*(options.uvScaleY??1);
     const uv=[[sx/texture.w+du,sy/texture.h+dv],[endX/texture.w+du,sy/texture.h+dv],[endX/texture.w+du,endY/texture.h+dv],[sx/texture.w+du,endY/texture.h+dv]];
     for(const i of [0,1,2,0,2,3])this.batch.push(...corners[i],...uv[i],...tint,alpha,1,0);
   }
   texture(texture,point=false,addressFlags=null){const g=this.gl,wrapU=addressFlags===null?(texture.defaultWrap??g.CLAMP_TO_EDGE):addressFlags&1?g.REPEAT:g.CLAMP_TO_EDGE,wrapV=addressFlags===null?(texture.defaultWrap??g.CLAMP_TO_EDGE):addressFlags&2?g.REPEAT:g.CLAMP_TO_EDGE;if(this.current!==texture||this.point!==point||this.wrapU!==wrapU||this.wrapV!==wrapV){this.flush();this.current=texture;this.point=point;this.wrapU=wrapU;this.wrapV=wrapV;g.bindTexture(g.TEXTURE_2D,texture.texture);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,point?g.NEAREST:g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,point?g.NEAREST:g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,wrapU);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,wrapV);}}
   mesh(p){
-    const texture=this.textures.get(p.a.name+':'+p.a.entry);if(!texture)return;
-    this.material(p.a.blend);this.texture(texture,p.filter===1,p.addressFlags);this.primitive(this.gl.TRIANGLES);
-    const emit=v=>this.batch.push(v.x,v.y,v.u,v.v,...argbRgba(v.color),v.rhw?1/v.rhw:1,0);
+    const texture=p.untextured?this.solid:this.textures.get(p.a.name+':'+p.a.entry);if(!texture)return;
+    this.material(p.a.blend);this.texture(texture,p.untextured||p.filter===1,p.addressFlags);
+    this.primitive(p.primitive===3?this.gl.LINE_STRIP:this.gl.TRIANGLES);
+    const emit=v=>this.batch.push(v.x,v.y,p.untextured ? .5 : v.u,p.untextured ? .5 : v.v,...argbRgba(v.color),v.rhw?1/v.rhw:1,0);
+    // Native45d5d0 submits each trail separately; batching two line strips
+    // together would draw a spurious segment between their endpoints.
+    if(p.primitive===3){this.flush();for(const v of p.vertices)emit(v);this.flush();return;}
     if(p.primitive===4)for(const v of p.vertices)emit(v);
     else for(let i=2;i<p.vertices.length;i++)for(const index of i&1?[i-1,i-2,i]:[i-2,i-1,i])emit(p.vertices[index]);
   }
@@ -177,16 +222,16 @@ export class Renderer {
     const x=p.x+Math.cos(p.angle)*p.length/2,y=p.y+Math.sin(p.angle)*p.length/2;
     this.region(p.a.name,s.entry,s.x,s.y,s.w,s.h,x,y,p.width,p.length,p.angle+Math.PI/2,p.alpha,p.tint,p.a.blend,{u:p.u,v:p.v});
   }
-  state(a,x,y,angle=0,scale=1,alpha=1){
+  state(a,x,y,angle=0,scale=1,alpha=1,screenShake=[0,0]){
     if(!a.visible)return;
     if(a.mode===14){if(a.alpha<=0)return;const color=[a.r,a.g,a.b,a.alpha*alpha],corners=quadCorners(x+a.x,y+a.y,a.geometryRadius*a.sx*scale,a.geometryWidth*a.sy*scale,a.rotation+angle);this.solidTriangles(corners.map(([x,y])=>({x,y,color})),[0,1,2,0,2,3],a.blend);return;}
     if(a.mode===15||a.mode===16){const count=a.geometryCount;if(count<3||count>512)return;const center=[a.r,a.g,a.b,a.alpha*alpha],edge=a.mode===15?[a.r2,a.g2,a.b2,a.alpha2*alpha]:center;if(center[3]<=0&&edge[3]<=0)return;const vertices=circleVertices(x+a.x,y+a.y,a.geometryRadius*a.sx*scale,a.rotation+angle,count,center,edge),indices=[];for(let i=1;i<=count;i++)indices.push(0,i,i+1);this.solidTriangles(vertices,indices,a.blend);return;}
-    const s=this.atlases[a.name]?.sprites[a.sprite];if(!s||a.alpha<=0)return;this.region(a.name,s.entry,s.x,s.y,s.w,s.h,x+a.x,y+a.y,(a.nativeWidth!==undefined&&a.nativeWidth!==-1?a.nativeWidth:s.w)*scale*a.sx,(a.nativeHeight!==undefined&&a.nativeHeight!==-1?a.nativeHeight:s.h)*scale*a.sy,a.rotate?a.rotation+angle:0,a.alpha*alpha,[a.r,a.g,a.b],a.blend,{anchorX:a.anchorX,anchorY:a.anchorY,u:a.u,v:a.v,uvScaleX:a.uvScaleX,uvScaleY:a.uvScaleY,pixel:a.mode===0||a.mode===1&&a.rotation+angle===0,point:a.point});
+    const s=this.atlases[a.name]?.sprites[a.sprite];if(!s||a.alpha<=0)return;this.region(a.name,s.entry,s.x,s.y,s.w,s.h,x+a.x,y+a.y,(a.nativeWidth!==undefined&&a.nativeWidth!==-1?a.nativeWidth:s.w)*scale*a.sx,(a.nativeHeight!==undefined&&a.nativeHeight!==-1?a.nativeHeight:s.h)*scale*a.sy,a.rotate?a.rotation+angle:0,a.alpha*alpha,[a.r,a.g,a.b],a.blend,{anchorX:a.anchorX,anchorY:a.anchorY,u:a.u,v:a.v,uvScaleX:a.uvScaleX,uvScaleY:a.uvScaleY,pixel:a.mode===0,nativeMode:a.mode,screenShake,point:a.point});
   }
   animation(name,id,age,x,y,angle=0,scale=1,variant=null,options={}){const {alpha=1,...sampling}=options;for(const a of this.animations.sampleAll(name,id,age,variant,sampling))this.state(a,x,y,angle,scale,alpha);}
   text(text,x,y,scale=1,tint=[1,1,1]){for(const c of String(text)){const s=this.atlases.ascii.sprites[c.charCodeAt(0)-32];if(s)this.region('ascii',s.entry,s.x,s.y,s.w,s.h,x+s.w*scale/2,y+s.h*scale/2,s.w*scale,s.h*scale,0,1,tint);x+=14*scale;}}
   hudText(text,x,y,scale=1,right=false){for(const p of hudGlyphs(text,x,y,scale,right)){const s=this.atlases.ascii.sprites[p.id];if(s)this.region('ascii',s.entry,s.x,s.y,s.w,s.h,p.x,p.y,s.w*scale,s.h*scale,0,1,[1,1,1],0,{anchorX:1,anchorY:1,point:true});}}
-  nativeText(descriptor){for(const p of asciiGlyphs(descriptor)){const s=this.atlases.ascii.sprites[p.id];if(!s)continue;const color=argbRgba(p.colorARGB);this.region('ascii',s.entry,s.x,s.y,s.w,s.h,p.x,p.y,s.w*p.scaleX,s.h*p.scaleY,0,color[3],color.slice(0,3),0,{anchorX:p.anchorX,anchorY:p.anchorY,point:p.point,pixel:true});}}
+  nativeText(descriptor,screenShake=[0,0]){for(const p of asciiGlyphs(descriptor)){const s=this.atlases.ascii.sprites[p.id];if(!s)continue;const color=argbRgba(p.colorARGB);this.region('ascii',s.entry,s.x,s.y,s.w,s.h,p.x,p.y,s.w*p.scaleX,s.h*p.scaleY,0,color[3],color.slice(0,3),0,{anchorX:p.anchorX,anchorY:p.anchorY,point:p.point,pixel:true,nativeMode:0,screenShake});}}
   hudCounters(h){
     this.hudText(groupedNumber(h[3]),620,72,1,true);this.hudText(groupedNumber(h[40]??h[3]),620,48,1,true);
     this.hudText(Math.floor(h[4]/100)+'.',540,152);this.hudText(String(Math.round(h[4])%100).padStart(2,'0'),560,159,.6);this.hudText('/4.',574,152);this.hudText('00',606,159,.6);
@@ -204,12 +249,12 @@ export class Renderer {
     const g=this.gl,texture=g.createTexture();this.flush();g.bindTexture(g.TEXTURE_2D,texture);g.texImage2D(g.TEXTURE_2D,0,g.RGBA,g.RGBA,g.UNSIGNED_BYTE,canvas);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);
     const result={texture,w:canvas.width,h:canvas.height};this.dialogueTextures.set(key,result);if(this.dialogueTextures.size>16){const oldest=this.dialogueTextures.keys().next().value,old=this.dialogueTextures.get(oldest);this.dialogueTextures.delete(oldest);g.deleteTexture(old.texture);}return result;
   }
-  dialogueLine(p){if(!p.text||p.a.alpha<=0)return;const texture=this.dialogueTexture(p.text,p.record,p.metrics,p.raster);this.material(p.a.blend??0);this.texture(texture,!!p.a.point);this.primitive(this.gl.TRIANGLES);const points=quadCorners(p.x,p.y,p.metrics.width*p.a.sx,p.metrics.height*p.a.sy,p.a.rotation??0,p.a.anchorX,p.a.anchorY),uv=[[0,0],[1,0],[1,1],[0,1]];for(const i of [0,1,2,0,2,3])this.batch.push(...points[i],...uv[i],p.a.r??1,p.a.g??1,p.a.b??1,p.a.alpha*p.alpha,1,0);}
+  dialogueLine(p){if(!p.text||p.a.alpha<=0)return;const texture=this.dialogueTexture(p.text,p.record,p.metrics,p.raster);this.material(p.a.blend??0);this.texture(texture,!!p.a.point);this.primitive(this.gl.TRIANGLES);const points=p.a.mode===0||p.a.mode===1?nativeQuadCorners(p.x,p.y,p.metrics.width*p.a.sx,p.metrics.height*p.a.sy,p.a.rotation??0,p.a.anchorX,p.a.anchorY,p.a.mode,p.screenShake):quadCorners(p.x,p.y,p.metrics.width*p.a.sx,p.metrics.height*p.a.sy,p.a.rotation??0,p.a.anchorX,p.a.anchorY),uv=[[0,0],[1,0],[1,1],[0,1]];for(const i of [0,1,2,0,2,3])this.batch.push(...points[i],...uv[i],p.a.r??1,p.a.g??1,p.a.b??1,p.a.alpha*p.alpha,1,0);}
   render(core){
     this.begin();const h=readCoreHud(core),frame=h[0];if(frame<this.lastFrame)this.animations=new AnimationSampler(this.atlases);this.lastFrame=frame;this.animations.beginFrame();
     const stage=Math.max(1,Math.min(7,h[39]||1)),stageSuffix=String(stage).padStart(2,'0');if(this.stageBackgrounds.has(stage))this.background=this.stageBackgrounds.get(stage);else if(!this.stageJobs.has(stage))this.prepareStage(stage).catch(error=>this.stageError=error);
     const g=this.gl;g.enable(g.SCISSOR_TEST);g.scissor(32,16,384,448);
-    const logicalBackground=readCoreBackground(core),background=this.background.geometry(logicalBackground?.frame??core._th12_background_frame?.()??frame,logicalBackground);g.uniform3fv(this.fogColor,background.camera.fog.slice(0,3));g.clearColor(...background.camera.fog.slice(0,3),1);g.clear(g.COLOR_BUFFER_BIT);
+    const logicalBackground=readCoreBackground(core),background=this.background.geometry(logicalBackground?.frame??core._th12_background_frame?.()??frame,logicalBackground),screenShake=logicalBackground?.camera?.screenShake??[0,0];g.uniform3fv(this.fogColor,background.camera.fog.slice(0,3));g.clearColor(...background.camera.fog.slice(0,3),1);g.clear(g.COLOR_BUFFER_BIT);
     this.primitive(g.TRIANGLES);if(background.authoritative||(core._th12_background_visible?.()??true))for(const triangle of background.triangles){const texture=this.textures.get(triangle.bank+':'+triangle.entry);if(!texture)continue;this.material(triangle.blend);this.texture(texture,triangle.point);for(const p of triangle.vertices)this.batch.push(p.x,p.y,p.u/texture.w,p.v/texture.h,p.r,p.g,p.b,p.alpha,p.depth,p.fog);}
     this.flush();
     const logicalPoses=readCoreAnimationPoses(core,stage),schedule=readCoreDrawSchedule(core),meshes=readCoreMeshes(core,stage),logicalOwners=new Set([...logicalPoses,...meshes].map(p=>p.owner)),message=readCoreMessage(core),spell=readCoreSpell(core);
@@ -246,9 +291,10 @@ export class Renderer {
     if(h.length>25&&!logicalPoses.some(p=>p.a.name==='front'&&(p.owner>>>16)===0xfffe))for(let i=0;i<3;i++){const color=h[23+i]|0;add('front',80,frame,0,0,0,1,null,{alpha:1,drawPriority:44,clipped:true,interrupts:[7+i,color?9+color:13,color?2:3]});}
     add('front',69+h[19],frame,0,0,0,1,null,{alpha:1,clipped:false});
     let currentClip=1;
-    for(const p of orderPresentation(poses,schedule)){
+    for(const originalPose of orderPresentation(poses,schedule)){
+      const p=shakePresentation(originalPose,screenShake);
       if(p.clip!==currentClip){this.flush();if(p.clip){g.enable(g.SCISSOR_TEST);if(p.clip===2)g.scissor(13,0,422,480);else g.scissor(32,16,384,448);}else g.disable(g.SCISSOR_TEST);currentClip=p.clip;}
-      if(p.nativeText)this.nativeText(p.nativeText);else if(p.hudCounters)this.hudCounters(h);else if(p.rectangle){const {bounds:[left,top,right,bottom],argb}=p.rectangle,color=argbRgba(argb);this.solidTriangles([[left,top],[right,top],[right,bottom],[left,bottom]].map(([x,y])=>({x,y,color})),[0,1,2,0,2,3],0);}else if(p.mesh)this.mesh(p);else if(p.laser)this.laserSegment(p);else if(p.dialogue)this.dialogueLine(p);else if(p.beamTrail)this.beamTrail(p.x,p.y,p.angle,p.scale,p.width,p.start,p.end);else if(p.trail)this.trail(p.x,p.y,p.angle,p.scale,p.start,p.end,p.alpha);else if(p.beam){const s=this.atlases[p.a.name].sprites[p.a.sprite];if(s)this.region(p.a.name,s.entry,s.x,s.y,s.w,s.h,p.x,p.y-448*p.scale/2,448*p.scale,14*p.a.sy,-Math.PI/2,p.a.alpha*p.alpha,[p.a.r,p.a.g,p.a.b],p.a.blend);}else this.state(p.a,p.x,p.y,p.angle,p.scale,p.alpha);
+      if(p.nativeText)this.nativeText(p.nativeText,p.screenShake);else if(p.hudCounters)this.hudCounters(h);else if(p.rectangle){const {bounds:[left,top,right,bottom],argb}=p.rectangle,color=argbRgba(argb);this.solidTriangles([[left,top],[right,top],[right,bottom],[left,bottom]].map(([x,y])=>({x,y,color})),[0,1,2,0,2,3],0);}else if(p.mesh)this.mesh(p);else if(p.laser)this.laserSegment(p);else if(p.dialogue)this.dialogueLine(p);else if(p.beamTrail)this.beamTrail(p.x,p.y,p.angle,p.scale,p.width,p.start,p.end);else if(p.trail)this.trail(p.x,p.y,p.angle,p.scale,p.start,p.end,p.alpha);else if(p.beam){const s=this.atlases[p.a.name].sprites[p.a.sprite];if(s)this.region(p.a.name,s.entry,s.x,s.y,s.w,s.h,p.x,p.y-448*p.scale/2,448*p.scale,14*p.a.sy,-Math.PI/2,p.a.alpha*p.alpha,[p.a.r,p.a.g,p.a.b],p.a.blend,{nativeMode:1,screenShake:p.screenShake});}else this.state(p.a,p.x,p.y,p.angle,p.scale,p.alpha,p.screenShake);
     }
     this.flush();g.disable(g.SCISSOR_TEST);this.animations.endFrame();return [...h];
   }

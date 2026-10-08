@@ -43,7 +43,7 @@ bool insideRect(Vec3 p, Vec3 c, Vec3 dimensions) {
 bool insideCircle(Vec3 p, Vec3 c, float r) {
   const float dx = float(double(c.x) - p.x), dy = float(double(c.y) - p.y);
   const float sq = float(double(dx) * dx + double(dy) * dy), rr = float(double(r) * r);
-  return sq < rr;
+  return sq <= rr;
 }
 AnimationGeometry geometry(const State& s) {
   return {s.position, s.angle, s.width, s.length, s.headOffset};
@@ -64,7 +64,10 @@ int clearStraight(Laser& object, Manager& manager, World& world, Pred hit, bool 
   // 429d21/42b32d: samples at 8,24,... with room for the full 16 unit cell.
   if (moving ? s.length < 16 : s.length <= 16)
     return 0;
-  const int count = std::min(256, int(s.length / 16));
+  // Moving accepts the final full cell, while Timed uses a strict comparison
+  // at42bae2. A480px timed beam has29 sampled cells, not30.
+  const int count =
+      std::min(256, moving ? int(s.length / 16) : int(std::ceil(double(s.length) / 16.)) - 1);
   if (count <= 0)
     return 0;
   const Vec3 origin = s.position, step = direction(s.angle, 16), half = direction(s.angle, 8);
@@ -246,8 +249,9 @@ void MovingLaser::initialize(World& world) {
   s.width = p.width;
   s.speed = p.speed;
   s.velocity = direction(s.angle, s.speed);
-  s.headOffset = s.speed > 0 ? .01f : 0;
+  s.headOffset = s.length > 0 ? .01f : 0; // Original428a7d compares initial length.
   s.extensionAge.reset(0);
+  s.offscreenGrace.reset(30); // Original42895e..428978.
   if (p.sound >= 0)
     world.sound(p.sound, 0);
 }
@@ -283,13 +287,13 @@ void CurveLaser::initialize(World& world) {
     world.sound(p.sound, 0);
 }
 
-bool Laser::extensions(Manager&, World& world) {
+bool Laser::extensions(Manager& manager, World& world) {
   auto& s = state;
   bool repeat = false;
   do {
     repeat = false;
     while (s.cursor < 18) {
-      const auto& r = s.parameters.program.records[size_t(s.cursor)];
+      auto& r = s.parameters.program.records[size_t(s.cursor)];
       if (!r.kind || (!r.concurrent && s.activeExtensions))
         break;
       if (s.activeExtensions & r.kind)
@@ -314,6 +318,60 @@ bool Laser::extensions(Manager&, World& world) {
         s.protection = r.c;
         continue;
       } // native +44c, not +43c.
+      if (r.kind == 0x80000 || r.kind == 0x100000) {
+        // Moving428e/Curve42d490 constructs a BulletManager emitter from a
+        // paired24-byte record. Timed42c1a0 ignores both command kinds.
+        if (r.kind == 0x100000 || s.kind == Kind::Timed)
+          continue;
+        if (s.cursor >= 18) {
+          world.unsupported(r.kind);
+          continue;
+        }
+        const auto& next = s.parameters.program.records[size_t(s.cursor++)];
+        const uint32_t packed = uint32_t(r.c);
+        const auto origin = add(s.position, direction(s.angle, s.length));
+        eb::Emission emission;
+        emission.x = origin.x;
+        emission.y = origin.y;
+        emission.type = (packed >> 16) & 255;
+        emission.color = (packed >> 8) & 255;
+        emission.mode = (packed >> 24) & 127;
+        emission.speed = r.a;
+        emission.slow = r.b;
+        emission.count = int16_t(r.d);
+        emission.layers = int16_t(next.c);
+        emission.angle = next.a;
+        emission.spacing = next.b;
+        emission.program = s.parameters.program;
+        emission.program.first = packed & 255;
+        emission.program.flags = uint32_t(next.d);
+        emission.program.transformSound = -1;
+        world.emitBullet(emission);
+        // 40b644..40b65a uses the zero-initialized emitter fireSound(+204)
+        // after dispatch; the laser's own constructor sound is independent.
+        if (emission.program.flags & 0x80u)
+          world.sound(0, origin.x);
+        if (packed & 0x80000000u) {
+          clearAll(manager, world, false, false);
+          ++s.cursor; // Native cancel branch falls through the common increment.
+        }
+        continue;
+      }
+      if (r.kind == 0x10000000) {
+        world.blendControl(*this, r.c != 0 ? 1 : 0);
+        continue;
+      }
+      if (r.kind == 0x100) {
+        // 428ce5..428d25 /42d2d7..42d313 decrement the stored record before
+        // a mirrored child's factory copies it. Timed's dispatcher ignores100.
+        if (s.kind != Kind::Timed && r.c > 0) {
+          s.activeExtensions |= 0x100;
+          s.mirrorSpeed = r.a >= 0 ? r.a : s.speed;
+          s.mirrorRemaining = --r.c;
+          s.mirrorFlags = r.d;
+        }
+        continue;
+      }
       if ((r.kind == 4 || r.kind == 8) && s.kind != Kind::Timed) {
         auto& motion = r.kind == 4 ? s.scalarAcceleration : s.polarAcceleration;
         motion.timer.reset(0);
@@ -360,6 +418,41 @@ bool Laser::extensions(Manager&, World& world) {
         }
         motion.timer.advance(rate);
       }
+    if ((s.activeExtensions & 0x100) && s.kind == Kind::Moving) {
+      // Native429150 tests the head, creates mirror images, and leaves this
+      // object's direction alone. Equal-to-edge heads do not trigger a mirror.
+      const auto head = add(s.position, direction(s.angle, s.length));
+      bool completed = false;
+      const auto mirror = [&](int flag, bool outsideEdge, bool horizontal, bool upperOrLeft) {
+        if (!(s.mirrorFlags & flag) || !outsideEdge)
+          return;
+        completed = true;
+        if (s.mirrorFlags & 16)
+          return;
+        auto& p = s.parameters;
+        p.position = head;
+        if (horizontal) {
+          p.position.y = upperOrLeft ? -head.y : float(896. - head.y);
+          p.angle = -s.angle;
+        } else {
+          p.position.x = upperOrLeft ? float(-double(head.x) - 384.) : float(384. - head.x);
+          p.angle = angleNormalize(float(-double(s.angle) - pi));
+        }
+        p.speed = s.mirrorSpeed;
+        s.initialPosition = p.position;
+        manager.spawn(Kind::Moving, p, world);
+      };
+      mirror(1, head.y < 0, true, true);
+      mirror(2, head.y > 448, true, false);
+      mirror(4, head.x < -192, false, true);
+      mirror(8, head.x > 192, false, false);
+      if (completed) {
+        s.activeExtensions &= ~0x100u;
+        if (s.parameters.program.transformSound >= 0)
+          world.sound(s.parameters.program.transformSound, 0);
+        repeat = true;
+      }
+    }
     if (s.activeExtensions & 0x1000) {
       if (s.wait.current <= 0) {
         s.activeExtensions &= ~0x1000u;
@@ -371,7 +464,10 @@ bool Laser::extensions(Manager&, World& world) {
     if (wasActive && s.protection)
       --s.protection;
   } while (repeat);
-  return s.phase == Phase::Retiring;
+  // Native extension dispatch does not skip the current object's remaining
+  // movement/ANM pass when an emission marks it for retirement. Manager20
+  // observes phase1 and removes it at the next visit.
+  return false;
 }
 void Laser::updateStraightAnimation(World& world) {
   world.updateAnimationGeometry(*this, Role::Main, geometry(state));
@@ -386,11 +482,11 @@ void Laser::checkStraightCollision(Manager& manager, World& world, bool moving) 
   auto& s = state;
   if (s.length <= 16 || (moving && s.width <= 3))
     return;
-  const float half = s.width >= 32 ? s.width * .5f
-                     : moving      ? float(double(s.width) - (double(s.width) + 16) * .5)
-                                   : float(double(s.width) - (double(s.width) + 16) / 3.);
+  const float half = s.width < 32 ? s.width * .5f
+                     : moving     ? float(double(s.width) - (double(s.width) + 16) * .5)
+                                  : float(double(s.width) - (double(s.width) + 16) / 3.);
   const Vec3 origin =
-      moving ? add(s.position, direction(s.angle, float(double(s.length) / 2))) : s.position;
+      moving ? add(s.position, direction(s.angle, float(double(s.length) / 10))) : s.position;
   const float size = moving ? float(double(s.length) * 4 / 5) : s.length;
   const auto result = world.lineCollision(origin, s.angle, half, size);
   if (result == Collision::Hit)
@@ -539,9 +635,20 @@ int Laser::clearAll(Manager&, World& world, bool convert, bool force) {
   int count = 0;
   // 42a8a4/42aa2d and42be43/42c07e use strict length>16 and d+8<length.
   // At exact multiples the final cell is omitted (also omits its ANM RNG).
+  const Vec3 step = direction(s.angle, 16);
+  Vec3 point = add(s.position, direction(s.angle, 8));
   for (float d = 8; double(d) + 8 < s.length; d = fadd(d, 16)) {
-    cancelPoint(world, s, add(s.position, direction(s.angle, d)), convert, false);
+    // 42be80..42beda gates Timed's entire effect/item path by16px bounds.
+    //  Moving42a8c0 creates its visual even for a point outside the viewport.
+    if (s.kind != Kind::Timed || !outside(point, 16, 16)) {
+      world.spawnCancelEffect(point, s.parameters.color * 2 + 4, s.angle, s.width);
+      if (convert && !outside(point, 32, 32))
+        world.pointItem(point, 9, -pi / 2, .6000000238418579f);
+    }
     ++count;
+    // 42a9fb/42c016 round each fixed-step addition; recomputing sin(angle)*d
+    //  makes horizontal float-PI beams drift despite the original fixed Y.
+    point = add(point, step);
     if (count >= 256)
       break;
   }
@@ -553,10 +660,11 @@ int Laser::clearRectangle(Manager& m, World& w, const Vec3& center, const Vec3& 
   return clearStraight(
       *this, m, w, [&](Vec3 p) { return insideRect(p, center, dimensions); }, convert, force);
 }
-int Laser::clearCircle(Manager& m, World& w, const Vec3& center, float radius, bool convert,
+int Laser::clearCircle(Manager& m, World& w, const Vec3& center, float radius, uint32_t cancelFlags,
                        bool force) {
   return clearStraight(
-      *this, m, w, [&](Vec3 p) { return insideCircle(p, center, radius); }, convert, force);
+      *this, m, w, [&](Vec3 p) { return insideCircle(p, center, radius); }, (cancelFlags & 1u) != 0,
+      force);
 }
 int CurveLaser::clearAll(Manager&, World& w, bool convert, bool force) {
   auto& s = state;
@@ -571,9 +679,11 @@ int CurveLaser::clearRectangle(Manager& m, World& w, const Vec3& c, const Vec3& 
                                bool force) {
   return clearCurve(*this, m, w, [&](Vec3 p) { return insideRect(p, c, d); }, convert, force);
 }
-int CurveLaser::clearCircle(Manager& m, World& w, const Vec3& c, float r, bool convert,
+int CurveLaser::clearCircle(Manager& m, World& w, const Vec3& c, float r, uint32_t cancelFlags,
                             bool force) {
-  return clearCurve(*this, m, w, [&](Vec3 p) { return insideCircle(p, c, r); }, convert, force);
+  // 42dfec and42e240 compare the entire flags word, unlike straight's bit0.
+  return clearCurve(
+      *this, m, w, [&](Vec3 p) { return insideCircle(p, c, r); }, cancelFlags != 0, force);
 }
 
 int Manager::spawn(Kind kind, const Parameters& parameters, World& world) {
@@ -671,6 +781,18 @@ int Manager::clearAll(World& w, bool convert, bool force) {
   }
   return count;
 }
+void Manager::clearPhaseEnd(World& world) {
+  // 428670 traverses every node, including phase1. It clears the object's
+  //  cancellation protection and resets its offscreen timer before virtual+14.
+  auto it = objects_.begin();
+  while (it != objects_.end()) {
+    auto current = it++;
+    auto& object = **current;
+    object.state.protection = 0;
+    object.state.offscreenGrace.reset(0);
+    object.clearAll(*this, world, true, false);
+  }
+}
 int Manager::clearRectangle(World& w, const Vec3& c, const Vec3& d, bool convert, bool force) {
   int count = 0;
   auto it = objects_.begin();
@@ -681,13 +803,13 @@ int Manager::clearRectangle(World& w, const Vec3& c, const Vec3& d, bool convert
   }
   return count;
 }
-int Manager::clearCircle(World& w, const Vec3& c, float radius, bool convert, bool force) {
+int Manager::clearCircle(World& w, const Vec3& c, float radius, uint32_t cancelFlags, bool force) {
   int count = 0;
   auto it = objects_.begin();
   while (it != objects_.end()) {
     auto cur = it++;
     if ((*cur)->state.phase != Phase::Retiring)
-      count += (*cur)->clearCircle(*this, w, c, radius, convert, force);
+      count += (*cur)->clearCircle(*this, w, c, radius, cancelFlags, force);
   }
   return count;
 }

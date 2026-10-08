@@ -40,3 +40,11 @@ test('Extra cannot be previewed as the ordinary first stage',()=>{
 test('malformed host touch input is rejected before changing state',()=>{
   for(const value of [{bombSerial:NaN},{escapeSerial:-1},{joystickX:Infinity},{joystickY:2},{fireEnabled:1},{touchSensitivity:500}])assert.throws(()=>validateTouchSnapshot(snapshot(value)));
 });
+test('left/right Ctrl and local/host controls are independent and never enter gameplay samples',()=>{
+  const input=new PreviewInput();input.key('KeyZ',true);input.key('ControlLeft',true);input.key('ControlRight',true);
+  input.key('ControlLeft',false);assert.equal(input.replayRate(true),4);assert.equal(input.replayRate(false),1);
+  assert.deepEqual(input.sample(0),{held:1,pressed:1});input.key('ControlLeft',true,'host');input.key('ControlRight',false);
+  assert.equal(input.replayRate(true),4);input.key('ControlLeft',false,'host');assert.equal(input.replayRate(true),1);
+  input.key('ControlLeft',true);input.clearKeyboard();assert.equal(input.replayRate(true),1);
+  input.key('ControlRight',true,'host');input.clear();assert.equal(input.replayRate(true),1);
+});

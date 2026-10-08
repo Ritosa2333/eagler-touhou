@@ -7,5 +7,4 @@ extern laser::World& laserWorld;
 uint64_t laserAnimationKey(u32 serial, laser::Role role);
 int spawnLaser(Enemy&, Shooter&, laser::Kind, int lookupId = 0);
 void tickLasers();
-void clearBombLasers();
 } // namespace th12

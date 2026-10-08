@@ -4,11 +4,11 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {writeFile,readFile} from 'node:fs/promises';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root);
-test('original Enemy/ECL/ANM/bullet provider preserves native scheduling in a passive world',async()=>{
+test('original Enemy/ECL/ANM/bullet provider preserves an explicitly primed passive slice',async()=>{
   const input=path.join(root,'artifacts/reverse/native-enemy-test-input.json'),output=path.join(root,'artifacts/reverse/native-enemy-test-output.json');
   const fixture={character:1,shot:0,difficulty:3,stage:1,seed:60128,initial:{power:100,rank:0,pointValue:2000000,x:0,y:51200},inputs:Array.from({length:180},(_,frame)=>({frame,xFixed:0,yFixed:51200,power:100,rank:0,held:0}))};
   await writeFile(input,JSON.stringify(fixture));
-  const run=spawnSync(path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe'),['scripts/reverse/native-enemy-provider.py','--frames','180','--input',input,'--native-bullets','--output',output],{cwd:root,encoding:'utf8'});
+  const run=spawnSync(path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe'),['scripts/reverse/native-enemy-provider.py','--frames','180','--input',input,'--native-bullets','--prime-creation-guard','--output',output],{cwd:root,encoding:'utf8'});
   assert.equal(run.status,0,run.stdout+run.stderr);const native=JSON.parse(await readFile(output,'utf8'));
   assert.equal(native.originalExeSha256,'99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417');
   assert.equal(native.wholeGameOracle,false);assert.equal(native.nativeAnmExecuted,true);assert.equal(native.nativeBulletUpdateExecuted,true);

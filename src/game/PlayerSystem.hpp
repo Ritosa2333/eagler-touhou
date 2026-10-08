@@ -2,6 +2,8 @@
 #include "GameTypes.hpp"
 
 namespace th12 {
+extern bool playerFocused; // Native Player+c598, distinct from the raw held key.
+bool movementFocus(int held, int totalAge, bool liveEnemies);
 void explodeReimuBOrb(pw::ReimuBOrb& orb);
 void awardPlayerGraze(float x, float y, float z = 0);
 bool startPlayerBomb();

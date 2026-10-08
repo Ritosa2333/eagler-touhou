@@ -46,6 +46,7 @@ int invuln = 120, deathWindow = 0, bombTimer = 0, previousHeld = 0, fireFrame = 
     dialogue = 0, spell = 0, ended = 0;
 int playerState = 1, playerStateTicks = 0;
 u32 playerFlags = 0;
+std::array<int, 4> replayStageGlobals{};
 uint64_t playerFocusAnimation = 0;
 int oracleFixtureFlags = 0; // Explicit partial-world diagnostics only; normal runtime stays zero.
 u32 nextEnemyId = 1, nextProjectileId = 1, nextItemId = 1;

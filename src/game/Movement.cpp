@@ -20,6 +20,15 @@ void combinePosition(Enemy& e) {
   const float vx = float(double(x) - e.x), vy = float(double(y) - e.y);
   e.x = enemy_motion::quantize(float(double(e.x) + vx));
   e.y = enemy_motion::quantize(float(double(e.y) + vy));
+  // Native413700 also applies this when called synchronously by ECL setters.
+  // With flag10000 it rewrites the absolute component even inside the bounds:
+  // the combined coordinate's floor residue belongs to absolute, not relative.
+  if (e.flags & 0x10000u) {
+    e.x = std::clamp(e.x, e.clampX - e.clampWidth * .5f, e.clampX + e.clampWidth * .5f);
+    e.y = std::clamp(e.y, e.clampY - e.clampHeight * .5f, e.clampY + e.clampHeight * .5f);
+    e.ax = float(double(e.x) - e.rx);
+    e.ay = float(double(e.y) - e.ry);
+  }
 }
 float movementCoordinate(double v) {
   return enemy_motion::quantize(float(v));

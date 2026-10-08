@@ -120,6 +120,8 @@ test('production core provides decoded spell title, bonus/history and manager dr
 
 test('production spell end removes queued numbers immediately and leaves the actual text74 outro',async()=>{
   const core=await ready();for(let i=0;i<160;i++)core._th12_tick(0,0);
+  assert.equal(presentation(core).spell.flags&1,1,'input0 only clears the birth guard; time160 has not executed yet');
+  core._th12_tick(0,0);
   const after=presentation(core);assert.equal(after.spell.flags&1,0);
   assert.equal(after.text.filter(p=>p.font).length,0);
   assert.equal(after.text.filter(p=>p.kind==='spell-title').length,1,'title keeps its registered outro VM');

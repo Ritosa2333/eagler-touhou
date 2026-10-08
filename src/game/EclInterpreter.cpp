@@ -1,5 +1,7 @@
 // TH12 1.00b portable C++ runtime. See NOTICE.md for rights.
 #include "EclInterpreter.hpp"
+#include "BulletCancellation.hpp"
+#include "CameraEffects.hpp"
 #include "EnemyCallbacks.hpp"
 #include "GameState.hpp"
 #include "HostilePool.hpp"
@@ -241,6 +243,9 @@ void command(Enemy& e, Context& c, int op) {
   case 258:
     e.bank = I(0);
     break;
+  case 452:
+    e.animationLayerOffset = I(0); // 415ac2: subsequent animation births only.
+    break;
   case 259:
   case 262: {
     const int slot = I(0), script = I(1);
@@ -293,6 +298,51 @@ void command(Enemy& e, Context& c, int op) {
     e.animationAge = 0;
     bindEnemyAnimation(e, 0, e.baseAnimation);
     break;
+  case 277:
+  case 278: {
+    const int slot = I(0);
+    if (slot < 0 || slot >= 16) {
+      ++unsupported[op];
+      break;
+    }
+    // Native461c50 resolves the handle before reading floating operands.
+    // A missing VM therefore consumes no referenced random value.
+    if (auto* node = animationScene.find(enemyAnimationKey(e.id, slot))) {
+      auto& state = node->vm.control();
+      if (op == 277) {
+        state.rotation = F(1); // 415c24 writes raw rotationZ, without wrapping.
+        state.flags |= 4u;
+      } else {
+        state.sx = F(1);
+        state.flags |= 8u;
+        // 415c61 and415c80 both read operand1. A referenced random value
+        // is evaluated twice; scaleY is not a copy of the first result.
+        state.sy = F(1);
+        state.flags |= 8u;
+      }
+    }
+    break;
+  }
+  case 279: {
+    const int slot = I(0);
+    if (slot < 0 || slot >= 16) {
+      ++unsupported[op];
+      break;
+    }
+    // 415cb6/415cd2/415cda: these belong to Enemy, even without a VM.
+    e.animationOffsets[slot] = {F(1), F(2), 0};
+    break;
+  }
+  case 281: {
+    const int parent = I(1); // Native415cea reads the source before the slot.
+    const int slot = I(0);
+    if (slot < 0 || slot >= 16) {
+      ++unsupported[op];
+      break;
+    }
+    e.animationParents[slot] = parent;
+    break;
+  }
   case 263:
   case 264:
     detachedAnimation(I(0), I(1), e, op == 263);
@@ -426,20 +476,31 @@ void command(Enemy& e, Context& c, int op) {
   }
   case 312:
   case 313: {
-    const float randomAngle = random.signedUnit() * pi;
+    const float randomAngle = float(double(random.signedUnit()) * pi);
     float angle;
-    if (e.x < e.clampX - e.clampWidth * .25f)
-      angle = randomAngle / 3;
-    else if (e.x > e.clampX + e.clampWidth * .25f)
-      angle = normalize(randomAngle / 3 + pi);
-    else if (e.x < px / 128.f)
-      angle = randomAngle * .5f;
-    else
-      angle = normalize(randomAngle * .5f + pi);
-    if (e.y < e.clampY - e.clampHeight * .25f)
+    if (double(e.x) < double(e.clampX) - double(e.clampWidth) * .25)
+      angle = float(double(randomAngle) / 3);
+    else if (double(e.x) > double(e.clampX) + double(e.clampWidth) * .25)
+      angle = normalize(float(double(randomAngle) / 3 + pi));
+    else {
+      // 41762a..4176a1: the center band consumes one RNG16 after409310.
+      // Preserve its conditional Pi addition; this branch does not wrap it.
+      angle = float(double(randomAngle) * .25);
+      const bool third = random.next16() % 3 == 0;
+      if ((e.x < px / 128.f) == third)
+        angle = float(double(angle) + pi);
+    }
+    if (double(e.y) < double(e.clampY) - double(e.clampHeight) * .25)
       angle = std::fabs(angle);
-    else if (e.y > e.clampY + e.clampHeight * .25f)
+    else if (double(e.y) > double(e.clampY) + double(e.clampHeight) * .25)
       angle = -std::fabs(angle);
+    // 4176fb..417799 avoids the narrow near-vertical bands. Native stores
+    // each offset as float before comparing with the original double limits.
+    constexpr float halfPi = 1.5707963705062866f;
+    if (std::fabs(float(double(angle) + halfPi)) < .05000000074505806)
+      angle = angle < -halfPi ? -1.6207963228225708f : -1.5207964181900024f;
+    else if (std::fabs(float(double(angle) - halfPi)) < .05)
+      angle = angle >= halfPi ? 1.6207963228225708f : 1.5207964181900024f;
     const int mode = I(1);
     const float speed = F(2);
     const int duration = I(0);
@@ -576,9 +637,12 @@ void command(Enemy& e, Context& c, int op) {
   case 416:
     sound_system::queue.play(I(0), e.x);
     break;
-  case 417:
-    ++unsupported[417]; // Native4529a0 screen effect is not a sound alias.
+  case 417: {
+    // 4187e8..418809 resolves the last operand first, then constructs profile1.
+    const int endAmplitude = I(2), startAmplitude = I(1), duration = I(0);
+    cameraEffects.pulse(duration, startAmplitude, endAmplitude);
     break;
+  }
   case 418: {
     if (messageVM.start(messageFiles[character * 2 + shot], I(0))) {
       dialogue = I(0) + 1;
@@ -595,7 +659,8 @@ void command(Enemy& e, Context& c, int op) {
     break;
   }
   case 419:
-    if (dialogue > 0) {
+    // 41883d/412720 waits only while MSG's opcode12 pulse (+8c) is zero.
+    if (dialogue > 0 && messageVM.typingDelay == 0) {
       c.time -= 1;
       c.pc -= rd<u16>(c.pc + 6);
     }
@@ -691,10 +756,16 @@ void command(Enemy& e, Context& c, int op) {
     animationScene.remove(spellAnimationKeys[3]);
     spellAnimationKeys[3] = 0;
     break;
+  case 444:
+    // 4189a7..4189b5 replaces this one bit; even nonzero values clear it.
+    e.flags = (e.flags & ~0x4000000u) | ((u32(I(0)) & 1u) << 26);
+    break;
   case 440:
     bossHud.remaining = std::clamp(I(0), 0, 10);
     break;
   case 445:
+    laserManager.clearPhaseEnd(laserWorld); // 419387 invokes428670.
+    break;
   case 449:
     break;
   case 455: {
@@ -763,10 +834,9 @@ void command(Enemy& e, Context& c, int op) {
       unsupported[op]++;
     break;
   case 510:
-    for (auto& b : bullets)
-      if (!b.friendly && b.active)
-        eb::cancel(b.enemy, bulletWorld);
-    laserManager.clearAll(laserWorld);
+    clearHostileViewport(true);
+    // Native4187b6 sets EBX=convert1/EDI=force0 before428750's vtable call.
+    laserManager.clearAll(laserWorld, true, false);
     break;
   case 514:
   case 517: {
@@ -813,18 +883,8 @@ void command(Enemy& e, Context& c, int op) {
   case 512:
   case 513: {
     const float radius = F(0);
-    for (auto& b : bullets)
-      if (!b.friendly && b.active &&
-          (b.enemy.phase == eb::Phase::Alive || b.enemy.phase == eb::Phase::Spawning)) {
-        const double dx = double(b.x) - e.x, dy = double(b.y) - e.y,
-                     reach = double(radius) + eb::appearances[b.enemy.type].hitbox * .5;
-        if (dx * dx + dy * dy <= reach * reach) {
-          eb::cancel(b.enemy, bulletWorld);
-          if (op == 512 && b.x >= -192 && b.x <= 192 && b.y >= 0 && b.y <= 448)
-            itemManager.spawn(9, {b.x, b.y}, -pi / 2, .6000000238418579f);
-        }
-      }
-    laserManager.clearCircle(laserWorld, {e.x, e.y, 0}, radius, op == 512, false);
+    cancelHostileCircle(e.x, e.y, radius, op == 512);
+    laserManager.clearCircle(laserWorld, {e.x, e.y, 0}, radius, op == 512, true);
     break;
   }
   case 520: {

@@ -49,6 +49,7 @@ extern int invuln, deathWindow, bombTimer, previousHeld, fireFrame, eventBits, d
     ended;
 extern int playerState, playerStateTicks, oracleFixtureFlags;
 extern u32 playerFlags;
+extern std::array<int, 4> replayStageGlobals;
 extern uint64_t playerFocusAnimation;
 extern u32 nextEnemyId, nextProjectileId, nextItemId;
 extern std::function<void(Projectile&)> friendlyBirthHook, friendlyHitHook;

@@ -86,6 +86,34 @@ Mesh ufoFillRing(const anm_logic::State& state, const SpriteRegion& region, Posi
   return result;
 }
 
+Mesh spellRing(const anm_logic::State& state, const SpriteRegion& region, Position origin) {
+  auto result = metadata(state, region);
+  const int count = state.geometryCount;
+  if (state.mode != 9 || count < 2 || count > 65536 || !drawable(state))
+    return result;
+  float angle = state.rotation, v = 0;
+  // Retail4a3cd0 is the double representation of the float tau constant.
+  const float step = float(double(anm_logic::Tau) / (count - 1)),
+              vstep = float(double(state.integers[1]) / (count - 1)),
+              outer = float(double(state.sx) * .5 + state.sy),
+              inner = float(double(state.sy) - double(state.sx) * .5),
+              outerU = add(region.u0, state.u), innerU = add(region.u1, state.u);
+  const auto argb = color(state);
+  result.vertices.reserve(size_t(count) * 2);
+  for (int i = 0; i < count - 1; ++i) {
+    const float textureV = add(v, state.v);
+    result.vertices.push_back(polar(angle, outer, origin, argb, outerU, textureV));
+    result.vertices.push_back(polar(angle, inner, origin, argb, innerU, textureV));
+    v = add(v, vstep);
+    angle = normalize(add(angle, step));
+  }
+  auto outerEnd = result.vertices[0], innerEnd = result.vertices[1];
+  outerEnd.v = innerEnd.v = add(v, state.v);
+  result.vertices.push_back(outerEnd);
+  result.vertices.push_back(innerEnd);
+  return result;
+}
+
 Mesh flatQuad(const anm_logic::State& state, const SpriteRegion& region, Position origin,
               float rotation, float scaleX, float scaleY) {
   auto result = metadata(state, region);

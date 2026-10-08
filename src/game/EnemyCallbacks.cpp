@@ -1,4 +1,5 @@
 #include "EnemyCallbacks.hpp"
+#include "FriendlyPool.hpp"
 #include "GameState.hpp"
 #include "HostilePool.hpp"
 #include "LaserCollision.hpp"
@@ -147,12 +148,17 @@ int queryPlayerDamage(const Enemy& target, float x, float y, float width, float 
   area.y = y;
   area.hitWidth = width;
   area.hitHeight = height;
-  int damage = playerSourceDamage(area) + playerBombDamage(area);
-  for (size_t i = 0; i < bullets.size(); ++i) {
-    auto& b = bullets[i];
-    if (b.active && b.friendly)
-      damage += friendlyProjectileDamage(b, area);
-  }
+  int damage = 0;
+  // 439ed0 scans256 physical slots. An impact can allocate particles into
+  // free slots on either side of this cursor; only later slots are queried.
+  for (int slot = 0; slot < FriendlyCapacity; ++slot)
+    if (auto* bullet = friendlySlots[slot]; bullet && bullet->active)
+      damage += friendlyProjectileDamage(*bullet, area);
+  // 43a1f2 queries Bomb after all physical friendly slots, then43a20a
+  // queries the128 continuous sources. Hit callbacks can affect later work;
+  // take these snapshots at their native point rather than before the scan.
+  damage += playerBombDamage(area);
+  damage += playerSourceDamage(area);
   damage = std::min(80, damage);
   if (damage > 0 && score < 999999999)
     ++score;

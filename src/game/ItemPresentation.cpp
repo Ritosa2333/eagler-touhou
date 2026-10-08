@@ -1,5 +1,6 @@
 #include "ItemPresentation.hpp"
 #include "GameState.hpp"
+#include "UfoEffects.hpp"
 #include <unordered_set>
 
 namespace th12 {
@@ -28,6 +29,7 @@ anm_logic::Node* ItemPresentation::bindScreen(anm_logic::Scene& scene, int bank,
 }
 
 void ItemPresentation::reset(anm_logic::Scene& scene, const ufo_system::Inventory& inventory) {
+  ufoEffects.reset();
   items_.clear();
   stock_ = {};
   overlays_.clear();
@@ -155,6 +157,9 @@ void ItemPresentation::visualEvent(anm_logic::Scene& scene, const ufo_system::Vi
   using K = ufo_system::VisualEventKind;
   switch (event.kind) {
   case K::Summoned: {
+    // 44a942 calls40fbe0(type2) before front82. Its Primary27 callback
+    // owns the summon flash and subsequent random trail births.
+    ufoEffects.summon(scene, event.position.x, event.position.y);
     if (auto* notice = bindScreen(scene, 7, event.noticeScript))
       scene.interrupt(notice->key, event.interrupt);
     ring_ = transientKey();
@@ -180,6 +185,7 @@ void ItemPresentation::visualEvent(anm_logic::Scene& scene, const ufo_system::Vi
     const auto key = transientKey();
     scene.bind(key, 0xeb000000u + serial_, 0, event.bulletScript, anm_logic::Membership::Primary,
                event.position.x, event.position.y, {}, false, nullptr, 224, 16, 23);
+    ufoEffects.defeat(scene, event.position.x, event.position.y);
     break;
   }
   case K::Removed:

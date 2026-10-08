@@ -62,3 +62,30 @@ test('direct laser meshes preserve exported manager order and main/cap pairs acr
   core._th12_mesh_draw=()=>4;
   assert.deepEqual(orderPresentation(readCoreMeshes(core)).map(p=>p.id),ids);
 });
+
+test('native diffuse UFO trails use solid color and remain separate line strips',()=>{
+  const core=fixture(),view=new DataView(core.HEAPU8.buffer),record=core.HEAPU8.slice(16384,16440);
+  for(let i=0;i<2;i++){
+    core.HEAPU8.set(record,16384+i*56);const at=16384+i*56;
+    for(const [word,value]of [[0,-1],[1,-1],[3,13],[5,3],[6,0],[7,26],[9,80+i],[10,i*3]])view.setInt32(at+word*4,value,true);
+    for(let j=0;j<3;j++){
+      const vertex=17408+(i*3+j)*28;
+      view.setFloat32(vertex,40*i+j,true);view.setFloat32(vertex+4,128+j,true);
+      view.setFloat32(vertex+12,1,true);view.setUint32(vertex+16,0x40007fff,true);
+    }
+  }
+  core._th12_mesh_draw=()=>2;core._th12_mesh_vertices_count=()=>6;
+  const meshes=readCoreMeshes(core);assert.ok(meshes.every(p=>p.untextured));
+  assert.deepEqual(orderPresentation(meshes).map(p=>p.drawPriority),[26,26]);
+  const renderer=Object.create(Renderer.prototype),draws=[],textures=[];
+  Object.assign(renderer,{gl:{TRIANGLES:4,LINE_STRIP:3},solid:{texture:'white'},textures:new Map(),batch:[],
+    material(){},texture(t){textures.push(t);},primitive(mode){this.mode=mode;},
+    flush(){if(this.batch.length){draws.push({mode:this.mode,vertices:this.batch.slice()});this.batch.length=0;}}});
+  for(const mesh of meshes)renderer.mesh(mesh);
+  assert.deepEqual(textures,[renderer.solid,renderer.solid]);
+  assert.equal(draws.length,2,'native submits two independent trails without an endpoint connector');
+  for(let i=0;i<2;i++){
+    assert.equal(draws[i].mode,3);assert.equal(draws[i].vertices.length,30);
+    assert.deepEqual(draws[i].vertices.slice(0,10),[40*i,128,.5,.5,0,127/255,1,64/255,1,0]);
+  }
+});

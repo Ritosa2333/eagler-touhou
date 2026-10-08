@@ -1,8 +1,9 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';
 import createCore from '../site/runtime/core.mjs';
+import {loadLiveMain} from './helpers/live-main.mjs';
 const root=path.resolve(import.meta.dirname,'..');
 const files=Array.from({length:6},(_,i)=>fs.readFileSync(path.join(root,'site/assets',`pl0${i>>1}${i%2?'b':'a'}.sht`)));
-async function fixture(){const c=await createCore();for(let i=0;i<6;i++){const p=c._malloc(files[i].length);c.HEAPU8.set(files[i],p);assert.equal(c._th12_load_sht(i,p,files[i].length),1);c._free(p);}return c;}
+async function fixture(){const c=await createCore();loadLiveMain(c);for(let i=0;i<6;i++){const p=c._malloc(files[i].length);c.HEAPU8.set(files[i],p);assert.equal(c._th12_load_sht(i,p,files[i].length),1);c._free(p);}return c;}
 function draw(c){const count=c._th12_draw(),p=c._th12_draw_ptr(),stride=c._th12_draw_stride(),v=new DataView(c.HEAPU8.buffer);return Array.from({length:count},(_,i)=>{const q=p+i*stride;return{x:v.getFloat32(q,true),y:v.getFloat32(q+4,true),scale:v.getFloat32(q+12,true),animation:v.getInt32(q+20,true),kind:v.getInt32(q+24,true),age:v.getInt32(q+32,true)};});}
 test('all six retail SHT formations use native triangular indices and focus table',async()=>{
   const c=await fixture(),scripts=[18,19,11,12,15,16];

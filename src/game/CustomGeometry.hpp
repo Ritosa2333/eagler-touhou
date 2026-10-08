@@ -18,7 +18,7 @@ struct Vertex {
   float u = 0, v = 0;
 };
 static_assert(sizeof(Vertex) == 28);
-enum class Primitive : uint32_t { TriangleList = 4, TriangleStrip = 5 };
+enum class Primitive : uint32_t { LineStrip = 3, TriangleList = 4, TriangleStrip = 5 };
 enum class DrawPass : uint32_t { AnmLayer = 0, LaserManager = 1, AsciiOverlay = 2 };
 enum class Filter : uint32_t { Point = 1, Linear = 2 };
 struct Mesh {
@@ -37,6 +37,9 @@ SpriteRegion spriteRegion(const anm_logic::State&, const anm_logic::SpriteInfo&)
 // including the host viewport once. Mode13 does not inherit parent scale or
 // rotation. Neither function updates a VM, timer, RNG, interpolation or Scene.
 Mesh ufoFillRing(const anm_logic::State&, const SpriteRegion&, Position origin);
+// 4581a3..458427 mode9: count-1 pairs around a full ring, followed by an
+// exact copy of the first pair with the final repeated V coordinate.
+Mesh spellRing(const anm_logic::State&, const SpriteRegion&, Position origin);
 Mesh flatQuad(const anm_logic::State&, const SpriteRegion&, Position origin, float rotation,
               float scaleX, float scaleY);
 

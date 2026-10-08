@@ -172,6 +172,10 @@ struct Enemy {
   std::array<int, 16> animationSlots{};
   std::array<int, 16> animationBanks{};
   std::array<bool, 16> animationBound{};
+  int animationLayerOffset = 1; // Native413426: EnemyState+238; factory adds7.
+  std::array<std::array<float, 3>, 16> animationOffsets{};
+  std::array<int, 16> animationParents{-1, -1, -1, -1, -1, -1, -1, -1,
+                                       -1, -1, -1, -1, -1, -1, -1, -1};
   std::list<Context> contexts;
   std::array<Shooter, 16> shooters{};
 };
@@ -187,7 +191,7 @@ struct Projectile {
   eb::State enemy{};
   pw::State weapon{};
   int hitAnimation = 0, hitCallback = 0, spawnCallback = 0;
-  int physicalSlot = -1; // Hostile BulletManager's stable0..1999 slot.
+  int physicalSlot = -1; // Hostile0..1999 or Player's friendly0..255 physical slot.
 };
 
 } // namespace th12

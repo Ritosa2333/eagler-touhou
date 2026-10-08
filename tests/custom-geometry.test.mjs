@@ -10,6 +10,7 @@ const build=spawnSync(python,[compiler,'tests/fixtures/custom-geometry.cpp','src
 assert.equal(build.status,0,build.stderr||build.stdout);
 const create=(await import(pathToFileURL(path.join(output,'core.mjs')).href)).default;
 const samples=JSON.parse(fs.readFileSync(path.join(root,'tests/fixtures/custom-geometry-original.json'),'utf8'));
+const rings=JSON.parse(fs.readFileSync(path.join(root,'tests/fixtures/spell-ring-geometry-native.json'),'utf8'));
 function generate(c,r,kind){
   const s=r.state,origin=r.origin??s.position.map((n,i)=>n+s.engine[i]+s.offset[i]),nodes=r.nodes??[];
   const f=new Float32Array([...origin,...s.rotation,...s.scale,...s.uvScroll,...s.uvScale,...s.dimensions,...s.uvCorners,...(r.laserPosition??[0,0,0]),r.laserAngle??0,r.curveDrawWidth??r.laserWidth??0,r.headOffset??0,...s.resourceDimensions]);
@@ -32,6 +33,16 @@ test('UFO206 original32-pair arc, repeated UV, fill, four-color IRQ2 and fade ve
   for(const r of samples.records.filter(r=>r.kind==='ufo206')){const a=generate(c,r,0);close(a,r.vertices,r.name);total+=a.length;assert.equal(c._metadata(0),5);assert.equal(c._metadata(4),r.state.layer);assert.equal(c._metadata(5),r.state.blend);}
   assert.equal(total,576);
 });
+test('spell125/126 mode9 draws retail closed rings rather than scaled sprite rectangles',async()=>{
+  const c=await create();assert.equal(rings.records.length,16);
+  for(const r of rings.records){
+    const vertices=generate(c,r,4);close(vertices,r.vertices,r.name);
+    assert.equal(vertices.length,r.state.integers[0]*2);
+    assert.deepEqual(vertices.at(-2).slice(0,6),vertices[0].slice(0,6));
+    assert.deepEqual(vertices.at(-1).slice(0,6),vertices[1].slice(0,6));
+    assert.equal(c._metadata(0),5);
+  }
+});
 test('Moving/Timed main flat ANM quads preserve native width, anchor, texture coordinates and headOffset',async()=>{
   const c=await create();const rows=samples.records.filter(r=>r.kind==='straight');assert.equal(rows.length,22);
   for(const r of rows){close(generate(c,r,3),r.draws[0].vertices,r.name);assert.equal(c._metadata(0),4);}
@@ -48,6 +59,6 @@ test('geometry is read-only and honors original draw guards and secondary color'
 });
 test('C++ raw resource UV records agree with corrected original460610/454b80 bindings',async()=>{
   const c=await create(),raw=fs.readFileSync(path.join(root,'local/retail/bullet.anm')),p=c._malloc(raw.length);c.HEAPU8.set(raw,p);assert.equal(c._load_bank(p,raw.length),1);c._free(p);
-  const seen=new Set();for(const r of samples.records){const s=r.state;if(seen.has(s.sprite))continue;seen.add(s.sprite);const at=c._sprite_region(s.sprite),v=new Float32Array(c.HEAPU8.buffer,at,6);assert.deepEqual(Array.from(v),[...s.resourceDimensions,s.uvCorners[0],s.uvCorners[1],s.uvCorners[2],s.uvCorners[5]]);}
-  assert.equal(seen.size,3);
+  const seen=new Set();for(const r of [...samples.records,...rings.records]){const s=r.state;if(seen.has(s.sprite))continue;seen.add(s.sprite);const at=c._sprite_region(s.sprite),v=new Float32Array(c.HEAPU8.buffer,at,6);assert.deepEqual(Array.from(v),[...s.resourceDimensions,s.uvCorners[0],s.uvCorners[1],s.uvCorners[2],s.uvCorners[5]]);}
+  assert.equal(seen.size,4); // One spell-ring sprite is also used by UFO206.
 });

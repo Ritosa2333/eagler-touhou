@@ -17,6 +17,11 @@ export function inflateReplay(input,size) {
   for(;;){if(bit())put(bits(8));else{const offset=bits(13);if(!offset)break;const n=bits(4)+3;for(let k=0;k<n;k++)put(dict[(offset+k)&8191]);}}
   if(written!==size)throw Error(`录像解压不完整 ${written}/${size}`);return out;
 }
+// Native43b9ce..43b9dd recognizes an end marker only when all three
+// recorded words areffff. A held-onlyffff word is still an input record.
+export function replayInputEnded(input) {
+  return !input||(input.held===0xffff&&input.pressed===0xffff&&input.released===0xffff);
+}
 export function parseReplay(source) {
   const b=source instanceof Uint8Array?source:new Uint8Array(source),v=new DataView(b.buffer,b.byteOffset,b.byteLength);
   if(b.length<36||v.getUint32(0,true)!==0x72323174||v.getUint16(4,true)!==4)throw Error('需要原版 TH12 1.00b .rpy 录像');
@@ -33,7 +38,7 @@ export function parseReplay(source) {
     const fpsCount=frames>1?1+Math.floor((frames-2)/30):0;
     if(payload-frames*6<fpsCount)throw Error('录像帧率数据不完整');
     stages.push({number,seed,frames,payload,offset,inputOffset:offset+160,
-      initial:{score:d.getInt32(offset+12,true),power:d.getInt32(offset+16,true),pointValue:d.getInt32(offset+20,true),lives:d.getUint16(offset+24,true),lifeFragments:d.getUint16(offset+26,true),bombs:d.getUint16(offset+28,true),bombFragments:d.getUint16(offset+30,true),ufoColors:[32,36,40].map(at=>d.getInt32(offset+at,true)),rank:d.getInt32(offset+44,true),x:d.getInt32(offset+48,true),y:d.getInt32(offset+52,true),nativeGlobals:[56,60,64,68].map(at=>d.getInt32(offset+at,true))}});
+      initial:{score:d.getInt32(offset+12,true),power:d.getInt16(offset+16,true),pointValue:d.getInt32(offset+20,true),lives:d.getInt16(offset+24,true),lifeFragments:d.getInt16(offset+26,true),bombs:d.getInt16(offset+28,true),bombFragments:d.getInt16(offset+30,true),ufoColors:[32,36,40].map(at=>d.getInt32(offset+at,true)),rank:d.getInt32(offset+44,true),x:d.getInt32(offset+48,true),y:d.getInt32(offset+52,true),nativeGlobals:[56,60,64,68].map(at=>d.getInt32(offset+at,true))}});
     offset+=160+payload;
   }
   if(offset!==size)throw Error('录像包含未识别的解压尾部');

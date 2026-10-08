@@ -15,9 +15,16 @@ export function validateTouchSnapshot(value) {
 
 export class PreviewInput {
   localKeys=new Set(); hostKeys=new Set(); touches=new Map(); hostTouch=0;
+  localReplayKeys=new Set(); hostReplayKeys=new Set();
   bombSerial=0; escapeSerial=0; pendingBomb=false; blockedPadBomb=false;
-  key(code,down,source='local') {const keys=source==='host'?this.hostKeys:this.localKeys;if(KEY_BITS[code])down?keys.add(code):keys.delete(code);}
-  clearKeyboard() {this.localKeys.clear();this.hostKeys.clear();}
+  key(code,down,source='local') {
+    if(code==='ControlLeft'||code==='ControlRight'){
+      const keys=source==='host'?this.hostReplayKeys:this.localReplayKeys;down?keys.add(code):keys.delete(code);return;
+    }
+    const keys=source==='host'?this.hostKeys:this.localKeys;if(KEY_BITS[code])down?keys.add(code):keys.delete(code);
+  }
+  replayRate(active=false) {return active&&(this.localReplayKeys.size||this.hostReplayKeys.size)?4:1;}
+  clearKeyboard() {this.localKeys.clear();this.hostKeys.clear();this.localReplayKeys.clear();this.hostReplayKeys.clear();}
   cancelTouch() {this.touches.clear();this.hostTouch=0;this.pendingBomb=false;}
   clear({resetSerials=false}={}) {this.clearKeyboard();this.cancelTouch();this.blockedPadBomb=true;if(resetSerials)this.bombSerial=this.escapeSerial=0;}
   touch(snapshot,active=true) {

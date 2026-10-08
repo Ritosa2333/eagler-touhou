@@ -1,4 +1,5 @@
 #include "../../src/game/GameState.hpp"
+#include "../../src/game/FriendlyPool.hpp"
 namespace th12 {
 float snapshot[16];
 pw::Leaf fixtureLeaf;
@@ -6,8 +7,8 @@ pw::ReimuABeam fixtureBeam;
 pw::ReimuBOrb fixtureOrb;
 extern "C" {
 void test_reset(int c,int seed,float x,float y,float angle,float speed,int extra,int update,int animation,int hitAnimation,int damage){
-  bullets.clear();enemies.clear();playerDamageSources.reset();character=c;random={uint16_t(seed),0};nextProjectileId=1;
-  Projectile b{x,y,angle,speed,12,extra?0:4,0,0,damage,animation,true};ShotSpec s;s.w=s.h=24;s.extraCallback=extra;s.update=update;s.hitAnimation=hitAnimation-5;initializeFriendlyProjectile(b,s);bullets.push_back(b);
+  bullets.clear();resetFriendlyPool();enemies.clear();playerDamageSources.reset();character=c;random={uint16_t(seed),0};nextProjectileId=1;
+  Projectile b{x,y,angle,speed,12,extra?0:4,0,0,damage,animation,true};b.physicalSlot=0;ShotSpec s;s.w=s.h=24;s.extraCallback=extra;s.update=update;s.hitAnimation=hitAnimation-5;initializeFriendlyProjectile(b,s);bullets.push_back(b);attachFriendlySlot(bullets.back());
 }
 int test_query(float x,float y,float w,float h){Enemy e;e.x=x;e.y=y;e.hitWidth=w;e.hitHeight=h;int damage=0;for(size_t i=0;i<bullets.size();++i)damage+=friendlyProjectileDamage(bullets[i],e);return std::min(80,damage+playerSourceDamage(e));}
 void test_update(){tickPlayerDamageSources();for(auto& b:bullets)if(b.active){updateFriendlyProjectile(b);++b.age;}}

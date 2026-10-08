@@ -1,8 +1,26 @@
 // TH12 1.00b portable C++ runtime. See NOTICE.md for rights.
+#include "FriendlyPool.hpp"
+#include "BulletCancellation.hpp"
+#include "CameraEffects.hpp"
+#include "LaserWorld.hpp"
 #include "GameState.hpp"
 #include "PlayerBounds.hpp"
 
 namespace th12 {
+bool playerFocused = false;
+bool movementFocus(int held, int totalAge, bool liveEnemies) {
+  // 4365a3..4365cc publishes C598 before movement/options/fire consume it.
+  return liveEnemies && totalAge >= 4 && (held & 8);
+}
+namespace {
+bool playerMovementFocus(int held) {
+  const bool liveEnemies = std::any_of(enemies.begin(), enemies.end(),
+                                      [](const auto& enemy) { return enemy->active; });
+  // Player+a48 advances at437475 through every player state and is reset
+  // only by436100 stage/session initialization, rather than by respawn.
+  return movementFocus(held, frame, liveEnemies);
+}
+} // namespace
 void awardPlayerGraze(float x, float y, float z) {
   sound_system::queue.play(44, x);
   // 4391c0 awards PIV even when the graze counter has reached its cap.
@@ -47,11 +65,18 @@ std::function<void(const pw::BombVisual&)> playerBombBindHook;
 std::function<void(const pw::ReimuBOrb&)> reimuBOrbBindHook;
 std::function<void(int, u32, float, float)>
     playerBombCustomBindHook; // effect profile/id/native position
+namespace {
+std::unordered_map<uint64_t, int> bombDeliveredInterrupts;
+}
 Enemy* playerTarget(float, float, float, u32);
 void explodeReimuBOrb(pw::ReimuBOrb& orb) {
   if (!orb.active)
     return;
-  playerBomb.circles.push_back({orb.x, orb.y, 128});
+  // Native4084a8 queues this pulse for a damage-triggered individual burst.
+  // The full timeout burst owns one shared pulse in408380 instead.
+  if (playerBomb.age < 200)
+    cameraEffects.pulse(8, 6, 6);
+  playerBomb.circles.push_back({orb.x, orb.y, 128, 2});
   // Retail 408030 allocates the burst before disabling the prior source slot.
   playerDamageSources.circle(orb.x, orb.y, 64, 8, 11, 60);
   if (orb.sourceSlot >= 0) {
@@ -121,6 +146,30 @@ bool startPlayerBomb() {
     if (playerBombBindHook)
       playerBombBindHook(v);
   playerBomb.primaryVisuals = playerBomb.visuals;
+  if (loadout == 2)
+    cameraEffects.shake(3, 60, 240, 30); // Actual4071aa profile8.
+  else if (loadout == 0)
+    cameraEffects.shake(2, 60, 240, 30); // Actual46a950 profile8.
+  else if (loadout == 3)
+    cameraEffects.shake(2, 60, 120, 30); // Actual407860 profile8.
+  else if (loadout == 4)
+    cameraEffects.shake(2, 180, 60, 1); // Actual408aa3 profile8.
+  {
+    // Native407250/408eba bind front1 synchronously after the player's main
+    // VM. Its independent handle receives IRQ1 when the Bomb stops.
+    const auto key = 0xc00000000ull + nextDetachedAnimation++;
+    auto* backdrop = animationScene.bind(key, 0x50000000u, 7, 1, anm_logic::Membership::Primary,
+                                        playerBomb.x + 224, playerBomb.y + 16, {}, false,
+                                        nullptr, 0, 0, 23);
+    if (loadout == 2 && backdrop) {
+      // Actual4072a5 writes the primary alpha after front1's birth tick.
+      //4072bf also writes the unused secondary-alpha curveB (+27c); front1
+      // uses mode0, so that retained coefficient does not change its fade.
+      auto& pose = backdrop->vm.control();
+      pose.primary = (pose.primary & 0xffffffu) | 0xe0000000u;
+    }
+    playerBomb.backgroundAnimation = key;
+  }
   eventBits |= 16;
   return true;
 }
@@ -149,6 +198,8 @@ void tickPlayerBomb() {
     if (b.tick())
       invuln = 40;
     playerBomb.active = b.active;
+    if (b.interrupt && b.visualAge == 0)
+      animationScene.interrupt(playerBomb.backgroundAnimation, 1);
     playerBomb.previousAge = playerBomb.age;
     playerBomb.age = b.age;
     if (b.clear.enabled)
@@ -159,17 +210,24 @@ void tickPlayerBomb() {
   if (playerBomb.loadout == 5 && playerBomb.active) {
     invuln = 40;
     const int age = playerBomb.age;
-    // pl02 script21 deletes at ANM tick280. The following Bomb update observes
-    // the missing VM, before the otherwise dormant native 400-tick hard cap.
-    if (age >= 281) {
+    // Actual408f00 resolves the main handle before creating sources/leaves.
+    // Without a resource bank, isolated logic fixtures retain their legacy
+    // scripted lifetime; the game uses the actual primary VM's deletion.
+    const bool sceneLifetime = animationScene.registry.bank(6) != nullptr;
+    const bool mainMissing = sceneLifetime &&
+        (playerBomb.visuals.empty() || !animationScene.find(0x700000000ull + playerBomb.visuals[0].id));
+    if (mainMissing || age >= (sceneLifetime ? 400 : 281)) {
       playerBomb.active = false;
+      animationScene.interrupt(playerBomb.backgroundAnimation, 1);
       playerBomb.visuals.clear();
       return;
     }
     if (age == 0)
       playerDamageSources.circle(playerBomb.x, playerBomb.y, 16, .35555556416511536f, 180, 13);
-    if (age == 180)
+    if (age == 180) {
+      cameraEffects.shake(4, 1, 60, 10); // Actual408f89 profile8.
       playerDamageSources.circle(playerBomb.x, playerBomb.y, 80, 20, 100, 80);
+    }
     if (age >= 30) {
       float x, y;
       if (age < 250) {
@@ -204,11 +262,16 @@ void tickPlayerBomb() {
     }
     invuln = 40;
     const int age = playerBomb.age;
-    if (age > 300) {
+    const bool mainMissing = animationScene.registry.bank(5) &&
+        (playerBomb.visuals.empty() || !animationScene.find(0x700000000ull + playerBomb.visuals[0].id));
+    if (mainMissing || age > 300) {
       playerBomb.active = false;
       playerBomb.speedMultiplier = 1;
+      animationScene.interrupt(playerBomb.backgroundAnimation, 1);
       playerBomb.tailAge = 0;
-      if (!playerBomb.visuals.empty()) {
+      if (mainMissing)
+        playerBomb.visuals.clear();
+      else if (!playerBomb.visuals.empty()) {
         playerBomb.visuals[0].interrupt = 1;
         playerBomb.visuals[0].age = 0;
       }
@@ -233,6 +296,7 @@ void tickPlayerBomb() {
     if (!playerBomb.reimuAEmitter.active) {
       playerBomb.active = false;
       playerBomb.speedMultiplier = 1;
+      animationScene.interrupt(playerBomb.backgroundAnimation, 1);
       return;
     }
     playerBomb.speedMultiplier = .5f;
@@ -260,6 +324,10 @@ void tickPlayerBomb() {
         if (reimuBOrbBindHook)
           reimuBOrbBindHook(orb);
       }
+    if (playerBomb.active && age >= 200) {
+      cameraEffects.pulse(8, 6, 6); // Actual408380, once for the whole burst.
+      animationScene.interrupt(playerBomb.backgroundAnimation, 1);
+    }
     for (auto& orb : playerBomb.reimuBOrbs) {
       if (orb.active) {
         if (age >= 200)
@@ -305,6 +373,8 @@ void tickPlayerBomb() {
       playerBomb.visuals.clear();
       return;
     }
+    if (age == 240)
+      animationScene.interrupt(playerBomb.backgroundAnimation, 1);
     if (age < 240)
       playerBomb.rectangles.push_back({true, 0, 224, 384, 448});
     if (!playerBomb.visuals.empty()) {
@@ -619,8 +689,8 @@ void sanaeBExplosion(const Projectile& parent) {
   profile.sound = 40;
   profile.update = 4;
   for (int i = 0; i < 6; ++i) {
-    if (std::count_if(bullets.begin(), bullets.end(),
-                      [](const Projectile& b) { return b.active && b.friendly; }) >= 256)
+    const int slot = reserveFriendlySlot();
+    if (slot < 0)
       break;
     const float cx = float(std::cos(double(angle)) * 12), cy = float(std::sin(double(angle)) * 12);
     const float spawnX = float(double(parent.x) + cx), spawnY = float(double(parent.y) + cy);
@@ -628,8 +698,10 @@ void sanaeBExplosion(const Projectile& parent) {
     Projectile b{
         float(double(spawnX) - vx), float(double(spawnY) - vy), angle, 3, 12, 4, 0, 0, 2, 13, true};
     b.entityId = nextProjectileId++;
+    b.physicalSlot = slot;
     initializeFriendlyProjectile(b, profile);
     bullets.push_back(b);
+    attachFriendlySlot(bullets.back());
     angle = playerAngle(float(double(angle) + 1.0471975803375244));
   }
   eventBits |= 1;
@@ -706,11 +778,13 @@ void configurePlayerAnimations() {
   };
   playerBombBindHook = [](const pw::BombVisual& v) {
     const auto key = 0x700000000ull + v.id;
+    bombDeliveredInterrupts.erase(key);
     animationScene.bind(key, 0x50000000u + v.id, 4 + v.bank, v.script,
                         anm_logic::Membership::Primary, v.x, v.y, {}, false, nullptr, 224, 16, 23);
   };
   reimuBOrbBindHook = [](const pw::ReimuBOrb& orb) {
     const auto key = 0x700000000ull + orb.id;
+    bombDeliveredInterrupts.erase(key);
     animationScene.bind(key, 0x50000000u + orb.id, 4, 24, anm_logic::Membership::Primary, orb.x,
                         orb.y, {}, false, nullptr, 224, 16, 23);
   };
@@ -726,7 +800,7 @@ void updatePlayerFocusAnimation(bool focused) {
   if (playerState != 1)
     return;
   auto* node = animationScene.find(playerFocusAnimation);
-  if (focused && !dialogue && frame >= 4) {
+  if (focused) {
     if (!node) {
       const auto key = 0xb00000000ull + nextDetachedAnimation++;
       // Native436606 creates bullet77 at zero before writing the moved
@@ -788,18 +862,14 @@ void syncBombAnimations() {
     if (visual.active) {
       const auto key = 0x700000000ull + visual.id;
       auto* node = animationScene.find(key);
-      if (!node) {
-        node = animationScene.bind(key, 0x50000000u + visual.id, 4 + visual.bank, visual.script,
-                                   anm_logic::Membership::Primary, visual.x, visual.y, {}, false,
-                                   nullptr, 224, 16, 23);
-        if (node && visual.interrupt)
-          animationScene.interrupt(key, visual.interrupt);
-      } else {
+      // Birth hooks own registration. A missing native461920 handle stays
+      // missing; synchronizing presentation must not resurrect a deleted VM.
+      if (node) {
         animationScene.position(key, visual.x, visual.y);
-        if (visual.interrupt && node->vm.diagnostics().pendingInterrupt != visual.interrupt &&
+        if (visual.interrupt && bombDeliveredInterrupts[key] != visual.interrupt &&
             !node->vm.state().ended) {
-          if (visual.age == 0)
-            animationScene.interrupt(key, visual.interrupt);
+          animationScene.interrupt(key, visual.interrupt);
+          bombDeliveredInterrupts[key] = visual.interrupt;
         }
       }
     }
@@ -812,13 +882,13 @@ void syncBombAnimations() {
 void fire() {
   const auto& s = loadouts[character * 2 + shot];
   const int level = std::clamp(power / s.powerStep, 0, s.maxLevel),
-            index = level + ((previousHeld & 8) ? s.maxLevel + 1 : 0);
+            index = level + (playerFocused ? s.maxLevel + 1 : 0);
   if (index >= int(s.groups.size()))
     return;
   for (const auto& spec : s.groups[index])
     if (spec.interval > 0 && fireFrame % spec.interval == spec.delay) {
-      if (std::count_if(bullets.begin(), bullets.end(),
-                        [](const Projectile& p) { return p.friendly && p.active; }) >= 256)
+      const int slot = reserveFriendlySlot();
+      if (slot < 0)
         break;
       if (spec.option > playerMotion.count)
         continue;
@@ -852,15 +922,20 @@ void fire() {
       if (spec.spawn == 2)
         b.hitHeight = 0;
       b.entityId = nextProjectileId++;
+      b.physicalSlot = slot;
       initializeFriendlyProjectile(b, spec);
       sound_system::queue.play(spec.sound, x);
       bullets.push_back(b);
+      attachFriendlySlot(bullets.back());
     }
 }
 
 void tickPlayer(int held, int pressed) {
   const auto& s = loadouts[character * 2 + shot];
-  const bool focus = held & 8;
+  const bool beganMoving = playerState == 1;
+  if (beganMoving)
+    playerFocused = playerMovementFocus(held);
+  const bool focus = playerFocused;
   const bool beganInDeathWindow = playerState == 4;
   const int speed = int((focus ? s.focus : s.speed) * playerBomb.speedMultiplier * 128),
             diagonal = int((focus ? s.focusDiag : s.diag) * playerBomb.speedMultiplier * 128);
@@ -923,13 +998,15 @@ void tickPlayer(int held, int pressed) {
     playerMotion.updateOptions(s, power, px, py, focus);
   bulletWorld.playerX = px / 128.f;
   bulletWorld.playerY = py / 128.f;
-  if (!(oracleFixtureFlags & 4) && (pressed & 2) && bombs > 0 &&
-      (playerState == 1 || playerState == 4) && startPlayerBomb()) {
+  if (!(oracleFixtureFlags & 4) && (held & 2) && bombs > 0 &&
+      (playerState == 1 || (playerState == 4 && playerStateTicks < 8)) && startPlayerBomb()) {
     syncBombAnimations();
     --bombs;
     deathWindow = 0;
     playerState = 1;
-    playerStateTicks = 60;
+    // 436d18 preserves a normal state's age; only436da8 deathbomb resets60.
+    if (beganInDeathWindow)
+      playerStateTicks = 60;
     spellState.onBomb();
     eventBits |= 4;
   }
@@ -972,9 +1049,7 @@ void tickPlayer(int held, int pressed) {
   } else if (playerState == 0) {
     py = 0xf000 - (playerStateTicks * 0x2800) / 60;
     if (playerStateTicks >= 30)
-      for (auto& b : bullets)
-        if (!b.friendly && b.active)
-          eb::cancel(b.enemy, bulletWorld);
+      cancelHostileBullets();
     if (playerStateTicks >= 60) {
       playerState = 1;
       playerStateTicks = 0;
@@ -984,7 +1059,11 @@ void tickPlayer(int held, int pressed) {
   ++playerStateTicks;
   if (invuln > 0)
     --invuln; // Native common tail follows state-transition writes.
-  updatePlayerFocusAnimation(focus);
+  // Native state0 reaches4364f0 on its transition back to state1. States2,
+  // 3 and4 leave C598/its handle alone until movement actually resumes.
+  if (!beganMoving && playerState == 1)
+    playerFocused = playerMovementFocus(held);
+  updatePlayerFocusAnimation(playerFocused);
   tickPlayerAnimation();
   // 4374dd..437533 uses the current Player state timer, after it advances.
   if (!dialogue && playerStateTicks % 60 == 0)
@@ -997,10 +1076,13 @@ void tickPlayer(int held, int pressed) {
     shotSchedule.finish(held & 1);
   }
   tickPlayerDamageSources();
-  for (size_t i = 0; i < bullets.size(); i++) {
-    auto& b = bullets[i];
-    if (!b.active || !b.friendly)
+  // Native436fxx updates the physical shot array in slot order. New shots
+  // in a slot already visited wait until the next effective Player16 update.
+  for (int slot = 0; slot < FriendlyCapacity; ++slot) {
+    auto* pointer = friendlySlots[slot];
+    if (!pointer || !pointer->active)
       continue;
+    auto& b = *pointer;
     updateFriendlyProjectile(b);
     if (!b.active)
       continue;
@@ -1057,26 +1139,18 @@ void tickBomb() {
   tickPlayerBomb();
   bombTimer = playerBomb.active ? playerBomb.age : 0;
   syncBombAnimations();
-  for (auto& b : bullets)
-    if (b.active && !b.friendly &&
-        (b.enemy.phase == eb::Phase::Alive || b.enemy.phase == eb::Phase::Spawning) &&
-        !b.enemy.protect.timer) {
-      bool clear = false;
-      for (const auto& a : playerBomb.rectangles)
-        if (std::abs(b.x - a.x) <= a.width * .5f && std::abs(b.y - a.y) <= a.height * .5f)
-          clear = true;
-      for (const auto& a : playerBomb.circles) {
-        const float r = float(double(a.radius) + eb::appearances[b.enemy.type].hitbox * .5f);
-        const double x = double(b.x) - a.x, y = double(b.y) - a.y;
-        if (x * x + y * y <= double(r) * r)
-          clear = true;
-      }
-      if (clear) {
-        eb::cancel(b.enemy, bulletWorld);
-        if (!spell && b.x >= -192 && b.x <= 192 && b.y >= 0 && b.y <= 448)
-          itemManager.spawn(9, {b.x, b.y}, -pi / 2, .6000000238418579f);
-      }
-    }
+  for (const auto& area : playerBomb.rectangles) {
+    if (!area.enabled)
+      continue;
+    cancelHostileRectangle(area.x, area.y, area.width, area.height, !spell);
+    laserManager.clearRectangle(laserWorld, {area.x, area.y, 0},
+                                {area.width, area.height, 0}, !spell, true);
+  }
+  for (const auto& area : playerBomb.circles) {
+    cancelHostileCircle(area.x, area.y, area.radius, !spell, true);
+    laserManager.clearCircle(laserWorld, {area.x, area.y, 0}, area.radius,
+                            uint32_t(!spell) | area.laserCancelFlags, true);
+  }
 }
 
 } // namespace th12

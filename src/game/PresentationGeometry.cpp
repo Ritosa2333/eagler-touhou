@@ -3,6 +3,7 @@
 #include "GameState.hpp"
 #include "LaserWorld.hpp"
 #include "TextGlyphs.hpp"
+#include "UfoEffects.hpp"
 #include <charconv>
 
 namespace th12 {
@@ -16,6 +17,27 @@ bool region(const anm_logic::Node& node, custom_geometry::SpriteRegion& output) 
     return false;
   output = custom_geometry::spriteRegion(state, bank->sprites[state.sprite]);
   return true;
+}
+custom_geometry::Position ringOrigin(const anm_logic::Node& node) {
+  // 4581e8..4582c4 includes exactly the immediate parent's script, offset
+  // and engine positions. Parent rotation/scale do not transform this mesh.
+  const auto position = [](const anm_logic::State& s) {
+    return custom_geometry::Position{float(double(float(double(s.offsetX) + s.x)) + s.engineX),
+                                     float(double(float(double(s.offsetY) + s.y)) + s.engineY),
+                                     float(double(float(double(s.offsetZ) + s.z)) + s.engineZ)};
+  };
+  auto result = position(node.vm.state());
+  if (node.parent)
+    if (const auto at = animationScene.nodes().find(node.parent);
+        at != animationScene.nodes().end()) {
+      const auto parent = position(at->second->vm.state());
+      result.x = float(double(result.x) + parent.x);
+      result.y = float(double(result.y) + parent.y);
+      result.z = float(double(result.z) + parent.z);
+    }
+  result.x = float(double(result.x) + node.viewportX);
+  result.y = float(double(result.y) + node.viewportY);
+  return result;
 }
 void append(custom_geometry::Mesh mesh, const anm_logic::Node& node) {
   if (mesh.vertices.empty())
@@ -31,22 +53,29 @@ void append(custom_geometry::Mesh mesh, const anm_logic::Node& node) {
 void captureCustomGeometry() {
   meshDrawState.clear();
   meshVertexState.clear();
-  std::vector<u32> ids;
-  for (const auto& [id, node] : animationScene.nodes())
-    if (node->alive && !node->customGeometry && node->vm.state().mode == 13)
-      ids.push_back(id);
-  std::sort(ids.begin(), ids.end());
-  for (const auto id : ids) {
-    const auto& node = *animationScene.nodes().at(id);
-    custom_geometry::SpriteRegion sprite;
-    if (!region(node, sprite))
-      continue;
-    const auto p = resolveAnimationTransform(node);
-    append(custom_geometry::ufoFillRing(
-               node.vm.state(), sprite,
-               {float(double(p.x) + node.viewportX), float(double(p.y) + node.viewportY), p.z}),
-           node);
-  }
+  // Registered chain order is shared by ordinary ANM and custom callbacks.
+  // Summon trails must retain that order when drawing in the same layer.
+  for (const auto membership : {anm_logic::Membership::Primary, anm_logic::Membership::Secondary,
+                                anm_logic::Membership::Embedded})
+    for (const auto* pointer : animationScene.chain(membership)) {
+      const auto& node = *pointer;
+      if (node.customGeometry && ufoEffects.owns(node.id)) {
+        append(ufoEffects.draw(node), node);
+        continue;
+      }
+      if (node.customGeometry || (node.vm.state().mode != 13 && node.vm.state().mode != 9))
+        continue;
+      custom_geometry::SpriteRegion sprite;
+      if (!region(node, sprite))
+        continue;
+      const auto p = resolveAnimationTransform(node);
+      const custom_geometry::Position origin{float(double(p.x) + node.viewportX),
+                                             float(double(p.y) + node.viewportY), p.z};
+      append(node.vm.state().mode == 9
+                 ? custom_geometry::spellRing(node.vm.state(), sprite, ringOrigin(node))
+                 : custom_geometry::ufoFillRing(node.vm.state(), sprite, origin),
+             node);
+    }
   for (const auto* object : laserManager.ordered()) {
     const auto& state = object->state;
     if (const auto* main =

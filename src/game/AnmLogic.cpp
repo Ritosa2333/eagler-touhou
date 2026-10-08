@@ -346,7 +346,9 @@ void VM::interpolate(std::initializer_list<Field> fields, std::vector<float> to,
   it->b = std::move(b);
   for (auto f : keys)
     it->from.push_back(field(f));
-  it->active = true;
+  // Native455630 tests the stored duration itself (scale +1e0): zero
+  // disables the interpolator without writing its target on later updates.
+  it->active = duration != 0;
 }
 
 void VM::jump(uint32_t offset, int clock, Runtime& r) {
@@ -821,8 +823,11 @@ void VM::advance(Runtime& r) {
     state_.v += 1;
   for (auto& t : interpolations_)
     if (t.active) {
-      t.time += dt;
-      const float n = t.duration > 0 ? std::min(1.f, t.time / t.duration) : 1.f,
+      // Native458e40 advances only positive-duration timers. A negative
+      // duration remains active at time0; a zero duration never reaches here.
+      if (t.duration > 0)
+        t.time += dt;
+      const float n = std::min(1.f, t.time / t.duration),
                   e = curve(n, t.mode);
       for (size_t i = 0; i < t.fields.size(); i++) {
         const auto f = t.fields[i];

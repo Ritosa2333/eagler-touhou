@@ -1,4 +1,5 @@
 // TH12 1.00b portable C++ runtime. See NOTICE.md for rights.
+#include "BulletCancellation.hpp"
 #include "GameState.hpp"
 #include "HostilePool.hpp"
 
@@ -32,6 +33,31 @@ struct BulletWorld : eb::World {
       eventBits |= 1;
   }
   static uint64_t key(u32 id) { return 0x500000000ull + id; }
+  static const anm_logic::SpriteInfo* currentSprite(const eb::State& state) {
+    if (auto* node = animationScene.find(key(state.id))) {
+      const auto& pose = node->vm.state();
+      if (const auto bank = animationScene.registry.bank(pose.spriteBank);
+          bank && pose.sprite >= 0 && pose.sprite < int(bank->sprites.size())) {
+        return &bank->sprites[pose.sprite];
+      }
+    }
+    return nullptr;
+  }
+  std::array<float, 2> spriteDimensions(const eb::State& state) const override {
+    if (const auto* sprite = currentSprite(state))
+      return {sprite->width, sprite->height};
+    return {0, 0};
+  }
+  bool spriteDimensionsAvailable(const eb::State& state) const override {
+    return currentSprite(state) != nullptr;
+  }
+  void blendControl(eb::State& state, int blend) override {
+    if (auto* node = animationScene.find(key(state.id))) {
+      auto& pose = node->vm.control();
+      pose.flags = (pose.flags & ~0xe0u) | (u32(blend & 1) << 5);
+      pose.blend = blend & 1;
+    }
+  }
   void appearance(eb::State& state, bool initial) override {
     const u32 id = state.id;
     const auto remap = [id](int sprite) {
@@ -78,16 +104,13 @@ struct BulletWorld : eb::World {
     case eb::AnimationEvent::CancelEffect: {
       const u32 serial = nextDetachedAnimation++;
       animationScene.bind(0x100000000ull + serial, 0, 0, argument, anm_logic::Membership::Primary,
-                          state.x, state.y);
+                          state.x, state.y, {}, false, nullptr, 224, 16, 23);
       return false;
     }
     case eb::AnimationEvent::BirthTick:
     case eb::AnimationEvent::BulletTick:
       animationScene.position(root, state.x, state.y);
       if (auto* node = animationScene.find(root)) {
-        auto& pose = node->vm.control();
-        if (state.rotateToMotion)
-          pose.rotation = state.angle + pi / 2;
         animationScene.tickEmbedded(root);
         return node->vm.state().ended;
       }
@@ -101,6 +124,24 @@ struct BulletWorld : eb::World {
   }
   bool ownsStateAnimation(const eb::State& state) const override {
     return const_cast<anm_logic::Scene&>(animationScene).find(key(state.id)) != nullptr;
+  }
+  eb::Collision playerCollision(eb::State& state) override {
+    if (oracleFixtureFlags & 2)
+      return eb::Collision::None;
+    const auto result = eb::collide(state, px / 128.f, py / 128.f, eb::playerHitboxes[character]);
+    // Native437810's outer graze branch precedes every state/dialogue gate.
+    if (result == eb::Collision::Graze && !state.grazed) {
+      awardPlayerGraze(px / 128.f, py / 128.f);
+      state.grazed = true;
+    }
+    if (result != eb::Collision::Hit)
+      return result;
+    if (dialogue || playerState == 2 || playerState == 3 || playerState == 4 || (playerFlags & 2u))
+      return eb::Collision::None;
+    // Invulnerability suppresses438370, while437810 still returnsHit and
+    // 4099e0 consumes the projectile. The miss effects precede its IRQ1.
+    playerMissCollision();
+    return eb::Collision::Hit;
   }
 } bulletBridge;
 eb::World& bulletWorld = bulletBridge;
@@ -166,16 +207,21 @@ void emit(Enemy& e, Shooter& s, bool audible) {
         unsupported[507]++;
         break;
       }
-      const float x = float(double(originX) + std::cos(double(a)) * s.radius),
-                  y = float(double(originY) + std::sin(double(a)) * s.radius);
+      // Native40a671 uses the normalized heading for radius placement, then
+      // stores40d640's polar offsets before adding the shooter origin. The
+      // subsequent velocity still uses the raw emitter angle in initialize.
+      const float radiusAngle = normalize(a),
+                  offsetX = float(std::cos(double(radiusAngle)) * s.radius),
+                  offsetY = float(std::sin(double(radiusAngle)) * s.radius),
+                  x = float(double(originX) + offsetX), y = float(double(originY) + offsetY);
       Projectile projectile{x, y, normalize(a), speed, s.type == 11 ? 4.f : 3.f, s.type, s.color};
       projectile.entityId = nextProjectileId++;
       projectile.physicalSlot = physicalSlot;
       bullets.push_back(projectile);
       auto& born = bullets.back();
       attachHostileSlot(born); // Parent occupies its slot before child births.
-      eb::initialize(born.enemy, born.entityId, s.extensions, s.type, s.color, x, y, normalize(a),
-                     speed, bulletWorld);
+      eb::initialize(born.enemy, born.entityId, s.extensions, s.type, s.color, x, y, a, speed,
+                     bulletWorld);
       born.x = born.enemy.x;
       born.y = born.enemy.y;
       born.active = born.enemy.phase != eb::Phase::Inactive;
@@ -184,6 +230,100 @@ void emit(Enemy& e, Shooter& s, bool audible) {
   eventBits |= 1;
   if (audible && (s.extensions.flags & 0x80u))
     sound_system::queue.play(s.fireSound, originX);
+}
+
+namespace {
+void cancelToPoint(Projectile& bullet, bool convert) {
+  const float x = bullet.enemy.x, y = bullet.enemy.y;
+  eb::cancel(bullet.enemy, bulletWorld);
+  if (convert && bullet_cancellation::pointVisible(x, y))
+    itemManager.spawn(9, {x, y}, -pi / 2, .6000000238418579f);
+}
+bool eligibleCancellation(const Projectile* bullet) {
+  return bullet && bullet->active &&
+         (bullet->enemy.phase == eb::Phase::Alive || bullet->enemy.phase == eb::Phase::Spawning);
+}
+bool fullClearTint(const Projectile& bullet, u32& color) {
+  const auto* node = animationScene.find(BulletWorld::key(bullet.enemy.id));
+  if (!node)
+    return false;
+  const auto& pose = node->vm.state();
+  const auto bank = animationScene.registry.bank(pose.spriteBank);
+  if (!bank || pose.sprite < 0 || pose.sprite >= int(bank->sprites.size()))
+    return false;
+  const float width = bank->sprites[pose.sprite].width;
+  // Native40d1ad..40d1f4 reads the resolved sprite record width, independent
+  // of scale/size overrides. Tables are4b0bd0,4b0c10,4b0c30.
+  static constexpr u32 small[16] = {0xff808080, 0xffff1010, 0xffff1010, 0xff801080,
+                                    0xff801080, 0xff1010ff, 0xff1010ff, 0xff108080,
+                                    0xff108080, 0xff10ff10, 0xff10ff10, 0xff10ff10,
+                                    0xff808010, 0xff808010, 0xff808010, 0xff808080};
+  static constexpr u32 medium[8] = {0xff808080, 0xffff1010, 0xff801080, 0xff1010ff,
+                                    0xff108080, 0xff10ff10, 0xff808010, 0xff808080};
+  static constexpr u32 large[4] = {0xffff1010, 0xff1010ff, 0xff10ff10, 0xff808010};
+  const int index = bullet.enemy.color;
+  if (index < 0)
+    return false;
+  if (width <= 16 && index < 16)
+    color = small[index];
+  else if (width > 16 && width <= 32 && index < 8)
+    color = medium[index];
+  else if (width > 32 && index < 4)
+    color = large[index];
+  else
+    return false;
+  return true;
+}
+} // namespace
+void cancelHostileBullets() {
+  for (auto* bullet : hostileSlots)
+    if (eligibleCancellation(bullet))
+      cancelToPoint(*bullet, false);
+}
+void clearHostileViewport(bool convert) {
+  if (spellState.active() && spellState.cardId >= 96 && spellState.cardId <= 99)
+    return;
+  for (auto* bullet : hostileSlots) {
+    if (!eligibleCancellation(bullet))
+      continue;
+    const float hitbox = eb::appearances[bullet->enemy.type].hitbox;
+    if (!bullet_cancellation::viewportOverlaps(bullet->enemy.x, bullet->enemy.y, hitbox, hitbox))
+      continue;
+    // Full clear marks flags8 directly. It preserves phase, lifetime and IRQ
+    // until the next Bullet21 visit, which retires without movement/ANM tick.
+    bullet->enemy.pendingRetire = true;
+    if (convert)
+      itemManager.spawn(9, {bullet->enemy.x, bullet->enemy.y}, -pi / 2, .6000000238418579f);
+    u32 tint = 0;
+    const bool tinted = fullClearTint(*bullet, tint);
+    float z = 0;
+    if (const auto* body = animationScene.find(BulletWorld::key(bullet->enemy.id)))
+      z = body->vm.state().engineZ;
+    const u32 serial = nextDetachedAnimation++;
+    if (auto* effect = animationScene.bind(
+            0x100000000ull + serial, 0, 0, 96, anm_logic::Membership::Primary, bullet->enemy.x,
+            bullet->enemy.y, {}, false, nullptr, 224, 16, 23, false, z);
+        effect && tinted)
+      effect->vm.control().primary = tint;
+  }
+}
+void cancelHostileCircle(float x, float y, float radius, bool convert, bool respectCountdown) {
+  // Native40caa0 visits physical slots even when a low free slot was reused
+  // after an older projectile; item9's delay ordinal follows these visits.
+  if (spellState.active() && spellState.cardId >= 96 && spellState.cardId <= 99)
+    radius = float(double(radius) / 3);
+  for (auto* bullet : hostileSlots)
+    if (eligibleCancellation(bullet) && (!respectCountdown || bullet->enemy.collisionDelay == 0) &&
+        bullet_cancellation::circleContains(bullet->enemy.x, bullet->enemy.y, x, y, radius,
+                                            eb::appearances[bullet->enemy.type].hitbox))
+      cancelToPoint(*bullet, convert);
+}
+void cancelHostileRectangle(float x, float y, float width, float height, bool convert) {
+  for (auto* bullet : hostileSlots)
+    if (eligibleCancellation(bullet) && bullet->enemy.collisionDelay == 0 &&
+        bullet_cancellation::rectangleContains(bullet->enemy.x, bullet->enemy.y, x, y, width,
+                                               height))
+      cancelToPoint(*bullet, convert);
 }
 
 void tickBullets() {
@@ -201,21 +341,6 @@ void tickBullets() {
     b.speed = b.enemy.speed;
     b.age = b.enemy.age;
     b.active = b.enemy.phase != eb::Phase::Inactive;
-    if (!(oracleFixtureFlags & 2) && b.active) {
-      const auto collision =
-          eb::collide(b.enemy, px / 128.f, py / 128.f, eb::playerHitboxes[character]);
-      if (collision == eb::Collision::Graze && !b.enemy.grazed) {
-        awardPlayerGraze(px / 128.f, py / 128.f);
-        b.enemy.grazed = true;
-      }
-      // Native437810's graze branch precedes every state/dialogue gate.
-      // Its inner hit returns0 in these states; invulnerability still returns1.
-      if (collision == eb::Collision::Hit && !dialogue && playerState != 2 && playerState != 3 &&
-          playerState != 4 && !(playerFlags & 2u)) {
-        eb::cancel(b.enemy, bulletWorld);
-        playerMissCollision();
-      }
-    }
     if (b.enemy.phase != eb::Phase::Inactive)
       eb::finishAnimation(b.enemy, bulletWorld);
     b.active = b.enemy.phase != eb::Phase::Inactive;

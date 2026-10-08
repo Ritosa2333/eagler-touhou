@@ -1,6 +1,7 @@
 import createCore from './runtime/core.mjs';
 import {Renderer} from '/src/renderer.mjs';
 import {parseReplay} from '/src/replay.mjs';
+import {startReplayStage,replayInputEnded} from '/src/replay-session.mjs';
 import {openStore} from '/src/storage.mjs';
 import {installShell} from '/src/shell.mjs';
 import {PreviewInput,supportedReplay} from '/src/preview-input.mjs';
@@ -27,6 +28,8 @@ function stopMusic(){audio.player?.stop();}
 function stopEffects(){for(const source of audio.effects.values()){try{source.stop();}catch{}}audio.effects.clear();}
 function audioPause(value){if(!audio.context)return;const task=value?audio.context.suspend():audio.context.resume();task.catch(e=>console.warn('音频暂停/恢复失败：'+e.message));}
 function clear(){inputState.clear();drag=hostDrag=null;previous=0;}
+function replayRate(){return inputState.replayRate(!!activeReplay&&running&&!paused);}
+function clearKeyboard(){const rate=replayRate();inputState.clearKeyboard();if(rate!==replayRate()){last=performance.now();accumulator=0;}}
 function cancelTouch(){inputState.cancelTouch();drag=hostDrag=null;}
 function fail(e){
   generation++;ready=running=paused=busy=loadingReplay=false;clear();stopMusic();stopEffects();audioPause(true);updateButtons();
@@ -110,12 +113,12 @@ function loop(now,token){
     const elapsed=Math.max(0,now-last);last=now;maxGap=Math.max(maxGap,elapsed);
     const pad=Array.from(navigator.getGamepads?.()||[]).find(p=>p?.connected);pollPadPause(pad);
     if(!paused){
-      accumulator+=elapsed;let budget=0;
-      while(running&&accumulator>=tickMs&&budget++<8){
+      const rate=replayRate();accumulator+=elapsed*rate;let budget=0;
+      while(running&&accumulator>=tickMs&&budget++<8*rate){
         let input;
         if(activeReplay){
           input=activeReplay.input(currentStage,replayFrame);
-          if(!input||input.held===65535){finish('replay-input-ended');break;}
+          if(replayInputEnded(input)){finish('replay-input-ended');break;}
           replayFrame++;
         }else input=inputState.sample(previous,pad);
         core._th12_tick(input.held,input.pressed);previous=input.held;accumulator-=tickMs;afterTick();
@@ -124,7 +127,7 @@ function loop(now,token){
     present();renderedFrames++;
     if(!firstPresented){firstPresented=true;requestAnimationFrame(()=>{if(token===generation)post({event:'first-frame'});});}
     if(now-healthAt>1000&&running){
-      const fps=renderedFrames*1000/(now-healthAt);$('fps').textContent=paused?'已暂停':fps.toFixed(0)+' FPS';
+      const fps=renderedFrames*1000/(now-healthAt);$('fps').textContent=paused?'已暂停':(replayRate()>1?'4 倍速 · ':'')+fps.toFixed(0)+' FPS';
       post({event:'frame-health',fps,maxGapMs:maxGap});post({event:'audio-health',backend:audio.enabled?'web-audio':'none',robust:false});renderedFrames=0;maxGap=0;healthAt=now;
     }
   }catch(e){fail(e);return;}
@@ -140,20 +143,20 @@ async function start(replay=null){
     const c=replay?.character??Number($('character').value),s=replay?.shot??Number($('shot').value),d=replay?.difficulty??(currentStage===7?4:Number($('difficulty').value)),stage=replay?.stages.find(s=>s.number===currentStage);
     await renderer.prepareStage(currentStage);
     if(!await stageLoader.load(currentStage,()=>token===generation))return;
-    core._th12_start(c,s,d,stage?.seed??Math.floor(Math.random()*65536));
-    if(stage){const i=stage.initial;core._th12_set_initial(i.x,i.y,i.power,i.lives,i.bombs,i.score);core._th12_set_replay_economy(i.pointValue,i.lifeFragments,i.bombFragments,...i.ufoColors,i.rank);}
+    if(stage)startReplayStage(core,replay,stage);
+    else core._th12_start(c,s,d,Math.floor(Math.random()*65536));
     audio.enabled=$('music').checked;
     try{await initializeAudio();await music(token);}catch(e){stopMusic();console.warn('音频未就绪：'+e.message);post({event:'notice',message:'音频未就绪，可关闭声音后继续试玩'});}
     if(token!==generation)return;
     running=true;paused=false;$('pause').textContent='暂停';$('overlay').hidden=true;
     const now=performance.now();last=healthAt=now;renderedFrames=maxGap=0;accumulator=tickMs;
-    message((replay?'原版录像 · ':'')+(currentStage===7?'Extra':'第 '+currentStage+' 面'));canvas.focus({preventScroll:true});
+    message((replay?'原版录像 · ':'')+(currentStage===7?'Extra':'第 '+currentStage+' 面')+(replay?' · 按住 Ctrl 4 倍速':''));canvas.focus({preventScroll:true});
     if(document.hidden||focusLostDuringStart)pause(true);
     post({event:'runtime-info',architecture:'C++/Wasm development core',renderer:'WebGL2',version:'0.3.0-cpp'});requestAnimationFrame(t=>loop(t,token));
   }finally{busy=false;updateButtons();}
 }
 function diagnostic(){const counts=new Uint32Array(core.HEAPU8.buffer,core._th12_unsupported(),1024);return {schema:'th12-development-report/1',version:'0.3.0-cpp',scope:'all-stage-preview',stage:currentStage,wholeGameDeterminism:false,replay:activeReplay?{name:activeReplay.name,character:activeReplay.character,shot:activeReplay.shot,difficulty:activeReplay.difficulty}:null,replayInputFrame:replayFrame,session:{running,paused},logicalFrame:lastHud[0],state:lastHud,unimplemented:Object.fromEntries([...counts].map((n,i)=>[i,n]).filter(([,n])=>n)),samples:log};}
-function replayChanged(){const f=corpus.find(f=>f.id===$('replay').value),select=$('replay-stage'),prior=Number(select.value);select.replaceChildren();for(const stage of f?.stages??[]){if(!supportedReplay(f,stage.number))continue;const option=document.createElement('option');option.value=stage.number;option.textContent=stage.number===7?'Extra':'第 '+stage.number+' 面';select.append(option);}if(f?.stages.some(s=>s.number===prior))select.value=prior;$('replay-info').textContent=f?`记录者 ${f.name} · ${f.stages.map(s=>s.number===7?'Extra':s.number+'面').join('、')}`:'';updateButtons();}
+function replayChanged(){const f=corpus.find(f=>f.id===$('replay').value),select=$('replay-stage'),prior=Number(select.value);select.replaceChildren();for(const stage of f?.stages??[]){if(!supportedReplay(f,stage.number))continue;const option=document.createElement('option');option.value=stage.number;option.textContent=stage.number===7?'Extra':'第 '+stage.number+' 面';select.append(option);}if(f?.stages.some(s=>s.number===prior))select.value=prior;$('replay-info').textContent=f?`记录者 ${f.name} · ${f.stages.map(s=>s.number===7?'Extra':s.number+'面').join('、')} · 按住 Ctrl 4 倍速`:'';updateButtons();}
 function refreshReplays(preferred=$('replay').value){
   const select=$('replay');select.innerHTML='';
   for(const f of corpus){const option=document.createElement('option');option.value=f.id;const supported=supportedReplay(f);option.disabled=!supported;option.textContent=`${f.id} · ${['灵梦','魔理沙','早苗'][f.character]}${f.shot?'B':'A'} · ${['E','N','H','L','EX'][f.difficulty]}${supported?'':' · 尚未支持关卡'}`;select.append(option);}
@@ -175,13 +178,17 @@ $('music').onchange=()=>{
   audio.enabled=$('music').checked;if(!audio.enabled){stopMusic();stopEffects();}else if(running&&!paused){const token=generation;initializeAudio().then(()=>music(token)).catch(e=>message('音频未就绪：'+e.message));}
 };
 function key(code,down,source='local'){
+  if(code==='ControlLeft'||code==='ControlRight'){
+    const rate=replayRate();inputState.key(code,down&&running&&!paused&&!!activeReplay,source);
+    if(rate!==replayRate()){last=performance.now();accumulator=0;}return;
+  }
   if(code==='Escape'){const keys=source==='host'?inputState.hostKeys:inputState.localKeys;if(down&&!keys.has(code))pause();down?keys.add(code):keys.delete(code);return;}
   if(down&&(!running||paused||activeReplay))return;inputState.key(code,down,source);
 }
 // Ignore repeated Escape while paused and preserve browser controls outside the game surface.
 window.addEventListener('keydown',e=>{
   if(!running||e.target.closest?.('input,select,textarea'))return;
-  if(['Escape','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','ShiftLeft','ShiftRight'].includes(e.code)){e.preventDefault();if(!e.repeat)key(e.code,true);}
+  if(['Escape','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyZ','KeyX','ShiftLeft','ShiftRight','ControlLeft','ControlRight'].includes(e.code)){e.preventDefault();if(!e.repeat)key(e.code,true);}
 });
 window.addEventListener('keyup',e=>key(e.code,false));
 function loseFocus(){focusLostDuringStart=true;clear();pause(true);Promise.resolve(store?.sync()).catch(e=>console.warn(e.message));}
@@ -211,7 +218,7 @@ async function initialize(){
   for(const path of await store.list()){if(!path.endsWith('.rpy'))continue;try{const b=await store.read(path),r=parseReplay(b),id=path.split('/').at(-1);custom.set(id,b);corpus.push({...r,data:undefined,id});}catch(e){console.warn(e.message);}}
   ready=true;refreshReplays();message('资源已就绪 · 可选择关卡');
   post=installShell({store,running:()=>running||busy,music:on=>{$('music').checked=on;audio.enabled=on;if(!on)stopMusic();},start:()=>start(),
-    key:(code,down)=>key(code,down,'host'),keyboardClear:()=>inputState.clearKeyboard(),touchCancel:cancelTouch,
+    key:(code,down)=>key(code,down,'host'),keyboardClear:clearKeyboard,touchCancel:cancelTouch,
     touch:m=>{const escape=inputState.touch(m,running&&!paused&&!activeReplay);if(escape)pause();},
     pointer:m=>{
       if(m.type==='up'){if(hostDrag?.id===m.id){inputState.touches.delete('host-pointer');hostDrag=null;}return;}

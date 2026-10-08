@@ -2,6 +2,7 @@
 #include "../bullet_visuals.hpp"
 #include "BulletPool.hpp"
 #include "GameState.hpp"
+#include "UfoEffects.hpp"
 
 namespace th12 {
 std::vector<Sprite> drawState;
@@ -68,17 +69,20 @@ void captureAnimationDraw() {
   }
   u32 order = 0;
   std::unordered_map<u32, u32> bulletOrder;
+  std::unordered_map<u32, const Projectile*> hostileDraw;
   // 40a020 appends surviving physical slots in ascending order to six
   // appearance groups;40a220 draws group0..5, not allocation/id order.
   for (const auto& bullet : bullets)
     if (!bullet.friendly && bullet.active && bullet.physicalSlot >= 0 && bullet.enemy.type >= 0 &&
-        bullet.enemy.type < int(bullet_visuals::appearances.size()))
+        bullet.enemy.type < int(bullet_visuals::appearances.size())) {
+      hostileDraw[0x10000000u + bullet.entityId] = &bullet;
       bulletOrder[0x10000000u + bullet.entityId] =
           u32(bullet_visuals::appearances[bullet.enemy.type].group * bullet_pool::Slots::capacity +
               bullet.physicalSlot);
+    }
   for (const auto* pointer : nodes) {
     const auto& node = *pointer;
-    if (node.customGeometry)
+    if (node.customGeometry && !ufoEffects.owns(node.id))
       continue;
     const u32 id = node.id;
     const auto& s = node.vm.state();
@@ -93,9 +97,18 @@ void captureAnimationDraw() {
                      : priority < 43 || priority == 44                                    ? 2u
                                                                                           : 0u;
     animationScheduleState.push_back({id, priority, drawOrder, clip});
-    if (s.mode == 13)
+    if (node.customGeometry)
       continue;
-    const auto transform = resolveAnimationTransform(node);
+    if (s.mode == 9 || s.mode == 13)
+      continue;
+    auto transform = resolveAnimationTransform(node);
+    if (priority == 31 && (s.flags & 0x20000000u))
+      if (const auto at = hostileDraw.find(node.owner); at != hostileDraw.end()) {
+        // 40a1a2 computes the embedded VM heading at draw time. Opcode82
+        // supplies this flag even when no ETEX rotation command was present.
+        transform.rotation =
+            anm_logic::normalized(float(double(at->second->enemy.angle) + 1.5707963705062866));
+      }
     animationDrawState.push_back({transform.x + node.viewportX,
                                   transform.y + node.viewportY,
                                   transform.z,

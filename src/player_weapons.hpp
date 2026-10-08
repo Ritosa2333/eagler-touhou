@@ -43,7 +43,7 @@ struct MarisaBBomb {
   }
   int damage(float enemyY)const{return active?marisaBDamage(age,enemyY):0;}
 };
-struct BombCircle {float x=0,y=0,radius=0;};
+struct BombCircle {float x=0,y=0,radius=0;uint32_t laserCancelFlags=0;};
 struct BombVisual {uint32_t id=0;int bank=0,script=0,age=0,interrupt=0;float x=0,y=0,angle=0;bool active=true;};
 struct RetiredVisual {BombVisual visual{};int remaining=0;};
 struct TrailPoint {float x=0,y=0;uint32_t color=0xffffffffu;};
@@ -97,6 +97,7 @@ struct BombState {
   int loadout=-1,age=0,previousAge=-1,tailAge=0;bool active=false;
   float x=0,y=0,speedMultiplier=1;
   MarisaBBomb marisaB{};
+  uint64_t backgroundAnimation=0;
   std::vector<BombVisual> visuals;
   std::vector<BombVisual> primaryVisuals;std::vector<RetiredVisual> retiredVisuals;
   std::vector<BombTrail> trails;std::vector<Leaf> leaves;
@@ -106,6 +107,11 @@ struct BombState {
   std::vector<BombCircle> circles;
   void reset(){*this={};}
 };
+inline float sourceCoordinate(float value){
+  const float scaled=float(double(value)*100.0);
+  const float integral=float(std::floor(double(scaled)));
+  return float(double(integral)/100.0);
+}
 struct Manager {
   std::array<DamageSource,128> sources{};uint32_t nextId=1;
   void reset(){sources={};nextId=1;}
@@ -113,7 +119,13 @@ struct Manager {
     for(auto& s:sources)if(!(s.flags&1)){s={};s.id=nextId++;s.x=x;s.y=y;s.radius=radius;s.growth=growth;s.ticks=ticks;s.previousTicks=ticks-1;s.damage=damage;s.flags=3;return &s;}return nullptr;
   }
   // 436f90..437098 advances radius and timer before ordinary projectile update.
-  void tick(){for(auto& s:sources)if(s.flags&1){s.radius=float(double(s.radius)+s.growth);s.width=float(double(s.width)+s.widthGrowth);s.height=float(double(s.height)+s.heightGrowth);s.previousTicks=s.ticks;--s.ticks;if(s.ticks<=0)s.flags&=~1u;}}
+  void tick(){for(auto& s:sources)if(s.flags&1){
+    // 43700e invokes464db0/465320 even on ctor-zero velocity circles. The
+    // first post-birth visit can floor147.929993 to147.919998, without moving
+    // the already matching parent shot or changing its source birth center.
+    s.x=sourceCoordinate(s.x);s.y=sourceCoordinate(s.y);
+    s.radius=float(double(s.radius)+s.growth);s.width=float(double(s.width)+s.widthGrowth);s.height=float(double(s.height)+s.heightGrowth);s.previousTicks=s.ticks;--s.ticks;if(s.ticks<=0)s.flags&=~1u;
+  }}
   int damage(float x,float y,float width,float height){
     int total=0;
     for(auto& s:sources){
@@ -121,7 +133,7 @@ struct Manager {
       // Native 43a228..235 suppresses the divisible ticks. This differs from lasers.
       if(s.ticks!=s.previousTicks&&s.ticks%s.cadence==0)continue;
       bool hit=false;
-      if(s.flags&2){const float dx=float(double(s.x)-x),dy=float(double(s.y)-y);const float d=float(double(dx)*dx+double(dy)*dy);hit=double(s.radius)*s.radius>=d;}
+      if(s.flags&2){const double dx=double(s.x)-x,dy=double(s.y)-y;const float d=float(dx*dx+dy*dy);hit=double(s.radius)*s.radius>=d;}
       else {const double dx=double(x)-s.x,dy=double(y)-s.y,c=std::cos(double(s.angle)),v=std::sin(double(s.angle));const float tx=float(dx*c+dy*v),ty=float(dy*c-dx*v);hit=std::abs(tx)<=width*.5f+s.width*.5f&&std::abs(ty)<=height*.5f+s.height*.5f;}
       if(hit){total+=s.damage;s.accumulated+=s.damage;if(s.accumulated>=s.limit)s.damage=0;}
     }return total;

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import createCore from '../site/runtime/core.mjs';
 import {readCoreAnimationPoses} from '../src/renderer.mjs';
+import {loadLiveMain} from './helpers/live-main.mjs';
 
 const native=JSON.parse(fs.readFileSync(new URL('./fixtures/player-focus-original.json',import.meta.url))),
   bytes=fs.readFileSync(new URL('../site/assets/bullet.anm',import.meta.url));
@@ -13,7 +14,7 @@ test('six loadouts retain all64 native focus-marker birth, tracking, fade and re
   assert.equal(native.gpuExecuted,false);
   assert.ok(native.frames.some(f=>f.nodes.length===4),'retirement overlaps a new focus press');
   for(let loadout=0;loadout<6;loadout++){
-    const c=await createCore(),ptr=c._malloc(bytes.length);c.HEAPU8.set(bytes,ptr);
+    const c=await createCore(),ptr=c._malloc(bytes.length);loadLiveMain(c);c.HEAPU8.set(bytes,ptr);
     assert.equal(c._th12_load_anm(0,ptr,bytes.length),1);c._free(ptr);
     c._th12_start(loadout>>1,loadout%2,1,0x1234);
     for(const f of native.frames){

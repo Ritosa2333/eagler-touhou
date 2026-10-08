@@ -1,4 +1,5 @@
 // TH12 1.00b portable C++ runtime. See NOTICE.md for rights.
+#include "CameraEffects.hpp"
 #include "GameState.hpp"
 #include "LaserSnapshot.hpp"
 
@@ -161,6 +162,8 @@ void snapshotBackground(std::ostream& out, bool full = false) {
   snapshotArray(out, c.offset);
   out << ",\"velocity\":";
   snapshotArray(out, c.velocity);
+  out << ",\"screenShake\":";
+  snapshotArray(out, cameraEffects.offsets);
   out << ",\"fov\":" << c.fov << ",\"fog\":[" << ((c.fogArgb >> 16) & 255) / 255.f << ','
       << ((c.fogArgb >> 8) & 255) / 255.f << ',' << (c.fogArgb & 255) / 255.f << ',' << c.fogStart
       << ',' << c.fogEnd << "]},\"poses\":[";
@@ -514,10 +517,12 @@ const std::string& captureState() {
       << "},\"player\":{\"xFixed\":" << px << ",\"yFixed\":" << py << ",\"state\":" << playerState
       << ",\"stateAge\":" << playerStateTicks << ",\"invulnerability\":" << invuln
       << ",\"deathWindow\":" << deathWindow << ",\"graze\":" << graze
-      << ",\"focusAnimation\":" << playerFocusAnimation << ",\"fireFrame\":" << shotSchedule.frame
-      << ",\"character\":" << character << ",\"shot\":" << shot << ",\"body\":["
-      << playerMotion.bodyAnimation << ',' << playerMotion.bodyAge << ',' << playerMotion.previousDx
-      << "],\"options\":[";
+      << ",\"focused\":" << playerFocused << ",\"focusAnimation\":" << playerFocusAnimation
+      << ",\"replayInitialGlobals\":";
+  snapshotArray(out, replayStageGlobals);
+  out << ",\"fireFrame\":" << shotSchedule.frame << ",\"character\":" << character
+      << ",\"shot\":" << shot << ",\"body\":[" << playerMotion.bodyAnimation << ','
+      << playerMotion.bodyAge << ',' << playerMotion.previousDx << "],\"options\":[";
   for (int i = 0; i < playerMotion.count; i++) {
     if (i)
       out << ',';
@@ -596,6 +601,7 @@ const std::string& captureState() {
         << ',' << e.ry << ',' << e.relativeAngle << ',' << e.relativeSpeed
         << "],\"life\":" << e.life << ",\"maxLife\":" << e.maxLife << ",\"age\":" << e.age
         << ",\"phaseAge\":" << e.phaseAge << ",\"flags\":" << e.flags
+        << ",\"animationLayerOffset\":" << e.animationLayerOffset
         << ",\"lifeFlags\":" << e.lifeFlags << ",\"lifeRaw\":" << e.lifeRaw
         << ",\"phaseLife\":" << e.phaseLife << ",\"lifeThreshold\":" << e.lifeThreshold
         << ",\"bossSlot\":" << e.bossSlot << ",\"active\":" << e.active << ",\"boss\":" << e.boss
@@ -656,8 +662,9 @@ const std::string& captureState() {
     if (comma)
       out << ',';
     comma = true;
-    out << "{\"id\":" << b.entityId << ",\"friendly\":" << b.friendly << ",\"position\":[" << b.x
-        << ',' << b.y << "],\"motion\":[" << b.angle << ',' << b.speed << "],\"type\":" << b.type
+    out << "{\"id\":" << b.entityId << ",\"physicalSlot\":" << b.physicalSlot
+        << ",\"friendly\":" << b.friendly << ",\"position\":[" << b.x << ',' << b.y
+        << "],\"motion\":[" << b.angle << ',' << b.speed << "],\"type\":" << b.type
         << ",\"color\":" << b.color << ",\"age\":" << b.age << ",\"active\":" << b.active;
     if (b.friendly)
       out << ",\"weapon\":[" << int(b.weapon.phase) << ',' << b.weapon.previousAge << ','
@@ -669,7 +676,7 @@ const std::string& captureState() {
       out << ",\"hostile\":[" << s.vx << ',' << s.vy << ',' << int(s.phase) << ',' << s.collisionAge
           << ',' << s.grazed << ',' << s.rotateToMotion << ',' << s.spawnDuration << ','
           << s.cancelAge << ',' << s.collisionDelay << ',' << s.offscreenGrace << ',' << s.active
-          << ',' << s.cursor << "],\"extensions\":";
+          << ',' << s.cursor << ',' << s.pendingRetire << "],\"extensions\":";
       snapshotProgram(out, s.program);
       out << ",\"transforms\":[";
       snapshotMotion(out, s.fast);
