@@ -425,7 +425,10 @@ function renderFilters() {
     button.title = titleFor(product);
     return button;
   });
-  el("filters").replaceChildren(...filters);
+  const dock = document.createElement("div");
+  dock.className = "minimap-dock";
+  dock.append(...filters);
+  el("filters").replaceChildren(dock);
   library = initializeGameLibrary({ initialProduct: selectedProduct, alignSelectionOnResize: true, onSelectionChange: product => selectProduct(product) });
 }
 function selectProduct(product: string, fromHistory = false) {
