@@ -58,7 +58,6 @@ bool ApplicationState::prepare_live_replay(bool cleared){
  if(!replay||!replay->live())return fail("No live recording to save");if(!completed_recording){replay->live()->finish(i64(std::time(nullptr)),progress.stage,cleared);completed_recording=true;}live_description=replay->live()->description();if(title)title->live=replay->live();return true;
 }
 bool ApplicationState::save_slot(i32 slot,const std::array<char,9>& name){
- if(practice.assisted)return false;
  if(practice.active&&replay&&replay->live()&&!replay->live()->set_practice(practice.run))return fail("Practice replay parameters unavailable");
  if(!replay||!replay->live())return fail("Replay save has no recording");ReplayCalendar date;if(!calendar(i64(std::time(nullptr)),date))return false;const auto score=scene()?scene()->battle.score.score:selection_score.score;
  const ReplayExportDetails details{score,double(frames),double(frames?frames:1),date.year,date.month,date.day,date.hour,date.minute};return files.save_replay(slot,*replay->live(),name,details)||fail(files.error);

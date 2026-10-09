@@ -6,6 +6,12 @@ Validation below describes the evidence collected, not full native/device parity
 
 ## Latest fixes and production verification
 
+- Restore purple's replay-save policy: using assistance no longer disables
+  the pause/completed-run save path or rejects the storage write. Native game
+  restrictions remain unchanged, and PRAC parameter parsing is still validated.
+  Cheats and live F12 toggles are not serialized by purple's PRAC JSON; enabling
+  saving alone is not a guarantee of deterministic assisted playback.
+
 - Preserve purple's keyboard HUD style and make its key labels readable; include
   arrows and Greek monitor glyphs in the shared Unicode font atlas.
 - Serialize the captured Reimu bomb aura handle, not the unrelated live registry
@@ -171,11 +177,14 @@ Retail resource payload, executable, fonts and build output are never committed.
   executable/assets to public artifacts. ON/OFF release builds are checked
   separately. No live menu/replay/device parity is claimed by these tests.
 
-### Assisted replay menu lifecycle
+### Historical assisted replay menu restriction (superseded)
 
-- Pause and completed-run replay saving query the application-owned assisted
+- The earlier implementation made Pause and completed-run replay saving query the application-owned assisted
   state. Unassisted Practice recordings retain the normal PRAC save path;
-  assisted runs disable the save entry instead of reaching a fatal write.
+  assisted runs disabled the save entry instead of reaching a fatal write.
+  This extra application policy was removed on 2026-10-09 to match purple's
+  TH15 save hook. Generic host-availability menu tests below are not evidence
+  that TH15 should reject assisted saves.
 - Rechecking while paused avoids duplicate disabled entries in the original
   bounded cursor. Enabling assistance inside replay slot/name entry unwinds
   the pushed menu frame, clears replay UI flags and resumes the result menu.

@@ -32,7 +32,7 @@ EMSCRIPTEN_KEEPALIVE void application_practice_frame(){if(!app)return;bool keys[
 EMSCRIPTEN_KEEPALIVE const i32* application_practice_state(){static std::array<i32,12> value{};if(app){auto& p=app->practice;value={p.enabled,p.menu,p.accepted,p.cancelled,p.advanced_visible,p.tracker_visible,p.menu_visible,p.active,p.replay,p.configured.section,p.run.section,p.assisted};}return value.data();}
 EMSCRIPTEN_KEEPALIVE void application_practice_mouse(int type,float x,float y){sdl::ThpracUi::mouse(type,x,y);}
 EMSCRIPTEN_KEEPALIVE int application_practice_pointer(float x,float y){return sdl::ThpracUi::captures_pointer(x,y);}
-EMSCRIPTEN_KEEPALIVE int application_practice_save(){const std::array<char,9> name{'P','U','R','P','L','E',0,0,0};return app&&app->prepare_live_replay(false)&&app->save_slot(0,name);}
+EMSCRIPTEN_KEEPALIVE int application_practice_save(){const std::array<char,9> name{'P','U','R','P','L','E',0,0,0};return app&&app->replay_save_available()&&app->prepare_live_replay(false)&&app->save_slot(0,name);}
 EMSCRIPTEN_KEEPALIVE const i32* application_practice_options(){static std::array<i32,13> value{};if(app){const auto& p=app->practice;value={p.input.disable_xkey,p.input.disable_shiftkey,p.input.disable_zkey,p.input.force_shiftkey,p.input.enable_fast_retry,p.show_keyboard_monitor,p.map_inf_life_to_no_continue,p.shooting_down_rate,p.force_boss_move_down,p.disable_master_display,p.show_lock_timer,p.all_clear_bonus,p.flip_screen_y};}return value.data();}
 EMSCRIPTEN_KEEPALIVE const i32* application_practice_ab_state(){static std::array<i32,3> value{};if(app&&app->scene())value={app->scene()->battle.enemy_world.integer_registers[3],app->practice.ab_result_frames,app->scene()->battle.session.extra_lives};return value.data();}
 }

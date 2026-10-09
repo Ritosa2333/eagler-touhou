@@ -85,7 +85,8 @@ try{
  await page.locator('canvas').screenshot({path:resolve(build,'practice-live.png')});
  observations.push(await page.evaluate(()=>{if(!fixture._application_practice_save())throw Error('Production PRAC save failed '+decode(fixture._application_error()));const files=fixture.FS.readdir('/save/replay').filter(n=>n.endsWith('.rpy'));if(files.length!==1)throw Error('Expected one replay '+files);return {kind:'Unassisted production PRAC save',files};}));
  observations.push(await page.evaluate(()=>{key(9);if(!prac()[5])throw Error('Tab tracker missing');key(8);key(112);if(!prac()[11])throw Error('Assisted owner missing');key(123);const p=prac();if(!p[4]||!fixture._application_practice_pointer(100,100))throw Error('F12 pointer carrier');return {kind:'Live Tab/Backspace/F1/F12',state:state(),practice:p};}));
- await page.evaluate(()=>{if(fixture._application_practice_save())throw Error('Assisted save accepted');key(8);tap(100,73);frames(2);tap(411,97);const p=fixture._application_practice_options()/4;if(!fixture.HEAP32[p+2])throw Error('F12 disable Z checkbox did not mutate input owner');tap(411,97);});
+ observations.push(await page.evaluate(()=>{if(!fixture._application_practice_save())throw Error('Purple assisted PRAC save was blocked '+decode(fixture._application_error()));return {kind:'Assisted PRAC save remains enabled',practice:prac()};}));
+ await page.evaluate(()=>{key(8);tap(100,73);frames(2);tap(411,97);const p=fixture._application_practice_options()/4;if(!fixture.HEAP32[p+2])throw Error('F12 disable Z checkbox did not mutate input owner');tap(411,97);});
  await page.locator('canvas').screenshot({path:resolve(build,'advanced-gameplay.png')});
  await page.evaluate(()=>{tap(100,70);tap(100,95);frames(2);});
  await page.locator('canvas').screenshot({path:resolve(build,'advanced-secret.png')});
@@ -93,6 +94,7 @@ try{
  await page.evaluate(()=>key(123));
  await page.locator('canvas').screenshot({path:resolve(build,'practice-tracker.png')});
  observations.push(await page.evaluate(()=>{key(27,256);frames(30);key(81,0x10000);waitMenu(1);choose(3,12);fixture._application_title_select(0);key(90,1);frames(18);if(state()[9]!==4)throw Error("Replay stage chooser missing "+state());key(90,1);for(let i=0;i<240&&state()[0]!==1;i++)step();const p=prac();if(state()[0]!==1||!p[8]||p[10]!==4)throw Error('Native replay selection failed '+state()+' '+p);frames(20);return {kind:'Native saved PRAC playback',state:state(),practice:prac()};}));
+ if(!process.argv.includes('--replay-only')){
  await page.evaluate(()=>{key(27,256);frames(30);key(81,0x10000);waitMenu(12);key(88,2);waitMenu(1);choose(2,6);choose(1,7);choose(0,9);frames(20);tap(480,148);tap(300,217);tap(480,200);frames(2);});
  await page.locator('canvas').screenshot({path:resolve(build,'practice-ab-popup.png')});
  observations.push(await page.evaluate(()=>{tap(300,368);if(prac()[9]!==74)throw Error('AB section unavailable '+prac());key(90,1);for(let i=0;i<240&&state()[0]!==1;i++)step();if(prac()[10]!==74||state()[2]!==3)throw Error('AB native entry failed '+state()+' '+prac());fixture._application_test_protection(900);frames(150);return {kind:'Purple AB authored ECL actual execution',state:state(),practice:prac()};}));
@@ -110,6 +112,7 @@ try{
  }
  assert.ok(abResult.ab[1]>=180,'AB result did not finish score animation '+JSON.stringify(abResult));observations.push(abResult);
  await page.locator('canvas').screenshot({path:resolve(build,'practice-ab-result.png')});
+ }
  assert.deepEqual(errors,[]);await page.evaluate(()=>fixture._application_close());
  await writeFile(resolve(build,'practice-browser.json'),JSON.stringify({passed:true,observations,scope:'Actual original DAT/font Runtime, native Practice entry/cancel/reentry/start; F12, Tab, assist state and pointer capture. Music disabled; no audio/native/device equivalence.'},null,2));console.log(JSON.stringify({passed:true,observations}));
  }
