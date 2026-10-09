@@ -564,3 +564,13 @@ main 前端在 product-catalog 中声明 rollbackLimit=0，回滚控件隐藏且
 最终生产 WASM：f4d650518257e4d58e9947294968d40c96e8eac6b73a68a028c6172a5455f250。`artifacts/launcher-main-th11mp/aligned-hud-restart-2p.json` 为真实 main、2P RTC、原生暂停 Restart、已入场观战退休及晚加入拒绝门禁：passed=true、fullAcceptance=true，下一代 F60–227 的 132 个同帧采样 hash 一致，errors / httpFailures / requestFailures 均为零。根 agent 检视 P2 原生暂停画面，核对独立 Graze、列对齐、间距及无 LOCAL 标题。
 
 最终原生 UI / Restart / 三视角门禁 1,643 断言、2,777 逻辑 / Draw tick 通过；`artifacts/multiplayer-ui/20261009/aligned-hud-restart/` 的截图与数值断言通过。此前同轮全原生门禁 6,822 断言、12,407 tick、协议与封装隔离通过；最终布局改动仅改变 Draw 坐标，随后重跑 UI 与真实双人菜单重启。main 产品、relay 策略、Runtime 诊断和工作区映射回归通过。本轮不声称三人真实浏览器全流程、移动设备、公网或性能验收。
+
+## 13. 恢复原生四项暂停菜单与真正退出联机
+
+用户随后确认 Return 有明确用途：退出联机，并指出缺少第四项 Replay Save。暂停菜单现保留原生 Resume / Return / Replay Save / Restart 四项，不再因自动备份隐藏手动保存。
+
+Return 在 P1 确认输入帧结束共享会话，保留自动录像保存；Runtime 的既有 exit 事件附带 returnToMenu=true，main 关闭游戏后复用原有离房流程，释放席位与 room session。普通异常停止、Replay Back 和观战返回的默认退出行为保持。已确认的原生 terminal state 被对端正常关闭触发断线回调时，按正常退出保存收尾；仍在运行的游戏断线继续报错。使用既有确认帧退休协议，没有新增网络包或更改共享库版本。
+
+Replay Save 复用原生确认、25 槽位、命名与 Application 的多人 Replay IO。暂停元数据使用 P1 机体、当前关卡、难度、共享分数和实际记录时间。`artifacts/multiplayer-ui/20261009/four-pause-choices/native-save-evidence.json` 实际写出 No.25 / A / 252 帧 / 9,248 bytes 的诊断多人录像，原生解码 valid=true、completed=false，证明输入确认帧先入档再写盘。原生四项 UI 门禁 1,651 断言 / 2,797 tick 通过；既有结算保存与只读不写入门禁也通过。该文件明确是带固定 diagnostic fingerprint 的 UI/IO 证据，不是完整通关或公网 Replay 验收。
+
+最终生产 WASM 为 189fc592c39e86165d974173130851a636e7dd21dc57475e641f401eb8608401。`artifacts/launcher-main-th11mp/four-pause-final-2p.json` 为真实 main / 双人 RTC / 原生菜单重启 / 再 Return 门禁，passed=true，双方 Runtime 关闭、room identity 清空，服务端目录对两个 member 均返回 mine=null。回滚隐藏、disabled、强制点击不生效的门禁仍通过。浏览器测试用真实键盘输入按确认帧等待方向键采样，确认前释放测试先前持续按住的 Shoot，避免把没有新边沿的按键当作菜单确认。本节取代第 12 节关于隐藏 Pause Replay Save / Return 的结论。

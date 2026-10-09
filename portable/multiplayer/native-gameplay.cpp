@@ -176,7 +176,7 @@ void native_ui_cases(const std::vector<u8>& bytes){
     auto* menu=w.mp_presentation.find(a->session.pause_menu->menu_animation);auto* background=w.mp_presentation.find(a->session.pause_menu->background_animation);
     check(menu&&menu->script_index==89&&background&&background->resource==&w.resources.core.text&&background->script_index==75,"native pause parent and captured-background resource owners");
     check(a->session.pause_menu->background_vm()==background,"GPU capture resolves the PauseMenu owning ANM manager");
-    unsigned children=0;for(auto* n=menu->child.next;n;n=n->next){++children;check(n->value->script_index==74||n->value->script_index==75||n->value->script_index==77||n->value->script_index==80,"pause retains original ornament headline Resume and Restart");}check(children==4,"no ordinary Save or Return owners enter MP pause");
+    unsigned children=0;for(auto* n=menu->child.next;n;n=n->next){++children;check(n->value->script_index==74||n->value->script_index==75||(n->value->script_index>=77&&n->value->script_index<=80),"pause retains the original four choices");}check(children==6,"all four native pause choices are present");
     in[1].pause=false;for(unsigned i=0;i<25;++i){in[1].held=i&1?1:0;step(*a,in);step(*b,in);check(a->session.multiplayer_hash()==b->session.multiplayer_hash(),"pause menu remains deterministic across local viewers");}
     check(a->session.state.phase==GameSessionPhase::paused&&a->session.pause_menu->state==33,"held entry Shot and P2 edges cannot confirm P1 native menu");
     check(w.frame==frame&&w.mp_hash()==frozen&&w.animations.script_rng.calls==rng,"native overlay animations cannot advance combat or combat RNG");
@@ -188,12 +188,19 @@ void native_ui_cases(const std::vector<u8>& bytes){
     in[0].pause=true;step(*a,in);step(*b,in);in={};step(*a,in);step(*b,in);in[2].pause=true;step(*a,in);step(*b,in);in={};for(unsigned i=0;i<13&&a->session.state.phase==GameSessionPhase::paused;++i){step(*a,in);step(*b,in);}check(a->session.state.phase==GameSessionPhase::stage&&a->session.multiplayer_hash()==b->session.multiplayer_hash(),"any seat retains confirmed Pause-key resume during native intro");
     in={};in[0].pause=true;step(*a,in);step(*b,in);in={};for(unsigned i=0;i<18;++i){step(*a,in);step(*b,in);}
     const auto restart_frame=w.frame,restart_hash=w.mp_hash();
-    in[0].held=32;step(*a,in);step(*b,in);check(a->session.pause_menu->cursor.selected==3&&b->session.pause_menu->cursor.selected==3,"Down skips unavailable Save and Return to Restart");
+    in[0].held=32;step(*a,in);step(*b,in);check(a->session.pause_menu->cursor.selected==1,"first Down selects Return");
+    in={};step(*a,in);step(*b,in);in[0].held=32;step(*a,in);step(*b,in);check(a->session.pause_menu->cursor.selected==2,"second Down selects Replay Save");
+    in={};step(*a,in);step(*b,in);in[0].held=32;step(*a,in);step(*b,in);check(a->session.pause_menu->cursor.selected==3&&b->session.pause_menu->cursor.selected==3,"third Down selects Restart");
     in={};step(*a,in);step(*b,in);in[0].held=1;step(*a,in);step(*b,in);
     check(a->session.pause_menu->action==PauseAction::Restart&&b->session.pause_menu->action==PauseAction::Restart,"native Restart emits the confirmed generation request on both viewers");
     check(a->session.state.phase==GameSessionPhase::paused&&w.frame==restart_frame&&w.mp_hash()==restart_hash,"Restart cannot rebuild a local world before its network fence");
     in={};step(*a,in);step(*b,in);in[0].held=0x200000;step(*a,in);step(*b,in);
     check(a->session.pause_menu->action==PauseAction::Restart&&a->session.multiplayer_hash()==b->session.multiplayer_hash(),"R emits the same deterministic Restart action");
+    in={};step(*a,in);step(*b,in);in[0].held=16;step(*a,in);step(*b,in);check(a->session.pause_menu->cursor.selected==2,"Up from Restart selects Replay Save");
+    in={};step(*a,in);step(*b,in);in[0].held=16;step(*a,in);step(*b,in);check(a->session.pause_menu->cursor.selected==1,"Up again selects Return");
+    in={};step(*a,in);step(*b,in);in[0].held=1;step(*a,in);step(*b,in);
+    check(a->session.state.phase==GameSessionPhase::finished&&b->session.state.phase==GameSessionPhase::finished&&a->session.multiplayer_hash()==b->session.multiplayer_hash(),"Return ends both viewers at the same confirmed boundary");
+    check(w.frame==restart_frame&&w.mp_hash()==restart_hash,"Return keeps combat frozen until network retirement and saving");
     options.local_seat=0;check(a->session.begin_multiplayer(a->resources,options),"life UI fixture");auto& world=*a->session.battle;in={};for(unsigned i=0;i<125;++i)step(*a,in);
     auto& donor=*world.pilots[0];auto& ghost=*world.pilots[1];donor.economy.lives=3;ghost.economy.lives=-1;check(ghost.game_over(false),"native ghost feedback fixture");
     for(auto& p:world.pilots)if(p)p->player->state.invincibility.set(100000,&world.animations.rate);put(*donor.player,0,400);put(*ghost.player,10,400);put(*world.pilots[2]->player,120,400);in[0].held=8;

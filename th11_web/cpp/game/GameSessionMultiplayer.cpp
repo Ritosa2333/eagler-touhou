@@ -57,6 +57,8 @@ bool GameSession::update_multiplayer(const std::array<MultiplayerInput,3>& input
         // The shared combat ANMs and their bound clocks stay frozen at rate 0.
         battle->mp_presentation.rate=1;
         pause_menu=std::make_unique<PauseMenu>(battle->mp_presentation,resources.core.text,resources.core.front,scores);
+        pause_menu->selection=multiplayer_options.selections[0];pause_menu->difficulty=multiplayer_options.difficulty;
+        pause_menu->stage=state.stage;pause_menu->result_score=economy.score_units;pause_menu->timestamp=recording_timestamp;
         if(!pause_menu->begin_multiplayer_pause()||!battle->mp_presentation.update(true))return fail("MP pause presentation initialization failed");
         menu_input={};menu_input.update(menu_keys(inputs[0].held));
         paused_rate=animations.rate;animations.rate=0;state.phase=GameSessionPhase::paused;battle->mp_paused=true;return true;
@@ -69,6 +71,7 @@ bool GameSession::update_multiplayer(const std::array<MultiplayerInput,3>& input
         menu_input.update(menu_keys(inputs[0].held));
         if(!pause_menu->update(menu_input.pressed|(pause_edge?256u:0u),menu_input.long_repeat)||!battle->mp_presentation.update(true))return fail("MP pause presentation update failed");
         if(pause_menu->action==PauseAction::Resume){pause_menu.reset();animations.rate=paused_rate;state.phase=GameSessionPhase::stage;battle->mp_paused=false;}
+        else if(pause_menu->action==PauseAction::Title)state.phase=GameSessionPhase::finished;
         return true;
     }
     if(state.phase!=GameSessionPhase::stage)return fail("Invalid MP phase");

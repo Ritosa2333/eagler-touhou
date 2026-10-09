@@ -80,7 +80,7 @@ function closeAudio(){
  if(borrowed)s.audioContext=undefined;
  try{core.th11_audio_close();}finally{if(borrowed)s.audioContext=context;}
 }
-async function stop(){if(stopping)return;stopping=true;try{clearKeyboard();core.th11_loop_stop();await save();multiplayer?.stop();closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
+async function stop({returnToMenu=false}={}){if(stopping)return;stopping=true;try{clearKeyboard();core.th11_loop_stop();await save();multiplayer?.stop();closeAudio();launched=false;emit('exit',{code:0,status:'success',...(multiplayerRuntime&&returnToMenu?{returnToMenu:true}:{})});}finally{stopping=false;}}
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(multiplayerRuntime?/^\/savesth11(?:mp)?\//:/^\/savesth11\//,'').replace(/^\//,'');const valid=multiplayerRuntime?/^replay\/th11_(?:\d{2}|ud[a-z0-9]{4})\.rpy$/:/^(?:scoreth11\.dat|th11\.cfg|replay\/th11_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?)$/;if(!valid.test(name))throw Error('存档路径无效');return name;}
 async function launch(){
  if(launched)return;clearKeyboard();

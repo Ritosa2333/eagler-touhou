@@ -65,7 +65,7 @@ export function createMultiplayerRuntime({Module,core,getOptions,getLanguage,man
  const showSeek=text=>{clearSeek();notice=doc.createElement('output');notice.className='th11-mp-replay-seek';notice.setAttribute('aria-live','polite');notice.textContent=text;doc.body.append(notice);};
  // Connection, calibration, failures and room returns are Launcher surfaces.
  // Reuse its standard events and shared transport diagnostics, as TH08/TH10 do.
- const endSession=message=>{if(message)emit('notice',{message});void onExit().catch(fail);};
+ const endSession=(message,returnToMenu=false)=>{if(message)emit('notice',{message});void onExit({returnToMenu}).catch(fail);};
  function fail(reason){
   if(failed)return;
   const message=reason?.message||String(reason);failed=true;target.__eaglerNetplayFailed=true;
@@ -73,6 +73,13 @@ export function createMultiplayerRuntime({Module,core,getOptions,getLanguage,man
  }
  const calibration=createAdonisCalibration({core:{memory:core.memory,multiplayer_calibration_status:()=>core.th11_mp_calibration_status(),
   multiplayer_network_poll:()=>core.th11_mp_pump()},getApp:()=>active?1:0,getOptions,emit,game:'th11',build,onError:fail,pause:()=>{
+   // A peer may close its input lane just after the shared Return frame.
+   // That confirmed native terminal state is a normal exit, not a live-game
+   // disconnect. Persist it even if the peer's final retirement ACK is late.
+   if(active&&mode==='player'){
+    const s=status();
+    if(gameStatus()[3]===4&&s[3]>0&&s[4]!==0xffffffff&&s[4]>=s[3]-1){finished=true;calibration.stop();endSession(undefined,true);return;}
+   }
    if(active&&target.__eaglerPeerTransport?.disconnected&&!core.th11_mp_pump())fail(Error(nativeError()));
    core.th11_loop_stop();
   },target});
@@ -129,7 +136,7 @@ export function createMultiplayerRuntime({Module,core,getOptions,getLanguage,man
     if(mode==='player'){
      flush();
      if(capacity)endSession(label('已达到本版单局 250,000 确认帧上限，已保存未完成录像。','This run reached the 250,000 confirmed-frame limit. A partial Replay was saved.'));
-     else if(game[3]===4)endSession();
+     else if(game[3]===4)endSession(undefined,true);
     }else endSession(capacity?label('本次观战达到单局 250,000 确认帧上限。','This spectator session reached the 250,000 confirmed-frame limit.'):label('本次观战结束。','Spectator session complete.'));
    }
   }

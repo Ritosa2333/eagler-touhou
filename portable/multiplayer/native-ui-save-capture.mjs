@@ -94,6 +94,26 @@ export async function captureNativeSaveMenus({page,shot,out,evidence}){
     assert.deepEqual(header.diagnosticBuild,report.diagnosticBuild);
   };
   assert.deepEqual(await files(),[],'diagnostic save namespace starts empty');
+  await page.evaluate(()=>{
+    if(!core._mp_fixture_ui_begin(1,0)||!core._mp_fixture_ui_record_io(0))throw Error('pause save setup');
+    step(125);if(!core._mp_fixture_ui_result_score(321))throw Error('pause score');
+    nativeTap(0,1);step(18);nativeTap(32);nativeTap(32);nativeTap(1);step(31);
+  });
+  assert.equal((await state()).pauseState,7,'pause Save uses the original confirmation');
+  await page.evaluate(()=>{nativeTap(16);nativeTap(1);step(31);});
+  assert.equal((await state()).pauseState,9,'pause Save opens the original 25 slots');
+  await snapshot('native-pause-save-slots','Original pause Replay Save confirmation and slot list; actual Application IO');
+  await page.evaluate(()=>{nativeTap(16);nativeTap(1);step(12);});
+  assert.equal((await state()).pauseState,10);assert.equal((await state()).pauseCursor,24);
+  await snapshot('native-pause-save-name','Original pause Replay Save name entry for No.25');
+  await page.evaluate(()=>nativeFinishName());
+  const pauseAfter=await state(),pauseHeader=await saved(25);
+  assert.equal(pauseHeader.valid,true);assert.equal(pauseHeader.name.trimEnd(),'A');assert.equal(pauseHeader.completed,false);
+  assert.equal(pauseHeader.frames,pauseAfter.archiveFrames-1);assert.equal(pauseHeader.scoreUnits,321);
+  assert.equal(pauseHeader.playerCount,3);assert.deepEqual(pauseHeader.diagnosticBuild,report.diagnosticBuild);
+  report.pauseSave={actualNativeFile:true,header:pauseHeader,confirmFrame:pauseAfter.archiveFrames-1};write();
+  await page.evaluate(()=>{step(12);nativeTap(0,1);step(15);});
+  assert.equal((await state()).phase,'finished','original pause Save Back exits the shared run');
   for(const entry of [
     {kind:0,name:'native-game-over',scoreUnits:1234567,slot:1,backup:true},
     {kind:1,name:'native-extra',scoreUnits:2345678,slot:3},
