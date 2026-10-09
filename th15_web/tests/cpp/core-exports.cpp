@@ -2306,6 +2306,35 @@ API(run_session_world_player_field) void* run_session_world_player_field(RunSess
 API(run_session_error) const char* run_session_error(RunSessionFixture* p){if(!p->session.error.empty())return p->session.error.c_str();if(!p->replay.error.empty())return p->replay.error.c_str();return run_gameplay_error(p);}
 API(run_session_replay_decoded) const u8* run_session_replay_decoded(RunSessionFixture* p){return p->replay.replay_file()?p->replay.replay_file()->decoded().data():nullptr;}
 API(run_session_clock) i32 run_session_clock(RunSessionFixture* p){return p->replay.live()?p->replay.live()->frame_clock():p->replay.replay()->frame_clock();}
+
+// Oracle stage driver uses the same completion controller as RunStageFlow.
+// The older component fixture deliberately counts completion without binding
+// it, so it cannot prove a terminal clear bonus or next-stage request.
+#include "../../cpp/game/RunCompletion.hpp"
+struct ReplayOracleCompletion final:CompletionRecords,RunCompletionServices {
+ RunSessionFixture& owner;std::unique_ptr<RunCompletion> completion;
+ bool next_requested=false;i32 next_stage=0;
+ explicit ReplayOracleCompletion(RunSessionFixture& p):owner(p){
+  owner.progress.transition=owner.progress.replay?1:0;
+  completion=std::make_unique<RunCompletion>(*owner.run.scene(),owner.progress,owner.session.driver()->runtime,*this,*this);
+  owner.run.scene()->stage_completion=[this](){return completion->complete();};
+ }
+ ~ReplayOracleCompletion(){if(owner.run.scene())owner.run.scene()->stage_completion={};}
+ bool stage_clear(i32,i32,i32)override{return true;}
+ bool finished_run(i32,bool,i32,bool)override{return true;}
+ bool spell_score(i32,bool,i32,i32)override{return true;}
+ bool remove_checkpoint(i32,i32)override{return true;}
+ bool prepare_ending(StageGameplay&)override{return true;}
+ bool finish_replay()override{return owner.finish_replay();}
+ bool finish_practice()override{return false;}
+ bool queue_next_stage()override{if(next_requested)return false;next_requested=true;return true;}
+ bool prepare_next_stage(i32 stage)override{next_stage=stage;return stage_definition(stage)!=nullptr;}
+};
+API(run_session_oracle_completion_create) ReplayOracleCompletion* run_session_oracle_completion_create(RunSessionFixture* p){if(!p->run.scene()||!p->session.driver())return nullptr;return new ReplayOracleCompletion(*p);}
+API(run_session_oracle_completion_delete) void run_session_oracle_completion_delete(ReplayOracleCompletion* p){delete p;}
+API(run_session_oracle_completed) i32 run_session_oracle_completed(ReplayOracleCompletion* p){return p->next_requested||((p->owner.progress.scene_flags&0x4000)!=0);}
+API(run_session_oracle_next_stage) i32 run_session_oracle_next_stage(ReplayOracleCompletion* p){return p->next_stage;}
+API(run_session_oracle_completion_error) const char* run_session_oracle_completion_error(ReplayOracleCompletion* p){return p->completion->error.c_str();}
 API(run_session_controls) const GameInput* run_session_controls(RunSessionFixture* p){return &p->session.driver()->controls();}
 API(run_session_age) const Timer* run_session_age(RunSessionFixture* p){return &p->session.driver()->runtime.age;}
 API(run_session_counters) u32 run_session_counters(RunSessionFixture* p,u32 i){return i==0?p->captures:i==1?p->transition_banners:p->entrances;}

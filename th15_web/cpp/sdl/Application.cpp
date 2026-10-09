@@ -72,9 +72,21 @@ bool ApplicationState::render_loading(){
  renderer.invalidate();graphics.backend.pipeline()=touhou::graphics::PipelineState{};graphics.configure_game(1);
  if(!graphics.select_target(nullptr,0)||!graphics.clear_target(0xff000000,nullptr))return fail(graphics.error);
  ScreenViews loading_views{renderer,loading_environment};if(!loading_views.camera(DrawCamera::Fullscreen,false))return fail("Loading camera unavailable");
- for(u32 layer=0;layer<42;++layer)if(!renderer.draw_layer(loading_animations.registry.layer(layer)))return fail(renderer.error);
+ const auto* credit=loading_animations.registry.find(loading_signature);
+ for(u32 layer=0;layer<42;++layer){
+  if(!renderer.draw_layer(loading_animations.registry.layer(layer)))return fail(renderer.error);
+  if(credit&&layer==u32(credit->visual.layer)){renderer.flush();graphics.draw_startup_branding(credit->visual.color);}
+ }
  renderer.flush();graphics.present();
  return true;
+}
+bool ApplicationState::render_loading(bool signature,unsigned frames){
+ (void)signature;
+ for(unsigned frame=0;frame<std::min(frames,120u);++frame){
+  if(!loading_animations.update(false)||!loading_animations.update(true))return fail(loading_animations.error);
+  ++loading_frames;
+ }
+ return render_loading();
 }
 bool ApplicationState::advance_loading(double delta){
  // Native title worker 46052a waits for owner +644 == 180. Advance only
