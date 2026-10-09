@@ -326,6 +326,9 @@ bool GameBattle::draw(AnmRenderer& renderer,SceneDrawKind kind) {
     switch(kind){
     case SceneDrawKind::ScorePopups:return popups.draw(renderer,resources.core.ascii,player->motion.state.position);
     case SceneDrawKind::HudInner:
+#ifdef TH11_MULTIPLAYER
+        if(mp_enabled)return hud.draw_inner(renderer,hud_input())&&hud.queue_text(ascii,hud_input())&&mp_draw_local_hud(renderer);
+#endif
         return hud.draw_inner(renderer,hud_input())&&hud.queue_text(ascii,hud_input());
     case SceneDrawKind::HudOuter:
 #ifdef TH11_MULTIPLAYER

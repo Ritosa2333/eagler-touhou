@@ -3,7 +3,7 @@ namespace th11::multiplayer {
 bool SessionSetup::valid()const{
     if(!session_id||player_count<2||player_count>3||local_player>=player_count||difficulty>4||seed>65535||
        requested_delay>9||input_delay>9||prediction_reserve<1||prediction_reserve>2||
-       challenge||(automatic&&requested_delay)||!(build[0]|build[1]|build[2]|build[3]))return false;
+       (automatic&&requested_delay)||!(build[0]|build[1]|build[2]|build[3]))return false;
     for(unsigned s=0;s<3;++s)if(selections[s]>5||(s>=player_count&&selections[s]))return false;
     return true;
 }

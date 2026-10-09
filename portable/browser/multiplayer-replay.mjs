@@ -21,7 +21,7 @@ export function inspectMultiplayerReplay(value,{validate,buildWords}={}) {
     bytes.length!==40+128+chapterCount*8+frameCount*playerCount*12)
   throw Error('多人录像内容不完整');
  const setup=Array.from({length:22},(_,i)=>u32(80+i*4));
- if(setup[0]!==5||setup[1]!==playerCount||setup[2]!==recordedPlayer||setup[14]!==1||setup[21]!==0)
+ if(setup[0]!==5||setup[1]!==playerCount||setup[2]!==recordedPlayer||setup[14]!==1||setup[21]>1)
   throw Error('多人录像配置不匹配');
  if(buildWords&&(!Array.isArray(buildWords)||buildWords.length!==4||buildWords.some((n,i)=>(n>>>0)!==setup[17+i])))
   throw Error('该多人录像使用了不同的 Runtime 版本，请用录制时的版本播放');
@@ -30,7 +30,7 @@ export function inspectMultiplayerReplay(value,{validate,buildWords}={}) {
  const timestamp=u32(56)+u32(60)*4294967296;
  return Object.freeze({
   playerCount,recordedPlayer,frameCount,chapters:Object.freeze(chapters),
-  difficulty:setup[3],seed:setup[4],inputDelay:u32(52),prediction:0,
+  difficulty:setup[3],seed:setup[4],inputDelay:u32(52),prediction:0,challenge:setup[21]===1,
   loadouts:Object.freeze(Array.from({length:playerCount},(_,i)=>({character:setup[8+i*2],shot:setup[9+i*2]}))),
   name:new TextDecoder().decode(bytes.subarray(72,80)).replace(/\0.*$/s,'').trim(),
   timestamp:Number.isSafeInteger(timestamp)?timestamp:0,score:u32(64)*10,

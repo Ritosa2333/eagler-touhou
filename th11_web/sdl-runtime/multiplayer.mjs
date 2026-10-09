@@ -11,8 +11,8 @@ export function multiplayerBuildWords(manifest) {
  return Array.from({length:4},(_,i)=>parseInt(digest.slice(i*8,i*8+8),16)>>>0);
 }
 export function validateMultiplayerOptions(options={}) {
- if(options.thpracEnabled||options.netplayChallengeMode===true)
-  throw Error('此 TH11 多人 Runtime 暂不支持 THPrac 或挑战模式');
+ if(options.thpracEnabled)throw Error('此 TH11 多人 Runtime 暂不支持 THPrac');
+ if(options.netplayChallengeMode!==undefined&&typeof options.netplayChallengeMode!=='boolean')throw Error('TH11 多人挑战模式配置无效');
  if(options.replayViewer===true){
   if(options.netplayMode==='lan'||options.netplaySpectator)throw Error('录像和联机不能同时启动');
   return {replay:true};
@@ -34,7 +34,7 @@ export function validateMultiplayerOptions(options={}) {
     !Number.isInteger(v.shot)||v.shot<0||v.shot>2))throw Error('TH11 多人机体配置无效');
  if(spectator&&(typeof options.netplaySpectatorId!=='string'||!options.netplaySpectatorId))
   throw Error('TH11 观战身份缺失');
- return {replay:false,url,room,run,count,seat,spectator,delay,automatic,reserve,loadouts};
+ return {replay:false,url,room,run,count,seat,spectator,delay,automatic,reserve,loadouts,challenge:options.netplayChallengeMode===true};
 }
 export async function multiplayerSetupWords(options,buildWords,cryptoProvider=globalThis.crypto) {
  const config=validateMultiplayerOptions(options);
@@ -44,14 +44,14 @@ export async function multiplayerSetupWords(options,buildWords,cryptoProvider=gl
  const digest=new DataView(await cryptoProvider.subtle.digest('SHA-256',identity));
  const words=[5,config.count,config.seat,options.netplayDifficulty,options.netplaySeed,digest.getUint32(0,true),digest.getUint32(4,true)||1,config.delay];
  for(let i=0;i<3;i++){const value=config.loadouts[i]||{character:0,shot:0};words.push(value.character,value.shot);}
- words.push(1,+config.automatic,config.reserve,...buildWords,0);
+ words.push(1,+config.automatic,config.reserve,...buildWords,+config.challenge);
  return {config,words};
 }
-export function createMultiplayerRuntime({Module,core,getOptions,getLanguage,manifest,emit,onError,onExit,sync,canvas,target=globalThis}) {
+export function createMultiplayerRuntime({Module,core,getOptions,getLanguage,manifest,emit,onError,onExit,target=globalThis}) {
  const buildWords=multiplayerBuildWords(manifest),build=manifest.execution.sha256;
  const doc=target.document;
  const stylesheet=doc.createElement('link');stylesheet.rel='stylesheet';stylesheet.href=new URL('./multiplayer.css',import.meta.url).href;doc.head.append(stylesheet);
- let active=false,mode='idle',replayViewer=false,panel=null,toolbar=null,notice=null,failed=false;
+ let active=false,mode='idle',replayViewer=false,notice=null,failed=false;
  let lastDiagnostic=0,lastGeneration=-1,finished=false;
  const readWords=(pointer,count)=>Array.from(new Uint32Array(core.memory.buffer,pointer,count));
  const textAt=pointer=>{if(!pointer)return '';const heap=new Uint8Array(core.memory.buffer);let end=pointer;while(end<heap.length&&heap[end])++end;return new TextDecoder().decode(heap.subarray(pointer,end));};
@@ -61,25 +61,15 @@ export function createMultiplayerRuntime({Module,core,getOptions,getLanguage,man
  const validate=bytes=>withBytes(bytes,(pointer,size)=>core.th11_mp_replay_validate(pointer,size)===1);
  const inspect=bytes=>inspectMultiplayerReplay(bytes,{validate,buildWords});
  const label=(zh,en)=>getLanguage()==='chs'?zh:en;
- const removeToolbar=()=>{toolbar?.remove();toolbar=null;};
- const removeUi=()=>{removeToolbar();panel?.remove();notice?.remove();panel=notice=null;doc.body.classList.remove('th11-mp-failed');};
- const button=(text,call)=>{const node=doc.createElement('button');node.type='button';node.textContent=text;node.addEventListener('click',()=>{try{const result=call();result?.catch?.(fail);}catch(error){fail(error);}});return node;};
- const makeNotice=text=>{notice?.remove();notice=doc.createElement('output');notice.className='th11-mp-surface th11-mp-notice';notice.setAttribute('aria-live','polite');notice.textContent=text;doc.body.append(notice);};
- const terminalControls=text=>{removeToolbar();toolbar=doc.createElement('div');toolbar.id='th11-multiplayer-session-controls';toolbar.className='th11-mp-surface th11-mp-session-controls';
-  const message=doc.createElement('output');message.setAttribute('aria-live','polite');message.textContent=text;
-  const exit=button(label('返回房间','Back to room'),onExit);toolbar.append(message,exit);doc.body.append(toolbar);
- };
+ const clearSeek=()=>{notice?.remove();notice=null;};
+ const showSeek=text=>{clearSeek();notice=doc.createElement('output');notice.className='th11-mp-replay-seek';notice.setAttribute('aria-live','polite');notice.textContent=text;doc.body.append(notice);};
+ // Connection, calibration, failures and room returns are Launcher surfaces.
+ // Reuse its standard events and shared transport diagnostics, as TH08/TH10 do.
+ const endSession=message=>{if(message)emit('notice',{message});void onExit().catch(fail);};
  function fail(reason){
+  if(failed)return;
   const message=reason?.message||String(reason);failed=true;target.__eaglerNetplayFailed=true;
-  calibration.stop();core.th11_loop_stop();onError(reason);target.__eaglerNetplayError=message;
-  if(active){
-   removeUi();doc.body.classList.add('th11-mp-failed');
-   panel=doc.createElement('section');panel.id='th11-multiplayer-error';panel.className='th11-mp-surface th11-mp-panel';panel.setAttribute('role','alertdialog');panel.setAttribute('aria-modal','true');
-   const heading=doc.createElement('h2');heading.id='th11-mp-heading';heading.textContent=label('多人运行已停止','Multiplayer stopped');panel.setAttribute('aria-labelledby',heading.id);
-   const text=doc.createElement('p');text.textContent=label('本局已停止。请返回房间后重新开始。','This run has stopped. Return to the room to start again.');
-   const details=doc.createElement('details'),summary=doc.createElement('summary'),detail=doc.createElement('pre');summary.textContent=label('错误详情','Error details');detail.textContent=message;details.append(summary,detail);
-   const exit=button(label('返回房间','Back to room'),onExit);panel.append(heading,text,details,exit);doc.body.append(panel);exit.focus({preventScroll:true});
-  }
+  target.__eaglerNetplayError=message;calibration.stop();core.th11_loop_stop();clearSeek();onError(reason);
  }
  const calibration=createAdonisCalibration({core:{memory:core.memory,multiplayer_calibration_status:()=>core.th11_mp_calibration_status(),
   multiplayer_network_poll:()=>core.th11_mp_pump()},getApp:()=>active?1:0,getOptions,emit,game:'th11',build,onError:fail,pause:()=>{
@@ -95,7 +85,8 @@ export function createMultiplayerRuntime({Module,core,getOptions,getLanguage,man
  }
  function applyOptions(){core.th11_mp_always_hitbox(+(getOptions().alwaysHitbox===true||getOptions().touchAlwaysHitbox===true));}
  async function launch(){
-  removeUi();failed=false;finished=false;target.__eaglerNetplayFailed=false;target.__eaglerNetplayError='';
+  clearSeek();failed=false;finished=false;target.__eaglerNetplayFailed=false;target.__eaglerNetplayError='';
+  target.__eaglerNetplayLanActive=false;target.__eaglerNetplaySpectator=false;
   const options=getOptions(),checked=validateMultiplayerOptions(options);
   replayViewer=checked.replay;
   if(replayViewer){
@@ -113,8 +104,8 @@ export function createMultiplayerRuntime({Module,core,getOptions,getLanguage,man
   if(!connected)throw Error(nativeError());
   if(!core.th11_mp_start())throw Error(nativeError());
   active=true;mode=config.spectator?'spectator':'player';lastGeneration=-1;applyOptions();
+  target.__eaglerNetplaySpectator=config.spectator;
   target.__eaglerNetplayInputDelayFrames=config.spectator?0:config.delay;target.__eaglerNetplayAdonisMode=1;
-  makeNotice(config.spectator?label('正在等待已确认的观战数据…','Waiting for confirmed spectator data…'):label('正在测量实际游戏连接…','Measuring the game connection…'));
   if(!config.spectator)calibration.start();
   return {runLoop:true};
  }
@@ -128,23 +119,23 @@ export function createMultiplayerRuntime({Module,core,getOptions,getLanguage,man
    const seeking=viewer[1]===2&&viewer[2]<viewer[4];
    if(seeking){
     const text=label('正在定位至第 '+viewer[10]+' 关 · ','Seeking to Stage '+viewer[10]+' · ')+Math.min(100,Math.floor(viewer[2]*100/Math.max(1,viewer[4])))+'%';
-    if(!notice)makeNotice(text);else notice.textContent=text;
-   }else{notice?.remove();notice=null;}
+    if(!notice)showSeek(text);else notice.textContent=text;
+   }else clearSeek();
   }else{
-   if(state[12]!==lastGeneration){if(lastGeneration>=0&&mode==='player'){finished=false;makeNotice(label('正在重新测量连接…','Measuring the new connection…'));calibration.start();}lastGeneration=state[12];}
-   if(state[3]>0){notice?.remove();notice=null;}
+   if(state[12]!==lastGeneration){if(lastGeneration>=0&&mode==='player'){finished=false;calibration.start();}lastGeneration=state[12];}
    if(state[13]&&!finished){
     finished=true;
     const capacity=state[3]>=MULTIPLAYER_REPLAY_MAX_FRAMES;
     if(mode==='player'){
      flush();
-     if(capacity){void sync(false).catch(fail);terminalControls(label('已达到本版单局 250,000 确认帧上限，已保存未完成录像。','This run reached the 250,000 confirmed-frame limit. A partial Replay was saved.'));}
-     else if(game[3]===4)void onExit().catch(fail);
-    }else terminalControls(capacity?label('本次观战达到单局 250,000 确认帧上限。','This spectator session reached the 250,000 confirmed-frame limit.'):label('本次观战结束。','Spectator session complete.'));
+     if(capacity)endSession(label('已达到本版单局 250,000 确认帧上限，已保存未完成录像。','This run reached the 250,000 confirmed-frame limit. A partial Replay was saved.'));
+     else if(game[3]===4)endSession();
+    }else endSession(capacity?label('本次观战达到单局 250,000 确认帧上限。','This spectator session reached the 250,000 confirmed-frame limit.'):label('本次观战结束。','Spectator session complete.'));
    }
   }
   target.__eaglerNetplayLanActive=state[9]===1;target.__eaglerNetplayLanFrame=state[3];target.__eaglerNetplayLanConfirmed=state[4]===0xffffffff?undefined:state[4];
   target.__eaglerNetplayTransport=state[20]===1?'rtc':state[20]===2?'relay':state[20]===3?'spectator':'';
+  target.__eaglerNetplayPath=target.__eaglerPeerTransport?.route||target.__eaglerNetplayTransport||'connecting';
   target.__eaglerNetplayLanRollback=0;target.__eaglerNetplayLanResimulated=0;
   target.__eaglerNetplayDiagnostics={frame:state[3],confirmed:state[4],inputDelay:state[7],prediction:0,undoBytes:0,generation:state[12],retired:!!state[13],frameZeroReady:!!state[21],
    sent:state[15],received:state[16],repairs:state[17],ignored:state[18],spectatorBacklog:state[14],spectatorPublisherFailed:!!state[22],nativeHash:game[1],mode,replay:viewer};
@@ -159,21 +150,11 @@ export function createMultiplayerRuntime({Module,core,getOptions,getLanguage,man
   keyboard(event,down){
    if(!active)return false;
    const code=event.code||event.key;
-   if(panel){
-    if(code==='Escape'){if(down&&!event.repeat)void onExit();return true;}
-    const controls=[...panel.querySelectorAll('button:not(:disabled),summary')],focused=doc.activeElement,index=controls.indexOf(focused);
-    if(['ArrowUp','ArrowDown','Home','End'].includes(code)){
-     if(down){const next=code==='Home'?0:code==='End'?controls.length-1:(index+(code==='ArrowUp'?-1:1)+controls.length)%controls.length;controls[next]?.focus();}return true;
-    }
-    if(code==='Tab'&&(index<0||(event.shiftKey?index===0:index===controls.length-1))){if(down)controls[event.shiftKey?controls.length-1:0]?.focus();return true;}
-    if(code==='KeyZ'||code==='Enter'){if(down&&!event.repeat&&panel.contains(focused))focused.click();return true;}
-    return false;
-   }
    if(mode==='spectator'&&code==='Escape'){if(down&&!event.repeat)void onExit();return true;}
    return false;
   },
   afterAudioResume(){},
   fail,
-  stop(){calibration.stop();removeUi();active=false;mode='idle';replayViewer=false;core.th11_mp_stop();},
+  stop(){calibration.stop();clearSeek();active=false;mode='idle';replayViewer=false;target.__eaglerNetplayLanActive=false;core.th11_mp_stop();},
  };
 }

@@ -28,11 +28,12 @@ bool GameBattle::collect(ItemState& item,bool& convert){
 bool GameBattle::drop_items(EnemyState& enemy){
 #ifdef TH11_MULTIPLAYER
     if(mp_enabled){
-        // Only stage drops multiply. Player death/F/transfer emissions retain
-        // their own rules and never pass through this boundary.
+        // Only eligible stage drops multiply. Shared life fragments retain
+        // the original quantity for every roster; ordinary Power stays 2P x1,
+        // 3P x2. Player death/F/transfer emissions keep their own boundaries.
         EnemyDrop drops=enemy.drops;
-        if(mp_options.seat_count==3){for(unsigned i:{0u,3u,4u,6u,9u,10u})drops.counts[i]*=2;
-            const int type=drops.primary;if(type==1||type==4||type==5||type==7||type==10||type==11){if(!items.drop(drops,enemy.current.position))return false;if(items.spawn(type,{enemy.current.position.x+8,enemy.current.position.y-8,enemy.current.position.z})<0)return false;enemy.drops={};return true;}}
+        if(mp_options.seat_count==3){for(unsigned i:{0u,3u,6u,9u,10u})drops.counts[i]*=2;
+            const int type=drops.primary;if(type==1||type==4||type==7||type==10||type==11){if(!items.drop(drops,enemy.current.position))return false;if(items.spawn(type,{enemy.current.position.x+8,enemy.current.position.y-8,enemy.current.position.z})<0)return false;enemy.drops={};return true;}}
         const bool ok=items.drop(drops,enemy.current.position);enemy.drops={};return ok;
     }
 #endif

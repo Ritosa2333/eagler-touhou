@@ -157,7 +157,7 @@ struct Application:StageResourceEffects {
         if(!netplay.Configured()||!initialize())return false;
         const auto& setup=netplay.Setup();MultiplayerOptions opts;
         opts.seat_count=setup.player_count;opts.local_seat=setup.local_player;
-        opts.stage=setup.initial_stage();opts.difficulty=int(setup.difficulty);opts.seed=setup.seed;
+        opts.stage=setup.initial_stage();opts.difficulty=int(setup.difficulty);opts.seed=setup.seed;opts.challenge=setup.challenge;
         for(unsigned s=0;s<3;++s)opts.selections[s]=int(setup.selections[s]);
         renderer.invalidate();
         auto& core=session.resources.core;
@@ -236,8 +236,9 @@ struct Application:StageResourceEffects {
         std::array<MultiplayerInput,3> input;
         if(decision.predictedMask||!multiplayer::InputLanes::Decode(decision.inputs.data(),netplay.Setup().player_count,input)){error="TH11 multiplayer requires exact inputs";return false;}
         const auto before=session.state.phase;const auto stage=session.state.stage;
-        const bool restart=before==GameSessionPhase::paused&&(input[0].held&0x200000u)!=0;
         if(!session.update_multiplayer(input)){error=session.error;return false;}
+        const bool restart=before==GameSessionPhase::paused&&
+            ((input[0].held&0x200000u)!=0||(session.pause_menu&&session.pause_menu->action==PauseAction::Restart));
         const auto after=session.state.phase;
         if(before!=GameSessionPhase::paused&&after==GameSessionPhase::paused&&!stage_music_held())pause_music(true);
         if(before==GameSessionPhase::paused&&after==GameSessionPhase::stage&&!stage_music_held())pause_music(false);

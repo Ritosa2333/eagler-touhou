@@ -74,6 +74,9 @@ bool PlayerFrame::hit(){
 }
 bool PlayerFrame::die(){
     economy.point_value=std::max(wrapping_add(economy.point_value,-10000000),state.minimum_point_value);
+#ifdef TH11_MULTIPLAYER
+    if(!input.challenge)
+#endif
 #ifdef TH_ENABLE_THPRAC
     if(!(practice&&practice->enabled&&!input.replay&&(practice->cheats&2)))
 #endif
@@ -98,7 +101,11 @@ bool PlayerFrame::death_frame(){
         const Vec3 p=motion.state.position;const float y=float(double(p.y)-224),dy=float(double(y)-p.y),dx=-p.x;
         const float angle=dx==0&&dy==0?1.5707963705062866f:float(std::atan2(double(dy),double(dx)));
         i32 types[7]={1,1,1,1,1,1,1};
-        if(economy.lives<=0)types[3]=6;
+        if(economy.lives<=0
+#ifdef TH11_MULTIPLAYER
+           &&!input.challenge
+#endif
+        )types[3]=6;
         else if(power>=step*7)for(auto& t:types)t=4;
         else if(power>=step*6){for(i32 i:{0,1,2,4,5,6})types[i]=4;}
         else if(power>=step*5){for(i32 i:{1,2,3,4,5})types[i]=4;}
@@ -109,7 +116,11 @@ bool PlayerFrame::death_frame(){
         if(!rebuild_options())return false;
     }
     if(state.state_timer.current>=30){
-        if(economy.lives<0){if(!world.game_over(input.replay))return false;}
+        if(economy.lives<0
+#ifdef TH11_MULTIPLAYER
+           &&!input.challenge
+#endif
+        ){if(!world.game_over(input.replay))return false;}
         else{state.life_state=0;animations.rate=1;shots.damage_areas.circle(motion.state.position,32,16,30,150,&animations.rate);state.death_position=motion.state.position;motion.state.position.x=0;motion.state.position.y=480;motion.state.x=0;motion.state.y=0xf000;state.invincibility.set(280,&animations.rate);state.state_timer.set(0,&animations.rate);}
     }return true;
 }

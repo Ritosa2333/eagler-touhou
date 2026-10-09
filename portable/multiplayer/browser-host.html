@@ -3,6 +3,8 @@
 <style>body{margin:0;background:#151820;color:#eee;font:14px sans-serif}iframe{width:640px;height:480px;border:0}</style>
 <div id="runtime"></div>
 <script>
+// Minimal protocol transport for native gameplay/Replay gates. It deliberately
+// does not imitate Launcher connection panels, room return or calibration UI.
 const protocol='eagler-touhou/1',game='th11',epoch=1,events=[],pending=new Map();
 let iframe,serial=0,stopAt=0,stopGeneration=0,observerInstalled=false,lastUiState='';
 const snapshots=new Map(),generations=new Map(),replayUiStates=[];

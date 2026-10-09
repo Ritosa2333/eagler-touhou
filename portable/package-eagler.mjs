@@ -132,8 +132,15 @@ export function packageEagler({
       const shell = readFileSync(resolve(shellRoot, name), 'utf8');
       const marker = /\/\*TH11_BUILD_INFO\*\/\{[^;]*\}/;
       if (!marker.test(shell)) throw Error('Runtime shell is missing the build identity marker.');
+      // Launcher freezes static dependencies, including imports in false
+      // branches. Assemble the selected factory before closing the package;
+      // an ordinary Runtime must not reference the absent MP module.
+      const factory = /\/\*TH11_MULTIPLAYER_FACTORY\*\/[^;\r\n]*;/g;
+      if ([...shell.matchAll(factory)].length !== 1)
+        throw Error('Runtime shell is missing a unique multiplayer factory marker.');
       add(name, shell.replace(marker, '/*TH11_BUILD_INFO*/' +
-        JSON.stringify({version: build.version, completeGame: true, multiplayer})));
+        JSON.stringify({version: build.version, completeGame: true, multiplayer}))
+        .replace(factory, value => multiplayer ? value.replace('/*TH11_MULTIPLAYER_FACTORY*/', '') : 'null;'));
     } else copy(resolve(shellRoot, name), name);
   }
   copy(resolve(root, 'portable/browser/motion-replay.mjs'), 'motion-replay.mjs');

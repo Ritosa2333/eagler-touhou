@@ -9,7 +9,7 @@ import {validateMotionReplay} from './motion-replay.mjs';
 import {bindOutsideTouches,normalizeOptions,applyTouchOptions,touchControls,suspendRuntimeAudio,resumeRuntimeAudio,directTouch,installResources as installHostResources,observeMusicWrites,mountManagedData,isSupersededRuntimeError} from './eagler-host.mjs';
 const runtimeBuild=/*TH11_BUILD_INFO*/{version:'development-incomplete',completeGame:false,multiplayer:false};
 const multiplayerRuntime=runtimeBuild.multiplayer===true,saveRoot=multiplayerRuntime?'/savesth11mp':'/savesth11';
-const createMultiplayerRuntime=multiplayerRuntime?(await import('./multiplayer.mjs')).createMultiplayerRuntime:null;
+const createMultiplayerRuntime=/*TH11_MULTIPLAYER_FACTORY*/multiplayerRuntime?(await import('./multiplayer.mjs')).createMultiplayerRuntime:null;
 const protocol='eagler-touhou/1',game='th11',query=new URLSearchParams(location.search),canvas=document.querySelector('canvas');
 const epoch=Number(query.get('runtimeEpoch'));
 const validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
@@ -18,7 +18,7 @@ const $=s=>document.querySelector(s);
 let Module,core,app=0,multiplayer=null,runtimeManifest=null,launched=false,first=false,stopping=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true,musicMode='none';
 let frames=0,lastHealth=0,lastFrame=0,maxGap=0,lastPresented=0,saveTimer=null,storageSync=Promise.resolve();
 const cancelTouches=bindOutsideTouches(document,canvas,()=>core,()=>launched&&options.touchEnabled&&(!multiplayerRuntime||multiplayer?.acceptInput()));
-const error=reason=>{const message=reason?.stack||String(reason);if(multiplayerRuntime){window.__eaglerNetplayFailed=true;window.__eaglerNetplayError=message;}const node=$('#error');if(node)node.textContent=message;emit('error',{message,error:message});console.error(reason);};
+const error=reason=>{const message=reason?.stack||String(reason);if(multiplayerRuntime){window.__eaglerNetplayFailed=true;window.__eaglerNetplayError=message;}else{const node=$('#error');if(node)node.textContent=message;}emit('error',{message,error:message});console.error(reason);};
 const u32=(ptr,count)=>new Int32Array(Module.HEAPU8.buffer,ptr,count);
 const sync=(populate=false)=>{const current=storageSync.then(()=>new Promise((r,j)=>Module.FS.syncfs(populate,e=>e?j(e):r())));storageSync=current.catch(()=>{});return current;};
 const coreError=()=>{const p=core.th11_error(),end=Module.HEAPU8.indexOf(0,p);return new TextDecoder().decode(Module.HEAPU8.subarray(p,end<0?p+256:end));};
@@ -148,8 +148,11 @@ setInterval(()=>{if(launched&&!document.hidden&&core)try{queue=queue.then(()=>sa
 const initialized=(async()=>{
  if(multiplayerRuntime)runtimeManifest=await fetch('./manifest.json').then(response=>{if(!response.ok)throw Error('TH11 多人 Runtime manifest 缺失');return response.json();});
  let audioContext;try{audioContext=parent.__touhouAudioContext;}catch{}
- Module=await createModule({canvas,noInitialRun:true,resetBrowserKeyboard:()=>keyboard.clear(),...(audioContext?{SDL3:{audioContext}}:{}),print:console.log,printErr:console.error,
-  instantiateWasm(imports,ready){return WebAssembly.instantiateStreaming(fetch('./th11-sdl.wasm'),imports).then(({instance,module})=>{core=instance.exports;ready(instance,module);return core;});}});
+ // Emscripten only observes the hook's success callback, not its returned
+ // Promise. Route asynchronous failure to this initialization's error owner.
+ let rejectWasm;const wasmFailure=new Promise((_,reject)=>{rejectWasm=reject;});
+ Module=await Promise.race([createModule({canvas,noInitialRun:true,resetBrowserKeyboard:()=>keyboard.clear(),...(audioContext?{SDL3:{audioContext}}:{}),print:console.log,printErr:console.error,
+  instantiateWasm(imports,ready){void WebAssembly.instantiateStreaming(fetch('./th11-sdl.wasm'),imports).then(({instance,module})=>{core=instance.exports;ready(instance,module);}).catch(rejectWasm);return {};}}),wasmFailure]);
  window.Module=Module;window.FS=Module.FS;window.core=core;
  observeMusicWrites(Module,core,game);
  Module.FS.mkdirTree(saveRoot);Module.FS.mount(Module.IDBFS,{},saveRoot);await sync(true);

@@ -98,12 +98,44 @@ EMSCRIPTEN_KEEPALIVE const char* mp_fixture_ui_saved(unsigned slot){
 EMSCRIPTEN_KEEPALIVE int mp_fixture_ui_fixture(int kind){
 #ifdef TH11_MULTIPLAYER
  auto& a=th11::sdl::app;auto* b=a.session.battle.get();if(!b)return 0;
+ if(kind==4){
+  // Prepare one diagnostic world once; local-view captures below only draw.
+  const int power[]={20,36,60},graze[]={111,222,333},points[]={5000000,6000000,7000000},communication[]={2500,5000,10000};
+  b->mp_fragments=2;
+  for(unsigned i=0;i<b->mp_options.seat_count;++i){auto& p=*b->pilots[i];p.economy.lives=2+3*int(i);p.economy.power=power[i];p.economy.graze=graze[i];p.economy.point_value=points[i];p.economy.communication=communication[i];p.economy.life_fragments=2;if(!p.power_changed())return 0;}
+  return b->mp_update_presentation();
+ }
  const float x[]={0,10,100};for(unsigned i=0;i<3;++i){auto& p=*b->pilots[i];auto& s=p.player->motion.state;s.x=int(x[i]*128);s.y=400*128;s.position={x[i],400,0};p.player->state.invincibility.set(100000,&b->animations.rate);p.economy.lives=i==1?1:3;p.economy.power=i==0?40:i==1?0:p.economy.max_power;p.power_changed();}
  if(kind==2){auto& q=*b->pilots[1];q.economy.lives=-1;if(!q.game_over(false))return 0;fixture_freeze_ghost=true;}
  return 1;
 #else
  return 0;
 #endif
+}
+EMSCRIPTEN_KEEPALIVE int mp_fixture_ui_local(unsigned local){
+#ifdef TH11_MULTIPLAYER
+ auto& a=th11::sdl::app;auto& s=a.session;auto* b=s.battle.get();if(!b||local>=b->mp_options.seat_count)return 0;
+ const auto identity=s.multiplayer_hash(),frame=s.multiplayer_frame;
+ b->mp_options.local_seat=local;s.multiplayer_options.local_seat=local;
+ if(!s.draw(a.renderer))return 0;a.graphics.present();
+ return s.multiplayer_hash()==identity&&s.multiplayer_frame==frame;
+#else
+ return 0;
+#endif
+}
+EMSCRIPTEN_KEEPALIVE const char* mp_fixture_ui_hud(){
+ static std::string out;out="[";
+#ifdef TH11_MULTIPLAYER
+ if(auto* b=th11::sdl::app.session.battle.get())for(const auto& request:b->ascii.requests){
+  const bool heading=request.text=="1P"||request.text=="2P"||request.text=="3P";
+  const bool local=(request.position.x==520&&(request.position.y==248||request.position.y==320))||(request.position.x==48&&request.position.y==455);
+  const bool score=request.position.x==508&&(request.position.y==48||request.position.y==72);
+  if(!heading&&!local&&!score)continue;
+  // This filtered native HUD subset contains only numeric/seat ASCII.
+  char row[256];std::snprintf(row,sizeof(row),"%s{\"text\":\"%s\",\"x\":%.0f,\"y\":%.0f,\"font\":%d,\"pass\":%d,\"color\":%u}",out.size()>1?",":"",request.text.c_str(),double(request.position.x),double(request.position.y),request.style.font,request.style.pass,request.style.color);out+=row;
+ }
+#endif
+ out+="]";return out.c_str();
 }
 EMSCRIPTEN_KEEPALIVE int mp_fixture_ui_terminal(int kind){
  auto& a=th11::sdl::app;if(!a.session.battle)return 0;
@@ -118,7 +150,7 @@ EMSCRIPTEN_KEEPALIVE const char* mp_fixture_ui_state(){
  static char out[2048];auto& a=th11::sdl::app;auto& s=a.session;
 #ifdef TH11_MULTIPLAYER
  auto* b=s.battle.get();auto* p=b?b->pilots[0].get():nullptr;auto* q=b?b->pilots[1].get():nullptr;
- std::snprintf(out,sizeof(out),"{\"phase\":\"%s\",\"frame\":%u,\"hash\":%u,\"pauseState\":%d,\"titleSubstate\":%d,\"lifeHold\":%u,\"powerTaps\":%u,\"p1Lives\":%d,\"p2Lives\":%d,\"p1Power\":%d,\"p2Power\":%d,\"p2Ghost\":%s,\"endingFrames\":%u,\"ghostPinned\":%s,\"titleScreen\":%d,\"titleCursor\":%d,\"titleNameCursor\":%d,\"titleNameLength\":%d,\"pauseCursor\":%d,\"pauseNameCursor\":%d,\"pauseNameLength\":%d,\"sharedScoreUnits\":%d,\"displayedScoreUnits\":%d,\"recordIo\":%s,\"readOnly\":%s,\"archiveFrames\":%u,\"autoPath\":\"%s\"}",s.phase_name(),s.state.frame,s.multiplayer_hash(),s.pause_menu?s.pause_menu->state:-1,s.title?s.title->substate:-1,p?p->life_hold:0,p?p->power_taps:0,p?p->economy.lives:0,q?q->economy.lives:0,p?p->economy.power:0,q?q->economy.power:0,q&&q->ghost?"true":"false",s.ending?s.ending->frames:0,fixture_freeze_ghost?"true":"false",s.title?int(s.title->screen):-1,s.title?s.title->cursor.selected:-1,s.title?s.title->name_cursor.selected:-1,s.title?s.title->name_length:-1,s.pause_menu?s.pause_menu->cursor.selected:-1,s.pause_menu?s.pause_menu->name_cursor.selected:-1,s.pause_menu?s.pause_menu->name_length:-1,s.economy.score_units,b?b->hud.score.displayed:-1,fixture_record_io?"true":"false",a.netplay.ReadOnly()?"true":"false",a.multiplayer_replay.FrameCount(),a.multiplayer_auto_path.c_str());
+ std::snprintf(out,sizeof(out),"{\"phase\":\"%s\",\"frame\":%u,\"hash\":%u,\"pauseState\":%d,\"titleSubstate\":%d,\"lifeHold\":%u,\"powerTaps\":%u,\"p1Lives\":%d,\"p2Lives\":%d,\"p1Power\":%d,\"p2Power\":%d,\"p2Ghost\":%s,\"endingFrames\":%u,\"ghostPinned\":%s,\"titleScreen\":%d,\"titleCursor\":%d,\"titleNameCursor\":%d,\"titleNameLength\":%d,\"pauseCursor\":%d,\"pauseNameCursor\":%d,\"pauseNameLength\":%d,\"sharedScoreUnits\":%d,\"displayedScoreUnits\":%d,\"recordIo\":%s,\"readOnly\":%s,\"archiveFrames\":%u,\"autoPath\":\"%s\",\"localSeat\":%u,\"localGraze\":%d,\"localPointValue\":%d,\"localCommunication\":%d,\"fragments\":%u}",s.phase_name(),s.state.frame,s.multiplayer_hash(),s.pause_menu?s.pause_menu->state:-1,s.title?s.title->substate:-1,p?p->life_hold:0,p?p->power_taps:0,p?p->economy.lives:0,q?q->economy.lives:0,p?p->economy.power:0,q?q->economy.power:0,q&&q->ghost?"true":"false",s.ending?s.ending->frames:0,fixture_freeze_ghost?"true":"false",s.title?int(s.title->screen):-1,s.title?s.title->cursor.selected:-1,s.title?s.title->name_cursor.selected:-1,s.title?s.title->name_length:-1,s.pause_menu?s.pause_menu->cursor.selected:-1,s.pause_menu?s.pause_menu->name_cursor.selected:-1,s.pause_menu?s.pause_menu->name_length:-1,s.economy.score_units,b?b->hud.score.displayed:-1,fixture_record_io?"true":"false",a.netplay.ReadOnly()?"true":"false",a.multiplayer_replay.FrameCount(),a.multiplayer_auto_path.c_str(),b?b->mp_options.local_seat:0,b?b->pilots[b->mp_options.local_seat]->economy.graze:0,b?b->pilots[b->mp_options.local_seat]->economy.point_value:0,b?b->pilots[b->mp_options.local_seat]->economy.communication:0,b?b->mp_fragments:0);
 #else
  std::snprintf(out,sizeof(out),"{\"phase\":\"%s\",\"frame\":%u,\"pauseState\":%d,\"titleSubstate\":%d}",s.phase_name(),s.state.frame,s.pause_menu?s.pause_menu->state:-1,s.title?s.title->substate:-1);
 #endif

@@ -17,7 +17,7 @@ MultiplayerPilot::MultiplayerPilot(GameBattle& w,unsigned index):world(w),seat(i
 bool MultiplayerPilot::alive()const noexcept{return player&&!ghost&&player->state.life_state!=2&&player->state.life_state!=4;}
 bool MultiplayerPilot::initialize(int selection){
     EffectOwner effect(world,seat);
-    input={};input.movement.character=selection/3;input.movement.subtype=selection%3;input.movement.enemy_manager=true;
+    input={};input.challenge=world.mp_options.challenge;input.movement.character=selection/3;input.movement.subtype=selection%3;input.movement.enemy_manager=true;
     communication.reset(&world.animations.rate);
     if(seat){owned_player=std::make_unique<PlayerFrame>(world.resources.core.shots[selection],world.resources.core.players[selection/3],world.resources.core.bullet,world.animations,economy,*this,7,6);player=owned_player.get();player->input=input;
         world.animations.multiplayer_tags[&player->motion.body]=seat+1;
@@ -25,6 +25,7 @@ bool MultiplayerPilot::initialize(int selection){
         if(world.mp_options.stage>1&&world.mp_options.stage<=6)economy.power=economy.max_power;
         owned_bomb=std::make_unique<BombController>(world.animations,world.resources.core.players[selection/3],*player,*this,7,&world.resources.core.text);bomb=owned_bomb.get();bomb->selection=selection;
     }else{player=world.player.get();bomb=world.bomb.get();}
+    player->input.challenge=world.mp_options.challenge;
     world.animations.multiplayer_tags[&player->motion.body]=seat+1;
     constexpr i32 minimum[]={2500000,5000000,10000000,20000000,20000000};player->state.minimum_point_value=minimum[economy.difficulty];
     const float spacing=world.mp_options.seat_count==2?48.f:56.f;
@@ -67,10 +68,10 @@ bool MultiplayerPilot::player_sound(i32 id){return world.sound(id,0,false);}
 bool MultiplayerPilot::attract_items(){force_attract=true;return true;}
 bool MultiplayerPilot::cancel_bullets(const Vec3* p,float r,bool skip){return world.cancel_bullets(p,r,skip);}
 bool MultiplayerPilot::cancel_lasers(const Vec3* p,float r,bool reward,bool skip){return world.cancel_lasers(p,r,reward,skip);}
-bool MultiplayerPilot::start_bomb(){if(!bomb||ghost)return false;EffectOwner effect(world,seat);return bomb->start()!=-2;}
+bool MultiplayerPilot::start_bomb(){if(world.mp_options.challenge||!bomb||ghost)return false;EffectOwner effect(world,seat);return bomb->start()!=-2;}
 bool MultiplayerPilot::spawn_item(i32 type,Vec3 p,u32 color,float angle,float speed){return world.items.spawn(type,p,color,angle,speed)==0;}
 bool MultiplayerPilot::display_lives(i32 lives,i32 fragments){if(!seat)return world.display_lives(lives,fragments);return true;}
-bool MultiplayerPilot::record_death(){world.events.push_back({BattleEventKind::Death,i32(seat)});return true;}
+bool MultiplayerPilot::record_death(){if(world.mp_options.challenge&&challenge_misses!=0xffffffffu)++challenge_misses;world.events.push_back({BattleEventKind::Death,i32(seat)});return true;}
 bool MultiplayerPilot::enemy_death(){return world.enemy_death();}
 bool MultiplayerPilot::game_over(bool){
     EffectOwner effect(world,seat);
@@ -95,13 +96,13 @@ bool MultiplayerPilot::lives_changed(i32 lives,i32 fragments){return display_liv
 void GameBattle::enable_multiplayer(const MultiplayerOptions& options){mp_options=options;mp_enabled=true;hud.multiplayer=true;mp_rank=economy.rank;for(unsigned i=0;i<options.seat_count;++i){pilots[i]=std::make_unique<MultiplayerPilot>(*this,i);completion.multiplayer_economies[i]=&pilots[i]->economy;}completion.multiplayer_count=options.seat_count;}
 bool GameBattle::mp_initialize_players(){for(unsigned i=0;i<mp_options.seat_count;++i)if(!pilots[i]->initialize(mp_options.selections[i])){error="MP player initialization";return false;}return true;}
 void GameBattle::mp_set_input(const std::array<MultiplayerInput,3>& frame_input){
-    for(unsigned i=0;i<mp_options.seat_count;++i){auto& p=*pilots[i];const auto& in=frame_input[i];p.keys.update(in.held,false);p.input.movement.held=p.ghost?0:p.keys.held;p.input.movement.pressed=p.ghost?0:p.keys.pressed;p.input.movement.touch_mode=p.ghost?0:in.touch_mode;p.input.movement.touch_x=in.touch_x;p.input.movement.touch_y=in.touch_y;}
+    for(unsigned i=0;i<mp_options.seat_count;++i){auto& p=*pilots[i];const auto& in=frame_input[i];p.keys.update(mp_options.challenge?in.held&~2u:in.held,false);p.input.movement.held=p.ghost?0:p.keys.held;p.input.movement.pressed=p.ghost?0:p.keys.pressed;p.input.movement.touch_mode=p.ghost?0:in.touch_mode;p.input.movement.touch_x=in.touch_x;p.input.movement.touch_y=in.touch_y;}
     player_input=pilots[0]->input;
 }
 void GameBattle::mp_sync(){
     bool any=false,nonshield=false,ending=false;
     for(unsigned i=0;i<mp_options.seat_count;++i){auto& p=*pilots[i];if(!p.player)continue;p.enemies=enemies.first;p.economy.rank=mp_rank;
-        p.input.movement.enemies=enemies.count!=0;p.input.movement.bomb=dialogue&&dialogue->active;p.input.special_available=p.bomb&&!p.ghost;p.input.special_active=p.bomb&&!p.ghost&&p.bomb->state.active;p.input.shooting_blocked=(completion.state.hud_flags&0x10)!=0||p.ghost;
+        p.input.movement.enemies=enemies.count!=0;p.input.movement.bomb=dialogue&&dialogue->active;p.input.special_available=p.bomb&&!p.ghost&&!mp_options.challenge;p.input.special_active=p.bomb&&!p.ghost&&p.bomb->state.active;p.input.shooting_blocked=(completion.state.hud_flags&0x10)!=0||p.ghost;
         p.player->input=p.input;
         if(p.input.special_active){any=true;if(!(p.player->motion.state.flags&4))nonshield=true;}
         if(!p.ghost&&!(p.player->motion.state.flags&4)&&(p.player->state.invincibility.current>0||(p.player->motion.state.flags&2)))ending=true;
@@ -227,11 +228,12 @@ i32 GameBattle::multiplayer_boss_damage(EnemyState& e,i32 amount){
     auto& rem=mp_damage_remainders[e.script_owner];const u64 scaled=u64(unsigned(amount))*numerator+rem;rem=unsigned(scaled%12);return i32(scaled/12);
 }
 bool GameBattle::mp_attract_players(const EnemyState& e){for(unsigned i=0;i<mp_options.seat_count;++i){auto& p=*pilots[i];if(!p.alive())continue;const Vec3 old=p.player->motion.state.position;auto d=GraphicsMath::normalize({float(double(e.current.position.x)-old.x),float(double(e.current.position.y)-old.y),0});position(*p.player,{float(double(old.x)+double(d.x)*e.floats[3]),float(double(old.y)+double(d.y)*e.floats[3]),0});}return true;}
-MultiplayerSeatView GameBattle::mp_seat(unsigned seat)const noexcept{MultiplayerSeatView v;v.seat=seat;if(!mp_enabled||seat>=mp_options.seat_count||!pilots[seat]||!pilots[seat]->player)return v;const auto& p=*pilots[seat];const auto& e=p.economy;v.active=true;v.ghost=p.ghost;v.life_state=p.player->state.life_state;v.power_taps=p.power_taps;v.selection=mp_options.selections[seat];v.lives=e.lives;v.life_fragments=mp_fragments;v.power=e.power;v.max_power=e.max_power;v.power_step=e.power_step;v.score=i64(e.score_units)*10;v.graze=e.graze;v.communication=e.communication;v.x=p.player->motion.state.position.x;v.y=p.player->motion.state.position.y;v.fast_speed=float(p.player->motion.state.normal_speed)/128;v.slow_speed=float(p.player->motion.state.focus_speed)/128;return v;}
+MultiplayerSeatView GameBattle::mp_seat(unsigned seat)const noexcept{MultiplayerSeatView v;v.seat=seat;if(!mp_enabled||seat>=mp_options.seat_count||!pilots[seat]||!pilots[seat]->player)return v;const auto& p=*pilots[seat];const auto& e=p.economy;v.active=true;v.ghost=p.ghost;v.life_state=p.player->state.life_state;v.power_taps=p.power_taps;v.misses=p.challenge_misses;v.selection=mp_options.selections[seat];v.lives=e.lives;v.life_fragments=mp_fragments;v.power=e.power;v.max_power=e.max_power;v.power_step=e.power_step;v.score=i64(e.score_units)*10;v.graze=e.graze;v.communication=e.communication;v.x=p.player->motion.state.position.x;v.y=p.player->motion.state.position.y;v.fast_speed=float(p.player->motion.state.normal_speed)/128;v.slow_speed=float(p.player->motion.state.focus_speed)/128;return v;}
 u32 GameBattle::mp_hash()const noexcept{
     u32 hash=2166136261u;auto word=[&](u32 v){for(unsigned i=0;i<4;++i){hash^=(v>>(i*8))&255;hash*=16777619u;}};auto flt=[&](float v){u32 bits;std::memcpy(&bits,&v,4);word(bits);};
     auto timer=[&](const Timer& t){word(t.previous);word(t.current);flt(t.fractional);};
     auto pc=[&](const EclOwner& owner,const EclInstruction* instruction){if(!instruction){word(0);return;}const auto address=reinterpret_cast<uintptr_t>(instruction);unsigned index=0;for(const auto& file:owner.program->files){++index;const auto begin=reinterpret_cast<uintptr_t>(file->bytes.data());if(address>=begin&&address<begin+file->bytes.size()){word(index);word(u32(address-begin));return;}}word(~0u);};
+    word(mp_options.challenge);for(unsigned i=0;i<mp_options.seat_count;++i)word(pilots[i]->challenge_misses);
     word(mp_tick);word(mp_fragments);word(mp_wipe_frames);word(mp_rank);word(economy.score_units);word(frame);word(resources.stage_number);word(animations.script_rng.seed);word(animations.script_rng.calls);word(spell_flags);word(spell_id);word(spell_bonus);word(spell_elapsed);
     for(auto value:enemy_environment.shared_integers)word(value);flt(animations.rate);word(transitioning);word(transition_started);word(stage_active);timer(transition_timer);
     if(stage){const auto& s=stage->state;word(s.instruction_offset);timer(s.script_timer);timer(s.fade_timer);word(s.frame_count);word(s.draw_flags);word(s.effects_enabled);}

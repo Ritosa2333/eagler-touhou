@@ -1,50 +1,20 @@
-/* Only transport errors, calibration/seek notices and terminal room actions.
-   Replay lists, stage selection, score registration and saves use native UI. */
-.th11-mp-surface {
+/* Native Replay seeking is read-only. All online connection, calibration,
+   failure and return UI is owned by the standard eagler-touhou frontend. */
+.th11-mp-replay-seek {
   color: #f5f1ec;
   font: 15px/1.5 "Yu Mincho", "MS PMincho", "Noto Serif CJK JP", serif;
   text-shadow: 1px 1px 2px #000, -1px -1px 2px #000;
   color-scheme: dark;
-}
-.th11-mp-surface button {
-  width: auto;
-  min-height: 36px;
-  margin: 0;
-  padding: 6px 10px;
-  border: 1px solid transparent;
-  border-radius: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-shadow: inherit;
-  cursor: pointer;
-}
-.th11-mp-surface button:hover:not(:disabled), .th11-mp-surface button:focus-visible,
-.th11-mp-surface summary:focus-visible {
-  color: #fff;
-  text-shadow: 0 0 4px #efb2b2, 0 0 10px #aa3155, 1px 1px 2px #000;
-  outline: 1px solid #ead6d6;
-  outline-offset: -1px;
-}
-.th11-mp-panel {
   position: fixed;
-  inset: 0;
-  z-index: 30;
-  overflow: auto;
-  padding: 28px max(24px, calc((100vw - 592px) / 2));
-  background: #080709e8;
-}
-.th11-mp-panel h2 { margin: 0 0 12px; font-size: 26px; font-weight: normal; letter-spacing: .04em; }
-.th11-mp-panel p { margin: 0 0 20px; max-width: 55ch; }
-.th11-mp-panel details { max-width: 55ch; margin: 0 0 20px; color: #d8cbd1; font-size: 13px; }
-.th11-mp-panel summary { cursor: pointer; width: fit-content; padding: 6px 0; }
-.th11-mp-panel details pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; margin: 6px 0; }
-.th11-mp-notice { position: fixed; left: 50%; top: 9%; transform: translateX(-50%); z-index: 24; width: max-content; max-width: 90%; padding: 8px 14px; background: #09070bdd; text-align: center; white-space: pre-line; pointer-events: none; }
-.th11-mp-session-controls { position: fixed; right: 8px; bottom: 8px; z-index: 24; max-width: calc(100vw - 16px); display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; font-size: 13px; pointer-events: none; }
-.th11-mp-session-controls output { max-width: 48ch; }
-.th11-mp-session-controls button { pointer-events: auto; background: #09070bcc; }
-body.th11-mp-failed #error { display: none; }
-@media (max-width: 540px) {
-  .th11-mp-panel { padding: 24px 20px; }
-  .th11-mp-panel h2 { font-size: 23px; }
+  left: 50%;
+  top: 9%;
+  transform: translateX(-50%);
+  z-index: 24;
+  width: max-content;
+  max-width: 90%;
+  padding: 8px 14px;
+  background: #09070bdd;
+  text-align: center;
+  white-space: pre-line;
+  pointer-events: none;
 }

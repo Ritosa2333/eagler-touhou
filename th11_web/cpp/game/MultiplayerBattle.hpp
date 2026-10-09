@@ -22,7 +22,7 @@ struct MultiplayerPilot final:PlayerFrameWorld,BombWorld,ItemRewardEffects {
     bool ghost=false,life_latched=false,force_attract=false;
     unsigned life_hold=0,power_taps=0,power_gap=0,ghost_clock=0;
     i32 ghost_dx=0,ghost_dy=0;
-    u32 ghost_random=1;
+    u32 ghost_random=1,challenge_misses=0;
     MultiplayerPilot(GameBattle&,unsigned);
     bool alive()const noexcept;
     bool initialize(int);

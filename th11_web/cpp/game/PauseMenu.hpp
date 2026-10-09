@@ -35,7 +35,7 @@ public:
 #ifdef TH11_MULTIPLAYER
     bool multiplayer_result=false,multiplayer_pause=false;
     bool begin_multiplayer_pause();
-    bool update_multiplayer_pause(u32 pressed);
+    bool update_multiplayer_pause(u32 pressed,u32 repeat);
     bool begin_multiplayer_end(bool completed=false);
 #endif
     bool update(u32 pressed,u32 repeat);

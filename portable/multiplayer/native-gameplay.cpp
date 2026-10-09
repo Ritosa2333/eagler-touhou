@@ -134,12 +134,15 @@ void restart_risk_cases(const std::vector<u8>& bytes){
 }
 #include "native-items.hpp"
 #include "native-score.hpp"
+#include "native-resources.hpp"
+#include "native-challenge.hpp"
 void presentation_risk_cases(const std::vector<u8>& bytes){
     auto peer=std::make_unique<Peer>(bytes);MultiplayerOptions options;options.seat_count=3;options.selections={0,3,5};
     check(peer->session.begin_multiplayer(peer->resources,options),"presentation risk world");auto& w=*peer->session.battle;std::array<MultiplayerInput,3> in{};
     for(unsigned i=0;i<125;++i)step(*peer,in);
     for(unsigned seat=0;seat<3;++seat){w.pilots[seat]->player->state.invincibility.set(100000,&w.animations.rate);for(unsigned i=0;i<9;++i)check(w.mp_life_icons[seat][i].resource==&w.resources.core.front&&w.mp_life_icons[seat][i].script_index==i32(10+i),"HUD uses original per-seat star/fragment scripts");for(unsigned i=0;i<4;++i)check(w.mp_communication_icons[seat][i].resource==&w.resources.core.front&&w.mp_communication_icons[seat][i].script_index==i32(32+i),"HUD uses original communication scripts");}
-    unsigned native_labels=0;if(auto* frame=w.animations.find(w.hud.frame_animation))for(auto* node=frame->child.next;node;node=node->next)if(node->value->script_index>=5&&node->value->script_index<=9){++native_labels;check(bool(node->value->flags&2)==(node->value->script_index<=6),"one original score label pair stays visible; only personal labels repeat");}check(native_labels==5,"all five native HUD label sources retained");
+    unsigned native_labels=0;if(auto* frame=w.animations.find(w.hud.frame_animation))for(auto* node=frame->child.next;node;node=node->next)if(node->value->script_index>=5&&node->value->script_index<=9){++native_labels;check(bool(node->value->flags&2)==(node->value->script_index<=6),"shared score stays visible; Life/Power repeat and local Graze relocates");}check(native_labels==5,"all five native HUD label sources retained");
+    local_hud_cases(*peer);
     check(peer->session.draw(peer->renderer),"native repeated HUD draw");unsigned tags=0;for(const auto& request:w.ascii.requests){check(request.text.find("CO-OP")==std::string::npos&&request.text.find("TEAM")==std::string::npos&&request.text.find("restart")==std::string::npos&&request.text.find("COMM")==std::string::npos,"HUD contains no invented dashboard/terminal labels");if(request.text=="1P"||request.text=="2P"||request.text=="3P")++tags;}check(tags==3,"stable native atlas seat labels");
     const auto visual_identity=peer->session.multiplayer_hash(),visual_rng=w.animations.script_rng.calls;
     const auto* frame_source=peer->renderer.multiplayer_hud_background;check(frame_source&&frame_source->script_index==2&&frame_source->sprite_index==1,"only original right frame sprite owns watermark replacement");
@@ -152,7 +155,7 @@ void presentation_risk_cases(const std::vector<u8>& bytes){
     check(std::memcmp(&frame,&original_frame,sizeof(frame))==0&&w.resources.core.front.textures[0].pixels==original_pixels,"watermark suppression cannot mutate native VM or texture pixels");
     peer->renderer.multiplayer_hud_background=nullptr;peer->graphics.captured.clear();peer->graphics.capture=true;check(peer->renderer.draw(frame)!=-2,"ordinary frame owner draw");peer->renderer.flush();peer->graphics.capture=false;check(peer->graphics.captured.size()==6,"without MP owner the original frame remains a single unchanged quad");w.mp_prepare_presentation(peer->renderer);
     w.ascii.clear();check(w.mp_draw_hud(peer->renderer),"three-seat native HUD clearance draw");
-    for(unsigned seat=0;seat<3;++seat){const std::string tag=std::to_string(seat+1)+"P";bool found=false;for(const auto& request:w.ascii.requests)if(request.text==tag){found=true;check(request.position.y==88+seat*112,"personal resources repeat below the single original score block");}check(found,"each seat retains its native-atlas tag");}
+    for(unsigned seat=0;seat<3;++seat){const std::string tag=std::to_string(seat+1)+"P";bool found=false;for(const auto& request:w.ascii.requests)if(request.text==tag){const float y[]={88,160,232};found=true;check(request.position.x==436&&request.position.y==y[seat],"Life/Power group headings leave the original local Graze row clear");}check(found,"each seat retains its native-atlas tag");}
     for(const auto& request:w.ascii.requests){const float native_height=request.style.font==1?9:request.style.font==2?10:16;check(request.position.y>=48&&request.position.y+native_height*request.style.scale.y<=464,"all repeated native font rows fit above the original bottom border");}
     check(peer->session.multiplayer_hash()==visual_identity&&w.animations.script_rng.calls==visual_rng,"right frame and HUD reflow preserve world identity and RNG");
     auto& p=*w.pilots[0];check(!p.player->motion.state.focused&&!p.player->motion.focus_animation,"Always Hitbox fixture has no native Focus input");
@@ -173,7 +176,7 @@ void native_ui_cases(const std::vector<u8>& bytes){
     auto* menu=w.mp_presentation.find(a->session.pause_menu->menu_animation);auto* background=w.mp_presentation.find(a->session.pause_menu->background_animation);
     check(menu&&menu->script_index==89&&background&&background->resource==&w.resources.core.text&&background->script_index==75,"native pause parent and captured-background resource owners");
     check(a->session.pause_menu->background_vm()==background,"GPU capture resolves the PauseMenu owning ANM manager");
-    unsigned children=0;for(auto* n=menu->child.next;n;n=n->next){++children;check(n->value->script_index==74||n->value->script_index==75||n->value->script_index==77,"pause retains only original ornament headline and Resume");}check(children==3,"no ordinary Save Return Retry menu owners enter MP pause");
+    unsigned children=0;for(auto* n=menu->child.next;n;n=n->next){++children;check(n->value->script_index==74||n->value->script_index==75||n->value->script_index==77||n->value->script_index==80,"pause retains original ornament headline Resume and Restart");}check(children==4,"no ordinary Save or Return owners enter MP pause");
     in[1].pause=false;for(unsigned i=0;i<25;++i){in[1].held=i&1?1:0;step(*a,in);step(*b,in);check(a->session.multiplayer_hash()==b->session.multiplayer_hash(),"pause menu remains deterministic across local viewers");}
     check(a->session.state.phase==GameSessionPhase::paused&&a->session.pause_menu->state==33,"held entry Shot and P2 edges cannot confirm P1 native menu");
     check(w.frame==frame&&w.mp_hash()==frozen&&w.animations.script_rng.calls==rng,"native overlay animations cannot advance combat or combat RNG");
@@ -183,6 +186,14 @@ void native_ui_cases(const std::vector<u8>& bytes){
     check(a->session.state.phase==GameSessionPhase::stage&&w.frame==frame&&a->session.animations.rate==1&&!a->session.pause_menu,"Resume restores normal time after native overlay dismissal without ticking combat early");
     step(*a,in);step(*b,in);check(w.frame==frame+1,"first post-menu confirmed frame advances world exactly once");
     in[0].pause=true;step(*a,in);step(*b,in);in={};step(*a,in);step(*b,in);in[2].pause=true;step(*a,in);step(*b,in);in={};for(unsigned i=0;i<13&&a->session.state.phase==GameSessionPhase::paused;++i){step(*a,in);step(*b,in);}check(a->session.state.phase==GameSessionPhase::stage&&a->session.multiplayer_hash()==b->session.multiplayer_hash(),"any seat retains confirmed Pause-key resume during native intro");
+    in={};in[0].pause=true;step(*a,in);step(*b,in);in={};for(unsigned i=0;i<18;++i){step(*a,in);step(*b,in);}
+    const auto restart_frame=w.frame,restart_hash=w.mp_hash();
+    in[0].held=32;step(*a,in);step(*b,in);check(a->session.pause_menu->cursor.selected==3&&b->session.pause_menu->cursor.selected==3,"Down skips unavailable Save and Return to Restart");
+    in={};step(*a,in);step(*b,in);in[0].held=1;step(*a,in);step(*b,in);
+    check(a->session.pause_menu->action==PauseAction::Restart&&b->session.pause_menu->action==PauseAction::Restart,"native Restart emits the confirmed generation request on both viewers");
+    check(a->session.state.phase==GameSessionPhase::paused&&w.frame==restart_frame&&w.mp_hash()==restart_hash,"Restart cannot rebuild a local world before its network fence");
+    in={};step(*a,in);step(*b,in);in[0].held=0x200000;step(*a,in);step(*b,in);
+    check(a->session.pause_menu->action==PauseAction::Restart&&a->session.multiplayer_hash()==b->session.multiplayer_hash(),"R emits the same deterministic Restart action");
     options.local_seat=0;check(a->session.begin_multiplayer(a->resources,options),"life UI fixture");auto& world=*a->session.battle;in={};for(unsigned i=0;i<125;++i)step(*a,in);
     auto& donor=*world.pilots[0];auto& ghost=*world.pilots[1];donor.economy.lives=3;ghost.economy.lives=-1;check(ghost.game_over(false),"native ghost feedback fixture");
     for(auto& p:world.pilots)if(p)p->player->state.invincibility.set(100000,&world.animations.rate);put(*donor.player,0,400);put(*ghost.player,10,400);put(*world.pilots[2]->player,120,400);in[0].held=8;
@@ -259,14 +270,15 @@ int main(int argc,char** argv){
     std::ifstream file(argv[1],std::ios::binary);std::vector<u8> bytes((std::istreambuf_iterator<char>(file)),{});
     check(!bytes.empty(),"retail archive fixture present");
     const auto mode=[&](const char* value){return argc==3&&std::strcmp(argv[2],value)==0;};
-    if(mode("presentation"))presentation_risk_cases(bytes);
+    if(mode("presentation")){resource_cases(bytes);presentation_risk_cases(bytes);}
     else if(mode("restart"))restart_risk_cases(bytes);
+    else if(mode("challenge"))challenge_cases(bytes);
     else if(mode("score")){score_cases(bytes);result_risk_cases(bytes);}
     else if(mode("ui")){native_ui_cases(bytes);presentation_risk_cases(bytes);restart_risk_cases(bytes);}
     else if(mode("repair")){presentation_risk_cases(bytes);restart_risk_cases(bytes);}
     else{
         if(argc==2){battle_cases(bytes);rules_cases(bytes);owner_cases(bytes);}
-        score_cases(bytes);item_risk_cases(bytes);presentation_risk_cases(bytes);result_risk_cases(bytes);restart_risk_cases(bytes);native_ui_cases(bytes);
+        challenge_cases(bytes);score_cases(bytes);item_risk_cases(bytes);resource_cases(bytes);presentation_risk_cases(bytes);result_risk_cases(bytes);restart_risk_cases(bytes);native_ui_cases(bytes);
     }
     std::printf("PASS: %u checks, %u native logic/draw ticks; no original executable\n",checks,ticks);return 0;
 }

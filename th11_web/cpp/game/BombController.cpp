@@ -26,6 +26,9 @@ Vec3 BombController::game_position(const AnmVm& vm)const{
     return {float(double(float(double(sum.x)+vm.child_position.x))-224),float(double(float(double(sum.y)+vm.child_position.y))-16),float(double(sum.z)+vm.child_position.z)};
 }
 i32 BombController::start(){
+#ifdef TH11_MULTIPLAYER
+    if(player.input.challenge)return -1;
+#endif
     if(state.active)return -1;if(!supported()){last_error=-2;return -2;}
     state.active=1;state.elapsed.set(0,&animations.rate);
     state.started_during_spell=(player.spell.flags&1)&&player.spell.elapsed>=60;

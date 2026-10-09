@@ -3,6 +3,7 @@ import {resolve,extname} from 'node:path';
 import {createServer} from 'node:http';
 import {createRequire} from 'node:module';
 import {createHash} from 'node:crypto';
+import assert from 'node:assert/strict';
 import {captureNativeSaveMenus} from './native-ui-save-capture.mjs';
 const here=import.meta.dirname,root=resolve(here,'../..');
 const index=process.argv.indexOf('--phase'),phase=index<0?'after':process.argv[index+1];
@@ -33,6 +34,23 @@ try{
  if(process.argv.includes('--ordinary-only')){evidence.passed=true;}else{const page=await pageFor('multiplayer');
  await page.evaluate(()=>{begin();step(1,0,0,0,1);step(18);});await shot(page,'mp-pause','3P native begin, neutral125, P1 pause edge, neutral18');
  for(let local=0;local<3;++local){await page.evaluate(local=>begin(1,local),local);await shot(page,'mp-3p-local'+(local+1),'3P native begin {0,3,5}, localSeat '+local+', neutral125');}
+ await page.evaluate(()=>{begin(1,0);if(!core._mp_fixture_ui_fixture(4))throw Error('distinct local HUD fixture');});
+ const localBase=await page.evaluate(()=>state());
+ evidence.localHud={sameWorld:true,fixture:4,baseHash:localBase.hash,baseFrame:localBase.frame,views:[]};
+ for(let local=0;local<3;++local){
+  const view=await page.evaluate(local=>{if(!core._mp_fixture_ui_local(local))throw Error('local view changed authority');return {state:state(),hud:JSON.parse(str(core._mp_fixture_ui_hud()))};},local);
+  assert.equal(view.state.hash,localBase.hash);assert.equal(view.state.frame,localBase.frame);assert.equal(view.state.localSeat,local);
+  assert.equal(view.state.localGraze,[111,222,333][local]);assert.equal(view.state.localPointValue,[5000000,6000000,7000000][local]);assert.equal(view.state.localCommunication,[2500,5000,10000][local]);assert.equal(view.state.fragments,2);
+  const at=(x,y)=>view.hud.filter(row=>row.x===x&&row.y===y);
+  assert.equal(at(508,48).length,1);assert.equal(at(508,72).length,1);
+  assert.equal(at(520,152).length,0);assert.equal(at(520,320).length,1);assert.equal(at(520,320)[0].text,String([111,222,333][local]));assert.equal(at(520,320)[0].pass,0);
+  assert.equal(view.hud.some(row=>row.text.startsWith('LOCAL ')),false);
+  assert.equal(at(48,455).length,1);assert.equal(at(48,455)[0].text,['050000*0.26','060000*0.52','070000*1.03'][local]);assert.equal(at(48,455)[0].pass,1);
+  for(let seat=0;seat<3;++seat){const headings=view.hud.filter(row=>row.text===String(seat+1)+'P');assert.equal(headings.length,1);assert.equal(headings[0].x,436);assert.equal(headings[0].y,[88,160,232][seat]);assert.equal(headings[0].font,1);assert.equal(headings[0].color,seat===local?0xffffff00:0xffffffff);}
+  evidence.localHud.views.push(view);
+  await shot(page,'mp-local-hud-'+(local+1)+'p','Same 3P authoritative world, fixture4 once then draw-only local('+local+'); distinct native Graze/point/communication and yellow local group heading');
+ }
+ evidence.localHud.passed=true;
  await page.evaluate(()=>{begin();if(!core._mp_fixture_ui_fixture(1))throw Error('life fixture');});let prior=0;
  for(const n of [30,60,89,90]){await page.evaluate(n=>step(n,8),n-prior);prior=n;await shot(page,'life-gift-'+n,'Controlled positions x0/10/100 y400, native invincibility100000, lives3/1/3; P1 Focus held '+n+' ticks');}
  await page.evaluate(()=>step(15));await shot(page,'life-gift-delivered','15 native neutral ticks after life transfer spawn');

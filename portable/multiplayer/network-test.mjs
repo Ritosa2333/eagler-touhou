@@ -16,7 +16,7 @@ const build=spawnSync(resolve(sdk,'bin/clang++.exe'),['--target=wasm32-wasip1','
  '-I'+resolve(common,'include'),'-I'+native,...sources,'-Wl,-z,stack-size=2097152','-Wl,--max-memory=268435456','-o',wasm],
  {cwd:root,encoding:'utf8',windowsHide:true,maxBuffer:4*1024*1024});
 if(build.error)throw build.error;if(build.status)throw Error(build.stdout+build.stderr);
-const wasi=new WASI({version:'preview1',args:['network-protocol','/output/replay-p3.rpy'],preopens:{'/output':out},returnOnExit:true});
+const wasi=new WASI({version:'preview1',args:['network-protocol','/output/replay-p3.rpy','/output/replay-challenge.rpy'],preopens:{'/output':out},returnOnExit:true});
 const instance=await WebAssembly.instantiate(await WebAssembly.compile(readFileSync(wasm)),{wasi_snapshot_preview1:wasi.wasiImport});
 assert.equal(wasi.start(instance),0);
 for(const name of ['calibration-retirement','session-channel','adonis-startup']){
@@ -48,8 +48,9 @@ const base={netplayMode:'lan',netplayUrl:'wss://relay.invalid/relay?room=th11mp-
 const first=await multiplayerSetupWords(base,buildWords,webcrypto),other=await multiplayerSetupWords({...base,netplayPlayer:0,netplayUrl:base.netplayUrl.replace('private','other')},buildWords,webcrypto);
 assert.equal(first.words.length,22);assert.equal(first.words[2],2);assert.deepEqual(first.words.slice(5,7),other.words.slice(5,7));
 assert.notDeepEqual(first.words.slice(5,7),(await multiplayerSetupWords({...base,netplayUrl:base.netplayUrl.replace('run=17','run=18')},buildWords,webcrypto)).words.slice(5,7));
-for(const options of [{netplayAdonisMode:2},{netplayPredictionLimit:1},{netplayInputDelayAuto:true},{netplayChallengeMode:true},{thpracEnabled:true},{netplayLoadouts:[{character:2,shot:0}]}])
+for(const options of [{netplayAdonisMode:2},{netplayPredictionLimit:1},{netplayInputDelayAuto:true},{netplayChallengeMode:1},{netplayChallengeMode:'true'},{thpracEnabled:true},{netplayLoadouts:[{character:2,shot:0}]}])
  assert.throws(()=>validateMultiplayerOptions({...base,...options}));
+for(const challenge of [false,true]){const configured=await multiplayerSetupWords({...base,netplayChallengeMode:challenge},buildWords,webcrypto);assert.equal(configured.words[21],+challenge);assert.equal(configured.config.challenge,challenge);assert.deepEqual(configured.words.slice(0,21),first.words.slice(0,21));}
 assert.deepEqual(validateMultiplayerOptions({replayViewer:true}),{replay:true});
 assert.equal(multiplayerReplayPath('/savesth11mp/replay/th11_03.rpy'),'replay/th11_03.rpy');
 assert.equal(multiplayerReplayPath('/savesth11/replay/th11_03.rpy'),'replay/th11_03.rpy');
@@ -58,6 +59,11 @@ const core=instance.exports,validate=bytes=>{const pointer=core.network_allocate
 const bytes=new Uint8Array(readFileSync(resolve(out,'replay-p3.rpy'))),metadata=inspectMultiplayerReplay(bytes,{validate,buildWords});
 assert.equal(metadata.recordedPlayer,2);assert.equal(metadata.playerCount,3);assert.equal(metadata.frameCount,180);assert.equal(metadata.inputDelay,2);assert.equal(metadata.prediction,0);assert.equal(metadata.score,9999999990);
 assert.equal(metadata.name,'P3TEST');assert.deepEqual(metadata.chapters,[{stage:1,frame:0},{stage:2,frame:90}]);
+assert.equal(metadata.challenge,false);
+const challengeBytes=new Uint8Array(readFileSync(resolve(out,'replay-challenge.rpy'))),challengeMetadata=inspectMultiplayerReplay(challengeBytes,{validate,buildWords});
+assert.equal(challengeMetadata.challenge,true);assert.equal(challengeMetadata.prediction,0);assert.equal(challengeMetadata.frameCount,180);
+assert.throws(()=>inspectMultiplayerReplay(challengeBytes,{validate,buildWords:[1,2,3,4]}));
+const invalidChallenge=challengeBytes.slice();new DataView(invalidChallenge.buffer).setUint32(164,2,true);assert.throws(()=>inspectMultiplayerReplay(invalidChallenge,{validate,buildWords}));
 assert.throws(()=>inspectMultiplayerReplay(bytes,{validate,buildWords:[1,2,3,4]}));
 const malformed=bytes.slice();malformed[malformed.length-1]^=1;assert.throws(()=>inspectMultiplayerReplay(malformed,{validate,buildWords}));
 writeFileSync(resolve(out,'report.json'),JSON.stringify({passed:true,network:{players:[2,3],delays:[0,2,9],prediction:0,undoBytes:0},recordedPlayer:metadata.recordedPlayer,frameCount:metadata.frameCount,score:metadata.score},null,2)+'\n');

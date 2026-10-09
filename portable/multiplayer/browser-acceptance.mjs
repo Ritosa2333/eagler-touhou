@@ -1,6 +1,9 @@
 // Uses the production package and shared relay/BrowserPeerTransport.
 // No synthetic remote input, native simulation mutation or executable oracle.
 // Negative Replay file fixtures and the offline seek ABI are labeled below.
+// The real Launcher owns connection/calibration/error/return UI. This minimal
+// protocol host checks Runtime signals only; frontend acceptance lives in
+// eagler-touhou/tests/browser/test-th11mp-launcher.py.
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {spawn} from 'node:child_process';
@@ -131,8 +134,8 @@ async function captureUi(page,name,{narrow=true}={}){
         legacyPlaybackClass:body.classList.contains('th11-mp-playback'),
         legacyControlsHeight:win.getComputedStyle(doc.documentElement).getPropertyValue('--th11-mp-controls-height').trim(),
         legacyCanvasRules:/th11-mp-playback|--th11-mp-controls-height|\.th11-mp-replay-controls/.test(css),
-        controls:[...body.querySelectorAll('#th11-multiplayer-session-controls,#th11-multiplayer-error')]
-          .map(node=>({id:node.id,width:node.clientWidth,scrollWidth:node.scrollWidth,height:node.clientHeight,scrollHeight:node.scrollHeight})),
+        legacyRuntimePanels:[...body.querySelectorAll('#th11-multiplayer-session-controls,#th11-multiplayer-error')]
+          .map(node=>node.id),
       };
     });
     const native=await page.evaluate(()=>host.snapshot().replayUi);
@@ -145,8 +148,8 @@ async function captureUi(page,name,{narrow=true}={}){
       const expectedWidth=Math.min(surface.nativeViewport.width,surface.nativeViewport.height*4/3,960);
       assert.ok(surface.canvas&&Math.abs(surface.canvas.width-expectedWidth)<=1,'Native canvas must retain the available 4:3 game frame');
       assert.ok(Math.abs(surface.canvas.width/surface.canvas.height-4/3)<.01,'Native canvas aspect ratio must stay 4:3');
-      for(const control of surface.controls)
-        assert.ok(control.scrollWidth<=control.width+1,name+' '+suffix+' must not clip or scroll horizontally');
+      assert.deepEqual(surface.legacyRuntimePanels,[],
+        'Connection/error/return controls belong to the real Launcher, never this Runtime');
     }
   };
   await capture('desktop');
@@ -255,7 +258,7 @@ try {
       host.observe(restart&&watcher?0:frames,restart&&!watcher?1:0);
       await host.configure(options);await host.launch();
     },{options,frames,restart,watcher});
-    if(seat===0)await captureUi(pages[seat],'connection');
+    if(seat===0)await captureUi(pages[seat],'startup-game-frame');
     if(!watcher){
       await pages[seat].evaluate(()=>host.key('KeyZ',true));
       await pages[seat].evaluate(([code,down])=>host.key(code,down),[seat%2?'ArrowRight':'ArrowLeft',true]);
@@ -568,20 +571,15 @@ try {
       return state.error&&state.events.some(value=>value.event==='error');
     },{},{timeout:30000});
     const failed=await pages[0].evaluate(()=>host.snapshot());
-    assert.ok(failed.error,'A live peer disconnect must be visible');
+    assert.ok(failed.error,'A live peer disconnect must reach the standard Runtime error event');
     assert.equal(failed.net[3],before.net[3],'Disconnected world must stay frozen');
-    await pages[0].frameLocator('iframe').getByRole('heading',{name:/^(Multiplayer stopped|多人运行已停止)$/}).waitFor();
-    report.disconnect={error:failed.error,frame:failed.net[3],visible:true};
+    report.disconnect={error:failed.error,frame:failed.net[3],standardErrorEvent:true,
+      frontendUiOwner:'eagler-touhou/tests/browser/test-th11mp-launcher.py'};
     await captureUi(pages[0],'disconnect');
-    if(verifyUi){
-      await pages[0].frameLocator('iframe').getByRole('button',{name:/^(Back to room|返回房间)$/}).click();
-      await pages[0].waitForFunction(()=>host.events.some(event=>event.event==='exit'),{},{timeout:30000});
-      const room=await pages[0].evaluate(()=>({open:host.lobbyState.socket.readyState===WebSocket.OPEN,
-        member:host.lobbyState.room.seats.some(seat=>seat?.clientId===host.lobbyState.id)}));
-      assert.deepEqual(room,{open:true,member:true},'Runtime exit must preserve the Launcher-owned room connection and membership');
-      report.disconnect.returnedWithRoomMembership=true;
-    }
-    console.log('TH11 '+players+'P '+route+': actual peer disconnect reported visibly');
+    assert.equal(await pages[0].frameLocator('iframe').locator(
+      '#th11-multiplayer-session-controls,#th11-multiplayer-error').count(),0,
+      'The Runtime must not recreate the frontend connection/return panel');
+    console.log('TH11 '+players+'P '+route+': actual peer disconnect emitted a standard error; frontend return is verified by the real Launcher gate');
   }
   report.passed=true;
 } catch(error) {

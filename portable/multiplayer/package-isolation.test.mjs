@@ -54,7 +54,9 @@ function withFixture(multiplayer, body) {
   put(buildDir + 'th11-sdl.wasm', binary);
   put(buildDir + 'th11-sdl.mjs', '// loader\n');
   put('th11_web/sdl-runtime/managed.html', '<html><head></head><body></body></html>');
-  put('th11_web/sdl-runtime/shell.mjs', 'const runtimeBuild=/*TH11_BUILD_INFO*/{version:"development"};\n');
+  // Exercise the real variant-dependent imports, not a build-info-only stub.
+  put('th11_web/sdl-runtime/shell.mjs',
+    readFileSync(new URL('../../th11_web/sdl-runtime/shell.mjs', import.meta.url), 'utf8'));
   for (const name of ['startup-branding.mjs', 'managed.css', 'keyboard.mjs', 'directory-keyboard.mjs',
     'eagler-host.mjs', 'multiplayer.mjs', 'multiplayer.css']) put('th11_web/sdl-runtime/' + name, '// shell\n');
   put('portable/browser/motion-replay.mjs', '// replay\n');
@@ -126,8 +128,14 @@ test('closed runtime inventories include the complete MP browser module closure 
     const shell = readFileSync(resolve(fixture.plan.out, 'shell.mjs'), 'utf8');
     assert.equal(manifest.game, 'th11');
     assert.match(shell, new RegExp('"multiplayer":' + multiplayer));
-    for (const name of ['multiplayer.mjs', 'multiplayer.css', 'multiplayer-replay.mjs', 'adonis-calibration.mjs'])
+    for (const name of ['multiplayer.mjs', 'multiplayer.css', 'multiplayer-replay.mjs', 'adonis-calibration.mjs']) {
       assert.equal(Object.hasOwn(inventory.files, name), multiplayer);
+      assert.equal(existsSync(resolve(fixture.plan.out, name)), multiplayer);
+    }
+    const multiplayerImport = /['"]\.\/multiplayer\.mjs['"]/;
+    if (multiplayer) assert.match(shell, multiplayerImport);
+    else assert.doesNotMatch(shell, multiplayerImport,
+      'ordinary shell must not reference an undeclared MP module, even in a false branch');
     for (const [name, expected] of Object.entries(inventory.files)) {
       const bytes = readFileSync(resolve(fixture.plan.out, name));
       assert.equal(bytes.length, expected.bytes);
@@ -136,13 +144,15 @@ test('closed runtime inventories include the complete MP browser module closure 
   });
 });
 
-test('bad hashes, stale sources and calibration mismatches leave existing output untouched', () => {
-  for (const kind of ['wasm', 'source', 'calibration']) withFixture(true, fixture => {
+test('bad hashes, stale sources, calibration and shell mismatches leave existing output untouched', () => {
+  for (const kind of ['wasm', 'source', 'calibration', 'factory']) withFixture(true, fixture => {
     fixture.put('build-eagler-multiplayer/manifest.json', 'previous generation');
     if (kind === 'wasm') fixture.put('th11_web/artifacts/multiplayer/th11-sdl.wasm', wasm(['wrong']));
     if (kind === 'source') fixture.put('source.cpp', '// changed\n');
     if (kind === 'calibration') fixture.put('third_party/eagler-common/browser/adonis-calibration.mjs', '// changed\n');
-    assert.throws(() => fixture.package(), /identity mismatch|modified source|calibration module/);
+    if (kind === 'factory') fixture.put('th11_web/sdl-runtime/shell.mjs',
+      readFileSync(resolve(fixture.root, 'th11_web/sdl-runtime/shell.mjs'), 'utf8').replace('/*TH11_MULTIPLAYER_FACTORY*/', ''));
+    assert.throws(() => fixture.package(), /identity mismatch|modified source|calibration module|factory marker/);
     assert.equal(readFileSync(resolve(fixture.plan.out, 'manifest.json'), 'utf8'), 'previous generation');
     assert.deepEqual(readdirSync(fixture.plan.out), ['manifest.json']);
   });

@@ -22,7 +22,7 @@ bool PauseMenu::begin(bool playback){
 }
 bool PauseMenu::update(u32 pressed,u32 repeat){
 #ifdef TH11_MULTIPLAYER
-    if(multiplayer_pause)return update_multiplayer_pause(pressed);
+    if(multiplayer_pause)return update_multiplayer_pause(pressed,repeat);
 #endif
     sounds.clear();action=PauseAction::None;scan_requested=false;recording_metadata_requested=false;
     switch(state){

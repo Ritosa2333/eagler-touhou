@@ -8,6 +8,7 @@ namespace th11 {
 struct MultiplayerOptions {
     unsigned seat_count=2,local_seat=0,stage=1,seed=1;
     int difficulty=1;
+    bool challenge=false;
     std::array<int,3> selections{};
     bool valid()const noexcept {
         if(seat_count<2||seat_count>3||local_seat>=seat_count||stage<1||stage>7||difficulty<0||difficulty>4)return false;
@@ -24,6 +25,7 @@ struct MultiplayerInput {
 struct MultiplayerSeatView {
     bool active=false,ghost=false;
     unsigned seat=0,life_state=0,power_taps=0;
+    u32 misses=0;
     int selection=0,lives=0,life_fragments=0,power=0,max_power=0,power_step=0;
     i64 score=0;
     int graze=0,communication=0;

@@ -108,6 +108,7 @@ public:
     std::array<std::array<AnmVm,9>,3> mp_life_icons{};
     std::array<std::array<AnmVm,4>,3> mp_communication_icons{};
     std::array<unsigned,3> mp_communication_modes{};
+    std::array<bool,3> mp_communication_hidden{};
     std::array<i32,3> mp_display_lives{{-99,-99,-99}},mp_display_fragments{{-99,-99,-99}};
     unsigned mp_fragments=0,mp_wipe_frames=0,mp_tick=0,mp_effect_seat=0,mp_graze_mask=0;
     i32 mp_rank=0;
@@ -126,6 +127,7 @@ public:
     bool mp_all_power_full()const noexcept;
     bool mp_collect(ItemState&,bool&);
     bool mp_draw_players(AnmRenderer&);
+    bool mp_draw_local_hud(AnmRenderer&);
     bool mp_draw_hud(AnmRenderer&);
     bool mp_initialize_presentation();
     bool mp_update_presentation();
