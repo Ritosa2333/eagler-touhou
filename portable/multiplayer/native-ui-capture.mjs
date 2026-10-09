@@ -3,6 +3,7 @@ import {resolve,extname} from 'node:path';
 import {createServer} from 'node:http';
 import {createRequire} from 'node:module';
 import {createHash} from 'node:crypto';
+import {captureNativeSaveMenus} from './native-ui-save-capture.mjs';
 const here=import.meta.dirname,root=resolve(here,'../..');
 const index=process.argv.indexOf('--phase'),phase=index<0?'after':process.argv[index+1];
 if(!/^[a-zA-Z0-9_-]+$/.test(phase))throw Error('Invalid diagnostic phase');
@@ -41,5 +42,6 @@ try{
  for(let n=1;n<=5;++n){await page.evaluate(()=>{step(1,1);});if(n>=3)await shot(page,'power-tap-'+n,'Native P1 Shoot press edge '+n+', each separated by 1 neutral tick; Power40/0/full');await page.evaluate(()=>step(1));}
  for(const [kind,name,stage]of [[0,'game-over',1],[1,'extra-result',7]]){await page.evaluate(({kind,stage})=>{begin(stage);if(!core._mp_fixture_ui_terminal(kind))throw Error('terminal seam');step(30);},{kind,stage});await shot(page,name,'StageExit '+(kind===0?'Title → native GameOver':'Results → native Extra front103')+', neutral30; UI-only seam');}
  await page.evaluate(()=>{begin();if(!core._mp_fixture_ui_terminal(2))throw Error('Ending seam');step(1);});await page.evaluate(()=>{for(let i=0;i<4000&&state().phase==='ending';++i)step(1,512|(i&1?1:0));if(state().phase!=='game_over')throw Error('Ending did not finish '+JSON.stringify(state()));step(30);});await shot(page,'ending-title-results','StageExit Ending, real native Ending and Staff interpreter, P1 Ctrl+alternatingShoot until completed, neutral30');
+ await captureNativeSaveMenus({page,shot,out,evidence});
  await page.close();if(evidence.errors.length)throw Error(evidence.errors.join('\n'));evidence.passed=true;}
 }catch(e){evidence.failure=String(e.stack||e);throw e;}finally{writeFileSync(resolve(out,process.argv.includes('--ordinary-only')?'ordinary-evidence.json':'screenshot-evidence.json'),JSON.stringify(evidence,null,2));await browser?.close();await new Promise(r=>server.close(r));}

@@ -1,5 +1,6 @@
 // Uses the production package and shared relay/BrowserPeerTransport.
-// No synthetic remote input, native state mutation or executable oracle.
+// No synthetic remote input, native simulation mutation or executable oracle.
+// Negative Replay file fixtures and the offline seek ABI are labeled below.
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {spawn} from 'node:child_process';
@@ -53,8 +54,60 @@ const html=readFileSync(resolve(import.meta.dirname,'browser-host.html'));
 const report={passed:false,scope:'local Chromium production Runtime and shared relay',players,route,language,
   selections,spectator,replay,restart,disconnect,automatic,dropFirst,fullSlots,joinLag,frames,wasm:manifest.execution.sha256,errors:[],checkpoints:[]};
 const bytesHash=bytes=>createHash('sha256').update(Uint8Array.from(bytes)).digest('hex');
+function foreignReplayFixture(value){
+  // Keep the recorded inputs and chapters intact. Recompute the published
+  // TH11 gameplay ABI and common corruption checksum for one changed build
+  // word, so rejection proves the Runtime fingerprint gate, not bad bytes.
+  const bytes=Uint8Array.from(value),view=new DataView(bytes.buffer);
+  const word=offset=>view.getUint32(offset,true);
+  assert.equal(word(24),128);assert.equal(word(40),0x4d313154);
+  view.setUint32(148,word(148)^0x80000000,true);
+  const setup=Array.from({length:22},(_,i)=>word(80+i*4));
+  const abiWords=[0x54483131,word(48),setup[1],setup[3],
+    setup[8]*3+setup[9],setup[10]*3+setup[11],setup[12]*3+setup[13],
+    setup[21],setup[15],setup[7],word(52),setup[16],...setup.slice(17,21)];
+  let abi=2166136261;
+  for(const n of abiWords)for(let shift=0;shift<32;shift+=8)
+    abi=Math.imul(abi^((n>>>shift)&255),16777619)>>>0;
+  view.setUint32(16,abi||1,true);
+  let checksum=2166136261;
+  for(let i=0;i<bytes.length;++i)if(i<36||i>=40)
+    checksum=Math.imul(checksum^bytes[i],16777619)>>>0;
+  view.setUint32(36,checksum,true);return Array.from(bytes);
+}
 const occupiedPaths=Array.from({length:99},(_,i)=>'replay/th11_'+String(i+1).padStart(2,'0')+'.rpy').concat('replay/th11_ud0000.rpy');
 const pause=ms=>new Promise(accept=>setTimeout(accept,ms));
+async function nativeKey(page,code){
+  // Real browser keyboard events reach the existing Runtime input adapter.
+  // The game's ANM/menu state machine remains the navigation authority.
+  await page.frameLocator('iframe').locator('canvas').focus();
+  await page.keyboard.press(code,{delay:90});
+}
+async function waitNative(page,predicate,label,timeout=30000){
+  const deadline=Date.now()+timeout;
+  while(true){
+    const state=await page.evaluate(()=>host.snapshot());
+    assert.ok(!state.error&&!state.shellError&&!state.events.length,JSON.stringify(state));
+    if(predicate(state))return state;
+    if(Date.now()>deadline)throw Error(label+': '+JSON.stringify(state));
+    await pause(40);
+  }
+}
+const nativeList=state=>state.replayUi?.[0]===1&&state.replayUi[1]===1&&state.replayUi[5]===11&&state.replayUi[6]===2;
+const nativeStages=state=>state.replayUi?.[1]===1&&state.replayUi[5]===11&&state.replayUi[6]===4;
+async function startNativeReplay(page){
+  // The original stage menu ignores confirmation during its entrance. Retry
+  // a released key only while that same menu is active; never inject gameplay.
+  const deadline=Date.now()+30000;
+  while(true){
+    const state=await page.evaluate(()=>host.snapshot());
+    assert.ok(!state.error&&!state.shellError&&!state.events.length,JSON.stringify(state));
+    if(state.replayUi?.[1]===2)return state;
+    if(nativeStages(state))await nativeKey(page,'KeyZ');
+    if(Date.now()>deadline)throw Error('Native Replay stage did not start: '+JSON.stringify(state));
+    await pause(260);
+  }
+}
 async function captureUi(page,name,{narrow=true}={}){
   if(!uiAudit)return;
   report.uiScreenshots??=[];
@@ -62,17 +115,38 @@ async function captureUi(page,name,{narrow=true}={}){
     const file=output.replace(/\.json$/,'-ui-'+name+'-'+suffix+'.png');
     await page.evaluate(()=>new Promise(accept=>requestAnimationFrame(()=>requestAnimationFrame(accept))));
     await page.screenshot({path:file});
-    const surface=await page.frameLocator('iframe').locator('body').evaluate(body=>({
-      text:body.innerText,focus:body.ownerDocument.activeElement?.outerHTML,
-      canvasBottom:body.querySelector('canvas')?.getBoundingClientRect().bottom,
-      controls:[...body.querySelectorAll('#th11-multiplayer-menu,#th11-multiplayer-replay-controls,#th11-multiplayer-session-controls')]
-        .map(node=>({id:node.id,width:node.clientWidth,scrollWidth:node.scrollWidth,height:node.clientHeight,scrollHeight:node.scrollHeight,top:node.getBoundingClientRect().top})),
-    }));
-    report.uiScreenshots.push({name,viewport:page.viewportSize(),file,surface});
-    if(verifyUi)for(const control of surface.controls){
-      assert.ok(control.scrollWidth<=control.width+1,name+' '+suffix+' must not clip or scroll horizontally');
-      if(control.id==='th11-multiplayer-replay-controls')
-        assert.ok(surface.canvasBottom<=control.top+1,'Replay controls must stay outside the native game frame');
+    let canvasFile;
+    if(/^replay-(?:empty|list|page-26|stages)$/.test(name)){
+      canvasFile=file.replace(/\.png$/,'-canvas.png');
+      await page.frameLocator('iframe').locator('canvas').screenshot({path:canvasFile});
+    }
+    const surface=await page.frameLocator('iframe').locator('body').evaluate(body=>{
+      const doc=body.ownerDocument,win=doc.defaultView,canvas=body.querySelector('canvas');
+      const bounds=canvas?.getBoundingClientRect();
+      const css=[...doc.styleSheets].flatMap(sheet=>{try{return [...sheet.cssRules].map(rule=>rule.cssText);}catch{return [];}}).join('\n');
+      return {text:body.innerText,focus:doc.activeElement?.outerHTML,
+        canvas:bounds?{width:bounds.width,height:bounds.height,top:bounds.top,left:bounds.left,bottom:bounds.bottom}:null,
+        nativeViewport:{width:win.innerWidth,height:win.innerHeight},
+        legacyReplayNodes:[...body.querySelectorAll('#th11-multiplayer-menu,#th11-multiplayer-replay-controls,.th11-mp-replay-controls')].map(node=>node.id||node.className),
+        legacyPlaybackClass:body.classList.contains('th11-mp-playback'),
+        legacyControlsHeight:win.getComputedStyle(doc.documentElement).getPropertyValue('--th11-mp-controls-height').trim(),
+        legacyCanvasRules:/th11-mp-playback|--th11-mp-controls-height|\.th11-mp-replay-controls/.test(css),
+        controls:[...body.querySelectorAll('#th11-multiplayer-session-controls,#th11-multiplayer-error')]
+          .map(node=>({id:node.id,width:node.clientWidth,scrollWidth:node.scrollWidth,height:node.clientHeight,scrollHeight:node.scrollHeight})),
+      };
+    });
+    const native=await page.evaluate(()=>host.snapshot().replayUi);
+    report.uiScreenshots.push({name,viewport:page.viewportSize(),file,canvasFile,surface,nativeReplayUi:native});
+    if(verifyUi){
+      assert.deepEqual(surface.legacyReplayNodes,[],'Replay lists and playback controls must remain native');
+      assert.equal(surface.legacyPlaybackClass,false,'No playback class may shrink the native canvas');
+      assert.equal(surface.legacyControlsHeight,'','No toolbar height may reserve native game space');
+      assert.equal(surface.legacyCanvasRules,false,'The packaged styles must not contain the retired player layout');
+      const expectedWidth=Math.min(surface.nativeViewport.width,surface.nativeViewport.height*4/3,960);
+      assert.ok(surface.canvas&&Math.abs(surface.canvas.width-expectedWidth)<=1,'Native canvas must retain the available 4:3 game frame');
+      assert.ok(Math.abs(surface.canvas.width/surface.canvas.height-4/3)<.01,'Native canvas aspect ratio must stay 4:3');
+      for(const control of surface.controls)
+        assert.ok(control.scrollWidth<=control.width+1,name+' '+suffix+' must not clip or scroll horizontally');
     }
   };
   await capture('desktop');
@@ -337,34 +411,93 @@ try {
     console.log('TH11: 99 numbered and 1 imported Replay preserved; overflow Replay and repeated flush passed');
   }
   if(replay){
+    const replayData=Uint8Array.from(bytes),header=new DataView(replayData.buffer);
+    const recordedFrames=header.getUint32(32,true),chapterCount=header.getUint32(28,true);
+    const firstStage=header.getUint32(40+header.getUint32(24,true),true);
+    // onGameFrame observes after FrameCadence's at-most-four-tick batch.
+    // Leave that exact margin so the normal cadence cannot cross EOF before
+    // this harness stops it and captures the final authoritative world.
+    const replayTarget=Math.min(frames,recordedFrames-4);
+    assert.ok(replayTarget>=75,'Replay must contain enough confirmed gameplay before EOF');
+    assert.ok(chapterCount>=1&&firstStage>=1&&firstStage<=7);
+    report.nativeReplay={recordedFrames,chapterCount,firstStage,replayTarget,
+      inputPath:'browser keyboard to native title/Replay menu',
+      stageSelection:'existing recorded chapter; no synthetic chapter or stage-state shortcut'};
     if(uiAudit){
       const empty=await newPage('empty-playback');
-      await empty.evaluate(async()=>{await host.configure({replayViewer:true});await host.launch();});
+      await empty.evaluate(async()=>{host.observe(0);await host.configure({replayViewer:true});await host.launch();});
+      await waitNative(empty,nativeList,'Empty native Replay directory did not appear');
       await captureUi(empty,'replay-empty');
+      if(verifyUi){
+        await nativeKey(empty,'KeyZ');
+        assert.ok(nativeList(await empty.evaluate(()=>host.snapshot())),'An empty native slot must not start playback');
+      }
+      await nativeKey(empty,'Escape');
+      await empty.waitForFunction(()=>host.events.some(event=>event.event==='exit'),{},{timeout:30000});
     }
     const page=await newPage('playback');
-    await page.evaluate(async({bytes,frames,restart})=>{
+    const negativeFixtures=verifyUi?{foreign:foreignReplayFixture(bytes),corrupt:bytes.slice(0,-1)}:null;
+    await page.evaluate(async({bytes,replayTarget,verifyUi})=>{
       await host.configure({replayViewer:true});
       await host.request('write',{path:'replay/th11_01.rpy',bytes});
-      host.observe(restart?0:frames);await host.launch();
-    },{bytes,frames,restart});
-    const frame=page.frameLocator('iframe');
+      // The second native page uses the exact same real recording. No forged
+      // chapter or world snapshot is needed to prove slot 26 is reachable.
+      if(verifyUi)await host.request('write',{path:'replay/th11_26.rpy',bytes});
+      host.observe(replayTarget);
+    },{bytes,replayTarget,verifyUi});
+    if(negativeFixtures){
+      const fixtures=await page.evaluate(async({foreign,corrupt})=>{
+        const result={foreignStructurallyValid:host.validateReplayFixture(foreign),
+          corruptStructurallyValid:host.validateReplayFixture(corrupt),imports:[]};
+        for(const [path,bytes] of [['replay/th11_02.rpy',foreign],['replay/th11_03.rpy',corrupt]]){
+          try{await host.request('write',{path,bytes});result.imports.push({path,accepted:true});}
+          catch(error){result.imports.push({path,accepted:false,error:String(error)});}
+          host.seedRejectedReplayFixture(path,bytes);
+        }
+        return result;
+      },negativeFixtures);
+      assert.equal(fixtures.foreignStructurallyValid,true,'The foreign fixture must pass the native codec before build identity filtering');
+      assert.equal(fixtures.corruptStructurallyValid,false);
+      assert.ok(fixtures.imports.every(result=>!result.accepted),'Host imports must reject foreign and corrupt Replays');
+      report.nativeReplay.negativeFiles={...fixtures,
+        source:'isolated prelaunch file fixtures for native scan, not a user import success'};
+    }
+    await page.evaluate(()=>host.launch());
+    await waitNative(page,nativeList,'Native Replay directory did not appear');
     await captureUi(page,'replay-list');
     if(verifyUi){
-      const selected=frame.locator('#th11-multiplayer-menu').getByRole('button',{name:/th11_01\.rpy/});
-      assert.equal(await selected.evaluate(node=>node===node.ownerDocument.activeElement),true,'Replay launch must retain menu focus');
-      await page.keyboard.press('ArrowDown');
-      assert.equal(await frame.locator('#th11-multiplayer-menu').getByRole('button',{name:/^(Back|返回)$/}).evaluate(node=>node===node.ownerDocument.activeElement),true);
-      await page.keyboard.press('ArrowUp');await page.keyboard.press('KeyZ');
-    }else await frame.locator('#th11-multiplayer-menu').getByRole('button',{name:/th11_01\.rpy/}).click();
-    const replayDeadline=Date.now()+180000;
-    while(true){
-      const state=await page.evaluate(()=>host.snapshot());
-      assert.ok(!state.error&&!state.shellError&&!state.events.length,JSON.stringify(state));
-      if(restart?state.net[13]===1:state.net[3]>=frames){report.playback=state;break;}
-      if(Date.now()>replayDeadline)throw Error('MP playback timeout: '+JSON.stringify(state));
-      await pause(50);
+      for(const row of [1,2]){
+        await nativeKey(page,'ArrowDown');
+        await waitNative(page,state=>nativeList(state)&&state.replayUi[7]===row,'Native Replay row navigation failed');
+        await nativeKey(page,'KeyZ');
+        await pause(160);
+        assert.ok(nativeList(await page.evaluate(()=>host.snapshot())),
+          (row===1?'Foreign-build':'Corrupt')+' stored Replay must not become a playable native menu entry');
+      }
+      report.nativeReplay.negativeFiles.nativeEntriesRejected=true;
+      await nativeKey(page,'ArrowUp');await nativeKey(page,'ArrowUp');
+      await waitNative(page,state=>nativeList(state)&&state.replayUi[7]===0,'Native Replay cursor did not return to row 1');
+      await nativeKey(page,'ArrowRight');
+      const second=await waitNative(page,state=>nativeList(state)&&state.replayUi[8]===1&&state.replayUi[7]===0,
+        'Native Replay second page did not expose slot 26');
+      report.nativeReplay.secondPage={slot:26,index:25,ui:second.replayUi,sameBytesSha256:bytesHash(bytes)};
+      await captureUi(page,'replay-page-26');
     }
+    const selectedIndex=verifyUi?25:0;
+    await nativeKey(page,'KeyZ');
+    const stages=await waitNative(page,nativeStages,'Original Replay stage menu did not appear');
+    assert.equal(stages.replayUi[8],Math.floor(selectedIndex/25));
+    assert.equal(stages.replayUi[7],firstStage-1,'Only a genuinely recorded starting stage may be selected');
+    await captureUi(page,'replay-stages');
+    await startNativeReplay(page);
+    // These physical game controls are deliberately ignored by the read-only
+    // Replay. Same-frame native hashes below detect any accidental injection.
+    await page.evaluate(async()=>{await host.key('ArrowUp',true);await host.key('KeyX',true);});
+    report.playback=await waitNative(page,state=>state.replayUi?.[1]===2&&state.net[3]>=replayTarget,
+      'MP playback failed to reach the pre-EOF observation boundary',180000);
+    assert.ok(report.playback.net[3]<recordedFrames,'Normal playback must stop before automatic EOF clears the world');
+    assert.equal(report.playback.replayUi[9],selectedIndex,'The selected numbered slot must reach native playback');
+    await page.evaluate(async()=>{await host.key('ArrowUp',false);await host.key('KeyX',false);});
     const playback=new Map(await page.evaluate(()=>[...host.snapshots]));
     const replayFrames=[...playback.keys()].filter(frame=>frame>=60&&reference.has(frame));
     assert.ok(replayFrames.length>=10);
@@ -372,54 +505,57 @@ try {
       'MP replay diverged at logical frame '+frame);
     report.replayComparisons=replayFrames.length;
     assert.equal(report.playback.net[11],1);
+    report.nativeReplay.physicalGameplayInputIgnored=true;
     console.log('TH11 '+players+'P '+route+': '+replayFrames.length+' replay frame comparisons passed');
-    // Seek through the real Runtime control. Its handler rebuilds from frame
-    // zero and uses the ordinary native begin/update/draw path, never a state
-    // snapshot. Clear observations so pre-seek data cannot satisfy this gate.
-    const controls=frame.locator('#th11-multiplayer-replay-controls');
-    const pauseControl=controls.locator('[data-action="pause"]');
-    if((await pauseControl.getAttribute('aria-pressed'))==='false'||(await pauseControl.textContent())==='Pause')await pauseControl.click();
+    await captureUi(page,'replay-playback');
+
+    // Explicit diagnostic invocation of the retained native offline seek ABI.
+    // There is no user-facing timeline. The observation harness stops the
+    // native loop at the target; this is not a Replay Pause UI claim.
     const seekFrame=replayFrames[Math.floor(replayFrames.length/3)];
-    await page.evaluate(()=>host.snapshots.clear());
-    await controls.locator('input[type="range"]').evaluate((input,value)=>{
-      input.value=String(value);input.dispatchEvent(new Event('change',{bubbles:true}));
-    },seekFrame);
-    const seekDeadline=Date.now()+30000;
-    let sought;
-    while(true){
-      sought=await page.evaluate(()=>host.snapshot());
-      assert.ok(!sought.error&&!sought.shellError&&!sought.events.length,JSON.stringify(sought));
-      if(sought.net[3]===seekFrame)break;
-      if(Date.now()>seekDeadline)throw Error('MP Replay seek timeout: '+JSON.stringify(sought));
-      await pause(25);
-    }
+    const seekStart=await page.evaluate(frame=>host.seekReplayDiagnostic(frame),seekFrame);
+    assert.ok(seekStart.before>seekFrame,'The diagnostic seek must actually go backwards');
+    assert.equal(seekStart.initial,0,'Backward seek must rebuild the native Replay from frame zero');
+    const sought=await waitNative(page,state=>state.replayUi?.[1]===2&&state.net[3]===seekFrame,
+      'Native diagnostic Replay seek did not stop at its target');
     assert.equal(sought.game[1],reference.get(seekFrame).game[1],'Replay seek world mismatch');
     assert.equal(sought.game[4],seekFrame);
     assert.ok((await page.evaluate(()=>[...host.snapshots.keys()])).some(value=>value<seekFrame),
-      'Backward seek must reconstruct earlier frames');
+      'Backward seek must expose its reconstructed earlier frames');
     await pause(120);
-    assert.equal((await page.evaluate(()=>host.snapshot())).net[3],seekFrame,'Replay remains paused after seek');
-    report.seek={frame:seekFrame,nativeHash:sought.game[1],matched:true,reconstructedFromStart:true};
-    if(verifyUi){
-      const range=controls.locator('input[type="range"]');
-      await pauseControl.focus();await page.keyboard.press('Tab');
-      assert.equal(await controls.locator('select').evaluate(node=>node===node.ownerDocument.activeElement),true,'Replay toolbar must allow Tab navigation');
-      await page.keyboard.press('Tab');
-      assert.equal(await range.evaluate(node=>node===node.ownerDocument.activeElement),true);
-      const prior=Number(await range.inputValue());
-      await page.keyboard.press('ArrowRight');
-      await page.waitForFunction(value=>host.snapshot().net[3]===value,prior+1,{timeout:30000});
-      assert.equal(Number(await range.inputValue()),prior+1,'Replay range must accept native keyboard changes');
-      report.uiKeyboard={menuNavigation:true,menuPlay:true,tabNavigation:true,rangeSeek:true};
-    }
-    await captureUi(page,'replay-seek');
-    if(verifyUi){
-      await page.keyboard.press('Escape');
-      const selected=frame.locator('#th11-multiplayer-menu').getByRole('button',{name:/th11_01\.rpy/});
-      assert.equal(await selected.evaluate(node=>node===node.ownerDocument.activeElement),true,'Returning to the Replay list must restore the selected file');
-      report.uiKeyboard.menuReturn=true;
-    }
-    console.log('TH11 '+players+'P '+route+': backward Replay seek matched frame '+seekFrame);
+    assert.equal((await page.evaluate(()=>host.snapshot())).net[3],seekFrame,
+      'The acceptance observer must stop exactly at the diagnostic seek target');
+    report.seek={frame:seekFrame,nativeHash:sought.game[1],matched:true,reconstructedFromStart:true,
+      via:'diagnostic th11_mp_replay_seek ABI',stoppedByAcceptanceObserver:true,userFacingSlider:false};
+    await captureUi(page,'replay-diagnostic-seek');
+
+    await page.evaluate(()=>host.resume(0));
+    await nativeKey(page,'Escape');
+    const returned=await waitNative(page,nativeList,'Physical Esc did not return to the original Replay directory');
+    assert.equal(returned.replayUi[8],Math.floor(selectedIndex/25));
+    assert.equal(returned.replayUi[7],selectedIndex%25,'Replay directory must remember the selected native file');
+    report.nativeReplay.escapeReturn={selectedIndex,ui:returned.replayUi};
+    await captureUi(page,'replay-return');
+    // Start that same recorded chapter again and allow its real input tape to
+    // end. No seek-to-EOF, forged completion flag or synthesized menu input.
+    await page.evaluate(()=>{host.snapshots.clear();host.generations.clear();host.replayUiStates.length=0;host.observe(0);});
+    await nativeKey(page,'KeyZ');
+    await waitNative(page,nativeStages,'Replay stage menu did not reopen');
+    await startNativeReplay(page);
+    const ended=await waitNative(page,nativeList,'Native Replay EOF did not return to the directory',180000);
+    assert.equal(ended.replayUi[8],Math.floor(selectedIndex/25));
+    assert.equal(ended.replayUi[7],selectedIndex%25);
+    assert.equal(await page.evaluate(()=>host.events.some(event=>event.event==='exit')),false,
+      'Replay EOF returns to the native directory before the user exits the Runtime');
+    report.nativeReplay.eof={automaticDirectoryReturn:true,recordedFrames,ui:ended.replayUi,
+      transitions:await page.evaluate(()=>host.replayUiStates)};
+    await captureUi(page,'replay-eof');
+    await nativeKey(page,'Escape');
+    await page.waitForFunction(()=>host.events.some(event=>event.event==='exit'),{},{timeout:30000});
+    report.nativeReplay.launcherReturn=await page.evaluate(()=>host.events.find(event=>event.event==='exit'));
+    if(verifyUi)report.uiKeyboard={native:true,menuNavigation:true,pageNavigation:true,menuPlay:true,
+      stageSelection:true,menuReturn:true,automaticEofReturn:true,launcherReturn:true};
+    console.log('TH11 '+players+'P '+route+': native Replay directory, stage selection, Esc, EOF and Launcher return passed; diagnostic backward seek matched '+seekFrame);
   }
   assert.equal(report.errors.length,0,JSON.stringify(report.errors));
   if(disconnect){

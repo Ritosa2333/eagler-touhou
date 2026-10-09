@@ -87,7 +87,7 @@ void owner_cases(const std::vector<u8>& bytes){
     auto peer=std::make_unique<Peer>(bytes);MultiplayerOptions options;options.seat_count=3;options.selections={0,3,5};check(peer->session.begin_multiplayer(peer->resources,options),"owner test world");auto& w=*peer->session.battle;std::array<MultiplayerInput,3> in{};for(unsigned frame=0;frame<125;++frame)step(*peer,in);
     const Vec3 target{0,100,0};const Vec2 size{16,16};
     for(unsigned seat=0;seat<3;++seat){auto& p=*w.pilots[seat];p.player->state.invincibility.set(100000,&w.animations.rate);check(p.player->shots.damage_areas.circle(target,32,0,31,10*(seat+1),&w.animations.rate)!=nullptr,"seat-owned native damage area");}
-    i32 damage=0;check(w.mp_damage_position(target,size,damage)&&damage==60,"all-seat damage summed once after per-owner native cap");for(unsigned seat=0;seat<3;++seat)check(w.pilots[seat]->economy.score_units>0,"damage score attributed to every attacking owner");
+    i32 damage=0;check(w.mp_damage_position(target,size,damage)&&damage==60,"all-seat damage summed once after per-owner native cap");check(w.economy.score_units>0,"native attacking owners contribute to the single shared score");
     Enemy enemy{};enemy.state.script_owner=&enemy;enemy.state.flags=0x80000;enemy.state.health=enemy.state.max_health=1000;
     check(w.multiplayer_boss_damage(enemy.state,damage)==40&&enemy.state.health==1000&&enemy.state.max_health==1000,"3P boss coefficient changes damage only");w.pilots[1]->ghost=true;check(w.mp_damage_position(target,size,damage)&&damage==40&&w.multiplayer_boss_damage(enemy.state,damage)==30,"ghost removes own damage and changes active 2P coefficient");w.pilots[2]->ghost=true;check(w.mp_damage_position(target,size,damage)&&damage==10&&w.multiplayer_boss_damage(enemy.state,damage)==10,"one remaining attacker uses native damage");
     for(auto& pilot:w.pilots)if(pilot){pilot->ghost=false;for(auto& area:pilot->player->shots.damage_areas.areas)area.flags=0;}
@@ -133,12 +133,13 @@ void restart_risk_cases(const std::vector<u8>& bytes){
     std::puts("PASS: actual paused 2P/3P same/new seed restart, fresh-peer per-frame identity, native time and movement");
 }
 #include "native-items.hpp"
+#include "native-score.hpp"
 void presentation_risk_cases(const std::vector<u8>& bytes){
     auto peer=std::make_unique<Peer>(bytes);MultiplayerOptions options;options.seat_count=3;options.selections={0,3,5};
     check(peer->session.begin_multiplayer(peer->resources,options),"presentation risk world");auto& w=*peer->session.battle;std::array<MultiplayerInput,3> in{};
     for(unsigned i=0;i<125;++i)step(*peer,in);
     for(unsigned seat=0;seat<3;++seat){w.pilots[seat]->player->state.invincibility.set(100000,&w.animations.rate);for(unsigned i=0;i<9;++i)check(w.mp_life_icons[seat][i].resource==&w.resources.core.front&&w.mp_life_icons[seat][i].script_index==i32(10+i),"HUD uses original per-seat star/fragment scripts");for(unsigned i=0;i<4;++i)check(w.mp_communication_icons[seat][i].resource==&w.resources.core.front&&w.mp_communication_icons[seat][i].script_index==i32(32+i),"HUD uses original communication scripts");}
-    unsigned native_labels=0;if(auto* frame=w.animations.find(w.hud.frame_animation))for(auto* node=frame->child.next;node;node=node->next)if(node->value->script_index>=5&&node->value->script_index<=9){++native_labels;check(!(node->value->flags&2),"original private label owners hidden before seat repetitions");}check(native_labels==5,"all five native HUD label sources retained");
+    unsigned native_labels=0;if(auto* frame=w.animations.find(w.hud.frame_animation))for(auto* node=frame->child.next;node;node=node->next)if(node->value->script_index>=5&&node->value->script_index<=9){++native_labels;check(bool(node->value->flags&2)==(node->value->script_index<=6),"one original score label pair stays visible; only personal labels repeat");}check(native_labels==5,"all five native HUD label sources retained");
     check(peer->session.draw(peer->renderer),"native repeated HUD draw");unsigned tags=0;for(const auto& request:w.ascii.requests){check(request.text.find("CO-OP")==std::string::npos&&request.text.find("TEAM")==std::string::npos&&request.text.find("restart")==std::string::npos&&request.text.find("COMM")==std::string::npos,"HUD contains no invented dashboard/terminal labels");if(request.text=="1P"||request.text=="2P"||request.text=="3P")++tags;}check(tags==3,"stable native atlas seat labels");
     const auto visual_identity=peer->session.multiplayer_hash(),visual_rng=w.animations.script_rng.calls;
     const auto* frame_source=peer->renderer.multiplayer_hud_background;check(frame_source&&frame_source->script_index==2&&frame_source->sprite_index==1,"only original right frame sprite owns watermark replacement");
@@ -151,7 +152,7 @@ void presentation_risk_cases(const std::vector<u8>& bytes){
     check(std::memcmp(&frame,&original_frame,sizeof(frame))==0&&w.resources.core.front.textures[0].pixels==original_pixels,"watermark suppression cannot mutate native VM or texture pixels");
     peer->renderer.multiplayer_hud_background=nullptr;peer->graphics.captured.clear();peer->graphics.capture=true;check(peer->renderer.draw(frame)!=-2,"ordinary frame owner draw");peer->renderer.flush();peer->graphics.capture=false;check(peer->graphics.captured.size()==6,"without MP owner the original frame remains a single unchanged quad");w.mp_prepare_presentation(peer->renderer);
     w.ascii.clear();check(w.mp_draw_hud(peer->renderer),"three-seat native HUD clearance draw");
-    for(unsigned seat=0;seat<3;++seat){const std::string tag=std::to_string(seat+1)+"P";bool found=false;for(const auto& request:w.ascii.requests)if(request.text==tag){found=true;check(request.position.y==48+seat*144,"seat starts at original y48 below the difficulty label");}check(found,"each seat retains its native-atlas tag");}
+    for(unsigned seat=0;seat<3;++seat){const std::string tag=std::to_string(seat+1)+"P";bool found=false;for(const auto& request:w.ascii.requests)if(request.text==tag){found=true;check(request.position.y==88+seat*112,"personal resources repeat below the single original score block");}check(found,"each seat retains its native-atlas tag");}
     for(const auto& request:w.ascii.requests){const float native_height=request.style.font==1?9:request.style.font==2?10:16;check(request.position.y>=48&&request.position.y+native_height*request.style.scale.y<=464,"all repeated native font rows fit above the original bottom border");}
     check(peer->session.multiplayer_hash()==visual_identity&&w.animations.script_rng.calls==visual_rng,"right frame and HUD reflow preserve world identity and RNG");
     auto& p=*w.pilots[0];check(!p.player->motion.state.focused&&!p.player->motion.focus_animation,"Always Hitbox fixture has no native Focus input");
@@ -196,30 +197,76 @@ void native_ui_cases(const std::vector<u8>& bytes){
     std::puts("PASS: original pause overlay/Resume, confirmed P1/menu input, combat freeze, native life feedback and ghost rescue alpha");
 }
 void result_risk_cases(const std::vector<u8>& bytes){
-    auto peer=std::make_unique<Peer>(bytes);MultiplayerOptions options;options.seat_count=3;options.selections={0,3,5};check(peer->session.begin_multiplayer(peer->resources,options),"result risk world");auto& w=*peer->session.battle;std::array<MultiplayerInput,3> in{};for(unsigned i=0;i<125;++i)step(*peer,in);
-    for(unsigned seat=0;seat<3;++seat){w.pilots[seat]->economy.lives=-1;check(w.pilots[seat]->game_over(false),"result all ghosts");}in[0].held=1;
-    for(unsigned i=0;i<179;++i)step(*peer,in);check(peer->session.state.phase==GameSessionPhase::stage&&w.mp_wipe_frames==179,"179th all-ghost tick remains combat");step(*peer,in);
-    check(peer->session.state.phase==GameSessionPhase::game_over&&w.mp_wipe_frames==180&&peer->session.pause_menu&&peer->session.pause_menu->multiplayer_result,"180th all-ghost tick creates native MP Game Over owner");
-    auto& menu=*peer->session.pause_menu;auto* root=w.animations.find(menu.menu_animation);check(root&&root->script_index==98,"wipe reuses original front 98 Game Over root");bool back=false,headline=false;for(auto* node=&root->child;node;node=node->next){const auto script=node->value->script_index;check(script!=94&&script!=96&&script!=97,"Continue ReplaySave Retry ANMs absent");back|=script==95;headline|=script==93;}check(back&&headline,"native Game Over headline and Return action retained");
-    const auto frame=w.frame,stage_draw=w.stage->state.frame_count,rng=w.animations.script_rng.calls;const auto records=peer->session.scores.characters;const auto settings=peer->session.scores.settings;
-    for(unsigned i=0;i<18;++i){in[1].held=i&1?1:0;step(*peer,in);}check(peer->session.state.phase==GameSessionPhase::game_over&&menu.state==29,"held P1 Shoot and P2 confirm do not close result");
-    check(w.frame==frame&&w.stage->state.frame_count==stage_draw&&w.animations.script_rng.calls==rng,"Game Over confirmed frames freeze combat and stage draw clocks");
-    in[0].held=0;step(*peer,in);in[0].held=0x200000;step(*peer,in);check(menu.state==29,"R does not restart or exit a result generation");in[0].held=0;step(*peer,in);in[0].held=256;step(*peer,in);check(menu.state==30,"P1 native Enter edge accepts Return action");
-    unsigned exit_ticks=0;while(peer->session.state.phase==GameSessionPhase::game_over&&exit_ticks++<30)step(*peer,in);check(peer->session.state.phase==GameSessionPhase::finished&&exit_ticks>=22,"native confirmation and exit animation complete before retirement");
-    check(peer->session.scores.characters==records&&peer->session.scores.settings==settings&&!menu.save_requested&&!menu.scan_requested&&!menu.recording_metadata_requested,"MP result never writes ordinary score/name/ReplaySave metadata");
-    check(w.frame==frame&&w.mp_wipe_frames==180&&w.pilots[0]->economy.lives==-1,"result does not Continue or reset any combat resources");
-    // A confirmed replay contains the same result frames. EOF itself calls no
-    // native update; the last confirmed result state therefore remains frozen.
-    const auto eof_hash=peer->session.multiplayer_hash();check(peer->session.draw(peer->renderer)&&peer->session.multiplayer_hash()==eof_hash,"terminal presentation cannot inject a result confirmation at EOF");
-    options.seat_count=2;options.stage=7;options.difficulty=4;check(peer->session.begin_multiplayer(peer->resources,options),"Extra native terminal fixture");peer->session.battle->completion.state.exit=StageExit::Results;in={};step(*peer,in);check(peer->session.state.phase==GameSessionPhase::game_over&&peer->session.pause_menu->completed,"Extra Results use native completed result owner");root=peer->session.animations.find(peer->session.pause_menu->menu_animation);check(root&&root->script_index==103,"Extra completion retains original front 103 presentation");
-    options.stage=1;options.difficulty=1;options.selections={4,5,0};check(peer->session.begin_multiplayer(peer->resources,options),"Ending terminal fixture");auto* combat=peer->session.battle.get();auto* original_p2=combat->pilots[1]->player;combat->completion.state.exit=StageExit::Ending;in={};step(*peer,in);
-    check(peer->session.state.phase==GameSessionPhase::ending&&peer->session.ending&&peer->session.ending->index==10,"P1 Marisa B owns original no-Continue good Ending");check(peer->session.battle.get()==combat&&combat->pilots[1]->player==original_p2,"Ending retains permanent final MP seat owners");const auto ending_frame=combat->frame;
-    for(unsigned i=0;i<4000&&peer->session.state.phase==GameSessionPhase::ending;++i){in[0].held=512|(i&1?1:0);step(*peer,in);}
-    check(peer->session.state.phase==GameSessionPhase::game_over&&peer->session.title&&peer->session.title->multiplayer_result,"original Ending and Staff finish into native Result screen");check(combat->frame==ending_frame&&combat->pilots[1]->player==original_p2,"Ending and Staff never tick or replace combat owner");
-    const auto& result=*peer->session.title;auto* heading=peer->session.animations.find(result.handles[100]);check(heading&&heading->resource==&peer->session.resources.core.title&&heading->script_index==100&&heading->sprite_index==79&&!result.handles[102],"MP post-Ending uses original Player Data heading instead of Name Regist");
-    for(unsigned script=150;script<=157;++script)check(!result.handles[script],"per-seat result rows are not labeled with a single P1 loadout");check(result.handles[158+options.difficulty]!=0,"result retains original shared difficulty badge");
-    const auto result_records=peer->session.scores.characters;in={};for(unsigned i=0;i<12;++i){in[1].held=i&1?1:0;step(*peer,in);}check(peer->session.title->substate==2&&peer->session.state.phase==GameSessionPhase::game_over,"P2 cannot confirm the post-Ending Result");in[0].held=1;step(*peer,in);for(unsigned i=0;i<24&&peer->session.state.phase==GameSessionPhase::game_over;++i)step(*peer,in);check(peer->session.state.phase==GameSessionPhase::finished&&peer->session.scores.characters==result_records&&!peer->session.title->replay_save_requested,"native post-Ending result exits without score table/name/ordinary replay save");
-    std::puts("PASS: 180-frame wipe, native Game Over, P1 edges, combat freeze, Extra Result, P1 Ending/Staff/Result");
+    auto peer=std::make_unique<Peer>(bytes);MultiplayerOptions options;options.seat_count=3;options.selections={0,3,5};
+    check(peer->session.begin_multiplayer(peer->resources,options),"native result world");auto& w=*peer->session.battle;
+    std::array<MultiplayerInput,3> in{};for(unsigned i=0;i<125;++i)step(*peer,in);
+    auto tap=[&](u32 held){in={};step(*peer,in);in[0].held=held;step(*peer,in);in={};step(*peer,in);};
+    auto wait=[&](unsigned n){in={};for(unsigned i=0;i<n;++i)step(*peer,in);};
+    auto finish_name=[&]{tap(1);tap(16);tap(64);tap(1);}; // Type A, then native Up/Left to End.
+    w.economy.score_units=1234567;
+    for(unsigned seat=0;seat<3;++seat){w.pilots[seat]->economy.lives=-1;check(w.pilots[seat]->game_over(false),"result all ghosts");}
+    in[0].held=1;for(unsigned i=0;i<179;++i)step(*peer,in);check(peer->session.state.phase==GameSessionPhase::stage&&w.mp_wipe_frames==179,"179th ghost frame remains combat");step(*peer,in);
+    check(peer->session.state.phase==GameSessionPhase::game_over&&peer->session.pause_menu&&peer->session.pause_menu->multiplayer_result,"180th ghost frame enters original end-menu owner");
+    auto& menu=*peer->session.pause_menu;const auto frame=w.frame,stage_draw=w.stage->state.frame_count,rng=w.animations.script_rng.calls;
+    for(unsigned i=0;i<24;++i){in[1].held=i&1?1:0;step(*peer,in);}
+    check(menu.state==18&&menu.result_score==1234567&&!menu.unranked,"Game Over keeps one native Score Ranking with shared score");
+    check(peer->session.scores.high_score(0,options.difficulty)==1234567&&peer->session.scores.high_score(3,options.difficulty)==1000000,"shared score enters only original P1 loadout table in memory");
+    check(menu.name_length==0,"held P1 Shoot and P2 confirm cannot edit the new result name");
+    check(w.frame==frame&&w.stage->state.frame_count==stage_draw&&w.animations.script_rng.calls==rng,"native result and name UI keep combat frozen");
+    finish_name();check(menu.state==14&&menu.cursor.selected==1,"original name confirmation enters native Return/Save choices");
+    auto* root=w.animations.find(menu.menu_animation);check(root&&root->script_index==98,"Game Over reuses original front 98");
+    bool back=false,save=false;for(auto* node=&root->child;node;node=node->next){const auto script=node->value->script_index;check(script!=94&&script!=97,"Continue and Retry animations are absent");back|=script==95;save|=script==96;}
+    check(back&&save,"native Game Over Return and Replay Save both remain available");
+    tap(16);check(menu.cursor.selected==2,"Up skips forbidden Continue and Retry");
+    tap(32);check(menu.cursor.selected==1,"Down skips forbidden Continue and Retry");
+    tap(32);tap(1);check(menu.state==16&&menu.cursor.selected==0,"native Replay Save opens numbered slots");
+    wait(12);in[0].held=1;step(*peer,in);check(menu.state==17&&menu.recording_metadata_requested,"native Replay name requests current MP recording metadata");
+    wait(12);tap(1);check(menu.save_requested&&menu.state==16&&menu.entered_name[0]=='A',"native Replay Save emits original slot/name request");
+    menu.save_requested=false;wait(12);tap(2);check(menu.state==14,"Replay list Back returns to original end choices");
+    in={};step(*peer,in);in[0].pause=true;step(*peer,in);check(menu.cursor.selected==1,"confirmed P1 Escape selects native Return");
+    tap(1);for(unsigned i=0;i<20&&peer->session.state.phase!=GameSessionPhase::finished;++i)wait(1);
+    check(peer->session.state.phase==GameSessionPhase::finished&&w.economy.score_units==1234567,"native Return ends the generation without Continue or score reset");
+    std::vector<u8> output;check(!peer->session.save_scores(output)&&output.empty(),"native in-memory name registration cannot serialize MP scores");
+    const auto eof_hash=peer->session.multiplayer_hash();check(peer->session.draw(peer->renderer)&&peer->session.multiplayer_hash()==eof_hash,"EOF presentation cannot inject menu input");
+    options.seat_count=2;options.stage=7;options.difficulty=4;
+    check(peer->session.begin_multiplayer(peer->resources,options),"Extra result fixture");peer->session.economy.score_units=2345678;peer->session.battle->completion.state.exit=StageExit::Results;wait(25);
+    auto& extra=*peer->session.pause_menu;check(extra.state==25&&extra.result_score==2345678,"Extra completion retains original native ranking/name stage");
+    finish_name();check(extra.state==22&&extra.cursor.selected==0,"Extra name finishes into native compact result menu");
+    root=peer->session.animations.find(extra.menu_animation);check(root&&root->script_index==103,"Extra keeps original front 103");
+    back=save=false;for(auto* node=&root->child;node;node=node->next){check(node->value->script_index!=102,"Extra Retry is absent");back|=node->value->script_index==100;save|=node->value->script_index==101;}
+    check(back&&save,"Extra retains original Return and Replay Save");tap(32);tap(1);check(extra.state==23,"Extra uses native Replay slots");wait(12);tap(1);wait(12);tap(1);check(extra.save_requested&&extra.state==23,"Extra native name confirmation emits Replay Save request");
+    options.stage=1;options.difficulty=1;options.selections={4,5,0};
+    check(peer->session.begin_multiplayer(peer->resources,options),"Ending result fixture");peer->session.economy.score_units=3456789;auto* combat=peer->session.battle.get();auto* original_p2=combat->pilots[1]->player;combat->completion.state.exit=StageExit::Ending;wait(1);
+    check(peer->session.state.phase==GameSessionPhase::ending&&peer->session.ending&&peer->session.ending->index==10,"P1 Marisa B keeps native good Ending");
+    const auto ending_frame=combat->frame;for(unsigned i=0;i<4000&&peer->session.state.phase==GameSessionPhase::ending;++i){in={};in[0].held=512|(i&1?1:0);step(*peer,in);}
+    check(peer->session.state.phase==GameSessionPhase::game_over&&peer->session.title&&peer->session.title->multiplayer_result,"Ending and Staff finish into original Title Result");
+    check(combat->frame==ending_frame&&combat->pilots[1]->player==original_p2,"Ending never ticks or replaces combat owners");
+    auto& result=*peer->session.title;auto* heading=peer->session.animations.find(result.handles[102]);
+    check(heading&&heading->resource==&peer->session.resources.core.title&&heading->script_index==102&&!result.handles[100],"post-Ending uses original Name Regist, not an invented Player Data result");
+    check(result.handles[151]&&result.handles[156]&&result.handles[159],"one shared result retains original P1 character/partner and shared difficulty badges");
+    wait(12);check(result.screen==TitleScreen::Results&&result.substate==2&&result.result_score==3456789,"native Title Result contains shared score");
+    for(unsigned i=0;i<8;++i){in={};in[1].held=i&1?1:0;step(*peer,in);}check(result.name_length==0,"P2 cannot edit the shared result name");
+    finish_name();wait(18);check(result.screen==TitleScreen::ReplaySave&&result.substate==2,"original result name leads to native Replay Save");
+    tap(1);wait(12);tap(1);check(result.replay_save_requested&&result.substate==2&&result.entered_name[0]=='A',"post-Ending native Replay name emits slot/name save request");
+    result.replay_save_requested=false;tap(2);wait(8);
+    check(result.multiplayer_result_done&&peer->session.state.phase==GameSessionPhase::finished,"native Replay Save Back retires the shared generation");
+    check(!peer->session.save_scores(output)&&output.empty(),"post-Ending shared ranking remains memory-only");
+    std::puts("PASS: native Game Over/Extra/Ending shared score ranking and name, original Replay Save requests, P1 inputs, no Continue/Retry or score persistence");
 }
 }
-int main(int argc,char** argv){if(argc<2||argc>3){std::fprintf(stderr,"retail archive path required\n");return 2;}std::ifstream file(argv[1],std::ios::binary);std::vector<u8> bytes((std::istreambuf_iterator<char>(file)),{});check(!bytes.empty(),"retail archive fixture present");if(argc==3&&std::strcmp(argv[2],"presentation")==0)presentation_risk_cases(bytes);else if(argc==3&&std::strcmp(argv[2],"restart")==0)restart_risk_cases(bytes);else if(argc==3&&std::strcmp(argv[2],"ui")==0){native_ui_cases(bytes);presentation_risk_cases(bytes);restart_risk_cases(bytes);}else if(argc==3&&std::strcmp(argv[2],"repair")==0){presentation_risk_cases(bytes);restart_risk_cases(bytes);}else{if(argc==2){battle_cases(bytes);rules_cases(bytes);owner_cases(bytes);}item_risk_cases(bytes);presentation_risk_cases(bytes);result_risk_cases(bytes);restart_risk_cases(bytes);native_ui_cases(bytes);}std::printf("PASS: %u checks, %u native logic/draw ticks; no original executable\n",checks,ticks);return 0;}
+int main(int argc,char** argv){
+    if(argc<2||argc>3){std::fprintf(stderr,"retail archive path required\n");return 2;}
+    std::ifstream file(argv[1],std::ios::binary);std::vector<u8> bytes((std::istreambuf_iterator<char>(file)),{});
+    check(!bytes.empty(),"retail archive fixture present");
+    const auto mode=[&](const char* value){return argc==3&&std::strcmp(argv[2],value)==0;};
+    if(mode("presentation"))presentation_risk_cases(bytes);
+    else if(mode("restart"))restart_risk_cases(bytes);
+    else if(mode("score")){score_cases(bytes);result_risk_cases(bytes);}
+    else if(mode("ui")){native_ui_cases(bytes);presentation_risk_cases(bytes);restart_risk_cases(bytes);}
+    else if(mode("repair")){presentation_risk_cases(bytes);restart_risk_cases(bytes);}
+    else{
+        if(argc==2){battle_cases(bytes);rules_cases(bytes);owner_cases(bytes);}
+        score_cases(bytes);item_risk_cases(bytes);presentation_risk_cases(bytes);result_risk_cases(bytes);restart_risk_cases(bytes);native_ui_cases(bytes);
+    }
+    std::printf("PASS: %u checks, %u native logic/draw ticks; no original executable\n",checks,ticks);return 0;
+}

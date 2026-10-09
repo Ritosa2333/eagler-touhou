@@ -250,6 +250,11 @@ bool GameSession::update(const GameSessionInput& input) {
         title_fades.update();
         if(title->start_requested){const auto choice=title->selection;return begin(*source,choice.stage,choice.character,choice.partner,choice.difficulty,false,false,(choice.flags&16)!=0);}
         if(title->replay_start_requested){auto entry=title->replay_files[title->replay_file];last_replay_file=title->replay_file;const u32 stage=title->replay_stage+1;
+#ifdef TH11_MULTIPLAYER
+            // The native menu owns selection and its original transition. The
+            // platform starts the exact all-seat input archive after this tick.
+            if(entry->is_multiplayer)return true;
+#endif
             if(entry->file.empty()&&(!resources.effects||!resources.effects->read_replay(entry->path,entry->file)))return fail("selected replay could not be loaded");
             return begin_replay(*source,entry->file.data(),u32(entry->file.size()),stage);}
         if(!animations.update(true)||!animations.update(false)) return fail("title ANM update failed");

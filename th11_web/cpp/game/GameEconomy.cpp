@@ -1,6 +1,15 @@
 #include "GameEconomy.hpp"
 #include <algorithm>
 namespace th11 {
+#ifdef TH11_MULTIPLAYER
+GameEconomy& GameEconomy::operator=(const GameEconomy& other) noexcept {
+    // Copy/reset values while retaining this economy's permanent score owner.
+    score_units=other.score_units;power=other.power;point_value=other.point_value;communication=other.communication;
+    lives=other.lives;life_fragments=other.life_fragments;difficulty=other.difficulty;rank=other.rank;
+    max_power=other.max_power;power_step=other.power_step;graze=other.graze;max_point_value=other.max_point_value;
+    return *this;
+}
+#endif
 void GameEconomy::add_score(i32 amount) noexcept {score_units=std::min(wrapping_add(score_units,amount/10),999999999);}
 void GameEconomy::add_point_value(i32 amount) noexcept {point_value=std::min(wrapping_add(point_value,amount),max_point_value);}
 void GameEconomy::add_rank(i32 amount) noexcept {rank=std::max(-1024,std::min(1024,wrapping_add(rank,amount)));}

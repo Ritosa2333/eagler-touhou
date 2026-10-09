@@ -1,6 +1,6 @@
 # TH11 Multiplayer：实现、规则边界与验收记录
 
-记录日期：2026-10-09。用户已授权先实现，未定义行为按实现者理解决定并作高危提示。首次实现提交为 `2bd03f0bcd3688bf64b8dfd83f78d070afb5d0be`；第 7 节保留那次构建、四组真实浏览器与 Launcher 接入证据。后续任务重点审查实际 UI，重新发现并修复了三人重开的协议边界；后续改动与本轮验收见第 9 节，不能用旧四组 PASS 覆盖新失败。第 5 / 6 节的临时规则不能当作已获平衡验证的既有共识，本轮不晋升 canonical、不 push 或部署。
+记录日期：2026-10-09。首次实现与首轮 UI 审查分别保留在第 7、9 节。用户随后明确指出：原作已有 Replay 播放流程，08 / 10 MP 使用共享分数，不能自造网页播放器和逐人成绩页。第 9 节对这些设计的肯定结论已被撤回，当前修正与验证以第 10 节为准。用户允许补足未定义行为，并不授权忽略原作和参考实现已经定义的行为。第 5 / 6 节其余临时规则仍须高危提醒；不晋升 canonical、不 push 或部署。
 
 ## 1. 本轮要求与基线
 
@@ -89,7 +89,7 @@
 
 每席保留所选机体的速度、射击、Option、Bomb、Deathbomb、上限与耗费。`ItemRewards.cpp` 中小 P 加 1、大 P 加接收者 step、F 加本机体 max；救援半满也取本机体上限，不能照搬 TH10 的 raw 100。
 
-**通信率自然逐席保留，不额外改成团队池。** `GameEconomy.hpp` 含 communication / graze / score / point value；`Communication.cpp` 按该玩家坐标和奖励更新，封顶 13000；`GameBattle.cpp` 按其 y 调用。`GameEconomy.cpp` 点值与 `ItemManager.cpp` 吸取条件消费它。每席 economy、擦弹、坐标和死亡清理都保留原作公式；共享池没有规则授权。共享道具归最近合法者，见第 5 节 C。
+**分数为全队共享；通信率、擦弹、点值和个人资源保留各自机体语义。** 初版把整个 economy 拆为逐席对象，连 score 也独立累计，这是对 08 / 10 MP 参考的错误应用，已在第 10 节修正。当前各席的 score 引用同一主 owner，HUD、结算和 MP Replay 元数据读同一份团队总分；不靠每帧拷贝或最后相加。`Communication.cpp` 仍按该玩家坐标和奖励更新，封顶 13000；点值与道具吸取仍使用该玩家的通信率。共享分数不等于把这些机体状态也合并。
 
 `ItemRewards.cpp`：类型 5 为碎片，5 片换 1 命；类型 7 为整残机；上限 9。原生换算 / 上限继续保留，多人共享计数与分发见第 5 节 B。`BombController.cpp` 的 selection 5 为魔理沙 C 河童护盾，未触发返还 10 原始 Power、被击中才计 Bomb / 符卡失败，须逐席保留，不能因共享符卡而让展开护盾立即失败。混合 Bomb 伤害先按攻击所属席位套该机体原作机制再汇总，不能因一位护盾影响全部队友；局部状态与真正共享背景 / 音效 / 敌人效果的 owner 拆分是实现责任。
 
@@ -137,9 +137,9 @@ TH11 `AttractPlayerAndBullets` 等全场特殊吸引临时作用于 **全部 Ali
 
 ### Replay 与重开边界（实现决策）
 
-TH11 MP Replay 采用公共 `EAGLRPY1` 扩展，`gameId = 11`，版本化 128 字节 `T11M` 描述记录配置 / 实测 D、`recordedPlayer` 与全部席位已确认输入。自动保存优先使用 `/savesth11mp/replay/th11_##.rpy` 的 01–99 空槽。Replay 由 Runtime 自有列表 / 关卡选择器控制，不新增 Launcher 命令。
+TH11 MP Replay 采用公共 `EAGLRPY1` 扩展，`gameId = 11`，版本化 128 字节 `T11M` 描述记录配置 / 实测 D、`recordedPlayer` 与全部席位已确认输入。自动保存优先使用 `/savesth11mp/replay/th11_##.rpy` 的 01–99 空槽。**Replay 接入 TH11 原生 `TitleScreen::Replays` 的 ANM、25 行列表和关卡选择；没有另一个 HTML 列表、播放工具条或滑杆。** JS 仅处理文件 / Host 接口、构建身份和定位期间的只读提示，不新增 Launcher 命令。
 
-**高危：本版浏览器 Runtime 拒绝不同 WASM 构建指纹的 MP Replay，避免临时规则变化后静默错误回放；升级构建可能使旧录制无法在新版播放。** 章节跳转从帧零使用同一 `GameSession::begin / update / draw` 生命周期重建，不读写回滚快照，不再次应用 D；每个 RAF 以约 8 ms 预算推进。短程 native / browser 一致性已按第 7 节验证，整关及长程 seek 不在本次已通过的证据范围内。
+**高危：本版浏览器 Runtime 拒绝不同 WASM 构建指纹的 MP Replay，避免临时规则变化后静默错误回放；升级构建可能使旧录制无法在新版播放。** 章节跳转从帧零使用同一 `GameSession::begin / update / draw` 生命周期重建，不读写回滚快照，不再次应用 D；每个 RAF 以约 8 ms 预算推进。当前修正版的短程 native / browser 一致性见第 10 节，整关及长程 seek 不在本次已通过的证据范围内。
 
 **高危：01–99 自动槽全满后，本轮自动保存继续选择现有 Replay 命名空间中的空闲 `th11_udXXXX.rpy`，其中 XXXX 为四位小写 base36。** 先检查完整编号区，再按 base36 递增检查扩展区；不会覆盖原有编号或导入录像。同一代首次选中的自动路径由后续 flush 复用，下一代重新选择空路径。手动指定编号的语义不变。真正的文件 I/O 失败仍显式报错，不能把逻辑槽位扩展宣称为磁盘 / 浏览器存储故障容错。
 
@@ -240,7 +240,9 @@ node portable/multiplayer/browser-acceptance.mjs --players 3 --route rtc --loado
 
 浏览器脚本使用真实生产包、原作 `th11.dat`、当前 Launcher 的共享 Relay 和 Chromium，Host 测试夹具只使用现有命令契约并观察 native 状态。默认校验已确认输入的 MP Replay 和向后定位；`--restart` 通过 P1 原生暂停 / R 进入新 generation，旧 Replay / 观战结束旧流；`--drop-first-input` 使用 Relay 既有测试开关；`--disconnect` 关闭一个真实浏览器上下文检查可见错误。`--full-replay-slots` 在启动前通过真正 Host 校验导入同轮 2P RTC 导出的 Replay，占满 99 个编号槽和 ud0000，验证原有 100 份文件不变、新旧代分开保存与重复 flush 复用路径；它依赖前一条 RTC 命令导出的同构建 `.rpy`，也可用 `--existing-replay` 显式指定。脚本不注入原生世界状态，不执行原作 EXE，也不替代真实设备 / 公网验收。命令清单是复现入口，实际通过状态以第 7 节和对应报告为准。
 
-## 9. 后续 NIG 核对、UI 修复与本轮验收
+## 9. 首轮 NIG / UI 审查记录（f5b444d，设计结论已由第 10 节纠正）
+
+**历史记录：** 本节的测试能证明当时的实现运行情况，不能证明产品语义正确。原网页 Replay 列表 / 工具条、逐席 HiScore / Score 和自造 Player Data 结果页违背本次任务的参考要求，已经按第 10 节撤下。原生素材或截图一致都不能为这些偏差提供依据。
 
 ### 9.1 后续 agent 实际改了什么
 
@@ -260,7 +262,7 @@ main 已有 TH15 workspace 映射，来源 `29accba`，但这不消除旧 `fed02
 | 2. 战斗 HUD | 保留 TH11 原生标签、数字、生命图标、Power 制式和三席排列；没有把合作进度移入右侧 HUD。 | `after/mp-3p-local1.png` 至 `local3.png`；这三张诊断图与 before 字节相同。 |
 | 3. 暂停与恢复 | 旧版只有暂停标题。现在使用原生 text 75 抓屏背景、front 89 装饰 / 标题 / Resume 与原作动画。独立呈现 owner 保持 1x，combat / RNG 仍冻结。P1 新确认或任意席位 Pause 可恢复，R 仍属于协议 owner。抓屏 helper 按 PauseMenu 的真实 owner 找 VM。 | `after/mp-pause.png`、正式包 `after/browser-ui-pause-desktop.png`；native pause / RNG / 输入边沿断言。 |
 | 4. 残机给予与救援 | 补上机体附近原生数字贴图百分比；幽灵随已确认的操作进度变亮。90 帧资源 / 复活边界保持，成功使用原生 Extend 音效。Power 仍从第 3 次点按显示原作道具及数字。 | `after/life-gift-30.png`、`60.png`、`89.png`；`after/ghost-rescue-45.png`、`89.png`、`90.png`；`after/power-tap-3.png` 至 `5.png`。 |
-| 5. Game Over / Extra / Ending 结果 | Game Over 和 Extra 保持原作结束路径且不展示 Continue / Retry。Ending 后将会误导为录名的 Name Regist 换成实际核验的原生 Player Data 标题，撤下仅属于 P1 的机体铭牌，保留共享难度和各席行内机体。原作十分制的 `00` 显示不改。 | `after/game-over.png`、`extra-result.png`、`ending-title-results.png`。终局图来自明确的 StageExit UI 接点；Ending / Staff 跑实际解释器，不能当完整通关证据。 |
+| 5. Game Over / Extra / Ending 结果 | 当时将 Ending 后 Name Regist 换成 Player Data、撤下 P1 机体铭牌并显示各席行内机体；这些设计已在第 10 节纠正。原记录所谓“十分制的 00”措辞也不准确：原生排名格式是 stored units 后附一位 Continue 标记，MP 为 0。 | `after/game-over.png`、`extra-result.png`、`ending-title-results.png` 为历史图。终局图来自明确的 StageExit UI 接点；Ending / Staff 跑实际解释器，不能当完整通关证据。 |
 | 6. Replay 列表与播放 | 旧表格在 390 像素宽度截掉信息，工具条遮挡游戏底部。新增 MP 专用样式：白字暗底、黄色选择、等宽表格、窄屏分行，控件预留独立空间且保持游戏 4:3。菜单保留 / 恢复文件焦点；方向键 / Z / Enter 可选播，Tab 与进度条键盘操作不再被全局吞掉。 | `after/browser-ui-replay-list-{desktop,portrait}.png`、`browser-ui-replay-seek-{desktop,portrait}.png`，以及中文 `runtime-zh-*` 对应图片；实际 DOM 布局和键盘断言。 |
 | 7. 断线与返回 | 旧界面直接铺满调用栈。现在明确说明本局停止，错误详情折叠，返回房间按钮有默认焦点；停止后不再接受 gameplay 输入。 | `after/browser-ui-disconnect-desktop.png`、`after/runtime-zh-ui-disconnect-portrait.png`；实际关闭另一个浏览器上下文触发故障，没有伪造 disconnect 标记。 |
 
@@ -291,7 +293,7 @@ main 已有 TH15 workspace 映射，来源 `29accba`，但这不消除旧 `fed02
 | 普通 / MP 闭包 | 两种正式 Emscripten 构建和打包均 PASS；普通 18 个文件，MP 因专用 `multiplayer.css` 增为 22 个文件；普通包不包含该 MP 样式和 MP 模块。package isolation 7/7 PASS。 |
 | Launcher 当前房间 UI | 重新捕捉并检查 2P Normal 自动延迟 / 3P Extra D9 的 4 张图，pure-only、无 challenge、启动 / 观战 / Replay 交接 PASS。报告 `eagler-touhou/.cache/th11mp-launcher-browser-followup-20261009-062902/result.json`。仍是 Framework + 真房间 Relay + synthetic Runtime / DATA，不能升级为真实游戏联合验收。 |
 
-当前正式 MP WASM 为 **`868022aabce50c7e768a83821ad498ef87b44667ee4df6fdfbc7b21da7094e0c`**，2,748,527 bytes；普通 `--thprac` WASM 为 **`f27bb5786d0dfc172efcd59fe9d7431ef02412261e0acb29be0954bca0b04fef`**，3,003,973 bytes。闭包目录仍为 `build-eagler-multiplayer/` 与 `build-eagler/`，不会把诊断导出、原作 DATA 或源码快照塞进正式包。
+该历史轮次的正式 MP WASM 为 **`868022aabce50c7e768a83821ad498ef87b44667ee4df6fdfbc7b21da7094e0c`**，2,748,527 bytes；普通 `--thprac` WASM 为 **`f27bb5786d0dfc172efcd59fe9d7431ef02412261e0acb29be0954bca0b04fef`**，3,003,973 bytes。它们不作为第 10 节修正版的产物身份。闭包目录仍为 `build-eagler-multiplayer/` 与 `build-eagler/`，不会把诊断导出、原作 DATA 或源码快照塞进正式包。
 
 ### 9.5 本轮必须继续告知的高危边界
 
@@ -303,7 +305,7 @@ main 已有 TH15 workspace 映射，来源 `29accba`，但这不消除旧 `fed02
 
 ### 9.6 复现 UI 检查
 
-先按第 8 节构建和打包当前正式产物，再运行：
+以下保留 f5b444d 轮次使用的历史命令。当前修正版使用第 10.6 节的 `native-correction` 目录，不再覆盖这里的 `before` / `after` 证据：
 
 ```powershell
 node portable/multiplayer/native-test.mjs --risk
@@ -313,4 +315,92 @@ node portable/multiplayer/browser-acceptance.mjs --players 3 --route relay --loa
 node portable/multiplayer/browser-acceptance.mjs --players 2 --route rtc --auto --loadouts 0,5 --frames 240 --disconnect --ui-audit --verify-ui --language lang_zh-hans --output artifacts/multiplayer-ui/20261009/after/runtime-zh-final.json
 ```
 
-`native-ui-README.md` 说明诊断接点和 cache 宏签名；诊断导出使用 package gate 已拒绝的 `mp_fixture_ui_*` 前缀。`--phase` 只是产物目录名，不能把当前源码输出重新标成旧 before。上述旧版 before 证据应保留。浏览器 `--verify-ui` 在截图之外检查焦点、真实键盘、范围控件、布局，以及返回时的既有 Host 生命周期；这些都是测试能力，没有新增正式 Host 命令。
+`native-ui-README.md` 说明诊断接点和 cache 宏签名；诊断导出使用 package gate 已拒绝的 `mp_fixture_ui_*` 前缀。`--phase` 只是产物目录名，不能把当前源码输出重新标成旧 before。上述旧版 before / after 证据均保留。这里提到的范围控件等是旧测试能力；当前原生菜单验收已经移除对应网页交互，见第 10 节。
+
+## 10. 原生 Replay、共享分数与原生结算修正
+
+### 10.1 承认并纠正原来的设计错误
+
+本轮从 NIG 中干净的 `eagler-mp` / `f5b444d98204def84bea24591a26a328ee558950` 继续。用户指出“Replay 播放原版就有”“每个人弄个分数”后，再次逐项比对第 1 节两个实际 MP ref 及 TH11 原生状态机。网页播放器、逐席分数池和自造 Player Data 成绩页并非未定义行为的合理补足，而是错误应用参考；第 9 节对这些设计的接受结论撤回。
+
+| 实际参考 | 已核对源码与行为 | TH11 当前处理 |
+| --- | --- | --- |
+| TH08 MP `b5b4091` | `multiplayer/PlayerResources.cpp` 将 score / display / high 绑定共享 GameGlobals；`game/GuiView.cpp` 只绘制一组原位分数。 | 各席引用同一个团队 score owner；HUD 原位绘制一组 HiScore / Score。 |
+| TH10 MP `288ea8d` | `multiplayer/EconomyView.hpp` / `platform/GameState.hpp` 的个人视图引用 TeamEconomy；`game/GuiScore.cpp` / `GuiDraw.cpp` 保留共享分数与个人资源分工。 | 命、Power、擦弹、通信率及点值仍按席位，击破与符卡分数写共享 owner 一次。 |
+| TH08 原生 Replay 接入 | `game/TitleReplays.cpp` 把 MP Archive preview 投射到原生元数据和 ANM 文件 / 关卡菜单。 | 复用 TH11 `TitleScreen::Replays`、ANM 92 / 99、原始列表、光标、转场及原生关卡选择。 |
+| TH10 原生 Replay 接入 | `platform/ReplayFiles.cpp::ReplayDocument::load` 加载 MP preview；`game/TitleReplays.cpp` 使用原生目录 / 关卡菜单。没有每章分数快照时只显示章节名称。 | 没有快照的 MP 章节不伪造分数；JS 不另建 Replay 表格、播放工具条、暂停控件或任意拖动滑杆。 |
+| 原生结果流程 | 原作与参考使用排名 / 录名及 Replay 槽位 / 录名流程。 | 恢复 Game Over、Extra、Ending 后的原生流程；只去除明确禁止的 Continue / Retry。 |
+
+Launcher `content/MULTIPLAYER.md` 的“解锁状态同步”明确只有 Replay 可保存。因此原生高分录名 / 排名状态只留本局内存，重开或下一局重新初始化；不会落盘 `scoreth11.dat` 或解锁。不能照搬旧参考中与此规则不符的持久化行为，也不能声称这里恢复了多人高分存档。
+
+### 10.2 共享计分与终局奖励
+
+`GameEconomy.hpp/.cpp` 在 `TH11_MULTIPLAYER` 下将每席 `score_units` 永久绑定到 session 的主 owner，复制资源快照时保留目的对象绑定。普通构建的数据布局与单人复制行为不受该宏外改动。`GameBattleCallbacks.cpp` / `MultiplayerBattle.cpp` 删除敌人和符卡奖励的逐席广播；拾取、射击等以触发者原生规则计算后写入同一总分。不是每帧互相抄分，也不是结算时才相加。旧版敌人 / 符卡本来就广播到各个独立分数池，不能误述为“旧版 P2 完全收不到这两种奖励”。
+
+`Hud.cpp` / `MultiplayerPresentation.cpp` 只保留原位、原尺寸的一组 HiScore / Score；按席位重复的只有必要个人资源，继续使用原生纹理、字体和图标。`MultiplayerMenus.cpp`、`PauseEnd.cpp`、`TitleResults.cpp` / `TitleText.cpp` 撤下逐席 Player Data，接回原作排名录名和 Replay 保存；共享成绩使用 P1 机体分类，菜单仍消费已确认的权威输入。
+
+**高危：多人 all-clear 的个人点值聚合没有明确规则。本轮采用“关卡基础奖励只加一次，每个席位按自己的原生点值、剩余命及 Power 计算个人部分，再按席位顺序各加一次”。** 通信率、点值仍为个人状态，不能用 P1 数值代替所有席位，也不能将已共享的 stage 基础项重复加 N 次。幽灵的负残机 / Power 按 0 计个人剩余资源；普通十分制、原生整数处理及总分上限保留。这是明确的临时经济规则，短程一致性通过不代表多人全通关平衡已经确认。
+
+原生固定输入检查包含：三席射击合计 3 stored units、敌人 137 points 仅加 13 stored units、P2 点道具按自身通信率 / 擦弹贡献 50,500 points、符卡 12,340 points 只加一次、999,999,999 stored units 封顶。固定 StageCompletion 向量得到 stage 1 的 4,000,000、Normal stage 6 的 280,200,000、Extra 的 353,200,000 points；另用三组普通期望值限制单人回归。这些是规则断言，不是实际通关成绩。
+
+### 10.3 Replay 目录、播放与保存
+
+`Application.cpp` 新增原生菜单入口与只读状态接口 `th11_mp_replay_menu` / `th11_mp_replay_ui_status`。Runtime 的 Replay 入口直接运行原生菜单循环；`ReplayMenu.hpp` 按原作每页 25 行翻页，覆盖 01–99 与已存在的全部合法 ud 文件，不再把 26–99 或后续 ud 录像藏起来。扫描保留路径和元数据，释放完整输入数据；真正开始播放时重新读取并完整验证文件及本次注册的构建身份。
+
+原生标题栏沿用 P1 机体字段，尾部用原生字体附加人数与录制席位。选择章节从帧零重建到实际录制章节点；不伪造章节，不增加预测、回滚或章节快照。播放期间物理移动 / Bomb 不影响录制世界；物理 Esc 返回原生 Replay 目录并保留页码 / 选项，录制 EOF 也回目录。目录 Back 完成原生退出转场后使用既有 Host exit 返回。EOF 自动回目录沿用 TH08 路径；没有发明一个新的结束播放器页面。
+
+网页层仅保留连接 / 错误 / 观战终局等 Runtime 必要状态，以及定位章节时的只读进度提示。删除旧 `th11-mp-playback`、Replay table / toolbar 和为工具条缩短 canvas 的 CSS。游戏始终按原生 4:3 画面呈现；窄屏仍缩放原生界面，没有另造手机版文件表。
+
+`Application.cpp` 服务原生 Title / Pause 的扫描、元数据及保存请求。保存在本帧已 `MarkSimulated` 并加入 Archive 之后执行，所以选择保存的确认帧包含在文件中。Replay / 观战只重放菜单输入，不执行写文件。Archive 的成绩字段读取唯一共享 score。
+
+自动备份若与玩家手动选择的编号同槽，手动保存后清除自动路径；下一次自动 flush 重新选空槽。这样玩家录入的名字和文件内容不会被之后的 `PLAYER` 自动备份覆盖。原有 99 槽后 ud 扩展策略不变。实际 I/O 验证见下节。
+
+### 10.4 当前证据与可见画面
+
+本轮证据统一位于 `artifacts/multiplayer-ui/20261009/native-correction/`，没有覆盖第 9 节旧图。生产网络测试始终使用下节同一个 MP WASM；GPU 菜单 / 存档诊断单独构建并清楚标记受控 score / StageExit 接点，不当作真实联机通关证据。
+
+| 验证 | 当前修正版的实际结果 |
+| --- | --- |
+| Native score / result / 既有高危规则 | `node portable/multiplayer/native-test.mjs --risk`：**1,768 checks / 3,622 logic+draw ticks PASS**。覆盖共享 score、不重复奖励、三类终局原生录名 / 保存请求、P1 输入、无 Continue / Retry、暂停 / 重开。日志 `artifacts/multiplayer-native/native-score-correction.log`。 |
+| 普通 Demo 回归 | 重新构建 WASI candidate 后，4 / 4 段既有 Demo、**18,049 ticks** 的 economy / player / RNG / entities 与不可变 quick golden 全部一致。报告 `artifacts/replay-verifier/native-correction-quick-result.json`。没有运行原作 EXE 或重写 golden。 |
+| 2P RTC 生产包 | `native-correction/2p-rtc.json` PASS：自动 D=1 / P=0，**123 同帧世界比较、38 Replay 比较**；从帧零回建至 119 匹配。22 张桌面 / 竖屏流程截图；真实断线后返回且保留房间成员身份。 |
+| 3P Relay 生产包 | `native-correction/3p-relay.json` PASS：D=2 / P=0，**222 同帧世界比较、33 Replay 比较、124 旧局观战比较**；同步暂停 / R 后新代重新实测，旧观战正常结束；从帧零回建至 106 匹配。26 张桌面 / 竖屏流程截图；真实断线返回且保留房间身份。 |
+| 原生 Replay 交互 / 拒绝条件 | 两组生产测试都用真实浏览器键盘进入原生目录 / 关卡 / 播放，翻到 slot 26，验证物理 gameplay 输入隔离、Esc 保留选项、EOF 回目录、目录 Back → Host exit。异构建且结构合法的文件与损坏文件都被导入和原生扫描拒绝。只选择实际录到的第一关；没有用合成章节冒充后续关卡验收。 |
+| 原生 GPU / 实际 App 保存 | 29 张 MP 诊断 PNG；Game Over、Extra、Ending 各包含 live / readOnly，共 **6 条菜单 / 文件流程**通过。原生 Archive 解码核对共享 score、姓名 A、席位、完成标记和包含保存确认帧；只读文件字节不变、`scoreth11.dat` 不存在。手动占用自动 01 后，新自动选择 02，原手动 01 字节不变。报告 `native-correction/native-save-evidence.json` / `screenshot-evidence.json`。 |
+| 构建 / 产物隔离 | 普通 `--thprac` 与 MP `--multiplayer` 都已构建、打包通过；闭包 18 / 22 文件。package isolation **7 / 7 PASS**，含实际 WASM export gate；普通包没有 MP 模块 / CSS，诊断 `mp_fixture_ui_*` 不进入生产。 |
+
+向后定位通过原有 native Replay seek ABI 和测试观察器验证从帧零重建，仅属于诊断调用；报告明确 `userFacingSlider: false`，不能把这项检查写成玩家已拥有网页进度条。两组报告均 `passed: true`、`errors: []`。3P 用 `lang_zh-hans` Runtime 配置；其原生文字取决于加载的资源包，不能据此声称完整中文资源或真机触控均已验收。
+
+实际复核的主要图包括 `mp-3p-local1.png`、`native-game-over-ranking.png`、`native-game-over-replay-slots.png`、`native-extra-actions.png`、`native-ending-ranking.png`、`native-ending-replay-name.png`，以及生产 `2p-rtc-ui-replay-list-desktop-canvas.png`、`2p-rtc-ui-replay-stages-desktop-canvas.png`、`3p-relay-ui-replay-list-portrait.png`。现在核对的是原生单份分数与原生菜单结构；不再用“颜色 / 字体像原作”接受本来就不应额外存在的网页播放器或逐人成绩页。诊断注入固定大分数时同步原生 HUD 的显示计数，避免把从零骤增的人工滚分滞后当成实际结果画面。最终诊断 WASM 为 `8bfb5ef4f7c8b0d253e6ebfee54313cbfc3efeb852c537e62714937a91998bd7`，不作为生产 Runtime。
+
+### 10.5 产物身份与仍须报告的高危边界
+
+当前生产 MP WASM：**`dfac7d70905e511397ae78cdd6afb8c1b6e18168dfcf19816f2b7d78d6cd5281`**，2,790,783 bytes。普通 `--thprac`：**`ad7c30dbb8ea3836b3ba5ec8c4c8088337508025f087d16bd31a89aedd8336fa`**，3,003,964 bytes。MP 仍固定 common `e02347fac98c9e599d30a6ffd7ef30756555b948`，`P=0`、不预测、不回滚。当前修正没有修改共享协议、canonical 普通工作区或 Launcher 的其他工作。
+
+1. **旧实验 Replay 不兼容：** `f5b444d` / `2bd03f0` 的独立计分与菜单输入序列已经改变；沿用精确 WASM 构建指纹拒绝旧构建，不提供迁移或偷偷按新规则播放。保存旧录制所对应的 Runtime 才能继续使用该旧录制。
+2. **终局经济仍有临时规则：** 第 10.2 节的全队 all-clear 点值 / 个人资源聚合会影响总分及平衡。它已明确实施和验证固定向量，但尚未成为已获产品确认的规则。
+3. **既有未定义规则不因 UI 修正获得确认：** 第 5 / 6 节的一档 Power 跨机体交换、280 帧救援、共享碎片 Extend、目标 / 掉落选择、途中赠送、重开新种子与 250,000 确认帧容量策略保持，并继续标为高危。
+4. **证据仍有范围：** 当前是真实生产 WASM 的本机 Chromium 短程 RTC / Relay、原生状态机和实际文件 I/O；没有完整多人战役 / Extra 通关、公网 / Android / iOS、长程 seek 或 69 分钟上限实跑结论。终局诊断的人工 score / StageExit 接点只证明菜单、呈现与 App 保存 owner。
+5. **接入与发布边界：** 代码保留在 `eagler-mp`；Launcher 仍为第 9.5 节的独立 React 接入，不能声称旧 main 已合并或线上可用。本轮不 push、merge canonical 或部署。
+
+### 10.6 当前修正版复现入口
+
+使用第 8 节指定的 Emscripten / WASI / 字体环境，从 TH11 MP worktree 运行：
+
+```powershell
+node portable/multiplayer/native-test.mjs --risk
+node portable/build.mjs --multiplayer
+node portable/build.mjs --thprac
+node portable/package-eagler.mjs --multiplayer
+node portable/package-eagler.mjs
+node --test portable/multiplayer/package-isolation.test.mjs
+node th11_web/scripts/cpp/build.mjs
+node tools/replay-verifier/capture-candidate.mjs --lane quick --output artifacts/replay-verifier/native-correction-candidate
+node tools/replay-verifier/run-gate.mjs --lane quick --capture-root artifacts/replay-verifier/native-correction-candidate --golden-root tools/replay-verifier/golden --report artifacts/replay-verifier/native-correction-quick-result.json
+node portable/multiplayer/native-ui-build.mjs --phase native-correction --mp-only
+node portable/multiplayer/native-ui-capture.mjs --phase native-correction --mp-only
+node portable/multiplayer/browser-acceptance.mjs --players 2 --route rtc --auto --loadouts 0,5 --frames 240 --disconnect --ui-audit --verify-ui --output artifacts/multiplayer-ui/20261009/native-correction/2p-rtc.json
+node portable/multiplayer/browser-acceptance.mjs --players 3 --route relay --loadouts 0,3,5 --frames 360 --restart --spectator --disconnect --ui-audit --verify-ui --language lang_zh-hans --output artifacts/multiplayer-ui/20261009/native-correction/3p-relay.json
+```
+
+生产 builds / packages、诊断 UI 接点和浏览器 Host fixture 各有明确边界。首次做某个比较前必须核对对应源码与产物身份；不能混用普通 THPrac cache、旧 MP wasm 或把 fixture 导出加入生产来凑验收。

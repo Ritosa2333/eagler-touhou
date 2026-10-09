@@ -38,7 +38,7 @@ bool GameSession::update_multiplayer(const std::array<MultiplayerInput,3>& input
         ++state.frame;return true;
     }
     if(state.phase==GameSessionPhase::game_over){
-        battle->events.clear();battle->dialogue_text_requests.clear();menu_input.update(menu_keys(inputs[0].held));
+        battle->events.clear();battle->dialogue_text_requests.clear();menu_input.update(menu_keys(inputs[0].held)|(inputs[0].pause?256u:0u));
         if(title&&title->multiplayer_result){
             title->held=menu_input.held;
             if(!title->update(menu_input.pressed,menu_input.long_repeat))return fail(title->error.c_str());
@@ -86,7 +86,7 @@ bool GameSession::multiplayer_open_result(bool completed,u32 held){
     battle->mp_finished=true;battle->mp_paused=false;animations.rate=1;
     pause_menu=std::make_unique<PauseMenu>(animations,resources.core.text,resources.core.front,scores);
     pause_menu->selection=state.character*3+state.subtype;pause_menu->difficulty=state.difficulty;pause_menu->stage=state.stage;
-    pause_menu->result_score=economy.score_units;
+    pause_menu->result_score=economy.score_units;pause_menu->continues=0;pause_menu->timestamp=recording_timestamp;
     if(!pause_menu->begin_multiplayer_end(completed))return fail(pause_menu->error.c_str());
     // Seed the native edge sampler from the final combat frame. Holding Shoot
     // through the wipe or clear cannot confirm the result menu on entry.
@@ -118,8 +118,8 @@ bool GameSession::multiplayer_open_clear_results(u32 held){
     title=std::make_unique<TitleMenu>(animations,resources.core.title,resources.core.title_variant,resources.core.ascii,scores);
     title_ascii=std::make_unique<AsciiText>(resources.core.ascii);title->text_resource=&resources.core.text;title->flags=0;
     title->selection.character=state.character;title->selection.partner=state.subtype;title->selection.difficulty=state.difficulty;
-    title->multiplayer_result=true;title->multiplayer_seats=multiplayer_options.seat_count;
-    for(unsigned i=0;i<multiplayer_options.seat_count;++i){title->multiplayer_scores[i]=battle->pilots[i]->economy.score_units;title->multiplayer_selections[i]=multiplayer_options.selections[i];}
+    title->multiplayer_result=true;title->result_score=economy.score_units;
+    title->result_continues=0;title->result_timestamp=recording_timestamp;
     title->change(TitleScreen::Results);
     if(!title->update(0,0)||!animations.update(true)||!animations.update(false))return fail("MP clear result initial ANM update failed");
     menu_input={};menu_input.update(menu_keys(held));state.phase=GameSessionPhase::game_over;return true;
@@ -127,8 +127,8 @@ bool GameSession::multiplayer_open_clear_results(u32 held){
 u32 GameSession::multiplayer_hash()const noexcept{
     u32 h=battle?battle->mp_hash():0;auto word=[&](u32 v){h=(h^v)*16777619u;};word(multiplayer_frame);word(u32(state.phase));
     if(state.phase==GameSessionPhase::paused||state.phase==GameSessionPhase::game_over||state.phase==GameSessionPhase::ending){word(menu_input.held);word(menu_input.pressed);
-        if(pause_menu){word(pause_menu->state);word(pause_menu->timer.current);}
-        if(title){word(u32(title->screen));word(title->substate);word(title->timer.current);}
+        if(pause_menu){word(pause_menu->state);word(pause_menu->timer.current);word(pause_menu->cursor.selected);word(pause_menu->name_cursor.selected);word(pause_menu->name_length);for(auto c:pause_menu->entered_name)word(u8(c));}
+        if(title){word(u32(title->screen));word(title->substate);word(title->timer.current);word(title->cursor.selected);word(title->name_cursor.selected);word(title->name_length);for(auto c:title->entered_name)word(u8(c));}
         if(ending){word(ending->frames);word(ending->flags);word(ending->index);word(ending->time.current);word(ending->wait.current);word(ending->line);auto data=ending->messages.find(ending->message);if(data!=ending->messages.end()&&ending->instruction)word(u32(ending->instruction-data->second.data()));}
     }return h;
 }

@@ -69,6 +69,90 @@ struct Application:StageResourceEffects {
     bool multiplayer_restart_pending=false,multiplayer_saved=false,multiplayer_pause_requested=false;
     u32 multiplayer_seek_target=0,multiplayer_last_stage=0;
     std::string multiplayer_auto_path;
+    std::array<u32,4> multiplayer_build{};
+    bool multiplayer_viewer=false;
+    u32 multiplayer_replay_index=0,multiplayer_replay_stage=1;
+    GameInput multiplayer_viewer_input;
+    bool multiplayer_build_matches(const multiplayer::ReplayArchive& replay)const {
+        return std::any_of(multiplayer_build.begin(),multiplayer_build.end(),[](u32 word){return word!=0;})&&replay.Setup().build==multiplayer_build;
+    }
+    bool multiplayer_completed()const {
+        return (session.title&&session.title->multiplayer_result)||
+            (session.pause_menu&&session.pause_menu->multiplayer_result&&session.pause_menu->completed);
+    }
+    static void multiplayer_preview(ReplayMenuEntry& entry,const multiplayer::ReplayArchive& replay){
+        entry.is_multiplayer=true;auto& out=entry.multiplayer;const auto& setup=replay.Setup();const auto& info=replay.Info();
+        out.name=replay.Name();out.timestamp=replay.Timestamp();out.score=replay.Score();out.completed=replay.Completed();
+        out.selection=setup.selections[0];out.difficulty=setup.difficulty;
+        out.player_count=setup.player_count;out.recorded_player=setup.local_player;
+        for(u32 i=0;i<info.chapterCount;++i){const auto& chapter=info.chapters[i];
+            out.stages[chapter.label]=true;out.stage_frames[chapter.label]=chapter.firstFrame;out.last_stage=chapter.label;
+        }
+    }
+    bool multiplayer_open_replay_menu(){
+        if(!initialize())return false;
+        netplay.Clear();multiplayer_viewer=true;multiplayer_world=false;multiplayer_advanced=false;
+        multiplayer_finish_pending=multiplayer_restart_pending=multiplayer_pause_requested=false;
+        multiplayer_seek_target=0;multiplayer_viewer_input={};
+        renderer.invalidate();renderer.multiplayer_animations=nullptr;renderer.multiplayer_hud_background=nullptr;renderer.multiplayer_opacity.fill(255);
+        session.multiplayer_active=false;session.animations.rate=1;
+        if(!session.open_title(resources,false,TitleScreen::Replays)){error=session.error;return false;}
+        session.title->multiplayer_replay_menu=true;
+        session.title->replay_files.resize(std::max<size_t>(100,(multiplayer_replay_index/25+1)*25));
+        session.title->last_replay=int(multiplayer_replay_index);
+        clear_inputs();audio.effects.reset();return tick(0);
+    }
+    bool multiplayer_load_replay(const u8* bytes,u32 size,u32 stage=0){
+        multiplayer::ReplayArchive replay;
+        if(!replay.Load(bytes,size)){error="Invalid TH11 multiplayer Replay";return false;}
+        if(!multiplayer_build_matches(replay)){error="TH11 multiplayer Replay requires the same Runtime build";return false;}
+        if(!stage)stage=replay.Setup().initial_stage();
+        u32 target=0;bool found=false;const auto& info=replay.Info();
+        for(u32 i=0;i<info.chapterCount;++i)if(info.chapters[i].label==stage){target=info.chapters[i].firstFrame;found=true;break;}
+        if(!found){error="Stage absent from TH11 multiplayer Replay";return false;}
+        error.clear();multiplayer_replay=std::move(replay);
+        if(!netplay.BeginPlayback(multiplayer_replay.Setup())){error=netplay.Error();return false;}
+        multiplayer_viewer=true;multiplayer_replay_stage=stage;multiplayer_viewer_input={};
+        if(!multiplayer_begin())return false;
+        // Chapters are input positions, not world snapshots. Restore frame zero
+        // and replay every prior confirmed input through the native owner.
+        multiplayer_seek_target=target;return true;
+    }
+    bool multiplayer_menu_metadata(){
+        if(session.title&&session.title->replay_scan_requested)scan_replays();
+        if(session.title&&session.title->screen==TitleScreen::ReplaySave){auto& menu=*session.title;
+            if(menu.substate==3&&!menu.pending_replay){
+                auto entry=std::make_shared<ReplayMenuEntry>();multiplayer_preview(*entry,multiplayer_replay);
+                entry->multiplayer.name="        ";entry->multiplayer.score=u32(session.economy.score_units);
+                if(netplay.Spectator()){
+                    // Spectator history does not carry the recording's wall
+                    // clock. Keep that field unknown, with the real room facts.
+                    auto& preview=entry->multiplayer;const auto& setup=netplay.Setup();
+                    preview.selection=setup.selections[0];preview.difficulty=setup.difficulty;
+                    preview.player_count=setup.player_count;preview.recorded_player=0;preview.last_stage=session.state.stage;
+                }
+                entry->multiplayer.completed=multiplayer_completed();menu.pending_replay=std::move(entry);
+            }
+        }
+        if(session.pause_menu){auto& menu=*session.pause_menu;
+            if(menu.scan_requested)scan_replays();
+            if(menu.recording_metadata_requested)menu.timestamp=multiplayer_replay.Timestamp();
+        }
+        return true;
+    }
+    bool multiplayer_menu_save(){
+        // These menus replay the recorded P1 controls on every consumer. Only
+        // a live player's isolated storage may service their file writes.
+        if(session.title&&session.title->replay_save_requested){auto& menu=*session.title;
+            if(!netplay.ReadOnly()&&!multiplayer_save(menu.replay_file+1,menu.entered_name.data()))return false;
+            menu.replay_save_requested=false;menu.pending_replay.reset();scan_replays();
+        }
+        if(session.pause_menu&&session.pause_menu->save_requested){auto& menu=*session.pause_menu;
+            if(!netplay.ReadOnly()&&!multiplayer_save(menu.cursor.selected+1,menu.entered_name.data()))return false;
+            menu.save_requested=false;scan_replays();
+        }
+        return true;
+    }
     bool multiplayer_begin(){
         if(!netplay.Configured()||!initialize())return false;
         const auto& setup=netplay.Setup();MultiplayerOptions opts;
@@ -82,8 +166,9 @@ struct Application:StageResourceEffects {
         if(!session.begin_multiplayer(resources,opts)){error=session.error;return false;}
         for(AnmResource* file:{&core.text,&core.ascii,&core.bullet,&core.enemy,&core.front,&core.title,&core.title_variant,&core.players[0],&core.players[1],&session.resources.stage->background,&session.resources.stage->logo,&session.resources.stage->enemies})
             if(!graphics.preload(*file)){error=graphics.error;return false;}
-        multiplayer_world=true;multiplayer_finish_pending=multiplayer_restart_pending=multiplayer_saved=multiplayer_pause_requested=false;clear_inputs();
+        multiplayer_world=true;multiplayer_advanced=false;multiplayer_finish_pending=multiplayer_restart_pending=multiplayer_saved=multiplayer_pause_requested=false;clear_inputs();
         multiplayer_last_stage=opts.stage;multiplayer_seek_target=0;multiplayer_auto_path.clear();frame_statistics.reset_run();
+        if(netplay.Playback())session.recording_timestamp=multiplayer_replay.Timestamp();
         if(!play_stage_music(session.state.stage))return false;return audio_events()&&text_events();
     }
     bool multiplayer_pump(){
@@ -119,22 +204,31 @@ struct Application:StageResourceEffects {
         }else if(!automatic_slot){
             char file[80];std::snprintf(file,sizeof(file),"/save/replay/th11_%.2u.rpy",slot);path=file;
         }
-        std::vector<u8> bytes;const auto seat=session.multiplayer_seat(netplay.Setup().local_player);
+        std::vector<u8> bytes;
         // Native score storage is in ten-point units and fits a u32 even when
         // its displayed ten-billion-point score needs an i64.
-        if(!multiplayer_replay.Encode(bytes,name,u32(std::max<i64>(0,seat.score)/10),multiplayer_finish_pending&&!multiplayer_restart_pending)){error="Unable to encode TH11 multiplayer Replay";return false;}
-        if(!write_file(path,bytes))return false;if(automatic_slot)multiplayer_auto_path=path;return true;
+        if(!multiplayer_replay.Encode(bytes,name,u32(std::max(0,session.economy.score_units)),multiplayer_completed()&&!multiplayer_restart_pending)){error="Unable to encode TH11 multiplayer Replay";return false;}
+        if(!write_file(path,bytes))return false;
+        if(automatic_slot)multiplayer_auto_path=path;
+        else if(path==multiplayer_auto_path){
+            // A named native save now owns that slot. Later periodic/exit
+            // backups must choose another empty path, never rename it PLAYER.
+            multiplayer_auto_path.clear();multiplayer_saved=false;
+        }
+        return true;
     }
     bool multiplayer_tick(){
         multiplayer_advanced=false;
         if(!multiplayer_pump()||!multiplayer_world)return error.empty();
+        if(netplay.Playback()&&multiplayer_finish_pending)return multiplayer_open_replay_menu();
         if(multiplayer_finish_pending||!netplay.CanStart())return true;
         if(!netplay.ReadOnly()&&!multiplayer_replay.Recording()){
             if(!multiplayer_replay.Begin(netplay.Setup(),u64(std::time(nullptr)))){error="Unable to reserve TH11 multiplayer Replay";return false;}
+            session.recording_timestamp=multiplayer_replay.Timestamp();
         }
         const auto frame=netplay.NextFrame();
         if(netplay.Playback()){
-            if(frame>=multiplayer_replay.FrameCount()){multiplayer_finish_pending=true;return multiplayer_pump();}
+            if(frame>=multiplayer_replay.FrameCount())return multiplayer_open_replay_menu();
             const auto* input=multiplayer_replay.FrameAt(frame);
             if(!input||!netplay.FeedPlayback(frame,input->data(),netplay.Setup().player_count)){error="Invalid TH11 multiplayer Replay frame";return false;}
         }else if(netplay.Spectator()&&!netplay.FeedSpectator(frame))return true;
@@ -150,6 +244,7 @@ struct Application:StageResourceEffects {
         if(before!=GameSessionPhase::game_over&&after==GameSessionPhase::game_over){
             audio.pause_music(false);if(!request_music(17)){error=audio.error;return false;}
         }
+        if(!multiplayer_menu_metadata())return false;
         if(!capture_pause_frame())return false;
         if(!audio_events()||!text_events())return false;
         audio.update();audio.pump();
@@ -158,6 +253,7 @@ struct Application:StageResourceEffects {
         if(!session.draw(renderer,&frame_text)){error=session.error;return false;}graphics.present();
         if(!netplay.MarkSimulated(frame,decision)){error=netplay.Error();return false;}
         if(!netplay.ReadOnly()&&!multiplayer_replay.Append(frame,stage,decision.inputs.data(),netplay.Setup().player_count)){error="TH11 confirmed Replay append failed";return false;}
+        if(!multiplayer_menu_save())return false;
         multiplayer_advanced=true;multiplayer_last_stage=stage;
         // All consumers retire after the last representable confirmed frame.
         // Never simulate/publish an additional frame which cannot be archived.
@@ -394,6 +490,15 @@ struct Application:StageResourceEffects {
         const auto before=session.state.phase;
         const GameSessionInput input{held,0,0,pause_key,bool(held&0x100),bool(held&0x2),frame_statistics.fps};
         if(!session.update(input)){error=session.error;return false;}
+#ifdef TH11_MULTIPLAYER
+        if(multiplayer_viewer&&session.title&&session.title->replay_start_requested){
+            const auto entry=session.title->replay_files[session.title->replay_file];
+            multiplayer_replay_index=u32(session.title->replay_file);const u32 stage=u32(session.title->replay_stage+1);
+            std::vector<u8> bytes;
+            if(!entry||!entry->is_multiplayer||!read_file(entry->path.c_str(),bytes,16*1024*1024)){error="Selected TH11 multiplayer Replay could not be loaded";return false;}
+            return multiplayer_load_replay(bytes.data(),u32(bytes.size()),stage);
+        }
+#endif
         const auto after=session.state.phase;
         if(before!=GameSessionPhase::title&&after==GameSessionPhase::title)filter_practice_music(PracticeBgmEvent::Stop);
         if(before!=GameSessionPhase::stage&&after==GameSessionPhase::stage&&session.state.frame==0)frame_statistics.reset_run();
@@ -432,6 +537,10 @@ struct Application:StageResourceEffects {
         return true;
     }
     bool return_to_title(){
+#ifdef TH11_MULTIPLAYER
+        if(multiplayer_viewer)return multiplayer_open_replay_menu();
+        if(multiplayer_world){error="A live multiplayer run cannot return through the single-player title path";return false;}
+#endif
         if(!save_scores())return false;
         if(!session.return_to_title()){error=session.error;return false;}
         filter_practice_music(PracticeBgmEvent::Stop);
@@ -439,6 +548,29 @@ struct Application:StageResourceEffects {
     }
     void scan_replays(){
         if(!session.title&&!session.pause_menu)return;
+#ifdef TH11_MULTIPLAYER
+        if(session.title)session.title->clear_replays();else session.pause_menu->replay_files.fill(nullptr);
+        auto load=[&](u32 slot,const std::string& path){
+            std::vector<u8> bytes;if(!read_file(path.c_str(),bytes,16*1024*1024))return;
+            multiplayer::ReplayArchive replay;if(!replay.Load(bytes.data(),bytes.size())||!multiplayer_build_matches(replay))return;
+            auto entry=std::make_shared<ReplayMenuEntry>();entry->path=path;multiplayer_preview(*entry,replay);
+            if(session.title)session.title->replay_files[slot]=std::move(entry);else if(slot<25)session.pause_menu->replay_files[slot]=std::move(entry);
+        };
+        const bool catalog=session.title&&session.title->screen==TitleScreen::Replays;
+        if(catalog){
+            std::vector<std::string> names;auto* dir=opendir("/save/replay");
+            if(dir){while(auto* entry=readdir(dir)){
+                const std::string name=entry->d_name;
+                if(name.size()!=15||name.compare(0,7,"th11_ud")||name.compare(11,4,".rpy"))continue;
+                if(std::all_of(name.begin()+7,name.begin()+11,[](char c){return (c>='0'&&c<='9')||(c>='a'&&c<='z');}))names.push_back(name);
+            }closedir(dir);}
+            std::sort(names.begin(),names.end());
+            session.title->replay_files.resize(100+((names.size()+24)/25)*25);
+            for(u32 i=0;i<names.size();++i)load(100+i,"/save/replay/"+names[i]);
+        }
+        for(u32 slot=0;slot<(catalog?99u:25u);++slot){char path[80];std::snprintf(path,sizeof(path),"/save/replay/th11_%.2u.rpy",slot+1);load(slot,path);}
+        if(catalog)session.title->replay_scan_complete();
+#else
         auto load=[&](u32 slot,const std::string& path){std::vector<u8> bytes;if(!read_file(path.c_str(),bytes,64*1024*1024))return;
             auto entry=std::make_shared<TitleMenu::ReplayEntry>();if(!entry->replay.open(bytes.data(),u32(bytes.size())))return;
             entry->path=path;entry->replay.retain_metadata();if(session.title)session.title->replay_files[slot]=std::move(entry);else if(slot<25)session.pause_menu->replay_files[slot]=std::move(entry);};
@@ -446,6 +578,7 @@ struct Application:StageResourceEffects {
         if(session.title&&session.title->screen==TitleScreen::Replays){std::vector<std::string> names;auto* dir=opendir("/save/replay");if(dir){while(auto* e=readdir(dir)){const std::string n=e->d_name;if(n.size()>=15&&n.rfind("th11_ud",0)==0&&(n.substr(11)==".rpy"||n.substr(11)==".rpyx"))names.push_back(n);}closedir(dir);}
             std::sort(names.begin(),names.end());for(u32 i=0;i<names.size()&&i<50;++i)load(25+i,"/save/replay/"+names[i]);}
         if(session.title&&session.title->screen==TitleScreen::Replays)session.title->replay_scan_complete();
+#endif
     }
 };
 Application app;
@@ -539,7 +672,7 @@ bool sample_and_tick(){
 #ifdef TH11_MULTIPLAYER
     // SDL events keep pumping during a remote wait. Gesture pulses belong to
     // the next unscheduled frame and are never consumed by a retry.
-    if(!app.netplay.NeedsCapture())return app.multiplayer_tick();
+    if(!app.multiplayer_viewer&&!app.netplay.NeedsCapture())return app.multiplayer_tick();
 #endif
     bool keys[256]{};std::array<u8,256> scans{};const auto* physical=th11_browser_keyboard()?nullptr:SDL_GetKeyboardState(nullptr);
     for(const auto& k:keyboard_map)if(k.hosted||(physical&&k.native!=SDL_SCANCODE_UNKNOWN&&physical[k.native])){if(k.scan<256)scans[k.scan]=128;if(k.vk<256)keys[k.vk]=true;if(k.vk>=160&&k.vk<=165)keys[16+(k.vk-160)/2]=true;if(k.scan==28||k.scan==156)keys[13]=true;}
@@ -559,6 +692,14 @@ bool sample_and_tick(){
     const u32 raw=sample_controller()|keyboard_keys(keys);
     const u32 held=(raw&~0x80100u)|((raw&0x80000)?256:0);
 #ifdef TH11_MULTIPLAYER
+    if(app.multiplayer_viewer){
+        if(!app.multiplayer_world){app.multiplayer_advanced=true;return app.tick(captured?0:held,!captured&&(raw&256)!=0);}
+        // TH08MP/TH10MP give physical Escape a local viewer exit. Every other
+        // gameplay/pause/result action comes only from the recorded seats.
+        app.multiplayer_viewer_input.update(captured?0:raw);
+        if(app.multiplayer_viewer_input.pressed&256u)return app.multiplayer_open_replay_menu();
+        return app.multiplayer_tick();
+    }
     int motion=sample.motion;float x=sample.x,y=sample.y;
     // The ordinary free stick derives a target from the current player
     // position. A delayed input carries the stable raw vector instead.
@@ -582,7 +723,8 @@ extern "C" {
 EMSCRIPTEN_KEEPALIVE int th11_mp_configure(const unsigned* words,unsigned count){
     using namespace th11::sdl;if(running)return 0;th11::multiplayer::SessionSetup setup;
     if(!th11::multiplayer::DecodeSessionSetup(setup,words,count)){app.error="TH11 multiplayer supports measured pure delay only";return 0;}
-    app.error.clear();app.multiplayer_replay.Clear();app.multiplayer_world=false;return app.netplay.Reset(setup)?1:0;
+    app.error.clear();app.multiplayer_replay.Clear();app.multiplayer_world=false;app.multiplayer_viewer=false;
+    app.multiplayer_build=setup.build;return app.netplay.Reset(setup)?1:0;
 }
 EMSCRIPTEN_KEEPALIVE int th11_mp_connect(const char* url){return th11::sdl::app.netplay.Connect(url);}
 EMSCRIPTEN_KEEPALIVE int th11_mp_spectator_connect(const char* url,const char* id){return th11::sdl::app.netplay.ConnectSpectator(url,id);}
@@ -591,16 +733,30 @@ EMSCRIPTEN_KEEPALIVE int th11_mp_pump(){return th11::sdl::app.multiplayer_pump()
 EMSCRIPTEN_KEEPALIVE const unsigned* th11_mp_status(){return th11::sdl::app.netplay.Status();}
 EMSCRIPTEN_KEEPALIVE const unsigned* th11_mp_calibration_status(){return th11::sdl::app.netplay.CalibrationStatus();}
 EMSCRIPTEN_KEEPALIVE const char* th11_mp_error(){auto& app=th11::sdl::app;return app.error.empty()?app.netplay.Error():app.error.c_str();}
-EMSCRIPTEN_KEEPALIVE void th11_mp_stop(){using namespace th11::sdl;app.netplay.Clear();app.multiplayer_world=false;app.multiplayer_finish_pending=false;clear_inputs();}
-EMSCRIPTEN_KEEPALIVE int th11_mp_replay_validate(const unsigned char* bytes,unsigned size){return th11::multiplayer::ReplayArchive::Validate(bytes,size);}
+EMSCRIPTEN_KEEPALIVE void th11_mp_stop(){using namespace th11::sdl;app.netplay.Clear();app.multiplayer_world=false;app.multiplayer_viewer=false;app.multiplayer_finish_pending=false;clear_inputs();}
+EMSCRIPTEN_KEEPALIVE int th11_mp_replay_menu(const unsigned* build,unsigned count){
+    using namespace th11::sdl;if(!build||count!=4||std::none_of(build,build+count,[](unsigned word){return word!=0;}))return 0;
+    std::copy_n(build,4,app.multiplayer_build.begin());app.error.clear();return app.multiplayer_open_replay_menu();
+}
+EMSCRIPTEN_KEEPALIVE const unsigned* th11_mp_replay_ui_status(){
+    using namespace th11::sdl;static std::array<unsigned,12> out{};out.fill(0);out[0]=1;
+    if(app.multiplayer_viewer)out[1]=app.multiplayer_world?2:app.session.title&&app.session.title->screen==th11::TitleScreen::Exit?4:1;
+    out[2]=app.netplay.NextFrame();out[3]=app.multiplayer_replay.FrameCount();out[4]=app.multiplayer_seek_target;
+    const auto* menu=app.session.title.get();out[5]=menu?unsigned(menu->screen):0xffffffffu;
+    if(menu){out[6]=unsigned(menu->substate);out[7]=unsigned(menu->cursor.selected);out[8]=unsigned(menu->page.selected);}
+    out[9]=app.multiplayer_replay_index;out[10]=app.multiplayer_replay_stage;return out.data();
+}
+EMSCRIPTEN_KEEPALIVE int th11_mp_replay_validate(const unsigned char* bytes,unsigned size){
+    th11::multiplayer::ReplayArchive replay;if(!replay.Load(bytes,size))return 0;
+    auto& app=th11::sdl::app;
+    return std::none_of(app.multiplayer_build.begin(),app.multiplayer_build.end(),[](unsigned word){return word!=0;})||app.multiplayer_build_matches(replay);
+}
 EMSCRIPTEN_KEEPALIVE int th11_mp_replay_load(const unsigned char* bytes,unsigned size){
-    using namespace th11::sdl;if(running||!app.multiplayer_replay.Load(bytes,size))return 0;
-    app.error.clear();if(!app.netplay.BeginPlayback(app.multiplayer_replay.Setup()))return 0;
-    clear_inputs();return app.multiplayer_begin();
+    using namespace th11::sdl;if(running)return 0;return app.multiplayer_load_replay(bytes,size);
 }
 EMSCRIPTEN_KEEPALIVE unsigned th11_mp_replay_size(){
-    auto& a=th11::sdl::app;const auto seat=a.session.multiplayer_seat(a.netplay.Setup().local_player);
-    return a.multiplayer_replay.Encode(a.multiplayer_export,"PLAYER",unsigned(std::max<th11::i64>(0,seat.score)/10),a.multiplayer_finish_pending&&!a.multiplayer_restart_pending)?unsigned(a.multiplayer_export.size()):0;
+    auto& a=th11::sdl::app;
+    return a.multiplayer_replay.Encode(a.multiplayer_export,"PLAYER",unsigned(std::max(0,a.session.economy.score_units)),a.multiplayer_completed()&&!a.multiplayer_restart_pending)?unsigned(a.multiplayer_export.size()):0;
 }
 EMSCRIPTEN_KEEPALIVE const unsigned char* th11_mp_replay_data(){return th11::sdl::app.multiplayer_export.data();}
 EMSCRIPTEN_KEEPALIVE int th11_mp_replay_save(unsigned slot,const char* name){return th11::sdl::app.multiplayer_save(slot,name);}
@@ -628,7 +784,7 @@ EMSCRIPTEN_KEEPALIVE const unsigned* th11_mp_game_status(){
 #endif
 EMSCRIPTEN_KEEPALIVE int th11_validate_file(unsigned kind,const unsigned char* data,unsigned size){
 #ifdef TH11_MULTIPLAYER
-    return kind==1&&th11::multiplayer::ReplayArchive::Validate(data,size);
+    return kind==1&&th11_mp_replay_validate(data,size);
 #else
     if(kind==0){th11::ScoreFile scores;return scores.open(data,size);}
     if(kind==1){th11::Replay replay;return replay.open(data,size);}

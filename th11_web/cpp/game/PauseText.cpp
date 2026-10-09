@@ -22,6 +22,10 @@ void PauseMenu::queue_ascii(AsciiText& out)const{
     if(state==9||state==16||state==23){
         for(i32 row=0;row<25;++row){style.color=cursor.selected==row?0xffffff00:0xff808080;
             if(!replay_files[row])std::snprintf(line,sizeof(line),"No.%.2d -------- --/--/-- ------- - St-",row+1);
+#ifdef TH11_MULTIPLAYER
+            else if(replay_files[row]->is_multiplayer){const auto& r=replay_files[row]->multiplayer;const auto t=calendar(r.timestamp);
+                std::snprintf(line,sizeof(line),"No.%.2d %-8.8s %.2d/%.2d/%.2d %s %s %s",row+1,r.name.c_str(),t.tm_year%100,t.tm_mon+1,t.tm_mday,players[r.selection],difficulties[r.difficulty],label(r.completed?8:r.last_stage,true));}
+#endif
             else{const auto& r=replay_files[row]->replay;const auto* p=r.decoded().data();u64 stamp;std::memcpy(&stamp,p+12,8);const auto t=calendar(stamp);
                 std::snprintf(line,sizeof(line),"No.%.2d %.8s %.2d/%.2d/%.2d %s %s %s",row+1,reinterpret_cast<const char*>(p),t.tm_year%100,t.tm_mon+1,t.tm_mday,players[r.character()*3+r.subtype()],difficulties[r.difficulty()],label(integer(p+0x68),true));}
             add(line,48,float(64+row*15));

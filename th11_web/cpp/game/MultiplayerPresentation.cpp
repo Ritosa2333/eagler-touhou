@@ -11,11 +11,10 @@ bool GameBattle::mp_initialize_presentation(){
     for(unsigned seat=0;seat<mp_options.seat_count;++seat){
         for(unsigned i=0;i<9;++i){auto& vm=mp_life_icons[seat][i];if(!vm.bind_script(resources.core.front,10+i,5,&mp_presentation.rate)||vm.update(mp_presentation)<0)return false;}
         for(unsigned i=0;i<4;++i){auto& vm=mp_communication_icons[seat][i];if(!vm.bind_script(resources.core.front,32+i,5,&mp_presentation.rate)||vm.update(mp_presentation)<0)return false;}
-        mp_hud_scores[seat].displayed=pilots[seat]->economy.score_units;
     }
-    // The frame and difficulty still use their native owners. Private labels
-    // are drawn from these exact VMs in the repeated seat layout below.
-    if(auto* frame=animations.find(hud.frame_animation))for(auto* node=frame->child.next;node;node=node->next)if(node->value->script_index>=5&&node->value->script_index<=9)node->value->flags&=~2u;
+    // HiScore/Score retain the original single owner and original position.
+    // Only the personal life/Power/graze labels repeat for the extra seats.
+    if(auto* frame=animations.find(hud.frame_animation))for(auto* node=frame->child.next;node;node=node->next)if(node->value->script_index>=7&&node->value->script_index<=9)node->value->flags&=~2u;
     return mp_update_presentation();
 }
 bool GameBattle::mp_update_presentation(){
@@ -35,7 +34,6 @@ bool GameBattle::mp_update_presentation(){
         if(mp_tick>=20){const unsigned mode=percentage<100?0:percentage<110?1:percentage<120?2:3;if(mode!=mp_communication_modes[seat])comm[1].pending_interrupt=comm[2].pending_interrupt=i16(7+mode);mp_communication_modes[seat]=mode;}
         const i32 blocks=(e.communication>=10000?100:percentage)/10;auto& bar=comm[1];
         bar.uv[1].x=bar.uv[3].x=float(double(bar.uv[0].x)+.017578125+double(blocks)*4*.001953125);bar.flags|=8;bar.sprite_size.x=float(double(blocks)*4+9);comm[2].flags|=8;comm[2].sprite_size.x=0;
-        mp_hud_scores[seat].update(e.score_units);
     }
     return true;
 }
@@ -73,25 +71,23 @@ bool GameBattle::mp_draw_players(AnmRenderer& renderer){
 }
 bool GameBattle::mp_draw_hud(AnmRenderer& renderer){
     renderer.set_camera(compositor.full_camera,true);
-    // Preserve the original five labels, stars/fragments, numeric atlas and
-    // communication display. Only uniform scaling and seat repetition differ.
-    constexpr float scale=.9f;char buffer[96];
-    for(unsigned seat=0;seat<mp_options.seat_count;++seat){const auto& pilot=*pilots[seat];const auto& e=pilot.economy;const auto& score=mp_hud_scores[seat];const float top=48+seat*144;const u32 opacity=pilot.ghost?112:255;
-        auto draw=[&](const AnmVm& source,bool communication=false){auto vm=source;const auto p=Vec3{vm.position.x+vm.script_position.x+vm.child_position.x,vm.position.y+vm.script_position.y+vm.child_position.y,0};vm.position=vm.child_position={};vm.script_position=communication?Vec3{428+(p.x-30)*scale,top+116+(p.y-456)*scale,0}:Vec3{428+(p.x-428)*scale,top+(p.y-48)*scale,0};vm.scale={vm.scale.x*scale,vm.scale.y*scale};vm.color=(vm.color&0xffffff)|((vm.color>>24)*opacity/255<<24);return renderer.draw(vm)!=-2;};
-        if(auto* frame=animations.find(hud.frame_animation))for(auto* node=frame->child.next;node;node=node->next)if(node->value->script_index>=5&&node->value->script_index<=9){auto vm=*node->value;vm.flags|=2;if(!draw(vm))return false;}
+    // Original-size personal labels, stars/fragments, numeric atlas and
+    // communication display below the one unchanged native score block.
+    constexpr float scale=1;char buffer[96];
+    for(unsigned seat=0;seat<mp_options.seat_count;++seat){const auto& pilot=*pilots[seat];const auto& e=pilot.economy;const float top=104+seat*112;const u32 opacity=pilot.ghost?112:255;
+        auto draw=[&](const AnmVm& source,bool communication=false){auto vm=source;const auto p=Vec3{vm.position.x+vm.script_position.x+vm.child_position.x,vm.position.y+vm.script_position.y+vm.child_position.y,0};vm.position=vm.child_position={};vm.script_position=communication?Vec3{428+(p.x-30)*scale,top+68+(p.y-456)*scale,0}:Vec3{428+(p.x-428)*scale,top+(p.y-104)*scale,0};vm.scale={vm.scale.x*scale,vm.scale.y*scale};vm.color=(vm.color&0xffffff)|((vm.color>>24)*opacity/255<<24);return renderer.draw(vm)!=-2;};
+        if(auto* frame=animations.find(hud.frame_animation))for(auto* node=frame->child.next;node;node=node->next)if(node->value->script_index>=7&&node->value->script_index<=9){auto vm=*node->value;vm.flags|=2;if(!draw(vm))return false;}
         for(const auto& vm:mp_life_icons[seat])if(!draw(vm))return false;
         for(const auto& vm:mp_communication_icons[seat])if(!draw(vm,true))return false;
         AsciiStyle style;style.font=3;style.scale={scale,scale};style.color=0xffffff|(((mp_life_icons[seat][0].color>>24)*opacity/255)<<24);
-        auto put=[&](float x,float y){return ascii.add(buffer,{428+(x-428)*scale,top+(y-48)*scale,0},style);};
-        std::snprintf(buffer,sizeof(buffer),score.high<100000000?" %.8d0":"%.9d0",score.high);if(!put(508,48))return false;
-        std::snprintf(buffer,sizeof(buffer),score.displayed<100000000?" %.8d0":"%.9d0",score.displayed);if(!put(508,72))return false;
+        auto put=[&](float x,float y){return ascii.add(buffer,{428+(x-428)*scale,top+(y-104)*scale,0},style);};
         if(!e.power_step)return false;
         std::snprintf(buffer,sizeof(buffer),"%d.",e.power/e.power_step);if(!put(520,128))return false;style.scale={scale*.6f,scale*.6f};std::snprintf(buffer,sizeof(buffer),"%.2d",signed_bits(u32(e.power%e.power_step)*100)/e.power_step);if(!put(540,135))return false;
         style.scale={scale,scale};std::snprintf(buffer,sizeof(buffer),"/%d.",e.max_power/e.power_step);if(!put(554,128))return false;style.scale={scale*.6f,scale*.6f};std::snprintf(buffer,sizeof(buffer),"00");if(!put(586,135))return false;
         style.scale={scale,scale};std::snprintf(buffer,sizeof(buffer),"%d",e.graze);if(!put(520,152))return false;
         style.font=2;style.color=0xffffff|(((mp_communication_icons[seat][0].color>>24)*opacity/255)<<24);const i32 percentage=e.communication<10000?signed_bits(u32(e.communication)*100)/10000:100;const i32 factor=wrapping_add(percentage,std::min(e.graze/100,899)),points=e.point_value/100;
-        std::snprintf(buffer,sizeof(buffer),"%.6d*%1.2f",points-points%10,double(factor)/100);if(!ascii.add(buffer,{428+18*scale,top+116-scale,0},style))return false;
-        style.font=1;style.scale={1,1};style.color=opacity<<24|0xffffff;std::snprintf(buffer,sizeof(buffer),"%uP",seat+1);if(!ascii.add(buffer,{614,top,0},style))return false;
+        std::snprintf(buffer,sizeof(buffer),"%.6d*%1.2f",points-points%10,double(factor)/100);if(!ascii.add(buffer,{428+18*scale,top+68-scale,0},style))return false;
+        style.font=1;style.scale={1,1};style.color=opacity<<24|0xffffff;std::snprintf(buffer,sizeof(buffer),"%uP",seat+1);if(!ascii.add(buffer,{614,top-16,0},style))return false;
     }
     auto* boss=enemy_commands.bosses[0];if(boss&&!(boss->flags&0x21)&&renderer.draw(hud.indicator)==-2)return false;
     return true;

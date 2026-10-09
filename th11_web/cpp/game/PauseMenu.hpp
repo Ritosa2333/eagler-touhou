@@ -37,7 +37,6 @@ public:
     bool begin_multiplayer_pause();
     bool update_multiplayer_pause(u32 pressed);
     bool begin_multiplayer_end(bool completed=false);
-    bool update_multiplayer_end(u32 pressed);
 #endif
     bool update(u32 pressed,u32 repeat);
     void queue_ascii(AsciiText&)const;

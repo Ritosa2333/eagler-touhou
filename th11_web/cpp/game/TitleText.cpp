@@ -14,6 +14,17 @@ const char* difficulties[]={"Easy   ","Normal ","Hard   ","Lunatic","Extra  "};
 const char* stage_label(i32 stage,bool brief=false){return stage>=0&&stage<9?(brief?brief_stages[stage]:stages[stage]):"???";}
 std::string replay_line(const TitleMenu::ReplayEntry* entry,i32 index){
     char line[256];
+#ifdef TH11_MULTIPLAYER
+    if(!entry){if(index<99)std::snprintf(line,sizeof(line),"No.%.2d -------- --/--/-- --:-- ------- ------- --- -----",index+1);else std::snprintf(line,sizeof(line),"User  -------- --/--/-- --:-- ------- ------- --- -----");return line;}
+    if(entry->is_multiplayer){
+        const auto& r=entry->multiplayer;const auto t=calendar(reinterpret_cast<const u8*>(&r.timestamp));
+        char date[32];if(r.timestamp)std::snprintf(date,sizeof(date),"%.2d/%.2d/%.2d %.2d:%.2d",t.tm_year%100,t.tm_mon+1,t.tm_mday,t.tm_hour,t.tm_min);else std::snprintf(date,sizeof(date),"--/--/-- --:--");
+        char prefix[16];if(index<99)std::snprintf(prefix,sizeof(prefix),"No.%.2d",index+1);
+        else{const auto slash=entry->path.find_last_of("/\\");const auto base=entry->path.substr(slash==std::string::npos?0:slash+1);std::snprintf(prefix,sizeof(prefix),"%.4s ",base.size()>=11?base.c_str()+7:"????");}
+        std::snprintf(line,sizeof(line),"%s %-8.8s %s %s %s %s %uP/P%u",prefix,r.name.c_str(),date,players[r.selection],difficulties[r.difficulty],stage_label(r.completed?8:r.last_stage,true),r.player_count,r.recorded_player+1);
+        return line;
+    }
+#endif
     if(!entry){if(index<25)std::snprintf(line,sizeof(line),"No.%.2d -------- --/--/-- --:-- ------- ------- --- ---%%",index+1);else std::snprintf(line,sizeof(line),"User  -------- --/--/-- --:-- ------- ------- --- ---%%");return line;}
     const auto& r=entry->replay;const auto* p=r.decoded().data();const auto t=calendar(p+12);
     char prefix[16];if(index<25)std::snprintf(prefix,sizeof(prefix),"No.%.2d",index+1);
@@ -25,12 +36,6 @@ std::string replay_line(const TitleMenu::ReplayEntry* entry,i32 index){
 void TitleMenu::queue_ascii(AsciiText& out)const{
     char line[256];AsciiStyle style;style.shadow=true;
     auto add=[&](float x,float y){out.add(line,{x,y,0},style);};
-#ifdef TH11_MULTIPLAYER
-    if(multiplayer_result&&screen==TitleScreen::Results){
-        if(substate==2)for(unsigned seat=0;seat<multiplayer_seats;++seat){style.color=0xffffffff;std::snprintf(line,sizeof(line),"%2u  %-8s  %9d0                     %s",seat+1,players[multiplayer_selections[seat]],multiplayer_scores[seat],stages[8]);add(48,float(160+seat*18));}
-        return;
-    }
-#endif
     if(screen==TitleScreen::Practice&&(substate==2||substate==3)&&(timer.current>=10||substate==3)){
         const auto* p=scores.characters[selection.character*3+selection.partner].data();
         for(i32 st=1;st<=6;++st){const i32 index=st+selection.difficulty*6;const bool available=p[0x5a1+index*8];
@@ -50,13 +55,22 @@ void TitleMenu::queue_ascii(AsciiText& out)const{
         const i32 time=integer(p+0x58c);std::snprintf(line,sizeof(line),"%3d:%.2d:%.2d",time/216000,time/3600%60,time/60%60);add(328,396);
         std::snprintf(line,sizeof(line),"    %5d",integer(p+0x590+secondary.selected*4));add(328,414);}
     }else if(screen==TitleScreen::Replays||screen==TitleScreen::ReplaySave){
-        if(substate==2){for(i32 row=0;row<25;++row){const i32 index=(screen==TitleScreen::ReplaySave?0:page.selected*25)+row;style.color=cursor.selected==row?0xffffff00:0xff808080;out.add(replay_line(replay_files[index].get(),index).c_str(),{58,float(80+row*15),0},style);}}
+        if(substate==2){for(i32 row=0;row<25;++row){const i32 index=(screen==TitleScreen::ReplaySave?0:page.selected*25)+row;
+#ifdef TH11_MULTIPLAYER
+            if(multiplayer_replay_menu&&index==99)continue;
+#endif
+            style.color=cursor.selected==row?0xffffff00:0xff808080;out.add(replay_line(replay_files[index].get(),index).c_str(),{58,float(80+row*15),0},style);}}
         else if(substate==4&&replay_files[replay_file]){
-            const auto& r=replay_files[replay_file]->replay;const auto* p=r.decoded().data();
+            const auto& entry=*replay_files[replay_file];const auto& r=entry.replay;const auto* p=r.decoded().data();
             const float y=timer.current<10?float(80+double((replay_file%25)*15)*(10-double(timer.fractional))/10):80;
             out.add(replay_line(replay_files[replay_file].get(),replay_file).c_str(),{58,y,0},style);
             if(timer.current>=10)for(i32 st=1;st<=7;++st){style.color=cursor.selected==st-1?0xffffff00:0xff808080;
-                if(!r.stage(st))std::snprintf(line,sizeof(line),"%s  ---------",stages[st]);
+                if(!entry.has_stage(st))std::snprintf(line,sizeof(line),"%s  ---------",stages[st]);
+#ifdef TH11_MULTIPLAYER
+                // Like TH10MP, chapters name a confirmed input frame; the
+                // archive does not contain retail per-stage score snapshots.
+                else if(entry.is_multiplayer)std::snprintf(line,sizeof(line),"%s",stages[st]);
+#endif
                 else{const auto* next=st<6?r.header(st+1):nullptr;std::snprintf(line,sizeof(line),"%s  %.8d%d",stages[st],integer(next?next+12:p+0x14),integer(next?next+40:p+0x6c));}
                 add(220,float(128+(st-1)*18));
             }

@@ -179,18 +179,18 @@ bool Hud::queue_text(AsciiText& output,const HudInput& input){
             }
         }
     }
-#ifdef TH11_MULTIPLAYER
-    if(multiplayer){
-        if(boss_visible(input)&&input.seconds>=0){style.font=3;style.pass=1;style.color=digits[0].color;if(!output.add(".",{394,16,0},style))return false;style.scale={.6f,.6f};std::snprintf(buffer,sizeof(buffer),"%.2d",input.hundredths);if(!put(402,22))return false;}
-        return true;
-    }
-#endif
     style.scale={1,1};style.pass=0;style.color=0xffffff|(lives[0].color&0xff000000);
     const i32 high=input.practice?std::max(input.practice_high,score.displayed):score.high;
     std::snprintf(buffer,sizeof(buffer),high<100000000?" %.8d%d":"%.9d%d",high,input.practice?0:score.high_continues);
     if(!put(508,48))return false;
     std::snprintf(buffer,sizeof(buffer),score.displayed<100000000?" %.8d%d":"%.9d%d",score.displayed,score.continues);
     if(!put(508,72))return false;
+#ifdef TH11_MULTIPLAYER
+    if(multiplayer){
+        if(boss_visible(input)&&input.seconds>=0){style.font=3;style.pass=1;style.color=digits[0].color;if(!output.add(".",{394,16,0},style))return false;style.scale={.6f,.6f};std::snprintf(buffer,sizeof(buffer),"%.2d",input.hundredths);if(!put(402,22))return false;}
+        return true;
+    }
+#endif
     if(!economy.power_step)return false;
     std::snprintf(buffer,sizeof(buffer),"%d.",economy.power/economy.power_step);
     if(!put(520,128))return false;

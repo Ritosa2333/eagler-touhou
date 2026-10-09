@@ -17,6 +17,18 @@ void PauseMenu::show_end_choices(i32 script,i32 next,i32 count){
     auto* vm=animations.create(front,script,5,29,true);if(!vm){error="game-over menu creation failed";return;}
     menu_animation=vm->id;state=next;cursor.count=count;cursor.wrap=1;cursor.select(0);
     family(menu_animation,3);family(menu_animation,7);
+#ifdef TH11_MULTIPLAYER
+    if(multiplayer_result){
+        const bool compact=next==22;cursor.disabled_count=0;
+        cursor.disabled[cursor.disabled_count++]=compact?2:0;
+        if(!compact)cursor.disabled[cursor.disabled_count++]=3;
+        cursor.select(compact?0:1);family(menu_animation,7+cursor.selected);
+        for(auto* node=vm->child.next;node;){auto* next_node=node->next;auto& child=*node->value;
+            if(child.script_index==94||child.script_index==97||child.script_index==102)animations.destroy(child);
+            node=next_node;
+        }
+    }
+#endif
 }
 void PauseMenu::end_menu(u32 pressed,u32 repeat){
     const bool practice_states=state>=20;const i32 list=practice_states?23:16,name=practice_states?24:17;
@@ -29,6 +41,10 @@ void PauseMenu::end_menu(u32 pressed,u32 repeat){
             const i32 rank=scores.insert_score(selection,difficulty,result_score,stage==7&&completed?8:stage,continues,timestamp,slowdown);
             unranked=rank<0;timer.set(0,&animations.rate);
             if(!unranked){cursor.count=25;cursor.wrap=1;cursor.select(rank);name_begin();state=practice_states?25:18;visible(false);break;}
+#ifdef TH11_MULTIPLAYER
+            if(multiplayer_result)show_end_choices(completed?103:98,completed?22:14,completed?3:4);
+            else
+#endif
             show_end_choices(98,14,practice_states?3:4);
         }else{
             if(selection>=0&&selection<7&&difficulty>=0&&difficulty<5&&stage>=1&&stage<=7){
@@ -39,6 +55,13 @@ void PauseMenu::end_menu(u32 pressed,u32 repeat){
         }break;
     case 14:case 22:{
         const bool compact=state==22;const i32 save=compact?1:2,back=compact?0:1;
+#ifdef TH11_MULTIPLAYER
+        if(multiplayer_result){
+            cursor.disabled_count=0;cursor.disabled[cursor.disabled_count++]=compact?2:0;
+            if(!compact)cursor.disabled[cursor.disabled_count++]=3;
+            if(cursor.selected!=back&&cursor.selected!=save)cursor.select(back);
+        }
+#endif
         move(pressed|repeat,7);
         if(pressed&0x80001){
             if(practice_save_disabled&&cursor.selected==save){sounds.push_back(37);break;}
@@ -78,6 +101,10 @@ void PauseMenu::end_menu(u32 pressed,u32 repeat){
         }break;
     case 19:case 26:
         if(timer.current>=12){family(background_animation,1);family(menu_animation,1);transition(27);
+#ifdef TH11_MULTIPLAYER
+            if(multiplayer_result)action=PauseAction::Title;
+            else
+#endif
             if(practice_states)action=cursor.selected==2?PauseAction::Restart:PauseAction::Title;
             else action=cursor.selected==0?(completed?PauseAction::Restart:PauseAction::Continue):cursor.selected==3?PauseAction::Restart:PauseAction::Title;
         }break;

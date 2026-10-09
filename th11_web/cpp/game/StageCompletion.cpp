@@ -1,4 +1,5 @@
 #include "StageCompletion.hpp"
+#include <algorithm>
 
 namespace th11 {
 namespace {
@@ -11,8 +12,17 @@ void StageCompletion::count_clear(){
 bool StageCompletion::complete(){
     if(mode.stage<1||mode.stage>7||mode.selection<0||mode.selection>=6||economy.difficulty<0||economy.difficulty>4)return false;
     if(!effects.stage_result_animation())return false;
-    state.displayed_bonus=multiply(wrapping_add(economy.lives,mode.stage),1000000);
+    i32 lives=economy.lives;
+#ifdef TH11_MULTIPLAYER
+    if(multiplayer_count)lives=std::max(lives,0);
+#endif
+    state.displayed_bonus=multiply(wrapping_add(lives,mode.stage),1000000);
     economy.add_score(state.displayed_bonus);
+#ifdef TH11_MULTIPLAYER
+    // The shared stage component is already present above. Each additional
+    // pilot contributes only its remaining lives, in stable seat order.
+    for(unsigned seat=1;seat<multiplayer_count;++seat){const auto& pilot=*multiplayer_economies[seat];const i32 bonus=multiply(std::max(pilot.lives,0),1000000);economy.add_score(bonus);state.displayed_bonus=wrapping_add(state.displayed_bonus,bonus);}
+#endif
     state.hud_flags|=0x200;
     state.result_timer.set(0,rate);
     effects.recall_player_options();
@@ -29,19 +39,35 @@ bool StageCompletion::complete(){
         return true;
     }
     state.hud_flags|=0x20;
-    const i32 points=economy.point_value/100;
-    economy.add_score(multiply(points-points%10,1000));
-    if(mode.stage==6){
+    auto award_resources=[&](const GameEconomy& pilot){
+        i32 lives=pilot.lives,power=pilot.power;
+#ifdef TH11_MULTIPLAYER
+        if(multiplayer_count){lives=std::max(lives,0);power=std::max(power,0);}
+#endif
+        const i32 points=pilot.point_value/100;
+        economy.add_score(multiply(points-points%10,1000));
+        if(mode.stage==7){
+            // Preserve the original per-component wrapping and score cap.
+            economy.add_score(multiply(lives,40000000));
+            economy.add_score(multiply(power,400000));
+            return;
+        }
         i32 bonus=0;
-        switch(economy.difficulty){
-        case 0:bonus=multiply(wrapping_add(multiply(economy.lives,200),economy.power),100000);break;
-        case 1:bonus=wrapping_add(multiply(economy.lives,25000000),multiply(economy.power,150000));break;
-        case 2:bonus=multiply(wrapping_add(multiply(economy.lives,175),economy.power),200000);break;
-        case 3:bonus=wrapping_add(multiply(economy.lives,40000000),multiply(economy.power,300000));break;
-        case 4:bonus=multiply(wrapping_add(multiply(economy.lives,100),economy.power),400000);break;
+        switch(pilot.difficulty){
+        case 0:bonus=multiply(wrapping_add(multiply(lives,200),power),100000);break;
+        case 1:bonus=wrapping_add(multiply(lives,25000000),multiply(power,150000));break;
+        case 2:bonus=multiply(wrapping_add(multiply(lives,175),power),200000);break;
+        case 3:bonus=wrapping_add(multiply(lives,40000000),multiply(power,300000));break;
+        case 4:bonus=multiply(wrapping_add(multiply(lives,100),power),400000);break;
         }
         economy.add_score(bonus);
         state.displayed_bonus=wrapping_add(state.displayed_bonus,bonus);
+    };
+    award_resources(economy);
+#ifdef TH11_MULTIPLAYER
+    for(unsigned seat=1;seat<multiplayer_count;++seat)award_resources(*multiplayer_economies[seat]);
+#endif
+    if(mode.stage==6){
         // 41eca6/41ed4a re-check Practice after the all-clear award, before
         // entering the ending or incrementing full-game clear records.
         if(mode.all_clear_bonus&&mode.practice){request(StageExit::Results);return true;}
@@ -51,10 +77,6 @@ bool StageCompletion::complete(){
         state.ending_frames=0;
         count_clear();
     }else{
-        // Separate score calls are observable when the score cap is reached
-        // or an original signed 32-bit bonus overflows.
-        economy.add_score(multiply(economy.lives,40000000));
-        economy.add_score(multiply(economy.power,400000));
         if(mode.all_clear_bonus&&mode.practice){request(StageExit::Results);return true;}
         if(mode.all_clear_bonus&&mode.control_mode!=0&&mode.replay_practice){request(StageExit::ReplayEnd);return true;}
         if(mode.replay_mode==1){request(StageExit::ReplayEnd);return true;}

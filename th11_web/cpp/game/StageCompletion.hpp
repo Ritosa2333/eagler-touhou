@@ -37,6 +37,12 @@ public:
         :economy(e),records(r),effects(f),rate(speed){}
     StageCompletionMode mode;
     StageCompletionState state;
+#ifdef TH11_MULTIPLAYER
+    // Non-owning views bound by the shared battle for this session. Score is
+    // one value; clear bonuses consume each pilot's native resources once.
+    std::array<GameEconomy*,3> multiplayer_economies{};
+    unsigned multiplayer_count=0;
+#endif
     bool complete();
     void update();
     bool result_delay_elapsed()const noexcept{return !(state.hud_flags&0x200)||state.result_timer.current>119;}

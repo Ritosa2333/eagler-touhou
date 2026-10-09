@@ -25,9 +25,6 @@ i32 TitleMenu::name_confirm(){
     return 0;
 }
 void TitleMenu::results(u32 pressed,u32 repeat){
-#ifdef TH11_MULTIPLAYER
-    if(multiplayer_result){multiplayer_results(pressed);return;}
-#endif
     switch(substate){
     case 0:{
         cursor.count=30;music_request=17;
@@ -56,7 +53,7 @@ void TitleMenu::replay_save(u32 pressed,u32 repeat){
     switch(substate){
     case 0:
         cursor.count=25;cursor.wrap=1;cursor.select(0);selection.stage=8;
-        replay_files.fill(nullptr);replay_scan_requested=true;create(103);step(1);
+        clear_replays();replay_scan_requested=true;create(103);step(1);
         [[fallthrough]];
     case 1:if(timer.current>6)step(2);break;
     case 2:
@@ -71,7 +68,11 @@ void TitleMenu::replay_save(u32 pressed,u32 repeat){
         }
         if(pressed&0x102){if(name_length){sounds.push_back(11);entered_name[--name_length]=' ';}else step(2);}break;
     case 4:
-        if(timer.current>=6){close(103);close(92);family(193,1);change(TitleScreen::Main);cursor.pop();music_request=0;replay_files.fill(nullptr);pending_replay.reset();}break;
+        if(timer.current>=6){close(103);close(92);family(193,1);
+#ifdef TH11_MULTIPLAYER
+            if(multiplayer_result){multiplayer_result_done=true;clear_replays();pending_replay.reset();break;}
+#endif
+            change(TitleScreen::Main);cursor.pop();music_request=0;clear_replays();pending_replay.reset();}break;
     }
 }
 }

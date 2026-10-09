@@ -11,7 +11,7 @@ const COMMON_REVISION = 'e02347fac98c9e599d30a6ffd7ef30756555b948';
 export const MULTIPLAYER_EXPORTS = Object.freeze([
   'configure', 'connect', 'spectator_connect', 'start', 'pump', 'status',
   'calibration_status', 'error', 'stop', 'replay_validate', 'replay_load',
-  'replay_size', 'replay_data', 'replay_save', 'replay_seek', 'always_hitbox', 'game_status',
+  'replay_size', 'replay_data', 'replay_save', 'replay_seek', 'replay_menu', 'replay_ui_status', 'always_hitbox', 'game_status',
 ].map(name => 'th11_mp_' + name));
 
 export const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');

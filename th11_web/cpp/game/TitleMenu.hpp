@@ -48,7 +48,15 @@ public:
     i32 music_request=-1;
     bool music_pause=false;
     using ReplayEntry=ReplayMenuEntry;
+#ifdef TH11_MULTIPLAYER
+    // Retain the native 25-row pages while allowing every isolated MP save
+    // slot and imported user Replay to remain reachable.
+    std::vector<std::shared_ptr<ReplayEntry>> replay_files=std::vector<std::shared_ptr<ReplayEntry>>(100);
+    bool multiplayer_replay_menu=false;
+#else
     std::array<std::shared_ptr<ReplayEntry>,75> replay_files{};
+#endif
+    void clear_replays(){for(auto& entry:replay_files)entry.reset();}
     i32 last_replay=0,replay_file=0,replay_stage=0;
     bool replay_scan_requested=false,replay_start_requested=false;
     i32 record_rows=0,unlock_progress=0,unlock_timeout=0;
@@ -60,14 +68,11 @@ public:
     bool replay_save_requested=false;
 #ifdef TH11_MULTIPLAYER
     bool multiplayer_result=false,multiplayer_result_done=false;
-    unsigned multiplayer_seats=0;
-    std::array<i32,3> multiplayer_scores{},multiplayer_selections{};
-    void multiplayer_results(u32 pressed);
 #endif
     std::shared_ptr<ReplayEntry> pending_replay;
     // The platform fills the catalog asynchronously; menu transitions wait for
     // completion exactly as the original directory-scanner thread did.
-    void replay_scan_complete(){flags|=8;}
+    void replay_scan_complete(){flags|=8;page.count=i32(replay_files.size()/25);page.select(page.selected);}
     bool load_music_comments(const u8*,u32);
     std::string error;
     bool update(u32 pressed,u32 repeat);

@@ -2,9 +2,6 @@
 #include <algorithm>
 namespace th11 {
 bool GameBattle::spell_result(bool captured,i32 bonus){
-#ifdef TH11_MULTIPLAYER
-    if(mp_enabled&&captured)for(unsigned i=1;i<mp_options.seat_count;++i)pilots[i]->economy.add_score(bonus);
-#endif
     events.push_back({BattleEventKind::SpellResult,captured?0:1,bonus});return hud.notice(captured?0:1,bonus);
 }
 bool GameBattle::callback_damage(Vec3 p,Vec2 size,i32& out){
@@ -14,9 +11,6 @@ bool GameBattle::callback_damage(Vec3 p,Vec2 size,i32& out){
     if(!player)return false;const auto& timer=player->state.state_timer;return player->shots.damage(p,size,timer.previous!=timer.current,economy,out);
 }
 bool GameBattle::add_score(i32 value){
-#ifdef TH11_MULTIPLAYER
-    if(mp_enabled){for(unsigned i=0;i<mp_options.seat_count;++i)pilots[i]->economy.add_score(value);return true;}
-#endif
     economy.add_score(value);return true;
 }
 bool GameBattle::rank_delta(i32 value){
@@ -51,15 +45,6 @@ void GameBattle::recall_player_options(){
     if(player)player->motion.recall_options(true);
 }
 bool GameBattle::dialogue_stage_complete(){
-#ifdef TH11_MULTIPLAYER
-    if(mp_enabled){
-        const auto multiply=[](i32 a,i32 b){return signed_bits(u32(a)*u32(b));};
-        for(unsigned i=1;i<mp_options.seat_count;++i){auto& e=pilots[i]->economy;const i32 stage=i32(resources.stage_number);e.add_score(multiply(wrapping_add(e.lives,stage),1000000));if(stage!=6&&stage!=7)continue;const i32 points=e.point_value/100;e.add_score(multiply(points-points%10,1000));
-            if(stage==7){e.add_score(multiply(e.lives,40000000));e.add_score(multiply(e.power,400000));continue;}
-            i32 bonus=0;switch(e.difficulty){case 0:bonus=multiply(wrapping_add(multiply(e.lives,200),e.power),100000);break;case 1:bonus=wrapping_add(multiply(e.lives,25000000),multiply(e.power,150000));break;case 2:bonus=multiply(wrapping_add(multiply(e.lives,175),e.power),200000);break;case 3:bonus=wrapping_add(multiply(e.lives,40000000),multiply(e.power,300000));break;case 4:bonus=multiply(wrapping_add(multiply(e.lives,100),e.power),400000);break;}e.add_score(bonus);
-        }
-    }
-#endif
     return completion.complete();
 }
 }

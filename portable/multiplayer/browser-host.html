@@ -4,8 +4,8 @@
 <div id="runtime"></div>
 <script>
 const protocol='eagler-touhou/1',game='th11',epoch=1,events=[],pending=new Map();
-let iframe,serial=0,stopAt=0,stopGeneration=0;
-const snapshots=new Map(),generations=new Map();
+let iframe,serial=0,stopAt=0,stopGeneration=0,observerInstalled=false,lastUiState='';
+const snapshots=new Map(),generations=new Map(),replayUiStates=[];
 window.__eaglerPrepareManagedRuntimeDataV1=async request=>{
   if(request.game!==game)throw Error('Wrong base content product');
   return {buffer:await(await fetch('/data/th11')).arrayBuffer()};
@@ -27,7 +27,7 @@ const text=pointer=>{
   return new TextDecoder().decode(bytes.subarray(pointer,end<0?pointer+512:end));
 };
 window.host={
-  events,snapshots,generations,language:'ja',
+  events,snapshots,generations,replayUiStates,language:'ja',
   open(){
     iframe=document.createElement('iframe');
     iframe.src='/runtime/th11.html?hosted=1&managedData=1&gameGeneration=th11-mp-acceptance&runtimeEpoch=1&runtimeVariant=multiplayer';
@@ -46,15 +46,21 @@ window.host={
     const r=iframe?.contentWindow;
     if(!r?.core?.th11_mp_status)return {ready:false};
     return {ready:true,net:words('th11_mp_status',24),calibration:words('th11_mp_calibration_status',32),
-      game:words('th11_mp_game_status',56),error:text(r.core.th11_mp_error()),
+      game:words('th11_mp_game_status',56),replayUi:words('th11_mp_replay_ui_status',12),error:text(r.core.th11_mp_error()),
       shellError:r.document.querySelector('#error')?.textContent||'',
       events:events.filter(m=>m.event==='error'),timing:r.__eaglerNetplayTiming||null,
       route:r.__eaglerPeerTransport?.route||null};
   },
   observe(target=600,generation=0){
-    stopAt=target;stopGeneration=generation;const r=iframe.contentWindow,prior=r.Module.onGameFrame;
+    stopAt=target;stopGeneration=generation;
+    if(observerInstalled)return;
+    observerInstalled=true;const r=iframe.contentWindow,prior=r.Module.onGameFrame;
     r.Module.onGameFrame=(...args)=>{
       prior?.(...args);const s=this.snapshot();
+      if(s.replayUi?.[0]===1){
+        const key=[s.replayUi[1],...s.replayUi.slice(5)].join(',');
+        if(key!==lastUiState){replayUiStates.push(s.replayUi);lastUiState=key;}
+      }
       if(s.ready&&s.net[1]){
         if(s.calibration[1]>0&&s.calibration[1]<5&&s.game[4])
           throw Error('Native world advanced before measured frame zero');
@@ -71,6 +77,30 @@ window.host={
   async launch(){await this.request('launch');},
   key(code,down){return this.request('keyboard',{code,down,repeat:false});},
   stop(){iframe.contentWindow.core.th11_loop_stop();},
+  resume(target=0,generation=0){this.observe(target,generation);iframe.contentWindow.core.th11_loop_start();},
+  // Acceptance-only invocation of the existing offline seek ABI. The native
+  // owner rebuilds from frame zero; this is not a user-facing slider or Pause.
+  seekReplayDiagnostic(frame){
+    const r=iframe.contentWindow,before=this.snapshot();this.stop();
+    snapshots.clear();generations.clear();this.observe(frame);
+    if(!r.core.th11_mp_replay_seek(frame))throw Error('Native diagnostic Replay seek rejected');
+    const initial=this.snapshot();
+    snapshots.set(initial.net[3],initial);generations.set(initial.net[12],new Map([[initial.net[3],initial]]));
+    r.core.th11_loop_start();return {before:before.net[3],initial:initial.net[3]};
+  },
+  validateReplayFixture(bytes){
+    const r=iframe.contentWindow,p=r.core.malloc(bytes.length);
+    if(!p)throw Error('Replay validation fixture allocation failed');
+    try{r.Module.HEAPU8.set(bytes,p);return r.core.th11_mp_replay_validate(p,bytes.length)===1;}
+    finally{r.core.free(p);}
+  },
+  seedRejectedReplayFixture(path,bytes){
+    // Simulate an already-stored foreign/corrupt file before launch, so native
+    // directory filtering is exercised independently of Host import validation.
+    // This changes only this isolated browser's test files, never game state.
+    if(!/^replay\/th11_0[23]\.rpy$/.test(path)||this.snapshot().net[1])throw Error('Invalid prelaunch Replay fixture');
+    iframe.contentWindow.Module.FS.writeFile('/savesth11mp/'+path,Uint8Array.from(bytes));
+  },
   pump(){return iframe.contentWindow.core.th11_mp_pump();},
   exportReplay(){
     const r=iframe.contentWindow,n=r.core.th11_mp_replay_size(),p=r.core.th11_mp_replay_data();
