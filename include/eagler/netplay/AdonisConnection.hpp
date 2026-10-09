@@ -9,13 +9,25 @@ namespace Netplay {
 class AdonisConnection final : public PeerTransport {
 public:
     explicit AdonisConnection(PeerTransport& transport):wire_(transport){}
-    void Clear(){startup_=AdonisStartup{};pending_.clear();enabled_=begun_=applied_=failed_=false;}
-    void Prepare(const SessionConfig& config,AdonisMode mode,bool automatic,unsigned delay,unsigned reserve){
+    void Clear(){startup_=AdonisStartup{};pending_.clear();retired_={};enabled_=begun_=applied_=failed_=false;}
+    // A caller which has actually retired its previous SessionChannel may
+    // identify that ONE epoch while measuring a fresh generation. Its valid
+    // tail packets are harmless, and its cached final ACKs are pumped by the
+    // channel separately. No old sample is deferred into the new input core.
+    // Existing callers keep the strict initial-startup behavior by default.
+    void Prepare(const SessionConfig& config,AdonisMode mode,bool automatic,unsigned delay,unsigned reserve,
+                 const SessionConfig* retired=nullptr){
+        const SessionConfig previous=retired?*retired:SessionConfig{};
         Clear();config_=config;mode_=mode;requested_=automatic?AdonisStartup::Automatic:delay;
         reserve_=reserve;enabled_=true;
+        if(retired){
+            if(!previous.sessionId||previous.sessionId==config.sessionId||!previous.gameplayAbi||previous.gameId!=config.gameId||
+               previous.playerCount!=config.playerCount||previous.localPlayer!=config.localPlayer){failed_=true;return;}
+            retired_=previous;
+        }
     }
     bool Pump(std::uint64_t us,bool worldReady){
-        now_=us;if(!enabled_)return true;
+        now_=us;if(failed_)return false;if(!enabled_)return true;
         if(!begun_){if(!worldReady)return !wire_.Failed();begun_=true;
             if(!startup_.Begin(config_,us,mode_,requested_,reserve_))return false;}
         if(!applied_){std::vector<std::uint8_t> bytes;
@@ -26,7 +38,7 @@ public:
                     if(DecodeSessionPacket(bytes.data(),bytes.size(),&packet)&&packet.sessionId==config_.sessionId){
                         if(pending_.size()>=16){failed_=true;return false;}
                         pending_.push_back(std::move(bytes));
-                    }else {failed_=true;return false;}
+                    }else if(!RetiredPacket(bytes.data(),bytes.size())){failed_=true;return false;}
                 }
             }
         }
@@ -68,8 +80,22 @@ public:
         }return false;
     }
 private:
+    bool RetiredPacket(const std::uint8_t* bytes,std::size_t size)const{
+        if(!retired_.sessionId)return false;
+        const auto peer=[&](unsigned p){return p<retired_.playerCount&&p!=retired_.localPlayer;};
+        InputPacket input;
+        if(DecodeInputPacket(bytes,size,&input))return input.sessionId==retired_.sessionId&&
+            input.playerCount==retired_.playerCount&&peer(input.senderPlayer);
+        AdonisPhaseSample phase;
+        if(DecodeAdonisPhaseSample(bytes,size,&phase))return phase.sessionId==retired_.sessionId&&
+            phase.targetPlayer==retired_.localPlayer&&peer(phase.senderPlayer);
+        SessionPacket session;
+        return DecodeSessionPacket(bytes,size,&session)&&session.sessionId==retired_.sessionId&&
+            session.gameId==retired_.gameId&&session.gameplayAbi==retired_.gameplayAbi&&session.seed==retired_.seed&&
+            session.playerCount==retired_.playerCount&&peer(session.senderPlayer);
+    }
     PeerTransport& wire_;AdonisStartup startup_;SessionConfig config_{};AdonisMode mode_=AdonisMode::Rollback;
-    unsigned requested_=0,reserve_=2;std::uint64_t now_=0;
+    unsigned requested_=0,reserve_=2;std::uint64_t now_=0;SessionConfig retired_{};
     bool enabled_=false,begun_=false,applied_=false,failed_=false;
     std::deque<std::vector<std::uint8_t>> pending_;std::array<std::uint32_t,32> status_{};
 };

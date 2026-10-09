@@ -357,6 +357,15 @@ bool SessionChannel::SendRetired(std::uint64_t nowMs)
     return true;
 }
 
+bool SessionChannel::PumpRetirement(std::uint64_t nowMs)
+{
+    if (failure_ != Failure::None) return false;
+    if (active_) return Fail(Failure::InvalidRetirement);
+    if (!ObserveClock(nowMs)) return false;
+    if (transport_.Failed()) return Fail(Failure::Transport);
+    return SendRetired(nowMs);
+}
+
 bool SessionChannel::Pump(SessionGate &gate, RollbackCore &core, std::uint64_t nowMs,
                           bool expectsInput)
 {

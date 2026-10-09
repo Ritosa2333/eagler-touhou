@@ -62,6 +62,10 @@ public:
     bool CanRetire(const RollbackCore &core, std::uint32_t terminalFrame) const;
     bool Retire(const RollbackCore &core, std::uint32_t terminalFrame,
                 std::uint64_t nowMs);
+    // During the next generation's measurement, keep the retired terminal
+    // ACK cache answerable without draining calibration packets, beginning a
+    // new HELLO or looking at the already replaced simulation input core.
+    bool PumpRetirement(std::uint64_t nowMs);
 
     Failure Error() const { return failure_; }
     bool Active() const { return active_; }

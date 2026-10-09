@@ -53,6 +53,12 @@ target_include_directories(eagler_common_session_channel_test PRIVATE
 target_link_libraries(eagler_common_session_channel_test PRIVATE eagler::session_channel)
 add_test(NAME eagler-common.session-channel COMMAND eagler_common_session_channel_test)
 
+add_executable(eagler_common_calibration_retirement_test calibration-retirement-test.cpp)
+target_include_directories(eagler_common_calibration_retirement_test PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/include")
+target_link_libraries(eagler_common_calibration_retirement_test PRIVATE eagler::session_channel)
+add_test(NAME eagler-common.calibration-retirement COMMAND eagler_common_calibration_retirement_test)
+
 add_executable(eagler_common_packet_transaction_test packet-transaction-test.cpp)
 target_include_directories(eagler_common_packet_transaction_test PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/include")
@@ -239,6 +245,8 @@ target_include_directories(eagler_common_adonis_startup_test PRIVATE "${CMAKE_CU
 target_link_libraries(eagler_common_adonis_startup_test PRIVATE eagler::netplay_headers)
 add_test(NAME eagler-common.adonis-startup COMMAND eagler_common_adonis_startup_test)
 if(EAGLER_COMMON_NODE_EXECUTABLE)
+    add_test(NAME eagler-common.browser-peer-spectator-tail
+        COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-spectator-tail.test.mjs)
     add_test(NAME eagler-common.browser-peer-recovery
         COMMAND ${EAGLER_COMMON_NODE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/browser-peer-recovery.test.mjs)
     add_test(NAME eagler-common.save-sync
