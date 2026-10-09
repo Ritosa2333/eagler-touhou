@@ -12,13 +12,13 @@ bool PlayerMotion::update(u32 input,bool focus_allowed,float rate,PlayerMotionVi
         if(!touch.valid()){error="Invalid continuous movement request";return false;}
         double x=double(touch.x)*128-position_fixed.x,y=double(touch.y)*128-position_fixed.y;
         if(touch.mode!=2){const double limit=focus?focus_speed:normal_speed,length=std::sqrt(x*x+y*y);if(length>limit&&length>0){x*=limit/length;y*=limit/length;}}
-        moving_x=truncate_int(x);moving_y=truncate_int(y);const u32 bits=(moving_x<0?0x40:moving_x>0?0x80:0)|(moving_y<0?0x10:moving_y>0?0x20:0);
+        moving_x=truncate_int(x);moving_y=truncate_int(flip_vertical_step?-y:y);const u32 bits=(moving_x<0?0x40:moving_x>0?0x80:0)|(moving_y<0?0x10:moving_y>0?0x20:0);
         direction=bits==0x50?5:bits==0x90?6:bits==0x60?7:bits==0xa0?8:bits==0x10?1:bits==0x20?2:bits==0x40?3:bits==0x80?4:0;
     }
     const i32 x=truncate_int(float(float(wrapping_sub(moving_x,truncate_int(float(external_velocity.x*-128.f))))*movement_scale)),y=truncate_int(float(float(wrapping_sub(moving_y,truncate_int(float(external_velocity.y*-128.f))))*movement_scale));
     i32 script=-1;if(x<0&&last_step.x>=0)script=1;else if(x>0&&last_step.x<=0)script=3;else if(!x&&last_step.x<0)script=2;else if(!x&&last_step.x>0)script=4;if(script>=0&&!visuals.pose(script)){error="Player directional animation failed";return false;}
     last_step={x,y};velocity.x=float(float(x)*rate);velocity.y=float(float(y)*rate);if(direction)last_direction=velocity;step={truncate_int(velocity.x),truncate_int(velocity.y)};
-    position_fixed.x=std::clamp(wrapping_add(position_fixed.x,step.x),-0x5c00,0x5c00);position_fixed.y=std::clamp(wrapping_add(position_fixed.y,step.y),0x1000,0xd800);position.x=float(float(position_fixed.x)*.0078125f);position.y=float(float(position_fixed.y)*.0078125f);visuals.focus_position(position);
+    position_fixed.x=std::clamp(wrapping_add(position_fixed.x,step.x),-0x5c00,0x5c00);position_fixed.y=std::clamp(flip_vertical_step?wrapping_sub(position_fixed.y,step.y):wrapping_add(position_fixed.y,step.y),0x1000,0xd800);position.x=float(float(position_fixed.x)*.0078125f);position.y=float(float(position_fixed.y)*.0078125f);visuals.focus_position(position);
     if(behavior_flags&2)collapse_frame=wrapping_add(collapse_frame,1);
     for(u32 i=0;i<options.size();i++){auto& option=options[i];if(!option.active)continue;
         if(!(behavior_flags&2)){const auto& offset=focus?option.focus_offset:option.normal_offset;option.target={wrapping_add(position_fixed.x,offset.x),wrapping_add(position_fixed.y,offset.y)};if(option.movement_callback&&!option.movement_callback(option)){error="Player option movement failed";return false;}}

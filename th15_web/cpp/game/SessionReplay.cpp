@@ -1,5 +1,6 @@
 #include "SessionReplay.hpp"
 #include "SpellPresentationClock.hpp"
+#include "PracticeConfig.hpp"
 namespace th15 {
 namespace {template<class T>void write(u8* to,u32 at,T value){std::memcpy(to+at,&value,sizeof value);}}
 bool SessionReplay::fail(const std::string& reason){if(error.empty())error=reason.empty()?"Session replay operation failed":reason;return false;}
@@ -16,7 +17,8 @@ bool SessionReplay::open(const u8* bytes,u32 size,i32 stage,ReplayRunState& stat
  for(u32 n=1;n<8;n++)if(file.stage(n)&&!snapshots[n].read(file.header(n),0x238))return fail(snapshots[n].error);
  const auto& metadata=file.decoded();std::copy(metadata.begin()+0x18,metadata.begin()+0x84,settings.bytes.begin());
  if(!snapshots[stage].restore_progress(state)||!snapshots[stage].restore_seed(game))return fail(snapshots[stage].error);
- state.player.mode_flags=(state.player.mode_flags&~0x30u)|(state.progress.spell_id>=0?0x20u:0);if(!(state.player.mode_flags&0x20))state.progress.spell_id=-1;
+ PracticeConfig practice;const bool practice_replay=practice_replay_read(bytes,size,practice)&&practice.mode==1;
+ state.player.mode_flags=(state.player.mode_flags&~0x30u)|(state.progress.spell_id>=0?0x20u:practice_replay?0x10u:0);if(!(state.player.mode_flags&0x20))state.progress.spell_id=-1;
  playback=std::make_unique<ReplayPlayback>(file);if(!playback->select(stage))return fail(playback->error());state.player.replay_state=1;selected=stage;initialized=true;return true;
 }
 bool SessionReplay::prepare_stage(ReplayRunState& state){

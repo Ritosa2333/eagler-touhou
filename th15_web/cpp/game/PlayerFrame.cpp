@@ -2,6 +2,9 @@
 namespace th15 {
 PlayerFrame::PlayerFrame(PlayerMotion& p,PlayerAnmHost& v,AnmManager& a,PlayerLife& l,DamageSources& d,PlayerShots& s,PlayerShotContext& c,PlayerFrameHost& w):motion(p),visuals(v),animations(a),life(l),damage(d),shots(s),shot_context(c),world(w){shooting.fire=[this](i32 frame,i32 continuous){shot_context.shoot_frame=frame;return shots.fire(frame,continuous);};}
 bool PlayerFrame::update(const PlayerFrameContext& frame,float& rate){
+    // Purple 454a70 samples on the player update, never on presentation redraw.
+    if(life.practice&&life.practice->enabled&&life.practice->record_keys)life.practice->record_keys(frame.held);
+    motion.flip_vertical_step=life.practice&&life.practice->enabled&&life.practice->flip_screen_y;
     context=frame;active_rate=&rate;animations.rate=rate;shots.set_rate(rate);motion.input_frame=input_age.current;
     if(!life.advance_state(context.pressed,rate,context.hud_available,*this)){error=life.error.empty()?"Player lifecycle service failed":life.error;return false;}
     if(!world.refresh(context)){error="Player world context unavailable";return false;}animations.rate=rate;shots.set_rate(rate);motion.movement_scale=1;motion.external_velocity=context.background_delta;damage.tick(rate);

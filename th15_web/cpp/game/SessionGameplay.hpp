@@ -25,7 +25,7 @@ class SessionGameplay final:private SessionRuntimeServices {
  bool load_scene(bool&)override;bool activate_scene()override;bool release_background()override;
  bool load_checkpoint_file(bool&)override;bool restart_overlay(i32)override;bool restart_effect(i32)override;
  bool prepare_stage_music()override;bool start_stage_music()override;bool start_boss_music()override;bool seek_stage_music(double)override;
- bool demo_fade()override;bool update_score()override;bool chapter_reward(bool)override;bool chapter_checkpoint(i32)override;bool update_overlays()override;
+ bool demo_fade()override;bool update_score()override;bool chapter_reward(bool)override;bool chapter_checkpoint(i32)override;bool skip_chapter_reward()override;bool update_overlays()override;
 public:
  SessionRuntime runtime;std::string error;
  bool auto_focus=false;

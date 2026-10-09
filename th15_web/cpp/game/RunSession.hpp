@@ -21,6 +21,7 @@ class RunSession final:private SessionGameplayServices,private SceneActivationSe
  bool destination(SessionDestination)override;bool load_scene(bool&)override;bool activate_scene()override;bool release_background()override;
  bool load_checkpoint_file(bool&)override;bool restart_overlay(i32)override;bool restart_effect(i32)override;
  bool prepare_stage_music()override;bool start_stage_music()override;bool start_boss_music()override;bool seek_stage_music(double)override;
+ bool start_entry_music()override;
  bool demo_fade()override;bool update_overlays()override;
  bool clear_stage_intro()override;bool discard_stage_assets()override;bool return_to_title(bool)override;
  bool initialize_background()override;bool capture_previous_background()override;bool prepare_background_transition()override;bool transition_banner()override;

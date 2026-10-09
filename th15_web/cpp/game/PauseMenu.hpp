@@ -4,6 +4,7 @@
 #include "ReplayCatalog.hpp"
 namespace th15 {
 struct PauseMenuServices:PauseScoreServices {
+ virtual bool replay_save_available()const{return true;}
  virtual bool sound(i32)=0;
  virtual bool synchronize_result_score()=0;
  virtual bool read_replay_slot(i32,std::shared_ptr<Replay>&)=0;
@@ -21,7 +22,7 @@ class PauseMenu final:private PauseNameServices {
  PauseNameEditor names;PauseScoreRegistration registration;
  bool check(bool,const char*);bool interrupt(u32,i32,bool immediate=false);bool child(i32,i32);bool freeze(bool);bool navigate(u32,u32,i32,bool visual=true);bool disable(i32);
  bool sound(i32)override;bool write_replay(i32,const std::array<char,9>&)override;bool prepare_results_menu()override;
- bool replay_slots();
+ bool replay_slots();bool restrict_replay_save();
 public:
  std::array<std::shared_ptr<Replay>,25> replays{};std::string error;
  PauseMenu(PauseState& s,SessionState& p,PlayerLifeSession& v,ItemScoreState& score,RecordStore& records,AnmManager& a,PauseMenuServices& h):state(s),progress(p),player(v),animations(a),host(h),names(s,p,v,records,*this),registration(s,p,v,score,records,names,h){}

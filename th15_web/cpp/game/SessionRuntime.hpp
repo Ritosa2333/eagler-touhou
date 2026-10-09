@@ -12,6 +12,9 @@ struct SessionRuntimeServices {
  virtual bool restart_effect(i32 label)=0;virtual bool prepare_stage_music()=0;virtual bool start_stage_music()=0;virtual bool start_boss_music()=0;virtual bool seek_stage_music(double seconds)=0;
  virtual bool demo_fade()=0;virtual bool update_score()=0;
  virtual bool chapter_reward(bool boss)=0;virtual bool chapter_checkpoint(i32 chapter)=0;
+ // The purple 43d0b5 hook skips reward code, not checkpoint creation. Called
+ // at the branch itself, including chapter zero, to consume each one-shot.
+ virtual bool skip_chapter_reward(){return false;}
  virtual bool update_overlays()=0;
 };
 class SessionRuntime {

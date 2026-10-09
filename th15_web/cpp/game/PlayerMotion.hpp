@@ -23,6 +23,7 @@ struct PlayerMotionVisuals {
 class PlayerMotion {
 public:
     PlayerTouch touch;
+    bool flip_vertical_step=false;
     PlayerFixedPosition position_fixed{},last_step{},step{};Vec3 position{},velocity{},last_direction{};
     i32 normal_speed=0,focus_speed=0,normal_diagonal_speed=0,focus_diagonal_speed=0;
     i32 direction=0,focus=0,input_frame=0,option_follow_percentage=30,collapse_frame=0,option_count=0;

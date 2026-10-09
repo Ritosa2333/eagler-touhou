@@ -36,7 +36,7 @@ const loader=readFileSync(resolve(buildRoot,'th15.mjs'));
 put('th15.mjs',loader);put('th15.wasm',wasm);
 const resources=fontNames.map(name=>{const bytes=readFileSync(resolve(fonts,name));put('fonts/'+name,bytes);return {path:'/fonts/'+name,url:'./fonts/'+name,bytes:bytes.length};});
 put('resources.json',JSON.stringify({schema:'eagler-sdl-resources/1',game,resources},null,2)+'\n');
-const features={thprac:false,languages:true,focusHitbox:false};
+const features={thprac:build.features?.thprac===true,languages:true,focusHitbox:false};
 put('manifest.json',JSON.stringify({game,protocol:'eagler-touhou/1',adapter:'sdl3-eagler',profile:'production',builtAt:build.builtAt,version,features,music:['ogg-stream','ogg-full','none'],execution:{kind:build.kind,sha256:build.sha256,loaderSha256:hash(loader),architecture:build.architecture}},null,2)+'\n');
 const files=Object.fromEntries(names.map(name=>{const bytes=readFileSync(resolve(out,name));return [name,{bytes:bytes.length,sha256:hash(bytes)}];}));
 put('runtime-files.json',JSON.stringify({schema:'eagler-touhou/runtime-directory/1',game,files},null,2)+'\n');

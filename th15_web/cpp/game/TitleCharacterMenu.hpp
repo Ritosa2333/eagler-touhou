@@ -11,6 +11,10 @@ struct TitleCharacterServices {
     virtual bool prepare_game_music()=0;
     virtual bool begin_transition(u32& animation)=0;
     virtual bool start_game(i32 stage)=0;
+    virtual bool practice_overlay_enabled()const{return false;}
+    virtual void practice_overlay_state(i32){}
+    // -1 cancel, 0 wait, 1 accept; selected stage is zero based.
+    virtual i32 practice_overlay_action(i32&){return 0;}
 };
 class TitleCharacterMenu {
     TitleState& state;SessionState& progress;PlayerLifeSession& player;TitleSelectionSettings& settings;

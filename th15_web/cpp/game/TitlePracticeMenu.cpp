@@ -5,8 +5,15 @@ bool TitlePracticeMenu::visual(bool ok){if(!ok&&error.empty())error=visuals.erro
 bool TitlePracticeMenu::update(u32 pressed,u32 repeated,i32 numbered_chapter,const TitleRecords& records){
     switch(state.substate){
     case 0:state.menu.count=6;state.menu.select(settings.preferred_stage);if(!visual(visuals.create(106)))return false;state.change_substate(1);if(state.return_reason==4)state.return_reason=1;[[fallthrough]];
-    case 1:if(state.age.current>10)state.change_substate(2);break;
+    case 1:if(state.age.current==1)host.practice_overlay_state(1);if(state.age.current>10)state.change_substate(2);break;
     case 2:
+        if(host.practice_overlay_enabled()){
+            i32 stage=state.menu.cursor;const i32 action=host.practice_overlay_action(stage);
+            if(action<0){state.change_substate(4);host.practice_overlay_state(4);return check(host.sound(9),"Practice cancel sound failed");}
+            if(!action)return true;
+            state.menu.cursor=stage;state.change_substate(3);host.practice_overlay_state(3);settings.preferred_stage=stage;state.practice_chapter=0;
+            return check(host.sound(7),"Practice confirm sound failed")&&check(host.sound(50),"Practice start sound failed")&&check(host.prepare_game_music(),"Practice music preparation failed");
+        }
         state.menu.previous=state.menu.cursor;
         if((pressed|repeated)&16)state.menu.move(-1);
         if((pressed|repeated)&32)state.menu.move(1);

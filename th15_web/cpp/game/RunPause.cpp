@@ -21,6 +21,7 @@ struct RunPause::Services final:PauseActivationServices,PauseRestorationServices
  bool capture_score_details(PauseScoreDetails& value)override{return owner.platform.capture_score_details(value);}
  bool synchronize_result_score()override{owner.scene.hud.displayed_score=owner.scene.battle.score.score;if(u32(owner.progress.high_score)<u32(owner.scene.battle.score.score))owner.progress.high_score=owner.scene.battle.score.score;return true;}
  bool read_replay_slot(i32 slot,std::shared_ptr<Replay>& replay)override{return owner.platform.read_replay_slot(slot,replay);}
+ bool replay_save_available()const override{return owner.platform.replay_save_available();}
  bool save_named_replay(i32 slot,const std::array<char,9>& name)override{return owner.platform.save_named_replay(slot,name);}
  bool prepare_replay_save(bool completed)override{return owner.platform.prepare_replay_save(completed);}
  bool open_options(float offset)override{return owner.platform.open_options(offset);}

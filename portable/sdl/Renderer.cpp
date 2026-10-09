@@ -7,6 +7,10 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+#if TH_ENABLE_THPRAC
+#include <cstddef>
+#include "imgui.h"
+#endif
 
 EM_JS(int, touhou_clip_control, (), {
   const e=GL.currentContext.GLctx.getExtension('EXT_clip_control');
@@ -258,8 +262,13 @@ void Renderer::read(u32 id){flush();auto it=surfaces.find(id);if(it==surfaces.en
  }g.rendered=false;
 }
 void Renderer::release(u32 id){flush();auto d=depths.find(id);if(d!=depths.end()){glDeleteRenderbuffers(1,&d->second.buffer);depths.erase(d);}auto it=surfaces.find(id);if(it==surfaces.end())return;glDeleteTextures(1,&it->second.texture);glDeleteFramebuffers(1,&it->second.framebuffer);surfaces.erase(it);boundTexture=readFramebuffer=drawFramebuffer=~0u;}
+#include "ImguiRenderer.inc"
 void Renderer::present(u32 id){flush();pending=id;stats.frames++;if(!defer)commit();}
-bool Renderer::commit(){if(!pending)return false;auto s=resolve(owner,pending);auto& g=surface(pending);pending=0;bind_framebuffer(GL_READ_FRAMEBUFFER,g.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,0);glDisable(GL_SCISSOR_TEST);int width=640,height=480;SDL_GetWindowSizeInPixels(window,&width,&height);glBlitFramebuffer(0,0,s.width*s.renderScale,s.height*s.renderScale,0,height,width,0,GL_COLOR_BUFFER_BIT,GL_NEAREST);SDL_GL_SwapWindow(window);stats.presentations++;return true;}
+bool Renderer::commit(){if(!pending)return false;auto s=resolve(owner,pending);auto& g=surface(pending);pending=0;bind_framebuffer(GL_READ_FRAMEBUFFER,g.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,0);glDisable(GL_SCISSOR_TEST);int width=640,height=480;SDL_GetWindowSizeInPixels(window,&width,&height);glBlitFramebuffer(0,0,s.width*s.renderScale,s.height*s.renderScale,0,flip_present_y?0:height,width,flip_present_y?height:0,GL_COLOR_BUFFER_BIT,GL_NEAREST);SDL_GL_SwapWindow(window);stats.presentations++;return true;}
+#if TH_ENABLE_THPRAC
+u32 Renderer::create_imgui_texture(u32 width,u32 height,const u8* rgba){flush();GLuint texture=0;glGenTextures(1,&texture);glActiveTexture(GL_TEXTURE0);bind_texture(texture);glPixelStorei(GL_UNPACK_ALIGNMENT,1);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP_TO_EDGE);glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,rgba);return texture;}
+void Renderer::release_imgui_texture(u32 value){flush();GLuint texture=value;if(texture)glDeleteTextures(1,&texture);boundTexture=~0u;}
+#endif
 }
 extern "C" {
 const touhou::sdl::Statistics* sdl_stats(){static touhou::sdl::Statistics zero{};return touhou::sdl::current()?&touhou::sdl::current()->stats:&zero;}

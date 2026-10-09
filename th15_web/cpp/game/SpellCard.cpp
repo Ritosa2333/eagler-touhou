@@ -27,7 +27,9 @@ bool SpellCard::begin(const SpellStartRequest& request,const SpellStartContext& 
 bool SpellCard::update(const SpellFrameContext& c){
     if(!(status.flags&1))return true;active_frames=wrapping_add(active_frames,1);
     if(age.current>=60&&!(status.flags&0x200)&&!check(host.background_visible(false),"Spell background visibility failed"))return false;
-    if(age.current>=300&&!(status.flags&8)){
+    // Purple 41fdf5 changes JL to JMP: bypass bonus decay only. The spell
+    // animation timer, active frames and banner placement still advance.
+    if(!c.lock_time&&age.current>=300&&!(status.flags&8)){
         const i32 divisor=wrapping_sub(duration,300);if(!divisor){error="Invalid original spell bonus divisor";return false;}
         const i32 amount=wrapping_sub(maximum_bonus,maximum_bonus/3);const i64 quotient=i64(amount)/divisor;
         if(quotient<INT32_MIN||quotient>INT32_MAX){error="Original spell bonus division overflow";return false;}

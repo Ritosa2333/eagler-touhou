@@ -18,6 +18,6 @@ public:
  GameDraw(StageGameplay&,SessionState&,RecordStore&,AnmManager&,AnmRenderer&,ZunGraphics&,ScreenViews&,AsciiText&,StageDrawServices&,ReplayCalendarServices&);~GameDraw();
  bool pass(u32 index){return index<callbacks.size()&&run(index);}void enable(bool value)noexcept{for(auto& c:callbacks)c.frame.enabled=value;}
  bool draw(){prepare_frame();if(scheduler.draw()<0)return fail(background.error.empty()?error:background.error);return background.error.empty()&&error.empty();}
- void prepare_frame()noexcept{background.rate=progress.rate;spell_context.character=progress.character;spell_context.subcharacter=progress.subcharacter;spell_context.mode_flags=scene.battle.session.mode_flags;}
+ void prepare_frame()noexcept{background.rate=progress.rate;spell_context.character=progress.character;spell_context.subcharacter=progress.subcharacter;spell_context.mode_flags=scene.battle.session.mode_flags;const auto* p=scene.battle.enemy_world.practice;spell_context.disable_master_display=p&&p->enabled&&p->disable_master_display;}
 };
 }

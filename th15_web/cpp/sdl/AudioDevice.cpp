@@ -24,13 +24,13 @@ struct AudioDevice::Impl final:MusicCommandOutput {
  bool release_pending()const override{return false;}bool release_waiting()override{return false;}
  void preload_reset()override{owner.pause_music(true);}
  bool prepare_music(i32,const std::string& wave)override{return owner.prepare_music(wave);}
- bool cached_music(i32 slot)override{return slot>=0&&slot<i32(commands.prepared.size())&&owner.music_file(commands.prepared[slot]);}
+ bool cached_music(i32 slot)override{return slot>=0&&slot<i32(commands.prepared.size())&&owner.music_file(commands.prepared[slot],true);}
  void stop_music_stream(bool)override{owner.stop_music();}
  void rewind_music_stream()override{if(auto* v=current())ma_sound_seek_to_pcm_frame(&v->sound,0);}
  bool load_music(const std::string&,i32 index)override{selected_track=index;auto* t=layout.track(u32(index));return t&&owner.prepare_music(t->filename);}
  void select_music(i32 index)override{selected_track=index;}
  i32 fill_music(bool,bool)override{return selected_track>=0&&u32(selected_track)<music_cache.size()&&music_cache[selected_track]?0:-1;}
- void start_music_stream()override{owner.music(selected_track);}
+ void start_music_stream()override{owner.music(selected_track,true);}
  void signal_music_release()override{}void close_music_stream()override{owner.stop_music();command_ready=false;}
  void fade_music_stream(i32 frames)override{owner.fade_music(frames);}void pause_music_stream(bool value)override{owner.pause_music(value);}
  void refresh_music_volume()override{if(auto* v=current())ma_sound_set_volume(&v->sound,owner.music_enabled?amplitude(adjusted_music_volume(0,owner.music_volume)):0.f);}
@@ -52,10 +52,15 @@ bool AudioDevice::prepare_music(const std::string& value){
  auto& a=*impl;if(!a.ready){error="Audio device not initialized";return false;}const i32 index=a.layout.original_index(wave_name(value));if(a.music_cache[index])return true;const auto& track=*a.layout.track(index);auto next=std::make_unique<Impl::Voice>();std::string filename=track.filename;filename.resize(filename.size()-4);const auto path=music_directory+"/"+filename+".ogg";auto config=ma_decoder_config_init(ma_format_f32,track.channels,track.rate);
  if(ma_decoder_init_file(path.c_str(),&config,&next->decoder)!=MA_SUCCESS){error="Unable to decode "+path;return false;}next->decoded=true;ma_uint64 length=0;if(ma_decoder_get_length_in_pcm_frames(&next->decoder,&length)!=MA_SUCCESS||length!=track.frames()){error="Music PCM frame count differs from original: "+path;return false;}ma_data_source_set_loop_point_in_pcm_frames(&next->decoder,track.loop_frame(),track.frames());if(!a.attach(*next)){error="Unable to attach music voice";return false;}ma_sound_set_looping(&next->sound,MA_TRUE);a.music_cache[index]=std::move(next);return true;
 }
-bool AudioDevice::music_file(const std::string& value){if(!prepare_music(value))return false;return music(impl->layout.original_index(wave_name(value)));}
-bool AudioDevice::music(i32 index){
+bool AudioDevice::music_file(const std::string& value,bool initial){if(!prepare_music(value))return false;return music(impl->layout.original_index(wave_name(value)),initial);}
+bool AudioDevice::music(i32 index,bool initial){
  if(!music_enabled){stop_music();return true;}
- auto& a=*impl;if(!a.ready)return false;if(index<0){stop_music();return true;}const auto* track=a.layout.track(u32(index));if(!track){error="Music index outside TH15 table";return false;}if(!prepare_music(track->filename))return false;if(auto* previous=a.current())ma_sound_stop(&previous->sound);a.track=a.selected_track=index;a.fade=a.fade_total=0;a.music_paused=false;auto* voice=a.current();ma_sound_seek_to_pcm_frame(&voice->sound,0);refresh_volume();ma_sound_start(&voice->sound);return true;
+ auto& a=*impl;if(!a.ready)return false;if(index<0){stop_music();return true;}const auto* track=a.layout.track(u32(index));if(!track){error="Music index outside TH15 table";return false;}if(!prepare_music(track->filename))return false;
+ // Native 48b4eb -> 48c294 supplies an offset relative to this PCM track,
+ // not a file offset or seconds. OGG decode keeps the same PCM frame layout.
+ const u32 offset=initial&&initial_music_byte_offset?initial_music_byte_offset():0;
+ if(!track->alignment||offset%track->alignment||offset>=track->loop_end){error="Practice music position outside original PCM layout";return false;}
+ if(auto* previous=a.current())ma_sound_stop(&previous->sound);a.track=a.selected_track=index;a.fade=a.fade_total=0;a.music_paused=false;auto* voice=a.current();if(ma_sound_seek_to_pcm_frame(&voice->sound,offset/track->alignment)!=MA_SUCCESS){error="Music initial PCM seek failed";return false;}refresh_volume();ma_sound_start(&voice->sound);return true;
 }
 void AudioDevice::stop_music(){auto& a=*impl;if(auto* voice=a.current()){ma_sound_stop(&voice->sound);ma_sound_seek_to_pcm_frame(&voice->sound,0);}a.track=-1;a.fade=a.fade_total=0;a.music_paused=false;}
 void AudioDevice::fade_music(i32 frames){auto& a=*impl;a.fade=a.fade_total=std::max(0,frames);if(!frames)if(auto* voice=a.current())ma_sound_stop(&voice->sound);}

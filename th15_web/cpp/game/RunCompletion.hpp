@@ -12,6 +12,7 @@ struct RunCompletionServices {
 class RunCompletion final:private CompletionServices {
  StageGameplay& scene;SessionState& progress;SessionRuntime& runtime;CompletionRecords& records;RunCompletionServices& platform;bool fail(const std::string&);
  bool clear_notice()override;bool finish_player_options()override;bool end_bomb()override;bool prepare_ending()override;
+ bool all_clear_bonus()const override;bool synchronize_clear_score()override;
  bool finish_replay()override;bool finish_practice()override;bool queue_next_scene()override;bool select_stage_resources(i32)override;
 public:
  std::string error;

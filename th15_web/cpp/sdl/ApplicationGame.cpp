@@ -1,4 +1,5 @@
 #include "ApplicationState.hpp"
+#include "../game/PracticeSections.hpp"
 #include <cstdio>
 #include <ctime>
 #include <SDL3/SDL.h>
@@ -31,7 +32,23 @@ bool ApplicationState::enemy_death_callback(EnemyRuntime&){return true;}
 // Dialogue, Music Room and Player Data keep their own authored font slots.
 bool ApplicationState::spell_title(AnmVm& vm,const std::string& value){DialogueText request{0,value,8,0,0xffffffff};request.right_aligned=true;return text(vm,request);}
 bool ApplicationState::spell_sound(i32 id){return sound(id);}
-bool ApplicationState::queue_music_control(i32 code,i32 value){return audio_device.queue_music(code,value,code==5?"FadeOut":"dummy")||fail(audio_device.error);}
+bool ApplicationState::suppress_practice_music(u32 caller,i32 id){
+ if(!practice.enabled)return false;
+ const bool hotkey=practice.cheat(PracticeBgm)&&practice.active&&practice.run.mode&&practice.run.section&&practice.run.section!=TH15_ST6_STARS;
+ const u32 flags=scene()?scene()->battle.session.mode_flags:selection_player.mode_flags;
+ // The source tests bit 1 here, NOT the Practice-entry flag 0x10.
+ return practice_music.suppress(hotkey,(flags&1)!=0,caller,id);
+}
+bool ApplicationState::request_music(u32 caller,i32 code,i32 value,const std::string& text){return suppress_practice_music(caller,value)||audio_device.queue_music(code,value,text)||fail(audio_device.error);}
+bool ApplicationState::start_gameplay_music(i32 slot){
+ // 44d3e0 releases only with the native alternate-audio configuration bit.
+ // Config starts at 4e79a4: 4e79cc is its +28 flag byte.
+ if(practice.enabled&&(config.bytes[0x28]&0x10)&&!request_music(0x44d3ff,4,0,"dummy"))return false;
+ return request_music(PracticeMusic::play_addr,2,slot,"dummy");
+}
+// MessageController already owns the helper's conditional release. Do not
+// duplicate that reset when its subsequent Play reaches the platform.
+bool ApplicationState::queue_music_control(i32 code,i32 value){return request_music(code==2?PracticeMusic::play_addr:0,code,value,code==5?"FadeOut":"dummy");}
 bool ApplicationState::unlock_music(i32 index){return records.unlock_music(index)||fail(records.error);}
 bool ApplicationState::complete_stage(){return scene()&&scene()->stage_completion&&scene()->stage_completion()||fail("Stage completion callback unavailable");}
 bool ApplicationState::begin_game_over(){return game_over();}
@@ -84,8 +101,8 @@ bool ApplicationState::load_checkpoint_file(bool& restored){
 bool ApplicationState::restart_overlay(i32 script){if(!assets())return fail("Restart overlay has no stage resource");animations.retire(restart_handle);restart_handle=animations.create_overlay(assets()->front,script);return restart_handle!=0||fail(animations.error);}
 bool ApplicationState::restart_effect(i32 label){return animations.interrupt(restart_effect_handle,label)||fail(animations.error);}
 bool ApplicationState::prepare_stage_music(){return music_command(3);}
-bool ApplicationState::start_stage_music(){const auto* definition=stage_definition(progress.stage);return definition&&audio_device.queue_music(2,0,"dummy")&&unlock_music(definition->music_unlock[0])||fail("Stage music unavailable");}
-bool ApplicationState::start_boss_music(){const auto* definition=stage_definition(progress.stage);return definition&&audio_device.queue_music(2,1,"dummy")&&unlock_music(definition->music_unlock[1])||fail("Boss music unavailable");}
+bool ApplicationState::start_stage_music(){const auto* definition=stage_definition(progress.stage);return definition&&start_gameplay_music(0)&&unlock_music(definition->music_unlock[0])||fail("Stage music unavailable");}
+bool ApplicationState::start_boss_music(){const auto* definition=stage_definition(progress.stage);return definition&&start_gameplay_music(1)&&unlock_music(definition->music_unlock[1])||fail("Boss music unavailable");}
 bool ApplicationState::seek_stage_music(double position){return audio_device.finish_music_requests()&&audio_device.seek_music(position)||fail(audio_device.error);}
 bool ApplicationState::demo_fade(){return screen_fade(60,20,49,true,true);}
 
@@ -105,7 +122,7 @@ bool ApplicationState::prepare_pause_menu(){return assets()&&animations.resource
 bool ApplicationState::prepare_checkpoint_storage(){return scene()!=nullptr||fail("Checkpoint owner missing during construction");}
 bool ApplicationState::restore_enemy_checkpoint(StageGameplay& stage){auto& enemies=*stage.battle.enemies;if(!enemies.clear())return fail(enemies.error);enemies.timer.set(0);return true;}
 bool ApplicationState::load_stage_theme(i32 stage){return stage_definition(stage)&&music_command(3)||fail("Stage music definition unavailable");}
-bool ApplicationState::load_player_theme(i32 stage,bool boss){const auto* definition=stage_definition(stage);return definition&&audio_device.queue_music_track(boss?1:0,definition->music[boss?1:0])||fail(audio_device.error.empty()?"Player theme definition unavailable":audio_device.error);}
+bool ApplicationState::load_player_theme(i32 stage,bool boss){const auto* definition=stage_definition(stage);return definition&&request_music(0,1,boss?1:0,std::string(definition->music[boss?1:0])+".wav")||fail(audio_device.error.empty()?"Player theme definition unavailable":audio_device.error);}
 bool ApplicationState::prepare_ending(StageGameplay& game){const auto index=ending_index(progress.character,progress.subcharacter,game.battle.session.mode_flags,game.battle.session.deaths);char name[16];std::snprintf(name,sizeof name,"e%02d.msg",index+1);std::vector<u8> bytes;return read(name,bytes);}
 bool ApplicationState::finish_practice(){return pause&&pause->open(PauseEntrance::Results)||fail(pause?pause->error:"Practice result menu unavailable");}
 bool ApplicationState::queue_next_stage(){return fail("Next-stage request bypassed the run completion owner");}
@@ -115,9 +132,9 @@ bool ApplicationState::save_records(){return save_settings();}
 bool ApplicationState::clear_session_links(){return true;}
 bool ApplicationState::reset_transition(){if(display->screen())display->screen()->replacement={};return true;}
 bool ApplicationState::disable_pause_callbacks(){if(pause)pause->disable();return true;}
-bool ApplicationState::queue_exit_music(i32 code){return music_command(code);}
+bool ApplicationState::queue_exit_music(i32 code){return request_music(PracticeMusic::stop_addr,code,0,"dummy");}
 bool ApplicationState::reset_audio_slots(){audio_device.effects.suspend();return true;}
-bool ApplicationState::suspend_music(){audio_device.pause_music(true);return true;}
+bool ApplicationState::suspend_music(){if(!suppress_practice_music(PracticeMusic::pause_addr,0))audio_device.pause_music(true);return true;}
 bool ApplicationState::finish_audio_requests(){return audio_device.finish_music_requests()||fail(audio_device.error);}
 bool ApplicationState::capture_background(StageGameplay&,AnmManager&,u32& handle,bool field){return display->capture(handle,!field)||fail(display->error);}
 bool ApplicationState::preserve_current_music(std::string& wave,double& position){return audio_device.current_music(wave,position)||fail(audio_device.error);}
@@ -133,7 +150,7 @@ bool ApplicationState::options_finished()const{return pause_manual&&pause_manual
 bool ApplicationState::close_options(){scheduler.remove(manual_update);if(pause_manual){for(auto handle:pause_manual->choices)animations.retire(handle);animations.retire(pause_manual->page);pause_manual.reset();pending_page=-1;}return true;}
 i32 ApplicationState::scene_destination()const{return current_destination;}
 bool ApplicationState::resume_looping_sounds(){audio_device.effects.resume();return true;}
-bool ApplicationState::resume_music(){audio_device.pause_music(false);return true;}
+bool ApplicationState::resume_music(){if(!suppress_practice_music(PracticeMusic::resume_addr,0))audio_device.pause_music(false);return true;}
 bool ApplicationState::resume_saved_music(const std::string& wave,double position){return music(wave)&&music_command(2)&&seek_stage_music(position);}
 bool ApplicationState::destination(PauseDestination value){pending_destination=i32(value);return true;}
 bool ApplicationState::screen_fade(i32 duration,i32 update,i32 draw,bool covering,bool full_screen){auto fade=std::make_unique<ScreenFade>(scheduler,renderer,graphics,environment,duration,update,draw,0,covering,full_screen);fade->context=[this](){return ScreenFadeContext{exiting,scene()!=nullptr,progress.scene_flags,progress.rate};};fades.push_back(std::move(fade));return true;}

@@ -5,7 +5,7 @@ BattleCheckpoint::BattleCheckpoint(GameBattle& g,StageScene& s,AnmManager& a,Ses
     switch(g.selected_character()){case 0:bomb=std::make_unique<BombCheckpoint>(static_cast<BombReimu&>(*g.bomb),animation_pool);break;case 1:bomb=std::make_unique<BombCheckpoint>(static_cast<BombMarisa&>(*g.bomb),animation_pool);break;case 2:bomb=std::make_unique<BombCheckpoint>(static_cast<BombSanae&>(*g.bomb),animation_pool);break;case 3:bomb=std::make_unique<BombCheckpoint>(static_cast<BombReisen&>(*g.bomb),animation_pool);break;}
 }
 bool BattleCheckpoint::check(bool result,const std::string& failure){if(!result&&error.empty())error=failure;return result;}
-bool BattleCheckpoint::capture(i32 id){error.clear();const bool ok=chapter.capture(id);if(!ok&&error.empty())error=chapter.error;return ok;}
+bool BattleCheckpoint::capture(i32 id,PracticePatchEffects* practice){error.clear();const bool ok=chapter.capture(id,practice);if(!ok&&error.empty())error=chapter.error;return ok;}
 bool BattleCheckpoint::restore(){error.clear();const bool ok=chapter.restore();if(!ok&&error.empty())error=chapter.error;return ok;}
 bool BattleCheckpoint::save_player(){return check(player.capture(),player.error);}
 bool BattleCheckpoint::save_enemies(){return check(enemies.capture(),enemies.error);}

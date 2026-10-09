@@ -11,6 +11,7 @@ class RunGameplay {
  struct Scene {std::unique_ptr<StageAssets> assets;std::unique_ptr<StageGameplay> gameplay;u32 stage=0;};
  Scene previous,active;bool fail(const std::string&);
 public:
+ PracticeState* practice=nullptr;
  std::string error;
  RunGameplay(AssetSource& f,AnmManager& a,AnmEnvironment& e,Rng& g,Rng& v,SessionState& p,StageGameplayServices& h,FrameScheduler* scheduler=nullptr,const std::unordered_map<std::string,i32>* shared=nullptr):files(f),animations(a),environment(e),game(g),visual(v),progress(p),platform(h),shared_scheduler(scheduler),shared_assets(shared){}
  bool load(u32 stage,i32 character,const StageCamera&,i32* requested_chapter=nullptr);

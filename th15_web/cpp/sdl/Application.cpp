@@ -104,6 +104,7 @@ bool ApplicationState::advance_loading(double delta){
 bool ApplicationState::initialize(bool device){
  if(initialized)return fail("Application already initialized");if(!prepare_platform())return false;if(!loading_animations.resource(2)&&!prepare_loading())return false;
  if(!fonts.initialize()||!audio_device.initialize(*this,device))return fail(fonts.error.empty()?audio_device.error:fonts.error);
+ audio_device.initial_music_byte_offset=[this](){return practice.enabled&&scene()?scene()->practice_music_start_offset():0u;};
  // Restart overlays draw their patterned fifth panel when the screen has alpha.
  // Derive this from the actual SDL surface, as the original format check does.
  environment.raster_scale=float(graphics.render_scale);
@@ -157,7 +158,10 @@ bool ApplicationState::begin_run(){
  if(!save_settings())return false;remember_title();title.reset();ending.reset();release_run();scene_effects.reset();for(auto& callback:animation_updates)callback.enabled=false;
  replay=std::make_unique<SessionReplay>(config,environment.game_rng,visual);
  progress.stage=selected_stage;progress.starting_stage=selected_stage;progress.scene_flags=0;progress.restart_frames=0;progress.rate=1;
+ practice.replay=progress.replay;
+ if(!progress.replay&&practice.enabled&&practice.cheats)practice.assisted=true;
  run=std::make_unique<RunGameplay>(*this,animations,environment,environment.game_rng,visual,progress,*this,&scheduler,&shared);
+ run->practice=&practice;
  if(!run->construct(progress.stage,progress.character)||!preload_run())return fail(run->error);
  // Selection carries stocks/mode; active bomb state belongs to the departing
  // bomb object (native +0x24) and cannot survive construction of a fresh one.

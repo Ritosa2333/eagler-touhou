@@ -116,7 +116,13 @@ int EnemyCommands::execute(EclContext& context,u16 opcode){
         case 432:case 433:{const i32 id=integer_arg(0);if(!ok)return -2;auto* target=world.lookup(u32(id));if(!target){context.error="Enemy movement target unavailable";return -2;}(opcode==432?enemy.absolute:enemy.relative).position=target->motion.position;break;}
         case 414:case 415:if(!world.boss){context.error="Enemy movement boss target unavailable";return -2;}else(opcode==414?enemy.absolute:enemy.relative).position=world.boss->motion.position;break;
         case 424:{i32 value;if(instruction->length<20||!context.integer(0,instruction->argument<i32>(0),value)){context.error="Enemy mirror argument unavailable";return -2;}enemy.flags=(enemy.flags&~0x80000u)|(u32(value)<<19&0x80000u);break;}
-        case 504:{const float x=arg(0),y=arg(1),width=arg(2),height=arg(3);if(!ok)return -2;enemy.flags|=0x20000;enemy.bound_center={x,y};enemy.bound_size={width,height};break;}
+        case 504:{const float x=arg(0),y=arg(1),width=arg(2),height=arg(3);if(!ok)return -2;enemy.flags|=0x20000;enemy.bound_center={x,y};enemy.bound_size={width,height};
+            // Purple 42b261 runs once after the four authored arguments.
+            // This advanced hook applies outside Practice too.
+            if(world.practice&&world.practice->enabled&&world.practice->force_boss_move_down){
+                practice_boss_range(&enemy.bound_center.y,&enemy.bound_size.y,world.practice->boss_move_down_range);
+            }
+            break;}
         case 505:enemy.flags&=~0x20000u;break;
         case 500:enemy.hitbox={arg(0),arg(1)};if(!enemy.chapter_contribution){enemy.chapter_contribution=1;world.chapter_total=wrapping_add(world.chapter_total,1);}break;
         case 501:enemy.hurtbox={arg(0),arg(1)};break;
@@ -127,12 +133,13 @@ int EnemyCommands::execute(EclContext& context,u16 opcode){
         case 509:if((world.mode_flags&48)!=32&&(!host||!host->drop_items(enemy))){context.error="Enemy item-drop service unavailable";return -2;}break;
         case 510:enemy.primary_drop=integer_arg(0);break;
         case 511:{const i32 life=integer_arg(0);if(!ok)return -2;enemy.life=enemy.initial_life=enemy.phase_life=life;enemy.life_budget=wrapping_sub(wrapping_mul(life,8),life);if(enemy.flags&0x800000)enemy.flags|=0x40000000;break;}
-        case 512:{const i32 slot=integer_arg(0);if(!ok)return -2;world.manager_flags&=~1u;if(slot<0){if(enemy.flags&0x800000){if(enemy.boss_slot<0||enemy.boss_slot>=3){context.error="Enemy Boss slot outside range";return -2;}world.boss_ids[enemy.boss_slot]=0;}enemy.flags&=~0x800000u;}else{if(slot>=3){context.error="Enemy Boss slot outside range";return -2;}enemy.flags|=0x800000;world.boss_ids[slot]=enemy.id;enemy.boss_slot=slot;}world.refresh_boss();break;}
+        case 512:{const i32 slot=integer_arg(0);if(!ok)return -2;if(world.practice&&world.practice->enabled)world.practice->lock_timer.reset();world.manager_flags&=~1u;if(slot<0){if(enemy.flags&0x800000){if(enemy.boss_slot<0||enemy.boss_slot>=3){context.error="Enemy Boss slot outside range";return -2;}world.boss_ids[enemy.boss_slot]=0;}enemy.flags&=~0x800000u;}else{if(slot>=3){context.error="Enemy Boss slot outside range";return -2;}enemy.flags|=0x800000;world.boss_ids[slot]=enemy.id;enemy.boss_slot=slot;}world.refresh_boss();break;}
         case 513:enemy.age_timer.set(0);break;
         case 514:case 521:case 556:{
             const auto read_name=[&](u32 offset,std::string& out){if(offset>=instruction->length){context.error="Truncated enemy script name";return false;}const char* data=reinterpret_cast<const char*>(instruction)+offset;u32 length=0;while(offset+length<instruction->length&&data[length])length++;if(offset+length==instruction->length||length>=64){context.error="Invalid enemy script name";return false;}out.assign(data,length);return true;};
             if(opcode==556){if(!read_name(20,enemy.death_script))return -2;break;}
             if(opcode==514){
+                if(world.practice&&world.practice->enabled)world.practice->lock_timer.reset();
                 const i32 time=integer_arg(2),life=((world.mode_flags&48)==32&&(enemy.flags&0x800000))?0:integer_arg(1),slot=integer_arg(0);if(!ok)return -2;if(slot<0||slot>=8){context.error="Enemy interrupt index outside resource range";return -2;}auto& interrupt=enemy.interrupts[slot];interrupt.life=life;
                 if(life>=0){interrupt.time=time;if((world.mode_flags&48)==32&&(enemy.flags&0x800000)){interrupt.script="BossDead";interrupt.timeout_script="BossEscape";}else{if(!read_name(32,interrupt.script))return -2;interrupt.timeout_script=interrupt.script;}}
             }else{const i32 slot=integer_arg(0);if(!ok)return -2;if(slot<0||slot>=8){context.error="Enemy interrupt index outside resource range";return -2;}if(!read_name(24,enemy.interrupts[slot].timeout_script))return -2;}break;
@@ -146,6 +153,9 @@ int EnemyCommands::execute(EclContext& context,u16 opcode){
         case 523:if(!host||!host->finish_spell()){context.error="Enemy spell finish failed";return -2;}enemy.life_flags&=~1u;break;
         case 524:{const i32 chapter=integer_arg(0);if(!ok)return -2;world.request_chapter(chapter);enemy.chapter=chapter;enemy.chapter_contribution=0;break;}
         case 525:case 571:if(!spawning||!spawning->clear_field(opcode==571)){context.error="Enemy scene clear failed";return -2;}break;
+        // Retail 0x42b275 squares the evaluated float into enemy +0x4074;
+        // bullet emission copies that value to its minimum-distance gate.
+        case 526:{const float distance=arg(0);if(!ok)return -2;enemy.minimum_bullet_distance_squared=float(distance*distance);break;}
         case 527:{const u32 color=u32(integer_arg(2));const float fraction=float(arg(1)/float(enemy.initial_life));const i32 index=integer_arg(0);if(!ok)return -2;if(!host||!host->boss_segment(enemy.boss_slot,index,fraction,color)){context.error="Boss health segment service unavailable";return -2;}break;}
         case 540:{const i32 count=integer_arg(0);if(!ok)return -2;if(!host||!host->boss_segments(count)){context.error="Boss health display service unavailable";return -2;}break;}
         case 541:enemy.invulnerability_timer.set(integer_arg(0));break;

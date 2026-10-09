@@ -7,6 +7,7 @@
 #include "TitleReplayMenu.hpp"
 namespace th15 {
 struct TitleReplaySaveServices {
+ virtual bool replay_save_available()const{return true;}
  virtual ~TitleReplaySaveServices()=default;virtual bool read_slot(i32,std::shared_ptr<Replay>&)=0;
  virtual bool sound(i32)=0;virtual bool prepare_live_replay(bool completed)=0;virtual bool save_slot(i32,const std::array<char,9>&)=0;
  virtual bool release_live_replay()=0;virtual bool music(const std::string&,i32)=0;

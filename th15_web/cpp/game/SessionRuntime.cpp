@@ -38,7 +38,7 @@ i32 SessionRuntime::update(const SessionFrameState& frame){
  }
  if(progress.scene_flags&0x8000){
   if(!(player.mode_flags&0x300)||frame.player_life_state==0||frame.player_life_state==1){
-   if(requested_chapter!=0&&!check(host.chapter_reward(requested_chapter>=43||(requested_chapter>=22&&requested_chapter<=40)),"Chapter reward failed"))return i32(FrameAction::Error);
+   if(!host.skip_chapter_reward()&&requested_chapter!=0&&!check(host.chapter_reward(requested_chapter>=43||(requested_chapter>=22&&requested_chapter<=40)),"Chapter reward failed"))return i32(FrameAction::Error);
    if(requested_chapter>=0&&!check(host.chapter_checkpoint(requested_chapter),"Chapter snapshot failed"))return i32(FrameAction::Error);
   }
   progress.scene_flags&=~0x8000u;

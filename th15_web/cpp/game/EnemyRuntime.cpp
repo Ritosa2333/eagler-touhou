@@ -36,6 +36,9 @@ int EnemyRuntime::update(float rate,const Vec3& background_delta){
     }
     rate=world.current_rate(rate);if(state.collision_timer.current>0)state.collision_timer.decrement(&rate);
     if(state.invulnerability_timer.current>0)state.invulnerability_timer.decrement(&rate);
-    state.lifetime_timer.tick(&rate);state.age_timer.tick(&rate);return 0;
+    state.lifetime_timer.tick(&rate);
+    // Purple changes the call at 428b5c from Timer::tick (408ba0) to the
+    // RET 4 at 408c08. Do not even change age.previous or its rate index.
+    if(!world.practice||!world.practice->cheat(PracticeTime))state.age_timer.tick(&rate);return 0;
 }
 }

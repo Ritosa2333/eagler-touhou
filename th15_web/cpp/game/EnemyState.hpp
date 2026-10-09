@@ -1,5 +1,6 @@
 #pragma once
 #include "SpellStatus.hpp"
+#include "PracticeConfig.hpp"
 #include "Types.hpp"
 #include "MotionState.hpp"
 #include "PositionInterpolation.hpp"
@@ -59,6 +60,7 @@ struct EnemyState {
     const std::string* check_interrupt(EnemyWorldState& world)noexcept;
 };
 struct EnemyWorldState {
+    const PracticeState* practice=nullptr;
     float* frame_rate=nullptr;float current_rate(float fallback)const noexcept{return frame_rate?*frame_rate:fallback;}
     Vec3 player_position{};EnemyState* boss=nullptr;std::vector<EnemyState*> enemies;
     std::array<u32,3> boss_ids{};u32 manager_flags=0;

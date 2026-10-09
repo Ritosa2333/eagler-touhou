@@ -73,7 +73,7 @@ bool ReplayRecording::serialize(const char* name,const ReplayExportDetails& deta
  if(count_touches){if(count_touches>(64*1024*1024-32)/16||file.size()+32+count_touches*16>128*1024*1024)return fail("Replay touch data exceeds file limit");const u32 start=file.size(),length=32+u32(count_touches)*16;file.resize(start+length,0);auto* out=file.data()+start;
   put(out,u32(0x52455355));put(out+4,length);put(out+8,u32(0x15));put(out+12,u32(0x54353154));put(out+16,u32(1));put(out+20,u32(count_touches));out+=32;
   for(u32 stage=1;stage<8;stage++)for(const auto& t:stages[stage].touches){put(out,u16(stage));put(out+2,u16(t.motion.mode));put(out+4,t.frame);put(out+8,t.motion.x);put(out+12,t.motion.y);out+=16;}
- }return true;
+ }if(!practice_block.empty())append(file,practice_block.data(),u32(practice_block.size()));return true;
 }
 bool ReplayRecording::spell_timing(u32 number,u32 sequence,i32 value){
  if(!failure.empty())return false;

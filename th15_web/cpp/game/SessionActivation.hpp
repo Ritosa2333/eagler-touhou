@@ -10,6 +10,7 @@ struct SceneActivationServices {
  virtual bool reset_bullets()=0;virtual bool reset_player()=0;virtual bool reset_items()=0;virtual bool reset_enemies()=0;virtual bool reset_lasers()=0;
  virtual bool prepare_replay_stage()=0;virtual bool start_main_script()=0;virtual bool initialize_hud()=0;virtual bool enable_game_callbacks()=0;virtual bool configure_player_options()=0;
  virtual bool start_stage_music()=0;virtual bool interrupt_entrance()=0;virtual bool retire_restart_overlay()=0;virtual bool interrupt_resume_overlay()=0;
+ virtual bool start_entry_music(){return start_stage_music();}
  virtual bool restore_pending_progress()=0;virtual bool queue_music(i32 kind)=0;virtual bool unlock_current_music()=0;
 };
 // Scene entrance is separate from manager construction and the main frame

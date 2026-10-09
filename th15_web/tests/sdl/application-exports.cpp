@@ -1,5 +1,6 @@
 // Development-only probes for scene lifecycle, drawing and controlled death regression.
 #include "../../cpp/sdl/ApplicationState.hpp"
+#include "../../cpp/sdl/ThpracUi.hpp"
 #include <memory>
 #include <emscripten.h>
 using namespace th15;
@@ -24,7 +25,16 @@ i32 application_test_game_over(){if(!app||!app->scene()||!app->pause)return 0;ap
 i32 application_test_death(){return app&&app->scene()&&app->scene()->battle.player->life.commit_death();}
 const i32* application_pause_state(){static std::array<i32,6> value;value.fill(-1);if(app&&app->pause){auto& p=app->pause->state;value={i32(p.screen),p.phase,p.menu.cursor,p.names.cursor,p.age.current,i32(app->audio_device.sound_playing(14))};}return value.data();}
 void application_test_finish_name(){if(app&&app->pause)app->pause->state.names.select(90);}
-void application_close(){app.reset();}
+void application_close(){sdl::ThpracUi::shutdown();app.reset();}
+// Private development harness: calls the same THPrac owner as BrowserRuntime.
+EMSCRIPTEN_KEEPALIVE int application_practice_initialize(){return app&&sdl::ThpracUi::initialize(*app);}
+EMSCRIPTEN_KEEPALIVE void application_practice_frame(){if(!app)return;bool keys[256]{};for(int i=0;i<256;i++)keys[i]=app->keyboard_state.keys[i]!=0;sdl::ThpracUi::update_input(*app,keys);sdl::ThpracUi::render(*app);app->graphics.backend.present(sdl::GraphicsDevice::screen);app->graphics.backend.commit();}
+EMSCRIPTEN_KEEPALIVE const i32* application_practice_state(){static std::array<i32,12> value{};if(app){auto& p=app->practice;value={p.enabled,p.menu,p.accepted,p.cancelled,p.advanced_visible,p.tracker_visible,p.menu_visible,p.active,p.replay,p.configured.section,p.run.section,p.assisted};}return value.data();}
+EMSCRIPTEN_KEEPALIVE void application_practice_mouse(int type,float x,float y){sdl::ThpracUi::mouse(type,x,y);}
+EMSCRIPTEN_KEEPALIVE int application_practice_pointer(float x,float y){return sdl::ThpracUi::captures_pointer(x,y);}
+EMSCRIPTEN_KEEPALIVE int application_practice_save(){const std::array<char,9> name{'P','U','R','P','L','E',0,0,0};return app&&app->prepare_live_replay(false)&&app->save_slot(0,name);}
+EMSCRIPTEN_KEEPALIVE const i32* application_practice_options(){static std::array<i32,13> value{};if(app){const auto& p=app->practice;value={p.input.disable_xkey,p.input.disable_shiftkey,p.input.disable_zkey,p.input.force_shiftkey,p.input.enable_fast_retry,p.show_keyboard_monitor,p.map_inf_life_to_no_continue,p.shooting_down_rate,p.force_boss_move_down,p.disable_master_display,p.show_lock_timer,p.all_clear_bonus,p.flip_screen_y};}return value.data();}
+EMSCRIPTEN_KEEPALIVE const i32* application_practice_ab_state(){static std::array<i32,3> value{};if(app&&app->scene())value={app->scene()->battle.enemy_world.integer_registers[3],app->practice.ab_result_frames,app->scene()->battle.session.extra_lives};return value.data();}
 }
 
 extern "C" const i32* application_checkpoint_state(){static std::array<i32,9> state{};state.fill(0);if(app&&app->scene()){const auto& c=app->scene()->checkpoint;const auto& s=c.state().state();state={c.ready()?1:0,s.stage,s.character,s.difficulty,s.chapter,s.stage_frame,s.chapter_deaths,i32(app->checkpoint_bytes.size()),i32(c.animation_count())};}return state.data();}

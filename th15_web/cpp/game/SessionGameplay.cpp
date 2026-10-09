@@ -45,6 +45,7 @@ bool SessionGameplay::seek_stage_music(double seconds){return services.seek_stag
 bool SessionGameplay::demo_fade(){return services.demo_fade();}
 bool SessionGameplay::update_score(){scene.hud.update_score();return true;}
 bool SessionGameplay::chapter_reward(bool boss){return scene.chapter_reward(boss);}
+bool SessionGameplay::skip_chapter_reward(){return scene.skip_chapter_reward();}
 bool SessionGameplay::chapter_checkpoint(i32 chapter){return scene.capture(chapter);}
 bool SessionGameplay::update_overlays(){return services.update_overlays();}
 }

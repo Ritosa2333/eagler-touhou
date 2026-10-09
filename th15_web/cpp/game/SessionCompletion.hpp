@@ -10,6 +10,8 @@ struct CompletionRecords {
 };
 struct CompletionServices {
  virtual ~CompletionServices()=default;
+ virtual bool all_clear_bonus()const{return false;}
+ virtual bool synchronize_clear_score(){return true;}
  virtual bool clear_notice()=0;virtual bool finish_player_options()=0;virtual bool end_bomb()=0;
  virtual bool prepare_ending()=0;virtual bool finish_replay()=0;virtual bool finish_practice()=0;
  virtual bool queue_next_scene()=0;virtual bool select_stage_resources(i32 stage)=0;

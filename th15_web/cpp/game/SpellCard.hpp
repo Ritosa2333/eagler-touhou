@@ -8,7 +8,7 @@ struct SpellStartRequest {i32 id=0,duration=0,requested_bonus=0;std::string name
 struct SpellBackground {i32 resource=-1,script=-1;bool independent=false;i32 overlay_resource=-1,overlay_script=-1;};
 struct SpellVisualResources {i32 ascii=-1,name=-1,effect=-1;std::array<SpellBackground,3> backgrounds{};bool secondary=false;};
 struct SpellStartContext {i32 stage=0,difficulty=0,character=0,bomb_state=0;bool replay=false;SpellVisualResources visuals;};
-struct SpellFrameContext {float rate=1,player_y=0;i32 bomb_state=0;};
+struct SpellFrameContext {float rate=1,player_y=0;i32 bomb_state=0;bool lock_time=false;};
 // Game presentation and records are explicit services. The native graphics
 // layout and address-based dispatch never enter the spell's game logic.
 struct SpellCardHost {

@@ -27,7 +27,7 @@ int EnemyDamage::update(EnemyRuntime& runtime,float rate){
         i32 extra=0;if(!host.additional_damage(enemy,hit.amount,extra))return fail(runtime,"Enemy additional damage callback unavailable");i32 damage=wrapping_add(hit.amount,extra);
         if(enemy.pending_damage>0){damage=wrapping_add(damage,enemy.pending_damage);enemy.pending_damage=0;}
         if(world.player_damage_state==0||world.player_damage_state==2)damage/=5;
-        if(world.damage_disabled)damage=0;
+        if(world.damage_disabled||(world.practice&&world.practice->cheat(PracticeEnemyInvincible)))damage=0;
         else if(damage>0){if(hit.direct){const i32 contribution=damage<enemy.life?damage:wrapping_add(enemy.life,wrapping_sub(damage,enemy.life)/4);world.shot_damage=wrapping_add(world.shot_damage,contribution);}else world.other_damage=wrapping_add(world.other_damage,damage);}
         if(world.game_state==1&&enemy.damage_multiplier<1){if(damage&&enemy.damage_multiplier<=0&&!host.sound(36,enemy.motion.position))return fail(runtime,"Enemy damage sound unavailable");damage=truncate_int(float(float(damage)*enemy.damage_multiplier));}
         if(damage){

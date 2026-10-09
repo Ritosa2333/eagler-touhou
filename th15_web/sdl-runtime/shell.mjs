@@ -23,13 +23,13 @@ function closeAudio(){
 }
 async function stop(){if(stopping)return;stopping=true;try{core._th15_loop_stop();await save();closeAudio();launched=false;emit('exit',{code:0,status:'success'});}finally{stopping=false;}}
 function path(value){const name=String(value).replaceAll('\\','/').toLowerCase().replace(/^\/savesth15\//,'').replace(/^\//,'');if(!/^(?:scoreth15\.dat|th15\.cfg|replay\/th15_(?:\d{2}|ud[a-z0-9]{4})\.rpyx?|autosave\/save[0-3]_[0-4]\.dat)$/.test(name))throw Error('存档路径无效');return name;}
-function apply(){core._th15_limit_presentation(+!!options.limitPresentationTo60);core._th15_touch_options(+!!options.touchEnabled,Math.max(0,['touch','touch-unlimited','joystick','joystick-free'].indexOf(options.touchMovementMode)),Math.max(100,Math.min(300,Number(options.touchSensitivity)||100))/100,+(options.touchFocusMode==='two-finger'),+!!options.doubleTapBombEnabled);core._th15_music_enabled(+music);}
+function apply(){core.eaglerOptions=options;core._th15_limit_presentation(+!!options.limitPresentationTo60);core._th15_touch_options(+!!options.touchEnabled,Math.max(0,['touch','touch-unlimited','joystick','joystick-free'].indexOf(options.touchMovementMode)),Math.max(100,Math.min(300,Number(options.touchSensitivity)||100))/100,+(options.touchFocusMode==='two-finger'),+!!options.doubleTapBombEnabled);core._th15_music_enabled(+music);}
 async function resource(r){
- if(!/^\/music\/(?:th15_\d{2}|th128_08)\.ogg$/.test(r.path)&&!/^\/fonts\/(?:font[0-7]|cp932|blend4444)\.bin$/.test(r.path))throw Error('资源路径无效');
+ if(r.path!=='/unifont.otf'&&!/^\/music\/(?:th15_\d{2}|th128_08)\.ogg$/.test(r.path)&&!/^\/fonts\/(?:font[0-7]|cp932|blend4444)\.bin$/.test(r.path))throw Error('资源路径无效');
  const u=new URL(r.url,location.href);if(u.origin!==location.origin||!['http:','https:','blob:'].includes(u.protocol))throw Error('资源来源无效');
  const response=await fetch(u);if(!response.ok)throw Error('资源读取失败');const bytes=new Uint8Array(await response.arrayBuffer());
  const expected=r.bytes??r.size;if(bytes.length>64*1024*1024||(expected!=null&&bytes.length!==expected))throw Error('资源大小错误');
- core.FS.mkdirTree(r.path.slice(0,r.path.lastIndexOf('/')));core.FS.writeFile(r.path,bytes,{canOwn:true});
+ core.FS.mkdirTree(r.path.slice(0,r.path.lastIndexOf('/'))||'/');core.FS.writeFile(r.path,bytes,{canOwn:true});
  emit('transfer',{mode:r.path.startsWith('/music/')?'ogg':'runtime',loaded:bytes.length,total:bytes.length,path:r.path});
 }
 let runtimePackFiles=[];
@@ -48,13 +48,14 @@ async function installRuntimePack(pack){
  const localePath='/thcrap/th15/runtime-language.txt';core.FS.writeFile(localePath,pack.language);runtimePackFiles.push(localePath);
 }
 async function command(m){switch(m.command){
-case 'configure':if(launched)throw Error('不能配置正在运行的游戏');if(!['ogg','none'].includes(m.music))throw Error('不支持的音乐模式');options=m.options||{};music=m.music==='ogg';for(const r of [...(m.runtimeResources||[]),...(m.resources||[])])await resource(r);if(m.runtimePack)await installRuntimePack(m.runtimePack);apply();return {};
+case 'configure':if(launched)throw Error('不能配置正在运行的游戏');if(!['ogg','none'].includes(m.music))throw Error('不支持的音乐模式');options=m.options||{};music=m.music==='ogg';for(const r of [...(m.sharedResources||[]),...(m.runtimeResources||[]),...(m.resources||[])])await resource(r);if(m.runtimePack)await installRuntimePack(m.runtimePack);apply();return {};
 case 'resources':for(const r of m.resources||[])await resource(r);return {};
 case 'keyboard':if(launched&&!document.hidden&&!stopping)keyboard.event(m,!!m.down,'hosted');return {};
 case 'keyboard-clear':clearKeyboard();return {};
 case 'touch-cancel':core._th15_touch_cancel();return {};
 case 'direct-touch':{if(m.type==='cancel'){core._th15_touch_cancel();return {};}if(!['down','move','up'].includes(m.type)||![m.x,m.y,m.id].every(Number.isFinite))return {};const b=canvas.getBoundingClientRect();if(b.width&&b.height)core._th15_touch(({down:0,move:1,up:2,cancel:2})[m.type]??2,Number(m.id)||0,(Number(m.x)*innerWidth-b.left)/b.width,(Number(m.y)*innerHeight-b.top)/b.height);return {};}
-case 'touch-controls':{const t=m.controls||m;if(Number.isFinite(t.touchSensitivity)&&t.touchSensitivity>=100&&t.touchSensitivity<=300&&t.touchSensitivity!==options.touchSensitivity){options.touchSensitivity=t.touchSensitivity;apply();}core._th15_touch_controls(+!!options.touchEnabled,+!!t.fireEnabled,+!!t.focusEnabled,t.bombSerial>>>0,t.escapeSerial>>>0);core._th15_touch_stick(Number(t.joystickX)||0,Number(t.joystickY)||0);return {};}
+case 'touch-controls':{const t=m.controls||m;core.eaglerControls=t;if(Number.isFinite(t.touchSensitivity)&&t.touchSensitivity>=100&&t.touchSensitivity<=300&&t.touchSensitivity!==options.touchSensitivity){options.touchSensitivity=t.touchSensitivity;apply();}core._th15_touch_controls(+!!options.touchEnabled,+!!t.fireEnabled,+!!t.focusEnabled,t.bombSerial>>>0,t.escapeSerial>>>0);core._th15_touch_stick(Number(t.joystickX)||0,Number(t.joystickY)||0);return {};}
+case 'thprac-mouse':{if(!options.thpracEnabled||!['down','move','up'].includes(m.type)||![m.x,m.y].every(Number.isFinite))return {};const r=canvas.getBoundingClientRect(),scale=Math.min(r.width/640,r.height/480);if(scale>0)core._th15_thprac_mouse(m.type==='down'?1:m.type==='up'?2:0,(m.x-r.left-(r.width-640*scale)/2)/scale,(m.y-r.top-(r.height-480*scale)/2)/scale);return {};}
 case 'launch':if(!launched){await installStartupBranding(core,{game,builtAt:(await(await fetch('./manifest.json')).json()).builtAt});let scaleOption=query.get('renderScale');if(!scaleOption)try{scaleOption=new URLSearchParams(parent.location.search).get('renderScale');}catch{}const requested=Number(scaleOption);core._th15_render_scale(options.renderScale===1?1:options.renderScale===2?2:requested===1?1:2);if(!core._th15_prepare_loading())throw Error(err());$('#loading').textContent='';const startupImageAt=performance.now();performance.mark('eagler-startup-image');await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);if(!core._th15_initialize())throw Error(err());await finishStartupAnimation(startupImageAt,frames=>core._th15_draw_startup(frames));performance.mark('eagler-startup-menu-ready');launched=true;apply();first=false;$('#loading').textContent='';core._th15_loop_start();emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:protocol,...runtimeBuild});}return {};
 case 'sync':await save();return {};
 case 'list':{const files=[];for(const dir of ['','/replay','/autosave'])for(const name of core.FS.readdir('/savesth15'+dir)){const n=(dir+'/'+name).replace(/^\//,'');try{path(n);}catch{continue;}const s=core.FS.stat('/savesth15/'+n);if(core.FS.isFile(s.mode))files.push({path:n,size:s.size});}return {files};}
@@ -70,6 +71,7 @@ default:throw Error('不支持的操作');}}
 window.addEventListener('message',e=>{const m=e.data;if(e.source!==parent||e.origin!==location.origin||m?.protocol!==protocol||m.game!==game||!validEpoch||m.epoch!==epoch||typeof m.command!=='string')return;queue=queue.then(async()=>{if(await initialized===false)return;try{const result=await command(m);if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:true,...result},location.origin);}catch(e){if(typeof m.request==='string')parent.postMessage({protocol,game,epoch,request:m.request,ok:false,error:String(e),errno:e?.errno},location.origin);else fatal(e);}}).catch(fatal);});
 document.addEventListener('visibilitychange',()=>{if(launched){clearKeyboard();core._th15_touch_cancel();core._th15_loop_pause(+document.hidden);if(document.hidden)try{void save().catch(fatal);}catch(e){fatal(e);}}});
 window.addEventListener('blur',()=>{clearKeyboard();core?._th15_touch_cancel();});
+window.addEventListener('eagler-thprac-menu',e=>emit('thprac-menu',{open:!!e.detail?.open}));
 // Keyboard events in the child realm do not bubble to the launcher. SDL's
 // canvas listener alone misses keys when the child BODY owns focus.
 for(const event of ['keydown','keyup'])window.addEventListener(event,e=>{if(!launched||e.altKey||e.metaKey)return;if(keyboard.event(e,event==='keydown')){e.preventDefault();e.stopPropagation();}},{capture:true});

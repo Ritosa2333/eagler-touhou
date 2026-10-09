@@ -98,6 +98,11 @@
 #include "../../cpp/game/VectorMath.hpp"
 #include <cstdlib>
 using namespace th15;
+#if defined(__EMSCRIPTEN__)
+// Keep fixture export names while avoiding Emscripten's POSIX timer prototypes.
+#define timer_create th15_test_timer_create
+#define timer_delete th15_test_timer_delete
+#endif
 #define API(name) extern "C" __attribute__((export_name(#name)))
 API(laser_motion_create) MovingLaserMotion* laser_motion_create(){return new MovingLaserMotion;}
 API(laser_motion_delete) void laser_motion_delete(MovingLaserMotion* p){delete p;}

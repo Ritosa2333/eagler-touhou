@@ -12,10 +12,9 @@ bool BombCheckpoint::write_file(std::vector<u8>& out){
     if(!state)return true;
     auto tree=[&](u32 h)->bool{if(!h)return true;if(animations.write_tree(h,bomb.context.animations,out))return true;error=animations.error;out.clear();return false;};
     if(reimu){const u32 at=out.size();out.resize(at+0x6c0,0);for(u32 i=0;i<8;i++){const auto& o=orbs[i];orb_fields(o,[&](u32 offset,const auto& value){put(out.data()+at+i*0xd8,offset,value);});put(out.data()+at+i*0xd8,0xd4,u32(o.archived));}
-        // 417180 resolves the live aura's slot in the saved animation pool.
-        // Saved pools, like the original, resolve fixed slots independently of
-        // the generation bits carried by the live handle.
-        if(aura_handle&&!tree(aura))return false;
+        // Registry slots and checkpoint slots are independent in the web port.
+        // Serialize the captured aura, never the live handle's unrelated slot.
+        if(!tree(aura_handle))return false;
         for(const auto& o:orbs)if(!tree(o.animation))return false;
     }else if(!tree(first_handle)||!tree(aura_handle))return false;
     return true;
@@ -28,6 +27,6 @@ bool BombCheckpoint::read_file(const u8* data,u32 size,u32& consumed){
     if(next_state){if(reimu){if(size-offset<0x6c0){error="Truncated Reimu bomb orb records";return false;}for(u32 i=0;i<8;i++){auto& o=next_orbs[i];orb_fields(o,[&](u32 at,auto& value){get(data+offset+i*0xd8,at,value);});o.archived=word(data+offset+i*0xd8,0xd4)!=0;}offset+=0x6c0;
             imported_aura=next_aura;if(!tree(imported_aura))return false;for(auto& o:next_orbs)if(!tree(o.animation))return false;
         }else if(!tree(next_first)||!tree(next_aura))return false;}
-    position=next_position;angle=next_angle;state=next_state;age=next_age;secondary_age=next_secondary;first_handle=next_first;aura_handle=next_aura;effective=next_effective;saved_charges=next_charges;if(reimu&&next_state){orbs=next_orbs;if(imported_aura)aura=imported_aura;}available=true;consumed=offset;guard.committed=true;return true;
+    position=next_position;angle=next_angle;state=next_state;age=next_age;secondary_age=next_secondary;first_handle=next_first;aura_handle=reimu&&next_state?imported_aura:next_aura;effective=next_effective;saved_charges=next_charges;if(reimu&&next_state)orbs=next_orbs;available=true;consumed=offset;guard.committed=true;return true;
 }
 }

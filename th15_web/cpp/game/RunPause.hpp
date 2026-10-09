@@ -6,6 +6,7 @@
 #include "PauseDraw.hpp"
 namespace th15 {
 struct RunPausePlatform:RunClock,PauseActionServices,PauseScoreServices {
+ virtual bool replay_save_available()const{return true;}
  virtual bool sound(i32)=0;virtual bool suspend_music()=0;virtual bool finish_audio_requests()=0;
  virtual bool capture_background(StageGameplay&,AnmManager&,u32&,bool playfield)=0;
  virtual bool preserve_current_music(std::string&,double&)=0;virtual bool start_game_over_music()=0;

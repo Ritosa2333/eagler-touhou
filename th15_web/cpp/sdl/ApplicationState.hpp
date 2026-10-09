@@ -29,6 +29,13 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  bool pump_checkpoint(u32 budget=131072);bool finish_checkpoint();
  Archive archive;std::vector<u8> archive_bytes;std::unordered_map<std::string,u32> archive_names;
  PlayerTouch touch;u32 controller_buttons=0;i32 numbered_chapter=0;
+ PracticeState practice;
+ PracticeMusic practice_music;
+ bool suppress_practice_music(u32 caller,i32 id);
+ bool request_music(u32 caller,i32 code,i32 value,const std::string& text);
+ bool start_gameplay_music(i32 slot);
+ bool practice_overlay_enabled()const override{return practice.enabled;}
+ void practice_overlay_state(i32)override;i32 practice_overlay_action(i32&)override;
  // These original title counters live across destruction of the title owner.
  i32 title_demo_idle=0,title_demo_index=0,title_saved_difficulty=0,title_saved_replay_selection=0;
  void remember_title()noexcept{if(title){title_demo_idle=title->frame.demo_idle;title_demo_index=title->frame.demo_index;title_saved_difficulty=title->frame.saved_difficulty;title_saved_replay_selection=title->saved_replay_selection;}}
@@ -40,6 +47,7 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  bool music(const std::string&)override;bool music(const std::string&,i32)override;bool music_command(i32)override;bool start_title_music()override;bool volume(i32,i32,i32)override;bool save(const TitleControllerSettings&)override;
  bool checkpoint_available(i32,i32,bool&)override;bool checkpoint_stage(i32,i32,i32&)override;bool reset_resume_selection()override;bool prepare_game_music()override;bool begin_transition(u32&)override;bool start_game(i32)override;bool fade_music(float)override;bool transition_size(float,float)override;
  bool request_catalog()override;bool release_catalog()override;bool start_replay(const ReplayStartRequest&)override;bool clear_page()override;bool request_page(i32)override;bool upload_page(i32)override;
+ bool replay_save_available()const override{return !practice.assisted;}
  bool read_slot(i32,std::shared_ptr<Replay>&)override;bool prepare_live_replay(bool)override;bool save_slot(i32,const std::array<char,9>&)override;bool release_live_replay()override;
  bool release_transient_animations()override;bool clear_title_overlay()override;bool read_demo(i32,std::shared_ptr<Replay>&)override;bool begin_demo(const ReplayStartRequest&)override;bool queue_title_music(i32,i32,const std::string&)override;bool clear_current_wave()override;bool reset_replay_selection()override;bool return_practice_transition()override;bool title_exit(i32)override;bool fade_out_title_music()override;
  bool audio(i32,float,PlayerShots::SoundAction,bool)override;bool life_hud(i32,i32)override;bool bomb_hud(i32,i32)override;bool game_over()override;bool notice(i32)override;bool popup(const Vec3&,i32,u32)override;bool cancellation_effect(i32,const Vec3&,const Vec3&)override;bool graze_spark(const Vec3&)override;bool graze_flash()override;bool graze_resonance(float)override;bool shake(const ScreenShakeSpec&)override;bool nudge(const ScreenNudgeSpec&)override;

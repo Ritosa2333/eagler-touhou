@@ -1,4 +1,5 @@
 #include "RunSession.hpp"
+#include "PracticeSections.hpp"
 namespace th15 {
 bool RunSession::fail(const std::string& reason){if(error.empty())error=reason.empty()?"Run session operation failed":reason;return false;}
 ReplayRunState RunSession::replay_state(){auto& s=scene();return {progress,s.battle.session,s.battle.score,s.battle.enemy_world,s.battle.player->motion,s.music.current_music_wave};}
@@ -22,6 +23,12 @@ bool RunSession::restart_overlay(i32 script){return platform.restart_overlay(scr
 bool RunSession::restart_effect(i32 label){return platform.restart_effect(label);}
 bool RunSession::prepare_stage_music(){return platform.prepare_stage_music();}
 bool RunSession::start_stage_music(){const auto* d=stage_definition(progress.stage);if(!d)return fail("Stage music definition unavailable");scene().music.current_music_wave=std::string(d->music[0])+".wav";return platform.start_stage_music();}
+bool RunSession::start_entry_music(){
+ // Purple 43d5c1 selects slot 1 iff THBGMTest() is nonzero. This hook
+ // belongs to scene entrance, not ordinary MSG requests or chapter retries.
+ const auto* p=run.practice;const int section=p&&p->active?p->run.section:0;
+ return section>0&&section<int(std::size(practice_sections))&&practice_sections[section].bgm?start_boss_music():start_stage_music();
+}
 bool RunSession::start_boss_music(){const auto* d=stage_definition(progress.stage);if(!d)return fail("Boss music definition unavailable");scene().music.current_music_wave=std::string(d->music[1])+".wav";return platform.start_boss_music();}
 bool RunSession::seek_stage_music(double seconds){return platform.seek_stage_music(seconds);}
 bool RunSession::demo_fade(){return platform.demo_fade();}

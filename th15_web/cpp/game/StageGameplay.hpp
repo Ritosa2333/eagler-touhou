@@ -33,6 +33,8 @@ public:
  bool initialize_player(bool configure=true);bool initialize_background(const StageCamera&);bool initialize_popups();bool enable_entry_updates();
  bool start_main_script();bool initialize_hud(i32 scene_destination);bool enable_game_callbacks();
  bool chapter_reward(bool boss);bool capture(i32 chapter);bool restore();bool clear_dialogue_field();
+ bool skip_chapter_reward()noexcept{return assets.practice_active&&assets.practice_effects.skip_reward();}
+ u32 practice_music_start_offset()noexcept;
  bool suspend_for_transition();
  void retire_projectile_effect_animations()noexcept{animations.retire_resource(assets.effect);animations.retire_resource(assets.bullet);}
  void apply_input(const GameInput&)noexcept;

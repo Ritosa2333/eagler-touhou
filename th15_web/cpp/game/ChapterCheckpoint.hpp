@@ -23,7 +23,7 @@ class ChapterCheckpoint {
 public:
     std::string error;
     ChapterCheckpoint(SessionState& s,PlayerLifeSession& p,ItemScoreState& v,EnemyWorldState& e,std::string& wave,ChapterCheckpointServices& h):progress(s),player(p),score(v),enemies(e),music(wave),host(h){}
-    bool capture(i32 chapter);bool restore();bool ready()const noexcept{return available;}
+    bool capture(i32 chapter,PracticePatchEffects* practice=nullptr);bool restore();bool ready()const noexcept{return available;}
     bool write_file(std::vector<u8>&);
     bool read_file(const u8*,u32,u32& consumed);
     const SessionState& state()const noexcept{return saved_progress;}

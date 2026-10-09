@@ -10,7 +10,9 @@ const std::string* EnemyState::check_interrupt(EnemyWorldState& world)noexcept{
         }break;
     }
     for(auto& interrupt:interrupts)if(interrupt.life>=0&&interrupt.time>0){
-        if(flags&0x800000){const i32 remaining=wrapping_sub(interrupt.time,age_timer.current),seconds=remaining/60,hundredths=wrapping_mul(remaining%60,100)/60;world.boss_seconds=seconds>99?99:seconds;world.boss_hundredths=seconds>99?99:hundredths;}
+        if(flags&0x800000){const i32 remaining=wrapping_sub(interrupt.time,age_timer.current),seconds=remaining/60,hundredths=wrapping_mul(remaining%60,100)/60;world.boss_seconds=seconds>99?99:seconds;world.boss_hundredths=seconds>99?99:hundredths;
+            if(world.practice&&world.practice->enabled)world.practice->lock_timer.observe();
+        }
         if(age_timer.current<interrupt.time)return nullptr;
         life=interrupt.life;interrupt.life=-1;age_timer.set(0);flags|=0x1000000;
         if(!(world.spell_flags()&8)){

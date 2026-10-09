@@ -44,7 +44,7 @@ public:
     BattleCheckpoint(GameBattle&,StageScene&,AnmManager&,SessionState&,PopupManager&,std::string& music,CheckpointSceneServices&,const std::array<i32,6>& banks,i32 bullet_bank);
     ~BattleCheckpoint(){release_binding();}
     void release_binding()noexcept{if(counter_linked&&game.items->alternating_counter==&progress.alternating_pieces)game.items->alternating_counter=previous_alternating_counter;counter_linked=false;}
-    bool capture(i32 chapter);bool restore();bool ready()const noexcept{return chapter.ready();}
+    bool capture(i32 chapter,PracticePatchEffects* practice=nullptr);bool restore();bool ready()const noexcept{return chapter.ready();}
     CheckpointHeader file_header(i64 timestamp,u32 display_flags)const noexcept;
     bool write_file(std::vector<u8>&,i64 timestamp,u32 display_flags);
     bool prepare_file(CheckpointFile&,i64 timestamp,u32 display_flags);

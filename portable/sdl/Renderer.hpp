@@ -7,6 +7,9 @@
 #include <map>
 #include <vector>
 #include <string>
+#if TH_ENABLE_THPRAC
+struct ImDrawData;
+#endif
 
 // Semantic GLES renderer shared by the two games. Matrices and vertices stay
 // in C++; only resource decoding knows the original file format codes.
@@ -25,9 +28,14 @@ struct State {
 class Renderer : public StateCommands {
 public:
     using Resolve=Surface(*)(void*,u32);
-    Statistics stats{};State state{};bool defer=false;
+    Statistics stats{};State state{};bool defer=false,flip_present_y=false;
     Renderer(int version,Resolve,void*);~Renderer();
     bool initialize();void flush();void discard();bool commit();
+#if TH_ENABLE_THPRAC
+    void render_imgui(const struct ::ImDrawData*,u32);
+    u32 create_imgui_texture(u32 width,u32 height,const u8* rgba);
+    void release_imgui_texture(u32);
+#endif
     PipelineState& pipeline() override { return state.pipeline; }
     void transform(MatrixKind,const void*);void viewport(const Viewport&);
     void draw(Topology primitive,u32 count,const void*,u32 stride,const void* indices=nullptr,IndexType indexFormat=IndexType::UInt16);
@@ -49,6 +57,9 @@ private:
     GLuint vertex=0,currentProgram=0,boundTexture=~0u,readFramebuffer=~0u,drawFramebuffer=~0u;
     std::map<std::array<u32,6>,GLuint> layouts;GLuint currentLayout=0;
     GLuint resampleProgram=0,resampleVao=0,weightTexture=0;
+#if TH_ENABLE_THPRAC
+    GLuint imguiProgram=0,imguiVao=0,imguiVbo=0,imguiEbo=0,imguiFontTexture=0;GLint imguiProjMtx=-1,imguiTexture=-1;
+#endif
     Program generic{};bool warming=true,buildingGeneric=false;Program* program=nullptr;
     Stream vertices{},indices{},instances{};State batchState{};
     std::vector<u8> batchBytes,batchScratch,quad,worlds,pixels;Topology batchTopology=Topology::Triangles;bool batching=false,instancing=false;

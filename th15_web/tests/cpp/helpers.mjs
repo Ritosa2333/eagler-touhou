@@ -7,7 +7,7 @@ import {NativeMachine} from "../../scripts/native/machine.mjs";
 export const root=fileURLToPath(new URL("../../",import.meta.url));
 export const target=JSON.parse(readFileSync(resolve(root,"target.json"),"utf8"));
 export const sha=data=>createHash("sha256").update(data).digest("hex");
-export async function core(){const wasi=new WASI({version:"preview1",args:[],env:{},preopens:{}});const {instance}=await WebAssembly.instantiate(readFileSync(resolve(root,"artifacts/cpp/game-core-test.wasm")),{wasi_snapshot_preview1:wasi.wasiImport});wasi.initialize(instance);return instance.exports;}
+export async function core(){const wasi=new WASI({version:"preview1",args:[],env:{},preopens:{}});const {instance}=await WebAssembly.instantiate(readFileSync(resolve(root,"artifacts/cpp/game-core-test.wasm")),{wasi_snapshot_preview1:wasi.wasiImport,env:{emscripten_notify_memory_growth(){}}});wasi.initialize(instance);return instance.exports;}
 export const memory=(c,p,n)=>new Uint8Array(c.memory.buffer,p,n);
 export function string(c,p){if(!Number.isInteger(p)||p<0||p>=c.memory.buffer.byteLength)throw Error("Invalid Wasm string pointer "+p);const bytes=memory(c,p,Math.min(1024,c.memory.buffer.byteLength-p)),n=bytes.indexOf(0);return Buffer.from(bytes.subarray(0,n<0?bytes.length:n)).toString();}
 export async function oracle(options={}){const bytes=readFileSync(resolve(root,target.executable));if(sha(bytes)!==target.sha256)throw Error("TH15 executable hash mismatch");const m=await NativeMachine.create(bytes,{...options,wasmBinary:readFileSync(resolve(root,"reference/native/unicorn-bounded.wasm"))});m.resetThreadFPU();

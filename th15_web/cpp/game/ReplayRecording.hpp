@@ -1,5 +1,6 @@
 #pragma once
 #include "Replay.hpp"
+#include "PracticeConfig.hpp"
 namespace th15 {
 struct ReplayExportDetails {
  i32 score=0;double elapsed=0,total=1;
@@ -16,8 +17,10 @@ struct RecordedReplayStage {
 class ReplayRecording {
  std::array<u8,0xa4> metadata{};std::array<RecordedReplayStage,8> stages{};
  i32 current=0,clock=-1;bool sealed=false;std::vector<u8> file;std::string failure;
+ std::vector<u8> practice_block;
  bool fail(const char*);bool serialize(const char*,const ReplayExportDetails&);
 public:
+ bool set_practice(const PracticeConfig& p){if(!p.valid())return false;const auto block=practice_replay_block(p);if(sealed)return block==practice_block&&!block.empty();practice_block=block;return !practice_block.empty();}
  std::array<u8,0xa4>& description(){return metadata;}
  const RecordedReplayStage* stage(u32 n)const{return n<8&&stages[n].present?&stages[n]:nullptr;}
  const std::vector<u8>& output()const{return file;}

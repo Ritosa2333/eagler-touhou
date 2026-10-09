@@ -13,7 +13,7 @@ bool SessionActivation::load(const SceneActivationFrame& frame,bool& waiting){
  if(!check(services.initialize_background(),"Scene background initialization failed"))return false;
  if(frame.previous_background){if(!check(services.capture_previous_background(),"Previous background capture failed")||!check(services.prepare_background_transition(),"Previous background transition failed"))return false;progress.scene_flags|=0x800;loaded=true;return check(services.transition_banner(),"Scene transition banner failed");}
  progress.scene_flags&=~0x800u;if(!reset_game())return false;loaded=true;
- if((player.mode_flags&0x30)!=0x20&&!(player.mode_flags&0x40)&&(player.mode_flags&0x300)!=0x200&&!check(services.start_stage_music(),"Scene entrance music failed"))return false;
+ if((player.mode_flags&0x30)!=0x20&&!(player.mode_flags&0x40)&&(player.mode_flags&0x300)!=0x200&&!check(services.start_entry_music(),"Scene entrance music failed"))return false;
  if(!check(services.interrupt_entrance(),"Entrance overlay interrupt failed")||!check(services.retire_restart_overlay(),"Entrance restart overlay retirement failed")||!check(services.interrupt_resume_overlay(),"Resume overlay interrupt failed"))return false;
  if(pending_progress){if(!check(services.restore_pending_progress(),"Pending progress restore failed"))return false;pending_progress=false;}
  return true;

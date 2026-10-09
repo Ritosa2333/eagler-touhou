@@ -7,10 +7,13 @@ void ChapterCheckpoint::count_next_retry(){
     saved_progress.stage_deaths[progress.stage+1]=wrapping_add(saved_progress.stage_deaths[progress.stage+1],1);
     saved_progress.chapter_deaths=wrapping_add(saved_progress.chapter_deaths,1);
 }
-bool ChapterCheckpoint::capture(i32 chapter){
+bool ChapterCheckpoint::capture(i32 chapter,PracticePatchEffects* practice){
     if(progress.stage<0||progress.stage>7)return check(false,"Checkpoint stage outside range");
     available=false;if(!check(host.synchronize_resources(),"Checkpoint resource boundary failed"))return false;
-    if(progress.chapter!=chapter)progress.run_clock=0;progress.chapter=chapter;enemies.current_chapter=chapter;
+    if(progress.chapter!=chapter)progress.run_clock=0;progress.chapter=chapter;
+    // Purple 43dd58 executes after the native chapter comparison/assignment.
+    if(practice&&practice->chapter_set!=-1){progress.chapter=practice->chapter_set;practice->chapter_set=-1;}
+    enemies.current_chapter=progress.chapter;
     score.graze_chapter=0;enemies.chapter_total=enemies.chapter_defeated=0;
     saved_progress=progress;saved_player=player;saved_score=score;saved_total=enemies.chapter_total;saved_defeated=enemies.chapter_defeated;saved_rank=enemies.rank;saved_music=music;
     saved_progress.checkpoint_power=player.power>player.power_step?player.power:player.power_step;
@@ -18,6 +21,9 @@ bool ChapterCheckpoint::capture(i32 chapter){
     if(!check(host.clear_saved_animations(),"Checkpoint animation pool clear failed")||!check(host.save_player(),"Player snapshot failed")||!check(host.save_enemies(),"Enemy snapshot failed")||!check(host.save_background(),"Background snapshot failed")||!check(host.save_bullets(),"Bullet snapshot failed")||!check(host.save_items(),"Item snapshot failed")||!check(host.save_effects(),"Effect snapshot failed")||!check(host.save_popups(),"Popup snapshot failed")||!check(host.save_bomb(),"Bomb snapshot failed"))return false;
     available=true;
     if((player.mode_flags&0x300)&&!check(host.checkpoint_file(false),"Checkpoint file save failed")){available=false;return false;}
+    // Purple 43dece hooks the return, after all checkpoint copies/file work.
+    // This must not change saved_total: retry restores the original snapshot.
+    if(practice&&practice->extra_boss_chapter_bonus){enemies.chapter_total=1;practice->extra_boss_chapter_bonus=false;}
     return true;
 }
 void ChapterCheckpoint::restore_progress(){
