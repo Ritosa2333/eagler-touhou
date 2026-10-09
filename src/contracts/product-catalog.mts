@@ -393,8 +393,8 @@ export const PRODUCT_GAMES = Object.freeze({
       adaptationNotice: "early-test",
     }),
     runtimeFileLayout: "directory",
-    // Original normal-face glyph coverage stays in the immutable Runtime.
-    requiredShared: Object.freeze([]),
+    // Purple THPrac and localization use the shared Unicode font.
+    requiredShared: Object.freeze(["/unifont.otf"]),
     runtimeAssets: Object.freeze([
       "th15.html",
       "manifest.json",
@@ -425,7 +425,7 @@ export const PRODUCT_GAMES = Object.freeze({
       musicMounts: Object.freeze({ ogg: "/music" }),
     }),
     replay: Object.freeze({ prefix: "th15" }),
-    features: Object.freeze({ thprac: false, languages: true, focusHitbox: false }),
+    features: Object.freeze({ thprac: true, languages: true, focusHitbox: false }),
   }),
   th20: Object.freeze({
     testOnly: true,
