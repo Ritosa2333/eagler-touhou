@@ -87,8 +87,11 @@ private:
         if(DecodeInputPacket(bytes,size,&input))return input.sessionId==retired_.sessionId&&
             input.playerCount==retired_.playerCount&&peer(input.senderPlayer);
         AdonisPhaseSample phase;
+        // Phase samples use broadcast control even when addressed to one peer.
+        // A valid retired sample for the third player is discarded here too,
+        // just as the active SessionChannel ignores a non-local phase target.
         if(DecodeAdonisPhaseSample(bytes,size,&phase))return phase.sessionId==retired_.sessionId&&
-            phase.targetPlayer==retired_.localPlayer&&peer(phase.senderPlayer);
+            phase.targetPlayer<retired_.playerCount&&peer(phase.senderPlayer);
         SessionPacket session;
         return DecodeSessionPacket(bytes,size,&session)&&session.sessionId==retired_.sessionId&&
             session.gameId==retired_.gameId&&session.gameplayAbi==retired_.gameplayAbi&&session.seed==retired_.seed&&

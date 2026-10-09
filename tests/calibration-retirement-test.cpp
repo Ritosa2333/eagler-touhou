@@ -75,6 +75,43 @@ void asymmetric_final_ack(){
  CHECK(!left.channel.Retiring()&&!right.channel.Retiring());
  std::puts("PASS lost asymmetric final ACK survives next-generation actual-channel calibration; new core remains empty");
 }
+void retired_three_player_phase_broadcast(){
+ // SessionChannel sends each peer-targeted phase sample through SendControl,
+ // which broadcasts it to every other peer. The third participant normally
+ // ignores it; the same valid old-generation tail must remain harmless while
+ // that participant is measuring a new generation.
+ for(unsigned local=0;local<3;++local){
+  Link wire,sink;wire.other=&sink;sink.other=&wire;
+  SessionConfig previous;previous.sessionId=11;previous.gameId=11;previous.gameplayAbi=23;previous.seed=91;
+  previous.playerCount=3;previous.localPlayer=local;
+  auto current=previous;current.sessionId++;current.seed++;
+  AdonisConnection connection(wire);connection.Prepare(current,AdonisMode::Delay,false,0,2,&previous);
+  AdonisPhaseSample phase;phase.sessionId=previous.sessionId;phase.frame=16;phase.waitCount=16;
+  phase.senderPlayer=(local+1)%3;phase.targetPlayer=(local+2)%3;
+  std::vector<std::uint8_t> bytes;CHECK(EncodeAdonisPhaseSample(phase,&bytes));
+  wire.incoming.push_back({0,bytes});
+  CHECK(connection.Pump(0,true));CHECK(!connection.Failed());CHECK(connection.Waiting());
+  CHECK(connection.Startup().Probes()==0);CHECK(!connection.NeedsApply());
+  CHECK(!connection.Poll(&bytes)); // The retired sample never reaches a new channel/core.
+ }
+ std::puts("PASS all three seats discard valid third-peer phase broadcasts from the immediately retired generation");
+}
+void rejected_retired_phase_broadcasts(){
+ for(unsigned kind=0;kind<8;++kind){
+  Link wire,sink;wire.other=&sink;sink.other=&wire;
+  SessionConfig previous;previous.sessionId=11;previous.gameId=11;previous.gameplayAbi=23;previous.seed=91;
+  previous.playerCount=(kind==2||kind==3)?2:3;previous.localPlayer=0;
+  auto current=previous;current.sessionId++;current.seed++;
+  AdonisConnection connection(wire);connection.Prepare(current,AdonisMode::Delay,false,0,2,kind==7?nullptr:&previous);
+  AdonisPhaseSample phase;phase.sessionId=kind==0?current.sessionId:kind==1?100:previous.sessionId;
+  phase.frame=16;phase.waitCount=16;phase.senderPlayer=kind==3?2:kind==4?0:1;phase.targetPlayer=kind==3?0:kind==4?1:2;
+  std::vector<std::uint8_t> bytes;CHECK(EncodeAdonisPhaseSample(phase,&bytes));
+  if(kind==5)bytes[17]=phase.senderPlayer; // A phase sample cannot target its own sender.
+  if(kind==6)bytes[17]=MAX_PLAYERS;
+  wire.incoming.push_back({0,bytes});CHECK(!connection.Pump(0,true));CHECK(connection.Failed());
+ }
+ std::puts("PASS current/foreign/unspecified epochs, local/invalid senders and invalid phase targets remain rejected");
+}
 void rejected_early_packets(){
  for(unsigned kind=0;kind<6;++kind){
   Link left,right;left.other=&right;right.other=&left;
@@ -98,5 +135,5 @@ void rejected_early_packets(){
  std::puts("PASS current/foreign/malformed-scope early inputs, wrong retired ABI/target and non-opted-in old packets stay rejected");
 }
 }
-int main(){asymmetric_final_ack();rejected_early_packets();}
+int main(){asymmetric_final_ack();retired_three_player_phase_broadcast();rejected_retired_phase_broadcasts();rejected_early_packets();}
 
