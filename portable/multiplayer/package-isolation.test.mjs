@@ -8,7 +8,7 @@ import {
   createRuntimeManifest, packageEagler, MULTIPLAYER_EXPORTS, sha256,
 } from '../package-eagler.mjs';
 
-const revision = 'd81eda48917625ff1d3f7d156bbdb2fdd816fde7';
+const revision = 'e02347fac98c9e599d30a6ffd7ef30756555b948';
 const leb = value => {
   const bytes = [];
   do { const part = value & 127; value >>>= 7; bytes.push(part | (value ? 128 : 0)); } while (value);
@@ -56,7 +56,7 @@ function withFixture(multiplayer, body) {
   put('th11_web/sdl-runtime/managed.html', '<html><head></head><body></body></html>');
   put('th11_web/sdl-runtime/shell.mjs', 'const runtimeBuild=/*TH11_BUILD_INFO*/{version:"development"};\n');
   for (const name of ['startup-branding.mjs', 'managed.css', 'keyboard.mjs', 'directory-keyboard.mjs',
-    'eagler-host.mjs', 'multiplayer.mjs']) put('th11_web/sdl-runtime/' + name, '// shell\n');
+    'eagler-host.mjs', 'multiplayer.mjs', 'multiplayer.css']) put('th11_web/sdl-runtime/' + name, '// shell\n');
   put('portable/browser/motion-replay.mjs', '// replay\n');
   put('portable/browser/multiplayer-replay.mjs', '// mp replay\n');
   put('third_party/eagler-common/browser/adonis-calibration.mjs', '// calibration\n');
@@ -126,7 +126,7 @@ test('closed runtime inventories include the complete MP browser module closure 
     const shell = readFileSync(resolve(fixture.plan.out, 'shell.mjs'), 'utf8');
     assert.equal(manifest.game, 'th11');
     assert.match(shell, new RegExp('"multiplayer":' + multiplayer));
-    for (const name of ['multiplayer.mjs', 'multiplayer-replay.mjs', 'adonis-calibration.mjs'])
+    for (const name of ['multiplayer.mjs', 'multiplayer.css', 'multiplayer-replay.mjs', 'adonis-calibration.mjs'])
       assert.equal(Object.hasOwn(inventory.files, name), multiplayer);
     for (const [name, expected] of Object.entries(inventory.files)) {
       const bytes = readFileSync(resolve(fixture.plan.out, name));

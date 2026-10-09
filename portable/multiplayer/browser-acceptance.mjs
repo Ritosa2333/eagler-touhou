@@ -12,12 +12,17 @@ import {randomUUID,createHash} from 'node:crypto';
 const root=resolve(import.meta.dirname,'../..');
 const option=(name,fallback)=>{const i=process.argv.indexOf(name);return i<0?fallback:process.argv[i+1];};
 const players=Number(option('--players','2')),route=option('--route','rtc');
+const language=option('--language','ja');
+assert.ok(['ja','lang_zh-hans'].includes(language));
 const selections=option('--loadouts',Array.from({length:players},(_,seat)=>seat).join(',')).split(',').map(Number);
 const frames=Number(option('--frames','600')),spectator=process.argv.includes('--spectator');
 const replay=!process.argv.includes('--no-replay');
 const restart=process.argv.includes('--restart');
 const fullSlots=process.argv.includes('--full-replay-slots');
 const disconnect=process.argv.includes('--disconnect');
+const uiAudit=process.argv.includes('--ui-audit');
+const verifyUi=process.argv.includes('--verify-ui');
+assert.ok(!verifyUi||uiAudit,'UI verification requires current-run captures');
 const automatic=process.argv.includes('--auto'),dropFirst=process.argv.includes('--drop-first-input');
 const joinLag=Number(option('--spectator-lag-frames','0'));
 assert.ok([2,3].includes(players));assert.ok(['rtc','relay'].includes(route));
@@ -45,11 +50,42 @@ const manifest=JSON.parse(readFileSync(resolve(runtime,'manifest.json')));
 assert.equal(manifest.product,'th11mp');
 const inventory=JSON.parse(readFileSync(resolve(runtime,'runtime-files.json')));
 const html=readFileSync(resolve(import.meta.dirname,'browser-host.html'));
-const report={passed:false,scope:'local Chromium production Runtime and shared relay',players,route,
+const report={passed:false,scope:'local Chromium production Runtime and shared relay',players,route,language,
   selections,spectator,replay,restart,disconnect,automatic,dropFirst,fullSlots,joinLag,frames,wasm:manifest.execution.sha256,errors:[],checkpoints:[]};
 const bytesHash=bytes=>createHash('sha256').update(Uint8Array.from(bytes)).digest('hex');
 const occupiedPaths=Array.from({length:99},(_,i)=>'replay/th11_'+String(i+1).padStart(2,'0')+'.rpy').concat('replay/th11_ud0000.rpy');
 const pause=ms=>new Promise(accept=>setTimeout(accept,ms));
+async function captureUi(page,name,{narrow=true}={}){
+  if(!uiAudit)return;
+  report.uiScreenshots??=[];
+  const capture=async suffix=>{
+    const file=output.replace(/\.json$/,'-ui-'+name+'-'+suffix+'.png');
+    await page.evaluate(()=>new Promise(accept=>requestAnimationFrame(()=>requestAnimationFrame(accept))));
+    await page.screenshot({path:file});
+    const surface=await page.frameLocator('iframe').locator('body').evaluate(body=>({
+      text:body.innerText,focus:body.ownerDocument.activeElement?.outerHTML,
+      canvasBottom:body.querySelector('canvas')?.getBoundingClientRect().bottom,
+      controls:[...body.querySelectorAll('#th11-multiplayer-menu,#th11-multiplayer-replay-controls,#th11-multiplayer-session-controls')]
+        .map(node=>({id:node.id,width:node.clientWidth,scrollWidth:node.scrollWidth,height:node.clientHeight,scrollHeight:node.scrollHeight,top:node.getBoundingClientRect().top})),
+    }));
+    report.uiScreenshots.push({name,viewport:page.viewportSize(),file,surface});
+    if(verifyUi)for(const control of surface.controls){
+      assert.ok(control.scrollWidth<=control.width+1,name+' '+suffix+' must not clip or scroll horizontally');
+      if(control.id==='th11-multiplayer-replay-controls')
+        assert.ok(surface.canvasBottom<=control.top+1,'Replay controls must stay outside the native game frame');
+    }
+  };
+  await capture('desktop');
+  if(narrow){
+    const viewport=page.viewportSize();
+    const prior=await page.locator('iframe').getAttribute('style');
+    await page.setViewportSize({width:390,height:844});
+    await page.locator('iframe').evaluate(node=>node.style.cssText='width:100vw;height:100vh;display:block');
+    await capture('portrait');
+    await page.setViewportSize(viewport);
+    await page.locator('iframe').evaluate((node,value)=>value===null?node.removeAttribute('style'):node.setAttribute('style',value),prior);
+  }
+}
 let server,relay,browser;const pages=[],contexts=[];
 let relayLog='';
 try {
@@ -95,7 +131,7 @@ try {
     if(route==='relay')await context.addInitScript("Object.defineProperty(globalThis,'RTCPeerConnection',{value:undefined,configurable:true})");
     const page=await context.newPage();pages.push(page);
     page.on('pageerror',error=>report.errors.push({label,error:String(error)}));
-    await page.goto(base);await page.evaluate(()=>host.open());
+    await page.goto(base);await page.evaluate(language=>{host.language=language;host.open();},language);
     await page.waitForFunction(()=>host.ready(),{},{timeout:120000});
     return page;
   }
@@ -145,6 +181,7 @@ try {
       host.observe(restart&&watcher?0:frames,restart&&!watcher?1:0);
       await host.configure(options);await host.launch();
     },{options,frames,restart,watcher});
+    if(seat===0)await captureUi(pages[seat],'connection');
     if(!watcher){
       await pages[seat].evaluate(()=>host.key('KeyZ',true));
       await pages[seat].evaluate(([code,down])=>host.key(code,down),[seat%2?'ArrowRight':'ArrowLeft',true]);
@@ -160,7 +197,7 @@ try {
       await host.key('ArrowUp',true);await host.key('KeyZ',true);
     });
   }
-  const deadline=Date.now()+180000;let checkpoints,started=false,pauseSent=false,restartSent=false,restartInputsSent=false,lastProgress=0;
+  const deadline=Date.now()+180000;let checkpoints,started=false,pauseSent=false,restartSent=false,restartInputsSent=false,lastProgress=0,pauseCaptureFrame=null;
   while(true){
     checkpoints=await Promise.all(pages.map(page=>page.evaluate(()=>{host.pump();return host.snapshot();})));
     if(Date.now()-lastProgress>5000){
@@ -203,6 +240,11 @@ try {
         console.log('TH11: P1 pause requested at '+live[0].net[3]);
       }
       if(pauseSent&&!restartSent&&live.every(state=>state.game[3]===2)){
+        if(uiAudit){
+          pauseCaptureFrame??=Math.max(...live.map(state=>state.net[3]))+18;
+          if(live.some(state=>state.net[3]<pauseCaptureFrame)){await pause(25);continue;}
+          await captureUi(pages[0],'pause');
+        }
         restartSent=true;report.paused=checkpoints;
         await pages[0].evaluate(async()=>{await host.key('Escape',false);await host.key('KeyR',true);});
         console.log('TH11: synchronized pause observed, P1 R requested at '+live[0].net[3]);
@@ -266,6 +308,8 @@ try {
   }
   console.log('TH11 '+players+'P '+route+': '+common.length+' same-frame world comparisons passed');
   await pages[0].screenshot({path:output.replace(/\.json$/,'.png')});
+  await captureUi(pages[0],'gameplay');
+  if(restart&&spectator)await captureUi(pages[players],'spectator-end');
   const retiredReplayPath=fullSlots?'replay/th11_ud0001.rpy':'replay/th11_01.rpy';
   const bytes=restart?(await pages[0].evaluate(path=>host.request('read',{path}),retiredReplayPath)).bytes:
     await pages[0].evaluate(()=>host.exportReplay());
@@ -293,6 +337,11 @@ try {
     console.log('TH11: 99 numbered and 1 imported Replay preserved; overflow Replay and repeated flush passed');
   }
   if(replay){
+    if(uiAudit){
+      const empty=await newPage('empty-playback');
+      await empty.evaluate(async()=>{await host.configure({replayViewer:true});await host.launch();});
+      await captureUi(empty,'replay-empty');
+    }
     const page=await newPage('playback');
     await page.evaluate(async({bytes,frames,restart})=>{
       await host.configure({replayViewer:true});
@@ -300,7 +349,14 @@ try {
       host.observe(restart?0:frames);await host.launch();
     },{bytes,frames,restart});
     const frame=page.frameLocator('iframe');
-    await frame.locator('#th11-multiplayer-menu').getByRole('button',{name:/th11_01\.rpy/}).click();
+    await captureUi(page,'replay-list');
+    if(verifyUi){
+      const selected=frame.locator('#th11-multiplayer-menu').getByRole('button',{name:/th11_01\.rpy/});
+      assert.equal(await selected.evaluate(node=>node===node.ownerDocument.activeElement),true,'Replay launch must retain menu focus');
+      await page.keyboard.press('ArrowDown');
+      assert.equal(await frame.locator('#th11-multiplayer-menu').getByRole('button',{name:/^(Back|返回)$/}).evaluate(node=>node===node.ownerDocument.activeElement),true);
+      await page.keyboard.press('ArrowUp');await page.keyboard.press('KeyZ');
+    }else await frame.locator('#th11-multiplayer-menu').getByRole('button',{name:/th11_01\.rpy/}).click();
     const replayDeadline=Date.now()+180000;
     while(true){
       const state=await page.evaluate(()=>host.snapshot());
@@ -322,7 +378,7 @@ try {
     // snapshot. Clear observations so pre-seek data cannot satisfy this gate.
     const controls=frame.locator('#th11-multiplayer-replay-controls');
     const pauseControl=controls.locator('[data-action="pause"]');
-    if((await pauseControl.textContent())==='Pause')await pauseControl.click();
+    if((await pauseControl.getAttribute('aria-pressed'))==='false'||(await pauseControl.textContent())==='Pause')await pauseControl.click();
     const seekFrame=replayFrames[Math.floor(replayFrames.length/3)];
     await page.evaluate(()=>host.snapshots.clear());
     await controls.locator('input[type="range"]').evaluate((input,value)=>{
@@ -344,6 +400,25 @@ try {
     await pause(120);
     assert.equal((await page.evaluate(()=>host.snapshot())).net[3],seekFrame,'Replay remains paused after seek');
     report.seek={frame:seekFrame,nativeHash:sought.game[1],matched:true,reconstructedFromStart:true};
+    if(verifyUi){
+      const range=controls.locator('input[type="range"]');
+      await pauseControl.focus();await page.keyboard.press('Tab');
+      assert.equal(await controls.locator('select').evaluate(node=>node===node.ownerDocument.activeElement),true,'Replay toolbar must allow Tab navigation');
+      await page.keyboard.press('Tab');
+      assert.equal(await range.evaluate(node=>node===node.ownerDocument.activeElement),true);
+      const prior=Number(await range.inputValue());
+      await page.keyboard.press('ArrowRight');
+      await page.waitForFunction(value=>host.snapshot().net[3]===value,prior+1,{timeout:30000});
+      assert.equal(Number(await range.inputValue()),prior+1,'Replay range must accept native keyboard changes');
+      report.uiKeyboard={menuNavigation:true,menuPlay:true,tabNavigation:true,rangeSeek:true};
+    }
+    await captureUi(page,'replay-seek');
+    if(verifyUi){
+      await page.keyboard.press('Escape');
+      const selected=frame.locator('#th11-multiplayer-menu').getByRole('button',{name:/th11_01\.rpy/});
+      assert.equal(await selected.evaluate(node=>node===node.ownerDocument.activeElement),true,'Returning to the Replay list must restore the selected file');
+      report.uiKeyboard.menuReturn=true;
+    }
     console.log('TH11 '+players+'P '+route+': backward Replay seek matched frame '+seekFrame);
   }
   assert.equal(report.errors.length,0,JSON.stringify(report.errors));
@@ -359,8 +434,17 @@ try {
     const failed=await pages[0].evaluate(()=>host.snapshot());
     assert.ok(failed.error,'A live peer disconnect must be visible');
     assert.equal(failed.net[3],before.net[3],'Disconnected world must stay frozen');
-    await pages[0].frameLocator('iframe').getByRole('heading',{name:'Multiplayer stopped'}).waitFor();
+    await pages[0].frameLocator('iframe').getByRole('heading',{name:/^(Multiplayer stopped|多人运行已停止)$/}).waitFor();
     report.disconnect={error:failed.error,frame:failed.net[3],visible:true};
+    await captureUi(pages[0],'disconnect');
+    if(verifyUi){
+      await pages[0].frameLocator('iframe').getByRole('button',{name:/^(Back to room|返回房间)$/}).click();
+      await pages[0].waitForFunction(()=>host.events.some(event=>event.event==='exit'),{},{timeout:30000});
+      const room=await pages[0].evaluate(()=>({open:host.lobbyState.socket.readyState===WebSocket.OPEN,
+        member:host.lobbyState.room.seats.some(seat=>seat?.clientId===host.lobbyState.id)}));
+      assert.deepEqual(room,{open:true,member:true},'Runtime exit must preserve the Launcher-owned room connection and membership');
+      report.disconnect.returnedWithRoomMembership=true;
+    }
     console.log('TH11 '+players+'P '+route+': actual peer disconnect reported visibly');
   }
   report.passed=true;

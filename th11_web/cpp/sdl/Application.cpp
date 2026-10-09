@@ -248,7 +248,7 @@ struct Application:StageResourceEffects {
     bool capture_pause_frame(){
         if(!session.pause_menu||!session.pause_menu->capture_requested)return true;
         auto& menu=*session.pause_menu;
-        auto* vm=session.animations.find(menu.background_animation);if(!vm||!vm->sprite||!vm->resource){error="Pause screenshot sprite missing";return false;}
+        auto* vm=menu.background_vm();if(!vm||!vm->sprite||!vm->resource){error="Pause screenshot sprite missing";return false;}
         const auto& sprite=*vm->sprite;const u32 target=graphics.texture(*vm->resource,sprite.texture);renderer.flush();
         const i32 from[]={32,16,416,464},to[]={i32(sprite.x),i32(sprite.y),i32(sprite.x+sprite.width),i32(sprite.y+sprite.height)};
         if(!graphics.backend.resample(GraphicsDevice::screen,from,target,to,nullptr,0,0)){error="Pause GPU capture failed";return false;}

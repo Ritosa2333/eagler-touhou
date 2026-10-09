@@ -164,6 +164,15 @@ bool GameBattle::mp_stage_reset(){
     for(unsigned i=0;i<mp_options.seat_count;++i){auto& p=*pilots[i];EffectOwner effect(*this,i);if(p.ghost&&!p.revive(false))return false;if(!p.player->start_stage())return false;p.communication.reset(&animations.rate);p.economy.communication=0;p.life_hold=p.power_taps=0;p.life_latched=false;p.keys={};}
     return true;
 }
+int GameBattle::mp_life_receiver(unsigned giver)const noexcept{
+    if(giver>=mp_options.seat_count||!pilots[giver])return -1;
+    const auto& p=*pilots[giver];int receiver=-1;
+    if(!p.alive()||(p.keys.held&9)!=8||p.life_latched||p.economy.lives<=0||(dialogue&&dialogue->active)||!stage_active)return -1;
+    for(unsigned j=0;j<mp_options.seat_count;++j){if(giver==j)continue;const auto& q=*pilots[j];if((!q.alive()&&!q.ghost)||(!q.ghost&&q.economy.lives>=9)||distance2(p.player->motion.state.position,q.player->motion.state.position)>400)continue;
+        if(receiver<0||q.ghost>pilots[unsigned(receiver)]->ghost||(q.ghost==pilots[unsigned(receiver)]->ghost&&q.economy.lives<pilots[unsigned(receiver)]->economy.lives))receiver=j;
+    }
+    return receiver;
+}
 bool GameBattle::mp_update_rules(){
     ++mp_tick;
     for(unsigned i=0;i<mp_options.seat_count;++i){auto& p=*pilots[i];if(!p.player)continue;const u32 held=p.keys.held;
@@ -172,10 +181,8 @@ bool GameBattle::mp_update_rules(){
         if(!p.alive()||(dialogue&&dialogue->active)||!stage_active)continue;
         int receiver=-1;
         if((held&9)==8&&!p.life_latched&&p.economy.lives>0){
-            for(unsigned j=0;j<mp_options.seat_count;++j){if(i==j)continue;const auto& q=*pilots[j];if((!q.alive()&&!q.ghost)||(!q.ghost&&q.economy.lives>=9)||distance2(p.player->motion.state.position,q.player->motion.state.position)>400)continue;
-                if(receiver<0||q.ghost>pilots[unsigned(receiver)]->ghost||(q.ghost==pilots[unsigned(receiver)]->ghost&&q.economy.lives<pilots[unsigned(receiver)]->economy.lives))receiver=j;
-            }
-            if(receiver>=0){if(++p.life_hold>=90){auto& q=*pilots[unsigned(receiver)];bool transferred=false;if(q.ghost){--p.economy.lives;transferred=q.revive(true);}else if(items.spawn_transfer(7,p.player->motion.state.position,unsigned(receiver))){--p.economy.lives;transferred=true;}if(transferred){p.life_latched=true;p.life_hold=0;}}}else p.life_hold=0;
+            receiver=mp_life_receiver(i);
+            if(receiver>=0){if(++p.life_hold>=90){auto& q=*pilots[unsigned(receiver)];bool transferred=false;if(q.ghost){--p.economy.lives;transferred=q.revive(true);if(transferred&&!sound(0x2c,0,false))return false;}else if(items.spawn_transfer(7,p.player->motion.state.position,unsigned(receiver))){--p.economy.lives;transferred=true;}if(transferred){p.life_latched=true;p.life_hold=0;}}}else p.life_hold=0;
         }else if(!p.life_latched)p.life_hold=0;
         if(p.keys.pressed&1){if(p.power_gap>24)p.power_taps=0;p.power_gap=0;++p.power_taps;
             if(p.power_taps>=5){p.power_taps=0;receiver=-1;

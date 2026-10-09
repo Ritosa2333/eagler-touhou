@@ -2,6 +2,33 @@
 #include "PauseMenu.hpp"
 #include "TitleMenu.hpp"
 namespace th11 {
+bool PauseMenu::begin_multiplayer_pause(){
+    if(!begin(false))return false;
+    multiplayer_pause=true;transition(32);cursor.count=1;cursor.select(0);
+    // Keep the native pause headline, ornament and Resume. Runtime/confirmed
+    // generation owners retain room exit and restart; ordinary Replay Save
+    // and single-player Return/Retry must not acquire an MP action here.
+    auto* menu=animations.find(menu_animation);if(!menu)return false;
+    for(auto* node=menu->child.next;node;){auto* next=node->next;auto& vm=*node->value;
+        if(vm.script_index==78||vm.script_index==79||vm.script_index==80)animations.destroy(vm);
+        node=next;
+    }
+    return true;
+}
+bool PauseMenu::update_multiplayer_pause(u32 pressed){
+    sounds.clear();action=PauseAction::None;scan_requested=save_requested=recording_metadata_requested=false;
+    if((state==32||state==33)&&((pressed&256)||(state==33&&(pressed&0x80001)))){
+        sounds.push_back(10);family(background_animation,1);family(menu_animation,1);transition(34);
+    }
+    switch(state){
+    case 32:if(timer.current>=10){family(menu_animation,7);transition(33);}break;
+    case 33:break;
+    case 34:if(timer.current>11){state=0;action=PauseAction::Resume;}break;
+    case 0:break;
+    default:error="invalid MP pause state";return false;
+    }
+    timer.tick();elapsed.tick();return true;
+}
 bool PauseMenu::begin_multiplayer_end(bool cleared){
     multiplayer_result=true;completed=cleared;practice=false;replay=false;
     transition(28);elapsed.set(0,&animations.rate);sounds.clear();action=PauseAction::None;
@@ -40,13 +67,16 @@ void TitleMenu::multiplayer_results(u32 pressed){
     switch(substate){
     case 0:
         music_request=17;result_unranked=1;cursor.select(-1);
-        if(!exists(92)){create(92);create(18,193,2);}create(102);
-        create(selection.character+150);create(selection.character*3+selection.partner+152);create(selection.difficulty+158);
+        // The original Player Data heading shares the Name Regist animation
+        // but accurately describes this read-only table. Each row already
+        // identifies its own loadout; only the shared difficulty stays above.
+        if(!exists(92)){create(92);create(18,193,2);}create(100);
+        create(selection.difficulty+158);
         step(1);break;
     case 1:if(timer.current>6)step(2);break;
     case 2:if(pressed&0x80001){sounds.push_back(10);step(3);}break;
     case 3:
-        if(timer.current>=6){close(102);close(selection.character+150);close(selection.character*3+selection.partner+152);close(selection.difficulty+158);step(4);}break;
+        if(timer.current>=6){close(100);close(selection.difficulty+158);step(4);}break;
     case 4:if(timer.current>=10)multiplayer_result_done=true;break;
     default:error="invalid MP clear result state";break;
     }

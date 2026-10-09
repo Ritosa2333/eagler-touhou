@@ -27,7 +27,7 @@ const text=pointer=>{
   return new TextDecoder().decode(bytes.subarray(pointer,end<0?pointer+512:end));
 };
 window.host={
-  events,snapshots,generations,
+  events,snapshots,generations,language:'ja',
   open(){
     iframe=document.createElement('iframe');
     iframe.src='/runtime/th11.html?hosted=1&managedData=1&gameGeneration=th11-mp-acceptance&runtimeEpoch=1&runtimeVariant=multiplayer';
@@ -66,7 +66,7 @@ window.host={
     };
   },
   async configure(options){
-    await this.request('configure',{language:'ja',music:'none',options});
+    await this.request('configure',{language:this.language,music:'none',options});
   },
   async launch(){await this.request('launch');},
   key(code,down){return this.request('keyboard',{code,down,repeat:false});},

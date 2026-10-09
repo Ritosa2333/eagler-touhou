@@ -1,6 +1,6 @@
 # TH11 Multiplayer：实现、规则边界与验收记录
 
-记录日期：2026-10-09。用户已授权先实现，未定义行为按实现者理解决定并作高危提示。多人玩法、原生协议、Replay / 观战与 Launcher 接入已完成；普通 / MP 生产构建和最终四组真实浏览器验收通过。逐项证据、独立 Launcher 基线的既有阻塞和未验证范围见第 7 节。第 5 / 6 节的临时规则不能当作已获平衡验证的既有共识，本轮不晋升 canonical、不 push 或部署。
+记录日期：2026-10-09。用户已授权先实现，未定义行为按实现者理解决定并作高危提示。首次实现提交为 `2bd03f0bcd3688bf64b8dfd83f78d070afb5d0be`；第 7 节保留那次构建、四组真实浏览器与 Launcher 接入证据。后续任务重点审查实际 UI，重新发现并修复了三人重开的协议边界；后续改动与本轮验收见第 9 节，不能用旧四组 PASS 覆盖新失败。第 5 / 6 节的临时规则不能当作已获平衡验证的既有共识，本轮不晋升 canonical、不 push 或部署。
 
 ## 1. 本轮要求与基线
 
@@ -13,7 +13,7 @@
 | TH08 MP 参考 | `th08-eagler` 的 `eagler-mp` ref | `b5b4091cb19619576035ea64ce2913bb22b3833b` |
 | TH10 MP 参考 | `th10-eagler` 的 `eagler-mp` ref | `288ea8d5676ace5152ca5cd317061511ee660887` |
 | 两个参考 MP 的共享库依赖 | `eagler-common` gitlink | `43add4dc9085c65468f7ab15428c00206cbe3834` |
-| TH11 MP 共享库依赖 | `eagler-common` gitlink，TH11 EBTM identity、退休 ACK 与观战尾帧 | `d81eda48917625ff1d3f7d156bbdb2fdd816fde7` |
+| TH11 MP 当前共享库依赖 | `eagler-common` gitlink，TH11 identity、退休 ACK、观战尾帧与三人退休测量广播修复 | `e02347fac98c9e599d30a6ffd7ef30756555b948`（初次实现为 `d81eda4`） |
 | Launcher 规则来源 | `eagler-touhou` / `experiment/ui-main` | `039b6e0034a70536afe5d7561d078d7e7e2c295d` |
 | Launcher 独立提交基线 | `experiment/ui-main` 本轮期间更新后的提交 | `fed02bf5fc6027615c6253205f8afeb196c29323` |
 | Launcher TH11 接入提交 | `worktrees/launcher-th11-multiplayer` / `experiment/th11-multiplayer` | `4eacf9efc182ae005060c71fbae8ffe8bb554ebf` |
@@ -151,7 +151,7 @@ P1 在暂停状态按 R 发起重开，先完成旧 generation 的 ACK retiremen
 
 正常观战终局最多冻结 256 帧待发送的已确认输入，每次最多发送 32 包或用时 2 ms；在 15 秒内独立排空。末尾数据与正常 STOP 走同一条有序 relay 流。观战压力不阻塞玩家确认、退休或重开；超出尾帧上限或排空超时则明确标记观战失败。接收端先消费已缓存的尾帧，再处理 EOF。
 
-## 7. 实现与验收证据
+## 7. 首次实现与验收证据（2bd03f0）
 
 MP profile 仍要求：独立 Runtime / build / storage / Replay 身份、普通 / MP DATA layout 一致、Catalog 人数 / 难度 / 机体与双语标签、准备和帧零同步、每席确定性输入 / mismatch、同步 pause / restart 新 generation、MP Replay、显式 start-only 观战准入与只读隔离、WebRTC / 共享 Relay fallback、本地玩家可见性 / 诊断 / 返回房间生命周期。不能用 spectator=false 掩盖未完成功能。Relay 使用 `EAGLER_NETPLAY_*`，不新造 title 服务命名。
 
@@ -239,3 +239,78 @@ node portable/multiplayer/browser-acceptance.mjs --players 3 --route rtc --loado
 ```
 
 浏览器脚本使用真实生产包、原作 `th11.dat`、当前 Launcher 的共享 Relay 和 Chromium，Host 测试夹具只使用现有命令契约并观察 native 状态。默认校验已确认输入的 MP Replay 和向后定位；`--restart` 通过 P1 原生暂停 / R 进入新 generation，旧 Replay / 观战结束旧流；`--drop-first-input` 使用 Relay 既有测试开关；`--disconnect` 关闭一个真实浏览器上下文检查可见错误。`--full-replay-slots` 在启动前通过真正 Host 校验导入同轮 2P RTC 导出的 Replay，占满 99 个编号槽和 ud0000，验证原有 100 份文件不变、新旧代分开保存与重复 flush 复用路径；它依赖前一条 RTC 命令导出的同构建 `.rpy`，也可用 `--existing-replay` 显式指定。脚本不注入原生世界状态，不执行原作 EXE，也不替代真实设备 / 公网验收。命令清单是复现入口，实际通过状态以第 7 节和对应报告为准。
+
+## 9. 后续 NIG 核对、UI 修复与本轮验收
+
+### 9.1 后续 agent 实际改了什么
+
+再次进入 NIG 时，TH11 MP 仍为干净的 `2bd03f0`；Launcher 隔离接入仍为干净的 `0409d7f`。原 Launcher 工作树中，本任务的 21 个作者文件与此前 `.cache/th11mp-launcher-snapshots.json` 的 after 快照逐字相同，没有被后续工作覆盖。
+
+后续提交在另一条 Launcher main：`7d4408926a5c88b72ead7496b75a6433e8516911` 移除昼夜模式、快捷语音及 CI，`2836d4b2f90f07166928d683ad9dbf08ce39763b` 更新 TH15 THPrac / thcrap 等行为。它们不是 TH11 MP 的后续实现。main 与 React `experiment/ui-main` 以 `9899dff` 为共同祖先，分别有 25 / 48 个独有提交；main 仍使用旧 Launcher 页面结构，没有本任务的 React 房间接入。不能把两个分支当作前后版本，或直接将 21 文件补丁整包套到 main。
+
+main 已有 TH15 workspace 映射，来源 `29accba`，但这不消除旧 `fed02bf` 隔离接入的前置缺口，也不构成在 main 上运行 TH11 MP policy 的 PASS。本轮保留别人的脏文件和两条 Launcher 分支，没有 merge、push 或部署。canonical `eagler-common/main` 保持干净的 `cedb710`，只将非当前 `th11-multiplayer` 分支本地 fast-forward 到 `e02347f`。
+
+### 9.2 先看实图，再修 UI
+
+本轮先捕捉旧正式包的连接、战斗、暂停、Replay 列表 / 播放 / 定位和断线界面，再用原作资源、真实 SDL / GLES / WebGL 渲染器捕捉普通暂停 / Replay 参考与多人终局。截图位于 `artifacts/multiplayer-ui/20261009/{before,after}/`，没有使用原作 EXE，也没有重写 golden。
+
+| 流程 | 本轮看到的问题与处理 | 接受证据 |
+| --- | --- | --- |
+| 1. 连接测量 | 原先独立蓝色圆角通知改为暗底、白字的简洁状态提示；仍等待实际游戏链路完成测量。 | `after/browser-ui-connection-desktop.png`；正式包 3P / RTC 新轮次均实际完成 129 次测量。 |
+| 2. 战斗 HUD | 保留 TH11 原生标签、数字、生命图标、Power 制式和三席排列；没有把合作进度移入右侧 HUD。 | `after/mp-3p-local1.png` 至 `local3.png`；这三张诊断图与 before 字节相同。 |
+| 3. 暂停与恢复 | 旧版只有暂停标题。现在使用原生 text 75 抓屏背景、front 89 装饰 / 标题 / Resume 与原作动画。独立呈现 owner 保持 1x，combat / RNG 仍冻结。P1 新确认或任意席位 Pause 可恢复，R 仍属于协议 owner。抓屏 helper 按 PauseMenu 的真实 owner 找 VM。 | `after/mp-pause.png`、正式包 `after/browser-ui-pause-desktop.png`；native pause / RNG / 输入边沿断言。 |
+| 4. 残机给予与救援 | 补上机体附近原生数字贴图百分比；幽灵随已确认的操作进度变亮。90 帧资源 / 复活边界保持，成功使用原生 Extend 音效。Power 仍从第 3 次点按显示原作道具及数字。 | `after/life-gift-30.png`、`60.png`、`89.png`；`after/ghost-rescue-45.png`、`89.png`、`90.png`；`after/power-tap-3.png` 至 `5.png`。 |
+| 5. Game Over / Extra / Ending 结果 | Game Over 和 Extra 保持原作结束路径且不展示 Continue / Retry。Ending 后将会误导为录名的 Name Regist 换成实际核验的原生 Player Data 标题，撤下仅属于 P1 的机体铭牌，保留共享难度和各席行内机体。原作十分制的 `00` 显示不改。 | `after/game-over.png`、`extra-result.png`、`ending-title-results.png`。终局图来自明确的 StageExit UI 接点；Ending / Staff 跑实际解释器，不能当完整通关证据。 |
+| 6. Replay 列表与播放 | 旧表格在 390 像素宽度截掉信息，工具条遮挡游戏底部。新增 MP 专用样式：白字暗底、黄色选择、等宽表格、窄屏分行，控件预留独立空间且保持游戏 4:3。菜单保留 / 恢复文件焦点；方向键 / Z / Enter 可选播，Tab 与进度条键盘操作不再被全局吞掉。 | `after/browser-ui-replay-list-{desktop,portrait}.png`、`browser-ui-replay-seek-{desktop,portrait}.png`，以及中文 `runtime-zh-*` 对应图片；实际 DOM 布局和键盘断言。 |
+| 7. 断线与返回 | 旧界面直接铺满调用栈。现在明确说明本局停止，错误详情折叠，返回房间按钮有默认焦点；停止后不再接受 gameplay 输入。 | `after/browser-ui-disconnect-desktop.png`、`after/runtime-zh-ui-disconnect-portrait.png`；实际关闭另一个浏览器上下文触发故障，没有伪造 disconnect 标记。 |
+
+游戏内菜单 / HUD / 给予反馈直接使用原作资源；多人录像列表和播放控件仍是 Runtime 的网页界面。这里的结论是风格与交互经过实图协调，不宣称新增网页控件使用了原版菜单的全部贴图。桌面检查为 660×510 外层与 640×480 Runtime；竖屏检查为 390×844 Runtime。没有把窗口改尺寸称作真机触控验收。
+
+原生诊断 after 共 18 张 MP 图；相同输入安排下 17 项权威 hash 前后相同，仅新增原生菜单状态的 Pause 不同，11 张非本轮修改目标 PNG 完全相同。普通两张视觉参考保留在 before；本轮 after 诊断使用 `--mp-only`，没有混入普通 THPrac 缓存。完整记录见 `after/{build-evidence,screenshot-evidence,comparison}.json`。
+
+### 9.3 高危故障：三人 R 重开时误拒绝旧测量广播
+
+旧正式 WASM `d60aa357…` 在本轮 `3P Relay → 暂停稳定 18 ticks → 横 / 竖屏截图 → P1 R` 中真实失败，错误为 `Gameplay packet before calibration commit or excessive deferred HELLOs`。失败报告保留在 `before/browser.json`，不能用之前四组短程 PASS 抹掉这个反例。
+
+共同层 `SessionChannel` 会广播带目标席位的 Phase 样本；正常接收允许非目标席位忽略这种包。但退休包识别曾要求目标必须恰好是本机，导致三人房里发给第三席位的合法旧轮次尾包，在新轮次测量时被错误拒绝。新增回归在旧实现明确 exit 1；修复只允许已授权紧邻退休代内、来源合法且目标在本房间席位范围内的广播被丢弃。当前代 / 外来代、缺退休上下文、自发送者、非法目标继续拒绝。
+
+修复提交为共同层 `e02347fac98c9e599d30a6ffd7ef30756555b948`，仅改 `AdonisConnection.hpp` 和退休回归测试；TH11 gitlink、构建、打包与 package 测试都固定到该提交。没有在 TH11 私设另一套协议，没有放宽当前局 gameplay 入口，没有增加预测或回滚。
+
+同一套生产浏览器时序在新正式包重新通过：新代三人再次完成 129 次实际通道测量，272 个同帧权威状态一致；143 个旧观战同帧比较一致，旧观战按正常 EOF 结束；41 个 Replay 比较与从帧零回退到 114 的定位一致。共同层反例与正式浏览器复现均保留。
+
+### 9.4 本轮验证与产物身份
+
+| 检查 | 实际结果与范围 |
+| --- | --- |
+| 共同协议定向回归 | 先旧实现失败，再新实现 5/5 CTest PASS：startup、timing、session-channel、calibration-retirement、packet-transaction；包含全部三席正例和 8 类拒绝条件。日志在 nested common 的 `artifacts/th11-phase-retirement-20261009/{before,after}.log`。 |
+| Native UI / 终局 / 重建 | `node portable/multiplayer/native-test.mjs --risk`：1736 checks / 3312 logic+draw ticks PASS；原生 Pause、combat / RNG 冻结、给予 / 救援、Game Over / Extra / Ending、暂停后新旧种子重建。日志 `artifacts/multiplayer-native/native-ui-risk.log`。 |
+| 真实 GPU UI | before 20 张、after 18 张 MP 图已逐图检查；diagnostic WASM `18ed7de9d0978d9ee5f0cca8cdba368cf3a2149dae816a30077227e932001308`。它不是生产 Runtime，也不证明网络或完整关卡。 |
+| 生产 3P Relay | `after/browser.json` PASS：272 同帧、41 Replay、143 旧观战同帧、回退定位 114、P0、两代实测启动、16 张界面图、方向键选播 / Z / Tab / range 键盘定位及无横向裁切 / 无控件遮挡。 |
+| 生产 2P RTC 中文 | 最终 `after/runtime-zh-final.json` PASS：自动 D=1 / P0，124 同帧、42 Replay、回退定位 133，12 张桌面 / 竖屏图及相同键盘 / 布局断言；Esc 返回 Replay 列表后恢复所选文件焦点；实际断线后点击返回按钮完成 Host exit，房间 WebSocket 和本人成员身份均保留。此前 `runtime-zh.json` 的 104 / 38 比较也通过，但不与最后一次简单相加作为一次测试的覆盖量。 |
+| 普通模式回归 | 重新构建当前 WASI 诊断 core；4 份 Demo 共 18,049 ticks 的 economy / player / RNG / entities 与既有不可变 golden 完全一致。报告 `artifacts/replay-verifier/ui-followup-quick-result.json`。没有执行原作 EXE 或修改 golden。 |
+| 普通 / MP 闭包 | 两种正式 Emscripten 构建和打包均 PASS；普通 18 个文件，MP 因专用 `multiplayer.css` 增为 22 个文件；普通包不包含该 MP 样式和 MP 模块。package isolation 7/7 PASS。 |
+| Launcher 当前房间 UI | 重新捕捉并检查 2P Normal 自动延迟 / 3P Extra D9 的 4 张图，pure-only、无 challenge、启动 / 观战 / Replay 交接 PASS。报告 `eagler-touhou/.cache/th11mp-launcher-browser-followup-20261009-062902/result.json`。仍是 Framework + 真房间 Relay + synthetic Runtime / DATA，不能升级为真实游戏联合验收。 |
+
+当前正式 MP WASM 为 **`868022aabce50c7e768a83821ad498ef87b44667ee4df6fdfbc7b21da7094e0c`**，2,748,527 bytes；普通 `--thprac` WASM 为 **`f27bb5786d0dfc172efcd59fe9d7431ef02412261e0acb29be0954bca0b04fef`**，3,003,973 bytes。闭包目录仍为 `build-eagler-multiplayer/` 与 `build-eagler/`，不会把诊断导出、原作 DATA 或源码快照塞进正式包。
+
+### 9.5 本轮必须继续告知的高危边界
+
+1. **暂停恢复时序 / 旧 Replay 兼容性：** 原生退出动画约需 12 个已确认输入帧，期间不推进战斗。当前构建的网络 / Replay / seek 已验证；旧 `2bd03f0` 的暂停恢复输入历史没有这段新增菜单时序。现有 WASM 指纹检查会拒绝跨构建 MP Replay，本轮没有迁移器，不承诺旧实验录像在新版播放。
+2. **Launcher 集成主线：** TH11 MP 接入在 React 工作分支和干净的 `experiment/th11-multiplayer` 提交中；最新 main 尚无这套 TH11 MP 接入，而且页面结构分叉。本轮没有将“本地实现完成”写成“main 已合并 / 线上已提供”。
+3. **第 5 / 6 节临时玩法仍未获多人平衡确认：** 各机体一档 Power 交换而非 raw 点数守恒、普通 P/F 优先未满者、280 帧不消弹救援、共享碎片全队 Extend、死亡 / 重生过渡仍计入 Boss 分母与全满条件、途中目标变幽灵的两种不同赠送处理、最近 Alive 瞄准及全体 Alive 特殊吸引都保持已披露实现。本轮 UI 验证不把这些决定变成既定共识。
+4. **重开 / 容量 / 观战边界：** R 仍换种子并重新测量；观战和录像停在旧代，不自动加入新代。250,000 确认帧上限、包含暂停 / Ending、达到后结束并保存 partial、99 槽后选择空闲 udXXXX、真实 I/O 失败显式报错等策略未改变。
+5. **验证范围：** 真实网络检查为本机 Chromium RTC / Relay 的短局；原生终局截图用了注明的 UI 接点，救援诊断固定幽灵漂移。没有完整多人战役 / Extra 真人通关、长程 seek、69 分钟实跑、Android / iOS 真机或公网表现结论。
+
+### 9.6 复现 UI 检查
+
+先按第 8 节构建和打包当前正式产物，再运行：
+
+```powershell
+node portable/multiplayer/native-test.mjs --risk
+node portable/multiplayer/native-ui-build.mjs --phase after --mp-only
+node portable/multiplayer/native-ui-capture.mjs --phase after --mp-only
+node portable/multiplayer/browser-acceptance.mjs --players 3 --route relay --loadouts 0,3,5 --frames 360 --restart --spectator --disconnect --ui-audit --verify-ui --output artifacts/multiplayer-ui/20261009/after/browser.json
+node portable/multiplayer/browser-acceptance.mjs --players 2 --route rtc --auto --loadouts 0,5 --frames 240 --disconnect --ui-audit --verify-ui --language lang_zh-hans --output artifacts/multiplayer-ui/20261009/after/runtime-zh-final.json
+```
+
+`native-ui-README.md` 说明诊断接点和 cache 宏签名；诊断导出使用 package gate 已拒绝的 `mp_fixture_ui_*` 前缀。`--phase` 只是产物目录名，不能把当前源码输出重新标成旧 before。上述旧版 before 证据应保留。浏览器 `--verify-ui` 在截图之外检查焦点、真实键盘、范围控件、布局，以及返回时的既有 Host 生命周期；这些都是测试能力，没有新增正式 Host 命令。

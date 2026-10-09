@@ -30,9 +30,12 @@ public:
     PauseAction action=PauseAction::None;
     std::string error;
     bool begin(bool replay=false);
+    AnmVm* background_vm()noexcept{return animations.find(background_animation);}
     bool begin_end(bool practice=false,bool completed=false);
 #ifdef TH11_MULTIPLAYER
-    bool multiplayer_result=false;
+    bool multiplayer_result=false,multiplayer_pause=false;
+    bool begin_multiplayer_pause();
+    bool update_multiplayer_pause(u32 pressed);
     bool begin_multiplayer_end(bool completed=false);
     bool update_multiplayer_end(u32 pressed);
 #endif

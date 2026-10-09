@@ -20,7 +20,7 @@ await Promise.all(Array.from({length:4},async()=>{while(cursor<sources.length){c
 const wasm=resolve(out,'native-gameplay.wasm');await run([...flags,...objects,'-Wl,-z,stack-size=2097152','-Wl,--max-memory=1073741824','-o',wasm]);
 const archive=process.env.TH11_TEST_ARCHIVE||resolve(root,'../../th11-eagler/[th11] 东方地灵殿 (汉化版+日文版)/th11.dat');
 if(!existsSync(archive))throw Error('Set TH11_TEST_ARCHIVE to the existing legally supplied th11.dat fixture');
-const testMode=['presentation','restart','repair','risk'].find(mode=>process.argv.includes('--'+mode));
+const testMode=['presentation','restart','repair','risk','ui'].find(mode=>process.argv.includes('--'+mode));
 const wasi=new WASI({version:'preview1',args:['native-gameplay','/assets/'+basename(archive),...(testMode?[testMode]:[])],preopens:{'/assets':dirname(archive)},returnOnExit:true});
 const instance=await WebAssembly.instantiate(await WebAssembly.compile(readFileSync(wasm)),{wasi_snapshot_preview1:wasi.wasiImport});
 process.exitCode=wasi.start(instance);

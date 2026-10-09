@@ -7,7 +7,7 @@ import {createHash} from 'node:crypto';
 
 const GAME = 'th11';
 const SHA256 = /^[a-f0-9]{64}$/i;
-const COMMON_REVISION = 'd81eda48917625ff1d3f7d156bbdb2fdd816fde7';
+const COMMON_REVISION = 'e02347fac98c9e599d30a6ffd7ef30756555b948';
 export const MULTIPLAYER_EXPORTS = Object.freeze([
   'configure', 'connect', 'spectator_connect', 'start', 'pump', 'status',
   'calibration_status', 'error', 'stop', 'replay_validate', 'replay_load',
@@ -122,7 +122,7 @@ export function packageEagler({
 
   const shellRoot = resolve(root, 'th11_web/sdl-runtime');
   const runtimeNames = ['startup-branding.mjs', 'shell.mjs', 'managed.css', 'keyboard.mjs',
-    'directory-keyboard.mjs', 'eagler-host.mjs', ...(multiplayer ? ['multiplayer.mjs'] : [])];
+    'directory-keyboard.mjs', 'eagler-host.mjs', ...(multiplayer ? ['multiplayer.mjs', 'multiplayer.css'] : [])];
   const html = readFileSync(resolve(shellRoot, 'managed.html'), 'utf8')
     .replace('<head>', '<head><meta name="eagler-data-provider" content="retail-memory">' +
       (multiplayer ? '<meta name="eagler-product" content="th11mp">' : ''));

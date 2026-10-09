@@ -105,7 +105,6 @@ public:
     // or alter the shared combat RNG, Focus input, collision or shot state.
     AnmManager mp_presentation;
     u32 mp_focus_marker=0;
-    AnmVm mp_pause_label{};
     std::array<std::array<AnmVm,9>,3> mp_life_icons{};
     std::array<std::array<AnmVm,4>,3> mp_communication_icons{};
     std::array<HudScore,3> mp_hud_scores{};
@@ -119,6 +118,7 @@ public:
     bool mp_initialize_players();
     bool mp_update_players();
     bool mp_update_rules();
+    int mp_life_receiver(unsigned giver)const noexcept;
     bool mp_stage_reset();
     void mp_set_input(const std::array<MultiplayerInput,3>&);
     void mp_sync();

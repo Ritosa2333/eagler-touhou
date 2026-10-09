@@ -52,10 +52,25 @@ bool GameSession::update_multiplayer(const std::array<MultiplayerInput,3>& input
         }
         return true;
     }
-    if(pause_edge){if(state.phase==GameSessionPhase::stage){paused_rate=animations.rate;animations.rate=0;state.phase=GameSessionPhase::paused;battle->mp_paused=true;return true;}if(state.phase==GameSessionPhase::paused){animations.rate=paused_rate;state.phase=GameSessionPhase::stage;battle->mp_paused=false;return true;}}
+    if(pause_edge&&state.phase==GameSessionPhase::stage){
+        // Native menu overlays have their own fixed-rate presentation owner.
+        // The shared combat ANMs and their bound clocks stay frozen at rate 0.
+        battle->mp_presentation.rate=1;
+        pause_menu=std::make_unique<PauseMenu>(battle->mp_presentation,resources.core.text,resources.core.front,scores);
+        if(!pause_menu->begin_multiplayer_pause()||!battle->mp_presentation.update(true))return fail("MP pause presentation initialization failed");
+        menu_input={};menu_input.update(menu_keys(inputs[0].held));
+        paused_rate=animations.rate;animations.rate=0;state.phase=GameSessionPhase::paused;battle->mp_paused=true;return true;
+    }
     // Restart/exit are protocol-generation operations. Never restart the world
     // from R/Enter in a still-live network generation.
-    if(state.phase==GameSessionPhase::paused)return true;
+    if(state.phase==GameSessionPhase::paused){
+        battle->events.clear();battle->dialogue_text_requests.clear();
+        if(!pause_menu||!pause_menu->multiplayer_pause)return fail("MP pause owner missing");
+        menu_input.update(menu_keys(inputs[0].held));
+        if(!pause_menu->update(menu_input.pressed|(pause_edge?256u:0u),menu_input.long_repeat)||!battle->mp_presentation.update(true))return fail("MP pause presentation update failed");
+        if(pause_menu->action==PauseAction::Resume){pause_menu.reset();animations.rate=paused_rate;state.phase=GameSessionPhase::stage;battle->mp_paused=false;}
+        return true;
+    }
     if(state.phase!=GameSessionPhase::stage)return fail("Invalid MP phase");
     if(!battle->update([&]{battle->mp_set_input(inputs);return true;})){error="MP battle update failed: "+std::to_string(battle->last_error)+" "+battle->error;return false;}
     if(battle->game_over_requested)return multiplayer_open_result(false,inputs[0].held);
@@ -111,7 +126,7 @@ bool GameSession::multiplayer_open_clear_results(u32 held){
 }
 u32 GameSession::multiplayer_hash()const noexcept{
     u32 h=battle?battle->mp_hash():0;auto word=[&](u32 v){h=(h^v)*16777619u;};word(multiplayer_frame);word(u32(state.phase));
-    if(state.phase==GameSessionPhase::game_over||state.phase==GameSessionPhase::ending){word(menu_input.held);word(menu_input.pressed);
+    if(state.phase==GameSessionPhase::paused||state.phase==GameSessionPhase::game_over||state.phase==GameSessionPhase::ending){word(menu_input.held);word(menu_input.pressed);
         if(pause_menu){word(pause_menu->state);word(pause_menu->timer.current);}
         if(title){word(u32(title->screen));word(title->substate);word(title->timer.current);}
         if(ending){word(ending->frames);word(ending->flags);word(ending->index);word(ending->time.current);word(ending->wait.current);word(ending->line);auto data=ending->messages.find(ending->message);if(data!=ending->messages.end()&&ending->instruction)word(u32(ending->instruction-data->second.data()));}

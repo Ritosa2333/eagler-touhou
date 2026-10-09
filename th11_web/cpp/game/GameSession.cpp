@@ -423,6 +423,10 @@ bool GameSession::draw(AnmRenderer& renderer,AsciiText* overlay) {
             if(pass.layer==19){compositor.world_camera.offset={};renderer.offset={};}
             if(pass.layer==20||pass.layer==29)renderer.set_camera(compositor.full_camera,true);
             if(renderer.draw_layer(animations.layer_first(pass.layer))==-2)return fail("ANM draw failed");
+#ifdef TH11_MULTIPLAYER
+            if(multiplayer_active&&battle&&pause_menu&&pause_menu->multiplayer_pause&&pass.layer==29)
+                if(renderer.draw_layer(battle->mp_presentation.layer_first(29))==-2)return fail("MP pause ANM draw failed");
+#endif
         }else if(u32(pass.kind)>=u32(SceneDrawKind::Begin)&&u32(pass.kind)<=u32(SceneDrawKind::End)){
             if(!compositor.draw(renderer,pass.kind))return fail("screen compositor draw failed");
         }else if(title&&pass.kind==SceneDrawKind::AsciiOuter){

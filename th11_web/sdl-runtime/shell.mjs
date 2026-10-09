@@ -93,7 +93,7 @@ async function launch(){
  launched=true;apply();first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
  const loading=$('#loading');if(loading)loading.textContent='';
  const mode=multiplayerRuntime?await multiplayer.launch():{runLoop:true};
- canvas.focus({preventScroll:true});if(!multiplayerRuntime)core.sdl_loop_pause(1);if(!document.hidden)void resumeForegroundAudio();if(mode.runLoop)core.th11_loop_start();
+ if(mode.runLoop)canvas.focus({preventScroll:true});if(!multiplayerRuntime)core.sdl_loop_pause(1);if(!document.hidden)void resumeForegroundAudio();if(mode.runLoop)core.th11_loop_start();
  if(multiplayerRuntime&&!mode.runLoop){await new Promise(requestAnimationFrame);first=true;emit('first-frame');}
  emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:protocol,version:runtimeBuild.version});
 }
