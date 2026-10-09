@@ -11,12 +11,18 @@ void LaserManager::release(LaserState& b)noexcept{
 }
 void LaserManager::clear()noexcept{while(sentinel.next)release(*sentinel.next);}
 i32 LaserManager::spawn(const LaserLineParameters& p){
+#ifdef TH11_MULTIPLAYER
+    if(world.multiplayer_world())world.player=world.multiplayer_target(p.position);
+#endif
     if(!updating)sync();if(active_count>=capacity)return 0;const auto id=issue_id();
     auto* l=new(std::nothrow) LaserLine{};if(!l){last_error=-2;return 0;}
     l->base.initialize(&rate);l->base.id=id;append(l->base);
     if(!laser_line_initialize(*l,p,resource,animations,*this,file_id)){last_error=-2;release(l->base);return 0;}return id;
 }
 i32 LaserManager::spawn(const LaserInfiniteParameters& p){
+#ifdef TH11_MULTIPLAYER
+    if(world.multiplayer_world())world.player=world.multiplayer_target(p.position);
+#endif
     if(!updating)sync();if(active_count>=capacity)return 0;const auto id=issue_id();
     auto* l=new(std::nothrow) LaserInfinite{};if(!l){last_error=-2;return 0;}
     l->base.initialize(&rate);l->base.type=1;l->base.id=id;append(l->base);
@@ -32,6 +38,9 @@ bool LaserManager::update(bool paused,bool frozen){
         auto* next=b->next;
         if((b->marked&&++b->marked>=2)||b->state==1)release(*b);
         else{
+#ifdef TH11_MULTIPLAYER
+            if(world.multiplayer_world())player=world.multiplayer_target(b->position);
+#endif
             const i32 result=b->type==0?laser_line_update(*reinterpret_cast<LaserLine*>(b),animations,*this):laser_infinite_update(*reinterpret_cast<LaserInfinite*>(b),animations,*this);
             if(result<0){last_error=result;break;}
             if(result)release(*b);else{b->lifetime.tick();b->rectangle_enabled=1;}

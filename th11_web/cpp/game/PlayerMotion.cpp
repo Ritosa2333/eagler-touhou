@@ -115,6 +115,9 @@ bool PlayerMotion::update(const PlayerMotionInput& in){
     // and original replay paths retain the unmodified integer movement above.
     if(in.touch_mode&&s.warp<99&&std::isfinite(in.touch_x)&&std::isfinite(in.touch_y)){
         double x=double(in.touch_x)*128-s.x,y=double(in.touch_y)*128-s.y;
+#ifdef TH11_MULTIPLAYER
+        if(in.touch_mode==3){const double speed=s.focused?s.focus_speed:s.normal_speed;x=std::clamp(double(in.touch_x),-1.,1.)*speed;y=std::clamp(double(in.touch_y),-1.,1.)*speed;const double length=std::sqrt(x*x+y*y);if(length>speed&&length>0){x*=speed/length;y*=speed/length;}}
+#endif
         if(in.touch_mode!=2){const double speed=s.focused?s.focus_speed:s.normal_speed,length=std::sqrt(x*x+y*y);if(length>speed&&length>0){x*=speed/length;y*=speed/length;}}
         dx=truncate_int(x);dy=truncate_int(y);s.direction=direction((dx<0?0x40:dx>0?0x80:0)|(dy<0?0x10:dy>0?0x20:0));
     }

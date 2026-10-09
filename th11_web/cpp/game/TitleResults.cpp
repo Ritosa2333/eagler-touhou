@@ -25,6 +25,9 @@ i32 TitleMenu::name_confirm(){
     return 0;
 }
 void TitleMenu::results(u32 pressed,u32 repeat){
+#ifdef TH11_MULTIPLAYER
+    if(multiplayer_result){multiplayer_results(pressed);return;}
+#endif
     switch(substate){
     case 0:{
         cursor.count=30;music_request=17;

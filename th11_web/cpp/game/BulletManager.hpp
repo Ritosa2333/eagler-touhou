@@ -10,6 +10,11 @@ struct BulletCancelContext {
     bool protected_spell()const noexcept{return (spell_flags&1)&&spell_id>=158&&spell_id<=161;}
 };
 struct BulletWorld {
+#ifdef TH11_MULTIPLAYER
+    virtual bool multiplayer_world()const{return false;}
+    virtual Vec3 multiplayer_target(Vec3)const{return {};}
+    virtual bool multiplayer_bullet_collision(const BulletState&,u8&,i32&){return false;}
+#endif
     virtual ~BulletWorld()=default;
     virtual bool sound(i32,float,bool){return false;}
     virtual i32 collision(const BulletState&){return -2;}
@@ -30,6 +35,9 @@ public:
     BulletState& at(u32 index)noexcept{return storage[index];}
     BulletState* group_first(u32 group)const noexcept{return group<6?heads[group]:nullptr;}
     u32 cursor=0,active_count=0;float exclusion_squared=0;i32 last_error=0;
+#ifdef TH11_MULTIPLAYER
+    std::array<u8,capacity> multiplayer_grazed{};
+#endif
     // Original manager +0x44/+0x50, zeroed by 408390/408710.
     Vec2 cancel_center{},cancel_size{};
     i32 spawn(const BulletEmitter&,i32 index,i32 layer,float aim)noexcept;

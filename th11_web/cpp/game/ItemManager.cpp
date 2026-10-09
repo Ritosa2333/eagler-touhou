@@ -3,8 +3,12 @@
 #include "AnmRenderer.hpp"
 #include <cmath>
 namespace th11 {
-ItemManager::ItemManager(AnmResource& r,AnmEnvironment& a,ItemWorld& w,u16 id):storage(new ItemState[capacity]),resource(r),animations(a),world(w),file_id(id){std::memset(storage.get(),0,sizeof(ItemState)*capacity);}
-void ItemManager::reset()noexcept{std::memset(storage.get(),0,sizeof(ItemState)*capacity);active_count=0;last_error=0;}
+ItemManager::ItemManager(AnmResource& r,AnmEnvironment& a,ItemWorld& w,u16 id):storage(new ItemState[capacity]),resource(r),animations(a),world(w),file_id(id){reset();}
+void ItemManager::reset()noexcept{std::memset(storage.get(),0,sizeof(ItemState)*capacity);active_count=0;last_error=0;
+#ifdef TH11_MULTIPLAYER
+    multiplayer_targets.fill(-1);multiplayer_current_target=-1;
+#endif
+}
 bool ItemManager::bind(ItemState& item,i32 script){
     if(!item.vm.bind_script(resource,script,file_id,&animations.rate)){last_error=1;return false;}
     // The caller sets 16x16 before the original bind, whose second reset clears it.
@@ -15,6 +19,9 @@ i32 ItemManager::spawn(i32 type,Vec3 position,u32 color,float angle,float speed)
     if(type==8){
         auto& item=storage[ordinary_capacity+cancel_cursor];++cancel_spawn_count;
         if(!item.state){
+#ifdef TH11_MULTIPLAYER
+            multiplayer_targets[ordinary_capacity+cancel_cursor]=-1;
+#endif
             item.delay=cancel_spawn_count<256?i32(cancel_cursor%4):cancel_spawn_count<512?i32(cancel_cursor%8+4):cancel_spawn_count<1024?i32(cancel_cursor%16+8):i32(cancel_cursor%32+16);
             item.state=5;item.type=item.display_type=8;item.position=position;
             const auto v=polar(angle,speed);item.velocity={v.x,v.y,0};item.lifetime.set(0,&animations.rate);item.reserved_44c=0;
@@ -23,9 +30,16 @@ i32 ItemManager::spawn(i32 type,Vec3 position,u32 color,float angle,float speed)
     }
     ItemState* selected=nullptr;for(u32 i=0;i<ordinary_capacity;++i)if(!storage[i].state){selected=&storage[i];break;}
     if(!selected)return 0;auto& item=*selected;item.state=1;item.position=position;
+#ifdef TH11_MULTIPLAYER
+    multiplayer_targets[selected-storage.get()]=-1;
+#endif
     if(!(item.position.x>-192))item.position.x=-192;else if(item.position.x>192)item.position.x=192;
     const auto v=polar(angle,speed);item.velocity={v.x,v.y,0};item.lifetime.set(0,&animations.rate);item.reserved_44c=0;
-    if(player.power>=player.max_power&&(type==1||type==4||type==10||type==11))type=9;
+    bool full=player.power>=player.max_power;
+#ifdef TH11_MULTIPLAYER
+    if(world.multiplayer_world())full=!multiplayer_spawning_transfer&&world.multiplayer_power_full();
+#endif
+    if(full&&(type==1||type==4||type==10||type==11))type=9;
     if(type==5&&(!world.effect(item.position,0x73)||!world.sound(0x34,item.position.x))){last_error=3;return -2;}
     item.type=item.display_type=type;if(type==10)item.display_type=1;else if(type==11)item.display_type=4;
     if(!bind(item,item.display_type+0x60))return -2;item.vm.color=color;return 0;
@@ -36,6 +50,9 @@ void ItemManager::move(ItemState& item){
     item.position={axis(item.position.x,item.velocity.x),axis(item.position.y,item.velocity.y),axis(item.position.z,item.velocity.z)};
 }
 void ItemManager::home(ItemState& item){
+#ifdef TH11_MULTIPLAYER
+    if(world.multiplayer_world()&&player.state==2){item.state=1;item.velocity={};return;}
+#endif
     const float angle=aim_angle(item.position,player.position);const auto v=polar(angle,item.attraction_speed);item.velocity.x=v.x;item.velocity.y=v.y;move(item);
     if(item.attraction_speed<12)item.attraction_speed=float(double(item.attraction_speed)+double(.2f));
     if(player.state==4){item.state=1;item.velocity.x=item.velocity.y=0;}
@@ -50,6 +67,9 @@ bool ItemManager::convert_power_items(){
 bool ItemManager::update(){
     if(last_error)return false;active_count=cancel_spawn_count=0;bool convert=false;
     for(u32 i=0;i<capacity;++i){auto& item=storage[i];if(!item.state)continue;
+#ifdef TH11_MULTIPLAYER
+        if(world.multiplayer_world()&&!world.multiplayer_item_player(item,player)){player=ItemPlayer{};player.state=2;}
+#endif
         if(item.state==5){item.delay=wrapping_sub(item.delay,1);if(item.delay<0&&!activate(item))return false;continue;}
         if(item.state==1){
             const bool fall=(player.state==2||player.state==4||((item.lifetime.current<40||player.communication<10000)&&player.position.y>=128))&&!player.force_attract;
@@ -74,6 +94,16 @@ bool ItemManager::update(){
     }
     return !convert||convert_power_items();
 }
+#ifdef TH11_MULTIPLAYER
+bool ItemManager::spawn_transfer(i32 type,Vec3 p,unsigned target){
+    if(type!=4&&type!=7)return false;
+    u32 index=0;while(index<ordinary_capacity&&storage[index].state)++index;
+    if(index==ordinary_capacity)return false;
+    multiplayer_spawning_transfer=true;const i32 result=spawn(type,p,0xffffffff,-1.57079637f,0);multiplayer_spawning_transfer=false;
+    if(result<0||!storage[index].state)return false;
+    multiplayer_targets[index]=i32(target);storage[index].state=3;storage[index].attraction_speed=8;return true;
+}
+#endif
 bool ItemManager::scatter(EnemyDrop& drops,Vec3 position){
     auto& rng=animations.script_rng;constexpr double pi=3.1415927410125732421875,half_pi=1.57079637050628662109375;
     float angle=float(double(rng.signed_unit())*pi);

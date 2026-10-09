@@ -13,6 +13,9 @@
 #include "TitleMenu.hpp"
 #include "PauseMenu.hpp"
 #include "Ending.hpp"
+#ifdef TH11_MULTIPLAYER
+#include "Multiplayer.hpp"
+#endif
 #include <string>
 #include <memory>
 
@@ -73,6 +76,20 @@ public:
     GameSessionState state;
     PracticeState practice;
     std::string error;
+#ifdef TH11_MULTIPLAYER
+    bool multiplayer_active=false;
+    bool multiplayer_always_hitbox=false;
+    MultiplayerOptions multiplayer_options{};
+    u32 multiplayer_frame=0;
+    std::array<bool,3> multiplayer_pause_held{};
+    bool begin_multiplayer(GameResources&,const MultiplayerOptions&);
+    bool update_multiplayer(const std::array<MultiplayerInput,3>&);
+    MultiplayerSeatView multiplayer_seat(unsigned)const noexcept;
+    u32 multiplayer_hash()const noexcept;
+    bool multiplayer_open_result(bool completed,u32 held);
+    bool multiplayer_open_ending(u32 held);
+    bool multiplayer_open_clear_results(u32 held);
+#endif
 
     bool begin(GameResources& source, u32 stage=1, i32 character=0,
                i32 subtype=0, i32 difficulty=1, bool demo=false, bool replay=false,bool practice=false,const PracticeConfig* parameters=nullptr);

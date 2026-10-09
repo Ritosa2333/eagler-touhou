@@ -58,6 +58,12 @@ public:
     i32 name_length=0,result_unranked=0,result_score=0,result_continues=0;
     u64 result_timestamp=0;float result_slowdown=0;
     bool replay_save_requested=false;
+#ifdef TH11_MULTIPLAYER
+    bool multiplayer_result=false,multiplayer_result_done=false;
+    unsigned multiplayer_seats=0;
+    std::array<i32,3> multiplayer_scores{},multiplayer_selections{};
+    void multiplayer_results(u32 pressed);
+#endif
     std::shared_ptr<ReplayEntry> pending_replay;
     // The platform fills the catalog asynchronously; menu transitions wait for
     // completion exactly as the original directory-scanner thread did.

@@ -23,6 +23,11 @@ public:
     AnmVm* layer_first(u32 layer)const noexcept {return layer<layers.size()?layers[layer]:nullptr;}
     u32 active_count()const noexcept {return active.size();}
     u32 last_error=0;
+#ifdef TH11_MULTIPLAYER
+    unsigned multiplayer_owner=0;
+    std::unordered_map<const AnmVm*,unsigned> multiplayer_tags;
+    unsigned multiplayer_tag(const AnmVm& vm)const noexcept{auto i=multiplayer_tags.find(&vm);return i==multiplayer_tags.end()?0:i->second;}
+#endif
 private:
     std::vector<std::unique_ptr<AnmVm>> storage;
     std::vector<AnmVm*> available;

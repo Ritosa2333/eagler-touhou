@@ -63,6 +63,11 @@ public:
     SceneCamera* active_camera=nullptr;
     const u32* practice_game_frame=nullptr;
     bool practice_replay_has_stage5=false;
+#ifdef TH11_MULTIPLAYER
+    bool multiplayer_frozen_draw=false;
+    unsigned multiplayer_tint_owner=0;
+    u32 multiplayer_tint_source=0;
+#endif
     std::string error;
     Stage(AnmManager& m,AnmResource& a,AnmResource& t,u32& color,u16 id):manager(m),animations(a),text(t),background_color(color),file_id(id){}
     ~Stage();

@@ -150,6 +150,9 @@ bool Hud::draw_inner(AnmRenderer& renderer,const HudInput& input){
         for(const auto& segment:enemies.health_segments)if(segment.fraction!=0)
             renderer.solid_rectangle(40,22,float(double(std::min(displayed_health,segment.fraction))*330+40),24,u32(segment.type));
     }
+#ifdef TH11_MULTIPLAYER
+    if(!multiplayer)
+#endif
     for(auto& vm:communication)if(renderer.draw(vm)==-2)return false;
     if(boss_visible(input)&&input.seconds>=0)for(auto& vm:digits)if(renderer.draw(vm)==-2)return false;
     return true;
@@ -176,6 +179,12 @@ bool Hud::queue_text(AsciiText& output,const HudInput& input){
             }
         }
     }
+#ifdef TH11_MULTIPLAYER
+    if(multiplayer){
+        if(boss_visible(input)&&input.seconds>=0){style.font=3;style.pass=1;style.color=digits[0].color;if(!output.add(".",{394,16,0},style))return false;style.scale={.6f,.6f};std::snprintf(buffer,sizeof(buffer),"%.2d",input.hundredths);if(!put(402,22))return false;}
+        return true;
+    }
+#endif
     style.scale={1,1};style.pass=0;style.color=0xffffff|(lives[0].color&0xff000000);
     const i32 high=input.practice?std::max(input.practice_high,score.displayed):score.high;
     std::snprintf(buffer,sizeof(buffer),high<100000000?" %.8d%d":"%.9d%d",high,input.practice?0:score.high_continues);

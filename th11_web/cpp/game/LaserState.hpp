@@ -38,6 +38,10 @@ static_assert(offsetof(LaserInfinite,body)==0x648);
 static_assert(sizeof(LaserInfinite)==0xeb0);
 #endif
 struct LaserWorld {
+#ifdef TH11_MULTIPLAYER
+    virtual bool multiplayer_world()const{return false;}
+    virtual Vec3 multiplayer_target(Vec3)const{return {};}
+#endif
     float rate=1;Vec3 player{};
     virtual ~LaserWorld()=default;
     virtual bool sound(i32,float,bool){return false;}

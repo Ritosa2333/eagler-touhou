@@ -42,9 +42,16 @@ bool EnemyCallbacks::marked_enemies(EnemyTick kind){
 bool EnemyCallbacks::attract(EnemyState& e){
     if(!commands.bullets)return false;auto& manager=*commands.bullets;
     if(e.integers[0]==1){
+#ifdef TH11_MULTIPLAYER
+        if(world.multiplayer_world()){if(!world.multiplayer_attract_players(e))return false;}
+        else{
+#endif
         const auto p=environment.player_position;auto d=GraphicsMath::normalize({float(double(e.current.position.x)-p.x),float(double(e.current.position.y)-p.y),0});
         d={float(double(d.x)*e.floats[3]),float(double(d.y)*e.floats[3]),float(double(d.z)*e.floats[3])};
         if(!world.callback_move_player(add(p,d)))return false;
+#ifdef TH11_MULTIPLAYER
+        }
+#endif
     }
     for(u32 i=0;i<BulletManager::capacity;++i){auto& b=manager.at(i);if(!active(b))continue;if(u32(b.sprite)>=bullet_appearances.size())return false;
         if(bullet_appearances[b.sprite].script!=0x22)continue;

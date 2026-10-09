@@ -13,7 +13,13 @@ bool SpellController::begin(i32 id,i32 duration,const char* text,Vec3 boss,bool 
     timer.set(0,rate);world.spell_elapsed=0;world.spell_id=id;name.fill(0);std::strcpy(name.data(),text);
     world.spell_flags=(world.spell_flags&~0x18u)|3;
     if(!replay)for(i32 table:{selection,6}){auto& r=records.entries[table][id];r.name=name;if(r.attempts<99999)++r.attempts;}
-    world.spell_flags&=~0x20u;if(bomb&&selection!=5)world.spell_flags|=0x20;
+    bool blocked=bomb&&selection!=5;
+#ifdef TH11_MULTIPLAYER
+    // The MP owner supplies whether any non-shield Bomb is active. P1's
+    // loadout cannot grant Nitori's unused-shield exemption to teammates.
+    if(world.multiplayer_world())blocked=bomb;
+#endif
+    world.spell_flags&=~0x20u;if(blocked)world.spell_flags|=0x20;
     world.spell_flags&=~0x40u;frame_count=1;
     timeout=duration;circle_position=boss;
     world.spell_bonus=signed_bits(u32(wrapping_add(economy.difficulty,stage))*1000000u);

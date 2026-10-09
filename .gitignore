@@ -1,5 +1,6 @@
 **/artifacts/
 build-eagler/
+build-eagler-multiplayer/
 assets-ogg/
 **/node_modules/
 **/.cache/

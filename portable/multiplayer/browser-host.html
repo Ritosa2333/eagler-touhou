@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>TH11 multiplayer browser acceptance</title>
+<style>body{margin:0;background:#151820;color:#eee;font:14px sans-serif}iframe{width:640px;height:480px;border:0}</style>
+<div id="runtime"></div>
+<script>
+const protocol='eagler-touhou/1',game='th11',epoch=1,events=[],pending=new Map();
+let iframe,serial=0,stopAt=0,stopGeneration=0;
+const snapshots=new Map(),generations=new Map();
+window.__eaglerPrepareManagedRuntimeDataV1=async request=>{
+  if(request.game!==game)throw Error('Wrong base content product');
+  return {buffer:await(await fetch('/data/th11')).arrayBuffer()};
+};
+window.addEventListener('message',event=>{
+  const m=event.data;
+  if(event.origin!==location.origin||event.source!==iframe?.contentWindow||m?.protocol!==protocol)return;
+  if(m.game!==game||m.epoch!==epoch)return;
+  if(m.event)events.push(m);
+  const request=pending.get(m.request);
+  if(request){pending.delete(m.request);clearTimeout(request.timer);m.ok?request.resolve(m):request.reject(Error(m.error));}
+});
+const words=(name,count)=>{
+  const r=iframe?.contentWindow;if(!r?.core?.[name])return [];
+  const p=r.core[name]();return Array.from(new Uint32Array(r.Module.HEAPU8.buffer,p,count));
+};
+const text=pointer=>{
+  const bytes=iframe.contentWindow.Module.HEAPU8,end=bytes.indexOf(0,pointer);
+  return new TextDecoder().decode(bytes.subarray(pointer,end<0?pointer+512:end));
+};
+window.host={
+  events,snapshots,generations,
+  open(){
+    iframe=document.createElement('iframe');
+    iframe.src='/runtime/th11.html?hosted=1&managedData=1&gameGeneration=th11-mp-acceptance&runtimeEpoch=1&runtimeVariant=multiplayer';
+    document.querySelector('#runtime').append(iframe);
+  },
+  ready(){return events.some(m=>m.event==='ready');},
+  request(command,fields={}){
+    return new Promise((resolve,reject)=>{
+      const request='acceptance-'+(++serial);
+      const timer=setTimeout(()=>{pending.delete(request);reject(Error('Host timeout: '+command));},120000);
+      pending.set(request,{resolve,reject,timer});
+      iframe.contentWindow.postMessage({protocol,game,epoch,request,command,...fields},location.origin);
+    });
+  },
+  snapshot(){
+    const r=iframe?.contentWindow;
+    if(!r?.core?.th11_mp_status)return {ready:false};
+    return {ready:true,net:words('th11_mp_status',24),calibration:words('th11_mp_calibration_status',32),
+      game:words('th11_mp_game_status',56),error:text(r.core.th11_mp_error()),
+      shellError:r.document.querySelector('#error')?.textContent||'',
+      events:events.filter(m=>m.event==='error'),timing:r.__eaglerNetplayTiming||null,
+      route:r.__eaglerPeerTransport?.route||null};
+  },
+  observe(target=600,generation=0){
+    stopAt=target;stopGeneration=generation;const r=iframe.contentWindow,prior=r.Module.onGameFrame;
+    r.Module.onGameFrame=(...args)=>{
+      prior?.(...args);const s=this.snapshot();
+      if(s.ready&&s.net[1]){
+        if(s.calibration[1]>0&&s.calibration[1]<5&&s.game[4])
+          throw Error('Native world advanced before measured frame zero');
+        if(!generations.has(s.net[12]))generations.set(s.net[12],new Map());
+        generations.get(s.net[12]).set(s.net[3],s);
+        if(s.net[12]===stopGeneration)snapshots.set(s.net[3],s);
+        if(stopAt&&s.net[12]===stopGeneration&&s.net[3]>=stopAt)r.core.th11_loop_stop();
+      }
+    };
+  },
+  async configure(options){
+    await this.request('configure',{language:'ja',music:'none',options});
+  },
+  async launch(){await this.request('launch');},
+  key(code,down){return this.request('keyboard',{code,down,repeat:false});},
+  stop(){iframe.contentWindow.core.th11_loop_stop();},
+  pump(){return iframe.contentWindow.core.th11_mp_pump();},
+  exportReplay(){
+    const r=iframe.contentWindow,n=r.core.th11_mp_replay_size(),p=r.core.th11_mp_replay_data();
+    if(!p||!n)throw Error('Confirmed MP replay export failed');
+    return Array.from(r.Module.HEAPU8.subarray(p,p+n));
+  },
+  async lobby(url,id,seat,count,selection=seat){
+    const target=new URL(url);target.searchParams.delete('run');target.searchParams.set('lobby',id);
+    target.searchParams.set('intent',seat===0?'create':'join');
+    target.searchParams.set('member','member_'+id);
+    target.searchParams.set('players',String(count));target.searchParams.set('difficulty','1');
+    const socket=new WebSocket(target);const state={socket,id,messages:[],room:null};
+    socket.addEventListener('message',e=>{const m=JSON.parse(String(e.data));state.messages.push(m);if(m.room)state.room=m.room;});
+    socket.addEventListener('error',()=>state.error='Lobby connection failed');
+    socket.addEventListener('close',e=>state.error='Lobby closed '+e.code+' '+e.reason);
+    this.lobbyState=state;
+    const until=async predicate=>{
+      const end=performance.now()+15000;
+      while(!predicate()){if(state.error||performance.now()>end)throw Error(state.error||'Lobby timeout');await new Promise(r=>setTimeout(r,10));}
+    };
+    state.until=until;await until(()=>state.room);
+    socket.send(JSON.stringify(seat<count?{type:'take-seat',seat,loadout:selection,ready:false}:{type:'spectate'}));
+    await until(()=>seat<count?state.room.seats[seat]?.clientId===id:state.room.spectators.some(s=>s.clientId===id));
+    return {id};
+  },
+  async readyLobby(){
+    const state=this.lobbyState;state.socket.send(JSON.stringify({type:'set-ready',ready:true}));
+    await state.until(()=>state.room.seats.some(s=>s?.clientId===state.id&&s.ready));
+  },
+  async startLobby(automatic=false){
+    const state=this.lobbyState;await state.until(()=>state.room.seats.filter(Boolean).every(s=>s.ready));
+    state.socket.send(JSON.stringify({type:'start',adonisMode:1,inputDelayAuto:automatic,inputDelay:automatic?0:2,
+      predictionReserve:2,predictionLimit:0,challengeMode:false}));
+    await state.until(()=>state.messages.some(m=>m.type==='start'));
+  },
+};
+</script></html>

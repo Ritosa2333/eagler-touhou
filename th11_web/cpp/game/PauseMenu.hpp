@@ -31,6 +31,11 @@ public:
     std::string error;
     bool begin(bool replay=false);
     bool begin_end(bool practice=false,bool completed=false);
+#ifdef TH11_MULTIPLAYER
+    bool multiplayer_result=false;
+    bool begin_multiplayer_end(bool completed=false);
+    bool update_multiplayer_end(u32 pressed);
+#endif
     bool update(u32 pressed,u32 repeat);
     void queue_ascii(AsciiText&)const;
 private:

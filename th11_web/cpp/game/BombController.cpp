@@ -5,6 +5,12 @@ namespace th11 {
 namespace {constexpr i32 marisa_b_scripts[]={48,50,52,54,56};}
 BombController::BombController(AnmManager& a,AnmResource& r,PlayerFrame& p,BombWorld& w,u16 file,AnmResource* text):animations(a),resource(r),player(p),world(w),file_id(file),text_resource(text){}
 BombController::~BombController(){if(auto* vm=animations.find(state.animation))if(vm->after_update==ring_noise){vm->after_update=nullptr;vm->reserved_418=0;}}
+#ifdef TH11_MULTIPLAYER
+void BombController::multiplayer_clear(){
+    if(auto* vm=animations.find(state.animation))if(vm->after_update==ring_noise){vm->after_update=nullptr;vm->reserved_418=0;}
+    EnemyAnimations helper(animations);helper.erase(state.animation);helper.erase(state.auxiliary);mesh.reset();state.active=0;state.animation=state.auxiliary=0;
+}
+#endif
 bool BombController::sound(i32 id,bool positional){return world.bomb_sound(id,positional?state.position.x:0,positional);}
 bool BombController::create(u32& id,i32 script,bool positioned){
     Vec3 p={float((double(state.position.x)+32)+192),float(double(state.position.y)+16),state.position.z};

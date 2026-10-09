@@ -10,6 +10,12 @@ struct EnemyFrameWorld {
     Enemy* target=nullptr;
     i32 countdown_seconds=0,countdown_hundredths=0,spell_elapsed=0,spell_bonus=0,shared_spell_state=0;
     virtual ~EnemyFrameWorld()=default;
+#ifdef TH11_MULTIPLAYER
+    virtual bool multiplayer_world()const{return false;}
+    virtual void multiplayer_enemy_target(Vec3){}
+    virtual void multiplayer_shot_target(EnemyState&){}
+    virtual i32 multiplayer_boss_damage(EnemyState&,i32 damage){return damage;}
+#endif
     virtual bool shot_damage(EnemyState&,i32&){return false;}
     virtual bool player_collision(EnemyState&,float,i32&){return false;}
     virtual bool tick_callback(EnemyState&,i32&){return false;}

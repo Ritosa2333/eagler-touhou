@@ -30,6 +30,9 @@ public:
     i32 start();
     bool update();
     bool damage(const Vec3&,const Vec2&,i32&);
+#ifdef TH11_MULTIPLAYER
+    void multiplayer_clear();
+#endif
 private:
     AnmManager& animations;AnmResource& resource;PlayerFrame& player;BombWorld& world;u16 file_id;
     AnmResource* text_resource;std::unique_ptr<ScreenDeformation> mesh;

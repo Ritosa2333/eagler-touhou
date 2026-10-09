@@ -2,6 +2,7 @@
 #include "AnmVm.hpp"
 #include "Movement.hpp"
 #include <memory>
+#include <array>
 namespace th11 {
 struct EnemyDrop;
 class AnmRenderer;
@@ -18,6 +19,11 @@ struct ItemPlayer {
     i32 communication=0,power=0,max_power=400;
 };
 struct ItemWorld {
+#ifdef TH11_MULTIPLAYER
+    virtual bool multiplayer_world()const{return false;}
+    virtual bool multiplayer_item_player(ItemState&,ItemPlayer&){return false;}
+    virtual bool multiplayer_power_full()const{return false;}
+#endif
     virtual ~ItemWorld()=default;
     virtual bool effect(Vec3,i32){return false;}
     virtual bool sound(i32,float){return false;}
@@ -30,6 +36,12 @@ public:
     ItemManager(AnmResource&,AnmEnvironment&,ItemWorld&,u16 file_id=6);
     ItemState& at(u32 n){return storage[n];}
     ItemPlayer player;u32 cancel_cursor=0,cancel_spawn_count=0,active_count=0;i32 last_error=0;
+#ifdef TH11_MULTIPLAYER
+    std::array<i32,capacity> multiplayer_targets{};
+    i32 multiplayer_current_target=-1;
+    bool multiplayer_spawning_transfer=false;
+    bool spawn_transfer(i32,Vec3,unsigned);
+#endif
     // 0 success/full pool, -2 unavailable resource or world dependency.
     i32 spawn(i32 type,Vec3 position,u32 color=0xffffffff,float angle=-1.5707963705062866f,float speed=2.2f);
     bool update();

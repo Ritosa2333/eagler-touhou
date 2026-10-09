@@ -5,7 +5,11 @@ namespace th11 {
 
 GameSession::GameSession(){scores.initialize(animations.script_rng);scores.read_records(spell_records,clear_records);}
 bool GameSession::load_scores(const u8* data,u32 size){if(!scores.open(data,size))return false;scores.read_records(spell_records,clear_records);return true;}
-bool GameSession::save_scores(std::vector<u8>& out){if(!title)scores.write_records(spell_records,clear_records);return scores.save(out);}
+bool GameSession::save_scores(std::vector<u8>& out){
+#ifdef TH11_MULTIPLAYER
+    if(multiplayer_active){out.clear();return false;}
+#endif
+    if(!title)scores.write_records(spell_records,clear_records);return scores.save(out);}
 
 namespace {
 bool clear_animations(AnmManager& manager) {
@@ -65,7 +69,11 @@ bool GameSession::begin(GameResources& source, u32 stage, i32 character,
     initial_stage=stage;economy.rank=next_continues?-512:0;
     if(practice&&!replay)economy.lives=menu_selection.practice_start?menu_selection.practice_start-1:9;
     economy.difficulty=difficulty;
-    if(!replay&&!recording.begin(character,subtype,difficulty,practice,recording_timestamp))return fail("replay recorder initialization failed");
+    if(!replay
+#ifdef TH11_MULTIPLAYER
+       &&!multiplayer_active
+#endif
+       &&!recording.begin(character,subtype,difficulty,practice,recording_timestamp))return fail("replay recorder initialization failed");
     if(!replay){auto* counter=scores.characters[character*3+subtype].data()+0x588;i32 n;std::memcpy(&n,counter,4);if(n<99999){++n;std::memcpy(counter,&n,4);}}
     // Original 0x41f8f0 tables at 0x4a79e8/0x4a79fc, in stored units.
     constexpr i32 minimum[]={2500000,5000000,10000000,20000000,20000000};
@@ -110,6 +118,9 @@ bool GameSession::start_stage(GameResources& source, u32 stage) {
         entry.restore(economy,animations.script_rng,true);
     }
     battle=std::make_unique<GameBattle>(resources,animations,economy,spell_records,compositor,clear_records);
+#ifdef TH11_MULTIPLAYER
+    if(multiplayer_active)battle->enable_multiplayer(multiplayer_options);
+#endif
     battle->replaying=state.replay;battle->demo=state.demo;battle->replay_entry=entry;
 #ifdef TH_ENABLE_THPRAC
     battle->practice=practice.enabled?&practice:nullptr;
@@ -136,7 +147,11 @@ bool GameSession::start_stage(GameResources& source, u32 stage) {
     battle->completion.mode.replay_mode=state.replay?1:0;
     battle_attached=true;
     if(!state.demo)scores.settings[0x26+stage_music(stage)]=1;
-    if(!state.replay&&!record_stage_entry(true))return false;
+    if(!state.replay
+#ifdef TH11_MULTIPLAYER
+       &&!multiplayer_active
+#endif
+       &&!record_stage_entry(true))return false;
     return true;
 }
 
@@ -151,6 +166,9 @@ bool GameSession::record_stage_entry(bool initial){
     recording_active=true;return true;
 }
 bool GameSession::save_replay(const char* name,std::vector<u8>& output,bool terminal,float slowdown){
+#ifdef TH11_MULTIPLAYER
+    if(multiplayer_active)return false; // MP records all confirmed seats in the shared codec.
+#endif
 #ifdef TH_ENABLE_THPRAC
     if(practice.enabled&&practice.assisted)return false;
 #endif
@@ -168,6 +186,9 @@ bool GameSession::save_replay(const char* name,std::vector<u8>& output,bool term
 }
 
 bool GameSession::update(const GameSessionInput& input) {
+#ifdef TH11_MULTIPLAYER
+    if(multiplayer_active)return fail("MP requires a confirmed input frame");
+#endif
     if(!error.empty()) return false;
     if(state.phase==GameSessionPhase::finished) return true;
     GameSessionInput edges=input;
@@ -373,10 +394,21 @@ bool GameSession::open_title(GameResources& data,bool first,TitleScreen screen){
 }
 
 bool GameSession::draw(AnmRenderer& renderer,AsciiText* overlay) {
-    if(state.phase==GameSessionPhase::title&&title&&title_ascii){
+#ifdef TH11_MULTIPLAYER
+    if(multiplayer_active&&battle){battle->mp_always_hitbox=multiplayer_always_hitbox;battle->mp_prepare_presentation(renderer);}
+#endif
+    if(title&&title_ascii&&(state.phase==GameSessionPhase::title
+#ifdef TH11_MULTIPLAYER
+       ||(multiplayer_active&&title->multiplayer_result)
+#endif
+    )){
         title_ascii->clear();title->queue_ascii(*title_ascii);
     }
-    if(state.phase==GameSessionPhase::finished)return true;
+    if(state.phase==GameSessionPhase::finished
+#ifdef TH11_MULTIPLAYER
+       &&!multiplayer_active
+#endif
+    )return true;
     if(battle_attached&&battle)battle->ascii.clear();
     renderer.fog_origin=compositor.play_camera.position;
     const auto& fog=compositor.play_camera.fog;

@@ -63,7 +63,14 @@ bool GameBattle::initialize(i32 character,i32 subtype,i32 difficulty) {
     player_input={};player_input.movement.character=character;player_input.movement.subtype=subtype;
     player_input.movement.enemy_manager=true;
     bomb.reset();
-    player=std::make_unique<PlayerFrame>(resources.core.shots[character*3+subtype],resources.core.players[character],resources.core.bullet,animations,economy,*this,7,6);
+    PlayerFrameWorld* player_world=this;
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled)player_world=pilots[0].get();
+#endif
+    player=std::make_unique<PlayerFrame>(resources.core.shots[character*3+subtype],resources.core.players[character],resources.core.bullet,animations,economy,*player_world,7,6);
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled)pilots[0]->player=player.get();
+#endif
     player->input=player_input;
 #ifdef TH_ENABLE_THPRAC
     player->practice=practice;
@@ -74,8 +81,15 @@ bool GameBattle::initialize(i32 character,i32 subtype,i32 difficulty) {
     // Lifecycle 0 is the respawn entrance, not a new game's starting state.
     if(!player->start_stage()){last_error=-601;error="initial player stage reset";return false;}
     if(replaying&&!player->restore_replay_position(replay_entry)){error="replay player entry";return false;}
-    bomb=std::make_unique<BombController>(animations,resources.core.players[character],*player,*this,7,&resources.core.text);
+    BombWorld* bomb_world=this;
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled)bomb_world=pilots[0].get();
+#endif
+    bomb=std::make_unique<BombController>(animations,resources.core.players[character],*player,*bomb_world,7,&resources.core.text);
     bomb->selection=character*3+subtype;
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled&&!mp_initialize_players())return false;
+#endif
     synchronize_player();
     if(!spawn_root()){last_error=-1001;error="stage main: ECL opcode "+std::to_string(enemies.script_error.opcode);return false;}
     countdown_seconds=-1;
@@ -83,6 +97,9 @@ bool GameBattle::initialize(i32 character,i32 subtype,i32 difficulty) {
     if(practice&&practice->active){const int section=practice->run.section;hud.practice_skip_logo=section&&(section<10000||section>=20000||section%100!=1);}
 #endif
     if(!hud.start_stage(resources.stage->logo,hud_input(),demo,true,completion.mode.control_mode,hud.score.continues)){error="HUD initialization";return false;}
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled&&!mp_initialize_presentation()){error="MP native presentation initialization";return false;}
+#endif
     initialized=true;return true;
 }
 void GameBattle::create_dialogue(){
@@ -124,8 +141,15 @@ bool GameBattle::next_stage(GameResources& source,u32 number){
     if(!stage->initialize(resources.stage->scene,number,compositor.world_camera,false)){error=stage->error;return false;}
     enemy_commands.stage=stage.get();enemy_animations.resources[2]={&resources.stage->enemies,9};
     create_dialogue();spells.stage=number;
-    bomb=std::make_unique<BombController>(animations,resources.core.players[enemy_environment.character],*player,*this,7,&resources.core.text);
+    BombWorld* bomb_world=this;
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled)bomb_world=pilots[0].get();
+#endif
+    bomb=std::make_unique<BombController>(animations,resources.core.players[enemy_environment.character],*player,*bomb_world,7,&resources.core.text);
     bomb->selection=enemy_environment.character*3+enemy_environment.subtype;
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled){pilots[0]->bomb=bomb.get();for(unsigned i=1;i<mp_options.seat_count;++i){auto& p=*pilots[i];p.owned_bomb=std::make_unique<BombController>(animations,resources.core.players[p.input.movement.character],*p.player,p,7,&resources.core.text);p.bomb=p.owned_bomb.get();p.bomb->selection=mp_options.selections[i];}}
+#endif
     completion.mode.stage=i32(number);completion.state.exit=StageExit::None;
     hud.prepare_stage();countdown_seconds=-1;
     transition_timer.set(0,&animations.rate);frame=0;
@@ -134,6 +158,10 @@ bool GameBattle::next_stage(GameResources& source,u32 number){
 }
 bool GameBattle::activate_stage(){
     bullets.reset();animations.retire_resource(resources.core.bullet);
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled){if(!mp_stage_reset())return false;}
+    else
+#endif
     if(!player->start_stage())return false;
     if(replaying&&!player->restore_replay_position(replay_entry))return false;
     items.reset();
@@ -174,6 +202,9 @@ void GameBattle::set_input(const GameSessionInput& input) {
     if(player)player->input=player_input;
 }
 void GameBattle::synchronize_player() {
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled){mp_sync();return;}
+#endif
     if(!player)return;
     player_input.movement.bomb=dialogue&&dialogue->active;
     player->input.movement.bomb=player_input.movement.bomb;
@@ -217,7 +248,13 @@ bool GameBattle::update(const std::function<bool()>& sample_input) {
     // 420752: the stage-six introduction holds the music cursor for 300 ticks.
     if(control_running&&!demo&&resources.stage_number==6&&frame==300)events.push_back({BattleEventKind::MusicResume});
     if(control_running)hud.score.update(economy.score_units);
-    if(control_running&&frame>=90&&player&&!(dialogue&&dialogue->active))communication.update(economy,player->motion.state.position.y);
+    if(control_running&&frame>=90&&player&&!(dialogue&&dialogue->active)){
+#ifdef TH11_MULTIPLAYER
+        if(mp_enabled){for(unsigned i=0;i<mp_options.seat_count;++i){auto& p=*pilots[i];if(!p.ghost)p.communication.update(p.economy,p.player->motion.state.position.y);}}
+        else
+#endif
+        communication.update(economy,player->motion.state.position.y);
+    }
     if(control_running)enemy_commands.section_frame=wrapping_add(enemy_commands.section_frame,1);
     // Original replay/input callbacks run after game control (priority 10),
     // which selects the incoming stage's stream at activation, before players.
@@ -233,6 +270,10 @@ bool GameBattle::update(const std::function<bool()>& sample_input) {
     fades.update();
     popups.update(animations.rate);
     synchronize_player();
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled){if(!mp_update_players())return false;}
+    else
+#endif
     if(player_live&&player){
         player->spell={spell_flags,spell_elapsed,spell_bonus};
         if(!player->update()){if(!last_error)last_error=-601;return false;}
@@ -240,12 +281,19 @@ bool GameBattle::update(const std::function<bool()>& sample_input) {
     }
     // Bomb activation enables its callback itself (406510); it may run during
     // the outgoing-background overlap while new enemy callbacks are disabled.
-    if(bomb){
+    if(bomb
+#ifdef TH11_MULTIPLAYER
+       &&!mp_enabled
+#endif
+    ){
         if(!bomb->update()){if(error.empty())error="unimplemented or failed Bomb branch "+std::to_string(bomb->selection);last_error=-608;return false;}
         spell_flags=player->spell.flags;spell_bonus=player->spell.bonus;
     }
     synchronize_player();
     target_locked=false;
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled)for(unsigned i=0;i<mp_options.seat_count;++i)pilots[i]->player->shots.target_locked=0;
+#endif
     if(stage_active&&!enemies.update()){last_error=-1001;if(error.empty())error="ECL opcode "+std::to_string(enemies.script_error.opcode)+" at time "+std::to_string(enemies.script_error.time);return false;}
     animations.rate=enemy_environment.rate;
     synchronize_player();
@@ -253,12 +301,19 @@ bool GameBattle::update(const std::function<bool()>& sample_input) {
     if(stage_active&&!bullets.update(false)){last_error=-1002;return false;}
     synchronize_player();
     if(!items.update()){last_error=-1004;return false;}
-    if(spell_flags&1){Vec3 boss;if(!boss_position(boss)||!spells.update(player->motion.state.position.y,boss,special_active)){last_error=-1006;if(error.empty())error="spell update";return false;}}
+    if(spell_flags&1){Vec3 boss;bool blocking_bomb=special_active;
+#ifdef TH11_MULTIPLAYER
+        if(mp_enabled)blocking_bomb=spells.bomb_active;
+#endif
+        if(!boss_position(boss)||!spells.update(player->motion.state.position.y,boss,blocking_bomb)){last_error=-1006;if(error.empty())error="spell update";return false;}}
     completion.update();
     if(!hud.update(hud_input())){last_error=-1010;error="HUD update";return false;}
     if(dialogue&&dialogue->active){const i32 result=dialogue->update(player_input.movement.held,player_input.movement.pressed);if(result<0){last_error=-1007;if(error.empty())error=dialogue->error+" MSG opcode "+std::to_string(dialogue->last_opcode);return false;}if(result){if(enemy_commands.stage_section)enemy_commands.section_frame=0;enemy_commands.stage_section=0;}else dialogue->state.elapsed.tick();}
     if(!hud.finish_update(hud_input())){last_error=-1010;error="HUD indicator update";return false;}
     if(!animations.update(false)){last_error=-1005;return false;}
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled&&(!mp_update_rules()||!mp_update_presentation()))return false;
+#endif
     if(control_running)++frame;
     // Both VM registries have now consumed resource retirement markers.
     if(transitioning&&stage_active&&!outgoing_stage){
@@ -270,8 +325,13 @@ bool GameBattle::update(const std::function<bool()>& sample_input) {
 bool GameBattle::draw(AnmRenderer& renderer,SceneDrawKind kind) {
     switch(kind){
     case SceneDrawKind::ScorePopups:return popups.draw(renderer,resources.core.ascii,player->motion.state.position);
-    case SceneDrawKind::HudInner:return hud.draw_inner(renderer,hud_input())&&hud.queue_text(ascii,hud_input());
-    case SceneDrawKind::HudOuter:return hud.draw_outer(renderer,hud_input());
+    case SceneDrawKind::HudInner:
+        return hud.draw_inner(renderer,hud_input())&&hud.queue_text(ascii,hud_input());
+    case SceneDrawKind::HudOuter:
+#ifdef TH11_MULTIPLAYER
+        if(mp_enabled)return mp_draw_hud(renderer);
+#endif
+        return hud.draw_outer(renderer,hud_input());
     case SceneDrawKind::AsciiInner:return ascii.draw(renderer,1,compositor.full_camera,compositor.play_camera);
     case SceneDrawKind::AsciiOuter:return ascii.draw(renderer,0,compositor.full_camera,compositor.play_camera);
     case SceneDrawKind::StageBackground:
@@ -287,7 +347,11 @@ bool GameBattle::draw(AnmRenderer& renderer,SceneDrawKind kind) {
             spell_titles[2]=0;
         }
         return true;
-    case SceneDrawKind::Player:return player&&player->draw(renderer);
+    case SceneDrawKind::Player:
+#ifdef TH11_MULTIPLAYER
+        if(mp_enabled)return mp_draw_players(renderer);
+#endif
+        return player&&player->draw(renderer);
     case SceneDrawKind::Items:return items.draw(renderer);
     case SceneDrawKind::Lasers:return lasers.draw(renderer,false);
     case SceneDrawKind::Bullets:
@@ -342,12 +406,18 @@ bool GameBattle::bomb_cancel_beam(Vec3 p,bool reward){
     p.y=float(double(p.y)-224);return lasers.cancel_rectangle(p,{32,448,0},reward)>=0;
 }
 bool GameBattle::cancel_shot(Vec3 position,float angle) {
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled)return pilots[mp_effect_seat]->player->shots.spawn_converted_laser(position,angle)!=-2;
+#endif
     if(!player)return false;
     player->shots.locked_target=EnemyFrameWorld::target;
     // A full native 256-shot pool silently discards the emission.
     return player->shots.spawn_converted_laser(position,angle)!=-2;
 }
 bool GameBattle::shot_damage(EnemyState& e,i32& out) {
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled)return mp_damage_position(e.current.position,e.hitbox,out);
+#endif
     if(!player)return false;
     const auto& timer=player->state.state_timer;
     return player->shots.damage(e.current.position,e.hitbox,timer.previous!=timer.current,economy,out);
@@ -362,6 +432,9 @@ i32 GameBattle::apply_collision(PlayerCollisionResult result) {
     return i32(result.kind);
 }
 bool GameBattle::player_collision(EnemyState& e,float radius,i32& out) {
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled){out=0;mp_graze_mask=0;for(unsigned i=0;i<mp_options.seat_count;++i){auto& p=*pilots[i];if(!p.alive())continue;const auto c=p.player->collision().circle({e.current.position.x,e.current.position.y},radius);if(!mp_hit(i,c))return false;if(c.kind==CollisionKind::Graze)mp_graze_mask|=1u<<i;out=std::max(out,i32(c.kind));}return true;}
+#endif
     if(!player)return false;
     out=apply_collision(player->collision().circle({e.current.position.x,e.current.position.y},radius));return out>=0;
 }
@@ -371,14 +444,27 @@ i32 GameBattle::collision(const BulletState& b) {
     return apply_collision(b.flags&0x10?shape.circle(p,b.hitbox.x):shape.rectangle(p,b.hitbox));
 }
 i32 GameBattle::collision(Vec3 p,float angle,float width,float length) {
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled){i32 result=0;mp_graze_mask=0;for(unsigned i=0;i<mp_options.seat_count;++i){auto& seat=*pilots[i];if(!seat.alive())continue;const auto half=seat.player->state.hit_half;const auto c=seat.player->collision().laser({p.x,p.y},{half.x,half.y},angle,width,length);if(!mp_hit(i,c))return -2;if(i32(c.kind)==1){LaserWorld::player=seat.player->motion.state.position;result=1;}else if(i32(c.kind)==2){mp_graze_mask|=1u<<i;if(!result)result=2;}}return result;}
+#endif
     if(!player)return -2;const auto half=player->state.hit_half;
     return apply_collision(player->collision().laser({p.x,p.y},{half.x,half.y},angle,width,length));
 }
 i32 GameBattle::warning_collision(Vec3 p,float angle,float width,float length) {
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled){for(unsigned i=0;i<mp_options.seat_count;++i){auto& seat=*pilots[i];if(!seat.alive())continue;const auto half=seat.player->state.hit_half;if(i32(seat.player->collision().laser({p.x,p.y},{half.x,half.y},angle,width,length,true).kind)==1)return 1;}return 0;}
+#endif
     if(!player)return -2;const auto half=player->state.hit_half;
     return i32(player->collision().laser({p.x,p.y},{half.x,half.y},angle,width,length,true).kind);
 }
-void GameBattle::clear_shot_targets(Enemy* enemy) { if(player)player->shots.invalidate_target(enemy);ShotWorld::enemies=enemies.first; }
+void GameBattle::clear_shot_targets(Enemy* enemy) {
+#ifdef TH11_MULTIPLAYER
+    mp_damage_remainders.erase(enemy);
+    if(mp_enabled){for(unsigned i=0;i<mp_options.seat_count;++i)if(pilots[i]&&pilots[i]->player){pilots[i]->player->shots.invalidate_target(enemy);pilots[i]->enemies=enemies.first;}}
+    else
+#endif
+    if(player)player->shots.invalidate_target(enemy);ShotWorld::enemies=enemies.first;
+}
 bool GameBattle::boss_position(Vec3& out) { if(!enemy_commands.bosses[0])return false;out=enemy_commands.bosses[0]->current.position;return true; }
 bool GameBattle::visual(Vec3 p,i32 script) { p.x=float(double(p.x)+224);p.y=float(double(p.y)+16);return animations.create(resources.core.bullet,script,6,22,false,false,&p)!=nullptr; }
 bool GameBattle::colored_effect(const Vec3& position,i32 script,u32 color){Vec3 p=position;p.x=float(double(p.x)+224);p.y=float(double(p.y)+16);auto* vm=animations.create(resources.core.bullet,script,6,22,false,false,&p);if(!vm)return false;vm->color=color;return true;}
@@ -400,10 +486,23 @@ bool GameBattle::enemy_death() {
     enemy_environment.shared_integers[2]=0;return true;
 }
 bool GameBattle::game_over(bool replay) {game_over_requested=true;events.push_back({BattleEventKind::GameOver,i32(replay)});return true;}
-bool GameBattle::register_graze() { if(economy.graze<99999999)++economy.graze;return true; }
+bool GameBattle::register_graze() {
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled){for(unsigned i=0;i<mp_options.seat_count;++i)if(mp_graze_mask&(1u<<i)){auto& e=pilots[i]->economy;if(e.graze<99999999)++e.graze;}return true;}
+#endif
+    if(economy.graze<99999999)++economy.graze;return true;
+}
 bool GameBattle::communication_reward(i32 amount) { communication.reward(economy,amount,&animations.rate);return true; }
-bool GameBattle::reward_graze() {constexpr i32 amounts[]={800,500,500,500,500};return communication_reward(amounts[economy.difficulty]);}
-bool GameBattle::graze_reward() {constexpr i32 amounts[]={500,400,300,200,200};return communication_reward(amounts[economy.difficulty]);}
+bool GameBattle::reward_graze() {constexpr i32 amounts[]={800,500,500,500,500};
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled){for(unsigned i=0;i<mp_options.seat_count;++i)if(mp_graze_mask&(1u<<i)){auto& p=*pilots[i];p.communication.reward(p.economy,amounts[economy.difficulty],&animations.rate);}return true;}
+#endif
+    return communication_reward(amounts[economy.difficulty]);}
+bool GameBattle::graze_reward() {constexpr i32 amounts[]={500,400,300,200,200};
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled){for(unsigned i=0;i<mp_options.seat_count;++i)if(mp_graze_mask&(1u<<i)){auto& p=*pilots[i];p.communication.reward(p.economy,amounts[economy.difficulty],&animations.rate);}return true;}
+#endif
+    return communication_reward(amounts[economy.difficulty]);}
 bool GameBattle::graze(EnemyState& e) {return register_graze()&&visual(e.current.position,156)&&reward_graze()&&sound(28,e.current.position.x,true);}
 bool GameBattle::cancel_bullets(const Vec3* center,float radius,bool skip_delayed) {
     cancellation={spell_flags,spell_id};
@@ -434,6 +533,9 @@ bool GameBattle::spell_begin_visuals(i32 id,i32 timeout,const char* name){
     default:return false;
     }
     for(u32 i=0;i<2;++i){auto& vm=spell_backgrounds[i];animations.release_geometry(vm);if(!vm.bind_script(resources.stage->enemies,bg[i],9,&animations.rate)||vm.update(animations)<0)return false;}
+#ifdef TH11_MULTIPLAYER
+    if(mp_enabled)return true; // Shared declaration text/background remain; portrait cut-in is omitted.
+#endif
     return effect<0||create(resources.stage->enemies,effect,9);
 }
 bool GameBattle::spell_update_visuals(){for(auto& vm:spell_backgrounds)if(vm.update(animations)<0)return false;return true;}

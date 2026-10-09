@@ -25,7 +25,12 @@ const char* EnemyState::check_interrupts(EnemyPhaseState& world)noexcept{
         if(!(*world.spell_flags&8)){
             if(*world.spell_flags&1){
                 if(*world.spell_elapsed>=60){*world.spell_bonus=0;*world.spell_flags&=~0x22u;}
-                else if(world.special_active&&signed_bits(u32(world.character)*3+u32(world.subtype))!=5)*world.spell_flags|=0x20;
+                else{bool blocked=world.special_active&&signed_bits(u32(world.character)*3+u32(world.subtype))!=5;
+#ifdef TH11_MULTIPLAYER
+                    if(world.multiplayer)blocked=world.multiplayer_nonshield_bomb;
+#endif
+                    if(blocked)*world.spell_flags|=0x20;
+                }
             }
             *world.shared_spell_state=0;
         }

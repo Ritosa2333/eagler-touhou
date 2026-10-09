@@ -5,6 +5,9 @@
 #include "SceneCamera.hpp"
 #include <vector>
 namespace th11 {
+#ifdef TH11_MULTIPLAYER
+class AnmManager;
+#endif
 class AnmRenderer {
 public:
     explicit AnmRenderer(ZunGraphics& graphics):graphics(graphics){vertices.reserve(6144);}
@@ -15,6 +18,14 @@ public:
     // camera endpoint. Keep those values and its reference origin explicit.
     Vec3 fog_origin{},fog_channels{160,160,160};float fog_start=1000;
     bool tint_enabled=false;u32 tint=0x80808080;
+#ifdef TH11_MULTIPLAYER
+    const AnmManager* multiplayer_animations=nullptr;
+    const AnmVm* multiplayer_hud_background=nullptr;
+    std::array<u8,4> multiplayer_opacity{{255,255,255,255}};
+    u32 multiplayer_color(const AnmVm&,u32)const noexcept;
+    u32 multiplayer_tint(u32,unsigned)const noexcept;
+    void multiplayer_geometry(const AnmVm&,touhou::graphics::Topology,u32,const AnmVertex*);
+#endif
     int draw(AnmVm& vm);
     int draw_ascii_sprite(AnmVm& vm);
     int draw_ripple(AnmVm& vm);
@@ -30,6 +41,9 @@ public:
 private:
     ZunGraphics& graphics;
     std::vector<AnmVertex> vertices;
+#ifdef TH11_MULTIPLAYER
+    std::vector<AnmVertex> multiplayer_geometry_vertices;
+#endif
     u32 texture_handle=~0u,blend_mode=~0u,filter=~0u;
     const AnmSprite* uv_sprite=nullptr;Matrix4 cached_uv{};
     void material(const AnmVm& vm);

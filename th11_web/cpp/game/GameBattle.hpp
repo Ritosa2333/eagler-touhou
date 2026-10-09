@@ -24,6 +24,9 @@
 #include "SceneCompositor.hpp"
 #include "StageCompletion.hpp"
 #include "Hud.hpp"
+#ifdef TH11_MULTIPLAYER
+#include "MultiplayerBattle.hpp"
+#endif
 #include <memory>
 #include <vector>
 #include <functional>
@@ -92,6 +95,58 @@ public:
     ReplayStageState replay_entry;
     i32 last_error=0;
     std::string error;
+#ifdef TH11_MULTIPLAYER
+    MultiplayerOptions mp_options{};
+    std::array<std::unique_ptr<MultiplayerPilot>,3> pilots;
+    bool mp_enabled=false,mp_failed=false;
+    bool mp_always_hitbox=false;
+    bool mp_paused=false,mp_finished=false;
+    // This owner is presentation only. Native Focus/HUD scripts never sample
+    // or alter the shared combat RNG, Focus input, collision or shot state.
+    AnmManager mp_presentation;
+    u32 mp_focus_marker=0;
+    AnmVm mp_pause_label{};
+    std::array<std::array<AnmVm,9>,3> mp_life_icons{};
+    std::array<std::array<AnmVm,4>,3> mp_communication_icons{};
+    std::array<HudScore,3> mp_hud_scores{};
+    std::array<unsigned,3> mp_communication_modes{};
+    std::array<i32,3> mp_display_lives{{-99,-99,-99}},mp_display_fragments{{-99,-99,-99}};
+    unsigned mp_fragments=0,mp_wipe_frames=0,mp_tick=0,mp_effect_seat=0,mp_graze_mask=0;
+    i32 mp_rank=0;
+    std::unordered_map<Enemy*,unsigned> mp_damage_remainders;
+    std::array<unsigned,3> mp_enemy_graze{};
+    void enable_multiplayer(const MultiplayerOptions&);
+    bool mp_initialize_players();
+    bool mp_update_players();
+    bool mp_update_rules();
+    bool mp_stage_reset();
+    void mp_set_input(const std::array<MultiplayerInput,3>&);
+    void mp_sync();
+    unsigned mp_operable_count()const noexcept;
+    int mp_target(Vec3,bool power=false)const noexcept;
+    bool mp_all_power_full()const noexcept;
+    bool mp_collect(ItemState&,bool&);
+    bool mp_draw_players(AnmRenderer&);
+    bool mp_draw_hud(AnmRenderer&);
+    bool mp_initialize_presentation();
+    bool mp_update_presentation();
+    void mp_prepare_presentation(AnmRenderer&);
+    MultiplayerSeatView mp_seat(unsigned)const noexcept;
+    u32 mp_hash()const noexcept;
+    bool mp_damage_position(Vec3,Vec2,i32&);
+    bool mp_hit(unsigned,PlayerCollisionResult);
+    bool mp_reward_graze(unsigned,bool);
+    bool mp_attract_players(const EnemyState&);
+    bool multiplayer_world()const override{return mp_enabled;}
+    Vec3 multiplayer_target(Vec3)const override;
+    void multiplayer_enemy_target(Vec3)override;
+    void multiplayer_shot_target(EnemyState&)override;
+    i32 multiplayer_boss_damage(EnemyState&,i32)override;
+    bool multiplayer_bullet_collision(const BulletState&,u8&,i32&)override;
+    bool multiplayer_item_player(ItemState&,ItemPlayer&)override;
+    bool multiplayer_power_full()const override{return mp_all_power_full();}
+    bool multiplayer_attract_players(const EnemyState& e)override{return mp_attract_players(e);}
+#endif
 
     GameBattle(GameSessionResources&,AnmManager&,GameEconomy&,SpellRecords&,SceneCompositor&,ClearRecords&);
     ~GameBattle()override;
@@ -108,7 +163,7 @@ public:
     void spell_title_interrupt(i16 label)override{for(auto id:spell_titles)enemy_animations.interrupt(id,label);}
     void spell_circle_position(Vec3 p)override{enemy_animations.position(spell_circle,p,true);}
     void spell_circle_end()override{enemy_animations.erase(spell_circle);spell_circle=0;cancellation={spell_flags,spell_id};}
-    bool spell_result(bool captured,i32 bonus)override{events.push_back({BattleEventKind::SpellResult,captured?0:1,bonus});return hud.notice(captured?0:1,bonus);}
+    bool spell_result(bool captured,i32 bonus)override;
     bool spell_sound(i32 id)override{return sound(id,0,false);}
     i32& shared_spell_counter()override{return enemy_environment.shared_integers[2];}
     bool start_dialogue(i32)override;
@@ -118,9 +173,9 @@ public:
     bool hud_sound(i32 id)override{return sound(id,0,false);}
     bool dialogue_music()override{events.push_back({BattleEventKind::BossMusic,i32(resources.stage_number)});return true;}
     bool dialogue_fade(float seconds)override{events.push_back({BattleEventKind::MusicFade,0,0,{seconds,0,0}});return true;}
-    bool dialogue_stage_complete()override{return completion.complete();}
+    bool dialogue_stage_complete()override;
     bool stage_result_animation()override;
-    void recall_player_options()override{if(player)player->motion.recall_options(true);}
+    void recall_player_options()override;
     void request_stage_exit(StageExit)override{}
     void start_ending_fade()override{fades.start(5,200,0,67,&animations.rate);}
 
@@ -134,13 +189,13 @@ public:
     bool callback_move_player(Vec3)override;
     bool callback_indicator(i16,bool)override;
     AnmVm* callback_animation(u32& id)override{return enemy_animations.lookup(id);}
-    bool callback_damage(Vec3 p,Vec2 size,i32& out)override{if(!player)return false;const auto& timer=player->state.state_timer;return player->shots.damage(p,size,timer.previous!=timer.current,economy,out);}
+    bool callback_damage(Vec3 p,Vec2 size,i32& out)override;
     bool callback_collision(Vec3 p,float angle,float width,float length)override{return collision(p,angle,width,length)>=0;}
     bool graze(EnemyState&) override;
     bool sound(i32 id,float x) override { return sound(id,x,true); }
-    bool add_score(i32 value) override { economy.add_score(value); return true; }
+    bool add_score(i32 value) override;
     bool score_popup(Vec3 p,i32 value)override{return popup(p,value,0xffffffff);}
-    bool drop_items(EnemyState& e) override { items.player.power=economy.power;items.player.max_power=economy.max_power;return items.drop(e.drops,e.current.position); }
+    bool drop_items(EnemyState& e) override;
     bool cancel_reward(Vec3 p) override { return point_reward(p); }
     bool create_deformation(EnemyState&) override;
     bool deform(EnemyState& e) override { e.deformation->update(e,spell_id);return true; }
@@ -169,8 +224,8 @@ public:
     bool boss_position(Vec3&) override;
 
     bool effect(Vec3 p,i32 script) override { return visual(p,script); }
-    bool collect(ItemState& item,bool& convert) override { return item_rewards.collect(item,convert); }
-    bool rank_delta(i32 value) override { economy.add_rank(value); return true; }
+    bool collect(ItemState& item,bool& convert) override;
+    bool rank_delta(i32 value) override;
     bool popup(Vec3,i32,u32) override;
     bool notify(i32) override;
     bool power_changed() override;

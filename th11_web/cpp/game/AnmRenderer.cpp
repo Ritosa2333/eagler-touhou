@@ -1,6 +1,9 @@
 #include "AnmRenderer.hpp"
 #include <algorithm>
 #include <cmath>
+#ifdef TH11_MULTIPLAYER
+#include "AnmManager.hpp"
+#endif
 namespace th11 {
 using namespace touhou::graphics;
 void AnmRenderer::flush(){if(vertices.empty())return;auto& p=graphics.pipeline();p.textureTransform=false;p.color.second=p.alpha.second={ArgumentSource::Diffuse};graphics.set_layout(VertexLayout::ScreenColorUv);graphics.triangles(vertices.size()/3,vertices.data(),sizeof(AnmVertex));vertices.clear();}
@@ -21,10 +24,36 @@ void AnmRenderer::set_camera(SceneCamera& value,bool screen){
     camera.fog_near=value.fog.near_distance;camera.fog_far=value.fog.far_distance;camera.fog_color=value.fog.color;
     offset=value.offset;graphics.set_matrix(MatrixKind::View,value.view);graphics.set_matrix(MatrixKind::Projection,value.projection);set_viewport(value.viewport);
 }
-u32 AnmRenderer::color(const AnmVm& vm)const noexcept {const u32 original=vm.flags&0x8000?vm.secondary_color:vm.color;if(!tint_enabled)return original;u32 out=0;for(u32 shift=0;shift<32;shift+=8)out|=std::min(255u,(((original>>shift)&255)*((tint>>shift)&255))>>7)<<shift;return out;}
+u32 AnmRenderer::color(const AnmVm& vm)const noexcept {u32 original=vm.flags&0x8000?vm.secondary_color:vm.color;
+#ifdef TH11_MULTIPLAYER
+    original=multiplayer_color(vm,original);
+#endif
+    if(!tint_enabled)return original;u32 out=0;for(u32 shift=0;shift<32;shift+=8)out|=std::min(255u,(((original>>shift)&255)*((tint>>shift)&255))>>7)<<shift;return out;}
+#ifdef TH11_MULTIPLAYER
+u32 AnmRenderer::multiplayer_color(const AnmVm& vm,u32 color)const noexcept{if(!multiplayer_animations)return color;const auto owner=multiplayer_animations->multiplayer_tag(vm);if(!owner||owner>=multiplayer_opacity.size())return color;return (color&0xffffff)|(((color>>24)*multiplayer_opacity[owner]/255)<<24);}
+u32 AnmRenderer::multiplayer_tint(u32 value,unsigned owner)const noexcept{
+    if(!owner||owner>=multiplayer_opacity.size())return value;
+    const unsigned opacity=multiplayer_opacity[owner];if(opacity==255)return value;
+    // TH11's neutral multiplicative tint is 0x80 per channel. Interpolate
+    // only the submitted multiplier; the shared Stage.tint remains native.
+    u32 color=0;for(unsigned shift=0;shift<32;shift+=8){const unsigned source=(value>>shift)&255;const unsigned mixed=(source*opacity+128*(255-opacity)+127)/255;color|=mixed<<shift;}return color;
+}
+void AnmRenderer::multiplayer_geometry(const AnmVm& vm,Topology topology,u32 count,const AnmVertex* source){
+    const auto owner=multiplayer_animations?multiplayer_animations->multiplayer_tag(vm):0;
+    if(!owner||owner>=multiplayer_opacity.size()||multiplayer_opacity[owner]==255){graphics.primitives(topology,count,source,sizeof(AnmVertex));return;}
+    // Draw-only copies preserve native ring/ripple/distortion vertices and RNG.
+    multiplayer_geometry_vertices.assign(source,source+count+2);
+    for(auto& vertex:multiplayer_geometry_vertices)vertex.color=multiplayer_color(vm,vertex.color);
+    graphics.primitives(topology,count,multiplayer_geometry_vertices.data(),sizeof(AnmVertex));
+}
+#endif
 void AnmRenderer::material(const AnmVm& vm){
     const auto handle=graphics.texture(*vm.resource,vm.sprite->texture);if(handle!=texture_handle){flush();texture_handle=handle;graphics.bind_texture(handle);}
-    const u32 blend=(vm.flags>>4)&7;if(blend!=blend_mode){flush();blend_mode=blend;auto& p=graphics.pipeline();
+    u32 blend=(vm.flags>>4)&7;
+#ifdef TH11_MULTIPLAYER
+    if(multiplayer_animations){const auto owner=multiplayer_animations->multiplayer_tag(vm);if(owner&&owner<multiplayer_opacity.size()&&multiplayer_opacity[owner]<255&&blend!=1)blend=0;}
+#endif
+    if(blend!=blend_mode){flush();blend_mode=blend;auto& p=graphics.pipeline();
         switch(blend){
         case 0:p.sourceBlend=BlendFactor::SourceAlpha;p.destinationBlend=BlendFactor::InverseSourceAlpha;break;
         case 1:p.sourceBlend=BlendFactor::SourceAlpha;p.destinationBlend=BlendFactor::One;break;
@@ -64,6 +93,22 @@ int AnmRenderer::draw_ascii_sprite(AnmVm& vm){
 }
 int AnmRenderer::draw(AnmVm& vm){
     if((vm.flags&3)!=3||!(vm.color>>24))return -1;
+#ifdef TH11_MULTIPLAYER
+    if(&vm==multiplayer_hud_background){
+        // The title/watermark is baked into the right frame's sprite, not a
+        // separate text VM. Keep its original 16-pixel top/bottom borders and
+        // fill only the interior from this same artwork's unlettered band.
+        // Submitted copies leave the resource, VM and all world state intact.
+        auto strip=[&](float top,float height,float source_top,float source_height){auto copy=vm;
+            const float v0=vm.uv[0].y,span=vm.uv[2].y-v0;
+            copy.script_position.y+=top*vm.scale.y;copy.sprite_size.y=height;
+            copy.uv[0].y=copy.uv[1].y=v0+span*(source_top/480);
+            copy.uv[2].y=copy.uv[3].y=v0+span*((source_top+source_height)/480);
+            return draw(copy)!=-2;
+        };
+        return strip(0,16,0,16)&&strip(16,448,16,160)&&strip(464,16,464,16)?0:-2;
+    }
+#endif
     if(!vm.sprite||!vm.resource)return -2;const u32 mode=(vm.flags>>22)&15;
     if(mode<=3){
         Vec3 positions[4];const u32 saved_flags=vm.flags;
@@ -82,7 +127,10 @@ int AnmRenderer::draw(AnmVm& vm){
             const u32 value=fog_color(color(vm),amount,true);for(auto& v:colors)v=value;
         }else{
             Matrix4 world;if(!anm_projected_quad(vm,camera,positions,&world))return -1;
-            const Vec3 corners[]={{-128,-128,0},{128,-128,0},{-128,128,0},{128,128,0}};const u32 value=vm.flags&0x8000?vm.secondary_color:vm.color;
+            const Vec3 corners[]={{-128,-128,0},{128,-128,0},{-128,128,0},{128,128,0}};u32 value=vm.flags&0x8000?vm.secondary_color:vm.color;
+#ifdef TH11_MULTIPLAYER
+            value=multiplayer_color(vm,value);
+#endif
             for(u32 i=0;i<4;++i){float p[4];GraphicsMath::transform(corners[i],world,p);colors[i]=fog_color(value,fog_amount({p[0],p[1],p[2]},fog_origin),false);}
         }
         return submit_quad(vm,positions,false,colors);
@@ -101,12 +149,23 @@ int AnmRenderer::draw(AnmVm& vm){
     if(mode==9||mode==11||mode==12||mode==13){
         if(!vm.geometry)return -2;flush();material(vm);auto& p=graphics.pipeline();p.textureTransform=false;p.color.second=p.alpha.second={ArgumentSource::Diffuse};graphics.set_layout(VertexLayout::ScreenColorUv);
         const bool fan=mode==11;if(fan)p.depthWrite=false;const u32 count=u32(vm.integers[0])*2-2;
-        graphics.primitives(fan?Topology::Fan:Topology::Strip,count,vm.geometry,sizeof(AnmVertex));return 0;
+#ifdef TH11_MULTIPLAYER
+        multiplayer_geometry(vm,fan?Topology::Fan:Topology::Strip,count,static_cast<const AnmVertex*>(vm.geometry));
+#else
+        graphics.primitives(fan?Topology::Fan:Topology::Strip,count,vm.geometry,sizeof(AnmVertex));
+#endif
+        return 0;
     }
     return 0; // Reserved modes have no draw operation in the original dispatcher.
 }
 int AnmRenderer::draw_ripple(AnmVm& vm){
-    if(!vm.geometry||!vm.resource||!vm.sprite)return -2;flush();material(vm);auto& p=graphics.pipeline();p.depthWrite=false;p.textureTransform=false;p.color.second=p.alpha.second={ArgumentSource::Diffuse};graphics.set_layout(VertexLayout::ScreenColorUv);graphics.primitives(Topology::Fan,31,vm.geometry,sizeof(AnmVertex));return 0;
+    if(!vm.geometry||!vm.resource||!vm.sprite)return -2;flush();material(vm);auto& p=graphics.pipeline();p.depthWrite=false;p.textureTransform=false;p.color.second=p.alpha.second={ArgumentSource::Diffuse};graphics.set_layout(VertexLayout::ScreenColorUv);
+#ifdef TH11_MULTIPLAYER
+    multiplayer_geometry(vm,Topology::Fan,31,static_cast<const AnmVertex*>(vm.geometry));
+#else
+    graphics.primitives(Topology::Fan,31,vm.geometry,sizeof(AnmVertex));
+#endif
+    return 0;
 }
 int AnmRenderer::draw_layer(AnmVm* first){for(auto* vm=first;vm;vm=vm->draw_next){if(vm->flags&0x4000000)continue;if(vm->before_update==anm_ripple_update&&draw_ripple(*vm)==-2)return -2;if(vm->draw_callback)vm->draw_callback(*vm);if(draw(*vm)==-2)return -2;}return 1;}
 }

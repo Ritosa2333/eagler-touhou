@@ -33,6 +33,9 @@ bool BulletManager::appearance(BulletState& b,i32 type,i32 color,bool interrupt)
     if(interrupt)b.vm.pending_interrupt=2;return true;
 }
 void BulletManager::reset()noexcept{
+#ifdef TH11_MULTIPLAYER
+    multiplayer_grazed.fill(0);
+#endif
     std::memset(storage.get(),0,sizeof(BulletState)*capacity);
     heads.fill(nullptr);tails.fill(nullptr);cursor=active_count=fire_depth=0;last_error=0;
 }
@@ -41,6 +44,9 @@ i32 BulletManager::spawn(const BulletEmitter& e,i32 index,i32 layer,float aim)no
     if(last_error)return -2;u32 slot=cursor,visited=0;
     while(storage[slot].state!=0){slot=(slot+1)%capacity;if(++visited==capacity)return 1;}
     auto& b=storage[slot];BulletLaunch launch;
+#ifdef TH11_MULTIPLAYER
+    multiplayer_grazed[slot]=0;
+#endif
     const bool accepted=bullet_launch(e,index,layer,aim,animations.script_rng,player,exclusion_squared,launch);
     b.position=launch.position;b.speed=launch.speed;b.angle=launch.angle;if(!accepted)return -1;
     b.flags|=1;b.state=1;b.lifetime.set(0,&rate);b.auxiliary_timer.set(0,&rate);
@@ -58,6 +64,9 @@ i32 BulletManager::spawn(const BulletEmitter& e,i32 index,i32 layer,float aim)no
 }
 bool BulletManager::fire(const BulletEmitter& e){
     if(last_error||fire_depth>=64){last_error=4;return false;}++fire_depth;
+#ifdef TH11_MULTIPLAYER
+    if(world.multiplayer_world())player=world.multiplayer_target(e.position);
+#endif
     const float aim=bullet_aim(e.position,player);bool full=false;
     for(i32 layer=0;layer<e.layers&&!full;++layer)for(i32 index=0;index<e.count;++index){const i32 result=spawn(e,index,layer,aim);if(result==-2){--fire_depth;return false;}if(result==1){full=true;break;}}
     --fire_depth;if((e.flags&128)&&!sound(e.fire_sound,e.position.x,true)){last_error=5;return false;}return true;
@@ -134,6 +143,9 @@ bool BulletManager::cancel_beam(const Vec3& center,float half_width,bool reward,
     }return world.cancel_enemy_beam(center,half_width,reward);
 }
 i32 BulletManager::update_one(BulletState& b)noexcept{
+#ifdef TH11_MULTIPLAYER
+    if(world.multiplayer_world())player=world.multiplayer_target(b.position);
+#endif
     if(b.flags&8){release(b);return -1;}
     if(b.state==2){move(b,rate,true);if(b.vm.integers[0])b.state=1;}
     else if(b.state==3)move(b,rate,true);
@@ -142,9 +154,18 @@ i32 BulletManager::update_one(BulletState& b)noexcept{
         constexpr u32 order[]={1,4,8,0x10,0x40,0x20,0x100,0x800000,0x2000000,0x8000000,0x1000};
         for(const auto op:order)if((b.active_transforms&op)&&bullet_motion(b,op,*this)<0)return -2;
         move(b,rate,false);
-        if(b.flags&2){const i32 collision=world.collision(b);if(collision<0)return -2;
+        if(b.flags&2){i32 collision=0;
+#ifdef TH11_MULTIPLAYER
+            if(world.multiplayer_world()){if(!world.multiplayer_bullet_collision(b,multiplayer_grazed[&b-storage.get()],collision))return -2;}
+            else
+#endif
+            collision=world.collision(b);if(collision<0)return -2;
             if(collision==1){b.state=3;b.vm.pending_interrupt=1;if(b.cancel_effect>=0&&!world.effect(b.position,b.cancel_effect))return -2;}
-            else if(collision==2&&!(b.flags&4)){if(!world.register_graze())return -2;b.flags|=4;
+            else if(collision==2&&!(b.flags&4)
+#ifdef TH11_MULTIPLAYER
+                    &&!world.multiplayer_world()
+#endif
+            ){if(!world.register_graze())return -2;b.flags|=4;
                 if(!world.effect(b.position,156)||!world.reward_graze()||!sound(28,b.position.x,true))return -2;}
         }
     }

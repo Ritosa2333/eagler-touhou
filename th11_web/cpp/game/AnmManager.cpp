@@ -7,6 +7,9 @@ AnmVm* AnmManager::create(AnmResource& file,i32 script,u16 file_id,u32 layer,boo
     if(script<0||u32(script)>=file.scripts.size()||spawn_depth>=128)return nullptr;
     AnmVm* vm;if(available.empty()){storage.push_back(std::make_unique<AnmVm>());vm=storage.back().get();vm->initialize();}else{vm=available.back();available.pop_back();}
     vm->layer=layer;
+#ifdef TH11_MULTIPLAYER
+    if(multiplayer_owner)multiplayer_tags[vm]=multiplayer_owner;else multiplayer_tags.erase(vm);
+#endif
     if(initial_position){vm->position=*initial_position;vm->bind_script(file,script,file_id,&rate);}
     else{vm->position=vm->script_position=vm->child_position={};vm->flags|=0x40000000;
     vm->rectangle_columns=vm->rectangle_rows=16;vm->script_index=i16(script);vm->file_index=file_id;vm->resource=&file;
@@ -18,8 +21,20 @@ AnmVm* AnmManager::create(AnmResource& file,i32 script,u16 file_id,u32 layer,boo
     else{node.previous=tails[list];if(tails[list])tails[list]->next=&node;else heads[list]=&node;tails[list]=&node;}
     if(++next_id==0)++next_id;vm->id=next_id;active.emplace(next_id,vm);return vm;
 }
-AnmVm* AnmManager::spawn(AnmVm& parent,i32 script,u32 op){if(!parent.resource)return nullptr;return create(*parent.resource,script,parent.file_index,parent.layer,op==90||op==92,op==91||op==92);}
+AnmVm* AnmManager::spawn(AnmVm& parent,i32 script,u32 op){if(!parent.resource)return nullptr;
+#ifdef TH11_MULTIPLAYER
+    const unsigned previous=multiplayer_owner;multiplayer_owner=multiplayer_tag(parent);
+#endif
+    auto* result=create(*parent.resource,script,parent.file_index,parent.layer,op==90||op==92,op==91||op==92);
+#ifdef TH11_MULTIPLAYER
+    multiplayer_owner=previous;
+#endif
+    return result;
+}
 void AnmManager::destroy(AnmVm& vm){
+#ifdef TH11_MULTIPLAYER
+    multiplayer_tags.erase(&vm);
+#endif
     // A destroyed VM may still be referenced by the previous draw traversal.
     // Remove it there before initialize() resets its id and next pointer.
     for(auto& head:layers){auto** link=&head;while(*link){if(*link==&vm){*link=vm.draw_next;break;}link=&(*link)->draw_next;}}
@@ -34,6 +49,9 @@ void AnmManager::clear(){
     layers.fill(nullptr);
     while(!active.empty())destroy(*active.begin()->second);
     last_error=0;
+#ifdef TH11_MULTIPLAYER
+    multiplayer_tags.clear();multiplayer_owner=0;
+#endif
 }
 void AnmManager::retire_resource(const AnmResource& resource){
     // Deferred deletion matches 4564c0: an overlay callback and its children

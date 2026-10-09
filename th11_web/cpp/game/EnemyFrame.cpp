@@ -9,6 +9,9 @@ i32 enemy_death(EnemyState& e,EnemyAnimations& animations,EnemyFrameWorld& world
 i32 enemy_frame(EnemyScriptServices& script,EnemyFrameWorld& world){
     auto& e=script.globals.enemy;auto& environment=script.globals.environment;
     if(e.flags&0x4000)return 0;
+#ifdef TH11_MULTIPLAYER
+    if(world.multiplayer_world())world.multiplayer_enemy_target(e.current.position);
+#endif
     if(e.update_movement(&environment.rate,environment.camera_delta))return -1;
     auto* animations=script.commands.animations;if(!animations)return -2;
     if(e.flags&0x1000000){
@@ -30,14 +33,26 @@ i32 enemy_frame(EnemyScriptServices& script,EnemyFrameWorld& world){
     }
     e.flags&=~0x20000u;
     EnemyPhaseState phase{e.lifetime.rate,&world.countdown_seconds,&world.countdown_hundredths,&world.spell_flags,&world.spell_elapsed,&world.spell_bonus,&world.shared_spell_counter(),world.special_active,environment.character,environment.subtype};
+#ifdef TH11_MULTIPLAYER
+    phase.multiplayer=world.multiplayer_world();phase.multiplayer_nonshield_bomb=world.special_active&&!(world.player_flags&4);
+#endif
     const auto transition=[&](const char* name){e.lifetime.set(0,e.lifetime.rate);auto& owner=*e.script_owner;owner.script.reset_threads(script);owner.script.select_subroutine(name);};
     if(!(e.flags&0x21)){
         i32 damage=0;
         if(u32(e.damage_callback)?!world.damage_callback(e,damage):!world.shot_damage(e,damage))return -2;
-        if(world.player_state==0||world.player_state==2)damage/=5;
-        if((world.spell_flags&1)&&world.spell_id>=0x9e&&world.spell_id<=0xa1&&(world.special_active||world.special_ending)&&!(world.player_flags&4))damage/=5;
+#ifdef TH11_MULTIPLAYER
+        if(!world.multiplayer_world()){
+#endif
+            if(world.player_state==0||world.player_state==2)damage/=5;
+            if((world.spell_flags&1)&&world.spell_id>=0x9e&&world.spell_id<=0xa1&&(world.special_active||world.special_ending)&&!(world.player_flags&4))damage/=5;
+#ifdef TH11_MULTIPLAYER
+        }
+#endif
         if(!enlarged&&damage){
             if((world.spell_flags&0x21)==0x21)damage/=7;
+#ifdef TH11_MULTIPLAYER
+            if(world.multiplayer_world())damage=world.multiplayer_boss_damage(e,damage);
+#endif
             if(!(e.flags&0x10)&&e.damage_immunity.current<=0)e.take_damage(damage);
             if(const char* name=e.check_interrupts(phase)){transition(name);result=script.update(elapsed);if(result)return result==-2?-2:-1;}
             if(e.health<=0&&!(e.flags&0x80)){
@@ -55,6 +70,9 @@ i32 enemy_frame(EnemyScriptServices& script,EnemyFrameWorld& world){
         }
     }
     if(!animations->update_direction(e))return -2;animations->update_positions(e);
+#ifdef TH11_MULTIPLAYER
+    if(world.multiplayer_world())world.multiplayer_shot_target(e);
+#endif
     if(!(e.flags&0xc00021)&&(!world.target||std::abs(float(double(world.target->state.current.position.x)-environment.player_position.x))<std::abs(float(double(e.current.position.x)-environment.player_position.x)))){
         if(!world.target_locked)world.target=e.script_owner;world.target_locked=true;
     }

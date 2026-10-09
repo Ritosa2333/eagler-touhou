@@ -12,6 +12,10 @@ enum class EnemyTick:u32 {
 enum class EnemyDamage:u32 {None,Arc};
 enum class EnemyCollision:u32 {None,Arc};
 struct EnemyCallbackWorld {
+#ifdef TH11_MULTIPLAYER
+    virtual bool multiplayer_world()const{return false;}
+    virtual bool multiplayer_attract_players(const EnemyState&){return false;}
+#endif
     virtual ~EnemyCallbackWorld()=default;
     virtual EnemyLink* callback_enemies()=0;
     virtual bool callback_spawn(const EnemyState&,Vec3)=0;

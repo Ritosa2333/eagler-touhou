@@ -28,7 +28,11 @@ public:
     bool cancel_effect(Vec3 p,i32 script)override{return world.cancel_effect(p,script);}
     bool cancel_reward(Vec3 p)override{return world.cancel_reward(p);}
     bool cancel_shot(Vec3 p,float angle)override{return world.cancel_shot(p,angle);}
-    i32 collision(Vec3 p,float angle,float width,float length)override{return world.collision(p,angle,width,length);}
+    i32 collision(Vec3 p,float angle,float width,float length)override{const auto result=world.collision(p,angle,width,length);
+#ifdef TH11_MULTIPLAYER
+        if(world.multiplayer_world())player=world.player;
+#endif
+        return result;}
     i32 warning_collision(Vec3 p,float angle,float width,float length)override{return world.warning_collision(p,angle,width,length);}
     bool cut(LaserLine&,Vec3,Vec3,bool,bool)override;
     bool cut_infinite(LaserInfinite&,Vec3,Vec3,bool,bool)override;

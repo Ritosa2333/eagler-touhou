@@ -25,6 +25,12 @@ std::string replay_line(const TitleMenu::ReplayEntry* entry,i32 index){
 void TitleMenu::queue_ascii(AsciiText& out)const{
     char line[256];AsciiStyle style;style.shadow=true;
     auto add=[&](float x,float y){out.add(line,{x,y,0},style);};
+#ifdef TH11_MULTIPLAYER
+    if(multiplayer_result&&screen==TitleScreen::Results){
+        if(substate==2)for(unsigned seat=0;seat<multiplayer_seats;++seat){style.color=0xffffffff;std::snprintf(line,sizeof(line),"%2u  %-8s  %9d0                     %s",seat+1,players[multiplayer_selections[seat]],multiplayer_scores[seat],stages[8]);add(48,float(160+seat*18));}
+        return;
+    }
+#endif
     if(screen==TitleScreen::Practice&&(substate==2||substate==3)&&(timer.current>=10||substate==3)){
         const auto* p=scores.characters[selection.character*3+selection.partner].data();
         for(i32 st=1;st<=6;++st){const i32 index=st+selection.difficulty*6;const bool available=p[0x5a1+index*8];

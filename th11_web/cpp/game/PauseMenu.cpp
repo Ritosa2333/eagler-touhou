@@ -21,6 +21,9 @@ bool PauseMenu::begin(bool playback){
     menu_animation=menu->id;family(menu_animation,3);sounds.push_back(32);return true;
 }
 bool PauseMenu::update(u32 pressed,u32 repeat){
+#ifdef TH11_MULTIPLAYER
+    if(multiplayer_result)return update_multiplayer_end(pressed);
+#endif
     sounds.clear();action=PauseAction::None;scan_requested=false;recording_metadata_requested=false;
     switch(state){
     case 0:break;

@@ -87,5 +87,8 @@ struct EnemyPhaseState {
     const float* rate; i32* countdown_seconds; i32* countdown_hundredths;
     u32* spell_flags; i32* spell_elapsed; i32* spell_bonus;
     i32* shared_spell_state; i32 special_active,character,subtype;
+#ifdef TH11_MULTIPLAYER
+    bool multiplayer=false,multiplayer_nonshield_bomb=false;
+#endif
 };
 }
