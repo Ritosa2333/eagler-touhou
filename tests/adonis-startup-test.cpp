@@ -295,12 +295,29 @@ static void interrupted_mesh(unsigned count,unsigned slowSeat,AdonisMode mode,st
         if(delay!=AdonisStartup::Automatic)assert(choice.delay==delay);
     }
 }
+void spectator_timing_identity(){
+    for(const unsigned game:{8u,10u,11u}){
+        AdonisSpectatorTiming timing;
+        timing.game=game;timing.mode=1;timing.delay=1;timing.fullDelay=1;
+        timing.sessionId=123;timing.gameplayAbi=456;timing.rttP95Us=32000;
+        timing.samples=120;timing.automatic=true;
+        auto bytes=timing.Encode();AdonisSpectatorTiming decoded;
+        assert(bytes.size()==40);
+        assert(AdonisSpectatorTiming::Decode(bytes.data(),bytes.size(),decoded));
+        assert(decoded.game==game&&decoded.mode==1&&decoded.prediction==0);
+        assert(decoded.sessionId==timing.sessionId&&decoded.gameplayAbi==timing.gameplayAbi);
+        bytes[1]='9';assert(!AdonisSpectatorTiming::IsPacket(bytes.data(),bytes.size()));
+        assert(!AdonisSpectatorTiming::Decode(bytes.data(),bytes.size(),decoded));
+        timing.prediction=1;assert(timing.Encode().empty());
+    }
+}
 int main(){
 #ifdef _MSC_VER
     _CrtSetReportMode(_CRT_ASSERT,_CRTDBG_MODE_FILE);
     _CrtSetReportFile(_CRT_ASSERT,_CRTDBG_FILE_STDERR);
     _set_abort_behavior(0,_WRITE_ABORT_MSG|_CALL_REPORTFAULT);
 #endif
+    spectator_timing_identity();
     connection_owner();
     connection_waits_for_loading_peer();
     for(unsigned count:{2u,3u})for(unsigned seat=0;seat<count;++seat)
