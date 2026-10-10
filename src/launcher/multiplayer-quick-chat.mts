@@ -1,4 +1,5 @@
 import { QUICK_CHAT_ROWS, quickChatPhrase, type QuickChatPhrase } from "../contracts/multiplayer-quick-chat.mjs";
+import { playQuickChatVoice } from "./quick-chat-voice.mjs";
 import type { UiMessageKey } from "./i18n.mjs";
 
 interface Seat { clientId: string; name: string }
@@ -82,6 +83,7 @@ export class MultiplayerQuickChat {
     const seat = ctx.seats[message.seat];
     if(!seat || message.clientId !== seat.clientId) return;
     const entry = {clientId: seat.clientId, seat: message.seat, name: seat.name, phrase};
+    if (!this.muted.has(seat.clientId)) playQuickChatVoice(phrase.id);
     this.entries.push(entry);
     if(this.entries.length > 50) this.removeEntry(this.entries[0]!);
     this.renderLog();
@@ -176,6 +178,7 @@ export class MultiplayerQuickChat {
         button.disabled = ctx.localSeat == null || !ctx.connected;
         button.addEventListener("click", () => {
           if(this.context?.localSeat == null || !this.context.connected) return;
+          playQuickChatVoice(phrase.id);
           this.send({type: "quick-chat", phrase: phrase.id, serial: this.context.serial});
           this.pickerOpen = false; this.render();
         }); return button;

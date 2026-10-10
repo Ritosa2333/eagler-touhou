@@ -1649,7 +1649,8 @@ function handleRuntimeThpracMenu(event: Event) {
   thpracMenuOpen = record(record(event)?.detail)?.open === true;
   touchThpracFunctionKeys.hidden = !thpracMenuOpen;
   const enemyInvincibleKey = touchThpracFunctionKeys.querySelector<HTMLElement>('[data-thprac-key="U"]');
-  if (enemyInvincibleKey) enemyInvincibleKey.hidden = !("thpracTouchExtraKeys" in PRODUCT_GAMES[state.game] && (PRODUCT_GAMES[state.game] as {thpracTouchExtraKeys: readonly string[]}).thpracTouchExtraKeys.includes("U"));
+  const practiceProduct = PRODUCT_GAMES[state.game];
+  if (enemyInvincibleKey) enemyInvincibleKey.hidden = !("thpracExtraFunctionKeys" in practiceProduct && practiceProduct.thpracExtraFunctionKeys.includes("U"));
 }
 
 // The external device only replaces the built-in synth once access is granted,
@@ -4827,7 +4828,8 @@ function render({ updateLibrary = true } = {}) {
   touchThpracMenu.hidden = !thpracControlsVisible;
   touchThpracFunctionKeys.hidden = !thpracMenuOpen;
   const enemyInvincibleKey = touchThpracFunctionKeys.querySelector<HTMLElement>('[data-thprac-key="U"]');
-  if (enemyInvincibleKey) enemyInvincibleKey.hidden = !("thpracTouchExtraKeys" in PRODUCT_GAMES[state.game] && (PRODUCT_GAMES[state.game] as {thpracTouchExtraKeys: readonly string[]}).thpracTouchExtraKeys.includes("U"));
+  const practiceProduct = PRODUCT_GAMES[state.game];
+  if (enemyInvincibleKey) enemyInvincibleKey.hidden = !("thpracExtraFunctionKeys" in practiceProduct && practiceProduct.thpracExtraFunctionKeys.includes("U"));
   applyTouchLayout();
   if (touchLayoutEditing) updateTouchLayoutEditorUi();
   gameZoom.refreshUi();
