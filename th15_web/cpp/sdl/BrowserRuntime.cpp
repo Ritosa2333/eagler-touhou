@@ -57,9 +57,9 @@ touhou::input::TouchState touch_state(){
  touhou::input::TouchState value;if(!app||!app->scene()||!app->session)return value;
  if(app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive)return value;
  if(app->progress.replay){value.context=3;return value;}
- auto& stage=*app->scene();if(stage.messages.active()){value.context=2;return value;}
+ auto& stage=*app->scene();
  auto& player=*stage.battle.player;auto& motion=player.motion;
- value.context=1;value.instance=app->progress.stage;value.ready=player.life.state==1&&!(app->progress.scene_flags&(4|0x70|0x4000|0x10000));
+ value.context=stage.messages.active()?2:1;value.instance=app->progress.stage;value.ready=player.life.state==1&&!(app->progress.scene_flags&(4|0x70|0x4000|0x10000));
  value.x=motion.position.x;value.y=motion.position.y;value.fast=float(motion.normal_speed)/128;value.slow=float(motion.focus_speed)/128;
  value.min_x=-184;value.max_x=184;value.min_y=32;value.max_y=432;return value;
 }
