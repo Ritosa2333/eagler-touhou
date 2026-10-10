@@ -8,7 +8,7 @@ import {
   createRuntimeManifest, packageEagler, MULTIPLAYER_EXPORTS, sha256,
 } from '../package-eagler.mjs';
 
-const revision = 'e02347fac98c9e599d30a6ffd7ef30756555b948';
+const revision = '984a8a10834c35fe9ef86c4ffe03daf1fb61f87c';
 const leb = value => {
   const bytes = [];
   do { const part = value & 127; value >>>= 7; bytes.push(part | (value ? 128 : 0)); } while (value);
