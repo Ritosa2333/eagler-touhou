@@ -96,6 +96,9 @@ public:
     GameBattle(GameSessionResources&,AnmManager&,GameEconomy&,SpellRecords&,SceneCompositor&,ClearRecords&);
     ~GameBattle()override;
     bool initialize(i32 character,i32 subtype,i32 difficulty);
+    bool always_hitbox=false;
+    AnmManager hitbox_presentation;u32 hitbox_marker=0;
+    bool draw_hitbox(AnmRenderer&,const PlayerFrame&);
     bool next_stage(GameResources&,u32);
     bool update(const std::function<bool()>& sample_input={});
     bool draw(AnmRenderer&,SceneDrawKind);

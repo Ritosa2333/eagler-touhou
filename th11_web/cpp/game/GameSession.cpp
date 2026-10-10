@@ -373,6 +373,7 @@ bool GameSession::open_title(GameResources& data,bool first,TitleScreen screen){
 }
 
 bool GameSession::draw(AnmRenderer& renderer,AsciiText* overlay) {
+    if(battle)battle->always_hitbox=always_hitbox;
     if(state.phase==GameSessionPhase::title&&title&&title_ascii){
         title_ascii->clear();title->queue_ascii(*title_ascii);
     }

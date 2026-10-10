@@ -69,6 +69,7 @@ public:
     std::unique_ptr<AsciiText> title_ascii;
     ScreenFades title_fades;
     TitleSelection menu_selection;
+    bool always_hitbox=false;
     bool interactive=false;
     GameSessionState state;
     PracticeState practice;

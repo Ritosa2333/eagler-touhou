@@ -11,6 +11,8 @@
 #include "../game/MusicCatalog.hpp"
 #include <cmath>
 #include <algorithm>
+#include <cstdio>
+#include <cerrno>
 namespace th11::sdl {
 namespace {
 u32 word(const u8* p){u32 v;std::memcpy(&v,p,4);return v;}
@@ -21,7 +23,7 @@ struct AudioDevice::Impl {
     struct Voice {ma_decoder decoder{};ma_sound sound{};bool decoded=false,attached=false;~Voice(){if(attached)ma_sound_uninit(&sound);if(decoded)ma_decoder_uninit(&decoder);}};
     ma_engine engine{};SDL_AudioStream* stream=nullptr;bool engine_ready=false,ready=false,suspended=false,refill=true,music_paused=false;
     std::array<std::unique_ptr<Voice>,56> sounds;std::array<std::vector<u8>,46> samples;std::unique_ptr<Voice> music;
-    std::vector<u8> formats;i32 track=-1,fade=0,fade_total=0;mutable u32 stats[9]{};
+    std::vector<u8> formats;i32 track=-1,pending_track=-1,fade=0,fade_total=0;ma_uint64 pending_frames=0;bool music_retry=false;mutable u32 stats[9]{};
     ~Impl(){music.reset();for(auto& sound:sounds)sound.reset();if(stream)SDL_DestroyAudioStream(stream);if(engine_ready)ma_engine_uninit(&engine);}
     bool attach(Voice& v){if(ma_sound_init_from_data_source(&engine,&v.decoder,MA_SOUND_FLAG_NO_SPATIALIZATION,nullptr,&v.sound)!=MA_SUCCESS)return false;v.attached=true;return true;}
     Voice* voice(u32 n){return n&&n<=sounds.size()?sounds[n-1].get():nullptr;}
@@ -43,7 +45,7 @@ bool AudioDevice::initialize(GameResources& resources){
     if(!resources.read("thbgm.fmt",a.formats)){error="Missing TH11 music layout";return false;}SDL_ResumeAudioStreamDevice(a.stream);a.ready=true;error.clear();return true;
 }
 bool AudioDevice::music(i32 track){
-    auto& a=*impl;if(!a.ready)return false;if(track<0){if(a.music)ma_sound_stop(&a.music->sound);a.track=-1;return true;}
+    auto& a=*impl;if(!a.ready)return false;if(track<0){a.pending_track=-1;a.music_retry=false;if(a.music)ma_sound_stop(&a.music->sound);a.track=-1;return true;}
     const char* stem=nullptr;for(const auto& t:music_tracks)if(t.cue==track){stem=t.file;break;}if(!stem){error="Unknown TH11 music cue";return false;}
     const auto filename=std::string(stem)+".wav";const u8* format=nullptr;
     for(u32 n=0;n+52<=a.formats.size();n+=52)if(std::strncmp(reinterpret_cast<const char*>(a.formats.data()+n),filename.c_str(),16)==0){format=a.formats.data()+n;break;}
@@ -51,19 +53,45 @@ bool AudioDevice::music(i32 track){
     if(a.track==track&&a.music){a.fade=0;a.music_paused=false;ma_sound_seek_to_pcm_frame(&a.music->sound,0);ma_sound_set_volume(&a.music->sound,music_enabled?volume(SoundEffects::adjusted_volume(0,music_volume,true)):0.f);ma_sound_start(&a.music->sound);return true;}
     auto next=std::make_unique<Impl::Voice>();const auto path=std::string("/music/")+stem+".ogg";const u32 rate=word(format+36),align=short_word(format+44),channels=short_word(format+34),total=word(format+28),intro=word(format+24);
     if(!align||!rate||!channels||intro>=total){error="Invalid music loop";return false;}
+    // Match TH08/TH10's progressive OGG contract: missing music is silence,
+    // not a fatal game error. Only the resource-write notification retries it.
+    if(auto* file=std::fopen(path.c_str(),"rb"))std::fclose(file);
+    else if(errno==ENOENT){
+        a.music.reset();a.track=track;a.pending_track=track;a.pending_frames=0;
+        a.music_retry=false;a.fade=0;a.music_paused=false;error.clear();return true;
+    }
     auto config=ma_decoder_config_init(ma_format_f32,channels,rate);
     if(ma_decoder_init_file(path.c_str(),&config,&next->decoder)!=MA_SUCCESS){error="Unable to decode "+path;return false;}next->decoded=true;
     ma_uint64 length=0;if(ma_decoder_get_length_in_pcm_frames(&next->decoder,&length)!=MA_SUCCESS||length!=total/align){error="Music PCM frame count differs from original: "+path;return false;}
     ma_data_source_set_loop_point_in_pcm_frames(&next->decoder,intro/align,total/align);
     if(!a.attach(*next)){error="Unable to attach music voice";return false;}ma_sound_set_looping(&next->sound,MA_TRUE);ma_sound_set_volume(&next->sound,music_enabled?volume(SoundEffects::adjusted_volume(0,music_volume,true)):0.f);
-    a.music=std::move(next);a.track=track;a.fade=0;a.music_paused=false;ma_sound_start(&a.music->sound);return true;
+    a.music=std::move(next);a.track=track;a.pending_track=-1;a.music_retry=false;a.fade=0;a.music_paused=false;ma_sound_start(&a.music->sound);return true;
 }
 bool AudioDevice::music_file(const char* name){std::string file=name?name:"";const auto slash=file.find_last_of("/\\");if(slash!=std::string::npos)file.erase(0,slash+1);const auto dot=file.find_last_of('.');if(dot!=std::string::npos)file.erase(dot);for(const auto& track:music_tracks)if(file==track.file)return music(track.cue);error="Unknown music filename: "+file;return false;}
-void AudioDevice::fade_music(i32 frames){auto& a=*impl;a.fade=a.fade_total=std::max(0,frames);if(!frames&&a.music)ma_sound_stop(&a.music->sound);}
-void AudioDevice::pause_music(bool paused){auto& a=*impl;if(!a.music||a.music_paused==paused)return;a.music_paused=paused;if(paused)ma_sound_stop(&a.music->sound);else ma_sound_start(&a.music->sound);}
+void AudioDevice::fade_music(i32 frames){auto& a=*impl;a.fade=a.fade_total=std::max(0,frames);if(!frames){a.pending_track=-1;a.music_retry=false;if(a.music)ma_sound_stop(&a.music->sound);}}
+void AudioDevice::pause_music(bool paused){auto& a=*impl;if(a.music_paused==paused)return;a.music_paused=paused;if(!a.music)return;if(paused)ma_sound_stop(&a.music->sound);else ma_sound_start(&a.music->sound);}
 void AudioDevice::refresh_volume(){auto& a=*impl;if(a.music)ma_sound_set_volume(&a.music->sound,music_enabled?volume(SoundEffects::adjusted_volume(a.fade?a.fade*5000/a.fade_total-5000:0,music_volume,true)):0.f);}
-void AudioDevice::update(){auto& a=*impl;effects.process();if(a.music&&a.fade&&!a.music_paused){--a.fade;if(!a.fade)ma_sound_stop(&a.music->sound);}refresh_volume();}
+void AudioDevice::resource_changed(){if(impl->pending_track>=0)impl->music_retry=true;}
+bool AudioDevice::update(){
+    auto& a=*impl;effects.process();
+    if(a.pending_track>=0&&a.music_retry){
+        const auto track=a.pending_track;const auto cursor=a.pending_frames;const auto fade=a.fade,total=a.fade_total;const bool paused=a.music_paused;
+        if(!music(track))return false;
+        if(a.pending_track<0&&a.music){
+            const char* stem=nullptr;for(const auto& t:music_tracks)if(t.cue==track){stem=t.file;break;}
+            const auto name=std::string(stem)+".wav";const u8* f=nullptr;
+            for(u32 n=0;n+52<=a.formats.size();n+=52)if(std::strncmp(reinterpret_cast<const char*>(a.formats.data()+n),name.c_str(),16)==0){f=a.formats.data()+n;break;}
+            if(!f)return false;const auto align=short_word(f+44);const ma_uint64 intro=word(f+24)/align,end=word(f+28)/align;
+            const auto source_cursor=cursor*word(f+36)/44100;const auto frame=source_cursor<end?source_cursor:intro+(source_cursor-intro)%(end-intro);
+            ma_sound_seek_to_pcm_frame(&a.music->sound,frame);
+        }
+        a.pending_frames=cursor;a.fade=fade;a.fade_total=total;pause_music(paused);
+    }
+    if((a.music||a.pending_track>=0)&&a.fade&&!a.music_paused){--a.fade;if(!a.fade){if(a.music)ma_sound_stop(&a.music->sound);a.pending_track=-1;}}
+    refresh_volume();return true;
+}
 bool AudioDevice::mix(float* pcm,u32 frames){
+    if(impl->pending_track>=0&&music_enabled&&!impl->music_paused)impl->pending_frames+=frames;
     ma_uint64 read=0;if(!impl->ready||!pcm||ma_engine_read_pcm_frames(&impl->engine,pcm,frames,&read)!=MA_SUCCESS||read!=frames)return false;
     for(u32 n=0;n<frames*2;++n)pcm[n]=std::clamp(pcm[n],-1.f,1.f);return true;
 }

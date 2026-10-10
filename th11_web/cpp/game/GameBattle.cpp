@@ -38,6 +38,7 @@ bool GameBattle::create_deformation(EnemyState& e){auto effect=std::make_unique<
 bool GameBattle::initialize(i32 character,i32 subtype,i32 difficulty) {
     if(character<0||character>1||subtype<0||subtype>2||difficulty<0||difficulty>4)return unavailable("invalid battle selection");
     initialized=false;last_error=0;frame=0;error.clear();events.clear();
+    auto* marker=hitbox_presentation.create(resources.core.bullet,74,6,15);if(!marker)return false;hitbox_marker=marker->id;
     completion.mode.stage=i32(resources.stage_number);completion.mode.selection=character*3+subtype;
     if(replaying)spell_timing.records=replay_entry.spell_times;
     enemy_environment.character=character;enemy_environment.subtype=subtype;
@@ -259,12 +260,20 @@ bool GameBattle::update(const std::function<bool()>& sample_input) {
     if(dialogue&&dialogue->active){const i32 result=dialogue->update(player_input.movement.held,player_input.movement.pressed);if(result<0){last_error=-1007;if(error.empty())error=dialogue->error+" MSG opcode "+std::to_string(dialogue->last_opcode);return false;}if(result){if(enemy_commands.stage_section)enemy_commands.section_frame=0;enemy_commands.stage_section=0;}else dialogue->state.elapsed.tick();}
     if(!hud.finish_update(hud_input())){last_error=-1010;error="HUD indicator update";return false;}
     if(!animations.update(false)){last_error=-1005;return false;}
+    hitbox_presentation.rate=animations.rate;
+    if(!hitbox_presentation.update(true)||!hitbox_presentation.update(false))return false;
     if(control_running)++frame;
     // Both VM registries have now consumed resource retirement markers.
     if(transitioning&&stage_active&&!outgoing_stage){
         auto* old=resources.previous_stage.get();
         if(!old||(!animations.references(old->background)&&!animations.references(old->logo)&&!animations.references(old->enemies))){resources.retire_previous();transitioning=false;}
     }
+    return true;
+}
+bool GameBattle::draw_hitbox(AnmRenderer& renderer,const PlayerFrame& player){
+    if(player.state.life_state!=1||player.motion.focus_animation)return true;
+    const auto p=player.motion.state.position;
+    if(auto* marker=hitbox_presentation.find(hitbox_marker))for(auto* n=&marker->child;n;n=n->next){auto vm=*n->value;vm.position={p.x+224,p.y+16,0};if(renderer.draw(vm)==-2)return false;}
     return true;
 }
 bool GameBattle::draw(AnmRenderer& renderer,SceneDrawKind kind) {
@@ -287,7 +296,7 @@ bool GameBattle::draw(AnmRenderer& renderer,SceneDrawKind kind) {
             spell_titles[2]=0;
         }
         return true;
-    case SceneDrawKind::Player:return player&&player->draw(renderer);
+    case SceneDrawKind::Player:return player&&player->draw(renderer)&&(!always_hitbox||draw_hitbox(renderer,*player));
     case SceneDrawKind::Items:return items.draw(renderer);
     case SceneDrawKind::Lasers:return lasers.draw(renderer,false);
     case SceneDrawKind::Bullets:

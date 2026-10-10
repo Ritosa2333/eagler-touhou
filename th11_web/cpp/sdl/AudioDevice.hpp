@@ -12,7 +12,8 @@ public:
     bool initialize(GameResources&);
     void close();
     bool music(i32 track);bool music_file(const char*);void fade_music(i32 frames=240);void pause_music(bool);
-    void refresh_volume();void update();void pump();void suspend(bool);
+    void resource_changed();
+    void refresh_volume();bool update();void pump();void suspend(bool);
     bool mix(float*,u32 frames);
     void sound_stop(u32)override;void sound_position(u32,u32)override;
     void sound_pan(u32,i32)override;void sound_volume(u32,i32)override;void sound_play(u32)override;
