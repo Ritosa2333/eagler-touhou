@@ -16,7 +16,7 @@ if (multiplayer && thprac) throw Error('TH11 multiplayer and THPrac are separate
 const profile = multiplayer ? 'multiplayer' : 'sdl3';
 const variant = multiplayer ? 'multiplayer' : 'normal';
 const out = resolve(root, 'artifacts', profile);
-const commonRevision = 'e02347fac98c9e599d30a6ffd7ef30756555b948';
+const commonRevision = '984a8a10834c35fe9ef86c4ffe03daf1fb61f87c';
 const netplayRoot = resolve(process.env.EAGLER_COMMON_ROOT || resolve(workspace, 'third_party/eagler-common'));
 const sdk = process.env.EMSDK || [
   resolve(workspace, 'tools/emsdk'),
@@ -90,7 +90,7 @@ const headerFiles = dir => readdirSync(dir, {withFileTypes: true}).flatMap(entry
     headerFiles(resolve(dir, entry.name))) :
     /\.(h|hpp|inc)$/.test(entry.name) ? [resolve(dir, entry.name)] : []);
 const headers = [...headerFiles(resolve(root, 'cpp')), ...headerFiles(resolve(workspace, 'portable/sdl')),
-  ...headerFiles(resolve(workspace, 'portable/input')),
+  ...headerFiles(resolve(workspace, 'portable/input')), resolve(workspace, 'third_party/eagler-common/include/eagler/input/DialogueGesture.hpp'),
   ...(multiplayer ? headerFiles(resolve(netplayRoot, 'include')) : [])].sort();
 const headerHash = sha(headers.map(path => path + sha(readObserved(path))).join('\n'));
 readObserved(fileURLToPath(import.meta.url));

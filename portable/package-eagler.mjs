@@ -7,7 +7,7 @@ import {createHash} from 'node:crypto';
 
 const GAME = 'th11';
 const SHA256 = /^[a-f0-9]{64}$/i;
-const COMMON_REVISION = 'e02347fac98c9e599d30a6ffd7ef30756555b948';
+const COMMON_REVISION = '984a8a10834c35fe9ef86c4ffe03daf1fb61f87c';
 export const MULTIPLAYER_EXPORTS = Object.freeze([
   'configure', 'connect', 'spectator_connect', 'start', 'pump', 'status',
   'calibration_status', 'error', 'stop', 'replay_validate', 'replay_load',
@@ -25,7 +25,7 @@ export function resolvePackagePlan(root, args = []) {
   return {
     game: GAME, multiplayer, profile: multiplayer ? 'multiplayer' : 'sdl3',
     variant: multiplayer ? 'multiplayer' : 'normal',
-    out: resolve(root, multiplayer ? 'build-eagler-multiplayer' : 'build-eagler'),
+    out: process.env.EAGLER_RUNTIME_OUTPUT ? resolve(process.env.EAGLER_RUNTIME_OUTPUT) : resolve(root, multiplayer ? 'build-eagler-multiplayer' : 'build-eagler'),
     buildRoot: resolve(root, 'th11_web/artifacts', multiplayer ? 'multiplayer' : 'sdl3'),
   };
 }
