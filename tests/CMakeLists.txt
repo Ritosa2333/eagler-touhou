@@ -7,6 +7,10 @@ else()
     add_compile_options(-UNDEBUG)
 endif()
 
+add_executable(eagler_common_thprac_test thprac-test.cpp)
+target_link_libraries(eagler_common_thprac_test PRIVATE eagler::thprac)
+add_test(NAME eagler-common.thprac COMMAND eagler_common_thprac_test)
+
 add_executable(eagler_common_assertions_enabled_test assertions-enabled-test.cpp)
 add_test(NAME eagler-common.assertions-enabled COMMAND eagler_common_assertions_enabled_test)
 
