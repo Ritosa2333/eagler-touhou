@@ -7,7 +7,7 @@
 #include "../game/PracticeVersion.hpp"
 #include "../game/PracticeLicense.hpp"
 #include "../game/PracticeAbScores.hpp"
-#include "../game/PracticeKeyMonitor.hpp"
+#include <eagler/thprac/PracticeKeyMonitor.hpp>
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "imgui_freetype.h"
@@ -31,15 +31,15 @@ unsigned generation=0,draw_generation=~0u;
 void publish_menu(bool open){EM_ASM({const v=!!$0;if(Module.eaglerThpracMenuOpen===v)return;Module.eaglerThpracMenuOpen=v;window.dispatchEvent(new CustomEvent('eagler-thprac-menu',{detail:{open:v}}));},int(open));}
 void toggle(ApplicationState& app,u32 bit){if(app.practice.replay)return;app.practice.cheats^=bit;app.practice.assisted|=app.practice.cheats!=0;}
 const char* label(const char* const* values){return values[locale];}
-PracticeKeyMonitor key_monitor;
-#include "PracticeKeyHud.inc"
+eagler::thprac::PracticeKeyMonitor key_monitor;
+#include <eagler/thprac/PracticeKeyHud.inc>
 struct PracticeCounter {int64_t QuadPart=0;};
 void practice_counter_frequency(PracticeCounter* c){c->QuadPart=1000000000;}
 void practice_counter_now(PracticeCounter* c){c->QuadPart=int64_t(SDL_GetTicksNS());}
 std::function<unsigned()> practice_random_generator(unsigned minimum,unsigned maximum){return std::bind(std::uniform_int_distribution<unsigned>(minimum,maximum),std::mt19937(std::mt19937::result_type(std::time(nullptr))));}
-#include "PracticeReaction.inc"
+#include <eagler/thprac/PracticeReaction.inc>
 THGuiTestReactionTest reaction_test;
-#include "PracticeSpeed.inc"
+#include <eagler/thprac/PracticeSpeed.inc>
 ImTextureID practice_blind_image(ApplicationState& app,const unsigned char* fallback,size_t length){
  size_t bytes=0;auto* custom=static_cast<unsigned char*>(SDL_LoadFile("/blind.png",&bytes));int w=0,h=0,channels=0;
  auto* image=custom&&bytes<=64*1024*1024?stbi_load_from_memory(custom,int(bytes),&w,&h,&channels,4):nullptr;SDL_free(custom);
