@@ -1,0 +1,25 @@
+import {readFileSync,existsSync} from 'node:fs';
+import {resolve} from 'node:path';
+import {execFileSync} from 'node:child_process';
+import {requiredExports} from './adapter.mjs';
+import {createPresentationLabServer,sha256} from '../../third_party/eagler-common/testkit/presentation-lab/server-core.mjs';
+const lab=import.meta.dirname,root=resolve(lab,'../..'),buildRoot=resolve(root,'th15_web/artifacts/presentation-lab'),common=resolve(root,'third_party/eagler-common/testkit/presentation-lab');
+const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json'))),wasm=readFileSync(resolve(buildRoot,'th15-application.wasm'));
+if(sha256(wasm)!==build.sha256)throw Error('Stale Lab Wasm');
+const exports=new Set(WebAssembly.Module.exports(new WebAssembly.Module(wasm)).map(x=>x.name));
+for(const name of requiredExports)if(!exports.has(name))throw Error('Not a TH15 Lab diagnostic build: '+name);
+for(const [name,hash] of Object.entries({...build.sources,...build.headers}))if(sha256(readFileSync(resolve(root,name)))!==hash)throw Error('Rebuild changed source '+name);
+const files=new Map([['/','workbench.html'],['/index.html','workbench.html'],['/common/workbench.css','workbench.css'],['/common/workbench.mjs','workbench.mjs']].map(([url,name])=>[url,resolve(common,name)]));
+for(const name of ['controller-core.mjs','contracts.mjs','analyzer.mjs','report-core.mjs'])files.set('/third_party/eagler-common/testkit/presentation-lab/'+name,resolve(common,name));
+files.set('/lab-config.mjs',resolve(lab,'browser-config.mjs'));files.set('/adapter.mjs',resolve(lab,'adapter.mjs'));
+for(const name of ['runtime.html','runtime.mjs'])files.set('/runtime/'+name,resolve(lab,name));
+files.set('/runtime/keyboard.mjs',resolve(root,'th15_web/sdl-runtime/keyboard.mjs'));
+for(const name of ['th15-application.mjs','th15-application.wasm'])files.set('/runtime/'+name,resolve(buildRoot,name));
+const fonts=process.env.TH15_LAB_FONTS||resolve(root,'../../th15-eagler/th15_web/assets/sdl-native/fonts');
+for(const name of [...Array.from({length:13},(_,n)=>'font'+n+'.bin'),'cp932.bin','blend4444.bin']){const file=resolve(fonts,name);if(!existsSync(file))throw Error('Set TH15_LAB_FONTS to measured fonts');files.set('/fonts/'+name,file);}
+if(process.env.TH15_LAB_DATA&&existsSync(process.env.TH15_LAB_DATA))files.set('/input/th15.dat',process.env.TH15_LAB_DATA);
+const git=dir=>execFileSync('git',['rev-parse','HEAD'],{cwd:dir,encoding:'utf8'}).trim();
+const identity={schema:'presentation-lab/build/1',game:'th15',commit:git(root),commonCommit:git(resolve(root,'third_party/eagler-common')),wasm:build.sha256,loader:sha256(readFileSync(resolve(buildRoot,'th15-application.mjs'))),instrumented:true,profile:'presentation-lab',localChanges:true,sourceFiles:{...build.sources,...build.headers,...Object.fromEntries(['adapter.mjs','browser-config.mjs','runtime.mjs','runtime.html'].map(name=>['portable/presentation-lab/'+name,sha256(readFileSync(resolve(lab,name)))]))},dataAvailable:files.has('/input/th15.dat'),evidence:'partial Player X observer; no complete consumer admission; diagnostic only',sampling:'original Draw packet references; unknown for missing owners/state'};
+const port=Number(process.env.PORT||8145);
+const {start}=createPresentationLabServer({port,files,identity,incident:{directory:resolve(buildRoot,'incidents'),validate(report){if(report?.schema!=='presentation-lab/report/1'||!Number.isInteger(report.tick)||!Array.isArray(report.objects))throw Error('Invalid report');return String(report.tick);}}});
+start();console.log(`TH15 Presentation Lab: http://127.0.0.1:${port}/`);

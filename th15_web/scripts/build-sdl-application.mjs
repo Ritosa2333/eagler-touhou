@@ -13,12 +13,15 @@ const emcc=['install','upstream'].map(layout=>resolve(sdk,layout,'emscripten/emc
 if(!emcc)throw Error('Emscripten compiler not found in TH15_EMSDK');
 const release=process.argv.includes('--release');
 const thprac=process.argv.includes('--thprac');
+const lab=process.argv.includes('--presentation-lab');
+if(lab&&release)throw Error('Presentation Lab cannot be a production build');
 const target=JSON.parse(readFileSync(resolve(root,'target.json'),'utf8'));
-const out=resolve(root,process.env.TH15_OUTPUT||(release?'artifacts/sdl-release':'artifacts/sdl-application'));
+const out=resolve(root,process.env.TH15_OUTPUT||(lab?'artifacts/presentation-lab':release?'artifacts/sdl-release':'artifacts/sdl-application'));
 const objects=resolve(out,'objects');mkdirSync(objects,{recursive:true});
 const env={...process.env,EM_CONFIG:resolve(sdk,'.emscripten'),EMSDK:sdk,EMCC_CORES:'4'};
 const common=['-O2','-g0','-std=c++17','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti','-DTH_NATIVE_PLATFORM=1','-DTH_ENABLE_THCRAP=1',`-DTH15_DEVELOPMENT_HARNESS=${release?0:1}`,'--use-port=sdl3','--use-port=sdl3_ttf'];
 common.push('-I'+commonInclude);
+common.push(`-DTH15_PRESENTATION_LAB=${lab?1:0}`);
 common.push(`-DTH_ENABLE_THPRAC=${thprac?1:0}`);
 if(thprac)common.push('-DIMGUI_DISABLE_WIN32_FUNCTIONS','-I'+resolve(root,'cpp/third_party/imgui'));
 // The full object list can exceed Windows' 32K process command limit after extraction.

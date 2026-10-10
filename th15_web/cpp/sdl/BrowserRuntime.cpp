@@ -37,6 +37,10 @@ SDL_Joystick* controller=nullptr;
 bool loading_held=false;
 bool running=false,suspended=false,lost_focus=false,music_enabled=true;u32 render_scale=1;
 u32 loop_epoch=0;
+#if TH15_PRESENTATION_LAB
+bool lab_frozen=false;
+std::array<unsigned,5> lab_reference_clock{}; // previous/current tick and original Draw serial, session
+#endif
 double previous_frame=-1,window_start=0;
 u32 window_ticks=0;
 float measured_fps=60;
@@ -105,6 +109,9 @@ bool sample_and_tick(){
  const bool focus=lost_focus;lost_focus=false;
  const bool capture=ThpracUi::captures_game_input();
  const bool ok=app->step(capture?0:controls.held,capture?0:controls.pressed,capture?0:controls.repeated,measured_fps,focus);
+#if TH15_PRESENTATION_LAB
+ if(ok&&app->graphics.presentation.ready){lab_reference_clock[0]=lab_reference_clock[1];lab_reference_clock[2]=lab_reference_clock[3];lab_reference_clock[1]=app->frames;++lab_reference_clock[3];}
+#endif
  if(ok)ThpracUi::render(*app);
  const double now=double(SDL_GetTicksNS())/1e9;if(!window_start)window_start=now;
  if(ok){window_ticks++;const double duration=now-window_start;if(duration>=1){measured_fps=float(window_ticks/duration);window_ticks=0;window_start=now;}}
@@ -139,6 +146,9 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
  if(!ThpracUi::initialize(*app)){app->fail("THPrac shared font unavailable: /unifont.otf");th15_browser_frame(0,0,0);return;}app->graphics.release_startup_branding();running=true;suspended=false;previous_frame=-1;cadence.reset();presentation.reset();if(app)app->graphics.presentation.reset();clear_inputs();window_start=0;window_ticks=0;reset_presentation_clock();app->audio_device.suspend(false);
  emscripten_request_animation_frame_loop([](double time,void* epoch)->EM_BOOL{
   if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double begin=emscripten_get_now(),delta=previous_frame<0?0:(time-previous_frame)/1000.;previous_frame=time;
+#if TH15_PRESENTATION_LAB
+  if(lab_frozen){cadence.reset();return EM_TRUE;}
+#endif
   if(suspended){cadence.reset();presentation.reset();app->graphics.presentation.reset();return EM_TRUE;}
   // Startup retains native 180 loading frames; subsequent loads wait for
   // resource completion. Neither path accumulates gameplay simulation debt.
@@ -152,7 +162,13 @@ EMSCRIPTEN_KEEPALIVE void th15_loop_start(){
   bool fast=false,slow=false,debug=false;for(const auto& key:keyboard_map)if(key.hosted){fast|=key.vk==17||key.vk==162||key.vk==163;slow|=key.vk==16||key.vk==160||key.vk==161;debug|=key.vk==32;}
   const double period=app->practice.enabled?app->practice.speed.interval(app->practice.replay,fast,slow,debug):1./60.;if(period!=cadence.period){cadence.period=period;cadence.reset();app->graphics.presentation.reset();}
   const bool interpolate=std::abs(period-1./60.)<1e-12;
-  if(!limit_presentation_60&&interpolate)presentation.advance(delta);else presentation.reset();app->graphics.presentation.enabled=presentation.high_refresh&&!limit_presentation_60&&interpolate;const auto ticks=cadence.advance(delta);bool ok=true;app->graphics.backend.defer=true;
+  if(!limit_presentation_60&&interpolate)presentation.advance(delta);else presentation.reset();app->graphics.presentation.enabled=presentation.high_refresh&&!limit_presentation_60&&interpolate;
+#if TH15_PRESENTATION_LAB
+  // Keep independent original Draw endpoints even on a 60Hz display; extra
+  // presentation remains governed by the real cadence and the 60Hz limiter.
+  app->graphics.presentation.enabled=true;
+#endif
+  const auto ticks=cadence.advance(delta);bool ok=true;app->graphics.backend.defer=true;
   unsigned completed=0;
   for(unsigned i=0;i<ticks&&ok;i++){ok=sample_and_tick();++completed;if(app->exiting||app->pending_load)break;
    // Keep every executed update/draw, but do not turn one expensive tick into
@@ -184,6 +200,15 @@ EMSCRIPTEN_KEEPALIVE const float* th15_probe_background_diagnostics(){using name
 EMSCRIPTEN_KEEPALIVE int th15_probe_dialogue_extent(const char* text,int font){using namespace th15::sdl;return app&&app->scene()&&text?app->scene()->dialogue_host.text_extent(text,font):-1;}
 EMSCRIPTEN_KEEPALIVE int th15_probe_dialogue_request(int script){using namespace th15::sdl;return app&&app->scene()&&app->scene()->messages.request(script);}
 EMSCRIPTEN_KEEPALIVE int th15_probe_dialogue_advance(){using namespace th15::sdl;if(!app||!app->scene())return -1;auto& messages=app->scene()->messages;if(!messages.dialogue)return 0;messages.dialogue->state.clock.set(100000);if(messages.dialogue->state.wait.current>0)messages.dialogue->state.wait.set(1);if(!messages.update({1,0,0,0,0,app->progress.stage}))return -1;return messages.active()?1:0;}
+#if TH15_PRESENTATION_LAB
+EMSCRIPTEN_KEEPALIVE int th15_lab_freeze(){using namespace th15::sdl;if(!app)return 0;lab_frozen=true;cadence.reset();return 1;}
+EMSCRIPTEN_KEEPALIVE int th15_lab_resume(){using namespace th15::sdl;if(!app||!lab_frozen)return 0;lab_frozen=false;previous_frame=-1;cadence.reset();window_start=0;window_ticks=0;return 1;}
+// Receipts: 1 complete tick, 2 loading, 3 finished, 0 error. Never bare Calculation.
+EMSCRIPTEN_KEEPALIVE int th15_lab_tick(){using namespace th15::sdl;if(!app||!lab_frozen)return 0;if(app->exiting)return 3;if(app->loading_waiting()){if(app->pending_load){const auto deadline=app->loading_until;if(!app->complete_loading()||!app->draw_loading(false))return 0;app->loading_until=deadline;}return 2;}app->graphics.presentation.enabled=true;const auto before=app->frames;if(!sample_and_tick())return 0;app->audio_device.pump();return app->frames==before+1?1:0;}
+EMSCRIPTEN_KEEPALIVE int th15_lab_draw(float alpha){using namespace th15::sdl;if(!app||!lab_frozen||!std::isfinite(alpha)||alpha<0||alpha>1)return 0;return app->graphics.presentation.present(app->graphics.backend,alpha,app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive);}
+EMSCRIPTEN_KEEPALIVE const unsigned* th15_lab_reference_clock(){return th15::sdl::lab_reference_clock.data();}
+EMSCRIPTEN_KEEPALIVE int th15_lab_world_frozen(){using namespace th15::sdl;return app&&app->pause&&app->pause->state.screen!=th15::PauseScreen::Inactive;}
+#endif
 EMSCRIPTEN_KEEPALIVE const touhou::sdl::Statistics* th15_probe_graphics_statistics(){using namespace th15::sdl;return app?&app->graphics.backend.stats:nullptr;}
 // Read-only Replay clocks and stage lengths for common's per-tick verifier.
 EMSCRIPTEN_KEEPALIVE const int* th15_probe_replay_state(){using namespace th15::sdl;static std::array<int,24> v{};v.fill(0);if(app&&app->replay){const auto* file=app->replay->replay_file();auto* playback=app->replay->replay();if(file&&playback){v[0]=1;v[1]=int(file->frame());v[2]=playback->frame_clock();v[3]=playback->fps;v[4]=playback->finished;v[5]=int(file->stage_count());v[6]=int(playback->input.held);v[7]=int(playback->input.pressed);v[8]=int(playback->input.released);v[9]=int(playback->input.repeated);for(unsigned i=1;i<8;i++)if(const auto* stage=file->stage(i))v[16+i]=int(stage->frames);}}return v.data();}
