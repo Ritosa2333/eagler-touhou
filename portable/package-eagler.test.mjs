@@ -53,6 +53,7 @@ function makeFixture() {
   write('th08_web/cpp/game/source.cpp', source);
   write('th08_web/sdl-runtime/th08.html', '<!doctype html><head></head><body></body>');
   write('th08_web/sdl-runtime/shell.mjs', 'export const shell = true;');
+  write('th08_web/sdl-runtime/startup-branding.mjs', 'export const branding = true;');
   write('th08_web/sdl-runtime/eagler-host.mjs', 'export const host = true;');
   write('th08_web/sdl-runtime/directory-keyboard.mjs', 'export const keyboard = true;');
   write('third_party/eagler-common/browser/adonis-calibration.mjs', 'export const calibration = true;');
@@ -78,6 +79,7 @@ function makeFixture() {
     write(resolve(buildRoot, 'browser-services.js'), '');
     write(resolve(buildRoot, 'build.json'), JSON.stringify({
       game: 'th08',
+      builtAt: '2026-10-10T00:00:00.000Z',
       kind: 'cpp-sdl3',
       profile,
       variant,
