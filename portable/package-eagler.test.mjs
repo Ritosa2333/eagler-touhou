@@ -33,6 +33,7 @@ function makeFixture({thprac = false} = {}) {
   write('th10_web/cpp/game/source.cpp', source);
   write('th10_web/sdl-runtime/th10.html', '<!doctype html><head></head><body></body>');
   write('th10_web/sdl-runtime/shell.mjs', 'export const shell = true;');
+  write('th10_web/sdl-runtime/startup-branding.mjs', 'export const branding = true;');
   write('th10_web/sdl-runtime/eagler-host.mjs', 'export const host = true;');
   write('th10_web/sdl-runtime/directory-keyboard.mjs', 'export const keyboard = true;');
   write('th10_web/sdl-runtime/save-storage.mjs', 'export const storage = true;');
@@ -60,6 +61,7 @@ function makeFixture({thprac = false} = {}) {
     write(resolve(buildRoot, 'browser-services.js'), '');
     write(resolve(buildRoot, 'build.json'), JSON.stringify({
       game: 'th10',
+      builtAt: '2026-10-10T00:00:00.000Z',
       kind: 'cpp-sdl3',
       profile,
       variant,
