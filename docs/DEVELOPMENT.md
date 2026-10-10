@@ -40,6 +40,12 @@ Multiplayer, THPrac and THCRAP adaptation starts in an additional topic
 worktree and reaches `thXX-eagler` only after its focused review and gates.
 See [Adaptation Worktree Isolation](playbooks/adaptation-worktrees.md).
 
+Purple THPrac's cross-title input, key monitor/HUD, reaction test and speed
+tools are owned by the optional `eagler-common` component `eagler::thprac`.
+See [Purple THPrac shared library](playbooks/thprac.md#purple-thprac-shared-library)
+for consumer bindings, cache inputs, source checks and common-first publication.
+An unpublished workspace override is for validation only, not a release pin.
+
 ```powershell
 mkdir eagler-touhou-workspace
 cd .\eagler-touhou-workspace

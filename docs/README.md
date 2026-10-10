@@ -47,6 +47,9 @@ document instead.
 - [Engineering playbooks](playbooks/README.md) - implementation ownership,
   recurring pitfalls, superseded approaches, and verification methods for
   adaptation and maintenance work.
+- [Purple THPrac shared library](playbooks/thprac.md#purple-thprac-shared-library) -
+  `eagler::thprac` ownership, consumer integration, source verification and
+  dependency publication order.
 - [Runtime storage testing](RUNTIME_STORAGE_TESTING.md) - storage contract and
   browser conformance lanes.
 - [Mobile function key](TOUCH_FUNCTION_KEY.md) - ordinary C input ownership,
