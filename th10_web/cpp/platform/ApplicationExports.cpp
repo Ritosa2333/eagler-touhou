@@ -37,6 +37,6 @@ APP_EXPORT("application_touch_state") void application_touch_state(browser::Appl
     if(app->ending_view){output[0]=2;return;}
     if(app->state.return_screen==2||(app->state.game.flags&0x20)){output[0]=3;return;}
     if(!p||!session||app->state.game.lives<0||(session->session_flags&0x70)||!session->update_entry||!(session->update_entry->flags&2))return;
-    if(gui&&gui->dialogue){output[0]=2;return;}output[0]=1;output[1]=static_cast<u32>(reinterpret_cast<uintptr_t>(p));output[2]=p->state==1;
+    output[0]=gui&&gui->dialogue?2:1;output[1]=static_cast<u32>(reinterpret_cast<uintptr_t>(p));output[2]=p->state==1;
     const float values[]={p->position.x,p->position.y,p->fast_speed*.01f*app->engine.speed,p->slow_speed*.01f*app->engine.speed,app->engine.speed};std::memcpy(output+3,values,sizeof(values));
 }
