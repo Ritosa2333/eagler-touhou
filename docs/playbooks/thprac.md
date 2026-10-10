@@ -123,8 +123,9 @@ based on common `cedb710`. TH08/TH10/TH11/TH15 consumer changes
 are isolated in `experiment/common-purple-thprac` topic worktrees, not promoted
 to their daily integration branches. All four full THPrac builds, TH10/TH11/TH15
 OFF builds, shared/source checks and 34 common tests passed. TH08 retains its
-existing always-built practice adapter. Device validation and published pins
-remain pending; TH11 also needs common submodule registration at publication.
+existing always-built practice adapter. Published experiment consumers pin
+common `25d678c` through the Goan114 fork, including TH11's new submodule.
+Device validation and promotion to daily integration branches remain pending.
 This status is extraction evidence, not a Product Catalog support declaration.
 
 <!-- knowledge-id: K-THPRAC-002 -->
