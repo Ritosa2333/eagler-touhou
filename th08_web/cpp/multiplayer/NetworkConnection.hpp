@@ -45,6 +45,7 @@ private:
     Netplay::BrowserPeerTransport transport;
     Netplay::AdonisConnection calibration{transport};
     Netplay::SessionChannel channel;
+    Netplay::SessionConfig retired_config{};
     SpectatorStream spectator_frames;
     u32 spectator_publish=0;
     bool spectator_finished=false,spectator_publish_failed=false;

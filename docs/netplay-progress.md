@@ -544,3 +544,19 @@ connected. The functional TH08MP profile is therefore complete at the
 automated local-browser boundary. The next work is explicitly performance,
 real-device/full-stage acceptance and public deployment. No performance
 change, canonical promotion, push or deployment is claimed by this document.
+
+
+## 2026-10-10 spectator and restart repair
+
+The public 3P + spectator audit reached F1800 with real movement/shooting but found effect-domain differences between endpoints. That is not proof of the user's mid-run stop cause. The local full-state gate reproduced the same effect mismatch in 2P too. Local opaque effects previously drew in place while remote and observer effects used temporary copies. MP now consistently uses copies for these draw lists, leaving authored positions and geometry caches equal. The canonical hash remains complete and unchanged.
+
+The restart gate separately reproduced a native result-save failure: the newly loading graph still wrote into a gameplay file journal with no open frame. A new generation now unbinds confirmed audio/file ownership as at initial bootstrap, then rebinds at the loaded-world boundary. Next it reproduced `Gameplay packet before calibration commit or excessive deferred HELLOs`: retired third-peer phase broadcasts reached the new calibration. The adapter now pins the shared, already tested e02347fac98c9e599d30a6ffd7ef30756555b948, identifies the actually retired epoch, and pumps its terminal ACK cache through measurement. Malformed and foreign packets retain strict rejection. P1 queues the final spectator frame before discarding that generation's input history.
+
+The host fixture uses the current TH08 product prefix, real membership and keyboard input, with the existing frame-capture notification path. Checkpoints hash all 13 canonical words after every endpoint reaches the same fully confirmed frame. Progress polling omits the expensive hash, then checkpoint comparison includes it in full. No domain or mismatch is excluded.
+
+Production WASM: 5982f90abd8ea3de77914768cd1b29ba451c8eb00edf300dca8439a022b16381.
+
+- `portable/multiplayer/check-spectator.py --mode spectator-rtc --players all --frames 1199`: 2P and 3P with an admitted observer PASS, 18 full canonical checkpoints each through F1199, physical observer inputs rejected, records unchanged, Restart ends only the observer and both/three players continue generation 1 through F119. Evidence: `artifacts/multiplayer/spectator-final-retirement-20261010.json`.
+- The same gate with `--players 3 --timing hybrid --frames 599`: PASS, 8 complete checkpoints, one predicted frame and zero corrections in this run. This is hybrid lifecycle coverage, not a forced rollback/resimulation proof. Evidence: `artifacts/multiplayer/spectator-hybrid-final-20261010.json`.
+
+Promotion from the previously public bdf2347 also includes existing ancestor fixes: recovery/disconnection forwarding to the shared channel, valid background-sparkle positions, and the original native loading picture. The loading picture is additional visible behavior and is explicitly identified here. Ordinary TH08 Runtime and retail/resource bytes are outside this MP update. These local browser checks do not prove full campaigns, mobile devices, or the original user's exact mid-run failure.

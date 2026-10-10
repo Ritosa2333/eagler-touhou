@@ -61,6 +61,7 @@ bool NetworkConnection::Pump(bool expects_input){
         if(Now()>=spectator_deadline){spectator_error="Spectator input stream stalled; players are unaffected";return false;}
         return !transport.Failed()&&!spectator_frames.Failed();
     }
+    if(calibration.Waiting()&&channel.Retiring()&&!channel.Active()&&!channel.PumpRetirement(Now()))return false;
     if(!calibration.Pump(std::uint64_t(emscripten_get_now()*1000),expects_input))return false;
     if(calibration.NeedsApply()){
         const auto choice=calibration.Startup().Selected();
@@ -121,12 +122,23 @@ bool NetworkConnection::Captured(u32 frame){
     // SessionChannel owns F -> F+D. Its capture frontier is physical, too.
     return channel.LocalCaptured(net.core_,frame,Now());
 }
-bool NetworkConnection::CanRetire()const{return net.CanRetire()&&(!enabled||channel.CanRetire(net.core_,net.LastFrame()));}
-bool NetworkConnection::Retire(){return CanRetire()&&(!enabled||channel.Retire(net.core_,net.LastFrame(),Now()))&&net.Retire();}
-bool NetworkConnection::BeginGeneration(){phase_debt_ms=0;if(!enabled)return true;channel.Clear();
-    if(net.PreparingWorld()){calibration.Prepare(net.Config(),net.Mode(),net.Setup().input_delay_auto,net.InputDelay(),net.Setup().prediction_reserve);return true;}
+bool NetworkConnection::CanRetire()const{
+    if(!net.CanRetire()||(enabled&&!channel.CanRetire(net.core_,net.LastFrame())))return false;
+    // Publication is bounded per pump. Queue the final confirmed frame before
+    // replacing the input history, so viewers can consume the native Restart.
+    return !enabled||net.Spectator()||net.Generation()!=0||net.Setup().local_player!=0||
+        spectator_publish_failed||!transport.HasSpectators()||spectator_publish>net.LastFrame();
+}
+bool NetworkConnection::Retire(){
+    if(!CanRetire()||(enabled&&!channel.Retire(net.core_,net.LastFrame(),Now()))||!net.Retire())return false;
+    retired_config=net.Config();return true;
+}
+bool NetworkConnection::BeginGeneration(){phase_debt_ms=0;if(!enabled)return true;
+    // Keep the previous terminal ACKs alive during measurement. The shared
+    // calibrator discards only valid packets from this actually retired epoch.
+    if(net.PreparingWorld()){calibration.Prepare(net.Config(),net.Mode(),net.Setup().input_delay_auto,net.InputDelay(),net.Setup().prediction_reserve,&retired_config);return true;}
     return channel.BeginSession(net.Config(),Now(),channel_policy(net.Mode()));}
-void NetworkConnection::Close(){transport.Close();channel.Clear();calibration.Clear();enabled=false;invalid_input=false;phase_debt_ms=0;spectator_frames.Clear();}
+void NetworkConnection::Close(){transport.Close();channel.Clear();calibration.Clear();retired_config={};enabled=false;invalid_input=false;phase_debt_ms=0;spectator_frames.Clear();}
 double NetworkConnection::PacedElapsedSeconds(double elapsed){
     if(!std::isfinite(elapsed)||elapsed<0)return 0;
     if(!enabled||net.ReadOnly()||net.Mode()==Netplay::AdonisMode::Rollback)return elapsed;

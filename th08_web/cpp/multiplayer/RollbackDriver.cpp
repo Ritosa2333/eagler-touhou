@@ -137,7 +137,11 @@ bool RollbackDriver::Admit(){
         if(!runtime.replay_archive.NextGeneration(net.Generation()))return Fail("Replay generation failed");
         next.started=true;a.session.multiplayer_session=next;
         a.session.random={u16(next.seed),u16(next.seed),0};
-        audio.Reset();files.Reset();generation=net.Generation();generation_transition_pending=true;
+        // The native teardown/loading graph writes records and emits loading
+        // audio outside gameplay frames, just as at the initial bootstrap.
+        // Rebind the confirmed-output journals only when the new world starts.
+        runtime.bind_audio_events(nullptr);audio.Reset();files.Reset();initialized=false;
+        generation=net.Generation();generation_transition_pending=true;
         a.session.network_waiting=true;return true;
     }
     if(net.AllowsRollback()&&!bound&&Stable()){

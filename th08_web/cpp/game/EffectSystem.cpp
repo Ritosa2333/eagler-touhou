@@ -295,14 +295,22 @@ void EffectSystem::draw_list(u32 index,float depth,bool offset_before_depth){
         local_familiar=familiar_effect_view.contains(*e);
 #endif
         const auto fade=[alpha](EffectState& vm){vm.color1.a=std::min(vm.color1.a,alpha);vm.color2.a=std::min(vm.color2.a,alpha);};
+        bool isolated=presentation::render_only||alpha<255||local_familiar;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        // Every endpoint must leave the same authoritative effect state.
+        // Previously local full-opacity effects drew in place, while remote
+        // and spectator effects drew copies. Renderer position/geometry caches
+        // then depended on which player was viewing the world.
+        isolated=true;
+#endif
         if(e->draw){
-            if(presentation::render_only||alpha<255||local_familiar){
+            if(isolated){
                 EffectState copy=*e;std::array<SpriteVertex,258> vertices{};if(e->vertices){std::memcpy(vertices.data(),e->vertices,sizeof(vertices));copy.vertices=vertices.data();}
                 copy.position=presentation_position(*e);presentation_visual(*e,copy);fade(copy);if(presentation::active)presentation_geometry(*e,copy);copy.geometry_dirty=1;const bool invalid_before=geometry.invalid;e->draw(copy,*this);geometry.invalid=invalid_before;
             }else e->draw(*e,*this);
             continue;
         }EffectState copy;EffectState* draw=e;
-        if(presentation::render_only||alpha<255||local_familiar){copy=*e;copy.position=presentation_position(*e);presentation_visual(*e,copy);fade(copy);draw=&copy;}
+        if(isolated){copy=*e;copy.position=presentation_position(*e);presentation_visual(*e,copy);fade(copy);draw=&copy;}
         draw->pos=draw->position;draw->pos.x=Scalar::add(arcade.x,draw->pos.x);draw->pos.y=Scalar::add(arcade.y,draw->pos.y);
         if(offset_before_depth){add(draw->pos,draw->pos2);draw->pos.z=depth;}else{draw->pos.z=depth;add(draw->pos,draw->pos2);}renderer.draw_2d(*draw);
     }
