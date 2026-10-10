@@ -22,7 +22,7 @@ const files=dir=>readdirSync(resolve(root,dir),{withFileTypes:true}).flatMap(e=>
 const source=[...files('cpp/game'),...files('cpp/sdl'),resolve(workspace,'portable/sdl/Renderer.cpp')];
 source.push(...['imgui.cpp','imgui_draw.cpp','imgui_freetype.cpp','imgui_tables.cpp','imgui_widgets.cpp'].map(n=>resolve(imgui,n)));
 const headerFiles=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?headerFiles(resolve(dir,e.name)):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);
-const headers=[...headerFiles(resolve(root,'cpp')),...headerFiles(resolve(workspace,'portable/sdl')),...headerFiles(resolve(workspace,'portable/input'))].sort();
+const headers=[...headerFiles(resolve(root,'cpp')),...headerFiles(resolve(workspace,'portable/sdl')),...headerFiles(resolve(workspace,'portable/input')),resolve(workspace,'third_party/eagler-common/include/eagler/input/DialogueGesture.hpp')].sort();
 const sha=b=>createHash('sha256').update(b).digest('hex');
 const headerHash=sha(headers.map(p=>p+sha(readFileSync(p))).join('\n'));
 const objects=resolve(out,'objects');mkdirSync(objects,{recursive:true});
