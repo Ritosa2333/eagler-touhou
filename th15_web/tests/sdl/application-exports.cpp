@@ -56,3 +56,9 @@ extern "C" EMSCRIPTEN_KEEPALIVE void application_test_music_enabled(int enabled)
 extern "C" EMSCRIPTEN_KEEPALIVE const float* application_test_lifecycle(){static std::array<float,6> value{};value.fill(-1);if(app){value[4]=float(app->pending_load);value[5]=app->checkpoint_encoder?1:0;if(app->scene()){const auto& s=*app->scene();value[0]=s.battle.player->motion.position.x;value[1]=s.battle.player->motion.position.y;value[2]=float(s.hud.flags);value[3]=float(s.hud.intro_age.current);}}return value.data();}
 
 extern "C" EMSCRIPTEN_KEEPALIVE int application_test_capture(){return app&&app->scene()&&app->scene()->capture(app->progress.chapter);}
+extern "C" EMSCRIPTEN_KEEPALIVE int application_test_chapter_reward(){
+ if(!app||!app->scene())return 0;auto& scene=*app->scene();
+ scene.battle.enemy_world.chapter_total=100;scene.battle.enemy_world.chapter_defeated=36;
+ scene.battle.score.graze_chapter=223;
+ return scene.chapter_reward(false);
+}

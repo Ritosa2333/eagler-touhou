@@ -10,7 +10,16 @@ bool ScreenCompositor::compose(u32 index,bool camera,bool layer){
  if(!captures[index])return fail("Screen compositor capture animation missing");
  renderer.flush();graphics.pipeline().blendEquation=touhou::graphics::BlendEquation::Add;graphics.pipeline().alphaTest=false;graphics.set_depth_mask(false);
  if(camera&&!views.camera(DrawCamera::Playfield,false))return fail("Screen compositor camera selection failed");
- if(renderer.draw(*captures[index])==-2)return fail(renderer.error.c_str());captures[index]->visual.color=0xffffffff;
+ // The native capture scripts use ONE/ZERO + ADD (mode 3): destination
+ // pixels, including alpha, must not contribute. Submit this copy without
+ // blending, then restore the scene state before layer 33. This is equivalent
+ // to the authored copy, without relying on mobile blend-state transitions.
+ const bool source_copy=captures[index]->visual.blend_mode()==3&&!graphics.pipeline().separateAlphaBlend;
+ const bool blending=graphics.pipeline().blend;
+ if(source_copy)graphics.pipeline().blend=false;
+ const int result=renderer.draw(*captures[index]);
+ if(source_copy){renderer.flush();graphics.pipeline().blend=blending;}
+ if(result==-2)return fail(renderer.error.c_str());captures[index]->visual.color=0xffffffff;
  if(layer&&!renderer.draw_layer(animations.registry.layer(33)))return fail(renderer.error.c_str());
  renderer.flush();graphics.pipeline().alphaTest=true;return true;
 }
