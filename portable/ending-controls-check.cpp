@@ -1,6 +1,7 @@
 #include "../th08_web/cpp/game/Ending.hpp"
 #include "../th08_web/cpp/game/TitleMenus.hpp"
 #include "../th08_web/cpp/game/Dialogue.hpp"
+#include "input/TouchController.hpp"
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include "../th08_web/cpp/multiplayer/TextureJournal.hpp"
 // No graphics journal is bound in this script/input fixture.
@@ -76,5 +77,31 @@ int main(){
     globals.retries=0;context.flags=8;context.replay_clear=0;assert(dialogue.read(10));assert(display.dialogue.message==1);
     context.replay_clear=1;assert(dialogue.read(10));assert(display.dialogue.message==2);
     context.replay_clear=2;assert(dialogue.read(10));assert(display.dialogue.message==3);
+    // The actual MSG Selection owner receives swipe arrows and a separate tap
+    // confirm. Selecting alone must not enter either route.
+    std::vector<u8> choices(40);const u32 choice_count=3,entries[]={16,32,36};
+    std::memcpy(choices.data(),&choice_count,4);std::memcpy(choices.data()+4,entries,12);
+    choices[18]=u8(MessageOpcode::Selection);choices[19]=4;
+    const i32 choice_wait=600;std::memcpy(choices.data()+20,&choice_wait,4);
+    choices[26]=u8(MessageOpcode::ReadSelected); // followed by Delete in each route
+    assert(dialogue.load(choices.data(),choices.size()));context.stage=5;context.flags=0;
+    for(float y:{.4f,.6f}){
+        assert(dialogue.read(0));display.dialogue.paused_frames=60;
+        assert(dialogue.choosing());
+        touhou::input::TouchState state;state.context=2;state.choice=dialogue.choosing();
+        state.ready=true;state.instance=1;state.x=0;state.y=200;state.fast=4;state.slow=2;
+        touhou::input::TouchController touch;
+        touch.pointer(0,1,.5f,.5f,0,state,false);touch.pointer(1,1,.5f,y,10,state,false);
+        auto input=touch.sample(state,20,false,false);
+        context.previous_input=0;context.input=input.keys[38]?16:input.keys[40]?32:0;
+        assert(dialogue.update()==0&&dialogue.choosing());assert(display.dialogue.selected==(y>.5f));
+        touch.pointer(2,1,.5f,y,30,state,false);input=touch.sample(state,31,false,false);
+        assert(!input.keys[90]);
+        touch.pointer(0,1,.5f,.5f,40,state,false);touch.pointer(2,1,.5f,.5f,50,state,false);
+        input=touch.sample(state,51,false,false);assert(input.keys[90]);
+        context.previous_input=context.input;context.input=1;
+        assert(dialogue.update()==-1&&!dialogue.choosing());
+        assert(((context.flags>>11)&3)==u32(y>.5f));
+    }
     std::puts("TH08 Ending controls / fresh-save availability / Final A-B / recorded replay route: PASS");
 }

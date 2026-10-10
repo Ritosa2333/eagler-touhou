@@ -34,6 +34,22 @@ int main(){
     touch.begin_session(); touch.set_mode(1); touch.pointer(0,2,.5f,.5f,200,state,false);
     assert(!touch.set_mode(1)&&touch.active()); assert(touch.set_mode(2)&&!touch.active()); ++checks;
     TouchState dialogue=state;dialogue.context=2;
+    TouchState choice=dialogue;choice.choice=true;
+    TouchController swipe;
+    swipe.controls(true,false,0,0,0,0);
+    for(float y:{.4f,.6f}){
+        swipe.pointer(0,4,.5f,.5f,2000,choice,false);
+        swipe.pointer(1,4,.5f,y,2010,choice,false);
+        sample=swipe.sample(choice,2600,false,false);
+        assert(sample.keys[y<.5f?38:40]&&!sample.keys[y<.5f?40:38]);
+        assert(!sample.keys[17]&&!sample.keys[90]&&sample.motion);
+        swipe.pointer(2,4,.5f,y,2610,choice,false);
+        sample=swipe.sample(choice,2611,false,false);
+        assert(!sample.keys[38]&&!sample.keys[40]&&!sample.keys[90]);++checks;
+    }
+    swipe.pointer(0,4,.5f,.5f,2700,dialogue,false);
+    swipe.pointer(2,4,.5f,.5f,2710,dialogue,false);
+    sample=swipe.sample(dialogue,2711,false,false);assert(sample.keys[90]);++checks;
     TouchController hold;
     hold.pointer(0,3,.5f,.5f,1000,dialogue,false);
     sample=hold.sample(dialogue,1499,false,false);assert(!sample.keys[17]&&!sample.keys[90]);

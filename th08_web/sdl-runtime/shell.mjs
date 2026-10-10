@@ -152,6 +152,9 @@ async function resumeForegroundAudio(forcePause=false){
 async function stop(){if(closing)return;closing=true;calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();window.dispatchEvent(new CustomEvent('touhou-midi-close'));await sync(false);app=0;launched=false;emit('exit',{code:0,status:'success'});}finally{removeResourceTraceHostButton();closing=false;}}
 async function launch(){
  if(launched)return;clearKeyboard();
+ const {installStartupBranding}=await import('./startup-branding.mjs');
+ const build=await(await fetch('./manifest.json')).json();
+ await installStartupBranding(Module,{game:'th08',builtAt:build.builtAt});
  ensureSharedFontAlias(Module);
  // Localized text falls back to Unifont for glyphs MS Gothic does not carry
  // (sdl/FontHost.cpp). Alias it into the canonical /fonts layout when a
@@ -173,6 +176,7 @@ async function launch(){
  core.sdl_music_enabled?.(music);app=core.sdl_game_open(multiplayer?multiplayer.seed:Date.now()>>>0);if(!app)throw Error('C++ game initialization failed');
  try{
  if(!core.sdl_prepare_loading()||!core.sdl_draw_loading(0))throw Error('开头加载画面初始化失败');
+ const startupImageAt=performance.now();
  // Two RAF boundaries let the original frame reach the compositor before
  // resource work resumes. There is no minimum splash duration.
  await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);let loadingPaint=performance.now();
@@ -181,7 +185,7 @@ async function launch(){
  // Spectator protection precedes native initialize(), which itself writes the
  // config/score namespace. Waiting until the first gameplay frame is too late.
  if(multiplayer?.spectator)await configureMultiplayer(core,app,options,{runtimeBuildWords});
- if(!core.sdl_game_initialize())throw Error('永夜抄初始化失败');document.querySelector('#loading').textContent='';
+ if(!core.sdl_game_initialize())throw Error('永夜抄初始化失败');await new Promise(resolve=>setTimeout(resolve,Math.max(0,2000-(performance.now()-startupImageAt))));performance.mark('eagler-startup-menu-ready');document.querySelector('#loading').textContent='';
  if(multiplayer&&!multiplayer.spectator)await configureMultiplayer(core,app,options,{runtimeBuildWords});
  }catch(reason){calibration?.stop();core.sdl_game_close();app=0;throw reason;}
  if(multiplayer){window.__eaglerNetplayFailed=false;window.__eaglerNetplayError='';updateNetworkDiagnostics(core,app);if(multiplayer.adonisMode&&!multiplayer.spectator)calibration?.start();}

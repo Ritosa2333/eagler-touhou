@@ -45,7 +45,9 @@ void producer(){
     t.pointer(2,1,1.0875f,.5f,14,s,false);assert(!t.take_player_delta(s,x,y,begin));
     t.pointer(0,1,.5f,.5f,15,s,false);t.sample(s,16,false,false);assert(t.take_player_delta(s,x,y,begin)&&begin&&x==0);
     t.sample(s,17,false,true);assert(!t.take_player_delta(s,x,y,begin));
-    t.pointer(0,2,.5f,.5f,18,s,false);s.context=2;t.sample(s,19,false,false);assert(!t.take_player_delta(s,x,y,begin));
+    t.pointer(0,2,.5f,.5f,18,s,false);s.context=2;t.sample(s,19,false,false);assert(t.take_player_delta(s,x,y,begin)&&begin&&x==0&&y==0);
+    t.pointer(1,2,.5125f,.5f,19,s,false);assert(t.take_player_delta(s,x,y,begin)&&!begin&&std::abs(x-8)<.0001f);
+    t.pointer(2,2,.5125f,.5f,19,s,false);assert(!t.take_player_delta(s,x,y,begin));
     s.context=1;t.pointer(0,3,.5f,.5f,20,s,false);t.pointer(1,3,.55f,.5f,21,s,false);
     t.cancel_transient();assert(!t.take_player_delta(s,x,y,begin));
     t.pointer(0,4,.5f,.5f,22,s,false);t.set_mode(3);assert(!t.take_player_delta(s,x,y,begin));

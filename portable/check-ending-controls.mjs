@@ -3,7 +3,7 @@ import {readFileSync,writeFileSync,mkdirSync,readdirSync} from 'node:fs';
 import {resolve,basename} from 'node:path';
 import {createHash} from 'node:crypto';
 import {WASI} from 'node:wasi';
-const root=resolve(import.meta.dirname,'..'),game=basename(root).replace(/mp$/,'');
+const root=resolve(import.meta.dirname,'..'),game=basename(root).replace(/(?:-eagler|mp)$/,'');
 const multiplayer=process.argv.includes('--multiplayer'),profile=multiplayer?'multiplayer':game==='th09'?'sdl-release':'sdl3';
 const buildRoot=resolve(root,game+'_web/artifacts',profile),obj=resolve(buildRoot,'objects');
 const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json')));

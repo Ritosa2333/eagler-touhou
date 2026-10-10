@@ -25,7 +25,7 @@ export function resolvePackagePlan(root, args = []) {
 
   const buildProfile = presentationLab ? 'presentation-lab' : multiplayer ? 'multiplayer' : 'sdl3';
   const variant = multiplayer ? 'multiplayer' : 'normal';
-  const out = presentationLab
+  const out = process.env.EAGLER_RUNTIME_OUTPUT ? resolve(process.env.EAGLER_RUNTIME_OUTPUT) : presentationLab
     ? resolve(root, 'artifacts/presentation-lab/runtime')
     : multiplayer ? resolve(root, 'build-eagler-multiplayer') : resolve(root, 'build-eagler');
   const buildRoot = resolve(root, game + '_web/artifacts', buildProfile);
@@ -37,6 +37,7 @@ export function validateBuildManifest(build, {game, buildProfile, variant, prese
       !!build.diagnostic !== presentationLab) {
     throw Error('Build profile or variant does not match requested package');
   }
+  if (!Number.isFinite(Date.parse(build.builtAt))) throw Error('Rebuild Runtime with build timestamp');
   if (!SHA256.test(build.sha256 || '') || !SHA256.test(build.loaderSha256 || '')) {
     throw Error('Build manifest is missing a valid WASM or loader SHA-256');
   }
@@ -75,6 +76,7 @@ export function createRuntimeManifest({game, build, presentationLab, multiplayer
   };
   return {
     game,
+    builtAt: build.builtAt,
     protocol: 'eagler-touhou/1',
     adapter: 'sdl3-eagler',
     profile: presentationLab ? 'presentation-lab' : multiplayer ? 'multiplayer' : 'production',
@@ -108,7 +110,8 @@ export function packageEagler({
   readAndValidateExports(wasm, build, plan);
 
   for (const [name, expected] of Object.entries(build.sourceFiles)) {
-    if (!SHA256.test(expected || '') || hash(readFileSync(resolve(root, name))) !== expected) {
+    if (!Number.isFinite(Date.parse(build.builtAt))) throw Error('Rebuild Runtime with build timestamp');
+  if (!SHA256.test(expected || '') || hash(readFileSync(resolve(root, name))) !== expected) {
       throw Error('Rebuild modified source: ' + name);
     }
   }
@@ -117,11 +120,11 @@ export function packageEagler({
   const fontNames = game === 'th08' ? ['blend.bin', 'cp932.bin'] : ['msgothic.ttc', 'simhei.ttf', 'blend.bin', 'codepages.bin'];
   const thprac = build.features?.thprac === true;
   const runtimeNames = [
-    'shell.mjs', 'eagler-host.mjs', 'directory-keyboard.mjs', 'save-storage.mjs',
+    'startup-branding.mjs', 'shell.mjs', 'eagler-host.mjs', 'directory-keyboard.mjs', 'save-storage.mjs',
     ...(game === 'th08' ? ['practice.mjs', 'practice-config.mjs', 'practice-sections.mjs','multiplayer-host.mjs'] : []),
   ];
   const names = [
-    entry, 'manifest.json', ...runtimeNames, 'motion-replay.mjs', ...(multiplayer?['adonis-calibration.mjs']:[]),
+    entry, 'manifest.json', ...runtimeNames, 'motion-replay.mjs', 'adonis-calibration.mjs',
     game + '-sdl.mjs', game + '-sdl.wasm', 'resources.json',
     ...fontNames.map(name => 'fonts/' + name),
   ];
@@ -142,7 +145,7 @@ export function packageEagler({
   const html = readFileSync(resolve(shellRoot, game + '.html'), 'utf8')
     .replace('<head>', '<head><meta name="eagler-data-provider" content="retail-memory">');
   const shellFiles = Object.fromEntries(runtimeNames.map(name => [name, readFileSync(resolve(shellRoot, name))]));
-  if(multiplayer)shellFiles['adonis-calibration.mjs']=readFileSync(resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'third_party/eagler-common'),'browser/adonis-calibration.mjs'));
+  shellFiles['adonis-calibration.mjs']=readFileSync(resolve(process.env.EAGLER_COMMON_ROOT??resolve(root,'third_party/eagler-common'),'browser/adonis-calibration.mjs'));
   const replayHelper = readFileSync(resolve(root, 'portable/browser/motion-replay.mjs'));
   const loader = readFileSync(resolve(buildRoot, game + '-sdl.mjs'));
   if (hash(wasm) !== build.sha256 || hash(loader) !== build.loaderSha256) {
