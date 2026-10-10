@@ -69,6 +69,6 @@ all four full THPrac builds pass; TH10/11/15 ordinary OFF builds pass. TH08
 retains its existing always-built practice adapter rather than introducing a
 new OFF policy. All four title generators and the central purple generator
 pass source checks. TH08 input/speed and TH15 APS/CSV/input/cadence executable
-regressions pass. Phone visual/device checks and release gitlink promotion are
-not claimed by these gates. TH11 needs its common submodule registered during
-that publication step; current validation uses the explicit workspace root.
+regressions pass. Phone visual/device checks and promotion to daily integration
+branches are not claimed by these gates. Published experiment consumers pin
+common `25d678c` through the Goan114 fork; TH11 registers its common submodule.
