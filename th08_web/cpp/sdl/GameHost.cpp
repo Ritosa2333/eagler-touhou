@@ -67,12 +67,12 @@ touhou::input::TouchState touch_state(){touhou::input::TouchState s;if(!runtime)
     if(a.supervisor.state.active==i32(th08::Scene::Ending)){s.context=2;return s;}
     if(a.in_game()&&(g.globals.game_flags&8)){s.context=3;return s;}
     if(!a.in_game()||a.loading_game()||!g.ready()||g.paused||g.menus.context.pause_state||p.context.game_over||(g.globals.game_flags&0x60))return s;
-    s.context=g.dialogue.present()?2:1;s.ready=p.life.state!=1&&p.life.state!=2;s.instance=g.globals.stage+1;
+    s.context=g.dialogue.present()?2:1;s.choice=g.dialogue.choosing();s.ready=p.life.state!=1&&p.life.state!=2;s.instance=g.globals.stage+1;
     s.x=p.motion.movement.position.x;s.y=p.motion.movement.position.y;s.fast=g.shots[0].settings().normal_speed*g.player.timing.rate;s.slow=g.shots[1].settings().focus_speed*g.player.timing.rate;
     s.min_x=p.input.minimum.x;s.min_y=p.input.minimum.y;s.max_x=s.min_x+p.input.extent.x;s.max_y=s.min_y+p.input.extent.y;return s;
 }
 int touch_stage(){return runtime&&runtime->app.in_game()?runtime->app.game.globals.stage:-1;}
-void sync_touch_context(const touhou::input::TouchState& state){const int previous=touch.current_context();if(runtime&&previous!=state.context&&(previous==1||previous==2))runtime->motion.touch_cancel(touch_stage());}
+void sync_touch_context(const touhou::input::TouchState& state){const int previous=touch.current_context();if(runtime&&previous!=state.context&&(previous==1||previous==2)&&state.context!=1&&state.context!=2)runtime->motion.touch_cancel(touch_stage());}
 void pointer(int type,int id,float x,float y){const auto state=touch_state();sync_touch_context(state);if(runtime&&(state.context==1||state.context==2))runtime->motion.touch_event(touch_stage(),type,id,x,y);touch.pointer(type,id,x,y,SDL_GetTicks(),state,runtime&&runtime->keyboard_state()[16]);}
 void cancel_touch(){if(runtime){runtime->motion.touch_cancel(touch_stage());runtime->motion.target(0,0,0);}touch.cancel_transient();}
 bool interpolation_ready(){

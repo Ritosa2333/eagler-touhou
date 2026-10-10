@@ -5,7 +5,7 @@ import {TH08_PRESENTATION_LAB_EXPORTS} from './presentation-lab/native-abi.mjs';
 const root=resolve(import.meta.dirname,'..');
 const game=existsSync(resolve(root,'th08_web/cpp/game/AnmRenderer.cpp'))?'th08':'th10';
 const presentationLab=process.argv.includes('--presentation-lab');
-const out=presentationLab?resolve(root,'artifacts/presentation-lab/runtime'):resolve(root,'build-eagler');
+const out=process.env.EAGLER_RUNTIME_OUTPUT?resolve(process.env.EAGLER_RUNTIME_OUTPUT):presentationLab?resolve(root,'artifacts/presentation-lab/runtime'):resolve(root,'build-eagler');
 const buildRoot=resolve(root,game+'_web/artifacts',presentationLab?'presentation-lab':'sdl3');
 const hash=b=>createHash('sha256').update(b).digest('hex');
 const build=JSON.parse(readFileSync(resolve(buildRoot,'build.json'),'utf8'));

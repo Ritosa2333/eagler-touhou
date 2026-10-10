@@ -41,6 +41,11 @@ public:
     i32 draw();
     bool waiting()const{return state.message>=0&&!state.ignore_wait;}
     bool present()const{return state.message>=0||state.message==-2;}
+    bool choosing()const{
+        MessageInstruction current;
+        return state.message>=0&&program.instruction(state.instruction,current)&&
+            current.opcode==MessageOpcode::Selection&&state.timer.current>=current.time;
+    }
 private:
     GuiState& gui;GuiImplState& display;DialogueState& state;DialogueContext& context;
     GameGlobals& globals;GameValues& values;AnmExecutor& executor;TextWriter& text_writer;AnmRenderer& renderer;DialogueActions& actions;
