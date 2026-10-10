@@ -104,6 +104,9 @@ bool AnimationEngine::present(AnmVm& copy,const AnmVm& source) const{
     if(before.sprite_index==source.sprite_index){if(continuous&64)copy.uv_offset.x=presentation_uv(before.uv_offset.x,source.uv_offset.x);if(continuous&128)copy.uv_offset.y=presentation_uv(before.uv_offset.y,source.uv_offset.y);}
     return true;
 }
+#ifdef TH_SDL3
+extern "C" void sdl_startup_branding_draw(unsigned tint);
+#endif
 void AnimationEngine::draw(AnmVm& vm){
     const auto submit=[&](AnmVm& target){
         auto env=renderer();AnmRenderer native{manager,env};
@@ -120,6 +123,9 @@ void AnimationEngine::draw(AnmVm& vm){
         }
 #endif
         native.draw(target);
+#ifdef TH_SDL3
+        if(manager.files[1]&&target.animation_file==manager.files[1]&&target.script_index==0&&(target.flags&3)==3){flush();sdl_startup_branding_draw(target.color);}
+#endif
     };
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     // front.anm's stock Player/Power label VMs remain alive and updated for

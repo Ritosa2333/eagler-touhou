@@ -1,3 +1,4 @@
+const builtAt=new Date().toISOString();
 import {spawn} from 'node:child_process';
 import {readFileSync,writeFileSync,readdirSync,mkdirSync,existsSync,statSync} from 'node:fs';
 import {resolve,dirname,relative} from 'node:path';
@@ -64,7 +65,8 @@ const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 function observed(path){const bytes=readFileSync(path),value=digest(bytes);if(capturedInputs.has(path)&&capturedInputs.get(path)!==value)throw Error('Source changed during build: '+path);capturedInputs.set(path,value);return bytes;}
 observed(fileURLToPath(import.meta.url));
 observed(resolve(workspace,'portable/response-file.mjs'));
-const hash=createHash('sha256');for(const path of [...headers(resolve(root,'cpp')),...headers(shared),...headers(numeric),...headers(input),...netplayHeaders].sort())hash.update(path).update(observed(path));
+const dialogueHeaders=[resolve(workspace,'third_party/eagler-common/include/eagler/input/DialogueGesture.hpp')];
+const hash=createHash('sha256');for(const path of [...headers(resolve(root,'cpp')),...headers(shared),...headers(numeric),...headers(input),...netplayHeaders,...dialogueHeaders].sort())hash.update(path).update(observed(path));
 const prefix=JSON.stringify([flags,hash.digest('hex')]);
 // Same flags/native translation units; share the object cache, never the
 // linked binary, manifest or source inventory. Build variants sequentially.
@@ -84,13 +86,13 @@ const hostImports=[];
 const library=resolve(out,'browser-services.js');writeFileSync(library,'addToLibrary({\n'+hostImports.map(i=>`${JSON.stringify(i.name)}: function() { return Module['services'][${JSON.stringify(i.module)}][${JSON.stringify(i.name)}].apply(null, arguments); }`).join(',\n')+'\n});\n');
 await run([...flags,...linkFlags,'--emit-symbol-map','--js-library',library,'-sDEFAULT_TO_CXX=1','--no-entry','-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=web,worker','-sALLOW_MEMORY_GROWTH=1','-sSTACK_SIZE=1048576','-sINITIAL_MEMORY=67108864','-sMAXIMUM_MEMORY=1073741824','-sFILESYSTEM=1','-lidbfs.js','-sEXPORTED_RUNTIME_METHODS=FS,IDBFS','-sINVOKE_RUN=0','-sEXIT_RUNTIME=0','-sMIN_WEBGL_VERSION=2','-sMAX_WEBGL_VERSION=2','-sGL_SUPPORT_AUTOMATIC_ENABLE_EXTENSIONS=0',...outputs,rendererObject,softObject,'-o',output]);
 const wasm=readFileSync(output.replace('.mjs','.wasm')),module=new WebAssembly.Module(wasm),sha=x=>createHash('sha256').update(x).digest('hex');
-const sourceFiles=[...sources.map(p=>resolve(root,p)),...headers(resolve(root,'cpp')),...headers(shared),...headers(numeric),...headers(input),...netplayHeaders,renderer,soft,resolve(workspace,'portable',game+'-services.json'),...(existsSync(resolve(root,'cpp/game/THPRAC-LICENSE.txt'))?[resolve(root,'cpp/game/THPRAC-LICENSE.txt')]:[]),fileURLToPath(import.meta.url)].sort();
+const sourceFiles=[...sources.map(p=>resolve(root,p)),...headers(resolve(root,'cpp')),...headers(shared),...headers(numeric),...headers(input),...netplayHeaders,...dialogueHeaders,renderer,soft,resolve(workspace,'portable',game+'-services.json'),...(existsSync(resolve(root,'cpp/game/THPRAC-LICENSE.txt'))?[resolve(root,'cpp/game/THPRAC-LICENSE.txt')]:[]),fileURLToPath(import.meta.url)].sort();
 sourceFiles.push(resolve(workspace,'portable/response-file.mjs'));sourceFiles.sort();
 const inventory=Object.fromEntries(sourceFiles.map(p=>[relative(workspace,p).replaceAll('\\','/'),sha(observed(p))]));
 for(const [path,expected] of capturedInputs)if(digest(readFileSync(path))!==expected)throw Error('Source changed during compilation; do not publish mixed build: '+path);
 const sdkMetadata=resolve(sdk,'touhou-sdk.json');
 const toolchain=existsSync(sdkMetadata)?JSON.parse(readFileSync(sdkMetadata)):{emsdkRoot:relative(workspace,sdk).replaceAll('\\','/'),layout:'external'};
-const report={game,kind:'cpp-sdl3',profile,variant:multiplayer?'multiplayer':'normal',diagnostic:presentationLab,version:game==='th10'?'3.5.1-sdl3':'3.4.0-sdl3',features:{thprac,languages:thcrap,focusHitbox:false},...{architecture:{loop:'cpp-original-cadence-skip-expired-single-tick',audio:'miniaudio-sdl3',renderer:'cpp-gles-semantic-batched',graphicsInterface:'semantic-state-texture-matrix',vertexUpload:'web-bufferData-direct-game-batches-cached-vao',files:'sdl-io-idbfs',fonts:'sdl3-ttf',input:'cpp-sdl',launcher:'eagler-touhou/1'}},sdlVersion:'3.4.2',sources,sourceFiles:inventory,sharedSources:['Renderer.cpp','Renderer.hpp','Shaders.hpp','GraphicsState.hpp','AssetPixelFormat.hpp','RenderCommands.hpp','LegacyGraphics.hpp','ExactFloat.hpp','MotionTrack.hpp'],bytes:wasm.length,sha256:sha(wasm),loaderSha256:sha(readFileSync(output)),imports:WebAssembly.Module.imports(module),exports:WebAssembly.Module.exports(module),toolchain};
+const report={builtAt,game,kind:'cpp-sdl3',profile,variant:multiplayer?'multiplayer':'normal',diagnostic:presentationLab,version:game==='th10'?'3.5.1-sdl3':'3.4.0-sdl3',features:{thprac,languages:thcrap,focusHitbox:false},...{architecture:{loop:'cpp-original-cadence-skip-expired-single-tick',audio:'miniaudio-sdl3',renderer:'cpp-gles-semantic-batched',graphicsInterface:'semantic-state-texture-matrix',vertexUpload:'web-bufferData-direct-game-batches-cached-vao',files:'sdl-io-idbfs',fonts:'sdl3-ttf',input:'cpp-sdl',launcher:'eagler-touhou/1'}},sdlVersion:'3.4.2',sources,sourceFiles:inventory,sharedSources:['Renderer.cpp','Renderer.hpp','Shaders.hpp','GraphicsState.hpp','AssetPixelFormat.hpp','RenderCommands.hpp','LegacyGraphics.hpp','ExactFloat.hpp','MotionTrack.hpp'],bytes:wasm.length,sha256:sha(wasm),loaderSha256:sha(readFileSync(output)),imports:WebAssembly.Module.imports(module),exports:WebAssembly.Module.exports(module),toolchain};
 if(fixtures)report.diagnostic=true;
 report.sourceDigest=digest(JSON.stringify(inventory));
 writeFileSync(resolve(out,'build.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify({game,profile,bytes:wasm.length,sha256:report.sha256,output},null,2));

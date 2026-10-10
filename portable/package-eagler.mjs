@@ -28,7 +28,7 @@ export function resolvePackagePlan(root, args = []) {
 
   const buildProfile = presentationLab ? 'presentation-lab' : multiplayer ? 'multiplayer' : 'sdl3';
   const variant = multiplayer ? 'multiplayer' : 'normal';
-  const out = presentationLab
+  const out = process.env.EAGLER_RUNTIME_OUTPUT ? resolve(process.env.EAGLER_RUNTIME_OUTPUT) : presentationLab
     ? resolve(root, 'artifacts/presentation-lab/runtime')
     : multiplayer ? resolve(root, 'build-eagler-multiplayer') : resolve(root, 'build-eagler');
   const buildRoot = resolve(root, game + '_web/artifacts', buildProfile);
@@ -40,6 +40,7 @@ export function validateBuildManifest(build, {game, buildProfile, variant, prese
       !!build.diagnostic !== presentationLab) {
     throw Error('Build profile or variant does not match requested package');
   }
+  if (!Number.isFinite(Date.parse(build.builtAt))) throw Error('Rebuild Runtime with build timestamp');
   if (!SHA256.test(build.sha256 || '') || !SHA256.test(build.loaderSha256 || '')) {
     throw Error('Build manifest is missing a valid WASM or loader SHA-256');
   }
@@ -58,6 +59,7 @@ export function createRuntimeManifest({game, build, presentationLab, multiplayer
   };
   return {
     game,
+    builtAt: build.builtAt,
     protocol: 'eagler-touhou/1',
     adapter: 'sdl3-eagler',
     profile: presentationLab ? 'presentation-lab' : multiplayer ? 'multiplayer' : 'production',
@@ -104,7 +106,8 @@ export function packageEagler({
   }
 
   for (const [name, expected] of Object.entries(build.sourceFiles)) {
-    if (!SHA256.test(expected || '') || hash(readFileSync(resolve(root, name))) !== expected) {
+    if (!Number.isFinite(Date.parse(build.builtAt))) throw Error('Rebuild Runtime with build timestamp');
+  if (!SHA256.test(expected || '') || hash(readFileSync(resolve(root, name))) !== expected) {
       throw Error('Rebuild modified source: ' + name);
     }
   }
@@ -113,7 +116,7 @@ export function packageEagler({
   const fontNames = game === 'th08' ? ['msgothic.ttc', 'blend.bin', 'cp932.bin'] : ['blend.bin', 'codepages.bin'];
   const thprac = build.features?.thprac === true;
   const runtimeNames = [
-    'shell.mjs', 'eagler-host.mjs', 'directory-keyboard.mjs', 'save-storage.mjs',
+    'startup-branding.mjs', 'shell.mjs', 'eagler-host.mjs', 'directory-keyboard.mjs', 'save-storage.mjs',
     ...(game === 'th10' ? ['practice-loader.mjs'] : []),
     ...(thprac || multiplayer ? ['practice.mjs', 'practice-config.mjs', 'practice-sections.mjs'] : []),
   ];

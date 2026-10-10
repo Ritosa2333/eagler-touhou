@@ -1,6 +1,7 @@
 // Platform shell for the upstream eagler-touhou/1 Launcher contract.
 // Game construction, input, timing, rendering, text and sound belong to C++.
 import {createBrowserKeyboard} from './directory-keyboard.mjs';
+import {installStartupBranding} from './startup-branding.mjs';
 import createModule from './th10-sdl.mjs';
 import {createOptionalPractice} from './practice-loader.mjs';
 import {bindOutsideTouches} from './eagler-host.mjs';
@@ -176,6 +177,7 @@ async function resumeForegroundAudio(forcePause=false){
 async function stop(){if(closing)return;closing=true;calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();await sync(false);app=0;launched=false;updateReplaySeek();emit('exit',{code:0,status:'success'});}finally{closing=false;}}
 async function launch(){
  if(launched)return;clearKeyboard();
+ await installStartupBranding(Module,{game,builtAt:(await(await fetch('./manifest.json')).json()).builtAt});
  // The localized Runtime still constructs the Japanese core. Keep its font
  // alias alongside the selected localization font and user-file root.
  ensureSharedFontAlias(Module,'jp');

@@ -1,5 +1,6 @@
 #include "../platform/Graphics.hpp"
 #include "Renderer.hpp"
+#include "StartupBranding.hpp"
 #include "AssetPixelFormat.hpp"
 #ifndef TH_NATIVE_PLATFORM
 #include "LegacyGraphics.hpp"
@@ -19,7 +20,7 @@ u32 fvf=0;
 VertexLayout layout=VertexLayout::WorldUv;Surface s;std::vector<u8> bytes;};
 struct Host {
  std::map<u32,std::unique_ptr<Resource>> resources;u32 next=1,device=0,back=0,depth=0,target=0,depthTarget=0,bound=0,stream=0,streamOffset=0,streamStride=0,index=0;
- std::unique_ptr<Renderer> gpu;std::vector<u8> expanded;
+ std::unique_ptr<Renderer> gpu;std::vector<u8> expanded;u32 startup_credit=0;
  Resource& get(u32 h){auto it=resources.find(h);if(it==resources.end()){std::fprintf(stderr,"SDL TH10 invalid resource %u\n",h);std::abort();}return *it->second;}
  u32 create(Resource::Kind k){u32 id=next++;auto r=std::make_unique<Resource>();r->kind=k;r->s.handle=id;resources[id]=std::move(r);return id;}
  u32 image(u32 w,u32 h,u32 f,u32 pool=1,u32 usage=0){u32 id=create(Resource::Image);auto& r=get(id);r.pool=pool;r.usage=usage;r.s.width=w;r.s.height=h;r.s.format=asset_pixel_format(f);r.s.pitch=w*pixel_bytes(f);r.s.size=r.s.pitch*h;r.bytes.resize(r.s.size);r.s.data=r.bytes.data();return id;}
@@ -63,6 +64,13 @@ expanded.resize(count*stride);for(u32 i=0;i<count;i++){u32 k=fmt==101?static_cas
 }host;
 }
 extern "C" {
+void sdl_startup_branding_draw(unsigned tint){
+ if(!host.startup_credit){auto pixels=startup_branding::load();if(pixels.empty())return;
+  host.startup_credit=host.image(1280,960,21);auto& resource=host.get(host.startup_credit);
+  resource.bytes=std::move(pixels);resource.s.data=resource.bytes.data();}
+ startup_branding::draw(*host.gpu,host.startup_credit,host.back,tint);
+}
+
 #ifdef TH_NATIVE_PLATFORM
 PipelineState& sdl_pipeline(){return host.gpu->pipeline();}
 #else
@@ -170,5 +178,5 @@ i32 graphics_host_resource(u32 id,u32 op,const u32* a){auto& h=host;if(op==0)ret
 }
 #endif
 __attribute__((export_name("sdl_read_back"))) u32 sdl_read_back(){host.gpu->read(host.back);return addr(host.get(host.back).s.data);}
-__attribute__((export_name("sdl_shutdown"))) void sdl_shutdown(){host.gpu.reset();host.resources.clear();host.next=1;host.device=host.back=host.depth=host.target=host.depthTarget=host.bound=host.stream=host.index=0;}
+__attribute__((export_name("sdl_shutdown"))) void sdl_shutdown(){host.gpu.reset();host.resources.clear();host.next=1;host.startup_credit=0;host.device=host.back=host.depth=host.target=host.depthTarget=host.bound=host.stream=host.index=0;}
 }
