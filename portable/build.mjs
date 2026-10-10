@@ -56,7 +56,7 @@ const exported = [
   '_th11_initialize', '_th11_music_enabled', '_th11_audio_statistics', '_th11_return_title',
   '_th11_restart', '_th11_error', '_th11_frame', '_th11_phase', '_th11_pause', '_th11_resume',
   '_th11_loop_start', '_th11_loop_stop', '_th11_loop_pause', '_th11_key', '_th11_keys_clear',
-  '_th11_touch', '_th11_touch_cancel', '_th11_touch_options', '_th11_touch_controls', '_th11_touch_stick',
+  '_th11_always_hitbox', '_th11_touch', '_th11_touch_cancel', '_th11_touch_options', '_th11_touch_controls', '_th11_touch_stick',
 ];
 if (thprac) exported.push('_th11_practice_configure');
 // MP entry points carry EMSCRIPTEN_KEEPALIVE in their owning translation units.

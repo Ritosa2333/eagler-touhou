@@ -9,10 +9,20 @@ void resource_cases(const std::vector<u8>& bytes){
         for(i32 type:{1,4,5,6,10,11}){
             EnemyState enemy{};enemy.current.position={0,100,0};enemy.drops.primary=type;enemy.drops.counts[type-1]=2;
             const auto before=item_count(type);check(w.drop_items(enemy),"native stage primary and counted item drop");
-            const unsigned expected=3u*((type==1||type==4||type==10||type==11)&&count==3?2u:1u);
-            check(item_count(type)==before+expected,"fragments and Full Power stay x1; ordinary Power stays 2P x1 and 3P x2");
+            const unsigned expected=3u*((type==1||type==4||type==10||type==11)?count:1u);
+            check(item_count(type)==before+expected,"fragments and Full Power stay x1; ordinary Power is 2P x2 and 3P x3");
             check(enemy.drops.primary==0&&enemy.drops.counts[type-1]==0,"stage drop request is consumed once");
         }
+        for(int type:{1,4,7})for(float x:{-192.f,0.f,192.f}){
+            w.items.reset();const unsigned copies=type==7?count-1:count;
+            check(w.items.spawn(type,{x,100,0})==0,"roster item batch at field edge");check(item_count(type)==copies,"batch quantity follows roster independently of operable slots");
+            for(unsigned n=0;n<copies;++n){const auto& item=w.items.at(n);check(item.position.x>=-192&&item.position.x<=192&&item.velocity.y<0,"each batch item starts in field and moves upward");if(n)check(item.position.x-w.items.at(n-1).position.x>=17.99f,"copies start at least eighteen pixels apart");}
+            for(unsigned n=0;n<13;++n)check(w.items.update(),"native batch spreading ticks");
+            for(unsigned n=0;n<copies;++n){const auto& item=w.items.at(n);check(item.position.x>=-192&&item.position.x<=192,"twelve-tick fan stays in bounds");if(copies>1)check(item.velocity.x==0,"fan stops horizontal spreading after twelve native ticks");}
+        }
+        w.items.reset();check(w.items.spawn(1,{0,100,0},0xffffffff,-.9f,3)==0&&item_count(1)==count,"death-style ordinary P also follows roster multiplier");
+        for(unsigned n=1;n<count;++n)check(float_bits(w.items.at(n).velocity.x)==float_bits(w.items.at(0).velocity.x)&&float_bits(w.items.at(n).velocity.y)==float_bits(w.items.at(0).velocity.y),"death copies retain the authored original arc");
+        w.items.reset();check(w.items.spawn_transfer(4,{0,100,0},1)&&item_count(4)==1,"Power gifts remain one exact native item, never multiplied");
         auto& ghost=*w.pilots[count-1];ghost.economy.lives=-1;check(ghost.game_over(false),"fragment reward native ghost entry");
         w.pilots[0]->economy.lives=8;if(count==3)w.pilots[1]->economy.lives=9;
         ItemState fragment{};fragment.type=5;bool convert=false;

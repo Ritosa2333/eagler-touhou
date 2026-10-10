@@ -14,7 +14,10 @@ void item_risk_cases(const std::vector<u8>& bytes){
     auto fresh=[&](int type,Vec3 position,int age=40)->ItemState&{
         w.items.reset();const unsigned index=type==8?ItemManager::ordinary_capacity+w.items.cancel_cursor:0;
         check(w.items.spawn(type,position,0xffffffff,-1.57079637f,0)==0,"spawn native item fixture");
-        auto& item=w.items.at(index);if(type==8)check(w.items.activate(item),"activate actual cancel item");
+        // Isolate one native item for pickup/owner boundary tests. Batch
+        // counts and trajectories are covered by resource_cases separately.
+        if(type!=8)for(unsigned n=1;n<ItemManager::ordinary_capacity;++n)w.items.at(n).state=0;
+        auto& item=w.items.at(index);item.position=position;if(type==8)check(w.items.activate(item),"activate actual cancel item");
         item.lifetime.set(age,&w.animations.rate);item.velocity={};return item;
     };
     auto owner=[&](ItemState& item){ItemPlayer selected{};const bool found=w.multiplayer_item_player(item,selected);

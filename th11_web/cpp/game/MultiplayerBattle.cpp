@@ -81,6 +81,13 @@ bool MultiplayerPilot::game_over(bool){
     if(bomb)bomb->multiplayer_clear();
     return player->motion.reset_body();
 }
+void GameBattle::mp_share_invincibility(unsigned source,i32 frames){
+    if(!mp_enabled||mp_options.selections[source]==3)return;
+    for(unsigned seat=0;seat<mp_options.seat_count;++seat){auto& p=*pilots[seat];if(seat==source||p.ghost)continue;
+        if(p.player->state.invincibility.current<frames)p.player->state.invincibility.set(frames,&animations.rate);
+    }
+}
+void MultiplayerPilot::bomb_invincibility(i32 frames){world.mp_share_invincibility(seat,frames);}
 bool MultiplayerPilot::bomb_sound(i32 id,float x,bool positional){return sound(id,x,positional);}
 bool MultiplayerPilot::bomb_stop_sound(i32 id){world.events.push_back({BattleEventKind::StopSound,id});return true;}
 bool MultiplayerPilot::bomb_cancel(Vec3 p,float radius,u32 rewards,bool convert){EffectOwner effect(world,seat);const BulletCancelContext c{world.spell_flags,world.spell_id};if(convert?!world.bullets.convert_circle(p,radius,rewards&1,c):!world.bullets.cancel_circle(p,radius,rewards&1,true,c))return false;return world.lasers.cancel_circle(p,radius,rewards,true)>=0;}
@@ -168,7 +175,7 @@ bool GameBattle::mp_stage_reset(){
 int GameBattle::mp_life_receiver(unsigned giver)const noexcept{
     if(giver>=mp_options.seat_count||!pilots[giver])return -1;
     const auto& p=*pilots[giver];int receiver=-1;
-    if(!p.alive()||(p.keys.held&9)!=8||p.life_latched||p.economy.lives<=0||(dialogue&&dialogue->active)||!stage_active)return -1;
+    if(!p.alive()||(p.keys.held&9)!=8||p.life_latched||p.economy.lives<=0||!stage_active)return -1;
     for(unsigned j=0;j<mp_options.seat_count;++j){if(giver==j)continue;const auto& q=*pilots[j];if((!q.alive()&&!q.ghost)||(!q.ghost&&q.economy.lives>=9)||distance2(p.player->motion.state.position,q.player->motion.state.position)>400)continue;
         if(receiver<0||q.ghost>pilots[unsigned(receiver)]->ghost||(q.ghost==pilots[unsigned(receiver)]->ghost&&q.economy.lives<pilots[unsigned(receiver)]->economy.lives))receiver=j;
     }
@@ -179,7 +186,7 @@ bool GameBattle::mp_update_rules(){
     for(unsigned i=0;i<mp_options.seat_count;++i){auto& p=*pilots[i];if(!p.player)continue;const u32 held=p.keys.held;
         if(!(held&8)){p.life_hold=0;p.life_latched=false;}
         if(p.power_gap<25)++p.power_gap;if(p.power_gap>24)p.power_taps=0;
-        if(!p.alive()||(dialogue&&dialogue->active)||!stage_active)continue;
+        if(!p.alive()||!stage_active)continue;
         int receiver=-1;
         if((held&9)==8&&!p.life_latched&&p.economy.lives>0){
             receiver=mp_life_receiver(i);
@@ -244,7 +251,7 @@ u32 GameBattle::mp_hash()const noexcept{
         const auto& script=n->value->script;for(auto* thread=&script.threads;thread;thread=thread->next){const auto& c=*thread->value;word(c.thread_id);flt(c.time);pc(script,c.instruction);word(c.state);word(c.flags);word(c.stack.top);word(c.stack.frame_base);}word(~0u);
     }
     for(u32 i=0;i<BulletManager::capacity;++i){const auto& b=const_cast<BulletManager&>(bullets).at(i);if(!b.state)continue;word(i);word(b.state);word(b.flags);flt(b.position.x);flt(b.position.y);flt(b.speed);flt(b.angle);word(b.lifetime.current);word(bullets.multiplayer_grazed[i]);}
-    for(u32 i=0;i<ItemManager::capacity;++i){const auto& item=const_cast<ItemManager&>(items).at(i);if(!item.state)continue;word(i);word(item.state);word(item.type);flt(item.position.x);flt(item.position.y);word(item.lifetime.current);word(items.multiplayer_targets[i]);}
+    for(u32 i=0;i<ItemManager::capacity;++i){const auto& item=const_cast<ItemManager&>(items).at(i);if(!item.state)continue;word(i);word(item.state);word(item.type);flt(item.position.x);flt(item.position.y);word(item.lifetime.current);word(items.multiplayer_targets[i]);flt(item.velocity.x);flt(item.velocity.y);if(i<ItemManager::ordinary_capacity)word(items.multiplayer_fan[i]);}
     for(auto* l=lasers.first();l;l=l->next){word(l->id);word(l->state);word(l->type);flt(l->position.x);flt(l->position.y);flt(l->velocity.x);flt(l->velocity.y);flt(l->angle);flt(l->length);flt(l->width);flt(l->speed);flt(l->offset);timer(l->lifetime);timer(l->graze_timer);timer(l->offscreen_timer);word(l->active_transforms);word(l->transform_index);
         for(const auto& motion:l->motion){timer(motion.timer);flt(motion.a);flt(motion.b);flt(motion.vector.x);flt(motion.vector.y);word(motion.duration);word(motion.limit);word(motion.count);}
         if(l->type==0){const auto& p=reinterpret_cast<const LaserLine*>(l)->parameters;flt(p.growth_limit);flt(p.initial_length);flt(p.end_distance);word(p.flags);}else{const auto& p=reinterpret_cast<const LaserInfinite*>(l)->parameters;flt(p.angular_velocity);flt(p.max_length);word(p.warning_frames);word(p.expand_frames);word(p.active_frames);word(p.shrink_frames);word(p.flags);}

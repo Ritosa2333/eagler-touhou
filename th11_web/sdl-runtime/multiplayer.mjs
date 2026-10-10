@@ -78,7 +78,7 @@ export function createMultiplayerRuntime({Module,core,getOptions,getLanguage,man
    // disconnect. Persist it even if the peer's final retirement ACK is late.
    if(active&&mode==='player'){
     const s=status();
-    if(gameStatus()[3]===4&&s[3]>0&&s[4]!==0xffffffff&&s[4]>=s[3]-1){finished=true;calibration.stop();endSession(undefined,true);return;}
+    if(gameStatus()[3]===4&&s[3]>0&&s[4]!==0xffffffff&&s[4]>=s[3]-1){finished=true;calibration.stop();endSession(undefined);return;}
    }
    if(active&&target.__eaglerPeerTransport?.disconnected&&!core.th11_mp_pump())fail(Error(nativeError()));
    core.th11_loop_stop();
@@ -90,7 +90,7 @@ export function createMultiplayerRuntime({Module,core,getOptions,getLanguage,man
   if(!active||mode!=='player')return;
   if(!withString('PLAYER',pointer=>core.th11_mp_replay_save(0,pointer)))throw Error(nativeError());
  }
- function applyOptions(){core.th11_mp_always_hitbox(+(getOptions().alwaysHitbox===true||getOptions().touchAlwaysHitbox===true));}
+ function applyOptions(){core.th11_mp_local_visibility(+(getOptions().multiplayerLocalPlayerVisibility===true));core.th11_mp_always_hitbox(+(getOptions().alwaysHitbox===true||getOptions().touchAlwaysHitbox===true));}
  async function launch(){
   clearSeek();failed=false;finished=false;target.__eaglerNetplayFailed=false;target.__eaglerNetplayError='';
   target.__eaglerNetplayLanActive=false;target.__eaglerNetplaySpectator=false;
@@ -136,7 +136,7 @@ export function createMultiplayerRuntime({Module,core,getOptions,getLanguage,man
     if(mode==='player'){
      flush();
      if(capacity)endSession(label('已达到本版单局 250,000 确认帧上限，已保存未完成录像。','This run reached the 250,000 confirmed-frame limit. A partial Replay was saved.'));
-     else if(game[3]===4)endSession(undefined,true);
+     else if(game[3]===4)endSession(undefined);
     }else endSession(capacity?label('本次观战达到单局 250,000 确认帧上限。','This spectator session reached the 250,000 confirmed-frame limit.'):label('本次观战结束。','Spectator session complete.'));
    }
   }

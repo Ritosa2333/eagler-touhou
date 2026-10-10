@@ -11,6 +11,7 @@ struct BombWorld {
     virtual bool bomb_background_color(u32)=0;
     virtual bool bomb_refund_power()=0;
     virtual bool bomb_cancel_beam(Vec3,bool)=0;
+    virtual void bomb_invincibility(i32){}
 };
 struct BombState {
     Timer elapsed,secondary;

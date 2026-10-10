@@ -399,8 +399,9 @@ bool GameSession::open_title(GameResources& data,bool first,TitleScreen screen){
 }
 
 bool GameSession::draw(AnmRenderer& renderer,AsciiText* overlay) {
+    if(battle)battle->always_hitbox=always_hitbox;
 #ifdef TH11_MULTIPLAYER
-    if(multiplayer_active&&battle){battle->mp_always_hitbox=multiplayer_always_hitbox;battle->mp_prepare_presentation(renderer);}
+    if(multiplayer_active&&battle){battle->mp_always_hitbox=always_hitbox||multiplayer_always_hitbox;battle->mp_local_visibility=multiplayer_local_visibility;battle->mp_prepare_presentation(renderer);}
 #endif
     if(title&&title_ascii&&(state.phase==GameSessionPhase::title
 #ifdef TH11_MULTIPLAYER

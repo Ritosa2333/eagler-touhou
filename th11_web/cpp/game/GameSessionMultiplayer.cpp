@@ -31,7 +31,8 @@ bool GameSession::update_multiplayer(const std::array<MultiplayerInput,3>& input
     if(state.phase==GameSessionPhase::ending){
         battle->events.clear();battle->dialogue_text_requests.clear();
         if(!ending)return fail("MP ending owner missing");
-        menu_input.update(menu_keys(inputs[0].held));
+        u32 story=0;for(unsigned seat=0;seat<multiplayer_options.seat_count;++seat)story|=inputs[seat].held&0x301u;
+        menu_input.update(menu_keys(story));
         if(!ending->tick(menu_input.held,menu_input.pressed))return fail(ending->error.c_str());
         if(!ending->active)return multiplayer_open_clear_results(inputs[0].held);
         if(!animations.update(true)||!animations.update(false))return fail("MP ending ANM update failed");

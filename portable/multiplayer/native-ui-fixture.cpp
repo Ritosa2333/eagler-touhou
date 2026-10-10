@@ -3,6 +3,7 @@
 static bool fixture_freeze_ghost=false;
 static bool fixture_record_io=false;
 extern "C" {
+EMSCRIPTEN_KEEPALIVE void mp_fixture_audio_pause(int on){th11::sdl::app.audio.pause_music(on!=0);}
 EMSCRIPTEN_KEEPALIVE int mp_fixture_ui_begin(int stage,int local){
  auto& a=th11::sdl::app;fixture_freeze_ghost=false;fixture_record_io=false;
  if(!a.initialize())return 0;

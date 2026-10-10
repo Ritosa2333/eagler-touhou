@@ -47,6 +47,7 @@ struct MultiplayerPilot final:PlayerFrameWorld,BombWorld,ItemRewardEffects {
     bool bomb_background_color(u32)override;
     bool bomb_refund_power()override;
     bool bomb_cancel_beam(Vec3,bool)override;
+    void bomb_invincibility(i32)override;
     bool popup(Vec3,i32,u32)override;
     bool notify(i32)override;
     bool power_changed()override;

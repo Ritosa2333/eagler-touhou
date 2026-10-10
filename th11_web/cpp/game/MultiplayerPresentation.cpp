@@ -8,7 +8,7 @@ namespace th11 {
 namespace {float local_graze_y(unsigned seats){return seats==2?248.f:320.f;}}
 bool GameBattle::mp_initialize_presentation(){
     mp_presentation.script_rng={u16(mp_options.seed),0,0};mp_presentation.visual_rng={u16(mp_options.seed>>16),0,0};
-    auto* focus=mp_presentation.create(resources.core.bullet,74,6,15);if(!focus)return false;mp_focus_marker=focus->id;
+
     for(unsigned seat=0;seat<mp_options.seat_count;++seat){
         for(unsigned i=0;i<9;++i){auto& vm=mp_life_icons[seat][i];if(!vm.bind_script(resources.core.front,10+i,5,&mp_presentation.rate)||vm.update(mp_presentation)<0)return false;}
         for(unsigned i=0;i<4;++i){auto& vm=mp_communication_icons[seat][i];if(!vm.bind_script(resources.core.front,32+i,5,&mp_presentation.rate)||vm.update(mp_presentation)<0)return false;}
@@ -60,16 +60,20 @@ void GameBattle::mp_prepare_presentation(AnmRenderer& renderer){
     }
 }
 bool GameBattle::mp_draw_players(AnmRenderer& renderer){
-    for(unsigned i=0;i<mp_options.seat_count;++i){auto& p=*pilots[i];if(p.ghost){auto& body=p.player->motion.body;const auto pos=p.player->motion.state.position;body.position={float(double(pos.x)+224),float(double(pos.y)+16),0};if(renderer.draw(body)==-2)return false;}else if(!p.player->draw(renderer))return false;}
+    for(unsigned i=0;i<mp_options.seat_count;++i){auto& p=*pilots[i];if(p.ghost){auto body=p.player->motion.body;const auto pos=p.player->motion.state.position;
+        // Ghost presence belongs to MP, not the native death/respawn blink.
+        // A draw copy preserves the sprite and script without inheriting hide
+        // flags or zero alpha that would make a rescue target disappear.
+        body.flags=(body.flags|2u)&~0x8000u;body.color=(body.color&0xffffff)|(u32(renderer.multiplayer_opacity[i+1])<<24);
+        body.position={float(double(pos.x)+224),float(double(pos.y)+16),0};if(renderer.draw(body)==-2)return false;}else if(!p.player->draw(renderer))return false;}
     auto& local=*pilots[mp_options.local_seat];const auto p=local.player->motion.state.position;const float x=p.x+224,y=p.y+16;
-    if(!local.ghost){renderer.pipeline().sourceBlend=touhou::graphics::BlendFactor::SourceAlpha;const u32 c=0xc0ffffff;
+    if(!local.ghost&&mp_local_visibility){renderer.pipeline().sourceBlend=touhou::graphics::BlendFactor::SourceAlpha;const u32 c=0xc0ffffff;
         renderer.solid_rectangle(x-7,y-7,x-3,y-6,c);renderer.solid_rectangle(x+3,y-7,x+7,y-6,c);renderer.solid_rectangle(x-7,y+6,x-3,y+7,c);renderer.solid_rectangle(x+3,y+6,x+7,y+7,c);
-        if(mp_always_hitbox&&!local.player->motion.focus_animation){
-            // The same native two-layer Focus marker, with only its visibility
-            // changed. These copies never touch motion.focused or native VMs.
-            if(auto* marker=mp_presentation.find(mp_focus_marker))for(auto* node=&marker->child;node;node=node->next){auto vm=*node->value;vm.position={x,y,0};if(renderer.draw(vm)==-2)return false;}
-        }
     }
+    if(!local.ghost){
+        if(mp_always_hitbox&&!draw_hitbox(renderer,*local.player))return false;
+    }
+
     for(unsigned i=0;i<mp_options.seat_count;++i){const auto& pilot=*pilots[i];if(!pilot.alive())continue;const auto p=pilot.player->motion.state.position;AsciiStyle style;style.font=2;style.pass=1;char text[8];
         if(pilot.life_hold&&mp_life_receiver(i)>=0){std::snprintf(text,sizeof(text),"%u%%",std::min(pilot.life_hold*100/90,100u));const float left=p.x+224-float(std::strlen(text))*3.5f;if(!ascii.add(text,{left,p.y-8,0},style))return false;continue;}
         if(pilot.power_taps<3)continue;AnmVm icon;icon.initialize();icon.resource=&resources.core.bullet;icon.flags=0x140003;icon.script_position={p.x+208,p.y-8,0};if(!icon.bind_sprite(0x159)||renderer.draw(icon)==-2)return false;std::snprintf(text,sizeof(text),"%u",pilot.power_taps);if(!ascii.add(text,{p.x+225,p.y-5,0},style))return false;

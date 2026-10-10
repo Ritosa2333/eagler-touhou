@@ -23,6 +23,7 @@ struct ItemWorld {
     virtual bool multiplayer_world()const{return false;}
     virtual bool multiplayer_item_player(ItemState&,ItemPlayer&){return false;}
     virtual bool multiplayer_power_full()const{return false;}
+    virtual unsigned multiplayer_item_copies(i32)const{return 1;}
 #endif
     virtual ~ItemWorld()=default;
     virtual bool effect(Vec3,i32){return false;}
@@ -32,7 +33,12 @@ struct ItemWorld {
 };
 class ItemManager {
 public:
-    static constexpr u32 ordinary_capacity=150,cancel_capacity=2048,capacity=ordinary_capacity+cancel_capacity;
+    #ifdef TH11_MULTIPLAYER
+    static constexpr u32 ordinary_capacity=450;
+#else
+    static constexpr u32 ordinary_capacity=150;
+#endif
+    static constexpr u32 cancel_capacity=2048,capacity=ordinary_capacity+cancel_capacity;
     ItemManager(AnmResource&,AnmEnvironment&,ItemWorld&,u16 file_id=6);
     ItemState& at(u32 n){return storage[n];}
     ItemPlayer player;u32 cancel_cursor=0,cancel_spawn_count=0,active_count=0;i32 last_error=0;
@@ -40,6 +46,7 @@ public:
     std::array<i32,capacity> multiplayer_targets{};
     i32 multiplayer_current_target=-1;
     bool multiplayer_spawning_transfer=false;
+    std::array<u8,ordinary_capacity> multiplayer_fan{};
     bool spawn_transfer(i32,Vec3,unsigned);
 #endif
     // 0 success/full pool, -2 unavailable resource or world dependency.
@@ -55,6 +62,7 @@ public:
 private:
     std::unique_ptr<ItemState[]> storage;
     AnmResource& resource;AnmEnvironment& animations;ItemWorld& world;u16 file_id;
+    i32 spawn_single(i32,Vec3,u32,float,float,ItemState** out=nullptr);
     bool bind(ItemState&,i32 script);
     void move(ItemState&);
     void home(ItemState&);

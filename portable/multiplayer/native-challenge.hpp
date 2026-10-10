@@ -38,12 +38,12 @@ void challenge_cases(const std::vector<u8>& bytes){
     check(giver.economy.lives==3&&receiver.economy.lives==3&&w.pilots[2]->economy.lives==1&&w.mp_fragments==0,"challenge five fragments award hidden team stock");
     for(auto& p:w.pilots)check(p->challenge_misses==10,"transfers and Extends cannot change cumulative Miss");
     giver.economy.lives=9;check(giver.rewards.add_life()&&giver.economy.lives==9&&giver.challenge_misses==10,"challenge hidden stock still caps at nine");
-    input={};step(*a,input);giver.economy.power=giver.economy.power_step*2;receiver.economy.power=0;w.pilots[2]->economy.power=w.pilots[2]->economy.max_power;
+    w.items.reset();input={};step(*a,input);giver.economy.power=giver.economy.power_step*2;receiver.economy.power=0;w.pilots[2]->economy.power=w.pilots[2]->economy.max_power;
     for(unsigned i=0;i<5;++i){input[0].held=1;step(*a,input);input[0].held=0;step(*a,input);}for(unsigned i=0;i<16;++i)step(*a,input);
     check(giver.economy.power==giver.economy.power_step&&receiver.economy.power==receiver.economy.power_step,"challenge retains loadout-specific Power transfer");
     check(w.next_stage(a->resources,2),"challenge native stage transition");for(unsigned i=0;i<170;++i)step(*a,input);
     for(unsigned seat=0;seat<3;++seat)check(a->session.multiplayer_seat(seat).misses==10&&!w.pilots[seat]->ghost,"challenge stage transition preserves cumulative Miss");
-    check(a->session.draw(a->renderer),"challenge HUD draw");unsigned miss_rows=0;for(const auto& text:w.ascii.requests)if(text.position.x==520&&(text.position.y==104||text.position.y==208||text.position.y==280)){++miss_rows;check(text.text=="10"&&text.style.font==3,"native life row renders cumulative Miss using native digits");}check(miss_rows==3,"every challenge life group renders its own Miss count");
+    check(a->session.draw(a->renderer),"challenge HUD draw");unsigned miss_rows=0;for(const auto& text:w.ascii.requests)if(text.position.x==520&&(text.position.y==104||text.position.y==176||text.position.y==248)){++miss_rows;check(text.text=="10"&&text.style.font==3,"native life row renders cumulative Miss using native digits");}check(miss_rows==3,"every challenge life group renders its own Miss count");
     const auto before=a->session.multiplayer_hash();++giver.challenge_misses;check(a->session.multiplayer_hash()!=before,"Miss participates in deterministic state identity");--giver.challenge_misses;
     giver.challenge_misses=0xffffffffu;check(giver.record_death()&&giver.challenge_misses==0xffffffffu,"challenge Miss saturates like TH10");
     input[0].pause=true;step(*a,input);check(a->session.state.phase==GameSessionPhase::paused,"challenge restart starts from real paused owner");

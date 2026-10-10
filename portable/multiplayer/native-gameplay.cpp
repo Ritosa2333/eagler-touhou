@@ -10,7 +10,7 @@ unsigned checks=0,ticks=0;
 void check(bool ok,const char* message){++checks;if(!ok){std::fprintf(stderr,"FAIL: %s\n",message);std::exit(1);}}
 struct NullGraphics final:ZunGraphics {
     touhou::graphics::PipelineState state{};
-    unsigned triangles_drawn=0;
+    unsigned triangles_drawn=0,primitive_calls=0;
     bool capture=false;std::vector<AnmVertex> captured;
     touhou::graphics::PipelineState& pipeline()override{return state;}
     u32 texture(const AnmResource&,u32 index)override{return index+1;}
@@ -18,7 +18,7 @@ struct NullGraphics final:ZunGraphics {
     void set_layout(touhou::graphics::VertexLayout)override{}
     void set_matrix(touhou::graphics::MatrixKind,const Matrix4&)override{}
     void triangles(u32 n,const void* vertices,u32 stride)override{triangles_drawn+=n;if(capture&&stride==sizeof(AnmVertex)){const auto* source=static_cast<const AnmVertex*>(vertices);captured.insert(captured.end(),source,source+n*3);}}
-    void primitives(touhou::graphics::Topology,u32,const void*,u32)override{}
+    void primitives(touhou::graphics::Topology,u32,const void*,u32)override{++primitive_calls;}
     bool select_target(const AnmResource*,u32)override{return true;}
     bool clear_target(u32,const GraphicsViewport*)override{return true;}
 };
@@ -36,6 +36,70 @@ void compare_owners(const GameBattle& a,const GameBattle& b){
         }check(!u&&!v,"direct ECL thread roster");
     }check(!left&&!right,"direct shared enemy roster");
     for(unsigned seat=0;seat<a.mp_options.seat_count;++seat){const auto& p=*a.pilots[seat];const auto& q=*b.pilots[seat];check(p.economy.lives==q.economy.lives&&p.economy.power==q.economy.power&&p.economy.score_units==q.economy.score_units,"direct per-seat economy");check(p.player->motion.state.x==q.player->motion.state.x&&p.player->motion.state.y==q.player->motion.state.y,"direct per-seat motion");}
+}
+void ghost_dialogue_cases(const std::vector<u8>& bytes){
+    for(unsigned count:{2u,3u})for(unsigned seat=0;seat<count;++seat)for(u32 confirm:{1u,256u}){
+        auto peer=std::make_unique<Peer>(bytes);MultiplayerOptions o;o.seat_count=count;
+        check(peer->session.begin_multiplayer(peer->resources,o),"ghost dialogue world");auto& w=*peer->session.battle;std::array<MultiplayerInput,3> in{};
+        for(unsigned n=0;n<125;++n)step(*peer,in);
+        auto& host=*w.pilots[0];host.economy.lives=-1;check(host.game_over(false),"P1 becomes a native MP ghost before dialogue");
+        // A real MSG wait opcode with a long deadline and native terminator.
+        // Run it through the actual battle update, not a mocked key selector.
+        const std::vector<u8> msg={1,0,0,0,12,0,0,0,0,0,0,0,0,0,11,4,0x58,2,0,0,0,0,0,0};
+        check(w.dialogue->begin(msg,0),"native MSG confirmation fixture");step(*peer,in);check(w.dialogue->active&&w.dialogue->state.wait.current>0,"MSG waits for a real confirmed press");
+        in[seat].held=confirm;step(*peer,in);
+        check(!w.dialogue->active,"any seat's Shoot or Enter advances dialogue with ghost P1");
+        check(host.ghost&&host.player->input.movement.held==0,"story confirmation does not restore ghost movement or shooting");
+    }
+    for(unsigned count:{2u,3u})for(unsigned seat=0;seat<count;++seat){
+        auto peer=std::make_unique<Peer>(bytes);MultiplayerOptions o;o.seat_count=count;check(peer->session.begin_multiplayer(peer->resources,o),"all-participant ending story world");
+        auto& s=peer->session;s.ending=std::make_unique<Ending>(s.animations,s.resources.core.text,s.scores);
+        const u8 msg[]={0xe8,3,1,0,0xd0,7,1,0};auto& e=*s.ending;e.instruction=msg;e.end=msg+sizeof(msg);e.active=true;e.time.set(0,&s.animations.rate);e.elapsed.set(0,&s.animations.rate);e.wait.set(0,&s.animations.rate);s.state.phase=GameSessionPhase::ending;
+        std::array<MultiplayerInput,3> in{};step(*peer,in);check(e.instruction==msg,"native ending waits for confirmation before future-timed text");in[seat].held=256;step(*peer,in);check(e.instruction==msg+4,"any participant's Enter advances native ending story");
+    }
+    for(unsigned count:{2u,3u}){
+        auto peer=std::make_unique<Peer>(bytes);MultiplayerOptions o;o.seat_count=count;check(peer->session.begin_multiplayer(peer->resources,o),"dialogue transfer world");auto& w=*peer->session.battle;std::array<MultiplayerInput,3> in{};
+        for(unsigned n=0;n<125;++n)step(*peer,in);
+        std::vector<u8> msg={1,0,0,0,12,0,0,0,0,0,0,0};for(unsigned n=0;n<10;++n){const u8 wait[]={u8(n*2000),u8((n*2000)>>8),11,4,0x58,2,0,0};msg.insert(msg.end(),wait,wait+8);}msg.insert(msg.end(),{0,0,0,0});
+        auto& ghost=*w.pilots[0];ghost.economy.lives=-1;check(ghost.game_over(false)&&w.dialogue->begin(msg,0),"ghost host and active native dialogue");auto& giver=*w.pilots[1];giver.economy.lives=3;put(*giver.player,0,400);put(*ghost.player,10,400);
+        for(unsigned n=0;n<90;++n){ghost.ghost_clock=1;ghost.ghost_dx=ghost.ghost_dy=0;in[1].held=8;step(*peer,in);}
+        check(w.dialogue->active&&!ghost.ghost&&giver.economy.lives==2,"90-tick life rescue works during dialogue without ending it");
+        in={};step(*peer,in);put(*giver.player,0,400);put(*ghost.player,10,400);giver.economy.power=giver.economy.max_power;ghost.economy.power=0;check(giver.power_changed()&&ghost.power_changed(),"dialogue Power transfer setup");const auto before=giver.economy.power;
+        for(unsigned n=0;n<5;++n){in[1].held=1;step(*peer,in);in[1].held=0;step(*peer,in);}
+        check(w.dialogue->active&&giver.economy.power==before-giver.economy.power_step,"five Shoot taps transfer Power while native dialogue remains active");
+        for(unsigned n=0;n<8;++n)step(*peer,in);check(ghost.economy.power==ghost.economy.power_step,"native directed Power gift is collected during dialogue");
+    }
+    std::puts("PASS: native MSG through real battle update, 2P/3P ghost P1, every participant Shoot/Enter, no ghost gameplay control, dialogue life rescue and Power transfers");
+}
+void reported_rule_cases(const std::vector<u8>& bytes){
+    for(unsigned count:{2u,3u})for(unsigned victim=0;victim<count;++victim){
+        auto peer=std::make_unique<Peer>(bytes);MultiplayerOptions o;o.seat_count=count;o.selections={0,3,5};
+        check(peer->session.begin_multiplayer(peer->resources,o),"reported death world");auto& w=*peer->session.battle;std::array<MultiplayerInput,3> in{};
+        for(unsigned n=0;n<125;++n)step(*peer,in);
+        auto& dead=*w.pilots[victim];dead.economy.lives=0;dead.economy.power=0;
+        check(w.mp_hit(victim,{CollisionKind::Hit,true}),"real native hit enters final death");
+        for(unsigned n=0;n<41;++n)step(*peer,in);
+        check(dead.ghost&&!w.game_over_requested&&peer->session.state.phase==GameSessionPhase::stage,"every seat including P1 becomes a ghost without single-player Game Over");
+        peer->renderer.flush();peer->graphics.triangles_drawn=0;check(w.mp_draw_players(peer->renderer),"ghost body draw");peer->renderer.flush();check((dead.player->motion.body.flags&2)&&peer->graphics.triangles_drawn>0,"native ghost sprite stays visible");
+        const auto old_body=dead.player->motion.body;dead.player->motion.body.flags&=~2u;dead.player->motion.body.color&=0xffffff;
+        const auto hidden_body=dead.player->motion.body;peer->renderer.flush();peer->graphics.triangles_drawn=0;check(w.mp_draw_players(peer->renderer),"ghost ignores native hidden/zero-alpha draw flags");peer->renderer.flush();check(peer->graphics.triangles_drawn==count*2,"every ghost still submits its original sprite quad");check(std::memcmp(&hidden_body,&dead.player->motion.body,sizeof(hidden_body))==0,"ghost visibility is a draw copy, never gameplay animation mutation");dead.player->motion.body=old_body;
+        const unsigned giver=(victim+1)%count;auto& donor=*w.pilots[giver];donor.economy.lives=3;
+        put(*donor.player,0,400);put(*dead.player,10,400);in[giver].held=8;if(count==3){in[giver].touch_mode=2;in[giver].touch_x=0;in[giver].touch_y=400;}
+        for(unsigned n=0;n<90;++n){dead.ghost_dx=dead.ghost_dy=0;dead.ghost_clock=1;step(*peer,in);}
+        check(!dead.ghost&&dead.player->state.life_state==1&&donor.economy.lives==2,"all-seat actual final deaths can receive 90-tick rescue");
+    }
+    for(unsigned source:{0u,1u})for(int selection=0;selection<6;++selection){
+        auto peer=std::make_unique<Peer>(bytes);MultiplayerOptions o;o.seat_count=3;o.selections={0,0,0};o.selections[source]=selection;
+        check(peer->session.begin_multiplayer(peer->resources,o),"Bomb sharing world");auto& w=*peer->session.battle;std::array<MultiplayerInput,3> in{};
+        for(unsigned n=0;n<125;++n)step(*peer,in);
+        for(auto& p:w.pilots)p->player->state.invincibility.set(0,&w.animations.rate);
+        w.pilots[source]->economy.power=w.pilots[source]->economy.max_power;check(w.pilots[source]->power_changed(),"Bomb Power setup");
+        in[source].held=2;step(*peer,in);in={};step(*peer,in);
+        for(unsigned seat=0;seat<3;++seat)if(seat!=source){const auto& p=*w.pilots[seat];check(p.player->state.invincibility.current==(selection==3||selection==5?0:selection==0?1:40),"ordinary Bomb shares native protection, Marisa A and unused shield do not");check(!p.bomb->state.active&&!(p.player->motion.state.flags&6),"shared invincibility never copies Bomb or shield mechanics");}
+        if(selection==5){check(w.mp_hit(source,{CollisionKind::Hit,true})&&w.pilots[source]->tick_bomb(),"Nitori protection starts only on shield hit");for(unsigned seat=0;seat<3;++seat)if(seat!=source)check(w.pilots[seat]->player->state.invincibility.current==40,"triggered shield shares native invincibility");}
+        w.pilots[(source+1)%3]->player->state.invincibility.set(500,&w.animations.rate);w.mp_share_invincibility(source,40);check(w.pilots[(source+1)%3]->player->state.invincibility.current==500,"Bomb cannot shorten existing rescue protection");
+    }
+    std::puts("PASS: actual 2P/3P all-seat final deaths and rescue, six native Bombs with Marisa A exception and Nitori timing");
 }
 void battle_cases(const std::vector<u8>& bytes){
     auto a=std::make_unique<Peer>(bytes),b=std::make_unique<Peer>(bytes);
@@ -162,8 +226,13 @@ void presentation_risk_cases(const std::vector<u8>& bytes){
     const auto identity=peer->session.multiplayer_hash(),rng=w.animations.script_rng.calls;const auto weapon=p.player->motion.state.weapon_mode;const auto fast=p.player->motion.state.normal_speed,slow=p.player->motion.state.focus_speed;
     peer->renderer.flush();w.mp_always_hitbox=false;peer->graphics.triangles_drawn=0;check(w.mp_draw_players(peer->renderer),"normal unFocused draw");peer->renderer.flush();const auto ordinary=peer->graphics.triangles_drawn;
     w.mp_always_hitbox=true;peer->graphics.triangles_drawn=0;check(w.mp_draw_players(peer->renderer),"Always Hitbox native marker draw");peer->renderer.flush();check(peer->graphics.triangles_drawn==ordinary+4,"Always Hitbox adds exactly native two textured marker quads");
-    auto* marker=w.mp_presentation.find(w.mp_focus_marker);check(marker&&marker->resource==&w.resources.core.bullet&&marker->script_index==74&&marker->sprite_index==324,"Always Hitbox retains bullet 74 native marker sprite");check(marker&&marker->child.next&&marker->child.next->value->script_index==73,"Always Hitbox retains native counter-rotating child");
+    auto* marker=w.hitbox_presentation.find(w.hitbox_marker);check(marker&&marker->resource==&w.resources.core.bullet&&marker->script_index==74&&marker->sprite_index==324,"Always Hitbox retains bullet 74 native marker sprite");check(marker&&marker->child.next&&marker->child.next->value->script_index==73,"Always Hitbox retains native counter-rotating child");
     check(!p.player->motion.state.focused&&!p.player->motion.focus_animation&&p.player->motion.state.weapon_mode==weapon&&p.player->motion.state.normal_speed==fast&&p.player->motion.state.focus_speed==slow,"draw-only hitbox does not synthesize Focus or modify native motion/weapon");check(peer->session.multiplayer_hash()==identity&&w.animations.script_rng.calls==rng,"Always Hitbox has no authoritative state/RNG effect");
+    w.mp_local_visibility=false;peer->graphics.primitive_calls=0;check(w.mp_draw_players(peer->renderer),"local visibility disabled draw");check(peer->graphics.primitive_calls==0,"disabled local visibility adds no highlight");
+    w.mp_local_visibility=true;check(w.mp_draw_players(peer->renderer),"local visibility enabled draw");check(peer->graphics.primitive_calls==4,"enabled local visibility marks only the local pilot");
+    check(peer->session.multiplayer_hash()==identity,"local visibility never changes authoritative gameplay");
+    w.mp_enabled=false;w.always_hitbox=false;peer->renderer.flush();peer->graphics.triangles_drawn=0;check(w.draw(peer->renderer,SceneDrawKind::Player),"ordinary player draw");peer->renderer.flush();const auto normal_triangles=peer->graphics.triangles_drawn;
+    w.always_hitbox=true;peer->graphics.triangles_drawn=0;check(w.draw(peer->renderer,SceneDrawKind::Player),"ordinary always-hitbox draw");peer->renderer.flush();check(peer->graphics.triangles_drawn==normal_triangles+4,"ordinary always-hitbox also adds the native two-layer marker");w.mp_enabled=true;
     in[0].pause=true;step(*peer,in);check(peer->session.state.phase==GameSessionPhase::paused,"native pause fixture");auto* pause=w.mp_presentation.find(peer->session.pause_menu->menu_animation);check(pause&&pause->resource==&w.resources.core.front&&pause->script_index==89,"pause uses complete original parent menu owner");
     std::puts("PASS: native atlas HUD, original two-layer Always Hitbox, no Focus/RNG mutation");
 }
@@ -285,7 +354,7 @@ int main(int argc,char** argv){
     else if(mode("repair")){presentation_risk_cases(bytes);restart_risk_cases(bytes);}
     else{
         if(argc==2){battle_cases(bytes);rules_cases(bytes);owner_cases(bytes);}
-        challenge_cases(bytes);score_cases(bytes);item_risk_cases(bytes);resource_cases(bytes);presentation_risk_cases(bytes);result_risk_cases(bytes);restart_risk_cases(bytes);native_ui_cases(bytes);
+        ghost_dialogue_cases(bytes);reported_rule_cases(bytes);challenge_cases(bytes);score_cases(bytes);item_risk_cases(bytes);resource_cases(bytes);presentation_risk_cases(bytes);result_risk_cases(bytes);restart_risk_cases(bytes);native_ui_cases(bytes);
     }
     std::printf("PASS: %u checks, %u native logic/draw ticks; no original executable\n",checks,ticks);return 0;
 }

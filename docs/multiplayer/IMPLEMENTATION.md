@@ -574,3 +574,18 @@ Return 在 P1 确认输入帧结束共享会话，保留自动录像保存；Run
 Replay Save 复用原生确认、25 槽位、命名与 Application 的多人 Replay IO。暂停元数据使用 P1 机体、当前关卡、难度、共享分数和实际记录时间。`artifacts/multiplayer-ui/20261009/four-pause-choices/native-save-evidence.json` 实际写出 No.25 / A / 252 帧 / 9,248 bytes 的诊断多人录像，原生解码 valid=true、completed=false，证明输入确认帧先入档再写盘。原生四项 UI 门禁 1,651 断言 / 2,797 tick 通过；既有结算保存与只读不写入门禁也通过。该文件明确是带固定 diagnostic fingerprint 的 UI/IO 证据，不是完整通关或公网 Replay 验收。
 
 最终生产 WASM 为 189fc592c39e86165d974173130851a636e7dd21dc57475e641f401eb8608401。`artifacts/launcher-main-th11mp/four-pause-final-2p.json` 为真实 main / 双人 RTC / 原生菜单重启 / 再 Return 门禁，passed=true，双方 Runtime 关闭、room identity 清空，服务端目录对两个 member 均返回 mine=null。回滚隐藏、disabled、强制点击不生效的门禁仍通过。浏览器测试用真实键盘输入按确认帧等待方向键采样，确认前释放测试先前持续按住的 Shoot，避免把没有新边沿的按键当作菜单确认。本节取代第 12 节关于隐藏 Pause Replay Save / Return 的结论。
+
+
+## 13. 2026-10-10 玩家报告修复
+
+本轮规则文案已由用户确认并进入 main 的特殊规则：普通 P 为 2P 两倍、3P 三倍，Full Power 不倍增，残机碎片一倍且共享。任意 Bomb 共享原生无敌时间，魔理沙 A（8 Power）仅保护自己。所有参战玩家（含幽灵）可推进剧情，剧情路线沿用 P1 机体。允许在对话时进行资源转移。
+
+- 普通 P 的复制统一进入 ItemManager，覆盖关卡和死亡掉落。参考 TH08 的 18 像素横向间距与 12 帧散开，保留死亡的原生方向、速度。边缘整组内移，生命 / Power 赠送只生成一份。普通物品池上限由 150 扩为 450，避免三倍数量提前耗尽。Full Power 和残机碎片不倍增。
+- Bomb 直接共享各机体原生设置的无敌计时，取较大值，不覆盖更长的复活保护。河童护盾未触发时不凭空给队友护盾，触发后共享原生无敌。
+- 幽灵绘制使用原生自机的副本，修正死亡隐藏与闪烁透明度，不改逻辑 VM。真实最终死亡与资源救援覆盖 2P / 3P 的全部席位。
+- 始终显示判定点复用原生 Focus 标记且独立推进显示动画，支持普通版和 MP。增强本地玩家可见性实际读取前端开关。开关不改变判定或 RNG。
+- 剧情读取每席确认输入，不再只读取 P1 的有效战斗输入。幽灵仍不能移动、射击。Ending 确认同样接受各参战席。对话期间保留原距离、资源数量、五次射击 / 90 帧低速赠送条件，触控按钮继续采样。
+- Extra 的 OGG 资源尚未到达时沿用 TH08 / TH10 的静音等待。资源写入通知恢复同一原生解码器和播放位置，保留暂停、淡出和取消，不替换为网页播放器。已有文件损坏仍报错。普通版同步同一音频修正。
+- 主线前端保留最新机体选择至服务器确认，旧快照不覆盖快速连点的选择，确认前禁用准备和开始。退出仍由既有 room owner 返回原房间，接受测试据此核对成员身份。
+
+原生门禁 `node portable/multiplayer/native-test.mjs`：8,834 checks / 16,979 logic+draw ticks PASS，日志 `artifacts/rules-native-20261010.log`。这包括真实原生 MSG 的全席幽灵剧情输入、对话资源赠送和 Ending。音频门禁 `portable/multiplayer/audio-resource-test.mjs` 检查缺失 Extra 音乐非致命、写入后非零 PCM、暂停 / 恢复、淡出 / 取消和关闭 BGM 后 SFX；它是 C++ 诊断构建，不能冒充正式浏览器房间验收。浏览器、生产包与发布结果分别记录，未验证完整真人 Extra 通关或移动真机。

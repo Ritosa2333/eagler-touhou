@@ -17,7 +17,7 @@ bool BombController::create(u32& id,i32 script,bool positioned){
     auto* vm=animations.create(resource,script,file_id,22,false,false,positioned?&p:nullptr);if(!vm)return false;id=vm->id;return true;
 }
 bool BombController::body(i32 script){return player.motion.body.bind_script(resource,script,file_id,&animations.rate)&&player.motion.body.update(animations)>=0;}
-void BombController::invincible(i32 frames){player.state.invincibility.set(frames,&animations.rate);}
+void BombController::invincible(i32 frames){player.state.invincibility.set(frames,&animations.rate);world.bomb_invincibility(frames);}
 bool BombController::fail_spell(){auto& spell=player.spell;if(spell.flags&1){if(spell.elapsed>=60){spell.bonus=0;spell.flags&=~0x22u;}else if(state.active&&selection!=5)spell.flags|=0x20;}return true;}
 void BombController::interrupt(u32 id,i16 label){if(auto* vm=animations.find(id))for(auto* n=&vm->child;n;n=n->next)n->value->pending_interrupt=label;}
 AnmVm* BombController::child(i32 script){auto* vm=animations.find(state.animation);if(!vm){state.animation=0;return nullptr;}for(auto* n=&vm->child;n;n=n->next)if(n->value->script_index==script)return n->value;return nullptr;}
@@ -61,6 +61,7 @@ i32 BombController::start(){
 i32 BombController::tick(){
     auto* vm=animations.find(state.animation);if(!vm)state.animation=0;
     if(selection==0){
+        world.bomb_invincibility(1);
         if(!vm){if(!body(0))return -2;player.motion.state.flags&=~2u;player.motion.state.previous_dx=player.motion.state.previous_dy=0;invincible(40);return -1;}
         if(state.elapsed.current>=180){
             if(state.elapsed.current==180){if(!sound(38)||!world.bomb_stop_sound(49))return -2;player.shots.damage_areas.circle(state.position,32,10,30,50,&animations.rate);}

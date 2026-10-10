@@ -248,7 +248,7 @@ struct Application:StageResourceEffects {
         if(!multiplayer_menu_metadata())return false;
         if(!capture_pause_frame())return false;
         if(!audio_events()||!text_events())return false;
-        audio.update();audio.pump();
+        if(!audio.update()){error=audio.error;return false;}audio.pump();
         frame_statistics.sample(double(SDL_GetTicks())*.001,after==GameSessionPhase::stage&&session.battle&&session.battle->stage_active&&!netplay.ReadOnly());
         frame_text.clear();const auto label=frame_statistics.label();frame_text.add(label.text.c_str(),label.position,label.style);
         if(!session.draw(renderer,&frame_text)){error=session.error;return false;}graphics.present();
@@ -527,7 +527,7 @@ struct Application:StageResourceEffects {
         }
         if(session.battle&&after==GameSessionPhase::stage&&!session.battle->spell_timing.update(session.battle->spell_flags,session.battle->spells.frame_count,double(SDL_GetTicks())*.001,session.state.replay)){error="Invalid spell timing state";return false;}
         if(!audio_events()||!text_events())return false;
-        audio.update();audio.pump();
+        if(!audio.update()){error=audio.error;return false;}audio.pump();
         frame_statistics.sample(double(SDL_GetTicks())*.001,after==GameSessionPhase::stage&&session.battle&&session.battle->stage_active&&!session.state.replay);
         frame_text.clear();const auto label=frame_statistics.label();frame_text.add(label.text.c_str(),label.position,label.style);
         if(!session.draw(renderer,&frame_text)){error=session.error;return false;}
@@ -611,7 +611,7 @@ touhou::input::TouchState touch_state(){
     touhou::input::TouchState s;auto& session=app.session;
 #ifdef TH11_MULTIPLAYER
     if(app.netplay.ReadOnly()){s.context=3;return s;}
-    if(session.state.phase==GameSessionPhase::ending){s.context=app.netplay.Setup().local_player==0?2:3;return s;}
+    if(session.state.phase==GameSessionPhase::ending){s.context=2;return s;}
     if(session.state.phase==GameSessionPhase::game_over){s.context=app.netplay.Setup().local_player==0?0:3;return s;}
     if(session.state.phase==GameSessionPhase::stage&&app.multiplayer_world){
         if(session.battle&&session.battle->dialogue&&session.battle->dialogue->active){s.context=2;return s;}
@@ -681,6 +681,11 @@ bool sample_and_tick(){
     previous_scans=scans;
     const auto sample=gestures.sample(touch_state(),SDL_GetTicks(),keys[16],keys[37]||keys[38]||keys[39]||keys[40]);
     for(u32 n=0;n<256;++n)keys[n]=keys[n]||sample.keys[n];
+#ifdef TH11_MULTIPLAYER
+    // Story taps keep their native confirmation path. Retain the action
+    // buttons too, so touch players can give resources while dialogue is open.
+    if(app.multiplayer_world&&app.session.battle&&app.session.battle->dialogue&&app.session.battle->dialogue->active&&gestures.enabled){keys[90]=keys[90]||gestures.fire;keys[16]=keys[16]||gestures.focus;}
+#endif
 #ifdef TH_ENABLE_THPRAC
     browser::ThpracUi::update_input(app.session,keys);
     const bool captured=browser::ThpracUi::captures_game_input();
@@ -768,6 +773,7 @@ EMSCRIPTEN_KEEPALIVE int th11_mp_replay_seek(unsigned frame){
     }
     app.multiplayer_seek_target=frame;return 1;
 }
+EMSCRIPTEN_KEEPALIVE void th11_mp_local_visibility(unsigned on){th11::sdl::app.session.multiplayer_local_visibility=on!=0;}
 EMSCRIPTEN_KEEPALIVE void th11_mp_always_hitbox(unsigned on){th11::sdl::app.session.multiplayer_always_hitbox=on!=0;}
 EMSCRIPTEN_KEEPALIVE const unsigned* th11_mp_game_status(){
     auto& app=th11::sdl::app;static std::array<unsigned,56> out{};out.fill(0);
@@ -914,6 +920,7 @@ EMSCRIPTEN_KEEPALIVE void th11_loop_start(){
 }
 EMSCRIPTEN_KEEPALIVE void th11_touch(unsigned type,int id,float x,float y){th11::sdl::touch_event(type,id,x,y);}
 EMSCRIPTEN_KEEPALIVE void th11_touch_cancel(){th11::sdl::cancel_touch();}
+EMSCRIPTEN_KEEPALIVE void th11_always_hitbox(unsigned on){th11::sdl::app.session.always_hitbox=on!=0;}
 EMSCRIPTEN_KEEPALIVE void th11_touch_options(unsigned enabled,unsigned mode,float sensitivity,unsigned two_finger,unsigned double_tap){using namespace th11::sdl;gestures.enabled=enabled!=0;gestures.unlimited=mode==1;gestures.sensitivity=std::isfinite(sensitivity)?std::clamp(sensitivity,1.f,3.f):1;gestures.two_finger=two_finger!=0;gestures.double_tap=double_tap!=0;if(gestures.set_mode(mode<=3?int(mode):0))if(app.session.battle)app.session.battle->player_input.movement.touch_mode=0;if(!enabled)gestures.cancel();}
 EMSCRIPTEN_KEEPALIVE void th11_touch_controls(unsigned enabled,unsigned fire,unsigned focus,unsigned bomb,unsigned escape){using namespace th11::sdl;gestures.enabled=enabled!=0;gestures.controls(fire!=0,focus!=0,bomb,escape,0,0);}
 EMSCRIPTEN_KEEPALIVE void th11_touch_stick(float x,float y){using namespace th11::sdl;gestures.stick_x=std::isfinite(x)?std::clamp(x/32767.f,-1.f,1.f):0;gestures.stick_y=std::isfinite(y)?std::clamp(y/32767.f,-1.f,1.f):0;}
@@ -927,5 +934,5 @@ __attribute__((export_name("sdl_touch_gestures"))) void sdl_touch_gestures(unsig
 __attribute__((export_name("sdl_touch_mode"))) void sdl_touch_mode(unsigned mode){using namespace th11::sdl;if(gestures.set_mode(mode<=3?int(mode):0))if(app.session.battle)app.session.battle->player_input.movement.touch_mode=0;}
 __attribute__((export_name("sdl_touch_controls"))) void sdl_touch_controls(unsigned shoot,unsigned slow,unsigned bomb,unsigned escape,float x,float y){using namespace th11::sdl;gestures.controls(shoot!=0,slow!=0,bomb,escape,x,y);}
 __attribute__((export_name("sdl_loop_pause"))) void sdl_loop_pause(unsigned on){th11_loop_pause(on);}
-__attribute__((export_name("sdl_music_resource_changed"))) void sdl_music_resource_changed(){}
+__attribute__((export_name("sdl_music_resource_changed"))) void sdl_music_resource_changed(){th11::sdl::app.audio.resource_changed();}
 }

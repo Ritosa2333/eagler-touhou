@@ -72,13 +72,14 @@ public:
     std::unique_ptr<AsciiText> title_ascii;
     ScreenFades title_fades;
     TitleSelection menu_selection;
+    bool always_hitbox=false;
     bool interactive=false;
     GameSessionState state;
     PracticeState practice;
     std::string error;
 #ifdef TH11_MULTIPLAYER
     bool multiplayer_active=false;
-    bool multiplayer_always_hitbox=false;
+    bool multiplayer_always_hitbox=false,multiplayer_local_visibility=false;
     MultiplayerOptions multiplayer_options{};
     u32 multiplayer_frame=0;
     std::array<bool,3> multiplayer_pause_held{};

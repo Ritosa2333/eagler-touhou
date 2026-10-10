@@ -99,12 +99,13 @@ public:
     MultiplayerOptions mp_options{};
     std::array<std::unique_ptr<MultiplayerPilot>,3> pilots;
     bool mp_enabled=false,mp_failed=false;
-    bool mp_always_hitbox=false;
+    bool mp_always_hitbox=false,mp_local_visibility=false;
+    void mp_share_invincibility(unsigned,i32);
     bool mp_paused=false,mp_finished=false;
     // This owner is presentation only. Native Focus/HUD scripts never sample
     // or alter the shared combat RNG, Focus input, collision or shot state.
     AnmManager mp_presentation;
-    u32 mp_focus_marker=0;
+
     std::array<std::array<AnmVm,9>,3> mp_life_icons{};
     std::array<std::array<AnmVm,4>,3> mp_communication_icons{};
     std::array<unsigned,3> mp_communication_modes{};
@@ -146,12 +147,16 @@ public:
     bool multiplayer_bullet_collision(const BulletState&,u8&,i32&)override;
     bool multiplayer_item_player(ItemState&,ItemPlayer&)override;
     bool multiplayer_power_full()const override{return mp_all_power_full();}
+    unsigned multiplayer_item_copies(i32 type)const override{return !mp_enabled?1:type==1||type==4||type==10||type==11?mp_options.seat_count:type==7?mp_options.seat_count-1:1;}
     bool multiplayer_attract_players(const EnemyState& e)override{return mp_attract_players(e);}
 #endif
 
     GameBattle(GameSessionResources&,AnmManager&,GameEconomy&,SpellRecords&,SceneCompositor&,ClearRecords&);
     ~GameBattle()override;
     bool initialize(i32 character,i32 subtype,i32 difficulty);
+    bool always_hitbox=false;
+    AnmManager hitbox_presentation;u32 hitbox_marker=0;
+    bool draw_hitbox(AnmRenderer&,const PlayerFrame&);
     bool next_stage(GameResources&,u32);
     bool update(const std::function<bool()>& sample_input={});
     bool draw(AnmRenderer&,SceneDrawKind);
@@ -244,6 +249,11 @@ public:
     bool bomb_background_color(u32 color)override{if(!stage)return false;stage->state.tint=color;return true;}
     bool bomb_refund_power()override{bool changed=false;return item_rewards.add_power(10,changed)&&power_changed();}
     bool bomb_cancel_beam(Vec3,bool)override;
+    void bomb_invincibility(i32 frames)override{
+#ifdef TH11_MULTIPLAYER
+        if(mp_enabled)mp_share_invincibility(0,frames);
+#endif
+    }
     bool cancel_enemy_beam(const Vec3& p,float width,bool reward)override{return enemies.cancel_beam(p,width,reward);}
     bool spawn_item(i32 type,Vec3 p,u32 color,float angle,float speed) override {
         // Death subtracts power inside the player callback before spawning

@@ -2,11 +2,12 @@
 #include "EnemyState.hpp"
 #include "AnmRenderer.hpp"
 #include <cmath>
+#include <algorithm>
 namespace th11 {
 ItemManager::ItemManager(AnmResource& r,AnmEnvironment& a,ItemWorld& w,u16 id):storage(new ItemState[capacity]),resource(r),animations(a),world(w),file_id(id){reset();}
 void ItemManager::reset()noexcept{std::memset(storage.get(),0,sizeof(ItemState)*capacity);active_count=0;last_error=0;
 #ifdef TH11_MULTIPLAYER
-    multiplayer_targets.fill(-1);multiplayer_current_target=-1;
+    multiplayer_targets.fill(-1);multiplayer_current_target=-1;multiplayer_fan.fill(0);
 #endif
 }
 bool ItemManager::bind(ItemState& item,i32 script){
@@ -15,6 +16,22 @@ bool ItemManager::bind(ItemState& item,i32 script){
     if(item.vm.update(animations)<0){last_error=2;return false;}return true;
 }
 i32 ItemManager::spawn(i32 type,Vec3 position,u32 color,float angle,float speed){
+#ifdef TH11_MULTIPLAYER
+    const auto copies=world.multiplayer_world()&&!multiplayer_spawning_transfer?world.multiplayer_item_copies(type):1;
+    if(copies>1){
+        // TH08's batch pattern: separate each native item by 18 pixels, fan
+        // ordinary drops upward for twelve ticks, retain death's authored arc.
+        const float half=float(copies-1)*9,inset=half+6;const float center=std::clamp(position.x,-192+inset,192-inset);
+        const bool fan=angle==-1.5707963705062866f&&speed==2.2f;
+        for(unsigned n=0;n<copies;++n){auto origin=position;origin.x=center+18*(float(n)-float(copies-1)*.5f);ItemState* item=nullptr;
+            if(spawn_single(type,origin,color,angle,speed,&item)<0)return -2;
+            if(item&&fan){item->velocity.x=float(double(animations.script_rng.signed_unit())*.5);item->velocity.y=float(-double(speed)-double(animations.script_rng.unit())*.6);multiplayer_fan[item-storage.get()]=1;}
+        }return 0;
+    }
+#endif
+    return spawn_single(type,position,color,angle,speed);
+}
+i32 ItemManager::spawn_single(i32 type,Vec3 position,u32 color,float angle,float speed,ItemState** out){
     if(last_error)return -2;
     if(type==8){
         auto& item=storage[ordinary_capacity+cancel_cursor];++cancel_spawn_count;
@@ -29,9 +46,9 @@ i32 ItemManager::spawn(i32 type,Vec3 position,u32 color,float angle,float speed)
         cancel_cursor=(cancel_cursor+1)%cancel_capacity;return 0;
     }
     ItemState* selected=nullptr;for(u32 i=0;i<ordinary_capacity;++i)if(!storage[i].state){selected=&storage[i];break;}
-    if(!selected)return 0;auto& item=*selected;item.state=1;item.position=position;
+    if(!selected)return 0;if(out)*out=selected;auto& item=*selected;item.state=1;item.position=position;
 #ifdef TH11_MULTIPLAYER
-    multiplayer_targets[selected-storage.get()]=-1;
+    multiplayer_targets[selected-storage.get()]=-1;multiplayer_fan[selected-storage.get()]=0;
 #endif
     if(!(item.position.x>-192))item.position.x=-192;else if(item.position.x>192)item.position.x=192;
     const auto v=polar(angle,speed);item.velocity={v.x,v.y,0};item.lifetime.set(0,&animations.rate);item.reserved_44c=0;
@@ -71,6 +88,9 @@ bool ItemManager::update(){
         if(world.multiplayer_world()&&!world.multiplayer_item_player(item,player)){player=ItemPlayer{};player.state=2;}
 #endif
         if(item.state==5){item.delay=wrapping_sub(item.delay,1);if(item.delay<0&&!activate(item))return false;continue;}
+#ifdef TH11_MULTIPLAYER
+        if(i<ordinary_capacity&&multiplayer_fan[i]&&item.lifetime.current>=12){item.velocity.x=0;multiplayer_fan[i]=0;}
+#endif
         if(item.state==1){
             const bool fall=(player.state==2||player.state==4||((item.lifetime.current<40||player.communication<10000)&&player.position.y>=128))&&!player.force_attract;
             if(fall){move(item);item.velocity.y=float(double(item.velocity.y)+double(animations.rate)*double(.03f));
