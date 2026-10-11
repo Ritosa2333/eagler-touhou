@@ -12,7 +12,7 @@ import {build} from 'esbuild';
 import {JSDOM} from 'jsdom';
 import {authoredSourcesPlugin} from './authored-sources.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url));
-const pinned = name => execFileSync('git', ['show', `28bda8ca502b3d643eed3a5b705eb38d15769ad0:src/launcher/${name}`], {cwd: project, encoding: 'utf8'});
+const pinned = name => execFileSync('git', ['show', `8bdf6dbf4a81032f0725cc841b86d03e1465fe07:src/launcher/${name}`], {cwd: project, encoding: 'utf8'});
 const original = pinned('multiplayer-guide.mts');
 const originalBuilder = original.slice(original.indexOf('interface AuthoredGuideGroup'), original.indexOf('function isDialogElement'));
 let api, work, inputs;

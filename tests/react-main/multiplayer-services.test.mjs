@@ -440,3 +440,19 @@ test('TH11 owner cannot enable rollback and preserves zero prediction through 2P
   assert.equal(f.service.runtimeOptions().netplayPredictionLimit,0); f.service.dispose();
  }
 });
+
+test('rapid loadout changes ignore stale snapshots and cannot ready/start until latest socket echo',async()=>{
+ const f=await joinedRoom();const id=f.identity.lobbyClientId('th06mp'),socket=f.sockets[0];
+ for(let i=0;i<4;i++) f.service.changeLoadout(1);
+ assert.equal(f.service.getSnapshot().preferredLoadout,0); // TH06 wraps its four choices.
+ f.service.changeLoadout(1);
+ assert.equal(f.service.getSnapshot().preferredLoadout,1);
+ socket.message({type:'state',room:roomState(id,{seats:[{clientId:id,name:'A',loadout:0,ready:true},{clientId:'peer_1234',name:'B',loadout:1,ready:true}]})});
+ assert.equal(f.service.getSnapshot().preferredLoadout,1);assert.equal(f.service.getSnapshot().loadoutPending,true);
+ assert.equal(f.service.getSnapshot().ready,false);const before=socket.sent.length;
+ await f.service.toggleReady();f.service.start();assert.equal(socket.sent.length,before);
+ assert.throws(()=>f.service.runtimeOptions(),/roomStateInvalid/);
+ socket.message({type:'state',room:roomState(id,{seats:[{clientId:id,name:'A',loadout:1,ready:false},{clientId:'peer_1234',name:'B',loadout:1,ready:true}]})});
+ assert.equal(f.service.getSnapshot().loadoutPending,false);await f.service.toggleReady();
+ assert.equal(socket.sent.at(-1).type,'set-ready');assert.equal(socket.sent.at(-1).ready,true);f.service.dispose();
+});

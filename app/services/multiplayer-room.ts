@@ -30,6 +30,7 @@ export interface RoomOwnerSnapshot {
   ready: boolean;
   spectatorRequested: boolean;
   preferredLoadout: number;
+  loadoutPending: boolean;
   displayName: string;
   roomSettingsOpen: boolean;
   startSerial: number;
@@ -110,6 +111,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   let ownerController = new AbortController();
   let preparation: {epoch: number; controller: AbortController; task: Promise<void>} | null = null;
   let movementDecision: Promise<boolean> | null = null;
+  let pendingLoadout: {socket: RoomSocket | null; seat: number; index: number} | null = null;
   let reportedSocket: RoomSocket | null = null, reportedResourceKey = '', lastActivity = 0;
   let state = {fromDirectory: false, connected: false, directorySupported: false, controlModesSupported: false,
     seat: null as number | null, ready: false, spectatorRequested: false, preferredLoadout: 0, displayName: '',
@@ -127,9 +129,9 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       spectatorRequested: state.spectatorRequested, roomSettingsOpen: state.roomSettingsOpen});
   }
   function publish() {
-    const canStart = ownerLocal() && state.connected && state.ready && room?.phase === 'lobby' &&
+    const canStart = !pendingLoadout && ownerLocal() && state.connected && state.ready && room?.phase === 'lobby' &&
       Array.isArray(room.seats) && room.seats.slice(0, room.playerCount).every(seat => seat && !seat.offline && seat.ready);
-    snapshot = Object.freeze({...state, product, epoch, localClientId: clientId, room: room ? Object.freeze({...room}) : null, canStart: !!canStart,
+    snapshot = Object.freeze({...state, loadoutPending: !!pendingLoadout, product, epoch, localClientId: clientId, room: room ? Object.freeze({...room}) : null, canStart: !!canStart,
       preparation: state.preparation ? Object.freeze({...state.preparation}) : null});
     if (!disposed) {persist(); for (const listener of listeners) listener();}
   }
@@ -180,6 +182,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     return taskOwner.task;
   }
   function disconnect() {
+    pendingLoadout = null;
     ports.network.reset();
     if (reconnectTimer !== null) cancel(reconnectTimer);
     reconnectTimer = null; reconnectAttempt = 0;
@@ -212,8 +215,12 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     state.seat = normalized.localSeat;
     if (state.seat != null) {
       const seat = normalized.seats[state.seat]; if (!seat) return;
-      state.spectatorRequested = false; state.preferredLoadout = seat.loadout; state.ready = seat.ready;
+      if (pendingLoadout && (pendingLoadout.socket !== socket || pendingLoadout.seat !== state.seat || pendingLoadout.index === seat.loadout)) pendingLoadout = null;
+      state.spectatorRequested = false;
+      if (!pendingLoadout) state.preferredLoadout = seat.loadout;
+      state.ready = !pendingLoadout && seat.ready;
     } else {
+      pendingLoadout = null;
       if (normalized.localSpectator) state.spectatorRequested = true;
       state.ready = false; reportedResourceKey = '';
     }
@@ -392,17 +399,21 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     publish(); return result.name;
   }
   function changeLoadout(delta: number) {
+    if (state.seat != null && room?.phase !== 'lobby') return;
     const count = policy()?.loadouts.length || 0; if (!count || !product) throw new Error(ports.translate('multiplayer.loadoutEmpty'));
     state.preferredLoadout = (normalizePreferredLoadout(state.preferredLoadout, count) + delta + count) % count;
     ports.preferences.persistPreferredLoadout(product, state.preferredLoadout);
-    if (state.seat != null) send({type: 'set-loadout', loadout: state.preferredLoadout}); publish();
+    if (state.seat != null && send({type: 'set-loadout', loadout: state.preferredLoadout})) {
+      pendingLoadout = {socket, seat: state.seat, index: state.preferredLoadout}; state.ready = false;
+    }
+    publish();
   }
   async function toggleReady() {
-    if (state.seat == null || !state.connected || !room) return;
+    if (state.seat == null || !state.connected || !room || pendingLoadout) return;
     const ready = !state.ready, ownedEpoch = epoch;
     if (ready && ['cancelled', 'importing'].includes(state.preparation?.status || '')) return;
     if (ready && !await ensureMovementAllowed()) return;
-    if (!current(ownedEpoch) || state.seat == null || room.phase !== 'lobby') return;
+    if (!current(ownedEpoch) || state.seat == null || room.phase !== 'lobby' || pendingLoadout) return;
     if (send({type: 'set-ready', ready, ...input()})) {state.ready = ready; publish();}
   }
   function setRoomSettings(patch: Partial<Pick<MultiplayerRoomState, 'playerCount' | 'difficulty' | 'visibility' | 'disableCheatMovement' | 'challengeMode'>>) {
@@ -453,7 +464,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       ...(!timingPolicy.rollback || timing.sendPredictionLimit != null ? {predictionLimit: timingPolicy.predictionLimit} : {})});
   }
   function runtimeOptions(): MultiplayerRuntimeOptions {
-    if (!room || !product) throw new Error(ports.translate('multiplayer.roomStateInvalid'));
+    if (!room || !product || pendingLoadout) throw new Error(ports.translate('multiplayer.roomStateInvalid'));
     const config = policy()!, spectator = state.seat == null && state.spectatorRequested;
     if (!spectator && (state.seat == null || state.seat < 0 || state.seat >= room.playerCount)) throw new Error(ports.translate('multiplayer.roomStateInvalid'));
     const url = buildMultiplayerGameplayRelayUrl(ports.relayUrl(product), {product, roomCode: room.code,

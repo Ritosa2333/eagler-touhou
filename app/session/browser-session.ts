@@ -1,3 +1,4 @@
+import {createNetplayTelemetry} from '../../src/launcher/netplay-telemetry.mts';
 import {DEFAULT_PRODUCT_ID, DEFAULT_MULTIPLAYER_PRODUCT_ID, PRODUCT_IDS, PRODUCT_GAMES, createLocalProductManifest, productEnabledForBuild, gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct, type ProductId} from '../../src/contracts/product-catalog.mts';
 import type {HostManifest} from '../../src/contracts/host-manifest.mts';
 import {detectUiLocale, isUiMessageKey, UI_LOCALE_STORAGE_KEY, type UiLocale} from '../../src/launcher/i18n.mts';
@@ -109,6 +110,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   let replays: ReplayModel | null = null, files: ReturnType<typeof createFileActions> | null = null;
   let midi: ReturnType<typeof createMidiBridge> | null = null;
   let diagnostics: ReturnType<typeof createRuntimeDiagnostics> | null = null;
+  let telemetryTimer: number | null = null;
   let gameplayNetwork: ReturnType<typeof createGameplayNetwork> | null = null;
   let roomSession: RoomSession | null = null;
   let activeSettings: SettingsSnapshot | null = null;
@@ -440,6 +442,16 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
           adonisSupported: multiplayerConfigForProduct(product)?.inputTiming?.measuredStartup === true,
           replayViewer: snapshot.replayViewer, spectator: config?.netplaySpectator === true};
       }});
+    const telemetry = createNetplayTelemetry({origin: window.location.origin,
+      endpoint: () => metadata.getSnapshot().hostManifest?.shared.netplayTelemetry,
+      snapshot: () => {
+        const state = runtime?.getSnapshot(), token = runtime?.getMidiEventContext();
+        const net = gameplayNetwork?.readNativeSnapshot(), config = runtime?.getLauncherControlContext()?.options;
+        if (disposed || !state?.launched || !token || !net?.active || net.failed || net.frame == null || net.frame < 0 || net.frame === 4294967295) return null;
+        return {identity: token.document, product: activeSettings?.context.productId ?? DEFAULT_PRODUCT_ID,
+          players: config?.netplayPlayerCount ?? 2, spectator: net.spectator, transport: net.transport, peers: net.peerState?.peers ?? []};
+      }});
+    telemetryTimer = window.setInterval(() => {void telemetry.tick();}, 1000);
     midi = createMidiBridge({runtime, external: externalMidi, loadSynth: ports.loadSynth, webAudioAvailable: audio, translate: t,
       frame: element, window, document, playerOpen: () => snapshot.playerOpen});
     unsubscribeRuntime = runtime.subscribe(() => {const current = runtime!.getSnapshot(); if (calibration.getSnapshot().epoch !== (current.epoch ?? 0)) calibration.reset(current.epoch ?? 0); publish({runtime: current}); roomSession?.sync(); if (invalidatedSettingsEpoch !== null) queueMicrotask(retireChangedSettings);});
@@ -786,7 +798,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     setLocale(locale: UiLocale) {try {storage?.setItem(UI_LOCALE_STORAGE_KEY, locale);} catch {} requiredNavigation().setLocaleAddress(locale); if (!runtime?.getSnapshot().launched) settings.restoreLocalePreferences(settingsContext(settings.getSnapshot()!.context.productId, locale)); publish({locale}); feedback.refreshLocale(); externalMidi.refreshLocale(t); document.documentElement.lang = locale; document.documentElement.dataset.uiLocale = locale; window.dispatchEvent(new CustomEvent('eagler-ui-locale-change', {detail: {locale}})); appShellOwner.refreshLocale(); diagnostics?.refresh(); gameplayNetwork?.refresh(); const canonical = document.querySelector<HTMLLinkElement>('link[rel=canonical]'); if (canonical) canonical.href = new URL(locale === 'en' ? 'en.html' : './', canonical.href).href;},
     reportError,
     async dispose() {
-      if (disposed) return; disposed = true; launchAbort?.abort(); if (roomReturnTimer !== null) window.clearTimeout(roomReturnTimer); document.body.classList.remove('mp-room-returning'); for (const type of playerGestureTypes) document.removeEventListener(type, preventPlayerBrowserGesture, true); primaryTouchPointer.removeEventListener('change', syncTouchSettingsOrder); activityObserver.disconnect(); unsubscribeTouchActivity(); unsubscribeAppShell(); metadataRetry.dispose(); localPackageMaintenance.dispose(); appShellOwner.dispose(); document.body.classList.remove('app-shell-activation-pending'); unsubscribeRoom(); room.dispose(); networkDiagnostics.dispose(); metadata.dispose(); directory.dispose(); startup.dispose(); unsubscribeMetadata(); unbindPreferences();
+      if (disposed) return; disposed = true; if (telemetryTimer !== null) window.clearInterval(telemetryTimer); launchAbort?.abort(); if (roomReturnTimer !== null) window.clearTimeout(roomReturnTimer); document.body.classList.remove('mp-room-returning'); for (const type of playerGestureTypes) document.removeEventListener(type, preventPlayerBrowserGesture, true); primaryTouchPointer.removeEventListener('change', syncTouchSettingsOrder); activityObserver.disconnect(); unsubscribeTouchActivity(); unsubscribeAppShell(); metadataRetry.dispose(); localPackageMaintenance.dispose(); appShellOwner.dispose(); document.body.classList.remove('app-shell-activation-pending'); unsubscribeRoom(); room.dispose(); networkDiagnostics.dispose(); metadata.dispose(); directory.dispose(); startup.dispose(); unsubscribeMetadata(); unbindPreferences();
       document.removeEventListener('fullscreenchange', fullscreenChanged); document.removeEventListener('webkitfullscreenchange', fullscreenChanged); unsubscribeTitle(); titleNetwork.dispose(); calibration.dispose(); gameData.dispose(); transfer.dispose(); startupError.dispose(); decisions.dispose(); feedback.dispose(); replays?.dispose(); unsubscribeRuntime?.(); diagnostics?.dispose(); gameplayNetwork?.dispose(); midi?.dispose(); externalMidi.dispose();
       await nativeTouch.dispose();
       if (runtime && frame?.isConnected === false) runtime.disposeDetachedFrame();

@@ -56,7 +56,7 @@ OBSERVE = r"""
    return Array.from(new Uint32Array(r.Module.HEAPU8.buffer,p,count));
   };
   return {
-   epoch:Number(new URL(frame.src).searchParams.get('runtimeEpoch')),
+   epoch:Number(new URL(frame.src,location.href).searchParams.get('runtimeEpoch')),
    url:frame.src, active:r.__th11Runtime?.app===1,
    net:words('th11_mp_status',24), game:words('th11_mp_game_status',56),
    calibration:words('th11_mp_calibration_status',32),
@@ -229,12 +229,16 @@ def arguments() -> argparse.Namespace:
     p.add_argument("--challenge", action="store_true", help="Enable the original authoritative room Challenge toggle")
     p.add_argument("--restart", action="store_true")
     p.add_argument("--restart-menu", action="store_true", help="Use the native pause Restart option instead of R")
-    p.add_argument("--return-menu", action="store_true", help="Verify native pause Return ends the session and leaves the room")
+    p.add_argument("--loadout-check", action="store_true", help="Rapidly select Marisa B through the actual room controls and verify every native seat")
+    p.add_argument("--return-menu", action="store_true", help="Verify native pause Return ends the session and returns to the same room")
     p.add_argument("--disconnect", action="store_true")
+    p.add_argument("--browser-back", action="store_true", help="Return P2 to its room with real browser Back before checking P1's connection return")
     p.add_argument("--replay", action="store_true")
     p.add_argument("--prepare-only", action="store_true")
     p.add_argument("--startup-only", action="store_true")
     a = p.parse_args()
+    if a.browser_back and not a.disconnect:
+        p.error("--browser-back needs --disconnect to check the remaining player's return")
     if a.replay and not a.disconnect:
         p.error("--replay needs --disconnect so the standard return button persists and closes this run")
     if a.restart and not a.spectator:
@@ -520,22 +524,27 @@ def main() -> int:
         register_browser(browser, "P1" if a.browser_isolation == "process" else "shared")
         seed = browser.new_context(service_workers="block")
         host_manifest = seed.request.get(urljoin(url, "host-manifest.json")).json()
+        package_descriptor = seed.request.get(urljoin(url, "th11.package.json")).json() if not host_manifest["games"]["th11"]["gameData"].get("source") else None
         seed.close()
         game = host_manifest["games"]["th11"]
         assert game.get("multiplayerRuntime"), "main Host Manifest must declare TH11 MP; no test fallback is allowed"
         assert host_manifest["shared"].get("netplayRelay") == relay_url, host_manifest["shared"]
         assert game["gameData"]["bytes"] == data_identity["bytes"]
         assert game["gameData"]["sha256"] == data_identity["sha256"]
-        assert game["gameData"].get("source"), "Use a real hosted DATA declaration"
+        data_source = game["gameData"].get("source")
+        if not data_source:
+            declaration = package_descriptor["files"]["game-data"]
+            assert declaration["bytes"] == data_identity["bytes"] and declaration["sha256"] == data_identity["sha256"]
+            data_source = declaration["source"]
         runtime_base = urljoin(url, game["multiplayerRuntime"]).rsplit("/", 1)[0] + "/"
         runtime_prefix = urlparse(runtime_base).path
-        sources = {
-            urljoin(url, game["gameData"]["source"]): data_file,
-            urljoin(url, host_manifest["shared"]["vanillaFont"]): font,
-            urljoin(url, host_manifest["shared"]["unicodeFont"]): unicode_font,
-        }
+        sources = {urljoin(url, data_source): data_file}
+        for resource_key, file in [("vanillaFont", font), ("unicodeFont", unicode_font)]:
+            if host_manifest["shared"].get(resource_key):sources[urljoin(url, host_manifest["shared"][resource_key])] = file
+        if package_descriptor:
+            for declaration in package_descriptor["files"].values():
+                if declaration.get("target") == "/unifont.otf":sources[urljoin(url, declaration["source"])] = unicode_font
         sources.update({urljoin(runtime_base, name): package / name for name in identities})
-        sources[urljoin(runtime_base, "runtime-files.json")] = package / "runtime-files.json"
         report["hostManifest"] = host_manifest
         for resource_url, file in sources.items():
             began = stamp()
@@ -657,6 +666,13 @@ def main() -> int:
             trace(label + ": opening the real product card and multiplayer directory")
             page.wait_for_function("window.__eaglerBoot?.done===true", timeout=60000)
             dismiss_decisions(page)
+            # Production hosts hide diagnostics by default. Enable the actual
+            # user setting so the calibration report remains accessible.
+            if page.locator("#runtimeDiagnosticsToggle").get_attribute("aria-checked") != "true":
+                page.locator("#mastheadMenuToggle").click()
+                page.locator("#runtimeDiagnosticsToggle").click()
+                if page.locator("#mastheadMenuToggle").get_attribute("aria-expanded") == "true":
+                    page.locator("#mastheadMenuToggle").click()
             page.locator('[data-product="th11mp"]').click()
             page.wait_for_url("**/lobby.html?game=th11mp", timeout=30000)
             page.wait_for_function("!document.querySelector('#createButton')?.disabled", timeout=30000)
@@ -760,6 +776,18 @@ def main() -> int:
             assert page.locator("#mpRollbackToggle").is_disabled()
             page.locator("#mpReady").click()
         wait_for(lambda: host.locator("#mpStartGame").is_enabled(), "Room readiness did not permit start")
+        if a.loadout_check:
+            for page in live:
+                page.locator(".mp-seat-edit:visible").click()
+                current = page.evaluate("Number(localStorage.getItem('eagler-touhou-th11mp-loadout-v1') || 0)")
+                for _ in range((4 - current) % 6):page.locator("#mpLoadoutNextSeat").click()
+                page.locator("#mpRoomPanelClose").click()
+                page.wait_for_function("!document.querySelector('#mpRoomPanel').open")
+            for page in live:
+                page.wait_for_function("!document.querySelector('#mpReady').disabled")
+                if not page.locator("#mpReady").evaluate("node=>node.getAttribute('aria-pressed')==='true'"):page.locator("#mpReady").click()
+            wait_for(lambda: not host.locator("#mpStartGame").is_disabled(), "Selected loadout did not receive room confirmation")
+
         trace("Starting the real room; observing per-participant resource delivery and native measurement")
         report["startupBeganAt"] = round(time.time() * 1000)
         host.locator("#mpStartGame").click()
@@ -786,6 +814,12 @@ def main() -> int:
             return states if all(s and s["calibration"][1] == 5 and s["net"][3] != UINT32_MAX and s["net"][3] >= 60 for s in states) else None
 
         started = wait_for(measured, "Measured frame zero did not start", 180)
+        if a.loadout_check:
+            for state in started:
+                for seat in range(a.players):
+                    assert state["game"][8+seat*16+11] == 4 and state["game"][8+seat*16+5] == 80, state
+            report["rapidLoadoutConfirmed"] = "every room seat and native SHT is Marisa B"
+
         trace("Standard frontend connection measurement committed; native gameplay running")
         for s in started:
             check_runtime(s)
@@ -928,8 +962,18 @@ def main() -> int:
             for seat, page in enumerate(live):
                 key(page, "KeyZ", False)
                 key(page, "ArrowLeft" if seat % 2 == 0 else "ArrowRight", False)
-            contexts[1].close()
-            trace("Closed P2's real BrowserContext; awaiting standard frontend return")
+            if a.browser_back:
+                p2_before = live[1].evaluate(IDENTITY)
+                live[1].go_back()
+                wait_for(lambda: live[1].evaluate(IDENTITY)["roomVisible"] and not live[1].locator("#player").evaluate("n=>n.classList.contains('open')"), "Browser Back did not return P2 to its room")
+                p2_after = live[1].evaluate(IDENTITY)
+                assert all(p2_after[k] == p2_before[k] for k in ("member", "client")), p2_after
+                assert p2_after["room"]["room"]["code"] == room and p2_after["room"]["seat"] == 1, p2_after
+                report["browserBackToRoom"] = True
+                trace("P2 browser Back retained its room; awaiting P1's connection return")
+            else:
+                contexts[1].close()
+                trace("Closed P2's real BrowserContext; awaiting standard frontend return")
             wait_for(lambda: host.locator("#netplayConnectionReturn").is_visible(), "A real peer loss did not expose the standard return button", 45)
             # The standard transport window exposes Return while native input
             # timeout detection is still pending. Observe the actual failure
@@ -948,6 +992,10 @@ def main() -> int:
             assert after_identity["client"] == before_identity["client"]
             assert after_identity["room"]["room"]["code"] == room and after_identity["room"]["seat"] == 0
             assert after_identity["roomVisible"] and "0" in after_identity["me"], after_identity
+            assert host.evaluate("""() => {
+              const token=new URL(location.href).searchParams.get('j');
+              return !!token&&JSON.parse(atob(token.replace(/-/g,'+').replace(/_/g,'/'))).f===true;
+            }"""), host.url
             report["disconnect"] = {"nativeError": failed["error"], "frozenFrame": frozen,
                 "standardReturn": True, "sameMember": True, "sameClient": True, "sameRoom": True, "sameSeat": True}
             screenshot(host, "standard-returned-room")
@@ -1016,24 +1064,37 @@ def main() -> int:
                 report["returnCandidates"] = [snapshot(page) for page in live]
                 report["returnIdentities"] = [page.evaluate(IDENTITY) for page in live]
                 return all(not page.locator("#player").evaluate("node=>node.classList.contains('open')")
-                    and identity["room"] is None for page, identity in zip(live, report["returnIdentities"]))
-            wait_for(returned, "Native Return did not end both runtimes and leave both room seats", 45)
+                    and identity["room"] is not None and identity["roomVisible"] for page, identity in zip(live, report["returnIdentities"]))
+            wait_for(returned, "Native Return did not end both runtimes and return to the room", 45)
             host.keyboard.up("KeyZ")
             report["nativeReturnToMenu"] = [page.evaluate(IDENTITY) for page in live]
             report["returnDirectorySnapshots"] = []
             for page in live:
-                assert not page.evaluate(IDENTITY)["roomVisible"]
+                assert page.evaluate(IDENTITY)["roomVisible"]
                 member = page.evaluate(IDENTITY)["member"]
                 reply = page.evaluate("""({relay,member})=>new Promise((resolve,reject)=>{
                   const url=new URL(relay);url.searchParams.set('directory','1');url.searchParams.set('member',member);
                   const socket=new WebSocket(url),timer=setTimeout(()=>{socket.close();reject(Error('Room membership still occupied'));},10000);
-                  socket.onmessage=event=>{const value=JSON.parse(event.data);if(value.type==='directory'&&value.mine===null){clearTimeout(timer);socket.close();resolve(value);}};
+                  socket.onmessage=event=>{const value=JSON.parse(event.data);if(value.type==='directory'&&value.mine!==null){clearTimeout(timer);socket.close();resolve(value);}};
                   socket.onerror=()=>{clearTimeout(timer);reject(Error('Directory verification failed'));};
                 })""", {"relay": relay_url, "member": member})
                 report["returnDirectorySnapshots"].append({"mine": reply["mine"], "version": reply["version"]})
-            report["returnRoomMembershipReleased"] = True
+            report["returnRoomMembershipRetained"] = True
             screenshot(host, "standard-native-return")
-            trace("Native Return ended both players and released both room identities")
+            trace("Native Return ended both players and retained the same waiting room")
+            # The next front-end Back leaves this room for its directory.
+            # Losing the directory marker on native exit used to reveal the
+            # legacy options panel instead, despite retaining membership.
+            for page in live:
+                assert page.evaluate("""() => {
+                  const token=new URL(location.href).searchParams.get('j');
+                  return !!token&&JSON.parse(atob(token.replace(/-/g,'+').replace(/_/g,'/'))).f===true;
+                }"""), page.url
+                page.locator("#mpLeaveRoom").click()
+                page.wait_for_url("**/lobby.html?game=th11mp", timeout=15000)
+                page.wait_for_function("!document.querySelector('#createButton')?.disabled", timeout=15000)
+            report["frontEndRoomBackToDirectory"] = True
+            screenshot(host, "standard-return-directory")
 
         assert not report["errors"], report["errors"]
         report["passed"] = True

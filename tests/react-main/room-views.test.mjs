@@ -25,7 +25,7 @@ const defaultContext = {launched: false, th09NetworkOverlayOpen: false, launchSt
 before(async () => {
   env = installMountedDom(); React = await import('react'); ({createRoot} = await import('react-dom/client')); ({MemoryRouter} = await import('react-router'));
   for (const file of ['src/launcher/i18n.mts', 'src/contracts/product-catalog.mts']) assert.equal(pinnedUiAuthorityText(readFileSync(resolve(project, file), 'utf8')), pinned(file), `Pinned authority changed: ${file}`);
-  originalHTML = pinned('public/index.html'); const mainSource = execFileSync('git', ['show', '28bda8ca502b3d643eed3a5b705eb38d15769ad0:src/launcher/app.mts'], {cwd: project, encoding: 'utf8'});
+  originalHTML = pinned('public/index.html'); const mainSource = execFileSync('git', ['show', '8bdf6dbf4a81032f0725cc841b86d03e1465fe07:src/launcher/app.mts'], {cwd: project, encoding: 'utf8'});
   // Retain origin/main's separately accepted editable-name block with main's
   // updated room timing renderer. Both inputs are committed legacy authorities.
   const nameBlock = text => text.slice(text.indexOf('  const nameInput = $("#mpDisplayName");', text.indexOf('function renderMpRoom()')), text.indexOf('  const spectator = $("#mpUnseatedNote");', text.indexOf('function renderMpRoom()')));
@@ -137,7 +137,7 @@ function baseline(f, {panel = null, context = defaultContext} = {}) {
     mpRoomOwnerLocal: () => room.synced === true && snapshot.seat === 0, mpLoadouts: () => config.loadouts, mpLoadoutLabel: loadout => t(f.locale, loadout.labelKey),
     mpNormalizeLoadoutIndex: value => ((Number(value) || 0) % config.loadouts.length + config.loadouts.length) % config.loadouts.length,
     mpPlayerCounts: () => config.playerCounts, mpDifficultyMax: () => config.difficulties.length - 1, mpInputTimingPolicy: () => config.inputTiming,
-    mpAdonisSupported: () => config.inputTiming?.measuredStartup === true, mpRollbackSupported: () => config.inputTiming?.measuredStartup === true && owners.multiplayerInputTimingPolicy(config).rollback, mpInputTimingRecommendation: () => f.service.timingRecommendation(), mpRollbackEnabled: snapshot.rollbackEnabled,
+    mpAdonisSupported: () => config.inputTiming?.measuredStartup === true, mpRollbackSupported: () => config.inputTiming?.measuredStartup === true && owners.multiplayerInputTimingPolicy(config).rollback, mpInputTimingRecommendation: () => f.service.timingRecommendation(), mpRollbackEnabled: snapshot.rollbackEnabled, mpPendingLoadout: snapshot.loadoutPending ? {index:snapshot.preferredLoadout} : null,
     multiplayerDisplayInitial: owners.multiplayerDisplayInitial, touchMovementUsesJoystick: owners.touchMovementUsesJoystick,
     networkMiB: value => `${(Math.max(0, Number(value) || 0) / 1048576).toFixed(1)} MiB`, mpGameCheckInFlight: snapshot.checkBusy, mpLaunchInFlight: snapshot.launchBusy,
     updateMpQuickChat() {}, mpPersistRoomState() {}, mpAnimateSeatContents() {}, syncCustomSelect() {},
