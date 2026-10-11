@@ -21,7 +21,6 @@ const DEFAULT_LANGUAGES = Object.freeze(["ja", "lang_zh-hans", "lang_en"]);
 export async function resolveHostFrontend({ projectRoot, siteUrl, environment = process.env, serve = false }) {
   const kind = frontendSelection(environment);
   const url = normalizeSiteUrl(siteUrl);
-  if (kind === "main") return Object.freeze({ kind, siteUrl: url, artifact: null });
   const artifact = await readReactFrontendArtifact({
     directory: reactFrontendArtifactDirectory({ project: projectRoot, environment }),
     expectedMountPath: environment.EAGLER_REACT_MOUNT_PATH,
