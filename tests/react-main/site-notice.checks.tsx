@@ -56,11 +56,11 @@ export async function runChecks(repo: string) {
     await run(); cases.push({name, status: 'passed'}); console.log(`PASS ${name}`);
   }
   const originalHtml = execFileSync('git', ['show', `${pinnedMain}:public/index.html`], {cwd: repo, encoding: 'utf8'});
-  await check('shared content policy preserves pinned bytes, main lifecycle and public export identities', () => {
+  await check('shared parser preserves pinned bytes with the requested four-second lifespan', () => {
     const pinned = execFileSync('git', ['show', `${pinnedMain}:src/launcher/site-notice.mts`], {cwd: repo, encoding: 'utf8'});
     const content = readFileSync(join(repo, 'src/launcher/site-notice-content.mts'), 'utf8').replaceAll('\r\n', '\n');
     assert.equal(content.replace('export function fallbackBaseUrl()', 'function fallbackBaseUrl()'),
-      pinned.slice(0, pinned.indexOf('function renderSiteNoticeText(')));
+      pinned.slice(0, pinned.indexOf('function renderSiteNoticeText(')).replace('15_000', '4_000'));
     for (const name of ['parseSiteNoticeText', 'siteNoticeBrandAsset', 'SITE_NOTICE_DURATION_MS', 'SITE_NOTICE_STORAGE_KEY', 'SITE_NOTICE_DISMISSED_KEY'] as const) {
       assert.equal(reactPolicy[name], contentPolicy[name]);
     }
@@ -133,8 +133,8 @@ export async function runChecks(repo: string) {
       return new Response('\uFEFF[FAQ](faq.html) [GitHub](https://github.com/test)\n<script>alert(1)</script> [bad](javascript:alert(1))');
     }});
   state.connect();
-  await check('real NOTICE.txt fetch, BOM trim, parser and 15-second lifespan', async () => {
-    assert.equal(await state.load(), true); assert.equal(state.getSnapshot().durationMs, 15_000);
+  await check('real NOTICE.txt fetch, BOM trim, parser and four-second lifespan', async () => {
+    assert.equal(await state.load(), true); assert.equal(state.getSnapshot().durationMs, 4_000);
     assert.equal(state.getSnapshot().lines.length, 2);
     assert.equal(state.getSnapshot().lines[1][0].type, 'text');
     assert.equal(state.getSnapshot().optOutVisible, false);
@@ -151,14 +151,14 @@ export async function runChecks(repo: string) {
   await check('scroll hiding preserves running lifespan and upward scroll restores', () => {
     state.rememberScroll(scroll, 0); state.scroll(scroll, 30);
     assert.equal(state.getSnapshot().scrollHidden, true);
-    assert.ok([...timer.timers.values()].some(item => item.delay === 15_000));
+    assert.ok([...timer.timers.values()].some(item => item.delay === 4_000));
     state.scroll(scroll, 24); assert.equal(state.getSnapshot().scrollHidden, false);
   });
   await check('closing a scroll-hidden notice is immediate', () => {
     state.scroll(scroll, 40); state.close(); assert.equal(state.getSnapshot().hidden, true);
   });
   await check('automatic expiration completes original animated dismissal', async () => {
-    await state.load(); timer.fire(15_000); assert.equal(state.getSnapshot().closing, true);
+    await state.load(); timer.fire(4_000); assert.equal(state.getSnapshot().closing, true);
     timer.fire(220); assert.equal(state.getSnapshot().hidden, true);
   });
   await check('permanent opt-out persists and prevents additional fetches', async () => {
@@ -169,7 +169,16 @@ export async function runChecks(repo: string) {
     const before = fetches; prefs.toggleNotice(); await Promise.resolve(); await Promise.resolve();
     assert.equal(fetches, before + 1); state.destroy(); assert.equal(timer.timers.size, 0);
   });
-  for (const operation of ['newer', 'close', 'disable', 'destroy']) {
+  await check('leaving Launcher hides the banner and cancels its lifespan without dismissal', async () => {
+    const preference = createSitePreferencesModel({storage: storage()}), time = clock(); let calls = 0;
+    const owner = createSiteNoticeState(preference, {...time, fetchImpl: async () => {calls++; return new Response('Notice');}});
+    owner.connect(); await owner.load(); owner.setVisible(false);
+    assert.equal(owner.getSnapshot().hidden, true); assert.equal(time.timers.size, 0);
+    assert.equal(preference.getSnapshot().noticeDismissed, false);
+    assert.equal(owner.isEnabled(), true); assert.equal(await owner.load(), false); assert.equal(calls, 1);
+    owner.setVisible(true); assert.equal(await owner.load(), true); owner.destroy();
+  });
+  for (const operation of ['newer', 'close', 'disable', 'destroy', 'leave-launcher']) {
     await check(`pending request invalidation: ${operation}`, async () => {
       const preference = createSitePreferencesModel({storage: storage()}), time = clock();
       const pending: ((response: Response) => void)[] = [];
@@ -180,6 +189,7 @@ export async function runChecks(repo: string) {
       if (operation === 'close') owner.close();
       if (operation === 'disable') preference.toggleNotice();
       if (operation === 'destroy') owner.destroy();
+      if (operation === 'leave-launcher') owner.setVisible(false);
       pending[0](new Response('obsolete')); assert.equal(await first, false);
       if (newer) {
         pending[1](new Response('current')); assert.equal(await newer, true);
@@ -212,6 +222,7 @@ export async function runChecks(repo: string) {
   const legacy = pinnedNotice.createSiteNoticeController({documentObj: original.window.document, windowObj: original.window,
     storage: storage(), fetchImpl: async () => new Response(notice), ...legacyTimer, matchMediaImpl: () => ({matches: false})});
   await legacy.load();
+  original.window.document.getElementById('siteNotice')!.style.setProperty('--site-notice-duration', '4000ms');
   const browserPrefs = createSitePreferencesModel({storage: storage()});
   const detach = bindSitePreferencesToDocument(browserPrefs), componentTimer = clock();
   const environment = {...componentTimer, fetchImpl: async () => new Response(notice), baseUrl: 'https://test.example/', matchMediaImpl: () => ({matches: false})};

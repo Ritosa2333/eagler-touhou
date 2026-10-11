@@ -1,4 +1,4 @@
-export const SITE_NOTICE_DURATION_MS = 15_000;
+export const SITE_NOTICE_DURATION_MS = 4_000;
 export const SITE_NOTICE_STORAGE_KEY = "eagler-touhou-site-notice-enabled-v1";
 export const SITE_NOTICE_DISMISSED_KEY = "eagler-touhou-site-notice-dismissed-v1";
 

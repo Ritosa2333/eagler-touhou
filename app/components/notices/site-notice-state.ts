@@ -29,7 +29,7 @@ export function createSiteNoticeState(preferences: SitePreferencesModel, environ
   const listeners = new Set<() => void>();
   let snapshot: SiteNoticeSnapshot = Object.freeze({lines: [], hidden: true, closing: false,
     scrollHidden: false, optOutVisible: false, durationMs: null});
-  let active = false, requestSerial = 0;
+  let active = false, visible = true, requestSerial = 0;
   let timer: number | null = null, closeTimer: number | null = null;
   let unsubscribePreferences: (() => void) | null = null;
   const scrollPositions = new WeakMap<object, number>();
@@ -55,13 +55,13 @@ export function createSiteNoticeState(preferences: SitePreferencesModel, environ
     }, 220);
   }
   async function load(): Promise<boolean> {
-    if (!active || !preferences.getSnapshot().noticeEnabled) return false;
+    if (!active || !visible || !preferences.getSnapshot().noticeEnabled) return false;
     const request = ++requestSerial;
     try {
       const response = await (environment.fetchImpl ?? globalThis.fetch)('NOTICE.txt', {cache: 'no-store'});
       if (!response.ok) return false;
       const text = (await response.text()).replace(/^\uFEFF/, '').trim();
-      if (!text || !active || !preferences.getSnapshot().noticeEnabled || request !== requestSerial) return false;
+      if (!text || !active || !visible || !preferences.getSnapshot().noticeEnabled || request !== requestSerial) return false;
       const baseUrl = environment.baseUrl ?? globalThis.location?.href ?? 'https://notice.invalid/';
       const lines = parseSiteNoticeText(text, baseUrl);
       clear(timer); clear(closeTimer); closeTimer = null;
@@ -103,6 +103,13 @@ export function createSiteNoticeState(preferences: SitePreferencesModel, environ
       return destroy;
     },
     load, close, scroll, rememberScroll, destroy,
+    setVisible(value: boolean) {
+      visible = value;
+      if (value) return;
+      ++requestSerial;
+      clear(timer); clear(closeTimer); timer = null; closeTimer = null;
+      publish({hidden: true, closing: false, scrollHidden: false});
+    },
     dismiss() {preferences.dismissNotice(); close();},
     optOut() {preferences.setNoticeEnabled(false);},
     isEnabled: () => preferences.getSnapshot().noticeEnabled,
