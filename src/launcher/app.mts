@@ -1646,11 +1646,9 @@ function bindGameKeyWindow(win: RuntimeWindow | null) {
 }
 
 function handleRuntimeThpracMenu(event: Event) {
-  thpracMenuOpen = record(record(event)?.detail)?.open === true;
-  touchThpracFunctionKeys.hidden = !thpracMenuOpen;
-  const enemyInvincibleKey = touchThpracFunctionKeys.querySelector<HTMLElement>('[data-thprac-key="U"]');
-  const practiceProduct = PRODUCT_GAMES[state.game];
-  if (enemyInvincibleKey) enemyInvincibleKey.hidden = !("thpracExtraFunctionKeys" in practiceProduct && practiceProduct.thpracExtraFunctionKeys.includes("U"));
+  // Runtime Backspace state no longer controls an outer function-key drawer.
+  // The single mobile entry owns the visibility of native collapsible panels.
+  void event;
 }
 
 // The external device only replaces the built-in synth once access is granted,
@@ -4824,9 +4822,10 @@ function render({ updateLibrary = true } = {}) {
   syncDirectTouchSurfaceVisibility();
   renderTouchActionState();
   const thpracControlsVisible = !spectatorRuntime && thpracTouchControlsVisible();
-  touchThpracTab.hidden = !thpracControlsVisible;
+  touchThpracTab.hidden = true;
   touchThpracMenu.hidden = !thpracControlsVisible;
-  touchThpracFunctionKeys.hidden = !thpracMenuOpen;
+  touchThpracFunctionKeys.hidden = true;
+  $("#touchThpracBackspace").setAttribute("aria-expanded", String(thpracMenuOpen));
   const enemyInvincibleKey = touchThpracFunctionKeys.querySelector<HTMLElement>('[data-thprac-key="U"]');
   const practiceProduct = PRODUCT_GAMES[state.game];
   if (enemyInvincibleKey) enemyInvincibleKey.hidden = !("thpracExtraFunctionKeys" in practiceProduct && practiceProduct.thpracExtraFunctionKeys.includes("U"));
@@ -5220,8 +5219,12 @@ async function syncTouchControls() {
 }
 function pushTouchControlsLive() {
   // Held-key Fire is delivered separately; do not also send its automatic pulse stream.
-  const controls = PRODUCT_GAMES[state.game].touchFire.mode === "held-key"
-    ? { ...touchControls, fireEnabled: false } : touchControls;
+  const controls = {
+    ...touchControls,
+    fireEnabled: PRODUCT_GAMES[state.game].touchFire.mode === "held-key" ? false : touchControls.fireEnabled,
+    thpracMobilePanelsEnabled: !state.netplay.spectator && !!state.options.touchEnabled && thpracTouchControlsVisible(),
+    thpracMobilePanelsVisible: thpracMenuOpen && !touchLayoutEditing,
+  };
   return postRuntimeTouchControls(touchRuntimeMessageContext(), controls, state.options.touchSensitivity);
 }
 function refocusGameIfNeeded() {
@@ -9363,12 +9366,18 @@ $("#touchThpracBackspace").addEventListener("pointerdown", event => {
   if (touchLayoutEditing || !state.launched) return;
   event.preventDefault();
   event.stopPropagation();
-  pulseThpracKey("Backspace");
+  toggleMobileThpracPanels();
 });
 $("#touchThpracBackspace").addEventListener("click", event => {
   if (event.detail !== 0 || touchLayoutEditing || !state.launched) return;
-  pulseThpracKey("Backspace");
+  toggleMobileThpracPanels();
 });
+function toggleMobileThpracPanels() {
+  thpracMenuOpen = !thpracMenuOpen;
+  $("#touchThpracBackspace").setAttribute("aria-expanded", String(thpracMenuOpen));
+  pushTouchControlsLive();
+  refocusGameIfNeeded();
+}
 document.querySelectorAll<HTMLElement>("[data-thprac-key]").forEach(button => {
   button.addEventListener("pointerdown", event => {
     if (touchLayoutEditing || !state.launched) return;

@@ -24,6 +24,8 @@ export interface TouchRuntimeContext {
 }
 
 export interface TouchControlsSnapshot {
+  thpracMobilePanelsEnabled?: boolean;
+  thpracMobilePanelsVisible?: boolean;
   fireEnabled: boolean;
   focusEnabled: boolean;
   bombSerial: number;

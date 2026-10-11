@@ -131,6 +131,22 @@ This status is extraction evidence, not a Product Catalog support declaration.
 <!-- knowledge-id: K-THPRAC-002 -->
 ## Invariants and pitfalls
 
+### Mobile group and assisted Replay policy
+
+The mobile Launcher exposes one `作弊和高级设置` button. Its existing
+`touch-controls` payload carries `thpracMobilePanelsEnabled` and
+`thpracMobilePanelsVisible`; it does not simulate Backspace, F12 or Tab to open
+the group. Native windows retain their bodies and title-owned actions, with
+collapsed touchable headers supplied by common `PracticeMobilePanels.hpp`.
+Key display/tool/result presentation may collapse, but their authoritative
+counters and gameplay effects must continue. Desktop keyboard behavior and
+window bodies remain unchanged. Missing fields select desktop compatibility.
+
+Allow assisted recordings to use the ordinary Replay save path, as in
+TH06–TH08. Preserve the assisted owner and custom Practice metadata; do not
+guarantee deterministic playback, inject cheats during playback, or deliberately
+corrupt the Replay. Pause save availability and the final serializer must agree.
+
 - UI visibility is not semantic integration proof.
 - Vanilla Pause remains the vanilla owner; THPrac must not create a competing Pause layer.
 - Retry/restart replaces the old owner and generation; stale `isInReplay` or candidate state must not poison fresh Practice.
@@ -151,6 +167,20 @@ Launch popups, UI-only harnesses, host bypasses and fake character state are not
   These are reference sources, not files shipped inside this repository.
 
 ## Verification
+
+For TH06/TH07 Emscripten releases, `TH_EXTERNAL_ASSETS=ON` is a source-only
+build, not a deployable Launcher Runtime. It omits `loadPackage` and cannot
+mount the Launcher-provided DATA even though WASM and the Launcher boot.
+Build with `TH_EXTERNAL_ASSETS=OFF`, `TH_WEB_MUSIC=BASE`, and the existing
+shared-font policy. Keep original assets private/local; do not publish them
+as part of a code-only repair. Before freezing a Runtime generation, use
+`lib/runtime-data-layout.mjs::extractGameDataLayout` to match the published
+DATA layout and byte count, and verify the generated DATA hash against the
+unchanged package. Reject missing preload metadata, rather than bypassing it.
+Verify both titles through the real managed-DATA Launcher path: native archives
+and shared fonts mounted, no startup alert, title menu rendered, and a normal
+run entered. Launcher-only boot and a harness that manually installs individual
+archive files do not prove that production DATA preloading works.
 
 1. Verify the hook/source boundary and ordinary-build OFF behavior.
 2. Enter fresh Practice, select character/shot, reach original stage-select and open the real overlay.
