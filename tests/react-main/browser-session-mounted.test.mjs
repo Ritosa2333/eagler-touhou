@@ -861,11 +861,11 @@ test('actual BrowserLauncher: import-only Start → invalid file → valid canon
   assert.equal(node('#decisionDialog').open, false); assert.equal(playerOpen(), false); assert.equal(f.navigations.length, 0);
   await selectImport(new NativeFile([], 'empty.zip'));
   assert.equal(node('#gameDataImportWindow').hidden, false); assert.equal(node('#gameDataImportWindow').getAttribute('aria-busy'), 'false');
-  assert.equal((await api.readCurrentPackageGeneration('th06')).generation, null, 'invalid input cannot install a partial current generation');
+  await React.act(async () => {assert.equal((await api.readCurrentPackageGeneration('th06')).generation, null, 'invalid input cannot install a partial current generation');});
   await selectImport(importPackageFile());
   await until(() => commands().includes('launch'), 'validated canonical import resumes the original launch');
   assert.equal(playerOpen(), true); assert.equal(node('#decisionDialog').open, false); assert.equal(f.order.includes('fullscreen-enter'), false);
-  const current = await api.readCurrentPackageGeneration('th06');
+  let current; await React.act(async () => {current = await api.readCurrentPackageGeneration('th06');});
   assert.equal(current.generation.descriptor.revision, 'synthetic-import-r1');
   assert.deepEqual(f.dataReads, [[1, 2, 3]], 'actual managed DATA callback reads the installed canonical object');
   assert.deepEqual(f.nativeWrites.map(item => item.path).sort(), ['/msgothic.ttc', '/unifont.otf']);
@@ -1017,7 +1017,7 @@ test('actual BrowserLauncher: canonical installed hint preserves session-only la
   await click('#gamePackageImport'); await until(() => !node('#gameDataImportWindow').hidden, 'manual canonical import window opens');
   await selectImport(importPackageFile());
   await until(() => node('#gameDataImportWindow').hidden, 'manual import completes without launch');
-  assert.equal((await api.readCurrentPackageGeneration('th06')).generation.descriptor.revision, 'synthetic-import-r1');
+  await React.act(async () => {assert.equal((await api.readCurrentPackageGeneration('th06')).generation.descriptor.revision, 'synthetic-import-r1');});
   await tick();
   assert.equal(node('#languageSelect').value, 'en'); assert.equal(node('#focusHitboxToggle').getAttribute('aria-checked'), 'true');
   assert.equal(f.storage.getItem(api.languagePreferenceStorageKey('th06')), 'ja');
