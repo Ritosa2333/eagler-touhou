@@ -1,4 +1,4 @@
-import {gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct,
+import {gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct, multiplayerInputTimingPolicy,
   type MultiplayerProductId} from '../../src/contracts/product-catalog.mts';
 import {multiplayerDisplayInitial, type MultiplayerIdentityStore} from '../../src/launcher/multiplayer-identity.mts';
 import {normalizeMultiplayerLobbySnapshot, type MultiplayerResourceProgress} from '../../src/launcher/multiplayer-lobby-snapshot.mts';
@@ -203,7 +203,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   function applySnapshot(value: unknown) {
     const config = policy(); if (!room || !config) return;
     const normalized = normalizeMultiplayerLobbySnapshot(value, {localClientId: clientId,
-      playerCounts: config.playerCounts, difficulties: config.difficulties, loadouts: config.loadouts});
+      playerCounts: config.playerCounts, difficulties: config.difficulties, loadouts: config.loadouts, inputTiming: config.inputTiming});
     if (!normalized) return;
     const movementChanged = !room.disableCheatMovement && normalized.disableCheatMovement;
     Object.assign(room, normalized, {synced: true, connection: 'connected', challengeMode: normalized.challengeMode ?? false,
@@ -422,7 +422,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
   }
   function timingRecommendation() {
     const config = policy();
-    if (config?.inputTiming?.measuredStartup) return {inputDelay: 0, targetRollbackFrames: state.rollbackEnabled ? 2 : 0, networkFrames: 0, mobileSeats: 0};
+    if (config?.inputTiming?.measuredStartup) return {inputDelay: 0, targetRollbackFrames: multiplayerInputTimingPolicy(config).rollback && state.rollbackEnabled ? 2 : 0, networkFrames: 0, mobileSeats: 0};
     const seats = room?.seats?.slice(0, room.playerCount) || [];
     const settings = ports.settings();
     const phones = seats.reduce((count, seat, index) => count + (seat && (seat.mobileDevice || (index === state.seat && (settings.mobileDevice || settings.touchEnabled))) ? 1 : 0), 0);
@@ -436,20 +436,21 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
     state.timingChoice = value; publish();
   }
   function setRollbackEnabled(enabled: boolean) {
-    if (!ownerLocal() || room?.phase !== 'lobby' || !policy()?.inputTiming?.measuredStartup) return;
+    if (!ownerLocal() || room?.phase !== 'lobby' || !policy()?.inputTiming?.measuredStartup || !multiplayerInputTimingPolicy(policy()).rollback) return;
     state.rollbackEnabled = enabled; publish();
   }
   function start() {
     if (!snapshot.canStart) return;
     const timing = policy()?.inputTiming;
     if (!timing) {send({type: 'start'}); return;}
-    const measured = timing.measuredStartup === true, adonisMode = measured ? state.rollbackEnabled ? 2 : 1 : 0;
+    const timingPolicy = multiplayerInputTimingPolicy(policy());
+    const measured = timingPolicy.measuredStartup, adonisMode = measured ? timingPolicy.rollback && state.rollbackEnabled ? 2 : 1 : 0;
     const automatic = measured && state.timingChoice === 'auto';
     const selected = Number(state.timingChoice);
-    const inputDelay = automatic ? 0 : Number.isInteger(selected) && selected >= 0 && selected <= (adonisMode ? 9 : 8)
+    const inputDelay = automatic ? 0 : Number.isInteger(selected) && selected >= 0 && selected <= (adonisMode ? timingPolicy.manualDelayLimit : 8)
       ? selected : timingRecommendation().inputDelay;
     send({type: 'start', inputDelay, ...(measured ? {adonisMode, inputDelayAuto: automatic, predictionReserve: 2} : {}),
-      ...(timing.sendPredictionLimit != null ? {predictionLimit: timing.sendPredictionLimit} : {})});
+      ...(!timingPolicy.rollback || timing.sendPredictionLimit != null ? {predictionLimit: timingPolicy.predictionLimit} : {})});
   }
   function runtimeOptions(): MultiplayerRuntimeOptions {
     if (!room || !product) throw new Error(ports.translate('multiplayer.roomStateInvalid'));
@@ -473,7 +474,7 @@ export function createMultiplayerRoom(ports: MultiplayerRoomPorts) {
       ...(config.inputTiming ? {inputDelay: Number(room.inputDelay) || 0} : {}),
       ...(config.inputTiming?.measuredStartup ? {inputDelayAuto: room.inputDelayAuto ?? false,
         predictionReserve: room.predictionReserve ?? 2, adonisMode: Number(room.adonisMode) || 0} : {}),
-      ...(config.inputTiming?.sendPredictionLimit != null ? {predictionLimit: Number(room.predictionLimit) || 8} : {}),
+      ...(!multiplayerInputTimingPolicy(config).rollback || config.inputTiming?.sendPredictionLimit != null ? {predictionLimit: room.predictionLimit ?? multiplayerInputTimingPolicy(config).predictionLimit} : {}),
       spectator, spectatorId: spectator ? clientId : '',
       spectatorCount: Math.max(0, Number(room.spectatorCount) || 0),
       ...(config.gameplay === 'cooperative' ? {challengeMode: room.challengeMode === true} : {}),

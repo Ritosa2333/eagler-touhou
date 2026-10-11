@@ -57,6 +57,7 @@ export interface RuntimeNetplaySnapshot {
   peerCount: number | null;
   rtcReady: boolean;
   failed: boolean;
+  nativeFailed: boolean;
   error: string;
   peerState: RuntimePeerTransport | null;
 }
@@ -131,8 +132,10 @@ export function readRuntimeNetplay(runtime: object | null, state: RuntimeNetplay
     lanPeers,
     peerCount: Number.isFinite(peerSize) && peerSize >= 0 ? peerSize : null,
     rtcReady: peerState?.rtcReadySent === true,
-    failed: peerState?.failed === true,
-    error: typeof peerState?.error === "string" ? peerState.error : "",
+    failed: peerState?.failed === true || value("__eaglerNetplayFailed") === true,
+    nativeFailed: value("__eaglerNetplayFailed") === true,
+    error: value("__eaglerNetplayFailed") === true ? String(value("__eaglerNetplayError") || "")
+      : typeof peerState?.error === "string" ? peerState.error : "",
     peerState,
   };
 }

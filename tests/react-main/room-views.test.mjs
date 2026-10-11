@@ -1,4 +1,4 @@
-import {pinnedUiAuthorityText} from './source-text.mjs';
+import {pinnedUiAuthorityText, synchronizedMainAuthority} from './source-text.mjs';
 /** Pinned-main room view regression: SYNTHETIC DOM, relay, preparation, metrics,
  * clocks and animation promises. No native browser/network/runtime/layout claim.
  * Expected rendering executes main's original functions after TypeScript erasure.
@@ -14,7 +14,7 @@ import {fileURLToPath, pathToFileURL} from 'node:url';
 import {installMountedDom} from './mounted-dom-environment.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url)), require = createRequire(resolve(project, 'package.json'));
 const {build, transform} = require('esbuild'), pinnedMain = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
-const pinned = path => execFileSync('git', ['show', `${pinnedMain}:${path}`], {cwd: project, encoding: 'utf8'});
+const pinned = path => synchronizedMainAuthority(path, project, pinnedMain);
 let env, React, createRoot, MemoryRouter, owners, work, originalHTML, originalRender;
 const mounts = new Set(), fixtures = new Set();
 const n = (selector, scope = env.document) => {const node = scope.querySelector(selector); assert.ok(node, `Missing ${selector}`); return node;};
@@ -25,7 +25,11 @@ const defaultContext = {launched: false, th09NetworkOverlayOpen: false, launchSt
 before(async () => {
   env = installMountedDom(); React = await import('react'); ({createRoot} = await import('react-dom/client')); ({MemoryRouter} = await import('react-router'));
   for (const file of ['src/launcher/i18n.mts', 'src/contracts/product-catalog.mts']) assert.equal(pinnedUiAuthorityText(readFileSync(resolve(project, file), 'utf8')), pinned(file), `Pinned authority changed: ${file}`);
-  originalHTML = pinned('public/index.html'); const source = pinned('src/launcher/app.mts');
+  originalHTML = pinned('public/index.html'); const mainSource = execFileSync('git', ['show', '28bda8ca502b3d643eed3a5b705eb38d15769ad0:src/launcher/app.mts'], {cwd: project, encoding: 'utf8'});
+  // Retain origin/main's separately accepted editable-name block with main's
+  // updated room timing renderer. Both inputs are committed legacy authorities.
+  const nameBlock = text => text.slice(text.indexOf('  const nameInput = $("#mpDisplayName");', text.indexOf('function renderMpRoom()')), text.indexOf('  const spectator = $("#mpUnseatedNote");', text.indexOf('function renderMpRoom()')));
+  const source = mainSource.replace(nameBlock(mainSource), nameBlock(pinned('src/launcher/app.mts')));
   const section = (start, end) => source.slice(source.indexOf(start), source.indexOf(end, source.indexOf(start)));
   const original = section('function renderRoomPreparationProgress()', 'function packageNetworkMeta(') + '\n' +
     section('function renderRoomNetwork()', '// FLIP: read the visible geometry once');
@@ -99,6 +103,7 @@ function fixture({product = 'th06mp', locale = 'en', created = true} = {}) {
     get id() {return identity.lobbyClientId(product);}, get socket() {return sockets.at(-1);},
     async enter() {await act(() => service.enterRoom(product, '1234', created)); return f;},
     async receive(patch = {}) {await act(() => f.socket.message({code: '1234', playerCount: 2, difficulty: 1, phase: 'lobby', inputDelay: 0, startSerial: 0,
+      ...(product === 'th11mp' ? {adonisMode: 1, predictionLimit: 0} : {}),
       seats: [{clientId: f.id, name: 'A', loadout: 0, ready: false, controlMode: 'normal'}, null], spectators: [], ...patch})); return f;},
     async live(patch = {}) {await f.enter(); await act(() => f.socket.open()); await f.receive(patch); return f;},
     async report(progress) {await act(() => preparations.at(-1).report({status: 'preparing', stage: 'package', percent: null, error: '', ...progress}));},
@@ -132,7 +137,7 @@ function baseline(f, {panel = null, context = defaultContext} = {}) {
     mpRoomOwnerLocal: () => room.synced === true && snapshot.seat === 0, mpLoadouts: () => config.loadouts, mpLoadoutLabel: loadout => t(f.locale, loadout.labelKey),
     mpNormalizeLoadoutIndex: value => ((Number(value) || 0) % config.loadouts.length + config.loadouts.length) % config.loadouts.length,
     mpPlayerCounts: () => config.playerCounts, mpDifficultyMax: () => config.difficulties.length - 1, mpInputTimingPolicy: () => config.inputTiming,
-    mpAdonisSupported: () => config.inputTiming?.measuredStartup === true, mpInputTimingRecommendation: () => f.service.timingRecommendation(), mpRollbackEnabled: snapshot.rollbackEnabled,
+    mpAdonisSupported: () => config.inputTiming?.measuredStartup === true, mpRollbackSupported: () => config.inputTiming?.measuredStartup === true && owners.multiplayerInputTimingPolicy(config).rollback, mpInputTimingRecommendation: () => f.service.timingRecommendation(), mpRollbackEnabled: snapshot.rollbackEnabled,
     multiplayerDisplayInitial: owners.multiplayerDisplayInitial, touchMovementUsesJoystick: owners.touchMovementUsesJoystick,
     networkMiB: value => `${(Math.max(0, Number(value) || 0) / 1048576).toFixed(1)} MiB`, mpGameCheckInFlight: snapshot.checkBusy, mpLaunchInFlight: snapshot.launchBusy,
     updateMpQuickChat() {}, mpPersistRoomState() {}, mpAnimateSeatContents() {}, syncCustomSelect() {},
@@ -504,4 +509,11 @@ test('Drawer departure and unmount cancel retained 220ms timers with no stale fo
     await h.m.update({open: false}); const task = [...clock.tasks.values()].find(task => task.delay === 220); assert.ok(task);
     await h.m.unmount(); assert.equal(clock.tasks.size, 0); await act(task.fn); assert.equal(env.document.querySelector('#mpSettingsRoomDrawer'), null); assert.equal(all('.mizuki-select-menu').length, 0);
   } finally {clock.restore();}
+});
+
+test('TH11 rollback is hidden and disabled even for a ready host', async()=>{
+ const f=await fixture({product:'th11mp'}).live(); const {m}=await mountRoom(f);
+ assert.equal(n('#mpRollbackToggle').hidden,true); assert.equal(n('#mpRollbackToggle').disabled,true);
+ await act(()=>f.service.setRollbackEnabled(true)); assert.equal(f.service.getSnapshot().rollbackEnabled,false);
+ await m.unmount();
 });

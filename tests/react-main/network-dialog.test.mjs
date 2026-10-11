@@ -1,4 +1,4 @@
-import {pinnedUiAuthorityText} from './source-text.mjs';
+import {pinnedUiAuthorityText, synchronizedMainAuthority} from './source-text.mjs';
 /** Pinned-main network dialog parity: synthetic DOM/MemoryRouter and fake IO.
  * No browser, server, live WebSocket/ICE/TURN, native top-layer or pixel claim. */
 import test, {before, after, afterEach} from 'node:test';
@@ -13,7 +13,7 @@ import {installMountedDom} from './mounted-dom-environment.mjs';
 
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const pinnedMain = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
-const pinned = path => execFileSync('git', ['show', `${pinnedMain}:${path}`], {cwd: project, encoding: 'utf8'});
+const pinned = path => synchronizedMainAuthority(path, project, pinnedMain);
 let env, work, api, React, createRoot, createMemoryRouter, RouterProvider, originalHTML, io, pinnedApi;
 const mounts = new Set(), models = new Set();
 const relayUrl = 'wss://relay.invalid/netplay?diagnostic=1&keep=fixture';

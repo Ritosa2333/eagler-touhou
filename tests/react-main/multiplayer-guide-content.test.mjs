@@ -12,7 +12,7 @@ import {build} from 'esbuild';
 import {JSDOM} from 'jsdom';
 import {authoredSourcesPlugin} from './authored-sources.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url));
-const pinned = name => execFileSync('git', ['show', `edee9633e5e3ee79cd2e1aa334f84f6caf755090:src/launcher/${name}`], {cwd: project, encoding: 'utf8'});
+const pinned = name => execFileSync('git', ['show', `28bda8ca502b3d643eed3a5b705eb38d15769ad0:src/launcher/${name}`], {cwd: project, encoding: 'utf8'});
 const original = pinned('multiplayer-guide.mts');
 const originalBuilder = original.slice(original.indexOf('interface AuthoredGuideGroup'), original.indexOf('function isDialogElement'));
 let api, work, inputs;
@@ -76,14 +76,14 @@ function execute(builder, sanitizer, html, initialGameId) {
       assert.equal(left.defaultPrevented, true); capture('left wraps focus only');
       const right = new window.KeyboardEvent('keydown', {key: 'ArrowRight', bubbles: true, cancelable: true}); document.activeElement.dispatchEvent(right);
       assert.equal(right.defaultPrevented, true); capture('right wraps focus only');
-      for (const game of ['th06', 'th07', 'th08', 'th10']) {target.scrollTop = 123; tabs.querySelector(`[data-game="${game}"]`).click(); capture(`click ${game}`);}
+      for (const game of ['th06', 'th07', 'th08', 'th10', 'th11']) {target.scrollTop = 123; tabs.querySelector(`[data-game="${game}"]`).click(); capture(`click ${game}`);}
       const disclosure = target.querySelector('.multiplayer-rule-panel[data-game="th10"] details'); disclosure.open = true; capture('native disclosure state');
       for (const game of ['th08', 'unknown', '', 'th10']) {target.scrollTop = 234; guide.dispatchEvent(new window.CustomEvent('mp-guide-select-game', {detail: game})); capture(`select ${game}`);}
     }
     return {sanitized, trace};
   } finally {window.close();}
 }
-for (const [name, html] of Object.entries(cases)) for (const game of ['th06', 'th07', 'th08', 'th10', 'unknown', '']) test(`pinned executed guide transformation: ${name}, initial=${game || '(empty)'}`, () => {
+for (const [name, html] of Object.entries(cases)) for (const game of ['th06', 'th07', 'th08', 'th10', 'th11', 'unknown', '']) test(`pinned executed guide transformation: ${name}, initial=${game || '(empty)'}`, () => {
   const expected = execute(api.pinnedBuilder, api.pinnedSanitizer, html, game);
   const actual = execute(api.buildRuleGuide, api.renderContentFragment, html, game);
   assert.deepEqual(actual, expected);
@@ -96,9 +96,9 @@ for (const [name, html] of Object.entries(cases)) for (const game of ['th06', 't
   if (['authored', 'headings', 'hostile'].includes(name)) {
     const initial = new JSDOM(actual.trace[0].html).window;
     try {
-      assert.equal(initial.document.querySelectorAll('.multiplayer-rule-game-tab').length, 4);
+      assert.equal(initial.document.querySelectorAll('.multiplayer-rule-game-tab').length, 5);
       assert.equal(initial.document.querySelectorAll('details[open]').length, 0);
-      assert.equal(initial.document.querySelector('[aria-selected="true"]').dataset.game, ['th06', 'th07', 'th08', 'th10'].includes(game) ? game : 'th07');
+      assert.equal(initial.document.querySelector('[aria-selected="true"]').dataset.game, ['th06', 'th07', 'th08', 'th10', 'th11'].includes(game) ? game : 'th07');
       if (name === 'headings') {
         assert.equal(initial.document.querySelector('.multiplayer-rule-panel[data-game="th07"] .multiplayer-rule-disclosure-specific').textContent, '本作特有规则Last duplicate winsReplacement');
         assert.equal(initial.document.querySelector('.multiplayer-rule-panel[data-game="th10"] .multiplayer-rule-disclosure-specific').textContent, '本作特有规则无');

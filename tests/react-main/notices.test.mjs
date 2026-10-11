@@ -1,4 +1,4 @@
-import {pinnedUiAuthorityText} from './source-text.mjs';
+import {pinnedUiAuthorityText, synchronizedMainAuthority} from './source-text.mjs';
 /** Independent mounted synthetic-DOM regression. No browser/native top-layer/CSS claim. */
 import test, {before, after, afterEach} from 'node:test';
 import assert from 'node:assert/strict';
@@ -16,7 +16,7 @@ const {build} = require('esbuild');
 const {JSDOM} = require('jsdom');
 const {installMountedDom} = await import(pathToFileURL(resolve(project, 'tests/react-main/mounted-dom-environment.mjs')));
 const pinnedMain = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
-const pinned = path => execFileSync('git', ['show', `${pinnedMain}:${path}`], {cwd: project, encoding:'utf8'});
+const pinned = path => synchronizedMainAuthority(path, project, pinnedMain);
 let env, React, createRoot, owners, changedMotionOwners, baselineHTML, current = null;
 const alive = new Set();
 const originalSetTimeout = globalThis.setTimeout, originalClearTimeout = globalThis.clearTimeout;

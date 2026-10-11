@@ -1,4 +1,4 @@
-import {pinnedUiAuthorityText} from './source-text.mjs';
+import {pinnedUiAuthorityText, synchronizedMainAuthority} from './source-text.mjs';
 /** Mounted synthetic DOM only. No browser, authored-CSS, rendering or device claim. */
 import test, {before, beforeEach, after, afterEach} from 'node:test';
 import assert from 'node:assert/strict';
@@ -14,7 +14,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const project = resolve(here, '../..');
 const require = createRequire(resolve(project, 'package.json'));
 const pinnedMain = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
-const pinned = path => execFileSync('git', ['show', `${pinnedMain}:${path}`], {cwd: project, encoding: 'utf8'});
+const pinned = path => synchronizedMainAuthority(path, project, pinnedMain);
 const originalTimers = Object.fromEntries(['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'].map(key => [key, globalThis[key]]));
 const mounts = new Set();
 let env, React, createRoot, owners, buildDirectory, baselineHTML, clock;

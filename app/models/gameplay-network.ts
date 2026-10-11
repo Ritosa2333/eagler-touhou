@@ -74,11 +74,11 @@ export function createGameplayNetwork(options: GameplayNetworkOptions) {
     let connection: NetplayConnectionView | null = null;
     if (net && !context.replayViewer && net.peerState) {
       if (!net.spectator && connectionTransport !== net.peerState) {connectionTransport = net.peerState; connectedOnce = false;}
-      connection = describeNetplayConnection({english: options.english(), spectator: net.spectator, failed: net.failed, error: net.error, transport: net.transport, path: net.path, peerState: net.peerState, playerCount: context.playerCount, localPlayer: context.player, connectedOnce, webSocketOpenState: 1});
+      connection = describeNetplayConnection({english: options.english(), spectator: net.spectator, failed: net.failed, nativeFailed: net.nativeFailed, error: net.error, transport: net.transport, path: net.path, peerState: net.peerState, playerCount: context.playerCount, localPlayer: context.player, connectedOnce, webSocketOpenState: 1});
       connectedOnce = connection.connectedOnce;
     }
     const visible = !!net && state.launched && !context.replayViewer && !net.spectator;
-    snapshot = Object.freeze({connection, calibrationEligible: !!net?.peerState && !context.replayViewer && !net.failed && !net.spectator && !net.peerState.disconnected && !net.peerState.isRecovering?.(), returnToRoom: !!net && !net.spectator && !!connection && !connection.hidden && (!!connection.ended || connection.reconnecting), playerStatusVisible: visible,
+    snapshot = Object.freeze({connection, calibrationEligible: !!net?.peerState && !context.replayViewer && !net.failed && !net.spectator && !net.peerState.disconnected && !net.peerState.isRecovering?.(), returnToRoom: !!net && (!net.spectator || net.nativeFailed) && !!connection && !connection.hidden && (!!connection.ended || connection.reconnecting), playerStatusVisible: visible,
       playerStatus: visible && net ? playerRows(net, context) : [], diagnostics: net ? formatNetplayDiagnostics(net, context, quality, now, options.translate) : {}});
     for (const listener of listeners) listener();
   }
@@ -115,7 +115,7 @@ export function createGameplayNetwork(options: GameplayNetworkOptions) {
         if (now() >= deadline) {finish(new Error(options.translate('room.gameplayPathTimeout'))); return;}
         const net = read(), state = options.context();
         if (net?.failed) {finish(new Error(net.error || options.translate('room.unavailable'))); return;}
-        if (net?.peerState && describeNetplayConnection({spectator: net.spectator, failed: net.failed, error: net.error, transport: net.transport, path: net.path, peerState: net.peerState, playerCount: state.playerCount, localPlayer: state.player, webSocketOpenState: 1}).hidden) {finish(); return;}
+        if (net?.peerState && describeNetplayConnection({spectator: net.spectator, failed: net.failed, nativeFailed: net.nativeFailed, error: net.error, transport: net.transport, path: net.path, peerState: net.peerState, playerCount: state.playerCount, localPlayer: state.player, webSocketOpenState: 1}).hidden) {finish(); return;}
         wait.timer = timers.setTimeout(poll, 250);
       }; poll();
     });

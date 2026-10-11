@@ -420,3 +420,23 @@ test('room Retry matches pinned handler eligibility, cleanup order and continuat
     fixture.service.retryPreparation(); assert.equal(cleanupCalls, 0); assert.deepEqual(expected.events, []); fixture.service.dispose();
   });
 });
+
+test('TH11 owner cannot enable rollback and preserves zero prediction through 2P/3P and Extra start',async()=>{
+ for(const playerCount of [2,3]){
+  const f=roomFixture(); f.service.enterRoom('th11mp','1234',true); await flush();
+  const socket=f.sockets[0]; socket.open(); const id=f.identity.lobbyClientId('th11mp');
+  const seats=Array.from({length:playerCount},(_,i)=>({clientId:i?`peer-seat${i}`:id,name:'A',loadout:i?4:0,ready:true}));
+  socket.message({type:'state',room:roomState(id,{playerCount,difficulty:4,seats,predictionLimit:0,adonisMode:1})});
+  f.service.setRollbackEnabled(true); assert.equal(f.service.getSnapshot().rollbackEnabled,false);
+  f.service.start(); const start=socket.sent.findLast(m=>m.type==='start');
+  assert.equal(start.adonisMode,1); assert.equal(start.predictionLimit,0); assert.equal(start.inputDelayAuto,true);
+  socket.message({type:'state',room:roomState(id,{playerCount,difficulty:4,seats,phase:'running',predictionLimit:0,adonisMode:1,inputDelay:3})});
+  const options=f.service.runtimeOptions(); assert.equal(options.netplayPredictionLimit,0);
+  assert.equal(options.netplayAdonisMode,1); assert.equal(options.netplayDifficulty,4);
+  assert.equal(options.netplayPlayerCount,playerCount); assert.equal(options.netplayLoadouts[1].shot,1);
+  // A stale/modified relay cannot make the React room accept a hybrid run.
+  socket.message({type:'state',room:roomState(id,{playerCount,difficulty:0,seats,phase:'running',predictionLimit:8,adonisMode:2})});
+  assert.equal(f.service.getSnapshot().room.difficulty,4);
+  assert.equal(f.service.runtimeOptions().netplayPredictionLimit,0); f.service.dispose();
+ }
+});

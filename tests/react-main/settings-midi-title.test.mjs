@@ -1,4 +1,4 @@
-import {pinnedUiAuthorityText} from './source-text.mjs';
+import {pinnedUiAuthorityText, synchronizedMainAuthority} from './source-text.mjs';
 /** Original app.mts4415–4423 MIDI help/disabled presentation and
  * public/index.html447/544 music labels after original static translations.
  * Synthetic DOM and fake device availability only; no browser permission,
@@ -14,7 +14,7 @@ import {authoredSourcesPlugin} from './authored-sources.mjs';
 import {installMountedDom} from './mounted-dom-environment.mjs';
 const project = fileURLToPath(new URL('../../', import.meta.url));
 const baseline = 'edee9633e5e3ee79cd2e1aa334f84f6caf755090';
-const pinned = path => execFileSync('git', ['show', `${baseline}:${path}`], {cwd: project, encoding: 'utf8'});
+const pinned = path => synchronizedMainAuthority(path, project, baseline);
 let env, React, createRoot, owners, work, root, originalHTML, originalSync;
 const step = callback => React.act(async () => {callback?.(); await Promise.resolve();});
 before(async () => {
