@@ -7,7 +7,9 @@ export function reactDeploymentConfig(environment: NodeJS.ProcessEnv = process.e
   let appShell: ReactAppShellDeployment | null = null;
   if (environment.EAGLER_REACT_APP_SHELL_ORIGIN || environment.EAGLER_REACT_APP_SHELL) {
     if (environment.EAGLER_REACT_APP_SHELL !== 'isolated' || !environment.EAGLER_REACT_APP_SHELL_ORIGIN) throw new Error('React App Shell requires EAGLER_REACT_APP_SHELL=isolated and EAGLER_REACT_APP_SHELL_ORIGIN');
-    appShell = validateReactAppShellDeployment({schema: 'eagler-touhou/react-app-shell/1', origin: environment.EAGLER_REACT_APP_SHELL_ORIGIN, mountPath});
+    if (environment.EAGLER_REACT_APP_SHELL_ISOLATED_ORIGIN && environment.EAGLER_REACT_APP_SHELL_ISOLATED_ORIGIN !== 'true') throw new Error('EAGLER_REACT_APP_SHELL_ISOLATED_ORIGIN must be true');
+    appShell = validateReactAppShellDeployment({schema: 'eagler-touhou/react-app-shell/1', origin: environment.EAGLER_REACT_APP_SHELL_ORIGIN, mountPath,
+      ...(environment.EAGLER_REACT_APP_SHELL_ISOLATED_ORIGIN === 'true' ? {isolatedOrigin: true} : {})});
   }
   return Object.freeze({mountPath, outputDirectory, appShell});
 }
