@@ -100,8 +100,12 @@ try {
       }
     });
   });
+  // Removing the host hides the directory row before the final unseated
+  // client has departed. Wait for all close handshakes before testing room
+  // quota reuse; directory visibility alone is not room deletion evidence.
+  const departed = Promise.all([sockets[0], sockets[1], extraJoin.socket].map(socket => once(socket, 'close')));
   sockets[0].close(1000, 'leave room'); sockets[1].close(1000, 'leave room'); extraJoin.socket.close(1000, 'leave room');
-  await released;
+  await Promise.all([released, departed]);
   assert.equal((await first(lobby('0003'))).message.type, 'state'); // Immediately reusable after room deletion.
   const rejected = new WebSocket(`ws://127.0.0.1:${port}/?directory=1&member=another_member`, { headers: { 'X-Real-IP': '203.0.113.200' } });
   sockets.push(rejected);
