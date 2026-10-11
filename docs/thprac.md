@@ -35,6 +35,44 @@ do not replace their blue implementation merely to force common ownership.
 
 ## Build and release
 
+### Mobile panel presentation
+
+`PracticeMobilePanels.hpp` is an optional ImGui-only presentation adapter,
+usable by both blue and purple consumers. Launcher sends the boolean fields
+`thpracMobilePanelsEnabled` and `thpracMobilePanelsVisible` through the existing
+`touch-controls` command. One mobile entry opens the group; each native window
+starts collapsed and its header toggles the original body. Reopening resets
+collapse state. Missing fields preserve desktop behavior.
+
+Use `show` and `begin` in place of each window's visibility check and `Begin`;
+always pair with `ImGui::End`, including a collapsed body. `draw_tool` gates
+draw-list indicators without changing their original geometry. Counters,
+recording, reaction/result timing and gameplay updates must remain outside
+these visibility gates. `captures_advanced` captures gameplay only while the
+mobile advanced body is expanded. Native pointer hit-testing must include
+these header windows, not only the old fullscreen menu.
+
+Mobile cheat rows use native `checkbox` widgets with the title's existing
+mutation, Replay and lifecycle guards. This does not redefine F-key membership
+or migrate a blue title to purple. Assisted Replay saving is title-owned:
+allow the original save path and retain Practice metadata, while warning that
+playback does not reapply live cheats and may desynchronize. Never deliberately
+damage the Replay file or bypass Replay input/mutation restrictions.
+
+`tests/thprac-mobile-panels.cpp` exercises collapsed windows, actual mouse
+press/release expansion, input capture, reopening and desktop fallback against
+an ImGui implementation, including padding-free outer windows, equal-sized
+side-by-side upper-left cheat/settings headers, and one-pixel black button
+borders on cheat/settings/status headers. A phone visual/device pass is still required.
+Folded windows and fold/unfold headers are excluded from keyboard/gamepad
+navigation; game-menu swipes and confirm inputs cannot open them. Direct touch
+still toggles them, while native expanded-body navigation policy is preserved.
+`PracticePointer.hpp` assigns trainer gesture ownership only at pointer-down;
+game drags crossing a header remain game-owned, while menu drags retain their
+release outside the window. Reset it on focus loss, touch cancellation and
+session reset. `tests/thprac-pointer-test.cpp` covers crossing, release,
+multi-finger isolation and cancellation.
+
 CMake consumers link `eagler::thprac`. Script-based consumers add `include` to
 their compiler search path and hash all shared headers/`.inc` inputs into their
 object cache and build report. Ordinary builds use only header types, not ImGui
