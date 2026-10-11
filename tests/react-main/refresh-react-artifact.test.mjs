@@ -119,7 +119,8 @@ test('React refresh stages and verifies a coherent artifact before replacing any
       await verify(plain);
       const deployment = await json(resolve(plain, 'deployment.json'));
       assert.equal(deployment.appShell, null);
-      assert.ok(!deployment.files.some(item => item.path === 'app-shell-sw.js'));
+      assert.ok(deployment.files.some(item => item.path === 'app-shell-sw.js'));
+      assert.match(await readFile(resolve(plain, 'app-shell-sw.js'), 'utf8'), /registration\.unregister/);
       assert.deepEqual(protectedFiles(await hashes(plain)), protectedFiles(before));
       assert.deepEqual((await verifyReleaseManifest(plain)).parameters, release.parameters);
     });

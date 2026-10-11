@@ -9,6 +9,7 @@ import {pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
 import {parse} from 'parse5';
 import {buildReactAppShell} from '../../scripts/ui-rewrite/app-shell-build.ts';
+import {APP_SHELL_RETIREMENT_WORKER} from '../../lib/app-shell-retirement.mjs';
 import {STATIC_FRONTEND_PACKAGE_FILES} from '../../lib/frontend-static-manifest.mjs';
 import {readReactAppShellDeployment} from '../../app/services/app-shell-deployment.ts';
 let work, coldSource;
@@ -54,9 +55,9 @@ function nodes(html) {
   const result = []; const visit = node => {if (node.tagName) result.push(node); for (const child of node.childNodes ?? []) visit(child);};
   visit(parse(html)); return result;
 }
-test('default actual build publishes neither App Shell metadata nor worker', async () => {
+test('default actual build publishes the retirement worker without App Shell metadata', async () => {
   const {directory} = outputs.get('default');
-  assert.equal(await exists(resolve(directory, 'app-shell-sw.js')), false);
+  assert.equal(await readFile(resolve(directory, 'app-shell-sw.js'), 'utf8'), APP_SHELL_RETIREMENT_WORKER);
   for (const file of ['index.html', 'en.html', 'lobby.html']) assert.doesNotMatch(await readFile(resolve(directory, file), 'utf8'), /name="eagler-react-app-shell"/);
 });
 for (const name of ['root', 'nested']) test(`${name} output uses actual React chunks, exact mount, canonical worker and byte identities`, async () => {

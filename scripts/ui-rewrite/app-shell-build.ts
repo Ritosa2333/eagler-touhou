@@ -9,6 +9,7 @@ import * as runtimeContract from '../../src/contracts/runtime-generations.mts';
 import {writeFileAtomic} from '../../lib/atomic-file.mjs';
 import {normalizeReactMountPath, REACT_APP_SHELL_META, validateReactAppShellDeployment, type ReactAppShellDeployment} from '../../app/services/app-shell-deployment.ts';
 import {readReactFrontendArtifact} from '../../lib/react-frontend-artifact.mjs';
+import {writeAppShellRetirementWorker} from '../../lib/app-shell-retirement.mjs';
 
 interface ReactShellGraph {schema: string; mountPath: string; appShell: ReactAppShellDeployment | null; shellFiles: string[]}
 interface BuildOptions {
@@ -88,7 +89,10 @@ export async function buildReactAppShell({clientDirectory, mountPath, appShell, 
   }
   await writeFileAtomic(resolve(clientDirectory, '.vite/react-app-shell-graph.json'), JSON.stringify({...graph, shellFiles: shellFiles.slice().sort()}, null, 2) + '\n');
   await readReactFrontendArtifact({directory: clientDirectory, expectedMountPath: mountPath});
-  if (!appShell) return null;
+  if (!appShell) {
+    await writeAppShellRetirementWorker(resolve(clientDirectory, 'app-shell-sw.js'));
+    return null;
+  }
   // Host artwork is supplied by an authorized assembly or synthetic fixture.
   // Hash present icons too; never manufacture or borrow production artwork.
   for (const file of HOST_SITE_ARTWORK_FILES) {

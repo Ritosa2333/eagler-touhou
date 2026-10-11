@@ -13,6 +13,7 @@ import { isDeepStrictEqual } from "node:util";
 import { sourceIdentity, verifyReleaseManifestDeclaration, writeReleaseManifest } from "../lib/release-manifest.mjs";
 import { normalizeSiteUrl, writeSiteMetadata } from "../lib/site-metadata.mjs";
 import { PRIVATE_FRONTEND_ASSETS, privateFrontendAssetSource } from "../lib/private-frontend-assets.mjs";
+import { writeAppShellRetirementWorker } from "../lib/app-shell-retirement.mjs";
 
 // Windows scanners can briefly hold a freshly verified directory open. Retry
 // only those transient sharing failures; every other failure retains rollback.
@@ -242,9 +243,9 @@ try {
   });
   if (result?.contract.entries.some(path => path.startsWith("runtime/"))) throw new Error("Runtime leaked into Launcher precache");
   if (result) await rename(temporary, swPath);
-  else await rm(swPath, {force: true});
+  else await writeAppShellRetirementWorker(swPath);
 
-  const bytes = result ? await readFile(swPath) : null;
+  const bytes = await readFile(swPath);
   const identity = bytes ? {
     bytes: bytes.length,
     sha256: createHash("sha256").update(bytes).digest("hex"),

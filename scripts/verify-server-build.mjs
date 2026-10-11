@@ -24,6 +24,7 @@ import {
 import { BUILD_AUTHORITY_PUBLICATION, classifyBuildProfile } from "../lib/build-profile.mjs";
 import { hostArtworkFiles } from "../lib/host-artwork.mjs";
 import { assertAppShellContract } from "../lib/app-shell-validation.mjs";
+import { APP_SHELL_RETIREMENT_WORKER } from "../lib/app-shell-retirement.mjs";
 import { readReactFrontendArtifact } from "../lib/react-frontend-artifact.mjs";
 import { STATIC_APP_SHELL_FILES } from "../lib/frontend-static-manifest.mjs";
 import { browserModuleClosure } from "../lib/browser-module-graph.mjs";
@@ -84,7 +85,10 @@ const preloadGames = gameIds.filter(game => PRODUCT_GAMES[game].dataProvider ===
 if (!deployment.files.some(item => item.path === "touch-guide.css")) throw new Error("touch guide stylesheet missing from deployment");
 if (!deployment.files.some(item => item.path === "site.webmanifest")) throw new Error("Home Screen Web App manifest missing from deployment");
 if (reactFrontend && !reactFrontend.appShell) {
-  if (deployment.files.some(item => item.path === "app-shell-sw.js")) throw new Error("disabled React App Shell must not publish a Service Worker");
+  if (!deployment.files.some(item => item.path === "app-shell-sw.js") ||
+      await readFile(resolve(root, "app-shell-sw.js"), "utf8") !== APP_SHELL_RETIREMENT_WORKER) {
+    throw new Error("disabled React App Shell must publish its canonical retirement worker");
+  }
 } else if (!deployment.files.some(item => item.path === "app-shell-sw.js")) throw new Error("App Shell Service Worker missing from deployment");
 if (!deployment.files.some(item => item.path === "migrate.html")) throw new Error("origin migration page missing from deployment");
 if (!deployment.files.some(item => item.path === "about.html")) throw new Error("about page missing from deployment");

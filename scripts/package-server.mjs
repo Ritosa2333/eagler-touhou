@@ -29,6 +29,7 @@ import { assemblePreloadData } from "../lib/preload-data-assembler.mjs";
 import { assertRuntimeDataShell } from "../lib/runtime-data-provider.mjs";
 import { assertRuntimeProtocolSources } from "../lib/runtime-protocol-shell.mjs";
 import { buildAppShell } from "../lib/app-shell-build.mjs";
+import { writeAppShellRetirementWorker } from "../lib/app-shell-retirement.mjs";
 import { deploymentAppShellPatterns, runtimeAppShellPaths } from "../lib/app-shell-policy.mjs";
 import { sourceIdentity, verifyReleaseManifest, writeReleaseManifest, fileSetIdentity } from "../lib/release-manifest.mjs";
 import { verifyRuntimeRelease, runtimeFileNames, runtimeStem } from "../lib/runtime-release.mjs";
@@ -933,6 +934,7 @@ const appShellBuild = REACT_FRONTEND_ARTIFACT && !REACT_FRONTEND_ARTIFACT.appShe
     workerContractSource: await readFile(await resolveRuntimeGenerationWorkerSource(), "utf8"),
   } : {}),
 });
+if (!appShellBuild) await writeAppShellRetirementWorker(resolve(staging, "app-shell-sw.js"));
 
 const inventory = [];
 for (const path of (await walk(staging)).sort()) {

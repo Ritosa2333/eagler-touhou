@@ -86,14 +86,16 @@ test('opt-in React artifacts use the actual server packager and generic verifier
       assert.ok(!deployment.files.some(item=>item.path==='app.js'));
       await verify(main);
     });
-    await t.test('default React publication omits SW, legacy UI, and public graph metadata', async () => {
+    await t.test('default React publication retains the retirement worker and omits legacy UI and public graph metadata', async () => {
       await packageSite(plain, defaultBuild);
       await verify(plain);
       const deployment = await json(resolve(plain, 'deployment.json'));
       assert.equal(deployment.appShell, null);
       assert.equal(deployment.frontend.kind, 'react');
       assert.equal(deployment.frontend.mountPath, '/');
-      assert.ok(!deployment.files.some(item => item.path === 'app-shell-sw.js' || item.path === 'app.js' || item.path.startsWith('assets/launcher/') || item.path.startsWith('.vite/')));
+      assert.ok(deployment.files.some(item => item.path === 'app-shell-sw.js'));
+      assert.match(await readFile(resolve(plain, 'app-shell-sw.js'), 'utf8'), /registration\.unregister/);
+      assert.ok(!deployment.files.some(item => item.path === 'app.js' || item.path.startsWith('assets/launcher/') || item.path.startsWith('.vite/')));
       const artifact = await readReactFrontendArtifact({directory: plain, metadata: deployment.frontend.validationMetadata});
       assert.ok(artifact.packageFiles.every(path => deployment.files.some(item => item.path === path)));
       assert.equal((await verifyReleaseManifest(plain)).parameters.frontend.kind, 'react');
@@ -178,9 +180,8 @@ test('opt-in React artifacts use the actual server packager and generic verifier
     await rejectsMutation('frontend provenance mismatch fails', plain, async (_, __, release) => {
       release.parameters.frontend.mountPath = '/other/';
     }, /frontend does not match Release Manifest provenance/);
-    await rejectsMutation('disabled worker cannot be introduced by packaging', plain, async (directory, deployment) => {
+    await rejectsMutation('disabled offline mode rejects a noncanonical retirement worker', plain, async directory => {
       await writeFile(resolve(directory, 'app-shell-sw.js'), '// unexpected worker');
-      deployment.files.push({path: 'app-shell-sw.js'});
     }, /disabled React App Shell/);
     await rejectsMutation('isolated permission cannot move to another origin', isolated, async (_, deployment) => {
       deployment.siteUrl = 'https://other.invalid/react-review/';

@@ -16,6 +16,7 @@ import {
   staticContentType,
 } from "../server/static-content-policy.mjs";
 import { buildAppShell } from "../lib/app-shell-build.mjs";
+import { APP_SHELL_RETIREMENT_WORKER } from "../lib/app-shell-retirement.mjs";
 import { createDevelopmentSiteManifest } from "../lib/development-site-manifest.mjs";
 import { DEVELOPMENT_CONTENT } from "../lib/development-content.mjs";
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
@@ -86,8 +87,8 @@ const isRuntimeAppShellPath = value => /^runtime\/(?:.*\.(?:html|js|wasm))$/i.te
   String(value || "").replaceAll("\\", "/")
 );
 const initialAppShell = appShellEnabled ? await buildAppShell(localAppShellOptions) : null;
-let lastAppShellBuildId = initialAppShell?.buildId ?? null;
-let appShellWorker = initialAppShell?.worker ?? null;
+let lastAppShellBuildId = initialAppShell?.buildId ?? createHash("sha256").update(APP_SHELL_RETIREMENT_WORKER).digest("hex");
+let appShellWorker = initialAppShell?.worker ?? APP_SHELL_RETIREMENT_WORKER;
 let appShellRebuildTimer = null;
 let appShellBuildRunning = false;
 let appShellBuildQueued = false;

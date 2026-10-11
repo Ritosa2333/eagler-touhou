@@ -56,7 +56,7 @@ async function start({selected = null, env = environment} = {}) {
     return {base: `http://127.0.0.1:${selected}`, stop};
   } catch (error) {await stop(); throw error;}
 }
-test('selected React root serves real routes and rejects old UI/disabled worker/missing resource fallback', async () => {
+test('selected React root serves real routes and retirement worker and rejects old UI/missing resources', async () => {
   const server = await start();
   try {
     for (const path of ['/', '/en.html', '/lobby.html']) {
@@ -64,7 +64,10 @@ test('selected React root serves real routes and rejects old UI/disabled worker/
       const html = await response.text(); assert.match(html, /__reactRouterContext/);
       assert.doesNotMatch(html, /<script[^>]+src=["'](?:\.\/)?app\.js/);
     }
-    for (const path of ['/app-shell-sw.js', '/app.js', '/assets/launcher/app.mjs', '/public/index.html', '/public/app.js', '/missing.wasm', '/missing.js', '/missing.woff2']) {
+    const worker = await fetch(server.base + '/app-shell-sw.js');
+    assert.equal(worker.status, 200);
+    assert.match(await worker.text(), /registration\.unregister/);
+    for (const path of ['/app.js', '/assets/launcher/app.mjs', '/public/index.html', '/public/app.js', '/missing.wasm', '/missing.js', '/missing.woff2']) {
       const response = await fetch(server.base + path); assert.equal(response.status, 404, path);
       assert.doesNotMatch(await response.text(), /__reactRouterContext/, path);
     }

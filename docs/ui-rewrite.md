@@ -18,7 +18,7 @@ For a launcher checkout below `worktrees`, set `EAGLER_WORKSPACE_ROOT` to the ac
 
 `EAGLER_REACT_BUILD_DIRECTORY` selects the build output directory, defaulting to `.cache/build/ui-rewrite`. `EAGLER_REACT_MOUNT_PATH` selects the build-time mount, defaulting to `/`. Build and host selection must use the same mount. A nested artifact belongs on a matching mounted static host. An existing built artifact is consumed without invoking the compiler during host assembly.
 
-Offline support is an explicit deployment choice. Set both `EAGLER_REACT_APP_SHELL=isolated` and `EAGLER_REACT_APP_SHELL_ORIGIN` to the exact intended origin before building. Setting only a mount does not enable a worker. The built metadata binds the worker to that origin and mount, and rejects foreign or ancestor registrations. Rebuild to change this identity. `refresh:deployment-frontend` consumes a matching verified artifact. Older full-UI deployments must be repackaged; the refresh tool never republishes a second UI.
+Offline support is an explicit deployment choice. Set both `EAGLER_REACT_APP_SHELL=isolated` and `EAGLER_REACT_APP_SHELL_ORIGIN` to the exact intended origin before building. Setting only a mount does not enable offline caching or worker registration. The built metadata binds the worker to that origin and mount, and rejects foreign or ancestor registrations. Rebuild to change this identity. `refresh:deployment-frontend` consumes a matching verified artifact. Older full-UI deployments must be repackaged; the refresh tool never republishes a second UI.
 
 ## Components and return policy
 
@@ -135,6 +135,16 @@ reviewed and synchronized locally, not yet published. One-sided return stopping
 its peer is accepted behavior, not an outstanding terminal-flow repair.
 
 ## Site Manifest and compatibility
+
+When offline support is disabled, `app-shell-sw.js` remains a canonical retirement
+worker at the former script URL. Cached old Launchers authorize its activation
+through their existing idle/gameplay/file-operation guards. It unregisters the
+old scope and passes requests to the network without claiming other tabs,
+forcing game navigation, or deleting caches, IndexedDB or localStorage. New
+React pages do not register it. This compatibility endpoint must remain available
+while old cached Launchers exist. `npm run test:app-shell-retirement:browser`
+checks root and nested upgrades, deferred activation, concurrent old/new tabs,
+and preservation of stored data using the committed pre-migration worker/client.
 
 `site-manifest.json` with `eagler-touhou/site-manifest/1` is the current resource
 contract. Product Catalog remains the static product authority; Release Catalog

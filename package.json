@@ -64,6 +64,7 @@
     "test:package-installer": "npm run test:package-store:browser",
     "test:webkit": "node tests/browser/test-playwright-webkit-gate.mjs",
     "test:pwa:browser": "python tests/browser/test-pwa-boot.py",
+    "test:app-shell-retirement:browser": "node tests/browser/test-app-shell-retirement.mjs",
     "test:import-update:browser": "python tests/browser/test-import-update.py",
     "test:card-filter:browser": "python tests/test-card-filter-browser.py",
     "test:edge-drawers:browser": "python tests/browser/test-edge-drawers.py",
