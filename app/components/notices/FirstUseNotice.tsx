@@ -59,7 +59,8 @@ export function FirstUseNotice({open, onCloseRequest, onOpenRequest, contentUrl 
     const token = generation.current;
     const request = (async (): Promise<NoticeLoadResult> => {
       try {
-        const response = await latest.current.fetchImpl(latest.current.contentUrl, {cache: 'no-store'});
+        const {fetchImpl, contentUrl} = latest.current;
+        const response = await fetchImpl(contentUrl, {cache: 'no-store'});
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const html = String(await response.text()).trim();
         if (!active.current || token !== generation.current) return {kind: 'error', error: new Error('Notice unmounted')};

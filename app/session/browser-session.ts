@@ -341,8 +341,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     if (!owner.getSnapshot().launched) launchAbort?.abort(new RuntimeSessionSupersededError());
     // Main native exit (including failure status) has no surviving sync receiver.
     // Only the authenticated event owner supplies this completed-engine flag.
-    if (!await owner.close({decide: closeDecision, discardUnsaved: nativeExit})) return false;
-    await nativeTouch.exitPlayerFullscreen().catch(() => {});
+    if (!await owner.close({decide: closeDecision, discardUnsaved: nativeExit,
+      beforeReset: () => nativeTouch.exitPlayerFullscreen().catch(() => {})})) return false;
     gameData.clear(); if (titleNetwork.getSnapshot().open) roomSession?.service.resetRoomWithoutNavigation(); titleNetwork.close(false); transfer.hide(); startupError.close(); midi?.reset(); activeSettings = null; publish({playerOpen: false, touchHelpOpen: false, startupError: null, roomLaunchStage: null, replayViewer: false}); return true;
   }
   const gameData = createGameDataImportModel({acquisition, translate: t,
@@ -396,12 +396,33 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     if (!element || element === frame) return;
     if (frame) throw new Error('Launcher cannot replace its live Runtime iframe');
     frame = element;
-    runtime = createRuntimeService({frame: element, hostWindow: window, baseUrl, translate: t, network, worker: appShellDeployment ? appShell!.activeWorker() : null, onLocalResourceProgress: transfer.localProgress, onWarning: reportError, onEvent: (message, context) => {const ownsPresentation = !context.fileOnly || fileRuntimePresentation?.() !== false; if (ownsPresentation) transfer.runtimeEvent(message); if (ownsPresentation && message.event === 'ready') {gameData.finish(); feedback.playerStatus(t('runtime.readyStatus')); const selected = activeSettings ?? settings.getSnapshot(); if (selected) feedback.status(t('runtime.readyWithMusic', {game: selected.gameId.toUpperCase(), music: selected.music === 'midi' ? 'midi' : t(selected.music === 'none' ? 'settings.music.none' : selected.music === 'ogg-full' ? 'settings.music.oggFull' : 'settings.music.oggStream')}));}
+    runtime = createRuntimeService({frame: element, hostWindow: window, baseUrl, translate: t, network, worker: appShellDeployment ? appShell!.activeWorker() : null, onLocalResourceProgress: transfer.localProgress, onWarning: reportError,
+      onFrameRetired() {
+        // Reuse the same React-owned node, but discard the completed game's
+        // browsing context and its child-history entries before the next launch.
+        const parent = element.parentNode, next = element.nextSibling;
+        if (element.isConnected && parent) {element.remove(); parent.insertBefore(element, next);}
+      },
+      onEvent: (message, context) => {const ownsPresentation = !context.fileOnly || fileRuntimePresentation?.() !== false; if (ownsPresentation) transfer.runtimeEvent(message); if (ownsPresentation && message.event === 'ready') {gameData.finish(); feedback.playerStatus(t('runtime.readyStatus')); const selected = activeSettings ?? settings.getSnapshot(); if (selected) feedback.status(t('runtime.readyWithMusic', {game: selected.gameId.toUpperCase(), music: selected.music === 'midi' ? 'midi' : t(selected.music === 'none' ? 'settings.music.none' : selected.music === 'ogg-full' ? 'settings.music.oggFull' : 'settings.music.oggStream')}));}
       if (message.event === 'network-request') titleNetwork.open();
       if (message.event === 'runtime-info' && message.netplayTiming) {calibration.record(message.netplayTiming, runtime!.getSnapshot().epoch ?? 0); roomSession?.service.acceptMeasuredTiming(message.netplayTiming);}
       if (message.event === 'notice' && typeof message.message === 'string' && message.message) feedback.toast(message.message);
       if (ownsPresentation && message.event === 'error') feedback.playerStatus(errorText(message.error || t('runtime.startFailed')));
-      if (ownsPresentation && message.event === 'exit') {feedback.playerStatus(t(message.status === 'success' ? 'runtime.gameExited' : 'runtime.gameExitedAbnormally')); const titleOverlayWasOpen = titleNetwork.getSnapshot().open; void requestRuntimeClose({nativeExit: true}).then(closed => {if (closed) requiredNavigation().completeRuntimeClose({titleOverlayWasOpen});});}}});
+      if (ownsPresentation && message.event === 'exit') {
+        feedback.playerStatus(t(message.status === 'success' ? 'runtime.gameExited' : 'runtime.gameExitedAbnormally'));
+        const titleOverlayWasOpen = titleNetwork.getSnapshot().open;
+        const roomAtExit = roomSession?.service.getSnapshot();
+        const leaveRoom = !context.fileOnly && message.returnToMenu === true && roomAtExit?.product && isMultiplayerProductId(roomAtExit.product);
+        void requestRuntimeClose({nativeExit: true}).then(closed => {
+          if (!closed) return;
+          requiredNavigation().completeRuntimeClose({titleOverlayWasOpen});
+          // Main's explicit native Return to Menu retires membership after the
+          // Player closes. An unrelated/newer room must never inherit that exit.
+          const currentRoom = roomSession?.service.getSnapshot();
+          if (leaveRoom && currentRoom?.epoch === roomAtExit?.epoch && currentRoom?.room?.code === roomAtExit?.room?.code)
+            roomSession?.service.leave();
+        }).catch(reportError);
+      }}});
     const browser = describeBrowserEnvironment({userAgent: window.navigator.userAgent, platform: window.navigator.platform,
       userAgentDataPlatform: (window.navigator as Navigator & {userAgentData?: {platform?: string}}).userAgentData?.platform,
       mobile, brave: !!(window.navigator as Navigator & {brave?: unknown}).brave});
@@ -549,7 +570,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   }
   async function closeRoomPlayerWithoutSync() {
     launchAbort?.abort(new RuntimeSessionSupersededError());
-    await requiredRuntime().close({discardUnsaved: true}); await nativeTouch.exitPlayerFullscreen().catch(() => {});
+    await requiredRuntime().close({discardUnsaved: true, beforeReset: () => nativeTouch.exitPlayerFullscreen().catch(() => {})});
     gameData.clear(); transfer.hide(); midi?.reset(); activeSettings = null;
     publish({playerOpen: false, touchHelpOpen: false, roomLaunchStage: null});
   }
@@ -716,7 +737,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     requestRoomLeave: () => {if (titleNetwork.getSnapshot().open) titleNetwork.leave(); else room.service.leave();},
     async leaveRoom() {
       if (titleNetwork.getSnapshot().open) {titleNetwork.leave(); return;}
-      if (snapshot.roomLaunchStage && snapshot.playerOpen) {launchAbort?.abort(new RuntimeSessionSupersededError()); await requiredRuntime().close({discardUnsaved: true}); await nativeTouch.exitPlayerFullscreen().catch(() => {}); activeSettings = null; publish({playerOpen: false, roomLaunchStage: null});}
+      if (snapshot.roomLaunchStage && snapshot.playerOpen) {launchAbort?.abort(new RuntimeSessionSupersededError()); await requiredRuntime().close({discardUnsaved: true, beforeReset: () => nativeTouch.exitPlayerFullscreen().catch(() => {})}); activeSettings = null; publish({playerOpen: false, roomLaunchStage: null});}
       room.service.leave();
     },
     async copyRoomCode(code: string) {feedback.toast(await ports.copyText(code) ? t('status.roomCodeCopied') : t('status.roomCode', {code}));},

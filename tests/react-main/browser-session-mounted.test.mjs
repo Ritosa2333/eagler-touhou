@@ -158,6 +158,9 @@ function createNativeEndpoint(frame) {
       });
     }
   }};
+  const setAttribute = frame.setAttribute.bind(frame), removeAttribute = frame.removeAttribute.bind(frame);
+  frame.setAttribute = (name, value) => {if (name === 'src') native.location.replace(value); else setAttribute(name, value);};
+  frame.removeAttribute = name => {if (name === 'src') native.location.replace('about:blank'); else removeAttribute(name);};
   native.emit = (event, extra = {}) => {
     const message = new env.window.Event('message');
     Object.defineProperties(message, {origin: {value: env.window.location.origin}, source: {value: native}, data: {value: {...native.envelope, event, ...extra}}});
@@ -375,6 +378,16 @@ test('actual BrowserLauncher: warning cancel has no fullscreen/native side effec
   await until(() => commands().includes('launch'), 'one confirmed Start launches');
   assert.equal(commands().filter(command => command === 'launch').length, 1);
   await back(); await until(() => !playerOpen(), 'cleanup through actual close');
+});
+
+test('actual BrowserLauncher: manual close exits fullscreen before retiring the native writer', async () => {
+  const f = await mountBrowser(); await start();
+  const index = f.order.length;
+  await React.act(async () => {assert.equal(await api.getTestSession().requestRuntimeClose(), true);});
+  const closing = f.order.slice(index);
+  assert.ok(closing.indexOf('sync') < closing.indexOf('fullscreen-exit'));
+  assert.ok(closing.indexOf('fullscreen-exit') < closing.indexOf('native-retired'));
+  assert.equal(playerOpen(), false);
 });
 
 test('actual BrowserLauncher: failed native sync offers Stay and retry without retiring the save writer', async () => {
@@ -1773,6 +1786,34 @@ test('actual BrowserLauncher terminal blocked return-message storage preserves p
   assert.deepEqual(f.sessionStorage.writes.slice(writesBefore).filter(([key]) => key === 'eagler-lobby-message'), expected.storageWrites);
   assert.equal(session.directory.getSnapshot().notice, ''); assert.equal(node('#notice').hidden, true);
   f.sessionStorage.blocked = false;
+});
+
+test('actual BrowserLauncher: authenticated native Return to Menu closes the Player and leaves its multiplayer room', async () => {
+  const {f, session} = await actualTerminalRoom({fromDirectory: false});
+  await click('[data-mp-seat="0"] .mp-seat-edit'); await click('#mpCheckGame');
+  await until(() => session.getRuntime().getSnapshot().launched, 'native multiplayer preflight launched');
+  await React.act(async () => f.native.emit('exit', {status: 'success', returnToMenu: true}));
+  await until(() => !playerOpen() && session.room.service.getSnapshot().room === null, 'explicit native menu return retires game and membership');
+  assert.equal(currentUrl(), '/lobby.html?game=th06mp');
+});
+
+test('actual BrowserLauncher: leaving a directly loaded TH07 room selects TH07 after the directory manifest arrives', async () => {
+  const host = subsetHost(['th06', 'th07']); host.shared.netplayRelay = 'wss://relay.invalid/socket';
+  const f = await mountBrowser({initial: `/?j=${api.encodeRoomInvite({g: 'th07mp', r: '1234'})}`, host,
+    socketBoundary: true, directoryTransport: true, actualHistory: true, seedPackages: ['th07']});
+  const session = api.getTestSession();
+  await until(() => f.sockets.some(value => new URL(value.url).searchParams.has('lobby')), 'direct TH07 room transport');
+  const socket = f.sockets.find(value => new URL(value.url).searchParams.has('lobby'));
+  await React.act(async () => {socket.open(); socket.message({type: 'state', roomDirectory: {version: 1, controlModes: true}, room: {
+    code: '1234', playerCount: 2, difficulty: 1, phase: 'lobby', inputDelay: 0, predictionLimit: 8, startSerial: 0,
+    seats: [{clientId: new URL(socket.url).searchParams.get('lobby'), name: 'A', loadout: 0, ready: false}, null], spectators: [],
+  }});});
+  assert.equal(session.directory.getSnapshot().initialized, false, 'room entry has no initialized directory');
+  await click('#mpLeaveRoom');
+  await until(() => session.directory.getSnapshot().initialized, 'returned directory loads its own manifest');
+  assert.equal(currentUrl(), '/lobby.html?game=th07mp');
+  assert.equal(session.directory.getSnapshot().selectedProduct, 'th07mp');
+  assert.ok(node('#lobbyGameRail .game.nav-preview[data-product="th07mp"]'), 'visible card matches the return URL');
 });
 
 for (const origin of ['directory create', 'directory join', 'direct']) test(`actual BrowserLauncher: ${origin} native Exit keeps its room, then Leave returns to lobby`, async () => {

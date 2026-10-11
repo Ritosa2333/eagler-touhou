@@ -266,7 +266,10 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     }
   }
   function selectProduct(product: string) {
-    if (!isMultiplayerProductId(product) || !snapshot.products.includes(product) || snapshot.selectedProduct === product) return;
+    if (!isMultiplayerProductId(product) || snapshot.selectedProduct === product ||
+        ((snapshot.initialized || snapshot.products.length > 0) && !snapshot.products.includes(product))) return;
+    // A room return can supply its filter before this view's first manifest.
+    // Keep that request for initialize() to validate against the loaded catalog.
     loadedProduct = null;
     publish({selectedProduct: product});
     clear(filterTimer); filterTimer = later(() => {filterTimer = null; refresh();}, 180);

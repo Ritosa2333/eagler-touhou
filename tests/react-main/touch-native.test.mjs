@@ -74,3 +74,30 @@ test('WebKit inherited root follows the same explicit-exit/owned-cleanup distinc
   await f.native.exitPlayerFullscreen(); assert.deepEqual(f.calls, ['exit']);
   assert.equal(f.document.webkitFullscreenElement, null);
 });
+
+test('Player close completes when the fullscreen event finishes an otherwise pending browser request', async () => {
+  const f = fixture(), events = new EventTarget();
+  f.document.addEventListener = events.addEventListener.bind(events);
+  f.document.removeEventListener = events.removeEventListener.bind(events);
+  await f.native.enterFullscreen(f.player);
+  let calls = 0;
+  f.document.exitFullscreen = () => {calls++; return new Promise(() => {});};
+  let closed = false;
+  const closing = f.native.exitPlayerFullscreen().then(() => {closed = true;});
+  await Promise.resolve(); assert.equal(closed, false, 'a still-fullscreen document is not treated as finished');
+  f.current(null); events.dispatchEvent(new Event('fullscreenchange'));
+  await closing; assert.equal(closed, true); assert.equal(calls, 1);
+  await f.native.dispose(); assert.equal(calls, 1);
+});
+
+test('Player close completes when an embedded host retires fullscreen without an event or resolved request', {timeout: 1000}, async () => {
+  const f = fixture();
+  await f.native.enterFullscreen(f.player);
+  f.document.exitFullscreen = () => new Promise(() => {});
+  let closed = false;
+  const closing = f.native.exitPlayerFullscreen().then(() => {closed = true;});
+  await Promise.resolve(); assert.equal(closed, false);
+  f.current(null);
+  await closing; assert.equal(closed, true);
+  await f.native.dispose();
+});

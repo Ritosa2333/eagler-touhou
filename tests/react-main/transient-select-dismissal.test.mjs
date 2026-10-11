@@ -56,6 +56,19 @@ async function mount() {
 async function openMenu() {await act(() => n('.mizuki-select-trigger').click()); const menu = n('.mizuki-select-menu'); assert.equal(menu.hidden, false); return menu;}
 const revision = f => f.importer.getSnapshot().presentationRevision;
 
+test('Default toast timers retain the native browser receiver through replacement and dismissal', () => {
+  const originalSet = globalThis.setTimeout, originalClear = globalThis.clearTimeout;
+  const callbacks = new Map(); let serial = 0, feedback;
+  globalThis.setTimeout = function(callback, delay) {assert.equal(this, globalThis); assert.equal(delay, 2000); callbacks.set(++serial, callback); return serial;};
+  globalThis.clearTimeout = function(id) {assert.equal(this, globalThis); callbacks.delete(id);};
+  try {
+    feedback = api.createFeedbackModel(); feedback.toast('First'); feedback.toast('Replacement');
+    assert.equal(callbacks.size, 1); assert.equal(feedback.getSnapshot().toast, 'Replacement');
+    [...callbacks.values()][0](); assert.equal(feedback.getSnapshot().toastOpen, false); assert.equal(callbacks.size, 0);
+    feedback.toast('Dispose'); feedback.dispose(); assert.equal(callbacks.size, 0);
+  } finally {feedback?.dispose(); globalThis.setTimeout = originalSet; globalThis.clearTimeout = originalClear;}
+});
+
 test('Toast show and replacement dismiss the menu; status updates and dismissal do not', async () => {
   const f = await mount(); let menu = await openMenu();
   await act(() => f.feedback.toast('First toast')); assert.equal(menu.hidden, true);

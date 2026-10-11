@@ -331,3 +331,24 @@ test('Informational motion: direct native close cancels pending exit and queued 
   await React.act(async()=>dialog.dispatchEvent(new env.window.Event('close')));
   assert.equal(dialog.open,true);assert.equal(activeMotion(dialog),entry);assert.equal(requests,1);assert.equal(closed,1);
 });
+
+test('content fetch callbacks retain standalone invocation required by browser fetch', async () => {
+  const calls = [];
+  function fetchImpl(...args) {
+    assert.equal(this, undefined, 'the request must not use the latest-state object as its receiver');
+    calls.push(args);
+    return Promise.resolve(response(html));
+  }
+  const ref = React.createRef();
+  const notice = await mount(owners.FirstUseNotice, {...firstDefaults(), ref, fetchImpl});
+  await React.act(async () => assert.equal((await ref.current.load()).kind, 'available'));
+  assert.deepEqual(calls, [['content/FIRST_USE_NOTICE.html', {cache: 'no-store'}]]);
+  await notice.unmount();
+  await mount(owners.MultiplayerGuideDialog, {open: true, gameId: 'th07', fetchImpl});
+  await flush();
+  assert.ok(n('[data-mp-rule-guide]'));
+  assert.deepEqual(calls, [
+    ['content/FIRST_USE_NOTICE.html', {cache: 'no-store'}],
+    ['content/MULTIPLAYER.html'],
+  ]);
+});

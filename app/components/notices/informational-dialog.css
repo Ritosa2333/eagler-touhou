@@ -13,7 +13,6 @@
 .informational-window--standard header button:active{transform:scale(.94)}
 .informational-dialog--artwork{width:min(540px,calc(100vw - 28px))}
 .informational-dialog--scrollable{width:min(650px,calc(100vw - 32px));max-height:min(88dvh,820px);border:0;box-shadow:0 24px 64px rgba(0,0,0,.66)}
-.informational-dialog--scrollable::backdrop{background:transparent;backdrop-filter:none}
 .informational-window--scrollable{display:grid;grid-template-rows:auto minmax(0,1fr);max-height:min(88dvh,820px)}
 .informational-window--scrollable>header{padding:10px 12px 10px 20px;border:0}
 .informational-window--scrollable h1{color:#eee;font:800 17px/1.2 var(--ui-font)}

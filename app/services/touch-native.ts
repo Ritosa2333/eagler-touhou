@@ -3,6 +3,8 @@ import type {TouchLayoutOrientation} from '../models/touch-layout';
 import type {Translate} from '../i18n';
 
 type FullscreenDocument = Pick<Document, 'documentElement' | 'fullscreenElement' | 'exitFullscreen'> & {
+  addEventListener?: Document['addEventListener'];
+  removeEventListener?: Document['removeEventListener'];
   webkitFullscreenElement?: Element | null;
   webkitExitFullscreen?: () => void | Promise<void>;
 };
@@ -32,8 +34,28 @@ export function createTouchNativePorts({document: documentLike, screen: screenLi
   const isFullscreen = () => (!!target && current() === target) || current() === documentLike.documentElement;
   const canSwitchOrientation = () => !disposed && mobile && typeof screenLike.orientation?.lock === 'function' && !unsupported;
   async function exitBrowserFullscreen() {
-    if (typeof documentLike.exitFullscreen === 'function') await documentLike.exitFullscreen();
-    else if (typeof documentLike.webkitExitFullscreen === 'function') await documentLike.webkitExitFullscreen();
+    let resolveExit!: () => void;
+    const exited = new Promise<void>(resolve => {resolveExit = resolve;});
+    const changed = () => {if (!current()) resolveExit();};
+    documentLike.addEventListener?.('fullscreenchange', changed);
+    documentLike.addEventListener?.('webkitfullscreenchange', changed);
+    // Embedded browser hosts can update fullscreenElement without delivering
+    // the completion event. Keep observing the native state until either form
+    // of completion arrives, and retire the observer with the request.
+    const observation = globalThis.setInterval(changed, 100);
+    try {
+      const request = typeof documentLike.exitFullscreen === 'function' ? documentLike.exitFullscreen()
+        : documentLike.webkitExitFullscreen?.();
+      // Retiring an iframe can finish the browser's fullscreen transition while
+      // its exit request remains pending. The actual document state also proves
+      // completion; it must not strand the already-closed game behind its cover.
+      changed();
+      await Promise.race([Promise.resolve(request), exited]);
+    } finally {
+      globalThis.clearInterval(observation);
+      documentLike.removeEventListener?.('fullscreenchange', changed);
+      documentLike.removeEventListener?.('webkitfullscreenchange', changed);
+    }
   }
   async function exitFullscreen() {
     const previous = owned; owned = null;

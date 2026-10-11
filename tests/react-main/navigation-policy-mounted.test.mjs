@@ -140,7 +140,7 @@ test('policy: locale replacement does not sync or close direct-query running pla
 test('policy: ordinary player Exit silently waits save, then returns to its options', async () => {
   const controls = await mount(); const home = href();
   await settle(() => controls.navigation.openOptions('th06'));
-  const optionsKey = mounted.router.state.location.key;
+  const optionsKey = mounted.router.state.location.key, optionsAddress = href();
   await settle(() => {controls.navigation.openPlayer('th06'); controls.setPlayer(true);});
   assert.notEqual(mounted.router.state.location.key, optionsKey, 'game owns one Back layer above its options');
   const playerKey = mounted.router.state.location.key;
@@ -149,8 +149,40 @@ test('policy: ordinary player Exit silently waits save, then returns to its opti
   assert.equal(controls.closeCount, 1); assert.equal(controls.navigation.playerOpen, true);
   assert.equal(mounted.router.state.location.key, playerKey); assert.equal(decisionOpen(), false);
   await settle(() => finish(true));
-  assert.equal(controls.navigation.playerOpen, false); assert.equal(controls.navigation.surface, 'options'); assert.equal(mounted.router.state.location.key, optionsKey);
+  assert.equal(controls.navigation.playerOpen, false); assert.equal(controls.navigation.surface, 'options');
+  assert.equal(href(), optionsAddress); assert.equal(mounted.router.state.historyAction, 'REPLACE');
+  assert.equal(state().launcherGameEntry, undefined, 'completed game cannot remain an active history layer');
   await settle(() => controls.navigation.closeSurface()); assert.equal(href(), home);
+});
+
+test('policy: completed multiplayer close retires the game marker before a second launch', async () => {
+  const controls = await mount(inviteEntry({g: 'th06mp', r: '4079', f: true}));
+  await settle(() => {controls.navigation.openPlayer('th06mp'); controls.setPlayer(true);});
+  await settle(() => controls.navigation.closeSurface());
+  assert.equal(controls.navigation.playerOpen, false); assert.equal(controls.navigation.surface, 'room');
+  assert.equal(state().launcherGameEntry, undefined, 'main room normalization also retires the React game layer');
+  const roomKey = mounted.router.state.location.key;
+  await settle(() => {controls.navigation.openPlayer('th06mp'); controls.setPlayer(true);});
+  assert.notEqual(mounted.router.state.location.key, roomKey, 'the second launch owns its own game Back layer');
+  await settle(() => controls.navigation.closeSurface());
+  assert.equal(controls.closeCount, 2); assert.equal(controls.navigation.surface, 'room');
+  assert.equal(controls.leaveCount, 0);
+});
+
+test('policy: closing rules after native MP Exit cannot resurrect a retired game marker', async () => {
+  const controls = await mount(inviteEntry({g: 'th06mp', r: '4079', f: true}));
+  await settle(() => {controls.navigation.openPlayer('th06mp'); controls.setPlayer(true);});
+  await settle(() => controls.navigation.openInfoDialog('mpGuideDialog'));
+  await settle(() => {controls.setPlayer(false); controls.navigation.completeRuntimeClose();});
+  assert.equal(controls.navigation.infoDialogOpen('mpGuideDialog'), true, 'native close preserves the attached rules dialog');
+  await settle(() => controls.navigation.closeSurface()); await settle();
+  assert.equal(controls.navigation.infoDialogOpen('mpGuideDialog'), false);
+  assert.equal(state().launcherGameEntry, undefined, 'the popped older entry cannot retain the completed game');
+  const roomKey = mounted.router.state.location.key;
+  await settle(() => {controls.navigation.openPlayer('th06mp'); controls.setPlayer(true);});
+  assert.notEqual(mounted.router.state.location.key, roomKey);
+  await settle(() => controls.navigation.closeSurface());
+  assert.equal(controls.closeCount, 1); assert.equal(controls.leaveCount, 0);
 });
 
 test('policy: Stay retains player and allows a later close retry', async () => {
@@ -535,7 +567,7 @@ for (const fromDirectory of [false, true]) test(`source-derived room leave alway
   assert.equal(controls.navigation.surface, 'library');
   assert.equal(controls.navigation.context, 'lobby');
   assert.equal(controls.navigation.roomCode, null);
-  assert.equal(mounted.router.state.historyAction, 'POP');
+  assert.equal(mounted.router.state.historyAction, 'REPLACE', 'main mpReturnToDirectory commits the known destination without traversing room history');
 });
 
 

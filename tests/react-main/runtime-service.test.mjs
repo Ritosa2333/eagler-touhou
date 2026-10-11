@@ -57,7 +57,7 @@ function managedPlan(game = 'th10', options = {}) {
       base: {files: ['data']}, components: {}}, files: {data: {objectId: `obj-${game}-data`, revision: 'data-r1'}}},
     configure: {music: 'none', options}};
 }
-function fixture(overrides = {}) {
+function fixture({onFrameRetired, ...overrides} = {}) {
   const messageListeners = new Set(), loadListeners = new Set(), eventContexts = [], outbound = [], navigations = [], retained = [], released = [], codeCalls = [], dataReads = [];
   const timers = deterministicTimers();
   const host = {location: {origin, href: `${baseUrl}?game=th06`},
@@ -67,8 +67,11 @@ function fixture(overrides = {}) {
     postMessage(data, target) {assert.equal(target, origin); outbound.push(data);},
     addEventListener() {}, removeEventListener() {}};
   const frame = {contentWindow: runtime, isConnected: true,
+    setAttribute(name, value) {assert.equal(name, 'src'); runtime.location.replace(value);},
+    removeAttribute(name) {assert.equal(name, 'src'); runtime.location.replace('about:blank');},
     addEventListener(type, listener) {assert.equal(type, 'load'); loadListeners.add(listener);}, removeEventListener(_type, listener) {loadListeners.delete(listener);}};
   const service = owners.createRuntimeService({translate: key => key, frame, hostWindow: host, baseUrl, timers,
+    onFrameRetired,
     fetchImpl: async () => {throw new Error('Unexpected network in deterministic service fixture');},
     onEvent: (message, context) => eventContexts.push({message, context, snapshot: service.getSnapshot()}),
     dependencies: {
@@ -110,6 +113,73 @@ test('runtime: validated direct preload uses original asset URL, one frame and A
   f.event('first-frame'); assert.equal(f.service.getSnapshot().firstFrame, true); assert.equal(f.service.getSnapshot().firstFrameTimedOut, false);
   const closing = f.service.close(); await flush(); f.ack('sync'); assert.equal(await closing, true);
   assert.equal(f.navigations.at(-1), 'about:blank'); assert.equal(f.frame, frame);
+});
+
+test('runtime: save consent precedes native presentation cleanup, which precedes iframe retirement', async () => {
+  const f = fixture(); await f.prepare(directPlan());
+  const starting = f.service.launch(); f.ack('launch'); await starting;
+  let release, calls = 0;
+  const fullscreen = new Promise(resolve => {release = resolve;});
+  const closing = f.service.close({beforeReset: async () => {calls++; await fullscreen;}});
+  assert.equal(f.service.close(), closing, 'concurrent closes share the exact save and presentation operation');
+  await flush(); assert.equal(calls, 0, 'save is still pending');
+  f.ack('sync'); await flush();
+  assert.equal(calls, 1); assert.notEqual(f.navigations.at(-1), 'about:blank', 'save writer survives until fullscreen has exited');
+  assert.equal(f.service.getSnapshot().ready, true);
+  release(); assert.equal(await closing, true);
+  assert.equal(f.navigations.at(-1), 'about:blank');
+});
+
+test('runtime: the validated iframe src owner launches and removes the source without Window history replacement', async () => {
+  const f = fixture(), navigate = f.runtime.location.replace.bind(f.runtime.location), calls = [];
+  f.frame.setAttribute = (name, value) => {calls.push(['set', name, value]); navigate(value);};
+  f.frame.removeAttribute = name => {calls.push(['remove', name]); navigate('about:blank');};
+  f.runtime.location.replace = () => {assert.fail('Player must use the original iframe navigation owner');};
+  await f.prepare(directPlan());
+  assert.equal(calls.length, 1); assert.deepEqual(calls[0].slice(0, 2), ['set', 'src']);
+  assert.equal(await f.service.close({discardUnsaved: true}), true);
+  assert.deepEqual(calls.at(-1), ['remove', 'src']);
+});
+
+test('runtime: Stay after failed save keeps fullscreen and iframe intact', async () => {
+  const f = fixture(); await f.prepare(directPlan());
+  const starting = f.service.launch(); f.ack('launch'); await starting;
+  let calls = 0;
+  const closing = f.service.close({decide: async () => 'stay', beforeReset: async () => {calls++;}});
+  await flush(); f.ack('sync', {ok: false});
+  assert.equal(await closing, false); assert.equal(calls, 0);
+  assert.equal(f.service.getSnapshot().launched, true); assert.notEqual(f.navigations.at(-1), 'about:blank');
+});
+
+test('runtime: child browsing context is retired only after accepted close and blank navigation', async () => {
+  let retired = 0;
+  const f = fixture({onFrameRetired() {retired++; assert.equal(f.runtime.location.href, 'about:blank');}});
+  await f.prepare(directPlan());
+  const starting = f.service.launch(); f.ack('launch'); await starting;
+  const stayed = f.service.close({decide: async () => 'stay'});
+  await flush(); f.ack('sync', {ok: false});
+  assert.equal(await stayed, false); assert.equal(retired, 0);
+  const closed = f.service.close(); await flush(); f.ack('sync');
+  assert.equal(await closed, true); assert.equal(retired, 1);
+});
+
+test('runtime: Player retirement waits for the blank child document to commit before resolving close', async () => {
+  const f = fixture(); await f.prepare(directPlan());
+  const starting = f.service.launch(); f.ack('launch'); await starting;
+  const originalReplace = f.runtime.location.replace;
+  const oldDocument = f.runtime.document;
+  Object.assign(oldDocument, {URL: f.runtime.location.href, readyState: 'complete'});
+  f.runtime.location.replace = url => {
+    originalReplace(url);
+    if (url === 'about:blank') f.runtime.document = oldDocument;
+  };
+  let closed = false;
+  const closing = f.service.close({beforeReset: async () => {}}).then(result => {closed = true; return result;});
+  await flush(); f.ack('sync'); await flush();
+  assert.equal(f.runtime.location.href, 'about:blank'); assert.equal(closed, false, 'requested navigation still exposes the previous game document');
+  f.runtime.document = {URL: 'about:blank', readyState: 'complete'};
+  for (const listener of [...f.loadListeners]) listener({type: 'load'});
+  assert.equal(await closing, true);
 });
 
 test('runtime: optional first-frame wait remains pending after ACK; 14-second failure keeps acknowledged runtime alive', async () => {

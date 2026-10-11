@@ -61,6 +61,8 @@ export interface RuntimeMidiEventContext {
 }
 export interface RuntimeFrame {
   readonly contentWindow: RuntimeWindow | null;
+  setAttribute(name: 'src', value: string): void;
+  removeAttribute(name: 'src'): void;
   /** Emergency cleanup is allowed only with positive evidence of DOM removal. */
   readonly isConnected?: boolean;
   addEventListener(type: 'load', listener: EventListener): void;
@@ -214,6 +216,8 @@ export interface RuntimeServiceOptions {
   network?: ReturnType<typeof createNetworkActivityTracker>;
   onLocalResourceProgress?: (progress: RuntimeLocalResourceProgress) => void;
   onWarning?: (error: unknown) => void;
+  /** Discard the retired child browsing context while retaining its host node. */
+  onFrameRetired?: () => void;
 }
 export class RuntimeSessionSupersededError extends Error {
   override name = 'AbortError';
@@ -429,10 +433,11 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     }
     const runtime = frame.contentWindow;
     if (!runtime) throw new Error('Runtime iframe browsing context is unavailable');
-    // Location.replace explicitly replaces the child session-history entry.
-    // src assignment/removal uses auto history handling and can add joint Back
-    // steps. There is deliberately no src-write fallback if replacement fails.
-    runtime.location.replace(target);
+    // Match main's iframe navigation owner: launch sets src and retirement
+    // removes it. Direct Window.location replacement leaves retired documents
+    // in joint history snapshots when the same iframe launches a second game.
+    if (target === 'about:blank') frame.removeAttribute('src');
+    else frame.setAttribute('src', target);
   }
   function runtimeIdentity(token: RuntimeSessionToken) {
     assertCurrent(token);
@@ -1116,16 +1121,18 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
     update({fileOperationBusy: true});
     return session.promise as Promise<T>;
   }
-  function close({ discardUnsaved = false, decide }: {
+  function close({ discardUnsaved = false, decide, beforeReset }: {
     discardUnsaved?: boolean;
     decide?: (error: unknown) => Promise<RuntimeCloseDecision>;
+    /** After save consent, retire native presentation before navigating the iframe. */
+    beforeReset?: () => Promise<void>;
   } = {}): Promise<boolean> {
     if (frame.isConnected === false) { disposeDetachedFrame(); return Promise.resolve(false); }
     preflight?.interrupt?.();
     if (closing) return closing;
     if (fileClosing) return fileClosing;
     if (fileSession) {
-      const continueClose = () => {fileClosing = null; return close({discardUnsaved, decide});};
+      const continueClose = () => {fileClosing = null; return close({discardUnsaved, decide, beforeReset});};
       const waiting = fileSession.promise.then(continueClose, continueClose);
       fileClosing = waiting; return waiting;
     }
@@ -1151,7 +1158,14 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
         // preparation waiting behind it. A default/no-UI failure stays visible.
         if (!leave) { update({ phase: previousPhase, ...(decide ? {saveError: null} : {}) }); return false; }
       }
-      if (!token || sessions.isCurrent(token)) return reset();
+      if (!token || sessions.isCurrent(token)) {
+        if (beforeReset) await beforeReset();
+        if (token && !sessions.isCurrent(token)) return !detachedFrameLost && terminalLossEpoch === null;
+        const cleared = reset();
+        if (cleared && (beforeReset || options.onFrameRetired)) await waitForBlankFrame();
+        if (cleared) options.onFrameRetired?.();
+        return cleared;
+      }
       return false;
     })().catch(error => {
       // A dismissed/rejected UI decision is not consent to leave and must not
@@ -1160,6 +1174,29 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
       throw error;
     }).finally(() => { if (closing === task) closing = null; });
     closing = task; return task;
+  }
+  function waitForBlankFrame(): Promise<void> {
+    const isBlank = () => {
+      try {
+        const runtime = frame.contentWindow, document = runtime?.document as {URL?: string; readyState?: string} | undefined;
+        return runtime?.location.href === 'about:blank' && !!document &&
+          (document.URL === undefined || document.URL === 'about:blank') && document.readyState !== 'loading';
+      } catch {return false;}
+    };
+    if (isBlank()) return Promise.resolve();
+    // location.replace requests navigation; it does not commit it synchronously.
+    // Popping the host history before the child commits can cancel retirement
+    // and preserve the old game document in the next launch's parent entry.
+    return new Promise<void>((resolve, reject) => {
+      const changed: EventListener = () => {if (isBlank()) finish();};
+      const finish = (error?: Error) => {
+        frame.removeEventListener('load', changed); timers.clearTimeout(timeout);
+        if (error) reject(error); else resolve();
+      };
+      const timeout = timers.setTimeout(() => finish(new Error('Runtime iframe retirement did not complete')), options.timeouts?.ready ?? 120000);
+      frame.addEventListener('load', changed);
+      if (isBlank()) finish();
+    });
   }
   function cancel() {
     if (frame.isConnected === false) { disposeDetachedFrame(); return; }

@@ -1,7 +1,8 @@
 /** Authored CSS cascade proof, not browser geometry/rendering. Resolve the real
  * legacy and shared shell selectors, media, specificity and shorthand resets
  * against equivalent DOM. Motion declarations are intentionally replaced by
- * the common WAAPI policy; all other declarations retain the pinned gate.
+ * the common WAAPI policy; guide backdrop now follows the common dimmed shell.
+ * Other declarations retain the pinned gate.
  * Native top-layer/backdrop painting remains untested. */
 import test, {before, after} from 'node:test';
 import assert from 'node:assert/strict';
@@ -101,10 +102,11 @@ for(const [name,id,props] of [
   ['AppleRefreshDialog','appleRefreshDialog',{}],
   ['DonationDialog','donationDialog',{assetUrl:x=>x,onArtworkUnavailable(){}}],
   ['MultiplayerGuideDialog','mpGuideDialog',{gameId:'th07'}],
-])test(`${name}: non-motion shell declarations equal canonical main in all states/media`,()=>{
+])test(`${name}: shell retains canonical layout and common dimmed backdrop in all states/media`,()=>{
   const baseline=new dom.window.DOMParser().parseFromString(pinned('public/index.html'),'text/html').querySelector('#'+id);
   const markup=renderToStaticMarkup(React.createElement(api.LocaleProvider,{locale:'zh-CN'},React.createElement(api[name],{open:false,onCloseRequest(){},...props})));
   const holder=dom.window.document.createElement('div');holder.innerHTML=markup;const actual=holder.querySelector('#'+id);
+  const commonBackdrop=new dom.window.DOMParser().parseFromString(pinned('public/index.html'),'text/html').querySelector('#appleRefreshDialog');
   assert.equal(actual.matches('.apple-refresh-dialog,.donation-dialog,.multiplayer-guide-dialog'),false);
   assert.equal(actual.firstElementChild.matches('.apple-refresh-window,.donation-window,.multiplayer-guide-window'),false);
   const variables=Object.fromEntries(Array.from(actual.style).map(prop=>[prop,actual.style.getPropertyValue(prop)]));
@@ -112,7 +114,7 @@ for(const [name,id,props] of [
     const fixture=dom.window.document.createElement('div');fixture.className=mode.less?'less-motion':'';fixture.append(baseline,actual);
     for(const dialog of [baseline,actual]){dialog.toggleAttribute('open',state!=='closed');dialog.classList.toggle('closing',state==='closing');dialog.querySelector('button').setAttribute('data-probe-state',interaction);}
     const targets=[['dialog',baseline,actual,false],['backdrop',baseline,actual,true],...['article','header','h1','button'].map(tag=>[tag,baseline.querySelector(tag),actual.querySelector(tag),false])];
-    for(const [target,before,after,backdrop] of targets)assert.deepEqual(resolved(sharedRules,after,mode,backdrop,variables),resolved(originalRules,before,mode,backdrop),`${modeName}/${state}/${interaction||'idle'}/${target}`);
+    for(const [target,before,after,backdrop] of targets)assert.deepEqual(resolved(sharedRules,after,mode,backdrop,variables),resolved(originalRules,backdrop?commonBackdrop:before,mode,backdrop),`${modeName}/${state}/${interaction||'idle'}/${target}`);
   }
 });
 test('one generic style/lifecycle owner retains canonical CSS and domain-only callers',()=>{

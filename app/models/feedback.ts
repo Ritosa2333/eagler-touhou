@@ -1,6 +1,6 @@
 /** Original main status channels and fixed two-second toast lifetime. */
 export interface FeedbackSnapshot {readonly status: string; readonly playerStatus: string; readonly toast: string; readonly toastOpen: boolean; readonly toastRevision: number;}
-export function createFeedbackModel(timers: {setTimeout: typeof setTimeout; clearTimeout: typeof clearTimeout} = {setTimeout, clearTimeout}) {
+export function createFeedbackModel(timers: {setTimeout: typeof setTimeout; clearTimeout: typeof clearTimeout} = {setTimeout: globalThis.setTimeout.bind(globalThis), clearTimeout: globalThis.clearTimeout.bind(globalThis)}) {
   const listeners = new Set<() => void>();
   let statusRenderer: (() => string) | null = null;
   let timer: ReturnType<typeof setTimeout> | null = null;

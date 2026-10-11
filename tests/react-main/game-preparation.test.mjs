@@ -120,7 +120,9 @@ function runtimeFixture(order = [], overrides = {}) {
         request: message.request, ok: true}));},
   };
   service = api.createRuntimeService({translate: t, baseUrl,
-    frame: {contentWindow: native, isConnected: true, addEventListener() {}, removeEventListener() {}},
+    frame: {contentWindow: native, isConnected: true, addEventListener() {}, removeEventListener() {},
+      setAttribute(name, value) {assert.equal(name, 'src'); native.location.replace(value);},
+      removeAttribute(name) {assert.equal(name, 'src'); native.location.replace('about:blank');}},
     hostWindow: {location: {href: baseUrl, origin}, addEventListener(_type, fn) {listeners.add(fn);}, removeEventListener(_type, fn) {listeners.delete(fn);}},
     fetchImpl: async () => {throw new Error('Unexpected Runtime network');},
     onLocalResourceProgress: overrides.onLocalResourceProgress,

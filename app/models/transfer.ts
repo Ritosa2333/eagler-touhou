@@ -64,7 +64,7 @@ export function transferClock(seconds: number): string {
 /** Main 1206–1270 and 3489–3668. Presentation only: the original one network
  * tracker, authenticated Runtime and blocking-operation owner supply events. */
 export function createTransferModel({translate: t, context, ports, frames,
-  timers = {setTimeout, clearTimeout}, now = () => globalThis.performance?.now?.() ?? Date.now()}: {
+  timers = {setTimeout: globalThis.setTimeout.bind(globalThis), clearTimeout: globalThis.clearTimeout.bind(globalThis)}, now = () => globalThis.performance?.now?.() ?? Date.now()}: {
   translate: Translate;
   context(): {epoch: number | null; launched: boolean; iosWebKitTouch: boolean};
   ports: TransferModelPorts;

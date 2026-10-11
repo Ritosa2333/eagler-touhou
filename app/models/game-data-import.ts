@@ -75,7 +75,7 @@ export interface BeginManualGameDataImport {
 /** Main 1588–1605, 3318–3488 and 9643–9740. Plain document-lived model:
  * no DOM, route mutation, permissions, Runtime transport, or private store. */
 export function createGameDataImportModel({acquisition, translate: t, getContext, ports,
-  timers = {setTimeout, clearTimeout}}: {
+  timers = {setTimeout: globalThis.setTimeout.bind(globalThis), clearTimeout: globalThis.clearTimeout.bind(globalThis)}}: {
   acquisition: Pick<PackageAcquisition, 'importPackage'>;
   translate: Translate;
   getContext(): GameDataImportContext;

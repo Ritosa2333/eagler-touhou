@@ -37,7 +37,8 @@ export function MultiplayerGuideDialog({gameId, contentUrl = 'content/MULTIPLAYE
     if (!pending.current) {
       const request = (async () => {
         try {
-          const response = await latest.current.fetchImpl(latest.current.contentUrl);
+          const {fetchImpl, contentUrl} = latest.current;
+          const response = await fetchImpl(contentUrl);
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
           const html = await response.text();
           if (!active.current || token !== generation.current || !content.current) return;
