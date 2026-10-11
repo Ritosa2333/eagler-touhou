@@ -96,7 +96,11 @@ try {
   assert.deepEqual((await readRuntimeManifest(output)).groups.map(group=>group.current.generation),generations,"Launcher-only refresh does not rebuild game generations");
   const deployment=await json(resolve(output,"deployment.json"));
   if (deployment.appShell) assert.ok(deployment.appShell.entries.every(path=>!path.startsWith("runtime/") && path!==RUNTIME_MANIFEST_FILE));
-  else assert.ok(!deployment.files.some(file=>file.path==="app-shell-sw.js"),"disabled offline mode must not publish a worker");
+  else {
+    assert.ok(deployment.files.some(file=>file.path==="app-shell-sw.js"),"disabled offline mode retains its upgrade endpoint");
+    const {APP_SHELL_RETIREMENT_WORKER} = await import('../lib/app-shell-retirement.mjs');
+    assert.equal(await readFile(resolve(output,"app-shell-sw.js"),"utf8"),APP_SHELL_RETIREMENT_WORKER);
+  }
   await command("scripts/verify-server-build.mjs",output);
   const store=resolve(temp,"releases"),current=resolve(temp,"current");
   const first=await deployStaticSite({source:output,releases:store,current});
