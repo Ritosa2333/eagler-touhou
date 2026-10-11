@@ -9,5 +9,12 @@
 /* main styles.css31–33 embed rules, scoped to the retained carrier document. */
 .lobby-options-document .main.library-layout{padding:0!important;min-height:0}
 .lobby-options-document #mpNetworkDiagnostics{display:none}
+/* A native dialog opens while the panel is still at its closed transform.
+   Its autofocus belongs to the carrier, so focusing offscreen controls cannot
+   scroll the visual viewport/background before the shared entrance starts. */
+.lobby-options-document:focus{outline:none}
+/* Reuse the original fixed, opaque page cue on SPA entries. The initial-entry
+   dispatch remains immutable and still owns the pre-module failure surface. */
+:is(#eaglerPreload,#lobbyPreload)[data-route-preload]{display:grid!important}
 /* Root's lobby stylesheet adapter excludes marked original-document roots and
    descendants from lobby.css5–8/105–106, including moved menus and overlays. */

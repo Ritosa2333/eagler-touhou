@@ -3,7 +3,7 @@ import {multiplayerInputTimingPolicy} from '../../../src/contracts/product-catal
 import {multiplayerDisplayInitial} from '../../../src/launcher/multiplayer-identity.mts';
 import {useLocale} from '../../i18n';
 import type {RoomViewProps, RoomPanelKind} from './types';
-import {roomPresentation, networkMessage} from './presentation';
+import {roomPresentation, networkMessage, roomConnectionMessage} from './presentation';
 import {RoomProgress} from './RoomProgress';
 import {RoomSeats} from './RoomSeats';
 import {RoomPanel} from './RoomPanel';
@@ -31,7 +31,7 @@ export function RoomView(props: RoomViewProps) {
   const phase = t(context.launchStage === 'path' ? 'room.connectingGameplay' : context.launchStage || room.phase === 'starting' ? 'room.starting' : room.phase === 'running' ? 'room.running' : state.preparation?.status === 'preparing' ? 'room.preparingResources' : state.preparation?.status === 'importing' ? 'package.importingSimple' : state.preparation?.status === 'ready' ? 'room.resourcesReady' : state.preparation?.status === 'failed' ? 'room.resourcesUnavailable' : 'room.lobby');
   const message = networkMessage(state, context, t), peers = (room.seats || []).slice(0, room.playerCount).flatMap((seat, index) => seat && index !== state.seat ? [{seat, index}] : []);
   return <section className="mp-room-view" id="mpRoomView" hidden={props.visible === false} aria-label={`${gameId.toUpperCase()} ${t('multiplayer.roomAria')}`} inert={props.settingsOpen}>
-    <header className="mp-room-head"><button className="mp-room-back mp-room-top-action" id="mpLeaveRoom" type="button" onClick={() => {void props.onLeave();}}><img className="room-icon" src={assetUrl('assets/room-caret-left.svg')} alt=""/><span>{t('action.back')}</span></button><span className={`mp-room-connection${ready ? ' connected' : ''}`} id="mpRoomConnection" role="status">{t(ready ? 'room.online' : 'multiplayer.reconnecting')}</span>
+    <header className="mp-room-head"><button className="mp-room-back mp-room-top-action" id="mpLeaveRoom" type="button" onClick={() => {void props.onLeave();}}><img className="room-icon" src={assetUrl('assets/room-caret-left.svg')} alt=""/><span>{t('action.back')}</span></button><span className={`mp-room-connection${ready ? ' connected' : ''}`} id="mpRoomConnection" role="status">{ready ? t('room.online') : roomConnectionMessage(state, t)}</span>
       <button className="mp-room-code mp-room-top-action" id="mpCopyRoomCode" type="button" aria-label={t('multiplayer.copyRoomCode')} onClick={() => {void props.onCopyRoomCode(room.code);}}><span className="mp-room-code-label">{t('multiplayer.roomCode')}</span><strong id="mpRoomCode">{room.code}</strong><img className="room-icon" src={assetUrl('assets/room-copy.svg')} alt=""/></button>
       <button className="edge-drawer-cue-right mp-settings-room-cue mp-room-top-action" id="mpSettingsRoomDrawerToggle" type="button" aria-controls="mpSettingsRoomDrawer" aria-expanded={props.settingsOpen} aria-label={t('settings.title')} hidden={props.settingsOpen || props.settingsClosing} onClick={props.onOpenSettings}><img className="room-icon" src={assetUrl('assets/room-gear-six.svg')} alt=""/></button>
     </header>

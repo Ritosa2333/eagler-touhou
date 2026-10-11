@@ -39,6 +39,7 @@ before(async () => {
   await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
     export * from './app/components/room/index.ts';
     export * from './app/components/room/RoomPanel.tsx';
+    export * from './app/components/room/presentation.ts';
     export * from './app/components/launcher/OptionsPanel.tsx';
     export * from './app/components/launcher/products.ts';
     export * from './app/components/settings/SettingsBody.tsx';
@@ -67,6 +68,20 @@ afterEach(async () => {
 });
 after(async () => {env?.close(); if (work) await rm(work, {recursive: true, force: true});});
 class Storage {values = new Map(); getItem(key) {return this.values.get(key) ?? null;} setItem(key, value) {this.values.set(key, String(value));} removeItem(key) {this.values.delete(key);}}
+test('Room connection distinguishes initial connect, synchronization and actual reconnect', async () => {
+  const f = await fixture({product: 'th11mp', locale: 'zh-CN'}).enter();
+  const message = () => owners.roomConnectionMessage(f.service.getSnapshot(), key => t('zh-CN', key));
+  assert.equal(message(), t('zh-CN', 'multiplayer.connectingRoom'));
+  await act(() => f.socket.open());
+  assert.equal(message(), t('zh-CN', 'multiplayer.syncingMembers'));
+  await f.receive({predictionLimit: 8, adonisMode: 0});
+  assert.equal(f.service.getSnapshot().room.synced, false);
+  assert.equal(message(), t('zh-CN', 'multiplayer.syncingMembers'));
+  await f.receive();
+  assert.equal(f.service.getSnapshot().room.synced, true);
+  await act(() => f.socket.close(1006));
+  assert.equal(message(), t('zh-CN', 'multiplayer.reconnecting'));
+});
 class Socket {
   readyState = 0; sent = []; listeners = new Map(); closes = [];
   addEventListener(type, fn) {this.listeners.set(type, [...(this.listeners.get(type) || []), fn]);}
@@ -162,7 +177,17 @@ function compare(f, options = {}) {
   const selectors = ['#mpRoomConnection', '#mpCopyRoomCode', '#mpRoomTitle', '.mp-room-tags', '#mpRoomResourceProgress', '#mpRoomSettingsDrawer', '#mpInputTiming',
     '#mpSpectatorAvatars', '#mpSpectatorCount', '.mp-room-footer', '#mpNameEditor', '#mpUnseatedNote', '#mpLocalPlayer', '#mpCheckGame',
     '#mpRoomSettings', '#mpSpectatorContent', '[data-room-panel="network"]'];
-  for (const selector of selectors) assert.deepEqual(canonical(n(selector)), canonical(n(selector, doc)), `Executed pinned main: ${selector}`);
+  for (const selector of selectors) {
+    const actual = n(selector).cloneNode(true);
+    // Timing deliberately moved here; its values/permissions have their own
+    // exercised check below. Every other original room field stays identical.
+    if (selector === '#mpRoomSettings') actual.querySelector('#mpInputDelaySetting')?.remove();
+    if (selector === '#mpRoomConnection' && (!f.service.getSnapshot().connected || !f.service.getSnapshot().room.synced)) {
+      assert.equal(actual.textContent, owners.roomConnectionMessage(f.service.getSnapshot(), key => t(f.locale, key)));
+      continue;
+    }
+    assert.deepEqual(canonical(actual), canonical(n(selector, doc)), `Executed pinned main: ${selector}`);
+  }
   for (const [index, actual] of all('[data-mp-seat]').entries()) {
     const expected = n(`[data-mp-seat="${index}"]`, doc);
     for (const attr of ['class', 'hidden', 'title']) assert.equal(actual.getAttribute(attr), expected.getAttribute(attr), `Seat ${index}: ${attr}`);
@@ -397,13 +422,15 @@ test('Unmount retires an open native modal synchronously', async () => {
   const h = await panelFixture(); await h.m.unmount(); assert.equal(h.node.open, false);
 });
 
-for (const locale of ['zh-CN', 'en']) test(`MP settings slot matches original ${locale} timing lifecycle and replay/import callback routing for every product`, async () => {
+for (const locale of ['zh-CN', 'en']) test(`room game settings own ${locale} timing while local options retain replay/import for every product`, async () => {
   for (const product of owners.PRODUCT_IDS.filter(owners.isMultiplayerProductId)) {
     const f = fixture({product, locale}), events = [], m = await mount(owners.MultiplayerSettingsControls, {product, service: f.service, onReplayViewer: () => events.push('replay-viewer'), onImport: () => events.push('import')}, {locale});
-    assert.equal(n('#mpInputDelaySetting').hidden, true); assert.equal(n('#mpInputDelay').disabled, true);
+    assert.equal(all('#mpInputDelay').length, 0, 'local options never contain a room-wide timing field');
     for (const selector of ['#mpReplayViewer', '#mpGamePackageImport']) assert.equal(n(selector).disabled, false);
     await click('#mpReplayViewer'); await click('#mpGamePackageImport'); assert.deepEqual(events, ['replay-viewer', 'import']);
-    await f.live(); const config = owners.multiplayerConfigForProduct(product), select = n('#mpInputDelay'), original = baseline(f);
+    await f.live(); const h = await mountRoom(f, {panel: {kind: 'game'}}, {locale});
+    const config = owners.multiplayerConfigForProduct(product), select = n('#mpInputDelay'), original = baseline(f);
+    assert.ok(n('#mpRoomSettings').contains(select));
     assert.equal(n('#mpInputDelaySetting').hidden, !config.inputTiming);
     if (config.inputTiming) assert.deepEqual([...select.options].map(node => [node.value, node.textContent, node.disabled]), [...n('#mpInputDelay', original).options].map(node => [node.value, node.textContent, node.disabled]));
     for (const selector of ['#mpReplayViewer', '#mpGamePackageImport']) assert.deepEqual(canonical(n(selector)), canonical(n(selector, original)));
@@ -424,7 +451,7 @@ for (const locale of ['zh-CN', 'en']) test(`MP settings slot matches original ${
       }
       await act(() => f.socket.close(1006)); assert.equal(select.disabled, true);
     }
-    await m.unmount(); assert.equal(all('.mizuki-select-menu').length, 0);
+    await h.m.unmount(); await m.unmount(); assert.equal(all('.mizuki-select-menu').length, 0);
   }
 });
 function settingsContext(productId, patch = {}) {return {productId, uiLocale: 'en', languages: [{id: 'ja', title: '日本語'}], musicAvailability: {audio: true, midiAvailable: true, importServer: false, remoteOggAdvertised: false}, webMidiAvailable: false, mobile: false, ...patch};}
@@ -449,7 +476,7 @@ function fakeTimers() {
   globalThis.setTimeout = (fn, delay = 0, ...args) => {const id = ++serial; tasks.set(id, {at: time + delay, delay, fn: () => fn(...args)}); return id;}; globalThis.clearTimeout = id => tasks.delete(id);
   return {tasks, async tick(ms) {const end = time + ms; for (;;) {const next = [...tasks].filter(([, task]) => task.at <= end).sort((a, b) => a[1].at - b[1].at)[0]; if (!next) break; tasks.delete(next[0]); time = next[1].at; await act(next[1].fn);} time = end;}, restore() {globalThis.setTimeout = originalSet; globalThis.clearTimeout = originalClear;}};
 }
-function sharedNodes() {return Object.fromEntries(['#mpSettingsFold', '.tools-head', '.mp-settings-body', '#mpShareSettingsToggle', '#mpInputDelay', '#mpReplayViewer', '#mpGamePackageImport', '#mpTouchLayoutEdit'].map(selector => [selector, n(selector)]));}
+function sharedNodes() {return Object.fromEntries(['#mpSettingsFold', '.tools-head', '.mp-settings-body', '#mpShareSettingsToggle', '#mpReplayViewer', '#mpGamePackageImport', '#mpTouchLayoutEdit'].map(selector => [selector, n(selector)]));}
 function assertSharedNodes(nodes) {for (const [selector, node] of Object.entries(nodes)) {assert.ok(n(selector) === node, `Preserve original node: ${selector}`); assert.equal(all(selector).length, 1);} const ids = all('[id]').map(node => node.id); assert.equal(new Set(ids).size, ids.length);}
 
 test('Real shared SettingsBody moves one header/fold into drawer and back across StrictMode, rerender, product/context switches', async () => {
@@ -458,8 +485,9 @@ test('Real shared SettingsBody moves one header/fold into drawer and back across
   await h.m.update({roomOpen: true, open: true}); assertSharedNodes(nodes);
   const drawer = n('#mpSettingsRoomDrawer'); assert.ok(nodes['.tools-head'].parentElement === drawer); assert.equal(nodes['#mpSettingsFold'].parentElement.id, 'mpSettingsRoomDrawerContent'); assert.equal(nodes['#mpSettingsFold'].classList.contains('mp-room-drawer-mounted'), true);
   assert.ok(env.document.activeElement === n('#libraryBack'), 'Drawer opening focuses original libraryBack'); assert.equal(n('#libraryBack').getAttribute('aria-label'), t('en', 'settings.drawerClose'));
-  assert.ok(n('#mpInputDelaySetting').previousElementSibling.classList.contains('mp-shared-settings')); assert.ok(n('#mpInputDelaySetting').nextElementSibling.classList.contains('launch-actions-compact'));
-  assert.equal(n('#mpInputDelaySetting').nextElementSibling.classList.contains('mp-replay-launch-wrap'), false, 'compact placement uses the shared semantic variant');
+  assert.equal(drawer.querySelector('#mpInputDelaySetting'), null, 'room-wide timing stays out of the local options drawer');
+  const actions = n('#mpReplayViewer').closest('.launch-actions');
+  assert.ok(actions.previousElementSibling.classList.contains('mp-shared-settings')); assert.equal(actions.classList.contains('mp-replay-launch-wrap'), false, 'compact placement uses the shared semantic variant');
   for (const selector of ['#optionsLobbyLink', '#mpNetworkDiagnostics', '#ordinary-launch-actions']) {assert.ok(n(selector)); assert.equal(drawer.contains(n(selector)), false);}
   await click('#mpReplayViewer'); await click('#mpGamePackageImport'); await click('#mpTouchLayoutEdit'); assert.deepEqual(h.events.slice(-3), [['replay-viewer'], ['import'], ['editor']]);
   const before = h.model.getSnapshot().shareSingleplayerSettings; await click('#mpShareSettingsToggle'); assert.equal(h.model.getSnapshot().shareSingleplayerSettings, !before); assertSharedNodes(nodes);
@@ -475,13 +503,13 @@ test('Drawer preserves shared controls through editor foreground suspension and 
   await act(() => n('#mpCopyRoomCode').focus()); await h.m.update({foregroundActive: false}); assert.equal(n('#mpSettingsRoomDrawer').hidden, false); assert.equal(n('#mpSettingsRoomDrawer').hasAttribute('inert'), false); assert.ok(env.document.activeElement === focused, 'Restores exact focused control'); assertSharedNodes(nodes);
 });
 
-test('Drawer close uses 220ms completion, immediate backdrop/inert release and then visible cue focus; reopen retires stale timer', async () => {
+test('Drawer close uses 220ms completion, retained fading backdrop and immediate inert release and then visible cue focus; reopen retires stale timer', async () => {
   animationFixture(); const f = await fixture().live(), h = await sharedDrawer(f), clock = fakeTimers();
   try {
     const cue = n('#mpSettingsRoomDrawerToggle'), focusCalls = [], originalFocus = cue.focus.bind(cue); cue.focus = options => {focusCalls.push({hidden: cue.hidden, roomInert: n('#mpRoomView').hasAttribute('inert')}); originalFocus(options);};
-    await h.m.update({open: false}); assert.equal(n('#mpSettingsRoomBackdrop').hidden, true); assert.equal(n('#mpRoomView').hasAttribute('inert'), false); assert.equal(n('#mpSettingsRoomDrawer').hidden, false); assert.equal(n('#mpSettingsRoomDrawer').classList.contains('closing'), true); assert.equal(cue.hidden, true);
+    await h.m.update({open: false}); assert.equal(n('#mpSettingsRoomBackdrop').hidden, false); assert.equal(n('#mpSettingsRoomBackdrop').classList.contains('closing'), true); assert.equal(n('#mpRoomView').hasAttribute('inert'), false); assert.equal(n('#mpSettingsRoomDrawer').hidden, false); assert.equal(n('#mpSettingsRoomDrawer').classList.contains('closing'), true); assert.equal(cue.hidden, true);
     assert.equal([...clock.tasks.values()].filter(task => task.delay === 220).length, 1); await clock.tick(219); assert.equal(n('#mpSettingsRoomDrawer').hidden, false); await clock.tick(1);
-    assert.equal(n('#mpSettingsRoomDrawer').hidden, true); assert.equal(cue.hidden, false); assert.deepEqual(focusCalls, [{hidden: false, roomInert: false}]);
+    assert.equal(n('#mpSettingsRoomDrawer').hidden, true); assert.equal(n('#mpSettingsRoomBackdrop').hidden, true); assert.equal(cue.hidden, false); assert.deepEqual(focusCalls, [{hidden: false, roomInert: false}]);
     await h.m.update({open: true}); await h.m.update({open: false}); const stale = [...clock.tasks.values()].find(task => task.delay === 220); await h.m.update({open: true}); assert.equal([...clock.tasks.values()].some(task => task === stale), false);
     await act(stale.fn); assert.equal(n('#mpSettingsRoomDrawer').hidden, false); assert.equal(n('#mpSettingsRoomDrawer').classList.contains('closing'), false);
     await h.m.update({open: false}); await h.m.update({roomOpen: false}); assert.equal(n('#mpSettingsRoomDrawer').hidden, true); assert.equal(clock.tasks.size, 0);

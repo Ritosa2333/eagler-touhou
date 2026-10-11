@@ -10,10 +10,11 @@ export function useOptionsViewport(ref: RefObject<HTMLElement | null>) {
     if (viewport && viewport.scale !== 1) return;
     const width = viewport?.width || document.documentElement.clientWidth;
     const height = viewport?.height || window.innerHeight;
-    node.style.setProperty('--options-view-width', `${width}px`);
-    node.style.setProperty('--options-view-height', `${height}px`);
-    node.style.setProperty('--options-view-top', `${viewport?.offsetTop || 0}px`);
-    node.style.setProperty('--options-view-left', `${viewport?.offsetLeft || 0}px`);
+    const values = {'--options-view-width': `${width}px`, '--options-view-height': `${height}px`,
+      '--options-view-top': `${viewport?.offsetTop || 0}px`, '--options-view-left': `${viewport?.offsetLeft || 0}px`};
+    for (const [name, value] of Object.entries(values)) {
+      if (node.style.getPropertyValue(name) !== value) node.style.setProperty(name, value);
+    }
     node.classList.toggle('options-compact', height < 520);
   };
   const latest = useRef(update); latest.current = update;

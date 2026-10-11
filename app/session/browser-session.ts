@@ -755,7 +755,10 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     },
     async copyRoomCode(code: string) {feedback.toast(await ports.copyText(code) ? t('status.roomCodeCopied') : t('status.roomCode', {code}));},
     bindNavigation(value: BrowserNavigationPorts) {navigation = value; if (pendingHostSelection) {value.applyHostSelection(pendingHostSelection); pendingHostSelection = null;} return () => {if (navigation === value) navigation = null;};},
-    productAvailable: (product: ProductId) => metadata.getSnapshot().products.includes(product),
+    // The directory can offer MP settings before a hosted MP Runtime exists.
+    // Acquisition/launch retains its own resource gate, including local import.
+    productAvailable: (product: ProductId) => metadata.getSnapshot().products.includes(product) ||
+      isMultiplayerProductId(product) && directory.getSnapshot().products.includes(product),
     reportProductSelection(product: ProductId, changed: boolean) {
       const title = PRODUCT_GAMES[gameIdForProduct(product)].title;
       feedback.translatedStatus(() => t(changed ? 'status.switchedProduct' : 'status.selectedProduct', {product: title}));

@@ -1501,7 +1501,7 @@ body.mp-room-returning .main.library-layout>.tools{animation:mp-room-options-in 
   body.library-tools-open .main.library-layout>.tools.is-open{transform:translateY(0)!important;transition-delay:0s!important;will-change:transform}
   body.library-tools-closing.library-tools-open .main.library-layout>.tools.is-open{transform:translateY(100%)!important;pointer-events:none!important;transition:transform .2s cubic-bezier(.4,0,1,1)!important}
   .library-backdrop{background:transparent!important;transition:none!important;will-change:auto}
-  body.library-tools-closing .library-backdrop{opacity:0!important;pointer-events:none!important;transition:none!important}
+  body.library-tools-closing .library-backdrop{pointer-events:none!important;transition:none!important}
   .main.library-layout .game-rail .game .card-art{transition:none!important}
   .main.library-layout .game-rail .game .card-art:after{transition:none!important}
   .main.library-layout .game-rail .game.nav-preview .card-art{scale:1}

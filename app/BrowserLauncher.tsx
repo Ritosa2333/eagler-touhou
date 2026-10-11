@@ -90,7 +90,7 @@ function LegacyMultiplayerOnline({session}: {session: BrowserSession}) {
 function RoomSettingsControls({session}: {session: BrowserSession}) {
   const settings = useSyncExternalStore(session.settings.subscribe, session.settings.getSnapshot, session.settings.getSnapshot);
   if (!settings || !isMultiplayerProductId(settings.context.productId)) return null;
-  return <MultiplayerSettingsControls product={settings.context.productId} service={session.room.service}
+  return <MultiplayerSettingsControls
     onReplayViewer={() => {void session.openReplayViewer(settings.context.productId).catch(session.reportError);}} onImport={session.gameData.openManual}/>;
 }
 function RoomDrawer({session, onClosingChange}: {session: BrowserSession; onClosingChange(value: boolean): void}) {
