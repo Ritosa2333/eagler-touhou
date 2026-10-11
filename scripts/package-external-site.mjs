@@ -6,7 +6,7 @@ import { basename, dirname, isAbsolute, relative, resolve, sep } from "node:path
 import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 import { normalizeProductSelection } from "../lib/product-selection.mjs";
-import { validateHostManifest } from "../lib/contracts/host-manifest.mjs";
+import { validateSiteManifest } from "../lib/contracts/site-manifest.mjs";
 import { run } from "../host/lib/process.mjs";
 import { readReactFrontendArtifact } from "../lib/react-frontend-artifact.mjs";
 import { normalizeSiteUrl } from "../lib/site-metadata.mjs";
@@ -57,10 +57,9 @@ if (sourceDeployment.resourceMode !== "hosted") throw new Error("external source
 // The verified hosted input owns the UI, not the caller's checkout selection.
 // React deployments embed the original private build metadata in their hash-
 // verified deployment and need no maintainer build directory for conversion.
-const sourceFrontend = sourceDeployment.frontend
-  ? await readReactFrontendArtifact({directory: source, metadata: sourceDeployment.frontend.validationMetadata,
-    expectedMountPath: sourceDeployment.frontend.mountPath})
-  : null;
+if (sourceDeployment.frontend?.kind !== 'react') throw new Error('External conversion requires a current React source publication');
+const sourceFrontend = await readReactFrontendArtifact({directory: source, metadata: sourceDeployment.frontend.validationMetadata,
+    expectedMountPath: sourceDeployment.frontend.mountPath});
 const siteUrl = normalizeSiteUrl(args["site-url"] ?? (sourceFrontend ? sourceDeployment.siteUrl : null));
 if (sourceFrontend) {
   const destination = siteUrl ? new URL(siteUrl) : null;
@@ -70,7 +69,7 @@ if (sourceFrontend) {
     throw new Error("React external relocation requires a separately built artifact for the exact isolated origin and mount");
   }
 }
-const sourceManifest = validateHostManifest(JSON.parse(await readFile(resolve(source, "host-manifest.json"), "utf8")));
+const sourceManifest = validateSiteManifest(JSON.parse(await readFile(resolve(source, "site-manifest.json"), "utf8")));
 const games = normalizeProductSelection(args.games || sourceDeployment.games?.join(","));
 if (games.some(game => !sourceManifest.games[game])) throw new Error("external selection is missing from the hosted source");
 const runtimeManifest = JSON.parse(await readFile(resolve(runtimeRelease, "runtime-release.json"), "utf8"));
@@ -110,7 +109,7 @@ async function assertMatchingRuntimeTrees(hostedRoot, externalRoot) {
 const featureConfig = resolve(tmpdir(), `eagler-touhou-external-features-${randomUUID()}.json`);
 let frontendBuild = null;
 try {
-  const frontendEnvironment = {EAGLER_FRONTEND: sourceFrontend ? "react" : "main"};
+  const frontendEnvironment = {EAGLER_FRONTEND: undefined}; // Verified source identity owns conversion, not a retired caller selector.
   if (sourceFrontend) {
     frontendBuild = await mkdtemp(resolve(tmpdir(), "eagler-touhou-external-frontend-"));
     const client = resolve(frontendBuild, "client"), inventory = new Map(sourceDeployment.files.map(file => [file.path, file]));
@@ -144,7 +143,7 @@ try {
     `--output=${candidate}`,
     `--runtime-release=${runtimeRelease}`,
     `--previous-site=${source}`,
-    `--host-manifest=${resolve(source, "host-manifest.json")}`,
+    `--site-manifest=${resolve(source, "site-manifest.json")}`,
     `--artwork-dir=${resolve(source, "assets")}`,
     `--feature-config=${featureConfig}`,
     `--games=${games.join(",")}`,

@@ -50,7 +50,7 @@ def main() -> None:
                 ]
                 route.fulfill(status=200, content_type="application/json", body=json.dumps(manifest))
 
-            context.route("**/host-manifest.json", publish_language)
+            context.route("**/site-manifest.json", publish_language)
             page = context.new_page()
             page.goto(urljoin(args.url, "?game=th06mp&room=123456"), wait_until="load")
             page.wait_for_function("window.__eaglerBoot?.done === true")

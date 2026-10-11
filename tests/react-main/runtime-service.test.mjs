@@ -45,7 +45,7 @@ function directPlan(game = 'th06', options = {}) {
   const gameInfo = {runtime: entry, gameData: {path: owners.PRODUCT_GAMES[game].package.dataTarget.slice(1), bytes: 1, sha256: hash,
     version: `sha256-${hash}`, layout: `sha256-${'b'.repeat(64)}`}, music: {midi: {files: []}}};
   return {game, runtimeVariant: 'normal', generation: null, entry, publishedRuntime: false,
-    directPreloadHost: {schema: 'eagler-touhou/host-manifest/1', protocol: 'eagler-touhou/1', profile: 'web-validation-test',
+    directPreloadHost: {schema: 'eagler-touhou/site-manifest/1', protocol: 'eagler-touhou/1', profile: 'web-validation-test',
       shared: {resourceMode: 'hosted', vanillaFont: 'msgothic.ttc', unicodeFont: 'unifont.otf'}, games: {[game]: gameInfo}},
     configure: {music: 'none', options}};
 }

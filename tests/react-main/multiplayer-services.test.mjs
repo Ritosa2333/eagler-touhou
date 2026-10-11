@@ -67,12 +67,12 @@ function stores() {
     sessions: owner.createMultiplayerRoomSessionStore({storage: session}), preferences: owner.createMultiplayerPreferenceStore({storage: persistent})};
 }
 const hash = 'a'.repeat(64);
-const manifest = () => ({schema: 'eagler-touhou/host-manifest/1', protocol: 'eagler-touhou/1', profile: 'synthetic-test',
+const manifest = () => ({schema: 'eagler-touhou/site-manifest/1', protocol: 'eagler-touhou/1', profile: 'synthetic-test',
   shared: {resourceMode: 'hosted', vanillaFont: '../shared/msgothic.ttc', unicodeFont: '../shared/unifont.otf', netplayRelay: 'wss://relay.invalid/socket'},
   games: {th06: {runtime: 'runtime/th06/game.html', gameData: {version: `sha256-${hash}`, layout: `sha256-${hash}`, path: 'th06.data', bytes: 1, sha256: hash}, music: {midi: {files: []}}}}});
 function directory(extra = {}) {
   const storage = stores(), clock = new Clock(), sockets = [], navigation = [], normalized = [];
-  const service = owner.createLobbyDirectory({loadHostManifest: async () => manifest(), createSocket: url => {const socket = new Socket(url); sockets.push(socket); return socket;},
+  const service = owner.createLobbyDirectory({loadSiteManifest: async () => manifest(), createSocket: url => {const socket = new Socket(url); sockets.push(socket); return socket;},
     memberId: () => 'member123456', ...storage, sessionStorage: storage.session, translate: key => key,
     launcherUrl: () => 'https://launcher.invalid/en.html', navigateToRoom: url => navigation.push(url),
     selectedProduct: 'th06mp', onSelectedProductNormalized: product => normalized.push(product), randomWord: () => 123,
@@ -100,7 +100,7 @@ test('directory preserves main host-existence product subset and 3s retry withou
 });
 
 test('directory 10s manifest timeout and StrictMode-style suspend/resume do not strand leaving', async () => {
-  const blocked = directory({loadHostManifest: () => new Promise(() => {})});
+  const blocked = directory({loadSiteManifest: () => new Promise(() => {})});
   const initializing = blocked.service.initialize(); blocked.clock.tick(10000); await initializing;
   assert.equal(blocked.service.getSnapshot().connection, 'offline'); blocked.service.dispose();
   const fixture = await liveDirectory(); fixture.service.pageHide(); assert.equal(fixture.service.getSnapshot().leaving, true);
@@ -281,7 +281,7 @@ function preparationFixture({installed = true, worker = null, installError, noCa
   let generation = installed ? {game: 'th06'} : null;
   const host = {games: {th06: {multiplayerRuntime: 'runtime/th06/mp.html'}}, shared: {runtimeManifest: 'runtime-manifest.json'}};
   const acquisition = {fetchImpl: async () => {throw new Error('fixture must not fetch');}, catalogUrl: 'https://launcher.invalid/releases.json',
-    getMetadata: () => ({hostManifest: host, releaseCatalog: noCatalog ? null : {games: {th06: {}}}}),
+    getMetadata: () => ({siteManifest: host, releaseCatalog: noCatalog ? null : {games: {th06: {}}}}),
     readCurrent: async game => {events.push(['read', game]); return {generation};},
     installPublished: async (game, options) => {events.push(['install', game, options]); if (installError) throw installError; generation = {game};},
     refreshInstalled: async game => {events.push(['publish', game]);},

@@ -106,13 +106,13 @@ test('external conversion preserves the verified source frontend rather than cal
       assert.equal(target.appShell.runtimeManifest.sha256, createHash('sha256').update(await readFile(resolve(output, 'runtime-manifest.json'))).digest('hex'));
       assert.deepEqual(await hashes(resolve(output, 'runtime')), await hashes(resolve(hosted.isolated, 'runtime')));
     });
-    await t.test('main source keeps main even when caller requests an unavailable React artifact', async () => {
+    await t.test('default source keeps its verified React bytes when caller artifact is unavailable', async () => {
       const output = resolve(work, 'external-main');
       await convert(hosted.main, output, {EAGLER_FRONTEND: 'react', EAGLER_REACT_BUILD_DIRECTORY: resolve(work, 'missing')});
       await verify(output);
       const deployment = await json(resolve(output, 'deployment.json'));
-      assert.equal(Object.hasOwn(deployment, 'frontend'), false);
-      assert.ok(deployment.files.some(file => file.path === 'app.js'));
+      assert.equal(deployment.frontend.kind,'react');
+      assert.ok(!deployment.files.some(file=>file.path==='app.js'));
     });
     await t.test('unsupported isolated relocation fails before replacing existing output', async () => {
       const output = resolve(work, 'preserved'); await mkdir(output); await writeFile(resolve(output, 'sentinel'), 'keep');

@@ -1,7 +1,7 @@
 import {componentFileIds} from '../../package/package-generation.mjs';
 import {PRODUCT_GAMES, gameIdForProduct, isMultiplayerProductId, languagePriority, productFeatureAvailable,
   type ProductId} from '../../src/contracts/product-catalog.mts';
-import type {HostManifest} from '../../src/contracts/host-manifest.mts';
+import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 import type {InstalledPackageGeneration} from '../../src/contracts/package-read-models.mts';
 import type {RuntimeConfigureOptions} from '../../src/contracts/runtime-protocol.mts';
 import {buildLanguageCatalog, selectLanguageEntry, thpracLocaleForLanguage} from '../../src/launcher/language-catalog.mts';
@@ -83,7 +83,7 @@ function requestFor(input: FilePreparationInput, withUpdate: boolean): Acquisiti
 function identityPlan(input: FilePreparationInput, acquired: PackageAcquisitionResult): RuntimePlan {
   const game = gameIdForProduct(input.productId), product = PRODUCT_GAMES[game];
   const runtimeVariant = isMultiplayerProductId(input.productId) ? 'multiplayer' : 'normal';
-  const host = input.acquisition.getMetadata().hostManifest;
+  const host = input.acquisition.getMetadata().siteManifest;
   if (acquired.kind === 'direct-preload') return {game, runtimeVariant, generation: null,
     directPreloadHost: acquired.host, entry: acquired.entry, publishedRuntime: false, configure: {music: 'none'}};
   const hosted = host?.games[game];
@@ -95,7 +95,7 @@ function identityPlan(input: FilePreparationInput, acquired: PackageAcquisitionR
   return {game, runtimeVariant, generation: acquired.generation, entry, publishedRuntime,
     ...(!host ? {localCatalogRuntime: true} : !publishedRuntime ? {runtimeHost: host} : {}), configure: {music: 'none'}};
 }
-function effectiveMusic(input: GamePreparationInput, generation: InstalledPackageGeneration | null, host: HostManifest | null) {
+function effectiveMusic(input: GamePreparationInput, generation: InstalledPackageGeneration | null, host: SiteManifest | null) {
   const {settings, acquisition} = input, hosted = host?.games[settings.gameId];
   return resolveEffectiveMusicMode({audio: settings.context.musicAvailability.audio,
     midiAvailable: PRODUCT_GAMES[settings.gameId].musicCapabilities.midi && hosted?.music.midi.supported !== false,
@@ -106,7 +106,7 @@ function effectiveMusic(input: GamePreparationInput, generation: InstalledPackag
 }
 /** Original app 4163–4198. Room timing is supplied by the validated room owner,
  * never recomputed, filled with guesses, or inferred from a Replay. */
-export function gameRuntimeOptions(input: GamePreparationInput, language: string, music: MusicMode, host: HostManifest | null): RuntimeConfigureOptions {
+export function gameRuntimeOptions(input: GamePreparationInput, language: string, music: MusicMode, host: SiteManifest | null): RuntimeConfigureOptions {
   const {settings, multiplayer} = input, {gameId: game, options} = settings, product = PRODUCT_GAMES[game];
   const isMultiplayer = isMultiplayerProductId(input.productId), features = host?.games[game]?.features;
   if (isMultiplayer && !multiplayer) throw new Error('Multiplayer launch requires a room, Replay or game-check intent');
@@ -126,7 +126,7 @@ export function gameRuntimeOptions(input: GamePreparationInput, language: string
     ...(input.debugHarness ? {debugHarness: input.debugHarness} : {})};
 }
 async function finishPlan(input: GamePreparationInput, initial: RuntimePlan, guard: () => void): Promise<PreparedGamePlan> {
-  const {settings, acquisition, translate: t} = input, metadata = acquisition.getMetadata(), host = metadata.hostManifest;
+  const {settings, acquisition, translate: t} = input, metadata = acquisition.getMetadata(), host = metadata.siteManifest;
   let generation = initial.generation, music = effectiveMusic(input, generation, host), language = settings.language;
   const catalog = buildLanguageCatalog({languageOptions: host?.games[settings.gameId]?.languageOptions,
     legacyLanguages: host?.games[settings.gameId]?.languages, offlineEntries: settings.context.languages,

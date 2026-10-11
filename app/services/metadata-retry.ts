@@ -22,10 +22,10 @@ export function createMetadataRetry(options: MetadataRetryOptions) {
     if (disposed) return;
     const snapshot = metadata.getSnapshot();
     if (snapshot.phase !== 'ready') {lastReady = false; return;}
-    const result = [snapshot.hostManifest, snapshot.releaseCatalog, snapshot.hostManifestError, snapshot.releaseCatalogError];
+    const result = [snapshot.siteManifest, snapshot.releaseCatalog, snapshot.siteManifestError, snapshot.releaseCatalogError];
     if (lastReady && lastResult?.every((value, index) => value === result[index])) return;
     lastReady = true; lastResult = result;
-    remoteError = snapshot.releaseCatalogError; hostError = snapshot.hostManifestError;
+    remoteError = snapshot.releaseCatalogError; hostError = snapshot.siteManifestError;
     remoteState = remoteError ? 'unavailable' : 'ready'; shell.setRemoteState(remoteState, remoteError);
     options.markBoot?.(remoteError ? 'catalog-unavailable' : 'catalog-ok');
     const timer = win.setTimeout(() => {timers.delete(timer); if (!disposed) options.onSettled();}, 0); timers.add(timer);
@@ -46,7 +46,7 @@ export function createMetadataRetry(options: MetadataRetryOptions) {
   const offline = () => {
     if (disposed) return;
     remoteError ||= new Error('offline');
-    if (!metadata.getSnapshot().hostManifest) hostError ||= new Error('offline');
+    if (!metadata.getSnapshot().siteManifest) hostError ||= new Error('offline');
     remoteState = 'unavailable'; shell.setRemoteState('unavailable', remoteError);
   };
   const focus = () => {if (disposed) return; if (remoteError || hostError) retry(); else void shell.checkForUpdate();};

@@ -39,9 +39,9 @@ try {
       throw new Error(`legacy mount redirect failed: ${legacyPath} -> ${legacyResponse.status} ${legacyResponse.headers.get("location")}`);
     }
   }
-  const legacyManifest = await fetch(`http://127.0.0.1:${port}/eagler-touhou/host-manifest.json`);
+  const legacyManifest = await fetch(`http://127.0.0.1:${port}/eagler-touhou/site-manifest.json`);
   if (!legacyManifest.ok || !/^application\/json\b/i.test(legacyManifest.headers.get("content-type") || "")) {
-    throw new Error("legacy Service Worker clients cannot reach the current Host Manifest");
+    throw new Error("legacy Service Worker clients cannot reach the current Site Manifest");
   }
   const retirementWorker = await fetch(`http://127.0.0.1:${port}/eagler-touhou/app-shell-sw.js`);
   const retirementSource = await retirementWorker.text();

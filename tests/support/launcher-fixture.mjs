@@ -3,8 +3,8 @@ import {createReadStream, constants} from 'node:fs';
 import {copyFile, mkdir, mkdtemp, readFile, readdir, realpath, rm, stat, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {dirname, isAbsolute, resolve, sep} from 'node:path';
-import {createDevelopmentHostManifestFromContent} from '../../lib/development-host-manifest.mjs';
-import {validateHostManifest} from '../../lib/contracts/host-manifest.mjs';
+import {createDevelopmentSiteManifestFromContent} from '../../lib/development-site-manifest.mjs';
+import {validateSiteManifest} from '../../lib/contracts/site-manifest.mjs';
 import {RELEASE_CATALOG_SCHEMA, validateReleaseCatalog} from '../../lib/contracts/release-catalog.mjs';
 
 function relativeFile(value) {
@@ -71,7 +71,7 @@ export async function prepareLauncherFixture(artifactRoot, declarationPath, envi
     if (content.data?.source) files.push(await verifyData(sourceRoot, content.data));
     if (Object.keys(content.music || {}).length) throw new Error('Protocol-stub fixture must not introduce extra music payloads');
   }
-  const host = validateHostManifest(await createDevelopmentHostManifestFromContent(declaration.content, {
+  const host = validateSiteManifest(await createDevelopmentSiteManifestFromContent(declaration.content, {
     sourceRoot, games: selected || Object.keys(declaration.content.games), netplayRelay: relay,
   }));
   const catalog = validateReleaseCatalog({schema: RELEASE_CATALOG_SCHEMA, games: {}});
@@ -89,7 +89,7 @@ export async function prepareLauncherFixture(artifactRoot, declarationPath, envi
       // Verify the staged copy as well; a changed source cannot silently enter.
       await verifyData(root, {source: file.source, identity: file});
     }
-    await writeFile(resolve(root, 'host-manifest.json'), JSON.stringify(host, null, 2) + '\n');
+    await writeFile(resolve(root, 'site-manifest.json'), JSON.stringify(host, null, 2) + '\n');
     await writeFile(resolve(root, 'release-catalog.json'), JSON.stringify(catalog, null, 2) + '\n');
     return {root, host, catalog, files: files.map(({source, bytes, sha256}) => ({source, bytes, sha256})), dispose};
   } catch (error) {await dispose(); throw error;}

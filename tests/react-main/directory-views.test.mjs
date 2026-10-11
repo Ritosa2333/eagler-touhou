@@ -68,7 +68,7 @@ after(async () => {env?.close(); if (work) await rm(work, {recursive: true, forc
 
 function manifest({games = ['th06', 'th07', 'th08', 'th09', 'th10'], relay = true} = {}) {
   const hash = 'a'.repeat(64);
-  return {schema: 'eagler-touhou/host-manifest/1', protocol: 'eagler-touhou/1', profile: 'synthetic-directory-views',
+  return {schema: 'eagler-touhou/site-manifest/1', protocol: 'eagler-touhou/1', profile: 'synthetic-directory-views',
     shared: {resourceMode: 'hosted', testBuild: true, vanillaFont: 'font.ttf', unicodeFont: 'font.otf', ...(relay ? {netplayRelay: 'wss://relay.invalid/netplay'} : {})},
     games: Object.fromEntries(games.map(id => [id, {runtime: `runtime/${id}.html`, ...('multiplayerRuntime' in owners.PRODUCT_GAMES[id] ? {multiplayerRuntime: `runtime/${id}-mp.html`} : {}),
       gameData: {path: owners.PRODUCT_GAMES[id].package.dataTarget.slice(1), bytes: 1, sha256: hash, version: `sha256-${hash}`, layout: `sha256-${hash}`}, music: {midi: {files: []}}}]))};
@@ -83,7 +83,7 @@ class Socket {
 function fixture({locale = 'en', selectedProduct = 'th06mp', host = {}, loadError = false} = {}) {
   const sockets = [], timers = new Map(), events = [], sessionWrites = [], navigations = []; let timerId = 0, closeCalls = 0;
   const real = owners.createLobbyDirectory({selectedProduct,
-    loadHostManifest: async () => {if (loadError) throw Error('synthetic manifest failure'); return manifest(host);},
+    loadSiteManifest: async () => {if (loadError) throw Error('synthetic manifest failure'); return manifest(host);},
     createSocket: url => {const socket = new Socket(); socket.url = url; sockets.push(socket); return socket;},
     memberId: () => 'fixture-member', identity: {lobbyClientId: product => {events.push(`identity:${product}`); return 'fixture-client';}},
     sessions: {save: (...args) => sessionWrites.push(['save', ...args]), clear: product => sessionWrites.push(['clear', product])},

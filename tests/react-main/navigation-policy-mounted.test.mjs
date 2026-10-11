@@ -707,14 +707,14 @@ for (const mode of ['push', 'replace', 'completed return']) for (const scenario 
   else source.searchParams.set('j', owner.encodeRoomInvite({...scenario.prior, a: 'create', p: 3, d: 4, v: 'private', c: true}));
   const input = {currentUrl: source, currentState: {unrelated: 7}, product: 'th06mp', roomCode: '4079', push: mode === 'push'};
   const canonical = (mode === 'completed return' ? owner.returnToRoomHistoryOperation : owner.roomRouteHistoryOperation)(input);
-  assert.equal(owner.resolveRoomInvite(canonical.url).f, false, 'unchanged pinned helper still exhibits the original origin loss');
+  assert.equal(owner.resolveRoomInvite(canonical.url).f, scenario.expected, 'main now preserves the fixed same-room origin');
   const corrected = owner.preserveSameRoomDirectoryOrigin(canonical, source), url = new URL(corrected.url), invite = owner.resolveRoomInvite(url);
   assert.equal(invite.f, scenario.expected); assert.equal(invite.g, 'th06mp'); assert.equal(invite.r, '4079');
   assert.equal(invite.a, undefined); assert.equal(invite.p, undefined); assert.equal(invite.d, undefined); assert.equal(invite.v, undefined); assert.equal(invite.c, false);
   assert.equal(url.searchParams.has('lobbyAction'), false); assert.equal(url.searchParams.has('mpRoom'), false);
   assert.equal(url.searchParams.get('keep'), 'a b'); assert.equal(url.hash, '#retained');
   assert.equal(corrected.state, canonical.state); assert.equal(corrected.kind, canonical.kind);
-  assert.equal(owner.resolveRoomInvite(canonical.url).f, false, 'wrapper does not mutate the canonical operation');
+  assert.equal(owner.resolveRoomInvite(canonical.url).f, scenario.expected, 'wrapper does not mutate the canonical operation');
 });
 for (const destination of [{product: 'th06mp', code: '4079', expected: true}, {product: 'th06mp', code: '5678', expected: false}, {product: 'th07mp', code: '4079', expected: false}]) {
   test(`actual navigation push ${destination.product}/${destination.code} inherits only matching room origin`, async () => {

@@ -8,7 +8,7 @@ import {writeRuntimeGeneration,publishRuntimeManifest} from '../lib/runtime-gene
 const site=resolve(process.argv[2]),source=resolve(process.argv[3]);
 const expected=JSON.parse(await readFile(resolve(source,'runtime-files.json'),'utf8')).files;
 const current=await writeRuntimeGeneration({site,root:'runtime/th15/',entry:'th15.html',source,names:Object.keys(expected),expected});
-const host=JSON.parse(await readFile(resolve(site,'host-manifest.json'),'utf8'));
+const host=JSON.parse(await readFile(resolve(site,'site-manifest.json'),'utf8'));
 if(process.argv[4]){
  const prepared=resolve(process.argv[4]),catalog=JSON.parse(await readFile(resolve(prepared,'catalog.json'),'utf8'));
  if(catalog.game!=='th15'||catalog.schema!=='eagler-touhou/thcrap-static-catalog/1')throw Error('Invalid TH15 language catalog');
@@ -35,5 +35,5 @@ if(process.argv[4]){
 }
 host.games.th15.runtime=`runtime/th15/${current.generation}/th15.html`;
 await publishRuntimeManifest(site,[{root:'runtime/th15/',current}]);
-await writeFile(resolve(site,'host-manifest.json'),JSON.stringify(host,null,2)+'\n');
+await writeFile(resolve(site,'site-manifest.json'),JSON.stringify(host,null,2)+'\n');
 console.log(JSON.stringify({site,generation:current.generation}));

@@ -29,7 +29,7 @@ if (target === "react") {
 // directly, so a cold source checkout never initializes the old Launcher build.
 const {FRONTEND_PACKAGE_FILES, APP_SHELL_FILES, resolveFrontendPackageSource} = reactDeployment
   ? {} : await import("../../lib/frontend-manifest.mjs");
-const {resolveBrowserPublicationSource} = reactDeployment ? {} : await import("../../lib/launcher-build.mjs");
+const {resolveBrowserPublicationSource} = reactDeployment ? {} : await import("../../lib/client-services-build.mjs");
 let {writeRuntimeGeneration, publishRuntimeManifest} = reactDeployment ? {} : await import("../../lib/runtime-generations.mjs");
 await mkdir(root, { recursive: true });
 if (reactDeployment) {

@@ -70,7 +70,7 @@ def host_game(game: str, midi: bool) -> dict:
 
 
 HOST_MANIFEST = {
-    "schema": "eagler-touhou/host-manifest/1",
+    "schema": "eagler-touhou/site-manifest/1",
     "protocol": "eagler-touhou/1",
     "profile": "web-validation-replay-launcher",
     "shared": {
@@ -129,7 +129,7 @@ def main() -> int:
                     page = context.new_page()
                     page.on("pageerror", lambda error: page_errors.append(str(error)))
                     page.route(
-                        "**/host-manifest.json",
+                        "**/site-manifest.json",
                         lambda route: route.fulfill(
                             status=200,
                             content_type="application/json",

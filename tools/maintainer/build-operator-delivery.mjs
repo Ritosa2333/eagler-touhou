@@ -98,7 +98,7 @@ const formalManifest = await verifyReleaseBundle(formalRelease);
 const hosted = resolve(formalRelease, "hosted-site");
 const hostedRelease = await verifyReleaseManifest(hosted);
 const profile = validateOperatorProfile(JSON.parse(await readFile(profilePath, "utf8")));
-const hostManifest = JSON.parse(await readFile(resolve(hosted, "host-manifest.json"), "utf8"));
+const hostManifest = JSON.parse(await readFile(resolve(hosted, "site-manifest.json"), "utf8"));
 assertHostedSiteMatchesOperatorProfile(hostManifest, profile);
 
 const incompleteRoot = resolve(dirname(output), ".operator-incomplete");

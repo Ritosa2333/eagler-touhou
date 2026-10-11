@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import {
-  HOST_MANIFEST_FILE,
-  HOST_MANIFEST_SCHEMA,
-  hostOriginMigrationAvailable,
-  validateHostManifest,
-} from "../lib/contracts/host-manifest.mjs";
+  SITE_MANIFEST_FILE,
+  SITE_MANIFEST_SCHEMA,
+  siteOriginMigrationAvailable,
+  validateSiteManifest,
+} from "../lib/contracts/site-manifest.mjs";
 
 const game = {
   runtime: "runtime/th06/th06.html?hosted=1&v=1",
@@ -36,8 +36,8 @@ const gameWithLanguages = {
   ],
 };
 
-const hosted = validateHostManifest({
-  schema: HOST_MANIFEST_SCHEMA,
+const hosted = validateSiteManifest({
+  schema: SITE_MANIFEST_SCHEMA,
   protocol: "eagler-touhou/1",
   profile: "web-validation-test",
   shared: {
@@ -49,34 +49,34 @@ const hosted = validateHostManifest({
   games: { th06: game },
 });
 assert.equal(hosted.shared.resourceMode, "hosted");
-assert.equal(HOST_MANIFEST_FILE, "host-manifest.json");
-assert.equal(hostOriginMigrationAvailable(hosted, "https:"), false);
+assert.equal(SITE_MANIFEST_FILE, "site-manifest.json");
+assert.equal(siteOriginMigrationAvailable(hosted, "https:"), false);
 
-const migrationHost = validateHostManifest({
+const migrationHost = validateSiteManifest({
   ...hosted,
   shared: { ...hosted.shared, originMigration: { mode: "http-to-https" } },
 });
-assert.equal(hostOriginMigrationAvailable(migrationHost, "https:"), true);
-assert.equal(hostOriginMigrationAvailable(migrationHost, "http:"), false);
+assert.equal(siteOriginMigrationAvailable(migrationHost, "https:"), true);
+assert.equal(siteOriginMigrationAvailable(migrationHost, "http:"), false);
 for (const originMigration of [true, "http-to-https", {}, { mode: "https-only" }]) {
-  assert.throws(() => validateHostManifest({
+  assert.throws(() => validateSiteManifest({
     ...hosted,
     shared: { ...hosted.shared, originMigration },
   }), /originMigration/);
 }
 
-assert.throws(() => validateHostManifest({ ...hosted, games: { th99: game } }), /games/);
-assert.throws(() => validateHostManifest({ ...hosted, shared: { ...hosted.shared, resourceMode: "import-partial" } }), /resource mode/);
-assert.throws(() => validateHostManifest({ ...hosted, shared: { ...hosted.shared, netplayRelay: "https://example.invalid/" } }), /netplayRelay/);
-assert.doesNotThrow(() => validateHostManifest({
+assert.throws(() => validateSiteManifest({ ...hosted, games: { th99: game } }), /games/);
+assert.throws(() => validateSiteManifest({ ...hosted, shared: { ...hosted.shared, resourceMode: "import-partial" } }), /resource mode/);
+assert.throws(() => validateSiteManifest({ ...hosted, shared: { ...hosted.shared, netplayRelay: "https://example.invalid/" } }), /netplayRelay/);
+assert.doesNotThrow(() => validateSiteManifest({
   ...hosted,
   games: { th06: { ...game, features: undefined } },
 }));
-assert.doesNotThrow(() => validateHostManifest({
+assert.doesNotThrow(() => validateSiteManifest({
   ...hosted,
   games: { th06: { ...game, music: { midi: { files: [], supported: false } } } },
 }));
-assert.doesNotThrow(() => validateHostManifest({ ...hosted, games: { th06: gameWithLanguages } }));
+assert.doesNotThrow(() => validateSiteManifest({ ...hosted, games: { th06: gameWithLanguages } }));
 for (const broken of [
   { ...gameWithLanguages, languageOptions: gameWithLanguages.languageOptions.map(item => item.id === "lang_en"
     ? { ...item, pack: { ...languagePack, url: "games/th06/language/missing.zip" } } : item) },
@@ -84,21 +84,21 @@ for (const broken of [
   { ...gameWithLanguages, languages: [...gameWithLanguages.languages, gameWithLanguages.languages[0]] },
   { ...gameWithLanguages, languageOptions: [{ id: "ja", pack: languagePack }, gameWithLanguages.languageOptions[1]] },
 ]) {
-  assert.throws(() => validateHostManifest({ ...hosted, games: { th06: broken } }), /games/);
+  assert.throws(() => validateSiteManifest({ ...hosted, games: { th06: broken } }), /games/);
 }
 
-const external = validateHostManifest({
+const external = validateSiteManifest({
   ...hosted,
   shared: { resourceMode: "external" },
   games: { th06: { ...game, package: { revision: "a".repeat(16), descriptor: "th06.package.json" } } },
 });
 assert.equal(external.shared.resourceMode, "external");
-assert.throws(() => validateHostManifest({
+assert.throws(() => validateSiteManifest({
   ...hosted,
   shared: { ...hosted.shared, resourceMode: "external" },
   games: { th06: { ...game, package: { revision: "a".repeat(16), descriptor: "th06.package.json" } } },
 }), /shared font URLs/);
-assert.throws(() => validateHostManifest({
+assert.throws(() => validateSiteManifest({
   ...hosted,
   shared: { resourceMode: "external" },
 }), /games/);
@@ -108,7 +108,7 @@ for (const features of [
   { replayManagement: true },
   { languages: true },
 ]) {
-  assert.throws(() => validateHostManifest({
+  assert.throws(() => validateSiteManifest({
     ...hosted,
     games: { th06: { ...game, features } },
   }), /games/);
@@ -129,13 +129,13 @@ for (const music of [
   { midi: { files: [] }, ogg: { version: `sha256-${"c".repeat(64)}`, files: ["a.ogg", "a.ogg"], sizes: [1, 1] } },
   { midi: { files: [] }, ogg: { version: `sha256-${"c".repeat(64)}`, files: ["a.ogg"], sizes: [1.5] } },
 ]) {
-  assert.throws(() => validateHostManifest({
+  assert.throws(() => validateSiteManifest({
     ...hosted,
     games: { th06: { ...game, music } },
   }), /games/);
 }
 
-assert.throws(() => validateHostManifest({
+assert.throws(() => validateSiteManifest({
   ...hosted,
   games: { th06: { ...game, gameData: { ...game.gameData, bytes: Number.MAX_SAFE_INTEGER + 1 } } },
 }), /games/);
@@ -153,8 +153,8 @@ const importedGame = {
     languages: { source: "offline-pack", baseline: ["ja"] },
   },
 };
-assert.doesNotThrow(() => validateHostManifest({
-  schema: HOST_MANIFEST_SCHEMA,
+assert.doesNotThrow(() => validateSiteManifest({
+  schema: SITE_MANIFEST_SCHEMA,
   protocol: "eagler-touhou/1",
   profile: "web-validation-import",
   shared: { resourceMode: "import" },
@@ -163,5 +163,5 @@ assert.doesNotThrow(() => validateHostManifest({
 
 console.log(JSON.stringify({ hostManifest: "PASS", subsetProducts: true }));
 
-for (const testBuild of [false, true]) assert.equal(validateHostManifest({...hosted, shared:{...hosted.shared,testBuild}}).shared.testBuild,testBuild);
-for (const testBuild of ["true", "false", 0, 1, null]) assert.throws(()=>validateHostManifest({...hosted,shared:{...hosted.shared,testBuild}}),/testBuild/);
+for (const testBuild of [false, true]) assert.equal(validateSiteManifest({...hosted, shared:{...hosted.shared,testBuild}}).shared.testBuild,testBuild);
+for (const testBuild of ["true", "false", 0, 1, null]) assert.throws(()=>validateSiteManifest({...hosted,shared:{...hosted.shared,testBuild}}),/testBuild/);

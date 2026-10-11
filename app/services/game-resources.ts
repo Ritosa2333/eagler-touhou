@@ -1,6 +1,6 @@
 import {componentFileIds} from '../../package/package-generation.mjs';
 import {PRODUCT_GAMES, type GameId} from '../../src/contracts/product-catalog.mts';
-import type {HostManifest} from '../../src/contracts/host-manifest.mts';
+import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 import {releaseCatalogEntryUrl, type ReleaseCatalog} from '../../src/contracts/release-catalog.mts';
 import type {InstalledPackageGeneration} from '../../src/contracts/package-read-models.mts';
 import type {MusicMode} from '../../src/launcher/game-preferences.mts';
@@ -22,7 +22,7 @@ export function packageResourceIds(generation: InstalledPackageGeneration): stri
       !!generation.files[id]?.objectId && !/\.(?:html|m?js|wasm)$/i.test(declaration.source || '');
   });
 }
-export function remoteRuntimeResources(generation: InstalledPackageGeneration | null, host: HostManifest | null,
+export function remoteRuntimeResources(generation: InstalledPackageGeneration | null, host: SiteManifest | null,
   catalog: ReleaseCatalog | null, catalogUrl: string, t: Translate) {
   // Main's built-in manifest defaults to hosted while metadata is unavailable.
   // A known Catalog can still supply a missing resource in that local-first path.
@@ -39,7 +39,7 @@ export function remoteRuntimeResources(generation: InstalledPackageGeneration | 
   });
 }
 export function sharedResources({game, generation, host, language, thprac, baseUrl, translate: t}: {
-  game: GameId; generation: InstalledPackageGeneration | null; host: HostManifest | null;
+  game: GameId; generation: InstalledPackageGeneration | null; host: SiteManifest | null;
   language: string; thprac: boolean; baseUrl: string; translate: Translate;
 }) {
   const product = PRODUCT_GAMES[game];
@@ -55,7 +55,7 @@ export function sharedResources({game, generation, host, language, thprac, baseU
   if ((language !== 'ja' || thprac) && !targets.has('/unifont.otf')) add('/unifont.otf', host?.shared.unicodeFont);
   return result;
 }
-export function remoteMusicResources(game: GameId, music: MusicMode, host: HostManifest | null, baseUrl: string, t: Translate) {
+export function remoteMusicResources(game: GameId, music: MusicMode, host: SiteManifest | null, baseUrl: string, t: Translate) {
   if (!oggMusic(music)) return [];
   const pack = host?.games[game]?.music.ogg;
   if (!pack || !Array.isArray(pack.files)) throw new Error(t('music.manifestInvalid'));
@@ -82,7 +82,7 @@ export async function ensureOggStartup({generation, music, acquisition, signal, 
   if (initial.length < 2) return {generation, music: 'midi'};
   if (initial.every(id => !!generation.files[id]?.objectId)) return {generation, music};
   const metadata = acquisition.getMetadata(), catalog = metadata.releaseCatalog;
-  if (metadata.hostManifest?.shared.resourceMode === 'import' || catalog?.games[generation.game]?.revision !== generation.descriptor.revision) {
+  if (metadata.siteManifest?.shared.resourceMode === 'import' || catalog?.games[generation.game]?.revision !== generation.descriptor.revision) {
     onWarning?.(t('music.initialOggIncomplete')); return {generation, music: 'midi'};
   }
   try {

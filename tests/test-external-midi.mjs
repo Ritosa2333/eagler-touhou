@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-// Import the frontend manifest first: it owns ensureLauncherBuild(), so this
+// Import the frontend manifest first: it owns ensureClientServicesBuild(), so this
 // test also runs standalone without a stale .cache build.
 import { resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
 import {
@@ -346,18 +346,9 @@ assert.equal(normalizeStoredGamePreferences(
 
 // --- settings surface -----------------------------------------------------
 
-const index = await readFile(resolveFrontendPackageSource("index.html"), "utf8");
-for (const id of [
-  "externalMidiOption", "externalMidiToggle", "externalMidiDeviceOption", "externalMidiDeviceSelect",
-  "mpExternalMidiOption", "mpExternalMidiToggle", "mpExternalMidiDeviceOption", "mpExternalMidiDeviceSelect",
-]) {
-  assert.match(index, new RegExp(`id="${id}"`), `advanced settings must expose #${id}`);
-}
-assert.match(index, /settings\.externalMidi/, "the advanced settings switch must be translatable");
-assert.match(index, /<span[^>]*data-i18n="settings\.externalMidi"/);
-assert.match(index, /<select[^>]*id="externalMidiDeviceSelect"/, "the device picker must be a select control");
-assert.match(index, /<select[^>]*id="mpExternalMidiDeviceSelect"/, "the multiplayer panel needs the same device picker");
-
+// Mounted SettingsBody regression owns control presentation and device selection.
+const settingsSource=await readFile(new URL('../app/components/settings/SettingsBody.tsx',import.meta.url),'utf8');
+assert.match(settingsSource,/externalMidi/);
 console.log(JSON.stringify({
   externalMidi: "PASS",
   games: midiGames,

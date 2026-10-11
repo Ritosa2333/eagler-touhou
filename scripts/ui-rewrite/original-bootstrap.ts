@@ -10,7 +10,7 @@ const resolvedId = '\0' + moduleId;
  * emergency UI text or duplicate it into a newly authored React implementation. */
 export function readOriginalBootstrap() {
   function fromFile(name: string) {
-    const file = fileURLToPath(new URL(`../../public/${name}`, import.meta.url));
+    const file = fileURLToPath(new URL(`../../public/bootstrap/${name}`, import.meta.url));
     const source = readFileSync(file, 'utf8');
     const root = parse(source, {sourceCodeLocationInfo: true});
     const elements: Element[] = [];
@@ -44,8 +44,8 @@ export function originalBootstrap(): Plugin {
     resolveId(id) {if (id === moduleId) return resolvedId;},
     load(id) {
       if (id !== resolvedId) return;
-      this.addWatchFile(fileURLToPath(new URL('../../public/index.html', import.meta.url)));
-      this.addWatchFile(fileURLToPath(new URL('../../public/lobby.html', import.meta.url)));
+      this.addWatchFile(fileURLToPath(new URL('../../public/bootstrap/index.html', import.meta.url)));
+      this.addWatchFile(fileURLToPath(new URL('../../public/bootstrap/lobby.html', import.meta.url)));
       return `export const originalBootstrap = ${JSON.stringify(readOriginalBootstrap())};`;
     },
   };

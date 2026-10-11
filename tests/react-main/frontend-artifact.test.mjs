@@ -1,3 +1,4 @@
+import {assertReactFrontendEnvironment} from '../../compat/frontend-environment.mjs';
 /** Publication source/artifact contracts only. No server, browser or deployment. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -7,7 +8,7 @@ import {tmpdir} from 'node:os';
 import {dirname, resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {STATIC_FRONTEND_PACKAGE_FILES, STATIC_APP_SHELL_FILES} from '../../lib/frontend-static-manifest.mjs';
-import {frontendSelection, readReactFrontendArtifact, reactFrontendArtifactDirectory} from '../../lib/react-frontend-artifact.mjs';
+import {readReactFrontendArtifact, reactFrontendArtifactDirectory} from '../../lib/react-frontend-artifact.mjs';
 
 async function fixture(run, {appShell = null, mountPath = '/review/'} = {}) {
   const work = await mkdtemp(resolve(tmpdir(), 'react-publication-'));
@@ -35,10 +36,10 @@ async function fixture(run, {appShell = null, mountPath = '/review/'} = {}) {
 }
 
 test('frontend selection is explicit and never coerces invalid values to main', () => {
-  assert.equal(frontendSelection({}), 'main');
-  assert.equal(frontendSelection({EAGLER_FRONTEND: 'main'}), 'main');
-  assert.equal(frontendSelection({EAGLER_FRONTEND: 'react'}), 'react');
-  for (const value of ['', 'React', 'legacy', 'react ', 'auto']) assert.throws(() => frontendSelection({EAGLER_FRONTEND: value}), /EAGLER_FRONTEND/);
+  assert.doesNotThrow(()=>assertReactFrontendEnvironment({}));
+  assert.throws(()=>assertReactFrontendEnvironment({EAGLER_FRONTEND:'main'}),/EAGLER_FRONTEND/);
+  assert.doesNotThrow(()=>assertReactFrontendEnvironment({EAGLER_FRONTEND:'react'}));
+  for (const value of ['', 'React', 'legacy', 'react ', 'auto']) assert.throws(() => assertReactFrontendEnvironment({EAGLER_FRONTEND: value}), /EAGLER_FRONTEND/);
 });
 
 test('artifact directory follows the maintainer source versus packaged prebuilt boundary', async () => {
@@ -160,8 +161,8 @@ test('operator selector loads before any npm dependencies are installed', async 
   await fixture(async ({work}) => {
     const operator = resolve(work, 'before-install'); await mkdir(resolve(operator, 'lib'), {recursive: true});
     for (const file of ['react-frontend-artifact.mjs', 'frontend-static-manifest.mjs', 'react-app-shell-deployment.mjs']) await cp(resolve('lib', file), resolve(operator, 'lib', file));
-    const script = `import {frontendSelection, reactFrontendArtifactDirectory} from './lib/react-frontend-artifact.mjs'; console.log(JSON.stringify({selection:frontendSelection({}), root:reactFrontendArtifactDirectory({project:process.cwd(),environment:{}})}));`;
+    const script = `import {reactFrontendArtifactDirectory} from './lib/react-frontend-artifact.mjs'; console.log(JSON.stringify({selection:"react", root:reactFrontendArtifactDirectory({project:process.cwd(),environment:{}})}));`;
     const result = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', script], {cwd: operator, encoding: 'utf8'}));
-    assert.deepEqual(result, {selection: 'main', root: operator});
+    assert.deepEqual(result, {selection: 'react', root: operator});
   });
 });

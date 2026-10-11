@@ -13,8 +13,8 @@ async function refreshReleaseIntegrity(site, manifestBytes) {
   if (deployment?.format !== "eagler-touhou-deployment/1" || !Array.isArray(deployment.files)) {
     throw new Error("target deployment metadata is invalid");
   }
-  const hostEntry = deployment.files.find(file => file?.path === "host-manifest.json");
-  if (!hostEntry) throw new Error("host-manifest.json is missing from deployment inventory");
+  const hostEntry = deployment.files.find(file => file?.path === "site-manifest.json");
+  if (!hostEntry) throw new Error("site-manifest.json is missing from deployment inventory");
   hostEntry.bytes = manifestBytes.length;
   hostEntry.sha256 = hash(manifestBytes);
   const deploymentBytes = Buffer.from(`${JSON.stringify(deployment, null, 2)}\n`);
@@ -74,9 +74,9 @@ if (originMigration && !["enable", "disable"].includes(originMigration)) {
   throw new Error("origin-migration must be enable or disable");
 }
 
-const manifestPath = resolve(options.site, "host-manifest.json");
+const manifestPath = resolve(options.site, "site-manifest.json");
 const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
-if (manifest?.schema !== "eagler-touhou/host-manifest/1" || manifest?.shared?.resourceMode !== "hosted") {
+if (manifest?.schema !== "eagler-touhou/site-manifest/1" || manifest?.shared?.resourceMode !== "hosted") {
   throw new Error("target is not an Eagler Touhou Hosted site");
 }
 if (relay) manifest.shared.netplayRelay = relay.href;

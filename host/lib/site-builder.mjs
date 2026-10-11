@@ -1,9 +1,10 @@
+import {assertReactFrontendEnvironment} from '../../compat/frontend-environment.mjs';
 import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { createHash, randomUUID } from "node:crypto";
-import { frontendSelection, reactFrontendArtifactDirectory, readReactFrontendArtifact } from "../../lib/react-frontend-artifact.mjs";
+import { reactFrontendArtifactDirectory, readReactFrontendArtifact } from "../../lib/react-frontend-artifact.mjs";
 import { privateFrontendAssetSource } from "../../lib/private-frontend-assets.mjs";
 import { normalizeSiteUrl, writeSiteMetadata } from "../../lib/site-metadata.mjs";
 import { inspectHostWorkspace } from "../../lib/host-workspace.mjs";
@@ -19,7 +20,8 @@ const DEFAULT_LANGUAGES = Object.freeze(["ja", "lang_zh-hans", "lang_en"]);
 
 // Full artifact preflight runs after operator dependency setup, before content preparation.
 export async function resolveHostFrontend({ projectRoot, siteUrl, environment = process.env, serve = false }) {
-  const kind = frontendSelection(environment);
+  assertReactFrontendEnvironment(environment);
+  const kind = "react";
   const url = normalizeSiteUrl(siteUrl);
   const artifact = await readReactFrontendArtifact({
     directory: reactFrontendArtifactDirectory({ project: projectRoot, environment }),
@@ -89,6 +91,15 @@ async function treeHasFileNewerThan(root, cutoff) {
   return false;
 }
 
+export function hostedLanguagesComplete(manifest) {
+  for (const game of GAMES) {
+    if (!PRODUCT_GAMES[game].features.languages) continue;
+    const options=manifest.games?.[game]?.languageOptions;
+    if (!Array.isArray(options) || DEFAULT_LANGUAGES.some(id=>!options.some(option=>option.id===id&&(id==='ja'||option.pack)))) return false;
+  }
+  return true;
+}
+
 export async function reusableHostedBase(projectRoot, layout, { siteUrl } = {}) {
   const frontend = await resolveHostFrontend({ projectRoot, siteUrl });
   let deployment;
@@ -100,7 +111,7 @@ export async function reusableHostedBase(projectRoot, layout, { siteUrl } = {}) 
   if (deployment.format !== "eagler-touhou-deployment/1" ||
       deployment.profile !== "web-validation-self-host" ||
       deployment.resourceMode !== "hosted") return false;
-  if ((deployment.frontend?.kind ?? "main") !== frontend.kind ||
+  if (deployment.frontend?.kind !== frontend.kind ||
       (deployment.siteUrl ?? null) !== frontend.siteUrl) return false;
   if (frontend.kind === "react") {
     if (deployment.frontend.mountPath !== frontend.artifact.mountPath ||
@@ -120,13 +131,8 @@ export async function reusableHostedBase(projectRoot, layout, { siteUrl } = {}) 
   // Old hosted sites can pass structural verification while omitting a newly
   // enabled language capability. Rebuild them before reusing their resources.
   try {
-    const manifest = JSON.parse(await readFile(resolve(layout.site, "host-manifest.json"), "utf8"));
-    for (const game of GAMES) {
-      if (!PRODUCT_GAMES[game].features.languages) continue;
-      const options = manifest.games?.[game]?.languageOptions;
-      if (!Array.isArray(options) || DEFAULT_LANGUAGES.some(id =>
-        !options.some(option => option.id === id && (id === "ja" || option.pack)))) return false;
-    }
+    const manifest = JSON.parse(await readFile(resolve(layout.site, "site-manifest.json"), "utf8"));
+    if (!hostedLanguagesComplete(manifest)) return false;
   } catch {
     return false;
   }
@@ -417,7 +423,7 @@ export async function buildImportArtifacts({
       `--output=${layout.importSite}`,
       ...(frontend.siteUrl ? [`--site-url=${frontend.siteUrl}`] : []),
       `--feature-config=${features}`,
-      `--host-manifest=${resolve(layout.site, "host-manifest.json")}`,
+      `--site-manifest=${resolve(layout.site, "site-manifest.json")}`,
       `--runtime-release=${layout.runtimeRelease}`,
       `--artwork-dir=${resolve(layout.site, "assets")}`,
       `--games=${GAMES.join(",")}`,

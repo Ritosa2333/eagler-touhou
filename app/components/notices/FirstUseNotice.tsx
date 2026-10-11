@@ -1,3 +1,4 @@
+import {legacyFirstUseNoticeSeen} from '../../../src/contracts/compat/first-use-notice.mts';
 import {useEffect, useImperativeHandle, useLayoutEffect, useRef, type Ref} from 'react';
 import {renderContentFragment} from '../../../src/launcher/content-fragment.mts';
 import {createEdgeDrawerGesture} from '../../../src/launcher/edge-drawer-gesture.mts';
@@ -7,7 +8,6 @@ import {useMainDialog, type MainDialogProps} from './use-main-dialog';
 // Original first-use-notice.mts3–10; legacy presence migrates, not just value "1".
 export const FIRST_USE_NOTICE_FILE = 'content/FIRST_USE_NOTICE.html';
 export const FIRST_USE_NOTICE_SEEN_STORAGE_KEY = 'eagler-touhou-first-use-notice-seen-v1';
-const legacySeenKeys = ['eagler-touhou-new-player-notice-seen-v1', 'eagler-touhou-changelog-seen-v2', 'eagler-touhou-changelog-seen-20260822-1'];
 export type NoticeLoadResult = {kind: 'available'} | {kind: 'empty'} | {kind: 'error'; error: unknown};
 export interface FirstUseNoticeHandle {
   load(): Promise<NoticeLoadResult>;
@@ -42,7 +42,7 @@ export function FirstUseNotice({open, onCloseRequest, onOpenRequest, contentUrl 
     try {
       const store = getStorage();
       if (store?.getItem(FIRST_USE_NOTICE_SEEN_STORAGE_KEY) === '1') return true;
-      for (const key of legacySeenKeys) if (store?.getItem(key)) {store.setItem(FIRST_USE_NOTICE_SEEN_STORAGE_KEY, '1'); return true;}
+      if (legacyFirstUseNoticeSeen(store)) {store?.setItem(FIRST_USE_NOTICE_SEEN_STORAGE_KEY, '1'); return true;}
     } catch {}
     return false;
   }

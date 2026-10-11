@@ -131,7 +131,7 @@ test('production static server preserves MIME/cache/ETag/HEAD/compression/redire
       const legacy = await raw(server.base, '/eagler-touhou/'); assert.equal(legacy.status, 302); assert.equal(legacy.headers.location, '/');
       const retired = await raw(server.base, '/eagler-touhou/app-shell-sw.js'); assert.equal(retired.status, 200); assert.equal(retired.headers['service-worker-allowed'], '/eagler-touhou/'); assert.equal(retired.headers['cache-control'], 'no-store');
       assert.equal((await raw(server.base, '/favicon.ico')).status, 204);
-      for (const path of ['/missing.html', '/missing.wasm', '/app.js', '/assets/launcher/app.mjs', '/public/index.html', '/host-manifest.json', '/release-catalog.json', '/app-shell-sw.js', '/%2e%2e%2foutside']) {
+      for (const path of ['/missing.html', '/missing.wasm', '/app.js', '/assets/launcher/app.mjs', '/public/index.html', '/site-manifest.json', '/release-catalog.json', '/app-shell-sw.js', '/%2e%2e%2foutside']) {
         const response = await raw(server.base, path); assert.equal(response.status, 404, path); assert.equal(response.body.toString(), 'Not found');
       }
       for (const [path, body] of bodies) assert.deepEqual(await readFile(resolve(root, path)), body, 'serving must not rewrite publication bytes');

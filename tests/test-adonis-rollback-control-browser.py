@@ -45,7 +45,7 @@ def main(default_game: str | None = None) -> None:
             context = browser.new_context(viewport={"width": 1280, "height": 850}, service_workers="block")
             manifest = fixture.host_manifest(f"ws://127.0.0.1:{port}/")
             manifest["games"] = {args.game: fixture.host_game(args.game, args.game=="th08")}
-            context.route("**/host-manifest.json*", lambda route: route.fulfill(
+            context.route("**/site-manifest.json*", lambda route: route.fulfill(
                 status=200, content_type="application/json", body=json.dumps(manifest)))
             context.route("**/release-catalog.json*", lambda route: route.fulfill(status=404, body="fixture"))
             page = context.new_page()
@@ -86,7 +86,7 @@ def main(default_game: str | None = None) -> None:
             assert toggle.get_attribute("aria-checked") == "false"
             assert page.locator("#mpInputDelay").input_value() == chosen_delay, "Rollback must not rewrite D"
             guest_context = browser.new_context(service_workers="block")
-            guest_context.route("**/host-manifest.json*", lambda route: route.fulfill(
+            guest_context.route("**/site-manifest.json*", lambda route: route.fulfill(
                 status=200, content_type="application/json", body=json.dumps(manifest)))
             guest_context.route("**/release-catalog.json*", lambda route: route.fulfill(status=404, body="fixture"))
             guest = guest_context.new_page()

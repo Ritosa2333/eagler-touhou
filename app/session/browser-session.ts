@@ -1,6 +1,7 @@
+import {loadCompatibleSiteManifest} from '../../src/contracts/compat/host-manifest.mts';
 import {createNetplayTelemetry} from '../../src/launcher/netplay-telemetry.mts';
 import {DEFAULT_PRODUCT_ID, DEFAULT_MULTIPLAYER_PRODUCT_ID, PRODUCT_IDS, PRODUCT_GAMES, createLocalProductManifest, productEnabledForBuild, gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct, type ProductId} from '../../src/contracts/product-catalog.mts';
-import type {HostManifest} from '../../src/contracts/host-manifest.mts';
+import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 import {detectUiLocale, isUiMessageKey, UI_LOCALE_STORAGE_KEY, type UiLocale} from '../../src/launcher/i18n.mts';
 import {replayImportAccept} from '../../src/launcher/replay-files.mts';
 import {discouragedBrowserId} from '../../src/launcher/browser-support.mts';
@@ -105,7 +106,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   let playerRelayout: (() => Promise<boolean>) | null = null;
   let disposed = false, navigation: BrowserNavigationPorts | null = null;
   let pendingHostSelection: HostSelection | null = null;
-  let appliedHost: HostManifest | null = null;
+  let appliedHost: SiteManifest | null = null;
   let runtime: RuntimeService | null = null, frame: HTMLIFrameElement | null = null;
   let replays: ReplayModel | null = null, files: ReturnType<typeof createFileActions> | null = null;
   let midi: ReturnType<typeof createMidiBridge> | null = null;
@@ -206,13 +207,13 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   primaryTouchPointer.addEventListener('change', syncTouchSettingsOrder);
   const unsubscribeMetadata = metadata.subscribe(() => {
     const current = metadata.getSnapshot();
-    if (current.hostManifest && !current.hostManifestError && current.hostManifest !== appliedHost) {
-      const firstHost = appliedHost === null, host = current.hostManifest;
+    if (current.siteManifest && !current.siteManifestError && current.siteManifest !== appliedHost) {
+      const firstHost = appliedHost === null, host = current.siteManifest;
       const previousProduct = settings.getSnapshot()!.context.productId;
       let product = previousProduct;
       if (!Object.hasOwn(host.games, gameIdForProduct(product))) {
         const fallback = Object.keys(PRODUCT_GAMES).find(game => Object.hasOwn(host.games, game)) as ProductId | undefined;
-        if (!fallback) throw new Error('Host Manifest 没有可用游戏');
+        if (!fallback) throw new Error('Site Manifest 没有可用游戏');
         product = fallback;
         settings.restoreHostPreferences(settingsContext(product, snapshot.locale));
         publish({replayViewer: false});
@@ -230,7 +231,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   });
   const localManifest = createLocalProductManifest();
   const localPackageMaintenance = createLocalPackageMaintenance({
-    getGames: () => metadata.getSnapshot().hostManifest?.games ?? localManifest.games,
+    getGames: () => metadata.getSnapshot().siteManifest?.games ?? localManifest.games,
     origin: window.location.origin, onInstalled: metadata.acceptInstalledHint,
     onHydrated: () => publish({metadataRevision: snapshot.metadataRevision + 1}),
     scheduler: {requestFrame: callback => window.requestAnimationFrame(callback), cancelFrame: id => window.cancelAnimationFrame(id),
@@ -244,7 +245,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   const identity = createMultiplayerIdentityStore({persistentStorage: storage, sessionStorage});
   const sessions = createMultiplayerRoomSessionStore({storage: sessionStorage});
   const directory = createLobbyDirectory({
-    loadHostManifest: async signal => {const response = await window.fetch(new URL('host-manifest.json', baseUrl), {cache: 'no-store', signal}); if (!response.ok) throw new Error(String(response.status)); return response.json();},
+    loadSiteManifest: signal => loadCompatibleSiteManifest(async file => {const response = await window.fetch(new URL(file, baseUrl), {cache: 'no-store', signal}); if (!response.ok) throw Object.assign(new Error(`HTTP ${response.status}`), {status: response.status}); return response.json();}),
     createSocket: url => new WebSocket(url), memberId: multiplayerMemberId,
     identity, sessions, sessionStorage, translate: t,
     launcherUrl: () => new URL(snapshot.locale === 'en' ? 'en.html' : './', baseUrl).href,
@@ -253,7 +254,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     onSelectedProductNormalized: product => requiredNavigation().selectLobbyProduct(product),
   });
   const networkDiagnostics = createNetworkDiagnosticsModel({ translate: stringTranslate,
-    getRelayUrl: () => {const host = /\/lobby(?:\.html)?\/?$/.test(window.location.pathname) ? directory.getSnapshot().hostManifest : metadata.getSnapshot().hostManifest; const relay = host?.shared.netplayRelay; return relay ? buildMultiplayerDiagnosticRelayUrl(relay) : '';},
+    getRelayUrl: () => {const host = /\/lobby(?:\.html)?\/?$/.test(window.location.pathname) ? directory.getSnapshot().siteManifest : metadata.getSnapshot().siteManifest; const relay = host?.shared.netplayRelay; return relay ? buildMultiplayerDiagnosticRelayUrl(relay) : '';},
     getFallbackIceServers: () => [{urls: ['stun:stun.cloudflare.com:3478']}]});
   const nativeTouch = createTouchNativePorts({document, screen: window.screen, mobile, translate: t});
   const playerGestureTypes = ['contextmenu', 'selectstart', 'dragstart', 'gesturestart', 'gesturechange', 'gestureend'];
@@ -351,8 +352,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     getContext: () => ({product: settings.getSnapshot()?.context.productId ?? DEFAULT_PRODUCT_ID,
       roomCode: roomCodeFromUrl(window.location.href) || null, replayViewer: snapshot.replayViewer,
       runtimeReady: runtime?.getSnapshot().ready === true, launched: runtime?.getSnapshot().launched === true,
-      playerOpen: snapshot.playerOpen, importServer: metadata.getSnapshot().hostManifest?.shared.resourceMode === 'import',
-      fallback: metadata.getSnapshot().hostManifest?.shared.gameDataFallback ?? null}),
+      playerOpen: snapshot.playerOpen, importServer: metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import',
+      fallback: metadata.getSnapshot().siteManifest?.shared.gameDataFallback ?? null}),
     ports: {
       pickFile: ({accept}) => ports.pickFile(accept), feedback, showGameDataTransfer: transfer.revealGameData,
       closePlayer: async () => {const titleOverlayWasOpen = titleNetwork.getSnapshot().open; if (!await requestRuntimeClose()) return false; requiredNavigation().completeRuntimeClose({titleOverlayWasOpen}); return true;},
@@ -379,7 +380,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   });
   const titleNetwork = createTitleNetwork({context: () => ({game: runtime?.getSnapshot().game ?? activeSettings?.gameId ?? 'th06',
     product: roomSession?.service.getSnapshot().product ?? activeSettings?.context.productId ?? DEFAULT_PRODUCT_ID,
-    launched: runtime?.getSnapshot().launched === true, relayUrl: metadata.getSnapshot().hostManifest?.shared.netplayRelay ?? ''}),
+    launched: runtime?.getSnapshot().launched === true, relayUrl: metadata.getSnapshot().siteManifest?.shared.netplayRelay ?? ''}),
     translate: stringTranslate, toast: feedback.toast, randomValues: value => {const bytes = new Uint32Array(value.length); window.crypto.getRandomValues(bytes); value.set(bytes); return value;},
     sendNetworkCancel: () => requiredRuntime().cancelTitleNetwork(),
     enterRoom(product, code, created) {if (isMultiplayerProductId(product)) roomSession!.service.enterRoom(product, code, created);},
@@ -429,7 +430,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       userAgentDataPlatform: (window.navigator as Navigator & {userAgentData?: {platform?: string}}).userAgentData?.platform,
       mobile, brave: !!(window.navigator as Navigator & {brave?: unknown}).brave});
     diagnostics = createRuntimeDiagnostics({runtime, frame: element, window, storage, translate: stringTranslate,
-      browser: () => browser.browser, testBuild: () => metadata.getSnapshot().hostManifest?.shared.testBuild === true,
+      browser: () => browser.browser, testBuild: () => metadata.getSnapshot().siteManifest?.shared.testBuild === true,
       frameLimit60: () => activeSettings?.options.frameLimit60Enabled === true});
     gameplayNetwork = createGameplayNetwork({runtime, timers: window, english: () => snapshot.locale === 'en', translate: stringTranslate,
       context: () => {
@@ -443,7 +444,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
           replayViewer: snapshot.replayViewer, spectator: config?.netplaySpectator === true};
       }});
     const telemetry = createNetplayTelemetry({origin: window.location.origin,
-      endpoint: () => metadata.getSnapshot().hostManifest?.shared.netplayTelemetry,
+      endpoint: () => metadata.getSnapshot().siteManifest?.shared.netplayTelemetry,
       snapshot: () => {
         const state = runtime?.getSnapshot(), token = runtime?.getMidiEventContext();
         const net = gameplayNetwork?.readNativeSnapshot(), config = runtime?.getLauncherControlContext()?.options;
@@ -634,7 +635,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
       const owner = requiredRuntime();
       if (owner.getSnapshot().launched) {frame?.focus({preventScroll: true}); return;}
       if (isMultiplayerProductId(product)) {await roomSession!.service.launch(); return;}
-      if (metadata.getSnapshot().hostManifest?.shared.resourceMode === 'import' && !(await readCurrentPackageGeneration(gameIdForProduct(product))).generation) {
+      if (metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import' && !(await readCurrentPackageGeneration(gameIdForProduct(product))).generation) {
         publish({startupError: null}); feedback.status(t('package.needImport')); gameData.beginImportRequired(); return;
       }
       if (!await confirmInputWarnings()) return;
@@ -681,7 +682,7 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   const roomPreparation = createRoomPreparation({acquisition, metadataReady: metadata.initialize, baseUrl, translate: t,
     activeWorker: () => appShellOwner.activeWorker()});
   roomSession = createRoomSession({document, window, storage, identity, sessions, memberId: multiplayerMemberId,
-    createSocket: url => new WebSocket(url), relayUrl: () => metadata.getSnapshot().hostManifest?.shared.netplayRelay ?? '',
+    createSocket: url => new WebSocket(url), relayUrl: () => metadata.getSnapshot().siteManifest?.shared.netplayRelay ?? '',
     settingsModel: settings, sitePreferences: preferences, runtime: () => runtime, replayViewer: () => snapshot.replayViewer,
     titleOverlayOpen: () => snapshot.th09NetworkOverlayOpen,
     settings: () => ({touchEnabled: settings.getSnapshot()?.options.touchEnabled === true, touchMovementMode: settings.getSnapshot()?.options.touchMovementMode ?? 'touch', mobileDevice: mobile, iceServers: [{urls: ['stun:stun.cloudflare.com:3478']}]}),

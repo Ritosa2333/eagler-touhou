@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { readFile } from "node:fs/promises";
-import {frontendSelection, reactFrontendArtifactDirectory, readReactFrontendArtifact} from "../lib/react-frontend-artifact.mjs";
+import {reactFrontendArtifactDirectory, readReactFrontendArtifact} from "../lib/react-frontend-artifact.mjs";
 import {resolveRuntimeGenerationWorkerSource} from "../lib/contracts-build.mjs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,8 +22,9 @@ function parseArgs(values) {
 const args = parseArgs(process.argv.slice(2));
 const output = args.check ? null : (args.output || resolve(project, "dist", "app-shell", "app-shell-sw.js"));
 let buildOptions = {quiet: true, globDirectory: project, swDest: output};
-if (frontendSelection() === "react") {
+{
   const artifact = await readReactFrontendArtifact({directory: reactFrontendArtifactDirectory({project}), expectedMountPath: process.env.EAGLER_REACT_MOUNT_PATH});
+  if (!artifact.appShell && args.check) {console.log("React App Shell: disabled; sealed frontend verified"); process.exit(0);}
   if (!artifact.appShell) throw new Error("The selected React artifact has App Shell disabled; build an explicitly isolated App Shell artifact before generating its worker");
   buildOptions = {...buildOptions, globDirectory: artifact.root, shellFiles: artifact.shellFiles,
     workerContractSource: await readFile(await resolveRuntimeGenerationWorkerSource({project}), "utf8")};

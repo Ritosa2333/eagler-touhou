@@ -56,7 +56,7 @@ test('opt-in React artifacts use the actual server packager and generic verifier
       EAGLER_REACT_MOUNT_PATH: '/react-review/', EAGLER_REACT_APP_SHELL: 'isolated', EAGLER_REACT_APP_SHELL_ORIGIN: 'https://review.invalid'});
     const runtimeRelease = await writeSyntheticRuntimeRelease(resolve(temporary, 'runtime'));
     const seed = createPublicationHostSeed('web-validation-react-server');
-    seed.schema = 'eagler-touhou/host-manifest/1';
+    seed.schema = 'eagler-touhou/site-manifest/1';
     seed.shared = {resourceMode: 'hosted', vanillaFont: 'shared/msgothic.ttc?v=f', unicodeFont: 'shared/unifont.otf?v=g'};
     for (const [game, product] of Object.entries(PRODUCT_GAMES)) Object.assign(seed.games[game], {
       runtime: `runtime/${game}/${game}.html?hosted=1&v=old`,
@@ -70,7 +70,7 @@ test('opt-in React artifacts use the actual server packager and generic verifier
     await writeFile(resolve(temporary, 'host-seed.json'), JSON.stringify(seed));
     await writeFile(resolve(temporary, 'features.json'), JSON.stringify(features));
     const packageSite = (output, build, extra = [], selection = 'react') => command(['scripts/package-server.mjs', `--output=${output}`,
-      `--runtime-release=${resolve(temporary, 'runtime')}`, `--host-manifest=${resolve(temporary, 'host-seed.json')}`,
+      `--runtime-release=${resolve(temporary, 'runtime')}`, `--site-manifest=${resolve(temporary, 'host-seed.json')}`,
       `--feature-config=${resolve(temporary, 'features.json')}`, '--profile=web-validation-react-server', '--games=th06,th07,th08,th10', '--music=midi', ...extra],
     {...(selection === null ? {} : {EAGLER_FRONTEND: selection}), EAGLER_REACT_BUILD_DIRECTORY: build});
     // Neither the verifier's selection nor a nonexistent build can override
@@ -78,12 +78,12 @@ test('opt-in React artifacts use the actual server packager and generic verifier
     const verify = directory => command(['scripts/verify-server-build.mjs', directory],
       {EAGLER_FRONTEND: 'invalid-verifier-environment', EAGLER_REACT_BUILD_DIRECTORY: resolve(temporary, 'missing')});
     const main = resolve(temporary, 'main-site'), plain = resolve(temporary, 'plain-site'), isolated = resolve(temporary, 'isolated-site');
-    await t.test('unset selection preserves original main and verifies independently of caller selection', async () => {
-      await packageSite(main, resolve(temporary, 'missing-react-build'), [], null);
+    await t.test('unset selection publishes React and verifies independently of caller selection', async () => {
+      await packageSite(main, defaultBuild, [], null);
       const deployment = await json(resolve(main, 'deployment.json'));
-      assert.equal(Object.hasOwn(deployment, 'frontend'), false);
-      assert.ok(deployment.appShell.buildId);
-      assert.ok(deployment.files.some(item => item.path === 'app.js'));
+      assert.equal(deployment.frontend.kind,'react');
+      assert.equal(deployment.appShell,null);
+      assert.ok(!deployment.files.some(item=>item.path==='app.js'));
       await verify(main);
     });
     await t.test('default React publication omits SW, legacy UI, and public graph metadata', async () => {
@@ -97,7 +97,7 @@ test('opt-in React artifacts use the actual server packager and generic verifier
       const artifact = await readReactFrontendArtifact({directory: plain, metadata: deployment.frontend.validationMetadata});
       assert.ok(artifact.packageFiles.every(path => deployment.files.some(item => item.path === path)));
       assert.equal((await verifyReleaseManifest(plain)).parameters.frontend.kind, 'react');
-      const runtime = await verifyRuntimePublication(plain, await json(resolve(plain, 'host-manifest.json')));
+      const runtime = await verifyRuntimePublication(plain, await json(resolve(plain, 'site-manifest.json')));
       assert.equal(runtime.groups.length, ['th06', 'th07', 'th08', 'th10'].reduce((count, game) => count + 1 + Number(Boolean(PRODUCT_GAMES[game].multiplayerRuntime)), 0));
     });
     await t.test('isolated React publication rebuilds its SW against final Host bytes and actual graph', async () => {
@@ -114,15 +114,14 @@ test('opt-in React artifacts use the actual server packager and generic verifier
       for (const target of [plain, isolated]) {
         const before = await fileHashes(target);
         await assert.rejects(command(['scripts/refresh-deployment-app-shell.mjs', target, '--frontend'],
-          {EAGLER_FRONTEND: 'main'}), /React frontend refresh requires explicit EAGLER_FRONTEND=react/);
+          {EAGLER_FRONTEND: 'main'}), /EAGLER_FRONTEND/);
         assert.deepEqual(await fileHashes(target), before);
       }
-      const before = await fileHashes(main);
-      for (const flags of [[], ['--frontend']]) {
-        await assert.rejects(command(['scripts/refresh-deployment-app-shell.mjs', main, ...flags],
-          {EAGLER_FRONTEND: 'react', EAGLER_REACT_BUILD_DIRECTORY: defaultBuild}), /cannot refresh a main deployment with the React frontend/);
-        assert.deepEqual(await fileHashes(main), before);
-      }
+      const retired=resolve(temporary,'retired-declaration');await cp(main,retired,{recursive:true});
+      await resign(retired,async deployment=>{delete deployment.frontend;});
+      const before=await fileHashes(retired);
+      await assert.rejects(command(['scripts/refresh-deployment-app-shell.mjs',retired]),/Retired UI deployments/);
+      assert.deepEqual(await fileHashes(retired),before);
     });
     await t.test('wrong or absent isolated site URL and unknown selection preserve existing output', async () => {
       const output = resolve(temporary, 'preserved'); await mkdir(output); await writeFile(resolve(output, 'sentinel'), 'keep');
@@ -130,7 +129,7 @@ test('opt-in React artifacts use the actual server packager and generic verifier
         await assert.rejects(packageSite(output, isolatedBuild, extra), /React (?:App Shell|frontend artifact mount)/);
         assert.equal(await readFile(resolve(output, 'sentinel'), 'utf8'), 'keep');
       }
-      await assert.rejects(packageSite(output, defaultBuild, [], 'typo'), /EAGLER_FRONTEND must be main or react/);
+      await assert.rejects(packageSite(output, defaultBuild, [], 'typo'), /EAGLER_FRONTEND/);
       await assert.rejects(packageSite(output, resolve(temporary, 'not-built')), /React frontend artifact is missing/);
       assert.deepEqual(await readdir(output), ['sentinel']);
     });
@@ -156,7 +155,7 @@ test('opt-in React artifacts use the actual server packager and generic verifier
       const external = resolve(temporary, 'external-site');
       await writeFile(resolve(temporary, 'external-features.json'), JSON.stringify({...features, resourceMode: 'external'}));
       await command(['scripts/package-server.mjs', `--output=${external}`, `--runtime-release=${resolve(temporary, 'runtime')}`,
-        `--host-manifest=${resolve(hosted, 'host-manifest.json')}`, `--feature-config=${resolve(temporary, 'external-features.json')}`,
+        `--site-manifest=${resolve(hosted, 'site-manifest.json')}`, `--feature-config=${resolve(temporary, 'external-features.json')}`,
         '--profile=web-validation-react-server', '--games=th08', '--music=midi'],
       {EAGLER_FRONTEND: 'react', EAGLER_REACT_BUILD_DIRECTORY: defaultBuild});
       await verify(external);
@@ -191,7 +190,7 @@ test('opt-in React artifacts use the actual server packager and generic verifier
         const source = await readFile(resolve(directory, item.path), 'utf8');
         if (source.includes('originMigrationOpen')) await writeFile(resolve(directory, item.path), source.replaceAll('originMigrationOpen', 'missingMigrationOpen'));
       }
-    }, /React UI is missing its inert Host Manifest governed origin migration entry/);
+    }, /React UI is missing its inert Site Manifest governed origin migration entry/);
     await rejectsMutation('hosted shared-font targets remain a required React UI contract', hosted, async (directory, deployment) => {
       for (const item of deployment.files.filter(item => /^assets\/.+\.js$/.test(item.path))) {
         const source = await readFile(resolve(directory, item.path), 'utf8');
@@ -203,10 +202,10 @@ test('opt-in React artifacts use the actual server packager and generic verifier
       await writeFile(resolve(directory, file.path), 'changed-runtime');
     }, /(?:Runtime|runtime).*(?:mismatch|identity)|(?:mismatch|identity).*(?:Runtime|runtime)/);
     await rejectsMutation('DATA identity is still checked with React SW disabled', plain, async directory => {
-      const host = await json(resolve(directory, 'host-manifest.json'));
+      const host = await json(resolve(directory, 'site-manifest.json'));
       host.games.th06.gameData.bytes = 0;
-      await writeFile(resolve(directory, 'host-manifest.json'), JSON.stringify(host));
-    }, /(?:game data identity|gameData|data identity|invalid Host Manifest games)/);
+      await writeFile(resolve(directory, 'site-manifest.json'), JSON.stringify(host));
+    }, /(?:game data identity|gameData|data identity|invalid Site Manifest games)/);
   } finally {
     await rm(temporary, {recursive: true, force: true});
   }

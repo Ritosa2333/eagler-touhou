@@ -161,7 +161,7 @@ try {
   assert.deepEqual(Object.keys(manifest.sources), ["eagler-touhou"]);
   const deployment = JSON.parse(await readFile(resolve(host, "deployment.json"), "utf8"));
   assert.deepEqual(deployment.games, ["th06", "th07"]);
-  const hostManifest = JSON.parse(await readFile(resolve(host, "host-manifest.json"), "utf8"));
+  const hostManifest = JSON.parse(await readFile(resolve(host, "site-manifest.json"), "utf8"));
   assert.equal(hostManifest.shared.netplayRelay, "wss://relay.example.com/eagler-netplay/");
   assert.equal(hostManifest.shared.gameDataFallback.url, "https://downloads.example.com/packages");
   assert.deepEqual(hostManifest.shared.originMigration, { mode: "http-to-https" });
@@ -170,7 +170,7 @@ try {
   assert.match(hostManifest.games.th07.multiplayerRuntime, /^runtime\/th07\/multiplayer\/th07\.html\?hosted=1&v=/,
     "TH07 host assembly must publish the isolated multiplayer Runtime from Runtime Release");
   const externalDeployment = JSON.parse(await readFile(resolve(external, "deployment.json"), "utf8"));
-  const externalManifest = JSON.parse(await readFile(resolve(external, "host-manifest.json"), "utf8"));
+  const externalManifest = JSON.parse(await readFile(resolve(external, "site-manifest.json"), "utf8"));
   const externalCatalog = JSON.parse(await readFile(resolve(external, "release-catalog.json"), "utf8"));
   assert.equal(externalDeployment.resourceMode, "external");
   assert.equal(externalManifest.shared.resourceMode, "external");

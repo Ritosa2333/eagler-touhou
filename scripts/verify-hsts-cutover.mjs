@@ -35,12 +35,12 @@ if (!Number.isSafeInteger(maxAge) || maxAge < 31_536_000) {
   throw new Error(`final HTTPS site must publish at least one year of HSTS, got ${hsts || "missing"}`);
 }
 
-const manifestUrl = new URL("host-manifest.json", httpsBase);
+const manifestUrl = new URL("site-manifest.json", httpsBase);
 const manifestResponse = await fetch(manifestUrl, { cache: "no-store" });
-if (!manifestResponse.ok) throw new Error(`Host Manifest failed: ${manifestResponse.status}`);
+if (!manifestResponse.ok) throw new Error(`Site Manifest failed: ${manifestResponse.status}`);
 const manifest = await manifestResponse.json();
 if (manifest?.shared?.originMigration != null) {
-  throw new Error("final HSTS cutover must remove shared.originMigration from the Host Manifest");
+  throw new Error("final HSTS cutover must remove shared.originMigration from the Site Manifest");
 }
 
 console.log(JSON.stringify({

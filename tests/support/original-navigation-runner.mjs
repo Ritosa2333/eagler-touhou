@@ -81,7 +81,7 @@ export async function prepareOriginalNavigation({root: selectedRoot, caseName}) 
   }
   const artifacts = await Promise.all([...required].sort().map(async path => ({path, file: await inspectFile(root, path)})));
   const images = await Promise.all([...artwork].sort().map(async path => ({path, file: await inspectFile(root, path)})));
-  const metadata = await Promise.all(['host-manifest.json', 'release-catalog.json', 'runtime-manifest.json'].map(async path => ({path, file: await inspectFile(root, path)})));
+  const metadata = await Promise.all(['site-manifest.json', 'release-catalog.json', 'runtime-manifest.json'].map(async path => ({path, file: await inspectFile(root, path)})));
   const missingRequiredArtifacts = artifacts.filter(item => !item.file).map(item => item.path);
   const missingArtwork = images.filter(item => !item.file).map(item => item.path);
   const missingMetadata = metadata.filter(item => !item.file && item.path !== 'runtime-manifest.json').map(item => item.path);

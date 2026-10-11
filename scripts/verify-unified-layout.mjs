@@ -1,14 +1,14 @@
 import { readFile, stat } from "node:fs/promises";
 import { dirname, extname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createDevelopmentHostManifest } from "../lib/development-host-manifest.mjs";
+import { createDevelopmentSiteManifest } from "../lib/development-site-manifest.mjs";
 
 // Verifies the explicitly local development layout. It is not a release gate;
 // published candidates use verify-server-build.mjs and their generated catalog.
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const workspace = resolve(project, "..");
-const manifest = await createDevelopmentHostManifest();
+const manifest = await createDevelopmentSiteManifest();
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 const toPath = value => resolve(workspace, decodeURIComponent(new URL(value, "https://eagler.local/eagler-touhou/").pathname.slice(1)));
 const results = {};

@@ -7,7 +7,7 @@ export const HOST_PROTOCOL = "eagler-touhou/1";
 // Keep the three publication layers explicit:
 // - product: static capability ceiling/difference;
 // - Runtime Release: concrete build attestation (all entries below);
-// - Host Manifest: only features the Launcher must query as booleans at run
+// - Site Manifest: only features the Launcher must query as booleans at run
 //   time. Some capabilities have a richer Host surface instead: languages are
 //   represented by languages/languageOptions rather than a duplicate flag.
 export const PRODUCT_FEATURE_POLICY = Object.freeze({

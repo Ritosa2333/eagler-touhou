@@ -68,7 +68,7 @@ test('selected React root serves real routes and rejects old UI/disabled worker/
       const response = await fetch(server.base + path); assert.equal(response.status, 404, path);
       assert.doesNotMatch(await response.text(), /__reactRouterContext/, path);
     }
-    const host = await fetch(server.base + '/host-manifest.json'); assert.equal(host.status, 200);
+    const host = await fetch(server.base + '/site-manifest.json'); assert.equal(host.status, 200);
     assert.match(host.headers.get('content-type'), /application\/json/);
     const module = artifact.browserEntrypoints.find(path => path.startsWith('assets/'));
     assert.equal((await fetch(server.base + '/' + module)).status, 200);

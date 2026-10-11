@@ -35,7 +35,7 @@ before(async () => {
   };
   React = await import(pathToFileURL(require.resolve('react')));
   ({createRoot} = await import(pathToFileURL(require.resolve('react-dom/client'))));
-  for (const p of ['src/launcher/first-use-notice.mts','src/launcher/content-fragment.mts','src/launcher/i18n.mts']) assert.equal(pinnedUiAuthorityText(readFileSync(resolve(project,p), 'utf8')),pinned(p),`baseline ${p} changed`);
+  for (const p of ['src/launcher/content-fragment.mts','src/launcher/i18n.mts']) assert.equal(pinnedUiAuthorityText(readFileSync(resolve(project,p), 'utf8')),pinned(p),`baseline ${p} changed`);
   baselineHTML = pinned('public/index.html');
   buildDirectory = await mkdtemp(resolve(here, 'notices-build-'));
   const buildOptions={absWorkingDir:project, stdin:{resolveDir:project,loader:'ts',contents:`
@@ -46,7 +46,7 @@ before(async () => {
     export * from './app/components/notices/InformationalDialog.tsx';
     export * from './app/components/FullscreenTransient.tsx';
     export * from './app/i18n.tsx';
-    export {createFirstUseNoticeController} from './src/launcher/first-use-notice.mts';
+    export {createFirstUseNoticeController} from 'pinned:first-use-notice.mts';
     export {createMultiplayerGuideController} from 'pinned:multiplayer-guide.mts';
     export * from './src/launcher/content-fragment.mts';
   `},bundle:true,platform:'node',format:'esm',jsx:'automatic',outfile:resolve(buildDirectory,'actual-bundle.mjs'),logLevel:'silent',plugins:[{name:'pinned-guide-oracle',setup(ctx){

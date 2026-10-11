@@ -54,7 +54,7 @@ An App Shell replacement first verifies and caches its complete required Launche
 Resource delivery has three modes. `hosted` publishes game/shared payloads with the site; `external` keeps Launcher and Runtime local while retaining Release Catalog and Package Descriptors for automatic acquisition through same-origin redirect routes; `import` requires a user-selected local Package. External storage topology does not enter Package Descriptor URLs: descriptors retain safe relative sources, and the web-server/CDN layer owns redirects and CORS.
 
 The static `src/contracts/product-catalog.mts` module is the product registry.
-The browser-visible `host-manifest.json` describes the deployed Runtime/content
+The browser-visible `site-manifest.json` describes the deployed Runtime/content
 surface, while `release-catalog.json` points at installable Package
 Descriptors. There is no third `games.json` protocol. Local import stays
 available even when remote fetch fails. Missing files may be non-fatal during

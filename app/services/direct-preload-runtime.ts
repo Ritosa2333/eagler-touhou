@@ -1,13 +1,13 @@
-import {validateHostManifest, type HostManifest} from '../../src/contracts/host-manifest.mts';
+import {validateSiteManifest, type SiteManifest} from '../../src/contracts/site-manifest.mts';
 import {PRODUCT_GAMES, type GameId} from '../../src/contracts/product-catalog.mts';
 /** Original app.mts5948–5983 fallback. No fabricated Package generation, no
  * managed-DATA query and no authority for a retail-memory engine to fetch DATA. */
 export function directPreloadRuntimeUrl(plan: {
   game: GameId; runtimeVariant: 'normal' | 'multiplayer'; entry: string;
-  directPreloadHost?: HostManifest;
+  directPreloadHost?: SiteManifest;
 }, baseUrl: string): URL {
   if (!plan.directPreloadHost) throw new Error('Direct preload requires validated Host authority');
-  const host = validateHostManifest(plan.directPreloadHost), product = PRODUCT_GAMES[plan.game];
+  const host = validateSiteManifest(plan.directPreloadHost), product = PRODUCT_GAMES[plan.game];
   const game = host.games[plan.game];
   if (host.shared.resourceMode !== 'hosted' || product.dataProvider !== 'emscripten-preload' || !game) throw new Error('Host does not authorize this preload Runtime');
   const declared = plan.runtimeVariant === 'multiplayer' ? game.multiplayerRuntime : game.runtime;

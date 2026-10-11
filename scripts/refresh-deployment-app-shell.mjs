@@ -1,9 +1,12 @@
 #!/usr/bin/env node
+import {assertReactFrontendEnvironment} from '../compat/frontend-environment.mjs';
+assertReactFrontendEnvironment();
+import {writeLegacySiteManifestAlias} from '../compat/site-manifest.mjs';
 import { createHash, randomUUID } from "node:crypto";
 import { copyFile, cp, lstat, mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
 import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { frontendSelection, reactFrontendArtifactDirectory, readReactFrontendArtifact } from "../lib/react-frontend-artifact.mjs";
+import { reactFrontendArtifactDirectory, readReactFrontendArtifact } from "../lib/react-frontend-artifact.mjs";
 import { resolveRuntimeGenerationWorkerSource } from "../lib/contracts-build.mjs";
 import { run } from "../host/lib/process.mjs";
 import { isDeepStrictEqual } from "node:util";
@@ -42,26 +45,15 @@ if (deployment.format !== "eagler-touhou-deployment/1" || !Array.isArray(deploym
   throw new Error("invalid deployment manifest");
 }
 const reactTarget = deployment.frontend?.kind === "react";
-if (reactTarget) {
-  // A shell-only refresh inherits its frontend from the target. Select its
-  // contract context before importing any cached canonical contract facade.
-  // Frontend replacement still requires the caller's explicit selection.
-  if (refreshFrontend && frontendSelection() !== "react") throw new Error("React frontend refresh requires explicit EAGLER_FRONTEND=react");
-  if (process.env.EAGLER_FRONTEND !== "react") {
-    const result = await run(process.execPath, [...process.execArgv, fileURLToPath(import.meta.url), ...values], {
-      env: {EAGLER_FRONTEND: "react"}, allowFailure: true,
-    });
-    process.exit(result.code);
-  }
-}
+if (!reactTarget) throw new Error("Retired UI deployments require fresh React packaging; in-place old UI refresh is unavailable");
 const { freezeHostRuntimes, verifyRuntimePublication, verifyRuntimeGenerationDirectory } = await import("../lib/runtime-generations.mjs");
 const { buildAppShell } = await import("../lib/app-shell-build.mjs");
 const { runtimeAppShellPaths } = await import("../lib/app-shell-validation.mjs");
 const { hostArtworkFiles } = await import("../lib/host-artwork.mjs");
 const { RUNTIME_GENERATION_FILE, RUNTIME_MANIFEST_FILE, parseRuntimeGenerationPath } = await import("../lib/contracts/runtime-generations.mjs");
-const { HOST_MANIFEST_FILE, validateHostManifest } = await import("../lib/contracts/host-manifest.mjs");
+const { SITE_MANIFEST_FILE, validateSiteManifest } = await import("../lib/contracts/site-manifest.mjs");
 const { WORKSPACE_REPOSITORIES } = await import("../lib/workspace-layout.mjs");
-const hostManifest = validateHostManifest(JSON.parse(await readFile(resolve(root, HOST_MANIFEST_FILE), "utf8")));
+const hostManifest = validateSiteManifest(JSON.parse(await readFile(resolve(root, SITE_MANIFEST_FILE), "utf8")));
 const siteUrl = normalizeSiteUrl(siteUrlOption?.slice("--site-url=".length) || deployment.siteUrl);
 let previousArtifact = null, selectedArtifact = null, frontend = null;
 if (reactTarget) {
@@ -80,10 +72,6 @@ if (reactTarget) {
       selectedSite.pathname !== selectedArtifact.appShell.mountPath)) throw new Error("React refresh site URL must match the exact isolated origin and mount");
   if (!refreshFrontend && siteUrl !== normalizeSiteUrl(deployment.siteUrl)) throw new Error("React site URL changes require --frontend");
   if (!(await lstat(root)).isDirectory()) throw new Error("React refresh requires an ordinary preparation directory, not a live publication symlink");
-} else {
-  if (Object.hasOwn(deployment, "frontend")) throw new Error("invalid deployment frontend identity");
-  if (frontendSelection() === "react") throw new Error("cannot refresh a main deployment with the React frontend; use explicit server packaging instead");
-  frontend = await import("../lib/frontend-manifest.mjs");
 }
 
 // Same sibling staging and mkdir-lock patterns as the existing publication
@@ -95,7 +83,7 @@ const lock = reactTarget ? resolve(dirname(root), `.${basename(root)}.refresh-lo
 const appRoot = candidate || root;
 const swPath = resolve(appRoot, "app-shell-sw.js");
 const deploymentPath = resolve(appRoot, "deployment.json");
-const hostManifestPath = resolve(appRoot, HOST_MANIFEST_FILE);
+const hostManifestPath = resolve(appRoot, SITE_MANIFEST_FILE);
 let originalFiles = null, selectedFiles = null, previousRelease = null, ownsLock = false;
 
 async function inventoryTree(directory, {sidecars = false} = {}, prefix = "", files = []) {
@@ -165,6 +153,7 @@ if (reactTarget) {
 // legacy loose code as one verified generation before rebuilding the shell.
 await freezeHostRuntimes(appRoot, hostManifest);
 await writeFile(hostManifestPath, `${JSON.stringify(hostManifest, null, 2)}\n`);
+  await writeLegacySiteManifestAlias(appRoot, hostManifest);
 await verifyRuntimePublication(appRoot, hostManifest);
 const runtimePaths = runtimeAppShellPaths(hostManifest);
 const inventoryPaths = new Set(deployment.files.map(item => item.path));
@@ -180,7 +169,6 @@ if (reactTarget) {
 const temporary = resolve(temporaryRoot, `app-shell-sw-${process.pid}-${randomUUID()}.js`);
 try {
   if (refreshFrontend) {
-    if (!reactTarget) await (await import("../lib/launcher-build.mjs")).ensureLauncherBuild();
     const packageFiles = selectedArtifact?.packageFiles || frontend.FRONTEND_PACKAGE_FILES;
     const resolveSource = selectedArtifact ? path => selectedArtifact.resolveSource(path) : frontend.resolveFrontendPackageSource;
     if (reactTarget) {

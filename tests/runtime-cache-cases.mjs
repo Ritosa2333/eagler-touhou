@@ -7,7 +7,7 @@ import { RUNTIME_MANIFEST_SCHEMA, RUNTIME_PROTOCOL, RUNTIME_GENERATION_SCHEMA,
   runtimeGenerationBase, runtimeGenerationEntry } from "../lib/contracts/runtime-generations.mjs";
 const source = (await Promise.all([
   "../.cache/build/browser/assets/contracts/runtime-generations-worker.js",
-  "../legacy/runtime-generation-reader.js", "../src/runtime-cache-sw.js",
+  "../compat/runtime-generation-reader.js", "../src/runtime-cache-sw.js",
 ].map(path => readFile(new URL(path, import.meta.url), "utf8")))).join("\n");
 const sha = text => createHash("sha256").update(text).digest("hex");
 class MemoryCache {

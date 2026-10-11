@@ -1,3 +1,4 @@
+import {verifyLegacySiteManifestAlias} from '../compat/site-manifest.mjs';
 import { verifyRuntimePublication } from "../lib/runtime-generations.mjs";
 import { RUNTIME_GENERATION_FILE, RUNTIME_MANIFEST_FILE, parseRuntimeGenerationPath } from "../lib/contracts/runtime-generations.mjs";
 import { createHash } from "node:crypto";
@@ -10,7 +11,7 @@ import { canonicalPackagePayload, validatePackageDescriptor } from "../package/p
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { runtimeFileNames } from "../lib/runtime-release.mjs";
 import { RELEASE_CATALOG_FILE, releaseCatalogEntryUrl, validateReleaseCatalog } from "../lib/contracts/release-catalog.mjs";
-import { HOST_MANIFEST_FILE, validateHostManifest } from "../lib/contracts/host-manifest.mjs";
+import { SITE_MANIFEST_FILE, validateSiteManifest } from "../lib/contracts/site-manifest.mjs";
 import { extractGameDataLayout } from "../lib/runtime-data-layout.mjs";
 import { assertRuntimeDataShell } from "../lib/runtime-data-provider.mjs";
 import { verifyReleaseManifest } from "../lib/release-manifest.mjs";
@@ -47,6 +48,7 @@ if (!inferredAuthority || (deployment.authority != null && deployment.authority 
 }
 // The verified deployment owns its frontend identity. The verifier's process
 // environment cannot switch a published site to a different artifact graph.
+if (deployment.frontend?.kind !== "react") throw new Error("Current publications must use the React frontend");
 let reactFrontend = null;
 if (Object.hasOwn(deployment, "frontend")) {
   if (deployment.frontend?.kind !== "react" || typeof deployment.frontend.mountPath !== "string" ||
@@ -72,10 +74,11 @@ if (Object.hasOwn(deployment, "frontend")) {
 const declaredResourceMode = deployment.resourceMode || "hosted";
 const resourceMode = normalizeResourceMode(declaredResourceMode);
 if (!resourceMode) throw new Error("invalid deployment resourceMode");
-const games = validateHostManifest(JSON.parse(await readFile(resolve(root, HOST_MANIFEST_FILE), "utf8")));
+const games = validateSiteManifest(JSON.parse(await readFile(resolve(root, SITE_MANIFEST_FILE), "utf8")));
+await verifyLegacySiteManifestAlias(root, games);
 const gameIds = Object.keys(games.games);
 if (!gameIds.length || gameIds.some(game => !Object.hasOwn(PRODUCT_GAMES, game))) {
-  throw new Error("Host Manifest contains no products or an unregistered product");
+  throw new Error("Site Manifest contains no products or an unregistered product");
 }
 const preloadGames = gameIds.filter(game => PRODUCT_GAMES[game].dataProvider === "emscripten-preload");
 if (!deployment.files.some(item => item.path === "touch-guide.css")) throw new Error("touch guide stylesheet missing from deployment");
@@ -93,13 +96,8 @@ for (const font of ["yatra-one-latin.woff2", "chill-round-gothic-site-medium.wof
   if (!deployment.files.some(item => item.path === `assets/fonts/${font}`)) throw new Error(`UI font missing from deployment: ${font}`);
 }
 
-if (reactFrontend) {
+{
   if (reactFrontend.appShell) assertAppShellContract(deployment.appShell, games, {shellFiles: reactFrontend.shellFiles});
-} else {
-  // Derive the same original graph from the published files, rather than a
-  // caller-selected source checkout frontend or compiler cache.
-  const mainModules = await browserModuleClosure({root, entries: ["app.js", "assets/launcher/lobby.mjs"]});
-  assertAppShellContract(deployment.appShell, games, {shellFiles: [...STATIC_APP_SHELL_FILES, ...mainModules]});
 }
 if (games.shared.runtimeManifest) {
   await verifyRuntimePublication(root, games);
@@ -217,7 +215,7 @@ async function verifyHtmlReferences(relativeHtmlPath) {
   }
 }
 const htmlPaths = ["index.html", "migrate.html", "about.html", "faq.html"];
-if (reactFrontend) htmlPaths.push("en.html");
+htmlPaths.push("en.html");
 for (const game of gameIds) {
   const entry = games.games[game];
   for (const runtime of [entry.runtime, entry.multiplayerRuntime].filter(Boolean)) {
@@ -228,7 +226,7 @@ for (const game of gameIds) {
 for (const htmlPath of htmlPaths) await verifyHtmlReferences(htmlPath);
 
 const releaseCatalog = validateReleaseCatalog(JSON.parse(await readFile(resolve(root, RELEASE_CATALOG_FILE), "utf8")));
-if (games.profile !== deployment.profile) throw new Error("Host Manifest profile does not match deployment");
+if (games.profile !== deployment.profile) throw new Error("Site Manifest profile does not match deployment");
 if (games.protocol !== "eagler-touhou/1") throw new Error("invalid host protocol");
 if (normalizeResourceMode(games.shared?.resourceMode || "hosted") !== resourceMode) throw new Error("host/deployment resourceMode mismatch");
 for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === "directory")) {
@@ -256,7 +254,7 @@ for (const game of gameIds.filter(id => PRODUCT_GAMES[id].runtimeFileLayout === 
   if (!Number.isSafeInteger(identity?.bytes) || identity.bytes <= 0 || !/^[a-f0-9]{64}$/.test(identity.sha256) ||
       identity.path !== dataPath || identity.version !== `sha256-${identity.sha256}`) throw new Error(`${game}: invalid DATA identity`);
   if (!product.musicCapabilities.midi && entry.music?.midi?.supported !== false) {
-    throw new Error(`${game}: Host Manifest exposes unsupported MIDI capability`);
+    throw new Error(`${game}: Site Manifest exposes unsupported MIDI capability`);
   }
   if (resourceMode === RESOURCE_MODE_HOSTED) {
     const bytes = await readFile(resolve(root, "games", game, dataPath));
@@ -299,7 +297,7 @@ if (resourceMode === RESOURCE_MODE_HOSTED) {
 }
 const fallback = games.shared?.gameDataFallback;
 if (!fallback) {
-  console.warn("OPERATOR WARNING: Host Manifest has no gameDataFallback; configure the fallback download link before publication.");
+  console.warn("OPERATOR WARNING: Site Manifest has no gameDataFallback; configure the fallback download link before publication.");
 }
 if (fallback != null && (typeof fallback !== "object" || typeof fallback.url !== "string" || !/^https:\/\//.test(fallback.url) ||
     (fallback.hint != null && typeof fallback.hint !== "string"))) {
@@ -316,7 +314,7 @@ const sharedFontMounts = resourceMode === RESOURCE_MODE_HOSTED
   ? [games.shared.vanillaFont, games.shared.unicodeFont]
     .map(value => `/${basename(new URL(value, "https://eagler.invalid/").pathname)}`)
   : [];
-if (reactFrontend) {
+{
   // React's document is hydrated, so its inert entry belongs to emitted JSX,
   // not static index markup. Inspect syntax rather than executing UI code or
   // accepting a copied legacy app.js as proof of the selected implementation.
@@ -348,26 +346,8 @@ if (reactFrontend) {
   for (const path of reactFrontend.browserModules.filter(path => !path.startsWith("legacy/"))) {
     visit(parse(await readFile(resolve(root, path), "utf8"), {ecmaVersion: "latest", sourceType: "module"}));
   }
-  if (!inertMigrationEntry) throw new Error("React UI is missing its inert Host Manifest governed origin migration entry");
+  if (!inertMigrationEntry) throw new Error("React UI is missing its inert Site Manifest governed origin migration entry");
   for (const mount of sharedFontMounts) if (!constants.has(mount)) throw new Error(`host shared font target mismatch: ${mount}`);
-} else {
-  const hostAppFacade = await readFile(resolve(root, "app.js"), "utf8");
-  const hostApp = await readFile(resolve(root, "assets", "launcher", "app.mjs"), "utf8");
-  const hostIndex = await readFile(resolve(root, "index.html"), "utf8");
-  if (!/id="originMigrationOpen"[^>]+href="migrate\.html"[^>]+hidden/.test(hostIndex)) {
-    throw new Error("inert origin migration entry missing from main UI");
-  }
-  if (!hostApp.includes("host-manifest-origin-migration-policy/1")) {
-    throw new Error("main UI migration entry is not governed by the Host Manifest campaign");
-  }
-  if (!hostAppFacade.includes('import "./assets/launcher/app.mjs";')) {
-    throw new Error("Launcher app.js facade does not delegate to the generated TypeScript artifact");
-  }
-  for (const mount of sharedFontMounts) {
-    if (!hostApp.includes(JSON.stringify(mount))) {
-      throw new Error(`host shared font target mismatch: ${mount}`);
-    }
-  }
 }
 for (const game of preloadGames) {
   const product = PRODUCT_GAMES[game];

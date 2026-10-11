@@ -3,7 +3,7 @@ import {resolve} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import type {Plugin} from 'vite';
-import {launcherStyleSources, buildLauncherStyleOutputs} from '../../lib/launcher-optimization.mjs';
+import {launcherStyleSources, buildLauncherStyleOutputs} from '../../lib/frontend-assets.mjs';
 import {writeFileAtomic} from '../../lib/atomic-file.mjs';
 import {STATIC_FRONTEND_PACKAGE_FILES} from '../../lib/frontend-static-manifest.mjs';
 import {resolvePublicOrRepositorySource} from '../../lib/public-source.mjs';
@@ -70,7 +70,7 @@ export function mainAssets(): Plugin {
       // Stable read-compatibility URLs remain available without pulling the
       // retired DOM/history owners or Node build facades into the browser.
       const compatibility = await build({
-        entryPoints: STATIC_FRONTEND_PACKAGE_FILES.filter(path => path.startsWith('legacy/')).map(path => resolve(root, path)),
+        entryPoints: Object.fromEntries(STATIC_FRONTEND_PACKAGE_FILES.filter(path => path.startsWith('legacy/')).map(path => [path.replace(/\.mjs$/, ''), resolvePublicOrRepositorySource(path)])),
         outbase: root, outdir: output, bundle: true, splitting: true, format: 'esm',
         platform: 'browser', target: 'es2022', minify: true, write: false,
         outExtension: {'.js': '.mjs'}, chunkNames: 'legacy/chunks/[name]-[hash]',

@@ -36,15 +36,15 @@ assert.ok(FRONTEND_PACKAGE_FILES.includes("vendor/fflate.LICENSE"));
 assert.ok(APP_SHELL_FILES.includes("vendor/fflate.min.js"));
 assert.ok(!APP_SHELL_FILES.includes("vendor/fflate.LICENSE"));
 assert.ok(APP_SHELL_FILES.every(path => FRONTEND_PACKAGE_FILES.includes(path)));
-assert.deepEqual(BROWSER_MODULE_ENTRYPOINTS, ["app.js", "assets/launcher/lobby.mjs"],
-  "both Launcher and standalone room directory must publish their browser entrypoints");
-assert.ok(BROWSER_MODULE_FILES.includes("app.js"));
-assert.ok(BROWSER_MODULE_FILES.includes("assets/launcher/app.mjs"));
+assert.ok(BROWSER_MODULE_ENTRYPOINTS.length > 0);
+assert.ok(BROWSER_MODULE_ENTRYPOINTS.every(path=>FRONTEND_PACKAGE_FILES.includes(path)));
+assert.ok(!BROWSER_MODULE_ENTRYPOINTS.includes('app.js'));
+assert.ok(!BROWSER_MODULE_FILES.includes('app.js'));
+assert.ok(!BROWSER_MODULE_FILES.includes('assets/launcher/app.mjs'));
 assert.ok(BROWSER_MODULE_FILES.length > 2,
   "feature chunks must remain in the published browser graph so code splitting never creates online-only functionality");
-assert.ok(BROWSER_MODULE_FILES.some(path => /^assets\/launcher\/[^/]+-[A-Z0-9]{8}\.mjs$/.test(path)),
-  "optimized browser graph must contain at least one split feature chunk");
-assert.ok(BROWSER_MODULE_FILES.every(path => APP_SHELL_FILES.includes(path)));
+assert.ok(BROWSER_MODULE_FILES.some(path=>/^assets\/.*\.(?:js|mjs)$/.test(path)), 'React chunks must belong to the sealed graph');
+assert.ok(BROWSER_MODULE_FILES.filter(path=>!path.startsWith('legacy/')).every(path => APP_SHELL_FILES.includes(path)));
 assert.equal(new Set(BROWSER_MODULE_FILES).size, BROWSER_MODULE_FILES.length);
 assert.ok(APP_SHELL_FILES.includes("features.css"), "deferred feature CSS must still be installed with the App Shell");
 assert.ok(!FRONTEND_PACKAGE_FILES.includes("app-shell-sw.js"));
@@ -80,22 +80,11 @@ for (const game of gameIds) {
 }
 assert.deepEqual(hostArtworkFiles(gameIds), [...cardArtwork, ...HOST_SITE_ARTWORK_FILES],
   "all registered products must contribute their catalog-owned card artwork exactly once");
-assert.match(
-  relative(project, resolveFrontendPackageSource("assets/launcher/app.mjs")).replaceAll("\\", "/"),
-  /^\.cache\/build\/optimized\/assets\/launcher\/app\.mjs$/,
-  "source checkout must publish the optimized Launcher outside the authored assets directory",
-);
-for (const directory of ["assets/contracts", "assets/launcher"]) {
-  await assert.rejects(access(resolve(project, directory)), error => error?.code === "ENOENT",
-    `${directory} must not exist as generated source-checkout output`);
-}
-const publicFiles = await collectFiles(publicRoot);
-const declaredPublicFiles = FRONTEND_PACKAGE_FILES.filter(path =>
-  resolveFrontendPackageSource(path).startsWith(`${publicRoot}\\`) ||
-  resolveFrontendPackageSource(path).startsWith(`${publicRoot}/`)
-).concat(["index.html", "styles.css", "touch-guide.css"]).sort();
-assert.deepEqual(publicFiles, declaredPublicFiles,
-  "public/ must contain exactly the allowlisted authored browser source files");
+for(const path of BROWSER_MODULE_FILES) await access(resolveFrontendPackageSource(path));
+const publicFiles=await collectFiles(publicRoot);
+const {STATIC_FRONTEND_PACKAGE_FILES}=await import('../lib/frontend-static-manifest.mjs');
+const allowed=new Set([...STATIC_FRONTEND_PACKAGE_FILES,'bootstrap/index.html','bootstrap/lobby.html']);
+for(const path of publicFiles) assert.ok(allowed.has(path),`undeclared public source ${path}`);
 assert.equal(new Set(PRIVATE_FRONTEND_ASSETS.map(asset => asset.target)).size, PRIVATE_FRONTEND_ASSETS.length,
   "private frontend publication targets must be unique");
 for (const asset of PRIVATE_FRONTEND_ASSETS) {

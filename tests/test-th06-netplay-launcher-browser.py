@@ -56,8 +56,8 @@ def wait_relay(process: subprocess.Popen[str], timeout: float = 10.0) -> None:
 
 def development_manifest(relay_url: str) -> dict:
     source = """
-import { createDevelopmentHostManifest } from './lib/development-host-manifest.mjs';
-console.log(JSON.stringify(await createDevelopmentHostManifest()));
+import { createDevelopmentSiteManifest } from './lib/development-site-manifest.mjs';
+console.log(JSON.stringify(await createDevelopmentSiteManifest()));
 """
     result = subprocess.run(
         ["node", "--input-type=module", "-e", source],
@@ -74,7 +74,7 @@ console.log(JSON.stringify(await createDevelopmentHostManifest()));
 def install_manifest_routes(context, manifest: dict) -> None:
     body = json.dumps(manifest)
     context.route(
-        "**/host-manifest.json",
+        "**/site-manifest.json",
         lambda route: route.fulfill(status=200, content_type="application/json", body=body),
     )
     context.route(

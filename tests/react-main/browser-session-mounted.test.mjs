@@ -59,7 +59,7 @@ before(async () => {
     export {getTestSession} from 'captured-browser-session';
     export {getAcquisitionOptions} from 'captured-acquisition';
     export {setPackageReadGate} from 'gated-package-read';
-    export {validateHostManifest} from './src/contracts/host-manifest.mts';
+    export {validateSiteManifest} from './src/contracts/site-manifest.mts';
     export {PRODUCT_GAMES, multiplayerConfigForProduct} from './src/contracts/product-catalog.mts';
     export {encodeRoomInvite} from './src/launcher/room-invite.mts';
     export {validateReleaseCatalog} from './src/contracts/release-catalog.mts';
@@ -188,9 +188,9 @@ function createNativeEndpoint(frame) {
   };
   owner.native = native; owner.frame = frame; return native;
 }
-function hostManifest(mode = 'hosted') {
+function siteManifest(mode = 'hosted') {
   const hash = createHash('sha256').update(new Uint8Array([1, 2, 3])).digest('hex');
-  return {schema: 'eagler-touhou/host-manifest/1', protocol: 'eagler-touhou/1', profile: 'web-validation-test',
+  return {schema: 'eagler-touhou/site-manifest/1', protocol: 'eagler-touhou/1', profile: 'web-validation-test',
     shared: mode === 'import' ? {resourceMode: mode} : {resourceMode: mode, vanillaFont: 'msgothic.ttc', unicodeFont: 'unifont.otf'},
     games: {th06: {runtime: 'runtime/th06/th06.html', multiplayerRuntime: 'runtime/th06mp/th06.html',
       gameData: {path: 'th06.data', bytes: 3, sha256: hash, version: `sha256-${hash}`, layout: `sha256-${'b'.repeat(64)}`},
@@ -198,8 +198,8 @@ function hostManifest(mode = 'hosted') {
       languages: [], languageOptions: [{id: 'ja', title: '日本語', pack: null}], music: {midi: {files: []}}}}};
 }
 async function mountBrowser({initial = '/?game=th06&keep=a%20b', autoReady = true, strictMode = false, blockStorage = false, resourceMode = 'hosted', noticeEnabled = false,
-  hydrate = false, host = hostManifest(resourceMode), holdHost = false, holdFirstUse = false, seedStorage = () => {}, seedPackages = [], socketBoundary = false, directoryTransport = false, actualHistory = false, fetchBoundary = () => null} = {}) {
-  api.validateHostManifest(host); api.validateReleaseCatalog({schema: 'eagler-touhou/release-catalog/1', games: {}});
+  hydrate = false, host = siteManifest(resourceMode), holdHost = false, holdFirstUse = false, seedStorage = () => {}, seedPackages = [], socketBoundary = false, directoryTransport = false, actualHistory = false, fetchBoundary = () => null} = {}) {
+  api.validateSiteManifest(host); api.validateReleaseCatalog({schema: 'eagler-touhou/release-catalog/1', games: {}});
   env.errors.length = 0; env.window.history.replaceState(null, '', initial);
   const storage = new MemoryStorage(), sessionStorage = new MemoryStorage();
   storage.values.set('eagler-touhou-first-use-notice-seen-v1', '1');
@@ -223,10 +223,10 @@ async function mountBrowser({initial = '/?game=th06&keep=a%20b', autoReady = tru
   const fetchImpl = async (input, init = {}) => {
     const url = new URL(String(input), env.window.location.href); fetches.push({url: url.href, init});
     const handled = fetchBoundary(url, init); if (handled) return handled;
-    if (url.pathname.endsWith('/host-manifest.json')) {
+    if (url.pathname.endsWith('/site-manifest.json')) {
       // The document Launcher starts first; the independent directory request
       // can finish while its metadata response is still outstanding.
-      if (holdHost !== 'launcher' || fetches.filter(item => new URL(item.url).pathname.endsWith('/host-manifest.json')).length === 1) await hostReady;
+      if (holdHost !== 'launcher' || fetches.filter(item => new URL(item.url).pathname.endsWith('/site-manifest.json')).length === 1) await hostReady;
       return Response.json(host);
     }
     if (url.pathname.endsWith('/release-catalog.json')) return Response.json({schema: 'eagler-touhou/release-catalog/1', games: {}});
@@ -891,7 +891,7 @@ test('actual BrowserLauncher: StrictMode initialization owns one notice request,
 // These are supplemental owner-integration checks derived from main1493–1521,
 // 4840–4845 and9742–9751. The original browser scenarios remain unchanged.
 function subsetHost(ids, {multiplayer = true} = {}) {
-  const value = hostManifest(), template = value.games.th06;
+  const value = siteManifest(), template = value.games.th06;
   value.games = Object.fromEntries(ids.map(id => [id, {...structuredClone(template), runtime: `runtime/${id}/${id}.html`,
     multiplayerRuntime: multiplayer ? `runtime/${id}mp/${id}.html` : undefined,
     gameData: {...template.gameData, path: `${id}.data`}}]));
@@ -1007,7 +1007,7 @@ for (const room of [false, true]) test(`actual BrowserLauncher: same-base missin
 });
 
 test('actual BrowserLauncher: canonical installed hint preserves session-only language/options after first Host', async () => {
-  const host = hostManifest(), language = {id: 'en', title: 'English', pack: {url: 'lang/en.zip', bytes: 3, sha256: 'c'.repeat(64), runtimeVersion: 'fixture', files: 1}};
+  const host = siteManifest(), language = {id: 'en', title: 'English', pack: {url: 'lang/en.zip', bytes: 3, sha256: 'c'.repeat(64), runtimeVersion: 'fixture', files: 1}};
   host.games.th06.languages.push(language); host.games.th06.languageOptions.push(language);
   const f = await mountBrowser({host, seedStorage(storage) {storage.values.set(api.languagePreferenceStorageKey('th06'), 'ja');}});
   f.storage.blocked = true;
@@ -1231,7 +1231,7 @@ for (const timing of ['together', 'after-directory']) test(`actual BrowserLaunch
   if (timing === 'after-directory') await until(() => env.document.querySelector('#lobbyGameRail .game.nav-preview[data-product="th07mp"]'), 'actual directory applies TH07 filter before Launcher Host');
   await React.act(async () => {f.releaseHost();}); await tick();
   await until(() => env.document.querySelector('#lobbyGameRail .game.nav-preview[data-product="th07mp"]'), 'actual directory applies TH07 filter');
-  assert.equal(f.fetches.filter(item => new URL(item.url).pathname.endsWith('/host-manifest.json')).length, 2);
+  assert.equal(f.fetches.filter(item => new URL(item.url).pathname.endsWith('/site-manifest.json')).length, 2);
   assert.equal(node('#lobbyOptionsDialog').open, false, 'the directory filter is not an instruction to open game settings');
   await click('#lobbyGuideOpen');
   await until(() => env.document.querySelector('#mpGuideContent .multiplayer-rule-game-tab.selected'), 'authored guide content loads');
@@ -1311,7 +1311,7 @@ test('actual BrowserLauncher hydrates shared static cards into one live session 
 for (const locale of ['en', 'zh-CN']) test(`actual BrowserLauncher: room Cancel/Retry owns manual recovery and preserves ${locale} main copy`, async () => {
   const releases = [];
   api.setPackageReadGate(() => new Promise(resolve => {releases.push(resolve);}));
-  const host = hostManifest(); host.shared.netplayRelay = 'wss://relay.invalid/socket';
+  const host = siteManifest(); host.shared.netplayRelay = 'wss://relay.invalid/socket';
   host.shared.gameDataFallback = {url: 'https://downloads.invalid/package.zip', hint: 'original hint'};
   const f = await mountBrowser({initial: '/?game=th06mp&mpRoom=1234', host, socketBoundary: true,
     seedStorage(storage) {storage.values.set('eagler-touhou-ui-locale-v1', locale);}});
@@ -1375,7 +1375,7 @@ for (const status of ['ready', 'preparing', 'cancelled', 'failed']) for (const o
       const pending = new Promise(resolve => {releaseRead = resolve;});
       api.setPackageReadGate(() => ++reads === 1 ? pending : null);
     }
-    const host = hostManifest(); host.shared.netplayRelay = 'wss://relay.invalid/socket';
+    const host = siteManifest(); host.shared.netplayRelay = 'wss://relay.invalid/socket';
     const f = await mountBrowser({initial: '/en.html?game=th06mp&mpRoom=1234', host, socketBoundary: true, seedPackages: status === 'ready' ? ['th06'] : []});
     const session = api.getTestSession();
     await until(() => session.room.service.getSnapshot().preparation?.status === (status === 'cancelled' ? 'preparing' : status), 'canonical room preparation reaches the test state');
@@ -1415,7 +1415,7 @@ for (const status of ['ready', 'preparing', 'cancelled', 'failed']) for (const o
 }
 
 for (const kind of ['launch', undefined]) test(`actual BrowserLauncher: failed-room import rejects ${kind ?? 'absent'} continuation as a room resume handle`, async () => {
-  const host = hostManifest(); host.shared.netplayRelay = 'wss://relay.invalid/socket';
+  const host = siteManifest(); host.shared.netplayRelay = 'wss://relay.invalid/socket';
   await mountBrowser({initial: '/en.html?game=th06mp&mpRoom=1234', host, socketBoundary: true});
   const session = api.getTestSession(); await until(() => session.room.service.getSnapshot().preparation?.status === 'failed', 'canonical room preparation fails without a local or published package');
   assert.equal(pinnedRoomImportEligible('failed', kind), false);
@@ -1683,7 +1683,7 @@ function pinnedTerminalClose({code, fromDirectory, launched = false, locale = 'e
   return result;
 }
 async function actualTerminalRoom({fromDirectory, locale = 'en', strictMode = false} = {}) {
-  const host = hostManifest(); host.shared.netplayRelay = 'wss://relay.invalid/socket';
+  const host = siteManifest(); host.shared.netplayRelay = 'wss://relay.invalid/socket';
   const f = await mountBrowser({initial: `${locale === 'en' ? '/en.html' : '/'}?game=th06mp&mpRoom=1234${fromDirectory ? '&fromLobby=1' : ''}`,
     host, socketBoundary: true, directoryTransport: true, actualHistory: true, strictMode, seedPackages: ['th06'],
     seedStorage(storage) {storage.values.set('eagler-touhou-ui-locale-v1', locale);}});

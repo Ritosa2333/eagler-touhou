@@ -34,7 +34,7 @@ before(async () => {
     export {createRuntimeService} from './app/services/runtime.ts';
     export {createGameSettingsModel} from './app/models/game-settings.ts';
     export {readManagedRuntimeData, readManagedRuntimeResource} from './src/launcher/runtime-preparation.mts';
-    export {validateHostManifest} from './src/contracts/host-manifest.mts';
+    export {validateSiteManifest} from './src/contracts/site-manifest.mts';
     export {PRODUCT_GAMES} from './src/contracts/product-catalog.mts';
     export {translate} from './app/i18n.tsx';
   `}, outfile, bundle: true, platform: 'node', format: 'esm', packages: 'external', logLevel: 'silent',
@@ -73,7 +73,7 @@ function added(source, ids, id = `${source.id}-optional`) {
   return {...source, id, files: {...source.files, ...Object.fromEntries(ids.map(id => [id, ref(id)]))}};
 }
 function host(extra = {}) {
-  return api.validateHostManifest({schema: 'eagler-touhou/host-manifest/1', protocol: 'eagler-touhou/1', profile: 'web-validation-test',
+  return api.validateSiteManifest({schema: 'eagler-touhou/site-manifest/1', protocol: 'eagler-touhou/1', profile: 'web-validation-test',
     shared: {resourceMode: 'hosted', vanillaFont: 'msgothic.ttc', unicodeFont: 'unifont.otf'},
     games: {th06: {runtime: './runtime/th06/th06.html', gameData: {path: 'th06.data', bytes: bytes.length, sha256: hash,
       version: `sha256-${hash}`, layout: `sha256-${'b'.repeat(64)}`}, music: {midi: {files: []}}, ...extra}}});
@@ -81,7 +81,7 @@ function host(extra = {}) {
 function catalog(revision = 'package-r1') {return {schema: 'eagler-touhou/release-catalog/1', games: {th06: {revision, descriptor: 'games/th06/package.json'}}};}
 function acquisitionFixture({current = generation(), hostValue = null, catalogValue = null, dependencies = {}, fetchImpl, network,
   initialize = async () => {}} = {}) {
-  const calls = [], metadata = {hostManifest: hostValue, releaseCatalog: catalogValue};
+  const calls = [], metadata = {siteManifest: hostValue, releaseCatalog: catalogValue};
   const installation = () => ({generation: current, installation: current ? {game: 'th06', currentGeneration: current.id,
     pendingGeneration: null, source: 'local'} : null});
   const acquisition = api.createPackageAcquisition({baseUrl, translate: t, indexedDBAvailable: () => true,
@@ -215,7 +215,7 @@ for (const form of ['runtime', 'runtimes']) test(`main 4018 and original package
 test('main 5948: hosted preload retains validated authority and asset URL without fake Package generation', async () => {
   const f = acquisitionFixture({current: null, hostValue: host()});
   const plan = await api.prepareFilePlan(gameInput(f));
-  assert.equal(plan.generation, null); assert.equal(plan.directPreloadHost, f.metadata.hostManifest);
+  assert.equal(plan.generation, null); assert.equal(plan.directPreloadHost, f.metadata.siteManifest);
   const r = runtimeFixture(); await r.service.prepare(plan);
   const source = new URL(r.service.getSnapshot().source);
   assert.equal(source.searchParams.get('asset'), `sha256-${hash}`);
@@ -224,7 +224,7 @@ test('main 5948: hosted preload retains validated authority and asset URL withou
   const invalid = structuredClone(plan); invalid.directPreloadHost.shared.resourceMode = 'external';
   delete invalid.directPreloadHost.shared.vanillaFont; delete invalid.directPreloadHost.shared.unicodeFont;
   invalid.directPreloadHost.games.th06.package = {revision: '0123456789abcdef', descriptor: 'th06.package.json'};
-  api.validateHostManifest(invalid.directPreloadHost);
+  api.validateSiteManifest(invalid.directPreloadHost);
   const other = runtimeFixture(); await assert.rejects(other.service.prepare(invalid), /preload|hosted/i);
 });
 
@@ -303,11 +303,11 @@ test('main 5904: ordinary acquisition cancellation exists only during an actual 
 test('main 3953: development resource acquisition has the same actual-operation cancellation lifetime', async () => {
   for (const mode of ['success', 'failure', 'cancel']) {
     const activity = [], controller = new AbortController(), declared = host().games.th06;
-    const development = api.validateHostManifest({...host(), profile: 'web-development', games: {th08: {
+    const development = api.validateSiteManifest({...host(), profile: 'web-development', games: {th08: {
       ...declared, runtime: api.PRODUCT_GAMES.th08.runtime, gameData: {...declared.gameData, path: 'th08.data', source: 'development/th08.dat'},
     }}});
     let current = null;
-    const acquisition = api.createPackageAcquisition({baseUrl, translate: t, metadata: {getSnapshot: () => ({hostManifest: development, releaseCatalog: null}),
+    const acquisition = api.createPackageAcquisition({baseUrl, translate: t, metadata: {getSnapshot: () => ({siteManifest: development, releaseCatalog: null}),
       initialize: async () => {throw new Error('Development current must already be installed');}},
       fetchImpl: async (url, options) => {
         assert.equal(String(url), `${baseUrl}development/th08.dat`); assert.equal(options.signal, controller.signal); return new Response(bytes);

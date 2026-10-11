@@ -1,16 +1,16 @@
-import {validateHostManifest, type HostManifest} from '../../src/contracts/host-manifest.mts';
+import {validateSiteManifest, type SiteManifest} from '../../src/contracts/site-manifest.mts';
 import {createLocalProductManifest, type GameId} from '../../src/contracts/product-catalog.mts';
 /** Main5639–5655 uses immutable code only when the actual Host advertises it.
  * Otherwise the validated Host or unchanged built-in catalog supplies the live
  * same-origin entry. Installed DATA is still independently generation-pinned. */
 export function liveRuntimeEntryAuthorized(plan: {
   game: GameId; runtimeVariant: 'normal' | 'multiplayer'; entry: string;
-  runtimeHost?: HostManifest; developmentRuntimeHost?: HostManifest;
+  runtimeHost?: SiteManifest; developmentRuntimeHost?: SiteManifest;
   localCatalogRuntime?: boolean;
 }, baseUrl: string): boolean {
   try {
     const supplied = plan.runtimeHost ?? plan.developmentRuntimeHost;
-    const manifest = supplied ? validateHostManifest(supplied) : plan.localCatalogRuntime ? createLocalProductManifest() : null;
+    const manifest = supplied ? validateSiteManifest(supplied) : plan.localCatalogRuntime ? createLocalProductManifest() : null;
     if (!manifest || ('runtimeManifest' in manifest.shared && manifest.shared.runtimeManifest)) return false;
     const game = manifest.games[plan.game];
     if (!game) return false;

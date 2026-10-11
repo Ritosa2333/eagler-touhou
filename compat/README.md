@@ -39,3 +39,18 @@ the last short-revision offline packages published before 2026-09-12 and one
 normal release cycle has elapsed after that baseline. Retirement removes the
 missing-hash branch and its regression fixture together; content-addressed
 reuse of fully identified objects remains part of the Package Store.
+
+## Current compatibility ownership
+
+| Boundary | Callers and evidence | Removal condition |
+| --- | --- | --- |
+| Site Manifest schema/file and operator flag | Metadata/directory readers, package writer and verifier. `test-site-manifest-compat.mjs` checks 404-only fallback, strict current errors and alias tampering. | Raise the supported site/client baseline beyond schema-1 Host Manifest consumers and verify an upgrade/export path. Remove the generated URL alias and its tests together. |
+| Old `EAGLER_FRONTEND=react` setting | Operator preflight only. It is a no-op, never a UI selection. `main` is rejected. | Operators have migrated their launch scripts. |
+| First-use acknowledgement keys | React FirstUseNotice calls the pure adapter in `src/contracts/compat/first-use-notice.mts`. Mounted notice tests cover old nonempty values, empty values and storage failure. | Raise the supported client baseline and remove keys plus regression cases together. |
+| Fixed-URL Runtime snapshot caches | App Shell/runtime cache workers use `runtime-generation-reader.js`. Runtime cache cases verify per-byte identity and incomplete snapshots. | The documented old-cache upgrade window ends and existing data has a recovery/export route. |
+| Published `legacy/*.mjs` URLs | `path-aliases.mjs` maps them to this directory. The React artifact seals the bundled responses but does not precache these historical entrypoints. Legacy ZIP/migration tests execute those same source owners. | Follow the package/storage baseline conditions above. |
+
+Source code is consolidated here. Historical URL spellings and protocol markers
+may remain at their wire boundaries; they are not duplicate implementations or
+current UI renderers. New Site Manifest output is schema-checked before any
+legacy response is derived from it. Neither adapter modifies saves or Replay.

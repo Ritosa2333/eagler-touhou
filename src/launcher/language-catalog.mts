@@ -83,7 +83,7 @@ export function buildLanguageCatalog({
   translate?: (key: LanguageDisplayNameKey) => string;
   priority: (id: string) => number;
 }): LanguageCatalogEntry[] {
-  // `languageOptions` is the canonical Host Manifest selection surface.
+  // `languageOptions` is the canonical Site Manifest selection surface.
   // `languages` predates it in schema 1 and remains read-only deployment
   // compatibility; current producers must not depend on this fallback.
   const base = Array.isArray(languageOptions)

@@ -20,7 +20,7 @@ const python = source => JSON.parse(execFileSync('python', ['-c', source], {cwd:
 let work, cold, fixture, coldInitially;
 before(async () => {
   await mkdir(resolve(project, '.cache'), {recursive: true}); work = await mkdtemp(resolve(project, '.cache/package-module-setup-')); cold = resolve(work, 'source');
-  for (const path of ['src/contracts', 'package', 'lib/contracts-build.mjs', 'lib/launcher-optimization.mjs', 'lib/atomic-file.mjs', 'lib/browser-module-graph.mjs', 'lib/development-server-scope.mjs',
+  for (const path of ['src/contracts', 'package', 'lib/contracts-build.mjs', 'lib/frontend-assets.mjs', 'lib/atomic-file.mjs', 'lib/browser-module-graph.mjs', 'lib/development-server-scope.mjs',
     'tsconfig.launcher.json', 'tsconfig.contracts.json', 'package.json', 'scripts/serve-static.mjs', 'server/static-content-policy.mjs', 'tests/support/package-module-fixture.mjs',
     'public/faq.html', 'public/styles.css', 'public/about.css', 'public/assets/fonts', 'public/assets/launcher-background.webp']) {
     await mkdir(dirname(resolve(cold, path)), {recursive: true}); await cp(resolve(project, path), resolve(cold, path), {recursive: true});
@@ -61,7 +61,7 @@ test('cold isolated source builds current canonical contracts and stages the act
     assert.equal(item.sha256, manifest.outputs['assets/contracts/' + name]);
   }
   for (const path of ['.cache/build/browser', '.cache/build/optimized', 'src/launcher']) assert.equal(existsSync(resolve(cold, path)), false, path);
-  for (const path of ['index.html', 'app.js', 'host-manifest.json', 'release-catalog.json', 'app-shell-sw.js', 'runtime-manifest.json']) assert.equal(existsSync(resolve(fixture.root, path)), false, path);
+  for (const path of ['index.html', 'app.js', 'site-manifest.json', 'release-catalog.json', 'app-shell-sw.js', 'runtime-manifest.json']) assert.equal(existsSync(resolve(fixture.root, path)), false, path);
   const store = await import(pathToFileURL(resolve(fixture.root, 'package/package-store.mjs')).href);
   const installer = await import(pathToFileURL(resolve(fixture.root, 'package/package-installer.mjs')).href);
   assert.equal(store.PACKAGE_STORE_DB, 'eagler-touhou-package-store-v1'); assert.equal(typeof installer.installPackageFromAcquisition, 'function');
@@ -124,7 +124,7 @@ test('CLI serves original module URLs with canonical HTTP headers, no Host/worke
       const head = await fetch(base + '/' + path, {method: 'HEAD'}); assert.equal(head.status, 200); assert.equal((await head.arrayBuffer()).byteLength, 0);
       assert.equal((await fetch(base + '/' + path, {headers: {'If-None-Match': response.headers.get('etag')}})).status, 304);
     }
-    for (const path of ['index.html', 'app.js', 'assets/launcher/app.mjs', 'host-manifest.json', 'release-catalog.json', 'app-shell-sw.js', 'runtime-manifest.json', 'missing.mjs']) {
+    for (const path of ['index.html', 'app.js', 'assets/launcher/app.mjs', 'site-manifest.json', 'release-catalog.json', 'app-shell-sw.js', 'runtime-manifest.json', 'missing.mjs']) {
       const response = await fetch(base + '/' + path); assert.equal(response.status, 404, path); assert.equal(await response.text(), 'Not found');
     }
   } finally {

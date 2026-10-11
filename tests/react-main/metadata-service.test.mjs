@@ -30,7 +30,7 @@ const pack = {url: 'lang-en.zip', bytes: 123, sha256: hash, runtimeVersion: 'run
 const hostGame = (game, extra = {}) => ({runtime: `runtime/${game}/${game}.html`,
   gameData: {version: `sha256-${hash}`, layout: `sha256-${'b'.repeat(64)}`, path: `${game}.data`, bytes: 1, sha256: hash},
   music: {midi: {files: []}}, ...extra});
-const host = (games = {th06: hostGame('th06')}, shared = {}) => ({schema: 'eagler-touhou/host-manifest/1',
+const host = (games = {th06: hostGame('th06')}, shared = {}) => ({schema: 'eagler-touhou/site-manifest/1',
   protocol: 'eagler-touhou/1', profile: 'web-validation-test',
   shared: {resourceMode: 'hosted', vanillaFont: '../shared/msgothic.ttc', unicodeFont: '../shared/unifont.otf', ...shared}, games});
 const catalog = {schema: 'eagler-touhou/release-catalog/1', games: {th06: {revision: 'published-r1', descriptor: 'th06.package.json'}}};
@@ -38,7 +38,7 @@ function network(hostValue = host(), catalogValue = catalog) {
   const calls = [];
   return {calls, fetch: async (url, init) => {
     const file = new URL(url).pathname.split('/').at(-1); calls.push({url: String(url), init});
-    const value = file === 'host-manifest.json' ? hostValue : catalogValue;
+    const value = file === 'site-manifest.json' ? hostValue : catalogValue;
     if (value instanceof Error) throw value;
     return {ok: true, status: 200, json: async () => value};
   }};
@@ -98,9 +98,9 @@ for (const fail of ['host', 'catalog', 'both']) test(`metadata: ${fail} failure 
   const net = network(fail === 'host' || fail === 'both' ? new Error('host offline') : host(),
     fail === 'catalog' || fail === 'both' ? new Error('catalog offline') : catalog);
   const service = fixture(net); await service.initialize(); const snapshot = service.getSnapshot();
-  assert.equal(snapshot.phase, 'ready'); assert.equal(snapshot.hostManifest !== null, fail === 'catalog');
+  assert.equal(snapshot.phase, 'ready'); assert.equal(snapshot.siteManifest !== null, fail === 'catalog');
   assert.equal(snapshot.releaseCatalog !== null, fail === 'host'); assert.equal(snapshot.metadataErrors.length, fail === 'both' ? 2 : 1);
-  for (const call of net.calls) {assert.equal(call.init.cache, 'no-store'); assert.ok(call.init.signal instanceof AbortSignal); assert.match(call.url, /^https:\/\/launcher.invalid\/deploy\/(host-manifest|release-catalog).json$/);}
+  for (const call of net.calls) {assert.equal(call.init.cache, 'no-store'); assert.ok(call.init.signal instanceof AbortSignal); assert.match(call.url, /^https:\/\/launcher.invalid\/deploy\/(site-manifest|release-catalog).json$/);}
   service.dispose();
 });
 
@@ -143,7 +143,7 @@ test('metadata: latest per-game read wins and dispose prevents stale read/networ
   idb.generation = generation('after-dispose'); const stale = service.refreshInstalled('th06'), snapshot = service.getSnapshot();
   service.dispose(); idb.requests[2].succeed(); await stale; assert.equal(service.getSnapshot(), snapshot);
   const calls = [], deferred = [];
-  const net = {fetch: (url, init) => new Promise(resolve => {calls.push({url, init}); deferred.push(() => resolve({ok: true, json: async () => String(url).includes('host-manifest') ? host() : catalog}));})};
+  const net = {fetch: (url, init) => new Promise(resolve => {calls.push({url, init}); deferred.push(() => resolve({ok: true, json: async () => String(url).includes('site-manifest') ? host() : catalog}));})};
   const other = fixture(net); const pending = other.initialize(); const loading = other.getSnapshot(); other.dispose();
   assert.ok(calls.every(call => call.init.signal.aborted)); deferred.forEach(resolve => resolve()); await pending;
   assert.equal(other.getSnapshot(), loading); await other.initialize(); assert.equal(calls.length, 2);

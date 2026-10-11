@@ -1,5 +1,5 @@
 /** Frozen main optimized CSS output, before the shared pure helper extraction. */
-import test from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import {resolve} from 'node:path';import {createHash} from 'node:crypto';import {build} from 'esbuild';import {fileURLToPath} from 'node:url';import {launcherStyleSources,buildLauncherStyleOutputs} from '../../lib/launcher-optimization.mjs';
+import test from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import {resolve} from 'node:path';import {createHash} from 'node:crypto';import {build} from 'esbuild';import {fileURLToPath} from 'node:url';import {launcherStyleSources,buildLauncherStyleOutputs} from '../../lib/frontend-assets.mjs';
 const root=fileURLToPath(new URL('../..',import.meta.url));
 test('canonical style partition retains frozen main production bytes and critical-font policy',async()=>{
  const source=await readFile(resolve(root,'public/styles.css'),'utf8'),fonts=await readFile(resolve(root,'public/ui-fonts.css'),'utf8');

@@ -7,7 +7,7 @@ import {liveRuntimeEntryAuthorized} from './runtime-entry-authority';
 import {errorText} from './error-text';
 import {GameDataAcquisitionError} from './game-data-acquisition';
 import {isReplayFilePath, isSafeReplayArchivePath} from '../../src/launcher/replay-files.mts';
-import type {HostManifest} from '../../src/contracts/host-manifest.mts';
+import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 /**
  * Bounded current-main Runtime orchestration seam, independent of React/DOM UI.
  * The caller supplies ONE permanent direct iframe and a resolved launch plan.
@@ -98,15 +98,15 @@ export interface RuntimePlan {
   /** An already installed, verified Package Store generation, never mutable current lookup. */
   generation: InstalledPackageGeneration | null;
   /** Exact original hosted emscripten-preload fallback, with no Package DATA. */
-  directPreloadHost?: HostManifest;
+  directPreloadHost?: SiteManifest;
   /** Optional resources acquired after native ready; never replaces loaded DATA. */
   resourceGeneration?: InstalledPackageGeneration;
   entry: string;
-  /** Must reflect the current Host Manifest's runtimeManifest capability. */
+  /** Must reflect the current Site Manifest's runtimeManifest capability. */
   publishedRuntime: boolean;
   /** Exact validated Host authorizing live development code, never a fallback. */
-  developmentRuntimeHost?: HostManifest;
-  runtimeHost?: HostManifest;
+  developmentRuntimeHost?: SiteManifest;
+  runtimeHost?: SiteManifest;
   localCatalogRuntime?: boolean;
   /** Exact current wire payload. Adonis options are passed through, never inferred. */
   configure: RuntimeCommandPayloads['configure'];

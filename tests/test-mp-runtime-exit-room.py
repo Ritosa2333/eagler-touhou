@@ -76,7 +76,7 @@ def host_game(game: str, midi: bool) -> dict:
 
 def host_manifest(relay_url: str) -> dict:
     return {
-        "schema": "eagler-touhou/host-manifest/1",
+        "schema": "eagler-touhou/site-manifest/1",
         "protocol": "eagler-touhou/1",
         "profile": "web-validation-mp-runtime-exit",
         "shared": {
@@ -136,7 +136,7 @@ def run_case(browser, base_url: str, relay_url: str, fixture: dict, host_payload
     page = context.new_page()
     install_runtime_document_observation(page)
     page.route(
-        "**/host-manifest.json*",
+        "**/site-manifest.json*",
         lambda route: route.fulfill(status=200, content_type="application/json", body=json.dumps(host_payload)),
     )
     page.route("**/release-catalog.json*", lambda route: route.fulfill(status=404, body="not published in this test"))
@@ -267,7 +267,7 @@ def main() -> int:
         if args.game == "th08":
             import urllib.request
             opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-            with opener.open(launcher_url + "host-manifest.json", timeout=5) as response:
+            with opener.open(launcher_url + "site-manifest.json", timeout=5) as response:
                 host_payload = json.load(response)
             host_payload["shared"]["netplayRelay"] = relay_url
             host_payload["games"]["th08"]["multiplayerRuntime"] = "runtime/th08/multiplayer/th08.html?hosted=1&v=test-multiplayer"

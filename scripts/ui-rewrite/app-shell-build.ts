@@ -4,7 +4,7 @@ import {fileURLToPath} from 'node:url';
 import {parse, type DefaultTreeAdapterMap} from 'parse5';
 import {buildAppShell} from '../../lib/app-shell-build.mjs';
 import {STATIC_APP_SHELL_FILES, HOST_SITE_ARTWORK_FILES} from '../../lib/frontend-static-manifest.mjs';
-import {buildRuntimeGenerationWorkerSource} from '../../lib/launcher-optimization.mjs';
+import {buildRuntimeGenerationWorkerSource} from '../../lib/frontend-assets.mjs';
 import * as runtimeContract from '../../src/contracts/runtime-generations.mts';
 import {writeFileAtomic} from '../../lib/atomic-file.mjs';
 import {normalizeReactMountPath, REACT_APP_SHELL_META, validateReactAppShellDeployment, type ReactAppShellDeployment} from '../../app/services/app-shell-deployment.ts';

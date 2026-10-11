@@ -18,7 +18,7 @@ import {
 import { verifyRuntimeRelease } from "../lib/runtime-release.mjs";
 import { WORKSPACE_REPOSITORIES, workspacePath, workspaceRoot } from "../lib/workspace-layout.mjs";
 import { sourceIdentity, writeReleaseManifest } from "../lib/release-manifest.mjs";
-import { HOST_MANIFEST_FILE } from "../lib/contracts/host-manifest.mjs";
+import { SITE_MANIFEST_FILE } from "../lib/contracts/site-manifest.mjs";
 import { verifyReleaseBundle } from "../lib/release-bundle-verifier.mjs";
 
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -214,7 +214,7 @@ const importArgs = [
   "scripts/package-server.mjs",
   `--output=${importSite}`,
   `--feature-config=${importConfig}`,
-  `--host-manifest=${resolve(hosted, HOST_MANIFEST_FILE)}`,
+  `--site-manifest=${resolve(hosted, SITE_MANIFEST_FILE)}`,
   `--runtime-release=${prepare.RuntimeRelease}`,
   `--artwork-dir=${resolve(hosted, "assets")}`,
   `--games=${releaseGames.join(",")}`,

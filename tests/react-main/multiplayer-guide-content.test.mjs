@@ -22,7 +22,6 @@ before(async () => {
   const outfile = resolve(work, 'builders.mjs');
   const result = await build({absWorkingDir: project, stdin: {resolveDir: project, loader: 'ts', contents: `
     export {buildRuleGuide, DEFAULT_GUIDE_GAME} from './src/launcher/multiplayer-guide-content.mts';
-    export * as canonicalController from './src/launcher/multiplayer-guide.mts';
     export {renderContentFragment} from './src/launcher/content-fragment.mts';
     export {buildRuleGuide as pinnedBuilder} from 'pinned:multiplayer-guide.mts';
     export {renderContentFragment as pinnedSanitizer} from 'pinned:content-fragment.mts';
@@ -36,13 +35,11 @@ before(async () => {
 });
 after(async () => {if (work) await rm(work, {recursive: true, force: true});});
 
-test('one framework-independent builder retains pinned bytes and original controller API/lifecycle', () => {
+test('one framework-independent builder retains pinned bytes after the legacy controller retires', () => {
   const current = readFileSync(resolve(project, 'src/launcher/multiplayer-guide-content.mts'), 'utf8').replaceAll('\r\n', '\n');
   const body = current.slice(current.indexOf('interface AuthoredGuideGroup')).replace('export const DEFAULT_GUIDE_GAME', 'const DEFAULT_GUIDE_GAME').replace('export function buildRuleGuide', 'function buildRuleGuide');
   assert.equal(body, originalBuilder);
-  const controller = readFileSync(resolve(project, 'src/launcher/multiplayer-guide.mts'), 'utf8').replaceAll('\r\n', '\n');
-  assert.equal(controller, original.replace('import { renderContentFragment } from "./content-fragment.mjs";', 'import { renderContentFragment } from "./content-fragment.mjs";\nimport {buildRuleGuide, DEFAULT_GUIDE_GAME} from "./multiplayer-guide-content.mjs";').replace(originalBuilder, ''));
-  assert.deepEqual(Object.keys(api.canonicalController).sort(), ['MULTIPLAYER_GUIDE_FILE', 'createMultiplayerGuideController']);
+  assert.equal(existsSync(resolve(project, 'src/launcher/multiplayer-guide.mts')), false);
   assert.equal(api.DEFAULT_GUIDE_GAME, 'th07');
   assert.equal(pinnedUiAuthorityText(readFileSync(resolve(project, 'src/launcher/content-fragment.mts'), 'utf8')), pinned('content-fragment.mts'));
   assert.equal(existsSync(resolve(project, 'app/components/notices/multiplayer-guide-content.ts')), false);

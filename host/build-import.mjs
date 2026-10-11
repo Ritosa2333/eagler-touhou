@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { frontendSelection } from "../lib/react-frontend-artifact.mjs";
+import {assertReactFrontendEnvironment} from "../compat/frontend-environment.mjs";
 import { inspectHostWorkspace } from "../lib/host-workspace.mjs";
 import { assertSupportedNode, ensureNodeDependencies } from "./lib/node-environment.mjs";
 import { run } from "./lib/process.mjs";
@@ -29,7 +29,7 @@ const rebuildHostedBase = !!args["rebuild-hosted-base"];
 
 assertSupportedNode();
 const siteUrl = args["site-url"];
-frontendSelection();
+assertReactFrontendEnvironment();
 console.log("[Import] Validating self-host inputs and configuration");
 await inspectHostWorkspace(hostRoot, { music });
 await ensureNodeDependencies(projectRoot);

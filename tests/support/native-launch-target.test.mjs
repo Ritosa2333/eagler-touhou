@@ -89,8 +89,8 @@ test('actual React development server preserves canonical TH20 identity-only Hos
     try {
       const html = await (await fetch(server.base + '/')).text();
       assert.match(html, /__reactRouterContext/); assert.doesNotMatch(html, /<script[^>]+src=["'](?:\.\/)?app\.js/);
-      const actual = await (await fetch(server.base + '/host-manifest.json')).json();
-      const canonical = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', "import {createDevelopmentHostManifest} from './lib/development-host-manifest.mjs';console.log(JSON.stringify(await createDevelopmentHostManifest({games:['th20'],netplayRelay:process.env.EAGLER_TOUHOU_NETPLAY_RELAY})))"], {cwd: project, env: environment, encoding: 'utf8'}));
+      const actual = await (await fetch(server.base + '/site-manifest.json')).json();
+      const canonical = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', "import {createDevelopmentSiteManifest} from './lib/development-site-manifest.mjs';console.log(JSON.stringify(await createDevelopmentSiteManifest({games:['th20'],netplayRelay:process.env.EAGLER_TOUHOU_NETPLAY_RELAY})))"], {cwd: project, env: environment, encoding: 'utf8'}));
       assert.deepEqual(actual, canonical);
       assert.equal(actual.shared.netplayRelay, environment.EAGLER_TOUHOU_NETPLAY_RELAY);
       assert.deepEqual(Object.keys(actual.games), ['th20']);

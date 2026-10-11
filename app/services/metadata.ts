@@ -2,7 +2,7 @@ import {loadRemoteMetadata} from '../../src/launcher/remote-metadata.mts';
 import {createLocalProductManifest, PRODUCT_IDS, PRODUCT_GAMES, gameIdForProduct,
   isMultiplayerProductId, productEnabledForBuild, languagePriority,
   type GameId, type ProductId} from '../../src/contracts/product-catalog.mts';
-import type {HostManifest} from '../../src/contracts/host-manifest.mts';
+import type {SiteManifest} from '../../src/contracts/site-manifest.mts';
 import type {ReleaseCatalog} from '../../src/contracts/release-catalog.mts';
 import type {InstalledPackageGeneration} from '../../src/contracts/package-read-models.mts';
 import {readCurrentPackageGeneration} from '../../package/package-store.mjs';
@@ -13,12 +13,12 @@ import type {SettingsContext} from '../models/game-settings';
 
 export interface MetadataSnapshot {
   phase: 'idle' | 'loading' | 'ready';
-  hostManifest: HostManifest | null;
+  siteManifest: SiteManifest | null;
   releaseCatalog: ReleaseCatalog | null;
   installed: ReadonlyMap<GameId, InstalledPackageGeneration>;
   products: readonly ProductId[];
   metadataErrors: readonly unknown[];
-  hostManifestError: unknown | null;
+  siteManifestError: unknown | null;
   releaseCatalogError: unknown | null;
 }
 export interface MetadataServiceOptions {
@@ -46,10 +46,10 @@ export function createMetadataService(options: MetadataServiceOptions) {
   const reads = new Map<GameId, number>();
   let disposed = false;
   let initialization: Promise<void> | null = null;
-  let snapshot: MetadataSnapshot = Object.freeze({phase: 'idle', hostManifest: null,
-    releaseCatalog: null, installed: new Map(), products: availableProducts(null), metadataErrors: [], hostManifestError: null, releaseCatalogError: null});
+  let snapshot: MetadataSnapshot = Object.freeze({phase: 'idle', siteManifest: null,
+    releaseCatalog: null, installed: new Map(), products: availableProducts(null), metadataErrors: [], siteManifestError: null, releaseCatalogError: null});
 
-  function availableProducts(host: HostManifest | null): readonly ProductId[] {
+  function availableProducts(host: SiteManifest | null): readonly ProductId[] {
     return Object.freeze(PRODUCT_IDS.filter(product => {
       if (!productEnabledForBuild(product, testBuild || host?.shared.testBuild === true)) return false;
       if (!host) return true;
@@ -112,20 +112,20 @@ export function createMetadataService(options: MetadataServiceOptions) {
     void refreshInstalled();
     initialization = loadRemoteMetadata(fetchJson).then(result => {
       if (disposed) return;
-      const hostManifest = result.hostManifest.ok ? result.hostManifest.value : snapshot.hostManifest;
+      const siteManifest = result.siteManifest.ok ? result.siteManifest.value : snapshot.siteManifest;
       const releaseCatalog = result.releaseCatalog.ok ? result.releaseCatalog.value : snapshot.releaseCatalog;
       const metadataErrors: unknown[] = [];
-      if (!result.hostManifest.ok) metadataErrors.push(result.hostManifest.error);
+      if (!result.siteManifest.ok) metadataErrors.push(result.siteManifest.error);
       if (!result.releaseCatalog.ok) metadataErrors.push(result.releaseCatalog.error);
-      publish({phase: 'ready', hostManifest, releaseCatalog, products: availableProducts(hostManifest), metadataErrors,
-        hostManifestError: result.hostManifest.ok ? null : result.hostManifest.error,
+      publish({phase: 'ready', siteManifest, releaseCatalog, products: availableProducts(siteManifest), metadataErrors,
+        siteManifestError: result.siteManifest.ok ? null : result.siteManifest.error,
         releaseCatalogError: result.releaseCatalog.ok ? null : result.releaseCatalog.error});
     }).finally(() => {initialization = null;});
     return initialization;
   }
   function settingsContext(productId: ProductId, locale: string): SettingsContext {
     const gameId = gameIdForProduct(productId);
-    const hostGame = snapshot.hostManifest?.games[gameId];
+    const hostGame = snapshot.siteManifest?.games[gameId];
     const game = hostGame ?? local.games[gameId];
     const generation = snapshot.installed.get(gameId) ?? null;
     const music = hostGame?.music;
@@ -139,7 +139,7 @@ export function createMetadataService(options: MetadataServiceOptions) {
       musicAvailability: {
         audio: options.webAudioAvailable,
         midiAvailable: PRODUCT_GAMES[gameId].musicCapabilities.midi && music?.midi?.supported !== false,
-        importServer: snapshot.hostManifest?.shared.resourceMode === 'import',
+        importServer: snapshot.siteManifest?.shared.resourceMode === 'import',
         publishedOggCapable: Boolean(music?.ogg || music?.wav),
         remoteOggAdvertised: Boolean(music?.ogg),
         remoteRevision: snapshot.releaseCatalog?.games?.[gameId]?.revision ?? null,

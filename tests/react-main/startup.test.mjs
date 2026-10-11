@@ -43,7 +43,7 @@ function fixture({path = '/', shown = false, continueVisit = true, warning = nul
 test('original boot script/CSS/preload are exact substrings, retaining diagnostic text and deadlines', async () => {
   const sources = readOriginalBootstrap();
   for (const [kind, filename] of [['library', 'index.html'], ['lobby', 'lobby.html']]) {
-    const original = await readFile(resolve(root, 'public', filename), 'utf8');
+    const original = await readFile(resolve(root,'public','bootstrap',filename), 'utf8');
     for (const field of ['script', 'compatibility', 'css', 'preload']) assert.ok(original.includes(sources[kind][field]));
   }
   assert.match(sources.library.compatibility, /var supportedChromium/);

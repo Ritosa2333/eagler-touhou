@@ -254,7 +254,7 @@ for (const [game, product] of Object.entries(PRODUCT_GAMES)) {
 // acquiring another hidden "if this is THxx" contract. Product-specific data
 // tables/format adapters are intentionally outside this source guard.
 for (const relative of [
-  "src/launcher/app.mts",
+  "app/services/game-preparation.ts",
   "src/launcher/network-diagnostics.mts",
   "src/launcher/multiplayer-relay-url.mts",
   "scripts/package-server.mjs",
@@ -264,7 +264,7 @@ for (const relative of [
   "lib/frontend-manifest.mjs",
   "lib/workspace-layout.mjs",
   "lib/runtime-release.mjs",
-  "lib/development-host-manifest.mjs",
+  "lib/development-site-manifest.mjs",
   "lib/publication-host-seed.mjs",
 ]) {
   const source = readFileSync(resolve(import.meta.dirname, "..", relative), "utf8");
@@ -272,9 +272,9 @@ for (const relative of [
   assert.deepEqual(literals, [], `${relative}: shared orchestration must not hard-code product ids; declare the difference in product-catalog instead`);
 }
 
-const launcherHtml = readFileSync(resolve(import.meta.dirname, "..", "public", "index.html"), "utf8");
+const launcherHtml = readFileSync(resolve(import.meta.dirname, "..", "app", "components", "settings", "SettingsBody.tsx"), "utf8");
 const launcherCss = readFileSync(resolve(import.meta.dirname, "..", "public", "styles.css"), "utf8");
-assert.ok(launcherHtml.includes('class="item option-focus-hitbox"') && launcherHtml.includes('option-focus-hitbox mp-setting-item'),
+assert.ok(launcherHtml.includes('focusHitbox'),
   "focus-hitbox UI must be named by capability rather than by the title that first implemented it");
 assert.ok(!launcherHtml.includes("option-th06") && !launcherCss.includes(".option-th06"),
   "optional product UI must not encode a title-specific capability class");

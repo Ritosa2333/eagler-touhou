@@ -3,10 +3,9 @@ import {
   SITE_NOTICE_DISMISSED_KEY,
   SITE_NOTICE_DURATION_MS,
   SITE_NOTICE_STORAGE_KEY,
-  createSiteNoticeController,
   parseSiteNoticeText,
   siteNoticeBrandAsset,
-} from "../.cache/build/browser/assets/launcher/site-notice.mjs";
+} from "../.cache/build/browser/assets/launcher/site-notice-content.mjs";
 
 const baseUrl = "https://test.example/eagler-touhou/";
 assert.equal(SITE_NOTICE_DURATION_MS, 15_000);
@@ -43,102 +42,4 @@ assert.deepEqual(parseSiteNoticeText("[车万云](https://cloud.touhou.best/)", 
   asset: "assets/notice-touhou-cloud.png",
 }]);
 
-class FakeClassList {
-  values = new Set();
-  add(...names) { for (const name of names) this.values.add(name); }
-  remove(...names) { for (const name of names) this.values.delete(name); }
-  contains(name) { return this.values.has(name); }
-}
-
-class FakeElement {
-  constructor(id = "") { this.id = id; }
-  hidden = true;
-  scrollTop = 0;
-  className = "";
-  classList = new FakeClassList();
-  styleValues = new Map();
-  style = { setProperty: (name, value) => this.styleValues.set(name, value) };
-  attributes = new Map();
-  listeners = new Map();
-  children = [];
-  setAttribute(name, value) { this.attributes.set(name, String(value)); }
-  addEventListener(type, callback) {
-    const list = this.listeners.get(type) || [];
-    list.push(callback);
-    this.listeners.set(type, list);
-  }
-  removeEventListener(type, callback) {
-    const list = this.listeners.get(type) || [];
-    this.listeners.set(type, list.filter(value => value !== callback));
-  }
-  dispatch(type) { for (const callback of this.listeners.get(type) || []) callback({ target: this }); }
-  append(...values) { this.children.push(...values); }
-  replaceChildren(...values) { this.children = [...values]; }
-}
-
-class FakeDocument {
-  constructor() {
-    this.documentElement = new FakeElement("documentElement");
-    this.scrollingElement = this.documentElement;
-    this.elements = new Map(["siteNotice", "siteNoticeContent", "siteNoticeOptOut", "siteNoticeClose", "siteNoticeToggle"]
-      .map(id => [id, new FakeElement(id)]));
-  }
-  listeners = new Map();
-  getElementById(id) { return this.elements.get(id) || null; }
-  createElement() { return new FakeElement(); }
-  createTextNode(text) { return { nodeType: 3, textContent: text }; }
-  addEventListener(type, callback) {
-    const list = this.listeners.get(type) || [];
-    list.push(callback);
-    this.listeners.set(type, list);
-  }
-  removeEventListener(type, callback) {
-    const list = this.listeners.get(type) || [];
-    this.listeners.set(type, list.filter(value => value !== callback));
-  }
-}
-
-const storageValues = new Map();
-const storage = {
-  getItem: key => storageValues.has(key) ? storageValues.get(key) : null,
-  setItem: (key, value) => storageValues.set(key, String(value)),
-};
-const documentObj = new FakeDocument();
-const windowObj = { location: { href: baseUrl }, scrollY: 0 };
-const timers = new Map();
-let timerSerial = 0;
-let optOutMessages = 0;
-const controller = createSiteNoticeController({
-  documentObj,
-  windowObj,
-  storage,
-  fetchImpl: async () => new Response("欢迎 [FAQ](faq.html)", { status: 200 }),
-  matchMediaImpl: () => ({ matches: true }),
-  setTimeoutImpl: (callback, delay) => { const id = ++timerSerial; timers.set(id, { callback, delay }); return id; },
-  clearTimeoutImpl: id => timers.delete(id),
-  baseUrl,
-  onOptOut: () => optOutMessages++,
-});
-
-const bar = documentObj.getElementById("siteNotice");
-const content = documentObj.getElementById("siteNoticeContent");
-const toggle = documentObj.getElementById("siteNoticeToggle");
-assert.equal(toggle.attributes.get("aria-checked"), "true");
-assert.equal(await controller.load(), true);
-assert.equal(bar.hidden, false);
-assert.equal(bar.styleValues.get("--site-notice-duration"), "15000ms");
-assert.equal(content.children.length, 1);
-assert.ok([...timers.values()].some(timer => timer.delay === 15_000));
-
-documentObj.getElementById("siteNoticeClose").dispatch("click");
-assert.equal(storageValues.get(SITE_NOTICE_DISMISSED_KEY), "1");
-assert.equal(bar.hidden, true, "reduced-motion close must finish immediately");
-
-documentObj.getElementById("siteNoticeOptOut").dispatch("click");
-assert.equal(storageValues.get(SITE_NOTICE_STORAGE_KEY), "0");
-assert.equal(toggle.attributes.get("aria-checked"), "false");
-assert.equal(optOutMessages, 1);
-assert.equal(await controller.load(), false, "disabled notice must not fetch/display");
-controller.destroy();
-
-console.log(JSON.stringify({ siteNotice: "PASS", durationMs: SITE_NOTICE_DURATION_MS, nonBlocking: true }));
+console.log('Shared notice parser and link policy: PASS');

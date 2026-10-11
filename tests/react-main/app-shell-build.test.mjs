@@ -22,9 +22,9 @@ before(async () => {
   coldSource = resolve(work, 'source'); await mkdir(coldSource);
   // Exercise the supported build from authored inputs, never a warm ignored
   // launcher cache. Keep dependency installation shared; copy no build output.
-  for (const path of ['app', 'src', 'lib', 'legacy', 'package', 'public', 'config', 'scripts', 'host', 'server', 'integrations',
+  for (const path of ['app', 'src', 'lib', 'compat', 'package', 'public', 'config', 'scripts', 'host', 'server', 'integrations',
     'content', 'docs/FAQ.md', 'docs/SELF_HOSTING.md', 'docs/SELF_HOSTING_REFERENCE.md', 'docs/EXTERNAL_RESOURCE_MODE.md',
-    'NOTICE.txt', 'README.md', 'ASSETS.md', 'THIRD_PARTY.md', 'package.json', 'package-lock.json', 'tsconfig.launcher.json', 'tsconfig.contracts.json',
+    'product-catalog.mjs','site-manifest.mjs','release-catalog.mjs','resource-mode.mjs','runtime-protocol.mjs','NOTICE.txt', 'README.md', 'ASSETS.md', 'THIRD_PARTY.md', 'package.json', 'package-lock.json', 'tsconfig.launcher.json', 'tsconfig.contracts.json',
     'tsconfig.ui-rewrite.json', 'tsconfig.ui-rewrite.tools.json', 'vite.config.ts', 'react-router.config.ts']) {
     await cp(resolve(path), resolve(coldSource, path), {recursive: true});
   }
@@ -133,8 +133,8 @@ test('original legacy compatibility assertions pass unchanged against published 
   const original = await readFile(resolve('tests/test-legacy-game-pack.mjs'), 'utf8');
   for (const [name, {directory}] of outputs) {
     let replacements = 0;
-    const adapted = original.replace(/"\.\.\/(legacy\/[^"\n]+\.mjs)"/g, (_match, file) => {
-      replacements++; return JSON.stringify(pathToFileURL(resolve(directory, file)).href);
+    const adapted = original.replace(/"\.\.\/compat\/([^"\n]+\.mjs)"/g, (_match, file) => {
+      replacements++; return JSON.stringify(pathToFileURL(resolve(directory, "legacy", file)).href);
     });
     assert.equal(replacements, 3, 'only the three subject imports are adapted');
     const fixture = resolve(work, `original-legacy-${name}.mjs`);
@@ -163,10 +163,10 @@ test('selected self-host bundle consumes prebuilt React and private graph inputs
     for (const dependency of ['acorn', 'parse5', 'entities']) await cp(resolve('node_modules', dependency), resolve(operator, 'node_modules', dependency), {recursive: true});
     const environment = {...process.env, EAGLER_FRONTEND: 'react'};
     delete environment.EAGLER_REACT_BUILD_DIRECTORY; delete environment.EAGLER_REACT_MOUNT_PATH;
-    const script = `import {FRONTEND_SELECTION, FRONTEND_PACKAGE_FILES, REACT_FRONTEND_ARTIFACT} from './lib/frontend-manifest.mjs';
+    const script = `import {FRONTEND_PACKAGE_FILES, REACT_FRONTEND_ARTIFACT} from './lib/frontend-manifest.mjs';
       import {ensureContractsBuild} from './lib/contracts-build.mjs';
       const contracts = await ensureContractsBuild();
-      console.log(JSON.stringify({selection: FRONTEND_SELECTION, frontend: REACT_FRONTEND_ARTIFACT.kind, mode: contracts.mode,
+      console.log(JSON.stringify({selection: "react", frontend: REACT_FRONTEND_ARTIFACT.kind, mode: contracts.mode,
         legacy: FRONTEND_PACKAGE_FILES.includes('app.js'), metadataPublic: FRONTEND_PACKAGE_FILES.some(path => path.startsWith('.vite/'))}));`;
     const result = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', script], {cwd: operator, env: environment, encoding: 'utf8', timeout: 30000}));
     assert.deepEqual(result, {selection: 'react', frontend: 'react', mode: 'prebuilt', legacy: false, metadataPublic: false});

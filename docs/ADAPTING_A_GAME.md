@@ -149,7 +149,7 @@ attestation or a generated identity.
 | development content | local source paths and development-only identities | formal release policy |
 | Runtime source | game simulation, renderer/audio/input implementation, Runtime shell implementation | Host/package publication state |
 | Runtime Release | verified distributable Runtime files, DATA provider/layout, concrete Runtime feature attestation | original game DATA/music/artwork |
-| Host Manifest | concrete deployment Runtime URL, DATA identity, music/language availability, deployer capabilities | static product policy |
+| Site Manifest | concrete deployment Runtime URL, DATA identity, music/language availability, deployer capabilities | static product policy |
 | Package Descriptor | installable files, targets, components, Runtime/data requirement | Launcher UI policy |
 | Release Catalog | current installable Package revision + descriptor URL | Runtime/content details duplicated from descriptors |
 | Launcher | orchestration and user interaction based on the declarations above | hidden per-game capability tables |
@@ -197,7 +197,7 @@ Examples:
 
 - `features.thprac: false` cannot be overridden to true by a Host;
 - `musicCapabilities.midi: false` means a publication must not expose MIDI even
-  if a generic Host Manifest shape contains a `midi` object;
+  if a generic Site Manifest shape contains a `midi` object;
 - a Host can omit OGG even when the product is OGG-capable.
 
 ## 4. Pick the DATA provider deliberately
@@ -500,7 +500,7 @@ Music has three separate authorities:
 
 1. `musicCapabilities.midi` - the only current optional product-level music
    capability; normal OGG/no-music are required adapter behavior;
-2. Host Manifest `music` - what this publication concretely provides;
+2. Site Manifest `music` - what this publication concretely provides;
 3. installed Package state - what the browser has locally.
 
 The Launcher resolves the effective mode from all three. Do not special-case a
@@ -516,7 +516,7 @@ MIDI-capable Runtime just because no remote MIDI files are published.
 ## 11. Languages and thprac
 
 `features.languages` and `features.thprac` are product ceilings. Runtime Release
-then attests the concrete build. Host Manifest may reduce Runtime features.
+then attests the concrete build. Site Manifest may reduce Runtime features.
 
 Do not infer either feature from game number.
 
@@ -553,7 +553,7 @@ An adapter is not complete until all three resource modes agree.
 ### Hosted
 
 Publishes Runtime plus deployer-generated game/package content. DATA/music hashes
-must match Host Manifest and Package Descriptor.
+must match Site Manifest and Package Descriptor.
 
 ### External
 

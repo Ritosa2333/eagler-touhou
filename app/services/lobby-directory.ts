@@ -1,6 +1,6 @@
 import {PRODUCT_IDS, gameIdForProduct, isMultiplayerProductId, multiplayerConfigForProduct,
   productEnabledForBuild, type MultiplayerProductId} from '../../src/contracts/product-catalog.mts';
-import {validateHostManifest, type HostManifest} from '../../src/contracts/host-manifest.mts';
+import {validateSiteManifest, type SiteManifest} from '../../src/contracts/site-manifest.mts';
 import {multiplayerControlMode, type MultiplayerIdentityStore} from '../../src/launcher/multiplayer-identity.mts';
 import {buildMultiplayerDirectoryRelayUrl} from '../../src/launcher/multiplayer-relay-url.mts';
 import type {MultiplayerRoomSessionStore} from '../../src/launcher/multiplayer-room-session.mts';
@@ -38,7 +38,7 @@ export interface DirectorySnapshot {
   total: number;
   notice: string;
   form: Readonly<DirectoryForm>;
-  hostManifest: HostManifest | null;
+  siteManifest: SiteManifest | null;
 }
 export interface DirectorySocket {
   readonly readyState: number;
@@ -50,7 +50,7 @@ export interface DirectorySocket {
 }
 export interface LobbyDirectoryOptions {
   /** Separate original-directory 10s manifest request, not the 12s launcher bootstrap. */
-  loadHostManifest(signal: AbortSignal): Promise<unknown>;
+  loadSiteManifest(signal: AbortSignal): Promise<unknown>;
   createSocket(url: string): DirectorySocket;
   memberId(): string;
   identity: MultiplayerIdentityStore;
@@ -91,7 +91,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
   let snapshot: DirectorySnapshot = Object.freeze({products: [], selectedProduct: initialProduct,
     rooms: [], visibleRooms: [], mine: null, recovering: null, supportsRecovery: false,
     connection: 'loading', connectionInterrupted: false, loading: true, initialized: false, leaving: false,
-    total: 0, notice: '', hostManifest: null,
+    total: 0, notice: '', siteManifest: null,
     form: Object.freeze({mode: 'create', product: '', capacity: 2, difficulty: 1, code: '',
       visibility: 'public', disableCheatMovement: false, validationMessage: ''}),
   });
@@ -237,8 +237,8 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
     let deadline: Timer = null;
     let abortLoad: (() => void) | null = null;
     try {
-      const manifest = validateHostManifest(await Promise.race([
-        options.loadHostManifest(controller.signal),
+      const manifest = validateSiteManifest(await Promise.race([
+        options.loadSiteManifest(controller.signal),
         new Promise<never>((_, reject) => {
           abortLoad = () => reject(new Error('directory manifest aborted'));
           controller.signal.addEventListener('abort', abortLoad, {once: true});
@@ -250,7 +250,7 @@ export function createLobbyDirectory(options: LobbyDirectoryOptions) {
         productEnabledForBuild(product, manifest.shared.testBuild) && !!manifest.games[gameIdForProduct(product)]);
       const selectedProduct = products.includes(snapshot.selectedProduct as MultiplayerProductId) ? snapshot.selectedProduct : products[0] || '';
       relay = manifest.shared.netplayRelay || '';
-      publish({products: Object.freeze(products), selectedProduct, hostManifest: manifest,
+      publish({products: Object.freeze(products), selectedProduct, siteManifest: manifest,
         form: Object.freeze({...snapshot.form, ...formDefaults(products[0] || '')})});
       if (selectedProduct) options.onSelectedProductNormalized?.(selectedProduct);
       if (!relay) publish({connection: 'missing'}); else connect();

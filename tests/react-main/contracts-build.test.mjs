@@ -22,7 +22,7 @@ function run(cwd, code, environment = {}) {
 }
 before(async () => {
   work = await mkdtemp(resolve(project, '.cache/contracts-only-test-')); cold = resolve(work, 'source');
-  for (const path of ['src/contracts', 'lib/contracts', 'lib/contracts-build.mjs', 'lib/launcher-optimization.mjs', 'lib/atomic-file.mjs', 'tsconfig.launcher.json', 'tsconfig.contracts.json', 'package.json']) {
+  for (const path of ['src/contracts', 'lib/contracts', 'lib/contracts-build.mjs', 'lib/frontend-assets.mjs', 'lib/atomic-file.mjs', 'tsconfig.launcher.json', 'tsconfig.contracts.json', 'package.json']) {
     await mkdir(resolve(cold, path, '..'), {recursive: true});
     await cp(resolve(project, path), resolve(cold, path), {recursive: true});
   }
@@ -32,8 +32,8 @@ before(async () => {
 after(async () => {if (work) await rm(work, {recursive: true, force: true});});
 
 test('concurrent cold Node facade imports publish one verified contracts-only generation', async () => {
-  const code = `const [p,h,r] = await Promise.all([import('./lib/contracts/product-catalog.mjs'),import('./lib/contracts/host-manifest.mjs'),import('./lib/contracts/runtime-generations.mjs')]);
-    const b=await import('./lib/contracts-build.mjs'); const result=await b.ensureContractsBuild(); console.log(JSON.stringify({product:p.DEFAULT_PRODUCT_ID,host:h.HOST_MANIFEST_SCHEMA,runtime:r.RUNTIME_MANIFEST_FILE,hash:result.inputHash}));`;
+  const code = `const [p,h,r] = await Promise.all([import('./lib/contracts/product-catalog.mjs'),import('./lib/contracts/site-manifest.mjs'),import('./lib/contracts/runtime-generations.mjs')]);
+    const b=await import('./lib/contracts-build.mjs'); const result=await b.ensureContractsBuild(); console.log(JSON.stringify({product:p.DEFAULT_PRODUCT_ID,host:h.SITE_MANIFEST_SCHEMA,runtime:r.RUNTIME_MANIFEST_FILE,hash:result.inputHash}));`;
   const results = await Promise.all(Array.from({length: 3}, () => run(cold, code).then(JSON.parse)));
   assert.ok(results.every(value => value.product === 'th06' && value.runtime === 'runtime-manifest.json'));
   assert.equal(new Set(results.map(value => value.hash)).size, 1);
@@ -50,9 +50,9 @@ test('classic worker resolver uses the exact shared canonical compiler and expor
   assert.equal(path, resolve(built.contractsDirectory, 'runtime-generations-worker.js'));
   const source = await readFile(path, 'utf8');
   assert.equal(createHash('sha256').update(source).digest('hex'), 'fae3b9da9ae6a1b6046c435d75d9621a09d2323fcc21a22986750ec3e1614a56', 'frozen canonical main worker bytes');
-  const {buildRuntimeGenerationWorkerSource} = await import('../../lib/launcher-optimization.mjs');
+  const {buildRuntimeGenerationWorkerSource} = await import('../../lib/frontend-assets.mjs');
   assert.equal(source, await buildRuntimeGenerationWorkerSource({project: cold}));
-  const helperUrl = pathToFileURL(resolve(cold, 'lib/launcher-optimization.mjs')).href;
+  const helperUrl = pathToFileURL(resolve(cold, 'lib/frontend-assets.mjs')).href;
   const otherCwd = await run(work, `import{buildRuntimeGenerationWorkerSource}from${JSON.stringify(helperUrl)};process.stdout.write(await buildRuntimeGenerationWorkerSource({project:${JSON.stringify(cold)}}));`);
   assert.equal(otherCwd, source.trim(), 'worker bytes do not depend on the caller working directory');
   const context = vm.createContext({}); vm.runInContext(source, context);
@@ -67,18 +67,16 @@ test('source changes produce a new immutable generation while the old import sta
   const {loadCompiledContract} = await import(pathToFileURL(resolve(cold, 'lib/contracts/load-compiled-contract.mjs')).href);
   assert.equal((await loadCompiledContract('product-catalog')).CONTRACTS_ONLY_REFRESH_PROBE, 'fresh');
   assert.equal((await import(pathToFileURL(resolve(old.contractsDirectory, 'product-catalog.mjs')).href)).CONTRACTS_ONLY_REFRESH_PROBE, undefined);
-  const host = await loadCompiledContract('host-manifest'); assert.match(host.HOST_MANIFEST_SCHEMA, /^eagler-touhou/);
+  const host = await loadCompiledContract('site-manifest'); assert.match(host.SITE_MANIFEST_SCHEMA, /^eagler-touhou/);
 });
 
-test('existing full-Launcher cache and published contract precedence remain unchanged', async () => {
-  const cached = resolve(cold, '.cache/build/browser/assets/contracts'), published = resolve(cold, 'assets/contracts');
-  await mkdir(cached, {recursive: true}); await mkdir(published, {recursive: true});
-  await writeFile(resolve(cached, 'precedence.mjs'), 'export const source = "cached";');
-  await writeFile(resolve(published, 'precedence.mjs'), 'export const source = "published";');
-  assert.equal(await run(cold, `import{loadCompiledContract}from'./lib/contracts/load-compiled-contract.mjs';console.log((await loadCompiledContract('precedence')).source);`), 'cached');
-  await rm(resolve(cached, 'precedence.mjs'));
-  assert.equal(await run(cold, `import{loadCompiledContract}from'./lib/contracts/load-compiled-contract.mjs';console.log((await loadCompiledContract('precedence')).source);`), 'published');
-  await rm(resolve(cold, '.cache/build/browser'), {recursive: true}); await rm(resolve(cold, 'assets'), {recursive: true});
+test('source contracts ignore both stale Launcher cache and borrowed publication bytes', async()=>{
+ const cached=resolve(cold,'.cache/build/browser/assets/contracts'),published=resolve(cold,'assets/contracts');
+ await mkdir(cached,{recursive:true});await mkdir(published,{recursive:true});
+ for(const path of [cached,published]) await writeFile(resolve(path,'product-catalog.mjs'),'export const DEFAULT_PRODUCT_ID="wrong";');
+ const value=await run(cold,`import{loadCompiledContract}from'./lib/contracts/load-compiled-contract.mjs';console.log((await loadCompiledContract('product-catalog')).DEFAULT_PRODUCT_ID);`);
+ assert.equal(value,'th06');
+ await rm(resolve(cold,'.cache/build/browser'),{recursive:true});await rm(resolve(cold,'assets'),{recursive:true});
 });
 
 test('source drift during compilation discards staging rather than publishing mixed bytes', async () => {
@@ -107,7 +105,7 @@ test('published-only Node distribution reads contracts and worker without source
   await cp(built.contractsDirectory, resolve(distribution, 'assets/contracts'), {recursive: true});
   const result = JSON.parse(await run(distribution, `import{readFile}from'node:fs/promises';import{DEFAULT_PRODUCT_ID}from'./lib/contracts/product-catalog.mjs';import{resolveRuntimeGenerationWorkerSource,ensureContractsBuild}from'./lib/contracts-build.mjs';console.log(JSON.stringify({product:DEFAULT_PRODUCT_ID,worker:(await readFile(await resolveRuntimeGenerationWorkerSource(),'utf8')).includes('EaglerRuntimeGenerations'),mode:(await ensureContractsBuild()).mode}));`, {EAGLER_FRONTEND: 'react'}));
   assert.deepEqual(result, {product: 'th06', worker: true, mode: 'prebuilt'});
-  for (const path of ['src', 'node_modules', 'lib/launcher-optimization.mjs', '.cache']) assert.equal(existsSync(resolve(distribution, path)), false);
+  for (const path of ['src', 'node_modules', 'lib/frontend-assets.mjs', '.cache']) assert.equal(existsSync(resolve(distribution, path)), false);
 });
 
 test('selected React source ignores stale inherited main contracts and worker after canonical edits', async () => {

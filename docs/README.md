@@ -64,7 +64,7 @@ document instead.
 | `src/browser-facades/` | Tracked compatibility/publication facades for browser-facing contract URLs; they re-export the typed contract owners and are not TypeScript-generated source. |
 | `src/app-shell-sw.js` | Service Worker source. Generated App Shell output does not live here. |
 | [`package/`](../package/README.md) | Browser Package Store, package generation/install/ZIP subsystem. This is product code, not npm metadata. |
-| `legacy/` | Deliberately bounded read/migration compatibility for previously published data formats. New writes do not target legacy formats. |
+| `compat/` | Deliberately bounded read/migration compatibility for previously published data formats. New writes do not target legacy formats. |
 | [`lib/`](../lib/README.md) | Reusable Node-side build, release, verification, and contract adapters. Reusable code belongs here rather than in CLI scripts. |
 | `server/` | Standalone relay/TURN-side server code and server configuration helpers. |
 | `integrations/` | External integration adapters such as thprac. |
@@ -75,7 +75,7 @@ document instead.
 | [`examples/deployment/`](../examples/deployment/README.md) | Non-authoritative Web-server examples for serving an already generated site. |
 | `config/` | Canonical workspace and build-policy registries. |
 
-The root `host-manifest.mjs`, `product-catalog.mjs`, `release-catalog.mjs`,
+The root `site-manifest.mjs`, `product-catalog.mjs`, `release-catalog.mjs`,
 `resource-mode.mjs`, and `runtime-protocol.mjs` files are intentionally tiny
 stable Node/contract facades. They re-export the owning modules from
 `lib/contracts/`; they are not parallel implementations.

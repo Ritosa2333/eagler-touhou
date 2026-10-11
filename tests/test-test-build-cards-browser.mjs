@@ -17,9 +17,9 @@ let flag,metadataFailure=false;
 const server=createServer(async(req,res)=>{
   try{
     const path=new URL(req.url,'http://localhost').pathname;
-    if(path==='/host-manifest.json'){
+    if(path==='/site-manifest.json'){
       if(metadataFailure){res.writeHead(503).end();return;}
-      res.setHeader('Content-Type','application/json');res.end(JSON.stringify({schema:'eagler-touhou/host-manifest/1',protocol:'eagler-touhou/1',profile:'web-release-import',shared:{resourceMode:'import',...(flag===undefined?{}:{testBuild:flag})},games}));return;
+      res.setHeader('Content-Type','application/json');res.end(JSON.stringify({schema:'eagler-touhou/site-manifest/1',protocol:'eagler-touhou/1',profile:'web-release-import',shared:{resourceMode:'import',...(flag===undefined?{}:{testBuild:flag})},games}));return;
     }
     if(path==='/release-catalog.json'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify({schema:'eagler-touhou/release-catalog/1',games:{}}));return;}
     const file=files.get(path==='/'?'/index.html':path);if(!file){res.writeHead(404).end();return;}

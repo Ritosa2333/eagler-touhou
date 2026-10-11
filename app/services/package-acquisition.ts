@@ -4,11 +4,11 @@ import {installPublishedPackage} from '../../package/package-launcher.mjs';
 import {installPackageFromAcquisition, installParsedPackageZip} from '../../package/package-installer.mjs';
 import {parsePackageZip} from '../../package/package-zip.mjs';
 import {readCurrentPackageGeneration} from '../../package/package-store.mjs';
-import {adaptLegacyGamePackToPackage} from '../../legacy/legacy-package-adapter.mjs';
-import {parseStoredGameDataPack} from '../../legacy/legacy-game-pack.mjs';
+import {adaptLegacyGamePackToPackage} from '../../compat/legacy-package-adapter.mjs';
+import {parseStoredGameDataPack} from '../../compat/legacy-game-pack.mjs';
 import {HOST_PROTOCOL, PRODUCT_GAMES, gameIdForProduct, isMultiplayerProductId, productEnabledForBuild, productFeatureAvailable,
   type GameId, type ProductId} from '../../src/contracts/product-catalog.mts';
-import type {HostManifest, HostGameData} from '../../src/contracts/host-manifest.mts';
+import type {SiteManifest, SiteGameData} from '../../src/contracts/site-manifest.mts';
 import {RELEASE_CATALOG_FILE, type ReleaseCatalog} from '../../src/contracts/release-catalog.mts';
 import type {CurrentPackageGeneration, InstalledPackageGeneration, PackageDescriptor, InstalledPackageResult} from '../../src/contracts/package-read-models.mts';
 import type {MusicMode} from '../../src/launcher/game-preferences.mts';
@@ -20,7 +20,7 @@ import {GameDataAcquisitionError} from './game-data-acquisition';
 import type {PreparationNetwork} from './preparation-network';
 
 export interface PreparationMetadataSnapshot {
-  hostManifest: HostManifest | null;
+  siteManifest: SiteManifest | null;
   releaseCatalog: ReleaseCatalog | null;
   metadataErrors?: unknown;
   releaseCatalogError?: unknown;
@@ -60,7 +60,7 @@ export interface AcquisitionRequest {
 }
 export type PackageAcquisitionResult =
   | {kind: 'managed'; generation: InstalledPackageGeneration; deferredUpdate: CurrentPackageGeneration | null}
-  | {kind: 'direct-preload'; host: HostManifest; entry: string; gameData: HostGameData};
+  | {kind: 'direct-preload'; host: SiteManifest; entry: string; gameData: SiteGameData};
 export interface PackageAcquisitionDependencies {
   readCurrent: typeof readCurrentPackageGeneration;
   installPublished: typeof installPublishedPackage;
@@ -99,7 +99,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
   const catalogUrl = new URL(RELEASE_CATALOG_FILE, baseUrl).href;
   const getPackageFetch = (game: GameId) => network?.packageFetch(game) ?? fetchImpl;
   const background = new Map<GameId, Promise<void>>();
-  const selectedLanguages = (game: GameId, language: string): Readonly<Record<string, readonly string[]>> => productFeatureAvailable(game, 'languages', metadata.getSnapshot().hostManifest?.games[game]?.features)
+  const selectedLanguages = (game: GameId, language: string): Readonly<Record<string, readonly string[]>> => productFeatureAvailable(game, 'languages', metadata.getSnapshot().siteManifest?.games[game]?.features)
     ? {language: language === 'ja' ? [] : [language]} : {};
   function progress(request: Pick<AcquisitionRequest, 'onProgress'>, key: Parameters<Translate>[0], values: Record<string, unknown> = {}) {
     request.onProgress?.({stage: 'package', message: t(key, values),
@@ -110,7 +110,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     // Metadata publication is secondary to the committed canonical transaction.
     try {await metadata.refreshInstalled?.(game);} catch {}
   }
-  function developmentDescriptor(game: GameId, host: HostManifest): PackageDescriptor | null {
+  function developmentDescriptor(game: GameId, host: SiteManifest): PackageDescriptor | null {
     const hosted = host.games[game], data = hosted?.gameData;
     if (!hosted || !data?.source) return null;
     const files: PackageDescriptor['files'] = {'game-data': {revision: data.version, source: 'game-data', target: `/${data.path}`, bytes: data.bytes, sha256: data.sha256}};
@@ -125,7 +125,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       runtimeRequirement: {protocol: HOST_PROTOCOL, target: game, dataFile: 'game-data', dataLayout: data.layout},
       files, base: {files: ['game-data']}, components: ids.length ? {ogg: {type: 'ogg', files: ids}} : {}};
   }
-  async function installDevelopment(game: GameId, host: HostManifest, request: AcquisitionRequest): Promise<InstalledPackageResult | null> {
+  async function installDevelopment(game: GameId, host: SiteManifest, request: AcquisitionRequest): Promise<InstalledPackageResult | null> {
     if (PRODUCT_GAMES[game].dataProvider !== 'retail-memory') return null;
     const descriptor = developmentDescriptor(game, host), hosted = host.games[game];
     if (!descriptor || !hosted?.gameData.source) return null;
@@ -173,10 +173,10 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     checkPreparationAbort(request.signal);
     const game = gameIdForProduct(request.productId);
     let metadataSnapshot = metadata.getSnapshot();
-    if (!productEnabledForBuild(request.productId, testBuild || metadataSnapshot.hostManifest?.shared.testBuild === true)) throw new Error('该游戏仅在测试版开启');
+    if (!productEnabledForBuild(request.productId, testBuild || metadataSnapshot.siteManifest?.shared.testBuild === true)) throw new Error('该游戏仅在测试版开启');
     // Development materializes the currently selected OGG before reusing current,
     // exactly as main does. Ordinary installed launches never await metadata.
-    if (metadataSnapshot.hostManifest?.profile === 'web-development') await installDevelopment(game, metadataSnapshot.hostManifest, request);
+    if (metadataSnapshot.siteManifest?.profile === 'web-development') await installDevelopment(game, metadataSnapshot.siteManifest, request);
     let installed = await deps.readCurrent(game); checkPreparationAbort(request.signal);
     if (installed.generation) {
       const mode = await maybeUpdate(game, installed, request); checkPreparationAbort(request.signal);
@@ -184,7 +184,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
       if (installed.generation) return {kind: 'managed', generation: installed.generation, deferredUpdate: mode === 'background' ? installed : null};
     }
     if (!metadataSnapshot.releaseCatalog) {try {await metadata.initialize();} catch {} checkPreparationAbort(request.signal); metadataSnapshot = metadata.getSnapshot();}
-    const {hostManifest: host, releaseCatalog: catalog} = metadataSnapshot;
+    const {siteManifest: host, releaseCatalog: catalog} = metadataSnapshot;
     if (catalog?.games[game]) {
       try {
         request.onAcquisitionActivity?.(true);
@@ -224,7 +224,7 @@ export function createPackageAcquisition({metadata, baseUrl, translate: t, fetch
     checkPreparationAbort(signal);
     if (!(file instanceof Blob) || file.size <= 0 || file.size > 256 * 1024 * 1024) throw new Error(t('package.invalidDataSize'));
     if (!indexedDBAvailable()) throw new Error(t('package.indexedDbUnavailable'));
-    const host = metadata.getSnapshot().hostManifest, expected = host?.games[game]?.gameData;
+    const host = metadata.getSnapshot().siteManifest, expected = host?.games[game]?.gameData;
     function expectedData() {if (!expected) throw new Error(t('runtime.dataDescriptorMissing', {game})); return expected;}
     async function done(result: InstalledPackageResult) {
       checkPreparationAbort(signal); await installedChanged(game);

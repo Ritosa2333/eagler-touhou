@@ -59,7 +59,7 @@ def host_manifest(relay_url: str) -> dict:
     layout = "b" * 64
     game = "th07"
     return {
-        "schema": "eagler-touhou/host-manifest/1",
+        "schema": "eagler-touhou/site-manifest/1",
         "protocol": "eagler-touhou/1",
         "profile": "web-validation-spectator-launcher",
         "shared": {
@@ -211,7 +211,7 @@ def main() -> int:
                 page.on("pageerror", lambda error: page_errors.append(str(error)))
                 manifest_body = json.dumps(host_manifest(relay_url))
                 page.route(
-                    "**/host-manifest.json",
+                    "**/site-manifest.json",
                     lambda route: route.fulfill(status=200, content_type="application/json", body=manifest_body),
                 )
                 page.route(

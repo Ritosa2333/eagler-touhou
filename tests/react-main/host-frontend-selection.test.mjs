@@ -43,8 +43,8 @@ async function withFrontend(value, run) {
   }
 }
 
-test('main remains the default and invalid selection fails before host inspection', async () => {
-  assert.equal((await resolveHostFrontend({projectRoot: '/absent', environment: {}})).kind, 'main');
+test('React is required by default and invalid legacy flags fail before host inspection', async () => {
+  await assert.rejects(resolveHostFrontend({projectRoot:'/absent',environment:{}}),/artifact is missing/);
   await withFrontend('invalid', async () => {
     for (const build of [buildHostedSite, buildImportArtifacts]) await assert.rejects(build({projectRoot: '/absent', hostRoot: '/absent'}), /EAGLER_FRONTEND/);
   });
@@ -88,7 +88,7 @@ test('cache reuse binds frontend kind, mount, artifact bytes, metadata, and depl
     const site = resolve(root, 'site');
     const layout = {site, music: ['ogg'], runtimeRelease: resolve(root, 'runtime'), shared: resolve(root, 'shared'), config: resolve(root, 'host-config.json'), games: Object.fromEntries(games.map(game => [game, resolve(root, game)]))};
     await put('scripts/verify-server-build.mjs', 'process.exit(0);');
-    await put('site/host-manifest.json', JSON.stringify({games: Object.fromEntries(games.map(game => [game, {languageOptions: ['ja', 'lang_zh-hans', 'lang_en'].map(id => ({id, pack: id === 'ja' ? null : {url: `${id}.zip`}}))}]))}));
+    await put('site/site-manifest.json', JSON.stringify({games: Object.fromEntries(games.map(game => [game, {languageOptions: ['ja', 'lang_zh-hans', 'lang_en'].map(id => ({id, pack: id === 'ja' ? null : {url: `${id}.zip`}}))}]))}));
     const deployment = {format: 'eagler-touhou-deployment/1', profile: 'web-validation-self-host', resourceMode: 'hosted', games, music: ['ogg'], generatedAt: new Date(Date.now() + 60000).toISOString(), frontend: {kind: 'react', mountPath: '/', validationMetadata: selected.artifact.metadata}};
     await mkdir(site, {recursive: true});
     for (const path of selected.artifact.packageFiles) {
@@ -102,7 +102,7 @@ test('cache reuse binds frontend kind, mount, artifact bytes, metadata, and depl
     }));
     const save = () => put('site/deployment.json', JSON.stringify(deployment));
     await save();
-    await withFrontend('main', async () => assert.equal(await reusableHostedBase(root, layout), false));
+    await withFrontend('main', async () => assert.rejects(reusableHostedBase(root,layout),/EAGLER_FRONTEND/));
     await withFrontend('react', async () => {
       assert.equal(await reusableHostedBase(root, layout), true);
       assert.equal(await reusableHostedBase(root, layout, {siteUrl: 'https://example.test/'}), false);
@@ -128,7 +128,7 @@ test('both host CLIs reject invalid frontend before workspace or dependency prep
       cwd: project, env: {...process.env, EAGLER_FRONTEND: 'invalid'}, encoding: 'utf8', timeout: 10000,
     });
     assert.equal(result.status, 1);
-    assert.match(result.stderr, /EAGLER_FRONTEND must be main or react/);
+    assert.match(result.stderr, /EAGLER_FRONTEND/);
     assert.doesNotMatch(result.stdout, /Preparing|Validating self-host/);
   }
 });
@@ -136,6 +136,7 @@ test('both host CLIs reject invalid frontend before workspace or dependency prep
 
 async function copyHostCode(root) {
   const project = fileURLToPath(new URL('../../', import.meta.url));
+  await cp(resolve(project,'compat'),resolve(root,'compat'),{recursive:true});
   await cp(resolve(project, 'lib'), resolve(root, 'lib'), {recursive: true});
   await mkdir(resolve(root, 'config'), {recursive: true});
   await cp(resolve(project, 'config/workspace.json'), resolve(root, 'config/workspace.json'));
@@ -198,7 +199,7 @@ test('cache uses synthetic private override bytes without modifying artifact or 
       return {path, bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex')};
     }));
     await put('site/deployment.json', JSON.stringify({format: 'eagler-touhou-deployment/1', profile: 'web-validation-self-host', resourceMode: 'hosted', games, music: ['ogg'], generatedAt: new Date(Date.now() + 60000).toISOString(), files, frontend: {kind: 'react', mountPath: '/', validationMetadata: selected.artifact.metadata}}));
-    await put('site/host-manifest.json', JSON.stringify({games: Object.fromEntries(games.map(game => [game, {languageOptions: ['ja', 'lang_zh-hans', 'lang_en'].map(id => ({id, pack: id === 'ja' ? null : {url: `${id}.zip`}}))}]))}));
+    await put('site/site-manifest.json', JSON.stringify({games: Object.fromEntries(games.map(game => [game, {languageOptions: ['ja', 'lang_zh-hans', 'lang_en'].map(id => ({id, pack: id === 'ja' ? null : {url: `${id}.zip`}}))}]))}));
     await withFrontend('react', async () => {
       assert.equal(await isolated.reusableHostedBase(root, layout), true);
       assert.equal(await readFile(resolve(root, 'private-assets/donation.webp'), 'utf8'), 'synthetic override');

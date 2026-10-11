@@ -14,5 +14,5 @@ export function synchronizedMainAuthority(path, project, fallbackRevision) {
   if (path === 'src/launcher/i18n.mts') source = source.replace(
     '  ["multiplayer.nameOneTimeHint", "昵称只能设置一次，保存后不可修改", "Your nickname can be saved only once and cannot be changed later"],',
     '  ["multiplayer.nameEditableHint", "昵称可随时修改，保存后立即生效", "You can change your nickname at any time; changes take effect immediately"],');
-  return source;
+  return source.replaceAll("eagler-touhou/host-manifest/1", "eagler-touhou/site-manifest/1").replaceAll("Host Manifest", "Site Manifest").replaceAll("Host manifest", "Site manifest").replaceAll("Host 清单", "站点清单");
 }

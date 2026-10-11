@@ -31,7 +31,7 @@ directory. The result is `catalog.json` and `language/lang_*.zip`.
 `th11/portable/build.mjs` compiles the SDL3 Runtime with THCRAP and SDL3_ttf
 support, and `th11/portable/package-eagler.mjs` produces the Launcher Runtime
 directory. A Hosted build supplies the prepared language directory to
-`scripts/package-server.mjs` as `--th11-language-packs`. The Host Manifest and
+`scripts/package-server.mjs` as `--th11-language-packs`. The Site Manifest and
 Package Descriptor derive the language choices from that catalog; do not
 handwrite them. To make one web-importable resource-and-language ZIP, use
 `node scripts/package-offline-game.mjs <assembled-site> th11 <output.zip>` and

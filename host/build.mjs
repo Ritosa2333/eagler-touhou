@@ -2,7 +2,7 @@
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { frontendSelection } from "../lib/react-frontend-artifact.mjs";
+import {assertReactFrontendEnvironment} from "../compat/frontend-environment.mjs";
 import { inspectHostWorkspace } from "../lib/host-workspace.mjs";
 import { assertSupportedNode, ensureNodeDependencies } from "./lib/node-environment.mjs";
 import { run } from "./lib/process.mjs";
@@ -51,7 +51,7 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error(`invali
 
 assertSupportedNode();
 const siteUrl = args["site-url"];
-frontendSelection();
+assertReactFrontendEnvironment();
 console.log("[Build] Validating self-host inputs and configuration");
 await inspectHostWorkspace(hostRoot, { music });
 await ensureNodeDependencies(projectRoot);

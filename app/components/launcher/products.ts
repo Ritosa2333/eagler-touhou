@@ -17,7 +17,7 @@ export interface LibraryProduct {
   credit?: {name: string; url: string};
 }
 
-/** Same catalog fields as lib/launcher-optimization.mjs; no copied product list. */
+/** Same catalog fields as lib/frontend-assets.mjs; no copied product list. */
 export function createLibraryProducts(ids: readonly ProductId[], assetUrl: (path: string) => string, hrefForProduct: (id: ProductId) => string): LibraryProduct[] {
   return ids.map(id => {
     const gameId = gameIdForProduct(id), game = PRODUCT_GAMES[gameId], support = game.support;

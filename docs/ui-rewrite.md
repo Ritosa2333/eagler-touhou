@@ -1,6 +1,6 @@
 # React launcher maintainer lane
 
-The default frontend remains `main`. Select `react` explicitly when serving or packaging the built rewrite. Both frontends use the same runtime protocols, package storage and multiplayer services.
+React is the only current frontend for development, self-hosting and hosted/external/import publication. The UI uses shared components, and contracts/services retain Runtime, Package Store and multiplayer ownership. The former Launcher renderer and its page/history entrypoints are retired.
 
 ## Development and verification
 
@@ -11,14 +11,14 @@ npm run typecheck:ui-rewrite
 npm run typecheck:ui-rewrite:tools
 npm run test:ui-rewrite
 npm run build:ui-rewrite
-EAGLER_FRONTEND=react npm start
+npm start
 ```
 
-On PowerShell, set `$env:EAGLER_FRONTEND='react'` before `npm start`. For a launcher checkout below `worktrees`, also set `EAGLER_WORKSPACE_ROOT` to the actual workspace root. Development serving uses a root-mounted artifact.
+For a launcher checkout below `worktrees`, set `EAGLER_WORKSPACE_ROOT` to the actual workspace root. Development serving uses a root-mounted artifact.
 
 `EAGLER_REACT_BUILD_DIRECTORY` selects the build output directory, defaulting to `.cache/build/ui-rewrite`. `EAGLER_REACT_MOUNT_PATH` selects the build-time mount, defaulting to `/`. Build and host selection must use the same mount. A nested artifact belongs on a matching mounted static host. An existing built artifact is consumed without invoking the compiler during host assembly.
 
-Offline support is an explicit deployment choice. Set both `EAGLER_REACT_APP_SHELL=isolated` and `EAGLER_REACT_APP_SHELL_ORIGIN` to the exact intended origin before building. Setting only a mount does not enable a worker. The built metadata binds the worker to that origin and mount, and rejects foreign or ancestor registrations. Rebuild to change this identity. `refresh:deployment-frontend` requires explicit React selection and a matching artifact.
+Offline support is an explicit deployment choice. Set both `EAGLER_REACT_APP_SHELL=isolated` and `EAGLER_REACT_APP_SHELL_ORIGIN` to the exact intended origin before building. Setting only a mount does not enable a worker. The built metadata binds the worker to that origin and mount, and rejects foreign or ancestor registrations. Rebuild to change this identity. `refresh:deployment-frontend` consumes a matching verified artifact. Older full-UI deployments must be repackaged; the refresh tool never republishes a second UI.
 
 ## Components and return policy
 
@@ -36,9 +36,9 @@ Attached dialogs and the touch editor return to their opener. Gameplay has one B
 
 Synthetic mounted tests cover routing, native message boundaries and ownership. They do not establish actual game, mobile-device or durable browser-storage acceptance. Real browser and native runtime gates remain required before replacing the production frontend.
 
-## Pre-merge record — 2026-10-11
+## Historical pre-merge record — before the React-only migration
 
-Status: **HOLD**. Synchronization is committed, but this record does not authorize
+This historical record is not acceptance of the subsequent migration. Synchronization is committed, but this record does not authorize
 merging into main, switching the default frontend, or publishing/deploying.
 
 The source candidate is `ace43d76c3a019308ba102eb25927f59def231ca`.
@@ -133,3 +133,25 @@ Before promotion: obtain green full-suite Linux CI including the atomic-deployme
 gate, then complete formal browser/release acceptance. The TH11 rule wording is
 reviewed and synchronized locally, not yet published. One-sided return stopping
 its peer is accepted behavior, not an outstanding terminal-flow repair.
+
+## Site Manifest and compatibility
+
+`site-manifest.json` with `eagler-touhou/site-manifest/1` is the current resource
+contract. Product Catalog remains the static product authority; Release Catalog
+continues to describe installable versions. Host remains the Runtime's host role.
+
+Old schema/file readers and old operator-flag handling live in `compat/` and
+`src/contracts/compat/`. The optional old `host-manifest.json` response is derived
+from Site Manifest by one compatibility writer and verified against it; it is
+not independently editable. Current browser reads use the new file first and
+try the legacy URL only for HTTP 404/410. Invalid current content and network
+failures do not silently select a different authority.
+
+The current build compiles pure client services for Node checks, then emits the
+React graph. It does not generate old card HTML or an old app/lobby module.
+Bootstrap-only HTML fragments preserve the original loading and compatibility
+surfaces. Common CSS is still shared with standalone help pages; moving styles
+must retain the accepted production byte/cascade checks.
+
+Public PR/review wording still requires the user's review. Commit wording is
+exempt by the 2026-10-11 instruction and uses concise Chinese.

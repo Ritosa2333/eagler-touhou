@@ -67,7 +67,7 @@ try {
   await writeFile(resolve(legacy,"runtime-release.json"),JSON.stringify(old));
   await verifyRuntimeRelease(legacy);
   const seed = createPublicationHostSeed("web-validation-generations");
-  seed.schema="eagler-touhou/host-manifest/1";
+  seed.schema="eagler-touhou/site-manifest/1";
   seed.shared={resourceMode:"hosted",vanillaFont:"shared/msgothic.ttc?v=f",unicodeFont:"shared/unifont.otf?v=g"};
   for(const [game,product] of Object.entries(PRODUCT_GAMES))Object.assign(seed.games[game],{
     runtime:`runtime/${game}/${game}.html?hosted=1&v=old`,
@@ -79,10 +79,10 @@ try {
     ...(product.features.languages?{languages:["ja"]}:{}),...(product.features.thprac?{thprac:false}:{})}]))};
   await writeFile(resolve(temp,"seed.json"),JSON.stringify(seed));
   await writeFile(resolve(temp,"features.json"),JSON.stringify(features));
-  await command("scripts/package-server.mjs",`--output=${output}`,`--runtime-release=${release}`,`--host-manifest=${resolve(temp,"seed.json")}`,
+  await command("scripts/package-server.mjs",`--output=${output}`,`--runtime-release=${release}`,`--site-manifest=${resolve(temp,"seed.json")}`,
     `--feature-config=${resolve(temp,"features.json")}`,"--profile=web-validation-generations","--games=th06,th07,th08,th10","--music=midi");
   await command("scripts/verify-server-build.mjs",output);
-  const host = await json(resolve(output,"host-manifest.json"));
+  const host = await json(resolve(output,"site-manifest.json"));
   const catalog = await verifyRuntimePublication(output,host);
   assert.deepEqual(catalog.groups.map(group => group.root).sort(),
     ["th06", "th07", "th08", "th10"].flatMap(game => [
@@ -95,7 +95,8 @@ try {
   await command("scripts/refresh-deployment-app-shell.mjs",output,"--frontend");
   assert.deepEqual((await readRuntimeManifest(output)).groups.map(group=>group.current.generation),generations,"Launcher-only refresh does not rebuild game generations");
   const deployment=await json(resolve(output,"deployment.json"));
-  assert.ok(deployment.appShell.entries.every(path=>!path.startsWith("runtime/") && path!==RUNTIME_MANIFEST_FILE));
+  if (deployment.appShell) assert.ok(deployment.appShell.entries.every(path=>!path.startsWith("runtime/") && path!==RUNTIME_MANIFEST_FILE));
+  else assert.ok(!deployment.files.some(file=>file.path==="app-shell-sw.js"),"disabled offline mode must not publish a worker");
   await command("scripts/verify-server-build.mjs",output);
   const store=resolve(temp,"releases"),current=resolve(temp,"current");
   const first=await deployStaticSite({source:output,releases:store,current});

@@ -5,7 +5,7 @@ import {gameIdForProduct, isMultiplayerProductId, PRODUCT_IDS} from '../src/cont
 import {buildMultiplayerDiagnosticRelayUrl} from '../src/launcher/multiplayer-relay-url.mts';
 import {errorText} from './services/error-text';
 import {readReactAppShellDeployment} from './services/app-shell-deployment';
-import {hostOriginMigrationAvailable} from '../src/contracts/host-manifest.mts';
+import {siteOriginMigrationAvailable} from '../src/contracts/site-manifest.mts';
 import {LauncherApplication, type LauncherHost} from './LauncherApplication';
 import {createBrowserSession, type BrowserSession} from './session/browser-session';
 import {RoomComposition} from './session/RoomComposition';
@@ -75,7 +75,7 @@ function InlineMultiplayerDiagnostics({session}: {session: BrowserSession}) {
   const navigation = useSurfaceNavigation();
   if (navigation.context === 'lobby') return null;
   return <MultiplayerDiagnostics model={session.networkDiagnostics} onGuide={() => navigation.openInfoDialog('mpGuideDialog')}
-    getRelayUrl={() => {const relay = session.metadata.getSnapshot().hostManifest?.shared.netplayRelay; return relay ? buildMultiplayerDiagnosticRelayUrl(relay) : '';}}/>;
+    getRelayUrl={() => {const relay = session.metadata.getSnapshot().siteManifest?.shared.netplayRelay; return relay ? buildMultiplayerDiagnosticRelayUrl(relay) : '';}}/>;
 }
 function LegacyMultiplayerOnline({session}: {session: BrowserSession}) {
   const settings = useSyncExternalStore(session.settings.subscribe, session.settings.getSnapshot, session.settings.getSnapshot);
@@ -83,7 +83,7 @@ function LegacyMultiplayerOnline({session}: {session: BrowserSession}) {
   const {t} = useLocale();
   const product = settings?.context.productId;
   const enter = (code: string, created: boolean) => {if (product && isMultiplayerProductId(product)) session.room.service.enterRoom(product, code, created);};
-  const configuration = metadata.hostManifest?.shared.netplayRelay ? 'ready' : metadata.hostManifest || metadata.hostManifestError ? 'missing' : 'loading';
+  const configuration = metadata.siteManifest?.shared.netplayRelay ? 'ready' : metadata.siteManifest || metadata.siteManifestError ? 'missing' : 'loading';
   return <MultiplayerOnlineFold configuration={configuration} onCreate={() => {const value = new Uint32Array(1); crypto.getRandomValues(value); enter(String(1000 + value[0] % 9000), true);}}
     onJoin={code => enter(code, false)} onInvalidCode={() => session.feedback.toast(t('status.enterRoomCode'))}/>;
 }
@@ -109,7 +109,7 @@ function Header({session, firstUse, notice, donationAvailable}: {
   const updatedAge = useSyncExternalStore(session.appShell.brandAge.subscribe, session.appShell.brandAge.getSnapshot, session.appShell.brandAge.getSnapshot);
   const [menuOpen, setMenuOpen] = useState(false), url = (path: string) => new URL(path, session.baseUrl).href;
   return <LauncherMasthead updatedAge={updatedAge} variant={navigation.context} assetUrl={url} launcherHref={url(locale === 'en' ? 'en.html' : './')}
-    faqHref={url('faq.html')} aboutHref={url('about.html')} migrationPolicyKnown={metadata.hostManifest !== null} migrationHref={metadata.hostManifest && hostOriginMigrationAvailable(metadata.hostManifest, window.location.protocol) ? url('migrate.html') : undefined}
+    faqHref={url('faq.html')} aboutHref={url('about.html')} migrationPolicyKnown={metadata.siteManifest !== null} migrationHref={metadata.siteManifest && siteOriginMigrationAvailable(metadata.siteManifest, window.location.protocol) ? url('migrate.html') : undefined}
     menuOpen={menuOpen} onMenuOpenChange={setMenuOpen} lessMotion={prefs.lessMotion} onToggleMotion={session.preferences.toggleMotion}
     noticeEnabled={prefs.noticeEnabled} onToggleNotice={session.preferences.toggleNotice}
     diagnosticsEnabled={diagnosticState?.enabled ?? false} onToggleDiagnostics={() => diagnostics?.toggle()}
@@ -148,7 +148,7 @@ function SessionLaunchActions({session}: {session: BrowserSession}) {
   const settings = useSyncExternalStore(session.settings.subscribe, session.settings.getSnapshot, session.settings.getSnapshot);
   if (!settings || settings.multiplayer || navigation.context === 'lobby') return null;
   return <LaunchActions primary={{id: 'launch', textId: 'launchText',
-    label: t(session.metadata.getSnapshot().hostManifest?.shared.resourceMode === 'import' && !session.metadata.getSnapshot().installed.has(settings.gameId) ? 'action.importGameData' : settings.multiplayer ? 'action.startMultiplayer' : 'action.start'),
+    label: t(session.metadata.getSnapshot().siteManifest?.shared.resourceMode === 'import' && !session.metadata.getSnapshot().installed.has(settings.gameId) ? 'action.importGameData' : settings.multiplayer ? 'action.startMultiplayer' : 'action.start'),
     onClick: () => {if (navigation.productId) void session.launch(navigation.productId).catch(session.reportError);}}}
     secondary={{id: 'gamePackageImport', label: t('action.import'), onClick: session.gameData.openManual}}/>;
 }
@@ -193,7 +193,7 @@ function SessionOverlays({session, firstUse, notice, assetUrl, onDonationUnavail
   useLayoutEffect(() => {if (navigation.directoryFormMode) session.directory.restoreFormMode(navigation.directoryFormMode);}, [session, navigation.directoryFormMode]);
   return <><input id="fileInput" type="file" hidden/><FullscreenTransient><Feedback model={session.feedback}/><StartupError model={session.startupError}/><GameDataImportWindows model={session.gameData} getRuntimeReady={() => session.getRuntime()?.getSnapshot().ready === true}/></FullscreenTransient>
     {navigation.context === 'lobby' && <NetworkDiagnosticsDialog model={session.networkDiagnostics} ref={network} open={navigation.infoDialogOpen('lobbyNetworkDialog')} onCloseRequest={() => navigation.closeInfoDialog('lobbyNetworkDialog')}
-      getRelayUrl={() => {const relay = session.directory.getSnapshot().hostManifest?.shared.netplayRelay; return relay ? buildMultiplayerDiagnosticRelayUrl(relay) : '';}} onRunningChange={onNetworkRunning}/>}
+      getRelayUrl={() => {const relay = session.directory.getSnapshot().siteManifest?.shared.netplayRelay; return relay ? buildMultiplayerDiagnosticRelayUrl(relay) : '';}} onRunningChange={onNetworkRunning}/>}
     {navigation.context === 'lobby' && <DirectoryRoomDialog service={session.directory} open={navigation.directoryFormMode !== null} onCloseRequest={navigation.closeDirectoryForm}
       completionContext={{locationKey: location.key, parentKey: navigation.directoryFormParentKey, href: location.pathname + location.search + location.hash}}/>}
     <FirstUseNotice ref={firstUse} open={navigation.infoDialogOpen('firstUseNoticeDialog')} onCloseRequest={() => navigation.closeInfoDialog('firstUseNoticeDialog')} onOpenRequest={() => navigation.openInfoDialog('firstUseNoticeDialog')} storage={session.storage} contentUrl={assetUrl('content/FIRST_USE_NOTICE.html')} edgeGestures={navigation.context === 'library'}/>

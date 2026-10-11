@@ -1,3 +1,4 @@
+import {LEGACY_HOST_MANIFEST_FILE, legacyHostManifestResponse} from '../compat/site-manifest.mjs';
 import { createReadStream, existsSync, watch } from "node:fs";
 import { createHash } from "node:crypto";
 import { stat, readFile } from "node:fs/promises";
@@ -15,13 +16,13 @@ import {
   staticContentType,
 } from "../server/static-content-policy.mjs";
 import { buildAppShell } from "../lib/app-shell-build.mjs";
-import { createDevelopmentHostManifest } from "../lib/development-host-manifest.mjs";
+import { createDevelopmentSiteManifest } from "../lib/development-site-manifest.mjs";
 import { DEVELOPMENT_CONTENT } from "../lib/development-content.mjs";
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
-import { FRONTEND_SELECTION, REACT_FRONTEND_ARTIFACT, FRONTEND_PACKAGE_FILES, hostArtworkFiles, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
-import { HOST_MANIFEST_FILE } from "../lib/contracts/host-manifest.mjs";
+import { REACT_FRONTEND_ARTIFACT, FRONTEND_PACKAGE_FILES, hostArtworkFiles, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
+import { SITE_MANIFEST_FILE } from "../lib/contracts/site-manifest.mjs";
 import { RELEASE_CATALOG_FILE, RELEASE_CATALOG_SCHEMA } from "../lib/contracts/release-catalog.mjs";
-import { isMappedBrowserPublicationPath, resolveBrowserPublicationSource } from "../lib/launcher-build.mjs";
+import { isMappedBrowserPublicationPath, resolveBrowserPublicationSource } from "../lib/client-services-build.mjs";
 import { privateFrontendAssetSource } from "../lib/private-frontend-assets.mjs";
 import {
   APP_SHELL_OUTPUT_FILE,
@@ -40,20 +41,19 @@ const root = resolve(process.argv[3] || resolve(project, ".."));
 assertSafeDevelopmentServerScope({ host, project, root });
 const sourceDevelopmentServer = root === resolve(project, "..");
 const servedApp = sourceDevelopmentServer ? project : root;
-const reactFrontend = FRONTEND_SELECTION === "react";
 // This development server has always served the root mount. Nested React
 // artifacts belong to a matching mounted Host/static server, never this root.
-if (reactFrontend && REACT_FRONTEND_ARTIFACT.mountPath !== "/") {
+if (REACT_FRONTEND_ARTIFACT.mountPath !== "/") {
   throw new Error("The development server requires a root-mounted React artifact; rebuild with EAGLER_REACT_MOUNT_PATH=/");
 }
-if (reactFrontend && !sourceDevelopmentServer) {
+if (!sourceDevelopmentServer) {
   throw new Error("Explicit directory serving for React must use the verified packaged static server, not the source development server");
 }
-if (reactFrontend && REACT_FRONTEND_ARTIFACT.appShell &&
+if (REACT_FRONTEND_ARTIFACT.appShell &&
     REACT_FRONTEND_ARTIFACT.appShell.origin !== `http://${host}:${port}`) {
   throw new Error("React App Shell origin does not match this development server");
 }
-const appShellEnabled = !reactFrontend || REACT_FRONTEND_ARTIFACT.appShell !== null;
+const appShellEnabled = REACT_FRONTEND_ARTIFACT.appShell !== null;
 
 const defaultArtworkDirectory = sourceDevelopmentServer ? resolve(workspaceRoot(), "games", "host-artwork") : null;
 const configuredArtworkDirectory = process.env.EAGLER_TOUHOU_ARTWORK_DIR
@@ -66,18 +66,21 @@ const configuredNetplayRelay = process.env.EAGLER_TOUHOU_NETPLAY_RELAY?.trim() |
 const hostArtwork = new Set(hostArtworkFiles(Object.keys(DEVELOPMENT_CONTENT.games)));
 const selectedDevelopmentGames = process.env.EAGLER_DEVELOPMENT_GAMES?.split(",").map(value => value.trim()).filter(Boolean);
 const developmentMetadata = sourceDevelopmentServer ? new Map([
-  [HOST_MANIFEST_FILE, `${JSON.stringify(await createDevelopmentHostManifest({
+  [SITE_MANIFEST_FILE, `${JSON.stringify(await createDevelopmentSiteManifest({
     netplayRelay: configuredNetplayRelay,
     games: selectedDevelopmentGames,
   }), null, 2)}\n`],
   [RELEASE_CATALOG_FILE, `${JSON.stringify({ schema: RELEASE_CATALOG_SCHEMA, games: {} }, null, 2)}\n`],
 ]) : null;
+if (developmentMetadata) developmentMetadata.set(LEGACY_HOST_MANIFEST_FILE,
+  JSON.stringify(legacyHostManifestResponse(JSON.parse(developmentMetadata.get(SITE_MANIFEST_FILE)))) + '\n');
+
 const localAppShellOptions = {
   quiet: true,
   globDirectory: servedApp,
   additionalGlobPatterns: APP_SHELL_RUNTIME_GLOBS,
   deferredPathPrefixes: ["runtime/"],
-  ...(reactFrontend && appShellEnabled ? {workerContractSource: await readFile(await resolveRuntimeGenerationWorkerSource({project}), "utf8")} : {}),
+  ...(appShellEnabled ? {workerContractSource: await readFile(await resolveRuntimeGenerationWorkerSource({project}), "utf8")} : {}),
 };
 const isRuntimeAppShellPath = value => /^runtime\/(?:.*\.(?:html|js|wasm))$/i.test(
   String(value || "").replaceAll("\\", "/")
@@ -111,7 +114,7 @@ async function rebuildAppShell() {
     appShellBuildRunning = false;
   }
 }
-const appShellWatcher = appShellEnabled ? watch(reactFrontend ? REACT_FRONTEND_ARTIFACT.root : servedApp, { recursive: true }, (_event, filename) => {
+const appShellWatcher = appShellEnabled ? watch(REACT_FRONTEND_ARTIFACT.root, { recursive: true }, (_event, filename) => {
   if (!filename) return;
   const watchedPath = String(filename).replaceAll("\\", "/");
   const publicLogicalPath = watchedPath.startsWith("public/") ? watchedPath.slice("public/".length) : null;
@@ -220,7 +223,7 @@ createServer(async (request, response) => {
     const publicPath = pathname.replace(/^\//, "");
     const frontendPath = publicPath || "index.html";
     const possibleLegacyPath = frontendPath.startsWith("public/") ? frontendPath.slice("public/".length) : frontendPath;
-    if (reactFrontend && !FRONTEND_PACKAGE_FILES.includes(frontendPath) &&
+    if (!FRONTEND_PACKAGE_FILES.includes(frontendPath) &&
         (possibleLegacyPath === "app.js" || possibleLegacyPath.startsWith("assets/launcher/") ||
          isMappedBrowserPublicationPath(possibleLegacyPath))) {
       throw new Error("Legacy frontend URL is not part of the selected React artifact");

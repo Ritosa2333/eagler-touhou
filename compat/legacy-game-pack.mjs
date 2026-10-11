@@ -1,4 +1,4 @@
-import { PRODUCT_GAMES } from "../product-catalog.mjs";
+import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { isSafeStoredZipName, parseStoredZip, readStoredZipEntry } from "../package/stored-zip.mjs";
 
 // Read compatibility only. Current packages are Package Descriptor / Package

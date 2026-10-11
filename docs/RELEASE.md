@@ -138,7 +138,7 @@ Historical `game-data-pack/1` and `offline-game-pack/1` formats are read-compati
 The Package Store deduplicates fully SHA-256-identified content across games.
 Shared fonts therefore download once per browser Origin when their declared
 bytes are identical. The bounded short-revision upgrade bridge and its removal
-criteria are documented in `legacy/README.md`.
+criteria are documented in `compat/README.md`.
 
 ## Public Web behavior
 
@@ -190,7 +190,7 @@ HTTP and HTTPS are different Origins. Moving the path from `/eagler-touhou/` to 
 
 During the migration window, both the old HTTP Origin and new HTTPS Origin must remain available. On the old HTTP page, `migrate.html` reads browser-local data and transfers it to the HTTPS receiver through a constrained `postMessage` protocol. Data is never uploaded to the server.
 
-Only a Host Manifest built for the migration window declares:
+Only a Site Manifest built for the migration window declares:
 
 ```json
 {
@@ -238,7 +238,7 @@ final HTTPS
 
 To end the migration window:
 
-1. remove the `originMigration` capability from the Host Manifest and regenerate the site;
+1. remove the `originMigration` capability from the Site Manifest and regenerate the site;
 2. retire old HTTP `/migrate.html` as a migration entrypoint;
 3. send `Strict-Transport-Security: max-age=31536000` or longer on final HTTPS responses;
 4. if TLS terminates at a CDN or edge, confirm that the final client response still carries the header;
@@ -248,7 +248,7 @@ To end the migration window:
 npm run verify:hsts-cutover -- http://example.invalid/ https://example.invalid/
 ```
 
-This check verifies only final public behavior: ordinary HTTP entrypoints redirect to HTTPS, HTTPS publishes at least one year of HSTS, and the Host Manifest no longer declares `originMigration`. It is independent of whether the site uses nginx, Caddy, Apache, IIS, object storage, or a particular Linux distribution.
+This check verifies only final public behavior: ordinary HTTP entrypoints redirect to HTTPS, HTTPS publishes at least one year of HSTS, and the Site Manifest no longer declares `originMigration`. It is independent of whether the site uses nginx, Caddy, Apache, IIS, object storage, or a particular Linux distribution.
 
 `includeSubDomains` and HSTS preload are not default policy. Enable either only after the operator explicitly commits every affected subdomain to long-term HTTPS.
 

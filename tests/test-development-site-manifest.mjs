@@ -4,9 +4,9 @@ import { execFileSync } from "node:child_process";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
-import { createDevelopmentHostManifestFromContent } from "../lib/development-host-manifest.mjs";
+import { createDevelopmentSiteManifestFromContent } from "../lib/development-site-manifest.mjs";
 import { DEVELOPMENT_CONTENT } from "../lib/development-content.mjs";
-import { HOST_MANIFEST_SCHEMA, validateHostManifest } from "../lib/contracts/host-manifest.mjs";
+import { SITE_MANIFEST_SCHEMA, validateSiteManifest } from "../lib/contracts/site-manifest.mjs";
 import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 
 const root = await mkdtemp(join(resolve(import.meta.dirname, "../.."), "eagler-development-manifest-"));
@@ -30,18 +30,18 @@ const fixtureContent = {
     },
   }])),
 };
-const createManifest = options => createDevelopmentHostManifestFromContent(fixtureContent, { sourceRoot: root, ...options });
+const createManifest = options => createDevelopmentSiteManifestFromContent(fixtureContent, { sourceRoot: root, ...options });
 const manifest = await createManifest();
-assert.equal(manifest.schema, HOST_MANIFEST_SCHEMA);
+assert.equal(manifest.schema, SITE_MANIFEST_SCHEMA);
 assert.equal(manifest.profile, "web-development");
 assert.equal(manifest.shared.testBuild, true);
 assert.equal(manifest.shared.resourceMode, "hosted");
 assert.deepEqual(Object.keys(manifest.games), Object.keys(PRODUCT_GAMES));
-assert.doesNotThrow(() => validateHostManifest(manifest));
+assert.doesNotThrow(() => validateSiteManifest(manifest));
 assert.equal(manifest.shared.netplayRelay, undefined);
 const th09Only = await createManifest({ games: ["th09"] });
 assert.deepEqual(Object.keys(th09Only.games), ["th09"]);
-assert.doesNotThrow(() => validateHostManifest(th09Only));
+assert.doesNotThrow(() => validateSiteManifest(th09Only));
 
 const relayManifest = await createManifest({ netplayRelay: "ws://127.0.0.1:18142/" });
 assert.equal(relayManifest.shared.netplayRelay, "ws://127.0.0.1:18142/");
@@ -52,10 +52,10 @@ await assert.rejects(
 for (const [game, entry] of Object.entries(manifest.games)) {
   assert.match(entry.runtime, /^\.\.\//, `${game}: development Runtime must remain an explicit workspace-relative input`);
   assert.equal(entry.runtime, DEVELOPMENT_CONTENT.games[game].runtime,
-    `${game}: development Host Manifest must preserve the declared Runtime owner`);
+    `${game}: development Site Manifest must preserve the declared Runtime owner`);
   if (PRODUCT_GAMES[game].multiplayerRuntime) {
     assert.equal(entry.multiplayerRuntime, DEVELOPMENT_CONTENT.games[game].multiplayerRuntime,
-      `${game}: development Host Manifest must preserve the declared multiplayer Runtime owner`);
+      `${game}: development Site Manifest must preserve the declared multiplayer Runtime owner`);
   }
   assert.match(entry.gameData.version, /^sha256-[a-f0-9]{64}$/i);
   assert.match(entry.gameData.layout, /^sha256-[a-f0-9]{64}$/i);
@@ -80,8 +80,8 @@ for (const game of ["th06", "th07", "th09", "th10", "th11", "th15", "th20"]) {
     await writeFile(join(contentRoot, musicDirectory, name), fixtureData);
   }
   const prepared = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e",
-    `import { createDevelopmentHostManifest } from './lib/development-host-manifest.mjs';
-     console.log(JSON.stringify(await createDevelopmentHostManifest({ games: ['${game}'] })));`,
+    `import { createDevelopmentSiteManifest } from './lib/development-site-manifest.mjs';
+     console.log(JSON.stringify(await createDevelopmentSiteManifest({ games: ['${game}'] })));`,
   ], { cwd: project, encoding: "utf8", env: { ...process.env, [`EAGLER_${game.toUpperCase()}_CONTENT_DIR`]: contentRoot } }));
   const entry = prepared.games[game];
   assert.equal(resolve(project, entry.gameData.source), join(contentRoot, `${game}.data`));

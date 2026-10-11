@@ -81,7 +81,7 @@ function feedback() {
   };
 }
 function actualFixture({generation, catalog, locale, source = 'local', install}) {
-  const current = {generation, installation: {source}}, metadata = {hostManifest: null, releaseCatalog: catalog};
+  const current = {generation, installation: {source}}, metadata = {siteManifest: null, releaseCatalog: catalog};
   let refreshed = 0;
   const acquisition = api.createPackageAcquisition({baseUrl, translate: actualTranslate(locale),
     metadata: {getSnapshot: () => metadata, initialize: async () => {throw new Error('Installed launch must not wait for metadata');},

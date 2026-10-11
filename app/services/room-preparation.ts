@@ -62,9 +62,9 @@ export function createRoomPreparation(options: RoomPreparationOptions) {
     void acquisition.refreshInstalled(game).catch(() => {});
     stage = 'runtime';
     report({status: 'preparing', stage, percent: null, error: '', title: t('room.preparingRuntime')});
-    if (!acquisition.getMetadata().hostManifest) {try {await options.metadataReady();} catch {}}
+    if (!acquisition.getMetadata().siteManifest) {try {await options.metadataReady();} catch {}}
     if (!context.isCurrent()) return;
-    const host = acquisition.getMetadata().hostManifest;
+    const host = acquisition.getMetadata().siteManifest;
     const runtime = host?.games[game]?.multiplayerRuntime;
     if (typeof runtime === 'string' && runtime && host?.shared.runtimeManifest) {
       let worker: RuntimeWorker | null = null;

@@ -238,7 +238,7 @@ def main() -> int:
                         }
                 if fault['mode']:
                     subprocess.run(['node', '--input-type=module', '-e',
-                        "import {validateHostManifest} from './lib/contracts/host-manifest.mjs';import {readFileSync} from 'node:fs';validateHostManifest(JSON.parse(readFileSync(0,'utf8')));"],
+                        "import {validateSiteManifest} from './lib/contracts/site-manifest.mjs';import {readFileSync} from 'node:fs';validateSiteManifest(JSON.parse(readFileSync(0,'utf8')));"],
                         input=json.dumps(manifest), text=True, cwd=PROJECT, check=True)
                 headers = {
                     key: value for key, value in response.headers.items()
@@ -251,7 +251,7 @@ def main() -> int:
                     body=json.dumps(manifest),
                 )
 
-            page.route("**/host-manifest.json", strip_published_ogg)
+            page.route("**/site-manifest.json", strip_published_ogg)
             page.route("**/release-catalog.json", lambda route: route.fulfill(status=404, body="not published in this test"))
             def runtime_stub(route):
                 stub = RUNTIME_PROTOCOL_STUB

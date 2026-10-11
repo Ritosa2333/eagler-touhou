@@ -108,7 +108,7 @@ The early TH06 LCConnect/`MultiplayerRuntime.*`/`g_Player2` route is withdrawn. 
 
 ### Public room directory
 
-`public/lobby.html` is a separate directory page; the launcher's Multiplayer
+The React `lobby.html` route is a separate directory page; the launcher's Multiplayer
 shelf links to it. Each supported game's options panel links to `lobby.html?game=<mp-product>`
 using the catalog's game-to-Multiplayer mapping. The directory keeps that filter.
 The Launcher and directory opt into a short native document crossfade, including
@@ -125,10 +125,11 @@ connection failure) and critical fonts/background/visible covers have settled,
 with a bounded visual wait matching the Launcher. Initial rows do not replay
 their insertion animation at reveal. A standalone preload failure surface keeps
 reload/back available if the page module fails to load.
-`src/launcher/lobby.mts` renders real relay snapshots and uses the existing
-Launcher room route for creation/joining. Browsing the
+`app/services/lobby-directory.ts` consumes real relay snapshots.
+`app/components/directory/` renders the shared directory components and uses the
+React room route for creation/joining. Browsing the
 directory never creates a room or takes a seat. No generated mockup is shipped
-as a UI asset. Both the page and its ESM closure belong to `frontend-manifest`.
+as a UI asset. Both the page and its dependency closure belong to the sealed React artifact.
 
 P1 can select public/private discovery and disallow unlimited-speed touch
 movement. Private means hidden from the directory, not password protection;
@@ -145,7 +146,7 @@ The relay derives this from declared touch settings, advertises support, and
 publishes updates. Empty seats and legacy peers with unknown settings have no caption.
 
 `server/room-directory.mjs` is owned by the shared netplay relay. The same relay
-URL from Host Manifest accepts `?directory=1&member=<anonymous-browser-id>` and
+URL from Site Manifest accepts `?directory=1&member=<anonymous-browser-id>` and
 sends version-1 `directory` messages. Snapshots expose room code/product,
 capacity, occupancy, difficulty, ready status, spectator count and **initials
 only**. They exclude internal client IDs and full display names. `refresh`

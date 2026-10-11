@@ -15,10 +15,10 @@ import {
   type ResourceMode,
 } from "./resource-mode.mjs";
 
-export const HOST_MANIFEST_SCHEMA = "eagler-touhou/host-manifest/1";
-export const HOST_MANIFEST_FILE = "host-manifest.json";
+export const SITE_MANIFEST_SCHEMA = "eagler-touhou/site-manifest/1";
+export const SITE_MANIFEST_FILE = "site-manifest.json";
 
-export interface HostGameData {
+export interface SiteGameData {
   path: string;
   bytes: number;
   sha256: string;
@@ -28,7 +28,7 @@ export interface HostGameData {
   source?: string;
 }
 
-export interface HostMidiManifest {
+export interface SiteMidiManifest {
   files: string[];
   sizes?: number[];
   /** Concrete publication support; false means the Runtime/product must not expose MIDI. */
@@ -36,7 +36,7 @@ export interface HostMidiManifest {
   [key: string]: unknown;
 }
 
-export interface HostOggManifest {
+export interface SiteOggManifest {
   version: string;
   files: string[];
   sizes: number[];
@@ -44,7 +44,7 @@ export interface HostOggManifest {
   [key: string]: unknown;
 }
 
-export interface HostLanguagePack {
+export interface SiteLanguagePack {
   url: string;
   bytes: number;
   sha256: string;
@@ -53,30 +53,30 @@ export interface HostLanguagePack {
   [key: string]: unknown;
 }
 
-export interface HostLanguageOption {
+export interface SiteLanguageOption {
   id: string;
   title?: string;
-  pack: HostLanguagePack | null;
+  pack: SiteLanguagePack | null;
   [key: string]: unknown;
 }
 
-export interface HostGameManifest {
+export interface SiteGameManifest {
   runtime: string;
   multiplayerRuntime?: string;
-  gameData: HostGameData;
+  gameData: SiteGameData;
   music: {
-    midi: HostMidiManifest;
-    ogg?: HostOggManifest | null;
+    midi: SiteMidiManifest;
+    ogg?: SiteOggManifest | null;
     [key: string]: unknown;
   };
   features?: HostRuntimeFeatures;
-  languageOptions?: HostLanguageOption[];
-  languages?: HostLanguageOption[];
+  languageOptions?: SiteLanguageOption[];
+  languages?: SiteLanguageOption[];
   offlineCompatibility?: unknown;
   [key: string]: unknown;
 }
 
-export interface HostManifestShared {
+export interface SiteManifestShared {
   /** Additive schema-1 extension; absent only in legacy/development manifests. */
   runtimeManifest?: typeof RUNTIME_MANIFEST_FILE;
   testBuild?: boolean;
@@ -90,12 +90,12 @@ export interface HostManifestShared {
   [key: string]: unknown;
 }
 
-export interface HostManifest {
-  schema: typeof HOST_MANIFEST_SCHEMA;
+export interface SiteManifest {
+  schema: typeof SITE_MANIFEST_SCHEMA;
   protocol: typeof HOST_PROTOCOL;
   profile: string;
-  shared: HostManifestShared;
-  games: Partial<Record<GameId, HostGameManifest>>;
+  shared: SiteManifestShared;
+  games: Partial<Record<GameId, SiteGameManifest>>;
   [key: string]: unknown;
 }
 
@@ -123,13 +123,13 @@ function validMusicSizes(value: unknown, length: number): value is number[] {
     value.every(size => Number.isSafeInteger(size) && size > 0);
 }
 
-function validMidiManifest(value: unknown): value is HostMidiManifest {
+function validMidiManifest(value: unknown): value is SiteMidiManifest {
   if (!isRecord(value) || !validMusicFiles(value.files, "mid", true)) return false;
   return (value.sizes == null || validMusicSizes(value.sizes, value.files.length)) &&
     (value.supported == null || typeof value.supported === "boolean");
 }
 
-function validOggManifest(value: unknown): value is HostOggManifest | null | undefined {
+function validOggManifest(value: unknown): value is SiteOggManifest | null | undefined {
   if (value == null) return true;
   if (!isRecord(value)) return false;
   const files = value.files;
@@ -141,7 +141,7 @@ function validOggManifest(value: unknown): value is HostOggManifest | null | und
     sha256.every(hash => typeof hash === "string" && SHA256.test(hash));
 }
 
-function validLanguagePack(value: unknown): value is HostLanguagePack {
+function validLanguagePack(value: unknown): value is SiteLanguagePack {
   return isRecord(value) && typeof value.url === "string" && !!value.url &&
     Number.isSafeInteger(value.bytes) && Number(value.bytes) > 0 &&
     typeof value.sha256 === "string" && SHA256.test(value.sha256) &&
@@ -149,7 +149,7 @@ function validLanguagePack(value: unknown): value is HostLanguagePack {
     (value.files == null || (Number.isSafeInteger(value.files) && Number(value.files) >= 0));
 }
 
-function sameLanguagePack(left: HostLanguagePack, right: HostLanguagePack): boolean {
+function sameLanguagePack(left: SiteLanguagePack, right: SiteLanguagePack): boolean {
   return left.url === right.url && left.bytes === right.bytes &&
     left.sha256.toLowerCase() === right.sha256.toLowerCase() &&
     left.runtimeVersion === right.runtimeVersion && left.files === right.files;
@@ -162,7 +162,7 @@ function validLanguageCatalogs(value: UnknownRecord): boolean {
   if (!hasLanguages && !hasOptions) return true;
   if (!Array.isArray(value.languages) || !Array.isArray(value.languageOptions)) return false;
 
-  const packaged = new Map<string, HostLanguagePack>();
+  const packaged = new Map<string, SiteLanguagePack>();
   for (const raw of value.languages) {
     if (!isRecord(raw) || typeof raw.id !== "string" || !raw.id || raw.id === "ja" ||
         packaged.has(raw.id) || !validLanguagePack(raw.pack)) return false;
@@ -212,7 +212,7 @@ function validHostRuntimeFeatures(value: unknown): value is HostRuntimeFeatures 
   return Object.entries(value).every(([key, item]) => isHostRuntimeFeatureId(key) && typeof item === "boolean");
 }
 
-function validGame(gameId: string, value: unknown, resourceMode: ResourceMode): value is HostGameManifest {
+function validGame(gameId: string, value: unknown, resourceMode: ResourceMode): value is SiteGameManifest {
   if (!isGameId(gameId) || !isRecord(value) || typeof value.runtime !== "string" || !value.runtime) return false;
   const music = value.music;
   const gameData = value.gameData;
@@ -246,53 +246,53 @@ function validOptionalUrl(value: unknown, protocols: ReadonlySet<string>): value
   catch { return false; }
 }
 
-function validOriginMigration(value: unknown): value is HostManifestShared["originMigration"] {
+function validOriginMigration(value: unknown): value is SiteManifestShared["originMigration"] {
   return value == null || (isRecord(value) && value.mode === "http-to-https");
 }
 
-export function hostOriginMigrationAvailable(manifest: Pick<HostManifest, "shared">, protocol: string): boolean {
+export function siteOriginMigrationAvailable(manifest: Pick<SiteManifest, "shared">, protocol: string): boolean {
   return protocol === "https:" && manifest.shared.originMigration?.mode === "http-to-https";
 }
 
-export function validateHostManifest(value: unknown): HostManifest {
-  if (!isRecord(value) || value.schema !== HOST_MANIFEST_SCHEMA || value.protocol !== HOST_PROTOCOL ||
+export function validateSiteManifest(value: unknown): SiteManifest {
+  if (!isRecord(value) || value.schema !== SITE_MANIFEST_SCHEMA || value.protocol !== HOST_PROTOCOL ||
       typeof value.profile !== "string" || !value.profile || !isRecord(value.shared) || !isRecord(value.games)) {
-    throw new Error("invalid Host Manifest");
+    throw new Error("invalid Site Manifest");
   }
   if (value.shared.testBuild !== undefined && typeof value.shared.testBuild !== "boolean") {
-    throw new Error("invalid Host Manifest testBuild flag");
+    throw new Error("invalid Site Manifest testBuild flag");
   }
   const resourceMode = normalizeResourceMode(value.shared.resourceMode);
-  if (!resourceMode) throw new Error("invalid Host Manifest resource mode");
+  if (!resourceMode) throw new Error("invalid Site Manifest resource mode");
   if (resourceMode === RESOURCE_MODE_HOSTED &&
       (typeof value.shared.vanillaFont !== "string" || typeof value.shared.unicodeFont !== "string")) {
-    throw new Error("hosted Host Manifest is missing shared fonts");
+    throw new Error("hosted Site Manifest is missing shared fonts");
   }
   if (resourceMode !== RESOURCE_MODE_HOSTED &&
       (value.shared.vanillaFont != null || value.shared.unicodeFont != null)) {
-    throw new Error(`${resourceMode} Host Manifest must not publish shared font URLs`);
+    throw new Error(`${resourceMode} Site Manifest must not publish shared font URLs`);
   }
   const fallback = value.shared.gameDataFallback;
   if (fallback != null && (!isRecord(fallback) || typeof fallback.url !== "string" ||
       !validOptionalUrl(fallback.url, new Set(["https:"])) ||
       (fallback.hint != null && typeof fallback.hint !== "string"))) {
-    throw new Error("invalid Host Manifest gameDataFallback");
+    throw new Error("invalid Site Manifest gameDataFallback");
   }
   if (!validOptionalUrl(value.shared.netplayRelay, new Set(["ws:", "wss:"]))) {
-    throw new Error("invalid Host Manifest netplayRelay");
+    throw new Error("invalid Site Manifest netplayRelay");
   }
   if (!validOptionalUrl(value.shared.netplayTelemetry, new Set(["http:", "https:"]))) {
-    throw new Error("invalid Host Manifest netplayTelemetry");
+    throw new Error("invalid Site Manifest netplayTelemetry");
   }
   if (!validOriginMigration(value.shared.originMigration)) {
-    throw new Error("invalid Host Manifest originMigration");
+    throw new Error("invalid Site Manifest originMigration");
   }
   if (value.shared.runtimeManifest != null && value.shared.runtimeManifest !== RUNTIME_MANIFEST_FILE) {
-    throw new Error("invalid Host Manifest Runtime pointer");
+    throw new Error("invalid Site Manifest Runtime pointer");
   }
   if (value.shared.runtimeManifest === RUNTIME_MANIFEST_FILE) {
     for (const game of Object.values(value.games)) {
-      if (!isRecord(game)) throw new Error("invalid Host Manifest game");
+      if (!isRecord(game)) throw new Error("invalid Site Manifest game");
       for (const field of ["runtime", "multiplayerRuntime"]) {
         if (game[field] == null) continue;
         if (typeof game[field] !== "string") throw new Error("invalid Host Runtime URL");
@@ -307,14 +307,14 @@ export function validateHostManifest(value: unknown): HostManifest {
   const actualGames = Object.keys(games).sort();
   if (!actualGames.length || actualGames.some(game => !isGameId(game)) ||
       actualGames.some(game => !validGame(game, games[game], resourceMode))) {
-    throw new Error("invalid Host Manifest games");
+    throw new Error("invalid Site Manifest games");
   }
   return {
     ...value,
-    schema: HOST_MANIFEST_SCHEMA,
+    schema: SITE_MANIFEST_SCHEMA,
     protocol: HOST_PROTOCOL,
     profile: value.profile,
-    shared: { ...value.shared, resourceMode } as HostManifestShared,
-    games: games as Partial<Record<GameId, HostGameManifest>>,
+    shared: { ...value.shared, resourceMode } as SiteManifestShared,
+    games: games as Partial<Record<GameId, SiteGameManifest>>,
   };
 }
