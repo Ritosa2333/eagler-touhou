@@ -37,9 +37,21 @@ assert.equal((await getRuntimeBuildProfile('th11','normal')).workspaceRepository
 assert.equal((await getRuntimeBuildProfile('th11','multiplayer')).workspaceRepository,'th11mp');
 assert.equal(DEVELOPMENT_CONTENT.games.th11.runtime,projectRelativeWorkspacePath('th11','build-eagler','th11.html')+'?hosted=1');
 assert.equal(DEVELOPMENT_CONTENT.games.th11.multiplayerRuntime,projectRelativeWorkspacePath('th11mp','build-eagler-multiplayer','th11.html')+'?hosted=1');
-const guide=await readFile(new URL('../content/MULTIPLAYER.md',import.meta.url),'utf8');
+const guide=(await readFile(new URL('../content/MULTIPLAYER.md',import.meta.url),'utf8')).replaceAll('\r\n','\n');
 assert.match(guide,/## TH11 地灵殿/);assert.match(guide,/高危/);assert.match(guide,/不启用预测或回滚/);
 assert.match(guide,/挑战模式遵循上文通用规则，默认关闭/);assert.doesNotMatch(guide,/不提供挑战模式/);
+const th11Guide=guide.slice(guide.indexOf('## TH11 地灵殿'));
+const uniqueRules=th11Guide.match(/### 本作特有规则\n([\s\S]*?)(?=\n### |$)/)?.[1];
+assert.ok(uniqueRules,'TH11-specific player-facing rules must exist');
+assert.equal((uniqueRules.match(/^- /gm)||[]).length,3,'TH11-specific rules list has exactly the three reviewed items');
+assert.match(uniqueRules,/2 人时为 \*\*2 倍\*\*，3 人时为 \*\*3 倍\*\*/);
+assert.match(uniqueRules,/Full Power 道具不倍增/);
+assert.match(uniqueRules,/魔理沙 A（满 Power 为 8\.00）例外.*不向队友提供无敌/);
+assert.match(uniqueRules,/残机碎片由全队共享.*原作的 \*\*1 倍\*\*/);
+assert.doesNotMatch(guide,/风神录、地灵殿暂为/,'TH11 no longer uses TH10 P-drop exception');
+assert.doesNotMatch(guide,/### 剧情、路线与共享关卡内容/,'shared dialogue/route invariants are not player-facing rules');
+assert.doesNotMatch(th11Guide,/所有参战玩家，包括幽灵.*推进剧情|对话期间.*转移/);
+assert.doesNotMatch(th11Guide,/始终显示自机判定点|右侧各席位只分组显示/,'local-only visuals are implementation, not team rules');
 
 const base={url:'ws://localhost/?room=th11mp-1234&run=1&player=0&players=2&member=member_test_1234',
   player:0,playerCount:2,seed:1234,difficulty:4,loadouts:[{character:0,shot:0},{character:1,shot:2}],

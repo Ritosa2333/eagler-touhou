@@ -104,18 +104,32 @@ automatically was incorrect and is withdrawn. This behavior is not a merge
 blocker. The missing `returnToMenu` marker remains an observed protocol fact,
 not a requirement to force both players out of the room.
 
-The synchronized rule text also needs the user's review. It still describes
-Graze in the personal HUD, TH11 P drops as 1x/2x, generic Bomb invulnerability
-without the eight-Power-character exception, and P1-owned dialogue without the
-accepted all-player/ghost advancement rule. It does not state dialogue-time
-resource transfer. This preparation preserves main's wording rather than silently
-publishing a new rule version. Shared life fragments are already stated.
+The synchronized candidate initially preserved main's outdated TH11 rule text.
+On 2026-10-11 the user specified the final three TH11-specific player-facing
+rules: ordinary P drops scale 2x/3x (not Full Power), Bomb invulnerability is
+shared except for Marisa A (8.00 maximum Power), and shared life fragments drop
+at the original 1x rate. The authored `content/MULTIPLAYER.md` and generated
+HTML now use those rules; the generic P-drop exception no longer includes TH11.
+All-seat/ghost dialogue advancement, P1-owned story selection, and transfers
+during dialogue are multiplayer implementation invariants, not extra
+player-facing rules. UI layout and the optional Always Hitbox are likewise
+presentation requirements, not game-rule bullets.
+
+TH11MP native presentation verification passed 807 checks / 376 native
+logic-and-draw ticks: original life/Power atlas elements, local Graze below
+the seat groups, local-only view selection, and Always Hitbox drawn only for
+the local seat when enabled, without changing combat RNG, Focus, motion or
+authoritative state. The original communication/point display remains in
+the native lower-left location. Launcher content freshness, TH11 policy,
+shared guide, and dialog regression checks also passed. These focused
+checks do not replace a full browser/device run or the pending Linux CI.
 
 Earlier all-title browser evidence is retained separately in
 `.cache/ui-acceptance/report.json` and is not relabeled as acceptance of this
 candidate. No new 3P/Extra/spectator complete run, mobile-device, forced TURN,
 long-duration Replay, production cutover or formal release is claimed here.
 
-Before promotion: approve/synchronize the rule wording and obtain green Linux CI
-including the atomic-deployment gate. One-sided return stopping its peer is the
-accepted behavior, not an outstanding terminal-flow repair.
+Before promotion: obtain green full-suite Linux CI including the atomic-deployment
+gate, then complete formal browser/release acceptance. The TH11 rule wording is
+reviewed and synchronized locally, not yet published. One-sided return stopping
+its peer is accepted behavior, not an outstanding terminal-flow repair.
