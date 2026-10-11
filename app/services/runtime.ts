@@ -806,11 +806,17 @@ export function createRuntimeService(options: RuntimeServiceOptions) {
         let codeGeneration: string | null = null;
         try {
           let entry = source.href;
-          if (plan.generation && plan.publishedRuntime) {
+          // Offline metadata can be absent while this deployment's worker still
+          // owns a complete immutable program. Resolve it before navigation:
+          // a worker redirect from a catalog alias changes the document URL and
+          // cannot satisfy this owner's exact document/epoch binding.
+          const offlineWorker = plan.localCatalogRuntime ? await options.worker : null;
+          assertOperation(); assertCurrent(token);
+          if (plan.generation && (plan.publishedRuntime || offlineWorker)) {
             // Keep current main's complete-generation verification + idle-based
             // download helper. No replacement timeout or latest-file fallback.
             const prepared = await deps.prepareCode(entry, { baseUrl, fetchImpl: network.fetch as typeof fetch,
-              exclude: excluded, worker: options.worker });
+              exclude: excluded, worker: offlineWorker || options.worker });
             assertOperation(); assertCurrent(token);
             entry = prepared.url; codeGeneration = prepared.generation;
           }
