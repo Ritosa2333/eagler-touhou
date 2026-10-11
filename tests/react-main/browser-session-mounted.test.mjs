@@ -1252,6 +1252,20 @@ for (const timing of ['together', 'after-directory']) test(`actual BrowserLaunch
   assert.equal(f.fetches.filter(item => new URL(item.url).pathname.endsWith('/content/MULTIPLAYER.html')).length, 1, 'cached authored guide follows the filter on reopen');
 });
 
+test('directory TH11MP settings stay available without a hosted multiplayer Runtime', async () => {
+  const host = developmentAcquisitionHost(['th11']); delete host.games.th11.multiplayerRuntime; host.shared.testBuild = true;
+  await mountBrowser({initial: '/lobby.html?game=th11mp', host, actualHistory: true});
+  await until(() => env.document.querySelector('#lobbyGameRail .game.nav-preview[data-product="th11mp"]'), 'directory advertises TH11MP');
+  const session = api.getTestSession();
+  assert.equal(session.metadata.getSnapshot().products.includes('th11mp'), false);
+  assert.equal(session.directory.getSnapshot().products.includes('th11mp'), true);
+  await click('#lobbyGameRail .game[data-product="th11mp"]');
+  await until(() => node('#lobbyOptionsDialog').open, 'TH11MP card opens settings independently of hosted Runtime');
+  assert.equal(node('#gameId').textContent, 'TH11 MP');
+  assert.equal(session.settings.getSnapshot().context.productId, 'th11mp');
+  await click('#libraryBack'); await until(() => !node('#lobbyOptionsDialog').open, 'Back closes TH11MP settings');
+});
+
 // Main lobby.mts has no automatic first-use presentation. A route-owned shared
 // component must not let the previous Launcher request appear over that page.
 test('actual BrowserLauncher: delayed automatic first-use cannot open or mark seen after entering lobby', async () => {

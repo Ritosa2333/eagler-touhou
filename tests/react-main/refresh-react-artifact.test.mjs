@@ -200,6 +200,19 @@ test('React refresh stages and verifies a coherent artifact before replacing any
     const enabledRoot = resolve(temporary, 'unexpected-worker-permission');
     await permissionArtifact(nextBuild, enabledRoot, {schema: 'eagler-touhou/react-app-shell/1', origin: 'http://localhost:4173', mountPath: '/'});
     await rejectsUntouched('frontend refresh cannot silently enable a disabled worker', plain, {flags: ['--frontend'], extra: selected(enabledRoot), expected: /must preserve the deployment's App Shell permission/});
+    await rejectsUntouched('explicit enable requires the artifact origin', plain, {flags: ['--frontend', '--enable-app-shell', '--site-url=https://wrong.invalid/'], extra: selected(enabledRoot), expected: /exact isolated origin and mount/});
+    await t.test('explicit offline enable stages a complete worker and retains runtime/content', async () => {
+      const target = resolve(temporary, 'explicit-offline-enable');
+      await cp(plain, target, {recursive: true});
+      const before = protectedFiles(await hashes(target));
+      await refresh(target, ['--frontend', '--enable-app-shell', '--site-url=http://localhost:4173/'], selected(enabledRoot));
+      await verify(target);
+      assert.deepEqual(protectedFiles(await hashes(target)), before);
+      const deployment = await json(resolve(target, 'deployment.json'));
+      assert.ok(deployment.appShell);
+      assert.ok(deployment.appShell.entries.includes('index.html'));
+      assert.ok(!(await readFile(resolve(target, 'app-shell-sw.js'), 'utf8')).includes('Retire the previous'));
+    });
     const movedOrigin = resolve(temporary, 'unexpected-worker-origin');
     await permissionArtifact(nextEnabled, movedOrigin, {schema: 'eagler-touhou/react-app-shell/1', origin: 'https://other.invalid', mountPath: '/refresh-review/'});
     await rejectsUntouched('frontend refresh cannot change the isolated worker origin', isolated, {flags: ['--frontend'], extra: selected(movedOrigin), expected: /must preserve the deployment's App Shell permission/});

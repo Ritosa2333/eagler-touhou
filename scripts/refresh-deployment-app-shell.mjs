@@ -30,12 +30,14 @@ async function renamePublicationDirectory(source, target) {
 const project = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const values = process.argv.slice(2);
 const refreshFrontend = values.includes("--frontend");
+const enableAppShell = values.includes("--enable-app-shell");
 const siteUrlOption = values.find(value => value.startsWith("--site-url="));
 const artworkOption = values.find(value => value.startsWith("--artwork-dir="));
 const rootValue = values.find(value => !value.startsWith("--"));
-if (!rootValue || values.some(value => value !== rootValue && value !== "--frontend" && value !== siteUrlOption && value !== artworkOption)) {
-  throw new Error("usage: node scripts/refresh-deployment-app-shell.mjs <deployment-root> [--frontend] [--site-url=https://example.com/] [--artwork-dir=<path>]");
+if (!rootValue || values.some(value => value !== rootValue && value !== "--frontend" && value !== "--enable-app-shell" && value !== siteUrlOption && value !== artworkOption)) {
+  throw new Error("usage: node scripts/refresh-deployment-app-shell.mjs <deployment-root> [--frontend] [--enable-app-shell] [--site-url=https://example.com/] [--artwork-dir=<path>]");
 }
+if (enableAppShell && (!refreshFrontend || !siteUrlOption)) throw new Error("--enable-app-shell requires --frontend and an explicit --site-url");
 const root = resolve(rootValue);
 const artworkRoot = artworkOption ? resolve(artworkOption.slice("--artwork-dir=".length)) : null;
 if (artworkRoot && !refreshFrontend) throw new Error("--artwork-dir requires --frontend");
@@ -64,7 +66,8 @@ if (reactTarget) {
   selectedArtifact = refreshFrontend ? await readReactFrontendArtifact({
     directory: reactFrontendArtifactDirectory({project}), expectedMountPath: previousArtifact.mountPath,
   }) : previousArtifact;
-  if (!isDeepStrictEqual(selectedArtifact.appShell, previousArtifact.appShell)) {
+  if (enableAppShell && (previousArtifact.appShell !== null || selectedArtifact.appShell === null)) throw new Error("--enable-app-shell requires a disabled deployment and an enabled selected artifact");
+  if (!enableAppShell && !isDeepStrictEqual(selectedArtifact.appShell, previousArtifact.appShell)) {
     throw new Error("React refresh must preserve the deployment's App Shell permission and isolated origin/mount");
   }
   const selectedSite = siteUrl ? new URL(siteUrl) : null;

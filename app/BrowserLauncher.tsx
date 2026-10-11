@@ -90,7 +90,7 @@ function LegacyMultiplayerOnline({session}: {session: BrowserSession}) {
 function RoomSettingsControls({session}: {session: BrowserSession}) {
   const settings = useSyncExternalStore(session.settings.subscribe, session.settings.getSnapshot, session.settings.getSnapshot);
   if (!settings || !isMultiplayerProductId(settings.context.productId)) return null;
-  return <MultiplayerSettingsControls product={settings.context.productId} service={session.room.service}
+  return <MultiplayerSettingsControls
     onReplayViewer={() => {void session.openReplayViewer(settings.context.productId).catch(session.reportError);}} onImport={session.gameData.openManual}/>;
 }
 function RoomDrawer({session, onClosingChange}: {session: BrowserSession; onClosingChange(value: boolean): void}) {
@@ -179,7 +179,7 @@ function SessionOverlays({session, firstUse, notice, assetUrl, onDonationUnavail
     document.body.classList.toggle('player-active', state.playerOpen);
     return () => {document.body.classList.remove('player-active');};
   }, [state.playerOpen]);
-  useEffect(() => session.startup.attach({
+  useLayoutEffect(() => session.startup.attach({
     context: navigation.context, url: window.location.href,
     boot: (window as Window & {__eaglerBoot?: {ready(): void}}).__eaglerBoot ?? {ready() {throw new Error('Original launcher bootstrap is not installed');}},
     waitDirectoryRendered: () => new Promise<void>(resolve => {if (session.directory.getSnapshot().initialized) return resolve();
@@ -197,7 +197,7 @@ function SessionOverlays({session, firstUse, notice, assetUrl, onDonationUnavail
     {navigation.context === 'lobby' && <DirectoryRoomDialog service={session.directory} open={navigation.directoryFormMode !== null} onCloseRequest={navigation.closeDirectoryForm}
       completionContext={{locationKey: location.key, parentKey: navigation.directoryFormParentKey, href: location.pathname + location.search + location.hash}}/>}
     <FirstUseNotice ref={firstUse} open={navigation.infoDialogOpen('firstUseNoticeDialog')} onCloseRequest={() => navigation.closeInfoDialog('firstUseNoticeDialog')} onOpenRequest={() => navigation.openInfoDialog('firstUseNoticeDialog')} storage={session.storage} contentUrl={assetUrl('content/FIRST_USE_NOTICE.html')} edgeGestures={navigation.context === 'library'}/>
-    <SiteNotice ref={notice} preferences={session.preferences} assetUrl={assetUrl} edgeGestures={navigation.context === 'library'} onOptOut={session.feedback.toast}/>
+    <SiteNotice ref={notice} preferences={session.preferences} assetUrl={assetUrl} visible={navigation.context === 'library' && navigation.surface === 'library' && !state.playerOpen} edgeGestures={navigation.context === 'library' && navigation.surface === 'library'} onOptOut={session.feedback.toast}/>
     <DonationDialog open={navigation.infoDialogOpen('donationDialog')} onCloseRequest={() => navigation.closeInfoDialog('donationDialog')} closeDurationMs={navigation.context === 'lobby' ? 0 : 220} assetUrl={assetUrl} onArtworkUnavailable={onDonationUnavailable}/>
     <AppleRefreshDialog open={navigation.infoDialogOpen('appleRefreshDialog')} onCloseRequest={() => navigation.closeInfoDialog('appleRefreshDialog')}/>
     <MultiplayerGuideDialog open={navigation.infoDialogOpen('mpGuideDialog')} onCloseRequest={() => navigation.closeInfoDialog('mpGuideDialog')} gameId={guideProduct ? gameIdForProduct(guideProduct) : 'th06'} contentUrl={assetUrl('content/MULTIPLAYER.html')}/>

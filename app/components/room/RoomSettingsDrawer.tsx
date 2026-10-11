@@ -2,6 +2,7 @@ import {useEffect, useLayoutEffect, useRef, useState} from 'react';
 import {createEdgeDrawerGesture} from '../../../src/launcher/edge-drawer-gesture.mts';
 import {cycleFocus} from '../cycle-focus';
 import {useLocale} from '../../i18n';
+import {useOptionsViewport} from '../launcher/use-options-viewport';
 export interface RoomSettingsDrawerProps {
   roomOpen: boolean;
   open: boolean;
@@ -14,6 +15,7 @@ export interface RoomSettingsDrawerProps {
  * not an extra native dialog. OptionsPanel relocates its one header/fold here. */
 export function RoomSettingsDrawer({roomOpen, open, foregroundActive = false, onCloseRequest, onClosingChange}: RoomSettingsDrawerProps) {
   const {t} = useLocale(), drawer = useRef<HTMLElement>(null), generation = useRef(0);
+  useOptionsViewport(drawer);
   const [presence, setPresence] = useState({hidden: true, closing: false});
   const suspendedFocus = useRef<HTMLElement | null>(null);
   const pendingReturnFocus = useRef(false);
@@ -69,7 +71,7 @@ export function RoomSettingsDrawer({roomOpen, open, foregroundActive = false, on
       isOpen: () => latest.current.open, open: () => {}, close: () => latest.current.onCloseRequest()});
     return () => {node.removeEventListener('keydown', keydown); gesture.destroy();};
   }, []);
-  return <><button className="settings-room-backdrop" id="mpSettingsRoomBackdrop" type="button" aria-label={t('settings.drawerClose')} hidden={!roomOpen || !open || foregroundActive} onClick={onCloseRequest}/>
+  return <><button className={`settings-room-backdrop${presence.closing ? ' closing' : ''}`} id="mpSettingsRoomBackdrop" type="button" aria-label={t('settings.drawerClose')} hidden={!roomOpen || presence.hidden || foregroundActive} onClick={onCloseRequest}/>
     <aside ref={drawer} className={`mp-settings-room-drawer settings-ui${presence.closing ? ' closing' : ''}`} id="mpSettingsRoomDrawer" role="dialog" aria-modal="true" aria-label={t('settings.title')} hidden={presence.hidden || foregroundActive} inert={foregroundActive}><div className="mp-settings-room-content" id="mpSettingsRoomDrawerContent"/></aside>
   </>;
 }

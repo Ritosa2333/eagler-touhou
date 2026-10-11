@@ -31,6 +31,14 @@ test('remote root and nonsecure hosts are rejected; exact loopback fixtures allo
   assert.deepEqual(validateReactAppShellDeployment(local), local);
   assert.equal(readReactAppShellDeployment(document(local), {href: 'http://127.0.0.1:4322/'}), undefined);
 });
+test('dedicated secure origin can explicitly cache its root without registering on another origin', () => {
+  const isolated = {...config, mountPath: '/', isolatedOrigin: true};
+  assert.deepEqual(validateReactAppShellDeployment(isolated), isolated);
+  const build = reactDeploymentConfig({EAGLER_REACT_APP_SHELL: 'isolated', EAGLER_REACT_APP_SHELL_ORIGIN: config.origin, EAGLER_REACT_APP_SHELL_ISOLATED_ORIGIN: 'true'});
+  assert.deepEqual(build.appShell, isolated);
+  assert.equal(readReactAppShellDeployment(document(isolated), {href: 'https://production.invalid/'}), undefined);
+  assert.deepEqual(readReactAppShellDeployment(document(isolated), {href: config.origin + '/'}), {workerUrl: config.origin + '/app-shell-sw.js', scope: config.origin + '/'});
+});
 test('scope traversal, queries, encoded paths and missing explicit opt-in fail closed', () => {
   for (const path of ['//', '/review', '/review/../', '/%2f/', '/review/?x', '/review/#x', '/review.with-dot/']) assert.throws(() => normalizeReactMountPath(path));
   assert.throws(() => reactDeploymentConfig({EAGLER_REACT_APP_SHELL_ORIGIN: config.origin}), /requires/);

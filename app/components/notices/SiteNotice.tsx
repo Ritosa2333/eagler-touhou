@@ -15,6 +15,8 @@ export interface SiteNoticeProps {
   assetUrl?: (path: string) => string;
   /** Startup sequencing stays with the host: first-use notice, room and embed gates. */
   autoLoad?: boolean;
+  /** Only the Launcher home owns this banner; leaving cancels pending reveals. */
+  visible?: boolean;
   /** Original launcher has left-edge gestures; original lobby does not. */
   edgeGestures?: boolean;
   onOptOut?: (restoreHint: string) => void;
@@ -26,7 +28,7 @@ const identityAsset = (path: string) => path;
 /** Original public/index.html #siteNotice DOM and catalog copy. No new surface,
  * history entry, content HTML, styles, or extra layout wrapper is introduced.
  */
-export function SiteNotice({preferences, assetUrl = identityAsset, autoLoad = false, edgeGestures = true,
+export function SiteNotice({preferences, assetUrl = identityAsset, autoLoad = false, visible = true, edgeGestures = true,
   onOptOut, environment, ref}: SiteNoticeProps) {
   const {t} = useLocale();
   const bar = useRef<HTMLDivElement>(null);
@@ -35,11 +37,12 @@ export function SiteNotice({preferences, assetUrl = identityAsset, autoLoad = fa
   const nativeOpen = () => !!bar.current && !bar.current.hidden && !bar.current.classList.contains('site-notice-closing');
   useImperativeHandle(ref, () => ({load: state.load, close: state.close, isOpen: nativeOpen, isEnabled: state.isEnabled}), [state]);
   useLayoutEffect(() => state.connect(), [state]);
+  useLayoutEffect(() => state.setVisible(visible), [state, visible]);
   // Main's external DOM contract permits hiding the original banner directly
   // (including the unchanged edge-drawer browser-test setup). A subsequent
   // explicit successful reveal must restore the actual hidden attribute even
   // if React's preceding snapshot also had hidden=false.
-  useLayoutEffect(() => {if (bar.current) bar.current.hidden = snapshot.hidden;}, [snapshot]);
+  useLayoutEffect(() => {if (bar.current) bar.current.hidden = snapshot.hidden || !visible;}, [snapshot, visible]);
   useEffect(() => {
     const node = bar.current;
     if (!node) return;
@@ -68,17 +71,17 @@ export function SiteNotice({preferences, assetUrl = identityAsset, autoLoad = fa
     rememberScroll();
     documentObj.addEventListener('scroll', handleScroll, {capture: true, passive: true});
     const gestures = edgeGestures ? createEdgeDrawerGesture({documentObj, windowObj, side: 'left', drawer: node,
-      isOpen: nativeOpen, open: state.load, close: state.close, enabled: state.isEnabled}) : null;
+      isOpen: nativeOpen, open: state.load, close: state.close, enabled: () => visible && state.isEnabled()}) : null;
     return () => {
       unsubscribe(); gestures?.destroy();
       documentObj.removeEventListener('scroll', handleScroll, {capture: true});
     };
-  }, [state, edgeGestures]);
+  }, [state, edgeGestures, visible]);
   useEffect(() => {if (autoLoad) void state.load();}, [state, autoLoad]);
   const className = ['site-notice', snapshot.scrollHidden && 'site-notice-scroll-hidden', snapshot.closing && 'site-notice-closing'].filter(Boolean).join(' ');
   const style = snapshot.durationMs === null ? undefined : {'--site-notice-duration': `${snapshot.durationMs}ms`} as CSSProperties;
   return <div ref={bar} className={className} id="siteNotice" role="region" aria-label={t('notice.aria')}
-    data-i18n-aria-label="notice.aria" aria-live="polite" hidden={snapshot.hidden} style={style}>
+    data-i18n-aria-label="notice.aria" aria-live="polite" hidden={snapshot.hidden || !visible} style={style}>
     <div className="site-notice-header">
       <strong className="site-notice-label" data-i18n="notice.label">{t('notice.label')}</strong>
       <div className="site-notice-actions">

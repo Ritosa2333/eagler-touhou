@@ -57,7 +57,7 @@ function managedPlan(game = 'th10', options = {}) {
       base: {files: ['data']}, components: {}}, files: {data: {objectId: `obj-${game}-data`, revision: 'data-r1'}}},
     configure: {music: 'none', options}};
 }
-function fixture({onFrameRetired, ...overrides} = {}) {
+function fixture({onFrameRetired, worker, ...overrides} = {}) {
   const messageListeners = new Set(), loadListeners = new Set(), eventContexts = [], outbound = [], navigations = [], retained = [], released = [], codeCalls = [], dataReads = [];
   const timers = deterministicTimers();
   const host = {location: {origin, href: `${baseUrl}?game=th06`},
@@ -71,7 +71,7 @@ function fixture({onFrameRetired, ...overrides} = {}) {
     removeAttribute(name) {assert.equal(name, 'src'); runtime.location.replace('about:blank');},
     addEventListener(type, listener) {assert.equal(type, 'load'); loadListeners.add(listener);}, removeEventListener(_type, listener) {loadListeners.delete(listener);}};
   const service = owners.createRuntimeService({translate: key => key, frame, hostWindow: host, baseUrl, timers,
-    onFrameRetired,
+    onFrameRetired, worker,
     fetchImpl: async () => {throw new Error('Unexpected network in deterministic service fixture');},
     onEvent: (message, context) => eventContexts.push({message, context, snapshot: service.getSnapshot()}),
     dependencies: {
@@ -283,6 +283,17 @@ for (const authority of ['catalog', 'host']) test(`runtime: main live ${authorit
   assert.equal(source.pathname, new URL(plan.entry, baseUrl).pathname); assert.equal(source.searchParams.get('managedData'), '1');
   assert.equal(source.searchParams.get('gameGeneration'), plan.generation.id); assert.equal(f.codeCalls.length, 0);
   assert.equal(f.retained.length, 1); assert.equal(f.service.getSnapshot().ready, true);
+});
+test('runtime: offline local package resolves the owning worker program before exact document binding', async () => {
+  const worker = {postMessage() {}};
+  const f = fixture({worker: Promise.resolve(worker)}), plan = managedPlan('th06');
+  plan.publishedRuntime = false; plan.localCatalogRuntime = true; plan.entry = owners.PRODUCT_GAMES.th06.runtime;
+  await f.prepare(plan);
+  assert.equal(f.codeCalls.length, 1);
+  assert.equal(f.codeCalls[0].options.worker, worker);
+  assert.equal(new URL(f.service.getSnapshot().source).pathname, new URL('__runtime/test-generation/entry.html', baseUrl).pathname);
+  assert.equal(f.service.getSnapshot().codeGeneration, 'code-r1');
+  assert.equal(f.service.getSnapshot().ready, true);
 });
 
 test('runtime: file-only readiness skips configure/resources and cannot launch gameplay', async () => {

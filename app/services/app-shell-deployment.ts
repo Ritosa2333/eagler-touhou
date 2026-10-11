@@ -1,7 +1,7 @@
 /** Explicit artifact configuration, never inferred from a query or a parent SW. */
 import {REACT_APP_SHELL_META, normalizeReactMountPath, validateReactAppShellDeployment as validateDeployment} from '../../lib/react-app-shell-deployment.mjs';
 export {REACT_APP_SHELL_META, normalizeReactMountPath};
-export interface ReactAppShellDeployment {schema: 'eagler-touhou/react-app-shell/1'; origin: string; mountPath: string}
+export interface ReactAppShellDeployment {schema: 'eagler-touhou/react-app-shell/1'; origin: string; mountPath: string; isolatedOrigin?: boolean}
 
 export function validateReactAppShellDeployment(value: unknown): ReactAppShellDeployment {
   return validateDeployment(value);

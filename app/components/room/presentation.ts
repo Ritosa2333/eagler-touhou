@@ -15,6 +15,9 @@ export function networkMessage(state: RoomOwnerSnapshot, context: RoomViewContex
   const room = state.room;
   if (!room) return '';
   const peers = (room.seats || []).slice(0, room.playerCount).filter((seat, index) => seat && index !== state.seat);
-  return !state.connected || !room.synced ? t('multiplayer.reconnecting') : room.phase !== 'lobby' || context.launched && !context.th09NetworkOverlayOpen ? t('room.pausedTest') : state.seat == null ? t('room.seatToTest') : !peers.length ? t('room.waitPeer') : '';
+  return !state.connected || !room.synced ? roomConnectionMessage(state, t) : room.phase !== 'lobby' || context.launched && !context.th09NetworkOverlayOpen ? t('room.pausedTest') : state.seat == null ? t('room.seatToTest') : !peers.length ? t('room.waitPeer') : '';
+}
+export function roomConnectionMessage(state: RoomOwnerSnapshot, t: Translate): string {
+  return t(state.connected ? 'multiplayer.syncingMembers' : state.room?.connection === 'reconnecting' ? 'multiplayer.reconnecting' : 'multiplayer.connectingRoom');
 }
 export const roomMiB = (bytes: unknown) => `${(Math.max(0, Number(bytes) || 0) / 1048576).toFixed(1)} MiB`;

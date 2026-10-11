@@ -18,7 +18,7 @@ export function LobbyOptionsHost({open, onCloseRequest, children, foregroundActi
   return <dialog ref={dialog.ref} className="lobby-options-host" id="lobbyOptionsDialog" aria-label={t('lobby.gameOptions')}
     onCancel={event => {event.preventDefault(); onCloseRequest();}}
     onClick={event => {if (event.target === event.currentTarget) onCloseRequest();}}>
-    <div data-launcher-document="" className="lobby-options-document"><div className="main library-layout">
+    <div data-launcher-document="" className="lobby-options-document" tabIndex={-1} autoFocus><div className="main library-layout">
       <OptionsBackdrop onBack={onCloseRequest}/>
       {children}
     </div></div>

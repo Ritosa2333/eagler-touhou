@@ -173,7 +173,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   const preferences = createSitePreferencesModel({storage});
   const unbindPreferences = bindSitePreferencesToDocument(preferences, { windowObj: window});
   const ports = createBrowserPorts({document, window, baseUrl});
-  const startup = createStartupController({document, window, baseUrl});
+  const startup = createStartupController({document, window, baseUrl,
+    preloadLabel: context => t(context === 'lobby' ? 'lobby.loading' : 'preload.aria')});
   const startupError = createStartupErrorModel({translate: t, launched: () => runtime?.getSnapshot().launched === true, copyText: ports.copyText, toast: feedback.toast});
   const transfer = createTransferModel({translate: t,
     context: () => ({epoch: runtime?.getSnapshot().epoch ?? null, launched: runtime?.getSnapshot().launched === true,
@@ -755,7 +756,10 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
     },
     async copyRoomCode(code: string) {feedback.toast(await ports.copyText(code) ? t('status.roomCodeCopied') : t('status.roomCode', {code}));},
     bindNavigation(value: BrowserNavigationPorts) {navigation = value; if (pendingHostSelection) {value.applyHostSelection(pendingHostSelection); pendingHostSelection = null;} return () => {if (navigation === value) navigation = null;};},
-    productAvailable: (product: ProductId) => metadata.getSnapshot().products.includes(product),
+    // The directory can offer MP settings before a hosted MP Runtime exists.
+    // Acquisition/launch retains its own resource gate, including local import.
+    productAvailable: (product: ProductId) => metadata.getSnapshot().products.includes(product) ||
+      isMultiplayerProductId(product) && directory.getSnapshot().products.includes(product),
     reportProductSelection(product: ProductId, changed: boolean) {
       const title = PRODUCT_GAMES[gameIdForProduct(product)].title;
       feedback.translatedStatus(() => t(changed ? 'status.switchedProduct' : 'status.selectedProduct', {product: title}));

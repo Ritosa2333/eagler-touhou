@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { PRODUCT_GAMES, multiplayerConfigForProduct, multiplayerInputTimingPolicy } from "../lib/contracts/product-catalog.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const relayPath = resolve(root, "server/netplay-relay.mjs");
+const relayPath = resolve(root, process.env.EAGLER_TEST_RELAY_PATH || "server/netplay-relay.mjs");
 const multiplayerGames = Object.entries(PRODUCT_GAMES)
   .filter(([, product]) => !!product.multiplayer)
   .map(([game]) => game);
@@ -77,6 +77,9 @@ async function openLobby(port, room, clientId, policy = '') {
   const initial = await first;
   assert.equal(initial.type, "state");
   assert.equal(initial.room.prankMode, false, 'prank mode stays disabled at room creation');
+  const initialPolicy = multiplayerInputTimingPolicy(multiplayerConfigForProduct(room.split('-')[0]));
+  assert.equal(initial.room.predictionLimit, initialPolicy.predictionLimit, `${room}: initial prediction policy`);
+  assert.equal(initial.room.adonisMode, initialPolicy.rollback ? 0 : 1, `${room}: initial timing mode`);
   return socket;
 }
 
