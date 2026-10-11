@@ -8,7 +8,7 @@ const config = {schema: 'eagler-touhou/react-app-shell/1', origin: 'https://isol
 const document = (value, count = 1) => ({querySelectorAll: () => Array.from({length: count}, () => ({getAttribute: () => JSON.stringify(value)}))});
 test('optional test/fixture runtime bound does not claim all Node22 releases', () => {
   for (const version of ['22.18.0', '23.6.0', '24.0.0', '24.19.0']) assert.doesNotThrow(() => assertUiRewriteRuntime(version));
-  for (const version of ['20.19.0', '22.0.0', '22.17.0', '23.5.0']) assert.throws(() => assertUiRewriteRuntime(version), /22\.18\+.*23\.6\+.*24\+.*Only Node\.js 24\.19/);
+  for (const version of ['20.19.0', '22.0.0', '22.17.0', '23.5.0']) assert.throws(() => assertUiRewriteRuntime(version), /22\.18\+.*23\.6\+.*24\+.*Node\.js 24 is the verified/);
 });
 test('default and mount-only builds have no App Shell opt-in', () => {
   assert.equal(reactDeploymentConfig({}).appShell, null);
