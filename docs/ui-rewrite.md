@@ -96,13 +96,13 @@ clients. Test memberships were released and temporary tabs/services closed.
 
 The frozen TH11 Runtime generation used for this test is
 `4c629ac48793a981cc74c6cc8ba2ca20496982ee7f1b2fedd656b2cb99cc2d6c`.
-Its native pause Return-to-Title **failed** the required terminal flow: P2 retired
-into the room, while P1 stopped on a control-channel error and needed the recovery
-button. Its `multiplayer.mjs` native terminal calls do not set `returnToMenu:true`;
-the shell supports that flag, but the producer does not send it. React's
-flag-authenticated departure is covered by mounted regression tests; this is not
-an end-to-end PASS. Replace/fix and freeze the Runtime, then repeat terminal
-return and membership-release acceptance before promotion.
+Observed native pause Return-to-Title behavior: P2 retired into the room, while
+P1 stopped on a control-channel error and could use the recovery button to return
+to that room. On 2026-10-11 the user clarified that one side returning and the
+other side stopping is intended. The prior requirement that both clients exit
+automatically was incorrect and is withdrawn. This behavior is not a merge
+blocker. The missing `returnToMenu` marker remains an observed protocol fact,
+not a requirement to force both players out of the room.
 
 The synchronized rule text also needs the user's review. It still describes
 Graze in the personal HUD, TH11 P drops as 1x/2x, generic Bomb invulnerability
@@ -116,5 +116,6 @@ Earlier all-title browser evidence is retained separately in
 candidate. No new 3P/Extra/spectator complete run, mobile-device, forced TURN,
 long-duration Replay, production cutover or formal release is claimed here.
 
-Before promotion: repair and repeat native terminal acceptance, approve/synchronize
-the rule wording, and obtain green Linux CI including the atomic-deployment gate.
+Before promotion: approve/synchronize the rule wording and obtain green Linux CI
+including the atomic-deployment gate. One-sided return stopping its peer is the
+accepted behavior, not an outstanding terminal-flow repair.
