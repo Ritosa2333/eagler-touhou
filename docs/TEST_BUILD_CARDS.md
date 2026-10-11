@@ -3,8 +3,8 @@
 TH10 的 directory SDL3 / Emscripten Runtime 是正式产品。普通版 TH08（`th08.html`）始终是
 独立产品；Launcher 仍只有一个 TH10 卡片。
 
-Host Manifest 的 `shared.testBuild` 只保留开发清单兼容字段，不再控制 TH10
-卡片显示。`false`、字段缺失、非法值或 Host Manifest 不可用都不应隐藏
+Site Manifest 的 `shared.testBuild` 只保留开发清单兼容字段，不再控制 TH10
+卡片显示。`false`、字段缺失、非法值或 Site Manifest 不可用都不应隐藏
 正式 TH10 卡片。
 
 开发服务器仍生成 `testBuild: true`，供旧客户端兼容；打包不应根据它筛除
@@ -26,5 +26,5 @@ node tests/test-host-manifest.mjs
 npm run test:test-build-cards:browser
 ```
 
-卡片测试覆盖不同 Host Manifest 标志、清单失败、分类与刷新、深链接和无
+卡片测试覆盖不同 Site Manifest 标志、清单失败、分类与刷新、深链接和无
 JavaScript 的静态可见性；它不证明公网部署、真实游戏或手机性能。

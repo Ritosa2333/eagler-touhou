@@ -6,7 +6,7 @@ import { basename, dirname, isAbsolute, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 
-import { validateHostManifest } from "../../lib/contracts/host-manifest.mjs";
+import { validateSiteManifest } from "../../lib/contracts/site-manifest.mjs";
 import { RESOURCE_MODE_EXTERNAL, RESOURCE_MODE_HOSTED } from "../../lib/contracts/resource-mode.mjs";
 import { normalizeProductSelection } from "../../lib/product-selection.mjs";
 import { verifyReleaseManifest } from "../../lib/release-manifest.mjs";
@@ -105,7 +105,7 @@ const sourceDeployment = JSON.parse(await readFile(resolve(source, "deployment.j
 if (sourceDeployment?.format !== "eagler-touhou-deployment/1" || sourceDeployment.resourceMode !== RESOURCE_MODE_HOSTED) {
   throw new Error("--source must be an integrity-verified Hosted deployment");
 }
-const sourceManifest = validateHostManifest(JSON.parse(await readFile(resolve(source, "host-manifest.json"), "utf8")));
+const sourceManifest = validateSiteManifest(JSON.parse(await readFile(resolve(source, "site-manifest.json"), "utf8")));
 if (sourceManifest.shared.resourceMode !== RESOURCE_MODE_HOSTED) {
   throw new Error("Hosted source manifest has the wrong resource mode");
 }
@@ -155,7 +155,7 @@ try {
     resolve(project, "scripts/package-server.mjs"),
     `--output=${candidate}`,
     `--runtime-release=${runtimeRelease}`,
-    `--host-manifest=${resolve(source, "host-manifest.json")}`,
+    `--site-manifest=${resolve(source, "site-manifest.json")}`,
     `--artwork-dir=${resolve(source, "assets")}`,
     `--feature-config=${featureConfig}`,
     `--external-recovery-context=${recoveryContext}`,
@@ -164,7 +164,7 @@ try {
     `--test-build=${args["test-build"] || "0"}`,
   ], { cwd: project });
 
-  const candidateManifest = validateHostManifest(JSON.parse(await readFile(resolve(candidate, "host-manifest.json"), "utf8")));
+  const candidateManifest = validateSiteManifest(JSON.parse(await readFile(resolve(candidate, "site-manifest.json"), "utf8")));
   if (candidateManifest.shared.resourceMode !== RESOURCE_MODE_EXTERNAL ||
       (candidateManifest.shared.netplayRelay || null) !== relay ||
       !isDeepStrictEqual(candidateManifest.shared.originMigration || null, originMigration) ||

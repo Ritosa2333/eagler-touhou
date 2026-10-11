@@ -24,7 +24,7 @@ param(
     [string] $ThtkThanm,
     [string] $ArtworkDirectory,
     [string] $FeatureConfig,
-    [string] $HostManifest,
+    [string] $SiteManifest,
     [string[]] $Games,
     [string] $Profile = 'web-validation-package',
     [switch] $SuppressCompletionSummary
@@ -171,10 +171,10 @@ function Resolve-RuntimeBuildPlan(
 }
 
 if ($resourceMode -eq 'import') {
-    if (-not $HostManifest) {
-        throw "$resourceMode requires -HostManifest pointing to a verified hosted host-manifest.json"
+    if (-not $SiteManifest) {
+        throw "$resourceMode requires -SiteManifest pointing to a verified hosted site-manifest.json"
     }
-    $hostManifestPath = (Resolve-Path -LiteralPath $HostManifest).Path
+    $hostManifestPath = (Resolve-Path -LiteralPath $SiteManifest).Path
     $importArtwork = $artworkOverride
     if (-not $importArtwork) {
         $hostArtwork = Join-Path (Split-Path $hostManifestPath -Parent) 'assets'
@@ -236,7 +236,7 @@ if ($resourceMode -eq 'import') {
         (Join-Path $project 'scripts\package-server.mjs'),
         "--output=$output",
         "--feature-config=$featureConfigPath",
-        "--host-manifest=$hostManifestPath",
+        "--site-manifest=$hostManifestPath",
         "--games=$([string]::Join(',', $Games))",
         "--profile=$Profile"
     )

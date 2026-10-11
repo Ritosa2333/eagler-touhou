@@ -1,6 +1,7 @@
 import json
 import socket
 import subprocess
+import sys
 import time
 import urllib.request
 from pathlib import Path
@@ -9,6 +10,8 @@ from playwright.sync_api import sync_playwright
 
 
 PROJECT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT / "tests"))
+from support.launcher_target import launcher_server_command
 
 _adapter_contracts = json.loads(subprocess.run(
     ["node", "scripts/inspect-adapter-contract.mjs"],
@@ -191,7 +194,7 @@ def main() -> int:
     port = free_port()
     origin = f"http://127.0.0.1:{port}"
     process = subprocess.Popen(
-        ["node", "scripts/serve.mjs", str(port)],
+        launcher_server_command(PROJECT, port),
         cwd=PROJECT,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -235,7 +238,7 @@ def main() -> int:
                         }
                 if fault['mode']:
                     subprocess.run(['node', '--input-type=module', '-e',
-                        "import {validateHostManifest} from './lib/contracts/host-manifest.mjs';import {readFileSync} from 'node:fs';validateHostManifest(JSON.parse(readFileSync(0,'utf8')));"],
+                        "import {validateSiteManifest} from './lib/contracts/site-manifest.mjs';import {readFileSync} from 'node:fs';validateSiteManifest(JSON.parse(readFileSync(0,'utf8')));"],
                         input=json.dumps(manifest), text=True, cwd=PROJECT, check=True)
                 headers = {
                     key: value for key, value in response.headers.items()
@@ -248,7 +251,7 @@ def main() -> int:
                     body=json.dumps(manifest),
                 )
 
-            page.route("**/host-manifest.json", strip_published_ogg)
+            page.route("**/site-manifest.json", strip_published_ogg)
             page.route("**/release-catalog.json", lambda route: route.fulfill(status=404, body="not published in this test"))
             def runtime_stub(route):
                 stub = RUNTIME_PROTOCOL_STUB

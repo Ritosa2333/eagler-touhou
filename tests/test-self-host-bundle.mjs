@@ -56,18 +56,17 @@ for (const file of FRONTEND_PACKAGE_FILES) {
   const source = relative(project, resolveFrontendPackageSource(file)).replaceAll("\\", "/");
   assert.equal(targets.get(file), source, `frontend publication input is missing from self-host bundle: ${file}`);
 }
-for (const file of ["app.js", "assets/notice-github.svg", "vendor/fflate.min.js"]) {
-  assert.equal(targets.get(file), `public/${file}`,
+for (const file of ["assets/notice-github.svg", "vendor/fflate.min.js"]) {
+  assert.equal(targets.get(file), relative(project,resolveFrontendPackageSource(file)).replaceAll("\\","/"),
     `authored browser source must be copied from public/ without changing its self-host target: ${file}`);
 }
 for (const file of ["index.html", "en.html", "styles.css"]) {
-  assert.match(targets.get(file), /^\.cache\/build\/optimized\//,
+  assert.match(targets.get(file), /^\.cache\/build\/ui-rewrite\/client\//,
     `optimized browser output must be used for ${file}`);
 }
 assert.ok([...targets.keys()].every(target => !target.startsWith("public/")),
   "the source-only public/ directory must not leak into self-host bundle targets");
 for (const required of [
-  "assets/launcher/app.mjs",
   "assets/contracts/product-catalog.mjs",
   "host/build.mjs",
   "host/build-import.mjs",
@@ -120,8 +119,8 @@ try {
     await mkdir(resolve(target, ".."), { recursive: true });
     await cp(source, target);
   }
-  const packagedLauncher = await import(pathToFileURL(resolve(smokeRoot, "lib/launcher-build.mjs")).href);
-  const packagedResult = await packagedLauncher.ensureLauncherBuild({ force: true });
+  const packagedLauncher = await import(pathToFileURL(resolve(smokeRoot, "lib/client-services-build.mjs")).href);
+  const packagedResult = await packagedLauncher.ensureClientServicesBuild({ force: true });
   assert.deepEqual(packagedResult, { built: false, mode: "prebuilt", sourceCount: 0 });
   assert.equal(
     packagedLauncher.resolveBrowserPublicationSource("assets/contracts/product-catalog.mjs"),
@@ -134,8 +133,8 @@ try {
     "self-host bundle must resolve browser facades from packaged root files",
   );
   const packagedManifest = await import(pathToFileURL(resolve(smokeRoot, "lib/frontend-manifest.mjs")).href);
-  assert.ok(packagedManifest.BROWSER_MODULE_FILES.includes("app.js"));
-  assert.ok(packagedManifest.BROWSER_MODULE_FILES.includes("assets/launcher/app.mjs"));
+  assert.ok(!packagedManifest.BROWSER_MODULE_FILES.includes("app.js"));
+  assert.ok(!packagedManifest.BROWSER_MODULE_FILES.includes("assets/launcher/app.mjs"));
   assert.ok(packagedManifest.BROWSER_MODULE_FILES.length > 2,
     "self-host bundle must preserve split Launcher chunks for offline feature loading");
   assert.ok(packagedManifest.APP_SHELL_FILES.includes("features.css"));

@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
-import { ensureLauncherBuild } from "../lib/launcher-build.mjs";
-import { HOST_MANIFEST_SCHEMA } from "../lib/contracts/host-manifest.mjs";
+import { ensureClientServicesBuild } from "../lib/client-services-build.mjs";
+import { SITE_MANIFEST_SCHEMA } from "../lib/contracts/site-manifest.mjs";
 import { RELEASE_CATALOG_SCHEMA } from "../lib/contracts/release-catalog.mjs";
 
-await ensureLauncherBuild();
+await ensureClientServicesBuild();
 const { loadRemoteMetadata } = await import("../.cache/build/browser/assets/launcher/remote-metadata.mjs");
 
 const hostManifest = {
-  schema: HOST_MANIFEST_SCHEMA,
+  schema: SITE_MANIFEST_SCHEMA,
   protocol: "eagler-touhou/1",
   profile: "web-validation-test",
   shared: { resourceMode: "hosted", vanillaFont: "../shared/msgothic.ttc", unicodeFont: "../shared/unifont.otf" },
@@ -27,22 +27,22 @@ const hostManifest = {
 };
 const releaseCatalog = { schema: RELEASE_CATALOG_SCHEMA, games: {} };
 
-const both = await loadRemoteMetadata(async (_file, kind) => kind === "host-manifest" ? hostManifest : releaseCatalog);
-assert.equal(both.hostManifest.ok, true);
+const both = await loadRemoteMetadata(async (_file, kind) => kind === "site-manifest" ? hostManifest : releaseCatalog);
+assert.equal(both.siteManifest.ok, true);
 assert.equal(both.releaseCatalog.ok, true);
 
 const hostOnly = await loadRemoteMetadata(async (_file, kind) => {
   if (kind === "release-catalog") throw new Error("catalog offline");
   return hostManifest;
 });
-assert.equal(hostOnly.hostManifest.ok, true);
+assert.equal(hostOnly.siteManifest.ok, true);
 assert.equal(hostOnly.releaseCatalog.ok, false);
 
 const catalogOnly = await loadRemoteMetadata(async (_file, kind) => {
-  if (kind === "host-manifest") throw new Error("manifest offline");
+  if (kind === "site-manifest") throw new Error("manifest offline");
   return releaseCatalog;
 });
-assert.equal(catalogOnly.hostManifest.ok, false);
+assert.equal(catalogOnly.siteManifest.ok, false);
 assert.equal(catalogOnly.releaseCatalog.ok, true);
 
 console.log(JSON.stringify({ remoteMetadata: "PASS", independentFailures: true }));

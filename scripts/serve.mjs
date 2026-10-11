@@ -1,6 +1,7 @@
+import {LEGACY_HOST_MANIFEST_FILE, legacyHostManifestResponse} from '../compat/site-manifest.mjs';
 import { createReadStream, existsSync, watch } from "node:fs";
 import { createHash } from "node:crypto";
-import { stat } from "node:fs/promises";
+import { stat, readFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { resolve, sep } from "node:path";
 import { pipeline } from "node:stream/promises";
@@ -15,13 +16,14 @@ import {
   staticContentType,
 } from "../server/static-content-policy.mjs";
 import { buildAppShell } from "../lib/app-shell-build.mjs";
-import { createDevelopmentHostManifest } from "../lib/development-host-manifest.mjs";
+import { APP_SHELL_RETIREMENT_WORKER } from "../lib/app-shell-retirement.mjs";
+import { createDevelopmentSiteManifest } from "../lib/development-site-manifest.mjs";
 import { DEVELOPMENT_CONTENT } from "../lib/development-content.mjs";
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
-import { FRONTEND_PACKAGE_FILES, hostArtworkFiles, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
-import { HOST_MANIFEST_FILE } from "../lib/contracts/host-manifest.mjs";
+import { REACT_FRONTEND_ARTIFACT, FRONTEND_PACKAGE_FILES, hostArtworkFiles, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
+import { SITE_MANIFEST_FILE } from "../lib/contracts/site-manifest.mjs";
 import { RELEASE_CATALOG_FILE, RELEASE_CATALOG_SCHEMA } from "../lib/contracts/release-catalog.mjs";
-import { isMappedBrowserPublicationPath, resolveBrowserPublicationSource } from "../lib/launcher-build.mjs";
+import { isMappedBrowserPublicationPath, resolveBrowserPublicationSource } from "../lib/client-services-build.mjs";
 import { privateFrontendAssetSource } from "../lib/private-frontend-assets.mjs";
 import {
   APP_SHELL_OUTPUT_FILE,
@@ -30,6 +32,7 @@ import {
 } from "../lib/app-shell-policy.mjs";
 import { assertSafeDevelopmentServerScope } from "../lib/development-server-scope.mjs";
 import { workspaceRoot } from "../lib/workspace-layout.mjs";
+import { resolveRuntimeGenerationWorkerSource } from "../lib/contracts-build.mjs";
 
 const host = process.env.EAGLER_TOUHOU_HOST || "127.0.0.1";
 const port = Number.parseInt(process.argv[2] || process.env.EAGLER_TOUHOU_PORT || "8130", 10);
@@ -39,6 +42,20 @@ const root = resolve(process.argv[3] || resolve(project, ".."));
 assertSafeDevelopmentServerScope({ host, project, root });
 const sourceDevelopmentServer = root === resolve(project, "..");
 const servedApp = sourceDevelopmentServer ? project : root;
+// This development server has always served the root mount. Nested React
+// artifacts belong to a matching mounted Host/static server, never this root.
+if (REACT_FRONTEND_ARTIFACT.mountPath !== "/") {
+  throw new Error("The development server requires a root-mounted React artifact; rebuild with EAGLER_REACT_MOUNT_PATH=/");
+}
+if (!sourceDevelopmentServer) {
+  throw new Error("Explicit directory serving for React must use the verified packaged static server, not the source development server");
+}
+if (REACT_FRONTEND_ARTIFACT.appShell &&
+    REACT_FRONTEND_ARTIFACT.appShell.origin !== `http://${host}:${port}`) {
+  throw new Error("React App Shell origin does not match this development server");
+}
+const appShellEnabled = REACT_FRONTEND_ARTIFACT.appShell !== null;
+
 const defaultArtworkDirectory = sourceDevelopmentServer ? resolve(workspaceRoot(), "games", "host-artwork") : null;
 const configuredArtworkDirectory = process.env.EAGLER_TOUHOU_ARTWORK_DIR
   ? resolve(process.env.EAGLER_TOUHOU_ARTWORK_DIR)
@@ -50,28 +67,33 @@ const configuredNetplayRelay = process.env.EAGLER_TOUHOU_NETPLAY_RELAY?.trim() |
 const hostArtwork = new Set(hostArtworkFiles(Object.keys(DEVELOPMENT_CONTENT.games)));
 const selectedDevelopmentGames = process.env.EAGLER_DEVELOPMENT_GAMES?.split(",").map(value => value.trim()).filter(Boolean);
 const developmentMetadata = sourceDevelopmentServer ? new Map([
-  [HOST_MANIFEST_FILE, `${JSON.stringify(await createDevelopmentHostManifest({
+  [SITE_MANIFEST_FILE, `${JSON.stringify(await createDevelopmentSiteManifest({
     netplayRelay: configuredNetplayRelay,
     games: selectedDevelopmentGames,
   }), null, 2)}\n`],
   [RELEASE_CATALOG_FILE, `${JSON.stringify({ schema: RELEASE_CATALOG_SCHEMA, games: {} }, null, 2)}\n`],
 ]) : null;
+if (developmentMetadata) developmentMetadata.set(LEGACY_HOST_MANIFEST_FILE,
+  JSON.stringify(legacyHostManifestResponse(JSON.parse(developmentMetadata.get(SITE_MANIFEST_FILE)))) + '\n');
+
 const localAppShellOptions = {
   quiet: true,
   globDirectory: servedApp,
   additionalGlobPatterns: APP_SHELL_RUNTIME_GLOBS,
   deferredPathPrefixes: ["runtime/"],
+  ...(appShellEnabled ? {workerContractSource: await readFile(await resolveRuntimeGenerationWorkerSource({project}), "utf8")} : {}),
 };
 const isRuntimeAppShellPath = value => /^runtime\/(?:.*\.(?:html|js|wasm))$/i.test(
   String(value || "").replaceAll("\\", "/")
 );
-const initialAppShell = await buildAppShell(localAppShellOptions);
-let lastAppShellBuildId = initialAppShell.buildId;
-let appShellWorker = initialAppShell.worker;
+const initialAppShell = appShellEnabled ? await buildAppShell(localAppShellOptions) : null;
+let lastAppShellBuildId = initialAppShell?.buildId ?? createHash("sha256").update(APP_SHELL_RETIREMENT_WORKER).digest("hex");
+let appShellWorker = initialAppShell?.worker ?? APP_SHELL_RETIREMENT_WORKER;
 let appShellRebuildTimer = null;
 let appShellBuildRunning = false;
 let appShellBuildQueued = false;
 async function rebuildAppShell() {
+  if (!appShellEnabled) return;
   if (appShellBuildRunning) {
     appShellBuildQueued = true;
     return;
@@ -93,7 +115,7 @@ async function rebuildAppShell() {
     appShellBuildRunning = false;
   }
 }
-const appShellWatcher = watch(servedApp, { recursive: true }, (_event, filename) => {
+const appShellWatcher = appShellEnabled ? watch(REACT_FRONTEND_ARTIFACT.root, { recursive: true }, (_event, filename) => {
   if (!filename) return;
   const watchedPath = String(filename).replaceAll("\\", "/");
   const publicLogicalPath = watchedPath.startsWith("public/") ? watchedPath.slice("public/".length) : null;
@@ -102,8 +124,8 @@ const appShellWatcher = watch(servedApp, { recursive: true }, (_event, filename)
       !isRuntimeAppShellPath(watchedPath)) return;
   if (appShellRebuildTimer) clearTimeout(appShellRebuildTimer);
   appShellRebuildTimer = setTimeout(() => void rebuildAppShell(), 500);
-});
-appShellWatcher.unref();
+}) : null;
+appShellWatcher?.unref();
 
 function configuredPaths(value, fallbacks) {
   if (value) return value.split(";").map(path => resolve(path.trim())).filter(Boolean);
@@ -175,6 +197,7 @@ createServer(async (request, response) => {
     }
     const appShellUrl = `/${APP_SHELL_OUTPUT_FILE}`;
     if (pathname === appShellUrl) {
+      if (!appShellWorker) throw new Error("App Shell is not enabled for this frontend artifact");
       const tag = `\"${lastAppShellBuildId}\"`;
       const headers = {
         "Content-Type": "text/javascript; charset=utf-8",
@@ -200,6 +223,13 @@ createServer(async (request, response) => {
     let file;
     const publicPath = pathname.replace(/^\//, "");
     const frontendPath = publicPath || "index.html";
+    const possibleLegacyPath = frontendPath.startsWith("public/") ? frontendPath.slice("public/".length) : frontendPath;
+    if (!FRONTEND_PACKAGE_FILES.includes(frontendPath) &&
+        (possibleLegacyPath === "app.js" || possibleLegacyPath.startsWith("assets/launcher/") ||
+         isMappedBrowserPublicationPath(possibleLegacyPath))) {
+      throw new Error("Legacy frontend URL is not part of the selected React artifact");
+    }
+
     const privateFrontendAsset = sourceDevelopmentServer ? privateFrontendAssetSource(frontendPath) : null;
     if (sourceDevelopmentServer && FRONTEND_PACKAGE_FILES.includes(frontendPath)) {
       file = resolveFrontendPackageSource(frontendPath);

@@ -27,13 +27,13 @@ import {
   importedGameDataMetadataKey,
   importedOggMetadataKey,
   legacyLocalAssetKey,
-} from "../legacy/legacy-import-storage.mjs";
+} from "../compat/legacy-import-storage.mjs";
 
 const html = await readFile(resolveFrontendPackageSource("migrate.html"), "utf8");
 const indexHtml = await readFile(resolveFrontendPackageSource("index.html"), "utf8");
-const app = await readFile(new URL("../src/launcher/app.mts", import.meta.url), "utf8");
-const legacyImportStorage = await readFile(new URL("../legacy/legacy-import-storage.mjs", import.meta.url), "utf8");
-const legacyGamePack = await readFile(new URL("../legacy/legacy-game-pack.mjs", import.meta.url), "utf8");
+const app = (await Promise.all(["app/components/launcher/LauncherMasthead.tsx","app/session/browser-session.ts","app/services/language-pack.ts","app/models/site-preferences.ts","src/launcher/game-preferences.mts"].map(file=>readFile(new URL("../"+file,import.meta.url),"utf8")))).join("\n");
+const legacyImportStorage = await readFile(new URL("../compat/legacy-import-storage.mjs", import.meta.url), "utf8");
+const legacyGamePack = await readFile(new URL("../compat/legacy-game-pack.mjs", import.meta.url), "utf8");
 
 // migrate.html intentionally stays one self-contained document so the exact
 // old HTTP Origin can still run the sender after the rest of the application
@@ -109,8 +109,8 @@ for (const forbidden of ["document.cookie", "navigator.storage.getDirectory", "s
 // These two UI flags intentionally remain app-local instead of creating a
 // miscellaneous preference owner. Their literal storage keys are themselves
 // migration contracts and therefore are legitimate source-shape assertions.
-assert.ok(app.includes('const touchHelpSeenKey = "eagler-touch-help-seen-v8";'));
-assert.ok(app.includes('const lessMotionStorageKey = "eagler-touhou-less-motion-v1";'));
+assert.ok(app.includes('eagler-touch-help-seen-v8'));
+assert.ok(app.includes('eagler-touhou-less-motion-v1'));
 
 assert.equal(multiplayerSpectatorRailPositionStorageKey, "eagler-touhou-mp-spectator-rail-position-v1");
 assert.equal(multiplayerSpectatorRailLegacyPositionStorageKey, "eagler.mpSpectatorRail.mobilePosition.v1");
@@ -139,7 +139,7 @@ assert.deepEqual(LEGACY_IMPORT_STORAGE, {
   emscriptenPreloadDatabase: "EM_PRELOAD_CACHE",
 });
 assert.equal(LEGACY_GAME_DATA_CACHE_NAME, "eagler-touhou-game-data-v1");
-assert.ok(app.includes('const languageCacheName = "eagler-touhou-language-packs-v1";'));
+assert.ok(app.includes('eagler-touhou-language-packs-v1'));
 assert.equal(
   legacyLocalAssetKey("http://old.example/.eagler-local/offline/th07/file.bin", "http://old.example"),
   "/.eagler-local/offline/th07/file.bin",
@@ -158,7 +158,7 @@ assert.ok(FRONTEND_PACKAGE_FILES.includes("migrate.html"));
 assert.ok(!APP_SHELL_FILES.includes("migrate.html"),
   "migration protocol must always load from the network instead of a stale App Shell cache");
 assert.match(indexHtml, /id="originMigrationOpen"[^>]+href="migrate\.html"[^>]+hidden/,
-  "Launcher must ship a migration entry that stays inert unless the Host Manifest enables a transition campaign");
+  "Launcher must ship a migration entry that stays inert unless the Site Manifest enables a transition campaign");
 
 console.log(JSON.stringify({
   originMigration: "PASS",

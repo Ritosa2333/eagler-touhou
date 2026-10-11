@@ -258,7 +258,7 @@ HTTP and HTTPS are different browser origins. During a migration window, old
 HTTP-origin data can be transferred only while the exact old-origin migration
 document remains reachable.
 
-The Launcher advertises migration only when the generated Host Manifest
+The Launcher advertises migration only when the generated Site Manifest
 contains:
 
 ```json

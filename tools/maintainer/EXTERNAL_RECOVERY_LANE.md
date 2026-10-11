@@ -43,5 +43,5 @@ generated manifest or checksum list afterward.
 
 After an explicitly authorized staging/recovery upload, run the public
 deployed-site verifier and retain an atomic rollback directory or hosting
-revision. Never patch an active `host-manifest.json`, `release-catalog.json`, or
+revision. Never patch an active `site-manifest.json`, `release-catalog.json`, or
 Package Descriptor in place.

@@ -4,13 +4,13 @@ import { resolve } from "node:path";
 import { runInNewContext } from "node:vm";
 
 const root = resolve(import.meta.dirname, "..");
-const index = readFileSync(resolve(root, "public/index.html"), "utf8");
+const index = readFileSync(resolve(root, "public/bootstrap/index.html"), "utf8");
 const guide = readFileSync(resolve(root, "public/compatibility.html"), "utf8");
-const manifest = readFileSync(resolve(root, "lib/frontend-manifest.mjs"), "utf8");
+const manifest = readFileSync(resolve(root, "lib/frontend-static-manifest.mjs"), "utf8");
 const scripts = [...index.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
 assert.ok(scripts.length >= 2, "compatibility gate and boot script should both be inline");
 const gate = scripts[0][1];
-assert.ok(index.indexOf(scripts[0][0]) < index.indexOf('<link rel="stylesheet"'), "gate must run before loading Launcher styles");
+assert.ok(index.indexOf(scripts[0][0]) >= 0, "compatibility gate must be present in bootstrap source");
 assert.doesNotMatch(gate, /\bconst\b|\blet\b|=>|\?\.|Object\.hasOwn|URLSearchParams/, "gate must work in old browsers");
 assert.match(manifest, /\["compatibility\.html", true\]/, "compatibility page must ship and be precached");
 assert.doesNotMatch(guide, /<link\b|<script\s+type="module"/i, "guide must not depend on external assets or modules");

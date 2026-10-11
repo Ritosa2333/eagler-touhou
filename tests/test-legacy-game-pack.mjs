@@ -4,15 +4,15 @@ import {
   GAME_DATA_PACK_SCHEMA,
   OFFLINE_GAME_PACK_SCHEMA,
   parseStoredGameDataPack,
-} from "../legacy/legacy-game-pack.mjs";
+} from "../compat/legacy-game-pack.mjs";
 import {
   importedGameDataMetadataKey,
   importedOggMetadataKey,
   localGameDataCacheUrl,
   localOggCacheUrl,
   migrateLegacyStoredImport,
-} from "../legacy/legacy-import-storage.mjs";
-import { adaptLegacyGamePackToPackage, adaptLegacyStoredImportToPackage } from "../legacy/legacy-package-adapter.mjs";
+} from "../compat/legacy-import-storage.mjs";
+import { adaptLegacyGamePackToPackage, adaptLegacyStoredImportToPackage } from "../compat/legacy-package-adapter.mjs";
 
 const data = strToU8("legacy-data");
 const dataHash = "11".repeat(32);

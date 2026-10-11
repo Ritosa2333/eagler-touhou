@@ -6,7 +6,8 @@ import puppeteer from 'puppeteer-core';
 import {findChromiumExecutable} from '../lib/chromium-executable.mjs';
 import {FRONTEND_PACKAGE_FILES,resolveFrontendPackageSource} from '../lib/frontend-manifest.mjs';
 import {PRODUCT_GAMES,PRODUCT_IDS} from '../lib/contracts/product-catalog.mjs';
-const files=new Map(FRONTEND_PACKAGE_FILES.map(name=>['/'+name,resolveFrontendPackageSource(name)]));
+import {launcherTestFiles} from './support/launcher-target.mjs';
+const files=await launcherTestFiles(new Map(FRONTEND_PACKAGE_FILES.map(name=>['/'+name,resolveFrontendPackageSource(name)])));
 const games=Object.fromEntries(Object.entries(PRODUCT_GAMES).map(([id,p])=>[id,{
   runtime:p.runtime,...(p.multiplayerRuntime?{multiplayerRuntime:p.multiplayerRuntime}:{}),
   gameData:{path:p.package.dataTarget.slice(1),bytes:1,sha256:'a'.repeat(64),version:'sha256-'+'a'.repeat(64),layout:'sha256-'+'b'.repeat(64)},
@@ -16,9 +17,9 @@ let flag,metadataFailure=false;
 const server=createServer(async(req,res)=>{
   try{
     const path=new URL(req.url,'http://localhost').pathname;
-    if(path==='/host-manifest.json'){
+    if(path==='/site-manifest.json'){
       if(metadataFailure){res.writeHead(503).end();return;}
-      res.setHeader('Content-Type','application/json');res.end(JSON.stringify({schema:'eagler-touhou/host-manifest/1',protocol:'eagler-touhou/1',profile:'web-release-import',shared:{resourceMode:'import',...(flag===undefined?{}:{testBuild:flag})},games}));return;
+      res.setHeader('Content-Type','application/json');res.end(JSON.stringify({schema:'eagler-touhou/site-manifest/1',protocol:'eagler-touhou/1',profile:'web-release-import',shared:{resourceMode:'import',...(flag===undefined?{}:{testBuild:flag})},games}));return;
     }
     if(path==='/release-catalog.json'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify({schema:'eagler-touhou/release-catalog/1',games:{}}));return;}
     const file=files.get(path==='/'?'/index.html':path);if(!file){res.writeHead(404).end();return;}

@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - uses: actions/setup-python@v7
         with:
@@ -29,3 +29,24 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: python -m pip install --requirement requirements-ci.txt
       - run: npm run check
+
+  ui-rewrite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: Fetch pinned main parity source
+        run: |
+          git fetch --no-tags --depth=1 origin edee9633e5e3ee79cd2e1aa334f84f6caf755090
+          git cat-file -e edee9633e5e3ee79cd2e1aa334f84f6caf755090^{commit}
+          git fetch --no-tags --depth=1 origin 8bdf6dbf4a81032f0725cc841b86d03e1465fe07
+          git cat-file -e 8bdf6dbf4a81032f0725cc841b86d03e1465fe07^{commit}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck:ui-rewrite
+      - run: npm run typecheck:ui-rewrite:tools
+      - run: npm run test:ui-rewrite
+      - run: npm run build:ui-rewrite

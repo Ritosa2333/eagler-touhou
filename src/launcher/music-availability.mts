@@ -38,7 +38,7 @@ export interface MusicAvailabilityInput {
   audio: boolean;
   midiAvailable: boolean;
   importServer: boolean;
-  // Compatibility/diagnostic signal from the Host Manifest. Once an installed
+  // Compatibility/diagnostic signal from the Site Manifest. Once an installed
   // generation exists, remote progressive OGG authority comes from that
   // descriptor plus the matching Release Catalog revision instead.
   publishedOggCapable?: boolean;
@@ -78,7 +78,7 @@ export function resolveMusicAvailability({
     localOgg = startupIds.length === 2 && startupIds.every(fileId => !!installed.files[fileId]?.objectId);
     // Once the installed generation already declares OGG files, matching the
     // Release Catalog revision is enough to prove that the same remote OGG
-    // objects remain available for progressive completion. The Host Manifest
+    // objects remain available for progressive completion. The Site Manifest
     // must not have to duplicate that capability or it can disappear from the
     // UI when the Runtime closes and only the Package snapshot remains.
     remoteOgg = !importServer && ids.length >= 2 && remoteRevision === installed.revision;

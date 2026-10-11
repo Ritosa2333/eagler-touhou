@@ -25,7 +25,7 @@ The formal language preparation chain is:
 Host build resolves selected thcrap source
  → format compiler validates/compiles supported resources
  → static language catalog + ZIP with SHA-256 identity
- → Host Manifest / Package Descriptor publishes selected language
+ → Site Manifest / Package Descriptor publishes selected language
  → Launcher validates and installs selected files/fonts
  → Runtime launch
 ```
@@ -80,7 +80,7 @@ Runtime-side arbitrary THCRAP fetching, fixed-buffer long-text binding, temporar
 
 ## Verification
 
-1. Validate source/compile/static catalog/ZIP identity and Host Manifest/Package
+1. Validate source/compile/static catalog/ZIP identity and Site Manifest/Package
    publication.
 2. Check TH06/TH07 path isolation and feature allowlist.
 3. Test representative dialog, Music Room, spell, bomb and portrait text with the named font/render path.

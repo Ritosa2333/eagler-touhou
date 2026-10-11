@@ -7,7 +7,7 @@ import { PRODUCT_GAMES } from "../lib/contracts/product-catalog.mjs";
 import { RESOURCE_MODE_EXTERNAL, RESOURCE_MODE_HOSTED, RESOURCE_MODE_IMPORT, normalizeResourceMode } from "../lib/contracts/resource-mode.mjs";
 import { assertAppShellContract } from "../lib/app-shell-policy.mjs";
 import { RELEASE_CATALOG_FILE, releaseCatalogEntryUrl, validateReleaseCatalog } from "../lib/contracts/release-catalog.mjs";
-import { HOST_MANIFEST_FILE, validateHostManifest } from "../lib/contracts/host-manifest.mjs";
+import { SITE_MANIFEST_FILE, validateSiteManifest } from "../lib/contracts/site-manifest.mjs";
 import { validateExternalResourceFinalUrl, validateExternalResourceRedirect } from "../lib/external-resource-routing.mjs";
 
 if (!process.argv[2]) throw new Error("usage: node scripts/verify-deployed-site.mjs URL");
@@ -136,25 +136,19 @@ for (const [path, result] of results) if (parseRuntimeGenerationPath(path)) {
 }
 
 const releaseCatalogResult = results.get(RELEASE_CATALOG_FILE);
-const hostManifestResult = results.get(HOST_MANIFEST_FILE);
+const hostManifestResult = results.get(SITE_MANIFEST_FILE);
 const legacyGamePackResult = results.get("legacy/legacy-game-pack.mjs");
 const migrationResult = results.get("migrate.html");
 const indexResult = results.get("index.html");
-const appResult = results.get("app.js");
-const appModuleResult = results.get("assets/launcher/app.mjs");
 const appShellWorkerResult = results.get("app-shell-sw.js");
 if (!indexResult) failures.push("index.html: unavailable");
 else if (!/id="originMigrationOpen"[^>]+href="migrate\.html"[^>]+hidden/.test(new TextDecoder().decode(indexResult.bytes))) {
   failures.push("index.html: inert origin migration entry missing");
 }
-if (!appResult) failures.push("app.js: unavailable");
-else if (!new TextDecoder().decode(appResult.bytes).includes('import "./assets/launcher/app.mjs";')) {
-  failures.push("app.js: generated Launcher facade missing");
-}
-if (!appModuleResult) failures.push("assets/launcher/app.mjs: unavailable");
-else if (!new TextDecoder().decode(appModuleResult.bytes).includes("host-manifest-origin-migration-policy/1")) {
-  failures.push("assets/launcher/app.mjs: migration entry is not governed by the Host Manifest campaign");
-}
+if (deployment.frontend?.kind !== 'react') failures.push('deployment must declare the current React frontend');
+if (indexResult && !new TextDecoder().decode(indexResult.bytes).includes('window.__reactRouterContext')) failures.push('index.html: React hydration entry missing');
+const uiModules=[...results].filter(([path])=>path.startsWith('assets/')&&/\.(?:js|mjs)$/.test(path));
+if (!uiModules.some(([,result])=>new TextDecoder().decode(result.bytes).includes('host-manifest-origin-migration-policy/1'))) failures.push('React frontend: migration entry policy missing');
 if (!migrationResult) failures.push("migrate.html: unavailable");
 else {
   const migrationHtml = new TextDecoder().decode(migrationResult.bytes);
@@ -176,7 +170,7 @@ else if (!/^(?:text|application)\/javascript\b/i.test(legacyGamePackResult.conte
   failures.push(`legacy/legacy-game-pack.mjs: invalid module MIME ${legacyGamePackResult.contentType || "missing"}`);
 }
 if (!releaseCatalogResult) failures.push(`${RELEASE_CATALOG_FILE}: unavailable`);
-else if (!hostManifestResult) failures.push(`${HOST_MANIFEST_FILE}: unavailable`);
+else if (!hostManifestResult) failures.push(`${SITE_MANIFEST_FILE}: unavailable`);
 else {
   let catalog;
   try { catalog = validateReleaseCatalog(JSON.parse(new TextDecoder().decode(releaseCatalogResult.bytes))); }
@@ -185,17 +179,18 @@ else {
     catalog = null;
   }
   let games;
-  try { games = validateHostManifest(JSON.parse(new TextDecoder().decode(hostManifestResult.bytes))); }
+  try { games = validateSiteManifest(JSON.parse(new TextDecoder().decode(hostManifestResult.bytes))); }
   catch (error) {
-    failures.push(`${HOST_MANIFEST_FILE}: ${error?.message || error}`);
+    failures.push(`${SITE_MANIFEST_FILE}: ${error?.message || error}`);
     games = null;
   }
   if (!games || !catalog) {
-    // Host Manifest validation already recorded the concrete failure.
+    // Site Manifest validation already recorded the concrete failure.
   } else {
     if (!games.shared?.gameDataFallback) {
-      console.warn("OPERATOR WARNING: deployed Host Manifest has no gameDataFallback; configure the fallback download link.");
+      console.warn("OPERATOR WARNING: deployed Site Manifest has no gameDataFallback; configure the fallback download link.");
     }
+  if (deployment.appShell) {
   if (!appShellWorkerResult) {
     failures.push("app-shell-sw.js: unavailable");
   } else {
@@ -213,12 +208,13 @@ else {
       failures.push(`App Shell deployment contract invalid: ${error?.message || error}`);
     }
   }
+  } else if (appShellWorkerResult) failures.push('disabled offline mode published an unexpected Service Worker');
   const declaredResourceMode = deployment.resourceMode || "hosted";
   const resourceMode = normalizeResourceMode(declaredResourceMode);
   if (!resourceMode) failures.push(`invalid resourceMode: ${declaredResourceMode}`);
   if (catalog.schema !== "eagler-touhou/release-catalog/1" || !catalog.games ||
       normalizeResourceMode(games.shared?.resourceMode || "hosted") !== resourceMode) {
-    failures.push("Release Catalog / Host Manifest resource mode mismatch");
+    failures.push("Release Catalog / Site Manifest resource mode mismatch");
   }
   if (resourceMode === RESOURCE_MODE_IMPORT) {
     if (games.shared?.vanillaFont != null || games.shared?.unicodeFont != null) failures.push(`${resourceMode}: runtime font URL must be absent`);

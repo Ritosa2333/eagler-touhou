@@ -14,9 +14,9 @@ import puppeteer from "puppeteer-core";
 import { buildAppShell } from "../lib/app-shell-build.mjs";
 import { APP_SHELL_OUTPUT_FILE } from "../lib/app-shell-policy.mjs";
 import { findChromiumExecutable } from "../lib/chromium-executable.mjs";
-import { ensureLauncherBuild, resolveBrowserPublicationSource } from "../lib/launcher-build.mjs";
+import { ensureClientServicesBuild, resolveBrowserPublicationSource } from "../lib/client-services-build.mjs";
 import { DEFAULT_MULTIPLAYER_PRODUCT_ID, PRODUCT_GAMES, PRODUCT_IDS } from "../lib/contracts/product-catalog.mjs";
-import { HOST_MANIFEST_SCHEMA } from "../lib/contracts/host-manifest.mjs";
+import { SITE_MANIFEST_SCHEMA } from "../lib/contracts/site-manifest.mjs";
 import { RELEASE_CATALOG_SCHEMA } from "../lib/contracts/release-catalog.mjs";
 import { staticContentCompressible, staticContentType } from "../server/static-content-policy.mjs";
 
@@ -69,7 +69,7 @@ function createReferenceManifest() {
     };
   }
   return {
-    schema: HOST_MANIFEST_SCHEMA,
+    schema: SITE_MANIFEST_SCHEMA,
     protocol: "eagler-touhou/1",
     profile: "verified-in-practice-reference",
     shared: {
@@ -111,11 +111,11 @@ function createCertificate(directory) {
 }
 
 async function createReferenceServer(workRoot) {
-  await ensureLauncherBuild();
+  await ensureClientServicesBuild();
   const shell = await buildAppShell({ quiet: true, globDirectory: project });
   const certificate = createCertificate(workRoot);
   const metadata = new Map([
-    ["host-manifest.json", Buffer.from(`${JSON.stringify(createReferenceManifest(), null, 2)}\n`)],
+    ["site-manifest.json", Buffer.from(`${JSON.stringify(createReferenceManifest(), null, 2)}\n`)],
     ["release-catalog.json", Buffer.from(`${JSON.stringify({ schema: RELEASE_CATALOG_SCHEMA, games: {} }, null, 2)}\n`)],
     [APP_SHELL_OUTPUT_FILE, shell.worker],
   ]);
