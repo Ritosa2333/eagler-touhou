@@ -80,6 +80,7 @@
     "test:offline-reload:browser": "python tests/test-offline-reload-browser.py",
     "test:legacy-mount-retirement:browser": "python tests/test-legacy-mount-retirement-browser.py",
     "test:mp-runtime-exit:browser": "python tests/test-mp-runtime-exit-room.py",
+    "test:th11mp-launcher:browser": "npm run build:launcher && python tests/browser/test-th11mp-launcher.py",
     "test:th07mp-launch:browser": "python tests/test-th07mp-launch.py",
     "test:th07mp-ui:browser": "python tests/test-th07mp-ui.py",
     "test:th07mp-webrtc:browser": "python tests/test-th07mp-webrtc.py",
