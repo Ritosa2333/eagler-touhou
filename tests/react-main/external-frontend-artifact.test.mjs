@@ -64,12 +64,12 @@ test('external conversion preserves the verified source frontend rather than cal
     const features = resolve(work, 'features.json');
     await writeFile(features, JSON.stringify({schema: 'eagler-touhou/server-features/1', resourceMode: 'hosted', games: {th08: {languages: ['ja'], thprac: false}}}));
     const hosted = {};
-    for (const [kind, build, site] of [['main', null, null], ['plain', plainBuild, null], ['isolated', isolatedBuild, 'https://review.invalid/review/']]) {
+    for (const [kind, build, site] of [['default', plainBuild, null], ['plain', plainBuild, null], ['isolated', isolatedBuild, 'https://review.invalid/review/']]) {
       const output = hosted[kind] = resolve(work, `hosted-${kind}`);
       await command(['scripts/package-server.mjs', `--output=${output}`, `--runtime-release=${runtime}`, `--feature-config=${features}`,
         '--profile=web-validation-external-frontend', '--games=th08', '--music=midi', `--artwork-dir=${artwork}`, `--th08-assets=${assets}`,
         `--font=${resolve(assets, 'unifont.otf')}`, `--vanilla-font=${resolve(assets, 'msgothic.ttc')}`, ...(site ? [`--site-url=${site}`] : [])],
-      build ? {EAGLER_FRONTEND: 'react', EAGLER_REACT_BUILD_DIRECTORY: build} : {});
+      {EAGLER_REACT_BUILD_DIRECTORY: build, ...(kind === 'plain' ? {EAGLER_FRONTEND: 'react'} : {})});
     }
     // Conversion must consume the verified hosted artifact, not a warm source
     // build, and deployed sites intentionally publish no private .vite inputs.
@@ -81,7 +81,7 @@ test('external conversion preserves the verified source frontend rather than cal
 
     await t.test('React source remains React with unset selection and unavailable checkout artifact', async () => {
       const output = resolve(work, 'external-plain');
-      await convert(hosted.plain, output);
+      await convert(hosted.plain, output, {EAGLER_REACT_BUILD_DIRECTORY: resolve(work, 'missing')});
       await verify(output);
       const source = await json(resolve(hosted.plain, 'deployment.json')), target = await json(resolve(output, 'deployment.json'));
       assert.equal(target.frontend?.kind, 'react');
@@ -107,8 +107,8 @@ test('external conversion preserves the verified source frontend rather than cal
       assert.deepEqual(await hashes(resolve(output, 'runtime')), await hashes(resolve(hosted.isolated, 'runtime')));
     });
     await t.test('default source keeps its verified React bytes when caller artifact is unavailable', async () => {
-      const output = resolve(work, 'external-main');
-      await convert(hosted.main, output, {EAGLER_FRONTEND: 'react', EAGLER_REACT_BUILD_DIRECTORY: resolve(work, 'missing')});
+      const output = resolve(work, 'external-default');
+      await convert(hosted.default, output, {EAGLER_FRONTEND: 'react', EAGLER_REACT_BUILD_DIRECTORY: resolve(work, 'missing')});
       await verify(output);
       const deployment = await json(resolve(output, 'deployment.json'));
       assert.equal(deployment.frontend.kind,'react');

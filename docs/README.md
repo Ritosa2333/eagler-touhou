@@ -58,7 +58,8 @@ document instead.
 
 | Path | Owner / purpose |
 | --- | --- |
-| `public/` | Source-controlled Web surface: HTML, CSS, manifest, static fonts/assets, vendored browser files, and tiny browser entry facades. |
+| `app/` | Current React frontend, shared components, navigation and typed browser services. |
+| `public/` | Authored startup guards, standalone pages, CSS, fonts/assets and vendored browser files. Current launcher HTML is generated from React. |
 | `src/launcher/` | Authoritative Launcher TypeScript implementation. |
 | `src/contracts/` | Typed browser-visible metadata and protocol contracts. |
 | `src/browser-facades/` | Tracked compatibility/publication facades for browser-facing contract URLs; they re-export the typed contract owners and are not TypeScript-generated source. |

@@ -346,25 +346,18 @@ the old HTTP/new HTTPS boundary before the Launcher starts.
 
 ### Browser module delivery
 
-Deployed `/app.js` is the stable browser facade and module entrypoint; its
-source-checkout owner is `public/app.js`.
-`lib/browser-module-graph.mjs`
-derives its complete relative-ESM dependency closure, including literal
-`import("./feature.mjs")` edges emitted by the optimized Launcher.
+The React build emits the browser entrypoints and their hashed dependency graph.
+`lib/react-frontend-artifact.mjs` validates the graph, mount, optional worker
+permission and every published byte before a consumer can use it.
+`lib/frontend-manifest.mjs` exposes that verified artifact to development and
+all site packagers. It does not build or select another UI.
 
-That derived closure is consumed by `lib/frontend-manifest.mjs` for both:
-
-- frontend publication, and
-- App Shell precache ownership.
-
-Therefore a newly imported Launcher module cannot silently become
-network-only because somebody forgot to add it to a second file list.
-Feature code may be dynamically imported to avoid first-screen evaluation,
-but every emitted feature chunk remains part of the eager Launcher App Shell.
-`styles.css` is the render-blocking shell stylesheet; `features.css` starts
-downloading with the document without blocking first paint and is also owned by
-the App Shell. Non-literal dynamic imports and bare-package imports are rejected
-by this offline closure contract.
+The graph owns both frontend publication and optional App Shell precaching.
+Dynamic chunks remain in the declared graph, so adding a feature cannot silently
+make it network-only. React documents use the generated stylesheet; standalone
+FAQ/migration pages retain their shared original stylesheet URLs. Historical
+`legacy/*.mjs` URL aliases remain available as compatibility readers outside
+precache ownership. No current `/app.js` facade is published.
 
 ## 3. Browser-visible metadata contracts
 
