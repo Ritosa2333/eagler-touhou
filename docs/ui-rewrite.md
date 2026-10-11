@@ -35,3 +35,86 @@ Offline support is an explicit deployment choice. Set both `EAGLER_REACT_APP_SHE
 Attached dialogs and the touch editor return to their opener. Gameplay has one Back layer over its options or room. Save failure retains the existing Retry/Leave/Stay decision. The persistent iframe follows main's validated `src` assignment/removal, rather than replacing its Window history. After save consent, Player close exits fullscreen and waits for the blank iframe document to commit before completing navigation. The host reattaches that same iframe node to discard the retired child browsing context and its history before another launch. A completed game replaces its active entry with its options or the same room, so it does not traverse an earlier game iframe snapshot. Room departure replaces the address with the selected game's lobby, including after refresh and direct invitations. An explicit native Return to Menu leaves membership after closing the Player. TH09's native title room remains an attached overlay of its retained runtime.
 
 Synthetic mounted tests cover routing, native message boundaries and ownership. They do not establish actual game, mobile-device or durable browser-storage acceptance. Real browser and native runtime gates remain required before replacing the production frontend.
+
+## Pre-merge record — 2026-10-11
+
+Status: **HOLD**. Synchronization is committed, but this record does not authorize
+merging into main, switching the default frontend, or publishing/deploying.
+
+The source candidate is `ace43d76c3a019308ba102eb25927f59def231ca`.
+Local main is `28bda8ca502b3d643eed3a5b705eb38d15769ad0`; fetched origin/main is
+`edee9633e5e3ee79cd2e1aa334f84f6caf755090`. Both are ancestors of the candidate.
+The local main commits added TH11 multiplayer and native Return-to-Menu room
+departure. Merge `b5a42505f83b5cce10893402f5428c8d998bad34` retains both histories,
+including origin/main's editable nicknames. The sole content conflict was the
+rule renderer: its shared extraction was retained and the TH11 tab added there.
+Main's catalog, room relay, spectator protocol, runtime/build configuration and
+authored rule document are unchanged by the rewrite synchronization.
+
+Preparatory changes and their purposes:
+
+- `28025f7`: checkpoint the previously browser-verified runtime retirement,
+  fullscreen/save order, fixed room/lobby returns and native browser API bindings.
+- `b5a4250`: port main's no-rollback declaration into React's room control,
+  mutation guard, start packet, snapshot validation and runtime options. Zero
+  prediction remains zero. Port native stopped-game diagnostics and an actionable
+  return for players and spectators. Rebase parity fixtures on committed main
+  inputs while preserving the separately accepted editable-name behavior.
+- `cd6d2e4`: give the new TH11 browser test an explicit package command so it is
+  owned by a discoverable acceptance lane.
+- `4d6febd`: fetch both committed parity authorities in shallow CI checkouts.
+- `225ca47`: wait for all lobby close handshakes before asserting reuse of room
+  quota. Hiding a directory row does not establish that the room was deleted.
+- `ace43d7`: extend notice/controller and keyboard-tab parity to main's TH11 rules.
+
+| Gate | Evidence and result |
+| --- | --- |
+| UI and tools type checks | PASS, Node 24.13 on Windows. |
+| Main module compilation and generated content | PASS, 69 authored TypeScript modules and content freshness check. |
+| React production build | PASS. Default frontend remains main; React and isolated App Shell remain explicit selections. |
+| Full React synthetic suite | 1203 cases executed: 1200 passed, 3 stale four-tab oracle assertions failed. Those fixtures were updated and the complete affected notice/guide set passed (97 cases). A fresh green whole-suite CI result is still required. |
+| Notice/guide final regression | PASS, 97 tests after updating the committed main oracle and five-tab traversal. |
+| Site notice | PASS, 36 cases against its unchanged origin/main authority. |
+| Repository core | 120 scripts executed. Initial run: 118 passed, room-quota race and Windows symlink failure. The quota fixture was corrected and passed; the other 118 scripts were unchanged. Atomic deployment remains blocked by EPERM, not skipped. |
+| Publication audit | PASS for tracked source candidates. This does not verify a public deployment. |
+| Linux CI | NOT RUN for this unpushed candidate. Must pass the normal core and rewrite jobs before promotion. |
+
+Local logs and exact changed-file inventory are retained under `.cache/premerge-*`.
+They are diagnostic evidence, not distributable release artifacts. The unrelated
+pre-existing `design-qa.md` edit is preserved and excluded from these commits.
+
+Browser evidence uses Windows Chrome 155 on two localhost origins, separate
+members, a private room, the actual game Runtime and the shared public signaling
+relay. TH11 entered Stage 1 with streaming OGG, advancing confirmed input and
+RTC direct channels. The real Module received mode 1, prediction 0, and P2
+`{character:1, shot:1}` for Marisa B. The native pause menu contained four entries.
+The same page launched successive Runtime epochs 1 and 4. Menu Restart reached
+fresh calibration and reset the confirmed-frame counter; complete gameplay-state
+reset is not established by that observation. Manual error recovery returned to
+the same room, and room departure returned to `lobby.html?game=th11mp` on both
+clients. Test memberships were released and temporary tabs/services closed.
+
+The frozen TH11 Runtime generation used for this test is
+`4c629ac48793a981cc74c6cc8ba2ca20496982ee7f1b2fedd656b2cb99cc2d6c`.
+Its native pause Return-to-Title **failed** the required terminal flow: P2 retired
+into the room, while P1 stopped on a control-channel error and needed the recovery
+button. Its `multiplayer.mjs` native terminal calls do not set `returnToMenu:true`;
+the shell supports that flag, but the producer does not send it. React's
+flag-authenticated departure is covered by mounted regression tests; this is not
+an end-to-end PASS. Replace/fix and freeze the Runtime, then repeat terminal
+return and membership-release acceptance before promotion.
+
+The synchronized rule text also needs the user's review. It still describes
+Graze in the personal HUD, TH11 P drops as 1x/2x, generic Bomb invulnerability
+without the eight-Power-character exception, and P1-owned dialogue without the
+accepted all-player/ghost advancement rule. It does not state dialogue-time
+resource transfer. This preparation preserves main's wording rather than silently
+publishing a new rule version. Shared life fragments are already stated.
+
+Earlier all-title browser evidence is retained separately in
+`.cache/ui-acceptance/report.json` and is not relabeled as acceptance of this
+candidate. No new 3P/Extra/spectator complete run, mobile-device, forced TURN,
+long-duration Replay, production cutover or formal release is claimed here.
+
+Before promotion: repair and repeat native terminal acceptance, approve/synchronize
+the rule wording, and obtain green Linux CI including the atomic-deployment gate.
