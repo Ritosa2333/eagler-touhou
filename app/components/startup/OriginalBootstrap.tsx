@@ -18,6 +18,10 @@ function subscribeLocale(listener: () => void) {
 // bundle. Static SPA fallback HTML serves both original document contexts.
 const dispatch = `(function(){var lobby=/\\/(?:lobby|lobby\\.html)\\/?$/.test(location.pathname);document.documentElement.setAttribute('data-original-entry',lobby?'lobby':'library');if(lobby){document.documentElement.setAttribute('data-lobby-boot','loading');}else{${original.library.compatibility}\n${original.library.script}\n}}());`;
 const tail = `(function(){var module=document.querySelector('script[type="module"][data-eagler-entry]');if(module)module.id='lobbyModule';if(document.documentElement.getAttribute('data-original-entry')==='lobby'){${original.lobby.script}\n}}());`;
+// One authored loading presentation for both document entries and warm routes.
+// Keep the lobby's failure carrier, while deriving its motion from Launcher.
+const sharedLobbyPreloadCss = original.library.css.replaceAll('#eaglerPreload', '#lobbyPreload').replaceAll('eagler-preload-', 'lobby-preload-') +
+  '\n.lobby-preload-card{padding:0;gap:normal}html[data-lobby-boot="failed"] .lobby-preload-card{width:min(420px,calc(100vw - 48px));height:auto;min-height:132px;padding:24px;gap:18px;animation:none}';
 /** Source-extracted original pre-module safety gate and preload presentation. */
 export function OriginalBootstrapHead() {
   const {pathname} = useLocation();
@@ -31,7 +35,7 @@ export function OriginalBootstrapHead() {
   const description = translate(locale, 'site.description');
   return <>
     <script dangerouslySetInnerHTML={{__html: dispatch}}/>
-    <style dangerouslySetInnerHTML={{__html: original.library.css + '\n' + original.lobby.css +
+    <style dangerouslySetInnerHTML={{__html: original.library.css + '\n' + original.lobby.css + '\n' + sharedLobbyPreloadCss +
       '\nhtml[data-original-entry="lobby"] #eaglerPreload,html:not([data-original-entry="lobby"]) #lobbyPreload{display:none}'}}/>
     <style id="launcherNavigationTransition">{'@view-transition{navigation:auto}'}</style>
     <title data-i18n={lobby ? undefined : 'site.documentTitle'}>{title}</title>
@@ -59,9 +63,12 @@ export function OriginalBootstrapHead() {
   </>;
 }
 export function OriginalPreloads() {
-  // Trusted original markup only. The original boot owner removes its preload;
-  // React does not own or reconcile descendants inside this static carrier.
-  return <div style={{display: 'contents'}} dangerouslySetInnerHTML={{__html: original.library.preload + original.lobby.preload}}/>;
+  // The original boot owns cold entry. Templates retain that same authored cue
+  // for later same-document page entries without restarting its watchdog.
+  return <div style={{display: 'contents'}} data-surface-preload-host="" dangerouslySetInnerHTML={{__html:
+    original.library.preload + original.lobby.preload +
+    `<template data-surface-preload="library">${original.library.preload}</template>` +
+    `<template data-surface-preload="lobby">${original.lobby.preload}</template>`}}/>;
 }
 export function OriginalModuleRequestMark() {
   return <script dangerouslySetInnerHTML={{__html: 'window.__eaglerBoot && window.__eaglerBoot.mark("app-module-request");'}}/>;

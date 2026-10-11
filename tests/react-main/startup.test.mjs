@@ -24,9 +24,9 @@ after(async () => {env?.close(); if (work) await rm(work, {recursive: true, forc
 const tick = () => new Promise(resolve => setImmediate(resolve));
 function deferred() {let resolve; const promise = new Promise(r => {resolve = r;}); return {promise, resolve};}
 function fixture({path = '/', shown = false, continueVisit = true, warning = null, firstUse = null, directory = null, decode = null} = {}) {
-  const events = [], fonts = [], decoded = [], timers = new Map(), frames = new Map(); let serial = 0;
+  const events = [], fonts = [], decoded = [], timers = new Map(), frames = new Map(); let serial = 0, clock = 0;
   Object.defineProperty(env.document, 'fonts', {configurable: true, value: {load(font, text) {fonts.push([font, text]); return Promise.resolve([]);}}});
-  const window = {addEventListener: env.window.addEventListener.bind(env.window), removeEventListener: env.window.removeEventListener.bind(env.window), innerHeight: 800, setTimeout(fn, delay) {const id = ++serial; timers.set(id, {fn, delay}); return id;}, clearTimeout(id) {timers.delete(id);},
+  const window = {performance: {now: () => clock}, addEventListener: env.window.addEventListener.bind(env.window), removeEventListener: env.window.removeEventListener.bind(env.window), innerHeight: 800, setTimeout(fn, delay) {const id = ++serial; timers.set(id, {fn, delay}); return id;}, clearTimeout(id) {timers.delete(id);},
     requestAnimationFrame(fn) {const id = ++serial; frames.set(id, fn); return id;}, cancelAnimationFrame(id) {frames.delete(id);}};
   const owner = createStartupController({document: env.document, window, baseUrl: 'https://launcher.invalid/mount/',
     decodeImage(source) {decoded.push(source); return decode?.promise ?? Promise.resolve();}});
@@ -37,7 +37,7 @@ function fixture({path = '/', shown = false, continueVisit = true, warning = nul
     async loadSiteNotice() {events.push('site');}, onError(error) {events.push(error);}};
   const f = {owner, ports, events, fonts, decoded, timers, frames,
     raf() {const callbacks = [...frames.values()]; frames.clear(); for (const fn of callbacks) fn();},
-    timeout(delay) {for (const [id, entry] of [...timers]) if (entry.delay === delay) {timers.delete(id); entry.fn();}},
+    timeout(delay) {clock += delay; for (const [id, entry] of [...timers]) if (entry.delay === delay) {timers.delete(id); entry.fn();}},
   }; active.push(f); return f;
 }
 test('original boot script/CSS/preload are exact substrings, retaining diagnostic text and deadlines', async () => {
@@ -62,10 +62,53 @@ test('direct lobby entry returns to library without calling an absent library bo
   const leaveLobby = f.owner.attach(f.ports); await tick(); f.raf(); f.raf();
   leaveLobby();
   const leaveLibrary = f.owner.attach({...f.ports, context: 'library', url: 'https://launcher.invalid/'}); await tick();
-  assert.deepEqual(f.events, ['directory', 'site', 'warning', 'warning-current:true', 'first-use', 'site']);
+  assert.deepEqual(f.events, ['directory', 'warning', 'warning-current:true', 'first-use', 'site']);
   assert.equal(env.document.documentElement.getAttribute('data-original-entry'), 'lobby');
   leaveLibrary(); f.owner.attach(f.ports); await tick();
-  assert.equal(f.events.filter(event => event === 'directory').length, 1);
+  assert.equal(f.events.filter(event => event === 'directory').length, 2, 'each lobby entry checks the reused directory before revealing it');
+});
+
+function installPageCues() {
+  const original = readOriginalBootstrap();
+  env.document.documentElement.setAttribute('data-original-entry', 'library');
+  env.document.body.innerHTML = `<div data-surface-preload-host>${original.library.preload}${original.lobby.preload}
+    <template data-surface-preload="library">${original.library.preload}</template>
+    <template data-surface-preload="lobby">${original.lobby.preload}</template></div><main class="lobby-main"></main>`;
+}
+
+test('SPA lobby entry keeps the authored page cue until directory and visual readiness without restarting cold boot', async () => {
+  installPageCues(); const directory = deferred(), f = fixture({directory});
+  const leaveLibrary = f.owner.attach(f.ports); await tick(); leaveLibrary();
+  f.owner.attach({...f.ports, context: 'lobby', url: 'https://launcher.invalid/lobby.html'});
+  const preload = env.document.getElementById('lobbyPreload');
+  assert.equal(preload.dataset.routePreload, 'lobby');
+  assert.equal(preload.classList.contains('is-done'), false);
+  assert.equal(env.document.querySelector('.lobby-main').inert, true);
+  assert.equal(env.document.documentElement.getAttribute('data-original-entry'), 'library');
+  await tick(); f.raf(); f.raf(); assert.equal(preload.classList.contains('is-done'), false);
+  directory.resolve(); await tick(); f.timeout(160); f.raf(); f.raf();
+  assert.equal(preload.classList.contains('is-done'), true);
+  assert.equal(env.document.querySelector('.lobby-main').inert, false);
+  assert.equal(env.document.documentElement.hasAttribute('data-lobby-boot'), false);
+  f.timeout(200); assert.equal(preload.isConnected, false);
+  assert.equal(f.events.filter(event => event === 'ready').length, 1);
+  assert.equal(env.document.querySelectorAll('template[data-surface-preload]').length, 2);
+});
+
+test('superseded SPA preparation cannot retire the next page cue', async () => {
+  installPageCues(); const directory = deferred(), f = fixture({directory});
+  const leaveLibrary = f.owner.attach(f.ports); await tick(); leaveLibrary();
+  const leaveLobby = f.owner.attach({...f.ports, context: 'lobby', url: 'https://launcher.invalid/lobby.html'}); await tick(); leaveLobby();
+  f.owner.attach(f.ports); await tick();
+  const preload = env.document.getElementById('eaglerPreload');
+  assert.equal(preload.dataset.routePreload, 'library');
+  directory.resolve(); await tick();
+  assert.equal(preload.classList.contains('is-done'), false);
+  assert.equal(preload.isConnected, true);
+  f.timeout(160); f.raf(); f.raf();
+  assert.equal(preload.classList.contains('is-done'), true);
+  f.timeout(240); assert.equal(preload.isConnected, false);
+  assert.equal(f.events.filter(event => event === 'ready').length, 1);
 });
 test('first-use shown suppresses site notice; no duplicate initialization after completed binding', async () => {
   const f = fixture({shown: true}); const detach = f.owner.attach(f.ports); await tick(); detach(); f.owner.attach(f.ports); await tick();
@@ -100,7 +143,7 @@ test('lobby waits for original render boundary, uses exact fonts, double RAF and
   env.document.documentElement.dataset.lobbyBoot = 'loading'; env.document.body.innerHTML = '<main class="lobby-main" inert><img src="https://launcher.invalid/cover.webp"></main><div id="lobbyPreload"></div>';
   const main = env.document.querySelector('main'); main.inert = true;
   f.owner.attach(f.ports); await tick(); assert.equal(f.decoded.length, 1); assert.equal(f.frames.size, 0);
-  assert.equal(f.events.includes('warning'), false); assert.equal(f.events.includes('first-use'), false); assert.equal(f.events.includes('site'), true);
+  assert.equal(f.events.includes('warning'), false); assert.equal(f.events.includes('first-use'), false); assert.equal(f.events.includes('site'), false);
   directory.resolve(); await tick(); assert.equal(f.fonts.length, 4); assert.match(f.fonts[0][0], /ET Yatra/); assert.equal(f.decoded.length, 2);
   f.raf(); assert.equal(main.inert, true); f.raf(); assert.equal(main.inert, false); assert.equal(env.document.documentElement.hasAttribute('data-lobby-boot'), false);
   assert.equal(env.document.getElementById('lobbyPreload').getAttribute('aria-hidden'), 'true'); f.timeout(200); assert.equal(env.document.getElementById('lobbyPreload'), null);
@@ -130,12 +173,12 @@ test('lobby notice completion cannot consume interrupted library first-use on re
   assert.equal(f.events.filter(event => event === 'first-use').length, 1);
   leaveLibrary();
   const leaveLobby = f.owner.attach({...f.ports, context: 'lobby', url: 'https://launcher.invalid/lobby.html'}); await tick();
-  assert.equal(f.events.filter(event => event === 'site').length, 1);
+  assert.equal(f.events.filter(event => event === 'site').length, 0);
   firstUse.resolve(); await tick();
   leaveLobby();
   const leaveReturnedLibrary = f.owner.attach(f.ports); await tick();
   assert.equal(f.events.filter(event => event === 'first-use').length, 2, 'unfinished library notice sequence resumes after a different context completes');
-  assert.equal(f.events.filter(event => event === 'site').length, 1, 'returned first-use presentation still suppresses the library site notice');
+  assert.equal(f.events.filter(event => event === 'site').length, 0, 'returned first-use presentation still suppresses the library site notice');
   leaveReturnedLibrary(); f.owner.attach(f.ports); await tick();
   assert.equal(f.events.filter(event => event === 'first-use').length, 2, 'successfully completed library sequence remains once-only');
 });

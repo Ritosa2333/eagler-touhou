@@ -179,7 +179,7 @@ function SessionOverlays({session, firstUse, notice, assetUrl, onDonationUnavail
     document.body.classList.toggle('player-active', state.playerOpen);
     return () => {document.body.classList.remove('player-active');};
   }, [state.playerOpen]);
-  useEffect(() => session.startup.attach({
+  useLayoutEffect(() => session.startup.attach({
     context: navigation.context, url: window.location.href,
     boot: (window as Window & {__eaglerBoot?: {ready(): void}}).__eaglerBoot ?? {ready() {throw new Error('Original launcher bootstrap is not installed');}},
     waitDirectoryRendered: () => new Promise<void>(resolve => {if (session.directory.getSnapshot().initialized) return resolve();

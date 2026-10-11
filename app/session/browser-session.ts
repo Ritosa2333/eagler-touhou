@@ -173,7 +173,8 @@ export function createBrowserSession({document, window, baseUrl: configuredBaseU
   const preferences = createSitePreferencesModel({storage});
   const unbindPreferences = bindSitePreferencesToDocument(preferences, { windowObj: window});
   const ports = createBrowserPorts({document, window, baseUrl});
-  const startup = createStartupController({document, window, baseUrl});
+  const startup = createStartupController({document, window, baseUrl,
+    preloadLabel: context => t(context === 'lobby' ? 'lobby.loading' : 'preload.aria')});
   const startupError = createStartupErrorModel({translate: t, launched: () => runtime?.getSnapshot().launched === true, copyText: ports.copyText, toast: feedback.toast});
   const transfer = createTransferModel({translate: t,
     context: () => ({epoch: runtime?.getSnapshot().epoch ?? null, launched: runtime?.getSnapshot().launched === true,

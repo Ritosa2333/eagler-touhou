@@ -1,11 +1,20 @@
 .replay-loading{min-height:132px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#aaa;font:11px/1.2 var(--ui-font);letter-spacing:.08em}.replay-loading i{display:block;width:24px;height:24px;box-sizing:border-box;border:2px solid #555;border-top-color:#eee;border-radius:50%;animation:replay-loading-spin .72s linear infinite}.replay-load-error{color:#ef777d}@keyframes replay-loading-spin{to{transform:rotate(360deg)}}
 .toast{z-index:80}
 /* Launcher / directory navigation: one short dissolve, including browser Back. */
-::view-transition-group(root){animation-duration:.18s}
-::view-transition-old(root){animation:launcher-page-out .18s ease-out both}
-::view-transition-new(root){animation:launcher-page-in .18s ease-out both}
+:root{--launcher-page-duration:180ms}
+@view-transition{navigation:auto}
+::view-transition-group(root){animation-duration:var(--launcher-page-duration)}
+::view-transition-old(root){animation:launcher-page-out var(--launcher-page-duration) ease-out both}
+::view-transition-new(root){animation:launcher-page-in var(--launcher-page-duration) ease-out both}
 @keyframes launcher-page-out{to{opacity:0}}
 @keyframes launcher-page-in{from{opacity:0}}
+/* Shared shell rules also reach the standalone About and FAQ pages. */
+.sheet,.lobby-main,.about-page,html body.mp-room-active #mpRoomView.mp-room-view,body.mp-room-returning .sheet{animation:launcher-page-in var(--launcher-page-duration) ease-out both}
+:is(html:has([data-route-preload]:not(.is-done)),html[data-original-entry="library"]:has(#eaglerPreload:not(.is-done)),html[data-original-entry="lobby"]:has(#lobbyPreload:not(.is-done))) :is(.sheet,.lobby-main){animation:none}
+:is(#eaglerPreload,#lobbyPreload){transition:opacity var(--launcher-page-duration) ease-out}
+@supports selector(html:active-view-transition){html:active-view-transition :is(.sheet,.lobby-main,.about-page,#mpRoomView){animation:none!important}}
+.less-motion :is(.sheet,.lobby-main,.about-page,#mpRoomView){animation:none!important}
+@media(prefers-reduced-motion:reduce){.sheet,.lobby-main,.about-page,#mpRoomView{animation:none!important}}
 html:has(body.less-motion)::view-transition-group(root),html:has(body.less-motion)::view-transition-old(root),html:has(body.less-motion)::view-transition-new(root){animation:none!important}
 @media(prefers-reduced-motion:reduce){::view-transition-group(root),::view-transition-old(root),::view-transition-new(root){animation:none!important}}
 .site-notice-opt-out[hidden]{display:none}
