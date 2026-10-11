@@ -11,6 +11,7 @@ uint64_t laserAnimationKey(u32 serial, laser::Role role) {
 
 class GameLaserWorld final : public laser::World {
 public:
+  float gameRate() const override { return gameSpeed; }
   laser::Vec3 playerPosition() const override { return {px / 128.f, py / 128.f, 0}; }
   bool bossPosition(laser::Vec3& p) const override {
     if (auto* boss = primaryBoss()) {
@@ -28,7 +29,11 @@ public:
                      const laser::AnimationBinding& b) override {
     const auto key = laserAnimationKey(object.state.serialId, role);
     std::function<int(int)> remap;
-    if (b.typeColorAppearance)
+    if (object.state.kind == laser::Kind::Curve && role == laser::Role::Main)
+      // Native42c3f0 installs42e6d0: every sprite bind uses480+signed color,
+      // independent of the literal sprite operand in the curve's ANM script.
+      remap = [color = b.color](int) { return 480 + int16_t(color); };
+    else if (b.typeColorAppearance)
       remap = [type = b.type, color = b.color](int sprite) {
         int resolved = 0;
         if (bullet_visuals::resolve(type, color, sprite, resolved))
@@ -42,8 +47,8 @@ public:
       node->customGeometry = true;
   }
   void finishAnimationBirth(laser::Laser& object, laser::Role role) override {
-    if (object.state.kind == laser::Kind::Curve)
-      return;
+    // Curve42c48d/42c51b force the same Main/Cap blend and mode as straight
+    // constructors; the custom strip only replaces their geometry generation.
     if (auto* node = animationScene.find(laserAnimationKey(object.state.serialId, role))) {
       auto& state = node->vm.control();
       state.blend = 1;
@@ -69,8 +74,15 @@ public:
                                const laser::AnimationGeometry& g) override {
     auto p = g.position;
     if (role == laser::Role::Cap) {
-      p.x = float(double(p.x) + std::cos(double(g.angle)) * g.headOffset);
-      p.y = float(double(p.y) + std::sin(double(g.angle)) * g.headOffset);
+      if (object.state.kind == laser::Kind::Curve) {
+        // Native42cfd8 draws the initial cap at the oldest retained history
+        // point, while the traveling head advances independently.
+        if (!object.state.nodes.empty())
+          p = object.state.nodes.back().position;
+      } else {
+        p.x = float(double(p.x) + std::cos(double(g.angle)) * g.headOffset);
+        p.y = float(double(p.y) + std::sin(double(g.angle)) * g.headOffset);
+      }
     }
     animationScene.position(laserAnimationKey(object.state.serialId, role), p.x, p.y);
     if (auto* node = animationScene.find(laserAnimationKey(object.state.serialId, role))) {

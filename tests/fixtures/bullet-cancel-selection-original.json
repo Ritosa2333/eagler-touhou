@@ -1,0 +1,192 @@
+{
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "samplerSha256": "ee1d86449cca7dfe6fd978a15ebcd7c9ec0efe613559e96407d7423eb7040128",
+  "wholeGameOracle": false,
+  "scope": "Controlled slot+524 and free phase/cursor inputs. Actual40a250/40aa60 via real ECL emission and original ANM birth; no original instruction/RNG replaced. No collision, replay, drawing or full-stage claim. Existing provider heap/resource/audio boundaries retained.",
+  "rows": [
+    {
+      "type": 0,
+      "color": 4,
+      "previous": 0,
+      "transform": null,
+      "actualType": 0,
+      "selected": 12
+    },
+    {
+      "type": 3,
+      "color": 4,
+      "previous": 0,
+      "transform": null,
+      "actualType": 3,
+      "selected": 12
+    },
+    {
+      "type": 17,
+      "color": 4,
+      "previous": 0,
+      "transform": null,
+      "actualType": 17,
+      "selected": 20
+    },
+    {
+      "type": 23,
+      "color": 4,
+      "previous": 0,
+      "transform": null,
+      "actualType": 23,
+      "selected": 16
+    },
+    {
+      "type": 24,
+      "color": 4,
+      "previous": 0,
+      "transform": null,
+      "actualType": 24,
+      "selected": 6
+    },
+    {
+      "type": 26,
+      "color": 4,
+      "previous": 0,
+      "transform": null,
+      "actualType": 26,
+      "selected": -1
+    },
+    {
+      "type": 28,
+      "color": 4,
+      "previous": 0,
+      "transform": null,
+      "actualType": 28,
+      "selected": 12
+    },
+    {
+      "type": 29,
+      "color": 4,
+      "previous": 0,
+      "transform": null,
+      "actualType": 29,
+      "selected": 0
+    },
+    {
+      "type": 30,
+      "color": 4,
+      "previous": 0,
+      "transform": null,
+      "actualType": 30,
+      "selected": 0
+    },
+    {
+      "type": 29,
+      "color": 0,
+      "previous": -1,
+      "transform": null,
+      "actualType": 29,
+      "selected": -1
+    },
+    {
+      "type": 29,
+      "color": 0,
+      "previous": 6,
+      "transform": null,
+      "actualType": 29,
+      "selected": 6
+    },
+    {
+      "type": 29,
+      "color": 0,
+      "previous": 16,
+      "transform": null,
+      "actualType": 29,
+      "selected": 16
+    },
+    {
+      "type": 30,
+      "color": 0,
+      "previous": -1,
+      "transform": null,
+      "actualType": 30,
+      "selected": -1
+    },
+    {
+      "type": 30,
+      "color": 0,
+      "previous": 6,
+      "transform": null,
+      "actualType": 30,
+      "selected": 6
+    },
+    {
+      "type": 30,
+      "color": 0,
+      "previous": 16,
+      "transform": null,
+      "actualType": 30,
+      "selected": 16
+    },
+    {
+      "type": 0,
+      "color": 0,
+      "previous": 0,
+      "transform": 29,
+      "actualType": 29,
+      "selected": 12
+    },
+    {
+      "type": 0,
+      "color": 0,
+      "previous": 16,
+      "transform": 29,
+      "actualType": 29,
+      "selected": 12
+    },
+    {
+      "type": 29,
+      "color": 0,
+      "previous": 0,
+      "transform": 29,
+      "actualType": 29,
+      "selected": 12
+    },
+    {
+      "type": 29,
+      "color": 0,
+      "previous": 16,
+      "transform": 29,
+      "actualType": 29,
+      "selected": 12
+    },
+    {
+      "type": 29,
+      "color": 0,
+      "previous": 0,
+      "transform": 30,
+      "actualType": 30,
+      "selected": 12
+    },
+    {
+      "type": 29,
+      "color": 0,
+      "previous": 16,
+      "transform": 30,
+      "actualType": 30,
+      "selected": 12
+    },
+    {
+      "type": 30,
+      "color": 0,
+      "previous": 0,
+      "transform": 29,
+      "actualType": 29,
+      "selected": 12
+    },
+    {
+      "type": 30,
+      "color": 0,
+      "previous": 16,
+      "transform": 29,
+      "actualType": 29,
+      "selected": 12
+    }
+  ]
+}

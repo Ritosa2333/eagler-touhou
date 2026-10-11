@@ -18,7 +18,7 @@ bool playerMovementFocus(int held) {
       std::any_of(enemies.begin(), enemies.end(), [](const auto& enemy) { return enemy->active; });
   // Player+a48 advances at437475 through every player state and is reset
   // only by436100 stage/session initialization, rather than by respawn.
-  return movementFocus(held, frame, liveEnemies);
+  return movementFocus(held, gameSpeed == 1 ? frame : int(playerTotalTime), liveEnemies);
 }
 } // namespace
 void awardPlayerGraze(float x, float y, float z) {
@@ -50,6 +50,7 @@ void playerMissCollision() {
   for (int i = 0; i < 32; ++i)
     effect(80);
   playerStateTicks = 0;
+  playerStateTime = 0;
   deathWindow = 8;
   invuln = 6;
   eventBits |= 32;
@@ -149,6 +150,9 @@ bool startPlayerBomb() {
   playerBomb.retiredVisuals = std::move(retired);
   playerBomb.loadout = loadout;
   playerBomb.active = true;
+  // Original ReimuA46a5f0 increments at46a7de and46a82c; the other
+  // five constructors increment EnemyManager+14 once.
+  phasePlayerCounters[1] += loadout == 0 ? 2u : 1u;
   playerBomb.x = px / 128.f;
   playerBomb.y = py / 128.f;
   if (loadout == 3) {
@@ -575,7 +579,7 @@ void initializeFriendlyProjectile(Projectile& b, const ShotSpec& s) {
     friendlyBirthHook(b);
 }
 void tickPlayerDamageSources() {
-  playerDamageSources.tick();
+  playerDamageSources.tick(gameSpeed);
 }
 int playerSourceDamage(const Enemy& e) {
   return playerDamageSources.damage(e.x, e.y, e.hitWidth, e.hitHeight);
@@ -979,6 +983,8 @@ void fire() {
 }
 
 void tickPlayer(int held, int pressed) {
+  if (int(playerStateTime) != playerStateTicks) playerStateTime = float(playerStateTicks);
+  if (int(playerInvulnerabilityTime) != invuln) playerInvulnerabilityTime = float(invuln);
   const auto& s = loadouts[character * 2 + shot];
   // The state0 branch computes its entry position and clears first. At age60
   // it falls through to the normal state1 branch in this same Player pass.
@@ -989,6 +995,7 @@ void tickPlayer(int held, int pressed) {
     if (playerStateTicks >= 60) {
       playerState = 1;
       playerStateTicks = 0;
+      playerStateTime = 0;
     }
   }
   const bool beganMoving = playerState == 1;
@@ -1009,6 +1016,7 @@ void tickPlayer(int held, int pressed) {
     // 436d18 preserves a normal state's age; only436da8 deathbomb resets60.
     if (beganInDeathWindow)
       playerStateTicks = 60;
+    if (beganInDeathWindow) playerStateTime = 60;
     spellState.onBomb();
     //4385b0 refreshes options here, but43875c returns without resetting
     //their positions when the option count is unchanged.
@@ -1021,6 +1029,10 @@ void tickPlayer(int held, int pressed) {
   const bool focus = playerFocused;
   const int speed = int((focus ? s.focus : s.speed) * playerBomb.speedMultiplier * 128),
             diagonal = int((focus ? s.focusDiag : s.diag) * playerBomb.speedMultiplier * 128);
+  // 43666d2 truncates SHT fixed speed*Bomb factor first.436782 then
+  // scales each signed displacement by4b2ed0 and truncates again.
+  const int scaledSpeed = int(float(double(speed) * gameSpeed)),
+            scaledDiagonal = int(float(double(diagonal) * gameSpeed));
   int dir = 0;
   if ((held & 0x50) == 0x50)
     dir = 5;
@@ -1042,32 +1054,32 @@ void tickPlayer(int held, int pressed) {
   if (beganMoving) {
     switch (dir) {
     case 1:
-      py -= speed;
+      py -= scaledSpeed;
       break;
     case 2:
-      py += speed;
+      py += scaledSpeed;
       break;
     case 3:
-      px -= speed;
+      px -= scaledSpeed;
       break;
     case 4:
-      px += speed;
+      px += scaledSpeed;
       break;
     case 5:
-      px -= diagonal;
-      py -= diagonal;
+      px -= scaledDiagonal;
+      py -= scaledDiagonal;
       break;
     case 6:
-      px += diagonal;
-      py -= diagonal;
+      px += scaledDiagonal;
+      py -= scaledDiagonal;
       break;
     case 7:
-      px -= diagonal;
-      py += diagonal;
+      px -= scaledDiagonal;
+      py += scaledDiagonal;
       break;
     case 8:
-      px += diagonal;
-      py += diagonal;
+      px += scaledDiagonal;
+      py += scaledDiagonal;
       break;
     }
   }
@@ -1083,10 +1095,14 @@ void tickPlayer(int held, int pressed) {
   if (playerState == 4) {
     deathWindow = std::max(0, 8 - playerStateTicks);
     if (playerStateTicks >= 8) {
+      // Native436d61 commits a miss only after the deathbomb window expires.
+      ++phasePlayerCounters[0];
+      phasePlayerCounters[2] = 0;
       --lives;
       resources.addRank(-1024);
       playerState = 2;
       playerStateTicks = 0;
+      playerStateTime = 0;
       deathWindow = 0;
       invuln = 180;
       playerMotion.count = 0;
@@ -1112,19 +1128,27 @@ void tickPlayer(int held, int pressed) {
         playerDamageSources.circle(respawnClearOrigin[0], respawnClearOrigin[1], 32, 16, 30, 150);
         playerState = 0;
         playerStateTicks = 0;
+        playerStateTime = 0;
         px = 0;
         py = 480 * 128;
         invuln = 280;
         if (bombs < 2) {
           bombs = 2;
-          resources.bombFragments = 0;
+          // 436f0f -> 422f60 restores stock only; HUD receives the retained
+          // fragment count at4b0ca4, including a partially earned next Bomb.
         }
       }
     }
   }
-  ++playerStateTicks;
-  if (invuln > 0)
-    --invuln; // Native common tail follows state-transition writes.
+  playerPreviousStateTicks = playerStateTicks;
+  playerStateTime = float(double(playerStateTime) + gameSpeed);
+  playerStateTicks = int(playerStateTime);
+  playerTotalTime = gameSpeed == 1 ? float(frame + 1) : float(double(playerTotalTime) + gameSpeed);
+  if (int(playerInvulnerabilityTime) != invuln) playerInvulnerabilityTime = float(invuln);
+  if (invuln > 0) {
+    playerInvulnerabilityTime = float(double(playerInvulnerabilityTime) - gameSpeed);
+    invuln = int(playerInvulnerabilityTime);
+  } // Native common tail follows state-transition writes.
   // Native state0 reaches4364f0 on its transition back to state1. States2,
   // 3 and4 leave C598/its handle alone until movement actually resumes.
   if (!beganMoving && !beganInDeathWindow && playerState == 1)
@@ -1136,11 +1160,14 @@ void tickPlayer(int held, int pressed) {
   if (!dialogue && playerStateTicks % 60 == 0)
     resources.addRank(1);
   previousHeld = held;
-  if (playerState == 1 && !beganInDeathWindow) {
+  // Successful436da8 restores state1 before the common tail.439a40 checks
+  // that current state, so firing resumes on the deathbomb frame even though
+  // movement/focus remained skipped in its earlier state4 branch.
+  if (playerState == 1) {
     fireFrame = shotSchedule.begin(held & 1, !dialogue);
-    if (fireFrame >= 0)
+    if (fireFrame >= 0 && shotSchedule.emitThisTick)
       fire();
-    shotSchedule.finish(held & 1);
+    shotSchedule.finish(held & 1, gameSpeed);
   }
   tickPlayerDamageSources();
   // Native436fxx updates the physical shot array in slot order. New shots
@@ -1180,7 +1207,9 @@ void tickPlayer(int held, int pressed) {
       }
     } else if (b.x < -280 || b.x > 280 || b.y < -100 || b.y > 520)
       b.active = false;
-    ++b.age;
+    if (int(b.weapon.ageTime) != b.age) b.weapon.ageTime = float(b.age);
+    b.weapon.ageTime = float(double(b.weapon.ageTime) + gameSpeed);
+    b.age = int(b.weapon.ageTime);
   }
   for (const auto& b : bullets)
     if (b.friendly) {

@@ -8,6 +8,7 @@
 #include "LaserWorld.hpp"
 namespace th12 {
 void selectStage(int number) {
+  gameSpeed = animationScene.runtime.delta = 1;
   resetCameraEffects();
   laserManager.reset(&laserWorld);
   resetItemPresentation();
@@ -30,6 +31,7 @@ void selectStage(int number) {
   backgroundEnemyOrigin = {};
 }
 void startGame(int c, int s, int d, int seed, const int* replayInitial) {
+  gameSpeed = animationScene.runtime.delta = 1;
   sound_system::queue.reset();
   character = std::clamp(c, 0, 2);
   shot = std::clamp(s, 0, 1);
@@ -44,6 +46,9 @@ void startGame(int c, int s, int d, int seed, const int* replayInitial) {
   deathWindow = bombTimer = 0;
   playerState = 1;
   playerStateTicks = 0;
+  playerStateTime = playerTotalTime = 0;
+  playerPreviousStateTicks = -1;
+  playerInvulnerabilityTime = 120;
   playerFlags = 0;
   replayStageGlobals = {};
   playerFocused = false;
@@ -77,6 +82,7 @@ void startGame(int c, int s, int d, int seed, const int* replayInitial) {
   referenceFaults.clear();
   runtimeFaults.clear();
   globals.clear();
+  phasePlayerCounters = {};
   backgroundEnemyOrigin = {};
   enemies.clear();
   bullets.clear();

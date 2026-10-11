@@ -38,8 +38,11 @@ extern std::unordered_map<uint64_t, u32> referenceFaults;
 extern std::unordered_map<uint64_t, u32> runtimeFaults;
 void recordRuntimeFault(uint32_t system, uint32_t code);
 extern std::unordered_map<int, Value> globals;
+// EnemyManager+10/+14/+18, exposed as ECL−9949/−9948/−9947.
+extern std::array<u32, 3> phasePlayerCounters;
 extern int frame, character, shot, difficulty, stageNumber, px, py, graze;
 extern int backgroundFrame;
+extern float gameSpeed; // Original global4b2ed0, set by ECL447.
 extern bool backgroundVisible;
 extern stage_logic::Program stageProgram;
 extern stage_logic::State stageState;
@@ -48,6 +51,8 @@ extern int &power, &lives, &bombs, &score;
 extern int invuln, deathWindow, bombTimer, previousHeld, fireFrame, eventBits, dialogue, spell,
     ended;
 extern int playerState, playerStateTicks, oracleFixtureFlags;
+extern float playerStateTime, playerInvulnerabilityTime, playerTotalTime;
+extern int playerPreviousStateTicks; // Player+a30, damage query cadence gate.
 extern u32 playerFlags;
 extern std::array<int, 4> replayStageGlobals;
 extern uint64_t playerFocusAnimation;

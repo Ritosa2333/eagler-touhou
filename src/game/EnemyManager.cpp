@@ -63,7 +63,7 @@ void synchronizeEnemyAnimations(Enemy& e) {
         pose.engineZ = float(double(e.z) + offset[2] + script[2]);
       }
 }
-bool resolveEnemyInterrupt(Enemy& e) {
+bool resolveEnemyInterrupt(Enemy& e, bool executeScript = true) {
   e.phaseLife = e.life;
   e.lifeThreshold = 0;
   EnemyInterrupt* transition = nullptr;
@@ -98,7 +98,16 @@ bool resolveEnemyInterrupt(Enemy& e) {
     e.flags &= ~0x800000u;
   if (timeout)
     spellState.onTimeout(playerBomb.active);
-  resetPhase(e, next);
+  if (executeScript)
+    resetPhase(e, next);
+  else {
+    // 413f86..413fc6 only installs the next context. Unlike413f0c,
+    // this second interrupt check does not run468d90 until next Enemy18.
+    e.contexts.clear();
+    e.contexts.emplace_back(program.find(next));
+    e.phaseAge = e.age = 0;
+    e.phaseAgeTime = e.ageTime = 0;
+  }
   return true;
 }
 void finishEnemyUpdate(Enemy& e) {
@@ -106,6 +115,20 @@ void finishEnemyUpdate(Enemy& e) {
     if (e.isUfo)
       ufoManager.notifyEnemyRemoved(e.id, ufo_system::RemovalReason::ScriptDelete);
     return;
+  }
+  // 413b98..413c49: Flying Bowl opts into a Bomb-dependent hurt-query
+  // gate. Enter/leave after ECL, before callbacks and the damage scan.
+  // Send the existing slot0 VM an IRQ; do not recreate its ANM or consume RNG.
+  if (e.flags & 0x8000000u) {
+    if (playerBomb.active && !(e.flags & 0x10000000u)) {
+      e.animation = e.bombAnimation;
+      animationScene.interrupt(enemyAnimationKey(e.id, 0), e.animation);
+      e.flags |= 0x10000001u;
+    } else if (!playerBomb.active && (e.flags & 0x10000000u)) {
+      e.animation = e.bombSavedAnimation;
+      animationScene.interrupt(enemyAnimationKey(e.id, 0), e.animation);
+      e.flags &= ~0x10000001u;
+    }
   }
   // 413c76 calls the continuous callback after ECL, before the hurt query.
   if (e.customUpdate && runEnemyCallback(e, e.customUpdate)) {
@@ -129,9 +152,12 @@ void finishEnemyUpdate(Enemy& e) {
     const bool spellShield = spellState.active() && spellState.cardId >= 103 &&
                              spellState.cardId <= 112 && playerBomb.active &&
                              (e.flags & 0x400000u) && !(playerFlags & 4u);
+    // Native413e5a tests positive damage before PendingBomb's division.
+    // Even a result truncated to0 still takes the first interrupt path.
+    const bool hurtQuery = !spellShield && damage > 0;
     if (spellState.pendingBomb())
       damage /= 30;
-    if (!spellShield && damage > 0) {
+    if (hurtQuery) {
       if (!(e.flags & 0x10u) && !e.immunityTicks) {
         enemy_life::hurt(e.life, e.lifeRaw, e.lifeThreshold, e.lifeFlags, damage);
         eventBits |= 8;
@@ -158,7 +184,7 @@ void finishEnemyUpdate(Enemy& e) {
     e.active = false;
     return;
   }
-  resolveEnemyInterrupt(e);
+  resolveEnemyInterrupt(e, false);
   if (!e.active)
     return;
   if (!(oracleFixtureFlags & 2) && e.active && !(e.flags & (2 | 32 | 0x2000000)) &&
@@ -173,8 +199,12 @@ void finishEnemyUpdate(Enemy& e) {
   if (e.bodyImmunityTicks > 0)
     --e.bodyImmunityTicks;
   e.invincible = bool(e.flags & 17) || e.immunityTicks > 0;
-  ++e.age;
-  ++e.phaseAge;
+  if (anm_logic::nativeInt(e.ageTime) != e.age) e.ageTime = float(e.age);
+  if (anm_logic::nativeInt(e.phaseAgeTime) != e.phaseAge) e.phaseAgeTime = float(e.phaseAge);
+  e.ageTime = float(double(e.ageTime) + gameSpeed);
+  e.phaseAgeTime = float(double(e.phaseAgeTime) + gameSpeed);
+  e.age = anm_logic::nativeInt(e.ageTime);
+  e.phaseAge = anm_logic::nativeInt(e.phaseAgeTime);
   ++e.animationAge;
 }
 bool enemyOutside(Enemy& e) {
@@ -284,6 +314,7 @@ void resetPhase(Enemy& e, const std::string& sub) {
   e.contexts.clear();
   e.contexts.emplace_back(program.find(sub));
   e.phaseAge = e.age = 0;
+  e.phaseAgeTime = e.ageTime = 0;
   runContext(e, e.contexts.front());
 }
 void dropItems(Enemy& e) {

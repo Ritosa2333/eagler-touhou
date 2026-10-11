@@ -21,6 +21,8 @@ void releaseHostileBullet(u32 id) {
   const auto found = slotsById.find(id);
   if (found == slotsById.end())
     return;
+  if (const auto* bullet = hostileSlots[found->second])
+    hostilePool.cancelEffects[found->second] = bullet->enemy.cancelEffect;
   hostilePool.release(found->second);
   hostileSlots[found->second] = nullptr;
   slotsById.erase(found);

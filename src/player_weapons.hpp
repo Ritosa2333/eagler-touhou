@@ -15,12 +15,14 @@ struct State {
   int visualAge=0,impactDuration=0,previousAge=-1,interrupt=0;
   bool hit=false,auxiliaryHit=false;
   float acceleration=0,angularVelocity=0;
+  float ageTime=0;
 };
 struct DamageSource {
   uint32_t id=0;float x=0,y=0,radius=0,growth=0;
   float width=0,height=0,widthGrowth=0,heightGrowth=0,angle=0;
   int ticks=0,previousTicks=0,damage=0,accumulated=0,limit=999999,cadence=4;
   uint32_t flags=0;
+  float remainingTime=0;
 };
 struct BombArea {bool enabled=false;float x=0,y=0,width=0,height=0;};
 // Marisa B: retail 4079d0 damage and 407a30 sweep rectangle. Timer starts at
@@ -119,12 +121,14 @@ struct Manager {
     for(auto& s:sources)if(!(s.flags&1)){s={};s.id=nextId++;s.x=x;s.y=y;s.radius=radius;s.growth=growth;s.ticks=ticks;s.previousTicks=ticks-1;s.damage=damage;s.flags=3;return &s;}return nullptr;
   }
   // 436f90..437098 advances radius and timer before ordinary projectile update.
-  void tick(){for(auto& s:sources)if(s.flags&1){
+  void tick(float rate=1){for(auto& s:sources)if(s.flags&1){
     // 43700e invokes464db0/465320 even on ctor-zero velocity circles. The
     // first post-birth visit can floor147.929993 to147.919998, without moving
     // the already matching parent shot or changing its source birth center.
     s.x=sourceCoordinate(s.x);s.y=sourceCoordinate(s.y);
-    s.radius=float(double(s.radius)+s.growth);s.width=float(double(s.width)+s.widthGrowth);s.height=float(double(s.height)+s.heightGrowth);s.previousTicks=s.ticks;--s.ticks;if(s.ticks<=0)s.flags&=~1u;
+    s.radius=float(double(s.radius)+s.growth);s.width=float(double(s.width)+s.widthGrowth);s.height=float(double(s.height)+s.heightGrowth);s.previousTicks=s.ticks;
+    if(int(s.remainingTime)!=s.ticks)s.remainingTime=float(s.ticks);
+    s.remainingTime=float(double(s.remainingTime)-rate);s.ticks=int(s.remainingTime);if(s.ticks<=0)s.flags&=~1u;
   }}
   int damage(float x,float y,float width,float height){
     int total=0;

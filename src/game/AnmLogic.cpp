@@ -379,6 +379,9 @@ bool VM::handleInterrupt() {
     }
   }
   pendingInterrupt_ = 0;
+  // 45576d clears the held flag before checking either a matching label or
+  // the -1 fallback. An unmatched request still releases this flag.
+  state_.flags &= ~0x2000u;
   if (at == script_->commands.size())
     at = fallback;
   if (at == script_->commands.size())
@@ -390,7 +393,6 @@ bool VM::handleInterrupt() {
   timer_ = float(script_->commands[at].time);
   state_.clock = nativeInt(timer_);
   state_.held = false;
-  state_.flags &= ~0x2000u;
   state_.visible = true;
   state_.flags |= 1;
   return true;
@@ -827,8 +829,7 @@ void VM::advance(Runtime& r) {
       // duration remains active at time0; a zero duration never reaches here.
       if (t.duration > 0)
         t.time += dt;
-      const float n = std::min(1.f, t.time / t.duration),
-                  e = curve(n, t.mode);
+      const float n = std::min(1.f, t.time / t.duration), e = curve(n, t.mode);
       for (size_t i = 0; i < t.fields.size(); i++) {
         const auto f = t.fields[i];
         double value;
@@ -978,10 +979,13 @@ bool VM::tick(Runtime& runtime) {
     return true;
   if (state_.flags & 0x40000u)
     return false;
-  handleInterrupt();
+  const float tickRate = (state_.flags & 0x80000000u) ? 1.f : runtime.delta;
+  const bool requestedInterrupt = pendingInterrupt_ != 0;
+  const bool unmatchedInterrupt = requestedInterrupt && !handleInterrupt();
   state_.held = false;
   size_t budget = 0;
-  while (pc_ < script_->commands.size() && script_->commands[pc_].time <= state_.clock) {
+  while (!unmatchedInterrupt && pc_ < script_->commands.size() &&
+         script_->commands[pc_].time <= state_.clock) {
     if (budget++ >= runtime.instructionBudget) {
       report(runtime, -1, "instruction budget");
       state_.ended = true;
@@ -995,8 +999,29 @@ bool VM::tick(Runtime& runtime) {
     if (!jumped && pc_ == old)
       ++pc_;
   }
-  if (!state_.ended)
+  if (!state_.ended) {
+    // Unmatched IRQ455786 and held commands both reach45645f's464a20(-1)
+    // before the common velocity/interpolation tail and positive timer step.
+    const bool negativeStep = unmatchedInterrupt || state_.held;
+    const bool fastTimer = tickRate > .99f && tickRate < 1.01f;
+    const float timerStep = fastTimer ? 1.f : tickRate;
+    float negativeTime = 0;
+    int negativeClock = 0;
+    if (negativeStep) {
+      timer_ -= timerStep;
+      state_.clock = nativeInt(timer_);
+      negativeTime = timer_;
+      negativeClock = state_.clock;
+    }
     advance(runtime);
+    if (negativeStep) {
+      // 4586de increments the integer clock directly in the near-one path.
+      // With a fractional timer the preceding negative step can truncate to
+      // zero, so recomputing this clock from the final float is not equivalent.
+      timer_ = float(double(negativeTime) + timerStep);
+      state_.clock = fastTimer ? int32_t(uint32_t(negativeClock) + 1) : nativeInt(timer_);
+    }
+  }
   return state_.ended;
 }
 } // namespace th12::anm_logic

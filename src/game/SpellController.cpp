@@ -5,7 +5,7 @@ namespace th12 {
 void tickSpell() {
   auto* spellBoss = primaryBoss();
   const auto spellTick = spellState.tick(
-      playerBomb.active, py / 128.f, spellBoss ? spellBoss->x : 0, spellBoss ? spellBoss->y : 0);
+      playerBomb.active, py / 128.f, spellBoss ? spellBoss->x : 0, spellBoss ? spellBoss->y : 0, gameSpeed);
   if (!spellTick.valid)
     ++unsupported[986];
   spell = spellState.active();

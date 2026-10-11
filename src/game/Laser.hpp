@@ -78,7 +78,8 @@ struct State {
   Phase phase = Phase::Removed;
   Vec3 position{}, velocity{}, initialPosition{};
   float angle = 0, length = 0, width = 0, speed = 0, headOffset = 0;
-  Timer age{}, grazeAge{}, extensionAge{}, offscreenGrace{}, wait{};
+  Timer age{}, grazeAge{}, extensionAge{}, offscreenGrace{}, wait{}, offscreenGate{};
+  int offscreenGateFlags = 0;
   bool cancellable = false;
   uint8_t retirePending = 0;
   int protection = 0;

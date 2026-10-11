@@ -84,7 +84,7 @@ void initializeStageAnimations() {
 
 void tickStage() {
   if (stageState.program && !stageProgram.commands.empty()) {
-    if (!stageState.tick(stageWorld))
+    if (!stageState.tick(stageWorld, gameSpeed))
       ++unsupported[982];
     backgroundFrame = stageState.callbackCount;
   } else

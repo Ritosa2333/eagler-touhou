@@ -8,9 +8,11 @@ class Slots {
 public:
   static constexpr size_t capacity = 2000;
   std::array<uint16_t, capacity> phases{};
+  std::array<int, capacity> cancelEffects{}; // Native slot+524 survives reuse.
   size_t cursor = 0;
   void reset() {
     phases = {};
+    cancelEffects = {};
     cursor = 0;
   }
   // 40a250 searches from the saved pointer, wrapping at its phase5 sentinel.

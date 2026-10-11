@@ -61,7 +61,7 @@ inline int resolveCardId(int opcode,int base,int difficulty){return opcode==437?
 struct State {
   uint32_t flags=0;int cardId=0,age=0,previousAge=-1,timeLimit=0;
   int bonusDisplayed=0,initialBonusDisplayed=0,serialTicks=0;
-  float ringX=0,ringY=0;bool replay=false,timedOut=false;
+  float ringX=0,ringY=0,ageTime=0;bool replay=false,timedOut=false;
   std::string title;Failure failure=Failure::None;
   Record loadoutRecord{},allRecord{};Result lastResult{};
   std::array<int32_t,21> replayResultTimes{};int replayResultTimeCount=0,resultTimeIndex=0;
@@ -95,7 +95,7 @@ struct State {
   }
   bool start(const Start& s){
     if(s.cardId<0||s.cardId>127||s.timeLimit<0||s.difficulty<0||s.difficulty>4||s.stage<1||s.stage>7)return false;
-    cardId=s.cardId;age=0;previousAge=-1;timeLimit=s.timeLimit;serialTicks=1;replay=s.replay;timedOut=false;failure=Failure::None;
+    cardId=s.cardId;age=0;ageTime=0;previousAge=-1;timeLimit=s.timeLimit;serialTicks=1;replay=s.replay;timedOut=false;failure=Failure::None;
     title=s.title;ringX=s.bossX;ringY=s.bossY;loadoutRecord=s.loadoutRecord;allRecord=s.allRecord;
     flags=(flags&~uint32_t(Survival|TimeoutRing|PendingBomb|WallClockRunning))|Active|Eligible;
     if(s.bombActive)flags|=PendingBomb;
@@ -115,7 +115,7 @@ struct State {
   bool onMiss(bool bombActive){return lose(Failure::Miss,bombActive);}
   bool onBomb(bool bombActive=true){return lose(Failure::Bomb,bombActive);}
   bool onTimeout(bool bombActive){if(!active())return false;timedOut=true;return survival()?false:lose(Failure::Timeout,bombActive);}
-  Tick tick(bool bombActive,float playerY,float bossX,float bossY){
+  Tick tick(bool bombActive,float playerY,float bossX,float bossY,float rate=1){
     Tick result;if(!active())return result;++serialTicks;
     if(age>=300&&!survival()){
       const int denominator=timeLimit-300;
@@ -125,7 +125,8 @@ struct State {
       const int decrement=(initialBonusDisplayed-initialBonusDisplayed/4)/denominator;
       const int next=bonusDisplayed-decrement;bonusDisplayed=next-next%10;
     }
-    previousAge=age;++age;result.openedGameplay=previousAge==60;
+    if(int(ageTime)!=age)ageTime=float(age);
+    previousAge=age;ageTime=float(double(ageTime)+rate);age=int(ageTime);result.openedGameplay=previousAge==60;
     if(age>=120){if(!(flags&BannerShifted)&&playerY<96){flags|=BannerShifted;result.bannerInterrupt=3;}
       else if((flags&BannerShifted)&&playerY>128){flags&=~uint32_t(BannerShifted);result.bannerInterrupt=2;}}
     const float dx=float(double(bossX)-ringX),dy=float(double(bossY)-ringY);

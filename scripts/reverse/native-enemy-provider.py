@@ -17,12 +17,17 @@ from unicorn.x86_const import *
 SHA='99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417'
 parser=argparse.ArgumentParser();parser.add_argument('--frames',type=int,default=120);parser.add_argument('--routine',default='main');parser.add_argument('--seed',type=int,default=42);parser.add_argument('--input',type=pathlib.Path);parser.add_argument('--native-bullets',action='store_true');parser.add_argument('--native-player',action='store_true');parser.add_argument('--native-items',action='store_true');parser.add_argument('--active-collision',action='store_true');parser.add_argument('--without-anm',action='store_true');parser.add_argument('--initial-health',type=int,default=10000);parser.add_argument('--damage-fixture',type=int,default=0);parser.add_argument('--omit-animation-capture',action='store_true');parser.add_argument('--prime-creation-guard',action='store_true');parser.add_argument('--trace-hurt-queries',nargs=2,type=int);parser.add_argument('--trace-rng-ticks',nargs=2,type=int);parser.add_argument('--capture-text-output',action='store_true');parser.add_argument('--trace-source-births',nargs=2,type=int);parser.add_argument('--output',type=pathlib.Path,default=TITLE/'artifacts/reverse/native-enemy-frames.json');parser.add_argument('--native-lasers',action='store_true');parser.add_argument('--instruction-budget',type=int,default=2000000);parser.add_argument('--trace-laser-visual-ticks',nargs=2,type=int);parser.add_argument('--trace-anm-vm-address',type=lambda value:int(value,0));parser.add_argument('--trace-cancel-ticks',nargs=2,type=int);parser.add_argument('--native-camera-effects',action='store_true');parser.add_argument('--omit-world-frame-capture',action='store_true');parser.add_argument('--trace-msg-ticks',nargs=2,type=int);parser.add_argument('--trace-combine-ticks',nargs=2,type=int);parser.add_argument('--trace-player-ticks',nargs=2,type=int,action='append')
 parser.add_argument('--host-heap-extra-mib',type=int,default=0,help='Opt-in bounded host allocator spill arena at0x8000000, used only after the original16MiB arena cannot fit a request (0..256MiB)')
+parser.add_argument('--native-d3dx-vec2',action='store_true',help='Bind Vec2Normalize to the pinned original32bit D3DX9_40 DLL CPU implementation; no mathematical stub')
+parser.add_argument('--trace-graze-ticks',nargs=2,type=int,help='Opt-in observation-only Curve line queries, actual graze awards and completed-frame history nodes in this inclusive input range')
+parser.add_argument('--compact-output',action='store_true',help='Serialize the same observed JSON values without indentation to bound diagnostic file size')
 args=parser.parse_args()
 if args.native_player and (not args.input or args.without_anm):raise SystemExit('Native player requires a fixture input and original ANM logic')
 if args.active_collision and (not args.native_player or args.damage_fixture):raise SystemExit('Active collision requires original player and forbids synthetic damage fixture')
 if args.native_items and not args.native_player:raise SystemExit('Native items require original player')
 if args.native_camera_effects and not args.native_items:raise SystemExit('Native camera effects require original item/Bomb/world managers')
 if args.native_lasers and not (args.native_player and args.native_items and args.native_bullets and not args.without_anm):raise SystemExit('Native lasers require original Player/Item/Bullet/ANM updates')
+if args.trace_graze_ticks and not (args.native_lasers and args.active_collision):raise SystemExit('Curve graze observation requires actual active Player and Laser updates')
+if args.trace_graze_ticks and not (0<=args.trace_graze_ticks[0]<=args.trace_graze_ticks[1]):raise SystemExit('Invalid inclusive curve graze input range')
 if not 1<=args.instruction_budget<=200000000:raise SystemExit('Native instruction budget must be between1 and200000000')
 if not 0<=args.host_heap_extra_mib<=256:raise SystemExit('Host heap extension must be between0 and256MiB')
 exe=WORKSPACE/'th12/th12.exe'
@@ -143,6 +148,7 @@ native_polar_inputs={}
 source_request=None
 collision_query=None
 laser_line_query=None
+curve_graze_query=None
 combine_state=None
 
 def source_fields(pointer):
@@ -185,7 +191,19 @@ if not args.without_anm:
 if args.active_collision:
  for address in [0x439ed0,0x437810,0x437980,0x4391c0]:del external[address]
 def code_hook(v,address,size,unused):
- global heap,next_bullet_id,next_friendly_id,last_spawn_request,resource_base,source_request,collision_query,laser_line_query,combine_state
+ global heap,next_bullet_id,next_friendly_id,last_spawn_request,resource_base,source_request,collision_query,laser_line_query,combine_state,curve_graze_query
+ if args.trace_graze_ticks and args.trace_graze_ticks[0]<=frame<=args.trace_graze_ticks[1]:
+  if address==0x437a80 and get(v.reg_read(UC_X86_REG_ESP),'I')[0]==0x42cbb5:
+   sp=v.reg_read(UC_X86_REG_ESP);obj=v.reg_read(UC_X86_REG_ESI);node=v.reg_read(UC_X86_REG_EDI)
+   curve_graze_query={'frame':frame,'kind':'nativeCurveLineCollision','entry':'0x437a80','caller':'0x42cbb5','object':hex(obj),'nativeField80':get(obj+0x80,'I')[0],'nodeIndex':v.reg_read(UC_X86_REG_EBX),'node':get(node,'5f'),'origin':get(v.reg_read(UC_X86_REG_EAX),'fff'),'angleTransverseLongitudinal':get(sp+4,'fff'),'playerPosition':get(PLAYER+0x97c,'fff'),'playerHalfExtents':get(PLAYER+0x9e4,'fff'),'grazeAgeBefore':get(obj+0x28,'iif'),'alreadyAwardedThisVisit':v.reg_read(UC_X86_REG_EBP)}
+  elif address==0x42cbb5 and curve_graze_query:
+   curve_graze_query['result']=v.reg_read(UC_X86_REG_EAX);events.append(curve_graze_query);curve_graze_query=None
+  if address in (0x4391c0,0x4392f0):
+   sp=v.reg_read(UC_X86_REG_ESP);caller=get(sp,'I')[0]
+   row={'frame':frame,'kind':'nativeGrazeWindowAward','entry':hex(address),'caller':hex(caller),'grazeBefore':get(0x4b0cdc,'i')[0],'pivBefore':get(0x4b0c78,'i')[0]}
+   if caller==0x42cc18:
+    obj=v.reg_read(UC_X86_REG_ESI);row.update({'curveObject':hex(obj),'nativeField80':get(obj+0x80,'I')[0],'nodeIndex':v.reg_read(UC_X86_REG_EBX),'grazeAgeBefore':get(obj+0x28,'iif')})
+   events.append(row)
  if args.trace_combine_ticks and args.trace_combine_ticks[0]<=frame<=args.trace_combine_ticks[1] and address in (0x413700,0x413763,0x464db0,0x465320,0x413768,0x41382d):
   if address==0x413700:combine_state=v.reg_read(UC_X86_REG_ESI)
   sp=v.reg_read(UC_X86_REG_ESP);row={'frame':frame,'kind':'nativeCombineTrace','entry':hex(address),'fpcw':hex(v.reg_read(UC_X86_REG_FPCW)),'fpsw':hex(v.reg_read(UC_X86_REG_FPSW)),'mxcsr':hex(v.reg_read(UC_X86_REG_MXCSR)),'stackCodeWords':[hex(word) for word in get(sp,'32I') if 0x400000<=word<0x498000]}
@@ -329,6 +347,8 @@ def code_hook(v,address,size,unused):
 # not cross into Python. This preserves native logic and speeds long traces.
 for address in sorted(set(external)|{SOUND_SET_PAN,SOUND_GET_STATUS,SOUND_STOP,0x433710,0x46c9ea,0x46d04a,0x46c941,0x46ca4f,0x412990,0x413230,0x413840,0x413d90,0x43967b,0x439ed0,0x439f70,0x40d640,0x4643d0,0x464440,0x467170,0x4154d0,0x4694f0,0x40b5e0,0x40aa16,0x40aa0a,0x4273f0,0x45fe60,0x463c10,0x44e660,0x44e8e0,0x4390f0,0x4391ab,0x43a21c,0x43a3c4,0x43a3d1,0x43a3f6,0x437810,0x437980,0x409b5a,0x409e5f,0x4391c0}):v.hook_add(UC_HOOK_CODE,code_hook,begin=address,end=address)
 for address in (0x437a80,0x42b029):v.hook_add(UC_HOOK_CODE,code_hook,begin=address,end=address)
+if args.trace_graze_ticks:
+ for address in (0x42cbb5,0x4392f0):v.hook_add(UC_HOOK_CODE,code_hook,begin=address,end=address)
 for address in (0x40cf60,0x40caa0,0x40c8b0,0x428670,0x4286f0,0x428750,0x42a800,0x42a1f0,0x42bd90,0x42b750,0x42e3e0,0x42df00):v.hook_add(UC_HOOK_CODE,code_hook,begin=address,end=address)
 v.hook_add(UC_HOOK_CODE,code_hook,begin=0x452a60,end=0x452a60)
 v.hook_add(UC_HOOK_CODE,code_hook,begin=0x412720,end=0x412720)
@@ -375,6 +395,24 @@ def call(address,*values,budget=2000000):
   if isinstance(globals().get('frames'),list) and 'write_trace' in globals():write_trace(fault=boundary)
   raise RuntimeError('Native instruction budget exceeded at '+hex(v.reg_read(UC_X86_REG_EIP))+'; inputTick='+str(frame)+'; boundary='+str(boundary_output))
  return v.reg_read(UC_X86_REG_EAX)
+d3dx_vec2={'enabled':False}
+if args.native_d3dx_vec2:
+ # ETEX400's actual40c530 calls46c6ce -> [4982e4]. An unbound import
+ # contains the PE import-name RVA, not executable code. Execute the same
+ # pinned dependency/CPU dispatch initialization used by sample-etex-boundaries.
+ dll_path=pathlib.Path(r'C:\Windows\SysWOW64\D3DX9_40.dll')
+ dll_sha='16fd909aeb68d0d1aca8529dc7f78880b97d6649d70ce8d03a2c858bc28e216b'
+ if hashlib.sha256(dll_path.read_bytes()).hexdigest()!=dll_sha:raise RuntimeError('Pinned original32bit D3DX9_40 DLL required for Vec2Normalize')
+ dll_pe=pefile.PE(str(dll_path));dll_base=0x10000000
+ if dll_pe.OPTIONAL_HEADER.ImageBase!=dll_base:raise RuntimeError('Unexpected original D3DX9_40 preferred base')
+ v.mem_map(dll_base,(dll_pe.OPTIONAL_HEADER.SizeOfImage+4095)&~4095)
+ v.mem_write(dll_base,dll_pe.get_memory_mapped_image())
+ put(0x4982e4,'I',0x101fded0)
+ call(0x103e18fe,0x103f8048)
+ if get(0x103f8104,'I')[0]!=0x103e0517:raise RuntimeError('Unexpected original SSE2 Vec2Normalize dispatch')
+ def count_d3dx_vec2(v,address,size,unused):intercepts['native_d3dx_vec2_normalize']+=1
+ v.hook_add(UC_HOOK_CODE,count_d3dx_vec2,begin=0x101fded0,end=0x101fded0)
+ d3dx_vec2={'enabled':True,'dll':str(dll_path),'sha256':dll_sha,'mappedBase':hex(dll_base),'imageSize':dll_pe.OPTIONAL_HEADER.SizeOfImage,'import':'D3DXVec2Normalize','iat':'0x4982e4','entry':'0x101fded0','initializer':'0x103e18fe','selectedCpuImplementation':'0x103e0517','scope':'Pinned real32bit dependency bytes and actual CPU feature dispatch. Only the original unresolved Vec2Normalize IAT is bound. Native ETEX geometry, motion, collision, RNG and ANM instructions remain executable without replacement; other D3DX/application/GPU imports remain outside this selected-manager host.'}
 if args.routine not in routines:raise SystemExit('Unknown original routine')
 if args.native_items:
  if call(0x46ea5c,1)!=1 or call(0x47562a)!=1:raise RuntimeError('Original CRT heap/thread initialization failed')
@@ -470,6 +508,10 @@ def capture_lasers():
   # never equate it with the candidate manager's independent serial number.
   if pointer not in laser_ids:laser_ids[pointer]={'id':len(laser_ids)+1,'firstObservedInputTick':frame}
   row={'observedObject':laser_ids[pointer],'address':hex(pointer),'nativeField80':get(pointer+0x80,'I')[0],'kind':kind,'phase':get(pointer+0xc,'i')[0],'position':get(pointer+0x50,'fff'),'geometry':get(pointer+0x68,'4f'),'headOffset':get(pointer+0x78,'f')[0],'age':get(pointer+0x14,'iif'),'retirePending':get(pointer+0x7c,'B')[0],'cancellable':get(pointer+0x7d,'B')[0]}
+  if kind==2 and args.trace_graze_ticks and args.trace_graze_ticks[0]<=frame<=args.trace_graze_ticks[1]:
+   count=get(pointer+0x470,'i')[0];history=get(pointer+0xf9c,'I')[0]
+   if not 0<=count<=4096:raise RuntimeError('Invalid observed Curve history count')
+   row['curveHistory']={'count':count,'nodes':[get(history+index*20,'5f') for index in range(count)],'grazeAge':get(pointer+0x28,'iif'),'cancellationProtection':get(pointer+0x44c,'i')[0]}
   if args.trace_laser_visual_ticks and args.trace_laser_visual_ticks[0]<=frame<=args.trace_laser_visual_ticks[1]:
    vms=[]
    for role,offset in [('main',{0:0x63c,1:0x660,2:0x634}[kind]),('cap',{0:0xaf0,1:0xb14,2:0xae8}[kind])]:
@@ -590,7 +632,9 @@ def write_trace(fault=None,scene_boundary=None):
  data['instructionBudgetPerCall']=args.instruction_budget
  data['worldFrameCaptureScope']={'enabled':not args.omit_world_frame_capture,'actualInputTicksExecuted':executed_input_ticks,'completedSnapshots':len(frames)-1,'scope':'Optional event-only CPU diagnostics execute the same original replay inputs and schedule, but omitted snapshots cannot be compared as a native frame prefix.'}
  data['grazeStateCapture']={'enabled':any(isinstance(row.get('economy'),dict) and 'graze' in row['economy'] for row in frames),'address':'0x4b0cdc','field':'economy.graze','awardEntries':['0x4391c0','0x4392f0'],'replayHeaderRestore':'0x43b316','scope':'Direct integer observation after completed manager ticks; no award, collision or RNG execution is altered. Captures without this field do not provide a graze comparison.'}
+ data['curveGrazeWindowObservation']={'inputTickRange':args.trace_graze_ticks,'enabled':bool(args.trace_graze_ticks),'lineQueryEntry':'0x437a80','curveQueryReturn':'0x42cbb5','curveAwardCaller':'0x42cc18','historyPointer':'Curve+0xf9c','historyCount':'Curve+0x470','scope':'Observation-only actual Curve segment line-query inputs and returned EAX, actual graze award entries and completed-frame history nodes. No return, node, timer, RNG or input is replaced; snapshots outside this opt-in window omit node history.'}
  data['hostHeapAudit']=capture_heap_audit()
+ data['nativeD3dxVec2Normalize']=d3dx_vec2
  if args.trace_anm_vm_address is not None:data['anmVmWriteAudit']={'vm':hex(args.trace_anm_vm_address),'scope':'Original CPU writes observed without alteration to resource selection, interrupt and script pointers.','writes':anm_vm_writes}
  data['laserScope']={'enabled':args.native_lasers,'constructor':'0x4281c0' if args.native_lasers else None,'registrar':'0x427fd0' if args.native_lasers else None,'update':'0x428270' if args.native_lasers else None,'priority':20 if args.native_lasers else None,'scope':'Original manager and object vtable updates, embedded ANM and Player line collision. Direct callback fixture has an unpaused world; whole application pause/dialogue scheduler and drawing remain outside scope.'}
  data['laserStateCapture']={'enabled':args.native_lasers,'kinds':{'0':'moving','1':'timed','2':'curve'},'fields':['observed object identity','nativeField80','kind','phase','position','angle/length/width/speed','headOffset','age previous/current/value','retirePending','cancellable'],'nativeField80':'Moving/Curve serial; Timed lookup ID, overwritten by42ad74. Candidate serial IDs are a separate namespace.','curveNodesCaptured':False,'gpuExecuted':False,'scope':'Observed original CPU object state. Observation IDs cannot detect a birth retiring before the first captured frame. Curve node geometry and draw vertices are not captured. Opt-in comparator reports declare their observed CPU field and independent-identity pairing scope separately.'}
@@ -598,7 +642,7 @@ def write_trace(fault=None,scene_boundary=None):
  data['audioOutputBoundary']={'audibleOutputExecuted':False,'scope':'Host-only sound buffers with native queue updates retained. Silent IDirectSoundBuffer GetStatus, SetPan and Stop responses; no audio oracle.','methods':{'vtable+0x24':'GetStatus returns no playing buffer','vtable+0x40':'SetPan returns success','vtable+0x48':'Stop returns success'}}
  data['nativeGameOverSceneBoundary']=next((event for event in events if event['kind']=='nativeGameOverSceneEntered'),None)
  data['dynamicTextOutputBoundary']={'enabled':args.capture_text_output,'functions':['0x44e660','0x44e8e0'] if args.capture_text_output else [],'scope':'Records actual CPU formatting/layout wrapper arguments; GDI rasterization, CPU glyph-pixel transforms and D3D texture upload suppressed. No font pixel/size comparison and no visual oracle. Actual Spell/Enemy/ECL/ANM/RNG logic retained.'}
- args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(data,indent=2)+'\n',encoding='utf-8')
+ args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(data,indent=None if args.compact_output else 2,separators=(',',':') if args.compact_output else None)+'\n',encoding='utf-8')
 # Probe bootstrap consumers execute the initialization prefix only. Validate
 # the requested trace length at the actual loop boundary, not during bootstrap.
 if args.frames<0 or (fixture and args.frames>len(fixture['inputs'])):raise SystemExit('Requested trace exceeds supplied replay inputs')

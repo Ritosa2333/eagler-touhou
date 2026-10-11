@@ -22,6 +22,7 @@ void emitHostileEmission(const eb::Emission& event, bool audible) {
   th12::emit(origin, s, audible);
 }
 struct BulletWorld : eb::World {
+  float gameRate() const override { return gameSpeed; }
   void emit(const eb::Emission& event) override { emitHostileEmission(event); }
   void unsupported(uint32_t code) override {
     ++th12::unsupported[509];
@@ -223,6 +224,7 @@ void emit(Enemy& e, Shooter& s, bool audible) {
       bullets.push_back(projectile);
       auto& born = bullets.back();
       attachHostileSlot(born); // Parent occupies its slot before child births.
+      born.enemy.cancelEffect = hostilePool.cancelEffects[physicalSlot];
       eb::initialize(born.enemy, born.entityId, s.extensions, s.type, s.color, x, y, a, speed,
                      bulletWorld);
       born.x = born.enemy.x;

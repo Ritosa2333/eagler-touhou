@@ -92,16 +92,24 @@ struct PlayerMotion {
   }
 };
 struct ShotSchedule {
-  int frame=-1;
+  int frame=-1,previous=-2;float time=-1;bool emitThisTick=false;
   int begin(bool held,bool allowed){
-    if(!allowed){frame=-1;return -1;}
-    if(frame<0){if(!held)return -1;frame=0;}
+    emitThisTick=false;
+    if(!allowed){frame=-1;time=-1;previous=-2;return -1;}
+    if(frame<0){if(!held)return -1;frame=0;time=0;previous=-1;}
+    if(int(time)!=frame)time=float(frame);
+    emitThisTick=frame!=previous;
     return frame;
   }
-  void finish(bool held){
+  void finish(bool held,float rate=1){
     // Original 439a40: complete the 0..14 cycle after Z is released.
     if(frame<0)return;
-    if(frame>=14)frame=held?frame-14:-1;else ++frame;
+    previous=frame;
+    // 439ac2 passes-14 to464a20, which multiplies the adjustment by
+    // global speed too. Preserve this fractional-rate wrap rather than14.
+    if(frame>=14){if(held)time=float(double(time)-14*double(rate));else{time=-1;previous=-2;}}
+    else time=float(double(time)+rate);
+    frame=int(time);
   }
 };
 }

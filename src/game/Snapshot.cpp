@@ -487,7 +487,7 @@ void snapshotAnimations(std::ostream& out) {
 const std::string& captureState() {
   std::ostringstream out;
   out << std::setprecision(9);
-  out << "{\"referenceFaults\":[";
+  out << "{\"gameSpeed\":" << gameSpeed << ",\"referenceFaults\":[";
   std::vector<uint64_t> faultKeys;
   for (const auto& [key, count] : referenceFaults)
     faultKeys.push_back(key);

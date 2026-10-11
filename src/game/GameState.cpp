@@ -34,9 +34,11 @@ void recordRuntimeFault(uint32_t system, uint32_t code) {
 
 Program program;
 std::unordered_map<int, Value> globals;
+std::array<u32, 3> phasePlayerCounters{};
 int frame = 0, character = 0, shot = 0, difficulty = 1, stageNumber = 1, px = 0, py = 51200,
     graze = 0;
 int backgroundFrame = 0;
+float gameSpeed = 1;
 bool backgroundVisible = true;
 stage_logic::Program stageProgram;
 stage_logic::State stageState;
@@ -45,6 +47,8 @@ int &power = resources.power, &lives = resources.lives, &bombs = resources.bombs
 int invuln = 120, deathWindow = 0, bombTimer = 0, previousHeld = 0, fireFrame = 0, eventBits = 0,
     dialogue = 0, spell = 0, ended = 0;
 int playerState = 1, playerStateTicks = 0;
+float playerStateTime = 0, playerInvulnerabilityTime = 120, playerTotalTime = 0;
+int playerPreviousStateTicks = -1;
 u32 playerFlags = 0;
 std::array<int, 4> replayStageGlobals{};
 uint64_t playerFocusAnimation = 0;

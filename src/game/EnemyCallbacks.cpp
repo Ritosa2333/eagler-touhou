@@ -142,6 +142,10 @@ int runEnemyCallback(Enemy& e, int selector) {
   return result.nativeReturn;
 }
 int queryPlayerDamage(const Enemy& target, float x, float y, float width, float height) {
+  // 439ee1..439f02 exits BEFORE the shot/source scan when Player+a34
+  // has not advanced past+a30. Fractional-speed frames must not award hits.
+  if (playerPreviousStateTicks == playerStateTicks)
+    return 0;
   Enemy area;
   area.id = target.id;
   area.x = x;

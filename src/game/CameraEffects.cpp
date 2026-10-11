@@ -73,7 +73,7 @@ void tickCameraEffects() {
   // Draw42's460e40..460e62 clears these globals after the preceding frame's
   // stage/gameplay draws. Keep that frame seam even when no GPU draws occur.
   cameraEffects.offsets = {};
-  cameraEffects.tick(random);
+  cameraEffects.tick(random, gameSpeed);
 }
 void resetCameraEffects() {
   cameraEffects.reset();

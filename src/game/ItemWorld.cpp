@@ -37,7 +37,7 @@ void applyUfoPlan(const ufo_system::RewardPlan& plan) {
 void tickUfo() {
   const auto hooks = ufoHooks();
   const auto result = ufoManager.tick(
-      {power, stageNumber, primaryBoss() != nullptr, dialogue > 0, 1, resources.powerStep}, hooks);
+      {power, stageNumber, primaryBoss() != nullptr, dialogue > 0, gameSpeed, resources.powerStep}, hooks);
   for (const auto& action : result.actions)
     for (auto& p : enemies)
       if (p->id == action.enemyId && p->active) {
@@ -53,6 +53,7 @@ void tickUfo() {
 void tickItems(bool focus) {
   const auto hooks = ufoHooks();
   item_system::FrameView itemFrame;
+  itemFrame.rate = gameSpeed;
   itemFrame.animate = itemPresentationTick;
   itemFrame.player =
       item_system::PlayerView::native(character, {px / 128.f, py / 128.f}, focus, playerState);

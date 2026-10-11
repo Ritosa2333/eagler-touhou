@@ -157,7 +157,10 @@ int clearCurve(CurveLaser& object, Manager&, World& world, Pred hit, bool conver
     ++a;
   if (a) {
     s.nodes.erase(s.nodes.begin(), s.nodes.begin() + a);
-    removed.erase(removed.begin(), removed.begin() + a);
+    // 42e132..42e193/42dc53..42dcb5 shift this leading prefix and return.
+    // Later hit islands were sampled for effects but remain in this history;
+    // the interior-disconnection branch runs only when the head was unhit.
+    return hits;
   }
   int run = 0;
   while (run < int(s.nodes.size()) && !removed[size_t(run)])
@@ -320,6 +323,14 @@ bool Laser::extensions(Manager& manager, World& world) {
         s.protection = r.c;
         continue;
       } // native +44c, not +43c.
+      if (r.kind == 0x400 && s.kind == Kind::Curve) {
+        // 42d31e..42d33a: Curve-only offscreen lifetime, distinct from
+        // cancellation protection200. Other laser dispatchers ignore400.
+        s.activeExtensions |= 0x400;
+        s.offscreenGate.reset(r.c);
+        s.offscreenGateFlags = r.d;
+        continue;
+      }
       if (r.kind == 0x80000 || r.kind == 0x100000) {
         // Moving428e/Curve42d490 constructs a BulletManager emitter from a
         // paired24-byte record. Timed42c1a0 ignores both command kinds.
@@ -455,6 +466,16 @@ bool Laser::extensions(Manager& manager, World& world) {
         repeat = true;
       }
     }
+    if ((s.activeExtensions & 0x400) && s.kind == Kind::Curve) {
+      // 42d980 decrements first, then requests another dispatch pass when
+      // the integer timer reaches zero. Polar8 completion can cause this
+      // callback to run again in the same update.
+      s.offscreenGate.advance(-world.gameRate());
+      if (s.offscreenGate.current <= 0) {
+        s.activeExtensions &= ~0x400u;
+        repeat = true;
+      }
+    }
     if (s.activeExtensions & 0x1000) {
       if (s.wait.current <= 0) {
         s.activeExtensions &= ~0x1000u;
@@ -585,13 +606,15 @@ bool CurveLaser::update(Manager& manager, World& world) {
   const float rate = world.gameRate();
   for (size_t i = s.nodes.size(); i > 1; --i)
     s.nodes[i - 1] = s.nodes[i - 2];
-  s.position = add(s.position, s.velocity); // native42c965 has no global rate multiply.
+  // 42c965 advances the first remaining history point, which can differ from
+  // the previous head after cancellation. It then synchronizes Laser+50 XYZ;
+  // the new head retains the current laser angle/speed, not the old node's.
+  s.position = add(s.nodes.empty() ? s.position : s.nodes[0].position, s.velocity);
   if (!s.nodes.empty())
     s.nodes[0] = {s.position, s.angle, s.speed};
-  if (s.offscreenGrace.current > 0)
+  if (s.offscreenGrace.current > 0 || (s.activeExtensions & 0x400))
     s.offscreenGrace.advance(-rate);
-  else if (!(s.activeExtensions & 0x400) &&
-           std::all_of(s.nodes.begin(), s.nodes.end(),
+  else if (std::all_of(s.nodes.begin(), s.nodes.end(),
                        [&](const Node& n) { return outside(n.position, s.width, s.width); }))
     return true;
   float total = 0;
@@ -599,7 +622,8 @@ bool CurveLaser::update(Manager& manager, World& world) {
   for (size_t i = 0; i + 1 < s.nodes.size(); ++i) {
     const auto& node = s.nodes[i];
     total = fadd(total, node.speed);
-    if (total <= 16)
+    // 42cb72..42cb81 skips only totals below16; equality is queried.
+    if (total < 16)
       continue;
     auto r = world.lineCollision(add(node.position, direction(node.angle, node.speed * .5f)),
                                  node.angle, s.width * .5f, node.speed);
@@ -841,6 +865,11 @@ void Manager::reset(World* w) {
 }
 Laser* Manager::appendMovingFragment(const Laser& source, const Vec3& position, float length,
                                      World& world) {
+  // Timed42bc01..42bc4b (and its rectangle counterpart) rejects a
+  // disconnected fragment whose starting point is outside the32px margin.
+  // Constructing it anyway creates an extra cancel effect on the next Bomb.
+  if (source.state.kind == Kind::Timed && outside(position, 32, 32))
+    return nullptr;
   Parameters p = source.state.parameters;
   p.position = position;
   p.angle = source.state.angle;

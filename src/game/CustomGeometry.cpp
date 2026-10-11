@@ -172,8 +172,8 @@ Mesh curveLaser(const laser::State& laser, const anm_logic::State& state,
   const size_t count = laser.nodes.size();
   if (count < 2 || count > 65536 || !drawable(state))
     return result;
-  const float radius = float(double(laser.parameters.width) * .5),
-              textureStep = float(1. / double(count - 1));
+  const float radius = float(double(laser.parameters.width) * .5);
+  const double textureStep = 1. / double(count - 1); //42cf9c retains the quotient until the add.
   float u = 0;
   result.vertices.reserve(count * 2);
   for (size_t i = 0; i < count; ++i) {
@@ -186,7 +186,7 @@ Mesh curveLaser(const laser::State& laser, const anm_logic::State& state,
                                     0xffffffff, u, region.v0));
     result.vertices.push_back(polar(joinNormal(point.angle, previous, i == 0, -1), radius, origin,
                                     0xffffffff, u, region.v1));
-    u = add(u, textureStep);
+    u = float(double(u) + textureStep);
   }
   return result;
 }

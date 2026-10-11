@@ -23,6 +23,10 @@ float global(Enemy& e, int id, bool floating) {
   if (id >= -9935 && id <= -9932)
     return asfloat(e.variables[id + 9943]);
   switch (id) {
+  case -9949:
+  case -9948:
+  case -9947:
+    return float(i32(phasePlayerCounters[id + 9949]));
   case -10000:
     return float(random.next32());
   case -9999:
@@ -104,6 +108,8 @@ float global(Enemy& e, int id, bool floating) {
     return character * 2 + shot;
   case -9931:
     return float(i32(lastSpawnedEnemyId)); // Native41a41b: signed fild of EnemyManager+78.
+  case -9930:
+    return float(power); // Native41a427: signed fild of raw power4b0c48.
   default: {
     auto found = globals.find(id);
     return found == globals.end() ? 0 : found->second.floating();
@@ -111,10 +117,14 @@ float global(Enemy& e, int id, bool floating) {
   }
 }
 i32 globalInt(Enemy& e, int id) {
+  if (id >= -9949 && id <= -9947)
+    return i32(phasePlayerCounters[id + 9949]);
   if (id == -10000)
     return i32(random.next32());
   if (id == -9931)
     return i32(lastSpawnedEnemyId);
+  if (id == -9930)
+    return power; // Native419dba preserves the integer before any float conversion.
   if (id >= -9985 && id <= -9982)
     return i32(e.variables[id + 9985]);
   if (auto found = globals.find(id); found != globals.end())
@@ -162,7 +172,9 @@ float arg(Context& c, Enemy& e, int index, bool isFloat, int referenceIndex) {
 }
 void store(Context& c, Enemy& e, int id, float value, bool isFloat) {
   const u32 raw = isFloat ? asbits(value) : u32(i32(value));
-  if (id >= 0 && id < 1024)
+  if (id >= -9949 && id <= -9947)
+    phasePlayerCounters[id + 9949] = raw;
+  else if (id >= 0 && id < 1024)
     c.locals[id / 4] = raw;
   else if (id >= -9985 && id <= -9978)
     e.variables[id + 9985] = raw;
@@ -172,7 +184,9 @@ void store(Context& c, Enemy& e, int id, float value, bool isFloat) {
     globals[id] = {raw, !isFloat};
 }
 void storeInt(Context& c, Enemy& e, int id, i32 value) {
-  if (id >= 0 && id < 1024)
+  if (id >= -9949 && id <= -9947)
+    phasePlayerCounters[id + 9949] = u32(value);
+  else if (id >= 0 && id < 1024)
     c.locals[id / 4] = u32(value);
   else if (id >= -9985 && id <= -9978)
     e.variables[id + 9985] = u32(value);
@@ -685,6 +699,7 @@ void command(Enemy& e, Context& c, int op) {
   }
   case 413:
     e.phaseAge = e.age = 0;
+    e.phaseAgeTime = e.ageTime = 0;
     break;
   case 414: {
     const int timeout = I(2), health = I(1), slot = I(0);
@@ -838,6 +853,19 @@ void command(Enemy& e, Context& c, int op) {
     break;
   case 445:
     laserManager.clearPhaseEnd(laserWorld); // 419387 invokes428670.
+    break;
+  case 446:
+    // 419391..4193d0 reads both operands as integer words, including the
+    // retail literal0.0f. Save the current movement IRQ, not the ANM script.
+    e.flags = (e.flags & ~0x8000000u) | ((u32(I(0)) & 1u) << 27);
+    e.bombAnimation = I(1);
+    e.flags &= ~0x10000000u;
+    e.bombSavedAnimation = e.animation;
+    break;
+  case 447:
+    // 4193df..4193e4: later managers and ANM birth/tails see this immediately.
+    gameSpeed = F(0);
+    animationScene.runtime.delta = gameSpeed;
     break;
   case 449:
     e.flags = (e.flags & ~0x40000000u) | ((u32(I(0)) & 1u) << 30);
@@ -1062,6 +1090,9 @@ void command(Enemy& e, Context& c, int op) {
   }
 }
 void runContext(Enemy& e, Context& c) {
+  // 468d90 passes the rate into467170 before commands execute. ECL447
+  // affects later callbacks; this runner's tail retains its entry rate.
+  const float tickRate = gameSpeed;
   for (int budget = 0; c.pc && rd<i32>(c.pc) <= c.time && budget < 10000; budget++) {
     const u8* instruction = c.pc;
     const int op = rd<u16>(c.pc + 4), length = rd<u16>(c.pc + 6);
@@ -1362,7 +1393,7 @@ void runContext(Enemy& e, Context& c) {
       c.pc = instruction;
   }
   if (c.pc)
-    c.time += 1;
+    c.time = float(double(c.time) + tickRate);
 }
 
 } // namespace th12
