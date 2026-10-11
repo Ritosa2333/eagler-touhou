@@ -1,6 +1,7 @@
+import {emscripten} from '../scripts/toolchain.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';import{spawnSync}from'node:child_process';import{pathToFileURL}from'node:url';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root),output=path.join(root,'artifacts/anm-scene-test-runtime');fs.mkdirSync(output,{recursive:true});
-const python=path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe'),compiler=path.join(workspace,'tools/emsdk/upstream/emscripten/emcc.py');
+const python=emscripten(root).python,compiler=emscripten(root).compiler;
 const result=spawnSync(python,[compiler,'tests/fixtures/anm-scene.cpp','src/game/AnmLogic.cpp','src/game/AnmScene.cpp','-std=c++20','-O2','-o',path.join(output,'core.mjs'),'-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=node','-sEXPORTED_FUNCTIONS=["_malloc","_free","_load","_load_bank","_reset","_bind","_bind_at","_bind_bank_xyz","_scene_interrupt","_scene_rotate","_primary","_secondary","_snapshot","_scene_remove"]','-sEXPORTED_RUNTIME_METHODS=["HEAPU8"]'],{cwd:root,encoding:'utf8',env:{...process.env,EM_CACHE:path.join(root,'artifacts/emscripten-cache'),EMSDK_PYTHON:python,PATH:path.dirname(python)+path.delimiter+process.env.PATH}});assert.equal(result.status,0,result.stderr||result.stdout);
 const create=(await import(pathToFileURL(path.join(output,'core.mjs')).href)).default;
 function instruction(op,formats='',values=[],time=0,mask=0){const b=Buffer.alloc(8+values.length*4);b.writeUInt16LE(op&65535);b.writeUInt16LE(b.length,2);b.writeInt16LE(time,4);b.writeUInt16LE(mask,6);values.forEach((v,i)=>formats[i]==='f'?b.writeFloatLE(v,8+i*4):b.writeInt32LE(v,8+i*4));return b;}

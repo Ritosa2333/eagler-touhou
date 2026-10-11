@@ -4,6 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import createCore from '../site/runtime/core.mjs';
+import {omitPlayerEntryClear} from './helpers/passive-player.mjs';
 import {readCoreAnimationPoses} from '../src/renderer.mjs';
 import {readCoreDrawSchedule,orderPresentation} from '../src/draw-scheduler.mjs';
 import {readCoreSpell,decodeSpellTitle,spellTextDescriptors} from '../src/spell-presentation.mjs';
@@ -61,6 +62,7 @@ async function ready(){
       instruction(501,[word(0)]),hold()]
   });
   load(core,ecl,'_th12_load_ecl');core._th12_start(0,0,1,0x1234);
+  omitPlayerEntryClear(core);
   core._th12_set_initial(0,400*128,400,2,2,0);
   core._th12_set_replay_economy(10000,0,0,1,2,0,0);
   return core;
@@ -106,7 +108,7 @@ test('production core provides decoded spell title, bonus/history and manager dr
   // Friendly and hostile shots share the0x1 owner namespace. Select the
   // hostile retail bank as well; friendly shots use their player ANM banks.
   const body=poses.find(p=>p.owner===0xffff0000),bullet=poses.find(p=>(p.owner>>>28)===1&&p.a.name==='bullet'),
-    stock=poses.filter(p=>(p.owner&0xffff0000)>>>0===0xfffe0000);
+    stock=poses.filter(p=>p.a.name==='front'&&(p.owner&0xffff0000)>>>0===0xfffe0000);
   assert.ok(body,'real player VM');assert.ok(bullet,'ordinary hostile bullet VM');assert.equal(stock.length,3,'all physical UFO stock VMs');
   assert.equal(schedule.get(body.id).drawPriority,24);assert.equal(schedule.get(bullet.id).drawPriority,31);
   for(const p of stock)assert.equal(schedule.get(p.id).drawPriority,44,'stock embedded layer20 bypasses normal layer callback');

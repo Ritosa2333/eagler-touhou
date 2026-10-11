@@ -62,6 +62,10 @@ struct Loadout {
 struct PlayerOption {int x=0,y=0,age=0;};
 struct PlayerMotion {
   std::array<PlayerOption,4> options{};
+  //43add0 marks each retained option for one direct position reset on the
+  // next movement pass; ordinary subsequent following keeps its30% smoothing.
+  std::array<bool,4> resetPending{};
+  void resetOptionPositions(){resetPending.fill(true);}
   int count=0,bodyAnimation=0,bodyAge=0,previousDx=0;
   // Creation 4385b0 uses triangular indices, then low-speed offsets at +10.
   static constexpr int formationStart[4]={0,1,3,6};
@@ -80,8 +84,10 @@ struct PlayerMotion {
       auto& o=options[i];const auto& p=s.optionOffsets[formationStart[count-1]+i+(focused?10:0)];
       const int tx=x+int(double(p.x)*128),ty=y+int(double(p.y)*128);
       if(rebuild){o.x=tx;o.y=ty;o.age=0;}
+      else if(resetPending[i]){o.x=tx;o.y=ty;++o.age;}
       else {const int dx=(tx-o.x)*30/100,dy=(ty-o.y)*30/100;
         if(!dx&&!dy){o.x=tx;o.y=ty;}else{o.x+=dx;o.y+=dy;}++o.age;}
+      resetPending[i]=false;
     }
   }
 };

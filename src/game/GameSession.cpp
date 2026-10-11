@@ -1,11 +1,11 @@
 #include "GameSession.hpp"
+#include "CameraEffects.hpp"
 #include "EnemyCallbacks.hpp"
 #include "FriendlyPool.hpp"
 #include "GameState.hpp"
 #include "HostilePool.hpp"
 #include "ItemPresentation.hpp"
 #include "LaserWorld.hpp"
-#include "CameraEffects.hpp"
 namespace th12 {
 void selectStage(int number) {
   resetCameraEffects();
@@ -57,6 +57,7 @@ void startGame(int c, int s, int d, int seed, const int* replayInitial) {
   messageVM.reset();
   messageEvents.clear();
   spellState.reset();
+  spellState.replayWallClock = replayInitial != nullptr;
   scorePopups.clear();
   spellAnimationKeys = {};
   messageAnimationKeys = {};
@@ -112,9 +113,12 @@ void startGame(int c, int s, int d, int seed, const int* replayInitial) {
   // 43c590 restores C598 after the initial option layout. Later body resets
   // must retain the live focus field rather than replaying this stage header.
   playerFocused = replayInitial && replayStageGlobals[2] != 0;
+  // Both4385b0's initial construction and replay43add0 mark these reset flags.
+  playerMotion.resetOptionPositions();
   bulletWorld.playerX = px / 128.f;
   bulletWorld.playerY = py / 128.f;
   nextEnemyId = nextProjectileId = 1;
+  lastSpawnedEnemyId = 0;
   resetItemPresentation();
   consumeUfoPresentation();
   initializeStageAnimations();

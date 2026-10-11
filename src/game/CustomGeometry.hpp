@@ -1,5 +1,6 @@
 // TH12 1.00b CPU geometry, separated from logic and GPU submission.
 #pragma once
+#include "../player_weapons.hpp"
 #include "AnmTypes.hpp"
 #include "Laser.hpp"
 
@@ -53,6 +54,9 @@ Mesh straightLaser(const laser::State&, const anm_logic::State&, const SpriteReg
 // State.width (+70). UV is 0..1 along node ordinal; native vertex color is white.
 Mesh curveLaser(const laser::State&, const anm_logic::State&, const SpriteRegion&,
                 Position viewport = {224, 16, 0});
+// 410590/45d5d0 copies the already screen-space leaf points into one diffuse
+// line strip. Its custom callback ignores script0's transparent primary color.
+Mesh sanaeBLeaf(const pw::Leaf&, const anm_logic::State&);
 bool straightCapVisible(const laser::State&);
 bool curveCapVisible(const laser::State&);
 } // namespace th12::custom_geometry

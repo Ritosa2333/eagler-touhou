@@ -7,7 +7,7 @@ import {spawnSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root);
 const directory=path.join(root,'artifacts/camera-pulse-tests');fs.mkdirSync(directory,{recursive:true});
-const {python,compiler}=emscripten(root);
+const python=emscripten(root).python,compiler=emscripten(root).compiler;
 const output=path.join(directory,'core.mjs'),names=['camera_prepare','camera_birth','camera_update','camera_snapshot'];
 const result=spawnSync(python,[compiler,'tests/fixtures/camera-pulse.cpp','src/game/CameraEffects.cpp',
  '-std=c++20','-O2','-o',output,'-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=node',

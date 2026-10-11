@@ -1,7 +1,7 @@
 import {emscripten} from './toolchain.mjs';
 import fs from 'node:fs';import path from 'node:path';import {spawnSync} from 'node:child_process';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root);
-const {python,compiler}=emscripten(root),cache=path.join(root,'artifacts/emscripten-cache');
+const python=emscripten(root).python,compiler=emscripten(root).compiler,cache=path.join(root,'artifacts/emscripten-cache');
 fs.mkdirSync(path.join(root,'artifacts/spell-tests'),{recursive:true});
 const names=['spell_reset','spell_start','spell_survival','spell_prepare','spell_tick','spell_loss','spell_end','spell_snapshot','spell_ring','spell_text','spell_decrypt','spell_title','spell_card'];
 names.push('spell_attempts','spell_retry','spell_bindings','spell_digits');

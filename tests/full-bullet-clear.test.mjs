@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import createCore from '../site/runtime/core.mjs';
+import {omitPlayerEntryClear} from './helpers/passive-player.mjs';
 
 const native=JSON.parse(fs.readFileSync(new URL('fixtures/full-bullet-clear-native.json',import.meta.url)));
 const word=v=>{const b=Buffer.alloc(4);b.writeInt32LE(v);return b;};
@@ -30,6 +31,7 @@ async function ready(card=0,inactive=false){
  if(inactive)commands.push(instruction(423,[],1));
  commands.push(instruction(510,[],1));
  load(c,'_th12_load_ecl',program(commands));c._th12_start(0,0,1,0x1234);
+ omitPlayerEntryClear(c);
  c._th12_tick(0,0); // Native input0 clears the main birth guard.
  return c;
 }

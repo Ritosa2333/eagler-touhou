@@ -367,6 +367,7 @@ void snapshotSpellResult(std::ostream& out, const spell_system::Result& r) {
   out << "{\"kind\":" << int(r.kind) << ",\"failure\":" << int(r.failure)
       << ",\"cardId\":" << r.cardId << ",\"bonusDisplayed\":" << r.bonusDisplayed
       << ",\"scoreDeltaStored\":" << r.scoreDeltaStored << ",\"elapsedTicks\":" << r.elapsedTicks
+      << ",\"displayElapsedTicks\":" << r.displayElapsedTicks << ",\"realTimeEncoded\":" << r.realTimeEncoded
       << ",\"survivedTimeout\":" << r.survivedTimeout << ",\"titleHex\":";
   snapshotHex(out, r.title);
   out << ",\"records\":[" << r.loadoutRecord.attempts << ',' << r.loadoutRecord.captures << ','
@@ -376,7 +377,8 @@ void snapshotSpell(std::ostream& out) {
   const auto& s = spellState;
   out << "{\"flags\":" << s.flags << ",\"cardId\":" << s.cardId << ",\"age\":" << s.age
       << ",\"previousAge\":" << s.previousAge << ",\"timeLimit\":" << s.timeLimit
-      << ",\"serialTicks\":" << s.serialTicks << ",\"bonusDisplayed\":" << s.bonusDisplayed
+      << ",\"serialTicks\":" << s.serialTicks << ",\"resultAnimationId\":" << s.resultAnimationId
+      << ",\"bonusDisplayed\":" << s.bonusDisplayed
       << ",\"initialBonusDisplayed\":" << s.initialBonusDisplayed << ",\"ring\":[" << s.ringX << ','
       << s.ringY << "],\"replay\":" << s.replay << ",\"timedOut\":" << s.timedOut
       << ",\"failure\":" << int(s.failure) << ",\"titleHex\":";
@@ -601,16 +603,16 @@ const std::string& captureState() {
         << ',' << e.ry << ',' << e.relativeAngle << ',' << e.relativeSpeed
         << "],\"life\":" << e.life << ",\"maxLife\":" << e.maxLife << ",\"age\":" << e.age
         << ",\"phaseAge\":" << e.phaseAge << ",\"flags\":" << e.flags
-        << ",\"animationLayerOffset\":" << e.animationLayerOffset
-        << ",\"lifeFlags\":" << e.lifeFlags << ",\"lifeRaw\":" << e.lifeRaw
-        << ",\"phaseLife\":" << e.phaseLife << ",\"lifeThreshold\":" << e.lifeThreshold
-        << ",\"bossSlot\":" << e.bossSlot << ",\"active\":" << e.active << ",\"boss\":" << e.boss
-        << ",\"hidden\":" << e.hidden << ",\"invincible\":" << e.invincible
-        << ",\"bodyImmunity\":" << e.bodyImmunityTicks << ",\"renderExtents\":[" << e.renderWidth
-        << ',' << e.renderHeight << "],\"immunity\":" << e.immunityTicks
-        << ",\"mirror\":" << e.mirror << ",\"timedOut\":" << e.timedOut << ",\"ufo\":" << e.isUfo
-        << ",\"hitbox\":[" << e.hitWidth << ',' << e.hitHeight << ',' << e.bodyWidth << ','
-        << e.bodyHeight << "],\"variables\":";
+        << ",\"animationLayerOffset\":" << e.animationLayerOffset << ",\"hitPresentation\":["
+        << e.hitSound << ',' << e.hitFlashTicks << ']' << ",\"lifeFlags\":" << e.lifeFlags
+        << ",\"lifeRaw\":" << e.lifeRaw << ",\"phaseLife\":" << e.phaseLife
+        << ",\"lifeThreshold\":" << e.lifeThreshold << ",\"bossSlot\":" << e.bossSlot
+        << ",\"active\":" << e.active << ",\"boss\":" << e.boss << ",\"hidden\":" << e.hidden
+        << ",\"invincible\":" << e.invincible << ",\"bodyImmunity\":" << e.bodyImmunityTicks
+        << ",\"renderExtents\":[" << e.renderWidth << ',' << e.renderHeight
+        << "],\"immunity\":" << e.immunityTicks << ",\"mirror\":" << e.mirror
+        << ",\"timedOut\":" << e.timedOut << ",\"ufo\":" << e.isUfo << ",\"hitbox\":[" << e.hitWidth
+        << ',' << e.hitHeight << ',' << e.bodyWidth << ',' << e.bodyHeight << "],\"variables\":";
     snapshotArray(out, e.variables);
     out << ",\"drops\":[" << e.drop << ',' << e.score << ',' << e.dropSpreadX << ','
         << e.dropSpreadY << "],\"dropCounts\":";
@@ -640,7 +642,10 @@ const std::string& captureState() {
       out << '[' << m.enabled << ',' << m.centerX << ',' << m.centerY << ',' << m.radius << ','
           << m.radialSpeed << ',' << m.fromOmega << ',' << m.toOmega << ',' << m.fromRadius << ','
           << m.toRadius << ',' << m.fromRadial << ',' << m.toRadial << ',' << m.ticks << ','
-          << m.time << ',' << m.mode << ']';
+          << m.time << ',' << m.mode << ',' << m.ellipse << ',' << m.ellipseAngle << ','
+          << m.ellipseRatio << ',' << m.fromEllipseAngle << ',' << m.toEllipseAngle << ','
+          << m.fromEllipseRatio << ',' << m.toEllipseRatio << ',' << m.ellipseTicks << ','
+          << m.ellipseTime << ',' << m.ellipseMode << ']';
     }
     out << "],\"shooters\":[";
     for (size_t i = 0; i < e.shooters.size(); i++) {

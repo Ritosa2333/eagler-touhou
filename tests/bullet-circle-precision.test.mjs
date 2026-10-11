@@ -1,3 +1,4 @@
+import {emscripten} from '../scripts/toolchain.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -6,8 +7,8 @@ import {spawnSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root);
 const directory=path.join(root,'artifacts/bullet-circle-precision');fs.mkdirSync(directory,{recursive:true});
-const python=path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe');
-const compiler=path.join(workspace,'tools/emsdk/upstream/emscripten/emcc.py');
+const python=emscripten(root).python;
+const compiler=emscripten(root).compiler;
 const output=path.join(directory,'core.mjs');
 const result=spawnSync(python,[compiler,'tests/fixtures/bullet-circle-precision.cpp','-std=c++20','-O2',
  '-o',output,'-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=node',

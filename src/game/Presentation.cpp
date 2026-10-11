@@ -2,6 +2,7 @@
 #include "../bullet_visuals.hpp"
 #include "BulletPool.hpp"
 #include "GameState.hpp"
+#include "StageBackgroundEffect.hpp"
 #include "UfoEffects.hpp"
 
 namespace th12 {
@@ -82,7 +83,13 @@ void captureAnimationDraw() {
     }
   for (const auto* pointer : nodes) {
     const auto& node = *pointer;
-    if (node.customGeometry && !ufoEffects.owns(node.id))
+    const bool leafGeometry =
+        node.customGeometry &&
+        std::any_of(playerBomb.leaves.begin(), playerBomb.leaves.end(), [&](const pw::Leaf& leaf) {
+          return leaf.active && node.key == 0x600000000ull + leaf.id;
+        });
+    if (node.customGeometry && !ufoEffects.owns(node.id) && !leafGeometry &&
+        !stageBackgroundEffect.owns(node.key))
       continue;
     const u32 id = node.id;
     const auto& s = node.vm.state();

@@ -4,6 +4,14 @@
 namespace th12 {
 extern bool playerFocused; // Native Player+c598, distinct from the raw held key.
 bool movementFocus(int held, int totalAge, bool liveEnemies);
+// Original436ba0 clear calls, in their CPU/RNG order. Kind0/1 is Bullet/Laser
+// circle; kind2/3 is Bullet/Laser full clear. Protection means skip/force.
+struct PlayerClearOperation {
+  int kind = 0;
+  float radius = 0;
+  bool protection = false;
+};
+std::vector<PlayerClearOperation> playerClearOperations(int state, int age);
 void explodeReimuBOrb(pw::ReimuBOrb& orb);
 void awardPlayerGraze(float x, float y, float z = 0);
 bool startPlayerBomb();

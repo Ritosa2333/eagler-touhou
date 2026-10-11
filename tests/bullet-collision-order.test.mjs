@@ -1,11 +1,12 @@
+import {emscripten} from '../scripts/toolchain.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 const root=path.resolve(import.meta.dirname,'..'), workspace=path.dirname(root);
-const python=path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe');
-const compiler=path.join(workspace,'tools/emsdk/upstream/emscripten/emcc.py');
+const python=emscripten(root).python;
+const compiler=emscripten(root).compiler;
 const cache=path.join(root,'artifacts/emscripten-cache');
 const output=path.join(root,'artifacts/bullet-collision-order');
 fs.mkdirSync(output,{recursive:true});

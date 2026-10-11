@@ -1,3 +1,4 @@
+import {emscripten} from '../scripts/toolchain.mjs';
 // Research diagnostics only: actual retail x86, no candidate behavior/golden acceptance.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -10,7 +11,7 @@ const digest=async file=>createHash('sha256').update(await readFile(file)).diges
 test('original UFO lifecycle probe keeps death, escape, HUD, quota and source paths distinct',async()=>{
   const watched=['src/core.cpp','src/items.hpp','src/ufo.hpp'].map(f=>path.join(root,f));watched.push(path.join(workspace,'th12/th12.exe'));
   const before=await Promise.all(watched.map(digest));
-  const run=spawnSync(path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe'),['scripts/reverse/inspect-ufo-lifecycle.py'],{cwd:root,encoding:'utf8'});
+  const run=spawnSync(emscripten(root).python,['scripts/reverse/inspect-ufo-lifecycle.py'],{cwd:root,encoding:'utf8'});
   assert.equal(run.status,0,run.stdout+run.stderr);
   const result=JSON.parse(await readFile(path.join(root,'artifacts/reverse/ufo-lifecycle-inspection.json'),'utf8'));
   assert.equal(result.originalExeSha256,'99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417');assert.equal(result.partial,true);assert.equal(result.wholeGameOracle,false);assert.ok(result.cases.length>=41);

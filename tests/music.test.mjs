@@ -12,7 +12,7 @@ function audio(decode=async bytes=>({encoded:[...new Uint8Array(bytes)]})){
   context.decodeAudioData=bytes=>{context.decoded++;return decode(bytes);};
   context.createGain=()=>{const gain={gain:{value:1},connect(target){this.target=target;}};context.gains.push(gain);return gain;};
   context.createBufferSource=()=>{
-    const source={started:0,stopped:0,connect(target){this.target=target;},start(){this.started++;},stop(){this.stopped++;}};
+    const source={started:0,stopped:0,connect(target){this.target=target;},start(...args){this.started++;this.startArgs=args;},stop(){this.stopped++;}};
     context.sources.push(source);return source;
   };
   return context;
@@ -75,4 +75,15 @@ test('failed preloads can be retried and errors from superseded playback stay st
   const slow=deferred(),obsolete=new MusicPlayer({context:audio(),readBytes:()=>slow.promise});
   const pending=obsolete.play(road);obsolete.stop();slow.reject(Error('old failure'));
   assert.equal(await pending,false);
+});
+
+test('seeking music retains its intro then wraps elapsed position inside the original loop',async()=>{
+  const player=new MusicPlayer({context:audio(),readBytes:async()=>new Uint8Array([1])});
+  for(const elapsed of [0,3,road.loopStart,road.loopEnd-0.25,road.loopEnd,road.loopEnd+10,800]){
+    await player.play(road,()=>true,{offsetSeconds:elapsed});
+    const expected=elapsed<road.loopEnd?elapsed:road.loopStart+(elapsed-road.loopStart)%(road.loopEnd-road.loopStart);
+    assert.deepEqual(player.source.startArgs,[0,expected]);
+    assert.equal(player.source.loopStart,road.loopStart);assert.equal(player.source.loopEnd,road.loopEnd);
+  }
+  await player.play(boss,()=>true,{offsetSeconds:12.5});assert.deepEqual(player.source.startArgs,[0,12.5]);
 });

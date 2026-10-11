@@ -79,7 +79,7 @@ void th12_unload_anm(int bank) {
   th12::animationScene.registry.unloadBank(bank);
 }
 void th12_oracle_fixture(int flags) {
-  th12::oracleFixtureFlags = flags & 7;
+  th12::oracleFixtureFlags = flags & 15;
 }
 void th12_select_stage(int number) {
   th12::selectStage(number);
@@ -97,10 +97,17 @@ int th12_load_sht(int index, const uint8_t* p, int n) {
 void th12_start(int c, int s, int d, int seed) {
   th12::startGame(c, s, d, seed);
 }
+void th12_set_wall_time(double milliseconds) {
+  th12::spellState.observeWallTime(milliseconds);
+}
 int th12_start_replay(int c, int s, int d, int seed, const int32_t* initial, int count) {
-  if (!initial || count != 17)
+  if (!initial || (count != 17 && count != 38))
     return 0;
   th12::startGame(c, s, d, seed, initial);
+  if (count == 38) {
+    std::copy(initial + 17, initial + 38, th12::spellState.replayResultTimes.begin());
+    th12::spellState.replayResultTimeCount = 21;
+  }
   return 1;
 }
 void th12_set_initial(int x, int y, int p, int life, int bomb, int points) {
@@ -158,12 +165,10 @@ void th12_tick(int held, int pressed) {
 int th12_draw() {
   using namespace th12;
   drawState.clear();
-  for (auto& p : enemies) {
-    auto& e = *p;
-    if (e.active && !e.hidden)
-      drawState.push_back(
-          {e.x + 224, e.y + 16, 0, 1, e.boundBank, e.animation, 0, 0, e.animationAge, e.id});
-  }
+  // Native413220 (Enemy draw21) submits nothing. Enemy slots and their
+  // children draw only through the registered ANM layer callbacks. In
+  // particular, Cir00 waits before binding its yin-yang body: exporting the
+  // default animation0 here invented a fairy throughout that entry delay.
   for (auto& b : bullets)
     if (b.active)
       drawState.push_back(
@@ -176,17 +181,23 @@ int th12_draw() {
     if (v.active)
       drawState.push_back({v.x + 224, v.y + 16, v.angle, 1, v.bank, v.script, 7, 0, v.age,
                            0x50000000u + v.id, v.interrupt});
-  for (const auto& trail : playerBomb.trails)
+  for (const auto& trail : playerBomb.trails) {
+    if (trail.kind == 13)
+      if (const auto* node = animationScene.find(0x600000000ull + trail.id);
+          node && node->customGeometry)
+        continue; // Native410590 emits this entire leaf through the mesh ABI.
     for (size_t i = 1; i < trail.points.size(); i++) {
       const auto& a = trail.points[i - 1];
       const auto& b = trail.points[i];
       const float dx = b.x - a.x, dy = b.y - a.y;
-      drawState.push_back({float(double(a.x + b.x) * .5) + 224, float(double(a.y + b.y) * .5) + 16,
-                           float(std::atan2(double(dy), double(dx))),
-                           float(std::hypot(double(dx), double(dy))), 0, int(b.color), trail.kind,
-                           int(a.color), 0, 0x60000000u + trail.id * 16 + u32(i), 0,
-                           trail.kind == 12 ? trail.width : 1.f});
+      const float viewportX = trail.kind == 13 ? 0 : 224, viewportY = trail.kind == 13 ? 0 : 16;
+      drawState.push_back(
+          {float(double(a.x + b.x) * .5) + viewportX, float(double(a.y + b.y) * .5) + viewportY,
+           float(std::atan2(double(dy), double(dx))), float(std::hypot(double(dx), double(dy))), 0,
+           int(b.color), trail.kind, int(a.color), 0, 0x60000000u + trail.id * 16 + u32(i), 0,
+           trail.kind == 12 ? trail.width : 1.f});
     }
+  }
   for (const auto& i : itemManager.entities)
     if (i.visible()) {
       const int age = i.visualInterrupt ? i.visualInterruptAge : i.visualAge;
@@ -304,6 +315,9 @@ const float* th12_hud() {
 }
 int th12_hud_size() {
   return th12::hud.size();
+}
+int32_t th12_score_stored() {
+  return th12::score;
 }
 const uint32_t* th12_unsupported() {
   return th12::unsupported.data();

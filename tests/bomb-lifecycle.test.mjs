@@ -1,3 +1,4 @@
+import {emscripten} from '../scripts/toolchain.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -8,10 +9,10 @@ import {runtimeSources} from '../scripts/runtime-sources.mjs';
 import {loadLiveMain} from './helpers/live-main.mjs';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root);
 const directory=path.join(root,'artifacts/bomb-lifecycle-tests');fs.mkdirSync(directory,{recursive:true});
-const python=path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe');
-const compiler=path.join(workspace,'tools/emsdk/upstream/emscripten/emcc.py');
+const python=emscripten(root).python;
+const compiler=emscripten(root).compiler;
 const output=path.join(directory,'core.mjs');
-const names=['bomb_prepare','bomb_phase','bomb_snapshot','bomb_remove_main','th12_load_ecl','th12_load_anm','malloc','free'];
+const names=['bomb_prepare','bomb_phase','bomb_snapshot','bomb_remove_main','bomb_leaf_birth','th12_load_ecl','th12_load_anm','malloc','free'];
 const build=spawnSync(python,[compiler,'tests/fixtures/bomb-lifecycle.cpp',...runtimeSources(root),
  '-std=c++20','-O0','-o',output,'-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=node',
  '-sALLOW_MEMORY_GROWTH=1','-sINITIAL_MEMORY=33554432','-sEXPORTED_FUNCTIONS='+JSON.stringify(names.map(n=>'_'+n)),
@@ -22,6 +23,7 @@ assert.equal(build.status,0,build.stdout+'\n'+build.stderr);
 const create=(await import(pathToFileURL(output))).default;
 const native=JSON.parse(fs.readFileSync(new URL('./fixtures/bomb-lifecycle-visual-original.json',import.meta.url)));
 const nativeOther=JSON.parse(fs.readFileSync(new URL('./fixtures/bomb-lifecycle-other-mesh-tracked-original.json',import.meta.url)));
+const nativeLeaf=JSON.parse(fs.readFileSync(new URL('./fixtures/bomb-leaf-birth-original.json',import.meta.url)));
 const snapshot=c=>[...new Float32Array(c.HEAPU8.buffer,c._bomb_snapshot(),17)];
 async function prepare(row,existing=null){
  const c=existing??await create();loadLiveMain(c);
@@ -76,5 +78,17 @@ test('missing actual main handle stops the Bomb before subsequent sources, leave
   const c=await prepare(row);c._bomb_phase(1);c._bomb_remove_main();c._bomb_phase(0);
   const s=snapshot(c);assert.equal(s[0],0);assert.equal(s[1],1);assert.equal(s[2],0);
   assert.equal(s[7],41,'front1 receives exit IRQ1 on the same Bomb pass');
+ }
+});
+test('actual SanaeB leaf construction retains all500 screen-coordinate births and custom layer13',async()=>{
+ assert.equal(nativeLeaf.originalExeSha256,native.originalExeSha256);
+ assert.equal(nativeLeaf.wholeGameOracle,false);
+ const row=native.records.find(row=>row.loadout===5),c=await prepare(row);
+ const births=new Map(nativeLeaf.births.map(b=>[b.frame,b]));
+ for(let frame=0;frame<nativeLeaf.frameCount;frame++){
+  c._bomb_phase(nativeLeaf.starts.includes(frame));
+  const value=[...new Float32Array(c.HEAPU8.buffer,c._bomb_leaf_birth(),5)],birth=births.get(frame);
+  assert.equal(value[0],birth?1:0,`frame${frame} birth`);
+  if(birth)assert.deepEqual(value.slice(1),[...birth.position,1,13],`frame${frame} screen coordinates/custom draw`);
  }
 });

@@ -193,6 +193,21 @@ Mesh curveLaser(const laser::State& laser, const anm_logic::State& state,
 bool straightCapVisible(const laser::State& laser) {
   return laser.headOffset == 0;
 }
+Mesh sanaeBLeaf(const pw::Leaf& leaf, const anm_logic::State& state) {
+  Mesh result;
+  result.primitive = Primitive::LineStrip;
+  result.bank = result.sprite = -1;
+  result.layer = 13;
+  result.drawPriority = 26;
+  result.blend = int((state.flags >> 5) & 7u);
+  if (!leaf.active)
+    return result;
+  for (int i = 0; i < std::clamp(leaf.age, 0, 16); ++i) {
+    const auto& point = leaf.points[i];
+    result.vertices.push_back({point.x, point.y, 0, 1, point.color, 0, 0});
+  }
+  return result;
+}
 bool curveCapVisible(const laser::State& laser) {
   return int(laser.nodes.size()) >= laser.age.current;
 }

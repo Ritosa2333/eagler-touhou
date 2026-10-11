@@ -1,0 +1,62 @@
+{
+  "schema": "th12-original-enemy-hit-properties/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "scope": "Actual Enemy construction and ECL453/449 literal operands with real ANM, followed by two actual Enemy18 passes. Property values come from the original EnemyState, not candidate code.",
+  "cases": [
+    {
+      "value": null,
+      "hitSound": -1,
+      "tinted": false,
+      "rng": [
+        1234,
+        0
+      ]
+    },
+    {
+      "value": -1,
+      "hitSound": -1,
+      "tinted": true,
+      "rng": [
+        1234,
+        0
+      ]
+    },
+    {
+      "value": 0,
+      "hitSound": 0,
+      "tinted": false,
+      "rng": [
+        1234,
+        0
+      ]
+    },
+    {
+      "value": 1,
+      "hitSound": 1,
+      "tinted": true,
+      "rng": [
+        1234,
+        0
+      ]
+    },
+    {
+      "value": 37,
+      "hitSound": 37,
+      "tinted": true,
+      "rng": [
+        1234,
+        0
+      ]
+    },
+    {
+      "value": 87,
+      "hitSound": 87,
+      "tinted": true,
+      "rng": [
+        1234,
+        0
+      ]
+    }
+  ]
+}

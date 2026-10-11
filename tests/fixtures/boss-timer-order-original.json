@@ -1,0 +1,1224 @@
+{
+  "schema": "th12-original-boss-timer-order/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "scope": "Original412990 birth,413190 Enemy18 update,41a6f0 interrupt/countdown and414a65 phase-clock tail. Controlled SCPT and synthetic valid HUD fields; no Player, whole application scheduling, HUD25 or GPU execution.",
+  "records": [
+    {
+      "kind": "short-timeout",
+      "syntheticEclHex": "53435054010000000000000000000000020000000000000000000000000000000000000038000000800000006d61696e00456e640000000045434c48000000000000000000000000000000009e01240000003f040000000000000000000000000200000004000000456e6400000000005300140000003f0100000000a086010045434c48000000000000000000000000000000005300140000003f0100000000a0860100",
+      "frames": [
+        {
+          "inputTick": -1,
+          "phaseAge": 1,
+          "flags": 537034752,
+          "timer": [
+            0,
+            3
+          ]
+        },
+        {
+          "inputTick": 0,
+          "phaseAge": 1,
+          "flags": 536903680,
+          "timer": [
+            0,
+            3
+          ]
+        },
+        {
+          "inputTick": 1,
+          "phaseAge": 2,
+          "flags": 536903680,
+          "timer": [
+            0,
+            1
+          ]
+        },
+        {
+          "inputTick": 2,
+          "phaseAge": 1,
+          "flags": 545292288,
+          "timer": [
+            0,
+            0
+          ]
+        },
+        {
+          "inputTick": 3,
+          "phaseAge": 2,
+          "flags": 545292288,
+          "timer": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "normal-timeout",
+      "syntheticEclHex": "53435054010000000000000000000000020000000000000000000000000000000000000038000000800000006d61696e00456e640000000045434c48000000000000000000000000000000009e01240000003f040000000000000000000000003c00000004000000456e6400000000005300140000003f0100000000a086010045434c48000000000000000000000000000000005300140000003f0100000000a0860100",
+      "frames": [
+        {
+          "inputTick": -1,
+          "phaseAge": 1,
+          "flags": 537034752,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 0,
+          "phaseAge": 1,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 1,
+          "phaseAge": 2,
+          "flags": 536903680,
+          "timer": [
+            0,
+            98
+          ]
+        },
+        {
+          "inputTick": 2,
+          "phaseAge": 3,
+          "flags": 536903680,
+          "timer": [
+            0,
+            96
+          ]
+        },
+        {
+          "inputTick": 3,
+          "phaseAge": 4,
+          "flags": 536903680,
+          "timer": [
+            0,
+            95
+          ]
+        },
+        {
+          "inputTick": 4,
+          "phaseAge": 5,
+          "flags": 536903680,
+          "timer": [
+            0,
+            93
+          ]
+        },
+        {
+          "inputTick": 5,
+          "phaseAge": 6,
+          "flags": 536903680,
+          "timer": [
+            0,
+            91
+          ]
+        },
+        {
+          "inputTick": 6,
+          "phaseAge": 7,
+          "flags": 536903680,
+          "timer": [
+            0,
+            90
+          ]
+        },
+        {
+          "inputTick": 7,
+          "phaseAge": 8,
+          "flags": 536903680,
+          "timer": [
+            0,
+            88
+          ]
+        },
+        {
+          "inputTick": 8,
+          "phaseAge": 9,
+          "flags": 536903680,
+          "timer": [
+            0,
+            86
+          ]
+        },
+        {
+          "inputTick": 9,
+          "phaseAge": 10,
+          "flags": 536903680,
+          "timer": [
+            0,
+            85
+          ]
+        },
+        {
+          "inputTick": 10,
+          "phaseAge": 11,
+          "flags": 536903680,
+          "timer": [
+            0,
+            83
+          ]
+        },
+        {
+          "inputTick": 11,
+          "phaseAge": 12,
+          "flags": 536903680,
+          "timer": [
+            0,
+            81
+          ]
+        },
+        {
+          "inputTick": 12,
+          "phaseAge": 13,
+          "flags": 536903680,
+          "timer": [
+            0,
+            80
+          ]
+        },
+        {
+          "inputTick": 13,
+          "phaseAge": 14,
+          "flags": 536903680,
+          "timer": [
+            0,
+            78
+          ]
+        },
+        {
+          "inputTick": 14,
+          "phaseAge": 15,
+          "flags": 536903680,
+          "timer": [
+            0,
+            76
+          ]
+        },
+        {
+          "inputTick": 15,
+          "phaseAge": 16,
+          "flags": 536903680,
+          "timer": [
+            0,
+            75
+          ]
+        },
+        {
+          "inputTick": 16,
+          "phaseAge": 17,
+          "flags": 536903680,
+          "timer": [
+            0,
+            73
+          ]
+        },
+        {
+          "inputTick": 17,
+          "phaseAge": 18,
+          "flags": 536903680,
+          "timer": [
+            0,
+            71
+          ]
+        },
+        {
+          "inputTick": 18,
+          "phaseAge": 19,
+          "flags": 536903680,
+          "timer": [
+            0,
+            70
+          ]
+        },
+        {
+          "inputTick": 19,
+          "phaseAge": 20,
+          "flags": 536903680,
+          "timer": [
+            0,
+            68
+          ]
+        },
+        {
+          "inputTick": 20,
+          "phaseAge": 21,
+          "flags": 536903680,
+          "timer": [
+            0,
+            66
+          ]
+        },
+        {
+          "inputTick": 21,
+          "phaseAge": 22,
+          "flags": 536903680,
+          "timer": [
+            0,
+            65
+          ]
+        },
+        {
+          "inputTick": 22,
+          "phaseAge": 23,
+          "flags": 536903680,
+          "timer": [
+            0,
+            63
+          ]
+        },
+        {
+          "inputTick": 23,
+          "phaseAge": 24,
+          "flags": 536903680,
+          "timer": [
+            0,
+            61
+          ]
+        },
+        {
+          "inputTick": 24,
+          "phaseAge": 25,
+          "flags": 536903680,
+          "timer": [
+            0,
+            60
+          ]
+        },
+        {
+          "inputTick": 25,
+          "phaseAge": 26,
+          "flags": 536903680,
+          "timer": [
+            0,
+            58
+          ]
+        },
+        {
+          "inputTick": 26,
+          "phaseAge": 27,
+          "flags": 536903680,
+          "timer": [
+            0,
+            56
+          ]
+        },
+        {
+          "inputTick": 27,
+          "phaseAge": 28,
+          "flags": 536903680,
+          "timer": [
+            0,
+            55
+          ]
+        },
+        {
+          "inputTick": 28,
+          "phaseAge": 29,
+          "flags": 536903680,
+          "timer": [
+            0,
+            53
+          ]
+        },
+        {
+          "inputTick": 29,
+          "phaseAge": 30,
+          "flags": 536903680,
+          "timer": [
+            0,
+            51
+          ]
+        },
+        {
+          "inputTick": 30,
+          "phaseAge": 31,
+          "flags": 536903680,
+          "timer": [
+            0,
+            50
+          ]
+        },
+        {
+          "inputTick": 31,
+          "phaseAge": 32,
+          "flags": 536903680,
+          "timer": [
+            0,
+            48
+          ]
+        },
+        {
+          "inputTick": 32,
+          "phaseAge": 33,
+          "flags": 536903680,
+          "timer": [
+            0,
+            46
+          ]
+        },
+        {
+          "inputTick": 33,
+          "phaseAge": 34,
+          "flags": 536903680,
+          "timer": [
+            0,
+            45
+          ]
+        },
+        {
+          "inputTick": 34,
+          "phaseAge": 35,
+          "flags": 536903680,
+          "timer": [
+            0,
+            43
+          ]
+        },
+        {
+          "inputTick": 35,
+          "phaseAge": 36,
+          "flags": 536903680,
+          "timer": [
+            0,
+            41
+          ]
+        },
+        {
+          "inputTick": 36,
+          "phaseAge": 37,
+          "flags": 536903680,
+          "timer": [
+            0,
+            40
+          ]
+        },
+        {
+          "inputTick": 37,
+          "phaseAge": 38,
+          "flags": 536903680,
+          "timer": [
+            0,
+            38
+          ]
+        },
+        {
+          "inputTick": 38,
+          "phaseAge": 39,
+          "flags": 536903680,
+          "timer": [
+            0,
+            36
+          ]
+        },
+        {
+          "inputTick": 39,
+          "phaseAge": 40,
+          "flags": 536903680,
+          "timer": [
+            0,
+            35
+          ]
+        },
+        {
+          "inputTick": 40,
+          "phaseAge": 41,
+          "flags": 536903680,
+          "timer": [
+            0,
+            33
+          ]
+        },
+        {
+          "inputTick": 41,
+          "phaseAge": 42,
+          "flags": 536903680,
+          "timer": [
+            0,
+            31
+          ]
+        },
+        {
+          "inputTick": 42,
+          "phaseAge": 43,
+          "flags": 536903680,
+          "timer": [
+            0,
+            30
+          ]
+        },
+        {
+          "inputTick": 43,
+          "phaseAge": 44,
+          "flags": 536903680,
+          "timer": [
+            0,
+            28
+          ]
+        },
+        {
+          "inputTick": 44,
+          "phaseAge": 45,
+          "flags": 536903680,
+          "timer": [
+            0,
+            26
+          ]
+        },
+        {
+          "inputTick": 45,
+          "phaseAge": 46,
+          "flags": 536903680,
+          "timer": [
+            0,
+            25
+          ]
+        },
+        {
+          "inputTick": 46,
+          "phaseAge": 47,
+          "flags": 536903680,
+          "timer": [
+            0,
+            23
+          ]
+        },
+        {
+          "inputTick": 47,
+          "phaseAge": 48,
+          "flags": 536903680,
+          "timer": [
+            0,
+            21
+          ]
+        },
+        {
+          "inputTick": 48,
+          "phaseAge": 49,
+          "flags": 536903680,
+          "timer": [
+            0,
+            20
+          ]
+        },
+        {
+          "inputTick": 49,
+          "phaseAge": 50,
+          "flags": 536903680,
+          "timer": [
+            0,
+            18
+          ]
+        },
+        {
+          "inputTick": 50,
+          "phaseAge": 51,
+          "flags": 536903680,
+          "timer": [
+            0,
+            16
+          ]
+        },
+        {
+          "inputTick": 51,
+          "phaseAge": 52,
+          "flags": 536903680,
+          "timer": [
+            0,
+            15
+          ]
+        },
+        {
+          "inputTick": 52,
+          "phaseAge": 53,
+          "flags": 536903680,
+          "timer": [
+            0,
+            13
+          ]
+        },
+        {
+          "inputTick": 53,
+          "phaseAge": 54,
+          "flags": 536903680,
+          "timer": [
+            0,
+            11
+          ]
+        },
+        {
+          "inputTick": 54,
+          "phaseAge": 55,
+          "flags": 536903680,
+          "timer": [
+            0,
+            10
+          ]
+        },
+        {
+          "inputTick": 55,
+          "phaseAge": 56,
+          "flags": 536903680,
+          "timer": [
+            0,
+            8
+          ]
+        },
+        {
+          "inputTick": 56,
+          "phaseAge": 57,
+          "flags": 536903680,
+          "timer": [
+            0,
+            6
+          ]
+        },
+        {
+          "inputTick": 57,
+          "phaseAge": 58,
+          "flags": 536903680,
+          "timer": [
+            0,
+            5
+          ]
+        },
+        {
+          "inputTick": 58,
+          "phaseAge": 59,
+          "flags": 536903680,
+          "timer": [
+            0,
+            3
+          ]
+        },
+        {
+          "inputTick": 59,
+          "phaseAge": 60,
+          "flags": 536903680,
+          "timer": [
+            0,
+            1
+          ]
+        },
+        {
+          "inputTick": 60,
+          "phaseAge": 1,
+          "flags": 545292288,
+          "timer": [
+            0,
+            0
+          ]
+        },
+        {
+          "inputTick": 61,
+          "phaseAge": 2,
+          "flags": 545292288,
+          "timer": [
+            0,
+            0
+          ]
+        },
+        {
+          "inputTick": 62,
+          "phaseAge": 3,
+          "flags": 545292288,
+          "timer": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "remove-timer",
+      "syntheticEclHex": "53435054010000000000000000000000020000000000000000000000000000000000000038000000a40000006d61696e00456e640000000045434c48000000000000000000000000000000009e01240000003f040000000000000000000000003c00000004000000456e6400010000009e01240000003f040000000000000000ffffffff0000000004000000456e6400000000005300140000003f0100000000a086010045434c48000000000000000000000000000000005300140000003f0100000000a0860100",
+      "frames": [
+        {
+          "inputTick": -1,
+          "phaseAge": 1,
+          "flags": 537034752,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 0,
+          "phaseAge": 1,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 1,
+          "phaseAge": 2,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 2,
+          "phaseAge": 3,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 3,
+          "phaseAge": 4,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 4,
+          "phaseAge": 5,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 5,
+          "phaseAge": 6,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 6,
+          "phaseAge": 7,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 7,
+          "phaseAge": 8,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 8,
+          "phaseAge": 9,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 9,
+          "phaseAge": 10,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 10,
+          "phaseAge": 11,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 11,
+          "phaseAge": 12,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 12,
+          "phaseAge": 13,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 13,
+          "phaseAge": 14,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 14,
+          "phaseAge": 15,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 15,
+          "phaseAge": 16,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 16,
+          "phaseAge": 17,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 17,
+          "phaseAge": 18,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 18,
+          "phaseAge": 19,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 19,
+          "phaseAge": 20,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 20,
+          "phaseAge": 21,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 21,
+          "phaseAge": 22,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 22,
+          "phaseAge": 23,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 23,
+          "phaseAge": 24,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 24,
+          "phaseAge": 25,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 25,
+          "phaseAge": 26,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 26,
+          "phaseAge": 27,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 27,
+          "phaseAge": 28,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 28,
+          "phaseAge": 29,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 29,
+          "phaseAge": 30,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 30,
+          "phaseAge": 31,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 31,
+          "phaseAge": 32,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 32,
+          "phaseAge": 33,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 33,
+          "phaseAge": 34,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 34,
+          "phaseAge": 35,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 35,
+          "phaseAge": 36,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 36,
+          "phaseAge": 37,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 37,
+          "phaseAge": 38,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 38,
+          "phaseAge": 39,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 39,
+          "phaseAge": 40,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 40,
+          "phaseAge": 41,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 41,
+          "phaseAge": 42,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 42,
+          "phaseAge": 43,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 43,
+          "phaseAge": 44,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 44,
+          "phaseAge": 45,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 45,
+          "phaseAge": 46,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 46,
+          "phaseAge": 47,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 47,
+          "phaseAge": 48,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 48,
+          "phaseAge": 49,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 49,
+          "phaseAge": 50,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 50,
+          "phaseAge": 51,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 51,
+          "phaseAge": 52,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 52,
+          "phaseAge": 53,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 53,
+          "phaseAge": 54,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 54,
+          "phaseAge": 55,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 55,
+          "phaseAge": 56,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 56,
+          "phaseAge": 57,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 57,
+          "phaseAge": 58,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 58,
+          "phaseAge": 59,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 59,
+          "phaseAge": 60,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 60,
+          "phaseAge": 61,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 61,
+          "phaseAge": 62,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        },
+        {
+          "inputTick": 62,
+          "phaseAge": 63,
+          "flags": 536903680,
+          "timer": [
+            1,
+            0
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -96,7 +96,9 @@ int clearStraight(Laser& object, Manager& manager, World& world, Pred hit, bool 
     s.length = float(double(s.length) - begin * 16.);
     if (s.length > 24) {
       s.parameters.maxLength = s.length;
-      s.headOffset = 0;
+      // Native42a5d8/42a5de stores the cut distance, not zero or the old
+      // offset. The next Laser20 pass advances it and the head cap stays hidden.
+      s.headOffset = float(begin * 16);
     } else
       s.retirePending = 1;
   }

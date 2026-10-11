@@ -129,9 +129,13 @@ struct EnemyInterrupt {
 };
 struct CircularMotion {
   bool enabled = false;
+  bool ellipse = false;
   float centerX = 0, centerY = 0, radius = 0, radialSpeed = 0, fromOmega = 0, toOmega = 0,
         fromRadius = 0, toRadius = 0, fromRadial = 0, toRadial = 0;
   int ticks = 0, time = 0, mode = 0;
+  float ellipseAngle = 0, ellipseRatio = 0, fromEllipseAngle = 0, toEllipseAngle = 0,
+        fromEllipseRatio = 0, toEllipseRatio = 0;
+  int ellipseTicks = 0, ellipseTime = 0, ellipseMode = 0;
 };
 struct Enemy {
   u32 id = 0;
@@ -163,6 +167,7 @@ struct Enemy {
   float clampX = 0, clampY = 0, clampWidth = 0, clampHeight = 0;
   int phaseAge = 0;
   int deathSound = -1, deathAnimation = -1, deathAnimationBank = 0;
+  int hitSound = -1, hitFlashTicks = 0; // Native EnemyState+168c/+1684.
   int customUpdate = 0, customDamage = 0, customCollision = 0;
   CircularMotion absoluteCircle{}, relativeCircle{};
   int maxLife = 30;

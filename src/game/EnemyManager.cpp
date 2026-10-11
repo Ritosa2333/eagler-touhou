@@ -4,6 +4,45 @@
 
 namespace th12 {
 void finishEnemyUpdate(Enemy& e);
+void synchronizeEnemyHitPresentation(Enemy& e) {
+  // Actual4143b0..41457e affects only the live slot0 VM. A missing handle
+  // does not advance the four-tick flash timer or issue a hit sound.
+  auto* node = animationScene.find(enemyAnimationKey(e.id, 0));
+  if (!node)
+    return;
+  auto& pose = node->vm.control();
+  constexpr u32 Secondary = 0x10000u;
+  if (e.hitFlashTicks != 0) {
+    pose.flags &= ~Secondary;
+    --e.hitFlashTicks;
+    return;
+  }
+  if (e.flags & 0x40000000u) {
+    if (e.phaseAge % 4 == 0) {
+      pose.flags |= Secondary;
+      pose.secondary = 0xffff00ffu;
+    } else
+      pose.flags &= ~Secondary;
+  }
+  const bool phaseBody = e.flags & 0x20400000u;
+  const bool timedSpell = spellState.active() && !spellState.survival();
+  if (e.flags & 0x100000u) {
+    pose.flags |= Secondary;
+    pose.secondary = 0xff0000ffu;
+    e.hitFlashTicks = 4;
+    const bool lowHealth = phaseBody && (!spellState.active() || timedSpell) &&
+                           e.phaseLife < (spellState.active() ? 200 : 900);
+    sound_system::queue.play(e.hitSound >= 0 ? e.hitSound : lowHealth ? 36 : 35, e.x);
+    return;
+  }
+  if (e.phaseAge % 4 != 0)
+    pose.flags &= ~Secondary;
+  else if (phaseBody && (!spellState.active() || timedSpell) &&
+           e.phaseLife < (spellState.active() ? 100 : 500)) {
+    pose.flags |= Secondary;
+    pose.secondary = 0xff0000ffu;
+  }
+}
 void synchronizeEnemyAnimations(Enemy& e) {
   // 414220..4142b4 runs after ECL and callbacks. Per-slot offsets live on
   // Enemy; parent-slot linking adds only that VM's script XYZ, not its engine.
@@ -40,6 +79,7 @@ bool resolveEnemyInterrupt(Enemy& e) {
   if (!transition)
     for (auto& interrupt : e.interrupts)
       if (interrupt.health >= 0 && interrupt.time > 0) {
+        recordBossCountdown(interrupt.time, e.phaseAge);
         if (e.phaseAge >= interrupt.time) {
           transition = &interrupt;
           timeout = true;
@@ -76,6 +116,7 @@ void finishEnemyUpdate(Enemy& e) {
   }
   // 413d8b calls 439ed0 before the HP immunity filters. Impact callbacks,
   // source accumulation and the stored-score hit award still run in immunity.
+  e.flags &= ~0x100000u; // Native413d57 clears the preceding tick's hurt flag.
   if (!(oracleFixtureFlags & 1) && !e.hidden && !(e.flags & 0x21u)) {
     int damage = customEnemyDamage(e);
     if (dialogue)
@@ -125,6 +166,7 @@ void finishEnemyUpdate(Enemy& e) {
     customEnemyCollision(e);
   }
   synchronizeEnemyAnimations(e);
+  synchronizeEnemyHitPresentation(e);
   // 414a29..414a65: timers and age advance after interrupts and body collision.
   if (e.immunityTicks > 0)
     --e.immunityTicks;
@@ -233,6 +275,9 @@ Enemy* spawn(const std::string& sub, float x, float y, int life, int points, int
   // Registration follows the synchronous constructor. Births made by its ECL
   // are already in the manager's chain when this node is appended.
   enemies.push_back(std::move(p));
+  // Native412b70 publishes the completed birth's ID after registration,
+  // including after any children created by its synchronous constructor.
+  lastSpawnedEnemyId = nativeId;
   return result;
 }
 void resetPhase(Enemy& e, const std::string& sub) {
@@ -281,8 +326,9 @@ void drop(Enemy& e) {
   }
   eventBits |= 2;
 }
-void enemyDeathVisual(const Enemy& e) {
-  sound_system::queue.play(e.deathSound, e.x);
+void enemyDeathVisual(const Enemy& e, bool audible) {
+  if (audible)
+    sound_system::queue.play(e.deathSound, e.x);
   if (e.deathAnimation < 0)
     return;
   const auto key = 0x100000000ull + nextDetachedAnimation++;
@@ -298,7 +344,7 @@ void requestEnemyClear() {
     auto& e = *pointer;
     if (!e.active || ((e.flags & 0x6004a0u) && !(e.flags & 0x100u)))
       continue;
-    enemyDeathVisual(e);
+    enemyDeathVisual(e, false);
     e.flags |= 0x1000000u;
   }
 }
@@ -338,6 +384,9 @@ void tickEnemies() {
     }
     for (int relative = 0; relative < 2; relative++) {
       auto& m = relative ? e.relativeCircle : e.absoluteCircle;
+      // 321/323 initializes an ellipse-angle/ratio track, but the original
+      // 413840 movement path never advances it. Preserve that behavior;
+      // angular speed/radius/radial tracks below still advance normally.
       if (m.ticks) {
         float t = easing(float(++m.time) / m.ticks, m.mode);
         (relative ? e.relativeSpeed : e.speed) = m.fromOmega + (m.toOmega - m.fromOmega) * t;
@@ -417,9 +466,14 @@ void tickEnemies() {
     std::vector<Context*> existing;
     for (auto& c : e.contexts)
       existing.push_back(&c);
-    for (auto* c : existing)
+    for (auto* c : existing) {
       if (c->pc)
         runContext(e, *c);
+      // Native468dbc exits the entire runner on a primary return/delete.
+      // Its cached asynchronous successor is never visited on that frame.
+      if (!e.active)
+        break;
+    }
     finishEnemyUpdate(e);
   }
 }

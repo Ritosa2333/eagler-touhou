@@ -1,3 +1,4 @@
+import {emscripten} from '../scripts/toolchain.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -6,7 +7,7 @@ import {readFile} from 'node:fs/promises';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root);
 
 test('original CRT constructors and formatter execute through CPU heap/TLS host imports',async()=>{
-  const run=spawnSync(path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe'),['scripts/reverse/sample-crt-format.py'],{cwd:root,encoding:'utf8'});
+  const run=spawnSync(emscripten(root).python,['scripts/reverse/sample-crt-format.py'],{cwd:root,encoding:'utf8'});
   assert.equal(run.status,0,run.stdout+run.stderr);
   const native=JSON.parse(await readFile(path.join(root,'artifacts/reverse/crt-format/samples.json'),'utf8'));
   assert.equal(native.originalExeSha256,'99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417');

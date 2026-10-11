@@ -1,3 +1,4 @@
+import {emscripten} from '../scripts/toolchain.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -8,8 +9,8 @@ import {runtimeSources} from '../scripts/runtime-sources.mjs';
 import {loadLiveMain} from './helpers/live-main.mjs';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root);
 const directory=path.join(root,'artifacts/player-focus-gate');fs.mkdirSync(directory,{recursive:true});
-const python=path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe');
-const compiler=path.join(workspace,'tools/emsdk/upstream/emscripten/emcc.py');
+const python=emscripten(root).python;
+const compiler=emscripten(root).compiler;
 const output=path.join(directory,'core.mjs');
 const names=['focus_prepare','focus_update','focus_player_phase','focus_dialogue','th12_load_ecl','th12_load_anm','th12_load_sht','th12_state','th12_state_size','th12_tick','th12_start','malloc','free'];
 const build=spawnSync(python,[compiler,'tests/fixtures/player-focus-gate.cpp',...runtimeSources(root),

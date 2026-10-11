@@ -102,6 +102,8 @@ float global(Enemy& e, int id, bool floating) {
   }
   case -9945:
     return character * 2 + shot;
+  case -9931:
+    return float(i32(lastSpawnedEnemyId)); // Native41a41b: signed fild of EnemyManager+78.
   default: {
     auto found = globals.find(id);
     return found == globals.end() ? 0 : found->second.floating();
@@ -111,6 +113,8 @@ float global(Enemy& e, int id, bool floating) {
 i32 globalInt(Enemy& e, int id) {
   if (id == -10000)
     return i32(random.next32());
+  if (id == -9931)
+    return i32(lastSpawnedEnemyId);
   if (id >= -9985 && id <= -9982)
     return i32(e.variables[id + 9985]);
   if (auto found = globals.find(id); found != globals.end())
@@ -347,6 +351,21 @@ void command(Enemy& e, Context& c, int op) {
   case 264:
     detachedAnimation(I(0), I(1), e, op == 263);
     break;
+  case 273: {
+    const int bank = I(0), script = I(1);
+    const bool worldCoordinates = e.flags & 0x2000000u;
+    const auto key = 0x100000000ull + nextDetachedAnimation++;
+    auto* node = animationScene.bind(key, 0, bank, script, anm_logic::Membership::Primary, e.x, e.y,
+                                     {}, false, nullptr, worldCoordinates ? 0 : 224,
+                                     worldCoordinates ? 0 : 16, 9, false, e.z);
+    // Native273 constructs/binds before resolving its rotation operand.
+    const float rotation = F(2);
+    if (node) {
+      node->vm.control().rotation = rotation;
+      node->vm.control().flags |= 4u;
+    }
+    break;
+  }
   case 275:
     break;
   case 300:
@@ -366,7 +385,10 @@ void command(Enemy& e, Context& c, int op) {
     const float x = F(2), y = F(3);
     const int duration = I(0), mode = I(1);
     const bool rel = op == 303;
-    (rel ? e.relativeCircle : e.absoluteCircle).enabled = false;
+    if (duration > 0) {
+      auto& motion = rel ? e.relativeCircle : e.absoluteCircle;
+      motion.enabled = motion.ellipse = false;
+    }
     int& ticks = rel ? e.relativePositionTicks : e.positionTicks;
     ticks = std::max(0, duration);
     (rel ? e.relativePositionTime : e.positionTime) = 0;
@@ -387,6 +409,7 @@ void command(Enemy& e, Context& c, int op) {
                              targetY <= -999999 ? from[1] : targetY, 0};
     const float tangentB[3] = {F(5), F(6), 0};
     (rel ? e.relativeCircle : e.absoluteCircle).enabled = false;
+    (rel ? e.relativeCircle : e.absoluteCircle).ellipse = false;
     (rel ? e.relativePositionTicks : e.positionTicks) = std::max(0, duration);
     (rel ? e.relativePositionTime : e.positionTime) = 0;
     (rel ? e.relativePositionMode : e.positionMode) = 8;
@@ -401,6 +424,7 @@ void command(Enemy& e, Context& c, int op) {
     const float speed = F(1);
     const bool rel = op == 306;
     (rel ? e.relativeCircle : e.absoluteCircle).enabled = false;
+    (rel ? e.relativeCircle : e.absoluteCircle).ellipse = false;
     if (angle > -999999)
       (rel ? e.relativeAngle : e.angle) =
           normalize(e.mirror && op != 328 ? mirrorAngle(angle) : angle);
@@ -415,7 +439,10 @@ void command(Enemy& e, Context& c, int op) {
     const float speed = F(3);
     const int duration = I(0), mode = I(1);
     const bool rel = op == 307;
-    (rel ? e.relativeCircle : e.absoluteCircle).enabled = false;
+    if (duration > 0) {
+      auto& motion = rel ? e.relativeCircle : e.absoluteCircle;
+      motion.enabled = motion.ellipse = false;
+    }
     int& ticks = rel ? e.relativePolarTicks : e.polarTicks;
     ticks = std::max(0, duration);
     (rel ? e.relativePolarTime : e.polarTime) = 0;
@@ -437,8 +464,10 @@ void command(Enemy& e, Context& c, int op) {
     break;
   }
   case 308:
-  case 310: {
-    const bool rel = op == 310;
+  case 310:
+  case 320:
+  case 322: {
+    const bool rel = op == 310 || op == 322;
     auto& m = rel ? e.relativeCircle : e.absoluteCircle;
     if (!m.enabled) {
       m.centerX = rel ? e.rx : e.ax;
@@ -454,13 +483,23 @@ void command(Enemy& e, Context& c, int op) {
       m.radius = radius;
     if (radial > -999999)
       m.radialSpeed = radial;
+    if (op == 320 || op == 322) {
+      const float orientation = F(4), ratio = F(5);
+      if (orientation > -999999)
+        m.ellipseAngle = normalize(orientation);
+      if (ratio > -999999)
+        m.ellipseRatio = ratio;
+      m.ellipse = true;
+    }
     circularPosition(e, rel);
     combinePosition(e);
     break;
   }
   case 309:
-  case 311: {
-    const bool rel = op == 311;
+  case 311:
+  case 321:
+  case 323: {
+    const bool rel = op == 311 || op == 323;
     auto& m = rel ? e.relativeCircle : e.absoluteCircle;
     m.ticks = std::max(0, I(0));
     m.time = 0;
@@ -472,6 +511,35 @@ void command(Enemy& e, Context& c, int op) {
     m.toOmega = omega <= -999999 ? m.fromOmega : omega;
     m.toRadius = radius <= -999999 ? m.fromRadius : radius;
     m.toRadial = radial <= -999999 ? m.fromRadial : radial;
+    if (op == 321 || op == 323) {
+      const float orientation = F(5), ratio = F(6);
+      m.ellipseTicks = m.ticks;
+      m.ellipseTime = 0;
+      m.ellipseMode = m.mode;
+      m.fromEllipseAngle = m.ellipseAngle;
+      m.toEllipseAngle = orientation <= -999999 ? m.ellipseAngle : orientation;
+      m.fromEllipseRatio = m.ellipseRatio;
+      m.toEllipseRatio = ratio <= -999999 ? m.ellipseRatio : ratio;
+      if (std::fabs(m.fromEllipseAngle - m.toEllipseAngle) >= pi) {
+        if (m.toEllipseAngle <= m.fromEllipseAngle)
+          m.toEllipseAngle += tau;
+        else
+          m.fromEllipseAngle += tau;
+      }
+      if (m.ticks <= 0)
+        break; // Native nonpositive duration preserves flags and geometry.
+      // 41749d copies the current component position to its center even if
+      // it was already elliptical, then re-evaluates the existing offset.
+      m.centerX = rel ? e.rx : e.ax;
+      m.centerY = rel ? e.ry : e.ay;
+      m.ellipse = true;
+    }
+    // 416ffa..417009 enables circle motion, recomputes its current geometry
+    // and combines it synchronously. This second combine can recover a
+    // hundredth-pixel residue from the preceding manager movement pass.
+    m.enabled = true;
+    circularPosition(e, rel);
+    combinePosition(e);
     break;
   }
   case 312:
@@ -644,14 +712,19 @@ void command(Enemy& e, Context& c, int op) {
     break;
   }
   case 418: {
-    if (messageVM.start(messageFiles[character * 2 + shot], I(0))) {
-      dialogue = I(0) + 1;
+    const int index = I(0);
+    if (messageVM.start(messageFiles[character * 2 + shot], index)) {
       messageEvents.clear();
       startMessageAnimations();
-      bossHud.checkpoint = I(0) + 1; // Native41fc68.
-      for (auto* b : hostileSlots)
-        if (b && b->active)
-          eb::cancel(b->enemy, bulletWorld);
+      // Native41f900's MSG constructor clears the world before41fc68 stores
+      // the dialogue/checkpoint. ECL418 then performs its separate full clear.
+      // Deferred enemies remain linked, so both calls create their death VMs.
+      cancelHostileBullets(false); // Native41fba3 ->40d230, EBX0.
+      laserManager.clearAll(laserWorld, false, false);
+      requestEnemyClear();
+      dialogue = index + 1;
+      bossHud.checkpoint = index + 1; // Native41fc68.
+      clearHostileViewport(false); // Native418823 ->40cf60, convert0.
       laserManager.clearAll(laserWorld, false, false);
       requestEnemyClear();
     } else
@@ -767,6 +840,10 @@ void command(Enemy& e, Context& c, int op) {
     laserManager.clearPhaseEnd(laserWorld); // 419387 invokes428670.
     break;
   case 449:
+    e.flags = (e.flags & ~0x40000000u) | ((u32(I(0)) & 1u) << 30);
+    break;
+  case 453:
+    e.hitSound = I(0); // Native415ad7; independent of the death sound.
     break;
   case 455: {
     const auto id = I(1);
@@ -998,11 +1075,16 @@ void runContext(Enemy& e, Context& c) {
       case 0:
         break;
       case 1:
-        e.active = false;
+        // 468d90 treats a nonzero main-thread result as Enemy removal,
+        // but unlinks only the current asynchronous context otherwise.
+        if (e.contexts.empty() || &c == &e.contexts.front())
+          e.active = false;
         c.pc = nullptr;
         return;
       case 10:
         if (c.calls.empty()) {
+          if (e.contexts.empty() || &c == &e.contexts.front())
+            e.active = false;
           c.pc = nullptr;
           return;
         } else {
@@ -1222,6 +1304,9 @@ void runContext(Enemy& e, Context& c) {
         break;
       case 81: {
         float angle = arg(c, e, 2, true), length = arg(c, e, 3, true);
+        // Native468880 normalizes through4646e0 before its polar projection.
+        // Out-of-range float angles otherwise produce different laser origins.
+        angle = normalize(angle);
         store(c, e, int(rd<float>(c.pc + 16)), float(std::cos(double(angle)) * length), true);
         store(c, e, int(rd<float>(c.pc + 20)), float(std::sin(double(angle)) * length), true);
         break;

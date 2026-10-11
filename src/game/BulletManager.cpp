@@ -87,7 +87,10 @@ struct BulletWorld : eb::World {
                           nullptr, 224, 16, 0, true);
     else if (auto* node = animationScene.find(key(id))) {
       node->spriteRemap = birthRemap;
-      animationScene.rebind(key(id), 0, state.animation);
+      // 40ada8/40b0d6 resets the embedded VM through402520 before454ee0.
+      // Keeping the old int0 skips the new appearance's spawn transition and
+      // can cull the projectile using its small body sprite too early.
+      animationScene.rebind(key(id), 0, state.animation, false);
     }
     (void)remap;
   }
@@ -224,6 +227,8 @@ void emit(Enemy& e, Shooter& s, bool audible) {
                      bulletWorld);
       born.x = born.enemy.x;
       born.y = born.enemy.y;
+      born.type = born.enemy.type;
+      born.color = born.enemy.color;
       born.active = born.enemy.phase != eb::Phase::Inactive;
       hostilePool.commit(physicalSlot); // After synchronous ANM/child births.
     }
@@ -275,9 +280,13 @@ bool fullClearTint(const Projectile& bullet, u32& color) {
   return true;
 }
 } // namespace
-void cancelHostileBullets() {
+void cancelHostileBullets(bool respectCountdown) {
+  // Original40d230 preserves the special96..99 spell's bullets and, when
+  // its EBX argument is set, slots with a cancellation-protection countdown.
+  if (spellState.active() && spellState.cardId >= 96 && spellState.cardId <= 99)
+    return;
   for (auto* bullet : hostileSlots)
-    if (eligibleCancellation(bullet))
+    if (eligibleCancellation(bullet) && (!respectCountdown || bullet->enemy.collisionDelay == 0))
       cancelToPoint(*bullet, false);
 }
 void clearHostileViewport(bool convert) {
@@ -339,6 +348,8 @@ void tickBullets() {
     b.y = b.enemy.y;
     b.angle = b.enemy.angle;
     b.speed = b.enemy.speed;
+    b.type = b.enemy.type;
+    b.color = b.enemy.color;
     b.age = b.enemy.age;
     b.active = b.enemy.phase != eb::Phase::Inactive;
     if (b.enemy.phase != eb::Phase::Inactive)

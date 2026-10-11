@@ -43,7 +43,7 @@ export class MusicPlayer {
     if(source){try{source.stop();}catch{}}
   }
 
-  async play(track,isCurrent=()=>true) {
+  async play(track,isCurrent=()=>true,{offsetSeconds=0}={}) {
     this.stop();
     const request=this.request;
     if(!isCurrent())return false;
@@ -63,7 +63,10 @@ export class MusicPlayer {
     gain.connect(this.context.destination);
     source.onended=()=>{if(this.source===source)this.source=null;};
     this.source=source;
-    source.start();
+    const seconds=Number.isFinite(offsetSeconds)?Math.max(0,offsetSeconds):0;
+    const length=track.loopEnd-track.loopStart;
+    const offset=length>0&&seconds>=track.loopEnd?track.loopStart+(seconds-track.loopStart)%length:seconds;
+    source.start(0,offset);
     return true;
   }
 }

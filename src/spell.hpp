@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <cmath>
 #include <string>
 #include <vector>
 namespace th12::spell_system {
@@ -21,6 +22,7 @@ struct Start {
 struct Result {
   ResultKind kind=ResultKind::None;Failure failure=Failure::None;
   int cardId=0,bonusDisplayed=0,scoreDeltaStored=0,elapsedTicks=0;
+  int displayElapsedTicks=0,realTimeEncoded=-1;
   bool survivedTimeout=false;std::string title;
   Record loadoutRecord{},allRecord{};
 };
@@ -62,11 +64,35 @@ struct State {
   float ringX=0,ringY=0;bool replay=false,timedOut=false;
   std::string title;Failure failure=Failure::None;
   Record loadoutRecord{},allRecord{};Result lastResult{};
+  std::array<int32_t,21> replayResultTimes{};int replayResultTimeCount=0,resultTimeIndex=0;
+  bool replayWallClock=false;double wallStartSeconds=0;
+  uint32_t resultAnimationId=0;
   bool active()const{return flags&Active;}
   bool eligible()const{return flags&Eligible;}
   bool survival()const{return flags&Survival;}
   bool pendingBomb()const{return (flags&(Active|PendingBomb))==(Active|PendingBomb);}
   void reset(){*this={};}
+  void observeWallTime(double milliseconds){
+    //40dd50 is a presentation-tail observer.4508b0 supplies QPC seconds;
+    //active paused frames retain the original start, so pauses count here.
+    //Replay results use the recorded stage header, never playback duration.
+    if(replayWallClock||!std::isfinite(milliseconds)||milliseconds<0)return;
+    const double seconds=milliseconds/1000.;
+    if(active()){
+      if(!(flags&WallClockRunning)){wallStartSeconds=seconds;flags|=WallClockRunning;}
+      return;
+    }
+    if(!(flags&WallClockRunning))return;
+    const double duration=std::max(0.,seconds-wallStartSeconds);
+    const double remainder=std::fmod(duration,.0167);
+    const double rounded=duration-remainder+(remainder>=.00835?.0167:0.);
+    const double whole=std::floor(rounded);
+    const int integerSeconds=int(std::min(whole,999.));
+    const int hundredths=int((rounded-whole)*100.);
+    lastResult.realTimeEncoded=((integerSeconds+hundredths+22)*1000+
+      (integerSeconds+66)%1000)*100+(hundredths+33)%100;
+    flags&=~uint32_t(WallClockRunning);
+  }
   bool start(const Start& s){
     if(s.cardId<0||s.cardId>127||s.timeLimit<0||s.difficulty<0||s.difficulty>4||s.stage<1||s.stage>7)return false;
     cardId=s.cardId;age=0;previousAge=-1;timeLimit=s.timeLimit;serialTicks=1;replay=s.replay;timedOut=false;failure=Failure::None;
@@ -111,6 +137,10 @@ struct State {
     if(!active())return {};
     const bool captured=eligible();flags&=~uint32_t(Active|PendingBomb);
     Result result;result.kind=captured?ResultKind::Captured:ResultKind::Failed;result.failure=failure;result.cardId=cardId;result.bonusDisplayed=captured?bonusDisplayed:0;result.scoreDeltaStored=captured?bonusDisplayed/10:0;result.elapsedTicks=age;result.survivedTimeout=timedOut&&survival();result.title=title;
+    // Native40dd89 copies the serial counter+90, not the Spell timer+28.
+    result.displayElapsedTicks=serialTicks;
+    if(resultTimeIndex<replayResultTimeCount)result.realTimeEncoded=replayResultTimes[resultTimeIndex];
+    ++resultTimeIndex;
     if(captured){scoreStored=int32_t(std::min<int64_t>(999999999,int64_t(scoreStored)+result.scoreDeltaStored));if(!replay){if(loadoutRecord.captures<99999)++loadoutRecord.captures;if(allRecord.captures<99999)++allRecord.captures;}}
     result.loadoutRecord=loadoutRecord;result.allRecord=allRecord;lastResult=result;return result;
   }

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import createCore from '../site/runtime/core.mjs';
+import {initializeCandidate,state as worldState} from '../tools/replay-verifier/capture-candidate.mjs';
 
 const native=JSON.parse(fs.readFileSync(new URL('fixtures/enemy-animation-layer-native.json',import.meta.url)));
 assert.equal(native.originalExeSha256,'99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417');
@@ -58,5 +59,31 @@ test('native41c723 registers enemy animation slots at the Primary head',async()=
     assert.deepEqual(scripts,row.birthPrimaryChain.map(n=>n.script));
     assert.equal(row.enemyManagerDraw21.returned,1);
     assert.equal(row.enemyManagerDraw21.submissionCount,0);
+    const core=await start(row),count=core._th12_draw(),view=new DataView(core.HEAPU8.buffer),ptr=core._th12_draw_ptr();
+    for(let i=0;i<count;i++)assert.notEqual(view.getInt32(ptr+i*core._th12_draw_stride()+24,true),0,
+      'Enemy draw21 has no separate sprite fallback; registered ANM slots own the visible enemy');
   }
+});
+
+test('retail stage2 yin-yang entry delay cannot display the default fairy or advance logic while drawing',async()=>{
+  const core=await initializeCandidate(2);core._th12_start(0,0,1,0x1234);
+  let delayed=0,visibleYinYang=0;
+  for(let frame=0;frame<1100;frame++){
+    core._th12_tick(0,0);
+    if(frame<940)continue;
+    const before=worldState(core),circles=before.enemies.filter(e=>e.interrupts.some(i=>i[2]==='Cir00Dead'));
+    if(!circles.length)continue;
+    for(const enemy of circles){
+      const owned=before.animations.nodes.filter(n=>n.owner===enemy.id);
+      if(!owned.length)delayed++;
+      else if(owned.some(n=>n.bank===1&&n.script>=86&&n.script<=97&&n.render[4]>=141&&n.render[4]<=148))visibleYinYang++;
+    }
+    const count=core._th12_draw(),view=new DataView(core.HEAPU8.buffer),ptr=core._th12_draw_ptr();
+    for(let i=0;i<count;i++)assert.notEqual(view.getInt32(ptr+i*core._th12_draw_stride()+24,true),0,
+      'no invented default fairy before the original body ANM binds');
+    core._th12_anm_draw();
+    assert.deepEqual(worldState(core),before,'presentation must not change stage timing or game RNG');
+  }
+  assert.ok(delayed>0,'the real Cir00 entry contains a period without a body VM');
+  assert.ok(visibleYinYang>0,'the real yin-yang body subsequently becomes visible');
 });

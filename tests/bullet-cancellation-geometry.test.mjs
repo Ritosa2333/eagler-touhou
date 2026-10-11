@@ -1,3 +1,4 @@
+import {emscripten} from '../scripts/toolchain.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -5,8 +6,8 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root);
-const python=path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe');
-const compiler=path.join(workspace,'tools/emsdk/upstream/emscripten/emcc.py');
+const python=emscripten(root).python;
+const compiler=emscripten(root).compiler;
 const directory=path.join(root,'artifacts/bullet-cancellation-geometry');fs.mkdirSync(directory,{recursive:true});
 const output=path.join(directory,'core.mjs');
 const build=spawnSync(python,[compiler,'tests/fixtures/bullet-cancellation-geometry.cpp','-std=c++20','-O2','-o',output,
@@ -29,4 +30,16 @@ test('native circle cancellation preserves its original float stores and convers
   if((dx*dx+dy*dy<=reach*reach)!==row.cancelled)++distinguishesFloatStores;
  }
  assert.equal(distinguishesFloatStores,1,'a true native boundary rejects the former unrounded circle calculation');
+});
+test('Sanae B original409220 circle rejects the th12_14 boundary bullet from its original fixed center',async()=>{
+ const cases=JSON.parse(fs.readFileSync(new URL('fixtures/bomb-cancel-origin-original.json',import.meta.url)));
+ assert.equal(cases.originalExeSha256,'99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417');
+ const c=await create();assert.equal(cases.rows.length,6);
+ for(const row of cases.rows){
+  assert.equal(!!c._circle_contains(...row.position,...row.center,row.radius,row.hitbox),row.cancelled,JSON.stringify(row));
+  assert.deepEqual(row.clearCalls.map(call=>call.entry),['0x40caa0','0x4286f0']);
+  assert.deepEqual(row.clearCalls.map(call=>call.arguments.slice(1)),[[0,1],[0,1]]);
+ }
+ assert.deepEqual(cases.rows.filter(row=>row.case==='original-bomb-before-movement-origin').map(row=>row.cancelled),[false,false,false]);
+ assert.deepEqual(cases.rows.filter(row=>row.case==='former-core-moved-origin').map(row=>row.cancelled),[true,true,true]);
 });

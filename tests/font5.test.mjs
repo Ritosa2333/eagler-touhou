@@ -1,6 +1,7 @@
+import {emscripten} from '../scripts/toolchain.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';import{spawnSync}from'node:child_process';import{pathToFileURL}from'node:url';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root),folder=path.join(root,'artifacts/font5-tests');fs.mkdirSync(folder,{recursive:true});
-const python=path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe'),compiler=path.join(workspace,'tools/emsdk/upstream/emscripten/emcc.py');
+const python=emscripten(root).python,compiler=emscripten(root).compiler;
 const result=spawnSync(python,[compiler,'tests/fixtures/font5.cpp','src/game/TextGlyphs.cpp','src/game/Items.cpp','-std=c++20','-O2','-o',path.join(folder,'core.mjs'),'-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=node','-sEXPORTED_FUNCTIONS=["_font5_layout","_font5_glyphs","_pickup_bounds","_malloc","_free"]','-sEXPORTED_RUNTIME_METHODS=["HEAPU8","HEAPF32"]'],{cwd:root,encoding:'utf8',env:{...process.env,EM_CACHE:path.join(root,'artifacts/emscripten-cache'),EMSDK_PYTHON:python}});assert.equal(result.status,0,result.stderr||result.stdout);
 const create=(await import(pathToFileURL(path.join(folder,'core.mjs')).href)).default;
 test('Font5 numeric glyphs match132 actual native layout/geometry positions and scales',async()=>{

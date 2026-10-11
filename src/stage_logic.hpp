@@ -60,6 +60,7 @@ struct World {
   virtual void bindEmbedded(int /*slot*/,int /*script*/){} // op14; negative script retires.
   virtual void tickEmbedded(int /*slot*/){} // eight Stage+1cc VMs after STD commands.
   virtual void backgroundEffect(int /*kind*/){unsupported(17,"background effect mesh not connected");}
+  virtual void tickBackgroundEffect(){} //403145 after camera publication; before callback count.
   virtual void publish(const Camera&){}
 };
 struct Interpolation {
@@ -122,7 +123,7 @@ struct State {
       if(fogTrack.duration){const auto v=fogTrack.tick(6,delta);camera.fogStart=v[0];camera.fogEnd=v[1];camera.fogArgb=0;for(int i=0;i<4;++i){camera.fogBytes[i]=v[i+2];camera.fogArgb|=uint32_t(int(v[i+2])&255)<<(8*i);}}
       vectorTrack(upTrack,camera.up);updateShake(delta);for(int i=0;i<8;++i)world.tickEmbedded(i);
     }
-    world.publish(camera);++callbackCount;return true;
+    world.publish(camera);world.tickBackgroundEffect();++callbackCount;return true;
   }
 };
 } // namespace th12::stage_logic

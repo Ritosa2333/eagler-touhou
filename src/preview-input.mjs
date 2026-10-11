@@ -1,5 +1,5 @@
 // Input transport for stage previews. Gameplay consumes one sample per tick.
-export const KEY_BITS = Object.freeze({ArrowUp:16,ArrowDown:32,ArrowLeft:64,ArrowRight:128,KeyZ:1,KeyX:2,ShiftLeft:8,ShiftRight:8});
+export const KEY_BITS = Object.freeze({ArrowUp:16,ArrowDown:32,ArrowLeft:64,ArrowRight:128,KeyZ:1,KeyX:2,ShiftLeft:8,ShiftRight:8,ControlLeft:512,ControlRight:512});
 
 export function supportedReplay(replay,number) {
   return !!replay && Number.isInteger(replay.difficulty) && replay.difficulty >= 0 && replay.difficulty <= 4 && replay.stages?.some(stage=>Number.isInteger(stage.number)&&(number===undefined||stage.number===number)&&(replay.difficulty===4?stage.number===7:stage.number>=1&&stage.number<=6));
@@ -39,6 +39,9 @@ export class PreviewInput {
   }
   sample(previous,pad) {
     let held=this.hostTouch;
+    // Manual play sends the original MSG fast-forward bit. Replay playback
+    // reads its recorded input directly and never samples these physical keys.
+    if(this.localReplayKeys.size||this.hostReplayKeys.size)held|=512;
     for(const code of this.localKeys)held|=KEY_BITS[code];for(const code of this.hostKeys)held|=KEY_BITS[code];
     for(const value of this.touches.values())held|=value;
     if(pad?.connected){

@@ -1,0 +1,267 @@
+{
+  "schema": "th12-original-bomb-cancel-origin/1",
+  "originalExeSha256": "99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417",
+  "wholeGameOracle": false,
+  "gpuExecuted": false,
+  "scope": "Original409220 full query with one synthetic phase1 bullet, countdown0, script-1, hitbox4, empty Enemy/Laser lists, ordinary active spell. The position comes from the pre-Bullet21 th12_14 input9288 slot1249 trace; centers are explicit constructed conditions. This fixture proves clear geometry only, not Bomb birth order or RNG acceptance.",
+  "rows": [
+    {
+      "case": "original-bomb-before-movement-origin",
+      "age": 60,
+      "position": [
+        5.678585052490234,
+        385.36041259765625
+      ],
+      "hitbox": 4,
+      "radius": 32.0,
+      "center": [
+        0.8671875,
+        423.0
+      ],
+      "cancelled": false,
+      "clearCalls": [
+        {
+          "entry": "0x40caa0",
+          "center": [
+            0.8671875,
+            423.0,
+            0.0
+          ],
+          "arguments": [
+            32.0,
+            0,
+            1
+          ]
+        },
+        {
+          "entry": "0x4286f0",
+          "center": [
+            0.8671875,
+            423.0,
+            0.0
+          ],
+          "arguments": [
+            32.0,
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "case": "original-bomb-before-movement-origin",
+      "age": 61,
+      "position": [
+        5.678585052490234,
+        385.36041259765625
+      ],
+      "hitbox": 4,
+      "radius": 32.266666412353516,
+      "center": [
+        0.8671875,
+        423.0
+      ],
+      "cancelled": false,
+      "clearCalls": [
+        {
+          "entry": "0x40caa0",
+          "center": [
+            0.8671875,
+            423.0,
+            0.0
+          ],
+          "arguments": [
+            32.266666412353516,
+            0,
+            1
+          ]
+        },
+        {
+          "entry": "0x4286f0",
+          "center": [
+            0.8671875,
+            423.0,
+            0.0
+          ],
+          "arguments": [
+            32.266666412353516,
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "case": "original-bomb-before-movement-origin",
+      "age": 62,
+      "position": [
+        5.678585052490234,
+        385.36041259765625
+      ],
+      "hitbox": 4,
+      "radius": 32.53333282470703,
+      "center": [
+        0.8671875,
+        423.0
+      ],
+      "cancelled": false,
+      "clearCalls": [
+        {
+          "entry": "0x40caa0",
+          "center": [
+            0.8671875,
+            423.0,
+            0.0
+          ],
+          "arguments": [
+            32.53333282470703,
+            0,
+            1
+          ]
+        },
+        {
+          "entry": "0x4286f0",
+          "center": [
+            0.8671875,
+            423.0,
+            0.0
+          ],
+          "arguments": [
+            32.53333282470703,
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "case": "former-core-moved-origin",
+      "age": 60,
+      "position": [
+        5.678585052490234,
+        385.36041259765625
+      ],
+      "hitbox": 4,
+      "radius": 32.0,
+      "center": [
+        0.8671875,
+        418.5
+      ],
+      "cancelled": true,
+      "clearCalls": [
+        {
+          "entry": "0x40caa0",
+          "center": [
+            0.8671875,
+            418.5,
+            0.0
+          ],
+          "arguments": [
+            32.0,
+            0,
+            1
+          ]
+        },
+        {
+          "entry": "0x4286f0",
+          "center": [
+            0.8671875,
+            418.5,
+            0.0
+          ],
+          "arguments": [
+            32.0,
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "case": "former-core-moved-origin",
+      "age": 61,
+      "position": [
+        5.678585052490234,
+        385.36041259765625
+      ],
+      "hitbox": 4,
+      "radius": 32.266666412353516,
+      "center": [
+        0.8671875,
+        418.5
+      ],
+      "cancelled": true,
+      "clearCalls": [
+        {
+          "entry": "0x40caa0",
+          "center": [
+            0.8671875,
+            418.5,
+            0.0
+          ],
+          "arguments": [
+            32.266666412353516,
+            0,
+            1
+          ]
+        },
+        {
+          "entry": "0x4286f0",
+          "center": [
+            0.8671875,
+            418.5,
+            0.0
+          ],
+          "arguments": [
+            32.266666412353516,
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "case": "former-core-moved-origin",
+      "age": 62,
+      "position": [
+        5.678585052490234,
+        385.36041259765625
+      ],
+      "hitbox": 4,
+      "radius": 32.53333282470703,
+      "center": [
+        0.8671875,
+        418.5
+      ],
+      "cancelled": true,
+      "clearCalls": [
+        {
+          "entry": "0x40caa0",
+          "center": [
+            0.8671875,
+            418.5,
+            0.0
+          ],
+          "arguments": [
+            32.53333282470703,
+            0,
+            1
+          ]
+        },
+        {
+          "entry": "0x4286f0",
+          "center": [
+            0.8671875,
+            418.5,
+            0.0
+          ],
+          "arguments": [
+            32.53333282470703,
+            0,
+            1
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import createCore from '../site/runtime/core.mjs';
+import {omitPlayerEntryClear} from './helpers/passive-player.mjs';
 
 const native=JSON.parse(fs.readFileSync(new URL('fixtures/full-clear-valid-colors-native.json',import.meta.url)));
 const word=v=>{const b=Buffer.alloc(4);b.writeInt32LE(v);return b;};
@@ -28,7 +29,8 @@ async function ready(row){
   instruction(525,[word(0),...row.origin.map(float)]),instruction(505,[word(0),float(row.speed),float(0)]),
   instruction(507,[word(0),word(row.mode)]),instruction(508,[word(0),word(row.fireSound),word(row.transformSound)]),
   instruction(501,[word(0)]),instruction(510)];
- load(c,'_th12_load_ecl',program(commands));c._th12_start(0,0,1,row.seed);return c;
+ load(c,'_th12_load_ecl',program(commands));c._th12_start(0,0,1,row.seed);
+ omitPlayerEntryClear(c);return c;
 }
 function compareEffect(snapshot,expected,label){
  const effects=snapshot.animations.nodes.filter(n=>n.alive&&n.bank===0&&n.script===96);

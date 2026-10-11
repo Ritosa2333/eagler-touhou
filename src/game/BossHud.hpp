@@ -11,12 +11,17 @@ struct BossHud {
   std::array<uint32_t, 4> colors{};
   uint64_t name = 0;
   std::array<uint64_t, 10> stars{};
+  int timerSeconds = -1, timerHundredths = 0, previousTimerSeconds = -1;
+  bool timerVisible = false;
+  uint32_t timerColor = 0xffffffffu;
+  std::array<uint64_t, 2> timerDigits{};
 };
 extern BossHud bossHud;
 extern bool bossMusic;
 extern uint32_t musicSerial;
 extern std::string bossHudSnapshotBuffer;
 void tickBossHud();
+void recordBossCountdown(int limit, int phaseAge);
 void clearBossMarkers();
 const std::string& captureBossHud();
 } // namespace th12

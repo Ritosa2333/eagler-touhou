@@ -1,11 +1,11 @@
 // Ordered WebGL2 sprite batches. Presentation is a reader of core draw state.
 import {AnimationSampler} from './animation.mjs';
 import {StageBackground} from './stage-background.mjs';
-import {readCoreSpell,spellTextDescriptors} from './spell-presentation.mjs';
+import {readCoreSpell,spellTextDescriptors,bossTimerDescriptors,spellResultDescriptors} from './spell-presentation.mjs';
 import {readCoreUfo,ufoTextPoses,ufoTextRenderPriority} from './ufo-presentation.mjs';
 import {asciiGlyphs} from './ascii-presentation.mjs';
 import {readCoreDrawSchedule,orderPresentation} from './draw-scheduler.mjs';
-export function readCoreHud(core){const size=core._th12_hud_size?.()??20;if(!Number.isInteger(size)||size<20||size>256)throw Error('状态记录长度无效');return new Float32Array(core.HEAPU8.buffer,core._th12_hud(),size);}
+export function readCoreHud(core){const size=core._th12_hud_size?.()??20;if(!Number.isInteger(size)||size<20||size>256)throw Error('状态记录长度无效');const h=new Float32Array(core.HEAPU8.buffer,core._th12_hud(),size);if(typeof core._th12_score_stored!=='function')return h;const score=core._th12_score_stored();if(!Number.isInteger(score)||score< -0x80000000||score>0x7fffffff)throw Error('整数分数记录无效');const exact=[...h];exact[3]=score*10;if(size>40)exact[40]=score*10;return exact;}
 export function readCoreBossHud(core){
   if(!core._th12_boss_hud||!core._th12_boss_hud_size)return null;
   const ptr=core._th12_boss_hud(),size=core._th12_boss_hud_size();
@@ -54,7 +54,7 @@ export function readCoreAnimationPoses(core,stage=1){
   for(let i=0;i<count;i++){const offset=ptr+i*stride,F=n=>view.getFloat32(offset+n*4,true),I=n=>view.getInt32(offset+n*4,true),U=n=>view.getUint32(offset+n*4,true),flags=U(24),flags2=U(25),primary=rgba(U(14)),secondary=rgba(U(15)),color=flags&0x10000?secondary:primary;
     const a={name:animationBankName(I(16),stage),sprite:I(17),layer:I(18),mode:I(19),anchorX:I(20),anchorY:I(21),blend:I(22),geometryCount:I(23),
       x:0,y:0,z:F(2),rx:F(3),ry:F(4),rotation:F(5),sx:F(6),sy:F(7),u:F(8),v:F(9),uvScaleX:F(10),uvScaleY:F(11),geometryRadius:F(12),geometryWidth:F(13),
-      r:color[0],g:color[1],b:color[2],alpha:color[3],r2:secondary[0],g2:secondary[1],b2:secondary[2],alpha2:secondary[3],point:!!(flags2&2),visible:!!(flags&1),rotate:I(19)===1||I(19)===3};
+      r:color[0],g:color[1],b:color[2],alpha:color[3],primaryColor:primary,r2:secondary[0],g2:secondary[1],b2:secondary[2],alpha2:secondary[3],point:!!(flags2&2),visible:!!(flags&1),rotate:I(19)===1||I(19)===3};
     if(U(31)===1){a.nativeWidth=F(29);a.nativeHeight=F(30);}
     const owner=U(27);a.visible=(flags&3)===3;
     // Original45c93e/45c95b tests primary alpha even when flag10000 selects
@@ -111,6 +111,17 @@ export function hudGlyphs(text,x,y,scale=1,right=false){text=String(text);const 
 // Native mode15 circle helper 0x45d430 writes a triangle fan: primary color
 // at its center, secondary color at count+1 circumference vertices.
 export function circleVertices(x,y,radius,angle,segments,centerColor,edgeColor){const f=Math.fround,pi=3.1415927410125732,tau=6.2831854820251465,step=f(6.283185307179586/segments),vertices=[{x,y,color:centerColor}];angle=f(angle);for(let i=0;i<=segments;i++){vertices.push({x:f(x+f(Math.cos(angle)*radius)),y:f(y+f(Math.sin(angle)*radius)),color:edgeColor});angle=f(angle+step);while(angle>pi)angle=f(angle-tau);while(angle<-pi)angle=f(angle+tau);}return vertices;}
+// Native45d710 is a diffuse line strip with count+1 perimeter points. Mode16
+// is used by the small UFO completion hint and the two large UFO circles.
+export function outlineVertices(x,y,radius,angle,segments,color){
+  const f=Math.fround,pi=3.1415927410125732,tau=6.2831854820251465,step=f(tau/segments),vertices=[];
+  [x,y,radius,angle]=[x,y,radius,angle].map(f);
+  for(let i=0;i<=segments;i++){
+    vertices.push({x:f(x+f(Math.cos(angle)*radius)),y:f(y+f(Math.sin(angle)*radius)),color});
+    angle=f(angle+step);while(angle>pi)angle=f(angle-tau);while(angle<-pi)angle=f(angle+tau);
+  }
+  return vertices;
+}
 // 459e50 uses x87 nearest-even before the D3D half-pixel adjustment. WebGL
 // has no D3D half-pixel offset, but must retain that rounding at exact halves.
 export function nativePixel(n){const floor=Math.floor(n),fraction=n-floor;return fraction===.5?floor+(Math.abs(floor%2)===1?1:0):Math.round(n);}
@@ -153,7 +164,7 @@ export class Renderer {
     this.fogColor=gl.getUniformLocation(p,'fogColor');
     const solid=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,solid);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([255,255,255,255]));gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);this.solid={texture:solid,w:1,h:1};
     gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
-    this.uploadCount=0;this.drawCount=0;this.lastFrame=-1;this.point=null;
+    this.uploadCount=0;this.drawCount=0;this.lastFrame=-1;this.point=null;this.stageSurfaceCopied=false;this.stageSurfaceComposited=false;this.stageSurfaceAvailable=false;this.surfaceCopyError=0;
   }
   async prepare(){
     await this.loadAtlases(['pl00','pl01','pl02','bullet','enemy','front','ascii','text']);await this.prepareStage(1);
@@ -179,35 +190,71 @@ export class Renderer {
       this.textures.set(name+':'+index,{texture,w:bitmap.width,h:bitmap.height,defaultWrap:wrap});bitmap.close();
     }));
   }
-  begin(){const g=this.gl;g.viewport(0,0,640,480);g.clearColor(.035,.035,.055,1);g.clear(g.COLOR_BUFFER_BIT);g.bindVertexArray(this.vao);g.bindBuffer(g.ARRAY_BUFFER,this.buffer);this.drawCount=0;this.uploadCount=0;this.current=null;this.batch=[];this.batchMode=g.TRIANGLES;this.blend=-1;this.material(0);}
+  begin(){const g=this.gl;g.viewport(0,0,640,480);g.clearColor(.035,.035,.055,1);g.clear(g.COLOR_BUFFER_BIT);g.bindVertexArray(this.vao);g.bindBuffer(g.ARRAY_BUFFER,this.buffer);this.drawCount=0;this.uploadCount=0;this.current=null;this.batch=[];this.batchMode=g.TRIANGLES;this.blend=-1;this.stageSurfaceCopied=false;this.stageSurfaceComposited=false;this.stageSurfaceAvailable=false;this.surfaceCopyError=0;this.material(0);}
   flush(){if(!this.batch.length)return;const g=this.gl;g.bindTexture(g.TEXTURE_2D,this.current.texture);g.bufferData(g.ARRAY_BUFFER,new Float32Array(this.batch),g.STREAM_DRAW);g.drawArrays(this.batchMode,0,this.batch.length/10);this.drawCount++;this.uploadCount++;this.batch.length=0;}
   primitive(mode){if(this.batchMode!==mode){this.flush();this.batchMode=mode;}}
   material(blend){if(this.blend===blend)return;this.flush();const g=this.gl;const factors=[[g.SRC_ALPHA,g.ONE_MINUS_SRC_ALPHA],[g.SRC_ALPHA,g.ONE],[g.ZERO,g.ONE_MINUS_SRC_COLOR],[g.ONE,g.ZERO],[g.ONE_MINUS_DST_COLOR,g.ONE_MINUS_SRC_ALPHA],[g.DST_COLOR,g.ZERO],[g.ONE_MINUS_SRC_COLOR,g.ONE_MINUS_SRC_ALPHA]];g.blendFunc(...(factors[blend]||factors[0]));this.blend=blend;}
   region(name,entry,sx,sy,sw,sh,x,y,w,h,angle=0,alpha=1,tint=[1,1,1],blend=0,options={}){
-    const texture=this.textures.get(name+':'+entry);if(!texture)return;
+    const texture=this.textures.get(name+':'+entry);if(!texture||texture.available===false)return;
     this.material(blend);this.texture(texture,!!options.point);this.primitive(this.gl.TRIANGLES);
     const corners=options.nativeMode===0||options.nativeMode===1
       ?nativeQuadCorners(x,y,w,h,angle,options.anchorX||0,options.anchorY||0,options.nativeMode,options.screenShake)
       :quadCorners(x,y,w,h,angle,options.anchorX||0,options.anchorY||0,!!options.pixel),du=options.u||0,dv=options.v||0;
     const endX=sx+sw*(options.uvScaleX??1),endY=sy+sh*(options.uvScaleY??1);
     const uv=[[sx/texture.w+du,sy/texture.h+dv],[endX/texture.w+du,sy/texture.h+dv],[endX/texture.w+du,endY/texture.h+dv],[sx/texture.w+du,endY/texture.h+dv]];
-    for(const i of [0,1,2,0,2,3])this.batch.push(...corners[i],...uv[i],...tint,alpha,1,0);
+    for(const i of [0,1,2,0,2,3])this.batch.push(...corners[i],uv[i][0],texture.flipY?1-uv[i][1]:uv[i][1],...tint,alpha,1,0);
   }
   texture(texture,point=false,addressFlags=null){const g=this.gl,wrapU=addressFlags===null?(texture.defaultWrap??g.CLAMP_TO_EDGE):addressFlags&1?g.REPEAT:g.CLAMP_TO_EDGE,wrapV=addressFlags===null?(texture.defaultWrap??g.CLAMP_TO_EDGE):addressFlags&2?g.REPEAT:g.CLAMP_TO_EDGE;if(this.current!==texture||this.point!==point||this.wrapU!==wrapU||this.wrapV!==wrapV){this.flush();this.current=texture;this.point=point;this.wrapU=wrapU;this.wrapV=wrapV;g.bindTexture(g.TEXTURE_2D,texture.texture);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,point?g.NEAREST:g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,point?g.NEAREST:g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,wrapU);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,wrapV);}}
   mesh(p){
-    const texture=p.untextured?this.solid:this.textures.get(p.a.name+':'+p.a.entry);if(!texture)return;
+    const texture=p.untextured?this.solid:this.textures.get(p.a.name+':'+p.a.entry);if(!texture||texture.available===false)return;
     this.material(p.a.blend);this.texture(texture,p.untextured||p.filter===1,p.addressFlags);
     this.primitive(p.primitive===3?this.gl.LINE_STRIP:this.gl.TRIANGLES);
-    const emit=v=>this.batch.push(v.x,v.y,p.untextured ? .5 : v.u,p.untextured ? .5 : v.v,...argbRgba(v.color),v.rhw?1/v.rhw:1,0);
+    const emit=v=>this.batch.push(v.x,v.y,p.untextured ? .5 : v.u,p.untextured ? .5 : texture.flipY?1-v.v:v.v,...argbRgba(v.color),v.rhw?1/v.rhw:1,0);
     // Native45d5d0 submits each trail separately; batching two line strips
     // together would draw a spurious segment between their endpoints.
     if(p.primitive===3){this.flush();for(const v of p.vertices)emit(v);this.flush();return;}
     if(p.primitive===4)for(const v of p.vertices)emit(v);
     else for(let i=2;i<p.vertices.length;i++)for(const index of i&1?[i-1,i-2,i]:[i-2,i-1,i])emit(p.vertices[index]);
   }
+  stageSurface(priority,screenShake=[0,0],clip=1){
+    //431630 aliases text@R entry2 to the first native target.42f200 ends
+    //that same-frame background pass at draw12;42f3b0 copies it at14 before
+    //the layer28 strips. This texture never includes later Player/enemy/HUD.
+    const g=this.gl;
+    if(priority>=12&&!this.stageSurfaceCopied){
+      this.flush();let texture=this.textures.get('text:2');
+      if(!texture){texture={texture:g.createTexture(),w:640,h:480,defaultWrap:g.REPEAT,flipY:true};this.textures.set('text:2',texture);}
+      //The renderer's alpha:false back buffer is RGB. Copying it to RGBA
+      //attempts to add an absent component and can fail INVALID_OPERATION.
+      //The original @R uses the opaque display format; RGB also samples A=1.
+      g.bindTexture(g.TEXTURE_2D,texture.texture);g.copyTexImage2D(g.TEXTURE_2D,0,g.RGB,0,0,640,480,0);
+      this.surfaceCopyError=g.getError?.()??0;
+      texture.available=this.surfaceCopyError===(g.NO_ERROR??0);
+      this.current=null;this.point=null;this.stageSurfaceCopied=true;
+      this.stageSurfaceAvailable=texture.available;
+      if(!texture.available)return; //Retain the already rendered background.
+      g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);
+      g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.REPEAT);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.REPEAT);
+      //Native42f200 clears the destination target before any layer5/prio13
+      //draw. Keeping the previous background here would leave ghost strips
+      //at the exposed edges when Main81 moves during Camera shake.
+      g.enable(g.SCISSOR_TEST);g.scissor(13,0,422,480);g.clearColor(0,0,0,1);g.clear(g.COLOR_BUFFER_BIT);
+      if(clip===0)g.disable(g.SCISSOR_TEST);else if(clip===1)g.scissor(32,16,384,448);
+    }
+    if(priority>=14&&!this.stageSurfaceComposited){
+      if(!this.stageSurfaceAvailable){this.stageSurfaceComposited=true;return;}
+      //The original main script81's ordinary held pose copies sprite75 using
+      //blend3. Preserve that copy even when layer5/prio13 drew into the next
+      //target. A later typed Main-VM interrupt can override this normal pose.
+      this.region('text',2,32,16,384,448,32,16,384,448,0,1,[1,1,1],3,
+        {nativeMode:0,anchorX:1,anchorY:1,screenShake});
+      this.flush();this.stageSurfaceComposited=true;
+    }
+  }
   sprite(name,id,x,y,angle=0,scale=1,alpha=1){const s=this.atlases[name]?.sprites[id];if(s)this.region(name,s.entry,s.x,s.y,s.w,s.h,x,y,s.w*scale,s.h*scale,angle,alpha);}
   solidTriangles(vertices,indices,blend){this.material(blend);this.texture(this.solid,true);this.primitive(this.gl.TRIANGLES);for(const i of indices){const p=vertices[i];this.batch.push(p.x,p.y,.5,.5,...p.color,1,0);}}
-  trail(x,y,angle,length,start,end,alpha){const dx=Math.cos(angle)*length/2,dy=Math.sin(angle)*length/2;this.material(1);this.texture(this.solid,true);this.primitive(this.gl.LINES);this.batch.push(x-dx,y-dy,.5,.5,...argbRgba(start,alpha),1,0,x+dx,y+dy,.5,.5,...argbRgba(end,alpha),1,0);}
+  solidLineStrip(vertices,blend){this.material(blend);this.texture(this.solid,true);this.primitive(this.gl.LINE_STRIP);this.flush();for(const p of vertices)this.batch.push(p.x,p.y,.5,.5,...p.color,1,0);this.flush();}
+  trail(x,y,angle,length,start,end,alpha){const dx=Math.cos(angle)*length/2,dy=Math.sin(angle)*length/2;this.material(0);this.texture(this.solid,true);this.primitive(this.gl.LINES);this.batch.push(x-dx,y-dy,.5,.5,...argbRgba(start,alpha),1,0,x+dx,y+dy,.5,.5,...argbRgba(end,alpha),1,0);}
   beamTrail(x,y,angle,length,width,start,end){
     // Native profile3/script210 uses sprite405, blend1/layer12. The custom
     // vertex update 46a0ee..46a153 offsets both edges by12px (full width24).
@@ -225,7 +272,7 @@ export class Renderer {
   state(a,x,y,angle=0,scale=1,alpha=1,screenShake=[0,0]){
     if(!a.visible)return;
     if(a.mode===14){if(a.alpha<=0)return;const color=[a.r,a.g,a.b,a.alpha*alpha],corners=quadCorners(x+a.x,y+a.y,a.geometryRadius*a.sx*scale,a.geometryWidth*a.sy*scale,a.rotation+angle);this.solidTriangles(corners.map(([x,y])=>({x,y,color})),[0,1,2,0,2,3],a.blend);return;}
-    if(a.mode===15||a.mode===16){const count=a.geometryCount;if(count<3||count>512)return;const center=[a.r,a.g,a.b,a.alpha*alpha],edge=a.mode===15?[a.r2,a.g2,a.b2,a.alpha2*alpha]:center;if(center[3]<=0&&edge[3]<=0)return;const vertices=circleVertices(x+a.x,y+a.y,a.geometryRadius*a.sx*scale,a.rotation+angle,count,center,edge),indices=[];for(let i=1;i<=count;i++)indices.push(0,i,i+1);this.solidTriangles(vertices,indices,a.blend);return;}
+    if(a.mode===15||a.mode===16){const count=a.geometryCount;if(count<3||count>512)return;const primary=a.primaryColor??[a.r,a.g,a.b,a.alpha],center=[primary[0],primary[1],primary[2],primary[3]*alpha],edge=[a.r2,a.g2,a.b2,a.alpha2*alpha];if(a.mode===16){if(center[3]>0)this.solidLineStrip(outlineVertices(x+a.x,y+a.y,Math.fround(a.geometryRadius*a.sx*scale),a.rotation+angle,count,center),a.blend);return;}if(center[3]<=0&&edge[3]<=0)return;const vertices=circleVertices(x+a.x,y+a.y,a.geometryRadius*a.sx*scale,a.rotation+angle,count,center,edge),indices=[];for(let i=1;i<=count;i++)indices.push(0,i,i+1);this.solidTriangles(vertices,indices,a.blend);return;}
     const s=this.atlases[a.name]?.sprites[a.sprite];if(!s||a.alpha<=0)return;this.region(a.name,s.entry,s.x,s.y,s.w,s.h,x+a.x,y+a.y,(a.nativeWidth!==undefined&&a.nativeWidth!==-1?a.nativeWidth:s.w)*scale*a.sx,(a.nativeHeight!==undefined&&a.nativeHeight!==-1?a.nativeHeight:s.h)*scale*a.sy,a.rotate?a.rotation+angle:0,a.alpha*alpha,[a.r,a.g,a.b],a.blend,{anchorX:a.anchorX,anchorY:a.anchorY,u:a.u,v:a.v,uvScaleX:a.uvScaleX,uvScaleY:a.uvScaleY,pixel:a.mode===0,nativeMode:a.mode,screenShake,point:a.point});
   }
   animation(name,id,age,x,y,angle=0,scale=1,variant=null,options={}){const {alpha=1,...sampling}=options;for(const a of this.animations.sampleAll(name,id,age,variant,sampling))this.state(a,x,y,angle,scale,alpha);}
@@ -257,11 +304,12 @@ export class Renderer {
     const logicalBackground=readCoreBackground(core),background=this.background.geometry(logicalBackground?.frame??core._th12_background_frame?.()??frame,logicalBackground),screenShake=logicalBackground?.camera?.screenShake??[0,0];g.uniform3fv(this.fogColor,background.camera.fog.slice(0,3));g.clearColor(...background.camera.fog.slice(0,3),1);g.clear(g.COLOR_BUFFER_BIT);
     this.primitive(g.TRIANGLES);if(background.authoritative||(core._th12_background_visible?.()??true))for(const triangle of background.triangles){const texture=this.textures.get(triangle.bank+':'+triangle.entry);if(!texture)continue;this.material(triangle.blend);this.texture(texture,triangle.point);for(const p of triangle.vertices)this.batch.push(p.x,p.y,p.u/texture.w,p.v/texture.h,p.r,p.g,p.b,p.alpha,p.depth,p.fog);}
     this.flush();
-    const logicalPoses=readCoreAnimationPoses(core,stage),schedule=readCoreDrawSchedule(core),meshes=readCoreMeshes(core,stage),logicalOwners=new Set([...logicalPoses,...meshes].map(p=>p.owner)),message=readCoreMessage(core),spell=readCoreSpell(core);
+    const logicalPoses=readCoreAnimationPoses(core,stage),schedule=readCoreDrawSchedule(core),meshes=readCoreMeshes(core,stage),logicalOwners=new Set([...logicalPoses,...meshes].map(p=>p.owner)),message=readCoreMessage(core),spell=readCoreSpell(core),bossHud=readCoreBossHud(core);
     const count=core._th12_draw(),ptr=core._th12_draw_ptr(),stride=(core._th12_draw_stride?.()||36)/4;if(stride<9||stride>64||!Number.isInteger(stride))throw Error('绘制记录长度无效');
     const f=new Float32Array(core.HEAPU8.buffer,ptr,count*stride),v=new Int32Array(core.HEAPU8.buffer,ptr,count*stride);
     const player='pl0'+h[17],poses=[...logicalPoses.filter(p=>!(p.a.name==='text'&&(p.a.sprite>=0&&p.a.sprite<4||p.a.sprite===7))),...messageTextPoses(message,logicalPoses,this.atlases),...meshes,...(core._th12_mesh_draw?[]:readCoreLaserSegments(core,stage))];
     for(const text of spellTextDescriptors(spell,logicalPoses))poses.push(text.kind==='spell-title'?{...text.pose,dialogue:true,text:text.text,record:text.record,metrics:text.metrics,raster:text.raster}:{nativeText:text,drawPriority:45,clipped:false,order:poses.length});
+    for(const text of [...bossTimerDescriptors(bossHud),...spellResultDescriptors(spell,logicalPoses)])poses.push({nativeText:text,drawPriority:44,clip:2,order:poses.length});
     for(const text of ufoTextPoses(readCoreUfo(core))){const priority=ufoTextRenderPriority(text);poses.push({nativeText:text,drawPriority:priority,clip:priority===22?2:0,order:poses.length});}
     const add=(name,id,age,x,y,angle,scale,variant,options)=>{const {alpha,drawPriority,clipped,...sampling}=options;for(const a of this.animations.sampleAll(name,id,age,variant,sampling))poses.push({a,x,y,angle,scale,alpha,drawPriority,clipped,order:poses.length});};
     for(let i=0;i<count;i++){
@@ -269,7 +317,7 @@ export class Renderer {
       if(stride>=12&&logicalOwners.has(entityId))continue;
       const options={entityId,seed:entityId?entityId&65535:0x1234,alpha,...(interrupt?{interrupt}: {}),...(kind===1?{drawPriority:31,clipped:true}:kind===3?{drawPriority:27,clipped:true}:kind===4?{drawPriority:24,clipped:true}:{})};
       if(kind===12)poses.push({a:{layer:12},x,y,angle,scale,width:alpha,start:color>>>0,end:animation>>>0,beamTrail:true,order:poses.length});
-      else if(kind===13)poses.push({a:{layer:12},x,y,angle,scale,alpha:1,start:color>>>0,end:animation>>>0,trail:true,order:poses.length});
+      else if(kind===13)poses.push({a:{layer:13},x,y,angle,scale,alpha:1,start:color>>>0,end:animation>>>0,trail:true,order:poses.length});
       else if(kind===4||kind===5||kind===2||kind===7)add(player,animation,age,x,y,angle,scale,null,options);
       else if(kind===6){const {alpha:opacity,...sampling}=options,a=this.animations.sample(player,animation,age,null,sampling);if(a)poses.push({a,x,y,angle,scale,alpha:opacity,beam:true,order:poses.length});}
       else if(kind===1){const type=this.atlases.bullet.types?.[Math.floor(color/16)],variant=type?.colors[color%16];if(type)add('bullet',stride>=12?animation:type.script,age,x,y,angle,scale,variant,options);}
@@ -285,13 +333,15 @@ export class Renderer {
     // The frame itself belongs at layer21/23. Painting it after every VM
     // hides the UFO panel and FontManager's right-side counters.
     add('front',0,frame,0,0,0,1,null,{alpha:1,clipped:false});
-    for(const rectangle of bossHealthRectangles(readCoreBossHud(core)))poses.push({rectangle,drawPriority:44,clip:2,order:poses.length});
+    for(const rectangle of bossHealthRectangles(bossHud))poses.push({rectangle,drawPriority:44,clip:2,order:poses.length});
     poses.push({hudCounters:true,drawPriority:69,clipped:false,order:poses.length});
     for(let i=0;i<8;i++){add('front',13+i,frame,0,0,0,1,null,{alpha:1,drawPriority:59,clipped:false,interrupt:fragmentInterrupt(i,h[5],h[21])});add('front',21+i,frame,0,0,0,1,null,{alpha:1,drawPriority:59,clipped:false,interrupt:fragmentInterrupt(i,h[6],h[22])});}
     if(h.length>25&&!logicalPoses.some(p=>p.a.name==='front'&&(p.owner>>>16)===0xfffe))for(let i=0;i<3;i++){const color=h[23+i]|0;add('front',80,frame,0,0,0,1,null,{alpha:1,drawPriority:44,clipped:true,interrupts:[7+i,color?9+color:13,color?2:3]});}
     add('front',69+h[19],frame,0,0,0,1,null,{alpha:1,clipped:false});
     let currentClip=1;
+    const hasStageSurface=!!logicalBackground?.loaded;
     for(const originalPose of orderPresentation(poses,schedule)){
+      if(hasStageSurface)this.stageSurface(originalPose.drawPriority,screenShake,currentClip);
       const p=shakePresentation(originalPose,screenShake);
       if(p.clip!==currentClip){this.flush();if(p.clip){g.enable(g.SCISSOR_TEST);if(p.clip===2)g.scissor(13,0,422,480);else g.scissor(32,16,384,448);}else g.disable(g.SCISSOR_TEST);currentClip=p.clip;}
       if(p.nativeText)this.nativeText(p.nativeText,p.screenShake);else if(p.hudCounters)this.hudCounters(h);else if(p.rectangle){const {bounds:[left,top,right,bottom],argb}=p.rectangle,color=argbRgba(argb);this.solidTriangles([[left,top],[right,top],[right,bottom],[left,bottom]].map(([x,y])=>({x,y,color})),[0,1,2,0,2,3],0);}else if(p.mesh)this.mesh(p);else if(p.laser)this.laserSegment(p);else if(p.dialogue)this.dialogueLine(p);else if(p.beamTrail)this.beamTrail(p.x,p.y,p.angle,p.scale,p.width,p.start,p.end);else if(p.trail)this.trail(p.x,p.y,p.angle,p.scale,p.start,p.end,p.alpha);else if(p.beam){const s=this.atlases[p.a.name].sprites[p.a.sprite];if(s)this.region(p.a.name,s.entry,s.x,s.y,s.w,s.h,p.x,p.y-448*p.scale/2,448*p.scale,14*p.a.sy,-Math.PI/2,p.a.alpha*p.alpha,[p.a.r,p.a.g,p.a.b],p.a.blend,{nativeMode:1,screenShake:p.screenShake});}else this.state(p.a,p.x,p.y,p.angle,p.scale,p.alpha,p.screenShake);

@@ -1,3 +1,4 @@
+import {emscripten} from '../scripts/toolchain.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -6,8 +7,8 @@ import {spawnSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root);
 const directory=path.join(root,'artifacts/bullet-offscreen-sprites');fs.mkdirSync(directory,{recursive:true});
-const python=path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe');
-const compiler=path.join(workspace,'tools/emsdk/upstream/emscripten/emcc.py');
+const python=emscripten(root).python;
+const compiler=emscripten(root).compiler;
 const output=path.join(directory,'core.mjs');
 const names=['malloc','free','bounds_query','bounds_load','bounds_begin','bounds_tick','bounds_snapshot'];
 const result=spawnSync(python,[compiler,'tests/fixtures/bullet-offscreen-sprites.cpp','src/game/AnmLogic.cpp','src/game/BulletTargetMotion.cpp',

@@ -81,7 +81,11 @@ Entity* Manager::spawn(const SpawnRequest& r) {
       ++poolMisses;
       return nullptr;
     }
+    // Native4277d8..42784f resets the small-point birth fields but leaves
+    // Item+9bc in the recycled slot. Attraction overwrites it on entry.
+    const float attractionSpeed = e->attractionSpeed;
     *e = {};
+    e->attractionSpeed = attractionSpeed;
     e->state = State::DelayedPoint;
     e->delay = smallPointSpawns >= 1024  ? (ordinal & 31) + 16
                : smallPointSpawns >= 512 ? (ordinal & 15) + 8

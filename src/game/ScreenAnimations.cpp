@@ -230,6 +230,9 @@ void endSpellAnimations(const spell_system::Result& result) {
   for (const auto& binding : spell_system::resultBindings(captured, result.bonusDisplayed)) {
     const auto key =
         bindScreenAnimation(spellAnimationBank(binding.bank), binding.script, binding.layer);
+    if (binding.bank == spell_system::VisualBank::Front && binding.script == 78)
+      if (const auto* node = animationScene.find(key))
+        spellState.resultAnimationId = node->id;
     if (binding.bank == spell_system::VisualBank::Font && binding.script >= 5 &&
         binding.script <= 12)
       if (auto* node = animationScene.find(key)) {

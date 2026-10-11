@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import createCore from '../site/runtime/core.mjs';
+import {omitPlayerEntryClear} from './helpers/passive-player.mjs';
 const native=JSON.parse(fs.readFileSync(new URL('fixtures/laser-phase-clear-native.json',import.meta.url)));
 assert.equal(native.originalExeSha256,'99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417');
 const snapshot=core=>{const at=core._th12_state(),size=core._th12_state_size();return JSON.parse(new TextDecoder().decode(core.HEAPU8.subarray(at,at+size)));};
@@ -12,6 +13,7 @@ async function start(row){
   const raw=Buffer.from(row.syntheticEclHex,'hex'),header=raw.readUInt32LE(36);
   raw.fill(0,40,header);raw.write('main',40);load(raw,core._th12_load_ecl);
   core._th12_start(0,0,1,0x1234);
+  omitPlayerEntryClear(core);
   for(let tick=0;tick<row.inputTicksBeforeCapture;tick++)core._th12_tick(0,0);
   return core;
 }

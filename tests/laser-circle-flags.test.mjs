@@ -1,3 +1,4 @@
+import {emscripten} from '../scripts/toolchain.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -6,7 +7,7 @@ import {spawnSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root),dir=path.join(root,'artifacts/laser-circle-flags-tests');
 fs.mkdirSync(dir,{recursive:true});
-const python=path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe'),compiler=path.join(workspace,'tools/emsdk/upstream/emscripten/emcc.py'),output=path.join(dir,'core.mjs');
+const python=emscripten(root).python,compiler=emscripten(root).compiler,output=path.join(dir,'core.mjs');
 const result=spawnSync(python,[compiler,'tests/fixtures/laser-circle-flags.cpp','src/game/Laser.cpp','-std=c++20','-O2','-o',output,
  '-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=node','-sEXPORTED_FUNCTIONS=["_laser_circle_flags"]','-sEXPORTED_RUNTIME_METHODS=["UTF8ToString"]'],
  {cwd:root,encoding:'utf8',env:{...process.env,EM_CACHE:path.join(root,'artifacts/emscripten-cache'),EMSDK_PYTHON:python,PATH:path.dirname(python)+path.delimiter+process.env.PATH}});

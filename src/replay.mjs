@@ -38,6 +38,8 @@ export function parseReplay(source) {
     const fpsCount=frames>1?1+Math.floor((frames-2)/30):0;
     if(payload-frames*6<fpsCount)throw Error('录像帧率数据不完整');
     stages.push({number,seed,frames,payload,offset,inputOffset:offset+160,
+      // Native40de94/40de9b indexes the fixed21 result-time words at+4c.
+      spellTimes:Array.from({length:21},(_,index)=>d.getInt32(offset+76+index*4,true)),
       initial:{score:d.getInt32(offset+12,true),power:d.getInt16(offset+16,true),pointValue:d.getInt32(offset+20,true),lives:d.getInt16(offset+24,true),lifeFragments:d.getInt16(offset+26,true),bombs:d.getInt16(offset+28,true),bombFragments:d.getInt16(offset+30,true),ufoColors:[32,36,40].map(at=>d.getInt32(offset+at,true)),rank:d.getInt32(offset+44,true),x:d.getInt32(offset+48,true),y:d.getInt32(offset+52,true),nativeGlobals:[56,60,64,68].map(at=>d.getInt32(offset+at,true))}});
     offset+=160+payload;
   }

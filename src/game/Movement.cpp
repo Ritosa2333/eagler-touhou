@@ -36,6 +36,25 @@ float movementCoordinate(double v) {
 void circularPosition(Enemy& e, bool relative) {
   auto& m = relative ? e.relativeCircle : e.absoluteCircle;
   const float angle = relative ? e.relativeAngle : e.angle;
+  if (m.ellipse) {
+    double difference = double(angle) - m.ellipseAngle;
+    if (difference > pi)
+      difference -= tau;
+    else if (difference < -pi)
+      difference += tau;
+    // Native465280 stores its angle difference, followed by two4646e0
+    // normalizations. 465390's polar pair is stored before scaling local X.
+    const float localAngle = normalize(normalize(float(difference)));
+    const float x = float(double(float(std::cos(double(localAngle)) * m.radius)) * m.ellipseRatio),
+                y = float(std::sin(double(localAngle)) * m.radius),
+                cosine = float(std::cos(double(m.ellipseAngle))),
+                sine = float(std::sin(double(m.ellipseAngle)));
+    const float rotatedX = float(double(x) * cosine - double(y) * sine),
+                rotatedY = float(double(x) * sine + double(y) * cosine);
+    (relative ? e.rx : e.ax) = movementCoordinate(double(m.centerX) + rotatedX);
+    (relative ? e.ry : e.ay) = movementCoordinate(double(m.centerY) + rotatedY);
+    return;
+  }
   (relative ? e.rx : e.ax) =
       movementCoordinate(double(m.centerX) + float(std::cos(double(angle)) * m.radius));
   (relative ? e.ry : e.ay) =

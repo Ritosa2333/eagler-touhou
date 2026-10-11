@@ -2,7 +2,7 @@ import {emscripten} from './toolchain.mjs';
 import fs from 'node:fs';import path from 'node:path';import {spawnSync} from 'node:child_process';
 import {runtimeSources} from './runtime-sources.mjs';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root);
-const {python,compiler}=emscripten(root),cache=path.join(root,'artifacts/emscripten-cache');
+const python=emscripten(root).python,compiler=emscripten(root).compiler,cache=path.join(root,'artifacts/emscripten-cache');
 fs.mkdirSync(path.join(root,'artifacts/player-weapons-tests'),{recursive:true});
 const names=['test_reset','test_query','test_update','test_state','test_count','test_rng_seed','test_rng_calls','test_source_reset','test_source_tick','test_source','test_source_damage','test_cadence','test_rect','test_marisa_b_damage','test_marisa_b_area','test_leaf_begin','test_leaf_tick','test_leaf_state','test_sanae_b_radius','test_marisa_a_damage','test_marisa_a_area'];
 names.push('test_reimu_a_beam_begin','test_reimu_a_beam_tick','test_reimu_a_beam_state','test_reimu_a_emitter_begin','test_reimu_a_emitter_tick','test_reimu_a_emitter_state');

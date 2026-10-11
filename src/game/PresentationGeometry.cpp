@@ -2,6 +2,7 @@
 #include "EnemyCallbacks.hpp"
 #include "GameState.hpp"
 #include "LaserWorld.hpp"
+#include "StageBackgroundEffect.hpp"
 #include "TextGlyphs.hpp"
 #include "UfoEffects.hpp"
 #include <charconv>
@@ -62,6 +63,18 @@ void captureCustomGeometry() {
       if (node.customGeometry && ufoEffects.owns(node.id)) {
         append(ufoEffects.draw(node), node);
         continue;
+      }
+      if (node.customGeometry) {
+        for (size_t column = 0; column < stageBackgroundEffect.keys.size(); ++column)
+          if (node.key && node.key == stageBackgroundEffect.keys[column]) {
+            append(stageBackgroundEffect.draw(int(column), node.vm.state()), node);
+            break;
+          }
+        for (const auto& leaf : playerBomb.leaves)
+          if (node.key == 0x600000000ull + leaf.id) {
+            append(custom_geometry::sanaeBLeaf(leaf, node.vm.state()), node);
+            break;
+          }
       }
       if (node.customGeometry || (node.vm.state().mode != 13 && node.vm.state().mode != 9))
         continue;

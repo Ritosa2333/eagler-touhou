@@ -1,3 +1,4 @@
+import {emscripten} from '../scripts/toolchain.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -5,8 +6,8 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root);
-const python=path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe');
-const compiler=path.join(workspace,'tools/emsdk/upstream/emscripten/emcc.py');
+const python=emscripten(root).python;
+const compiler=emscripten(root).compiler;
 const directory=path.join(root,'artifacts/bullet-cancel-lifecycle');fs.mkdirSync(directory,{recursive:true});
 const output=path.join(directory,'core.mjs');
 const names=['cancel_begin','cancel_scripted','cancel_tick','cancel_state','cancel_events_count','cancel_events'];

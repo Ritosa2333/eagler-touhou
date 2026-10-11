@@ -1,3 +1,4 @@
+import {emscripten} from '../scripts/toolchain.mjs';
 import test, {before} from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -7,7 +8,7 @@ import {readFile} from 'node:fs/promises';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root);
 let createHarness,nativeLifecycle;
 before(async()=>{
-  const python=path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe'),emcc=path.join(workspace,'tools/emsdk/upstream/emscripten/emcc.py'),out=path.join(root,'artifacts/ufo-harness.mjs');
+  const python=emscripten(root).python,emcc=emscripten(root).compiler,out=path.join(root,'artifacts/ufo-harness.mjs');
 const names=['reset','spawn','set_player','item_tick','ufo_tick','token','absorb','fixture_ufo','finish','fixture_item','fixture_state','fixture_ufo_age','fixture_fragments','death_drops','collect_aggregate','item','state','nth_id','ufo_tick_dialogue','apply_enemy_death','removed','direct_reset','enemy_alive','death_requested','effects','reward_frames','fixture_inventory','hud_rotation','hud_event_count','hud_event','visual_event_count','visual_event','clear_events','item_event_count','item_event_kind','fixture_private','animation_count','animation_visit'];
   const result=spawnSync(python,[emcc,'tests/native/ufo_harness.cpp','src/game/Items.cpp','src/game/Ufo.cpp','-std=c++20','-O2','-o',out,'-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=node','-sEXPORTED_FUNCTIONS='+JSON.stringify(names.map(n=>'_'+n)),'-sEXPORTED_RUNTIME_METHODS='+JSON.stringify(['HEAPF32'])],{cwd:root,encoding:'utf8',env:{...process.env,EM_CACHE:path.join(root,'artifacts/emscripten-cache'),EMSDK_PYTHON:python}});
   assert.equal(result.status,0,result.stdout+result.stderr);createHarness=(await import(pathToFileURL(out))).default;

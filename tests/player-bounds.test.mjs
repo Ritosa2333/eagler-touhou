@@ -1,6 +1,7 @@
+import {emscripten} from '../scripts/toolchain.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';import {spawnSync} from 'node:child_process';import{pathToFileURL}from'node:url';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root),folder=path.join(root,'artifacts/player-bounds-tests');fs.mkdirSync(folder,{recursive:true});
-const python=path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe'),compiler=path.join(workspace,'tools/emsdk/upstream/emscripten/emcc.py');
+const python=emscripten(root).python,compiler=emscripten(root).compiler;
 const build=spawnSync(python,[compiler,'tests/fixtures/player-bounds.cpp','src/game/PlayerBounds.cpp','-std=c++20','-O2','-o',path.join(folder,'core.mjs'),'-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=node','-sEXPORTED_FUNCTIONS=["_bounds_quad","_bounds_corners","_bounds_survives","_bounds_hit"]','-sEXPORTED_RUNTIME_METHODS=["HEAPF32"]'],{cwd:root,encoding:'utf8',env:{...process.env,EM_CACHE:path.join(root,'artifacts/emscripten-cache'),EMSDK_PYTHON:python}});assert.equal(build.status,0,build.stderr||build.stdout);
 const create=(await import(pathToFileURL(path.join(folder,'core.mjs')).href)).default,original=JSON.parse(fs.readFileSync(path.join(root,'tests/fixtures/player-bounds-original.json')));
 test('C++ quad positions agree with all36 original mode0/1 anchor and rotation samples',async()=>{

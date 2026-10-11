@@ -17,6 +17,15 @@ test('STD nonzero dimensions override ANM scale, including the cloud script scal
 test('retail HUD frame expands all eleven children with original top-left anchors',()=>{const a=new AnimationSampler(atlases),s=a.sampleAll('front',0,100);assert.equal(s.filter(s=>s.sprite!==null).length,11);const right=s.find(s=>s.script===3);assert.equal(right.x,416);assert.equal(right.y,0);assert.equal(right.anchorX,1);assert.equal(right.anchorY,1);assert.deepEqual(quadCorners(416,0,224,480,0,1,1),[[416,0],[640,0],[640,480],[416,480]]);});
 test('HUD native counters select original fragment interrupts and original numeric glyphs',()=>{assert.equal(fragmentInterrupt(0,2,3),2);assert.equal(fragmentInterrupt(2,2,3),10);assert.equal(fragmentInterrupt(3,2,3),3);assert.equal(fragmentInterrupt(2,2,0),7);assert.equal(groupedNumber(123456780),'123,456,780');const glyphs=hudGlyphs('123,456,780',620,72,1,true);assert.equal(glyphs[0].id,244);assert.equal(glyphs[0].x,504);assert.equal(glyphs[3].id,257);assert.equal(glyphs[3].y,75);assert.equal(glyphs.at(-1).x,608);const frac=hudGlyphs('43',560,159,.6);assert.equal(frac[0].id,247);assert.equal(frac[1].x,567.2);});
 test('HUD ABI supports extended state and the earlier 20-field core',()=>{const HEAPU8=new Uint8Array(1024),core={HEAPU8,_th12_hud:()=>0};assert.equal(readCoreHud(core).length,20);core._th12_hud_size=()=>41;const h=readCoreHud(core);assert.equal(h.length,41);h[40]=123;assert.equal(new Float32Array(HEAPU8.buffer)[40],123);core._th12_hud_size=()=>400;assert.throws(()=>readCoreHud(core),/状态记录/);});
+test('large HUD scores preserve original integer digits without float32 rounding or changing game state',()=>{
+  const HEAPU8=new Uint8Array(1024),core={HEAPU8,_th12_hud:()=>0,_th12_hud_size:()=>41};
+  const h=new Float32Array(HEAPU8.buffer);h[3]=h[40]=36101630;assert.equal(h[3],36101632);
+  for(const stored of [3610163,1677722,999999999]){
+    core._th12_score_stored=()=>stored;const before=HEAPU8.slice(),exact=readCoreHud(core);
+    assert.equal(exact[3],stored*10);assert.equal(exact[40],stored*10);assert.deepEqual(HEAPU8,before);
+    assert.equal(groupedNumber(exact[3]),String(stored*10).replace(/\B(?=(\d{3})+(?!\d))/g,','));
+  }
+});
 test('logical ANM pose ABI reads authoritative colors and resolved coordinates without sampling',()=>{
   const HEAPU8=new Uint8Array(256),view=new DataView(HEAPU8.buffer),F=(i,n)=>view.setFloat32(i*4,n,true),U=(i,n)=>view.setUint32(i*4,n,true);
   F(0,112.25);F(1,206.5);F(5,.25);F(6,2);F(7,3);U(14,0x80102030);U(15,0x40223344);U(16,2);U(17,7);U(18,11);U(19,1);U(20,1);U(21,2);U(22,1);U(24,1);U(25,2);U(26,19);U(27,42);F(28,.75);

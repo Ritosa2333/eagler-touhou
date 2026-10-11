@@ -89,3 +89,24 @@ test('native diffuse UFO trails use solid color and remain separate line strips'
     assert.deepEqual(draws[i].vertices.slice(0,10),[40*i,128,.5,.5,0,127/255,1,64/255,1,0]);
   }
 });
+
+test('Boss countdown and spell-result times are submitted inside HUD44 and remain visible over spell backgrounds',()=>{
+  const core=fixture(),view=new DataView(core.HEAPU8.buffer),texts=[],renderer=Object.create(Renderer.prototype);
+  // Replace only this scene's HUD pose with the native front78 time label.
+  view.setInt32(1024+4*128+17*4,58,true);
+  const put=(name,state,ptr)=>{const b=new TextEncoder().encode(JSON.stringify(state));core.HEAPU8.set(b,ptr);core['_th12_'+name]=()=>ptr;core['_th12_'+name+'_size']=()=>b.length;};
+  put('boss_hud',{fill:.5,target:.5,markers:[[0,0],[0,0],[0,0],[0,0]],timer:{visible:1,seconds:12,hundredths:34,colorARGB:0xffffffff}},24000);
+  // Original41d0b0 representation for12.34s: checksum and decimal offsets.
+  const encoded=(12+34+22)*100000+((12+66)%1000)*100+(34+33)%100;
+  put('spell',{flags:0,bonusDisplayed:0,titleHex:'',records:[1,0,1,0],resultAnimationId:5,
+    lastResult:{kind:1,displayElapsedTicks:1234,realTimeEncoded:encoded}},25000);
+  let clipped=false;
+  Object.assign(renderer,{gl:{SCISSOR_TEST:1,TRIANGLES:4,COLOR_BUFFER_BIT:16,enable(){clipped=true;},disable(){clipped=false;},scissor(){},uniform3fv(){},clearColor(){},clear(){}},
+    stageBackgrounds:new Map([[1,{geometry:()=>({camera:{fog:[0,0,0]},triangles:[]})}]]),stageJobs:new Map(),textures:new Map(),atlases:{text:{sprites:{}}},lastFrame:-1,
+    animations:{beginFrame(){},endFrame(){},sampleAll(){return [];}},begin(){},flush(){},primitive(){},state(){},mesh(){},solidTriangles(){},hudCounters(){},
+    nativeText(p){texts.push({text:p.text,font:p.font,x:p.x,y:p.y,clipped});}});
+  renderer.render(core);
+  for(const [text,x,y]of [['.',394,16],['34',402,22],[' 20.',222,192],['56s',266,198],[' 12.',222,208],['34s',266,214]]){
+    const shown=texts.find(p=>p.text===text&&p.x===x&&p.y===y);assert.ok(shown,`${text} at${x},${y}`);assert.equal(shown.font,3);assert.equal(shown.clipped,true);
+  }
+});

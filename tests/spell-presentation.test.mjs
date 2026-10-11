@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {readCoreSpell,decodeSpellTitle,spellAsciiDescriptors,spellTitleDescriptors,spellTextDescriptors} from '../src/spell-presentation.mjs';
+import {readCoreSpell,decodeSpellTitle,spellAsciiDescriptors,spellTitleDescriptors,spellTextDescriptors,bossTimerDescriptors,spellResultDescriptors,decodeSpellRealTime} from '../src/spell-presentation.mjs';
 
 const native=JSON.parse(fs.readFileSync(new URL('fixtures/spell-presentation-original.json',import.meta.url)));
 const pose=(name,sprite,alpha=1)=>({a:{name,sprite,visible:true,alpha,sx:1,sy:1,anchorX:2,anchorY:1},x:412,y:32,alpha:1,id:123,owner:99,logical:true});
@@ -76,4 +76,31 @@ test('compact spell snapshot reader is bounded and does not read or tick the ful
   const utf8=coreRecord(state);utf8.HEAPU8[16]=255;assert.throws(()=>readCoreSpell(utf8));
   for(const value of[[],null,{}, {...state,flags:1.5},{...state,bonusDisplayed:null},{...state,titleHex:'xz'},
     {...state,records:[1,2]},{...state,records:[-1,0,0,0]},{...state,records:[1,null,0,0]}])assert.throws(()=>readCoreSpell(coreRecord(value)),/符卡/);
+});
+
+const times=JSON.parse(fs.readFileSync(new URL('fixtures/boss-spell-times-original.json',import.meta.url)));
+const fontCalls=record=>record.calls.map(call=>({text:call.text,font:call.font,x:call.position[0],y:call.position[1],z:call.position[2],
+  scaleX:call.scale[0],scaleY:call.scale[1],colorARGB:call.colorARGB,alignX:call.alignment[0],alignY:call.alignment[1],drawFlag:call.drawFlag}));
+test('Boss countdown fractional text matches retail41f795 font positions, colors and scaling',()=>{
+  for(const record of times.countdowns){
+    assert.equal(record.rngUnchanged,true);
+    const hud={timer:{visible:true,seconds:record.seconds,hundredths:record.hundredths,colorARGB:0xffabcdef}};
+    assert.deepEqual(bossTimerDescriptors(hud),fontCalls(record));
+  }
+  assert.deepEqual(bossTimerDescriptors({timer:{visible:false,hundredths:0,colorARGB:0xffffffff}}),[]);
+  assert.deepEqual(bossTimerDescriptors(null),[]);
+  for(const gate of times.gates)assert.deepEqual(gate.calls,[],gate.name);
+});
+
+test('spell result logical and recorded real times match all native41f11a font submissions',()=>{
+  for(const record of times.results){
+    const spell={resultAnimationId:123,lastResult:{kind:1,displayElapsedTicks:record.ticks,realTimeEncoded:record.encoded}};
+    const time=pose('front',58,record.alpha/255),before=structuredClone({spell,time});
+    assert.deepEqual(spellResultDescriptors(spell,[pose('ascii',261),time]),fontCalls(record));
+    assert.deepEqual({spell,time},before);assert.equal(record.rngUnchanged,true);
+    assert.deepEqual(decodeSpellRealTime(record.encoded),record.valid?[record.seconds,record.hundredths]:[999,99]);
+  }
+  assert.deepEqual(spellResultDescriptors({resultAnimationId:1,lastResult:{kind:1,displayElapsedTicks:120}},[pose('front',58)]),[],'wrong registered result handle is ignored');
+  const missing={resultAnimationId:123,lastResult:{kind:2,displayElapsedTicks:120,realTimeEncoded:-1}};
+  assert.equal(spellResultDescriptors(missing,[pose('front',58)]).length,2,'unknown wall-clock time does not become simulated time');
 });

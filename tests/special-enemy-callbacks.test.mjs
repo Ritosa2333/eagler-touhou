@@ -1,3 +1,4 @@
+import {emscripten} from '../scripts/toolchain.mjs';
 import test, {before} from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -8,8 +9,8 @@ import {pathToFileURL} from 'node:url';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root);
 let createHarness,native;
 before(async()=>{
-  const python=path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe');
-  const emcc=path.join(workspace,'tools/emsdk/upstream/emscripten/emcc.py');
+  const python=emscripten(root).python;
+  const emcc=emscripten(root).compiler;
   const out=path.join(root,'artifacts/special-enemy-harness.mjs');
   const names=['reset','set_enemy','set_resources','set_bullet','set_missing','run_callback','fault','affected','private_integer','score_stored','primary_counter','bullet_state','bullet_field','popup_count','popup_state','popup_field','animation_state','animation_flags'];
   const result=spawnSync(python,[emcc,'tests/native/special_enemy_harness.cpp','src/game/SpecialEnemyCallbacks.cpp','-std=c++20','-O2','-o',out,'-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=node','-sEXPORTED_FUNCTIONS='+JSON.stringify(names.map(n=>'_'+n)),'-sEXPORTED_RUNTIME_METHODS='+JSON.stringify(['HEAPF32'])],{

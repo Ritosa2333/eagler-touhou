@@ -15,21 +15,26 @@ from native_crt_host import CrtHost
 from unicorn import Uc,UC_ARCH_X86,UC_MODE_32,UC_HOOK_CODE,UC_HOOK_MEM_WRITE
 from unicorn.x86_const import *
 SHA='99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417'
-parser=argparse.ArgumentParser();parser.add_argument('--frames',type=int,default=120);parser.add_argument('--routine',default='main');parser.add_argument('--seed',type=int,default=42);parser.add_argument('--input',type=pathlib.Path);parser.add_argument('--native-bullets',action='store_true');parser.add_argument('--native-player',action='store_true');parser.add_argument('--native-items',action='store_true');parser.add_argument('--active-collision',action='store_true');parser.add_argument('--without-anm',action='store_true');parser.add_argument('--initial-health',type=int,default=10000);parser.add_argument('--damage-fixture',type=int,default=0);parser.add_argument('--omit-animation-capture',action='store_true');parser.add_argument('--prime-creation-guard',action='store_true');parser.add_argument('--trace-hurt-queries',nargs=2,type=int);parser.add_argument('--trace-rng-ticks',nargs=2,type=int);parser.add_argument('--capture-text-output',action='store_true');parser.add_argument('--trace-source-births',nargs=2,type=int);parser.add_argument('--output',type=pathlib.Path,default=TITLE/'artifacts/reverse/native-enemy-frames.json');parser.add_argument('--native-lasers',action='store_true');parser.add_argument('--instruction-budget',type=int,default=2000000);parser.add_argument('--trace-laser-visual-ticks',nargs=2,type=int);parser.add_argument('--trace-anm-vm-address',type=lambda value:int(value,0));parser.add_argument('--trace-cancel-ticks',nargs=2,type=int);parser.add_argument('--native-camera-effects',action='store_true');parser.add_argument('--omit-world-frame-capture',action='store_true');parser.add_argument('--trace-msg-ticks',nargs=2,type=int);args=parser.parse_args()
+parser=argparse.ArgumentParser();parser.add_argument('--frames',type=int,default=120);parser.add_argument('--routine',default='main');parser.add_argument('--seed',type=int,default=42);parser.add_argument('--input',type=pathlib.Path);parser.add_argument('--native-bullets',action='store_true');parser.add_argument('--native-player',action='store_true');parser.add_argument('--native-items',action='store_true');parser.add_argument('--active-collision',action='store_true');parser.add_argument('--without-anm',action='store_true');parser.add_argument('--initial-health',type=int,default=10000);parser.add_argument('--damage-fixture',type=int,default=0);parser.add_argument('--omit-animation-capture',action='store_true');parser.add_argument('--prime-creation-guard',action='store_true');parser.add_argument('--trace-hurt-queries',nargs=2,type=int);parser.add_argument('--trace-rng-ticks',nargs=2,type=int);parser.add_argument('--capture-text-output',action='store_true');parser.add_argument('--trace-source-births',nargs=2,type=int);parser.add_argument('--output',type=pathlib.Path,default=TITLE/'artifacts/reverse/native-enemy-frames.json');parser.add_argument('--native-lasers',action='store_true');parser.add_argument('--instruction-budget',type=int,default=2000000);parser.add_argument('--trace-laser-visual-ticks',nargs=2,type=int);parser.add_argument('--trace-anm-vm-address',type=lambda value:int(value,0));parser.add_argument('--trace-cancel-ticks',nargs=2,type=int);parser.add_argument('--native-camera-effects',action='store_true');parser.add_argument('--omit-world-frame-capture',action='store_true');parser.add_argument('--trace-msg-ticks',nargs=2,type=int);parser.add_argument('--trace-combine-ticks',nargs=2,type=int);parser.add_argument('--trace-player-ticks',nargs=2,type=int,action='append')
+parser.add_argument('--host-heap-extra-mib',type=int,default=0,help='Opt-in bounded host allocator spill arena at0x8000000, used only after the original16MiB arena cannot fit a request (0..256MiB)')
+args=parser.parse_args()
 if args.native_player and (not args.input or args.without_anm):raise SystemExit('Native player requires a fixture input and original ANM logic')
 if args.active_collision and (not args.native_player or args.damage_fixture):raise SystemExit('Active collision requires original player and forbids synthetic damage fixture')
 if args.native_items and not args.native_player:raise SystemExit('Native items require original player')
 if args.native_camera_effects and not args.native_items:raise SystemExit('Native camera effects require original item/Bomb/world managers')
 if args.native_lasers and not (args.native_player and args.native_items and args.native_bullets and not args.without_anm):raise SystemExit('Native lasers require original Player/Item/Bullet/ANM updates')
 if not 1<=args.instruction_budget<=200000000:raise SystemExit('Native instruction budget must be between1 and200000000')
+if not 0<=args.host_heap_extra_mib<=256:raise SystemExit('Host heap extension must be between0 and256MiB')
 exe=WORKSPACE/'th12/th12.exe'
 if hashlib.sha256(exe.read_bytes()).hexdigest()!=SHA:raise SystemExit('Wrong retail EXE version')
 pe=pefile.PE(str(exe));v=Uc(UC_ARCH_X86,UC_MODE_32)
 fixture=json.loads(args.input.read_text(encoding='utf-8')) if args.input else None
 if fixture and fixture.get('inputOnly') and not args.native_player:raise SystemExit('Input-only replay fixtures require original native player execution')
-if fixture and fixture.get('stage')!=1:raise SystemExit('This partial native provider currently binds stage1 resources only')
+native_stage=fixture.get('stage',1) if fixture else 1
+if not isinstance(native_stage,int) or not 1<=native_stage<=7:raise SystemExit('Native replay stage must be1..7')
 if fixture:args.seed=fixture['seed']
 for base,size in [(0,0x10000),(0x400000,(pe.OPTIONAL_HEADER.SizeOfImage+4095)&~4095),(0x1000000,0x100000),(0x2000000,0x1000000),(0x3000000,0x1000000),(0x4000000,0x400000),(0x5000000,0x1000000),(0x6000000,0x2000000)]:v.mem_map(base,size)
+if args.host_heap_extra_mib:v.mem_map(0x8000000,args.host_heap_extra_mib*1024*1024)
 v.mem_write(0x400000,pe.get_memory_mapped_image())
 def put(a,f,*values):v.mem_write(a,struct.pack('<'+f,*values))
 def get(a,f):return struct.unpack('<'+f,v.mem_read(a,struct.calcsize(f)))
@@ -40,9 +45,9 @@ def read_string(a):
   if not byte:return data.decode('ascii')
   data.append(byte)
  raise RuntimeError('Unterminated retail string')
-MANAGER,PLAYER,STAGE,HUD,DIALOGUE,BOMB,BULLETS,PROGRAM=0x2000000,0x2010000,0x2020000,0x2030000,0x2040000,0x2050000,0x2100000,0x2060000
+MANAGER,PLAYER,STAGE,HUD,BOMB_PLACEHOLDER,REPLAY_PLACEHOLDER,BULLETS,PROGRAM=0x2000000,0x2010000,0x2020000,0x2030000,0x2040000,0x2050000,0x2100000,0x2060000
 SP,STOP=0x10f0000,0x10ff000
-for address,value in [(0x4b43dc,MANAGER),(0x4b4514,PLAYER),(0x4b43e4,STAGE),(0x4b43cc,HUD),(0x4b43c4,DIALOGUE),(0x4b43c8,BULLETS),(0x4b4518,BOMB),(0x4ce8cc,0x5000000)]:put(address,'I',value)
+for address,value in [(0x4b43dc,MANAGER),(0x4b4514,PLAYER),(0x4b43e4,STAGE),(0x4b43cc,HUD),(0x4b43c4,BOMB_PLACEHOLDER),(0x4b43c8,BULLETS),(0x4b4518,REPLAY_PLACEHOLDER),(0x4ce8cc,0x5000000)]:put(address,'I',value)
 put(0x4b43d4,'I',0x2092000) # Native effect factory resource holder; callbacks execute normally.
 put(0x4ce89c,'I',0x2080000)
 if args.native_camera_effects:
@@ -51,10 +56,10 @@ if args.native_camera_effects:
  # This supplies only the declared startup environment/flags, not a camera
  # update, random value, geometry or original application scene constructor.
  put(0x4b44e8,'I',0x20d0000);put(0x20d0060,'I',0)
-STAGE_INFO,STAGE_NAMES=0x2081000,0x2094000
+STAGE_INFO=0x4aebf0+native_stage*64
 put(0x4b452c,'I',STAGE_INFO)
-for index,name in enumerate(['stage01.ecl','stage01.std','stage01.anm','enemy.anm','stgenm01.anm','stage01','st01_00a.msg','st01_00b.msg','st01_01a.msg','st01_01b.msg','st01_02a.msg','st01_02b.msg','st01logo.anm']):
- address=STAGE_NAMES+index*128;v.mem_write(address,name.encode('ascii')+b'\0');put(STAGE_INFO+index*4,'I',address)
+stage_info_words=get(STAGE_INFO,'16I')
+stage_resources={'std':read_string(stage_info_words[1]),'enemyAnm':read_string(stage_info_words[2]),'ecl':read_string(stage_info_words[3]),'stageMusic':read_string(stage_info_words[4]),'bossMusic':read_string(stage_info_words[5]),'messages':[read_string(a) for a in stage_info_words[6:12]],'logoAnm':read_string(stage_info_words[12]),'stageMusicIndex':stage_info_words[13],'bossMusicIndex':stage_info_words[14]}
 SOUND_BUFFER,SOUND_VTABLE,SOUND_SET_PAN,SOUND_GET_STATUS,SOUND_STOP=0x2090000,0x2091000,0x10fe000,0x10fe010,0x10fe020
 put(0x4d1068,'I',SOUND_BUFFER);put(SOUND_BUFFER,'I',SOUND_VTABLE)
 for offset,method in [(0x24,SOUND_GET_STATUS),(0x40,SOUND_SET_PAN),(0x48,SOUND_STOP)]:put(SOUND_VTABLE+offset,'I',method)
@@ -68,7 +73,7 @@ v.mem_write(SOUND_GET_STATUS,b'\x8b\x44\x24\x08\xc7\x00\x00\x00\x00\x00\x31\xc0\
 v.mem_write(SOUND_STOP,b'\x31\xc0\xc2\x04\x00')
 put(0x4b2ed0,'f',1);put(0x4d52d4,'I',1);put(0x4d52dc,'I',1);v.reg_write(UC_X86_REG_MXCSR,0x1f80);v.reg_write(UC_X86_REG_FPCW,0x037f)
 v.reg_write(UC_X86_REG_FPTAG,0xffff);v.reg_write(UC_X86_REG_FPSW,0)
-put(0x4b0ca8,'i',1);put(0x4b0cb0,'i',1);put(0x4b0c48,'i',100);put(0x4b0cd0,'ii',400,100)
+put(0x4b0ca8,'i',1);put(0x4b0cb0,'i',native_stage);put(0x4b0c48,'i',100);put(0x4b0cd0,'ii',400,100)
 put(0x4ce568,'H',args.seed&65535);put(0x4ce56c,'I',0)
 put(BULLETS+0x10,'I',BULLETS+0x64);put(BULLETS+0x64+2000*0x9f8+0x532,'H',5)
 put(PLAYER+0x97c,'fff',0,400,0);put(PLAYER+0xa28,'i',1);put(MANAGER+0x64,'I',PROGRAM);put(MANAGER+0x74,'I',1)
@@ -79,22 +84,45 @@ if fixture:
  put(PLAYER+0x97c,'fff',fixture['initial']['x']/128,fixture['initial']['y']/128,0)
 # Populate the original loader's sorted name/header lookup table from raw retail
 # SCPT metadata. Binary search and all VM instruction decoding execute natively.
-routines={};files=[];cursor=0x4000000
-for name in ['default.ecl','stage01.ecl']:
- data=(TITLE/'local/retail'/name).read_bytes();base=cursor;v.mem_write(base,data);cursor+=(len(data)+4095)&~4095
+routines={};files=[];cursor=0x4000000;ecl_loaded=set();ecl_loading=set();animation_imports=[]
+def original_ecl_imports(data):
+ limit=36+struct.unpack_from('<H',data,6)[0];offset=36;sections={}
+ while offset<limit:
+  tag=data[offset:offset+4].decode('ascii');count=struct.unpack_from('<I',data,offset+4)[0];offset+=8
+  if tag not in ('ANIM','ECLI') or count>64:raise RuntimeError('Invalid original SCPT import section')
+  names=[]
+  for _ in range(count):
+   end=data.index(0,offset,limit);name=data[offset:end].decode('ascii');offset=end+1
+   if pathlib.PureWindowsPath(name).name!=name:raise RuntimeError('Original SCPT import contains non-local resource path')
+   names.append(name)
+  sections[tag]=names;offset=(offset+3)&~3
+ if offset!=limit:raise RuntimeError('Original SCPT import boundary mismatch')
+ return sections
+def load_original_ecl(name):
+ global cursor
+ if name in ecl_loaded:return
+ if name in ecl_loading:raise RuntimeError('Recursive original SCPT import cycle')
+ ecl_loading.add(name);data=(TITLE/'local/retail'/name).read_bytes();sections=original_ecl_imports(data)
+ for dependency in sections.get('ECLI',[]):load_original_ecl(dependency)
+ for dependency in sections.get('ANIM',[]):
+  if dependency not in animation_imports:animation_imports.append(dependency)
+ base=cursor;end=cursor+((len(data)+4095)&~4095)
+ if end>0x4400000:raise RuntimeError('Original SCPT resources exceed declared native ECL arena')
+ v.mem_write(base,data);cursor=end
  count=struct.unpack_from('<H',data,16)[0];table=36+struct.unpack_from('<H',data,6)[0];names=table+count*4
  for index in range(count):
   header=base+struct.unpack_from('<I',data,table+index*4)[0];end=data.index(0,names);routine=data[names:end].decode('ascii');routines[routine]=(base+names,header);names=end+1
  files.append({'file':name,'sha256':hashlib.sha256(data).hexdigest()})
+ ecl_loading.remove(name);ecl_loaded.add(name)
+load_original_ecl(stage_resources['ecl'])
 resource_by_name={}
 if not args.without_anm:
  check_original(exe);resource_base=0x6000000
- anm_names=['enemy.anm','stgenm01.anm','bullet.anm']+([f"pl{fixture['character']:02}.anm",'ascii.anm'] if args.native_player else [])
+ anm_names=['enemy.anm',stage_resources['enemyAnm'],'bullet.anm']+[name for name in animation_imports if name not in ('enemy.anm',stage_resources['enemyAnm'])]+([f"pl{fixture['character']:02}.anm",'ascii.anm'] if args.native_player else [])
  for index,name in enumerate(anm_names):
   raw=(TITLE/'local/retail'/name).read_bytes();resource=install_resource(v,raw,resource_base,index);resource_base=(resource['end']+4095)&~4095
   resource_by_name[name]=resource['resource']
-  if index==0:put(MANAGER+0x44,'I',resource['resource'])
-  if index==1:put(MANAGER+0x48,'I',resource['resource'])
+  if name in animation_imports:put(MANAGER+0x44+animation_imports.index(name)*4,'I',resource['resource'])
   # Native412c60 assigns slot0 from BulletManager+4debdc;412dd0 loads
   # ECL ANIM banks starting at slot1. They are distinct resource namespaces.
   if index==2:put(MANAGER+0x40,'I',resource['resource']);put(BULLETS+0x4debdc,'I',resource['resource']);put(0x2092000+0x10,'I',resource['resource'])
@@ -104,6 +132,8 @@ lookup=PROGRAM+0x100;put(PROGRAM+8,'I',len(routines));put(PROGRAM+0x8c,'I',looku
 for index,(name,(address,header)) in enumerate(sorted(routines.items())):put(lookup+index*8,'II',address,header)
 heap=0x3000000;intercepts=collections.Counter();events=[];frame=-1;last_calls=collections.deque(maxlen=12);births={};bullet_ids={};next_bullet_id=1;last_spawn_request=None
 heap_allocations=[];heap_frees=[];heap_regions={'heap':(0x3000000,0x4000000),'ecl':(0x4000000,0x4400000),'anmManager':(0x5000000,0x6000000),'resources':(0x6000000,0x8000000)}
+heap_active_region='heap';heap_primary_high_water=heap
+if args.host_heap_extra_mib:heap_regions['heapExtension']=(0x8000000,0x8000000+args.host_heap_extra_mib*1024*1024)
 anm_vm_writes=[]
 camera_update_counts=collections.Counter()
 camera_draw_reset_count=0
@@ -113,17 +143,36 @@ native_polar_inputs={}
 source_request=None
 collision_query=None
 laser_line_query=None
+combine_state=None
 
 def source_fields(pointer):
  return {'slot':(pointer-PLAYER-0x8988)//0x74,'radius':get(pointer,'f')[0],'radialGrowth':get(pointer+4,'f')[0],'rotation':get(pointer+8,'f')[0],'rotationGrowth':get(pointer+12,'f')[0],'width':get(pointer+16,'f')[0],'height':get(pointer+20,'f')[0],'position':get(pointer+0x18,'fff'),'heading':get(pointer+0x3c,'f')[0],'timer':get(pointer+0x4c,'ii'),'damage':get(pointer+0x60,'i')[0],'accumulatedDamage':get(pointer+0x64,'i')[0],'limit':get(pointer+0x68,'i')[0],'cadence':get(pointer+0x6c,'i')[0],'flags':get(pointer+0x70,'I')[0]}
 
 def allocate_bytes(amount,source='crtHeap'):
- global heap
+ global heap,heap_active_region,heap_primary_high_water
+ region=heap_active_region
  allocation=heap;end=allocation+((max(amount,1)+15)&~15)
- if end>heap_regions['heap'][1]:raise RuntimeError('Synthetic host heap exhausted before allocation '+hex(allocation)+'..'+hex(end))
+ if end>heap_regions[region][1]:
+  if region=='heap' and 'heapExtension' in heap_regions:
+   allocation=heap_regions['heapExtension'][0];end=allocation+((max(amount,1)+15)&~15)
+   if end>heap_regions['heapExtension'][1]:raise RuntimeError('Synthetic host heap exhausted before allocation '+hex(allocation)+'..'+hex(end)+'; bounded extension cannot fit request')
+   region='heapExtension'
+  else:raise RuntimeError('Synthetic host heap exhausted before allocation '+hex(allocation)+'..'+hex(end))
+ # Commit only a fitting request. A failure leaves both cursors and the
+ # allocation ledger unchanged; no byte can cross ECL/ANM/resource arenas.
+ heap_active_region=region
  heap=end
- heap_allocations.append({'inputTick':frame,'source':source,'address':hex(allocation),'endExclusive':hex(end),'requestedBytes':amount,'alignedBytes':end-allocation,'nativeInstruction':hex(v.reg_read(UC_X86_REG_EIP)),'caller':hex(get(v.reg_read(UC_X86_REG_ESP),'I')[0])})
+ if region=='heap':heap_primary_high_water=end
+ record={'inputTick':frame,'source':source,'address':hex(allocation),'endExclusive':hex(end),'requestedBytes':amount,'alignedBytes':end-allocation,'nativeInstruction':hex(v.reg_read(UC_X86_REG_EIP)),'caller':hex(get(v.reg_read(UC_X86_REG_ESP),'I')[0])}
+ if region=='heapExtension':record['arena']='heapExtension'
+ heap_allocations.append(record)
  return allocation
+
+def capture_heap_audit():
+ data={'scope':'Bounded disjoint host arena; allocations never reuse freed storage. Native allocator and retail file loader share the same checked allocator. Free calls are recorded but do not reclaim host storage.','regions':{name:[hex(a),hex(b)] for name,(a,b) in heap_regions.items()},'allocationCount':len(heap_allocations),'highWaterExclusive':hex(heap),'remainingBytes':heap_regions[heap_active_region][1]-heap,'overlapsFixedRegions':False,'allocations':heap_allocations,'nativeFreeCalls':heap_frees}
+ if args.host_heap_extra_mib:
+  data['extension']={'enabled':True,'requestedMiB':args.host_heap_extra_mib,'capacityBytes':args.host_heap_extra_mib*1024*1024,'base':hex(heap_regions['heapExtension'][0]),'endExclusive':hex(heap_regions['heapExtension'][1]),'activeArena':heap_active_region,'spillUsed':heap_active_region=='heapExtension','primaryHighWaterExclusive':hex(heap_primary_high_water),'primaryTailBytes':heap_regions['heap'][1]-heap_primary_high_water,'remainingExtensionBytes':heap_regions['heapExtension'][1]-(heap if heap_active_region=='heapExtension' else heap_regions['heapExtension'][0]),'scope':'Opt-in host malloc/CRT/file-loader capacity only. Original16MiB addresses and alignment remain unchanged until a request cannot fit. Subsequent requests use the disjoint bounded extension monotonically; abandoned primary tail and free calls are not reused. No original CPU, replay input, gameplay field, ANM/RNG or full-game completeness claim is changed.'}
+ return data
 
 crt_host=CrtHost(v,pe,allocate_bytes) if args.native_items else None
 def return_from_call(pop=0,result=0):
@@ -136,7 +185,16 @@ if not args.without_anm:
 if args.active_collision:
  for address in [0x439ed0,0x437810,0x437980,0x4391c0]:del external[address]
 def code_hook(v,address,size,unused):
- global heap,next_bullet_id,next_friendly_id,last_spawn_request,resource_base,source_request,collision_query,laser_line_query
+ global heap,next_bullet_id,next_friendly_id,last_spawn_request,resource_base,source_request,collision_query,laser_line_query,combine_state
+ if args.trace_combine_ticks and args.trace_combine_ticks[0]<=frame<=args.trace_combine_ticks[1] and address in (0x413700,0x413763,0x464db0,0x465320,0x413768,0x41382d):
+  if address==0x413700:combine_state=v.reg_read(UC_X86_REG_ESI)
+  sp=v.reg_read(UC_X86_REG_ESP);row={'frame':frame,'kind':'nativeCombineTrace','entry':hex(address),'fpcw':hex(v.reg_read(UC_X86_REG_FPCW)),'fpsw':hex(v.reg_read(UC_X86_REG_FPSW)),'mxcsr':hex(v.reg_read(UC_X86_REG_MXCSR)),'stackCodeWords':[hex(word) for word in get(sp,'32I') if 0x400000<=word<0x498000]}
+  if combine_state:
+   state=combine_state;row.update({'stateAddress':hex(state),'enemy':get(state-0x1040+0x27b4,'I')[0],'combined':get(state+0x34,'3f'),'delta':get(state+0x40,'3f'),'absolute':get(state+0x68,'3f'),'relative':get(state+0x9c,'3f'),'motionFlags':[get(state+off,'I')[0] for off in (0x64,0x98,0xcc)],'enemyFlags':get(state+0x16b8,'I')[0]})
+  if address==0x465320:
+   ptr=v.reg_read(UC_X86_REG_ESI);row.update({'quantizedPointer':hex(ptr),'beforeQuantization':get(ptr,'3f')})
+  events.append(row)
+  if address==0x41382d:combine_state=None
  if args.trace_cancel_ticks and args.trace_cancel_ticks[0]<=frame<=args.trace_cancel_ticks[1] and address in (0x40cf60,0x40caa0,0x40c8b0,0x428670,0x4286f0,0x428750,0x42a800,0x42a1f0,0x42bd90,0x42b750,0x42e3e0,0x42df00):
   sp=v.reg_read(UC_X86_REG_ESP);row={'frame':frame,'kind':'nativeCancelEntry','entry':hex(address),'caller':hex(get(sp,'I')[0]),'stackWords':get(sp+4,'6I'),'registers':{name:hex(v.reg_read(register)) for name,register in [('eax',UC_X86_REG_EAX),('ecx',UC_X86_REG_ECX),('edx',UC_X86_REG_EDX),('esi',UC_X86_REG_ESI),('edi',UC_X86_REG_EDI)]},'spellFlagsBonus':get(bonus_manager+0x7c,'II') if args.native_items else None}
   if address==0x40cf60:row['convert']=get(sp+4,'I')[0]
@@ -274,6 +332,8 @@ for address in (0x437a80,0x42b029):v.hook_add(UC_HOOK_CODE,code_hook,begin=addre
 for address in (0x40cf60,0x40caa0,0x40c8b0,0x428670,0x4286f0,0x428750,0x42a800,0x42a1f0,0x42bd90,0x42b750,0x42e3e0,0x42df00):v.hook_add(UC_HOOK_CODE,code_hook,begin=address,end=address)
 v.hook_add(UC_HOOK_CODE,code_hook,begin=0x452a60,end=0x452a60)
 v.hook_add(UC_HOOK_CODE,code_hook,begin=0x412720,end=0x412720)
+if args.trace_combine_ticks:
+ for address in (0x413700,0x413763,0x464db0,0x465320,0x413768,0x41382d):v.hook_add(UC_HOOK_CODE,code_hook,begin=address,end=address)
 resource_fields={0x4b0c44:'scoreStored',0x4b0c48:'power',0x4b0c78:'pivStored',0x4b0ccc:'rank'}
 def resource_write(v,access,address,size,value,unused):
  if address in resource_fields and size==4:
@@ -346,10 +406,18 @@ if args.native_player:
  call(0x436100,PLAYER)
  # State/resources from the replay header are initial conditions, not supplied
  # per-tick player position or damage results. All subsequent movement is native.
- put(PLAYER+0x97c,'fff',fixture['initial']['x']/128,fixture['initial']['y']/128,0);put(PLAYER+0x988,'ii',fixture['initial']['x'],fixture['initial']['y'])
+ put(0x20c0000,'ii',fixture['initial']['x'],fixture['initial']['y']);v.reg_write(UC_X86_REG_ECX,0x20c0000);call(0x43add0)
+ globals_initial=fixture['initial'].get('nativeGlobals',[0,0,0,0])
+ put(0x4b0cc4,'i',globals_initial[0]);put(0x4b0cd8,'i',globals_initial[1]);put(PLAYER+0xc598,'i',globals_initial[2]);put(0x4b0cdc,'i',globals_initial[3])
  for address,key in [(0x4b0c48,'power'),(0x4b0c98,'lives'),(0x4b0c9c,'lifeFragments'),(0x4b0ca0,'bombs'),(0x4b0ca4,'bombFragments')]:put(address,'i',fixture['initial'].get(key,0))
  if args.native_items:
-  put(0x4b0c78,'i',fixture['initial']['pointValue']);put(0x4b0c44,'i',fixture['initial'].get('score',0));put(0x4b0c4c,'iii',*fixture['initial'].get('ufoColors',[0,0,0]))
+  put(0x4b0c78,'i',fixture['initial']['pointValue']);put(0x4b0c44,'i',fixture['initial'].get('score',0))
+  # Actual replay43c730 resets the inventory aggregate, then calls422e80 for
+  # each stored color. Copying only its first three words omits count/sequence
+  # state when independently starting later stages with carried UFO tokens.
+  put(0x4b0c4c,'6i',0,0,0,0,0,0)
+  for color in fixture['initial'].get('ufoColors',[0,0,0]):
+   v.reg_write(UC_X86_REG_EDI,color);v.reg_write(UC_X86_REG_ESI,0x4b0c4c);call(0x422e80)
 if args.native_lasers:
  # Actual4281c0 allocates the manager, registers4283d0 at priority20 and loads
  # bullet.anm. Its native427fd0 registration publishes the list sentinel and
@@ -389,7 +457,7 @@ def capture_animations():
   node=get(0x5000000+list_offset,'I')[0]
   while node:
    animation,next_node=get(node,'II')
-   result.append({'id':get(animation,'I')[0],'priority':priority,'bankScriptSprite':get(animation+0x3e6,'H')[0:1]+get(animation+0x3ea,'H')[0:1]+get(animation+0x3e4,'H')[0:1],'clock':get(animation+0x6c,'i')[0],'flags':get(animation+0x47c,'II'),'anchor':get(animation+0x430,'fff'),'position':get(animation+0x424,'fff'),'rotation':get(animation+0x24,'fff'),'scale':get(animation+0x40,'ff'),'spriteSize':get(animation+0x58,'ff'),'primaryColor':get(animation+0x3bc,'I')[0],'interrupt':get(animation+0x3c4,'H')[0]});node=next_node
+   result.append({'id':get(animation,'I')[0],'address':hex(animation),'priority':priority,'bankScriptSprite':get(animation+0x3e6,'H')[0:1]+get(animation+0x3ea,'H')[0:1]+get(animation+0x3e4,'H')[0:1],'clock':get(animation+0x6c,'i')[0],'flags':get(animation+0x47c,'II'),'anchor':get(animation+0x430,'fff'),'position':get(animation+0x424,'fff'),'rotation':get(animation+0x24,'fff'),'scale':get(animation+0x40,'ff'),'spriteSize':get(animation+0x58,'ff'),'primaryColor':get(animation+0x3bc,'I')[0],'interrupt':get(animation+0x3c4,'H')[0]});node=next_node
  return result
 
 def capture_lasers():
@@ -413,7 +481,7 @@ def capture_lasers():
   if len(result)>256:raise RuntimeError('Invalid original laser manager list')
  return result
 def capture_player():
- return {'position':get(PLAYER+0x97c,'ff'),'fixedPosition':get(PLAYER+0x988,'ii'),'state':get(PLAYER+0xa28,'i')[0],'stateAge':get(PLAYER+0xa34,'i')[0],'invulnerability':get(PLAYER+0xc404,'i')[0],'shootAge':get(PLAYER+0xc424,'i')[0],'bodyAnimationTime':get(PLAYER+0x14+0x6c,'i')[0],'lifeAndBombCounters':get(0x4b0c98,'iiii'),'power':get(0x4b0c48,'i')[0],'speedsFixed':get(PLAYER+0x990,'iiii'),'shtMoveFloats':get(get(PLAYER+0xa2c,'I')[0]+0x10,'ffff'),'movementFactor':get(PLAYER+0x825c,'f')[0],'direction':get(PLAYER+0xa1c,'i')[0],'deltaFixed':get(PLAYER+0xa14,'ii')}
+ return {'position':get(PLAYER+0x97c,'ff'),'fixedPosition':get(PLAYER+0x988,'ii'),'state':get(PLAYER+0xa28,'i')[0],'stateAge':get(PLAYER+0xa34,'i')[0],'invulnerability':get(PLAYER+0xc404,'i')[0],'shootAge':get(PLAYER+0xc424,'i')[0],'bodyAnimationTime':get(PLAYER+0x14+0x6c,'i')[0],'lifeAndBombCounters':get(0x4b0c98,'iiii'),'power':get(0x4b0c48,'i')[0],'speedsFixed':get(PLAYER+0x990,'iiii'),'shtMoveFloats':get(get(PLAYER+0xa2c,'I')[0]+0x10,'ffff'),'movementFactor':get(PLAYER+0x825c,'f')[0],'direction':get(PLAYER+0xa1c,'i')[0],'deltaFixed':get(PLAYER+0xa14,'ii'),'focus':get(PLAYER+0xc598,'i')[0],'flagsC414':get(PLAYER+0xc414,'I')[0],'flagsC3fc':get(PLAYER+0xc3fc,'I')[0],'weaponLatchWords':get(PLAYER+0xc430,'9I'),'options':[{'index':index,'active':get(PLAYER+0x8260+index*0xe4,'I')[0],'desiredFixed':get(PLAYER+0x82b4+index*0xe4,'ii'),'currentFixed':get(PLAYER+0x82bc+index*0xe4,'ii'),'reset':get(PLAYER+0x8334+index*0xe4,'i')[0],'animationHandles':get(PLAYER+0x8310+index*0xe4,'II'),'updateFunction':hex(get(PLAYER+0x833c+index*0xe4,'I')[0])} for index in range(8)]}
 def capture_items():
  result=[]
  for slot in range(2664):
@@ -484,10 +552,17 @@ def capture_friendly():
  for slot in range(256):
   projectile=PLAYER+0xa58+slot*0x78;phase=get(projectile+0x48,'i')[0]
   if not phase:continue
-  result.append({'id':friendly_ids.get(slot),'slot':slot,'phase':phase,'age':get(projectile+4,'i')[0],'position':get(projectile+0x14,'ff'),'velocity':get(projectile+0x20,'ff'),'speed':get(projectile+0x2c,'f')[0],'angle':get(projectile+0x30,'f')[0],'damage':get(projectile+0x60,'i')[0],'hitbox':get(projectile+0x68,'ff'),'targetID':get(projectile+0x64,'I')[0],'hitLastFrame':get(projectile+0x58,'i')[0]})
+  sht=get(projectile+0x74,'I')[0]
+  result.append({'id':friendly_ids.get(slot),'slot':slot,'phase':phase,'age':get(projectile+4,'i')[0],'position':get(projectile+0x14,'ff'),'velocity':get(projectile+0x20,'ff'),'speed':get(projectile+0x2c,'f')[0],'angle':get(projectile+0x30,'f')[0],'damage':get(projectile+0x60,'i')[0],'hitbox':get(projectile+0x68,'ff'),'targetID':get(projectile+0x64,'I')[0],'hitLastFrame':get(projectile+0x58,'i')[0],'animationHandles':get(projectile+0x4c,'II'),'sht':{'address':hex(sht),'rowHex':bytes(v.mem_read(sht,0x30)).hex(),'option':get(sht+0x1c,'b')[0],'firingMode':get(sht+0x1d,'B')[0],'spriteScriptIndex':get(sht+0x1e,'h')[0],'callbackWords':[hex(word) for word in get(sht+0x20,'III')]} if sht else None})
  return result
+
+def capture_player_event(sample_phase):
+ pl=capture_player();friendly=capture_friendly();handles={handle for row in pl['options']+friendly for handle in row['animationHandles'] if handle};anms=[row for row in capture_animations() if row['id'] in handles]
+ return {'frame':frame,'kind':'nativePlayerFrame','samplePhase':sample_phase,'held':get(0x4d49d0,'I')[0],'pressed':get(0x4d49dc,'I')[0],'player':pl,'friendly':friendly,'animations':anms}
 def capture_economy():
- return {'scoreStored':get(0x4b0c44,'i')[0],'power':get(0x4b0c48,'i')[0],'pivStored':get(0x4b0c78,'i')[0],'maxPivStored':get(0x4b0cf4,'i')[0],'rank':get(0x4b0ccc,'i')[0],'lifeBombCounters':get(0x4b0c98,'iiii'),'ufoColors':get(0x4b0c4c,'iii'),'ufoCountState':get(0x4b0c58,'ii'),'ufoAge':get(ufo_manager+0x14,'i')[0],'ufoKind':get(ufo_manager+0x30,'i')[0],'ufoEnemy':get(ufo_manager+0x38,'I')[0],'ufoFill':get(ufo_manager+0x50,'f')[0],'ufoBuckets':get(ufo_manager+0x48,'ii'),'spellFlagsBonus':get(bonus_manager+0x7c,'II'),'bombState':get(bomb_manager+0x3c,'i')[0]}
+ # 4391dc/4392fc increment the same CDC word restored by43b316 from the
+ # replay header. Observe it directly; deriving graze from PIV loses capped awards.
+ return {'scoreStored':get(0x4b0c44,'i')[0],'power':get(0x4b0c48,'i')[0],'graze':get(0x4b0cdc,'i')[0],'pivStored':get(0x4b0c78,'i')[0],'maxPivStored':get(0x4b0cf4,'i')[0],'rank':get(0x4b0ccc,'i')[0],'lifeBombCounters':get(0x4b0c98,'iiii'),'ufoColors':get(0x4b0c4c,'iii'),'ufoCountState':get(0x4b0c58,'ii'),'ufoAge':get(ufo_manager+0x14,'i')[0],'ufoKind':get(ufo_manager+0x30,'i')[0],'ufoEnemy':get(ufo_manager+0x38,'I')[0],'ufoFill':get(ufo_manager+0x50,'f')[0],'ufoBuckets':get(ufo_manager+0x48,'ii'),'spellFlagsBonus':get(bonus_manager+0x7c,'II'),'bombState':get(bomb_manager+0x3c,'i')[0]}
 
 def write_trace(fault=None,scene_boundary=None):
  # A failed tick is never exported as a completed frame. Retain the preceding
@@ -500,18 +575,25 @@ def write_trace(fault=None,scene_boundary=None):
   data['sceneBoundary']=scene_boundary
   data['events']=[event for event in events if event['frame']<scene_boundary['frame']]
  if crt_host:data['crtCpuHost']=crt_host.metadata()
+ data['requestedInputExecutionCompleted']=fault is None and scene_boundary is None and executed_input_ticks==args.frames
+ data['nativeStageResources']={'number':native_stage,'originalTableAddress':hex(STAGE_INFO),'source':'Pinned retail image4aebf0 + stage*64, the table selected by40f810/4217e0','resources':stage_resources,'originalAnimationImports':animation_imports,'eclLoaderScope':'Raw original SCPT imports populate the native sorted routine lookup table; native4694f0 searches that table. Full native file-loader/application startup remains outside scope.'}
+ data['replayHeaderInitialConditionScope']={'fixedPosition':'Original43add0 restores fixed/float position and marks all eight native options for pose reset, following43c590.','ufoInventory':'Original422e80 is called in43c730 header order after clearing the actual inventory aggregate.','nativeGlobals':'Raw header CC4/CD8, Player+C598 focus and CDC graze initial values, as43c730/43c590/43b311.','scope':'These are original replay header initial conditions, not candidate trajectories. Full native ReplayManager/application startup and continuous scene transitions remain outside this selected-manager environment.'} if args.native_player else None
+ data['nativeReplayManagerScope']={'nativeConstructorExecuted':False,'priority11ReplayInputExecuted':False,'globalPointer':'0x4b4518','hostPlaceholder':hex(REPLAY_PLACEHOLDER),'placeholderModeAt10':get(REPLAY_PLACEHOLDER+0x10,'i')[0],'scope':'Original replay words are supplied at the declared input boundary. The host ReplayManager placeholder has mode0; original ECL stage-end and Player GameOver mode branches are therefore normal selected-manager branches, not complete native replay scene transitions. A candidate stage-clear clock stop does not validate or invalidate the unexecuted ReplayManager tail.'}
  data['nativeLaserUpdateExecuted']=args.native_lasers
  data['nativeCameraUpdateExecuted']=args.native_camera_effects
  data['cameraScope']={'enabled':args.native_camera_effects,'constructor':'0x452a60','priority':14,'registeredList':'[4ce89c]+18; node owner callback+8 and userdata+20','callbacksExecuted':dict(camera_update_counts),'retirement':'Original return7 destructor callback; original462890 for return0','applicationContext':{'address':'0x20d0000','flagsAt60':0,'syntheticUnpausedStartup':True} if args.native_camera_effects else None,'scope':'Original registered camera CPU callbacks/RNG and destructor lifecycle; application startup, pause conditions and draw output remain partial. No synthetic random burn.'}
  data['cameraDrawResetBoundary']={'executed':args.native_camera_effects,'nativeInstructions':['0x460e40','0x460e62 exclusive'],'calls':camera_draw_reset_count,'gpuExecuted':False,'scope':'Actual Draw42 CPU zero-write prefix only, before4611d0. CPU frame snapshots show offsets after that reset; drawing and visible displacement are not an image oracle.'}
  data['messageDiagnosticScope']={'inputTickRange':args.trace_msg_ticks,'scope':'Actual frame-end MSG timer/PC/flags and412720 gate reads, with original replay held/pressed/released values. No timer, gate or message instruction is altered.'}
+ data['combineDiagnosticScope']={'inputTickRange':args.trace_combine_ticks,'entries':['0x413700','0x413763','0x464db0','0x465320','0x413768','0x41382d'] if args.trace_combine_ticks else [],'scope':'Original combined-coordinate call entry/delta/add/floor/exit, three actual Motion flag words, FPU control/status registers and native stack-code words. Observation only; no coordinate, flag or FPU state is changed.'}
+ data['playerDiagnosticScope']={'inputTickRanges':args.trace_player_ticks,'samplePhases':['afterPlayer16 beforeBomb17','afterPrimary27 and Draw42'],'scope':'Original Player option desired/current/reset/active/update callback and weapon latch words, Friendly SHT rows/pool and real active ANM VMs referenced by their handles. Observation only, without synthetic pose or lifetime state.'}
  data['textAnmStartupBinding']={'enabled':args.native_items,'source':'42ea3e..42ea54: text.anm bank0 returned by45fe60 -> global4cee70','resource':hex(text_resource) if args.native_items else None,'scope':'Original CPU ANM resource layout and scripts loaded at a host texture-free boundary. Application startup itself remains partial.'}
  data['instructionBudgetPerCall']=args.instruction_budget
  data['worldFrameCaptureScope']={'enabled':not args.omit_world_frame_capture,'actualInputTicksExecuted':executed_input_ticks,'completedSnapshots':len(frames)-1,'scope':'Optional event-only CPU diagnostics execute the same original replay inputs and schedule, but omitted snapshots cannot be compared as a native frame prefix.'}
- data['hostHeapAudit']={'scope':'Bounded disjoint host arena; allocations never reuse freed storage. Native allocator and retail file loader share the same checked allocator. Free calls are recorded but do not reclaim host storage.','regions':{name:[hex(a),hex(b)] for name,(a,b) in heap_regions.items()},'allocationCount':len(heap_allocations),'highWaterExclusive':hex(heap),'remainingBytes':heap_regions['heap'][1]-heap,'overlapsFixedRegions':False,'allocations':heap_allocations,'nativeFreeCalls':heap_frees}
+ data['grazeStateCapture']={'enabled':any(isinstance(row.get('economy'),dict) and 'graze' in row['economy'] for row in frames),'address':'0x4b0cdc','field':'economy.graze','awardEntries':['0x4391c0','0x4392f0'],'replayHeaderRestore':'0x43b316','scope':'Direct integer observation after completed manager ticks; no award, collision or RNG execution is altered. Captures without this field do not provide a graze comparison.'}
+ data['hostHeapAudit']=capture_heap_audit()
  if args.trace_anm_vm_address is not None:data['anmVmWriteAudit']={'vm':hex(args.trace_anm_vm_address),'scope':'Original CPU writes observed without alteration to resource selection, interrupt and script pointers.','writes':anm_vm_writes}
  data['laserScope']={'enabled':args.native_lasers,'constructor':'0x4281c0' if args.native_lasers else None,'registrar':'0x427fd0' if args.native_lasers else None,'update':'0x428270' if args.native_lasers else None,'priority':20 if args.native_lasers else None,'scope':'Original manager and object vtable updates, embedded ANM and Player line collision. Direct callback fixture has an unpaused world; whole application pause/dialogue scheduler and drawing remain outside scope.'}
- data['laserStateCapture']={'enabled':args.native_lasers,'kinds':{'0':'moving','1':'timed','2':'curve'},'fields':['observed object identity','nativeField80','kind','phase','position','angle/length/width/speed','headOffset','age previous/current/value','retirePending','cancellable'],'nativeField80':'Moving/Curve serial; Timed lookup ID, overwritten by42ad74. Candidate serial IDs are a separate namespace.','curveNodesCaptured':False,'gpuExecuted':False,'scope':'Observed original CPU object state. Observation IDs cannot detect a birth retiring before the first captured frame. Curve node geometry and draw vertices are not captured, and the current world comparator has no laser-field acceptance claim.'}
+ data['laserStateCapture']={'enabled':args.native_lasers,'kinds':{'0':'moving','1':'timed','2':'curve'},'fields':['observed object identity','nativeField80','kind','phase','position','angle/length/width/speed','headOffset','age previous/current/value','retirePending','cancellable'],'nativeField80':'Moving/Curve serial; Timed lookup ID, overwritten by42ad74. Candidate serial IDs are a separate namespace.','curveNodesCaptured':False,'gpuExecuted':False,'scope':'Observed original CPU object state. Observation IDs cannot detect a birth retiring before the first captured frame. Curve node geometry and draw vertices are not captured. Opt-in comparator reports declare their observed CPU field and independent-identity pairing scope separately.'}
  data['laserEmbeddedAnimationCapture']={'inputTickRange':args.trace_laser_visual_ticks,'enabled':bool(args.native_lasers and args.trace_laser_visual_ticks),'scope':'Actual Main/Cap embedded VM state, including flags/blend/alpha/layer/resource selection/pose. No GPU execution, draw vertices or pixel oracle.'}
  data['audioOutputBoundary']={'audibleOutputExecuted':False,'scope':'Host-only sound buffers with native queue updates retained. Silent IDirectSoundBuffer GetStatus, SetPan and Stop responses; no audio oracle.','methods':{'vtable+0x24':'GetStatus returns no playing buffer','vtable+0x40':'SetPan returns success','vtable+0x48':'Stop returns success'}}
  data['nativeGameOverSceneBoundary']=next((event for event in events if event['kind']=='nativeGameOverSceneEntered'),None)
@@ -533,6 +615,7 @@ for frame in range(args.frames):
  if not args.without_anm:v.reg_write(UC_X86_REG_EDI,0x5000000);call(0x4610d0)
  if args.native_camera_effects:tick_camera_effects()
  if args.native_player:call(0x436ba0,PLAYER)
+ if args.native_player and args.trace_player_ticks and any(start<=frame<=end for start,end in args.trace_player_ticks):events.append(capture_player_event('afterPlayer16 beforeBomb17'))
  if args.native_items:v.reg_write(UC_X86_REG_EAX,bomb_manager);call(0x406ce0)
  call(0x413190,MANAGER)
  if args.native_items:v.reg_write(UC_X86_REG_EAX,ufo_manager);call(0x44a2d0)
@@ -543,7 +626,11 @@ for frame in range(args.frames):
  if not args.without_anm:v.reg_write(UC_X86_REG_EDI,0x5000000);call(0x460fe0)
  if args.native_camera_effects:reset_camera_at_draw42()
  executed_input_ticks+=1
+ if executed_input_ticks%600==0:
+  print(f'Native progress {executed_input_ticks}/{args.frames} input ticks; graze={get(0x4b0cdc,"i")[0]} rngCalls={get(0x4ce56c,"I")[0]}',file=sys.stderr,flush=True)
  if args.trace_msg_ticks and args.trace_msg_ticks[0]<=frame<=args.trace_msg_ticks[1]:events.append(capture_message_event())
+ if args.trace_player_ticks and any(start<=frame<=end for start,end in args.trace_player_ticks):
+  events.append(capture_player_event('afterPrimary27 and Draw42'))
  if args.omit_world_frame_capture:continue
  frames.append({'frame':frame,'rngSeed':get(0x4ce568,'H')[0],'rngCalls':get(0x4ce56c,'I')[0],'enemies':capture(),'bullets':capture_bullets() if args.native_bullets else [],'animations':capture_animations() if not (args.without_anm or args.omit_animation_capture) else [],'player':capture_player() if args.native_player else None,'items':capture_items() if args.native_items else [],'sources':capture_sources() if args.native_player else [],'friendly':capture_friendly() if args.native_player else [],'economy':capture_economy() if args.native_items else None})
  if args.native_lasers:frames[-1]['lasers']=capture_lasers()

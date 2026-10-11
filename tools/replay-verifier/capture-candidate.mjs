@@ -5,7 +5,7 @@ import {startReplayStage} from '../../src/replay-session.mjs';
 import {replayInputEnded} from '../../src/replay.mjs';
 const root=path.resolve(import.meta.dirname,'../..'),assets=path.join(root,'site/assets');
 export function state(core){const ptr=core._th12_state(),size=core._th12_state_size();return JSON.parse(new TextDecoder().decode(core.HEAPU8.subarray(ptr,ptr+size)));}
-export async function initializeCandidate(number=1){const c=await createCore();c._th12_select_stage(number);
+export async function initializeCandidate(number=1,{wasmBinary}={}){const c=await createCore(wasmBinary?{wasmBinary}:{});c._th12_select_stage(number);
   const load=(file,method,index=null)=>{const b=fs.readFileSync(path.join(assets,file)),p=c._malloc(b.length);try{c.HEAPU8.set(b,p);if(!(index===null?method(p,b.length):method(index,p,b.length)))throw Error('Invalid retail input '+file);}finally{c._free(p);}};
   for(const file of ['default.ecl',`stage${String(number).padStart(2,'0')}.ecl`,...(number===7?['stage07boss.ecl']:[])])load(file,c._th12_load_ecl);
   if(c._th12_load_std)load(`stage${String(number).padStart(2,'0')}.std`,c._th12_load_std);

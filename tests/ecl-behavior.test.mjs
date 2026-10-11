@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import createCore from '../site/runtime/core.mjs';
+import {omitPlayerEntryClear} from './helpers/passive-player.mjs';
 import fs from 'node:fs';
 
 const word=value=>{const b=Buffer.alloc(4);b.writeInt32LE(value);return b;};
@@ -17,9 +18,32 @@ function program(routines){
   const b=Buffer.alloc(start+chunks.reduce((n,c)=>n+c.length,0));b.write('SCPT');b.writeUInt16LE(1,4);b.writeUInt16LE(entries.length,16);names.copy(b,36+entries.length*4);
   for(let i=0;i<entries.length;i++){b.writeUInt32LE(offset,36+i*4);chunks[i].copy(b,offset);offset+=chunks[i].length;}return b;
 }
-async function ready(routines,character=0,postGuard=true){
-  const c=await createCore(),b=program(routines),p=c._malloc(b.length);c.HEAPU8.set(b,p);
+function animationBank(){
+  // Authored ANM v7 input: one16px sprite and46 ordinary scripts. Each script
+  // binds that sprite, then remains active without RNG or interpolation.
+  const count=46,tableEnd=68+count*8,spriteAt=tableEnd;
+  const header=Buffer.alloc(tableEnd+20);header.writeUInt32LE(7);
+  header.writeUInt16LE(1,4);header.writeUInt16LE(count,6);
+  header.writeUInt16LE(16,10);header.writeUInt16LE(16,12);header.writeUInt32LE(spriteAt,64);
+  header.writeFloatLE(16,spriteAt+12);header.writeFloatLE(16,spriteAt+16);
+  const command=(op,payload=[],time=0)=>{
+    const raw=Buffer.concat(payload),bytes=Buffer.alloc(8+raw.length);
+    bytes.writeUInt16LE(op&65535);bytes.writeUInt16LE(bytes.length,2);bytes.writeInt16LE(time,4);
+    raw.copy(bytes,8);return bytes;
+  };
+  const script=Buffer.concat([command(3,[word(0)]),command(0,[],10000),command(-1,[],10000)]);
+  for(let id=0;id<count;id++){header.writeInt32LE(id,68+id*8);header.writeUInt32LE(header.length+id*script.length,72+id*8);}
+  return Buffer.concat([header,...Array.from({length:count},()=>script)]);
+}
+async function ready(routines,character=0,postGuard=true,banks=[]){
+  const c=await createCore();
+  for(const bank of banks){
+    const bytes=animationBank(),at=c._malloc(bytes.length);c.HEAPU8.set(bytes,at);
+    try{assert.equal(c._th12_load_anm(bank,at,bytes.length),1);}finally{c._free(at);}
+  }
+  const b=program(routines),p=c._malloc(b.length);c.HEAPU8.set(b,p);
   assert.equal(c._th12_load_ecl(p,b.length),1);c._free(p);c._th12_start(character,0,1,1234);
+  omitPlayerEntryClear(c);
   // These independent ECL/motion slices start after Native's input0 visit
   // clears the synchronous birth guard. Keep the original movement fixtures
   // unchanged; real birth/input0/input1 alignment is tested inreplay-startup.
@@ -35,6 +59,14 @@ const spawn=(op,name,x,y,refs=0)=>instruction(op,[str(name),float(x),float(y),wo
 const bind=animation=>instruction(259,[word(0),word(animation)]);
 const near=(actual,expected,label)=>assert.ok(Math.abs(actual-expected)<.000002,`${label}: ${actual} != ${expected}`);
 const snapshot=c=>{const p=c._th12_state(),size=c._th12_state_size();return JSON.parse(new TextDecoder().decode(c.HEAPU8.subarray(p,p+size)));};
+const logicalEnemies=c=>snapshot(c).enemies.filter(enemy=>enemy.active&&!enemy.hidden);
+const enemyPositions=c=>logicalEnemies(c).map(enemy=>enemy.position);
+function enemyAnimation(c){
+  const state=snapshot(c),enemy=state.enemies.find(enemy=>enemy.active&&!enemy.hidden);
+  assert.ok(enemy,'logical enemy exists');
+  const node=state.animations.nodes.find(node=>node.alive&&node.owner===enemy.id&&node.key===enemy.id*256);
+  assert.ok(node,'slot0 is a real registered ANM VM');return node;
+}
 
 test('native325/326 Hermite movement follows all103 original frames including sentinel targets and zero duration',async()=>{
   const original=JSON.parse(fs.readFileSync(new URL('fixtures/hermite-motion-original.json',import.meta.url)));
@@ -51,7 +83,20 @@ test('malformed ECL does not publish routines or replace previously loaded resou
   const c=await createCore(),valid=program({main:[spawn(257,'Child',20,100),hold()],Child:[hold()]});
   const p=c._malloc(valid.length);c.HEAPU8.set(valid,p);assert.equal(c._th12_load_ecl(p,valid.length),1);
   const invalid=Buffer.from(valid);invalid.writeUInt32LE(valid.length-4,40);c.HEAPU8.set(invalid,p);assert.equal(c._th12_load_ecl(p,invalid.length),0);c._free(p);
-  c._th12_start(0,0,1,1234);assert.deepEqual(sprites(c,0).map(s=>[s.x,s.y]),[[20,100]]);
+  c._th12_start(0,0,1,1234);assert.deepEqual(enemyPositions(c),[[20,100]]);
+});
+
+test('an unbound enemy has no invented draw21 sprite, while a real ANM slot owns its body',async()=>{
+  const routines={main:[spawn(257,'Child',20,100),hold()],Child:[hold()]};
+  const unbound=await ready(routines);
+  assert.deepEqual(enemyPositions(unbound),[[20,100]]);
+  assert.equal(snapshot(unbound).animations.nodes.length,0);
+  assert.equal(sprites(unbound,0).length,0,'no fairy is synthesized for an unbound enemy');
+  const bound=await ready({...routines,Child:[instruction(258,[word(2)]),bind(0),hold()]},0,true,[2]);
+  const node=enemyAnimation(bound);assert.deepEqual([node.bank,node.script,node.render[4]],[2,0,0]);
+  assert.equal(node.membership,1,'actual Primary ANM registration');
+  assert.equal(sprites(bound,0).length,0,'draw21 remains empty even after a real body binds');
+  const before=snapshot(bound);bound._th12_draw();assert.deepEqual(snapshot(bound),before,'drawing cannot advance logic or VM clocks');
 });
 
 test('native HP0 without an effective hurt query remains alive and does not award a drop',async()=>{
@@ -70,36 +115,36 @@ test('real ECL commands configure all three C++ laser classes and retain timed l
 
 test('spawn uses logical reference bits after a variable-length name and adds the parent position',async()=>{
   const c=await ready({main:[instruction(300,[float(100),float(200)]),instruction(44,[float(75)]),spawn(256,'EnemyWithLongName',-1,30,2),hold()],EnemyWithLongName:[hold()]});
-  assert.deepEqual(sprites(c,0).map(s=>[s.x,s.y]),[[175,230]]);
+  assert.deepEqual(enemyPositions(c),[[175,230]]);
 });
 test('absolute and relative mirrored spawns reflect movement once, without moving the birth position',async()=>{
   const c=await ready({main:[instruction(300,[float(100),float(200)]),spawn(260,'Relative',10,20),spawn(261,'Absolute',10,20),hold()],Relative:[instruction(304,[float(0),float(2)]),hold()],Absolute:[instruction(304,[float(0),float(2)]),hold()]});
-  assert.deepEqual(sprites(c,0).map(s=>[s.x,s.y]),[[110,220],[10,20]]);
-  c._th12_tick(0,0);const values=sprites(c,0);near(values[0].x,108,'relative mirrored movement');near(values[1].x,8,'absolute mirrored movement');
+  assert.deepEqual(enemyPositions(c),[[110,220],[10,20]]);
+  c._th12_tick(0,0);const values=enemyPositions(c);near(values[0][0],108,'relative mirrored movement');near(values[1][0],8,'absolute mirrored movement');
 });
 test('enemy variables are copied at birth and remain independent across enemies',async()=>{
   const c=await ready({main:[instruction(44,[float(12)]),instruction(45,[float(-9981)]),spawn(257,'Child',1,20),instruction(44,[float(-12)]),instruction(45,[float(-9981)]),spawn(257,'Child',2,30),instruction(44,[float(0)]),instruction(45,[float(-9981)]),hold()],Child:[instruction(300,[float(-9981),float(-999999)],5,1),hold()]});
   for(let i=0;i<5;i++)c._th12_tick(0,0);
-  assert.deepEqual(sprites(c,0).map(s=>[s.x,s.y]),[[12,20],[-12,30]]);
+  assert.deepEqual(enemyPositions(c),[[12,20],[-12,30]]);
 });
 test('angle/speed interpolation advances while a position interpolation owns displacement',async()=>{
   const c=await ready({main:[spawn(257,'Child',0,100),hold()],Child:[instruction(304,[float(0),float(2)]),instruction(305,[word(2),word(0),float(0),float(6)]),instruction(301,[word(2),word(0),float(20),float(100)]),hold()]});
-  c._th12_tick(0,0);near(sprites(c,0)[0].x,10,'first interpolated position');c._th12_tick(0,0);near(sprites(c,0)[0].x,20,'last interpolated position');c._th12_tick(0,0);near(sprites(c,0)[0].x,26,'completed speed interpolation');
+  c._th12_tick(0,0);near(enemyPositions(c)[0][0],10,'first interpolated position');c._th12_tick(0,0);near(enemyPositions(c)[0][0],20,'last interpolated position');c._th12_tick(0,0);near(enemyPositions(c)[0][0],26,'completed speed interpolation');
 });
 test('health interrupts preserve their slots and timeout scripts do not replace health scripts',async()=>{
-  const c=await ready({main:[spawn(257,'TestBoss',0,100),hold()],TestBoss:[instruction(414,[word(0),word(50),word(100),str('Health')],0,0,4),instruction(414,[word(1),word(0),word(200),str('Death')],0,0,4),instruction(421,[word(0),str('Timeout')],0,0,2),instruction(411,[word(40)],3),hold()],Health:[bind(31),hold()],Death:[bind(32),hold()],Timeout:[bind(33),hold()]});
-  for(let i=0;i<4;i++)c._th12_tick(0,0);assert.equal(sprites(c,0)[0].animation,31);
-  const d=await ready({main:[spawn(257,'TestBoss',0,100),hold()],TestBoss:[instruction(414,[word(0),word(50),word(3),str('Health')],0,0,4),instruction(421,[word(0),str('Timeout')],0,0,2),hold()],Health:[bind(31),hold()],Timeout:[bind(33),hold()]});
-  for(let i=0;i<3;i++)d._th12_tick(0,0);assert.equal(sprites(d,0)[0].animation,33);
+  const c=await ready({main:[spawn(257,'TestBoss',0,100),hold()],TestBoss:[instruction(414,[word(0),word(50),word(100),str('Health')],0,0,4),instruction(414,[word(1),word(0),word(200),str('Death')],0,0,4),instruction(421,[word(0),str('Timeout')],0,0,2),instruction(411,[word(40)],3),hold()],Health:[bind(31),hold()],Death:[bind(32),hold()],Timeout:[bind(33),hold()]},0,true,[1]);
+  for(let i=0;i<4;i++)c._th12_tick(0,0);assert.equal(enemyAnimation(c).script,31);
+  const d=await ready({main:[spawn(257,'TestBoss',0,100),hold()],TestBoss:[instruction(414,[word(0),word(50),word(3),str('Health')],0,0,4),instruction(421,[word(0),str('Timeout')],0,0,2),hold()],Health:[bind(31),hold()],Timeout:[bind(33),hold()]},0,true,[1]);
+  for(let i=0;i<3;i++)d._th12_tick(0,0);assert.equal(enemyAnimation(d).script,33);
 });
 
 test('native timeout checks skip zero duration and stop at the first enabled timed slot',async()=>{
-  const make=(first,second)=>ready({main:[spawn(257,'TestBoss',0,100),hold()],TestBoss:[instruction(414,[word(0),word(50),word(first),str('First')],0,0,4),instruction(414,[word(1),word(40),word(second),str('Second')],0,0,4),hold()],First:[bind(31),hold()],Second:[bind(32),hold()]});
-  const zero=await make(0,0);for(let i=0;i<4;i++)zero._th12_tick(0,0);assert.equal(sprites(zero,0)[0].animation,0);
-  const ordered=await make(10,2);for(let i=0;i<4;i++)ordered._th12_tick(0,0);assert.equal(sprites(ordered,0)[0].animation,0);
-  for(let i=0;i<6;i++)ordered._th12_tick(0,0);assert.equal(sprites(ordered,0)[0].animation,31);
+  const make=(first,second)=>ready({main:[spawn(257,'TestBoss',0,100),hold()],TestBoss:[bind(0),instruction(414,[word(0),word(50),word(first),str('First')],0,0,4),instruction(414,[word(1),word(40),word(second),str('Second')],0,0,4),hold()],First:[bind(31),hold()],Second:[bind(32),hold()]},0,true,[1]);
+  const zero=await make(0,0);for(let i=0;i<4;i++)zero._th12_tick(0,0);assert.equal(enemyAnimation(zero).script,0);
+  const ordered=await make(10,2);for(let i=0;i<4;i++)ordered._th12_tick(0,0);assert.equal(enemyAnimation(ordered).script,0);
+  for(let i=0;i<6;i++)ordered._th12_tick(0,0);assert.equal(enemyAnimation(ordered).script,31);
   // Phase entry resets its clock; the following enabled slot now owns timeout2.
-  for(let i=0;i<2;i++)ordered._th12_tick(0,0);assert.equal(sprites(ordered,0)[0].animation,32);
+  for(let i=0;i<2;i++)ordered._th12_tick(0,0);assert.equal(enemyAnimation(ordered).script,32);
 });
 test('TH12 emitter modes reproduce original launch selection evidence',async()=>{
   // Explicit original inspection: 0x40a34d..0x40a617, seed 1234, count 4,
@@ -120,9 +165,12 @@ test('zero count emits no bullets and emitter polar offset / radius / fixed orig
   const b=sprites(d,1)[0];near(b.x,50,'radial origin x');near(b.y,50,'polar offset y');near(b.angle,0,'radius must not overwrite angle');
 });
 test('animation clock resets on binding and selected bank does not change the bound animation',async()=>{
-  const c=await ready({main:[spawn(257,'Child',0,100),hold()],Child:[instruction(258,[word(2)]),bind(0),instruction(258,[word(1)],3),instruction(259,[word(0),word(45)],5),hold()]});
-  for(let i=0;i<3;i++)c._th12_tick(0,0);assert.equal(sprites(c,0)[0].bank,2);
-  for(let i=0;i<2;i++)c._th12_tick(0,0);const bound=sprites(c,0)[0];assert.equal(bound.bank,1);assert.equal(bound.animation,45);assert.equal(bound.age,1);
+  const c=await ready({main:[spawn(257,'Child',0,100),hold()],Child:[instruction(258,[word(2)]),bind(0),instruction(258,[word(1)],3),instruction(259,[word(0),word(45)],5),hold()]},0,true,[1,2]);
+  for(let i=0;i<3;i++)c._th12_tick(0,0);const previous=enemyAnimation(c);assert.equal(previous.bank,2);assert.equal(previous.clock,5);
+  for(let i=0;i<2;i++)c._th12_tick(0,0);const bound=enemyAnimation(c);assert.equal(bound.bank,1);assert.equal(bound.script,45);
+  // A real bind performs one immediate VM tick; age1 means one subsequent
+  // Primary27 tick, not the obsolete Enemy draw fallback's age field.
+  assert.equal(bound.ticks-1,1);assert.equal(bound.clock,2);assert.notEqual(bound.id,previous.id);
 });
 
 test('items keep tracking after the player leaves the point-of-collection line',async()=>{

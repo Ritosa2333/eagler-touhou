@@ -1,3 +1,4 @@
+import {emscripten} from '../scripts/toolchain.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -8,7 +9,7 @@ import {runtimeSources} from '../scripts/runtime-sources.mjs';
 import {loadLiveMain} from './helpers/live-main.mjs';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root),directory=path.join(root,'artifacts/player-bomb-age-tests');
 fs.mkdirSync(directory,{recursive:true});
-const python=path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe'),compiler=path.join(workspace,'tools/emsdk/upstream/emscripten/emcc.py'),output=path.join(directory,'core.mjs');
+const python=emscripten(root).python,compiler=emscripten(root).compiler,output=path.join(directory,'core.mjs');
 const names=['player_bomb_age_prepare','player_bomb_age_update','th12_load_ecl','th12_load_anm','th12_load_sht','malloc','free'];
 const result=spawnSync(python,[compiler,'tests/fixtures/player-bomb-age.cpp',...runtimeSources(root),'-std=c++20','-O0','-o',output,
  '-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=node','-sALLOW_MEMORY_GROWTH=1','-sINITIAL_MEMORY=33554432',

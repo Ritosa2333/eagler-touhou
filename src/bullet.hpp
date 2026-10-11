@@ -40,7 +40,7 @@ struct State {
   Phase phase=Phase::Inactive;bool grazed=false,rotateToMotion=false,pendingRetire=false;
   int spawnDuration=0,cancelAge=0,collisionDelay=0,offscreenGrace=10,cancelEffect=4;
   uint32_t active=0;int cursor=0;Program program{};
-  Motion fast{},acceleration{},polar{},turn{},bounce{},wait{},protect{};
+  Motion fast{},acceleration{},speedApproach{},polar{},turn{},bounce{},wait{},protect{};
   int32_t tag=0;TargetMotion target{};
   BulletGate gate{};
 };
@@ -107,12 +107,21 @@ inline void start(State& s,World& w){
     case 1:s.active|=kind;s.fast={};break;
     case 2:break; // Spawn-only command, consumed by initialize at the selected start.
     case 4:{s.active|=kind;auto& m=s.acceleration;m={};m.a=t.a;m.b=resolvedAngle(s,w,t.b);m.duration=t.c;m.vx=float(std::cos(double(m.b))*m.a);m.vy=float(std::sin(double(m.b))*m.a);break;}
+    // 40b468..40b4f2: a is the target speed; interpolate the scalar and
+    // velocity toward it over c ticks, preserving the selected heading.
+    case 0x20000000:{s.active|=kind;auto& m=s.speedApproach;m={};m.a=float((double(t.a)-s.speed)/t.c);m.b=resolvedAngle(s,w,t.b);m.duration=t.c;m.vx=float(std::cos(double(m.b))*m.a);m.vy=float(std::sin(double(m.b))*m.a);break;}
     case 8:{s.active|=kind;s.polar={};s.polar.a=t.a;s.polar.b=t.b;s.polar.duration=t.c;break;}
     case 0x10:case 0x20:case 0x40:{s.active|=kind;s.turn={};s.turn.b=resolvedAngle(s,w,t.a);s.turn.a=t.b<=-999?s.speed:t.b;s.turn.duration=t.c;s.turn.limit=t.d;break;}
     case 0x100:s.active|=kind;s.bounce={};s.bounce.a=t.a;s.bounce.limit=t.c;s.bounce.count=t.d;break;
     case 0x200:s.collisionDelay=t.c;break;
     case 0x400:s.active|=kind;s.protect={};s.protect.timer=t.c;s.protect.count=t.d;s.gate.begin(t.c);break;
-    case 0x800:case 0x1000000:appearance(s,t.c,t.d);s.interrupt=2;s.visualAge=0;w.appearance(s,false);w.stateAnimation(s,AnimationEvent::Interrupt,2);break;
+    case 0x800:case 0x1000000:
+      appearance(s,t.c,t.d);s.visualAge=0;w.appearance(s,false);
+      // 40ad6c starts the normal fresh spawn animation. Only40b09a's
+      // immediate-body variant queues IRQ2 after the402520/454ee0 reset.
+      s.interrupt=kind==0x1000000?2:0;
+      if(s.interrupt)w.stateAnimation(s,AnimationEvent::Interrupt,s.interrupt);
+      break;
     case 0x1000:s.active|=kind;s.wait={};s.wait.timer=t.c;break;
     case 0x2000:cancel(s,w);break;
     case 0x4000:w.sound(t.c,s.x);break;
@@ -133,7 +142,7 @@ inline void start(State& s,World& w){
     case 0x2000000:beginTargetMotion(s.target,s,t,w);break;
     default:w.unsupported(kind);break;
     }
-    if(s.cursor&&s.program.transformSound>=0&&(kind==4||kind==8))w.sound(s.program.transformSound,s.x);
+    if(s.cursor&&s.program.transformSound>=0&&(kind==4||kind==8||kind==0x20000000))w.sound(s.program.transformSound,s.x);
     ++s.cursor;
   }
 }
@@ -193,6 +202,8 @@ inline void tick(State& s,World& w,bool deferAnimation=false){
   start(s,w);int completed=0;const bool hadActive=s.active!=0;
   if(s.active&1){if(s.fast.timer<=16){velocity(s,float(double(s.speed)+(5-double(s.fast.timer)*5*.0625)));++s.fast.timer;}else{s.active&=~1u;++completed;}}
   if(s.active&4){auto& m=s.acceleration;if(m.timer<m.duration){s.speed=float(double(s.speed)+m.a);s.vx=float(double(s.vx)+m.vx);s.vy=float(double(s.vy)+m.vy);if(std::abs(s.vx)>.0001f||std::abs(s.vy)>.0001f)s.angle=float(std::atan2(double(s.vy),double(s.vx)));++m.timer;}else{s.active&=~4u;++completed;}}
+  // Native409cde visits40b800 after acceleration and before polar motion.
+  if(s.active&0x20000000){auto& m=s.speedApproach;if(m.timer<m.duration){s.speed=float(double(s.speed)+m.a);s.vx=float(double(s.vx)+m.vx);s.vy=float(double(s.vy)+m.vy);if(std::abs(s.vx)>.0001f||std::abs(s.vy)>.0001f)s.angle=float(std::atan2(double(s.vy),double(s.vx)));++m.timer;}else{s.active&=~0x20000000u;++completed;}}
   if(s.active&8){auto& m=s.polar;if(m.timer<m.duration){s.angle=normalize(float(double(s.angle)+m.b));s.speed=float(double(s.speed)+m.a);velocity(s,s.speed);++m.timer;}else{s.active&=~8u;++completed;}}
   for(uint32_t kind:{0x10u,0x40u,0x20u})if(s.active&kind){auto& m=s.turn;float speed;
     if(m.timer<m.duration)speed=float(double(s.speed)-double(m.timer)*s.speed/m.duration);

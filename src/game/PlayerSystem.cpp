@@ -1,9 +1,9 @@
 // TH12 1.00b portable C++ runtime. See NOTICE.md for rights.
-#include "FriendlyPool.hpp"
 #include "BulletCancellation.hpp"
 #include "CameraEffects.hpp"
-#include "LaserWorld.hpp"
+#include "FriendlyPool.hpp"
 #include "GameState.hpp"
+#include "LaserWorld.hpp"
 #include "PlayerBounds.hpp"
 
 namespace th12 {
@@ -14,8 +14,8 @@ bool movementFocus(int held, int totalAge, bool liveEnemies) {
 }
 namespace {
 bool playerMovementFocus(int held) {
-  const bool liveEnemies = std::any_of(enemies.begin(), enemies.end(),
-                                      [](const auto& enemy) { return enemy->active; });
+  const bool liveEnemies =
+      std::any_of(enemies.begin(), enemies.end(), [](const auto& enemy) { return enemy->active; });
   // Player+a48 advances at437475 through every player state and is reset
   // only by436100 stage/session initialization, rather than by respawn.
   return movementFocus(held, frame, liveEnemies);
@@ -67,7 +67,39 @@ std::function<void(int, u32, float, float)>
     playerBombCustomBindHook; // effect profile/id/native position
 namespace {
 std::unordered_map<uint64_t, int> bombDeliveredInterrupts;
+std::array<float, 3> respawnClearOrigin{}; // Native Player+a08, saved death position.
+} // namespace
+std::vector<PlayerClearOperation> playerClearOperations(int state, int age) {
+  if ((state == 1 && age < 30) || (state == 0 && age >= 30))
+    return {{2, 0, true}, {3, 0, true}};
+  if (state != 0)
+    return {};
+  const float outer = float(double(age) * 512 / 30 + 64);
+  const float inner = float(double(outer) * .25);
+  return {{0, outer, true}, {0, inner, false}, {1, outer, true}, {1, inner, false}};
 }
+namespace {
+void clearPlayerField(int state, int age) {
+  // Passive Enemy/Laser/ANM fixtures omit the original Player16 callback.
+  // Their explicit flag8 omits this separate entry-clear path too. Active
+  // replay restores always start with flags0 and execute all native clears.
+  if (oracleFixtureFlags & 8)
+    return;
+  for (const auto& operation : playerClearOperations(state, age)) {
+    if (operation.kind == 0)
+      cancelHostileCircle(respawnClearOrigin[0], respawnClearOrigin[1], operation.radius, false,
+                          operation.protection);
+    else if (operation.kind == 1)
+      laserManager.clearCircle(
+          laserWorld, {respawnClearOrigin[0], respawnClearOrigin[1], respawnClearOrigin[2]},
+          operation.radius, 0, operation.protection);
+    else if (operation.kind == 2)
+      cancelHostileBullets(operation.protection);
+    else
+      laserManager.clearAll(laserWorld, false, operation.protection);
+  }
+}
+} // namespace
 Enemy* playerTarget(float, float, float, u32);
 void explodeReimuBOrb(pw::ReimuBOrb& orb) {
   if (!orb.active)
@@ -158,12 +190,12 @@ bool startPlayerBomb() {
     // Native407250/408eba bind front1 synchronously after the player's main
     // VM. Its independent handle receives IRQ1 when the Bomb stops.
     const auto key = 0xc00000000ull + nextDetachedAnimation++;
-    auto* backdrop = animationScene.bind(key, 0x50000000u, 7, 1, anm_logic::Membership::Primary,
-                                        playerBomb.x + 224, playerBomb.y + 16, {}, false,
-                                        nullptr, 0, 0, 23);
+    auto* backdrop =
+        animationScene.bind(key, 0x50000000u, 7, 1, anm_logic::Membership::Primary,
+                            playerBomb.x + 224, playerBomb.y + 16, {}, false, nullptr, 0, 0, 23);
     if (loadout == 2 && backdrop) {
       // Actual4072a5 writes the primary alpha after front1's birth tick.
-      //4072bf also writes the unused secondary-alpha curveB (+27c); front1
+      // 4072bf also writes the unused secondary-alpha curveB (+27c); front1
       // uses mode0, so that retained coefficient does not change its fade.
       auto& pose = backdrop->vm.control();
       pose.primary = (pose.primary & 0xffffffu) | 0xe0000000u;
@@ -214,8 +246,9 @@ void tickPlayerBomb() {
     // Without a resource bank, isolated logic fixtures retain their legacy
     // scripted lifetime; the game uses the actual primary VM's deletion.
     const bool sceneLifetime = animationScene.registry.bank(6) != nullptr;
-    const bool mainMissing = sceneLifetime &&
-        (playerBomb.visuals.empty() || !animationScene.find(0x700000000ull + playerBomb.visuals[0].id));
+    const bool mainMissing =
+        sceneLifetime && (playerBomb.visuals.empty() ||
+                          !animationScene.find(0x700000000ull + playerBomb.visuals[0].id));
     if (mainMissing || age >= (sceneLifetime ? 400 : 281)) {
       playerBomb.active = false;
       animationScene.interrupt(playerBomb.backgroundAnimation, 1);
@@ -231,7 +264,12 @@ void tickPlayerBomb() {
     if (age >= 30) {
       float x, y;
       if (age < 250) {
-        const float radius = pw::unitRandom(random.next32());
+        const auto* main = playerBomb.visuals.empty()
+                               ? nullptr
+                               : animationScene.find(0x700000000ull + playerBomb.visuals[0].id);
+        // 40902b scales the random radius by the live main VM's scaleX.
+        const float radius =
+            float(double(main ? main->vm.state().sx : 1.f) * pw::unitRandom(random.next32()));
         const float direction = float(double(pw::signedRandom(random.next32())) * double(pi));
         x = float(double(playerBomb.x) + float(std::cos(double(direction)) * radius));
         y = float(double(playerBomb.y) + float(std::sin(double(direction)) * radius));
@@ -240,7 +278,9 @@ void tickPlayerBomb() {
         y = float(double(pw::unitRandom(random.next32())) * 448);
       }
       pw::Leaf leaf;
-      leaf.begin(nextProjectileId++, x, y, random);
+      // 40908f adds the viewport before4105e0 stores point0. The custom
+      // history therefore integrates screen coordinates, including rounding.
+      leaf.begin(nextProjectileId++, float(double(x) + 224), float(double(y) + 16), random);
       playerBomb.leaves.push_back(leaf);
       if (playerBombCustomBindHook)
         playerBombCustomBindHook(5, leaf.id, x, y);
@@ -263,7 +303,8 @@ void tickPlayerBomb() {
     invuln = 40;
     const int age = playerBomb.age;
     const bool mainMissing = animationScene.registry.bank(5) &&
-        (playerBomb.visuals.empty() || !animationScene.find(0x700000000ull + playerBomb.visuals[0].id));
+                             (playerBomb.visuals.empty() ||
+                              !animationScene.find(0x700000000ull + playerBomb.visuals[0].id));
     if (mainMissing || age > 300) {
       playerBomb.active = false;
       playerBomb.speedMultiplier = 1;
@@ -605,6 +646,9 @@ void updateFriendlyProjectile(Projectile& b) {
     return;
   }
   if (b.update == 2) {
+    // 43a73d advances collision height before testing the shooting latch.
+    //  The release pass grows once, then the retained phase2 tail stops growing.
+    b.hitHeight = std::min(448.f, b.hitHeight + 28.f);
     if (b.option < 1 || b.option > playerMotion.count || shotSchedule.frame < 0 || dialogue) {
       b.weapon.phase = pw::Phase::Impact;
       b.weapon.interrupt = 1;
@@ -624,8 +668,6 @@ void updateFriendlyProjectile(Projectile& b) {
     const auto& o = playerMotion.options[b.option - 1];
     b.x = o.x / 128.f;
     b.y = o.y / 128.f;
-    // Original 43a6b0, from spawn callback 43a680's zero height.
-    b.hitHeight = std::min(448.f, b.hitHeight + 28.f);
     return;
   }
   if (b.update == 1) {
@@ -743,6 +785,7 @@ uint64_t bombEffectKey(u32 id) {
 }
 void bindBombEffect(int profile, u32 id);
 void configurePlayerAnimations() {
+  respawnClearOrigin = {};
   friendlyBirthHook = [](Projectile& b) {
     const auto key = 0x800000000ull + b.entityId;
     auto* node =
@@ -847,7 +890,9 @@ void bindBombEffect(int profile, u32 id) {
                           anm_logic::Membership::Primary, 0, 0, {}, false, nullptr, 224, 16, 23);
   if (!node)
     return;
-  node->customGeometry = profile == 3;
+  node->customGeometry = profile == 3 || profile == 5;
+  if (profile == 5)
+    node->vm.control().layer = 13; // Actual410706 custom leaf draw layer.
   animationScene.custom(bombEffectKey(id), [profile, id]() {
     const bool retired = tickPlayerBombEffect(profile, id);
     if (profile == 4)
@@ -893,7 +938,10 @@ void fire() {
       if (spec.option > playerMotion.count)
         continue;
       if (spec.type == 2 && std::any_of(bullets.begin(), bullets.end(), [&](const Projectile& b) {
-            return b.active && b.friendly && b.type == 2 && b.option == spec.option;
+            // 43a7c1 releases the option's C430 latch when its old beam enters
+            // phase2. Its eight-tick ANM tail must not block a newly fired beam.
+            return b.active && b.friendly && b.type == 2 && b.weapon.phase == pw::Phase::Alive &&
+                   b.option == spec.option;
           }))
         continue;
       float x = px / 128.f, y = py / 128.f;
@@ -932,11 +980,45 @@ void fire() {
 
 void tickPlayer(int held, int pressed) {
   const auto& s = loadouts[character * 2 + shot];
+  // The state0 branch computes its entry position and clears first. At age60
+  // it falls through to the normal state1 branch in this same Player pass.
+  if (playerState == 0) {
+    playerMotion.resetOptionPositions(); // 436c07 ->412610 retains positions, marks reset.
+    py = 0xf000 - (playerStateTicks * 0x2800) / 60;
+    clearPlayerField(0, playerStateTicks);
+    if (playerStateTicks >= 60) {
+      playerState = 1;
+      playerStateTicks = 0;
+    }
+  }
   const bool beganMoving = playerState == 1;
+  const bool beganInDeathWindow = playerState == 4;
+  const bool liveEnemies =
+      std::any_of(enemies.begin(), enemies.end(), [](const auto& enemy) { return enemy->active; });
+  // 436d18 constructs the Bomb before436d47 advances the player's position.
+  // SanaeB retains that birth center for sources, clearing and leaf effects.
+  // The deathbomb branch436da8 bypasses movement for this entire Player pass.
+  if (!(oracleFixtureFlags & 4) && (held & 2) && bombs > 0 &&
+      ((playerState == 1 && !dialogue && liveEnemies) ||
+       (playerState == 4 && playerStateTicks < 8)) &&
+      startPlayerBomb()) {
+    syncBombAnimations();
+    --bombs;
+    deathWindow = 0;
+    playerState = 1;
+    // 436d18 preserves a normal state's age; only436da8 deathbomb resets60.
+    if (beganInDeathWindow)
+      playerStateTicks = 60;
+    spellState.onBomb();
+    //4385b0 refreshes options here, but43875c returns without resetting
+    //their positions when the option count is unchanged.
+    eventBits |= 4;
+  }
+  if (beganMoving)
+    clearPlayerField(1, playerStateTicks);
   if (beganMoving)
     playerFocused = playerMovementFocus(held);
   const bool focus = playerFocused;
-  const bool beganInDeathWindow = playerState == 4;
   const int speed = int((focus ? s.focus : s.speed) * playerBomb.speedMultiplier * 128),
             diagonal = int((focus ? s.focusDiag : s.diag) * playerBomb.speedMultiplier * 128);
   int dir = 0;
@@ -957,7 +1039,7 @@ void tickPlayer(int held, int pressed) {
   else if (held & 0x80)
     dir = 4;
   const int beforeX = px;
-  if (playerState == 1) {
+  if (beganMoving) {
     switch (dir) {
     case 1:
       py -= speed;
@@ -989,27 +1071,15 @@ void tickPlayer(int held, int pressed) {
       break;
     }
   }
-  if (playerState != 4)
+  if (!beganInDeathWindow && playerState != 4)
     playerMotion.body(px - beforeX);
   px = std::clamp(px, -0x5c00, 0x5c00);
   if (playerState == 1)
     py = std::clamp(py, 0x1000, 0xd800);
-  if (playerState == 1 || playerState == 0)
+  if (beganMoving)
     playerMotion.updateOptions(s, power, px, py, focus);
   bulletWorld.playerX = px / 128.f;
   bulletWorld.playerY = py / 128.f;
-  if (!(oracleFixtureFlags & 4) && (held & 2) && bombs > 0 &&
-      (playerState == 1 || (playerState == 4 && playerStateTicks < 8)) && startPlayerBomb()) {
-    syncBombAnimations();
-    --bombs;
-    deathWindow = 0;
-    playerState = 1;
-    // 436d18 preserves a normal state's age; only436da8 deathbomb resets60.
-    if (beganInDeathWindow)
-      playerStateTicks = 60;
-    spellState.onBomb();
-    eventBits |= 4;
-  }
   if (playerState == 4) {
     deathWindow = std::max(0, 8 - playerStateTicks);
     if (playerStateTicks >= 8) {
@@ -1035,6 +1105,11 @@ void tickPlayer(int held, int pressed) {
       if (lives < 0)
         ended = 2;
       else {
+        // 436efc creates the expanding damage source before saving+a08 and
+        // resetting the player position. Player16's common source pass below
+        // advances the new source in this same callback.
+        respawnClearOrigin = {px / 128.f, py / 128.f, 0};
+        playerDamageSources.circle(respawnClearOrigin[0], respawnClearOrigin[1], 32, 16, 30, 150);
         playerState = 0;
         playerStateTicks = 0;
         px = 0;
@@ -1046,24 +1121,16 @@ void tickPlayer(int held, int pressed) {
         }
       }
     }
-  } else if (playerState == 0) {
-    py = 0xf000 - (playerStateTicks * 0x2800) / 60;
-    if (playerStateTicks >= 30)
-      cancelHostileBullets();
-    if (playerStateTicks >= 60) {
-      playerState = 1;
-      playerStateTicks = 0;
-      py = 400 * 128;
-    }
   }
   ++playerStateTicks;
   if (invuln > 0)
     --invuln; // Native common tail follows state-transition writes.
   // Native state0 reaches4364f0 on its transition back to state1. States2,
   // 3 and4 leave C598/its handle alone until movement actually resumes.
-  if (!beganMoving && playerState == 1)
+  if (!beganMoving && !beganInDeathWindow && playerState == 1)
     playerFocused = playerMovementFocus(held);
-  updatePlayerFocusAnimation(playerFocused);
+  if (!beganInDeathWindow)
+    updatePlayerFocusAnimation(playerFocused);
   tickPlayerAnimation();
   // 4374dd..437533 uses the current Player state timer, after it advances.
   if (!dialogue && playerStateTicks % 60 == 0)
@@ -1143,13 +1210,13 @@ void tickBomb() {
     if (!area.enabled)
       continue;
     cancelHostileRectangle(area.x, area.y, area.width, area.height, !spell);
-    laserManager.clearRectangle(laserWorld, {area.x, area.y, 0},
-                                {area.width, area.height, 0}, !spell, true);
+    laserManager.clearRectangle(laserWorld, {area.x, area.y, 0}, {area.width, area.height, 0},
+                                !spell, true);
   }
   for (const auto& area : playerBomb.circles) {
     cancelHostileCircle(area.x, area.y, area.radius, !spell, true);
     laserManager.clearCircle(laserWorld, {area.x, area.y, 0}, area.radius,
-                            uint32_t(!spell) | area.laserCancelFlags, true);
+                             uint32_t(!spell) | area.laserCancelFlags, true);
   }
 }
 

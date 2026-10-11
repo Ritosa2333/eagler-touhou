@@ -1,3 +1,4 @@
+import {emscripten} from '../scripts/toolchain.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -5,7 +6,7 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root),output=path.join(root,'artifacts/custom-geometry-test-runtime');fs.mkdirSync(output,{recursive:true});
-const python=path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe'),compiler=path.join(workspace,'tools/emsdk/upstream/emscripten/emcc.py');
+const python=emscripten(root).python,compiler=emscripten(root).compiler;
 const build=spawnSync(python,[compiler,'tests/fixtures/custom-geometry.cpp','src/game/CustomGeometry.cpp','src/game/AnmLogic.cpp','-std=c++20','-O2','-o',path.join(output,'core.mjs'),'-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=node','-sALLOW_MEMORY_GROWTH=1','-sEXPORTED_FUNCTIONS=["_malloc","_free","_load_bank","_sprite_region","_generate_geometry","_vertices","_metadata"]','-sEXPORTED_RUNTIME_METHODS=["HEAPU8"]'],{cwd:root,encoding:'utf8',env:{...process.env,EM_CACHE:path.join(root,'artifacts/emscripten-cache'),EMSDK_PYTHON:python,PATH:path.dirname(python)+path.delimiter+process.env.PATH}});
 assert.equal(build.status,0,build.stderr||build.stdout);
 const create=(await import(pathToFileURL(path.join(output,'core.mjs')).href)).default;

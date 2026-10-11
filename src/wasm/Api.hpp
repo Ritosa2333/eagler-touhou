@@ -11,6 +11,7 @@ void th12_unload_anm(int);
 int th12_load_sht(int, const uint8_t*, int);
 void th12_select_stage(int);
 void th12_start(int character, int shot, int difficulty, int seed);
+void th12_set_wall_time(double milliseconds);
 int th12_start_replay(int character, int shot, int difficulty, int seed, const int32_t* initial,
                       int count);
 void th12_oracle_fixture(int flags);
@@ -61,6 +62,7 @@ int th12_background_frame();
 int th12_background_visible();
 const float* th12_hud();
 int th12_hud_size();
+int32_t th12_score_stored();
 const uint32_t* th12_unsupported();
 uint32_t th12_rng16(int seed);
 uint32_t th12_rng32(int seed);

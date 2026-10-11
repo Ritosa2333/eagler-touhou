@@ -14,6 +14,11 @@ export function startReplayStage(core,replay,stage) {
   const words=[i.x,i.y,i.power,i.lives,i.bombs,i.score,i.pointValue,i.lifeFragments,i.bombFragments,
     ...i.ufoColors,i.rank,...i.nativeGlobals];
   if(!words.every(n=>Number.isInteger(n)&&n>=-0x80000000&&n<=0x7fffffff))throw Error('录像开局字段无效');
+  if(stage.spellTimes!==undefined){
+    if(!Array.isArray(stage.spellTimes)||stage.spellTimes.length!==21||
+      !stage.spellTimes.every(n=>Number.isInteger(n)&&n>=-0x80000000&&n<=0x7fffffff))throw Error('录像符卡时间记录无效');
+    words.push(...stage.spellTimes);
+  }
   const pointer=core._malloc(words.length*4);
   try {
     const heap=core.HEAPU8;

@@ -71,3 +71,42 @@ export function spellTitleDescriptors(spell,logicalPoses=[]) {
 export function spellTextDescriptors(spell,logicalPoses=[]) {
   return [...spellTitleDescriptors(spell,logicalPoses),...spellAsciiDescriptors(spell,logicalPoses)];
 }
+
+function timerSubmission(text,x,y,colorARGB,scale=1){
+  return {text,font:3,x,y,z:0,scaleX:scale,scaleY:scale,colorARGB:colorARGB>>>0,alignX:1,alignY:1,drawFlag:1};
+}
+
+// Integer seconds belong to the two core-owned embedded ascii3/4 VMs.
+export function bossTimerDescriptors(bossHud){
+  const timer=bossHud?.timer;
+  if(!timer?.visible||!signedInteger(timer.hundredths)||!Number.isInteger(timer.colorARGB))return [];
+  return [timerSubmission('.',394,16,timer.colorARGB),
+    timerSubmission(precisionInteger(timer.hundredths,2),402,22,timer.colorARGB,Math.fround(.6))];
+}
+
+// Exact41d0b0 checksum/decode; malformed recorded times render999.99.
+export function decodeSpellRealTime(encoded){
+  if(!signedInteger(encoded))throw Error('符卡实时间数据无效');
+  const tail=encoded%100,packed=Math.trunc(encoded/100),seconds=(packed%1000+934)%1000,
+    hundredths=(tail+67)%100;
+  return Math.trunc(encoded/100000)-22===seconds+hundredths?[seconds,hundredths]:[999,99];
+}
+
+export function spellResultDescriptors(spell,logicalPoses=[]){
+  const result=spell?.lastResult;
+  if(!result?.kind||!signedInteger(result.displayElapsedTicks))return [];
+  // Only the most recently registered front78 handle supplies the alpha.
+  const time=logicalPoses.find(p=>p.id===spell.resultAnimationId&&matchPose(p,'front',58));
+  if(!time)return [];
+  const alpha=Math.max(0,Math.min(255,Math.round(time.a.alpha*255))),white=((alpha<<24)|0xffffff)>>>0;
+  const ticks=result.displayElapsedTicks,seconds=Math.trunc(ticks/60),hundredths=Math.trunc((ticks%60)*100/60);
+  const output=[timerSubmission(widthInteger(Math.min(seconds,999),3)+'.',222,192,white),
+    timerSubmission(precisionInteger(hundredths,2)+'s',266,198,white,Math.fround(.6))];
+  // No logical-clock substitute for an unavailable real wall-clock value.
+  if(result.realTimeEncoded!==undefined&&result.realTimeEncoded!==-1){
+    const [realSeconds,realHundredths]=decodeSpellRealTime(result.realTimeEncoded),gray=((alpha<<24)|0x808080)>>>0;
+    output.push(timerSubmission(widthInteger(realSeconds,3)+'.',222,208,gray),
+      timerSubmission(precisionInteger(realHundredths,2)+'s',266,214,gray,Math.fround(.6)));
+  }
+  return output;
+}

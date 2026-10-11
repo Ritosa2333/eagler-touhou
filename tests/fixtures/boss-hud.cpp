@@ -1,5 +1,6 @@
 #include "../../src/game/GameState.hpp"
 #include <sstream>
+#include <iomanip>
 namespace th12 {
 anm_logic::Scene animationScene;
 int px=0,py=0,dialogue=0,stageNumber=1;
@@ -26,9 +27,12 @@ void input(int health,int maximum,int stage,int checkpoint,int remaining,float x
   th12::px=int(x*128);th12::py=int(y*128);th12::present=present;th12::dialogue=dialogue;
 }
 void tick_hud(){th12::events.clear();th12::tickBossHud();}
+void timer_input(int phaseAge,int limit,int enabled){if(enabled)th12::recordBossCountdown(limit,phaseAge);}
 const char* hud_snapshot(){
-  static std::string output;std::ostringstream out;out<<"{\"hud\":"<<th12::captureBossHud()<<",\"name\":"<<th12::bossHud.name<<",\"shifted\":"<<th12::bossHud.shifted<<",\"stars\":[";
+  static std::string output;std::ostringstream out;out<<std::setprecision(9)<<"{\"hud\":"<<th12::captureBossHud()<<",\"name\":"<<th12::bossHud.name<<",\"shifted\":"<<th12::bossHud.shifted<<",\"stars\":[";
   for(int i=0;i<10;i++){if(i)out<<',';out<<th12::bossHud.stars[i];}
+  out<<"],\"digits\":[";
+  for(int i=0;i<2;i++){if(i)out<<',';const auto* n=th12::animationScene.find(th12::bossHud.timerDigits[i]);if(!n){out<<"null";continue;}const auto& s=n->vm.state();out<<"{\"sprite\":"<<s.sprite<<",\"primary\":"<<s.primary<<",\"scale\":["<<s.sx<<','<<s.sy<<"],\"position\":["<<s.x<<','<<s.y<<','<<s.z<<"],\"flags\":"<<s.flags<<'}';}
   out<<"],\"events\":[";bool comma=false;
   for(auto event:th12::events){if(comma)out<<',';comma=true;out<<'['<<event[0]<<','<<event[1]<<','<<event[2]<<']';}
   out<<"]}";output=out.str();return output.c_str();

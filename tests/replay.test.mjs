@@ -84,17 +84,29 @@ function fixtureCore(){
 }
 test('replay session sends all17 native fields atomically before the core owns main birth',()=>{
   const replay=parseReplay(literalReplay()),stage=replay.stages[0],before=structuredClone(stage),core=fixtureCore();
-  startReplayStage(core,replay,stage);
+  startReplayStage(core,replay,{...stage,spellTimes:undefined});
   assert.deepEqual(core.calls,[['malloc',68],['start',2,1,1,0x1234,[768,49920,-143,-1,-3,123456,12345000,-2,-4,1,2,0,42,314,3,1,9876]],['free',64]]);
   assert.deepEqual(stage,before,'original stage record is read-only');
 });
 test('missing or invalid atomic replay initialization fails explicitly and frees the allocated header',()=>{
-  const replay=parseReplay(literalReplay()),stage=replay.stages[0];
+  const replay=parseReplay(literalReplay()),stage={...replay.stages[0],spellTimes:undefined};
   const old=fixtureCore();delete old._th12_start_replay;assert.throws(()=>startReplayStage(old,replay,stage),/更新核心/);assert.deepEqual(old.calls,[]);
   const failed=fixtureCore();failed._th12_start_replay=()=>0;assert.throws(()=>startReplayStage(failed,replay,stage),/初始化失败/);assert.deepEqual(failed.calls,[['malloc',68],['free',64]]);
   const escaped=fixtureCore();escaped._malloc=()=>250;assert.throws(()=>startReplayStage(escaped,replay,stage),/分配失败/);assert.deepEqual(escaped.calls,[['free',250]]);
   for(const invalid of[{...stage,seed:-1},{...stage,initial:{...stage.initial,power:1.5}},
     {...stage,initial:{...stage.initial,nativeGlobals:[0,0,0]}},{...stage,initial:{...stage.initial,ufoColors:[0,0]}}]){
     const core=fixtureCore();assert.throws(()=>startReplayStage(core,replay,invalid),/无效/);assert.deepEqual(core.calls,[]);
+  }
+});
+
+test('recorded spell times stay bounded in the native header and extend replay startup without changing input',()=>{
+  const replay=parseReplay(literalReplay()),stage=replay.stages[0],core=fixtureCore();
+  const data=new DataView(replay.data.buffer);assert.equal(stage.spellTimes.length,21);
+  assert.deepEqual(stage.spellTimes,Array.from({length:21},(_,i)=>data.getInt32(stage.offset+76+i*4,true)));
+  const before=replay.input(stage.number,0);startReplayStage(core,replay,stage);
+  const start=core.calls.find(call=>call[0]==='start');assert.equal(start.at(-1).length,38);
+  assert.deepEqual(start.at(-1).slice(17),stage.spellTimes);assert.deepEqual(replay.input(stage.number,0),before);
+  for(const spellTimes of [[],Array(22).fill(0),Array(21).fill(.5),Array(21).fill(0x80000000)]){
+    const c=fixtureCore();assert.throws(()=>startReplayStage(c,replay,{...stage,spellTimes}),/符卡时间/);assert.deepEqual(c.calls,[]);
   }
 });

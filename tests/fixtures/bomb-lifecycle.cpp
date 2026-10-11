@@ -1,11 +1,12 @@
+#include "../../src/game/CameraEffects.hpp"
 #include "../../src/game/GameSession.hpp"
 #include "../../src/game/GameState.hpp"
-#include "../../src/game/CameraEffects.hpp"
 using namespace th12;
 namespace {
 float values[17];
+float leafBirth[5];
 uint64_t mainKey = 0;
-}
+} // namespace
 extern "C" {
 void bomb_prepare(int c, int s) {
   startGame(c, s, 1, 42);
@@ -21,14 +22,25 @@ void bomb_phase(int start) {
   syncBombAnimations();
   if (start) {
     startPlayerBomb();
-    mainKey = playerBomb.primaryVisuals.empty() ? 0 :
-              0x700000000ull + playerBomb.primaryVisuals.front().id;
+    mainKey = playerBomb.primaryVisuals.empty()
+                  ? 0
+                  : 0x700000000ull + playerBomb.primaryVisuals.front().id;
     if (playerBomb.loadout == 0)
       mainKey = 0x600000000ull + playerBomb.reimuAEmitter.id;
     else if (playerBomb.loadout == 3)
       mainKey = 0x700000000ull + playerBomb.marisaB.id;
   }
+  const auto leafCount = playerBomb.leaves.size();
   tickBomb();
+  leafBirth[0] = playerBomb.leaves.size() > leafCount;
+  if (leafBirth[0]) {
+    const auto& leaf = playerBomb.leaves.back();
+    leafBirth[1] = leaf.points[0].x;
+    leafBirth[2] = leaf.points[0].y;
+    const auto* node = animationScene.find(0x600000000ull + leaf.id);
+    leafBirth[3] = node && node->customGeometry;
+    leafBirth[4] = node ? float(node->vm.state().layer) : -1;
+  }
   animationScene.tickPrimary();
   animationScene.collect();
   buildPlayerBombTrails();
@@ -56,5 +68,10 @@ const float* bomb_snapshot() {
   values[16] = backdrop ? float(backdrop->vm.state().secondary >> 24) : -1;
   return values;
 }
-void bomb_remove_main() { animationScene.remove(mainKey); }
+void bomb_remove_main() {
+  animationScene.remove(mainKey);
+}
+const float* bomb_leaf_birth() {
+  return leafBirth;
+}
 }

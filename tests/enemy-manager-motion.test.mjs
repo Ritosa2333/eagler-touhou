@@ -1,3 +1,4 @@
+import {emscripten} from '../scripts/toolchain.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -6,8 +7,8 @@ import {spawnSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 import {runtimeSources} from '../scripts/runtime-sources.mjs';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root);
-const python=path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe');
-const compiler=path.join(workspace,'tools/emsdk/upstream/emscripten/emcc.py');
+const python=emscripten(root).python;
+const compiler=emscripten(root).compiler;
 const directory=path.join(root,'artifacts/enemy-manager-motion-tests');
 fs.mkdirSync(directory,{recursive:true});
 const output=path.join(directory,'core.mjs');
@@ -17,7 +18,7 @@ const compile=spawnSync(python,[compiler,...runtimeSources(root),
   'tests/native/enemy_manager_motion.cpp','-std=c++20','-O2','-ffp-contract=off',
   '-o',output,'-sMODULARIZE=1','-sEXPORT_ES6=1','-sENVIRONMENT=node',
   '-sINITIAL_MEMORY=33554432','-sALLOW_MEMORY_GROWTH=1',
-  '-sEXPORTED_FUNCTIONS='+JSON.stringify(['_setup','_restore_position','_tick','_combine','_snapshot','_bounds','_set_position','_quantized']),
+  '-sEXPORTED_FUNCTIONS='+JSON.stringify(['_setup','_restore_position','_tick','_combine','_snapshot','_bounds','_set_position','_quantized','_interpolate_circle']),
   '-sEXPORTED_RUNTIME_METHODS='+JSON.stringify(['HEAPF32'])],
   {cwd:root,encoding:'utf8',env:{...process.env,
     EM_CACHE:path.join(root,'artifacts/emscripten-cache'),EMSDK_PYTHON:python,
@@ -60,6 +61,21 @@ function exactPosition(c,state,label){
   assert.deepEqual(data.slice(9,11),state.relative.slice(0,2),label+' relative');
   assert.deepEqual(data.slice(18,20),state.position.slice(0,2),label+' combined');
 }
+
+test('actual309/311 enables circular motion and synchronously combines current geometry',async()=>{
+  const native=JSON.parse(fs.readFileSync(new URL('fixtures/ecl-circle-interpolation-sync-original.json',import.meta.url)));
+  assert.equal(native.originalExeSha256,'99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417');
+  const c=await create();
+  for(const row of native.records){
+    const relative=Number(row.relative),m=row.before[row.relative?'relative':'absolute'];
+    c._setup(relative,0,0,0,0,0,0,0,0,0,0);
+    c._interpolate_circle(relative,m.flags&1,...row.before.combined.position.slice(0,2),m.angle,m.radius);
+    const actual=values(c),selected=row.relative?9:0;
+    assert.deepEqual(actual.slice(18,20),row.after.combined.position.slice(0,2),JSON.stringify(row.before)+' combined');
+    assert.deepEqual(actual.slice(selected,selected+2),row.after[row.relative?'relative':'absolute'].position.slice(0,2));
+    assert.equal(actual[selected+8],row.after[row.relative?'relative':'absolute'].flags&1);
+  }
+});
 test('retail float quantization boundaries demonstrate that a second floor can move a component',async()=>{
   const c=await create();
   for(const row of floor.quantizationCases){

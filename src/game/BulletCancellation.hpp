@@ -32,7 +32,7 @@ inline bool viewportOverlaps(float x, float y, float width, float height) {
   return right >= -192 && left <= 192 && bottom >= 0 && top <= 448;
 }
 } // namespace bullet_cancellation
-void cancelHostileBullets();
+void cancelHostileBullets(bool respectCountdown = false);
 void clearHostileViewport(bool convert);
 void cancelHostileCircle(float x, float y, float radius, bool convert,
                          bool respectCountdown = false);

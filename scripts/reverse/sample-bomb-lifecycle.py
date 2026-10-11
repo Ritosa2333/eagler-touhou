@@ -14,6 +14,7 @@ parser.add_argument('--visual-fields', action='store_true')
 parser.add_argument('--audit-other-loadouts', action='store_true')
 parser.add_argument('--mesh-enabled', action='store_true')
 parser.add_argument('--tracked-main', action='store_true')
+parser.add_argument('--leaf-positions', action='store_true')
 arguments = parser.parse_args()
 records = []
 names = ['reimu-a', 'reimu-b', 'marisa-b', 'sanae-a'] if arguments.audit_other_loadouts else ['sanae-b', 'marisa-a']
@@ -75,11 +76,17 @@ for name in names:
         elif address == 0x452a60:
             events.append({'frame': frame, 'phase': phase, 'kind': 'cameraConstructor',
                            'caller': hex(get(sp, 'I')[0]), 'arguments': list(get(sp + 8, '6i'))})
+        elif address == 0x4105e0 and arguments.leaf_positions:
+            pointer = mu.reg_read(UC_X86_REG_EDX)
+            events.append({'frame': frame, 'phase': phase, 'kind': 'leafBirth',
+                           'position': list(get(pointer, '3f'))})
     for address in [0x454d10, 0x464440, 0x40cd00, 0x4285f0, 0x40caa0, 0x4286f0, 0x452a60]:
         mu.hook_add(UC_HOOK_CODE, observe, begin=address, end=address)
     if arguments.visual_fields:
         for address in [0x407297, 0x4072c5]:
             mu.hook_add(UC_HOOK_CODE, observe, begin=address, end=address)
+    if arguments.leaf_positions:
+        mu.hook_add(UC_HOOK_CODE, observe, begin=0x4105e0, end=0x4105e0)
     def cameras():
         rows, node = [], get(SCHEDULER + 0x18, 'I')[0]
         while node:
@@ -114,6 +121,7 @@ for name in names:
         result = {'id': get(pointer, 'I')[0], 'script': get(pointer + 0x3ea, 'H')[0],
                   'clock': get(pointer + 0x6c, 'i')[0], 'flags': get(pointer + 0x47c, 'I')[0]}
         if arguments.visual_fields: result.update(colors(pointer))
+        if arguments.leaf_positions: result['scale'] = list(get(pointer + 0x40, '2f'))
         return result
     tracked_main = 0
     def snap():
@@ -155,7 +163,8 @@ for name in names:
                      'actual Bomb17 then PrimaryANM27; original constructors/Leaf callbacks and game RNG'],
         'initialSeed': 42, 'starts': [0, 350], 'frames': frames, 'events': events,
         'resourceNames': list(native['resource_by_name'])})
-    output = ROOT / ('artifacts/reverse/bomb-lifecycle-other-mesh-tracked-original.json' if arguments.audit_other_loadouts and arguments.mesh_enabled and arguments.tracked_main
+    output = ROOT / ('artifacts/reverse/bomb-lifecycle-leaf-positions-original.json' if arguments.leaf_positions
+                     else 'artifacts/reverse/bomb-lifecycle-other-mesh-tracked-original.json' if arguments.audit_other_loadouts and arguments.mesh_enabled and arguments.tracked_main
                      else 'artifacts/reverse/bomb-lifecycle-other-mesh-original.json' if arguments.audit_other_loadouts and arguments.mesh_enabled
                      else 'artifacts/reverse/bomb-lifecycle-other-loadouts-original.json' if arguments.audit_other_loadouts
                      else 'artifacts/reverse/bomb-lifecycle-visual-original.json' if arguments.visual_fields

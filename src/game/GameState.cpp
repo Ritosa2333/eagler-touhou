@@ -50,5 +50,6 @@ std::array<int, 4> replayStageGlobals{};
 uint64_t playerFocusAnimation = 0;
 int oracleFixtureFlags = 0; // Explicit partial-world diagnostics only; normal runtime stays zero.
 u32 nextEnemyId = 1, nextProjectileId = 1, nextItemId = 1;
+u32 lastSpawnedEnemyId = 0;
 
 } // namespace th12

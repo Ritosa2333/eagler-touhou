@@ -1,3 +1,4 @@
+import {emscripten} from '../scripts/toolchain.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -7,8 +8,8 @@ import {pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
 const root=path.resolve(import.meta.dirname,'..'),workspace=path.dirname(root);
 const directory=path.join(root,'artifacts/anm-external-scale');fs.mkdirSync(directory,{recursive:true});
-const python=path.join(workspace,'tools/emsdk/python/3.13.3_64bit/python.exe');
-const compiler=path.join(workspace,'tools/emsdk/upstream/emscripten/emcc.py');
+const python=emscripten(root).python;
+const compiler=emscripten(root).compiler;
 const output=path.join(directory,'core.mjs');
 const names=['malloc','free','external_load','external_begin','external_interrupt','external_scale','external_tick','external_snapshot'];
 const result=spawnSync(python,[compiler,'tests/fixtures/anm-external-scale.cpp','src/game/AnmLogic.cpp',
