@@ -18,4 +18,4 @@ operator when a required value is unknown.
 
 Deployment is structurally complete only after checksums, `nginx -t` and the
 applicable cutover verifier pass. Netplay additionally requires both Relay
-probes and the verified WSS endpoint in the deployed Host Manifest.
+probes and the verified WSS endpoint in the deployed Site Manifest.

@@ -64,6 +64,7 @@
     "test:package-installer": "npm run test:package-store:browser",
     "test:webkit": "node tests/browser/test-playwright-webkit-gate.mjs",
     "test:pwa:browser": "python tests/browser/test-pwa-boot.py",
+    "test:app-shell-retirement:browser": "node tests/browser/test-app-shell-retirement.mjs",
     "test:import-update:browser": "python tests/browser/test-import-update.py",
     "test:card-filter:browser": "python tests/test-card-filter-browser.py",
     "test:edge-drawers:browser": "python tests/browser/test-edge-drawers.py",
@@ -80,6 +81,7 @@
     "test:offline-reload:browser": "python tests/test-offline-reload-browser.py",
     "test:legacy-mount-retirement:browser": "python tests/test-legacy-mount-retirement-browser.py",
     "test:mp-runtime-exit:browser": "python tests/test-mp-runtime-exit-room.py",
+    "test:th11mp-launcher:browser": "npm run build:launcher && python tests/browser/test-th11mp-launcher.py",
     "test:th07mp-launch:browser": "python tests/test-th07mp-launch.py",
     "test:th11mp:browser": "python tests/browser/test-th11mp-launcher.py",
     "test:th07mp-ui:browser": "python tests/test-th07mp-ui.py",
@@ -111,21 +113,41 @@
     "test:th06-netplay-launcher:browser": "npm run build:launcher && python tests/test-th06-netplay-launcher-browser.py",
     "test:server": "node tests/test-server.mjs",
     "check": "node scripts/check.mjs",
-    "check:workspace": "node scripts/check.mjs --workspace"
+    "check:workspace": "node scripts/check.mjs --workspace",
+    "typecheck:ui-rewrite": "tsc -p tsconfig.ui-rewrite.json",
+    "test:ui-rewrite": "node scripts/ui-rewrite/check-runtime.mjs && node --test --test-concurrency=1 tests/react-main/*.test.mjs && node tests/react-main/site-notice.run.mjs",
+    "build:ui-rewrite": "react-router build",
+    "dev:ui-rewrite": "react-router dev --host 127.0.0.1",
+    "typecheck:ui-rewrite:tools": "tsc -p tsconfig.ui-rewrite.tools.json"
   },
   "dependencies": {
     "fflate": "0.8.3",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-router": "8.4.0",
     "webaudio-tinysynth": "1.1.3",
     "ws": "^8.18.3"
   },
   "devDependencies": {
+    "@react-router/dev": "8.4.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "acorn": "8.18.0",
     "esbuild": "0.28.2",
+    "fake-indexeddb": "6.2.5",
+    "jsdom": "30.1.2",
     "lighthouse": "13.4.1",
     "marked": "18.0.12",
     "parse5": "8.0.1",
+    "postcss": "8.5.29",
     "puppeteer-core": "25.10.0",
     "typescript": "7.0.2",
+    "vite": "8.3.2",
     "workbox-build": "^7.4.1"
+  },
+  "overrides": {
+    "tldts-icann": {
+      "tldts-core": "7.4.11"
+    }
   }
 }

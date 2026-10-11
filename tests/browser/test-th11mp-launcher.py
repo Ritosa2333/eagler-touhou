@@ -1,7 +1,7 @@
 """Real main Launcher + production TH11 MP + shared Relay + prepared retail DATA.
 
 This gate uses the public product card, multiplayer directory, room controls and
-native Replay menu. It never substitutes a Host Manifest, Runtime or DATA. The
+native Replay menu. It never substitutes a Site Manifest, Runtime or DATA. The
 declared resources are fetched from the real HTTP server and hash checked before
 launch; every browser subsequently uses that server without request interception.
 
@@ -295,7 +295,7 @@ def main() -> int:
         "expectedWasm": a.expected_wasm, "wasm": wasm, "runtimeManifest": manifest,
         "runtimePackage": str(package), "runtimeInventorySha256": digest((package / "runtime-files.json").read_bytes()),
         "data": data_identity, "font": str(font), "unicodeFont": str(unicode_font),
-        "resourceDelivery": "Original Host Manifest URLs and real HTTP server; no browser request interception",
+        "resourceDelivery": "Original Site Manifest URLs and real HTTP server; no browser request interception",
         "startupOnly": a.startup_only, "fullAcceptance": not a.startup_only and not a.prepare_only,
         "errors": [], "console": [], "httpFailures": [], "decisions": [], "screenshots": [],
         "httpVerifiedResources": [], "networkRequests": [], "requestFailures": [],
@@ -523,11 +523,11 @@ def main() -> int:
 
         register_browser(browser, "P1" if a.browser_isolation == "process" else "shared")
         seed = browser.new_context(service_workers="block")
-        host_manifest = seed.request.get(urljoin(url, "host-manifest.json")).json()
+        host_manifest = seed.request.get(urljoin(url, "site-manifest.json")).json()
         package_descriptor = seed.request.get(urljoin(url, "th11.package.json")).json() if not host_manifest["games"]["th11"]["gameData"].get("source") else None
         seed.close()
         game = host_manifest["games"]["th11"]
-        assert game.get("multiplayerRuntime"), "main Host Manifest must declare TH11 MP; no test fallback is allowed"
+        assert game.get("multiplayerRuntime"), "main Site Manifest must declare TH11 MP; no test fallback is allowed"
         assert host_manifest["shared"].get("netplayRelay") == relay_url, host_manifest["shared"]
         assert game["gameData"]["bytes"] == data_identity["bytes"]
         assert game["gameData"]["sha256"] == data_identity["sha256"]

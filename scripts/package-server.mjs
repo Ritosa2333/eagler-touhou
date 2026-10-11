@@ -1,3 +1,4 @@
+import {normalizeSiteManifestArguments, readCompatibleSiteManifest, writeLegacySiteManifestAlias} from '../compat/site-manifest.mjs';
 import { freezeHostRuntimes } from "../lib/runtime-generations.mjs";
 import { createHash, randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
@@ -12,7 +13,7 @@ import {
 } from "../package/package-descriptor.mjs";
 import { staticLanguagePackPath } from "../server/thcrap-static-pack.mjs";
 import { RELEASE_CATALOG_FILE, RELEASE_CATALOG_SCHEMA, validateReleaseCatalog } from "../lib/contracts/release-catalog.mjs";
-import { HOST_MANIFEST_FILE, HOST_MANIFEST_SCHEMA, validateHostManifest } from "../lib/contracts/host-manifest.mjs";
+import { SITE_MANIFEST_FILE, SITE_MANIFEST_SCHEMA, validateSiteManifest } from "../lib/contracts/site-manifest.mjs";
 import {
   HOST_RUNTIME_FEATURE_IDS,
   PRODUCT_FEATURE_POLICY,
@@ -28,12 +29,14 @@ import { assemblePreloadData } from "../lib/preload-data-assembler.mjs";
 import { assertRuntimeDataShell } from "../lib/runtime-data-provider.mjs";
 import { assertRuntimeProtocolSources } from "../lib/runtime-protocol-shell.mjs";
 import { buildAppShell } from "../lib/app-shell-build.mjs";
+import { writeAppShellRetirementWorker } from "../lib/app-shell-retirement.mjs";
 import { deploymentAppShellPatterns, runtimeAppShellPaths } from "../lib/app-shell-policy.mjs";
 import { sourceIdentity, verifyReleaseManifest, writeReleaseManifest, fileSetIdentity } from "../lib/release-manifest.mjs";
 import { verifyRuntimeRelease, runtimeFileNames, runtimeStem } from "../lib/runtime-release.mjs";
 import { PRODUCT_CONTENT } from "../lib/content-definition.mjs";
 import { WORKSPACE_REPOSITORIES, workspacePath, workspaceRoot } from "../lib/workspace-layout.mjs";
-import { FRONTEND_PACKAGE_FILES, hostArtworkFiles, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
+import { FRONTEND_PACKAGE_FILES, REACT_FRONTEND_ARTIFACT, hostArtworkFiles, resolveFrontendPackageSource } from "../lib/frontend-manifest.mjs";
+import { resolveRuntimeGenerationWorkerSource } from "../lib/contracts-build.mjs";
 import { normalizeSiteUrl, writeSiteMetadata } from "../lib/site-metadata.mjs";
 import { PRIVATE_FRONTEND_ASSETS, privateFrontendAssetSource } from "../lib/private-frontend-assets.mjs";
 
@@ -43,12 +46,26 @@ const args = Object.fromEntries(process.argv.slice(2).map(value => {
   if (!value.startsWith("--") || split < 3) throw new Error(`invalid argument: ${value}`);
   return [value.slice(2, split), value.slice(split + 1)];
 }));
+normalizeSiteManifestArguments(args);
 const required = name => {
   if (!args[name]) throw new Error(`missing --${name}=PATH`);
   return resolve(args[name]);
 };
 const output = required("output");
 const siteUrl = normalizeSiteUrl(args["site-url"]);
+// React remains an explicit artifact selection. A build's isolated worker
+// permission is never widened to another public origin or mount by packaging.
+if (REACT_FRONTEND_ARTIFACT) {
+  const selectedSite = siteUrl ? new URL(siteUrl) : null;
+  if (selectedSite && selectedSite.pathname !== REACT_FRONTEND_ARTIFACT.mountPath) {
+    throw new Error("site URL does not match the React frontend artifact mount");
+  }
+  if (REACT_FRONTEND_ARTIFACT.appShell && (!selectedSite ||
+      selectedSite.origin !== REACT_FRONTEND_ARTIFACT.appShell.origin ||
+      selectedSite.pathname !== REACT_FRONTEND_ARTIFACT.appShell.mountPath)) {
+    throw new Error("React App Shell packaging requires --site-url matching its exact isolated origin and mount");
+  }
+}
 const temporaryRoot = resolve(dirname(output), ".tmp");
 const staging = resolve(temporaryRoot, `${basename(output)}.staging-${randomUUID()}`);
 const workspace = workspaceRoot();
@@ -305,7 +322,7 @@ function staticPackPath(value, game) {
 }
 
 // Language pack publication is shared by every Runtime layout: packs are
-// copied under games/<game>/language/ and surfaced through the Host Manifest
+// copied under games/<game>/language/ and surfaced through the Site Manifest
 // languages/languageOptions pair plus the Package Descriptor language
 // component.
 async function publishLanguagePacks(game, entry, gameRoot) {
@@ -513,31 +530,31 @@ await mkdir(temporaryRoot, { recursive: true });
 await rm(staging, { recursive: true, force: true });
 try {
 const hostUiAssets = await copyFrontend();
-const hostManifestPath = args["host-manifest"] ? resolve(args["host-manifest"]) : null;
+const hostManifestPath = args["site-manifest"] ? resolve(args["site-manifest"]) : null;
 if (!hostedResources && !hostManifestPath) {
-  throw new Error(`${serverResourceMode} packaging requires an explicit --host-manifest from a verified hosted build`);
+  throw new Error(`${serverResourceMode} packaging requires an explicit --site-manifest from a verified hosted build`);
 }
 const manifest = hostManifestPath
-  ? validateHostManifest(JSON.parse(await readFile(hostManifestPath, "utf8")))
+  ? validateSiteManifest(readCompatibleSiteManifest(JSON.parse(await readFile(hostManifestPath, "utf8"))))
   : createPublicationHostSeed(buildProfile);
 if (externalResources && manifest.shared.resourceMode !== RESOURCE_MODE_HOSTED) {
-  throw new Error("external packaging requires a Host Manifest from a hosted resource publication");
+  throw new Error("external packaging requires a Site Manifest from a hosted resource publication");
 }
 if (manifest.protocol !== "eagler-touhou/1" || !manifest.games || typeof manifest.games !== "object") {
-  throw new Error(`invalid Host Manifest input: ${hostManifestPath || "generated publication Host seed"}`);
+  throw new Error(`invalid Site Manifest input: ${hostManifestPath || "generated publication Host seed"}`);
 }
 if (manifest.profile === "web-development") {
-  throw new Error("development Host Manifest cannot be used as publication input");
+  throw new Error("development Site Manifest cannot be used as publication input");
 }
-assertProductEntriesRegistered(manifest.games, "Host Manifest games");
+assertProductEntriesRegistered(manifest.games, "Site Manifest games");
 if (gameIds.some(game => !manifest.games[game])) {
-  throw new Error(`Host Manifest is missing selected adapters: ${hostManifestPath || "generated publication Host seed"}`);
+  throw new Error(`Site Manifest is missing selected adapters: ${hostManifestPath || "generated publication Host seed"}`);
 }
 let externalRecoveryProvenance = null;
 if (externalRecoveryRequest) {
   const sourceRoot = dirname(hostManifestPath);
-  if (resolve(sourceRoot, HOST_MANIFEST_FILE) !== hostManifestPath) {
-    throw new Error("External recovery provenance requires the Hosted root host-manifest.json");
+  if (resolve(sourceRoot, SITE_MANIFEST_FILE) !== hostManifestPath) {
+    throw new Error("External recovery provenance requires the Hosted root site-manifest.json");
   }
   const sourceRelease = await verifyReleaseManifest(sourceRoot);
   const sourceDeployment = JSON.parse(await readFile(resolve(sourceRoot, "deployment.json"), "utf8"));
@@ -568,7 +585,7 @@ if (externalRecoveryRequest) {
   };
 }
 manifest.games = selectProductEntries(manifest.games, gameIds);
-manifest.schema = HOST_MANIFEST_SCHEMA;
+manifest.schema = SITE_MANIFEST_SCHEMA;
 manifest.profile = buildProfile;
 manifest.shared = {
   resourceMode: serverResourceMode,
@@ -901,17 +918,23 @@ const releaseCatalog = validateReleaseCatalog({
 // Freeze only final program bytes after DATA assembly; game/package identities
 // are unchanged. Preserve older immutable directories when replacing a site.
 await freezeHostRuntimes(staging, manifest, { previousSite: args["previous-site"] ? resolve(args["previous-site"]) : output });
-validateHostManifest(manifest);
-await writeFile(resolve(staging, HOST_MANIFEST_FILE), `${JSON.stringify(manifest, null, 2)}\n`);
+validateSiteManifest(manifest);
+await writeFile(resolve(staging, SITE_MANIFEST_FILE), `${JSON.stringify(manifest, null, 2)}\n`);
+await writeLegacySiteManifestAlias(staging, manifest);
 await writeFile(resolve(staging, RELEASE_CATALOG_FILE), `${JSON.stringify(releaseCatalog, null, 2)}\n`);
-const appShellBuild = await buildAppShell({
+const appShellBuild = REACT_FRONTEND_ARTIFACT && !REACT_FRONTEND_ARTIFACT.appShell ? null : await buildAppShell({
   quiet: true,
   globDirectory: staging,
   swDest: resolve(staging, "app-shell-sw.js"),
   additionalGlobPatterns: deploymentAppShellPatterns({ games: gameIds, hostArtwork: hostUiAssets }),
   deferredPaths: runtimeAppShellPaths(manifest),
   deferredPathPrefixes: ["runtime/"],
+  ...(REACT_FRONTEND_ARTIFACT ? {
+    shellFiles: REACT_FRONTEND_ARTIFACT.shellFiles,
+    workerContractSource: await readFile(await resolveRuntimeGenerationWorkerSource(), "utf8"),
+  } : {}),
 });
+if (!appShellBuild) await writeAppShellRetirementWorker(resolve(staging, "app-shell-sw.js"));
 
 const inventory = [];
 for (const path of (await walk(staging)).sort()) {
@@ -931,7 +954,14 @@ const deployment = {
   releaseManifest: "release-manifest.json",
   generatedAt: new Date().toISOString(),
   resourceMode: serverResourceMode,
-  appShell: appShellBuild.contract,
+  appShell: appShellBuild?.contract ?? null,
+  ...(REACT_FRONTEND_ARTIFACT ? { frontend: {
+    kind: "react",
+    mountPath: REACT_FRONTEND_ARTIFACT.mountPath,
+    // Validation inputs are covered by Release Manifest's deployment hash,
+    // rather than served as public .vite build metadata.
+    validationMetadata: REACT_FRONTEND_ARTIFACT.metadata,
+  } } : {}),
   music: serverResourceMode === RESOURCE_MODE_HOSTED ? [...modes].sort() : [],
   files: inventory,
 };
@@ -964,6 +994,7 @@ await writeReleaseManifest(staging, {
   sources,
   parameters: { authority: buildAuthority, resourceMode: serverResourceMode, music: deployment.music,
     runtimeBuildProvenance: runtimeRelease ? "verified-runtime-release" : "not-verified-by-packager",
+    ...(REACT_FRONTEND_ARTIFACT ? { frontend: { kind: "react", mountPath: REACT_FRONTEND_ARTIFACT.mountPath } } : {}),
     ...(externalRecoveryProvenance ? { externalRecovery: externalRecoveryProvenance } : {}) },
 });
 await rm(output, { recursive: true, force: true });

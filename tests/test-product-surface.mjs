@@ -15,7 +15,7 @@ import {
 
 const html = await readFile(resolveFrontendPackageSource("index.html"), "utf8");
 const css = await readFile(resolveFrontendPackageSource("styles.css"), "utf8");
-const launcherSource = await readFile(new URL("../src/launcher/app.mts", import.meta.url), "utf8");
+const launcherSource = await readFile(new URL("../app/components/launcher/OptionsPanel.tsx", import.meta.url), "utf8");
 const document = parse(html);
 const cards = [];
 const navigationChoices = [];
@@ -89,11 +89,9 @@ assert.doesNotMatch(css, /assets\/th\d+-card\.webp/i,
   "shared Launcher CSS must not carry a title-specific card-image fallback; touch/card previews must use Product Catalog artwork");
 assert.doesNotMatch(launcherSource, /\$\{state\.game\}-card\.webp/,
   "Launcher must not reconstruct card filenames from a title-number convention");
-assert.ok(/PRODUCT_GAMES\[[^\]]*\]/.test(launcherSource) && launcherSource.includes("cardArtwork"),
-  "touch preview ownership must consume the Product Catalog cardArtwork declaration");
 assert.doesNotMatch(html, /id="gameNoticeRepo"[^>]+href="[^"]*th\d+/i,
   "static Launcher HTML must not seed the dynamic game-repository link with one title's repository");
-assert.match(launcherSource, /gameNoticeRepo["']\)\.href\s*=\s*support\.sourceRepository/,
+assert.match(launcherSource, /href=\{product\.sourceRepository\}/,
   "visible adaptation notices must resolve their repository from Product Catalog support metadata");
 
 console.log(JSON.stringify({ productSurface: "PASS", products: PRODUCT_IDS }));

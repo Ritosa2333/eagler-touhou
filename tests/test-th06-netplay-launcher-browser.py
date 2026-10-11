@@ -10,6 +10,8 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
+from support.launcher_target import launcher_static_server_command
+
 
 PROJECT = Path(__file__).resolve().parents[1]
 WORKSPACE = PROJECT.parent
@@ -54,8 +56,8 @@ def wait_relay(process: subprocess.Popen[str], timeout: float = 10.0) -> None:
 
 def development_manifest(relay_url: str) -> dict:
     source = """
-import { createDevelopmentHostManifest } from './lib/development-host-manifest.mjs';
-console.log(JSON.stringify(await createDevelopmentHostManifest()));
+import { createDevelopmentSiteManifest } from './lib/development-site-manifest.mjs';
+console.log(JSON.stringify(await createDevelopmentSiteManifest()));
 """
     result = subprocess.run(
         ["node", "--input-type=module", "-e", source],
@@ -72,7 +74,7 @@ console.log(JSON.stringify(await createDevelopmentHostManifest()));
 def install_manifest_routes(context, manifest: dict) -> None:
     body = json.dumps(manifest)
     context.route(
-        "**/host-manifest.json",
+        "**/site-manifest.json",
         lambda route: route.fulfill(status=200, content_type="application/json", body=body),
     )
     context.route(
@@ -137,7 +139,7 @@ def main() -> None:
         "TH07_RELAY_JITTER_MS": "5",
     })
     http = subprocess.Popen(
-        [sys.executable, "-m", "http.server", str(http_port), "--bind", "127.0.0.1"],
+        launcher_static_server_command(PROJECT, http_port, [sys.executable, "-m", "http.server", str(http_port), "--bind", "127.0.0.1"]),
         cwd=WORKSPACE,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,

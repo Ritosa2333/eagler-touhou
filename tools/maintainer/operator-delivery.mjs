@@ -12,7 +12,7 @@ const REQUIRED_OPERATOR_FILES = Object.freeze([
   "README.md",
   "operator-profile.json",
   "verification-report.json",
-  "site/host-manifest.json",
+  "site/site-manifest.json",
   "site/deployment.json",
   "site/release-manifest.json",
   "site/checksums.txt",
@@ -69,7 +69,7 @@ export function validateOperatorProfile(profile) {
 
 export function assertHostedSiteMatchesOperatorProfile(manifest, profileInput) {
   const profile = validateOperatorProfile(profileInput);
-  if (manifest?.schema !== "eagler-touhou/host-manifest/1" || manifest.shared?.resourceMode !== profile.resourceMode) {
+  if (manifest?.schema !== "eagler-touhou/site-manifest/1" || manifest.shared?.resourceMode !== profile.resourceMode) {
     throw new Error("Operator input is not a Hosted Eagler Touhou site");
   }
   const fallback = manifest.shared?.gameDataFallback;
@@ -185,7 +185,7 @@ export async function verifyOperatorDelivery(root) {
   if (await readFile(resolve(target, "operator-checksums.txt"), "utf8") !== expectedChecksums) {
     throw new Error("Operator checksum list mismatch");
   }
-  const siteManifest = JSON.parse(await readFile(resolve(target, "site", "host-manifest.json"), "utf8"));
+  const siteManifest = JSON.parse(await readFile(resolve(target, "site", "site-manifest.json"), "utf8"));
   assertHostedSiteMatchesOperatorProfile(siteManifest, profile);
   const siteRelease = await verifyReleaseManifest(resolve(target, "site"));
   if (siteRelease.releaseId !== identity.siteReleaseId) throw new Error("Operator Hosted site release identity mismatch");

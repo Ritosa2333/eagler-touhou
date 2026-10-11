@@ -408,7 +408,7 @@ def main() -> None:
     scratch = None
     if package_arg:
         # The development server only serves paths under the workspace root, and
-        # the Host Manifest carries a workspace-relative DATA source, so an
+        # the Site Manifest carries a workspace-relative DATA source, so an
         # extracted package must live inside the workspace (cleaned up below).
         scratch = WORKSPACE / "prepared" / f"th09mp-package-{uuid.uuid4().hex[:8]}"
         scratch.mkdir(parents=True)

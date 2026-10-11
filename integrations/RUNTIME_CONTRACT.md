@@ -25,7 +25,7 @@ arbitrary thcrap network requests:
 3. `scripts/prepare-th06-language-pack.mjs` produces a static language catalog
    and archives with byte/hash identity.
 4. Site/package assembly publishes only the language packs that were actually
-   prepared and selected. `host-manifest.json` exposes the selectable
+   prepared and selected. `site-manifest.json` exposes the selectable
    `languageOptions`; Package Descriptors may also carry installed language
    components.
 5. The Launcher obtains the selected archive from the Package Store or the

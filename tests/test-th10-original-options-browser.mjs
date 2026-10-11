@@ -101,7 +101,7 @@ try{
  // iframe). Reconstructing the SDL core inside an old instance is unsupported.
  const localizedPage=await browser.newPage();await localizedPage.goto(base);
  await localizedPage.evaluate(async()=>{
-  const manifest=await (await fetch('/host-manifest.json')).json();
+  const manifest=await (await fetch('/site-manifest.json')).json();
   const data=new URL(manifest.games.th10.gameData.source,location.href).href;
   window.__eaglerPrepareManagedRuntimeDataV1=async()=>({buffer:await (await fetch(data)).arrayBuffer()});
   const frame=document.createElement('iframe');frame.id='hintChineseRuntime';
@@ -111,7 +111,7 @@ try{
  await localizedPage.waitForFunction(()=>document.querySelector('#hintChineseRuntime')?.contentWindow?.__th10Runtime?.app===0,{timeout:60000});
  const localized=localizedPage.frames().find(frame=>frame.url().includes('th10.html'));
  const chinese=await localized.evaluate(async bytes=>{
-  const rt=window.__th10Runtime,manifest=await (await fetch('/host-manifest.json')).json();
+  const rt=window.__th10Runtime,manifest=await (await fetch('/site-manifest.json')).json();
   await rt.command({command:'configure',language:'lang_zh-hans',music:'none',options:{faithBarEnabled:true},sharedResources:[
    {path:'/msgothic.ttc',url:new URL(manifest.shared.vanillaFont,location.origin+'/').href},
    {path:'/unifont.otf',url:new URL(manifest.shared.unicodeFont,location.origin+'/').href},

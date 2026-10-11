@@ -85,6 +85,6 @@ for (const fallbackState of [
   { hostManifestAvailable: false, installedGeneration: null },
 ]) {
   assert.equal(canUseExistingInstallationAfterRemoteFailure(fallbackState), false,
-    "a first-install or unavailable Host Manifest must not claim that an existing installation will be used");
+    "a first-install or unavailable Site Manifest must not claim that an existing installation will be used");
 }
 console.log("Package Launcher policy contract: PASS (fetch cancellation is Browser-owned)");

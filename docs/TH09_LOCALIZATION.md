@@ -24,7 +24,7 @@ Run the existing `scripts/prepare-th06-language-pack.mjs` with `--game th09`,
 `--thmsg`, `--font-file`, `--output`, and (on Windows) `--temporary-root`
 arguments. The output has `catalog.json` and `language/lang_*.zip` files.
 Use that directory as `--th09-language-packs` when calling
-`scripts/package-server.mjs`; the Host Manifest's `languageOptions` and the
+`scripts/package-server.mjs`; the Site Manifest's `languageOptions` and the
 Package Descriptor's language component are generated there, not handwritten.
 To make a single web-importable resource-and-language ZIP, run
 `node scripts/package-offline-game.mjs <assembled-site> th09 <output.zip>`

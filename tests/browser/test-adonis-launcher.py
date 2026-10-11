@@ -17,7 +17,7 @@ report={'passed':False,'game':a.game,'scope':__doc__,'errors':[],'console':[],'h
 with sync_playwright() as pw:
  browser=pw.chromium.launch(headless=True,args=['--enable-unsafe-swiftshader','--disable-features=LocalNetworkAccessChecks']);pages=[]
  try:
-  seed_context=browser.new_context(service_workers='block');response=seed_context.request.get(a.url+'host-manifest.json')
+  seed_context=browser.new_context(service_workers='block');response=seed_context.request.get(a.url+'site-manifest.json')
   manifest=response.json();seed_context.close();manifest['shared']['netplayRelay']=a.relay_url
   external=manifest.get('shared',{}).get('resourceMode')=='external'
   if not external:
@@ -35,7 +35,7 @@ with sync_playwright() as pw:
   room=str(1000+int(uuid.uuid4().hex[:6],16)%9000)
   for seat in range(3):
    context=browser.new_context(service_workers='block',viewport={'width':1280,'height':900})
-   context.route('**/host-manifest.json*',lambda r:r.fulfill(status=200,content_type='application/json',body=json.dumps(manifest)))
+   context.route('**/site-manifest.json*',lambda r:r.fulfill(status=200,content_type='application/json',body=json.dumps(manifest)))
    context.route('**/release-catalog.json*',lambda r:r.fulfill(status=200,content_type='application/json',body=json.dumps(catalog)))
    context.route('**/'+a.game+'.package.json*',lambda r:r.fulfill(status=200,content_type='application/json',body=json.dumps(descriptor)))
    context.route('**/test-data/'+a.game,lambda r:r.fulfill(status=200,body=data))

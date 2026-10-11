@@ -25,7 +25,7 @@ The static product registry is the existing `PRODUCT_GAMES` in
 | Declaration | Direct consumer / meaning |
 | --- | --- |
 | title / number / subtitle / card artwork | Launcher catalog and Host artwork publication |
-| Runtime URL | default/development product bootstrap; concrete formal URLs come from Host Manifest |
+| Runtime URL | default/development product bootstrap; concrete formal URLs come from Site Manifest |
 | `storage.saveRoot` / `scoreFile` / `configFiles` | user-file bridge and score/config tools |
 | `features.thprac` / `focusHitbox` | static capability ceiling; Runtime/Host may reduce but not enable |
 | `features.languages` | publisher/language-pipeline capability ceiling |
@@ -54,7 +54,7 @@ There are three distinct levels for **optional/profile capability attestation**:
 
 1. **Product Catalog** - maximum capability the product supports.
 2. **Runtime Release** - what the concrete compiled Runtime build attests.
-3. **Host Manifest / installed Package** - what this deployment/browser can use.
+3. **Site Manifest / installed Package** - what this deployment/browser can use.
 
 A lower level may reduce an optional/profile capability but must not exceed the
 level above it. Required adapter capabilities are deliberately outside this
@@ -67,7 +67,7 @@ Examples:
 - a Runtime Release built without language support cannot become language-capable
   because a Host publishes a language pack;
 - a product with `musicCapabilities.midi: false` cannot expose MIDI merely
-  because the Host Manifest has the required `midi` object shape.
+  because the Site Manifest has the required `midi` object shape.
 
 `PRODUCT_FEATURE_POLICY` owns the mapping between these layers. Runtime Release
 attests every optional product feature, while Host `features` remains a
@@ -146,7 +146,7 @@ not those game IDs.
 
 ## Host and Package ownership
 
-Host Manifest owns concrete deployment state: Runtime URLs, DATA identity,
+Site Manifest owns concrete deployment state: Runtime URLs, DATA identity,
 published music/language resources and server capabilities.
 
 Package Descriptor owns installable files, their Runtime targets, optional
@@ -171,7 +171,7 @@ Music availability has the same layered model:
 - `musicCapabilities.midi` says whether this product adds optional MIDI;
 - required OGG/no-music behavior comes from the adapter contract, not a product
   opt-out;
-- Host Manifest says what is published;
+- Site Manifest says what is published;
 - Package Store says what is installed locally;
 - Launcher resolves the effective mode without title-name checks.
 

@@ -125,7 +125,7 @@ assert.equal(effective({
   remoteOggAdvertised: false,
   remoteRevision: "r1",
   installed: { ...installed, files: {} },
-}), "ogg-stream", "matching Release Catalog revision must preserve remote OGG capability even when Host Manifest does not duplicate music.ogg");
+}), "ogg-stream", "matching Release Catalog revision must preserve remote OGG capability even when Site Manifest does not duplicate music.ogg");
 assert.equal(effective({
   requested: "midi",
   explicit: false,

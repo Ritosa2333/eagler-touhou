@@ -11,7 +11,7 @@ const profile = validateOperatorProfile(JSON.parse(await readFile(
   resolve("tools/maintainer/operator-delivery/profile.json"), "utf8"
 )));
 const manifest = {
-  schema: "eagler-touhou/host-manifest/1",
+  schema: "eagler-touhou/site-manifest/1",
   shared: {
     resourceMode: "hosted",
     gameDataFallback: { url: "https://example.invalid/games" },
