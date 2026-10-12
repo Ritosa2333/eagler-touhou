@@ -19,7 +19,7 @@ import tempfile
 
 from PIL import Image
 
-from touhou_formats import extract_pbg3_entry, extract_pbg4_entry, extract_pbgz_entry, extract_pe_icon
+from touhou_formats import extract_pbg3_entry, extract_pbg4_entry, extract_pbgz_entry
 
 
 ARTWORK_BY_GAME = {
@@ -118,17 +118,6 @@ def _encode_site_icon(source: bytes, name: str) -> tuple[bytes, tuple[int, int]]
         raise ValueError(f"th06.ico: unsupported or corrupt site icon") from error
 
 
-def _find_th06_executable(root: Path) -> Path:
-    for name in ("th06.exe", "東方紅魔郷.exe", "紅魔郷.exe"):
-        candidate = root / name
-        if candidate.is_file():
-            return candidate
-    raise FileNotFoundError(
-        f"TH06 icon extraction requires th06.exe/東方紅魔郷.exe under {root}; "
-        "provide a custom th06.ico override if the executable is intentionally absent"
-    )
-
-
 def _extract_th06_title(root: Path) -> bytes:
     archive = root / "紅魔郷TL.DAT"
     if not archive.is_file():
@@ -190,13 +179,13 @@ def _extract_th15_title(root: Path, thdat: str, thanm: str) -> bytes:
 
 
 def _default_artwork(game: str, name: str, roots: dict[str, Path], thdat: str = "thdat", thanm: str = "thanm") -> bytes:
+    if name == "th06.ico":
+        return (Path(__file__).resolve().parent.parent / "th06.ico").read_bytes()
     root = roots.get(game)
     if root is None:
         raise FileNotFoundError(
             f"{game}: original directory is required unless every host artwork file is overridden"
         )
-    if name == "th06.ico":
-        return extract_pe_icon(_find_th06_executable(root))
     if name == "th06-card.webp":
         return _extract_th06_title(root)
     if name == "th07-card.webp":
@@ -277,7 +266,7 @@ def prepare_host_artwork(
                     source = "override-derived"
                 else:
                     raw = _default_artwork("th06", "th06.ico", roots, thdat, thanm)
-                    source = "original-extraction-derived"
+                    source = "site-brand-derived"
                 _validate_artwork("th06.ico", raw)
                 data, dimensions = _encode_site_icon(raw, name)
                 source_bytes = len(raw)
@@ -289,7 +278,7 @@ def prepare_host_artwork(
                     else:
                         data = raw
                         _validate_artwork(name, data)
-                    source = "original-extraction"
+                    source = "site-brand" if name == "th06.ico" else "original-extraction"
                     source_bytes = len(raw)
                 except (FileNotFoundError, ValueError, EOFError, OSError) as error:
                     entries.append({
