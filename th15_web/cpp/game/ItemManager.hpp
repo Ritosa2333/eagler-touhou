@@ -26,6 +26,7 @@ public:
     Slot* find(u32 id){return id>0&&id<=pool_size?&slots[id-1]:nullptr;}
     u32 spawn(i32 kind,const Vec3&,float angle,float speed);
     bool release(u32 id);bool falling(u32 id);
+    std::function<ItemFrameContext*(u32,const ItemState&)> multiplayer_context;
     bool update(ItemFrameContext&);
     bool draw(AnmRenderer&);
     u32 free_head(bool cancel)const noexcept{return free_slots[cancel].empty()?0:free_slots[cancel].back()+1;}

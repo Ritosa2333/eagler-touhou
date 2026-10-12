@@ -1,6 +1,7 @@
 #pragma once
 #include "BulletState.hpp"
 #include <vector>
+#include <functional>
 namespace th15 {
 struct BulletManagerHost:BulletSoundHost {virtual ~BulletManagerHost()=default;virtual BulletFrameHost& bullet(u32 slot)=0;virtual void prepare(u32 slot,BulletFrameContext& context)=0;virtual const std::string* failure()const noexcept{return nullptr;}};
 class BulletManager final:public BulletEmissionHost {
@@ -11,6 +12,7 @@ class BulletManager final:public BulletEmissionHost {
     u32 acquire()noexcept;
 public:
     static constexpr u32 capacity=2000,none=UINT32_MAX;
+    std::function<Vec3(const Vec3&)> multiplayer_target;
     BulletFrameContext context;Rng* random=nullptr;float minimum_distance_squared=0;bool world_paused=false;
     BulletCancellationRewards cancellation_rewards;
     std::string error;u32 visible_count=0;std::array<std::vector<u32>,6> draw_groups;

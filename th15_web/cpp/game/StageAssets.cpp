@@ -33,3 +33,11 @@ bool StageAssets::load(u32 stage,i32 selected_character,const PracticeConfig* pr
 DialogueResources StageAssets::dialogue_resources()const noexcept{return definition?definition->dialogue_resources(character,text,player,logo,front,enemy_banks):DialogueResources{};}
 SpellVisualResources StageAssets::spell_resources(i32 age)const noexcept{return definition?definition->spell_visuals(age,ascii,text,effect,enemy_banks):SpellVisualResources{};}
 }
+
+namespace th15 {
+bool StageAssets::load_multiplayer(){
+ for(unsigned ch=0;ch<4;++ch){const auto prefix="pl0"+std::to_string(ch);multiplayer_players[ch]=load_animation(prefix+".anm");
+  std::vector<u8> bytes;if(multiplayer_players[ch]<0||!read(prefix+".sht",bytes)||!multiplayer_shots[ch].open(bytes.data(),bytes.size()))return fail("Multiplayer player resource unavailable: "+prefix);}
+ return true;
+}
+}

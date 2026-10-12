@@ -5,6 +5,7 @@
 namespace th15 {
 struct EnemyCombatServices {
     virtual ~EnemyCombatServices()=default;
+    virtual bool multiplayer_damage(const DamageQuery&,DamageResult&,bool& handled){handled=false;return true;}
     virtual bool bomb_damage(const DamageQuery&,i32& amount)=0;
     virtual bool additional_damage(EnemyState&,i32 incoming,i32& amount)=0;
     virtual int enemy_death(EnemyRuntime&,float rate)=0;

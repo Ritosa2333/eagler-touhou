@@ -26,6 +26,8 @@ public:
     StageAssets(AssetSource& source,AnmManager& animations,const StageAssets* common=nullptr,const std::unordered_map<std::string,i32>* shared=nullptr):source(source),animations(animations),common(common),shared(shared){}
     ~StageAssets();
     StageAssets(const StageAssets&)=delete;StageAssets& operator=(const StageAssets&)=delete;
+    std::array<ShtResource,4> multiplayer_shots;std::array<i32,4> multiplayer_players{};
+    bool load_multiplayer();
     bool load(u32 stage,i32 character,const PracticeConfig* practice_config=nullptr);
     const std::unordered_map<std::string,i32>& loaded_animations()const noexcept{return loaded;}
     DialogueResources dialogue_resources()const noexcept;

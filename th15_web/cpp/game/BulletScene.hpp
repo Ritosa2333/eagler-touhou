@@ -5,6 +5,8 @@
 #include <memory>
 namespace th15 {
 struct BulletSceneHost:PlayerDamageHost {
+    virtual unsigned player_count()const noexcept{return 1;}
+    virtual void select_player(unsigned){}
     virtual const PlayerCollision& player_collision()const noexcept=0;
     virtual void sound(i32 id)=0;
     virtual void cancellation_effect(i32 script,const Vec3& position,const Vec3& velocity)=0;

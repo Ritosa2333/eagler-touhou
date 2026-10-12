@@ -162,6 +162,9 @@ bool ApplicationState::begin_run(){
  if(!progress.replay&&practice.enabled&&practice.cheats)practice.assisted=true;
  run=std::make_unique<RunGameplay>(*this,animations,environment,environment.game_rng,visual,progress,*this,&scheduler,&shared);
  run->practice=&practice;
+#if TH15_MULTIPLAYER
+ run->multiplayer=multiplayer;
+#endif
  if(!run->construct(progress.stage,progress.character)||!preload_run())return fail(run->error);
  // Selection carries stocks/mode; active bomb state belongs to the departing
  // bomb object (native +0x24) and cannot survive construction of a fresh one.
@@ -169,6 +172,9 @@ bool ApplicationState::begin_run(){
  session=std::make_unique<RunSession>(*run,progress,*replay,*this,*this);initialization=std::make_unique<RunInitialization>(*run,progress,records,*replay,*session,*this);
  if(!initialization->initialize(camera,current_destination,selected_replay.empty()?nullptr:selected_replay.data(),u32(selected_replay.size())))return fail(initialization->error);
  flow=std::make_unique<RunStageFlow>(*run,*session,progress,records,*initialization,*replay,*this,*this);
+#if TH15_MULTIPLAYER
+ if(multiplayer&&!scene()->battle.mp_enable(mp_options,assets()->multiplayer_shots,assets()->multiplayer_players))return fail(scene()->battle.error);
+#endif
  if(!flow->bind(camera)||!bind_run_display())return fail(flow->error);completed_recording=false;return true;
 }
 bool ApplicationState::begin_ending(){
@@ -176,7 +182,11 @@ bool ApplicationState::begin_ending(){
  release_run();ending=std::make_unique<EndingScene>(animations,records,*this,scheduler,0);return ending->initialize(progress,selection_player.mode_flags,selection_player.deaths)||fail(ending->error);
 }
 bool ApplicationState::apply_destination(){
- if(pending_destination<0)return true;const auto next=pending_destination;pending_destination=-1;
+ if(pending_destination<0)return true;
+#if TH15_MULTIPLAYER
+ if(multiplayer&&pending_destination!=13){completed_recording=pending_destination==15||pending_destination==16;pending_destination=-1;exiting=true;return save_settings();}
+#endif
+ const auto next=pending_destination;pending_destination=-1;
  if(next==13||next==10||next==11){
   // Native 44e600 restores the initial selection through 44f6c0 and sets
   // the new-run flag before either ordinary or replay reconstruction.
@@ -216,7 +226,11 @@ bool ApplicationState::step(u32 held,u32 pressed,u32 repeated,float fps,bool los
  PROFILE_AT(1);
  if(!display->draw())return fail(display->error);
  PROFILE_AT(2);
- if(scene()){
+ if(scene()
+#if TH15_MULTIPLAYER
+ &&!multiplayer
+#endif
+ ){
   auto& battle=scene()->battle;auto& clock=battle.spell_card.clock;
   if(clock.needs_sample(battle.spell.flags)){
    double now=0;if(!seconds(now))return fail("Spell presentation clock unavailable");

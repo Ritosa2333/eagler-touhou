@@ -11,12 +11,22 @@ bool GameDraw::run(u32 index){
  if(!error.empty())return false;auto& b=scene.battle;
  switch(index){
  case 0:prepare_frame();return draw_spell_card(b.spell_card,animations,records,spell_context,text,error);
- case 1:return b.player&&b.player->draw(renderer)||fail(b.player?b.player->error:"Player drawing unavailable");
+ case 1:
+#if TH15_MULTIPLAYER
+ if(b.mp_enabled)return b.mp_draw(renderer)||fail(b.error);
+#endif
+ return b.player&&b.player->draw(renderer)||fail(b.player?b.player->error:"Player drawing unavailable");
  case 2:if(progress.scene_flags&4)return true;return b.items&&b.items->draw(renderer)||fail(b.items?b.items->error:"Item drawing unavailable");
  case 3:return b.laser_scene&&b.laser_scene->draw(renderer)||fail(b.laser_scene?b.laser_scene->error:"Laser drawing unavailable");
  case 4:if(progress.scene_flags&4)return true;return b.bullet_scene&&b.bullet_scene->draw(renderer)||fail(b.bullet_scene?b.bullet_scene->error:"Bullet drawing unavailable");
  case 5:return b.player&&scene.popups.draw(*this,b.player->motion.position)||fail(scene.popups.error);
- case 6:{if(!scene.hud.root)return true;HudDrawContext context;context.frame={&b.enemy_world,b.player?&b.player->motion.position:nullptr,b.spell.flags,scene.messages.active()};context.spell_available=true;context.spell_frames=b.spell_card.clock.completed_frames;context.spell_best_time=b.spell_card.clock.encoded;return scene.hud.draw(context,text)||fail(scene.hud.error);}
+ case 6:{
+#if TH15_MULTIPLAYER
+ if(b.mp_enabled){for(unsigned seat=0;seat<b.mp_options.seat_count;++seat){const auto& p=*b.pilots[seat];HudTextStyle style;style.font=1;style.color=seat==b.mp_options.local_seat?0xffffffff:0xffc0c0c0;
+ const auto line="P"+std::to_string(seat+1)+" L:"+std::to_string(p.session.extra_lives)+" B:"+std::to_string(p.session.bombs)+" P:"+std::to_string(p.session.power)+(p.ghost?" OUT":"");
+ if(!text.hud_text({{432,float(392+seat*16),0},style,line}))return fail(text.error);}}
+#endif
+ if(!scene.hud.root)return true;HudDrawContext context;context.frame={&b.enemy_world,b.player?&b.player->motion.position:nullptr,b.spell.flags,scene.messages.active()};context.spell_available=true;context.spell_frames=b.spell_card.clock.completed_frames;context.spell_best_time=b.spell_card.clock.encoded;return scene.hud.draw(context,text)||fail(scene.hud.error);}
  case 7:return !pause||pause->visuals.draw(text,dates,replay_header,captured)||fail(pause->visuals.error);
  default:return fail("Gameplay draw pass outside schedule");
  }

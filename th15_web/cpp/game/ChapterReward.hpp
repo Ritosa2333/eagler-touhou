@@ -12,5 +12,6 @@ public:
     ChapterReward(AnmManager& a,ItemScoreState& s,PlayerLifeSession& p,EnemyWorldState& e,ItemCollection& c,i32 bank):animations(a),score(s),player(p),enemies(e),collection(c),front(bank){}
     ~ChapterReward(){animations.retire(state.animation);}
     bool complete(bool boss,i32 chapter_deaths);
+    bool award(bool boss,i32 chapter_deaths);
 };
 }

@@ -2,6 +2,8 @@
 namespace th15 {
 bool EnemyCombat::shot_damage(EnemyState& enemy,bool special,EnemyShotDamage& hit){
     const auto query=enemy_shot_query(enemy,special);
+    DamageResult mp;bool handled=false;if(!world.multiplayer_damage(query,mp,handled))return false;
+    if(handled){hit.amount=mp.amount;hit.direct=mp.direct;if(mp.position_written)hit.position=mp.position;return true;}
     const bool changed=player_frame.current!=player_frame.previous;i32 bomb_damage=0;
     if(changed&&!world.bomb_damage(query,bomb_damage))return false;
     const auto result=damage.query(query,changed,bomb_damage);
@@ -19,7 +21,7 @@ bool EnemyCombat::animation_region_damage(EnemyState& enemy,const AnmVm* animati
     amount=incoming;if(!animation){enemy.animation_handles[0]=0;return true;}
     DamageQuery query;query.position=enemy.motion.position;query.position.y=float(query.position.y+24.f);query.target=signed_bits(enemy.id);query.rectangle=true;query.size={float(animation->visual.scale.x*192.f),float(animation->visual.scale.y*32.f)};query.angle=animation->variables.rotation.z;
     const bool changed=player_frame.current!=player_frame.previous;
-    const auto hit=[&](i32& value){i32 bomb=0;if(changed&&!world.bomb_damage(query,bomb))return false;const auto result=damage.query(query,changed,bomb);if(!damage.error.empty())return false;value=result.amount;return true;};
+    const auto hit=[&](i32& value){DamageResult mp;bool handled=false;if(!world.multiplayer_damage(query,mp,handled))return false;if(handled){value=mp.amount;return true;}i32 bomb=0;if(changed&&!world.bomb_damage(query,bomb))return false;const auto result=damage.query(query,changed,bomb);if(!damage.error.empty())return false;value=result.amount;return true;};
     i32 first=0,second=0;if(!hit(first))return false;query.position.y=float(query.position.y+32.f);query.rectangle=false;query.radius=48;query.angle=0;if(!hit(second))return false;amount=wrapping_add(incoming,wrapping_add(first,second));return true;
 }
 }

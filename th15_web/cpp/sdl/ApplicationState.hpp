@@ -29,6 +29,9 @@ struct ApplicationState final:TitleScenePlatform,EndingScenePlatform,StageGamepl
  bool pump_checkpoint(u32 budget=131072);bool finish_checkpoint();
  Archive archive;std::vector<u8> archive_bytes;std::unordered_map<std::string,u32> archive_names;
  PlayerTouch touch;u32 controller_buttons=0;i32 numbered_chapter=0;
+#if TH15_MULTIPLAYER
+ MultiplayerOptions mp_options;bool multiplayer=false;
+#endif
  PracticeState practice;
  PracticeMusic practice_music;
  bool suppress_practice_music(u32 caller,i32 id);

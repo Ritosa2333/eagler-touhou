@@ -83,9 +83,15 @@ i32 StageGameplay::update_dialogue(){
 }
 bool StageGameplay::chapter_reward(bool boss){
  if(!battle.enemy_world.chapter_total)return true;if(!reward.complete(boss,progress.chapter_deaths))return fail(reward.error);const auto& state=reward.state;
+#if TH15_MULTIPLAYER
+ if(battle.mp_enabled)for(unsigned seat=1;seat<battle.mp_options.seat_count;++seat){auto& p=*battle.pilots[seat];if(p.ghost)continue;ChapterReward own(animations,p.score,p.session,battle.enemy_world,*p.collection,assets.front);if(!own.award(boss,0))return fail(own.error);}
+#endif
  hud.result_notice=state.animation;hud.result_grazes=state.grazes;hud.result_deaths=state.deaths;hud.result={state.display_percent,state.percent,state.bonus,state.display_bonus,state.base_bonus,state.duration};hud.flags=(hud.flags&~0x1000u)|0x800;hud.intro_age=state.age;return true;
 }
 bool StageGameplay::capture(i32 chapter){
+#if TH15_MULTIPLAYER
+ if(battle.mp_enabled){for(unsigned seat=1;seat<battle.mp_options.seat_count;++seat)battle.pilots[seat]->score.graze_chapter=0;return true;}
+#endif
  return checkpoint.capture(chapter,assets.practice_active?&assets.practice_effects:nullptr)||fail(checkpoint.error);
 }
 bool StageGameplay::restore(){return checkpoint.restore()||fail(checkpoint.error);}

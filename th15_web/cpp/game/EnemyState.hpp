@@ -62,6 +62,7 @@ struct EnemyState {
 struct EnemyWorldState {
     const PracticeState* practice=nullptr;
     float* frame_rate=nullptr;float current_rate(float fallback)const noexcept{return frame_rate?*frame_rate:fallback;}
+    std::function<Vec3(const Vec3&)> multiplayer_target;
     Vec3 player_position{};EnemyState* boss=nullptr;std::vector<EnemyState*> enemies;
     std::array<u32,3> boss_ids{};u32 manager_flags=0;
     Rng* random=nullptr;

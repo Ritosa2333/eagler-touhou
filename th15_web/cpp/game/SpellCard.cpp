@@ -4,7 +4,7 @@ namespace th15 {
 bool SpellCard::check(bool ok,const char* message){if(!ok&&error.empty())error=message;return ok;}
 bool SpellCard::banners(i32 label){for(u32 i=1;i<=3;i++)if(!check(host.interrupt(handles[i],label),"Spell banner interrupt failed"))return false;return true;}
 bool SpellCard::begin(const SpellStartRequest& request,const SpellStartContext& c){
-    error.clear();if(request.id<0||request.id>=119||request.name.size()>=64){error="Spell metadata outside original range";return false;}
+    error.clear();if(request.id<0||request.id>=119||request.name.size()>=64){error="Spell metadata outside original range: id="+std::to_string(request.id)+", bytes="+std::to_string(request.name.size());return false;}
     age.set(0);status.frame=age.current;identifier=request.id;name=request.name;replay=c.replay;status.flags=(status.flags|3u)&~0x98u;
     if(!replay&&!check(host.history_begin(identifier,name),"Spell history start failed"))return false;
     if(!check(host.prepare_hud(true),"Spell HUD start failed"))return false;

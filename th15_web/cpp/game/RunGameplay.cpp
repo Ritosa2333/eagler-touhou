@@ -7,6 +7,7 @@ bool RunGameplay::load(u32 stage,i32 character,const StageCamera& camera,i32* re
 bool RunGameplay::construct(u32 stage,i32 character,i32* requested){
  if(common||!error.empty())return fail("Run scenes already initialized");
  common=std::make_unique<StageAssets>(files,animations,nullptr,shared_assets);if(!common->load(stage,character,practice&&practice->active?&practice->run:nullptr))return fail(common->error);
+ if(multiplayer&&!common->load_multiplayer())return fail(common->error);
  progress.stage=stage;progress.character=character;
  objects=std::make_unique<RunStageObjects>(*common,animations,environment,game,visual,progress,platform);
  objects->battle.player->life.practice=practice;

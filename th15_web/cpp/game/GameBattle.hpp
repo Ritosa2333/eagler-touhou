@@ -12,6 +12,9 @@
 #include "FrameScheduler.hpp"
 #include "SpellAnmHost.hpp"
 #include "SessionState.hpp"
+#if TH15_MULTIPLAYER
+#include "MultiplayerPilot.hpp"
+#endif
 namespace th15 {
 struct BattleSceneBindings;
 class RecordStore;
@@ -52,6 +55,7 @@ struct BattleWorldServices:SpellCardServices {
     virtual bool stage_logo(){return false;}
 };
 class GameBattle {
+    friend struct MultiplayerPilot;
     struct Services;std::unique_ptr<Services> services;
     AnmManager& animations;AnmEnvironment& environment;Rng& game_random;Rng& visual_random;
     BattleWorldServices& presentation;EclProgram& program;BattleResources resources;i32 character;
@@ -77,11 +81,25 @@ public:
     std::unique_ptr<BulletScene> bullet_scene;std::unique_ptr<LaserScene> laser_scene;
     std::unique_ptr<EnemyCombat> combat;std::unique_ptr<EnemyDamage> enemy_damage;std::unique_ptr<EnemyDeath> enemy_death;
     std::unique_ptr<EnemyManager> enemies;std::unique_ptr<BombContext> bomb_context;std::unique_ptr<BombController> bomb;
+#if TH15_MULTIPLAYER
+    MultiplayerOptions mp_options;bool mp_enabled=false;unsigned mp_contact_seat=0;
+    std::array<std::unique_ptr<MultiplayerPilot>,3> pilots;
+    std::array<int,ItemManager::pool_size> mp_item_targets{};
+    bool mp_enable(const MultiplayerOptions&,const std::array<ShtResource,4>&,const std::array<int,4>&);
+    void mp_input(const std::array<MultiplayerInput,3>&);
+    const PlayerCollision& mp_collision(unsigned);
+    int mp_nearest(const Vec3&,bool power=false)const;Vec3 mp_target(const Vec3&)const;
+    bool mp_damage(const DamageQuery&,DamageResult&);bool mp_draw(AnmRenderer&);
+#endif
     std::string error;
     std::function<bool()> game_over_begin;
     GameBattle(AnmManager&,AnmEnvironment&,Rng& game,Rng& visual,BattleWorldServices&,EclProgram&,const ShtResource&,i32 character,BattleResources);
     ~GameBattle();
-    bool record_graze(const Vec3&);void graze_flash()noexcept{player->motion.barrier_timer.set(10);}void graze_resonance(float value)noexcept{items->motion_scale=value;}
+    bool record_graze(const Vec3&);void graze_flash()noexcept{
+#if TH15_MULTIPLAYER
+ if(mp_enabled){pilots[mp_contact_seat]->player->motion.barrier_timer.set(10);return;}
+#endif
+ player->motion.barrier_timer.set(10);}void graze_resonance(float value)noexcept{items->motion_scale=value;}
     bool initialize(bool configure_player=true);bool prepare_frame(const BattleFrame&);bool step(const BattleFrame&);bool spawn(const EnemySpawnRequest&);
     bool attach(FrameScheduler&);BattleFrame& active_frame()noexcept{return input;}
     bool detach(FrameScheduler&);bool replace_stage(EclProgram&,const std::array<i32,6>&,const SpellVisualResources&);
