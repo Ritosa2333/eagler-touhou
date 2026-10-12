@@ -55,6 +55,7 @@ Extended negative_dot(const Vec3& a, const Vec3& b) {
 }
 
 void GraphicsMath::arithmetic(GraphicsArithmetic path) { arithmetic_path=path; }
+GraphicsArithmetic GraphicsMath::arithmetic() noexcept { return arithmetic_path; }
 
 void GraphicsMath::multiply(Matrix4& output, const Matrix4& first, const Matrix4& second) {
     // D3DX's initialized scalar dispatch (0x486fd6) sums even and odd

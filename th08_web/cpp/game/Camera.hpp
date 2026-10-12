@@ -12,8 +12,17 @@ struct SceneCamera {
     float field_of_view=.5235987901687622f;
 };
 static_assert(sizeof(SceneCamera)==76);
+#ifdef TH_CAMERA_CACHE_TEST
+// Standalone numeric-oracle counters; absent from both runtime build profiles.
+struct CameraCacheStats {
+    u64 screen_hits=0,screen_computations=0,scene_hits=0,scene_computations=0;
+};
+#endif
 struct Camera {
     static void screen(Matrix4& view,Matrix4& projection,const Viewport& viewport);
     static void scene(Matrix4& view,Matrix4& projection,const Viewport& viewport,SceneCamera& data);
+#ifdef TH_CAMERA_CACHE_TEST
+    static CameraCacheStats cache_stats() noexcept;
+#endif
 };
 }
