@@ -13,8 +13,14 @@ const runtimeVariant=query.get('runtimeVariant')??'normal',multiplayerRuntime=ru
 const createAdonisCalibration=multiplayerRuntime?(await import('./adonis-calibration.mjs')).createAdonisCalibration:null;
 const epoch=Number(query.get('runtimeEpoch'));
 const validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
+const runtimeDocument=document,hosted=parent!==window,ownerFrame=hosted?window.frameElement:null;
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
 let Module,core,app=0,launched=false,first=false,closing=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true;
+let initializedReady=false,launchSettled=false,replayReopening=false,touchLifetime=0,touchRetired=false;
+// Source serials consume every received snapshot, including ineligible input.
+// Only accepted changes advance native serials; game open/reopen resets those
+// mapped counters, while the source baseline remains owned by this document.
+let sourceBomb=0,sourceEscape=0,mappedBomb=0,mappedEscape=0;
 let runtimeBuildWords=null,calibration=null;
 let runtimeBuildIdentity='',runtimeWasmIdentity='';
 let traceRequested=false,traceStarted=false,traceHostButton=null;
@@ -86,8 +92,29 @@ const keyboard=createBrowserKeyboard({
 });
 function clearKeyboard(){keyboard.clear();core?.sdl_keys_clear();}
 let frames=0,lastHealth=0,lastFrame=0,maxGap=0,lastPresented=0,saveTimer=null;
-const cancelTouches=bindOutsideTouches(document,canvas,()=>core,()=>launched&&options.touchEnabled);
-const error=reason=>{const message=reason?.stack||String(reason);if(multiplayerRuntime){window.__eaglerNetplayFailed=true;window.__eaglerNetplayError=message;}document.querySelector('#error').textContent=message;emit('error',{message,error:message});console.error(reason);};
+function ownsTouchDocument(){
+ try{return document===runtimeDocument&&(!hosted||!!ownerFrame&&ownerFrame.isConnected&&ownerFrame.contentWindow===window&&ownerFrame.contentDocument===runtimeDocument);}
+ catch{return false;}
+}
+function touchReady(){
+ return initializedReady&&!!core&&!!app&&launched&&launchSettled&&!closing&&!replayReopening&&
+  !touchRetired&&!document.hidden&&!!options.touchEnabled&&!options.netplaySpectator&&ownsTouchDocument();
+}
+function cancelTouchInput(){
+ const delivered=touchReady();cancelTouches();
+ // Native cancel_transient already clears focus/stick/short pulses while
+ // preserving the Launcher's fire toggle and accepted serial baseline.
+ if(!delivered&&initializedReady&&core)core.sdl_touch_cancel();
+}
+function invalidateTouches(terminal=false){
+ ++touchLifetime;launchSettled=false;if(terminal)touchRetired=true;cancelTouchInput();
+}
+function acceptsTouch(){
+ if(!ownsTouchDocument()){if(!touchRetired)invalidateTouches(true);return false;}
+ return touchReady();
+}
+const cancelTouches=bindOutsideTouches(document,canvas,()=>touchReady()?core:null,acceptsTouch);
+const error=reason=>{invalidateTouches(true);const message=reason?.stack||String(reason);if(multiplayerRuntime){window.__eaglerNetplayFailed=true;window.__eaglerNetplayError=message;}document.querySelector('#error').textContent=message;emit('error',{message,error:message});console.error(reason);};
 const u32=(ptr,count)=>new Uint32Array(core.memory.buffer,ptr,count);
 const cstring=(text,fn)=>{const bytes=new TextEncoder().encode(text+'\0'),p=core.allocate(bytes.length);try{new Uint8Array(core.memory.buffer,p,bytes.length).set(bytes);return fn(p);}finally{core.deallocate(p);}};
 let storage;
@@ -145,13 +172,13 @@ function save(){if(app)core.save(app);return sync(false);}
 // pending batch has no valid texture.
 function persist(){return sync(false);}
 async function resumeForegroundAudio(forcePause=false){
- if(!core||!launched||document.hidden)return false;
+ if(!core||!app||!launched||closing||touchRetired||!ownsTouchDocument()||document.hidden)return false;
  if(forcePause)core.sdl_loop_pause(1);
- return resumeRuntimeAudio(Module,core,()=>!!core&&launched&&!document.hidden);
+ return resumeRuntimeAudio(Module,core,()=>!!core&&!!app&&launched&&!closing&&!touchRetired&&ownsTouchDocument()&&!document.hidden);
 }
-async function stop(){if(closing)return;closing=true;calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();window.dispatchEvent(new CustomEvent('touhou-midi-close'));await sync(false);app=0;launched=false;emit('exit',{code:0,status:'success'});}finally{removeResourceTraceHostButton();closing=false;}}
+async function stop(){if(closing)return;closing=true;invalidateTouches();calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();window.dispatchEvent(new CustomEvent('touhou-midi-close'));await sync(false);app=0;launched=false;emit('exit',{code:0,status:'success'});}finally{removeResourceTraceHostButton();closing=false;}}
 async function launch(){
- if(launched)return;clearKeyboard();
+ if(launched)return;const touchTicket=touchLifetime;launchSettled=false;clearKeyboard();
  const {installStartupBranding}=await import('./startup-branding.mjs');
  const build=await(await fetch('./manifest.json')).json();
  await installStartupBranding(Module,{game:'th08',builtAt:build.builtAt});
@@ -174,6 +201,7 @@ async function launch(){
   throw Error('TH08 multiplayer Runtime requires a room start, preflight or Replay viewer');
  if(!multiplayerRuntime&&options.netplayMode==='lan')throw Error('Network session requires the multiplayer Runtime');
  core.sdl_music_enabled?.(music);app=core.sdl_game_open(multiplayer?multiplayer.seed:Date.now()>>>0);if(!app)throw Error('C++ game initialization failed');
+ mappedBomb=mappedEscape=0;
  try{
  if(!core.sdl_prepare_loading()||!core.sdl_draw_loading(0))throw Error('开头加载画面初始化失败');
  const startupImageAt=performance.now();
@@ -191,9 +219,9 @@ async function launch(){
  if(multiplayer){window.__eaglerNetplayFailed=false;window.__eaglerNetplayError='';updateNetworkDiagnostics(core,app);if(multiplayer.adonisMode&&!multiplayer.spectator)calibration?.start();else calibration?.stop();}
  applyOptions();launched=true;first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
  canvas.focus({preventScroll:true});core.sdl_loop_pause(1);if(!document.hidden)await resumeForegroundAudio();if(query.get('manual')!=='1')core.sdl_loop_start();
+ launchSettled=touchTicket===touchLifetime&&!touchRetired&&!closing&&!!app&&ownsTouchDocument();
  emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:'eagler-touhou/1',version:'3.4.1-sdl3'});
 }
-let replayReopening=false;
 function replayWords(){const p=core.multiplayer_replay_status(app);return Array.from(new Uint32Array(core.memory.buffer,p,12));}
 function replayByteCall(bytes,callback){const p=core.allocate(bytes.length);if(!p)throw Error('Replay allocation failed');
  try{new Uint8Array(core.memory.buffer,p,bytes.length).set(bytes);return callback(p,bytes.length);}finally{core.deallocate(p);}}
@@ -207,6 +235,7 @@ async function reopenReplay(path,stage){
  core.sdl_loop_stop();
  window.dispatchEvent(new CustomEvent('touhou-midi-close'));
  app=core.multiplayer_replay_reopen(seed);if(!app)throw Error('Replay native world allocation failed');
+ mappedBomb=mappedEscape=0;
  if(bytes){if(!replayByteCall(bytes,(p,n)=>core.multiplayer_replay_load(app,p,n,stage)))throw Error('Replay native bootstrap rejected');}
  else if(!core.multiplayer_replay_viewer(app))throw Error('Replay viewer bootstrap rejected');
  const total=core.sdl_prepare_total();for(let i=0;i<total;++i){
@@ -214,22 +243,30 @@ async function reopenReplay(path,stage){
   if(i%12===11)await new Promise(resolve=>setTimeout(resolve,0));
  }
  if(!core.sdl_game_initialize())throw Error('Replay native initialization failed');
- core.sdl_keys_clear();applyOptions();replayReopening=false;
+ core.sdl_keys_clear();applyOptions();
  core.sdl_loop_pause(1);if(!document.hidden)await resumeForegroundAudio();
  if(query.get('manual')!=='1')core.sdl_loop_start();
+ replayReopening=false;
 }
 async function command(message){
  if(multiplayerRuntime&&launched&&options.netplaySpectator&&
-    ['keyboard','thprac-mouse','direct-touch','touch-controls'].includes(message.command))return {};
+    ['keyboard','thprac-mouse'].includes(message.command))return {};
  switch(message.command){
  case 'configure':if(launched)throw Error('Cannot configure a running game');language=message.language==='lang_zh-hans'?'chs':'jp';options=normalizeOptions(message.options);if(multiplayerRuntime)options.thpracEnabled=false;if(!['ogg','midi','none'].includes(message.music))throw Error('Invalid music mode');Module.touhouMusicMode=message.music;Module.eaglerOptions=options;music=message.music!=='none';await installResources(message.sharedResources);await installResources(message.runtimeResources);await installResources(message.resources);if(message.runtimePack)await installRuntimePack(message.runtimePack);applyOptions();return {};
  case 'resources':if(multiplayerRuntime&&launched)throw Error('Cannot replace resources during a multiplayer run');await installResources(message.resources);return {};
  case 'keyboard':if(launched&&!document.hidden&&!closing)keyboard.event(message,!!message.down,'hosted');return {};
  case 'thprac-mouse':practice?.mouse(message);return {};
  case 'keyboard-clear':clearKeyboard();return {};
- case 'touch-cancel':cancelTouches();return {};
- case 'direct-touch':directTouch(core,canvas,message,{width:innerWidth,height:innerHeight});return {};
- case 'touch-controls':touchControls(core,options,message);return {};
+ case 'touch-cancel':cancelTouchInput();return {};
+ case 'direct-touch':if(acceptsTouch())directTouch(core,canvas,message,{width:innerWidth,height:innerHeight});return {};
+ case 'touch-controls':{
+  const controls=message.controls??message,bomb=controls.bombSerial>>>0,escape=controls.escapeSerial>>>0;
+  const changedBomb=bomb!==sourceBomb,changedEscape=escape!==sourceEscape;
+  sourceBomb=bomb;sourceEscape=escape;if(!acceptsTouch())return {};
+  const nextBomb=(mappedBomb+Number(changedBomb))>>>0,nextEscape=(mappedEscape+Number(changedEscape))>>>0;
+  touchControls(core,options,{controls:{...controls,bombSerial:nextBomb,escapeSerial:nextEscape}});
+  mappedBomb=nextBomb;mappedEscape=nextEscape;return {};
+ }
  case 'launch':await launch();return {};
  case 'sync':await save();return {};
  case 'list':{const files=[];for(const dir of ['', '/replay'])for(const name of Module.FS.readdir(root()+dir)){const path=(dir+'/'+name).replace(/^\//,'');try{storage.relativeSave(path);}catch{continue;}const full=root()+'/'+path,s=Module.FS.stat(full);if(Module.FS.isFile(s.mode)){const bytes=Module.FS.readFile(full);files.push({path:multiplayerRuntime?path:exportReplayName(path,bytes,8),size:s.size});}}return {files};}
@@ -250,12 +287,12 @@ window.addEventListener('message',event=>{
  const m=event.data;if(!validEpoch||event.source!==parent||event.origin!==location.origin||m?.protocol!==protocol||m.game!==game||m.epoch!==epoch||typeof m.command!=='string')return;
  // Device events must not wait behind filesystem/resource operations. Their
  // synchronous command bodies observe the current owner and lifecycle now.
- if(m.command==='keyboard'||m.command==='keyboard-clear'){void dispatchCommand(m);return;}
+ if(m.command==='keyboard'||m.command==='keyboard-clear'||m.command==='direct-touch'||m.command==='touch-controls'||m.command==='touch-cancel'){void dispatchCommand(m);return;}
  queue=queue.then(async()=>{if(await initialized===false)return;await dispatchCommand(m);}).catch(error);
 });
-document.addEventListener('visibilitychange',()=>{if(!core||!launched)return;clearKeyboard();cancelTouches();if(document.hidden){suspendRuntimeAudio(Module,core);queue=queue.then(persist).catch(error);}else void resumeForegroundAudio(true);});
-window.addEventListener('blur',()=>{if(core){practice?.clear();clearKeyboard();cancelTouches();}});
-window.addEventListener('pagehide',()=>{clearKeyboard();cancelTouches();removeResourceTraceHostButton();if(core&&launched){suspendRuntimeAudio(Module,core);void persist().catch(console.error);}});
+document.addEventListener('visibilitychange',()=>{cancelTouchInput();if(!core||!launched)return;clearKeyboard();if(document.hidden){suspendRuntimeAudio(Module,core);queue=queue.then(persist).catch(error);}else void resumeForegroundAudio(true);});
+window.addEventListener('blur',()=>{cancelTouchInput();if(core){practice?.clear();clearKeyboard();}});
+window.addEventListener('pagehide',()=>{invalidateTouches(true);clearKeyboard();removeResourceTraceHostButton();if(core&&launched){suspendRuntimeAudio(Module,core);void persist().catch(console.error);}});
 window.addEventListener('pageshow',()=>{if(core&&launched&&!document.hidden)void resumeForegroundAudio(true);});
 canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();clearKeyboard();core?.sdl_loop_pause(1);error('图形环境已失效，请退出后重新开始。');});
 for(const name of ['pointerdown','keydown'])window.addEventListener(name,()=>{if(Module?.SDL3?.audioContext?.state!=='running')void resumeForegroundAudio(true);},{capture:true});
@@ -293,7 +330,7 @@ const initialized=(async()=>{
    const state=replayWords(),pointer=core.multiplayer_replay_request(app);
    const memory=new Uint8Array(core.memory.buffer);let end=pointer;while(pointer&&end<memory.length&&memory[end]&&end-pointer<512)++end;
    const path=pointer?new TextDecoder().decode(memory.subarray(pointer,end)):'';
-   if(path||state[9]){replayReopening=true;core.sdl_loop_pause(1);
+   if(path||state[9]){replayReopening=true;cancelTouchInput();core.sdl_loop_pause(1);
     queue=queue.then(()=>reopenReplay(path,state[10])).catch(error);return;}
   }
   practice.tick();
@@ -311,5 +348,6 @@ const initialized=(async()=>{
  Module.runtimeStopped=()=>{};Module.runtimeNotice=message=>emit('notice',{message});Module.runtimeMidi=(op,data)=>{if(op===62&&music&&Module.touhouMusicMode==='midi')window.dispatchEvent(new CustomEvent('touhou-midi',{detail:{bytes:Array.from(data||[])}}));if(op===61)window.dispatchEvent(new CustomEvent('touhou-midi-close'));};Module.callMain=launch;
  window.__th08Runtime={core,Module,get app(){return app;},status,launch,stop,command,resourceTrace:{start:traceStart,read:traceRead,export:exportResourceTrace}};
  installResourceTrace();
+ initializedReady=true;
  emit('ready');
 })().catch(e=>{if(isSupersededRuntimeError(e)){console.debug('Runtime navigation superseded');return false;}error(e);throw e;});
