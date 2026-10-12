@@ -48,13 +48,15 @@
 | <img src="assets/game-covers/thumbnails/th175.jpg" width="40" height="40" alt="东方刚欲异闻"> | **[th175] 東方剛欲異聞** | ![Unassigned][unassigned] | - | - | - |
 | <img src="assets/game-covers/thumbnails/th185.jpg" width="40" height="40" alt="弹幕狂们的黑市"> | **[th185] バレットフィリア達の闇市場** | ![Unassigned][unassigned] | - | - | - |
 
-## TH14 移植进度（2026-10-12）
+## TH14 移植进度（2026-10-13）
 
 [AdingApkgg/thp](https://github.com/AdingApkgg/thp)正在推进 TH14 源码重建与 Web 移植；尚未完成整作 1:1 验收。
 
-- Easy 咲夜 A 通过普通输入自然完成六面（92,137 帧），无无敌或强制通关覆盖；无头核心继续结局与 staff 3,737 帧返回成绩页。
-- 四条普通输入录像自对照 208,272 帧，活动战斗的 26 个选定字段无差异；九份录像通过原版解密/解压对照。此项不等于原版整局行为一致。
-- Normal 咲夜 A 测试在第四面 Game Over，不能写成 Normal 通关；图像、音频、异步加载与原版整局对照仍未全部通过。多人联机未验收。
+- 修正咲夜 A 已销毁目标的重新获取时序、回放按键边沿，以及 ECL -9908 实时敌人数读取；对应原版机器码检查通过。
+- Easy 咲夜 A 普通按键自然完成六面（92,262 帧、3 次死亡、16 次库存符卡），没有无敌或强制通关覆盖；自然结局/staff 后正常成绩录名、录像保存请求与返回主菜单通过。
+- 新录像完整回放自对照 91,881 帧，活动战斗的 26 个选定字段无差异，5 个非激活换关得分差异保留；成绩文件的 22,382 编码字节及 149,076 解码字节通过原版加载与重写对照。
+- 原版独立进程的一至四面及六面各 3,901 帧窗口，30 个选定玩法字段和捕获的详细对象窗口无差异；异步加载视觉 RNG 差异保留。此项不等于原版不间断整局行为一致。
+- Normal 尚未自然通关；完整图像、原生音频、异步加载与原版整局对照仍未全部通过，多人联机未验收。
 - 仓库只发布源码、脚本与报告，不包含原作数据或提取素材。详见[发布范围与限制](https://github.com/AdingApkgg/thp/blob/main/docs/GITHUB_RELEASE.md)和[核心接手记录](https://github.com/AdingApkgg/thp/blob/main/docs/porting/CORE_STATUS.md)。
 
 ## 适配详情
