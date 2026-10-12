@@ -16,6 +16,47 @@ MODES={'frontier':0,'frontier-late':0,'frontier-legacy':0,
        'frontier-cache-legacy':0,'always':1,'exact':2,'exact-snapshots':3}
 
 def digest(path):return hashlib.sha256(path.read_bytes()).hexdigest()
+def logical_frame(row):
+    value=row.get('logicalFrame')
+    return row['net'][3] if value is None else value
+def progress(row):
+    value=row.get('progress')
+    return value if isinstance(value,list) and len(value)==6 else None
+def valid_progress(row):
+    value=row.get('progress')
+    return value is None or (isinstance(value,list) and len(value)==6 and
+      all(type(v) is int and 0<=v<=0xffffffff for v in value) and value[2] in (0,1) and value[3] in (0,1) and
+      value[0]==logical_frame(row) and value[1]==row['net'][3])
+def correcting(row):
+    value=progress(row)
+    return value is not None and bool(value[2])
+def epoch(row):return (row.get('stage'),row['net'][10])
+def logical_rate(rows):
+    if len(rows)<2 or any(not valid_progress(r) for r in rows):return None
+    if any(b['time']<=a['time'] or epoch(a)!=epoch(b) or logical_frame(b)<logical_frame(a)
+           for a,b in zip(rows,rows[1:])):return None
+    return (logical_frame(rows[-1])-logical_frame(rows[0]))*1000/(rows[-1]['time']-rows[0]['time'])
+def unconfirmed_frames(row):
+    confirmed=row['net'][5]
+    remote=0 if confirmed in (-1,0xffffffff) else confirmed+1
+    return max(0,logical_frame(row)-remote)
+def progress_summary(rows,first=None):
+    if not rows:return {'samples':0}
+    first=rows[0] if first is None else first
+    observed=rows[1:];available=[r for r in observed if progress(r) is not None]
+    start,end=progress(first),progress(rows[-1])
+    cursor_deltas=[b['net'][3]-a['net'][3] for a,b in zip(rows,rows[1:])]
+    return {'source':sorted({'logicalFrame' if r.get('logicalFrame') is not None else 'legacy net[3]' for r in rows}),
+      'samples':len(observed),'availableSamples':len(available),'invalidSamples':sum(not valid_progress(r) for r in rows),
+      'correctingCallbacks':sum(correcting(r) for r in available) if available else None,
+      'budgetYieldCallbacks':sum(bool(progress(r)[3]) for r in available) if available else None,
+      'correctionYields':end[4]-start[4] if start is not None and end is not None and end[4]>=start[4] and epoch(first)==epoch(rows[-1]) else None,
+      'correctingCallbackMs':distribution([r['ms'] for r in available if correcting(r)]),
+      'budgetYieldCallbackMs':distribution([r['ms'] for r in available if progress(r)[3]]),
+      'cursorRegressions':sum(n<0 for n in cursor_deltas),'cursorRegressedFrames':sum(-n for n in cursor_deltas if n<0),
+      'logicalRegressions':sum(logical_frame(b)<logical_frame(a) for a,b in zip(rows,rows[1:])),
+      'epochChanges':sum(epoch(a)!=epoch(b) for a,b in zip(rows,rows[1:])),
+      'scope':'Post-callback flags; all callback costs remain in the body, including partial correction. Missing legacy flags are unknown.'}
 def distribution(values):
     values=sorted(values)
     if not values:return {'count':0}
@@ -25,33 +66,44 @@ def distribution(values):
 def summarize(peer):
     rows=peer['rows'];first=peer['before'];last=rows[-1]
     # Keep scene retirement/menu lockstep separate from gameplay throughput.
-    # Preserve the whole-run result too: transitions remain user-visible.
-    scenes=[];start=previous_scene=None
+    # A historical cursor/Enemy counter during correction is not forward
+    # progress. Stable endpoints still include every intervening callback.
+    scenes=[];group=[];previous_scene=anchor=None
+    def finish_scene():
+        anchors=[i for i,row in enumerate(group) if not correcting(row) and valid_progress(row)]
+        if not anchors:return
+        selected=group[anchors[0]:anchors[-1]+1];start,end=selected[0],selected[-1]
+        scenes.append({'scene':start.get('scene'),'stage':start.get('stage'),'generation':start['net'][10],
+          'firstFrame':logical_frame(start),'lastFrame':logical_frame(end),'elapsedMs':end['time']-start['time'],
+          'logicalFps':logical_rate(selected),'samples':len(selected),
+          'correctingSamples':sum(correcting(r) for r in selected)})
     for row in rows:
-        if start is None:start=row
-        if previous_scene is not None and row.get('scene')!=start.get('scene'):
-            duration=previous_scene['time']-start['time']
-            scenes.append({'scene':start.get('scene'),'firstFrame':start['net'][3],
-              'lastFrame':previous_scene['net'][3],'elapsedMs':duration,
-              'logicalFps':(previous_scene['net'][3]-start['net'][3])*1000/duration if duration else None})
-            start=row
+        if previous_scene is not None and (row.get('scene')!=previous_scene.get('scene') or
+          row.get('loading')!=previous_scene.get('loading') or epoch(row)!=epoch(previous_scene) or
+          row['time']<=previous_scene['time'] or logical_frame(row)<logical_frame(previous_scene) or
+          (not correcting(row) and anchor is not None and row.get('enemyFrame',0)<anchor.get('enemyFrame',0))):
+            finish_scene();group=[];anchor=None
+        group.append(row)
+        if not correcting(row):anchor=row
         previous_scene=row
-    if start is not None:
-        duration=last['time']-start['time']
-        scenes.append({'scene':start.get('scene'),'firstFrame':start['net'][3],
-          'lastFrame':last['net'][3],'elapsedMs':duration,
-          'logicalFps':(last['net'][3]-start['net'][3])*1000/duration if duration else None})
-    gaps=[];advances=[];last_present=last_advance=None;previous=None
+    finish_scene()
+    gaps=[];advances=[];ticks=[];last_present=last_advance=None;previous=None
     for row in rows:
         if previous:
             if row['graphics'][5]!=previous['graphics'][5]:
                 if last_present is not None:gaps.append(row['time']-last_present)
                 last_present=row['time']
-            if row['net'][3]!=previous['net'][3]:
-                if last_advance is not None:advances.append(row['time']-last_advance)
-                last_advance=row['time']
+            advance=logical_frame(row)-logical_frame(previous)
+            if advance<0 or epoch(row)!=epoch(previous) or row['time']<=previous['time']:
+                last_advance=None
+            else:
+                ticks.append(advance)
+                if advance>0:
+                    if last_advance is not None:advances.append(row['time']-last_advance)
+                    last_advance=row['time']
         previous=row
-    frames=last['net'][3]-first['net'][3];elapsed=last['time']-first['time']
+    rate=logical_rate([first]+rows[1:]);elapsed=last['time']-first['time']
+    frames=logical_frame(last)-logical_frame(first) if rate is not None else None
     profile=[a-b for a,b in zip(last['profile'],first['profile'])]
     chain=[a-b for a,b in zip(last['chain'],first['chain'])]
     bullet=[a-b for a,b in zip(last['bullet'],first['bullet'])]
@@ -60,9 +112,12 @@ def summarize(peer):
     owners=[a-b for a,b in zip(last['snapshotOwners'],first['snapshotOwners'])]
     imp=peer['impairment'];sent=imp['sent'];start_imp=first['impairment']
     measured_sent=sent-start_imp['sent']
-    ticks=[b['net'][3]-a['net'][3] for a,b in zip(rows,rows[1:])]
-    result={'logicalFps':frames*1000/elapsed,'frames':frames,'elapsedMs':elapsed,'sceneSpans':scenes,
-      'maxLogicalTicksPerCallback':max(ticks),'multiTickCallbacks':sum(n>1 for n in ticks),
+    executed=frames+last['driver'][4]-first['driver'][4] if frames is not None else None
+    result={'logicalFps':rate,'frames':frames,'elapsedMs':elapsed,'sceneSpans':scenes,
+      'logicalCounterValid':rate is not None,'logicalFrame':{'first':logical_frame(first),'last':logical_frame(last)},
+      'netCursor':{'first':first['net'][3],'last':last['net'][3]},'progress':progress_summary(rows,first),
+      'predictionBacklogFrames':distribution([unconfirmed_frames(r) for r in rows]),
+      'maxLogicalTicksPerCallback':max(ticks,default=None),'multiTickCallbacks':sum(n>1 for n in ticks),
       'audioServicesPerSecond':(last['audioServices']-first['audioServices'])*1000/elapsed if last.get('audioServices') is not None else None,
       'audioClockSecondsPerSecond':(last['audioClock']-first['audioClock'])*1000/elapsed if 'audioClock' in last else None,
       'presentGapMs':distribution(gaps),'advanceGapMs':distribution(advances),
@@ -77,8 +132,8 @@ def summarize(peer):
       'snapshotOwnerBytes':owners[:6],'snapshotOwnerBeginMs':owners[6:],
       'actualSnapshotModes':last['snapshotModes'],
       'correctionMs':last['costs'][2]-first['costs'][2],'maxCorrectionMs':last['costs'][3],
-      'callbackMsPerLogicalTick':sum(x['ms'] for x in rows[1:])/frames,
-      'updateMsPerExecutedTick':profile[6]/(frames+last['driver'][4]-first['driver'][4]),
+      'callbackMsPerLogicalTick':sum(x['ms'] for x in rows[1:])/frames if frames and frames>0 else None,
+      'updateMsPerExecutedTick':profile[6]/executed if executed and executed>0 else None,
       'activeBullets':last['profile'][9],'peakBullets':max(x['profile'][9] for x in rows),
       'heapGrowthBytes':last['heap']-first['heap'],'canonical':peer['canonical'],
       'confirmedThrough':peer['after']['net'][5],
@@ -261,7 +316,10 @@ def run(args,origin,relay,dest,mode):
             for seat,peer in enumerate(report['peers']):
                 imp=peer['impairment']
                 if not imp['matched'] or not imp['sent'] or imp['errors'] or imp['overflow']:raise AssertionError('RTC impairment not applied cleanly')
-                if not peer['rows'] or peer['after']['net'][3]!=args.frames:raise AssertionError('Incomplete run')
+                if not peer['rows'] or logical_frame(peer['after'])!=args.frames or correcting(peer['after']):
+                    raise AssertionError('Incomplete forward run or correction at stop')
+                if any(not valid_progress(row) for row in [peer['before'],*peer['rows'],peer['after']]):
+                    raise AssertionError('Inconsistent multiplayer progress sample')
                 # Warmup RTC traffic alone cannot qualify the measured body:
                 # reject a later relay fallback or an idle impairment seam.
                 if peer['after']['driver'][12]!=1 or any(row['driver'][12]!=1 for row in peer['rows']):
@@ -295,7 +353,7 @@ def run(args,origin,relay,dest,mode):
                     rows=peer['rows'];origin=peer['timeOrigin'];windows=[]
                     pre_end=end-args.spike_ms
                     pre=[r for r in rows if pre_end-1500<=origin+r['time']<pre_end]
-                    pre_fps=(pre[-1]['net'][3]-pre[0]['net'][3])*1000/(pre[-1]['time']-pre[0]['time']) if len(pre)>1 else None
+                    pre_fps=logical_rate(pre)
                     summary['preSpikeLogicalFps']=pre_fps
                     # Fixed wall windows after network recovery, not frame windows
                     # that hide stalls. Keep confirmed progress separate from receive.
@@ -303,18 +361,19 @@ def run(args,origin,relay,dest,mode):
                         selected=[r for r in rows if end+index*1000<=origin+r['time']<end+(index+1)*1000]
                         if len(selected)<2:continue
                         a,b=selected[0],selected[-1];dt=b['time']-a['time']
-                        windows.append({'second':index,'logicalFps':(b['net'][3]-a['net'][3])*1000/dt,
+                        windows.append({'second':index,'logicalFps':logical_rate(selected),
                           'maxConfirmedAgeMs':max(r['confirmedAge'] for r in selected),
-                          'maxUnconfirmed':max(max(0,r['net'][3]-r['net'][5]-1) for r in selected),
-                          'callbackMs':distribution([r['ms'] for r in selected])})
+                          'maxUnconfirmed':max(unconfirmed_frames(r) for r in selected),
+                          'callbackMs':distribution([r['ms'] for r in selected]),'progress':progress_summary(selected)})
                     summary['recoveryWindows']=windows
                     summary['sustainedRecoveryMs']=next((w['second']*1000 for i,w in enumerate(windows[:-1])
-                      if w['logicalFps']>=57 and windows[i+1]['logicalFps']>=57 and
+                      if w['logicalFps'] is not None and windows[i+1]['logicalFps'] is not None and
+                         w['logicalFps']>=57 and windows[i+1]['logicalFps']>=57 and
                          w['maxConfirmedAgeMs']<200 and windows[i+1]['maxConfirmedAgeMs']<200),None)
                     summary['settledRecoveryMs']=next((w['second']*1000 for i,w in enumerate(windows[:-2])
-                      if all(v['logicalFps']>=57 and v['maxConfirmedAgeMs']<200 for v in windows[i:])),None)
+                      if all(v['logicalFps'] is not None and v['logicalFps']>=57 and v['maxConfirmedAgeMs']<200 for v in windows[i:])),None)
                     summary['recoveryToPreSpikeMs']=next((w['second']*1000 for i,w in enumerate(windows[:-1])
-                      if pre_fps and all(v['logicalFps']>=pre_fps*.95 and v['maxConfirmedAgeMs']<200 for v in windows[i:i+2])),None)
+                      if pre_fps and all(v['logicalFps'] is not None and v['logicalFps']>=pre_fps*.95 and v['maxConfirmedAgeMs']<200 for v in windows[i:i+2])),None)
             if mode not in ('exact','exact-snapshots'):
                 changing=set(args.touch_seats if args.wall_clock_touch else ([] if args.idle_input else range(args.players)))
                 if any(changing-{seat} and peer['corrections']==0 for seat,peer in enumerate(report['summary'])):raise AssertionError('No measured remote-input rollback')
