@@ -10,4 +10,6 @@
 
 封面属于对应游戏的素材，不因保存在本仓库而改用本仓库的代码许可证。
 
-在 Markdown 表格中可用 `<img src="docs/assets/game-covers/th06.png" width="96" alt="東方紅魔郷">` 控制显示大小，图片列表头留空。
+在 Markdown 表格中可用 `<img src="docs/assets/game-covers/thumbnails/th06.jpg" height="40" alt="東方紅魔郷">` 控制显示大小，图片列表头留空。
+
+`thumbnails/` 为表格用 JPEG 缩略图，最高 80px，按 40px 显示。原图和来源记录保留。

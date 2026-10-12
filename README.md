@@ -15,7 +15,8 @@
 ## 概要
 
 > [!TIP]
-> 如果您对原作逆向或东二/原作适配感兴趣，可以查看[总进度表](docs/TOUHOU_PROGRESS.md)。
+> 如果您对原作逆向或东二/原作适配感兴趣，可以查看[还原和适配总进度表](https://github.com/YomotsuHisami/eagler-touhou/blob/main/docs/TOUHOU_PROGRESS.md)。
+>
 > 建议加入我们的 [QQ 群](https://qm.qq.com/q/eeUrxIltug?from=tim)，我们有个开发者群。
 
 这计划的基本目标是用户在**任何现代设备下都能无门槛地**游玩。
