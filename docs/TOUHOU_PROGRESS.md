@@ -10,14 +10,14 @@
 | <img src="assets/game-covers/thumbnails/th09.jpg" width="40" height="40" alt="东方花映塚"> | **[th09] 東方花映塚 v1.50a** | [SteinsGateON](https://github.com/YomotsuHisami/th09/tree/main)<br>![Done][done] | [SteinsGateON](https://github.com/YomotsuHisami/th09/tree/main)<br>![Done][done] | [YomotsuHisami](https://github.com/YomotsuHisami/th09/tree/eagler)<br>[![In Progress][in-progress-detail]](#th09-web-适配) | [YomotsuHisami](https://github.com/YomotsuHisami/th09/tree/experiment/th09-multiplayer)<br>![Done][done] |
 | <img src="assets/game-covers/thumbnails/th10.jpg" width="40" height="40" alt="东方风神录"> | **[th10] 東方風神録 v1.00a** | [SteinsGateON](https://github.com/YomotsuHisami/th10/tree/main)<br>![Done][done] | [SteinsGateON](https://github.com/YomotsuHisami/th10/tree/portable)<br>![Done][done] | [YomotsuHisami](https://github.com/YomotsuHisami/th10/tree/eagler)<br>![Done][done] | [YomotsuHisami](https://github.com/YomotsuHisami/th10/tree/experiment/th10-multiplayer)<br>![Done][done] |
 | <img src="assets/game-covers/thumbnails/th11.jpg" width="40" height="40" alt="东方地灵殿"> | **[th11] 東方地霊殿 v1.00a** | [SteinsGateON](https://github.com/YomotsuHisami/th11/tree/main)<br>![Done][done] | [SteinsGateON](https://github.com/YomotsuHisami/th11/tree/main)<br>![Done][done] | [YomotsuHisami](https://github.com/YomotsuHisami/th11/tree/eagler)<br>[![In Progress][in-progress-detail]](#th11-web-适配) | [YomotsuHisami](https://github.com/YomotsuHisami/th11/tree/eagler)<br>[![In Progress][in-progress-detail]](#th11-多人联机) |
-| <img src="assets/game-covers/thumbnails/th12.jpg" width="40" height="40" alt="东方星莲船"> | **[th12] 東方星蓮船 v1.00b** | [Tweet-META](https://github.com/Tweet-META/th12/tree/main)<br>![In Progress][in-progress]<br>[AdingApkgg/thp](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | [AdingApkgg/thp](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | [AdingApkgg/thp](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | - |
-| <img src="assets/game-covers/thumbnails/th13.jpg" width="40" height="40" alt="东方神灵庙"> | **[th13] 東方神霊廟 v1.00c** | [AdingApkgg/thp](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | [AdingApkgg/thp](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | [AdingApkgg/thp](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | - |
+| <img src="assets/game-covers/thumbnails/th12.jpg" width="40" height="40" alt="东方星莲船"> | **[th12] 東方星蓮船 v1.00b** | [Tweet-META](https://github.com/Tweet-META/th12/tree/main)<br>![In Progress][in-progress] | - | - | - |
+| <img src="assets/game-covers/thumbnails/th13.jpg" width="40" height="40" alt="东方神灵庙"> | **[th13] 東方神霊廟 v1.00c** | ![Unassigned][unassigned] | - | - | - |
 | <img src="assets/game-covers/thumbnails/th14.jpg" width="40" height="40" alt="东方辉针城"> | **[th14] 東方輝針城 v1.00b** | Asuna<br>![In Progress][in-progress]<br>[AdingApkgg/thp](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | [AdingApkgg/thp](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | [AdingApkgg/thp](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | - |
 | <img src="assets/game-covers/thumbnails/th15.jpg" width="40" height="40" alt="东方绀珠传"> | **[th15] 東方紺珠伝 v1.00b** | [SteinsGateON](https://github.com/YomotsuHisami/th15/tree/main)<br>![Done][done] | [SteinsGateON](https://github.com/YomotsuHisami/th15/tree/main)<br>![Done][done] | [YomotsuHisami](https://github.com/YomotsuHisami/th15/tree/eagler)<br>![Done][done] | ![In Progress][in-progress] |
-| <img src="assets/game-covers/thumbnails/th16.jpg" width="40" height="40" alt="东方天空璋"> | **[th16] 東方天空璋 v1.00a** | [AdingApkgg/thp](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | - | - | - |
-| <img src="assets/game-covers/thumbnails/th17.jpg" width="40" height="40" alt="东方鬼形兽"> | **[th17] 東方鬼形獣 v1.00b** | [AdingApkgg/thp](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | - | - | - |
-| <img src="assets/game-covers/thumbnails/th18.jpg" width="40" height="40" alt="东方虹龙洞"> | **[th18] 東方虹龍洞 v1.00a** | [AdingApkgg/thp](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | - | - | - |
-| <img src="assets/game-covers/thumbnails/th19.jpg" width="40" height="40" alt="东方兽王园"> | **[th19] 東方獣王園 v1.10c** | [Idle](https://github.com/Idle233333)<br>![In Progress][in-progress]<br>[AdingApkgg/thp](https://github.com/AdingApkgg/thp)<br>![In Progress][in-progress] | - | - | - |
+| <img src="assets/game-covers/thumbnails/th16.jpg" width="40" height="40" alt="东方天空璋"> | **[th16] 東方天空璋 v1.00a** | ![Unassigned][unassigned] | - | - | - |
+| <img src="assets/game-covers/thumbnails/th17.jpg" width="40" height="40" alt="东方鬼形兽"> | **[th17] 東方鬼形獣 v1.00b** | ![Unassigned][unassigned] | - | - | - |
+| <img src="assets/game-covers/thumbnails/th18.jpg" width="40" height="40" alt="东方虹龙洞"> | **[th18] 東方虹龍洞 v1.00a** | ![Unassigned][unassigned] | - | - | - |
+| <img src="assets/game-covers/thumbnails/th19.jpg" width="40" height="40" alt="东方兽王园"> | **[th19] 東方獣王園 v1.10c** | [Idle](https://github.com/Idle233333)<br>![In Progress][in-progress] | - | - | - |
 | <img src="assets/game-covers/thumbnails/th20.jpg" width="40" height="40" alt="东方锦上京"> | **[th20] 東方錦上京 v1.00c** | [Oracatt](https://github.com/Oracatt/Touhou20/tree/main)<br>![In Progress][in-progress] | - | - | - |
 
 ## 旧作（PC-98）
@@ -48,14 +48,13 @@
 | <img src="assets/game-covers/thumbnails/th175.jpg" width="40" height="40" alt="东方刚欲异闻"> | **[th175] 東方剛欲異聞** | ![Unassigned][unassigned] | - | - | - |
 | <img src="assets/game-covers/thumbnails/th185.jpg" width="40" height="40" alt="弹幕狂们的黑市"> | **[th185] バレットフィリア達の闇市場** | ![Unassigned][unassigned] | - | - | - |
 
-## AdingApkgg/thp 移植进度（2026-10-12）
+## TH14 移植进度（2026-10-12）
 
-[源码工作区](https://github.com/AdingApkgg/thp)按源码重建路线推进；上表新增条目均为进行中，尚未完成整作 1:1 验收。保留现有项目与作者条目。
+[AdingApkgg/thp](https://github.com/AdingApkgg/thp)正在推进 TH14 源码重建与 Web 移植；尚未完成整作 1:1 验收。
 
-- 范围：TH06nc、TH12、TH13、TH14、TH16、TH17、TH18、TH19；排除参考站点已发布的 TH06–TH11、TH15、TH20。资源读取闸门 8/8、3,456 条归档条目通过，不等于完整游戏验收。
-- TH12/TH13/TH14 已有共享 C++ 核心与浏览器构建，完整验收继续。当前优先 TH14，TH16 后置；TH17/TH18/TH19/TH06nc 不标成可完整游玩。
-- TH14 Easy 咲夜 A 通过普通输入自然完成六面（92,137 帧），无无敌或强制通关覆盖；无头核心继续结局与 staff 3,737 帧返回成绩页。四条普通输入录像自对照 208,272 帧，活动战斗的 26 个选定字段无差异；九份录像通过原版解密/解压对照。此项不等于原版整局行为一致。
-- TH14 Normal 咲夜 A 测试在第四面 Game Over，不能写成 Normal 通关；图像、音频、异步加载与原版整局对照仍未全部通过。多人联机未验收。
+- Easy 咲夜 A 通过普通输入自然完成六面（92,137 帧），无无敌或强制通关覆盖；无头核心继续结局与 staff 3,737 帧返回成绩页。
+- 四条普通输入录像自对照 208,272 帧，活动战斗的 26 个选定字段无差异；九份录像通过原版解密/解压对照。此项不等于原版整局行为一致。
+- Normal 咲夜 A 测试在第四面 Game Over，不能写成 Normal 通关；图像、音频、异步加载与原版整局对照仍未全部通过。多人联机未验收。
 - 仓库只发布源码、脚本与报告，不包含原作数据或提取素材。详见[发布范围与限制](https://github.com/AdingApkgg/thp/blob/main/docs/GITHUB_RELEASE.md)和[核心接手记录](https://github.com/AdingApkgg/thp/blob/main/docs/porting/CORE_STATUS.md)。
 
 ## 适配详情
