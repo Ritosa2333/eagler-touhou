@@ -22,14 +22,23 @@ inline bool rectangleContains(float x, float y, float originX, float originY, fl
          double(y) >= double(originY) - double(height) * .5 &&
          double(y) <= double(originY) + double(height) * .5;
 }
-// Original40cf60 uses each bullet's hit rectangle against the manager's
-// 384x448 viewport, including equality at an edge.
-inline bool viewportOverlaps(float x, float y, float width, float height) {
+// Original40cf60 uses BulletManager+44/+48/+50/+54, not the playfield.
+// 409470 zeros the manager and409530 never initializes these four fields.
+// Retail replay01 stage2 confirms the zero rectangle at the BossDead clear.
+// Explicit rectangle arguments are useful for independently constructed probes.
+inline bool viewportOverlaps(float x, float y, float width, float height,
+                             float centerX = 0, float centerY = 0,
+                             float viewportWidth = 0, float viewportHeight = 0) {
   const float left = float(double(x) - double(width) * .5),
               right = float(double(x) + double(width) * .5),
               top = float(double(y) - double(height) * .5),
               bottom = float(double(y) + double(height) * .5);
-  return right >= -192 && left <= 192 && bottom >= 0 && top <= 448;
+  const float viewportLeft = float(double(centerX) - double(viewportWidth) * .5),
+              viewportRight = float(double(centerX) + double(viewportWidth) * .5),
+              viewportTop = float(double(centerY) - double(viewportHeight) * .5),
+              viewportBottom = float(double(centerY) + double(viewportHeight) * .5);
+  return right >= viewportLeft && left <= viewportRight &&
+         bottom >= viewportTop && top <= viewportBottom;
 }
 } // namespace bullet_cancellation
 void cancelHostileBullets(bool respectCountdown = false);

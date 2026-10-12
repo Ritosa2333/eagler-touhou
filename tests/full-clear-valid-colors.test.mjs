@@ -5,7 +5,7 @@ import crypto from 'node:crypto';
 import createCore from '../site/runtime/core.mjs';
 import {omitPlayerEntryClear} from './helpers/passive-player.mjs';
 
-const native=JSON.parse(fs.readFileSync(new URL('fixtures/full-clear-valid-colors-native.json',import.meta.url)));
+const native=JSON.parse(fs.readFileSync(new URL('fixtures/full-clear-valid-colors-retail-native.json',import.meta.url)));
 const word=v=>{const b=Buffer.alloc(4);b.writeInt32LE(v);return b;};
 const float=v=>{const b=Buffer.alloc(4);b.writeFloatLE(v);return b;};
 function instruction(op,args=[],time=0){
@@ -46,11 +46,13 @@ function compareEffect(snapshot,expected,label){
 test('valid16/8/4-color bullet families preserve actual native full-clear tint and RNG through Primary27',async()=>{
  assert.equal(native.originalExeSha256,'99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417');
  assert.deepEqual(native.cases.map(c=>c.bulletBirth.spriteWidth),[8,32,64]);
+ assert.deepEqual(native.managerClearRectangle,[0,0,0,0]);
  for(const row of native.cases){
   const c=await ready(row),birth=state(c),label='type'+row.type+'/color'+row.color;
   compareEffect(birth,row.afterClear,label+' clear');
   const stars=birth.items.filter(i=>i[2]===9);assert.equal(stars.length,row.afterClear.pointBirths.length);
   assert.deepEqual(stars[0].slice(4,6).map(Math.fround),row.afterClear.pointBirths[0].position.slice(0,2));
   c._th12_tick(0,0);compareEffect(state(c),row.afterPrimary27,label+' Primary27');
+  c._th12_tick(0,0);compareEffect(state(c),row.afterSecondPrimary27,label+' second Primary27 masked RNG');
  }
 });

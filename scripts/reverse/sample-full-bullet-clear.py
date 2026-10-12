@@ -5,7 +5,9 @@ selection, item9 births, flags, effect factory/color mapping and targeted next
 Bullet21 visits. Host allocation boundaries reuse the ANM effect sampler.
 Never changes game source, original files, replays or accepted goldens.
 """
-import hashlib, json, pathlib, re
+import argparse, hashlib, json, pathlib, re
+parser=argparse.ArgumentParser();parser.add_argument('--retail-viewport',action='store_true')
+retail_viewport=parser.parse_args().retail_viewport
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 sampler = ROOT / 'scripts/reverse/sample-ufo-summon-effect.py'
 namespace = {'__file__': str(sampler), '__name__': 'native_full_clear_definitions'}
@@ -26,6 +28,11 @@ rows = [
     {'slot': 8, 'position': [0, 450], 'hitbox': [4, 4], 'phase': 2, 'bodyScript': 69, 'color': 8},
     {'slot': 9, 'position': [40, 220], 'hitbox': [10, 10], 'phase': 1, 'bodyScript': 69, 'color': 9},
 ]
+if retail_viewport:
+    rows += [
+        {'slot':10,'position':[0,0],'hitbox':[4,4],'phase':1,'bodyScript':35,'color':2},
+        {'slot':11,'position':[2,0],'hitbox':[4,4],'phase':1,'bodyScript':35,'color':3},
+    ]
 cases = []
 for convert, card, active in [(1, 0, False), (0, 0, False), (1, 95, True),
                                (1, 96, True), (1, 99, True), (1, 96, False)]:
@@ -39,8 +46,9 @@ for convert, card, active in [(1, 0, False), (0, 0, False), (1, 95, True),
     native.put(0x4b44f0, 'I', ITEMS)
     native.put(0x4b43cc, 'I', BONUS)
     native.put(BONUS + 0x78, 'II', card, int(active))
-    native.put(BULLETS + 0x44, '4f', 0, 224, 0, 384)
-    native.put(BULLETS + 0x54, 'f', 448)
+    if not retail_viewport:
+        native.put(BULLETS + 0x44, '4f', 0, 224, 0, 384)
+        native.put(BULLETS + 0x54, 'f', 448)
     native.put(BULLETS + 0x4debdc, 'I', native.resource['resource'])
     for row in rows:
         at = BULLETS + 0x64 + row['slot'] * 0x9f8
@@ -76,13 +84,16 @@ for convert, card, active in [(1, 0, False), (0, 0, False), (1, 95, True),
                   'rngBefore': before, 'rngAfter': native.rng(), 'afterClear': after,
                   'pointBirths': point_births, 'effects': effects,
                   'afterSelectedNextBulletVisit': [bullet_state(row) for row in rows]})
-output = ROOT / 'tests/fixtures/full-bullet-clear-native.json'
+output = ROOT / ('tests/fixtures/full-bullet-clear-retail-native.json' if retail_viewport else 'tests/fixtures/full-bullet-clear-native.json')
 result = {'schema': 'th12-native-full-bullet-clear/1', 'originalExeSha256': namespace['EXE_SHA256'],
           'bulletAnmSha256': hashlib.sha256(namespace['RAW']).hexdigest(),
           'asciiAnmSha256': hashlib.sha256(ascii_raw).hexdigest(),
           'wholeGameOracle': False, 'acceptedReplayGolden': False, 'gpuExecuted': False,
           'boundary': 'Actual40cf60/4273f0/454d10/461250/4099e0 with a constructed384x448 BulletManager viewport, ten physical bullet slots and original embedded bullet.anm bodies. Only selected flag8 next-visits are invoked. Host malloc/free and resource tables use sample-ufo-summon-effect.py; no gameplay function stubs, no GPU draw. Enemy/Player/UFO/Item updates omitted.',
           'initialBullets': rows, 'cases': cases}
+if retail_viewport:
+    result['managerClearRectangle']=[0,0,0,0]
+    result['boundary']=result['boundary'].replace('constructed384x448 BulletManager viewport, ten physical bullet slots','zero-initialized BulletManager clear rectangle as observed in real replay01 stage2, twelve physical bullet slots')
 output.write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
 print(json.dumps({'output': str(output), 'cases': [{'convert': r['convert'], 'card': r['card'], 'activeSpell': r['activeSpell'],
     'flagged': [b['slot'] for b in r['afterClear'] if b['flags'] & 8],

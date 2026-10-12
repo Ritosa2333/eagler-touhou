@@ -2,13 +2,14 @@ import importlib.util
 import struct
 import unittest
 from pathlib import Path
-from profile import prepare_config,capture
+from profile import prepare_config,capture,replay_identity
 from window_capture import encode_png
 
 class Memory:
     def __init__(self):self.data={}
     def put(self,address,fmt,*values):self.data[address]=struct.pack('<'+fmt,*values)
     def unpack(self,fmt,address):return struct.unpack(fmt,self.data[address])
+    def read(self,address,length):return self.data[address][:length]
 
 class ProfileTests(unittest.TestCase):
     def test_config_preserves_all_other_options(self):
@@ -26,7 +27,7 @@ class ProfileTests(unittest.TestCase):
                 (0x4b0cdc,4596),(0x4b0c48,306)]:m.put(address,'i',value)
         m.put(0x4ce568,'II',55179,195958)
         for address,ptr in [(0x4b4514,0x1000000),(0x4b43e4,0x2000000),
-                (0x4b43cc,0x3000000),(0x4b4518,0x4000000)]:m.put(address,'I',ptr)
+                (0x4b43cc,0x3000000),(0x4b4518,0x4000000),(0x4b43dc,0)]:m.put(address,'I',ptr)
         m.put(0x4000000+0x10,'i',1);m.put(0x4000000+6*36+0xbc,'i',14637)
         m.put(0x4000000+0x1d0,'i',14637)
         m.put(0x2000000+0x6cdc,'i',11575720);m.put(0x2000000+0x6ce0,'i',1)
@@ -42,7 +43,7 @@ class ProfileTests(unittest.TestCase):
     def test_capture_menu_without_manager_dereferences(self):
         m=Memory()
         for address in (0x4b0cb0,0x4b0c44,0x4b0c78,0x4b0cdc,0x4b0c48):m.put(address,'i',0)
-        for address in (0x4b4514,0x4b43e4,0x4b43cc,0x4b4518):m.put(address,'I',0)
+        for address in (0x4b4514,0x4b43e4,0x4b43cc,0x4b4518,0x4b43dc):m.put(address,'I',0)
         m.put(0x4ce568,'II',123,0)
         self.assertIsNone(capture(m)['replayCursor'])
     def test_lossless_png_of_captured_bgrx(self):
@@ -55,5 +56,15 @@ class ProfileTests(unittest.TestCase):
             if png[at+4:at+8]==b'IDAT':decoded=zlib.decompress(png[at+8:at+8+n])
             at+=n+12
         self.assertEqual(decoded,b'\0\xff\0\0\0\xff\0')
+    def test_replay_identity_covers_header_input_and_fps_payload(self):
+        import hashlib
+        m=Memory();m.put(0x4b4518,'I',0x2000000)
+        m.put(0x2000000+6*36+0xa8,'I',0x3000000);m.put(0x2000000+6*36+0xb8,'I',0x4000000)
+        header=bytearray(160);struct.pack_into('<HHII',header,0,6,42,2,13)
+        m.data[0x4000000]=bytes(header);m.data[0x3000000]=bytes(range(13))
+        identity=replay_identity(m,6)
+        self.assertEqual(identity,{'stage':6,'frames':2,'stageSha256':hashlib.sha256(bytes(header)+bytes(range(13))).hexdigest()})
+        m.data[0x3000000]=bytes(range(12))+b'\xff'
+        self.assertNotEqual(replay_identity(m,6)['stageSha256'],identity['stageSha256'])
 
 if __name__=='__main__':unittest.main()

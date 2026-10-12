@@ -7,6 +7,8 @@ body{margin:24px;background:#161623;color:#ededf5;font:16px system-ui}h1{font-si
 <div class="controls"><button data-command="launch">启动检查副本</button><button data-command="pause">原版停帧</button><button data-command="step">原版前进一帧</button><button data-command="resume">原版继续</button><button data-command="capture">保存当前帧</button><a href="/api/snapshot.json" download>下载内部数据</a><a href="/api/frame.png" download>下载画面</a></div>
 <div class="controls"><label>录像<input id="replay" value="th12_11.rpy"></label><label>关卡<select id="stage"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option selected>6</option><option>7</option></select></label><button id="load">网页版加载录像</button></div>
 <div class="controls"><label>时间<input id="time" value="4:03.95"></label><label>帧号<input id="frame" type="number" min="1" value="14637"></label><button id="until">原版运行到此帧</button><button id="seek">网页版定位到此帧</button><button id="align">网页对齐原版当前帧</button><button id="both-step">两边前进一帧</button></div>
+<div class="controls"><button id="auto-start">自动找分歧点</button><button id="auto-stop" disabled>停止自动检查</button></div>
+<p>选择与原版相同的录像、关卡并在原版停帧，直接点击“自动找分歧点”，网页会自动加载并对齐。首次内部数据不同就停住两边。检查整关请从关卡开头开始。显示分数滚动与贴图不参与比较。</p><p id="scan-status" role="status">选好同一录像和关卡，在原版停帧后直接开始。</p><pre id="scan-result" aria-label="首个分歧详情"></pre>
 <p id="status">正在连接原版…</p><p id="comparison">加载同一份录像后，可比较同帧内部数据。画面帧和录像帧分别显示，不按秒数猜测对齐。</p>
 <div class="views"><section class="view"><h2>原版当前帧</h2><img id="original" alt="停帧后显示原版画面"><pre id="native-state"></pre></section><section class="view"><h2>网页版</h2><iframe id="candidate" src="/candidate?frameInspector=1" title="网页版逐帧检查"></iframe><pre id="candidate-state"></pre></section></div>
 <script type="module" src="/inspector.mjs"></script></html>

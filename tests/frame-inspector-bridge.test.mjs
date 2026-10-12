@@ -21,3 +21,12 @@ test('rejected command returns an error and does not poison later requests',asyn
   await new Promise(resolve=>setImmediate(resolve));
   assert.match(replies[0].error,/不支持/);assert.equal(replies[1].state.cursor,0);
 });
+
+test('scan batch result is returned with the exact final state',async()=>{
+  let listener;const replies=[],parent={postMessage:r=>replies.push(r)};
+  const env={parent,location:{origin:'http://127.0.0.1:8113'},addEventListener:(_,f)=>listener=f};
+  installFrameInspectorBridge({state:()=>({cursor:12}),scanBatch:async count=>({rows:[{cursor:11},{cursor:12}],count})},env);
+  listener({source:parent,origin:env.location.origin,data:{id:'batch',command:'scan-batch',count:2,protocol:'th12-frame-inspector/1'}});
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(replies[0].result.count,2);assert.equal(replies[0].state.cursor,12);
+});

@@ -13,7 +13,7 @@ import {createReplaySeeker} from '/src/replay-seek.mjs';
 const $=id=>document.getElementById(id),canvas=$('screen'),inputState=new PreviewInput();
 let core,renderer,store,stageLoader,currentStage=1,post=()=>{},ready=false,running=false,paused=false,busy=false,loadingReplay=false,last=0,accumulator=0,generation=0,previous=0,activeReplay=null,replayFrame=0;
 let corpus=[],custom=new Map(),renderedFrames=0,healthAt=0,maxGap=0,lastHud=[],log=[],drag=null,hostDrag=null,firstPresented=false,focusLostDuringStart=false,padPauseHeld=false;
-let replaySeeker,seeking=false,replayScrub=null,seekResume=true;
+let replaySeeker,seeking=false,replayScrub=null,seekResume=true,inspectorSamples=null;
 const audio={context:null,buffers:new Map(),player:null,musicSerial:-1,enabled:true,index:null,sounds:null,effects:new Map(),timelineSerial:-1,trackStartFrame:0};
 const tickMs=1000/60;
 
@@ -276,7 +276,7 @@ function download(value,name){const a=document.createElement('a'),u=URL.createOb
 $('report').onclick=()=>{if(core)download(diagnostic(),'th12-development-report.json');};
 async function initialize(){
   store=await openStore();const atlases=await fetch('/assets/atlases.json').then(r=>r.json());renderer=new Renderer(canvas,atlases);await renderer.prepare();core=await createCore();
-  replaySeeker=createReplaySeeker(core,{onReset:resetReplayMusic,onTick:(_,cursor)=>observeReplayMusic(cursor)});
+  replaySeeker=createReplaySeeker(core,{onReset:resetReplayMusic,onTick:(_,cursor)=>{observeReplayMusic(cursor);if(inspectorSamples)inspectorSamples.rows.push(inspectorSamples.read(cursor));}});
   stageLoader=new StageLoader(core,atlases,file=>bytes('/assets/'+file));await stageLoader.load(1);
   core._th12_start(2,1,1,0);present();canvas.dataset.sessionState='ready';corpus=(await fetch('/replays/index.json').then(r=>r.json())).fixtures;
   for(const path of await store.list()){if(!path.endsWith('.rpy'))continue;try{const b=await store.read(path),r=parseReplay(b),id=path.split('/').at(-1);custom.set(id,b);corpus.push({...r,data:undefined,id});}catch(e){console.warn(e.message);}}
@@ -294,18 +294,30 @@ async function initialize(){
   if(new URL(location.href).searchParams.get('frameInspector')==='1'){
     const {installFrameInspectorBridge}=await import('/src/frame-inspector-bridge.mjs');
     const frozen=()=>{if(running)pause(true);$('overlay').hidden=true;};
+    let inspectorIdentity=null;
+    const inspectorState=(cursor=replayFrame)=>{const h=hud(),pointer=core._th12_spell(),size=core._th12_spell_size(),spell=JSON.parse(new TextDecoder().decode(core.HEAPU8.subarray(pointer,pointer+size)));return {stage:currentStage,replayCursor:cursor,logicalFrame:h[0],scoreStored:core._th12_score_stored(),rng:[h[8],h[9]],piv:h[20],graze:h[7],power:h[4],playerFixed:[Math.round(h[1]*128),Math.round(h[2]*128)],bossLife:h[34],bossPhaseAge:h[33],spell:{card:spell.cardId,flags:spell.flags,age:spell.age},paused,ended:h[13]};};
     installFrameInspectorBridge({
       async load(id,stage){
         if(!/^[a-zA-Z0-9_-]+\.rpy$/.test(id)||!Number.isInteger(stage)||stage<1||stage>7)throw Error('录像或关卡无效');
         const replay=parseReplay(await bytes('/replays/'+encodeURIComponent(id)));
         if(!supportedReplay(replay,stage))throw Error('录像不包含此关卡');
+        const part=replay.stages.find(s=>s.number===stage),hash=new Uint8Array(await crypto.subtle.digest('SHA-256',replay.data.slice(part.offset,part.inputOffset+part.payload)));
+        inspectorIdentity={stage,frames:part.frames,stageSha256:[...hash].map(v=>v.toString(16).padStart(2,'0')).join('')};
         $('replay-stage').replaceChildren(new Option(String(stage),String(stage)));$('replay-stage').value=stage;
         audio.enabled=false;$('music').checked=false;await start(replay);frozen();
       },
       async seek(frame){if(!Number.isSafeInteger(frame)||frame<0||frame>600000)throw Error('帧号无效');if(!activeReplay)throw Error('请先加载录像');await seekReplay(frame,false);frozen();},
       async step(){if(!activeReplay)throw Error('请先加载录像');await jumpReplay(1,false);frozen();},
-      state(){const h=hud(),pointer=core._th12_spell(),size=core._th12_spell_size(),spell=JSON.parse(new TextDecoder().decode(core.HEAPU8.subarray(pointer,pointer+size)));return {stage:currentStage,replayCursor:replayFrame,logicalFrame:h[0],scoreStored:core._th12_score_stored(),rng:[h[8],h[9]],piv:h[20],graze:h[7],power:h[4],playerFixed:[Math.round(h[1]*128),Math.round(h[2]*128)],spell:{card:spell.cardId,flags:spell.flags,age:spell.age},paused};}
+      async scanBatch(count){
+        if(!Number.isInteger(count)||count<1||count>240)throw Error('检查批次无效');
+        if(!activeReplay||!inspectorIdentity)throw Error('请先通过检查页加载录像');
+        frozen();const base=inspectorState(),rows=[];inspectorSamples={rows,read:inspectorState};
+        try{await seekReplay(replayFrame+count,false);frozen();}finally{inspectorSamples=null;}
+        return {base,rows,identity:inspectorIdentity,ended:inspectorState().ended};
+      },
+      state:inspectorState
     });
+    window.parent.postMessage({protocol:'th12-frame-inspector/1',event:'ready'},location.origin);
   }
 }
 initialize().catch(fail);

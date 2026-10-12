@@ -76,6 +76,7 @@ def main():
             elif path=='/api/snapshot.json':file=output/'latest.json'
             elif path=='/':file=HERE/'index.html'
             elif path=='/inspector.mjs':file=HERE/'inspector.mjs'
+            elif path=='/auto-scan.mjs':file=HERE/'auto-scan.mjs'
             elif path=='/candidate':file=TITLE/'site/index.html'
             else:
                 root=TITLE/'src' if path.startswith('/src/') else TITLE/'site'
@@ -90,11 +91,18 @@ def main():
             if self.path!='/api/command':self.send(404,b'{}');return
             try:
                 length=int(self.headers.get('Content-Length','0'))
-                if not 0<length<=2048:raise ValueError('Invalid request size')
+                if not 0<length<=256*1024:raise ValueError('Invalid request size')
                 command=json.loads(self.rfile.read(length));kind=command.get('kind')
                 if kind=='launch':launch();self.send(202,b'{"queued":true}');return
-                if kind not in ('pause','resume','step','until','capture','close'):raise ValueError('Unknown command')
+                if kind not in ('pause','resume','step','until','capture','close','scan-batch'):raise ValueError('Unknown command')
                 if debugger is None:raise ValueError('请先启动检查副本。')
+                if kind=='scan-batch':
+                    if debugger.state().get('status')!='paused':raise ValueError('先停住原版再开始检查')
+                    from scan import ScanBatch
+                    ScanBatch(command['base'],command['rows'])
+                    if not isinstance(command.get('batchId'),str) or len(command['batchId'])>80:raise ValueError('检查批次无效')
+                    debugger.command(kind,base=command['base'],rows=command['rows'],identity=command['identity'],batchId=command['batchId'])
+                    self.send(202,b'{"queued":true}');return
                 if kind=='until':
                     stage,frame=command.get('stage'),command.get('frame')
                     if type(stage)!=int or type(frame)!=int or not 1<=stage<=7 or not 0<=frame<=600000:raise ValueError('Invalid target frame')

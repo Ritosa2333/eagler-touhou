@@ -4,7 +4,9 @@ Executes40a250's real color remap/bullet ANM and40cf60(1), then460fe0.
 Constructed CPU fixture with host allocator/resource boundaries, no provider
 changes, runtime edits, GPU rendering, original edits or accepted goldens.
 """
-import hashlib, json, pathlib
+import argparse, hashlib, json, pathlib
+parser=argparse.ArgumentParser();parser.add_argument('--retail-viewport',action='store_true')
+retail_viewport=parser.parse_args().retail_viewport
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 sampler = ROOT / 'scripts/reverse/sample-ufo-summon-effect.py'
 namespace = {'__file__': str(sampler), '__name__': 'valid_full_clear_color_definitions'}
@@ -15,7 +17,7 @@ from unicorn.x86_const import *
 BULLETS, ITEMS, BONUS, FONT = 0x2400000, 0x5000000, 0x2012000, 0x2015000
 SHOOTER, PLAYER = 0x2018000, 0x2100000
 cases = []
-for kind, color, origin in [(0, 5, [-80, 120]), (17, 4, [0, 160]), (26, 2, [80, 200])]:
+for kind, color, origin in ([(0,5,[-1,0]),(17,4,[0,0]),(26,2,[1,0])] if retail_viewport else [(0, 5, [-80, 120]), (17, 4, [0, 160]), (26, 2, [80, 200])]):
     native = Native(0x1234)
     native.mu.mem_map(ITEMS, 0x800000)
     ascii_raw = (ROOT / 'local/retail/ascii.anm').read_bytes()
@@ -29,8 +31,9 @@ for kind, color, origin in [(0, 5, [-80, 120]), (17, 4, [0, 160]), (26, 2, [80, 
     native.put(PLAYER + 0x97c, '3f', 0, 400, 0)
     native.put(BULLETS + 0x10, 'I', BULLETS + 0x64)
     native.put(BULLETS + 0x64 + 2000 * 0x9f8 + 0x532, 'H', 5)
-    native.put(BULLETS + 0x44, '4f', 0, 224, 0, 384)
-    native.put(BULLETS + 0x54, 'f', 448)
+    if not retail_viewport:
+        native.put(BULLETS + 0x44, '4f', 0, 224, 0, 384)
+        native.put(BULLETS + 0x54, 'f', 448)
     native.put(BULLETS + 0x4debdc, 'I', native.resource['resource'])
     native.put(SHOOTER, 'HH', kind, color)
     native.put(SHOOTER + 4, '3f', *origin, .1)
@@ -57,15 +60,20 @@ for kind, color, origin in [(0, 5, [-80, 120]), (17, 4, [0, 160]), (26, 2, [80, 
     native.tick = 0
     native.call(0x460fe0, registers={UC_X86_REG_EDI: namespace['MANAGER']})
     primary = {'rng': native.rng(), 'effects': native.nodes()}
+    native.tick = 1
+    native.call(0x460fe0, registers={UC_X86_REG_EDI: namespace['MANAGER']})
+    second_primary = {'rng': native.rng(), 'effects': native.nodes()}
     cases.append({'type': kind, 'color': color, 'origin': origin, 'mode': 1, 'speed': 0,
                   'flags': 0x83, 'fireSound': 22, 'transformSound': 40,
                   'seed': 0x1234, 'rngBefore': before,
-                  'bulletBirth': birth, 'afterClear': clear, 'afterPrimary27': primary})
-output = ROOT / 'tests/fixtures/full-clear-valid-colors-native.json'
+                  'bulletBirth': birth, 'afterClear': clear, 'afterPrimary27': primary,
+                  'afterSecondPrimary27': second_primary})
+output = ROOT / ('tests/fixtures/full-clear-valid-colors-retail-native.json' if retail_viewport else 'tests/fixtures/full-clear-valid-colors-native.json')
 output.write_text(json.dumps({'schema': 'th12-native-full-clear-valid-colors/1',
     'originalExeSha256': namespace['EXE_SHA256'], 'bulletAnmSha256': hashlib.sha256(namespace['RAW']).hexdigest(),
     'asciiAnmSha256': hashlib.sha256(ascii_raw).hexdigest(), 'gpuExecuted': False,
     'wholeGameOracle': False, 'acceptedReplayGolden': False,
+    'managerClearRectangle': [0,0,0,0] if retail_viewport else [0,224,384,448],
     'boundary': 'Actual40a250 with valid type0/color5, type17/color4, type26/color2 shooters, real454ee0/40d430 ANM remap and original bullet birth update; actual40cf60(1)/4273f0 and subsequent460fe0 Primary27. Zero-speed mode1 single bullets, default shooter flags0x83/fireSound22/transformSound40, original resources and prepared host allocations. Constructor called directly, so emitter wrapper/audio output omitted. No gameplay instruction replacements. Player/Enemy/Item manager updates omitted; no GPU draw.',
     'cases': cases}, indent=2) + '\n', encoding='utf-8')
 print(json.dumps({'output': str(output), 'cases': [{'type': c['type'], 'color': c['color'],

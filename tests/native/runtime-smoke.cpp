@@ -1,4 +1,6 @@
 #include "game/Laser.hpp"
+#include "game/GameState.hpp"
+#include "game/BulletCancellation.hpp"
 #include "wasm/Api.hpp"
 #include <array>
 #include <cstdio>
@@ -12,6 +14,36 @@ static bool check(bool condition, const char* message) {
   return condition;
 }
 int main() {
+  // Original41a9f0 accepts damage-immune targets and excludes targeting flags.
+  // These samples include the one-tick birth immunity seen in replay01.
+  for (const auto flags : {0u, 0x10u, 1u, 0x20u, 0x2000000u, 0x4000000u}) {
+    th12::enemies.clear();
+    auto enemy = std::make_unique<th12::Enemy>();
+    enemy->id = 1;
+    enemy->active = true;
+    enemy->x = 20;
+    enemy->y = 40;
+    enemy->flags = flags;
+    enemy->immunityTicks = 1;
+    enemy->invincible = true;
+    th12::enemies.push_back(std::move(enemy));
+    const bool accepted = flags == 0 || flags == 0x10;
+    if (!check(bool(th12::playerTarget(0, 0, 256)) == accepted,
+               "Original homing acquisition differs for an immune/flagged enemy") ||
+        !check(bool(th12::playerTarget(0, 0, 256, 1)) == accepted,
+               "Original homing target retention differs for an immune/flagged enemy"))
+      return 1;
+  }
+  th12::enemies.clear();
+  if (!check(!th12::bullet_cancellation::viewportOverlaps(-180, 422, 4, 4),
+             "Retail ECL510 unexpectedly uses playfield dimensions") ||
+      !check(th12::bullet_cancellation::viewportOverlaps(2, 0, 4, 4),
+             "Retail zero rectangle lost inclusive boundary contact") ||
+      !check(!th12::bullet_cancellation::viewportOverlaps(2.01f, 0, 4, 4),
+             "Retail zero rectangle accepts an outside bullet") ||
+      !check(th12::bullet_cancellation::viewportOverlaps(-180, 422, 4, 4, 0, 224, 384, 448),
+             "Explicitly constructed rectangle differs from original probes"))
+    return 1;
   // Four independently captured values from the immutable native RNG corpus.
   struct RngSample {
     int seed;

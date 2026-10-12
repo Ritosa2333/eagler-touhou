@@ -12,7 +12,8 @@ import queue
 import threading
 import time
 from pathlib import Path
-from profile import FRAME_BOUNDARY, FRAME_SIGNATURE, capture, COMMON_REVISION
+from profile import FRAME_BOUNDARY, FRAME_SIGNATURE, capture, COMMON_REVISION,replay_identity
+from scan import ScanBatch,compare
 
 DWORD = c.c_uint32
 PTR = c.c_void_p
@@ -72,6 +73,7 @@ class FrameDebugger:
         self.commands=queue.Queue(); self.lock=threading.Lock()
         self.latest={'status':'starting','commonRevision':COMMON_REVISION}
         self.mode='run'; self.target=None; self.frames=0; self.held=False
+        self.scan=None;self.scan_report=None;self.identity=None
         self.ready=threading.Event(); self.closed=False
         self.worker=threading.Thread(target=self._run,name='TH12 debugger',daemon=True)
         self.worker.start()
@@ -93,10 +95,25 @@ class FrameDebugger:
             self.latest={**row,'status':status,'processId':self.pi.pid,
                 'presentFrame':self.frames,'boundary':hex(FRAME_BOUNDARY),
                 'commonRevision':COMMON_REVISION,'coverage':'scalar fields; not complete object state'}
+            if self.scan_report:self.latest['scan']=dict(self.scan_report)
     def _apply(self,cmd,row):
         kind=cmd['kind']
         if kind=='close': self.closed=True; return
-        if kind=='pause': self.mode='pause'
+        if kind=='pause':
+            self.mode='pause'
+            if self.scan_report and self.scan_report.get('status')=='running':self.scan_report['status']='cancelled'
+        elif kind=='scan-batch':
+            if not self.held or not row.get('replayActive'):raise ValueError('先在原版录像中停帧，再开始自动检查')
+            identity=replay_identity(self.reader,row['stage'])
+            if identity!=cmd.get('identity'):raise ValueError('两边加载的录像不同；请选择相同录像与关卡')
+            batch=ScanBatch(cmd['base'],cmd['rows'])
+            differences=compare(row,cmd['base'])
+            self.scan=batch;self.identity=identity;self.scan_report=batch.result
+            self.scan_report['batchId']=cmd['batchId']
+            if differences:
+                self.scan_report.update(status='diverged',firstDifference={'frame':row['replayCursor'],'fields':differences,'original':row,'candidate':cmd['base']})
+            else:self.mode='scan'
+            self._publish(row,'paused' if self.mode=='pause' else 'running')
         elif kind=='resume': self.mode='run'; self.target=None
         elif kind=='step': self.mode='step'; self.target=self.frames+1
         elif kind=='until':
@@ -116,7 +133,8 @@ class FrameDebugger:
             except queue.Empty: return
             try: self._apply(cmd,row)
             except Exception as error:
-                with self.lock: self.latest['commandError']=str(error)
+                self.scan_report={'status':'error','error':str(error)}
+                self._publish(row,'paused' if self.held else 'running')
             if self.closed or self.mode!='pause': return
     def _run(self):
         self.pi=ProcessInfo(); si=StartupInfo(); si.cb=c.sizeof(si)
@@ -164,16 +182,24 @@ class FrameDebugger:
                                 trace.write(json.dumps({'presentFrame':self.frames,**row})+'\n')
                                 if self.frames%60==0:trace.flush()
                                 self._drain(row)
+                                scan_stop=False
+                                if self.mode=='scan':
+                                    try:scan_stop=self.scan.observe(row)
+                                    except Exception as error:
+                                        self.scan_report.update(status='error',error=str(error));scan_stop=True
                                 stop=(self.mode=='pause' or self.mode=='step' and self.frames>=self.target or
                                     self.mode=='until' and row.get('replayActive') and
-                                    row['stage']==self.target[0] and row['replayCursor']>=self.target[1])
+                                    row['stage']==self.target[0] and row['replayCursor']>=self.target[1] or scan_stop)
                                 if stop:
                                     self.mode='pause'; self.held=True; trace.flush()
                                     self._publish(row,'paused'); self.ready.set()
                                     try:
                                         from window_capture import capture_client
-                                        capture_client(self.pi.pid,self.output/'latest.png')
-                                        (self.output/'latest.json').write_text(json.dumps(self.state(),ensure_ascii=False,indent=2),encoding='utf8')
+                                        if not self.scan_report or self.scan_report.get('status')!='batch-complete':
+                                            capture_client(self.pi.pid,self.output/'latest.png')
+                                            (self.output/'latest.json').write_text(json.dumps(self.state(),ensure_ascii=False,indent=2),encoding='utf8')
+                                            if self.scan_report and self.scan_report.get('status')=='diverged':
+                                                (self.output/'first-difference.json').write_text(json.dumps(self.state(),ensure_ascii=False,indent=2),encoding='utf8')
                                     except Exception as error:
                                         with self.lock:self.latest['captureError']=str(error)
                                     while self.mode=='pause' and not self.closed: self._drain(row,block=True)

@@ -596,7 +596,9 @@ Enemy* playerTarget(float x, float y, float radius, u32 existing) {
   float distance = radius * radius;
   for (auto& p : enemies) {
     auto& e = *p;
-    if (!e.active || e.hidden || e.invincible)
+    // Native41a9f0/43a54e exclude these targeting flags, not damage immunity.
+    // Newly spawned enemies remain valid targets during their HP immunity tick.
+    if (!e.active || (e.flags & 0x6000021u))
       continue;
     if (existing && e.id == existing)
       return &e;

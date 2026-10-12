@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import createCore from '../site/runtime/core.mjs';
 import {omitPlayerEntryClear} from './helpers/passive-player.mjs';
 
-const native=JSON.parse(fs.readFileSync(new URL('fixtures/full-bullet-clear-native.json',import.meta.url)));
+const native=JSON.parse(fs.readFileSync(new URL('fixtures/full-bullet-clear-retail-native.json',import.meta.url)));
 const word=v=>{const b=Buffer.alloc(4);b.writeInt32LE(v);return b;};
 const float=v=>{const b=Buffer.alloc(4);b.writeFloatLE(v);return b;};
 function instruction(op,args=[],time=0){
@@ -35,10 +35,11 @@ async function ready(card=0,inactive=false){
  c._th12_tick(0,0); // Native input0 clears the main birth guard.
  return c;
 }
-test('production ECL510 retires matching bullets immediately and converts physical slots in native order',async()=>{
+test('production ECL510 uses the retail zero rectangle and converts matching physical slots in native order',async()=>{
  assert.equal(native.originalExeSha256,'99907258b44ea25be41fb4e607cbe7f64b79021148d9fb95a9a7ebf979095417');
  const original=native.cases.find(c=>c.convert&&!c.card),c=await ready();
- assert.equal(state(c).bullets.filter(b=>!b.friendly).length,8);
+ assert.deepEqual(native.managerClearRectangle,[0,0,0,0]);
+ assert.equal(state(c).bullets.filter(b=>!b.friendly).length,10);
  c._th12_tick(0,0);const after=state(c),items=after.items.filter(i=>i[2]===9);
  assert.equal(items.length,original.pointBirths.length);
  for(let i=0;i<items.length;i++){
@@ -46,7 +47,9 @@ test('production ECL510 retires matching bullets immediately and converts physic
   assert.equal(items[i][10],(i&3)-1,'same Item22 visit consumes the original ordinal delay');
  }
  const remaining=after.bullets.filter(b=>!b.friendly);
- assert.equal(remaining.length,1);assert.deepEqual(remaining[0].position,[260,128]);
+ const survivors=original.afterClear.filter(b=>b.phase!==0&&b.phase!==3&&!(b.flags&8));
+ assert.equal(remaining.length,survivors.length);
+ assert.deepEqual(remaining.map(b=>b.position),survivors.map(b=>b.position.slice(0,2)));
  assert.equal(after.animations.nodes.filter(n=>n.alive&&n.bank===0&&n.script===96).length,original.effects.length);
 });
 test('production full clear preserves the native active96..99 spell gate',async()=>{

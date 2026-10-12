@@ -32,7 +32,8 @@ def capture(reader):
            'piv': value(0x4b0c78), 'graze': value(0x4b0cdc),
            'power': value(0x4b0c48), 'replayActive': False,
            'replayCursor': None, 'displayScoreStored': None,
-           'playerFixed': None, 'spell': None}
+           'playerFixed': None, 'spell': {'card':0,'flags':0,'age':0},
+           'bossLife':0,'bossPhaseAge':0}
     if replay and 1 <= stage <= 7:
         row['replayActive'] = value(replay+0x10) == 1
         if row['replayActive']:
@@ -51,7 +52,29 @@ def capture(reader):
         row['spell'] = {'card': value(spell+0x78),
                         'flags': value(spell+0x7c, 'I'),
                         'age': value(spell+0x28)}
+    manager=value(0x4b43dc,'I')
+    if manager:
+        node=value(manager+0x68,'I');visited=set()
+        while node:
+            if node in visited or len(visited)>=8192:raise ValueError('Enemy链表无效')
+            visited.add(node)
+            enemy,next_node=reader.unpack('<II',node)
+            if value(enemy+0x26f8,'I')&0x400000:
+                row['bossLife']=value(enemy+0x2648)
+                row['bossPhaseAge']=value(enemy+0x12b0)
+                break
+            node=next_node
     return row
+
+def replay_identity(reader,stage):
+    replay=reader.unpack('<I',0x4b4518)[0]
+    if not replay or not 1<=stage<=7:raise ValueError('原版尚未进入录像')
+    base=reader.unpack('<I',replay+stage*36+0xa8)[0]
+    header=reader.unpack('<I',replay+stage*36+0xb8)[0]
+    raw=reader.read(header,160)
+    number,seed,frames,payload=struct.unpack_from('<HHII',raw)
+    if number!=stage or not 1<=frames<=600000 or not frames*6<=payload<=64*1024*1024:raise ValueError('原版录像数据无效')
+    return {'stage':stage,'frames':frames,'stageSha256':hashlib.sha256(raw+reader.read(base,payload)).hexdigest()}
 
 def verify_executable(path):
     if hashlib.sha256(path.read_bytes()).hexdigest() != EXE_SHA256:
