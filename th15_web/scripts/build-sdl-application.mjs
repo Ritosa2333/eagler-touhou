@@ -4,6 +4,7 @@ import {readFileSync,readdirSync,mkdirSync,existsSync,writeFileSync,unlinkSync} 
 import {resolve,relative} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
+import {commonInclude,commonThpracHeaders} from '../../portable/common-root.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const workspace=resolve(root,'..');
@@ -17,6 +18,7 @@ const out=resolve(root,process.env.TH15_OUTPUT||(release?'artifacts/sdl-release'
 const objects=resolve(out,'objects');mkdirSync(objects,{recursive:true});
 const env={...process.env,EM_CONFIG:resolve(sdk,'.emscripten'),EMSDK:sdk,EMCC_CORES:'4'};
 const common=['-O2','-g0','-std=c++17','-ffp-contract=off','-fno-strict-aliasing','-fno-exceptions','-fno-rtti','-DTH_NATIVE_PLATFORM=1','-DTH_ENABLE_THCRAP=1',`-DTH15_DEVELOPMENT_HARNESS=${release?0:1}`,'--use-port=sdl3','--use-port=sdl3_ttf'];
+common.push('-I'+commonInclude);
 common.push(`-DTH_ENABLE_THPRAC=${thprac?1:0}`);
 if(thprac)common.push('-DIMGUI_DISABLE_WIN32_FUNCTIONS','-I'+resolve(root,'cpp/third_party/imgui'));
 // The full object list can exceed Windows' 32K process command limit after extraction.
@@ -30,7 +32,7 @@ const files=dir=>readdirSync(resolve(root,dir),{withFileTypes:true}).flatMap(e=>
 const source=[...files('cpp/game'),...files('cpp/sdl'),...(release?[]:[resolve(root,'tests/sdl/application-exports.cpp')]),resolve(workspace,'portable/sdl/Renderer.cpp')];
 if(thprac)source.push(...['imgui.cpp','imgui_draw.cpp','imgui_tables.cpp','imgui_widgets.cpp','imgui_freetype.cpp'].map(p=>resolve(root,'cpp/third_party/imgui',p)));
 const headerFiles=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?headerFiles(resolve(dir,e.name)):/\.(h|hpp|inc)$/.test(e.name)?[resolve(dir,e.name)]:[]);
-const headers=[...headerFiles(resolve(root,'cpp')),...headerFiles(resolve(workspace,'portable/sdl')),...headerFiles(resolve(workspace,'portable/input'))].sort();
+const headers=[...headerFiles(resolve(root,'cpp')),...headerFiles(resolve(workspace,'portable/sdl')),...headerFiles(resolve(workspace,'portable/input')),...commonThpracHeaders].sort();
 const sha=b=>createHash('sha256').update(b).digest('hex');
 const headerHash=sha(headers.map(p=>p+sha(readFileSync(p))).join('\n'));
 const settings=JSON.stringify([common,headerHash]);
