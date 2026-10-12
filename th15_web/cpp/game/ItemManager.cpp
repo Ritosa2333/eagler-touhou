@@ -21,6 +21,7 @@ bool ItemManager::appearance(Slot& slot,i32 kind){
 }
 bool ItemManager::piece_effect(const ItemState& item){if(item.kind!=4&&item.kind!=5&&item.kind!=6&&item.kind!=7&&item.kind!=12)return true;if(!effects.create(101,item.position)){error=effects.error;return false;}if(!sound||!sound(item.kind==4||item.kind==5?74:48)){error="Item piece sound unavailable";return false;}return true;}
 u32 ItemManager::spawn(i32 kind,const Vec3& position,float angle,float speed){
+    if((kind==1||kind==3)&&multiplayer_power_full&&multiplayer_power_full())kind=2;
     requests=wrapping_add(requests,1);if(kind<1||kind>15){error="Invalid item kind";return 0;}const bool cancel=kind==9||kind==10||kind==11||kind==13;auto& free=free_slots[cancel];if(free.empty())return 0;const u32 index=free.back();auto& slot=slots[index];auto& state=slot.state;
     state.position=position;state.velocity={float(std::cos(double(angle))*double(speed)),float(std::sin(double(angle))*double(speed)),0};state.reserved=0;state.age.set(0);
     if(cancel){state.stamp=cancel_stamp;const i32 divisor=cancel_density<256?4:cancel_density<512?8:cancel_density<1024?16:32,offset=cancel_density<256?0:cancel_density<512?4:cancel_density<1024?8:16;state.delay=wrapping_add(requests%divisor,offset);state.state=5;state.kind=state.appearance=kind;}

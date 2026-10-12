@@ -56,6 +56,7 @@ struct BattleWorldServices:SpellCardServices {
 };
 class GameBattle {
     friend struct MultiplayerPilot;
+    friend class MultiplayerHud;
     struct Services;std::unique_ptr<Services> services;
     AnmManager& animations;AnmEnvironment& environment;Rng& game_random;Rng& visual_random;
     BattleWorldServices& presentation;EclProgram& program;BattleResources resources;i32 character;
@@ -90,6 +91,7 @@ public:
     const PlayerCollision& mp_collision(unsigned);
     int mp_nearest(const Vec3&,bool power=false)const;Vec3 mp_target(const Vec3&)const;
     bool mp_damage(const DamageQuery&,DamageResult&);bool mp_draw(AnmRenderer&);bool mp_reward_item(const ItemState&);
+    bool mp_all_power_full()const;int mp_item_owner(const ItemState&)const;
 #endif
     std::string error;
     std::function<bool()> game_over_begin;

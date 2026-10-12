@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iterator>
 #include <cstdlib>
+#include <cstring>
 using namespace th15;
 void require(bool valid,const std::string& reason){if(!valid){std::fprintf(stderr,"FAIL: %s\n",reason.c_str());std::exit(1);}}
 struct RetailAssets final:AssetSource {
@@ -54,8 +55,11 @@ struct World {
   for(unsigned s=0;s<3;++s){if(!b.pilots[s]){at+=8;continue;}auto& p=*b.pilots[s];out[at++]=u32(p.player->motion.position_fixed.x);out[at++]=u32(p.player->motion.position_fixed.y);out[at++]=p.session.power;out[at++]=p.session.bombs;out[at++]=p.session.extra_lives;out[at++]=p.player->life.state;out[at++]=p.score.score;out[at++]=p.player->frame.input_age.current;}return out;
  }
 };
+#include "native-items.hpp"
+#include "native-hud.hpp"
 int main(int argc,char** argv){
  require(argc==2,"Pass a legally supplied Japanese TH15 1.00b archive");RetailAssets files(argv[1]);unsigned ticks=0;
+ item_rules(files);hud_rules(files);
  for(const auto selections:{std::array<int,3>{0,1,2},std::array<int,3>{3,3,0}}){
   auto left=std::make_unique<World>(files,3,0,selections),right=std::make_unique<World>(files,3,2,selections);
   auto& b=*left->battle;
@@ -153,5 +157,5 @@ int main(int argc,char** argv){
   require(run.pilots[2]->session.life_pieces==2&&run.pilots[2]->session.bomb_pieces==3&&run.pilots[2]->owned_life_piece_tier==4,"Next stage discarded individual fragments or Extend progress");
   for(unsigned f=0;f<30;++f)transition.step({});
  }
- std::printf("{\"passed\":true,\"ticks\":%u,\"characters\":4,\"localSeats\":[0,2],\"checks\":[\"independent-input-bombs-lives-power-fragments\",\"shared-score-graze-point-value\",\"shared-damage-score\",\"nearest-pickup\",\"remote-collision\",\"single-team-chapter-score-individual-resources\",\"individual-extend-tiers-caps-extra-threshold\",\"nearest-ECL-aim\",\"next-stage-resources\",\"all-player-game-over\",\"retail-ECL-determinism\"]}\n",ticks);
+ std::printf("{\"passed\":true,\"ticks\":%u,\"characters\":4,\"localSeats\":[0,2],\"checks\":[\"independent-input-bombs-lives-power-fragments\",\"shared-score-graze-point-value\",\"shared-damage-score\",\"eligible-underpowered-pickup-full-P-conversion\",\"individual-HUD-shared-statistics-no-battle-RNG\",\"remote-collision\",\"single-team-chapter-score-individual-resources\",\"individual-extend-tiers-caps-extra-threshold\",\"nearest-ECL-aim\",\"next-stage-resources\",\"all-player-game-over\",\"retail-ECL-determinism\"]}\n",ticks);
 }

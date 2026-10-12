@@ -104,6 +104,9 @@ int AnmRenderer::trail(AnmVm& vm){
     flush();if(!material(vm,false))return -2;graphics.set_depth_mask(false);auto& state=graphics.pipeline();state.color.operation=state.alpha.operation=ColorOperation::First;state.color.first=state.alpha.first={ArgumentSource::Diffuse};shapes.clear();for(i32 i=0;i<count;i++)shapes.push_back({{float(center.x+data.points[u32(i)].x),float(center.y+data.points[u32(i)].y),0},1,data.colors[u32(i)]});graphics.set_layout(VertexLayout::ScreenColor);submit(vm,Topology::LineStrip,u32(count-1),shapes.data(),sizeof(ColorVertex));return 0;
 }
 int AnmRenderer::draw(AnmVm& vm){
+#if TH15_MULTIPLAYER
+    if(std::find(multiplayer_hidden_hud.begin(),multiplayer_hidden_hud.end(),&vm)!=multiplayer_hidden_hud.end())return 0;
+#endif
 #if TH15_DEVELOPMENT_HARNESS
  ++render_modes[vm.visual.draw_mode()&31];
 #endif

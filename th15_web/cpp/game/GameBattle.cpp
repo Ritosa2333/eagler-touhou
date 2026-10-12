@@ -218,6 +218,9 @@ const PlayerCollision& GameBattle::player_collision()noexcept{
 bool GameBattle::refresh_world(){
     if(progress){stage=progress->stage;input.rate=progress->rate;input.game_flags=progress->scene_flags;enemy_world.mode=progress->character;enemy_world.submode=progress->subcharacter;enemy_world.difficulty=progress->difficulty;enemy_world.counter1=progress->spell_id;enemy_world.current_chapter=progress->chapter;enemy_world.spell_state=progress->transition;enemy_world.player_state=progress->new_run;enemy_world.scene_flags=progress->scene_flags;score.difficulty=progress->difficulty;}
     enemy_world.mode_flags=session.mode_flags;enemy_world.state=session.power;enemy_world.counter3=session.deaths;
+#if TH15_MULTIPLAYER
+    if(mp_enabled){i32 power=score.max_power;bool found=false;for(unsigned s=0;s<mp_options.seat_count;++s){const auto& p=*pilots[s];if(p.ghost||p.session.extra_lives<0)continue;found=true;power=std::min(power,p.session.power);}enemy_world.state=found?power:0;}
+#endif
     enemy_world.player_position=player->motion.position;enemy_world.player_damage_state=player->life.state;enemy_world.game_state=session.bomb_state;
     // ECL, player deaths and Bomb activation share the native manager counters.
     session.enemy_deaths=enemy_world.counters[0];session.enemy_chain=enemy_world.counters[2];
@@ -259,10 +262,8 @@ i32 GameBattle::update_items(){
  for(unsigned s=0;s<mp_options.seat_count;++s){auto& p=*pilots[s];auto c=std::make_unique<ItemFrameContext>(ItemFrameContext{p.player->motion,p.player->frame.bounds,p.score,*p.collection,visual_random});
  c->player_state=p.ghost?2:p.player->life.state;c->character=p.character;c->bomb_state=p.session.bomb_state;c->bomb_frame=p.bomb->age.current;c->held=p.keys.held;c->hud_collect=input.hud_collect||dialogue_present();c->attraction_speed=p.player->resource.header.attraction_speed;c->rate=input.rate;contexts[s]=std::move(c);}
  items->multiplayer_context=[&](u32 index,const ItemState& item)->ItemFrameContext*{
- const bool power=item.kind==1||item.kind==3||item.kind==8||item.kind==10;int target=mp_item_targets[index];
- if((item.state!=3&&item.state!=4)||target<0||target>=int(mp_options.seat_count)||!pilots[target]->alive())target=mp_nearest(item.position,power);
- if(target<0)target=mp_nearest(item.position);mp_item_targets[index]=target;
- return target<0?&*contexts[0]:&*contexts[unsigned(target)];};
+ const int target=mp_item_owner(item);mp_item_targets[index]=target;
+ return target<0?nullptr:&*contexts[unsigned(target)];};
  const bool ok=items->update(*contexts[0]);items->multiplayer_context={};if(!ok){fail(items->error);return 5;}return error.empty()?1:5;}
 #endif
 refresh_world();ItemFrameContext c{player->motion,player->frame.bounds,score,*collection,visual_random};c.player_state=player->life.state;c.character=character;c.bomb_state=session.bomb_state;c.bomb_frame=bomb->age.current;c.hud_collect=input.hud_collect||dialogue_present();c.held=input.held;c.attraction_speed=player->resource.header.attraction_speed;c.rate=input.rate;if(!items->update(c)){fail(items->error);return 5;}return error.empty()?1:5;}

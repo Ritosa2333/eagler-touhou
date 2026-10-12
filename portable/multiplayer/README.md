@@ -30,6 +30,24 @@ The primary pilot's Extend tier retains its retail score-state field for the
 HUD; other pilots' collections bind separate tier owners. Extends do not
 reactivate ghosts, and chapter fragments are not granted to ghosts.
 Whole-life and whole-Bomb pickups go to their collecting pilot.
+The HUD groups native glyph stock markers/counts and Power for every seat,
+including individual fragment progress; the local seat is highlighted and
+ghosts are dimmed. Shared point value and chapter/total Graze appear once in
+the team area. Decorative panel art is dimmed for readability. The original
+text queue owns presentation and consumes no battle or visual RNG.
+Small/large P and Full Power items prefer the nearest eligible collector who
+still needs Power; eligibility includes the collector's own POC line, Bomb
+attraction and pickup bounds. Owners are reconsidered while homing and after
+death. Normal P converts to blue point items only when every non-exhausted
+pilot is full, including respawning pilots; ghosts do not block conversion.
+Both new drops and existing field P convert, including the same frame as the
+last Power pickup. ECL Power conditions read the minimum Power of the same
+non-exhausted team, so a full primary pilot cannot suppress a teammate's P
+drops. Full Power remains an F item and only fills its collector;
+at full Power its retail bonus increases the shared point value once.
+Cancel point-value items use normal collector eligibility rather than Power
+priority. Point pickups use the shared value and the collecting character's
+native POC/height calculation. Native drop quantities are retained.
 The stage, enemies, projectiles and spell capture are shared.
 Aimed emissions select the nearest operable pilot; ties use seat order.
 Every participant simulates the same confirmed input rows at 60 Hz.
@@ -56,8 +74,8 @@ selects a free slot, then replaces slot 01 if all slots are occupied. Replays
 carry the complete seat setup, seed, build identity and confirmed input rows.
 Playback requires the same executable build and applies no second input delay.
 Retail one-player replays are not accepted by the multiplayer viewer.
-Gameplay ABI version 3 rejects the earlier per-seat statistics and pooled
-life-fragment recordings (versions 1 and 2).
+Gameplay ABI version 4 rejects earlier recordings with different statistics,
+fragment or Power-item ownership rules (versions 1 through 3).
 
 For shared launcher development, point `EAGLER_WORKSPACE_ROOT` at the repository
 workspace and provide the multiplayer worktree at

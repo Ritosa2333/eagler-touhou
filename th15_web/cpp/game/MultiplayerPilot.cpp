@@ -102,10 +102,31 @@ bool MultiplayerPilot::shake(const ScreenShakeSpec& s){return world.presentation
 bool MultiplayerPilot::nudge(const ScreenNudgeSpec& s){return world.presentation.nudge(s);}
 bool GameBattle::mp_enable(const MultiplayerOptions& o,const std::array<ShtResource,4>& shots,const std::array<int,4>& banks){
     if(!initialized||mp_enabled||!o.valid()||o.selections[0]!=character||(session.mode_flags&0x300))return fail("Invalid TH15 Legacy multiplayer setup");
-    mp_options=o;mp_enabled=true;mp_item_targets.fill(-1);
+    mp_options=o;mp_enabled=true;mp_item_targets.fill(-1);items->multiplayer_power_full=[this]{return mp_all_power_full();};
     for(unsigned s=0;s<o.seat_count;++s)pilots[s]=std::make_unique<MultiplayerPilot>(*this,s,o.selections[s]);
     for(unsigned s=0;s<o.seat_count;++s)if(!pilots[s]->initialize(shots[o.selections[s]],banks[o.selections[s]]))return false;
     enemy_world.multiplayer_target=[this](const Vec3& p){return mp_target(p);};bullet_scene->manager.multiplayer_target=enemy_world.multiplayer_target;return true;
+}
+bool GameBattle::mp_all_power_full()const{
+    bool found=false;for(unsigned s=0;s<mp_options.seat_count;++s){const auto& p=*pilots[s];if(p.ghost||p.session.extra_lives<0)continue;found=true;if(p.session.power<p.score.max_power)return false;}return found;
+}
+int GameBattle::mp_item_owner(const ItemState& item)const{
+    const bool power=item.kind==1||item.kind==3||item.kind==8;
+    const auto contains=[](const PlayerBox& box,const Vec3& p){return p.x>=box.minimum.x&&p.x<=box.maximum.x&&p.y>=box.minimum.y&&p.y<=box.maximum.y;};
+    auto eligible=[&](const MultiplayerPilot& p){
+        if(!p.alive()||item.state==5||(item.state==1&&item.delay>0))return false;
+        if(item.state==3||item.state==4)return true;
+        if(item.state==1&&(p.player->motion.position.y<float(p.character==1?148:128)||(p.session.bomb_state==1&&p.bomb->age.current<60)||input.hud_collect||dialogue_present()))return true;
+        if(item.state==2&&float(item.velocity.y+input.rate*.03f)>=0)return true;
+        if(item.state==2&&(item.kind==13||item.kind==14||item.kind==15))return false;
+        auto position=item.position;if(item.state==1||item.state==2){const float scale=item.state==1?items->motion_scale:1.f;position.x+=float(item.velocity.x*input.rate)*scale;position.y+=float(item.velocity.y*input.rate)*scale;if(position.y>472)return false;}
+        if(contains(p.player->frame.bounds.item_near,position))return true;
+        const bool special=item.kind==9||item.kind==10||item.kind==11||item.kind==13||item.kind==14||item.kind==15;
+        return !special&&contains(p.keys.held&8?p.player->frame.bounds.graze:p.player->frame.bounds.item_full,position);
+    };
+    auto nearest=[&](bool needs_power){int chosen=-1;double best=0;for(unsigned s=0;s<mp_options.seat_count;++s){const auto& p=*pilots[s];if((needs_power&&p.session.power>=p.score.max_power)||!eligible(p))continue;
+        const double dx=double(item.position.x)-p.player->motion.position.x,dy=double(item.position.y)-p.player->motion.position.y,d=dx*dx+dy*dy;if(chosen<0||d<best){chosen=int(s);best=d;}}return chosen;};
+    int target=nearest(power);return target<0&&power?nearest(false):target;
 }
 void GameBattle::mp_input(const std::array<MultiplayerInput,3>& in){for(unsigned s=0;s<mp_options.seat_count;++s)pilots[s]->input=in[s];}
 const PlayerCollision& GameBattle::mp_collision(unsigned s){
@@ -116,7 +137,7 @@ const PlayerCollision& GameBattle::mp_collision(unsigned s){
 }
 int GameBattle::mp_nearest(const Vec3& p,bool power)const{
     int chosen=-1;double best=0;
-    for(unsigned s=0;s<mp_options.seat_count;++s){const auto& pilot=*pilots[s];if(!pilot.alive()||(power&&pilot.session.power>=400))continue;
+    for(unsigned s=0;s<mp_options.seat_count;++s){const auto& pilot=*pilots[s];if(!pilot.alive()||(power&&pilot.session.power>=pilot.score.max_power))continue;
         const auto& q=pilot.player->motion.position;const double x=double(p.x)-q.x,y=double(p.y)-q.y,d=x*x+y*y;
         if(chosen<0||d<best){chosen=int(s);best=d;}}
     return chosen;
