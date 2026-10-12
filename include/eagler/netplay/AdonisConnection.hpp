@@ -9,10 +9,11 @@ namespace Netplay {
 class AdonisConnection final : public PeerTransport {
 public:
     explicit AdonisConnection(PeerTransport& transport):wire_(transport){}
-    void Clear(){startup_=AdonisStartup{};pending_.clear();enabled_=begun_=applied_=failed_=false;}
-    void Prepare(const SessionConfig& config,AdonisMode mode,bool automatic,unsigned delay,unsigned reserve){
+    void Clear(){startup_=AdonisStartup{};pending_.clear();retired_={};enabled_=begun_=applied_=failed_=false;}
+    void Prepare(const SessionConfig& config,AdonisMode mode,bool automatic,unsigned delay,unsigned reserve,
+                 const SessionConfig* retired=nullptr){
         Clear();config_=config;mode_=mode;requested_=automatic?AdonisStartup::Automatic:delay;
-        reserve_=reserve;enabled_=true;
+        reserve_=reserve;enabled_=true;if(retired)retired_=*retired;
     }
     bool Pump(std::uint64_t us,bool worldReady){
         now_=us;if(!enabled_)return true;
@@ -22,7 +23,8 @@ public:
             for(unsigned n=0;n<256&&wire_.Poll(&bytes);++n){
                 if(AdonisStartup::IsPacket(bytes.data(),bytes.size())){
                     if(!startup_.Receive(wire_,bytes.data(),bytes.size(),us))return false;
-                }else {SessionPacket packet;
+                }else {if(IsRetiredPacket(bytes))continue;
+                    SessionPacket packet;
                     if(DecodeSessionPacket(bytes.data(),bytes.size(),&packet)&&packet.sessionId==config_.sessionId){
                         if(pending_.size()>=16){failed_=true;return false;}
                         pending_.push_back(std::move(bytes));
@@ -68,7 +70,29 @@ public:
         }return false;
     }
 private:
-    PeerTransport& wire_;AdonisStartup startup_;SessionConfig config_{};AdonisMode mode_=AdonisMode::Rollback;
+    bool IsRetiredPacket(const std::vector<std::uint8_t>& bytes)const{
+        // Opt in only after a successful retirement on this same player mesh.
+        // Old reliable ACKs, HELLOs and advisory samples may outlive the world,
+        // but no current/unknown gameplay packet can enter before calibration.
+        if(!retired_.sessionId||retired_.sessionId==config_.sessionId||
+           retired_.gameId!=config_.gameId||retired_.playerCount!=config_.playerCount||
+           retired_.localPlayer!=config_.localPlayer)return false;
+        const auto peer=[&](unsigned seat){return seat<retired_.playerCount&&seat!=retired_.localPlayer;};
+        InputPacket input;
+        if(DecodeInputPacket(bytes.data(),bytes.size(),&input))
+            return input.sessionId==retired_.sessionId&&input.playerCount==retired_.playerCount&&peer(input.senderPlayer);
+        SessionPacket session;
+        if(DecodeSessionPacket(bytes.data(),bytes.size(),&session))
+            return session.sessionId==retired_.sessionId&&session.playerCount==retired_.playerCount&&
+                peer(session.senderPlayer)&&session.gameId==retired_.gameId&&
+                session.gameplayAbi==retired_.gameplayAbi&&session.seed==retired_.seed;
+        AdonisPhaseSample phase;
+        // Phase reports use mesh-broadcast control, including reports addressed
+        // to another peer. Validate that old mesh's roles before ignoring them.
+        return DecodeAdonisPhaseSample(bytes.data(),bytes.size(),&phase)&&
+            phase.sessionId==retired_.sessionId&&peer(phase.senderPlayer)&&phase.targetPlayer<retired_.playerCount;
+    }
+    PeerTransport& wire_;AdonisStartup startup_;SessionConfig config_{},retired_{};AdonisMode mode_=AdonisMode::Rollback;
     unsigned requested_=0,reserve_=2;std::uint64_t now_=0;
     bool enabled_=false,begun_=false,applied_=false,failed_=false;
     std::deque<std::vector<std::uint8_t>> pending_;std::array<std::uint32_t,32> status_{};
