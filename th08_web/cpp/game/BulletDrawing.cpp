@@ -2,6 +2,9 @@
 #include "GameMath.hpp"
 #include "Presentation.hpp"
 #include "PresentationAudit.hpp"
+#ifdef TH_MULTIPLAYER_FIXTURES
+#include "../multiplayer/MotionCadenceProbe.hpp"
+#endif
 #include <cmath>
 namespace th08 {
 namespace {
@@ -31,6 +34,16 @@ void BulletDrawing::bullet(BulletState& b,const Vec2& origin,u32 previous_opacit
     vm->pos={Scalar::add(origin.x,position.x),Scalar::add(origin.y,position.y),.05f};
     vm->color1.d3dColor=i32((u32(vm->color1.d3dColor)&0xff000000)|0xffffff);
     if(vm->type){vm->rotation.z=add_angle(Scalar::add(1.5707964f,angle),0);vm->updateRotation=true;}
+#ifdef TH_MULTIPLAYER_FIXTURES
+    multiplayer::motion_probe::Scope probe;
+    const auto probe_slot=i32(&b-state.bullets);
+    if(probe.Bullet(probe_slot,b.state,b.active_time.current,b.position.x,b.position.y)){
+        const auto& previous=previous_bullets[size_t(probe_slot)];
+        const bool valid=presentation::active&&previous.active&&previous.state==b.state&&
+            previous.script==source.scriptIndex&&b.active_time.current>=previous.age&&close_enough(previous.position,b.position);
+        probe.Previous(previous.position.x,previous.position.y,previous.age,valid);
+    }
+#endif
     actions.draw(*vm);
 }
 void BulletDrawing::laser(LaserState& l,const Vec2& origin){
@@ -60,6 +73,13 @@ void BulletDrawing::laser(LaserState& l,const Vec2& origin){
     }
 }
 bool BulletDrawing::draw(u32 flags,const Vec2& origin){
+#ifdef TH_MULTIPLAYER_FIXTURES
+    const int probe_slot=multiplayer::motion_probe::SelectedBulletSlot();
+    if(probe_slot>=0&&probe_slot<1537){
+        const auto& selected=state.bullets[probe_slot];
+        multiplayer::motion_probe::ValidateSelectedBullet(selected.state!=0,selected.active_time.current);
+    }
+#endif
     const bool tint=flags&1024;const u32 current_opacity_factor=tint?255u:128u;if(tint)actions.tint(0xfff01010);actions.items();
     for(auto& l:state.lasers)if(l.in_use)laser(l,origin);
     for(auto* layer:state.layers){u32 count=0;for(auto* b=layer;b;b=b->next_in_layer){if(++count>1536){if(tint)actions.clear_tint();return false;}bullet(*b,origin,previous_submitted_opacity_factor,current_opacity_factor);}}

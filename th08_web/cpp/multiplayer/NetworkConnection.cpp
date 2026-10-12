@@ -24,7 +24,7 @@ bool NetworkConnection::Connect(const char* relay){
     if(!transport.Connect(relay,u8(net.Setup().local_player),u8(net.Setup().player_count)))return false;
     if(net.PreparingWorld())calibration.Prepare(net.Config(),net.Mode(),net.Setup().input_delay_auto,net.InputDelay(),net.Setup().prediction_reserve);
     else if(!channel.BeginSession(net.Config(),Now(),channel_policy(net.Mode()))){transport.Close();return false;}
-    enabled=true;invalid_input=false;phase_debt_ms=0;return true;
+    enabled=true;invalid_input=false;phase_debt_ms=0;input_gap_pacing.Reset(Now());return true;
 }
 bool NetworkConnection::ConnectSpectator(const char* relay,const char* id){
     if(enabled||net.ReadOnly()||!relay||!*relay||!id||!net.Configured()||net.LastFrame()!=Netplay::INVALID_FRAME)return false;
@@ -34,7 +34,7 @@ bool NetworkConnection::ConnectSpectator(const char* relay,const char* id){
     }
     if(!transport.ConnectSpectator(relay,id,u8(net.Setup().player_count)))return false;
     if(!net.BeginSpectator()){transport.Close();return false;}
-    enabled=true;invalid_input=false;spectator_finished=false;spectator_error="";
+    enabled=true;invalid_input=false;spectator_finished=false;spectator_error="";input_gap_pacing.Reset(Now());
     spectator_frames.Clear();return true;
 }
 bool NetworkConnection::Pump(bool expects_input){
@@ -67,10 +67,15 @@ bool NetworkConnection::Pump(bool expects_input){
         const auto choice=calibration.Startup().Selected();
         if(!net.ApplyMeasuredTiming(choice.delay,choice.prediction)||
            !channel.BeginSession(net.Config(),Now(),channel_policy(net.Mode(),choice.prediction)))return false;
-        calibration.Applied();
+        calibration.Applied();input_gap_pacing.Reset(Now());
     }
-    if(calibration.Waiting())return true;
-    if(!channel.Pump(net.gate_,net.core_,Now(),expects_input)||invalid_input)return false;
+    if(calibration.Waiting()){input_gap_pacing.Reset(Now());return true;}
+    const auto now=Now();
+    if(!channel.Pump(net.gate_,net.core_,now,expects_input)||invalid_input)return false;
+    // Measure a continuous input shortage only after draining received packets.
+    // Rewinding simulation does not create additional prediction room.
+    input_gap_pacing.Update(now,net.MissingRemoteInputs(),
+        net.CanStart()&&!net.ReadOnly()&&net.Mode()==Netplay::AdonisMode::Rollback&&expects_input);
     PublishConfirmedSpectatorFrames();return true;
 }
 bool NetworkConnection::ConsumeSpectator(){
@@ -133,12 +138,17 @@ bool NetworkConnection::Retire(){
     if(!CanRetire()||(enabled&&!channel.Retire(net.core_,net.LastFrame(),Now()))||!net.Retire())return false;
     retired_config=net.Config();return true;
 }
-bool NetworkConnection::BeginGeneration(){phase_debt_ms=0;if(!enabled)return true;
+bool NetworkConnection::BeginGeneration(){phase_debt_ms=0;input_gap_pacing.Reset(Now());if(!enabled)return true;
     // Keep the previous terminal ACKs alive during measurement. The shared
     // calibrator discards only valid packets from this actually retired epoch.
     if(net.PreparingWorld()){calibration.Prepare(net.Config(),net.Mode(),net.Setup().input_delay_auto,net.InputDelay(),net.Setup().prediction_reserve,&retired_config);return true;}
     return channel.BeginSession(net.Config(),Now(),channel_policy(net.Mode()));}
-void NetworkConnection::Close(){transport.Close();channel.Clear();calibration.Clear();retired_config={};enabled=false;invalid_input=false;phase_debt_ms=0;spectator_frames.Clear();}
+void NetworkConnection::Close(){transport.Close();channel.Clear();calibration.Clear();retired_config={};enabled=false;invalid_input=false;phase_debt_ms=0;input_gap_pacing.Reset(0);spectator_frames.Clear();}
+double NetworkConnection::IntervalScale()const{
+    const auto phase=channel.IntervalScale();
+    return enabled&&net.CanStart()&&!net.ReadOnly()&&net.Mode()==Netplay::AdonisMode::Rollback&&input_gap_pacing.Scale()>1
+        ?std::max(phase,input_gap_pacing.Scale()):phase;
+}
 double NetworkConnection::PacedElapsedSeconds(double elapsed){
     if(!std::isfinite(elapsed)||elapsed<0)return 0;
     if(!enabled||net.ReadOnly()||net.Mode()==Netplay::AdonisMode::Rollback)return elapsed;

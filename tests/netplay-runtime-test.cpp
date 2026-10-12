@@ -166,6 +166,63 @@ static void confirmation_gap_is_bounded(){
     assert(r.Prepare(frame).canAdvance);
     assert(r.SubmitRemote(1,100000,FrameInput(0))==RemoteInputResult::InvalidPlayer);
 }
+static void input_gap_frontiers(unsigned count){
+    NetplayRuntime peers[3];
+    for(unsigned seat=0;seat<count;++seat)assert(peers[seat].Reset(setup(count,seat)));
+    barrier(peers,count);auto& r=peers[0];assert(r.SetWorldReady(true));
+    assert(r.PredictionFrontier()==0&&r.RemoteInputFrontier()==0&&r.MissingRemoteInputs()==0);
+    for(unsigned frame=0;frame<6;++frame){
+        assert(r.CaptureLocal(frame,FrameInput{}));
+        const auto decision=r.Prepare(frame);
+        assert(decision.canAdvance&&r.MarkSimulated(frame,decision));
+        assert(r.PredictionFrontier()==frame+1&&r.RemoteInputFrontier()==0&&
+               r.MissingRemoteInputs()==frame+1);
+    }
+    // Sending a frontier input does not simulate another frame or consume
+    // prediction room. Its capture must survive the following correction.
+    assert(r.CaptureLocal(6,FrameInput{})&&r.NextCaptureFrame()==7);
+    assert(r.PredictionFrontier()==6&&r.MissingRemoteInputs()==6);
+    for(unsigned seat=1;seat<count;++seat){
+        // Newer exact packets leave holes at 1 and 3. The latest packet
+        // cannot stand in for a contiguous frontier, including in 3P.
+        for(unsigned frame:{0u,2u,4u,5u})
+            assert(r.SubmitRemote(seat,frame,FrameInput{})==RemoteInputResult::PredictionCorrect);
+    }
+    assert(r.RemoteInputFrontier()==1&&r.MissingRemoteInputs()==5);
+    assert(r.SubmitRemote(1,1,FrameInput(16))==RemoteInputResult::RollbackRequired);
+    assert(r.RemoteInputFrontier()==(count==2?3u:1u));
+    if(count==3){
+        // A faster peer must not conceal the other peer's missing frame.
+        assert(r.MissingRemoteInputs()==5);
+        assert(r.SubmitRemote(2,1,FrameInput{})==RemoteInputResult::PredictionCorrect);
+    }
+    assert(r.RemoteInputFrontier()==3&&r.MissingRemoteInputs()==3);
+    assert(r.RollbackFrame()==1&&r.BeginCorrection(1));
+    assert(r.NextFrame()==1&&r.PredictionFrontier()==6&&r.MissingRemoteInputs()==3);
+    for(unsigned frame=1;frame<3;++frame){
+        const auto decision=r.Prepare(frame);
+        assert(decision.canAdvance&&r.MarkSimulated(frame,decision));
+        assert(r.PredictionFrontier()==6&&r.RemoteInputFrontier()==3&&r.MissingRemoteInputs()==3);
+    }
+    for(unsigned seat=1;seat<count;++seat){
+        assert(r.SubmitRemote(seat,3,FrameInput{})==RemoteInputResult::Accepted);
+        if(seat+1<count)assert(r.RemoteInputFrontier()==3&&r.MissingRemoteInputs()==3);
+    }
+    // Actual packet delivery may remove shortage before recovery completes.
+    // Rewinding itself must never do so.
+    assert(r.Correcting()&&r.NextFrame()==3&&r.PredictionFrontier()==6&&
+           r.RemoteInputFrontier()==6&&r.MissingRemoteInputs()==0);
+    for(unsigned frame=3;frame<6;++frame){
+        const auto decision=r.Prepare(frame);
+        assert(decision.canAdvance&&!decision.predictedMask&&r.MarkSimulated(frame,decision));
+    }
+    assert(r.EndCorrection()&&r.PredictionFrontier()==6&&r.RemoteInputFrontier()==6&&
+           r.MissingRemoteInputs()==0&&r.HasCapture(6)&&r.NextCaptureFrame()==7);
+    for(unsigned seat=1;seat<count;++seat)
+        assert(r.SubmitRemote(seat,6,FrameInput{})==RemoteInputResult::Accepted);
+    assert(r.PredictionFrontier()==6&&r.RemoteInputFrontier()==7&&r.MissingRemoteInputs()==0);
+    r.Clear();assert(r.PredictionFrontier()==0&&r.RemoteInputFrontier()==0&&r.MissingRemoteInputs()==0);
+}
 static SessionSetup delayed_setup(unsigned local,unsigned delay=4,unsigned limit=2){
     const std::uint32_t words[]{4,2,local,1,1234,0x55667788u,0x10203040u,
         0x11223344u,0x55667788u,0x99aabbccu,0xddeeff00u,
@@ -409,6 +466,7 @@ int main(){
     decode_atomicity();fixed_input_delay_is_applied_and_agreed();session_and_inputs(2);session_and_inputs(3);
     delayed_capture_and_wait();
     confirmation_gap_is_bounded();packet_transaction_and_negative_inputs();
+    input_gap_frontiers(2);input_gap_frontiers(3);
     spectator_is_exact_read_only_and_bounded();
     for(unsigned count:{2u,3u}){for(unsigned delay:{0u,1u,9u})adonis_exact_input_and_generation(count,delay);adonis_hybrid_correction(count);}
     adonis_mismatch_and_gap();

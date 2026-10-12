@@ -1,5 +1,6 @@
 #pragma once
 #include "NetplayRuntime.hpp"
+#include "InputGapPacing.hpp"
 #include "SpectatorStream.hpp"
 #include "../game/Types.hpp"
 #include <eagler/netplay/BrowserPeerTransport.hpp>
@@ -33,6 +34,7 @@ public:
     const char* Error()const;
     const char* Mode()const{return transport.Mode();}
     const Netplay::SessionChannel& Channel()const{return channel;}
+    double IntervalScale()const;
     const u32* CalibrationStatus(){return calibration.Status();}
     bool Calibrating()const{return calibration.Waiting();}
     // Wall-clock pacing only; consume only when no already-due tick is pending.
@@ -54,6 +56,7 @@ private:
     const char* spectator_error="";
     bool enabled=false,invalid_input=false;
     double phase_debt_ms=0;
+    InputGapPacing input_gap_pacing;
     static std::uint64_t Now();
     bool IsOpen()const override{return transport.IsOpen();}
     bool Recovering()const override{return transport.Recovering();}

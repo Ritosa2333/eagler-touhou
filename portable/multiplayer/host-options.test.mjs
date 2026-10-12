@@ -22,9 +22,9 @@ function fake(){
 test('host maps TH08 twelve loadouts and room identity without controlling frames',async()=>{
  const c=fake();assert.equal(await configureMultiplayer(c,42,base,deps),true);
  assert.deepEqual(c.words.slice(0,5),[4,2,0,1,1234]);assert.deepEqual(c.words.slice(7,11),runtimeBuildWords);
- assert.deepEqual(c.words.slice(11),[4,0,11,0,0,0,4,2]);
+ assert.deepEqual(c.words.slice(11),[4,0,11,0,0,0,0,2]);
  assert.ok(c.words[5]||c.words[6]);assert.equal(c.connects.length,1);assert.equal(c.freed.length,2);
- assert.equal(globalThis.__eaglerNetplayInputDelayFrames,4);
+ assert.equal(globalThis.__eaglerNetplayInputDelayFrames,0);
  const peer=fake();await configureMultiplayer(peer,42,{...base,netplayUrl:base.netplayUrl.replace('player=0','player=1'),netplayPlayer:1},deps);
  assert.deepEqual(c.words.slice(5,7),peer.words.slice(5,7));
  const next=fake();await configureMultiplayer(next,42,{...base,netplayUrl:base.netplayUrl.replace('run=1','run=2')},deps);
@@ -90,18 +90,81 @@ test('native null error pointers do not decode unrelated memory at address zero'
  new Uint8Array(memory.buffer,0,8).set(new TextEncoder().encode('garbage\0'));
  assert.equal(networkError({memory,multiplayer_network_error:()=>0},42),'');
 });
-test('experimental mode and fixed D use v5 without changing the baseline envelope',async()=>{
- for(const mode of [1,2])for(const delay of [0,1,9]){
-  const c=fake();await configureMultiplayer(c,42,{...base,netplayAdonisMode:mode,netplayInputDelay:delay},deps);
-  assert.equal(c.words[0],5);assert.equal(c.words.length,20);assert.deepEqual(c.words.slice(17),[delay,2,mode]);
-  assert.equal(globalThis.__eaglerNetplayAdonisMode,mode);
+test('pure delay retains fixed and automatic v6 timing',async()=>{
+ for(const delay of [0,1,9]){
+  const c=fake();await configureMultiplayer(c,42,{...base,netplayAdonisMode:1,netplayInputDelay:delay},deps);
+  assert.equal(c.words[0],6);assert.equal(c.words.length,22);assert.deepEqual(c.words.slice(17),[delay,2,1,0,2]);
+  assert.equal(globalThis.__eaglerNetplayAdonisMode,1);
+  assert.equal(globalThis.__eaglerNetplayInputDelayFrames,delay);
  }
+ const c=fake();await configureMultiplayer(c,42,{...base,netplayAdonisMode:1,netplayInputDelay:0,netplayInputDelayAuto:true,netplayPredictionReserve:1},deps);
+ assert.equal(c.words[0],6);assert.equal(c.words.length,22);assert.deepEqual(c.words.slice(17),[0,2,1,1,1]);
+});
+
+test('rollback choices normalize before shell admission and native configuration',async()=>{
+ for(const mode of [0,2])for(const delay of [0,1,mode===0?8:9]){
+  const options={...base,netplayAdonisMode:mode,netplayInputDelay:delay,netplayInputDelayAuto:false};
+  const original=structuredClone(options),validated=validateMultiplayerOptions(options);
+  assert.equal(validated.adonisMode,0,'shell must not start measured calibration for rollback');
+  assert.equal(validated.inputDelay,0);assert.equal(validated.automatic,false);
+  assert.equal(validated.predictionLimit,base.netplayPredictionLimit,'input delay does not alter prediction depth');
+  const c=fake();await configureMultiplayer(c,42,options,deps);
+  assert.equal(c.words[0],4);assert.equal(c.words.length,19);assert.deepEqual(c.words.slice(17),[0,2]);
+  assert.equal(globalThis.__eaglerNetplayAdonisMode,0);assert.equal(globalThis.__eaglerNetplayInputDelayFrames,0);
+  assert.deepEqual(options,original,'normalization must not mutate Launcher options');
+ }
+ const automatic={...base,netplayAdonisMode:2,netplayInputDelay:0,netplayInputDelayAuto:true};
+ const validated=validateMultiplayerOptions(automatic);
+ assert.equal(validated.adonisMode,0);assert.equal(validated.inputDelay,0);assert.equal(validated.automatic,false);
+ const c=fake();await configureMultiplayer(c,42,automatic,deps);
+ assert.equal(c.words[0],4);assert.equal(c.words.length,19);assert.deepEqual(c.words.slice(17),[0,2]);
+});
+
+test('raw timing errors remain rejected before normalization or native mutation',async()=>{
  for(const mode of [-1,3,1.5,'1',null,NaN]){
   const c=fake();await assert.rejects(configureMultiplayer(c,42,{...base,netplayAdonisMode:mode},deps));
   assert.equal(c.words.length,0);
  }
- const c=fake();await configureMultiplayer(c,42,{...base,netplayAdonisMode:0},deps);
- assert.equal(c.words[0],4);assert.equal(c.words.length,19);
+ for(const timing of [
+  {netplayAdonisMode:0,netplayInputDelay:9},
+  {netplayAdonisMode:2,netplayInputDelay:10},
+  {netplayAdonisMode:2,netplayInputDelay:-1},
+  {netplayAdonisMode:2,netplayInputDelay:'0'},
+  {netplayAdonisMode:0,netplayInputDelay:0,netplayInputDelayAuto:true},
+  {netplayAdonisMode:2,netplayInputDelay:1,netplayInputDelayAuto:true},
+  {netplayAdonisMode:2,netplayInputDelay:0,netplayInputDelayAuto:1},
+  {netplayAdonisMode:2,netplayPredictionReserve:0},
+  {netplayAdonisMode:2,netplayPredictionLimit:9},
+ ]){
+  const c=fake();await assert.rejects(configureMultiplayer(c,42,{...base,...timing},deps));
+  assert.equal(c.words.length,0);assert.equal(c.connects.length,0);assert.equal(c.observers.length,0);
+ }
+});
+
+test('spectators use the same effective timing envelope as their publishing player',async()=>{
+ for(const timing of [
+  {netplayAdonisMode:0,netplayInputDelay:2},
+  {netplayAdonisMode:2,netplayInputDelay:2},
+  {netplayAdonisMode:2,netplayInputDelay:0,netplayInputDelayAuto:true},
+  {netplayAdonisMode:1,netplayInputDelay:2},
+  {netplayAdonisMode:1,netplayInputDelay:0,netplayInputDelayAuto:true},
+ ]){
+  const options={...base,...timing},player=fake(),observer=fake();
+  await configureMultiplayer(player,42,options,deps);
+  await configureMultiplayer(observer,42,{...options,netplaySpectator:true,netplaySpectatorId:'viewer_1234',netplayPlayer:-1},deps);
+  assert.deepEqual(observer.words,player.words,'spectator ABI and timing-header expectation must match P1');
+  assert.equal(observer.connects.length,0);assert.equal(observer.observers.length,1);
+  assert.equal(globalThis.__eaglerNetplayInputDelayFrames,0);
+  assert.equal(globalThis.__eaglerNetplayAdonisMode,timing.netplayAdonisMode===1?1:0);
+ }
+});
+
+test('challenge admission retains v7 rules with the effective timing mode',async()=>{
+ for(const mode of [0,1,2]){
+  const c=fake();await configureMultiplayer(c,42,{...base,netplayChallengeMode:true,netplayAdonisMode:mode},deps);
+  assert.equal(c.words[0],7);assert.equal(c.words.length,23);
+  assert.deepEqual(c.words.slice(17),[mode===1?4:0,2,mode===1?1:0,0,2,1]);
+ }
 });
 
 test('read-only spectator completion no longer advertises an active session',()=>{

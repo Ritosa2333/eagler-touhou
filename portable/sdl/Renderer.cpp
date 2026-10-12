@@ -1,6 +1,9 @@
 #include "Renderer.hpp"
 #include "Shaders.hpp"
 #include "ResampleShader.hpp"
+#ifdef TH_MULTIPLAYER_FIXTURES
+#include "../../th08_web/cpp/multiplayer/MotionCadenceProbe.hpp"
+#endif
 #include <emscripten.h>
 #include <algorithm>
 #include <cmath>
@@ -326,8 +329,16 @@ void Renderer::render_imgui(const ImDrawData* data,u32 targetHandle){
  // the next paused/menu frame and upload them over the overlay/game image.
  output.rendered=true;drawState=DrawStateCache{};currentProgram=0;currentLayout=0;boundTexture=readFramebuffer=drawFramebuffer=~0u;glDepthMask(GL_TRUE);
 }
-void Renderer::present(u32 id){flush();pending=id;stats.frames++;if(!defer)commit();}
-bool Renderer::commit(){if(!pending)return false;auto s=resolve(owner,pending);auto& g=surface(pending);pending=0;bind_framebuffer(GL_READ_FRAMEBUFFER,g.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,0);glDisable(GL_SCISSOR_TEST);glBlitFramebuffer(0,0,s.width,s.height,0,480,640,0,GL_COLOR_BUFFER_BIT,GL_NEAREST);SDL_GL_SwapWindow(window);stats.presentations++;return true;}
+void Renderer::present(u32 id){flush();pending=id;stats.frames++;
+#ifdef TH_MULTIPLAYER_FIXTURES
+ if(version==8)th08::multiplayer::motion_probe::Present();
+#endif
+ if(!defer)commit();}
+bool Renderer::commit(){if(!pending)return false;auto s=resolve(owner,pending);auto& g=surface(pending);pending=0;bind_framebuffer(GL_READ_FRAMEBUFFER,g.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,0);glDisable(GL_SCISSOR_TEST);glBlitFramebuffer(0,0,s.width,s.height,0,480,640,0,GL_COLOR_BUFFER_BIT,GL_NEAREST);SDL_GL_SwapWindow(window);stats.presentations++;
+#ifdef TH_MULTIPLAYER_FIXTURES
+ if(version==8)th08::multiplayer::motion_probe::Commit();
+#endif
+ return true;}
 }
 extern "C" {
 const touhou::sdl::Statistics* sdl_stats(){static touhou::sdl::Statistics zero{};return touhou::sdl::current()?&touhou::sdl::current()->stats:&zero;}

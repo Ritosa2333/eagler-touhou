@@ -30,8 +30,13 @@ export function validateMultiplayerOptions(value={}) {
    throw Error('Invalid TH08 multiplayer loadout');
   return {character:v.character,shot:0};
  });
+ // Validate the requested envelope before applying the title's timing policy.
+ // Both rollback choices use immediate local input. Spectators need the same
+ // effective setup as the players; pure delay keeps its measured/fixed policy.
+ const zeroDelayRollback=adonisMode===0||adonisMode===2;
  return {url,room,run,count,seat,spectator,spectatorId,seed:value.netplaySeed,difficulty:value.netplayDifficulty,
-  inputDelay,predictionLimit,adonisMode,automatic,reserve,loadouts};
+  inputDelay:zeroDelayRollback?0:inputDelay,predictionLimit,
+  adonisMode:zeroDelayRollback?0:adonisMode,automatic:zeroDelayRollback?false:automatic,reserve,loadouts};
 }
 function string(core,text,fn){
  const bytes=new TextEncoder().encode(text+'\0'),pointer=core.allocate(bytes.length);

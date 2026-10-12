@@ -2,6 +2,9 @@
 // the MIT reference credited in cpp/licenses/th08-reference-MIT.txt.
 #include "AnmRenderer.hpp"
 #include "PresentationAudit.hpp"
+#ifdef TH_MULTIPLAYER_FIXTURES
+#include "../multiplayer/MotionCadenceProbe.hpp"
+#endif
 #include "GameMath.hpp"
 #include "GraphicsMath.hpp"
 #include <cmath>
@@ -258,6 +261,9 @@ i32 AnmRenderer::draw_inner(AnmVm& vm, u32 flags) {
     }
     set_state(vm);
     TH08_AUDIT_SPRITE(vm,quad,4,shake);
+#ifdef TH_MULTIPLAYER_FIXTURES
+    multiplayer::motion_probe::CaptureQuad(vm,quad,shake);
+#endif
     add_quad(quad);
     return 0;
 }

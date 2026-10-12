@@ -8,7 +8,13 @@ p.add_argument('--input-delay',type=int,choices=range(10),default=0)
 p.add_argument('--adonis-mode',type=int,choices=range(3),default=0)
 args=p.parse_args();report={'passed':False,'errors':[],'scope':'Runtime host protocol, actual native touch and live relay admission; not public Launcher product declaration'}
 player_count=3 if args.players=='3' else 2
-report.update({'players':player_count,'adonisMode':args.adonis_mode,'inputDelay':args.input_delay})
+# Keep room admission unchanged, then verify the title host's applied policy.
+# Rollback requests (mode 0/2) use D0; pure delay (mode 1) retains its fixed D.
+effective_mode=1 if args.adonis_mode==1 else 0
+effective_delay=args.input_delay if effective_mode==1 else 0
+report.update({'players':player_count,'adonisMode':effective_mode,'inputDelay':effective_delay,
+ 'requestedTiming':{'adonisMode':args.adonis_mode,'inputDelay':args.input_delay},
+ 'effectiveTiming':{'adonisMode':effective_mode,'inputDelay':effective_delay},'timingVerified':False})
 def save():args.output.write_text(json.dumps(report,indent=2),encoding='utf-8')
 def call(page,code,arg=None):return page.evaluate(code,arg)
 def request(page,command,**fields):return call(page,'v=>host.request(v.command,v.fields)',{'command':command,'fields':fields})
@@ -29,7 +35,7 @@ with sync_playwright() as pw:
   assert all(admitted['room'][k]==v for k,v in timing.items()),admitted
   report['admission']=admitted;report['phase']='admitted';save()
   for seat,page in enumerate(pages):
-   options={'runtimeVariant':'multiplayer','netplayMode':'lan','netplayUrl':args.relay+'/?room='+room+'&run='+str(admitted['serial']),
+   options={'runtimeVariant':'multiplayer','netplayMode':'lan','netplayUrl':args.relay+'/?room='+room+'&run='+str(admitted['serial'])+'&member=fixture_host_contract_p'+str(seat+1),
     'netplayPlayer':seat,'netplayPlayerCount':player_count,'netplayDifficulty':1,'netplaySeed':1234,
     'netplayInputDelay':admitted['room']['inputDelay'],'netplayPredictionLimit':admitted['room']['predictionLimit'],'netplayAdonisMode':admitted['room']['adonisMode'],
     'netplayLoadouts':[{'character':p,'shot':0} for p in range(player_count)], 'netplayIceServers':[],
@@ -41,14 +47,16 @@ with sync_playwright() as pw:
     states=[call(page,'t=>host.tickTo(t)',target) for page in pages]
     if all(s['net'][4]==target and s['net'][5]>=target and s['net'][6]==0xffffffff for s in states):
      assert all(s['canonical']==states[0]['canonical'] for s in states),states
-     if args.adonis_mode==1:
+     if effective_mode==1:
       assert all(s['driver'][3:6]==[0,0,0] and s['driver'][10]==0 and s['net'][7]==0 for s in states),states
      return states
     assert time.monotonic()<deadline,states
     pages[0].wait_for_timeout(2)
   settled=advance(179)
-  assert all(s['net'][12]==args.input_delay for s in settled),settled
-  assert all(s['net'][14]==args.adonis_mode for s in settled),settled
+  report['observedTiming']=[{'adonisMode':s['net'][14],'inputDelay':s['net'][12]} for s in settled]
+  assert all(s['net'][12]==effective_delay for s in settled),settled
+  assert all(s['net'][14]==effective_mode for s in settled),settled
+  report['timingVerified']=True
   # Keep the peer's simulation idle until prediction is exhausted. Repeated
   # native callbacks must not build an undeclared physical-input queue.
   for _ in range(30):stalled=call(pages[0],'host.physicalTick()')
@@ -57,12 +65,12 @@ with sync_playwright() as pw:
   assert all(s['net'][13]==s['net'][3] for s in baseline),baseline
   request(pages[1],'keyboard',code='ArrowRight',down=True)
   timing=[]
-  for offset in range(args.input_delay+1):
+  for offset in range(effective_delay+1):
    edge=advance(220+offset);timing.append(edge[0]['state'][25])
-   if offset<args.input_delay:assert edge[0]['state'][25]==baseline[0]['state'][25],(offset,baseline,edge)
+   if offset<effective_delay:assert edge[0]['state'][25]==baseline[0]['state'][25],(offset,baseline,edge)
    else:assert edge[0]['state'][25]>baseline[0]['state'][25],(offset,baseline,edge)
   request(pages[1],'keyboard',code='ArrowRight',down=False)
-  report['inputTiming']={'configured':args.input_delay,'firstMovementOffset':args.input_delay,
+  report['inputTiming']={'requested':args.input_delay,'configured':effective_delay,'firstMovementOffset':effective_delay,
    'positions':timing,'captureAfterStall':stalled['net'][13],'nextAfterStall':stalled['net'][3]}
   before=advance(249);report['beforeTouch']=before;save()
   # Raw coordinates are in the iframe viewport, not already-adjusted player
@@ -70,11 +78,12 @@ with sync_playwright() as pw:
   request(pages[1],'direct-touch',type='down',id=91,x=.5,y=.7)
   request(pages[1],'direct-touch',type='move',id=91,x=.58,y=.7)
   touch_timing=[]
-  for offset in range(args.input_delay+1):
+  for offset in range(effective_delay+1):
    edge=advance(250+offset);touch_timing.append(edge[0]['state'][25])
-   if offset<args.input_delay:assert edge[0]['state'][25]==before[0]['state'][25],(offset,before,edge)
+   if offset<effective_delay:assert edge[0]['state'][25]==before[0]['state'][25],(offset,before,edge)
    else:assert edge[0]['state'][25]>before[0]['state'][25],(offset,before,edge)
-  report['touchInputTiming']={'firstMovementOffset':args.input_delay,'positions':touch_timing}
+  report['touchInputTiming']={'requested':args.input_delay,'configured':effective_delay,
+   'firstMovementOffset':effective_delay,'positions':touch_timing}
   moved=advance(289);report['afterP2Drag']=moved;save()
   assert moved[0]['state'][25]>before[0]['state'][25]+30,(before,moved)
   assert moved[0]['state'][13]==before[0]['state'][13],(before,moved)
@@ -100,7 +109,8 @@ with sync_playwright() as pw:
   call(pages[1],'host.open()');pages[1].wait_for_function('host.ready()',timeout=120000)
   assert request(pages[1],'read',path='score.dat')['bytes']==saved_files[1]
   report.update({'storageReload':True,'roomRetained':True,'passed':True})
-  assert not report['errors'],report['errors'];print('TH08 host protocol, P2 native touch/bomb, exit and persistence: PASS',flush=True)
+  assert not report['errors'],report['errors'];print(
+   f'TH08 host protocol, P2 native touch/bomb, exit and persistence: PASS (requested mode={args.adonis_mode} D={args.input_delay}; effective mode={effective_mode} D={effective_delay})',flush=True)
  except BaseException as error:
   report['error']=str(error)
   report['events']=[call(page,'host.events') for page in pages];raise

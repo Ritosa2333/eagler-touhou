@@ -3,6 +3,9 @@
 #include "BulletSystem.hpp"
 #include "BackgroundScript.hpp"
 #include "PracticeConfig.hpp"
+#ifdef TH_MULTIPLAYER_FIXTURES
+#include "../multiplayer/MotionCadenceProbe.hpp"
+#endif
 #if defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
 #include "../multiplayer/PlayerResources.hpp"
 #include "../multiplayer/Balance.hpp"
@@ -67,7 +70,14 @@ class PlayerScene:public PlayerSetupActions,public PlayerLifeActions,public Play
         AnmVm* focus_effect(const Vec3& p)override{return s.fixed_effect(22,p,2,0xffffffff);}
         EffectState* gauge_effect(const Vec3& p)override{return s.fixed_effect(25,p,8,0xffffffff);}
         void step_animation(AnmVm& vm)override{s.step_animation(vm);}
-        void draw_player(AnmVm& vm)override{s.renderer.draw_no_rotation(vm);}
+        void draw_player(AnmVm& vm)override{
+#if defined(TH_MULTIPLAYER_FIXTURES) && defined(TH_ENABLE_MULTIPLAYER_GAMEPLAY)
+            multiplayer::motion_probe::Scope probe;
+            const auto& p=s.state.motion.movement.position;
+            probe.Player(s.seat,s.state.life.state,s.state.motion.animation.currentTimeInScript.current,p.x,p.y);
+#endif
+            s.renderer.draw_no_rotation(vm);
+        }
         void draw(AnmVm& vm)override{s.renderer.draw_2d(vm);}
     } motion{*this};
     struct Patterns:PlayerBombPatternActions {

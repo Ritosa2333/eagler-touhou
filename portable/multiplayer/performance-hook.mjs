@@ -14,7 +14,10 @@ const perfStopGesture=()=>{
     perfState.touch.lastCleanupAt=now;
   }
 };
-const perfRead=()=>({net:perfWorld.netStatus(),driver:perfWorld.driverStatus(),
+const perfLogicalPosition=()=>{const pointer=core.trace(app);return Array.from(new Float32Array(core.memory.buffer,pointer+28,2));};
+const perfRead=()=>({net:perfWorld.netStatus(),driver:perfWorld.driverStatus(),player0LogicalXY:perfLogicalPosition(),
+  motion:core.mp_fixture_motion_sample?Array.from(new Float64Array(core.memory.buffer,core.mp_fixture_motion_sample(),108)):null,
+  cadence:core.mp_fixture_cadence_sample?Array.from(new Float64Array(core.memory.buffer,core.mp_fixture_cadence_sample(),8)):null,
   pacing:core.mp_fixture_pacing?Array.from(new Float64Array(core.memory.buffer,core.mp_fixture_pacing(),3)):null,
   audioServices:perfWorld.audioServices(),audioClock:core.sdl_loop_time(),
   scene:core.status(app,0),loading:core.status(app,7),enemyFrame:core.status(app,6),
@@ -119,6 +122,7 @@ window.th08Performance={
     Module.runtimePrepare=()=>{
       try{
         const frame=perfWorld.netStatus()[3];
+        if(frame>end)throw Error('Measurement frame overshoot '+frame+' > '+end);
         if(frame>=end){
           perfWorld.pollNetwork();perfWorld.reconcile();
           const n=perfWorld.netStatus();
@@ -128,7 +132,7 @@ window.th08Performance={
         // Direct CaptureLocal injection also needs the diagnostic channel
         // announcement below. Formal runs leave capture AND send to the real
         // SDL/Driver device path; pre-capturing here would prevent that send.
-        if(perfFixture&&frame>perfLastCapture&&!(perfWallTouch&&frame>=180)){
+        if(perfFixture&&!hostTiming&&perfWorld.netStatus()[2]&&frame>perfLastCapture&&!(perfWallTouch&&frame>=180)){
           // Constant tick workload across policies; no frame-rate-dependent
           // input and no duplicate sample while admission is waiting.
           const moving=!perfIdleInput&&frame>=180;
@@ -158,7 +162,7 @@ window.th08Performance={
   report(){return {...perfState,canonical:perfWorld.canonical(),state:perfWorld.status(),
     mainBlocks:perfMainBlocks(),
     profileAvailable:perfFixture,timeOrigin:performance.timeOrigin,
-    identity:perfWorld.identity(),limit60:!!Module.eaglerOptions?.limitPresentationTo60,wallClockTouch:perfWallTouch,
+    identity:perfWorld.identity(),timing:perfWorld.timingStatus(),limit60:!!Module.eaglerOptions?.limitPresentationTo60,wallClockTouch:perfWallTouch,
     earlyInput:perfFixture?!!core.mp_fixture_early_input(app,2):true,
     targetFilter:perfTargetFilter,broadphase:perfBroadphase,barrierCache:perfBarrierCache,
     liveBullets:perfFixture?(core.mp_fixture_bullet_backend(app,2,0)&3)===2:true,

@@ -13,7 +13,11 @@
 #include <memory>
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include <eagler/netplay/FrameBudget.hpp>
+#include "../multiplayer/NetworkFrameSchedule.hpp"
 #include "../multiplayer/RollbackDriver.hpp"
+#endif
+#ifdef TH_MULTIPLAYER_FIXTURES
+#include "../multiplayer/MotionCadenceProbe.hpp"
 #endif
 // New browser shells own all DOM keys; old shells keep the SDL fallback.
 EM_JS(int, th08_browser_keyboard, (), {return typeof Module['resetBrowserKeyboard']==='function';});
@@ -60,14 +64,21 @@ struct Key{const char* code;const char* sdl;u32 scan,vk;bool hosted=false;SDL_Sc
 #include "../../../portable/input/KeyboardMap.inc"
 SDL_Gamepad* gamepad=nullptr;u32 prepared=0;bool running=false,suspended=false;double elapsed=0,last=-1,frame_begin=0;u32 frames=0,loop_epoch=0,warm_mask=0;touhou::sdl::FrameCadence cadence;touhou::sdl::PresentationCadence display_cadence;touhou::sdl::PresentationGate presentation_gate;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-double network_debt=0;
+multiplayer::NetworkFrameSchedule network_schedule;
+std::uint64_t network_session=0;
+u32 network_generation=0;
+bool network_identity_valid=false;
 #ifdef TH_MULTIPLAYER_FIXTURES
 bool fixture_full_hidden_draw=false;
+double fixture_cadence[8]{};
 #endif
 #endif
 void reset_cadence(){cadence.reset();
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    network_debt=0;
+    network_schedule.reset();network_identity_valid=false;
+#ifdef TH_MULTIPLAYER_FIXTURES
+    multiplayer::motion_probe::Reset();
+#endif
 #endif
 }
 constexpr SDL_GamepadButton gamepad_slots[]={
@@ -165,28 +176,48 @@ bool service_frame_audio(){
 #endif
 EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;const double delta=last<0?0:std::max(0.,(now-last)/1000.);last=now;frame_begin=emscripten_get_now();
     if(suspended||!th08_frame_ready()){sdl_audio_pause(true);reset_cadence();display_cadence.reset();presentation_gate.reset();return EM_TRUE;}sdl_audio_pause(false);int result=0;
+#ifdef TH_MULTIPLAYER_FIXTURES
+    multiplayer::motion_probe::BeginDisplay();
+#endif
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Receive and acknowledge input at display cadence even while the logical
+    // clock is braking. This only pumps the channel; Step still owns capture,
+    // correction and every authoritative update/draw pair.
+    if(runtime&&runtime->app.session.netplay.Configured()&&!runtime->app.session.netplay.ReadOnly()&&
+       runtime->app.session.netplay.Mode()==Netplay::AdonisMode::Rollback&&!runtime->pump_network())result=2;
+#endif
     const bool limit60=th08_limit_presentation_to_60()!=0;
     const bool ready=interpolation_ready()&&!limit60,fast=touhou::sdl::PresentationCadence::fast_sample(delta);if(ready)display_cadence.advance(delta);else display_cadence.reset();
     const bool tick_due=cadence.advance(delta)!=0;
-    const bool high=display_cadence.high_refresh&&interpolation_ready();const bool interpolate=presentation_gate.advance(high,tick_due);bool presented=false;
+    const bool high=display_cadence.high_refresh&&interpolation_ready();bool presented=false;
     bool due=tick_due;unsigned completed=0;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     const bool catchup=runtime&&runtime->app.session.netplay.Configured()&&
         (!runtime->app.session.netplay.ReadOnly()||(runtime->app.session.netplay.Spectator()&&
           runtime->app.session.netplay.CanStart()&&runtime->network_driver()&&runtime->network_driver()->Network().SpectatorBacklog()>4));
     constexpr double interval=touhou::sdl::FrameCadence::interval;
-    const double network_interval=interval*(catchup&&runtime->network_driver()?runtime->network_driver()->Network().Channel().IntervalScale():1.);
+    const double network_scale=catchup&&runtime->network_driver()?runtime->network_driver()->Network().IntervalScale():1.;
+    const bool live_rollback=catchup&&!runtime->app.session.netplay.ReadOnly()&&
+        runtime->app.session.netplay.Mode()==Netplay::AdonisMode::Rollback;
+    unsigned network_ticks=0;bool network_blocked=false;
     if(catchup){
-        // Same bounded backlog/start budget as TH06/07. Waiting for a packet
-        // consumes no logical time; never accumulate seconds of catch-up work.
-        // An already-due tick (including a blocked retry) must not consume an
-        // advisory correction that cannot delay that tick. Keep it queued for
-        // the next forward deadline; sub-tick callbacks retain unspent debt.
-        const auto paced_delta=network_debt+1.e-9<network_interval&&runtime->network_driver()?
+        const auto& net=runtime->app.session.netplay;
+        if(!network_identity_valid||network_session!=net.Config().sessionId||network_generation!=net.Generation()){
+            network_schedule.reset();presentation_gate.reset();network_identity_valid=true;
+#ifdef TH_MULTIPLAYER_FIXTURES
+            multiplayer::motion_probe::Reset();multiplayer::motion_probe::BeginDisplay();
+#endif
+            network_session=net.Config().sessionId;network_generation=net.Generation();
+        }
+        // A blocked rollback tick is already due. Retry it without consuming
+        // phase advice or accumulating the wall time spent waiting for input.
+        const auto paced_delta=!network_schedule.retry_pending()&&network_schedule.debt_seconds()+1.e-9<interval&&runtime->network_driver()?
             runtime->network_driver()->PacedElapsedSeconds(delta):delta;
-        network_debt=std::min(network_debt+paced_delta,network_interval*Netplay::FrameBudget::MaxCatchupTicks);
-        due=network_debt+1.e-9>=network_interval;
-    }else network_debt=0;
+        // Integrate only new time at the current speed. Re-scaling existing
+        // fractional progress would move interpolation backwards on braking.
+        network_ticks=network_schedule.advance(paced_delta/network_scale,live_rollback);
+        due=network_ticks!=0;
+    }else {network_schedule.reset();network_identity_valid=false;}
     // MIDI service follows wall cadence, never the number of catch-up ticks.
     if(tick_due)elapsed+=interval;
 #endif
@@ -266,19 +297,27 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
         }
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
         if(catchup){
-            if(!advanced)break;
-            network_debt=std::max(0.,network_debt-network_interval);
-            due=network_debt+1.e-9>=network_interval;
+            if(!advanced){
+                if(live_rollback){network_schedule.blocked(true);network_blocked=true;}
+                break;
+            }
+            network_schedule.complete();
+            due=completed<network_ticks;
         }else
 #endif
         due=false;
     }
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Preserve ordinary CPU-budget debt. Only a genuine live rollback wait
+    // discards overdue wall time; every logical tick still executes in order.
+    if(catchup&&!network_blocked&&completed<network_ticks)
+        network_schedule.defer(network_ticks-completed);
     // Real-time sequencing is independent of admission and correction count.
     // The confirmed command outbox still owns which track/notes are started.
     if(tick_due&&!result&&!service_frame_audio())result=2;
     if(catchup&&completed&&!high&&!result)presented=sdl_commit()!=0;
 #endif
+    const bool interpolate=presentation_gate.advance(high,completed!=0);
     float presentation_alpha=1.0f;
     if(!result&&runtime&&high){
         const bool frozen=runtime->app.in_game()&&(runtime->app.game.paused||runtime->app.game.retrying||runtime->app.game.menus.context.pause_state||runtime->app.game.menus.context.show_retry);
@@ -287,7 +326,7 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
 #endif
         presentation_alpha=interpolate?float(cadence.interpolation_alpha()):1.0f;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-        if(catchup&&interpolate)presentation_alpha=float(std::clamp(network_debt/network_interval,0.,1.));
+        if(catchup&&interpolate)presentation_alpha=float(network_schedule.presentation_alpha());
 #endif
         presented=runtime->app.draw(presentation_alpha,interpolate,true,!frozen);
 #if defined(TH_PRESENTATION_AUDIT)
@@ -295,6 +334,12 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
 #endif
     }
     if(presented&&runtime)runtime->app.statistics.presentation_frame();
+#ifdef TH_MULTIPLAYER_FIXTURES
+    fixture_cadence[0]=runtime&&runtime->network_driver()?runtime->network_driver()->Network().IntervalScale():1.;
+    fixture_cadence[1]=runtime?runtime->app.session.netplay.MissingRemoteInputs():0;
+    fixture_cadence[2]=network_schedule.retry_pending();fixture_cadence[3]=network_schedule.debt_seconds();
+    fixture_cadence[4]=completed;fixture_cadence[5]=high;fixture_cadence[6]=interpolate;fixture_cadence[7]=presentation_alpha;
+#endif
 #if defined(TH_PRESENTATION_AUDIT)
     if(runtime){auto& sample=audit_timing[audit_timing_next];sample={};sample.timestamp_ms=now;sample.delta_ms=float(delta*1000.);sample.alpha=presentation_alpha;
         sample.flags=u32(ready)|(u32(fast)<<1)|(u32(high)<<2)|(u32(tick_due)<<3)|(u32(interpolate)<<4)|(u32(presented)<<5);
@@ -311,11 +356,13 @@ extern "C" {
 void sdl_keys_clear();
 #ifdef TH_MULTIPLAYER_FIXTURES
 EX("mp_fixture_full_hidden_draw") void mp_fixture_full_hidden_draw(u32 enabled){fixture_full_hidden_draw=enabled!=0;}
+EX("mp_fixture_motion_sample") const double* mp_fixture_motion_sample(){return multiplayer::motion_probe::Data();}
+EX("mp_fixture_cadence_sample") const double* mp_fixture_cadence_sample(){return fixture_cadence;}
 EX("mp_fixture_pacing") const double* mp_fixture_pacing(){
-    static double out[3]{};out[0]=1;out[1]=0;out[2]=network_debt;
+    static double out[3]{};out[0]=1;out[1]=0;out[2]=network_schedule.debt_seconds();
     if(runtime&&runtime->network_driver()){
-        const auto& channel=runtime->network_driver()->Network().Channel();
-        out[0]=channel.IntervalScale();out[1]=channel.FrameLead();
+        const auto& network=runtime->network_driver()->Network();
+        out[0]=network.IntervalScale();out[1]=network.Channel().FrameLead();
     }
     return out;
 }

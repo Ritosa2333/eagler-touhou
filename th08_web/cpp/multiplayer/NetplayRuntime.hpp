@@ -64,6 +64,19 @@ public:
     Netplay::FrameDecision Prepare(std::uint32_t frame)const;
     bool MarkSimulated(std::uint32_t frame,const Netplay::FrameDecision&);
     std::uint32_t ConfirmedThrough()const{return core_.ConfirmedThroughAllRemotes();}
+    // Network shortage follows the highest live simulation frontier, not
+    // the rewound cursor or the independent physical capture frontier.
+    std::uint32_t PredictionFrontier()const{
+        return Correcting()&&correction_end_>next_?correction_end_:next_;
+    }
+    std::uint32_t RemoteInputFrontier()const{
+        const auto confirmed=ConfirmedThrough();
+        return confirmed==Netplay::INVALID_FRAME?0:confirmed+1;
+    }
+    std::uint32_t MissingRemoteInputs()const{
+        const auto frontier=PredictionFrontier(),actual=RemoteInputFrontier();
+        return frontier>actual?frontier-actual:0;
+    }
     bool ConfirmedInputs(std::uint32_t frame,std::array<Netplay::FrameInput,Netplay::MAX_PLAYERS>&)const;
     std::uint32_t RollbackFrame()const{return core_.RollbackFrame();}
 

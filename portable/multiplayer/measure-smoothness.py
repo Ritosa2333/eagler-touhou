@@ -96,16 +96,20 @@ def summarize(peer):
 def freeze(args):
     dest=args.output/'frozen';dest.mkdir(parents=True,exist_ok=False)
     profile='multiplayer' if args.production else 'multiplayer-fixtures'
-    build=ROOT/'th08_web/artifacts'/profile
+    runtime_root=args.runtime_root.resolve() if args.runtime_root else ROOT
+    build=runtime_root/'th08_web/artifacts'/profile
     info=json.loads((build/'build.json').read_text())
     if bool(info['diagnostic'])==args.production or info['variant']!=profile or digest(build/'th08-sdl.wasm')!=info['sha256']:raise ValueError('Wrong measurement build')
     if digest(build/'th08-sdl.mjs')!=info['loaderSha256']:raise ValueError('Stale fixture loader')
     for name,expected in info['sourceFiles'].items():
-        if digest(ROOT/name)!=expected:raise ValueError('Stale fixture source '+name)
+        if digest(runtime_root/name)!=expected:raise ValueError('Stale fixture source '+name)
     source={ROOT/'portable/multiplayer/smoke.html':'index.html',ROOT/'portable/multiplayer/smoke.mjs':'smoke-source.mjs',
       ROOT/'portable/multiplayer/performance-hook.mjs':'performance-hook.mjs',Path(__file__):'measure-smoothness.py',
+      ROOT/'portable/multiplayer/performance-lobby.mjs':'performance-lobby.mjs',
+      runtime_root/'th08_web/sdl-runtime/multiplayer-host.mjs':'multiplayer-host.mjs',
+      runtime_root/'third_party/eagler-common/browser/adonis-calibration.mjs':'adonis-calibration.mjs',
       build/'th08-sdl.mjs':'th08-sdl.mjs',build/'th08-sdl.wasm':'th08-sdl.wasm',build/'build.json':'runtime-build.json',
-      WORKSPACE/'eagler-common/testkit/rtc-input-impairment.cjs':'rtc-input-impairment.cjs',
+      ROOT/'third_party/eagler-common/testkit/rtc-input-impairment.cjs':'rtc-input-impairment.cjs',
       args.data:'input/th08.dat',WORKSPACE/'th06-eagler/assets/msgothic.ttc':'fonts/msgothic.ttc',
       WORKSPACE/'th08-eagler/build-eagler/fonts/blend.bin':'fonts/blend.bin',
       WORKSPACE/'th08-eagler/build-eagler/fonts/cp932.bin':'fonts/cp932.bin'}
@@ -143,7 +147,7 @@ class QuietHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self,*args):pass
 
 def run(args,origin,relay,dest,mode):
-    report={'passed':False,'mode':mode,'production':args.production,'cpuRate':args.cpu_rate,'players':args.players,
+    report={'passed':False,'mode':mode,'production':args.production,'cpuRate':args.cpu_rate,'players':args.players,'runtimeTiming':args.runtime_timing,
       'denseBullets':args.bullets,'difficulty':args.difficulty,'limit60':args.cap60,'wallClockTouch':args.wall_clock_touch,'idleInput':args.idle_input,'frames':args.frames,'oneWayMs':args.one_way_ms,'jitterMs':args.jitter_ms,
       'slowSeats':args.slow_seats,'touchSeats':args.touch_seats,'checkpointSpan':args.checkpoint_span,'backgroundIndex':args.background_index,'bombLazy':args.bomb_lazy,'shotSparse':args.shot_sparse,'recordSparse':args.record_sparse,'titleSpellsLazy':args.title_spells_lazy,'worldInstancing':args.world_instancing,'textureCoalesce':args.texture_coalesce,'skipResimVisual':args.skip_resim_visual,'skipResimGeometry':args.skip_resim_geometry,'backMetadataOnly':args.back_metadata_only,'scope':'separate Chromium processes; native rAF; RTC application-send impairment; CPU throttle is not a phone model',
       'headed':args.headed,'nativeGpu':args.native_gpu,'touchHz':args.touch_hz,'browserChannel':args.browser_channel,
@@ -151,7 +155,9 @@ def run(args,origin,relay,dest,mode):
     with sync_playwright() as pw:
         browsers=[];pages=[]
         try:
-            room='smooth-'+uuid.uuid4().hex[:12]
+            host_timing=args.runtime_timing=='launcher-rollback'
+            room=('th08mp-' if host_timing else 'smooth-')+uuid.uuid4().hex[:12]
+            admission=None
             for seat in range(args.players):
                 browser_args=['--disable-background-timer-throttling','--disable-backgrounding-occluded-windows','--disable-renderer-backgrounding']
                 if args.native_gpu:
@@ -172,7 +178,18 @@ def run(args,origin,relay,dest,mode):
                 page=context.new_page();pages.append(page)
                 page.on('pageerror',lambda e,seat=seat:report['errors'].append({'seat':seat,'error':str(e)}))
                 page.goto(origin);page.wait_for_function('window.th08Performance!==undefined',timeout=90000)
-                page.evaluate('(o)=>multiplayerSmoke.start(1234,Array.from({length:o.players},(_,i)=>i),o.seat,[12345,67890],null,o.difficulty)',{'seat':seat,'players':args.players,'difficulty':args.difficulty})
+                if host_timing and seat==0:
+                    admission=page.evaluate('async o=>{const m=await import("/performance-lobby.mjs");return m.admitPerformanceRoom(o.relay,o.room,o.count,o.difficulty,o.timing)}',
+                      {'relay':relay,'room':room,'count':args.players,'difficulty':args.difficulty,
+                       'timing':{'adonisMode':2,'inputDelay':0,'inputDelayAuto':True,'predictionLimit':8,'predictionReserve':2}})
+                    report['admission']=admission['admission']
+                timing=None
+                if admission:
+                    settings=admission['admission']['room']
+                    timing={key:settings[key] for key in ('adonisMode','inputDelay','inputDelayAuto','predictionLimit','predictionReserve')}
+                    timing['url']=admission['urls'][seat]
+                page.evaluate('(o)=>multiplayerSmoke.start(1234,Array.from({length:o.players},(_,i)=>i),o.seat,[12345,67890],null,o.difficulty,o.timing)',
+                  {'seat':seat,'players':args.players,'difficulty':args.difficulty,'timing':timing})
                 identity['actualGL']=page.evaluate("""()=>{
                   const canvas=document.querySelector('canvas'),gl=canvas?.getContext('webgl2');
                   if(!gl)return null;
@@ -185,13 +202,19 @@ def run(args,origin,relay,dest,mode):
                 identity['nativeGpuVerified']=bool(actual and actual['unmasked'] and renderer and
                   not any(name in renderer for name in ('swiftshader','llvmpipe','software','basic render','warp')))
                 if args.native_gpu and not identity['nativeGpuVerified']:raise AssertionError('Native game WebGL renderer not verified')
-            for page in pages:
-                if not page.evaluate('(url)=>multiplayerSmoke.connect(url)',relay+'/?room='+room):raise AssertionError('connect')
+            if host_timing:
+                # Measured startup loads the native world before its commit.
+                # Polling alone cannot provide that readiness; run the same
+                # native rAF path used in gameplay, with ordinary input capture.
+                for seat,page in enumerate(pages):page.evaluate('(seat)=>th08Performance.start(180,999999,seat)',seat)
+            else:
+                for page in pages:
+                    if not page.evaluate('(url)=>multiplayerSmoke.connect(url)',relay+'/?room='+room):raise AssertionError('connect')
             deadline=time.monotonic()+60
             while True:
                 states=[page.evaluate('()=>{multiplayerSmoke.pollNetwork();return multiplayerSmoke.netStatus()}') for page in pages]
                 if all(s[2] for s in states):break
-                if time.monotonic()>deadline:raise TimeoutError('RTC barrier')
+                if time.monotonic()>deadline:raise TimeoutError('RTC barrier '+json.dumps([page.evaluate('multiplayerSmoke.timingStatus()') for page in pages]))
                 time.sleep(.05)
             if not all(page.evaluate('multiplayerSmoke.driverStatus()[12]===1') for page in pages):raise AssertionError('Not RTC')
             for page in pages:
@@ -205,8 +228,22 @@ def run(args,origin,relay,dest,mode):
                     if time.monotonic()>deadline:raise TimeoutError(json.dumps(states))
                     time.sleep(.5)
                 for page in pages:page.evaluate('th08Performance.stop()')
-            for seat,page in enumerate(pages):page.evaluate('(seat)=>th08Performance.start(180,999999,seat)',seat)
+            if not host_timing:
+                for seat,page in enumerate(pages):page.evaluate('(seat)=>th08Performance.start(180,999999,seat)',seat)
             wait_phase(1)
+            report['startupTiming']=[page.evaluate('multiplayerSmoke.timingStatus()') for page in pages]
+            for timing in report['startupTiming']:
+                if args.expected_native_mode is not None and timing['native']['mode']!=args.expected_native_mode:raise AssertionError('Unexpected baseline/candidate native mode')
+                if timing['host']:
+                    effective=timing['host']['effective']
+                    if timing['host']['errors'] or timing['native']['mode']!=effective['mode']:raise AssertionError('Actual host timing mode mismatch')
+                    if effective['automatic']:
+                        if timing['calibration'][1]!=5 or timing['native']['delay']!=timing['calibration'][8]:raise AssertionError('Measured timing was not committed')
+                    elif timing['native']['delay']!=effective['delay']:raise AssertionError('Actual host delay mismatch')
+            report['startupImpairment']=[page.evaluate('({...__th08Impairment.stats})') for page in pages]
+            for timing,imp in zip(report['startupTiming'],report['startupImpairment']):
+                if timing['host'] and timing['host']['effective']['automatic']:
+                    if imp.get('calibrationProbes',0)<129 or imp.get('calibrationEchoes',0)<129:raise AssertionError('Actual calibration probes/echoes were not impaired')
             if len({json.dumps(p.evaluate('multiplayerSmoke.canonical()')) for p in pages})!=1:raise AssertionError('Warmup divergence')
             for seat,page in enumerate(pages):
                 page.evaluate('(o)=>th08Performance.configure(o.mode,o.bullets,o.cap60,o.wallTouch,o.earlyInput,o.liveBullets,o.targetFilter,o.broadphase,o.cache,o.idleInput,o.backgroundIndex,o.bombLazy,o.shotSparse,o.recordSparse,o.worldInstancing,o.textureCoalesce,o.skipResimVisual,o.skipResimGeometry,o.titleSpellsLazy,o.backMetadataOnly,o.touchHz)',{'mode':MODES[mode],'bullets':args.bullets,'cap60':args.cap60,'wallTouch':args.wall_clock_touch and seat in args.touch_seats,'earlyInput':mode!='frontier-late','liveBullets':mode!='frontier-legacy','targetFilter':mode not in ('frontier-target-legacy','frontier-both-legacy'),'broadphase':mode not in ('frontier-collision-legacy','frontier-both-legacy'),'cache':mode not in ('frontier-cache-legacy','frontier-both-legacy'),'idleInput':args.idle_input or (args.wall_clock_touch and seat not in args.touch_seats),'backgroundIndex':args.background_index,'bombLazy':args.bomb_lazy,'shotSparse':args.shot_sparse,'recordSparse':args.record_sparse,'worldInstancing':args.world_instancing,'textureCoalesce':args.texture_coalesce,'skipResimVisual':args.skip_resim_visual,'skipResimGeometry':args.skip_resim_geometry,'titleSpellsLazy':args.title_spells_lazy,'backMetadataOnly':args.back_metadata_only,'touchHz':args.touch_hz})
@@ -339,6 +376,9 @@ def main():
     p.add_argument('--modes',default='always,frontier');p.add_argument('--rounds',type=int,default=2)
     p.add_argument('--timeout',type=float,default=150);p.add_argument('--freeze-only',action='store_true')
     p.add_argument('--reuse-freeze',type=Path,help='Rerun an existing immutable experiment without rebuilding the old source')
+    p.add_argument('--runtime-root',type=Path,help='Freeze a separately identified Runtime tree with this same measurement harness')
+    p.add_argument('--runtime-timing',choices=('legacy-d0','launcher-rollback'),default='legacy-d0',help='Use actual host validation/configuration and room admission for the Launcher rollback request')
+    p.add_argument('--expected-native-mode',type=int,choices=(0,1,2),help='Require the observed native mode independently of its own host validator')
     p.add_argument('--browser-channel',choices=('default','chromium','chrome','msedge'),default='chromium')
     p.add_argument('--headed',action='store_true',help='Use visible desktop browser windows')
     p.add_argument('--native-gpu',action='store_true',help='Require the actual game WebGL context to expose a non-software renderer')
@@ -365,6 +405,7 @@ def main():
     if args.production and args.background_index:raise ValueError('Production lane cannot enable fixture index')
     if args.production and not (args.wall_clock_touch or args.idle_input):
         raise ValueError('Production stimulus must use native wall-clock touch or explicit idle input')
+    if args.reuse_freeze and args.runtime_root:raise ValueError('runtime-root cannot be combined with reuse-freeze')
     if args.reuse_freeze:
         origin=args.reuse_freeze.resolve();dest=origin/'frozen'
         manifest=json.loads((origin/'manifest.json').read_text());verify(dest,manifest)
@@ -389,6 +430,10 @@ def main():
                     name=f'{round_id+1}-{mode}.json'
                     report=supervised_run(args,'http://127.0.0.1:'+str(server.server_port),'ws://127.0.0.1:'+str(relay_port),dest,mode,name)
                     verify(dest,manifest)
+                    if report['passed'] and args.runtime_timing=='launcher-rollback':
+                        if report.get('runtimeTiming')!=args.runtime_timing or not report.get('admission') or not report.get('peers') or any(not peer.get('timing',{}).get('host') for peer in report['peers']):
+                            report['passed']=False;report['error']='Frozen harness did not execute the requested host timing path'
+                            (args.output/name).write_text(json.dumps(report,indent=2))
                     if report['passed']:
                         hashes=report['peers'][0]['canonical']
                         if not args.wall_clock_touch and reference_hashes is not None and hashes!=reference_hashes:

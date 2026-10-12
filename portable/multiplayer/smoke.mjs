@@ -20,14 +20,14 @@ for(const path of ['/input/th08.dat','/fonts/msgothic.ttc','/fonts/blend.bin','/
 }
 function string(value,callback){const bytes=new TextEncoder().encode(value+'\0'),ptr=core.allocate(bytes.length);try{new Uint8Array(core.memory.buffer,ptr,bytes.length).set(bytes);return callback(ptr);}finally{core.deallocate(ptr);}}
 string('#screen',core.sdl_canvas);core.sdl_music_enabled(0);
-let app=0;
+let app=0,hostTiming=null,hostCalibration=null;
 const nativeStatus=()=>Array.from(new Int32Array(core.memory.buffer,core.sdl_game_status(),10));
 window.multiplayerSmoke={
   identity(){return {...buildIdentity,wasmSha256:instantiatedSha256,fixtureBuild:typeof core.mp_fixture_die==='function'};},
   traceEnable(frame){if(!core.multiplayer_resource_trace_enable?.(app,frame))throw Error('Trace enable rejected');},
   deathField(victim,bombs=3,scenario=0){if(!core.mp_fixture_death_field?.(app,victim,bombs,scenario))throw Error('Death field setup rejected');},
   traceRead(frame,detail=false){const p=core.multiplayer_resource_trace_read(app,frame,detail?1:0);const heap=new Uint8Array(core.memory.buffer);let end=p;while(heap[end])++end;return JSON.parse(new TextDecoder().decode(heap.subarray(p,end)));},
-  async start(seed=1234,loadouts=null,local=0,sessionId=null,configuration=null,difficulty=1){
+  async start(seed=1234,loadouts=null,local=0,sessionId=null,configuration=null,difficulty=1,timing=null){
     if(app)throw Error('Use a fresh page for a new run');
     if(configuration){
       const bytes=new Uint8Array(60),v=new DataView(bytes.buffer);
@@ -40,7 +40,7 @@ window.multiplayerSmoke={
       Module.FS.writeFile('/savesth08-multiplayer/th08.cfg',bytes);
     }
     app=core.sdl_game_open(seed);if(!app)throw Error('Native app creation failed');
-    if(loadouts){
+    if(loadouts&&!timing){
       const words=[sessionId?3:1,loadouts.length,local,difficulty,seed,...(sessionId||[]),...(sessionId?fixtureBuildWords:[]),...loadouts.flatMap(character=>[character,0])];
       const count=sessionId?17:11;while(words.length<count)words.push(0);
       const ptr=core.allocate(count*4);try{
@@ -59,6 +59,29 @@ window.multiplayerSmoke={
     }
     window.__th08TestBoot={phase:'initialize',step:total,total};
     if(!core.sdl_game_initialize())throw Error('Initialize failed');
+    if(timing){
+      const {validateMultiplayerOptions,configureMultiplayer}=await import('./multiplayer-host.mjs');
+      const options={runtimeVariant:'multiplayer',netplayMode:'lan',netplayUrl:timing.url,
+        netplayPlayer:local,netplayPlayerCount:loadouts.length,netplayDifficulty:difficulty,netplaySeed:seed,
+        netplayInputDelay:timing.inputDelay,netplayAdonisMode:timing.adonisMode,
+        netplayInputDelayAuto:timing.inputDelayAuto,netplayPredictionLimit:timing.predictionLimit,
+        netplayPredictionReserve:timing.predictionReserve,
+        netplayLoadouts:loadouts.map(character=>({character,shot:0})),netplayIceServers:[]};
+      const effective=validateMultiplayerOptions(options);
+      hostTiming={requested:{mode:timing.adonisMode,delay:timing.inputDelay,automatic:timing.inputDelayAuto,
+        predictionLimit:timing.predictionLimit,reserve:timing.predictionReserve},
+        effective:{mode:effective.adonisMode,delay:effective.inputDelay,automatic:effective.automatic,
+          predictionLimit:effective.predictionLimit,reserve:effective.reserve},events:[],errors:[]};
+      Module.eaglerOptions=options;
+      await configureMultiplayer(core,app,options,{runtimeBuildWords:fixtureBuildWords});
+      if(effective.adonisMode){
+        const {createAdonisCalibration}=await import('./adonis-calibration.mjs');
+        hostCalibration=createAdonisCalibration({core,getApp:()=>app,getOptions:()=>options,game:'th08',build:instantiatedSha256,
+          emit:(event,value)=>hostTiming.events.push({event,...value}),
+          onError:error=>{hostTiming.errors.push(String(error));core.sdl_loop_stop();},pause:()=>core.sdl_loop_pause(1)});
+        hostCalibration.start();
+      }
+    }
     window.__th08TestBoot={phase:'ready',step:total,total};
     return nativeStatus();
   },
@@ -114,7 +137,9 @@ window.multiplayerSmoke={
     const ptr=core.mp_fixture_update_optimizations(app,mode);return Array.from(new Uint32Array(core.memory.buffer,ptr,64));},
   worldJournalProbe(mode=0){if(!core.mp_fixture_world_journal||!app)throw Error('Gameplay diagnostic fixture required');
     const ptr=core.mp_fixture_world_journal(app,mode);return Array.from(new Uint32Array(core.memory.buffer,ptr,64));},
-  netStatus(){return Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_netplay_status(app),12));},
+  netStatus(){return Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_netplay_status(app),15));},
+  timingStatus(){const net=this.netStatus(),pointer=core.multiplayer_calibration_status?.(app);
+    return {host:hostTiming,native:{mode:net[14],delay:net[12]},calibration:pointer?Array.from(new Uint32Array(core.memory.buffer,pointer,32)):null};},
   driverStatus(){const p=core.multiplayer_driver_status(app);return Array.from(new Uint32Array(core.memory.buffer,p,16));},
   canonical(){const p=core.multiplayer_canonical_state(app);return Array.from(new Uint32Array(core.memory.buffer,p,13));},
   rngState(){if(!core.mp_fixture_rng_state)return null;

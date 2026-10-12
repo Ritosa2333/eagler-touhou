@@ -188,7 +188,7 @@ async function launch(){
  if(!core.sdl_game_initialize())throw Error('永夜抄初始化失败');await new Promise(resolve=>setTimeout(resolve,Math.max(0,2000-(performance.now()-startupImageAt))));performance.mark('eagler-startup-menu-ready');document.querySelector('#loading').textContent='';
  if(multiplayer&&!multiplayer.spectator)await configureMultiplayer(core,app,options,{runtimeBuildWords});
  }catch(reason){calibration?.stop();core.sdl_game_close();app=0;throw reason;}
- if(multiplayer){window.__eaglerNetplayFailed=false;window.__eaglerNetplayError='';updateNetworkDiagnostics(core,app);if(multiplayer.adonisMode&&!multiplayer.spectator)calibration?.start();}
+ if(multiplayer){window.__eaglerNetplayFailed=false;window.__eaglerNetplayError='';updateNetworkDiagnostics(core,app);if(multiplayer.adonisMode&&!multiplayer.spectator)calibration?.start();else calibration?.stop();}
  applyOptions();launched=true;first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
  canvas.focus({preventScroll:true});core.sdl_loop_pause(1);if(!document.hidden)await resumeForegroundAudio();if(query.get('manual')!=='1')core.sdl_loop_start();
  emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:'eagler-touhou/1',version:'3.4.1-sdl3'});
