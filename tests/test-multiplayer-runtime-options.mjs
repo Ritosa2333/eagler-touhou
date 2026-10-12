@@ -36,6 +36,7 @@ assert.deepEqual(buildMultiplayerRuntimeOptions(base, th06), {
   netplayPlayerCount: 2,
   netplaySeed: 1234,
   netplayDifficulty: 4,
+  netplayInputDelay: 0,
   netplaySpectator: false,
   netplaySpectatorId: "",
   netplaySpectatorCount: 2,
@@ -43,23 +44,23 @@ assert.deepEqual(buildMultiplayerRuntimeOptions(base, th06), {
   netplayLoadouts: base.loadouts.slice(0, 2),
 }, "Runtime options must use only the active player-count prefix of loadouts");
 const th08Timing=buildMultiplayerRuntimeOptions({ ...base, inputDelay: 4, predictionLimit: 2 }, th06);
-assert.equal(th08Timing.netplayInputDelay, 4);
+assert.equal(th08Timing.netplayInputDelay, 0);
 assert.equal(th08Timing.netplayPredictionLimit, 2);
 const inputDelayOnly=buildMultiplayerRuntimeOptions({ ...base, inputDelay: 3 }, th06);
-assert.equal(inputDelayOnly.netplayInputDelay, 3);
+assert.equal(inputDelayOnly.netplayInputDelay, 0);
 assert.equal("netplayPredictionLimit" in inputDelayOnly, false,
   "TH09/TH10 input delay must not silently override each title's rollback limit");
 
 const adonisBase={...base,url:base.url.replace('th06mp-','th09mp-'),inputDelay:9,adonisMode:1};
 for(const product of ['th08mp','th09mp','th10mp'])for(const adonisMode of [1,2]){
   const options=buildMultiplayerRuntimeOptions({...adonisBase,url:adonisBase.url.replace('th09mp',product),adonisMode},th06);
-  assert.equal(options.netplayAdonisMode,adonisMode);
-  assert.equal(options.netplayInputDelay,9);
+  assert.equal(options.netplayAdonisMode,adonisMode===2?0:1);
+  assert.equal(options.netplayInputDelay,adonisMode===2?0:9);
 }
 for(const product of ['th08mp','th10mp']) {
   const stable={...base,url:base.url.replace('th06mp',product),inputDelay:3};
   const options=buildMultiplayerRuntimeOptions(stable,th06);
-  assert.equal(options.netplayInputDelay,3);
+  assert.equal(options.netplayInputDelay,0);
   assert.equal('netplayAdonisMode' in options,false);
   assert.equal('netplayInputDelayAuto' in options,false);
   assert.equal('netplayPredictionReserve' in options,false);

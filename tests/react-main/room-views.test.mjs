@@ -24,7 +24,13 @@ const act = fn => React.act(async () => {await fn?.(); for (let i = 0; i < 12; i
 const defaultContext = {launched: false, th09NetworkOverlayOpen: false, launchStage: null, touchEnabled: false, touchMovementMode: 'joystick'};
 before(async () => {
   env = installMountedDom(); React = await import('react'); ({createRoot} = await import('react-dom/client')); ({MemoryRouter} = await import('react-router'));
-  for (const file of ['src/launcher/i18n.mts', 'src/contracts/product-catalog.mts']) assert.equal(pinnedUiAuthorityText(readFileSync(resolve(project, file), 'utf8')), pinned(file), `Pinned authority changed: ${file}`);
+  for (const file of ['src/launcher/i18n.mts', 'src/contracts/product-catalog.mts']) {
+    let expected=pinned(file);
+    if(file==='src/launcher/i18n.mts')expected=expected
+      .replace(/^  \["room.enableRollback".*$/m,'  ["room.enableRollback", "启用回滚(降低输入延迟，需要更高的性能)", "Enable rollback (lower input delay, requires higher performance)"],')
+      .replace(/^  \["room.rollbackHint".*$/m,'  ["room.rollbackHint", "开启后输入延迟固定为 0 帧；关闭后使用所选输入延迟。开局后设置固定。", "When enabled, input delay is fixed at 0 frames. When disabled, use the selected input delay. Settings are fixed once the game starts."],');
+    assert.equal(pinnedUiAuthorityText(readFileSync(resolve(project,file),'utf8')),expected,`Pinned authority changed: ${file}`);
+  }
   originalHTML = pinned('public/index.html'); const mainSource = execFileSync('git', ['show', '8bdf6dbf4a81032f0725cc841b86d03e1465fe07:src/launcher/app.mts'], {cwd: project, encoding: 'utf8'});
   // Retain origin/main's separately accepted editable-name block with main's
   // updated room timing renderer. Both inputs are committed legacy authorities.
@@ -358,6 +364,7 @@ for (const locale of ['zh-CN', 'en']) test(`Synthetic network metrics match exec
 test('Measured rollback button routes through real room owner without overwriting selected delay; applied running value wins', async () => {
   const product = owners.PRODUCT_IDS.find(id => owners.isMultiplayerProductId(id) && owners.multiplayerConfigForProduct(id).inputTiming?.measuredStartup);
   assert.ok(product, 'Measured product must exist'); const f = await fixture({product}).live(); await mountRoom(f);
+  assert.equal(f.service.getSnapshot().rollbackEnabled,true);await click('#mpRollbackToggle');
   await act(() => f.service.setTimingChoice(7)); await click('#mpRollbackToggle'); assert.equal(f.service.getSnapshot().rollbackEnabled, true); assert.equal(f.service.getSnapshot().timingChoice, 7);
   assert.equal(n('#mpRollbackToggle').getAttribute('aria-checked'), 'true'); await click('#mpRollbackToggle'); assert.equal(f.service.getSnapshot().rollbackEnabled, false);
   await f.receive({phase: 'running', adonisMode: 2}); assert.equal(n('#mpRollbackToggle').getAttribute('aria-checked'), 'true'); assert.equal(n('#mpRollbackToggle').disabled, true);
@@ -435,6 +442,7 @@ for (const locale of ['zh-CN', 'en']) test(`room game settings own ${locale} tim
     if (config.inputTiming) assert.deepEqual([...select.options].map(node => [node.value, node.textContent, node.disabled]), [...n('#mpInputDelay', original).options].map(node => [node.value, node.textContent, node.disabled]));
     for (const selector of ['#mpReplayViewer', '#mpGamePackageImport']) assert.deepEqual(canonical(n(selector)), canonical(n(selector, original)));
     if (config.inputTiming) {
+      if(owners.multiplayerInputTimingPolicy(config).rollback){assert.equal(select.value,'0');assert.equal(select.disabled,true);await act(()=>f.service.setRollbackEnabled(false));assert.equal(select.disabled,false);}
       await act(() => {select.value = '5'; select.dispatchEvent(new env.window.Event('change', {bubbles: true}));}); assert.equal(f.service.getSnapshot().timingChoice, 5); assert.equal(select.value, '5');
       const trigger = select.closest('.mizuki-select').querySelector('.mizuki-select-trigger'); assert.match(trigger.textContent, /5f/);
       await f.receive({seats: [{clientId: 'host12345', name: 'H', loadout: 0}, {clientId: f.id, name: 'A', loadout: 1}]});
