@@ -67,6 +67,11 @@ struct GameBattle::Services {
     } projectiles;
     struct Items final:ItemCollectionHost {
         GameBattle& g;explicit Items(GameBattle& g):g(g){}
+        bool shared_life_piece(bool& handled)override{
+#if TH15_MULTIPLAYER
+            if(g.mp_enabled)return g.mp_life_piece(handled);
+#endif
+            handled=false;return true;}
         bool options_changed()override{return g.player->configure_options();}
         bool notice(i32 id)override{return g.scene?(g.scene->hud.notification(0,id)||g.fail(g.scene->hud.error)):g.check(g.presentation.notice(id),"Item notice failed");}
         bool sound(i32 id,bool queued)override{return g.sound(id,0,PlayerShots::SoundAction::play,queued);}
@@ -182,13 +187,19 @@ bool GameBattle::check(bool ok,const char* message){return ok||fail(message);}
 bool GameBattle::life_hud(i32 lives,i32 pieces){return scene?(scene->hud.life(lives,pieces)||fail(scene->hud.error)):check(presentation.life_hud(lives,pieces),"Life HUD failed");}
 bool GameBattle::bomb_hud(i32 stock,i32 pieces){return scene?(scene->hud.bombs(stock,pieces)||fail(scene->hud.error)):check(presentation.bomb_hud(stock,pieces),"Bomb HUD failed");}
 bool GameBattle::record_graze(const Vec3& position){
-    if(!scene)return check(presentation.graze_spark(position),"Graze presentation unavailable");
+    if(!scene
 #if TH15_MULTIPLAYER
-    if(mp_enabled&&mp_contact_seat){auto& s=pilots[mp_contact_seat]->score;s.graze_total=std::min(wrapping_add(s.graze_total,1),99999999);s.graze_chapter=std::min(wrapping_add(s.graze_chapter,1),99999999);s.point_value=std::min(wrapping_add(s.point_value,100),s.max_point_value);return sound(42,position.x,PlayerShots::SoundAction::play,true);}
+       &&!mp_enabled
 #endif
+    )return check(presentation.graze_spark(position),"Graze presentation unavailable");
     score.graze_total=std::min(wrapping_add(score.graze_total,1),99999999);score.graze_chapter=std::min(wrapping_add(score.graze_chapter,1),99999999);
     score.point_value=std::min(wrapping_add(score.point_value,100),score.max_point_value);
-    const auto& player_position=player->motion.position;const Vec3 middle{float(float(player_position.x+position.x)*.5f),float(float(player_position.y+position.y)*.5f),0};
+    if(!scene)return check(presentation.graze_spark(position),"Graze presentation unavailable");
+    const auto& player_position=
+#if TH15_MULTIPLAYER
+        mp_enabled?pilots[mp_contact_seat]->player->motion.position:
+#endif
+        player->motion.position;const Vec3 middle{float(float(player_position.x+position.x)*.5f),float(float(player_position.y+position.y)*.5f),0};
     const auto handle=animations.create(resources.effect,24,-1,0,middle);if(!handle)return fail(animations.error);
     scene->popups.number(middle,score.graze_chapter,0xffc0c0ff);return sound(42,position.x,PlayerShots::SoundAction::play,true);
 }
@@ -241,7 +252,7 @@ i32 GameBattle::update_enemies(){
 #if TH15_MULTIPLAYER
  if(mp_enabled){refresh_world();if(!battle_enemy_frame(input.game_flags))return 1;for(unsigned s=0;s<mp_options.seat_count;++s)pilots[s]->player->damage.score=pilots[s]->score.score;
  enemies->rate=input.rate;enemies->background_delta=input.background_delta;if(!enemies->update()){fail(enemies->error);return 5;}
- for(unsigned s=0;s<mp_options.seat_count;++s)pilots[s]->score.score=pilots[s]->player->damage.score;return error.empty()?1:5;}
+ score.score=player->damage.score;return error.empty()?1:5;}
 #endif
 refresh_world();if(!battle_enemy_frame(input.game_flags))return 1;player->damage.score=score.score;enemies->rate=input.rate;enemies->background_delta=input.background_delta;const bool ok=enemies->update();score.score=player->damage.score;if(!ok){fail(enemies->error);return 5;}return error.empty()?1:5;}
 i32 GameBattle::update_lasers(){refresh_world();if(!laser_scene->update(input.rate,input.game_flags)){fail(laser_scene->error);return 5;}return error.empty()?1:5;}

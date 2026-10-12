@@ -4,7 +4,7 @@
 #include "BattleSceneBindings.hpp"
 #include <algorithm>
 namespace th15 {
-MultiplayerPilot::MultiplayerPilot(GameBattle& w,unsigned s,int ch):world(w),seat(s),character(ch),owned_session(w.session),owned_score(w.score),session(s?owned_session:w.session),score(s?owned_score:w.score){}
+MultiplayerPilot::MultiplayerPilot(GameBattle& w,unsigned s,int ch):world(w),seat(s),character(ch),owned_session(w.session),session(s?owned_session:w.session),score(w.score){}
 bool MultiplayerPilot::initialize(const ShtResource& sht,int bank){
     if(seat){
         owned_player=std::make_unique<Player>(sht,world.animations,world.effects,world.game_random,world.visual_random,session,world.spell,*this,character,bank,world.resources.effect);
@@ -89,6 +89,19 @@ bool MultiplayerPilot::hit_sound(i32 id){return world.sound(id,0,PlayerShots::So
 bool MultiplayerPilot::sound(i32 id,bool q){return world.sound(id,0,PlayerShots::SoundAction::play,q);}
 bool MultiplayerPilot::popup(const Vec3& p,i32 v,u32 c){return world.popup(p,v,c);}
 bool MultiplayerPilot::notice(i32 id){return world.check(world.presentation.notice(id),"Multiplayer item notice failed");}
+bool MultiplayerPilot::shared_life_piece(bool& handled){return world.mp_life_piece(handled);}
+bool GameBattle::mp_life_piece(bool& handled){
+    handled=false;bool room=false;for(unsigned s=0;s<mp_options.seat_count;++s)room|=pilots[s]->session.extra_lives<8;
+    if(!room){for(unsigned s=0;s<mp_options.seat_count;++s)pilots[s]->session.life_pieces=0;return true;}
+    handled=true;if(score.life_piece_tier<0||(score.difficulty==4&&score.life_piece_tier>5))return fail("Life-piece tier outside verified threshold table");
+    const i32 threshold=score.difficulty==4?(score.life_piece_tier<5?5:99999999):3;
+    i32 pieces=wrapping_add(session.life_pieces,1);const bool extend=pieces>=threshold;
+    if(extend){pieces=wrapping_sub(pieces,threshold);score.life_piece_tier=wrapping_add(score.life_piece_tier,1);}
+    for(unsigned s=0;s<mp_options.seat_count;++s){auto& p=*pilots[s];p.session.life_pieces=pieces;
+        if(extend&&p.session.extra_lives<8)++p.session.extra_lives;
+        if(!p.life_hud(p.session.extra_lives,pieces))return false;}
+    return !extend||(pilots[0]->sound(17,true)&&pilots[0]->notice(4));
+}
 bool MultiplayerPilot::cancel_bullets(const Vec3& p,float r,i32 k){return cancel_bullets_near(p,r,k);}
 bool MultiplayerPilot::cancel_lasers(const Vec3& p,float r,i32 k,bool h){return cancel_lasers_near(p,r,k,h);}
 bool MultiplayerPilot::cancel_bullets_rectangle(const Vec3& p,const Vec2& s,float a,i32 k){return world.bullet_scene->cancel_rectangle(p,s,a,k);}
@@ -120,7 +133,10 @@ Vec3 GameBattle::mp_target(const Vec3& p)const{const auto s=mp_nearest(p);return
 bool GameBattle::mp_damage(const DamageQuery& q,DamageResult& out){
     out={};for(unsigned s=0;s<mp_options.seat_count;++s){auto& p=*pilots[s];if(p.ghost)continue;
         const bool changed=p.player->frame.input_age.current!=p.player->frame.input_age.previous;
-        const auto hit=p.player->damage.query(q,changed,0);if(!p.player->damage.error.empty())return fail(p.player->damage.error);
+        const i32 before=p.player->damage.score;const auto hit=p.player->damage.query(q,changed,0);if(!p.player->damage.error.empty())return fail(p.player->damage.error);
+        const i32 gain=wrapping_sub(p.player->damage.score,before);
+        if(s)player->damage.score=std::min(wrapping_add(player->damage.score,gain),999999999);
+        score.score=std::min(wrapping_add(score.score,gain),999999999);
         out.amount=wrapping_add(out.amount,hit.amount);out.direct|=hit.direct;if(hit.position_written){out.position=hit.position;out.position_written=true;}}
     return true;
 }

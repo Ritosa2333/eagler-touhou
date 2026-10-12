@@ -15,8 +15,18 @@ that common branch before sharing a remote checkout of the title branch.
 Canonical TH15 and launcher checkouts have not been promoted or overwritten.
 
 Two or three pilots independently select Reimu, Marisa, Sanae or Reisen.
-Player lifecycle, shots, bombs, items, score and chapter rewards have stable
-per-seat owners. The stage, enemies, projectiles and spell capture are shared.
+Player lifecycle, shots, Bomb stock/fragments, lives and Power have stable
+per-seat owners. Score, total/chapter Graze, point value, point-item counts,
+collection statistics and chapter rewards use one team owner. Each pilot's
+eligible graze contributes once, including multiple pilots grazing one bullet.
+Chapter rewards are calculated once from the team statistics.
+Life fragments form a team pool: three grant each pilot one life in Legacy;
+Extra requires five for each of its first five Extends, as in retail TH15.
+Each pilot remains capped at eight spare lives. A capped pilot still contributes
+while a teammate has room; when everyone is capped, a fragment becomes only
+the collecting pilot's Bomb fragment. Extends do not reactivate ghosts.
+Whole-life and whole-Bomb pickups go to their collecting pilot.
+The stage, enemies, projectiles and spell capture are shared.
 Aimed emissions select the nearest operable pilot; ties use seat order.
 Every participant simulates the same confirmed input rows at 60 Hz.
 `eagler-common-netplay` owns transport, calibration, ACK repair, frame-zero
@@ -42,6 +52,7 @@ selects a free slot, then replaces slot 01 if all slots are occupied. Replays
 carry the complete seat setup, seed, build identity and confirmed input rows.
 Playback requires the same executable build and applies no second input delay.
 Retail one-player replays are not accepted by the multiplayer viewer.
+Gameplay ABI version 2 rejects the earlier per-seat economy recordings.
 
 For shared launcher development, point `EAGLER_WORKSPACE_ROOT` at the repository
 workspace and provide the multiplayer worktree at

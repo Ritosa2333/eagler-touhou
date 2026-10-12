@@ -89,7 +89,7 @@ public:
     void mp_input(const std::array<MultiplayerInput,3>&);
     const PlayerCollision& mp_collision(unsigned);
     int mp_nearest(const Vec3&,bool power=false)const;Vec3 mp_target(const Vec3&)const;
-    bool mp_damage(const DamageQuery&,DamageResult&);bool mp_draw(AnmRenderer&);
+    bool mp_damage(const DamageQuery&,DamageResult&);bool mp_draw(AnmRenderer&);bool mp_life_piece(bool&);
 #endif
     std::string error;
     std::function<bool()> game_over_begin;
