@@ -365,8 +365,14 @@ EM_BOOL frame(double now,void* epoch){if(!running||uintptr_t(epoch)!=loop_epoch)
     bool committed_endpoint=false;
     if(correction_pending)presentation_gate.reset();
     if(catchup&&!result&&!correction_pending){
+        // Keep the 8 ms history/new-tick budget, but allow a completed frame
+        // a short final presentation pass before falling back to its endpoint.
+        // Using the work budget here also snapped the interpolation phase to
+        // one, then held that endpoint through subsequent no-tick callbacks.
+        // This is a Draw start threshold, not a hard callback duration limit.
+        constexpr double presentation_start_budget_ms=10.;
         const bool budget_spent=live_rollback&&emscripten_get_now()-frame_begin>=
-            double(Netplay::FrameBudget::CatchupBudgetNs)/1000000.;
+            presentation_start_budget_ms;
         // Rollback forward ticks already produced complete pixels. When the
         // callback budget is spent, submit that image instead of drawing the
         // same world again. Pure delay's lightweight hidden Draw is excluded.
