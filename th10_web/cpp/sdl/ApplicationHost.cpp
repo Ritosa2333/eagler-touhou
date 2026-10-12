@@ -17,6 +17,7 @@ extern "C" void sdl_native_input(th10::browser::Application*);
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
 #include <eagler/netplay/FrameBudget.hpp>
 #include <eagler/netplay/PendingFrameSchedule.hpp>
+#include "../multiplayer/NetworkFrameSchedule.hpp"
 extern "C" void sdl_audio_replay_seek_output(th10::u32);
 extern "C" th10::u32 sdl_audio_replay_seek_tick();
 extern "C" int sdl_replay_seek_batch(th10::browser::Application*);
@@ -33,6 +34,25 @@ using HostCadence=Netplay::PendingFrameSchedule<touhou::sdl::FrameCadence>;
 using HostCadence=touhou::sdl::FrameCadence;
 #endif
 unsigned loop_epoch=0;bool running=false,suspended=false,presentation_primed=false;double elapsed=0,last=-1,audio_remainder=0,callback_begin=0;HostCadence cadence;touhou::sdl::PresentationCadence presentation;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+th10::multiplayer::NetworkFrameSchedule network_schedule;
+bool network_identity_valid=false;std::uint64_t network_session=0;th10::u32 network_generation=0;
+double multiplayer_presentation_sample[6]{1,0,0,1,0,0};
+#endif
+void reset_cadence(){
+    cadence.reset();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    network_schedule.reset();network_identity_valid=false;
+#endif
+}
+bool flush_network_inputs(){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(application&&!application->state.netplay_runtime.FlushNetworkInputs()){
+        application->multiplayer_fail("Flush display input tail");return false;
+    }
+#endif
+    return true;
+}
 #ifdef TH_PRESENTATION_AUDIT
 bool presentation_lab_fault=false;
 struct PresentationLabTiming {double timestamp_ms;float delta_ms,alpha;th10::u32 flags,tick,draw_serial,reserved;};
@@ -70,24 +90,26 @@ EM_BOOL frame(double timestamp,void* epoch){
     // Keep handshake, input/ACK repair and retirement alive while loading,
     // suspended or waiting for input. Network timing is real wall time, not
     // sdl_loop_time(), whose simulation clock legitimately stops here.
-    if(!application->multiplayer_pump_network()){
+    if(!application->multiplayer_pump_network(true)){
         browser_finish_frame(2,emscripten_get_now()-callback_begin);return running?EM_TRUE:EM_FALSE;
     }
 #endif
     // Browser responsibilities end at resource readiness and input snapshots.
     // The C++ ApplicationLoop owns deadlines, logic, draw and the original
     // 60Hz cadence, independent of display callback frequency.
-    const int ready=browser_prepare_frame();if(!running)return EM_FALSE;
-    if(ready<=0||suspended){sdl_audio_pause(1);cadence.reset();presentation.reset();presentation_primed=false;return EM_TRUE;}
+    const int ready=browser_prepare_frame();
+    if(!running||!application||uintptr_t(epoch)!=loop_epoch)return EM_FALSE;
+    if(ready<=0||suspended){flush_network_inputs();sdl_audio_pause(1);reset_cadence();presentation.reset();presentation_primed=false;return EM_TRUE;}
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     // This callback has passed its own readiness/suspension fence. Release
     // only that pause; an active Replay seek retains its separate mute owner.
     sdl_audio_pause(0);
     if(application->multiplayer_replay_seeking()){
+        if(!flush_network_inputs()){browser_finish_frame(2,emscripten_get_now()-callback_begin);return running?EM_TRUE:EM_FALSE;}
         const int result=sdl_replay_seek_batch(application);
         // Seek is a requested offline Replay operation, not catch-up debt.
         // Resume the existing live/SP cadence with no accumulated backlog.
-        cadence.reset();presentation.reset();presentation_primed=false;last=-1;
+        reset_cadence();presentation.reset();presentation_primed=false;last=-1;
         browser_finish_frame(result,emscripten_get_now()-callback_begin);
         return running?EM_TRUE:EM_FALSE;
     }
@@ -96,63 +118,150 @@ EM_BOOL frame(double timestamp,void* epoch){
     const auto milliseconds=th10::u32(std::floor(audio_remainder));audio_remainder-=milliseconds;
     application->audio.advance(milliseconds);
     if(application->world&&application->world->loading){
+        if(!flush_network_inputs()){browser_finish_frame(2,emscripten_get_now()-callback_begin);return running?EM_TRUE:EM_FALSE;}
         // Share the exact object creation sequence with the synchronous test
         // entry point, but yield between owners on the browser thread. Keep
         // gameplay/RNG/recording frozen until the original loading barrier.
         const double deadline=emscripten_get_now()+2.;
         do{application->world->advance_loading_step();}while(application->world->loading&&emscripten_get_now()<deadline);
         application->sync_views();
-        if(application->world->loading){application->engine.device.present_frame();sdl_audio_pump();browser_finish_frame(0,emscripten_get_now()-callback_begin);cadence.reset();presentation.reset();presentation_primed=false;return EM_TRUE;}
+        if(application->world->loading){application->engine.device.present_frame();sdl_audio_pump();browser_finish_frame(0,emscripten_get_now()-callback_begin);reset_cadence();presentation.reset();presentation_primed=false;return EM_TRUE;}
     }
-    // Some Emscripten SDL builds fall back to millisecond gettimeofday for
-    // performance counters. Use the display's timestamp for cadence, avoiding
-    // a late/early callback's CPU work moving the next deadline across a VSync.
-    // Match TH08: locked presentation uses the authored fixed-tick draw, with
-    // no extra interpolated draws. Keep logic/input and audio cadence intact.
     const bool limit60=th10_limit_presentation_to_60()!=0;
-    const bool presentation_ready=interpolation_ready()&&!limit60,fast=touhou::sdl::PresentationCadence::fast_sample(delta);if(presentation_ready)presentation.advance(delta);else presentation.reset();if(!presentation.high_refresh||!fast)presentation_primed=false;
+    const bool presentation_ready=interpolation_ready()&&!limit60;
+    const bool fast=touhou::sdl::PresentationCadence::fast_sample(delta);
+    if(presentation_ready)presentation.advance(delta);else presentation.reset();
     double simulation_delta=delta;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
     auto& runtime=application->state.netplay_runtime;
     const bool live=application->multiplayer_active()&&runtime.NetworkEnabled()&&
                     runtime.CanStart()&&!runtime.Spectator()&&runtime.InitialInputsReady();
-    if(live&&!cadence.retry_pending())
-        simulation_delta/=runtime.Channel().IntervalScale();
+    const bool rollback_clock=live&&runtime.Mode()==Netplay::AdonisMode::Rollback;
+    if(rollback_clock){
+        if(!network_identity_valid||network_session!=runtime.Config().sessionId||
+           network_generation!=runtime.Generation()){
+            network_schedule.reset();presentation_primed=false;network_identity_valid=true;
+            network_session=runtime.Config().sessionId;network_generation=runtime.Generation();
+        }
+    }else {network_schedule.reset();network_identity_valid=false;}
+    if(live&&!cadence.retry_pending())simulation_delta/=runtime.IntervalScale();
     if(live&&!cadence.retry_pending()&&cadence.debt+1.e-9<touhou::sdl::FrameCadence::interval)
         simulation_delta=runtime.PacedElapsedSeconds(simulation_delta);
-#endif
-    // Clock calibration changes only when the next fixed tick is due. Every
-    // admitted tick still executes the original 60 Hz simulation and Draw.
-    bool tick_due=false;int result=0;sdl_defer(1);
-#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-    tick_due=cadence.advance(simulation_delta,live)!=0;
+    // Scale only new wall time. Keep fractional phase in nominal logic units.
+    const unsigned offered=rollback_clock?network_schedule.advance(delta/runtime.IntervalScale(),true):
+        cadence.advance(simulation_delta,live);
+    if(!presentation.high_refresh||(!rollback_clock&&!fast))presentation_primed=false;
 #else
-    tick_due=cadence.advance(simulation_delta)!=0;
+    const unsigned offered=cadence.advance(simulation_delta);
+    if(!presentation.high_refresh||!fast)presentation_primed=false;
 #endif
-    if(tick_due){
+    const bool tick_due=offered!=0;
+    int result=0;unsigned completed=0;bool completed_after_correction=false;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-        const auto before=runtime.LastSimulatedFrame();
+    bool unfinished_accounted=false;
 #endif
-        sdl_native_input(application);result=application->step(true);
+    sdl_defer(1);
+    while(completed<offered&&!result){
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
-        // Waiting keeps only this due frame. Recovery never repays the host's
-        // elapsed time as extra forward simulation; every logical frame remains.
-        if(live&&!result&&runtime.LastSimulatedFrame()!=before+1u)cadence.blocked(true);
-        else cadence.complete();
-        // A start-time spectator may receive the relay's bounded confirmed
-        // history after joining. Consume a few exact logical frames per
-        // display callback until caught up; live players never enter here.
-        for(th10::u32 i=1;!result&&application->multiplayer_spectator_catchup_budget()>1&&
-            Netplay::FrameBudget::CanStartTick(i,std::uint64_t(std::max(0.,emscripten_get_now()-callback_begin)*1.e6));++i){
-            const auto before=runtime.LastSimulatedFrame();result=application->step(true);
-            if(runtime.LastSimulatedFrame()!=before+1u)break;
+        if(rollback_clock&&!Netplay::FrameBudget::CanStartTick(completed,
+            std::uint64_t(std::max(0.,emscripten_get_now()-callback_begin)*1.e6)))break;
+        // An additional admitted tick still gets one fresh input opportunity.
+        if(completed){
+            const int additional_ready=browser_prepare_frame();
+            // Preparation may stop/replace this loop and release its app.
+            // Never finish the old callback through that retired lifetime.
+            if(!running||!application||uintptr_t(epoch)!=loop_epoch){
+                sdl_defer(0);return EM_FALSE;
+            }
+            if(additional_ready<=0||suspended)break;
         }
+        const auto before=runtime.LastSimulatedFrame();
+        const auto corrections=application->multiplayer_rollbacks;
+#endif
+        sdl_native_input(application);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        result=application->step(true,callback_begin);
+        if(runtime.Correcting()||application->multiplayer_rollbacks!=corrections){
+            presentation_primed=false;completed_after_correction=false;
+        }
+        const bool advanced=application->multiplayer_forward_advanced;
+        if(rollback_clock){
+            if(!advanced){
+                if(runtime.Correcting())
+                    network_schedule.recovering(offered-completed);
+                else network_schedule.blocked(true);
+                unfinished_accounted=true;break;
+            }
+            network_schedule.complete();++completed;completed_after_correction=true;
+        }else{
+            if(live&&!result&&runtime.LastSimulatedFrame()!=before+1u)cadence.blocked(true);
+            else cadence.complete();
+            ++completed;completed_after_correction=advanced;
+        }
+#else
+        result=application->step(true);++completed;completed_after_correction=true;
 #endif
     }
-    const bool high=presentation.high_refresh&&interpolation_ready();if(high&&fast&&!presentation_primed&&tick_due)presentation_primed=true;const bool interpolate=high&&fast&&presentation_primed;float frame_alpha=1.0f;
-    sdl_defer(0);bool presented=false;
-    if(!result&&high){const bool frozen=application->world&&application->world->actors.session&&(application->world->actors.session->session_flags&0x74);frame_alpha=interpolate?float(cadence.interpolation_alpha()):1.0f;presented=application->presentation_draw(frame_alpha,interpolate,!frozen);}else presented=sdl_commit()!=0;
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(rollback_clock&&!unfinished_accounted&&completed<offered)
+        network_schedule.defer(offered-completed);
+    // Spectator backlog is confirmed history, separate from live recovery.
+    if(!rollback_clock&&tick_due){
+        for(th10::u32 i=1;!result&&application->multiplayer_spectator_catchup_budget()>1&&
+            Netplay::FrameBudget::CanStartTick(i,std::uint64_t(std::max(0.,emscripten_get_now()-callback_begin)*1.e6));++i){
+            const auto before=runtime.LastSimulatedFrame();result=application->step(true,callback_begin);
+            if(runtime.LastSimulatedFrame()!=before+1u)break;
+        }
+    }
+#endif
+    if(!flush_network_inputs())result=2;
+    const bool high=presentation.high_refresh&&interpolation_ready();
+    float frame_alpha=1.0f;bool interpolate=false,presented=false;
+    sdl_defer(0);
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    if(rollback_clock){
+        if(high&&completed_after_correction)presentation_primed=true;
+        interpolate=high&&presentation_primed;
+        if(!result&&!runtime.Correcting()){
+            const bool budget_spent=emscripten_get_now()-callback_begin>=10.;
+            const bool corrected=application->multiplayer_corrected_presentation_pending;
+            if(completed_after_correction&&(!high||budget_spent)){
+                // Full semantic pixels already exist. Once their endpoint was
+                // shown, do not interpolate backwards through the same pair.
+                presented=sdl_commit()!=0;
+                if(presented){presentation_primed=false;interpolate=false;}
+            }else if(high&&(!corrected||!budget_spent)){
+                const bool frozen=application->world&&application->world->actors.session&&
+                    (application->world->actors.session->session_flags&0x74);
+                frame_alpha=interpolate?float(network_schedule.presentation_alpha()):1.0f;
+                presented=application->presentation_draw(frame_alpha,interpolate,!frozen);
+            }else if(corrected&&!budget_spent){
+                // Historical Draw can suppress GPU output. Only after full
+                // reconciliation may a read-only pass show the corrected world.
+                presented=application->presentation_draw(1.0f,false,false);
+            }
+            if(presented)application->multiplayer_corrected_presentation_pending=false;
+        }
+    }else
+#endif
+    {
+        if(high&&fast&&!presentation_primed&&tick_due)presentation_primed=true;
+        interpolate=high&&fast&&presentation_primed;
+        if(!result&&high){
+            const bool frozen=application->world&&application->world->actors.session&&
+                (application->world->actors.session->session_flags&0x74);
+            frame_alpha=interpolate?float(cadence.interpolation_alpha()):1.0f;
+            presented=application->presentation_draw(frame_alpha,interpolate,!frozen);
+        }else presented=sdl_commit()!=0;
+    }
     if(presented&&application)application->presentation_frame();
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    multiplayer_presentation_sample[1]=high?1:0;
+    multiplayer_presentation_sample[2]=interpolate?1:0;
+    multiplayer_presentation_sample[3]=frame_alpha;
+    multiplayer_presentation_sample[4]=presented?1:0;
+    multiplayer_presentation_sample[5]=presentation_primed?1:0;
+#endif
 #ifdef TH_PRESENTATION_AUDIT
     record_presentation_timing(timestamp,delta,frame_alpha,(ready>0?1u:0u)|(fast?2u:0u)|(high?4u:0u)|(tick_due?8u:0u)|(interpolate?16u:0u)|(presented?32u:0u));
 #endif
@@ -162,6 +271,8 @@ EM_BOOL frame(double timestamp,void* epoch){
 }
 extern "C" {
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+__attribute__((export_name("multiplayer_presentation_status")))
+const double* multiplayer_presentation_status(){return multiplayer_presentation_sample;}
 int sdl_replay_seek_batch(th10::browser::Application* app){
     if(!app||app->stopped||!app->multiplayer_replay_seeking())return -1;
     sdl_audio_replay_seek_output(1);sdl_defer(1);
@@ -189,9 +300,9 @@ __attribute__((export_name("sdl_loop_time"))) double sdl_loop_time(){return elap
 __attribute__((export_name("sdl_loop_tick"))) int sdl_loop_tick(th10::browser::Application* app,double seconds,th10::u32 milliseconds){
     if(running)return -1;elapsed+=seconds;app->audio.advance(milliseconds);sdl_native_input(app);return app->step(true);
 }
-__attribute__((export_name("sdl_loop_pause"))) void sdl_loop_pause(th10::u32 pause){suspended=pause!=0;last=-1;cadence.reset();presentation.reset();presentation_primed=false;sdl_audio_pause(pause);}
+__attribute__((export_name("sdl_loop_pause"))) void sdl_loop_pause(th10::u32 pause){suspended=pause!=0;last=-1;reset_cadence();presentation.reset();presentation_primed=false;sdl_audio_pause(pause);}
 __attribute__((export_name("sdl_loop_start"))) void sdl_loop_start(th10::browser::Application* app){
-    application=app;elapsed=audio_remainder=0;cadence.reset();presentation.reset();presentation_primed=false;last=-1;callback_begin=emscripten_get_now();running=true;
+    application=app;elapsed=audio_remainder=0;reset_cadence();presentation.reset();presentation_primed=false;last=-1;callback_begin=emscripten_get_now();running=true;
     emscripten_request_animation_frame_loop(frame,reinterpret_cast<void*>(uintptr_t(++loop_epoch)));
 }
 __attribute__((export_name("sdl_loop_stop"))) void sdl_loop_stop(){

@@ -99,6 +99,7 @@ bool World::end_netplay_frame(){
 }
 bool World::commit_audio(){
     const auto& runtime=state.netplay_runtime;
+    if(runtime.Correcting()||runtime.HasRollbackRequest())return true;
     return audio_events.CommitThrough(runtime.ConfirmedThroughAllRemotes(),
         runtime.LastSimulatedFrame(),audio.manager,[](void* context){
             auto& audio=*static_cast<Audio*>(context);audio.advance_fades();

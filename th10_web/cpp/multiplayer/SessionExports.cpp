@@ -539,7 +539,7 @@ u32 multiplayer_submit_remote(browser::Application* app,u32 player,u32 frame,
 }
 extern "C" __attribute__((export_name("multiplayer_capture_local")))
 u32 multiplayer_capture_local(browser::Application* app,u32 frame,const u32* words,u32 count){
-    if(!app||app->stopped||count!=5||!app->state.netplay_runtime.CanStart()||
+    if(!app||app->stopped||count!=5||!app->state.netplay_runtime.CanCapture()||
        frame!=app->state.netplay_runtime.NextFrame())return 0;
     Netplay::FrameInput input{};if(!decode_frame_input(words,input))return 0;
     return app->state.netplay_runtime.CaptureLocal(frame,input)?1:0;
@@ -575,6 +575,34 @@ const i32* multiplayer_netplay_status(browser::Application* app){
     words[7]=i32(u32(sessionId));words[8]=i32(u32(sessionId>>32));
     words[9]=app->multiplayer_active()?1:0;
     words[10]=app->world&&app->world->actors.session?1:0;
+    return words;
+}
+extern "C" __attribute__((export_name("multiplayer_smoothness_status")))
+const i32* multiplayer_smoothness_status(browser::Application* app){
+    // Host-owned observations only: no journal writes, clock updates, input
+    // consumption, or semantic hashes in the presentation callback probe.
+    static i32 words[10]{};std::fill(words,words+10,0);words[0]=1;
+    if(!app)return words;
+    auto& runtime=app->state.netplay_runtime;
+    words[1]=i32(app->multiplayer_recovery_yields);
+    words[2]=runtime.Correcting()?1:0;
+    words[3]=runtime.Correcting()?i32(runtime.CorrectionEnd()):-1;
+    words[4]=i32(runtime.PredictionFrontier());
+    words[5]=i32(runtime.MissingRemoteInputs());
+    words[6]=i32(runtime.IntervalScale()*1000.0+0.5);
+    words[7]=app->multiplayer_forward_advanced?1:0;
+    words[8]=app->multiplayer_corrected_presentation_pending?1:0;
+    words[9]=runtime.HasLocalCapture(runtime.NextFrame())?1:0;
+    return words;
+}
+extern "C" __attribute__((export_name("multiplayer_projection_cache_status")))
+const double* multiplayer_projection_cache_status(browser::Application* app){
+    // Read only after the measured run: derived whole-world-lifetime counters.
+    static double words[5]{};std::fill(words,words+5,0);words[0]=1;
+    if(!app||!app->world)return words;
+    const auto& count=app->world->backgrounds.projection_cache.counters();
+    words[1]=double(count.hits);words[2]=double(count.misses);
+    words[3]=double(count.evictions);words[4]=double(count.fallbacks);
     return words;
 }
 extern "C" __attribute__((export_name("multiplayer_canonical_hashes")))

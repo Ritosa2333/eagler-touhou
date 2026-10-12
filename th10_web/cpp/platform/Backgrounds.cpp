@@ -13,7 +13,13 @@ void BackgroundScript::initialize_animation(AnmFile& file,AnmVm& vm,i32 id){init
 void BackgroundScript::normalize(Vec3& output,const Vec3& input){GraphicsMath::normalize(output,input);}
 BackgroundDraw::BackgroundDraw(Backgrounds& o):owner(o),renderer(o.engine.renderer()),graphics_camera(renderer){world=&o.engine.world;active=&o.engine.active;screen_space=&o.engine.screen_space;fog_enabled=&o.engine.fog_enabled;rate=&o.engine.speed;camera=&graphics_camera;}
 void BackgroundDraw::translation(Matrix4& matrix,const Vec3& position){GraphicsMath::translation(matrix,position);}
-void BackgroundDraw::project_points(Vec3* output,const Vec3* input,u32 count,const Camera& camera,const Matrix4& world){GraphicsMath::project_array(output,12,input,12,count,&camera.viewport,&camera.projection,&camera.view,&world);}
+void BackgroundDraw::project_points(Vec3* output,const Vec3* input,u32 count,const Camera& camera,const Matrix4& world){
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    owner.projection_cache.project_points(output,input,count,camera,world);
+#else
+    GraphicsMath::project_array(output,12,input,12,count,&camera.viewport,&camera.projection,&camera.view,&world);
+#endif
+}
 void BackgroundDraw::draw_animation(AnmVm& vm){owner.engine.draw(vm);}
 void BackgroundDraw::draw_layer(u32 layer){owner.engine.manager.draw_layer(layer,owner.engine);}
 void BackgroundDraw::clear(u32 flags,u32 color,const StageClearRect* rectangle){owner.engine.device.clear_target(flags,color,1.f,0,reinterpret_cast<const i32*>(rectangle),rectangle?1u:0u);}

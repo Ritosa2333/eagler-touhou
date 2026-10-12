@@ -11,6 +11,7 @@
 #include <eagler/netplay/SessionChannel.hpp>
 #include <eagler/netplay/AdonisConnection.hpp>
 #include <eagler/netplay/AdonisSpectatorTiming.hpp>
+#include <eagler/netplay/InputGapPacing.hpp>
 
 #include <cstdint>
 #include <deque>
@@ -57,11 +58,7 @@ public:
     void MarkLocalReady() { if(!spectator_)gate_.MarkLocalReady(); }
     bool CanStart() const { return configured_ && (spectator_?spectator_timing_ready_:playback_ || gate_.CanStart()); }
 
-    bool CaptureLocal(std::uint32_t frame, const Netplay::FrameInput& input) {
-        if(playback_||spectator_||!CanStart()||!Netplay::IsValidFrameInput(input)||
-           !core_.ScheduleLocalInput(frame,input))return false;
-        return !network_enabled_||channel_.LocalCaptured(core_,frame,network_now_);
-    }
+    bool CaptureLocal(std::uint32_t frame, const Netplay::FrameInput& input);
     Netplay::RemoteInputResult SubmitRemote(std::uint8_t player, std::uint32_t frame,
                                             const Netplay::FrameInput& input) {
         return configured_&&!playback_&&!spectator_
@@ -87,6 +84,28 @@ public:
         return last==Netplay::INVALID_FRAME?0:last+1;
     }
     bool HasLocalCapture(std::uint32_t frame) const { return core_.HasLocalCapture(frame); }
+    // Recovery progress is host-owned, outside the rewindable world. Keep
+    // the old exclusive frontier even when the simulation cursor rewinds.
+    bool Correcting() const { return correction_end_!=Netplay::INVALID_FRAME; }
+    std::uint32_t CorrectionEnd() const { return correction_end_; }
+    std::uint32_t PredictionFrontier() const {
+        const auto next=NextFrame();
+        return Correcting()&&correction_end_>next?correction_end_:next;
+    }
+    void BeginCorrection(std::uint32_t end) {
+        if(!Correcting()||end>correction_end_)correction_end_=end;
+    }
+    void EndCorrection() { correction_end_=Netplay::INVALID_FRAME; }
+    bool CanCapture() const {
+        return CanStart()&&!playback_&&!spectator_&&!retired_&&
+            (!Correcting()||NextFrame()>=correction_end_);
+    }
+    std::uint32_t MissingRemoteInputs() const {
+        const auto through=ConfirmedThroughAllRemotes();
+        const auto actual=through==Netplay::INVALID_FRAME?0:through+1;
+        const auto frontier=PredictionFrontier();
+        return frontier>actual?frontier-actual:0;
+    }
     bool InputPresent(std::uint8_t player,std::uint32_t frame) const {
         return core_.InputPresent(player,frame);
     }
@@ -107,7 +126,8 @@ public:
 
     bool Connect(const char* relayUrl);
     bool ConnectSpectator(const char* relayUrl,const char* spectatorId);
-    bool PumpNetwork(bool expectsInput);
+    bool PumpNetwork(bool expectsInput,bool captureFollows=false);
+    bool FlushNetworkInputs();
     bool NetworkEnabled() const { return network_enabled_; }
     bool PreparingWorld()const{return configured_&&setup_.version>=4&&setup_.adonis_mode!=0&&!playback_&&!spectator_;}
     bool AllowsRollback()const{return !playback_&&!spectator_&&setup_.adonis_mode!=unsigned(Netplay::AdonisMode::Delay);}
@@ -115,6 +135,10 @@ public:
     const SessionSetup& Setup()const{return setup_;}
     const std::uint32_t* CalibrationStatus(){return calibration_.Status();}
     double PacedElapsedSeconds(double elapsed);
+    double IntervalScale() const {
+        const auto gap=input_gap_pacing_.Scale(),phase=channel_.IntervalScale();
+        return gap>1.?(gap>phase?gap:phase):phase;
+    }
     // The HELLO/READY gate agrees on the session, not on completion of each
     // browser's title/resource loading. First input proves the world is ready.
     bool InitialInputsReady() const;
@@ -139,6 +163,8 @@ private:
     Netplay::AdonisConnection calibration_{transport_};
     Netplay::SessionChannel channel_{calibration_};
     double phase_debt_ms_=0;
+    Netplay::InputGapPacing input_gap_pacing_{};
+    std::uint32_t correction_end_=Netplay::INVALID_FRAME;
     std::uint64_t network_now_=0;
     bool network_enabled_=false;
     bool initial_wait_started_=false;

@@ -89,6 +89,11 @@ for (const [name, sources, flags = []] of [
   ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['presentation-cache', [resolve(root,'tests/presentation-cache-test.cpp')],
     ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
+  ['background-projection-cache', [
+    ...['tests/background-projection-cache-test.cpp','th10_web/cpp/game/GraphicsMath.cpp',
+      'th10_web/cpp/game/Arithmetic.cpp','th10_web/cpp/game/GameMath.cpp']
+      .map(path=>resolve(root,path)),softfloat,
+  ], ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1','-ffp-contract=off','-fno-strict-aliasing']],
   ['player-presentation', [resolve(root,'tests/player-presentation-test.cpp')],
     ['-DTH_ENABLE_MULTIPLAYER_GAMEPLAY=1']],
   ['rollback-pool', [

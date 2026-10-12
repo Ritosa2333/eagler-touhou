@@ -55,6 +55,28 @@ const enemyDebug=()=>Array.from(new Uint32Array(core.memory.buffer,core.multipla
 const lifecycle=()=>Array.from(new Int32Array(core.memory.buffer,core.multiplayer_lifecycle_status(app),12));
 const audioStatus=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_audio_status(app),9));
 const generationStatus=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_generation_status(app),9));
+const calibrationStatus=()=>{
+ if(!core.multiplayer_calibration_status)throw Error('Native calibration status export required');
+ const pointer=core.multiplayer_calibration_status(app);
+ return Array.from(new Uint32Array(core.memory.buffer,pointer,32));
+};
+function resultsStatus(){
+ if(!core.multiplayer_scene_owners)throw Error('Native scene descriptors required');
+ // Fetch the descriptor before memory.buffer: the export may grow memory.
+ // Results is owner 3 in DiagnosticsExports.cpp; do not copy the entire scene.
+ const descriptor=core.multiplayer_scene_owners(app),buffer=core.memory.buffer;
+ const count=new Uint32Array(buffer,descriptor,1)[0];
+ if(count>20)throw Error('Scene descriptor bound');
+ if(count<4)return null;
+ const owners=new Uint32Array(buffer,descriptor,9),pointer=owners[7],bytes=owners[8];
+ if(!pointer)return null;
+ if(bytes!==0x2c8||pointer+bytes>buffer.byteLength)throw Error('Results owner layout/bound');
+ const view=new DataView(buffer,pointer,bytes);
+ return {schema:1,pointer,bytes,state:view.getInt32(0x4,true),
+  timer:view.getInt32(0x14,true),previousTimer:view.getInt32(0x10,true),
+  selected:view.getInt32(0x24,true),itemCount:view.getInt32(0x2c,true),
+  stackDepth:view.getInt32(0xb0,true)};
+}
 const replayStatus=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_replay_status(app),13));
 const spectatorStatus=()=>Array.from(new Uint32Array(core.memory.buffer,core.multiplayer_spectator_status(app),7));
 const replayPath='/savesth10-multiplayer/jp/replay/th10_01.rpy';
@@ -109,7 +131,11 @@ window.multiplayerSmoke={
   if(result||core.application_error(app))throw Error('Comparison tick failed '+result+' '+networkError());
   return netStatus();
  },
- performanceFinal(){return {state:status(),canonical:canonical(),audio:audioStatus(),net:netStatus()};},
+ performanceFinal(){return {state:status(),canonical:canonical(),audio:audioStatus(),net:netStatus(),
+  smoothness:core.multiplayer_smoothness_status?Array.from(new Int32Array(
+   core.memory.buffer,core.multiplayer_smoothness_status(app),10)):null,
+  projectionCache:core.multiplayer_projection_cache_status?Array.from(new Float64Array(
+   core.memory.buffer,core.multiplayer_projection_cache_status(app),5)):null};},
  sceneOwners(){
   if(!core.multiplayer_scene_owners)return null;
   const pointer=core.multiplayer_scene_owners(app);
@@ -363,6 +389,8 @@ window.multiplayerSmoke={
  lifecycle,
  audioStatus,
  generationStatus,
+ calibrationStatus,
+ resultsStatus,
  memoryStatus,
  timedNetTick(){const start=performance.now();const result=core.sdl_loop_tick(app,1/60,16);
   const milliseconds=performance.now()-start;

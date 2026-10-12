@@ -3,6 +3,9 @@
 #include "ScreenEffects.hpp"
 #include "../game/StageResources.hpp"
 #include "../game/StageRenderer.hpp"
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+#include "BackgroundProjectionCache.hpp"
+#endif
 #include <array>
 namespace th10::browser {
 struct Backgrounds;
@@ -28,6 +31,8 @@ struct Backgrounds final : StageResourceEnvironment,CallbackReceiver {
     struct PresentationStage {Stage* owner=nullptr;Camera camera{};bool valid=false;};
     std::array<PresentationStage,2> presentation{};
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    // Exact derived projections survive a restore; they are not journaled.
+    BackgroundProjectionCache projection_cache;
     // Physical ownership only, NOT a rewindable game-state container. A
     // restore makes current/previous live again and cancels that retirement.
     // Journaling this queue would resurrect already-freed pointers in newer

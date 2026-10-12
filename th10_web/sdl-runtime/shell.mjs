@@ -14,8 +14,14 @@ const runtimeVariant=query.get('runtimeVariant')??'normal',multiplayerRuntime=ru
 const createAdonisCalibration=multiplayerRuntime?(await import('./adonis-calibration.mjs')).createAdonisCalibration:null;
 const epoch=Number(query.get('runtimeEpoch'));
 const validEpoch=Number.isSafeInteger(epoch)&&epoch>0;
+const runtimeDocument=document,hosted=parent!==window,ownerFrame=hosted?window.frameElement:null;
 const emit=(event,fields={})=>parent.postMessage({protocol,game,epoch,event,...fields},location.origin);
 let Module,core,app=0,launched=false,first=false,closing=false,language=query.get('language')==='lang_zh-hans'?'chs':'jp',options={},music=true;
+let initializedReady=false,launchSettled=false,touchLifetime=0,touchRetired=false;
+// Source serials consume all authenticated snapshots, including dropped input.
+// Only accepted changes advance native serials. A real sdl_game_open resets
+// mapped serials; TH10 Replay stays in the same native Application/session.
+let sourceBomb=0,sourceEscape=0,mappedBomb=0,mappedEscape=0;
 let practice;
 let calibration=null,runtimeBuild='',runtimeBuildWords=[];
 const keyboard=createBrowserKeyboard({
@@ -24,8 +30,31 @@ const keyboard=createBrowserKeyboard({
 });
 function clearKeyboard(){keyboard.clear();core?.sdl_keys_clear();}
 let frames=0,lastHealth=0,lastFrame=0,maxGap=0,lastPresented=0,saveTimer=null;
-const cancelTouches=bindOutsideTouches(document,canvas,()=>core,()=>launched&&options.touchEnabled);
-const error=reason=>{const message=reason?.stack||String(reason);if(multiplayerRuntime){window.__eaglerNetplayFailed=true;window.__eaglerNetplayError=message;}document.querySelector('#error').textContent=message;emit('error',{message,error:message});console.error(reason);};
+function ownsTouchDocument(){
+ try{return document===runtimeDocument&&(!hosted||!!ownerFrame&&ownerFrame.isConnected&&ownerFrame.contentWindow===window&&ownerFrame.contentDocument===runtimeDocument);}
+ catch{return false;}
+}
+function touchReady(){
+ // Replay menus and Esc during playback/seek remain native viewer controls.
+ // Playback and spectator ownership of game input is enforced by C++.
+ return initializedReady&&!!core&&!!app&&launched&&launchSettled&&!closing&&
+  !touchRetired&&!document.hidden&&!!options.touchEnabled&&!options.netplaySpectator&&ownsTouchDocument();
+}
+function cancelTouchInput(){
+ const delivered=touchReady();cancelTouches();
+ // Native cancel_transient clears focus/stick/pulses, preserving fire and
+ // the accepted action serials. Also cancel when the lifecycle is ineligible.
+ if(!delivered&&initializedReady&&core)core.sdl_touch_cancel();
+}
+function invalidateTouches(terminal=false){
+ ++touchLifetime;launchSettled=false;if(terminal)touchRetired=true;cancelTouchInput();
+}
+function acceptsTouch(){
+ if(!ownsTouchDocument()){if(!touchRetired)invalidateTouches(true);return false;}
+ return touchReady();
+}
+const cancelTouches=bindOutsideTouches(document,canvas,()=>touchReady()?core:null,acceptsTouch);
+const error=reason=>{invalidateTouches(true);const message=reason?.stack||String(reason);if(multiplayerRuntime){window.__eaglerNetplayFailed=true;window.__eaglerNetplayError=message;}document.querySelector('#error').textContent=message;emit('error',{message,error:message});console.error(reason);};
 const u32=(ptr,count)=>new Uint32Array(core.memory.buffer,ptr,count);
 const cstring=(text,fn)=>{const bytes=new TextEncoder().encode(text+'\0'),p=core.graphics_allocate(bytes.length);try{new Uint8Array(core.memory.buffer,p,bytes.length).set(bytes);return fn(p);}finally{core.graphics_free(p);}};
 const readCString=ptr=>{if(!ptr)return '';const heap=new Uint8Array(core.memory.buffer);let end=ptr;while(end<heap.length&&heap[end])++end;return new TextDecoder().decode(heap.subarray(ptr,end));};
@@ -47,10 +76,15 @@ async function configureNetplay(){
  const url=new URL(options.netplayUrl),room=url.searchParams.get('room'),run=url.searchParams.get('run');
  const count=options.netplayPlayerCount,seat=options.netplaySpectator?0:options.netplayPlayer;
  const loadouts=options.netplayLoadouts;
- const inputDelay=options.netplayInputDelay===undefined?0:Number(options.netplayInputDelay);
- const mode=options.netplayAdonisMode??0,automatic=options.netplayInputDelayAuto??false,reserve=options.netplayPredictionReserve??2;
- if(!Number.isInteger(mode)||mode<0||mode>2||typeof automatic!=='boolean'||(automatic&&(!mode||inputDelay))||
+ let inputDelay=options.netplayInputDelay===undefined?0:Number(options.netplayInputDelay);
+ let mode=options.netplayAdonisMode??0,automatic=options.netplayInputDelayAuto??false;
+ const reserve=options.netplayPredictionReserve??2;
+ if(!Number.isInteger(mode)||mode<0||mode>2||typeof automatic!=='boolean'||
     !Number.isInteger(reserve)||reserve<1||reserve>2)throw Error('Invalid TH10 measured timing policy');
+ // Both rollback choices use the verified zero-delay path. Pure delay keeps
+ // its existing measured/fixed policy and ABI.
+ if(mode===0||mode===2){mode=0;inputDelay=0;automatic=false;}
+ if(automatic&&inputDelay)throw Error('Invalid TH10 measured timing policy');
  if(!['ws:','wss:'].includes(url.protocol)||!room||!run||![2,3].includes(count)||
     !Number.isInteger(seat)||seat<0||seat>=count||
     !Number.isInteger(options.netplaySeed)||options.netplaySeed<0||options.netplaySeed>65535||
@@ -137,7 +171,7 @@ async function installRuntimePack(pack){
  }
 }
 function applyOptions(){
- applyTouchOptions(core,options);
+ applyTouchOptions(core,options.netplaySpectator?{...options,touchEnabled:false}:options);
  if(app){
   core.application_touch_display?.(app,options.alwaysHitbox?1:0);
   const hints=['hint_user.txt','hint_auto.txt'].some(name=>fileExists(root()+'/hint/'+name));
@@ -170,13 +204,14 @@ function updateReplaySeek(){
 }
 function save(){if(app)core.application_save(app);return sync(false);}
 async function resumeForegroundAudio(forcePause=false){
- if(!core||!launched||document.hidden)return false;
+ if(!core||!app||!launched||closing||touchRetired||document.hidden||!ownsTouchDocument())return false;
  if(forcePause)core.sdl_loop_pause(1);
- return resumeRuntimeAudio(Module,core,()=>!!core&&launched&&!document.hidden);
+ return resumeRuntimeAudio(Module,core,()=>!!core&&!!app&&launched&&!closing&&!touchRetired&&!document.hidden&&ownsTouchDocument());
 }
-async function stop(){if(closing)return;closing=true;calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();await sync(false);app=0;launched=false;updateReplaySeek();emit('exit',{code:0,status:'success'});}finally{closing=false;}}
+async function stop(){if(closing)return;closing=true;invalidateTouches();calibration?.stop();clearKeyboard();try{practice?.close();core.sdl_loop_stop();await save();core.sdl_game_close();await sync(false);app=0;launched=false;updateReplaySeek();emit('exit',{code:0,status:'success'});}finally{closing=false;}}
 async function launch(){
- if(launched)return;clearKeyboard();
+ if(launched)return;
+ const touchTicket=touchLifetime;launchSettled=false;clearKeyboard();
  await installStartupBranding(Module,{game,builtAt:(await(await fetch('./manifest.json')).json()).builtAt});
  // The localized Runtime still constructs the Japanese core. Keep its font
  // alias alongside the selected localization font and user-file root.
@@ -185,9 +220,11 @@ async function launch(){
  Module.eaglerSaveLanguage=language;
  const mode=Module.touhouMusicMode||'none';music=mode!=='none'&&mode!=='midi';core.sdl_ogg_decode_mode?.(options.oggDecodeMode==='full');
  core.sdl_music_enabled?.(music);app=core.sdl_game_open(false,options.netplayMode==='lan'?options.netplaySeed:Date.now()&65535);if(!app)throw Error('C++ game initialization failed');
+ mappedBomb=mappedEscape=0;
  try{await configureNetplay();}catch(reason){calibration?.stop();core.sdl_game_close();app=0;throw reason;}
  applyOptions();launched=true;first=false;lastPresented=0;lastHealth=performance.now();lastFrame=0;frames=0;maxGap=0;
- canvas.focus({preventScroll:true});core.sdl_loop_pause(1);if(!document.hidden)void resumeForegroundAudio();core.sdl_loop_start(app);
+ canvas.focus({preventScroll:true});core.sdl_loop_pause(1);if(!document.hidden)await resumeForegroundAudio();core.sdl_loop_start(app);
+ launchSettled=touchTicket===touchLifetime&&!touchRetired&&!closing&&!!app&&ownsTouchDocument();
  emit('runtime-info',{renderer:'SDL3 / WebGL2 / C++',architecture:'eagler-touhou/1',version:'3.5.1-sdl3'});
 }
 async function command(message){
@@ -197,9 +234,16 @@ async function command(message){
  case 'keyboard':if(launched&&!document.hidden&&!closing)keyboard.event(message,!!message.down,'hosted');return {};
  case 'thprac-mouse':practice?.mouse(message);return {};
  case 'keyboard-clear':clearKeyboard();return {};
- case 'touch-cancel':cancelTouches();return {};
- case 'direct-touch':directTouch(core,canvas,message,{width:innerWidth,height:innerHeight});return {};
- case 'touch-controls':touchControls(core,options,message);return {};
+ case 'touch-cancel':cancelTouchInput();return {};
+ case 'direct-touch':if(acceptsTouch())directTouch(core,canvas,message,{width:innerWidth,height:innerHeight});return {};
+ case 'touch-controls':{
+  const controls=message.controls??message,bomb=controls.bombSerial>>>0,escape=controls.escapeSerial>>>0;
+  const changedBomb=bomb!==sourceBomb,changedEscape=escape!==sourceEscape;
+  sourceBomb=bomb;sourceEscape=escape;if(!acceptsTouch())return {};
+  const nextBomb=(mappedBomb+Number(changedBomb))>>>0,nextEscape=(mappedEscape+Number(changedEscape))>>>0;
+  touchControls(core,options,{controls:{...controls,bombSerial:nextBomb,escapeSerial:nextEscape}});
+  mappedBomb=nextBomb;mappedEscape=nextEscape;return {};
+ }
  case 'launch':await launch();return {};
  case 'sync':await save();return {};
  case 'list':{const files=[];for(const dir of ['', '/replay','/hint']){if(!fileExists(root()+dir))continue;for(const name of Module.FS.readdir(root()+dir)){const path=(dir+'/'+name).replace(/^\//,'');try{storage.relativeSave(path);}catch{continue;}const full=root()+'/'+path,s=Module.FS.stat(full);if(Module.FS.isFile(s.mode)){const bytes=Module.FS.readFile(full);files.push({path:replayFiles.exported(path,bytes),size:s.size});}}}return {files};}
@@ -223,12 +267,12 @@ window.addEventListener('message',event=>{
  const m=event.data;if(!validEpoch||event.source!==parent||event.origin!==location.origin||m?.protocol!==protocol||m.game!==game||m.epoch!==epoch||typeof m.command!=='string')return;
  // Device events must not wait behind filesystem/resource operations. Their
  // synchronous command bodies observe the current owner and lifecycle now.
- if(m.command==='keyboard'||m.command==='keyboard-clear'){void dispatchCommand(m);return;}
+ if(['keyboard','keyboard-clear','direct-touch','touch-controls','touch-cancel'].includes(m.command)){void dispatchCommand(m);return;}
  queue=queue.then(async()=>{if(await initialized===false)return;await dispatchCommand(m);}).catch(error);
 });
-document.addEventListener('visibilitychange',()=>{if(!core||!launched)return;clearKeyboard();cancelTouches();if(document.hidden){suspendRuntimeAudio(Module,core);queue=queue.then(save).catch(error);}else void resumeForegroundAudio(true);});
-window.addEventListener('blur',()=>{if(core){clearKeyboard();cancelTouches();}});
-window.addEventListener('pagehide',()=>{clearKeyboard();cancelTouches();if(core&&launched){suspendRuntimeAudio(Module,core);void save().catch(console.error);}});
+document.addEventListener('visibilitychange',()=>{if(!core||!launched)return;clearKeyboard();cancelTouchInput();if(document.hidden){suspendRuntimeAudio(Module,core);queue=queue.then(save).catch(error);}else void resumeForegroundAudio(true);});
+window.addEventListener('blur',()=>{if(core){clearKeyboard();cancelTouchInput();}});
+window.addEventListener('pagehide',()=>{invalidateTouches(true);clearKeyboard();if(core&&launched){suspendRuntimeAudio(Module,core);void save().catch(console.error);}});
 window.addEventListener('pageshow',()=>{if(core&&launched&&!document.hidden)void resumeForegroundAudio(true);});
 canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();clearKeyboard();core?.sdl_loop_pause(1);error('图形环境已失效，请退出后重新开始。');});
 for(const name of ['pointerdown','keydown'])window.addEventListener(name,()=>{if(Module?.SDL3?.audioContext?.state!=='running')void resumeForegroundAudio(true);},{capture:true});
@@ -266,5 +310,6 @@ const initialized=(async()=>{
  Module.runtimeFileChanged=()=>{if(saveTimer!==null)return;saveTimer=setTimeout(()=>{saveTimer=null;queue=queue.then(()=>sync(false)).catch(error);},0);};
  Module.runtimeStopped=()=>{};Module.callMain=launch;
  window.__th10Runtime={core,Module,get app(){return app;},status,launch,stop,command};
+ initializedReady=true;
  emit('ready');
 })().catch(e=>{if(isSupersededRuntimeError(e)){console.debug('Runtime navigation superseded');return false;}error(e);throw e;});

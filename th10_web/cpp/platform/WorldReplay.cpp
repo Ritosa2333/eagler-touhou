@@ -324,6 +324,7 @@ bool World::finalize_replay_checkpoint(){
 }
 
 bool World::commit_replay(){
+    if(state.netplay_runtime.Correcting()||state.netplay_runtime.HasRollbackRequest())return true;
     auto& archive=state.multiplayer_replay;
     if(!archive.Recording())return true;
     if(!archive.Commit(state.netplay_runtime))return false;
