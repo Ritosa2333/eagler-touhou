@@ -411,15 +411,11 @@ bool RollbackDriver::Step(bool render,double callback_start_ms){
     // Restore, replay and every callback budget exit start with no deferred
     // ordinary send; historical ticks only reuse retained physical input.
     if(!FlushInputs())return false;
-    const bool had_correction=net.Correcting()||net.RollbackFrame()!=Netplay::INVALID_FRAME;
     if(net.AllowsRollback()&&!Correct(callback_start_ms))return false;
     if(net.Correcting())return true;
-    // Completing recovery does not authorize an extra forward tick after its
-    // callback budget is spent. Preserve the owed tick for the next rAF.
-    if(had_correction&&callback_start_ms>=0&&emscripten_get_now()-callback_start_ms>=8.){
-        callback_yielded=true;
-        return !render||PresentCorrection();
-    }
+    // Complete recovery may proceed through normal admission to the owed
+    // forward tick. Its indivisible cost can extend this callback beyond the
+    // history slice budget; the SDL host still gates further catch-up ticks.
     if(!Commit()||!Admit())return false;
     if(session.network_waiting)return PresentCorrection();
     // The outer SDL callback owns the shared observer catch-up budget.
