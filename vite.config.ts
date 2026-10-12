@@ -8,6 +8,7 @@ const deployment = reactDeploymentConfig();
 export default defineConfig({base: deployment.mountPath,
   // The build's preview fetch and listener share one explicit loopback family.
   preview: {host: '127.0.0.1'},
-  build: {manifest: true},
+  // Keep generated JavaScript within the browser floor admitted by bootstrap.
+  build: {manifest: true, target: 'chrome108'},
   define: {__REACT_APP_SHELL_DEPLOYMENT__: JSON.stringify(deployment.appShell)},
   plugins: [originalBootstrap(), mainAssets(), authoredSources(), reactRouter()], publicDir: false});
