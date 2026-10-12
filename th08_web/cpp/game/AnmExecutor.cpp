@@ -18,6 +18,19 @@ struct Arguments {
     float fv(u32 n) const {return instruction->varMask&(1u<<n)?vm.GetFloatVar(f(n)).to_float():f(n);}
     i32* ip(u32 n) const {return vm.GetIntVarPtr(reinterpret_cast<i32*>(instruction+1)+n,instruction->varMask,n);}
     float* fp(u32 n) const {return vm.GetFloatVarPtr(reinterpret_cast<float*>(instruction+1)+n,instruction->varMask,n);}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    bool before_literal_write(i32 opcode)const {
+        if(opcode!=5&&(opcode<37||opcode>66))return true;
+        if(instruction->instructionSize<sizeof(AnmRawInstr)+sizeof(u32))return false;
+        // 37..59 alternate integer/float destinations; 60..66 are all float.
+        const bool real=opcode>=60||(opcode>=38&&opcode<=58&&(opcode&1)==0);
+        void* target=real?static_cast<void*>(fp(0)):static_cast<void*>(ip(0));
+        // An unknown masked variable still resolves to the literal itself.
+        // Only the resolved address proves that this is a VM-owned variable.
+        return target!=static_cast<void*>(instruction+1)||!vm.anmFile||
+            vm.anmFile->BeforeScriptWrite(target,sizeof(u32));
+    }
+#endif
     Vec3 vec(u32 n) const {return {fv(n),fv(n+1),fv(n+2)};}
 };
 }
@@ -62,6 +75,9 @@ bool AnmExecutor::execute(AnmVm& vm){
         const Arguments a{vm,instruction};const i32 op=instruction->opcode;
         if(op==-1||op==1||op==2){if(op!=2)vm.visible=false;vm.currentInstruction=nullptr;return true;}
         if(instruction->instructionSize<8){invalid=true;return true;}
+#ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+        if(!a.before_literal_write(op)){invalid=true;return true;}
+#endif
         bool finish=false;
         switch(op){
         case 3:vm.visible=true;if(vm.anmFile)vm.anmFile->SetSprite(&vm,a.iv(0));vm.timeOfLastSpriteSet=vm.currentTimeInScript.current;break;

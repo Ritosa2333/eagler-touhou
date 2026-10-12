@@ -72,6 +72,7 @@ bool AnmResource::configure_texture(u32 index,u32 handle,u32 width,u32 height){
 void AnmResource::clone_from(const AnmResource& source,i32 index){
     loaded=source.loaded;raw=source.raw;sources=source.sources;sprite_sources=source.sprite_sources;sprites=source.sprites;
 #ifdef TH_ENABLE_MULTIPLAYER_GAMEPLAY
+    loaded.ClearScriptWriteHook(); // A clone never inherits another file's owner.
     script_ranges=source.script_ranges;
 #endif
     script_pointers.resize(source.script_pointers.size());

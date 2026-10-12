@@ -21,6 +21,12 @@ public:
     bool Failed()const{return failed||bytes.Failed()||(library&&library->rollback_failed);}
     std::size_t BytesForFrame(u32 frame)const{return bytes.BytesForFrame(frame);}
     u32 AuditHash()const;
+#ifdef TH_MULTIPLAYER_FIXTURES
+    bool SetScriptFirstWrite(bool enabled){
+        if(bytes.IsFrameOpen()||bytes.FrameCount())return false;
+        script_first_write=enabled;return true;
+    }
+#endif
 private:
     struct Identity {
         AnmResource* owner=nullptr;const u8* data=nullptr;std::size_t size=0;
@@ -28,6 +34,12 @@ private:
         const AnmRawInstr* const* scripts=nullptr;std::size_t script_count=0;
     } identities[256]{};
     AnmLibrary* library=nullptr;Netplay::RollbackJournal bytes;bool failed=false;
+#ifdef TH_MULTIPLAYER_FIXTURES
+    bool script_first_write=true;
+#endif
+    static bool BeforeScriptWrite(void*,const AnmLoaded&,void*,std::size_t);
+    bool TouchScript(const AnmLoaded&,void*,std::size_t);
+    bool RejectWrite(){if(library)library->rollback_failed=true;return false;}
     bool stable()const;
     bool Fail(){failed=true;return false;}
 };
