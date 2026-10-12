@@ -12,7 +12,7 @@ const HELP=`Usage: node portable/multiplayer/analyze-motion-cadence.mjs [options
   --window-rows <n>        Original rows around the strongest signal, 1..20 (default 20).
   --help
 
-Signals are descriptive, not a stutter verdict. Network waiting and zero native
+Signals are descriptive, not a stutter verdict. Network waiting and zero logical
 progress remain in the body. Touch release does not stop bullet simulation.
 Only a known end/stopped marker and declared measurement edges are filtered.
 `;
@@ -79,9 +79,16 @@ function readReport(path){
 }
 function decode(raw,index,origin){
   const m=raw.motion,o=84;
+  // During a yielded correction net[3] is a historical replay cursor. Only
+  // the persistent frontier can select the logical end of the measurement.
+  // Pixel samples still come exclusively from the probe's committed snapshot.
+  const logicalFrame=finite(raw.logicalFrame)?raw.logicalFrame:at(raw.progress,0)??at(raw.net,3);
+  const frameSource=finite(raw.logicalFrame)?'logicalFrame':at(raw.progress,0)!==null?'progress[0]':'net[3]';
   const sample={raw,index,time:finite(raw.time)?raw.time:null,
     epoch:finite(origin)&&finite(raw.time)?origin+raw.time:null,
-    frame:at(raw.net,3),generation:at(raw.net,10),corrections:at(raw.driver,3),
+    frame:logicalFrame,frameSource,cursor:at(raw.net,3),
+    correcting:at(raw.progress,2),budgetYielded:at(raw.progress,3),
+    generation:at(raw.net,10),corrections:at(raw.driver,3),
     commit:at(m,1),draw:at(m,3),alpha:at(m,6),excluded:null,
     supported:Array.isArray(m)&&m.length>=108&&m[0]===1&&m[11]===24};
   const b={valid:at(m,o),kind:at(m,o+1),slot:at(m,o+2),life:at(m,o+3),
@@ -306,7 +313,9 @@ function rawWindow(best,settings){
     signal:event.signal,details:event.details,
     rows:all.slice(start,start+settings.windowRows).map(s=>{
       const b=s.bullet;
-      return {row:s.index,timestampMs:s.time,epochMs:s.epoch,netFrame:s.frame,generation:s.generation,
+      return {row:s.index,timestampMs:s.time,epochMs:s.epoch,netFrame:s.cursor,
+        logicalFrame:s.frame,logicalFrameSource:s.frameSource,correcting:s.correcting,budgetYielded:s.budgetYielded,
+        generation:s.generation,
         commit:s.commit,draw:s.draw,valid:b.valid,slot:b.slot,life:b.life,state:b.state,script:b.script,
         age:b.age,previousAge:b.previousAge,previousValid:b.previousValid,alpha:s.alpha,
         renderPhase:b.phase,authoritative:b.auth,previous:b.previous,vm:b.vm,center:b.center,
@@ -338,7 +347,9 @@ function main(){
     rules:[
       'Input rows are observer callback timestamps, not exact GPU scanout timestamps.',
       'Common measured interval uses peer timeOrigin; any peer reaching its target cuts off natural stopped-input tails.',
-      'Network waiting, repeated native frames and zero movement are retained. Touch release is not a game-input stop.',
+      'Logical end/progress uses row.logicalFrame, then progress[0], then legacy net[3]. Raw-window netFrame preserves the actual replay cursor.',
+      'Display samples use only committed probe snapshots and real commit ordinals; historical cursor advances never create presentations.',
+      'Network waiting, repeated logical frames and zero movement are retained. Touch release is not a game-input stop.',
       'Bullet segments require same generation/scene/slot/life/state/script, one valid quad and consecutive real commit ordinals.',
       'Sprite changes only break center comparisons. Invalid previous endpoints are excluded from age/phase models.',
       'Age-span and endpoint counts include stable segments only. Other age differences list at most eight values.',

@@ -132,7 +132,7 @@ inline const u32* resources_journal_probe(TextureStore& textures){
         journal.AuditHash()==stable_hash&&journal.SetScriptFirstWrite(true),23))return result;
     journal.Clear();
     if(!require(!deferred->script_write_context&&!deferred->script_before_write&&
-        !library.rollback_journal&&!library.rollback_failed,24))return result;
+        !journal.Failed(),24))return result;
     // Reject an occupied later file without partially installing earlier ones.
     auto* occupied=library.load(later_slot,source.data(),u32(source.size()));if(!require(occupied!=nullptr,25))return result;
     const auto foreign_hook=+[](void*,const AnmLoaded&,void*,std::size_t){return true;};
