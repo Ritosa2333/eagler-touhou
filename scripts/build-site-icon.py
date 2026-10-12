@@ -22,7 +22,7 @@ def main() -> None:
         draw = ImageDraw.Draw(image)
         draw.text(((256 - right + left) // 2 - left,
                    (256 - bottom + top) // 2 - top), "☯", font=face, fill="white")
-        image.save(root / "th06.ico", format="ICO",
+        image.save(root / "favicon.ico", format="ICO",
                    sizes=[(16, 16), (24, 24), (32, 32), (48, 48),
                           (64, 64), (128, 128), (256, 256)])
         image.save(root / "docs/assets/eagler-touhou-icon.png")

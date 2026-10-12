@@ -14,7 +14,7 @@ assert.equal(siteNoticeBrandAsset("https://cloud.touhou.best/", baseUrl), "asset
 assert.equal(siteNoticeBrandAsset("https://space.bilibili.com/1", baseUrl), "assets/notice-bilibili.svg");
 assert.equal(siteNoticeBrandAsset("https://github.com/example/repo", baseUrl), "assets/notice-github.svg");
 assert.equal(siteNoticeBrandAsset("https://qm.qq.com/q/example", baseUrl), "assets/notice-qq.svg");
-assert.equal(siteNoticeBrandAsset("faq.html", baseUrl), "assets/th06.ico");
+assert.equal(siteNoticeBrandAsset("faq.html", baseUrl), "assets/favicon.ico");
 assert.equal(siteNoticeBrandAsset("https://example.org/", baseUrl), "");
 
 const parsed = parseSiteNoticeText(
@@ -28,7 +28,7 @@ assert.deepEqual(parsed[0].filter(segment => segment.type === "link").map(segmen
   external: segment.external,
   asset: segment.asset,
 })), [
-  { label: "FAQ", href: "faq.html", external: false, asset: "assets/th06.ico" },
+  { label: "FAQ", href: "faq.html", external: false, asset: "assets/favicon.ico" },
   { label: "GitHub", href: "https://github.com/example/repo", external: true, asset: "assets/notice-github.svg" },
 ]);
 assert.equal(parsed[1].map(segment => segment.type === "text" ? segment.text : segment.label).join(""),

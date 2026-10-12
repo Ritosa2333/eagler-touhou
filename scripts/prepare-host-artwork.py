@@ -25,7 +25,7 @@ from touhou_formats import extract_pbg3_entry, extract_pbg4_entry, extract_pbgz_
 ARTWORK_BY_GAME = {
     "th06": (
         "th06-card.webp",
-        "th06.ico",
+        "favicon.ico",
         "pwa/icon-192.png",
         "pwa/icon-512.png",
         "pwa/icon-maskable-512.png",
@@ -115,7 +115,7 @@ def _encode_site_icon(source: bytes, name: str) -> tuple[bytes, tuple[int, int]]
             _validate_artwork(name, data)
             return data, canvas.size
     except OSError as error:
-        raise ValueError(f"th06.ico: unsupported or corrupt site icon") from error
+        raise ValueError(f"favicon.ico: unsupported or corrupt site icon") from error
 
 
 def _extract_th06_title(root: Path) -> bytes:
@@ -179,8 +179,8 @@ def _extract_th15_title(root: Path, thdat: str, thanm: str) -> bytes:
 
 
 def _default_artwork(game: str, name: str, roots: dict[str, Path], thdat: str = "thdat", thanm: str = "thanm") -> bytes:
-    if name == "th06.ico":
-        return (Path(__file__).resolve().parent.parent / "th06.ico").read_bytes()
+    if name == "favicon.ico":
+        return (Path(__file__).resolve().parent.parent / "favicon.ico").read_bytes()
     root = roots.get(game)
     if root is None:
         raise FileNotFoundError(
@@ -260,14 +260,14 @@ def prepare_host_artwork(
                 source = "override"
                 source_bytes = len(raw)
             elif derived_site_icon:
-                icon_override = override_dir / "th06.ico" if override_dir else None
+                icon_override = override_dir / "favicon.ico" if override_dir else None
                 if icon_override is not None and icon_override.is_file():
                     raw = icon_override.read_bytes()
                     source = "override-derived"
                 else:
-                    raw = _default_artwork("th06", "th06.ico", roots, thdat, thanm)
+                    raw = _default_artwork("th06", "favicon.ico", roots, thdat, thanm)
                     source = "site-brand-derived"
-                _validate_artwork("th06.ico", raw)
+                _validate_artwork("favicon.ico", raw)
                 data, dimensions = _encode_site_icon(raw, name)
                 source_bytes = len(raw)
             else:
@@ -278,7 +278,7 @@ def prepare_host_artwork(
                     else:
                         data = raw
                         _validate_artwork(name, data)
-                    source = "site-brand" if name == "th06.ico" else "original-extraction"
+                    source = "site-brand" if name == "favicon.ico" else "original-extraction"
                     source_bytes = len(raw)
                 except (FileNotFoundError, ValueError, EOFError, OSError) as error:
                     entries.append({

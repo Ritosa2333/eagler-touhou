@@ -165,11 +165,6 @@ createServer(async (request, response) => {
     const url = new URL(request.url || "/", `http://${host}:${port}`);
     if (await handleThcrap(request, response, url)) return;
     let pathname = decodeURIComponent(url.pathname);
-    if (pathname === "/favicon.ico") {
-      response.writeHead(204, { "Cache-Control": "public, max-age=86400" });
-      response.end();
-      return;
-    }
     if (pathname === "/eagler-touhou" || pathname === "/eagler-touhou/") {
       response.writeHead(302, { Location: "/", "Cache-Control": "no-store" });
       response.end();

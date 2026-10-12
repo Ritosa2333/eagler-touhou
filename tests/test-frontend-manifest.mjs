@@ -66,7 +66,7 @@ for (const artwork of cardArtwork) {
     `${artwork}: original-game-derived card artwork must remain a Host input, not a repository-owned frontend asset`);
 }
 assert.deepEqual(HOST_SITE_ARTWORK_FILES, [
-  "th06.ico",
+  "favicon.ico",
   "pwa/icon-192.png",
   "pwa/icon-512.png",
   "pwa/icon-maskable-512.png",

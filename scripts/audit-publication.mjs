@@ -50,7 +50,6 @@ const legacyHostGeneratedOriginalAssets = new Set([
   "assets/th06-title00.jpg",
   "assets/th07-title00.jpg",
   "assets/th08-title00.png",
-  "assets/th06.ico",
   "assets/pwa/icon-192.png",
   "assets/pwa/icon-512.png",
   "assets/pwa/icon-maskable-512.png",

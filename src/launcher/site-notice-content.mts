@@ -28,7 +28,7 @@ export function siteNoticeBrandAsset(url: string, baseUrl = fallbackBaseUrl()): 
   if (host === "qm.qq.com") return "assets/notice-qq.svg";
   if (host === "github.com") return "assets/notice-github.svg";
   if (host === "bilibili.com" || host.endsWith(".bilibili.com")) return "assets/notice-bilibili.svg";
-  if (resolved.origin === base.origin && /(?:^|\/)faq\.html$/i.test(resolved.pathname)) return "assets/th06.ico";
+  if (resolved.origin === base.origin && /(?:^|\/)faq\.html$/i.test(resolved.pathname)) return "assets/favicon.ico";
   return "";
 }
 

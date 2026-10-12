@@ -70,7 +70,7 @@ test('cold isolated source builds current canonical contracts and stages the act
 
 test('FAQ and its actual local styles/fonts are copied unchanged; absent optional artwork remains absent instead of fabricated', async () => {
   for (const path of ['faq.html', 'styles.css', 'about.css', 'assets/fonts/yatra-one-latin.woff2', 'assets/fonts/chill-round-gothic-site-medium.woff2']) assert.deepEqual(await readFile(resolve(fixture.root, path)), await readFile(resolve(cold, 'public', path)));
-  assert.ok(fixture.optionalMissing.includes('assets/th06.ico')); assert.equal(existsSync(resolve(fixture.root, 'assets/th06.ico')), false);
+  assert.ok(fixture.optionalMissing.includes('assets/favicon.ico')); assert.equal(existsSync(resolve(fixture.root, 'assets/favicon.ico')), false);
 });
 
 test('missing source/modules and corrupted compiled contracts fail closed without using inherited Launcher cache', async () => {

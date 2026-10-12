@@ -41,9 +41,9 @@ original-game-derived files are rejected from source publication candidates.
 
 ## Site brand assets
 
-`th06.ico` is the site's yin-yang icon, rendered from the U+262F glyph in
+`favicon.ico` is the site's yin-yang icon, rendered from the U+262F glyph in
 `font-touhou98@1.0.0`. It is tracked as a source brand asset and copied to
-`assets/th06.ico` during host assembly. An operator may supply a custom override.
+`assets/favicon.ico` during host assembly. An operator may supply a custom override.
 The preview is `docs/assets/eagler-touhou-icon.png`.
 
 `assets/fonts/touhou98.woff2` is the self-hosted Web font from
